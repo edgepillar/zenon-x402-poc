@@ -1,0 +1,25 @@
+{
+  "name": "zenon-x402-poc",
+  "version": "0.2.0",
+  "private": true,
+  "description": "Proof of concept: x402 v2 exact payments settled by signed Zenon account blocks",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "demo": "node src/demo.js",
+    "server": "node src/server-cli.js",
+    "buyer": "node src/buyer-cli.js",
+    "test": "node --test"
+  },
+  "dependencies": {
+    "@noble/ed25519": "^2.2.3",
+    "@noble/hashes": "^1.8.0",
+    "znn-typescript-sdk": "^1.0.5"
+  },
+  "overrides": {
+    "ws": "^8.21.0",
+    "serialize-javascript": "^7.0.5"
+  }
+}
