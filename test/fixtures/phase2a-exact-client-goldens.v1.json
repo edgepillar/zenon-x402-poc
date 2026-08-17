@@ -1,0 +1,2922 @@
+{
+  "schemaVersion": 2,
+  "oracle": {
+    "projectHead": "138da9c6c0d57ffa59b56016d42365116d1682f0",
+    "sdkPackage": "znn-typescript-sdk",
+    "sdkVersion": "1.0.5",
+    "sdkIntegrity": "sha512-+6R07O7tBNTvGw+zA7oyS+Cr+MaKHQcITO9Vz3F6zaie8tMQ7WsrbuFLmtkCJwhYQ8G+V86wIesftyAtAcxfRw=="
+  },
+  "scenarios": {
+    "A": {
+      "schemaVersion": 2,
+      "id": "A",
+      "provenance": {
+        "projectHead": "138da9c6c0d57ffa59b56016d42365116d1682f0",
+        "sdkPackage": "znn-typescript-sdk",
+        "sdkVersion": "1.0.5",
+        "sdkIntegrity": "sha512-+6R07O7tBNTvGw+zA7oyS+Cr+MaKHQcITO9Vz3F6zaie8tMQ7WsrbuFLmtkCJwhYQ8G+V86wIesftyAtAcxfRw=="
+      },
+      "inputs": {
+        "accountIndex": 0,
+        "chainProfile": {
+          "version": 1,
+          "chainIdentifier": "7",
+          "genesisMomentumHash": "7777777777777777777777777777777777777777777777777777777777777777"
+        },
+        "resource": {
+          "url": "https://resource.example/paid",
+          "description": "Phase 2A deterministic paid resource",
+          "mimeType": "application/json"
+        },
+        "accepted": {
+          "scheme": "exact",
+          "network": "zenon:testnet",
+          "asset": "zts1znnxxxxxxxxxxxxx9z4ulx",
+          "amount": "1",
+          "payTo": "z1qp6kjgxzjpwhjf90akspf2srzkghr7ljjqrd87",
+          "maxTimeoutSeconds": 30,
+          "extra": {
+            "poc": true,
+            "settlement": "account-block",
+            "zenonChain": {
+              "version": 1,
+              "chainIdentifier": "7",
+              "genesisMomentumHash": "7777777777777777777777777777777777777777777777777777777777777777"
+            }
+          }
+        },
+        "readinessMomentum": {
+          "chainIdentifier": 7,
+          "height": 100,
+          "hash": "9a59fe8ddb223191e4f8779aa27c4b3963b91ff4d97e767ab86ea1f6743675fd"
+        },
+        "frontierAccountBlock": null,
+        "preparationMomentum": {
+          "chainIdentifier": 7,
+          "height": 101,
+          "hash": "a42d1f824fe415da5ce98db412812c0f9d4b8e9ef8a1f1b3305092cd61110f8f"
+        },
+        "plasmaResponse": {
+          "requiredDifficulty": 0,
+          "basePlasma": 21000
+        },
+        "powNonce": null
+      },
+      "expected": {
+        "observedExecutionTrace": [
+          {
+            "sequence": 1,
+            "category": "http",
+            "operation": "fetch.initial"
+          },
+          {
+            "sequence": 2,
+            "category": "sdk-global",
+            "operation": "Zenon.setNetworkID",
+            "value": 3
+          },
+          {
+            "sequence": 3,
+            "category": "sdk-global",
+            "operation": "Zenon.getInstance"
+          },
+          {
+            "sequence": 4,
+            "category": "sdk-api",
+            "operation": "zenon.initialize",
+            "phase": "readiness"
+          },
+          {
+            "sequence": 5,
+            "category": "sdk-api",
+            "operation": "stats.networkInfo",
+            "phase": "readiness"
+          },
+          {
+            "sequence": 6,
+            "category": "sdk-api",
+            "operation": "stats.syncInfo",
+            "phase": "readiness"
+          },
+          {
+            "sequence": 7,
+            "category": "sdk-api",
+            "operation": "ledger.getFrontierMomentum",
+            "phase": "readiness"
+          },
+          {
+            "sequence": 8,
+            "category": "chain-authentication",
+            "operation": "authenticateChainProfile"
+          },
+          {
+            "sequence": 9,
+            "category": "sdk-global",
+            "operation": "Zenon.setChainID",
+            "value": 7
+          },
+          {
+            "sequence": 10,
+            "category": "boundary",
+            "operation": "KeyStore.fromMnemonic",
+            "arguments": "redacted"
+          },
+          {
+            "sequence": 11,
+            "category": "boundary",
+            "operation": "KeyStore.getKeyPair",
+            "role": "constructor-temporary",
+            "index": 0
+          },
+          {
+            "sequence": 12,
+            "category": "boundary",
+            "operation": "KeyPair.getAddress",
+            "role": "constructor-temporary"
+          },
+          {
+            "sequence": 13,
+            "category": "boundary",
+            "operation": "KeyStore.getKeyPair",
+            "role": "operation",
+            "index": 0
+          },
+          {
+            "sequence": 14,
+            "category": "sdk-block",
+            "operation": "AccountBlockTemplate.send.enter"
+          },
+          {
+            "sequence": 15,
+            "category": "sdk-global",
+            "operation": "Zenon.getChainIdentifier"
+          },
+          {
+            "sequence": 16,
+            "category": "block-stage",
+            "operation": "block-stage.sendReturn"
+          },
+          {
+            "sequence": 17,
+            "category": "sdk-block",
+            "operation": "Zenon.prepareBlock.enter"
+          },
+          {
+            "sequence": 18,
+            "category": "block-stage",
+            "operation": "block-stage.prepareEntry"
+          },
+          {
+            "sequence": 19,
+            "category": "sdk-global",
+            "operation": "Zenon.getInstance"
+          },
+          {
+            "sequence": 20,
+            "category": "boundary",
+            "operation": "KeyPair.getAddress",
+            "role": "operation"
+          },
+          {
+            "sequence": 21,
+            "category": "boundary",
+            "operation": "KeyPair.getPublicKey",
+            "role": "operation"
+          },
+          {
+            "sequence": 22,
+            "category": "sdk-api",
+            "operation": "ledger.getFrontierAccountBlock",
+            "phase": "prepare"
+          },
+          {
+            "sequence": 23,
+            "category": "block-stage",
+            "operation": "block-stage.frontierAccountEntry"
+          },
+          {
+            "sequence": 24,
+            "category": "sdk-api",
+            "operation": "ledger.getFrontierMomentum",
+            "phase": "prepare"
+          },
+          {
+            "sequence": 25,
+            "category": "block-stage",
+            "operation": "block-stage.preparationMomentumEntry"
+          },
+          {
+            "sequence": 26,
+            "category": "sdk-api",
+            "operation": "embedded.plasma.getRequiredPoWForAccountBlock",
+            "phase": "prepare"
+          },
+          {
+            "sequence": 27,
+            "category": "block-stage",
+            "operation": "block-stage.plasmaEntry"
+          },
+          {
+            "sequence": 28,
+            "category": "boundary",
+            "operation": "KeyPair.sign",
+            "role": "operation",
+            "messageBytes": 32
+          },
+          {
+            "sequence": 29,
+            "category": "block-stage",
+            "operation": "block-stage.signEntry"
+          },
+          {
+            "sequence": 30,
+            "category": "block-stage",
+            "operation": "block-stage.prepareReturn"
+          },
+          {
+            "sequence": 31,
+            "category": "sdk-block",
+            "operation": "Zenon.prepareBlock.return"
+          },
+          {
+            "sequence": 32,
+            "category": "sdk-block",
+            "operation": "AccountBlockTemplate.toJson"
+          },
+          {
+            "sequence": 33,
+            "category": "sdk-key",
+            "operation": "KeyPair.clear.enter",
+            "role": "operation"
+          },
+          {
+            "sequence": 34,
+            "category": "block-stage",
+            "operation": "block-stage.beforeProductionClear"
+          },
+          {
+            "sequence": 35,
+            "category": "block-stage",
+            "operation": "block-stage.afterProductionClear"
+          },
+          {
+            "sequence": 36,
+            "category": "sdk-lifecycle",
+            "operation": "Zenon.clearConnection",
+            "attempt": 1,
+            "mode": "return",
+            "outcome": "fulfilled"
+          },
+          {
+            "sequence": 37,
+            "category": "owner",
+            "operation": "ownerProbe.enter"
+          },
+          {
+            "sequence": 38,
+            "category": "http",
+            "operation": "fetch.paid"
+          }
+        ],
+        "sdkGlobalMilestones": [
+          {
+            "sequence": 2,
+            "category": "sdk-global",
+            "operation": "Zenon.setNetworkID",
+            "value": 3
+          },
+          {
+            "sequence": 3,
+            "category": "sdk-global",
+            "operation": "Zenon.getInstance"
+          },
+          {
+            "sequence": 9,
+            "category": "sdk-global",
+            "operation": "Zenon.setChainID",
+            "value": 7
+          },
+          {
+            "sequence": 15,
+            "category": "sdk-global",
+            "operation": "Zenon.getChainIdentifier"
+          },
+          {
+            "sequence": 19,
+            "category": "sdk-global",
+            "operation": "Zenon.getInstance"
+          }
+        ],
+        "sdkApiRpcMethodBoundaryTrace": [
+          {
+            "sequence": 4,
+            "layer": "sdk-api-method-boundary",
+            "wireEncodingObserved": false,
+            "operation": "zenon.initialize",
+            "phase": "readiness",
+            "arguments": [
+              "ws://rpc.invalid"
+            ],
+            "outcome": "fulfilled"
+          },
+          {
+            "sequence": 5,
+            "layer": "sdk-api-method-boundary",
+            "wireEncodingObserved": false,
+            "operation": "stats.networkInfo",
+            "phase": "readiness",
+            "arguments": [],
+            "outcome": "fulfilled"
+          },
+          {
+            "sequence": 6,
+            "layer": "sdk-api-method-boundary",
+            "wireEncodingObserved": false,
+            "operation": "stats.syncInfo",
+            "phase": "readiness",
+            "arguments": [],
+            "outcome": "fulfilled"
+          },
+          {
+            "sequence": 7,
+            "layer": "sdk-api-method-boundary",
+            "wireEncodingObserved": false,
+            "operation": "ledger.getFrontierMomentum",
+            "phase": "readiness",
+            "arguments": [],
+            "outcome": "fulfilled"
+          },
+          {
+            "sequence": 22,
+            "layer": "sdk-api-method-boundary",
+            "wireEncodingObserved": false,
+            "operation": "ledger.getFrontierAccountBlock",
+            "phase": "prepare",
+            "arguments": [
+              "z1qpqc8a473rn25e7fn9qs7eswkdl240d4c742ql"
+            ],
+            "outcome": "fulfilled"
+          },
+          {
+            "sequence": 24,
+            "layer": "sdk-api-method-boundary",
+            "wireEncodingObserved": false,
+            "operation": "ledger.getFrontierMomentum",
+            "phase": "prepare",
+            "arguments": [],
+            "outcome": "fulfilled"
+          },
+          {
+            "sequence": 26,
+            "layer": "sdk-api-method-boundary",
+            "wireEncodingObserved": false,
+            "operation": "embedded.plasma.getRequiredPoWForAccountBlock",
+            "phase": "prepare",
+            "arguments": [
+              {
+                "address": "z1qpqc8a473rn25e7fn9qs7eswkdl240d4c742ql",
+                "blockType": 2,
+                "toAddress": "z1qp6kjgxzjpwhjf90akspf2srzkghr7ljjqrd87",
+                "data": "zvEouzSzCsJUoOHN1jHks5UaZYK7zMXEOD5Ugwi5Emk="
+              }
+            ],
+            "outcome": "fulfilled"
+          }
+        ],
+        "prepareBlockApiBoundaryTrace": [
+          {
+            "sequence": 22,
+            "layer": "sdk-api-method-boundary",
+            "wireEncodingObserved": false,
+            "operation": "ledger.getFrontierAccountBlock",
+            "phase": "prepare",
+            "arguments": [
+              "z1qpqc8a473rn25e7fn9qs7eswkdl240d4c742ql"
+            ],
+            "outcome": "fulfilled"
+          },
+          {
+            "sequence": 24,
+            "layer": "sdk-api-method-boundary",
+            "wireEncodingObserved": false,
+            "operation": "ledger.getFrontierMomentum",
+            "phase": "prepare",
+            "arguments": [],
+            "outcome": "fulfilled"
+          },
+          {
+            "sequence": 26,
+            "layer": "sdk-api-method-boundary",
+            "wireEncodingObserved": false,
+            "operation": "embedded.plasma.getRequiredPoWForAccountBlock",
+            "phase": "prepare",
+            "arguments": [
+              {
+                "address": "z1qpqc8a473rn25e7fn9qs7eswkdl240d4c742ql",
+                "blockType": 2,
+                "toAddress": "z1qp6kjgxzjpwhjf90akspf2srzkghr7ljjqrd87",
+                "data": "zvEouzSzCsJUoOHN1jHks5UaZYK7zMXEOD5Ugwi5Emk="
+              }
+            ],
+            "outcome": "fulfilled"
+          }
+        ],
+        "blockStageSnapshots": {
+          "sendReturn": {
+            "sequence": 16,
+            "block": {
+              "version": 1,
+              "chainIdentifier": 7,
+              "blockType": 2,
+              "hash": "0000000000000000000000000000000000000000000000000000000000000000",
+              "previousHash": "0000000000000000000000000000000000000000000000000000000000000000",
+              "height": 0,
+              "momentumAcknowledged": {
+                "hash": "0000000000000000000000000000000000000000000000000000000000000000",
+                "height": 0
+              },
+              "address": "z1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqsggv2f",
+              "toAddress": "z1qp6kjgxzjpwhjf90akspf2srzkghr7ljjqrd87",
+              "amount": "1",
+              "tokenStandard": "zts1znnxxxxxxxxxxxxx9z4ulx",
+              "fromBlockHash": "0000000000000000000000000000000000000000000000000000000000000000",
+              "data": "",
+              "fusedPlasma": 0,
+              "difficulty": 0,
+              "nonce": "",
+              "publicKey": "",
+              "signature": ""
+            }
+          },
+          "prepareEntry": {
+            "sequence": 18,
+            "block": {
+              "version": 1,
+              "chainIdentifier": 7,
+              "blockType": 2,
+              "hash": "0000000000000000000000000000000000000000000000000000000000000000",
+              "previousHash": "0000000000000000000000000000000000000000000000000000000000000000",
+              "height": 0,
+              "momentumAcknowledged": {
+                "hash": "0000000000000000000000000000000000000000000000000000000000000000",
+                "height": 0
+              },
+              "address": "z1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqsggv2f",
+              "toAddress": "z1qp6kjgxzjpwhjf90akspf2srzkghr7ljjqrd87",
+              "amount": "1",
+              "tokenStandard": "zts1znnxxxxxxxxxxxxx9z4ulx",
+              "fromBlockHash": "0000000000000000000000000000000000000000000000000000000000000000",
+              "data": "zvEouzSzCsJUoOHN1jHks5UaZYK7zMXEOD5Ugwi5Emk=",
+              "fusedPlasma": 0,
+              "difficulty": 0,
+              "nonce": "",
+              "publicKey": "",
+              "signature": ""
+            }
+          },
+          "frontierAccountEntry": {
+            "sequence": 23,
+            "block": {
+              "version": 1,
+              "chainIdentifier": 7,
+              "blockType": 2,
+              "hash": "0000000000000000000000000000000000000000000000000000000000000000",
+              "previousHash": "0000000000000000000000000000000000000000000000000000000000000000",
+              "height": 0,
+              "momentumAcknowledged": {
+                "hash": "0000000000000000000000000000000000000000000000000000000000000000",
+                "height": 0
+              },
+              "address": "z1qpqc8a473rn25e7fn9qs7eswkdl240d4c742ql",
+              "toAddress": "z1qp6kjgxzjpwhjf90akspf2srzkghr7ljjqrd87",
+              "amount": "1",
+              "tokenStandard": "zts1znnxxxxxxxxxxxxx9z4ulx",
+              "fromBlockHash": "0000000000000000000000000000000000000000000000000000000000000000",
+              "data": "zvEouzSzCsJUoOHN1jHks5UaZYK7zMXEOD5Ugwi5Emk=",
+              "fusedPlasma": 0,
+              "difficulty": 0,
+              "nonce": "",
+              "publicKey": "c+sqppCnjYaDJqQtEa7qMBxaE6XHh/xtDXi7E+f8br0=",
+              "signature": ""
+            }
+          },
+          "preparationMomentumEntry": {
+            "sequence": 25,
+            "block": {
+              "version": 1,
+              "chainIdentifier": 7,
+              "blockType": 2,
+              "hash": "0000000000000000000000000000000000000000000000000000000000000000",
+              "previousHash": "0000000000000000000000000000000000000000000000000000000000000000",
+              "height": 0,
+              "momentumAcknowledged": {
+                "hash": "0000000000000000000000000000000000000000000000000000000000000000",
+                "height": 0
+              },
+              "address": "z1qpqc8a473rn25e7fn9qs7eswkdl240d4c742ql",
+              "toAddress": "z1qp6kjgxzjpwhjf90akspf2srzkghr7ljjqrd87",
+              "amount": "1",
+              "tokenStandard": "zts1znnxxxxxxxxxxxxx9z4ulx",
+              "fromBlockHash": "0000000000000000000000000000000000000000000000000000000000000000",
+              "data": "zvEouzSzCsJUoOHN1jHks5UaZYK7zMXEOD5Ugwi5Emk=",
+              "fusedPlasma": 0,
+              "difficulty": 0,
+              "nonce": "",
+              "publicKey": "c+sqppCnjYaDJqQtEa7qMBxaE6XHh/xtDXi7E+f8br0=",
+              "signature": ""
+            }
+          },
+          "plasmaEntry": {
+            "sequence": 27,
+            "block": {
+              "version": 1,
+              "chainIdentifier": 7,
+              "blockType": 2,
+              "hash": "0000000000000000000000000000000000000000000000000000000000000000",
+              "previousHash": "0000000000000000000000000000000000000000000000000000000000000000",
+              "height": 1,
+              "momentumAcknowledged": {
+                "hash": "a42d1f824fe415da5ce98db412812c0f9d4b8e9ef8a1f1b3305092cd61110f8f",
+                "height": 101
+              },
+              "address": "z1qpqc8a473rn25e7fn9qs7eswkdl240d4c742ql",
+              "toAddress": "z1qp6kjgxzjpwhjf90akspf2srzkghr7ljjqrd87",
+              "amount": "1",
+              "tokenStandard": "zts1znnxxxxxxxxxxxxx9z4ulx",
+              "fromBlockHash": "0000000000000000000000000000000000000000000000000000000000000000",
+              "data": "zvEouzSzCsJUoOHN1jHks5UaZYK7zMXEOD5Ugwi5Emk=",
+              "fusedPlasma": 0,
+              "difficulty": 0,
+              "nonce": "",
+              "publicKey": "c+sqppCnjYaDJqQtEa7qMBxaE6XHh/xtDXi7E+f8br0=",
+              "signature": ""
+            }
+          },
+          "powProviderEntry": null,
+          "signEntry": {
+            "sequence": 29,
+            "block": {
+              "version": 1,
+              "chainIdentifier": 7,
+              "blockType": 2,
+              "hash": "3651e34186505ad83d8831495cc8f860318e06d082fc985504f30f83268a6948",
+              "previousHash": "0000000000000000000000000000000000000000000000000000000000000000",
+              "height": 1,
+              "momentumAcknowledged": {
+                "hash": "a42d1f824fe415da5ce98db412812c0f9d4b8e9ef8a1f1b3305092cd61110f8f",
+                "height": 101
+              },
+              "address": "z1qpqc8a473rn25e7fn9qs7eswkdl240d4c742ql",
+              "toAddress": "z1qp6kjgxzjpwhjf90akspf2srzkghr7ljjqrd87",
+              "amount": "1",
+              "tokenStandard": "zts1znnxxxxxxxxxxxxx9z4ulx",
+              "fromBlockHash": "0000000000000000000000000000000000000000000000000000000000000000",
+              "data": "zvEouzSzCsJUoOHN1jHks5UaZYK7zMXEOD5Ugwi5Emk=",
+              "fusedPlasma": 21000,
+              "difficulty": 0,
+              "nonce": "0000000000000000",
+              "publicKey": "c+sqppCnjYaDJqQtEa7qMBxaE6XHh/xtDXi7E+f8br0=",
+              "signature": ""
+            }
+          },
+          "prepareReturn": {
+            "sequence": 30,
+            "block": {
+              "version": 1,
+              "chainIdentifier": 7,
+              "blockType": 2,
+              "hash": "3651e34186505ad83d8831495cc8f860318e06d082fc985504f30f83268a6948",
+              "previousHash": "0000000000000000000000000000000000000000000000000000000000000000",
+              "height": 1,
+              "momentumAcknowledged": {
+                "hash": "a42d1f824fe415da5ce98db412812c0f9d4b8e9ef8a1f1b3305092cd61110f8f",
+                "height": 101
+              },
+              "address": "z1qpqc8a473rn25e7fn9qs7eswkdl240d4c742ql",
+              "toAddress": "z1qp6kjgxzjpwhjf90akspf2srzkghr7ljjqrd87",
+              "amount": "1",
+              "tokenStandard": "zts1znnxxxxxxxxxxxxx9z4ulx",
+              "fromBlockHash": "0000000000000000000000000000000000000000000000000000000000000000",
+              "data": "zvEouzSzCsJUoOHN1jHks5UaZYK7zMXEOD5Ugwi5Emk=",
+              "fusedPlasma": 21000,
+              "difficulty": 0,
+              "nonce": "0000000000000000",
+              "publicKey": "c+sqppCnjYaDJqQtEa7qMBxaE6XHh/xtDXi7E+f8br0=",
+              "signature": "yXIQK/0w8v8txQaNMVbkJQtqREW1Ps26mx1xiB3mSx/liSJ8hof3IU0Ln9CSfew7MeTMOVfHAsA0hgJfCiqgBA=="
+            }
+          },
+          "beforeProductionClear": {
+            "sequence": 34,
+            "block": {
+              "version": 1,
+              "chainIdentifier": 7,
+              "blockType": 2,
+              "hash": "3651e34186505ad83d8831495cc8f860318e06d082fc985504f30f83268a6948",
+              "previousHash": "0000000000000000000000000000000000000000000000000000000000000000",
+              "height": 1,
+              "momentumAcknowledged": {
+                "hash": "a42d1f824fe415da5ce98db412812c0f9d4b8e9ef8a1f1b3305092cd61110f8f",
+                "height": 101
+              },
+              "address": "z1qpqc8a473rn25e7fn9qs7eswkdl240d4c742ql",
+              "toAddress": "z1qp6kjgxzjpwhjf90akspf2srzkghr7ljjqrd87",
+              "amount": "1",
+              "tokenStandard": "zts1znnxxxxxxxxxxxxx9z4ulx",
+              "fromBlockHash": "0000000000000000000000000000000000000000000000000000000000000000",
+              "data": "zvEouzSzCsJUoOHN1jHks5UaZYK7zMXEOD5Ugwi5Emk=",
+              "fusedPlasma": 21000,
+              "difficulty": 0,
+              "nonce": "0000000000000000",
+              "publicKey": "c+sqppCnjYaDJqQtEa7qMBxaE6XHh/xtDXi7E+f8br0=",
+              "signature": "yXIQK/0w8v8txQaNMVbkJQtqREW1Ps26mx1xiB3mSx/liSJ8hof3IU0Ln9CSfew7MeTMOVfHAsA0hgJfCiqgBA=="
+            }
+          },
+          "afterProductionClear": {
+            "sequence": 35,
+            "block": {
+              "version": 1,
+              "chainIdentifier": 7,
+              "blockType": 2,
+              "hash": "3651e34186505ad83d8831495cc8f860318e06d082fc985504f30f83268a6948",
+              "previousHash": "0000000000000000000000000000000000000000000000000000000000000000",
+              "height": 1,
+              "momentumAcknowledged": {
+                "hash": "a42d1f824fe415da5ce98db412812c0f9d4b8e9ef8a1f1b3305092cd61110f8f",
+                "height": 101
+              },
+              "address": "z1qpqc8a473rn25e7fn9qs7eswkdl240d4c742ql",
+              "toAddress": "z1qp6kjgxzjpwhjf90akspf2srzkghr7ljjqrd87",
+              "amount": "1",
+              "tokenStandard": "zts1znnxxxxxxxxxxxxx9z4ulx",
+              "fromBlockHash": "0000000000000000000000000000000000000000000000000000000000000000",
+              "data": "zvEouzSzCsJUoOHN1jHks5UaZYK7zMXEOD5Ugwi5Emk=",
+              "fusedPlasma": 21000,
+              "difficulty": 0,
+              "nonce": "0000000000000000",
+              "publicKey": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+              "signature": "yXIQK/0w8v8txQaNMVbkJQtqREW1Ps26mx1xiB3mSx/liSJ8hof3IU0Ln9CSfew7MeTMOVfHAsA0hgJfCiqgBA=="
+            },
+            "clearOutcome": "returned"
+          }
+        },
+        "payloadTransactionSnapshots": {
+          "productionToJson": {
+            "sequence": 32,
+            "transaction": {
+              "version": 1,
+              "chainIdentifier": 7,
+              "blockType": 2,
+              "hash": "3651e34186505ad83d8831495cc8f860318e06d082fc985504f30f83268a6948",
+              "previousHash": "0000000000000000000000000000000000000000000000000000000000000000",
+              "height": 1,
+              "momentumAcknowledged": {
+                "hash": "a42d1f824fe415da5ce98db412812c0f9d4b8e9ef8a1f1b3305092cd61110f8f",
+                "height": 101
+              },
+              "address": "z1qpqc8a473rn25e7fn9qs7eswkdl240d4c742ql",
+              "toAddress": "z1qp6kjgxzjpwhjf90akspf2srzkghr7ljjqrd87",
+              "amount": "1",
+              "tokenStandard": "zts1znnxxxxxxxxxxxxx9z4ulx",
+              "fromBlockHash": "0000000000000000000000000000000000000000000000000000000000000000",
+              "data": "zvEouzSzCsJUoOHN1jHks5UaZYK7zMXEOD5Ugwi5Emk=",
+              "fusedPlasma": 21000,
+              "difficulty": 0,
+              "nonce": "0000000000000000",
+              "publicKey": "c+sqppCnjYaDJqQtEa7qMBxaE6XHh/xtDXi7E+f8br0=",
+              "signature": "yXIQK/0w8v8txQaNMVbkJQtqREW1Ps26mx1xiB3mSx/liSJ8hof3IU0Ln9CSfew7MeTMOVfHAsA0hgJfCiqgBA=="
+            }
+          },
+          "beforeProductionClear": {
+            "sequence": 34,
+            "transaction": {
+              "version": 1,
+              "chainIdentifier": 7,
+              "blockType": 2,
+              "hash": "3651e34186505ad83d8831495cc8f860318e06d082fc985504f30f83268a6948",
+              "previousHash": "0000000000000000000000000000000000000000000000000000000000000000",
+              "height": 1,
+              "momentumAcknowledged": {
+                "hash": "a42d1f824fe415da5ce98db412812c0f9d4b8e9ef8a1f1b3305092cd61110f8f",
+                "height": 101
+              },
+              "address": "z1qpqc8a473rn25e7fn9qs7eswkdl240d4c742ql",
+              "toAddress": "z1qp6kjgxzjpwhjf90akspf2srzkghr7ljjqrd87",
+              "amount": "1",
+              "tokenStandard": "zts1znnxxxxxxxxxxxxx9z4ulx",
+              "fromBlockHash": "0000000000000000000000000000000000000000000000000000000000000000",
+              "data": "zvEouzSzCsJUoOHN1jHks5UaZYK7zMXEOD5Ugwi5Emk=",
+              "fusedPlasma": 21000,
+              "difficulty": 0,
+              "nonce": "0000000000000000",
+              "publicKey": "c+sqppCnjYaDJqQtEa7qMBxaE6XHh/xtDXi7E+f8br0=",
+              "signature": "yXIQK/0w8v8txQaNMVbkJQtqREW1Ps26mx1xiB3mSx/liSJ8hof3IU0Ln9CSfew7MeTMOVfHAsA0hgJfCiqgBA=="
+            }
+          },
+          "afterProductionClear": {
+            "sequence": 35,
+            "transaction": {
+              "version": 1,
+              "chainIdentifier": 7,
+              "blockType": 2,
+              "hash": "3651e34186505ad83d8831495cc8f860318e06d082fc985504f30f83268a6948",
+              "previousHash": "0000000000000000000000000000000000000000000000000000000000000000",
+              "height": 1,
+              "momentumAcknowledged": {
+                "hash": "a42d1f824fe415da5ce98db412812c0f9d4b8e9ef8a1f1b3305092cd61110f8f",
+                "height": 101
+              },
+              "address": "z1qpqc8a473rn25e7fn9qs7eswkdl240d4c742ql",
+              "toAddress": "z1qp6kjgxzjpwhjf90akspf2srzkghr7ljjqrd87",
+              "amount": "1",
+              "tokenStandard": "zts1znnxxxxxxxxxxxxx9z4ulx",
+              "fromBlockHash": "0000000000000000000000000000000000000000000000000000000000000000",
+              "data": "zvEouzSzCsJUoOHN1jHks5UaZYK7zMXEOD5Ugwi5Emk=",
+              "fusedPlasma": 21000,
+              "difficulty": 0,
+              "nonce": "0000000000000000",
+              "publicKey": "c+sqppCnjYaDJqQtEa7qMBxaE6XHh/xtDXi7E+f8br0=",
+              "signature": "yXIQK/0w8v8txQaNMVbkJQtqREW1Ps26mx1xiB3mSx/liSJ8hof3IU0Ln9CSfew7MeTMOVfHAsA0hgJfCiqgBA=="
+            }
+          }
+        },
+        "transaction": {
+          "version": 1,
+          "chainIdentifier": 7,
+          "blockType": 2,
+          "hash": "3651e34186505ad83d8831495cc8f860318e06d082fc985504f30f83268a6948",
+          "previousHash": "0000000000000000000000000000000000000000000000000000000000000000",
+          "height": 1,
+          "momentumAcknowledged": {
+            "hash": "a42d1f824fe415da5ce98db412812c0f9d4b8e9ef8a1f1b3305092cd61110f8f",
+            "height": 101
+          },
+          "address": "z1qpqc8a473rn25e7fn9qs7eswkdl240d4c742ql",
+          "toAddress": "z1qp6kjgxzjpwhjf90akspf2srzkghr7ljjqrd87",
+          "amount": "1",
+          "tokenStandard": "zts1znnxxxxxxxxxxxxx9z4ulx",
+          "fromBlockHash": "0000000000000000000000000000000000000000000000000000000000000000",
+          "data": "zvEouzSzCsJUoOHN1jHks5UaZYK7zMXEOD5Ugwi5Emk=",
+          "fusedPlasma": 21000,
+          "difficulty": 0,
+          "nonce": "0000000000000000",
+          "publicKey": "c+sqppCnjYaDJqQtEa7qMBxaE6XHh/xtDXi7E+f8br0=",
+          "signature": "yXIQK/0w8v8txQaNMVbkJQtqREW1Ps26mx1xiB3mSx/liSJ8hof3IU0Ln9CSfew7MeTMOVfHAsA0hgJfCiqgBA=="
+        },
+        "preparedJsonString": "{\"version\":1,\"chainIdentifier\":7,\"blockType\":2,\"hash\":\"3651e34186505ad83d8831495cc8f860318e06d082fc985504f30f83268a6948\",\"previousHash\":\"0000000000000000000000000000000000000000000000000000000000000000\",\"height\":1,\"momentumAcknowledged\":{\"hash\":\"a42d1f824fe415da5ce98db412812c0f9d4b8e9ef8a1f1b3305092cd61110f8f\",\"height\":101},\"address\":\"z1qpqc8a473rn25e7fn9qs7eswkdl240d4c742ql\",\"toAddress\":\"z1qp6kjgxzjpwhjf90akspf2srzkghr7ljjqrd87\",\"amount\":\"1\",\"tokenStandard\":\"zts1znnxxxxxxxxxxxxx9z4ulx\",\"fromBlockHash\":\"0000000000000000000000000000000000000000000000000000000000000000\",\"data\":\"zvEouzSzCsJUoOHN1jHks5UaZYK7zMXEOD5Ugwi5Emk=\",\"fusedPlasma\":21000,\"difficulty\":0,\"nonce\":\"0000000000000000\",\"publicKey\":\"c+sqppCnjYaDJqQtEa7qMBxaE6XHh/xtDXi7E+f8br0=\",\"signature\":\"yXIQK/0w8v8txQaNMVbkJQtqREW1Ps26mx1xiB3mSx/liSJ8hof3IU0Ln9CSfew7MeTMOVfHAsA0hgJfCiqgBA==\"}",
+        "preparedJsonUtf8Hex": "7b2276657273696f6e223a312c22636861696e4964656e746966696572223a372c22626c6f636b54797065223a322c2268617368223a2233363531653334313836353035616438336438383331343935636338663836303331386530366430383266633938353530346633306638333236386136393438222c2270726576696f757348617368223a2230303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030222c22686569676874223a312c226d6f6d656e74756d41636b6e6f776c6564676564223a7b2268617368223a2261343264316638323466653431356461356365393864623431323831326330663964346238653965663861316631623333303530393263643631313130663866222c22686569676874223a3130317d2c2261646472657373223a227a31717071633861343733726e32356537666e397173376573776b646c323430643463373432716c222c22746f41646472657373223a227a317170366b6a67787a6a7077686a663930616b7370663273727a6b676872376c6a6a7172643837222c22616d6f756e74223a2231222c22746f6b656e5374616e64617264223a227a7473317a6e6e78787878787878787878787878397a34756c78222c2266726f6d426c6f636b48617368223a2230303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030222c2264617461223a227a76456f757a537a43734a556f4f484e316a486b733555615a594b377a4d58454f44355567776935456d6b3d222c226675736564506c61736d61223a32313030302c22646966666963756c7479223a302c226e6f6e6365223a2230303030303030303030303030303030222c227075626c69634b6579223a22632b73717070436e6a5961444a715174456137714d42786145365848682f787444586937452b66386272303d222c227369676e6174757265223a22795849514b2f3077387638747851614e4d56626b4a51747152455731507332366d7831786942336d53782f6c69534a38686f66334955304c6e394353666577374d65544d4f5666484173413068674a664369716742413d3d227d",
+        "hashPreimageHex": "00000000000000010000000000000007000000000000000200000000000000000000000000000000000000000000000000000000000000000000000000000001a42d1f824fe415da5ce98db412812c0f9d4b8e9ef8a1f1b3305092cd61110f8f0000000000000065004183f6be88e6aa67c999410f660eb37eaabdb500756920c2905d7924afeda014aa03159171fbf2000000000000000000000000000000000000000000000000000000000000000114e66318c6318c6318c60000000000000000000000000000000000000000000000000000000000000000a7ffc6f8bf1ed76651c14756a061d662f580ff4de43b49fa82d80a4b80f8434a1a188ca2bbad166a8768a54fec3023dae3e80da867bf5ee7ba035ce0be5d728a000000000000520800000000000000000000000000000000",
+        "hashPreimageBytes": 306,
+        "transactionHash": "3651e34186505ad83d8831495cc8f860318e06d082fc985504f30f83268a6948",
+        "publicKeyHex": "73eb2aa690a78d868326a42d11aeea301c5a13a5c787fc6d0d78bb13e7fc6ebd",
+        "signatureHex": "c972102bfd30f2ff2dc5068d3156e4250b6a4445b53ecdba9b1d71881de64b1fe589227c8687f7214d0b9fd0927dec3b31e4cc3957c702c03486025f0a2aa004",
+        "paymentPayload": {
+          "x402Version": 2,
+          "resource": {
+            "url": "https://resource.example/paid",
+            "description": "Phase 2A deterministic paid resource",
+            "mimeType": "application/json"
+          },
+          "accepted": {
+            "scheme": "exact",
+            "network": "zenon:testnet",
+            "asset": "zts1znnxxxxxxxxxxxxx9z4ulx",
+            "amount": "1",
+            "payTo": "z1qp6kjgxzjpwhjf90akspf2srzkghr7ljjqrd87",
+            "maxTimeoutSeconds": 30,
+            "extra": {
+              "poc": true,
+              "settlement": "account-block",
+              "zenonChain": {
+                "version": 1,
+                "chainIdentifier": "7",
+                "genesisMomentumHash": "7777777777777777777777777777777777777777777777777777777777777777"
+              }
+            }
+          },
+          "payload": {
+            "transaction": {
+              "version": 1,
+              "chainIdentifier": 7,
+              "blockType": 2,
+              "hash": "3651e34186505ad83d8831495cc8f860318e06d082fc985504f30f83268a6948",
+              "previousHash": "0000000000000000000000000000000000000000000000000000000000000000",
+              "height": 1,
+              "momentumAcknowledged": {
+                "hash": "a42d1f824fe415da5ce98db412812c0f9d4b8e9ef8a1f1b3305092cd61110f8f",
+                "height": 101
+              },
+              "address": "z1qpqc8a473rn25e7fn9qs7eswkdl240d4c742ql",
+              "toAddress": "z1qp6kjgxzjpwhjf90akspf2srzkghr7ljjqrd87",
+              "amount": "1",
+              "tokenStandard": "zts1znnxxxxxxxxxxxxx9z4ulx",
+              "fromBlockHash": "0000000000000000000000000000000000000000000000000000000000000000",
+              "data": "zvEouzSzCsJUoOHN1jHks5UaZYK7zMXEOD5Ugwi5Emk=",
+              "fusedPlasma": 21000,
+              "difficulty": 0,
+              "nonce": "0000000000000000",
+              "publicKey": "c+sqppCnjYaDJqQtEa7qMBxaE6XHh/xtDXi7E+f8br0=",
+              "signature": "yXIQK/0w8v8txQaNMVbkJQtqREW1Ps26mx1xiB3mSx/liSJ8hof3IU0Ln9CSfew7MeTMOVfHAsA0hgJfCiqgBA=="
+            },
+            "intentDigest": "cef128bb34b30ac254a0e1cdd631e4b3951a6582bbccc5c4383e548308b91269"
+          }
+        },
+        "paymentPayloadWireJson": "{\"x402Version\":2,\"resource\":{\"url\":\"https://resource.example/paid\",\"description\":\"Phase 2A deterministic paid resource\",\"mimeType\":\"application/json\"},\"accepted\":{\"scheme\":\"exact\",\"network\":\"zenon:testnet\",\"asset\":\"zts1znnxxxxxxxxxxxxx9z4ulx\",\"amount\":\"1\",\"payTo\":\"z1qp6kjgxzjpwhjf90akspf2srzkghr7ljjqrd87\",\"maxTimeoutSeconds\":30,\"extra\":{\"poc\":true,\"settlement\":\"account-block\",\"zenonChain\":{\"version\":1,\"chainIdentifier\":\"7\",\"genesisMomentumHash\":\"7777777777777777777777777777777777777777777777777777777777777777\"}}},\"payload\":{\"transaction\":{\"version\":1,\"chainIdentifier\":7,\"blockType\":2,\"hash\":\"3651e34186505ad83d8831495cc8f860318e06d082fc985504f30f83268a6948\",\"previousHash\":\"0000000000000000000000000000000000000000000000000000000000000000\",\"height\":1,\"momentumAcknowledged\":{\"hash\":\"a42d1f824fe415da5ce98db412812c0f9d4b8e9ef8a1f1b3305092cd61110f8f\",\"height\":101},\"address\":\"z1qpqc8a473rn25e7fn9qs7eswkdl240d4c742ql\",\"toAddress\":\"z1qp6kjgxzjpwhjf90akspf2srzkghr7ljjqrd87\",\"amount\":\"1\",\"tokenStandard\":\"zts1znnxxxxxxxxxxxxx9z4ulx\",\"fromBlockHash\":\"0000000000000000000000000000000000000000000000000000000000000000\",\"data\":\"zvEouzSzCsJUoOHN1jHks5UaZYK7zMXEOD5Ugwi5Emk=\",\"fusedPlasma\":21000,\"difficulty\":0,\"nonce\":\"0000000000000000\",\"publicKey\":\"c+sqppCnjYaDJqQtEa7qMBxaE6XHh/xtDXi7E+f8br0=\",\"signature\":\"yXIQK/0w8v8txQaNMVbkJQtqREW1Ps26mx1xiB3mSx/liSJ8hof3IU0Ln9CSfew7MeTMOVfHAsA0hgJfCiqgBA==\"},\"intentDigest\":\"cef128bb34b30ac254a0e1cdd631e4b3951a6582bbccc5c4383e548308b91269\"}}",
+        "paymentPayloadUtf8Hex": "7b227834303256657273696f6e223a322c227265736f75726365223a7b2275726c223a2268747470733a2f2f7265736f757263652e6578616d706c652f70616964222c226465736372697074696f6e223a2250686173652032412064657465726d696e69737469632070616964207265736f75726365222c226d696d6554797065223a226170706c69636174696f6e2f6a736f6e227d2c226163636570746564223a7b22736368656d65223a226578616374222c226e6574776f726b223a227a656e6f6e3a746573746e6574222c226173736574223a227a7473317a6e6e78787878787878787878787878397a34756c78222c22616d6f756e74223a2231222c22706179546f223a227a317170366b6a67787a6a7077686a663930616b7370663273727a6b676872376c6a6a7172643837222c226d617854696d656f75745365636f6e6473223a33302c226578747261223a7b22706f63223a747275652c22736574746c656d656e74223a226163636f756e742d626c6f636b222c227a656e6f6e436861696e223a7b2276657273696f6e223a312c22636861696e4964656e746966696572223a2237222c2267656e657369734d6f6d656e74756d48617368223a2237373737373737373737373737373737373737373737373737373737373737373737373737373737373737373737373737373737373737373737373737373737227d7d7d2c227061796c6f6164223a7b227472616e73616374696f6e223a7b2276657273696f6e223a312c22636861696e4964656e746966696572223a372c22626c6f636b54797065223a322c2268617368223a2233363531653334313836353035616438336438383331343935636338663836303331386530366430383266633938353530346633306638333236386136393438222c2270726576696f757348617368223a2230303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030222c22686569676874223a312c226d6f6d656e74756d41636b6e6f776c6564676564223a7b2268617368223a2261343264316638323466653431356461356365393864623431323831326330663964346238653965663861316631623333303530393263643631313130663866222c22686569676874223a3130317d2c2261646472657373223a227a31717071633861343733726e32356537666e397173376573776b646c323430643463373432716c222c22746f41646472657373223a227a317170366b6a67787a6a7077686a663930616b7370663273727a6b676872376c6a6a7172643837222c22616d6f756e74223a2231222c22746f6b656e5374616e64617264223a227a7473317a6e6e78787878787878787878787878397a34756c78222c2266726f6d426c6f636b48617368223a2230303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030222c2264617461223a227a76456f757a537a43734a556f4f484e316a486b733555615a594b377a4d58454f44355567776935456d6b3d222c226675736564506c61736d61223a32313030302c22646966666963756c7479223a302c226e6f6e6365223a2230303030303030303030303030303030222c227075626c69634b6579223a22632b73717070436e6a5961444a715174456137714d42786145365848682f787444586937452b66386272303d222c227369676e6174757265223a22795849514b2f3077387638747851614e4d56626b4a51747152455731507332366d7831786942336d53782f6c69534a38686f66334955304c6e394353666577374d65544d4f5666484173413068674a664369716742413d3d227d2c22696e74656e74446967657374223a2263656631323862623334623330616332353461306531636464363331653462333935316136353832626263636335633433383365353438333038623931323639227d7d",
+        "paymentSignatureHeader": "eyJ4NDAyVmVyc2lvbiI6MiwicmVzb3VyY2UiOnsidXJsIjoiaHR0cHM6Ly9yZXNvdXJjZS5leGFtcGxlL3BhaWQiLCJkZXNjcmlwdGlvbiI6IlBoYXNlIDJBIGRldGVybWluaXN0aWMgcGFpZCByZXNvdXJjZSIsIm1pbWVUeXBlIjoiYXBwbGljYXRpb24vanNvbiJ9LCJhY2NlcHRlZCI6eyJzY2hlbWUiOiJleGFjdCIsIm5ldHdvcmsiOiJ6ZW5vbjp0ZXN0bmV0IiwiYXNzZXQiOiJ6dHMxem5ueHh4eHh4eHh4eHh4eDl6NHVseCIsImFtb3VudCI6IjEiLCJwYXlUbyI6InoxcXA2a2pneHpqcHdoamY5MGFrc3BmMnNyemtnaHI3bGpqcXJkODciLCJtYXhUaW1lb3V0U2Vjb25kcyI6MzAsImV4dHJhIjp7InBvYyI6dHJ1ZSwic2V0dGxlbWVudCI6ImFjY291bnQtYmxvY2siLCJ6ZW5vbkNoYWluIjp7InZlcnNpb24iOjEsImNoYWluSWRlbnRpZmllciI6IjciLCJnZW5lc2lzTW9tZW50dW1IYXNoIjoiNzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3NyJ9fX0sInBheWxvYWQiOnsidHJhbnNhY3Rpb24iOnsidmVyc2lvbiI6MSwiY2hhaW5JZGVudGlmaWVyIjo3LCJibG9ja1R5cGUiOjIsImhhc2giOiIzNjUxZTM0MTg2NTA1YWQ4M2Q4ODMxNDk1Y2M4Zjg2MDMxOGUwNmQwODJmYzk4NTUwNGYzMGY4MzI2OGE2OTQ4IiwicHJldmlvdXNIYXNoIjoiMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMCIsImhlaWdodCI6MSwibW9tZW50dW1BY2tub3dsZWRnZWQiOnsiaGFzaCI6ImE0MmQxZjgyNGZlNDE1ZGE1Y2U5OGRiNDEyODEyYzBmOWQ0YjhlOWVmOGExZjFiMzMwNTA5MmNkNjExMTBmOGYiLCJoZWlnaHQiOjEwMX0sImFkZHJlc3MiOiJ6MXFwcWM4YTQ3M3JuMjVlN2ZuOXFzN2Vzd2tkbDI0MGQ0Yzc0MnFsIiwidG9BZGRyZXNzIjoiejFxcDZramd4empwd2hqZjkwYWtzcGYyc3J6a2docjdsampxcmQ4NyIsImFtb3VudCI6IjEiLCJ0b2tlblN0YW5kYXJkIjoienRzMXpubnh4eHh4eHh4eHh4eHg5ejR1bHgiLCJmcm9tQmxvY2tIYXNoIjoiMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMCIsImRhdGEiOiJ6dkVvdXpTekNzSlVvT0hOMWpIa3M1VWFaWUs3ek1YRU9ENVVnd2k1RW1rPSIsImZ1c2VkUGxhc21hIjoyMTAwMCwiZGlmZmljdWx0eSI6MCwibm9uY2UiOiIwMDAwMDAwMDAwMDAwMDAwIiwicHVibGljS2V5IjoiYytzcXBwQ25qWWFESnFRdEVhN3FNQnhhRTZYSGgveHREWGk3RStmOGJyMD0iLCJzaWduYXR1cmUiOiJ5WElRSy8wdzh2OHR4UWFOTVZia0pRdHFSRVcxUHMyNm14MXhpQjNtU3gvbGlTSjhob2YzSVUwTG45Q1NmZXc3TWVUTU9WZkhBc0EwaGdKZkNpcWdCQT09In0sImludGVudERpZ2VzdCI6ImNlZjEyOGJiMzRiMzBhYzI1NGEwZTFjZGQ2MzFlNGIzOTUxYTY1ODJiYmNjYzVjNDM4M2U1NDgzMDhiOTEyNjkifX0=",
+        "paymentSignatureHeaderSha256": "624ee2f50f8e6a6f861c70efff58cf103640ca4e150afea2e337dfe249dec155",
+        "mutationFacts": {
+          "exactEighteenFieldOrder": true,
+          "sendReturnedPrepareArgument": true,
+          "sendDataBytes": 0,
+          "prepareDataHex": "cef128bb34b30ac254a0e1cdd631e4b3951a6582bbccc5c4383e548308b91269",
+          "dataAssignedBetweenStages": true,
+          "prepareUsedOperationKeyPair": true,
+          "addressAliasesGetAddress": true,
+          "publicKeyAliasesGetPublicKey": true,
+          "previousHashAliasesFrontier": true,
+          "acknowledgedHashAliasesPreparationMomentum": true,
+          "signatureAliasesSignResult": true,
+          "prepareReturnedSameBlock": true,
+          "transactionObjectIsProductionToJson": true,
+          "blockHashAtSign": "3651e34186505ad83d8831495cc8f860318e06d082fc985504f30f83268a6948",
+          "signArgumentHex": "3651e34186505ad83d8831495cc8f860318e06d082fc985504f30f83268a6948",
+          "signEntryHashMatchesArgument": true,
+          "signEntrySignatureEmpty": true,
+          "prepareReturnSignaturePresent": true,
+          "publicKeyAliasZeroAfterProductionClear": true,
+          "payloadTransactionUnchangedByProductionClear": true,
+          "detachedAddressPreserved": true,
+          "detachedPublicKeyPreserved": true,
+          "detachedPreviousHashPreserved": true,
+          "detachedAcknowledgedHashPreserved": true,
+          "detachedSignaturePreserved": true,
+          "independentHashMatches": true,
+          "powDataHash": null,
+          "independentPowDataHash": "d827463532ab6dba020fbf6aab665d8fae2ade23af857c2cf853ef9a9efdb1b9"
+        },
+        "argumentFacts": {
+          "frontierAddressType": "object",
+          "frontierAddressConstructor": "Address",
+          "frontierAddressIsSdkAddress": true,
+          "frontierAddressIsPayerIdentity": true,
+          "frontierAddressBytesHex": "004183f6be88e6aa67c999410f660eb37eaabdb5",
+          "frontierAddressArguments": 1,
+          "tokenType": "object",
+          "tokenConstructor": "TokenStandard",
+          "tokenIsSdkTokenStandard": true,
+          "tokenBytesHex": "14e66318c6318c6318c6",
+          "tokenLookupOccurred": false,
+          "tokenLookupUsedExactTemplateToken": null,
+          "powParamIsSdkGetRequiredPowParam": true,
+          "powParamType": "object",
+          "powParamConstructor": "GetRequiredPowParam",
+          "powParamAddressIdentity": true,
+          "powParamRecipientIdentity": true,
+          "powParamDataIdentity": true,
+          "powParamBlockType": 2,
+          "powParamDataHex": "cef128bb34b30ac254a0e1cdd631e4b3951a6582bbccc5c4383e548308b91269",
+          "powParamAddressBytesHex": "004183f6be88e6aa67c999410f660eb37eaabdb5",
+          "powParamRecipientBytesHex": "00756920c2905d7924afeda014aa03159171fbf2",
+          "readinessAndPreparationMomentumDiffer": true,
+          "authenticatedSessionSingleton": true,
+          "sdkGetInstanceCalls": 2,
+          "sdkGetInstanceResultsSameSession": true,
+          "templateTokenMatchesFixtureBytes": true,
+          "templateRecipientIsSdkAddress": true,
+          "templateRecipientBytesHex": "00756920c2905d7924afeda014aa03159171fbf2",
+          "sendRecipientIdentity": true,
+          "sendTokenIdentity": true,
+          "sendAmountType": "bigint",
+          "sendAmountDecimal": "1"
+        },
+        "lifecycle": {
+          "constructorTemporaryPairs": 1,
+          "operationPairs": 1,
+          "temporary": {
+            "index": 0,
+            "productionClearAttempts": 0,
+            "productionClearOutcome": "not-called",
+            "privateNonzeroBeforeProductionClear": null,
+            "publicNonzeroBeforeProductionClear": null,
+            "privateNonzeroAfterProductionClear": null,
+            "publicNonzeroAfterProductionClear": null,
+            "privateNonzeroBeforeHarnessTeardown": true,
+            "publicNonzeroBeforeHarnessTeardown": true,
+            "harnessTeardownWipeAttempts": 0
+          },
+          "operation": {
+            "index": 0,
+            "productionClearAttempts": 1,
+            "productionClearOutcome": "returned",
+            "privateNonzeroBeforeProductionClear": true,
+            "publicNonzeroBeforeProductionClear": true,
+            "privateNonzeroAfterProductionClear": false,
+            "publicNonzeroAfterProductionClear": false,
+            "privateNonzeroBeforeHarnessTeardown": false,
+            "publicNonzeroBeforeHarnessTeardown": false,
+            "harnessTeardownWipeAttempts": 0
+          },
+          "connectionClearCalls": 1,
+          "clientOwnAfterProduction": true,
+          "clientUndefinedAfterProduction": true,
+          "publicationCalls": 0,
+          "networkTripwireCalls": 0,
+          "fetchCalls": 2
+        },
+        "harnessCleanupFacts": {
+          "pairWipes": [
+            {
+              "role": "constructor-temporary",
+              "index": 0,
+              "harnessTeardownWipeAttempts": 1,
+              "privateZeroAfterHarnessTeardown": true,
+              "publicZeroAfterHarnessTeardown": true
+            },
+            {
+              "role": "operation",
+              "index": 0,
+              "harnessTeardownWipeAttempts": 1,
+              "privateZeroAfterHarnessTeardown": true,
+              "publicZeroAfterHarnessTeardown": true
+            }
+          ],
+          "allSensitiveBuffersZeroAfterHarnessTeardown": true
+        },
+        "restoration": {
+          "singletonDescriptorExact": true,
+          "staticDescriptorsExact": true,
+          "instanceDescriptorsExact": true,
+          "keyStoreDescriptorsExact": true,
+          "keyPairDescriptorsExact": true,
+          "templateDescriptorsExact": true,
+          "globalFetchDescriptorExact": true,
+          "environmentExact": true
+        }
+      }
+    },
+    "B": {
+      "schemaVersion": 2,
+      "id": "B",
+      "provenance": {
+        "projectHead": "138da9c6c0d57ffa59b56016d42365116d1682f0",
+        "sdkPackage": "znn-typescript-sdk",
+        "sdkVersion": "1.0.5",
+        "sdkIntegrity": "sha512-+6R07O7tBNTvGw+zA7oyS+Cr+MaKHQcITO9Vz3F6zaie8tMQ7WsrbuFLmtkCJwhYQ8G+V86wIesftyAtAcxfRw=="
+      },
+      "inputs": {
+        "accountIndex": 1,
+        "chainProfile": {
+          "version": 1,
+          "chainIdentifier": "7",
+          "genesisMomentumHash": "7777777777777777777777777777777777777777777777777777777777777777"
+        },
+        "resource": {
+          "url": "https://resource.example/paid",
+          "description": "Phase 2A deterministic paid resource",
+          "mimeType": "application/json"
+        },
+        "accepted": {
+          "scheme": "exact",
+          "network": "zenon:testnet",
+          "asset": "zts1gfpyysjzgfpyysjzdkmmd6",
+          "amount": "57896044618658097711785492504343953926634992332820282019728792003956564819967",
+          "payTo": "z1qp6kjgxzjpwhjf90akspf2srzkghr7ljjqrd87",
+          "maxTimeoutSeconds": 30,
+          "extra": {
+            "poc": true,
+            "settlement": "account-block",
+            "zenonChain": {
+              "version": 1,
+              "chainIdentifier": "7",
+              "genesisMomentumHash": "7777777777777777777777777777777777777777777777777777777777777777"
+            }
+          }
+        },
+        "readinessMomentum": {
+          "chainIdentifier": 7,
+          "height": 72,
+          "hash": "d50a9387c85b656c1173898acf9d46f5e59b4e17e3bc51ecdf61536fd2fa0645"
+        },
+        "frontierAccountBlock": {
+          "height": 41,
+          "hash": "00a99c9c3dffad8c2a7aaaa968b3f9d79a04dd43e520224ba454b8b54f1f4b33"
+        },
+        "preparationMomentum": {
+          "chainIdentifier": 7,
+          "height": 73,
+          "hash": "e020a004be7f88f446751782207a38b32c3f2da69886b683cf14cb98861b615f"
+        },
+        "plasmaResponse": {
+          "requiredDifficulty": 0,
+          "basePlasma": 43210
+        },
+        "powNonce": null
+      },
+      "expected": {
+        "observedExecutionTrace": [
+          {
+            "sequence": 1,
+            "category": "http",
+            "operation": "fetch.initial"
+          },
+          {
+            "sequence": 2,
+            "category": "sdk-global",
+            "operation": "Zenon.setNetworkID",
+            "value": 3
+          },
+          {
+            "sequence": 3,
+            "category": "sdk-global",
+            "operation": "Zenon.getInstance"
+          },
+          {
+            "sequence": 4,
+            "category": "sdk-api",
+            "operation": "zenon.initialize",
+            "phase": "readiness"
+          },
+          {
+            "sequence": 5,
+            "category": "sdk-api",
+            "operation": "stats.networkInfo",
+            "phase": "readiness"
+          },
+          {
+            "sequence": 6,
+            "category": "sdk-api",
+            "operation": "stats.syncInfo",
+            "phase": "readiness"
+          },
+          {
+            "sequence": 7,
+            "category": "sdk-api",
+            "operation": "ledger.getFrontierMomentum",
+            "phase": "readiness"
+          },
+          {
+            "sequence": 8,
+            "category": "chain-authentication",
+            "operation": "authenticateChainProfile"
+          },
+          {
+            "sequence": 9,
+            "category": "sdk-global",
+            "operation": "Zenon.setChainID",
+            "value": 7
+          },
+          {
+            "sequence": 10,
+            "category": "sdk-api",
+            "operation": "embedded.token.getByZts",
+            "phase": "asset"
+          },
+          {
+            "sequence": 11,
+            "category": "boundary",
+            "operation": "KeyStore.fromMnemonic",
+            "arguments": "redacted"
+          },
+          {
+            "sequence": 12,
+            "category": "boundary",
+            "operation": "KeyStore.getKeyPair",
+            "role": "constructor-temporary",
+            "index": 0
+          },
+          {
+            "sequence": 13,
+            "category": "boundary",
+            "operation": "KeyPair.getAddress",
+            "role": "constructor-temporary"
+          },
+          {
+            "sequence": 14,
+            "category": "boundary",
+            "operation": "KeyStore.getKeyPair",
+            "role": "operation",
+            "index": 1
+          },
+          {
+            "sequence": 15,
+            "category": "sdk-block",
+            "operation": "AccountBlockTemplate.send.enter"
+          },
+          {
+            "sequence": 16,
+            "category": "sdk-global",
+            "operation": "Zenon.getChainIdentifier"
+          },
+          {
+            "sequence": 17,
+            "category": "block-stage",
+            "operation": "block-stage.sendReturn"
+          },
+          {
+            "sequence": 18,
+            "category": "sdk-block",
+            "operation": "Zenon.prepareBlock.enter"
+          },
+          {
+            "sequence": 19,
+            "category": "block-stage",
+            "operation": "block-stage.prepareEntry"
+          },
+          {
+            "sequence": 20,
+            "category": "sdk-global",
+            "operation": "Zenon.getInstance"
+          },
+          {
+            "sequence": 21,
+            "category": "boundary",
+            "operation": "KeyPair.getAddress",
+            "role": "operation"
+          },
+          {
+            "sequence": 22,
+            "category": "boundary",
+            "operation": "KeyPair.getPublicKey",
+            "role": "operation"
+          },
+          {
+            "sequence": 23,
+            "category": "sdk-api",
+            "operation": "ledger.getFrontierAccountBlock",
+            "phase": "prepare"
+          },
+          {
+            "sequence": 24,
+            "category": "block-stage",
+            "operation": "block-stage.frontierAccountEntry"
+          },
+          {
+            "sequence": 25,
+            "category": "sdk-api",
+            "operation": "ledger.getFrontierMomentum",
+            "phase": "prepare"
+          },
+          {
+            "sequence": 26,
+            "category": "block-stage",
+            "operation": "block-stage.preparationMomentumEntry"
+          },
+          {
+            "sequence": 27,
+            "category": "sdk-api",
+            "operation": "embedded.plasma.getRequiredPoWForAccountBlock",
+            "phase": "prepare"
+          },
+          {
+            "sequence": 28,
+            "category": "block-stage",
+            "operation": "block-stage.plasmaEntry"
+          },
+          {
+            "sequence": 29,
+            "category": "boundary",
+            "operation": "KeyPair.sign",
+            "role": "operation",
+            "messageBytes": 32
+          },
+          {
+            "sequence": 30,
+            "category": "block-stage",
+            "operation": "block-stage.signEntry"
+          },
+          {
+            "sequence": 31,
+            "category": "block-stage",
+            "operation": "block-stage.prepareReturn"
+          },
+          {
+            "sequence": 32,
+            "category": "sdk-block",
+            "operation": "Zenon.prepareBlock.return"
+          },
+          {
+            "sequence": 33,
+            "category": "sdk-block",
+            "operation": "AccountBlockTemplate.toJson"
+          },
+          {
+            "sequence": 34,
+            "category": "sdk-key",
+            "operation": "KeyPair.clear.enter",
+            "role": "operation"
+          },
+          {
+            "sequence": 35,
+            "category": "block-stage",
+            "operation": "block-stage.beforeProductionClear"
+          },
+          {
+            "sequence": 36,
+            "category": "block-stage",
+            "operation": "block-stage.afterProductionClear"
+          },
+          {
+            "sequence": 37,
+            "category": "sdk-lifecycle",
+            "operation": "Zenon.clearConnection",
+            "attempt": 1,
+            "mode": "return",
+            "outcome": "fulfilled"
+          },
+          {
+            "sequence": 38,
+            "category": "owner",
+            "operation": "ownerProbe.enter"
+          },
+          {
+            "sequence": 39,
+            "category": "http",
+            "operation": "fetch.paid"
+          }
+        ],
+        "sdkGlobalMilestones": [
+          {
+            "sequence": 2,
+            "category": "sdk-global",
+            "operation": "Zenon.setNetworkID",
+            "value": 3
+          },
+          {
+            "sequence": 3,
+            "category": "sdk-global",
+            "operation": "Zenon.getInstance"
+          },
+          {
+            "sequence": 9,
+            "category": "sdk-global",
+            "operation": "Zenon.setChainID",
+            "value": 7
+          },
+          {
+            "sequence": 16,
+            "category": "sdk-global",
+            "operation": "Zenon.getChainIdentifier"
+          },
+          {
+            "sequence": 20,
+            "category": "sdk-global",
+            "operation": "Zenon.getInstance"
+          }
+        ],
+        "sdkApiRpcMethodBoundaryTrace": [
+          {
+            "sequence": 4,
+            "layer": "sdk-api-method-boundary",
+            "wireEncodingObserved": false,
+            "operation": "zenon.initialize",
+            "phase": "readiness",
+            "arguments": [
+              "ws://rpc.invalid"
+            ],
+            "outcome": "fulfilled"
+          },
+          {
+            "sequence": 5,
+            "layer": "sdk-api-method-boundary",
+            "wireEncodingObserved": false,
+            "operation": "stats.networkInfo",
+            "phase": "readiness",
+            "arguments": [],
+            "outcome": "fulfilled"
+          },
+          {
+            "sequence": 6,
+            "layer": "sdk-api-method-boundary",
+            "wireEncodingObserved": false,
+            "operation": "stats.syncInfo",
+            "phase": "readiness",
+            "arguments": [],
+            "outcome": "fulfilled"
+          },
+          {
+            "sequence": 7,
+            "layer": "sdk-api-method-boundary",
+            "wireEncodingObserved": false,
+            "operation": "ledger.getFrontierMomentum",
+            "phase": "readiness",
+            "arguments": [],
+            "outcome": "fulfilled"
+          },
+          {
+            "sequence": 10,
+            "layer": "sdk-api-method-boundary",
+            "wireEncodingObserved": false,
+            "operation": "embedded.token.getByZts",
+            "phase": "asset",
+            "arguments": [
+              "zts1gfpyysjzgfpyysjzdkmmd6"
+            ],
+            "outcome": "fulfilled"
+          },
+          {
+            "sequence": 23,
+            "layer": "sdk-api-method-boundary",
+            "wireEncodingObserved": false,
+            "operation": "ledger.getFrontierAccountBlock",
+            "phase": "prepare",
+            "arguments": [
+              "z1qzvcqt0s9ypm2tg75866xvryd3tulznrdjrhwr"
+            ],
+            "outcome": "fulfilled"
+          },
+          {
+            "sequence": 25,
+            "layer": "sdk-api-method-boundary",
+            "wireEncodingObserved": false,
+            "operation": "ledger.getFrontierMomentum",
+            "phase": "prepare",
+            "arguments": [],
+            "outcome": "fulfilled"
+          },
+          {
+            "sequence": 27,
+            "layer": "sdk-api-method-boundary",
+            "wireEncodingObserved": false,
+            "operation": "embedded.plasma.getRequiredPoWForAccountBlock",
+            "phase": "prepare",
+            "arguments": [
+              {
+                "address": "z1qzvcqt0s9ypm2tg75866xvryd3tulznrdjrhwr",
+                "blockType": 2,
+                "toAddress": "z1qp6kjgxzjpwhjf90akspf2srzkghr7ljjqrd87",
+                "data": "ZX5UmT7B8Vr6I4NvG/NJ5EuWoI9sZG/jRU0C/tIPXJ8="
+              }
+            ],
+            "outcome": "fulfilled"
+          }
+        ],
+        "prepareBlockApiBoundaryTrace": [
+          {
+            "sequence": 23,
+            "layer": "sdk-api-method-boundary",
+            "wireEncodingObserved": false,
+            "operation": "ledger.getFrontierAccountBlock",
+            "phase": "prepare",
+            "arguments": [
+              "z1qzvcqt0s9ypm2tg75866xvryd3tulznrdjrhwr"
+            ],
+            "outcome": "fulfilled"
+          },
+          {
+            "sequence": 25,
+            "layer": "sdk-api-method-boundary",
+            "wireEncodingObserved": false,
+            "operation": "ledger.getFrontierMomentum",
+            "phase": "prepare",
+            "arguments": [],
+            "outcome": "fulfilled"
+          },
+          {
+            "sequence": 27,
+            "layer": "sdk-api-method-boundary",
+            "wireEncodingObserved": false,
+            "operation": "embedded.plasma.getRequiredPoWForAccountBlock",
+            "phase": "prepare",
+            "arguments": [
+              {
+                "address": "z1qzvcqt0s9ypm2tg75866xvryd3tulznrdjrhwr",
+                "blockType": 2,
+                "toAddress": "z1qp6kjgxzjpwhjf90akspf2srzkghr7ljjqrd87",
+                "data": "ZX5UmT7B8Vr6I4NvG/NJ5EuWoI9sZG/jRU0C/tIPXJ8="
+              }
+            ],
+            "outcome": "fulfilled"
+          }
+        ],
+        "blockStageSnapshots": {
+          "sendReturn": {
+            "sequence": 17,
+            "block": {
+              "version": 1,
+              "chainIdentifier": 7,
+              "blockType": 2,
+              "hash": "0000000000000000000000000000000000000000000000000000000000000000",
+              "previousHash": "0000000000000000000000000000000000000000000000000000000000000000",
+              "height": 0,
+              "momentumAcknowledged": {
+                "hash": "0000000000000000000000000000000000000000000000000000000000000000",
+                "height": 0
+              },
+              "address": "z1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqsggv2f",
+              "toAddress": "z1qp6kjgxzjpwhjf90akspf2srzkghr7ljjqrd87",
+              "amount": "57896044618658097711785492504343953926634992332820282019728792003956564819967",
+              "tokenStandard": "zts1gfpyysjzgfpyysjzdkmmd6",
+              "fromBlockHash": "0000000000000000000000000000000000000000000000000000000000000000",
+              "data": "",
+              "fusedPlasma": 0,
+              "difficulty": 0,
+              "nonce": "",
+              "publicKey": "",
+              "signature": ""
+            }
+          },
+          "prepareEntry": {
+            "sequence": 19,
+            "block": {
+              "version": 1,
+              "chainIdentifier": 7,
+              "blockType": 2,
+              "hash": "0000000000000000000000000000000000000000000000000000000000000000",
+              "previousHash": "0000000000000000000000000000000000000000000000000000000000000000",
+              "height": 0,
+              "momentumAcknowledged": {
+                "hash": "0000000000000000000000000000000000000000000000000000000000000000",
+                "height": 0
+              },
+              "address": "z1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqsggv2f",
+              "toAddress": "z1qp6kjgxzjpwhjf90akspf2srzkghr7ljjqrd87",
+              "amount": "57896044618658097711785492504343953926634992332820282019728792003956564819967",
+              "tokenStandard": "zts1gfpyysjzgfpyysjzdkmmd6",
+              "fromBlockHash": "0000000000000000000000000000000000000000000000000000000000000000",
+              "data": "ZX5UmT7B8Vr6I4NvG/NJ5EuWoI9sZG/jRU0C/tIPXJ8=",
+              "fusedPlasma": 0,
+              "difficulty": 0,
+              "nonce": "",
+              "publicKey": "",
+              "signature": ""
+            }
+          },
+          "frontierAccountEntry": {
+            "sequence": 24,
+            "block": {
+              "version": 1,
+              "chainIdentifier": 7,
+              "blockType": 2,
+              "hash": "0000000000000000000000000000000000000000000000000000000000000000",
+              "previousHash": "0000000000000000000000000000000000000000000000000000000000000000",
+              "height": 0,
+              "momentumAcknowledged": {
+                "hash": "0000000000000000000000000000000000000000000000000000000000000000",
+                "height": 0
+              },
+              "address": "z1qzvcqt0s9ypm2tg75866xvryd3tulznrdjrhwr",
+              "toAddress": "z1qp6kjgxzjpwhjf90akspf2srzkghr7ljjqrd87",
+              "amount": "57896044618658097711785492504343953926634992332820282019728792003956564819967",
+              "tokenStandard": "zts1gfpyysjzgfpyysjzdkmmd6",
+              "fromBlockHash": "0000000000000000000000000000000000000000000000000000000000000000",
+              "data": "ZX5UmT7B8Vr6I4NvG/NJ5EuWoI9sZG/jRU0C/tIPXJ8=",
+              "fusedPlasma": 0,
+              "difficulty": 0,
+              "nonce": "",
+              "publicKey": "S0aMiGtW+8LpTnE1JvQZRFmizDB092ohYDBmfANfo6c=",
+              "signature": ""
+            }
+          },
+          "preparationMomentumEntry": {
+            "sequence": 26,
+            "block": {
+              "version": 1,
+              "chainIdentifier": 7,
+              "blockType": 2,
+              "hash": "0000000000000000000000000000000000000000000000000000000000000000",
+              "previousHash": "0000000000000000000000000000000000000000000000000000000000000000",
+              "height": 0,
+              "momentumAcknowledged": {
+                "hash": "0000000000000000000000000000000000000000000000000000000000000000",
+                "height": 0
+              },
+              "address": "z1qzvcqt0s9ypm2tg75866xvryd3tulznrdjrhwr",
+              "toAddress": "z1qp6kjgxzjpwhjf90akspf2srzkghr7ljjqrd87",
+              "amount": "57896044618658097711785492504343953926634992332820282019728792003956564819967",
+              "tokenStandard": "zts1gfpyysjzgfpyysjzdkmmd6",
+              "fromBlockHash": "0000000000000000000000000000000000000000000000000000000000000000",
+              "data": "ZX5UmT7B8Vr6I4NvG/NJ5EuWoI9sZG/jRU0C/tIPXJ8=",
+              "fusedPlasma": 0,
+              "difficulty": 0,
+              "nonce": "",
+              "publicKey": "S0aMiGtW+8LpTnE1JvQZRFmizDB092ohYDBmfANfo6c=",
+              "signature": ""
+            }
+          },
+          "plasmaEntry": {
+            "sequence": 28,
+            "block": {
+              "version": 1,
+              "chainIdentifier": 7,
+              "blockType": 2,
+              "hash": "0000000000000000000000000000000000000000000000000000000000000000",
+              "previousHash": "00a99c9c3dffad8c2a7aaaa968b3f9d79a04dd43e520224ba454b8b54f1f4b33",
+              "height": 42,
+              "momentumAcknowledged": {
+                "hash": "e020a004be7f88f446751782207a38b32c3f2da69886b683cf14cb98861b615f",
+                "height": 73
+              },
+              "address": "z1qzvcqt0s9ypm2tg75866xvryd3tulznrdjrhwr",
+              "toAddress": "z1qp6kjgxzjpwhjf90akspf2srzkghr7ljjqrd87",
+              "amount": "57896044618658097711785492504343953926634992332820282019728792003956564819967",
+              "tokenStandard": "zts1gfpyysjzgfpyysjzdkmmd6",
+              "fromBlockHash": "0000000000000000000000000000000000000000000000000000000000000000",
+              "data": "ZX5UmT7B8Vr6I4NvG/NJ5EuWoI9sZG/jRU0C/tIPXJ8=",
+              "fusedPlasma": 0,
+              "difficulty": 0,
+              "nonce": "",
+              "publicKey": "S0aMiGtW+8LpTnE1JvQZRFmizDB092ohYDBmfANfo6c=",
+              "signature": ""
+            }
+          },
+          "powProviderEntry": null,
+          "signEntry": {
+            "sequence": 30,
+            "block": {
+              "version": 1,
+              "chainIdentifier": 7,
+              "blockType": 2,
+              "hash": "e25e430bb7b31ec1c65e46b4a6b10555962acb59f6ba12559f25931891fc7119",
+              "previousHash": "00a99c9c3dffad8c2a7aaaa968b3f9d79a04dd43e520224ba454b8b54f1f4b33",
+              "height": 42,
+              "momentumAcknowledged": {
+                "hash": "e020a004be7f88f446751782207a38b32c3f2da69886b683cf14cb98861b615f",
+                "height": 73
+              },
+              "address": "z1qzvcqt0s9ypm2tg75866xvryd3tulznrdjrhwr",
+              "toAddress": "z1qp6kjgxzjpwhjf90akspf2srzkghr7ljjqrd87",
+              "amount": "57896044618658097711785492504343953926634992332820282019728792003956564819967",
+              "tokenStandard": "zts1gfpyysjzgfpyysjzdkmmd6",
+              "fromBlockHash": "0000000000000000000000000000000000000000000000000000000000000000",
+              "data": "ZX5UmT7B8Vr6I4NvG/NJ5EuWoI9sZG/jRU0C/tIPXJ8=",
+              "fusedPlasma": 43210,
+              "difficulty": 0,
+              "nonce": "0000000000000000",
+              "publicKey": "S0aMiGtW+8LpTnE1JvQZRFmizDB092ohYDBmfANfo6c=",
+              "signature": ""
+            }
+          },
+          "prepareReturn": {
+            "sequence": 31,
+            "block": {
+              "version": 1,
+              "chainIdentifier": 7,
+              "blockType": 2,
+              "hash": "e25e430bb7b31ec1c65e46b4a6b10555962acb59f6ba12559f25931891fc7119",
+              "previousHash": "00a99c9c3dffad8c2a7aaaa968b3f9d79a04dd43e520224ba454b8b54f1f4b33",
+              "height": 42,
+              "momentumAcknowledged": {
+                "hash": "e020a004be7f88f446751782207a38b32c3f2da69886b683cf14cb98861b615f",
+                "height": 73
+              },
+              "address": "z1qzvcqt0s9ypm2tg75866xvryd3tulznrdjrhwr",
+              "toAddress": "z1qp6kjgxzjpwhjf90akspf2srzkghr7ljjqrd87",
+              "amount": "57896044618658097711785492504343953926634992332820282019728792003956564819967",
+              "tokenStandard": "zts1gfpyysjzgfpyysjzdkmmd6",
+              "fromBlockHash": "0000000000000000000000000000000000000000000000000000000000000000",
+              "data": "ZX5UmT7B8Vr6I4NvG/NJ5EuWoI9sZG/jRU0C/tIPXJ8=",
+              "fusedPlasma": 43210,
+              "difficulty": 0,
+              "nonce": "0000000000000000",
+              "publicKey": "S0aMiGtW+8LpTnE1JvQZRFmizDB092ohYDBmfANfo6c=",
+              "signature": "HY1CT5BOs5JtUw1b35E75N48ZlLlrAf79wXCkPhjA4ak8qWphaJqHlVRUIZL4TYhUbLZPfc6KXopqjpVM+42AA=="
+            }
+          },
+          "beforeProductionClear": {
+            "sequence": 35,
+            "block": {
+              "version": 1,
+              "chainIdentifier": 7,
+              "blockType": 2,
+              "hash": "e25e430bb7b31ec1c65e46b4a6b10555962acb59f6ba12559f25931891fc7119",
+              "previousHash": "00a99c9c3dffad8c2a7aaaa968b3f9d79a04dd43e520224ba454b8b54f1f4b33",
+              "height": 42,
+              "momentumAcknowledged": {
+                "hash": "e020a004be7f88f446751782207a38b32c3f2da69886b683cf14cb98861b615f",
+                "height": 73
+              },
+              "address": "z1qzvcqt0s9ypm2tg75866xvryd3tulznrdjrhwr",
+              "toAddress": "z1qp6kjgxzjpwhjf90akspf2srzkghr7ljjqrd87",
+              "amount": "57896044618658097711785492504343953926634992332820282019728792003956564819967",
+              "tokenStandard": "zts1gfpyysjzgfpyysjzdkmmd6",
+              "fromBlockHash": "0000000000000000000000000000000000000000000000000000000000000000",
+              "data": "ZX5UmT7B8Vr6I4NvG/NJ5EuWoI9sZG/jRU0C/tIPXJ8=",
+              "fusedPlasma": 43210,
+              "difficulty": 0,
+              "nonce": "0000000000000000",
+              "publicKey": "S0aMiGtW+8LpTnE1JvQZRFmizDB092ohYDBmfANfo6c=",
+              "signature": "HY1CT5BOs5JtUw1b35E75N48ZlLlrAf79wXCkPhjA4ak8qWphaJqHlVRUIZL4TYhUbLZPfc6KXopqjpVM+42AA=="
+            }
+          },
+          "afterProductionClear": {
+            "sequence": 36,
+            "block": {
+              "version": 1,
+              "chainIdentifier": 7,
+              "blockType": 2,
+              "hash": "e25e430bb7b31ec1c65e46b4a6b10555962acb59f6ba12559f25931891fc7119",
+              "previousHash": "00a99c9c3dffad8c2a7aaaa968b3f9d79a04dd43e520224ba454b8b54f1f4b33",
+              "height": 42,
+              "momentumAcknowledged": {
+                "hash": "e020a004be7f88f446751782207a38b32c3f2da69886b683cf14cb98861b615f",
+                "height": 73
+              },
+              "address": "z1qzvcqt0s9ypm2tg75866xvryd3tulznrdjrhwr",
+              "toAddress": "z1qp6kjgxzjpwhjf90akspf2srzkghr7ljjqrd87",
+              "amount": "57896044618658097711785492504343953926634992332820282019728792003956564819967",
+              "tokenStandard": "zts1gfpyysjzgfpyysjzdkmmd6",
+              "fromBlockHash": "0000000000000000000000000000000000000000000000000000000000000000",
+              "data": "ZX5UmT7B8Vr6I4NvG/NJ5EuWoI9sZG/jRU0C/tIPXJ8=",
+              "fusedPlasma": 43210,
+              "difficulty": 0,
+              "nonce": "0000000000000000",
+              "publicKey": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+              "signature": "HY1CT5BOs5JtUw1b35E75N48ZlLlrAf79wXCkPhjA4ak8qWphaJqHlVRUIZL4TYhUbLZPfc6KXopqjpVM+42AA=="
+            },
+            "clearOutcome": "returned"
+          }
+        },
+        "payloadTransactionSnapshots": {
+          "productionToJson": {
+            "sequence": 33,
+            "transaction": {
+              "version": 1,
+              "chainIdentifier": 7,
+              "blockType": 2,
+              "hash": "e25e430bb7b31ec1c65e46b4a6b10555962acb59f6ba12559f25931891fc7119",
+              "previousHash": "00a99c9c3dffad8c2a7aaaa968b3f9d79a04dd43e520224ba454b8b54f1f4b33",
+              "height": 42,
+              "momentumAcknowledged": {
+                "hash": "e020a004be7f88f446751782207a38b32c3f2da69886b683cf14cb98861b615f",
+                "height": 73
+              },
+              "address": "z1qzvcqt0s9ypm2tg75866xvryd3tulznrdjrhwr",
+              "toAddress": "z1qp6kjgxzjpwhjf90akspf2srzkghr7ljjqrd87",
+              "amount": "57896044618658097711785492504343953926634992332820282019728792003956564819967",
+              "tokenStandard": "zts1gfpyysjzgfpyysjzdkmmd6",
+              "fromBlockHash": "0000000000000000000000000000000000000000000000000000000000000000",
+              "data": "ZX5UmT7B8Vr6I4NvG/NJ5EuWoI9sZG/jRU0C/tIPXJ8=",
+              "fusedPlasma": 43210,
+              "difficulty": 0,
+              "nonce": "0000000000000000",
+              "publicKey": "S0aMiGtW+8LpTnE1JvQZRFmizDB092ohYDBmfANfo6c=",
+              "signature": "HY1CT5BOs5JtUw1b35E75N48ZlLlrAf79wXCkPhjA4ak8qWphaJqHlVRUIZL4TYhUbLZPfc6KXopqjpVM+42AA=="
+            }
+          },
+          "beforeProductionClear": {
+            "sequence": 35,
+            "transaction": {
+              "version": 1,
+              "chainIdentifier": 7,
+              "blockType": 2,
+              "hash": "e25e430bb7b31ec1c65e46b4a6b10555962acb59f6ba12559f25931891fc7119",
+              "previousHash": "00a99c9c3dffad8c2a7aaaa968b3f9d79a04dd43e520224ba454b8b54f1f4b33",
+              "height": 42,
+              "momentumAcknowledged": {
+                "hash": "e020a004be7f88f446751782207a38b32c3f2da69886b683cf14cb98861b615f",
+                "height": 73
+              },
+              "address": "z1qzvcqt0s9ypm2tg75866xvryd3tulznrdjrhwr",
+              "toAddress": "z1qp6kjgxzjpwhjf90akspf2srzkghr7ljjqrd87",
+              "amount": "57896044618658097711785492504343953926634992332820282019728792003956564819967",
+              "tokenStandard": "zts1gfpyysjzgfpyysjzdkmmd6",
+              "fromBlockHash": "0000000000000000000000000000000000000000000000000000000000000000",
+              "data": "ZX5UmT7B8Vr6I4NvG/NJ5EuWoI9sZG/jRU0C/tIPXJ8=",
+              "fusedPlasma": 43210,
+              "difficulty": 0,
+              "nonce": "0000000000000000",
+              "publicKey": "S0aMiGtW+8LpTnE1JvQZRFmizDB092ohYDBmfANfo6c=",
+              "signature": "HY1CT5BOs5JtUw1b35E75N48ZlLlrAf79wXCkPhjA4ak8qWphaJqHlVRUIZL4TYhUbLZPfc6KXopqjpVM+42AA=="
+            }
+          },
+          "afterProductionClear": {
+            "sequence": 36,
+            "transaction": {
+              "version": 1,
+              "chainIdentifier": 7,
+              "blockType": 2,
+              "hash": "e25e430bb7b31ec1c65e46b4a6b10555962acb59f6ba12559f25931891fc7119",
+              "previousHash": "00a99c9c3dffad8c2a7aaaa968b3f9d79a04dd43e520224ba454b8b54f1f4b33",
+              "height": 42,
+              "momentumAcknowledged": {
+                "hash": "e020a004be7f88f446751782207a38b32c3f2da69886b683cf14cb98861b615f",
+                "height": 73
+              },
+              "address": "z1qzvcqt0s9ypm2tg75866xvryd3tulznrdjrhwr",
+              "toAddress": "z1qp6kjgxzjpwhjf90akspf2srzkghr7ljjqrd87",
+              "amount": "57896044618658097711785492504343953926634992332820282019728792003956564819967",
+              "tokenStandard": "zts1gfpyysjzgfpyysjzdkmmd6",
+              "fromBlockHash": "0000000000000000000000000000000000000000000000000000000000000000",
+              "data": "ZX5UmT7B8Vr6I4NvG/NJ5EuWoI9sZG/jRU0C/tIPXJ8=",
+              "fusedPlasma": 43210,
+              "difficulty": 0,
+              "nonce": "0000000000000000",
+              "publicKey": "S0aMiGtW+8LpTnE1JvQZRFmizDB092ohYDBmfANfo6c=",
+              "signature": "HY1CT5BOs5JtUw1b35E75N48ZlLlrAf79wXCkPhjA4ak8qWphaJqHlVRUIZL4TYhUbLZPfc6KXopqjpVM+42AA=="
+            }
+          }
+        },
+        "transaction": {
+          "version": 1,
+          "chainIdentifier": 7,
+          "blockType": 2,
+          "hash": "e25e430bb7b31ec1c65e46b4a6b10555962acb59f6ba12559f25931891fc7119",
+          "previousHash": "00a99c9c3dffad8c2a7aaaa968b3f9d79a04dd43e520224ba454b8b54f1f4b33",
+          "height": 42,
+          "momentumAcknowledged": {
+            "hash": "e020a004be7f88f446751782207a38b32c3f2da69886b683cf14cb98861b615f",
+            "height": 73
+          },
+          "address": "z1qzvcqt0s9ypm2tg75866xvryd3tulznrdjrhwr",
+          "toAddress": "z1qp6kjgxzjpwhjf90akspf2srzkghr7ljjqrd87",
+          "amount": "57896044618658097711785492504343953926634992332820282019728792003956564819967",
+          "tokenStandard": "zts1gfpyysjzgfpyysjzdkmmd6",
+          "fromBlockHash": "0000000000000000000000000000000000000000000000000000000000000000",
+          "data": "ZX5UmT7B8Vr6I4NvG/NJ5EuWoI9sZG/jRU0C/tIPXJ8=",
+          "fusedPlasma": 43210,
+          "difficulty": 0,
+          "nonce": "0000000000000000",
+          "publicKey": "S0aMiGtW+8LpTnE1JvQZRFmizDB092ohYDBmfANfo6c=",
+          "signature": "HY1CT5BOs5JtUw1b35E75N48ZlLlrAf79wXCkPhjA4ak8qWphaJqHlVRUIZL4TYhUbLZPfc6KXopqjpVM+42AA=="
+        },
+        "preparedJsonString": "{\"version\":1,\"chainIdentifier\":7,\"blockType\":2,\"hash\":\"e25e430bb7b31ec1c65e46b4a6b10555962acb59f6ba12559f25931891fc7119\",\"previousHash\":\"00a99c9c3dffad8c2a7aaaa968b3f9d79a04dd43e520224ba454b8b54f1f4b33\",\"height\":42,\"momentumAcknowledged\":{\"hash\":\"e020a004be7f88f446751782207a38b32c3f2da69886b683cf14cb98861b615f\",\"height\":73},\"address\":\"z1qzvcqt0s9ypm2tg75866xvryd3tulznrdjrhwr\",\"toAddress\":\"z1qp6kjgxzjpwhjf90akspf2srzkghr7ljjqrd87\",\"amount\":\"57896044618658097711785492504343953926634992332820282019728792003956564819967\",\"tokenStandard\":\"zts1gfpyysjzgfpyysjzdkmmd6\",\"fromBlockHash\":\"0000000000000000000000000000000000000000000000000000000000000000\",\"data\":\"ZX5UmT7B8Vr6I4NvG/NJ5EuWoI9sZG/jRU0C/tIPXJ8=\",\"fusedPlasma\":43210,\"difficulty\":0,\"nonce\":\"0000000000000000\",\"publicKey\":\"S0aMiGtW+8LpTnE1JvQZRFmizDB092ohYDBmfANfo6c=\",\"signature\":\"HY1CT5BOs5JtUw1b35E75N48ZlLlrAf79wXCkPhjA4ak8qWphaJqHlVRUIZL4TYhUbLZPfc6KXopqjpVM+42AA==\"}",
+        "preparedJsonUtf8Hex": "7b2276657273696f6e223a312c22636861696e4964656e746966696572223a372c22626c6f636b54797065223a322c2268617368223a2265323565343330626237623331656331633635653436623461366231303535353936326163623539663662613132353539663235393331383931666337313139222c2270726576696f757348617368223a2230306139396339633364666661643863326137616161613936386233663964373961303464643433653532303232346261343534623862353466316634623333222c22686569676874223a34322c226d6f6d656e74756d41636b6e6f776c6564676564223a7b2268617368223a2265303230613030346265376638386634343637353137383232303761333862333263336632646136393838366236383363663134636239383836316236313566222c22686569676874223a37337d2c2261646472657373223a227a31717a7663717430733979706d327467373538363678767279643374756c7a6e72646a72687772222c22746f41646472657373223a227a317170366b6a67787a6a7077686a663930616b7370663273727a6b676872376c6a6a7172643837222c22616d6f756e74223a223537383936303434363138363538303937373131373835343932353034333433393533393236363334393932333332383230323832303139373238373932303033393536353634383139393637222c22746f6b656e5374616e64617264223a227a7473316766707979736a7a6766707979736a7a646b6d6d6436222c2266726f6d426c6f636b48617368223a2230303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030222c2264617461223a225a5835556d5437423856723649344e76472f4e4a354575576f4939735a472f6a525530432f744950584a383d222c226675736564506c61736d61223a34333231302c22646966666963756c7479223a302c226e6f6e6365223a2230303030303030303030303030303030222c227075626c69634b6579223a225330614d694774572b384c70546e45314a76515a52466d697a44423039326f685944426d66414e666f36633d222c227369676e6174757265223a22485931435435424f73354a745577316233354537354e34385a6c4c6c72416637397758436b50686a4134616b3871577068614a71486c565255495a4c3454596855624c5a506663364b586f70716a70564d2b343241413d3d227d",
+        "hashPreimageHex": "00000000000000010000000000000007000000000000000200a99c9c3dffad8c2a7aaaa968b3f9d79a04dd43e520224ba454b8b54f1f4b33000000000000002ae020a004be7f88f446751782207a38b32c3f2da69886b683cf14cb98861b615f00000000000000490099802df02903b52d1ea1f5a330646c57cf8a6300756920c2905d7924afeda014aa03159171fbf27fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff424242424242424242420000000000000000000000000000000000000000000000000000000000000000a7ffc6f8bf1ed76651c14756a061d662f580ff4de43b49fa82d80a4b80f8434aeddc5e33763e1d14eb313ee5a3972bd00dc3f62f42d097d25d6e92f004bd06cb000000000000a8ca00000000000000000000000000000000",
+        "hashPreimageBytes": 306,
+        "transactionHash": "e25e430bb7b31ec1c65e46b4a6b10555962acb59f6ba12559f25931891fc7119",
+        "publicKeyHex": "4b468c886b56fbc2e94e713526f4194459a2cc3074f76a216030667c035fa3a7",
+        "signatureHex": "1d8d424f904eb3926d530d5bdf913be4de3c6652e5ac07fbf705c290f8630386a4f2a5a985a26a1e555150864be1362151b2d93df73a297a29aa3a5533ee3600",
+        "paymentPayload": {
+          "x402Version": 2,
+          "resource": {
+            "url": "https://resource.example/paid",
+            "description": "Phase 2A deterministic paid resource",
+            "mimeType": "application/json"
+          },
+          "accepted": {
+            "scheme": "exact",
+            "network": "zenon:testnet",
+            "asset": "zts1gfpyysjzgfpyysjzdkmmd6",
+            "amount": "57896044618658097711785492504343953926634992332820282019728792003956564819967",
+            "payTo": "z1qp6kjgxzjpwhjf90akspf2srzkghr7ljjqrd87",
+            "maxTimeoutSeconds": 30,
+            "extra": {
+              "poc": true,
+              "settlement": "account-block",
+              "zenonChain": {
+                "version": 1,
+                "chainIdentifier": "7",
+                "genesisMomentumHash": "7777777777777777777777777777777777777777777777777777777777777777"
+              }
+            }
+          },
+          "payload": {
+            "transaction": {
+              "version": 1,
+              "chainIdentifier": 7,
+              "blockType": 2,
+              "hash": "e25e430bb7b31ec1c65e46b4a6b10555962acb59f6ba12559f25931891fc7119",
+              "previousHash": "00a99c9c3dffad8c2a7aaaa968b3f9d79a04dd43e520224ba454b8b54f1f4b33",
+              "height": 42,
+              "momentumAcknowledged": {
+                "hash": "e020a004be7f88f446751782207a38b32c3f2da69886b683cf14cb98861b615f",
+                "height": 73
+              },
+              "address": "z1qzvcqt0s9ypm2tg75866xvryd3tulznrdjrhwr",
+              "toAddress": "z1qp6kjgxzjpwhjf90akspf2srzkghr7ljjqrd87",
+              "amount": "57896044618658097711785492504343953926634992332820282019728792003956564819967",
+              "tokenStandard": "zts1gfpyysjzgfpyysjzdkmmd6",
+              "fromBlockHash": "0000000000000000000000000000000000000000000000000000000000000000",
+              "data": "ZX5UmT7B8Vr6I4NvG/NJ5EuWoI9sZG/jRU0C/tIPXJ8=",
+              "fusedPlasma": 43210,
+              "difficulty": 0,
+              "nonce": "0000000000000000",
+              "publicKey": "S0aMiGtW+8LpTnE1JvQZRFmizDB092ohYDBmfANfo6c=",
+              "signature": "HY1CT5BOs5JtUw1b35E75N48ZlLlrAf79wXCkPhjA4ak8qWphaJqHlVRUIZL4TYhUbLZPfc6KXopqjpVM+42AA=="
+            },
+            "intentDigest": "657e54993ec1f15afa23836f1bf349e44b96a08f6c646fe3454d02fed20f5c9f"
+          }
+        },
+        "paymentPayloadWireJson": "{\"x402Version\":2,\"resource\":{\"url\":\"https://resource.example/paid\",\"description\":\"Phase 2A deterministic paid resource\",\"mimeType\":\"application/json\"},\"accepted\":{\"scheme\":\"exact\",\"network\":\"zenon:testnet\",\"asset\":\"zts1gfpyysjzgfpyysjzdkmmd6\",\"amount\":\"57896044618658097711785492504343953926634992332820282019728792003956564819967\",\"payTo\":\"z1qp6kjgxzjpwhjf90akspf2srzkghr7ljjqrd87\",\"maxTimeoutSeconds\":30,\"extra\":{\"poc\":true,\"settlement\":\"account-block\",\"zenonChain\":{\"version\":1,\"chainIdentifier\":\"7\",\"genesisMomentumHash\":\"7777777777777777777777777777777777777777777777777777777777777777\"}}},\"payload\":{\"transaction\":{\"version\":1,\"chainIdentifier\":7,\"blockType\":2,\"hash\":\"e25e430bb7b31ec1c65e46b4a6b10555962acb59f6ba12559f25931891fc7119\",\"previousHash\":\"00a99c9c3dffad8c2a7aaaa968b3f9d79a04dd43e520224ba454b8b54f1f4b33\",\"height\":42,\"momentumAcknowledged\":{\"hash\":\"e020a004be7f88f446751782207a38b32c3f2da69886b683cf14cb98861b615f\",\"height\":73},\"address\":\"z1qzvcqt0s9ypm2tg75866xvryd3tulznrdjrhwr\",\"toAddress\":\"z1qp6kjgxzjpwhjf90akspf2srzkghr7ljjqrd87\",\"amount\":\"57896044618658097711785492504343953926634992332820282019728792003956564819967\",\"tokenStandard\":\"zts1gfpyysjzgfpyysjzdkmmd6\",\"fromBlockHash\":\"0000000000000000000000000000000000000000000000000000000000000000\",\"data\":\"ZX5UmT7B8Vr6I4NvG/NJ5EuWoI9sZG/jRU0C/tIPXJ8=\",\"fusedPlasma\":43210,\"difficulty\":0,\"nonce\":\"0000000000000000\",\"publicKey\":\"S0aMiGtW+8LpTnE1JvQZRFmizDB092ohYDBmfANfo6c=\",\"signature\":\"HY1CT5BOs5JtUw1b35E75N48ZlLlrAf79wXCkPhjA4ak8qWphaJqHlVRUIZL4TYhUbLZPfc6KXopqjpVM+42AA==\"},\"intentDigest\":\"657e54993ec1f15afa23836f1bf349e44b96a08f6c646fe3454d02fed20f5c9f\"}}",
+        "paymentPayloadUtf8Hex": "7b227834303256657273696f6e223a322c227265736f75726365223a7b2275726c223a2268747470733a2f2f7265736f757263652e6578616d706c652f70616964222c226465736372697074696f6e223a2250686173652032412064657465726d696e69737469632070616964207265736f75726365222c226d696d6554797065223a226170706c69636174696f6e2f6a736f6e227d2c226163636570746564223a7b22736368656d65223a226578616374222c226e6574776f726b223a227a656e6f6e3a746573746e6574222c226173736574223a227a7473316766707979736a7a6766707979736a7a646b6d6d6436222c22616d6f756e74223a223537383936303434363138363538303937373131373835343932353034333433393533393236363334393932333332383230323832303139373238373932303033393536353634383139393637222c22706179546f223a227a317170366b6a67787a6a7077686a663930616b7370663273727a6b676872376c6a6a7172643837222c226d617854696d656f75745365636f6e6473223a33302c226578747261223a7b22706f63223a747275652c22736574746c656d656e74223a226163636f756e742d626c6f636b222c227a656e6f6e436861696e223a7b2276657273696f6e223a312c22636861696e4964656e746966696572223a2237222c2267656e657369734d6f6d656e74756d48617368223a2237373737373737373737373737373737373737373737373737373737373737373737373737373737373737373737373737373737373737373737373737373737227d7d7d2c227061796c6f6164223a7b227472616e73616374696f6e223a7b2276657273696f6e223a312c22636861696e4964656e746966696572223a372c22626c6f636b54797065223a322c2268617368223a2265323565343330626237623331656331633635653436623461366231303535353936326163623539663662613132353539663235393331383931666337313139222c2270726576696f757348617368223a2230306139396339633364666661643863326137616161613936386233663964373961303464643433653532303232346261343534623862353466316634623333222c22686569676874223a34322c226d6f6d656e74756d41636b6e6f776c6564676564223a7b2268617368223a2265303230613030346265376638386634343637353137383232303761333862333263336632646136393838366236383363663134636239383836316236313566222c22686569676874223a37337d2c2261646472657373223a227a31717a7663717430733979706d327467373538363678767279643374756c7a6e72646a72687772222c22746f41646472657373223a227a317170366b6a67787a6a7077686a663930616b7370663273727a6b676872376c6a6a7172643837222c22616d6f756e74223a223537383936303434363138363538303937373131373835343932353034333433393533393236363334393932333332383230323832303139373238373932303033393536353634383139393637222c22746f6b656e5374616e64617264223a227a7473316766707979736a7a6766707979736a7a646b6d6d6436222c2266726f6d426c6f636b48617368223a2230303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030222c2264617461223a225a5835556d5437423856723649344e76472f4e4a354575576f4939735a472f6a525530432f744950584a383d222c226675736564506c61736d61223a34333231302c22646966666963756c7479223a302c226e6f6e6365223a2230303030303030303030303030303030222c227075626c69634b6579223a225330614d694774572b384c70546e45314a76515a52466d697a44423039326f685944426d66414e666f36633d222c227369676e6174757265223a22485931435435424f73354a745577316233354537354e34385a6c4c6c72416637397758436b50686a4134616b3871577068614a71486c565255495a4c3454596855624c5a506663364b586f70716a70564d2b343241413d3d227d2c22696e74656e74446967657374223a2236353765353439393365633166313561666132333833366631626633343965343462393661303866366336343666653334353464303266656432306635633966227d7d",
+        "paymentSignatureHeader": "eyJ4NDAyVmVyc2lvbiI6MiwicmVzb3VyY2UiOnsidXJsIjoiaHR0cHM6Ly9yZXNvdXJjZS5leGFtcGxlL3BhaWQiLCJkZXNjcmlwdGlvbiI6IlBoYXNlIDJBIGRldGVybWluaXN0aWMgcGFpZCByZXNvdXJjZSIsIm1pbWVUeXBlIjoiYXBwbGljYXRpb24vanNvbiJ9LCJhY2NlcHRlZCI6eyJzY2hlbWUiOiJleGFjdCIsIm5ldHdvcmsiOiJ6ZW5vbjp0ZXN0bmV0IiwiYXNzZXQiOiJ6dHMxZ2ZweXlzanpnZnB5eXNqemRrbW1kNiIsImFtb3VudCI6IjU3ODk2MDQ0NjE4NjU4MDk3NzExNzg1NDkyNTA0MzQzOTUzOTI2NjM0OTkyMzMyODIwMjgyMDE5NzI4NzkyMDAzOTU2NTY0ODE5OTY3IiwicGF5VG8iOiJ6MXFwNmtqZ3h6anB3aGpmOTBha3NwZjJzcnprZ2hyN2xqanFyZDg3IiwibWF4VGltZW91dFNlY29uZHMiOjMwLCJleHRyYSI6eyJwb2MiOnRydWUsInNldHRsZW1lbnQiOiJhY2NvdW50LWJsb2NrIiwiemVub25DaGFpbiI6eyJ2ZXJzaW9uIjoxLCJjaGFpbklkZW50aWZpZXIiOiI3IiwiZ2VuZXNpc01vbWVudHVtSGFzaCI6Ijc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3NzcifX19LCJwYXlsb2FkIjp7InRyYW5zYWN0aW9uIjp7InZlcnNpb24iOjEsImNoYWluSWRlbnRpZmllciI6NywiYmxvY2tUeXBlIjoyLCJoYXNoIjoiZTI1ZTQzMGJiN2IzMWVjMWM2NWU0NmI0YTZiMTA1NTU5NjJhY2I1OWY2YmExMjU1OWYyNTkzMTg5MWZjNzExOSIsInByZXZpb3VzSGFzaCI6IjAwYTk5YzljM2RmZmFkOGMyYTdhYWFhOTY4YjNmOWQ3OWEwNGRkNDNlNTIwMjI0YmE0NTRiOGI1NGYxZjRiMzMiLCJoZWlnaHQiOjQyLCJtb21lbnR1bUFja25vd2xlZGdlZCI6eyJoYXNoIjoiZTAyMGEwMDRiZTdmODhmNDQ2NzUxNzgyMjA3YTM4YjMyYzNmMmRhNjk4ODZiNjgzY2YxNGNiOTg4NjFiNjE1ZiIsImhlaWdodCI6NzN9LCJhZGRyZXNzIjoiejFxenZjcXQwczl5cG0ydGc3NTg2Nnh2cnlkM3R1bHpucmRqcmh3ciIsInRvQWRkcmVzcyI6InoxcXA2a2pneHpqcHdoamY5MGFrc3BmMnNyemtnaHI3bGpqcXJkODciLCJhbW91bnQiOiI1Nzg5NjA0NDYxODY1ODA5NzcxMTc4NTQ5MjUwNDM0Mzk1MzkyNjYzNDk5MjMzMjgyMDI4MjAxOTcyODc5MjAwMzk1NjU2NDgxOTk2NyIsInRva2VuU3RhbmRhcmQiOiJ6dHMxZ2ZweXlzanpnZnB5eXNqemRrbW1kNiIsImZyb21CbG9ja0hhc2giOiIwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwIiwiZGF0YSI6IlpYNVVtVDdCOFZyNkk0TnZHL05KNUV1V29JOXNaRy9qUlUwQy90SVBYSjg9IiwiZnVzZWRQbGFzbWEiOjQzMjEwLCJkaWZmaWN1bHR5IjowLCJub25jZSI6IjAwMDAwMDAwMDAwMDAwMDAiLCJwdWJsaWNLZXkiOiJTMGFNaUd0Vys4THBUbkUxSnZRWlJGbWl6REIwOTJvaFlEQm1mQU5mbzZjPSIsInNpZ25hdHVyZSI6IkhZMUNUNUJPczVKdFV3MWIzNUU3NU40OFpsTGxyQWY3OXdYQ2tQaGpBNGFrOHFXcGhhSnFIbFZSVUlaTDRUWWhVYkxaUGZjNktYb3BxanBWTSs0MkFBPT0ifSwiaW50ZW50RGlnZXN0IjoiNjU3ZTU0OTkzZWMxZjE1YWZhMjM4MzZmMWJmMzQ5ZTQ0Yjk2YTA4ZjZjNjQ2ZmUzNDU0ZDAyZmVkMjBmNWM5ZiJ9fQ==",
+        "paymentSignatureHeaderSha256": "848886a834b2e4145c9aceebb5cb6f439d936700bd25ccdcf94eb2e9ebb97b7d",
+        "mutationFacts": {
+          "exactEighteenFieldOrder": true,
+          "sendReturnedPrepareArgument": true,
+          "sendDataBytes": 0,
+          "prepareDataHex": "657e54993ec1f15afa23836f1bf349e44b96a08f6c646fe3454d02fed20f5c9f",
+          "dataAssignedBetweenStages": true,
+          "prepareUsedOperationKeyPair": true,
+          "addressAliasesGetAddress": true,
+          "publicKeyAliasesGetPublicKey": true,
+          "previousHashAliasesFrontier": true,
+          "acknowledgedHashAliasesPreparationMomentum": true,
+          "signatureAliasesSignResult": true,
+          "prepareReturnedSameBlock": true,
+          "transactionObjectIsProductionToJson": true,
+          "blockHashAtSign": "e25e430bb7b31ec1c65e46b4a6b10555962acb59f6ba12559f25931891fc7119",
+          "signArgumentHex": "e25e430bb7b31ec1c65e46b4a6b10555962acb59f6ba12559f25931891fc7119",
+          "signEntryHashMatchesArgument": true,
+          "signEntrySignatureEmpty": true,
+          "prepareReturnSignaturePresent": true,
+          "publicKeyAliasZeroAfterProductionClear": true,
+          "payloadTransactionUnchangedByProductionClear": true,
+          "detachedAddressPreserved": true,
+          "detachedPublicKeyPreserved": true,
+          "detachedPreviousHashPreserved": true,
+          "detachedAcknowledgedHashPreserved": true,
+          "detachedSignaturePreserved": true,
+          "independentHashMatches": true,
+          "powDataHash": null,
+          "independentPowDataHash": "5847203f48fc118876c3856c1e83d81aa386b32e3b11e271ceb38ae00a808f67"
+        },
+        "argumentFacts": {
+          "frontierAddressType": "object",
+          "frontierAddressConstructor": "Address",
+          "frontierAddressIsSdkAddress": true,
+          "frontierAddressIsPayerIdentity": true,
+          "frontierAddressBytesHex": "0099802df02903b52d1ea1f5a330646c57cf8a63",
+          "frontierAddressArguments": 1,
+          "tokenType": "object",
+          "tokenConstructor": "TokenStandard",
+          "tokenIsSdkTokenStandard": true,
+          "tokenBytesHex": "42424242424242424242",
+          "tokenLookupOccurred": true,
+          "tokenLookupUsedExactTemplateToken": true,
+          "powParamIsSdkGetRequiredPowParam": true,
+          "powParamType": "object",
+          "powParamConstructor": "GetRequiredPowParam",
+          "powParamAddressIdentity": true,
+          "powParamRecipientIdentity": true,
+          "powParamDataIdentity": true,
+          "powParamBlockType": 2,
+          "powParamDataHex": "657e54993ec1f15afa23836f1bf349e44b96a08f6c646fe3454d02fed20f5c9f",
+          "powParamAddressBytesHex": "0099802df02903b52d1ea1f5a330646c57cf8a63",
+          "powParamRecipientBytesHex": "00756920c2905d7924afeda014aa03159171fbf2",
+          "readinessAndPreparationMomentumDiffer": true,
+          "authenticatedSessionSingleton": true,
+          "sdkGetInstanceCalls": 2,
+          "sdkGetInstanceResultsSameSession": true,
+          "templateTokenMatchesFixtureBytes": true,
+          "templateRecipientIsSdkAddress": true,
+          "templateRecipientBytesHex": "00756920c2905d7924afeda014aa03159171fbf2",
+          "sendRecipientIdentity": true,
+          "sendTokenIdentity": true,
+          "sendAmountType": "bigint",
+          "sendAmountDecimal": "57896044618658097711785492504343953926634992332820282019728792003956564819967"
+        },
+        "lifecycle": {
+          "constructorTemporaryPairs": 1,
+          "operationPairs": 1,
+          "temporary": {
+            "index": 0,
+            "productionClearAttempts": 0,
+            "productionClearOutcome": "not-called",
+            "privateNonzeroBeforeProductionClear": null,
+            "publicNonzeroBeforeProductionClear": null,
+            "privateNonzeroAfterProductionClear": null,
+            "publicNonzeroAfterProductionClear": null,
+            "privateNonzeroBeforeHarnessTeardown": true,
+            "publicNonzeroBeforeHarnessTeardown": true,
+            "harnessTeardownWipeAttempts": 0
+          },
+          "operation": {
+            "index": 1,
+            "productionClearAttempts": 1,
+            "productionClearOutcome": "returned",
+            "privateNonzeroBeforeProductionClear": true,
+            "publicNonzeroBeforeProductionClear": true,
+            "privateNonzeroAfterProductionClear": false,
+            "publicNonzeroAfterProductionClear": false,
+            "privateNonzeroBeforeHarnessTeardown": false,
+            "publicNonzeroBeforeHarnessTeardown": false,
+            "harnessTeardownWipeAttempts": 0
+          },
+          "connectionClearCalls": 1,
+          "clientOwnAfterProduction": true,
+          "clientUndefinedAfterProduction": true,
+          "publicationCalls": 0,
+          "networkTripwireCalls": 0,
+          "fetchCalls": 2
+        },
+        "harnessCleanupFacts": {
+          "pairWipes": [
+            {
+              "role": "constructor-temporary",
+              "index": 0,
+              "harnessTeardownWipeAttempts": 1,
+              "privateZeroAfterHarnessTeardown": true,
+              "publicZeroAfterHarnessTeardown": true
+            },
+            {
+              "role": "operation",
+              "index": 1,
+              "harnessTeardownWipeAttempts": 1,
+              "privateZeroAfterHarnessTeardown": true,
+              "publicZeroAfterHarnessTeardown": true
+            }
+          ],
+          "allSensitiveBuffersZeroAfterHarnessTeardown": true
+        },
+        "restoration": {
+          "singletonDescriptorExact": true,
+          "staticDescriptorsExact": true,
+          "instanceDescriptorsExact": true,
+          "keyStoreDescriptorsExact": true,
+          "keyPairDescriptorsExact": true,
+          "templateDescriptorsExact": true,
+          "globalFetchDescriptorExact": true,
+          "environmentExact": true
+        }
+      }
+    },
+    "C": {
+      "schemaVersion": 2,
+      "id": "C",
+      "provenance": {
+        "projectHead": "138da9c6c0d57ffa59b56016d42365116d1682f0",
+        "sdkPackage": "znn-typescript-sdk",
+        "sdkVersion": "1.0.5",
+        "sdkIntegrity": "sha512-+6R07O7tBNTvGw+zA7oyS+Cr+MaKHQcITO9Vz3F6zaie8tMQ7WsrbuFLmtkCJwhYQ8G+V86wIesftyAtAcxfRw=="
+      },
+      "inputs": {
+        "accountIndex": 2,
+        "chainProfile": {
+          "version": 1,
+          "chainIdentifier": "7",
+          "genesisMomentumHash": "7777777777777777777777777777777777777777777777777777777777777777"
+        },
+        "resource": {
+          "url": "https://resource.example/paid",
+          "description": "Phase 2A deterministic paid resource",
+          "mimeType": "application/json"
+        },
+        "accepted": {
+          "scheme": "exact",
+          "network": "zenon:testnet",
+          "asset": "zts1qsrxxxxxxxxxxxxxmrhjll",
+          "amount": "424242",
+          "payTo": "z1qp6kjgxzjpwhjf90akspf2srzkghr7ljjqrd87",
+          "maxTimeoutSeconds": 30,
+          "extra": {
+            "poc": true,
+            "settlement": "account-block",
+            "zenonChain": {
+              "version": 1,
+              "chainIdentifier": "7",
+              "genesisMomentumHash": "7777777777777777777777777777777777777777777777777777777777777777"
+            }
+          }
+        },
+        "readinessMomentum": {
+          "chainIdentifier": 7,
+          "height": 87,
+          "hash": "7e9edab8b9ad7cea28c551e0ab82dfce52371e58b273376ead33ef7700ee5258"
+        },
+        "frontierAccountBlock": {
+          "height": 12,
+          "hash": "6fb6eaba8bd70cfc1ac543468781693d4b0a13312e626149daea73a297c9644b"
+        },
+        "preparationMomentum": {
+          "chainIdentifier": 7,
+          "height": 88,
+          "hash": "c6ffb7f70cf53112ac3c79f4ca3f295e1d9b1178b51d746d7b7b458d7a347295"
+        },
+        "plasmaResponse": {
+          "requiredDifficulty": 17,
+          "availablePlasma": 123456
+        },
+        "powNonce": "0102030405060708"
+      },
+      "expected": {
+        "observedExecutionTrace": [
+          {
+            "sequence": 1,
+            "category": "http",
+            "operation": "fetch.initial"
+          },
+          {
+            "sequence": 2,
+            "category": "sdk-global",
+            "operation": "Zenon.setNetworkID",
+            "value": 3
+          },
+          {
+            "sequence": 3,
+            "category": "sdk-global",
+            "operation": "Zenon.getInstance"
+          },
+          {
+            "sequence": 4,
+            "category": "sdk-api",
+            "operation": "zenon.initialize",
+            "phase": "readiness"
+          },
+          {
+            "sequence": 5,
+            "category": "sdk-api",
+            "operation": "stats.networkInfo",
+            "phase": "readiness"
+          },
+          {
+            "sequence": 6,
+            "category": "sdk-api",
+            "operation": "stats.syncInfo",
+            "phase": "readiness"
+          },
+          {
+            "sequence": 7,
+            "category": "sdk-api",
+            "operation": "ledger.getFrontierMomentum",
+            "phase": "readiness"
+          },
+          {
+            "sequence": 8,
+            "category": "chain-authentication",
+            "operation": "authenticateChainProfile"
+          },
+          {
+            "sequence": 9,
+            "category": "sdk-global",
+            "operation": "Zenon.setChainID",
+            "value": 7
+          },
+          {
+            "sequence": 10,
+            "category": "boundary",
+            "operation": "KeyStore.fromMnemonic",
+            "arguments": "redacted"
+          },
+          {
+            "sequence": 11,
+            "category": "boundary",
+            "operation": "KeyStore.getKeyPair",
+            "role": "constructor-temporary",
+            "index": 0
+          },
+          {
+            "sequence": 12,
+            "category": "boundary",
+            "operation": "KeyPair.getAddress",
+            "role": "constructor-temporary"
+          },
+          {
+            "sequence": 13,
+            "category": "boundary",
+            "operation": "KeyStore.getKeyPair",
+            "role": "operation",
+            "index": 2
+          },
+          {
+            "sequence": 14,
+            "category": "sdk-block",
+            "operation": "AccountBlockTemplate.send.enter"
+          },
+          {
+            "sequence": 15,
+            "category": "sdk-global",
+            "operation": "Zenon.getChainIdentifier"
+          },
+          {
+            "sequence": 16,
+            "category": "block-stage",
+            "operation": "block-stage.sendReturn"
+          },
+          {
+            "sequence": 17,
+            "category": "sdk-block",
+            "operation": "Zenon.prepareBlock.enter"
+          },
+          {
+            "sequence": 18,
+            "category": "block-stage",
+            "operation": "block-stage.prepareEntry"
+          },
+          {
+            "sequence": 19,
+            "category": "sdk-global",
+            "operation": "Zenon.getInstance"
+          },
+          {
+            "sequence": 20,
+            "category": "boundary",
+            "operation": "KeyPair.getAddress",
+            "role": "operation"
+          },
+          {
+            "sequence": 21,
+            "category": "boundary",
+            "operation": "KeyPair.getPublicKey",
+            "role": "operation"
+          },
+          {
+            "sequence": 22,
+            "category": "sdk-api",
+            "operation": "ledger.getFrontierAccountBlock",
+            "phase": "prepare"
+          },
+          {
+            "sequence": 23,
+            "category": "block-stage",
+            "operation": "block-stage.frontierAccountEntry"
+          },
+          {
+            "sequence": 24,
+            "category": "sdk-api",
+            "operation": "ledger.getFrontierMomentum",
+            "phase": "prepare"
+          },
+          {
+            "sequence": 25,
+            "category": "block-stage",
+            "operation": "block-stage.preparationMomentumEntry"
+          },
+          {
+            "sequence": 26,
+            "category": "sdk-api",
+            "operation": "embedded.plasma.getRequiredPoWForAccountBlock",
+            "phase": "prepare"
+          },
+          {
+            "sequence": 27,
+            "category": "block-stage",
+            "operation": "block-stage.plasmaEntry"
+          },
+          {
+            "sequence": 28,
+            "category": "sdk-global",
+            "operation": "Zenon.getPowProvider"
+          },
+          {
+            "sequence": 29,
+            "category": "sdk-pow",
+            "operation": "Zenon.powProvider",
+            "hashHex": "b42ba57be9f05bbe9252cf11f3b23c33c2a13b369595bacf65e7b033498f5f9c",
+            "difficulty": 17
+          },
+          {
+            "sequence": 30,
+            "category": "block-stage",
+            "operation": "block-stage.powProviderEntry"
+          },
+          {
+            "sequence": 31,
+            "category": "boundary",
+            "operation": "KeyPair.sign",
+            "role": "operation",
+            "messageBytes": 32
+          },
+          {
+            "sequence": 32,
+            "category": "block-stage",
+            "operation": "block-stage.signEntry"
+          },
+          {
+            "sequence": 33,
+            "category": "block-stage",
+            "operation": "block-stage.prepareReturn"
+          },
+          {
+            "sequence": 34,
+            "category": "sdk-block",
+            "operation": "Zenon.prepareBlock.return"
+          },
+          {
+            "sequence": 35,
+            "category": "sdk-block",
+            "operation": "AccountBlockTemplate.toJson"
+          },
+          {
+            "sequence": 36,
+            "category": "sdk-key",
+            "operation": "KeyPair.clear.enter",
+            "role": "operation"
+          },
+          {
+            "sequence": 37,
+            "category": "block-stage",
+            "operation": "block-stage.beforeProductionClear"
+          },
+          {
+            "sequence": 38,
+            "category": "block-stage",
+            "operation": "block-stage.afterProductionClear"
+          },
+          {
+            "sequence": 39,
+            "category": "sdk-lifecycle",
+            "operation": "Zenon.clearConnection",
+            "attempt": 1,
+            "mode": "return",
+            "outcome": "fulfilled"
+          },
+          {
+            "sequence": 40,
+            "category": "owner",
+            "operation": "ownerProbe.enter"
+          },
+          {
+            "sequence": 41,
+            "category": "http",
+            "operation": "fetch.paid"
+          }
+        ],
+        "sdkGlobalMilestones": [
+          {
+            "sequence": 2,
+            "category": "sdk-global",
+            "operation": "Zenon.setNetworkID",
+            "value": 3
+          },
+          {
+            "sequence": 3,
+            "category": "sdk-global",
+            "operation": "Zenon.getInstance"
+          },
+          {
+            "sequence": 9,
+            "category": "sdk-global",
+            "operation": "Zenon.setChainID",
+            "value": 7
+          },
+          {
+            "sequence": 15,
+            "category": "sdk-global",
+            "operation": "Zenon.getChainIdentifier"
+          },
+          {
+            "sequence": 19,
+            "category": "sdk-global",
+            "operation": "Zenon.getInstance"
+          },
+          {
+            "sequence": 28,
+            "category": "sdk-global",
+            "operation": "Zenon.getPowProvider"
+          }
+        ],
+        "sdkApiRpcMethodBoundaryTrace": [
+          {
+            "sequence": 4,
+            "layer": "sdk-api-method-boundary",
+            "wireEncodingObserved": false,
+            "operation": "zenon.initialize",
+            "phase": "readiness",
+            "arguments": [
+              "ws://rpc.invalid"
+            ],
+            "outcome": "fulfilled"
+          },
+          {
+            "sequence": 5,
+            "layer": "sdk-api-method-boundary",
+            "wireEncodingObserved": false,
+            "operation": "stats.networkInfo",
+            "phase": "readiness",
+            "arguments": [],
+            "outcome": "fulfilled"
+          },
+          {
+            "sequence": 6,
+            "layer": "sdk-api-method-boundary",
+            "wireEncodingObserved": false,
+            "operation": "stats.syncInfo",
+            "phase": "readiness",
+            "arguments": [],
+            "outcome": "fulfilled"
+          },
+          {
+            "sequence": 7,
+            "layer": "sdk-api-method-boundary",
+            "wireEncodingObserved": false,
+            "operation": "ledger.getFrontierMomentum",
+            "phase": "readiness",
+            "arguments": [],
+            "outcome": "fulfilled"
+          },
+          {
+            "sequence": 22,
+            "layer": "sdk-api-method-boundary",
+            "wireEncodingObserved": false,
+            "operation": "ledger.getFrontierAccountBlock",
+            "phase": "prepare",
+            "arguments": [
+              "z1qpk5utc7l9hmv2vguhpea7jucy3xvfcsyefp0e"
+            ],
+            "outcome": "fulfilled"
+          },
+          {
+            "sequence": 24,
+            "layer": "sdk-api-method-boundary",
+            "wireEncodingObserved": false,
+            "operation": "ledger.getFrontierMomentum",
+            "phase": "prepare",
+            "arguments": [],
+            "outcome": "fulfilled"
+          },
+          {
+            "sequence": 26,
+            "layer": "sdk-api-method-boundary",
+            "wireEncodingObserved": false,
+            "operation": "embedded.plasma.getRequiredPoWForAccountBlock",
+            "phase": "prepare",
+            "arguments": [
+              {
+                "address": "z1qpk5utc7l9hmv2vguhpea7jucy3xvfcsyefp0e",
+                "blockType": 2,
+                "toAddress": "z1qp6kjgxzjpwhjf90akspf2srzkghr7ljjqrd87",
+                "data": "MbzQoQcgBHnxaJ9H7pwhnJz/FJdfZrQqCuzUP4/iE4U="
+              }
+            ],
+            "outcome": "fulfilled"
+          }
+        ],
+        "prepareBlockApiBoundaryTrace": [
+          {
+            "sequence": 22,
+            "layer": "sdk-api-method-boundary",
+            "wireEncodingObserved": false,
+            "operation": "ledger.getFrontierAccountBlock",
+            "phase": "prepare",
+            "arguments": [
+              "z1qpk5utc7l9hmv2vguhpea7jucy3xvfcsyefp0e"
+            ],
+            "outcome": "fulfilled"
+          },
+          {
+            "sequence": 24,
+            "layer": "sdk-api-method-boundary",
+            "wireEncodingObserved": false,
+            "operation": "ledger.getFrontierMomentum",
+            "phase": "prepare",
+            "arguments": [],
+            "outcome": "fulfilled"
+          },
+          {
+            "sequence": 26,
+            "layer": "sdk-api-method-boundary",
+            "wireEncodingObserved": false,
+            "operation": "embedded.plasma.getRequiredPoWForAccountBlock",
+            "phase": "prepare",
+            "arguments": [
+              {
+                "address": "z1qpk5utc7l9hmv2vguhpea7jucy3xvfcsyefp0e",
+                "blockType": 2,
+                "toAddress": "z1qp6kjgxzjpwhjf90akspf2srzkghr7ljjqrd87",
+                "data": "MbzQoQcgBHnxaJ9H7pwhnJz/FJdfZrQqCuzUP4/iE4U="
+              }
+            ],
+            "outcome": "fulfilled"
+          }
+        ],
+        "blockStageSnapshots": {
+          "sendReturn": {
+            "sequence": 16,
+            "block": {
+              "version": 1,
+              "chainIdentifier": 7,
+              "blockType": 2,
+              "hash": "0000000000000000000000000000000000000000000000000000000000000000",
+              "previousHash": "0000000000000000000000000000000000000000000000000000000000000000",
+              "height": 0,
+              "momentumAcknowledged": {
+                "hash": "0000000000000000000000000000000000000000000000000000000000000000",
+                "height": 0
+              },
+              "address": "z1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqsggv2f",
+              "toAddress": "z1qp6kjgxzjpwhjf90akspf2srzkghr7ljjqrd87",
+              "amount": "424242",
+              "tokenStandard": "zts1qsrxxxxxxxxxxxxxmrhjll",
+              "fromBlockHash": "0000000000000000000000000000000000000000000000000000000000000000",
+              "data": "",
+              "fusedPlasma": 0,
+              "difficulty": 0,
+              "nonce": "",
+              "publicKey": "",
+              "signature": ""
+            }
+          },
+          "prepareEntry": {
+            "sequence": 18,
+            "block": {
+              "version": 1,
+              "chainIdentifier": 7,
+              "blockType": 2,
+              "hash": "0000000000000000000000000000000000000000000000000000000000000000",
+              "previousHash": "0000000000000000000000000000000000000000000000000000000000000000",
+              "height": 0,
+              "momentumAcknowledged": {
+                "hash": "0000000000000000000000000000000000000000000000000000000000000000",
+                "height": 0
+              },
+              "address": "z1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqsggv2f",
+              "toAddress": "z1qp6kjgxzjpwhjf90akspf2srzkghr7ljjqrd87",
+              "amount": "424242",
+              "tokenStandard": "zts1qsrxxxxxxxxxxxxxmrhjll",
+              "fromBlockHash": "0000000000000000000000000000000000000000000000000000000000000000",
+              "data": "MbzQoQcgBHnxaJ9H7pwhnJz/FJdfZrQqCuzUP4/iE4U=",
+              "fusedPlasma": 0,
+              "difficulty": 0,
+              "nonce": "",
+              "publicKey": "",
+              "signature": ""
+            }
+          },
+          "frontierAccountEntry": {
+            "sequence": 23,
+            "block": {
+              "version": 1,
+              "chainIdentifier": 7,
+              "blockType": 2,
+              "hash": "0000000000000000000000000000000000000000000000000000000000000000",
+              "previousHash": "0000000000000000000000000000000000000000000000000000000000000000",
+              "height": 0,
+              "momentumAcknowledged": {
+                "hash": "0000000000000000000000000000000000000000000000000000000000000000",
+                "height": 0
+              },
+              "address": "z1qpk5utc7l9hmv2vguhpea7jucy3xvfcsyefp0e",
+              "toAddress": "z1qp6kjgxzjpwhjf90akspf2srzkghr7ljjqrd87",
+              "amount": "424242",
+              "tokenStandard": "zts1qsrxxxxxxxxxxxxxmrhjll",
+              "fromBlockHash": "0000000000000000000000000000000000000000000000000000000000000000",
+              "data": "MbzQoQcgBHnxaJ9H7pwhnJz/FJdfZrQqCuzUP4/iE4U=",
+              "fusedPlasma": 0,
+              "difficulty": 0,
+              "nonce": "",
+              "publicKey": "YiznLiVF2UeWpB9tJOp5Cge4CJsbwUxSpXmnkifwQrM=",
+              "signature": ""
+            }
+          },
+          "preparationMomentumEntry": {
+            "sequence": 25,
+            "block": {
+              "version": 1,
+              "chainIdentifier": 7,
+              "blockType": 2,
+              "hash": "0000000000000000000000000000000000000000000000000000000000000000",
+              "previousHash": "0000000000000000000000000000000000000000000000000000000000000000",
+              "height": 0,
+              "momentumAcknowledged": {
+                "hash": "0000000000000000000000000000000000000000000000000000000000000000",
+                "height": 0
+              },
+              "address": "z1qpk5utc7l9hmv2vguhpea7jucy3xvfcsyefp0e",
+              "toAddress": "z1qp6kjgxzjpwhjf90akspf2srzkghr7ljjqrd87",
+              "amount": "424242",
+              "tokenStandard": "zts1qsrxxxxxxxxxxxxxmrhjll",
+              "fromBlockHash": "0000000000000000000000000000000000000000000000000000000000000000",
+              "data": "MbzQoQcgBHnxaJ9H7pwhnJz/FJdfZrQqCuzUP4/iE4U=",
+              "fusedPlasma": 0,
+              "difficulty": 0,
+              "nonce": "",
+              "publicKey": "YiznLiVF2UeWpB9tJOp5Cge4CJsbwUxSpXmnkifwQrM=",
+              "signature": ""
+            }
+          },
+          "plasmaEntry": {
+            "sequence": 27,
+            "block": {
+              "version": 1,
+              "chainIdentifier": 7,
+              "blockType": 2,
+              "hash": "0000000000000000000000000000000000000000000000000000000000000000",
+              "previousHash": "6fb6eaba8bd70cfc1ac543468781693d4b0a13312e626149daea73a297c9644b",
+              "height": 13,
+              "momentumAcknowledged": {
+                "hash": "c6ffb7f70cf53112ac3c79f4ca3f295e1d9b1178b51d746d7b7b458d7a347295",
+                "height": 88
+              },
+              "address": "z1qpk5utc7l9hmv2vguhpea7jucy3xvfcsyefp0e",
+              "toAddress": "z1qp6kjgxzjpwhjf90akspf2srzkghr7ljjqrd87",
+              "amount": "424242",
+              "tokenStandard": "zts1qsrxxxxxxxxxxxxxmrhjll",
+              "fromBlockHash": "0000000000000000000000000000000000000000000000000000000000000000",
+              "data": "MbzQoQcgBHnxaJ9H7pwhnJz/FJdfZrQqCuzUP4/iE4U=",
+              "fusedPlasma": 0,
+              "difficulty": 0,
+              "nonce": "",
+              "publicKey": "YiznLiVF2UeWpB9tJOp5Cge4CJsbwUxSpXmnkifwQrM=",
+              "signature": ""
+            }
+          },
+          "powProviderEntry": {
+            "sequence": 30,
+            "block": {
+              "version": 1,
+              "chainIdentifier": 7,
+              "blockType": 2,
+              "hash": "0000000000000000000000000000000000000000000000000000000000000000",
+              "previousHash": "6fb6eaba8bd70cfc1ac543468781693d4b0a13312e626149daea73a297c9644b",
+              "height": 13,
+              "momentumAcknowledged": {
+                "hash": "c6ffb7f70cf53112ac3c79f4ca3f295e1d9b1178b51d746d7b7b458d7a347295",
+                "height": 88
+              },
+              "address": "z1qpk5utc7l9hmv2vguhpea7jucy3xvfcsyefp0e",
+              "toAddress": "z1qp6kjgxzjpwhjf90akspf2srzkghr7ljjqrd87",
+              "amount": "424242",
+              "tokenStandard": "zts1qsrxxxxxxxxxxxxxmrhjll",
+              "fromBlockHash": "0000000000000000000000000000000000000000000000000000000000000000",
+              "data": "MbzQoQcgBHnxaJ9H7pwhnJz/FJdfZrQqCuzUP4/iE4U=",
+              "fusedPlasma": 123456,
+              "difficulty": 17,
+              "nonce": "",
+              "publicKey": "YiznLiVF2UeWpB9tJOp5Cge4CJsbwUxSpXmnkifwQrM=",
+              "signature": ""
+            }
+          },
+          "signEntry": {
+            "sequence": 32,
+            "block": {
+              "version": 1,
+              "chainIdentifier": 7,
+              "blockType": 2,
+              "hash": "bb7f5f1d71470417a01c806039bd59d359cc484e601cf18ca2b963c063c1daf1",
+              "previousHash": "6fb6eaba8bd70cfc1ac543468781693d4b0a13312e626149daea73a297c9644b",
+              "height": 13,
+              "momentumAcknowledged": {
+                "hash": "c6ffb7f70cf53112ac3c79f4ca3f295e1d9b1178b51d746d7b7b458d7a347295",
+                "height": 88
+              },
+              "address": "z1qpk5utc7l9hmv2vguhpea7jucy3xvfcsyefp0e",
+              "toAddress": "z1qp6kjgxzjpwhjf90akspf2srzkghr7ljjqrd87",
+              "amount": "424242",
+              "tokenStandard": "zts1qsrxxxxxxxxxxxxxmrhjll",
+              "fromBlockHash": "0000000000000000000000000000000000000000000000000000000000000000",
+              "data": "MbzQoQcgBHnxaJ9H7pwhnJz/FJdfZrQqCuzUP4/iE4U=",
+              "fusedPlasma": 123456,
+              "difficulty": 17,
+              "nonce": "0102030405060708",
+              "publicKey": "YiznLiVF2UeWpB9tJOp5Cge4CJsbwUxSpXmnkifwQrM=",
+              "signature": ""
+            }
+          },
+          "prepareReturn": {
+            "sequence": 33,
+            "block": {
+              "version": 1,
+              "chainIdentifier": 7,
+              "blockType": 2,
+              "hash": "bb7f5f1d71470417a01c806039bd59d359cc484e601cf18ca2b963c063c1daf1",
+              "previousHash": "6fb6eaba8bd70cfc1ac543468781693d4b0a13312e626149daea73a297c9644b",
+              "height": 13,
+              "momentumAcknowledged": {
+                "hash": "c6ffb7f70cf53112ac3c79f4ca3f295e1d9b1178b51d746d7b7b458d7a347295",
+                "height": 88
+              },
+              "address": "z1qpk5utc7l9hmv2vguhpea7jucy3xvfcsyefp0e",
+              "toAddress": "z1qp6kjgxzjpwhjf90akspf2srzkghr7ljjqrd87",
+              "amount": "424242",
+              "tokenStandard": "zts1qsrxxxxxxxxxxxxxmrhjll",
+              "fromBlockHash": "0000000000000000000000000000000000000000000000000000000000000000",
+              "data": "MbzQoQcgBHnxaJ9H7pwhnJz/FJdfZrQqCuzUP4/iE4U=",
+              "fusedPlasma": 123456,
+              "difficulty": 17,
+              "nonce": "0102030405060708",
+              "publicKey": "YiznLiVF2UeWpB9tJOp5Cge4CJsbwUxSpXmnkifwQrM=",
+              "signature": "DVmkG1WSq+VYJaTt0ghxVskLSIk9kMNbYQMc9NdhoyvTL++OJWOqBc6zO+9BmccLQ9aImo0C2q9R7loR4k9IAQ=="
+            }
+          },
+          "beforeProductionClear": {
+            "sequence": 37,
+            "block": {
+              "version": 1,
+              "chainIdentifier": 7,
+              "blockType": 2,
+              "hash": "bb7f5f1d71470417a01c806039bd59d359cc484e601cf18ca2b963c063c1daf1",
+              "previousHash": "6fb6eaba8bd70cfc1ac543468781693d4b0a13312e626149daea73a297c9644b",
+              "height": 13,
+              "momentumAcknowledged": {
+                "hash": "c6ffb7f70cf53112ac3c79f4ca3f295e1d9b1178b51d746d7b7b458d7a347295",
+                "height": 88
+              },
+              "address": "z1qpk5utc7l9hmv2vguhpea7jucy3xvfcsyefp0e",
+              "toAddress": "z1qp6kjgxzjpwhjf90akspf2srzkghr7ljjqrd87",
+              "amount": "424242",
+              "tokenStandard": "zts1qsrxxxxxxxxxxxxxmrhjll",
+              "fromBlockHash": "0000000000000000000000000000000000000000000000000000000000000000",
+              "data": "MbzQoQcgBHnxaJ9H7pwhnJz/FJdfZrQqCuzUP4/iE4U=",
+              "fusedPlasma": 123456,
+              "difficulty": 17,
+              "nonce": "0102030405060708",
+              "publicKey": "YiznLiVF2UeWpB9tJOp5Cge4CJsbwUxSpXmnkifwQrM=",
+              "signature": "DVmkG1WSq+VYJaTt0ghxVskLSIk9kMNbYQMc9NdhoyvTL++OJWOqBc6zO+9BmccLQ9aImo0C2q9R7loR4k9IAQ=="
+            }
+          },
+          "afterProductionClear": {
+            "sequence": 38,
+            "block": {
+              "version": 1,
+              "chainIdentifier": 7,
+              "blockType": 2,
+              "hash": "bb7f5f1d71470417a01c806039bd59d359cc484e601cf18ca2b963c063c1daf1",
+              "previousHash": "6fb6eaba8bd70cfc1ac543468781693d4b0a13312e626149daea73a297c9644b",
+              "height": 13,
+              "momentumAcknowledged": {
+                "hash": "c6ffb7f70cf53112ac3c79f4ca3f295e1d9b1178b51d746d7b7b458d7a347295",
+                "height": 88
+              },
+              "address": "z1qpk5utc7l9hmv2vguhpea7jucy3xvfcsyefp0e",
+              "toAddress": "z1qp6kjgxzjpwhjf90akspf2srzkghr7ljjqrd87",
+              "amount": "424242",
+              "tokenStandard": "zts1qsrxxxxxxxxxxxxxmrhjll",
+              "fromBlockHash": "0000000000000000000000000000000000000000000000000000000000000000",
+              "data": "MbzQoQcgBHnxaJ9H7pwhnJz/FJdfZrQqCuzUP4/iE4U=",
+              "fusedPlasma": 123456,
+              "difficulty": 17,
+              "nonce": "0102030405060708",
+              "publicKey": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+              "signature": "DVmkG1WSq+VYJaTt0ghxVskLSIk9kMNbYQMc9NdhoyvTL++OJWOqBc6zO+9BmccLQ9aImo0C2q9R7loR4k9IAQ=="
+            },
+            "clearOutcome": "returned"
+          }
+        },
+        "payloadTransactionSnapshots": {
+          "productionToJson": {
+            "sequence": 35,
+            "transaction": {
+              "version": 1,
+              "chainIdentifier": 7,
+              "blockType": 2,
+              "hash": "bb7f5f1d71470417a01c806039bd59d359cc484e601cf18ca2b963c063c1daf1",
+              "previousHash": "6fb6eaba8bd70cfc1ac543468781693d4b0a13312e626149daea73a297c9644b",
+              "height": 13,
+              "momentumAcknowledged": {
+                "hash": "c6ffb7f70cf53112ac3c79f4ca3f295e1d9b1178b51d746d7b7b458d7a347295",
+                "height": 88
+              },
+              "address": "z1qpk5utc7l9hmv2vguhpea7jucy3xvfcsyefp0e",
+              "toAddress": "z1qp6kjgxzjpwhjf90akspf2srzkghr7ljjqrd87",
+              "amount": "424242",
+              "tokenStandard": "zts1qsrxxxxxxxxxxxxxmrhjll",
+              "fromBlockHash": "0000000000000000000000000000000000000000000000000000000000000000",
+              "data": "MbzQoQcgBHnxaJ9H7pwhnJz/FJdfZrQqCuzUP4/iE4U=",
+              "fusedPlasma": 123456,
+              "difficulty": 17,
+              "nonce": "0102030405060708",
+              "publicKey": "YiznLiVF2UeWpB9tJOp5Cge4CJsbwUxSpXmnkifwQrM=",
+              "signature": "DVmkG1WSq+VYJaTt0ghxVskLSIk9kMNbYQMc9NdhoyvTL++OJWOqBc6zO+9BmccLQ9aImo0C2q9R7loR4k9IAQ=="
+            }
+          },
+          "beforeProductionClear": {
+            "sequence": 37,
+            "transaction": {
+              "version": 1,
+              "chainIdentifier": 7,
+              "blockType": 2,
+              "hash": "bb7f5f1d71470417a01c806039bd59d359cc484e601cf18ca2b963c063c1daf1",
+              "previousHash": "6fb6eaba8bd70cfc1ac543468781693d4b0a13312e626149daea73a297c9644b",
+              "height": 13,
+              "momentumAcknowledged": {
+                "hash": "c6ffb7f70cf53112ac3c79f4ca3f295e1d9b1178b51d746d7b7b458d7a347295",
+                "height": 88
+              },
+              "address": "z1qpk5utc7l9hmv2vguhpea7jucy3xvfcsyefp0e",
+              "toAddress": "z1qp6kjgxzjpwhjf90akspf2srzkghr7ljjqrd87",
+              "amount": "424242",
+              "tokenStandard": "zts1qsrxxxxxxxxxxxxxmrhjll",
+              "fromBlockHash": "0000000000000000000000000000000000000000000000000000000000000000",
+              "data": "MbzQoQcgBHnxaJ9H7pwhnJz/FJdfZrQqCuzUP4/iE4U=",
+              "fusedPlasma": 123456,
+              "difficulty": 17,
+              "nonce": "0102030405060708",
+              "publicKey": "YiznLiVF2UeWpB9tJOp5Cge4CJsbwUxSpXmnkifwQrM=",
+              "signature": "DVmkG1WSq+VYJaTt0ghxVskLSIk9kMNbYQMc9NdhoyvTL++OJWOqBc6zO+9BmccLQ9aImo0C2q9R7loR4k9IAQ=="
+            }
+          },
+          "afterProductionClear": {
+            "sequence": 38,
+            "transaction": {
+              "version": 1,
+              "chainIdentifier": 7,
+              "blockType": 2,
+              "hash": "bb7f5f1d71470417a01c806039bd59d359cc484e601cf18ca2b963c063c1daf1",
+              "previousHash": "6fb6eaba8bd70cfc1ac543468781693d4b0a13312e626149daea73a297c9644b",
+              "height": 13,
+              "momentumAcknowledged": {
+                "hash": "c6ffb7f70cf53112ac3c79f4ca3f295e1d9b1178b51d746d7b7b458d7a347295",
+                "height": 88
+              },
+              "address": "z1qpk5utc7l9hmv2vguhpea7jucy3xvfcsyefp0e",
+              "toAddress": "z1qp6kjgxzjpwhjf90akspf2srzkghr7ljjqrd87",
+              "amount": "424242",
+              "tokenStandard": "zts1qsrxxxxxxxxxxxxxmrhjll",
+              "fromBlockHash": "0000000000000000000000000000000000000000000000000000000000000000",
+              "data": "MbzQoQcgBHnxaJ9H7pwhnJz/FJdfZrQqCuzUP4/iE4U=",
+              "fusedPlasma": 123456,
+              "difficulty": 17,
+              "nonce": "0102030405060708",
+              "publicKey": "YiznLiVF2UeWpB9tJOp5Cge4CJsbwUxSpXmnkifwQrM=",
+              "signature": "DVmkG1WSq+VYJaTt0ghxVskLSIk9kMNbYQMc9NdhoyvTL++OJWOqBc6zO+9BmccLQ9aImo0C2q9R7loR4k9IAQ=="
+            }
+          }
+        },
+        "transaction": {
+          "version": 1,
+          "chainIdentifier": 7,
+          "blockType": 2,
+          "hash": "bb7f5f1d71470417a01c806039bd59d359cc484e601cf18ca2b963c063c1daf1",
+          "previousHash": "6fb6eaba8bd70cfc1ac543468781693d4b0a13312e626149daea73a297c9644b",
+          "height": 13,
+          "momentumAcknowledged": {
+            "hash": "c6ffb7f70cf53112ac3c79f4ca3f295e1d9b1178b51d746d7b7b458d7a347295",
+            "height": 88
+          },
+          "address": "z1qpk5utc7l9hmv2vguhpea7jucy3xvfcsyefp0e",
+          "toAddress": "z1qp6kjgxzjpwhjf90akspf2srzkghr7ljjqrd87",
+          "amount": "424242",
+          "tokenStandard": "zts1qsrxxxxxxxxxxxxxmrhjll",
+          "fromBlockHash": "0000000000000000000000000000000000000000000000000000000000000000",
+          "data": "MbzQoQcgBHnxaJ9H7pwhnJz/FJdfZrQqCuzUP4/iE4U=",
+          "fusedPlasma": 123456,
+          "difficulty": 17,
+          "nonce": "0102030405060708",
+          "publicKey": "YiznLiVF2UeWpB9tJOp5Cge4CJsbwUxSpXmnkifwQrM=",
+          "signature": "DVmkG1WSq+VYJaTt0ghxVskLSIk9kMNbYQMc9NdhoyvTL++OJWOqBc6zO+9BmccLQ9aImo0C2q9R7loR4k9IAQ=="
+        },
+        "preparedJsonString": "{\"version\":1,\"chainIdentifier\":7,\"blockType\":2,\"hash\":\"bb7f5f1d71470417a01c806039bd59d359cc484e601cf18ca2b963c063c1daf1\",\"previousHash\":\"6fb6eaba8bd70cfc1ac543468781693d4b0a13312e626149daea73a297c9644b\",\"height\":13,\"momentumAcknowledged\":{\"hash\":\"c6ffb7f70cf53112ac3c79f4ca3f295e1d9b1178b51d746d7b7b458d7a347295\",\"height\":88},\"address\":\"z1qpk5utc7l9hmv2vguhpea7jucy3xvfcsyefp0e\",\"toAddress\":\"z1qp6kjgxzjpwhjf90akspf2srzkghr7ljjqrd87\",\"amount\":\"424242\",\"tokenStandard\":\"zts1qsrxxxxxxxxxxxxxmrhjll\",\"fromBlockHash\":\"0000000000000000000000000000000000000000000000000000000000000000\",\"data\":\"MbzQoQcgBHnxaJ9H7pwhnJz/FJdfZrQqCuzUP4/iE4U=\",\"fusedPlasma\":123456,\"difficulty\":17,\"nonce\":\"0102030405060708\",\"publicKey\":\"YiznLiVF2UeWpB9tJOp5Cge4CJsbwUxSpXmnkifwQrM=\",\"signature\":\"DVmkG1WSq+VYJaTt0ghxVskLSIk9kMNbYQMc9NdhoyvTL++OJWOqBc6zO+9BmccLQ9aImo0C2q9R7loR4k9IAQ==\"}",
+        "preparedJsonUtf8Hex": "7b2276657273696f6e223a312c22636861696e4964656e746966696572223a372c22626c6f636b54797065223a322c2268617368223a2262623766356631643731343730343137613031633830363033396264353964333539636334383465363031636631386361326239363363303633633164616631222c2270726576696f757348617368223a2236666236656162613862643730636663316163353433343638373831363933643462306131333331326536323631343964616561373361323937633936343462222c22686569676874223a31332c226d6f6d656e74756d41636b6e6f776c6564676564223a7b2268617368223a2263366666623766373063663533313132616333633739663463613366323935653164396231313738623531643734366437623762343538643761333437323935222c22686569676874223a38387d2c2261646472657373223a227a3171706b35757463376c39686d763276677568706561376a756379337876666373796566703065222c22746f41646472657373223a227a317170366b6a67787a6a7077686a663930616b7370663273727a6b676872376c6a6a7172643837222c22616d6f756e74223a22343234323432222c22746f6b656e5374616e64617264223a227a747331717372787878787878787878787878786d72686a6c6c222c2266726f6d426c6f636b48617368223a2230303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030222c2264617461223a224d627a516f51636742486e78614a3948377077686e4a7a2f464a64665a72517143757a5550342f694534553d222c226675736564506c61736d61223a3132333435362c22646966666963756c7479223a31372c226e6f6e6365223a2230313032303330343035303630373038222c227075626c69634b6579223a2259697a6e4c69564632556557704239744a4f703543676534434a73627755785370586d6e6b69667751724d3d222c227369676e6174757265223a2244566d6b47315753712b56594a6154743067687856736b4c53496b396b4d4e6259514d63394e64686f7976544c2b2b4f4a574f714263367a4f2b39426d63634c513961496d6f304332713952376c6f52346b394941513d3d227d",
+        "hashPreimageHex": "0000000000000001000000000000000700000000000000026fb6eaba8bd70cfc1ac543468781693d4b0a13312e626149daea73a297c9644b000000000000000dc6ffb7f70cf53112ac3c79f4ca3f295e1d9b1178b51d746d7b7b458d7a3472950000000000000058006d4e2f1ef96fb62988e5c39efa5cc12266271000756920c2905d7924afeda014aa03159171fbf2000000000000000000000000000000000000000000000000000000000006793204066318c6318c6318c60000000000000000000000000000000000000000000000000000000000000000a7ffc6f8bf1ed76651c14756a061d662f580ff4de43b49fa82d80a4b80f8434aae5bc86872e4335fc9489767e6c79ea8ae886d5e3fc2ce1eabc21f35cceb0fc7000000000001e24000000000000000110102030405060708",
+        "hashPreimageBytes": 306,
+        "transactionHash": "bb7f5f1d71470417a01c806039bd59d359cc484e601cf18ca2b963c063c1daf1",
+        "publicKeyHex": "622ce72e2545d94796a41f6d24ea790a07b8089b1bc14c52a579a79227f042b3",
+        "signatureHex": "0d59a41b5592abe55825a4edd2087156c90b48893d90c35b61031cf4d761a32bd32fef8e2563aa05ceb33bef4199c70b43d6889a8d02daaf51ee5a11e24f4801",
+        "paymentPayload": {
+          "x402Version": 2,
+          "resource": {
+            "url": "https://resource.example/paid",
+            "description": "Phase 2A deterministic paid resource",
+            "mimeType": "application/json"
+          },
+          "accepted": {
+            "scheme": "exact",
+            "network": "zenon:testnet",
+            "asset": "zts1qsrxxxxxxxxxxxxxmrhjll",
+            "amount": "424242",
+            "payTo": "z1qp6kjgxzjpwhjf90akspf2srzkghr7ljjqrd87",
+            "maxTimeoutSeconds": 30,
+            "extra": {
+              "poc": true,
+              "settlement": "account-block",
+              "zenonChain": {
+                "version": 1,
+                "chainIdentifier": "7",
+                "genesisMomentumHash": "7777777777777777777777777777777777777777777777777777777777777777"
+              }
+            }
+          },
+          "payload": {
+            "transaction": {
+              "version": 1,
+              "chainIdentifier": 7,
+              "blockType": 2,
+              "hash": "bb7f5f1d71470417a01c806039bd59d359cc484e601cf18ca2b963c063c1daf1",
+              "previousHash": "6fb6eaba8bd70cfc1ac543468781693d4b0a13312e626149daea73a297c9644b",
+              "height": 13,
+              "momentumAcknowledged": {
+                "hash": "c6ffb7f70cf53112ac3c79f4ca3f295e1d9b1178b51d746d7b7b458d7a347295",
+                "height": 88
+              },
+              "address": "z1qpk5utc7l9hmv2vguhpea7jucy3xvfcsyefp0e",
+              "toAddress": "z1qp6kjgxzjpwhjf90akspf2srzkghr7ljjqrd87",
+              "amount": "424242",
+              "tokenStandard": "zts1qsrxxxxxxxxxxxxxmrhjll",
+              "fromBlockHash": "0000000000000000000000000000000000000000000000000000000000000000",
+              "data": "MbzQoQcgBHnxaJ9H7pwhnJz/FJdfZrQqCuzUP4/iE4U=",
+              "fusedPlasma": 123456,
+              "difficulty": 17,
+              "nonce": "0102030405060708",
+              "publicKey": "YiznLiVF2UeWpB9tJOp5Cge4CJsbwUxSpXmnkifwQrM=",
+              "signature": "DVmkG1WSq+VYJaTt0ghxVskLSIk9kMNbYQMc9NdhoyvTL++OJWOqBc6zO+9BmccLQ9aImo0C2q9R7loR4k9IAQ=="
+            },
+            "intentDigest": "31bcd0a107200479f1689f47ee9c219c9cff14975f66b42a0aecd43f8fe21385"
+          }
+        },
+        "paymentPayloadWireJson": "{\"x402Version\":2,\"resource\":{\"url\":\"https://resource.example/paid\",\"description\":\"Phase 2A deterministic paid resource\",\"mimeType\":\"application/json\"},\"accepted\":{\"scheme\":\"exact\",\"network\":\"zenon:testnet\",\"asset\":\"zts1qsrxxxxxxxxxxxxxmrhjll\",\"amount\":\"424242\",\"payTo\":\"z1qp6kjgxzjpwhjf90akspf2srzkghr7ljjqrd87\",\"maxTimeoutSeconds\":30,\"extra\":{\"poc\":true,\"settlement\":\"account-block\",\"zenonChain\":{\"version\":1,\"chainIdentifier\":\"7\",\"genesisMomentumHash\":\"7777777777777777777777777777777777777777777777777777777777777777\"}}},\"payload\":{\"transaction\":{\"version\":1,\"chainIdentifier\":7,\"blockType\":2,\"hash\":\"bb7f5f1d71470417a01c806039bd59d359cc484e601cf18ca2b963c063c1daf1\",\"previousHash\":\"6fb6eaba8bd70cfc1ac543468781693d4b0a13312e626149daea73a297c9644b\",\"height\":13,\"momentumAcknowledged\":{\"hash\":\"c6ffb7f70cf53112ac3c79f4ca3f295e1d9b1178b51d746d7b7b458d7a347295\",\"height\":88},\"address\":\"z1qpk5utc7l9hmv2vguhpea7jucy3xvfcsyefp0e\",\"toAddress\":\"z1qp6kjgxzjpwhjf90akspf2srzkghr7ljjqrd87\",\"amount\":\"424242\",\"tokenStandard\":\"zts1qsrxxxxxxxxxxxxxmrhjll\",\"fromBlockHash\":\"0000000000000000000000000000000000000000000000000000000000000000\",\"data\":\"MbzQoQcgBHnxaJ9H7pwhnJz/FJdfZrQqCuzUP4/iE4U=\",\"fusedPlasma\":123456,\"difficulty\":17,\"nonce\":\"0102030405060708\",\"publicKey\":\"YiznLiVF2UeWpB9tJOp5Cge4CJsbwUxSpXmnkifwQrM=\",\"signature\":\"DVmkG1WSq+VYJaTt0ghxVskLSIk9kMNbYQMc9NdhoyvTL++OJWOqBc6zO+9BmccLQ9aImo0C2q9R7loR4k9IAQ==\"},\"intentDigest\":\"31bcd0a107200479f1689f47ee9c219c9cff14975f66b42a0aecd43f8fe21385\"}}",
+        "paymentPayloadUtf8Hex": "7b227834303256657273696f6e223a322c227265736f75726365223a7b2275726c223a2268747470733a2f2f7265736f757263652e6578616d706c652f70616964222c226465736372697074696f6e223a2250686173652032412064657465726d696e69737469632070616964207265736f75726365222c226d696d6554797065223a226170706c69636174696f6e2f6a736f6e227d2c226163636570746564223a7b22736368656d65223a226578616374222c226e6574776f726b223a227a656e6f6e3a746573746e6574222c226173736574223a227a747331717372787878787878787878787878786d72686a6c6c222c22616d6f756e74223a22343234323432222c22706179546f223a227a317170366b6a67787a6a7077686a663930616b7370663273727a6b676872376c6a6a7172643837222c226d617854696d656f75745365636f6e6473223a33302c226578747261223a7b22706f63223a747275652c22736574746c656d656e74223a226163636f756e742d626c6f636b222c227a656e6f6e436861696e223a7b2276657273696f6e223a312c22636861696e4964656e746966696572223a2237222c2267656e657369734d6f6d656e74756d48617368223a2237373737373737373737373737373737373737373737373737373737373737373737373737373737373737373737373737373737373737373737373737373737227d7d7d2c227061796c6f6164223a7b227472616e73616374696f6e223a7b2276657273696f6e223a312c22636861696e4964656e746966696572223a372c22626c6f636b54797065223a322c2268617368223a2262623766356631643731343730343137613031633830363033396264353964333539636334383465363031636631386361326239363363303633633164616631222c2270726576696f757348617368223a2236666236656162613862643730636663316163353433343638373831363933643462306131333331326536323631343964616561373361323937633936343462222c22686569676874223a31332c226d6f6d656e74756d41636b6e6f776c6564676564223a7b2268617368223a2263366666623766373063663533313132616333633739663463613366323935653164396231313738623531643734366437623762343538643761333437323935222c22686569676874223a38387d2c2261646472657373223a227a3171706b35757463376c39686d763276677568706561376a756379337876666373796566703065222c22746f41646472657373223a227a317170366b6a67787a6a7077686a663930616b7370663273727a6b676872376c6a6a7172643837222c22616d6f756e74223a22343234323432222c22746f6b656e5374616e64617264223a227a747331717372787878787878787878787878786d72686a6c6c222c2266726f6d426c6f636b48617368223a2230303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030303030222c2264617461223a224d627a516f51636742486e78614a3948377077686e4a7a2f464a64665a72517143757a5550342f694534553d222c226675736564506c61736d61223a3132333435362c22646966666963756c7479223a31372c226e6f6e6365223a2230313032303330343035303630373038222c227075626c69634b6579223a2259697a6e4c69564632556557704239744a4f703543676534434a73627755785370586d6e6b69667751724d3d222c227369676e6174757265223a2244566d6b47315753712b56594a6154743067687856736b4c53496b396b4d4e6259514d63394e64686f7976544c2b2b4f4a574f714263367a4f2b39426d63634c513961496d6f304332713952376c6f52346b394941513d3d227d2c22696e74656e74446967657374223a2233316263643061313037323030343739663136383966343765653963323139633963666631343937356636366234326130616563643433663866653231333835227d7d",
+        "paymentSignatureHeader": "eyJ4NDAyVmVyc2lvbiI6MiwicmVzb3VyY2UiOnsidXJsIjoiaHR0cHM6Ly9yZXNvdXJjZS5leGFtcGxlL3BhaWQiLCJkZXNjcmlwdGlvbiI6IlBoYXNlIDJBIGRldGVybWluaXN0aWMgcGFpZCByZXNvdXJjZSIsIm1pbWVUeXBlIjoiYXBwbGljYXRpb24vanNvbiJ9LCJhY2NlcHRlZCI6eyJzY2hlbWUiOiJleGFjdCIsIm5ldHdvcmsiOiJ6ZW5vbjp0ZXN0bmV0IiwiYXNzZXQiOiJ6dHMxcXNyeHh4eHh4eHh4eHh4eG1yaGpsbCIsImFtb3VudCI6IjQyNDI0MiIsInBheVRvIjoiejFxcDZramd4empwd2hqZjkwYWtzcGYyc3J6a2docjdsampxcmQ4NyIsIm1heFRpbWVvdXRTZWNvbmRzIjozMCwiZXh0cmEiOnsicG9jIjp0cnVlLCJzZXR0bGVtZW50IjoiYWNjb3VudC1ibG9jayIsInplbm9uQ2hhaW4iOnsidmVyc2lvbiI6MSwiY2hhaW5JZGVudGlmaWVyIjoiNyIsImdlbmVzaXNNb21lbnR1bUhhc2giOiI3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3In19fSwicGF5bG9hZCI6eyJ0cmFuc2FjdGlvbiI6eyJ2ZXJzaW9uIjoxLCJjaGFpbklkZW50aWZpZXIiOjcsImJsb2NrVHlwZSI6MiwiaGFzaCI6ImJiN2Y1ZjFkNzE0NzA0MTdhMDFjODA2MDM5YmQ1OWQzNTljYzQ4NGU2MDFjZjE4Y2EyYjk2M2MwNjNjMWRhZjEiLCJwcmV2aW91c0hhc2giOiI2ZmI2ZWFiYThiZDcwY2ZjMWFjNTQzNDY4NzgxNjkzZDRiMGExMzMxMmU2MjYxNDlkYWVhNzNhMjk3Yzk2NDRiIiwiaGVpZ2h0IjoxMywibW9tZW50dW1BY2tub3dsZWRnZWQiOnsiaGFzaCI6ImM2ZmZiN2Y3MGNmNTMxMTJhYzNjNzlmNGNhM2YyOTVlMWQ5YjExNzhiNTFkNzQ2ZDdiN2I0NThkN2EzNDcyOTUiLCJoZWlnaHQiOjg4fSwiYWRkcmVzcyI6InoxcXBrNXV0YzdsOWhtdjJ2Z3VocGVhN2p1Y3kzeHZmY3N5ZWZwMGUiLCJ0b0FkZHJlc3MiOiJ6MXFwNmtqZ3h6anB3aGpmOTBha3NwZjJzcnprZ2hyN2xqanFyZDg3IiwiYW1vdW50IjoiNDI0MjQyIiwidG9rZW5TdGFuZGFyZCI6Inp0czFxc3J4eHh4eHh4eHh4eHh4bXJoamxsIiwiZnJvbUJsb2NrSGFzaCI6IjAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAiLCJkYXRhIjoiTWJ6UW9RY2dCSG54YUo5SDdwd2huSnovRkpkZlpyUXFDdXpVUDQvaUU0VT0iLCJmdXNlZFBsYXNtYSI6MTIzNDU2LCJkaWZmaWN1bHR5IjoxNywibm9uY2UiOiIwMTAyMDMwNDA1MDYwNzA4IiwicHVibGljS2V5IjoiWWl6bkxpVkYyVWVXcEI5dEpPcDVDZ2U0Q0pzYndVeFNwWG1ua2lmd1FyTT0iLCJzaWduYXR1cmUiOiJEVm1rRzFXU3ErVllKYVR0MGdoeFZza0xTSWs5a01OYllRTWM5TmRob3l2VEwrK09KV09xQmM2ek8rOUJtY2NMUTlhSW1vMEMycTlSN2xvUjRrOUlBUT09In0sImludGVudERpZ2VzdCI6IjMxYmNkMGExMDcyMDA0NzlmMTY4OWY0N2VlOWMyMTljOWNmZjE0OTc1ZjY2YjQyYTBhZWNkNDNmOGZlMjEzODUifX0=",
+        "paymentSignatureHeaderSha256": "7b58e9e9d3d40b33b5e7ef129193bed47e875fef98e5b79a93a6caaf88fa88dd",
+        "mutationFacts": {
+          "exactEighteenFieldOrder": true,
+          "sendReturnedPrepareArgument": true,
+          "sendDataBytes": 0,
+          "prepareDataHex": "31bcd0a107200479f1689f47ee9c219c9cff14975f66b42a0aecd43f8fe21385",
+          "dataAssignedBetweenStages": true,
+          "prepareUsedOperationKeyPair": true,
+          "addressAliasesGetAddress": true,
+          "publicKeyAliasesGetPublicKey": true,
+          "previousHashAliasesFrontier": true,
+          "acknowledgedHashAliasesPreparationMomentum": true,
+          "signatureAliasesSignResult": true,
+          "prepareReturnedSameBlock": true,
+          "transactionObjectIsProductionToJson": true,
+          "blockHashAtSign": "bb7f5f1d71470417a01c806039bd59d359cc484e601cf18ca2b963c063c1daf1",
+          "signArgumentHex": "bb7f5f1d71470417a01c806039bd59d359cc484e601cf18ca2b963c063c1daf1",
+          "signEntryHashMatchesArgument": true,
+          "signEntrySignatureEmpty": true,
+          "prepareReturnSignaturePresent": true,
+          "publicKeyAliasZeroAfterProductionClear": true,
+          "payloadTransactionUnchangedByProductionClear": true,
+          "detachedAddressPreserved": true,
+          "detachedPublicKeyPreserved": true,
+          "detachedPreviousHashPreserved": true,
+          "detachedAcknowledgedHashPreserved": true,
+          "detachedSignaturePreserved": true,
+          "independentHashMatches": true,
+          "powDataHash": "b42ba57be9f05bbe9252cf11f3b23c33c2a13b369595bacf65e7b033498f5f9c",
+          "independentPowDataHash": "b42ba57be9f05bbe9252cf11f3b23c33c2a13b369595bacf65e7b033498f5f9c"
+        },
+        "argumentFacts": {
+          "frontierAddressType": "object",
+          "frontierAddressConstructor": "Address",
+          "frontierAddressIsSdkAddress": true,
+          "frontierAddressIsPayerIdentity": true,
+          "frontierAddressBytesHex": "006d4e2f1ef96fb62988e5c39efa5cc122662710",
+          "frontierAddressArguments": 1,
+          "tokenType": "object",
+          "tokenConstructor": "TokenStandard",
+          "tokenIsSdkTokenStandard": true,
+          "tokenBytesHex": "04066318c6318c6318c6",
+          "tokenLookupOccurred": false,
+          "tokenLookupUsedExactTemplateToken": null,
+          "powParamIsSdkGetRequiredPowParam": true,
+          "powParamType": "object",
+          "powParamConstructor": "GetRequiredPowParam",
+          "powParamAddressIdentity": true,
+          "powParamRecipientIdentity": true,
+          "powParamDataIdentity": true,
+          "powParamBlockType": 2,
+          "powParamDataHex": "31bcd0a107200479f1689f47ee9c219c9cff14975f66b42a0aecd43f8fe21385",
+          "powParamAddressBytesHex": "006d4e2f1ef96fb62988e5c39efa5cc122662710",
+          "powParamRecipientBytesHex": "00756920c2905d7924afeda014aa03159171fbf2",
+          "readinessAndPreparationMomentumDiffer": true,
+          "authenticatedSessionSingleton": true,
+          "sdkGetInstanceCalls": 2,
+          "sdkGetInstanceResultsSameSession": true,
+          "templateTokenMatchesFixtureBytes": true,
+          "templateRecipientIsSdkAddress": true,
+          "templateRecipientBytesHex": "00756920c2905d7924afeda014aa03159171fbf2",
+          "sendRecipientIdentity": true,
+          "sendTokenIdentity": true,
+          "sendAmountType": "bigint",
+          "sendAmountDecimal": "424242"
+        },
+        "lifecycle": {
+          "constructorTemporaryPairs": 1,
+          "operationPairs": 1,
+          "temporary": {
+            "index": 0,
+            "productionClearAttempts": 0,
+            "productionClearOutcome": "not-called",
+            "privateNonzeroBeforeProductionClear": null,
+            "publicNonzeroBeforeProductionClear": null,
+            "privateNonzeroAfterProductionClear": null,
+            "publicNonzeroAfterProductionClear": null,
+            "privateNonzeroBeforeHarnessTeardown": true,
+            "publicNonzeroBeforeHarnessTeardown": true,
+            "harnessTeardownWipeAttempts": 0
+          },
+          "operation": {
+            "index": 2,
+            "productionClearAttempts": 1,
+            "productionClearOutcome": "returned",
+            "privateNonzeroBeforeProductionClear": true,
+            "publicNonzeroBeforeProductionClear": true,
+            "privateNonzeroAfterProductionClear": false,
+            "publicNonzeroAfterProductionClear": false,
+            "privateNonzeroBeforeHarnessTeardown": false,
+            "publicNonzeroBeforeHarnessTeardown": false,
+            "harnessTeardownWipeAttempts": 0
+          },
+          "connectionClearCalls": 1,
+          "clientOwnAfterProduction": true,
+          "clientUndefinedAfterProduction": true,
+          "publicationCalls": 0,
+          "networkTripwireCalls": 0,
+          "fetchCalls": 2
+        },
+        "harnessCleanupFacts": {
+          "pairWipes": [
+            {
+              "role": "constructor-temporary",
+              "index": 0,
+              "harnessTeardownWipeAttempts": 1,
+              "privateZeroAfterHarnessTeardown": true,
+              "publicZeroAfterHarnessTeardown": true
+            },
+            {
+              "role": "operation",
+              "index": 2,
+              "harnessTeardownWipeAttempts": 1,
+              "privateZeroAfterHarnessTeardown": true,
+              "publicZeroAfterHarnessTeardown": true
+            }
+          ],
+          "allSensitiveBuffersZeroAfterHarnessTeardown": true
+        },
+        "restoration": {
+          "singletonDescriptorExact": true,
+          "staticDescriptorsExact": true,
+          "instanceDescriptorsExact": true,
+          "keyStoreDescriptorsExact": true,
+          "keyPairDescriptorsExact": true,
+          "templateDescriptorsExact": true,
+          "globalFetchDescriptorExact": true,
+          "environmentExact": true
+        }
+      }
+    }
+  }
+}
