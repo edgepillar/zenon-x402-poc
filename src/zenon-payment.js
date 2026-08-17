@@ -19,6 +19,7 @@ import {
   EVIDENCE_STATES,
   SettlementJournal,
 } from './settlement-journal.js';
+import { invokeLegacySdk105SignedComposite } from './zenon/internal/legacy-sdk-1-0-5-signed-composite.js';
 
 const TESTNET_NETWORK_ID = 3;
 const MAX_DATA_BYTES = 32;
@@ -775,7 +776,7 @@ export class ExactZenonClient {
           // prepareBlock() is a composite SDK operation with internal RPC and
           // possible PoW work. SDK 1.0.5 cannot cancel it, so ownership is held
           // until it completes instead of applying a superficial Promise.race.
-          const prepared = await zenon.prepareBlock(block, keyPair);
+          const prepared = await invokeLegacySdk105SignedComposite(zenon, block, keyPair);
           if (prepared.chainIdentifier !== chainId ||
               String(prepared.chainIdentifier) !== accepted.extra.zenonChain.chainIdentifier) {
             safetyError('prepared_chain_mismatch');
