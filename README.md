@@ -1,10 +1,18 @@
-# Zenon x402 v0.2 Prototype
+# Zenon x402 Prototype
 
 A research proof of concept that maps x402 v2 `exact` payments to payer-signed Zenon account blocks.
 
 The buyer prepares and signs a normal Zenon `UserSend` account block without publishing it. The x402 payload carries that exact signed block. The facilitator validates it against the selected payment requirement, journals the attempt, publishes it, observes Momentum inclusion, and only then authorizes the protected resource.
 
 This is not an official Zenon integration, not an official x402 network implementation, and not production software. Mock mode is the default. No stablecoin or production security guarantee is bundled.
+
+## Current architecture status
+
+The current `main` branch contains the v0.3 architecture checkpoint; this is not a v0.3 package or production release. The planner, wallet, Plasma, payment-mechanism, chain-profile, and settlement-repository interfaces are additive design boundaries. They document intended ownership and separation but are not wired into the active transaction path.
+
+The active live Zenon buyer path still uses the legacy signed-composite behavior of `znn-typescript-sdk@1.0.5`: `prepareBlock(accountBlockTemplate, keyPair)` performs preparation, possible PoW, hashing, and signing. Phase 2A provides immutable golden and lifecycle characterization of that behavior. Phase 2B.1 routes the same call through a transparent internal legacy comparator seam without changing its semantics.
+
+Phase 2C is deferred and remains `NO-GO`. No unsigned planner/wallet split or hardware-wallet integration is active. [digitalSloth/znn-typescript-sdk#31](https://github.com/digitalSloth/znn-typescript-sdk/issues/31) is an upstream staged-preparation proposal only; this codebase neither implements nor consumes the proposed API. This remains a research PoC, and production deployment remains `NO-GO`.
 
 ## Architecture
 
@@ -20,7 +28,8 @@ Resource server
 Buyer validates the requirement
     |
     | globally owned SDK session
-    | prepareBlock() + local signing
+    | legacy SDK 1.0.5 signed-composite
+    | prepareBlock(accountBlockTemplate, keyPair)
     v
 Signed Zenon UserSend block, not yet published
     |
@@ -40,6 +49,8 @@ Resource server / facilitator
     v
 Protected resource or a non-authorizing reconciliation response
 ```
+
+The additive `WalletAdapter`, `ZenonTransactionPlanner`, and `PlasmaStrategy` boundaries describe intended future ownership only; they are not active runtime components. The legacy composite SDK path remains active for live Zenon payments through the transparent Phase 2B.1 seam.
 
 The facilitator never receives the buyer mnemonic or private key.
 
@@ -113,6 +124,12 @@ An unexpected SDK connection-cleanup failure also poisons the runtime before own
 
 `prepareBlock()` is a composite operation containing SDK RPC and possible PoW. It is not wrapped in a superficial timeout; the global owner remains held until it completes or throws.
 
+### Compatibility characterization
+
+The legacy comparator is locked to `znn-typescript-sdk@1.0.5`. Immutable Phase 2A fixtures and golden/lifecycle tests characterize transaction bytes, the account-block preimage and hash, public key and signature, mutation timing, RPC ordering, key and connection cleanup, timeout handling, runtime poisoning, and queued-owner behavior. Phase 2B.1 tests verify that the transparent internal seam remains on this active live PoC path.
+
+These tests preserve the legacy baseline; they do not provide a supported unsigned-preparation or canonical-hash SDK API. The deterministic custom-provider PoW fixture characterizes legacy SDK behavior and is not evidence of a consensus-valid difficulty-17 PoW solution.
+
 ### Journal and retry behavior
 
 Live settlement uses a versioned journal under the ignored `.runtime/` directory. After node-dependent pre-publication checks and before publication, it records the exact validated signed block, transaction and authorization identities, resource and chain-profile commitments, and the `VALIDATED` evidence state. Writes use a same-directory temporary file, file `fsync`, atomic rename, and directory sync where supported. Corrupt or malformed state fails closed. An initialization marker also makes a missing journal file fail closed after the first successful write; deleting both the journal and marker remains outside the guarantees of this local-file design.
@@ -128,7 +145,11 @@ The evidence and delivery states are:
 - `DELIVERY_PENDING`: an exclusive delivery claim was durably recorded; callback execution may have begun;
 - `DELIVERED`: a response was recorded and can be returned on retry.
 
-Known evidence is not downgraded after a transient lookup failure. A publication timeout is never described as a definite rejection. HTTP returns a PoC-specific `409` recovery response with `PAYMENT-RESPONSE`, `retrySamePayment: true`, and an instruction to reuse and reconcile the same payment rather than create another transaction. An uncertain payment does not release the resource.
+Known evidence is not downgraded after a transient lookup failure. A publication timeout is never described as a definite rejection. HTTP returns a PoC-specific `409` recovery response with `PAYMENT-RESPONSE`, `retrySamePayment: true`, and an instruction to reuse and reconcile the same payment rather than create another transaction.
+
+A redacted `PAYMENT-RESPONSE` may accompany HTTP `402` only when the facilitator returns the exact compound evidence `success === false`, `state === "VALIDATED"`, `retrySamePayment === false`, and `deliveryState === "NONE"`, with exact network, transaction-hash, and canonical payer binding to the submitted payment. The public response uses the fixed reason `payment_settlement_failed`; facilitator error details and raw causes are not exposed, and `retrySamePayment` is omitted. Before submission, the buyer derives a detached, validated payment snapshot by decoding the exact encoded `PAYMENT-SIGNATURE` value that it will send. Settlement validation then binds the response network, transaction hash, and payer to that submitted snapshot.
+
+A purported definite-`402` response with missing, malformed, additional, mismatched, ambiguous, wrongly statused, or unexpected evidence remains `payment_submission_outcome_unknown`. Other HTTP `402` responses are not implicitly definite. Valid HTTP `409` evidence remains the reuse-and-reconcile path for uncertain or recoverable outcomes. Neither an uncertain nor a definite failed payment releases the resource. This lane necessarily trusts the facilitator's exact compound state as evidence that publication and delivery were not attempted.
 
 Concurrent duplicate requests in one resource-server process converge on one in-flight settlement and delivery operation. A delivered response is cached and returned without republishing or rerunning the callback. Cached response bodies are stored as plaintext JSON in the local journal and are limited to 64 KiB, so operators must protect the runtime directory and must not use it for sensitive resource content. There remains a crash window after an arbitrary resource callback performs a side effect but before `DELIVERED` is durably recorded; the journal does not justify an exactly-once claim.
 
@@ -146,6 +167,10 @@ RPC polling remains authoritative for inclusion observation. Subscriptions are w
 
 ## Important limitations
 
+- Phase 2C is deferred and remains `NO-GO`; production deployment is also `NO-GO`.
+- Hardware-wallet support is not implemented.
+- The planner, wallet, Plasma, payment-mechanism, chain-profile, and settlement-repository boundaries are not wired into the active live Zenon transaction path.
+- No supported public unsigned-preparation or canonical-account-block-hash SDK API is consumed.
 - No authenticated live chain profile or real live profile ships in this repository.
 - The RPC node remains a trust boundary; no SPV or checkpoint verification is implemented.
 - The journal and queues coordinate one process on one host only.
@@ -160,22 +185,47 @@ RPC polling remains authoritative for inclusion observation. Subscriptions are w
 
 ```text
 src/
-  buyer.js                 generic x402 paid-fetch flow
-  resource-server.js       protected HTTP resource and retry boundary
-  x402-wire.js             strict x402 wire/profile validation
-  mock-payment.js          local mock client and facilitator
-  zenon-payment.js         prepared-block client and live facilitator
-  live-runtime.js          process-wide SDK ownership and poisoning
-  settlement-journal.js    dependency-free recovery journal
-  config.js                payment requirement configuration
+  buyer.js                    generic x402 paid-fetch flow
+  resource-server.js          protected HTTP resource and retry boundary
+  x402-wire.js                strict x402 wire/profile validation
+  mock-payment.js             local mock client and facilitator
+  zenon-payment.js            active legacy client and live facilitator
+  live-runtime.js             process-wide SDK ownership and poisoning
+  settlement-journal.js       dependency-free recovery journal
+  config.js                    payment requirement configuration
+  settlement/
+    settlement-repository.js  additive repository boundary
+  x402/
+    payment-mechanism.js      additive mechanism boundary
+  zenon/
+    chain-profile.js          additive chain-profile boundary
+    wallet-adapter.js         additive wallet boundary
+    transaction-planner.js    additive planner boundary
+    plasma-strategy.js        additive Plasma boundary
+    internal/
+      legacy-sdk-1-0-5-signed-composite.js
+                               active transparent legacy seam
+test-support/
+  phase2a-sdk-harness.js       isolated SDK/lifecycle harness
+  phase2a-inputs.js            deterministic public scenario inputs
+  phase2a-account-block-preimage.js
+                               independent account-block preimage helper
 test/
+  fixtures/
+    phase2a-exact-client-goldens.v1.json
+                               immutable Phase 2A golden values
+  architecture-boundaries.test.js
+  conformance.test.js
   e2e.test.js
+  journal.test.js
+  live-runtime.test.js
+  phase2a-exact-client-golden.test.js
+  phase2a-exact-client-lifecycle.test.js
+  phase2b1-legacy-sdk-signed-composite.test.js
+  http-recovery.test.js
+  live-settlement-integration.test.js
   security.test.js
   wire-profile.test.js
-  live-runtime.test.js
-  journal.test.js
-  http-recovery.test.js
-  conformance.test.js
 docs/
   IMPLEMENTATION_PLAN.md
   UPSTREAM_X402.md
@@ -185,4 +235,9 @@ SECURITY.md
 
 ## Next target
 
-The next live milestone is an independently verifiable chain-profile authenticator anchored to authoritative genesis or checkpoint data. A production design also needs an explicit-session SDK or facilitator runtime, durable multi-process settlement state, deeper confirmation policy, and official x402 integration tests.
+Future work has two separate lanes:
+
+1. Near-term work continues x402 correctness, interoperability, and operational hardening on the frozen legacy signing baseline.
+2. A separately approved Phase 2C remains gated on a supported upstream unsigned-preparation and canonical-hash API, a wallet identity/lease/disposal and cleanup contract, and a separately versioned successor characterization suite.
+
+Production prerequisites across either lane include independently authenticated chain-profile verification, durable multi-process settlement, an explicit confirmation policy, and official interoperability testing. Phase 2C and hardware-wallet work are not required for the current mock x402 flow.
