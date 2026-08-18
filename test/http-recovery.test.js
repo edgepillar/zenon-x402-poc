@@ -243,6 +243,181 @@ test('unknown publication outcome returns a distinct retry-same-payment response
   }
 });
 
+test('definite rejection evidence requires exact pre-publication settlement state', async () => {
+  const requirement = await buildRequirement('mock');
+  let deliveries = 0;
+  let settleCalls = 0;
+  let transformSettlement = value => value;
+  let mutateInputs = () => {};
+  const facilitator = {
+    async settle(paymentPayload, selectedRequirement) {
+      settleCalls += 1;
+      mutateInputs(paymentPayload, selectedRequirement);
+      return transformSettlement({
+        success: false,
+        network: selectedRequirement.network,
+        transaction: paymentPayload.payload.transaction.hash,
+        payer: paymentPayload.payload.transaction.address,
+        state: 'VALIDATED',
+        errorReason: 'sensitive_frontier_detail',
+        cause: new Error('sensitive facilitator cause'),
+        retrySamePayment: false,
+        deliveryState: 'NONE',
+      });
+    },
+  };
+  const app = createResourceServer({
+    facilitator,
+    requirement,
+    resourceHandler: async () => ({ ok: true, deliveries: ++deliveries }),
+  });
+  const listening = await app.listen();
+  try {
+    const { paymentPayload, paymentRequired } = await signedPayment(listening.url);
+    const definite = await submitPayment(listening.url, paymentPayload);
+    const publicSettlement = decodeB64Json(definite.headers.get(HEADERS.PAYMENT_RESPONSE));
+
+    assert.equal(definite.status, 402);
+    assertPaidResponseIsPrivate(definite);
+    assert.deepEqual(decodeB64Json(definite.headers.get(HEADERS.PAYMENT_REQUIRED)), paymentRequired);
+    assert.deepEqual(publicSettlement, {
+      success: false,
+      network: requirement.network,
+      transaction: paymentPayload.payload.transaction.hash,
+      payer: paymentPayload.payload.transaction.address,
+      state: 'VALIDATED',
+      errorReason: 'payment_settlement_failed',
+    });
+    assert.equal(Object.hasOwn(publicSettlement, 'retrySamePayment'), false);
+    const definiteText = await definite.text();
+    assert.match(definiteText, /payment_settlement_failed/);
+    assert.doesNotMatch(definiteText, /sensitive_frontier_detail|sensitive facilitator cause/);
+
+    const variants = [
+      { transform: value => { delete value.success; return value; }, status: 402 },
+      { transform: value => ({ ...value, success: 0 }), status: 402 },
+      { transform: value => { delete value.retrySamePayment; return value; }, status: 402 },
+      { transform: value => ({ ...value, retrySamePayment: true }), status: 409 },
+      { transform: value => ({ ...value, retrySamePayment: 0 }), status: 402 },
+      { transform: value => { delete value.deliveryState; return value; }, status: 402 },
+      { transform: value => ({ ...value, deliveryState: 'DELIVERY_PENDING' }), status: 402 },
+      {
+        transform: value => {
+          Object.defineProperty(value, 'deliveryState', { enumerable: true, get: () => 'NONE' });
+          return value;
+        },
+        status: 402,
+      },
+      { transform: value => ({ ...value, network: 'zenon:testnet' }), status: 402 },
+      { transform: value => ({ ...value, transaction: '0'.repeat(64) }), status: 402 },
+      { transform: value => ({ ...value, payer: `mock-${'f'.repeat(32)}` }), status: 402 },
+      { transform: value => ({ ...value, payer: 'z1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqsggv2f' }), status: 402 },
+      { transform: value => ({ ...value, state: 'SUBMISSION_OUTCOME_UNKNOWN' }), status: 409 },
+      { transform: () => null, status: 402 },
+      { transform: () => [], status: 402 },
+    ];
+    for (const { transform, status } of variants) {
+      transformSettlement = transform;
+      const response = await submitPayment(listening.url, paymentPayload);
+      assert.equal(response.status, status);
+      assertPaidResponseIsPrivate(response);
+      if (response.status === 409) {
+        const recovery = decodeB64Json(response.headers.get(HEADERS.PAYMENT_RESPONSE));
+        assert.equal(recovery.retrySamePayment, true);
+      } else {
+        assert.equal(response.headers.get(HEADERS.PAYMENT_RESPONSE), null);
+      }
+      assert.match(await response.text(), /payment_|resource_/);
+    }
+
+    transformSettlement = value => value;
+    mutateInputs = (submittedPayload, selectedRequirement) => {
+      selectedRequirement.network = 'zenon:testnet';
+      submittedPayload.accepted.network = 'zenon:testnet';
+      submittedPayload.payload.transaction.hash = 'a'.repeat(64);
+      submittedPayload.payload.transaction.address = `mock-${'e'.repeat(32)}`;
+    };
+    const mutatedInput = await submitPayment(listening.url, paymentPayload);
+    assert.equal(mutatedInput.status, 402);
+    assert.equal(mutatedInput.headers.get(HEADERS.PAYMENT_RESPONSE), null);
+
+    mutateInputs = () => {};
+    transformSettlement = () => { throw new Error('sensitive facilitator failure'); };
+    const unexpected = await submitPayment(listening.url, paymentPayload);
+    const unexpectedText = await unexpected.text();
+    assert.equal(unexpected.status, 500);
+    assert.equal(unexpected.headers.get(HEADERS.PAYMENT_RESPONSE), null);
+    assert.match(unexpectedText, /internal_error/);
+    assert.doesNotMatch(unexpectedText, /sensitive facilitator failure/);
+    assertPaidResponseIsPrivate(unexpected);
+
+    assert.equal(deliveries, 0);
+    assert.equal(settleCalls, variants.length + 3);
+  } finally {
+    await app.close();
+  }
+});
+
+test('definite rejection rejects a checksum-invalid live payer before exposing evidence', async () => {
+  const mockRequirement = await buildRequirement('mock');
+  const requirement = {
+    ...structuredClone(mockRequirement),
+    network: 'zenon:testnet',
+    asset: 'zts1qqqqqqqqqqqqtq587y',
+    payTo: 'z1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqsggv2f',
+    extra: {
+      ...structuredClone(mockRequirement.extra),
+      zenonChain: {
+        version: 1,
+        chainIdentifier: '7',
+        genesisMomentumHash: '7'.repeat(64),
+      },
+    },
+  };
+  const invalidPayer = 'z1qpqc8a473rn25e7fn9qs7eswkdl240d4c742qq';
+  const transaction = '1'.repeat(64);
+  const facilitator = {
+    async settle() {
+      return {
+        success: false,
+        network: requirement.network,
+        transaction,
+        payer: invalidPayer,
+        state: 'VALIDATED',
+        retrySamePayment: false,
+        deliveryState: 'NONE',
+      };
+    },
+  };
+  const app = createResourceServer({
+    facilitator,
+    requirement,
+    advertisedBaseUrl: 'https://resource.example',
+  });
+  const listening = await app.listen();
+  try {
+    const response = await submitPayment(listening.url, {
+      x402Version: 2,
+      resource: {
+        url: 'https://resource.example/paid',
+        description: 'Zenon x402 PoC protected resource',
+        mimeType: 'application/json',
+      },
+      accepted: structuredClone(requirement),
+      payload: {
+        transaction: { hash: transaction, address: invalidPayer },
+        intentDigest: '2'.repeat(64),
+      },
+    });
+    assert.equal(response.status, 402);
+    assert.equal(response.headers.get(HEADERS.PAYMENT_RESPONSE), null);
+    assert.deepEqual(await response.json(), { error: 'payment_settlement_failed' });
+    assertPaidResponseIsPrivate(response);
+  } finally {
+    await app.close();
+  }
+});
+
 test('a known transaction cannot authorize a different protected resource', async () => {
   const facilitator = new MockExactZenonFacilitator();
   const requirement = await buildRequirement('mock');
@@ -441,6 +616,51 @@ function challengeResponse(paymentRequired) {
   };
 }
 
+function nonCanonicalBase64Alias(value) {
+  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+  const padding = value.endsWith('==') ? 2 : value.endsWith('=') ? 1 : 0;
+  assert.notEqual(padding, 0);
+  const index = value.length - padding - 1;
+  const replacement = alphabet[alphabet.indexOf(value[index]) ^ 1];
+  const alias = `${value.slice(0, index)}${replacement}${value.slice(index + 1)}`;
+  assert.deepEqual(Buffer.from(alias, 'base64'), Buffer.from(value, 'base64'));
+  return alias;
+}
+
+function buyerSettlementAttempt(paymentRequired, requirement, {
+  status = 402,
+  transform = value => value,
+  header = 'encoded',
+} = {}) {
+  let calls = 0;
+  return paidFetch(paymentRequired.resource.url, new MockExactZenonClient(), async (_url, options) => {
+    calls += 1;
+    if (calls === 1) return challengeResponse(paymentRequired);
+    const paymentPayload = decodeB64Json(options.headers[HEADERS.PAYMENT_SIGNATURE]);
+    const settlement = transform({
+      success: false,
+      network: requirement.network,
+      transaction: paymentPayload.payload.transaction.hash,
+      payer: paymentPayload.payload.transaction.address,
+      state: 'VALIDATED',
+      errorReason: 'payment_settlement_failed',
+    });
+    const headers = new Headers();
+    if (header === 'encoded') headers.set(HEADERS.PAYMENT_RESPONSE, encodeB64Json(settlement));
+    if (header === 'malformed') headers.set(HEADERS.PAYMENT_RESPONSE, 'not canonical base64!');
+    if (header === 'noncanonical') {
+      let json = JSON.stringify(settlement);
+      while (Buffer.byteLength(json, 'utf8') % 3 === 0) json += ' ';
+      headers.set(HEADERS.PAYMENT_RESPONSE, nonCanonicalBase64Alias(Buffer.from(json).toString('base64')));
+    }
+    if (header === 'oversized') {
+      const json = `${' '.repeat((8 * 1024) + 1)}${JSON.stringify(settlement)}`;
+      headers.set(HEADERS.PAYMENT_RESPONSE, Buffer.from(json, 'utf8').toString('base64'));
+    }
+    return { status, headers };
+  });
+}
+
 test('buyer uses manual redirect handling and preserves the exact payment on redirect', async () => {
   const { paymentRequired } = await buyerChallenge('https://resource.example/paid');
   let submissionOptions;
@@ -507,6 +727,103 @@ test('buyer treats a post-submission 402 without settlement evidence as uncertai
     error => error instanceof PaymentSubmissionOutcomeUnknownError &&
       error.httpStatus === 402 && error.retrySamePayment === true,
   );
+});
+
+test('buyer returns exact transaction-bound definite rejection evidence', async () => {
+  const { paymentRequired, requirement } = await buyerChallenge('https://resource.example/paid');
+  const result = await buyerSettlementAttempt(paymentRequired, requirement);
+
+  assert.equal(result.response.status, 402);
+  assert.equal(result.settlement.success, false);
+  assert.equal(result.settlement.network, requirement.network);
+  assert.equal(result.settlement.transaction, result.paymentPayload.payload.transaction.hash);
+  assert.equal(result.settlement.payer, result.paymentPayload.payload.transaction.address);
+  assert.equal(result.settlement.state, 'VALIDATED');
+  assert.equal(result.settlement.errorReason, 'payment_settlement_failed');
+  assert.equal(Object.hasOwn(result.settlement, 'retrySamePayment'), false);
+});
+
+test('buyer binds rejection evidence to the detached payload bytes actually submitted', async () => {
+  const { paymentRequired, requirement } = await buyerChallenge('https://resource.example/paid');
+  const mockClient = new MockExactZenonClient();
+  let retainedPayload;
+  let submittedPayload;
+  let calls = 0;
+  const paymentClient = {
+    async createPaymentPayload(...args) {
+      retainedPayload = await mockClient.createPaymentPayload(...args);
+      return retainedPayload;
+    },
+  };
+  const fetchImpl = async (_url, options) => {
+    calls += 1;
+    if (calls === 1) return challengeResponse(paymentRequired);
+    submittedPayload = decodeB64Json(options.headers[HEADERS.PAYMENT_SIGNATURE]);
+    retainedPayload.accepted.network = 'zenon:testnet';
+    retainedPayload.payload.transaction.hash = 'a'.repeat(64);
+    retainedPayload.payload.transaction.address = `mock-${'e'.repeat(32)}`;
+    return {
+      status: 402,
+      headers: new Headers({
+        [HEADERS.PAYMENT_RESPONSE]: encodeB64Json({
+          success: false,
+          network: retainedPayload.accepted.network,
+          transaction: retainedPayload.payload.transaction.hash,
+          payer: retainedPayload.payload.transaction.address,
+          state: 'VALIDATED',
+          errorReason: 'payment_settlement_failed',
+        }),
+      }),
+    };
+  };
+
+  await assert.rejects(
+    paidFetch(paymentRequired.resource.url, paymentClient, fetchImpl),
+    error => {
+      assert.ok(error instanceof PaymentSubmissionOutcomeUnknownError);
+      assert.deepEqual(error.paymentPayload, submittedPayload);
+      assert.equal(error.paymentPayload.accepted.network, requirement.network);
+      assert.notEqual(error.paymentPayload.payload.transaction.hash, retainedPayload.payload.transaction.hash);
+      return true;
+    },
+  );
+});
+
+test('buyer treats every malformed or inconsistent definite rejection variation as uncertain', async () => {
+  const { paymentRequired, requirement } = await buyerChallenge('https://resource.example/paid');
+  const cases = [
+    { header: 'missing' },
+    { header: 'malformed' },
+    { header: 'noncanonical' },
+    { header: 'oversized' },
+    { transform: value => ({ ...value, unexpected: true }) },
+    { status: 200 },
+    { transform: value => ({ ...value, network: 'zenon:testnet' }) },
+    { transform: value => ({ ...value, transaction: '0'.repeat(64) }) },
+    { transform: value => ({ ...value, payer: 'mock-forged-payer' }) },
+    { transform: value => ({ ...value, state: 'SUBMISSION_ACKNOWLEDGED' }) },
+    { transform: value => ({ ...value, errorReason: 'private_frontier_detail' }) },
+    { transform: value => ({ ...value, retrySamePayment: true }) },
+    { transform: value => ({ ...value, retrySamePayment: false }) },
+    { transform: value => ({ ...value, success: true }) },
+    { transform: value => { delete value.success; return value; } },
+    { transform: value => { delete value.errorReason; return value; } },
+    { transform: value => { delete value.network; return value; } },
+    { transform: value => { delete value.transaction; return value; } },
+    { transform: value => { delete value.payer; return value; } },
+    { transform: value => { delete value.state; return value; } },
+    { transform: value => ({ ...value, transaction: 'A'.repeat(64) }) },
+    { transform: value => ({ ...value, payer: 'x'.repeat(129) }) },
+  ];
+
+  for (const variation of cases) {
+    await assert.rejects(
+      buyerSettlementAttempt(paymentRequired, requirement, variation),
+      error => error instanceof PaymentSubmissionOutcomeUnknownError &&
+        error.code === 'payment_submission_outcome_unknown' &&
+        error.retrySamePayment === true,
+    );
+  }
 });
 
 test('buyer rejects a settlement response for a different transaction', async () => {

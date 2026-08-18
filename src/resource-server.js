@@ -1,10 +1,13 @@
 import http from 'node:http';
+import { Address } from 'znn-typescript-sdk';
 import { sha256Hex } from './canonical.js';
 import {
   decodeB64Json,
   encodeB64Json,
+  EXPERIMENTAL_LIVE_NETWORK,
   HEADERS,
   makePaymentRequired,
+  MOCK_NETWORK,
   validatePaymentPayloadEnvelope,
   validateRequirement,
 } from './x402-wire.js';
@@ -13,6 +16,9 @@ const MAX_PAYMENT_HEADER_BYTES = 8 * 1024;
 const MAX_CACHED_RESPONSE_BYTES = 64 * 1024;
 const MAX_JSON_DEPTH = 20;
 const PAID_VARY_HEADER = 'PAYMENT-SIGNATURE';
+const HASH_HEX = /^[0-9a-f]{64}$/;
+const MOCK_PAYER = /^mock-[0-9a-f]{32}$/;
+const DEFINITIVE_SETTLEMENT_FAILURE = 'payment_settlement_failed';
 const RECOVERY_STATES = new Set([
   'SUBMISSION_ACKNOWLEDGED',
   'SUBMISSION_OUTCOME_UNKNOWN',
@@ -78,8 +84,11 @@ export function createResourceServer({
         resourceHandler,
       }));
 
+      if (outcome.kind === 'definite-rejection') {
+        return definiteRejectionResponse(res, paymentRequired, outcome.settlement);
+      }
       if (outcome.kind === 'payment-required') {
-        return requirePayment(res, { ...paymentRequired, error: 'payment_settlement_failed' });
+        return requirePayment(res, { ...paymentRequired, error: DEFINITIVE_SETTLEMENT_FAILURE });
       }
       if (outcome.kind === 'recovery') return recoveryResponse(res, outcome.settlement);
       if (outcome.kind !== 'delivered') return json(res, 500, { error: 'internal_error' });
@@ -131,8 +140,20 @@ async function authorizeAndDeliver({ facilitator, paymentPayload, requirement, p
   // Settlement owns strict offline verification, journal reconciliation,
   // frontier-sensitive checks, publication and Momentum-inclusion observation.
   // Calling verify() first would reject a safe retry after its frontier moved.
-  const settlement = await facilitator.settle(paymentPayload, requirement, paymentRequired);
+  const submittedIdentity = {
+    network: requirement.network,
+    acceptedNetwork: paymentPayload.accepted.network,
+    transaction: paymentPayload.payload.transaction.hash,
+    payer: paymentPayload.payload.transaction.address,
+  };
+  const settlement = await facilitator.settle(
+    structuredClone(paymentPayload),
+    structuredClone(requirement),
+    structuredClone(paymentRequired),
+  );
   if (!settlement?.success) {
+    const rejection = definiteRejectionEvidence(settlement, submittedIdentity);
+    if (rejection) return { kind: 'definite-rejection', settlement: rejection };
     const recoverable = settlement?.retrySamePayment === true || RECOVERY_STATES.has(settlement?.state);
     return { kind: recoverable ? 'recovery' : 'payment-required', settlement };
   }
@@ -205,6 +226,58 @@ async function authorizeAndDeliver({ facilitator, paymentPayload, requirement, p
     return deliveryRecovery(settlement, 'delivery_outcome_unknown', 'DELIVERY_PENDING');
   }
   return { kind: 'delivered', settlement: { ...settlement, deliveryState: 'DELIVERED' }, cached };
+}
+
+function definiteRejectionEvidence(settlement, submitted) {
+  if (!isPlainObject(settlement)) return null;
+  const requiredFields = [
+    'success', 'network', 'transaction', 'payer', 'state', 'retrySamePayment', 'deliveryState',
+  ];
+  const evidence = {};
+  for (const field of requiredFields) {
+    const descriptor = Object.getOwnPropertyDescriptor(settlement, field);
+    if (!descriptor || !Object.hasOwn(descriptor, 'value')) return null;
+    evidence[field] = descriptor.value;
+  }
+
+  if (evidence.success !== false ||
+      evidence.state !== 'VALIDATED' ||
+      evidence.retrySamePayment !== false ||
+      evidence.deliveryState !== 'NONE' ||
+      evidence.network !== submitted.network ||
+      submitted.acceptedNetwork !== submitted.network ||
+      typeof submitted.transaction !== 'string' || !HASH_HEX.test(submitted.transaction) ||
+      evidence.transaction !== submitted.transaction ||
+      typeof evidence.transaction !== 'string' || !HASH_HEX.test(evidence.transaction) ||
+      !isCanonicalPayer(submitted.payer, submitted.network) ||
+      !isCanonicalPayer(evidence.payer, submitted.network) ||
+      evidence.payer !== submitted.payer) {
+    return null;
+  }
+
+  // This compound state is the facilitator's proof that publication and
+  // delivery were never attempted. Snapshot only transaction-bound public
+  // evidence; facilitator error details and causes stay private.
+  return {
+    success: false,
+    network: submitted.network,
+    transaction: submitted.transaction,
+    payer: submitted.payer,
+    state: 'VALIDATED',
+    errorReason: DEFINITIVE_SETTLEMENT_FAILURE,
+  };
+}
+
+function isCanonicalPayer(value, network) {
+  if (typeof value !== 'string' || !value || value.length > 128) return false;
+  if (network === MOCK_NETWORK) return MOCK_PAYER.test(value);
+  if (network !== EXPERIMENTAL_LIVE_NETWORK) return false;
+  try {
+    const address = Address.parse(value);
+    return address.toString() === value && address.getBytes()[0] === Address.userByte;
+  } catch {
+    return false;
+  }
 }
 
 function deliveryRecovery(settlement, errorReason, deliveryState = settlement?.deliveryState) {
@@ -311,6 +384,14 @@ function publicSettlement(settlement = {}) {
     ...(typeof settlement.errorReason === 'string' ? { errorReason: settlement.errorReason } : {}),
     ...(settlement.retrySamePayment === true ? { retrySamePayment: true } : {}),
   };
+}
+
+function definiteRejectionResponse(res, paymentRequired, settlement) {
+  res.statusCode = 402;
+  res.setHeader('content-type', 'application/json; charset=utf-8');
+  res.setHeader(HEADERS.PAYMENT_REQUIRED, encodeB64Json(paymentRequired));
+  res.setHeader(HEADERS.PAYMENT_RESPONSE, encodeB64Json(settlement));
+  res.end(JSON.stringify({ error: DEFINITIVE_SETTLEMENT_FAILURE }, null, 2));
 }
 
 function requirePayment(res, paymentRequired) {

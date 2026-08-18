@@ -57,7 +57,12 @@ function challenge(accepted = requirement(), url = 'https://resource.example/pai
   };
 }
 
-function signedPayment(paymentRequired, accepted = paymentRequired.accepts[0], privateByte = 17) {
+function signedPayment(
+  paymentRequired,
+  accepted = paymentRequired.accepts[0],
+  privateByte = 17,
+  { height = 1, previousHash } = {},
+) {
   const buyer = sdk.KeyPair.fromPrivateKey(Buffer.alloc(32, privateByte));
   try {
     const block = sdk.AccountBlockTemplate.send(
@@ -67,7 +72,8 @@ function signedPayment(paymentRequired, accepted = paymentRequired.accepts[0], p
     );
     block.chainIdentifier = Number(accepted.extra.zenonChain.chainIdentifier);
     block.address = buyer.getAddress();
-    block.height = 1;
+    block.height = height;
+    if (previousHash) block.previousHash = previousHash;
     block.momentumAcknowledged = new sdk.HashHeight(
       sdk.Hash.digest(Buffer.from('synthetic acknowledged momentum')),
       1,
@@ -460,10 +466,13 @@ test('ExactZenonFacilitator deterministic settlement integration scenarios', asy
     assert.equal(node.counters.initialize, initializeCalls);
   });
 
-  await t.test('scenario 6: a definite pre-publication frontier failure is not ambiguous', async t => {
+  await t.test('scenario 6: a definite pre-publication frontier failure emits bound HTTP rejection evidence', async t => {
     const accepted = requirement();
     const required = challenge(accepted);
-    const payload = signedPayment(required, accepted);
+    const payload = signedPayment(required, accepted, 17, {
+      height: 2,
+      previousHash: sdk.Hash.digest(Buffer.from('submitted account frontier')),
+    });
     const { journal } = await journalFixture(t);
     const node = installSyntheticNode(t, {
       lookup: () => null,
@@ -472,15 +481,60 @@ test('ExactZenonFacilitator deterministic settlement integration scenarios', asy
         hash: sdk.Hash.digest(Buffer.from('stale frontier')),
       }),
     });
+    const exact = facilitator(journal);
+    let internalSettlement;
+    let deliveries = 0;
+    const app = createResourceServer({
+      facilitator: {
+        settle: async (...args) => {
+          internalSettlement = await exact.settle(...args);
+          return internalSettlement;
+        },
+      },
+      requirement: accepted,
+      advertisedBaseUrl: 'https://resource.example',
+      resourceHandler: async () => ({ ok: true, deliveries: ++deliveries }),
+    });
+    const listening = await app.listen();
+    try {
+      const response = await submit(listening.url, payload);
+      const body = await response.json();
+      assert.ok(response.headers.get(HEADERS.PAYMENT_REQUIRED));
+      assert.ok(response.headers.get(HEADERS.PAYMENT_RESPONSE));
+      const rejectionRequired = decodeB64Json(response.headers.get(HEADERS.PAYMENT_REQUIRED));
+      const settlement = decodeB64Json(response.headers.get(HEADERS.PAYMENT_RESPONSE));
 
-    const result = await facilitator(journal).settle(payload, accepted, required);
-    assert.equal(result.success, false);
-    assert.equal(result.state, EVIDENCE_STATES.VALIDATED);
-    assert.equal(result.errorReason, 'stale_height');
-    assert.equal(result.retrySamePayment, false);
-    assert.notEqual(result.state, EVIDENCE_STATES.SUBMISSION_OUTCOME_UNKNOWN);
-    assert.equal(node.counters.publish, 0);
-    assert.equal((await journal.list()).length, 0);
+      assert.equal(response.status, 402);
+      assert.deepEqual(rejectionRequired, required);
+      assert.deepEqual(body, { error: 'payment_settlement_failed' });
+      assert.deepEqual(settlement, {
+        success: false,
+        network: accepted.network,
+        transaction: payload.payload.transaction.hash,
+        payer: payload.payload.transaction.address,
+        state: EVIDENCE_STATES.VALIDATED,
+        errorReason: 'payment_settlement_failed',
+      });
+      assert.match(settlement.transaction, /^[0-9a-f]{64}$/);
+      assert.equal(Object.hasOwn(settlement, 'retrySamePayment'), false);
+      assert.equal(response.headers.get('cache-control'), 'private, no-store, max-age=0');
+      assert.equal(response.headers.get('vary'), 'PAYMENT-SIGNATURE');
+
+      assert.equal(internalSettlement.success, false);
+      assert.equal(internalSettlement.state, EVIDENCE_STATES.VALIDATED);
+      assert.equal(internalSettlement.errorReason, 'stale_frontier');
+      assert.equal(internalSettlement.retrySamePayment, false);
+      assert.equal(internalSettlement.deliveryState, 'NONE');
+      assert.equal(internalSettlement.network, accepted.network);
+      assert.equal(internalSettlement.transaction, payload.payload.transaction.hash);
+      assert.equal(internalSettlement.payer, payload.payload.transaction.address);
+      assert.notEqual(internalSettlement.state, EVIDENCE_STATES.SUBMISSION_OUTCOME_UNKNOWN);
+      assert.equal(node.counters.publish, 0);
+      assert.equal(deliveries, 0);
+      assert.equal((await journal.list()).length, 0);
+    } finally {
+      await app.close();
+    }
   });
 
   await t.test('scenario 7: direct settle rejects offline tampering before initialize', async t => {
@@ -534,6 +588,25 @@ test('ExactZenonFacilitator deterministic settlement integration scenarios', asy
       assert.equal(result.success, false);
       assert.equal(result.state, 'VALIDATION_FAILED');
       assert.equal(result.errorReason, expectedReason);
+    }
+
+    let deliveries = 0;
+    const app = createResourceServer({
+      facilitator: exact,
+      requirement: accepted,
+      advertisedBaseUrl: 'https://resource.example',
+      resourceHandler: async () => ({ ok: true, deliveries: ++deliveries }),
+    });
+    const listening = await app.listen();
+    try {
+      const response = await submit(listening.url, badSignature);
+      assert.equal(response.status, 402);
+      assert.ok(response.headers.get(HEADERS.PAYMENT_REQUIRED));
+      assert.equal(response.headers.get(HEADERS.PAYMENT_RESPONSE), null);
+      assert.deepEqual(await response.json(), { error: 'payment_settlement_failed' });
+      assert.equal(deliveries, 0);
+    } finally {
+      await app.close();
     }
     assert.equal(node.counters.initialize, 0);
     assert.equal(node.counters.publish, 0);

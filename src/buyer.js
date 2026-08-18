@@ -11,6 +11,7 @@ import {
 
 const MAX_X402_HEADER_BYTES = 8 * 1024;
 const HASH_HEX = /^[0-9a-f]{64}$/;
+const DEFINITIVE_SETTLEMENT_FAILURE = 'payment_settlement_failed';
 const SETTLEMENT_FIELDS = Object.freeze(['success', 'network', 'transaction', 'payer', 'state']);
 const OPTIONAL_SETTLEMENT_FIELDS = Object.freeze(['errorReason', 'retrySamePayment']);
 const RECOVERY_STATES = new Set([
@@ -74,6 +75,10 @@ export async function paidFetch(url, paymentClient, fetchImpl = fetch) {
   if (Buffer.byteLength(encodedPayment, 'utf8') > MAX_X402_HEADER_BYTES) {
     throw new Error('payment payload exceeds the supported header size');
   }
+  // Bind settlement validation and recovery to the exact bytes submitted while
+  // preserving the characterized payment object returned by the client.
+  const submittedPaymentPayload = decodeB64Json(encodedPayment, { maxDecodedBytes: MAX_X402_HEADER_BYTES });
+  validateBuyerPaymentPayload(submittedPaymentPayload, paymentRequired, accepted);
 
   let second;
   try {
@@ -84,21 +89,21 @@ export async function paidFetch(url, paymentClient, fetchImpl = fetch) {
       },
     });
   } catch {
-    throw outcomeUnknown({ paymentRequired, paymentPayload });
+    throw outcomeUnknown({ paymentRequired, paymentPayload: submittedPaymentPayload });
   }
   if (second.status >= 300 && second.status < 400) {
-    throw outcomeUnknown({ paymentRequired, paymentPayload, httpStatus: second.status });
+    throw outcomeUnknown({ paymentRequired, paymentPayload: submittedPaymentPayload, httpStatus: second.status });
   }
   const settlementHeader = second.headers.get(HEADERS.PAYMENT_RESPONSE);
   if (!settlementHeader) {
-    throw outcomeUnknown({ paymentRequired, paymentPayload, httpStatus: second.status });
+    throw outcomeUnknown({ paymentRequired, paymentPayload: submittedPaymentPayload, httpStatus: second.status });
   }
   let settlement;
   try {
     settlement = decodeB64Json(settlementHeader, { maxDecodedBytes: MAX_X402_HEADER_BYTES });
-    validateSettlementResponse(settlement, paymentPayload, accepted, second.status);
+    validateSettlementResponse(settlement, submittedPaymentPayload, second.status);
   } catch {
-    throw outcomeUnknown({ paymentRequired, paymentPayload, httpStatus: second.status });
+    throw outcomeUnknown({ paymentRequired, paymentPayload: submittedPaymentPayload, httpStatus: second.status });
   }
   return { response: second, paymentRequired, paymentPayload, settlement };
 }
@@ -121,7 +126,7 @@ function validateBuyerPaymentPayload(paymentPayload, paymentRequired, accepted) 
   }
 }
 
-function validateSettlementResponse(settlement, paymentPayload, accepted, httpStatus) {
+function validateSettlementResponse(settlement, paymentPayload, httpStatus) {
   if (!isPlainObject(settlement)) throw new Error('invalid settlement response');
   const allowed = new Set([...SETTLEMENT_FIELDS, ...OPTIONAL_SETTLEMENT_FIELDS]);
   const keys = Object.keys(settlement);
@@ -143,7 +148,7 @@ function validateSettlementResponse(settlement, paymentPayload, accepted, httpSt
   }
 
   const transaction = paymentPayload.payload.transaction;
-  if (settlement.network !== accepted.network || settlement.transaction !== transaction.hash ||
+  if (settlement.network !== paymentPayload.accepted.network || settlement.transaction !== transaction.hash ||
       settlement.payer !== transaction.address) {
     throw new Error('settlement response does not match the submitted payment');
   }
@@ -151,6 +156,14 @@ function validateSettlementResponse(settlement, paymentPayload, accepted, httpSt
     if (settlement.state !== 'MOMENTUM_INCLUDED' || httpStatus < 200 || httpStatus >= 300 ||
         Object.hasOwn(settlement, 'errorReason') || Object.hasOwn(settlement, 'retrySamePayment')) {
       throw new Error('invalid successful settlement response');
+    }
+    return;
+  }
+  if (httpStatus === 402) {
+    if (settlement.state !== 'VALIDATED' ||
+        settlement.errorReason !== DEFINITIVE_SETTLEMENT_FAILURE ||
+        Object.hasOwn(settlement, 'retrySamePayment')) {
+      throw new Error('invalid definitive settlement failure response');
     }
     return;
   }
