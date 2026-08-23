@@ -11,6 +11,7 @@ import {
   sameRequirements,
   validateActiveUpfrontRequirement,
   validatePaymentPayloadEnvelope,
+  validatePaymentPayloadStructure,
 } from './x402-wire.js';
 
 const MAX_PAYMENT_HEADER_BYTES = 8 * 1024;
@@ -54,23 +55,35 @@ export function createResourceServer({
       });
 
       const signatureHeader = req.headers[HEADERS.PAYMENT_SIGNATURE];
-      if (!signatureHeader) return requirePayment(res, paymentRequired);
+      if (signatureHeader === undefined) return requirePayment(res, paymentRequired);
       if (Array.isArray(signatureHeader) || typeof signatureHeader !== 'string' ||
           Buffer.byteLength(signatureHeader, 'utf8') > MAX_PAYMENT_HEADER_BYTES) {
-        return requirePayment(res, { ...paymentRequired, error: 'invalid_payment_header' });
+        return invalidPayment(res);
       }
 
       let paymentPayload;
       try {
         paymentPayload = decodeB64Json(signatureHeader, { maxDecodedBytes: MAX_PAYMENT_HEADER_BYTES });
+        validateJsonValue(paymentPayload, 0, new Set(), { requireSafeIntegers: false });
+        validatePaymentPayloadStructure(paymentPayload);
+      } catch {
+        return invalidPayment(res);
+      }
+
+      try {
         validatePaymentPayloadEnvelope(paymentPayload);
         validateActiveUpfrontRequirement(paymentPayload.accepted);
         if (!sameRequirements(paymentPayload.accepted, configuredRequirement)) {
           throw new Error('submitted payment requirement does not match the configured requirement');
         }
-        validateJsonValue(paymentPayload);
       } catch {
         return requirePayment(res, { ...paymentRequired, error: 'invalid_payment_header' });
+      }
+
+      try {
+        validateJsonValue(paymentPayload);
+      } catch {
+        return invalidPayment(res);
       }
 
       // Generic JSON depth and size are bounded before canonicalization. This
@@ -321,11 +334,13 @@ function cloneBoundedJson(value, maximumBytes) {
   return JSON.parse(encoded);
 }
 
-function validateJsonValue(value, depth = 0, seen = new Set()) {
+function validateJsonValue(value, depth = 0, seen = new Set(), { requireSafeIntegers = true } = {}) {
   if (depth > MAX_JSON_DEPTH) throw new Error('JSON value is too deep');
   if (value === null || typeof value === 'string' || typeof value === 'boolean') return;
   if (typeof value === 'number') {
-    if (!Number.isFinite(value) || !Number.isSafeInteger(value)) throw new Error('invalid JSON number');
+    if (!Number.isFinite(value) || (requireSafeIntegers && !Number.isSafeInteger(value))) {
+      throw new Error('invalid JSON number');
+    }
     return;
   }
   if (!value || typeof value !== 'object' || seen.has(value)) throw new Error('invalid JSON value');
@@ -336,7 +351,7 @@ function validateJsonValue(value, depth = 0, seen = new Set()) {
     if (!Array.isArray(value) && ['__proto__', 'prototype', 'constructor'].includes(key)) {
       throw new Error('invalid JSON key');
     }
-    validateJsonValue(item, depth + 1, seen);
+    validateJsonValue(item, depth + 1, seen, { requireSafeIntegers });
   }
   seen.delete(value);
 }
@@ -397,6 +412,12 @@ function definiteRejectionResponse(res, paymentRequired, settlement) {
   res.setHeader(HEADERS.PAYMENT_REQUIRED, encodeB64Json(paymentRequired));
   res.setHeader(HEADERS.PAYMENT_RESPONSE, encodeB64Json(settlement));
   res.end(JSON.stringify({ error: DEFINITIVE_SETTLEMENT_FAILURE }, null, 2));
+}
+
+function invalidPayment(res) {
+  res.removeHeader(HEADERS.PAYMENT_REQUIRED);
+  res.removeHeader(HEADERS.PAYMENT_RESPONSE);
+  return json(res, 400, { error: 'invalid_payment' });
 }
 
 function requirePayment(res, paymentRequired) {

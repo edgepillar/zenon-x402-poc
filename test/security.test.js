@@ -1514,23 +1514,178 @@ async function withServer(run) {
   }
 }
 
-test('HTTP boundary rejects missing, malformed, oversized, and unsupported payments safely', async () => {
-  await withServer(async url => {
+test('HTTP boundary separates malformed payment input from unsupported payment policy', async () => {
+  const accepted = requirement();
+  const effects = { facilitator: 0, journal: 0, publication: 0, delivery: 0 };
+  const app = createResourceServer({
+    facilitator: {
+      async settle() {
+        effects.facilitator += 1;
+        effects.journal += 1;
+        effects.publication += 1;
+        throw new Error('unreachable synthetic settlement');
+      },
+    },
+    requirement: accepted,
+    resourceHandler: async () => {
+      effects.delivery += 1;
+      throw new Error('unreachable synthetic delivery');
+    },
+  });
+  const listening = await app.listen();
+  const url = `${listening.url}/paid`;
+  const noEffects = () => assert.deepEqual(
+    effects,
+    { facilitator: 0, journal: 0, publication: 0, delivery: 0 },
+  );
+  const assertPrivate = response => {
+    assert.match(response.headers.get('cache-control') ?? '', /(?:^|,)\s*private\b/i);
+    assert.match(response.headers.get('cache-control') ?? '', /(?:^|,)\s*no-store\b/i);
+    assert.ok((response.headers.get('vary') ?? '').split(',').map(value => value.trim().toLowerCase())
+      .includes(HEADERS.PAYMENT_SIGNATURE));
+  };
+  const submitHeader = header => fetch(url, {
+    headers: header instanceof Headers ? header : { [HEADERS.PAYMENT_SIGNATURE]: header },
+  });
+  const assertMalformed = async header => {
+    const response = await submitHeader(header);
+    assert.equal(response.status, 400);
+    assert.deepEqual(await response.json(), { error: 'invalid_payment' });
+    assert.equal(response.headers.get(HEADERS.PAYMENT_REQUIRED), null);
+    assert.equal(response.headers.get(HEADERS.PAYMENT_RESPONSE), null);
+    assertPrivate(response);
+    noEffects();
+  };
+  const assertUnsupported = async payload => {
+    const response = await submitHeader(encodeB64Json(payload));
+    assert.equal(response.status, 402);
+    assert.equal(response.headers.get(HEADERS.PAYMENT_RESPONSE), null);
+    const required = decodeB64Json(response.headers.get(HEADERS.PAYMENT_REQUIRED));
+    assert.equal(required.error, 'invalid_payment_header');
+    assertPrivate(response);
+    noEffects();
+  };
+
+  try {
     const missing = await fetch(url);
     assert.equal(missing.status, 402);
+    assert.ok(missing.headers.get(HEADERS.PAYMENT_REQUIRED));
+    assert.equal(missing.headers.get(HEADERS.PAYMENT_RESPONSE), null);
+    assertPrivate(missing);
+    noEffects();
 
-    for (const header of ['not-base64', Buffer.from('{').toString('base64'), 'A'.repeat(9000)]) {
-      const response = await fetch(url, { headers: { [HEADERS.PAYMENT_SIGNATURE]: header } });
-      assert.equal(response.status, 402);
-      const required = decodeB64Json(response.headers.get(HEADERS.PAYMENT_REQUIRED));
-      assert.equal(required.error, 'invalid_payment_header');
+    const required = decodeB64Json(missing.headers.get(HEADERS.PAYMENT_REQUIRED));
+    const valid = await new MockExactZenonClient().createPaymentPayload(required, accepted);
+
+    const deep = structuredClone(valid);
+    let nested = deep.payload.transaction;
+    for (let index = 0; index < 24; index += 1) {
+      nested.child = {};
+      nested = nested.child;
+    }
+    const fractionalTransactionNumber = structuredClone(valid);
+    fractionalTransactionNumber.payload.transaction.unexpectedNumber = 0.5;
+    const unsafeTransactionNumber = structuredClone(valid);
+    unsafeTransactionNumber.payload.transaction.unexpectedNumber = Number.MAX_SAFE_INTEGER + 1;
+
+    const malformedPayloads = [
+      {},
+      { ...valid, x402Version: '2' },
+      Object.fromEntries(Object.entries(valid).filter(([key]) => key !== 'accepted')),
+      Object.fromEntries(Object.entries(valid).filter(([key]) => key !== 'payload')),
+      { ...valid, accepted: [] },
+      { ...valid, payload: [] },
+      {
+        ...valid,
+        accepted: Object.fromEntries(Object.entries(valid.accepted).filter(([key]) => key !== 'amount')),
+      },
+      { ...valid, accepted: { ...valid.accepted, amount: '01' } },
+      { ...valid, accepted: { ...valid.accepted, maxTimeoutSeconds: '30' } },
+      { ...valid, accepted: { ...valid.accepted, extra: [] } },
+      {
+        ...valid,
+        accepted: {
+          ...valid.accepted,
+          extra: { ...valid.accepted.extra, zenonChain: null },
+        },
+      },
+      {
+        ...valid,
+        accepted: {
+          ...valid.accepted,
+          extra: {
+            ...valid.accepted.extra,
+            zenonChain: { ...valid.accepted.extra.zenonChain, genesisMomentumHash: 'A'.repeat(64) },
+          },
+        },
+      },
+      { ...valid, payload: { ...valid.payload, transaction: [] } },
+      { ...valid, payload: { ...valid.payload, intentDigest: 'A'.repeat(64) } },
+      fractionalTransactionNumber,
+      unsafeTransactionNumber,
+      deep,
+    ];
+
+    const duplicate = new Headers();
+    duplicate.append(HEADERS.PAYMENT_SIGNATURE, encodeB64Json(valid));
+    duplicate.append(HEADERS.PAYMENT_SIGNATURE, encodeB64Json(valid));
+    for (const header of [
+      duplicate,
+      '',
+      'not-base64',
+      nonCanonicalBase64Alias(encodeB64Json({ x402Version: 2 })),
+      Buffer.from([0xc3, 0x28]).toString('base64'),
+      Buffer.from('{', 'utf8').toString('base64'),
+      Buffer.from('[]', 'utf8').toString('base64'),
+      'A'.repeat(9000),
+      ...malformedPayloads.map(encodeB64Json),
+    ]) {
+      await assertMalformed(header);
     }
 
-    const unsupported = await fetch(url, {
-      headers: { [HEADERS.PAYMENT_SIGNATURE]: encodeB64Json({ x402Version: 1 }) },
-    });
-    assert.equal(unsupported.status, 402);
-    const required = decodeB64Json(unsupported.headers.get(HEADERS.PAYMENT_REQUIRED));
-    assert.equal(required.error, 'invalid_payment_header');
-  });
+    const missingResource = structuredClone(valid);
+    delete missingResource.resource;
+    const missingFlow = structuredClone(valid);
+    delete missingFlow.accepted.extra.paymentFlow;
+    const nonUpfront = structuredClone(valid);
+    nonUpfront.accepted.extra.paymentFlow = 'authorization';
+    const malformedFlowPolicy = structuredClone(valid);
+    malformedFlowPolicy.accepted.extra.paymentFlow = { unsupported: true };
+    const timeoutPolicy = structuredClone(valid);
+    timeoutPolicy.accepted.maxTimeoutSeconds = 301;
+    const fractionalTimeoutPolicy = structuredClone(valid);
+    fractionalTimeoutPolicy.accepted.maxTimeoutSeconds = 0.5;
+    const amountPolicy = structuredClone(valid);
+    amountPolicy.accepted.amount = (MAX_ZENON_AMOUNT + 1n).toString();
+    const networkPolicy = structuredClone(valid);
+    networkPolicy.accepted.network = 'zenon:other';
+    const schemePolicy = structuredClone(valid);
+    schemePolicy.accepted.scheme = 'other';
+    const chainPolicy = structuredClone(valid);
+    chainPolicy.accepted.network = 'zenon:testnet';
+    const mismatch = structuredClone(valid);
+    mismatch.accepted.amount = '101';
+
+    for (const payload of [
+      { x402Version: 1 },
+      missingResource,
+      { ...valid, resource: null },
+      { ...valid, extensions: {} },
+      { ...valid, unexpected: true },
+      missingFlow,
+      nonUpfront,
+      malformedFlowPolicy,
+      timeoutPolicy,
+      fractionalTimeoutPolicy,
+      amountPolicy,
+      networkPolicy,
+      schemePolicy,
+      chainPolicy,
+      mismatch,
+    ]) {
+      await assertUnsupported(payload);
+    }
+  } finally {
+    await app.close();
+  }
 });

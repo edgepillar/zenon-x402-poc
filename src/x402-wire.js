@@ -20,6 +20,7 @@ export const HEADERS = Object.freeze({
 });
 
 const CANONICAL_POSITIVE_DECIMAL = /^[1-9]\d*$/;
+const CANONICAL_UNSIGNED_DECIMAL = /^(?:0|[1-9]\d*)$/;
 const LOWERCASE_HASH = /^[0-9a-f]{64}$/;
 const REQUIREMENT_FIELDS = Object.freeze([
   'scheme', 'network', 'asset', 'amount', 'payTo', 'maxTimeoutSeconds', 'extra',
@@ -59,6 +60,23 @@ function assertExactKeys(value, required, { optional = [], label } = {}) {
   for (const key of required) {
     if (!Object.hasOwn(value, key)) throw new Error(`${label}.${key} is required`);
   }
+}
+
+function readRequiredDataProperty(value, key, label) {
+  const descriptor = Object.getOwnPropertyDescriptor(value, key);
+  if (!descriptor || !Object.hasOwn(descriptor, 'value')) {
+    throw new Error(`${label}.${key} is required`);
+  }
+  return descriptor.value;
+}
+
+function readOptionalDataProperty(value, key, label) {
+  if (!Object.hasOwn(value, key)) return { present: false, value: undefined };
+  const descriptor = Object.getOwnPropertyDescriptor(value, key);
+  if (!descriptor || !Object.hasOwn(descriptor, 'value')) {
+    throw new Error(`${label}.${key} must be an own data property`);
+  }
+  return { present: true, value: descriptor.value };
 }
 
 function readExactDataObject(value, required, label) {
@@ -251,6 +269,125 @@ export function validateBasePaymentRequirement(req) {
   }
   if (Object.hasOwn(req, 'extra') && req.extra !== null && !isPlainObject(req.extra)) {
     throw new Error('PaymentRequirements.extra must be an object or null');
+  }
+}
+
+function validateStableResourceStructure(resource) {
+  assertPlainObject(resource, 'ResourceInfo');
+  const url = readRequiredDataProperty(resource, 'url', 'ResourceInfo');
+  if (typeof url !== 'string' || url.length === 0) {
+    throw new Error('ResourceInfo.url must be a non-empty string');
+  }
+  for (const key of ['description', 'mimeType', 'serviceName', 'iconUrl']) {
+    const field = readOptionalDataProperty(resource, key, 'ResourceInfo');
+    if (field.present && field.value !== null && typeof field.value !== 'string') {
+      throw new Error(`ResourceInfo.${key} must be a string or null`);
+    }
+  }
+  const tags = readOptionalDataProperty(resource, 'tags', 'ResourceInfo');
+  if (tags.present && tags.value !== null &&
+      (!Array.isArray(tags.value) || tags.value.some(value => typeof value !== 'string'))) {
+    throw new Error('ResourceInfo.tags must be an array of strings or null');
+  }
+}
+
+function validateStableRequirementStructure(requirement) {
+  assertPlainObject(requirement, 'PaymentRequirements');
+  const values = {};
+  for (const key of BASE_REQUIREMENT_FIELDS) {
+    values[key] = readRequiredDataProperty(requirement, key, 'PaymentRequirements');
+  }
+  for (const key of ['scheme', 'network', 'asset', 'amount', 'payTo']) {
+    if (typeof values[key] !== 'string' || values[key].length === 0) {
+      throw new Error(`PaymentRequirements.${key} must be a non-empty string`);
+    }
+  }
+  if (values.network.length < 3 || !values.network.includes(':')) {
+    throw new Error('PaymentRequirements.network must be a namespaced identifier');
+  }
+  if (typeof values.maxTimeoutSeconds !== 'number' || !Number.isFinite(values.maxTimeoutSeconds) ||
+      values.maxTimeoutSeconds <= 0) {
+    throw new Error('PaymentRequirements.maxTimeoutSeconds must be a positive finite number');
+  }
+  const extra = readOptionalDataProperty(requirement, 'extra', 'PaymentRequirements');
+  if (extra.present && extra.value !== null && !isPlainObject(extra.value)) {
+    throw new Error('PaymentRequirements.extra must be an object or null');
+  }
+  return { ...values, extra: extra.value };
+}
+
+function validateLocalZenonRequirementStructure(values) {
+  if (typeof values.amount !== 'string' || !CANONICAL_UNSIGNED_DECIMAL.test(values.amount)) {
+    throw new Error('PaymentRequirements.amount must use canonical unsigned decimal encoding');
+  }
+  assertPlainObject(values.extra, 'PaymentRequirements.extra');
+  const poc = readRequiredDataProperty(values.extra, 'poc', 'PaymentRequirements.extra');
+  const settlement = readRequiredDataProperty(values.extra, 'settlement', 'PaymentRequirements.extra');
+  const profile = readRequiredDataProperty(values.extra, 'zenonChain', 'PaymentRequirements.extra');
+  if (typeof poc !== 'boolean') throw new Error('PaymentRequirements.extra.poc must be a boolean');
+  if (typeof settlement !== 'string') {
+    throw new Error('PaymentRequirements.extra.settlement must be a string');
+  }
+  assertPlainObject(profile, 'PaymentRequirements.extra.zenonChain');
+  const version = readRequiredDataProperty(profile, 'version', 'PaymentRequirements.extra.zenonChain');
+  const chainIdentifier = readRequiredDataProperty(
+    profile,
+    'chainIdentifier',
+    'PaymentRequirements.extra.zenonChain',
+  );
+  const genesisMomentumHash = readRequiredDataProperty(
+    profile,
+    'genesisMomentumHash',
+    'PaymentRequirements.extra.zenonChain',
+  );
+  if (!Number.isSafeInteger(version)) {
+    throw new Error('PaymentRequirements.extra.zenonChain.version must be a safe integer');
+  }
+  if (typeof chainIdentifier !== 'string' || !CANONICAL_UNSIGNED_DECIMAL.test(chainIdentifier)) {
+    throw new Error('PaymentRequirements.extra.zenonChain.chainIdentifier has invalid encoding');
+  }
+  if (typeof genesisMomentumHash !== 'string' || !LOWERCASE_HASH.test(genesisMomentumHash)) {
+    throw new Error('PaymentRequirements.extra.zenonChain.genesisMomentumHash has invalid encoding');
+  }
+
+  // The stable extra container permits arbitrary JSON values. Reading only the
+  // descriptor rejects accessors without applying local flow policy here.
+  readOptionalDataProperty(values.extra, 'paymentFlow', 'PaymentRequirements.extra');
+}
+
+export function validatePaymentPayloadStructure(paymentPayload) {
+  assertPlainObject(paymentPayload, 'PaymentPayload');
+  const x402Version = readRequiredDataProperty(paymentPayload, 'x402Version', 'PaymentPayload');
+  if (typeof x402Version !== 'number' || !Number.isFinite(x402Version)) {
+    throw new Error('PaymentPayload.x402Version must be a finite number');
+  }
+
+  // A well-typed but unsupported version is handled by the existing strict
+  // policy lane. Do not impose the V2 member contract on another version.
+  if (x402Version !== X402_VERSION) return;
+
+  const accepted = readRequiredDataProperty(paymentPayload, 'accepted', 'PaymentPayload');
+  const payload = readRequiredDataProperty(paymentPayload, 'payload', 'PaymentPayload');
+  const acceptedValues = validateStableRequirementStructure(accepted);
+  assertPlainObject(payload, 'PaymentPayload.payload');
+
+  const resource = readOptionalDataProperty(paymentPayload, 'resource', 'PaymentPayload');
+  if (resource.present && resource.value !== null) validateStableResourceStructure(resource.value);
+  const extensions = readOptionalDataProperty(paymentPayload, 'extensions', 'PaymentPayload');
+  if (extensions.present && extensions.value !== null && !isPlainObject(extensions.value)) {
+    throw new Error('PaymentPayload.extensions must be an object or null');
+  }
+
+  const declaredLocalRoute = acceptedValues.scheme === 'exact' &&
+    (acceptedValues.network === MOCK_NETWORK || acceptedValues.network === EXPERIMENTAL_LIVE_NETWORK);
+  if (!declaredLocalRoute) return;
+
+  validateLocalZenonRequirementStructure(acceptedValues);
+  const transaction = readRequiredDataProperty(payload, 'transaction', 'PaymentPayload.payload');
+  const intentDigest = readRequiredDataProperty(payload, 'intentDigest', 'PaymentPayload.payload');
+  assertPlainObject(transaction, 'PaymentPayload.payload.transaction');
+  if (typeof intentDigest !== 'string' || !LOWERCASE_HASH.test(intentDigest)) {
+    throw new Error('PaymentPayload.payload.intentDigest has invalid encoding');
   }
 }
 
