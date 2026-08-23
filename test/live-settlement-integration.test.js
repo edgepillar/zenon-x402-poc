@@ -35,6 +35,7 @@ function requirement({ asset = sdk.ZNN_ZTS.toString() } = {}) {
       payTo: seller.getAddress().toString(),
       maxTimeoutSeconds: 1,
       extra: {
+        paymentFlow: 'upfront',
         poc: true,
         settlement: 'account-block',
         zenonChain: { ...PROFILE },

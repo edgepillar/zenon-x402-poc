@@ -6,6 +6,7 @@ import {
   MAX_ZENON_AMOUNT,
   MOCK_ZENON_CHAIN_PROFILE,
   sameRequirements,
+  validateActiveUpfrontRequirement,
   validateCanonicalZenonAmount,
   validatePaymentPayloadEnvelope,
   validatePaymentRequired,
@@ -29,6 +30,7 @@ function liveRequirement(profile = LIVE_PROFILE) {
     payTo: 'z1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqsggv2f',
     maxTimeoutSeconds: 30,
     extra: {
+      paymentFlow: 'upfront',
       poc: true,
       settlement: 'account-block',
       zenonChain: { ...profile },
@@ -129,6 +131,7 @@ test('requirements bind exact chain identity and reserve the mock profile', asyn
   );
 
   const mock = await buildRequirement('mock');
+  assert.equal(mock.extra.paymentFlow, 'upfront');
   assert.deepEqual(mock.extra.zenonChain, MOCK_ZENON_CHAIN_PROFILE);
   assert.throws(() => validateRequirement({
     ...requirement,
@@ -138,6 +141,26 @@ test('requirements bind exact chain identity and reserve the mock profile', asyn
     ...mock,
     extra: { ...mock.extra, zenonChain: { ...LIVE_PROFILE } },
   }));
+});
+
+test('active HTTP requirements require the exact upfront payment flow', () => {
+  const requirement = liveRequirement();
+  assert.doesNotThrow(() => validateActiveUpfrontRequirement(requirement));
+
+  const legacyCharacterizationRequirement = structuredClone(requirement);
+  delete legacyCharacterizationRequirement.extra.paymentFlow;
+  assert.doesNotThrow(() => validateRequirement(legacyCharacterizationRequirement));
+  assert.throws(
+    () => validateActiveUpfrontRequirement(legacyCharacterizationRequirement),
+    /paymentFlow=upfront/,
+  );
+
+  for (const paymentFlow of [null, 'authorization', 'escrow', 'unknown', false, 1, {}, []]) {
+    const invalid = structuredClone(requirement);
+    invalid.extra.paymentFlow = paymentFlow;
+    assert.throws(() => validateRequirement(invalid), /paymentFlow must equal upfront/);
+    assert.throws(() => validateActiveUpfrontRequirement(invalid), /paymentFlow must equal upfront/);
+  }
 });
 
 test('outer x402 structures reject missing and unexpected fields', () => {
@@ -185,6 +208,7 @@ test('live requirement construction requires a programmatic profile and enforces
       resolveAsset: async () => 'zts1qqqqqqqqqqqqtq587y',
     });
     assert.equal(requirement.amount, MAX_ZENON_AMOUNT.toString());
+    assert.equal(requirement.extra.paymentFlow, 'upfront');
     assert.deepEqual(requirement.extra.zenonChain, LIVE_PROFILE);
   });
 

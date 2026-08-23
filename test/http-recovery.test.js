@@ -861,6 +861,7 @@ test('buyer refuses an HTTP live payment resource before signing', async () => {
     payTo: 'z1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqsggv2f',
     maxTimeoutSeconds: 30,
     extra: {
+      paymentFlow: 'upfront',
       poc: true,
       settlement: 'account-block',
       zenonChain: {
