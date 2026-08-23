@@ -1,6 +1,7 @@
 import { performance } from 'node:perf_hooks';
 import { paymentIntentDigest, sha256Hex } from './canonical.js';
 import {
+  createPaymentCapabilities,
   EXPERIMENTAL_LIVE_NETWORK,
   MAX_ZENON_AMOUNT,
   sameRequirements,
@@ -36,6 +37,11 @@ const ACCOUNT_BLOCK_FIELDS = new Set([
   'momentumAcknowledged', 'address', 'toAddress', 'amount', 'tokenStandard',
   'fromBlockHash', 'data', 'fusedPlasma', 'difficulty', 'nonce', 'publicKey', 'signature',
 ]);
+const LIVE_PAYMENT_CAPABILITIES = createPaymentCapabilities([{
+  scheme: 'exact',
+  network: EXPERIMENTAL_LIVE_NETWORK,
+  paymentFlows: ['upfront'],
+}]);
 const EVIDENCE_RANK = new Map([
   [EVIDENCE_STATES.VALIDATED, 0],
   [EVIDENCE_STATES.SUBMISSION_OUTCOME_UNKNOWN, 1],
@@ -700,6 +706,12 @@ export class ExactZenonClient {
         writable: false,
         configurable: false,
         enumerable: true,
+      },
+      paymentCapabilities: {
+        value: LIVE_PAYMENT_CAPABILITIES,
+        writable: false,
+        configurable: false,
+        enumerable: false,
       },
     });
   }

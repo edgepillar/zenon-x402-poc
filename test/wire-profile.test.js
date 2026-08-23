@@ -3,13 +3,17 @@ import assert from 'node:assert/strict';
 import { paymentIntentDigest } from '../src/canonical.js';
 import { buildRequirement } from '../src/config.js';
 import {
+  createPaymentCapabilities,
   MAX_ZENON_AMOUNT,
   MOCK_ZENON_CHAIN_PROFILE,
   sameRequirements,
+  snapshotPaymentCapabilities,
   validateActiveUpfrontRequirement,
+  validateBasePaymentRequirement,
   validateCanonicalZenonAmount,
   validatePaymentPayloadEnvelope,
   validatePaymentRequired,
+  validatePaymentRequiredForOfferSelection,
   validateRequirement,
   validateZenonChainProfile,
 } from '../src/x402-wire.js';
@@ -161,6 +165,88 @@ test('active HTTP requirements require the exact upfront payment flow', () => {
     assert.throws(() => validateRequirement(invalid), /paymentFlow must equal upfront/);
     assert.throws(() => validateActiveUpfrontRequirement(invalid), /paymentFlow must equal upfront/);
   }
+});
+
+test('offer routing separates stable base shape from strict Zenon validation', () => {
+  const supported = liveRequirement();
+  const genericAlternative = {
+    scheme: 'other',
+    network: 'other:test',
+    asset: 'asset',
+    amount: '9'.repeat(78),
+    payTo: 'recipient',
+    maxTimeoutSeconds: 0.5,
+    extra: { paymentFlow: 1 },
+  };
+  const alternatives = [
+    genericAlternative,
+    { ...supported, extra: null },
+    { ...supported, extra: { paymentFlow: { unsupported: true } } },
+  ];
+  for (const alternative of alternatives) {
+    assert.doesNotThrow(() => validateBasePaymentRequirement(alternative));
+    assert.throws(() => validateRequirement(alternative));
+  }
+  assert.doesNotThrow(() => validateBasePaymentRequirement({
+    ...genericAlternative,
+    scheme: 's'.repeat(129),
+    network: `${'n'.repeat(129)}:test`,
+    asset: 'a'.repeat(129),
+    payTo: 'p'.repeat(129),
+  }));
+  assert.doesNotThrow(() => validatePaymentRequiredForOfferSelection({
+    ...paymentRequired(supported),
+    accepts: [...alternatives, supported],
+  }));
+
+  const malformed = [
+    { ...alternatives[0], scheme: null },
+    { ...alternatives[0], network: 'unscoped' },
+    { ...alternatives[0], maxTimeoutSeconds: 0 },
+    { ...alternatives[0], maxTimeoutSeconds: -1 },
+    { ...alternatives[0], maxTimeoutSeconds: '1' },
+    { ...alternatives[0], maxTimeoutSeconds: Number.NaN },
+    { ...alternatives[0], maxTimeoutSeconds: Number.POSITIVE_INFINITY },
+    { ...alternatives[0], extra: [] },
+    { ...alternatives[0], unexpected: true },
+    Object.fromEntries(Object.entries(alternatives[0]).filter(([key]) => key !== 'amount')),
+  ];
+  for (const key of ['scheme', 'network', 'asset', 'amount', 'payTo']) {
+    malformed.push({ ...alternatives[0], [key]: '' });
+  }
+  for (const requirement of malformed) {
+    assert.throws(() => validateBasePaymentRequirement(requirement));
+  }
+
+  assert.throws(() => validateRequirement({ ...supported, amount: '9'.repeat(78) }));
+  assert.throws(() => validateRequirement({ ...supported, maxTimeoutSeconds: 0.5 }));
+});
+
+test('payment capability descriptors are versioned, detached, and deeply immutable', () => {
+  const input = [{
+    scheme: 'exact',
+    network: 'zenon:testnet',
+    paymentFlows: ['upfront'],
+  }];
+  const capabilities = createPaymentCapabilities(input);
+  input[0].network = 'other:test';
+  input[0].paymentFlows[0] = 'authorization';
+
+  assert.equal(capabilities.version, 1);
+  assert.equal(capabilities.x402Version, 2);
+  assert.equal(capabilities.routes[0].network, 'zenon:testnet');
+  assert.deepEqual(capabilities.routes[0].paymentFlows, ['upfront']);
+  assert.equal(Object.isFrozen(capabilities), true);
+  assert.equal(Object.isFrozen(capabilities.routes), true);
+  assert.equal(Object.isFrozen(capabilities.routes[0]), true);
+  assert.equal(Object.isFrozen(capabilities.routes[0].paymentFlows), true);
+
+  const snapshot = snapshotPaymentCapabilities(capabilities);
+  assert.deepEqual(snapshot, capabilities);
+  assert.notEqual(snapshot, capabilities);
+  assert.notEqual(snapshot.routes, capabilities.routes);
+  assert.notEqual(snapshot.routes[0], capabilities.routes[0]);
+  assert.notEqual(snapshot.routes[0].paymentFlows, capabilities.routes[0].paymentFlows);
 });
 
 test('outer x402 structures reject missing and unexpected fields', () => {

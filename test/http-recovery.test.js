@@ -713,6 +713,55 @@ test('buyer transport errors preserve the reusable payment without exposing the 
   );
 });
 
+test('mixed-offer recovery retains the original challenge and selected payment', async () => {
+  const { paymentRequired, requirement } = await buyerChallenge('https://resource.example/paid');
+  const original = {
+    ...paymentRequired,
+    accepts: [{
+      scheme: 'other',
+      network: 'other:test',
+      asset: 'asset',
+      amount: '1',
+      payTo: 'recipient',
+      maxTimeoutSeconds: 30,
+      extra: null,
+    }, ...paymentRequired.accepts],
+  };
+  const exact = new MockExactZenonClient();
+  let selectedView;
+  const wrapper = {
+    async createPaymentPayload(required, accepted) {
+      selectedView = required;
+      return exact.createPaymentPayload(required, accepted);
+    },
+  };
+  Object.defineProperty(wrapper, 'paymentCapabilities', {
+    value: exact.paymentCapabilities,
+    enumerable: false,
+    writable: false,
+    configurable: false,
+  });
+  let calls = 0;
+  await assert.rejects(
+    paidFetch(original.resource.url, wrapper, async (_url, options) => {
+      calls += 1;
+      if (!options) return challengeResponse(original);
+      throw new Error('synthetic transport failure');
+    }),
+    error => {
+      assert.ok(error instanceof PaymentSubmissionOutcomeUnknownError);
+      assert.deepEqual(error.paymentRequired, original);
+      assert.deepEqual(error.paymentPayload.accepted, requirement);
+      assert.equal(selectedView.accepts.length, 1);
+      assert.deepEqual(selectedView.accepts[0], requirement);
+      assert.notEqual(selectedView, original);
+      assert.notEqual(selectedView.resource, original.resource);
+      return true;
+    },
+  );
+  assert.equal(calls, 2);
+});
+
 test('buyer treats a post-submission 402 without settlement evidence as uncertain', async () => {
   const { paymentRequired } = await buyerChallenge('https://resource.example/paid');
   let calls = 0;

@@ -31,6 +31,14 @@ const RESOURCE_FIELDS = Object.freeze(['url', 'description', 'mimeType']);
 const PAYMENT_REQUIRED_FIELDS = Object.freeze(['x402Version', 'resource', 'accepts']);
 const PAYMENT_PAYLOAD_FIELDS = Object.freeze(['x402Version', 'resource', 'accepted', 'payload']);
 const INNER_PAYMENT_PAYLOAD_FIELDS = Object.freeze(['transaction', 'intentDigest']);
+const BASE_REQUIREMENT_FIELDS = Object.freeze([
+  'scheme', 'network', 'asset', 'amount', 'payTo', 'maxTimeoutSeconds',
+]);
+const PAYMENT_CAPABILITY_FIELDS = Object.freeze(['version', 'x402Version', 'routes']);
+const PAYMENT_CAPABILITY_ROUTE_FIELDS = Object.freeze(['scheme', 'network', 'paymentFlows']);
+const RECOGNIZED_PAYMENT_FLOWS = Object.freeze(['authorization', 'upfront', 'escrow']);
+const MAX_PAYMENT_CAPABILITY_ROUTES = 16;
+const MAX_PAYMENT_CAPABILITY_STRING_LENGTH = 128;
 
 function isPlainObject(value) {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
@@ -51,6 +59,110 @@ function assertExactKeys(value, required, { optional = [], label } = {}) {
   for (const key of required) {
     if (!Object.hasOwn(value, key)) throw new Error(`${label}.${key} is required`);
   }
+}
+
+function readExactDataObject(value, required, label) {
+  assertPlainObject(value, label);
+  const keys = Reflect.ownKeys(value);
+  if (keys.length !== required.length || keys.some(key => typeof key !== 'string' || !required.includes(key))) {
+    throw new Error(`${label} has an invalid shape`);
+  }
+  const result = {};
+  for (const key of required) {
+    const descriptor = Object.getOwnPropertyDescriptor(value, key);
+    if (!descriptor || !Object.hasOwn(descriptor, 'value')) {
+      throw new Error(`${label}.${key} must be an own data property`);
+    }
+    result[key] = descriptor.value;
+  }
+  return result;
+}
+
+function readDataArray(value, label, { maxLength, requireFrozen = false } = {}) {
+  if (!Array.isArray(value)) throw new Error(`${label} must be an array`);
+  const lengthDescriptor = Object.getOwnPropertyDescriptor(value, 'length');
+  if (!lengthDescriptor || !Object.hasOwn(lengthDescriptor, 'value') ||
+      lengthDescriptor.value === 0 || lengthDescriptor.value > maxLength) {
+    throw new Error(`${label} has an invalid length`);
+  }
+  if (requireFrozen && !Object.isFrozen(value)) throw new Error(`${label} must be frozen`);
+  const allowedKeys = new Set([
+    'length',
+    ...Array.from({ length: lengthDescriptor.value }, (_, index) => String(index)),
+  ]);
+  const keys = Reflect.ownKeys(value);
+  if (keys.length !== allowedKeys.size || keys.some(key => typeof key !== 'string' || !allowedKeys.has(key))) {
+    throw new Error(`${label} has an invalid shape`);
+  }
+  return Array.from({ length: lengthDescriptor.value }, (_, index) => {
+    const descriptor = Object.getOwnPropertyDescriptor(value, String(index));
+    if (!descriptor || !Object.hasOwn(descriptor, 'value')) {
+      throw new Error(`${label} entries must be own data properties`);
+    }
+    return descriptor.value;
+  });
+}
+
+function validateCapabilityString(value, label) {
+  if (typeof value !== 'string' || value.length === 0 || value.length > MAX_PAYMENT_CAPABILITY_STRING_LENGTH) {
+    throw new Error(`${label} must be a bounded non-empty string`);
+  }
+}
+
+function copyCapabilityRoutes(routes, { requireFrozen = false } = {}) {
+  const values = readDataArray(routes, 'paymentCapabilities.routes', {
+    maxLength: MAX_PAYMENT_CAPABILITY_ROUTES,
+    requireFrozen,
+  });
+  const routeKeys = new Set();
+  return values.map((route, routeIndex) => {
+    if (requireFrozen && !Object.isFrozen(route)) {
+      throw new Error('paymentCapabilities routes must be frozen');
+    }
+    const copied = readExactDataObject(
+      route,
+      PAYMENT_CAPABILITY_ROUTE_FIELDS,
+      `paymentCapabilities.routes[${routeIndex}]`,
+    );
+    validateCapabilityString(copied.scheme, 'paymentCapabilities route scheme');
+    validateCapabilityString(copied.network, 'paymentCapabilities route network');
+    if (copied.network.length < 3 || !copied.network.includes(':')) {
+      throw new Error('paymentCapabilities route network must be a namespaced identifier');
+    }
+    const paymentFlows = readDataArray(copied.paymentFlows, 'paymentCapabilities route paymentFlows', {
+      maxLength: RECOGNIZED_PAYMENT_FLOWS.length,
+      requireFrozen,
+    });
+    const flowSet = new Set();
+    for (const flow of paymentFlows) {
+      if (!RECOGNIZED_PAYMENT_FLOWS.includes(flow)) {
+        throw new Error('paymentCapabilities contains an unsupported payment flow');
+      }
+      if (flowSet.has(flow)) throw new Error('paymentCapabilities contains a duplicate payment flow');
+      flowSet.add(flow);
+    }
+    const routeKey = `${copied.scheme}\u0000${copied.network}`;
+    if (routeKeys.has(routeKey)) throw new Error('paymentCapabilities contains a duplicate route');
+    routeKeys.add(routeKey);
+    return {
+      scheme: copied.scheme,
+      network: copied.network,
+      paymentFlows,
+    };
+  });
+}
+
+function freezeCapabilities(routes) {
+  const frozenRoutes = routes.map(route => Object.freeze({
+    scheme: route.scheme,
+    network: route.network,
+    paymentFlows: Object.freeze([...route.paymentFlows]),
+  }));
+  return Object.freeze({
+    version: 1,
+    x402Version: X402_VERSION,
+    routes: Object.freeze(frozenRoutes),
+  });
 }
 
 function sameChainProfile(a, b) {
@@ -106,6 +218,39 @@ export function sameRequirements(a, b) {
     return canonicalJson(a) === canonicalJson(b);
   } catch {
     return false;
+  }
+}
+
+export function createPaymentCapabilities(routes) {
+  return freezeCapabilities(copyCapabilityRoutes(routes));
+}
+
+export function snapshotPaymentCapabilities(value) {
+  if (!Object.isFrozen(value)) throw new Error('paymentCapabilities must be frozen');
+  const descriptor = readExactDataObject(value, PAYMENT_CAPABILITY_FIELDS, 'paymentCapabilities');
+  if (descriptor.version !== 1 || descriptor.x402Version !== X402_VERSION) {
+    throw new Error('paymentCapabilities has an unsupported version');
+  }
+  return freezeCapabilities(copyCapabilityRoutes(descriptor.routes, { requireFrozen: true }));
+}
+
+export function validateBasePaymentRequirement(req) {
+  assertExactKeys(req, BASE_REQUIREMENT_FIELDS, {
+    optional: ['extra'],
+    label: 'PaymentRequirements',
+  });
+  for (const key of ['scheme', 'network', 'asset', 'amount', 'payTo']) {
+    if (typeof req[key] !== 'string' || !req[key]) throw new Error(`PaymentRequirements.${key} is required`);
+  }
+  if (req.network.length < 3 || !req.network.includes(':')) {
+    throw new Error('PaymentRequirements.network must be a namespaced identifier');
+  }
+  if (typeof req.maxTimeoutSeconds !== 'number' || !Number.isFinite(req.maxTimeoutSeconds) ||
+      req.maxTimeoutSeconds <= 0) {
+    throw new Error('PaymentRequirements.maxTimeoutSeconds must be a positive finite number');
+  }
+  if (Object.hasOwn(req, 'extra') && req.extra !== null && !isPlainObject(req.extra)) {
+    throw new Error('PaymentRequirements.extra must be an object or null');
   }
 }
 
@@ -178,13 +323,22 @@ export function validateResource(resource) {
 }
 
 export function validatePaymentRequired(paymentRequired) {
+  validatePaymentRequiredOuter(paymentRequired);
+  for (const requirement of paymentRequired.accepts) validateRequirement(requirement);
+}
+
+export function validatePaymentRequiredForOfferSelection(paymentRequired) {
+  validatePaymentRequiredOuter(paymentRequired);
+  for (const requirement of paymentRequired.accepts) validateBasePaymentRequirement(requirement);
+}
+
+function validatePaymentRequiredOuter(paymentRequired) {
   assertExactKeys(paymentRequired, PAYMENT_REQUIRED_FIELDS, { optional: ['error'], label: 'PaymentRequired' });
   if (paymentRequired.x402Version !== X402_VERSION) throw new Error('unsupported x402Version');
   validateResource(paymentRequired.resource);
   if (!Array.isArray(paymentRequired.accepts) || paymentRequired.accepts.length === 0) {
     throw new Error('PaymentRequired.accepts must contain at least one requirement');
   }
-  for (const requirement of paymentRequired.accepts) validateRequirement(requirement);
   if (Object.hasOwn(paymentRequired, 'error') &&
       (typeof paymentRequired.error !== 'string' || !paymentRequired.error)) {
     throw new Error('PaymentRequired.error must be a non-empty string');

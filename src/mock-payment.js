@@ -1,6 +1,7 @@
 import crypto from 'node:crypto';
 import { canonicalJson, paymentIntentDigest, sha256Hex } from './canonical.js';
 import {
+  createPaymentCapabilities,
   MOCK_NETWORK,
   sameRequirements,
   validatePaymentPayloadEnvelope,
@@ -15,6 +16,11 @@ const MOCK_TRANSACTION_FIELDS = Object.freeze([
   'blockType', 'chainIdentifier', 'address', 'toAddress', 'amount',
   'tokenStandard', 'data', 'nonce', 'publicKey', 'signature', 'hash',
 ]);
+const MOCK_PAYMENT_CAPABILITIES = createPaymentCapabilities([{
+  scheme: 'exact',
+  network: MOCK_NETWORK,
+  paymentFlows: ['upfront'],
+}]);
 
 function decodeCanonicalBase64(value, expectedBytes) {
   if (typeof value !== 'string' || !BASE64.test(value)) throw new Error('invalid base64');
@@ -66,6 +72,12 @@ export class MockExactZenonClient {
     this.privateKey = privateKey;
     this.publicKeyDerB64 = publicKey.export({ type: 'spki', format: 'der' }).toString('base64');
     this.address = publicKeyId(this.publicKeyDerB64);
+    Object.defineProperty(this, 'paymentCapabilities', {
+      value: MOCK_PAYMENT_CAPABILITIES,
+      enumerable: false,
+      writable: false,
+      configurable: false,
+    });
   }
 
   async createPaymentPayload(paymentRequired, accepted = paymentRequired?.accepts?.[0]) {
