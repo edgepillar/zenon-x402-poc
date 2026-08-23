@@ -37,6 +37,14 @@ registerExactZenonScheme(facilitator, {
 
 No canonical Zenon network identifier is asserted here. The current PoC label `zenon:testnet` is descriptive only and must not be used as authenticated chain identity.
 
+## Local supported-offer negotiation boundary
+
+The current PoC does not replace the official registered-scheme-handler model. Its dependency-light HTTP client uses an internal, immutable `paymentCapabilities` descriptor solely to route among advertised offers for the injected payment client. The built-in mock and live clients each declare their exact local Zenon network and `upfront` flow; wrappers must explicitly copy the descriptor for multi-offer support. This descriptor is a local compatibility mechanism, not a proposed substitute for `@x402/core` registration interfaces.
+
+Every offer first receives generic stable-v2 structural validation. Selection preserves advertised order and skips structurally valid alternatives that do not match the client's x402 version, scheme, network, and exact `upfront` flow. A matching route then receives complete strict Zenon validation; failure invalidates the challenge before payment construction. Descriptor-less clients retain single-offer behavior but reject multi-offer challenges as ambiguous.
+
+Selection performs no speculative payload construction, signing, SDK initialization, RPC, PoW, settlement, or resource delivery. For a multi-offer challenge, payment construction receives a detached internal view containing only the selected offer, while success and recovery retain the original challenge. The missing-flow compatibility option remains confined to the single-offer Phase 2A characterization lane. This boundary does not establish complete stable-v2 compatibility, official registration, a canonical Zenon network identifier, Phase 2C activation, or hardware-wallet support.
+
 ## Why a signed prepared block is a reasonable v1 payload
 
 The proposed mapping follows a general exact-payment pattern: the client creates and signs a chain-specific transaction, serializes it into the x402 mechanism payload, and the facilitator verifies and settles it. This repository does not locally verify behavior of any official chain-specific package.

@@ -4,9 +4,11 @@ import {
   EXPERIMENTAL_LIVE_NETWORK,
   HEADERS,
   sameRequirements,
+  snapshotPaymentCapabilities,
   validateActiveUpfrontRequirement,
   validatePaymentPayloadEnvelope,
   validatePaymentRequired,
+  validatePaymentRequiredForOfferSelection,
   validateRequirement,
 } from './x402-wire.js';
 
@@ -51,6 +53,7 @@ export class PaymentSubmissionOutcomeUnknownError extends Error {
 
 export async function paidFetch(url, paymentClient, fetchImpl = fetch, options = {}) {
   const allowLegacyMissingPaymentFlow = validatePaidFetchOptions(options);
+  const paymentCapabilities = snapshotPaymentClientCapabilities(paymentClient);
   const first = await fetchImpl(url);
   if (first.status !== 402) {
     return { response: first, paymentRequired: null, paymentPayload: null, settlement: null };
@@ -59,24 +62,29 @@ export async function paidFetch(url, paymentClient, fetchImpl = fetch, options =
   const requiredHeader = first.headers.get(HEADERS.PAYMENT_REQUIRED);
   if (!requiredHeader) throw new Error('402 response did not contain PAYMENT-REQUIRED');
   const paymentRequired = decodeB64Json(requiredHeader, { maxDecodedBytes: MAX_X402_HEADER_BYTES });
-  validatePaymentRequired(paymentRequired);
+  validatePaymentRequiredForOfferSelection(paymentRequired);
+  if (paymentRequired.accepts.length === 1) validatePaymentRequired(paymentRequired);
   const responseUrl = first.url || String(url);
   const advertisedResource = new URL(paymentRequired.resource.url);
   if (advertisedResource.username || advertisedResource.password) throw new Error('payment resource URL must not contain credentials');
   if (advertisedResource.href !== new URL(responseUrl).href) {
     throw new Error('payment resource does not match the requested URL');
   }
-  const accepted = paymentRequired.accepts?.[0];
-  if (!accepted) throw new Error('no accepted payment option');
-  if (allowLegacyMissingPaymentFlow && !Object.hasOwn(accepted.extra, 'paymentFlow')) {
-    validateRequirement(accepted);
-  } else {
-    validateActiveUpfrontRequirement(accepted);
-  }
+  const accepted = selectPaymentRequirement(
+    paymentRequired,
+    paymentCapabilities,
+    allowLegacyMissingPaymentFlow,
+  );
   if (accepted.network === EXPERIMENTAL_LIVE_NETWORK && advertisedResource.protocol !== 'https:') {
     throw new Error('live payment resource must use HTTPS');
   }
-  const paymentPayload = await paymentClient.createPaymentPayload(paymentRequired, accepted);
+  const selectedView = paymentRequired.accepts.length === 1
+    ? { paymentRequired, accepted }
+    : makeSelectedPaymentRequiredView(paymentRequired, accepted);
+  const paymentPayload = await paymentClient.createPaymentPayload(
+    selectedView.paymentRequired,
+    selectedView.accepted,
+  );
   validateBuyerPaymentPayload(paymentPayload, paymentRequired, accepted);
   const encodedPayment = encodeB64Json(paymentPayload);
   if (Buffer.byteLength(encodedPayment, 'utf8') > MAX_X402_HEADER_BYTES) {
@@ -113,6 +121,85 @@ export async function paidFetch(url, paymentClient, fetchImpl = fetch, options =
     throw outcomeUnknown({ paymentRequired, paymentPayload: submittedPaymentPayload, httpStatus: second.status });
   }
   return { response: second, paymentRequired, paymentPayload, settlement };
+}
+
+function snapshotPaymentClientCapabilities(paymentClient) {
+  if ((typeof paymentClient !== 'object' && typeof paymentClient !== 'function') || paymentClient === null) {
+    throw new Error('payment client must be an object');
+  }
+  const descriptor = Object.getOwnPropertyDescriptor(paymentClient, 'paymentCapabilities');
+  if (!descriptor) return null;
+  if (!Object.hasOwn(descriptor, 'value') || descriptor.enumerable ||
+      descriptor.writable || descriptor.configurable) {
+    throw new Error('paymentCapabilities must be an immutable non-enumerable own data property');
+  }
+  return snapshotPaymentCapabilities(descriptor.value);
+}
+
+function selectPaymentRequirement(paymentRequired, paymentCapabilities, allowLegacyMissingPaymentFlow) {
+  if (paymentRequired.accepts.length === 1) {
+    const accepted = paymentRequired.accepts[0];
+    validateSelectedRequirement(accepted, allowLegacyMissingPaymentFlow);
+    if (paymentCapabilities && !capabilitiesSupportUpfront(paymentCapabilities, paymentRequired, accepted)) {
+      throw new Error('no supported upfront paymentFlow option');
+    }
+    return accepted;
+  }
+  if (!paymentCapabilities) {
+    throw new Error('ambiguous payment requirements require payment client capabilities');
+  }
+
+  if (paymentCapabilities.x402Version !== paymentRequired.x402Version) {
+    throw new Error('no supported upfront paymentFlow option');
+  }
+  for (const candidate of paymentRequired.accepts) {
+    const route = paymentCapabilities.routes.find(capability =>
+      capability.scheme === candidate.scheme &&
+      capability.network === candidate.network &&
+      capability.paymentFlows.includes('upfront'));
+    if (!route) continue;
+    if (!isPlainObject(candidate.extra) || candidate.extra.paymentFlow !== 'upfront') continue;
+    validateActiveUpfrontRequirement(candidate);
+    return candidate;
+  }
+  throw new Error('no supported upfront paymentFlow option');
+}
+
+function capabilitiesSupportUpfront(paymentCapabilities, paymentRequired, requirement) {
+  return paymentCapabilities.x402Version === paymentRequired.x402Version &&
+    paymentCapabilities.routes.some(capability =>
+      capability.scheme === requirement.scheme &&
+      capability.network === requirement.network &&
+      capability.paymentFlows.includes('upfront'));
+}
+
+function validateSelectedRequirement(requirement, allowLegacyMissingPaymentFlow) {
+  if (allowLegacyMissingPaymentFlow && isPlainObject(requirement.extra) &&
+      !Object.hasOwn(requirement.extra, 'paymentFlow')) {
+    validateRequirement(requirement);
+    return;
+  }
+  validateActiveUpfrontRequirement(requirement);
+}
+
+function makeSelectedPaymentRequiredView(paymentRequired, accepted) {
+  let resource;
+  let selected;
+  try {
+    resource = structuredClone(paymentRequired.resource);
+    selected = structuredClone(accepted);
+  } catch {
+    throw new Error('payment requirements could not be detached');
+  }
+  return {
+    paymentRequired: {
+      x402Version: paymentRequired.x402Version,
+      ...(Object.hasOwn(paymentRequired, 'error') ? { error: paymentRequired.error } : {}),
+      resource,
+      accepts: [selected],
+    },
+    accepted: selected,
+  };
 }
 
 function validatePaidFetchOptions(options) {

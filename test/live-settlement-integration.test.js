@@ -9,6 +9,7 @@ import { createResourceServer } from '../src/resource-server.js';
 import { decodeB64Json, encodeB64Json, HEADERS } from '../src/x402-wire.js';
 import {
   computeBlockHash,
+  ExactZenonClient,
   ExactZenonFacilitator,
   preflightZenonPayment,
 } from '../src/zenon-payment.js';
@@ -22,6 +23,25 @@ const PROFILE = Object.freeze({
   chainIdentifier: '7',
   // Synthetic test-only identity; not a real network profile.
   genesisMomentumHash: '7'.repeat(64),
+});
+
+test('live payment capability routing is immutable and requires no SDK operation', () => {
+  const client = new ExactZenonClient({ mnemonic: '', accountIndex: 0, rpcTimeoutMs: 1 });
+  const descriptor = Object.getOwnPropertyDescriptor(client, 'paymentCapabilities');
+  assert.ok(descriptor);
+  assert.equal(descriptor.enumerable, false);
+  assert.equal(descriptor.writable, false);
+  assert.equal(descriptor.configurable, false);
+  assert.deepEqual(descriptor.value, {
+    version: 1,
+    x402Version: 2,
+    routes: [{
+      scheme: 'exact',
+      network: 'zenon:testnet',
+      paymentFlows: ['upfront'],
+    }],
+  });
+  assert.equal(Object.isFrozen(descriptor.value.routes[0].paymentFlows), true);
 });
 
 function requirement({ asset = sdk.ZNN_ZTS.toString() } = {}) {

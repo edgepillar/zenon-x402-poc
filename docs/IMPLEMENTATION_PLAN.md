@@ -35,6 +35,7 @@ The selected requirement uses the ordinary x402 fields plus an exact chain profi
   "maxTimeoutSeconds": 60,
   "extra": {
     "poc": true,
+    "paymentFlow": "upfront",
     "settlement": "account-block",
     "zenonChain": {
       "version": 1,
@@ -50,6 +51,14 @@ The repository intentionally supplies no real live profile. `zenon:testnet` is d
 The amount range is `1` through `2^255 - 1` atomic units. This is narrower than the account-block hash's 32-byte amount field because canonical go-zenon validation rejects values with a bit length above 255.
 
 The intent digest covers the complete selected requirement and resource. Before standardization, generic JSON canonicalization should be replaced with a specified, domain-separated encoding and portable conformance vectors.
+
+### Implemented local offer-selection boundary
+
+The buyer applies generic stable-v2 structural validation to every advertised offer before selection. Built-in mock and live clients expose deeply immutable, client-owned `paymentCapabilities` descriptors for their exact scheme, local Zenon network label, and `upfront` flow. Multi-offer selection preserves order, skips structurally valid unsupported alternatives, and selects the first route matching the client's x402 version, scheme, network, and exact `upfront` flow. A claimed supported route receives complete strict Zenon validation; failure invalidates the challenge before payment construction.
+
+A descriptor-less client retains existing single-offer behavior and rejects multi-offer challenges as ambiguous. Wrappers must explicitly copy the immutable descriptor to support multiple offers. Selection performs no speculative signing, SDK initialization, RPC, PoW, settlement, or protected-resource delivery. Multi-offer payment construction receives a detached single-selected-offer view, while success and recovery retain the original challenge. The missing-flow option is restricted to the existing single-offer Phase 2A characterization lane.
+
+This is a narrow internal compatibility boundary, not a replacement for official registered scheme handlers and not a claim of complete stable-v2 compatibility, official x402 or Zenon network registration, Phase 2C activation, hardware-wallet support, or production readiness.
 
 ## Implemented live-safety foundation
 

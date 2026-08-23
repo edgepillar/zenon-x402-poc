@@ -9,6 +9,7 @@ import { MockExactZenonClient, MockExactZenonFacilitator } from '../src/mock-pay
 import { paidFetch } from '../src/buyer.js';
 import { createResourceServer } from '../src/resource-server.js';
 import {
+  createPaymentCapabilities,
   encodeB64Json,
   decodeB64Json,
   HEADERS,
@@ -60,6 +61,95 @@ function paymentRequired(accepted = requirement()) {
     resource: { url: 'http://example.test/paid', description: 'test', mimeType: 'application/json' },
     accepts: [accepted],
   };
+}
+
+function liveRequirement() {
+  return {
+    ...requirement(),
+    network: 'zenon:testnet',
+    asset: 'zts1qqqqqqqqqqqqtq587y',
+    payTo: 'z1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqsggv2f',
+    extra: {
+      paymentFlow: 'upfront',
+      poc: true,
+      settlement: 'account-block',
+      zenonChain: {
+        version: 1,
+        chainIdentifier: '42424242',
+        genesisMomentumHash: 'a'.repeat(64),
+      },
+    },
+  };
+}
+
+function definePaymentCapabilities(client, capabilities) {
+  Object.defineProperty(client, 'paymentCapabilities', {
+    value: capabilities,
+    enumerable: false,
+    writable: false,
+    configurable: false,
+  });
+  return client;
+}
+
+function recordingPaymentClient(capabilities, observations = {}) {
+  return definePaymentCapabilities({
+    async createPaymentPayload(required, accepted) {
+      observations.constructions = (observations.constructions ?? 0) + 1;
+      observations.required = required;
+      observations.accepted = accepted;
+      const intentDigest = paymentIntentDigest(required, accepted);
+      return {
+        x402Version: required.x402Version,
+        resource: structuredClone(required.resource),
+        accepted: structuredClone(accepted),
+        payload: {
+          transaction: {
+            hash: 'c'.repeat(64),
+            address: 'synthetic-payer',
+            data: intentDigest,
+          },
+          intentDigest,
+        },
+      };
+    },
+  }, capabilities);
+}
+
+async function completeSelection(paymentRequiredValue, paymentClient, observations = {}, paidFetchOptions = {}) {
+  const result = await paidFetch(paymentRequiredValue.resource.url, paymentClient, async (_url, options) => {
+    observations.requests = (observations.requests ?? 0) + 1;
+    if (!options) {
+      return {
+        status: 402,
+        url: paymentRequiredValue.resource.url,
+        headers: new Headers({
+          [HEADERS.PAYMENT_REQUIRED]: encodeB64Json(paymentRequiredValue),
+        }),
+      };
+    }
+    observations.retries = (observations.retries ?? 0) + 1;
+    const payload = decodeB64Json(options.headers[HEADERS.PAYMENT_SIGNATURE]);
+    return {
+      status: 200,
+      headers: new Headers({
+        [HEADERS.PAYMENT_RESPONSE]: encodeB64Json({
+          success: true,
+          network: payload.accepted.network,
+          transaction: payload.payload.transaction.hash,
+          payer: payload.payload.transaction.address,
+          state: 'MOMENTUM_INCLUDED',
+        }),
+      }),
+    };
+  }, paidFetchOptions);
+  return result;
+}
+
+function freezeCapabilityFixture(value) {
+  if (!value || typeof value !== 'object' || Object.isFrozen(value)) return value;
+  for (const key of Reflect.ownKeys(value)) freezeCapabilityFixture(value[key]);
+  return Object.freeze(value);
 }
 
 async function signedMock() {
@@ -382,6 +472,374 @@ test('paidFetch rejects malformed characterization options before any request', 
     assert.equal(paymentConstructions, 0);
   }
   assert.equal(accessorReads, 0);
+});
+
+test('built-in payment clients expose exact immutable routing capabilities', () => {
+  const mock = new MockExactZenonClient();
+  const live = new ExactZenonClient({ mnemonic: '', accountIndex: 0, rpcTimeoutMs: 1 });
+  for (const [client, network] of [[mock, 'zenon:mock'], [live, 'zenon:testnet']]) {
+    const property = Object.getOwnPropertyDescriptor(client, 'paymentCapabilities');
+    assert.ok(property);
+    assert.equal(Object.hasOwn(property, 'value'), true);
+    assert.equal(property.enumerable, false);
+    assert.equal(property.writable, false);
+    assert.equal(property.configurable, false);
+    assert.deepEqual(property.value, {
+      version: 1,
+      x402Version: 2,
+      routes: [{ scheme: 'exact', network, paymentFlows: ['upfront'] }],
+    });
+    assert.equal(Object.isFrozen(property.value), true);
+    assert.equal(Object.isFrozen(property.value.routes), true);
+    assert.equal(Object.isFrozen(property.value.routes[0]), true);
+    assert.equal(Object.isFrozen(property.value.routes[0].paymentFlows), true);
+    assert.throws(() => { property.value.routes[0].network = 'other:test'; }, TypeError);
+  }
+  assert.equal(Object.keys(mock).includes('paymentCapabilities'), false);
+  assert.equal(Object.keys(live).includes('paymentCapabilities'), false);
+});
+
+test('client-owned capabilities select the correct route in either offer order', async () => {
+  const mockCapabilities = new MockExactZenonClient().paymentCapabilities;
+  const liveCapabilities = new ExactZenonClient({ mnemonic: '', accountIndex: 0, rpcTimeoutMs: 1 })
+    .paymentCapabilities;
+  const mock = requirement();
+  const live = liveRequirement();
+  const cases = [
+    { offers: [mock, live], capabilities: mockCapabilities, expected: mock },
+    { offers: [mock, live], capabilities: liveCapabilities, expected: live },
+    { offers: [live, mock], capabilities: mockCapabilities, expected: mock },
+    { offers: [live, mock], capabilities: liveCapabilities, expected: live },
+  ];
+
+  for (const scenario of cases) {
+    const required = {
+      ...paymentRequired(),
+      resource: {
+        ...paymentRequired().resource,
+        url: 'https://resource.example/paid',
+      },
+      accepts: structuredClone(scenario.offers),
+    };
+    const original = structuredClone(required);
+    const observations = {};
+    const client = recordingPaymentClient(scenario.capabilities, observations);
+    const result = await completeSelection(required, client, observations);
+
+    assert.deepEqual(result.paymentPayload.accepted, scenario.expected);
+    assert.deepEqual(result.paymentRequired, original);
+    assert.equal(observations.constructions, 1);
+    assert.equal(observations.requests, 2);
+    assert.equal(observations.retries, 1);
+    assert.equal(observations.required.accepts.length, 1);
+    assert.deepEqual(observations.required.accepts[0], scenario.expected);
+    assert.notEqual(observations.required, required);
+    assert.notEqual(observations.required.resource, required.resource);
+    assert.notEqual(observations.accepted, scenario.expected);
+    assert.equal(
+      result.paymentPayload.payload.intentDigest,
+      paymentIntentDigest(required, scenario.expected),
+    );
+  }
+});
+
+test('nonmatching payment flows are skipped only when a later upfront offer is usable', async () => {
+  const capabilities = new MockExactZenonClient().paymentCapabilities;
+  const variants = [undefined, null, 'authorization', 'escrow', 'unknown', {}, 1, false];
+  for (const paymentFlow of variants) {
+    const alternative = requirement();
+    if (paymentFlow === undefined) delete alternative.extra.paymentFlow;
+    else alternative.extra.paymentFlow = paymentFlow;
+    const supported = requirement();
+    const observations = {};
+    const client = recordingPaymentClient(capabilities, observations);
+    const required = { ...paymentRequired(), accepts: [alternative, supported] };
+    const result = await completeSelection(required, client, observations);
+    assert.deepEqual(result.paymentPayload.accepted, supported);
+    assert.equal(observations.constructions, 1);
+
+    let singleOfferConstructions = 0;
+    let singleOfferRequests = 0;
+    await assert.rejects(
+      paidFetch(required.resource.url, definePaymentCapabilities({
+        async createPaymentPayload() {
+          singleOfferConstructions += 1;
+        },
+      }, capabilities), async () => {
+        singleOfferRequests += 1;
+        return {
+          status: 402,
+          url: required.resource.url,
+          headers: new Headers({
+            [HEADERS.PAYMENT_REQUIRED]: encodeB64Json({ ...required, accepts: [alternative] }),
+          }),
+        };
+      }),
+      /paymentFlow/,
+    );
+    assert.equal(singleOfferConstructions, 0);
+    assert.equal(singleOfferRequests, 1);
+  }
+
+  const missingFlow = { ...requirement(), amount: '99' };
+  delete missingFlow.extra.paymentFlow;
+  const supported = requirement();
+  const observations = {};
+  const client = recordingPaymentClient(capabilities, observations);
+  const result = await completeSelection(
+    { ...paymentRequired(), accepts: [missingFlow, supported] },
+    client,
+    observations,
+    { [LEGACY_FLOW_OPTION]: true },
+  );
+  assert.deepEqual(result.paymentPayload.accepted, supported);
+});
+
+test('malformed alternatives and invalid claimed Zenon offers invalidate the challenge', async () => {
+  const capabilities = new MockExactZenonClient().paymentCapabilities;
+  const unsupported = {
+    scheme: 'other',
+    network: 'other:test',
+    asset: 'asset',
+    amount: '9'.repeat(78),
+    payTo: 'recipient',
+    maxTimeoutSeconds: 0.5,
+    extra: { paymentFlow: 1 },
+  };
+  const malformed = [
+    { ...unsupported, scheme: null },
+    { ...unsupported, network: 'unscoped' },
+    { ...unsupported, amount: {} },
+    { ...unsupported, maxTimeoutSeconds: 0 },
+    { ...unsupported, extra: [] },
+  ];
+  const invalidClaimed = [
+    { ...requirement(), amount: '0' },
+    { ...requirement(), amount: '9'.repeat(78) },
+    { ...requirement(), maxTimeoutSeconds: 0.5 },
+  ];
+
+  const observations = {};
+  const supported = requirement();
+  const selected = await completeSelection(
+    { ...paymentRequired(), accepts: [unsupported, supported] },
+    recordingPaymentClient(capabilities, observations),
+    observations,
+  );
+  assert.deepEqual(selected.paymentPayload.accepted, supported);
+  assert.equal(observations.constructions, 1);
+
+  for (const alternative of [...malformed, ...invalidClaimed]) {
+    let constructions = 0;
+    let requests = 0;
+    const client = definePaymentCapabilities({
+      async createPaymentPayload() {
+        constructions += 1;
+      },
+    }, capabilities);
+    await assert.rejects(paidFetch(paymentRequired().resource.url, client, async () => {
+      requests += 1;
+      return {
+        status: 402,
+        url: paymentRequired().resource.url,
+        headers: new Headers({
+          [HEADERS.PAYMENT_REQUIRED]: encodeB64Json({
+            ...paymentRequired(),
+            accepts: [alternative, requirement()],
+          }),
+        }),
+      };
+    }));
+    assert.equal(constructions, 0);
+    assert.equal(requests, 1);
+  }
+});
+
+test('descriptor-less and unmatched clients fail closed without speculative work', async () => {
+  const supported = requirement();
+  const unsupported = liveRequirement();
+  const required = { ...paymentRequired(), accepts: [unsupported, supported] };
+
+  let ambiguousConstructions = 0;
+  await assert.rejects(
+    paidFetch(required.resource.url, {
+      async createPaymentPayload() {
+        ambiguousConstructions += 1;
+      },
+    }, async () => ({
+      status: 402,
+      url: required.resource.url,
+      headers: new Headers({ [HEADERS.PAYMENT_REQUIRED]: encodeB64Json(required) }),
+    })),
+    /ambiguous/,
+  );
+  assert.equal(ambiguousConstructions, 0);
+
+  const singleObservations = {};
+  const singleClient = {
+    async createPaymentPayload(requiredView, accepted) {
+      return recordingPaymentClient(
+        createPaymentCapabilities([{ scheme: 'exact', network: 'zenon:mock', paymentFlows: ['upfront'] }]),
+        singleObservations,
+      ).createPaymentPayload(requiredView, accepted);
+    },
+  };
+  const singleResult = await completeSelection(paymentRequired(supported), singleClient, singleObservations);
+  assert.deepEqual(singleResult.paymentPayload.accepted, supported);
+  assert.equal(singleObservations.constructions, 1);
+
+  let unmatchedConstructions = 0;
+  const unmatchedClient = definePaymentCapabilities({
+    async createPaymentPayload() {
+      unmatchedConstructions += 1;
+    },
+  }, new MockExactZenonClient().paymentCapabilities);
+  await assert.rejects(
+    paidFetch(paymentRequired(unsupported).resource.url, unmatchedClient, async () => ({
+      status: 402,
+      url: paymentRequired(unsupported).resource.url,
+      headers: new Headers({
+        [HEADERS.PAYMENT_REQUIRED]: encodeB64Json(paymentRequired(unsupported)),
+      }),
+    })),
+    /no supported upfront paymentFlow option/,
+  );
+  assert.equal(unmatchedConstructions, 0);
+});
+
+test('malformed capability descriptors fail before the initial request', async () => {
+  const validRoute = { scheme: 'exact', network: 'zenon:mock', paymentFlows: ['upfront'] };
+  const frozen = value => freezeCapabilityFixture(value);
+  const malformedValues = [
+    { version: 1, x402Version: 2, routes: [validRoute] },
+    Object.freeze({ version: 1, x402Version: 2, routes: [validRoute] }),
+    frozen({ version: 1, x402Version: 2, routes: [validRoute], unexpected: true }),
+    frozen({ version: 2, x402Version: 2, routes: [validRoute] }),
+    frozen({ version: 1, x402Version: 1, routes: [validRoute] }),
+    frozen({ version: 1, x402Version: 2, routes: [] }),
+    frozen({ version: 1, x402Version: 2, routes: [{
+      ...validRoute,
+      paymentFlows: [],
+    }] }),
+    frozen({ version: 1, x402Version: 2, routes: Array.from({ length: 17 }, (_, index) => ({
+      scheme: `scheme-${index}`,
+      network: `network:${index}`,
+      paymentFlows: ['upfront'],
+    })) }),
+    frozen({ version: 1, x402Version: 2, routes: [{
+      scheme: 'x'.repeat(129),
+      network: 'zenon:mock',
+      paymentFlows: ['upfront'],
+    }] }),
+    frozen({ version: 1, x402Version: 2, routes: [validRoute, { ...validRoute }] }),
+    frozen({ version: 1, x402Version: 2, routes: [{
+      ...validRoute,
+      paymentFlows: ['upfront', 'upfront'],
+    }] }),
+    frozen({ version: 1, x402Version: 2, routes: [{
+      ...validRoute,
+      paymentFlows: ['unknown'],
+    }] }),
+    frozen({ version: 1, x402Version: 2, routes: [{
+      ...validRoute,
+      unexpected: true,
+    }] }),
+  ];
+
+  const symbolRoot = { version: 1, x402Version: 2, routes: [validRoute] };
+  symbolRoot[Symbol('unexpected')] = true;
+  malformedValues.push(frozen(symbolRoot));
+
+  const symbolRoute = { ...validRoute, [Symbol('unexpected')]: true };
+  malformedValues.push(frozen({ version: 1, x402Version: 2, routes: [symbolRoute] }));
+
+  const symbolRoutes = [validRoute];
+  symbolRoutes[Symbol('unexpected')] = true;
+  malformedValues.push(frozen({ version: 1, x402Version: 2, routes: symbolRoutes }));
+
+  const symbolFlows = ['upfront'];
+  symbolFlows[Symbol('unexpected')] = true;
+  malformedValues.push(frozen({ version: 1, x402Version: 2, routes: [{
+    ...validRoute,
+    paymentFlows: symbolFlows,
+  }] }));
+
+  let routeAccessorReads = 0;
+  const accessorRoute = {
+    network: validRoute.network,
+    paymentFlows: Object.freeze([...validRoute.paymentFlows]),
+  };
+  Object.defineProperty(accessorRoute, 'scheme', {
+    get() {
+      routeAccessorReads += 1;
+      return validRoute.scheme;
+    },
+    enumerable: true,
+  });
+  Object.freeze(accessorRoute);
+  malformedValues.push(Object.freeze({
+    version: 1,
+    x402Version: 2,
+    routes: Object.freeze([accessorRoute]),
+  }));
+
+  let accessorReads = 0;
+  const accessorClient = { async createPaymentPayload() {} };
+  Object.defineProperty(accessorClient, 'paymentCapabilities', {
+    get() {
+      accessorReads += 1;
+      return createPaymentCapabilities([validRoute]);
+    },
+  });
+  const malformedClients = [accessorClient];
+  for (const value of malformedValues) {
+    malformedClients.push(definePaymentCapabilities({ async createPaymentPayload() {} }, value));
+  }
+  const enumerableClient = { async createPaymentPayload() {} };
+  enumerableClient.paymentCapabilities = createPaymentCapabilities([validRoute]);
+  malformedClients.push(enumerableClient);
+  for (const propertyFlags of [{ writable: true }, { configurable: true }]) {
+    const client = { async createPaymentPayload() {} };
+    Object.defineProperty(client, 'paymentCapabilities', {
+      value: createPaymentCapabilities([validRoute]),
+      enumerable: false,
+      writable: propertyFlags.writable ?? false,
+      configurable: propertyFlags.configurable ?? false,
+    });
+    malformedClients.push(client);
+  }
+
+  for (const client of malformedClients) {
+    let requests = 0;
+    await assert.rejects(paidFetch('https://resource.example/paid', client, async () => {
+      requests += 1;
+    }), /paymentCapabilities/);
+    assert.equal(requests, 0);
+  }
+  assert.equal(accessorReads, 0);
+  assert.equal(routeAccessorReads, 0);
+});
+
+test('multi-offer wrappers must explicitly copy immutable capabilities', async () => {
+  const exact = new MockExactZenonClient();
+  const required = { ...paymentRequired(), accepts: [liveRequirement(), requirement()] };
+  const withoutCapabilities = {
+    createPaymentPayload: (...args) => exact.createPaymentPayload(...args),
+  };
+  await assert.rejects(
+    paidFetch(required.resource.url, withoutCapabilities, async () => ({
+      status: 402,
+      url: required.resource.url,
+      headers: new Headers({ [HEADERS.PAYMENT_REQUIRED]: encodeB64Json(required) }),
+    })),
+    /ambiguous/,
+  );
+
+  const observations = {};
+  const withCapabilities = recordingPaymentClient(exact.paymentCapabilities, observations);
+  const result = await completeSelection(required, withCapabilities, observations);
+  assert.deepEqual(result.paymentPayload.accepted, requirement());
+  assert.equal(observations.constructions, 1);
 });
 
 test('resource server rejects non-upfront configuration before downstream effects', () => {
