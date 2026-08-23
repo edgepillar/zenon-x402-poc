@@ -130,6 +130,7 @@ async function completeSelection(paymentRequiredValue, paymentClient, observatio
     }
     observations.retries = (observations.retries ?? 0) + 1;
     const payload = decodeB64Json(options.headers[HEADERS.PAYMENT_SIGNATURE]);
+    observations.submitted = payload;
     return {
       status: 200,
       headers: new Headers({
@@ -281,6 +282,171 @@ test('payment intent digest covers every selected requirement and resource field
     paymentIntentDigest(paymentRequired(reordered), reordered),
     paymentIntentDigest(paymentRequired(reorderedAgain), reorderedAgain),
   );
+});
+
+test('buyer preserves optional ResourceInfo metadata through selection and success', async () => {
+  const supported = requirement();
+  const unsupported = {
+    scheme: 'other',
+    network: 'other:test',
+    asset: 'asset',
+    amount: '1',
+    payTo: 'recipient',
+    maxTimeoutSeconds: 30,
+    extra: null,
+  };
+  const capabilities = createPaymentCapabilities([{
+    scheme: supported.scheme,
+    network: supported.network,
+    paymentFlows: ['upfront'],
+  }]);
+  const resources = [
+    { url: 'http://example.test/paid' },
+    { url: 'http://example.test/paid', description: '', mimeType: '' },
+    { url: 'http://example.test/paid', description: 'test' },
+    { url: 'http://example.test/paid', mimeType: 'application/json' },
+  ];
+
+  for (const resource of resources) {
+    const required = {
+      x402Version: 2,
+      resource: structuredClone(resource),
+      accepts: [unsupported, supported],
+    };
+    const observations = {};
+    const result = await completeSelection(
+      required,
+      recordingPaymentClient(capabilities, observations),
+      observations,
+    );
+
+    assert.deepEqual(observations.required.resource, resource);
+    assert.deepEqual(observations.submitted.resource, resource);
+    assert.deepEqual(result.paymentRequired.resource, resource);
+    assert.deepEqual(result.paymentPayload.resource, resource);
+    assert.equal(observations.constructions, 1);
+    assert.equal(observations.retries, 1);
+    assert.equal(observations.requests, 2);
+  }
+});
+
+test('buyer rejects optional ResourceInfo presence changes before the paid retry', async () => {
+  const cases = [
+    {
+      resource: { url: 'http://example.test/paid' },
+      mutate(value) { value.description = ''; },
+    },
+    {
+      resource: { url: 'http://example.test/paid', description: '' },
+      mutate(value) { delete value.description; },
+    },
+    {
+      resource: { url: 'http://example.test/paid', mimeType: '' },
+      mutate(value) { delete value.mimeType; },
+    },
+  ];
+
+  for (const entry of cases) {
+    const accepted = requirement();
+    const required = {
+      x402Version: 2,
+      resource: entry.resource,
+      accepts: [accepted],
+    };
+    let constructions = 0;
+    let requests = 0;
+    const paymentClient = {
+      async createPaymentPayload(received, selected) {
+        constructions += 1;
+        const resource = structuredClone(received.resource);
+        entry.mutate(resource);
+        const intentDigest = paymentIntentDigest(received, selected);
+        return {
+          x402Version: received.x402Version,
+          resource,
+          accepted: structuredClone(selected),
+          payload: {
+            transaction: {
+              hash: 'c'.repeat(64),
+              address: 'synthetic-payer',
+              data: intentDigest,
+            },
+            intentDigest,
+          },
+        };
+      },
+    };
+
+    await assert.rejects(paidFetch(required.resource.url, paymentClient, async (_url, options) => {
+      requests += 1;
+      if (options) throw new Error('paid retry must not occur');
+      return {
+        status: 402,
+        url: required.resource.url,
+        headers: new Headers({ [HEADERS.PAYMENT_REQUIRED]: encodeB64Json(required) }),
+      };
+    }), /mismatched payload/);
+    assert.equal(constructions, 1);
+    assert.equal(requests, 1);
+  }
+});
+
+test('unsupported ResourceInfo metadata stops before payment and downstream effects', async () => {
+  const resources = [
+    { url: 'http://example.test/paid', description: null },
+    { url: 'http://example.test/paid', mimeType: null },
+    { url: 'http://example.test/paid', description: 1 },
+    { url: 'http://example.test/paid', serviceName: 'unsupported' },
+    { url: 'http://example.test/paid', tags: ['unsupported'] },
+    { url: 'http://example.test/paid', iconUrl: 'https://example.test/icon.png' },
+  ];
+
+  for (const resource of resources) {
+    const effects = {
+      requests: 0,
+      signing: 0,
+      sdk: 0,
+      rpc: 0,
+      pow: 0,
+      journal: 0,
+      publication: 0,
+      settlement: 0,
+      delivery: 0,
+    };
+    const required = { x402Version: 2, resource, accepts: [requirement()] };
+    await assert.rejects(paidFetch(required.resource.url, {
+      async createPaymentPayload() {
+        effects.signing += 1;
+        effects.sdk += 1;
+        effects.rpc += 1;
+        effects.pow += 1;
+      },
+    }, async (_url, options) => {
+      effects.requests += 1;
+      if (options) {
+        effects.journal += 1;
+        effects.publication += 1;
+        effects.settlement += 1;
+        effects.delivery += 1;
+      }
+      return {
+        status: 402,
+        url: required.resource.url,
+        headers: new Headers({ [HEADERS.PAYMENT_REQUIRED]: encodeB64Json(required) }),
+      };
+    }));
+    assert.deepEqual(effects, {
+      requests: 1,
+      signing: 0,
+      sdk: 0,
+      rpc: 0,
+      pow: 0,
+      journal: 0,
+      publication: 0,
+      settlement: 0,
+      delivery: 0,
+    });
+  }
 });
 
 test('buyer refuses to sign for a different advertised resource URL', async () => {
@@ -1670,6 +1836,8 @@ test('HTTP boundary separates malformed payment input from unsupported payment p
       { x402Version: 1 },
       missingResource,
       { ...valid, resource: null },
+      { ...valid, resource: { ...valid.resource, description: null } },
+      { ...valid, resource: { ...valid.resource, mimeType: null } },
       { ...valid, extensions: {} },
       { ...valid, unexpected: true },
       missingFlow,

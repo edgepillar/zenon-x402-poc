@@ -28,7 +28,8 @@ const REQUIREMENT_FIELDS = Object.freeze([
 const REQUIREMENT_EXTRA_FIELDS = Object.freeze(['poc', 'settlement', 'zenonChain']);
 const REQUIREMENT_EXTRA_OPTIONAL_FIELDS = Object.freeze(['paymentFlow']);
 const CHAIN_PROFILE_FIELDS = Object.freeze(['version', 'chainIdentifier', 'genesisMomentumHash']);
-const RESOURCE_FIELDS = Object.freeze(['url', 'description', 'mimeType']);
+const RESOURCE_REQUIRED_FIELDS = Object.freeze(['url']);
+const RESOURCE_OPTIONAL_FIELDS = Object.freeze(['description', 'mimeType']);
 const PAYMENT_REQUIRED_FIELDS = Object.freeze(['x402Version', 'resource', 'accepts']);
 const PAYMENT_PAYLOAD_FIELDS = Object.freeze(['x402Version', 'resource', 'accepted', 'payload']);
 const INNER_PAYMENT_PAYLOAD_FIELDS = Object.freeze(['transaction', 'intentDigest']);
@@ -439,16 +440,28 @@ export function validateActiveUpfrontRequirement(req) {
 }
 
 export function validateResource(resource) {
-  assertExactKeys(resource, RESOURCE_FIELDS, { label: 'ResourceInfo' });
-  for (const key of RESOURCE_FIELDS) {
-    if (typeof resource[key] !== 'string' || !resource[key]) throw new Error(`ResourceInfo.${key} is required`);
+  assertExactKeys(resource, RESOURCE_REQUIRED_FIELDS, {
+    optional: RESOURCE_OPTIONAL_FIELDS,
+    label: 'ResourceInfo',
+  });
+  const url = readRequiredDataProperty(resource, 'url', 'ResourceInfo');
+  const description = readOptionalDataProperty(resource, 'description', 'ResourceInfo');
+  const mimeType = readOptionalDataProperty(resource, 'mimeType', 'ResourceInfo');
+  if (typeof url !== 'string' || !url) throw new Error('ResourceInfo.url is required');
+  if (description.present && typeof description.value !== 'string') {
+    throw new Error('ResourceInfo.description must be a string');
   }
-  if (resource.url.length > 4096 || resource.description.length > 4096 || resource.mimeType.length > 256) {
+  if (mimeType.present && typeof mimeType.value !== 'string') {
+    throw new Error('ResourceInfo.mimeType must be a string');
+  }
+  if (url.length > 4096 ||
+      (description.present && description.value.length > 4096) ||
+      (mimeType.present && mimeType.value.length > 256)) {
     throw new Error('ResourceInfo field is too large');
   }
   let parsed;
   try {
-    parsed = new URL(resource.url);
+    parsed = new URL(url);
   } catch {
     throw new Error('ResourceInfo.url must be an absolute URL');
   }
@@ -456,7 +469,7 @@ export function validateResource(resource) {
     throw new Error('ResourceInfo.url must use HTTP or HTTPS');
   }
   if (parsed.username || parsed.password) throw new Error('ResourceInfo.url must not contain credentials');
-  if (/[\r\n]/.test(resource.mimeType)) throw new Error('ResourceInfo.mimeType is invalid');
+  if (mimeType.present && /[\r\n]/.test(mimeType.value)) throw new Error('ResourceInfo.mimeType is invalid');
 }
 
 export function validatePaymentRequired(paymentRequired) {
@@ -500,8 +513,8 @@ export function makePaymentRequired({ resourceUrl, description, mimeType, requir
     ...(error ? { error } : {}),
     resource: {
       url: resourceUrl,
-      description,
-      mimeType,
+      ...(description !== undefined ? { description } : {}),
+      ...(mimeType !== undefined ? { mimeType } : {}),
     },
     accepts: [requirement],
   };

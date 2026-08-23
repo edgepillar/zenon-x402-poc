@@ -717,6 +717,41 @@ test('buyer transport errors preserve the reusable payment without exposing the 
   );
 });
 
+test('outcome-unknown recovery preserves optional ResourceInfo representation exactly', async () => {
+  const resources = [
+    { url: 'https://resource.example/paid' },
+    { url: 'https://resource.example/paid', description: '', mimeType: '' },
+  ];
+
+  for (const resource of resources) {
+    const requirement = await buildRequirement('mock');
+    const paymentRequired = {
+      x402Version: 2,
+      resource,
+      accepts: [requirement],
+    };
+    let calls = 0;
+    let submitted;
+    await assert.rejects(
+      paidFetch(resource.url, new MockExactZenonClient(), async (_url, options) => {
+        calls += 1;
+        if (!options) return challengeResponse(paymentRequired);
+        submitted = decodeB64Json(options.headers[HEADERS.PAYMENT_SIGNATURE]);
+        throw new Error('synthetic transport failure');
+      }),
+      error => {
+        assert.ok(error instanceof PaymentSubmissionOutcomeUnknownError);
+        assert.deepEqual(error.paymentRequired.resource, resource);
+        assert.deepEqual(error.paymentPayload.resource, resource);
+        assert.deepEqual(submitted.resource, resource);
+        assert.equal(error.retrySamePayment, true);
+        return true;
+      },
+    );
+    assert.equal(calls, 2);
+  }
+});
+
 test('mixed-offer recovery retains the original challenge and selected payment', async () => {
   const { paymentRequired, requirement } = await buyerChallenge('https://resource.example/paid');
   const original = {

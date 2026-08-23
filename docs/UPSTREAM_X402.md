@@ -45,6 +45,12 @@ Every offer first receives generic stable-v2 structural validation. Selection pr
 
 Selection performs no speculative payload construction, signing, SDK initialization, RPC, PoW, settlement, or resource delivery. For a multi-offer challenge, payment construction receives a detached internal view containing only the selected offer, while success and recovery retain the original challenge. The missing-flow compatibility option remains confined to the single-offer Phase 2A characterization lane. This boundary does not establish complete stable-v2 compatibility, official registration, a canonical Zenon network identifier, Phase 2C activation, or hardware-wallet support.
 
+## Local ResourceInfo metadata boundary
+
+The strict local profile requires `ResourceInfo.url`. `description` and `mimeType` are optional strings, and empty strings are accepted for interoperability with official server defaults. Selection, payment construction, intent binding, success, and recovery preserve their exact presence and value; absent metadata is not normalized to an empty string. Explicit `null` and additional `ResourceInfo` members remain unsupported.
+
+This narrow compatibility slice does not add extension handling or claim complete stable-v2 compatibility. Phase 2C, hardware wallets, and authenticated live-chain identity remain separate and deferred.
+
 ## Malformed paid-request boundary
 
 The local HTTP server distinguishes definitely malformed submitted input from payment policy and settlement outcomes. Missing payment receives the ordinary `402` challenge. A present payment header with invalid transport encoding, excessive size or depth, a malformed V2 envelope, wrong required container or primitive types, or invalid primitive encoding for a declared local Zenon route receives a fixed private `400` response without `PAYMENT-REQUIRED` or `PAYMENT-RESPONSE`. Structurally valid but unsupported versions, routes, flows, optional members, local policy values, and exact-requirement mismatches remain `402`; rejected settlement also remains `402`, while uncertain settlement retains the PoC-specific `409` reconciliation response.
