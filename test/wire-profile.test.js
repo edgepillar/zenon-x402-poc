@@ -12,6 +12,7 @@ import {
   validateBasePaymentRequirement,
   validateCanonicalZenonAmount,
   validatePaymentPayloadEnvelope,
+  validatePaymentPayloadStructure,
   validatePaymentRequired,
   validatePaymentRequiredForOfferSelection,
   validateRequirement,
@@ -277,6 +278,100 @@ test('outer x402 structures reject missing and unexpected fields', () => {
   const missingProfile = structuredClone(requirement);
   delete missingProfile.extra.zenonChain;
   assert.throws(() => validateRequirement(missingProfile));
+});
+
+test('payment payload structure separates malformed V2 input from unsupported local policy', () => {
+  const valid = paymentPayload();
+  assert.doesNotThrow(() => validatePaymentPayloadStructure(valid));
+
+  const structurallyValidButUnsupported = [
+    { x402Version: 1 },
+    Object.fromEntries(Object.entries(valid).filter(([key]) => key !== 'resource')),
+    { ...valid, resource: null },
+    { ...valid, extensions: {} },
+    { ...valid, unexpected: true },
+    {
+      ...valid,
+      resource: { url: valid.resource.url, description: null, mimeType: null },
+    },
+    {
+      ...valid,
+      accepted: { ...valid.accepted, maxTimeoutSeconds: 0.5 },
+    },
+    {
+      ...valid,
+      accepted: { ...valid.accepted, amount: (MAX_ZENON_AMOUNT + 1n).toString() },
+    },
+    {
+      ...valid,
+      accepted: {
+        ...valid.accepted,
+        extra: { ...valid.accepted.extra, paymentFlow: { unsupported: true } },
+      },
+    },
+  ];
+  for (const value of structurallyValidButUnsupported) {
+    assert.doesNotThrow(() => validatePaymentPayloadStructure(value));
+    assert.throws(() => validatePaymentPayloadEnvelope(value));
+  }
+
+  const malformed = [
+    null,
+    [],
+    {},
+    { ...valid, x402Version: '2' },
+    Object.fromEntries(Object.entries(valid).filter(([key]) => key !== 'accepted')),
+    Object.fromEntries(Object.entries(valid).filter(([key]) => key !== 'payload')),
+    { ...valid, accepted: null },
+    { ...valid, payload: [] },
+    { ...valid, resource: [] },
+    { ...valid, resource: { url: valid.resource.url, description: 1 } },
+    { ...valid, extensions: [] },
+    { ...valid, accepted: { ...valid.accepted, amount: '01' } },
+    { ...valid, accepted: { ...valid.accepted, extra: null } },
+    {
+      ...valid,
+      accepted: {
+        ...valid.accepted,
+        extra: { ...valid.accepted.extra, poc: 'true' },
+      },
+    },
+    {
+      ...valid,
+      accepted: {
+        ...valid.accepted,
+        extra: { ...valid.accepted.extra, zenonChain: null },
+      },
+    },
+    {
+      ...valid,
+      accepted: {
+        ...valid.accepted,
+        extra: {
+          ...valid.accepted.extra,
+          zenonChain: { ...valid.accepted.extra.zenonChain, chainIdentifier: '01' },
+        },
+      },
+    },
+    { ...valid, payload: { ...valid.payload, transaction: [] } },
+    { ...valid, payload: { ...valid.payload, intentDigest: 'B'.repeat(64) } },
+  ];
+  for (const value of malformed) assert.throws(() => validatePaymentPayloadStructure(value));
+
+  const unsupportedRoute = {
+    ...valid,
+    accepted: {
+      scheme: 'other',
+      network: 'other:test',
+      asset: 'asset',
+      amount: '01',
+      payTo: 'recipient',
+      maxTimeoutSeconds: 0.5,
+      extra: null,
+    },
+  };
+  assert.doesNotThrow(() => validatePaymentPayloadStructure(unsupportedRoute));
+  assert.throws(() => validatePaymentPayloadEnvelope(unsupportedRoute));
 });
 
 test('live requirement construction requires a programmatic profile and enforces amount boundaries', async () => {

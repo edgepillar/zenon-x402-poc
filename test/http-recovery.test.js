@@ -452,7 +452,7 @@ test('a known transaction cannot authorize a different protected resource', asyn
   }
 });
 
-test('malformed payment header remains a safe 402 boundary failure', async () => {
+test('malformed payment header returns a private 400 without payment response headers', async () => {
   const facilitator = new MockExactZenonFacilitator();
   const requirement = await buildRequirement('mock');
   const app = createResourceServer({ facilitator, requirement });
@@ -461,10 +461,11 @@ test('malformed payment header remains a safe 402 boundary failure', async () =>
     const response = await fetch(`${listening.url}/paid`, {
       headers: { [HEADERS.PAYMENT_SIGNATURE]: 'not canonical base64!' },
     });
-    assert.equal(response.status, 402);
+    assert.equal(response.status, 400);
     assertPaidResponseIsPrivate(response);
-    assert.equal((await response.json()).error, 'invalid_payment_header');
-    assert.ok(response.headers.get(HEADERS.PAYMENT_REQUIRED));
+    assert.deepEqual(await response.json(), { error: 'invalid_payment' });
+    assert.equal(response.headers.get(HEADERS.PAYMENT_REQUIRED), null);
+    assert.equal(response.headers.get(HEADERS.PAYMENT_RESPONSE), null);
   } finally {
     await app.close();
   }
@@ -589,8 +590,11 @@ test('in-flight canonicalization rejects deeply nested unvalidated transactions 
     for (let depth = 0; depth < 1_000; depth += 1) nested = [nested];
     paymentPayload.payload.transaction = { nested };
     const response = await submitPayment(listening.url, paymentPayload);
-    assert.equal(response.status, 402);
-    assert.equal((await response.json()).error, 'invalid_payment_header');
+    assert.equal(response.status, 400);
+    assertPaidResponseIsPrivate(response);
+    assert.deepEqual(await response.json(), { error: 'invalid_payment' });
+    assert.equal(response.headers.get(HEADERS.PAYMENT_REQUIRED), null);
+    assert.equal(response.headers.get(HEADERS.PAYMENT_RESPONSE), null);
   } finally {
     await app.close();
   }
@@ -776,6 +780,23 @@ test('buyer treats a post-submission 402 without settlement evidence as uncertai
     error => error instanceof PaymentSubmissionOutcomeUnknownError &&
       error.httpStatus === 402 && error.retrySamePayment === true,
   );
+});
+
+test('buyer treats an uncorroborated post-submission 400 as uncertain', async () => {
+  const { paymentRequired } = await buyerChallenge('https://resource.example/paid');
+  let calls = 0;
+  const fetchImpl = async () => {
+    calls += 1;
+    if (calls === 1) return challengeResponse(paymentRequired);
+    return { status: 400, headers: new Headers() };
+  };
+
+  await assert.rejects(
+    paidFetch(paymentRequired.resource.url, new MockExactZenonClient(), fetchImpl),
+    error => error instanceof PaymentSubmissionOutcomeUnknownError &&
+      error.httpStatus === 400 && error.retrySamePayment === true,
+  );
+  assert.equal(calls, 2);
 });
 
 test('buyer returns exact transaction-bound definite rejection evidence', async () => {
