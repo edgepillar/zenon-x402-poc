@@ -4,8 +4,8 @@ import {
   EXPERIMENTAL_LIVE_NETWORK,
   MOCK_NETWORK,
   MOCK_ZENON_CHAIN_PROFILE,
+  validateActiveUpfrontRequirement,
   validateCanonicalZenonAmount,
-  validateRequirement,
   validateZenonChainProfile,
 } from './x402-wire.js';
 
@@ -28,12 +28,13 @@ export async function buildRequirement(
       payTo: 'mock-seller',
       maxTimeoutSeconds: 30,
       extra: {
+        paymentFlow: 'upfront',
         poc: true,
         settlement: 'account-block',
         zenonChain: { ...MOCK_ZENON_CHAIN_PROFILE },
       },
     };
-    validateRequirement(requirement);
+    validateActiveUpfrontRequirement(requirement);
     return requirement;
   }
 
@@ -61,11 +62,12 @@ export async function buildRequirement(
     payTo,
     maxTimeoutSeconds: envInt('ZENON_MAX_TIMEOUT_SECONDS', 60),
     extra: {
+      paymentFlow: 'upfront',
       poc: true,
       settlement: 'account-block',
       zenonChain: { ...zenonChain },
     },
   };
-  validateRequirement(requirement);
+  validateActiveUpfrontRequirement(requirement);
   return requirement;
 }

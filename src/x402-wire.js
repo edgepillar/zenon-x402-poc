@@ -25,6 +25,7 @@ const REQUIREMENT_FIELDS = Object.freeze([
   'scheme', 'network', 'asset', 'amount', 'payTo', 'maxTimeoutSeconds', 'extra',
 ]);
 const REQUIREMENT_EXTRA_FIELDS = Object.freeze(['poc', 'settlement', 'zenonChain']);
+const REQUIREMENT_EXTRA_OPTIONAL_FIELDS = Object.freeze(['paymentFlow']);
 const CHAIN_PROFILE_FIELDS = Object.freeze(['version', 'chainIdentifier', 'genesisMomentumHash']);
 const RESOURCE_FIELDS = Object.freeze(['url', 'description', 'mimeType']);
 const PAYMENT_REQUIRED_FIELDS = Object.freeze(['x402Version', 'resource', 'accepts']);
@@ -126,10 +127,16 @@ export function validateRequirement(req) {
     throw new Error(`maxTimeoutSeconds must be between 1 and ${MAX_SETTLEMENT_TIMEOUT_SECONDS}`);
   }
 
-  assertExactKeys(req.extra, REQUIREMENT_EXTRA_FIELDS, { label: 'PaymentRequirements.extra' });
+  assertExactKeys(req.extra, REQUIREMENT_EXTRA_FIELDS, {
+    optional: REQUIREMENT_EXTRA_OPTIONAL_FIELDS,
+    label: 'PaymentRequirements.extra',
+  });
   if (req.extra.poc !== true) throw new Error('PaymentRequirements.extra.poc must equal true');
   if (req.extra.settlement !== 'account-block') {
     throw new Error('PaymentRequirements.extra.settlement must equal account-block');
+  }
+  if (Object.hasOwn(req.extra, 'paymentFlow') && req.extra.paymentFlow !== 'upfront') {
+    throw new Error('PaymentRequirements.extra.paymentFlow must equal upfront');
   }
   validateZenonChainProfile(req.extra.zenonChain);
   const isSyntheticMock = sameChainProfile(req.extra.zenonChain, MOCK_ZENON_CHAIN_PROFILE);
@@ -139,6 +146,13 @@ export function validateRequirement(req) {
   if (req.network !== MOCK_NETWORK &&
       (isSyntheticMock || req.extra.zenonChain.genesisMomentumHash === MOCK_ZENON_CHAIN_PROFILE.genesisMomentumHash)) {
     throw new Error('live requirements cannot use the synthetic mock chain profile');
+  }
+}
+
+export function validateActiveUpfrontRequirement(req) {
+  validateRequirement(req);
+  if (!Object.hasOwn(req.extra, 'paymentFlow')) {
+    throw new Error('active HTTP payments require PaymentRequirements.extra.paymentFlow=upfront');
   }
 }
 

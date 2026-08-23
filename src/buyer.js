@@ -4,6 +4,7 @@ import {
   EXPERIMENTAL_LIVE_NETWORK,
   HEADERS,
   sameRequirements,
+  validateActiveUpfrontRequirement,
   validatePaymentPayloadEnvelope,
   validatePaymentRequired,
   validateRequirement,
@@ -14,6 +15,7 @@ const HASH_HEX = /^[0-9a-f]{64}$/;
 const DEFINITIVE_SETTLEMENT_FAILURE = 'payment_settlement_failed';
 const SETTLEMENT_FIELDS = Object.freeze(['success', 'network', 'transaction', 'payer', 'state']);
 const OPTIONAL_SETTLEMENT_FIELDS = Object.freeze(['errorReason', 'retrySamePayment']);
+const LEGACY_FLOW_OPTION = 'allowLegacyMissingPaymentFlowForCharacterization';
 const RECOVERY_STATES = new Set([
   'VALIDATED',
   'SUBMISSION_ACKNOWLEDGED',
@@ -47,7 +49,8 @@ export class PaymentSubmissionOutcomeUnknownError extends Error {
   }
 }
 
-export async function paidFetch(url, paymentClient, fetchImpl = fetch) {
+export async function paidFetch(url, paymentClient, fetchImpl = fetch, options = {}) {
+  const allowLegacyMissingPaymentFlow = validatePaidFetchOptions(options);
   const first = await fetchImpl(url);
   if (first.status !== 402) {
     return { response: first, paymentRequired: null, paymentPayload: null, settlement: null };
@@ -65,7 +68,11 @@ export async function paidFetch(url, paymentClient, fetchImpl = fetch) {
   }
   const accepted = paymentRequired.accepts?.[0];
   if (!accepted) throw new Error('no accepted payment option');
-  validateRequirement(accepted);
+  if (allowLegacyMissingPaymentFlow && !Object.hasOwn(accepted.extra, 'paymentFlow')) {
+    validateRequirement(accepted);
+  } else {
+    validateActiveUpfrontRequirement(accepted);
+  }
   if (accepted.network === EXPERIMENTAL_LIVE_NETWORK && advertisedResource.protocol !== 'https:') {
     throw new Error('live payment resource must use HTTPS');
   }
@@ -106,6 +113,20 @@ export async function paidFetch(url, paymentClient, fetchImpl = fetch) {
     throw outcomeUnknown({ paymentRequired, paymentPayload: submittedPaymentPayload, httpStatus: second.status });
   }
   return { response: second, paymentRequired, paymentPayload, settlement };
+}
+
+function validatePaidFetchOptions(options) {
+  if (!isPlainObject(options)) throw new Error('paidFetch options must be a plain object');
+  const keys = Reflect.ownKeys(options);
+  if (keys.some(key => key !== LEGACY_FLOW_OPTION)) {
+    throw new Error('paidFetch options contain an unexpected field');
+  }
+  if (keys.length === 0) return false;
+  const descriptor = Object.getOwnPropertyDescriptor(options, LEGACY_FLOW_OPTION);
+  if (!descriptor || !Object.hasOwn(descriptor, 'value') || typeof descriptor.value !== 'boolean') {
+    throw new Error(`${LEGACY_FLOW_OPTION} must be a boolean`);
+  }
+  return descriptor.value;
 }
 
 function outcomeUnknown(details) {

@@ -35,6 +35,8 @@ import { EVIDENCE_STATES } from '../src/settlement-journal.js';
 
 ed.etc.sha512Sync = (...m) => sha512(ed.etc.concatBytes(...m));
 
+const LEGACY_FLOW_OPTION = 'allowLegacyMissingPaymentFlowForCharacterization';
+
 function requirement() {
   return {
     scheme: 'exact',
@@ -44,6 +46,7 @@ function requirement() {
     payTo: 'mock-seller',
     maxTimeoutSeconds: 30,
     extra: {
+      paymentFlow: 'upfront',
       poc: true,
       settlement: 'account-block',
       zenonChain: { ...MOCK_ZENON_CHAIN_PROFILE },
@@ -173,6 +176,7 @@ test('payment intent digest covers every selected requirement and resource field
     value => { value.accepted.amount = '101'; },
     value => { value.accepted.payTo = 'other-recipient'; },
     value => { value.accepted.maxTimeoutSeconds = 31; },
+    value => { value.accepted.extra.paymentFlow = 'authorization'; },
     value => { value.accepted.extra.poc = false; },
   ];
   for (const mutate of mutations) {
@@ -204,6 +208,237 @@ test('buyer refuses to sign for a different advertised resource URL', async () =
     /does not match/,
   );
   assert.equal(signed, false);
+});
+
+test('buyer rejects every non-upfront flow before payment construction or retry', async () => {
+  const variants = [
+    { label: 'missing', value: undefined },
+    { label: 'null', value: null },
+    { label: 'authorization', value: 'authorization' },
+    { label: 'escrow', value: 'escrow' },
+    { label: 'unknown', value: 'unknown' },
+    { label: 'boolean', value: false },
+    { label: 'number', value: 1 },
+    { label: 'object', value: {} },
+  ];
+
+  for (const variant of variants) {
+    const accepted = requirement();
+    if (variant.label === 'missing') delete accepted.extra.paymentFlow;
+    else accepted.extra.paymentFlow = variant.value;
+    const required = paymentRequired(accepted);
+    let paymentConstructions = 0;
+    let requests = 0;
+    const fetchImpl = async () => {
+      requests += 1;
+      return {
+        status: 402,
+        url: required.resource.url,
+        headers: new Headers({ [HEADERS.PAYMENT_REQUIRED]: encodeB64Json(required) }),
+      };
+    };
+
+    await assert.rejects(
+      paidFetch(required.resource.url, {
+        async createPaymentPayload() {
+          paymentConstructions += 1;
+        },
+      }, fetchImpl),
+      /paymentFlow/,
+    );
+    assert.equal(paymentConstructions, 0);
+    assert.equal(requests, 1);
+  }
+});
+
+test('paidFetch characterization option permits only a completely absent payment flow', async () => {
+  const accepted = requirement();
+  delete accepted.extra.paymentFlow;
+  const required = paymentRequired(accepted);
+  let falseOptionConstructions = 0;
+  let falseOptionRequests = 0;
+  await assert.rejects(
+    paidFetch(required.resource.url, {
+      async createPaymentPayload() {
+        falseOptionConstructions += 1;
+      },
+    }, async () => {
+      falseOptionRequests += 1;
+      return {
+        status: 402,
+        url: required.resource.url,
+        headers: new Headers({ [HEADERS.PAYMENT_REQUIRED]: encodeB64Json(required) }),
+      };
+    }, { [LEGACY_FLOW_OPTION]: false }),
+    /paymentFlow/,
+  );
+  assert.equal(falseOptionConstructions, 0);
+  assert.equal(falseOptionRequests, 1);
+
+  const exact = new MockExactZenonClient();
+  let paymentConstructions = 0;
+  let requests = 0;
+  const paymentClient = {
+    async createPaymentPayload(...args) {
+      paymentConstructions += 1;
+      return exact.createPaymentPayload(...args);
+    },
+  };
+  const fetchImpl = async (_url, options) => {
+    requests += 1;
+    if (requests === 1) {
+      return {
+        status: 402,
+        url: required.resource.url,
+        headers: new Headers({ [HEADERS.PAYMENT_REQUIRED]: encodeB64Json(required) }),
+      };
+    }
+    const payload = decodeB64Json(options.headers[HEADERS.PAYMENT_SIGNATURE]);
+    return {
+      status: 200,
+      headers: new Headers({
+        [HEADERS.PAYMENT_RESPONSE]: encodeB64Json({
+          success: true,
+          network: accepted.network,
+          transaction: payload.payload.transaction.hash,
+          payer: payload.payload.transaction.address,
+          state: 'MOMENTUM_INCLUDED',
+        }),
+      }),
+    };
+  };
+
+  const result = await paidFetch(required.resource.url, paymentClient, fetchImpl, {
+    [LEGACY_FLOW_OPTION]: true,
+  });
+  assert.equal(result.response.status, 200);
+  assert.equal(Object.hasOwn(result.paymentPayload.accepted.extra, 'paymentFlow'), false);
+  assert.equal(paymentConstructions, 1);
+  assert.equal(requests, 2);
+
+  for (const paymentFlow of [null, 'authorization', 'escrow', 'unknown', false, 1, {}]) {
+    const invalidAccepted = requirement();
+    invalidAccepted.extra.paymentFlow = paymentFlow;
+    const invalidRequired = paymentRequired(invalidAccepted);
+    let invalidConstructions = 0;
+    let invalidRequests = 0;
+    await assert.rejects(
+      paidFetch(invalidRequired.resource.url, {
+        async createPaymentPayload() {
+          invalidConstructions += 1;
+        },
+      }, async () => {
+        invalidRequests += 1;
+        return {
+          status: 402,
+          url: invalidRequired.resource.url,
+          headers: new Headers({ [HEADERS.PAYMENT_REQUIRED]: encodeB64Json(invalidRequired) }),
+        };
+      }, { [LEGACY_FLOW_OPTION]: true }),
+      /paymentFlow/,
+    );
+    assert.equal(invalidConstructions, 0);
+    assert.equal(invalidRequests, 1);
+  }
+});
+
+test('paidFetch rejects malformed characterization options before any request', async () => {
+  let accessorReads = 0;
+  const accessorOption = {};
+  Object.defineProperty(accessorOption, LEGACY_FLOW_OPTION, {
+    enumerable: true,
+    get() {
+      accessorReads += 1;
+      return true;
+    },
+  });
+  const malformedOptions = [
+    null,
+    [],
+    true,
+    'true',
+    { unexpected: true },
+    { [LEGACY_FLOW_OPTION]: null },
+    { [LEGACY_FLOW_OPTION]: 'true' },
+    { [LEGACY_FLOW_OPTION]: true, unexpected: true },
+    { [Symbol('unexpected')]: true },
+    accessorOption,
+  ];
+
+  for (const options of malformedOptions) {
+    let requests = 0;
+    let paymentConstructions = 0;
+    await assert.rejects(
+      paidFetch('https://resource.example/paid', {
+        async createPaymentPayload() {
+          paymentConstructions += 1;
+        },
+      }, async () => {
+        requests += 1;
+      }, options),
+      /paidFetch options|allowLegacyMissingPaymentFlowForCharacterization/,
+    );
+    assert.equal(requests, 0);
+    assert.equal(paymentConstructions, 0);
+  }
+  assert.equal(accessorReads, 0);
+});
+
+test('resource server rejects non-upfront configuration before downstream effects', () => {
+  const variants = [undefined, null, 'authorization', 'escrow', 'unknown', false, 1, {}];
+  for (const paymentFlow of variants) {
+    const accepted = requirement();
+    if (paymentFlow === undefined) delete accepted.extra.paymentFlow;
+    else accepted.extra.paymentFlow = paymentFlow;
+    const effects = { settle: 0, verify: 0, journal: 0, publication: 0, resource: 0 };
+    const facilitator = {
+      async verify() {
+        effects.verify += 1;
+      },
+      async settle() {
+        effects.settle += 1;
+        effects.journal += 1;
+        effects.publication += 1;
+      },
+    };
+
+    assert.throws(() => createResourceServer({
+      facilitator,
+      requirement: accepted,
+      resourceHandler: async () => { effects.resource += 1; },
+    }), /paymentFlow/);
+    assert.deepEqual(effects, { settle: 0, verify: 0, journal: 0, publication: 0, resource: 0 });
+  }
+});
+
+test('resource server rejects a submitted requirement without upfront before settlement', async () => {
+  const accepted = requirement();
+  const required = paymentRequired(accepted);
+  const payload = await new MockExactZenonClient().createPaymentPayload(required, accepted);
+  delete payload.accepted.extra.paymentFlow;
+  let settleCalls = 0;
+  let deliveries = 0;
+  const app = createResourceServer({
+    facilitator: {
+      async settle() {
+        settleCalls += 1;
+      },
+    },
+    requirement: accepted,
+    resourceHandler: async () => { deliveries += 1; },
+  });
+  const listening = await app.listen();
+  try {
+    const response = await fetch(`${listening.url}/paid`, {
+      headers: { [HEADERS.PAYMENT_SIGNATURE]: encodeB64Json(payload) },
+    });
+    assert.equal(response.status, 402);
+    assert.equal((await response.json()).error, 'invalid_payment_header');
+    assert.equal(settleCalls, 0);
+    assert.equal(deliveries, 0);
+  } finally {
+    await app.close();
+  }
 });
 
 function structurallyValidBlockJson() {
@@ -645,6 +880,7 @@ async function preparedZenonFixture({ recipient } = {}) {
       payTo: payTo.toString(),
       maxTimeoutSeconds: 30,
       extra: {
+        paymentFlow: 'upfront',
         poc: true,
         settlement: 'account-block',
         zenonChain: { ...SYNTHETIC_LIVE_PROFILE },

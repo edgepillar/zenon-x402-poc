@@ -87,6 +87,7 @@ Every selected Zenon payment requirement includes:
 ```json
 {
   "poc": true,
+  "paymentFlow": "upfront",
   "settlement": "account-block",
   "zenonChain": {
     "version": 1,
@@ -95,6 +96,8 @@ Every selected Zenon payment requirement includes:
   }
 }
 ```
+
+Active HTTP payment requirements use exactly `extra.paymentFlow: "upfront"`. The buyer rejects a missing or different flow before payment construction, and the resource server rejects it before settlement or protected-resource delivery. In this PoC, `upfront` means successful settlement and Momentum inclusion precede release of the protected resource. A missing-field compatibility path exists only to replay immutable Phase 2A characterization fixtures; ordinary runtime callers do not enable it.
 
 The complete selected requirement, including this profile, is committed by the payment-intent digest in the signed account block. The signed block's `chainIdentifier` must equal the profile value.
 

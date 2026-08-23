@@ -341,7 +341,11 @@ async function runSdkHarness({ scenario, mnemonic, behavior }) {
       rpcTimeoutMs: behavior.rpcTimeoutMs ?? 500,
     });
     const fetchImpl = makeFakeFetch(state, paymentRequired);
-    const operation = paidFetch(paymentRequired.resource.url, client, fetchImpl);
+    const operation = paidFetch(paymentRequired.resource.url, client, fetchImpl, {
+      // Preserve the immutable pre-paymentFlow characterization only.
+      // Active runtime callers never enable this compatibility option.
+      allowLegacyMissingPaymentFlowForCharacterization: true,
+    });
     const reflectedOperation = operation.then(
       value => ({ status: 'fulfilled', value }),
       error => ({ status: 'rejected', error }),

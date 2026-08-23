@@ -8,8 +8,9 @@ import {
   HEADERS,
   makePaymentRequired,
   MOCK_NETWORK,
+  sameRequirements,
+  validateActiveUpfrontRequirement,
   validatePaymentPayloadEnvelope,
-  validateRequirement,
 } from './x402-wire.js';
 
 const MAX_PAYMENT_HEADER_BYTES = 8 * 1024;
@@ -34,7 +35,7 @@ export function createResourceServer({
   resourceHandler,
 }) {
   const configuredRequirement = structuredClone(requirement);
-  validateRequirement(configuredRequirement);
+  validateActiveUpfrontRequirement(configuredRequirement);
   let actualPort = port;
   const inFlight = new Map();
 
@@ -63,6 +64,10 @@ export function createResourceServer({
       try {
         paymentPayload = decodeB64Json(signatureHeader, { maxDecodedBytes: MAX_PAYMENT_HEADER_BYTES });
         validatePaymentPayloadEnvelope(paymentPayload);
+        validateActiveUpfrontRequirement(paymentPayload.accepted);
+        if (!sameRequirements(paymentPayload.accepted, configuredRequirement)) {
+          throw new Error('submitted payment requirement does not match the configured requirement');
+        }
         validateJsonValue(paymentPayload);
       } catch {
         return requirePayment(res, { ...paymentRequired, error: 'invalid_payment_header' });
