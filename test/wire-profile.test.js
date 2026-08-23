@@ -4,6 +4,7 @@ import { paymentIntentDigest } from '../src/canonical.js';
 import { buildRequirement } from '../src/config.js';
 import {
   createPaymentCapabilities,
+  makePaymentRequired,
   MAX_ZENON_AMOUNT,
   MOCK_ZENON_CHAIN_PROFILE,
   sameRequirements,
@@ -15,6 +16,7 @@ import {
   validatePaymentPayloadStructure,
   validatePaymentRequired,
   validatePaymentRequiredForOfferSelection,
+  validateResource,
   validateRequirement,
   validateZenonChainProfile,
 } from '../src/x402-wire.js';
@@ -278,6 +280,112 @@ test('outer x402 structures reject missing and unexpected fields', () => {
   const missingProfile = structuredClone(requirement);
   delete missingProfile.extra.zenonChain;
   assert.throws(() => validateRequirement(missingProfile));
+});
+
+test('strict ResourceInfo preserves optional metadata absence and empty strings', () => {
+  const requirement = liveRequirement();
+  const url = 'https://resource.example/paid';
+  const resources = [
+    { url },
+    { url, description: '' },
+    { url, mimeType: '' },
+    { url, description: 'test resource' },
+    { url, mimeType: 'application/json' },
+    { url, description: '', mimeType: '' },
+    { url, description: 'test resource', mimeType: 'application/json' },
+  ];
+
+  for (const resource of resources) {
+    const original = structuredClone(resource);
+    assert.doesNotThrow(() => validateResource(resource));
+    assert.doesNotThrow(() => validatePaymentRequired({
+      x402Version: 2,
+      resource,
+      accepts: [requirement],
+    }));
+    assert.doesNotThrow(() => validatePaymentPayloadEnvelope({
+      ...paymentPayload(requirement),
+      resource,
+    }));
+    assert.deepEqual(resource, original);
+  }
+
+  const omitted = makePaymentRequired({ resourceUrl: url, requirement });
+  assert.deepEqual(omitted.resource, { url });
+  assert.deepEqual(Object.keys(omitted.resource), ['url']);
+
+  const complete = makePaymentRequired({
+    resourceUrl: url,
+    description: 'test resource',
+    mimeType: 'application/json',
+    requirement,
+  });
+  assert.deepEqual(complete.resource, resources.at(-1));
+
+  const digests = resources.slice(0, 5).map(resource => paymentIntentDigest({
+    x402Version: 2,
+    resource,
+    accepts: [requirement],
+  }, requirement));
+  assert.equal(new Set(digests).size, digests.length);
+});
+
+test('strict ResourceInfo rejects invalid optional metadata without invoking accessors', () => {
+  const url = 'https://resource.example/paid';
+  for (const key of ['description', 'mimeType']) {
+    for (const value of [null, undefined, 1, [], {}, Symbol('invalid')]) {
+      assert.throws(() => validateResource({ url, [key]: value }));
+    }
+
+    let reads = 0;
+    const resource = { url };
+    Object.defineProperty(resource, key, {
+      enumerable: true,
+      get() {
+        reads += 1;
+        return 'must not be read';
+      },
+    });
+    assert.throws(() => validateResource(resource));
+    assert.equal(reads, 0);
+  }
+
+  let urlReads = 0;
+  const accessorUrl = {};
+  Object.defineProperty(accessorUrl, 'url', {
+    enumerable: true,
+    get() {
+      urlReads += 1;
+      return url;
+    },
+  });
+  assert.throws(() => validateResource(accessorUrl));
+  assert.equal(urlReads, 0);
+
+  for (const unexpected of [
+    { serviceName: 'service' },
+    { tags: ['tag'] },
+    { iconUrl: 'https://resource.example/icon.png' },
+    { unexpected: true },
+  ]) {
+    assert.throws(() => validateResource({ url, ...unexpected }));
+  }
+
+  const credentialUrl = new URL(url);
+  credentialUrl.username = 'x';
+  credentialUrl.password = 'x';
+  for (const invalidUrl of [
+    '',
+    'relative/path',
+    'ftp://resource.example/paid',
+    credentialUrl.href,
+    `https://resource.example/${'a'.repeat(4096)}`,
+  ]) {
+    assert.throws(() => validateResource({ url: invalidUrl }));
+  }
+  assert.throws(() => validateResource({ url, description: 'a'.repeat(4097) }));
+  assert.throws(() => validateResource({ url, mimeType: 'a'.repeat(257) }));
+  assert.throws(() => validateResource({ url, mimeType: 'text/plain\r\ninvalid: true' }));
 });
 
 test('payment payload structure separates malformed V2 input from unsupported local policy', () => {
