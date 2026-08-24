@@ -10,7 +10,7 @@ import {
 import { createHash, randomBytes } from 'node:crypto';
 import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { MAX_ZENON_AMOUNT } from './x402-wire.js';
+import { MAX_ZENON_AMOUNT, validateResource } from './x402-wire.js';
 
 export const JOURNAL_SCHEMA_VERSION = 1;
 export const EVIDENCE_STATES = Object.freeze({
@@ -224,10 +224,19 @@ function validateChainProfile(profile) {
 }
 
 function validateResourceIdentity(resource) {
-  return exactKeys(resource, ['url', 'description', 'mimeType']) &&
-    typeof resource.url === 'string' && resource.url.length > 0 && resource.url.length <= 4096 &&
-    typeof resource.description === 'string' && resource.description.length <= 4096 &&
-    typeof resource.mimeType === 'string' && resource.mimeType.length > 0 && resource.mimeType.length <= 256;
+  try {
+    validateResource(resource);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function validateInputResourceIdentity(input) {
+  if (!isPlainObject(input)) return false;
+  const descriptor = Object.getOwnPropertyDescriptor(input, 'resourceIdentity');
+  return Boolean(descriptor && Object.hasOwn(descriptor, 'value') &&
+    validateResourceIdentity(descriptor.value));
 }
 
 function validateSignedAccountBlock(block, record) {
@@ -514,6 +523,7 @@ export class SettlementJournal {
   }
 
   async putValidated(input) {
+    if (!validateInputResourceIdentity(input)) journalError('journal_record_invalid');
     const immutable = cloneJson(input);
     const timestamp = this.#now();
     const candidate = {

@@ -330,6 +330,282 @@ test('strict ResourceInfo preserves optional metadata absence and empty strings'
   assert.equal(new Set(digests).size, digests.length);
 });
 
+test('strict ResourceInfo preserves service names and descriptor-safe tags exactly', async () => {
+  const requirement = liveRequirement();
+  const url = 'https://resource.example/paid';
+  const resources = [
+    { url, serviceName: 'A' },
+    { url, serviceName: 'S'.repeat(32) },
+    { url, tags: [] },
+    { url, tags: ['A'] },
+    { url, tags: ['T'.repeat(32)] },
+    { url, tags: ['alpha'] },
+    { url, tags: ['alpha', 'beta'] },
+    { url, tags: ['alpha', 'beta', 'gamma'] },
+    { url, tags: ['alpha', 'beta', 'gamma', 'delta'] },
+    { url, tags: ['alpha', 'alpha', 'beta', 'alpha', 'beta'] },
+    { url, description: '', mimeType: '', serviceName: 'Service', tags: ['beta', 'alpha'] },
+  ];
+
+  for (const resource of resources) {
+    const original = structuredClone(resource);
+    assert.doesNotThrow(() => validateResource(resource));
+    assert.doesNotThrow(() => validatePaymentRequired({
+      x402Version: 2,
+      resource,
+      accepts: [requirement],
+    }));
+    assert.doesNotThrow(() => validatePaymentPayloadEnvelope({
+      ...paymentPayload(requirement),
+      resource,
+    }));
+    assert.deepEqual(resource, original);
+  }
+
+  const sourceTags = ['alpha', 'alpha', 'beta'];
+  const constructed = makePaymentRequired({
+    resourceUrl: url,
+    serviceName: 'Service',
+    tags: sourceTags,
+    requirement,
+  });
+  sourceTags[0] = 'changed';
+  sourceTags.push('later');
+  assert.deepEqual(constructed.resource, {
+    url,
+    serviceName: 'Service',
+    tags: ['alpha', 'alpha', 'beta'],
+  });
+
+  const emptyTags = makePaymentRequired({ resourceUrl: url, tags: [], requirement });
+  assert.equal(Object.hasOwn(emptyTags.resource, 'tags'), true);
+  assert.deepEqual(emptyTags.resource.tags, []);
+
+  const wire = await import('../src/x402-wire.js');
+  assert.equal(typeof wire.sameResource, 'function');
+  assert.equal(wire.sameResource(resources.at(-1), structuredClone(resources.at(-1))), true);
+  for (const different of [
+    { ...resources.at(-1), serviceName: 'Other' },
+    { ...resources.at(-1), tags: [] },
+    { ...resources.at(-1), tags: ['alpha', 'beta'] },
+    { ...resources.at(-1), tags: ['beta', 'alpha', 'alpha'] },
+    { url, description: '', mimeType: '', serviceName: 'Service' },
+  ]) {
+    assert.equal(wire.sameResource(resources.at(-1), different), false);
+  }
+
+  let resourceReads = 0;
+  const accessorResource = { url };
+  Object.defineProperty(accessorResource, 'tags', {
+    enumerable: true,
+    get() {
+      resourceReads += 1;
+      return ['alpha'];
+    },
+  });
+  assert.equal(wire.sameResource(accessorResource, { url, tags: ['alpha'] }), false);
+  assert.equal(resourceReads, 0);
+
+  let constructionReads = 0;
+  const accessorConstructionTags = [];
+  Object.defineProperty(accessorConstructionTags, '0', {
+    enumerable: true,
+    get() {
+      constructionReads += 1;
+      return 'alpha';
+    },
+  });
+  accessorConstructionTags.length = 1;
+  assert.throws(() => makePaymentRequired({
+    resourceUrl: url,
+    tags: accessorConstructionTags,
+    requirement,
+  }));
+  assert.equal(constructionReads, 0);
+
+  const boundResources = [
+    { url },
+    { url, serviceName: 'Service' },
+    { url, tags: [] },
+    { url, tags: ['alpha', 'beta'] },
+    { url, tags: ['beta', 'alpha'] },
+    { url, tags: ['alpha', 'alpha', 'beta'] },
+    { url, tags: ['alpha', 'beta', 'alpha'] },
+  ];
+  const digests = boundResources.map(resource => paymentIntentDigest({
+    x402Version: 2,
+    resource,
+    accepts: [requirement],
+  }, requirement));
+  assert.equal(new Set(digests).size, digests.length);
+});
+
+test('ResourceInfo service metadata rejects unsafe descriptors without invoking getters', () => {
+  const url = 'https://resource.example/paid';
+  const invalidServiceNames = [
+    '',
+    'a'.repeat(33),
+    'line\nfeed',
+    `delete${String.fromCharCode(0x7f)}`,
+    'caf\u00e9',
+    null,
+    undefined,
+    1,
+    [],
+    {},
+    Symbol('invalid'),
+  ];
+  for (const serviceName of invalidServiceNames) {
+    assert.throws(() => validateResource({ url, serviceName }));
+  }
+
+  const invalidTags = [
+    ['one', 'two', 'three', 'four', 'five', 'six'],
+    [''],
+    ['a'.repeat(33)],
+    ['line\nfeed'],
+    [`delete${String.fromCharCode(0x7f)}`],
+    ['caf\u00e9'],
+    [1],
+    [null],
+    [undefined],
+  ];
+  for (const tags of invalidTags) assert.throws(() => validateResource({ url, tags }));
+  for (const tags of [undefined, null, 'tag', 1, true, {}, new Set(['tag'])]) {
+    assert.throws(() => validateResource({ url, tags }));
+  }
+
+  const sparse = new Array(1);
+  assert.throws(() => validateResource({ url, tags: sparse }));
+
+  const inherited = [];
+  inherited.length = 1;
+  Object.setPrototypeOf(inherited, Object.create(Array.prototype, {
+    0: { value: 'inherited', enumerable: true },
+  }));
+  assert.throws(() => validateResource({ url, tags: inherited }));
+
+  let tagReads = 0;
+  const accessorTags = [];
+  Object.defineProperty(accessorTags, '0', {
+    enumerable: true,
+    get() {
+      tagReads += 1;
+      return 'must-not-run';
+    },
+  });
+  accessorTags.length = 1;
+  assert.throws(() => validateResource({ url, tags: accessorTags }));
+  assert.equal(tagReads, 0);
+
+  const unexpectedKey = ['tag'];
+  unexpectedKey.extra = true;
+  assert.throws(() => validateResource({ url, tags: unexpectedKey }));
+
+  const symbolKey = ['tag'];
+  symbolKey[Symbol('unexpected')] = true;
+  assert.throws(() => validateResource({ url, tags: symbolKey }));
+
+  const nonEnumerableIndex = [];
+  Object.defineProperty(nonEnumerableIndex, '0', {
+    value: 'tag',
+    enumerable: false,
+    writable: true,
+    configurable: true,
+  });
+  nonEnumerableIndex.length = 1;
+  assert.throws(() => validateResource({ url, tags: nonEnumerableIndex }));
+
+  for (const key of ['url', 'description', 'mimeType', 'serviceName', 'tags']) {
+    const resource = key === 'url' ? {} : { url };
+    const values = {
+      url,
+      description: 'description',
+      mimeType: 'application/json',
+      serviceName: 'Service',
+      tags: ['tag'],
+    };
+    Object.defineProperty(resource, key, {
+      value: values[key],
+      enumerable: false,
+    });
+    assert.throws(() => validateResource(resource));
+  }
+
+  let tagsPropertyReads = 0;
+  const accessorTagsProperty = { url };
+  Object.defineProperty(accessorTagsProperty, 'tags', {
+    enumerable: true,
+    get() {
+      tagsPropertyReads += 1;
+      return ['must-not-run'];
+    },
+  });
+  assert.throws(() => validateResource(accessorTagsProperty));
+  assert.equal(tagsPropertyReads, 0);
+
+  let serviceReads = 0;
+  const accessorService = { url };
+  Object.defineProperty(accessorService, 'serviceName', {
+    enumerable: true,
+    get() {
+      serviceReads += 1;
+      return 'must-not-run';
+    },
+  });
+  assert.throws(() => validateResource(accessorService));
+  assert.equal(serviceReads, 0);
+
+  const symbolResource = { url };
+  symbolResource[Symbol('unexpected')] = true;
+  assert.throws(() => validateResource(symbolResource));
+
+  assert.throws(() => createPaymentCapabilities([]));
+  assert.throws(() => createPaymentCapabilities([{
+    scheme: 'exact',
+    network: 'zenon:testnet',
+    paymentFlows: [],
+  }]));
+});
+
+test('stable ResourceInfo structure separates malformed released metadata from unsupported policy', () => {
+  const valid = paymentPayload();
+  for (const resource of [
+    { ...valid.resource, serviceName: '' },
+    { ...valid.resource, serviceName: 'a'.repeat(33) },
+    { ...valid.resource, tags: ['one', 'two', 'three', 'four', 'five', 'six'] },
+    { ...valid.resource, tags: [''] },
+  ]) {
+    assert.throws(() => validatePaymentPayloadStructure({ ...valid, resource }));
+  }
+
+  let reads = 0;
+  const accessorTags = [];
+  Object.defineProperty(accessorTags, '0', {
+    enumerable: true,
+    get() {
+      reads += 1;
+      return 'must-not-run';
+    },
+  });
+  accessorTags.length = 1;
+  assert.throws(() => validatePaymentPayloadStructure({
+    ...valid,
+    resource: { ...valid.resource, tags: accessorTags },
+  }));
+  assert.equal(reads, 0);
+
+  for (const resource of [
+    { ...valid.resource, serviceName: null },
+    { ...valid.resource, tags: null },
+    { ...valid.resource, iconUrl: 'https://resource.example/icon.png' },
+    { ...valid.resource, unknownMetadata: 'unsupported' },
+  ]) {
+    assert.doesNotThrow(() => validatePaymentPayloadStructure({ ...valid, resource }));
+    assert.throws(() => validatePaymentPayloadEnvelope({ ...valid, resource }));
+  }
+});
+
 test('strict ResourceInfo rejects invalid optional metadata without invoking accessors', () => {
   const url = 'https://resource.example/paid';
   for (const key of ['description', 'mimeType']) {
@@ -363,8 +639,6 @@ test('strict ResourceInfo rejects invalid optional metadata without invoking acc
   assert.equal(urlReads, 0);
 
   for (const unexpected of [
-    { serviceName: 'service' },
-    { tags: ['tag'] },
     { iconUrl: 'https://resource.example/icon.png' },
     { unexpected: true },
   ]) {

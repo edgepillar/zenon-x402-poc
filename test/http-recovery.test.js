@@ -721,6 +721,15 @@ test('outcome-unknown recovery preserves optional ResourceInfo representation ex
   const resources = [
     { url: 'https://resource.example/paid' },
     { url: 'https://resource.example/paid', description: '', mimeType: '' },
+    { url: 'https://resource.example/paid', serviceName: 'Service' },
+    { url: 'https://resource.example/paid', tags: [] },
+    {
+      url: 'https://resource.example/paid',
+      description: '',
+      mimeType: '',
+      serviceName: 'Service',
+      tags: ['alpha', 'alpha', 'beta'],
+    },
   ];
 
   for (const resource of resources) {
@@ -750,6 +759,54 @@ test('outcome-unknown recovery preserves optional ResourceInfo representation ex
     );
     assert.equal(calls, 2);
   }
+});
+
+test('detached single-offer client mutation cannot alter outcome-unknown recovery state', async () => {
+  const { paymentRequired, requirement } = await buyerChallenge('https://resource.example/paid');
+  paymentRequired.resource.serviceName = 'Service';
+  paymentRequired.resource.tags = ['alpha', 'alpha', 'beta'];
+  const originalChallenge = structuredClone(paymentRequired);
+  const exact = new MockExactZenonClient();
+  let calls = 0;
+  let submitted;
+  let mutatedClientView;
+
+  let recoveryError;
+  try {
+    await paidFetch(paymentRequired.resource.url, {
+      async createPaymentPayload(received, selected) {
+        const untouchedRequired = structuredClone(received);
+        const untouchedSelected = structuredClone(selected);
+        received.resource.serviceName = 'Other service';
+        received.resource.tags.reverse();
+        selected.amount = '101';
+        received.accepts[0].maxTimeoutSeconds = 31;
+        mutatedClientView = structuredClone(received);
+        return exact.createPaymentPayload(untouchedRequired, untouchedSelected);
+      },
+    }, async (_url, options) => {
+      calls += 1;
+      if (!options) return challengeResponse(paymentRequired);
+      submitted = decodeB64Json(options.headers[HEADERS.PAYMENT_SIGNATURE]);
+      throw new Error('synthetic transport failure');
+    });
+  } catch (error) {
+    recoveryError = error;
+  }
+
+  assert.equal(recoveryError?.message, 'payment_submission_outcome_unknown');
+  assert.ok(recoveryError instanceof PaymentSubmissionOutcomeUnknownError);
+  assert.deepEqual(recoveryError.paymentRequired, originalChallenge);
+  assert.deepEqual(recoveryError.paymentRequired.resource, originalChallenge.resource);
+  assert.deepEqual(recoveryError.paymentRequired.accepts[0], originalChallenge.accepts[0]);
+  assert.deepEqual(recoveryError.paymentPayload, submitted);
+  assert.deepEqual(recoveryError.paymentPayload.resource, originalChallenge.resource);
+  assert.deepEqual(recoveryError.paymentPayload.accepted, originalChallenge.accepts[0]);
+  assert.equal(recoveryError.retrySamePayment, true);
+
+  assert.equal(calls, 2);
+  assert.notDeepEqual(mutatedClientView, originalChallenge);
+  assert.deepEqual(paymentRequired, originalChallenge);
 });
 
 test('mixed-offer recovery retains the original challenge and selected payment', async () => {

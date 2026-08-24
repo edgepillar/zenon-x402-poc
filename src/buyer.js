@@ -3,6 +3,7 @@ import {
   encodeB64Json,
   EXPERIMENTAL_LIVE_NETWORK,
   HEADERS,
+  sameResource,
   sameRequirements,
   snapshotPaymentCapabilities,
   validateActiveUpfrontRequirement,
@@ -78,9 +79,7 @@ export async function paidFetch(url, paymentClient, fetchImpl = fetch, options =
   if (accepted.network === EXPERIMENTAL_LIVE_NETWORK && advertisedResource.protocol !== 'https:') {
     throw new Error('live payment resource must use HTTPS');
   }
-  const selectedView = paymentRequired.accepts.length === 1
-    ? { paymentRequired, accepted }
-    : makeSelectedPaymentRequiredView(paymentRequired, accepted);
+  const selectedView = makeSelectedPaymentRequiredView(paymentRequired, accepted);
   const paymentPayload = await paymentClient.createPaymentPayload(
     selectedView.paymentRequired,
     selectedView.accepted,
@@ -279,10 +278,6 @@ function validateSettlementResponse(settlement, paymentPayload, httpStatus) {
       typeof settlement.errorReason !== 'string' || !RECOVERY_STATES.has(settlement.state)) {
     throw new Error('invalid recovery settlement response');
   }
-}
-
-function sameResource(left, right) {
-  return left.url === right.url && left.description === right.description && left.mimeType === right.mimeType;
 }
 
 function isPlainObject(value) {

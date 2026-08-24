@@ -9,6 +9,7 @@ import {
   EVIDENCE_STATES,
   SettlementJournal,
 } from '../src/settlement-journal.js';
+import { validateResource } from '../src/x402-wire.js';
 
 function canonicalJson(value) {
   if (value === null || typeof value !== 'object') return JSON.stringify(value);
@@ -107,6 +108,107 @@ test('journal reload returns the exact immutable authorization identity', async 
   const record = await reloaded.get(attempt.authorizationKey, attempt.transactionHash);
   for (const [key, value] of Object.entries(attempt)) assert.deepEqual(record[key], value);
   assert.equal((await reloaded.load()).records.length, 1);
+});
+
+test('journal preserves legacy optionality and ResourceInfo service metadata exactly', async t => {
+  const { root, directory, journal } = await fixture(t);
+  const url = 'http://example.test/paid';
+  const resources = [
+    { url },
+    { url, description: 'description only' },
+    { url, mimeType: 'application/json' },
+    { url, description: '', mimeType: '', serviceName: 'A', tags: [] },
+    { url, serviceName: 'S'.repeat(32), tags: ['alpha'] },
+    { url, serviceName: 'Service', tags: ['alpha', 'alpha', 'beta', 'alpha', 'beta'] },
+  ];
+  const attempts = resources.map((resourceIdentity, index) => validatedAttempt({
+    transactionHash: String(index + 1).repeat(64),
+    resourceIdentity,
+  }));
+
+  for (const attempt of attempts) await journal.putValidated(attempt);
+
+  const reloaded = new SettlementJournal({ directory, allowedRoot: root });
+  const records = await reloaded.list();
+  assert.equal(records.length, attempts.length);
+  for (const attempt of attempts) {
+    const record = await reloaded.get(attempt.authorizationKey, attempt.transactionHash);
+    assert.deepEqual(record.resourceIdentity, attempt.resourceIdentity);
+    assert.equal(record.resourceDigest, attempt.resourceDigest);
+  }
+
+  const onDisk = JSON.parse(await readFile(join(directory, 'settlement-journal.json'), 'utf8'));
+  assert.equal(onDisk.schemaVersion, 1);
+});
+
+test('journal integrity rejects ResourceInfo metadata tampering after reload', async t => {
+  const url = 'http://example.test/paid';
+  const complete = () => ({
+    url,
+    serviceName: 'Service',
+    tags: ['alpha', 'alpha', 'beta'],
+  });
+  const cases = [
+    {
+      resourceIdentity: complete(),
+      mutate(resource) { delete resource.serviceName; },
+    },
+    {
+      resourceIdentity: complete(),
+      mutate(resource) { resource.serviceName = 'Other service'; },
+    },
+    {
+      resourceIdentity: complete(),
+      mutate(resource) { delete resource.tags; },
+    },
+    {
+      resourceIdentity: { url, serviceName: 'Service', tags: [] },
+      mutate(resource) { delete resource.tags; },
+    },
+    {
+      resourceIdentity: { url, serviceName: 'Service' },
+      mutate(resource) { resource.tags = []; },
+    },
+    {
+      resourceIdentity: complete(),
+      mutate(resource) { resource.tags = ['beta', 'alpha', 'alpha']; },
+    },
+    {
+      resourceIdentity: complete(),
+      mutate(resource) { resource.tags.push('gamma'); },
+    },
+    {
+      resourceIdentity: complete(),
+      mutate(resource) { resource.tags.pop(); },
+    },
+    {
+      resourceIdentity: complete(),
+      mutate(resource) { resource.tags = ['alpha', 'beta', 'beta']; },
+    },
+  ];
+
+  for (const entry of cases) {
+    const { root, directory, journal } = await fixture(t);
+    const attempt = validatedAttempt({ resourceIdentity: entry.resourceIdentity });
+    await journal.putValidated(attempt);
+
+    const filePath = join(directory, 'settlement-journal.json');
+    const onDisk = JSON.parse(await readFile(filePath, 'utf8'));
+    const [record] = Object.values(onDisk.records);
+    const boundResourceDigest = record.resourceDigest;
+    entry.mutate(record.resourceIdentity);
+    assert.doesNotThrow(() => validateResource(record.resourceIdentity));
+    assert.equal(record.resourceDigest, boundResourceDigest);
+    onDisk.checksum = digest({
+      schemaVersion: onDisk.schemaVersion,
+      revision: onDisk.revision,
+      records: onDisk.records,
+    });
+    await writeFile(filePath, JSON.stringify(onDisk), 'utf8');
+
+    const reloaded = new SettlementJournal({ directory, allowedRoot: root });
+    await assert.rejects(reloaded.load(), error => error?.code === 'journal_corrupt');
+  }
 });
 
 test('initialized journal fails closed when its state file disappears', async t => {
