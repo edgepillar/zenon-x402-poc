@@ -261,6 +261,10 @@ test('payment intent digest covers every selected requirement and resource field
     value => { value.required.resource.url += '/other'; },
     value => { value.required.resource.description += ' other'; },
     value => { value.required.resource.mimeType = 'text/plain'; },
+    value => { value.required.resource.serviceName = 'Other service'; },
+    value => { value.required.resource.tags = []; },
+    value => { value.required.resource.tags = ['beta', 'alpha']; },
+    value => { value.required.resource.tags = ['alpha', 'alpha']; },
     value => { value.accepted.scheme = 'other'; },
     value => { value.accepted.network = 'zenon:other'; },
     value => { value.accepted.asset = 'other-zts'; },
@@ -305,6 +309,15 @@ test('buyer preserves optional ResourceInfo metadata through selection and succe
     { url: 'http://example.test/paid', description: '', mimeType: '' },
     { url: 'http://example.test/paid', description: 'test' },
     { url: 'http://example.test/paid', mimeType: 'application/json' },
+    { url: 'http://example.test/paid', serviceName: 'Service' },
+    { url: 'http://example.test/paid', tags: [] },
+    {
+      url: 'http://example.test/paid',
+      description: '',
+      mimeType: '',
+      serviceName: 'Service',
+      tags: ['alpha', 'alpha', 'beta'],
+    },
   ];
 
   for (const resource of resources) {
@@ -344,6 +357,46 @@ test('buyer rejects optional ResourceInfo presence changes before the paid retry
       resource: { url: 'http://example.test/paid', mimeType: '' },
       mutate(value) { delete value.mimeType; },
     },
+    {
+      resource: { url: 'http://example.test/paid' },
+      mutate(value) { value.serviceName = 'Service'; },
+    },
+    {
+      resource: { url: 'http://example.test/paid', serviceName: 'Service' },
+      mutate(value) { delete value.serviceName; },
+    },
+    {
+      resource: { url: 'http://example.test/paid', serviceName: 'Service' },
+      mutate(value) { value.serviceName = 'Other service'; },
+    },
+    {
+      resource: { url: 'http://example.test/paid' },
+      mutate(value) { value.tags = []; },
+    },
+    {
+      resource: { url: 'http://example.test/paid', tags: [] },
+      mutate(value) { delete value.tags; },
+    },
+    {
+      resource: { url: 'http://example.test/paid', tags: ['alpha', 'beta'] },
+      mutate(value) { value.tags.reverse(); },
+    },
+    {
+      resource: { url: 'http://example.test/paid', tags: ['alpha', 'alpha', 'beta'] },
+      mutate(value) { value.tags = ['alpha', 'beta']; },
+    },
+    {
+      resource: { url: 'http://example.test/paid', tags: ['alpha', 'beta'] },
+      mutate(value) { value.tags[1] = 'gamma'; },
+    },
+    {
+      resource: { url: 'http://example.test/paid', tags: ['alpha'] },
+      mutate(value) { value.tags.push('beta'); },
+    },
+    {
+      resource: { url: 'http://example.test/paid', tags: ['alpha', 'beta'] },
+      mutate(value) { value.tags.pop(); },
+    },
   ];
 
   for (const entry of cases) {
@@ -355,6 +408,8 @@ test('buyer rejects optional ResourceInfo presence changes before the paid retry
     };
     let constructions = 0;
     let requests = 0;
+    let settlementEffects = 0;
+    let deliveryEffects = 0;
     const paymentClient = {
       async createPaymentPayload(received, selected) {
         constructions += 1;
@@ -379,7 +434,11 @@ test('buyer rejects optional ResourceInfo presence changes before the paid retry
 
     await assert.rejects(paidFetch(required.resource.url, paymentClient, async (_url, options) => {
       requests += 1;
-      if (options) throw new Error('paid retry must not occur');
+      if (options) {
+        settlementEffects += 1;
+        deliveryEffects += 1;
+        throw new Error('paid retry must not occur');
+      }
       return {
         status: 402,
         url: required.resource.url,
@@ -388,7 +447,121 @@ test('buyer rejects optional ResourceInfo presence changes before the paid retry
     }), /mismatched payload/);
     assert.equal(constructions, 1);
     assert.equal(requests, 1);
+    assert.equal(settlementEffects, 0);
+    assert.equal(deliveryEffects, 0);
   }
+});
+
+test('buyer rejects in-place mutation of a single-offer resource before the paid retry', async () => {
+  const mutations = [
+    resource => { resource.serviceName = 'Other service'; },
+    resource => { resource.tags.reverse(); },
+    resource => { resource.tags[1] = 'gamma'; },
+    resource => { resource.tags.pop(); },
+  ];
+
+  for (const mutate of mutations) {
+    const accepted = requirement();
+    const required = paymentRequired(accepted);
+    required.resource.serviceName = 'Service';
+    required.resource.tags = ['alpha', 'alpha', 'beta'];
+    const originalChallenge = structuredClone(required);
+    const exact = new MockExactZenonClient();
+    let constructions = 0;
+    let requests = 0;
+    const downstream = {
+      facilitator: 0,
+      journal: 0,
+      publication: 0,
+      settlement: 0,
+      delivery: 0,
+    };
+
+    await assert.rejects(paidFetch(required.resource.url, {
+      async createPaymentPayload(received, selected) {
+        constructions += 1;
+        mutate(received.resource);
+        return exact.createPaymentPayload(received, selected);
+      },
+    }, async (_url, options) => {
+      requests += 1;
+      if (!options) {
+        return {
+          status: 402,
+          url: required.resource.url,
+          headers: new Headers({ [HEADERS.PAYMENT_REQUIRED]: encodeB64Json(required) }),
+        };
+      }
+      downstream.facilitator += 1;
+      downstream.journal += 1;
+      downstream.publication += 1;
+      downstream.settlement += 1;
+      downstream.delivery += 1;
+      throw new Error('paid retry must not occur');
+    }), /mismatched payload/);
+
+    assert.equal(constructions, 1);
+    assert.equal(requests, 1);
+    assert.deepEqual(downstream, {
+      facilitator: 0,
+      journal: 0,
+      publication: 0,
+      settlement: 0,
+      delivery: 0,
+    });
+    assert.deepEqual(required, originalChallenge);
+  }
+});
+
+test('buyer rejects in-place mutation of a single selected requirement before the paid retry', async () => {
+  const accepted = requirement();
+  const required = paymentRequired(accepted);
+  const originalChallenge = structuredClone(required);
+  const exact = new MockExactZenonClient();
+  let constructions = 0;
+  let requests = 0;
+  const downstream = {
+    facilitator: 0,
+    journal: 0,
+    publication: 0,
+    settlement: 0,
+    delivery: 0,
+  };
+
+  await assert.rejects(paidFetch(required.resource.url, {
+    async createPaymentPayload(received, selected) {
+      constructions += 1;
+      selected.amount = '101';
+      received.accepts[0].maxTimeoutSeconds = 31;
+      return exact.createPaymentPayload(received, selected);
+    },
+  }, async (_url, options) => {
+    requests += 1;
+    if (!options) {
+      return {
+        status: 402,
+        url: required.resource.url,
+        headers: new Headers({ [HEADERS.PAYMENT_REQUIRED]: encodeB64Json(required) }),
+      };
+    }
+    downstream.facilitator += 1;
+    downstream.journal += 1;
+    downstream.publication += 1;
+    downstream.settlement += 1;
+    downstream.delivery += 1;
+    throw new Error('paid retry must not occur');
+  }), /mismatched payload/);
+
+  assert.equal(constructions, 1);
+  assert.equal(requests, 1);
+  assert.deepEqual(downstream, {
+    facilitator: 0,
+    journal: 0,
+    publication: 0,
+    settlement: 0,
+    delivery: 0,
+  });
+  assert.deepEqual(required, originalChallenge);
 });
 
 test('unsupported ResourceInfo metadata stops before payment and downstream effects', async () => {
@@ -396,8 +569,10 @@ test('unsupported ResourceInfo metadata stops before payment and downstream effe
     { url: 'http://example.test/paid', description: null },
     { url: 'http://example.test/paid', mimeType: null },
     { url: 'http://example.test/paid', description: 1 },
-    { url: 'http://example.test/paid', serviceName: 'unsupported' },
-    { url: 'http://example.test/paid', tags: ['unsupported'] },
+    { url: 'http://example.test/paid', serviceName: '' },
+    { url: 'http://example.test/paid', serviceName: 'a'.repeat(33) },
+    { url: 'http://example.test/paid', tags: [''] },
+    { url: 'http://example.test/paid', tags: ['one', 'two', 'three', 'four', 'five', 'six'] },
     { url: 'http://example.test/paid', iconUrl: 'https://example.test/icon.png' },
   ];
 
@@ -446,6 +621,54 @@ test('unsupported ResourceInfo metadata stops before payment and downstream effe
       settlement: 0,
       delivery: 0,
     });
+  }
+});
+
+test('resource server rejects exact ResourceInfo mismatches before facilitator invocation', async () => {
+  const accepted = requirement();
+  let facilitatorCalls = 0;
+  let deliveries = 0;
+  const app = createResourceServer({
+    facilitator: {
+      async settle() {
+        facilitatorCalls += 1;
+        throw new Error('must not be reached');
+      },
+    },
+    requirement: accepted,
+    resourceHandler: async () => {
+      deliveries += 1;
+      throw new Error('must not be reached');
+    },
+  });
+  const listening = await app.listen();
+  const url = `${listening.url}/paid`;
+  try {
+    const challengeResponse = await fetch(url);
+    const required = decodeB64Json(challengeResponse.headers.get(HEADERS.PAYMENT_REQUIRED));
+    const client = new MockExactZenonClient();
+    const original = await client.createPaymentPayload(required, accepted);
+    const mismatches = [
+      payload => { payload.resource.description = 'different resource'; },
+      payload => { payload.resource.serviceName = 'Service'; },
+      payload => { payload.resource.tags = []; },
+      payload => { payload.resource.tags = ['alpha', 'beta']; },
+    ];
+
+    for (const mutate of mismatches) {
+      const payload = structuredClone(original);
+      mutate(payload);
+      const response = await fetch(url, {
+        headers: { [HEADERS.PAYMENT_SIGNATURE]: encodeB64Json(payload) },
+      });
+      assert.equal(response.status, 402);
+      assert.ok(response.headers.get(HEADERS.PAYMENT_REQUIRED));
+      assert.equal(response.headers.get(HEADERS.PAYMENT_RESPONSE), null);
+      assert.equal(facilitatorCalls, 0);
+      assert.equal(deliveries, 0);
+    }
+  } finally {
+    await app.close();
   }
 });
 
@@ -1682,13 +1905,14 @@ async function withServer(run) {
 
 test('HTTP boundary separates malformed payment input from unsupported payment policy', async () => {
   const accepted = requirement();
-  const effects = { facilitator: 0, journal: 0, publication: 0, delivery: 0 };
+  const effects = { facilitator: 0, journal: 0, publication: 0, settlement: 0, delivery: 0 };
   const app = createResourceServer({
     facilitator: {
       async settle() {
         effects.facilitator += 1;
         effects.journal += 1;
         effects.publication += 1;
+        effects.settlement += 1;
         throw new Error('unreachable synthetic settlement');
       },
     },
@@ -1702,7 +1926,7 @@ test('HTTP boundary separates malformed payment input from unsupported payment p
   const url = `${listening.url}/paid`;
   const noEffects = () => assert.deepEqual(
     effects,
-    { facilitator: 0, journal: 0, publication: 0, delivery: 0 },
+    { facilitator: 0, journal: 0, publication: 0, settlement: 0, delivery: 0 },
   );
   const assertPrivate = response => {
     assert.match(response.headers.get('cache-control') ?? '', /(?:^|,)\s*private\b/i);
@@ -1753,6 +1977,22 @@ test('HTTP boundary separates malformed payment input from unsupported payment p
     fractionalTransactionNumber.payload.transaction.unexpectedNumber = 0.5;
     const unsafeTransactionNumber = structuredClone(valid);
     unsafeTransactionNumber.payload.transaction.unexpectedNumber = Number.MAX_SAFE_INTEGER + 1;
+    const emptyServiceName = structuredClone(valid);
+    emptyServiceName.resource.serviceName = '';
+    const oversizedServiceName = structuredClone(valid);
+    oversizedServiceName.resource.serviceName = 'a'.repeat(33);
+    const excessiveTags = structuredClone(valid);
+    excessiveTags.resource.tags = ['one', 'two', 'three', 'four', 'five', 'six'];
+    const invalidTag = structuredClone(valid);
+    invalidTag.resource.tags = [''];
+    const wrongTagsContainer = structuredClone(valid);
+    wrongTagsContainer.resource.tags = {};
+    const nonStringTag = structuredClone(valid);
+    nonStringTag.resource.tags = [1];
+    const controlServiceName = structuredClone(valid);
+    controlServiceName.resource.serviceName = 'line\nfeed';
+    const nonAsciiServiceName = structuredClone(valid);
+    nonAsciiServiceName.resource.serviceName = 'caf\u00e9';
 
     const malformedPayloads = [
       {},
@@ -1789,6 +2029,14 @@ test('HTTP boundary separates malformed payment input from unsupported payment p
       { ...valid, payload: { ...valid.payload, intentDigest: 'A'.repeat(64) } },
       fractionalTransactionNumber,
       unsafeTransactionNumber,
+      emptyServiceName,
+      oversizedServiceName,
+      excessiveTags,
+      invalidTag,
+      wrongTagsContainer,
+      nonStringTag,
+      controlServiceName,
+      nonAsciiServiceName,
       deep,
     ];
 
@@ -1831,6 +2079,16 @@ test('HTTP boundary separates malformed payment input from unsupported payment p
     chainPolicy.accepted.network = 'zenon:testnet';
     const mismatch = structuredClone(valid);
     mismatch.accepted.amount = '101';
+    const resourceMismatch = structuredClone(valid);
+    resourceMismatch.resource.description = 'different resource';
+    const nullServiceName = structuredClone(valid);
+    nullServiceName.resource.serviceName = null;
+    const nullTags = structuredClone(valid);
+    nullTags.resource.tags = null;
+    const unsupportedIcon = structuredClone(valid);
+    unsupportedIcon.resource.iconUrl = 'https://example.test/icon.png';
+    const unknownResourceMember = structuredClone(valid);
+    unknownResourceMember.resource.unknownMetadata = 'unsupported';
 
     for (const payload of [
       { x402Version: 1 },
@@ -1850,6 +2108,11 @@ test('HTTP boundary separates malformed payment input from unsupported payment p
       schemePolicy,
       chainPolicy,
       mismatch,
+      resourceMismatch,
+      nullServiceName,
+      nullTags,
+      unsupportedIcon,
+      unknownResourceMember,
     ]) {
       await assertUnsupported(payload);
     }

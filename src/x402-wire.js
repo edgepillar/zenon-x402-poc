@@ -29,7 +29,8 @@ const REQUIREMENT_EXTRA_FIELDS = Object.freeze(['poc', 'settlement', 'zenonChain
 const REQUIREMENT_EXTRA_OPTIONAL_FIELDS = Object.freeze(['paymentFlow']);
 const CHAIN_PROFILE_FIELDS = Object.freeze(['version', 'chainIdentifier', 'genesisMomentumHash']);
 const RESOURCE_REQUIRED_FIELDS = Object.freeze(['url']);
-const RESOURCE_OPTIONAL_FIELDS = Object.freeze(['description', 'mimeType']);
+const RESOURCE_OPTIONAL_FIELDS = Object.freeze(['description', 'mimeType', 'serviceName', 'tags']);
+const RESOURCE_FIELDS = Object.freeze([...RESOURCE_REQUIRED_FIELDS, ...RESOURCE_OPTIONAL_FIELDS]);
 const PAYMENT_REQUIRED_FIELDS = Object.freeze(['x402Version', 'resource', 'accepts']);
 const PAYMENT_PAYLOAD_FIELDS = Object.freeze(['x402Version', 'resource', 'accepted', 'payload']);
 const INNER_PAYMENT_PAYLOAD_FIELDS = Object.freeze(['transaction', 'intentDigest']);
@@ -41,6 +42,9 @@ const PAYMENT_CAPABILITY_ROUTE_FIELDS = Object.freeze(['scheme', 'network', 'pay
 const RECOGNIZED_PAYMENT_FLOWS = Object.freeze(['authorization', 'upfront', 'escrow']);
 const MAX_PAYMENT_CAPABILITY_ROUTES = 16;
 const MAX_PAYMENT_CAPABILITY_STRING_LENGTH = 128;
+const MAX_RESOURCE_TAGS = 5;
+const MAX_RESOURCE_SERVICE_FIELD_LENGTH = 32;
+const PRINTABLE_ASCII = /^[\x20-\x7e]+$/;
 
 function isPlainObject(value) {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
@@ -97,11 +101,16 @@ function readExactDataObject(value, required, label) {
   return result;
 }
 
-function readDataArray(value, label, { maxLength, requireFrozen = false } = {}) {
+function readDataArray(value, label, {
+  maxLength,
+  requireFrozen = false,
+  allowEmpty = false,
+  requireEnumerableItems = false,
+} = {}) {
   if (!Array.isArray(value)) throw new Error(`${label} must be an array`);
   const lengthDescriptor = Object.getOwnPropertyDescriptor(value, 'length');
   if (!lengthDescriptor || !Object.hasOwn(lengthDescriptor, 'value') ||
-      lengthDescriptor.value === 0 || lengthDescriptor.value > maxLength) {
+      (!allowEmpty && lengthDescriptor.value === 0) || lengthDescriptor.value > maxLength) {
     throw new Error(`${label} has an invalid length`);
   }
   if (requireFrozen && !Object.isFrozen(value)) throw new Error(`${label} must be frozen`);
@@ -118,8 +127,60 @@ function readDataArray(value, label, { maxLength, requireFrozen = false } = {}) 
     if (!descriptor || !Object.hasOwn(descriptor, 'value')) {
       throw new Error(`${label} entries must be own data properties`);
     }
+    if (requireEnumerableItems && descriptor.enumerable !== true) {
+      throw new Error(`${label} entries must be enumerable`);
+    }
     return descriptor.value;
   });
+}
+
+function readResourceFields(resource, { allowUnknown = false } = {}) {
+  assertPlainObject(resource, 'ResourceInfo');
+  const allowed = new Set(RESOURCE_FIELDS);
+  for (const key of Reflect.ownKeys(resource)) {
+    if (typeof key !== 'string') throw new Error('ResourceInfo contains an unexpected field');
+    const descriptor = Object.getOwnPropertyDescriptor(resource, key);
+    if (!descriptor || !Object.hasOwn(descriptor, 'value') || descriptor.enumerable !== true) {
+      throw new Error(`ResourceInfo.${key} must be an enumerable own data property`);
+    }
+    if (!allowUnknown && !allowed.has(key)) {
+      throw new Error('ResourceInfo contains an unexpected field');
+    }
+  }
+  if (!Object.hasOwn(resource, 'url')) throw new Error('ResourceInfo.url is required');
+
+  const fields = Object.create(null);
+  for (const key of RESOURCE_FIELDS) {
+    if (!Object.hasOwn(resource, key)) {
+      fields[key] = { present: false, value: undefined };
+      continue;
+    }
+    const descriptor = Object.getOwnPropertyDescriptor(resource, key);
+    fields[key] = { present: true, value: descriptor.value };
+  }
+  return fields;
+}
+
+function readResourceTags(value) {
+  const tags = readDataArray(value, 'ResourceInfo.tags', {
+    maxLength: MAX_RESOURCE_TAGS,
+    allowEmpty: true,
+    requireEnumerableItems: true,
+  });
+  for (const tag of tags) {
+    if (typeof tag !== 'string' || tag.length === 0 ||
+        tag.length > MAX_RESOURCE_SERVICE_FIELD_LENGTH || !PRINTABLE_ASCII.test(tag)) {
+      throw new Error('ResourceInfo.tags contains an invalid tag');
+    }
+  }
+  return tags;
+}
+
+function validateResourceServiceName(value) {
+  if (typeof value !== 'string' || value.length === 0 ||
+      value.length > MAX_RESOURCE_SERVICE_FIELD_LENGTH || !PRINTABLE_ASCII.test(value)) {
+    throw new Error('ResourceInfo.serviceName must be 1 to 32 printable ASCII characters');
+  }
 }
 
 function validateCapabilityString(value, label) {
@@ -274,21 +335,26 @@ export function validateBasePaymentRequirement(req) {
 }
 
 function validateStableResourceStructure(resource) {
-  assertPlainObject(resource, 'ResourceInfo');
-  const url = readRequiredDataProperty(resource, 'url', 'ResourceInfo');
-  if (typeof url !== 'string' || url.length === 0) {
+  const fields = readResourceFields(resource, { allowUnknown: true });
+  if (typeof fields.url.value !== 'string' || fields.url.value.length === 0) {
     throw new Error('ResourceInfo.url must be a non-empty string');
   }
-  for (const key of ['description', 'mimeType', 'serviceName', 'iconUrl']) {
-    const field = readOptionalDataProperty(resource, key, 'ResourceInfo');
+  for (const key of ['description', 'mimeType']) {
+    const field = fields[key];
     if (field.present && field.value !== null && typeof field.value !== 'string') {
       throw new Error(`ResourceInfo.${key} must be a string or null`);
     }
   }
-  const tags = readOptionalDataProperty(resource, 'tags', 'ResourceInfo');
-  if (tags.present && tags.value !== null &&
-      (!Array.isArray(tags.value) || tags.value.some(value => typeof value !== 'string'))) {
-    throw new Error('ResourceInfo.tags must be an array of strings or null');
+  const serviceName = fields.serviceName;
+  if (serviceName.present && serviceName.value !== null) {
+    validateResourceServiceName(serviceName.value);
+  }
+  const tags = fields.tags;
+  if (tags.present && tags.value !== null) readResourceTags(tags.value);
+
+  const iconUrl = readOptionalDataProperty(resource, 'iconUrl', 'ResourceInfo');
+  if (iconUrl.present && iconUrl.value !== null && typeof iconUrl.value !== 'string') {
+    throw new Error('ResourceInfo.iconUrl must be a string or null');
   }
 }
 
@@ -439,14 +505,13 @@ export function validateActiveUpfrontRequirement(req) {
   }
 }
 
-export function validateResource(resource) {
-  assertExactKeys(resource, RESOURCE_REQUIRED_FIELDS, {
-    optional: RESOURCE_OPTIONAL_FIELDS,
-    label: 'ResourceInfo',
-  });
-  const url = readRequiredDataProperty(resource, 'url', 'ResourceInfo');
-  const description = readOptionalDataProperty(resource, 'description', 'ResourceInfo');
-  const mimeType = readOptionalDataProperty(resource, 'mimeType', 'ResourceInfo');
+function snapshotValidatedResource(resource) {
+  const fields = readResourceFields(resource);
+  const url = fields.url.value;
+  const description = fields.description;
+  const mimeType = fields.mimeType;
+  const serviceName = fields.serviceName;
+  const tags = fields.tags;
   if (typeof url !== 'string' || !url) throw new Error('ResourceInfo.url is required');
   if (description.present && typeof description.value !== 'string') {
     throw new Error('ResourceInfo.description must be a string');
@@ -454,6 +519,8 @@ export function validateResource(resource) {
   if (mimeType.present && typeof mimeType.value !== 'string') {
     throw new Error('ResourceInfo.mimeType must be a string');
   }
+  if (serviceName.present) validateResourceServiceName(serviceName.value);
+  const copiedTags = tags.present ? readResourceTags(tags.value) : undefined;
   if (url.length > 4096 ||
       (description.present && description.value.length > 4096) ||
       (mimeType.present && mimeType.value.length > 256)) {
@@ -470,6 +537,42 @@ export function validateResource(resource) {
   }
   if (parsed.username || parsed.password) throw new Error('ResourceInfo.url must not contain credentials');
   if (mimeType.present && /[\r\n]/.test(mimeType.value)) throw new Error('ResourceInfo.mimeType is invalid');
+
+  return {
+    url,
+    ...(description.present ? { description: description.value } : {}),
+    ...(mimeType.present ? { mimeType: mimeType.value } : {}),
+    ...(serviceName.present ? { serviceName: serviceName.value } : {}),
+    ...(tags.present ? { tags: copiedTags } : {}),
+  };
+}
+
+export function validateResource(resource) {
+  snapshotValidatedResource(resource);
+}
+
+export function sameResource(left, right) {
+  try {
+    const leftSnapshot = snapshotValidatedResource(left);
+    const rightSnapshot = snapshotValidatedResource(right);
+    for (const key of ['description', 'mimeType', 'serviceName', 'tags']) {
+      if (Object.hasOwn(leftSnapshot, key) !== Object.hasOwn(rightSnapshot, key)) return false;
+    }
+    if (leftSnapshot.url !== rightSnapshot.url ||
+        leftSnapshot.description !== rightSnapshot.description ||
+        leftSnapshot.mimeType !== rightSnapshot.mimeType ||
+        leftSnapshot.serviceName !== rightSnapshot.serviceName) {
+      return false;
+    }
+    if (!Object.hasOwn(leftSnapshot, 'tags')) return true;
+    if (leftSnapshot.tags.length !== rightSnapshot.tags.length) return false;
+    for (let index = 0; index < leftSnapshot.tags.length; index += 1) {
+      if (leftSnapshot.tags[index] !== rightSnapshot.tags[index]) return false;
+    }
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 export function validatePaymentRequired(paymentRequired) {
@@ -507,7 +610,16 @@ export function validatePaymentPayloadEnvelope(paymentPayload) {
   }
 }
 
-export function makePaymentRequired({ resourceUrl, description, mimeType, requirement, error }) {
+export function makePaymentRequired({
+  resourceUrl,
+  description,
+  mimeType,
+  serviceName,
+  tags,
+  requirement,
+  error,
+}) {
+  const copiedTags = tags === undefined ? undefined : readResourceTags(tags);
   const result = {
     x402Version: X402_VERSION,
     ...(error ? { error } : {}),
@@ -515,6 +627,8 @@ export function makePaymentRequired({ resourceUrl, description, mimeType, requir
       url: resourceUrl,
       ...(description !== undefined ? { description } : {}),
       ...(mimeType !== undefined ? { mimeType } : {}),
+      ...(serviceName !== undefined ? { serviceName } : {}),
+      ...(tags !== undefined ? { tags: copiedTags } : {}),
     },
     accepts: [requirement],
   };

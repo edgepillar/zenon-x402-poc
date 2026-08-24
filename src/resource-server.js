@@ -8,6 +8,7 @@ import {
   HEADERS,
   makePaymentRequired,
   MOCK_NETWORK,
+  sameResource,
   sameRequirements,
   validateActiveUpfrontRequirement,
   validatePaymentPayloadEnvelope,
@@ -75,6 +76,9 @@ export function createResourceServer({
         validateActiveUpfrontRequirement(paymentPayload.accepted);
         if (!sameRequirements(paymentPayload.accepted, configuredRequirement)) {
           throw new Error('submitted payment requirement does not match the configured requirement');
+        }
+        if (!sameResource(paymentPayload.resource, paymentRequired.resource)) {
+          throw new Error('submitted payment resource does not match the current challenge');
         }
       } catch {
         return requirePayment(res, { ...paymentRequired, error: 'invalid_payment_header' });

@@ -289,9 +289,11 @@ test('ExactZenonFacilitator deterministic settlement integration scenarios', asy
   await t.test('scenario 1: the exact signed block is durable before publication', async t => {
     const accepted = requirement();
     const required = challenge(accepted);
+    required.resource.serviceName = 'Service';
+    required.resource.tags = ['alpha', 'alpha', 'beta'];
     const payload = signedPayment(required, accepted);
     const preflight = await preflightZenonPayment(payload, accepted, required);
-    const { journal } = await journalFixture(t);
+    const { root, directory, journal } = await journalFixture(t);
     const included = observedBlock(payload.payload.transaction, { included: true });
     let published = false;
     const { counters } = installSyntheticNode(t, {
@@ -309,8 +311,14 @@ test('ExactZenonFacilitator deterministic settlement integration scenarios', asy
     assert.equal(result.success, true);
     assert.equal(result.state, EVIDENCE_STATES.MOMENTUM_INCLUDED);
     assert.equal(counters.publish, 1);
-    assert.equal((await journal.get(preflight.authorizationKey, preflight.transactionHash)).evidenceState,
-      EVIDENCE_STATES.MOMENTUM_INCLUDED);
+    const persisted = await journal.get(preflight.authorizationKey, preflight.transactionHash);
+    assert.equal(persisted.evidenceState, EVIDENCE_STATES.MOMENTUM_INCLUDED);
+    assert.deepEqual(persisted.resourceIdentity, required.resource);
+    const reloaded = new SettlementJournal({ directory, allowedRoot: root });
+    assert.deepEqual(
+      (await reloaded.get(preflight.authorizationKey, preflight.transactionHash)).resourceIdentity,
+      required.resource,
+    );
   });
 
   await t.test('scenario 2: included retry bypasses an advanced frontier and never republishes', async t => {
@@ -410,6 +418,8 @@ test('ExactZenonFacilitator deterministic settlement integration scenarios', asy
   await t.test('scenario 5: ambiguous evidence survives reload and reconciles without republishing', async t => {
     const accepted = requirement();
     const required = challenge(accepted);
+    required.resource.serviceName = 'Service';
+    required.resource.tags = [];
     const payload = signedPayment(required, accepted);
     const preflight = await preflightZenonPayment(payload, accepted, required);
     const { root, directory, journal } = await journalFixture(t);
@@ -428,6 +438,7 @@ test('ExactZenonFacilitator deterministic settlement integration scenarios', asy
     const reloaded = new SettlementJournal({ directory, allowedRoot: root });
     const persisted = await reloaded.get(preflight.authorizationKey, preflight.transactionHash);
     assert.equal(persisted.evidenceState, EVIDENCE_STATES.SUBMISSION_OUTCOME_UNKNOWN);
+    assert.deepEqual(persisted.resourceIdentity, required.resource);
     phase = 'included';
     const retry = await facilitator(reloaded).settle(payload, accepted, required);
     assert.equal(retry.success, true);
