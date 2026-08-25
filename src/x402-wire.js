@@ -85,6 +85,40 @@ function readOptionalDataProperty(value, key, label) {
   return { present: true, value: descriptor.value };
 }
 
+function readOptionalEnumerableDataProperty(value, key, label) {
+  const descriptor = Object.getOwnPropertyDescriptor(value, key);
+  if (!descriptor) return { present: false, value: undefined };
+  if (!Object.hasOwn(descriptor, 'value') || descriptor.enumerable !== true) {
+    throw new Error(`${label}.${key} must be an enumerable data property`);
+  }
+  return { present: true, value: descriptor.value };
+}
+
+function readStableExtensionsProperty(value, label) {
+  const extensions = readOptionalEnumerableDataProperty(value, 'extensions', label);
+  if (!extensions.present || extensions.value === null) return extensions;
+
+  assertPlainObject(extensions.value, `${label}.extensions`);
+  for (const key of Reflect.ownKeys(extensions.value)) {
+    if (typeof key !== 'string') {
+      throw new Error(`${label}.extensions must not contain symbol keys`);
+    }
+    const descriptor = Object.getOwnPropertyDescriptor(extensions.value, key);
+    if (!descriptor || !Object.hasOwn(descriptor, 'value') || descriptor.enumerable !== true) {
+      throw new Error(`${label}.extensions entries must be enumerable data properties`);
+    }
+  }
+  return extensions;
+}
+
+function validateEmptyExtensionsProperty(value, label) {
+  const extensions = readStableExtensionsProperty(value, label);
+  if (!extensions.present) return;
+  if (extensions.value === null || Reflect.ownKeys(extensions.value).length !== 0) {
+    throw new Error(`${label}.extensions is unsupported`);
+  }
+}
+
 function readExactDataObject(value, required, label) {
   assertPlainObject(value, label);
   const keys = Reflect.ownKeys(value);
@@ -461,10 +495,7 @@ export function validatePaymentPayloadStructure(paymentPayload) {
 
   const resource = readOptionalDataProperty(paymentPayload, 'resource', 'PaymentPayload');
   if (resource.present && resource.value !== null) validateStableResourceStructure(resource.value);
-  const extensions = readOptionalDataProperty(paymentPayload, 'extensions', 'PaymentPayload');
-  if (extensions.present && extensions.value !== null && !isPlainObject(extensions.value)) {
-    throw new Error('PaymentPayload.extensions must be an object or null');
-  }
+  readStableExtensionsProperty(paymentPayload, 'PaymentPayload');
 
   const declaredLocalRoute = acceptedValues.scheme === 'exact' &&
     (acceptedValues.network === MOCK_NETWORK || acceptedValues.network === EXPERIMENTAL_LIVE_NETWORK);
@@ -611,7 +642,11 @@ export function validatePaymentRequiredForOfferSelection(paymentRequired) {
 }
 
 function validatePaymentRequiredOuter(paymentRequired) {
-  assertExactKeys(paymentRequired, PAYMENT_REQUIRED_FIELDS, { optional: ['error'], label: 'PaymentRequired' });
+  assertExactKeys(paymentRequired, PAYMENT_REQUIRED_FIELDS, {
+    optional: ['error', 'extensions'],
+    label: 'PaymentRequired',
+  });
+  validateEmptyExtensionsProperty(paymentRequired, 'PaymentRequired');
   if (paymentRequired.x402Version !== X402_VERSION) throw new Error('unsupported x402Version');
   validateResource(paymentRequired.resource);
   if (!Array.isArray(paymentRequired.accepts) || paymentRequired.accepts.length === 0) {
@@ -624,7 +659,11 @@ function validatePaymentRequiredOuter(paymentRequired) {
 }
 
 export function validatePaymentPayloadEnvelope(paymentPayload) {
-  assertExactKeys(paymentPayload, PAYMENT_PAYLOAD_FIELDS, { label: 'PaymentPayload' });
+  assertExactKeys(paymentPayload, PAYMENT_PAYLOAD_FIELDS, {
+    optional: ['extensions'],
+    label: 'PaymentPayload',
+  });
+  validateEmptyExtensionsProperty(paymentPayload, 'PaymentPayload');
   if (paymentPayload.x402Version !== X402_VERSION) throw new Error('unsupported x402Version');
   validateResource(paymentPayload.resource);
   validateRequirement(paymentPayload.accepted);

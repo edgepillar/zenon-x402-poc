@@ -369,6 +369,40 @@ test('mock payment verification binds the exact iconUrl representation', async (
   assert.equal((await facilitator.verify(payload, accepted, changedChallenge)).isValid, false);
 });
 
+test('empty extensions preserve authorization without automatic payload echo', async () => {
+  const accepted = requirement();
+  const required = paymentRequired(accepted);
+  const requiredWithEmptyExtensions = structuredClone(required);
+  requiredWithEmptyExtensions.extensions = {};
+  const client = new MockExactZenonClient();
+  const facilitator = new MockExactZenonFacilitator();
+
+  const payloadWithoutExtensions = await client.createPaymentPayload(required, accepted);
+  const payloadFromEmptyExtensions = await client.createPaymentPayload(
+    requiredWithEmptyExtensions,
+    accepted,
+  );
+  assert.equal(Object.hasOwn(payloadWithoutExtensions, 'extensions'), false);
+  assert.equal(Object.hasOwn(payloadFromEmptyExtensions, 'extensions'), false);
+
+  const submittedWithEmptyExtensions = structuredClone(payloadWithoutExtensions);
+  submittedWithEmptyExtensions.extensions = {};
+  const submittedSnapshot = structuredClone(submittedWithEmptyExtensions);
+  assert.equal(
+    (await facilitator.verify(payloadWithoutExtensions, accepted, required)).isValid,
+    true,
+  );
+  assert.equal(
+    (await facilitator.verify(
+      submittedWithEmptyExtensions,
+      accepted,
+      requiredWithEmptyExtensions,
+    )).isValid,
+    true,
+  );
+  assert.deepEqual(submittedWithEmptyExtensions, submittedSnapshot);
+});
+
 test('buyer rejects optional ResourceInfo presence changes before the paid retry', async () => {
   const cases = [
     {
@@ -520,6 +554,7 @@ test('buyer rejects in-place mutation of a single-offer resource before the paid
     await assert.rejects(paidFetch(required.resource.url, {
       async createPaymentPayload(received, selected) {
         constructions += 1;
+        assert.equal(Object.hasOwn(received, 'extensions'), false);
         mutate(received.resource);
         return exact.createPaymentPayload(received, selected);
       },
@@ -556,6 +591,7 @@ test('buyer rejects in-place mutation of a single-offer resource before the paid
 test('buyer rejects in-place mutation of a single selected requirement before the paid retry', async () => {
   const accepted = requirement();
   const required = paymentRequired(accepted);
+  required.extensions = {};
   const originalChallenge = structuredClone(required);
   const exact = new MockExactZenonClient();
   let constructions = 0;
@@ -954,6 +990,7 @@ test('client-owned capabilities select the correct route in either offer order',
       },
       accepts: structuredClone(scenario.offers),
     };
+    required.extensions = {};
     const original = structuredClone(required);
     const observations = {};
     const client = recordingPaymentClient(scenario.capabilities, observations);
@@ -965,6 +1002,7 @@ test('client-owned capabilities select the correct route in either offer order',
     assert.equal(observations.requests, 2);
     assert.equal(observations.retries, 1);
     assert.equal(observations.required.accepts.length, 1);
+    assert.equal(Object.hasOwn(observations.required, 'extensions'), false);
     assert.deepEqual(observations.required.accepts[0], scenario.expected);
     assert.notEqual(observations.required, required);
     assert.notEqual(observations.required.resource, required.resource);
@@ -2043,6 +2081,8 @@ test('HTTP boundary separates malformed payment input from unsupported payment p
     const oversizedIcon = structuredClone(valid);
     oversizedIcon.resource.iconUrl = iconPrefix + 'a'.repeat(2049 - iconPrefix.length);
     assert.equal(oversizedIcon.resource.iconUrl.length, 2049);
+    const wrongExtensionsContainer = structuredClone(valid);
+    wrongExtensionsContainer.extensions = [];
 
     const malformedPayloads = [
       {},
@@ -2089,6 +2129,7 @@ test('HTTP boundary separates malformed payment input from unsupported payment p
       nonAsciiServiceName,
       wrongIconType,
       oversizedIcon,
+      wrongExtensionsContainer,
       deep,
     ];
 
@@ -2149,6 +2190,10 @@ test('HTTP boundary separates malformed payment input from unsupported payment p
     credentialIcon.resource.iconUrl = 'https://synthetic-user@icons.example/icon.png';
     const nullIcon = structuredClone(valid);
     nullIcon.resource.iconUrl = null;
+    const nullExtensions = structuredClone(valid);
+    nullExtensions.extensions = null;
+    const nonEmptyExtensions = structuredClone(valid);
+    nonEmptyExtensions.extensions = { synthetic: true };
     const unknownResourceMember = structuredClone(valid);
     unknownResourceMember.resource.unknownMetadata = 'unsupported';
 
@@ -2158,7 +2203,6 @@ test('HTTP boundary separates malformed payment input from unsupported payment p
       { ...valid, resource: null },
       { ...valid, resource: { ...valid.resource, description: null } },
       { ...valid, resource: { ...valid.resource, mimeType: null } },
-      { ...valid, extensions: {} },
       { ...valid, unexpected: true },
       missingFlow,
       nonUpfront,
@@ -2179,6 +2223,8 @@ test('HTTP boundary separates malformed payment input from unsupported payment p
       unsupportedSchemeIcon,
       credentialIcon,
       nullIcon,
+      nullExtensions,
+      nonEmptyExtensions,
       unknownResourceMember,
     ]) {
       await assertUnsupported(payload);
