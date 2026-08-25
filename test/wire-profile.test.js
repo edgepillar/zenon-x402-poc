@@ -598,7 +598,6 @@ test('stable ResourceInfo structure separates malformed released metadata from u
   for (const resource of [
     { ...valid.resource, serviceName: null },
     { ...valid.resource, tags: null },
-    { ...valid.resource, iconUrl: 'https://resource.example/icon.png' },
     { ...valid.resource, unknownMetadata: 'unsupported' },
   ]) {
     assert.doesNotThrow(() => validatePaymentPayloadStructure({ ...valid, resource }));
@@ -639,7 +638,6 @@ test('strict ResourceInfo rejects invalid optional metadata without invoking acc
   assert.equal(urlReads, 0);
 
   for (const unexpected of [
-    { iconUrl: 'https://resource.example/icon.png' },
     { unexpected: true },
   ]) {
     assert.throws(() => validateResource({ url, ...unexpected }));
@@ -783,4 +781,174 @@ test('live requirement construction requires a programmatic profile and enforces
   }, async () => {
     await assert.rejects(buildRequirement('zenon', { zenonChain: LIVE_PROFILE }), /2\^255 - 1/);
   });
+});
+
+
+test('ResourceInfo iconUrl accepts parser-approved absolute HTTP representations without normalization', async () => {
+  const {
+    makePaymentRequired,
+    sameResource,
+    validatePaymentRequired,
+    validateResource,
+  } = await import('../src/x402-wire.js');
+  const { paymentIntentDigest } = await import('../src/canonical.js');
+
+  const base = paymentRequired();
+  const prefix = 'https://icons.example/';
+  const maximumLengthIcon = prefix + 'a'.repeat(2048 - prefix.length);
+  assert.equal(maximumLengthIcon.length, 2048);
+
+  const acceptedIcons = [
+    'http://icons.example/icon.png',
+    'HTTPS://icons.example/icon.png',
+    'http://192.0.2.10/icon.png',
+    'http://[2001:db8::1]/icon.png',
+    'http://localhost/icon.png',
+    'http://private.test/icon.png',
+    'https://public.example/icon.png',
+    'https://café.example/icon.png',
+    'https://icons.example:8443/path/icon.png?size=2#mark',
+    'https://icons.example:443/a%2Fb.png',
+    ' \thttps://icons.example/icon.png\n',
+    'https://icons.example/icon\t.png',
+    'https:\\\\icons.example\\\\icon.png',
+    maximumLengthIcon,
+  ];
+
+  for (const iconUrl of acceptedIcons) {
+    const parsed = new URL(iconUrl);
+    assert.ok(parsed.protocol === 'http:' || parsed.protocol === 'https:');
+    assert.ok(parsed.hostname);
+
+    const resource = { ...base.resource, iconUrl };
+    assert.doesNotThrow(() => validateResource(resource));
+    assert.doesNotThrow(() => validatePaymentRequired({ ...base, resource }));
+    assert.equal(resource.iconUrl, iconUrl);
+  }
+
+  const withoutIcon = makePaymentRequired({
+    resourceUrl: base.resource.url,
+    requirement: base.accepts[0],
+  });
+  assert.equal(Object.hasOwn(withoutIcon.resource, 'iconUrl'), false);
+
+  const constructorInput = {
+    resourceUrl: base.resource.url,
+    requirement: base.accepts[0],
+    iconUrl: acceptedIcons[1],
+  };
+  const withIcon = makePaymentRequired(constructorInput);
+  constructorInput.iconUrl = 'https://changed.example/icon.png';
+  assert.equal(withIcon.resource.iconUrl, acceptedIcons[1]);
+  assert.equal(sameResource(withIcon.resource, { ...withIcon.resource }), true);
+  assert.equal(sameResource(withIcon.resource, withoutIcon.resource), false);
+
+  const identityVariants = [
+    undefined,
+    'https://icons.example/icon.png',
+    'HTTPS://icons.example/icon.png',
+    'https://ICONS.example/icon.png',
+    'https://icons.example:443/icon.png',
+    'https://icons.example/a%2fb.png',
+    'https://icons.example/a%2Fb.png',
+    'https://icons.example/other.png',
+    'https://icons.example/icon.png?size=2',
+    'https://icons.example/icon.png#mark',
+  ];
+  const digests = identityVariants.map((iconUrl) => {
+    const resource = {
+      ...base.resource,
+      ...(iconUrl === undefined ? {} : { iconUrl }),
+    };
+    return paymentIntentDigest({ ...base, resource }, base.accepts[0]);
+  });
+  assert.equal(new Set(digests).size, digests.length);
+
+  for (const resourceUrl of [
+    ' \thttps://resource.example/item\n',
+    'https://resource.example/it\tem',
+    'https:\\\\resource.example\\\\item',
+    'https://resource.example/a%2Fb',
+  ]) {
+    assert.doesNotThrow(() => validateResource({ ...base.resource, url: resourceUrl }));
+  }
+});
+
+test('ResourceInfo iconUrl structural and strict validation remain descriptor-safe and fail closed', async () => {
+  const {
+    validatePaymentPayloadStructure,
+    validateResource,
+  } = await import('../src/x402-wire.js');
+
+  const baseResource = paymentRequired().resource;
+  const makePayload = (resource) => ({
+    ...paymentPayload(),
+    resource,
+  });
+  const prefix = 'https://icons.example/';
+  const overlongIcon = prefix + 'a'.repeat(2049 - prefix.length);
+  assert.equal(overlongIcon.length, 2049);
+
+  assert.throws(() =>
+    validatePaymentPayloadStructure(
+      makePayload({ ...baseResource, iconUrl: overlongIcon }),
+    ),
+  );
+
+  for (const invalidValue of [undefined, 1, true, [], {}, Symbol('synthetic')]) {
+    assert.throws(() =>
+      validatePaymentPayloadStructure(
+        makePayload({ ...baseResource, iconUrl: invalidValue }),
+      ),
+    );
+  }
+
+  const nullResource = { ...baseResource, iconUrl: null };
+  assert.doesNotThrow(() => validatePaymentPayloadStructure(makePayload(nullResource)));
+  assert.throws(() => validateResource(nullResource));
+
+  for (const invalidUrl of [
+    '',
+    'icons.example/icon.png',
+    '//icons.example/icon.png',
+    'http://[',
+    'data:image/png,synthetic',
+    'javascript:synthetic',
+    'file:///synthetic/icon.png',
+    'https://synthetic-user@icons.example/icon.png',
+    'https://:synthetic-pass@icons.example/icon.png',
+  ]) {
+    const resource = { ...baseResource, iconUrl: invalidUrl };
+    assert.doesNotThrow(() => validatePaymentPayloadStructure(makePayload(resource)));
+    assert.throws(() => validateResource(resource));
+  }
+
+  let getterReads = 0;
+  const accessorResource = { ...baseResource };
+  Object.defineProperty(accessorResource, 'iconUrl', {
+    enumerable: true,
+    get() {
+      getterReads += 1;
+      return 'https://icons.example/icon.png';
+    },
+  });
+  assert.throws(() => validatePaymentPayloadStructure(makePayload(accessorResource)));
+  assert.equal(getterReads, 0);
+
+  const nonEnumerableResource = { ...baseResource };
+  Object.defineProperty(nonEnumerableResource, 'iconUrl', {
+    enumerable: false,
+    value: 'https://icons.example/icon.png',
+  });
+  assert.throws(() => validatePaymentPayloadStructure(makePayload(nonEnumerableResource)));
+
+  const inheritedResource = Object.assign(
+    Object.create({ iconUrl: 'https://icons.example/icon.png' }),
+    baseResource,
+  );
+  assert.throws(() => validatePaymentPayloadStructure(makePayload(inheritedResource)));
+
+  const symbolResource = { ...baseResource };
+  symbolResource[Symbol('synthetic')] = 'https://icons.example/icon.png';
+  assert.throws(() => validatePaymentPayloadStructure(makePayload(symbolResource)));
 });

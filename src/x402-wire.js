@@ -29,7 +29,7 @@ const REQUIREMENT_EXTRA_FIELDS = Object.freeze(['poc', 'settlement', 'zenonChain
 const REQUIREMENT_EXTRA_OPTIONAL_FIELDS = Object.freeze(['paymentFlow']);
 const CHAIN_PROFILE_FIELDS = Object.freeze(['version', 'chainIdentifier', 'genesisMomentumHash']);
 const RESOURCE_REQUIRED_FIELDS = Object.freeze(['url']);
-const RESOURCE_OPTIONAL_FIELDS = Object.freeze(['description', 'mimeType', 'serviceName', 'tags']);
+const RESOURCE_OPTIONAL_FIELDS = Object.freeze(['description', 'mimeType', 'serviceName', 'tags', 'iconUrl']);
 const RESOURCE_FIELDS = Object.freeze([...RESOURCE_REQUIRED_FIELDS, ...RESOURCE_OPTIONAL_FIELDS]);
 const PAYMENT_REQUIRED_FIELDS = Object.freeze(['x402Version', 'resource', 'accepts']);
 const PAYMENT_PAYLOAD_FIELDS = Object.freeze(['x402Version', 'resource', 'accepted', 'payload']);
@@ -44,6 +44,7 @@ const MAX_PAYMENT_CAPABILITY_ROUTES = 16;
 const MAX_PAYMENT_CAPABILITY_STRING_LENGTH = 128;
 const MAX_RESOURCE_TAGS = 5;
 const MAX_RESOURCE_SERVICE_FIELD_LENGTH = 32;
+const MAX_RESOURCE_ICON_URL_LENGTH = 2048;
 const PRINTABLE_ASCII = /^[\x20-\x7e]+$/;
 
 function isPlainObject(value) {
@@ -181,6 +182,26 @@ function validateResourceServiceName(value) {
       value.length > MAX_RESOURCE_SERVICE_FIELD_LENGTH || !PRINTABLE_ASCII.test(value)) {
     throw new Error('ResourceInfo.serviceName must be 1 to 32 printable ASCII characters');
   }
+}
+
+function validateResourceIconUrl(value) {
+  if (typeof value !== 'string' || value.length === 0 || value.length > MAX_RESOURCE_ICON_URL_LENGTH) {
+    throw new Error('ResourceInfo.iconUrl must be a bounded non-empty string');
+  }
+  let parsed;
+  try {
+    parsed = new URL(value);
+  } catch {
+    throw new Error('ResourceInfo.iconUrl must be an absolute URL');
+  }
+  if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+    throw new Error('ResourceInfo.iconUrl must use HTTP or HTTPS');
+  }
+  if (!parsed.hostname) throw new Error('ResourceInfo.iconUrl must contain a hostname');
+  if (parsed.username || parsed.password) {
+    throw new Error('ResourceInfo.iconUrl must not contain credentials');
+  }
+  return value;
 }
 
 function validateCapabilityString(value, label) {
@@ -351,10 +372,10 @@ function validateStableResourceStructure(resource) {
   }
   const tags = fields.tags;
   if (tags.present && tags.value !== null) readResourceTags(tags.value);
-
-  const iconUrl = readOptionalDataProperty(resource, 'iconUrl', 'ResourceInfo');
-  if (iconUrl.present && iconUrl.value !== null && typeof iconUrl.value !== 'string') {
-    throw new Error('ResourceInfo.iconUrl must be a string or null');
+  const iconUrl = fields.iconUrl;
+  if (iconUrl.present && iconUrl.value !== null &&
+      (typeof iconUrl.value !== 'string' || iconUrl.value.length > MAX_RESOURCE_ICON_URL_LENGTH)) {
+    throw new Error('ResourceInfo.iconUrl must be a string of at most 2048 characters or null');
   }
 }
 
@@ -512,6 +533,7 @@ function snapshotValidatedResource(resource) {
   const mimeType = fields.mimeType;
   const serviceName = fields.serviceName;
   const tags = fields.tags;
+  const iconUrl = fields.iconUrl;
   if (typeof url !== 'string' || !url) throw new Error('ResourceInfo.url is required');
   if (description.present && typeof description.value !== 'string') {
     throw new Error('ResourceInfo.description must be a string');
@@ -521,6 +543,7 @@ function snapshotValidatedResource(resource) {
   }
   if (serviceName.present) validateResourceServiceName(serviceName.value);
   const copiedTags = tags.present ? readResourceTags(tags.value) : undefined;
+  const validatedIconUrl = iconUrl.present ? validateResourceIconUrl(iconUrl.value) : undefined;
   if (url.length > 4096 ||
       (description.present && description.value.length > 4096) ||
       (mimeType.present && mimeType.value.length > 256)) {
@@ -544,6 +567,7 @@ function snapshotValidatedResource(resource) {
     ...(mimeType.present ? { mimeType: mimeType.value } : {}),
     ...(serviceName.present ? { serviceName: serviceName.value } : {}),
     ...(tags.present ? { tags: copiedTags } : {}),
+    ...(iconUrl.present ? { iconUrl: validatedIconUrl } : {}),
   };
 }
 
@@ -555,13 +579,14 @@ export function sameResource(left, right) {
   try {
     const leftSnapshot = snapshotValidatedResource(left);
     const rightSnapshot = snapshotValidatedResource(right);
-    for (const key of ['description', 'mimeType', 'serviceName', 'tags']) {
+    for (const key of ['description', 'mimeType', 'serviceName', 'tags', 'iconUrl']) {
       if (Object.hasOwn(leftSnapshot, key) !== Object.hasOwn(rightSnapshot, key)) return false;
     }
     if (leftSnapshot.url !== rightSnapshot.url ||
         leftSnapshot.description !== rightSnapshot.description ||
         leftSnapshot.mimeType !== rightSnapshot.mimeType ||
-        leftSnapshot.serviceName !== rightSnapshot.serviceName) {
+        leftSnapshot.serviceName !== rightSnapshot.serviceName ||
+        leftSnapshot.iconUrl !== rightSnapshot.iconUrl) {
       return false;
     }
     if (!Object.hasOwn(leftSnapshot, 'tags')) return true;
@@ -616,6 +641,7 @@ export function makePaymentRequired({
   mimeType,
   serviceName,
   tags,
+  iconUrl,
   requirement,
   error,
 }) {
@@ -629,6 +655,7 @@ export function makePaymentRequired({
       ...(mimeType !== undefined ? { mimeType } : {}),
       ...(serviceName !== undefined ? { serviceName } : {}),
       ...(tags !== undefined ? { tags: copiedTags } : {}),
+      ...(iconUrl !== undefined ? { iconUrl } : {}),
     },
     accepts: [requirement],
   };
