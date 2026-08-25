@@ -119,6 +119,7 @@ function recordingPaymentClient(capabilities, observations = {}) {
 async function completeSelection(paymentRequiredValue, paymentClient, observations = {}, paidFetchOptions = {}) {
   const result = await paidFetch(paymentRequiredValue.resource.url, paymentClient, async (_url, options) => {
     observations.requests = (observations.requests ?? 0) + 1;
+    observations.requestUrls = [...(observations.requestUrls ?? []), _url];
     if (!options) {
       return {
         status: 402,
@@ -317,6 +318,7 @@ test('buyer preserves optional ResourceInfo metadata through selection and succe
       mimeType: '',
       serviceName: 'Service',
       tags: ['alpha', 'alpha', 'beta'],
+      iconUrl: 'https://icons.example:443/a%2Fb.png?size=2#mark',
     },
   ];
 
@@ -340,7 +342,31 @@ test('buyer preserves optional ResourceInfo metadata through selection and succe
     assert.equal(observations.constructions, 1);
     assert.equal(observations.retries, 1);
     assert.equal(observations.requests, 2);
+    assert.deepEqual(observations.requestUrls, [resource.url, resource.url]);
+    if (resource.iconUrl !== undefined) {
+      assert.equal(observations.requestUrls.includes(resource.iconUrl), false);
+    }
   }
+});
+
+test('mock payment verification binds the exact iconUrl representation', async () => {
+  const accepted = requirement();
+  const required = paymentRequired(accepted);
+  required.resource.iconUrl = 'HTTPS://icons.example:443/a%2Fb.png?size=2#mark';
+  const client = new MockExactZenonClient();
+  const facilitator = new MockExactZenonFacilitator();
+  const payload = await client.createPaymentPayload(required, accepted);
+
+  assert.equal(payload.resource.iconUrl, required.resource.iconUrl);
+  assert.equal((await facilitator.verify(payload, accepted, required)).isValid, true);
+
+  const changedPayload = structuredClone(payload);
+  changedPayload.resource.iconUrl = 'https://icons.example:443/a%2Fb.png?size=2#mark';
+  assert.equal((await facilitator.verify(changedPayload, accepted, required)).isValid, false);
+
+  const changedChallenge = structuredClone(required);
+  changedChallenge.resource.iconUrl = 'HTTPS://icons.example:443/a%2Fb.png?size=2#other';
+  assert.equal((await facilitator.verify(payload, accepted, changedChallenge)).isValid, false);
 });
 
 test('buyer rejects optional ResourceInfo presence changes before the paid retry', async () => {
@@ -396,6 +422,18 @@ test('buyer rejects optional ResourceInfo presence changes before the paid retry
     {
       resource: { url: 'http://example.test/paid', tags: ['alpha', 'beta'] },
       mutate(value) { value.tags.pop(); },
+    },
+    {
+      resource: { url: 'http://example.test/paid' },
+      mutate(value) { value.iconUrl = 'https://icons.example/icon.png'; },
+    },
+    {
+      resource: { url: 'http://example.test/paid', iconUrl: 'https://icons.example/icon.png' },
+      mutate(value) { delete value.iconUrl; },
+    },
+    {
+      resource: { url: 'http://example.test/paid', iconUrl: 'https://icons.example/icon.png' },
+      mutate(value) { value.iconUrl = 'https://icons.example/other.png'; },
     },
   ];
 
@@ -454,6 +492,7 @@ test('buyer rejects optional ResourceInfo presence changes before the paid retry
 
 test('buyer rejects in-place mutation of a single-offer resource before the paid retry', async () => {
   const mutations = [
+    resource => { resource.iconUrl = 'https://icons.example/other.png'; },
     resource => { resource.serviceName = 'Other service'; },
     resource => { resource.tags.reverse(); },
     resource => { resource.tags[1] = 'gamma'; },
@@ -465,6 +504,7 @@ test('buyer rejects in-place mutation of a single-offer resource before the paid
     const required = paymentRequired(accepted);
     required.resource.serviceName = 'Service';
     required.resource.tags = ['alpha', 'alpha', 'beta'];
+    required.resource.iconUrl = 'https://icons.example/icon.png';
     const originalChallenge = structuredClone(required);
     const exact = new MockExactZenonClient();
     let constructions = 0;
@@ -573,7 +613,10 @@ test('unsupported ResourceInfo metadata stops before payment and downstream effe
     { url: 'http://example.test/paid', serviceName: 'a'.repeat(33) },
     { url: 'http://example.test/paid', tags: [''] },
     { url: 'http://example.test/paid', tags: ['one', 'two', 'three', 'four', 'five', 'six'] },
-    { url: 'http://example.test/paid', iconUrl: 'https://example.test/icon.png' },
+    { url: 'http://example.test/paid', iconUrl: '' },
+    { url: 'http://example.test/paid', iconUrl: 'icons.example/icon.png' },
+    { url: 'http://example.test/paid', iconUrl: 'data:image/png,synthetic' },
+    { url: 'http://example.test/paid', iconUrl: 'https://synthetic-user@icons.example/icon.png' },
   ];
 
   for (const resource of resources) {
@@ -653,6 +696,7 @@ test('resource server rejects exact ResourceInfo mismatches before facilitator i
       payload => { payload.resource.serviceName = 'Service'; },
       payload => { payload.resource.tags = []; },
       payload => { payload.resource.tags = ['alpha', 'beta']; },
+      payload => { payload.resource.iconUrl = 'https://icons.example/icon.png'; },
     ];
 
     for (const mutate of mismatches) {
@@ -1993,6 +2037,12 @@ test('HTTP boundary separates malformed payment input from unsupported payment p
     controlServiceName.resource.serviceName = 'line\nfeed';
     const nonAsciiServiceName = structuredClone(valid);
     nonAsciiServiceName.resource.serviceName = 'caf\u00e9';
+    const wrongIconType = structuredClone(valid);
+    wrongIconType.resource.iconUrl = 1;
+    const iconPrefix = 'https://icons.example/';
+    const oversizedIcon = structuredClone(valid);
+    oversizedIcon.resource.iconUrl = iconPrefix + 'a'.repeat(2049 - iconPrefix.length);
+    assert.equal(oversizedIcon.resource.iconUrl.length, 2049);
 
     const malformedPayloads = [
       {},
@@ -2037,6 +2087,8 @@ test('HTTP boundary separates malformed payment input from unsupported payment p
       nonStringTag,
       controlServiceName,
       nonAsciiServiceName,
+      wrongIconType,
+      oversizedIcon,
       deep,
     ];
 
@@ -2085,8 +2137,18 @@ test('HTTP boundary separates malformed payment input from unsupported payment p
     nullServiceName.resource.serviceName = null;
     const nullTags = structuredClone(valid);
     nullTags.resource.tags = null;
-    const unsupportedIcon = structuredClone(valid);
-    unsupportedIcon.resource.iconUrl = 'https://example.test/icon.png';
+    const iconMismatch = structuredClone(valid);
+    iconMismatch.resource.iconUrl = 'https://icons.example/icon.png';
+    const emptyIcon = structuredClone(valid);
+    emptyIcon.resource.iconUrl = '';
+    const relativeIcon = structuredClone(valid);
+    relativeIcon.resource.iconUrl = 'icons.example/icon.png';
+    const unsupportedSchemeIcon = structuredClone(valid);
+    unsupportedSchemeIcon.resource.iconUrl = 'data:image/png,synthetic';
+    const credentialIcon = structuredClone(valid);
+    credentialIcon.resource.iconUrl = 'https://synthetic-user@icons.example/icon.png';
+    const nullIcon = structuredClone(valid);
+    nullIcon.resource.iconUrl = null;
     const unknownResourceMember = structuredClone(valid);
     unknownResourceMember.resource.unknownMetadata = 'unsupported';
 
@@ -2111,7 +2173,12 @@ test('HTTP boundary separates malformed payment input from unsupported payment p
       resourceMismatch,
       nullServiceName,
       nullTags,
-      unsupportedIcon,
+      iconMismatch,
+      emptyIcon,
+      relativeIcon,
+      unsupportedSchemeIcon,
+      credentialIcon,
+      nullIcon,
       unknownResourceMember,
     ]) {
       await assertUnsupported(payload);

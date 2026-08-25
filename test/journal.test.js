@@ -120,6 +120,15 @@ test('journal preserves legacy optionality and ResourceInfo service metadata exa
     { url, description: '', mimeType: '', serviceName: 'A', tags: [] },
     { url, serviceName: 'S'.repeat(32), tags: ['alpha'] },
     { url, serviceName: 'Service', tags: ['alpha', 'alpha', 'beta', 'alpha', 'beta'] },
+    { url, iconUrl: 'HTTPS://icons.example:443/a%2Fb.png?size=2#mark' },
+    {
+      url,
+      description: '',
+      mimeType: '',
+      serviceName: 'Service',
+      tags: ['alpha', 'alpha', 'beta'],
+      iconUrl: 'http://[2001:db8::1]/icon.png',
+    },
   ];
   const attempts = resources.map((resourceIdentity, index) => validatedAttempt({
     transactionHash: String(index + 1).repeat(64),
@@ -147,8 +156,17 @@ test('journal integrity rejects ResourceInfo metadata tampering after reload', a
     url,
     serviceName: 'Service',
     tags: ['alpha', 'alpha', 'beta'],
+    iconUrl: 'HTTPS://icons.example:443/a%2Fb.png?size=2#mark',
   });
   const cases = [
+    {
+      resourceIdentity: complete(),
+      mutate(resource) { delete resource.iconUrl; },
+    },
+    {
+      resourceIdentity: complete(),
+      mutate(resource) { resource.iconUrl = 'https://icons.example/other.png'; },
+    },
     {
       resourceIdentity: complete(),
       mutate(resource) { delete resource.serviceName; },

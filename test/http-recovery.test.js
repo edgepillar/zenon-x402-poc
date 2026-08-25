@@ -725,10 +725,15 @@ test('outcome-unknown recovery preserves optional ResourceInfo representation ex
     { url: 'https://resource.example/paid', tags: [] },
     {
       url: 'https://resource.example/paid',
+      iconUrl: 'HTTPS://icons.example:443/a%2Fb.png?size=2#mark',
+    },
+    {
+      url: 'https://resource.example/paid',
       description: '',
       mimeType: '',
       serviceName: 'Service',
       tags: ['alpha', 'alpha', 'beta'],
+      iconUrl: 'https://localhost/icon.png',
     },
   ];
 
@@ -765,6 +770,7 @@ test('detached single-offer client mutation cannot alter outcome-unknown recover
   const { paymentRequired, requirement } = await buyerChallenge('https://resource.example/paid');
   paymentRequired.resource.serviceName = 'Service';
   paymentRequired.resource.tags = ['alpha', 'alpha', 'beta'];
+  paymentRequired.resource.iconUrl = 'HTTPS://icons.example:443/a%2Fb.png?size=2#mark';
   const originalChallenge = structuredClone(paymentRequired);
   const exact = new MockExactZenonClient();
   let calls = 0;
@@ -779,6 +785,7 @@ test('detached single-offer client mutation cannot alter outcome-unknown recover
         const untouchedSelected = structuredClone(selected);
         received.resource.serviceName = 'Other service';
         received.resource.tags.reverse();
+        received.resource.iconUrl = 'https://icons.example/other.png';
         selected.amount = '101';
         received.accepts[0].maxTimeoutSeconds = 31;
         mutatedClientView = structuredClone(received);
