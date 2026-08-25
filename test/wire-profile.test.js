@@ -668,7 +668,6 @@ test('payment payload structure separates malformed V2 input from unsupported lo
     { x402Version: 1 },
     Object.fromEntries(Object.entries(valid).filter(([key]) => key !== 'resource')),
     { ...valid, resource: null },
-    { ...valid, extensions: {} },
     { ...valid, unexpected: true },
     {
       ...valid,
@@ -951,4 +950,145 @@ test('ResourceInfo iconUrl structural and strict validation remain descriptor-sa
   const symbolResource = { ...baseResource };
   symbolResource[Symbol('synthetic')] = 'https://icons.example/icon.png';
   assert.throws(() => validatePaymentPayloadStructure(makePayload(symbolResource)));
+});
+
+test('empty top-level extensions are equivalent to absence without automatic advertisement', async () => {
+  const required = paymentRequired();
+  const requiredWithEmptyExtensions = structuredClone(required);
+  requiredWithEmptyExtensions.extensions = {};
+  const requiredSnapshot = structuredClone(requiredWithEmptyExtensions);
+
+  assert.equal(
+    paymentIntentDigest(required, required.accepts[0]),
+    paymentIntentDigest(requiredWithEmptyExtensions, requiredWithEmptyExtensions.accepts[0]),
+  );
+  assert.doesNotThrow(() => validatePaymentRequired(requiredWithEmptyExtensions));
+  assert.deepEqual(requiredWithEmptyExtensions, requiredSnapshot);
+
+  const payload = paymentPayload();
+  const payloadWithEmptyExtensions = structuredClone(payload);
+  payloadWithEmptyExtensions.extensions = {};
+  const payloadSnapshot = structuredClone(payloadWithEmptyExtensions);
+
+  assert.doesNotThrow(() => validatePaymentPayloadStructure(payload));
+  assert.doesNotThrow(() => validatePaymentPayloadStructure(payloadWithEmptyExtensions));
+  assert.doesNotThrow(() => validatePaymentPayloadEnvelope(payloadWithEmptyExtensions));
+  assert.deepEqual(payloadWithEmptyExtensions, payloadSnapshot);
+
+  const nullPrototypeExtensions = Object.create(null);
+  assert.doesNotThrow(() =>
+    validatePaymentRequired({ ...required, extensions: nullPrototypeExtensions }),
+  );
+  assert.doesNotThrow(() =>
+    validatePaymentPayloadEnvelope({ ...payload, extensions: nullPrototypeExtensions }),
+  );
+
+  const locallyConstructed = makePaymentRequired({
+    resourceUrl: required.resource.url,
+    requirement: required.accepts[0],
+  });
+  assert.equal(Object.hasOwn(locallyConstructed, 'extensions'), false);
+  assert.equal(Object.hasOwn(payload, 'extensions'), false);
+});
+
+test('top-level extensions preserve structural and strict rejection boundaries', async () => {
+  const required = paymentRequired();
+  const payload = paymentPayload();
+
+  for (const extensions of [null, { synthetic: true }]) {
+    assert.throws(() => validatePaymentRequired({ ...required, extensions }));
+    assert.doesNotThrow(() =>
+      validatePaymentPayloadStructure({ ...payload, extensions }),
+    );
+    assert.throws(() => validatePaymentPayloadEnvelope({ ...payload, extensions }));
+  }
+
+  for (const extensions of [undefined, true, 1, 'synthetic', []]) {
+    assert.throws(() => validatePaymentRequired({ ...required, extensions }));
+    assert.throws(() =>
+      validatePaymentPayloadStructure({ ...payload, extensions }),
+    );
+  }
+
+  let getterReads = 0;
+  const accessorExtensions = {};
+  Object.defineProperty(accessorExtensions, 'synthetic', {
+    enumerable: true,
+    get() {
+      getterReads += 1;
+      return true;
+    },
+  });
+  assert.throws(() =>
+    validatePaymentRequired({ ...required, extensions: accessorExtensions }),
+  );
+  assert.throws(() =>
+    validatePaymentPayloadStructure({ ...payload, extensions: accessorExtensions }),
+  );
+  assert.equal(getterReads, 0);
+
+  const nonEnumerableExtensions = {};
+  Object.defineProperty(nonEnumerableExtensions, 'synthetic', {
+    enumerable: false,
+    value: true,
+  });
+  assert.throws(() =>
+    validatePaymentRequired({ ...required, extensions: nonEnumerableExtensions }),
+  );
+  assert.throws(() =>
+    validatePaymentPayloadStructure({ ...payload, extensions: nonEnumerableExtensions }),
+  );
+
+  const symbolExtensions = {};
+  symbolExtensions[Symbol('synthetic')] = true;
+  assert.throws(() =>
+    validatePaymentRequired({ ...required, extensions: symbolExtensions }),
+  );
+  assert.throws(() =>
+    validatePaymentPayloadStructure({ ...payload, extensions: symbolExtensions }),
+  );
+
+  const inheritedExtensions = Object.create({ synthetic: true });
+  assert.throws(() =>
+    validatePaymentRequired({ ...required, extensions: inheritedExtensions }),
+  );
+  assert.throws(() =>
+    validatePaymentPayloadStructure({ ...payload, extensions: inheritedExtensions }),
+  );
+
+  const topLevelAccessor = { ...payload };
+  Object.defineProperty(topLevelAccessor, 'extensions', {
+    enumerable: true,
+    get() {
+      getterReads += 1;
+      return {};
+    },
+  });
+  assert.throws(() => validatePaymentPayloadStructure(topLevelAccessor));
+  assert.equal(getterReads, 0);
+
+  const requiredTopLevelAccessor = { ...required };
+  Object.defineProperty(requiredTopLevelAccessor, 'extensions', {
+    enumerable: true,
+    get() {
+      getterReads += 1;
+      return {};
+    },
+  });
+  assert.throws(() => validatePaymentRequired(requiredTopLevelAccessor));
+  assert.equal(getterReads, 0);
+
+  const topLevelNonEnumerable = { ...payload };
+  Object.defineProperty(topLevelNonEnumerable, 'extensions', {
+    enumerable: false,
+    value: {},
+  });
+  assert.throws(() => validatePaymentPayloadStructure(topLevelNonEnumerable));
+
+  const requiredTopLevelNonEnumerable = { ...required };
+  Object.defineProperty(requiredTopLevelNonEnumerable, 'extensions', {
+    enumerable: false,
+    value: {},
+  });
+  assert.throws(() => validatePaymentRequired(requiredTopLevelNonEnumerable));
 });

@@ -46,6 +46,7 @@ test('safe HTTP retry returns the cached protected response without rerunning de
   const listening = await app.listen();
   try {
     const { paymentPayload } = await signedPayment(listening.url);
+    paymentPayload.extensions = {};
     const first = await submitPayment(listening.url, paymentPayload);
     const firstText = await first.text();
     const second = await submitPayment(listening.url, paymentPayload);
@@ -744,6 +745,7 @@ test('outcome-unknown recovery preserves optional ResourceInfo representation ex
       resource,
       accepts: [requirement],
     };
+    paymentRequired.extensions = {};
     let calls = 0;
     let submitted;
     await assert.rejects(
@@ -756,9 +758,10 @@ test('outcome-unknown recovery preserves optional ResourceInfo representation ex
       error => {
         assert.ok(error instanceof PaymentSubmissionOutcomeUnknownError);
         assert.deepEqual(error.paymentRequired.resource, resource);
-        assert.deepEqual(error.paymentPayload.resource, resource);
+      assert.deepEqual(error.paymentPayload.resource, resource);
         assert.deepEqual(submitted.resource, resource);
         assert.equal(error.retrySamePayment, true);
+        assert.equal(Object.hasOwn(error.paymentPayload, 'extensions'), false);
         return true;
       },
     );

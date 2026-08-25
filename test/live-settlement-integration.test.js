@@ -293,6 +293,7 @@ test('ExactZenonFacilitator deterministic settlement integration scenarios', asy
     required.resource.tags = ['alpha', 'alpha', 'beta'];
     required.resource.iconUrl = 'HTTPS://icons.example:443/a%2Fb.png?size=2#mark';
     const payload = signedPayment(required, accepted);
+    payload.extensions = {};
     const preflight = await preflightZenonPayment(payload, accepted, required);
     assert.deepEqual(preflight.resourceIdentity, required.resource);
     const { root, directory, journal } = await journalFixture(t);
