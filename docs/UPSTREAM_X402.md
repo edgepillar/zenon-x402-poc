@@ -37,6 +37,24 @@ registerExactZenonScheme(facilitator, {
 
 No canonical Zenon network identifier is asserted here. The current PoC label `zenon:testnet` is descriptive only and must not be used as authenticated chain identity.
 
+## Official interoperability compatibility matrix
+
+The evidence below is pinned to `@x402/core@2.23.0`. `EXECUTED` means that this repository's tests exercise the named public surface. It does not mean official Zenon scheme or network registration, complete stable-v2 compatibility, or production readiness.
+
+| Slice | Status | Public surface | Evidence | Boundary |
+| --- | --- | --- | --- | --- |
+| Official HTTP codecs | EXECUTED | `@x402/core/http` codecs | `test/official-x402-http-interop.test.js` | Partial HTTP wire interoperability in mock/local tests. |
+| Official client registration and HTTP lifecycle | EXECUTED | `@x402/core/client` `x402Client` and `x402HTTPClient`; `@x402/core/schemas` `PaymentRequiredV2Schema` | `test/official-x402-client-interop.test.js` | Version-pinned registration, selection, spend-control, and HTTP lifecycle characterization. |
+| Official resource-server registration and upfront lifecycle | EXECUTED | `@x402/core/server` `x402ResourceServer` and `x402HTTPResourceServer`; `@x402/core/http` codecs; `@x402/core/schemas` `PaymentRequiredV2Schema` | `test/official-x402-resource-server-interop.test.js` | Version-pinned registration and upfront settlement characterization through a test-local bridge. |
+| Direct official client-to-resource-server composition | EXECUTED | `@x402/core/client` `x402Client` and `x402HTTPClient`; `@x402/core/server` `x402ResourceServer` and `x402HTTPResourceServer`; `@x402/core/http` codecs; `@x402/core/schemas` `PaymentRequiredV2Schema` | `test/official-x402-client-resource-server-interop.test.js` | In-memory composition with independently bound client and server contexts. |
+| Official facilitator registration | DEFERRED | Not exercised | None | The pinned public verify/settle callbacks omit the complete authoritative `PaymentRequired`/`ResourceInfo` context required by strict local intent binding. |
+
+Selected-offer object identity continuity is characterized only for the pinned 2.23.0 runtime and is not a general public guarantee. The direct composition test keeps independently detached, test-local client and server contexts and crosses their boundary only through public `PAYMENT-REQUIRED`, `PAYMENT-SIGNATURE`, and `PAYMENT-RESPONSE` artifacts.
+
+All evidence is mock/local only. Tests use local loopback where applicable, while direct composition is in-memory; no live chain or real funds are used. Absent or empty extension-container compatibility does not enable non-empty extensions. The local malformed-payment HTTP 400 lane and PoC-specific recovery HTTP 409 lane remain local behavior, not official behavior claims.
+
+Official facilitator registration remains deferred rather than using hidden context sharing or a side channel to bypass the missing callback context. Dependency upgrades, CI setup, production adapters, official package implementation or publication, upstream issue filing, a canonical network identifier, authenticated chain identity, live-chain integration, hardware wallets, and Phase 2C remain out of scope.
+
 ## Local supported-offer negotiation boundary
 
 The current PoC does not replace the official registered-scheme-handler model. Its dependency-light HTTP client uses an internal, immutable `paymentCapabilities` descriptor solely to route among advertised offers for the injected payment client. The built-in mock and live clients each declare their exact local Zenon network and `upfront` flow; wrappers must explicitly copy the descriptor for multi-offer support. This descriptor is a local compatibility mechanism, not a proposed substitute for `@x402/core` registration interfaces.
