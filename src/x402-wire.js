@@ -95,9 +95,15 @@ function readOptionalEnumerableDataProperty(value, key, label) {
   return { present: true, value: descriptor.value };
 }
 
-function readStableExtensionsProperty(value, label) {
+function readStableExtensionsProperty(value, label, {
+  allowUndefinedAsAbsent = false,
+} = {}) {
   const extensions = readOptionalEnumerableDataProperty(value, 'extensions', label);
-  if (!extensions.present || extensions.value === null) return extensions;
+  if (!extensions.present ||
+      (allowUndefinedAsAbsent && extensions.value === undefined) ||
+      extensions.value === null) {
+    return extensions;
+  }
 
   assertPlainObject(extensions.value, `${label}.extensions`);
   for (const key of Reflect.ownKeys(extensions.value)) {
@@ -112,9 +118,16 @@ function readStableExtensionsProperty(value, label) {
   return extensions;
 }
 
-function validateEmptyExtensionsProperty(value, label) {
-  const extensions = readStableExtensionsProperty(value, label);
-  if (!extensions.present) return;
+function validateEmptyExtensionsProperty(value, label, {
+  allowUndefinedAsAbsent = false,
+} = {}) {
+  const extensions = readStableExtensionsProperty(value, label, {
+    allowUndefinedAsAbsent,
+  });
+  if (!extensions.present ||
+      (allowUndefinedAsAbsent && extensions.value === undefined)) {
+    return;
+  }
   if (extensions.value === null || Reflect.ownKeys(extensions.value).length !== 0) {
     throw new Error(`${label}.extensions is unsupported`);
   }
@@ -514,7 +527,9 @@ export function validatePaymentPayloadStructure(paymentPayload) {
 
   const resource = readOptionalDataProperty(paymentPayload, 'resource', 'PaymentPayload');
   if (resource.present && resource.value !== null) validateStableResourceStructure(resource.value);
-  readStableExtensionsProperty(paymentPayload, 'PaymentPayload');
+  readStableExtensionsProperty(paymentPayload, 'PaymentPayload', {
+    allowUndefinedAsAbsent: true,
+  });
 
   const declaredLocalRoute = acceptedValues.scheme === 'exact' &&
     (acceptedValues.network === MOCK_NETWORK || acceptedValues.network === EXPERIMENTAL_LIVE_NETWORK);
@@ -682,7 +697,9 @@ export function validatePaymentPayloadEnvelope(paymentPayload) {
     optional: ['extensions'],
     label: 'PaymentPayload',
   });
-  validateEmptyExtensionsProperty(paymentPayload, 'PaymentPayload');
+  validateEmptyExtensionsProperty(paymentPayload, 'PaymentPayload', {
+    allowUndefinedAsAbsent: true,
+  });
   if (paymentPayload.x402Version !== X402_VERSION) throw new Error('unsupported x402Version');
   validateResource(paymentPayload.resource);
   validateRequirement(paymentPayload.accepted);
