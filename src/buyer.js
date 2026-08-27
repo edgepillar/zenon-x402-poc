@@ -27,6 +27,41 @@ const RECOVERY_STATES = new Set([
   'DELIVERY_PENDING',
 ]);
 
+function isUsableFinalHttpStatus(value) {
+  return Number.isInteger(value) && value >= 200 && value <= 599;
+}
+
+function observePostSubmissionResponse(response) {
+  if ((typeof response !== 'object' && typeof response !== 'function') || response === null) {
+    return { kind: 'invalid' };
+  }
+
+  let httpStatus;
+  try {
+    httpStatus = response.status;
+  } catch {
+    return { kind: 'invalid' };
+  }
+  if (!isUsableFinalHttpStatus(httpStatus)) return { kind: 'invalid' };
+  if (httpStatus >= 300 && httpStatus < 400) return { kind: 'redirect', httpStatus };
+
+  try {
+    const headers = response.headers;
+    if ((typeof headers !== 'object' && typeof headers !== 'function') || headers === null) {
+      return { kind: 'invalid', httpStatus };
+    }
+    const get = headers.get;
+    if (typeof get !== 'function') return { kind: 'invalid', httpStatus };
+    const settlementHeader = Reflect.apply(get, headers, [HEADERS.PAYMENT_RESPONSE]);
+    if (typeof settlementHeader !== 'string' && settlementHeader !== null) {
+      return { kind: 'invalid', httpStatus };
+    }
+    return { kind: 'observed', httpStatus, settlementHeader };
+  } catch {
+    return { kind: 'invalid', httpStatus };
+  }
+}
+
 export class PaymentSubmissionOutcomeUnknownError extends Error {
   constructor({ paymentRequired, paymentPayload, httpStatus } = {}) {
     super('payment_submission_outcome_unknown');
@@ -48,7 +83,7 @@ export class PaymentSubmissionOutcomeUnknownError extends Error {
         configurable: false,
       },
     });
-    if (Number.isInteger(httpStatus)) this.httpStatus = httpStatus;
+    if (isUsableFinalHttpStatus(httpStatus)) this.httpStatus = httpStatus;
   }
 }
 
@@ -110,12 +145,17 @@ export async function paidFetch(url, paymentClient, fetchImpl = fetch, options =
   } catch {
     throw outcomeUnknown({ paymentRequired, paymentPayload: submittedPaymentPayload });
   }
-  if (second.status >= 300 && second.status < 400) {
-    throw outcomeUnknown({ paymentRequired, paymentPayload: submittedPaymentPayload, httpStatus: second.status });
+  const observation = observePostSubmissionResponse(second);
+  if (observation.kind !== 'observed') {
+    throw outcomeUnknown({
+      paymentRequired,
+      paymentPayload: submittedPaymentPayload,
+      httpStatus: observation.httpStatus,
+    });
   }
-  const settlementHeader = second.headers.get(HEADERS.PAYMENT_RESPONSE);
+  const { httpStatus, settlementHeader } = observation;
   if (!settlementHeader) {
-    throw outcomeUnknown({ paymentRequired, paymentPayload: submittedPaymentPayload, httpStatus: second.status });
+    throw outcomeUnknown({ paymentRequired, paymentPayload: submittedPaymentPayload, httpStatus });
   }
   let settlement;
   try {
@@ -123,9 +163,9 @@ export async function paidFetch(url, paymentClient, fetchImpl = fetch, options =
       maxDecodedBytes: MAX_X402_HEADER_ENCODED_BYTES,
       maxEncodedBytes: MAX_X402_HEADER_ENCODED_BYTES,
     });
-    validateSettlementResponse(settlement, submittedPaymentPayload, second.status);
+    validateSettlementResponse(settlement, submittedPaymentPayload, httpStatus);
   } catch {
-    throw outcomeUnknown({ paymentRequired, paymentPayload: submittedPaymentPayload, httpStatus: second.status });
+    throw outcomeUnknown({ paymentRequired, paymentPayload: submittedPaymentPayload, httpStatus });
   }
   return { response: second, paymentRequired, paymentPayload, settlement };
 }
@@ -242,6 +282,7 @@ function validateBuyerPaymentPayload(paymentPayload, paymentRequired, accepted) 
 }
 
 function validateSettlementResponse(settlement, paymentPayload, httpStatus) {
+  if (!isUsableFinalHttpStatus(httpStatus)) throw new Error('invalid settlement response');
   if (!isPlainObject(settlement)) throw new Error('invalid settlement response');
   const allowed = new Set([...SETTLEMENT_FIELDS, ...OPTIONAL_SETTLEMENT_FIELDS]);
   const keys = Object.keys(settlement);

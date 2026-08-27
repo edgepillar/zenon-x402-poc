@@ -2706,6 +2706,554 @@ function buyerSettlementAttempt(paymentRequired, requirement, {
   });
 }
 
+const BUYER_OBSERVATION_RESOURCE = 'http://buyer-observation.invalid/paid';
+
+function settlementEvidenceForStatus(status, requirement, paymentPayload) {
+  const identity = {
+    network: requirement.network,
+    transaction: paymentPayload.payload.transaction.hash,
+    payer: paymentPayload.payload.transaction.address,
+  };
+  if (status >= 200 && status < 300) {
+    return { success: true, ...identity, state: 'MOMENTUM_INCLUDED' };
+  }
+  if (status === 402) {
+    return {
+      success: false,
+      ...identity,
+      state: 'VALIDATED',
+      errorReason: 'payment_settlement_failed',
+    };
+  }
+  if (status === 409) {
+    return {
+      success: false,
+      ...identity,
+      state: 'SUBMISSION_OUTCOME_UNKNOWN',
+      errorReason: 'payment_outcome_unknown',
+      retrySamePayment: true,
+    };
+  }
+  throw new Error('unsupported test settlement status');
+}
+
+async function runAcceptedObservedResponse(status, makeResponse) {
+  const { paymentRequired, requirement } = await buyerChallenge(BUYER_OBSERVATION_RESOURCE);
+  const originalChallenge = structuredClone(paymentRequired);
+  const exactClient = new MockExactZenonClient();
+  let constructions = 0;
+  let fetches = 0;
+  let submittedPayment;
+  let observedResponse;
+  const result = await paidFetch(paymentRequired.resource.url, {
+    async createPaymentPayload(...args) {
+      constructions += 1;
+      return exactClient.createPaymentPayload(...args);
+    },
+  }, async (_url, options) => {
+    fetches += 1;
+    if (fetches === 1) return challengeResponse(paymentRequired);
+    if (fetches > 2) throw new Error('third request must not run');
+    submittedPayment = decodeB64Json(options.headers[HEADERS.PAYMENT_SIGNATURE]);
+    const settlementHeader = encodeB64Json(
+      settlementEvidenceForStatus(status, requirement, submittedPayment),
+    );
+    observedResponse = makeResponse({ settlementHeader, submittedPayment });
+    return observedResponse;
+  });
+
+  assert.equal(constructions, 1, 'accepted response must construct one payment');
+  assert.equal(fetches, 2, 'accepted response must use exactly two fetches');
+  assert.equal(result.response, observedResponse, 'accepted response identity must be preserved');
+  assert.deepEqual(paymentRequired, originalChallenge, 'accepted response must preserve the original challenge');
+  return { result, response: observedResponse, submittedPayment };
+}
+
+async function expectObservedOutcomeUnknown(makeResponse, {
+  httpStatus,
+  forbiddenValues = [],
+} = {}) {
+  const { paymentRequired, requirement } = await buyerChallenge(BUYER_OBSERVATION_RESOURCE);
+  const originalChallenge = structuredClone(paymentRequired);
+  const exactClient = new MockExactZenonClient();
+  let constructions = 0;
+  let fetches = 0;
+  let submittedPayment;
+  let settlementHeader;
+  let observedError;
+
+  try {
+    await paidFetch(paymentRequired.resource.url, {
+      async createPaymentPayload(...args) {
+        constructions += 1;
+        return exactClient.createPaymentPayload(...args);
+      },
+    }, async (_url, options) => {
+      fetches += 1;
+      if (fetches === 1) return challengeResponse(paymentRequired);
+      if (fetches > 2) throw new Error('third request must not run');
+      submittedPayment = decodeB64Json(options.headers[HEADERS.PAYMENT_SIGNATURE]);
+      settlementHeader = encodeB64Json(
+        settlementEvidenceForStatus(200, requirement, submittedPayment),
+      );
+      return makeResponse({ settlementHeader, submittedPayment });
+    });
+  } catch (error) {
+    observedError = error;
+  }
+
+  assert.ok(observedError instanceof PaymentSubmissionOutcomeUnknownError,
+    'invalid observed response must use outcome-unknown recovery');
+  assert.equal(observedError.name, 'PaymentSubmissionOutcomeUnknownError',
+    'outcome-unknown name must remain fixed');
+  assert.equal(observedError.message, 'payment_submission_outcome_unknown',
+    'outcome-unknown message must remain fixed');
+  assert.equal(observedError.code, 'payment_submission_outcome_unknown',
+    'outcome-unknown code must remain fixed');
+  assert.equal(observedError.retrySamePayment, true,
+    'outcome-unknown recovery must reuse the same payment');
+  assert.equal(observedError.action, 'reuse_and_reconcile_same_payment',
+    'outcome-unknown action must remain fixed');
+  assert.deepEqual(observedError.paymentPayload, submittedPayment,
+    'outcome-unknown recovery must retain the submitted payment');
+  assert.notEqual(observedError.paymentPayload, submittedPayment,
+    'outcome-unknown payment must be detached');
+  assert.notEqual(observedError.paymentPayload.payload, submittedPayment.payload,
+    'outcome-unknown nested payment payload must be detached');
+  assert.notEqual(observedError.paymentPayload.payload.transaction, submittedPayment.payload.transaction,
+    'outcome-unknown nested payment transaction must be detached');
+  assert.deepEqual(observedError.paymentRequired, originalChallenge,
+    'outcome-unknown recovery must retain the original challenge');
+  assert.notEqual(observedError.paymentRequired, paymentRequired,
+    'outcome-unknown challenge must be detached');
+  assert.notEqual(observedError.paymentRequired.accepts, paymentRequired.accepts,
+    'outcome-unknown challenge offers must be detached');
+  assert.notEqual(observedError.paymentRequired.accepts[0], paymentRequired.accepts[0],
+    'outcome-unknown nested challenge offer must be detached');
+  assert.notEqual(observedError.paymentRequired.resource, paymentRequired.resource,
+    'outcome-unknown nested challenge resource must be detached');
+  assert.deepEqual(paymentRequired, originalChallenge,
+    'response observation must not mutate the challenge');
+  assert.equal(Object.getOwnPropertyDescriptor(observedError, 'paymentPayload')?.enumerable, false,
+    'submitted payment recovery must remain non-enumerable');
+  assert.equal(Object.getOwnPropertyDescriptor(observedError, 'paymentRequired')?.enumerable, false,
+    'challenge recovery must remain non-enumerable');
+  assert.equal(Object.hasOwn(observedError, 'cause'), false,
+    'outcome-unknown recovery must not expose a cause');
+  assert.equal(Object.hasOwn(observedError, 'response'), false,
+    'outcome-unknown recovery must not retain the response');
+  assert.equal(Object.hasOwn(observedError, 'headers'), false,
+    'outcome-unknown recovery must not retain headers');
+
+  const expectedKeys = ['action', 'code', 'name', 'retrySamePayment'];
+  if (httpStatus === undefined) {
+    assert.equal(Object.hasOwn(observedError, 'httpStatus'), false,
+      'invalid status must not be attached');
+  } else {
+    expectedKeys.push('httpStatus');
+    assert.equal(observedError.httpStatus, httpStatus,
+      'validated status must be attached exactly');
+  }
+  assert.deepEqual(Object.keys(observedError).sort(), expectedKeys.sort(),
+    'outcome-unknown public fields must remain exact');
+
+  const publicError = JSON.stringify(observedError);
+  for (const forbiddenValue of [settlementHeader, ...forbiddenValues].filter(value =>
+    typeof value === 'string' && value.length > 0)) {
+    assert.equal(String(observedError).includes(forbiddenValue), false,
+      'outcome-unknown text must not expose private observation data');
+    assert.equal(publicError.includes(forbiddenValue), false,
+      'outcome-unknown fields must not expose private observation data');
+  }
+  assert.equal(constructions, 1, 'outcome-unknown recovery must construct one payment');
+  assert.equal(fetches, 2, 'outcome-unknown recovery must use exactly two fetches');
+  return { error: observedError, submittedPayment };
+}
+
+function makeSingleReadSettlementResponse(status, settlementHeader) {
+  const counts = { status: 0, headers: 0, get: 0, invocation: 0, receiver: 0 };
+  const headers = Object.create({
+    get get() {
+      counts.get += 1;
+      if (counts.get > 1) throw new Error();
+      return function getHeader(name) {
+        counts.invocation += 1;
+        if (counts.invocation > 1) throw new Error();
+        if (this === headers) counts.receiver += 1;
+        else throw new Error();
+        return name === HEADERS.PAYMENT_RESPONSE ? settlementHeader : null;
+      };
+    },
+  });
+  const response = {};
+  Object.defineProperties(response, {
+    status: {
+      configurable: true,
+      get() {
+        counts.status += 1;
+        if (counts.status > 1) throw new Error();
+        return status;
+      },
+    },
+    headers: {
+      configurable: true,
+      get() {
+        counts.headers += 1;
+        if (counts.headers > 1) throw new Error();
+        return headers;
+      },
+    },
+  });
+  return { response, counts };
+}
+
+function makeHeaderFailureResponse(kind, marker, result) {
+  const counts = { status: 0, headers: 0, get: 0, invocation: 0 };
+  if (kind === 'response-proxy') {
+    return {
+      counts,
+      response: new Proxy({}, {
+        get(_target, field) {
+          if (field === 'status') {
+            counts.status += 1;
+            return 200;
+          }
+          if (field === 'headers') {
+            counts.headers += 1;
+            throw new Error(marker);
+          }
+          return undefined;
+        },
+      }),
+    };
+  }
+
+  let headers;
+  if (kind === 'null-headers') {
+    headers = null;
+  } else if (kind === 'get-proxy') {
+    headers = new Proxy({}, {
+      get(_target, field) {
+        if (field === 'get') {
+          counts.get += 1;
+          throw new Error(marker);
+        }
+        return undefined;
+      },
+    });
+  } else {
+    headers = {};
+    Object.defineProperty(headers, 'get', {
+      configurable: true,
+      get() {
+        counts.get += 1;
+        if (kind === 'get-accessor') throw new Error(marker);
+        if (kind === 'non-function-get') return 0;
+        if (kind === 'callable-proxy') {
+          return new Proxy(function getHeader() {}, {
+            apply() {
+              counts.invocation += 1;
+              throw new Error(marker);
+            },
+          });
+        }
+        return function getHeader() {
+          counts.invocation += 1;
+          if (kind === 'throwing-invocation') throw new Error(marker);
+          return result;
+        };
+      },
+    });
+  }
+
+  const response = {};
+  Object.defineProperties(response, {
+    status: {
+      configurable: true,
+      get() {
+        counts.status += 1;
+        if (counts.status > 1) throw new Error(marker);
+        return 200;
+      },
+    },
+    headers: {
+      configurable: true,
+      get() {
+        counts.headers += 1;
+        if (kind === 'headers-accessor') throw new Error(marker);
+        return headers;
+      },
+    },
+  });
+  return { response, counts };
+}
+
+test('PaymentSubmissionOutcomeUnknownError attaches only usable final HTTP statuses', () => {
+  const paymentRequired = {
+    accepts: [{ policy: { modes: [true, false] } }],
+    resource: { metadata: [{ available: true }] },
+  };
+  const paymentPayload = {
+    payload: { transaction: { metadata: [{ submitted: true }] } },
+  };
+
+  const representative = new PaymentSubmissionOutcomeUnknownError({
+    paymentRequired,
+    paymentPayload,
+    httpStatus: 200,
+  });
+  assert.equal(representative.name, 'PaymentSubmissionOutcomeUnknownError');
+  assert.equal(representative.message, 'payment_submission_outcome_unknown');
+  assert.equal(representative.code, 'payment_submission_outcome_unknown');
+  assert.equal(representative.retrySamePayment, true);
+  assert.equal(representative.action, 'reuse_and_reconcile_same_payment');
+  assert.deepEqual(representative.paymentRequired, paymentRequired);
+  assert.deepEqual(representative.paymentPayload, paymentPayload);
+  assert.notEqual(representative.paymentRequired.accepts, paymentRequired.accepts);
+  assert.notEqual(representative.paymentRequired.accepts[0], paymentRequired.accepts[0]);
+  assert.notEqual(representative.paymentPayload.payload, paymentPayload.payload);
+  assert.notEqual(representative.paymentPayload.payload.transaction, paymentPayload.payload.transaction);
+  assert.equal(Object.getOwnPropertyDescriptor(representative, 'paymentRequired')?.enumerable, false);
+  assert.equal(Object.getOwnPropertyDescriptor(representative, 'paymentPayload')?.enumerable, false);
+
+  for (const httpStatus of [200, 299, 300, 409, 599]) {
+    const error = new PaymentSubmissionOutcomeUnknownError({
+      paymentRequired,
+      paymentPayload,
+      httpStatus,
+    });
+    assert.equal(error.httpStatus, httpStatus,
+      'usable final HTTP status must be attached');
+  }
+
+  for (const httpStatus of [199, 600, -1, 200.5, Number.NaN, Number.POSITIVE_INFINITY,
+    Number.NEGATIVE_INFINITY, '200', null, undefined, 200n, Symbol('invalid-status')]) {
+    const error = new PaymentSubmissionOutcomeUnknownError({
+      paymentRequired,
+      paymentPayload,
+      httpStatus,
+    });
+    assert.equal(Object.hasOwn(error, 'httpStatus'), false,
+      'unusable HTTP status must not be attached');
+  }
+});
+
+test('buyer snapshots native plain function and prototype-backed successful responses once', async () => {
+  let nativeResponse;
+  const nativeResult = await runAcceptedObservedResponse(200, ({ settlementHeader }) => {
+    nativeResponse = new Response(null, {
+      status: 200,
+      headers: { [HEADERS.PAYMENT_RESPONSE]: settlementHeader },
+    });
+    return nativeResponse;
+  });
+  assert.equal(nativeResult.result.response, nativeResponse,
+    'native response identity must remain unchanged');
+
+  let plainResponse;
+  const plainResult = await runAcceptedObservedResponse(299, ({ settlementHeader }) => {
+    plainResponse = {
+      status: 299,
+      headers: { get: name => name === HEADERS.PAYMENT_RESPONSE ? settlementHeader : null },
+    };
+    return plainResponse;
+  });
+  assert.equal(plainResult.result.response, plainResponse,
+    'plain response identity must remain unchanged');
+
+  let functionResponse;
+  const functionResult = await runAcceptedObservedResponse(298, ({ settlementHeader }) => {
+    functionResponse = function responseFunction() {};
+    functionResponse.status = 298;
+    functionResponse.headers = {
+      get: name => name === HEADERS.PAYMENT_RESPONSE ? settlementHeader : null,
+    };
+    return functionResponse;
+  });
+  assert.equal(functionResult.result.response, functionResponse,
+    'function response identity must remain unchanged');
+
+  let singleRead;
+  const statefulResult = await runAcceptedObservedResponse(200, ({ settlementHeader }) => {
+    singleRead = makeSingleReadSettlementResponse(200, settlementHeader);
+    return singleRead.response;
+  });
+  assert.equal(statefulResult.result.response, singleRead.response,
+    'prototype-backed response identity must remain unchanged');
+  assert.deepEqual(singleRead.counts, {
+    status: 1,
+    headers: 1,
+    get: 1,
+    invocation: 1,
+    receiver: 1,
+  }, 'successful response members must each be observed once');
+});
+
+test('buyer rejects every unusable post-submission status before observing headers', async () => {
+  const privateMarker = ['private', 'status', 'detail'].join('_');
+  let coercions = 0;
+  const throwingCoercion = {
+    [Symbol.toPrimitive]() {
+      coercions += 1;
+      throw new Error(privateMarker);
+    },
+  };
+  const cases = [
+    { missing: true },
+    { value: undefined },
+    { value: null },
+    { value: '200' },
+    { value: new Number(200) },
+    { value: Number.NaN },
+    { value: Number.POSITIVE_INFINITY },
+    { value: 0 },
+    { value: 199 },
+    { value: 600 },
+    { value: 200.5 },
+    { value: 200n },
+    { value: Symbol('invalid-status') },
+    { value: throwingCoercion },
+  ];
+
+  for (const entry of cases) {
+    let statusReads = 0;
+    let headerReads = 0;
+    await expectObservedOutcomeUnknown(() => {
+      const response = {};
+      if (!entry.missing) {
+        Object.defineProperty(response, 'status', {
+          get() {
+            statusReads += 1;
+            return entry.value;
+          },
+        });
+      }
+      Object.defineProperty(response, 'headers', {
+        get() {
+          headerReads += 1;
+          throw new Error(privateMarker);
+        },
+      });
+      return response;
+    }, { forbiddenValues: [privateMarker] });
+    assert.equal(statusReads, entry.missing ? 0 : 1,
+      'invalid status must be read at most once');
+    assert.equal(headerReads, 0, 'invalid status must stop before headers');
+  }
+  assert.equal(coercions, 0, 'invalid status validation must not coerce objects');
+});
+
+test('buyer contains primitive proxy and throwing post-submission response failures', async () => {
+  const privateMarker = ['private', 'response', 'detail'].join('_');
+  for (const response of [null, undefined, false, 0, '', 200, 200n, Symbol('invalid-response')]) {
+    await expectObservedOutcomeUnknown(() => response, { forbiddenValues: [privateMarker] });
+  }
+
+  let accessorReads = 0;
+  await expectObservedOutcomeUnknown(() => ({
+    get status() {
+      accessorReads += 1;
+      throw new Error(privateMarker);
+    },
+  }), { forbiddenValues: [privateMarker] });
+  assert.equal(accessorReads, 1, 'throwing status accessor must run once');
+
+  let proxyReads = 0;
+  await expectObservedOutcomeUnknown(() => new Proxy({}, {
+    get(_target, field) {
+      if (field === 'status') {
+        proxyReads += 1;
+        throw new Error(privateMarker);
+      }
+      return undefined;
+    },
+  }), { forbiddenValues: [privateMarker] });
+  assert.equal(proxyReads, 1, 'throwing status proxy trap must run once');
+});
+
+test('buyer contains every post-submission header observation failure with validated status', async () => {
+  const privateMarker = ['private', 'header', 'detail'].join('_');
+  const variants = [
+    { kind: 'headers-accessor', expectedGet: 0, expectedInvocation: 0 },
+    { kind: 'response-proxy', expectedGet: 0, expectedInvocation: 0 },
+    { kind: 'null-headers', expectedGet: 0, expectedInvocation: 0 },
+    { kind: 'get-accessor', expectedGet: 1, expectedInvocation: 0 },
+    { kind: 'get-proxy', expectedGet: 1, expectedInvocation: 0 },
+    { kind: 'non-function-get', expectedGet: 1, expectedInvocation: 0 },
+    { kind: 'throwing-invocation', expectedGet: 1, expectedInvocation: 1 },
+    { kind: 'callable-proxy', expectedGet: 1, expectedInvocation: 1 },
+    ...[undefined, false, 0, {}, [], Symbol('invalid-header-result')]
+      .map(result => ({
+        kind: 'invalid-result',
+        result,
+        expectedGet: 1,
+        expectedInvocation: 1,
+      })),
+  ];
+
+  for (const variant of variants) {
+    let observed;
+    await expectObservedOutcomeUnknown(() => {
+      observed = makeHeaderFailureResponse(variant.kind, privateMarker, variant.result);
+      return observed.response;
+    }, { httpStatus: 200, forbiddenValues: [privateMarker] });
+    assert.equal(observed.counts.status, 1, 'header failure must retain one validated status read');
+    assert.equal(observed.counts.headers, 1, 'header failure must observe headers exactly once');
+    assert.equal(observed.counts.get, variant.expectedGet,
+      'header failure must read get the expected number of times');
+    assert.equal(observed.counts.invocation, variant.expectedInvocation,
+      'header failure must invoke get the expected number of times');
+  }
+});
+
+test('buyer snapshots redirects and missing settlement headers without rereading status', async () => {
+  let redirect;
+  await expectObservedOutcomeUnknown(({ settlementHeader }) => {
+    redirect = makeSingleReadSettlementResponse(302, settlementHeader);
+    return redirect.response;
+  }, { httpStatus: 302 });
+  assert.deepEqual(redirect.counts, {
+    status: 1,
+    headers: 0,
+    get: 0,
+    invocation: 0,
+    receiver: 0,
+  }, 'redirect observation must stop after one status read');
+
+  let missing;
+  await expectObservedOutcomeUnknown(() => {
+    missing = makeSingleReadSettlementResponse(599, null);
+    return missing.response;
+  }, { httpStatus: 599 });
+  assert.deepEqual(missing.counts, {
+    status: 1,
+    headers: 1,
+    get: 1,
+    invocation: 1,
+    receiver: 1,
+  }, 'missing settlement header must use one complete observation');
+});
+
+test('buyer preserves definite rejection and recovery lanes through single-read snapshots', async () => {
+  for (const status of [402, 409]) {
+    let observed;
+    const { result } = await runAcceptedObservedResponse(status, ({ settlementHeader }) => {
+      observed = makeSingleReadSettlementResponse(status, settlementHeader);
+      return observed.response;
+    });
+    assert.equal(result.settlement.success, false, 'settlement lane must remain non-positive');
+    assert.equal(result.settlement.state, status === 402 ? 'VALIDATED' : 'SUBMISSION_OUTCOME_UNKNOWN',
+      'settlement lane state must remain unchanged');
+    assert.deepEqual(observed.counts, {
+      status: 1,
+      headers: 1,
+      get: 1,
+      invocation: 1,
+      receiver: 1,
+    }, 'settlement lane response members must each be observed once');
+  }
+});
+
 test('buyer rejects an oversized raw challenge before payment construction', async () => {
   const { paymentRequired } = await buyerChallenge('http://buyer.test/paid');
   const originalChallenge = structuredClone(paymentRequired);
