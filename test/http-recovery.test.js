@@ -1334,7 +1334,13 @@ test('cached array snapshots ignore inherited numeric setters during population'
 
     const inheritedIndex = 1023;
     const inheritedIndexKey = String(inheritedIndex);
+    const firstSentinel = 'array-probe-first';
+    const penultimateSentinel = 'array-probe-penultimate';
+    const finalSentinel = 'array-probe-final';
     const validBody = Array.from({ length: inheritedIndex + 1 }, (_, index) => index);
+    validBody[0] = firstSentinel;
+    validBody[inheritedIndex - 1] = penultimateSentinel;
+    validBody[inheritedIndex] = finalSentinel;
     let invalidAccessorReads = 0;
     const invalidBody = Array.from({ length: inheritedIndex + 1 }, (_, index) => index);
     Object.defineProperty(invalidBody, inheritedIndexKey, {
@@ -1393,10 +1399,32 @@ test('cached array snapshots ignore inherited numeric setters during population'
         try {
           Object.defineProperty(Array.prototype, inheritedIndexKey, {
             configurable: true,
-            set() {
-              inheritedSetterCalls += 1;
+            set(value) {
+              const firstMember = Object.getOwnPropertyDescriptor(this, '0');
+              const penultimateMember = Object.getOwnPropertyDescriptor(
+                this,
+                String(inheritedIndex - 1),
+              );
+              const productionSnapshotShaped = Array.isArray(this)
+                && this.length === inheritedIndex
+                && firstMember?.value === firstSentinel
+                && penultimateMember?.value === penultimateSentinel
+                && value === finalSentinel;
+              Object.defineProperty(this, inheritedIndexKey, {
+                configurable: true,
+                enumerable: true,
+                value,
+                writable: true,
+              });
+              if (productionSnapshotShaped) inheritedSetterCalls += 1;
             },
           });
+          const unrelatedArray = [];
+          const unrelatedValue = 'unrelated-array-value';
+          unrelatedArray[inheritedIndex] = unrelatedValue;
+          assert.equal(Object.hasOwn(unrelatedArray, inheritedIndexKey), true);
+          assert.equal(unrelatedArray[inheritedIndex], unrelatedValue);
+          assert.equal(inheritedSetterCalls, 0);
           response = await submitPayment(listening.url, paymentPayload);
         } finally {
           if (priorDescriptor) Object.defineProperty(Array.prototype, inheritedIndexKey, priorDescriptor);
