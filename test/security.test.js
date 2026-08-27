@@ -180,6 +180,848 @@ async function signedMock() {
   return { accepted, required, client, payload: await client.createPaymentPayload(required, accepted) };
 }
 
+async function settledMockDelivery() {
+  const { accepted, required, payload } = await signedMock();
+  const facilitator = new MockExactZenonFacilitator();
+  const settlement = await facilitator.settle(payload, accepted, required);
+  assert.equal(settlement.success, true, 'mock settlement succeeds');
+  const record = facilitator.records.get(settlement.transaction);
+  assert.ok(record, 'mock settlement record exists');
+  return { accepted, required, payload, facilitator, settlement, record };
+}
+
+async function assertFixedMockError(operation, message) {
+  let caught;
+  try {
+    await operation();
+  } catch (error) {
+    caught = error;
+  }
+  assert.ok(caught instanceof Error, 'mock operation rejects');
+  assert.equal(caught.message, message, 'mock operation uses the fixed error');
+  assert.equal(Object.hasOwn(caught, 'cause'), false, 'mock error has no cause');
+}
+
+function assertAsyncEvidenceShield(value, message) {
+  const descriptor = Object.getOwnPropertyDescriptor(value, 'then');
+  assert.ok(descriptor && Object.hasOwn(descriptor, 'value'), `${message} has an own data shield`);
+  assert.equal(descriptor.value, undefined, `${message} shield value is undefined`);
+  assert.equal(descriptor.enumerable, false, `${message} shield is non-enumerable`);
+}
+
+function assertExactMockRecordShape(record, message) {
+  assert.deepEqual(Reflect.ownKeys(record), [
+    'authorizationKey', 'transaction', 'payer', 'deliveryState', 'cachedResponse',
+  ], `${message} has the exact stored shape`);
+}
+
+test('mock delivery pending rejects malformed records without partial writes', async () => {
+  const cases = ['accessor', 'proxy', 'invalid delivered cache', 'invalid state', 'pending cache mismatch'];
+  for (const kind of cases) {
+    const current = await settledMockDelivery();
+    const original = current.record;
+    const records = current.facilitator.records;
+    const cachedDescriptor = Object.getOwnPropertyDescriptor(original, 'cachedResponse');
+    let expectedMapping = original;
+    let accessorReads = 0;
+
+    if (kind === 'accessor') {
+      Object.defineProperty(original, 'cachedResponse', {
+        configurable: true,
+        enumerable: true,
+        get() {
+          accessorReads += 1;
+          return null;
+        },
+      });
+    } else if (kind === 'proxy') {
+      expectedMapping = new Proxy(original, {
+        get() {
+          accessorReads += 1;
+          return undefined;
+        },
+      });
+      records.set(current.settlement.transaction, expectedMapping);
+    } else if (kind === 'invalid delivered cache') {
+      original.deliveryState = 'DELIVERED';
+      original.cachedResponse = { status: 200, body: { invalid() {} } };
+    } else if (kind === 'invalid state') {
+      original.deliveryState = 'INVALID';
+    } else {
+      original.deliveryState = 'DELIVERY_PENDING';
+      original.cachedResponse = { status: 200 };
+    }
+    const expectedState = original.deliveryState;
+
+    await assertFixedMockError(
+      () => current.facilitator.markDeliveryPending(current.settlement),
+      kind === 'invalid state' ? 'mock delivery not pending' : 'mock settlement identity not found',
+    );
+    assert.equal(accessorReads, 0, `${kind} record accessors are not invoked`);
+    assert.strictEqual(records.get(current.settlement.transaction), expectedMapping, `${kind} preserves the live mapping`);
+    assert.equal(original.deliveryState, expectedState, `${kind} preserves the original state`);
+
+    if (kind === 'accessor') {
+      Object.defineProperty(original, 'cachedResponse', cachedDescriptor);
+    } else if (kind === 'proxy') {
+      records.set(current.settlement.transaction, original);
+    } else {
+      original.deliveryState = 'NONE';
+      original.cachedResponse = null;
+    }
+    const recovered = await current.facilitator.markDeliveryPending(current.settlement);
+    const recoveredRecord = records.get(current.settlement.transaction);
+    assert.equal(recovered.deliveryClaimed, true, `${kind} failure remains recoverable`);
+    assert.notStrictEqual(recoveredRecord, original, `${kind} recovery replaces the original record`);
+    assert.equal(recoveredRecord.deliveryState, 'DELIVERY_PENDING', `${kind} recovery reaches pending`);
+    assert.equal(original.deliveryState, 'NONE', `${kind} recovery does not mutate the original record`);
+  }
+});
+
+test('mock delivery pending atomically replaces descriptor-hardened records', async () => {
+  const current = await settledMockDelivery();
+  const original = current.record;
+  const records = current.facilitator.records;
+  const stateDescriptor = Object.getOwnPropertyDescriptor(original, 'deliveryState');
+  const cacheDescriptor = Object.getOwnPropertyDescriptor(original, 'cachedResponse');
+  Object.defineProperty(original, 'deliveryState', { ...stateDescriptor, writable: false });
+  Object.defineProperty(original, 'cachedResponse', { ...cacheDescriptor, writable: false });
+
+  const claim = await current.facilitator.markDeliveryPending(current.settlement);
+  const pending = records.get(current.settlement.transaction);
+  assert.equal(claim.deliveryClaimed, true, 'hardened NONE record is claimed');
+  assertAsyncEvidenceShield(claim, 'pending claim');
+  assert.notStrictEqual(pending, original, 'pending claim replaces the hardened record');
+  assert.equal(original.deliveryState, 'NONE', 'hardened original state is unchanged');
+  assert.equal(original.cachedResponse, null, 'hardened original cache is unchanged');
+  assert.equal(pending.deliveryState, 'DELIVERY_PENDING', 'replacement record is pending');
+  assertExactMockRecordShape(pending, 'pending replacement');
+
+  const repeatedClaim = await current.facilitator.markDeliveryPending(current.settlement);
+  assert.equal(repeatedClaim.deliveryClaimed, false, 'pending record is not claimed twice');
+  assert.strictEqual(records.get(current.settlement.transaction), pending, 'pending retry performs no write');
+  assertAsyncEvidenceShield(repeatedClaim, 'pending retry');
+
+  await current.facilitator.markDelivered(current.settlement, { status: 200, body: { ok: true } });
+  const delivered = records.get(current.settlement.transaction);
+  const deliveredClaim = await current.facilitator.markDeliveryPending(current.settlement);
+  assert.equal(deliveredClaim.deliveryClaimed, false, 'delivered record is not claimed again');
+  assert.strictEqual(records.get(current.settlement.transaction), delivered, 'delivered claim performs no write');
+  assert.notStrictEqual(deliveredClaim.cachedResponse, delivered.cachedResponse, 'delivered claim evidence is detached');
+  assertAsyncEvidenceShield(deliveredClaim, 'delivered claim');
+});
+
+test('mock lifecycle evidence ignores inherited then accessors', async () => {
+  const pendingFixture = await settledMockDelivery();
+  const deliveryFixture = await settledMockDelivery();
+  await deliveryFixture.facilitator.markDeliveryPending(deliveryFixture.settlement);
+  const deliveryPending = deliveryFixture.facilitator.records.get(deliveryFixture.settlement.transaction);
+  const retryFixture = await settledMockDelivery();
+  await retryFixture.facilitator.markDeliveryPending(retryFixture.settlement);
+  await retryFixture.facilitator.markDelivered(retryFixture.settlement, {
+    status: 200,
+    body: { ok: true },
+  });
+  const retryStored = retryFixture.facilitator.records.get(retryFixture.settlement.transaction);
+  const success = await signedMock();
+  const successFacilitator = new MockExactZenonFacilitator();
+  const invalidFacilitator = new MockExactZenonFacilitator();
+  const conflict = await settledMockDelivery();
+  conflict.record.authorizationKey = 'fixed-conflict';
+  const originalThen = Object.getOwnPropertyDescriptor(Object.prototype, 'then');
+  let getterCalls = 0;
+  let pendingResult;
+  let deliveryResult;
+  let retryResult;
+  let successResult;
+  let invalidResult;
+  let conflictResult;
+
+  try {
+    Object.defineProperty(Object.prototype, 'then', {
+      configurable: true,
+      get() {
+        getterCalls += 1;
+        return undefined;
+      },
+    });
+    pendingResult = await pendingFixture.facilitator.markDeliveryPending(pendingFixture.settlement);
+    deliveryResult = await deliveryFixture.facilitator.markDelivered(deliveryFixture.settlement, {
+      status: 200,
+      body: { ok: true },
+    });
+    retryResult = await retryFixture.facilitator.markDelivered(retryFixture.settlement, {
+      body: { ok: true },
+      status: 200,
+    });
+    successResult = await successFacilitator.settle(success.payload, success.accepted, success.required);
+    invalidResult = await invalidFacilitator.settle({}, success.accepted, success.required);
+    conflictResult = await conflict.facilitator.settle(conflict.payload, conflict.accepted, conflict.required);
+  } finally {
+    if (originalThen) Object.defineProperty(Object.prototype, 'then', originalThen);
+    else delete Object.prototype.then;
+  }
+
+  const pendingStored = pendingFixture.facilitator.records.get(pendingFixture.settlement.transaction);
+  const deliveryStored = deliveryFixture.facilitator.records.get(deliveryFixture.settlement.transaction);
+  const settlementStored = successFacilitator.records.get(successResult.transaction);
+  assert.equal(getterCalls, 0, 'mock lifecycle results never observe inherited then');
+  assert.deepEqual(Object.getOwnPropertyDescriptor(Object.prototype, 'then'), originalThen, 'inherited then descriptor is restored');
+  assert.equal(pendingResult.deliveryClaimed, true, 'pending transition fulfills');
+  assert.equal(pendingStored.deliveryState, 'DELIVERY_PENDING', 'pending transition commits');
+  assert.notStrictEqual(pendingResult, pendingStored, 'pending evidence is detached');
+  assert.notStrictEqual(deliveryStored, deliveryPending, 'delivery transition replaces the pending record');
+  assert.equal(deliveryStored.deliveryState, 'DELIVERED', 'delivery transition commits');
+  assert.notStrictEqual(deliveryResult, deliveryStored, 'delivery evidence is detached');
+  assert.strictEqual(retryFixture.facilitator.records.get(retryFixture.settlement.transaction), retryStored, 'equal retry performs no write');
+  assert.notStrictEqual(retryResult, retryStored, 'equal retry evidence is detached');
+  assertAsyncEvidenceShield(pendingResult, 'pending transition evidence');
+  assertAsyncEvidenceShield(deliveryResult, 'delivery transition evidence');
+  assertAsyncEvidenceShield(retryResult, 'delivery retry evidence');
+  assertExactMockRecordShape(pendingStored, 'pending stored record');
+  assertExactMockRecordShape(deliveryStored, 'delivered stored record');
+  assertExactMockRecordShape(retryStored, 'retry stored record');
+  assert.equal(successResult.success, true, 'new settlement fulfills');
+  assert.equal(invalidResult.success, false, 'invalid settlement returns fixed failure evidence');
+  assert.equal(conflictResult.errorReason, 'payment_identity_conflict', 'conflict settlement returns fixed failure evidence');
+  assert.equal(invalidFacilitator.records.size, 0, 'invalid settlement creates no record');
+  assert.strictEqual(
+    conflict.facilitator.records.get(conflict.settlement.transaction),
+    conflict.record,
+    'conflict settlement preserves its record',
+  );
+  assertAsyncEvidenceShield(successResult, 'successful settlement evidence');
+  assertAsyncEvidenceShield(invalidResult, 'invalid settlement evidence');
+  assertAsyncEvidenceShield(conflictResult, 'conflict settlement evidence');
+  assertExactMockRecordShape(settlementStored, 'settlement stored record');
+});
+
+test('mock delivery definitions ignore inherited descriptor-member accessors', async () => {
+  const pendingFixture = await settledMockDelivery();
+  const deliveryFixture = await settledMockDelivery();
+  await deliveryFixture.facilitator.markDeliveryPending(deliveryFixture.settlement);
+  const deliveryPending = deliveryFixture.facilitator.records.get(deliveryFixture.settlement.transaction);
+  const retryFixture = await settledMockDelivery();
+  await retryFixture.facilitator.markDeliveryPending(retryFixture.settlement);
+  await retryFixture.facilitator.markDelivered(retryFixture.settlement, {
+    status: 200,
+    body: { ok: true },
+  });
+  const retryStored = retryFixture.facilitator.records.get(retryFixture.settlement.transaction);
+  const originalGet = Object.getOwnPropertyDescriptor(Object.prototype, 'get');
+  const originalSet = Object.getOwnPropertyDescriptor(Object.prototype, 'set');
+  const copyDescriptor = (source) => {
+    if (!source) return null;
+    const copy = Object.create(null);
+    for (const key of Reflect.ownKeys(source)) copy[key] = source[key];
+    return copy;
+  };
+  const restoreGet = copyDescriptor(originalGet);
+  const restoreSet = copyDescriptor(originalSet);
+  let hookCalls = 0;
+  const hookDescriptor = Object.create(null);
+  hookDescriptor.get = () => {
+    hookCalls += 1;
+    return undefined;
+  };
+  hookDescriptor.set = undefined;
+  hookDescriptor.enumerable = false;
+  hookDescriptor.configurable = true;
+  let pendingPromise;
+  let deliveryPromise;
+  let retryPromise;
+
+  try {
+    Object.defineProperty(Object.prototype, 'get', hookDescriptor);
+    Object.defineProperty(Object.prototype, 'set', hookDescriptor);
+    pendingPromise = pendingFixture.facilitator.markDeliveryPending(pendingFixture.settlement);
+    deliveryPromise = deliveryFixture.facilitator.markDelivered(deliveryFixture.settlement, {
+      status: 200,
+      body: { ok: true },
+    });
+    retryPromise = retryFixture.facilitator.markDelivered(retryFixture.settlement, {
+      body: { ok: true },
+      status: 200,
+    });
+  } finally {
+    if (restoreSet) Object.defineProperty(Object.prototype, 'set', restoreSet);
+    else delete Object.prototype.set;
+    if (restoreGet) Object.defineProperty(Object.prototype, 'get', restoreGet);
+    else delete Object.prototype.get;
+  }
+
+  const [pendingResult, deliveryResult, retryResult] = await Promise.all([
+    pendingPromise, deliveryPromise, retryPromise,
+  ]);
+  const pendingStored = pendingFixture.facilitator.records.get(pendingFixture.settlement.transaction);
+  const deliveryStored = deliveryFixture.facilitator.records.get(deliveryFixture.settlement.transaction);
+  assert.equal(hookCalls, 0, 'inherited descriptor-member accessors are never invoked');
+  assert.deepEqual(Object.getOwnPropertyDescriptor(Object.prototype, 'get'), originalGet, 'get descriptor is restored');
+  assert.deepEqual(Object.getOwnPropertyDescriptor(Object.prototype, 'set'), originalSet, 'set descriptor is restored');
+  assert.equal(pendingResult.deliveryClaimed, true, 'descriptor-safe pending claim fulfills');
+  assert.equal(pendingStored.deliveryState, 'DELIVERY_PENDING', 'descriptor-safe pending claim commits');
+  assert.notStrictEqual(deliveryStored, deliveryPending, 'descriptor-safe delivery replaces pending state');
+  assert.equal(deliveryStored.deliveryState, 'DELIVERED', 'descriptor-safe delivery commits');
+  assert.strictEqual(retryFixture.facilitator.records.get(retryFixture.settlement.transaction), retryStored, 'descriptor-safe retry performs no write');
+  assert.notStrictEqual(retryResult, retryStored, 'descriptor-safe retry evidence is detached');
+  assertAsyncEvidenceShield(pendingResult, 'descriptor-safe pending evidence');
+  assertAsyncEvidenceShield(deliveryResult, 'descriptor-safe delivery evidence');
+  assertAsyncEvidenceShield(retryResult, 'descriptor-safe retry evidence');
+  assertExactMockRecordShape(pendingStored, 'descriptor-safe pending record');
+  assertExactMockRecordShape(deliveryStored, 'descriptor-safe delivered record');
+  assertExactMockRecordShape(retryStored, 'descriptor-safe retry record');
+});
+
+test('mock delivery requires a pending state before cache observation', async () => {
+  const direct = await settledMockDelivery();
+  const directBefore = structuredClone(direct.record);
+  let directReads = 0;
+  const directCache = {};
+  Object.defineProperty(directCache, 'body', {
+    enumerable: true,
+    get() {
+      directReads += 1;
+      return { ok: true };
+    },
+  });
+
+  await assertFixedMockError(
+    () => direct.facilitator.markDelivered(direct.settlement, directCache),
+    'mock delivery not pending',
+  );
+  assert.equal(directReads, 0, 'not-pending cache is not observed');
+  assert.strictEqual(direct.facilitator.records.get(direct.settlement.transaction), direct.record, 'not-pending failure preserves the live mapping');
+  assert.deepEqual(direct.record, directBefore, 'not-pending record remains unchanged');
+  const laterClaim = await direct.facilitator.markDeliveryPending(direct.settlement);
+  assert.equal(laterClaim.deliveryClaimed, true, 'delivery remains claimable');
+
+  const invalid = await settledMockDelivery();
+  const invalidBefore = structuredClone(invalid.record);
+  let invalidReads = 0;
+  const invalidCache = {};
+  Object.defineProperty(invalidCache, 'body', {
+    enumerable: true,
+    get() {
+      invalidReads += 1;
+      return { ok: true };
+    },
+  });
+  const invalidSettlement = { ...invalid.settlement, authorizationKey: 'invalid-authorization' };
+  await assertFixedMockError(
+    () => invalid.facilitator.markDelivered(invalidSettlement, invalidCache),
+    'mock settlement identity not found',
+  );
+  assert.equal(invalidReads, 0, 'invalid identity cache is not observed');
+  assert.strictEqual(invalid.facilitator.records.get(invalid.settlement.transaction), invalid.record, 'invalid identity preserves the live mapping');
+  assert.deepEqual(invalid.record, invalidBefore, 'invalid identity leaves the record unchanged');
+});
+
+test('mock delivery cache failures leave the pending record recoverable', async () => {
+  const cases = [
+    ['nested function', () => ({ body: { value() {} } })],
+    ['nested symbol', () => ({ body: { value: Symbol('fixed') } })],
+    ['proxy', () => new Proxy({ body: { ok: true } }, {})],
+    ['cycle', () => {
+      const value = { body: { ok: true } };
+      value.self = value;
+      return value;
+    }],
+    ['BigInt', () => ({ body: { value: 1n } })],
+    ['non-finite number', () => ({ body: { value: Number.POSITIVE_INFINITY } })],
+    ['fractional number', () => ({ body: { value: 1.5 } })],
+    ['undefined member', () => ({ body: { value: undefined } })],
+    ['sparse array', () => {
+      const items = [];
+      items[1] = 'fixed';
+      return { body: { items } };
+    }],
+    ['exotic object', () => ({ body: { value: new Date(0) } })],
+    ['custom prototype', () => Object.assign(Object.create({ fixed: true }), { body: { ok: true } })],
+    ['symbol key', () => {
+      const value = { body: { ok: true } };
+      value[Symbol('fixed')] = true;
+      return value;
+    }],
+  ];
+
+  for (const [name, candidate] of cases) {
+    const current = await settledMockDelivery();
+    const claim = await current.facilitator.markDeliveryPending(current.settlement);
+    assert.equal(claim.deliveryClaimed, true, `${name} delivery is claimed`);
+    const pendingRecord = current.facilitator.records.get(current.settlement.transaction);
+    const before = structuredClone(pendingRecord);
+    const beforeCache = pendingRecord.cachedResponse;
+
+    await assertFixedMockError(
+      () => current.facilitator.markDelivered(current.settlement, candidate()),
+      'mock delivery cache invalid',
+    );
+    assert.strictEqual(current.facilitator.records.get(current.settlement.transaction), pendingRecord, `${name} preserves the live mapping`);
+    assert.deepEqual(pendingRecord, before, `${name} leaves the record unchanged`);
+    assert.strictEqual(pendingRecord.cachedResponse, beforeCache, `${name} preserves the cache reference`);
+    assert.equal(pendingRecord.deliveryState, 'DELIVERY_PENDING', `${name} remains pending`);
+
+    const delivered = await current.facilitator.markDelivered(current.settlement, {
+      status: 200,
+      body: { ok: true },
+    });
+    const stored = current.facilitator.records.get(current.settlement.transaction);
+    assert.equal(delivered.deliveryState, 'DELIVERED', `${name} remains recoverable`);
+    assert.equal(stored.deliveryState, 'DELIVERED', `${name} recovery updates the live mapping`);
+    assert.deepEqual(delivered, stored, `${name} recovery evidence agrees`);
+  }
+});
+
+test('mock delivery rejects candidate accessors without invoking them', async () => {
+  const current = await settledMockDelivery();
+  await current.facilitator.markDeliveryPending(current.settlement);
+  const pendingRecord = current.facilitator.records.get(current.settlement.transaction);
+  const before = structuredClone(pendingRecord);
+  let reads = 0;
+  const candidate = { status: 200 };
+  Object.defineProperty(candidate, 'body', {
+    enumerable: true,
+    get() {
+      reads += 1;
+      return { ok: true };
+    },
+  });
+
+  await assertFixedMockError(
+    () => current.facilitator.markDelivered(current.settlement, candidate),
+    'mock delivery cache invalid',
+  );
+  assert.equal(reads, 0, 'candidate getter is not invoked');
+  assert.strictEqual(current.facilitator.records.get(current.settlement.transaction), pendingRecord, 'candidate accessor preserves the live mapping');
+  assert.deepEqual(pendingRecord, before, 'candidate accessor leaves the pending record unchanged');
+  const delivered = await current.facilitator.markDelivered(current.settlement, { status: 200, body: { ok: true } });
+  assert.equal(delivered.deliveryState, 'DELIVERED', 'candidate accessor failure remains recoverable');
+  assert.deepEqual(delivered, current.facilitator.records.get(current.settlement.transaction), 'recovery agrees with the live mapping');
+});
+
+test('mock delivery array comparison never invokes inherited map', async () => {
+  const current = await settledMockDelivery();
+  await current.facilitator.markDeliveryPending(current.settlement);
+  const originalDescriptor = Object.getOwnPropertyDescriptor(Array.prototype, 'map');
+  let calls = 0;
+  let delivered;
+  let retry;
+  try {
+    Object.defineProperty(Array.prototype, 'map', {
+      ...originalDescriptor,
+      value(callback, thisArgument) {
+        calls += 1;
+        return Reflect.apply(originalDescriptor.value, this, [callback, thisArgument]);
+      },
+    });
+    delivered = await current.facilitator.markDelivered(current.settlement, {
+      status: 200,
+      body: { items: ['first', 'second'] },
+    });
+    retry = await current.facilitator.markDelivered(current.settlement, {
+      body: { items: ['first', 'second'] },
+      status: 200,
+    });
+  } finally {
+    Object.defineProperty(Array.prototype, 'map', originalDescriptor);
+  }
+
+  const stored = current.facilitator.records.get(current.settlement.transaction);
+  assert.equal(calls, 0, 'inherited array map is not invoked');
+  assert.equal(delivered.deliveryState, 'DELIVERED', 'array cache delivery succeeds');
+  assert.deepEqual(retry, stored, 'array cache retry returns existing evidence');
+  assert.notStrictEqual(retry, stored, 'array cache retry evidence is detached');
+});
+
+test('mock delivery internal arrays ignore inherited numeric setters', async () => {
+  const current = await settledMockDelivery();
+  await current.facilitator.markDeliveryPending(current.settlement);
+  let body = { ok: true };
+  for (let depth = 0; depth <= 63; depth += 1) {
+    body = { nested: body };
+  }
+  const candidate = { status: 200, body };
+  const numericIndex = '63';
+  const originalDescriptor = Object.getOwnPropertyDescriptor(Array.prototype, numericIndex);
+  let setterCalls = 0;
+  let deliveryPromise;
+  let retryPromise;
+  try {
+    Object.defineProperty(Array.prototype, numericIndex, {
+      configurable: true,
+      set(value) {
+        setterCalls += 1;
+        Object.defineProperty(this, numericIndex, {
+          configurable: true,
+          enumerable: true,
+          value,
+          writable: true,
+        });
+      },
+    });
+    deliveryPromise = current.facilitator.markDelivered(current.settlement, candidate);
+    retryPromise = current.facilitator.markDelivered(current.settlement, candidate);
+  } finally {
+    if (originalDescriptor) {
+      Object.defineProperty(Array.prototype, numericIndex, originalDescriptor);
+    } else {
+      delete Array.prototype[numericIndex];
+    }
+  }
+
+  const delivered = await deliveryPromise;
+  const retry = await retryPromise;
+  const stored = current.facilitator.records.get(current.settlement.transaction);
+  assert.equal(setterCalls, 0, 'inherited numeric setter is never invoked');
+  assert.equal(delivered.deliveryState, 'DELIVERED', 'numeric-setter delivery succeeds');
+  assert.deepEqual(retry, stored, 'numeric-setter retry returns existing evidence');
+  assert.notStrictEqual(retry, stored, 'numeric-setter retry evidence is detached');
+});
+
+test('mock delivery guards settlement identity inputs before cache observation', async () => {
+  const cases = [
+    ['transaction accessor', (settlement, observations) => {
+      Object.defineProperty(settlement, 'transaction', {
+        get() {
+          observations.identityReads += 1;
+          return 'unused';
+        },
+      });
+      return settlement;
+    }],
+    ['authorization accessor', (settlement, observations) => {
+      Object.defineProperty(settlement, 'authorizationKey', {
+        get() {
+          observations.identityReads += 1;
+          return 'unused';
+        },
+      });
+      return settlement;
+    }],
+    ['settlement proxy', (settlement, observations) => new Proxy(settlement, {
+      get() {
+        observations.identityReads += 1;
+        return 'unused';
+      },
+    })],
+  ];
+
+  for (const [name, makeSettlement] of cases) {
+    const current = await settledMockDelivery();
+    const before = structuredClone(current.record);
+    const observations = { identityReads: 0 };
+    let cacheReads = 0;
+    const candidate = {};
+    Object.defineProperty(candidate, 'body', {
+      enumerable: true,
+      get() {
+        cacheReads += 1;
+        return { ok: true };
+      },
+    });
+
+    await assertFixedMockError(
+      () => current.facilitator.markDelivered(
+        makeSettlement({ ...current.settlement }, observations),
+        candidate,
+      ),
+      'mock settlement identity not found',
+    );
+    assert.equal(observations.identityReads, 0, `${name} is not invoked`);
+    assert.equal(cacheReads, 0, `${name} stops before cache observation`);
+    assert.strictEqual(current.facilitator.records.get(current.settlement.transaction), current.record, `${name} preserves the live mapping`);
+    assert.deepEqual(current.record, before, `${name} leaves the record unchanged`);
+  }
+});
+
+test('mock delivery binds settlement payer before transition work', async () => {
+  const cases = [
+    ['mismatch', (settlement) => ({ ...settlement, payer: 'fixed-other-payer' })],
+    ['missing', (settlement) => {
+      const invalid = { ...settlement };
+      delete invalid.payer;
+      return invalid;
+    }],
+    ['proxy', (settlement, observations) => ({
+      ...settlement,
+      payer: new Proxy({}, {
+        get() {
+          observations.payerReads += 1;
+          return 'unused';
+        },
+      }),
+    })],
+    ['accessor', (settlement, observations) => {
+      const invalid = { ...settlement };
+      Object.defineProperty(invalid, 'payer', {
+        configurable: true,
+        enumerable: true,
+        get() {
+          observations.payerReads += 1;
+          return settlement.payer;
+        },
+      });
+      return invalid;
+    }],
+  ];
+
+  for (const phase of ['pending', 'delivered']) {
+    for (const [kind, makeSettlement] of cases) {
+      const current = await settledMockDelivery();
+      if (phase === 'delivered') await current.facilitator.markDeliveryPending(current.settlement);
+      const liveRecord = current.facilitator.records.get(current.settlement.transaction);
+      const before = structuredClone(liveRecord);
+      const observations = { payerReads: 0 };
+      let cacheReads = 0;
+      const candidate = {};
+      Object.defineProperty(candidate, 'body', {
+        enumerable: true,
+        get() {
+          cacheReads += 1;
+          return { ok: true };
+        },
+      });
+      const invalidSettlement = makeSettlement(current.settlement, observations);
+
+      await assertFixedMockError(
+        () => phase === 'pending'
+          ? current.facilitator.markDeliveryPending(invalidSettlement)
+          : current.facilitator.markDelivered(invalidSettlement, candidate),
+        'mock settlement identity not found',
+      );
+      assert.equal(observations.payerReads, 0, `${phase} ${kind} payer is not observed`);
+      assert.equal(cacheReads, 0, `${phase} ${kind} payer stops before cache observation`);
+      assert.strictEqual(current.facilitator.records.get(current.settlement.transaction), liveRecord, `${phase} ${kind} payer preserves the live mapping`);
+      assert.deepEqual(liveRecord, before, `${phase} ${kind} payer leaves the record unchanged`);
+
+      const recovered = phase === 'pending'
+        ? await current.facilitator.markDeliveryPending(current.settlement)
+        : await current.facilitator.markDelivered(current.settlement, { status: 200, body: { ok: true } });
+      assert.equal(
+        phase === 'pending' ? recovered.deliveryClaimed : recovered.deliveryState,
+        phase === 'pending' ? true : 'DELIVERED',
+        `${phase} ${kind} payer failure remains recoverable`,
+      );
+    }
+  }
+});
+
+test('mock delivery rejects owner and record accessors without invoking them', async () => {
+  const current = await settledMockDelivery();
+  await current.facilitator.markDeliveryPending(current.settlement);
+  const originalDescriptor = Object.getOwnPropertyDescriptor(current.facilitator, 'records');
+  const originalRecord = current.facilitator.records.get(current.settlement.transaction);
+  const before = structuredClone(originalRecord);
+  let ownerReads = 0;
+  let cacheReads = 0;
+  const candidate = {};
+  Object.defineProperty(candidate, 'body', {
+    enumerable: true,
+    get() {
+      cacheReads += 1;
+      return { ok: true };
+    },
+  });
+
+  try {
+    Object.defineProperty(current.facilitator, 'records', {
+      configurable: true,
+      enumerable: originalDescriptor.enumerable,
+      get() {
+        ownerReads += 1;
+        return originalDescriptor.value;
+      },
+    });
+    await assertFixedMockError(
+      () => current.facilitator.markDelivered(current.settlement, candidate),
+      'mock settlement identity not found',
+    );
+  } finally {
+    Object.defineProperty(current.facilitator, 'records', originalDescriptor);
+  }
+
+  assert.equal(ownerReads, 0, 'owner records accessor is not invoked');
+  assert.equal(cacheReads, 0, 'owner records failure stops before cache observation');
+  assert.strictEqual(originalDescriptor.value.get(current.settlement.transaction), originalRecord, 'owner records failure preserves the live mapping');
+  assert.deepEqual(originalRecord, before, 'owner records failure leaves the record unchanged');
+
+  const corrupted = await settledMockDelivery();
+  await corrupted.facilitator.markDeliveryPending(corrupted.settlement);
+  const corruptedRecord = corrupted.facilitator.records.get(corrupted.settlement.transaction);
+  let recordReads = 0;
+  let corruptedCacheReads = 0;
+  Object.defineProperty(corruptedRecord, 'cachedResponse', {
+    configurable: true,
+    enumerable: true,
+    get() {
+      recordReads += 1;
+      return null;
+    },
+  });
+  const corruptedCandidate = {};
+  Object.defineProperty(corruptedCandidate, 'body', {
+    enumerable: true,
+    get() {
+      corruptedCacheReads += 1;
+      return { ok: true };
+    },
+  });
+  await assertFixedMockError(
+    () => corrupted.facilitator.markDelivered(corrupted.settlement, corruptedCandidate),
+    'mock settlement identity not found',
+  );
+  assert.equal(recordReads, 0, 'record accessor is not invoked');
+  assert.equal(corruptedCacheReads, 0, 'record corruption stops before cache observation');
+  assert.strictEqual(corrupted.facilitator.records.get(corrupted.settlement.transaction), corruptedRecord, 'record corruption preserves the live mapping');
+});
+
+test('mock delivery snapshots data and identical retries do not write', async () => {
+  const current = await settledMockDelivery();
+  const claim = await current.facilitator.markDeliveryPending(current.settlement);
+  assert.equal(claim.deliveryClaimed, true, 'delivery is claimed');
+  const pendingRecord = current.facilitator.records.get(current.settlement.transaction);
+
+  const sourceBody = { ok: true, items: ['fixed'] };
+  const candidate = { status: 200, body: sourceBody };
+  const delivered = await current.facilitator.markDelivered(current.settlement, candidate);
+  const storedRecord = current.facilitator.records.get(current.settlement.transaction);
+  assert.notStrictEqual(storedRecord, pendingRecord, 'first delivery replaces the pending record');
+  assert.equal(pendingRecord.deliveryState, 'DELIVERY_PENDING', 'replaced pending record is not mutated');
+  assert.notStrictEqual(delivered, storedRecord, 'returned record is detached');
+  assert.notStrictEqual(storedRecord.cachedResponse, candidate, 'stored cache is detached from input');
+  assert.notStrictEqual(delivered.cachedResponse, storedRecord.cachedResponse, 'returned cache is detached');
+  assert.notStrictEqual(delivered.cachedResponse.body, storedRecord.cachedResponse.body, 'returned nested cache is detached');
+  assert.notStrictEqual(storedRecord.cachedResponse.body, sourceBody, 'stored cache is detached from input');
+  sourceBody.items[0] = 'changed-input';
+  delivered.cachedResponse.body.items[0] = 'changed-return';
+  assert.deepEqual(storedRecord.cachedResponse.body, { ok: true, items: ['fixed'] }, 'stored cache resists later mutation');
+
+  const storedCache = storedRecord.cachedResponse;
+  const storedSnapshot = structuredClone(storedRecord);
+  const identical = {
+    body: { items: ['fixed'], ok: true },
+    status: 200,
+  };
+  const identicalResult = await current.facilitator.markDelivered(current.settlement, identical);
+  assert.strictEqual(current.facilitator.records.get(current.settlement.transaction), storedRecord, 'record reference is unchanged');
+  assert.strictEqual(storedRecord.cachedResponse, storedCache, 'identical retry preserves the cache reference');
+  assert.deepEqual(storedRecord, storedSnapshot, 'identical retry leaves stored content unchanged');
+  assert.notStrictEqual(identicalResult, storedRecord, 'identical retry returns detached evidence');
+  assert.notStrictEqual(identicalResult.cachedResponse, storedCache, 'identical retry cache evidence is detached');
+
+  await assertFixedMockError(
+    () => current.facilitator.markDelivered(current.settlement, {
+      body: { items: ['fixed'], ok: true },
+      status: 200,
+      ignored: undefined,
+    }),
+    'mock delivery cache invalid',
+  );
+  assert.strictEqual(storedRecord.cachedResponse, storedCache, 'canonical collision preserves the cache reference');
+  assert.strictEqual(current.facilitator.records.get(current.settlement.transaction), storedRecord, 'canonical collision preserves the live mapping');
+  assert.deepEqual(storedRecord, storedSnapshot, 'canonical collision leaves the complete record unchanged');
+
+  await assertFixedMockError(
+    () => current.facilitator.markDelivered(current.settlement, {
+      status: 201,
+      body: { ok: false },
+    }),
+    'mock delivery conflict',
+  );
+  assert.strictEqual(storedRecord.cachedResponse, storedCache, 'conflict preserves the cache reference');
+  assert.strictEqual(current.facilitator.records.get(current.settlement.transaction), storedRecord, 'conflict preserves the live mapping');
+  assert.deepEqual(storedRecord, storedSnapshot, 'conflict leaves the complete record unchanged');
+});
+
+test('mock delivery replaces a descriptor-hardened pending record atomically', async () => {
+  const current = await settledMockDelivery();
+  await current.facilitator.markDeliveryPending(current.settlement);
+  const original = current.facilitator.records.get(current.settlement.transaction);
+  const records = current.facilitator.records;
+
+  const sourceBody = { ok: true, items: ['fixed'] };
+  const candidate = { status: 200, body: sourceBody };
+  const descriptor = Object.getOwnPropertyDescriptor(original, 'cachedResponse');
+  Object.defineProperty(original, 'cachedResponse', { ...descriptor, writable: false });
+
+  const delivered = await current.facilitator.markDelivered(current.settlement, candidate);
+  const stored = records.get(current.settlement.transaction);
+  assert.notStrictEqual(stored, original, 'delivery installs a new record');
+  assert.equal(original.deliveryState, 'DELIVERY_PENDING', 'hardened original remains pending');
+  assert.equal(original.cachedResponse, null, 'hardened original cache remains empty');
+  assert.equal(Object.getOwnPropertyDescriptor(original, 'cachedResponse').writable, false, 'hardened descriptor remains intact');
+  assert.equal(stored.deliveryState, 'DELIVERED', 'new record is delivered');
+  assert.notStrictEqual(stored.cachedResponse.body, sourceBody, 'stored cache is detached from input');
+  assert.notStrictEqual(delivered, stored, 'returned record is detached from storage');
+  assert.notStrictEqual(delivered.cachedResponse, stored.cachedResponse, 'returned cache is detached from storage');
+  assert.deepEqual(delivered, stored, 'returned and stored delivery evidence agree');
+});
+
+test('delivered mock settlements return detached cached evidence', async () => {
+  const current = await settledMockDelivery();
+  await current.facilitator.markDeliveryPending(current.settlement);
+  await current.facilitator.markDelivered(current.settlement, {
+    status: 200,
+    body: { ok: true, items: ['fixed'] },
+  });
+  const storedRecord = current.facilitator.records.get(current.settlement.transaction);
+  const storedCache = storedRecord.cachedResponse;
+
+  const first = await current.facilitator.settle(
+    current.payload,
+    current.accepted,
+    current.required,
+  );
+  assert.equal(first.deliveryState, 'DELIVERED', 'settlement reports delivered state');
+  assert.notStrictEqual(first.cachedResponse, storedCache, 'settlement cache is detached');
+  assert.notStrictEqual(first.cachedResponse.body, storedCache.body, 'nested settlement cache is detached');
+  first.cachedResponse.body.items[0] = 'changed-return';
+
+  const second = await current.facilitator.settle(
+    current.payload,
+    current.accepted,
+    current.required,
+  );
+  assert.deepEqual(storedCache.body, { ok: true, items: ['fixed'] }, 'stored cache resists settlement mutation');
+  assert.deepEqual(second.cachedResponse.body, { ok: true, items: ['fixed'] }, 'later settlement sees stored evidence');
+  assert.notStrictEqual(second.cachedResponse, storedCache, 'later settlement cache is detached');
+  assert.notStrictEqual(second.cachedResponse, first.cachedResponse, 'settlement snapshots are independent');
+});
+
+test('mock settlement rejects malformed existing records without observation', async () => {
+  for (const kind of ['accessor', 'proxy']) {
+    const current = await settledMockDelivery();
+    let reads = 0;
+    let expectedMapping = current.record;
+    if (kind === 'accessor') {
+      Object.defineProperty(current.record, 'cachedResponse', {
+        configurable: true,
+        enumerable: true,
+        get() {
+          reads += 1;
+          return null;
+        },
+      });
+    } else {
+      expectedMapping = new Proxy(current.record, {
+        get() {
+          reads += 1;
+          return undefined;
+        },
+      });
+      current.facilitator.records.set(current.settlement.transaction, expectedMapping);
+    }
+
+    const result = await current.facilitator.settle(current.payload, current.accepted, current.required);
+    assert.equal(reads, 0, `${kind} existing record is not observed`);
+    assert.equal(result.success, false, `${kind} existing record fails safely`);
+    assert.equal(result.errorReason, 'payment_identity_conflict', `${kind} existing record uses the fixed result`);
+    assert.equal(result.state, 'VALIDATION_FAILED', `${kind} existing record remains a validation failure`);
+    assert.equal(Object.hasOwn(result, 'cause'), false, `${kind} existing record exposes no cause`);
+    assert.strictEqual(current.facilitator.records.get(current.settlement.transaction), expectedMapping, `${kind} existing record preserves the live mapping`);
+  }
+});
+
 function nonCanonicalBase64Alias(value) {
   const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
   const padding = value.endsWith('==') ? 2 : value.endsWith('=') ? 1 : 0;
