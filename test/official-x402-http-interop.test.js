@@ -39,6 +39,28 @@ async function syntheticChallenge() {
   return { paymentRequired, requirement };
 }
 
+function encodedJsonAtByteLength(value, decodedBytes) {
+  const json = JSON.stringify(value);
+  const currentBytes = Buffer.byteLength(json, 'utf8');
+  assert.ok(currentBytes <= decodedBytes, 'encoded JSON fixture must fit the target size');
+  const encoded = Buffer.from(`${json}${' '.repeat(decodedBytes - currentBytes)}`, 'utf8').toString('base64');
+  assert.equal(Buffer.from(encoded, 'base64').toString('base64'), encoded, 'fixture Base64 must be canonical');
+  return encoded;
+}
+
+test('the local raw header policy remains opt-in beside the pinned official codec', async () => {
+  const { paymentRequired } = await syntheticChallenge();
+  const encoded = encodedJsonAtByteLength(paymentRequired, 6_145);
+  assert.equal(encoded.length, (8 * 1024) + 4, 'fixture must use the next Base64 quantum');
+  assert.deepEqual(officialDecodePaymentRequired(encoded), paymentRequired, 'official codec must accept the valid artifact');
+  assert.deepEqual(decodeB64Json(encoded), paymentRequired, 'generic local codec must remain compatible');
+  assert.throws(
+    () => decodeB64Json(encoded, { maxEncodedBytes: 8 * 1024 }),
+    error => error?.message === 'base64 JSON value exceeds encoded byte limit',
+    'explicit local HTTP policy must reject the oversized artifact',
+  );
+});
+
 test('official and local HTTP challenge codecs preserve ResourceInfo and advertised offer order', async () => {
   const { paymentRequired, requirement } = await syntheticChallenge();
   paymentRequired.accepts = [

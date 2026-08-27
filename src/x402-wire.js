@@ -4,6 +4,7 @@ export const X402_VERSION = 2;
 export const MAX_ZENON_AMOUNT = (1n << 255n) - 1n;
 export const MAX_ZENON_CHAIN_IDENTIFIER = BigInt(Number.MAX_SAFE_INTEGER);
 export const MAX_SETTLEMENT_TIMEOUT_SECONDS = 300;
+export const MAX_X402_HEADER_ENCODED_BYTES = 8 * 1024;
 export const EXPERIMENTAL_LIVE_NETWORK = 'zenon:testnet';
 export const MOCK_NETWORK = 'zenon:mock';
 export const MOCK_ZENON_CHAIN_PROFILE = Object.freeze({
@@ -306,13 +307,31 @@ function sameChainProfile(a, b) {
     a.genesisMomentumHash === b.genesisMomentumHash;
 }
 
-export function encodeB64Json(value) {
-  return Buffer.from(JSON.stringify(value), 'utf8').toString('base64');
+function validateEncodedByteLimit(maxEncodedBytes) {
+  if (maxEncodedBytes !== undefined &&
+      (!Number.isSafeInteger(maxEncodedBytes) || maxEncodedBytes < 0)) {
+    throw new Error('maxEncodedBytes must be a nonnegative safe integer');
+  }
 }
 
-export function decodeB64Json(value, { maxDecodedBytes = 64 * 1024 } = {}) {
+export function encodeB64Json(value, { maxEncodedBytes } = {}) {
+  validateEncodedByteLimit(maxEncodedBytes);
+  const encoded = Buffer.from(JSON.stringify(value), 'utf8').toString('base64');
+  if (maxEncodedBytes !== undefined && encoded.length > maxEncodedBytes) {
+    throw new Error('base64 JSON value exceeds encoded byte limit');
+  }
+  return encoded;
+}
+
+export function decodeB64Json(value, { maxDecodedBytes = 64 * 1024, maxEncodedBytes } = {}) {
   if (!value) throw new Error('missing base64 JSON value');
-  if (typeof value !== 'string' || !/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(value)) {
+  if (typeof value !== 'string') throw new Error('invalid base64 JSON value');
+  validateEncodedByteLimit(maxEncodedBytes);
+  if (maxEncodedBytes !== undefined &&
+      (value.length > maxEncodedBytes || Buffer.byteLength(value, 'utf8') > maxEncodedBytes)) {
+    throw new Error('base64 JSON value exceeds encoded byte limit');
+  }
+  if (!/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(value)) {
     throw new Error('invalid base64 JSON value');
   }
   const decoded = Buffer.from(value, 'base64');

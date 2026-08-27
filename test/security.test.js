@@ -15,6 +15,7 @@ import {
   HEADERS,
   MAX_ZENON_AMOUNT,
   MOCK_ZENON_CHAIN_PROFILE,
+  makePaymentRequired,
   validateRequirement,
 } from '../src/x402-wire.js';
 import {
@@ -37,6 +38,24 @@ import { EVIDENCE_STATES } from '../src/settlement-journal.js';
 ed.etc.sha512Sync = (...m) => sha512(ed.etc.concatBytes(...m));
 
 const LEGACY_FLOW_OPTION = 'allowLegacyMissingPaymentFlowForCharacterization';
+const X402_HEADER_ENCODED_BYTES = 8 * 1024;
+
+function encodedJsonAtByteLength(value, decodedBytes) {
+  const json = JSON.stringify(value);
+  const currentBytes = Buffer.byteLength(json, 'utf8');
+  assert.ok(currentBytes <= decodedBytes, 'encoded JSON fixture must fit the target size');
+  const encoded = Buffer.from(`${json}${' '.repeat(decodedBytes - currentBytes)}`, 'utf8').toString('base64');
+  assert.equal(Buffer.from(encoded, 'base64').toString('base64'), encoded, 'fixture Base64 must be canonical');
+  return encoded;
+}
+
+function exactJsonObject(decodedBytes) {
+  const empty = { padding: '' };
+  const emptyBytes = Buffer.byteLength(JSON.stringify(empty), 'utf8');
+  const value = { padding: 'x'.repeat(decodedBytes - emptyBytes) };
+  assert.equal(Buffer.byteLength(JSON.stringify(value), 'utf8'), decodedBytes, 'fixture JSON size must be exact');
+  return value;
+}
 
 function requirement() {
   return {
@@ -225,6 +244,50 @@ test('wire decoder rejects base64 aliases and invalid UTF-8', () => {
   assert.throws(() => decodeB64Json(nonCanonicalBase64Alias(encoded)), /invalid base64/);
   const invalidUtf8Json = Buffer.from([0x7b, 0x22, 0x78, 0x22, 0x3a, 0x22, 0xc0, 0xaf, 0x22, 0x7d]);
   assert.throws(() => decodeB64Json(invalidUtf8Json.toString('base64')));
+});
+
+test('x402 encoded header policy accepts the exact byte limit and rejects the next Base64 quantum', () => {
+  const exactValue = exactJsonObject(6_144);
+  const nextValue = exactJsonObject(6_145);
+  const exactHeader = encodeB64Json(exactValue);
+  const nextHeader = encodeB64Json(nextValue);
+  assert.equal(exactHeader.length, X402_HEADER_ENCODED_BYTES, 'exact boundary Base64 length must match');
+  assert.equal(nextHeader.length, X402_HEADER_ENCODED_BYTES + 4, 'next Base64 quantum length must match');
+  assert.deepEqual(
+    decodeB64Json(exactHeader, { maxEncodedBytes: X402_HEADER_ENCODED_BYTES }),
+    exactValue,
+    'exact encoded limit must decode',
+  );
+  assert.equal(
+    encodeB64Json(exactValue, { maxEncodedBytes: X402_HEADER_ENCODED_BYTES }),
+    exactHeader,
+    'bounded encoding must preserve exact-boundary bytes',
+  );
+  assert.throws(
+    () => decodeB64Json(nextHeader, { maxEncodedBytes: X402_HEADER_ENCODED_BYTES }),
+    error => error?.message === 'base64 JSON value exceeds encoded byte limit',
+    'next encoded quantum must be rejected',
+  );
+  assert.throws(
+    () => encodeB64Json(nextValue, { maxEncodedBytes: X402_HEADER_ENCODED_BYTES }),
+    error => error?.message === 'base64 JSON value exceeds encoded byte limit',
+    'next encoded quantum must be rejected during encoding',
+  );
+  assert.throws(
+    () => decodeB64Json('!'.repeat(X402_HEADER_ENCODED_BYTES + 1), {
+      maxEncodedBytes: X402_HEADER_ENCODED_BYTES,
+    }),
+    error => error?.message === 'base64 JSON value exceeds encoded byte limit',
+    'ASCII size rejection must precede Base64 validation',
+  );
+  assert.throws(
+    () => decodeB64Json('\u00e9'.repeat((X402_HEADER_ENCODED_BYTES / 2) + 1), {
+      maxEncodedBytes: X402_HEADER_ENCODED_BYTES,
+    }),
+    error => error?.message === 'base64 JSON value exceeds encoded byte limit',
+    'UTF-8 byte size must govern the encoded limit',
+  );
+  assert.deepEqual(decodeB64Json(nextHeader), nextValue, 'generic decoding must remain unbounded by local HTTP policy');
 });
 
 test('mock replay key cannot be changed through base64 signature aliases', async () => {
@@ -1984,6 +2047,142 @@ async function withServer(run) {
     await app.close();
   }
 }
+
+test('resource server applies the raw payment header limit before payment effects', async () => {
+  const accepted = requirement();
+  const exactFacilitator = new MockExactZenonFacilitator();
+  let exactDeliveries = 0;
+  const exactApp = createResourceServer({
+    facilitator: exactFacilitator,
+    requirement: accepted,
+    resourceHandler: async () => {
+      exactDeliveries += 1;
+      return { ok: true };
+    },
+  });
+  const exactListening = await exactApp.listen();
+  try {
+    const resourceUrl = `${exactListening.url}/paid`;
+    const challenge = await fetch(resourceUrl);
+    const required = decodeB64Json(challenge.headers.get(HEADERS.PAYMENT_REQUIRED));
+    const payment = await new MockExactZenonClient().createPaymentPayload(required, accepted);
+    const exactHeader = encodedJsonAtByteLength(payment, 6_144);
+    assert.equal(exactHeader.length, X402_HEADER_ENCODED_BYTES, 'exact payment header length must match');
+    const response = await fetch(resourceUrl, {
+      headers: { [HEADERS.PAYMENT_SIGNATURE]: exactHeader },
+    });
+    assert.equal(response.status, 200, 'exact payment header limit must follow the normal path');
+    assert.equal(exactFacilitator.records.size, 1, 'exact payment header must reach settlement');
+    assert.equal(exactDeliveries, 1, 'exact payment header must reach delivery');
+  } finally {
+    await exactApp.close();
+  }
+
+  const effects = { facilitator: 0, journal: 0, publication: 0, settlement: 0, delivery: 0 };
+  const oversizedApp = createResourceServer({
+    facilitator: {
+      async settle() {
+        effects.facilitator += 1;
+        effects.journal += 1;
+        effects.publication += 1;
+        effects.settlement += 1;
+        throw new Error('unreachable synthetic settlement');
+      },
+    },
+    requirement: accepted,
+    resourceHandler: async () => {
+      effects.delivery += 1;
+      throw new Error('unreachable synthetic delivery');
+    },
+  });
+  const oversizedListening = await oversizedApp.listen();
+  try {
+    const resourceUrl = `${oversizedListening.url}/paid`;
+    const challenge = await fetch(resourceUrl);
+    const required = decodeB64Json(challenge.headers.get(HEADERS.PAYMENT_REQUIRED));
+    const payment = await new MockExactZenonClient().createPaymentPayload(required, accepted);
+    const oversizedHeader = encodedJsonAtByteLength(payment, 6_145);
+    assert.equal(
+      oversizedHeader.length,
+      X402_HEADER_ENCODED_BYTES + 4,
+      'oversized payment header must use the next Base64 quantum',
+    );
+    const response = await fetch(resourceUrl, {
+      headers: { [HEADERS.PAYMENT_SIGNATURE]: oversizedHeader },
+    });
+    assert.equal(response.status, 400, 'oversized payment header must be private malformed input');
+    assert.deepEqual(await response.json(), { error: 'invalid_payment' }, 'oversized payment response must be fixed');
+    assert.equal(response.headers.get(HEADERS.PAYMENT_REQUIRED), null, 'oversized payment must not return a challenge');
+    assert.equal(response.headers.get(HEADERS.PAYMENT_RESPONSE), null, 'oversized payment must not return settlement data');
+    assert.match(response.headers.get('cache-control') ?? '', /(?:^|,)\s*private\b/i, 'oversized payment must be private');
+    assert.match(response.headers.get('cache-control') ?? '', /(?:^|,)\s*no-store\b/i, 'oversized payment must not be stored');
+    assert.deepEqual(
+      effects,
+      { facilitator: 0, journal: 0, publication: 0, settlement: 0, delivery: 0 },
+      'oversized payment must have zero downstream effects',
+    );
+  } finally {
+    await oversizedApp.close();
+  }
+});
+
+test('resource server fails privately when a generated challenge exceeds the raw header limit', async () => {
+  const accepted = requirement();
+  const marker = 'bounded-multibyte-resource';
+  const prefix = `http://example.test/${marker}/`;
+  const challengeFor = suffix => makePaymentRequired({
+    resourceUrl: `${prefix}${suffix}/paid`,
+    description: 'Zenon x402 PoC protected resource',
+    mimeType: 'application/json',
+    requirement: accepted,
+  });
+  const baseBytes = Buffer.byteLength(JSON.stringify(challengeFor('')), 'utf8');
+  const remainingBytes = 6_145 - baseBytes;
+  assert.ok(remainingBytes > 0, 'oversized challenge fixture must have padding capacity');
+  const suffix = `${'\u00e9'.repeat(Math.floor(remainingBytes / 2))}${remainingBytes % 2 === 0 ? '' : 'x'}`;
+  const oversizedChallenge = challengeFor(suffix);
+  assert.equal(
+    Buffer.byteLength(JSON.stringify(oversizedChallenge), 'utf8'),
+    6_145,
+    'oversized challenge JSON size must be exact',
+  );
+  assert.equal(
+    Buffer.from(JSON.stringify(oversizedChallenge), 'utf8').toString('base64').length,
+    X402_HEADER_ENCODED_BYTES + 4,
+    'oversized challenge must use the next Base64 quantum',
+  );
+
+  const effects = { facilitator: 0, delivery: 0 };
+  const app = createResourceServer({
+    facilitator: {
+      async settle() {
+        effects.facilitator += 1;
+        throw new Error('unreachable synthetic settlement');
+      },
+    },
+    requirement: accepted,
+    advertisedBaseUrl: `${prefix}${suffix}`,
+    resourceHandler: async () => {
+      effects.delivery += 1;
+      throw new Error('unreachable synthetic delivery');
+    },
+  });
+  const listening = await app.listen();
+  try {
+    const response = await fetch(`${listening.url}/paid`);
+    assert.equal(response.status, 500, 'oversized challenge must fail privately');
+    const body = await response.json();
+    assert.deepEqual(body, { error: 'internal_error' }, 'oversized challenge failure must be fixed');
+    assert.equal(response.headers.get(HEADERS.PAYMENT_REQUIRED), null, 'oversized challenge header must be absent');
+    assert.equal(response.headers.get(HEADERS.PAYMENT_RESPONSE), null, 'oversized settlement header must be absent');
+    assert.match(response.headers.get('cache-control') ?? '', /(?:^|,)\s*private\b/i, 'outbound overflow must be private');
+    assert.match(response.headers.get('cache-control') ?? '', /(?:^|,)\s*no-store\b/i, 'outbound overflow must not be stored');
+    assert.equal(JSON.stringify(body).includes(marker), false, 'outbound overflow must not reflect configured content');
+    assert.deepEqual(effects, { facilitator: 0, delivery: 0 }, 'outbound overflow must have zero payment effects');
+  } finally {
+    await app.close();
+  }
+});
 
 test('HTTP boundary separates malformed payment input from unsupported payment policy', async () => {
   const accepted = requirement();
