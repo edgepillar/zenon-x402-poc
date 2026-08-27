@@ -1974,6 +1974,114 @@ test('safe HTTP retry returns the cached protected response without rerunning de
   }
 });
 
+test('resource authorization outcomes ignore inherited then after durable delivery',
+  { concurrency: false, timeout: 30_000 }, async () => {
+    if (await isolatePrototypeSensitiveTest(
+      'resource authorization outcomes ignore inherited then after durable delivery',
+      'X402_RESOURCE_OUTCOME_THEN_ISOLATED',
+    )) return;
+
+    const facilitator = new MockExactZenonFacilitator();
+    const requirement = await buildRequirement('mock');
+    let handlerExecutions = 0;
+    let handlerResult;
+    const app = createResourceServer({
+      facilitator,
+      requirement,
+      resourceHandler: async () => {
+        handlerExecutions += 1;
+        handlerResult = { ok: true, entitlement: 'stable-result' };
+        return handlerResult;
+      },
+    });
+    const listening = await app.listen();
+    let first;
+    let second;
+    let recordAfterFirst;
+    let recordAfterReplay;
+    let hookObservations = 0;
+    const priorDescriptor = Object.getOwnPropertyDescriptor(Object.prototype, 'then');
+    try {
+      const { paymentPayload } = await signedPayment(listening.url);
+      const encodedPayment = encodeB64Json(paymentPayload);
+      try {
+        Object.defineProperty(Object.prototype, 'then', {
+          configurable: true,
+          get() {
+            try {
+              const kind = Object.getOwnPropertyDescriptor(this, 'kind');
+              const settlement = Object.getOwnPropertyDescriptor(this, 'settlement');
+              const cached = Object.getOwnPropertyDescriptor(this, 'cached');
+              const isDeliveredOutcome = kind?.value === 'delivered' &&
+                Object.hasOwn(settlement ?? {}, 'value') &&
+                Object.hasOwn(cached ?? {}, 'value');
+              if (!isDeliveredOutcome) return undefined;
+            } catch {
+              return undefined;
+            }
+            hookObservations += 1;
+            throw new Error('authorization outcome then hook');
+          },
+        });
+        first = await fetch(`${listening.url}/paid`, {
+          headers: { [HEADERS.PAYMENT_SIGNATURE]: encodedPayment },
+        });
+        recordAfterFirst = facilitator.records.values().next().value;
+        second = await fetch(`${listening.url}/paid`, {
+          headers: { [HEADERS.PAYMENT_SIGNATURE]: encodedPayment },
+        });
+        recordAfterReplay = facilitator.records.values().next().value;
+      } finally {
+        if (priorDescriptor) Object.defineProperty(Object.prototype, 'then', priorDescriptor);
+        else delete Object.prototype.then;
+      }
+
+      assert.deepEqual(Object.getOwnPropertyDescriptor(Object.prototype, 'then'), priorDescriptor);
+      const firstSettlementHeader = first.headers.get(HEADERS.PAYMENT_RESPONSE);
+      const replaySettlementHeader = second.headers.get(HEADERS.PAYMENT_RESPONSE);
+      assert.equal(typeof firstSettlementHeader, 'string', 'first payment response header missing');
+      assert.equal(typeof replaySettlementHeader, 'string', 'replay payment response header missing');
+      const firstSettlement = decodeB64Json(firstSettlementHeader);
+      const replaySettlement = decodeB64Json(replaySettlementHeader);
+      const expectedSettlementFields = ['network', 'payer', 'state', 'success', 'transaction'];
+      const settlementEvidence = settlement => ({
+        fields: Object.keys(settlement).sort(),
+        success: settlement.success,
+        state: settlement.state,
+        networkMatches: settlement.network === paymentPayload.accepted.network,
+        transactionMatches: settlement.transaction === paymentPayload.payload.transaction.hash,
+        payerMatches: settlement.payer === paymentPayload.payload.transaction.address,
+      });
+      const expectedSettlementEvidence = {
+        fields: expectedSettlementFields,
+        success: true,
+        state: 'MOMENTUM_INCLUDED',
+        networkMatches: true,
+        transactionMatches: true,
+        payerMatches: true,
+      };
+      const firstSettlementEvidence = settlementEvidence(firstSettlement);
+      const replaySettlementEvidence = settlementEvidence(replaySettlement);
+      assert.deepEqual(firstSettlementEvidence, expectedSettlementEvidence);
+      assert.deepEqual(replaySettlementEvidence, expectedSettlementEvidence);
+      assert.deepEqual(replaySettlementEvidence, firstSettlementEvidence);
+      assert.equal(recordAfterFirst?.deliveryState, 'DELIVERED');
+      assert.notEqual(recordAfterFirst?.cachedResponse, null);
+      assert.notEqual(recordAfterFirst?.cachedResponse?.body, handlerResult);
+      assert.equal(recordAfterReplay, recordAfterFirst);
+      assert.equal(recordAfterReplay?.cachedResponse, recordAfterFirst?.cachedResponse);
+      assert.equal(handlerExecutions, 1);
+      assert.equal(hookObservations, 0, 'post-delivery authorization outcome assimilation observed');
+      assert.equal(first.status, 200);
+      assert.equal(second.status, 200);
+      assertPaidResponseIsPrivate(first);
+      assertPaidResponseIsPrivate(second);
+      assert.equal(await second.text(), await first.text());
+    } finally {
+      await app.close();
+    }
+  });
+
 test('concurrent duplicate HTTP requests converge on one protected-resource callback', async () => {
   const facilitator = new MockExactZenonFacilitator();
   const requirement = await buildRequirement('mock');
