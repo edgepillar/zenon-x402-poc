@@ -282,6 +282,162 @@ test('outer x402 structures reject missing and unexpected fields', () => {
   assert.throws(() => validateRequirement(missingProfile));
 });
 
+test('PaymentRequired error compatibility is descriptor-safe and intent-neutral', () => {
+  const requirement = liveRequirement();
+  const absent = paymentRequired(requirement);
+  const validators = [validatePaymentRequired, validatePaymentRequiredForOfferSelection];
+  const expectedDigest = paymentIntentDigest(absent, requirement);
+  const absentSnapshot = structuredClone(absent);
+  const absentKeys = Reflect.ownKeys(absent);
+
+  for (const validate of validators) assert.doesNotThrow(() => validate(absent));
+  assert.deepEqual(absent, absentSnapshot);
+  assert.deepEqual(Reflect.ownKeys(absent), absentKeys);
+  assert.equal(Object.hasOwn(absent, 'error'), false);
+
+  for (const value of [undefined, '', 'informational']) {
+    const candidate = paymentRequired(requirement);
+    Object.defineProperty(candidate, 'error', {
+      value,
+      enumerable: true,
+      writable: false,
+      configurable: false,
+    });
+    const snapshot = structuredClone(candidate);
+    const descriptor = Object.getOwnPropertyDescriptor(candidate, 'error');
+    const keys = Reflect.ownKeys(candidate);
+
+    for (const validate of validators) assert.doesNotThrow(() => validate(candidate));
+    assert.deepEqual(candidate, snapshot);
+    assert.deepEqual(Object.getOwnPropertyDescriptor(candidate, 'error'), descriptor);
+    assert.deepEqual(Reflect.ownKeys(candidate), keys);
+    assert.equal(paymentIntentDigest(candidate, requirement), expectedDigest);
+  }
+
+  let coercions = 0;
+  const coercionProbe = {
+    [Symbol.toPrimitive]() {
+      coercions += 1;
+      return 'coerced';
+    },
+  };
+  const invalidValues = [
+    null,
+    false,
+    1,
+    1n,
+    Symbol('invalid-error'),
+    function invalidError() {},
+    [],
+    coercionProbe,
+  ];
+  for (const value of invalidValues) {
+    const candidate = paymentRequired(requirement);
+    Object.defineProperty(candidate, 'error', {
+      value,
+      enumerable: true,
+      writable: true,
+      configurable: true,
+    });
+    const descriptor = Object.getOwnPropertyDescriptor(candidate, 'error');
+    for (const validate of validators) {
+      assert.throws(
+        () => validate(candidate),
+        error => error?.message === 'PaymentRequired.error must be a string or undefined',
+      );
+    }
+    assert.deepEqual(Object.getOwnPropertyDescriptor(candidate, 'error'), descriptor);
+  }
+  assert.equal(coercions, 0);
+
+  let getterReads = 0;
+  for (const getter of [
+    () => {
+      getterReads += 1;
+      return undefined;
+    },
+    () => {
+      getterReads += 1;
+      throw new Error('unexpected error accessor read');
+    },
+  ]) {
+    const candidate = paymentRequired(requirement);
+    Object.defineProperty(candidate, 'error', {
+      enumerable: true,
+      configurable: true,
+      get: getter,
+    });
+    const descriptor = Object.getOwnPropertyDescriptor(candidate, 'error');
+    for (const validate of validators) {
+      assert.throws(
+        () => validate(candidate),
+        error => error?.message === 'PaymentRequired.error must be an enumerable data property',
+      );
+    }
+    assert.deepEqual(Object.getOwnPropertyDescriptor(candidate, 'error'), descriptor);
+  }
+  assert.equal(getterReads, 0);
+
+  let setterCalls = 0;
+  const setterOnly = paymentRequired(requirement);
+  Object.defineProperty(setterOnly, 'error', {
+    enumerable: true,
+    configurable: true,
+    set() {
+      setterCalls += 1;
+    },
+  });
+  for (const validate of validators) {
+    assert.throws(
+      () => validate(setterOnly),
+      error => error?.message === 'PaymentRequired.error must be an enumerable data property',
+    );
+  }
+  assert.equal(setterCalls, 0);
+
+  const nonEnumerable = paymentRequired(requirement);
+  Object.defineProperty(nonEnumerable, 'error', {
+    value: 'informational',
+    enumerable: false,
+  });
+  for (const validate of validators) {
+    assert.throws(
+      () => validate(nonEnumerable),
+      error => error?.message === 'PaymentRequired.error must be an enumerable data property',
+    );
+  }
+
+  const inherited = paymentRequired(requirement);
+  const previousDescriptor = Object.getOwnPropertyDescriptor(Object.prototype, 'error');
+  let inheritedReads = 0;
+  const inheritedResults = [];
+  try {
+    Object.defineProperty(Object.prototype, 'error', {
+      enumerable: true,
+      configurable: true,
+      get() {
+        inheritedReads += 1;
+        return 'inherited';
+      },
+    });
+    for (const validate of validators) {
+      try {
+        validate(inherited);
+        inheritedResults.push('accepted');
+      } catch {
+        inheritedResults.push('rejected');
+      }
+    }
+  } finally {
+    if (previousDescriptor) Object.defineProperty(Object.prototype, 'error', previousDescriptor);
+    else delete Object.prototype.error;
+  }
+  assert.deepEqual(inheritedResults, ['accepted', 'accepted']);
+  assert.equal(inheritedReads, 0);
+  assert.equal(Object.hasOwn(inherited, 'error'), false);
+  assert.equal(paymentIntentDigest(inherited, requirement), expectedDigest);
+});
+
 test('strict ResourceInfo preserves optional metadata absence and empty strings', () => {
   const requirement = liveRequirement();
   const url = 'https://resource.example/paid';

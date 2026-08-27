@@ -196,11 +196,6 @@ function createOfficialServerBridge({ requirement, localFacilitator }) {
 
     const snapshot = structuredClone(paymentRequiredResponse);
     validateCompleteChallenge(snapshot);
-    if (Object.hasOwn(snapshot, 'error') && snapshot.error === undefined) {
-      // The pinned public paid phase owns error: undefined; normalize only the
-      // detached snapshot so strict local validation treats it as absent.
-      delete snapshot.error;
-    }
     if (!sameResource(paymentRequiredResponse.resource, snapshot.resource)) {
       throw new Error('resource snapshot mismatch');
     }

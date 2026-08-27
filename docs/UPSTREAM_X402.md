@@ -71,6 +71,8 @@ The strict local profile requires `ResourceInfo.url`. `description` and `mimeTyp
 
 At the top-level wire envelope, an absent `extensions` property and an empty plain-object `extensions: {}` are treated as equivalent. Malformed containers and unsafe descriptors use the private `400` lane, while `null` and non-empty well-formed maps use the unsupported-policy `402` lane. This is empty-container compatibility only: the PoC does not add or advertise the empty field by default, register or execute extensions, echo extension entries, or change intent binding, signing, settlement, journal, or recovery behavior.
 
+Pinned `@x402/core@2.23.0` paid-phase `PaymentRequired` objects may contain an own enumerable data property `error: undefined`. Local validation accepts an absent `error`, that exact undefined shape, or a string including the empty string. JSON omits undefined values while preserving empty strings. Explicit `null`, accessors, non-enumerable properties, and other value types remain unsupported. The field is informational and excluded from payment-intent binding; this narrow compatibility does not claim complete stable-v2 support or change signing, settlement, or delivery behavior.
+
 The journal schema version is unchanged and existing legitimate records remain readable, but rollback after an `iconUrl`-bearing record is persisted must retain the additive ResourceInfo reader. This narrow compatibility slice changes no dependency, signing, SDK, RPC, PoW, settlement, or delivery semantics and makes no complete stable-v2, official-registration, or production-readiness claim. Phase 2C, hardware wallets, and authenticated live-chain identity remain separate and deferred.
 
 ## Malformed paid-request boundary

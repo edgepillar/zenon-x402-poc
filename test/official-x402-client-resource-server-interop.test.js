@@ -240,10 +240,6 @@ function createClientBridge({ localClient, requirement }) {
         const selectedIndex = selectedIndexes[0];
         const snapshot = structuredClone(paymentRequired);
         OfficialPaymentRequiredV2Schema.parse(snapshot);
-        if (Object.hasOwn(snapshot, 'error') && snapshot.error === undefined) {
-          // Normalize only the detached optional shape for the strict validator.
-          delete snapshot.error;
-        }
         validateSelectedSnapshot(snapshot, selectedIndex);
         if (!sameResource(paymentRequired.resource, snapshot.resource)) {
           throw new Error('resource snapshot mismatch');
@@ -415,11 +411,6 @@ function createServerBridge({ requirement, localFacilitator }) {
 
     const snapshot = structuredClone(paymentRequiredResponse);
     validateCompleteChallenge(snapshot);
-    if (Object.hasOwn(snapshot, 'error') && snapshot.error === undefined) {
-      // The pinned paid phase owns error: undefined; normalize only the
-      // detached snapshot so the strict local optional field remains absent.
-      delete snapshot.error;
-    }
     validateZenonPaymentRequired(snapshot);
     if (!sameResource(paymentRequiredResponse.resource, snapshot.resource)) {
       throw new Error('resource snapshot mismatch');

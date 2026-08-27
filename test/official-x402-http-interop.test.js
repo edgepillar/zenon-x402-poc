@@ -9,6 +9,7 @@ import {
   encodePaymentSignatureHeader as officialEncodePaymentSignature,
 } from '@x402/core/http';
 
+import { paymentIntentDigest } from '../src/canonical.js';
 import { buildRequirement } from '../src/config.js';
 import { MockExactZenonClient, MockExactZenonFacilitator } from '../src/mock-payment.js';
 import { createResourceServer } from '../src/resource-server.js';
@@ -90,6 +91,38 @@ test('official and local HTTP challenge codecs preserve ResourceInfo and adverti
     assert.equal(accepted.extra.paymentFlow, 'upfront');
   }
   assert.equal(Object.hasOwn(locallyDecoded, 'extensions'), false);
+});
+
+test('empty PaymentRequired error survives official and local HTTP codecs without changing intent', async () => {
+  const { paymentRequired, requirement } = await syntheticChallenge();
+  const expectedDigest = paymentIntentDigest(paymentRequired, requirement);
+  const withEmptyError = structuredClone(paymentRequired);
+  withEmptyError.error = '';
+
+  const officialToLocal = decodeB64Json(officialEncodePaymentRequired(withEmptyError));
+  const localToOfficial = officialDecodePaymentRequired(encodeB64Json(withEmptyError));
+  for (const decoded of [officialToLocal, localToOfficial]) {
+    assert.equal(Object.hasOwn(decoded, 'error'), true);
+    assert.equal(decoded.error, '');
+    assert.doesNotThrow(() => validatePaymentRequired(decoded));
+    assert.equal(paymentIntentDigest(decoded, requirement), expectedDigest);
+  }
+  assert.equal(paymentIntentDigest(withEmptyError, requirement), expectedDigest);
+
+  const withUndefinedError = structuredClone(paymentRequired);
+  Object.defineProperty(withUndefinedError, 'error', {
+    value: undefined,
+    enumerable: true,
+    writable: true,
+    configurable: true,
+  });
+  const undefinedDescriptor = Object.getOwnPropertyDescriptor(withUndefinedError, 'error');
+  // JSON omits an own undefined value, so the pinned undefined shape exists only in memory.
+  const undefinedOfficialToLocal = decodeB64Json(officialEncodePaymentRequired(withUndefinedError));
+  const undefinedLocalToOfficial = officialDecodePaymentRequired(encodeB64Json(withUndefinedError));
+  assert.equal(Object.hasOwn(undefinedOfficialToLocal, 'error'), false);
+  assert.equal(Object.hasOwn(undefinedLocalToOfficial, 'error'), false);
+  assert.deepEqual(Object.getOwnPropertyDescriptor(withUndefinedError, 'error'), undefinedDescriptor);
 });
 
 test('empty extension containers interoperate without enabling non-empty extensions', async () => {

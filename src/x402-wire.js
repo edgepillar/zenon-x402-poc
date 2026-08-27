@@ -671,9 +671,9 @@ function validatePaymentRequiredOuter(paymentRequired) {
   if (!Array.isArray(paymentRequired.accepts) || paymentRequired.accepts.length === 0) {
     throw new Error('PaymentRequired.accepts must contain at least one requirement');
   }
-  if (Object.hasOwn(paymentRequired, 'error') &&
-      (typeof paymentRequired.error !== 'string' || !paymentRequired.error)) {
-    throw new Error('PaymentRequired.error must be a non-empty string');
+  const paymentError = readOptionalEnumerableDataProperty(paymentRequired, 'error', 'PaymentRequired');
+  if (paymentError.present && paymentError.value !== undefined && typeof paymentError.value !== 'string') {
+    throw new Error('PaymentRequired.error must be a string or undefined');
   }
 }
 
