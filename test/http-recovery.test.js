@@ -1,10 +1,43 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { spawn } from 'node:child_process';
 import { paidFetch, PaymentSubmissionOutcomeUnknownError } from '../src/buyer.js';
 import { createResourceServer } from '../src/resource-server.js';
 import { MockExactZenonClient, MockExactZenonFacilitator } from '../src/mock-payment.js';
 import { buildRequirement } from '../src/config.js';
 import { decodeB64Json, encodeB64Json, HEADERS } from '../src/x402-wire.js';
+
+async function isolatePrototypeSensitiveTest(name, flag) {
+  if (process.env[flag] === '1') return false;
+  const isolatedEnvironment = { ...process.env, [flag]: '1' };
+  delete isolatedEnvironment.NODE_TEST_CONTEXT;
+  const isolated = spawn(process.execPath, [
+    '--test',
+    '--test-reporter=tap',
+    '--test-name-pattern',
+    `^${name}$`,
+    process.argv[1],
+  ], {
+    env: isolatedEnvironment,
+    stdio: ['ignore', 'pipe', 'pipe'],
+  });
+  let stdout = '';
+  let stderr = '';
+  isolated.stdout.setEncoding('utf8');
+  isolated.stderr.setEncoding('utf8');
+  isolated.stdout.on('data', chunk => { stdout += chunk; });
+  isolated.stderr.on('data', chunk => { stderr += chunk; });
+  const exitCode = await new Promise((resolve, reject) => {
+    isolated.once('error', reject);
+    isolated.once('close', resolve);
+  });
+  assert.equal(exitCode, 0, 'isolated prototype-sensitive child failed');
+  assert.match(stdout, /^# tests 1$/m, 'isolated child count missing');
+  assert.match(stdout, /^# pass 1$/m, 'isolated child pass missing');
+  assert.match(stdout, /^# fail 0$/m, 'isolated child failure count missing');
+  assert.equal(stderr, '', 'isolated child wrote diagnostics');
+  return true;
+}
 
 function assertPaidResponseIsPrivate(response) {
   assert.match(response.headers.get('cache-control') ?? '', /(?:^|,)\s*private\b/i);
@@ -33,6 +66,1849 @@ function reverseMemberOrder(value) {
   if (!value || typeof value !== 'object') return value;
   return Object.fromEntries(Object.keys(value).reverse().map(key => [key, reverseMemberOrder(value[key])]));
 }
+
+async function observePaidSubmission(response) {
+  assertPaidResponseIsPrivate(response);
+  const settlementHeader = response.headers.get(HEADERS.PAYMENT_RESPONSE);
+  return {
+    status: response.status,
+    hasPaymentRequired: response.headers.has(HEADERS.PAYMENT_REQUIRED),
+    body: await response.json(),
+    settlement: settlementHeader === null ? null : decodeB64Json(settlementHeader),
+  };
+}
+
+function assertSubmittedIdentityRecovery(observation, paymentPayload, {
+  state,
+  reason,
+  forbiddenValues = [],
+}) {
+  assert.equal(observation.status, 409);
+  assert.equal(observation.hasPaymentRequired, false);
+  assert.deepEqual(Object.keys(observation.body).sort(), ['action', 'error', 'transaction']);
+  assert.equal(observation.body.error, reason);
+  assert.equal(observation.body.action, 'reuse_and_reconcile_same_payment');
+  assert.equal(observation.body.transaction === paymentPayload.payload.transaction.hash, true);
+  assert.notEqual(observation.settlement, null);
+  assert.deepEqual(Object.keys(observation.settlement).sort(), [
+    'errorReason', 'network', 'payer', 'retrySamePayment', 'state', 'success', 'transaction',
+  ]);
+  assert.equal(observation.settlement.success, false);
+  assert.equal(observation.settlement.state, state);
+  assert.equal(observation.settlement.errorReason, reason);
+  assert.equal(observation.settlement.retrySamePayment, true);
+  assert.equal(observation.settlement.network === paymentPayload.accepted.network, true);
+  assert.equal(observation.settlement.transaction === paymentPayload.payload.transaction.hash, true);
+  assert.equal(observation.settlement.payer === paymentPayload.payload.transaction.address, true);
+  const publicResponse = JSON.stringify({
+    body: observation.body,
+    settlement: observation.settlement,
+  });
+  for (const internalValue of [
+    'authorizationKey',
+    'cachedResponse',
+    'deliveryClaimed',
+    'deliveryState',
+    'transactionHash',
+    'momentumEvidence',
+    'protectedCallbacks',
+    'unverified-cache',
+    'delivery transition must not be attempted',
+    ...forbiddenValues,
+  ]) {
+    assert.equal(publicResponse.includes(internalValue), false);
+  }
+}
+
+function mismatchIdentityField(value, {
+  field,
+  operation = 'mismatch',
+  transactionField = 'transaction',
+  onAccessorRead = () => {},
+}) {
+  const changed = { ...value };
+  if (transactionField === 'transactionHash' && Object.hasOwn(changed, 'transaction')) {
+    changed.transactionHash = changed.transaction;
+    delete changed.transaction;
+  }
+  if (transactionField === 'both' && Object.hasOwn(changed, 'transaction')) {
+    changed.transactionHash = changed.transaction;
+  }
+  const targetField = field === 'transaction' ? transactionField : field;
+  if (operation === 'missing') {
+    delete changed[targetField];
+    return changed;
+  }
+  let replacement;
+  if (field === 'network') replacement = 'zenon:identity-mismatch';
+  if (field === 'transaction') replacement = 'b'.repeat(64);
+  if (field === 'payer') replacement = `mock-${'c'.repeat(32)}`;
+  if (field === 'authorizationKey') replacement = 'd'.repeat(64);
+  if (operation === 'conflict') {
+    changed.transactionHash = replacement;
+    return changed;
+  }
+  if (operation === 'accessor') {
+    delete changed[targetField];
+    Object.defineProperty(changed, targetField, {
+      enumerable: true,
+      configurable: true,
+      get() {
+        onAccessorRead();
+        return replacement;
+      },
+    });
+    return changed;
+  }
+  changed[targetField] = replacement;
+  return changed;
+}
+
+test('recoverable non-positive settlement evidence is descriptor-safe and submitted-identity-only', async () => {
+  const variants = ['mismatch', 'accessor'].flatMap(operation =>
+    ['network', 'transaction', 'payer', 'authorizationKey']
+      .map(field => ({ field, operation })));
+  variants.push({ field: 'transaction', operation: 'accessor', throws: true });
+  variants.push({ operation: 'proxy' });
+  variants.push({
+    operation: 'state',
+    state: 'SUBMISSION_ACKNOWLEDGED',
+    expectedReason: 'payment_reconciliation_required',
+  });
+  variants.push({
+    operation: 'state',
+    state: 'VALIDATED',
+    expectedReason: 'payment_reconciliation_required',
+  });
+  const observations = [];
+
+  for (const variant of variants) {
+    const requirement = await buildRequirement('mock');
+    let settleCalls = 0;
+    let deliveryTransitionCalls = 0;
+    let protectedCallbacks = 0;
+    let accessorReads = 0;
+    let proxyTraps = 0;
+    const facilitator = {
+      async settle(paymentPayload) {
+        settleCalls += 1;
+        const recoverable = {
+          success: false,
+          network: requirement.network,
+          transaction: paymentPayload.payload.transaction.hash,
+          payer: paymentPayload.payload.transaction.address,
+          authorizationKey: 'e'.repeat(64),
+          state: 'SUBMISSION_OUTCOME_UNKNOWN',
+          errorReason: 'private-recovery-detail',
+          retrySamePayment: true,
+          deliveryState: 'NONE',
+          cachedResponse: { body: 'private-cached-detail' },
+          cause: { detail: 'private-cause-detail' },
+        };
+        if (variant.operation === 'state') recoverable.state = variant.state;
+        if (variant.operation === 'proxy') {
+          return new Proxy(recoverable, {
+            getOwnPropertyDescriptor(target, field) {
+              if (field === 'network') {
+                proxyTraps += 1;
+                throw new Error('private proxy detail');
+              }
+              return Reflect.getOwnPropertyDescriptor(target, field);
+            },
+          });
+        }
+        if (variant.operation === 'state') return recoverable;
+        return mismatchIdentityField(recoverable, {
+          ...variant,
+          onAccessorRead: () => {
+            accessorReads += 1;
+            if (variant.throws) throw new Error('private accessor detail');
+          },
+        });
+      },
+      async markDeliveryPending() {
+        deliveryTransitionCalls += 1;
+        throw new Error('delivery transition must not be attempted');
+      },
+      async markDelivered() {
+        deliveryTransitionCalls += 1;
+        throw new Error('delivery transition must not be attempted');
+      },
+    };
+    const app = createResourceServer({
+      facilitator,
+      requirement,
+      resourceHandler: async () => ({ ok: true, protectedCallbacks: ++protectedCallbacks }),
+    });
+    const listening = await app.listen();
+    try {
+      const { paymentPayload } = await signedPayment(listening.url);
+      const response = await submitPayment(listening.url, paymentPayload);
+      observations.push({
+        variant,
+        paymentPayload,
+        response: await observePaidSubmission(response),
+        settleCalls,
+        deliveryTransitionCalls,
+        protectedCallbacks,
+        accessorReads,
+        proxyTraps,
+        cachedResponseReleases: response.status === 200 ? 1 : 0,
+      });
+    } finally {
+      await app.close();
+    }
+  }
+
+  for (const observation of observations) {
+    assert.equal(observation.accessorReads, 0);
+    if (observation.variant.operation === 'proxy') assert.equal(observation.proxyTraps > 0, true);
+    assertSubmittedIdentityRecovery(observation.response, observation.paymentPayload, {
+      state: observation.variant.state ?? 'SUBMISSION_OUTCOME_UNKNOWN',
+      reason: observation.variant.expectedReason ?? 'payment_outcome_unknown',
+      forbiddenValues: [
+        'private-recovery-detail',
+        'private-cached-detail',
+        'private-cause-detail',
+        'private proxy detail',
+        'private accessor detail',
+      ],
+    });
+    assert.equal(observation.settleCalls, 1);
+    assert.equal(observation.deliveryTransitionCalls, 0);
+    assert.equal(observation.protectedCallbacks, 0);
+    assert.equal(observation.cachedResponseReleases, 0);
+  }
+});
+
+test('cached delivered responses are snapshotted once before release', async () => {
+  const variants = [
+    { field: 'status' },
+    { field: 'headers' },
+    { field: 'header-member' },
+    { field: 'body' },
+    { field: 'body-member' },
+    { field: 'stateful-body' },
+    { field: 'stateful-proxy', accepted: true },
+    { field: 'proxy' },
+  ];
+  const observations = [];
+
+  for (const variant of variants) {
+    const requirement = await buildRequirement('mock');
+    const honest = new MockExactZenonFacilitator();
+    let accessorReads = 0;
+    let proxyTraps = 0;
+    let proxyReads = 0;
+    let deliveryTransitionCalls = 0;
+    let protectedCallbacks = 0;
+    const cachedResponse = {
+      status: 200,
+      headers: { 'content-type': 'application/json; charset=utf-8' },
+      body: { ok: true, marker: 'unchecked-cached-content' },
+    };
+    if (variant.field === 'status' || variant.field === 'headers' || variant.field === 'body') {
+      const retained = cachedResponse[variant.field];
+      delete cachedResponse[variant.field];
+      Object.defineProperty(cachedResponse, variant.field, {
+        enumerable: true,
+        get() {
+          accessorReads += 1;
+          return retained;
+        },
+      });
+    }
+    if (variant.field === 'header-member') {
+      delete cachedResponse.headers['content-type'];
+      Object.defineProperty(cachedResponse.headers, 'content-type', {
+        enumerable: true,
+        get() {
+          accessorReads += 1;
+          return 'application/json; charset=utf-8';
+        },
+      });
+    }
+    if (variant.field === 'body-member') {
+      delete cachedResponse.body.marker;
+      Object.defineProperty(cachedResponse.body, 'marker', {
+        enumerable: true,
+        get() {
+          accessorReads += 1;
+          return 'unchecked-cached-content';
+        },
+      });
+    }
+    if (variant.field === 'stateful-body') {
+      delete cachedResponse.body;
+      Object.defineProperty(cachedResponse, 'body', {
+        enumerable: true,
+        get() {
+          accessorReads += 1;
+          return accessorReads === 1
+            ? { ok: true }
+            : { ok: true, marker: 'unchecked-stateful-content' };
+        },
+      });
+    }
+    if (variant.field === 'stateful-proxy') {
+      cachedResponse.body = { ok: true, marker: 'verified-snapshot-content' };
+    }
+    const suppliedCache = ['proxy', 'stateful-proxy'].includes(variant.field)
+      ? new Proxy(cachedResponse, variant.field === 'proxy' ? {
+          ownKeys() {
+            proxyTraps += 1;
+            throw new Error('private cached proxy detail');
+          },
+        } : {
+          get(target, field, receiver) {
+            if (field === 'body') {
+              proxyReads += 1;
+              return proxyReads === 1
+                ? Reflect.get(target, field, receiver)
+                : { ok: true, marker: 'unchecked-stateful-content' };
+            }
+            return Reflect.get(target, field, receiver);
+          },
+        })
+      : cachedResponse;
+    const facilitator = {
+      async settle(...args) {
+        const settlement = await honest.settle(...args);
+        return { ...settlement, deliveryState: 'DELIVERED', cachedResponse: suppliedCache };
+      },
+      async markDeliveryPending() {
+        deliveryTransitionCalls += 1;
+        throw new Error('delivery transition must not be attempted');
+      },
+      async markDelivered() {
+        deliveryTransitionCalls += 1;
+        throw new Error('delivery transition must not be attempted');
+      },
+    };
+    const app = createResourceServer({
+      facilitator,
+      requirement,
+      resourceHandler: async () => ({ ok: true, protectedCallbacks: ++protectedCallbacks }),
+    });
+    const listening = await app.listen();
+    try {
+      const { paymentPayload } = await signedPayment(listening.url);
+      const response = await submitPayment(listening.url, paymentPayload);
+      const observed = variant.accepted
+        ? { status: response.status, body: await response.json() }
+        : await observePaidSubmission(response);
+      observations.push({
+        variant,
+        paymentPayload,
+        response: observed,
+        accessorReads,
+        proxyTraps,
+        proxyReads,
+        deliveryTransitionCalls,
+        protectedCallbacks,
+        cachedResponseReleases: response.status === 200 ? 1 : 0,
+      });
+    } finally {
+      await app.close();
+    }
+  }
+
+  for (const observation of observations) {
+    if (observation.variant.accepted) {
+      assert.equal(observation.response.status, 200);
+      assert.deepEqual(observation.response.body, {
+        ok: true,
+        marker: 'verified-snapshot-content',
+      });
+      assert.equal(observation.proxyReads, 0);
+      assert.equal(observation.deliveryTransitionCalls, 0);
+      assert.equal(observation.protectedCallbacks, 0);
+      assert.equal(observation.cachedResponseReleases, 1);
+      continue;
+    }
+    if (observation.variant.field === 'proxy') assert.equal(observation.proxyTraps > 0, true);
+    else assert.equal(observation.accessorReads, 0);
+    assertSubmittedIdentityRecovery(observation.response, observation.paymentPayload, {
+      state: 'DELIVERY_PENDING',
+      reason: 'resource_delivery_outcome_unknown',
+      forbiddenValues: [
+        'unchecked-cached-content',
+        'unchecked-stateful-content',
+        'private cached proxy detail',
+      ],
+    });
+    assert.equal(observation.deliveryTransitionCalls, 0);
+    assert.equal(observation.protectedCallbacks, 0);
+    assert.equal(observation.cachedResponseReleases, 0);
+  }
+});
+
+test('positive settlement transaction aliases must agree before delivery', async () => {
+  const variants = [
+    { alias: 'missing', accepted: true },
+    { alias: 'equal', accepted: true },
+    { alias: 'conflict', accepted: false },
+    { alias: 'accessor', accepted: false },
+  ];
+  const observations = [];
+
+  for (const variant of variants) {
+    const requirement = await buildRequirement('mock');
+    const honest = new MockExactZenonFacilitator();
+    let accessorReads = 0;
+    let protectedCallbacks = 0;
+    let pendingCalls = 0;
+    let deliveredCalls = 0;
+    const facilitator = {
+      async settle(...args) {
+        const settlement = await honest.settle(...args);
+        if (variant.alias === 'equal') settlement.transactionHash = settlement.transaction;
+        if (variant.alias === 'conflict') settlement.transactionHash = 'b'.repeat(64);
+        if (variant.alias === 'accessor') {
+          Object.defineProperty(settlement, 'transactionHash', {
+            enumerable: true,
+            get() {
+              accessorReads += 1;
+              return settlement.transaction;
+            },
+          });
+        }
+        return settlement;
+      },
+      async markDeliveryPending(settlement) {
+        pendingCalls += 1;
+        return honest.markDeliveryPending(settlement);
+      },
+      async markDelivered(settlement, cachedResponse) {
+        deliveredCalls += 1;
+        return honest.markDelivered(settlement, cachedResponse);
+      },
+    };
+    const app = createResourceServer({
+      facilitator,
+      requirement,
+      resourceHandler: async () => ({ ok: true, protectedCallbacks: ++protectedCallbacks }),
+    });
+    const listening = await app.listen();
+    try {
+      const { paymentPayload } = await signedPayment(listening.url);
+      const response = await submitPayment(listening.url, paymentPayload);
+      const observed = variant.accepted
+        ? { status: response.status, body: await response.json() }
+        : await observePaidSubmission(response);
+      observations.push({
+        variant,
+        paymentPayload,
+        response: observed,
+        accessorReads,
+        protectedCallbacks,
+        pendingCalls,
+        deliveredCalls,
+      });
+    } finally {
+      await app.close();
+    }
+  }
+
+  for (const observation of observations) {
+    assert.equal(observation.accessorReads, 0);
+    if (observation.variant.accepted) {
+      assert.equal(observation.response.status, 200);
+      assert.equal(observation.response.body.ok, true);
+      assert.equal(observation.protectedCallbacks, 1);
+      assert.equal(observation.pendingCalls, 1);
+      assert.equal(observation.deliveredCalls, 1);
+    } else {
+      assertSubmittedIdentityRecovery(observation.response, observation.paymentPayload, {
+        state: 'SUBMISSION_OUTCOME_UNKNOWN',
+        reason: 'payment_outcome_unknown',
+      });
+      assert.equal(observation.protectedCallbacks, 0);
+      assert.equal(observation.pendingCalls, 0);
+      assert.equal(observation.deliveredCalls, 0);
+    }
+  }
+});
+
+test('already-delivered pending transition requires an exact unclaimed compound state', async () => {
+  const variants = [
+    { claim: 'false', accepted: true },
+    { claim: 'missing', accepted: false },
+    { claim: 'true', accepted: false },
+    { claim: 'non-boolean', accepted: false },
+    { claim: 'accessor', accepted: false },
+  ];
+  const observations = [];
+
+  for (const variant of variants) {
+    const requirement = await buildRequirement('mock');
+    const honest = new MockExactZenonFacilitator();
+    let pendingCalls = 0;
+    let deliveredCalls = 0;
+    let protectedCallbacks = 0;
+    let accessorReads = 0;
+    const cachedResponse = {
+      status: 200,
+      headers: { 'content-type': 'application/json; charset=utf-8' },
+      body: { ok: true, marker: 'verified-cached-content' },
+    };
+    const facilitator = {
+      async settle(...args) {
+        return honest.settle(...args);
+      },
+      async markDeliveryPending(settlement) {
+        pendingCalls += 1;
+        const claim = {
+          ...settlement,
+          deliveryState: 'DELIVERED',
+          deliveryClaimed: false,
+          cachedResponse,
+        };
+        if (variant.claim === 'missing') delete claim.deliveryClaimed;
+        if (variant.claim === 'true') claim.deliveryClaimed = true;
+        if (variant.claim === 'non-boolean') claim.deliveryClaimed = 'false';
+        if (variant.claim === 'accessor') {
+          delete claim.deliveryClaimed;
+          Object.defineProperty(claim, 'deliveryClaimed', {
+            enumerable: true,
+            get() {
+              accessorReads += 1;
+              return false;
+            },
+          });
+        }
+        return claim;
+      },
+      async markDelivered() {
+        deliveredCalls += 1;
+        throw new Error('markDelivered must not be called');
+      },
+    };
+    const app = createResourceServer({
+      facilitator,
+      requirement,
+      resourceHandler: async () => ({ ok: true, protectedCallbacks: ++protectedCallbacks }),
+    });
+    const listening = await app.listen();
+    try {
+      const { paymentPayload } = await signedPayment(listening.url);
+      const response = await submitPayment(listening.url, paymentPayload);
+      const observed = variant.accepted
+        ? { status: response.status, body: await response.json() }
+        : await observePaidSubmission(response);
+      observations.push({
+        variant,
+        paymentPayload,
+        response: observed,
+        pendingCalls,
+        deliveredCalls,
+        protectedCallbacks,
+        accessorReads,
+        cachedResponseReleases: response.status === 200 ? 1 : 0,
+      });
+    } finally {
+      await app.close();
+    }
+  }
+
+  for (const observation of observations) {
+    assert.equal(observation.accessorReads, 0);
+    assert.equal(observation.pendingCalls, 1);
+    assert.equal(observation.deliveredCalls, 0);
+    assert.equal(observation.protectedCallbacks, 0);
+    if (observation.variant.accepted) {
+      assert.equal(observation.response.status, 200);
+      assert.deepEqual(observation.response.body, { ok: true, marker: 'verified-cached-content' });
+      assert.equal(observation.cachedResponseReleases, 1);
+    } else {
+      assertSubmittedIdentityRecovery(observation.response, observation.paymentPayload, {
+        state: 'DELIVERY_PENDING',
+        reason: 'resource_delivery_outcome_unknown',
+        forbiddenValues: ['verified-cached-content'],
+      });
+      assert.equal(observation.cachedResponseReleases, 0);
+    }
+  }
+});
+
+test('delivery capabilities are captured once with their receiver before delivery', async () => {
+  const variants = ['markDeliveryPending', 'markDelivered'].flatMap(method => [
+    { method, behavior: 'throwing-getter', accepted: false },
+    { method, behavior: 'proxy-throw', accepted: false },
+    { method, behavior: 'stateful-getter', accepted: true },
+  ]);
+  const observations = [];
+
+  for (const variant of variants) {
+    const requirement = await buildRequirement('mock');
+    const honest = new MockExactZenonFacilitator();
+    let capabilityReads = 0;
+    let pendingCalls = 0;
+    let deliveredCalls = 0;
+    let protectedCallbacks = 0;
+    let receiverMatches = true;
+    let exposedFacilitator;
+    const pendingMethod = async function pendingMethod(settlement) {
+      receiverMatches = receiverMatches && this === exposedFacilitator;
+      pendingCalls += 1;
+      return honest.markDeliveryPending(settlement);
+    };
+    const deliveredMethod = async function deliveredMethod(settlement, cachedResponse) {
+      receiverMatches = receiverMatches && this === exposedFacilitator;
+      deliveredCalls += 1;
+      return honest.markDelivered(settlement, cachedResponse);
+    };
+    const target = {
+      async settle(...args) {
+        return honest.settle(...args);
+      },
+      markDeliveryPending: pendingMethod,
+      markDelivered: deliveredMethod,
+    };
+    if (variant.behavior !== 'proxy-throw') {
+      const retainedMethod = variant.method === 'markDeliveryPending' ? pendingMethod : deliveredMethod;
+      Object.defineProperty(target, variant.method, {
+        enumerable: true,
+        configurable: true,
+        get() {
+          capabilityReads += 1;
+          if (variant.behavior === 'throwing-getter') {
+            throw new Error('private delivery capability detail');
+          }
+          if (capabilityReads === 1) return retainedMethod;
+          return async () => {
+            throw new Error('private repeated capability detail');
+          };
+        },
+      });
+      exposedFacilitator = target;
+    } else {
+      exposedFacilitator = new Proxy(target, {
+        get(value, field, receiver) {
+          if (field === variant.method) {
+            capabilityReads += 1;
+            throw new Error('private delivery proxy detail');
+          }
+          return Reflect.get(value, field, receiver);
+        },
+      });
+    }
+    const app = createResourceServer({
+      facilitator: exposedFacilitator,
+      requirement,
+      resourceHandler: async () => ({ ok: true, protectedCallbacks: ++protectedCallbacks }),
+    });
+    const listening = await app.listen();
+    try {
+      const { paymentPayload } = await signedPayment(listening.url);
+      const response = await submitPayment(listening.url, paymentPayload);
+      assertPaidResponseIsPrivate(response);
+      const observed = variant.accepted
+        ? { status: response.status, body: await response.json() }
+        : await observePaidSubmission(response);
+      observations.push({
+        variant,
+        paymentPayload,
+        response: observed,
+        capabilityReads,
+        pendingCalls,
+        deliveredCalls,
+        protectedCallbacks,
+        receiverMatches,
+      });
+    } finally {
+      await app.close();
+    }
+  }
+
+  for (const observation of observations) {
+    assert.equal(observation.capabilityReads, 1);
+    if (observation.variant.accepted) {
+      assert.equal(observation.response.status, 200);
+      assert.equal(observation.response.body.ok, true);
+      assert.equal(observation.pendingCalls, 1);
+      assert.equal(observation.deliveredCalls, 1);
+      assert.equal(observation.protectedCallbacks, 1);
+      assert.equal(observation.receiverMatches, true);
+    } else {
+      assertSubmittedIdentityRecovery(observation.response, observation.paymentPayload, {
+        state: 'DELIVERY_PENDING',
+        reason: 'resource_delivery_outcome_unknown',
+        forbiddenValues: [
+          'private delivery capability detail',
+          'private repeated capability detail',
+          'private delivery proxy detail',
+        ],
+      });
+      assert.equal(observation.pendingCalls, 0);
+      assert.equal(observation.deliveredCalls, 0);
+      assert.equal(observation.protectedCallbacks, 0);
+    }
+  }
+});
+
+test('definite rejection binds an optional transaction alias before authorizing a new payment', async () => {
+  const variants = [
+    { alias: 'absent', accepted: true },
+    { alias: 'equal', accepted: true },
+    { alias: 'conflict', accepted: false },
+    { alias: 'accessor', accepted: false },
+    { alias: 'throwing-accessor', accepted: false },
+  ];
+  const observations = [];
+
+  for (const variant of variants) {
+    const requirement = await buildRequirement('mock');
+    let accessorReads = 0;
+    let deliveryTransitionCalls = 0;
+    let protectedCallbacks = 0;
+    const facilitator = {
+      async settle(paymentPayload) {
+        const rejection = {
+          success: false,
+          network: requirement.network,
+          transaction: paymentPayload.payload.transaction.hash,
+          payer: paymentPayload.payload.transaction.address,
+          state: 'VALIDATED',
+          errorReason: 'private rejection detail',
+          retrySamePayment: false,
+          deliveryState: 'NONE',
+        };
+        if (variant.alias === 'equal') rejection.transactionHash = rejection.transaction;
+        if (variant.alias === 'conflict') rejection.transactionHash = 'b'.repeat(64);
+        if (['accessor', 'throwing-accessor'].includes(variant.alias)) {
+          Object.defineProperty(rejection, 'transactionHash', {
+            enumerable: true,
+            get() {
+              accessorReads += 1;
+              if (variant.alias === 'throwing-accessor') {
+                throw new Error('private rejection accessor detail');
+              }
+              return rejection.transaction;
+            },
+          });
+        }
+        return rejection;
+      },
+      async markDeliveryPending() {
+        deliveryTransitionCalls += 1;
+        throw new Error('delivery transition must not be attempted');
+      },
+      async markDelivered() {
+        deliveryTransitionCalls += 1;
+        throw new Error('delivery transition must not be attempted');
+      },
+    };
+    const app = createResourceServer({
+      facilitator,
+      requirement,
+      resourceHandler: async () => ({ ok: true, protectedCallbacks: ++protectedCallbacks }),
+    });
+    const listening = await app.listen();
+    try {
+      const { paymentPayload } = await signedPayment(listening.url);
+      const response = await submitPayment(listening.url, paymentPayload);
+      assertPaidResponseIsPrivate(response);
+      if (variant.accepted) {
+        const settlement = decodeB64Json(response.headers.get(HEADERS.PAYMENT_RESPONSE));
+        observations.push({
+          variant,
+          status: response.status,
+          hasPaymentRequired: response.headers.has(HEADERS.PAYMENT_REQUIRED),
+          body: await response.json(),
+          settlement,
+          accessorReads,
+          deliveryTransitionCalls,
+          protectedCallbacks,
+        });
+      } else {
+        observations.push({
+          variant,
+          paymentPayload,
+          response: await observePaidSubmission(response),
+          accessorReads,
+          deliveryTransitionCalls,
+          protectedCallbacks,
+        });
+      }
+    } finally {
+      await app.close();
+    }
+  }
+
+  for (const observation of observations) {
+    assert.equal(observation.accessorReads, 0);
+    assert.equal(observation.deliveryTransitionCalls, 0);
+    assert.equal(observation.protectedCallbacks, 0);
+    if (observation.variant.accepted) {
+      assert.equal(observation.status, 402);
+      assert.equal(observation.hasPaymentRequired, true);
+      assert.deepEqual(observation.body, { error: 'payment_settlement_failed' });
+      assert.equal(observation.settlement.state, 'VALIDATED');
+      assert.equal(observation.settlement.errorReason, 'payment_settlement_failed');
+      assert.equal(Object.hasOwn(observation.settlement, 'transactionHash'), false);
+    } else {
+      assertSubmittedIdentityRecovery(observation.response, observation.paymentPayload, {
+        state: 'SUBMISSION_OUTCOME_UNKNOWN',
+        reason: 'payment_outcome_unknown',
+        forbiddenValues: [
+          'private rejection detail',
+          'private rejection accessor detail',
+        ],
+      });
+    }
+  }
+});
+
+test('cached response snapshot enforces incremental member and byte budgets', async () => {
+  const maximumBytes = 64 * 1024;
+  const exactCache = {
+    status: 200,
+    headers: { 'content-type': 'application/json; charset=utf-8' },
+    body: { value: '' },
+  };
+  const fixedBytes = Buffer.byteLength(JSON.stringify(exactCache), 'utf8');
+  exactCache.body.value = 'x'.repeat(maximumBytes - fixedBytes);
+  assert.equal(Buffer.byteLength(JSON.stringify(exactCache), 'utf8'), maximumBytes);
+
+  const variants = [
+    { kind: 'wide-object' },
+    { kind: 'oversized-string' },
+    { kind: 'oversized-keys' },
+    { kind: 'sparse-array' },
+    { kind: 'descriptor-failure' },
+    { kind: 'exact-limit', accepted: true },
+  ];
+  const observations = [];
+
+  for (const variant of variants) {
+    const requirement = await buildRequirement('mock');
+    const honest = new MockExactZenonFacilitator();
+    let descriptorReads = 0;
+    let afterBudgetReads = 0;
+    let proxyFailures = 0;
+    let deliveryTransitionCalls = 0;
+    let protectedCallbacks = 0;
+    let cachedResponse;
+
+    if (variant.kind === 'exact-limit') {
+      cachedResponse = exactCache;
+    } else {
+      let body;
+      if (variant.kind === 'wide-object') {
+        const target = Object.fromEntries(Array.from({ length: 4097 }, (_, index) => [`k${index}`, 0]));
+        body = new Proxy(target, {
+          getOwnPropertyDescriptor(value, field) {
+            descriptorReads += 1;
+            return Reflect.getOwnPropertyDescriptor(value, field);
+          },
+        });
+      }
+      if (variant.kind === 'oversized-string') {
+        const target = { large: 'x'.repeat(maximumBytes + 1), after: true };
+        body = new Proxy(target, {
+          getOwnPropertyDescriptor(value, field) {
+            descriptorReads += 1;
+            if (field === 'after') afterBudgetReads += 1;
+            return Reflect.getOwnPropertyDescriptor(value, field);
+          },
+        });
+      }
+      if (variant.kind === 'oversized-keys') {
+        const target = Object.fromEntries(Array.from({ length: 100 }, (_, index) => [
+          `k${index}-${'x'.repeat(700)}`,
+          0,
+        ]));
+        body = new Proxy(target, {
+          getOwnPropertyDescriptor(value, field) {
+            descriptorReads += 1;
+            return Reflect.getOwnPropertyDescriptor(value, field);
+          },
+        });
+      }
+      if (variant.kind === 'sparse-array') {
+        const target = [];
+        target.length = 4097;
+        target[4096] = 0;
+        body = new Proxy(target, {
+          getOwnPropertyDescriptor(value, field) {
+            descriptorReads += 1;
+            if (field === '4096') afterBudgetReads += 1;
+            return Reflect.getOwnPropertyDescriptor(value, field);
+          },
+        });
+      }
+      if (variant.kind === 'descriptor-failure') {
+        body = new Proxy({ value: true }, {
+          getOwnPropertyDescriptor() {
+            proxyFailures += 1;
+            throw new Error('private descriptor detail');
+          },
+        });
+      }
+      cachedResponse = {
+        status: 200,
+        headers: { 'content-type': 'application/json; charset=utf-8' },
+        body,
+      };
+    }
+
+    const facilitator = {
+      async settle(...args) {
+        const settlement = await honest.settle(...args);
+        return { ...settlement, deliveryState: 'DELIVERED', cachedResponse };
+      },
+      async markDeliveryPending() {
+        deliveryTransitionCalls += 1;
+        throw new Error('delivery transition must not be attempted');
+      },
+      async markDelivered() {
+        deliveryTransitionCalls += 1;
+        throw new Error('delivery transition must not be attempted');
+      },
+    };
+    const app = createResourceServer({
+      facilitator,
+      requirement,
+      resourceHandler: async () => ({ ok: true, protectedCallbacks: ++protectedCallbacks }),
+    });
+    const listening = await app.listen();
+    try {
+      const { paymentPayload } = await signedPayment(listening.url);
+      const response = await submitPayment(listening.url, paymentPayload);
+      assertPaidResponseIsPrivate(response);
+      const observed = variant.accepted
+        ? { status: response.status, body: await response.json() }
+        : await observePaidSubmission(response);
+      observations.push({
+        variant,
+        paymentPayload,
+        response: observed,
+        descriptorReads,
+        afterBudgetReads,
+        proxyFailures,
+        deliveryTransitionCalls,
+        protectedCallbacks,
+        cachedResponseReleases: response.status === 200 ? 1 : 0,
+      });
+    } finally {
+      await app.close();
+    }
+  }
+
+  for (const observation of observations) {
+    assert.equal(observation.deliveryTransitionCalls, 0);
+    assert.equal(observation.protectedCallbacks, 0);
+    if (observation.variant.accepted) {
+      assert.equal(observation.response.status, 200);
+      assert.equal(observation.response.body.value.length, maximumBytes - fixedBytes);
+      assert.equal(observation.cachedResponseReleases, 1);
+      continue;
+    }
+    assertSubmittedIdentityRecovery(observation.response, observation.paymentPayload, {
+      state: 'DELIVERY_PENDING',
+      reason: 'resource_delivery_outcome_unknown',
+      forbiddenValues: ['private descriptor detail'],
+    });
+    assert.equal(observation.cachedResponseReleases, 0);
+    if (['wide-object', 'oversized-keys'].includes(observation.variant.kind)) {
+      assert.equal(observation.descriptorReads, 0);
+    }
+    if (['oversized-string', 'sparse-array'].includes(observation.variant.kind)) {
+      assert.equal(observation.afterBudgetReads, 0);
+    }
+    if (observation.variant.kind === 'descriptor-failure') {
+      assert.equal(observation.proxyFailures, 1);
+    }
+  }
+});
+
+test('live included non-positive evidence preserves delivery recovery', async () => {
+  const variants = [
+    { kind: 'delivery-state', deliveryState: 'DELIVERY_PENDING' },
+    { kind: 'delivery-state', deliveryState: 'NONE' },
+    ...['mismatch', 'accessor'].flatMap(operation =>
+      ['network', 'transaction', 'payer', 'authorizationKey']
+        .map(field => ({ kind: 'identity', field, operation, deliveryState: 'DELIVERY_PENDING' }))),
+    { kind: 'delivery-missing' },
+    { kind: 'delivery-wrong', deliveryState: 'DELIVERED' },
+    { kind: 'delivery-accessor', deliveryState: 'DELIVERY_PENDING' },
+    { kind: 'delivery-throwing-accessor', deliveryState: 'DELIVERY_PENDING' },
+    { kind: 'delivery-proxy', deliveryState: 'DELIVERY_PENDING' },
+  ];
+  const observations = [];
+
+  for (const variant of variants) {
+    const requirement = await buildRequirement('mock');
+    let settleCalls = 0;
+    let pendingCalls = 0;
+    let deliveredCalls = 0;
+    let protectedCallbacks = 0;
+    let accessorReads = 0;
+    let proxyTraps = 0;
+    const facilitator = {
+      async settle(paymentPayload) {
+        settleCalls += 1;
+        let recovery = {
+          success: false,
+          network: requirement.network,
+          transaction: paymentPayload.payload.transaction.hash,
+          payer: paymentPayload.payload.transaction.address,
+          authorizationKey: 'e'.repeat(64),
+          state: 'MOMENTUM_INCLUDED',
+          errorReason: 'private live recovery detail',
+          retrySamePayment: true,
+          deliveryState: variant.deliveryState,
+          journalRecord: { detail: 'private journal detail' },
+        };
+        if (variant.kind === 'identity') {
+          recovery = mismatchIdentityField(recovery, {
+            ...variant,
+            onAccessorRead: () => { accessorReads += 1; },
+          });
+        }
+        if (variant.kind === 'delivery-missing') delete recovery.deliveryState;
+        if (['delivery-accessor', 'delivery-throwing-accessor'].includes(variant.kind)) {
+          delete recovery.deliveryState;
+          Object.defineProperty(recovery, 'deliveryState', {
+            enumerable: true,
+            get() {
+              accessorReads += 1;
+              if (variant.kind === 'delivery-throwing-accessor') {
+                throw new Error('private delivery-state detail');
+              }
+              return variant.deliveryState;
+            },
+          });
+        }
+        if (variant.kind === 'delivery-proxy') {
+          recovery = new Proxy(recovery, {
+            getOwnPropertyDescriptor(value, field) {
+              if (field === 'deliveryState') {
+                proxyTraps += 1;
+                throw new Error('private delivery-state proxy detail');
+              }
+              return Reflect.getOwnPropertyDescriptor(value, field);
+            },
+          });
+        }
+        return recovery;
+      },
+      async markDeliveryPending() {
+        pendingCalls += 1;
+        throw new Error('delivery transition must not be attempted');
+      },
+      async markDelivered() {
+        deliveredCalls += 1;
+        throw new Error('delivery transition must not be attempted');
+      },
+    };
+    const app = createResourceServer({
+      facilitator,
+      requirement,
+      resourceHandler: async () => ({ ok: true, protectedCallbacks: ++protectedCallbacks }),
+    });
+    const listening = await app.listen();
+    try {
+      const { paymentPayload } = await signedPayment(listening.url);
+      const response = await submitPayment(listening.url, paymentPayload);
+      observations.push({
+        variant,
+        paymentPayload,
+        response: await observePaidSubmission(response),
+        settleCalls,
+        pendingCalls,
+        deliveredCalls,
+        protectedCallbacks,
+        accessorReads,
+        proxyTraps,
+        cachedResponseReleases: response.status === 200 ? 1 : 0,
+      });
+    } finally {
+      await app.close();
+    }
+  }
+
+  for (const observation of observations) {
+    assert.equal(observation.accessorReads, 0);
+    if (observation.variant.kind === 'delivery-proxy') assert.equal(observation.proxyTraps > 0, true);
+    assertSubmittedIdentityRecovery(observation.response, observation.paymentPayload, {
+      state: 'DELIVERY_PENDING',
+      reason: 'resource_delivery_outcome_unknown',
+      forbiddenValues: [
+        'private live recovery detail',
+        'private journal detail',
+        'private delivery-state detail',
+        'private delivery-state proxy detail',
+      ],
+    });
+    assert.notEqual(observation.response.body.error, 'payment_outcome_unknown');
+    assert.notEqual(observation.response.settlement.state, 'SUBMISSION_OUTCOME_UNKNOWN');
+    assert.equal(observation.settleCalls, 1);
+    assert.equal(observation.pendingCalls, 0);
+    assert.equal(observation.deliveredCalls, 0);
+    assert.equal(observation.protectedCallbacks, 0);
+    assert.equal(observation.cachedResponseReleases, 0);
+  }
+});
+
+test('cached snapshots ignore inherited object and array toJSON hooks', { concurrency: false, timeout: 30_000 }, async () => {
+  if (await isolatePrototypeSensitiveTest(
+    'cached snapshots ignore inherited object and array toJSON hooks',
+    'X402_TOJSON_ISOLATED',
+  )) return;
+
+  const variants = [
+    {
+      kind: 'object',
+      prototype: Object.prototype,
+      body: { cacheHookMarker: true, value: 'verified-object-content' },
+    },
+    {
+      kind: 'nested-object',
+      prototype: Object.prototype,
+      body: { stable: true, nested: { cacheHookMarker: true, value: 'verified-nested-content' } },
+    },
+    {
+      kind: 'array',
+      prototype: Array.prototype,
+      body: ['cache-array-marker', { value: 'verified-array-content' }],
+    },
+  ];
+  const observations = [];
+
+  for (const variant of variants) {
+    const requirement = await buildRequirement('mock');
+    const honest = new MockExactZenonFacilitator();
+    let hookReads = 0;
+    let deliveryTransitionCalls = 0;
+    let protectedCallbacks = 0;
+    const cachedResponse = {
+      status: 200,
+      headers: { 'content-type': 'application/json; charset=utf-8' },
+      body: variant.body,
+    };
+    const facilitator = {
+      async settle(...args) {
+        const settlement = await honest.settle(...args);
+        return { ...settlement, deliveryState: 'DELIVERED', cachedResponse };
+      },
+      async markDeliveryPending() {
+        deliveryTransitionCalls += 1;
+        throw new Error('delivery transition must not be attempted');
+      },
+      async markDelivered() {
+        deliveryTransitionCalls += 1;
+        throw new Error('delivery transition must not be attempted');
+      },
+    };
+    const app = createResourceServer({
+      facilitator,
+      requirement,
+      resourceHandler: async () => ({ ok: true, protectedCallbacks: ++protectedCallbacks }),
+    });
+    const listening = await app.listen();
+    let phase = 'payment setup';
+    try {
+      const { paymentPayload } = await signedPayment(listening.url);
+      const encodedPayment = encodeB64Json(paymentPayload);
+      const priorToJson = Object.getOwnPropertyDescriptor(variant.prototype, 'toJSON');
+      let response;
+      try {
+        phase = 'prototype hook request';
+        Object.defineProperty(variant.prototype, 'toJSON', {
+          configurable: true,
+          writable: true,
+          value() {
+            const markedObject = Object.hasOwn(this, 'cacheHookMarker');
+            const markedArray = Array.isArray(this) && this[0] === 'cache-array-marker';
+            if (!markedObject && !markedArray) return this;
+            hookReads += 1;
+            return { uncheckedHookContent: hookReads };
+          },
+        });
+        response = await fetch(`${listening.url}/paid`, {
+          headers: { [HEADERS.PAYMENT_SIGNATURE]: encodedPayment },
+        });
+      } finally {
+        if (priorToJson) Object.defineProperty(variant.prototype, 'toJSON', priorToJson);
+        else delete variant.prototype.toJSON;
+      }
+      assertPaidResponseIsPrivate(response);
+      phase = 'response parsing';
+      observations.push({
+        variant,
+        status: response.status,
+        body: await response.json(),
+        hookReads,
+        deliveryTransitionCalls,
+        protectedCallbacks,
+      });
+    } catch {
+      assert.fail(`serialization hook regression failed during ${phase}`);
+    } finally {
+      await app.close();
+    }
+  }
+
+  for (const observation of observations) {
+    assert.equal(observation.hookReads, 0, 'inherited toJSON hook executed');
+    assert.equal(observation.status, 200, 'cached response was not released');
+    assert.deepEqual(observation.body, observation.variant.body, 'cached response content changed');
+    assert.equal(JSON.stringify(observation.body).includes('uncheckedHookContent'), false,
+      'unchecked hook content was released');
+    assert.equal(observation.deliveryTransitionCalls, 0, 'unexpected delivery transition');
+    assert.equal(observation.protectedCallbacks, 0, 'unexpected protected callback');
+  }
+});
+
+test('evidence snapshots ignore inherited identity setters during population',
+  { concurrency: false, timeout: 30_000 }, async () => {
+    if (await isolatePrototypeSensitiveTest(
+      'evidence snapshots ignore inherited identity setters during population',
+      'X402_EVIDENCE_SETTER_ISOLATED',
+    )) return;
+
+    const requirement = await buildRequirement('mock');
+    const honest = new MockExactZenonFacilitator();
+    let inheritedSetterCalls = 0;
+    let pendingCalls = 0;
+    let deliveredCalls = 0;
+    let protectedCallbacks = 0;
+    const facilitator = {
+      async settle(...args) {
+        const settlement = await honest.settle(...args);
+        return mismatchIdentityField(settlement, { field: 'transaction' });
+      },
+      async markDeliveryPending(...args) {
+        pendingCalls += 1;
+        return honest.markDeliveryPending(...args);
+      },
+      async markDelivered(...args) {
+        deliveredCalls += 1;
+        return honest.markDelivered(...args);
+      },
+    };
+    const app = createResourceServer({
+      facilitator,
+      requirement,
+      resourceHandler: async () => ({ ok: true, protectedCallbacks: ++protectedCallbacks }),
+    });
+    const listening = await app.listen();
+    try {
+      const { paymentPayload } = await signedPayment(listening.url);
+      const priorDescriptor = Object.getOwnPropertyDescriptor(Object.prototype, 'authorizationKey');
+      let response;
+      try {
+        Object.defineProperty(Object.prototype, 'authorizationKey', {
+          configurable: true,
+          set() {
+            inheritedSetterCalls += 1;
+          },
+        });
+        response = await submitPayment(listening.url, paymentPayload);
+      } finally {
+        if (priorDescriptor) Object.defineProperty(Object.prototype, 'authorizationKey', priorDescriptor);
+        else delete Object.prototype.authorizationKey;
+      }
+      const observation = await observePaidSubmission(response);
+      assert.equal(inheritedSetterCalls, 0);
+      assertSubmittedIdentityRecovery(observation, paymentPayload, {
+        state: 'SUBMISSION_OUTCOME_UNKNOWN',
+        reason: 'payment_outcome_unknown',
+      });
+      assert.equal(pendingCalls, 0);
+      assert.equal(deliveredCalls, 0);
+      assert.equal(protectedCallbacks, 0);
+    } finally {
+      await app.close();
+    }
+  });
+
+test('cached array snapshots ignore inherited numeric setters during population',
+  { concurrency: false, timeout: 30_000 }, async () => {
+    if (await isolatePrototypeSensitiveTest(
+      'cached array snapshots ignore inherited numeric setters during population',
+      'X402_ARRAY_SETTER_ISOLATED',
+    )) return;
+
+    const inheritedIndex = 1023;
+    const inheritedIndexKey = String(inheritedIndex);
+    const validBody = Array.from({ length: inheritedIndex + 1 }, (_, index) => index);
+    let invalidAccessorReads = 0;
+    const invalidBody = Array.from({ length: inheritedIndex + 1 }, (_, index) => index);
+    Object.defineProperty(invalidBody, inheritedIndexKey, {
+      configurable: true,
+      enumerable: true,
+      get() {
+        invalidAccessorReads += 1;
+        return inheritedIndex;
+      },
+    });
+    const variants = [
+      { kind: 'valid', body: validBody },
+      { kind: 'invalid-accessor', body: invalidBody },
+    ];
+    let inheritedSetterCalls = 0;
+    const observations = [];
+
+    for (const variant of variants) {
+      const requirement = await buildRequirement('mock');
+      const honest = new MockExactZenonFacilitator();
+      let pendingCalls = 0;
+      let deliveredCalls = 0;
+      let protectedCallbacks = 0;
+      const facilitator = {
+        async settle(...args) {
+          const settlement = await honest.settle(...args);
+          return {
+            ...settlement,
+            deliveryState: 'DELIVERED',
+            cachedResponse: {
+              status: 200,
+              headers: { 'content-type': 'application/json; charset=utf-8' },
+              body: variant.body,
+            },
+          };
+        },
+        async markDeliveryPending() {
+          pendingCalls += 1;
+          throw new Error('unexpected pending transition');
+        },
+        async markDelivered() {
+          deliveredCalls += 1;
+          throw new Error('unexpected delivered transition');
+        },
+      };
+      const app = createResourceServer({
+        facilitator,
+        requirement,
+        resourceHandler: async () => ({ ok: true, protectedCallbacks: ++protectedCallbacks }),
+      });
+      const listening = await app.listen();
+      try {
+        const { paymentPayload } = await signedPayment(listening.url);
+        const priorDescriptor = Object.getOwnPropertyDescriptor(Array.prototype, inheritedIndexKey);
+        let response;
+        try {
+          Object.defineProperty(Array.prototype, inheritedIndexKey, {
+            configurable: true,
+            set() {
+              inheritedSetterCalls += 1;
+            },
+          });
+          response = await submitPayment(listening.url, paymentPayload);
+        } finally {
+          if (priorDescriptor) Object.defineProperty(Array.prototype, inheritedIndexKey, priorDescriptor);
+          else delete Array.prototype[inheritedIndexKey];
+        }
+        observations.push({
+          variant,
+          paymentPayload,
+          response: await observePaidSubmission(response),
+          pendingCalls,
+          deliveredCalls,
+          protectedCallbacks,
+        });
+      } finally {
+        await app.close();
+      }
+    }
+
+    assert.equal(inheritedSetterCalls, 0);
+    assert.equal(invalidAccessorReads, 0);
+    for (const observation of observations) {
+      assert.equal(observation.pendingCalls, 0);
+      assert.equal(observation.deliveredCalls, 0);
+      assert.equal(observation.protectedCallbacks, 0);
+      if (observation.variant.kind === 'valid') {
+        assert.equal(observation.response.status, 200);
+        assert.equal(observation.response.body.length, validBody.length);
+        assert.equal(observation.response.body[inheritedIndex], validBody[inheritedIndex]);
+        assert.equal(observation.response.body.every((value, index) => value === validBody[index]), true);
+        const firstSerialization = JSON.stringify(observation.response.body);
+        const secondSerialization = JSON.stringify(observation.response.body);
+        assert.equal(firstSerialization === secondSerialization, true);
+      } else {
+        assertSubmittedIdentityRecovery(observation.response, observation.paymentPayload, {
+          state: 'DELIVERY_PENDING',
+          reason: 'resource_delivery_outcome_unknown',
+        });
+      }
+    }
+  });
+
+test('transition state cache and identity evidence fail closed on every malformed shape', async () => {
+  const pendingVariants = [
+    { field: 'deliveryState', operation: 'missing' },
+    { field: 'deliveryState', operation: 'accessor' },
+    { field: 'deliveryState', operation: 'throwing-accessor' },
+    { field: 'deliveryState', operation: 'wrong' },
+    { field: 'deliveryClaimed', operation: 'missing' },
+    { field: 'deliveryClaimed', operation: 'accessor' },
+    { field: 'deliveryClaimed', operation: 'throwing-accessor' },
+    { field: 'deliveryClaimed', operation: 'non-boolean' },
+    { field: 'deliveryClaimed', operation: 'wrong' },
+    { field: 'compound', operation: 'wrong' },
+  ];
+  const deliveredVariants = [
+    { field: 'deliveryState', operation: 'missing' },
+    { field: 'deliveryState', operation: 'accessor' },
+    { field: 'deliveryState', operation: 'throwing-accessor' },
+    { field: 'deliveryState', operation: 'wrong' },
+    { field: 'cachedResponse', operation: 'missing' },
+    { field: 'cachedResponse', operation: 'accessor' },
+    { field: 'cachedResponse', operation: 'throwing-accessor' },
+    { field: 'cachedResponse', operation: 'invalid' },
+    { field: 'authorizationKey', operation: 'missing' },
+    { field: 'payer', operation: 'missing' },
+    { field: 'transaction', operation: 'missing' },
+    { field: 'transaction', operation: 'conflict' },
+  ];
+  const observations = [];
+
+  for (const variant of pendingVariants) {
+    const requirement = await buildRequirement('mock');
+    const honest = new MockExactZenonFacilitator();
+    let pendingCalls = 0;
+    let deliveredCalls = 0;
+    let protectedCallbacks = 0;
+    let accessorReads = 0;
+    const facilitator = {
+      async settle(...args) {
+        return honest.settle(...args);
+      },
+      async markDeliveryPending(settlement) {
+        pendingCalls += 1;
+        const claim = await honest.markDeliveryPending(settlement);
+        if (variant.field === 'compound') {
+          claim.deliveryState = 'DELIVERED';
+          claim.deliveryClaimed = true;
+          return claim;
+        }
+        if (variant.operation === 'missing') delete claim[variant.field];
+        if (variant.operation === 'wrong' && variant.field === 'deliveryState') claim.deliveryState = 'NONE';
+        if (variant.operation === 'wrong' && variant.field === 'deliveryClaimed') claim.deliveryClaimed = false;
+        if (variant.operation === 'non-boolean') claim.deliveryClaimed = 'true';
+        if (['accessor', 'throwing-accessor'].includes(variant.operation)) {
+          const retained = claim[variant.field];
+          delete claim[variant.field];
+          Object.defineProperty(claim, variant.field, {
+            enumerable: true,
+            get() {
+              accessorReads += 1;
+              if (variant.operation === 'throwing-accessor') {
+                throw new Error('private pending accessor detail');
+              }
+              return retained;
+            },
+          });
+        }
+        return claim;
+      },
+      async markDelivered() {
+        deliveredCalls += 1;
+        throw new Error('markDelivered must not be called');
+      },
+    };
+    const app = createResourceServer({
+      facilitator,
+      requirement,
+      resourceHandler: async () => ({ ok: true, protectedCallbacks: ++protectedCallbacks }),
+    });
+    const listening = await app.listen();
+    try {
+      const { paymentPayload } = await signedPayment(listening.url);
+      const response = await submitPayment(listening.url, paymentPayload);
+      observations.push({
+        stage: 'pending',
+        paymentPayload,
+        response: await observePaidSubmission(response),
+        pendingCalls,
+        deliveredCalls,
+        protectedCallbacks,
+        accessorReads,
+        cachedResponseReleases: response.status === 200 ? 1 : 0,
+      });
+    } finally {
+      await app.close();
+    }
+  }
+
+  for (const variant of deliveredVariants) {
+    const requirement = await buildRequirement('mock');
+    const honest = new MockExactZenonFacilitator();
+    let pendingCalls = 0;
+    let deliveredCalls = 0;
+    let protectedCallbacks = 0;
+    let accessorReads = 0;
+    const facilitator = {
+      async settle(...args) {
+        return honest.settle(...args);
+      },
+      async markDeliveryPending(settlement) {
+        pendingCalls += 1;
+        return honest.markDeliveryPending(settlement);
+      },
+      async markDelivered(settlement, cachedResponse) {
+        deliveredCalls += 1;
+        const delivered = await honest.markDelivered(settlement, cachedResponse);
+        if (variant.operation === 'missing') {
+          if (variant.field === 'transaction') {
+            delete delivered.transaction;
+            delete delivered.transactionHash;
+          } else {
+            delete delivered[variant.field];
+          }
+        }
+        if (variant.operation === 'wrong') delivered.deliveryState = 'DELIVERY_PENDING';
+        if (variant.operation === 'invalid') {
+          delivered.cachedResponse = {
+            status: 201,
+            headers: { 'content-type': 'application/json; charset=utf-8' },
+            body: { uncheckedCacheContent: true },
+          };
+        }
+        if (variant.operation === 'conflict') {
+          const transaction = delivered.transaction ?? delivered.transactionHash;
+          delivered.transaction = transaction;
+          delivered.transactionHash = 'b'.repeat(64);
+        }
+        if (['accessor', 'throwing-accessor'].includes(variant.operation)) {
+          const retained = delivered[variant.field];
+          delete delivered[variant.field];
+          Object.defineProperty(delivered, variant.field, {
+            enumerable: true,
+            get() {
+              accessorReads += 1;
+              if (variant.operation === 'throwing-accessor') {
+                throw new Error('private delivered accessor detail');
+              }
+              return retained;
+            },
+          });
+        }
+        return delivered;
+      },
+    };
+    const app = createResourceServer({
+      facilitator,
+      requirement,
+      resourceHandler: async () => ({ ok: true, protectedCallbacks: ++protectedCallbacks }),
+    });
+    const listening = await app.listen();
+    try {
+      const { paymentPayload } = await signedPayment(listening.url);
+      const response = await submitPayment(listening.url, paymentPayload);
+      observations.push({
+        stage: 'delivered',
+        paymentPayload,
+        response: await observePaidSubmission(response),
+        pendingCalls,
+        deliveredCalls,
+        protectedCallbacks,
+        accessorReads,
+        cachedResponseReleases: response.status === 200 ? 1 : 0,
+      });
+    } finally {
+      await app.close();
+    }
+  }
+
+  for (const observation of observations) {
+    assert.equal(observation.accessorReads, 0);
+    assertSubmittedIdentityRecovery(observation.response, observation.paymentPayload, {
+      state: 'DELIVERY_PENDING',
+      reason: 'resource_delivery_outcome_unknown',
+      forbiddenValues: [
+        'private pending accessor detail',
+        'private delivered accessor detail',
+        'uncheckedCacheContent',
+      ],
+    });
+    assert.equal(observation.pendingCalls, 1);
+    assert.equal(observation.deliveredCalls, observation.stage === 'delivered' ? 1 : 0);
+    assert.equal(observation.protectedCallbacks, observation.stage === 'delivered' ? 1 : 0);
+    assert.equal(observation.cachedResponseReleases, 0);
+  }
+});
+
+test('positive settlement evidence identity mismatch fails closed before delivery', async () => {
+  const identityFields = ['network', 'transaction', 'payer', 'authorizationKey'];
+  const variants = ['accessor', 'missing', 'mismatch']
+    .flatMap(operation => identityFields.map(field => ({ field, operation })));
+  const observations = [];
+
+  for (const variant of variants) {
+    const requirement = await buildRequirement('mock');
+    const honest = new MockExactZenonFacilitator();
+    let settleCalls = 0;
+    let deliveryTransitionCalls = 0;
+    let protectedCallbacks = 0;
+    let accessorReads = 0;
+    const facilitator = {
+      async settle(...args) {
+        settleCalls += 1;
+        const settlement = await honest.settle(...args);
+        return mismatchIdentityField(settlement, {
+          ...variant,
+          onAccessorRead: () => { accessorReads += 1; },
+        });
+      },
+      async markDeliveryPending(settlement) {
+        deliveryTransitionCalls += 1;
+        return { ...settlement, deliveryState: 'DELIVERY_PENDING', deliveryClaimed: true };
+      },
+      async markDelivered(settlement, cachedResponse) {
+        deliveryTransitionCalls += 1;
+        return { ...settlement, deliveryState: 'DELIVERED', cachedResponse };
+      },
+    };
+    const app = createResourceServer({
+      facilitator,
+      requirement,
+      resourceHandler: async () => ({ ok: true, protectedCallbacks: ++protectedCallbacks }),
+    });
+    const listening = await app.listen();
+    try {
+      const { paymentPayload } = await signedPayment(listening.url);
+      const response = await submitPayment(listening.url, paymentPayload);
+      observations.push({
+        variant,
+        paymentPayload,
+        response: await observePaidSubmission(response),
+        settleCalls,
+        deliveryTransitionCalls,
+        protectedCallbacks,
+        accessorReads,
+        cachedResponseReleases: response.status === 200 ? 1 : 0,
+      });
+    } finally {
+      await app.close();
+    }
+  }
+
+  for (const observation of observations) {
+    assert.equal(observation.accessorReads, 0, `${observation.variant.field} must be an own data property`);
+    assertSubmittedIdentityRecovery(observation.response, observation.paymentPayload, {
+      state: 'SUBMISSION_OUTCOME_UNKNOWN',
+      reason: 'payment_outcome_unknown',
+    });
+    assert.equal(observation.settleCalls, 1);
+    assert.equal(observation.deliveryTransitionCalls, 0);
+    assert.equal(observation.protectedCallbacks, 0);
+    assert.equal(observation.cachedResponseReleases, 0);
+  }
+});
+
+test('cached delivered settlement identity mismatch never releases the protected response', async () => {
+  const variants = ['missing', 'mismatch'].flatMap(operation =>
+    ['network', 'transaction', 'payer', 'authorizationKey']
+      .map(field => ({ field, operation })));
+  const observations = [];
+
+  for (const variant of variants) {
+    const requirement = await buildRequirement('mock');
+    const honest = new MockExactZenonFacilitator();
+    let settleCalls = 0;
+    let deliveryTransitionCalls = 0;
+    let protectedCallbacks = 0;
+    const cachedResponse = {
+      status: 200,
+      headers: { 'content-type': 'application/json; charset=utf-8' },
+      body: { ok: true, entitlement: 'unverified-cache' },
+    };
+    const facilitator = {
+      async settle(...args) {
+        settleCalls += 1;
+        const settlement = mismatchIdentityField(await honest.settle(...args), variant);
+        return { ...settlement, deliveryState: 'DELIVERED', cachedResponse };
+      },
+      async markDeliveryPending() {
+        deliveryTransitionCalls += 1;
+        throw new Error('delivery transition must not be attempted');
+      },
+      async markDelivered() {
+        deliveryTransitionCalls += 1;
+        throw new Error('delivery transition must not be attempted');
+      },
+    };
+    const app = createResourceServer({
+      facilitator,
+      requirement,
+      resourceHandler: async () => ({ ok: true, protectedCallbacks: ++protectedCallbacks }),
+    });
+    const listening = await app.listen();
+    try {
+      const { paymentPayload } = await signedPayment(listening.url);
+      const response = await submitPayment(listening.url, paymentPayload);
+      observations.push({
+        paymentPayload,
+        response: await observePaidSubmission(response),
+        settleCalls,
+        deliveryTransitionCalls,
+        protectedCallbacks,
+        cachedResponseReleases: response.status === 200 ? 1 : 0,
+      });
+    } finally {
+      await app.close();
+    }
+  }
+
+  for (const observation of observations) {
+    assertSubmittedIdentityRecovery(observation.response, observation.paymentPayload, {
+      state: 'SUBMISSION_OUTCOME_UNKNOWN',
+      reason: 'payment_outcome_unknown',
+    });
+    assert.equal(observation.settleCalls, 1);
+    assert.equal(observation.deliveryTransitionCalls, 0);
+    assert.equal(observation.protectedCallbacks, 0);
+    assert.equal(observation.cachedResponseReleases, 0);
+  }
+});
+
+test('pending delivery transition identity mismatch fails closed before the protected callback', async () => {
+  const variants = ['transaction', 'transactionHash'].flatMap(transactionField =>
+    ['accessor', 'missing', 'mismatch'].flatMap(operation =>
+      ['authorizationKey', 'payer', 'transaction']
+        .map(field => ({ field, operation, transactionField }))));
+  variants.push({ field: 'transaction', operation: 'conflict', transactionField: 'both' });
+  const observations = [];
+
+  for (const variant of variants) {
+    const requirement = await buildRequirement('mock');
+    const honest = new MockExactZenonFacilitator();
+    let settleCalls = 0;
+    let pendingCalls = 0;
+    let deliveredCalls = 0;
+    let protectedCallbacks = 0;
+    let accessorReads = 0;
+    const facilitator = {
+      async settle(...args) {
+        settleCalls += 1;
+        return honest.settle(...args);
+      },
+      async markDeliveryPending(settlement) {
+        pendingCalls += 1;
+        const claim = await honest.markDeliveryPending(settlement);
+        return mismatchIdentityField(claim, {
+          ...variant,
+          onAccessorRead: () => { accessorReads += 1; },
+        });
+      },
+      async markDelivered(settlement, cachedResponse) {
+        deliveredCalls += 1;
+        return honest.markDelivered(settlement, cachedResponse);
+      },
+    };
+    const app = createResourceServer({
+      facilitator,
+      requirement,
+      resourceHandler: async () => ({ ok: true, protectedCallbacks: ++protectedCallbacks }),
+    });
+    const listening = await app.listen();
+    try {
+      const { paymentPayload } = await signedPayment(listening.url);
+      const response = await submitPayment(listening.url, paymentPayload);
+      observations.push({
+        paymentPayload,
+        response: await observePaidSubmission(response),
+        settleCalls,
+        pendingCalls,
+        deliveredCalls,
+        protectedCallbacks,
+        accessorReads,
+        cachedResponseReleases: response.status === 200 ? 1 : 0,
+      });
+    } finally {
+      await app.close();
+    }
+  }
+
+  for (const observation of observations) {
+    assert.equal(observation.accessorReads, 0);
+    assertSubmittedIdentityRecovery(observation.response, observation.paymentPayload, {
+      state: 'DELIVERY_PENDING',
+      reason: 'resource_delivery_outcome_unknown',
+    });
+    assert.equal(observation.settleCalls, 1);
+    assert.equal(observation.pendingCalls, 1);
+    assert.equal(observation.deliveredCalls, 0);
+    assert.equal(observation.protectedCallbacks, 0);
+    assert.equal(observation.cachedResponseReleases, 0);
+  }
+});
+
+test('delivered transition identity mismatch fails closed after one protected callback', async () => {
+  const variants = ['transaction', 'transactionHash'].flatMap(transactionField =>
+    ['accessor', 'mismatch'].flatMap(operation =>
+      ['authorizationKey', 'payer', 'transaction']
+        .map(field => ({ field, operation, transactionField }))));
+  const observations = [];
+
+  for (const variant of variants) {
+    const requirement = await buildRequirement('mock');
+    const honest = new MockExactZenonFacilitator();
+    let settleCalls = 0;
+    let pendingCalls = 0;
+    let deliveredCalls = 0;
+    let protectedCallbacks = 0;
+    let accessorReads = 0;
+    const facilitator = {
+      async settle(...args) {
+        settleCalls += 1;
+        return honest.settle(...args);
+      },
+      async markDeliveryPending(settlement) {
+        pendingCalls += 1;
+        return honest.markDeliveryPending(settlement);
+      },
+      async markDelivered(settlement, cachedResponse) {
+        deliveredCalls += 1;
+        const delivered = await honest.markDelivered(settlement, cachedResponse);
+        return mismatchIdentityField(delivered, {
+          ...variant,
+          onAccessorRead: () => { accessorReads += 1; },
+        });
+      },
+    };
+    const app = createResourceServer({
+      facilitator,
+      requirement,
+      resourceHandler: async () => ({ ok: true, protectedCallbacks: ++protectedCallbacks }),
+    });
+    const listening = await app.listen();
+    try {
+      const { paymentPayload } = await signedPayment(listening.url);
+      const response = await submitPayment(listening.url, paymentPayload);
+      observations.push({
+        paymentPayload,
+        response: await observePaidSubmission(response),
+        settleCalls,
+        pendingCalls,
+        deliveredCalls,
+        protectedCallbacks,
+        accessorReads,
+        cachedResponseReleases: response.status === 200 ? 1 : 0,
+      });
+    } finally {
+      await app.close();
+    }
+  }
+
+  for (const observation of observations) {
+    assert.equal(observation.accessorReads, 0);
+    assertSubmittedIdentityRecovery(observation.response, observation.paymentPayload, {
+      state: 'DELIVERY_PENDING',
+      reason: 'resource_delivery_outcome_unknown',
+    });
+    assert.equal(observation.settleCalls, 1);
+    assert.equal(observation.pendingCalls, 1);
+    assert.equal(observation.deliveredCalls, 1);
+    assert.equal(observation.protectedCallbacks, 1);
+    assert.equal(observation.cachedResponseReleases, 0);
+  }
+});
 
 test('safe HTTP retry returns the cached protected response without rerunning delivery', async () => {
   const facilitator = new MockExactZenonFacilitator();
@@ -489,23 +2365,24 @@ test('resource server snapshots its validated requirement at construction', asyn
 
 test('paid resource fails closed without a positive durable delivery claim', async () => {
   const requirement = await buildRequirement('mock');
+  const honest = new MockExactZenonFacilitator();
   let deliveries = 0;
+  let pendingCalls = 0;
+  let deliveredCalls = 0;
   const facilitator = {
-    async settle(paymentPayload) {
+    async settle(...args) {
+      return honest.settle(...args);
+    },
+    async markDeliveryPending(settlement) {
+      pendingCalls += 1;
       return {
-        success: true,
-        network: requirement.network,
-        transaction: paymentPayload.payload.transaction.hash,
-        payer: paymentPayload.payload.transaction.address,
-        state: 'MOMENTUM_INCLUDED',
-        authorizationKey: 'a'.repeat(64),
-        deliveryState: 'NONE',
+        ...settlement,
+        deliveryState: 'DELIVERY_PENDING',
+        deliveryClaimed: false,
       };
     },
-    async markDeliveryPending() {
-      return { deliveryState: 'DELIVERY_PENDING', deliveryClaimed: false };
-    },
     async markDelivered() {
+      deliveredCalls += 1;
       throw new Error('must not be called');
     },
   };
@@ -521,6 +2398,8 @@ test('paid resource fails closed without a positive durable delivery claim', asy
     assert.equal(response.status, 409);
     assert.equal((await response.json()).action, 'reuse_and_reconcile_same_payment');
     assert.equal(deliveries, 0);
+    assert.equal(pendingCalls, 1);
+    assert.equal(deliveredCalls, 0);
     assertPaidResponseIsPrivate(response);
   } finally {
     await app.close();
