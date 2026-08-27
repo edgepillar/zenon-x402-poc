@@ -40,6 +40,9 @@ export function createResourceServer({
   advertisedBaseUrl,
   resourceHandler,
 }) {
+  if (resourceHandler !== undefined && typeof resourceHandler !== 'function') {
+    throw new Error('resourceHandler must be a function');
+  }
   const configuredRequirement = structuredClone(requirement);
   validateActiveUpfrontRequirement(configuredRequirement);
   let actualPort = port;
