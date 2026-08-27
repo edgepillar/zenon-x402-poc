@@ -2520,6 +2520,15 @@ async function buyerChallenge(resourceUrl, requirement) {
   };
 }
 
+function encodedJsonAtByteLength(value, decodedBytes) {
+  const json = JSON.stringify(value);
+  const currentBytes = Buffer.byteLength(json, 'utf8');
+  assert.ok(currentBytes <= decodedBytes, 'encoded JSON fixture must fit the target size');
+  const encoded = Buffer.from(`${json}${' '.repeat(decodedBytes - currentBytes)}`, 'utf8').toString('base64');
+  assert.equal(Buffer.from(encoded, 'base64').toString('base64'), encoded, 'fixture Base64 must be canonical');
+  return encoded;
+}
+
 function challengeResponse(paymentRequired) {
   return {
     status: 402,
@@ -2572,6 +2581,169 @@ function buyerSettlementAttempt(paymentRequired, requirement, {
     return { status, headers };
   });
 }
+
+test('buyer rejects an oversized raw challenge before payment construction', async () => {
+  const { paymentRequired } = await buyerChallenge('http://buyer.test/paid');
+  const originalChallenge = structuredClone(paymentRequired);
+  const oversizedHeader = encodedJsonAtByteLength(paymentRequired, 6_145);
+  assert.equal(oversizedHeader.length, (8 * 1024) + 4, 'oversized challenge must use the next Base64 quantum');
+  let calls = 0;
+  let constructions = 0;
+  let observedError;
+
+  try {
+    await paidFetch(paymentRequired.resource.url, {
+      async createPaymentPayload() {
+        constructions += 1;
+        throw new Error('payment construction must not run');
+      },
+    }, async () => {
+      calls += 1;
+      if (calls === 1) {
+        return {
+          status: 402,
+          url: paymentRequired.resource.url,
+          headers: new Headers({ [HEADERS.PAYMENT_REQUIRED]: oversizedHeader }),
+        };
+      }
+      throw new Error('payment submission must not run');
+    });
+  } catch (error) {
+    observedError = error;
+  }
+
+  assert.equal(observedError?.message, 'base64 JSON value exceeds encoded byte limit', 'challenge error must be fixed');
+  assert.equal(observedError instanceof PaymentSubmissionOutcomeUnknownError, false, 'pre-payment failure must stay local');
+  assert.equal(calls, 1, 'oversized challenge must stop after one request');
+  assert.equal(constructions, 0, 'oversized challenge must not construct payment');
+  assert.deepEqual(paymentRequired, originalChallenge, 'oversized challenge handling must not mutate input');
+});
+
+test('buyer enforces the raw payment signature limit before submission', async () => {
+  const { paymentRequired, requirement } = await buyerChallenge('http://buyer.test/paid');
+  const originalChallengeJson = JSON.stringify(paymentRequired);
+  const exactClient = new MockExactZenonClient();
+  let constructions = 0;
+  let initialFetches = 0;
+  let submissionFetches = 0;
+  let sourcePayment;
+  let sourcePaymentJson;
+  let clientRequired;
+  let clientRequiredJson;
+  let clientAccepted;
+  let clientAcceptedJson;
+  let observedError;
+
+  const paymentClient = {
+    async createPaymentPayload(required, accepted) {
+      constructions += 1;
+      clientRequired = required;
+      clientRequiredJson = JSON.stringify(required);
+      clientAccepted = accepted;
+      clientAcceptedJson = JSON.stringify(accepted);
+      assert.equal(required === paymentRequired, false, 'payment client challenge input must be detached');
+      assert.equal(required.resource === paymentRequired.resource, false, 'payment client resource input must be detached');
+      assert.equal(accepted === requirement, false, 'payment client requirement input must be detached');
+
+      sourcePayment = await exactClient.createPaymentPayload(required, accepted);
+      sourcePayment.payload.transaction.transportPadding = '';
+      const baseBytes = Buffer.byteLength(JSON.stringify(sourcePayment), 'utf8');
+      const paddingBytes = 6_145 - baseBytes;
+      assert.ok(paddingBytes >= 0, 'buyer egress fixture must fit the target size');
+      sourcePayment.payload.transaction.transportPadding = 'x'.repeat(paddingBytes);
+      const encoded = encodeB64Json(sourcePayment);
+      assert.equal(Buffer.byteLength(JSON.stringify(sourcePayment), 'utf8'), 6_145, 'buyer egress JSON size must be exact');
+      assert.equal(encoded.length, (8 * 1024) + 4, 'buyer egress must use the next Base64 quantum');
+      assert.equal(Buffer.from(encoded, 'base64').toString('base64'), encoded, 'buyer egress Base64 must be canonical');
+      sourcePaymentJson = JSON.stringify(sourcePayment);
+      return sourcePayment;
+    },
+  };
+
+  try {
+    await paidFetch(paymentRequired.resource.url, paymentClient, async (_url, options) => {
+      if (!options) {
+        initialFetches += 1;
+        return challengeResponse(paymentRequired);
+      }
+      submissionFetches += 1;
+      throw new Error('payment submission must not run');
+    });
+  } catch (error) {
+    observedError = error;
+  }
+
+  assert.equal(observedError?.message, 'base64 JSON value exceeds encoded byte limit', 'buyer egress error must be fixed');
+  assert.equal(observedError instanceof PaymentSubmissionOutcomeUnknownError, false, 'pre-submission failure must stay local');
+  assert.equal(constructions, 1, 'buyer must construct exactly one oversized payment');
+  assert.equal(initialFetches, 1, 'buyer must make exactly one initial fetch');
+  assert.equal(submissionFetches, 0, 'buyer must not submit an oversized payment');
+  assert.equal(JSON.stringify(paymentRequired) === originalChallengeJson, true, 'buyer must not mutate the original challenge');
+  assert.equal(JSON.stringify(clientRequired) === clientRequiredJson, true, 'buyer must not mutate the detached challenge input');
+  assert.equal(JSON.stringify(clientAccepted) === clientAcceptedJson, true, 'buyer must not mutate the detached requirement input');
+  assert.equal(JSON.stringify(sourcePayment) === sourcePaymentJson, true, 'buyer must not mutate the payment source value');
+});
+
+test('buyer classifies an oversized raw settlement as same-payment outcome unknown', async () => {
+  const { paymentRequired, requirement } = await buyerChallenge('http://buyer.test/paid');
+  const originalChallenge = structuredClone(paymentRequired);
+  const exactClient = new MockExactZenonClient();
+  let calls = 0;
+  let constructions = 0;
+  let submittedPayment;
+  let observedError;
+
+  const paymentClient = {
+    async createPaymentPayload(...args) {
+      constructions += 1;
+      return exactClient.createPaymentPayload(...args);
+    },
+  };
+
+  try {
+    await paidFetch(paymentRequired.resource.url, paymentClient, async (_url, options) => {
+      calls += 1;
+      if (calls === 1) return challengeResponse(paymentRequired);
+      if (calls > 2) throw new Error('a third request must not run');
+      submittedPayment = decodeB64Json(options.headers[HEADERS.PAYMENT_SIGNATURE]);
+      const settlement = {
+        success: true,
+        network: requirement.network,
+        transaction: submittedPayment.payload.transaction.hash,
+        payer: submittedPayment.payload.transaction.address,
+        state: 'MOMENTUM_INCLUDED',
+      };
+      const oversizedHeader = encodedJsonAtByteLength(settlement, 6_145);
+      assert.equal(oversizedHeader.length, (8 * 1024) + 4, 'oversized settlement must use the next Base64 quantum');
+      return {
+        status: 200,
+        headers: new Headers({ [HEADERS.PAYMENT_RESPONSE]: oversizedHeader }),
+      };
+    });
+  } catch (error) {
+    observedError = error;
+  }
+
+  assert.ok(observedError instanceof PaymentSubmissionOutcomeUnknownError, 'oversized settlement must be uncertain');
+  assert.equal(observedError?.message, 'payment_submission_outcome_unknown', 'settlement error must be fixed');
+  assert.equal(observedError?.retrySamePayment, true, 'oversized settlement must reuse the same payment');
+  assert.equal(observedError?.action, 'reuse_and_reconcile_same_payment', 'oversized settlement must preserve recovery action');
+  assert.deepEqual(observedError?.paymentPayload, submittedPayment, 'recovery must retain the detached submitted payment');
+  assert.notEqual(observedError?.paymentPayload, submittedPayment, 'recovery payment must be detached');
+  assert.deepEqual(observedError?.paymentRequired, originalChallenge, 'recovery must retain the original challenge');
+  assert.equal(
+    Object.getOwnPropertyDescriptor(observedError, 'paymentPayload')?.enumerable,
+    false,
+    'submitted payment recovery field must be non-enumerable',
+  );
+  assert.equal(
+    Object.getOwnPropertyDescriptor(observedError, 'paymentRequired')?.enumerable,
+    false,
+    'challenge recovery field must be non-enumerable',
+  );
+  assert.equal(constructions, 1, 'oversized settlement must construct exactly one payment');
+  assert.equal(calls, 2, 'oversized settlement must make exactly two requests');
+});
 
 test('buyer uses manual redirect handling and preserves the exact payment on redirect', async () => {
   const { paymentRequired } = await buyerChallenge('https://resource.example/paid');

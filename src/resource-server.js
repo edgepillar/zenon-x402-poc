@@ -6,6 +6,7 @@ import {
   encodeB64Json,
   EXPERIMENTAL_LIVE_NETWORK,
   HEADERS,
+  MAX_X402_HEADER_ENCODED_BYTES,
   makePaymentRequired,
   MOCK_NETWORK,
   sameResource,
@@ -15,7 +16,6 @@ import {
   validatePaymentPayloadStructure,
 } from './x402-wire.js';
 
-const MAX_PAYMENT_HEADER_BYTES = 8 * 1024;
 const MAX_CACHED_RESPONSE_BYTES = 64 * 1024;
 const MAX_CACHED_RESPONSE_MEMBERS = 4096;
 const MAX_CACHED_RESPONSE_NODES = 4096;
@@ -61,14 +61,16 @@ export function createResourceServer({
 
       const signatureHeader = req.headers[HEADERS.PAYMENT_SIGNATURE];
       if (signatureHeader === undefined) return requirePayment(res, paymentRequired);
-      if (Array.isArray(signatureHeader) || typeof signatureHeader !== 'string' ||
-          Buffer.byteLength(signatureHeader, 'utf8') > MAX_PAYMENT_HEADER_BYTES) {
+      if (Array.isArray(signatureHeader) || typeof signatureHeader !== 'string') {
         return invalidPayment(res);
       }
 
       let paymentPayload;
       try {
-        paymentPayload = decodeB64Json(signatureHeader, { maxDecodedBytes: MAX_PAYMENT_HEADER_BYTES });
+        paymentPayload = decodeB64Json(signatureHeader, {
+          maxDecodedBytes: MAX_X402_HEADER_ENCODED_BYTES,
+          maxEncodedBytes: MAX_X402_HEADER_ENCODED_BYTES,
+        });
         validateJsonValue(paymentPayload, 0, new Set(), { requireSafeIntegers: false });
         validatePaymentPayloadStructure(paymentPayload);
       } catch {
@@ -119,14 +121,15 @@ export function createResourceServer({
       if (outcome.kind === 'recovery') return recoveryResponse(res, outcome.settlement);
       if (outcome.kind !== 'delivered') return json(res, 500, { error: 'internal_error' });
 
+      const paymentResponseHeader = encodeX402Header(publicSettlement(outcome.settlement));
       const cached = outcome.cached;
       res.statusCode = cached.status;
       for (const [name, value] of Object.entries(cached.headers)) res.setHeader(name, value);
       setPaidResponsePolicy(res);
-      res.setHeader(HEADERS.PAYMENT_RESPONSE, encodeB64Json(publicSettlement(outcome.settlement)));
+      res.setHeader(HEADERS.PAYMENT_RESPONSE, paymentResponseHeader);
       res.end(JSON.stringify(cached.body, null, 2));
     } catch {
-      json(res, 500, { error: 'internal_error' });
+      internalError(res);
     }
   });
 
@@ -709,9 +712,10 @@ function recoveryResponse(res, settlement = {}) {
     errorReason: error,
     retrySamePayment: true,
   };
+  const paymentResponseHeader = encodeX402Header(response);
   res.statusCode = 409;
   res.setHeader('content-type', 'application/json; charset=utf-8');
-  res.setHeader(HEADERS.PAYMENT_RESPONSE, encodeB64Json(response));
+  res.setHeader(HEADERS.PAYMENT_RESPONSE, paymentResponseHeader);
   res.end(JSON.stringify({
     error,
     action: 'reuse_and_reconcile_same_payment',
@@ -732,10 +736,12 @@ function publicSettlement(settlement = {}) {
 }
 
 function definiteRejectionResponse(res, paymentRequired, settlement) {
+  const paymentRequiredHeader = encodeX402Header(paymentRequired);
+  const paymentResponseHeader = encodeX402Header(settlement);
   res.statusCode = 402;
   res.setHeader('content-type', 'application/json; charset=utf-8');
-  res.setHeader(HEADERS.PAYMENT_REQUIRED, encodeB64Json(paymentRequired));
-  res.setHeader(HEADERS.PAYMENT_RESPONSE, encodeB64Json(settlement));
+  res.setHeader(HEADERS.PAYMENT_REQUIRED, paymentRequiredHeader);
+  res.setHeader(HEADERS.PAYMENT_RESPONSE, paymentResponseHeader);
   res.end(JSON.stringify({ error: DEFINITIVE_SETTLEMENT_FAILURE }, null, 2));
 }
 
@@ -746,10 +752,21 @@ function invalidPayment(res) {
 }
 
 function requirePayment(res, paymentRequired) {
+  const paymentRequiredHeader = encodeX402Header(paymentRequired);
   res.statusCode = 402;
   res.setHeader('content-type', 'application/json; charset=utf-8');
-  res.setHeader(HEADERS.PAYMENT_REQUIRED, encodeB64Json(paymentRequired));
+  res.setHeader(HEADERS.PAYMENT_REQUIRED, paymentRequiredHeader);
   res.end(JSON.stringify({ error: paymentRequired.error ?? 'payment_required' }, null, 2));
+}
+
+function encodeX402Header(value) {
+  return encodeB64Json(value, { maxEncodedBytes: MAX_X402_HEADER_ENCODED_BYTES });
+}
+
+function internalError(res) {
+  res.removeHeader(HEADERS.PAYMENT_REQUIRED);
+  res.removeHeader(HEADERS.PAYMENT_RESPONSE);
+  return json(res, 500, { error: 'internal_error' });
 }
 
 function json(res, status, value) {

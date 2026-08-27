@@ -3,6 +3,7 @@ import {
   encodeB64Json,
   EXPERIMENTAL_LIVE_NETWORK,
   HEADERS,
+  MAX_X402_HEADER_ENCODED_BYTES,
   sameResource,
   sameRequirements,
   snapshotPaymentCapabilities,
@@ -13,7 +14,6 @@ import {
   validateRequirement,
 } from './x402-wire.js';
 
-const MAX_X402_HEADER_BYTES = 8 * 1024;
 const HASH_HEX = /^[0-9a-f]{64}$/;
 const DEFINITIVE_SETTLEMENT_FAILURE = 'payment_settlement_failed';
 const SETTLEMENT_FIELDS = Object.freeze(['success', 'network', 'transaction', 'payer', 'state']);
@@ -62,7 +62,10 @@ export async function paidFetch(url, paymentClient, fetchImpl = fetch, options =
 
   const requiredHeader = first.headers.get(HEADERS.PAYMENT_REQUIRED);
   if (!requiredHeader) throw new Error('402 response did not contain PAYMENT-REQUIRED');
-  const paymentRequired = decodeB64Json(requiredHeader, { maxDecodedBytes: MAX_X402_HEADER_BYTES });
+  const paymentRequired = decodeB64Json(requiredHeader, {
+    maxDecodedBytes: MAX_X402_HEADER_ENCODED_BYTES,
+    maxEncodedBytes: MAX_X402_HEADER_ENCODED_BYTES,
+  });
   validatePaymentRequiredForOfferSelection(paymentRequired);
   if (paymentRequired.accepts.length === 1) validatePaymentRequired(paymentRequired);
   const responseUrl = first.url || String(url);
@@ -85,13 +88,15 @@ export async function paidFetch(url, paymentClient, fetchImpl = fetch, options =
     selectedView.accepted,
   );
   validateBuyerPaymentPayload(paymentPayload, paymentRequired, accepted);
-  const encodedPayment = encodeB64Json(paymentPayload);
-  if (Buffer.byteLength(encodedPayment, 'utf8') > MAX_X402_HEADER_BYTES) {
-    throw new Error('payment payload exceeds the supported header size');
-  }
+  const encodedPayment = encodeB64Json(paymentPayload, {
+    maxEncodedBytes: MAX_X402_HEADER_ENCODED_BYTES,
+  });
   // Bind settlement validation and recovery to the exact bytes submitted while
   // preserving the characterized payment object returned by the client.
-  const submittedPaymentPayload = decodeB64Json(encodedPayment, { maxDecodedBytes: MAX_X402_HEADER_BYTES });
+  const submittedPaymentPayload = decodeB64Json(encodedPayment, {
+    maxDecodedBytes: MAX_X402_HEADER_ENCODED_BYTES,
+    maxEncodedBytes: MAX_X402_HEADER_ENCODED_BYTES,
+  });
   validateBuyerPaymentPayload(submittedPaymentPayload, paymentRequired, accepted);
 
   let second;
@@ -114,7 +119,10 @@ export async function paidFetch(url, paymentClient, fetchImpl = fetch, options =
   }
   let settlement;
   try {
-    settlement = decodeB64Json(settlementHeader, { maxDecodedBytes: MAX_X402_HEADER_BYTES });
+    settlement = decodeB64Json(settlementHeader, {
+      maxDecodedBytes: MAX_X402_HEADER_ENCODED_BYTES,
+      maxEncodedBytes: MAX_X402_HEADER_ENCODED_BYTES,
+    });
     validateSettlementResponse(settlement, submittedPaymentPayload, second.status);
   } catch {
     throw outcomeUnknown({ paymentRequired, paymentPayload: submittedPaymentPayload, httpStatus: second.status });

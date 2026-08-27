@@ -77,6 +77,8 @@ The journal schema version is unchanged and existing legitimate records remain r
 
 The local HTTP server distinguishes definitely malformed submitted input from payment policy and settlement outcomes. Missing payment receives the ordinary `402` challenge. A present payment header with invalid transport encoding, excessive size or depth, a malformed V2 envelope, wrong required container or primitive types, or invalid primitive encoding for a declared local Zenon route receives a fixed private `400` response without `PAYMENT-REQUIRED` or `PAYMENT-RESPONSE`. Structurally valid but unsupported versions, routes, flows, optional members, local policy values, and exact-requirement mismatches remain `402`; rejected settlement also remains `402`, while uncertain settlement retains the PoC-specific `409` reconciliation response.
 
+The pinned official package defines no 8 KiB x402 header cap. This PoC independently applies an inclusive 8,192 raw UTF-8 byte limit to each Base64 `PAYMENT-REQUIRED`, `PAYMENT-SIGNATURE`, and `PAYMENT-RESPONSE` value while retaining separate decoded JSON guards. It is a stricter local transport policy, not an upstream or stable-V2 mandate, and it does not add an aggregate HTTP header-section budget.
+
 This boundary follows the normative HTTP transport distinction. It does not claim exact behavioral parity with the released TypeScript resource server, complete stable-V2 compatibility, or broader extension support.
 
 ## Why a signed prepared block is a reasonable v1 payload
