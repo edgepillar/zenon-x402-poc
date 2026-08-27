@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { isDeepStrictEqual } from 'node:util';
 import { paymentIntentDigest } from '../src/canonical.js';
 import { buildRequirement } from '../src/config.js';
 import {
@@ -1125,15 +1126,67 @@ test('empty top-level extensions are equivalent to absence without automatic adv
   const payloadWithEmptyExtensions = structuredClone(payload);
   payloadWithEmptyExtensions.extensions = {};
   const payloadSnapshot = structuredClone(payloadWithEmptyExtensions);
+  const payloadWithUndefinedExtensions = structuredClone(payload);
+  Object.defineProperty(payloadWithUndefinedExtensions, 'extensions', {
+    value: undefined,
+    enumerable: true,
+    writable: true,
+    configurable: true,
+  });
+  const undefinedPayloadSnapshot = structuredClone(payloadWithUndefinedExtensions);
+  const undefinedExtensionsDescriptor = Object.getOwnPropertyDescriptor(
+    payloadWithUndefinedExtensions,
+    'extensions',
+  );
 
   assert.doesNotThrow(() => validatePaymentPayloadStructure(payload));
   assert.doesNotThrow(() => validatePaymentPayloadStructure(payloadWithEmptyExtensions));
   assert.doesNotThrow(() => validatePaymentPayloadEnvelope(payloadWithEmptyExtensions));
+  const undefinedValidationResults = [
+    validatePaymentPayloadStructure,
+    validatePaymentPayloadEnvelope,
+  ].map(validate => {
+    try {
+      validate(payloadWithUndefinedExtensions);
+      return true;
+    } catch {
+      return false;
+    }
+  });
+  assert.deepEqual(
+    undefinedValidationResults,
+    [true, true],
+    'PaymentPayload undefined extensions must be accepted',
+  );
   assert.deepEqual(payloadWithEmptyExtensions, payloadSnapshot);
+  assert.equal(
+    isDeepStrictEqual(payloadWithUndefinedExtensions, undefinedPayloadSnapshot),
+    true,
+  );
+  assert.equal(
+    isDeepStrictEqual(
+      Object.getOwnPropertyDescriptor(
+        payloadWithUndefinedExtensions,
+        'extensions',
+      ),
+      undefinedExtensionsDescriptor,
+    ),
+    true,
+  );
+  const undefinedJsonRoundTrip = JSON.parse(
+    JSON.stringify(payloadWithUndefinedExtensions),
+  );
+  const emptyJsonRoundTrip = JSON.parse(JSON.stringify(payloadWithEmptyExtensions));
+  assert.equal(Object.hasOwn(undefinedJsonRoundTrip, 'extensions'), false);
+  assert.equal(Object.hasOwn(emptyJsonRoundTrip, 'extensions'), true);
+  assert.equal(Reflect.ownKeys(emptyJsonRoundTrip.extensions).length, 0);
 
   const nullPrototypeExtensions = Object.create(null);
   assert.doesNotThrow(() =>
     validatePaymentRequired({ ...required, extensions: nullPrototypeExtensions }),
+  );
+  assert.doesNotThrow(() =>
+    validatePaymentPayloadStructure({ ...payload, extensions: nullPrototypeExtensions }),
   );
   assert.doesNotThrow(() =>
     validatePaymentPayloadEnvelope({ ...payload, extensions: nullPrototypeExtensions }),
@@ -1159,10 +1212,36 @@ test('top-level extensions preserve structural and strict rejection boundaries',
     assert.throws(() => validatePaymentPayloadEnvelope({ ...payload, extensions }));
   }
 
-  for (const extensions of [undefined, true, 1, 'synthetic', []]) {
+  const requiredWithUndefinedExtensions = {
+    ...required,
+    extensions: undefined,
+  };
+  const requiredUndefinedDescriptor = Object.getOwnPropertyDescriptor(
+    requiredWithUndefinedExtensions,
+    'extensions',
+  );
+  assert.throws(() => validatePaymentRequired(requiredWithUndefinedExtensions));
+  assert.throws(() =>
+    validatePaymentRequiredForOfferSelection(requiredWithUndefinedExtensions),
+  );
+  assert.equal(
+    isDeepStrictEqual(
+      Object.getOwnPropertyDescriptor(
+        requiredWithUndefinedExtensions,
+        'extensions',
+      ),
+      requiredUndefinedDescriptor,
+    ),
+    true,
+  );
+
+  for (const extensions of [true, 1, 'synthetic', 1n, Symbol('synthetic'), () => {}, []]) {
     assert.throws(() => validatePaymentRequired({ ...required, extensions }));
     assert.throws(() =>
       validatePaymentPayloadStructure({ ...payload, extensions }),
+    );
+    assert.throws(() =>
+      validatePaymentPayloadEnvelope({ ...payload, extensions }),
     );
   }
 
@@ -1181,6 +1260,9 @@ test('top-level extensions preserve structural and strict rejection boundaries',
   assert.throws(() =>
     validatePaymentPayloadStructure({ ...payload, extensions: accessorExtensions }),
   );
+  assert.throws(() =>
+    validatePaymentPayloadEnvelope({ ...payload, extensions: accessorExtensions }),
+  );
   assert.equal(getterReads, 0);
 
   const nonEnumerableExtensions = {};
@@ -1194,6 +1276,9 @@ test('top-level extensions preserve structural and strict rejection boundaries',
   assert.throws(() =>
     validatePaymentPayloadStructure({ ...payload, extensions: nonEnumerableExtensions }),
   );
+  assert.throws(() =>
+    validatePaymentPayloadEnvelope({ ...payload, extensions: nonEnumerableExtensions }),
+  );
 
   const symbolExtensions = {};
   symbolExtensions[Symbol('synthetic')] = true;
@@ -1203,6 +1288,9 @@ test('top-level extensions preserve structural and strict rejection boundaries',
   assert.throws(() =>
     validatePaymentPayloadStructure({ ...payload, extensions: symbolExtensions }),
   );
+  assert.throws(() =>
+    validatePaymentPayloadEnvelope({ ...payload, extensions: symbolExtensions }),
+  );
 
   const inheritedExtensions = Object.create({ synthetic: true });
   assert.throws(() =>
@@ -1211,17 +1299,55 @@ test('top-level extensions preserve structural and strict rejection boundaries',
   assert.throws(() =>
     validatePaymentPayloadStructure({ ...payload, extensions: inheritedExtensions }),
   );
+  assert.throws(() =>
+    validatePaymentPayloadEnvelope({ ...payload, extensions: inheritedExtensions }),
+  );
 
   const topLevelAccessor = { ...payload };
   Object.defineProperty(topLevelAccessor, 'extensions', {
     enumerable: true,
     get() {
       getterReads += 1;
-      return {};
+      return undefined;
     },
   });
+  const topLevelAccessorDescriptor = Object.getOwnPropertyDescriptor(
+    topLevelAccessor,
+    'extensions',
+  );
   assert.throws(() => validatePaymentPayloadStructure(topLevelAccessor));
+  assert.throws(() => validatePaymentPayloadEnvelope(topLevelAccessor));
   assert.equal(getterReads, 0);
+  assert.equal(
+    isDeepStrictEqual(
+      Object.getOwnPropertyDescriptor(topLevelAccessor, 'extensions'),
+      topLevelAccessorDescriptor,
+    ),
+    true,
+  );
+
+  let setterWrites = 0;
+  const topLevelSetterOnly = { ...payload };
+  Object.defineProperty(topLevelSetterOnly, 'extensions', {
+    enumerable: true,
+    set() {
+      setterWrites += 1;
+    },
+  });
+  const topLevelSetterDescriptor = Object.getOwnPropertyDescriptor(
+    topLevelSetterOnly,
+    'extensions',
+  );
+  assert.throws(() => validatePaymentPayloadStructure(topLevelSetterOnly));
+  assert.throws(() => validatePaymentPayloadEnvelope(topLevelSetterOnly));
+  assert.equal(setterWrites, 0);
+  assert.equal(
+    isDeepStrictEqual(
+      Object.getOwnPropertyDescriptor(topLevelSetterOnly, 'extensions'),
+      topLevelSetterDescriptor,
+    ),
+    true,
+  );
 
   const requiredTopLevelAccessor = { ...required };
   Object.defineProperty(requiredTopLevelAccessor, 'extensions', {
@@ -1237,14 +1363,79 @@ test('top-level extensions preserve structural and strict rejection boundaries',
   const topLevelNonEnumerable = { ...payload };
   Object.defineProperty(topLevelNonEnumerable, 'extensions', {
     enumerable: false,
-    value: {},
+    value: undefined,
   });
+  const topLevelNonEnumerableDescriptor = Object.getOwnPropertyDescriptor(
+    topLevelNonEnumerable,
+    'extensions',
+  );
   assert.throws(() => validatePaymentPayloadStructure(topLevelNonEnumerable));
+  assert.throws(() => validatePaymentPayloadEnvelope(topLevelNonEnumerable));
+  assert.equal(
+    isDeepStrictEqual(
+      Object.getOwnPropertyDescriptor(topLevelNonEnumerable, 'extensions'),
+      topLevelNonEnumerableDescriptor,
+    ),
+    true,
+  );
 
   const requiredTopLevelNonEnumerable = { ...required };
   Object.defineProperty(requiredTopLevelNonEnumerable, 'extensions', {
     enumerable: false,
-    value: {},
+    value: undefined,
   });
   assert.throws(() => validatePaymentRequired(requiredTopLevelNonEnumerable));
+  assert.throws(() =>
+    validatePaymentRequiredForOfferSelection(requiredTopLevelNonEnumerable),
+  );
+
+  let coercionCalls = 0;
+  const coercionExtensions = {};
+  Object.defineProperty(coercionExtensions, Symbol.toPrimitive, {
+    enumerable: true,
+    value() {
+      coercionCalls += 1;
+      return 'synthetic';
+    },
+  });
+  assert.throws(() =>
+    validatePaymentPayloadStructure({ ...payload, extensions: coercionExtensions }),
+  );
+  assert.throws(() =>
+    validatePaymentPayloadEnvelope({ ...payload, extensions: coercionExtensions }),
+  );
+  assert.equal(coercionCalls, 0);
+
+  const inheritedExtensionsDescriptor = Object.getOwnPropertyDescriptor(
+    Object.prototype,
+    'extensions',
+  );
+  try {
+    Object.defineProperty(Object.prototype, 'extensions', {
+      value: undefined,
+      enumerable: true,
+      writable: true,
+      configurable: true,
+    });
+    const inheritedPayload = structuredClone(payload);
+    const inheritedRequired = structuredClone(required);
+    assert.equal(Object.hasOwn(inheritedPayload, 'extensions'), false);
+    assert.equal(Object.hasOwn(inheritedRequired, 'extensions'), false);
+    assert.doesNotThrow(() => validatePaymentPayloadStructure(inheritedPayload));
+    assert.doesNotThrow(() => validatePaymentPayloadEnvelope(inheritedPayload));
+    assert.doesNotThrow(() => validatePaymentRequired(inheritedRequired));
+    assert.doesNotThrow(() =>
+      validatePaymentRequiredForOfferSelection(inheritedRequired),
+    );
+  } finally {
+    if (inheritedExtensionsDescriptor) {
+      Object.defineProperty(
+        Object.prototype,
+        'extensions',
+        inheritedExtensionsDescriptor,
+      );
+    } else {
+      Reflect.deleteProperty(Object.prototype, 'extensions');
+    }
+  }
 });

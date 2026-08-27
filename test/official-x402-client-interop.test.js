@@ -8,6 +8,7 @@ import {
   x402HTTPClient,
 } from '@x402/core/client';
 import {
+  PaymentPayloadV2Schema as OfficialPaymentPayloadV2Schema,
   PaymentRequiredV2Schema as OfficialPaymentRequiredV2Schema,
 } from '@x402/core/schemas';
 
@@ -23,6 +24,8 @@ import {
   sameRequirements,
   sameResource,
   validateActiveUpfrontRequirement as validateZenonActiveUpfrontRequirement,
+  validatePaymentPayloadEnvelope,
+  validatePaymentPayloadStructure,
   validateRequirement as validateZenonRequirement,
 } from '../src/x402-wire.js';
 
@@ -382,7 +385,51 @@ test('official client contexts preserve extensions and request isolation', async
   const absentChallenge = challengeFor(requirement, {
     accepts: [absentRequirement],
   });
+  const absentChallengeSnapshot = structuredClone(absentChallenge);
   const absentPayload = await client.createPaymentPayload(absentChallenge);
+  const absentPayloadSnapshot = structuredClone(absentPayload);
+  const extensionsDescriptor = Object.getOwnPropertyDescriptor(
+    absentPayload,
+    'extensions',
+  );
+
+  assert.equal(Object.hasOwn(absentPayload, 'extensions'), true);
+  assert.equal(extensionsDescriptor !== undefined, true);
+  assert.equal(Object.hasOwn(extensionsDescriptor, 'value'), true);
+  assert.equal(extensionsDescriptor.value, undefined);
+  assert.equal(extensionsDescriptor.enumerable, true);
+  assert.equal(extensionsDescriptor.writable, true);
+  assert.equal(extensionsDescriptor.configurable, true);
+  assert.doesNotThrow(() => OfficialPaymentPayloadV2Schema.parse(absentPayload));
+
+  const localValidationResults = [
+    validatePaymentPayloadStructure,
+    validatePaymentPayloadEnvelope,
+  ].map(validate => {
+    try {
+      validate(absentPayload);
+      return true;
+    } catch {
+      return false;
+    }
+  });
+  assert.deepEqual(
+    localValidationResults,
+    [true, true],
+    'local payload validators must accept official undefined extensions',
+  );
+
+  assert.equal(isDeepStrictEqual(absentChallenge, absentChallengeSnapshot), true);
+  assert.equal(isDeepStrictEqual(absentPayload, absentPayloadSnapshot), true);
+  assert.equal(
+    isDeepStrictEqual(
+      Object.getOwnPropertyDescriptor(absentPayload, 'extensions'),
+      extensionsDescriptor,
+    ),
+    true,
+  );
+  const absentJsonRoundTrip = JSON.parse(JSON.stringify(absentPayload));
+  assert.equal(Object.hasOwn(absentJsonRoundTrip, 'extensions'), false);
 
   const emptyRequirement = structuredClone(requirement);
   await client.createPaymentPayload(
