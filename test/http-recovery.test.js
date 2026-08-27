@@ -2391,6 +2391,130 @@ test('resource server snapshots its validated requirement at construction', asyn
   }
 });
 
+test('resource server rejects configured non-function resource handlers before server creation', async () => {
+  const invalidHandlers = [null, false, 0, '', {}, [], 'configured'];
+
+  for (const resourceHandler of invalidHandlers) {
+    const requirement = await buildRequirement('mock');
+    const effects = {
+      settlement: 0,
+      publication: 0,
+      journal: 0,
+      pending: 0,
+      delivered: 0,
+      callback: 0,
+    };
+    const facilitator = {
+      async settle() {
+        effects.settlement += 1;
+        effects.publication += 1;
+        effects.journal += 1;
+        throw new Error('unexpected settlement');
+      },
+      async markDeliveryPending() {
+        effects.pending += 1;
+        throw new Error('unexpected pending transition');
+      },
+      async markDelivered() {
+        effects.delivered += 1;
+        throw new Error('unexpected delivered transition');
+      },
+    };
+    let app;
+
+    assert.throws(
+      () => {
+        app = createResourceServer({ facilitator, requirement, resourceHandler });
+      },
+      { name: 'Error', message: 'resourceHandler must be a function' },
+      'non-function resource handler must fail at construction',
+    );
+    await Promise.resolve();
+    assert.equal(app, undefined, 'invalid configuration must not return a server handle');
+    assert.deepEqual(effects, {
+      settlement: 0,
+      publication: 0,
+      journal: 0,
+      pending: 0,
+      delivered: 0,
+      callback: 0,
+    }, 'invalid configuration must have zero downstream effects');
+  }
+});
+
+test('omitted or undefined resource handler preserves the default protected response', async () => {
+  for (const explicitUndefined of [false, true]) {
+    const facilitator = new MockExactZenonFacilitator();
+    const requirement = await buildRequirement('mock');
+    const options = { facilitator, requirement };
+    if (explicitUndefined) options.resourceHandler = undefined;
+    const app = createResourceServer(options);
+    const listening = await app.listen();
+    try {
+      const { paymentPayload } = await signedPayment(listening.url);
+      const response = await submitPayment(listening.url, paymentPayload);
+      const body = await response.json();
+      assert.equal(response.status, 200);
+      assert.deepEqual(Object.keys(body).sort(), [
+        'generatedAt',
+        'message',
+        'network',
+        'ok',
+        'payer',
+        'transaction',
+      ]);
+      assert.equal(body.ok, true);
+      assert.equal(body.message, 'paid resource unlocked');
+      assert.equal(typeof body.generatedAt, 'string');
+    } finally {
+      await app.close();
+    }
+  }
+});
+
+test('valid resource handler runs only after settlement and durable delivery claim', async () => {
+  const honest = new MockExactZenonFacilitator();
+  const requirement = await buildRequirement('mock');
+  const events = [];
+  let callbacks = 0;
+  const facilitator = {
+    async settle(...args) {
+      const result = await honest.settle(...args);
+      events.push('settled');
+      return result;
+    },
+    async markDeliveryPending(...args) {
+      const result = await honest.markDeliveryPending(...args);
+      events.push('claimed');
+      return result;
+    },
+    async markDelivered(...args) {
+      events.push('delivered');
+      return honest.markDelivered(...args);
+    },
+  };
+  const app = createResourceServer({
+    facilitator,
+    requirement,
+    resourceHandler: async () => {
+      callbacks += 1;
+      events.push('handler');
+      return { ok: true, source: 'configured-handler' };
+    },
+  });
+  const listening = await app.listen();
+  try {
+    const { paymentPayload } = await signedPayment(listening.url);
+    const response = await submitPayment(listening.url, paymentPayload);
+    assert.equal(response.status, 200);
+    assert.deepEqual(await response.json(), { ok: true, source: 'configured-handler' });
+    assert.equal(callbacks, 1);
+    assert.deepEqual(events, ['settled', 'claimed', 'handler', 'delivered']);
+  } finally {
+    await app.close();
+  }
+});
+
 test('paid resource fails closed without a positive durable delivery claim', async () => {
   const requirement = await buildRequirement('mock');
   const honest = new MockExactZenonFacilitator();
