@@ -16,6 +16,8 @@ import {
   validatePaymentPayloadStructure,
 } from './x402-wire.js';
 
+const CREATE_OBJECT = Object.create;
+const DEFINE_PROPERTY = Object.defineProperty;
 const MAX_CACHED_RESPONSE_BYTES = 64 * 1024;
 const MAX_CACHED_RESPONSE_MEMBERS = 4096;
 const MAX_CACHED_RESPONSE_NODES = 4096;
@@ -31,6 +33,16 @@ const RECOVERY_STATES = new Set([
   'DELIVERY_PENDING',
 ]);
 const POSITIVE_DELIVERY_STATES = new Set(['NONE', 'DELIVERY_PENDING', 'DELIVERED']);
+
+function shieldAuthorizationOutcome(outcome) {
+  const descriptor = CREATE_OBJECT(null);
+  descriptor.value = undefined;
+  descriptor.enumerable = false;
+  descriptor.writable = false;
+  descriptor.configurable = false;
+  DEFINE_PROPERTY(outcome, 'then', descriptor);
+  return outcome;
+}
 
 export function createResourceServer({
   facilitator,
@@ -349,30 +361,42 @@ async function authorizeAndDeliver({ facilitator, paymentPayload, requirement, p
   if (success.kind !== 'data' || success.value !== true) {
     const rejection = definiteRejectionEvidence(settlementResult, submittedIdentity);
     if (rejection === MALFORMED_DEFINITE_REJECTION) {
-      return submittedPaymentRecovery(submittedIdentity);
+      return shieldAuthorizationOutcome(submittedPaymentRecovery(submittedIdentity));
     }
-    if (rejection) return { kind: 'definite-rejection', settlement: rejection };
-    return nonPositiveSettlementOutcome(settlementResult, submittedIdentity, success);
+    if (rejection) {
+      return shieldAuthorizationOutcome({ kind: 'definite-rejection', settlement: rejection });
+    }
+    return shieldAuthorizationOutcome(
+      nonPositiveSettlementOutcome(settlementResult, submittedIdentity, success),
+    );
   }
   const settlement = positiveSettlementEvidence(settlementResult, submittedIdentity);
-  if (!settlement) return submittedPaymentRecovery(submittedIdentity);
+  if (!settlement) {
+    return shieldAuthorizationOutcome(submittedPaymentRecovery(submittedIdentity));
+  }
   const capabilities = deliveryCapabilities(facilitator);
-  if (!capabilities) return submittedDeliveryRecovery(submittedIdentity);
+  if (!capabilities) {
+    return shieldAuthorizationOutcome(submittedDeliveryRecovery(submittedIdentity));
+  }
   if (settlement.deliveryState === 'DELIVERED') {
     const cachedResponse = inspectOwnProperty(settlementResult, 'cachedResponse');
-    if (cachedResponse.kind !== 'data') return submittedDeliveryRecovery(submittedIdentity);
+    if (cachedResponse.kind !== 'data') {
+      return shieldAuthorizationOutcome(submittedDeliveryRecovery(submittedIdentity));
+    }
     try {
-      return {
+      return shieldAuthorizationOutcome({
         kind: 'delivered',
         settlement,
         cached: normalizeCachedResponse(cachedResponse.value),
-      };
+      });
     } catch {
-      return submittedDeliveryRecovery(submittedIdentity);
+      return shieldAuthorizationOutcome(submittedDeliveryRecovery(submittedIdentity));
     }
   }
   if (settlement.deliveryState === 'DELIVERY_PENDING') {
-    return deliveryRecovery(settlement, 'delivery_outcome_unknown', 'DELIVERY_PENDING');
+    return shieldAuthorizationOutcome(
+      deliveryRecovery(settlement, 'delivery_outcome_unknown', 'DELIVERY_PENDING'),
+    );
   }
 
   let claim;
@@ -387,23 +411,27 @@ async function authorizeAndDeliver({ facilitator, paymentPayload, requirement, p
       ['deliveryState', 'deliveryClaimed'],
     );
     if (!claim || !POSITIVE_DELIVERY_STATES.has(claim.deliveryState)) {
-      return submittedDeliveryRecovery(submittedIdentity);
+      return shieldAuthorizationOutcome(submittedDeliveryRecovery(submittedIdentity));
     }
     if (claim.deliveryState === 'DELIVERED') {
-      if (claim.deliveryClaimed !== false) return submittedDeliveryRecovery(submittedIdentity);
+      if (claim.deliveryClaimed !== false) {
+        return shieldAuthorizationOutcome(submittedDeliveryRecovery(submittedIdentity));
+      }
       const cachedResponse = inspectOwnProperty(claimResult, 'cachedResponse');
-      if (cachedResponse.kind !== 'data') return submittedDeliveryRecovery(submittedIdentity);
-      return {
+      if (cachedResponse.kind !== 'data') {
+        return shieldAuthorizationOutcome(submittedDeliveryRecovery(submittedIdentity));
+      }
+      return shieldAuthorizationOutcome({
         kind: 'delivered',
         settlement: { ...settlement, deliveryState: 'DELIVERED' },
         cached: normalizeCachedResponse(cachedResponse.value),
-      };
+      });
     }
   } catch {
-    return submittedDeliveryRecovery(submittedIdentity);
+    return shieldAuthorizationOutcome(submittedDeliveryRecovery(submittedIdentity));
   }
   if (claim.deliveryClaimed !== true || claim.deliveryState !== 'DELIVERY_PENDING') {
-    return submittedDeliveryRecovery(submittedIdentity);
+    return shieldAuthorizationOutcome(submittedDeliveryRecovery(submittedIdentity));
   }
 
   let cached;
@@ -424,7 +452,9 @@ async function authorizeAndDeliver({ facilitator, paymentPayload, requirement, p
       body,
     });
   } catch {
-    return deliveryRecovery(settlement, 'delivery_outcome_unknown', 'DELIVERY_PENDING');
+    return shieldAuthorizationOutcome(
+      deliveryRecovery(settlement, 'delivery_outcome_unknown', 'DELIVERY_PENDING'),
+    );
   }
 
   try {
@@ -439,16 +469,20 @@ async function authorizeAndDeliver({ facilitator, paymentPayload, requirement, p
       ['deliveryState', 'cachedResponse'],
     );
     if (!delivered || delivered.deliveryState !== 'DELIVERED') {
-      return submittedDeliveryRecovery(submittedIdentity);
+      return shieldAuthorizationOutcome(submittedDeliveryRecovery(submittedIdentity));
     }
     const persisted = normalizeCachedResponse(delivered.cachedResponse);
     if (JSON.stringify(persisted) !== JSON.stringify(cached)) {
-      return submittedDeliveryRecovery(submittedIdentity);
+      return shieldAuthorizationOutcome(submittedDeliveryRecovery(submittedIdentity));
     }
   } catch {
-    return submittedDeliveryRecovery(submittedIdentity);
+    return shieldAuthorizationOutcome(submittedDeliveryRecovery(submittedIdentity));
   }
-  return { kind: 'delivered', settlement: { ...settlement, deliveryState: 'DELIVERED' }, cached };
+  return shieldAuthorizationOutcome({
+    kind: 'delivered',
+    settlement: { ...settlement, deliveryState: 'DELIVERED' },
+    cached,
+  });
 }
 
 function definiteRejectionEvidence(settlement, submitted) {
