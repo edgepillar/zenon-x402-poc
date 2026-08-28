@@ -2,6 +2,11 @@
   "name": "zenon-x402-poc",
   "version": "0.2.0",
   "private": true,
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/edgepillar/zenon-x402-poc.git"
+  },
   "description": "Proof of concept: x402 v2 exact payments settled by signed Zenon account blocks",
   "type": "module",
   "engines": {
