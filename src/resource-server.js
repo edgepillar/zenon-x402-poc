@@ -325,10 +325,6 @@ function nonPositiveSettlementOutcome(value, submitted, success) {
   const retrySamePayment = inspectOwnProperty(value, 'retrySamePayment');
   const state = inspectOwnProperty(value, 'state');
   const isIncluded = state.kind === 'data' && state.value === 'MOMENTUM_INCLUDED';
-  const deliveryState = isIncluded ? inspectOwnProperty(value, 'deliveryState') : { kind: 'missing' };
-  const isRecognizedIncludedRecovery = isIncluded && deliveryState.kind === 'data' &&
-    (deliveryState.value === 'NONE' || deliveryState.value === 'DELIVERY_PENDING');
-  if (isRecognizedIncludedRecovery) return submittedDeliveryRecovery(submitted);
   if (isIncluded) return submittedDeliveryRecovery(submitted);
   if (retrySamePayment.kind === 'accessor' || retrySamePayment.kind === 'error' ||
       state.kind === 'accessor' || state.kind === 'error') {
