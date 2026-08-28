@@ -20,12 +20,16 @@ import {
   PaymentRequiredV2Schema as OfficialPaymentRequiredV2Schema,
 } from '@x402/core/schemas';
 
+import { paidFetch, PaymentSubmissionOutcomeUnknownError } from '../src/buyer.js';
 import { buildRequirement } from '../src/config.js';
 import {
   MockExactZenonClient,
   MockExactZenonFacilitator,
 } from '../src/mock-payment.js';
 import {
+  decodeB64Json,
+  encodeB64Json,
+  HEADERS,
   makePaymentRequired,
   sameRequirements,
   sameResource,
@@ -1050,6 +1054,89 @@ test('composed official failures remain fail-closed without broadening local HTT
     isDeepStrictEqual(parsedWithBothHeaders.header, decodedFailure),
     true,
   );
+
+  const terminalSettlement = {
+    success: false,
+    network: requirement.network,
+    transaction: '1'.repeat(64),
+    payer: `mock-${'2'.repeat(32)}`,
+    state: 'SUBMISSION_OUTCOME_UNKNOWN',
+    errorReason: 'payment_reconciliation_terminal',
+  };
+  const terminalHeader = encodeB64Json(terminalSettlement);
+  const parsedTerminal = invalidHarness.httpClient.parsePaymentResult({
+    status: 402,
+    getHeader: name => name.toLowerCase() === HEADERS.PAYMENT_RESPONSE
+      ? terminalHeader
+      : undefined,
+    body: '{"error":"payment_reconciliation_terminal"}',
+  });
+  assert.equal(parsedTerminal.paymentStatus, 'settle_failed');
+  assert.equal(parsedTerminal.header?.success, false);
+  assert.equal(isDeepStrictEqual(parsedTerminal.header, terminalSettlement), true);
+
+  const parsedTerminalWithBothHeaders = invalidHarness.httpClient.parsePaymentResult({
+    status: 402,
+    getHeader: name => {
+      const normalized = name.toLowerCase();
+      if (normalized === HEADERS.PAYMENT_RESPONSE) return terminalHeader;
+      if (normalized === HEADERS.PAYMENT_REQUIRED) return unpaidPaymentRequired;
+      return undefined;
+    },
+    body: '{"error":"payment_reconciliation_terminal"}',
+  });
+  assert.equal(parsedTerminalWithBothHeaders.paymentStatus, 'settle_failed');
+  assert.equal(
+    isDeepStrictEqual(parsedTerminalWithBothHeaders.header, terminalSettlement),
+    true,
+  );
+
+  const localChallenge = createDirectChallenge(requirement, SYNTHETIC_RESOURCE_URL);
+  let localFetches = 0;
+  let localError;
+  try {
+    await paidFetch(
+      SYNTHETIC_RESOURCE_URL,
+      new MockExactZenonClient(),
+      async (_url, options) => {
+        localFetches += 1;
+        if (!options) {
+          return {
+            status: 402,
+            url: SYNTHETIC_RESOURCE_URL,
+            headers: new Headers({
+              [HEADERS.PAYMENT_REQUIRED]: encodeB64Json(localChallenge),
+            }),
+          };
+        }
+        const submitted = decodeB64Json(options.headers[HEADERS.PAYMENT_SIGNATURE]);
+        return {
+          status: 402,
+          headers: new Headers({
+            [HEADERS.PAYMENT_REQUIRED]: encodeB64Json(localChallenge),
+            [HEADERS.PAYMENT_RESPONSE]: encodeB64Json({
+              success: false,
+              network: requirement.network,
+              transaction: submitted.payload.transaction.hash,
+              payer: submitted.payload.transaction.address,
+              state: 'SUBMISSION_OUTCOME_UNKNOWN',
+              errorReason: 'payment_reconciliation_terminal',
+            }),
+          }),
+        };
+      },
+    );
+  } catch (error) {
+    localError = error;
+  }
+  assert.equal(localError instanceof PaymentSubmissionOutcomeUnknownError, true);
+  assert.equal(localError?.retrySamePayment, true);
+  assert.equal(Object.hasOwn(localError, 'recoveryHandle'), true);
+  assert.equal(localFetches, 2);
+
+  // These assertions characterize only the installed official parser. The
+  // response-only terminal lane remains a local profile, and the local buyer
+  // deliberately rejects its dual-header form as ambiguous.
   assert.equal(invalidHarness.serverBridge.settleCalls, 1);
   assert.equal(invalidHarness.localFacilitator.settleCalls, 1);
   assert.equal(invalidHarness.localFacilitator.verifyCalls, 1);

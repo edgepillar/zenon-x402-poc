@@ -12,7 +12,7 @@ import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { MAX_ZENON_AMOUNT, validateResource } from './x402-wire.js';
 
-export const JOURNAL_SCHEMA_VERSION = 1;
+export const JOURNAL_SCHEMA_VERSION = 2;
 export const EVIDENCE_STATES = Object.freeze({
   VALIDATED: 'VALIDATED',
   SUBMISSION_ACKNOWLEDGED: 'SUBMISSION_ACKNOWLEDGED',
@@ -31,8 +31,13 @@ const JOURNAL_FILE_NAME = 'settlement-journal.json';
 const INITIALIZATION_MARKER_FILE_NAME = '.settlement-journal.initialized';
 const DEFAULT_MAX_RECORDS = 256;
 const DEFAULT_MAX_FILE_BYTES = 16 * 1024 * 1024;
+const INITIAL_JOURNAL_SCHEMA_VERSION = 1;
+const MAX_TOMBSTONES = 4096;
+const MINIMUM_RETENTION_MS = 3_600_000;
+const MAXIMUM_RETENTION_MS = 2_592_000_000;
 const MAX_RECORD_BYTES = 128 * 1024;
 const MAX_CACHED_RESPONSE_BYTES = 64 * 1024;
+const MAX_CAS_OPTIONS_BYTES = MAX_RECORD_BYTES + (16 * 1024) + 4096;
 const MAX_JSON_DEPTH = 20;
 const HASH_HEX = /^[0-9a-f]{64}$/;
 const NONCE_HEX = /^[0-9a-f]{16}$/;
@@ -54,12 +59,36 @@ const IMMUTABLE_RECORD_FIELDS = Object.freeze([
   'authorizationKey', 'transactionHash', 'chainProfile', 'intentDigest',
   'resourceIdentity', 'resourceDigest', 'payer', 'signedAccountBlock',
 ]);
+const TOMBSTONE_FIELDS = Object.freeze([
+  'authorizationKey', 'transactionHash', 'chainProfile', 'intentDigest',
+  'resourceDigest', 'payer', 'signedAccountBlockDigest', 'priorEvidenceState',
+  'createdAt', 'terminalizedAt', 'lateMomentumEvidence',
+]);
+const TOMBSTONE_PRIOR_EVIDENCE_STATES = new Set([
+  EVIDENCE_STATES.VALIDATED,
+  EVIDENCE_STATES.SUBMISSION_ACKNOWLEDGED,
+  EVIDENCE_STATES.SUBMISSION_OUTCOME_UNKNOWN,
+]);
 const FORBIDDEN_PERSISTED_KEYS = new Set([
   'mnemonic', 'privatekey', 'seed', 'authtoken', 'authorization', 'password',
   'secret', 'rpccredentials', 'accesstoken', 'refreshtoken',
 ]);
 const WRITER_QUEUES = new Map();
 const UNSUPPORTED_DIRECTORY_SYNC_ERRORS = new Set(['EINVAL', 'ENOTSUP', 'EBADF', 'EISDIR']);
+const ARRAY_IS_ARRAY = Array.isArray;
+const DEFINE_PROPERTY = Object.defineProperty;
+const GET_OWN_PROPERTY_DESCRIPTOR = Object.getOwnPropertyDescriptor;
+const GET_PROTOTYPE_OF = Object.getPrototypeOf;
+const HAS_OWN = Object.hasOwn;
+const JSON_PARSE = JSON.parse;
+const JSON_STRINGIFY = JSON.stringify;
+const OBJECT_IS = Object.is;
+const OBJECT_PROTOTYPE = Object.prototype;
+const ARRAY_PROTOTYPE = Array.prototype;
+const REFLECT_OWN_KEYS = Reflect.ownKeys;
+const MISSING_OWN_ENTRY = Symbol('missing-own-entry');
+const INVALID_JSON_SNAPSHOT = Symbol('invalid-json-snapshot');
+const JSON_SNAPSHOT_TOO_LARGE = Symbol('json-snapshot-too-large');
 
 export class SettlementJournalError extends Error {
   constructor(code, cause) {
@@ -73,28 +102,361 @@ function journalError(code, cause) {
   throw new SettlementJournalError(code, cause);
 }
 
+function fixedJournalFailure(code) {
+  const error = new SettlementJournalError(code);
+  error.stack = `SettlementJournalError: ${code}`;
+  return error;
+}
+
+function fixedJournalErrorCode(error) {
+  try {
+    if (!(error instanceof SettlementJournalError)) return null;
+    const descriptor = GET_OWN_PROPERTY_DESCRIPTOR(error, 'code');
+    return descriptor && HAS_OWN(descriptor, 'value') && typeof descriptor.value === 'string'
+      ? descriptor.value
+      : null;
+  } catch {
+    return null;
+  }
+}
+
 function isPlainObject(value) {
-  if (value === null || typeof value !== 'object' || Array.isArray(value)) return false;
-  const prototype = Object.getPrototypeOf(value);
-  return prototype === Object.prototype || prototype === null;
+  if (value === null || typeof value !== 'object' || ARRAY_IS_ARRAY(value)) return false;
+  const prototype = GET_PROTOTYPE_OF(value);
+  return prototype === OBJECT_PROTOTYPE || prototype === null;
 }
 
 function exactKeys(value, expected) {
-  if (!isPlainObject(value)) return false;
-  const actual = Object.keys(value).sort();
-  const wanted = [...expected].sort();
-  return actual.length === wanted.length && actual.every((key, index) => key === wanted[index]);
+  try {
+    if (!isPlainObject(value)) return false;
+    const actual = REFLECT_OWN_KEYS(value);
+    if (actual.length !== expected.length) return false;
+    for (let actualIndex = 0; actualIndex < actual.length; actualIndex += 1) {
+      const key = actual[actualIndex];
+      if (typeof key !== 'string') return false;
+      const descriptor = GET_OWN_PROPERTY_DESCRIPTOR(value, key);
+      if (!descriptor || !HAS_OWN(descriptor, 'value') || descriptor.enumerable !== true) return false;
+      let found = false;
+      for (let expectedIndex = 0; expectedIndex < expected.length; expectedIndex += 1) {
+        if (key === expected[expectedIndex]) {
+          found = true;
+          break;
+        }
+      }
+      if (!found) return false;
+    }
+    return true;
+  } catch {
+    return false;
+  }
 }
 
-function canonicalJson(value) {
-  if (value === null || typeof value !== 'object') return JSON.stringify(value);
-  if (Array.isArray(value)) return `[${value.map(canonicalJson).join(',')}]`;
-  const keys = Object.keys(value).sort();
-  return `{${keys.map(key => `${JSON.stringify(key)}:${canonicalJson(value[key])}`).join(',')}}`;
+function invalidJsonSnapshot() {
+  throw INVALID_JSON_SNAPSHOT;
 }
 
-function sha256Hex(value) {
-  return createHash('sha256').update(typeof value === 'string' ? value : canonicalJson(value)).digest('hex');
+function jsonSnapshotTooLarge() {
+  throw JSON_SNAPSHOT_TOO_LARGE;
+}
+
+function chargeJsonSnapshot(context, value) {
+  context.bytes += Buffer.byteLength(value);
+  if (context.bytes > context.maximumBytes) jsonSnapshotTooLarge();
+}
+
+function captureDescriptorView(value, context) {
+  const prototype = GET_PROTOTYPE_OF(value);
+  const array = ARRAY_IS_ARRAY(value);
+  const arrayPrototype = prototype === ARRAY_PROTOTYPE;
+  if (array !== arrayPrototype ||
+      (!array && prototype !== OBJECT_PROTOTYPE && prototype !== null)) invalidJsonSnapshot();
+  const keys = REFLECT_OWN_KEYS(value);
+  if (!array && keys.length > context.maximumBytes) jsonSnapshotTooLarge();
+  for (let index = 0; index < keys.length; index += 1) {
+    if (typeof keys[index] !== 'string') invalidJsonSnapshot();
+  }
+
+  let arrayLength = null;
+  if (array) {
+    const lengthDescriptor = GET_OWN_PROPERTY_DESCRIPTOR(value, 'length');
+    if (!lengthDescriptor || !HAS_OWN(lengthDescriptor, 'value') ||
+        !Number.isSafeInteger(lengthDescriptor.value) || lengthDescriptor.value < 0 ||
+        keys.length !== lengthDescriptor.value + 1 || keys[lengthDescriptor.value] !== 'length') {
+      invalidJsonSnapshot();
+    }
+    arrayLength = lengthDescriptor.value;
+    if (arrayLength > context.maximumBytes) jsonSnapshotTooLarge();
+    for (let index = 0; index < arrayLength; index += 1) {
+      if (keys[index] !== String(index)) invalidJsonSnapshot();
+    }
+  }
+
+  const descriptors = [];
+  for (let index = 0; index < keys.length; index += 1) {
+    const key = keys[index];
+    const descriptor = GET_OWN_PROPERTY_DESCRIPTOR(value, key);
+    if (!descriptor || !HAS_OWN(descriptor, 'value')) invalidJsonSnapshot();
+    if (array && key === 'length') {
+      if (descriptor.enumerable !== false || descriptor.value !== arrayLength) invalidJsonSnapshot();
+    } else if (descriptor.enumerable !== true) {
+      invalidJsonSnapshot();
+    }
+    if (!array) chargeJsonSnapshot(context, key);
+    defineOwnData(descriptors, String(index), {
+      configurable: descriptor.configurable,
+      enumerable: descriptor.enumerable,
+      key,
+      value: descriptor.value,
+      writable: descriptor.writable,
+    });
+  }
+  return { array, arrayLength, descriptors, keys, prototype };
+}
+
+function sameDescriptorView(left, right) {
+  if (left.prototype !== right.prototype || left.array !== right.array ||
+      left.arrayLength !== right.arrayLength || left.keys.length !== right.keys.length) return false;
+  for (let index = 0; index < left.keys.length; index += 1) {
+    const leftDescriptor = left.descriptors[index];
+    const rightDescriptor = right.descriptors[index];
+    if (left.keys[index] !== right.keys[index] || leftDescriptor.key !== rightDescriptor.key ||
+        leftDescriptor.configurable !== rightDescriptor.configurable ||
+        leftDescriptor.enumerable !== rightDescriptor.enumerable ||
+        leftDescriptor.writable !== rightDescriptor.writable ||
+        !OBJECT_IS(leftDescriptor.value, rightDescriptor.value)) return false;
+  }
+  return true;
+}
+
+function descriptorSafeJsonValue(value, context, depth) {
+  if (depth > MAX_JSON_DEPTH) invalidJsonSnapshot();
+  if (value === null || typeof value === 'boolean') return value;
+  if (typeof value === 'string') {
+    chargeJsonSnapshot(context, value);
+    return value;
+  }
+  if (typeof value === 'number') {
+    if (!Number.isFinite(value) || !Number.isSafeInteger(value)) invalidJsonSnapshot();
+    return OBJECT_IS(value, -0) ? 0 : value;
+  }
+  if (typeof value !== 'object' || context.seen.has(value)) invalidJsonSnapshot();
+
+  context.seen.add(value);
+  try {
+    const firstView = captureDescriptorView(value, context);
+    const snapshot = firstView.array ? [] : {};
+    for (let index = 0; index < firstView.descriptors.length; index += 1) {
+      const descriptor = firstView.descriptors[index];
+      if (firstView.array && descriptor.key === 'length') continue;
+      const child = descriptorSafeJsonValue(descriptor.value, context, depth + 1);
+      defineOwnData(snapshot, descriptor.key, child);
+    }
+    const secondView = captureDescriptorView(value, { ...context, bytes: 0 });
+    if (!sameDescriptorView(firstView, secondView)) invalidJsonSnapshot();
+    return snapshot;
+  } finally {
+    context.seen.delete(value);
+  }
+}
+
+function jsonIndent(depth, width) {
+  let indentation = '';
+  for (let index = 0; index < depth * width; index += 1) indentation += ' ';
+  return indentation;
+}
+
+function orderedJsonKeys(value, sortKeys) {
+  const ownKeys = REFLECT_OWN_KEYS(value);
+  const keys = [];
+  for (let index = 0; index < ownKeys.length; index += 1) {
+    const key = ownKeys[index];
+    if (typeof key !== 'string') invalidJsonSnapshot();
+    const descriptor = GET_OWN_PROPERTY_DESCRIPTOR(value, key);
+    if (!descriptor || !HAS_OWN(descriptor, 'value') || descriptor.enumerable !== true) {
+      invalidJsonSnapshot();
+    }
+    defineOwnData(keys, String(index), key);
+  }
+  if (!sortKeys) return keys;
+  for (let index = 1; index < keys.length; index += 1) {
+    const key = keys[index];
+    let insertion = index;
+    while (insertion > 0 && key < keys[insertion - 1]) {
+      keys[insertion] = keys[insertion - 1];
+      insertion -= 1;
+    }
+    keys[insertion] = key;
+  }
+  return keys;
+}
+
+function stringifyJsonWithoutHooks(value, space = 0, sortKeys = false,
+  maximumBytes = DEFAULT_MAX_FILE_BYTES) {
+  const indentationWidth = space === 0 ? 0 : space;
+  if (!Number.isSafeInteger(indentationWidth) || indentationWidth < 0 || indentationWidth > 10) {
+    invalidJsonSnapshot();
+  }
+  if (typeof sortKeys !== 'boolean' || !Number.isSafeInteger(maximumBytes) || maximumBytes < 1) {
+    invalidJsonSnapshot();
+  }
+  const seen = new Set();
+  let encoded = '';
+  let encodedBytes = 0;
+
+  function emit(fragment) {
+    encodedBytes += Buffer.byteLength(fragment);
+    if (encodedBytes > maximumBytes) jsonSnapshotTooLarge();
+    encoded += fragment;
+  }
+
+  function serialize(current, depth) {
+    if (depth > MAX_JSON_DEPTH + 4) invalidJsonSnapshot();
+    if (current === null || typeof current === 'boolean' || typeof current === 'string') {
+      emit(JSON_STRINGIFY(current));
+      return;
+    }
+    if (typeof current === 'number') {
+      if (!Number.isFinite(current) || !Number.isSafeInteger(current)) invalidJsonSnapshot();
+      emit(JSON_STRINGIFY(current));
+      return;
+    }
+    if (typeof current !== 'object' || seen.has(current)) invalidJsonSnapshot();
+
+    seen.add(current);
+    try {
+      const array = ARRAY_IS_ARRAY(current);
+      const prototype = GET_PROTOTYPE_OF(current);
+      if ((array && prototype !== ARRAY_PROTOTYPE) ||
+          (!array && prototype !== OBJECT_PROTOTYPE && prototype !== null)) invalidJsonSnapshot();
+      const separator = indentationWidth === 0 ? ',' : `,\n${jsonIndent(depth + 1, indentationWidth)}`;
+      const colon = indentationWidth === 0 ? ':' : ': ';
+      const openIndent = indentationWidth === 0 ? '' : `\n${jsonIndent(depth + 1, indentationWidth)}`;
+      const closeIndent = indentationWidth === 0 ? '' : `\n${jsonIndent(depth, indentationWidth)}`;
+
+      if (array) {
+        const keys = REFLECT_OWN_KEYS(current);
+        const lengthDescriptor = GET_OWN_PROPERTY_DESCRIPTOR(current, 'length');
+        if (!lengthDescriptor || !HAS_OWN(lengthDescriptor, 'value') ||
+            lengthDescriptor.enumerable !== false ||
+            !Number.isSafeInteger(lengthDescriptor.value) || lengthDescriptor.value < 0 ||
+            keys.length !== lengthDescriptor.value + 1 || keys[lengthDescriptor.value] !== 'length') {
+          invalidJsonSnapshot();
+        }
+        emit('[');
+        if (lengthDescriptor.value > 0) emit(openIndent);
+        for (let index = 0; index < lengthDescriptor.value; index += 1) {
+          const key = String(index);
+          if (keys[index] !== key) invalidJsonSnapshot();
+          const descriptor = GET_OWN_PROPERTY_DESCRIPTOR(current, key);
+          if (!descriptor || !HAS_OWN(descriptor, 'value') || descriptor.enumerable !== true) {
+            invalidJsonSnapshot();
+          }
+          if (index > 0) emit(separator);
+          serialize(descriptor.value, depth + 1);
+        }
+        if (lengthDescriptor.value > 0) emit(closeIndent);
+        emit(']');
+        return;
+      }
+
+      const keys = orderedJsonKeys(current, sortKeys);
+      emit('{');
+      if (keys.length > 0) emit(openIndent);
+      for (let index = 0; index < keys.length; index += 1) {
+        const key = keys[index];
+        const descriptor = GET_OWN_PROPERTY_DESCRIPTOR(current, key);
+        if (!descriptor || !HAS_OWN(descriptor, 'value') || descriptor.enumerable !== true) {
+          invalidJsonSnapshot();
+        }
+        if (index > 0) emit(separator);
+        emit(JSON_STRINGIFY(key));
+        emit(colon);
+        serialize(descriptor.value, depth + 1);
+      }
+      if (keys.length > 0) emit(closeIndent);
+      emit('}');
+    } finally {
+      seen.delete(current);
+    }
+  }
+
+  serialize(value, 0);
+  return encoded;
+}
+
+function exactCasOptionsSnapshot(value, expected) {
+  try {
+    const context = { bytes: 0, maximumBytes: MAX_CAS_OPTIONS_BYTES, seen: new Set() };
+    const snapshot = descriptorSafeJsonValue(value, context, 0);
+    if (!exactKeys(snapshot, expected)) return null;
+    const encoded = stringifyJsonWithoutHooks(snapshot, 0, false, MAX_CAS_OPTIONS_BYTES);
+    if (Buffer.byteLength(encoded) > MAX_CAS_OPTIONS_BYTES) return null;
+    return snapshot;
+  } catch {
+    return null;
+  }
+}
+
+function ownDataEntry(value, key, errorCode = 'journal_corrupt') {
+  let descriptor;
+  try {
+    descriptor = GET_OWN_PROPERTY_DESCRIPTOR(value, key);
+  } catch (error) {
+    journalError(errorCode, error);
+  }
+  if (!descriptor) return MISSING_OWN_ENTRY;
+  if (!HAS_OWN(descriptor, 'value') || descriptor.enumerable !== true) journalError(errorCode);
+  return descriptor.value;
+}
+
+function requireOwnData(value, key, errorCode = 'journal_corrupt') {
+  const entry = ownDataEntry(value, key, errorCode);
+  if (entry === MISSING_OWN_ENTRY) journalError(errorCode);
+  return entry;
+}
+
+function defineOwnData(value, key, entry) {
+  DEFINE_PROPERTY(value, key, {
+    configurable: true,
+    enumerable: true,
+    value: entry,
+    writable: true,
+  });
+}
+
+function journalSchemaVersion(data) {
+  return requireOwnData(data, 'schemaVersion');
+}
+
+function journalRecords(data) {
+  const records = requireOwnData(data, 'records');
+  if (!isPlainObject(records)) journalError('journal_corrupt');
+  return records;
+}
+
+function journalTombstones(data) {
+  const schemaVersion = journalSchemaVersion(data);
+  if (schemaVersion === INITIAL_JOURNAL_SCHEMA_VERSION) return null;
+  if (schemaVersion !== JOURNAL_SCHEMA_VERSION) journalError('journal_corrupt');
+  const tombstones = requireOwnData(data, 'tombstones');
+  if (!isPlainObject(tombstones)) journalError('journal_corrupt');
+  return tombstones;
+}
+
+function mapEntry(map, key) {
+  if (map === null) return null;
+  const entry = ownDataEntry(map, key);
+  return entry === MISSING_OWN_ENTRY ? null : entry;
+}
+
+function canonicalJson(value, maximumBytes = MAX_RECORD_BYTES) {
+  return stringifyJsonWithoutHooks(value, 0, true, maximumBytes);
+}
+
+function sha256Hex(value, maximumBytes = MAX_RECORD_BYTES) {
+  return createHash('sha256')
+    .update(typeof value === 'string' ? value : canonicalJson(value, maximumBytes))
+    .digest('hex');
 }
 
 function recordKey(authorizationKey, transactionHash) {
@@ -173,7 +535,7 @@ async function assertSafeDirectory(directory, allowedRoot) {
   return directoryPath;
 }
 
-function validateJsonValue(value, { depth = 0, seen = new Set() } = {}) {
+function validateJsonValueInternal(value, { depth, seen }) {
   if (depth > MAX_JSON_DEPTH) journalError('journal_record_invalid');
   if (value === null || typeof value === 'string' || typeof value === 'boolean') return;
   if (typeof value === 'number') {
@@ -182,25 +544,76 @@ function validateJsonValue(value, { depth = 0, seen = new Set() } = {}) {
   }
   if (typeof value !== 'object' || seen.has(value)) journalError('journal_record_invalid');
   seen.add(value);
-  if (Array.isArray(value)) {
-    for (const item of value) validateJsonValue(item, { depth: depth + 1, seen });
-  } else {
-    if (!isPlainObject(value)) journalError('journal_record_invalid');
-    for (const [key, item] of Object.entries(value)) {
+  try {
+    const array = ARRAY_IS_ARRAY(value);
+    const prototype = GET_PROTOTYPE_OF(value);
+    if (array) {
+      if (prototype !== ARRAY_PROTOTYPE) journalError('journal_record_invalid');
+      const keys = REFLECT_OWN_KEYS(value);
+      const lengthDescriptor = GET_OWN_PROPERTY_DESCRIPTOR(value, 'length');
+      if (!lengthDescriptor || !HAS_OWN(lengthDescriptor, 'value') ||
+          lengthDescriptor.enumerable !== false ||
+          !Number.isSafeInteger(lengthDescriptor.value) || lengthDescriptor.value < 0 ||
+          keys.length !== lengthDescriptor.value + 1 || keys[lengthDescriptor.value] !== 'length') {
+        journalError('journal_record_invalid');
+      }
+      for (let index = 0; index < lengthDescriptor.value; index += 1) {
+        const key = String(index);
+        if (keys[index] !== key) journalError('journal_record_invalid');
+        const descriptor = GET_OWN_PROPERTY_DESCRIPTOR(value, key);
+        if (!descriptor || !HAS_OWN(descriptor, 'value') || descriptor.enumerable !== true) {
+          journalError('journal_record_invalid');
+        }
+        validateJsonValueInternal(descriptor.value, { depth: depth + 1, seen });
+      }
+      return;
+    }
+
+    if (prototype !== OBJECT_PROTOTYPE && prototype !== null) journalError('journal_record_invalid');
+    const keys = REFLECT_OWN_KEYS(value);
+    for (let index = 0; index < keys.length; index += 1) {
+      const key = keys[index];
+      if (typeof key !== 'string') journalError('journal_record_invalid');
+      const descriptor = GET_OWN_PROPERTY_DESCRIPTOR(value, key);
+      if (!descriptor || !HAS_OWN(descriptor, 'value') || descriptor.enumerable !== true) {
+        journalError('journal_record_invalid');
+      }
       const normalizedKey = key.toLowerCase().replace(/[^a-z0-9]/g, '');
       if (FORBIDDEN_PERSISTED_KEYS.has(normalizedKey)) journalError('journal_secret_field_forbidden');
       if (key === '__proto__' || key === 'prototype' || key === 'constructor') journalError('journal_record_invalid');
-      validateJsonValue(item, { depth: depth + 1, seen });
+      validateJsonValueInternal(descriptor.value, { depth: depth + 1, seen });
     }
+  } finally {
+    seen.delete(value);
   }
-  seen.delete(value);
+}
+
+function validateJsonValue(value) {
+  try {
+    validateJsonValueInternal(value, { depth: 0, seen: new Set() });
+  } catch (error) {
+    if (error instanceof SettlementJournalError) throw error;
+    journalError('journal_record_invalid');
+  }
 }
 
 function cloneJson(value, maximumBytes = MAX_RECORD_BYTES) {
-  validateJsonValue(value);
-  const encoded = JSON.stringify(value);
+  let snapshot;
+  let encoded;
+  try {
+    const context = { bytes: 0, maximumBytes, seen: new Set() };
+    snapshot = descriptorSafeJsonValue(value, context, 0);
+    validateJsonValue(snapshot);
+    encoded = stringifyJsonWithoutHooks(snapshot, 0, false, maximumBytes);
+  } catch (error) {
+    if (error === JSON_SNAPSHOT_TOO_LARGE) journalError('journal_record_too_large');
+    if (fixedJournalErrorCode(error) === 'journal_secret_field_forbidden') {
+      journalError('journal_secret_field_forbidden');
+    }
+    journalError('journal_record_invalid');
+  }
   if (Buffer.byteLength(encoded) > maximumBytes) journalError('journal_record_too_large');
-  return JSON.parse(encoded);
+  return snapshot;
 }
 
 function validateTimestamp(value) {
@@ -265,18 +678,41 @@ function validateSignedAccountBlock(block, record) {
 
 function validateMomentumEvidence(evidence) {
   if (!exactKeys(evidence, ['observedAt', 'confirmationDetail']) || !validateTimestamp(evidence.observedAt)) return false;
-  const detail = evidence.confirmationDetail;
-  if (!exactKeys(detail, ['numConfirmations', 'momentumHeight', 'momentumHash', 'momentumTimestamp']) ||
-      !Number.isSafeInteger(detail.numConfirmations) || detail.numConfirmations < 1 ||
-      !Number.isSafeInteger(detail.momentumHeight) || detail.momentumHeight < 1 ||
-      typeof detail.momentumHash !== 'string' || !HASH_HEX.test(detail.momentumHash) ||
-      !Number.isSafeInteger(detail.momentumTimestamp) || detail.momentumTimestamp < 0) return false;
+  if (!validateConfirmationDetail(evidence.confirmationDetail)) return false;
   try {
     cloneJson(evidence, 16 * 1024);
     return true;
   } catch {
     return false;
   }
+}
+
+function validateConfirmationDetail(detail) {
+  if (!exactKeys(detail, ['numConfirmations', 'momentumHeight', 'momentumHash', 'momentumTimestamp']) ||
+      !Number.isSafeInteger(detail.numConfirmations) || detail.numConfirmations < 1 ||
+      !Number.isSafeInteger(detail.momentumHeight) || detail.momentumHeight < 1 ||
+      typeof detail.momentumHash !== 'string' || !HASH_HEX.test(detail.momentumHash) ||
+      !Number.isSafeInteger(detail.momentumTimestamp) || detail.momentumTimestamp < 0) return false;
+  try {
+    cloneJson(detail, 16 * 1024);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function validRetentionMs(value) {
+  return Number.isSafeInteger(value) && value >= MINIMUM_RETENTION_MS && value <= MAXIMUM_RETENTION_MS;
+}
+
+function isRetentionEligible(record, timestamp, retentionMs) {
+  if (!validRetentionMs(retentionMs) || !validateTimestamp(timestamp) ||
+      !TOMBSTONE_PRIOR_EVIDENCE_STATES.has(record.evidenceState) ||
+      record.deliveryState !== DELIVERY_STATES.NONE || record.momentumEvidence !== null ||
+      record.cachedResponse !== null) return false;
+  const createdAtMs = Date.parse(record.createdAt);
+  const timestampMs = Date.parse(timestamp);
+  return timestampMs >= createdAtMs && timestampMs - createdAtMs >= retentionMs;
 }
 
 function validateRecord(record) {
@@ -321,38 +757,152 @@ function validateRecord(record) {
   return true;
 }
 
-function checksumFor(data) {
-  return sha256Hex({
-    schemaVersion: data.schemaVersion,
-    revision: data.revision,
-    records: data.records,
-  });
+function validateTombstone(tombstone) {
+  if (!exactKeys(tombstone, TOMBSTONE_FIELDS)) return false;
+  if (!HASH_HEX.test(tombstone.authorizationKey ?? '') ||
+      !HASH_HEX.test(tombstone.transactionHash ?? '') ||
+      !HASH_HEX.test(tombstone.intentDigest ?? '') ||
+      !HASH_HEX.test(tombstone.resourceDigest ?? '') ||
+      !HASH_HEX.test(tombstone.signedAccountBlockDigest ?? '')) return false;
+  if (!validateChainProfile(tombstone.chainProfile)) return false;
+  if (sha256Hex({
+    domain: 'zenon-x402-authorization-v1',
+    chainProfile: tombstone.chainProfile,
+    intentDigest: tombstone.intentDigest,
+    resourceDigest: tombstone.resourceDigest,
+    transactionHash: tombstone.transactionHash,
+  }) !== tombstone.authorizationKey) return false;
+  if (typeof tombstone.payer !== 'string' || tombstone.payer.length < 10 || tombstone.payer.length > 128) return false;
+  if (!TOMBSTONE_PRIOR_EVIDENCE_STATES.has(tombstone.priorEvidenceState)) return false;
+  if (!validateTimestamp(tombstone.createdAt) || !validateTimestamp(tombstone.terminalizedAt) ||
+      tombstone.terminalizedAt < tombstone.createdAt) return false;
+  if (tombstone.lateMomentumEvidence !== null &&
+      (!validateMomentumEvidence(tombstone.lateMomentumEvidence) ||
+        tombstone.lateMomentumEvidence.observedAt < tombstone.terminalizedAt)) return false;
+  try {
+    cloneJson(tombstone, MAX_RECORD_BYTES);
+  } catch {
+    return false;
+  }
+  return true;
+}
+
+function tombstoneFromRecord(record, terminalizedAt) {
+  return {
+    authorizationKey: record.authorizationKey,
+    transactionHash: record.transactionHash,
+    chainProfile: cloneJson(record.chainProfile),
+    intentDigest: record.intentDigest,
+    resourceDigest: record.resourceDigest,
+    payer: record.payer,
+    signedAccountBlockDigest: sha256Hex({
+      domain: 'zenon-x402-signed-account-block-v1',
+      signedAccountBlock: record.signedAccountBlock,
+    }),
+    priorEvidenceState: record.evidenceState,
+    createdAt: record.createdAt,
+    terminalizedAt,
+    lateMomentumEvidence: null,
+  };
+}
+
+function sameTombstoneIdentity(left, right) {
+  if (!validateTombstone(left) || !validateTombstone(right)) return false;
+  const leftBase = { ...left, lateMomentumEvidence: null };
+  const rightBase = { ...right, lateMomentumEvidence: null };
+  return canonicalJson(leftBase) === canonicalJson(rightBase);
+}
+
+function checksumFor(data, maximumBytes = DEFAULT_MAX_FILE_BYTES) {
+  const schemaVersion = journalSchemaVersion(data);
+  const content = {
+    schemaVersion,
+    revision: requireOwnData(data, 'revision'),
+    records: journalRecords(data),
+  };
+  if (schemaVersion === JOURNAL_SCHEMA_VERSION) {
+    defineOwnData(content, 'tombstones', journalTombstones(data));
+  }
+  return sha256Hex(content, maximumBytes);
 }
 
 function emptyJournal() {
-  const data = { schemaVersion: JOURNAL_SCHEMA_VERSION, revision: 0, records: {} };
+  const data = { schemaVersion: INITIAL_JOURNAL_SCHEMA_VERSION, revision: 0, records: {} };
   return { ...data, checksum: checksumFor(data) };
 }
 
-function validateJournal(data, maxRecords) {
-  if (!exactKeys(data, ['schemaVersion', 'revision', 'records', 'checksum']) ||
-      data.schemaVersion !== JOURNAL_SCHEMA_VERSION || !Number.isSafeInteger(data.revision) || data.revision < 0 ||
-      !isPlainObject(data.records) || !HASH_HEX.test(data.checksum ?? '') || checksumFor(data) !== data.checksum) {
-    journalError('journal_corrupt');
-  }
-  const entries = Object.entries(data.records);
-  if (entries.length > maxRecords) journalError('journal_corrupt');
-  const authorizations = new Set();
-  const transactions = new Set();
-  for (const [key, record] of entries) {
-    if (!validateRecord(record) || key !== recordKey(record.authorizationKey, record.transactionHash) ||
-        authorizations.has(record.authorizationKey) || transactions.has(record.transactionHash)) {
+function validatedMapKeys(map, maximumEntries) {
+  const keys = REFLECT_OWN_KEYS(map);
+  if (keys.length > maximumEntries) journalError('journal_corrupt');
+  for (let index = 0; index < keys.length; index += 1) {
+    const key = keys[index];
+    if (typeof key !== 'string') journalError('journal_corrupt');
+    const descriptor = GET_OWN_PROPERTY_DESCRIPTOR(map, key);
+    if (!descriptor || !HAS_OWN(descriptor, 'value') || descriptor.enumerable !== true) {
       journalError('journal_corrupt');
     }
-    authorizations.add(record.authorizationKey);
-    transactions.add(record.transactionHash);
   }
-  return data;
+  return keys;
+}
+
+function validateJournalStructure(data, maxRecords) {
+  try {
+    if (!isPlainObject(data)) journalError('journal_corrupt');
+    const schemaVersion = journalSchemaVersion(data);
+    const v1 = schemaVersion === INITIAL_JOURNAL_SCHEMA_VERSION;
+    const v2 = schemaVersion === JOURNAL_SCHEMA_VERSION;
+    if (!v1 && !v2) journalError('journal_corrupt');
+    const journalFields = v1
+      ? ['schemaVersion', 'revision', 'records', 'checksum']
+      : ['schemaVersion', 'revision', 'records', 'tombstones', 'checksum'];
+    const revision = requireOwnData(data, 'revision');
+    const records = journalRecords(data);
+    const tombstones = v2 ? journalTombstones(data) : null;
+    const checksum = requireOwnData(data, 'checksum');
+    if (!exactKeys(data, journalFields) || !Number.isSafeInteger(revision) || revision < 0 ||
+        !HASH_HEX.test(checksum ?? '')) journalError('journal_corrupt');
+
+    const recordKeys = validatedMapKeys(records, maxRecords);
+    const tombstoneKeys = tombstones === null ? null : validatedMapKeys(tombstones, MAX_TOMBSTONES);
+    const authorizations = new Set();
+    const transactions = new Set();
+    for (let index = 0; index < recordKeys.length; index += 1) {
+      const key = recordKeys[index];
+      const record = requireOwnData(records, key);
+      if (!validateRecord(record) || key !== recordKey(record.authorizationKey, record.transactionHash) ||
+          authorizations.has(record.authorizationKey) || transactions.has(record.transactionHash)) {
+        journalError('journal_corrupt');
+      }
+      authorizations.add(record.authorizationKey);
+      transactions.add(record.transactionHash);
+    }
+    if (tombstoneKeys !== null) {
+      for (let index = 0; index < tombstoneKeys.length; index += 1) {
+        const key = tombstoneKeys[index];
+        const tombstone = requireOwnData(tombstones, key);
+        if (!validateTombstone(tombstone) ||
+            key !== recordKey(tombstone.authorizationKey, tombstone.transactionHash) ||
+            authorizations.has(tombstone.authorizationKey) || transactions.has(tombstone.transactionHash)) {
+          journalError('journal_corrupt');
+        }
+        authorizations.add(tombstone.authorizationKey);
+        transactions.add(tombstone.transactionHash);
+      }
+    }
+    return checksum;
+  } catch {
+    throw fixedJournalFailure('journal_corrupt');
+  }
+}
+
+function validateJournal(data, maxRecords, maxFileBytes = DEFAULT_MAX_FILE_BYTES) {
+  try {
+    const checksum = validateJournalStructure(data, maxRecords);
+    if (checksumFor(data, maxFileBytes) !== checksum) journalError('journal_corrupt');
+    return data;
+  } catch {
+    throw fixedJournalFailure('journal_corrupt');
+  }
 }
 
 function enqueue(filePath, operation) {
@@ -416,16 +966,15 @@ export class SettlementJournal {
       const text = await handle.readFile({ encoding: 'utf8' });
       let parsed;
       try {
-        parsed = JSON.parse(text);
-      } catch (error) {
-        journalError('journal_corrupt', error);
+        parsed = JSON_PARSE(text);
+      } catch {
+        throw fixedJournalFailure('journal_corrupt');
       }
-      const data = validateJournal(parsed, this.maxRecords);
+      const data = validateJournal(parsed, this.maxRecords, this.maxFileBytes);
       if (!initialized) await this.#ensureInitializationMarker();
       return data;
     } catch (error) {
-      if (error instanceof SettlementJournalError) throw error;
-      journalError('journal_read_failed', error);
+      throw fixedJournalFailure(fixedJournalErrorCode(error) ?? 'journal_read_failed');
     } finally {
       await handle?.close().catch(() => {});
     }
@@ -472,14 +1021,24 @@ export class SettlementJournal {
   }
 
   async #write(data) {
-    data.checksum = checksumFor(data);
-    const serialized = `${JSON.stringify(data, null, 2)}\n`;
-    if (Buffer.byteLength(serialized) > this.maxFileBytes) journalError('journal_capacity_exceeded');
-    const temporaryPath = join(this.directory, `.${JOURNAL_FILE_NAME}.${process.pid}.${randomBytes(8).toString('hex')}.tmp`);
     let handle;
+    let temporaryPath;
+    let temporaryCreated = false;
     let renamed = false;
+    let failure = null;
+    let cleanupFailed = false;
     try {
+      validateJournalStructure(data, this.maxRecords);
+      defineOwnData(data, 'checksum', checksumFor(data, this.maxFileBytes));
+      validateJournal(data, this.maxRecords, this.maxFileBytes);
+      const serialized = `${stringifyJsonWithoutHooks(data, 2, false, this.maxFileBytes)}\n`;
+      if (Buffer.byteLength(serialized) > this.maxFileBytes) journalError('journal_capacity_exceeded');
+      temporaryPath = join(
+        this.directory,
+        `.${JOURNAL_FILE_NAME}.${process.pid}.${randomBytes(8).toString('hex')}.tmp`,
+      );
       handle = await open(temporaryPath, 'wx', 0o600);
+      temporaryCreated = true;
       await handle.writeFile(serialized, { encoding: 'utf8' });
       await handle.sync();
       await handle.close();
@@ -489,13 +1048,38 @@ export class SettlementJournal {
       await syncDirectory(this.directory);
       await this.#ensureInitializationMarker();
     } catch (error) {
-      if (error instanceof SettlementJournalError) throw error;
-      journalError(renamed ? 'journal_directory_sync_failed' : 'journal_write_failed', error);
+      const fixedCode = fixedJournalErrorCode(error);
+      const code = error === JSON_SNAPSHOT_TOO_LARGE
+        ? 'journal_capacity_exceeded'
+        : fixedCode !== null
+          ? fixedCode
+          : renamed
+            ? 'journal_directory_sync_failed'
+            : 'journal_write_failed';
+      failure = fixedJournalFailure(code);
     } finally {
-      await handle?.close().catch(() => {});
-      if (!renamed) await unlink(temporaryPath).catch(error => {
-        if (error?.code !== 'ENOENT') throw error;
-      });
+      if (handle) {
+        try {
+          await handle.close();
+        } catch {
+          cleanupFailed = true;
+        }
+      }
+      if (temporaryCreated && !renamed && temporaryPath !== undefined) {
+        try {
+          await unlink(temporaryPath);
+        } catch (error) {
+          let missing = false;
+          try {
+            missing = error?.code === 'ENOENT';
+          } catch {
+            // Cleanup errors are normalized below.
+          }
+          if (!missing) cleanupFailed = true;
+        }
+      }
+      if (failure) throw failure;
+      if (cleanupFailed) throw fixedJournalFailure('journal_cleanup_failed');
     }
   }
 
@@ -514,17 +1098,18 @@ export class SettlementJournal {
   async load() {
     return this.#withWriter(async () => {
       const data = await this.#read();
+      const records = journalRecords(data);
       return {
-        schemaVersion: data.schemaVersion,
-        revision: data.revision,
-        records: Object.values(data.records).map(record => cloneJson(record)),
+        schemaVersion: journalSchemaVersion(data),
+        revision: requireOwnData(data, 'revision'),
+        records: Object.values(records).map(record => cloneJson(record)),
       };
     });
   }
 
   async putValidated(input) {
-    if (!validateInputResourceIdentity(input)) journalError('journal_record_invalid');
     const immutable = cloneJson(input);
+    if (!validateInputResourceIdentity(immutable)) journalError('journal_record_invalid');
     const timestamp = this.#now();
     const candidate = {
       ...immutable,
@@ -539,24 +1124,31 @@ export class SettlementJournal {
 
     return this.#withWriter(async () => {
       const data = await this.#read();
+      const records = journalRecords(data);
+      const tombstones = journalTombstones(data);
       const key = recordKey(candidate.authorizationKey, candidate.transactionHash);
-      const existing = data.records[key];
+      const existing = mapEntry(records, key);
       if (existing) {
         const unchanged = IMMUTABLE_RECORD_FIELDS.every(field => canonicalJson(existing[field]) === canonicalJson(candidate[field]));
         if (!unchanged) journalError('journal_identity_conflict');
         return cloneJson(existing);
       }
-      for (const record of Object.values(data.records)) {
+      for (const record of Object.values(records)) {
         if (record.authorizationKey === candidate.authorizationKey || record.transactionHash === candidate.transactionHash) {
           journalError('journal_identity_conflict');
         }
       }
-      if (Object.keys(data.records).length >= this.maxRecords) {
+      for (const tombstone of Object.values(tombstones ?? {})) {
+        if (tombstone.authorizationKey === candidate.authorizationKey || tombstone.transactionHash === candidate.transactionHash) {
+          journalError('journal_identity_conflict');
+        }
+      }
+      if (Object.keys(records).length >= this.maxRecords) {
         // Never silently evict uncertain or delivery evidence. An operator may
         // archive old DELIVERED entries out of band; this PoC fails closed.
         journalError('journal_capacity_exceeded');
       }
-      data.records[key] = candidate;
+      defineOwnData(records, key, candidate);
       data.revision += 1;
       await this.#write(data);
       return cloneJson(candidate);
@@ -566,7 +1158,7 @@ export class SettlementJournal {
   async get(authorizationKey, transactionHash) {
     return this.#withWriter(async () => {
       const data = await this.#read();
-      const record = data.records[recordKey(authorizationKey, transactionHash)];
+      const record = mapEntry(journalRecords(data), recordKey(authorizationKey, transactionHash));
       return record ? cloneJson(record) : null;
     });
   }
@@ -575,17 +1167,233 @@ export class SettlementJournal {
     if (!HASH_HEX.test(transactionHash ?? '')) journalError('journal_record_invalid');
     return this.#withWriter(async () => {
       const data = await this.#read();
-      const record = Object.values(data.records).find(candidate => candidate.transactionHash === transactionHash);
+      const record = Object.values(journalRecords(data)).find(candidate => candidate.transactionHash === transactionHash);
       return record ? cloneJson(record) : null;
+    });
+  }
+
+  async getTombstone(authorizationKey, transactionHash) {
+    return this.#withWriter(async () => {
+      const data = await this.#read();
+      const tombstone = mapEntry(journalTombstones(data), recordKey(authorizationKey, transactionHash));
+      return tombstone ? cloneJson(tombstone) : null;
+    });
+  }
+
+  async findTombstoneByTransactionHash(transactionHash) {
+    if (!HASH_HEX.test(transactionHash ?? '')) journalError('journal_record_invalid');
+    return this.#withWriter(async () => {
+      const data = await this.#read();
+      const tombstone = Object.values(journalTombstones(data) ?? {})
+        .find(candidate => candidate.transactionHash === transactionHash);
+      return tombstone ? cloneJson(tombstone) : null;
+    });
+  }
+
+  async listReconciliationCandidates(retentionMs) {
+    if (retentionMs !== null && !validRetentionMs(retentionMs)) journalError('journal_retention_invalid');
+    return this.#withWriter(async () => {
+      const data = await this.#read();
+      const records = journalRecords(data);
+      const timestamp = retentionMs === null ? null : this.#now();
+      return {
+        records: retentionMs === null
+          ? []
+          : Object.values(records)
+            .filter(record => isRetentionEligible(record, timestamp, retentionMs))
+            .map(record => cloneJson(record)),
+        tombstones: Object.values(journalTombstones(data) ?? {}).map(tombstone => cloneJson(tombstone)),
+      };
+    });
+  }
+
+  async getEntrySnapshot(authorizationKey, transactionHash) {
+    const key = recordKey(authorizationKey, transactionHash);
+    return this.#withWriter(async () => {
+      const data = await this.#read();
+      const record = mapEntry(journalRecords(data), key);
+      if (record) {
+        return { revision: data.revision, kind: 'record', entry: cloneJson(record) };
+      }
+      const tombstone = mapEntry(journalTombstones(data), key);
+      if (tombstone) {
+        return { revision: data.revision, kind: 'tombstone', entry: cloneJson(tombstone) };
+      }
+      return { revision: data.revision, kind: null, entry: null };
+    });
+  }
+
+  async compareAndUpdateEvidence(options) {
+    const snapshot = exactCasOptionsSnapshot(options, [
+      'expectedRevision', 'expectedRecord', 'evidenceState', 'confirmationDetail',
+    ]);
+    if (!snapshot || !Number.isSafeInteger(snapshot.expectedRevision) || snapshot.expectedRevision < 0 ||
+        !validateRecord(snapshot.expectedRecord) ||
+        !TOMBSTONE_PRIOR_EVIDENCE_STATES.has(snapshot.expectedRecord.evidenceState) ||
+        snapshot.expectedRecord.deliveryState !== DELIVERY_STATES.NONE ||
+        ![EVIDENCE_STATES.SUBMISSION_ACKNOWLEDGED, EVIDENCE_STATES.MOMENTUM_INCLUDED]
+          .includes(snapshot.evidenceState) ||
+        (snapshot.evidenceState === EVIDENCE_STATES.SUBMISSION_ACKNOWLEDGED
+          ? snapshot.confirmationDetail !== null
+          : !validateConfirmationDetail(snapshot.confirmationDetail))) {
+      journalError('journal_compare_and_replace_failed');
+    }
+    const expectedRevision = snapshot.expectedRevision;
+    const evidenceState = snapshot.evidenceState;
+    const expectedRecord = cloneJson(snapshot.expectedRecord);
+    const confirmationDetail = snapshot.confirmationDetail === null
+      ? null
+      : cloneJson(snapshot.confirmationDetail, 16 * 1024);
+    const key = recordKey(expectedRecord.authorizationKey, expectedRecord.transactionHash);
+
+    return this.#withWriter(async () => {
+      const data = await this.#read();
+      const records = journalRecords(data);
+      const current = mapEntry(records, key);
+      if (data.revision !== expectedRevision || !current || mapEntry(journalTombstones(data), key) ||
+          canonicalJson(current) !== canonicalJson(expectedRecord)) {
+        journalError('journal_compare_and_replace_failed');
+      }
+      const observedAt = this.#now();
+      if (current.evidenceState === evidenceState) {
+        return { changed: false, record: cloneJson(current) };
+      }
+      const currentRank = Number(EVIDENCE_STATES.MOMENTUM_INCLUDED === current.evidenceState) * 3 +
+        Number(EVIDENCE_STATES.SUBMISSION_ACKNOWLEDGED === current.evidenceState) * 2 +
+        Number(EVIDENCE_STATES.SUBMISSION_OUTCOME_UNKNOWN === current.evidenceState);
+      const nextRank = evidenceState === EVIDENCE_STATES.MOMENTUM_INCLUDED ? 3 : 2;
+      if (nextRank <= currentRank) journalError('journal_compare_and_replace_failed');
+
+      const durableObservedAt = observedAt < current.updatedAt ? current.updatedAt : observedAt;
+      current.evidenceState = evidenceState;
+      current.momentumEvidence = confirmationDetail === null
+        ? null
+        : { observedAt: durableObservedAt, confirmationDetail };
+      current.updatedAt = durableObservedAt;
+      if (!validateRecord(current)) journalError('journal_compare_and_replace_failed');
+      data.revision += 1;
+      const writtenRevision = data.revision;
+      await this.#write(data);
+      const reloaded = await this.#read();
+      const reloadedRecord = mapEntry(journalRecords(reloaded), key);
+      if (reloaded.revision !== writtenRevision || canonicalJson(reloadedRecord) !== canonicalJson(current)) {
+        journalError('journal_write_verification_failed');
+      }
+      return { changed: true, record: cloneJson(reloadedRecord) };
+    });
+  }
+
+  async replaceRecordWithTombstone(options) {
+    const snapshot = exactCasOptionsSnapshot(options, ['expectedRevision', 'expectedRecord', 'retentionMs']);
+    if (!snapshot || !Number.isSafeInteger(snapshot.expectedRevision) || snapshot.expectedRevision < 0 ||
+        !validRetentionMs(snapshot.retentionMs) ||
+        !validateRecord(snapshot.expectedRecord)) {
+      journalError('journal_compare_and_replace_failed');
+    }
+    const expectedRevision = snapshot.expectedRevision;
+    const retentionMs = snapshot.retentionMs;
+    const expectedRecord = cloneJson(snapshot.expectedRecord);
+    const key = recordKey(expectedRecord.authorizationKey, expectedRecord.transactionHash);
+
+    return this.#withWriter(async () => {
+      const data = await this.#read();
+      const records = journalRecords(data);
+      const current = mapEntry(records, key);
+      if (data.revision !== expectedRevision || !current || mapEntry(journalTombstones(data), key) ||
+          canonicalJson(current) !== canonicalJson(expectedRecord) ||
+          !TOMBSTONE_PRIOR_EVIDENCE_STATES.has(current.evidenceState)) {
+        journalError('journal_compare_and_replace_failed');
+      }
+
+      const terminalizedAt = this.#now();
+      if (!isRetentionEligible(current, terminalizedAt, retentionMs)) journalError('journal_compare_and_replace_failed');
+      const currentTombstones = journalTombstones(data);
+      if (Object.keys(currentTombstones ?? {}).length >= MAX_TOMBSTONES) journalError('journal_capacity_exceeded');
+
+      const tombstone = tombstoneFromRecord(current, terminalizedAt);
+      if (!validateTombstone(tombstone)) journalError('journal_compare_and_replace_failed');
+      if (data.schemaVersion === INITIAL_JOURNAL_SCHEMA_VERSION) {
+        data.schemaVersion = JOURNAL_SCHEMA_VERSION;
+        defineOwnData(data, 'tombstones', {});
+      }
+      const tombstones = journalTombstones(data);
+      delete records[key];
+      defineOwnData(tombstones, key, tombstone);
+      data.revision += 1;
+      const writtenRevision = data.revision;
+      await this.#write(data);
+
+      const reloaded = await this.#read();
+      const reloadedRecord = mapEntry(journalRecords(reloaded), key);
+      const reloadedTombstone = mapEntry(journalTombstones(reloaded), key);
+      if (reloaded.schemaVersion !== JOURNAL_SCHEMA_VERSION || reloaded.revision !== writtenRevision ||
+          reloadedRecord || canonicalJson(reloadedTombstone) !== canonicalJson(tombstone)) {
+        journalError('journal_write_verification_failed');
+      }
+      return cloneJson(reloadedTombstone);
+    });
+  }
+
+  async recordLateMomentumEvidence(options) {
+    const snapshot = exactCasOptionsSnapshot(options, [
+      'expectedRevision', 'expectedTombstone', 'confirmationDetail',
+    ]);
+    if (!snapshot || !Number.isSafeInteger(snapshot.expectedRevision) || snapshot.expectedRevision < 0 ||
+        !validateTombstone(snapshot.expectedTombstone) || !validateConfirmationDetail(snapshot.confirmationDetail)) {
+      journalError('journal_compare_and_replace_failed');
+    }
+    const expectedRevision = snapshot.expectedRevision;
+    const expectedTombstone = cloneJson(snapshot.expectedTombstone);
+    const confirmationDetail = cloneJson(snapshot.confirmationDetail, 16 * 1024);
+    const key = recordKey(expectedTombstone.authorizationKey, expectedTombstone.transactionHash);
+
+    return this.#withWriter(async () => {
+      const data = await this.#read();
+      const current = mapEntry(journalTombstones(data), key);
+      if (!current || mapEntry(journalRecords(data), key) || !sameTombstoneIdentity(current, expectedTombstone)) {
+        journalError('journal_compare_and_replace_failed');
+      }
+      if (current.lateMomentumEvidence !== null) return { changed: false, tombstone: cloneJson(current) };
+      if (data.revision !== expectedRevision ||
+          canonicalJson(current) !== canonicalJson(expectedTombstone)) {
+        journalError('journal_compare_and_replace_failed');
+      }
+
+      const observedAt = this.#now();
+      current.lateMomentumEvidence = {
+        observedAt: observedAt < current.terminalizedAt ? current.terminalizedAt : observedAt,
+        confirmationDetail,
+      };
+      if (!validateTombstone(current)) journalError('journal_compare_and_replace_failed');
+      data.revision += 1;
+      const writtenRevision = data.revision;
+      await this.#write(data);
+
+      const reloaded = await this.#read();
+      const reloadedTombstone = mapEntry(journalTombstones(reloaded), key);
+      if (reloaded.revision !== writtenRevision ||
+          canonicalJson(reloadedTombstone) !== canonicalJson(current)) {
+        journalError('journal_write_verification_failed');
+      }
+      return { changed: true, tombstone: cloneJson(reloadedTombstone) };
     });
   }
 
   async updateEvidence(authorizationKey, transactionHash, evidenceState, momentumEvidence = undefined) {
     if (!Object.values(EVIDENCE_STATES).includes(evidenceState)) journalError('journal_evidence_invalid');
+    let immutableMomentumEvidence = null;
+    if (evidenceState === EVIDENCE_STATES.MOMENTUM_INCLUDED) {
+      try {
+        immutableMomentumEvidence = cloneJson(momentumEvidence, 16 * 1024);
+      } catch {
+        journalError('journal_momentum_evidence_invalid');
+      }
+      if (!validateMomentumEvidence(immutableMomentumEvidence)) journalError('journal_momentum_evidence_invalid');
+    }
     return this.#withWriter(async () => {
       const data = await this.#read();
       const key = recordKey(authorizationKey, transactionHash);
-      const record = data.records[key];
+      const record = mapEntry(journalRecords(data), key);
       if (!record) journalError('journal_record_not_found');
 
       const current = record.evidenceState;
@@ -597,8 +1405,7 @@ export class SettlementJournal {
       if (shouldIgnore || current === evidenceState) return cloneJson(record);
 
       if (evidenceState === EVIDENCE_STATES.MOMENTUM_INCLUDED) {
-        if (!validateMomentumEvidence(momentumEvidence)) journalError('journal_momentum_evidence_invalid');
-        record.momentumEvidence = cloneJson(momentumEvidence, 16 * 1024);
+        record.momentumEvidence = cloneJson(immutableMomentumEvidence, 16 * 1024);
       } else {
         record.momentumEvidence = null;
       }
@@ -615,7 +1422,7 @@ export class SettlementJournal {
     return this.#withWriter(async () => {
       const data = await this.#read();
       const key = recordKey(authorizationKey, transactionHash);
-      const record = data.records[key];
+      const record = mapEntry(journalRecords(data), key);
       if (!record) journalError('journal_record_not_found');
       if (record.deliveryState === DELIVERY_STATES.DELIVERED || record.deliveryState === DELIVERY_STATES.DELIVERY_PENDING) {
         return { ...cloneJson(record), deliveryClaimed: false };
@@ -635,7 +1442,7 @@ export class SettlementJournal {
     return this.#withWriter(async () => {
       const data = await this.#read();
       const key = recordKey(authorizationKey, transactionHash);
-      const record = data.records[key];
+      const record = mapEntry(journalRecords(data), key);
       if (!record) journalError('journal_record_not_found');
       if (record.deliveryState === DELIVERY_STATES.DELIVERED) {
         if (canonicalJson(record.cachedResponse) !== canonicalJson(cached)) journalError('journal_delivery_conflict');
@@ -653,8 +1460,20 @@ export class SettlementJournal {
     });
   }
 
-  async list() {
-    const loaded = await this.load();
-    return loaded.records;
+  async list(options = undefined) {
+    const includeTombstones = options !== undefined;
+    if (includeTombstones && !exactKeys(options, ['includeTombstones'])) {
+      journalError('journal_options_invalid');
+    }
+    if (includeTombstones && options.includeTombstones !== true) journalError('journal_options_invalid');
+    return this.#withWriter(async () => {
+      const data = await this.#read();
+      const records = Object.values(journalRecords(data)).map(record => cloneJson(record));
+      if (!includeTombstones) return records;
+      return {
+        records,
+        tombstones: Object.values(journalTombstones(data) ?? {}).map(tombstone => cloneJson(tombstone)),
+      };
+    });
   }
 }

@@ -28,6 +28,13 @@ const MAX_CONFIRMATION_WAIT_MS = 5 * 60_000;
 const DEFAULT_RPC_TIMEOUT_MS = 10_000;
 const UNCONFIRMED_PAGE_SIZE = 50;
 const MAX_UNCONFIRMED_BLOCKS = 200;
+const MINIMUM_RECONCILIATION_RETENTION_MS = 3_600_000;
+const MAXIMUM_RECONCILIATION_RETENTION_MS = 2_592_000_000;
+const RECONCILIATION_MAINTENANCE_BATCH_SIZE = 64;
+const RECONCILIATION_OUTCOME_KEYS = Object.freeze([
+  'included', 'acknowledged', 'terminalized', 'lateInclusionRecorded',
+  'unavailable', 'capacityBlocked', 'conflicted', 'unchanged',
+]);
 const HASH_HEX = /^[0-9a-f]{64}$/;
 const NONCE_HEX = /^[0-9a-f]{16}$/;
 const CANONICAL_DECIMAL = /^(0|[1-9]\d*)$/;
@@ -242,7 +249,7 @@ export function computeBlockHash(block, sdk) {
  * Validate an RPC observation as the exact signed AccountBlock that passed
  * offline preflight. A matching lookup key alone is not trusted as evidence.
  */
-export function validateObservedAccountBlock(observed, preflight, sdk) {
+function inspectObservedAccountBlock(observed, sdk) {
   if (!observed || typeof observed !== 'object' || typeof observed.toJson !== 'function') {
     safetyError('malformed_observed_account_block');
   }
@@ -251,6 +258,7 @@ export function validateObservedAccountBlock(observed, preflight, sdk) {
   let observedJson;
   let decoded;
   let computedHash;
+  let observedHash;
   let observedPublicKey;
   let observedSignature;
   try {
@@ -269,24 +277,67 @@ export function validateObservedAccountBlock(observed, preflight, sdk) {
     observedJson.signature = observedSignature.toString('base64');
     decoded = validateAccountBlockJson(observedJson);
     computedHash = computeBlockHash(observed, sdk).toString();
+    observedHash = observed.hash?.toString();
   } catch (error) {
     if (error instanceof ZenonSafetyError) throw error;
     safetyError('malformed_observed_account_block', error);
   }
 
-  if (sha256Hex(observedJson) !== sha256Hex(preflight.signedAccountBlock) ||
-      computedHash !== preflight.transactionHash ||
-      observed.hash?.toString() !== preflight.transactionHash ||
-      !observedPublicKey.equals(decoded.publicKey) ||
-      !observedSignature.equals(decoded.signature) ||
-      !observedPublicKey.equals(Buffer.from(preflight.block.publicKey)) ||
-      !observedSignature.equals(Buffer.from(preflight.block.signature))) {
+  if (!observedPublicKey.equals(decoded.publicKey) ||
+      !observedSignature.equals(decoded.signature)) {
     safetyError('observed_transaction_mismatch');
   }
-  if (observed.confirmationDetail !== undefined && observed.confirmationDetail !== null) {
-    normalizeConfirmationDetail(observed.confirmationDetail);
+  const confirmationDetail = observed.confirmationDetail === undefined || observed.confirmationDetail === null
+    ? null
+    : normalizeConfirmationDetail(observed.confirmationDetail);
+  return {
+    observed,
+    observedJson,
+    decoded,
+    computedHash,
+    observedHash,
+    observedPublicKey,
+    observedSignature,
+    confirmationDetail,
+  };
+}
+
+export function validateObservedAccountBlock(observed, preflight, sdk) {
+  const inspected = inspectObservedAccountBlock(observed, sdk);
+  if (sha256Hex(inspected.observedJson) !== sha256Hex(preflight.signedAccountBlock) ||
+      inspected.computedHash !== preflight.transactionHash ||
+      inspected.observedHash !== preflight.transactionHash ||
+      !inspected.observedPublicKey.equals(Buffer.from(preflight.block.publicKey)) ||
+      !inspected.observedSignature.equals(Buffer.from(preflight.block.signature))) {
+    safetyError('observed_transaction_mismatch');
   }
   return observed;
+}
+
+function validateObservedJournalRecord(observed, record, sdk) {
+  const inspected = inspectObservedAccountBlock(observed, sdk);
+  if (sha256Hex(inspected.observedJson) !== sha256Hex(record.signedAccountBlock) ||
+      inspected.computedHash !== record.transactionHash ||
+      inspected.observedHash !== record.transactionHash) {
+    safetyError('observed_transaction_mismatch');
+  }
+  return inspected;
+}
+
+function validateObservedTombstoneBlock(observed, tombstone, sdk) {
+  const inspected = inspectObservedAccountBlock(observed, sdk);
+  const signedAccountBlockDigest = sha256Hex({
+    domain: 'zenon-x402-signed-account-block-v1',
+    signedAccountBlock: inspected.observedJson,
+  });
+  if (inspected.computedHash !== tombstone.transactionHash ||
+      inspected.observedHash !== tombstone.transactionHash ||
+      inspected.observedJson.address !== tombstone.payer ||
+      String(inspected.observedJson.chainIdentifier) !== tombstone.chainProfile.chainIdentifier ||
+      signedAccountBlockDigest !== tombstone.signedAccountBlockDigest) {
+    safetyError('observed_transaction_mismatch');
+  }
+  return inspected;
 }
 
 function chainProfilesEqual(left, right) {
@@ -883,17 +934,131 @@ function terminalJournalSettlement(requirements, preflight, record) {
     : null;
 }
 
+function configuredReconciliationRetention(value) {
+  if (value === null) return null;
+  if (!Number.isSafeInteger(value) ||
+      value < MINIMUM_RECONCILIATION_RETENTION_MS ||
+      value > MAXIMUM_RECONCILIATION_RETENTION_MS) {
+    safetyError('invalid_reconciliation_retention');
+  }
+  return value;
+}
+
+function signedAccountBlockDigest(signedAccountBlock) {
+  return sha256Hex({
+    domain: 'zenon-x402-signed-account-block-v1',
+    signedAccountBlock,
+  });
+}
+
+function assertJournalTombstoneMatches(tombstone, preflight) {
+  if (!tombstone || typeof tombstone !== 'object') safetyError('journal_record_invalid');
+  const expected = {
+    authorizationKey: preflight.authorizationKey,
+    transactionHash: preflight.transactionHash,
+    chainProfile: preflight.chainProfile,
+    intentDigest: preflight.intentDigest,
+    resourceDigest: preflight.resourceDigest,
+    payer: preflight.payer,
+    signedAccountBlockDigest: signedAccountBlockDigest(preflight.signedAccountBlock),
+  };
+  for (const [field, value] of Object.entries(expected)) {
+    if (!Object.hasOwn(tombstone, field) || sha256Hex(tombstone[field]) !== sha256Hex(value)) {
+      safetyError('journal_identity_conflict');
+    }
+  }
+}
+
+function terminalTombstoneSettlement(requirements, preflight, tombstone) {
+  assertJournalTombstoneMatches(tombstone, preflight);
+  return failed(
+    requirements,
+    preflight.transactionHash,
+    preflight.payer,
+    'payment_reconciliation_terminal',
+    tombstone.priorEvidenceState,
+    {
+      authorizationKey: preflight.authorizationKey,
+      deliveryState: DELIVERY_STATES.NONE,
+      retrySamePayment: false,
+    },
+  );
+}
+
+function maintenanceEntriesEqual(left, right) {
+  return sha256Hex(left) === sha256Hex(right);
+}
+
+function sameTombstoneBase(left, right) {
+  if (!left || !right) return false;
+  return maintenanceEntriesEqual(
+    { ...left, lateMomentumEvidence: null },
+    { ...right, lateMomentumEvidence: null },
+  );
+}
+
+function recordCandidateMatchesTombstone(record, tombstone) {
+  if (!record || !tombstone) return false;
+  return record.authorizationKey === tombstone.authorizationKey &&
+    record.transactionHash === tombstone.transactionHash &&
+    maintenanceEntriesEqual(record.chainProfile, tombstone.chainProfile) &&
+    record.intentDigest === tombstone.intentDigest &&
+    record.resourceDigest === tombstone.resourceDigest &&
+    record.payer === tombstone.payer &&
+    signedAccountBlockDigest(record.signedAccountBlock) === tombstone.signedAccountBlockDigest &&
+    record.evidenceState === tombstone.priorEvidenceState &&
+    record.createdAt === tombstone.createdAt;
+}
+
+function compareMaintenanceCandidates(left, right) {
+  for (const field of ['createdAt', 'authorizationKey', 'transactionHash', 'kind']) {
+    if (left[field] < right[field]) return -1;
+    if (left[field] > right[field]) return 1;
+  }
+  return 0;
+}
+
+function emptyMaintenanceResult() {
+  return {
+    examined: 0,
+    included: 0,
+    acknowledged: 0,
+    terminalized: 0,
+    lateInclusionRecorded: 0,
+    unavailable: 0,
+    capacityBlocked: 0,
+    conflicted: 0,
+    unchanged: 0,
+  };
+}
+
+function finishMaintenanceResult(result, remainingInCycle) {
+  const outcomeTotal = RECONCILIATION_OUTCOME_KEYS
+    .reduce((total, key) => total + result[key], 0);
+  if (outcomeTotal !== result.examined) safetyError('reconciliation_maintenance_result_invalid');
+  return Object.freeze(shieldExactFacilitatorResult({
+    ...result,
+    remainingInCycle,
+    cycleComplete: remainingInCycle === 0,
+  }));
+}
+
 export class ExactZenonFacilitator {
+  #reconciliationMaintenance;
+
   constructor({
     authenticateChainProfile,
     authenticateNodeNetwork,
     journal = new SettlementJournal(),
     rpcTimeoutMs,
+    reconciliationRetentionMs = null,
   } = {}) {
     if (!(journal instanceof SettlementJournal)) safetyError('invalid_settlement_journal');
     const chainAuthenticator = authenticateChainProfile ?? authenticateNodeNetwork;
     const configuredTimeout = configuredRpcTimeout(rpcTimeoutMs);
+    const configuredRetention = configuredReconciliationRetention(reconciliationRetentionMs);
     const payerQueue = new PerPayerQueue();
+    this.#reconciliationMaintenance = { running: false, worklist: null };
     Object.defineProperties(this, {
       runtime: {
         value: liveSdkRuntime,
@@ -919,6 +1084,12 @@ export class ExactZenonFacilitator {
         configurable: false,
         enumerable: true,
       },
+      reconciliationRetentionMs: {
+        value: configuredRetention,
+        writable: false,
+        configurable: false,
+        enumerable: true,
+      },
       payerQueue: {
         value: payerQueue,
         writable: false,
@@ -926,6 +1097,157 @@ export class ExactZenonFacilitator {
         enumerable: false,
       },
     });
+  }
+
+  async runReconciliationMaintenance(...args) {
+    if (args.length !== 0) safetyError('reconciliation_maintenance_arguments_invalid');
+    const state = this.#reconciliationMaintenance;
+    if (state.running) safetyError('reconciliation_maintenance_in_progress');
+    state.running = true;
+    try {
+      return await this.#runReconciliationMaintenanceCycle();
+    } catch (error) {
+      safetyError(errorCode(error));
+    } finally {
+      state.running = false;
+    }
+  }
+
+  async #runReconciliationMaintenanceCycle() {
+    const state = this.#reconciliationMaintenance;
+    if (state.worklist === null) {
+      const candidates = await this.journal.listReconciliationCandidates(this.reconciliationRetentionMs);
+      state.worklist = [
+        ...candidates.records.map(entry => ({
+          kind: 'record',
+          createdAt: entry.createdAt,
+          authorizationKey: entry.authorizationKey,
+          transactionHash: entry.transactionHash,
+          payer: entry.payer,
+          chainProfile: entry.chainProfile,
+          entry,
+        })),
+        ...candidates.tombstones.map(entry => ({
+          kind: 'tombstone',
+          createdAt: entry.createdAt,
+          authorizationKey: entry.authorizationKey,
+          transactionHash: entry.transactionHash,
+          payer: entry.payer,
+          chainProfile: entry.chainProfile,
+          entry,
+        })),
+      ].sort(compareMaintenanceCandidates);
+    }
+
+    const result = emptyMaintenanceResult();
+    while (result.examined < RECONCILIATION_MAINTENANCE_BATCH_SIZE && state.worklist.length > 0) {
+      const candidate = state.worklist[0];
+      const outcome = await this.#runReconciliationCandidate(candidate);
+      if (!RECONCILIATION_OUTCOME_KEYS.includes(outcome)) {
+        safetyError('reconciliation_maintenance_result_invalid');
+      }
+      result.examined += 1;
+      result[outcome] += 1;
+      state.worklist.shift();
+    }
+    const remainingInCycle = state.worklist.length;
+    if (remainingInCycle === 0) state.worklist = null;
+    return finishMaintenanceResult(result, remainingInCycle);
+  }
+
+  async #runReconciliationCandidate(candidate) {
+    try {
+      return await this.payerQueue.run(
+        candidate.payer,
+        () => {
+          requireLiveAck();
+          return withOwnedZenonSession({
+            owner: 'facilitator.reconciliation-maintenance',
+            expectedChainProfile: candidate.chainProfile,
+            authenticateChainProfile: this.authenticateChainProfile,
+            runtime: this.runtime,
+            rpcTimeoutMs: this.rpcTimeoutMs,
+            work: async (connection, scope) => this.#reconcileMaintenanceCandidate(candidate, connection, scope),
+          });
+        },
+      );
+    } catch (error) {
+      const code = errorCode(error);
+      if (code === 'journal_capacity_exceeded') return 'capacityBlocked';
+      if (code === 'journal_compare_and_replace_failed') return 'conflicted';
+      throw error;
+    }
+  }
+
+  async #reconcileMaintenanceCandidate(candidate, connection, scope) {
+    const snapshot = await this.journal.getEntrySnapshot(
+      candidate.authorizationKey,
+      candidate.transactionHash,
+    );
+    const { kind, entry } = snapshot;
+    if (candidate.kind === 'record' && kind === 'record') {
+      if (!maintenanceEntriesEqual(candidate.entry, entry)) return 'conflicted';
+    } else if (candidate.kind === 'tombstone' && kind === 'tombstone') {
+      if (!sameTombstoneBase(candidate.entry, entry)) return 'conflicted';
+    } else if (candidate.kind === 'record' && kind === 'tombstone') {
+      if (!recordCandidateMatchesTombstone(candidate.entry, entry)) return 'conflicted';
+    } else {
+      return 'conflicted';
+    }
+
+    const { sdk, zenon } = connection;
+    let observed;
+    try {
+      observed = await runRead(
+        scope,
+        zenon,
+        this.rpcTimeoutMs,
+        'ledger.getAccountBlockByHash',
+        () => zenon.ledger.getAccountBlockByHash(sdk.Hash.parse(entry.transactionHash)),
+      );
+    } catch (error) {
+      if (error?.code === LIVE_RUNTIME_ERROR_CODES.READ_TIMEOUT ||
+          error?.code === LIVE_RUNTIME_ERROR_CODES.POISONED) throw error;
+      return 'unavailable';
+    }
+
+    if (kind === 'record') {
+      if (observed !== null) {
+        const inspected = validateObservedJournalRecord(observed, entry, sdk);
+        if (inspected.confirmationDetail !== null) {
+          const updated = await this.journal.compareAndUpdateEvidence({
+            expectedRevision: snapshot.revision,
+            expectedRecord: entry,
+            evidenceState: EVIDENCE_STATES.MOMENTUM_INCLUDED,
+            confirmationDetail: inspected.confirmationDetail,
+          });
+          return updated.changed ? 'included' : 'unchanged';
+        }
+        const updated = await this.journal.compareAndUpdateEvidence({
+          expectedRevision: snapshot.revision,
+          expectedRecord: entry,
+          evidenceState: EVIDENCE_STATES.SUBMISSION_ACKNOWLEDGED,
+          confirmationDetail: null,
+        });
+        return updated.changed ? 'acknowledged' : 'unchanged';
+      }
+      await this.journal.replaceRecordWithTombstone({
+        expectedRevision: snapshot.revision,
+        expectedRecord: entry,
+        retentionMs: this.reconciliationRetentionMs,
+      });
+      return 'terminalized';
+    }
+
+    if (observed === null) return 'unchanged';
+    const inspected = validateObservedTombstoneBlock(observed, entry, sdk);
+    if (inspected.confirmationDetail === null) return 'unchanged';
+    const late = await this.journal.recordLateMomentumEvidence({
+      expectedRevision: snapshot.revision,
+      expectedTombstone: entry,
+      confirmationDetail: inspected.confirmationDetail,
+    });
+    return late.changed ? 'lateInclusionRecorded' : 'unchanged';
   }
 
   async verify(paymentPayload, requirements, paymentRequired) {
@@ -1024,6 +1346,8 @@ export class ExactZenonFacilitator {
     };
     let record;
     try {
+      const terminal = await this.#terminalTombstone(preflight, requirements, attempt);
+      if (terminal) return terminal;
       // A known hash must be reconciled before any frontier-sensitive node
       // checks. This also prevents a retry from being mistaken for a new send.
       record = await this.#journalCall(
@@ -1053,6 +1377,13 @@ export class ExactZenonFacilitator {
         ),
       });
     } catch (error) {
+      let failure = error;
+      try {
+        const terminal = await this.#terminalTombstone(preflight, requirements, attempt);
+        if (terminal) return terminal;
+      } catch (tombstoneError) {
+        failure = tombstoneError;
+      }
       let current = record ?? null;
       try {
         current = await this.#currentRecord(preflight);
@@ -1068,13 +1399,13 @@ export class ExactZenonFacilitator {
         requirements,
         preflight.transactionHash,
         preflight.payer,
-        errorCode(error),
+        errorCode(failure),
         evidenceState,
         {
           authorizationKey: preflight.authorizationKey,
           retrySamePayment: attempt.journalUnavailable ||
             attempt.hasDurableRecord ||
-            shouldRetrySamePayment(error, evidenceState, this.runtime.poisoned),
+            shouldRetrySamePayment(failure, evidenceState, this.runtime.poisoned),
           deliveryState: current?.deliveryState ?? attempt.deliveryState,
         },
       );
@@ -1082,6 +1413,8 @@ export class ExactZenonFacilitator {
   }
 
   async #settleWithNode(preflight, requirements, connection, scope, initialRecord, attempt) {
+    const terminal = await this.#terminalTombstone(preflight, requirements, attempt);
+    if (terminal) return terminal;
     const { sdk, zenon } = connection;
     const callRead = (operation, execute) => runRead(scope, zenon, this.rpcTimeoutMs, operation, execute);
     const lookup = async () => {
@@ -1305,6 +1638,14 @@ export class ExactZenonFacilitator {
 
   async #currentRecord(preflight) {
     return this.journal.get(preflight.authorizationKey, preflight.transactionHash);
+  }
+
+  async #terminalTombstone(preflight, requirements, attempt) {
+    const tombstone = await this.#journalCall(
+      attempt,
+      () => this.journal.findTombstoneByTransactionHash(preflight.transactionHash),
+    );
+    return tombstone ? terminalTombstoneSettlement(requirements, preflight, tombstone) : null;
   }
 
   async markDeliveryPending(settlement) {

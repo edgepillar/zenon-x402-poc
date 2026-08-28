@@ -26,7 +26,14 @@ const PAID_VARY_HEADER = 'PAYMENT-SIGNATURE';
 const HASH_HEX = /^[0-9a-f]{64}$/;
 const MOCK_PAYER = /^mock-[0-9a-f]{32}$/;
 const DEFINITIVE_SETTLEMENT_FAILURE = 'payment_settlement_failed';
+const TERMINAL_RECONCILIATION_FAILURE = 'payment_reconciliation_terminal';
 const MALFORMED_DEFINITE_REJECTION = Symbol('malformed-definite-rejection');
+const MALFORMED_TERMINAL_RECONCILIATION = Symbol('malformed-terminal-reconciliation');
+const TERMINAL_RECONCILIATION_STATES = new Set([
+  'VALIDATED',
+  'SUBMISSION_ACKNOWLEDGED',
+  'SUBMISSION_OUTCOME_UNKNOWN',
+]);
 const RECOVERY_STATES = new Set([
   'SUBMISSION_ACKNOWLEDGED',
   'SUBMISSION_OUTCOME_UNKNOWN',
@@ -127,6 +134,10 @@ export function createResourceServer({
         resourceHandler,
       }));
 
+      if (outcome.kind === 'terminal-reconciliation') {
+        return terminalReconciliationResponse(res, outcome.settlement);
+      }
+      if (outcome.kind === 'internal-error') return internalError(res);
       if (outcome.kind === 'definite-rejection') {
         return definiteRejectionResponse(res, paymentRequired, outcome.settlement);
       }
@@ -211,6 +222,30 @@ function ownDataSnapshot(value, fields) {
     snapshot[field] = property.value;
   }
   return snapshot;
+}
+
+function exactFacilitatorResultKeys(value, fields) {
+  let keys;
+  try {
+    keys = Reflect.ownKeys(value);
+  } catch {
+    return false;
+  }
+  if (keys.some(key => typeof key !== 'string')) return false;
+  const allowed = new Set(fields);
+  const hasShield = keys.includes('then');
+  if (hasShield) {
+    let descriptor;
+    try {
+      descriptor = Object.getOwnPropertyDescriptor(value, 'then');
+    } catch {
+      return false;
+    }
+    if (!descriptor || !Object.hasOwn(descriptor, 'value') || descriptor.value !== undefined ||
+        descriptor.enumerable || descriptor.writable || descriptor.configurable) return false;
+    allowed.add('then');
+  }
+  return keys.length === allowed.size && keys.every(key => allowed.has(key));
 }
 
 function submittedSettlementIdentity(paymentPayload, requirement, paymentRequired) {
@@ -357,6 +392,13 @@ async function authorizeAndDeliver({ facilitator, paymentPayload, requirement, p
     structuredClone(requirement),
     structuredClone(paymentRequired),
   );
+  const terminal = terminalReconciliationEvidence(settlementResult, submittedIdentity);
+  if (terminal === MALFORMED_TERMINAL_RECONCILIATION) {
+    return shieldAuthorizationOutcome({ kind: 'internal-error' });
+  }
+  if (terminal) {
+    return shieldAuthorizationOutcome({ kind: 'terminal-reconciliation', settlement: terminal });
+  }
   const success = inspectOwnProperty(settlementResult, 'success');
   if (success.kind !== 'data' || success.value !== true) {
     const rejection = definiteRejectionEvidence(settlementResult, submittedIdentity);
@@ -483,6 +525,52 @@ async function authorizeAndDeliver({ facilitator, paymentPayload, requirement, p
     settlement: { ...settlement, deliveryState: 'DELIVERED' },
     cached,
   });
+}
+
+function terminalReconciliationEvidence(settlement, submitted) {
+  const errorReason = inspectOwnProperty(settlement, 'errorReason');
+  if (errorReason.kind === 'accessor' || errorReason.kind === 'error') {
+    return MALFORMED_TERMINAL_RECONCILIATION;
+  }
+  if (errorReason.kind !== 'data' || errorReason.value !== TERMINAL_RECONCILIATION_FAILURE) {
+    return null;
+  }
+  const requiredFields = [
+    'success',
+    'network',
+    'transaction',
+    'payer',
+    'state',
+    'authorizationKey',
+    'deliveryState',
+    'retrySamePayment',
+    'errorReason',
+  ];
+  const evidence = ownDataSnapshot(settlement, requiredFields);
+  if (!evidence || !exactFacilitatorResultKeys(settlement, requiredFields) ||
+      evidence.success !== false ||
+      !TERMINAL_RECONCILIATION_STATES.has(evidence.state) ||
+      evidence.deliveryState !== 'NONE' ||
+      evidence.retrySamePayment !== false ||
+      evidence.errorReason !== TERMINAL_RECONCILIATION_FAILURE ||
+      evidence.network !== submitted.network ||
+      submitted.acceptedNetwork !== submitted.network ||
+      evidence.transaction !== submitted.transaction ||
+      typeof evidence.transaction !== 'string' || !HASH_HEX.test(evidence.transaction) ||
+      evidence.payer !== submitted.payer ||
+      !isCanonicalPayer(evidence.payer, submitted.network) ||
+      evidence.authorizationKey !== submitted.authorizationKey ||
+      typeof evidence.authorizationKey !== 'string' || !HASH_HEX.test(evidence.authorizationKey)) {
+    return MALFORMED_TERMINAL_RECONCILIATION;
+  }
+  return {
+    success: false,
+    network: submitted.network,
+    transaction: submitted.transaction,
+    payer: submitted.payer,
+    state: evidence.state,
+    errorReason: TERMINAL_RECONCILIATION_FAILURE,
+  };
 }
 
 function definiteRejectionEvidence(settlement, submitted) {
@@ -780,6 +868,14 @@ function definiteRejectionResponse(res, paymentRequired, settlement) {
   res.setHeader(HEADERS.PAYMENT_REQUIRED, paymentRequiredHeader);
   res.setHeader(HEADERS.PAYMENT_RESPONSE, paymentResponseHeader);
   res.end(JSON.stringify({ error: DEFINITIVE_SETTLEMENT_FAILURE }, null, 2));
+}
+
+function terminalReconciliationResponse(res, settlement) {
+  res.statusCode = 402;
+  res.setHeader('content-type', 'application/json; charset=utf-8');
+  res.removeHeader(HEADERS.PAYMENT_REQUIRED);
+  res.setHeader(HEADERS.PAYMENT_RESPONSE, encodeX402Header(settlement));
+  res.end(JSON.stringify({ error: TERMINAL_RECONCILIATION_FAILURE }));
 }
 
 function invalidPayment(res) {
