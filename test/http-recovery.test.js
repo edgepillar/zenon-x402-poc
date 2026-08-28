@@ -1265,7 +1265,7 @@ test('live included non-positive evidence preserves delivery recovery', async ()
 
   for (const observation of observations) {
     assert.equal(observation.accessorReads, 0);
-    if (observation.variant.kind === 'delivery-proxy') assert.equal(observation.proxyTraps > 0, true);
+    if (observation.variant.kind === 'delivery-proxy') assert.equal(observation.proxyTraps, 1);
     assertSubmittedIdentityRecovery(observation.response, observation.paymentPayload, {
       state: 'DELIVERY_PENDING',
       reason: 'resource_delivery_outcome_unknown',
