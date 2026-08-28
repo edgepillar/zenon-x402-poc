@@ -32,6 +32,8 @@ const HASH_HEX = /^[0-9a-f]{64}$/;
 const NONCE_HEX = /^[0-9a-f]{16}$/;
 const CANONICAL_DECIMAL = /^(0|[1-9]\d*)$/;
 const BASE64 = /^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/;
+const CREATE_OBJECT = Object.create;
+const DEFINE_PROPERTY = Object.defineProperty;
 const ACCOUNT_BLOCK_FIELDS = new Set([
   'version', 'chainIdentifier', 'blockType', 'hash', 'previousHash', 'height',
   'momentumAcknowledged', 'address', 'toAddress', 'amount', 'tokenStandard',
@@ -939,7 +941,7 @@ export class ExactZenonFacilitator {
         rpcTimeoutMs: this.rpcTimeoutMs,
         work: async (connection, scope) => {
           await this.#verifyNodeState(preflight, connection, scope, { checkFrontier: true });
-          return { isValid: true, payer: preflight.payer };
+          return shieldExactFacilitatorResult({ isValid: true, payer: preflight.payer });
         },
       });
     } catch (error) {
@@ -1488,12 +1490,22 @@ function shouldRetrySamePayment(error, evidenceState, runtimePoisoned) {
   ]).has(errorCode(error));
 }
 
+function shieldExactFacilitatorResult(result) {
+  const descriptor = CREATE_OBJECT(null);
+  descriptor.value = undefined;
+  descriptor.enumerable = false;
+  descriptor.writable = false;
+  descriptor.configurable = false;
+  DEFINE_PROPERTY(result, 'then', descriptor);
+  return result;
+}
+
 function invalid(reason, payer = '') {
-  return { isValid: false, invalidReason: reason, payer };
+  return shieldExactFacilitatorResult({ isValid: false, invalidReason: reason, payer });
 }
 
 function failed(requirements, transaction, payer, errorReason, state, extra = {}) {
-  return {
+  return shieldExactFacilitatorResult({
     success: false,
     network: typeof requirements?.network === 'string' ? requirements.network : '',
     transaction,
@@ -1501,11 +1513,11 @@ function failed(requirements, transaction, payer, errorReason, state, extra = {}
     errorReason,
     state,
     ...extra,
-  };
+  });
 }
 
 function successful(requirements, preflight, record) {
-  return {
+  return shieldExactFacilitatorResult({
     success: true,
     network: requirements.network,
     transaction: preflight.transactionHash,
@@ -1516,5 +1528,5 @@ function successful(requirements, preflight, record) {
     ...(record.deliveryState === DELIVERY_STATES.DELIVERED
       ? { cachedResponse: record.cachedResponse }
       : {}),
-  };
+  });
 }
