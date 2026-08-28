@@ -203,13 +203,18 @@ RPC polling remains authoritative for inclusion observation. Subscriptions are w
 ```text
 src/
   buyer.js                    generic x402 paid-fetch flow
+  buyer-cli.js                command-line paid-fetch entry point
   resource-server.js          protected HTTP resource and retry boundary
+  server-cli.js               command-line resource-server entry point
   x402-wire.js                strict x402 wire/profile validation
+  canonical.js                canonical JSON and payment-intent digests
   mock-payment.js             local mock client and facilitator
+  demo.js                     local mock end-to-end demonstration
   zenon-payment.js            active legacy client and live facilitator
   live-runtime.js             process-wide SDK ownership and poisoning
   settlement-journal.js       dependency-free recovery journal
-  config.js                    payment requirement configuration
+  config.js                   payment requirement configuration
+  env.js                      dotenv and integer environment parsing
   settlement/
     settlement-repository.js  additive repository boundary
   x402/
@@ -221,21 +226,27 @@ src/
     plasma-strategy.js        additive Plasma boundary
     internal/
       legacy-sdk-1-0-5-signed-composite.js
-                               active transparent legacy seam
+                              active transparent legacy seam
 test-support/
-  phase2a-sdk-harness.js       isolated SDK/lifecycle harness
-  phase2a-inputs.js            deterministic public scenario inputs
+  phase2a-sdk-harness.js      isolated SDK/lifecycle harness
+  phase2a-inputs.js           deterministic public scenario inputs
   phase2a-account-block-preimage.js
-                               independent account-block preimage helper
+                              independent account-block preimage helper
 test/
   fixtures/
     phase2a-exact-client-goldens.v1.json
-                               immutable Phase 2A golden values
+                              immutable Phase 2A golden values
   architecture-boundaries.test.js
+  chain-profile-source-vector.test.js
+  cli-output.test.js
   conformance.test.js
   e2e.test.js
   journal.test.js
   live-runtime.test.js
+  official-x402-client-interop.test.js
+  official-x402-client-resource-server-interop.test.js
+  official-x402-http-interop.test.js
+  official-x402-resource-server-interop.test.js
   phase2a-exact-client-golden.test.js
   phase2a-exact-client-lifecycle.test.js
   phase2b1-legacy-sdk-signed-composite.test.js
