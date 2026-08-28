@@ -264,8 +264,13 @@ docs/
   IMPLEMENTATION_PLAN.md
   UPSTREAM_X402.md
   UPSTREAM_ZENON_SDK.md
+LICENSE
 SECURITY.md
 ```
+
+## License
+
+This project is licensed under the [Apache License, Version 2.0](LICENSE). The license grant provides no warranty and does not relax the security requirements in [SECURITY.md](SECURITY.md).
 
 ## Next target
 
