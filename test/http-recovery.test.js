@@ -1,7 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
-import { paidFetch, PaymentSubmissionOutcomeUnknownError } from '../src/buyer.js';
+import { paidFetch, PaymentSubmissionOutcomeUnknownError, reconcilePayment } from '../src/buyer.js';
+import { paymentIntentDigest, sha256Hex } from '../src/canonical.js';
 import { createResourceServer } from '../src/resource-server.js';
 import { MockExactZenonClient, MockExactZenonFacilitator } from '../src/mock-payment.js';
 import { buildRequirement } from '../src/config.js';
@@ -162,6 +163,41 @@ function mismatchIdentityField(value, {
   }
   changed[targetField] = replacement;
   return changed;
+}
+
+function terminalAuthorizationKey(paymentPayload, requirement, paymentRequired) {
+  return sha256Hex({
+    domain: 'zenon-x402-authorization-v1',
+    chainProfile: requirement.extra.zenonChain,
+    intentDigest: paymentIntentDigest(paymentRequired, requirement),
+    resourceDigest: sha256Hex(paymentRequired.resource),
+    transactionHash: paymentPayload.payload.transaction.hash,
+  });
+}
+
+function terminalInternalEvidence(paymentPayload, requirement, paymentRequired, state) {
+  return {
+    success: false,
+    network: requirement.network,
+    transaction: paymentPayload.payload.transaction.hash,
+    payer: paymentPayload.payload.transaction.address,
+    state,
+    authorizationKey: terminalAuthorizationKey(paymentPayload, requirement, paymentRequired),
+    deliveryState: 'NONE',
+    retrySamePayment: false,
+    errorReason: 'payment_reconciliation_terminal',
+  };
+}
+
+function terminalPublicEvidence(paymentPayload, requirement, state) {
+  return {
+    success: false,
+    network: requirement.network,
+    transaction: paymentPayload.payload.transaction.hash,
+    payer: paymentPayload.payload.transaction.address,
+    state,
+    errorReason: 'payment_reconciliation_terminal',
+  };
 }
 
 test('resource server listen result ignores inherited then assimilation',
@@ -3248,16 +3284,12 @@ async function expectObservedOutcomeUnknown(makeResponse, {
 function makeSingleReadSettlementResponse(status, settlementHeader) {
   const counts = { status: 0, headers: 0, get: 0, invocation: 0, receiver: 0 };
   const headers = Object.create({
-    get get() {
-      counts.get += 1;
-      if (counts.get > 1) throw new Error();
-      return function getHeader(name) {
-        counts.invocation += 1;
-        if (counts.invocation > 1) throw new Error();
-        if (this === headers) counts.receiver += 1;
-        else throw new Error();
-        return name === HEADERS.PAYMENT_RESPONSE ? settlementHeader : null;
-      };
+    get(name) {
+      counts.invocation += 1;
+      if (counts.invocation > 2) throw new Error();
+      if (this === headers) counts.receiver += 1;
+      else throw new Error();
+      return name === HEADERS.PAYMENT_RESPONSE ? settlementHeader : null;
     },
   });
   const response = {};
@@ -3318,27 +3350,34 @@ function makeHeaderFailureResponse(kind, marker, result) {
     });
   } else {
     headers = {};
-    Object.defineProperty(headers, 'get', {
-      configurable: true,
-      get() {
-        counts.get += 1;
-        if (kind === 'get-accessor') throw new Error(marker);
-        if (kind === 'non-function-get') return 0;
-        if (kind === 'callable-proxy') {
-          return new Proxy(function getHeader() {}, {
-            apply() {
-              counts.invocation += 1;
-              throw new Error(marker);
-            },
-          });
-        }
-        return function getHeader() {
+    if (kind === 'get-accessor') {
+      Object.defineProperty(headers, 'get', {
+        configurable: true,
+        get() {
+          counts.get += 1;
+          throw new Error(marker);
+        },
+      });
+    } else {
+      const get = kind === 'non-function-get'
+        ? 0
+        : kind === 'callable-proxy'
+          ? new Proxy(function getHeader() {}, {
+              apply() {
+                counts.invocation += 1;
+                throw new Error(marker);
+              },
+            })
+          : function getHeader() {
           counts.invocation += 1;
           if (kind === 'throwing-invocation') throw new Error(marker);
           return result;
         };
-      },
-    });
+      Object.defineProperty(headers, 'get', {
+        configurable: true,
+        value: get,
+      });
+    }
   }
 
   const response = {};
@@ -4399,9 +4438,9 @@ test('buyer snapshots native plain function and prototype-backed successful resp
   assert.deepEqual(singleRead.counts, {
     status: 1,
     headers: 1,
-    get: 1,
-    invocation: 1,
-    receiver: 1,
+    get: 0,
+    invocation: 2,
+    receiver: 2,
   }, 'successful response members must each be observed once');
 });
 
@@ -4493,16 +4532,16 @@ test('buyer contains every post-submission header observation failure with valid
     { kind: 'headers-accessor', expectedGet: 0, expectedInvocation: 0 },
     { kind: 'response-proxy', expectedGet: 0, expectedInvocation: 0 },
     { kind: 'null-headers', expectedGet: 0, expectedInvocation: 0 },
-    { kind: 'get-accessor', expectedGet: 1, expectedInvocation: 0 },
-    { kind: 'get-proxy', expectedGet: 1, expectedInvocation: 0 },
-    { kind: 'non-function-get', expectedGet: 1, expectedInvocation: 0 },
-    { kind: 'throwing-invocation', expectedGet: 1, expectedInvocation: 1 },
-    { kind: 'callable-proxy', expectedGet: 1, expectedInvocation: 1 },
+    { kind: 'get-accessor', expectedGet: 0, expectedInvocation: 0 },
+    { kind: 'get-proxy', expectedGet: 0, expectedInvocation: 0 },
+    { kind: 'non-function-get', expectedGet: 0, expectedInvocation: 0 },
+    { kind: 'throwing-invocation', expectedGet: 0, expectedInvocation: 1 },
+    { kind: 'callable-proxy', expectedGet: 0, expectedInvocation: 1 },
     ...[undefined, false, 0, {}, [], Symbol('invalid-header-result')]
       .map(result => ({
         kind: 'invalid-result',
         result,
-        expectedGet: 1,
+        expectedGet: 0,
         expectedInvocation: 1,
       })),
   ];
@@ -4544,7 +4583,7 @@ test('buyer snapshots redirects and missing settlement headers without rereading
   assert.deepEqual(missing.counts, {
     status: 1,
     headers: 1,
-    get: 1,
+    get: 0,
     invocation: 1,
     receiver: 1,
   }, 'missing settlement header must use one complete observation');
@@ -4563,9 +4602,9 @@ test('buyer preserves definite rejection and recovery lanes through single-read 
     assert.deepEqual(observed.counts, {
       status: 1,
       headers: 1,
-      get: 1,
-      invocation: 1,
-      receiver: 1,
+      get: 0,
+      invocation: 2,
+      receiver: 2,
     }, 'settlement lane response members must each be observed once');
   }
 });
@@ -5121,4 +5160,395 @@ test('buyer refuses an HTTP live payment resource before signing', async () => {
     /must use HTTPS/,
   );
   assert.equal(signed, false);
+});
+
+test('resource server exposes only exact terminal reconciliation evidence', async () => {
+  const requirement = await buildRequirement('mock');
+  const states = ['VALIDATED', 'SUBMISSION_ACKNOWLEDGED', 'SUBMISSION_OUTCOME_UNKNOWN'];
+  let state = states[0];
+  let deliveries = 0;
+  let settleCalls = 0;
+  const facilitator = {
+    async settle(paymentPayload, selectedRequirement, paymentRequired) {
+      settleCalls += 1;
+      return terminalInternalEvidence(paymentPayload, selectedRequirement, paymentRequired, state);
+    },
+  };
+  const app = createResourceServer({
+    facilitator,
+    requirement,
+    resourceHandler: async () => {
+      deliveries += 1;
+      return { ok: true };
+    },
+  });
+  const listening = await app.listen();
+  try {
+    const { paymentPayload } = await signedPayment(listening.url);
+    for (state of states) {
+      const response = await submitPayment(listening.url, paymentPayload);
+      const responseHeader = response.headers.get(HEADERS.PAYMENT_RESPONSE);
+      const rawBody = await response.text();
+      assert.equal(response.status, 402);
+      assertPaidResponseIsPrivate(response);
+      assert.equal(response.headers.get(HEADERS.PAYMENT_REQUIRED), null);
+      assert.equal(typeof responseHeader, 'string');
+      assert.equal(rawBody === '{"error":"payment_reconciliation_terminal"}', true);
+      const settlement = decodeB64Json(responseHeader);
+      assert.deepEqual(Object.keys(settlement).sort(), [
+        'errorReason', 'network', 'payer', 'state', 'success', 'transaction',
+      ]);
+      assert.equal(settlement.success, false);
+      assert.equal(settlement.network === requirement.network, true);
+      assert.equal(settlement.transaction === paymentPayload.payload.transaction.hash, true);
+      assert.equal(settlement.payer === paymentPayload.payload.transaction.address, true);
+      assert.equal(settlement.state, state);
+      assert.equal(settlement.errorReason, 'payment_reconciliation_terminal');
+      assert.equal(Object.hasOwn(settlement, 'retrySamePayment'), false);
+      assert.equal(Object.hasOwn(settlement, 'authorizationKey'), false);
+      assert.equal(Object.hasOwn(settlement, 'deliveryState'), false);
+    }
+    assert.equal(deliveries, 0);
+    assert.equal(settleCalls, states.length);
+  } finally {
+    await app.close();
+  }
+});
+
+test('resource server keeps malformed terminal reconciliation evidence private', async () => {
+  const requirement = await buildRequirement('mock');
+  let deliveries = 0;
+  let deliveryTransitions = 0;
+  let transform = value => value;
+  const facilitator = {
+    async settle(paymentPayload, selectedRequirement, paymentRequired) {
+      return transform(terminalInternalEvidence(
+        paymentPayload,
+        selectedRequirement,
+        paymentRequired,
+        'SUBMISSION_OUTCOME_UNKNOWN',
+      ));
+    },
+    async markDeliveryPending(settlement) {
+      deliveryTransitions += 1;
+      return {
+        authorizationKey: settlement.authorizationKey,
+        payer: settlement.payer,
+        transaction: settlement.transaction,
+        deliveryState: 'DELIVERY_PENDING',
+        deliveryClaimed: true,
+      };
+    },
+    async markDelivered(settlement, cachedResponse) {
+      deliveryTransitions += 1;
+      return {
+        authorizationKey: settlement.authorizationKey,
+        payer: settlement.payer,
+        transaction: settlement.transaction,
+        deliveryState: 'DELIVERED',
+        cachedResponse,
+      };
+    },
+  };
+  const app = createResourceServer({
+    facilitator,
+    requirement,
+    resourceHandler: async () => {
+      deliveries += 1;
+      return { ok: true };
+    },
+  });
+  const listening = await app.listen();
+  try {
+    const { paymentPayload } = await signedPayment(listening.url);
+    const variants = [
+      value => { delete value.authorizationKey; return value; },
+      value => ({ ...value, authorizationKey: '0'.repeat(64) }),
+      value => ({ ...value, network: 'zenon:testnet' }),
+      value => ({ ...value, transaction: '0'.repeat(64) }),
+      value => ({ ...value, payer: `mock-${'0'.repeat(32)}` }),
+      value => ({ ...value, state: 'MOMENTUM_INCLUDED' }),
+      value => ({ ...value, success: true }),
+      value => ({
+        ...value,
+        success: true,
+        state: 'MOMENTUM_INCLUDED',
+        deliveryState: 'NONE',
+      }),
+      value => ({ ...value, deliveryState: 'DELIVERY_PENDING' }),
+      value => ({ ...value, retrySamePayment: true }),
+      value => ({ ...value, unexpected: true }),
+      value => ({ ...value, paymentRequired: true, paymentResponse: true }),
+      value => {
+        delete value.state;
+        Object.defineProperty(value, 'state', {
+          enumerable: true,
+          get() {
+            throw new Error('private terminal accessor');
+          },
+        });
+        return value;
+      },
+    ];
+    for (transform of variants) {
+      const response = await submitPayment(listening.url, paymentPayload);
+      const body = await response.text();
+      assert.equal(response.status, 500);
+      assertPaidResponseIsPrivate(response);
+      assert.equal(response.headers.get(HEADERS.PAYMENT_REQUIRED), null);
+      assert.equal(response.headers.get(HEADERS.PAYMENT_RESPONSE), null);
+      assert.equal(body.includes('internal_error'), true);
+      assert.equal(body.includes('payment_reconciliation_terminal'), false);
+      assert.equal(body.includes('private terminal accessor'), false);
+    }
+    assert.equal(deliveries, 0);
+    assert.equal(deliveryTransitions, 0);
+  } finally {
+    await app.close();
+  }
+});
+
+test('resource server treats unreadable terminal reasons as private failures before delivery', async () => {
+  const variants = ['accessor', 'descriptor-error'];
+
+  for (const variant of variants) {
+    const requirement = await buildRequirement('mock');
+    const honest = new MockExactZenonFacilitator();
+    let accessorReads = 0;
+    let descriptorErrors = 0;
+    let resourceHandlerCalls = 0;
+    let pendingCalls = 0;
+    let deliveredCalls = 0;
+    const facilitator = {
+      async settle(...args) {
+        const settlement = await honest.settle(...args);
+        if (variant === 'accessor') {
+          Object.defineProperty(settlement, 'errorReason', {
+            configurable: true,
+            enumerable: true,
+            get() {
+              accessorReads += 1;
+              throw new Error('private terminal accessor');
+            },
+          });
+          return settlement;
+        }
+        return new Proxy(settlement, {
+          getOwnPropertyDescriptor(target, property) {
+            if (property === 'errorReason') {
+              descriptorErrors += 1;
+              throw new Error('private terminal descriptor');
+            }
+            return Reflect.getOwnPropertyDescriptor(target, property);
+          },
+        });
+      },
+      async markDeliveryPending(settlement) {
+        pendingCalls += 1;
+        return honest.markDeliveryPending(settlement);
+      },
+      async markDelivered(settlement, cachedResponse) {
+        deliveredCalls += 1;
+        return honest.markDelivered(settlement, cachedResponse);
+      },
+    };
+    const app = createResourceServer({
+      facilitator,
+      requirement,
+      resourceHandler: async () => {
+        resourceHandlerCalls += 1;
+        return { ok: true };
+      },
+    });
+    const listening = await app.listen();
+    try {
+      const { paymentPayload } = await signedPayment(listening.url);
+      const response = await submitPayment(listening.url, paymentPayload);
+      const body = await response.text();
+      assert.equal(response.status, 500);
+      assertPaidResponseIsPrivate(response);
+      assert.equal(response.headers.get(HEADERS.PAYMENT_REQUIRED), null);
+      assert.equal(response.headers.get(HEADERS.PAYMENT_RESPONSE), null);
+      assert.equal(body === JSON.stringify({ error: 'internal_error' }, null, 2), true);
+      assert.equal(body.includes('payment_reconciliation_terminal'), false);
+      assert.equal(body.includes('private terminal'), false);
+      assert.equal(resourceHandlerCalls, 0);
+      assert.equal(pendingCalls, 0);
+      assert.equal(deliveredCalls, 0);
+      assert.equal(accessorReads, 0);
+      assert.equal(variant === 'descriptor-error' ? descriptorErrors > 0 : descriptorErrors === 0, true);
+    } finally {
+      await app.close();
+    }
+  }
+});
+
+test('buyer accepts exact response-only terminal reconciliation without recovery ownership', async () => {
+  const { paymentRequired, requirement } = await buyerChallenge('https://resource.example/paid');
+  for (const state of ['VALIDATED', 'SUBMISSION_ACKNOWLEDGED', 'SUBMISSION_OUTCOME_UNKNOWN']) {
+    let fetches = 0;
+    let bodyReads = 0;
+    const response = {};
+    const result = await paidFetch(
+      paymentRequired.resource.url,
+      new MockExactZenonClient(),
+      async (_url, options) => {
+        fetches += 1;
+        if (!options) return challengeResponse(paymentRequired);
+        const paymentPayload = decodeB64Json(options.headers[HEADERS.PAYMENT_SIGNATURE]);
+        Object.defineProperties(response, {
+          status: { value: 402, enumerable: true },
+          headers: {
+            value: new Headers({
+              [HEADERS.PAYMENT_RESPONSE]: encodeB64Json(
+                terminalPublicEvidence(paymentPayload, requirement, state),
+              ),
+            }),
+            enumerable: true,
+          },
+          body: {
+            get() {
+              bodyReads += 1;
+              throw new Error('terminal body must not be consumed');
+            },
+          },
+        });
+        return response;
+      },
+    );
+    assert.equal(result.response, response);
+    assert.equal(result.settlement.state, state);
+    assert.equal(result.settlement.errorReason, 'payment_reconciliation_terminal');
+    assert.equal(Object.hasOwn(result.settlement, 'retrySamePayment'), false);
+    assert.equal(Object.hasOwn(result, 'recoveryHandle'), false);
+    let reconciliationFetches = 0;
+    await assert.rejects(
+      reconcilePayment(result, async () => {
+        reconciliationFetches += 1;
+        throw new Error('terminal reconciliation must not fetch');
+      }),
+      /invalid payment recovery owner/,
+    );
+    assert.equal(fetches, 2);
+    assert.equal(reconciliationFetches, 0);
+    assert.equal(bodyReads, 0);
+  }
+});
+
+test('buyer keeps terminal ambiguity private and transfers same-payment recovery ownership', async () => {
+  const { paymentRequired, requirement } = await buyerChallenge('https://resource.example/paid');
+  let terminalHeaderAccessorReads = 0;
+
+  async function expectTerminalUnknown({
+    status = 402,
+    transform = value => value,
+    includePaymentRequired = false,
+    headerAccessor = false,
+    omitSettlement = false,
+  } = {}) {
+    let calls = 0;
+    let submittedPayment;
+    let observedError;
+    try {
+      await paidFetch(paymentRequired.resource.url, new MockExactZenonClient(), async (_url, options) => {
+        calls += 1;
+        if (!options) return challengeResponse(paymentRequired);
+        submittedPayment = decodeB64Json(options.headers[HEADERS.PAYMENT_SIGNATURE]);
+        if (headerAccessor) {
+          const headers = {};
+          Object.defineProperty(headers, 'get', {
+            get() {
+              terminalHeaderAccessorReads += 1;
+              throw new Error('private terminal header accessor');
+            },
+          });
+          return { status, headers };
+        }
+        const headers = new Headers();
+        if (!omitSettlement) {
+          headers.set(HEADERS.PAYMENT_RESPONSE, encodeB64Json(transform(
+            terminalPublicEvidence(submittedPayment, requirement, 'SUBMISSION_OUTCOME_UNKNOWN'),
+          )));
+        }
+        if (includePaymentRequired) {
+          headers.set(HEADERS.PAYMENT_REQUIRED, encodeB64Json(paymentRequired));
+        }
+        return { status, headers };
+      });
+    } catch (error) {
+      observedError = error;
+    }
+    assert.equal(observedError instanceof PaymentSubmissionOutcomeUnknownError, true);
+    assert.equal(observedError?.retrySamePayment, true);
+    assert.equal(Object.hasOwn(observedError, 'recoveryHandle'), true);
+    assert.equal(calls, 2);
+
+    let recoveryFetches = 0;
+    const successor = await reconcilePayment(observedError, async (_url, options) => {
+      recoveryFetches += 1;
+      const paymentPayload = decodeB64Json(options.headers[HEADERS.PAYMENT_SIGNATURE]);
+      return {
+        status: 409,
+        headers: new Headers({
+          [HEADERS.PAYMENT_RESPONSE]: encodeB64Json(
+            settlementEvidenceForStatus(409, requirement, paymentPayload),
+          ),
+        }),
+      };
+    });
+    assert.equal(successor.settlement.retrySamePayment, true);
+    assert.equal(Object.hasOwn(successor, 'recoveryHandle'), true);
+    assert.equal(recoveryFetches, 1);
+  }
+
+  const variants = [
+    { includePaymentRequired: true },
+    { transform: value => ({ ...value, unexpected: true }) },
+    { transform: value => ({ ...value, network: 'zenon:testnet' }) },
+    { transform: value => ({ ...value, state: 'MOMENTUM_INCLUDED' }) },
+    { transform: value => ({ ...value, errorReason: 'payment_reconciliation_inexact' }) },
+    { transform: value => ({ ...value, retrySamePayment: false }) },
+    { status: 409 },
+    { status: 500, omitSettlement: true },
+    { headerAccessor: true },
+  ];
+  for (const variant of variants) await expectTerminalUnknown(variant);
+  assert.equal(terminalHeaderAccessorReads, 0);
+
+  let legacyCalls = 0;
+  const legacy = await paidFetch(paymentRequired.resource.url, new MockExactZenonClient(), async (_url, options) => {
+    legacyCalls += 1;
+    if (!options) return challengeResponse(paymentRequired);
+    const paymentPayload = decodeB64Json(options.headers[HEADERS.PAYMENT_SIGNATURE]);
+    return {
+      status: 402,
+      headers: new Headers({
+        [HEADERS.PAYMENT_REQUIRED]: encodeB64Json(paymentRequired),
+        [HEADERS.PAYMENT_RESPONSE]: encodeB64Json(
+          settlementEvidenceForStatus(402, requirement, paymentPayload),
+        ),
+      }),
+    };
+  });
+  assert.equal(legacy.settlement.errorReason, 'payment_settlement_failed');
+  assert.equal(Object.hasOwn(legacy, 'recoveryHandle'), false);
+  assert.equal(legacyCalls, 2);
+
+  let recoveryCalls = 0;
+  const recovery = await paidFetch(paymentRequired.resource.url, new MockExactZenonClient(), async (_url, options) => {
+    recoveryCalls += 1;
+    if (!options) return challengeResponse(paymentRequired);
+    const paymentPayload = decodeB64Json(options.headers[HEADERS.PAYMENT_SIGNATURE]);
+    return {
+      status: 409,
+      headers: new Headers({
+        [HEADERS.PAYMENT_RESPONSE]: encodeB64Json(
+          settlementEvidenceForStatus(409, requirement, paymentPayload),
+        ),
+      }),
+    };
+  });
+  assert.equal(recovery.settlement.retrySamePayment, true);
+  assert.equal(Object.hasOwn(recovery, 'recoveryHandle'), true);
+  assert.equal(recoveryCalls, 2);
 });

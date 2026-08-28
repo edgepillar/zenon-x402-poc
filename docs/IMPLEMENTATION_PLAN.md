@@ -92,9 +92,9 @@ After `publish()` returns its asynchronous request promise, every promise reject
 
 ### Durable PoC journal
 
-The ignored `.runtime/settlement-journal.json` file stores a versioned, checksummed set of exact payment attempts. Same-directory temporary writes, file sync, atomic rename and directory sync protect each revision where the operating system supports them. An initialization marker detects a missing state file after the first successful write. Invalid state fails closed; deletion of both state and marker is outside this local-filesystem trust model.
+The ignored `.runtime/settlement-journal.json` file stores a versioned, checksummed set of exact payment attempts. Same-directory temporary writes, file sync, atomic rename and directory sync protect each revision where the operating system supports them. An initialization marker detects a missing state file after the first successful write. Invalid state fails closed; deletion of both state and marker is outside this local-filesystem trust model. Schema v1 remains readable and is not upgraded to v2 by reads, ordinary updates, or disabled retention. The first successful tombstone conversion atomically writes schema v2 in one revision and extends the checksum over active records and tombstones. Rollback to a v1-only reader is unsupported after v2 appears.
 
-The journal has a default capacity of 256 records, is single-process, single-writer and single-host, and fails closed at capacity. Cached resource responses are plaintext JSON limited to 64 KiB. It does not implement distributed locking or production exactly-once delivery.
+The journal has a default active-record capacity of 256 and a fixed separate tombstone capacity of 4096. Both maps remain inside `maxFileBytes`; tombstones participate permanently in replay and uniqueness checks and are not silently evicted or archived. Capacity failure preserves the full record. The journal is single-process, single-writer and single-host. Cached resource responses are plaintext JSON limited to 64 KiB. It does not implement distributed locking or production exactly-once delivery.
 
 ### Evidence and delivery
 
@@ -121,6 +121,14 @@ DELIVERED
 An account lookup showing `confirmationDetail` establishes only `MOMENTUM_INCLUDED` under the current node-observation policy. It does not prove irreversible finality or merchant receipt. Observed inclusion evidence is never downgraded by a later transient lookup failure.
 
 The HTTP boundary returns a distinct `409` recovery response for uncertain or pending outcomes. It directs the buyer to reuse and reconcile the same payment. It does not release the protected resource.
+
+`reconciliationRetentionMs` is a constructor-only opt-in, defaulting to `null`, with an inclusive enabled range of 3,600,000 through 2,592,000,000 milliseconds. Only explicit zero-argument `runReconciliationMaintenance()` calls evaluate persisted `createdAt`; ordinary requests, startup, environment configuration, and background work do not. Each serial call examines at most 64 deterministic candidates. Backward clock movement delays terminalization, while a forward jump can terminalize early.
+
+Maintenance queries only the exact transaction hash. Included evidence advances the full record to `MOMENTUM_INCLUDED`, exact unconfirmed evidence advances it to `SUBMISSION_ACKNOWLEDGED` when stronger, and unavailable lookup retains it. Only exact absence after age can atomically replace an eligible `NONE`-delivery record with a tombstone. Existing tombstones are rechecked during explicit maintenance even when new terminalization is disabled; first late inclusion is recorded without invoking delivery or authorizing retry, resource access, refund, credit, or replacement.
+
+Candidate enumeration releases the journal writer before lock acquisition. Each candidate takes the payer queue before the process-global live-SDK owner and holds both through a fresh journal snapshot, exact-hash observation, and final compare-and-replace. The CAS rechecks the global revision and complete record identity/evidence/delivery state. This prevents same-process publication from crossing the final boundary but provides no distributed exclusion or restart-durable maintenance cursor.
+
+An exact tombstone match returns a local response-only HTTP `402`: `PAYMENT-RESPONSE` contains bound network, transaction, payer, retained prior state, and fixed `payment_reconciliation_terminal`; `PAYMENT-REQUIRED` and retry are absent. The buyer accepts only that exact disjoint shape and creates no recovery owner. Malformed or mismatched terminal candidates fail closed, while the existing dual-header `payment_settlement_failed` `402` and recoverable `409` behavior remain unchanged. This is retention abandonment rather than inclusion, irreversible finality, supersession, or safe replacement authority. Installed official-parser behavior is characterization only, not standardization, official Zenon support, release, or activation.
 
 Concurrent identical HTTP requests converge within one process. A `DELIVERED` cached response is returned without republishing or repeating the callback. Arbitrary external side effects still have a crash window between callback execution and the durable delivered record.
 

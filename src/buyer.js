@@ -17,6 +17,8 @@ import {
 const CREATE_OBJECT = Object.create;
 const DEFINE_PROPERTY = Object.defineProperty;
 const FREEZE_OBJECT = Object.freeze;
+const GET_OWN_PROPERTY_DESCRIPTOR = Object.getOwnPropertyDescriptor;
+const GET_PROTOTYPE_OF = Object.getPrototypeOf;
 const HAS_OWN = Object.hasOwn;
 const REFLECT_APPLY = Reflect.apply;
 const STRUCTURED_CLONE = structuredClone;
@@ -25,8 +27,14 @@ const WEAK_MAP_GET = WeakMap.prototype.get;
 const WEAK_MAP_SET = WeakMap.prototype.set;
 const HASH_HEX = /^[0-9a-f]{64}$/;
 const DEFINITIVE_SETTLEMENT_FAILURE = 'payment_settlement_failed';
+const TERMINAL_RECONCILIATION_FAILURE = 'payment_reconciliation_terminal';
 const SETTLEMENT_FIELDS = Object.freeze(['success', 'network', 'transaction', 'payer', 'state']);
 const OPTIONAL_SETTLEMENT_FIELDS = Object.freeze(['errorReason', 'retrySamePayment']);
+const TERMINAL_RECONCILIATION_STATES = new Set([
+  'VALIDATED',
+  'SUBMISSION_ACKNOWLEDGED',
+  'SUBMISSION_OUTCOME_UNKNOWN',
+]);
 const LEGACY_FLOW_OPTION = 'allowLegacyMissingPaymentFlowForCharacterization';
 const RECOVERY_OWNER_STATES = new WeakMap();
 const RECOVERY_STATES = new Set([
@@ -59,6 +67,31 @@ function isUsableFinalHttpStatus(value) {
   return Number.isInteger(value) && value >= 200 && value <= 599;
 }
 
+function descriptorSafeDataProperty(value, field) {
+  let current = value;
+  for (let depth = 0; depth < 32; depth += 1) {
+    if ((typeof current !== 'object' && typeof current !== 'function') || current === null) {
+      return { kind: 'missing' };
+    }
+    let descriptor;
+    try {
+      descriptor = REFLECT_APPLY(GET_OWN_PROPERTY_DESCRIPTOR, Object, [current, field]);
+    } catch {
+      return { kind: 'invalid' };
+    }
+    if (descriptor) {
+      if (!HAS_OWN(descriptor, 'value')) return { kind: 'accessor' };
+      return { kind: 'data', value: descriptor.value };
+    }
+    try {
+      current = REFLECT_APPLY(GET_PROTOTYPE_OF, Object, [current]);
+    } catch {
+      return { kind: 'invalid' };
+    }
+  }
+  return { kind: 'invalid' };
+}
+
 function observePostSubmissionResponse(response) {
   if ((typeof response !== 'object' && typeof response !== 'function') || response === null) {
     return { kind: 'invalid' };
@@ -78,13 +111,23 @@ function observePostSubmissionResponse(response) {
     if ((typeof headers !== 'object' && typeof headers !== 'function') || headers === null) {
       return { kind: 'invalid', httpStatus };
     }
-    const get = headers.get;
-    if (typeof get !== 'function') return { kind: 'invalid', httpStatus };
+    const getProperty = descriptorSafeDataProperty(headers, 'get');
+    if (getProperty.kind !== 'data' || typeof getProperty.value !== 'function') {
+      return { kind: 'invalid', httpStatus };
+    }
+    const get = getProperty.value;
     const settlementHeader = REFLECT_APPLY(get, headers, [HEADERS.PAYMENT_RESPONSE]);
     if (typeof settlementHeader !== 'string' && settlementHeader !== null) {
       return { kind: 'invalid', httpStatus };
     }
-    return { kind: 'observed', httpStatus, settlementHeader };
+    let paymentRequiredHeader = null;
+    if (typeof settlementHeader === 'string') {
+      paymentRequiredHeader = REFLECT_APPLY(get, headers, [HEADERS.PAYMENT_REQUIRED]);
+      if (typeof paymentRequiredHeader !== 'string' && paymentRequiredHeader !== null) {
+        return { kind: 'invalid', httpStatus };
+      }
+    }
+    return { kind: 'observed', httpStatus, settlementHeader, paymentRequiredHeader };
   } catch {
     return { kind: 'invalid', httpStatus };
   }
@@ -370,7 +413,7 @@ async function submitBoundPayment({
       httpStatus: observation.httpStatus,
     }, recoveryHandle, recoveryState);
   }
-  const { httpStatus, settlementHeader } = observation;
+  const { httpStatus, settlementHeader, paymentRequiredHeader } = observation;
   if (!settlementHeader) {
     throw outcomeUnknown({
       paymentRequired: recoveryState.paymentRequired,
@@ -384,7 +427,12 @@ async function submitBoundPayment({
       maxDecodedBytes: MAX_X402_HEADER_ENCODED_BYTES,
       maxEncodedBytes: MAX_X402_HEADER_ENCODED_BYTES,
     });
-    validateSettlementResponse(settlement, validationPaymentPayload, httpStatus);
+    validateSettlementResponse(
+      settlement,
+      validationPaymentPayload,
+      httpStatus,
+      paymentRequiredHeader,
+    );
   } catch {
     throw outcomeUnknown({
       paymentRequired: recoveryState.paymentRequired,
@@ -421,7 +469,7 @@ function validateBuyerPaymentPayload(paymentPayload, paymentRequired, accepted) 
   }
 }
 
-function validateSettlementResponse(settlement, paymentPayload, httpStatus) {
+function validateSettlementResponse(settlement, paymentPayload, httpStatus, paymentRequiredHeader) {
   if (!isUsableFinalHttpStatus(httpStatus)) throw new Error('invalid settlement response');
   if (!isPlainObject(settlement)) throw new Error('invalid settlement response');
   const allowed = new Set([...SETTLEMENT_FIELDS, ...OPTIONAL_SETTLEMENT_FIELDS]);
@@ -439,9 +487,6 @@ function validateSettlementResponse(settlement, paymentPayload, httpStatus) {
       (typeof settlement.errorReason !== 'string' || !settlement.errorReason || settlement.errorReason.length > 128)) {
     throw new Error('invalid settlement response');
   }
-  if (HAS_OWN(settlement, 'retrySamePayment') && settlement.retrySamePayment !== true) {
-    throw new Error('invalid settlement response');
-  }
 
   const transaction = paymentPayload.payload.transaction;
   if (settlement.network !== paymentPayload.accepted.network || settlement.transaction !== transaction.hash ||
@@ -454,6 +499,20 @@ function validateSettlementResponse(settlement, paymentPayload, httpStatus) {
       throw new Error('invalid successful settlement response');
     }
     return;
+  }
+  if (settlement.errorReason === TERMINAL_RECONCILIATION_FAILURE) {
+    const terminalFields = [...SETTLEMENT_FIELDS, 'errorReason'];
+    if (httpStatus !== 402 || paymentRequiredHeader !== null ||
+        keys.length !== terminalFields.length ||
+        keys.some(key => !terminalFields.includes(key)) ||
+        !TERMINAL_RECONCILIATION_STATES.has(settlement.state) ||
+        HAS_OWN(settlement, 'retrySamePayment')) {
+      throw new Error('invalid terminal reconciliation response');
+    }
+    return;
+  }
+  if (HAS_OWN(settlement, 'retrySamePayment') && settlement.retrySamePayment !== true) {
+    throw new Error('invalid settlement response');
   }
   if (httpStatus === 402) {
     if (settlement.state !== 'VALIDATED' || !HAS_OWN(settlement, 'errorReason') ||

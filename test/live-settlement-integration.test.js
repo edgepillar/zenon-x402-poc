@@ -15,6 +15,7 @@ import {
   preflightZenonPayment,
 } from '../src/zenon-payment.js';
 import {
+  DELIVERY_STATES,
   EVIDENCE_STATES,
   SettlementJournal,
 } from '../src/settlement-journal.js';
@@ -135,14 +136,14 @@ function observedBlock(transaction, { included = false } = {}) {
   return block;
 }
 
-async function journalFixture(t) {
+async function journalFixture(t, options = {}) {
   const root = await mkdtemp(join(tmpdir(), 'zenon-x402-live-integration-'));
   t.after(() => rm(root, { recursive: true, force: true }));
   const directory = join(root, 'state');
   return {
     root,
     directory,
-    journal: new SettlementJournal({ directory, allowedRoot: root }),
+    journal: new SettlementJournal({ directory, allowedRoot: root, ...options }),
   };
 }
 
@@ -207,9 +208,10 @@ function installSyntheticNode(t, behavior = {}) {
       height: 10,
       hash: sdk.Hash.digest(Buffer.from('synthetic frontier momentum')),
     }),
-    getAccountBlockByHash: async () => {
+    getAccountBlockByHash: async hash => {
       counters.lookup += 1;
-      return behavior.lookup?.(counters.lookup) ?? null;
+      if (typeof behavior.lookup === 'function') return behavior.lookup(counters.lookup, hash);
+      return null;
     },
     getFrontierAccountBlock: async () => {
       counters.frontier += 1;
@@ -252,11 +254,15 @@ function installSyntheticNode(t, behavior = {}) {
 }
 
 function facilitator(journal, options = {}) {
-  return new ExactZenonFacilitator({
+  const configuration = {
     journal,
     rpcTimeoutMs: options.rpcTimeoutMs ?? 100,
     authenticateChainProfile: async () => ({ ...PROFILE }),
-  });
+  };
+  if (Object.hasOwn(options, 'reconciliationRetentionMs')) {
+    configuration.reconciliationRetentionMs = options.reconciliationRetentionMs;
+  }
+  return new ExactZenonFacilitator(configuration);
 }
 
 function submit(localUrl, payload) {
@@ -269,6 +275,53 @@ function reverseMemberOrder(value) {
   if (Array.isArray(value)) return value.map(reverseMemberOrder);
   if (!value || typeof value !== 'object') return value;
   return Object.fromEntries(Object.keys(value).reverse().map(key => [key, reverseMemberOrder(value[key])]));
+}
+
+function deferred() {
+  let resolve;
+  const promise = new Promise(complete => { resolve = complete; });
+  return { promise, resolve };
+}
+
+const MAINTENANCE_RESULT_KEYS = Object.freeze([
+  'examined', 'included', 'acknowledged', 'terminalized',
+  'lateInclusionRecorded', 'unavailable', 'capacityBlocked', 'conflicted',
+  'unchanged', 'remainingInCycle', 'cycleComplete',
+]);
+
+function assertMaintenanceResult(result, expected) {
+  assert.equal(isDeepStrictEqual(Object.keys(result), MAINTENANCE_RESULT_KEYS), true);
+  for (const [key, value] of Object.entries(expected)) assert.equal(result[key], value);
+  const outcomeTotal = [
+    'included', 'acknowledged', 'terminalized', 'lateInclusionRecorded',
+    'unavailable', 'capacityBlocked', 'conflicted', 'unchanged',
+  ].reduce((total, key) => total + result[key], 0);
+  assert.equal(outcomeTotal, result.examined);
+  assert.equal(Object.isFrozen(result), true);
+  const thenDescriptor = Object.getOwnPropertyDescriptor(result, 'then');
+  assert.ok(thenDescriptor);
+  assert.equal(thenDescriptor.value, undefined);
+  assert.equal(thenDescriptor.enumerable, false);
+  assert.equal(thenDescriptor.writable, false);
+  assert.equal(thenDescriptor.configurable, false);
+}
+
+async function persistRecord(journal, payload, accepted, required, evidenceState = EVIDENCE_STATES.VALIDATED) {
+  const preflight = await preflightZenonPayment(payload, accepted, required);
+  await journal.putValidated({
+    authorizationKey: preflight.authorizationKey,
+    transactionHash: preflight.transactionHash,
+    chainProfile: preflight.chainProfile,
+    intentDigest: preflight.intentDigest,
+    resourceIdentity: preflight.resourceIdentity,
+    resourceDigest: preflight.resourceDigest,
+    payer: preflight.payer,
+    signedAccountBlock: preflight.signedAccountBlock,
+  });
+  if (evidenceState !== EVIDENCE_STATES.VALIDATED) {
+    await journal.updateEvidence(preflight.authorizationKey, preflight.transactionHash, evidenceState);
+  }
+  return preflight;
 }
 
 test('ExactZenonFacilitator deterministic settlement integration scenarios', async t => {
@@ -1089,16 +1142,685 @@ test('ExactZenonFacilitator deterministic settlement integration scenarios', asy
     assert.equal(node.counters.publish, publicationCountAfterFirstSettlement);
   });
 
+  await t.test('reconciliation maintenance constructor bounds and null retention preserve active records while rechecking tombstones', async t => {
+    const emptyFixture = await journalFixture(t);
+    const defaultFacilitator = facilitator(emptyFixture.journal);
+    assert.equal(defaultFacilitator.reconciliationRetentionMs, null);
+    assert.equal('reconciliationMaintenance' in defaultFacilitator, false);
+    assert.equal(Object.hasOwn(defaultFacilitator, 'worklist'), false);
+    assert.equal(facilitator(emptyFixture.journal, { reconciliationRetentionMs: null }).reconciliationRetentionMs, null);
+    assert.equal(facilitator(emptyFixture.journal, { reconciliationRetentionMs: 3_600_000 }).reconciliationRetentionMs, 3_600_000);
+    assert.equal(facilitator(emptyFixture.journal, { reconciliationRetentionMs: 2_592_000_000 }).reconciliationRetentionMs, 2_592_000_000);
+    for (const value of [-1, 0, 3_599_999, 2_592_000_001, 3_600_000.5, '3600000']) {
+      assert.throws(
+        () => facilitator(emptyFixture.journal, { reconciliationRetentionMs: value }),
+        error => error?.code === 'invalid_reconciliation_retention',
+      );
+    }
+    assertMaintenanceResult(await defaultFacilitator.runReconciliationMaintenance(), {
+      examined: 0,
+      included: 0,
+      acknowledged: 0,
+      terminalized: 0,
+      lateInclusionRecorded: 0,
+      unavailable: 0,
+      capacityBlocked: 0,
+      conflicted: 0,
+      unchanged: 0,
+      remainingInCycle: 0,
+      cycleComplete: true,
+    });
+    await assert.rejects(
+      defaultFacilitator.runReconciliationMaintenance(undefined),
+      error => error?.code === 'reconciliation_maintenance_arguments_invalid',
+    );
+
+    const current = { value: '2026-01-01T00:00:00.000Z' };
+    const { journal } = await journalFixture(t, { clock: () => current.value });
+    const accepted = requirement();
+    const required = challenge(accepted);
+    const terminalPayload = signedPayment(required, accepted, 31);
+    const terminalPreflight = await persistRecord(journal, terminalPayload, accepted, required);
+    const snapshot = await journal.load();
+    current.value = '2026-01-01T01:00:00.000Z';
+    await journal.replaceRecordWithTombstone({
+      expectedRevision: snapshot.revision,
+      expectedRecord: snapshot.records[0],
+      retentionMs: 3_600_000,
+    });
+    const activePayload = signedPayment(required, accepted, 32);
+    const activePreflight = await persistRecord(journal, activePayload, accepted, required);
+    const included = observedBlock(terminalPayload.payload.transaction, { included: true });
+    const node = installSyntheticNode(t, {
+      lookup: (_call, hash) => hash.toString() === terminalPreflight.transactionHash ? included : null,
+    });
+    const exact = facilitator(journal, { reconciliationRetentionMs: null });
+    const first = await exact.runReconciliationMaintenance();
+    assert.equal(first.examined, 1);
+    assert.equal(first.lateInclusionRecorded, 1);
+    assert.equal(first.cycleComplete, true);
+    assert.equal((await journal.get(activePreflight.authorizationKey, activePreflight.transactionHash)) !== null, true);
+    const listed = await journal.list({ includeTombstones: true });
+    assert.equal(listed.records.length, 1);
+    assert.equal(listed.tombstones.length, 1);
+    assert.equal(listed.tombstones[0].lateMomentumEvidence !== null, true);
+    const revisionAfterFirst = (await journal.load()).revision;
+    const second = await exact.runReconciliationMaintenance();
+    assert.equal(second.examined, 1);
+    assert.equal(second.unchanged, 1);
+    assert.equal((await journal.load()).revision, revisionAfterFirst);
+    assert.equal(node.counters.lookup, 2);
+    assert.equal(node.counters.frontier, 0);
+    assert.equal(node.counters.unconfirmed, 0);
+    assert.equal(node.counters.publish, 0);
+    assert.equal(node.counters.subscribe, 0);
+  });
+
+  await t.test('createdAt and clock direction gate exact-absence terminalization and same-payment terminal lookup bypasses SDK initialization', async t => {
+    const current = { value: '2026-01-01T00:00:00.000Z' };
+    const { journal } = await journalFixture(t, { clock: () => current.value });
+    const accepted = requirement();
+    const required = challenge(accepted);
+    const payload = signedPayment(required, accepted, 33);
+    const preflight = await persistRecord(
+      journal,
+      payload,
+      accepted,
+      required,
+      EVIDENCE_STATES.SUBMISSION_OUTCOME_UNKNOWN,
+    );
+    current.value = '2026-01-01T00:59:00.000Z';
+    await journal.updateEvidence(
+      preflight.authorizationKey,
+      preflight.transactionHash,
+      EVIDENCE_STATES.SUBMISSION_ACKNOWLEDGED,
+    );
+    const updatedAt = (await journal.get(preflight.authorizationKey, preflight.transactionHash)).updatedAt;
+
+    const exact = facilitator(journal, { reconciliationRetentionMs: 3_600_000 });
+    current.value = '2025-12-31T23:00:00.000Z';
+    assert.equal((await exact.runReconciliationMaintenance()).examined, 0);
+    current.value = '2026-01-01T01:00:00.000Z';
+    const node = installSyntheticNode(t, { lookup: () => null });
+    const result = await exact.runReconciliationMaintenance();
+    assert.equal(result.terminalized, 1);
+    const tombstone = await journal.getTombstone(preflight.authorizationKey, preflight.transactionHash);
+    assert.equal(tombstone.createdAt < updatedAt, true);
+    assert.equal(tombstone.priorEvidenceState, EVIDENCE_STATES.SUBMISSION_ACKNOWLEDGED);
+    assert.equal(await journal.get(preflight.authorizationKey, preflight.transactionHash), null);
+
+    const initializeCount = node.counters.initialize;
+    const terminal = await exact.settle(payload, accepted, required);
+    assert.equal(terminal.success, false);
+    assert.equal(terminal.network, accepted.network);
+    assert.equal(terminal.transaction === preflight.transactionHash, true);
+    assert.equal(terminal.payer === preflight.payer, true);
+    assert.equal(terminal.state, EVIDENCE_STATES.SUBMISSION_ACKNOWLEDGED);
+    assert.equal(terminal.authorizationKey === preflight.authorizationKey, true);
+    assert.equal(terminal.deliveryState, DELIVERY_STATES.NONE);
+    assert.equal(terminal.retrySamePayment, false);
+    assert.equal(terminal.errorReason, 'payment_reconciliation_terminal');
+    assert.equal(node.counters.initialize, initializeCount);
+    assert.equal(node.counters.publish, 0);
+    assert.equal(node.counters.frontier, 0);
+    assert.equal(node.counters.unconfirmed, 0);
+    assert.equal(node.counters.subscribe, 0);
+  });
+
+  await t.test('maintenance exact-hash included, unconfirmed, and unavailable outcomes preserve all forbidden side effects', async t => {
+    const current = { value: '2026-01-01T00:00:00.000Z' };
+    const { journal } = await journalFixture(t, { clock: () => current.value });
+    const accepted = requirement();
+    const required = challenge(accepted);
+    const includedPayload = signedPayment(required, accepted, 34);
+    const acknowledgedPayload = signedPayment(required, accepted, 35);
+    const unavailablePayload = signedPayment(required, accepted, 36);
+    const includedPreflight = await persistRecord(journal, includedPayload, accepted, required);
+    const acknowledgedPreflight = await persistRecord(journal, acknowledgedPayload, accepted, required);
+    const unavailablePreflight = await persistRecord(journal, unavailablePayload, accepted, required);
+    const included = observedBlock(includedPayload.payload.transaction, { included: true });
+    const unconfirmed = observedBlock(acknowledgedPayload.payload.transaction);
+    const unavailableError = new Error();
+    const node = installSyntheticNode(t, {
+      lookup: (_call, hash) => {
+        const transactionHash = hash.toString();
+        if (transactionHash === includedPreflight.transactionHash) return included;
+        if (transactionHash === acknowledgedPreflight.transactionHash) return unconfirmed;
+        if (transactionHash === unavailablePreflight.transactionHash) throw unavailableError;
+        return null;
+      },
+    });
+    current.value = '2026-01-01T01:00:00.000Z';
+    const result = await facilitator(journal, { reconciliationRetentionMs: 3_600_000 })
+      .runReconciliationMaintenance();
+    assert.equal(result.examined, 3);
+    assert.equal(result.included, 1);
+    assert.equal(result.acknowledged, 1);
+    assert.equal(result.unavailable, 1);
+    assert.equal(result.terminalized, 0);
+    const includedRecord = await journal.get(includedPreflight.authorizationKey, includedPreflight.transactionHash);
+    const acknowledgedRecord = await journal.get(acknowledgedPreflight.authorizationKey, acknowledgedPreflight.transactionHash);
+    const unavailableRecord = await journal.get(unavailablePreflight.authorizationKey, unavailablePreflight.transactionHash);
+    assert.equal(includedRecord.evidenceState, EVIDENCE_STATES.MOMENTUM_INCLUDED);
+    assert.equal(includedRecord.deliveryState, DELIVERY_STATES.NONE);
+    assert.equal(acknowledgedRecord.evidenceState, EVIDENCE_STATES.SUBMISSION_ACKNOWLEDGED);
+    assert.equal(unavailableRecord.evidenceState, EVIDENCE_STATES.VALIDATED);
+    assert.equal(node.counters.lookup, 3);
+    assert.equal(node.counters.frontier, 0);
+    assert.equal(node.counters.unconfirmed, 0);
+    assert.equal(node.counters.publish, 0);
+    assert.equal(node.counters.subscribe, 0);
+    assert.equal(node.counters.assetLookup, 0);
+  });
+
+  await t.test('clock rollback preserves stronger exact evidence while exact absence remains active', async t => {
+    const current = { value: '2026-01-01T00:00:00.000Z' };
+    const { journal } = await journalFixture(t, { clock: () => current.value });
+    const accepted = requirement();
+    const required = challenge(accepted);
+    const includedPayload = signedPayment(required, accepted, 122);
+    const acknowledgedPayload = signedPayment(required, accepted, 123);
+    const absentPayload = signedPayment(required, accepted, 124);
+    const includedPreflight = await persistRecord(journal, includedPayload, accepted, required);
+    const acknowledgedPreflight = await persistRecord(journal, acknowledgedPayload, accepted, required);
+    const absentPreflight = await persistRecord(journal, absentPayload, accepted, required);
+    const included = observedBlock(includedPayload.payload.transaction, { included: true });
+    const unconfirmed = observedBlock(acknowledgedPayload.payload.transaction);
+    const node = installSyntheticNode(t, {
+      lookup: (_call, hash) => {
+        current.value = '2025-12-31T23:00:00.000Z';
+        const transactionHash = hash.toString();
+        if (transactionHash === includedPreflight.transactionHash) return included;
+        if (transactionHash === acknowledgedPreflight.transactionHash) return unconfirmed;
+        return null;
+      },
+    });
+    current.value = '2026-01-01T01:00:00.000Z';
+    const result = await facilitator(journal, { reconciliationRetentionMs: 3_600_000 })
+      .runReconciliationMaintenance();
+    assert.equal(result.included, 1);
+    assert.equal(result.acknowledged, 1);
+    assert.equal(result.conflicted, 1);
+    assert.equal(
+      (await journal.get(includedPreflight.authorizationKey, includedPreflight.transactionHash)).evidenceState,
+      EVIDENCE_STATES.MOMENTUM_INCLUDED,
+    );
+    assert.equal(
+      (await journal.get(acknowledgedPreflight.authorizationKey, acknowledgedPreflight.transactionHash)).evidenceState,
+      EVIDENCE_STATES.SUBMISSION_ACKNOWLEDGED,
+    );
+    assert.equal((await journal.get(absentPreflight.authorizationKey, absentPreflight.transactionHash)) !== null, true);
+    assert.equal(await journal.getTombstone(absentPreflight.authorizationKey, absentPreflight.transactionHash), null);
+    assert.equal(node.counters.lookup, 3);
+    assert.equal(node.counters.publish, 0);
+    assert.equal(node.counters.frontier, 0);
+    assert.equal(node.counters.unconfirmed, 0);
+  });
+
+  await t.test('maintenance capacity blockage preserves the full record and same-payment recovery lane', async t => {
+    const current = { value: '2026-01-01T00:00:00.000Z' };
+    let maintenanceStarted = false;
+    let maintenanceClockCalls = 0;
+    let journal;
+    const fixtureState = await journalFixture(t);
+    journal = new SettlementJournal({
+      directory: fixtureState.directory,
+      allowedRoot: fixtureState.root,
+      clock: () => {
+        if (maintenanceStarted) {
+          maintenanceClockCalls += 1;
+          if (maintenanceClockCalls === 2) journal.maxFileBytes = 1024;
+        }
+        return current.value;
+      },
+    });
+    const accepted = requirement();
+    const required = challenge(accepted);
+    const payload = signedPayment(required, accepted, 37);
+    const preflight = await persistRecord(
+      journal,
+      payload,
+      accepted,
+      required,
+      EVIDENCE_STATES.SUBMISSION_OUTCOME_UNKNOWN,
+    );
+    current.value = '2026-01-01T01:00:00.000Z';
+    const node = installSyntheticNode(t, { lookup: () => null });
+    maintenanceStarted = true;
+    const exact = facilitator(journal, { reconciliationRetentionMs: 3_600_000 });
+    const result = await exact.runReconciliationMaintenance();
+    assert.equal(result.capacityBlocked, 1);
+    journal.maxFileBytes = 16 * 1024 * 1024;
+    maintenanceStarted = false;
+    const retained = await journal.get(preflight.authorizationKey, preflight.transactionHash);
+    assert.equal(retained.evidenceState, EVIDENCE_STATES.SUBMISSION_OUTCOME_UNKNOWN);
+    assert.equal(await journal.getTombstone(preflight.authorizationKey, preflight.transactionHash), null);
+
+    node.behavior.lookup = () => { throw new Error(); };
+    const recovery = await exact.settle(payload, accepted, required);
+    assert.equal(recovery.success, false);
+    assert.equal(recovery.retrySamePayment, true);
+    assert.equal(recovery.state, EVIDENCE_STATES.SUBMISSION_OUTCOME_UNKNOWN);
+    assert.equal(node.counters.publish, 0);
+    assert.equal(node.counters.frontier, 0);
+    assert.equal(node.counters.unconfirmed, 0);
+    assert.equal(node.counters.subscribe, 0);
+  });
+
+  await t.test('maintenance is non-overlapping and same-payer settlement cannot pass its terminal CAS boundary', async t => {
+    const current = { value: '2026-01-01T00:00:00.000Z' };
+    const { journal } = await journalFixture(t, { clock: () => current.value });
+    const accepted = requirement();
+    const required = challenge(accepted);
+    const payload = signedPayment(required, accepted, 38);
+    const preflight = await persistRecord(journal, payload, accepted, required);
+    current.value = '2026-01-01T01:00:00.000Z';
+    const entered = deferred();
+    const release = deferred();
+    const node = installSyntheticNode(t, {
+      lookup: async () => {
+        entered.resolve();
+        await release.promise;
+        return null;
+      },
+    });
+    const exact = facilitator(journal, { reconciliationRetentionMs: 3_600_000 });
+    const maintenance = exact.runReconciliationMaintenance();
+    await entered.promise;
+    await assert.rejects(
+      exact.runReconciliationMaintenance(),
+      error => error?.code === 'reconciliation_maintenance_in_progress',
+    );
+    const settlement = exact.settle(payload, accepted, required);
+    release.resolve();
+    const maintenanceResult = await maintenance;
+    assert.equal(maintenanceResult.terminalized, 1);
+    const terminal = await settlement;
+    assert.equal(terminal.errorReason, 'payment_reconciliation_terminal');
+    assert.equal(terminal.retrySamePayment, false);
+    assert.equal(terminal.transaction === preflight.transactionHash, true);
+    assert.equal(node.counters.initialize, 1);
+    assert.equal(node.counters.lookup, 1);
+    assert.equal(node.counters.publish, 0);
+    assert.equal(node.counters.frontier, 0);
+    assert.equal(node.counters.unconfirmed, 0);
+    assert.equal(node.counters.subscribe, 0);
+  });
+
+  await t.test('maintenance acquires payer before SDK ownership and holds both through terminal CAS', async t => {
+    const current = { value: '2026-01-01T00:00:00.000Z' };
+    const { journal } = await journalFixture(t, { clock: () => current.value });
+    const accepted = requirement();
+    const required = challenge(accepted);
+    const payload = signedPayment(required, accepted, 43);
+    const preflight = await persistRecord(journal, payload, accepted, required);
+    current.value = '2026-01-01T01:00:00.000Z';
+
+    const candidateListed = deferred();
+    const originalListCandidates = journal.listReconciliationCandidates.bind(journal);
+    journal.listReconciliationCandidates = async (...args) => {
+      const candidates = await originalListCandidates(...args);
+      candidateListed.resolve();
+      return candidates;
+    };
+    const casEntered = deferred();
+    const releaseCas = deferred();
+    const originalReplace = journal.replaceRecordWithTombstone.bind(journal);
+    journal.replaceRecordWithTombstone = async options => {
+      casEntered.resolve();
+      await releaseCas.promise;
+      return originalReplace(options);
+    };
+    const node = installSyntheticNode(t, { lookup: () => null });
+    const exact = facilitator(journal, { reconciliationRetentionMs: 3_600_000 });
+
+    const payerHeld = deferred();
+    const releasePayer = deferred();
+    const payerOwner = exact.payerQueue.run(preflight.payer, async () => {
+      payerHeld.resolve();
+      await releasePayer.promise;
+    });
+    await payerHeld.promise;
+    const maintenance = exact.runReconciliationMaintenance();
+    await candidateListed.promise;
+    await Promise.resolve();
+    assert.equal(node.counters.initialize, 0);
+
+    releasePayer.resolve();
+    await payerOwner;
+    await casEntered.promise;
+    assert.equal(node.counters.initialize, 1);
+    assert.equal(node.counters.lookup, 1);
+
+    let payerProbeEntered = false;
+    let runtimeProbeEntered = false;
+    const payerProbe = exact.payerQueue.run(preflight.payer, async () => {
+      payerProbeEntered = true;
+    });
+    const runtimeProbe = exact.runtime.withOwner('test.maintenance-lock-probe', async () => {
+      runtimeProbeEntered = true;
+    });
+    await Promise.resolve();
+    assert.equal(payerProbeEntered, false);
+    assert.equal(runtimeProbeEntered, false);
+
+    releaseCas.resolve();
+    const result = await maintenance;
+    await Promise.all([payerProbe, runtimeProbe]);
+    assert.equal(result.terminalized, 1);
+    assert.equal(payerProbeEntered, true);
+    assert.equal(runtimeProbeEntered, true);
+    assert.equal(await journal.get(preflight.authorizationKey, preflight.transactionHash), null);
+  });
+
+  await t.test('fresh in-owner snapshot rejects a changed candidate before exact-hash lookup', async t => {
+    const current = { value: '2026-01-01T00:00:00.000Z' };
+    const { root, directory, journal } = await journalFixture(t, { clock: () => current.value });
+    const competingJournal = new SettlementJournal({ directory, allowedRoot: root, clock: () => current.value });
+    const accepted = requirement();
+    const required = challenge(accepted);
+    const payload = signedPayment(required, accepted, 44);
+    const preflight = await persistRecord(journal, payload, accepted, required);
+    current.value = '2026-01-01T01:00:00.000Z';
+
+    const secondSnapshotListed = deferred();
+    const originalListCandidates = journal.listReconciliationCandidates.bind(journal);
+    journal.listReconciliationCandidates = async (...args) => {
+      const candidates = await originalListCandidates(...args);
+      secondSnapshotListed.resolve();
+      return candidates;
+    };
+    const ownerEntered = deferred();
+    const releaseOwner = deferred();
+    const owner = facilitator(journal).runtime.withOwner('test.maintenance-snapshot-holder', async () => {
+      ownerEntered.resolve();
+      await releaseOwner.promise;
+    });
+    await ownerEntered.promise;
+
+    const node = installSyntheticNode(t, { lookup: () => null });
+    const exact = facilitator(journal, { reconciliationRetentionMs: 3_600_000 });
+    const maintenance = exact.runReconciliationMaintenance();
+    await secondSnapshotListed.promise;
+    await competingJournal.updateEvidence(
+      preflight.authorizationKey,
+      preflight.transactionHash,
+      EVIDENCE_STATES.SUBMISSION_ACKNOWLEDGED,
+    );
+    releaseOwner.resolve();
+    await owner;
+
+    const result = await maintenance;
+    assert.equal(result.conflicted, 1);
+    assert.equal(node.counters.lookup, 0);
+    const retained = await journal.get(preflight.authorizationKey, preflight.transactionHash);
+    assert.equal(retained.evidenceState, EVIDENCE_STATES.SUBMISSION_ACKNOWLEDGED);
+    assert.equal(await journal.getTombstone(preflight.authorizationKey, preflight.transactionHash), null);
+  });
+
+  await t.test('two facilitator instances promote a stale active candidate to late tombstone reconciliation', async t => {
+    const current = { value: '2026-01-01T00:00:00.000Z' };
+    const { journal } = await journalFixture(t, { clock: () => current.value });
+    const accepted = requirement();
+    const required = challenge(accepted);
+    const payload = signedPayment(required, accepted, 45);
+    const preflight = await persistRecord(journal, payload, accepted, required);
+    current.value = '2026-01-01T01:00:00.000Z';
+
+    let enumerations = 0;
+    const secondEnumerated = deferred();
+    const originalListCandidates = journal.listReconciliationCandidates.bind(journal);
+    journal.listReconciliationCandidates = async (...args) => {
+      const candidates = await originalListCandidates(...args);
+      enumerations += 1;
+      if (enumerations === 2) secondEnumerated.resolve();
+      return candidates;
+    };
+    const firstLookupEntered = deferred();
+    const releaseFirstLookup = deferred();
+    const included = observedBlock(payload.payload.transaction, { included: true });
+    const node = installSyntheticNode(t, {
+      lookup: async call => {
+        if (call === 1) {
+          firstLookupEntered.resolve();
+          await releaseFirstLookup.promise;
+          return null;
+        }
+        return included;
+      },
+    });
+    const firstFacilitator = facilitator(journal, { reconciliationRetentionMs: 3_600_000 });
+    const secondFacilitator = facilitator(journal, { reconciliationRetentionMs: 3_600_000 });
+
+    const firstMaintenance = firstFacilitator.runReconciliationMaintenance();
+    await firstLookupEntered.promise;
+    const secondMaintenance = secondFacilitator.runReconciliationMaintenance();
+    await secondEnumerated.promise;
+    releaseFirstLookup.resolve();
+    const firstResult = await firstMaintenance;
+    const secondResult = await secondMaintenance;
+
+    assert.equal(firstResult.terminalized, 1);
+    assert.equal(secondResult.terminalized, 0);
+    assert.equal(secondResult.lateInclusionRecorded, 1);
+    assert.equal(node.counters.lookup, 2);
+    assert.equal(await journal.get(preflight.authorizationKey, preflight.transactionHash), null);
+    const tombstone = await journal.getTombstone(preflight.authorizationKey, preflight.transactionHash);
+    assert.equal(tombstone.lateMomentumEvidence !== null, true);
+  });
+
+  await t.test('maintenance aborts on malformed or digest-mismatched exact observations without mutation', async t => {
+    const current = { value: '2026-01-01T00:00:00.000Z' };
+    const { journal } = await journalFixture(t, { clock: () => current.value });
+    const accepted = requirement();
+    const required = challenge(accepted);
+    const payload = signedPayment(required, accepted, 39);
+    const otherPayload = signedPayment(required, accepted, 40);
+    const preflight = await persistRecord(journal, payload, accepted, required);
+    const original = await journal.load();
+    current.value = '2026-01-01T01:00:00.000Z';
+    let observation = {};
+    const node = installSyntheticNode(t, { lookup: () => observation });
+    const exact = facilitator(journal, { reconciliationRetentionMs: 3_600_000 });
+    const falsyMalformed = [undefined, false, 0, ''];
+    for (let index = 0; index < falsyMalformed.length; index += 1) {
+      observation = falsyMalformed[index];
+      await assert.rejects(
+        exact.runReconciliationMaintenance(),
+        error => error?.code === 'malformed_observed_account_block',
+      );
+      assert.equal((await journal.load()).revision, original.revision);
+      const retained = await journal.get(preflight.authorizationKey, preflight.transactionHash);
+      assert.equal(retained !== null, true);
+      assert.equal(retained.deliveryState, DELIVERY_STATES.NONE);
+      assert.equal(await journal.getTombstone(
+        preflight.authorizationKey,
+        preflight.transactionHash,
+      ), null);
+      assert.equal(node.counters.publish, 0);
+      assert.equal(node.counters.frontier, 0);
+      assert.equal(node.counters.unconfirmed, 0);
+      assert.equal(node.counters.subscribe, 0);
+    }
+
+    observation = {};
+    await assert.rejects(
+      exact.runReconciliationMaintenance(),
+      error => error?.code === 'malformed_observed_account_block',
+    );
+    assert.equal((await journal.load()).revision, original.revision);
+    assert.equal((await journal.get(preflight.authorizationKey, preflight.transactionHash)) !== null, true);
+
+    observation = observedBlock(otherPayload.payload.transaction);
+    await assert.rejects(
+      exact.runReconciliationMaintenance(),
+      error => error?.code === 'observed_transaction_mismatch',
+    );
+    assert.equal((await journal.load()).revision, original.revision);
+    assert.equal((await journal.get(preflight.authorizationKey, preflight.transactionHash)) !== null, true);
+
+    observation = null;
+    assert.equal((await exact.runReconciliationMaintenance()).terminalized, 1);
+    assert.equal(node.counters.frontier, 0);
+    assert.equal(node.counters.unconfirmed, 0);
+    assert.equal(node.counters.publish, 0);
+    assert.equal(node.counters.subscribe, 0);
+  });
+
+  await t.test('maintenance revision races retain the full record', async t => {
+    const current = { value: '2026-01-01T00:00:00.000Z' };
+    const { root, directory, journal } = await journalFixture(t, { clock: () => current.value });
+    const competingJournal = new SettlementJournal({ directory, allowedRoot: root, clock: () => current.value });
+    const accepted = requirement();
+    const required = challenge(accepted);
+    const payload = signedPayment(required, accepted, 41);
+    const preflight = await persistRecord(journal, payload, accepted, required);
+    current.value = '2026-01-01T01:00:00.000Z';
+    const entered = deferred();
+    const release = deferred();
+    installSyntheticNode(t, {
+      lookup: async () => {
+        entered.resolve();
+        await release.promise;
+        return null;
+      },
+    });
+    const exact = facilitator(journal, { reconciliationRetentionMs: 3_600_000 });
+    const maintenance = exact.runReconciliationMaintenance();
+    await entered.promise;
+    const competingPayload = signedPayment(required, accepted, 42);
+    await persistRecord(competingJournal, competingPayload, accepted, required);
+    release.resolve();
+    const result = await maintenance;
+    assert.equal(result.conflicted, 1);
+    assert.equal((await journal.get(preflight.authorizationKey, preflight.transactionHash)) !== null, true);
+    assert.equal(await journal.getTombstone(preflight.authorizationKey, preflight.transactionHash), null);
+  });
+
+  await t.test('maintenance cycles process at most 64 deterministic entries without in-process starvation and restart fresh', async t => {
+    const current = { value: '2026-01-01T00:00:00.000Z' };
+    const { journal } = await journalFixture(t, { clock: () => current.value });
+    const accepted = requirement();
+    const required = challenge(accepted);
+    for (let index = 0; index < 65; index += 1) {
+      const payload = signedPayment(required, accepted, 50 + index);
+      await persistRecord(journal, payload, accepted, required);
+    }
+    const ordered = (await journal.list())
+      .map(record => ({
+        createdAt: record.createdAt,
+        authorizationKey: record.authorizationKey,
+        transactionHash: record.transactionHash,
+        kind: 'record',
+      }))
+      .sort((left, right) => {
+        for (const key of ['createdAt', 'authorizationKey', 'transactionHash', 'kind']) {
+          if (left[key] < right[key]) return -1;
+          if (left[key] > right[key]) return 1;
+        }
+        return 0;
+      });
+    const observedTransactions = [];
+    const node = installSyntheticNode(t, {
+      lookup: (_call, hash) => {
+        observedTransactions.push(hash.toString());
+        return null;
+      },
+    });
+    current.value = '2026-01-01T01:00:00.000Z';
+    const exact = facilitator(journal, { reconciliationRetentionMs: 3_600_000 });
+    const first = await exact.runReconciliationMaintenance();
+    assert.equal(first.examined, 64);
+    assert.equal(first.terminalized, 64);
+    assert.equal(first.remainingInCycle, 1);
+    assert.equal(first.cycleComplete, false);
+    assert.equal(
+      isDeepStrictEqual(observedTransactions.slice(0, 64), ordered.slice(0, 64).map(entry => entry.transactionHash)),
+      true,
+    );
+
+    const newPayload = signedPayment(required, accepted, 120);
+    const newPreflight = await persistRecord(journal, newPayload, accepted, required);
+    current.value = '2026-01-01T02:00:00.000Z';
+    const second = await exact.runReconciliationMaintenance();
+    assert.equal(second.examined, 1);
+    assert.equal(second.terminalized, 1);
+    assert.equal(second.cycleComplete, true);
+    assert.equal((await journal.get(newPreflight.authorizationKey, newPreflight.transactionHash)) !== null, true);
+
+    const third = await exact.runReconciliationMaintenance();
+    assert.equal(third.examined, 64);
+    assert.equal(third.unchanged, 64);
+    assert.equal(third.remainingInCycle, 2);
+    const fourth = await exact.runReconciliationMaintenance();
+    assert.equal(fourth.examined, 2);
+    assert.equal(fourth.unchanged, 1);
+    assert.equal(fourth.terminalized, 1);
+    assert.equal(fourth.cycleComplete, true);
+    assert.equal(await journal.get(newPreflight.authorizationKey, newPreflight.transactionHash), null);
+
+    const restarted = facilitator(journal, { reconciliationRetentionMs: 3_600_000 });
+    const restartCycle = await restarted.runReconciliationMaintenance();
+    assert.equal(restartCycle.examined, 64);
+    assert.equal(restartCycle.unchanged, 64);
+    assert.equal(restartCycle.remainingInCycle, 2);
+    assert.equal(restartCycle.cycleComplete, false);
+    assert.equal(node.counters.frontier, 0);
+    assert.equal(node.counters.unconfirmed, 0);
+    assert.equal(node.counters.publish, 0);
+    assert.equal(node.counters.subscribe, 0);
+    assert.equal(node.counters.assetLookup, 0);
+  });
+
+  await t.test('maintenance requires live acknowledgement before SDK ownership or durable transition', async t => {
+    const current = { value: '2026-01-01T00:00:00.000Z' };
+    const { journal } = await journalFixture(t, { clock: () => current.value });
+    const accepted = requirement();
+    const required = challenge(accepted);
+    const payload = signedPayment(required, accepted, 121);
+    const preflight = await persistRecord(journal, payload, accepted, required);
+    current.value = '2026-01-01T01:00:00.000Z';
+    const before = await journal.load();
+    let casCalls = 0;
+    const originalReplace = journal.replaceRecordWithTombstone.bind(journal);
+    journal.replaceRecordWithTombstone = async options => {
+      casCalls += 1;
+      return originalReplace(options);
+    };
+    const node = installSyntheticNode(t, { lookup: () => null });
+    const exact = facilitator(journal, { reconciliationRetentionMs: 3_600_000 });
+    const acknowledgement = process.env.ZENON_LIVE_ACK;
+    delete process.env.ZENON_LIVE_ACK;
+    try {
+      await assert.rejects(
+        exact.runReconciliationMaintenance(),
+        error => error?.code === 'live_mode_not_acknowledged',
+      );
+    } finally {
+      process.env.ZENON_LIVE_ACK = acknowledgement;
+    }
+    assert.equal(node.counters.initialize, 0);
+    assert.equal(node.counters.lookup, 0);
+    assert.equal(casCalls, 0);
+    assert.equal((await journal.load()).revision, before.revision);
+    assert.equal((await journal.get(preflight.authorizationKey, preflight.transactionHash)) !== null, true);
+    assert.equal(await journal.getTombstone(preflight.authorizationKey, preflight.transactionHash), null);
+  });
+
   // This scenario permanently poisons the module-wide live runtime and must be
   // the final exact-facilitator scenario in this isolated test process.
   await t.test('scenario 10: publication timeout is ambiguous, delivers nothing, and blocks later sessions', async t => {
     const accepted = requirement();
-    const { journal } = await journalFixture(t);
+    const current = { value: '2026-01-01T00:00:00.000Z' };
+    const { journal } = await journalFixture(t, { clock: () => current.value });
     const node = installSyntheticNode(t, {
       lookup: () => null,
       publish: () => new Promise(() => {}),
     });
-    const exact = facilitator(journal, { rpcTimeoutMs: 20 });
+    const exact = facilitator(journal, {
+      rpcTimeoutMs: 20,
+      reconciliationRetentionMs: 3_600_000,
+    });
     let deliveries = 0;
     const app = createResourceServer({
       facilitator: exact,
@@ -1133,6 +1855,25 @@ test('ExactZenonFacilitator deterministic settlement integration scenarios', asy
       assert.equal(retry.retrySamePayment, true);
       assert.equal(node.counters.initialize, initializeCount);
       assert.equal(node.counters.publish, 1);
+
+      current.value = '2026-01-01T01:00:00.000Z';
+      const beforeMaintenance = await journal.load();
+      const lookupCount = node.counters.lookup;
+      let casCalls = 0;
+      const originalReplace = journal.replaceRecordWithTombstone.bind(journal);
+      journal.replaceRecordWithTombstone = async options => {
+        casCalls += 1;
+        return originalReplace(options);
+      };
+      await assert.rejects(
+        exact.runReconciliationMaintenance(),
+        error => error?.code === 'live_runtime_poisoned_restart_required',
+      );
+      assert.equal(node.counters.initialize, initializeCount);
+      assert.equal(node.counters.lookup, lookupCount);
+      assert.equal(casCalls, 0);
+      assert.equal((await journal.load()).revision, beforeMaintenance.revision);
+      assert.equal((await journal.get(preflight.authorizationKey, preflight.transactionHash)) !== null, true);
     } finally {
       await app.close();
     }
