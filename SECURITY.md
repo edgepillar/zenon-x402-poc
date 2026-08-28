@@ -54,7 +54,7 @@ Publication results are classified by evidence:
 
 - `VALIDATED` — offline validation succeeded; after node-dependent checks, the exact signed block and authorization identity are journaled before any publication attempt;
 - `SUBMISSION_ACKNOWLEDGED` — publication returned or the exact block was observed without Momentum inclusion details;
-- `SUBMISSION_OUTCOME_UNKNOWN` — a publication timeout or transport uncertainty may have occurred after node receipt;
+- `SUBMISSION_OUTCOME_UNKNOWN` — publication returned its asynchronous request promise, that promise rejected, and reconciliation did not observe the exact block; every such rejection remains uncertain, not only a timeout or transport failure;
 - `MOMENTUM_INCLUDED` — the queried node returned the exact block with `confirmationDetail`;
 - `DELIVERY_PENDING` — an exclusive delivery claim was durably recorded; protected-resource execution may have begun;
 - `DELIVERED` — the response was durably cached.
