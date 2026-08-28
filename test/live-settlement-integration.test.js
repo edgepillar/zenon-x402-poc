@@ -740,6 +740,139 @@ test('ExactZenonFacilitator deterministic settlement integration scenarios', asy
     }
   });
 
+  await t.test('exact facilitator verification and settlement results ignore inherited then assimilation', async t => {
+    const accepted = requirement();
+    const required = challenge(accepted);
+    const payload = signedPayment(required, accepted);
+    const invalidPayload = structuredClone(payload);
+    invalidPayload.x402Version = 1;
+    const { journal } = await journalFixture(t);
+    const included = observedBlock(payload.payload.transaction, { included: true });
+    let published = false;
+    const node = installSyntheticNode(t, {
+      lookup: () => published ? included : null,
+      publish: async () => { published = true; },
+    });
+    const exact = facilitator(journal);
+    const priorThenDescriptor = Object.getOwnPropertyDescriptor(Object.prototype, 'then');
+    const getOwnDescriptor = Object.getOwnPropertyDescriptor;
+    const defineProperty = Object.defineProperty;
+    const hasOwn = Object.hasOwn;
+    const controlledRejection = Symbol('controlled exact facilitator result rejection');
+    let inheritedThenObservations = 0;
+    let publicationCountAfterFirstSettlement;
+    const outcomes = [];
+
+    const isEnumerableDataField = (receiver, field) => {
+      const descriptor = getOwnDescriptor(receiver, field);
+      return descriptor?.enumerable === true && hasOwn(descriptor, 'value');
+    };
+    const capture = promise => promise.then(
+      value => ({ status: 'fulfilled', value }),
+      error => ({ status: 'rejected', controlled: error === controlledRejection }),
+    );
+
+    try {
+      defineProperty(Object.prototype, 'then', {
+        configurable: true,
+        get() {
+          const verificationResult = isEnumerableDataField(this, 'isValid') &&
+            isEnumerableDataField(this, 'payer');
+          const settlementResult = isEnumerableDataField(this, 'success') &&
+            isEnumerableDataField(this, 'network') &&
+            isEnumerableDataField(this, 'transaction') &&
+            isEnumerableDataField(this, 'payer') &&
+            isEnumerableDataField(this, 'state');
+          if (!verificationResult && !settlementResult) return undefined;
+          inheritedThenObservations += 1;
+          return (_resolve, reject) => reject(controlledRejection);
+        },
+      });
+
+      outcomes.push(await capture(exact.verify(invalidPayload, accepted, required)));
+      outcomes.push(await capture(exact.verify(payload, accepted, required)));
+      outcomes.push(await capture(exact.settle(invalidPayload, accepted, required)));
+      outcomes.push(await capture(exact.settle(payload, accepted, required)));
+      publicationCountAfterFirstSettlement = node.counters.publish;
+      outcomes.push(await capture(exact.settle(payload, accepted, required)));
+    } finally {
+      if (priorThenDescriptor) defineProperty(Object.prototype, 'then', priorThenDescriptor);
+      else delete Object.prototype.then;
+    }
+
+    const restoredThenDescriptor = Object.getOwnPropertyDescriptor(Object.prototype, 'then');
+    const prototypeRestored = priorThenDescriptor === undefined
+      ? restoredThenDescriptor === undefined
+      : restoredThenDescriptor?.value === priorThenDescriptor.value &&
+        restoredThenDescriptor?.get === priorThenDescriptor.get &&
+        restoredThenDescriptor?.set === priorThenDescriptor.set &&
+        restoredThenDescriptor?.enumerable === priorThenDescriptor.enumerable &&
+        restoredThenDescriptor?.writable === priorThenDescriptor.writable &&
+        restoredThenDescriptor?.configurable === priorThenDescriptor.configurable;
+    assert.equal(prototypeRestored, true, 'Object.prototype.then must be restored exactly');
+
+    const allFulfilled = outcomes.every(outcome => outcome.status === 'fulfilled');
+    const allControlledRejections = outcomes.every(outcome =>
+      outcome.status === 'rejected' && outcome.controlled === true);
+    assert.equal(
+      allFulfilled,
+      true,
+      allControlledRejections
+        ? 'baseline exact-result assimilation detected'
+        : 'Exact facilitator results must fulfill without inherited then assimilation',
+    );
+    assert.equal(inheritedThenObservations, 0);
+
+    const [invalidVerification, validVerification, invalidSettlement, firstSettlement, retrySettlement] =
+      outcomes.map(outcome => outcome.value);
+    assert.deepEqual(Object.keys(invalidVerification), ['isValid', 'invalidReason', 'payer']);
+    assert.equal(invalidVerification.isValid, false);
+    assert.equal(invalidVerification.invalidReason, 'malformed_payment');
+    assert.equal(invalidVerification.payer, '');
+    assert.deepEqual(Object.keys(validVerification), ['isValid', 'payer']);
+    assert.equal(validVerification.isValid, true);
+    assert.equal(validVerification.payer === payload.payload.transaction.address, true);
+
+    assert.deepEqual(Object.keys(invalidSettlement), [
+      'success', 'network', 'transaction', 'payer', 'errorReason', 'state',
+    ]);
+    assert.equal(invalidSettlement.success, false);
+    assert.equal(invalidSettlement.network, accepted.network);
+    assert.equal(invalidSettlement.transaction, '');
+    assert.equal(invalidSettlement.payer, '');
+    assert.equal(invalidSettlement.errorReason, 'malformed_payment');
+    assert.equal(invalidSettlement.state, 'VALIDATION_FAILED');
+
+    for (const result of [firstSettlement, retrySettlement]) {
+      assert.deepEqual(Object.keys(result), [
+        'success', 'network', 'transaction', 'payer', 'state', 'authorizationKey', 'deliveryState',
+      ]);
+      assert.equal(result.success, true);
+      assert.equal(result.network, accepted.network);
+      assert.equal(result.transaction === payload.payload.transaction.hash, true);
+      assert.equal(result.payer === payload.payload.transaction.address, true);
+      assert.equal(result.state, EVIDENCE_STATES.MOMENTUM_INCLUDED);
+      assert.equal(result.deliveryState, 'NONE');
+    }
+
+    for (const result of outcomes.map(outcome => outcome.value)) {
+      const descriptor = Object.getOwnPropertyDescriptor(result, 'then');
+      assert.ok(descriptor);
+      assert.equal(descriptor.value, undefined);
+      assert.equal(descriptor.enumerable, false);
+      assert.equal(descriptor.writable, false);
+      assert.equal(descriptor.configurable, false);
+    }
+
+    assert.equal(firstSettlement.transaction === retrySettlement.transaction, true);
+    assert.equal(firstSettlement.payer === retrySettlement.payer, true);
+    assert.equal(firstSettlement.authorizationKey === retrySettlement.authorizationKey, true);
+    const persisted = await journal.get(firstSettlement.authorizationKey, firstSettlement.transaction);
+    assert.equal(persisted.evidenceState, EVIDENCE_STATES.MOMENTUM_INCLUDED);
+    assert.equal(publicationCountAfterFirstSettlement, 1);
+    assert.equal(node.counters.publish, publicationCountAfterFirstSettlement);
+  });
+
   // This scenario permanently poisons the module-wide live runtime and must be
   // the final exact-facilitator scenario in this isolated test process.
   await t.test('scenario 10: publication timeout is ambiguous, delivers nothing, and blocks later sessions', async t => {
