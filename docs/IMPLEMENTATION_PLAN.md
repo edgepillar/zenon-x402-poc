@@ -86,7 +86,7 @@ This serializes one Node.js process, not other processes, facilitators or publis
 
 Simple reads and publication have bounded local waits. Because SDK requests are not cancellable, a timeout poisons the process-wide live runtime before ownership release. Teardown is best effort, queued and future owners fail, and the process must restart. An unexpected cleanup failure also poisons the runtime before release. The code does not claim the late request was cancelled.
 
-Publication timeout is `SUBMISSION_OUTCOME_UNKNOWN`, never a definite failure. The exact signed block is durably recorded first and must be reused for reconciliation.
+After `publish()` returns its asynchronous request promise, every promise rejection is reconciled by exact transaction lookup. If the exact block is not observed, the result remains `SUBMISSION_OUTCOME_UNKNOWN` whether the rejection appears to be a timeout, transport failure, or node-side refusal. A synchronous throw before the request promise is returned is a definite local pre-submission failure. The exact signed block is durably recorded first and must be reused for reconciliation.
 
 `prepareBlock()` is not given a superficial whole-operation deadline. It may perform internal RPC calls and PoW, so the global SDK owner remains held until the composite call settles.
 

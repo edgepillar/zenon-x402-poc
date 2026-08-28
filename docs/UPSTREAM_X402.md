@@ -110,7 +110,7 @@ Do not put Zenon-specific validation inside x402 core.
 - Zenon RPC publish/confirmation
 - default-asset declarations
 
-The client and facilitator interfaces should also make uncertain publication recoverable without encouraging a second payment. A publication timeout may mean the original signed block reached the node.
+The client and facilitator interfaces should also make uncertain publication recoverable without encouraging a second payment. After `publish()` returns its asynchronous request promise, every promise rejection is reconciled by exact transaction lookup. If the exact block is not observed, the result remains `SUBMISSION_OUTCOME_UNKNOWN` whether the rejection appears to be a timeout, transport failure, or node-side refusal. A synchronous throw before the request promise is returned is a definite local pre-submission failure.
 
 ## Recovery semantics
 
