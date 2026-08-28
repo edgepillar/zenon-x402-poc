@@ -14,6 +14,8 @@ import {
   validateRequirement,
 } from './x402-wire.js';
 
+const CREATE_OBJECT = Object.create;
+const DEFINE_PROPERTY = Object.defineProperty;
 const HASH_HEX = /^[0-9a-f]{64}$/;
 const DEFINITIVE_SETTLEMENT_FAILURE = 'payment_settlement_failed';
 const SETTLEMENT_FIELDS = Object.freeze(['success', 'network', 'transaction', 'payer', 'state']);
@@ -26,6 +28,16 @@ const RECOVERY_STATES = new Set([
   'MOMENTUM_INCLUDED',
   'DELIVERY_PENDING',
 ]);
+
+function shieldPaidFetchOutcome(outcome) {
+  const descriptor = CREATE_OBJECT(null);
+  descriptor.value = undefined;
+  descriptor.enumerable = false;
+  descriptor.writable = false;
+  descriptor.configurable = false;
+  DEFINE_PROPERTY(outcome, 'then', descriptor);
+  return outcome;
+}
 
 function isUsableFinalHttpStatus(value) {
   return Number.isInteger(value) && value >= 200 && value <= 599;
@@ -92,7 +104,12 @@ export async function paidFetch(url, paymentClient, fetchImpl = fetch, options =
   const paymentCapabilities = snapshotPaymentClientCapabilities(paymentClient);
   const first = await fetchImpl(url);
   if (first.status !== 402) {
-    return { response: first, paymentRequired: null, paymentPayload: null, settlement: null };
+    return shieldPaidFetchOutcome({
+      response: first,
+      paymentRequired: null,
+      paymentPayload: null,
+      settlement: null,
+    });
   }
 
   const requiredHeader = first.headers.get(HEADERS.PAYMENT_REQUIRED);
@@ -167,7 +184,7 @@ export async function paidFetch(url, paymentClient, fetchImpl = fetch, options =
   } catch {
     throw outcomeUnknown({ paymentRequired, paymentPayload: submittedPaymentPayload, httpStatus });
   }
-  return { response: second, paymentRequired, paymentPayload, settlement };
+  return shieldPaidFetchOutcome({ response: second, paymentRequired, paymentPayload, settlement });
 }
 
 function snapshotPaymentClientCapabilities(paymentClient) {

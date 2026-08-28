@@ -2082,6 +2082,139 @@ test('resource authorization outcomes ignore inherited then after durable delive
     }
   });
 
+test('paidFetch terminal outcomes ignore inherited then assimilation',
+  { concurrency: false, timeout: 30_000 }, async () => {
+    if (await isolatePrototypeSensitiveTest(
+      'paidFetch terminal outcomes ignore inherited then assimilation',
+      'X402_PAIDFETCH_OUTCOME_THEN_ISOLATED',
+    )) return;
+
+    const facilitator = new MockExactZenonFacilitator();
+    const requirement = await buildRequirement('mock');
+    let handlerExecutions = 0;
+    const app = createResourceServer({
+      facilitator,
+      requirement,
+      resourceHandler: async () => {
+        handlerExecutions += 1;
+        return { ok: true, entitlement: 'stable-result' };
+      },
+    });
+    const listening = await app.listen();
+    try {
+      const { paymentPayload: retainedPayment } = await signedPayment(listening.url);
+      const retainedClient = {
+        async createPaymentPayload() {
+          return retainedPayment;
+        },
+      };
+      const passthroughResponse = new Response(null, { status: 204 });
+      const outcomeFields = ['response', 'paymentRequired', 'paymentPayload', 'settlement'];
+      const inheritedThenFailure = new Error('controlled paidFetch outcome assimilation');
+      const captureOutcome = promise => promise.then(
+        value => ({ status: 'fulfilled', value }),
+        reason => ({ status: 'rejected', controlled: reason === inheritedThenFailure }),
+      );
+      const priorDescriptor = Object.getOwnPropertyDescriptor(Object.prototype, 'then');
+      let hookObservations = 0;
+      let passthrough;
+      let first;
+      let replay;
+      let recordAfterFirst;
+      let recordAfterReplay;
+      try {
+        Object.defineProperty(Object.prototype, 'then', {
+          configurable: true,
+          get() {
+            try {
+              const isTerminalOutcome = outcomeFields.every(field => {
+                const descriptor = Object.getOwnPropertyDescriptor(this, field);
+                return descriptor !== undefined && Object.hasOwn(descriptor, 'value');
+              });
+              if (!isTerminalOutcome) return undefined;
+            } catch {
+              return undefined;
+            }
+            hookObservations += 1;
+            throw inheritedThenFailure;
+          },
+        });
+
+        passthrough = await captureOutcome(paidFetch(
+          `${listening.url}/passthrough`,
+          retainedClient,
+          async () => passthroughResponse,
+        ));
+        first = await captureOutcome(paidFetch(`${listening.url}/paid`, retainedClient));
+        recordAfterFirst = facilitator.records.values().next().value;
+        replay = await captureOutcome(paidFetch(`${listening.url}/paid`, retainedClient));
+        recordAfterReplay = facilitator.records.values().next().value;
+      } finally {
+        if (priorDescriptor) Object.defineProperty(Object.prototype, 'then', priorDescriptor);
+        else delete Object.prototype.then;
+      }
+
+      assert.deepEqual(Object.getOwnPropertyDescriptor(Object.prototype, 'then'), priorDescriptor);
+      assert.equal(facilitator.records.size, 1);
+      assert.equal(handlerExecutions, 1);
+      assert.equal(recordAfterFirst?.deliveryState, 'DELIVERED');
+      assert.notEqual(recordAfterFirst?.cachedResponse, null);
+      assert.equal(recordAfterReplay, recordAfterFirst);
+      assert.equal(recordAfterReplay?.cachedResponse, recordAfterFirst?.cachedResponse);
+      assert.deepEqual(
+        [passthrough.status, first.status, replay.status],
+        ['fulfilled', 'fulfilled', 'fulfilled'],
+        'paidFetch terminal outcomes must fulfill without inherited then assimilation',
+      );
+
+      const outcomes = [passthrough.value, first.value, replay.value];
+      for (const outcome of outcomes) {
+        assert.deepEqual(Object.keys(outcome).sort(), [...outcomeFields].sort());
+        const thenDescriptor = Object.getOwnPropertyDescriptor(outcome, 'then');
+        assert.deepEqual({
+          value: thenDescriptor?.value,
+          enumerable: thenDescriptor?.enumerable,
+          writable: thenDescriptor?.writable,
+          configurable: thenDescriptor?.configurable,
+        }, {
+          value: undefined,
+          enumerable: false,
+          writable: false,
+          configurable: false,
+        });
+      }
+
+      assert.equal(passthrough.value.response === passthroughResponse, true);
+      assert.equal(passthrough.value.paymentRequired, null);
+      assert.equal(passthrough.value.paymentPayload, null);
+      assert.equal(passthrough.value.settlement, null);
+      assert.equal(first.value.paymentPayload === retainedPayment, true);
+      assert.equal(replay.value.paymentPayload === retainedPayment, true);
+      assert.deepEqual({
+        success: first.value.settlement.success === true && replay.value.settlement.success === true,
+        state: first.value.settlement.state === 'MOMENTUM_INCLUDED' &&
+          replay.value.settlement.state === 'MOMENTUM_INCLUDED',
+        network: first.value.settlement.network === replay.value.settlement.network,
+        transaction: first.value.settlement.transaction === replay.value.settlement.transaction,
+        payer: first.value.settlement.payer === replay.value.settlement.payer,
+      }, {
+        success: true,
+        state: true,
+        network: true,
+        transaction: true,
+        payer: true,
+      });
+      assert.equal(first.value.response.status, 200);
+      assert.equal(replay.value.response.status, 200);
+      assertPaidResponseIsPrivate(first.value.response);
+      assertPaidResponseIsPrivate(replay.value.response);
+      assert.equal(await replay.value.response.text() === await first.value.response.text(), true);
+      assert.equal(hookObservations, 0, 'inherited paidFetch outcome then hook observed');
+    } finally {
+      await app.close();
+    }
+  });
+
 test('concurrent duplicate HTTP requests converge on one protected-resource callback', async () => {
   const facilitator = new MockExactZenonFacilitator();
   const requirement = await buildRequirement('mock');
