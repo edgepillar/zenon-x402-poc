@@ -3413,6 +3413,730 @@ test('PaymentSubmissionOutcomeUnknownError attaches only usable final HTTP statu
   }
 });
 
+const BUYER_RECONCILIATION_RESOURCE = 'https://buyer-reconciliation.invalid/paid';
+
+async function loadReconcilePayment() {
+  const buyerModule = await import('../src/buyer.js');
+  assert.equal(typeof buyerModule.reconcilePayment, 'function',
+    'buyer must export the single-shot reconcilePayment primitive');
+  return buyerModule.reconcilePayment;
+}
+
+function reconciliationResponse(status, encodedPayment, transform = value => value) {
+  const paymentPayload = decodeB64Json(encodedPayment);
+  const settlement = transform(
+    settlementEvidenceForStatus(status, paymentPayload.accepted, paymentPayload),
+  );
+  return {
+    status,
+    headers: new Headers({
+      [HEADERS.PAYMENT_RESPONSE]: encodeB64Json(settlement),
+    }),
+  };
+}
+
+async function buyerRecoveryFixture({
+  onSubmitted,
+  resource = BUYER_RECONCILIATION_RESOURCE,
+  responseUrl,
+  status = 409,
+  transportFailure = false,
+} = {}) {
+  const { paymentRequired } = await buyerChallenge(resource);
+  const exactClient = new MockExactZenonClient();
+  let constructions = 0;
+  let createdPaymentPayload;
+  let fetches = 0;
+  let encodedPayment;
+  let outcome;
+  let observedError;
+  let paidResponse;
+
+  try {
+    outcome = await paidFetch(paymentRequired.resource.url, {
+      async createPaymentPayload(...args) {
+        constructions += 1;
+        createdPaymentPayload = await exactClient.createPaymentPayload(...args);
+        return createdPaymentPayload;
+      },
+    }, async (target, options) => {
+      fetches += 1;
+      if (!options) {
+        assert.equal(target, resource);
+        const response = challengeResponse(paymentRequired);
+        if (responseUrl !== undefined) response.url = responseUrl;
+        return response;
+      }
+      assert.equal(target, resource);
+      assert.equal(options.redirect, 'manual');
+      encodedPayment = options.headers[HEADERS.PAYMENT_SIGNATURE];
+      assert.equal(typeof encodedPayment, 'string');
+      if (onSubmitted) await onSubmitted(encodedPayment);
+      if (transportFailure) throw new Error('synthetic reconciliation transport failure');
+      paidResponse = reconciliationResponse(status, encodedPayment);
+      return paidResponse;
+    });
+  } catch (error) {
+    observedError = error;
+  }
+
+  assert.equal(constructions, 1, 'initial attempt must construct exactly one payment');
+  assert.equal(fetches, 2, 'initial attempt must perform one challenge and one submission');
+  assert.equal(typeof encodedPayment, 'string', 'initial submission bytes must be captured');
+  if (transportFailure) {
+    assert.ok(observedError instanceof PaymentSubmissionOutcomeUnknownError,
+      'transport uncertainty must expose the recovery error');
+  } else {
+    assert.equal(observedError, undefined, 'valid recovery evidence must return normally');
+    if (status === 409) {
+      assert.equal(outcome.settlement.state, 'SUBMISSION_OUTCOME_UNKNOWN');
+      assert.equal(outcome.settlement.retrySamePayment, true);
+    }
+  }
+
+  return {
+    constructions: () => constructions,
+    createdPaymentPayload,
+    encodedPayment,
+    fetches: () => fetches,
+    observedError,
+    outcome,
+    paidResponse,
+    paymentRequired,
+    target: resource,
+  };
+}
+
+function assertRecoveryHandleOwner(owner, expectedHandle = owner.recoveryHandle) {
+  const descriptor = Object.getOwnPropertyDescriptor(owner, 'recoveryHandle');
+  assert.ok(descriptor && Object.hasOwn(descriptor, 'value'),
+    'recoveryHandle must be an own data property');
+  assert.equal(typeof descriptor.value, 'string', 'recoveryHandle must be a primitive string');
+  assert.equal(descriptor.value === expectedHandle, true,
+    'recoveryHandle value must remain stable');
+  assert.equal(descriptor.enumerable, false, 'recoveryHandle must not be enumerable');
+  assert.equal(descriptor.writable, false, 'recoveryHandle must not be writable');
+  assert.equal(descriptor.configurable, false, 'recoveryHandle must not be configurable');
+  assert.equal(JSON.stringify(owner).includes('recoveryHandle'), false,
+    'recoveryHandle must not leak through JSON');
+  return descriptor.value;
+}
+
+function assertStringRecoveryHandle(handle, encodedPayment) {
+  assert.equal(typeof handle, 'string', 'recovery handle must be a primitive string');
+  assert.equal(handle === encodedPayment, true,
+    'recovery handle must equal the exact submitted payment bytes');
+}
+
+function assertNoRecoveryHandle(owner) {
+  assert.equal(Object.hasOwn(owner, 'recoveryHandle'), false,
+    'terminal result must not expose a recovery handle');
+  assert.deepEqual(Object.keys(owner).sort(), [
+    'paymentPayload', 'paymentRequired', 'response', 'settlement',
+  ]);
+  assert.equal(JSON.stringify(owner).includes('recoveryHandle'), false,
+    'terminal JSON must not expose a recovery handle');
+}
+
+function assertBoundReconciliationRequest(target, options, fixture) {
+  assert.equal(target, fixture.target, 'reconciliation must reuse the bound target');
+  assert.equal(options?.redirect, 'manual', 'reconciliation must retain manual redirect handling');
+  assert.deepEqual(Object.keys(options?.headers ?? {}), [HEADERS.PAYMENT_SIGNATURE]);
+  assert.equal(options.headers[HEADERS.PAYMENT_SIGNATURE] === fixture.encodedPayment, true,
+    'reconciliation must resend the exact encoded payment bytes');
+}
+
+test('buyer exports a single-shot payment reconciliation primitive', async () => {
+  await loadReconcilePayment();
+});
+
+test('valid recovery evidence reuses bound bytes without another challenge or payment construction', async () => {
+  const reconcilePayment = await loadReconcilePayment();
+  let responseUrlObservations = 0;
+  const responseUrl = {
+    toString() {
+      responseUrlObservations += 1;
+      return responseUrlObservations === 1
+        ? BUYER_RECONCILIATION_RESOURCE
+        : 'https://later-url-observation.invalid/paid';
+    },
+  };
+  let reentrantFetches = 0;
+  let reentrantResult;
+  const capture = promise => promise.then(
+    value => ({ status: 'fulfilled', value }),
+    error => ({ status: 'rejected', error }),
+  );
+  const fixture = await buyerRecoveryFixture({
+    responseUrl,
+    async onSubmitted(candidate) {
+      reentrantResult = await capture(reconcilePayment(candidate, async () => {
+        reentrantFetches += 1;
+        throw new Error('unregistered recovery must not reach fetch');
+      }));
+    },
+  });
+  const handle = assertRecoveryHandleOwner(fixture.outcome);
+  assertStringRecoveryHandle(handle, fixture.encodedPayment);
+  assert.equal(reentrantResult.status, 'rejected');
+  assert.equal(reentrantResult.error?.message, 'invalid payment recovery handle');
+  assert.equal(reentrantFetches, 0,
+    'the submitted string must remain unusable until recovery is exposed');
+  assert.equal(responseUrlObservations, 1, 'the response URL must be normalized exactly once');
+  assert.strictEqual(fixture.outcome.response, fixture.paidResponse,
+    'initial recovery must preserve the exact paid response');
+  assert.strictEqual(fixture.outcome.paymentPayload, fixture.createdPaymentPayload,
+    'initial recovery must preserve the exact client payment payload');
+  responseUrl.toString = () => 'https://mutated-url-like.invalid/paid';
+
+  fixture.outcome.paymentPayload.resource.url = 'https://mutated.invalid/paid';
+  fixture.outcome.paymentPayload.payload.transaction.hash = 'f'.repeat(64);
+  fixture.outcome.paymentRequired.resource.url = 'https://changed.invalid/paid';
+  fixture.outcome.paymentRequired.accepts[0].amount = '999';
+  fixture.paymentRequired.resource.url = 'https://source-mutated.invalid/paid';
+
+  let recoveryFetches = 0;
+  const recovered = await reconcilePayment(handle, async (target, options) => {
+    recoveryFetches += 1;
+    assertBoundReconciliationRequest(target, options, fixture);
+    return reconciliationResponse(200, fixture.encodedPayment);
+  });
+
+  assert.equal(recovered.response.status, 200);
+  assert.equal(recovered.settlement.success, true);
+  assert.equal(recovered.settlement.state, 'MOMENTUM_INCLUDED');
+  assert.equal(recoveryFetches, 1, 'reconciliation must perform exactly one paid request');
+  assert.equal(fixture.constructions(), 1, 'reconciliation must not construct a second payment');
+  assert.equal(fixture.fetches(), 2, 'reconciliation must not rerun the initial challenge');
+});
+
+test('transport uncertainty exposes the exact submitted string and can reconcile successfully', async () => {
+  const reconcilePayment = await loadReconcilePayment();
+  const fixture = await buyerRecoveryFixture({ transportFailure: true });
+  const handle = assertRecoveryHandleOwner(fixture.observedError);
+  assertStringRecoveryHandle(handle, fixture.encodedPayment);
+
+  fixture.observedError.paymentPayload.resource.url = 'https://mutated.invalid/paid';
+  fixture.observedError.paymentPayload.payload.transaction.address = 'mutated-payer';
+  fixture.observedError.paymentRequired.resource.url = 'https://changed.invalid/paid';
+  fixture.observedError.paymentRequired.accepts[0].amount = '999';
+
+  let recoveryFetches = 0;
+  const recovered = await reconcilePayment(handle, async (target, options) => {
+    recoveryFetches += 1;
+    assertBoundReconciliationRequest(target, options, fixture);
+    return reconciliationResponse(200, fixture.encodedPayment);
+  });
+
+  assert.equal(recovered.response.status, 200);
+  assert.equal(recovered.settlement.success, true);
+  assert.equal(recoveryFetches, 1);
+  assert.equal(fixture.constructions(), 1, 'uncertain recovery must not construct another payment');
+});
+
+test('repeated recoverable results and errors preserve one recovery string value', async () => {
+  const reconcilePayment = await loadReconcilePayment();
+  const fixture = await buyerRecoveryFixture();
+  const handle = assertRecoveryHandleOwner(fixture.outcome);
+
+  let repeatedResponse;
+  const repeated = await reconcilePayment(handle, async (target, options) => {
+    assertBoundReconciliationRequest(target, options, fixture);
+    repeatedResponse = reconciliationResponse(409, fixture.encodedPayment);
+    return repeatedResponse;
+  });
+  assertRecoveryHandleOwner(repeated, handle);
+  assert.strictEqual(repeated.response, repeatedResponse);
+  assert.equal(repeated.settlement.state, 'SUBMISSION_OUTCOME_UNKNOWN');
+  const expectedPaymentRequired = structuredClone(repeated.paymentRequired);
+  const expectedPaymentPayload = structuredClone(repeated.paymentPayload);
+  repeated.paymentRequired.resource.url = 'https://mutated-recovery-result.invalid/paid';
+  repeated.paymentPayload.payload.transaction.address = 'mutated-recovery-payer';
+
+  const requestOptions = [];
+  const concurrentResponses = [];
+  const concurrent = await Promise.all([0, 1].map(index => reconcilePayment(
+    handle,
+    async (target, options) => {
+      assertBoundReconciliationRequest(target, options, fixture);
+      requestOptions[index] = options;
+      if (index === 0) {
+        options.redirect = 'follow';
+        options.headers[HEADERS.PAYMENT_SIGNATURE] = 'mutated-request-local-copy';
+      }
+      concurrentResponses[index] = reconciliationResponse(409, fixture.encodedPayment);
+      return concurrentResponses[index];
+    },
+  )));
+  assert.notStrictEqual(requestOptions[0], requestOptions[1]);
+  assert.notStrictEqual(requestOptions[0].headers, requestOptions[1].headers);
+  for (const [index, result] of concurrent.entries()) {
+    assertRecoveryHandleOwner(result, handle);
+    assert.strictEqual(result.response, concurrentResponses[index]);
+    assert.deepEqual(result.paymentRequired, expectedPaymentRequired);
+    assert.deepEqual(result.paymentPayload, expectedPaymentPayload);
+    assert.notStrictEqual(result.paymentRequired, repeated.paymentRequired);
+    assert.notStrictEqual(result.paymentRequired.resource, repeated.paymentRequired.resource);
+    assert.notStrictEqual(result.paymentPayload, repeated.paymentPayload);
+    assert.notStrictEqual(result.paymentPayload.payload, repeated.paymentPayload.payload);
+  }
+  assert.notStrictEqual(concurrent[0].paymentRequired, concurrent[1].paymentRequired);
+  assert.notStrictEqual(concurrent[0].paymentPayload, concurrent[1].paymentPayload);
+
+  let observedError;
+  try {
+    await reconcilePayment(handle, async (target, options) => {
+      assertBoundReconciliationRequest(target, options, fixture);
+      throw new Error('synthetic repeated reconciliation failure');
+    });
+  } catch (error) {
+    observedError = error;
+  }
+  assert.ok(observedError instanceof PaymentSubmissionOutcomeUnknownError);
+  assertRecoveryHandleOwner(observedError, handle);
+  const expectedErrorRequired = structuredClone(observedError.paymentRequired);
+  const expectedErrorPayload = structuredClone(observedError.paymentPayload);
+  observedError.paymentRequired.resource.url = 'https://mutated-recovery-error.invalid/paid';
+  observedError.paymentPayload.payload.transaction.address = 'mutated-error-payer';
+
+  let nextError;
+  try {
+    await reconcilePayment(handle, async (target, options) => {
+      assertBoundReconciliationRequest(target, options, fixture);
+      throw new Error('synthetic next reconciliation failure');
+    });
+  } catch (error) {
+    nextError = error;
+  }
+  assert.ok(nextError instanceof PaymentSubmissionOutcomeUnknownError);
+  assertRecoveryHandleOwner(nextError, handle);
+  assert.deepEqual(nextError.paymentRequired, expectedErrorRequired);
+  assert.deepEqual(nextError.paymentPayload, expectedErrorPayload);
+  assert.notStrictEqual(nextError.paymentRequired, observedError.paymentRequired);
+  assert.notStrictEqual(nextError.paymentPayload, observedError.paymentPayload);
+  assertStringRecoveryHandle(handle, fixture.encodedPayment);
+  assert.equal(fixture.constructions(), 1, 'repeated recovery must never construct another payment');
+});
+
+test('equivalent produced strings reconcile while invalid handles fail before fetch', async () => {
+  const reconcilePayment = await loadReconcilePayment();
+  const fixture = await buyerRecoveryFixture();
+  const handle = assertRecoveryHandleOwner(fixture.outcome);
+  assertStringRecoveryHandle(handle, fixture.encodedPayment);
+
+  const equivalentHandles = [
+    handle.slice(0),
+    JSON.parse(JSON.stringify(handle)),
+    structuredClone(handle),
+  ];
+  let validFetches = 0;
+  for (const candidate of equivalentHandles) {
+    assert.equal(candidate === handle, true,
+      'copied primitive strings must preserve the produced handle value');
+    const result = await reconcilePayment(candidate, async (target, options) => {
+      validFetches += 1;
+      assertBoundReconciliationRequest(target, options, fixture);
+      return reconciliationResponse(409, fixture.encodedPayment);
+    });
+    assertRecoveryHandleOwner(result, handle);
+  }
+  assert.equal(validFetches, equivalentHandles.length,
+    'each valid handle copy must perform exactly one reconciliation request');
+
+  const replacement = handle.endsWith('A') ? 'B' : 'A';
+  const alteredHandle = `${handle.slice(0, -1)}${replacement}`;
+  const unproducedCanonical = encodeB64Json({ x402Version: 2, produced: false });
+  for (const candidate of [
+    undefined,
+    null,
+    '',
+    {},
+    new String(handle),
+    new Proxy(Object(handle), {}),
+    alteredHandle,
+    'not-a-produced-payment',
+    'A'.repeat(9_000),
+    unproducedCanonical,
+  ]) {
+    let fetches = 0;
+    await assert.rejects(
+      async () => reconcilePayment(candidate, async () => {
+        fetches += 1;
+        throw new Error('invalid handle must not reach fetch');
+      }),
+      error => error instanceof Error && error.message === 'invalid payment recovery handle',
+    );
+    assert.equal(fetches, 0, 'invalid recovery handle must fail before fetch');
+  }
+});
+
+test('buyer recovery registry ignores post-import intrinsic replacement',
+  { concurrency: false, timeout: 30_000 }, async () => {
+    if (await isolatePrototypeSensitiveTest(
+      'buyer recovery registry ignores post-import intrinsic replacement',
+      'X402_BUYER_RECOVERY_INTRINSICS_ISOLATED',
+    )) return;
+
+    const reconcilePayment = await loadReconcilePayment();
+    const fixture = await buyerRecoveryFixture();
+    const handle = assertRecoveryHandleOwner(fixture.outcome);
+    const secondTarget = 'https://buyer-reconciliation-second.invalid/paid';
+    const { paymentRequired: secondRequired } = await buyerChallenge(secondTarget);
+    const secondClient = new MockExactZenonClient();
+    const secondPayload = await secondClient.createPaymentPayload(
+      secondRequired,
+      secondRequired.accepts[0],
+    );
+    const forgedTarget = 'https://buyer-reconciliation-unproduced.invalid/paid';
+    const { paymentRequired: forgedRequired } = await buyerChallenge(forgedTarget);
+    const forgedClient = new MockExactZenonClient();
+    const forgedPayload = await forgedClient.createPaymentPayload(
+      forgedRequired,
+      forgedRequired.accepts[0],
+    );
+    const forgedHandle = encodeB64Json(forgedPayload);
+    assert.equal(forgedHandle === handle, false,
+      'the unproduced candidate must differ from the registered handle');
+    const forgedState = {
+      target: forgedTarget,
+      encodedPayment: forgedHandle,
+      paymentRequired: forgedRequired,
+      accepted: forgedRequired.accepts[0],
+    };
+    const alternateEquivalentTarget = 'https://buyer-reconciliation.invalid:443/paid';
+    const overwriteState = {
+      target: alternateEquivalentTarget,
+      encodedPayment: handle,
+      paymentRequired: fixture.paymentRequired,
+      accepted: fixture.paymentRequired.accepts[0],
+    };
+    const priorGet = Object.getOwnPropertyDescriptor(Map.prototype, 'get');
+    const priorSet = Object.getOwnPropertyDescriptor(Map.prototype, 'set');
+    const priorClone = Object.getOwnPropertyDescriptor(globalThis, 'structuredClone');
+    const nativeApply = Reflect.apply;
+    const nativeHasOwn = Object.hasOwn;
+    const observations = { clone: 0, get: 0, privateRead: 0, privateWrite: 0, set: 0 };
+    let duplicate;
+    let duplicateFetches = 0;
+    let legitimate;
+    let forged;
+    let secondOutcome;
+    let secondEncodedPayment;
+    let preserved;
+    let forgedFetches = 0;
+
+    const isRecoveryState = value => value && typeof value === 'object' &&
+      nativeHasOwn(value, 'target') && nativeHasOwn(value, 'encodedPayment') &&
+      nativeHasOwn(value, 'paymentRequired');
+    const capture = promise => promise.then(
+      value => ({ status: 'fulfilled', value }),
+      error => ({ status: 'rejected', error }),
+    );
+
+    try {
+      Object.defineProperty(Map.prototype, 'get', {
+        ...priorGet,
+        value(key) {
+          if (key === handle || key === forgedHandle) observations.get += 1;
+          if (key === forgedHandle) return forgedState;
+          const value = nativeApply(priorGet.value, this, [key]);
+          if (isRecoveryState(value)) observations.privateRead += 1;
+          return value;
+        },
+      });
+      Object.defineProperty(Map.prototype, 'set', {
+        ...priorSet,
+        value(key, value) {
+          if (isRecoveryState(value)) {
+            observations.set += 1;
+            observations.privateWrite += 1;
+            if (key === handle) value = overwriteState;
+          }
+          return nativeApply(priorSet.value, this, [key, value]);
+        },
+      });
+      Object.defineProperty(globalThis, 'structuredClone', {
+        ...priorClone,
+        value(value, options) {
+          observations.clone += 1;
+          return nativeApply(priorClone.value, globalThis, [value, options]);
+        },
+      });
+
+      legitimate = await capture(reconcilePayment(handle, async () =>
+        reconciliationResponse(409, fixture.encodedPayment)));
+      forged = await capture(reconcilePayment(forgedHandle, async () => {
+        forgedFetches += 1;
+        return reconciliationResponse(409, forgedHandle);
+      }));
+
+      let secondFetches = 0;
+      secondOutcome = await capture(paidFetch(secondTarget, {
+        async createPaymentPayload() {
+          return secondPayload;
+        },
+      }, async (_target, options) => {
+        secondFetches += 1;
+        if (!options) return challengeResponse(secondRequired);
+        secondEncodedPayment = options.headers[HEADERS.PAYMENT_SIGNATURE];
+        return reconciliationResponse(409, secondEncodedPayment);
+      }));
+      secondOutcome.fetches = secondFetches;
+
+      duplicate = await capture(paidFetch(fixture.target, {
+        async createPaymentPayload() {
+          return fixture.createdPaymentPayload;
+        },
+      }, async (_target, options) => {
+        duplicateFetches += 1;
+        if (!options) {
+          const response = challengeResponse(fixture.paymentRequired);
+          response.url = alternateEquivalentTarget;
+          return response;
+        }
+        assert.equal(options.headers[HEADERS.PAYMENT_SIGNATURE] === handle, true,
+          'duplicate construction must reproduce the exact registered string');
+        return reconciliationResponse(409, handle);
+      }));
+      preserved = await capture(reconcilePayment(handle, async (target, options) => {
+        assert.equal(target === fixture.target, true,
+          'an equal produced string must retain the first bound target');
+        assertBoundReconciliationRequest(target, options, fixture);
+        return reconciliationResponse(409, fixture.encodedPayment);
+      }));
+    } finally {
+      Object.defineProperty(Map.prototype, 'get', priorGet);
+      Object.defineProperty(Map.prototype, 'set', priorSet);
+      Object.defineProperty(globalThis, 'structuredClone', priorClone);
+    }
+
+    assert.deepEqual(Object.getOwnPropertyDescriptor(Map.prototype, 'get'), priorGet);
+    assert.deepEqual(Object.getOwnPropertyDescriptor(Map.prototype, 'set'), priorSet);
+    assert.deepEqual(Object.getOwnPropertyDescriptor(globalThis, 'structuredClone'), priorClone);
+    assert.deepEqual(observations, { clone: 0, get: 0, privateRead: 0, privateWrite: 0, set: 0 });
+    assert.equal(legitimate.status, 'fulfilled');
+    assertRecoveryHandleOwner(legitimate.value, handle);
+    assert.equal(forged.status, 'rejected');
+    assert.equal(forged.error?.message, 'invalid payment recovery handle');
+    assert.equal(forgedFetches, 0);
+    assert.equal(secondOutcome.status, 'fulfilled');
+    assert.equal(secondOutcome.fetches, 2);
+    assertStringRecoveryHandle(
+      assertRecoveryHandleOwner(secondOutcome.value),
+      secondEncodedPayment,
+    );
+    assert.equal(duplicate.status, 'fulfilled');
+    assert.equal(duplicateFetches, 2);
+    assertStringRecoveryHandle(assertRecoveryHandleOwner(duplicate.value), handle);
+    assert.equal(preserved.status, 'fulfilled');
+    assertRecoveryHandleOwner(preserved.value, handle);
+  });
+
+test('recovery handles stay confined to own recoverable retry evidence',
+  { concurrency: false, timeout: 30_000 }, async () => {
+    if (await isolatePrototypeSensitiveTest(
+      'recovery handles stay confined to own recoverable retry evidence',
+      'X402_BUYER_RECOVERY_RETRY_ISOLATED',
+    )) return;
+
+    const reconcilePayment = await loadReconcilePayment();
+    const existingFixture = await buyerRecoveryFixture();
+    const existingHandle = assertRecoveryHandleOwner(existingFixture.outcome);
+    const terminalFields = ['response', 'paymentRequired', 'paymentPayload', 'settlement'];
+    const priorThen = Object.getOwnPropertyDescriptor(Object.prototype, 'then');
+    const priorRetry = Object.getOwnPropertyDescriptor(Object.prototype, 'retrySamePayment');
+    let thenObservations = 0;
+    let retryGetterObservations = 0;
+    let initialSuccess;
+    let initialFailure;
+    let initialRecoverable;
+    let reconciledSuccess;
+    let reconciledFailure;
+    let reconciledRecoverable;
+    let reconciledSuccessResponse;
+    let reconciledFailureResponse;
+    let reconciledRecoverableResponse;
+    const capture = promise => promise.then(
+      value => ({ status: 'fulfilled', value }),
+      error => ({ status: 'rejected', error }),
+    );
+    try {
+      Object.defineProperty(Object.prototype, 'then', {
+        configurable: true,
+        get() {
+          try {
+            const terminal = terminalFields.every(field => {
+              const descriptor = Object.getOwnPropertyDescriptor(this, field);
+              return descriptor !== undefined && Object.hasOwn(descriptor, 'value');
+            });
+            if (!terminal) return undefined;
+          } catch {
+            return undefined;
+          }
+          thenObservations += 1;
+          throw new Error('controlled terminal assimilation');
+        },
+      });
+      Object.defineProperty(Object.prototype, 'retrySamePayment', {
+        configurable: true,
+        value: true,
+      });
+      initialSuccess = await capture(buyerRecoveryFixture({
+        resource: 'https://buyer-reconciliation-terminal-success.invalid/paid',
+        status: 200,
+      }));
+      initialFailure = await capture(buyerRecoveryFixture({
+        resource: 'https://buyer-reconciliation-terminal-failure.invalid/paid',
+        status: 402,
+      }));
+
+      Object.defineProperty(Object.prototype, 'retrySamePayment', {
+        configurable: true,
+        get() {
+          retryGetterObservations += 1;
+          throw new Error('controlled inherited retry observation');
+        },
+      });
+      initialRecoverable = await capture(buyerRecoveryFixture());
+      reconciledSuccess = await capture(reconcilePayment(existingHandle, async () => {
+        reconciledSuccessResponse = reconciliationResponse(200, existingFixture.encodedPayment);
+        return reconciledSuccessResponse;
+      }));
+      reconciledFailure = await capture(reconcilePayment(existingHandle, async () => {
+        reconciledFailureResponse = reconciliationResponse(402, existingFixture.encodedPayment);
+        return reconciledFailureResponse;
+      }));
+      reconciledRecoverable = await capture(reconcilePayment(existingHandle, async () => {
+        reconciledRecoverableResponse = reconciliationResponse(409, existingFixture.encodedPayment);
+        return reconciledRecoverableResponse;
+      }));
+    } finally {
+      if (priorThen) Object.defineProperty(Object.prototype, 'then', priorThen);
+      else delete Object.prototype.then;
+      if (priorRetry) Object.defineProperty(Object.prototype, 'retrySamePayment', priorRetry);
+      else delete Object.prototype.retrySamePayment;
+    }
+
+    assert.deepEqual(Object.getOwnPropertyDescriptor(Object.prototype, 'then'), priorThen);
+    assert.deepEqual(Object.getOwnPropertyDescriptor(Object.prototype, 'retrySamePayment'), priorRetry);
+    assert.equal(thenObservations, 0);
+    assert.equal(retryGetterObservations, 0);
+    for (const observed of [
+      initialSuccess,
+      initialFailure,
+      initialRecoverable,
+      reconciledSuccess,
+      reconciledFailure,
+      reconciledRecoverable,
+    ]) assert.equal(observed.status, 'fulfilled');
+
+    const initialSuccessOutcome = initialSuccess.value.outcome;
+    const initialFailureOutcome = initialFailure.value.outcome;
+    assertNoRecoveryHandle(initialSuccessOutcome);
+    assertNoRecoveryHandle(initialFailureOutcome);
+    assertNoRecoveryHandle(reconciledSuccess.value);
+    assertNoRecoveryHandle(reconciledFailure.value);
+    assert.strictEqual(reconciledSuccess.value.response, reconciledSuccessResponse);
+    assert.strictEqual(reconciledFailure.value.response, reconciledFailureResponse);
+
+    const initialRecoverableOutcome = initialRecoverable.value.outcome;
+    const initialHandle = assertRecoveryHandleOwner(initialRecoverableOutcome);
+    assert.strictEqual(initialRecoverableOutcome.response, initialRecoverable.value.paidResponse);
+    assertRecoveryHandleOwner(reconciledRecoverable.value, existingHandle);
+    assert.strictEqual(reconciledRecoverable.value.response, reconciledRecoverableResponse);
+    assertStringRecoveryHandle(initialHandle, initialRecoverable.value.encodedPayment);
+    assertStringRecoveryHandle(existingHandle, existingFixture.encodedPayment);
+    for (const outcome of [initialRecoverableOutcome, reconciledRecoverable.value]) {
+      const descriptor = Object.getOwnPropertyDescriptor(outcome, 'then');
+      assert.deepEqual({
+        value: descriptor?.value,
+        enumerable: descriptor?.enumerable,
+        writable: descriptor?.writable,
+        configurable: descriptor?.configurable,
+      }, {
+        value: undefined,
+        enumerable: false,
+        writable: false,
+        configurable: false,
+      });
+    }
+
+    for (const terminalFixture of [initialSuccess.value, initialFailure.value]) {
+      let fetches = 0;
+      await assert.rejects(
+        async () => reconcilePayment(terminalFixture.encodedPayment, async () => {
+          fetches += 1;
+          throw new Error('unexposed terminal payment must not reach fetch');
+        }),
+        error => error instanceof Error && error.message === 'invalid payment recovery handle',
+      );
+      assert.equal(fetches, 0,
+        'an unexposed terminal payment string must remain unauthorized for reconciliation');
+    }
+  });
+
+test('reconciliation response failures reuse the existing uncertainty boundary and handle', async () => {
+  const reconcilePayment = await loadReconcilePayment();
+  const fixture = await buyerRecoveryFixture();
+  const handle = assertRecoveryHandleOwner(fixture.outcome);
+  const cases = [
+    {
+      name: 'redirect',
+      response: () => ({
+        status: 302,
+        headers: new Headers({ location: 'https://redirect.invalid/paid' }),
+      }),
+    },
+    {
+      name: 'missing settlement evidence',
+      response: () => ({ status: 200, headers: new Headers() }),
+    },
+    {
+      name: 'malformed settlement evidence',
+      response: () => ({
+        status: 200,
+        headers: new Headers({ [HEADERS.PAYMENT_RESPONSE]: 'not-canonical-base64' }),
+      }),
+    },
+    {
+      name: 'mismatched settlement evidence',
+      response: () => reconciliationResponse(200, fixture.encodedPayment, settlement => ({
+        ...settlement,
+        transaction: '0'.repeat(64),
+      })),
+    },
+    {
+      name: 'transport failure',
+      response: () => { throw new Error('synthetic reconciliation transport failure'); },
+    },
+  ];
+
+  for (const scenario of cases) {
+    let fetches = 0;
+    let observedError;
+    try {
+      await reconcilePayment(handle, async (target, options) => {
+        fetches += 1;
+        assertBoundReconciliationRequest(target, options, fixture);
+        return scenario.response();
+      });
+    } catch (error) {
+      observedError = error;
+    }
+    assert.ok(observedError instanceof PaymentSubmissionOutcomeUnknownError,
+      `${scenario.name} must preserve outcome-unknown recovery`);
+    assert.equal(observedError.code, 'payment_submission_outcome_unknown');
+    assert.equal(observedError.retrySamePayment, true);
+    assert.equal(observedError.action, 'reuse_and_reconcile_same_payment');
+    assertRecoveryHandleOwner(observedError, handle);
+    assert.equal(fetches, 1, `${scenario.name} must use one reconciliation request`);
+  }
+
+  assertStringRecoveryHandle(handle, fixture.encodedPayment);
+  assert.equal(fixture.constructions(), 1,
+    'response validation failures must never construct another payment');
+});
+
 test('buyer snapshots native plain function and prototype-backed successful responses once', async () => {
   let nativeResponse;
   const nativeResult = await runAcceptedObservedResponse(200, ({ settlementHeader }) => {
