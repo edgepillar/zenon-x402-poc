@@ -503,6 +503,156 @@ test('ExactZenonFacilitator deterministic settlement integration scenarios', asy
     assert.equal(node.counters.initialize, initializeCalls);
   });
 
+  await t.test('journal capacity rejects a new unrelated payment without same-payment retry', async t => {
+    const accepted = requirement();
+    const required = challenge(accepted);
+    const firstPayload = signedPayment(required, accepted, 17);
+    const unrelatedPayload = signedPayment(required, accepted, 19);
+    const { root, directory } = await journalFixture(t);
+    const journal = new SettlementJournal({ directory, allowedRoot: root, maxRecords: 1 });
+    const node = installSyntheticNode(t, {
+      lookup: () => null,
+      publish: async () => { throw new Error('synthetic publication rejection'); },
+    });
+    const exact = facilitator(journal);
+
+    const first = await exact.settle(firstPayload, accepted, required);
+    assert.equal(first.success, false);
+    assert.equal(first.state, EVIDENCE_STATES.SUBMISSION_OUTCOME_UNKNOWN);
+    assert.equal(first.retrySamePayment, true);
+    assert.equal(node.counters.publish, 1);
+
+    const unrelated = await exact.settle(unrelatedPayload, accepted, required);
+    assert.equal(unrelated.success, false);
+    assert.equal(unrelated.state, EVIDENCE_STATES.VALIDATED);
+    assert.equal(unrelated.errorReason, 'journal_capacity_exceeded');
+    assert.equal(unrelated.retrySamePayment, false);
+    assert.equal(unrelated.deliveryState, 'NONE');
+    assert.equal(node.counters.publish, 1);
+    const retained = await journal.list();
+    assert.equal(retained.length, 1);
+    assert.equal(retained[0].evidenceState, EVIDENCE_STATES.SUBMISSION_OUTCOME_UNKNOWN);
+  });
+
+  await t.test('initial journal file capacity fails before publication without same-payment retry', async t => {
+    const accepted = requirement();
+    const required = challenge(accepted);
+    const payload = signedPayment(required, accepted);
+    const { root, directory } = await journalFixture(t);
+    const journal = new SettlementJournal({
+      directory,
+      allowedRoot: root,
+      maxFileBytes: 1024,
+    });
+    const node = installSyntheticNode(t, { lookup: () => null });
+
+    const result = await facilitator(journal).settle(payload, accepted, required);
+    assert.equal(result.success, false);
+    assert.equal(result.state, EVIDENCE_STATES.VALIDATED);
+    assert.equal(result.errorReason, 'journal_capacity_exceeded');
+    assert.equal(result.retrySamePayment, false);
+    assert.equal(result.deliveryState, 'NONE');
+    assert.equal(node.counters.publish, 0);
+    assert.equal((await journal.list()).length, 0);
+  });
+
+  await t.test('post-publication journal file capacity preserves same-payment recovery', async t => {
+    const accepted = requirement();
+    const required = challenge(accepted);
+    const payload = signedPayment(required, accepted);
+    const preflight = await preflightZenonPayment(payload, accepted, required);
+    const { root, directory } = await journalFixture(t);
+    let journal;
+    let clockCalls = 0;
+    const clock = () => {
+      clockCalls += 1;
+      if (clockCalls === 2) journal.maxFileBytes = 1024;
+      return new Date();
+    };
+    journal = new SettlementJournal({ directory, allowedRoot: root, clock });
+    const updateEvidence = journal.updateEvidence.bind(journal);
+    journal.updateEvidence = async (...args) => {
+      try {
+        return await updateEvidence(...args);
+      } finally {
+        journal.maxFileBytes = 16 * 1024 * 1024;
+      }
+    };
+    const node = installSyntheticNode(t, {
+      lookup: () => null,
+      publish: async () => {},
+    });
+
+    const result = await facilitator(journal).settle(payload, accepted, required);
+    assert.equal(result.success, false);
+    assert.equal(result.state, EVIDENCE_STATES.SUBMISSION_ACKNOWLEDGED);
+    assert.equal(result.errorReason, 'journal_capacity_exceeded');
+    assert.equal(result.retrySamePayment, true);
+    assert.equal(result.deliveryState, 'NONE');
+    assert.equal(node.counters.publish, 1);
+    const persisted = await journal.get(preflight.authorizationKey, preflight.transactionHash);
+    assert.equal(persisted.evidenceState, EVIDENCE_STATES.VALIDATED);
+  });
+
+  for (const transition of ['pending', 'delivered']) {
+    await t.test(`journal file capacity at ${transition} delivery preserves recovery`, async t => {
+      const accepted = requirement();
+      const required = challenge(accepted);
+      const payload = signedPayment(required, accepted);
+      const preflight = await preflightZenonPayment(payload, accepted, required);
+      const { root, directory } = await journalFixture(t);
+      let forceCapacity = false;
+      let journal;
+      const clock = () => {
+        if (forceCapacity) journal.maxFileBytes = 1024;
+        return new Date();
+      };
+      journal = new SettlementJournal({ directory, allowedRoot: root, clock });
+      const transitionMethod = transition === 'pending' ? 'markDeliveryPending' : 'markDelivered';
+      const originalTransition = journal[transitionMethod].bind(journal);
+      let transitionErrorCode;
+      journal[transitionMethod] = async (...args) => {
+        forceCapacity = true;
+        try {
+          return await originalTransition(...args);
+        } catch (error) {
+          transitionErrorCode = error?.code;
+          throw error;
+        } finally {
+          forceCapacity = false;
+          journal.maxFileBytes = 16 * 1024 * 1024;
+        }
+      };
+      const included = observedBlock(payload.payload.transaction, { included: true });
+      const node = installSyntheticNode(t, { lookup: () => included });
+      const exact = facilitator(journal);
+      let deliveries = 0;
+      const app = createResourceServer({
+        facilitator: exact,
+        requirement: accepted,
+        advertisedBaseUrl: 'https://resource.example',
+        resourceHandler: async () => ({ ok: true, deliveries: ++deliveries }),
+      });
+      const listening = await app.listen();
+      try {
+        const response = await submit(listening.url, payload);
+        const recovery = decodeB64Json(response.headers.get(HEADERS.PAYMENT_RESPONSE));
+        assert.equal(response.status, 409);
+        assert.equal((await response.json()).action, 'reuse_and_reconcile_same_payment');
+        assert.equal(recovery.state, 'DELIVERY_PENDING');
+        assert.equal(recovery.retrySamePayment, true);
+      } finally {
+        await app.close();
+      }
+      assert.equal(deliveries, transition === 'pending' ? 0 : 1);
+      assert.equal(node.counters.publish, 0);
+      assert.equal(transitionErrorCode, 'journal_capacity_exceeded');
+      const persisted = await journal.get(preflight.authorizationKey, preflight.transactionHash);
+      assert.equal(persisted.evidenceState, EVIDENCE_STATES.MOMENTUM_INCLUDED);
+      assert.equal(persisted.deliveryState, transition === 'pending' ? 'NONE' : 'DELIVERY_PENDING');
+    });
+  }
+
   await t.test('scenario 6: a definite pre-publication frontier failure emits bound HTTP rejection evidence', async t => {
     const accepted = requirement();
     const required = challenge(accepted);

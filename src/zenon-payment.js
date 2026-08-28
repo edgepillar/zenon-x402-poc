@@ -1263,7 +1263,10 @@ export class ExactZenonFacilitator {
     try {
       return await operation();
     } catch (error) {
-      if (errorCode(error) !== 'journal_identity_conflict') attempt.journalUnavailable = true;
+      const code = errorCode(error);
+      if (code !== 'journal_identity_conflict' && code !== 'journal_capacity_exceeded') {
+        attempt.journalUnavailable = true;
+      }
       throw error;
     }
   }
