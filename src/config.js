@@ -12,12 +12,14 @@ import {
 /**
  * Build the single payment option exposed by the PoC.
  *
- * Live chain identity is deliberately programmatic: this repository does not
- * ship a real testnet chain identifier or genesis Momentum hash.
+ * Live chain identity remains programmatic. The CLI may inject its one exact
+ * historical operator-trusted profile; arbitrary environment-supplied profile
+ * values are not accepted here.
  */
 export async function buildRequirement(
   mode = process.env.PAYMENT_MODE ?? 'mock',
   { zenonChain, resolveAsset = resolveZenonAsset } = {},
+  environment = process.env,
 ) {
   if (mode === 'mock') {
     const requirement = {
@@ -44,15 +46,15 @@ export async function buildRequirement(
   }
   validateZenonChainProfile(zenonChain);
 
-  const network = process.env.X402_NETWORK ?? EXPERIMENTAL_LIVE_NETWORK;
+  const network = environment.X402_NETWORK ?? EXPERIMENTAL_LIVE_NETWORK;
   if (network !== EXPERIMENTAL_LIVE_NETWORK) {
     throw new Error(`live mode requires X402_NETWORK=${EXPERIMENTAL_LIVE_NETWORK}`);
   }
-  const payTo = process.env.ZENON_PAY_TO;
+  const payTo = environment.ZENON_PAY_TO;
   if (!payTo || payTo.includes('REPLACE')) throw new Error('ZENON_PAY_TO must be configured for live mode');
-  const amount = process.env.ZENON_AMOUNT ?? '1';
+  const amount = environment.ZENON_AMOUNT ?? '1';
   validateCanonicalZenonAmount(amount, 'ZENON_AMOUNT');
-  const asset = await resolveAsset(process.env.ZENON_ASSET ?? 'ZNN');
+  const asset = await resolveAsset(environment.ZENON_ASSET ?? 'ZNN');
 
   const requirement = {
     scheme: 'exact',
@@ -60,7 +62,7 @@ export async function buildRequirement(
     asset,
     amount,
     payTo,
-    maxTimeoutSeconds: envInt('ZENON_MAX_TIMEOUT_SECONDS', 60),
+    maxTimeoutSeconds: envInt('ZENON_MAX_TIMEOUT_SECONDS', 60, environment),
     extra: {
       paymentFlow: 'upfront',
       poc: true,
