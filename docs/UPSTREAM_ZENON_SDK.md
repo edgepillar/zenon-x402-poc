@@ -6,7 +6,7 @@ These are possible upstream proposals, not accepted roadmap items. They would he
 
 Expose a documented way to authenticate an exact, versioned chain profile containing at least `chainIdentifier` and `genesisMomentumHash`. SDK-local `Zenon.getNetworkID()` configuration, the experimental `zenon:testnet` label and node self-reports are not evidence of the connected chain's identity. Equal chain identifiers do not rule out different genesis configurations.
 
-An alternative could expose authoritative genesis/checkpoint data, provenance and header/inclusion verification sufficient to link the active chain to that trust anchor. The prototype intentionally ships no real profile constant because it has not established that evidence path.
+An alternative could expose authoritative genesis/checkpoint data, provenance and header/inclusion verification sufficient to link the active chain to that trust anchor. The prototype now ships one explicitly operator-trusted historical testnet observation for bounded PoC use. Its exact height-2 RPC comparison can detect honest mismatches, but it is not a current-network trust manifest, authenticated endpoint, or verified lineage and does not satisfy this upstream requirement.
 
 ## Independent client sessions
 

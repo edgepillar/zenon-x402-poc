@@ -46,7 +46,7 @@ The selected requirement uses the ordinary x402 fields plus an exact chain profi
 }
 ```
 
-The repository intentionally supplies no real live profile. `zenon:testnet` is descriptive, not authenticated chain identity and not a claim of registered CAIP-2 naming. A valid live design must authenticate both profile values; equal chain identifiers alone do not distinguish chains with different genesis Momentums.
+The CLI supplies one exact, internally pinned historical testnet profile under an explicit operator-trust policy. `zenon:testnet` remains descriptive, not authenticated chain identity and not a claim of registered CAIP-2 naming. The policy checks a pinned five-field height-2 identity tuple before signing or publication, but it does not authenticate the RPC endpoint, verify the remaining Momentum fields, or prove linkage to the observed frontier. Equal chain identifiers alone still do not distinguish chains with different genesis Momentums.
 
 The amount range is `1` through `2^255 - 1` atomic units. This is narrower than the account-block hash's 32-byte amount field because canonical go-zenon validation rejects values with a bit length above 255.
 
@@ -138,18 +138,22 @@ Live resources require HTTPS. The paid request uses manual redirect handling and
 
 The facilitator reads every page implied by the RPC `Count`, rechecks the first page for a changing snapshot, and fails closed on malformed or incomplete results. The PoC accepts at most 200 unconfirmed blocks for one payer; larger results fail closed rather than enter an unbounded loop.
 
-## Immediate next milestone: authenticated chain identity
+## Selected near-term path: operator-trusted historical observation
 
-The default live path deliberately remains unavailable. The next patch must introduce a defensible authenticator for an explicitly supplied profile without embedding an invented or weakly sourced network constant.
+Issue #45 selected Path B as the bounded route to empirical testnet feedback. The CLI registry contains one immutable historical observation derived from the height-2 example in `zenon-network/znn-wiki` at the pinned 2021-12-17 source revision. The selector has no default or floating alias, accepts no environment-supplied chain-profile fields or trust-artifact URL, and requires the existing testnet-only acknowledgement plus a distinct operator-trust acknowledgement.
 
-The authenticator should establish, inside the exclusively owned SDK session:
+Inside the exclusively owned SDK session, the current policy requires exact agreement for:
 
-1. the exact `chainIdentifier`;
-2. the exact genesis Momentum identity;
-3. the provenance and version of the trust anchor;
-4. linkage from the trusted genesis or checkpoint to the observed chain.
+1. the historical observation's Momentum version, height and identity;
+2. its exact `chainIdentifier`;
+3. its exact predecessor, used as the profile's `genesisMomentumHash` field;
+4. the ordinary synchronized-frontier chain-identifier check.
 
-An authoritative node API, verified checkpoint scheme, SPV implementation or light-client design may supply this evidence. SDK configuration and RPC self-reporting cannot.
+This is a declared operator assumption, not authenticated chain identity. The source is unsigned, the predecessor observation does not independently prove current genesis semantics, and the RPC response does not prove continuity to the frontier. Honest mismatches or resets that alter the pinned tuple fail closed; forks after height 2 and disconnected or malicious RPC views are not detected. Path A remains the long-term research path: an authoritative trust artifact plus verified checkpoint/header linkage, SPV, or a light-client design belongs in the separate authenticated-policy path.
+
+The current CLI supports one profile generation in the shared journal namespace. Profile rotation and rollback are unsupported. Before another profile can be selectable, journal state must be isolated and cross-profile maintenance, recovery, and rollback behavior must be tested.
+
+The offline wiring does not complete Issue #45. A separate operational gate must use a disposable, minimally funded testnet wallet, perform the first real settlement and delivery, and publish the agreed verification evidence. No such live run is claimed here.
 
 ## Frontier architecture
 

@@ -21,6 +21,10 @@ import {
   SettlementJournal,
 } from './settlement-journal.js';
 import { invokeLegacySdk105SignedComposite } from './zenon/internal/legacy-sdk-1-0-5-signed-composite.js';
+import {
+  isOperatorTrustedTestnetEvidence,
+  isOperatorTrustedTestnetPolicy,
+} from './zenon/operator-trusted-testnet-profile.js';
 
 const TESTNET_NETWORK_ID = 3;
 const MAX_DATA_BYTES = 32;
@@ -59,6 +63,8 @@ const EVIDENCE_RANK = new Map([
 ]);
 
 let cachedDeps;
+const CLIENT_RUNTIME_ENVIRONMENTS = new WeakMap();
+const FACILITATOR_RUNTIME_ENVIRONMENTS = new WeakMap();
 
 async function loadZenonDeps() {
   if (cachedDeps) return cachedDeps;
@@ -82,14 +88,19 @@ function safetyError(code, cause) {
   throw new ZenonSafetyError(code, cause);
 }
 
-function requireLiveAck() {
-  if (process.env.ZENON_LIVE_ACK !== 'I_UNDERSTAND_TESTNET_ONLY') {
+function runtimeEnvironment(value) {
+  if (!isNonArrayObject(value)) safetyError('invalid_runtime_environment');
+  return value;
+}
+
+function requireLiveAck(environment = process.env) {
+  if (environment.ZENON_LIVE_ACK !== 'I_UNDERSTAND_TESTNET_ONLY') {
     safetyError('live_mode_not_acknowledged');
   }
 }
 
-function configuredTestnetNetworkId() {
-  const networkId = Number(process.env.ZENON_NETWORK_ID ?? TESTNET_NETWORK_ID);
+function configuredTestnetNetworkId(environment = process.env) {
+  const networkId = Number(environment.ZENON_NETWORK_ID ?? TESTNET_NETWORK_ID);
   if (networkId !== TESTNET_NETWORK_ID) safetyError('configured_network_is_not_testnet');
   return networkId;
 }
@@ -379,18 +390,28 @@ function runPublication(scope, zenon, timeoutMs, operation, execute) {
 }
 
 /**
- * Check node health and authenticate the exact expected chain profile.
- * Network information and the frontier Momentum are node self-reports; only
- * the injected profile authenticator is intended to establish chain identity.
+ * Check node health and apply exactly one injected chain-trust mechanism.
+ * Network information and the frontier Momentum are node self-reports. The
+ * operator-trusted path is deliberately distinct from authenticated identity.
  */
 export async function assertZenonNodeReady(
   zenon,
   sdk,
   authenticateChainProfile,
   expectedChainProfile,
-  { callRead = (_operation, execute) => execute() } = {},
+  {
+    callRead = (_operation, execute) => execute(),
+    operatorTrustedChainPolicy,
+  } = {},
 ) {
   validateZenonChainProfile(expectedChainProfile);
+  const hasAuthenticatorInput = authenticateChainProfile !== undefined;
+  const hasAuthenticator = typeof authenticateChainProfile === 'function';
+  const hasOperatorPolicy = operatorTrustedChainPolicy !== undefined;
+  if (hasOperatorPolicy && !isOperatorTrustedTestnetPolicy(operatorTrustedChainPolicy)) {
+    safetyError('operator_trusted_chain_policy_invalid');
+  }
+  if (hasAuthenticatorInput && hasOperatorPolicy) safetyError('chain_trust_policy_conflict');
   let networkInfo;
   let syncInfo;
   let frontierMomentum;
@@ -421,7 +442,33 @@ export async function assertZenonNodeReady(
     safetyError('malformed_frontier_momentum');
   }
   if (String(chainId) !== expectedChainProfile.chainIdentifier) safetyError('node_chain_identifier_mismatch');
-  if (typeof authenticateChainProfile !== 'function') safetyError('node_network_identity_unavailable');
+  if (!hasAuthenticator && !hasOperatorPolicy) safetyError('node_network_identity_unavailable');
+
+  if (hasOperatorPolicy) {
+    let chainTrustEvidence;
+    try {
+      chainTrustEvidence = await callRead(
+        'operatorTrustedChainObservation',
+        () => operatorTrustedChainPolicy.observeChainTrust({
+          zenon,
+          networkInfo,
+          syncInfo,
+          frontierMomentum,
+          expectedChainProfile: cloneChainProfile(expectedChainProfile),
+        }),
+      );
+    } catch (error) {
+      if (error?.code === LIVE_RUNTIME_ERROR_CODES.READ_TIMEOUT ||
+          error?.code === LIVE_RUNTIME_ERROR_CODES.POISONED) throw error;
+      safetyError('operator_trusted_chain_observation_unavailable', error);
+    }
+    if (!isOperatorTrustedTestnetEvidence(chainTrustEvidence) ||
+        chainTrustEvidence.remoteChainAuthenticated !== false ||
+        !chainProfilesEqual(chainTrustEvidence.chainProfile, expectedChainProfile)) {
+      safetyError('operator_trusted_chain_observation_invalid');
+    }
+    return { chainId, syncInfo, frontierMomentum, chainTrustEvidence };
+  }
 
   let authenticatedProfile;
   try {
@@ -444,8 +491,8 @@ export async function assertZenonNodeReady(
   return { chainId, syncInfo, frontierMomentum, authenticatedProfile: cloneChainProfile(authenticatedProfile) };
 }
 
-function parseRpcUrl() {
-  const rpcUrl = process.env.ZENON_RPC_URL ?? 'wss://testnet.zenonhub.io:35998';
+function parseRpcUrl(environment = process.env) {
+  const rpcUrl = environment.ZENON_RPC_URL ?? 'wss://testnet.zenonhub.io:35998';
   let parsed;
   try {
     parsed = new URL(rpcUrl);
@@ -465,15 +512,24 @@ async function withOwnedZenonSession({
   owner,
   expectedChainProfile,
   authenticateChainProfile,
+  operatorTrustedChainPolicy,
+  environment,
   runtime,
   rpcTimeoutMs,
   work,
 }) {
-  if (typeof authenticateChainProfile !== 'function') safetyError('node_network_identity_unavailable');
+  const hasAuthenticatorInput = authenticateChainProfile !== undefined;
+  const hasAuthenticator = typeof authenticateChainProfile === 'function';
+  const hasOperatorPolicy = operatorTrustedChainPolicy !== undefined;
+  if (hasOperatorPolicy && !isOperatorTrustedTestnetPolicy(operatorTrustedChainPolicy)) {
+    safetyError('operator_trusted_chain_policy_invalid');
+  }
+  if (hasAuthenticatorInput && hasOperatorPolicy) safetyError('chain_trust_policy_conflict');
+  if (!hasAuthenticator && !hasOperatorPolicy) safetyError('node_network_identity_unavailable');
   return runtime.withOwner(owner, async scope => {
     const { sdk, ed } = await loadZenonDeps();
-    const networkId = configuredTestnetNetworkId();
-    const rpcUrl = parseRpcUrl();
+    const networkId = configuredTestnetNetworkId(environment);
+    const rpcUrl = parseRpcUrl(environment);
     sdk.Zenon.setNetworkID(networkId);
     const zenon = sdk.Zenon.getInstance();
     if (zenon.client) {
@@ -497,7 +553,10 @@ async function withOwnedZenonSession({
         sdk,
         authenticateChainProfile,
         expectedChainProfile,
-        { callRead: (operation, execute) => runRead(scope, zenon, rpcTimeoutMs, operation, execute) },
+        {
+          callRead: (operation, execute) => runRead(scope, zenon, rpcTimeoutMs, operation, execute),
+          operatorTrustedChainPolicy,
+        },
       );
       sdk.Zenon.setChainID(readiness.chainId);
       return await work({ sdk, ed, zenon, ...readiness }, scope);
@@ -720,15 +779,29 @@ export async function preflightZenonPayment(paymentPayload, requirements, paymen
 export class ExactZenonClient {
   constructor({
     mnemonic,
-    accountIndex = process.env.ZENON_ACCOUNT_INDEX ?? 0,
+    accountIndex,
     authenticateChainProfile,
     authenticateNodeNetwork,
+    environment = process.env,
+    operatorTrustedChainPolicy,
     rpcTimeoutMs,
   } = {}) {
-    const configuredMnemonic = mnemonic ?? process.env.ZENON_MNEMONIC;
-    const configuredAccountIndex = Number(accountIndex ?? process.env.ZENON_ACCOUNT_INDEX ?? 0);
+    const selectedEnvironment = runtimeEnvironment(environment);
+    const configuredMnemonic = mnemonic ?? selectedEnvironment.ZENON_MNEMONIC;
+    const configuredAccountIndex = Number(
+      accountIndex ?? selectedEnvironment.ZENON_ACCOUNT_INDEX ?? 0,
+    );
     const chainAuthenticator = authenticateChainProfile ?? authenticateNodeNetwork;
-    const configuredTimeout = configuredRpcTimeout(rpcTimeoutMs);
+    if (operatorTrustedChainPolicy !== undefined &&
+        !isOperatorTrustedTestnetPolicy(operatorTrustedChainPolicy)) {
+      safetyError('operator_trusted_chain_policy_invalid');
+    }
+    if (operatorTrustedChainPolicy !== undefined && chainAuthenticator !== undefined) {
+      safetyError('chain_trust_policy_conflict');
+    }
+    const configuredTimeout = configuredRpcTimeout(
+      rpcTimeoutMs ?? selectedEnvironment.ZENON_RPC_TIMEOUT_MS ?? DEFAULT_RPC_TIMEOUT_MS,
+    );
     Object.defineProperties(this, {
       mnemonic: {
         value: configuredMnemonic,
@@ -754,6 +827,12 @@ export class ExactZenonClient {
         configurable: false,
         enumerable: false,
       },
+      operatorTrustedChainPolicy: {
+        value: operatorTrustedChainPolicy,
+        writable: false,
+        configurable: false,
+        enumerable: false,
+      },
       rpcTimeoutMs: {
         value: configuredTimeout,
         writable: false,
@@ -767,6 +846,7 @@ export class ExactZenonClient {
         enumerable: false,
       },
     });
+    CLIENT_RUNTIME_ENVIRONMENTS.set(this, selectedEnvironment);
   }
 
   async createPaymentPayload(paymentRequired, accepted = paymentRequired?.accepts?.[0]) {
@@ -776,8 +856,9 @@ export class ExactZenonClient {
     } catch (error) {
       safetyError('malformed_requirements', error);
     }
-    requireLiveAck();
-    configuredTestnetNetworkId();
+    const environment = CLIENT_RUNTIME_ENVIRONMENTS.get(this);
+    requireLiveAck(environment);
+    configuredTestnetNetworkId(environment);
     try {
       validatePaymentRequired(paymentRequired);
       validateRequirement(accepted);
@@ -786,6 +867,13 @@ export class ExactZenonClient {
     }
     if (!paymentRequired.accepts.some(candidate => sameRequirements(candidate, accepted))) {
       safetyError('requirements_mismatch');
+    }
+    if (this.operatorTrustedChainPolicy !== undefined &&
+        !chainProfilesEqual(
+          accepted.extra.zenonChain,
+          this.operatorTrustedChainPolicy.chainProfile(),
+        )) {
+      safetyError('operator_trusted_profile_mismatch');
     }
     if (accepted.network !== EXPERIMENTAL_LIVE_NETWORK) safetyError('unsupported_network');
     if (new URL(paymentRequired.resource.url).protocol !== 'https:') safetyError('live_resource_requires_https');
@@ -814,6 +902,8 @@ export class ExactZenonClient {
       owner: 'buyer.prepare',
       expectedChainProfile: accepted.extra.zenonChain,
       authenticateChainProfile: this.authenticateChainProfile,
+      operatorTrustedChainPolicy: this.operatorTrustedChainPolicy,
+      environment,
       runtime: this.runtime,
       rpcTimeoutMs: this.rpcTimeoutMs,
       work: async ({ sdk, zenon, chainId }, scope) => {
@@ -1049,13 +1139,25 @@ export class ExactZenonFacilitator {
   constructor({
     authenticateChainProfile,
     authenticateNodeNetwork,
+    environment = process.env,
+    operatorTrustedChainPolicy,
     journal = new SettlementJournal(),
     rpcTimeoutMs,
     reconciliationRetentionMs = null,
   } = {}) {
+    const selectedEnvironment = runtimeEnvironment(environment);
     if (!(journal instanceof SettlementJournal)) safetyError('invalid_settlement_journal');
     const chainAuthenticator = authenticateChainProfile ?? authenticateNodeNetwork;
-    const configuredTimeout = configuredRpcTimeout(rpcTimeoutMs);
+    if (operatorTrustedChainPolicy !== undefined &&
+        !isOperatorTrustedTestnetPolicy(operatorTrustedChainPolicy)) {
+      safetyError('operator_trusted_chain_policy_invalid');
+    }
+    if (operatorTrustedChainPolicy !== undefined && chainAuthenticator !== undefined) {
+      safetyError('chain_trust_policy_conflict');
+    }
+    const configuredTimeout = configuredRpcTimeout(
+      rpcTimeoutMs ?? selectedEnvironment.ZENON_RPC_TIMEOUT_MS ?? DEFAULT_RPC_TIMEOUT_MS,
+    );
     const configuredRetention = configuredReconciliationRetention(reconciliationRetentionMs);
     const payerQueue = new PerPayerQueue();
     this.#reconciliationMaintenance = { running: false, worklist: null };
@@ -1074,6 +1176,12 @@ export class ExactZenonFacilitator {
       },
       authenticateChainProfile: {
         value: chainAuthenticator,
+        writable: false,
+        configurable: false,
+        enumerable: false,
+      },
+      operatorTrustedChainPolicy: {
+        value: operatorTrustedChainPolicy,
         writable: false,
         configurable: false,
         enumerable: false,
@@ -1097,6 +1205,7 @@ export class ExactZenonFacilitator {
         enumerable: false,
       },
     });
+    FACILITATOR_RUNTIME_ENVIRONMENTS.set(this, selectedEnvironment);
   }
 
   async runReconciliationMaintenance(...args) {
@@ -1160,11 +1269,14 @@ export class ExactZenonFacilitator {
       return await this.payerQueue.run(
         candidate.payer,
         () => {
-          requireLiveAck();
+          const environment = FACILITATOR_RUNTIME_ENVIRONMENTS.get(this);
+          requireLiveAck(environment);
           return withOwnedZenonSession({
             owner: 'facilitator.reconciliation-maintenance',
             expectedChainProfile: candidate.chainProfile,
             authenticateChainProfile: this.authenticateChainProfile,
+            operatorTrustedChainPolicy: this.operatorTrustedChainPolicy,
+            environment,
             runtime: this.runtime,
             rpcTimeoutMs: this.rpcTimeoutMs,
             work: async (connection, scope) => this.#reconcileMaintenanceCandidate(candidate, connection, scope),
@@ -1252,13 +1364,16 @@ export class ExactZenonFacilitator {
 
   async verify(paymentPayload, requirements, paymentRequired) {
     try {
-      requireLiveAck();
-      configuredTestnetNetworkId();
+      const environment = FACILITATOR_RUNTIME_ENVIRONMENTS.get(this);
+      requireLiveAck(environment);
+      configuredTestnetNetworkId(environment);
       const preflight = await preflightZenonPayment(paymentPayload, requirements, paymentRequired);
       return await withOwnedZenonSession({
         owner: 'facilitator.verify',
         expectedChainProfile: preflight.chainProfile,
         authenticateChainProfile: this.authenticateChainProfile,
+        operatorTrustedChainPolicy: this.operatorTrustedChainPolicy,
+        environment,
         runtime: this.runtime,
         rpcTimeoutMs: this.rpcTimeoutMs,
         work: async (connection, scope) => {
@@ -1325,8 +1440,9 @@ export class ExactZenonFacilitator {
   async settle(paymentPayload, requirements, paymentRequired) {
     let preflight;
     try {
-      requireLiveAck();
-      configuredTestnetNetworkId();
+      const environment = FACILITATOR_RUNTIME_ENVIRONMENTS.get(this);
+      requireLiveAck(environment);
+      configuredTestnetNetworkId(environment);
       preflight = await preflightZenonPayment(paymentPayload, requirements, paymentRequired);
     } catch (error) {
       return failed(requirements, '', '', errorCode(error), 'VALIDATION_FAILED');
@@ -1365,6 +1481,8 @@ export class ExactZenonFacilitator {
         owner: 'facilitator.settle',
         expectedChainProfile: preflight.chainProfile,
         authenticateChainProfile: this.authenticateChainProfile,
+        operatorTrustedChainPolicy: this.operatorTrustedChainPolicy,
+        environment: FACILITATOR_RUNTIME_ENVIRONMENTS.get(this),
         runtime: this.runtime,
         rpcTimeoutMs: this.rpcTimeoutMs,
         work: async (connection, scope) => this.#settleWithNode(

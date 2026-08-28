@@ -20,8 +20,8 @@ export function loadDotEnv(filename = '.env') {
   }
 }
 
-export function envInt(name, fallback) {
-  const value = process.env[name];
+export function envInt(name, fallback, environment = process.env) {
+  const value = environment[name];
   if (value === undefined || value === '') return fallback;
   const n = Number(value);
   if (!Number.isSafeInteger(n)) throw new Error(`${name} must be an integer`);

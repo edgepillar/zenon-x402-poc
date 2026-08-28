@@ -97,38 +97,87 @@ export async function runServerLifecycle({
   }
 }
 
-async function runServerCli() {
-  const { loadDotEnv, envInt } = await import('./env.js');
-  loadDotEnv();
-
-  const mode = process.env.PAYMENT_MODE ?? 'mock';
-  const [{ createResourceServer }, { buildRequirement }] = await Promise.all([
+async function loadServerRuntime(mode) {
+  const [{ createResourceServer }, { buildRequirement }, { envInt }] = await Promise.all([
     import('./resource-server.js'),
     import('./config.js'),
+    import('./env.js'),
   ]);
-  const requirement = await buildRequirement(mode);
-  let facilitator;
   if (mode === 'mock') {
     const { MockExactZenonFacilitator } = await import('./mock-payment.js');
-    facilitator = new MockExactZenonFacilitator();
-  } else {
-    const { ExactZenonFacilitator } = await import('./zenon-payment.js');
-    facilitator = new ExactZenonFacilitator();
+    return { buildRequirement, createResourceServer, envInt, Facilitator: MockExactZenonFacilitator };
+  }
+  const { ExactZenonFacilitator } = await import('./zenon-payment.js');
+  return { buildRequirement, createResourceServer, envInt, Facilitator: ExactZenonFacilitator };
+}
+
+export async function prepareServerCli({
+  env = process.env,
+  loadRuntime = loadServerRuntime,
+} = {}) {
+  const mode = env.PAYMENT_MODE ?? 'mock';
+  if (mode !== 'mock' && mode !== 'zenon') throw new Error('unsupported payment mode');
+
+  let policy;
+  if (mode === 'zenon') {
+    const { selectOperatorTrustedTestnetPolicy } =
+      await import('./zenon/operator-trusted-testnet-profile.js');
+    policy = selectOperatorTrustedTestnetPolicy(
+      env.ZENON_CHAIN_PROFILE_NAME,
+      env.ZENON_OPERATOR_TRUST_ACK,
+      env.ZENON_LIVE_ACK,
+    );
   }
 
-  const port = envInt('PORT', 8402);
+  const { buildRequirement, createResourceServer, envInt, Facilitator } =
+    await loadRuntime(mode);
+  const requirement = await buildRequirement(
+    mode,
+    policy === undefined ? undefined : { zenonChain: policy.chainProfile() },
+    env,
+  );
+  const facilitator = mode === 'mock'
+    ? new Facilitator()
+    : new Facilitator({ environment: env, operatorTrustedChainPolicy: policy });
+  const port = envInt('PORT', 8402, env);
   const app = createResourceServer({
     facilitator,
     requirement,
     port,
-    advertisedBaseUrl: process.env.RESOURCE_BASE_URL,
+    advertisedBaseUrl: env.RESOURCE_BASE_URL,
+  });
+  return { app, mode, policy, requirement };
+}
+
+export async function runServerCli({
+  env = process.env,
+  loadRuntime,
+  onOperatorTrustWarning = warning => writeSync(2, `${warning}\n`),
+  onOutput = (...args) => console.log(...args),
+  signalTarget = process,
+} = {}) {
+  const { loadDotEnv } = await import('./env.js');
+  loadDotEnv();
+
+  const { app, mode, policy, requirement } = await prepareServerCli({
+    env,
+    ...(loadRuntime === undefined ? {} : { loadRuntime }),
   });
   await runServerLifecycle({
     app,
+    signalTarget,
     onTerminalFailure: reportFailure,
     onListening(listening) {
-      console.log(`[${mode}] x402 resource server listening on ${listening.url}/paid`);
-      console.log('Requirement:', requirement);
+      if (mode === 'mock') {
+        onOutput(`[${mode}] x402 resource server listening on ${listening.url}/paid`);
+        onOutput('Requirement:', requirement);
+        return;
+      }
+      onOperatorTrustWarning(policy.warning);
+      onOutput('Zenon resource server listening.');
+      onOutput('Selected profile:', policy.profileName);
+      onOutput('Trust mode:', policy.trustMode);
+      onOutput('Remote chain authenticated: no');
     },
   });
 }

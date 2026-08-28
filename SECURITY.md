@@ -4,9 +4,13 @@ This repository is research proof-of-concept code. It is not production-ready an
 
 ## Live operation is fail-closed
 
-The repository does not ship a real live chain profile or a chain-profile authenticator. Its command-line tools cannot enable live mode using `.env` alone. The default live client and facilitator stop with `node_network_identity_unavailable` because configured SDK values and node self-reports do not independently authenticate a remote chain.
+The command-line tools ship one exact, internally pinned historical testnet profile. It is disabled unless the operator selects its full immutable name and supplies both the existing testnet-only acknowledgement and a separate acknowledgement that the anchor does not authenticate the connected node. No profile JSON, chain identifier, genesis value, trust-artifact URL, default, or floating alias is accepted from the environment. The separately configured RPC URL remains part of the operator trust boundary.
 
-Do not use mainnet, real funds, or a valuable wallet. If a future local experiment supplies the missing programmatic components, use only a disposable, minimally funded testnet wallet. The acknowledgement variable and the SDK network-ID check are defense-in-depth guards, not proof of connected-chain identity.
+The profile is an unsigned historical observation from a pinned `zenon-network/znn-wiki` source revision. The owned SDK session requires the node's height-2 version, height, chain identifier, Momentum hash, and predecessor to match that observation exactly, and requires the height query's reported total not to be below the previously observed frontier height. This detects honest mismatches or resets that alter the pinned height-2 identity tuple. Forks after that tuple and disconnected or malicious RPC views are not detected. A match remains a node self-report; it does not authenticate the endpoint, establish canonical remote-chain identity, or verify linkage to the observed frontier. The distinct `operatorTrustedChainPolicy` path returns explicit non-authenticating evidence and cannot populate the authenticated-profile result.
+
+Do not use mainnet, real funds, or a valuable wallet. Use only a disposable, minimally funded testnet wallet for any separately approved operational run. The acknowledgements, historical comparison, and SDK network-ID check are defense-in-depth guards, not proof of connected-chain identity.
+
+Ordinary live CLI output does not print the requirement, settlement object, payer, transaction identifier, listening URL, or protected response body. Any future public evidence bundle requires a separate allowlisted capture and review path.
 
 Never commit `.env`, a mnemonic, keyfile, private key, token, or RPC credential. The facilitator must never receive buyer key material. Credential-bearing RPC URLs are rejected because the SDK may log the complete URL.
 
@@ -22,7 +26,7 @@ The selected requirement commits an exact versioned chain profile:
 }
 ```
 
-The experimental `zenon:testnet` label is descriptive only. It neither identifies nor authenticates a chain. A future authenticator must establish the exact chain identifier and genesis identity during the exclusively owned SDK session.
+The experimental `zenon:testnet` label is descriptive only. It neither identifies nor authenticates a chain. A future authenticated policy must establish the exact chain identifier and genesis identity and verify their linkage to the observed frontier during the exclusively owned SDK session.
 
 Both live entry points use one strict offline preflight before any RPC. It binds the signed `UserSend` block to the exact x402 version, resource, requirement, chain profile, recipient, concrete ZTS and canonical positive amount. The facilitator reconstructs the hash, verifies Ed25519 with strict ZIP-215 behavior disabled, and binds the public key to the payer address.
 
@@ -81,9 +85,11 @@ An exact retained tombstone is represented over the local HTTP boundary as respo
 
 This is a single-writer, single-process, single-host recovery mechanism. It supplies neither distributed locking nor durable exactly-once execution. In particular, an arbitrary resource callback can perform an external side effect and the process can crash before `DELIVERED` is recorded. Operators must reconcile `DELIVERY_PENDING` manually rather than assume whether delivery occurred.
 
+The current CLI has one profile generation and one shared journal namespace. Profile rotation and rollback are unsupported. A future profile generation must isolate its journal state and add cross-profile maintenance, recovery, and rollback tests before activation.
+
 ## Node-dependent checks
 
-A future authenticated live session must also pass sequential readiness checks, exact chain-profile comparison, token metadata validation, frontier validation and complete bounded unconfirmed-block inspection. Unconfirmed pagination reads every page implied by `Count` up to 200 entries and fails closed on malformed counts, incomplete pages, excessive counts and RPC failures. It rechecks page zero to detect some concurrent changes; the node view is not an atomic snapshot.
+The operator-trusted live session passes sequential readiness checks, exact pinned-observation and chain-profile comparison, token metadata validation, frontier validation and complete bounded unconfirmed-block inspection. Unconfirmed pagination reads every page implied by `Count` up to 200 entries and fails closed on malformed counts, incomplete pages, excessive counts and RPC failures. It rechecks page zero to detect some concurrent changes; the node view is not an atomic snapshot or authenticated chain proof.
 
 These checks remain observations of one node and cannot eliminate external frontier races. Process-local per-payer ordering does not coordinate client-side preparation, other processes, other facilitators or independent publication.
 

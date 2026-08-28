@@ -41,7 +41,7 @@ Resource server / facilitator
     | journal lookup and retry reconciliation
     | per-payer settlement ordering
     | globally owned SDK session
-    | required profile authentication (implementation not shipped)
+    | explicit operator-trusted historical observation (non-authenticating)
     | sync, asset, frontier and unconfirmed checks
     | publishRawTransaction()
     | RPC reconciliation until Momentum inclusion is observed
@@ -74,9 +74,15 @@ npm run server
 npm run buyer -- http://127.0.0.1:8402/paid
 ```
 
-## Live mode is intentionally unavailable by default
+## Operator-trusted historical testnet mode
 
-This repository does not ship a real testnet chain identifier, genesis Momentum hash, checkpoint, or node authenticator. `buildRequirement('zenon')` requires an explicit programmatic chain profile, and the default client and facilitator have no implementation that can authenticate that profile against the connected chain. The command-line entry points therefore cannot enable a live session from `.env` alone.
+The command-line entry points expose one exact, opt-in historical testnet profile. It is derived from the height-2 example in `zenon-network/znn-wiki` at the immutable 2021-12-17 source revision recorded in `src/zenon/operator-trusted-testnet-profile.js`. The profile name, the existing testnet-only acknowledgement, and a separate operator-trust acknowledgement must all match exactly before the server constructs a requirement or listens and before the buyer makes its initial request. There is no default, `current`, `latest`, or generic `testnet` alias. Chain-profile fields and trust-artifact URLs cannot be supplied through environment variables.
+
+Inside the owned SDK session, the policy requires one exact height-2 identity tuple: version, height, chain identifier, Momentum hash, and predecessor must match the pinned source, and the later height query cannot report a total below the previously observed frontier height. Missing or malformed evidence, and honest mismatches or resets that alter that tuple, fail before signing or publication. A matching tuple is still an unsigned node self-report under operator trust. Forks after height 2 and disconnected or malicious RPC views are not detected. The result is not an authoritative current-network release, RPC authentication, canonical remote-chain identity, or verified linkage from the historical observation to the frontier. The policy uses the distinct `operatorTrustedChainPolicy` constructor field, produces explicit non-authenticating evidence, and never produces an `authenticatedProfile` result.
+
+No live payment or real-node evidence is claimed by this offline integration. Issue #45 remains open until a separate operational run records settlement and delivery evidence.
+
+Ordinary live CLI output withholds the requirement, settlement object, payer, transaction identifier, listening URL, and protected response body. A future evidence package must be produced by a separate, explicitly reviewed workflow that discloses only its agreed public artifacts.
 
 The live adapter remains fail-closed. Do not use it with real funds, mainnet, or a valuable wallet.
 
@@ -111,7 +117,7 @@ The resource server independently requires `upfront` before settlement or delive
 
 The complete selected requirement, including this profile, is committed by the payment-intent digest in the signed account block. The signed block's `chainIdentifier` must equal the profile value.
 
-`network: "zenon:testnet"` is only an experimental descriptive label. It is not a CAIP-2 claim and does not authenticate a chain. Exact chain identity requires both the chain identifier and the genesis identity to be authenticated within the owned SDK session. The configured SDK network ID and node self-reports are not sufficient evidence.
+`network: "zenon:testnet"` is only an experimental descriptive label. It is not a CAIP-2 claim and does not authenticate a chain. Exact chain identity would require both the chain identifier and the genesis identity to be authenticated and linked to the observed frontier. The operator-trusted historical policy, configured SDK network ID, and node self-reports do not supply that evidence.
 
 Mock mode uses `network: "zenon:mock"` and an explicitly reserved synthetic profile. That profile is rejected for live requirements.
 
@@ -146,6 +152,8 @@ These tests preserve the legacy baseline; they do not provide a supported unsign
 ### Journal and retry behavior
 
 Live settlement uses a versioned journal under the ignored `.runtime/` directory. After node-dependent pre-publication checks and before publication, it records the exact validated signed block, transaction and authorization identities, complete `ResourceInfo` representation, resource and chain-profile commitments, and the `VALIDATED` evidence state. URL-only and independently omitted optional metadata remain readable, while `serviceName`, `tags: []`, tag order, duplicate multiplicity, and the exact original `iconUrl` string survive persistence, reload, and recovery without normalization. Writes use a same-directory temporary file, file `fsync`, atomic rename, and directory sync where supported. Corrupt, malformed, or resource-tampered state fails closed. An initialization marker also makes a missing journal file fail closed after the first successful write; deleting both the journal and marker remains outside the guarantees of this local-file design. Schema-v1 journals remain readable and are not upgraded to v2 by reads, ordinary updates, or disabled retention. The first successful full-record-to-tombstone conversion atomically writes schema v2 with checksums over both active records and tombstones; rollback to a v1-only reader is unsupported after that write.
+
+The current CLI supports one profile generation and retains the existing shared journal namespace. Profile rotation or rollback is not implemented. Before any second profile can become selectable, its journal state must be isolated from older-profile records and maintenance, recovery, and rollback behavior must receive separate tests.
 
 The journal's default active-record capacity is 256 and it fails closed at capacity. Tombstones use a separate fixed capacity of 4096, remain subject to `maxFileBytes`, participate permanently in replay and uniqueness checks, and are never evicted or archived automatically. A tombstone or file-capacity failure preserves the full record and its existing recovery lane. This is a single-process, single-writer, single-host PoC mechanism, not a distributed lock or universal exactly-once guarantee.
 
@@ -186,7 +194,7 @@ const reconciled = await reconcilePayment(recoverableResult);
 
 ### Node-dependent checks
 
-When a future integration supplies a real chain-profile authenticator, the facilitator also requires `SyncState.SyncDone`, compares the frontier Momentum chain identifier with the requirement profile and signed block, validates non-native token metadata, checks the payer frontier, and inspects all unconfirmed pages implied by the node's `Count` value. Inspection is bounded to 200 blocks and fails closed for malformed, inconsistent, excessive or unavailable results. A page-zero recheck detects some concurrent changes, but it is not an atomic snapshot.
+For the current operator-trusted policy, the facilitator requires `SyncState.SyncDone`, the exact historical height-2 identity tuple, and agreement between the frontier Momentum chain identifier, requirement profile, and signed block. It then validates non-native token metadata, checks the payer frontier, and inspects all unconfirmed pages implied by the node's `Count` value. Inspection is bounded to 200 blocks and fails closed for malformed, inconsistent, excessive or unavailable results. A page-zero recheck detects some concurrent changes, but it is not an atomic snapshot. A future authenticated implementation belongs in the separate authenticated-policy path; operator-trusted evidence cannot be promoted into it.
 
 RPC polling remains authoritative for inclusion observation. Subscriptions are wake-up hints only and are cleaned up by closing the owned connection.
 
@@ -200,7 +208,7 @@ RPC polling remains authoritative for inclusion observation. Subscriptions are w
 - Hardware-wallet support is not implemented.
 - The planner, wallet, Plasma, payment-mechanism, chain-profile, and settlement-repository boundaries are not wired into the active live Zenon transaction path.
 - No supported public unsigned-preparation or canonical-account-block-hash SDK API is consumed.
-- No authenticated live chain profile or real live profile ships in this repository.
+- The only shipped live profile is an operator-trusted historical observation; no authenticated live chain profile ships.
 - The RPC node remains a trust boundary; no SPV or checkpoint verification is implemented.
 - The journal and queues coordinate one process on one host only.
 - Other facilitators, buyer-side concurrent preparation and external publishers can still advance the same payer frontier.
@@ -233,6 +241,7 @@ src/
     payment-mechanism.js      additive mechanism boundary
   zenon/
     chain-profile.js          additive chain-profile boundary
+    operator-trusted-testnet-profile.js  historical CLI trust policy
     wallet-adapter.js         additive wallet boundary
     transaction-planner.js    additive planner boundary
     plasma-strategy.js        additive Plasma boundary
@@ -253,6 +262,7 @@ test/
   cli-output.test.js
   conformance.test.js
   e2e.test.js
+  operator-trusted-testnet-profile.test.js
   journal.test.js
   live-runtime.test.js
   official-x402-client-interop.test.js
