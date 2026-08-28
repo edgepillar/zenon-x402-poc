@@ -1372,12 +1372,7 @@ export async function ensurePublished({ lookup, publish, observed = undefined })
   // was started and is a definite local failure, not an uncertain submission.
   // Once a promise has been returned, any rejection is reconciled by hash and
   // remains uncertain when the node still cannot show the exact block.
-  let publication;
-  try {
-    publication = publish();
-  } catch (error) {
-    throw error;
-  }
+  const publication = publish();
   try {
     await publication;
     return shieldPublicationOutcome({

@@ -246,7 +246,6 @@ export class MockExactZenonFacilitator {
     });
     if (newRecord) {
       REFLECT_APPLY(MAP_SET, records, [verification.transaction, newRecord]);
-      return result;
     }
     return result;
   }
