@@ -2466,6 +2466,156 @@ test('publication is idempotent and reconciles ambiguous publish results', async
   assert.equal(ambiguous.state, EVIDENCE_STATES.SUBMISSION_OUTCOME_UNKNOWN);
 });
 
+test('publication outcomes ignore inherited then assimilation', { concurrency: false }, async () => {
+  const getOwnPropertyDescriptor = Object.getOwnPropertyDescriptor;
+  const defineProperty = Object.defineProperty;
+  const hasOwn = Object.hasOwn;
+  const ownKeys = Reflect.ownKeys;
+  const previousThen = getOwnPropertyDescriptor(Object.prototype, 'then');
+  const controlledRejection = Symbol('controlled publication outcome rejection');
+  const known = { confirmationDetail: undefined };
+  const included = { confirmationDetail: {} };
+  const recoveredPublicationError = new Error('publication response unavailable');
+  const ambiguousPublicationError = new Error('publication result unknown');
+  const counters = {
+    known: { lookup: 0, publish: 0 },
+    successful: { lookup: 0, publish: 0 },
+    recovered: { lookup: 0, publish: 0 },
+    ambiguous: { lookup: 0, publish: 0 },
+  };
+  let publicationOutcomeObservations = 0;
+  let outcomes;
+
+  try {
+    defineProperty(Object.prototype, 'then', {
+      configurable: true,
+      get() {
+        if ((typeof this !== 'object' && typeof this !== 'function') || this === null) {
+          return undefined;
+        }
+        const keys = ownKeys(this);
+        const stateDescriptor = getOwnPropertyDescriptor(this, 'state');
+        const observedDescriptor = getOwnPropertyDescriptor(this, 'observed');
+        const publicationErrorDescriptor = getOwnPropertyDescriptor(this, 'publicationError');
+        const isEnumerableData = descriptor => descriptor !== undefined &&
+          hasOwn(descriptor, 'value') &&
+          descriptor.enumerable === true &&
+          descriptor.writable === true &&
+          descriptor.configurable === true;
+        const isPublicationOutcome =
+          (keys.length === 2 || keys.length === 3) &&
+          keys[0] === 'state' && keys[1] === 'observed' &&
+          (keys.length === 2 || keys[2] === 'publicationError') &&
+          isEnumerableData(stateDescriptor) &&
+          isEnumerableData(observedDescriptor) &&
+          (keys.length === 2 || isEnumerableData(publicationErrorDescriptor));
+        if (!isPublicationOutcome) return undefined;
+        publicationOutcomeObservations += 1;
+        return (_resolve, reject) => reject(controlledRejection);
+      },
+    });
+
+    const capture = promise => promise.then(
+      value => ({ status: 'fulfilled', value }),
+      error => ({ status: 'rejected', controlled: error === controlledRejection }),
+    );
+    outcomes = await Promise.all([
+      capture(ensurePublished({
+        observed: known,
+        lookup: async () => { counters.known.lookup += 1; return null; },
+        publish: async () => { counters.known.publish += 1; },
+      })),
+      capture(ensurePublished({
+        lookup: async () => { counters.successful.lookup += 1; return null; },
+        publish: async () => { counters.successful.publish += 1; },
+      })),
+      capture(ensurePublished({
+        lookup: async () => {
+          counters.recovered.lookup += 1;
+          return counters.recovered.lookup === 1 ? null : included;
+        },
+        publish: async () => {
+          counters.recovered.publish += 1;
+          throw recoveredPublicationError;
+        },
+      })),
+      capture(ensurePublished({
+        lookup: async () => { counters.ambiguous.lookup += 1; return null; },
+        publish: async () => {
+          counters.ambiguous.publish += 1;
+          throw ambiguousPublicationError;
+        },
+      })),
+    ]);
+  } finally {
+    if (previousThen) defineProperty(Object.prototype, 'then', previousThen);
+    else delete Object.prototype.then;
+  }
+
+  assert.deepEqual(
+    getOwnPropertyDescriptor(Object.prototype, 'then'),
+    previousThen,
+    'inherited then descriptor is restored exactly',
+  );
+  assert.deepEqual(counters, {
+    known: { lookup: 0, publish: 0 },
+    successful: { lookup: 1, publish: 1 },
+    recovered: { lookup: 2, publish: 1 },
+    ambiguous: { lookup: 2, publish: 1 },
+  });
+
+  const baselineFailure = outcomes.every(outcome =>
+    outcome.status === 'rejected' && outcome.controlled === true) &&
+    publicationOutcomeObservations === outcomes.length;
+  const protectedFulfillment = outcomes.every(outcome => outcome.status === 'fulfilled') &&
+    publicationOutcomeObservations === 0;
+  assert.equal(
+    protectedFulfillment,
+    true,
+    baselineFailure
+      ? 'publication outcome inherited-then assimilation reproduced'
+      : 'publication outcomes did not match the protected boundary',
+  );
+
+  const expected = [
+    {
+      keys: ['state', 'observed'],
+      state: EVIDENCE_STATES.SUBMISSION_ACKNOWLEDGED,
+      observed: known,
+    },
+    {
+      keys: ['state', 'observed'],
+      state: EVIDENCE_STATES.SUBMISSION_ACKNOWLEDGED,
+      observed: null,
+    },
+    {
+      keys: ['state', 'observed'],
+      state: EVIDENCE_STATES.MOMENTUM_INCLUDED,
+      observed: included,
+    },
+    {
+      keys: ['state', 'observed', 'publicationError'],
+      state: EVIDENCE_STATES.SUBMISSION_OUTCOME_UNKNOWN,
+      observed: null,
+      publicationError: ambiguousPublicationError,
+    },
+  ];
+  for (const [index, expectation] of expected.entries()) {
+    const result = outcomes[index].value;
+    assert.deepEqual(Object.keys(result), expectation.keys);
+    assert.equal(result.state, expectation.state);
+    assert.strictEqual(result.observed, expectation.observed);
+    if (hasOwn(expectation, 'publicationError')) {
+      assert.strictEqual(result.publicationError, expectation.publicationError);
+    }
+    const descriptor = getOwnPropertyDescriptor(result, 'then');
+    assert.equal(descriptor?.value, undefined);
+    assert.equal(descriptor?.enumerable, false);
+    assert.equal(descriptor?.writable, false);
+    assert.equal(descriptor?.configurable, false);
+  }
+});
+
 test('a synchronous pre-publication failure is not classified as an uncertain submission', async () => {
   const error = new Error('local publication setup failed');
   await assert.rejects(
