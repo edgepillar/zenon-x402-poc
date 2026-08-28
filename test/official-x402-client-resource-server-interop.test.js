@@ -930,7 +930,25 @@ test('composed official failures remain fail-closed without broadening local HTT
   assert.equal(baseline.settlement.success, true);
 
   const policyHarness = await createCompositionHarness(requirement);
-  const policyChallenge = (await getChallenge(policyHarness)).challenge;
+  const { challenge: policyChallenge, result: unpaidResult } =
+    await getChallenge(policyHarness);
+  const unpaidPaymentRequired = headerValue(
+    unpaidResult.response.headers,
+    'PAYMENT-REQUIRED',
+  );
+  const unpaidPaymentResponse = headerValue(
+    unpaidResult.response.headers,
+    'PAYMENT-RESPONSE',
+  );
+  assert.equal(typeof unpaidPaymentRequired === 'string', true);
+  assert.equal(unpaidPaymentResponse === undefined, true);
+  const parsedUnpaid = policyHarness.httpClient.parsePaymentResult({
+    status: unpaidResult.response.status,
+    getHeader: name => headerValue(unpaidResult.response.headers, name),
+    body: unpaidResult.response.body,
+  });
+  assert.equal(parsedUnpaid.paymentStatus, 'payment_required');
+  assert.equal(isDeepStrictEqual(parsedUnpaid.header, policyChallenge), true);
   const excessiveChallenge = structuredClone(policyChallenge);
   excessiveChallenge.accepts[0].amount = (
     BigInt(requirement.amount) + 1n
@@ -995,6 +1013,43 @@ test('composed official failures remain fail-closed without broadening local HTT
   );
   assert.equal(invalidResult.type, 'payment-error');
   assert.equal(invalidResult.response.status, 402);
+  const failedPaymentResponse = headerValue(
+    invalidResult.response.headers,
+    'PAYMENT-RESPONSE',
+  );
+  const failedPaymentRequired = headerValue(
+    invalidResult.response.headers,
+    'PAYMENT-REQUIRED',
+  );
+  assert.equal(typeof failedPaymentResponse === 'string', true);
+  assert.equal(failedPaymentRequired === undefined, true);
+  const decodedFailure = officialDecodePaymentResponse(failedPaymentResponse);
+  assert.equal(decodedFailure.success, false);
+  const parsedFailure = invalidHarness.httpClient.parsePaymentResult({
+    status: invalidResult.response.status,
+    getHeader: name => headerValue(invalidResult.response.headers, name),
+    body: invalidResult.response.body,
+  });
+  assert.equal(parsedFailure.paymentStatus, 'settle_failed');
+  assert.equal(parsedFailure.header?.success, false);
+  assert.equal(isDeepStrictEqual(parsedFailure.header, decodedFailure), true);
+
+  // This pins only the currently installed official client/resource-server
+  // behavior. It does not establish official Zenon support, define Issue #31
+  // terminality or finality, or imply release or activation. A settlement
+  // response takes precedence if both official 402 headers exist.
+  const parsedWithBothHeaders = invalidHarness.httpClient.parsePaymentResult({
+    status: invalidResult.response.status,
+    getHeader: name =>
+      headerValue(invalidResult.response.headers, name) ??
+      headerValue(unpaidResult.response.headers, name),
+    body: invalidResult.response.body,
+  });
+  assert.equal(parsedWithBothHeaders.paymentStatus, 'settle_failed');
+  assert.equal(
+    isDeepStrictEqual(parsedWithBothHeaders.header, decodedFailure),
+    true,
+  );
   assert.equal(invalidHarness.serverBridge.settleCalls, 1);
   assert.equal(invalidHarness.localFacilitator.settleCalls, 1);
   assert.equal(invalidHarness.localFacilitator.verifyCalls, 1);
