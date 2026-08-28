@@ -20,14 +20,15 @@ const FREEZE_OBJECT = Object.freeze;
 const HAS_OWN = Object.hasOwn;
 const REFLECT_APPLY = Reflect.apply;
 const STRUCTURED_CLONE = structuredClone;
-const MAP_GET = Map.prototype.get;
-const MAP_SET = Map.prototype.set;
+const WEAK_MAP_DELETE = WeakMap.prototype.delete;
+const WEAK_MAP_GET = WeakMap.prototype.get;
+const WEAK_MAP_SET = WeakMap.prototype.set;
 const HASH_HEX = /^[0-9a-f]{64}$/;
 const DEFINITIVE_SETTLEMENT_FAILURE = 'payment_settlement_failed';
 const SETTLEMENT_FIELDS = Object.freeze(['success', 'network', 'transaction', 'payer', 'state']);
 const OPTIONAL_SETTLEMENT_FIELDS = Object.freeze(['errorReason', 'retrySamePayment']);
 const LEGACY_FLOW_OPTION = 'allowLegacyMissingPaymentFlowForCharacterization';
-const RECOVERY_HANDLE_STATES = new Map();
+const RECOVERY_OWNER_STATES = new WeakMap();
 const RECOVERY_STATES = new Set([
   'VALIDATED',
   'SUBMISSION_ACKNOWLEDGED',
@@ -184,8 +185,9 @@ export async function paidFetch(url, paymentClient, fetchImpl = fetch, options =
   });
 }
 
-export async function reconcilePayment(recoveryHandle, fetchImpl = fetch) {
-  const recoveryState = recoveryStateForHandle(recoveryHandle);
+export async function reconcilePayment(recoveryOwner, fetchImpl = fetch) {
+  const recoveryState = consumeRecoveryOwner(recoveryOwner);
+  const recoveryHandle = recoveryState.encodedPayment;
   const paymentPayload = decodeB64Json(recoveryHandle, {
     maxDecodedBytes: MAX_X402_HEADER_ENCODED_BYTES,
     maxEncodedBytes: MAX_X402_HEADER_ENCODED_BYTES,
@@ -308,22 +310,32 @@ function createRecoveryState({ target, encodedPayment, paymentRequired, accepted
   });
 }
 
-function recoveryStateForHandle(recoveryHandle) {
-  if (typeof recoveryHandle !== 'string' || recoveryHandle.length === 0 ||
-      recoveryHandle.length > MAX_X402_HEADER_ENCODED_BYTES) {
-    throw new Error('invalid payment recovery handle');
+function consumeRecoveryOwner(recoveryOwner) {
+  if ((typeof recoveryOwner !== 'object' && typeof recoveryOwner !== 'function') ||
+      recoveryOwner === null) {
+    throw new Error('invalid payment recovery owner');
   }
-  const recoveryState = REFLECT_APPLY(MAP_GET, RECOVERY_HANDLE_STATES, [recoveryHandle]);
-  if (!recoveryState) throw new Error('invalid payment recovery handle');
+  const recoveryState = REFLECT_APPLY(
+    WEAK_MAP_GET,
+    RECOVERY_OWNER_STATES,
+    [recoveryOwner],
+  );
+  if (!recoveryState || !REFLECT_APPLY(
+    WEAK_MAP_DELETE,
+    RECOVERY_OWNER_STATES,
+    [recoveryOwner],
+  )) {
+    throw new Error('invalid payment recovery owner');
+  }
   return recoveryState;
 }
 
-function exposeRecoveryHandle(owner, recoveryHandle, recoveryState) {
-  const existingState = REFLECT_APPLY(MAP_GET, RECOVERY_HANDLE_STATES, [recoveryHandle]);
-  attachRecoveryHandle(owner, recoveryHandle);
-  if (existingState === undefined) {
-    REFLECT_APPLY(MAP_SET, RECOVERY_HANDLE_STATES, [recoveryHandle, recoveryState]);
+function exposeRecoveryOwner(owner, recoveryHandle, recoveryState) {
+  if (REFLECT_APPLY(WEAK_MAP_GET, RECOVERY_OWNER_STATES, [owner]) !== undefined) {
+    throw new Error('invalid payment recovery owner');
   }
+  attachRecoveryHandle(owner, recoveryHandle);
+  REFLECT_APPLY(WEAK_MAP_SET, RECOVERY_OWNER_STATES, [owner, recoveryState]);
   return owner;
 }
 
@@ -382,13 +394,13 @@ async function submitBoundPayment({
   }
   const outcome = shieldPaidFetchOutcome({ response, paymentRequired, paymentPayload, settlement });
   if (HAS_OWN(settlement, 'retrySamePayment') && settlement.retrySamePayment === true) {
-    exposeRecoveryHandle(outcome, recoveryHandle, recoveryState);
+    exposeRecoveryOwner(outcome, recoveryHandle, recoveryState);
   }
   return outcome;
 }
 
 function outcomeUnknown(details, recoveryHandle, recoveryState) {
-  return exposeRecoveryHandle(
+  return exposeRecoveryOwner(
     new PaymentSubmissionOutcomeUnknownError(details),
     recoveryHandle,
     recoveryState,
