@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
+import { isDeepStrictEqual } from 'node:util';
 import * as sdk from 'znn-typescript-sdk';
 import { paymentIntentDigest } from '../src/canonical.js';
 import { createResourceServer } from '../src/resource-server.js';
@@ -508,6 +509,8 @@ test('ExactZenonFacilitator deterministic settlement integration scenarios', asy
     const required = challenge(accepted);
     const firstPayload = signedPayment(required, accepted, 17);
     const unrelatedPayload = signedPayment(required, accepted, 19);
+    const firstPreflight = await preflightZenonPayment(firstPayload, accepted, required);
+    const unrelatedPreflight = await preflightZenonPayment(unrelatedPayload, accepted, required);
     const { root, directory } = await journalFixture(t);
     const journal = new SettlementJournal({ directory, allowedRoot: root, maxRecords: 1 });
     const node = installSyntheticNode(t, {
@@ -521,17 +524,80 @@ test('ExactZenonFacilitator deterministic settlement integration scenarios', asy
     assert.equal(first.state, EVIDENCE_STATES.SUBMISSION_OUTCOME_UNKNOWN);
     assert.equal(first.retrySamePayment, true);
     assert.equal(node.counters.publish, 1);
+    const firstRecord = await journal.get(firstPreflight.authorizationKey, firstPreflight.transactionHash);
+    assert.equal(firstRecord !== null && typeof firstRecord === 'object', true);
 
-    const unrelated = await exact.settle(unrelatedPayload, accepted, required);
-    assert.equal(unrelated.success, false);
-    assert.equal(unrelated.state, EVIDENCE_STATES.VALIDATED);
-    assert.equal(unrelated.errorReason, 'journal_capacity_exceeded');
-    assert.equal(unrelated.retrySamePayment, false);
-    assert.equal(unrelated.deliveryState, 'NONE');
+    let internalSettlement;
+    let deliveries = 0;
+    const app = createResourceServer({
+      facilitator: {
+        settle: async (...args) => {
+          internalSettlement = await exact.settle(...args);
+          return internalSettlement;
+        },
+      },
+      requirement: accepted,
+      advertisedBaseUrl: 'https://resource.example',
+      resourceHandler: async () => ({ ok: true, deliveries: ++deliveries }),
+    });
+    const listening = await app.listen();
+    try {
+      const response = await submit(listening.url, unrelatedPayload);
+      const rawBody = await response.text();
+      assert.equal(rawBody.includes('journal_capacity_exceeded'), false);
+      assert.equal(
+        [...response.headers.values()].every(value => !value.includes('journal_capacity_exceeded')),
+        true,
+      );
+      let body;
+      try {
+        body = JSON.parse(rawBody);
+      } catch {
+        assert.fail('response body must be valid JSON');
+      }
+      const publicSettlement = decodeB64Json(response.headers.get(HEADERS.PAYMENT_RESPONSE));
+
+      assert.equal(response.status, 402);
+      assert.equal(
+        isDeepStrictEqual(decodeB64Json(response.headers.get(HEADERS.PAYMENT_REQUIRED)), required),
+        true,
+      );
+      assert.equal(isDeepStrictEqual(publicSettlement, {
+        success: false,
+        network: accepted.network,
+        transaction: unrelatedPreflight.transactionHash,
+        payer: unrelatedPreflight.payer,
+        state: EVIDENCE_STATES.VALIDATED,
+        errorReason: 'payment_settlement_failed',
+      }), true);
+      assert.equal(Object.hasOwn(publicSettlement, 'retrySamePayment'), false);
+      assert.equal(isDeepStrictEqual(body, { error: 'payment_settlement_failed' }), true);
+      assert.equal(response.headers.get('content-type') === 'application/json; charset=utf-8', true);
+      assert.equal(response.headers.get('cache-control') === 'private, no-store, max-age=0', true);
+      assert.equal(response.headers.get('vary') === 'PAYMENT-SIGNATURE', true);
+      assert.equal(JSON.stringify(publicSettlement).includes('journal_capacity_exceeded'), false);
+    } finally {
+      await app.close();
+    }
+
+    assert.equal(internalSettlement.success, false);
+    assert.equal(internalSettlement.state, EVIDENCE_STATES.VALIDATED);
+    assert.equal(internalSettlement.errorReason, 'journal_capacity_exceeded');
+    assert.equal(internalSettlement.retrySamePayment, false);
+    assert.equal(internalSettlement.deliveryState, 'NONE');
+    assert.equal(internalSettlement.network === accepted.network, true);
+    assert.equal(internalSettlement.transaction === unrelatedPreflight.transactionHash, true);
+    assert.equal(internalSettlement.payer === unrelatedPreflight.payer, true);
     assert.equal(node.counters.publish, 1);
+    assert.equal(deliveries, 0);
     const retained = await journal.list();
     assert.equal(retained.length, 1);
     assert.equal(retained[0].evidenceState, EVIDENCE_STATES.SUBMISSION_OUTCOME_UNKNOWN);
+    assert.equal(isDeepStrictEqual(retained[0], firstRecord), true);
+    assert.equal(
+      await journal.get(unrelatedPreflight.authorizationKey, unrelatedPreflight.transactionHash) === null,
+      true,
+    );
   });
 
   await t.test('initial journal file capacity fails before publication without same-payment retry', async t => {
