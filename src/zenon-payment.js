@@ -1344,14 +1344,24 @@ export function normalizeConfirmationDetail(detail) {
   };
 }
 
+function shieldPublicationOutcome(outcome) {
+  const descriptor = CREATE_OBJECT(null);
+  descriptor.value = undefined;
+  descriptor.enumerable = false;
+  descriptor.writable = false;
+  descriptor.configurable = false;
+  DEFINE_PROPERTY(outcome, 'then', descriptor);
+  return outcome;
+}
+
 export async function ensurePublished({ lookup, publish, observed = undefined }) {
   let known = observed;
   if (known === undefined) known = await lookup();
   if (known) {
-    return {
+    return shieldPublicationOutcome({
       state: known.confirmationDetail ? EVIDENCE_STATES.MOMENTUM_INCLUDED : EVIDENCE_STATES.SUBMISSION_ACKNOWLEDGED,
       observed: known,
-    };
+    });
   }
 
   // In this adapter the publication callback returns the asynchronous SDK
@@ -1367,7 +1377,10 @@ export async function ensurePublished({ lookup, publish, observed = undefined })
   }
   try {
     await publication;
-    return { state: EVIDENCE_STATES.SUBMISSION_ACKNOWLEDGED, observed: null };
+    return shieldPublicationOutcome({
+      state: EVIDENCE_STATES.SUBMISSION_ACKNOWLEDGED,
+      observed: null,
+    });
   } catch (publicationError) {
     try {
       known = await lookup();
@@ -1375,16 +1388,16 @@ export async function ensurePublished({ lookup, publish, observed = undefined })
       known = null;
     }
     if (known) {
-      return {
+      return shieldPublicationOutcome({
         state: known.confirmationDetail ? EVIDENCE_STATES.MOMENTUM_INCLUDED : EVIDENCE_STATES.SUBMISSION_ACKNOWLEDGED,
         observed: known,
-      };
+      });
     }
-    return {
+    return shieldPublicationOutcome({
       state: EVIDENCE_STATES.SUBMISSION_OUTCOME_UNKNOWN,
       observed: null,
       publicationError,
-    };
+    });
   }
 }
 
