@@ -159,7 +159,11 @@ export function createResourceServer({
           resolve();
         });
       });
-      return { host, port: actualPort, url: `http://${host}:${actualPort}` };
+      return shieldAuthorizationOutcome({
+        host,
+        port: actualPort,
+        url: `http://${host}:${actualPort}`,
+      });
     },
     async close() {
       if (!server.listening) return;

@@ -164,6 +164,140 @@ function mismatchIdentityField(value, {
   return changed;
 }
 
+test('resource server listen result ignores inherited then assimilation',
+  { concurrency: false, timeout: 30_000 }, async () => {
+    if (await isolatePrototypeSensitiveTest(
+      'resource server listen result ignores inherited then assimilation',
+      'X402_LISTEN_RESULT_ISOLATED',
+    )) return;
+
+    const requirement = await buildRequirement('mock');
+    const app = createResourceServer({
+      facilitator: new MockExactZenonFacilitator(),
+      requirement,
+      port: 0,
+    });
+    const getOwnPropertyDescriptor = Object.getOwnPropertyDescriptor;
+    const defineProperty = Object.defineProperty;
+    const hasOwn = Object.hasOwn;
+    const ownKeys = Reflect.ownKeys;
+    const previousThen = getOwnPropertyDescriptor(Object.prototype, 'then');
+    const controlledRejection = Symbol('controlled listen result rejection');
+    let inheritedThenObservations = 0;
+    let listenShapeObserved = false;
+    let listenerActiveWhenObserved = false;
+    let prototypeRestored = false;
+    let listenerClosed = false;
+    let outcome;
+
+    const descriptorsEqual = (left, right) => {
+      if (left === undefined || right === undefined) return left === right;
+      return left.value === right.value &&
+        left.get === right.get &&
+        left.set === right.set &&
+        left.writable === right.writable &&
+        left.enumerable === right.enumerable &&
+        left.configurable === right.configurable;
+    };
+
+    try {
+      defineProperty(Object.prototype, 'then', {
+        configurable: true,
+        get() {
+          if ((typeof this !== 'object' && typeof this !== 'function') || this === null) {
+            return undefined;
+          }
+          const keys = ownKeys(this);
+          const hostDescriptor = getOwnPropertyDescriptor(this, 'host');
+          const portDescriptor = getOwnPropertyDescriptor(this, 'port');
+          const urlDescriptor = getOwnPropertyDescriptor(this, 'url');
+          const isEnumerableData = descriptor => descriptor !== undefined &&
+            hasOwn(descriptor, 'value') &&
+            descriptor.enumerable === true &&
+            descriptor.writable === true &&
+            descriptor.configurable === true;
+          const isListenResult = keys.length === 3 &&
+            keys[0] === 'host' && keys[1] === 'port' && keys[2] === 'url' &&
+            isEnumerableData(hostDescriptor) &&
+            isEnumerableData(portDescriptor) &&
+            isEnumerableData(urlDescriptor) &&
+            typeof hostDescriptor.value === 'string' &&
+            Number.isInteger(portDescriptor.value) &&
+            typeof urlDescriptor.value === 'string';
+          if (!isListenResult) return undefined;
+          inheritedThenObservations += 1;
+          listenShapeObserved = true;
+          listenerActiveWhenObserved = app.server.listening;
+          return (_resolve, reject) => reject(controlledRejection);
+        },
+      });
+      outcome = await app.listen().then(
+        value => ({ status: 'fulfilled', value, listenerActive: app.server.listening }),
+        error => ({
+          status: 'rejected',
+          controlled: error === controlledRejection,
+          listenerActive: app.server.listening,
+        }),
+      );
+    } finally {
+      if (previousThen) defineProperty(Object.prototype, 'then', previousThen);
+      else delete Object.prototype.then;
+      prototypeRestored = descriptorsEqual(
+        getOwnPropertyDescriptor(Object.prototype, 'then'),
+        previousThen,
+      );
+      if (app.server.listening) await app.close();
+      listenerClosed = app.server.listening === false;
+    }
+
+    assert.equal(prototypeRestored, true, 'Object.prototype.then must be restored exactly');
+    assert.equal(listenerClosed, true, 'the ephemeral listener must close');
+    assert.equal(outcome.listenerActive, true, 'the listener must be active when listen settles');
+    const baselineFailure = outcome.status === 'rejected' &&
+      outcome.controlled === true &&
+      inheritedThenObservations === 1 &&
+      listenShapeObserved === true &&
+      listenerActiveWhenObserved === true;
+    const protectedFulfillment = outcome.status === 'fulfilled' &&
+      inheritedThenObservations === 0;
+    assert.equal(
+      protectedFulfillment,
+      true,
+      baselineFailure
+        ? 'listen result inherited-then assimilation reproduced'
+        : 'listen result outcome did not match the protected boundary',
+    );
+
+    const result = outcome.value;
+    const enumerableKeys = Object.keys(result);
+    assert.equal(
+      enumerableKeys.length === 3 &&
+        enumerableKeys[0] === 'host' &&
+        enumerableKeys[1] === 'port' &&
+        enumerableKeys[2] === 'url',
+      true,
+      'listen result enumerable keys must remain exact',
+    );
+    assert.equal(
+      typeof result.host === 'string' &&
+        Number.isInteger(result.port) &&
+        result.url === `http://${result.host}:${result.port}`,
+      true,
+      'listen result enumerable values must remain consistent',
+    );
+    const thenDescriptor = getOwnPropertyDescriptor(result, 'then');
+    assert.equal(
+      thenDescriptor !== undefined &&
+        hasOwn(thenDescriptor, 'value') &&
+        thenDescriptor.value === undefined &&
+        thenDescriptor.enumerable === false &&
+        thenDescriptor.writable === false &&
+        thenDescriptor.configurable === false,
+      true,
+      'listen result must own the immutable hidden then descriptor',
+    );
+  });
+
 test('recoverable non-positive settlement evidence is descriptor-safe and submitted-identity-only', async () => {
   const variants = ['mismatch', 'accessor'].flatMap(operation =>
     ['network', 'transaction', 'payer', 'authorizationKey']
