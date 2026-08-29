@@ -155,6 +155,16 @@ The current CLI supports one profile generation in the shared journal namespace.
 
 The offline wiring does not complete Issue #45. A separate operational gate must use a disposable, minimally funded testnet wallet, perform the first real settlement and delivery, and publish the agreed verification evidence. No such live run is claimed here.
 
+## Intermediate local four-node devnet lane
+
+The first devnet slice is an offline preparation boundary, not a selectable runtime profile. `src/zenon/operator-trusted-local-devnet-profile.js` parses one exact canonical `operator-trusted-self-created-local-four-node-devnet-v1` artifact and validates a supplied chain observation without RPC access. The artifact fixes its own acknowledgement, chain identifier 69, generated genesis predecessor and height-two Momentum, external-generator repository and immutable revision, node source repository and immutable revision, and container image by `sha256` digest. It has no environment override, floating image tag, endpoint, path, wallet, credential, node key, payment, transaction, or signature field.
+
+The dedicated check requires the frontier and height-two observations to agree with that artifact and returns branded non-authenticating evidence. This establishes only internal consistency for operator-supplied declarations. It does not authenticate the generator, source revision, container contents, RPC endpoint, chain identity, genesis, or frontier lineage. The fixed semantic claim is reproducible equivalent behavior rather than byte-for-byte recreation of a private network whose timestamps and secret random material change per generation.
+
+"Four-node" names the intended external operator workflow only; the artifact does not verify node count, roles, topology, or a topology digest. The exact false nonclaim records that limitation; a topology schema is deliberately deferred beyond this slice.
+
+The existing public-testnet profile, selector, acknowledgements, historical-height check, ordinary CLIs, and Gate-B runner remain unchanged. `0x3639/testnet` stays an external operator tool: no code is copied, vendored, patched, redistributed, or added as a dependency. A later, separately reviewed devnet operational slice would need protected operator material, local exposure controls, readiness wiring, isolated journal/evidence state, and offline tests before any run is authorized. Even a successful local run is an intermediate milestone; it cannot close Issue #45 and does not replace the later public-testnet evidence gate.
+
 ## Issue #45 staged live-evidence work
 
 PR A is the pure offline evidence contract only and is part of Issue #45 without closing it. Its six-path boundary adds `src/live-evidence.js`, `src/live-evidence-cli.js`, `test/live-evidence.test.js`, and narrow updates to `README.md`, `SECURITY.md`, and this plan. It changes no settlement, buyer, server, journal, wire, live-runtime, dependency, workflow, or ordinary CLI behavior.
@@ -239,4 +249,4 @@ A production facilitator still needs:
 
 The local suite covers strict wire shapes, amount/profile boundaries, hash/signature reconstruction, offline preflight, singleton ownership, poisoning, journal corruption/reload, state monotonicity, pagination, retries, duplicate delivery and ambiguous HTTP outcomes.
 
-Future isolated devnet tests should cover fresh accounts, Plasma and PoW, sequential and conflicting preparations, process restart at every journal transition, delayed inclusion, node disconnect/reconnect and merchant receive. No live-network integration test should run by default.
+Future isolated devnet tests should cover protected operator material, local-only exposure, fresh accounts, Plasma and PoW, sequential and conflicting preparations, process restart at every journal transition, delayed inclusion, node disconnect/reconnect and merchant receive. The committed offline artifact boundary must remain separate from the public-testnet policy, and no live-network integration test should run by default.
