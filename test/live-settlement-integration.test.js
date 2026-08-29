@@ -7,12 +7,19 @@ import { isDeepStrictEqual } from 'node:util';
 import * as sdk from 'znn-typescript-sdk';
 import { paymentIntentDigest } from '../src/canonical.js';
 import { LIVE_RUNTIME_ERROR_CODES } from '../src/live-runtime.js';
+import {
+  assertLiveEvidenceObserver,
+  createLiveEvidenceObserver,
+  recordLiveEvidencePhase,
+} from '../src/live-observation.js';
 import { createResourceServer } from '../src/resource-server.js';
 import { decodeB64Json, encodeB64Json, HEADERS } from '../src/x402-wire.js';
 import {
   computeBlockHash,
+  ensurePublished,
   ExactZenonClient,
   ExactZenonFacilitator,
+  probeZenonRoleReadiness,
   preflightZenonPayment,
 } from '../src/zenon-payment.js';
 import {
@@ -45,6 +52,29 @@ test('live payment capability routing is immutable and requires no SDK operation
     }],
   });
   assert.equal(Object.isFrozen(descriptor.value.routes[0].paymentFlows), true);
+});
+
+test('live lifecycle observers are explicit synchronous branded inputs', () => {
+  const observer = createLiveEvidenceObserver({
+    utcNow: () => '2026-01-01T00:00:00.000Z',
+    monotonicNow: () => 1,
+  });
+  assert.equal(assertLiveEvidenceObserver(observer), observer);
+  assert.throws(() => assertLiveEvidenceObserver({}), /live_observation_invalid/);
+  const event = recordLiveEvidencePhase(observer, 'buyer', 'buyer_owner_wait_started');
+  assert.deepEqual(event, {
+    sequence: 0,
+    phase: 'buyer_owner_wait_started',
+    role: 'buyer',
+    clockDomain: 'buyer-monotonic-v1',
+    utc: '2026-01-01T00:00:00.000Z',
+    monotonicMs: 1,
+  });
+  assert.equal(Object.isFrozen(event), true);
+  assert.throws(
+    () => recordLiveEvidencePhase(observer, 'buyer', 'publication_started'),
+    error => error?.code === 'live_observation_invalid' && error?.cause === undefined,
+  );
 });
 
 function requirement({ asset = sdk.ZNN_ZTS.toString() } = {}) {
@@ -180,6 +210,7 @@ function installSyntheticNode(t, behavior = {}) {
   const zenon = sdk.Zenon.getInstance();
   const original = {
     initialize: zenon.initialize,
+    prepareBlock: zenon.prepareBlock,
     clearConnection: zenon.clearConnection,
     ledger: zenon.ledger,
     stats: zenon.stats,
@@ -200,6 +231,7 @@ function installSyntheticNode(t, behavior = {}) {
     balanceLookup: 0,
     publish: 0,
     subscribe: 0,
+    prepareBlock: 0,
   };
 
   zenon.initialize = async () => {
@@ -211,6 +243,13 @@ function installSyntheticNode(t, behavior = {}) {
     counters.clearConnection += 1;
     zenon.client = undefined;
     return behavior.clearConnection?.();
+  };
+  zenon.prepareBlock = async (block, keyPair) => {
+    counters.prepareBlock += 1;
+    if (typeof behavior.prepareBlock === 'function') {
+      return behavior.prepareBlock(block, keyPair, counters.prepareBlock);
+    }
+    return original.prepareBlock.call(zenon, block, keyPair);
   };
   zenon.stats = {
     networkInfo: async () => ({
@@ -276,6 +315,7 @@ function installSyntheticNode(t, behavior = {}) {
 
   t.after(() => {
     zenon.initialize = original.initialize;
+    zenon.prepareBlock = original.prepareBlock;
     zenon.clearConnection = original.clearConnection;
     zenon.ledger = original.ledger;
     zenon.stats = original.stats;
@@ -298,6 +338,9 @@ function facilitator(journal, options = {}) {
   };
   if (Object.hasOwn(options, 'reconciliationRetentionMs')) {
     configuration.reconciliationRetentionMs = options.reconciliationRetentionMs;
+  }
+  if (Object.hasOwn(options, 'lifecycleObserver')) {
+    configuration.lifecycleObserver = options.lifecycleObserver;
   }
   return new ExactZenonFacilitator(configuration);
 }
@@ -2285,6 +2328,354 @@ test('ExactZenonFacilitator deterministic settlement integration scenarios', asy
     assert.equal((await journal.load()).revision, before.revision);
     assert.equal((await journal.get(preflight.authorizationKey, preflight.transactionHash)) !== null, true);
     assert.equal(await journal.getTombstone(preflight.authorizationKey, preflight.transactionHash), null);
+  });
+
+  await t.test('lifecycle observation records true facilitator boundaries without RPC drift', async t => {
+    let absentCounters;
+    let absentResult;
+    let absentResultText;
+    await t.test('observer absent', async t => {
+      const accepted = requirement();
+      const required = challenge(accepted);
+      const payload = signedPayment(required, accepted);
+      const { journal } = await journalFixture(t);
+      const included = observedBlock(payload.payload.transaction, { included: true });
+      let published = false;
+      const node = installSyntheticNode(t, {
+        lookup: () => published ? included : null,
+        publish: () => { published = true; },
+      });
+      const result = await facilitator(journal).settle(payload, accepted, required);
+      assert.equal(result.success, true);
+      absentResult = structuredClone(result);
+      absentResultText = JSON.stringify(result);
+      absentCounters = structuredClone(node.counters);
+    });
+
+    await t.test('observer present', async t => {
+      const accepted = requirement();
+      const required = challenge(accepted);
+      const payload = signedPayment(required, accepted);
+      const preflight = await preflightZenonPayment(payload, accepted, required);
+      const { journal } = await journalFixture(t);
+      const included = observedBlock(payload.payload.transaction, { included: true });
+      let published = false;
+      const node = installSyntheticNode(t, {
+        lookup: () => published ? included : null,
+        publish: () => { published = true; },
+      });
+      let monotonic = 0;
+      const observer = createLiveEvidenceObserver({
+        utcNow: () => '2026-01-01T00:00:00.000Z',
+        monotonicNow: () => ++monotonic,
+      });
+      const exact = facilitator(journal, { lifecycleObserver: observer });
+      const result = await exact.settle(payload, accepted, required);
+      assert.equal(result.success, true);
+      assert.deepEqual(structuredClone(result), absentResult);
+      assert.equal(JSON.stringify(result), absentResultText);
+      assert.deepEqual(structuredClone(node.counters), absentCounters);
+      const observations = exact.snapshotLiveEvidenceObservations();
+      assert.deepEqual(observations.map(event => event.phase), [
+        'facilitator_owner_wait_started',
+        'facilitator_owner_acquired',
+        'facilitator_readiness_started',
+        'facilitator_readiness_finished',
+        'publication_started',
+        'publication_acknowledged',
+        'inclusion_wait_started',
+        'momentum_inclusion_observed',
+        'facilitator_owner_released',
+      ]);
+      const inclusion = observations.find(event => event.phase === 'momentum_inclusion_observed');
+      const record = await journal.get(preflight.authorizationKey, preflight.transactionHash);
+      assert.equal(inclusion.utc, record.momentumEvidence.observedAt);
+    });
+  });
+
+  await t.test('inclusion observation precedes its gated durable write and occurs once', async t => {
+    const accepted = requirement();
+    const required = challenge(accepted);
+    const payload = signedPayment(required, accepted);
+    const { journal } = await journalFixture(t);
+    const included = observedBlock(payload.payload.transaction, { included: true });
+    let published = false;
+    installSyntheticNode(t, {
+      lookup: () => published ? included : null,
+      publish: () => { published = true; },
+    });
+    let monotonic = 0;
+    const observer = createLiveEvidenceObserver({
+      utcNow: () => '2026-01-01T00:00:00.000Z',
+      monotonicNow: () => ++monotonic,
+    });
+    const exact = facilitator(journal, { lifecycleObserver: observer });
+    const writeEntered = deferred();
+    const releaseWrite = deferred();
+    const originalUpdateEvidence = journal.updateEvidence.bind(journal);
+    let inclusionWrites = 0;
+    journal.updateEvidence = async (...args) => {
+      if (args[2] === EVIDENCE_STATES.MOMENTUM_INCLUDED) {
+        inclusionWrites += 1;
+        const observedBeforeWrite = exact.snapshotLiveEvidenceObservations()
+          .filter(event => event.phase === 'momentum_inclusion_observed');
+        assert.equal(observedBeforeWrite.length, 1);
+        writeEntered.resolve();
+        await releaseWrite.promise;
+      }
+      return originalUpdateEvidence(...args);
+    };
+    const settlement = exact.settle(payload, accepted, required);
+    await writeEntered.promise;
+    try {
+      assert.equal(
+        exact.snapshotLiveEvidenceObservations()
+          .filter(event => event.phase === 'momentum_inclusion_observed').length,
+        1,
+      );
+    } finally {
+      releaseWrite.resolve();
+    }
+    assert.equal((await settlement).success, true);
+    assert.equal(inclusionWrites, 1);
+    assert.equal(
+      exact.snapshotLiveEvidenceObservations()
+        .filter(event => event.phase === 'momentum_inclusion_observed').length,
+      1,
+    );
+  });
+
+  await t.test('observer clock faults and hostile thenables cannot change settlement or ACK durability', async t => {
+    const accepted = requirement();
+    const required = challenge(accepted);
+    const payload = signedPayment(required, accepted);
+    const preflight = await preflightZenonPayment(payload, accepted, required);
+    const { journal } = await journalFixture(t);
+    const included = observedBlock(payload.payload.transaction, { included: true });
+    let published = false;
+    installSyntheticNode(t, {
+      lookup: () => published ? included : null,
+      publish: () => { published = true; },
+    });
+    let thenReads = 0;
+    const hostileThenable = {};
+    Object.defineProperty(hostileThenable, 'then', {
+      get() { thenReads += 1; return () => new Promise(() => {}); },
+    });
+    const observer = createLiveEvidenceObserver({
+      utcNow: () => hostileThenable,
+      monotonicNow: () => hostileThenable,
+    });
+    const exact = facilitator(journal, { lifecycleObserver: observer });
+    const result = await exact.settle(payload, accepted, required);
+    assert.equal(result.success, true);
+    assert.equal(thenReads, 0);
+    assert.deepEqual(exact.snapshotLiveEvidenceObservations(), []);
+    assert.equal(
+      (await journal.get(preflight.authorizationKey, preflight.transactionHash)).evidenceState,
+      EVIDENCE_STATES.MOMENTUM_INCLUDED,
+    );
+  });
+
+  await t.test('synchronous publication failure precedes publication-start observation', async () => {
+    const observer = createLiveEvidenceObserver({
+      utcNow: () => '2026-01-01T00:00:00.000Z',
+      monotonicNow: () => 1,
+    });
+    const observations = [];
+    await assert.rejects(ensurePublished({
+      lookup: async () => null,
+      publish: () => { throw new Error('synthetic-local-failure'); },
+      lifecycleObserver: observer,
+      lifecycleObservations: observations,
+    }));
+    assert.deepEqual(observations, []);
+
+    const uncertainObservations = [];
+    const uncertain = await ensurePublished({
+      lookup: async () => null,
+      publish: () => Promise.reject(new Error('synthetic-publication-rejection')),
+      lifecycleObserver: observer,
+      lifecycleObservations: uncertainObservations,
+    });
+    assert.equal(uncertain.state, EVIDENCE_STATES.SUBMISSION_OUTCOME_UNKNOWN);
+    assert.deepEqual(
+      uncertainObservations.map(event => event.phase),
+      ['publication_started'],
+    );
+  });
+
+  await t.test('owner release is observed once before the next queued acquisition on setup failure', async t => {
+    const accepted = requirement();
+    const firstRequired = challenge(accepted);
+    const secondRequired = challenge(accepted, 'https://resource.example/other-paid');
+    const firstPayload = signedPayment(firstRequired, accepted, 35);
+    const secondPayload = signedPayment(secondRequired, accepted, 36);
+    const firstJournal = (await journalFixture(t)).journal;
+    const secondJournal = (await journalFixture(t)).journal;
+    const firstEntered = deferred();
+    const releaseFirst = deferred();
+    let initializeCalls = 0;
+    installSyntheticNode(t, {
+      initialize: async () => {
+        initializeCalls += 1;
+        if (initializeCalls === 1) {
+          firstEntered.resolve();
+          await releaseFirst.promise;
+        }
+        throw new Error('synthetic-setup-failure');
+      },
+    });
+    let monotonic = 0;
+    const observer = createLiveEvidenceObserver({
+      utcNow: () => '2026-01-01T00:00:00.000Z',
+      monotonicNow: () => ++monotonic,
+    });
+    const first = facilitator(firstJournal, { lifecycleObserver: observer });
+    const second = facilitator(secondJournal, { lifecycleObserver: observer });
+    const firstRun = first.settle(firstPayload, accepted, firstRequired);
+    await firstEntered.promise;
+    const secondRun = second.settle(secondPayload, accepted, secondRequired);
+    releaseFirst.resolve();
+    await Promise.all([firstRun, secondRun]);
+    const firstEvents = first.snapshotLiveEvidenceObservations();
+    const secondEvents = second.snapshotLiveEvidenceObservations();
+    const firstAcquired = firstEvents.find(event => event.phase === 'facilitator_owner_acquired');
+    const firstReleased = firstEvents.filter(event => event.phase === 'facilitator_owner_released');
+    const secondAcquired = secondEvents.find(event => event.phase === 'facilitator_owner_acquired');
+    const secondReleased = secondEvents.filter(event => event.phase === 'facilitator_owner_released');
+    assert.equal(firstReleased.length, 1);
+    assert.equal(secondReleased.length, 1);
+    assert.equal(firstAcquired.sequence < firstReleased[0].sequence, true);
+    assert.equal(firstReleased[0].sequence < secondAcquired.sequence, true);
+    assert.equal(secondAcquired.sequence < secondReleased[0].sequence, true);
+  });
+
+  await t.test('wallet-free readiness rejects offline errors before SDK effects and performs one asset read', async t => {
+    const customAsset = sdk.TokenStandard.fromCore(
+      Buffer.alloc(sdk.TokenStandard.coreSize, 5),
+    ).toString();
+    let keyStoreCalls = 0;
+    let signingCalls = 0;
+    const originalFromMnemonic = sdk.KeyStore.fromMnemonic;
+    const originalSign = sdk.KeyPair.prototype.sign;
+    sdk.KeyStore.fromMnemonic = () => {
+      keyStoreCalls += 1;
+      throw new Error('wallet access prohibited');
+    };
+    sdk.KeyPair.prototype.sign = () => {
+      signingCalls += 1;
+      throw new Error('signing prohibited');
+    };
+    t.after(() => {
+      sdk.KeyStore.fromMnemonic = originalFromMnemonic;
+      sdk.KeyPair.prototype.sign = originalSign;
+    });
+    const node = installSyntheticNode(t, {
+      prepareBlock: () => { throw new Error('preparation prohibited'); },
+    });
+    const environment = {
+      ZENON_LIVE_ACK: 'I_UNDERSTAND_TESTNET_ONLY',
+      ZENON_NETWORK_ID: '3',
+      ZENON_RPC_URL: 'ws://rpc.invalid',
+    };
+    await assert.rejects(probeZenonRoleReadiness({
+      role: 'buyer',
+      asset: 'not-a-token-standard',
+      expectedChainProfile: PROFILE,
+      authenticateChainProfile: async () => ({ ...PROFILE }),
+      environment,
+      rpcTimeoutMs: 100,
+    }));
+    await assert.rejects(probeZenonRoleReadiness({
+      role: 'buyer',
+      asset: customAsset,
+      expectedChainProfile: { ...PROFILE, chainIdentifier: '0' },
+      authenticateChainProfile: async () => ({ ...PROFILE }),
+      environment,
+      rpcTimeoutMs: 100,
+    }));
+    assert.equal(node.counters.initialize, 0);
+    assert.equal(node.counters.assetLookup, 0);
+    const ready = await probeZenonRoleReadiness({
+      role: 'buyer',
+      asset: customAsset,
+      expectedChainProfile: PROFILE,
+      authenticateChainProfile: async () => ({ ...PROFILE }),
+      environment,
+      rpcTimeoutMs: 100,
+    });
+    assert.deepEqual(ready, { ready: true, role: 'buyer' });
+    assert.equal(node.counters.initialize, 1);
+    assert.equal(node.counters.assetLookup, 1);
+    assert.equal(node.counters.prepareBlock, 0);
+    assert.equal(keyStoreCalls, 0);
+    assert.equal(signingCalls, 0);
+  });
+
+  await t.test('buyer observation preserves complete payload and RPC behavior', async t => {
+    const customAsset = sdk.TokenStandard.fromCore(
+      Buffer.alloc(sdk.TokenStandard.coreSize, 5),
+    ).toString();
+    const accepted = requirement({ asset: customAsset });
+    const required = challenge(accepted);
+    let absentPayload;
+    let absentCounters;
+    const run = async (nested, lifecycleObserver) => {
+      const keyPair = sdk.KeyPair.fromPrivateKey(Buffer.alloc(32, 37));
+      const originalFromMnemonic = sdk.KeyStore.fromMnemonic;
+      sdk.KeyStore.fromMnemonic = () => ({ getKeyPair: () => keyPair });
+      nested.after(() => { sdk.KeyStore.fromMnemonic = originalFromMnemonic; });
+      const node = installSyntheticNode(nested, {
+        prepareBlock: block => {
+          block.chainIdentifier = Number(PROFILE.chainIdentifier);
+          block.address = keyPair.getAddress();
+          block.height = 1;
+          block.momentumAcknowledged = new sdk.HashHeight(
+            sdk.Hash.digest(Buffer.from('synthetic buyer acknowledged momentum')),
+            1,
+          );
+          block.nonce = '0000000000000000';
+          block.publicKey = keyPair.getPublicKey();
+          block.hash = computeBlockHash(block, sdk);
+          block.signature = keyPair.sign(block.hash.getBytes());
+          return block;
+        },
+      });
+      const configuration = {
+        mnemonic: 'offline-placeholder-only',
+        authenticateChainProfile: async () => ({ ...PROFILE }),
+        rpcTimeoutMs: 100,
+      };
+      if (lifecycleObserver !== undefined) configuration.lifecycleObserver = lifecycleObserver;
+      const client = new ExactZenonClient(configuration);
+      const payload = await client.createPaymentPayload(required, accepted);
+      return { client, node, payload };
+    };
+    await t.test('observer absent', async nested => {
+      const result = await run(nested, undefined);
+      absentPayload = JSON.stringify(result.payload);
+      absentCounters = structuredClone(result.node.counters);
+      assert.deepEqual(result.client.snapshotLiveEvidenceObservations(), []);
+    });
+    await t.test('observer present', async nested => {
+      const observer = createLiveEvidenceObserver({
+        utcNow: () => '2026-01-01T00:00:00.000Z',
+        monotonicNow: (() => { let value = 0; return () => ++value; })(),
+      });
+      const result = await run(nested, observer);
+      assert.equal(JSON.stringify(result.payload), absentPayload);
+      assert.deepEqual(structuredClone(result.node.counters), absentCounters);
+      assert.deepEqual(result.client.snapshotLiveEvidenceObservations().map(event => event.phase), [
+        'buyer_owner_wait_started',
+        'buyer_owner_acquired',
+        'buyer_readiness_started',
+        'buyer_readiness_finished',
+        'prepare_block_started',
+        'prepare_block_finished',
+        'buyer_owner_released',
+      ]);
+    });
   });
 
   // This scenario permanently poisons the module-wide live runtime and must be
