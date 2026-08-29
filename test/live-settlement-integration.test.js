@@ -6,6 +6,7 @@ import { tmpdir } from 'node:os';
 import { isDeepStrictEqual } from 'node:util';
 import * as sdk from 'znn-typescript-sdk';
 import { paymentIntentDigest } from '../src/canonical.js';
+import { LIVE_RUNTIME_ERROR_CODES } from '../src/live-runtime.js';
 import { createResourceServer } from '../src/resource-server.js';
 import { decodeB64Json, encodeB64Json, HEADERS } from '../src/x402-wire.js';
 import {
@@ -136,6 +137,34 @@ function observedBlock(transaction, { included = false } = {}) {
   return block;
 }
 
+function accountInfo(address, {
+  asset = sdk.ZNN_ZTS.toString(),
+  balance = 1n,
+  blockCount = 0,
+  includeAsset = true,
+  tokenStandard = asset,
+  balanceInfoMap,
+} = {}) {
+  const selectedTokenStandard = sdk.TokenStandard.parse(tokenStandard);
+  const token = new sdk.Token(
+    'Synthetic',
+    'SYN',
+    '',
+    balance < 0n ? 0n : balance,
+    8,
+    address,
+    selectedTokenStandard,
+    balance < 0n ? 0n : balance,
+    false,
+    false,
+    false,
+  );
+  const balances = balanceInfoMap ?? (includeAsset ? {
+    [asset]: new sdk.BalanceInfoListItem(token, balance),
+  } : {});
+  return new sdk.AccountInfo(address, blockCount, balances);
+}
+
 async function journalFixture(t, options = {}) {
   const root = await mkdtemp(join(tmpdir(), 'zenon-x402-live-integration-'));
   t.after(() => rm(root, { recursive: true, force: true }));
@@ -168,6 +197,7 @@ function installSyntheticNode(t, behavior = {}) {
     frontier: 0,
     unconfirmed: 0,
     assetLookup: 0,
+    balanceLookup: 0,
     publish: 0,
     subscribe: 0,
   };
@@ -212,6 +242,13 @@ function installSyntheticNode(t, behavior = {}) {
       counters.lookup += 1;
       if (typeof behavior.lookup === 'function') return behavior.lookup(counters.lookup, hash);
       return null;
+    },
+    getAccountInfoByAddress: async address => {
+      counters.balanceLookup += 1;
+      if (typeof behavior.accountInfo === 'function') {
+        return behavior.accountInfo(address, counters.balanceLookup);
+      }
+      return accountInfo(address);
     },
     getFrontierAccountBlock: async () => {
       counters.frontier += 1;
@@ -540,6 +577,7 @@ test('ExactZenonFacilitator deterministic settlement integration scenarios', asy
     const first = await exact.settle(payload, accepted, required);
     assert.equal(first.success, true);
     assert.equal(first.state, EVIDENCE_STATES.MOMENTUM_INCLUDED);
+    assert.equal(node.counters.balanceLookup, 0);
     assert.equal(node.counters.publish, 0);
     assert.ok(events.indexOf('asset') < events.indexOf('lookup'));
     assert.ok(events.indexOf('lookup') < events.indexOf('journal:validated'));
@@ -555,6 +593,446 @@ test('ExactZenonFacilitator deterministic settlement integration scenarios', asy
     assert.equal(retry.state, EVIDENCE_STATES.MOMENTUM_INCLUDED);
     assert.equal(node.counters.publish, 0);
     assert.equal(node.counters.initialize, initializeCalls);
+  });
+
+  await t.test('first-attempt payer balance preflight is bounded and reconciliation-safe', async t => {
+    async function submitSettlement(exact, accepted, payload) {
+      let internal;
+      let deliveries = 0;
+      const app = createResourceServer({
+        facilitator: {
+          settle: async (...args) => {
+            internal = await exact.settle(...args);
+            return internal;
+          },
+        },
+        requirement: accepted,
+        advertisedBaseUrl: 'https://resource.example',
+        resourceHandler: async () => ({ ok: true, deliveries: ++deliveries }),
+      });
+      const listening = await app.listen();
+      try {
+        const response = await submit(listening.url, payload);
+        const rawBody = await response.text();
+        let body;
+        try {
+          body = JSON.parse(rawBody);
+        } catch {
+          assert.fail('response body must be valid JSON');
+        }
+        const responseHeader = response.headers.get(HEADERS.PAYMENT_RESPONSE);
+        return {
+          status: response.status,
+          rawBody,
+          body,
+          settlement: responseHeader === null ? null : decodeB64Json(responseHeader),
+          hasRequired: response.headers.get(HEADERS.PAYMENT_REQUIRED) !== null,
+          hasResponse: responseHeader !== null,
+          headerValuesArePrivate: [...response.headers.values()].every(value =>
+            !value.includes('insufficient_payer_balance') &&
+            !value.includes('payer_balance_')),
+          internal,
+          deliveries,
+        };
+      } finally {
+        await app.close();
+      }
+    }
+
+    await t.test('exact sufficient balance proceeds and verify performs no balance observation', async t => {
+      const accepted = requirement();
+      const required = challenge(accepted);
+      const payload = signedPayment(required, accepted, 81);
+      const { journal } = await journalFixture(t);
+      const included = observedBlock(payload.payload.transaction, { included: true });
+      let published = false;
+      const node = installSyntheticNode(t, {
+        accountInfo: address => accountInfo(address, { balance: BigInt(accepted.amount) }),
+        lookup: () => published ? included : null,
+        publish: async () => { published = true; },
+      });
+      const exact = facilitator(journal);
+
+      const verification = await exact.verify(payload, accepted, required);
+      assert.equal(verification.isValid, true);
+      assert.equal(node.counters.balanceLookup, 0);
+
+      const settlement = await exact.settle(payload, accepted, required);
+      assert.equal(settlement.success, true);
+      assert.equal(settlement.state, EVIDENCE_STATES.MOMENTUM_INCLUDED);
+      assert.equal(node.counters.balanceLookup, 1);
+      assert.equal(node.counters.publish, 1);
+    });
+
+    for (const variant of [
+      {
+        name: 'one-unit-short balance',
+        observe: address => accountInfo(address, { balance: 0n }),
+      },
+      {
+        name: 'missing requested asset entry',
+        observe: address => accountInfo(address, { includeAsset: false }),
+      },
+    ]) {
+      await t.test(`${variant.name} is a private definite rejection before durable effects`, async t => {
+        const accepted = requirement();
+        const required = challenge(accepted);
+        const payload = signedPayment(required, accepted, 82);
+        const { journal } = await journalFixture(t);
+        const node = installSyntheticNode(t, {
+          accountInfo: variant.observe,
+          lookup: () => null,
+        });
+        const response = await submitSettlement(facilitator(journal), accepted, payload);
+
+        assert.equal(response.status, 402);
+        assert.equal(response.hasRequired, true);
+        assert.equal(response.hasResponse, true);
+        assert.equal(response.headerValuesArePrivate, true);
+        assert.equal(response.rawBody.includes('insufficient_payer_balance'), false);
+        assert.equal(response.rawBody.includes('payer_balance_'), false);
+        assert.equal(isDeepStrictEqual(response.body, { error: 'payment_settlement_failed' }), true);
+        assert.equal(response.settlement.errorReason, 'payment_settlement_failed');
+        assert.equal(Object.hasOwn(response.settlement, 'retrySamePayment'), false);
+        assert.equal(response.internal.errorReason, 'insufficient_payer_balance');
+        assert.equal(response.internal.retrySamePayment, false);
+        assert.equal(response.internal.state, EVIDENCE_STATES.VALIDATED);
+        assert.equal(response.internal.deliveryState, DELIVERY_STATES.NONE);
+        assert.equal(response.deliveries, 0);
+        assert.equal(node.counters.balanceLookup, 1);
+        assert.equal(node.counters.lookup, 2);
+        assert.equal(node.counters.frontier, 0);
+        assert.equal(node.counters.unconfirmed, 0);
+        assert.equal(node.counters.subscribe, 0);
+        assert.equal(node.counters.publish, 0);
+        assert.equal((await journal.list()).length, 0);
+      });
+    }
+
+    const uncertaintyVariants = [
+      {
+        name: 'balance RPC rejection',
+        observe: () => { throw new Error(); },
+        expectedBalanceCalls: 1,
+        expectedLookups: 1,
+      },
+      {
+        name: 'balance read timeout',
+        observe: () => {
+          const error = new Error();
+          error.code = LIVE_RUNTIME_ERROR_CODES.READ_TIMEOUT;
+          throw error;
+        },
+        expectedBalanceCalls: 1,
+        expectedLookups: 1,
+      },
+      {
+        name: 'null account observation',
+        observe: () => null,
+      },
+      {
+        name: 'account accessor',
+        setup: address => {
+          let reads = 0;
+          const value = Object.create(sdk.AccountInfo.prototype);
+          Object.defineProperties(value, {
+            address: { enumerable: true, get: () => { reads += 1; return address; } },
+            blockCount: { enumerable: true, value: 0 },
+            balanceInfoMap: { enumerable: true, value: {} },
+          });
+          return { value, assertSafe: () => assert.equal(reads, 0) };
+        },
+      },
+      {
+        name: 'account proxy',
+        setup: address => {
+          let descriptorReads = 0;
+          const value = new Proxy(accountInfo(address), {
+            getOwnPropertyDescriptor(target, property) {
+              descriptorReads += 1;
+              return Reflect.getOwnPropertyDescriptor(target, property);
+            },
+          });
+          return { value, assertSafe: () => assert.equal(descriptorReads, 0) };
+        },
+      },
+      {
+        name: 'payer mismatch',
+        observe: () => accountInfo(sdk.Address.parse(requirement().payTo)),
+      },
+      {
+        name: 'account-height mismatch',
+        observe: address => accountInfo(address, { blockCount: 1 }),
+      },
+      {
+        name: 'polluted balance map',
+        observe: address => accountInfo(address, {
+          balanceInfoMap: Object.create({ [sdk.ZNN_ZTS.toString()]: {} }),
+        }),
+      },
+      {
+        name: 'token-standard mismatch',
+        observe: address => accountInfo(address, { tokenStandard: sdk.QSR_ZTS.toString() }),
+      },
+      {
+        name: 'negative balance',
+        observe: address => accountInfo(address, { balance: -1n }),
+      },
+      {
+        name: 'non-bigint balance',
+        setup: address => {
+          const value = accountInfo(address);
+          value.balanceInfoMap[sdk.ZNN_ZTS.toString()].balance = '1';
+          return { value };
+        },
+      },
+      {
+        name: 'selected balance accessor',
+        setup: address => {
+          let reads = 0;
+          const value = accountInfo(address);
+          Object.defineProperty(value.balanceInfoMap[sdk.ZNN_ZTS.toString()], 'balance', {
+            enumerable: true,
+            configurable: true,
+            get: () => { reads += 1; return 1n; },
+          });
+          return { value, assertSafe: () => assert.equal(reads, 0) };
+        },
+      },
+      {
+        name: 'non-object selected balance entry',
+        setup: address => {
+          const value = accountInfo(address);
+          value.balanceInfoMap[sdk.ZNN_ZTS.toString()] = 1n;
+          return { value };
+        },
+      },
+      {
+        name: 'non-first null account',
+        observe: () => null,
+        height: 2,
+      },
+      {
+        name: 'second exact lookup rejection',
+        observe: address => accountInfo(address),
+        lookup: call => {
+          if (call === 2) throw new Error();
+          return null;
+        },
+      },
+      {
+        name: 'second exact lookup malformed evidence',
+        observe: address => accountInfo(address),
+        lookup: call => call === 2 ? {} : null,
+      },
+    ];
+    for (const variant of uncertaintyVariants) {
+      await t.test(`${variant.name} retains same-payment recovery and has no downstream effect`, async t => {
+        const accepted = requirement();
+        const required = challenge(accepted);
+        const payload = signedPayment(required, accepted, 83, variant.height === 2 ? {
+          height: 2,
+          previousHash: sdk.Hash.digest(Buffer.from('synthetic prior account block')),
+        } : {});
+        const { journal } = await journalFixture(t);
+        let assertSafe = () => {};
+        const node = installSyntheticNode(t, {
+          accountInfo: address => {
+            if (variant.setup) {
+              const prepared = variant.setup(address);
+              assertSafe = prepared.assertSafe ?? assertSafe;
+              return prepared.value;
+            }
+            return variant.observe(address);
+          },
+          lookup: variant.lookup ?? (() => null),
+        });
+        const response = await submitSettlement(facilitator(journal), accepted, payload);
+
+        assertSafe();
+        assert.equal(response.status, 409);
+        assert.equal(response.hasResponse, true);
+        assert.equal(response.headerValuesArePrivate, true);
+        assert.equal(response.rawBody.includes('insufficient_payer_balance'), false);
+        assert.equal(response.rawBody.includes('payer_balance_'), false);
+        assert.equal(response.body.action, 'reuse_and_reconcile_same_payment');
+        assert.equal(response.settlement.retrySamePayment, true);
+        assert.equal(response.internal.retrySamePayment, true);
+        assert.equal(response.internal.state, EVIDENCE_STATES.VALIDATED);
+        assert.equal(response.internal.deliveryState, DELIVERY_STATES.NONE);
+        assert.equal(response.deliveries, 0);
+        assert.equal(node.counters.balanceLookup, variant.expectedBalanceCalls ?? 1);
+        assert.equal(node.counters.lookup, variant.expectedLookups ?? 2);
+        assert.equal(node.counters.frontier, 0);
+        assert.equal(node.counters.unconfirmed, 0);
+        assert.equal(node.counters.subscribe, 0);
+        assert.equal(node.counters.publish, 0);
+        assert.equal((await journal.list()).length, 0);
+      });
+    }
+
+    await t.test('second exact lookup overrides an insufficient snapshot with included evidence', async t => {
+      const accepted = requirement();
+      const required = challenge(accepted);
+      const payload = signedPayment(required, accepted, 84);
+      const { journal } = await journalFixture(t);
+      const included = observedBlock(payload.payload.transaction, { included: true });
+      const node = installSyntheticNode(t, {
+        accountInfo: address => accountInfo(address, { balance: 0n }),
+        lookup: call => call === 2 ? included : null,
+      });
+      const settlement = await facilitator(journal).settle(payload, accepted, required);
+
+      assert.equal(settlement.success, true);
+      assert.equal(settlement.state, EVIDENCE_STATES.MOMENTUM_INCLUDED);
+      assert.equal(node.counters.balanceLookup, 1);
+      assert.equal(node.counters.lookup, 2);
+      assert.equal(node.counters.frontier, 0);
+      assert.equal(node.counters.unconfirmed, 0);
+      assert.equal(node.counters.subscribe, 0);
+      assert.equal(node.counters.publish, 0);
+    });
+
+    await t.test('a durable record appearing during the balance read prevents definite rejection', async t => {
+      const accepted = requirement();
+      const required = challenge(accepted);
+      const payload = signedPayment(required, accepted, 85);
+      const { journal } = await journalFixture(t);
+      let persisted = false;
+      const node = installSyntheticNode(t, {
+        accountInfo: async address => {
+          if (!persisted) {
+            persisted = true;
+            await persistRecord(
+              journal,
+              payload,
+              accepted,
+              required,
+              EVIDENCE_STATES.SUBMISSION_OUTCOME_UNKNOWN,
+            );
+          }
+          return accountInfo(address, { balance: 0n });
+        },
+        lookup: () => null,
+      });
+      const settlement = await facilitator(journal).settle(payload, accepted, required);
+
+      assert.equal(settlement.success, false, 'concurrent durable result remains non-success');
+      assert.equal(settlement.retrySamePayment, true, 'concurrent durable result remains recoverable');
+      assert.equal(
+        settlement.state,
+        EVIDENCE_STATES.SUBMISSION_OUTCOME_UNKNOWN,
+        'concurrent durable evidence is retained',
+      );
+      assert.equal(node.counters.balanceLookup, 1, 'one balance lookup completed');
+      assert.equal(node.counters.lookup >= 2, true, 'the second exact lookup completed');
+      assert.equal(node.counters.frontier, 0, 'frontier remained untouched');
+      assert.equal(node.counters.unconfirmed, 0, 'unconfirmed pool remained untouched');
+      assert.equal(node.counters.publish, 0, 'publication remained untouched');
+    });
+
+    await t.test('catch-time durable lookup overrides a definite balance rejection', async t => {
+      const accepted = requirement();
+      const required = challenge(accepted);
+      const payload = signedPayment(required, accepted, 90);
+      const { journal } = await journalFixture(t);
+      const originalFind = journal.findByTransactionHash.bind(journal);
+      const originalGet = journal.get.bind(journal);
+      let findCalls = 0;
+      let catchGetCalls = 0;
+      journal.findByTransactionHash = async transactionHash => {
+        findCalls += 1;
+        if (findCalls === 3) {
+          await persistRecord(
+            journal,
+            payload,
+            accepted,
+            required,
+            EVIDENCE_STATES.SUBMISSION_OUTCOME_UNKNOWN,
+          );
+          return null;
+        }
+        return originalFind(transactionHash);
+      };
+      journal.get = async (...args) => {
+        catchGetCalls += 1;
+        return originalGet(...args);
+      };
+      const node = installSyntheticNode(t, {
+        accountInfo: address => accountInfo(address, { balance: 0n }),
+        lookup: () => null,
+      });
+      const response = await submitSettlement(facilitator(journal), accepted, payload);
+
+      assert.equal(response.status, 409);
+      assert.equal(response.body.action, 'reuse_and_reconcile_same_payment');
+      assert.equal(response.settlement.retrySamePayment, true);
+      assert.equal(response.internal.retrySamePayment, true);
+      assert.equal(response.internal.state, EVIDENCE_STATES.SUBMISSION_OUTCOME_UNKNOWN);
+      assert.equal(response.rawBody.includes('insufficient_payer_balance'), false);
+      assert.equal(response.headerValuesArePrivate, true);
+      assert.equal(findCalls, 3);
+      assert.equal(catchGetCalls, 1);
+      assert.equal(node.counters.balanceLookup, 1);
+      assert.equal(node.counters.lookup, 2);
+      assert.equal(node.counters.frontier, 0);
+      assert.equal(node.counters.unconfirmed, 0);
+      assert.equal(node.counters.subscribe, 0);
+      assert.equal(node.counters.publish, 0);
+      assert.equal(response.deliveries, 0);
+    });
+
+    await t.test('a preseeded VALIDATED record alone bypasses the balance filter', async t => {
+      const accepted = requirement();
+      const required = challenge(accepted);
+      const payload = signedPayment(required, accepted, 89);
+      const { journal } = await journalFixture(t);
+      await persistRecord(journal, payload, accepted, required);
+      const included = observedBlock(payload.payload.transaction, { included: true });
+      let published = false;
+      const node = installSyntheticNode(t, {
+        accountInfo: () => { throw new Error(); },
+        lookup: () => published ? included : null,
+        publish: async () => { published = true; },
+      });
+      const settlement = await facilitator(journal).settle(payload, accepted, required);
+
+      assert.equal(settlement.success, true);
+      assert.equal(settlement.state, EVIDENCE_STATES.MOMENTUM_INCLUDED);
+      assert.equal(node.counters.balanceLookup, 0);
+      assert.equal(node.counters.publish, 1);
+    });
+
+    await t.test('active durable retries and exact observations bypass the balance filter', async t => {
+      const accepted = requirement();
+      const required = challenge(accepted);
+
+      const durablePayload = signedPayment(required, accepted, 86);
+      const durableFixture = await journalFixture(t);
+      await persistRecord(
+        durableFixture.journal,
+        durablePayload,
+        accepted,
+        required,
+        EVIDENCE_STATES.SUBMISSION_OUTCOME_UNKNOWN,
+      );
+      const durableIncluded = observedBlock(durablePayload.payload.transaction, { included: true });
+      const durableNode = installSyntheticNode(t, { lookup: () => durableIncluded });
+      const durableResult = await facilitator(durableFixture.journal).settle(durablePayload, accepted, required);
+      assert.equal(durableResult.success, true);
+      assert.equal(durableNode.counters.balanceLookup, 0);
+      assert.equal(durableNode.counters.publish, 0);
+
+      const observedPayload = signedPayment(required, accepted, 88);
+      const observedFixture = await journalFixture(t);
+      const observedIncluded = observedBlock(observedPayload.payload.transaction, { included: true });
+      const observedNode = installSyntheticNode(t, { lookup: () => observedIncluded });
+      const observedResult = await facilitator(observedFixture.journal)
+        .settle(observedPayload, accepted, required);
+      assert.equal(observedResult.success, true);
+      assert.equal(observedNode.counters.balanceLookup, 0);
+      assert.equal(observedNode.counters.publish, 0);
+    });
   });
 
   await t.test('journal capacity rejects a new unrelated payment without same-payment retry', async t => {
@@ -782,6 +1260,7 @@ test('ExactZenonFacilitator deterministic settlement integration scenarios', asy
     const { journal } = await journalFixture(t);
     const node = installSyntheticNode(t, {
       lookup: () => null,
+      accountInfo: address => accountInfo(address, { blockCount: 1 }),
       frontier: () => ({
         height: 1,
         hash: sdk.Hash.digest(Buffer.from('stale frontier')),
@@ -1261,6 +1740,7 @@ test('ExactZenonFacilitator deterministic settlement integration scenarios', asy
     assert.equal(terminal.retrySamePayment, false);
     assert.equal(terminal.errorReason, 'payment_reconciliation_terminal');
     assert.equal(node.counters.initialize, initializeCount);
+    assert.equal(node.counters.balanceLookup, 0);
     assert.equal(node.counters.publish, 0);
     assert.equal(node.counters.frontier, 0);
     assert.equal(node.counters.unconfirmed, 0);

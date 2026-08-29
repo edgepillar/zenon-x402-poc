@@ -1,4 +1,5 @@
 import { performance } from 'node:perf_hooks';
+import { types as utilTypes } from 'node:util';
 import { paymentIntentDigest, sha256Hex } from './canonical.js';
 import {
   createPaymentCapabilities,
@@ -45,6 +46,17 @@ const CANONICAL_DECIMAL = /^(0|[1-9]\d*)$/;
 const BASE64 = /^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/;
 const CREATE_OBJECT = Object.create;
 const DEFINE_PROPERTY = Object.defineProperty;
+const GET_OWN_PROPERTY_DESCRIPTOR = Object.getOwnPropertyDescriptor;
+const GET_PROTOTYPE_OF = Object.getPrototypeOf;
+const REFLECT_OWN_KEYS = Reflect.ownKeys;
+const REFLECT_APPLY = Reflect.apply;
+const ARRAY_IS_ARRAY = Array.isArray;
+const HAS_OWN = Object.hasOwn;
+const BUFFER_IS_BUFFER = Buffer.isBuffer;
+const BUFFER_EQUALS = Buffer.prototype.equals;
+const OBJECT_PROTOTYPE = Object.prototype;
+const BUFFER_PROTOTYPE = Buffer.prototype;
+const IS_PROXY = utilTypes.isProxy;
 const ACCOUNT_BLOCK_FIELDS = new Set([
   'version', 'chainIdentifier', 'blockType', 'hash', 'previousHash', 'height',
   'momentumAcknowledged', 'address', 'toAddress', 'amount', 'tokenStandard',
@@ -323,6 +335,143 @@ export function validateObservedAccountBlock(observed, preflight, sdk) {
     safetyError('observed_transaction_mismatch');
   }
   return observed;
+}
+
+function descriptorSafeObject(value, expectedPrototype, requiredKeys) {
+  if (value === null || typeof value !== 'object') {
+    safetyError('payer_balance_observation_unavailable');
+  }
+  let prototype;
+  let keys;
+  try {
+    if (IS_PROXY(value) || ARRAY_IS_ARRAY(value)) {
+      safetyError('payer_balance_observation_unavailable');
+    }
+    prototype = GET_PROTOTYPE_OF(value);
+    keys = REFLECT_OWN_KEYS(value);
+  } catch {
+    safetyError('payer_balance_observation_unavailable');
+  }
+  if (prototype !== expectedPrototype) safetyError('payer_balance_observation_unavailable');
+  for (let index = 0; index < keys.length; index += 1) {
+    const key = keys[index];
+    if (typeof key !== 'string') safetyError('payer_balance_observation_unavailable');
+    let descriptor;
+    try {
+      descriptor = GET_OWN_PROPERTY_DESCRIPTOR(value, key);
+    } catch {
+      safetyError('payer_balance_observation_unavailable');
+    }
+    if (!descriptor || !descriptor.enumerable || !HAS_OWN(descriptor, 'value')) {
+      safetyError('payer_balance_observation_unavailable');
+    }
+  }
+  const values = CREATE_OBJECT(null);
+  for (let index = 0; index < requiredKeys.length; index += 1) {
+    const key = requiredKeys[index];
+    let descriptor;
+    try {
+      descriptor = GET_OWN_PROPERTY_DESCRIPTOR(value, key);
+    } catch {
+      safetyError('payer_balance_observation_unavailable');
+    }
+    if (!descriptor || !descriptor.enumerable || !HAS_OWN(descriptor, 'value')) {
+      safetyError('payer_balance_observation_unavailable');
+    }
+    DEFINE_PROPERTY(values, key, {
+      value: descriptor.value,
+      enumerable: true,
+      writable: false,
+      configurable: false,
+    });
+  }
+  return values;
+}
+
+function descriptorSafeSdkBytes(value, expectedPrototype, field, expectedLength) {
+  const snapshot = descriptorSafeObject(value, expectedPrototype, [field]);
+  const bytes = snapshot[field];
+  let prototype;
+  try {
+    if (IS_PROXY(bytes)) safetyError('payer_balance_observation_unavailable');
+    prototype = GET_PROTOTYPE_OF(bytes);
+  } catch {
+    safetyError('payer_balance_observation_unavailable');
+  }
+  if (!BUFFER_IS_BUFFER(bytes) || prototype !== BUFFER_PROTOTYPE || bytes.length !== expectedLength) {
+    safetyError('payer_balance_observation_unavailable');
+  }
+  return bytes;
+}
+
+function equalSdkBytes(left, right) {
+  try {
+    return REFLECT_APPLY(BUFFER_EQUALS, left, [right]);
+  } catch {
+    safetyError('payer_balance_observation_unavailable');
+  }
+}
+
+function validatePayerBalanceObservation(observed, preflight, requirements, sdk) {
+  if (observed === null) {
+    safetyError('payer_balance_observation_unavailable');
+  }
+
+  const account = descriptorSafeObject(
+    observed,
+    sdk.AccountInfo.prototype,
+    ['address', 'blockCount', 'balanceInfoMap'],
+  );
+  if (!validSafeInteger(account.blockCount) || account.blockCount !== preflight.block.height - 1) {
+    safetyError('payer_balance_observation_unavailable');
+  }
+
+  const observedAddress = descriptorSafeObject(
+    account.address,
+    sdk.Address.prototype,
+    ['hrp', 'core'],
+  );
+  const expectedAddress = descriptorSafeObject(
+    preflight.block.address,
+    sdk.Address.prototype,
+    ['hrp', 'core'],
+  );
+  if (observedAddress.hrp !== expectedAddress.hrp ||
+      !equalSdkBytes(
+        descriptorSafeSdkBytes(account.address, sdk.Address.prototype, 'core', sdk.Address.coreSize),
+        descriptorSafeSdkBytes(preflight.block.address, sdk.Address.prototype, 'core', sdk.Address.coreSize),
+      )) {
+    safetyError('payer_balance_observation_unavailable');
+  }
+
+  const balanceMap = descriptorSafeObject(account.balanceInfoMap, OBJECT_PROTOTYPE, []);
+  let selectedDescriptor;
+  try {
+    selectedDescriptor = GET_OWN_PROPERTY_DESCRIPTOR(account.balanceInfoMap, requirements.asset);
+  } catch {
+    safetyError('payer_balance_observation_unavailable');
+  }
+  if (selectedDescriptor === undefined) return 0n;
+  if (!selectedDescriptor.enumerable || !HAS_OWN(selectedDescriptor, 'value')) {
+    safetyError('payer_balance_observation_unavailable');
+  }
+  const selected = descriptorSafeObject(
+    selectedDescriptor.value,
+    sdk.BalanceInfoListItem.prototype,
+    ['token', 'balance'],
+  );
+  if (typeof selected.balance !== 'bigint' || selected.balance < 0n) {
+    safetyError('payer_balance_observation_unavailable');
+  }
+  const token = descriptorSafeObject(selected.token, sdk.Token.prototype, ['tokenStandard']);
+  if (!equalSdkBytes(
+    descriptorSafeSdkBytes(token.tokenStandard, sdk.TokenStandard.prototype, 'core', sdk.TokenStandard.coreSize),
+    descriptorSafeSdkBytes(preflight.tokenStandard, sdk.TokenStandard.prototype, 'core', sdk.TokenStandard.coreSize),
+  )) {
+    safetyError('payer_balance_observation_unavailable');
+  }
+  void balanceMap;
+  return selected.balance;
 }
 
 function validateObservedJournalRecord(observed, record, sdk) {
@@ -1547,7 +1696,7 @@ export class ExactZenonFacilitator {
             error?.code === LIVE_RUNTIME_ERROR_CODES.POISONED) throw error;
         safetyError('account_lookup_failed', error);
       }
-      return observed ? validateObservedAccountBlock(observed, preflight, sdk) : null;
+      return observed === null ? null : validateObservedAccountBlock(observed, preflight, sdk);
     };
 
     // Another facilitator instance may have journaled this attempt while this
@@ -1569,6 +1718,45 @@ export class ExactZenonFacilitator {
     // between that evidence and its durable journal update.
     await this.#verifyChainAndAsset(preflight, connection, callRead);
     let observed = await lookup();
+    if (!initialRecord && observed === null) {
+      let accountObservation;
+      try {
+        accountObservation = await callRead(
+          'ledger.getAccountInfoByAddress',
+          () => zenon.ledger.getAccountInfoByAddress(preflight.block.address),
+        );
+      } catch (error) {
+        if (error?.code === LIVE_RUNTIME_ERROR_CODES.READ_TIMEOUT ||
+            error?.code === LIVE_RUNTIME_ERROR_CODES.POISONED) throw error;
+        safetyError('payer_balance_lookup_failed');
+      }
+
+      // The extra account lookup widens the exact-hash race. Recheck the
+      // signed transaction before using this node-local balance observation.
+      observed = await lookup();
+      if (observed === null) {
+        const concurrentTerminal = await this.#terminalTombstone(preflight, requirements, attempt);
+        if (concurrentTerminal) return concurrentTerminal;
+        initialRecord = await this.#journalCall(
+          attempt,
+          () => this.journal.findByTransactionHash(preflight.transactionHash),
+        );
+        if (initialRecord) {
+          assertJournalRecordMatches(initialRecord, preflight);
+          noteRecordEvidence(attempt, initialRecord);
+        } else {
+          const observedBalance = validatePayerBalanceObservation(
+            accountObservation,
+            preflight,
+            requirements,
+            sdk,
+          );
+          if (observedBalance < preflight.block.amount) {
+            safetyError('insufficient_payer_balance');
+          }
+        }
+      }
+    }
     if (observed?.confirmationDetail) {
       attempt.evidenceState = EVIDENCE_STATES.MOMENTUM_INCLUDED;
     } else if (observed) {
@@ -1946,6 +2134,8 @@ function shouldRetrySamePayment(error, evidenceState, runtimePoisoned) {
     'connected_node_chain_profile_mismatch',
     'asset_lookup_failed',
     'account_lookup_failed',
+    'payer_balance_lookup_failed',
+    'payer_balance_observation_unavailable',
     'frontier_lookup_failed',
     'malformed_frontier_account_block',
     'malformed_observed_account_block',
