@@ -84,6 +84,24 @@ Inside the owned SDK session, the policy requires one exact height-2 identity tu
 
 No live payment or real-node evidence is claimed by this offline integration. Issue #45 remains open until a separate operational run records settlement and delivery evidence.
 
+### Offline live-evidence contract
+
+Issue #45 now has a pure offline evidence-contract layer. It does not contact an RPC endpoint, load a wallet, read a settlement journal, start either ordinary CLI, sign or publish a block, or capture a live exchange. No live run has occurred, and no runtime capture or operational harness is included in this slice.
+
+The three import-safe commands operate only on explicit files and emit one fixed status line without paths, identifiers, digests, or diagnostics:
+
+```sh
+node src/live-evidence-cli.js template --out NEW_TEMPLATE_FILE
+node src/live-evidence-cli.js assemble --manifest MANIFEST_FILE --chain CHAIN_FILE --http HTTP_FILE --journal JOURNAL_FILE --timing TIMING_FILE --out NEW_BUNDLE_FILE
+node src/live-evidence-cli.js verify --bundle BUNDLE_FILE
+```
+
+`template` creates an unexecuted checklist. `assemble` accepts five exact version-1 fragments, validates their offline cryptographic and semantic bindings, derives the Plasma/PoW description from the signed account block, and writes a new bundle without overwriting an existing file. `verify` revalidates the complete bundle without needing private keys or network access. Successful verification means only that the strict schema, internal digests, signed-block preflight, and cross-section bindings are consistent.
+
+The bundle intentionally excludes the raw encoded payment and all recovery material. A complete public signed account block is nevertheless linkable payment material; its payer, payee, amount, asset, public key, signature, nonce, transaction identity and timing fields may be published only after a separate Gate-B authorization. Every public string also requires human review. Unkeyed bundle digests detect alteration but do not authenticate the bundle, its source, the HTTP exchange, the connected node, or the chain observation.
+
+Gate B freezes the intended disclosure to a disposable, minimally funded, single-use testnet wallet after human review. The public evidence must include the complete exact six-field default protected response body, not only its digest, and the absolute UTC timestamps used for correlation, not relative-only timing. This deliberate disclosure carries low but nonzero linkability and is not a release, activation, authenticated-chain, or production-readiness claim.
+
 Ordinary live CLI output withholds the requirement, settlement object, payer, transaction identifier, listening URL, and protected response body. A future evidence package must be produced by a separate, explicitly reviewed workflow that discloses only its agreed public artifacts.
 
 The live adapter remains fail-closed. Do not use it with real funds, mainnet, or a valuable wallet.

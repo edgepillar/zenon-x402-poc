@@ -97,6 +97,29 @@ The account information is one node's process-local, TOCTOU-prone observation. I
 
 These checks remain observations of one node and cannot eliminate external frontier races. Process-local per-payer ordering does not coordinate client-side preparation, other processes, other facilitators or independent publication.
 
+## Offline live-evidence contract
+
+The Issue #45 evidence contract is a pure offline format and verifier. It does not contact a node, load a wallet, read a journal, start the server or buyer, capture an exchange, sign, publish, or deliver. Its file-only CLI accepts explicit regular files, reads each input once under a fixed limit, refuses symlink inputs and explicitly symlinked output parents, and creates a new restrictive output without overwriting an existing entry. Every success and failure signal is fixed and cause-free.
+
+Version 1 permits only the following deliberately public evidence after separate Gate-B publication authority and human review for a disposable, minimally funded, single-use testnet wallet:
+
+- the exact one-off challenge and sole selected offer, including full `ResourceInfo` optional-member presence and ordered duplicate tags;
+- the complete public signed account block and captured Momentum confirmation;
+- decoded initial and paid HTTP observations, the fixed protected body bytes, and the allowlisted response metadata;
+- one asserted final journal record and its source schema, revision and counts;
+- allowlisted timing events, role-local monotonic durations and UTC correlation assertions;
+- repository/profile provenance assertions and exact false nonclaims.
+
+The Gate-B package must publish the complete exact six-field default protected response body, not only a digest, and the absolute UTC timestamps used for correlation, not relative-only timing. These disclosures are intentional and linkable even though the wallet is single-use.
+
+Raw encoded payment headers, same-payment recovery material, wallet material, credentials, private or RPC endpoint details, and arbitrary protected bodies are structurally excluded. The public resource location and optional public icon location are deliberately included; both must be bounded absolute public HTTP(S) locations without credentials, query or fragment delimiters, and the protected resource itself requires HTTPS. The complete challenge and signed block can still reconstruct linkable payment material, so excluding the raw payment is data minimization rather than replay prevention. Automated validation cannot prove that secrets are absent: a human Gate-A review of every public string remains mandatory before publication.
+
+The parser rejects duplicate decoded keys, unknown or missing fields, accessors, proxies, custom prototypes, cycles, sparse arrays, symbols, unsafe numbers, negative zero, unpaired surrogates and all configured size/depth/count excesses. Canonical JSON sorts decoded object keys without Unicode normalization, preserves array order and duplicates, uses ordinary JSON primitive escaping and safe-integer number spelling, and excludes the single serialization newline from digests. SHA-256 is fixed in code. Each content section and the final bundle use distinct version-1 domain prefixes. These unkeyed digests provide only internal consistency and alteration detection, not authenticity or authorship.
+
+The exact false version-1 nonclaim keys are `authoritativeCurrentNetworkRelease`, `signedTrustArtifact`, `authenticatedRpcEndpoint`, `canonicalRemoteChainIdentity`, `verifiedFrontierLineage`, `authenticatedChainIdentity`, `canonicalNetworkIdentity`, `irreversibleFinality`, `facilitatorAuthorship`, `productionReadiness`, `phase2C`, `hardwareWallet`, `crossProcessExactlyOnce`, `replayPreventionProvided`, `resourceAuthorizationProvided`, `bundleOriginAuthenticated`, `bundleIntegrityAuthenticated`, `chainObservationIndependentlyAttested`, `httpExchangeIndependentlyAttested`, `facilitatorPublicationProven`, `buyerReceiptCryptographicallyProven`, `recipientReceiveObserved`, and `secretAbsenceProven`. Every key must be present and false. In particular, `recipientReceiveObserved` means that receipt by the recipient was not observed; it is not a balance assertion. These keys also state exactly that there is no authoritative current release, signed trust artifact, authenticated RPC endpoint, canonical remote-chain identity, verified frontier lineage, release, or activation claim.
+
+A valid bundle therefore establishes none of those claims. Timing is descriptive: monotonic values are compared only within one role-scoped clock domain, while UTC fields provide operator-supplied cross-domain ordering assertions rather than remote-clock proof. Plasma/PoW classification is derived from signed fields but does not prove PoW validity or Plasma sufficiency.
+
 ## Other known non-production properties
 
 - no authenticated genesis/checkpoint implementation or SPV verification;

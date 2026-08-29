@@ -155,6 +155,18 @@ The current CLI supports one profile generation in the shared journal namespace.
 
 The offline wiring does not complete Issue #45. A separate operational gate must use a disposable, minimally funded testnet wallet, perform the first real settlement and delivery, and publish the agreed verification evidence. No such live run is claimed here.
 
+## Issue #45 staged live-evidence work
+
+PR A is the pure offline evidence contract only and is part of Issue #45 without closing it. Its six-path boundary adds `src/live-evidence.js`, `src/live-evidence-cli.js`, `test/live-evidence.test.js`, and narrow updates to `README.md`, `SECURITY.md`, and this plan. It changes no settlement, buyer, server, journal, wire, live-runtime, dependency, workflow, or ordinary CLI behavior.
+
+Evidence version 1 uses five exact typed fragments: a manifest, an operator-supplied declared complete public account block and declared confirmation observation, a decoded HTTP exchange, an asserted final journal record, and externally captured timing assertions. Offline validation proves only structural and cryptographic consistency among those declared observations. It does not independently authenticate inclusion or finality, facilitator publication, HTTP delivery, or buyer receipt. Assembly requires one advertised offer at selected index zero, reuses the existing network-free Zenon preflight and binding primitives, cross-binds the signed block, resource, intent, authorization, confirmation, response and delivered journal state, and derives the descriptive Plasma/PoW class from signed fields. The verifier performs the same complete validation on a detached snapshot and never queries a node.
+
+The parser detects duplicate decoded keys before object construction and applies exact schemas, descriptor-safe snapshots, bounded depth/count/byte limits, deterministic canonical JSON, eight section digests and one domain-separated final digest. Timing events are exact and once-only, sequences preserve the cross-role protocol edges, role-scoped monotonic clocks recompute durations, and UTC values supply only explicit correlation and ordering assertions. The template is a null checklist rather than a fragment or bundle. The file CLI exposes only `template`, `assemble`, and `verify`, accepts no environment, standard-input, network, wallet, journal or server capability, and emits fixed sanitized status lines.
+
+PR B remains the next separate offline-tested slice. It must design the explicit role-separated operational runner, fresh protected journal selection, exact HTTPS/readiness gate, same-payment recovery-owner loop, optional fail-closed allowlisted observations, role-local monotonic timing and UTC correlation capture, and Plasma/PoW observation seam. It must remain opt-in and must not change ordinary CLI disclosure or default runtime activation.
+
+Gate B is a separate authorization boundary for the actual public-testnet endpoint, a disposable, minimally funded, single-use wallet, one payment, live capture and deliberate publication of linkable evidence after human review. Its frozen publication package includes the complete exact six-field default protected response body rather than only a digest, plus absolute UTC correlation timestamps rather than relative-only timing. Neither PR A nor PR B performs that run, closes Issue #45, claims authenticated chain identity, enters Phase 2C, adds hardware-wallet support, or establishes production readiness.
+
 ## Frontier architecture
 
 `prepareBlock()` fixes `height` and `previousHash`. Two payments prepared from one payer frontier can conflict.
