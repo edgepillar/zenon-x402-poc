@@ -131,6 +131,10 @@ Amounts are canonical positive decimal strings in atomic units. The maximum acce
 
 Both `verify()` and `settle()` run the same strict offline preflight before opening an SDK connection. It validates exact object shapes, x402 version, network label, an HTTPS live resource URL, full requirement equality, resource binding, chain profile, account-block fields, recipient, ZTS, amount, intent digest, locally reconstructed hash, strict Ed25519 signature, payer/public-key binding, and block/profile chain-identifier equality.
 
+Only a node-owned first `settle()` attempt with no durable record or tombstone and no exact transaction observation applies an additional payer-balance filter. After chain and asset validation, it reads the signed payer's account information through the bounded SDK read path, validates the account height and requested-ZTS entry without using accessors, and rejects an aligned balance below the signed amount before frontier inspection, subscription, any settlement-record write, publication, or delivery. A successfully returned account observation is followed by another exact-transaction lookup before its balance is interpreted; an exact transaction or concurrent durable record takes the existing reconciliation path instead. `verify()`, retries with durable evidence, tombstone matches, and already-observed transactions do not use this filter.
+
+This balance check is only an obvious-insufficiency observation from one configured node. It is process-local and TOCTOU-prone, reserves no funds, does not authenticate chain state, and cannot exclude another process, publisher, stale view, or dishonest node. Unavailable, malformed, mismatched, or otherwise uncertain account information preserves same-payment recovery rather than becoming a definite rejection. The filter does not validate Plasma or PoW sufficiency, and no live payment or real-node evidence is claimed by this offline change.
+
 Token lookup, node readiness, frontier lookup and unconfirmed-block inspection occur only after offline cryptographic validation succeeds.
 
 ### SDK ownership and deadlines
