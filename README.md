@@ -84,6 +84,16 @@ Inside the owned SDK session, the policy requires one exact height-2 identity tu
 
 No live payment or real-node evidence is claimed by this offline integration. Issue #45 remains open until a separate operational run records settlement and delivery evidence.
 
+### Offline local four-node devnet profile artifact
+
+The repository also defines a separate `operator-trusted-self-created-local-four-node-devnet-v1` preparation lane. It is not registered with the ordinary buyer/server CLIs or the public-testnet runner and cannot use either public-testnet acknowledgement. The dedicated parser accepts only one bounded canonical public artifact with the exact local-devnet acknowledgement, chain identifier 69, the generated genesis and height-two relationship, the immutable external-generator revision, the node source revision, and a `sha256` container-image digest. Missing provenance, floating tags such as `latest`, unknown fields, noncanonical JSON, and public-testnet substitution fail closed.
+
+The artifact contains public configuration assertions only. Generated wallets, operator credentials, node keys, RPC or resource endpoints, filesystem locations, transactions, and signatures are outside its schema and must remain private. The offline observation check cross-binds the declared chain identifier, genesis predecessor, exact height-two Momentum, reported count, and frontier height. It remains an operator-supplied self-report: it does not authenticate the node, chain, generator, source revision, or image digest.
+
+"Four-node" names the intended external operator workflow only; the artifact does not verify node count, roles, topology, or a topology digest. The fixed `fourNodeTopologyVerified: false` nonclaim prevents the lane name from being treated as topology evidence.
+
+`0x3639/testnet` is treated only as an external operator tool; no source from it is copied, vendored, patched, redistributed, or installed as a package dependency here. Because the external generator uses fresh timestamps and private random material, the supported evidence claim is reproducible equivalent behavior, never byte-for-byte recreation of the same private network. This offline slice does not run Docker, a builder, a node, a wallet, or a payment. A future local-devnet success would be an intermediate research milestone only; Issue #45 stays open and the separately authorized public-testnet gate remains required.
+
 ### Offline live-evidence contract
 
 Issue #45 now has a pure offline evidence-contract layer. It does not contact an RPC endpoint, load a wallet, read a settlement journal, start either ordinary CLI, sign or publish a block, or capture a live exchange. No live run has occurred, and PR A included no runtime capture or operational harness.
@@ -277,6 +287,8 @@ src/
     payment-mechanism.js      additive mechanism boundary
   zenon/
     chain-profile.js          additive chain-profile boundary
+    operator-trusted-local-devnet-profile.js
+                              offline local-devnet artifact boundary
     operator-trusted-testnet-profile.js  historical CLI trust policy
     wallet-adapter.js         additive wallet boundary
     transaction-planner.js    additive planner boundary
@@ -298,6 +310,7 @@ test/
   cli-output.test.js
   conformance.test.js
   e2e.test.js
+  operator-trusted-local-devnet-profile.test.js
   operator-trusted-testnet-profile.test.js
   journal.test.js
   live-runtime.test.js
