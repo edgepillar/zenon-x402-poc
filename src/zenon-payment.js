@@ -26,6 +26,10 @@ import {
   isOperatorTrustedTestnetEvidence,
   isOperatorTrustedTestnetPolicy,
 } from './zenon/operator-trusted-testnet-profile.js';
+import {
+  assertLiveEvidenceObserver,
+  recordLiveEvidencePhase,
+} from './live-observation.js';
 
 const TESTNET_NETWORK_ID = 3;
 const MAX_DATA_BYTES = 32;
@@ -77,6 +81,8 @@ const EVIDENCE_RANK = new Map([
 let cachedDeps;
 const CLIENT_RUNTIME_ENVIRONMENTS = new WeakMap();
 const FACILITATOR_RUNTIME_ENVIRONMENTS = new WeakMap();
+const CLIENT_LIFECYCLE_OBSERVATIONS = new WeakMap();
+const FACILITATOR_LIFECYCLE_OBSERVATIONS = new WeakMap();
 
 async function loadZenonDeps() {
   if (cachedDeps) return cachedDeps;
@@ -103,6 +109,58 @@ function safetyError(code, cause) {
 function runtimeEnvironment(value) {
   if (!isNonArrayObject(value)) safetyError('invalid_runtime_environment');
   return value;
+}
+
+function configuredLifecycleObserver(value) {
+  if (value === undefined) return undefined;
+  try {
+    assertLiveEvidenceObserver(value);
+  } catch {
+    safetyError('live_observation_invalid');
+  }
+  return value;
+}
+
+function appendObservation(buffer, event) {
+  if (!buffer || !event) return;
+  DEFINE_PROPERTY(buffer, String(buffer.length), {
+    value: event,
+    enumerable: true,
+    configurable: true,
+    writable: true,
+  });
+}
+
+function recordLifecycle(observer, buffer, role, phase, capturedUtc) {
+  if (observer === undefined) return undefined;
+  try {
+    const recorded = recordLiveEvidencePhase(observer, role, phase);
+    if (!recorded) return undefined;
+    const event = capturedUtc === undefined
+      ? recorded
+      : Object.freeze({
+        sequence: recorded.sequence,
+        phase: recorded.phase,
+        role: recorded.role,
+        clockDomain: recorded.clockDomain,
+        utc: capturedUtc,
+        monotonicMs: recorded.monotonicMs,
+      });
+    appendObservation(buffer, event);
+    return event;
+  } catch {
+    // Observation is optional evidence. It must never change, delay, or expose
+    // the settlement operation it describes.
+    return undefined;
+  }
+}
+
+function snapshotLifecycleObservations(buffer) {
+  const output = [];
+  if (buffer) {
+    for (let index = 0; index < buffer.length; index += 1) appendObservation(output, buffer[index]);
+  }
+  return Object.freeze(output);
 }
 
 function requireLiveAck(environment = process.env) {
@@ -665,6 +723,10 @@ async function withOwnedZenonSession({
   environment,
   runtime,
   rpcTimeoutMs,
+  lifecycleObserver,
+  lifecycleRole,
+  lifecycleObservations,
+  readinessWork,
   work,
 }) {
   const hasAuthenticatorInput = authenticateChainProfile !== undefined;
@@ -675,21 +737,42 @@ async function withOwnedZenonSession({
   }
   if (hasAuthenticatorInput && hasOperatorPolicy) safetyError('chain_trust_policy_conflict');
   if (!hasAuthenticator && !hasOperatorPolicy) safetyError('node_network_identity_unavailable');
+  if (lifecycleObserver !== undefined && lifecycleRole !== 'buyer' &&
+      lifecycleRole !== 'facilitator') safetyError('live_observation_invalid');
+  recordLifecycle(
+    lifecycleObserver,
+    lifecycleObservations,
+    lifecycleRole,
+    `${lifecycleRole}_owner_wait_started`,
+  );
   return runtime.withOwner(owner, async scope => {
-    const { sdk, ed } = await loadZenonDeps();
-    const networkId = configuredTestnetNetworkId(environment);
-    const rpcUrl = parseRpcUrl(environment);
-    sdk.Zenon.setNetworkID(networkId);
-    const zenon = sdk.Zenon.getInstance();
-    if (zenon.client) {
-      try {
-        clearConnection(zenon);
-      } catch (error) {
-        scope.poison(error);
-        safetyError('sdk_connection_cleanup_failed', error);
-      }
-    }
+    recordLifecycle(
+      lifecycleObserver,
+      lifecycleObservations,
+      lifecycleRole,
+      `${lifecycleRole}_owner_acquired`,
+    );
+    let zenon;
     try {
+      recordLifecycle(
+        lifecycleObserver,
+        lifecycleObservations,
+        lifecycleRole,
+        `${lifecycleRole}_readiness_started`,
+      );
+      const { sdk, ed } = await loadZenonDeps();
+      const networkId = configuredTestnetNetworkId(environment);
+      const rpcUrl = parseRpcUrl(environment);
+      sdk.Zenon.setNetworkID(networkId);
+      zenon = sdk.Zenon.getInstance();
+      if (zenon.client) {
+        try {
+          clearConnection(zenon);
+        } catch (error) {
+          scope.poison(error);
+          safetyError('sdk_connection_cleanup_failed', error);
+        }
+      }
       try {
         await runRead(scope, zenon, rpcTimeoutMs, 'zenon.initialize', () => zenon.initialize(rpcUrl));
       } catch (error) {
@@ -708,19 +791,112 @@ async function withOwnedZenonSession({
         },
       );
       sdk.Zenon.setChainID(readiness.chainId);
-      return await work({ sdk, ed, zenon, ...readiness }, scope);
+      let readinessFinished = false;
+      const finishReadiness = () => {
+        if (readinessFinished) return;
+        readinessFinished = true;
+        recordLifecycle(
+          lifecycleObserver,
+          lifecycleObservations,
+          lifecycleRole,
+          `${lifecycleRole}_readiness_finished`,
+        );
+      };
+      const connection = { sdk, ed, zenon, ...readiness, finishReadiness };
+      if (readinessWork !== undefined) {
+        await readinessWork(connection, scope);
+        finishReadiness();
+      }
+      return await work(connection, scope);
     } finally {
       const alreadyPoisoned = runtime.poisoned;
       try {
-        clearConnection(zenon);
+        if (zenon !== undefined) clearConnection(zenon);
       } catch (error) {
         scope.poison(error);
         // A prior RPC timeout keeps its stronger evidence classification.
         // Otherwise failed teardown becomes the current operation's error as
         // well as permanently preventing another singleton session.
         if (!alreadyPoisoned) safetyError('sdk_connection_cleanup_failed', error);
+      } finally {
+        // Record while this callback still owns the runtime. The runtime may
+        // grant the next waiter as soon as this callback returns.
+        recordLifecycle(
+          lifecycleObserver,
+          lifecycleObservations,
+          lifecycleRole,
+          `${lifecycleRole}_owner_released`,
+        );
       }
     }
+  });
+}
+
+/**
+ * Check one role's configured node/profile/asset readiness without a wallet.
+ * This remains a node-local operator-trusted observation, not authentication.
+ */
+export async function probeZenonRoleReadiness({
+  role,
+  asset,
+  expectedChainProfile,
+  authenticateChainProfile,
+  authenticateNodeNetwork,
+  operatorTrustedChainPolicy,
+  environment = process.env,
+  rpcTimeoutMs,
+} = {}) {
+  if (role !== 'buyer' && role !== 'facilitator') safetyError('invalid_readiness_role');
+  const selectedEnvironment = runtimeEnvironment(environment);
+  requireLiveAck(selectedEnvironment);
+  configuredTestnetNetworkId(selectedEnvironment);
+  const chainAuthenticator = authenticateChainProfile ?? authenticateNodeNetwork;
+  if (operatorTrustedChainPolicy !== undefined &&
+      !isOperatorTrustedTestnetPolicy(operatorTrustedChainPolicy)) {
+    safetyError('operator_trusted_chain_policy_invalid');
+  }
+  if (operatorTrustedChainPolicy !== undefined && chainAuthenticator !== undefined) {
+    safetyError('chain_trust_policy_conflict');
+  }
+  const configuredTimeout = configuredRpcTimeout(
+    rpcTimeoutMs ?? selectedEnvironment.ZENON_RPC_TIMEOUT_MS ?? DEFAULT_RPC_TIMEOUT_MS,
+  );
+  const expected = expectedChainProfile ?? operatorTrustedChainPolicy?.chainProfile?.();
+  if (!expected) safetyError('node_network_identity_unavailable');
+  try {
+    validateZenonChainProfile(expected);
+  } catch {
+    safetyError('node_network_identity_unavailable');
+  }
+  if (operatorTrustedChainPolicy !== undefined &&
+      !chainProfilesEqual(expected, operatorTrustedChainPolicy.chainProfile())) {
+    safetyError('operator_trusted_profile_mismatch');
+  }
+  const { sdk: offlineSdk } = await loadZenonDeps();
+  let tokenStandard;
+  try {
+    tokenStandard = offlineSdk.TokenStandard.parse(asset);
+  } catch {
+    safetyError('malformed_requirements');
+  }
+  if (tokenStandard.toString() !== asset) safetyError('malformed_requirements');
+  return withOwnedZenonSession({
+    owner: `${role}.readiness-probe`,
+    expectedChainProfile: expected,
+    authenticateChainProfile: chainAuthenticator,
+    operatorTrustedChainPolicy,
+    environment: selectedEnvironment,
+    runtime: liveSdkRuntime,
+    rpcTimeoutMs: configuredTimeout,
+    readinessWork: async ({ sdk, zenon }, scope) => {
+      await assertAssetExists(
+        zenon,
+        sdk,
+        tokenStandard,
+        (operation, execute) => runRead(scope, zenon, configuredTimeout, operation, execute),
+      );
+    },
+    work: async () => Object.freeze({ ready: true, role }),
   });
 }
 
@@ -934,6 +1110,7 @@ export class ExactZenonClient {
     environment = process.env,
     operatorTrustedChainPolicy,
     rpcTimeoutMs,
+    lifecycleObserver,
   } = {}) {
     const selectedEnvironment = runtimeEnvironment(environment);
     const configuredMnemonic = mnemonic ?? selectedEnvironment.ZENON_MNEMONIC;
@@ -951,6 +1128,7 @@ export class ExactZenonClient {
     const configuredTimeout = configuredRpcTimeout(
       rpcTimeoutMs ?? selectedEnvironment.ZENON_RPC_TIMEOUT_MS ?? DEFAULT_RPC_TIMEOUT_MS,
     );
+    const configuredObserver = configuredLifecycleObserver(lifecycleObserver);
     Object.defineProperties(this, {
       mnemonic: {
         value: configuredMnemonic,
@@ -988,6 +1166,12 @@ export class ExactZenonClient {
         configurable: false,
         enumerable: true,
       },
+      lifecycleObserver: {
+        value: configuredObserver,
+        writable: false,
+        configurable: false,
+        enumerable: false,
+      },
       paymentCapabilities: {
         value: LIVE_PAYMENT_CAPABILITIES,
         writable: false,
@@ -996,6 +1180,11 @@ export class ExactZenonClient {
       },
     });
     CLIENT_RUNTIME_ENVIRONMENTS.set(this, selectedEnvironment);
+    CLIENT_LIFECYCLE_OBSERVATIONS.set(this, configuredObserver === undefined ? null : []);
+  }
+
+  snapshotLiveEvidenceObservations() {
+    return snapshotLifecycleObservations(CLIENT_LIFECYCLE_OBSERVATIONS.get(this));
   }
 
   async createPaymentPayload(paymentRequired, accepted = paymentRequired?.accepts?.[0]) {
@@ -1055,12 +1244,16 @@ export class ExactZenonClient {
       environment,
       runtime: this.runtime,
       rpcTimeoutMs: this.rpcTimeoutMs,
-      work: async ({ sdk, zenon, chainId }, scope) => {
+      lifecycleObserver: this.lifecycleObserver,
+      lifecycleRole: 'buyer',
+      lifecycleObservations: CLIENT_LIFECYCLE_OBSERVATIONS.get(this),
+      work: async ({ sdk, zenon, chainId, finishReadiness }, scope) => {
         let keyPair;
         try {
           const tokenStandard = offlineTokenStandard;
           const callRead = (operation, execute) => runRead(scope, zenon, this.rpcTimeoutMs, operation, execute);
           await assertAssetExists(zenon, sdk, tokenStandard, callRead);
+          finishReadiness();
           let wallet;
           try {
             wallet = sdk.KeyStore.fromMnemonic(this.mnemonic);
@@ -1080,7 +1273,19 @@ export class ExactZenonClient {
           // prepareBlock() is a composite SDK operation with internal RPC and
           // possible PoW work. SDK 1.0.5 cannot cancel it, so ownership is held
           // until it completes instead of applying a superficial Promise.race.
+          recordLifecycle(
+            this.lifecycleObserver,
+            CLIENT_LIFECYCLE_OBSERVATIONS.get(this),
+            'buyer',
+            'prepare_block_started',
+          );
           const prepared = await invokeLegacySdk105SignedComposite(zenon, block, keyPair);
+          recordLifecycle(
+            this.lifecycleObserver,
+            CLIENT_LIFECYCLE_OBSERVATIONS.get(this),
+            'buyer',
+            'prepare_block_finished',
+          );
           if (prepared.chainIdentifier !== chainId ||
               String(prepared.chainIdentifier) !== accepted.extra.zenonChain.chainIdentifier) {
             safetyError('prepared_chain_mismatch');
@@ -1293,6 +1498,7 @@ export class ExactZenonFacilitator {
     journal = new SettlementJournal(),
     rpcTimeoutMs,
     reconciliationRetentionMs = null,
+    lifecycleObserver,
   } = {}) {
     const selectedEnvironment = runtimeEnvironment(environment);
     if (!(journal instanceof SettlementJournal)) safetyError('invalid_settlement_journal');
@@ -1308,6 +1514,7 @@ export class ExactZenonFacilitator {
       rpcTimeoutMs ?? selectedEnvironment.ZENON_RPC_TIMEOUT_MS ?? DEFAULT_RPC_TIMEOUT_MS,
     );
     const configuredRetention = configuredReconciliationRetention(reconciliationRetentionMs);
+    const configuredObserver = configuredLifecycleObserver(lifecycleObserver);
     const payerQueue = new PerPayerQueue();
     this.#reconciliationMaintenance = { running: false, worklist: null };
     Object.defineProperties(this, {
@@ -1347,6 +1554,12 @@ export class ExactZenonFacilitator {
         configurable: false,
         enumerable: true,
       },
+      lifecycleObserver: {
+        value: configuredObserver,
+        writable: false,
+        configurable: false,
+        enumerable: false,
+      },
       payerQueue: {
         value: payerQueue,
         writable: false,
@@ -1355,6 +1568,11 @@ export class ExactZenonFacilitator {
       },
     });
     FACILITATOR_RUNTIME_ENVIRONMENTS.set(this, selectedEnvironment);
+    FACILITATOR_LIFECYCLE_OBSERVATIONS.set(this, configuredObserver === undefined ? null : []);
+  }
+
+  snapshotLiveEvidenceObservations() {
+    return snapshotLifecycleObservations(FACILITATOR_LIFECYCLE_OBSERVATIONS.get(this));
   }
 
   async runReconciliationMaintenance(...args) {
@@ -1634,6 +1852,9 @@ export class ExactZenonFacilitator {
         environment: FACILITATOR_RUNTIME_ENVIRONMENTS.get(this),
         runtime: this.runtime,
         rpcTimeoutMs: this.rpcTimeoutMs,
+        lifecycleObserver: this.lifecycleObserver,
+        lifecycleRole: 'facilitator',
+        lifecycleObservations: FACILITATOR_LIFECYCLE_OBSERVATIONS.get(this),
         work: async (connection, scope) => this.#settleWithNode(
           preflight,
           requirements,
@@ -1684,6 +1905,8 @@ export class ExactZenonFacilitator {
     if (terminal) return terminal;
     const { sdk, zenon } = connection;
     const callRead = (operation, execute) => runRead(scope, zenon, this.rpcTimeoutMs, operation, execute);
+    let firstInclusionObservedAt;
+    let inclusionObservationAttempted = false;
     const lookup = async () => {
       let observed;
       try {
@@ -1696,7 +1919,28 @@ export class ExactZenonFacilitator {
             error?.code === LIVE_RUNTIME_ERROR_CODES.POISONED) throw error;
         safetyError('account_lookup_failed', error);
       }
-      return observed === null ? null : validateObservedAccountBlock(observed, preflight, sdk);
+      if (observed === null) return null;
+      const exact = validateObservedAccountBlock(observed, preflight, sdk);
+      if (exact.confirmationDetail !== undefined && exact.confirmationDetail !== null &&
+          firstInclusionObservedAt === undefined) {
+        firstInclusionObservedAt = new Date().toISOString();
+        if (!inclusionObservationAttempted) {
+          inclusionObservationAttempted = true;
+          recordLifecycle(
+            this.lifecycleObserver,
+            FACILITATOR_LIFECYCLE_OBSERVATIONS.get(this),
+            'facilitator',
+            'momentum_inclusion_observed',
+            firstInclusionObservedAt,
+          );
+        }
+      }
+      return Object.freeze({
+        confirmationDetail: exact.confirmationDetail ?? null,
+        inclusionObservedAt: exact.confirmationDetail === undefined || exact.confirmationDetail === null
+          ? null
+          : firstInclusionObservedAt,
+      });
     };
 
     // Another facilitator instance may have journaled this attempt while this
@@ -1717,6 +1961,7 @@ export class ExactZenonFacilitator {
     // exact Momentum-included block is observed, no ordinary node RPC remains
     // between that evidence and its durable journal update.
     await this.#verifyChainAndAsset(preflight, connection, callRead);
+    connection.finishReadiness();
     let observed = await lookup();
     if (!initialRecord && observed === null) {
       let accountObservation;
@@ -1822,6 +2067,8 @@ export class ExactZenonFacilitator {
               () => zenon.ledger.publishRawTransaction(preflight.block),
             ),
             observed,
+            lifecycleObserver: this.lifecycleObserver,
+            lifecycleObservations: FACILITATOR_LIFECYCLE_OBSERVATIONS.get(this),
           });
           observed = publication.observed;
           if (publication.state === EVIDENCE_STATES.SUBMISSION_OUTCOME_UNKNOWN) {
@@ -1876,6 +2123,8 @@ export class ExactZenonFacilitator {
         initialObserved: observed,
         timeoutSeconds: requirements.maxTimeoutSeconds,
         wake,
+        lifecycleObserver: this.lifecycleObserver,
+        lifecycleObservations: FACILITATOR_LIFECYCLE_OBSERVATIONS.get(this),
       });
       if (!included) {
         return failed(
@@ -1933,7 +2182,7 @@ export class ExactZenonFacilitator {
         preflight.transactionHash,
         EVIDENCE_STATES.MOMENTUM_INCLUDED,
         {
-          observedAt: new Date().toISOString(),
+          observedAt: observed.inclusionObservedAt,
           confirmationDetail,
         },
       ),
@@ -2004,7 +2253,14 @@ function shieldPublicationOutcome(outcome) {
   return outcome;
 }
 
-export async function ensurePublished({ lookup, publish, observed = undefined }) {
+export async function ensurePublished({
+  lookup,
+  publish,
+  observed = undefined,
+  lifecycleObserver,
+  lifecycleObservations,
+}) {
+  configuredLifecycleObserver(lifecycleObserver);
   let known = observed;
   if (known === undefined) known = await lookup();
   if (known) {
@@ -2020,12 +2276,14 @@ export async function ensurePublished({ lookup, publish, observed = undefined })
   // Once a promise has been returned, any rejection is reconciled by hash and
   // remains uncertain when the node still cannot show the exact block.
   const publication = publish();
+  recordLifecycle(
+    lifecycleObserver,
+    lifecycleObservations,
+    'facilitator',
+    'publication_started',
+  );
   try {
     await publication;
-    return shieldPublicationOutcome({
-      state: EVIDENCE_STATES.SUBMISSION_ACKNOWLEDGED,
-      observed: null,
-    });
   } catch (publicationError) {
     try {
       known = await lookup();
@@ -2044,6 +2302,16 @@ export async function ensurePublished({ lookup, publish, observed = undefined })
       publicationError,
     });
   }
+  recordLifecycle(
+    lifecycleObserver,
+    lifecycleObservations,
+    'facilitator',
+    'publication_acknowledged',
+  );
+  return shieldPublicationOutcome({
+    state: EVIDENCE_STATES.SUBMISSION_ACKNOWLEDGED,
+    observed: null,
+  });
 }
 
 function createInactiveWakeup() {
@@ -2093,12 +2361,26 @@ async function subscribeForSettlementWakeup({ zenon, address, callRead }) {
   };
 }
 
-export async function waitForMomentumInclusion({ lookup, initialObserved, timeoutSeconds, wake }) {
+export async function waitForMomentumInclusion({
+  lookup,
+  initialObserved,
+  timeoutSeconds,
+  wake,
+  lifecycleObserver,
+  lifecycleObservations,
+}) {
+  configuredLifecycleObserver(lifecycleObserver);
   if (initialObserved?.confirmationDetail) return initialObserved;
   if (!Number.isSafeInteger(timeoutSeconds) || timeoutSeconds <= 0 ||
       timeoutSeconds * 1000 > MAX_CONFIRMATION_WAIT_MS) {
     safetyError('invalid_confirmation_timeout');
   }
+  recordLifecycle(
+    lifecycleObserver,
+    lifecycleObservations,
+    'facilitator',
+    'inclusion_wait_started',
+  );
   const timeoutMs = timeoutSeconds * 1000;
   const deadline = performance.now() + timeoutMs;
   while (performance.now() < deadline) {
