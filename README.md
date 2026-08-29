@@ -10,6 +10,8 @@ This is not an official Zenon integration, not an official x402 network implemen
 
 The current `main` branch contains the v0.3 architecture checkpoint; this is not a v0.3 package or production release. The planner, wallet, Plasma, payment-mechanism, chain-profile, and settlement-repository interfaces are additive design boundaries. They document intended ownership and separation but are not wired into the active transaction path.
 
+Package semantic versioning is intentionally independent of architecture-checkpoint and payload-generation labels; those labels do not represent a published package release.
+
 The active live Zenon buyer path still uses the legacy signed-composite behavior of `znn-typescript-sdk@1.0.5`: `prepareBlock(accountBlockTemplate, keyPair)` performs preparation, possible PoW, hashing, and signing. Phase 2A provides immutable golden and lifecycle characterization of that behavior. Phase 2B.1 routes the same call through a transparent internal legacy comparator seam without changing its semantics.
 
 Phase 2C is deferred and remains `NO-GO`. No unsigned planner/wallet split or hardware-wallet integration is active. [digitalSloth/znn-typescript-sdk#31](https://github.com/digitalSloth/znn-typescript-sdk/issues/31) is an upstream staged-preparation proposal only; this codebase neither implements nor consumes the proposed API. This remains a research PoC, and production deployment remains `NO-GO`.
@@ -56,7 +58,7 @@ The facilitator never receives the buyer mnemonic or private key.
 
 ## Local mock demo
 
-Requires Node.js 20+.
+Requires Node.js 24+. Node 24 is the configured CI-tested minimum; CI does not exercise every higher Node major admitted by the package engine range.
 
 ```bash
 npm ci --ignore-scripts

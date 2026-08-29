@@ -10,7 +10,7 @@
   "description": "Proof of concept: x402 v2 exact payments settled by signed Zenon account blocks",
   "type": "module",
   "engines": {
-    "node": ">=20"
+    "node": ">=24"
   },
   "scripts": {
     "demo": "node src/demo.js",
