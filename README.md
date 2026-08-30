@@ -92,11 +92,23 @@ The artifact contains public configuration assertions only. Generated wallets, o
 
 "Four-node" names the intended external operator workflow only; the artifact does not verify node count, roles, topology, or a topology digest. The fixed `fourNodeTopologyVerified: false` nonclaim prevents the lane name from being treated as topology evidence.
 
-The artifact can create a separately branded local-devnet policy. The exported direct local observer and closed family dispatcher consume genuine local policies and evidence, while direct `assertZenonNodeReady` is the only payment-readiness integration that accepts the local family. The dispatcher queries height two exactly once, descriptor-safely snapshots the SDK response and frontier before and after the awaited query, and returns only branded non-authenticating evidence. Direct readiness revalidates the returned brand and family and requires the exact current observer result before reading evidence fields. This is offline-tested, runtime-unregistered readiness plumbing, not runtime activation or authenticated chain identity. Module import and policy construction are side-effect-free and offline; direct policy observation and direct readiness invocation perform the injected node reads. Policies and evidence, together with their copied fields, are detached and deeply frozen, while observation validation uses detached normalized copied snapshots. The SDK frontier object is returned unchanged by readiness and is not claimed to be detached or frozen. Adapter-controlled Promise handling uses captured intrinsics, but it cannot undo thenable assimilation or other behavior already performed inside an injected SDK method before that method returns a genuine native Promise. No ordinary CLI, runner, environment alias, package script, constructor, probe, client, facilitator, or default selects the local policy; every production session path remains public-testnet-only. Ordinary valid public-testnet selection and payment semantics remain unchanged; this bridge deliberately adds a non-enumerable readiness-result assimilation shield and earlier rejection for hostile inputs.
+The artifact can create a separately branded local-devnet policy. The exported direct local observer and closed family dispatcher consume genuine local policies and evidence, while direct `assertZenonNodeReady` is the only payment-readiness integration that accepts the local family. The dispatcher queries height two exactly once, descriptor-safely snapshots the SDK response and frontier before and after the awaited query, and returns only branded non-authenticating evidence. Direct readiness revalidates the returned brand and family and requires the exact current observer result before reading evidence fields. This is offline-tested, runtime-unregistered readiness plumbing, not runtime activation or authenticated chain identity. Module import and policy construction are side-effect-free and offline; direct policy observation and direct readiness invocation perform the injected node reads. Policies and evidence, together with their copied fields, are detached and deeply frozen, while observation validation uses detached normalized copied snapshots. The SDK frontier object is returned unchanged by readiness and is not claimed to be detached or frozen. Adapter-controlled Promise handling uses captured intrinsics, but it cannot undo thenable assimilation or other behavior already performed inside an injected SDK method before that method returns a genuine native Promise. No existing ordinary CLI, public runner, environment alias, package script, constructor, probe, client, facilitator, or default selects the local policy; every payment session path remains public-testnet-only. Ordinary valid public-testnet selection and payment semantics remain unchanged; this bridge deliberately adds a non-enumerable readiness-result assimilation shield and earlier rejection for hostile inputs.
+
+The dedicated `local-devnet-readiness-runner` and fixed-output CLI are an explicit opt-in, offline-tested, runtime-unregistered readiness tool. Import and argument validation perform no filesystem or network I/O; artifact preflight performs only one bounded local descriptor read and no network I/O. An explicitly invoked run accepts only the genuine local artifact and acknowledgement, a restrictive current-directory artifact file, and a canonical numeric-loopback WebSocket location. The URL must be exactly `ws://127.0.0.1:<non-default-port>/` or `ws://[::1]:<non-default-port>/`, with an explicit canonical decimal port other than 80 and the trailing slash. Hostnames and DNS, `wss`, credentials, implicit or default ports, alternate address encodings, additional paths, queries, fragments, whitespace, percent encoding, and noncanonical variants are rejected. The run starts one single-use Worker, creates one isolated SDK client, disables reconnects and redirects, performs one bounded connection and exactly four ordered readiness reads, closes the client once, then reports success only after the Worker and both captured output pipes are destroyed. Worker output is discarded under a fixed bound. The CLI emits only `LOCAL_DEVNET_READINESS_READY` or `LOCAL_DEVNET_READINESS_FAILED` and never echoes its inputs or diagnostics.
+
+The CLI accepts exactly one each of `--artifact-file`, `--rpc-url`, `--acknowledgement`, and `--timeout-ms`, in any order. It has no environment, standard-input, alias, default, discovery, help, or package-script path; the acknowledgement must be the exact local-artifact acknowledgement, and the timeout is a canonical decimal from 1000 through 30000 milliseconds.
+
+Direct invocation uses the dedicated script and all four explicit values; this symbolic example does not identify an operator endpoint:
+
+```sh
+node src/local-devnet-readiness-runner-cli.js --artifact-file local-devnet-profile.json --rpc-url 'ws://127.0.0.1:<non-default-port>/' --acknowledgement 'I_UNDERSTAND_THIS_IS_A_SELF_CREATED_LOCAL_FOUR_NODE_DEVNET_NOT_PUBLIC_TESTNET_OR_AUTHENTICATED_CHAIN_IDENTITY' --timeout-ms 5000
+```
+
+This tool does not set SDK NetworkID or ChainID and makes no network-identity claim. Its local policy, provenance assertions, observations, and intended four-node label remain operator trusted and non-authenticating; `fourNodeTopologyVerified` remains false. Adapter-controlled Promise handling cannot undo behavior already performed inside a pinned SDK producer before that producer returns a genuine native Promise. No existing selector, ordinary CLI, public runner, environment alias, package script, or default activates this lane. It has no wallet, funding, signing, block construction, publication, facilitator, protected-resource, journal, live-evidence capture or bundle, proof, or payment capability.
 
 `0x3639/testnet` is treated only as an external operator tool; no source from it is copied, vendored, patched, redistributed, or installed as a package dependency here. Because the external generator uses fresh timestamps and private random material, the supported evidence claim is reproducible equivalent behavior, never byte-for-byte recreation of the same private network. This offline slice does not run Docker, a builder, a node, a wallet, or a payment. A future local-devnet success would be an intermediate research milestone only; Issue #45 stays open and the separately authorized public-testnet gate remains required.
 
-A later runner design must separately resolve the descriptive network label, SDK network-ID binding, the local acknowledgement, loopback-only transport, the external tool's seed-plus-four-pillar/five-service workflow description, immutable image provenance, and devnet evidence classification. It must keep `fourNodeTopologyVerified: false` unless topology is independently authenticated. Wallets, credentials, node keys, endpoints, paths, transactions, signatures, Docker outputs, and generated operator packages remain outside this repository and artifact boundary.
+A later payment/evidence runner design must separately resolve the descriptive network label, SDK network-ID binding, the local acknowledgement, loopback-only transport, the external tool's seed-plus-four-pillar/five-service workflow description, immutable image provenance, and devnet evidence classification. It must keep `fourNodeTopologyVerified: false` unless topology is independently authenticated. Wallets, credentials, node keys, endpoints, paths, transactions, signatures, Docker outputs, and generated operator packages remain outside this repository and artifact boundary.
 
 ### Offline live-evidence contract
 
@@ -285,6 +297,12 @@ src/
   settlement-journal.js       dependency-free recovery journal
   config.js                   payment requirement configuration
   env.js                      dotenv and integer environment parsing
+  local-devnet-readiness-runner.js
+                              explicit opt-in readiness parent
+  local-devnet-readiness-worker.js
+                              isolated readiness-only SDK owner
+  local-devnet-readiness-runner-cli.js
+                              fixed-output readiness entry point
   settlement/
     settlement-repository.js  additive repository boundary
   x402/
@@ -309,6 +327,10 @@ test-support/
                               independent account-block preimage helper
 test/
   fixtures/
+    local-devnet-readiness-sdk-hook.js
+                              test-only SDK module redirect
+    local-devnet-readiness-sdk-fixture.js
+                              hostile and valid Worker SDK shapes
     phase2a-exact-client-goldens.v1.json
                               immutable Phase 2A golden values
   architecture-boundaries.test.js
@@ -320,6 +342,7 @@ test/
   operator-trusted-testnet-profile.test.js
   journal.test.js
   live-runtime.test.js
+  local-devnet-readiness-runner.test.js
   official-x402-client-interop.test.js
   official-x402-client-resource-server-interop.test.js
   official-x402-http-interop.test.js
