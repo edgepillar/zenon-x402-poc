@@ -837,8 +837,9 @@ export async function assertZenonNodeReady(
       }
       chainTrustEvidence = settlement.value;
     } catch (error) {
-      if (error?.code === LIVE_RUNTIME_ERROR_CODES.READ_TIMEOUT ||
-          error?.code === LIVE_RUNTIME_ERROR_CODES.POISONED) throw error;
+      const runtimeCode = readRuntimeFailureCode(error);
+      if (runtimeCode === LIVE_RUNTIME_ERROR_CODES.READ_TIMEOUT ||
+          runtimeCode === LIVE_RUNTIME_ERROR_CODES.POISONED) throw error;
       safetyError('operator_trusted_chain_observation_unavailable', error);
     }
     try {

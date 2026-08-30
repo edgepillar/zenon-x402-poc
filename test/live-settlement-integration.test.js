@@ -6,7 +6,7 @@ import { tmpdir } from 'node:os';
 import { isDeepStrictEqual } from 'node:util';
 import * as sdk from 'znn-typescript-sdk';
 import { canonicalJson, paymentIntentDigest } from '../src/canonical.js';
-import { LIVE_RUNTIME_ERROR_CODES } from '../src/live-runtime.js';
+import { LIVE_RUNTIME_ERROR_CODES, LiveRuntimeError } from '../src/live-runtime.js';
 import {
   assertLiveEvidenceObserver,
   createLiveEvidenceObserver,
@@ -31,6 +31,13 @@ import {
   parseOperatorTrustedLocalDevnetProfileArtifact,
 } from '../src/zenon/operator-trusted-local-devnet-profile.js';
 import {
+  OPERATOR_TRUST_ACKNOWLEDGEMENT,
+  OPERATOR_TRUSTED_PUBLIC_TESTNET_CHAIN_PROFILE,
+  OPERATOR_TRUSTED_PUBLIC_TESTNET_PROFILE_NAME,
+  TESTNET_LIVE_ACKNOWLEDGEMENT,
+  selectOperatorTrustedTestnetPolicy,
+} from '../src/zenon/operator-trusted-testnet-profile.js';
+import {
   DELIVERY_STATES,
   EVIDENCE_STATES,
   SettlementJournal,
@@ -42,6 +49,85 @@ const PROFILE = Object.freeze({
   // Synthetic test-only identity; not a real network profile.
   genesisMomentumHash: '7'.repeat(64),
 });
+
+function synchronousObservationFailureFixture(thrownValue) {
+  const policy = selectOperatorTrustedTestnetPolicy(
+    OPERATOR_TRUSTED_PUBLIC_TESTNET_PROFILE_NAME,
+    OPERATOR_TRUST_ACKNOWLEDGEMENT,
+    TESTNET_LIVE_ACKNOWLEDGEMENT,
+  );
+  const counters = {
+    network: 0,
+    sync: 0,
+    frontier: 0,
+    heightTwo: 0,
+    asset: 0,
+  };
+  const zenon = {
+    stats: {
+      async networkInfo() {
+        counters.network += 1;
+        return {
+          numPeers: 1,
+          self: { publicKey: 'synthetic-node-key', ip: 'synthetic-node-address' },
+          peers: [],
+        };
+      },
+      async syncInfo() {
+        counters.sync += 1;
+        return { state: sdk.SyncState.SyncDone, currentHeight: 8, targetHeight: 8 };
+      },
+    },
+    embedded: {
+      token: {
+        getByZts() {
+          counters.asset += 1;
+          throw new Error('asset lookup must not run');
+        },
+      },
+    },
+    ledger: {
+      async getFrontierMomentum() {
+        counters.frontier += 1;
+        return {
+          chainIdentifier: Number(
+            OPERATOR_TRUSTED_PUBLIC_TESTNET_CHAIN_PROFILE.chainIdentifier,
+          ),
+          hash: 'f'.repeat(64),
+          height: 8,
+        };
+      },
+      getMomentumsByHeight() {
+        counters.heightTwo += 1;
+        throw new Error('height-two query must not run');
+      },
+    },
+  };
+  const promise = assertZenonNodeReady(
+    zenon,
+    sdk,
+    undefined,
+    OPERATOR_TRUSTED_PUBLIC_TESTNET_CHAIN_PROFILE,
+    {
+      callRead(operation, execute) {
+        if (operation === 'operatorTrustedChainObservation') throw thrownValue;
+        return execute();
+      },
+      operatorTrustedChainPolicy: policy,
+    },
+  );
+  return { counters, promise };
+}
+
+function assertObservationFailureReadBoundary(counters) {
+  assert.deepEqual(counters, {
+    network: 1,
+    sync: 1,
+    frontier: 1,
+    heightTwo: 0,
+    asset: 0,
+  });
+}
 
 test('live payment capability routing is immutable and requires no SDK operation', () => {
   const client = new ExactZenonClient({ mnemonic: '', accountIndex: 0, rpcTimeoutMs: 1 });
@@ -284,6 +370,76 @@ test('local policy bridge widens only direct node readiness and performs no prod
   }), { code: 'operator_trusted_chain_policy_invalid' });
   assert.equal(sdk.Zenon.getNetworkID(), networkIdBefore);
   assert.equal(sdk.Zenon.getChainIdentifier(), chainIdBefore);
+});
+
+test('synchronous Proxy observation failures are sanitized without traps', async () => {
+  const timeoutError = new LiveRuntimeError('synthetic read timeout', {
+    code: LIVE_RUNTIME_ERROR_CODES.READ_TIMEOUT,
+  });
+  const timeout = synchronousObservationFailureFixture(timeoutError);
+  await assert.rejects(timeout.promise, error => error === timeoutError);
+  assertObservationFailureReadBoundary(timeout.counters);
+
+  let proxyHooks = 0;
+  const hostile = new Proxy(Object.create(null), {
+    get(target, key, receiver) {
+      proxyHooks += 1;
+      return Reflect.get(target, key, receiver);
+    },
+    getOwnPropertyDescriptor(target, key) {
+      proxyHooks += 1;
+      return Reflect.getOwnPropertyDescriptor(target, key);
+    },
+    getPrototypeOf(target) {
+      proxyHooks += 1;
+      return Reflect.getPrototypeOf(target);
+    },
+    ownKeys(target) {
+      proxyHooks += 1;
+      return Reflect.ownKeys(target);
+    },
+  });
+  const rejected = synchronousObservationFailureFixture(hostile);
+  await assert.rejects(rejected.promise, {
+    code: 'operator_trusted_chain_observation_unavailable',
+  });
+  assert.equal(proxyHooks, 0);
+  assertObservationFailureReadBoundary(rejected.counters);
+});
+
+test('synchronous accessor observation failures are sanitized without hooks', async () => {
+  const poisonedError = new LiveRuntimeError('synthetic poisoned runtime', {
+    code: LIVE_RUNTIME_ERROR_CODES.POISONED,
+  });
+  const poisoned = synchronousObservationFailureFixture(poisonedError);
+  await assert.rejects(poisoned.promise, error => error === poisonedError);
+  assertObservationFailureReadBoundary(poisoned.counters);
+
+  let accessorHooks = 0;
+  const countAccessor = value => ({
+    configurable: true,
+    get() {
+      accessorHooks += 1;
+      return value;
+    },
+    set() {
+      accessorHooks += 1;
+    },
+  });
+  const hostile = Object.create(null);
+  Object.defineProperties(hostile, {
+    code: countAccessor(undefined),
+    then: countAccessor(undefined),
+    toString: countAccessor(() => ''),
+    valueOf: countAccessor(() => hostile),
+    [Symbol.iterator]: countAccessor(() => ({ next: () => ({ done: true }) })),
+  });
+  const rejected = synchronousObservationFailureFixture(hostile);
+  await assert.rejects(rejected.promise, {
+    code: 'operator_trusted_chain_observation_unavailable',
+  });
+  assert.equal(accessorHooks, 0);
+  assertObservationFailureReadBoundary(rejected.counters);
 });
 
 function requirement({ asset = sdk.ZNN_ZTS.toString() } = {}) {
