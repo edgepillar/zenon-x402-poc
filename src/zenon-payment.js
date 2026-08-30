@@ -23,9 +23,13 @@ import {
 } from './settlement-journal.js';
 import { invokeLegacySdk105SignedComposite } from './zenon/internal/legacy-sdk-1-0-5-signed-composite.js';
 import {
-  isOperatorTrustedTestnetEvidence,
   isOperatorTrustedTestnetPolicy,
 } from './zenon/operator-trusted-testnet-profile.js';
+import {
+  assertOperatorTrustedChainEvidence,
+  assertOperatorTrustedChainPolicy,
+  observeOperatorTrustedChainPolicy,
+} from './zenon/operator-trusted-chain-policy.js';
 import {
   assertLiveEvidenceObserver,
   recordLiveEvidencePhase,
@@ -60,7 +64,15 @@ const BUFFER_IS_BUFFER = Buffer.isBuffer;
 const BUFFER_EQUALS = Buffer.prototype.equals;
 const OBJECT_PROTOTYPE = Object.prototype;
 const BUFFER_PROTOTYPE = Buffer.prototype;
+const OBJECT_FREEZE = Object.freeze;
+const IS_PROMISE = utilTypes.isPromise;
 const IS_PROXY = utilTypes.isProxy;
+const PROMISE_CONSTRUCTOR = Promise;
+const PROMISE_PROTOTYPE = Promise.prototype;
+const PROMISE_THEN = Promise.prototype.then;
+const PROMISE_SPECIES = Symbol.species;
+const PROMISE_SPECIES_GETTER =
+  GET_OWN_PROPERTY_DESCRIPTOR(PROMISE_CONSTRUCTOR, PROMISE_SPECIES)?.get;
 const ACCOUNT_BLOCK_FIELDS = new Set([
   'version', 'chainIdentifier', 'blockType', 'hash', 'previousHash', 'height',
   'momentumAcknowledged', 'address', 'toAddress', 'amount', 'tokenStandard',
@@ -104,6 +116,127 @@ export class ZenonSafetyError extends Error {
 
 function safetyError(code, cause) {
   throw new ZenonSafetyError(code, cause);
+}
+
+function shieldInternalReadPromise(value) {
+  const descriptor = REFLECT_APPLY(CREATE_OBJECT, undefined, [null]);
+  descriptor.value = PROMISE_THEN;
+  descriptor.enumerable = false;
+  descriptor.configurable = false;
+  descriptor.writable = false;
+  DEFINE_PROPERTY(value, 'then', descriptor);
+  return value;
+}
+
+function createReadSettlement(fulfilled, value) {
+  const settlement = REFLECT_APPLY(CREATE_OBJECT, undefined, [null]);
+  DEFINE_PROPERTY(settlement, 'fulfilled', {
+    value: fulfilled,
+    enumerable: true,
+    configurable: false,
+    writable: false,
+  });
+  DEFINE_PROPERTY(settlement, 'value', {
+    value,
+    enumerable: true,
+    configurable: false,
+    writable: false,
+  });
+  return REFLECT_APPLY(OBJECT_FREEZE, undefined, [settlement]);
+}
+
+function fulfilledReadSettlement(value) {
+  return createReadSettlement(true, value);
+}
+
+function rejectedReadSettlement(value) {
+  return createReadSettlement(false, value);
+}
+
+function assertNativeReadPromise(value) {
+  if (value === null || typeof value !== 'object' ||
+      REFLECT_APPLY(IS_PROXY, undefined, [value]) ||
+      !REFLECT_APPLY(IS_PROMISE, undefined, [value])) {
+    safetyError('operator_trusted_chain_observation_unavailable');
+  }
+  let prototype;
+  let keys;
+  let constructorDescriptor;
+  let speciesDescriptor;
+  try {
+    prototype = REFLECT_APPLY(GET_PROTOTYPE_OF, undefined, [value]);
+    keys = REFLECT_APPLY(REFLECT_OWN_KEYS, undefined, [value]);
+    constructorDescriptor = REFLECT_APPLY(
+      GET_OWN_PROPERTY_DESCRIPTOR,
+      undefined,
+      [PROMISE_PROTOTYPE, 'constructor'],
+    );
+    speciesDescriptor = REFLECT_APPLY(
+      GET_OWN_PROPERTY_DESCRIPTOR,
+      undefined,
+      [PROMISE_CONSTRUCTOR, PROMISE_SPECIES],
+    );
+  } catch {
+    safetyError('operator_trusted_chain_observation_unavailable');
+  }
+  for (let index = 0; index < keys.length; index += 1) {
+    if (typeof keys[index] === 'string') {
+      safetyError('operator_trusted_chain_observation_unavailable');
+    }
+  }
+  if (prototype !== PROMISE_PROTOTYPE || !constructorDescriptor ||
+      !REFLECT_APPLY(HAS_OWN, undefined, [constructorDescriptor, 'value']) ||
+      constructorDescriptor.value !== PROMISE_CONSTRUCTOR || !speciesDescriptor ||
+      REFLECT_APPLY(HAS_OWN, undefined, [speciesDescriptor, 'value']) ||
+      speciesDescriptor.get !== PROMISE_SPECIES_GETTER ||
+      speciesDescriptor.set !== undefined) {
+    safetyError('operator_trusted_chain_observation_unavailable');
+  }
+}
+
+function isNativeReadPromise(value) {
+  if (value !== null && (typeof value === 'object' || typeof value === 'function') &&
+      REFLECT_APPLY(IS_PROXY, undefined, [value])) {
+    safetyError('operator_trusted_chain_observation_unavailable');
+  }
+  if (!REFLECT_APPLY(IS_PROMISE, undefined, [value])) return false;
+  assertNativeReadPromise(value);
+  return true;
+}
+
+function settleNativeReadPromise(value) {
+  assertNativeReadPromise(value);
+  let bridge;
+  try {
+    bridge = REFLECT_APPLY(PROMISE_THEN, value, [
+      fulfilledReadSettlement,
+      rejectedReadSettlement,
+    ]);
+  } catch {
+    safetyError('operator_trusted_chain_observation_unavailable');
+  }
+  assertNativeReadPromise(bridge);
+  return shieldInternalReadPromise(bridge);
+}
+
+async function normalizeOperatorTrustedReadResult(value) {
+  if (!isNativeReadPromise(value)) return createReadSettlement(true, value);
+  return settleNativeReadPromise(value);
+}
+
+function readRuntimeFailureCode(value) {
+  if (value === null || (typeof value !== 'object' && typeof value !== 'function') ||
+      REFLECT_APPLY(IS_PROXY, undefined, [value])) return undefined;
+  let descriptor;
+  try {
+    descriptor = REFLECT_APPLY(GET_OWN_PROPERTY_DESCRIPTOR, undefined, [value, 'code']);
+  } catch {
+    return undefined;
+  }
+  if (!descriptor || !REFLECT_APPLY(HAS_OWN, undefined, [descriptor, 'value'])) {
+    return undefined;
+  }
+  return descriptor.value;
 }
 
 function runtimeEnvironment(value) {
@@ -564,6 +697,16 @@ function chainProfilesEqual(left, right) {
     left?.genesisMomentumHash === right?.genesisMomentumHash;
 }
 
+function shieldNodeReadinessResult(result) {
+  const descriptor = CREATE_OBJECT(null);
+  descriptor.value = undefined;
+  descriptor.enumerable = false;
+  descriptor.writable = false;
+  descriptor.configurable = false;
+  DEFINE_PROPERTY(result, 'then', descriptor);
+  return result;
+}
+
 function cloneChainProfile(profile) {
   return {
     version: profile.version,
@@ -615,8 +758,12 @@ export async function assertZenonNodeReady(
   const hasAuthenticatorInput = authenticateChainProfile !== undefined;
   const hasAuthenticator = typeof authenticateChainProfile === 'function';
   const hasOperatorPolicy = operatorTrustedChainPolicy !== undefined;
-  if (hasOperatorPolicy && !isOperatorTrustedTestnetPolicy(operatorTrustedChainPolicy)) {
-    safetyError('operator_trusted_chain_policy_invalid');
+  if (hasOperatorPolicy) {
+    try {
+      assertOperatorTrustedChainPolicy(operatorTrustedChainPolicy, expectedChainProfile);
+    } catch {
+      safetyError('operator_trusted_chain_policy_invalid');
+    }
   }
   if (hasAuthenticatorInput && hasOperatorPolicy) safetyError('chain_trust_policy_conflict');
   let networkInfo;
@@ -653,28 +800,71 @@ export async function assertZenonNodeReady(
 
   if (hasOperatorPolicy) {
     let chainTrustEvidence;
+    let observedChainTrustEvidence;
+    let observationCompleted = false;
+    let observationStarted = false;
     try {
-      chainTrustEvidence = await callRead(
+      const rawReadResult = callRead(
         'operatorTrustedChainObservation',
-        () => operatorTrustedChainPolicy.observeChainTrust({
-          zenon,
-          networkInfo,
-          syncInfo,
-          frontierMomentum,
-          expectedChainProfile: cloneChainProfile(expectedChainProfile),
-        }),
+        async () => {
+          if (observationStarted) {
+            safetyError('operator_trusted_chain_observation_unavailable');
+          }
+          observationStarted = true;
+          const evidence = await observeOperatorTrustedChainPolicy(
+            operatorTrustedChainPolicy,
+            {
+              zenon,
+              networkInfo,
+              syncInfo,
+              frontierMomentum,
+              expectedChainProfile: cloneChainProfile(expectedChainProfile),
+            },
+          );
+          observedChainTrustEvidence = evidence;
+          observationCompleted = true;
+          return evidence;
+        },
       );
+      const settlement = await normalizeOperatorTrustedReadResult(rawReadResult);
+      if (settlement.fulfilled !== true) {
+        const runtimeCode = readRuntimeFailureCode(settlement.value);
+        if (runtimeCode === LIVE_RUNTIME_ERROR_CODES.READ_TIMEOUT ||
+            runtimeCode === LIVE_RUNTIME_ERROR_CODES.POISONED) {
+          throw settlement.value;
+        }
+        safetyError('operator_trusted_chain_observation_unavailable');
+      }
+      chainTrustEvidence = settlement.value;
     } catch (error) {
-      if (error?.code === LIVE_RUNTIME_ERROR_CODES.READ_TIMEOUT ||
-          error?.code === LIVE_RUNTIME_ERROR_CODES.POISONED) throw error;
+      const runtimeCode = readRuntimeFailureCode(error);
+      if (runtimeCode === LIVE_RUNTIME_ERROR_CODES.READ_TIMEOUT ||
+          runtimeCode === LIVE_RUNTIME_ERROR_CODES.POISONED) throw error;
       safetyError('operator_trusted_chain_observation_unavailable', error);
     }
-    if (!isOperatorTrustedTestnetEvidence(chainTrustEvidence) ||
-        chainTrustEvidence.remoteChainAuthenticated !== false ||
+    try {
+      chainTrustEvidence = assertOperatorTrustedChainEvidence(
+        operatorTrustedChainPolicy,
+        chainTrustEvidence,
+      );
+    } catch {
+      safetyError('operator_trusted_chain_observation_invalid');
+    }
+    if (!observationStarted || !observationCompleted ||
+        chainTrustEvidence !== observedChainTrustEvidence) {
+      safetyError('operator_trusted_chain_observation_invalid');
+    }
+    if (chainTrustEvidence.remoteChainAuthenticated !== false ||
+        HAS_OWN(chainTrustEvidence, 'authenticatedProfile') ||
         !chainProfilesEqual(chainTrustEvidence.chainProfile, expectedChainProfile)) {
       safetyError('operator_trusted_chain_observation_invalid');
     }
-    return { chainId, syncInfo, frontierMomentum, chainTrustEvidence };
+    return shieldNodeReadinessResult({
+      chainId,
+      syncInfo,
+      frontierMomentum,
+      chainTrustEvidence,
+    });
   }
 
   let authenticatedProfile;
@@ -695,7 +885,12 @@ export async function assertZenonNodeReady(
   if (!chainProfilesEqual(authenticatedProfile, expectedChainProfile)) {
     safetyError('connected_node_chain_profile_mismatch');
   }
-  return { chainId, syncInfo, frontierMomentum, authenticatedProfile: cloneChainProfile(authenticatedProfile) };
+  return shieldNodeReadinessResult({
+    chainId,
+    syncInfo,
+    frontierMomentum,
+    authenticatedProfile: cloneChainProfile(authenticatedProfile),
+  });
 }
 
 function parseRpcUrl(environment = process.env) {
