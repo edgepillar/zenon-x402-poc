@@ -7,8 +7,11 @@ import * as sdk from 'znn-typescript-sdk';
 import { canonicalJson } from '../src/canonical.js';
 import {
   OPERATOR_TRUST_ACKNOWLEDGEMENT,
+  OPERATOR_TRUSTED_PUBLIC_TESTNET_CHAIN_PROFILE,
   OPERATOR_TRUSTED_PUBLIC_TESTNET_PROFILE_NAME,
+  OPERATOR_TRUSTED_PUBLIC_TESTNET_PROVENANCE,
   TESTNET_LIVE_ACKNOWLEDGEMENT,
+  isOperatorTrustedTestnetEvidence,
   isOperatorTrustedTestnetPolicy,
   selectOperatorTrustedTestnetPolicy,
 } from '../src/zenon/operator-trusted-testnet-profile.js';
@@ -128,6 +131,40 @@ function localSdkContext({ query } = {}) {
   };
 }
 
+function publicSdkContext() {
+  const calls = [];
+  const frontierMomentum = {
+    chainIdentifier: Number(OPERATOR_TRUSTED_PUBLIC_TESTNET_CHAIN_PROFILE.chainIdentifier),
+    hash: syntheticHash('f'),
+    height: 8,
+  };
+  const zenon = {
+    ledger: {
+      getMomentumsByHeight(...args) {
+        calls.push(args);
+        return {
+          count: 8,
+          list: [{
+            version: 1,
+            chainIdentifier: frontierMomentum.chainIdentifier,
+            hash: OPERATOR_TRUSTED_PUBLIC_TESTNET_PROVENANCE.observationHash,
+            previousHash: OPERATOR_TRUSTED_PUBLIC_TESTNET_CHAIN_PROFILE.genesisMomentumHash,
+            height: OPERATOR_TRUSTED_PUBLIC_TESTNET_PROVENANCE.observationHeight,
+          }],
+        };
+      },
+    },
+  };
+  return {
+    calls,
+    context: {
+      zenon,
+      expectedChainProfile: { ...OPERATOR_TRUSTED_PUBLIC_TESTNET_CHAIN_PROFILE },
+      frontierMomentum,
+    },
+  };
+}
+
 async function settledLocalSdkContext() {
   const candidate = localSdkContext();
   const observation = await candidate.context.zenon.ledger.getMomentumsByHeight(2, 1);
@@ -162,6 +199,50 @@ async function addSettledReadinessReads(candidate) {
     return frontier;
   };
   return candidate;
+}
+
+async function runReadinessWithInjectedEvidence({
+  assertZenonNodeReady,
+  candidate,
+  evidence,
+  expectedChainProfile,
+  policy,
+}) {
+  await addSettledReadinessReads(candidate);
+  return assertZenonNodeReady(
+    candidate.context.zenon,
+    sdk,
+    undefined,
+    expectedChainProfile,
+    {
+      callRead(operation, execute) {
+        if (operation === 'operatorTrustedChainObservation') return evidence;
+        return execute();
+      },
+      operatorTrustedChainPolicy: policy,
+    },
+  );
+}
+
+async function runReadinessNormally({
+  assertZenonNodeReady,
+  candidate,
+  expectedChainProfile,
+  policy,
+}) {
+  await addSettledReadinessReads(candidate);
+  return assertZenonNodeReady(
+    candidate.context.zenon,
+    sdk,
+    undefined,
+    expectedChainProfile,
+    {
+      callRead(_operation, execute) {
+        return execute();
+      },
+      operatorTrustedChainPolicy: policy,
+    },
+  );
 }
 
 function clone(value) {
@@ -609,6 +690,21 @@ test('four-node naming is an unverified external-workflow label in code and docu
     );
     assert.equal(source.includes('injected node reads'), true);
     assert.equal(source.includes('not claimed to be detached or frozen'), true);
+    assert.equal(
+      source.includes('direct `assertZenonNodeReady` is the only payment-readiness integration'),
+      true,
+    );
+    assert.equal(
+      source.includes(
+        'cannot undo thenable assimilation or other behavior already performed inside an injected SDK method before that method returns a genuine native Promise',
+      ),
+      true,
+    );
+    assert.equal(
+      source.includes('Ordinary valid public-testnet selection and payment semantics remain unchanged'),
+      true,
+    );
+    assert.equal(source.includes('non-enumerable readiness-result assimilation shield'), true);
     assert.equal(source.includes('seed-plus-four-pillar/five-service'), true);
     assert.equal(source.includes('fourNodeTopologyVerified'), true);
     assert.equal(source.includes('Issue #45'), true);
@@ -621,6 +717,7 @@ test('local artifact creates only a genuine immutable local policy and the dispa
   const dispatcher = await import('../src/zenon/operator-trusted-chain-policy.js');
   assert.equal(typeof localModule.createOperatorTrustedLocalDevnetPolicy, 'function');
   assert.equal(typeof localModule.isOperatorTrustedLocalDevnetPolicy, 'function');
+  assert.equal(typeof dispatcher.assertOperatorTrustedChainEvidence, 'function');
   assert.equal(typeof dispatcher.assertOperatorTrustedChainPolicy, 'function');
   assert.equal(typeof dispatcher.observeOperatorTrustedChainPolicy, 'function');
   assert.equal(Object.hasOwn(dispatcher, 'isOperatorTrustedChainEvidence'), false);
@@ -722,6 +819,15 @@ test('local policy observes actual SDK shapes exactly once and returns independe
   assert.equal(firstEvidence.remoteChainAuthenticated, false);
   assert.equal(firstEvidence.nonClaims.fourNodeTopologyVerified, false);
   assert.equal(Object.hasOwn(firstEvidence, 'authenticatedProfile'), false);
+  assert.equal(
+    dispatcher.assertOperatorTrustedChainEvidence(policy, firstEvidence),
+    firstEvidence,
+  );
+  const distinctPolicy = localModule.createOperatorTrustedLocalDevnetPolicy(artifact);
+  assert.throws(() => dispatcher.assertOperatorTrustedChainEvidence(
+    distinctPolicy,
+    firstEvidence,
+  ));
 });
 
 test('local SDK observation adapter contains hooks and detects mutation across the query', async () => {
@@ -1015,6 +1121,184 @@ test('local evidence, dispatcher, and readiness returns resist inherited then as
   assert.deepEqual(readiness.calls, [[2, 1]]);
 });
 
+test('direct readiness requires the current dispatcher observation and exact evidence family', async () => {
+  const localModule = await import('../src/zenon/operator-trusted-local-devnet-profile.js');
+  const dispatcher = await import('../src/zenon/operator-trusted-chain-policy.js');
+  const { assertZenonNodeReady } = await import('../src/zenon-payment.js');
+  const artifact = parseOperatorTrustedLocalDevnetProfileArtifact(artifactText());
+  const localPolicy = localModule.createOperatorTrustedLocalDevnetPolicy(artifact);
+  const publicPolicy = selectOperatorTrustedTestnetPolicy(
+    OPERATOR_TRUSTED_PUBLIC_TESTNET_PROFILE_NAME,
+    OPERATOR_TRUST_ACKNOWLEDGEMENT,
+    TESTNET_LIVE_ACKNOWLEDGEMENT,
+  );
+  const localObservation = localSdkContext();
+  const publicObservation = publicSdkContext();
+  const localEvidence = await dispatcher.observeOperatorTrustedChainPolicy(
+    localPolicy,
+    localObservation.context,
+  );
+  const publicEvidence = await dispatcher.observeOperatorTrustedChainPolicy(
+    publicPolicy,
+    publicObservation.context,
+  );
+  const localLookalike = Object.freeze({
+    chainProfile: Object.freeze({ ...artifact.chainProfile }),
+    remoteChainAuthenticated: false,
+  });
+  const publicLookalike = Object.freeze({
+    chainProfile: Object.freeze({ ...OPERATOR_TRUSTED_PUBLIC_TESTNET_CHAIN_PROFILE }),
+    remoteChainAuthenticated: false,
+  });
+  const cases = [
+    {
+      candidate: localSdkContext(),
+      evidence: localLookalike,
+      expectedChainProfile: artifact.chainProfile,
+      policy: localPolicy,
+    },
+    {
+      candidate: publicSdkContext(),
+      evidence: publicLookalike,
+      expectedChainProfile: OPERATOR_TRUSTED_PUBLIC_TESTNET_CHAIN_PROFILE,
+      policy: publicPolicy,
+    },
+    {
+      candidate: localSdkContext(),
+      evidence: publicEvidence,
+      expectedChainProfile: artifact.chainProfile,
+      policy: localPolicy,
+    },
+    {
+      candidate: publicSdkContext(),
+      evidence: localEvidence,
+      expectedChainProfile: OPERATOR_TRUSTED_PUBLIC_TESTNET_CHAIN_PROFILE,
+      policy: publicPolicy,
+    },
+    {
+      candidate: localSdkContext(),
+      evidence: localEvidence,
+      expectedChainProfile: artifact.chainProfile,
+      policy: localPolicy,
+    },
+    {
+      candidate: publicSdkContext(),
+      evidence: publicEvidence,
+      expectedChainProfile: OPERATOR_TRUSTED_PUBLIC_TESTNET_CHAIN_PROFILE,
+      policy: publicPolicy,
+    },
+  ];
+
+  for (const candidate of cases) {
+    await assert.rejects(runReadinessWithInjectedEvidence({
+      assertZenonNodeReady,
+      ...candidate,
+    }));
+    assert.deepEqual(candidate.candidate.calls, []);
+  }
+  assert.deepEqual(localObservation.calls, [[2, 1]]);
+  assert.deepEqual(publicObservation.calls, [[2, 1]]);
+});
+
+test('direct readiness rejects injected proxy and accessor evidence without invoking hooks', async () => {
+  const localModule = await import('../src/zenon/operator-trusted-local-devnet-profile.js');
+  const { assertZenonNodeReady } = await import('../src/zenon-payment.js');
+  const artifact = parseOperatorTrustedLocalDevnetProfileArtifact(artifactText());
+  const policy = localModule.createOperatorTrustedLocalDevnetPolicy(artifact);
+  const target = {
+    chainProfile: { ...artifact.chainProfile },
+    remoteChainAuthenticated: false,
+  };
+  let proxyHooks = 0;
+  const proxied = new Proxy(target, {
+    get(value, key, receiver) {
+      proxyHooks += 1;
+      return Reflect.get(value, key, receiver);
+    },
+    getOwnPropertyDescriptor(value, key) {
+      proxyHooks += 1;
+      return Reflect.getOwnPropertyDescriptor(value, key);
+    },
+    getPrototypeOf(value) {
+      proxyHooks += 1;
+      return Reflect.getPrototypeOf(value);
+    },
+    ownKeys(value) {
+      proxyHooks += 1;
+      return Reflect.ownKeys(value);
+    },
+  });
+  const accessor = Object.create(null);
+  let accessorHooks = 0;
+  const countAccessor = value => ({
+    configurable: true,
+    get() {
+      accessorHooks += 1;
+      return value;
+    },
+  });
+  Object.defineProperties(accessor, {
+    chainProfile: countAccessor({ ...artifact.chainProfile }),
+    remoteChainAuthenticated: countAccessor(false),
+    then: countAccessor(undefined),
+    toString: countAccessor(() => ''),
+    valueOf: countAccessor(() => accessor),
+    [Symbol.iterator]: countAccessor(() => ({ next: () => ({ done: true }) })),
+  });
+
+  for (const evidence of [proxied, accessor]) {
+    const candidate = localSdkContext();
+    await assert.rejects(runReadinessWithInjectedEvidence({
+      assertZenonNodeReady,
+      candidate,
+      evidence,
+      expectedChainProfile: artifact.chainProfile,
+      policy,
+    }));
+    assert.deepEqual(candidate.calls, []);
+  }
+  assert.equal(proxyHooks, 0);
+  assert.equal(accessorHooks, 0);
+});
+
+test('direct readiness keeps fresh genuine public and local evidence family-correct', async () => {
+  const localModule = await import('../src/zenon/operator-trusted-local-devnet-profile.js');
+  const { assertZenonNodeReady } = await import('../src/zenon-payment.js');
+  const artifact = parseOperatorTrustedLocalDevnetProfileArtifact(artifactText());
+  const localPolicy = localModule.createOperatorTrustedLocalDevnetPolicy(artifact);
+  const publicPolicy = selectOperatorTrustedTestnetPolicy(
+    OPERATOR_TRUSTED_PUBLIC_TESTNET_PROFILE_NAME,
+    OPERATOR_TRUST_ACKNOWLEDGEMENT,
+    TESTNET_LIVE_ACKNOWLEDGEMENT,
+  );
+  const localCandidates = [localSdkContext(), localSdkContext()];
+  const publicCandidates = [publicSdkContext(), publicSdkContext()];
+  const [localFirst, localSecond, publicFirst, publicSecond] = await Promise.all([
+    ...localCandidates.map(candidate => runReadinessNormally({
+      assertZenonNodeReady,
+      candidate,
+      expectedChainProfile: artifact.chainProfile,
+      policy: localPolicy,
+    })),
+    ...publicCandidates.map(candidate => runReadinessNormally({
+      assertZenonNodeReady,
+      candidate,
+      expectedChainProfile: OPERATOR_TRUSTED_PUBLIC_TESTNET_CHAIN_PROFILE,
+      policy: publicPolicy,
+    })),
+  ]);
+
+  assert.equal(isOperatorTrustedLocalDevnetEvidence(localFirst.chainTrustEvidence), true);
+  assert.equal(isOperatorTrustedLocalDevnetEvidence(localSecond.chainTrustEvidence), true);
+  assert.equal(isOperatorTrustedTestnetEvidence(publicFirst.chainTrustEvidence), true);
+  assert.equal(isOperatorTrustedTestnetEvidence(publicSecond.chainTrustEvidence), true);
+  assert.notEqual(localFirst.chainTrustEvidence, localSecond.chainTrustEvidence);
+  assert.notEqual(publicFirst.chainTrustEvidence, publicSecond.chainTrustEvidence);
+  for (const candidate of [...localCandidates, ...publicCandidates]) {
+    assert.deepEqual(candidate.calls, [[2, 1]]);
+  }
+});
+
 test('local SDK observation adapter rejects malformed and unavailable query results', async () => {
   const localModule = await import('../src/zenon/operator-trusted-local-devnet-profile.js');
   const dispatcher = await import('../src/zenon/operator-trusted-chain-policy.js');
@@ -1103,6 +1387,7 @@ test('local policy and closed dispatcher resist post-import intrinsic replacemen
       policy,
       candidate.context,
     );
+    dispatcher.assertOperatorTrustedChainEvidence(policy, evidence);
     return { policy, evidence };
   });
 

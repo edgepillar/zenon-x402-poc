@@ -21,10 +21,14 @@ const HAS_OWN = Object.hasOwn;
 const IS_PROXY = utilTypes.isProxy;
 const OBJECT_PROTOTYPE = Object.prototype;
 const REFLECT_OWN_KEYS = Reflect.ownKeys;
+const WEAK_MAP_CONSTRUCTOR = WeakMap;
+const WEAK_MAP_GET = WeakMap.prototype.get;
+const WEAK_MAP_SET = WeakMap.prototype.set;
 const ERROR_CODE = 'operator_trusted_chain_policy_invalid';
 const PUBLIC_TESTNET_FAMILY = 1;
 const LOCAL_DEVNET_FAMILY = 2;
 const PROFILE_KEYS = FREEZE(['chainIdentifier', 'genesisMomentumHash', 'version']);
+const EVIDENCE_POLICIES = new WEAK_MAP_CONSTRUCTOR();
 
 class OperatorTrustedChainPolicyError extends Error {
   constructor() {
@@ -98,6 +102,32 @@ export function assertOperatorTrustedChainPolicy(policy, expectedChainProfile) {
   return policy;
 }
 
+function normalizeFamilyEvidence(family, evidence) {
+  if (evidence === null || (typeof evidence !== 'object' && typeof evidence !== 'function') ||
+      APPLY(IS_PROXY, undefined, [evidence])) fail();
+  if (family === PUBLIC_TESTNET_FAMILY) {
+    if (!isOperatorTrustedTestnetEvidence(evidence) ||
+        isOperatorTrustedLocalDevnetEvidence(evidence)) fail();
+    return evidence;
+  }
+  if (!isOperatorTrustedLocalDevnetEvidence(evidence) ||
+      isOperatorTrustedTestnetEvidence(evidence)) fail();
+  return evidence;
+}
+
+export function assertOperatorTrustedChainEvidence(policy, evidence) {
+  const family = classifyPolicy(policy);
+  const normalized = normalizeFamilyEvidence(family, evidence);
+  if (APPLY(WEAK_MAP_GET, EVIDENCE_POLICIES, [normalized]) !== policy) fail();
+  return normalized;
+}
+
+function registerFamilyEvidence(policy, family, evidence) {
+  const normalized = normalizeFamilyEvidence(family, evidence);
+  APPLY(WEAK_MAP_SET, EVIDENCE_POLICIES, [normalized, policy]);
+  return normalized;
+}
+
 export async function observeOperatorTrustedChainPolicy(policy, context) {
   try {
     const family = classifyPolicy(policy);
@@ -107,18 +137,14 @@ export async function observeOperatorTrustedChainPolicy(policy, context) {
         undefined,
         [policy, context],
       );
-      if (!isOperatorTrustedTestnetEvidence(evidence) ||
-          isOperatorTrustedLocalDevnetEvidence(evidence)) fail();
-      return evidence;
+      return registerFamilyEvidence(policy, family, evidence);
     }
     const evidence = await APPLY(
       observeOperatorTrustedLocalDevnetPolicy,
       undefined,
       [policy, context],
     );
-    if (!isOperatorTrustedLocalDevnetEvidence(evidence) ||
-        isOperatorTrustedTestnetEvidence(evidence)) fail();
-    return evidence;
+    return registerFamilyEvidence(policy, family, evidence);
   } catch {
     fail();
   }
