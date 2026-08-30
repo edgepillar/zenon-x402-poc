@@ -92,7 +92,11 @@ The artifact contains public configuration assertions only. Generated wallets, o
 
 "Four-node" names the intended external operator workflow only; the artifact does not verify node count, roles, topology, or a topology digest. The fixed `fourNodeTopologyVerified: false` nonclaim prevents the lane name from being treated as topology evidence.
 
+The artifact can create a separately branded local-devnet policy for direct `assertZenonNodeReady` checks. A closed family dispatcher invokes that genuine policy, queries height two exactly once, descriptor-safely snapshots the SDK response and frontier before and after the awaited query, and returns only branded non-authenticating evidence. This is offline-tested, runtime-unregistered readiness plumbing, not runtime activation or authenticated chain identity. Module import and policy construction are side-effect-free and offline; direct policy observation and direct readiness invocation perform the injected node reads. Policies and evidence, together with their copied fields, are detached and deeply frozen, while observation validation uses detached normalized copied snapshots. The SDK frontier object is returned unchanged by readiness and is not claimed to be detached or frozen. No ordinary CLI, runner, environment alias, package script, constructor, probe, client, facilitator, or default selects the local policy; every production session path remains public-testnet-only.
+
 `0x3639/testnet` is treated only as an external operator tool; no source from it is copied, vendored, patched, redistributed, or installed as a package dependency here. Because the external generator uses fresh timestamps and private random material, the supported evidence claim is reproducible equivalent behavior, never byte-for-byte recreation of the same private network. This offline slice does not run Docker, a builder, a node, a wallet, or a payment. A future local-devnet success would be an intermediate research milestone only; Issue #45 stays open and the separately authorized public-testnet gate remains required.
+
+A later runner design must separately resolve the descriptive network label, SDK network-ID binding, the local acknowledgement, loopback-only transport, the external tool's seed-plus-four-pillar/five-service workflow description, immutable image provenance, and devnet evidence classification. It must keep `fourNodeTopologyVerified: false` unless topology is independently authenticated. Wallets, credentials, node keys, endpoints, paths, transactions, signatures, Docker outputs, and generated operator packages remain outside this repository and artifact boundary.
 
 ### Offline live-evidence contract
 
@@ -287,6 +291,8 @@ src/
     payment-mechanism.js      additive mechanism boundary
   zenon/
     chain-profile.js          additive chain-profile boundary
+    operator-trusted-chain-policy.js
+                              closed readiness-only family dispatcher
     operator-trusted-local-devnet-profile.js
                               offline local-devnet artifact boundary
     operator-trusted-testnet-profile.js  historical CLI trust policy

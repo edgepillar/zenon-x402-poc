@@ -14,13 +14,18 @@ const REPOSITORY_SLUG = /^[a-z0-9](?:[a-z0-9._-]{0,62})\/[a-z0-9](?:[a-z0-9._-]{
 
 const APPLY = Reflect.apply;
 const ARRAY_IS_ARRAY = Array.isArray;
+const ARRAY_PROTOTYPE = Array.prototype;
 const ARRAY_SORT = Array.prototype.sort;
+const BUFFER_IS_BUFFER = Buffer.isBuffer;
 const BUFFER_BYTE_LENGTH = Buffer.byteLength;
+const BUFFER_TO_STRING = Buffer.prototype.toString;
+const CREATE_OBJECT = Object.create;
 const DEFINE_PROPERTY = Object.defineProperty;
 const FREEZE = Object.freeze;
 const GET_OWN_PROPERTY_DESCRIPTOR = Object.getOwnPropertyDescriptor;
 const GET_PROTOTYPE_OF = Object.getPrototypeOf;
 const HAS_OWN = Object.hasOwn;
+const IS_PROMISE = utilTypes.isPromise;
 const IS_PROXY = utilTypes.isProxy;
 const JSON_PARSE = JSON.parse;
 const JSON_STRINGIFY = JSON.stringify;
@@ -44,6 +49,15 @@ const WEAK_SET_CONSTRUCTOR = WeakSet;
 const WEAK_SET_ADD = WeakSet.prototype.add;
 const WEAK_SET_DELETE = WeakSet.prototype.delete;
 const WEAK_SET_HAS = WeakSet.prototype.has;
+const WEAK_MAP_CONSTRUCTOR = WeakMap;
+const WEAK_MAP_GET = WeakMap.prototype.get;
+const WEAK_MAP_SET = WeakMap.prototype.set;
+const PROMISE_CONSTRUCTOR = Promise;
+const PROMISE_PROTOTYPE = Promise.prototype;
+const PROMISE_THEN = Promise.prototype.then;
+const PROMISE_SPECIES = Symbol.species;
+const PROMISE_SPECIES_GETTER =
+  GET_OWN_PROPERTY_DESCRIPTOR(PROMISE_CONSTRUCTOR, PROMISE_SPECIES)?.get;
 
 export const OPERATOR_TRUSTED_LOCAL_FOUR_NODE_DEVNET_LANE =
   'operator-trusted-self-created-local-four-node-devnet-v1';
@@ -73,9 +87,105 @@ export class OperatorTrustedLocalDevnetError extends Error {
 
 const ARTIFACTS = new WEAK_SET_CONSTRUCTOR();
 const EVIDENCE = new WEAK_SET_CONSTRUCTOR();
+const POLICIES = new WEAK_SET_CONSTRUCTOR();
+const POLICY_ARTIFACTS = new WEAK_MAP_CONSTRUCTOR();
 
 function fail() {
   throw new OperatorTrustedLocalDevnetError();
+}
+
+function shieldAsyncReturn(value) {
+  const descriptor = APPLY(CREATE_OBJECT, undefined, [null]);
+  descriptor.value = undefined;
+  descriptor.enumerable = false;
+  descriptor.configurable = false;
+  descriptor.writable = false;
+  DEFINE_PROPERTY(value, 'then', descriptor);
+  return value;
+}
+
+function shieldInternalPromise(value) {
+  const descriptor = APPLY(CREATE_OBJECT, undefined, [null]);
+  descriptor.value = PROMISE_THEN;
+  descriptor.enumerable = false;
+  descriptor.configurable = false;
+  descriptor.writable = false;
+  DEFINE_PROPERTY(value, 'then', descriptor);
+  return value;
+}
+
+function promiseSettlement(fulfilled, value) {
+  const settlement = APPLY(CREATE_OBJECT, undefined, [null]);
+  ownData(settlement, 'fulfilled', fulfilled);
+  ownData(settlement, 'value', value);
+  return FREEZE(settlement);
+}
+
+function fulfilledPromiseSettlement(value) {
+  return promiseSettlement(true, value);
+}
+
+function rejectedPromiseSettlement(value) {
+  return promiseSettlement(false, value);
+}
+
+function assertNativePromise(value) {
+  if (value === null || typeof value !== 'object' || isProxy(value) ||
+      !APPLY(IS_PROMISE, undefined, [value])) fail();
+  let prototype;
+  let keys;
+  let constructorDescriptor;
+  let speciesDescriptor;
+  try {
+    prototype = APPLY(GET_PROTOTYPE_OF, undefined, [value]);
+    keys = APPLY(REFLECT_OWN_KEYS, undefined, [value]);
+    constructorDescriptor = APPLY(
+      GET_OWN_PROPERTY_DESCRIPTOR,
+      undefined,
+      [PROMISE_PROTOTYPE, 'constructor'],
+    );
+    speciesDescriptor = APPLY(
+      GET_OWN_PROPERTY_DESCRIPTOR,
+      undefined,
+      [PROMISE_CONSTRUCTOR, PROMISE_SPECIES],
+    );
+  } catch {
+    fail();
+  }
+  for (let index = 0; index < keys.length; index += 1) {
+    if (typeof keys[index] === 'string') fail();
+  }
+  if (prototype !== PROMISE_PROTOTYPE ||
+      !constructorDescriptor ||
+      !APPLY(HAS_OWN, undefined, [constructorDescriptor, 'value']) ||
+      constructorDescriptor.value !== PROMISE_CONSTRUCTOR ||
+      !speciesDescriptor ||
+      APPLY(HAS_OWN, undefined, [speciesDescriptor, 'value']) ||
+      speciesDescriptor.get !== PROMISE_SPECIES_GETTER ||
+      speciesDescriptor.set !== undefined) fail();
+}
+
+function rawObservationIsNativePromise(value) {
+  if (value !== null && (typeof value === 'object' || typeof value === 'function') &&
+      isProxy(value)) fail();
+  if (!APPLY(IS_PROMISE, undefined, [value])) return false;
+  assertNativePromise(value);
+  return true;
+}
+
+function settleNativePromise(value) {
+  assertNativePromise(value);
+  let bridge;
+  try {
+    bridge = APPLY(PROMISE_THEN, value, [
+      fulfilledPromiseSettlement,
+      rejectedPromiseSettlement,
+    ]);
+  } catch {
+    fail();
+  }
+  assertNativePromise(bridge);
+  return shieldInternalPromise(bridge);
 }
 
 function ownData(target, key, value) {
@@ -158,6 +268,14 @@ function weakSetDelete(set, value) {
 
 function weakSetHas(set, value) {
   return APPLY(WEAK_SET_HAS, set, [value]);
+}
+
+function weakMapGet(map, key) {
+  return APPLY(WEAK_MAP_GET, map, [key]);
+}
+
+function weakMapSet(map, key, value) {
+  APPLY(WEAK_MAP_SET, map, [key, value]);
 }
 
 function hasUnpairedSurrogate(value) {
@@ -487,14 +605,280 @@ function cloneProvenance(provenance) {
   };
 }
 
+const POLICY_PROFILE_KEYS = FREEZE(['chainIdentifier', 'genesisMomentumHash', 'version']);
+const SDK_FRONTIER_PLAIN_KEYS = FREEZE(['chainIdentifier', 'hash', 'height']);
+const SDK_MOMENTUM_PLAIN_KEYS = FREEZE([
+  'chainIdentifier', 'hash', 'height', 'previousHash', 'version',
+]);
+const SDK_MOMENTUM_KEYS = FREEZE([
+  'chainIdentifier', 'changesHash', 'content', 'data', 'hash', 'height',
+  'previousHash', 'producer', 'publicKey', 'signature', 'timestamp', 'version',
+]);
+const SDK_MOMENTUM_LIST_KEYS = FREEZE(['count', 'list']);
+const SDK_HASH_KEYS = FREEZE(['core']);
+const SDK_SINGLE_ITEM_ARRAY_KEYS = FREEZE(['0', 'length']);
+
+function isProxy(value) {
+  return APPLY(IS_PROXY, undefined, [value]);
+}
+
+function ownDataDescriptor(value, key) {
+  let descriptor;
+  try {
+    descriptor = APPLY(GET_OWN_PROPERTY_DESCRIPTOR, undefined, [value, key]);
+  } catch {
+    fail();
+  }
+  if (!descriptor || !APPLY(HAS_OWN, undefined, [descriptor, 'value'])) fail();
+  return descriptor;
+}
+
+function readOwnDataProperty(value, key) {
+  if (value === null || (typeof value !== 'object' && typeof value !== 'function') ||
+      isProxy(value)) fail();
+  return ownDataDescriptor(value, key).value;
+}
+
+function reflectedStringKeys(value) {
+  let keys;
+  try {
+    keys = APPLY(REFLECT_OWN_KEYS, undefined, [value]);
+  } catch {
+    fail();
+  }
+  for (let index = 0; index < keys.length; index += 1) {
+    if (typeof keys[index] !== 'string') fail();
+  }
+  sortStrings(keys);
+  return keys;
+}
+
+function sameKeys(left, right) {
+  if (left.length !== right.length) return false;
+  for (let index = 0; index < left.length; index += 1) {
+    if (left[index] !== right[index]) return false;
+  }
+  return true;
+}
+
+function snapshotKnownSdkObject(value, alternatives) {
+  if (value === null || typeof value !== 'object' || isProxy(value)) fail();
+  const valueIsArray = arrayIsArray(value);
+  let prototype;
+  try {
+    prototype = APPLY(GET_PROTOTYPE_OF, undefined, [value]);
+  } catch {
+    fail();
+  }
+  const keys = reflectedStringKeys(value);
+  let selected = null;
+  for (let index = 0; index < alternatives.length; index += 1) {
+    const candidate = alternatives[index];
+    const prototypeMatches =
+      (candidate.prototype === 'plain' && prototype === OBJECT_PROTOTYPE) ||
+      (candidate.prototype === 'sdk' && prototype !== null &&
+        prototype !== OBJECT_PROTOTYPE && !valueIsArray) ||
+      (candidate.prototype === 'array' && prototype === ARRAY_PROTOTYPE && valueIsArray);
+    if (prototypeMatches && sameKeys(keys, candidate.keys)) {
+      selected = candidate;
+      break;
+    }
+  }
+  if (!selected) fail();
+  const snapshot = {};
+  for (let index = 0; index < keys.length; index += 1) {
+    ownData(snapshot, keys[index], ownDataDescriptor(value, keys[index]).value);
+  }
+  return snapshot;
+}
+
+function canonicalSdkHash(value) {
+  if (typeof value === 'string') {
+    if (!regexTest(LOWERCASE_HASH, value)) fail();
+    return value;
+  }
+  const snapshot = snapshotKnownSdkObject(value, [
+    { keys: SDK_HASH_KEYS, prototype: 'sdk' },
+  ]);
+  if (!APPLY(BUFFER_IS_BUFFER, undefined, [snapshot.core])) fail();
+  const encoded = APPLY(BUFFER_TO_STRING, snapshot.core, ['hex']);
+  if (typeof encoded !== 'string' || !regexTest(LOWERCASE_HASH, encoded)) fail();
+  return encoded;
+}
+
+function snapshotPolicyChainProfile(value) {
+  const snapshot = snapshotKnownSdkObject(value, [
+    { keys: POLICY_PROFILE_KEYS, prototype: 'plain' },
+  ]);
+  if (snapshot.version !== 1 || snapshot.chainIdentifier !== LOCAL_DEVNET_CHAIN_IDENTIFIER ||
+      typeof snapshot.genesisMomentumHash !== 'string' ||
+      !regexTest(LOWERCASE_HASH, snapshot.genesisMomentumHash)) fail();
+  return snapshot;
+}
+
+function snapshotSdkFrontier(value) {
+  const snapshot = snapshotKnownSdkObject(value, [
+    { keys: SDK_FRONTIER_PLAIN_KEYS, prototype: 'plain' },
+    { keys: SDK_MOMENTUM_KEYS, prototype: 'sdk' },
+  ]);
+  if (!safeInteger(snapshot.chainIdentifier, 1) || !safeInteger(snapshot.height, 2)) fail();
+  return {
+    chainIdentifier: snapshot.chainIdentifier,
+    hash: canonicalSdkHash(snapshot.hash),
+    height: snapshot.height,
+  };
+}
+
+function snapshotSdkHeightTwo(value) {
+  const snapshot = snapshotKnownSdkObject(value, [
+    { keys: SDK_MOMENTUM_PLAIN_KEYS, prototype: 'plain' },
+    { keys: SDK_MOMENTUM_KEYS, prototype: 'sdk' },
+  ]);
+  if (!safeInteger(snapshot.version) || !safeInteger(snapshot.chainIdentifier, 1) ||
+      !safeInteger(snapshot.height)) fail();
+  return {
+    version: snapshot.version,
+    chainIdentifier: snapshot.chainIdentifier,
+    hash: canonicalSdkHash(snapshot.hash),
+    previousHash: canonicalSdkHash(snapshot.previousHash),
+    height: snapshot.height,
+  };
+}
+
+function snapshotSdkMomentumList(value) {
+  const snapshot = snapshotKnownSdkObject(value, [
+    { keys: SDK_MOMENTUM_LIST_KEYS, prototype: 'plain' },
+    { keys: SDK_MOMENTUM_LIST_KEYS, prototype: 'sdk' },
+  ]);
+  if (!safeInteger(snapshot.count) || snapshot.list === null ||
+      typeof snapshot.list !== 'object' || isProxy(snapshot.list) ||
+      !arrayIsArray(snapshot.list)) fail();
+  const list = snapshotKnownSdkObject(snapshot.list, [
+    { keys: SDK_SINGLE_ITEM_ARRAY_KEYS, prototype: 'array' },
+  ]);
+  if (list.length !== 1) fail();
+  return { count: snapshot.count, heightTwo: snapshotSdkHeightTwo(list[0]) };
+}
+
+function readSdkDataMethod(value, key) {
+  if (value === null || (typeof value !== 'object' && typeof value !== 'function') ||
+      isProxy(value)) fail();
+  let descriptor;
+  try {
+    descriptor = APPLY(GET_OWN_PROPERTY_DESCRIPTOR, undefined, [value, key]);
+  } catch {
+    fail();
+  }
+  if (descriptor === undefined) {
+    let prototype;
+    try {
+      prototype = APPLY(GET_PROTOTYPE_OF, undefined, [value]);
+    } catch {
+      fail();
+    }
+    if (prototype === null || isProxy(prototype)) fail();
+    descriptor = ownDataDescriptor(prototype, key);
+  } else if (!APPLY(HAS_OWN, undefined, [descriptor, 'value'])) {
+    fail();
+  }
+  if (typeof descriptor.value !== 'function' || isProxy(descriptor.value)) fail();
+  return descriptor.value;
+}
+
+function samePolicyChainProfile(left, right) {
+  return left.version === right.version &&
+    left.chainIdentifier === right.chainIdentifier &&
+    left.genesisMomentumHash === right.genesisMomentumHash;
+}
+
+function sameSdkFrontier(left, right) {
+  return left.chainIdentifier === right.chainIdentifier && left.height === right.height &&
+    left.hash === right.hash;
+}
+
+export function createOperatorTrustedLocalDevnetPolicy(artifact) {
+  try {
+    if (!isOperatorTrustedLocalDevnetProfileArtifact(artifact)) fail();
+    const policy = deepFreeze({
+      artifactVersion: artifact.artifactVersion,
+      lane: artifact.lane,
+      trustMode: 'operator-trusted-self-created-local-devnet-observation',
+      remoteChainAuthenticated: false,
+      fourNodeTopologyVerified: false,
+      chainProfile: cloneChainProfile(artifact.chainProfile),
+      heightTwo: cloneHeightTwo(artifact.heightTwo),
+      provenance: cloneProvenance(artifact.provenance),
+      nonClaims: { ...OPERATOR_TRUSTED_LOCAL_FOUR_NODE_DEVNET_NON_CLAIMS },
+    });
+    weakSetAdd(POLICIES, policy);
+    weakMapSet(POLICY_ARTIFACTS, policy, artifact);
+    return policy;
+  } catch {
+    fail();
+  }
+}
+
+export function isOperatorTrustedLocalDevnetPolicy(value) {
+  return value !== null && (typeof value === 'object' || typeof value === 'function') &&
+    !isProxy(value) && weakSetHas(POLICIES, value);
+}
+
+export async function observeOperatorTrustedLocalDevnetPolicy(policy, context) {
+  try {
+    if (!isOperatorTrustedLocalDevnetPolicy(policy)) fail();
+    const artifact = weakMapGet(POLICY_ARTIFACTS, policy);
+    if (!isOperatorTrustedLocalDevnetProfileArtifact(artifact)) fail();
+    const expectedReference = readOwnDataProperty(context, 'expectedChainProfile');
+    const frontierReference = readOwnDataProperty(context, 'frontierMomentum');
+    const zenon = readOwnDataProperty(context, 'zenon');
+    const expectedBefore = snapshotPolicyChainProfile(expectedReference);
+    if (!samePolicyChainProfile(expectedBefore, artifact.chainProfile)) fail();
+    const frontierBefore = snapshotSdkFrontier(frontierReference);
+    if (frontierBefore.chainIdentifier !== toNumber(artifact.chainProfile.chainIdentifier)) fail();
+    const ledger = readOwnDataProperty(zenon, 'ledger');
+    const getMomentumsByHeight = readSdkDataMethod(ledger, 'getMomentumsByHeight');
+
+    let rawObservation;
+    try {
+      rawObservation = APPLY(getMomentumsByHeight, ledger, [2, 1]);
+    } catch {
+      fail();
+    }
+    let observation = rawObservation;
+    if (rawObservationIsNativePromise(rawObservation)) {
+      const settlement = await settleNativePromise(rawObservation);
+      if (settlement.fulfilled !== true) fail();
+      observation = settlement.value;
+    }
+
+    if (readOwnDataProperty(context, 'expectedChainProfile') !== expectedReference ||
+        readOwnDataProperty(context, 'frontierMomentum') !== frontierReference) fail();
+    const expectedAfter = snapshotPolicyChainProfile(expectedReference);
+    const frontierAfter = snapshotSdkFrontier(frontierReference);
+    if (!samePolicyChainProfile(expectedBefore, expectedAfter) ||
+        !sameSdkFrontier(frontierBefore, frontierAfter)) fail();
+    const normalized = snapshotSdkMomentumList(observation);
+    return validateOperatorTrustedLocalDevnetObservation(artifact, {
+      reportedMomentumCount: normalized.count,
+      frontierMomentum: {
+        chainIdentifier: frontierBefore.chainIdentifier,
+        height: frontierBefore.height,
+      },
+      heightTwoMomentum: normalized.heightTwo,
+    });
+  } catch {
+    fail();
+  }
+}
+
 export function isOperatorTrustedLocalDevnetProfileArtifact(value) {
   return value !== null && (typeof value === 'object' || typeof value === 'function') &&
-    weakSetHas(ARTIFACTS, value);
+    !isProxy(value) && weakSetHas(ARTIFACTS, value);
 }
 
 export function isOperatorTrustedLocalDevnetEvidence(value) {
   return value !== null && (typeof value === 'object' || typeof value === 'function') &&
-    weakSetHas(EVIDENCE, value);
+    !isProxy(value) && weakSetHas(EVIDENCE, value);
 }
 
 export function parseOperatorTrustedLocalDevnetProfileArtifact(jsonText) {
@@ -538,7 +922,7 @@ export function validateOperatorTrustedLocalDevnetObservation(artifact, observat
         snapshot.heightTwoMomentum.previousHash !== artifact.chainProfile.genesisMomentumHash ||
         snapshot.heightTwoMomentum.hash === snapshot.heightTwoMomentum.previousHash) fail();
 
-    const evidence = deepFreeze({
+    const evidence = deepFreeze(shieldAsyncReturn({
       lane: OPERATOR_TRUSTED_LOCAL_FOUR_NODE_DEVNET_LANE,
       trustMode: 'operator-trusted-self-created-local-devnet-observation',
       remoteChainAuthenticated: false,
@@ -549,7 +933,7 @@ export function validateOperatorTrustedLocalDevnetObservation(artifact, observat
       provenance: cloneProvenance(artifact.provenance),
       observationHeight: 2,
       nonClaims: { ...OPERATOR_TRUSTED_LOCAL_FOUR_NODE_DEVNET_NON_CLAIMS },
-    });
+    }));
     weakSetAdd(EVIDENCE, evidence);
     return evidence;
   } catch {

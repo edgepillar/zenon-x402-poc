@@ -23,9 +23,12 @@ import {
 } from './settlement-journal.js';
 import { invokeLegacySdk105SignedComposite } from './zenon/internal/legacy-sdk-1-0-5-signed-composite.js';
 import {
-  isOperatorTrustedTestnetEvidence,
   isOperatorTrustedTestnetPolicy,
 } from './zenon/operator-trusted-testnet-profile.js';
+import {
+  assertOperatorTrustedChainPolicy,
+  observeOperatorTrustedChainPolicy,
+} from './zenon/operator-trusted-chain-policy.js';
 import {
   assertLiveEvidenceObserver,
   recordLiveEvidencePhase,
@@ -564,6 +567,16 @@ function chainProfilesEqual(left, right) {
     left?.genesisMomentumHash === right?.genesisMomentumHash;
 }
 
+function shieldNodeReadinessResult(result) {
+  const descriptor = CREATE_OBJECT(null);
+  descriptor.value = undefined;
+  descriptor.enumerable = false;
+  descriptor.writable = false;
+  descriptor.configurable = false;
+  DEFINE_PROPERTY(result, 'then', descriptor);
+  return result;
+}
+
 function cloneChainProfile(profile) {
   return {
     version: profile.version,
@@ -615,8 +628,12 @@ export async function assertZenonNodeReady(
   const hasAuthenticatorInput = authenticateChainProfile !== undefined;
   const hasAuthenticator = typeof authenticateChainProfile === 'function';
   const hasOperatorPolicy = operatorTrustedChainPolicy !== undefined;
-  if (hasOperatorPolicy && !isOperatorTrustedTestnetPolicy(operatorTrustedChainPolicy)) {
-    safetyError('operator_trusted_chain_policy_invalid');
+  if (hasOperatorPolicy) {
+    try {
+      assertOperatorTrustedChainPolicy(operatorTrustedChainPolicy, expectedChainProfile);
+    } catch {
+      safetyError('operator_trusted_chain_policy_invalid');
+    }
   }
   if (hasAuthenticatorInput && hasOperatorPolicy) safetyError('chain_trust_policy_conflict');
   let networkInfo;
@@ -656,7 +673,7 @@ export async function assertZenonNodeReady(
     try {
       chainTrustEvidence = await callRead(
         'operatorTrustedChainObservation',
-        () => operatorTrustedChainPolicy.observeChainTrust({
+        () => observeOperatorTrustedChainPolicy(operatorTrustedChainPolicy, {
           zenon,
           networkInfo,
           syncInfo,
@@ -669,12 +686,17 @@ export async function assertZenonNodeReady(
           error?.code === LIVE_RUNTIME_ERROR_CODES.POISONED) throw error;
       safetyError('operator_trusted_chain_observation_unavailable', error);
     }
-    if (!isOperatorTrustedTestnetEvidence(chainTrustEvidence) ||
-        chainTrustEvidence.remoteChainAuthenticated !== false ||
+    if (chainTrustEvidence.remoteChainAuthenticated !== false ||
+        HAS_OWN(chainTrustEvidence, 'authenticatedProfile') ||
         !chainProfilesEqual(chainTrustEvidence.chainProfile, expectedChainProfile)) {
       safetyError('operator_trusted_chain_observation_invalid');
     }
-    return { chainId, syncInfo, frontierMomentum, chainTrustEvidence };
+    return shieldNodeReadinessResult({
+      chainId,
+      syncInfo,
+      frontierMomentum,
+      chainTrustEvidence,
+    });
   }
 
   let authenticatedProfile;
@@ -695,7 +717,12 @@ export async function assertZenonNodeReady(
   if (!chainProfilesEqual(authenticatedProfile, expectedChainProfile)) {
     safetyError('connected_node_chain_profile_mismatch');
   }
-  return { chainId, syncInfo, frontierMomentum, authenticatedProfile: cloneChainProfile(authenticatedProfile) };
+  return shieldNodeReadinessResult({
+    chainId,
+    syncInfo,
+    frontierMomentum,
+    authenticatedProfile: cloneChainProfile(authenticatedProfile),
+  });
 }
 
 function parseRpcUrl(environment = process.env) {

@@ -1,3 +1,36 @@
+import { types as utilTypes } from 'node:util';
+
+const APPLY = Reflect.apply;
+const ARRAY_IS_ARRAY = Array.isArray;
+const ARRAY_PROTOTYPE = Array.prototype;
+const ARRAY_SORT = Array.prototype.sort;
+const BUFFER_IS_BUFFER = Buffer.isBuffer;
+const BUFFER_TO_STRING = Buffer.prototype.toString;
+const CREATE_OBJECT = Object.create;
+const DEFINE_PROPERTY = Object.defineProperty;
+const FREEZE = Object.freeze;
+const GET_OWN_PROPERTY_DESCRIPTOR = Object.getOwnPropertyDescriptor;
+const GET_PROTOTYPE_OF = Object.getPrototypeOf;
+const HAS_OWN = Object.hasOwn;
+const IS_PROMISE = utilTypes.isPromise;
+const IS_PROXY = utilTypes.isProxy;
+const NUMBER_CONSTRUCTOR = Number;
+const NUMBER_IS_SAFE_INTEGER = Number.isSafeInteger;
+const OBJECT_IS = Object.is;
+const OBJECT_KEYS = Object.keys;
+const OBJECT_PROTOTYPE = Object.prototype;
+const REFLECT_OWN_KEYS = Reflect.ownKeys;
+const REGEXP_EXEC = RegExp.prototype.exec;
+const WEAK_SET_CONSTRUCTOR = WeakSet;
+const WEAK_SET_ADD = WeakSet.prototype.add;
+const WEAK_SET_HAS = WeakSet.prototype.has;
+const PROMISE_CONSTRUCTOR = Promise;
+const PROMISE_PROTOTYPE = Promise.prototype;
+const PROMISE_THEN = Promise.prototype.then;
+const PROMISE_SPECIES = Symbol.species;
+const PROMISE_SPECIES_GETTER =
+  GET_OWN_PROPERTY_DESCRIPTOR(PROMISE_CONSTRUCTOR, PROMISE_SPECIES)?.get;
+
 const LOWERCASE_HASH = /^[0-9a-f]{64}$/;
 
 export const OPERATOR_TRUSTED_PUBLIC_TESTNET_PROFILE_NAME =
@@ -11,13 +44,13 @@ export const TESTNET_LIVE_ACKNOWLEDGEMENT = 'I_UNDERSTAND_TESTNET_ONLY';
 export const OPERATOR_TRUSTED_PUBLIC_TESTNET_WARNING =
   'Warning: this historical public-testnet anchor is operator trusted; remote chain identity is not authenticated.';
 
-export const OPERATOR_TRUSTED_PUBLIC_TESTNET_CHAIN_PROFILE = Object.freeze({
+export const OPERATOR_TRUSTED_PUBLIC_TESTNET_CHAIN_PROFILE = FREEZE({
   version: 1,
   chainIdentifier: '3',
   genesisMomentumHash: '761f482683e6d0ed1f92af1140418b989b89c474d3491a2f4651bce99954bed6',
 });
 
-export const OPERATOR_TRUSTED_PUBLIC_TESTNET_PROVENANCE = Object.freeze({
+export const OPERATOR_TRUSTED_PUBLIC_TESTNET_PROVENANCE = FREEZE({
   repository: 'zenon-network/znn-wiki',
   revision: 'cad4cde3aea2e962a1713958323699c3298790ae',
   path: 'api.md',
@@ -27,7 +60,7 @@ export const OPERATOR_TRUSTED_PUBLIC_TESTNET_PROVENANCE = Object.freeze({
   derivation: 'height-2 previousHash',
 });
 
-export const OPERATOR_TRUSTED_PUBLIC_TESTNET_NON_CLAIMS = Object.freeze({
+export const OPERATOR_TRUSTED_PUBLIC_TESTNET_NON_CLAIMS = FREEZE({
   authoritativeCurrentNetworkRelease: false,
   signedTrustArtifact: false,
   authenticatedRpcEndpoint: false,
@@ -38,6 +71,199 @@ export const OPERATOR_TRUSTED_PUBLIC_TESTNET_NON_CLAIMS = Object.freeze({
 
 function fail(code) {
   throw new Error(code);
+}
+
+const PROFILE_KEYS = FREEZE(['chainIdentifier', 'genesisMomentumHash', 'version']);
+const FRONTIER_PLAIN_KEYS = FREEZE(['chainIdentifier', 'hash', 'height']);
+const MOMENTUM_PLAIN_KEYS = FREEZE([
+  'chainIdentifier', 'hash', 'height', 'previousHash', 'version',
+]);
+const MOMENTUM_SDK_KEYS = FREEZE([
+  'chainIdentifier', 'changesHash', 'content', 'data', 'hash', 'height',
+  'previousHash', 'producer', 'publicKey', 'signature', 'timestamp', 'version',
+]);
+const MOMENTUM_LIST_KEYS = FREEZE(['count', 'list']);
+const HASH_KEYS = FREEZE(['core']);
+const SINGLE_ITEM_ARRAY_KEYS = FREEZE(['0', 'length']);
+
+function apply(fn, receiver, args) {
+  return APPLY(fn, receiver, args);
+}
+
+function isProxy(value) {
+  return apply(IS_PROXY, undefined, [value]);
+}
+
+function arrayIsArray(value) {
+  return apply(ARRAY_IS_ARRAY, undefined, [value]);
+}
+
+function numberIsSafeInteger(value) {
+  return apply(NUMBER_IS_SAFE_INTEGER, undefined, [value]);
+}
+
+function toNumber(value) {
+  return apply(NUMBER_CONSTRUCTOR, undefined, [value]);
+}
+
+function regexTest(expression, value) {
+  return apply(REGEXP_EXEC, expression, [value]) !== null;
+}
+
+function weakSetAdd(set, value) {
+  apply(WEAK_SET_ADD, set, [value]);
+}
+
+function weakSetHas(set, value) {
+  return apply(WEAK_SET_HAS, set, [value]);
+}
+
+function defineOwnData(target, key, value) {
+  const descriptor = apply(CREATE_OBJECT, undefined, [null]);
+  descriptor.value = value;
+  descriptor.enumerable = true;
+  descriptor.configurable = true;
+  descriptor.writable = true;
+  apply(DEFINE_PROPERTY, undefined, [target, key, descriptor]);
+}
+
+function shieldAsyncReturn(value) {
+  const descriptor = apply(CREATE_OBJECT, undefined, [null]);
+  descriptor.value = undefined;
+  descriptor.enumerable = false;
+  descriptor.configurable = false;
+  descriptor.writable = false;
+  apply(DEFINE_PROPERTY, undefined, [value, 'then', descriptor]);
+  return value;
+}
+
+function shieldInternalPromise(value) {
+  const descriptor = apply(CREATE_OBJECT, undefined, [null]);
+  descriptor.value = PROMISE_THEN;
+  descriptor.enumerable = false;
+  descriptor.configurable = false;
+  descriptor.writable = false;
+  apply(DEFINE_PROPERTY, undefined, [value, 'then', descriptor]);
+  return value;
+}
+
+function promiseSettlement(fulfilled, value) {
+  const settlement = apply(CREATE_OBJECT, undefined, [null]);
+  defineOwnData(settlement, 'fulfilled', fulfilled);
+  defineOwnData(settlement, 'value', value);
+  return apply(FREEZE, undefined, [settlement]);
+}
+
+function fulfilledPromiseSettlement(value) {
+  return promiseSettlement(true, value);
+}
+
+function rejectedPromiseSettlement(value) {
+  return promiseSettlement(false, value);
+}
+
+function assertNativePromise(value) {
+  if (value === null || typeof value !== 'object' || isProxy(value) ||
+      !apply(IS_PROMISE, undefined, [value])) {
+    fail('operator_trusted_profile_evidence_invalid');
+  }
+  let prototype;
+  let keys;
+  let constructorDescriptor;
+  let speciesDescriptor;
+  try {
+    prototype = apply(GET_PROTOTYPE_OF, undefined, [value]);
+    keys = apply(REFLECT_OWN_KEYS, undefined, [value]);
+    constructorDescriptor = apply(
+      GET_OWN_PROPERTY_DESCRIPTOR,
+      undefined,
+      [PROMISE_PROTOTYPE, 'constructor'],
+    );
+    speciesDescriptor = apply(
+      GET_OWN_PROPERTY_DESCRIPTOR,
+      undefined,
+      [PROMISE_CONSTRUCTOR, PROMISE_SPECIES],
+    );
+  } catch {
+    fail('operator_trusted_profile_evidence_invalid');
+  }
+  for (let index = 0; index < keys.length; index += 1) {
+    if (typeof keys[index] === 'string') {
+      fail('operator_trusted_profile_evidence_invalid');
+    }
+  }
+  if (prototype !== PROMISE_PROTOTYPE ||
+      !constructorDescriptor ||
+      !apply(HAS_OWN, undefined, [constructorDescriptor, 'value']) ||
+      constructorDescriptor.value !== PROMISE_CONSTRUCTOR ||
+      !speciesDescriptor ||
+      apply(HAS_OWN, undefined, [speciesDescriptor, 'value']) ||
+      speciesDescriptor.get !== PROMISE_SPECIES_GETTER ||
+      speciesDescriptor.set !== undefined) {
+    fail('operator_trusted_profile_evidence_invalid');
+  }
+}
+
+function rawObservationIsNativePromise(value) {
+  if (value !== null && (typeof value === 'object' || typeof value === 'function') &&
+      isProxy(value)) fail('operator_trusted_profile_evidence_invalid');
+  if (!apply(IS_PROMISE, undefined, [value])) return false;
+  assertNativePromise(value);
+  return true;
+}
+
+function settleNativePromise(value) {
+  assertNativePromise(value);
+  let bridge;
+  try {
+    bridge = apply(PROMISE_THEN, value, [
+      fulfilledPromiseSettlement,
+      rejectedPromiseSettlement,
+    ]);
+  } catch {
+    fail('operator_trusted_profile_evidence_invalid');
+  }
+  assertNativePromise(bridge);
+  return shieldInternalPromise(bridge);
+}
+
+function safeInteger(value, minimum = 0) {
+  return numberIsSafeInteger(value) && !OBJECT_IS(value, -0) && value >= minimum;
+}
+
+function reflectedStringKeys(value) {
+  let keys;
+  try {
+    keys = apply(REFLECT_OWN_KEYS, undefined, [value]);
+  } catch {
+    fail('operator_trusted_profile_evidence_invalid');
+  }
+  for (let index = 0; index < keys.length; index += 1) {
+    if (typeof keys[index] !== 'string') fail('operator_trusted_profile_evidence_invalid');
+  }
+  apply(ARRAY_SORT, keys, []);
+  return keys;
+}
+
+function sameKeys(left, right) {
+  if (left.length !== right.length) return false;
+  for (let index = 0; index < left.length; index += 1) {
+    if (left[index] !== right[index]) return false;
+  }
+  return true;
+}
+
+function ownDataDescriptor(value, key) {
+  let descriptor;
+  try {
+    descriptor = apply(GET_OWN_PROPERTY_DESCRIPTOR, undefined, [value, key]);
+  } catch {
+    fail('operator_trusted_profile_evidence_invalid');
+  }
+  if (!descriptor || !apply(HAS_OWN, undefined, [descriptor, 'value'])) {
+    fail('operator_trusted_profile_evidence_invalid');
+  }
+  return descriptor;
 }
 
 function cloneChainProfile() {
@@ -53,46 +279,154 @@ function readOwnDataProperty(value, key) {
   if (value === null || (typeof value !== 'object' && typeof value !== 'function')) {
     fail('operator_trusted_profile_evidence_invalid');
   }
-  const descriptor = Object.getOwnPropertyDescriptor(value, key);
-  if (!descriptor || !Object.hasOwn(descriptor, 'value')) {
-    fail('operator_trusted_profile_evidence_invalid');
-  }
-  return descriptor.value;
+  if (isProxy(value)) fail('operator_trusted_profile_evidence_invalid');
+  return ownDataDescriptor(value, key).value;
 }
 
-function exactPinnedProfile(value) {
-  if (value === null || typeof value !== 'object' || Array.isArray(value)) return false;
-  let descriptors;
+function snapshotKnownObject(value, alternatives) {
+  if (value === null || typeof value !== 'object' || isProxy(value)) {
+    fail('operator_trusted_profile_evidence_invalid');
+  }
+  const valueIsArray = arrayIsArray(value);
+  let prototype;
   try {
-    descriptors = Object.getOwnPropertyDescriptors(value);
+    prototype = apply(GET_PROTOTYPE_OF, undefined, [value]);
   } catch {
-    return false;
+    fail('operator_trusted_profile_evidence_invalid');
   }
-  const keys = Object.keys(descriptors).sort();
-  if (keys.length !== 3 || keys[0] !== 'chainIdentifier' ||
-      keys[1] !== 'genesisMomentumHash' || keys[2] !== 'version') return false;
-  for (const key of keys) {
-    if (!Object.hasOwn(descriptors[key], 'value')) return false;
+  const keys = reflectedStringKeys(value);
+  let selected = null;
+  for (let index = 0; index < alternatives.length; index += 1) {
+    const candidate = alternatives[index];
+    const prototypeMatches =
+      (candidate.prototype === 'plain' && prototype === OBJECT_PROTOTYPE) ||
+      (candidate.prototype === 'sdk' && prototype !== null &&
+        prototype !== OBJECT_PROTOTYPE && !valueIsArray) ||
+      (candidate.prototype === 'array' && prototype === ARRAY_PROTOTYPE && valueIsArray);
+    if (prototypeMatches && sameKeys(keys, candidate.keys)) {
+      selected = alternatives[index];
+      break;
+    }
   }
-  return descriptors.version.value === OPERATOR_TRUSTED_PUBLIC_TESTNET_CHAIN_PROFILE.version &&
-    descriptors.chainIdentifier.value ===
-      OPERATOR_TRUSTED_PUBLIC_TESTNET_CHAIN_PROFILE.chainIdentifier &&
-    descriptors.genesisMomentumHash.value ===
-      OPERATOR_TRUSTED_PUBLIC_TESTNET_CHAIN_PROFILE.genesisMomentumHash;
+  if (!selected) fail('operator_trusted_profile_evidence_invalid');
+  const snapshot = apply(CREATE_OBJECT, undefined, [null]);
+  for (let index = 0; index < keys.length; index += 1) {
+    defineOwnData(snapshot, keys[index], ownDataDescriptor(value, keys[index]).value);
+  }
+  return snapshot;
 }
 
 function canonicalHash(value) {
-  let encoded = value;
-  if (typeof encoded !== 'string') {
-    if (encoded === null || typeof encoded !== 'object' || typeof encoded.toString !== 'function') {
-      fail('operator_trusted_profile_evidence_invalid');
-    }
-    encoded = encoded.toString();
+  if (typeof value === 'string') {
+    if (!regexTest(LOWERCASE_HASH, value)) fail('operator_trusted_profile_evidence_invalid');
+    return value;
   }
-  if (typeof encoded !== 'string' || !LOWERCASE_HASH.test(encoded)) {
+  const snapshot = snapshotKnownObject(value, [{ keys: HASH_KEYS, prototype: 'sdk' }]);
+  if (!apply(BUFFER_IS_BUFFER, undefined, [snapshot.core])) {
+    fail('operator_trusted_profile_evidence_invalid');
+  }
+  const encoded = apply(BUFFER_TO_STRING, snapshot.core, ['hex']);
+  if (typeof encoded !== 'string' || !regexTest(LOWERCASE_HASH, encoded)) {
     fail('operator_trusted_profile_evidence_invalid');
   }
   return encoded;
+}
+
+function snapshotPinnedProfile(value) {
+  const snapshot = snapshotKnownObject(value, [{ keys: PROFILE_KEYS, prototype: 'plain' }]);
+  if (snapshot.version !== OPERATOR_TRUSTED_PUBLIC_TESTNET_CHAIN_PROFILE.version ||
+      snapshot.chainIdentifier !== OPERATOR_TRUSTED_PUBLIC_TESTNET_CHAIN_PROFILE.chainIdentifier ||
+      snapshot.genesisMomentumHash !==
+        OPERATOR_TRUSTED_PUBLIC_TESTNET_CHAIN_PROFILE.genesisMomentumHash) {
+    fail('operator_trusted_profile_mismatch');
+  }
+  return snapshot;
+}
+
+function snapshotFrontier(value) {
+  const snapshot = snapshotKnownObject(value, [
+    { keys: FRONTIER_PLAIN_KEYS, prototype: 'plain' },
+    { keys: MOMENTUM_SDK_KEYS, prototype: 'sdk' },
+  ]);
+  if (!safeInteger(snapshot.chainIdentifier, 1) || !safeInteger(snapshot.height, 2)) {
+    fail('operator_trusted_profile_evidence_invalid');
+  }
+  return {
+    chainIdentifier: snapshot.chainIdentifier,
+    hash: canonicalHash(snapshot.hash),
+    height: snapshot.height,
+  };
+}
+
+function snapshotHeightTwo(value) {
+  const snapshot = snapshotKnownObject(value, [
+    { keys: MOMENTUM_PLAIN_KEYS, prototype: 'plain' },
+    { keys: MOMENTUM_SDK_KEYS, prototype: 'sdk' },
+  ]);
+  if (!safeInteger(snapshot.version, 0) || !safeInteger(snapshot.chainIdentifier, 1) ||
+      !safeInteger(snapshot.height, 0)) fail('operator_trusted_profile_evidence_invalid');
+  return {
+    version: snapshot.version,
+    chainIdentifier: snapshot.chainIdentifier,
+    hash: canonicalHash(snapshot.hash),
+    previousHash: canonicalHash(snapshot.previousHash),
+    height: snapshot.height,
+  };
+}
+
+function snapshotMomentumList(value) {
+  const snapshot = snapshotKnownObject(value, [
+    { keys: MOMENTUM_LIST_KEYS, prototype: 'plain' },
+    { keys: MOMENTUM_LIST_KEYS, prototype: 'sdk' },
+  ]);
+  if (!safeInteger(snapshot.count, 0) || snapshot.list === null ||
+      typeof snapshot.list !== 'object' || isProxy(snapshot.list) ||
+      !arrayIsArray(snapshot.list)) fail('operator_trusted_profile_evidence_invalid');
+  const list = snapshotKnownObject(snapshot.list, [
+    { keys: SINGLE_ITEM_ARRAY_KEYS, prototype: 'array' },
+  ]);
+  if (list.length !== 1) fail('operator_trusted_profile_evidence_invalid');
+  return {
+    count: snapshot.count,
+    heightTwo: snapshotHeightTwo(list[0]),
+  };
+}
+
+function readDataMethod(value, key) {
+  if (value === null || (typeof value !== 'object' && typeof value !== 'function') ||
+      isProxy(value)) fail('operator_trusted_profile_evidence_invalid');
+  let descriptor;
+  try {
+    descriptor = apply(GET_OWN_PROPERTY_DESCRIPTOR, undefined, [value, key]);
+  } catch {
+    fail('operator_trusted_profile_evidence_invalid');
+  }
+  if (descriptor === undefined) {
+    let prototype;
+    try {
+      prototype = apply(GET_PROTOTYPE_OF, undefined, [value]);
+    } catch {
+      fail('operator_trusted_profile_evidence_invalid');
+    }
+    if (prototype === null || isProxy(prototype)) fail('operator_trusted_profile_evidence_invalid');
+    descriptor = ownDataDescriptor(prototype, key);
+  } else if (!apply(HAS_OWN, undefined, [descriptor, 'value'])) {
+    fail('operator_trusted_profile_evidence_invalid');
+  }
+  if (typeof descriptor.value !== 'function') fail('operator_trusted_profile_evidence_unavailable');
+  if (isProxy(descriptor.value)) fail('operator_trusted_profile_evidence_invalid');
+  return descriptor.value;
+}
+
+function sameProfile(left, right) {
+  return left.version === right.version &&
+    left.chainIdentifier === right.chainIdentifier &&
+    left.genesisMomentumHash === right.genesisMomentumHash;
+}
+
+function sameFrontier(left, right) {
+  return left.chainIdentifier === right.chainIdentifier &&
+    left.height === right.height && left.hash === right.hash;
 }
 
 async function checkHistoricalHeightTwo(context) {
@@ -106,78 +440,69 @@ async function checkHistoricalHeightTwo(context) {
   } catch {
     fail('operator_trusted_profile_evidence_invalid');
   }
-
-  if (!exactPinnedProfile(expectedChainProfile)) {
-    fail('operator_trusted_profile_mismatch');
-  }
-
-  let getMomentumsByHeight;
-  try {
-    getMomentumsByHeight = zenon?.ledger?.getMomentumsByHeight;
-  } catch {
-    fail('operator_trusted_profile_evidence_invalid');
-  }
-  if (typeof getMomentumsByHeight !== 'function') {
-    fail('operator_trusted_profile_evidence_unavailable');
-  }
-
-  let observation;
-  try {
-    observation = await getMomentumsByHeight.call(zenon.ledger, 2, 1);
-  } catch {
-    fail('operator_trusted_profile_evidence_unavailable');
-  }
-
-  let count;
-  let list;
-  let frontierHeight;
-  try {
-    count = readOwnDataProperty(observation, 'count');
-    list = readOwnDataProperty(observation, 'list');
-    frontierHeight = readOwnDataProperty(frontierMomentum, 'height');
-  } catch {
-    fail('operator_trusted_profile_evidence_invalid');
-  }
-  if (!Number.isSafeInteger(count) || count < 2 || !Array.isArray(list) || list.length !== 1 ||
-      !Number.isSafeInteger(frontierHeight) || frontierHeight < 2 || count < frontierHeight) {
-    fail('operator_trusted_profile_evidence_invalid');
-  }
-
-  const momentum = list[0];
-  let version;
-  let chainIdentifier;
-  let height;
-  let hash;
-  let previousHash;
-  try {
-    version = readOwnDataProperty(momentum, 'version');
-    chainIdentifier = readOwnDataProperty(momentum, 'chainIdentifier');
-    height = readOwnDataProperty(momentum, 'height');
-    hash = canonicalHash(readOwnDataProperty(momentum, 'hash'));
-    previousHash = canonicalHash(readOwnDataProperty(momentum, 'previousHash'));
-  } catch {
-    fail('operator_trusted_profile_evidence_invalid');
-  }
-  if (version !== 1 || height !== OPERATOR_TRUSTED_PUBLIC_TESTNET_PROVENANCE.observationHeight ||
-      chainIdentifier !== Number(OPERATOR_TRUSTED_PUBLIC_TESTNET_CHAIN_PROFILE.chainIdentifier) ||
-      hash !== OPERATOR_TRUSTED_PUBLIC_TESTNET_PROVENANCE.observationHash ||
-      previousHash !== OPERATOR_TRUSTED_PUBLIC_TESTNET_CHAIN_PROFILE.genesisMomentumHash) {
+  const expectedBefore = snapshotPinnedProfile(expectedChainProfile);
+  const frontierBefore = snapshotFrontier(frontierMomentum);
+  if (frontierBefore.chainIdentifier !==
+      toNumber(OPERATOR_TRUSTED_PUBLIC_TESTNET_CHAIN_PROFILE.chainIdentifier)) {
     fail('operator_trusted_profile_evidence_mismatch');
   }
 
-  const evidence = Object.freeze({
+  let ledger;
+  let getMomentumsByHeight;
+  try {
+    ledger = readOwnDataProperty(zenon, 'ledger');
+    getMomentumsByHeight = readDataMethod(ledger, 'getMomentumsByHeight');
+  } catch {
+    fail('operator_trusted_profile_evidence_invalid');
+  }
+
+  let rawObservation;
+  try {
+    rawObservation = apply(getMomentumsByHeight, ledger, [2, 1]);
+  } catch {
+    fail('operator_trusted_profile_evidence_unavailable');
+  }
+  let observation = rawObservation;
+  if (rawObservationIsNativePromise(rawObservation)) {
+    const settlement = await settleNativePromise(rawObservation);
+    if (settlement.fulfilled !== true) {
+      fail('operator_trusted_profile_evidence_unavailable');
+    }
+    observation = settlement.value;
+  }
+
+  const expectedAfter = snapshotPinnedProfile(readOwnDataProperty(context, 'expectedChainProfile'));
+  if (readOwnDataProperty(context, 'frontierMomentum') !== frontierMomentum ||
+      !sameProfile(expectedBefore, expectedAfter)) fail('operator_trusted_profile_evidence_invalid');
+  const frontierAfter = snapshotFrontier(frontierMomentum);
+  if (!sameFrontier(frontierBefore, frontierAfter)) {
+    fail('operator_trusted_profile_evidence_invalid');
+  }
+  const normalized = snapshotMomentumList(observation);
+  if (normalized.count < frontierBefore.height || normalized.heightTwo.version !== 1 ||
+      normalized.heightTwo.height !==
+        OPERATOR_TRUSTED_PUBLIC_TESTNET_PROVENANCE.observationHeight ||
+      normalized.heightTwo.chainIdentifier !==
+        toNumber(OPERATOR_TRUSTED_PUBLIC_TESTNET_CHAIN_PROFILE.chainIdentifier) ||
+      normalized.heightTwo.hash !== OPERATOR_TRUSTED_PUBLIC_TESTNET_PROVENANCE.observationHash ||
+      normalized.heightTwo.previousHash !==
+        OPERATOR_TRUSTED_PUBLIC_TESTNET_CHAIN_PROFILE.genesisMomentumHash) {
+    fail('operator_trusted_profile_evidence_mismatch');
+  }
+
+  const evidence = FREEZE(shieldAsyncReturn({
     trustMode: 'operator-trusted-historical-observation',
     remoteChainAuthenticated: false,
-    chainProfile: Object.freeze(cloneChainProfile()),
+    chainProfile: FREEZE(cloneChainProfile()),
     observationHeight: OPERATOR_TRUSTED_PUBLIC_TESTNET_PROVENANCE.observationHeight,
-  });
-  OPERATOR_TRUST_EVIDENCE.add(evidence);
+  }));
+  weakSetAdd(OPERATOR_TRUST_EVIDENCE, evidence);
   return evidence;
 }
 
-const OPERATOR_TRUST_POLICIES = new WeakSet();
-const OPERATOR_TRUST_EVIDENCE = new WeakSet();
-const POLICY = Object.freeze({
+const OPERATOR_TRUST_POLICIES = new WEAK_SET_CONSTRUCTOR();
+const OPERATOR_TRUST_EVIDENCE = new WEAK_SET_CONSTRUCTOR();
+const POLICY = FREEZE({
   profileName: OPERATOR_TRUSTED_PUBLIC_TESTNET_PROFILE_NAME,
   trustMode: 'operator-trusted-historical-observation',
   remoteChainAuthenticated: false,
@@ -185,16 +510,24 @@ const POLICY = Object.freeze({
   chainProfile: cloneChainProfile,
   observeChainTrust: checkHistoricalHeightTwo,
 });
-OPERATOR_TRUST_POLICIES.add(POLICY);
+weakSetAdd(OPERATOR_TRUST_POLICIES, POLICY);
 
 export function isOperatorTrustedTestnetPolicy(value) {
   return (typeof value === 'object' || typeof value === 'function') && value !== null &&
-    OPERATOR_TRUST_POLICIES.has(value);
+    !isProxy(value) && weakSetHas(OPERATOR_TRUST_POLICIES, value);
 }
 
 export function isOperatorTrustedTestnetEvidence(value) {
   return (typeof value === 'object' || typeof value === 'function') && value !== null &&
-    OPERATOR_TRUST_EVIDENCE.has(value);
+    !isProxy(value) && weakSetHas(OPERATOR_TRUST_EVIDENCE, value);
+}
+
+export async function observeOperatorTrustedTestnetPolicy(policy, context) {
+  if (!isOperatorTrustedTestnetPolicy(policy)) {
+    fail('operator_trusted_chain_policy_invalid');
+  }
+  const evidence = await checkHistoricalHeightTwo(context);
+  return evidence;
 }
 
 export function selectOperatorTrustedTestnetPolicy(
