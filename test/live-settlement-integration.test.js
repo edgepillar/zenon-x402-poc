@@ -480,7 +480,7 @@ function signedPayment(
   paymentRequired,
   accepted = paymentRequired.accepts[0],
   privateByte = 17,
-  { height = 1, previousHash } = {},
+  { height = 1, previousHash, nonce = '0000000000000000' } = {},
 ) {
   const buyer = sdk.KeyPair.fromPrivateKey(Buffer.alloc(32, privateByte));
   try {
@@ -499,7 +499,7 @@ function signedPayment(
     );
     const intentDigest = paymentIntentDigest(paymentRequired, accepted);
     block.data = Buffer.from(intentDigest, 'hex');
-    block.nonce = '0000000000000000';
+    block.nonce = nonce;
     block.publicKey = buyer.getPublicKey();
     block.hash = computeBlockHash(block, sdk);
     block.signature = buyer.sign(block.hash.getBytes());
@@ -948,6 +948,121 @@ test('ExactZenonFacilitator deterministic settlement integration scenarios', asy
     assert.equal(retry.success, true);
     assert.equal(retry.state, EVIDENCE_STATES.MOMENTUM_INCLUDED);
     assert.equal(node.counters.publish, 1);
+  });
+
+  await t.test('hostile gate: an unknown same-frontier payment contains its distinct loser and exact retry reconciles', async t => {
+    const accepted = requirement();
+    const required = challenge(accepted);
+    const previousHash = sdk.Hash.digest(Buffer.from('shared prepared payer frontier'));
+    const original = signedPayment(required, accepted, 46, { height: 2, previousHash });
+    const distinct = signedPayment(required, accepted, 46, {
+      height: 2,
+      previousHash,
+      nonce: '0000000000000001',
+    });
+    const originalPreflight = await preflightZenonPayment(original, accepted, required);
+    const distinctPreflight = await preflightZenonPayment(distinct, accepted, required);
+    const exactEncodedOriginal = encodeB64Json(original);
+
+    // This is the controlled one-outstanding-payment case: both valid blocks
+    // were prepared for one payer and one frontier before either publication.
+    // It does not claim general multi-wallet coordination or consensus expiry.
+    assert.equal(originalPreflight.payer, distinctPreflight.payer);
+    assert.equal(originalPreflight.intentDigest, distinctPreflight.intentDigest);
+    assert.equal(originalPreflight.resourceDigest, distinctPreflight.resourceDigest);
+    assert.equal(original.payload.transaction.height, distinct.payload.transaction.height);
+    assert.equal(original.payload.transaction.previousHash, distinct.payload.transaction.previousHash);
+    assert.notEqual(originalPreflight.transactionHash, distinctPreflight.transactionHash);
+    assert.notEqual(exactEncodedOriginal, encodeB64Json(distinct));
+
+    const { journal } = await journalFixture(t);
+    const includedOriginal = observedBlock(original.payload.transaction, { included: true });
+    let phase = 'before-publication';
+    const exactLookups = { original: 0, distinct: 0 };
+    const node = installSyntheticNode(t, {
+      lookup: (_call, hash) => {
+        const transactionHash = hash.toString();
+        if (transactionHash === originalPreflight.transactionHash) {
+          exactLookups.original += 1;
+          return phase === 'included' ? includedOriginal : null;
+        }
+        if (transactionHash === distinctPreflight.transactionHash) {
+          exactLookups.distinct += 1;
+          return null;
+        }
+        throw new Error('unexpected synthetic exact-hash lookup');
+      },
+      // Keep the balance snapshot stale so the current frontier, not the
+      // account-info cache, is the decisive same-frontier rejection.
+      accountInfo: address => accountInfo(address, { blockCount: 1 }),
+      frontier: () => phase === 'included'
+        ? { height: 2, hash: sdk.Hash.parse(originalPreflight.transactionHash) }
+        : { height: 1, hash: previousHash },
+      publish: block => {
+        assert.equal(block.hash.toString(), originalPreflight.transactionHash);
+        phase = 'response-lost';
+        return Promise.reject(new Error('synthetic publication response loss'));
+      },
+    });
+    const exact = facilitator(journal);
+    const first = await exact.settle(original, accepted, required);
+    assert.equal(first.success, false);
+    assert.equal(first.state, EVIDENCE_STATES.SUBMISSION_OUTCOME_UNKNOWN);
+    assert.equal(first.errorReason, 'submission_outcome_unknown');
+    assert.equal(first.retrySamePayment, true);
+    assert.equal(first.deliveryState, DELIVERY_STATES.NONE);
+    assert.equal(node.counters.publish, 1);
+    const durableUnknown = await journal.get(
+      originalPreflight.authorizationKey,
+      originalPreflight.transactionHash,
+    );
+    assert.equal(durableUnknown.evidenceState, EVIDENCE_STATES.SUBMISSION_OUTCOME_UNKNOWN);
+    assert.deepEqual(durableUnknown.signedAccountBlock, original.payload.transaction);
+
+    // A later observation of the original bearer does not authorize a
+    // different block. The loser is rejected before publication or delivery.
+    phase = 'included';
+    const frontierCallsBeforeDistinct = node.counters.frontier;
+    const distinctResult = await exact.settle(distinct, accepted, required);
+    assert.equal(distinctResult.success, false);
+    assert.equal(distinctResult.state, EVIDENCE_STATES.VALIDATED);
+    assert.equal(distinctResult.errorReason, 'stale_height');
+    assert.equal(distinctResult.retrySamePayment, false);
+    assert.equal(distinctResult.deliveryState, DELIVERY_STATES.NONE);
+    assert.equal(exactLookups.distinct > 0, true);
+    assert.equal(node.counters.frontier, frontierCallsBeforeDistinct + 1);
+    assert.equal(node.counters.publish, 1);
+    assert.equal(
+      await journal.get(distinctPreflight.authorizationKey, distinctPreflight.transactionHash),
+      null,
+    );
+
+    const beforeExactRetry = { ...node.counters };
+    const originalLookupsBeforeRetry = exactLookups.original;
+    assert.equal(encodeB64Json(original), exactEncodedOriginal);
+    const recovered = await exact.settle(original, accepted, required);
+    assert.equal(recovered.success, true);
+    assert.equal(recovered.state, EVIDENCE_STATES.MOMENTUM_INCLUDED);
+    assert.equal(recovered.deliveryState, DELIVERY_STATES.NONE);
+    assert.equal(node.counters.publish, beforeExactRetry.publish);
+    assert.equal(node.counters.balanceLookup, beforeExactRetry.balanceLookup);
+    assert.equal(node.counters.frontier, beforeExactRetry.frontier);
+    assert.equal(node.counters.unconfirmed, beforeExactRetry.unconfirmed);
+    assert.equal(exactLookups.original, originalLookupsBeforeRetry + 1);
+    const durableIncluded = await journal.get(
+      originalPreflight.authorizationKey,
+      originalPreflight.transactionHash,
+    );
+    assert.equal(durableIncluded.evidenceState, EVIDENCE_STATES.MOMENTUM_INCLUDED);
+    assert.equal(durableIncluded.deliveryState, DELIVERY_STATES.NONE);
+    assert.deepEqual(durableIncluded.signedAccountBlock, original.payload.transaction);
+
+    const afterReconciliation = { ...node.counters };
+    const reconciledRetry = await exact.settle(original, accepted, required);
+    assert.equal(reconciledRetry.success, true);
+    assert.equal(reconciledRetry.authorizationKey, recovered.authorizationKey);
+    assert.equal(reconciledRetry.transaction, recovered.transaction);
+    assert.deepEqual(node.counters, afterReconciliation);
   });
 
   await t.test('scenario 5 evidence: asset validation precedes observation and inclusion is durable', async t => {
@@ -2029,7 +2144,7 @@ test('ExactZenonFacilitator deterministic settlement integration scenarios', asy
     assert.equal(node.counters.publish, publicationCountAfterFirstSettlement);
   });
 
-  await t.test('reconciliation maintenance constructor bounds and null retention preserve active records while rechecking tombstones', async t => {
+  await t.test('reconciliation maintenance preserves active records and can observe inclusion after local terminalization', async t => {
     const emptyFixture = await journalFixture(t);
     const defaultFacilitator = facilitator(emptyFixture.journal);
     assert.equal(defaultFacilitator.reconciliationRetentionMs, null);
@@ -2091,6 +2206,9 @@ test('ExactZenonFacilitator deterministic settlement integration scenarios', asy
     assert.equal(listed.records.length, 1);
     assert.equal(listed.tombstones.length, 1);
     assert.equal(listed.tombstones[0].lateMomentumEvidence !== null, true);
+    for (const field of ['revoked', 'revocation', 'onChainRevocation']) {
+      assert.equal(Object.hasOwn(listed.tombstones[0], field), false);
+    }
     const revisionAfterFirst = (await journal.load()).revision;
     const second = await exact.runReconciliationMaintenance();
     assert.equal(second.examined, 1);
@@ -2134,6 +2252,12 @@ test('ExactZenonFacilitator deterministic settlement integration scenarios', asy
     const tombstone = await journal.getTombstone(preflight.authorizationKey, preflight.transactionHash);
     assert.equal(tombstone.createdAt < updatedAt, true);
     assert.equal(tombstone.priorEvidenceState, EVIDENCE_STATES.SUBMISSION_ACKNOWLEDGED);
+    assert.equal(tombstone.lateMomentumEvidence, null);
+    // Retention terminalization is bounded local bookkeeping only. With no
+    // consensus expiry primitive, it must not be modeled as chain revocation.
+    for (const field of ['revoked', 'revocation', 'onChainRevocation']) {
+      assert.equal(Object.hasOwn(tombstone, field), false);
+    }
     assert.equal(await journal.get(preflight.authorizationKey, preflight.transactionHash), null);
 
     const initializeCount = node.counters.initialize;
@@ -2147,6 +2271,9 @@ test('ExactZenonFacilitator deterministic settlement integration scenarios', asy
     assert.equal(terminal.deliveryState, DELIVERY_STATES.NONE);
     assert.equal(terminal.retrySamePayment, false);
     assert.equal(terminal.errorReason, 'payment_reconciliation_terminal');
+    for (const field of ['revoked', 'revocation', 'onChainRevocation']) {
+      assert.equal(Object.hasOwn(terminal, field), false);
+    }
     assert.equal(node.counters.initialize, initializeCount);
     assert.equal(node.counters.balanceLookup, 0);
     assert.equal(node.counters.publish, 0);
