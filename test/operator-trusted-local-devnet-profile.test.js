@@ -571,7 +571,7 @@ test('observation checking is descriptor-safe and executes no hostile hooks', ()
   ));
 });
 
-test('artifact schema excludes private material and ordinary public-testnet paths remain unchanged', () => {
+test('artifact schema excludes private material and live-evidence public-testnet paths remain unchanged', () => {
   for (const forbiddenKey of [
     'rpcEndpoint',
     'wallet',
@@ -588,10 +588,8 @@ test('artifact schema excludes private material and ordinary public-testnet path
   }
 
   for (const relativePath of [
-    '../src/buyer-cli.js',
-    '../src/server-cli.js',
     '../src/live-evidence-runner.js',
-    '../src/zenon-payment.js',
+    '../src/live-evidence-facilitator-worker.js',
     '../src/zenon/operator-trusted-testnet-profile.js',
   ]) {
     const source = readFileSync(new URL(relativePath, import.meta.url), 'utf8');
@@ -1397,19 +1395,23 @@ test('local policy and closed dispatcher resist post-import intrinsic replacemen
   assert.deepEqual(candidate.calls, [[2, 1]]);
 });
 
-test('bridge import and construction are offline and production selectors remain public-only', async () => {
+test('bridge import and construction are offline, ordinary selection is closed, and owned evidence remains public-only', async () => {
   const dispatcherSource = readFileSync(
     new URL('../src/zenon/operator-trusted-chain-policy.js', import.meta.url),
     'utf8',
   );
   assert.doesNotMatch(dispatcherSource, /node:fs|process\.env|initialize\(|setNetworkID|setChainID/);
   for (const relativePath of [
-    '../src/buyer-cli.js',
-    '../src/server-cli.js',
     '../src/live-evidence-runner.js',
     '../src/live-evidence-facilitator-worker.js',
   ]) {
     const source = readFileSync(new URL(relativePath, import.meta.url), 'utf8');
+    assert.doesNotMatch(source, /operator-trusted-local-devnet-profile/);
+    assert.doesNotMatch(source, /operator-trusted-chain-policy/);
+  }
+  for (const relativePath of ['../src/buyer-cli.js', '../src/server-cli.js']) {
+    const source = readFileSync(new URL(relativePath, import.meta.url), 'utf8');
+    assert.match(source, /operator-trusted-execution-policy-selector/);
     assert.doesNotMatch(source, /operator-trusted-local-devnet-profile/);
     assert.doesNotMatch(source, /operator-trusted-chain-policy/);
   }
@@ -1418,5 +1420,9 @@ test('bridge import and construction are offline and production selectors remain
     'utf8',
   );
   assert.match(paymentSource, /operator-trusted-chain-policy/);
-  assert.doesNotMatch(paymentSource, /operator-trusted-local-devnet-profile/);
+  assert.match(paymentSource, /operator-trusted-local-devnet-profile/);
+  assert.match(
+    paymentSource,
+    /async function withOwnedZenonSession\([\s\S]*?isOperatorTrustedTestnetPolicy\(operatorTrustedChainPolicy\)/,
+  );
 });

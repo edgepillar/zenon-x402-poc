@@ -26,6 +26,9 @@ import {
   isOperatorTrustedTestnetPolicy,
 } from './zenon/operator-trusted-testnet-profile.js';
 import {
+  isOperatorTrustedLocalDevnetPolicy,
+} from './zenon/operator-trusted-local-devnet-profile.js';
+import {
   assertOperatorTrustedChainEvidence,
   assertOperatorTrustedChainPolicy,
   observeOperatorTrustedChainPolicy,
@@ -52,6 +55,7 @@ const HASH_HEX = /^[0-9a-f]{64}$/;
 const NONCE_HEX = /^[0-9a-f]{16}$/;
 const CANONICAL_DECIMAL = /^(0|[1-9]\d*)$/;
 const BASE64 = /^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/;
+const LOCAL_BOUND_RPC_URL = /^ws:\/\/(?:127\.0\.0\.1|\[::1\]):([1-9][0-9]{0,4})\/$/;
 const CREATE_OBJECT = Object.create;
 const DEFINE_PROPERTY = Object.defineProperty;
 const GET_OWN_PROPERTY_DESCRIPTOR = Object.getOwnPropertyDescriptor;
@@ -893,8 +897,7 @@ export async function assertZenonNodeReady(
   });
 }
 
-function parseRpcUrl(environment = process.env) {
-  const rpcUrl = environment.ZENON_RPC_URL ?? 'wss://testnet.zenonhub.io:35998';
+function parseRpcUrlValue(rpcUrl) {
   let parsed;
   try {
     parsed = new URL(rpcUrl);
@@ -910,12 +913,52 @@ function parseRpcUrl(environment = process.env) {
   return rpcUrl;
 }
 
+function parseRpcUrl(environment = process.env) {
+  return parseRpcUrlValue(environment.ZENON_RPC_URL ?? 'wss://testnet.zenonhub.io:35998');
+}
+
+function configuredLocalBoundRpcUrl(value) {
+  if (typeof value !== 'string') safetyError('operator_trusted_local_devnet_rpc_invalid');
+  const match = LOCAL_BOUND_RPC_URL.exec(value);
+  if (match === null) safetyError('operator_trusted_local_devnet_rpc_invalid');
+  const port = Number(match[1]);
+  if (!Number.isSafeInteger(port) || port < 1 || port > 65_535 || port === 80) {
+    safetyError('operator_trusted_local_devnet_rpc_invalid');
+  }
+  return value;
+}
+
+function configuredOperatorTrustedRpcUrl(policy, value) {
+  const localPolicy = isOperatorTrustedLocalDevnetPolicy(policy);
+  if (value === undefined) {
+    if (localPolicy) safetyError('operator_trusted_local_devnet_rpc_policy_mismatch');
+    return undefined;
+  }
+  if (!localPolicy) safetyError('operator_trusted_local_devnet_rpc_policy_mismatch');
+  return configuredLocalBoundRpcUrl(value);
+}
+
+function snapshotOperatorTrustedChainProfile(policy) {
+  let profile;
+  try {
+    if (isOperatorTrustedTestnetPolicy(policy)) profile = policy.chainProfile();
+    else if (isOperatorTrustedLocalDevnetPolicy(policy)) profile = policy.chainProfile;
+    else safetyError('operator_trusted_chain_policy_invalid');
+    validateZenonChainProfile(profile);
+    assertOperatorTrustedChainPolicy(policy, profile);
+  } catch {
+    safetyError('operator_trusted_chain_policy_invalid');
+  }
+  return REFLECT_APPLY(OBJECT_FREEZE, undefined, [cloneChainProfile(profile)]);
+}
+
 async function withOwnedZenonSession({
   owner,
   expectedChainProfile,
   authenticateChainProfile,
   operatorTrustedChainPolicy,
   environment,
+  rpcUrl: boundRpcUrl,
   runtime,
   rpcTimeoutMs,
   lifecycleObserver,
@@ -957,7 +1000,9 @@ async function withOwnedZenonSession({
       );
       const { sdk, ed } = await loadZenonDeps();
       const networkId = configuredTestnetNetworkId(environment);
-      const rpcUrl = parseRpcUrl(environment);
+      const rpcUrl = boundRpcUrl === undefined
+        ? parseRpcUrl(environment)
+        : configuredLocalBoundRpcUrl(boundRpcUrl);
       sdk.Zenon.setNetworkID(networkId);
       zenon = sdk.Zenon.getInstance();
       if (zenon.client) {
@@ -1304,22 +1349,23 @@ export class ExactZenonClient {
     authenticateNodeNetwork,
     environment = process.env,
     operatorTrustedChainPolicy,
+    rpcUrl,
     rpcTimeoutMs,
     lifecycleObserver,
   } = {}) {
     const selectedEnvironment = runtimeEnvironment(environment);
+    const chainAuthenticator = authenticateChainProfile ?? authenticateNodeNetwork;
+    if (operatorTrustedChainPolicy !== undefined && chainAuthenticator !== undefined) {
+      safetyError('chain_trust_policy_conflict');
+    }
+    const configuredOperatorTrustedChainProfile = operatorTrustedChainPolicy === undefined
+      ? undefined
+      : snapshotOperatorTrustedChainProfile(operatorTrustedChainPolicy);
+    const configuredRpcUrl = configuredOperatorTrustedRpcUrl(operatorTrustedChainPolicy, rpcUrl);
     const configuredMnemonic = mnemonic ?? selectedEnvironment.ZENON_MNEMONIC;
     const configuredAccountIndex = Number(
       accountIndex ?? selectedEnvironment.ZENON_ACCOUNT_INDEX ?? 0,
     );
-    const chainAuthenticator = authenticateChainProfile ?? authenticateNodeNetwork;
-    if (operatorTrustedChainPolicy !== undefined &&
-        !isOperatorTrustedTestnetPolicy(operatorTrustedChainPolicy)) {
-      safetyError('operator_trusted_chain_policy_invalid');
-    }
-    if (operatorTrustedChainPolicy !== undefined && chainAuthenticator !== undefined) {
-      safetyError('chain_trust_policy_conflict');
-    }
     const configuredTimeout = configuredRpcTimeout(
       rpcTimeoutMs ?? selectedEnvironment.ZENON_RPC_TIMEOUT_MS ?? DEFAULT_RPC_TIMEOUT_MS,
     );
@@ -1351,6 +1397,18 @@ export class ExactZenonClient {
       },
       operatorTrustedChainPolicy: {
         value: operatorTrustedChainPolicy,
+        writable: false,
+        configurable: false,
+        enumerable: false,
+      },
+      operatorTrustedChainProfile: {
+        value: configuredOperatorTrustedChainProfile,
+        writable: false,
+        configurable: false,
+        enumerable: false,
+      },
+      rpcUrl: {
+        value: configuredRpcUrl,
         writable: false,
         configurable: false,
         enumerable: false,
@@ -1404,7 +1462,7 @@ export class ExactZenonClient {
     if (this.operatorTrustedChainPolicy !== undefined &&
         !chainProfilesEqual(
           accepted.extra.zenonChain,
-          this.operatorTrustedChainPolicy.chainProfile(),
+          this.operatorTrustedChainProfile,
         )) {
       safetyError('operator_trusted_profile_mismatch');
     }
@@ -1437,6 +1495,7 @@ export class ExactZenonClient {
       authenticateChainProfile: this.authenticateChainProfile,
       operatorTrustedChainPolicy: this.operatorTrustedChainPolicy,
       environment,
+      rpcUrl: this.rpcUrl,
       runtime: this.runtime,
       rpcTimeoutMs: this.rpcTimeoutMs,
       lifecycleObserver: this.lifecycleObserver,
@@ -1691,20 +1750,21 @@ export class ExactZenonFacilitator {
     environment = process.env,
     operatorTrustedChainPolicy,
     journal = new SettlementJournal(),
+    rpcUrl,
     rpcTimeoutMs,
     reconciliationRetentionMs = null,
     lifecycleObserver,
   } = {}) {
     const selectedEnvironment = runtimeEnvironment(environment);
-    if (!(journal instanceof SettlementJournal)) safetyError('invalid_settlement_journal');
     const chainAuthenticator = authenticateChainProfile ?? authenticateNodeNetwork;
-    if (operatorTrustedChainPolicy !== undefined &&
-        !isOperatorTrustedTestnetPolicy(operatorTrustedChainPolicy)) {
-      safetyError('operator_trusted_chain_policy_invalid');
-    }
     if (operatorTrustedChainPolicy !== undefined && chainAuthenticator !== undefined) {
       safetyError('chain_trust_policy_conflict');
     }
+    const configuredOperatorTrustedChainProfile = operatorTrustedChainPolicy === undefined
+      ? undefined
+      : snapshotOperatorTrustedChainProfile(operatorTrustedChainPolicy);
+    const configuredRpcUrl = configuredOperatorTrustedRpcUrl(operatorTrustedChainPolicy, rpcUrl);
+    if (!(journal instanceof SettlementJournal)) safetyError('invalid_settlement_journal');
     const configuredTimeout = configuredRpcTimeout(
       rpcTimeoutMs ?? selectedEnvironment.ZENON_RPC_TIMEOUT_MS ?? DEFAULT_RPC_TIMEOUT_MS,
     );
@@ -1733,6 +1793,18 @@ export class ExactZenonFacilitator {
       },
       operatorTrustedChainPolicy: {
         value: operatorTrustedChainPolicy,
+        writable: false,
+        configurable: false,
+        enumerable: false,
+      },
+      operatorTrustedChainProfile: {
+        value: configuredOperatorTrustedChainProfile,
+        writable: false,
+        configurable: false,
+        enumerable: false,
+      },
+      rpcUrl: {
+        value: configuredRpcUrl,
         writable: false,
         configurable: false,
         enumerable: false,
@@ -1839,6 +1911,7 @@ export class ExactZenonFacilitator {
             authenticateChainProfile: this.authenticateChainProfile,
             operatorTrustedChainPolicy: this.operatorTrustedChainPolicy,
             environment,
+            rpcUrl: this.rpcUrl,
             runtime: this.runtime,
             rpcTimeoutMs: this.rpcTimeoutMs,
             work: async (connection, scope) => this.#reconcileMaintenanceCandidate(candidate, connection, scope),
@@ -1936,6 +2009,7 @@ export class ExactZenonFacilitator {
         authenticateChainProfile: this.authenticateChainProfile,
         operatorTrustedChainPolicy: this.operatorTrustedChainPolicy,
         environment,
+        rpcUrl: this.rpcUrl,
         runtime: this.runtime,
         rpcTimeoutMs: this.rpcTimeoutMs,
         work: async (connection, scope) => {
@@ -2045,6 +2119,7 @@ export class ExactZenonFacilitator {
         authenticateChainProfile: this.authenticateChainProfile,
         operatorTrustedChainPolicy: this.operatorTrustedChainPolicy,
         environment: FACILITATOR_RUNTIME_ENVIRONMENTS.get(this),
+        rpcUrl: this.rpcUrl,
         runtime: this.runtime,
         rpcTimeoutMs: this.rpcTimeoutMs,
         lifecycleObserver: this.lifecycleObserver,
