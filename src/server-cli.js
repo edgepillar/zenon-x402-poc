@@ -1,5 +1,9 @@
 import { writeSync } from 'node:fs';
 
+import {
+  selectOperatorTrustedCliExecution,
+} from './zenon/operator-trusted-execution-policy-selector.js';
+
 const FAILURE_LINE = 'Server CLI failed.\n';
 const SHUTDOWN_SIGNALS = ['SIGINT', 'SIGTERM'];
 let failureReported = false;
@@ -115,30 +119,24 @@ export async function prepareServerCli({
   env = process.env,
   loadRuntime = loadServerRuntime,
 } = {}) {
-  const mode = env.PAYMENT_MODE ?? 'mock';
-  if (mode !== 'mock' && mode !== 'zenon') throw new Error('unsupported payment mode');
-
-  let policy;
-  if (mode === 'zenon') {
-    const { selectOperatorTrustedTestnetPolicy } =
-      await import('./zenon/operator-trusted-testnet-profile.js');
-    policy = selectOperatorTrustedTestnetPolicy(
-      env.ZENON_CHAIN_PROFILE_NAME,
-      env.ZENON_OPERATOR_TRUST_ACK,
-      env.ZENON_LIVE_ACK,
-    );
-  }
+  const { mode, operatorTrust } = selectOperatorTrustedCliExecution(env);
+  const policy = operatorTrust?.policy;
 
   const { buildRequirement, createResourceServer, envInt, Facilitator } =
     await loadRuntime(mode);
   const requirement = await buildRequirement(
     mode,
-    policy === undefined ? undefined : { zenonChain: policy.chainProfile() },
+    operatorTrust === undefined ? undefined : { zenonChain: operatorTrust.chainProfile },
     env,
   );
+  const runtimeOptions = {
+    environment: env,
+    operatorTrustedChainPolicy: policy,
+  };
+  if (operatorTrust?.rpcUrl !== undefined) runtimeOptions.rpcUrl = operatorTrust.rpcUrl;
   const facilitator = mode === 'mock'
     ? new Facilitator()
-    : new Facilitator({ environment: env, operatorTrustedChainPolicy: policy });
+    : new Facilitator(runtimeOptions);
   const port = envInt('PORT', 8402, env);
   const app = createResourceServer({
     facilitator,
@@ -146,7 +144,7 @@ export async function prepareServerCli({
     port,
     advertisedBaseUrl: env.RESOURCE_BASE_URL,
   });
-  return { app, mode, policy, requirement };
+  return { app, mode, operatorTrust, policy, requirement };
 }
 
 export async function runServerCli({
@@ -159,7 +157,7 @@ export async function runServerCli({
   const { loadDotEnv } = await import('./env.js');
   loadDotEnv();
 
-  const { app, mode, policy, requirement } = await prepareServerCli({
+  const { app, mode, operatorTrust, requirement } = await prepareServerCli({
     env,
     ...(loadRuntime === undefined ? {} : { loadRuntime }),
   });
@@ -173,10 +171,10 @@ export async function runServerCli({
         onOutput('Requirement:', requirement);
         return;
       }
-      onOperatorTrustWarning(policy.warning);
+      onOperatorTrustWarning(operatorTrust.warning);
       onOutput('Zenon resource server listening.');
-      onOutput('Selected profile:', policy.profileName);
-      onOutput('Trust mode:', policy.trustMode);
+      onOutput('Selected profile:', operatorTrust.profileName);
+      onOutput('Trust mode:', operatorTrust.trustMode);
       onOutput('Remote chain authenticated: no');
     },
   });

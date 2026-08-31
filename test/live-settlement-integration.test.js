@@ -171,7 +171,7 @@ test('live lifecycle observers are explicit synchronous branded inputs', () => {
   );
 });
 
-test('local policy bridge widens only direct node readiness and performs no production side effect', async () => {
+test('local policy bridge widens direct readiness and ordinary construction but leaves owned readiness public-testnet-only', async () => {
   const localModule = await import('../src/zenon/operator-trusted-local-devnet-profile.js');
   const artifactValue = {
     acknowledgement: OPERATOR_TRUSTED_LOCAL_FOUR_NODE_DEVNET_ACKNOWLEDGEMENT,
@@ -350,14 +350,20 @@ test('local policy bridge widens only direct node readiness and performs no prod
     artifact.chainProfile,
     { operatorTrustedChainPolicy: publicPolicy },
   ), { code: 'operator_trusted_chain_policy_invalid' });
-  assert.throws(
-    () => new ExactZenonClient({ operatorTrustedChainPolicy: policy, environment: {} }),
-    { code: 'operator_trusted_chain_policy_invalid' },
-  );
-  assert.throws(
-    () => new ExactZenonFacilitator({ operatorTrustedChainPolicy: policy, environment: {} }),
-    { code: 'operator_trusted_chain_policy_invalid' },
-  );
+  const localClient = new ExactZenonClient({
+    operatorTrustedChainPolicy: policy,
+    environment: {},
+    rpcUrl: 'ws://127.0.0.1:16383/',
+  });
+  const localFacilitator = new ExactZenonFacilitator({
+    operatorTrustedChainPolicy: policy,
+    environment: {},
+    rpcUrl: 'ws://127.0.0.1:16383/',
+  });
+  assert.equal(localClient.operatorTrustedChainPolicy, policy);
+  assert.equal(localFacilitator.operatorTrustedChainPolicy, policy);
+  assert.equal(Object.getOwnPropertyDescriptor(localClient, 'rpcUrl')?.enumerable, false);
+  assert.equal(Object.getOwnPropertyDescriptor(localFacilitator, 'rpcUrl')?.enumerable, false);
   await assert.rejects(probeZenonRoleReadiness({
     role: 'buyer',
     asset: sdk.ZNN_ZTS.toString(),

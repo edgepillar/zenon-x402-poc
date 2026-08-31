@@ -1,3 +1,7 @@
+import {
+  selectOperatorTrustedCliExecution,
+} from './zenon/operator-trusted-execution-policy-selector.js';
+
 const FAILURE_LINE = 'Buyer CLI failed.\n';
 let failureReported = false;
 
@@ -26,25 +30,19 @@ export async function prepareBuyerCli({
   env = process.env,
   loadRuntime = loadBuyerRuntime,
 } = {}) {
-  const mode = env.PAYMENT_MODE ?? 'mock';
-  if (mode !== 'mock' && mode !== 'zenon') throw new Error('unsupported payment mode');
-
-  let policy;
-  if (mode === 'zenon') {
-    const { selectOperatorTrustedTestnetPolicy } =
-      await import('./zenon/operator-trusted-testnet-profile.js');
-    policy = selectOperatorTrustedTestnetPolicy(
-      env.ZENON_CHAIN_PROFILE_NAME,
-      env.ZENON_OPERATOR_TRUST_ACK,
-      env.ZENON_LIVE_ACK,
-    );
-  }
+  const { mode, operatorTrust } = selectOperatorTrustedCliExecution(env);
+  const policy = operatorTrust?.policy;
 
   const { Client, paidFetch } = await loadRuntime(mode);
+  const runtimeOptions = {
+    environment: env,
+    operatorTrustedChainPolicy: policy,
+  };
+  if (operatorTrust?.rpcUrl !== undefined) runtimeOptions.rpcUrl = operatorTrust.rpcUrl;
   const client = mode === 'mock'
     ? new Client()
-    : new Client({ environment: env, operatorTrustedChainPolicy: policy });
-  return { client, mode, paidFetch, policy };
+    : new Client(runtimeOptions);
+  return { client, mode, paidFetch, policy, operatorTrust };
 }
 
 export async function runBuyerCli({
@@ -57,11 +55,12 @@ export async function runBuyerCli({
   const { loadDotEnv } = await import('./env.js');
   loadDotEnv();
 
-  const url = argv[2] ?? env.RESOURCE_URL ?? 'http://127.0.0.1:8402/paid';
-  const { client, mode, paidFetch, policy } = await prepareBuyerCli({
+  const prepared = await prepareBuyerCli({
     env,
     ...(loadRuntime === undefined ? {} : { loadRuntime }),
   });
+  const url = argv[2] ?? env.RESOURCE_URL ?? 'http://127.0.0.1:8402/paid';
+  const { client, mode, paidFetch, operatorTrust } = prepared;
   const result = await paidFetch(url, client);
   const body = await result.response.text();
   if (mode === 'mock') {
@@ -71,10 +70,10 @@ export async function runBuyerCli({
     return;
   }
 
-  onOperatorTrustWarning(policy.warning);
+  onOperatorTrustWarning(operatorTrust.warning);
   onOutput('HTTP status:', result.response.status);
-  onOutput('Selected profile:', policy.profileName);
-  onOutput('Trust mode:', policy.trustMode);
+  onOutput('Selected profile:', operatorTrust.profileName);
+  onOutput('Trust mode:', operatorTrust.trustMode);
   onOutput('Remote chain authenticated: no');
 }
 
