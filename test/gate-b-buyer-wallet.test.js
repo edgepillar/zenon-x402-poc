@@ -8,6 +8,7 @@ import {
   lstat,
   mkdir,
   mkdtemp,
+  open,
   readFile,
   realpath,
   rename,
@@ -16,7 +17,7 @@ import {
   writeFile,
 } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import { PassThrough } from 'node:stream';
 import { fileURLToPath } from 'node:url';
 import * as sdk from 'znn-typescript-sdk';
@@ -31,21 +32,30 @@ import { superviseGateBBuyerWalletChild } from '../src/gate-b-buyer-wallet-super
 import { parsePublicWsOnceRoleInput } from '../src/live-evidence-runner.js';
 
 const TEST_ENTROPY = '00'.repeat(32);
+const WORKSPACE_NAME = 'zenon-x402-gate-b-wallet';
 
 async function fixture(t) {
-  const temporary = await mkdtemp(join(tmpdir(), 'gate-b-wallet-'));
+  const temporary = await realpath(await mkdtemp(join(tmpdir(), 'gate-b-wallet-')));
   t.after(() => rm(temporary, { recursive: true, force: true }));
-  const root = await realpath(temporary);
+  const root = join(temporary, 'Library', 'Application Support', WORKSPACE_NAME);
+  await mkdir(root, { recursive: true, mode: 0o700 });
   await chmod(root, 0o700);
-  return root;
+  return realpath(root);
+}
+
+async function additionalWorkspace(parent, label) {
+  const root = join(parent, label, 'Library', 'Application Support', WORKSPACE_NAME);
+  await mkdir(root, { recursive: true, mode: 0o700 });
+  await chmod(root, 0o700);
+  return realpath(root);
 }
 
 function deterministicSdk(counter = { random: 0, index: [] }) {
   return {
     KeyStore: {
-      newRandom() {
+      fromEntropy(entropy) {
         counter.random += 1;
-        const wallet = sdk.KeyStore.fromEntropy(TEST_ENTROPY);
+        const wallet = sdk.KeyStore.fromEntropy(entropy);
         const original = wallet.getKeyPair.bind(wallet);
         wallet.getKeyPair = index => {
           counter.index.push(index);
@@ -57,11 +67,72 @@ function deterministicSdk(counter = { random: 0, index: [] }) {
   };
 }
 
-function injectedSdk(counter, changes = {}) {
+function injectedSdk(root, counter, changes = {}) {
+  const {
+    afterEntropy,
+    afterRandomness,
+    afterReservations,
+    applicationSupportRoot,
+    decorateDirectoryHandle,
+    decorateFileHandle,
+    entropySource,
+    openPrivateWorkspace,
+    privateWorkspaceInjections = {},
+    readDirectory,
+    sdkLoader,
+    useDefaultAcl = false,
+    ...legacyPrivateChanges
+  } = changes;
+  const workspaceInjections = {
+    platform: 'darwin',
+    actualCwdPath: () => root,
+    lstatActualCwd: () => lstat(root, { bigint: true }),
+    openActualCwd: flags => open(root, flags),
+    realpathActualCwd: () => realpath(root),
+    ...(useDefaultAcl ? {} : { aclInspector: async () => true }),
+    ...legacyPrivateChanges,
+    ...privateWorkspaceInjections,
+  };
+  if (decorateFileHandle !== undefined) {
+    workspaceInjections.decorateFileHandle = (handle, name) => decorateFileHandle(
+      handle,
+      name === 'buyer-wallet.json' ? 'wallet' : 'address',
+    );
+  }
+  if (decorateDirectoryHandle !== undefined) {
+    workspaceInjections.decorateDirectoryHandle = decorateDirectoryHandle;
+  }
+  const output = {
+    applicationSupportRoot: applicationSupportRoot ?? (() => dirname(root)),
+    privateWorkspaceInjections: workspaceInjections,
+    sdkLoader: sdkLoader ?? (async () => deterministicSdk(counter)),
+    entropySource: entropySource ?? (async size => {
+      assert.equal(size, 32);
+      return Buffer.from(TEST_ENTROPY, 'hex');
+    }),
+    afterReservations: afterReservations ?? (async () => {}),
+    afterEntropy: afterEntropy ?? afterRandomness ?? (async () => {}),
+  };
+  if (openPrivateWorkspace !== undefined) output.openPrivateWorkspace = openPrivateWorkspace;
+  if (readDirectory !== undefined) output.readDirectory = readDirectory;
+  return output;
+}
+
+function supervisorInjections(root, changes = {}) {
   return {
-    sdkLoader: async () => deterministicSdk(counter),
-    aclInspector: async () => true,
+    applicationSupportRoot: () => dirname(root),
     ...changes,
+  };
+}
+
+function defaultAclSdk(root, counter) {
+  return {
+    applicationSupportRoot: () => dirname(root),
+    sdkLoader: async () => deterministicSdk(counter),
+    entropySource: async size => {
+      assert.equal(size, 32);
+      return Buffer.from(TEST_ENTROPY, 'hex');
+    },
   };
 }
 
@@ -91,6 +162,7 @@ function wrapHandle(handle, changes = {}) {
   return {
     stat: options => handle.stat(options),
     chmod: value => handle.chmod(value),
+    read: (...args) => handle.read(...args),
     write: (...args) => handle.write(...args),
     sync: () => handle.sync(),
     close: () => handle.close(),
@@ -104,11 +176,15 @@ class FakeChild extends EventEmitter {
     this.connected = true;
     this.onRequest = onRequest;
     this.bootstrap = new PassThrough();
+    this.bootstrapChunks = [];
+    this.bootstrap.on('data', chunk => this.bootstrapChunks.push(Buffer.from(chunk)));
     this.stdio = [null, null, null, null, this.bootstrap];
     this.kills = [];
+    this.messages = [];
   }
 
   send(message, callback) {
+    this.messages.push(message);
     queueMicrotask(() => {
       if (callback) callback();
       this.onRequest?.(this, message);
@@ -125,7 +201,6 @@ class FakeChild extends EventEmitter {
 
 function successfulFork(captured) {
   return (modulePath, argv, options) => {
-    captured.push({ modulePath, argv, options });
     const child = new FakeChild((current, message) => {
       if (message.type !== 'CREATE') return;
       queueMicrotask(() => {
@@ -134,6 +209,7 @@ function successfulFork(captured) {
         current.emit('close', 0, null);
       });
     });
+    captured.push({ modulePath, argv, options, child });
     queueMicrotask(() => child.emit('message', {
       ipcVersion: 1,
       requestId: 1,
@@ -235,11 +311,11 @@ test('supervisor isolates the child and accepts only enum IPC plus clean close',
   const root = await fixture(t);
   const captured = [];
   const childModule = join(root, 'fixed', 'fixed-child.js');
-  const result = await superviseGateBBuyerWalletChild(root, {
+  const result = await superviseGateBBuyerWalletChild(root, supervisorInjections(root, {
     forkProcess: successfulFork(captured),
     childModule,
     timeoutMs: 1000,
-  });
+  }));
   assert.deepEqual(result, { status: 'created' });
   assert.equal(captured.length, 1);
   assert.deepEqual(captured[0].argv, []);
@@ -247,19 +323,19 @@ test('supervisor isolates the child and accepts only enum IPC plus clean close',
   assert.deepEqual(captured[0].options.execArgv, []);
   assert.equal(captured[0].options.shell, false);
   assert.deepEqual(captured[0].options.stdio, ['ignore', 'ignore', 'ignore', 'ipc', 'pipe']);
-  assert.equal(captured[0].options.cwd, join(root, 'fixed'));
-  assert.equal(captured[0].options.cwd === root, false);
+  assert.equal(captured[0].options.cwd, root);
+  assert.equal(captured[0].options.cwd === root, true);
 });
 
 test('real OS fork validates fd-4 bootstrap, empty requested env, IPC, and clean exit without a wallet', async t => {
   const root = await fixture(t);
-  const result = await superviseGateBBuyerWalletChild(root, {
+  const result = await superviseGateBBuyerWalletChild(root, supervisorInjections(root, {
     childModule: fileURLToPath(new URL(
       '../test-support/gate-b-wallet-supervisor-child.js',
       import.meta.url,
     )),
     timeoutMs: 2000,
-  });
+  }));
   assert.deepEqual(result, { status: 'created' });
   assert.equal(await exists(join(root, 'buyer-wallet.json')), false);
   assert.equal(await exists(join(root, 'buyer-address.json')), false);
@@ -289,21 +365,21 @@ test('supervisor rejects malformed, duplicate, late, signaled, and timed-out chi
     const child = new FakeChild();
     queueMicrotask(() => scenario(child));
     await assert.rejects(
-      superviseGateBBuyerWalletChild(root, {
+      superviseGateBBuyerWalletChild(root, supervisorInjections(root, {
         forkProcess: () => child,
         childModule,
         timeoutMs: 100,
-      }),
+      })),
       /gate_b_buyer_wallet_supervisor_failed/,
     );
   }
   const child = new FakeChild();
   await assert.rejects(
-    superviseGateBBuyerWalletChild(root, {
+    superviseGateBBuyerWalletChild(root, supervisorInjections(root, {
       forkProcess: () => child,
       childModule,
       timeoutMs: 5,
-    }),
+    })),
     /gate_b_buyer_wallet_supervisor_failed/,
   );
   assert.ok(child.kills.length >= 1);
@@ -319,11 +395,11 @@ test('supervisor escalates to SIGKILL and has a bounded no-close reap policy', a
     return true;
   };
   await assert.rejects(
-    superviseGateBBuyerWalletChild(root, {
+    superviseGateBBuyerWalletChild(root, supervisorInjections(root, {
       forkProcess: () => forceClosed,
       childModule,
       timeoutMs: 5,
-    }),
+    })),
     /gate_b_buyer_wallet_supervisor_failed/,
   );
   assert.deepEqual(forceClosed.kills, ['SIGTERM', 'SIGKILL']);
@@ -335,11 +411,11 @@ test('supervisor escalates to SIGKILL and has a bounded no-close reap policy', a
   };
   const started = Date.now();
   await assert.rejects(
-    superviseGateBBuyerWalletChild(root, {
+    superviseGateBBuyerWalletChild(root, supervisorInjections(root, {
       forkProcess: () => neverClosed,
       childModule,
       timeoutMs: 5,
-    }),
+    })),
     /gate_b_buyer_wallet_supervisor_failed/,
   );
   assert.deepEqual(neverClosed.kills, ['SIGTERM', 'SIGKILL']);
@@ -428,7 +504,7 @@ test('bootstrap parser accepts only the supervisor canonical shape', () => {
 test('deterministic creation produces parser-compatible distinct owner-only files', async t => {
   const root = await fixture(t);
   const counter = { random: 0, index: [] };
-  const result = await createGateBBuyerWallet(root, injectedSdk(counter));
+  const result = await createGateBBuyerWallet(root, injectedSdk(root, counter));
   assert.deepEqual(result, { status: 'created' });
   assert.equal(counter.random, 1);
   assert.deepEqual(counter.index, [0]);
@@ -466,7 +542,7 @@ test('creation reserves and verifies both files before invoking randomness', asy
   const root = await fixture(t);
   const counter = { random: 0, index: [] };
   let observed = false;
-  await createGateBBuyerWallet(root, injectedSdk(counter, {
+  await createGateBBuyerWallet(root, injectedSdk(root, counter, {
     async afterReservations() {
       const [walletStat, addressStat] = await Promise.all([
         lstat(join(root, 'buyer-wallet.json'), { bigint: true }),
@@ -486,7 +562,7 @@ test('ACL verification covers the workspace and both artifacts before randomness
   const root = await fixture(t);
   const counter = { random: 0, index: [] };
   const observed = [];
-  await createGateBBuyerWallet(root, injectedSdk(counter, {
+  await createGateBBuyerWallet(root, injectedSdk(root, counter, {
     async aclInspector(_handle, expectedMode) {
       observed.push(expectedMode);
       return true;
@@ -496,10 +572,9 @@ test('ACL verification covers the workspace and both artifacts before randomness
   assert.equal(observed.includes('-rw-------'), true);
   assert.equal(counter.random, 1);
 
-  const rejected = join(root, 'acl-rejected');
-  await mkdir(rejected, { mode: 0o700 });
+  const rejected = await additionalWorkspace(root, 'acl-rejected');
   const rejectedCounter = { random: 0, index: [] };
-  await assert.rejects(createGateBBuyerWallet(rejected, injectedSdk(rejectedCounter, {
+  await assert.rejects(createGateBBuyerWallet(rejected, injectedSdk(rejected, rejectedCounter, {
     async aclInspector() { return false; },
   })), /gate_b_buyer_wallet_child_failed/);
   assert.equal(rejectedCounter.random, 0);
@@ -509,28 +584,35 @@ test('Darwin default ACL inspection accepts a clean deterministic workspace', as
   if (process.platform !== 'darwin') return t.skip('Darwin-only ACL boundary');
   const root = await fixture(t);
   const counter = { random: 0, index: [] };
-  await createGateBBuyerWallet(root, {
-    sdkLoader: async () => deterministicSdk(counter),
-  });
+  const originalCwd = process.cwd();
+  process.chdir(root);
+  try {
+    await createGateBBuyerWallet(root, defaultAclSdk(root, counter));
+  } finally {
+    process.chdir(originalCwd);
+  }
   assert.equal(counter.random, 1);
 });
 
 test('Darwin default ACL inspection rejects an actual ACL before SDK randomness', async t => {
   if (process.platform !== 'darwin') return t.skip('Darwin-only ACL boundary');
   const parent = await fixture(t);
-  const root = join(parent, 'acl-present');
-  await mkdir(root, { mode: 0o700 });
+  const root = await additionalWorkspace(parent, 'acl-present');
   assert.deepEqual(
     await runSilent('/bin/chmod', ['+a', 'everyone deny delete', root]),
     { code: 0, signal: null },
   );
+  const originalCwd = process.cwd();
+  process.chdir(root);
   try {
     const counter = { random: 0, index: [] };
-    await assert.rejects(createGateBBuyerWallet(root, {
-      sdkLoader: async () => deterministicSdk(counter),
-    }), /gate_b_buyer_wallet_child_failed/);
+    await assert.rejects(createGateBBuyerWallet(
+      root,
+      defaultAclSdk(root, counter),
+    ), /gate_b_buyer_wallet_child_failed/);
     assert.equal(counter.random, 0);
   } finally {
+    process.chdir(originalCwd);
     assert.deepEqual(
       await runSilent('/bin/chmod', ['-N', root]),
       { code: 0, signal: null },
@@ -541,7 +623,7 @@ test('Darwin default ACL inspection rejects an actual ACL before SDK randomness'
 test('full-write loops and all file and directory sync barriers are exercised', async t => {
   const root = await fixture(t);
   const syncs = [];
-  await createGateBBuyerWallet(root, injectedSdk({ random: 0, index: [] }, {
+  await createGateBBuyerWallet(root, injectedSdk(root, { random: 0, index: [] }, {
     decorateFileHandle(handle, label) {
       return wrapHandle(handle, {
         async write(bytes, offset, length, position) {
@@ -562,44 +644,45 @@ test('full-write loops and all file and directory sync barriers are exercised', 
       });
     },
   }));
-  assert.deepEqual(syncs, ['wallet', 'address', 'directory']);
+  assert.deepEqual(syncs, [
+    'directory', 'directory',
+    'wallet', 'address',
+    'directory', 'directory',
+  ]);
 });
 
 test('unsafe workspace mode, ownership, canonical aliases, symlinks, and Git containment fail before RNG', async t => {
   const parent = await fixture(t);
   const cases = [];
 
-  const unsafeMode = join(parent, 'unsafe-mode');
-  await mkdir(unsafeMode, { mode: 0o700 });
+  const unsafeMode = await additionalWorkspace(parent, 'unsafe-mode');
   await chmod(unsafeMode, 0o755);
   cases.push({ root: unsafeMode, injected: {} });
 
-  const ownerMismatch = join(parent, 'owner-mismatch');
-  await mkdir(ownerMismatch, { mode: 0o700 });
+  const ownerMismatch = await additionalWorkspace(parent, 'owner-mismatch');
   cases.push({ root: ownerMismatch, injected: {
     getuid: () => (typeof process.getuid === 'function' ? process.getuid() + 1 : 1),
   } });
 
-  const canonical = join(parent, 'canonical');
-  await mkdir(canonical, { mode: 0o700 });
-  cases.push({ root: `${canonical}/../canonical`, injected: {} });
+  const canonical = await additionalWorkspace(parent, 'canonical');
+  cases.push({ root: `${canonical}/../${WORKSPACE_NAME}`, injected: {} });
 
   const symlinkTarget = join(parent, 'symlink-target');
-  const symlinkRoot = join(parent, 'symlink-root');
   await mkdir(symlinkTarget, { mode: 0o700 });
+  const symlinkRoot = await additionalWorkspace(parent, 'symlink-root');
+  await rm(symlinkRoot, { recursive: true });
   await symlink(symlinkTarget, symlinkRoot);
   cases.push({ root: symlinkRoot, injected: {} });
 
   const gitParent = join(parent, 'git-parent');
-  const gitChild = join(gitParent, 'private');
+  const gitChild = await additionalWorkspace(parent, 'git-parent');
   await mkdir(join(gitParent, '.git'), { recursive: true, mode: 0o700 });
-  await mkdir(gitChild, { mode: 0o700 });
   cases.push({ root: gitChild, injected: {} });
 
   for (const entry of cases) {
     const counter = { random: 0, index: [] };
     await assert.rejects(
-      createGateBBuyerWallet(entry.root, injectedSdk(counter, entry.injected)),
+      createGateBBuyerWallet(entry.root, injectedSdk(entry.root, counter, entry.injected)),
       /gate_b_buyer_wallet_child_failed/,
     );
     assert.equal(counter.random, 0);
@@ -623,12 +706,11 @@ test('existing file, symlink, hard link, and zero-byte crash residue refuse befo
     async root => writeFile(join(root, 'buyer-address.json'), '', { mode: 0o600 }),
   ];
   for (let index = 0; index < setups.length; index += 1) {
-    const root = join(parent, `existing-${index}`);
-    await mkdir(root, { mode: 0o700 });
+    const root = await additionalWorkspace(parent, `existing-${index}`);
     await setups[index](root);
     const counter = { random: 0, index: [] };
     await assert.rejects(
-      createGateBBuyerWallet(root, injectedSdk(counter)),
+      createGateBBuyerWallet(root, injectedSdk(root, counter)),
       /gate_b_buyer_wallet_child_failed/,
     );
     assert.equal(counter.random, 0);
@@ -640,7 +722,7 @@ test('second reservation failure preserves the first retained crash residue befo
   const counter = { random: 0, index: [] };
   const { open: openPath } = await import('node:fs/promises');
   await assert.rejects(
-    createGateBBuyerWallet(root, injectedSdk(counter, {
+    createGateBBuyerWallet(root, injectedSdk(root, counter, {
       async openPath(path, ...rest) {
         if (path === join(root, 'buyer-address.json')) {
           throw Object.assign(new Error('synthetic'), { code: 'EIO' });
@@ -657,7 +739,7 @@ test('second reservation failure preserves the first retained crash residue befo
   assert.equal(Number(residue.mode & 0o777n), 0o600);
   assert.equal(await exists(join(root, 'buyer-address.json')), false);
   await assert.rejects(
-    createGateBBuyerWallet(root, injectedSdk(counter)),
+    createGateBBuyerWallet(root, injectedSdk(root, counter)),
     /gate_b_buyer_wallet_child_failed/,
   );
   assert.equal(counter.random, 0);
@@ -666,8 +748,7 @@ test('second reservation failure preserves the first retained crash residue befo
 test('write and sync failures preserve owner-only residue and block retries', async t => {
   const parent = await fixture(t);
   for (const failure of ['address-write', 'directory-sync']) {
-    const root = join(parent, failure);
-    await mkdir(root, { mode: 0o700 });
+    const root = await additionalWorkspace(parent, failure);
     const changes = failure === 'address-write'
       ? {
           decorateFileHandle(handle, label) {
@@ -684,7 +765,7 @@ test('write and sync failures preserve owner-only residue and block retries', as
           },
         };
     await assert.rejects(
-      createGateBBuyerWallet(root, injectedSdk({ random: 0, index: [] }, changes)),
+      createGateBBuyerWallet(root, injectedSdk(root, { random: 0, index: [] }, changes)),
       /gate_b_buyer_wallet_child_failed/,
     );
     const [walletStat, addressStat] = await Promise.all([
@@ -695,7 +776,7 @@ test('write and sync failures preserve owner-only residue and block retries', as
     assert.equal(Number(addressStat.mode & 0o777n), 0o600);
     const retryCounter = { random: 0, index: [] };
     await assert.rejects(
-      createGateBBuyerWallet(root, injectedSdk(retryCounter)),
+      createGateBBuyerWallet(root, injectedSdk(root, retryCounter)),
       /gate_b_buyer_wallet_child_failed/,
     );
     assert.equal(retryCounter.random, 0);
@@ -704,12 +785,11 @@ test('write and sync failures preserve owner-only residue and block retries', as
 
 test('workspace replacement after reservation fails before RNG and preserves crash residue', async t => {
   const parent = await fixture(t);
-  const root = join(parent, 'workspace');
+  const root = await additionalWorkspace(parent, 'workspace');
   const moved = join(parent, 'moved-workspace');
-  await mkdir(root, { mode: 0o700 });
   const counter = { random: 0, index: [] };
   await assert.rejects(
-    createGateBBuyerWallet(root, injectedSdk(counter, {
+    createGateBBuyerWallet(root, injectedSdk(root, counter, {
       async afterReservations() {
         await rename(root, moved);
         await mkdir(root, { mode: 0o700 });
@@ -728,7 +808,7 @@ test('target replacement failure never unlinks any retained or replacement inode
   const root = await fixture(t);
   const displaced = join(root, 'displaced-wallet');
   await assert.rejects(
-    createGateBBuyerWallet(root, injectedSdk({ random: 0, index: [] }, {
+    createGateBBuyerWallet(root, injectedSdk(root, { random: 0, index: [] }, {
       async afterRandomness() {
         await rename(join(root, 'buyer-wallet.json'), displaced);
         await writeFile(join(root, 'buyer-wallet.json'), 'replacement', { mode: 0o600 });
@@ -744,7 +824,7 @@ test('target replacement failure never unlinks any retained or replacement inode
 test('post-wallet-write failure retains a protected parser-compatible recovery artifact', async t => {
   const root = await fixture(t);
   await assert.rejects(
-    createGateBBuyerWallet(root, injectedSdk({ random: 0, index: [] }, {
+    createGateBBuyerWallet(root, injectedSdk(root, { random: 0, index: [] }, {
       decorateFileHandle(handle, label) {
         return wrapHandle(handle, label === 'address' ? {
           async write() { throw new Error('synthetic'); },
@@ -792,4 +872,535 @@ test('lockfile-pinned SDK supports deterministic non-secret wallet construction 
   assert.equal(typeof keyPair.getAddress().toString(), 'string');
   keyPair.clear();
   for (const field of ['mnemonic', 'entropy', 'seed']) wallet[field] = '';
+});
+
+function syntheticSecretCanary() {
+  return ['synthetic', 'secret', 'channel', 'sentinel'].join('-');
+}
+
+async function rejectsFixedChildFailure(promise) {
+  await assert.rejects(promise, error => {
+    assert.equal(error?.message, 'gate_b_buyer_wallet_child_failed');
+    assert.equal(
+      error?.stack,
+      'GateBBuyerWalletChildError: gate_b_buyer_wallet_child_failed',
+    );
+    assert.equal(String(error).includes(syntheticSecretCanary()), false);
+    return true;
+  });
+}
+
+async function rejectsFixedSupervisorFailure(promise) {
+  await assert.rejects(promise, error => {
+    assert.equal(error?.message, 'gate_b_buyer_wallet_supervisor_failed');
+    assert.equal(
+      error?.stack,
+      'GateBBuyerWalletSupervisorError: gate_b_buyer_wallet_supervisor_failed',
+    );
+    assert.equal(String(error).includes(syntheticSecretCanary()), false);
+    return true;
+  });
+}
+
+async function assertProtectedResidue(root, name, expectedSize) {
+  const value = await lstat(join(root, name), { bigint: true });
+  assert.equal(value.isFile(), true);
+  assert.equal(Number(value.mode & 0o777n), 0o600);
+  assert.equal(value.nlink, 1n);
+  if (expectedSize !== undefined) assert.equal(value.size, BigInt(expectedSize));
+  return value;
+}
+
+test('hardening reuses the shared capability and rejects non-allowlisted or nonempty workspaces before effects', async t => {
+  const childSource = await readFile(
+    new URL('../src/gate-b-buyer-wallet-child.js', import.meta.url),
+    'utf8',
+  );
+  assert.equal(
+    childSource.includes("from './gate-b-public-ws-private-workspace.js'"),
+    true,
+  );
+  for (const duplicatedBoundary of [
+    'inspectDarwinAcl', 'assertOutsideGit', 'O_EXCL', 'decorateDirectoryHandle',
+  ]) {
+    assert.equal(childSource.includes(duplicatedBoundary), false);
+  }
+
+  const first = await fixture(t);
+  const wrongRoot = join(dirname(first), 'not-allowlisted');
+  await mkdir(wrongRoot, { mode: 0o700 });
+  const second = await fixture(t);
+  await writeFile(join(second, 'unrelated-entry'), 'synthetic', { mode: 0o600 });
+  for (const root of [wrongRoot, second]) {
+    const counter = { random: 0, index: [] };
+    const effects = { entropy: 0, reservations: 0, sdk: 0 };
+    await rejectsFixedChildFailure(createGateBBuyerWallet(root, injectedSdk(root, counter, {
+      applicationSupportRoot: () => dirname(first),
+      decorateFileHandle(handle) {
+        effects.reservations += 1;
+        return handle;
+      },
+      async entropySource() {
+        effects.entropy += 1;
+        return Buffer.alloc(32);
+      },
+      async sdkLoader() {
+        effects.sdk += 1;
+        return deterministicSdk(counter);
+      },
+    })));
+    assert.deepEqual(effects, { entropy: 0, reservations: 0, sdk: 0 });
+  }
+});
+
+test('hardening keeps the exact private cwd and cleans malformed process handoffs without secret channels', async t => {
+  const root = await fixture(t);
+  const captured = [];
+  const childModule = join(root, 'fixed-child.js');
+  await superviseGateBBuyerWalletChild(root, supervisorInjections(root, {
+    forkProcess: successfulFork(captured),
+    childModule,
+    timeoutMs: 1000,
+  }));
+  assert.equal(captured.length, 1);
+  const record = captured[0];
+  assert.deepEqual(record.argv, []);
+  assert.equal(record.options.cwd, root);
+  assert.deepEqual(record.options.env, {});
+  assert.deepEqual(record.options.execArgv, []);
+  assert.equal(record.options.shell, false);
+  assert.deepEqual(record.options.stdio, ['ignore', 'ignore', 'ignore', 'ipc', 'pipe']);
+  assert.deepEqual(record.child.messages, [{
+    ipcVersion: 1,
+    requestId: 1,
+    type: 'CREATE',
+  }]);
+  const bootstrap = Buffer.concat(record.child.bootstrapChunks).toString('utf8');
+  assert.deepEqual(JSON.parse(bootstrap), { workspaceRoot: root });
+  assert.equal(JSON.stringify({
+    argv: record.argv,
+    cwd: record.options.cwd,
+    env: record.options.env,
+    execArgv: record.options.execArgv,
+    ipc: record.child.messages,
+    modulePath: record.modulePath,
+    stdio: record.options.stdio,
+  }).includes(syntheticSecretCanary()), false);
+  assert.equal(bootstrap.includes(syntheticSecretCanary()), false);
+
+  const malformed = new FakeChild();
+  malformed.send = undefined;
+  await rejectsFixedSupervisorFailure(superviseGateBBuyerWalletChild(
+    root,
+    supervisorInjections(root, {
+      forkProcess: () => malformed,
+      childModule,
+      timeoutMs: 100,
+    }),
+  ));
+  assert.equal(malformed.bootstrap.destroyed, true);
+  assert.equal(malformed.kills.includes('SIGTERM'), true);
+});
+
+test('hardening requires both reservation directory syncs before SDK or entropy and closes all handles', async t => {
+  for (const failedLabel of ['path', 'cwd']) {
+    const root = await fixture(t);
+    const counter = { random: 0, index: [] };
+    const effects = { entropy: 0, sdk: 0 };
+    const syncs = [];
+    const closes = [];
+    await rejectsFixedChildFailure(createGateBBuyerWallet(root, injectedSdk(root, counter, {
+      decorateDirectoryHandle(handle, label) {
+        return wrapHandle(handle, {
+          async close() {
+            closes.push(label);
+            return handle.close();
+          },
+          async sync() {
+            syncs.push(label);
+            if (label === failedLabel) throw new Error(syntheticSecretCanary());
+            return handle.sync();
+          },
+        });
+      },
+      decorateFileHandle(handle, label) {
+        return wrapHandle(handle, {
+          async close() {
+            closes.push(label);
+            return handle.close();
+          },
+        });
+      },
+      async entropySource() {
+        effects.entropy += 1;
+        return Buffer.alloc(32);
+      },
+      async sdkLoader() {
+        effects.sdk += 1;
+        return deterministicSdk(counter);
+      },
+    })));
+    assert.deepEqual(syncs, ['path', 'cwd', 'path', 'cwd']);
+    assert.deepEqual(effects, { entropy: 0, sdk: 0 });
+    await assertProtectedResidue(root, 'buyer-wallet.json', 0);
+    await assertProtectedResidue(root, 'buyer-address.json', 0);
+    for (const label of ['wallet', 'address', 'path', 'cwd']) {
+      assert.equal(closes.includes(label), true);
+    }
+
+    const retryEffects = { entropy: 0, sdk: 0 };
+    await rejectsFixedChildFailure(createGateBBuyerWallet(root, injectedSdk(
+      root,
+      { random: 0, index: [] },
+      {
+        async entropySource() {
+          retryEffects.entropy += 1;
+          return Buffer.alloc(32);
+        },
+        async sdkLoader() {
+          retryEffects.sdk += 1;
+          return deterministicSdk();
+        },
+      },
+    )));
+    assert.deepEqual(retryEffects, { entropy: 0, sdk: 0 });
+  }
+});
+
+test('hardening quarantines both artifacts on entropy throw or zero-byte write', async t => {
+  for (const failure of ['entropy', 'zero-write']) {
+    const root = await fixture(t);
+    const counter = { random: 0, index: [] };
+    const effects = { entropy: 0, sdk: 0 };
+    const closes = [];
+    await rejectsFixedChildFailure(createGateBBuyerWallet(root, injectedSdk(root, counter, {
+      decorateDirectoryHandle(handle, label) {
+        return wrapHandle(handle, {
+          async close() {
+            closes.push(label);
+            return handle.close();
+          },
+        });
+      },
+      decorateFileHandle(handle, label) {
+        return wrapHandle(handle, {
+          async close() {
+            closes.push(label);
+            return handle.close();
+          },
+          async write(...args) {
+            if (failure === 'zero-write' && label === 'wallet') {
+              return { bytesWritten: 0, buffer: args[0] };
+            }
+            return handle.write(...args);
+          },
+        });
+      },
+      async entropySource(size) {
+        effects.entropy += 1;
+        if (failure === 'entropy') throw new Error(syntheticSecretCanary());
+        return Buffer.alloc(size);
+      },
+      async sdkLoader() {
+        effects.sdk += 1;
+        return deterministicSdk(counter);
+      },
+    })));
+    assert.deepEqual(effects, { entropy: 1, sdk: 1 });
+    await assertProtectedResidue(root, 'buyer-wallet.json', 0);
+    await assertProtectedResidue(root, 'buyer-address.json', 0);
+    for (const label of ['wallet', 'address', 'path', 'cwd']) {
+      assert.equal(closes.includes(label), true);
+    }
+  }
+});
+
+test('hardening preserves protected residue for prefix-write and file-sync failures on either artifact', async t => {
+  const failures = [
+    { kind: 'prefix', label: 'wallet' },
+    { kind: 'prefix', label: 'address' },
+    { kind: 'sync', label: 'wallet' },
+    { kind: 'sync', label: 'address' },
+  ];
+  for (const failure of failures) {
+    const root = await fixture(t);
+    const counter = { random: 0, index: [] };
+    let prefixed = false;
+    await rejectsFixedChildFailure(createGateBBuyerWallet(root, injectedSdk(root, counter, {
+      decorateFileHandle(handle, label) {
+        return wrapHandle(handle, {
+          async sync() {
+            if (failure.kind === 'sync' && label === failure.label) {
+              throw new Error(syntheticSecretCanary());
+            }
+            return handle.sync();
+          },
+          async write(bytes, offset, length, position) {
+            if (failure.kind !== 'prefix' || label !== failure.label) {
+              return handle.write(bytes, offset, length, position);
+            }
+            if (prefixed) throw new Error(syntheticSecretCanary());
+            prefixed = true;
+            return handle.write(bytes, offset, Math.min(length, 3), position);
+          },
+        });
+      },
+    })));
+    const wallet = await assertProtectedResidue(root, 'buyer-wallet.json');
+    const address = await assertProtectedResidue(root, 'buyer-address.json');
+    assert.equal(wallet.size > 0n || address.size > 0n, true);
+
+    const retry = { entropy: 0, sdk: 0 };
+    await rejectsFixedChildFailure(createGateBBuyerWallet(root, injectedSdk(
+      root,
+      { random: 0, index: [] },
+      {
+        async entropySource() {
+          retry.entropy += 1;
+          return Buffer.alloc(32);
+        },
+        async sdkLoader() {
+          retry.sdk += 1;
+          return deterministicSdk();
+        },
+      },
+    )));
+    assert.deepEqual(retry, { entropy: 0, sdk: 0 });
+  }
+});
+
+test('hardening treats either final retained-directory sync failure as quarantined', async t => {
+  for (const failedLabel of ['path', 'cwd']) {
+    const root = await fixture(t);
+    const calls = { path: 0, cwd: 0 };
+    await rejectsFixedChildFailure(createGateBBuyerWallet(root, injectedSdk(
+      root,
+      { random: 0, index: [] },
+      {
+        decorateDirectoryHandle(handle, label) {
+          return wrapHandle(handle, {
+            async sync() {
+              calls[label] += 1;
+              if (label === failedLabel && calls[label] === 2) {
+                throw new Error(syntheticSecretCanary());
+              }
+              return handle.sync();
+            },
+          });
+        },
+      },
+    )));
+    assert.deepEqual(calls, { path: 2, cwd: 2 });
+    const wallet = await assertProtectedResidue(root, 'buyer-wallet.json');
+    const address = await assertProtectedResidue(root, 'buyer-address.json');
+    assert.equal(wallet.size > 0n, true);
+    assert.equal(address.size > 0n, true);
+  }
+});
+
+test('hardening rejects post-reservation mode, ACL, symlink, hardlink, generation, and cwd drift before entropy', async t => {
+  const scenarios = [
+    root => ({ afterReservations: () => chmod(join(root, 'buyer-wallet.json'), 0o644) }),
+    root => {
+      let rejectAcl = false;
+      return {
+        afterReservations: async () => { rejectAcl = true; },
+        privateWorkspaceInjections: {
+          aclInspector: async target => !(rejectAcl && target === './buyer-wallet.json'),
+        },
+      };
+    },
+    root => {
+      const displaced = join(root, 'displaced-wallet');
+      return {
+        async afterReservations() {
+          await rename(join(root, 'buyer-wallet.json'), displaced);
+          await symlink(displaced, join(root, 'buyer-wallet.json'));
+        },
+      };
+    },
+    root => ({
+      afterReservations: () => link(
+        join(root, 'buyer-wallet.json'),
+        join(root, 'linked-wallet'),
+      ),
+    }),
+    root => ({
+      afterReservations: () => writeFile(
+        join(root, 'buyer-wallet.json'),
+        'synthetic-prefix',
+        { mode: 0o600 },
+      ),
+    }),
+    root => {
+      const alternate = join(dirname(root), 'alternate-cwd');
+      let reportedCwd = root;
+      return {
+        async afterReservations() {
+          await mkdir(alternate, { mode: 0o700 });
+          reportedCwd = alternate;
+        },
+        privateWorkspaceInjections: {
+          actualCwdPath: () => reportedCwd,
+        },
+      };
+    },
+  ];
+  for (const configure of scenarios) {
+    const root = await fixture(t);
+    const counter = { random: 0, index: [] };
+    const effects = { entropy: 0, sdk: 0 };
+    await rejectsFixedChildFailure(createGateBBuyerWallet(root, injectedSdk(root, counter, {
+      ...configure(root),
+      async entropySource() {
+        effects.entropy += 1;
+        return Buffer.alloc(32);
+      },
+      async sdkLoader() {
+        effects.sdk += 1;
+        return deterministicSdk(counter);
+      },
+    })));
+    assert.deepEqual(effects, { entropy: 0, sdk: 0 });
+  }
+});
+
+test('hardening permits retry only after retained proof that a first-open failure created no inode', async t => {
+  const root = await fixture(t);
+  const walletPath = join(root, 'buyer-wallet.json');
+  const addressPath = join(root, 'buyer-address.json');
+  const effects = { entropy: 0, sdk: 0 };
+  const checkedAfterFailure = new Set();
+  let firstOpenFailed = false;
+  await rejectsFixedChildFailure(createGateBBuyerWallet(root, injectedSdk(
+    root,
+    { random: 0, index: [] },
+    {
+      async entropySource() {
+        effects.entropy += 1;
+        return Buffer.alloc(32);
+      },
+      async lstatPath(path, ...rest) {
+        if (firstOpenFailed && (path === walletPath || path === addressPath)) {
+          checkedAfterFailure.add(path);
+        }
+        return lstat(path, ...rest);
+      },
+      async openPath(path, ...rest) {
+        if (!firstOpenFailed && path === walletPath) {
+          firstOpenFailed = true;
+          throw Object.assign(new Error(syntheticSecretCanary()), { code: 'EACCES' });
+        }
+        return open(path, ...rest);
+      },
+      async sdkLoader() {
+        effects.sdk += 1;
+        return deterministicSdk();
+      },
+    },
+  )));
+  assert.deepEqual(effects, { entropy: 0, sdk: 0 });
+  assert.equal(checkedAfterFailure.has(walletPath), true);
+  assert.equal(checkedAfterFailure.has(addressPath), true);
+  assert.equal(await exists(walletPath), false);
+  assert.equal(await exists(addressPath), false);
+
+  const retryCounter = { random: 0, index: [] };
+  assert.deepEqual(
+    await createGateBBuyerWallet(root, injectedSdk(root, retryCounter)),
+    { status: 'created' },
+  );
+  assert.equal(retryCounter.random, 1);
+});
+
+test('hardening retains ambiguous or inode-present reservation failures and permanently refuses retry', async t => {
+  for (const failure of ['post-open-throw', 'post-open-decoration']) {
+    const root = await fixture(t);
+    const walletPath = join(root, 'buyer-wallet.json');
+    const effects = { entropy: 0, sdk: 0 };
+    const changes = {
+      async entropySource() {
+        effects.entropy += 1;
+        return Buffer.alloc(32);
+      },
+      async sdkLoader() {
+        effects.sdk += 1;
+        return deterministicSdk();
+      },
+    };
+    if (failure === 'post-open-throw') {
+      changes.openPath = async (path, ...rest) => {
+        const handle = await open(path, ...rest);
+        if (path !== walletPath) return handle;
+        await handle.close();
+        throw new Error(syntheticSecretCanary());
+      };
+    } else {
+      changes.decorateFileHandle = (handle, label) => {
+        if (label === 'wallet') throw new Error(syntheticSecretCanary());
+        return handle;
+      };
+    }
+    await rejectsFixedChildFailure(createGateBBuyerWallet(
+      root,
+      injectedSdk(root, { random: 0, index: [] }, changes),
+    ));
+    assert.deepEqual(effects, { entropy: 0, sdk: 0 });
+    await assertProtectedResidue(root, 'buyer-wallet.json', 0);
+
+    const retry = { entropy: 0, sdk: 0 };
+    await rejectsFixedChildFailure(createGateBBuyerWallet(root, injectedSdk(
+      root,
+      { random: 0, index: [] },
+      {
+        async entropySource() {
+          retry.entropy += 1;
+          return Buffer.alloc(32);
+        },
+        async sdkLoader() {
+          retry.sdk += 1;
+          return deterministicSdk();
+        },
+      },
+    )));
+    assert.deepEqual(retry, { entropy: 0, sdk: 0 });
+  }
+});
+
+test('hardening source and documentation retain chain-neutral and threat-boundary nonclaims', async () => {
+  const [childSource, supervisorSource, readme, security, plan] = await Promise.all([
+    readFile(new URL('../src/gate-b-buyer-wallet-child.js', import.meta.url), 'utf8'),
+    readFile(new URL('../src/gate-b-buyer-wallet-supervisor.js', import.meta.url), 'utf8'),
+    readFile(new URL('../README.md', import.meta.url), 'utf8'),
+    readFile(new URL('../SECURITY.md', import.meta.url), 'utf8'),
+    readFile(new URL('../docs/IMPLEMENTATION_PLAN.md', import.meta.url), 'utf8'),
+  ]);
+  assert.equal(childSource.includes('openGateBPublicWsPrivateWorkspace'), true);
+  assert.equal(childSource.includes("from 'node:crypto'"), true);
+  assert.equal(childSource.includes('fromEntropy'), true);
+  assert.equal(childSource.includes('newRandom'), false);
+  for (const source of [childSource, supervisorSource]) {
+    for (const token of [
+      'node:http', 'node:https', 'node:net', 'node:dns', 'fetch(', 'WebSocket',
+      'initialize(', 'publishRawTransaction', 'sendTransaction', 'testnet', 'mainnet',
+    ]) {
+      assert.equal(source.includes(token), false);
+    }
+  }
+  for (const document of [readme, security, plan]) {
+    assert.equal(document.includes('conclusively pre-effect'), true);
+    assert.equal(document.includes('both fixed leaves are rechecked absent'), true);
+    assert.match(document, /generic failure (?:line|result)/);
+    assert.match(
+      document,
+      /(?:not|do not provide) all-or-nothing file-content atomicity/,
+    );
+    assert.equal(document.includes('hostile same-UID'), true);
+    assert.equal(document.includes('backup and synchronization services'), true);
+    assert.match(
+      document,
+      /cryptographically public(?: data)? but (?:remains )?operationally private and linkable/,
+    );
+    assert.equal(document.includes('chain-neutral'), true);
+  }
 });
