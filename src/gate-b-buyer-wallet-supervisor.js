@@ -1,5 +1,6 @@
 import { fork } from 'node:child_process';
-import { dirname, isAbsolute } from 'node:path';
+import { userInfo } from 'node:os';
+import { isAbsolute, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { types as utilTypes } from 'node:util';
 
@@ -10,6 +11,7 @@ const DEFAULT_TIMEOUT_MS = 30_000;
 const MAX_TIMEOUT_MS = 60_000;
 const REAP_FORCE_MS = 250;
 const REAP_ABANDON_MS = 1250;
+const WORKSPACE_NAME = 'zenon-x402-gate-b-wallet';
 const CHILD_MODULE = fileURLToPath(new URL('./gate-b-buyer-wallet-child.js', import.meta.url));
 const ARRAY_IS_ARRAY = Array.isArray;
 const GET_OWN_PROPERTY_DESCRIPTOR = Object.getOwnPropertyDescriptor;
@@ -19,14 +21,33 @@ const IS_PROXY = utilTypes.isProxy;
 const OBJECT_PROTOTYPE = Object.prototype;
 const REFLECT_OWN_KEYS = Reflect.ownKeys;
 
-function fail() {
-  throw new Error('gate_b_buyer_wallet_supervisor_failed');
+class GateBBuyerWalletSupervisorError extends Error {
+  constructor() {
+    super('gate_b_buyer_wallet_supervisor_failed');
+    this.name = 'GateBBuyerWalletSupervisorError';
+    this.code = 'gate_b_buyer_wallet_supervisor_failed';
+    this.stack = 'GateBBuyerWalletSupervisorError: gate_b_buyer_wallet_supervisor_failed';
+  }
 }
 
-function snapshotWorkspaceRoot(value) {
-  if (typeof value !== 'string' || value.length === 0 || value.length > 4096 ||
-      value.includes('\0') || !isAbsolute(value)) fail();
+function fail() {
+  throw new GateBBuyerWalletSupervisorError();
+}
+
+function exactAbsolutePath(value) {
+  if (typeof value !== 'string' || value.length < 1 || value.length > 4096 ||
+      value.includes('\0') || !isAbsolute(value) || resolve(value) !== value) fail();
   return value;
+}
+
+function defaultApplicationSupportRoot() {
+  try {
+    const value = userInfo();
+    if (!value || typeof value !== 'object') fail();
+    return join(exactAbsolutePath(value.homedir), 'Library', 'Application Support');
+  } catch {
+    fail();
+  }
 }
 
 function exactMessage(message, expectedType) {
@@ -45,6 +66,7 @@ function exactMessage(message, expectedType) {
 
 function captureInjections(injected) {
   const output = {
+    applicationSupportRoot: defaultApplicationSupportRoot,
     forkProcess: fork,
     childModule: CHILD_MODULE,
     timeoutMs: DEFAULT_TIMEOUT_MS,
@@ -52,7 +74,7 @@ function captureInjections(injected) {
   if (injected === undefined) return output;
   if (!injected || typeof injected !== 'object' || IS_PROXY(injected) ||
       ARRAY_IS_ARRAY(injected) || GET_PROTOTYPE_OF(injected) !== OBJECT_PROTOTYPE) fail();
-  const allowed = ['forkProcess', 'childModule', 'timeoutMs'];
+  const allowed = Object.keys(output);
   const keys = REFLECT_OWN_KEYS(injected);
   for (let index = 0; index < keys.length; index += 1) {
     const key = keys[index];
@@ -63,30 +85,122 @@ function captureInjections(injected) {
         descriptor.enumerable !== true) fail();
     output[key] = descriptor.value;
   }
-  if (typeof output.forkProcess !== 'function' || typeof output.childModule !== 'string' ||
-      !isAbsolute(output.childModule) || !Number.isSafeInteger(output.timeoutMs) ||
-      output.timeoutMs < 1 || output.timeoutMs > MAX_TIMEOUT_MS) fail();
+  if (typeof output.applicationSupportRoot !== 'function' ||
+      typeof output.forkProcess !== 'function' ||
+      typeof output.childModule !== 'string' ||
+      !isAbsolute(output.childModule) || resolve(output.childModule) !== output.childModule ||
+      !Number.isSafeInteger(output.timeoutMs) || output.timeoutMs < 1 ||
+      output.timeoutMs > MAX_TIMEOUT_MS) fail();
   return output;
 }
 
+function snapshotWorkspaceRoot(value, dependencies) {
+  const workspaceRoot = exactAbsolutePath(value);
+  const supportRoot = exactAbsolutePath(Reflect.apply(
+    dependencies.applicationSupportRoot,
+    undefined,
+    [],
+  ));
+  if (workspaceRoot !== join(supportRoot, WORKSPACE_NAME)) fail();
+  return workspaceRoot;
+}
+
+function processBootstrap(child) {
+  if (!child || typeof child !== 'object' || IS_PROXY(child) ||
+      typeof child.on !== 'function' || typeof child.once !== 'function' ||
+      typeof child.send !== 'function' || typeof child.kill !== 'function' ||
+      child.connected !== true || !ARRAY_IS_ARRAY(child.stdio) || child.stdio.length !== 5) fail();
+  for (let index = 0; index < 4; index += 1) {
+    if (child.stdio[index] !== null) fail();
+  }
+  const stream = child.stdio[4];
+  if (!stream || typeof stream !== 'object' ||
+      typeof stream.once !== 'function' || typeof stream.end !== 'function' ||
+      typeof stream.destroy !== 'function') fail();
+  return stream;
+}
+
+function destroyBootstrap(child) {
+  try {
+    const stream = child?.stdio?.[4];
+    if (stream && typeof stream.destroy === 'function' && stream.destroyed !== true) {
+      stream.destroy();
+    }
+  } catch {}
+}
+
+function removeOwnedListener(emitter, event, listener) {
+  try {
+    if (emitter && typeof emitter.removeListener === 'function') {
+      emitter.removeListener(event, listener);
+    }
+  } catch {}
+}
+
+function releaseAbandonedChildHandles(child) {
+  let channel;
+  let disconnected = false;
+  try { channel = child?.channel; } catch {}
+  try {
+    if (child?.connected === true && typeof child.disconnect === 'function') {
+      child.disconnect();
+      disconnected = true;
+    }
+  } catch {}
+  if (!disconnected) {
+    try {
+      if (channel && typeof channel.close === 'function') channel.close();
+    } catch {}
+  }
+  try {
+    if (channel && typeof channel.unref === 'function') channel.unref();
+  } catch {}
+  try {
+    if (typeof child?.unref === 'function') child.unref();
+  } catch {}
+}
+
 async function reap(child, alreadyClosed) {
-  if (alreadyClosed || !child || typeof child.once !== 'function') return;
-  await new Promise(resolve => {
+  if (alreadyClosed || !child) return;
+  if (typeof child.on !== 'function' || typeof child.once !== 'function' ||
+      typeof child.kill !== 'function') {
+    releaseAbandonedChildHandles(child);
+    return;
+  }
+  await new Promise(resolveReap => {
     let finished = false;
+    let closeListenerAttached = false;
+    let errorListenerAttached = false;
     let forceTimer;
     let abandonTimer;
-    const done = () => {
+    const onClose = () => done(false);
+    const onError = () => {};
+    const done = abandoned => {
       if (finished) return;
       finished = true;
       clearTimeout(forceTimer);
       clearTimeout(abandonTimer);
-      resolve();
+      forceTimer = undefined;
+      abandonTimer = undefined;
+      if (abandoned) releaseAbandonedChildHandles(child);
+      if (closeListenerAttached) removeOwnedListener(child, 'close', onClose);
+      if (errorListenerAttached) removeOwnedListener(child, 'error', onError);
+      resolveReap();
     };
-    child.once('close', done);
+    try {
+      errorListenerAttached = true;
+      child.on('error', onError);
+      closeListenerAttached = true;
+      child.once('close', onClose);
+    } catch {
+      done(true);
+      return;
+    }
+    if (finished) return;
     forceTimer = setTimeout(() => {
       try { child.kill('SIGKILL'); } catch {}
     }, REAP_FORCE_MS);
-    abandonTimer = setTimeout(done, REAP_ABANDON_MS);
+    abandonTimer = setTimeout(() => done(true), REAP_ABANDON_MS);
     try { child.kill('SIGTERM'); } catch {}
   });
 }
@@ -95,9 +209,10 @@ export async function superviseGateBBuyerWalletChild(workspaceRoot, injected) {
   let child;
   let childClosed = false;
   let bootstrapBytes;
+  let clearTerminalListeners = () => {};
   try {
-    const snapshot = snapshotWorkspaceRoot(workspaceRoot);
     const dependencies = captureInjections(injected);
+    const snapshot = snapshotWorkspaceRoot(workspaceRoot, dependencies);
     bootstrapBytes = Buffer.from(JSON.stringify({ workspaceRoot: snapshot }), 'utf8');
     if (bootstrapBytes.length < 1 || bootstrapBytes.length > BOOTSTRAP_MAX_BYTES) fail();
 
@@ -105,51 +220,55 @@ export async function superviseGateBBuyerWalletChild(workspaceRoot, injected) {
       dependencies.childModule,
       [],
       {
-        cwd: dirname(dependencies.childModule),
+        cwd: snapshot,
         stdio: ['ignore', 'ignore', 'ignore', 'ipc', 'pipe'],
         env: {},
         execArgv: [],
         shell: false,
       },
     ]);
-    if (!child || typeof child.on !== 'function' || typeof child.send !== 'function' ||
-        !ARRAY_IS_ARRAY(child.stdio) || !child.stdio[4] ||
-        typeof child.stdio[4].end !== 'function') fail();
+    const bootstrap = processBootstrap(child);
 
     const terminal = await new Promise((resolveTerminal, rejectTerminal) => {
       let phase = 'ready';
-      let closed = false;
+      let closeSeen = false;
+      let acceptingEvents = true;
       let settled = false;
       let terminalType;
-      const timer = setTimeout(() => finish(false), dependencies.timeoutMs);
-      const finish = success => {
-        if (settled) return;
-        settled = true;
-        clearTimeout(timer);
-        if (success) resolveTerminal(terminalType);
-        else rejectTerminal(new Error('gate_b_buyer_wallet_supervisor_failed'));
+      let timer;
+      const onError = () => {
+        if (acceptingEvents) finish(false);
       };
-      child.on('error', () => finish(false));
-      child.on('disconnect', () => {
-        if (phase !== 'close') finish(false);
-      });
-      child.on('message', message => {
+      const onDisconnect = () => {
+        if (acceptingEvents && phase !== 'close') finish(false);
+      };
+      const onMessage = message => {
+        if (!acceptingEvents) return;
         try {
           if (phase === 'ready') {
             exactMessage(message, 'READY');
+            if (!acceptingEvents) return;
             phase = 'terminal';
-            const accepted = child.send({
-              ipcVersion: IPC_VERSION,
-              requestId: REQUEST_ID,
-              type: 'CREATE',
-            }, error => {
-              if (error) finish(false);
-            });
+            const sendMessage = child.send;
+            if (typeof sendMessage !== 'function') return finish(false);
+            if (!acceptingEvents) return;
+            const accepted = Reflect.apply(sendMessage, child, [
+              {
+                ipcVersion: IPC_VERSION,
+                requestId: REQUEST_ID,
+                type: 'CREATE',
+              },
+              error => {
+                if (acceptingEvents && error) finish(false);
+              },
+            ]);
+            if (!acceptingEvents) return;
             if (accepted === false && child.connected === false) finish(false);
             return;
           }
           if (phase === 'terminal') {
             exactMessage(message, 'CREATED');
+            if (!acceptingEvents) return;
             terminalType = message.type;
             phase = 'close';
             return;
@@ -158,30 +277,67 @@ export async function superviseGateBBuyerWalletChild(workspaceRoot, injected) {
         } catch {
           finish(false);
         }
-      });
-      child.on('exit', (code, signal) => {
+      };
+      const onExit = (code, signal) => {
+        if (!acceptingEvents) return;
         if (code !== 0 || signal !== null || phase !== 'close') finish(false);
-      });
-      child.on('close', (code, signal) => {
+      };
+      const onClose = (code, signal) => {
+        if (!acceptingEvents) return;
         childClosed = true;
-        if (closed) return finish(false);
-        closed = true;
+        if (closeSeen) return finish(false);
+        closeSeen = true;
         if (phase !== 'close' || terminalType !== 'CREATED' ||
             code !== 0 || signal !== null) return finish(false);
         finish(true);
-      });
-      child.stdio[4].once('error', () => finish(false));
-      child.stdio[4].end(bootstrapBytes, error => {
-        bootstrapBytes.fill(0);
-        bootstrapBytes = undefined;
-        if (error) finish(false);
-      });
+      };
+      const onBootstrapError = () => {
+        if (acceptingEvents) finish(false);
+      };
+      clearTerminalListeners = () => {
+        removeOwnedListener(child, 'error', onError);
+        removeOwnedListener(child, 'disconnect', onDisconnect);
+        removeOwnedListener(child, 'message', onMessage);
+        removeOwnedListener(child, 'exit', onExit);
+        removeOwnedListener(child, 'close', onClose);
+        removeOwnedListener(bootstrap, 'error', onBootstrapError);
+      };
+      const finish = success => {
+        if (settled || !acceptingEvents) return;
+        acceptingEvents = false;
+        settled = true;
+        clearTimeout(timer);
+        timer = undefined;
+        clearTerminalListeners();
+        if (success) resolveTerminal(terminalType);
+        else rejectTerminal(new GateBBuyerWalletSupervisorError());
+      };
+      try {
+        timer = setTimeout(() => finish(false), dependencies.timeoutMs);
+        child.on('error', onError);
+        child.on('disconnect', onDisconnect);
+        child.on('message', onMessage);
+        child.on('exit', onExit);
+        child.on('close', onClose);
+        bootstrap.once('error', onBootstrapError);
+        bootstrap.end(bootstrapBytes, error => {
+          if (Buffer.isBuffer(bootstrapBytes)) bootstrapBytes.fill(0);
+          bootstrapBytes = undefined;
+          if (acceptingEvents && error) finish(false);
+        });
+      } catch {
+        finish(false);
+      }
     });
     if (terminal !== 'CREATED') fail();
+    clearTerminalListeners();
+    destroyBootstrap(child);
     return { status: 'created' };
   } catch {
     if (Buffer.isBuffer(bootstrapBytes)) bootstrapBytes.fill(0);
+    destroyBootstrap(child);
     await reap(child, childClosed);
+    clearTerminalListeners();
     fail();
   }
 }
