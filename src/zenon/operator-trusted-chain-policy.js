@@ -6,7 +6,6 @@ import {
   observeOperatorTrustedLocalDevnetPolicy,
 } from './operator-trusted-local-devnet-profile.js';
 import {
-  OPERATOR_TRUSTED_PUBLIC_TESTNET_CHAIN_PROFILE,
   isOperatorTrustedTestnetEvidence,
   isOperatorTrustedTestnetPolicy,
   observeOperatorTrustedTestnetPolicy,
@@ -95,9 +94,14 @@ function sameProfile(left, right) {
 export function assertOperatorTrustedChainPolicy(policy, expectedChainProfile) {
   const family = classifyPolicy(policy);
   const expected = snapshotProfile(expectedChainProfile);
+  const profileValue = ownDataDescriptor(policy, 'chainProfile').value;
   const policyProfile = family === PUBLIC_TESTNET_FAMILY
-    ? snapshotProfile(OPERATOR_TRUSTED_PUBLIC_TESTNET_CHAIN_PROFILE)
-    : snapshotProfile(ownDataDescriptor(policy, 'chainProfile').value);
+    ? snapshotProfile(
+      typeof profileValue === 'function'
+        ? APPLY(profileValue, undefined, [])
+        : fail(),
+    )
+    : snapshotProfile(profileValue);
   if (!sameProfile(expected, policyProfile)) fail();
   return policy;
 }

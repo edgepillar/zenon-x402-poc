@@ -6,6 +6,8 @@ import {
   lstat,
   mkdir,
   open,
+  readFile,
+  readdir,
   realpath,
   rename,
   rm,
@@ -18,7 +20,7 @@ import { performance } from 'node:perf_hooks';
 import { types as utilTypes } from 'node:util';
 
 import { paidFetch, reconcilePayment } from './buyer.js';
-import { paymentIntentDigest } from './canonical.js';
+import { canonicalJson, paymentIntentDigest } from './canonical.js';
 import {
   assembleLiveEvidenceBundle,
   parseLiveEvidenceFragment,
@@ -30,6 +32,11 @@ import {
   finalizeLiveEvidenceTimeline,
   recordLiveEvidencePhase,
 } from './live-observation.js';
+import {
+  DELIVERY_STATES,
+  EVIDENCE_STATES,
+  SettlementJournal,
+} from './settlement-journal.js';
 import {
   createPaymentCapabilities,
   decodeB64Json,
@@ -46,11 +53,18 @@ import {
   probeZenonRoleReadiness,
 } from './zenon-payment.js';
 import {
+  GATE_B_CURRENT_TESTNET_CHAIN_PROFILE,
+  GATE_B_CURRENT_TESTNET_NON_CLAIMS,
+  GATE_B_CURRENT_TESTNET_OPERATOR_TRUST_ACKNOWLEDGEMENT,
+  GATE_B_CURRENT_TESTNET_PROFILE_NAME,
+  GATE_B_CURRENT_TESTNET_PROVENANCE,
+  GATE_B_CURRENT_TESTNET_SDK_NETWORK_ID,
   OPERATOR_TRUST_ACKNOWLEDGEMENT,
   OPERATOR_TRUSTED_PUBLIC_TESTNET_CHAIN_PROFILE,
   OPERATOR_TRUSTED_PUBLIC_TESTNET_NON_CLAIMS,
   OPERATOR_TRUSTED_PUBLIC_TESTNET_PROFILE_NAME,
   OPERATOR_TRUSTED_PUBLIC_TESTNET_PROVENANCE,
+  selectGateBCurrentTestnetPolicy,
   selectOperatorTrustedTestnetPolicy,
   TESTNET_LIVE_ACKNOWLEDGEMENT,
 } from './zenon/operator-trusted-testnet-profile.js';
@@ -64,12 +78,22 @@ const MAX_NODES = 8192;
 const MAX_MEMBERS = 4096;
 const PRIVATE_FILE_MODE = 0o600;
 const PRIVATE_DIRECTORY_MODE = 0o700;
+const PUBLIC_WS_ONCE_EXECUTION_MODE = 'public-ws-once-v1';
+const HISTORICAL_WSS_EXECUTION_MODE = 'historical-wss-v1';
+const PUBLIC_WS_ONCE_MARKER_NAME = 'PUBLIC_WS_ONCE_CONSUMED';
+const PUBLIC_WS_ONCE_TRANSPORT_EXCEPTION =
+  'I_EXPLICITLY_ACCEPT_PUBLIC_WS_FOR_EXACTLY_ONE_GATE_B_TESTNET_PAYMENT';
+const PUBLIC_WS_ONCE_PAYMENT_ACKNOWLEDGEMENT =
+  'I_ACCEPT_ONE_DISPOSABLE_MINIMALLY_FUNDED_TESTNET_PAYMENT_OVER_UNENCRYPTED_UNAUTHENTICATED_PUBLIC_RPC';
+const PUBLIC_WS_ONCE_PUBLICATION_ACKNOWLEDGEMENT =
+  'I_UNDERSTAND_ARTIFACTS_MUST_NOT_BE_PUBLISHED_UNTIL_INDEPENDENT_VERIFICATION';
 const MAX_RECOVERY_ATTEMPTS = 8;
 const MAX_RPC_TIMEOUT_MS = 60_000;
 const MAX_RECOVERY_DELAY_MS = 60_000;
 const MAX_RECOVERY_ELAPSED_MS = 5 * 60_000;
 const RUN_NAME = /^[a-z0-9](?:[a-z0-9-]{0,62}[a-z0-9])?$/;
 const REVISION = /^(?:[0-9a-f]{40}|[0-9a-f]{64})$/;
+const LOWERCASE_HASH_64 = /^[0-9a-f]{64}$/;
 const DECIMAL = /^(?:0|[1-9]\d*)$/;
 const CONTROL = /[\u0000-\u001f\u007f]/;
 const UTC_TIMESTAMP = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/;
@@ -135,6 +159,13 @@ const NON_CLAIM_FIELDS = FREEZE([
   'buyerReceiptCryptographicallyProven',
   'recipientReceiveObserved',
   'secretAbsenceProven',
+]);
+
+const PUBLIC_WS_ONCE_RECORD_FIELDS = FREEZE([
+  'authorizationKey', 'transactionHash', 'chainProfile', 'intentDigest',
+  'resourceIdentity', 'resourceDigest', 'payer', 'signedAccountBlock',
+  'evidenceState', 'momentumEvidence', 'deliveryState', 'cachedResponse',
+  'createdAt', 'updatedAt',
 ]);
 
 const DURATION_BINDINGS = FREEZE({
@@ -615,7 +646,10 @@ export async function createLiveEvidencePublicTransport(options) {
   }
 }
 
-function validateExpectedPaymentRequired(value) {
+function validateExpectedPaymentRequired(
+  value,
+  expectedProfile = OPERATOR_TRUSTED_PUBLIC_TESTNET_CHAIN_PROFILE,
+) {
   try {
     validatePaymentRequired(value);
     if (!ARRAY_IS_ARRAY(value.accepts) || value.accepts.length !== 1) fail();
@@ -626,10 +660,9 @@ function validateExpectedPaymentRequired(value) {
   exactPublicHttpsPaidUrl(value.resource.url);
   const accepted = value.accepts[0];
   if (accepted.network !== EXPERIMENTAL_LIVE_NETWORK ||
-      accepted.extra.zenonChain.version !== OPERATOR_TRUSTED_PUBLIC_TESTNET_CHAIN_PROFILE.version ||
-      accepted.extra.zenonChain.chainIdentifier !== OPERATOR_TRUSTED_PUBLIC_TESTNET_CHAIN_PROFILE.chainIdentifier ||
-      accepted.extra.zenonChain.genesisMomentumHash !==
-        OPERATOR_TRUSTED_PUBLIC_TESTNET_CHAIN_PROFILE.genesisMomentumHash) fail();
+      accepted.extra.zenonChain.version !== expectedProfile.version ||
+      accepted.extra.zenonChain.chainIdentifier !== expectedProfile.chainIdentifier ||
+      accepted.extra.zenonChain.genesisMomentumHash !== expectedProfile.genesisMomentumHash) fail();
   return value;
 }
 
@@ -662,6 +695,38 @@ export function parseLiveEvidenceRunConfig(jsonText) {
   }
 }
 
+export function parsePublicWsOnceRunConfig(jsonText) {
+  try {
+    const value = parseStrictJson(jsonText, CONFIG_MAX_BYTES);
+    exactObject(value, [
+      'runnerVersion', 'sourceRevision', 'profileName', 'acknowledgements',
+      'expectedPaymentRequired', 'runtime',
+    ]);
+    if (value.runnerVersion !== 1 || typeof value.sourceRevision !== 'string' ||
+        !REVISION.test(value.sourceRevision) ||
+        value.profileName !== GATE_B_CURRENT_TESTNET_PROFILE_NAME) fail();
+    exactObject(value.acknowledgements, ['live', 'operatorTrust']);
+    if (value.acknowledgements.live !== TESTNET_LIVE_ACKNOWLEDGEMENT ||
+        value.acknowledgements.operatorTrust !==
+          GATE_B_CURRENT_TESTNET_OPERATOR_TRUST_ACKNOWLEDGEMENT) fail();
+    validateExpectedPaymentRequired(
+      value.expectedPaymentRequired,
+      GATE_B_CURRENT_TESTNET_CHAIN_PROFILE,
+    );
+    exactObject(value.runtime, [
+      'listenPort', 'rpcTimeoutMs', 'maxRecoveryAttempts', 'recoveryDelayMs',
+      'maxRecoveryElapsedMs',
+    ]);
+    integer(value.runtime.listenPort, 1, 65_535);
+    integer(value.runtime.rpcTimeoutMs, 1, MAX_RPC_TIMEOUT_MS);
+    if (value.runtime.maxRecoveryAttempts !== 0 || value.runtime.recoveryDelayMs !== 0) fail();
+    integer(value.runtime.maxRecoveryElapsedMs, 1, MAX_RECOVERY_ELAPSED_MS);
+    return deepFreeze(value);
+  } catch {
+    fail();
+  }
+}
+
 function parseRpcSecret(value) {
   exactObject(value, ['secretVersion', 'rpcEndpoint']);
   if (value.secretVersion !== 1) fail();
@@ -678,11 +743,59 @@ function parseRpcSecret(value) {
   return value;
 }
 
+function exactPublicWsOnceEndpoint(value) {
+  stringValue(value, 4096);
+  if (value.includes('%') || value.includes('?') || value.includes('#')) fail();
+  let parsed;
+  try {
+    parsed = new URL(value);
+  } catch {
+    fail();
+  }
+  if (parsed.protocol !== 'ws:' || parsed.username || parsed.password ||
+      parsed.search || parsed.hash || parsed.pathname !== '/' || parsed.port === '' ||
+      parsed.port === '80' || parsed.href !== value || !parsed.hostname) fail();
+  const unbracketed = parsed.hostname.startsWith('[') && parsed.hostname.endsWith(']')
+    ? parsed.hostname.slice(1, -1)
+    : parsed.hostname;
+  const family = isIP(unbracketed);
+  if ((family !== 4 && family !== 6) || !publicAddress(unbracketed, family)) fail();
+  const numericPort = Number(parsed.port);
+  if (!Number.isSafeInteger(numericPort) || numericPort < 1 || numericPort > 65_535) fail();
+  return value;
+}
+
+function parsePublicWsOnceRpcSecret(value) {
+  exactObject(value, ['secretVersion', 'rpcEndpoint']);
+  if (value.secretVersion !== 2) fail();
+  exactPublicWsOnceEndpoint(value.rpcEndpoint);
+  return value;
+}
+
 export function parseLiveRoleInput(jsonText, role) {
   try {
     const value = parseStrictJson(jsonText, ROLE_INPUT_MAX_BYTES);
     if (role === 'buyer-rpc' || role === 'facilitator-rpc') {
       parseRpcSecret(value);
+    } else if (role === 'buyer-wallet') {
+      exactObject(value, ['secretVersion', 'mnemonic', 'accountIndex']);
+      if (value.secretVersion !== 1) fail();
+      stringValue(value.mnemonic, 4096);
+      integer(value.accountIndex, 0, Number.MAX_SAFE_INTEGER);
+    } else {
+      fail();
+    }
+    return deepFreeze(value);
+  } catch {
+    fail();
+  }
+}
+
+export function parsePublicWsOnceRoleInput(jsonText, role) {
+  try {
+    const value = parseStrictJson(jsonText, ROLE_INPUT_MAX_BYTES);
+    if (role === 'buyer-rpc' || role === 'facilitator-rpc') {
+      parsePublicWsOnceRpcSecret(value);
     } else if (role === 'buyer-wallet') {
       exactObject(value, ['secretVersion', 'mnemonic', 'accountIndex']);
       if (value.secretVersion !== 1) fail();
@@ -791,6 +904,81 @@ async function assertPhysicalDescendant(resolvedRoot, resolvedPath, rel) {
 }
 
 const FILE_GENERATION_FIELDS = FREEZE(['dev', 'ino', 'size', 'mtimeNs', 'ctimeNs']);
+const DIRECTORY_IDENTITY_FIELDS = FREEZE(['dev', 'ino']);
+
+function directoryIdentityFromBigIntStat(stat) {
+  try {
+    const identity = {};
+    for (let index = 0; index < DIRECTORY_IDENTITY_FIELDS.length; index += 1) {
+      const field = DIRECTORY_IDENTITY_FIELDS[index];
+      const value = stat[field];
+      if (typeof value !== 'bigint' || value < 0n) fail();
+      ownData(identity, field, value.toString());
+    }
+    return FREEZE(identity);
+  } catch {
+    fail();
+  }
+}
+
+function sameDirectoryIdentity(left, right) {
+  return DIRECTORY_IDENTITY_FIELDS.every(field => left[field] === right[field]);
+}
+
+function assertPrivateBigIntDirectoryStat(stat) {
+  const uidMatches = typeof process.getuid !== 'function' || stat.uid === BigInt(process.getuid());
+  if (!stat.isDirectory() || stat.isSymbolicLink() ||
+      Number(stat.mode & 0o777n) !== PRIVATE_DIRECTORY_MODE || !uidMatches) fail();
+}
+
+async function capturePrivateDirectoryState(path, workspaceRoot = false) {
+  let handle;
+  try {
+    if (workspaceRoot) await secureWorkspaceRoot(path);
+    else await assertPrivateDirectory(path);
+    const pathBefore = await lstat(path, { bigint: true });
+    assertPrivateBigIntDirectoryStat(pathBefore);
+    const noFollow = fsConstants.O_NOFOLLOW ?? 0;
+    const directoryOnly = fsConstants.O_DIRECTORY ?? 0;
+    handle = await open(path, fsConstants.O_RDONLY | noFollow | directoryOnly);
+    const descriptor = await handle.stat({ bigint: true });
+    assertPrivateBigIntDirectoryStat(descriptor);
+    const identity = directoryIdentityFromBigIntStat(descriptor);
+    if (!sameDirectoryIdentity(directoryIdentityFromBigIntStat(pathBefore), identity)) fail();
+    const pathAfter = await lstat(path, { bigint: true });
+    assertPrivateBigIntDirectoryStat(pathAfter);
+    if (!sameDirectoryIdentity(directoryIdentityFromBigIntStat(pathAfter), identity)) fail();
+    return { path, identity, handle, workspaceRoot };
+  } catch {
+    if (handle) {
+      try { await handle.close(); } catch {}
+    }
+    fail();
+  }
+}
+
+async function assertPrivateDirectoryState(state) {
+  try {
+    if (!state || typeof state.path !== 'string' || !state.handle ||
+        !state.identity || typeof state.workspaceRoot !== 'boolean') fail();
+    if (state.workspaceRoot) await secureWorkspaceRoot(state.path);
+    else await assertPrivateDirectory(state.path);
+    const descriptor = await state.handle.stat({ bigint: true });
+    const pathStat = await lstat(state.path, { bigint: true });
+    assertPrivateBigIntDirectoryStat(descriptor);
+    assertPrivateBigIntDirectoryStat(pathStat);
+    if (!sameDirectoryIdentity(directoryIdentityFromBigIntStat(descriptor), state.identity) ||
+        !sameDirectoryIdentity(directoryIdentityFromBigIntStat(pathStat), state.identity)) fail();
+  } catch {
+    fail();
+  }
+}
+
+async function disposePrivateDirectoryState(state) {
+  if (!state?.handle) return;
+  try { await state.handle.close(); } catch {}
+  state.handle = undefined;
+}
 
 function exactFileGeneration(value) {
   try {
@@ -931,6 +1119,250 @@ function exactPreflightOptions(options) {
   }
   ownData(snapshot, 'runName', options.runName);
   return FREEZE(snapshot);
+}
+
+function exactPublicWsOnceOptions(options) {
+  exactObject(options, [
+    'configPath', 'buyerRpcPath', 'buyerWalletPath', 'facilitatorRpcPath',
+    'authorizationPath', 'workspaceRoot', 'runName', 'transportException',
+  ]);
+  const names = [
+    'configPath', 'buyerRpcPath', 'buyerWalletPath', 'facilitatorRpcPath',
+    'authorizationPath', 'workspaceRoot',
+  ];
+  for (let index = 0; index < names.length; index += 1) {
+    stringValue(options[names[index]], 4096);
+  }
+  if (typeof options.runName !== 'string' || !RUN_NAME.test(options.runName) ||
+      options.transportException !== PUBLIC_WS_ONCE_TRANSPORT_EXCEPTION) fail();
+  const snapshot = {};
+  for (let index = 0; index < names.length; index += 1) {
+    ownData(snapshot, names[index], options[names[index]]);
+  }
+  ownData(snapshot, 'runName', options.runName);
+  ownData(snapshot, 'transportException', options.transportException);
+  return FREEZE(snapshot);
+}
+
+export function parsePublicWsOnceAuthorization(jsonText) {
+  try {
+    const value = parseStrictJson(jsonText, ROLE_INPUT_MAX_BYTES);
+    exactObject(value, [
+      'authorizationVersion', 'transportException', 'runName', 'sourceRevision',
+      'profileName', 'paymentIntentDigest', 'rpcEndpoint', 'acknowledgements',
+    ]);
+    if (value.authorizationVersion !== 1 ||
+        value.transportException !== PUBLIC_WS_ONCE_TRANSPORT_EXCEPTION ||
+        typeof value.runName !== 'string' || !RUN_NAME.test(value.runName) ||
+        typeof value.sourceRevision !== 'string' || !REVISION.test(value.sourceRevision) ||
+        value.profileName !== GATE_B_CURRENT_TESTNET_PROFILE_NAME ||
+        typeof value.paymentIntentDigest !== 'string' ||
+        !LOWERCASE_HASH_64.test(value.paymentIntentDigest)) fail();
+    exactPublicWsOnceEndpoint(value.rpcEndpoint);
+    exactObject(value.acknowledgements, ['payment', 'publication']);
+    if (value.acknowledgements.payment !== PUBLIC_WS_ONCE_PAYMENT_ACKNOWLEDGEMENT ||
+        value.acknowledgements.publication !==
+          PUBLIC_WS_ONCE_PUBLICATION_ACKNOWLEDGEMENT) fail();
+    return deepFreeze(value);
+  } catch {
+    fail();
+  }
+}
+
+export function parsePublicWsOnceSupervisorBootstrap(jsonText) {
+  try {
+    return exactPublicWsOnceOptions(parseStrictJson(jsonText, ROLE_INPUT_MAX_BYTES));
+  } catch {
+    fail();
+  }
+}
+
+export function parsePublicWsOnceIndependentVerification(jsonText, expectedRunName) {
+  try {
+    if (typeof expectedRunName !== 'string' || !RUN_NAME.test(expectedRunName)) fail();
+    const value = parseStrictJson(jsonText, ROLE_INPUT_MAX_BYTES);
+    exactObject(value, [
+      'verificationVersion', 'runName', 'route', 'sameEndpoint', 'sameOperatorRoute',
+      'exactBlockConfirmed', 'paymentIntentBindingConfirmed',
+      'momentumInclusionConfirmed',
+    ]);
+    if (value.verificationVersion !== 1 || value.runName !== expectedRunName ||
+        value.route !== 'different-operator-wss-or-https' ||
+        value.sameEndpoint !== false || value.sameOperatorRoute !== false ||
+        value.exactBlockConfirmed !== true ||
+        value.paymentIntentBindingConfirmed !== true ||
+        value.momentumInclusionConfirmed !== true) fail();
+    return deepFreeze(value);
+  } catch {
+    fail();
+  }
+}
+
+function publicWsOnceConsumedMarker(workspaceRoot) {
+  return join(workspaceRoot, PUBLIC_WS_ONCE_MARKER_NAME);
+}
+
+async function assertUnusedPublicWsOnceMarker(workspaceRoot) {
+  try {
+    await lstat(publicWsOnceConsumedMarker(workspaceRoot));
+    fail();
+  } catch (error) {
+    if (error instanceof LiveEvidenceRunError) throw error;
+    if (error?.code !== 'ENOENT') fail();
+  }
+}
+
+export async function persistPublicWsOnceConsumedMarker(workspaceRoot) {
+  let workspaceState;
+  try {
+    workspaceState = await capturePrivateDirectoryState(workspaceRoot, true);
+    return await persistPublicWsOnceConsumedMarkerInState(workspaceState);
+  } catch {
+    fail();
+  } finally {
+    await disposePrivateDirectoryState(workspaceState);
+  }
+}
+
+async function persistPublicWsOnceConsumedMarkerInState(workspaceState) {
+  let handle;
+  try {
+    await assertPrivateDirectoryState(workspaceState);
+    const root = workspaceState.path;
+    const destination = publicWsOnceConsumedMarker(root);
+    const noFollow = fsConstants.O_NOFOLLOW ?? 0;
+    await assertPrivateDirectoryState(workspaceState);
+    handle = await open(
+      destination,
+      fsConstants.O_WRONLY | fsConstants.O_CREAT | fsConstants.O_EXCL | noFollow,
+      PRIVATE_FILE_MODE,
+    );
+    await assertPrivateDirectoryState(workspaceState);
+    await handle.writeFile('PUBLIC_WS_ONCE_CONSUMED\n', 'utf8');
+    await handle.sync();
+    await assertPrivateDirectoryState(workspaceState);
+    await handle.close();
+    handle = undefined;
+    await workspaceState.handle.sync();
+    await assertPrivateDirectoryState(workspaceState);
+    const stat = await lstat(destination);
+    if (!stat.isFile() || stat.isSymbolicLink() || stat.nlink !== 1 ||
+        modeBits(stat) !== PRIVATE_FILE_MODE || !currentUidMatches(stat)) fail();
+    await assertPrivateDirectoryState(workspaceState);
+    return destination;
+  } catch {
+    if (handle) {
+      try { await handle.close(); } catch {}
+    }
+    // Never remove this marker: existence means the workspace-scoped one-attempt
+    // authorization was consumed, even if a crash or write failure left a partial file.
+    fail();
+  }
+}
+
+async function performPublicWsOncePreflight(options, retainInputs) {
+  const opened = [];
+  let workspaceState;
+  try {
+    options = exactPublicWsOnceOptions(options);
+    workspaceState = await capturePrivateDirectoryState(options.workspaceRoot, true);
+    const workspaceRoot = workspaceState.path;
+    const paths = [
+      options.configPath,
+      options.buyerRpcPath,
+      options.buyerWalletPath,
+      options.facilitatorRpcPath,
+      options.authorizationPath,
+    ];
+    const maximums = [
+      CONFIG_MAX_BYTES, ROLE_INPUT_MAX_BYTES, ROLE_INPUT_MAX_BYTES,
+      ROLE_INPUT_MAX_BYTES, ROLE_INPUT_MAX_BYTES,
+    ];
+    for (let index = 0; index < paths.length; index += 1) {
+      await assertPrivateDirectoryState(workspaceState);
+      append(opened, await openVerifiedProtectedInput(
+        workspaceRoot,
+        paths[index],
+        maximums[index],
+      ));
+      await assertPrivateDirectoryState(workspaceState);
+    }
+    const identities = new Set();
+    for (let index = 0; index < opened.length; index += 1) {
+      const identity = `${opened[index].generation.dev}:${opened[index].generation.ino}`;
+      if (identities.has(identity)) fail();
+      identities.add(identity);
+    }
+    const runDirectory = join(workspaceRoot, options.runName);
+    try {
+      await lstat(runDirectory);
+      fail();
+    } catch (error) {
+      if (error instanceof LiveEvidenceRunError) throw error;
+      if (error?.code !== 'ENOENT') fail();
+    }
+    await assertUnusedPublicWsOnceMarker(workspaceRoot);
+    await assertPrivateDirectoryState(workspaceState);
+    const configBytes = await readVerifiedOpenInput(opened[0], CONFIG_MAX_BYTES);
+    const buyerRpcBytes = await readVerifiedOpenInput(opened[1], ROLE_INPUT_MAX_BYTES);
+    const facilitatorRpcBytes = await readVerifiedOpenInput(opened[3], ROLE_INPUT_MAX_BYTES);
+    const authorizationBytes = await readVerifiedOpenInput(opened[4], ROLE_INPUT_MAX_BYTES);
+    const config = parsePublicWsOnceRunConfig(configBytes.toString('utf8'));
+    const buyerRpc = parsePublicWsOnceRoleInput(
+      buyerRpcBytes.toString('utf8'),
+      'buyer-rpc',
+    );
+    const facilitatorRpc = parsePublicWsOnceRoleInput(
+      facilitatorRpcBytes.toString('utf8'),
+      'facilitator-rpc',
+    );
+    const authorization = parsePublicWsOnceAuthorization(
+      authorizationBytes.toString('utf8'),
+    );
+    const intentDigest = paymentIntentDigest(
+      config.expectedPaymentRequired,
+      config.expectedPaymentRequired.accepts[0],
+    );
+    if (buyerRpc.rpcEndpoint !== facilitatorRpc.rpcEndpoint ||
+        authorization.rpcEndpoint !== buyerRpc.rpcEndpoint ||
+        authorization.runName !== options.runName ||
+        authorization.sourceRevision !== config.sourceRevision ||
+        authorization.profileName !== config.profileName ||
+        authorization.paymentIntentDigest !== intentDigest ||
+        authorization.transportException !== options.transportException) fail();
+    await opened[0].handle.close();
+    opened[0].handle = undefined;
+    await opened[4].handle.close();
+    opened[4].handle = undefined;
+    const state = {
+      workspaceRoot,
+      config,
+      configInput: opened[0],
+      buyerRpcInput: opened[1],
+      buyerWalletInput: opened[2],
+      facilitatorRpcInput: opened[3],
+      authorizationInput: opened[4],
+      workspaceState,
+    };
+    if (!retainInputs) {
+      for (let index = 0; index < opened.length; index += 1) {
+        await disposeVerifiedInput(opened[index]);
+      }
+      await disposePrivateDirectoryState(workspaceState);
+      workspaceState = undefined;
+    }
+    return { result: FREEZE({ valid: true }), state };
+  } catch {
+    for (let index = 0; index < opened.length; index += 1) {
+      await disposeVerifiedInput(opened[index]);
+    }
+    await disposePrivateDirectoryState(workspaceState);
+    fail();
+  }
+}
+
+export async function preflightPublicWsOnceRun(options) {
+  return (await performPublicWsOncePreflight(options, false)).result;
 }
 
 async function performLiveEvidencePreflight(options, retainInputs) {
@@ -1109,13 +1541,14 @@ async function assertPrivateDirectory(directory) {
   return directory;
 }
 
-async function atomicPrivateWrite(directory, name, contents) {
+async function atomicPrivateWrite(directory, name, contents, boundary) {
   if (typeof contents !== 'string' || BUFFER_BYTE_LENGTH(contents, 'utf8') > 512 * 1024) fail();
   const destination = join(directory, name);
   const temporary = join(directory, `.partial-${randomBytes(16).toString('hex')}`);
   let handle;
   let created = false;
   try {
+    if (boundary) await boundary();
     await assertPrivateDirectory(directory);
     try {
       await lstat(destination);
@@ -1126,11 +1559,14 @@ async function atomicPrivateWrite(directory, name, contents) {
     }
     handle = await open(temporary, 'wx', PRIVATE_FILE_MODE);
     created = true;
+    if (boundary) await boundary();
     await handle.writeFile(contents, 'utf8');
     await handle.sync();
+    if (boundary) await boundary();
     await handle.close();
     handle = undefined;
     await rename(temporary, destination);
+    if (boundary) await boundary();
     const directoryHandle = await open(directory, fsConstants.O_RDONLY);
     try {
       await directoryHandle.sync();
@@ -1140,6 +1576,7 @@ async function atomicPrivateWrite(directory, name, contents) {
     const stat = await lstat(destination);
     if (!stat.isFile() || stat.isSymbolicLink() || stat.nlink !== 1 ||
         modeBits(stat) !== PRIVATE_FILE_MODE || !currentUidMatches(stat)) fail();
+    if (boundary) await boundary();
     return destination;
   } catch {
     if (handle) {
@@ -1208,10 +1645,195 @@ async function publishPrivateArtifactSet(runDirectory, artifacts) {
   }
 }
 
-function environmentForRpc(config, rpcEndpoint) {
+async function assertExactPrivateFile(path, expectedContents, allowEmpty = false) {
+  try {
+    const stat = await lstat(path);
+    if (!stat.isFile() || stat.isSymbolicLink() || stat.nlink !== 1 ||
+        modeBits(stat) !== PRIVATE_FILE_MODE || !currentUidMatches(stat) ||
+        (!allowEmpty && stat.size < 1)) fail();
+    if (expectedContents !== undefined && await readFile(path, 'utf8') !== expectedContents) fail();
+  } catch {
+    fail();
+  }
+}
+
+function publicWsOncePendingMetadata() {
+  return {
+    candidateVersion: 1,
+    status: 'PENDING_INDEPENDENT_VERIFICATION',
+    publicationEligible: false,
+    transport: {
+      scheme: 'ws',
+      confidentiality: false,
+      peerAuthenticated: false,
+      operatorRiskAccepted: true,
+      endpointDisclosed: false,
+    },
+    independentVerification: {
+      required: true,
+      completed: false,
+      sameEndpointOrOperatorRouteSufficient: false,
+      exactBlockRequired: true,
+      paymentIntentBindingRequired: true,
+      momentumInclusionRequired: true,
+    },
+    privateCapture: {
+      complete: true,
+      independentlyVerified: false,
+      publicBundleProduced: false,
+      fragmentCount: 5,
+    },
+    nonClaims: publicWsOnceFalseNonClaims(),
+  };
+}
+
+async function assertPublicWsOnceRetainedState(
+  workspaceState,
+  runState,
+  pending,
+  expectedJournalSnapshot,
+  expectedArtifacts,
+) {
+  await assertPrivateDirectoryState(workspaceState);
+  await assertPrivateDirectoryState(runState);
+  await assertExactPrivateFile(
+    publicWsOnceConsumedMarker(workspaceState.path),
+    'PUBLIC_WS_ONCE_CONSUMED\n',
+  );
+  await assertExactPrivateFile(join(runState.path, 'SUBMISSION_ARMED'), 'SUBMISSION_ARMED\n');
+  const journalDirectory = join(runState.path, 'journal');
+  await assertPrivateDirectory(journalDirectory);
+  if (JSON_STRINGIFY((await readdir(journalDirectory)).sort()) !==
+      JSON_STRINGIFY(['.settlement-journal.initialized', 'settlement-journal.json'])) fail();
+  await assertExactPrivateFile(
+    join(journalDirectory, '.settlement-journal.initialized'),
+    undefined,
+    true,
+  );
+  await assertExactPrivateFile(join(journalDirectory, 'settlement-journal.json'));
+  const durableJournal = await new SettlementJournal({
+    directory: journalDirectory,
+    allowedRoot: runState.path,
+  }).load();
+  if (!expectedJournalSnapshot || expectedJournalSnapshot.quiescent !== true ||
+      durableJournal.schemaVersion !== 1 || durableJournal.revision !== 5 ||
+      durableJournal.schemaVersion !== expectedJournalSnapshot.schemaVersion ||
+      durableJournal.revision !== expectedJournalSnapshot.revision ||
+      !ARRAY_IS_ARRAY(durableJournal.records) || durableJournal.records.length !== 1 ||
+      JSON_STRINGIFY(durableJournal.records) !==
+        JSON_STRINGIFY(expectedJournalSnapshot.records)) fail();
+  const durableRecord = durableJournal.records[0];
+  if (durableRecord.evidenceState !== EVIDENCE_STATES.MOMENTUM_INCLUDED ||
+      durableRecord.deliveryState !== DELIVERY_STATES.DELIVERED ||
+      durableRecord.cachedResponse === null || durableRecord.cachedResponse === undefined) fail();
+  const expectedRunEntries = pending
+    ? ['SUBMISSION_ARMED', 'journal', 'pending-independent-verification']
+    : ['SUBMISSION_ARMED', 'journal'];
+  if (JSON_STRINGIFY((await readdir(runState.path)).sort()) !==
+      JSON_STRINGIFY(expectedRunEntries)) fail();
+  if (pending) {
+    const artifactNames = [
+      'manifest.json', 'chain.json', 'http.json', 'journal.json', 'timing.json',
+    ];
+    exactObject(expectedArtifacts, artifactNames);
+    const pendingDirectory = join(runState.path, 'pending-independent-verification');
+    const captureDirectory = join(pendingDirectory, 'capture');
+    await assertPrivateDirectory(pendingDirectory);
+    await assertPrivateDirectory(captureDirectory);
+    if (JSON_STRINGIFY((await readdir(pendingDirectory)).sort()) !== JSON_STRINGIFY([
+      'PENDING_INDEPENDENT_VERIFICATION', 'capture', 'metadata.json',
+    ])) fail();
+    if (JSON_STRINGIFY((await readdir(captureDirectory)).sort()) !==
+        JSON_STRINGIFY(artifactNames.slice().sort())) fail();
+    await assertExactPrivateFile(
+      join(pendingDirectory, 'PENDING_INDEPENDENT_VERIFICATION'),
+      'PENDING_INDEPENDENT_VERIFICATION\n',
+    );
+    await assertExactPrivateFile(
+      join(pendingDirectory, 'metadata.json'),
+      `${JSON_STRINGIFY(publicWsOncePendingMetadata())}\n`,
+    );
+    for (let index = 0; index < artifactNames.length; index += 1) {
+      const name = artifactNames[index];
+      await assertExactPrivateFile(join(captureDirectory, name), expectedArtifacts[name]);
+    }
+  }
+  await assertPrivateDirectoryState(workspaceState);
+  await assertPrivateDirectoryState(runState);
+}
+
+async function assertPublicWsOnceInputGenerations(preflightState) {
+  const inputs = [
+    preflightState.configInput,
+    preflightState.buyerRpcInput,
+    preflightState.buyerWalletInput,
+    preflightState.facilitatorRpcInput,
+    preflightState.authorizationInput,
+  ];
+  for (let index = 0; index < inputs.length; index += 1) {
+    await assertOpenInputPath(inputs[index], inputs[index].generation);
+  }
+}
+
+async function publishPublicWsOncePendingSet(runDirectory, artifacts, boundary) {
+  const artifactNames = [
+    'manifest.json', 'chain.json', 'http.json', 'journal.json', 'timing.json',
+  ];
+  exactObject(artifacts, artifactNames);
+  const destination = join(runDirectory, 'pending-independent-verification');
+  try {
+    if (boundary) await boundary();
+    await mkdir(destination, { mode: PRIVATE_DIRECTORY_MODE });
+    if (boundary) await boundary();
+    await chmod(destination, PRIVATE_DIRECTORY_MODE);
+    await assertPrivateDirectory(destination);
+    const captureDirectory = join(destination, 'capture');
+    await mkdir(captureDirectory, { mode: PRIVATE_DIRECTORY_MODE });
+    if (boundary) await boundary();
+    await chmod(captureDirectory, PRIVATE_DIRECTORY_MODE);
+    await assertPrivateDirectory(captureDirectory);
+    const metadata = publicWsOncePendingMetadata();
+    for (let index = 0; index < artifactNames.length; index += 1) {
+      const name = artifactNames[index];
+      if (typeof artifacts[name] !== 'string' || artifacts[name].length === 0) fail();
+      await atomicPrivateWrite(captureDirectory, name, artifacts[name], boundary);
+    }
+    await atomicPrivateWrite(
+      destination,
+      'metadata.json',
+      `${JSON_STRINGIFY(metadata)}\n`,
+      boundary,
+    );
+    await atomicPrivateWrite(
+      destination,
+      'PENDING_INDEPENDENT_VERIFICATION',
+      'PENDING_INDEPENDENT_VERIFICATION\n',
+      boundary,
+    );
+    await syncDirectory(destination);
+    await syncDirectory(runDirectory);
+    if (JSON_STRINGIFY((await readdir(captureDirectory)).sort()) !==
+        JSON_STRINGIFY(artifactNames.slice().sort())) fail();
+    if (JSON_STRINGIFY((await readdir(destination)).sort()) !== JSON_STRINGIFY([
+      'PENDING_INDEPENDENT_VERIFICATION', 'capture', 'metadata.json',
+    ])) fail();
+    if (boundary) await boundary();
+    return destination;
+  } catch {
+    // Preserve partial state after the workspace-scoped one-attempt guard is consumed.
+    fail();
+  }
+}
+
+function environmentForRpc(config, rpcEndpoint, executionMode = HISTORICAL_WSS_EXECUTION_MODE) {
+  if (executionMode !== HISTORICAL_WSS_EXECUTION_MODE &&
+      executionMode !== PUBLIC_WS_ONCE_EXECUTION_MODE) fail();
+  const sdkNetworkId = executionMode === PUBLIC_WS_ONCE_EXECUTION_MODE
+    ? GATE_B_CURRENT_TESTNET_SDK_NETWORK_ID
+    : '3';
   return FREEZE({
     ZENON_LIVE_ACK: config.acknowledgements.live,
-    ZENON_NETWORK_ID: OPERATOR_TRUSTED_PUBLIC_TESTNET_CHAIN_PROFILE.chainIdentifier,
+    ZENON_NETWORK_ID: sdkNetworkId,
     ZENON_RPC_URL: rpcEndpoint,
     ZENON_ASSET: config.expectedPaymentRequired.accepts[0].asset,
   });
@@ -1253,8 +1875,20 @@ async function boundedResponseText(response, maximumBytes) {
   }
 }
 
-async function defaultOperations(options, config, runDirectory, preflightState, dependencies = {}) {
-  const buyerRpc = parseLiveRoleInput(
+async function defaultOperations(
+  options,
+  config,
+  runDirectory,
+  preflightState,
+  dependencies = {},
+  executionMode = HISTORICAL_WSS_EXECUTION_MODE,
+  boundary = async () => {},
+  directoryIdentities,
+) {
+  if (executionMode !== HISTORICAL_WSS_EXECUTION_MODE &&
+      executionMode !== PUBLIC_WS_ONCE_EXECUTION_MODE) fail();
+  const publicWsOnce = executionMode === PUBLIC_WS_ONCE_EXECUTION_MODE;
+  const buyerRpc = (publicWsOnce ? parsePublicWsOnceRoleInput : parseLiveRoleInput)(
     preflightState.buyerRpcInput.buffer.toString('utf8'),
     'buyer-rpc',
   );
@@ -1264,24 +1898,38 @@ async function defaultOperations(options, config, runDirectory, preflightState, 
   const httpsRequester = dependencies.requestHttps ?? requestHttps;
   const zenonClientFactory = dependencies.createZenonClient ??
     (clientOptions => new ExactZenonClient(clientOptions));
-  const policy = selectOperatorTrustedTestnetPolicy(
-    config.profileName,
-    config.acknowledgements.operatorTrust,
-    config.acknowledgements.live,
-  );
-  const environment = environmentForRpc(config, buyerRpc.rpcEndpoint);
+  const policy = publicWsOnce
+    ? selectGateBCurrentTestnetPolicy(
+      config.profileName,
+      config.acknowledgements.operatorTrust,
+      config.acknowledgements.live,
+    )
+    : selectOperatorTrustedTestnetPolicy(
+      config.profileName,
+      config.acknowledgements.operatorTrust,
+      config.acknowledgements.live,
+    );
+  const environment = environmentForRpc(config, buyerRpc.rpcEndpoint, executionMode);
   let challengeEvent;
   let fetchCalls = 0;
   let armed = false;
   let publicTransport;
   const armSubmission = async () => {
     if (!armed) {
-      await atomicPrivateWrite(runDirectory, 'SUBMISSION_ARMED', 'SUBMISSION_ARMED\n');
+      await boundary();
+      await atomicPrivateWrite(
+        runDirectory,
+        'SUBMISSION_ARMED',
+        'SUBMISSION_ARMED\n',
+        boundary,
+      );
+      await boundary();
       armed = true;
     }
   };
   const operations = {
     async probeBuyerReadiness() {
+      await boundary();
       await Reflect.apply(readinessProbe, undefined, [{
         role: 'buyer',
         asset: config.expectedPaymentRequired.accepts[0].asset,
@@ -1289,8 +1937,10 @@ async function defaultOperations(options, config, runDirectory, preflightState, 
         environment,
         rpcTimeoutMs: config.runtime.rpcTimeoutMs,
       }]);
+      await boundary();
     },
     async probePublicEndpoint() {
+      await boundary();
       const resourceUrl = config.expectedPaymentRequired.resource.url;
       exactPublicHttpsPaidUrl(resourceUrl);
       publicTransport = await createLiveEvidencePublicTransport({
@@ -1300,6 +1950,7 @@ async function defaultOperations(options, config, runDirectory, preflightState, 
         requestHttps: httpsRequester,
       });
       const response = await publicTransport.fetch(publicTransport.healthUrl, { redirect: 'manual' });
+      await boundary();
       if (!response || response.redirected || response.url !== publicTransport.healthUrl ||
           response.status !== 200 ||
           response.headers.get('content-type') !== 'application/json; charset=utf-8') fail();
@@ -1307,6 +1958,8 @@ async function defaultOperations(options, config, runDirectory, preflightState, 
       if (bodyText !== JSON_STRINGIFY({ ok: true }, null, 2)) fail();
     },
     async startFacilitator({ recovery = false }) {
+      await boundary();
+      if (publicWsOnce && recovery !== false) fail();
       const worker = await import('./live-evidence-facilitator-worker.js');
       const workerOptions = {
         config,
@@ -1316,17 +1969,27 @@ async function defaultOperations(options, config, runDirectory, preflightState, 
         journalDirectory: join(runDirectory, 'journal'),
         recovery,
       };
+      if (publicWsOnce) ownData(workerOptions, 'executionMode', PUBLIC_WS_ONCE_EXECUTION_MODE);
+      if (publicWsOnce) {
+        exactObject(directoryIdentities, ['workspace', 'runDirectory']);
+        ownData(workerOptions, 'workspaceIdentity', directoryIdentities.workspace);
+        ownData(workerOptions, 'runDirectoryIdentity', directoryIdentities.runDirectory);
+      }
       if (dependencies.forkProcess) ownData(workerOptions, 'forkProcess', dependencies.forkProcess);
       const controller = await worker.startLiveEvidenceFacilitatorWorker(workerOptions);
+      await boundary();
       return worker.assertLiveEvidenceFacilitatorController(controller);
     },
     async readBuyerWallet() {
       try {
+        await boundary();
         const bytes = await readVerifiedOpenInput(
           preflightState.buyerWalletInput,
           ROLE_INPUT_MAX_BYTES,
         );
-        return parseLiveRoleInput(bytes.toString('utf8'), 'buyer-wallet');
+        const wallet = parseLiveRoleInput(bytes.toString('utf8'), 'buyer-wallet');
+        await boundary();
+        return wallet;
       } finally {
         await disposeVerifiedInput(preflightState.buyerWalletInput);
       }
@@ -1343,7 +2006,9 @@ async function defaultOperations(options, config, runDirectory, preflightState, 
       ownData(lazyClient, 'createPaymentPayload', async (paymentRequired, accepted) => {
         if (!paymentRequiredEqual(paymentRequired, config.expectedPaymentRequired) ||
             !sameRequirements(accepted, config.expectedPaymentRequired.accepts[0])) fail();
+        await boundary();
         const wallet = await openWallet();
+        await boundary();
         client = Reflect.apply(zenonClientFactory, undefined, [{
           mnemonic: wallet.mnemonic,
           accountIndex: wallet.accountIndex,
@@ -1354,13 +2019,18 @@ async function defaultOperations(options, config, runDirectory, preflightState, 
         }]);
         if (!client || typeof client.createPaymentPayload !== 'function' ||
             typeof client.snapshotLiveEvidenceObservations !== 'function') fail();
-        return client.createPaymentPayload(paymentRequired, accepted);
+        await boundary();
+        const payload = await client.createPaymentPayload(paymentRequired, accepted);
+        await boundary();
+        return payload;
       });
       const observedFetch = async (url, fetchOptions) => {
         fetchCalls += 1;
         if (!publicTransport || url !== config.expectedPaymentRequired.resource.url || fetchCalls > 2) fail();
         if (fetchCalls === 2) await armSubmission();
+        await boundary();
         const response = await publicTransport.fetch(url, { ...fetchOptions, redirect: 'manual' });
+        await boundary();
         if (!response || response.redirected || response.url !== url ||
             (response.status >= 300 && response.status < 400)) fail();
         if (fetchCalls === 1) {
@@ -1375,11 +2045,13 @@ async function defaultOperations(options, config, runDirectory, preflightState, 
       };
       let outcome;
       try {
+        await boundary();
         outcome = await paidFetch(
           config.expectedPaymentRequired.resource.url,
           lazyClient,
           observedFetch,
         );
+        await boundary();
       } catch (error) {
         if (error?.retrySamePayment === true) {
           return {
@@ -1455,6 +2127,16 @@ function falseNonClaims() {
   return value;
 }
 
+function publicWsOnceFalseNonClaims() {
+  const value = falseNonClaims();
+  const gateBKeys = OBJECT_KEYS(GATE_B_CURRENT_TESTNET_NON_CLAIMS);
+  for (let index = 0; index < gateBKeys.length; index += 1) {
+    if (!HAS_OWN(value, gateBKeys[index])) ownData(value, gateBKeys[index], false);
+    if (value[gateBKeys[index]] !== false) fail();
+  }
+  return value;
+}
+
 function exactJournalSnapshot(snapshot) {
   if (!snapshot || snapshot.quiescent !== true || snapshot.schemaVersion !== 1 ||
       snapshot.revision !== 5 ||
@@ -1462,7 +2144,126 @@ function exactJournalSnapshot(snapshot) {
   return snapshot.records[0];
 }
 
-export async function assembleLiveEvidenceRunCandidate(config, context, runDirectory) {
+function sameJson(left, right) {
+  try {
+    return canonicalJson(left) === canonicalJson(right);
+  } catch {
+    return false;
+  }
+}
+
+async function validatePublicWsOncePendingState(config, outcome, journalSnapshot) {
+  try {
+    const record = exactJournalSnapshot(journalSnapshot);
+    exactObject(record, PUBLIC_WS_ONCE_RECORD_FIELDS);
+    const paymentRequired = config.expectedPaymentRequired;
+    const requirements = paymentRequired.accepts[0];
+    if (!paymentRequiredEqual(outcome.paymentRequired, paymentRequired)) fail();
+    const preflight = await preflightZenonPayment(
+      outcome.paymentPayload,
+      requirements,
+      paymentRequired,
+    );
+    exactObject(outcome.settlement, [
+      'success', 'network', 'transaction', 'payer', 'state',
+    ]);
+    if (outcome.kind !== 'delivered' || outcome.settlement.success !== true ||
+        outcome.settlement.network !== requirements.network ||
+        outcome.settlement.transaction !== preflight.transactionHash ||
+        outcome.settlement.payer !== preflight.payer ||
+        outcome.settlement.state !== 'MOMENTUM_INCLUDED') fail();
+
+    if (record.authorizationKey !== preflight.authorizationKey ||
+        record.transactionHash !== preflight.transactionHash ||
+        record.intentDigest !== preflight.intentDigest ||
+        record.resourceDigest !== preflight.resourceDigest ||
+        record.payer !== preflight.payer ||
+        !sameJson(record.chainProfile, preflight.chainProfile) ||
+        !sameResource(record.resourceIdentity, paymentRequired.resource) ||
+        !sameJson(record.signedAccountBlock, outcome.paymentPayload.payload.transaction) ||
+        record.evidenceState !== 'MOMENTUM_INCLUDED' ||
+        record.deliveryState !== 'DELIVERED') fail();
+
+    if (typeof record.createdAt !== 'string' || !UTC_TIMESTAMP.test(record.createdAt) ||
+        typeof record.updatedAt !== 'string' || !UTC_TIMESTAMP.test(record.updatedAt) ||
+        !Number.isFinite(Date.parse(record.createdAt)) ||
+        !Number.isFinite(Date.parse(record.updatedAt)) ||
+        record.updatedAt < record.createdAt) fail();
+    exactObject(record.momentumEvidence, ['observedAt', 'confirmationDetail']);
+    if (typeof record.momentumEvidence.observedAt !== 'string' ||
+        !UTC_TIMESTAMP.test(record.momentumEvidence.observedAt) ||
+        !Number.isFinite(Date.parse(record.momentumEvidence.observedAt)) ||
+        record.momentumEvidence.observedAt < record.createdAt) fail();
+    const confirmation = record.momentumEvidence.confirmationDetail;
+    exactObject(confirmation, [
+      'numConfirmations', 'momentumHeight', 'momentumHash', 'momentumTimestamp',
+    ]);
+    if (!Number.isSafeInteger(confirmation.numConfirmations) ||
+        confirmation.numConfirmations < 1 ||
+        !Number.isSafeInteger(confirmation.momentumHeight) || confirmation.momentumHeight < 1 ||
+        !LOWERCASE_HASH_64.test(confirmation.momentumHash) ||
+        !Number.isSafeInteger(confirmation.momentumTimestamp) ||
+        confirmation.momentumHeight <= record.signedAccountBlock.momentumAcknowledged.height ||
+        confirmation.momentumHash === record.signedAccountBlock.momentumAcknowledged.hash) fail();
+
+    exactObject(record.cachedResponse, ['status', 'headers', 'body']);
+    exactObject(record.cachedResponse.headers, ['content-type']);
+    exactObject(record.cachedResponse.body, [
+      'ok', 'message', 'network', 'payer', 'transaction', 'generatedAt',
+    ]);
+    const expectedBody = {
+      ok: true,
+      message: 'paid resource unlocked',
+      network: requirements.network,
+      payer: preflight.payer,
+      transaction: preflight.transactionHash,
+      generatedAt: record.cachedResponse.body.generatedAt,
+    };
+    if (typeof expectedBody.generatedAt !== 'string' ||
+        !UTC_TIMESTAMP.test(expectedBody.generatedAt) ||
+        !Number.isFinite(Date.parse(expectedBody.generatedAt)) ||
+        record.cachedResponse.status !== 200 ||
+        record.cachedResponse.headers['content-type'] !==
+          'application/json; charset=utf-8' ||
+        !sameJson(record.cachedResponse.body, expectedBody)) fail();
+
+    exactObject(outcome.final, [
+      'status', 'contentType', 'cacheControl', 'vary', 'bodyText',
+    ]);
+    if (outcome.final.status !== 200 ||
+        outcome.final.contentType !== 'application/json; charset=utf-8' ||
+        outcome.final.cacheControl !== 'private, no-store, max-age=0' ||
+        outcome.final.vary !== 'PAYMENT-SIGNATURE' ||
+        outcome.final.bodyText !== JSON_STRINGIFY(expectedBody, null, 2)) fail();
+    return FREEZE({ record, preflight });
+  } catch {
+    fail();
+  }
+}
+
+function candidateTrust(config) {
+  if (config.profileName === GATE_B_CURRENT_TESTNET_PROFILE_NAME) {
+    return {
+      mode: 'operator-trusted-current-testnet-observation',
+      profileName: GATE_B_CURRENT_TESTNET_PROFILE_NAME,
+      chainProfile: GATE_B_CURRENT_TESTNET_CHAIN_PROFILE,
+      provenance: GATE_B_CURRENT_TESTNET_PROVENANCE,
+      nonClaims: publicWsOnceFalseNonClaims(),
+    };
+  }
+  if (config.profileName === OPERATOR_TRUSTED_PUBLIC_TESTNET_PROFILE_NAME) {
+    return {
+      mode: 'operator-trusted-historical-observation',
+      profileName: OPERATOR_TRUSTED_PUBLIC_TESTNET_PROFILE_NAME,
+      chainProfile: OPERATOR_TRUSTED_PUBLIC_TESTNET_CHAIN_PROFILE,
+      provenance: OPERATOR_TRUSTED_PUBLIC_TESTNET_PROVENANCE,
+      nonClaims: falseNonClaims(),
+    };
+  }
+  fail();
+}
+
+async function buildLiveEvidenceRunCandidate(config, context) {
   try {
     const record = exactJournalSnapshot(context.journalSnapshot);
     const preflight = await preflightZenonPayment(
@@ -1474,6 +2275,7 @@ export async function assembleLiveEvidenceRunCandidate(config, context, runDirec
         context.outcome.final.status !== 200 ||
         context.outcome.settlement.success !== true) fail();
     const timing = v1Timing(context.events);
+    const trustInput = candidateTrust(config);
     const manifest = {
       fragmentVersion: 1,
       fragmentType: 'manifest',
@@ -1484,11 +2286,11 @@ export async function assembleLiveEvidenceRunCandidate(config, context, runDirec
         nodeMajor: Number(process.versions.node.split('.')[0]),
       },
       trust: {
-        mode: 'operator-trusted-historical-observation',
-        profileName: OPERATOR_TRUSTED_PUBLIC_TESTNET_PROFILE_NAME,
-        chainIdentifier: OPERATOR_TRUSTED_PUBLIC_TESTNET_CHAIN_PROFILE.chainIdentifier,
-        genesisMomentumHash: OPERATOR_TRUSTED_PUBLIC_TESTNET_CHAIN_PROFILE.genesisMomentumHash,
-        provenance: OPERATOR_TRUSTED_PUBLIC_TESTNET_PROVENANCE,
+        mode: trustInput.mode,
+        profileName: trustInput.profileName,
+        chainIdentifier: trustInput.chainProfile.chainIdentifier,
+        genesisMomentumHash: trustInput.chainProfile.genesisMomentumHash,
+        provenance: trustInput.provenance,
         remoteChainAuthenticated: false,
       },
       payment: {
@@ -1500,7 +2302,7 @@ export async function assembleLiveEvidenceRunCandidate(config, context, runDirec
         ),
         authorizationKey: preflight.authorizationKey,
       },
-      nonClaims: falseNonClaims(),
+      nonClaims: trustInput.nonClaims,
     };
     const detail = record.momentumEvidence?.confirmationDetail;
     const chain = {
@@ -1561,6 +2363,15 @@ export async function assembleLiveEvidenceRunCandidate(config, context, runDirec
     }
     const bundle = await assembleLiveEvidenceBundle(parsed);
     await verifyLiveEvidenceBundle(bundle);
+    return { encodedFragments, bundle };
+  } catch {
+    fail();
+  }
+}
+
+export async function assembleLiveEvidenceRunCandidate(config, context, runDirectory) {
+  try {
+    const { encodedFragments, bundle } = await buildLiveEvidenceRunCandidate(config, context);
     const serialized = await serializeLiveEvidenceBundle(bundle);
     ownData(encodedFragments, 'candidate-bundle.json', serialized);
     ownData(encodedFragments, 'COMPLETE', 'COMPLETE\n');
@@ -1595,6 +2406,7 @@ function captureExecutionInjections(injected) {
       ARRAY_IS_ARRAY(injected) || GET_PROTOTYPE_OF(injected) !== OBJECT_PROTOTYPE) fail();
   const allowed = [
     'operations', 'lifecycleObserver', 'monotonicNow', 'delay', 'dependencies',
+    'workspaceBoundaryObserver',
   ];
   let keys;
   try { keys = REFLECT_OWN_KEYS(injected); } catch { fail(); }
@@ -1635,6 +2447,7 @@ function captureExecutionInjections(injected) {
       }
       ownData(captured, key, FREEZE(dependencySnapshot));
     } else {
+      if (key === 'workspaceBoundaryObserver' && typeof descriptor.value !== 'function') fail();
       ownData(captured, key, descriptor.value);
     }
   }
@@ -1875,8 +2688,195 @@ export async function executeLiveEvidenceRun(options, injected = {}) {
   }
 }
 
+export async function executePublicWsOnceRun(options, injected = {}) {
+  let runDirectory;
+  let runDirectoryState;
+  let controller;
+  let preflightState;
+  let boundControllerCleanup = operation => boundedPromise(operation, MAX_RPC_TIMEOUT_MS);
+  try {
+    injected = captureExecutionInjections(injected);
+    const runOptions = exactPublicWsOnceOptions(options);
+    const preflight = await performPublicWsOncePreflight(runOptions, true);
+    preflightState = preflight.state;
+    const config = preflightState.config;
+    boundControllerCleanup = operation => boundedPromise(operation, config.runtime.rpcTimeoutMs);
+    parsePublicWsOnceRunConfig(`${JSON_STRINGIFY(config)}\n`);
+
+    const assertBoundary = async () => {
+      await assertPrivateDirectoryState(preflightState.workspaceState);
+      if (runDirectoryState) await assertPrivateDirectoryState(runDirectoryState);
+    };
+    const boundaryPoint = async phase => {
+      await assertBoundary();
+      if (injected.workspaceBoundaryObserver) {
+        await Reflect.apply(injected.workspaceBoundaryObserver, undefined, [phase]);
+      }
+      await assertBoundary();
+    };
+
+    // This owner-controlled workspace guard is consumed before worker creation,
+    // RPC, wallet access, signing, or publication. The retained directory handle
+    // detects namespace drift at every checked boundary and is never used to
+    // claim confinement against an active same-UID actor.
+    await boundaryPoint('before-consumed-marker');
+    await persistPublicWsOnceConsumedMarkerInState(preflightState.workspaceState);
+    await boundaryPoint('after-consumed-marker');
+    runDirectory = await createRunDirectory(preflightState.workspaceRoot, runOptions.runName);
+    runDirectoryState = await capturePrivateDirectoryState(runDirectory, false);
+    await boundaryPoint('after-run-directory');
+
+    const collector = createLifecycleCollector();
+    await boundaryPoint('before-operations');
+    const operations = injected.operations ?? await defaultOperations(
+      runOptions,
+      config,
+      runDirectory,
+      preflightState,
+      injected.dependencies,
+      PUBLIC_WS_ONCE_EXECUTION_MODE,
+      assertBoundary,
+      {
+        workspace: preflightState.workspaceState.identity,
+        runDirectory: runDirectoryState.identity,
+      },
+    );
+    const requiredOperations = [
+      'probeBuyerReadiness', 'probePublicEndpoint', 'startFacilitator',
+      'readBuyerWallet', 'paidFetch',
+    ];
+    for (let index = 0; index < requiredOperations.length; index += 1) {
+      if (typeof operations[requiredOperations[index]] !== 'function') fail();
+    }
+    const coordinatorObserver = injected.lifecycleObserver ?? createLiveEvidenceObserver();
+    await boundaryPoint('before-buyer-readiness');
+    await operations.probeBuyerReadiness({ config });
+    await boundaryPoint('after-buyer-readiness');
+    await boundaryPoint('before-facilitator-create');
+    controller = await operations.startFacilitator({ config, recovery: false });
+    if (!controller || typeof controller.start !== 'function' ||
+        typeof controller.snapshotObservations !== 'function' ||
+        typeof controller.closeAndSnapshot !== 'function' ||
+        typeof controller.terminate !== 'function') fail();
+    await boundaryPoint('after-facilitator-create');
+    await controller.start();
+    await boundaryPoint('after-facilitator-start');
+    await boundaryPoint('before-public-endpoint');
+    await operations.probePublicEndpoint({ config });
+    await boundaryPoint('after-public-endpoint');
+
+    let wallet;
+    const openWallet = async () => {
+      if (wallet === undefined) wallet = await operations.readBuyerWallet({ config });
+      return wallet;
+    };
+    if (!collector.record(coordinatorObserver, 'runner', 'challenge_request_started')) fail();
+    let initialEvent;
+    const onChallenge = async paymentRequired => {
+      if (!paymentRequiredEqual(paymentRequired, config.expectedPaymentRequired)) fail();
+      initialEvent = collector.record(coordinatorObserver, 'runner', 'challenge_402_received');
+      if (!initialEvent) fail();
+      return initialEvent;
+    };
+    await boundaryPoint('before-paid-fetch');
+    const outcome = await operations.paidFetch({
+      config,
+      lifecycleObserver: coordinatorObserver,
+      openWallet,
+      onChallenge,
+    });
+    await boundaryPoint('after-paid-fetch');
+    if (!outcome || outcome.kind !== 'delivered' ||
+        !ARRAY_IS_ARRAY(outcome.buyerObservations)) fail();
+    collector.add(outcome.buyerObservations);
+    let finalEvent;
+    try {
+      finalEvent = recordLiveEvidencePhase(
+        coordinatorObserver,
+        'runner',
+        'paid_response_received',
+      );
+    } catch {
+      fail();
+    }
+    await boundaryPoint('before-facilitator-snapshot');
+    const facilitatorState = await controller.snapshotObservations();
+    await boundaryPoint('after-facilitator-snapshot');
+    if (!facilitatorState || facilitatorState.evidenceEligible !== true ||
+        !ARRAY_IS_ARRAY(facilitatorState.events)) fail();
+    collector.add(facilitatorState.events);
+    collector.add([finalEvent]);
+    await boundaryPoint('before-facilitator-close');
+    const journalSnapshot = await controller.closeAndSnapshot();
+    controller = undefined;
+    await boundaryPoint('after-facilitator-close');
+    collector.close();
+    const captured = collector.snapshot();
+    if (captured.evidenceEligible !== true) fail();
+    if (!initialEvent || outcome.initialObservedAt !== initialEvent.utc) fail();
+    const timeline = finalizeLiveEvidenceTimeline(captured.events);
+    v1Timing(timeline);
+    await validatePublicWsOncePendingState(config, outcome, journalSnapshot);
+    await boundaryPoint('after-pending-validation');
+    const candidate = await buildLiveEvidenceRunCandidate(config, {
+      outcome,
+      events: timeline,
+      initialObservedAt: outcome.initialObservedAt,
+      finalEvent,
+      journalSnapshot,
+    });
+    await boundaryPoint('after-pending-candidate');
+    await boundaryPoint('before-pending-state');
+    await assertPublicWsOnceRetainedState(
+      preflightState.workspaceState,
+      runDirectoryState,
+      false,
+      journalSnapshot,
+    );
+    await assertPublicWsOnceInputGenerations(preflightState);
+    await publishPublicWsOncePendingSet(
+      runDirectory,
+      candidate.encodedFragments,
+      assertBoundary,
+    );
+    await assertPublicWsOnceRetainedState(
+      preflightState.workspaceState,
+      runDirectoryState,
+      true,
+      journalSnapshot,
+      candidate.encodedFragments,
+    );
+    await assertPublicWsOnceInputGenerations(preflightState);
+    await boundaryPoint('after-pending-state');
+    return fixedOutcome('pending-independent-verification', false);
+  } catch {
+    if (controller) {
+      try { await boundControllerCleanup(controller.terminate()); } catch {}
+    }
+    // The fixed consumed marker and any run directory are intentionally preserved.
+    fail();
+  } finally {
+    if (preflightState) {
+      await disposeVerifiedInput(preflightState.configInput);
+      await disposeVerifiedInput(preflightState.buyerRpcInput);
+      await disposeVerifiedInput(preflightState.buyerWalletInput);
+      await disposeVerifiedInput(preflightState.facilitatorRpcInput);
+      await disposeVerifiedInput(preflightState.authorizationInput);
+      await disposePrivateDirectoryState(preflightState.workspaceState);
+    }
+    await disposePrivateDirectoryState(runDirectoryState);
+  }
+}
+
 export const LIVE_EVIDENCE_RUN_LIMITS = FREEZE({
   configBytes: CONFIG_MAX_BYTES,
   roleInputBytes: ROLE_INPUT_MAX_BYTES,
   childOutputBytes: CHILD_OUTPUT_MAX_BYTES,
+});
+
+export const PUBLIC_WS_ONCE_POLICY = FREEZE({
+  executionMode: PUBLIC_WS_ONCE_EXECUTION_MODE,
+  transportException: PUBLIC_WS_ONCE_TRANSPORT_EXCEPTION,
+  paymentAcknowledgement: PUBLIC_WS_ONCE_PAYMENT_ACKNOWLEDGEMENT,
+  publicationAcknowledgement: PUBLIC_WS_ONCE_PUBLICATION_ACKNOWLEDGEMENT,
 });
