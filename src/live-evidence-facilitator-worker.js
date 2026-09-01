@@ -695,6 +695,7 @@ export async function runLiveEvidenceFacilitatorWorker(options = {}) {
   let watchdogTimer;
   let watchdogDeadline;
   let forcedExit = false;
+  let publicPreloaded = false;
 
   const requestIdOf = rawMessage => {
     try {
@@ -819,6 +820,18 @@ export async function runLiveEvidenceFacilitatorWorker(options = {}) {
     try {
       if (requestId !== expectedRequestId || requestId > MAX_REQUEST_ID) fail();
       const messageType = ownMessageType(rawMessage);
+      if (messageType === 'PRELOAD') {
+        exactRequest(rawMessage, 'PRELOAD', []);
+        if (running || runtime || startInProgress || publicPreloaded) fail();
+        publicPreloaded = true;
+        expectedRequestId += 1;
+        await sendMessage(channel, {
+          ipcVersion: IPC_VERSION,
+          requestId,
+          type: 'PRELOADED',
+        });
+        return;
+      }
       if (messageType === 'START' || messageType === 'START_PUBLIC_WS_ONCE') {
         const publicWsOnce = messageType === 'START_PUBLIC_WS_ONCE';
         const message = exactRequest(rawMessage, messageType, publicWsOnce
@@ -832,6 +845,7 @@ export async function runLiveEvidenceFacilitatorWorker(options = {}) {
             'journalDirectory', 'recovery',
           ]);
         if (running || typeof message.recovery !== 'boolean' ||
+            publicPreloaded !== publicWsOnce ||
             (publicWsOnce && (message.recovery !== false ||
               message.executionMode !== PUBLIC_WS_ONCE_POLICY.executionMode))) fail();
         for (const field of ['workspaceRoot', 'journalDirectory']) {
@@ -1213,6 +1227,9 @@ export async function startLiveEvidenceFacilitatorWorker(options = {}) {
     }
 
     function validateReply(rawMessage, expectedType, requestId) {
+      if (expectedType === 'PRELOADED') {
+        return exactMessage(rawMessage, 'PRELOADED', requestId, []);
+      }
       if (expectedType === 'READY') return exactMessage(rawMessage, 'READY', requestId, []);
       if (expectedType === 'STATUS') {
         const message = exactMessage(rawMessage, 'STATUS', requestId, ['poisoned']);
@@ -1327,7 +1344,7 @@ export async function startLiveEvidenceFacilitatorWorker(options = {}) {
       }
     }
 
-    const controller = FREEZE({
+    const controller = {
       async start() {
         await request(capturedStartSnapshot.type, {
           config: capturedStartSnapshot.config,
@@ -1368,7 +1385,13 @@ export async function startLiveEvidenceFacilitatorWorker(options = {}) {
       async exited() {
         return lifecycleState.closed;
       },
-    });
+    };
+    if (captured.executionMode === PUBLIC_WS_ONCE_POLICY.executionMode) {
+      ownData(controller, 'preload', async () => {
+        await request('PRELOAD', {}, 'PRELOADED');
+      });
+    }
+    FREEZE(controller);
     CONTROLLERS.add(controller);
     return controller;
   } catch {

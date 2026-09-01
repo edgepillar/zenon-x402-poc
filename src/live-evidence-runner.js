@@ -20,7 +20,7 @@ import { performance } from 'node:perf_hooks';
 import { types as utilTypes } from 'node:util';
 
 import { paidFetch, reconcilePayment } from './buyer.js';
-import { canonicalJson, paymentIntentDigest } from './canonical.js';
+import { canonicalJson, paymentIntentDigest, sha256Hex } from './canonical.js';
 import {
   assembleLiveEvidenceBundle,
   parseLiveEvidenceFragment,
@@ -32,6 +32,7 @@ import {
   finalizeLiveEvidenceTimeline,
   recordLiveEvidencePhase,
 } from './live-observation.js';
+import { attestPublicWsOnceSourceTree } from './public-ws-source-attestation.js';
 import {
   DELIVERY_STATES,
   EVIDENCE_STATES,
@@ -87,6 +88,7 @@ const PUBLIC_WS_ONCE_PAYMENT_ACKNOWLEDGEMENT =
   'I_ACCEPT_ONE_DISPOSABLE_MINIMALLY_FUNDED_TESTNET_PAYMENT_OVER_UNENCRYPTED_UNAUTHENTICATED_PUBLIC_RPC';
 const PUBLIC_WS_ONCE_PUBLICATION_ACKNOWLEDGEMENT =
   'I_UNDERSTAND_ARTIFACTS_MUST_NOT_BE_PUBLISHED_UNTIL_INDEPENDENT_VERIFICATION';
+const PUBLIC_WS_ONCE_CONFIG_DIGEST_DOMAIN = 'zenon-x402-public-ws-once-config-v1';
 const MAX_RECOVERY_ATTEMPTS = 8;
 const MAX_RPC_TIMEOUT_MS = 60_000;
 const MAX_RECOVERY_DELAY_MS = 60_000;
@@ -727,6 +729,17 @@ export function parsePublicWsOnceRunConfig(jsonText) {
   }
 }
 
+export function publicWsOnceConfigDigest(parsedConfig) {
+  try {
+    const validated = parsePublicWsOnceRunConfig(`${JSON_STRINGIFY(parsedConfig)}\n`);
+    return sha256Hex(
+      `${PUBLIC_WS_ONCE_CONFIG_DIGEST_DOMAIN}\n${canonicalJson(validated)}`,
+    );
+  } catch {
+    fail();
+  }
+}
+
 function parseRpcSecret(value) {
   exactObject(value, ['secretVersion', 'rpcEndpoint']);
   if (value.secretVersion !== 1) fail();
@@ -1149,13 +1162,16 @@ export function parsePublicWsOnceAuthorization(jsonText) {
     const value = parseStrictJson(jsonText, ROLE_INPUT_MAX_BYTES);
     exactObject(value, [
       'authorizationVersion', 'transportException', 'runName', 'sourceRevision',
-      'profileName', 'paymentIntentDigest', 'rpcEndpoint', 'acknowledgements',
+      'profileName', 'configDigest', 'paymentIntentDigest', 'rpcEndpoint',
+      'acknowledgements',
     ]);
     if (value.authorizationVersion !== 1 ||
         value.transportException !== PUBLIC_WS_ONCE_TRANSPORT_EXCEPTION ||
         typeof value.runName !== 'string' || !RUN_NAME.test(value.runName) ||
         typeof value.sourceRevision !== 'string' || !REVISION.test(value.sourceRevision) ||
         value.profileName !== GATE_B_CURRENT_TESTNET_PROFILE_NAME ||
+        typeof value.configDigest !== 'string' ||
+        !LOWERCASE_HASH_64.test(value.configDigest) ||
         typeof value.paymentIntentDigest !== 'string' ||
         !LOWERCASE_HASH_64.test(value.paymentIntentDigest)) fail();
     exactPublicWsOnceEndpoint(value.rpcEndpoint);
@@ -1323,11 +1339,13 @@ async function performPublicWsOncePreflight(options, retainInputs) {
       config.expectedPaymentRequired,
       config.expectedPaymentRequired.accepts[0],
     );
+    const configDigest = publicWsOnceConfigDigest(config);
     if (buyerRpc.rpcEndpoint !== facilitatorRpc.rpcEndpoint ||
         authorization.rpcEndpoint !== buyerRpc.rpcEndpoint ||
         authorization.runName !== options.runName ||
         authorization.sourceRevision !== config.sourceRevision ||
         authorization.profileName !== config.profileName ||
+        authorization.configDigest !== configDigest ||
         authorization.paymentIntentDigest !== intentDigest ||
         authorization.transportException !== options.transportException) fail();
     await opened[0].handle.close();
@@ -1884,6 +1902,7 @@ async function defaultOperations(
   executionMode = HISTORICAL_WSS_EXECUTION_MODE,
   boundary = async () => {},
   directoryIdentities,
+  facilitatorWorkerModule,
 ) {
   if (executionMode !== HISTORICAL_WSS_EXECUTION_MODE &&
       executionMode !== PUBLIC_WS_ONCE_EXECUTION_MODE) fail();
@@ -1960,7 +1979,11 @@ async function defaultOperations(
     async startFacilitator({ recovery = false }) {
       await boundary();
       if (publicWsOnce && recovery !== false) fail();
-      const worker = await import('./live-evidence-facilitator-worker.js');
+      const worker = publicWsOnce
+        ? facilitatorWorkerModule
+        : await import('./live-evidence-facilitator-worker.js');
+      if (!worker || typeof worker.startLiveEvidenceFacilitatorWorker !== 'function' ||
+          typeof worker.assertLiveEvidenceFacilitatorController !== 'function') fail();
       const workerOptions = {
         config,
         facilitatorRpcFd: preflightState.facilitatorRpcInput.handle.fd,
@@ -2400,7 +2423,31 @@ function recoveryOwner(value) {
   return value;
 }
 
-function captureExecutionInjections(injected) {
+function capturePublicWsOnceFacilitatorModule(value) {
+  try {
+    if (!value || typeof value !== 'object' || IS_PROXY(value) || ARRAY_IS_ARRAY(value)) fail();
+    const startDescriptor = GET_OWN_PROPERTY_DESCRIPTOR(
+      value,
+      'startLiveEvidenceFacilitatorWorker',
+    );
+    const assertDescriptor = GET_OWN_PROPERTY_DESCRIPTOR(
+      value,
+      'assertLiveEvidenceFacilitatorController',
+    );
+    if (!startDescriptor || !HAS_OWN(startDescriptor, 'value') ||
+        typeof startDescriptor.value !== 'function' || !assertDescriptor ||
+        !HAS_OWN(assertDescriptor, 'value') || typeof assertDescriptor.value !== 'function') fail();
+    return FREEZE({
+      startLiveEvidenceFacilitatorWorker: startDescriptor.value,
+      assertLiveEvidenceFacilitatorController: assertDescriptor.value,
+    });
+  } catch {
+    fail();
+  }
+}
+
+function captureExecutionInjections(injected, publicWsOnce = false) {
+  if (typeof publicWsOnce !== 'boolean') fail();
   if (injected === undefined) return FREEZE({});
   if (!injected || typeof injected !== 'object' || IS_PROXY(injected) ||
       ARRAY_IS_ARRAY(injected) || GET_PROTOTYPE_OF(injected) !== OBJECT_PROTOTYPE) fail();
@@ -2408,6 +2455,10 @@ function captureExecutionInjections(injected) {
     'operations', 'lifecycleObserver', 'monotonicNow', 'delay', 'dependencies',
     'workspaceBoundaryObserver',
   ];
+  if (publicWsOnce) {
+    append(allowed, 'sourceTreeAttestor');
+    append(allowed, 'repositoryModuleLoader');
+  }
   let keys;
   try { keys = REFLECT_OWN_KEYS(injected); } catch { fail(); }
   const captured = {};
@@ -2447,7 +2498,9 @@ function captureExecutionInjections(injected) {
       }
       ownData(captured, key, FREEZE(dependencySnapshot));
     } else {
-      if (key === 'workspaceBoundaryObserver' && typeof descriptor.value !== 'function') fail();
+      if ((key === 'workspaceBoundaryObserver' || key === 'sourceTreeAttestor' ||
+          key === 'repositoryModuleLoader') &&
+          typeof descriptor.value !== 'function') fail();
       ownData(captured, key, descriptor.value);
     }
   }
@@ -2695,13 +2748,22 @@ export async function executePublicWsOnceRun(options, injected = {}) {
   let preflightState;
   let boundControllerCleanup = operation => boundedPromise(operation, MAX_RPC_TIMEOUT_MS);
   try {
-    injected = captureExecutionInjections(injected);
+    injected = captureExecutionInjections(injected, true);
     const runOptions = exactPublicWsOnceOptions(options);
     const preflight = await performPublicWsOncePreflight(runOptions, true);
     preflightState = preflight.state;
     const config = preflightState.config;
     boundControllerCleanup = operation => boundedPromise(operation, config.runtime.rpcTimeoutMs);
     parsePublicWsOnceRunConfig(`${JSON_STRINGIFY(config)}\n`);
+    const sourceTreeAttestor = injected.sourceTreeAttestor ?? attestPublicWsOnceSourceTree;
+    if (await Reflect.apply(sourceTreeAttestor, undefined, [config.sourceRevision]) !== true) {
+      fail();
+    }
+    const repositoryModuleLoader = injected.repositoryModuleLoader ??
+      (() => import('./live-evidence-facilitator-worker.js'));
+    const facilitatorWorkerModule = capturePublicWsOnceFacilitatorModule(
+      await Reflect.apply(repositoryModuleLoader, undefined, []),
+    );
 
     const assertBoundary = async () => {
       await assertPrivateDirectoryState(preflightState.workspaceState);
@@ -2720,6 +2782,9 @@ export async function executePublicWsOnceRun(options, injected = {}) {
     // detects namespace drift at every checked boundary and is never used to
     // claim confinement against an active same-UID actor.
     await boundaryPoint('before-consumed-marker');
+    if (await Reflect.apply(sourceTreeAttestor, undefined, [config.sourceRevision]) !== true) {
+      fail();
+    }
     await persistPublicWsOnceConsumedMarkerInState(preflightState.workspaceState);
     await boundaryPoint('after-consumed-marker');
     runDirectory = await createRunDirectory(preflightState.workspaceRoot, runOptions.runName);
@@ -2740,6 +2805,7 @@ export async function executePublicWsOnceRun(options, injected = {}) {
         workspace: preflightState.workspaceState.identity,
         runDirectory: runDirectoryState.identity,
       },
+      facilitatorWorkerModule,
     );
     const requiredOperations = [
       'probeBuyerReadiness', 'probePublicEndpoint', 'startFacilitator',
@@ -2749,16 +2815,26 @@ export async function executePublicWsOnceRun(options, injected = {}) {
       if (typeof operations[requiredOperations[index]] !== 'function') fail();
     }
     const coordinatorObserver = injected.lifecycleObserver ?? createLiveEvidenceObserver();
-    await boundaryPoint('before-buyer-readiness');
-    await operations.probeBuyerReadiness({ config });
-    await boundaryPoint('after-buyer-readiness');
     await boundaryPoint('before-facilitator-create');
     controller = await operations.startFacilitator({ config, recovery: false });
-    if (!controller || typeof controller.start !== 'function' ||
+    if (!controller || typeof controller.preload !== 'function' ||
+        typeof controller.start !== 'function' ||
         typeof controller.snapshotObservations !== 'function' ||
         typeof controller.closeAndSnapshot !== 'function' ||
         typeof controller.terminate !== 'function') fail();
     await boundaryPoint('after-facilitator-create');
+    await boundaryPoint('before-facilitator-preload');
+    await controller.preload();
+    await boundaryPoint('after-facilitator-preload');
+    await boundaryPoint('before-final-source-attestation');
+    if (await Reflect.apply(sourceTreeAttestor, undefined, [config.sourceRevision]) !== true) {
+      fail();
+    }
+    // No injected observer or repo-local path-based module load is initiated
+    // after this final byte attestation and before the first RPC effect.
+    await assertBoundary();
+    await operations.probeBuyerReadiness({ config });
+    await boundaryPoint('after-buyer-readiness');
     await controller.start();
     await boundaryPoint('after-facilitator-start');
     await boundaryPoint('before-public-endpoint');
