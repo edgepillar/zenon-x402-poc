@@ -1,10 +1,7 @@
 import { pathToFileURL } from 'node:url';
 import { types as utilTypes } from 'node:util';
 
-import {
-  executePublicWsOnceRun,
-  preflightPublicWsOnceRun,
-} from './live-evidence-runner.js';
+import { supervisePublicWsOnceChild } from './live-evidence-public-ws-once-supervisor.js';
 
 const FAILURE = 'LIVE_EVIDENCE_PUBLIC_WS_ONCE_FAILED\n';
 const PREFLIGHT_SUCCESS = 'LIVE_EVIDENCE_PUBLIC_WS_ONCE_PREFLIGHT_VALID\n';
@@ -63,7 +60,7 @@ function snapshotArray(value) {
 function snapshotOptions(options) {
   if (!options || typeof options !== 'object' || IS_PROXY(options) ||
       ARRAY_IS_ARRAY(options) || GET_PROTOTYPE_OF(options) !== OBJECT_PROTOTYPE) fail();
-  const allowed = new Set(['argv', 'stdout', 'stderr', 'preflight', 'execute', 'executeInjections']);
+  const allowed = new Set(['argv', 'stdout', 'stderr', 'supervise', 'supervisorInjections']);
   const output = {};
   const keys = REFLECT_OWN_KEYS(options);
   for (let index = 0; index < keys.length; index += 1) {
@@ -100,14 +97,17 @@ function parseArguments(argv) {
   return { command, options: parsed };
 }
 
-function exactPreflightSuccess(value) {
+function exactSupervisorSuccess(value, command) {
   if (!value || typeof value !== 'object' || IS_PROXY(value) || ARRAY_IS_ARRAY(value) ||
       GET_PROTOTYPE_OF(value) !== OBJECT_PROTOTYPE) fail();
   const keys = REFLECT_OWN_KEYS(value);
-  const descriptor = GET_OWN_PROPERTY_DESCRIPTOR(value, 'valid');
-  if (keys.length !== 1 || keys[0] !== 'valid' || !descriptor ||
+  const descriptor = GET_OWN_PROPERTY_DESCRIPTOR(value, 'status');
+  const expected = command === 'preflight-public-ws-once'
+    ? 'preflight-valid'
+    : 'pending-independent-verification';
+  if (keys.length !== 1 || keys[0] !== 'status' || !descriptor ||
       !HAS_OWN(descriptor, 'value') || descriptor.enumerable !== true ||
-      descriptor.value !== true) fail();
+      descriptor.value !== expected) fail();
 }
 
 export async function runPublicWsOnceRunnerCli(options = {}) {
@@ -117,26 +117,21 @@ export async function runPublicWsOnceRunnerCli(options = {}) {
     const argv = HAS_OWN(supplied, 'argv') ? supplied.argv : process.argv.slice(2);
     const stdout = HAS_OWN(supplied, 'stdout') ? supplied.stdout : line => process.stdout.write(line);
     stderr = HAS_OWN(supplied, 'stderr') ? supplied.stderr : stderr;
-    const preflight = HAS_OWN(supplied, 'preflight')
-      ? supplied.preflight
-      : preflightPublicWsOnceRun;
-    const execute = HAS_OWN(supplied, 'execute')
-      ? supplied.execute
-      : executePublicWsOnceRun;
+    const supervise = HAS_OWN(supplied, 'supervise')
+      ? supplied.supervise
+      : supervisePublicWsOnceChild;
     if (typeof stdout !== 'function' || typeof stderr !== 'function' ||
-        typeof preflight !== 'function' || typeof execute !== 'function') fail();
+        typeof supervise !== 'function') fail();
     const parsed = parseArguments(argv);
+    const result = await supervise(
+      parsed.command,
+      parsed.options,
+      HAS_OWN(supplied, 'supervisorInjections') ? supplied.supervisorInjections : undefined,
+    );
+    exactSupervisorSuccess(result, parsed.command);
     if (parsed.command === 'preflight-public-ws-once') {
-      if (HAS_OWN(supplied, 'executeInjections')) fail();
-      exactPreflightSuccess(await preflight(parsed.options));
       await stdout(PREFLIGHT_SUCCESS);
     } else {
-      const result = await execute(
-        parsed.options,
-        HAS_OWN(supplied, 'executeInjections') ? supplied.executeInjections : undefined,
-      );
-      if (result?.status !== 'pending-independent-verification' ||
-          result?.evidenceEligible !== false) fail();
       await stdout(PENDING_SUCCESS);
     }
     return true;

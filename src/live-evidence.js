@@ -14,6 +14,10 @@ import {
   validateAccountBlockJson,
 } from './zenon-payment.js';
 import {
+  GATE_B_CURRENT_TESTNET_CHAIN_PROFILE,
+  GATE_B_CURRENT_TESTNET_NON_CLAIMS,
+  GATE_B_CURRENT_TESTNET_PROFILE_NAME,
+  GATE_B_CURRENT_TESTNET_PROVENANCE,
   OPERATOR_TRUSTED_PUBLIC_TESTNET_CHAIN_PROFILE,
   OPERATOR_TRUSTED_PUBLIC_TESTNET_NON_CLAIMS,
   OPERATOR_TRUSTED_PUBLIC_TESTNET_PROFILE_NAME,
@@ -25,7 +29,8 @@ export const LIVE_EVIDENCE_VERSION = 1;
 const ERROR_CODE = 'live_evidence_invalid';
 const REPOSITORY = 'edgepillar/zenon-x402-poc';
 const PACKAGE_VERSION = '0.2.0';
-const TRUST_MODE = 'operator-trusted-historical-observation';
+const HISTORICAL_TRUST_MODE = 'operator-trusted-historical-observation';
+const CURRENT_GATE_B_TRUST_MODE = 'operator-trusted-current-testnet-observation';
 const INTEGRITY_ALGORITHM = 'sha256';
 const FINAL_MAX_BYTES = 512 * 1024;
 const FRAGMENT_LIMITS = Object.freeze({
@@ -83,6 +88,10 @@ const NON_CLAIM_FIELDS = Object.freeze([
   'buyerReceiptCryptographicallyProven',
   'recipientReceiveObserved',
   'secretAbsenceProven',
+]);
+const GATE_B_EXTRA_NON_CLAIM_FIELDS = Object.freeze([
+  'publicGenesisIndependentlyVerified',
+  'reproducibleNodeBinary',
 ]);
 const EVENT_PHASES = Object.freeze({
   runner: Object.freeze([
@@ -613,13 +622,25 @@ function validateChainProfileShape(profile) {
 }
 
 function validateProvenanceShape(provenance) {
-  exactObject(provenance, [
-    'repository', 'revision', 'path', 'sourceDate', 'observationHeight',
-    'observationHash', 'derivation',
-  ]);
-  stringValue(provenance.repository, { maximumBytes: 128 });
-  if (typeof provenance.revision !== 'string' || !REVISION_HEX.test(provenance.revision)) fail();
-  stringValue(provenance.path, { maximumBytes: 256 });
+  const keys = REFLECT_OWN_KEYS(provenance);
+  if (keys.length === 7 && HAS_OWN(provenance, 'repository')) {
+    exactObject(provenance, [
+      'repository', 'revision', 'path', 'sourceDate', 'observationHeight',
+      'observationHash', 'derivation',
+    ]);
+    stringValue(provenance.repository, { maximumBytes: 128 });
+    if (typeof provenance.revision !== 'string' || !REVISION_HEX.test(provenance.revision)) fail();
+    stringValue(provenance.path, { maximumBytes: 256 });
+  } else {
+    exactObject(provenance, [
+      'source', 'sourceDate', 'observationHeight', 'observationHash', 'derivation',
+      'sameSourceReproduced', 'publicGenesisDerivationCompleted', 'independentlyVerified',
+    ]);
+    stringValue(provenance.source, { maximumBytes: 128 });
+    if (provenance.sameSourceReproduced !== true ||
+        provenance.publicGenesisDerivationCompleted !== false ||
+        provenance.independentlyVerified !== false) fail();
+  }
   stringValue(provenance.sourceDate, { maximumBytes: 32 });
   if (!safeInteger(provenance.observationHeight, { min: 1 })) fail();
   hashValue(provenance.observationHash);
@@ -845,9 +866,13 @@ function validateTimingShape(timing, { final = true } = {}) {
 }
 
 function validateNonClaimsShape(nonClaims) {
-  exactObject(nonClaims, NON_CLAIM_FIELDS);
-  for (let index = 0; index < NON_CLAIM_FIELDS.length; index += 1) {
-    if (nonClaims[NON_CLAIM_FIELDS[index]] !== false) fail();
+  const keys = REFLECT_OWN_KEYS(nonClaims);
+  const fields = keys.length === NON_CLAIM_FIELDS.length
+    ? NON_CLAIM_FIELDS
+    : [...NON_CLAIM_FIELDS, ...GATE_B_EXTRA_NON_CLAIM_FIELDS];
+  exactObject(nonClaims, fields);
+  for (let index = 0; index < fields.length; index += 1) {
+    if (nonClaims[fields[index]] !== false) fail();
   }
 }
 
@@ -928,16 +953,30 @@ function validatePublicResource(resource) {
 
 function assertPinnedSourceAndTrust(source, trust, nonClaims) {
   if (source.repository !== REPOSITORY || source.packageVersion !== PACKAGE_VERSION ||
-      trust.mode !== TRUST_MODE ||
-      trust.profileName !== OPERATOR_TRUSTED_PUBLIC_TESTNET_PROFILE_NAME ||
-      trust.chainIdentifier !== OPERATOR_TRUSTED_PUBLIC_TESTNET_CHAIN_PROFILE.chainIdentifier ||
-      trust.genesisMomentumHash !== OPERATOR_TRUSTED_PUBLIC_TESTNET_CHAIN_PROFILE.genesisMomentumHash ||
-      trust.remoteChainAuthenticated !== false ||
-      !sameJson(trust.provenance, OPERATOR_TRUSTED_PUBLIC_TESTNET_PROVENANCE)) fail();
-  const profileClaims = OBJECT_KEYS(OPERATOR_TRUSTED_PUBLIC_TESTNET_NON_CLAIMS);
+      trust.remoteChainAuthenticated !== false) fail();
+  let expectedClaims;
+  if (trust.profileName === OPERATOR_TRUSTED_PUBLIC_TESTNET_PROFILE_NAME) {
+    if (trust.mode !== HISTORICAL_TRUST_MODE ||
+        trust.chainIdentifier !== OPERATOR_TRUSTED_PUBLIC_TESTNET_CHAIN_PROFILE.chainIdentifier ||
+        trust.genesisMomentumHash !== OPERATOR_TRUSTED_PUBLIC_TESTNET_CHAIN_PROFILE.genesisMomentumHash ||
+        !sameJson(trust.provenance, OPERATOR_TRUSTED_PUBLIC_TESTNET_PROVENANCE)) fail();
+    expectedClaims = OPERATOR_TRUSTED_PUBLIC_TESTNET_NON_CLAIMS;
+    if (REFLECT_OWN_KEYS(nonClaims).length !== NON_CLAIM_FIELDS.length) fail();
+  } else if (trust.profileName === GATE_B_CURRENT_TESTNET_PROFILE_NAME) {
+    if (trust.mode !== CURRENT_GATE_B_TRUST_MODE ||
+        trust.chainIdentifier !== GATE_B_CURRENT_TESTNET_CHAIN_PROFILE.chainIdentifier ||
+        trust.genesisMomentumHash !== GATE_B_CURRENT_TESTNET_CHAIN_PROFILE.genesisMomentumHash ||
+        !sameJson(trust.provenance, GATE_B_CURRENT_TESTNET_PROVENANCE)) fail();
+    expectedClaims = GATE_B_CURRENT_TESTNET_NON_CLAIMS;
+    if (REFLECT_OWN_KEYS(nonClaims).length !==
+        NON_CLAIM_FIELDS.length + GATE_B_EXTRA_NON_CLAIM_FIELDS.length) fail();
+  } else {
+    fail();
+  }
+  const profileClaims = OBJECT_KEYS(expectedClaims);
   for (let index = 0; index < profileClaims.length; index += 1) {
     const key = profileClaims[index];
-    if (OPERATOR_TRUSTED_PUBLIC_TESTNET_NON_CLAIMS[key] !== false || nonClaims[key] !== false) fail();
+    if (expectedClaims[key] !== false || nonClaims[key] !== false) fail();
   }
 }
 
@@ -1043,6 +1082,9 @@ function expectedDefaultBody(record, requirements, preflight) {
 
 async function validateContentSemantics(content) {
   assertPinnedSourceAndTrust(content.source, content.trust, content.nonClaims);
+  const expectedChainProfile = content.trust.profileName === GATE_B_CURRENT_TESTNET_PROFILE_NAME
+    ? GATE_B_CURRENT_TESTNET_CHAIN_PROFILE
+    : OPERATOR_TRUSTED_PUBLIC_TESTNET_CHAIN_PROFILE;
   const paymentRequired = content.payment.paymentRequired;
   const requirements = paymentRequired.accepts[0];
   validatePublicResource(paymentRequired.resource);
@@ -1053,7 +1095,7 @@ async function validateContentSemantics(content) {
     fail();
   }
   if (requirements.network !== EXPERIMENTAL_LIVE_NETWORK ||
-      !sameJson(requirements.extra.zenonChain, OPERATOR_TRUSTED_PUBLIC_TESTNET_CHAIN_PROFILE)) fail();
+      !sameJson(requirements.extra.zenonChain, expectedChainProfile)) fail();
   const expectedIntent = paymentIntentDigest(paymentRequired, requirements);
   if (content.payment.intentDigest !== expectedIntent) fail();
 

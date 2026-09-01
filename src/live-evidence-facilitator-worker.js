@@ -74,6 +74,7 @@ const FACILITATOR_PHASES = FREEZE([
 const UTC_TIMESTAMP = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/;
 const DECIMAL = /^(?:0|[1-9]\d*)$/;
 const FILE_GENERATION_FIELDS = FREEZE(['dev', 'ino', 'size', 'mtimeNs', 'ctimeNs']);
+const DIRECTORY_IDENTITY_FIELDS = FREEZE(['dev', 'ino']);
 
 function workerError() {
   const error = new Error(WORKER_ERROR);
@@ -308,6 +309,27 @@ function sameGeneration(left, right) {
   return true;
 }
 
+function exactDirectoryIdentity(value) {
+  exactPlainObject(value, DIRECTORY_IDENTITY_FIELDS);
+  const copy = {};
+  for (let index = 0; index < DIRECTORY_IDENTITY_FIELDS.length; index += 1) {
+    const field = DIRECTORY_IDENTITY_FIELDS[index];
+    if (typeof value[field] !== 'string' || !DECIMAL.test(value[field])) fail();
+    ownData(copy, field, value[field]);
+  }
+  return FREEZE(copy);
+}
+
+async function assertExpectedPrivateDirectory(path, expectedIdentity) {
+  const expected = exactDirectoryIdentity(expectedIdentity);
+  const stat = await lstat(path, { bigint: true });
+  const uidMatches = typeof process.getuid !== 'function' || stat.uid === BigInt(process.getuid());
+  if (!stat.isDirectory() || stat.isSymbolicLink() ||
+      Number(stat.mode & 0o777n) !== 0o700 || !uidMatches) fail();
+  const observed = { dev: stat.dev.toString(), ino: stat.ino.toString() };
+  if (observed.dev !== expected.dev || observed.ino !== expected.ino) fail();
+}
+
 function assertInheritedFileStat(stat) {
   const uidMatches = typeof process.getuid !== 'function' || stat.uid === BigInt(process.getuid());
   if (!stat.isFile() || stat.nlink !== 1n || Number(stat.mode & 0o777n) !== 0o600 ||
@@ -364,6 +386,53 @@ function assertJournalDescendant(workspaceRoot, journalDirectory) {
       resolve(workspaceRoot) !== workspaceRoot || resolve(journalDirectory) !== journalDirectory) fail();
   const rel = relative(workspaceRoot, journalDirectory);
   if (!rel || rel === '..' || rel.startsWith(`..${sep}`) || isAbsolute(rel)) fail();
+}
+
+class BoundaryCheckedSettlementJournal extends SettlementJournal {
+  constructor(options, boundary) {
+    super(options);
+    DEFINE_PROPERTY(this, 'boundary', {
+      value: boundary,
+      enumerable: false,
+      configurable: false,
+      writable: false,
+    });
+  }
+
+  async guarded(method, args) {
+    await this.boundary();
+    const result = await Reflect.apply(method, this, args);
+    await this.boundary();
+    return result;
+  }
+
+  async load(...args) { return this.guarded(super.load, args); }
+  async putValidated(...args) { return this.guarded(super.putValidated, args); }
+  async get(...args) { return this.guarded(super.get, args); }
+  async findByTransactionHash(...args) {
+    return this.guarded(super.findByTransactionHash, args);
+  }
+  async getTombstone(...args) { return this.guarded(super.getTombstone, args); }
+  async findTombstoneByTransactionHash(...args) {
+    return this.guarded(super.findTombstoneByTransactionHash, args);
+  }
+  async listReconciliationCandidates(...args) {
+    return this.guarded(super.listReconciliationCandidates, args);
+  }
+  async getEntrySnapshot(...args) { return this.guarded(super.getEntrySnapshot, args); }
+  async compareAndUpdateEvidence(...args) {
+    return this.guarded(super.compareAndUpdateEvidence, args);
+  }
+  async replaceRecordWithTombstone(...args) {
+    return this.guarded(super.replaceRecordWithTombstone, args);
+  }
+  async recordLateMomentumEvidence(...args) {
+    return this.guarded(super.recordLateMomentumEvidence, args);
+  }
+  async updateEvidence(...args) { return this.guarded(super.updateEvidence, args); }
+  async markDeliveryPending(...args) { return this.guarded(super.markDeliveryPending, args); }
+  async markDelivered(...args) { return this.guarded(super.markDelivered, args); }
+  async list(...args) { return this.guarded(super.list, args); }
 }
 
 function plausibleRecoveryRecord(snapshot) {
@@ -436,6 +505,15 @@ export async function startDefaultLiveEvidenceFacilitatorRuntime(
       executionMode !== PUBLIC_WS_ONCE_POLICY.executionMode) fail();
   const publicWsOnce = executionMode === PUBLIC_WS_ONCE_POLICY.executionMode;
   if (publicWsOnce && message.recovery !== false) fail();
+  const assertBoundary = publicWsOnce
+    ? async () => {
+      await assertExpectedPrivateDirectory(message.workspaceRoot, message.workspaceIdentity);
+      await assertExpectedPrivateDirectory(
+        dirname(message.journalDirectory),
+        message.runDirectoryIdentity,
+      );
+    }
+    : async () => {};
   const config = publicWsOnce
     ? parsePublicWsOnceRunConfig(`${JSON.stringify(message.config)}\n`)
     : parseLiveEvidenceRunConfig(`${JSON.stringify(message.config)}\n`);
@@ -456,18 +534,25 @@ export async function startDefaultLiveEvidenceFacilitatorRuntime(
       config.acknowledgements.live,
     );
   const environment = explicitEnvironment(config, secret.rpcEndpoint, executionMode);
+  await assertBoundary();
   assertJournalDescendant(message.workspaceRoot, message.journalDirectory);
   await assertPrivateWorkerDirectory(dirname(message.journalDirectory));
-  const journal = new SettlementJournal({
+  const Journal = publicWsOnce ? BoundaryCheckedSettlementJournal : SettlementJournal;
+  const journalOptions = {
     directory: message.journalDirectory,
     allowedRoot: dirname(message.journalDirectory),
-  });
+  };
+  const journal = publicWsOnce
+    ? new Journal(journalOptions, assertBoundary)
+    : new Journal(journalOptions);
   const initial = await journal.load();
+  await assertBoundary();
   await assertPrivateWorkerDirectory(message.journalDirectory);
   if (message.recovery) {
     if (!plausibleRecoveryRecord(initial)) fail();
   } else if (initial.schemaVersion !== 1 || initial.revision !== 0 ||
       !Array.isArray(initial.records) || initial.records.length !== 0) fail();
+  await assertBoundary();
   await Reflect.apply(runtimeDependencies.probeRoleReadiness, undefined, [{
     role: 'facilitator',
     asset: config.expectedPaymentRequired.accepts[0].asset,
@@ -475,6 +560,7 @@ export async function startDefaultLiveEvidenceFacilitatorRuntime(
     environment,
     rpcTimeoutMs: config.runtime.rpcTimeoutMs,
   }]);
+  await assertBoundary();
   const observer = createLiveEvidenceObserver();
   const facilitator = Reflect.apply(runtimeDependencies.createFacilitator, undefined, [{
     environment,
@@ -495,7 +581,9 @@ export async function startDefaultLiveEvidenceFacilitatorRuntime(
     advertisedBaseUrl,
   }]);
   if (!app || typeof app.listen !== 'function' || typeof app.close !== 'function') fail();
+  await assertBoundary();
   await app.listen();
+  await assertBoundary();
   let stopped = false;
   let finalSnapshot;
   return {
@@ -509,9 +597,12 @@ export async function startDefaultLiveEvidenceFacilitatorRuntime(
     async stop({ final }) {
       if (stopped) return finalSnapshot;
       stopped = true;
+      await assertBoundary();
       await app.close();
+      await assertBoundary();
       if (!final) return null;
       const snapshot = await journal.load();
+      await assertBoundary();
       if (!validFinalJournal(snapshot, message.recovery)) fail();
       finalSnapshot = FREEZE({
         quiescent: true,
@@ -734,6 +825,7 @@ export async function runLiveEvidenceFacilitatorWorker(options = {}) {
           ? [
             'config', 'facilitatorRpcGeneration', 'workspaceRoot',
             'journalDirectory', 'recovery', 'executionMode',
+            'workspaceIdentity', 'runDirectoryIdentity',
           ]
           : [
             'config', 'facilitatorRpcGeneration', 'workspaceRoot',
@@ -747,6 +839,10 @@ export async function runLiveEvidenceFacilitatorWorker(options = {}) {
               Buffer.byteLength(message[field], 'utf8') > MAX_IPC_STRING_BYTES) fail();
         }
         exactFileGeneration(message.facilitatorRpcGeneration);
+        if (publicWsOnce) {
+          exactDirectoryIdentity(message.workspaceIdentity);
+          exactDirectoryIdentity(message.runDirectoryIdentity);
+        }
         expectedRequestId += 1;
         startInProgress = true;
         startSettled = createDeferred();
@@ -939,6 +1035,7 @@ function captureControllerOptions(options) {
   const descriptors = exactPlainObject(options, [
     'config', 'facilitatorRpcFd', 'facilitatorRpcGeneration', 'workspaceRoot',
     'journalDirectory', 'recovery', 'forkProcess', 'executionMode',
+    'workspaceIdentity', 'runDirectoryIdentity',
   ]);
   const config = detachedIpcSnapshot(descriptors.config.value);
   const stringFields = ['workspaceRoot', 'journalDirectory'];
@@ -963,6 +1060,17 @@ function captureControllerOptions(options) {
       executionMode !== PUBLIC_WS_ONCE_POLICY.executionMode) fail();
   if (executionMode === PUBLIC_WS_ONCE_POLICY.executionMode &&
       descriptors.recovery.value !== false) fail();
+  if (executionMode === PUBLIC_WS_ONCE_POLICY.executionMode) {
+    ownData(captured, 'workspaceIdentity', exactDirectoryIdentity(
+      detachedIpcSnapshot(descriptors.workspaceIdentity.value),
+    ));
+    ownData(captured, 'runDirectoryIdentity', exactDirectoryIdentity(
+      detachedIpcSnapshot(descriptors.runDirectoryIdentity.value),
+    ));
+  } else if (descriptors.workspaceIdentity.value !== undefined ||
+      descriptors.runDirectoryIdentity.value !== undefined) {
+    fail();
+  }
   ownData(captured, 'recovery', descriptors.recovery.value);
   ownData(captured, 'forkProcess', descriptors.forkProcess.value);
   ownData(captured, 'executionMode', executionMode);
@@ -988,10 +1096,13 @@ export async function startLiveEvidenceFacilitatorWorker(options = {}) {
       recovery: false,
       forkProcess: fork,
       executionMode: HISTORICAL_WSS_EXECUTION_MODE,
+      workspaceIdentity: undefined,
+      runDirectoryIdentity: undefined,
     };
     const allowed = [
       'config', 'facilitatorRpcFd', 'facilitatorRpcGeneration', 'workspaceRoot',
       'journalDirectory', 'recovery', 'forkProcess', 'executionMode',
+      'workspaceIdentity', 'runDirectoryIdentity',
     ];
     for (let index = 0; index < allowed.length; index += 1) {
       const key = allowed[index];
@@ -1024,6 +1135,8 @@ export async function startLiveEvidenceFacilitatorWorker(options = {}) {
     };
     if (captured.executionMode === PUBLIC_WS_ONCE_POLICY.executionMode) {
       ownData(startSnapshot, 'executionMode', captured.executionMode);
+      ownData(startSnapshot, 'workspaceIdentity', captured.workspaceIdentity);
+      ownData(startSnapshot, 'runDirectoryIdentity', captured.runDirectoryIdentity);
     }
     const capturedStartSnapshot = detachedIpcSnapshot(startSnapshot);
 
@@ -1223,7 +1336,11 @@ export async function startLiveEvidenceFacilitatorWorker(options = {}) {
           journalDirectory: capturedStartSnapshot.journalDirectory,
           recovery: capturedStartSnapshot.recovery,
           ...(captured.executionMode === PUBLIC_WS_ONCE_POLICY.executionMode
-            ? { executionMode: captured.executionMode }
+            ? {
+              executionMode: captured.executionMode,
+              workspaceIdentity: captured.workspaceIdentity,
+              runDirectoryIdentity: captured.runDirectoryIdentity,
+            }
             : {}),
         }, 'READY');
       },

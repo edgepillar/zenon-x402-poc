@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { fork as forkProcess } from 'node:child_process';
 import { randomBytes } from 'node:crypto';
 import { EventEmitter } from 'node:events';
 import {
@@ -11,16 +12,20 @@ import {
   readFile,
   readdir,
   realpath,
+  rename,
   rm,
   writeFile,
 } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { basename, join } from 'node:path';
 import { PassThrough } from 'node:stream';
+import { fileURLToPath } from 'node:url';
 import * as sdk from 'znn-typescript-sdk';
 
 import { paymentIntentDigest } from '../src/canonical.js';
 import { runPublicWsOnceRunnerCli } from '../src/live-evidence-public-ws-once-cli.js';
+import { runPublicWsOnceExecutionChild } from '../src/live-evidence-public-ws-once-run-child.js';
+import { supervisePublicWsOnceChild } from '../src/live-evidence-public-ws-once-supervisor.js';
 import {
   runLiveEvidenceFacilitatorWorker,
   startLiveEvidenceFacilitatorWorker,
@@ -37,9 +42,15 @@ import {
   PUBLIC_WS_ONCE_POLICY,
 } from '../src/live-evidence-runner.js';
 import {
+  assembleLiveEvidenceBundle,
+  parseLiveEvidenceFragment,
+  verifyLiveEvidenceBundle,
+} from '../src/live-evidence.js';
+import {
   createLiveEvidenceObserver,
   recordLiveEvidencePhase,
 } from '../src/live-observation.js';
+import { EVIDENCE_STATES, SettlementJournal } from '../src/settlement-journal.js';
 import {
   assertOperatorTrustedChainPolicy,
   observeOperatorTrustedChainPolicy,
@@ -71,6 +82,7 @@ const SYNTHETIC_GENERATION = Object.freeze({
   mtimeNs: '4',
   ctimeNs: '5',
 });
+const SYNTHETIC_DIRECTORY_IDENTITY = Object.freeze({ dev: '1', ino: '2' });
 const PHASES = Object.freeze({
   buyer: Object.freeze([
     'buyer_owner_wait_started',
@@ -326,6 +338,101 @@ async function validOutcome(configuration) {
   }
 }
 
+function journalInputFromRecord(record) {
+  return {
+    authorizationKey: record.authorizationKey,
+    transactionHash: record.transactionHash,
+    chainProfile: structuredClone(record.chainProfile),
+    intentDigest: record.intentDigest,
+    resourceIdentity: structuredClone(record.resourceIdentity),
+    resourceDigest: record.resourceDigest,
+    payer: record.payer,
+    signedAccountBlock: structuredClone(record.signedAccountBlock),
+  };
+}
+
+async function createRetainedProductionState(runDirectory, record) {
+  await writeFile(join(runDirectory, 'SUBMISSION_ARMED'), 'SUBMISSION_ARMED\n', {
+    mode: 0o600,
+  });
+  const journal = new SettlementJournal({
+    directory: join(runDirectory, 'journal'),
+    allowedRoot: runDirectory,
+    clock: () => new Date(UTC),
+  });
+  assert.deepEqual(await journal.load(), { schemaVersion: 1, revision: 0, records: [] });
+  await journal.putValidated(journalInputFromRecord(record));
+  await journal.updateEvidence(
+    record.authorizationKey,
+    record.transactionHash,
+    EVIDENCE_STATES.SUBMISSION_ACKNOWLEDGED,
+  );
+  await journal.updateEvidence(
+    record.authorizationKey,
+    record.transactionHash,
+    EVIDENCE_STATES.MOMENTUM_INCLUDED,
+    record.momentumEvidence,
+  );
+  await journal.markDeliveryPending(record.authorizationKey, record.transactionHash);
+  await journal.markDelivered(
+    record.authorizationKey,
+    record.transactionHash,
+    record.cachedResponse,
+  );
+  return journal;
+}
+
+function successfulPublicWsExecution(options, candidate, afterState = async () => {}) {
+  let journal;
+  const controller = {
+    async start() {},
+    async snapshotObservations() {
+      return { evidenceEligible: true, events: observations('facilitator') };
+    },
+    async closeAndSnapshot() {
+      const snapshot = await journal.load();
+      return { quiescent: true, ...snapshot };
+    },
+    async terminate() {},
+  };
+  return {
+    operations: {
+      async probeBuyerReadiness() {},
+      async startFacilitator() {
+        const runDirectory = join(options.workspaceRoot, options.runName);
+        journal = await createRetainedProductionState(runDirectory, candidate.record);
+        await afterState(runDirectory);
+        return controller;
+      },
+      async probePublicEndpoint() {},
+      async readBuyerWallet() {
+        return { mnemonic: 'offline-placeholder-only', accountIndex: 0 };
+      },
+      async paidFetch({ openWallet, onChallenge }) {
+        await onChallenge(fixtureConfiguration(options).expectedPaymentRequired);
+        await openWallet();
+        return candidate.outcome;
+      },
+    },
+    lifecycleObserver: fixedObserver(),
+  };
+}
+
+async function assertPrivateTestFile(path) {
+  const stat = await lstat(path);
+  assert.equal(stat.isFile(), true);
+  assert.equal(stat.isSymbolicLink(), false);
+  assert.equal(stat.nlink, 1);
+  assert.equal(stat.mode & 0o777, 0o600);
+}
+
+async function assertPrivateTestDirectory(path) {
+  const stat = await lstat(path);
+  assert.equal(stat.isDirectory(), true);
+  assert.equal(stat.isSymbolicLink(), false);
+  assert.equal(stat.mode & 0o777, 0o700);
+}
+
 function fixedFailure(error) {
   return error?.code === 'live_evidence_run_invalid' && error?.cause === undefined;
 }
@@ -500,7 +607,7 @@ test('preflight rejects mode, hardlink, and protected-file alias failures', asyn
   await assert.rejects(preflightPublicWsOnceRun(aliasFixture), fixedFailure);
 });
 
-test('fixed workspace marker is exclusive, durable, globally one-shot, and partial existence consumes', async t => {
+test('fixed workspace marker is exclusive, durable, and one-attempt within an unchanged workspace', async t => {
   const options = await fixture(t);
   const attempts = await Promise.allSettled([
     persistPublicWsOnceConsumedMarker(options.workspaceRoot),
@@ -523,7 +630,107 @@ test('fixed workspace marker is exclusive, durable, globally one-shot, and parti
   await assert.rejects(preflightPublicWsOnceRun(partial), fixedFailure);
 });
 
-test('one-shot execution consumes before effects and produces pending-only sanitized metadata', async t => {
+test('workspace rename and replacement fail closed before every later effect boundary', async t => {
+  for (const phase of ['after-consumed-marker', 'after-run-directory']) {
+    await t.test(phase, async subtest => {
+      const options = await fixture(subtest);
+      const original = `${options.workspaceRoot}-original`;
+      let replaced = false;
+      await assert.rejects(executePublicWsOnceRun(options, {
+        operations: {},
+        workspaceBoundaryObserver: async observedPhase => {
+          if (observedPhase !== phase || replaced) return;
+          replaced = true;
+          await rename(options.workspaceRoot, original);
+          await mkdir(options.workspaceRoot, { mode: 0o700 });
+        },
+      }), fixedFailure);
+      assert.equal(replaced, true);
+      assert.equal((await lstat(join(original, 'PUBLIC_WS_ONCE_CONSUMED'))).isFile(), true);
+    });
+  }
+});
+
+test('run-directory rename and replacement fails closed before RPC or wallet effects', async t => {
+  const options = await fixture(t);
+  let effects = 0;
+  let replaced = false;
+  const runDirectory = join(options.workspaceRoot, options.runName);
+  const moved = join(options.workspaceRoot, `${options.runName}-original`);
+  await assert.rejects(executePublicWsOnceRun(options, {
+    operations: {
+      async probeBuyerReadiness() { effects += 1; },
+      async probePublicEndpoint() { effects += 1; },
+      async startFacilitator() { effects += 1; },
+      async readBuyerWallet() { effects += 1; },
+      async paidFetch() { effects += 1; },
+    },
+    workspaceBoundaryObserver: async phase => {
+      if (phase !== 'before-buyer-readiness' || replaced) return;
+      replaced = true;
+      await rename(runDirectory, moved);
+      await mkdir(runDirectory, { mode: 0o700 });
+    },
+  }), fixedFailure);
+  assert.equal(replaced, true);
+  assert.equal(effects, 0);
+  assert.equal((await lstat(join(options.workspaceRoot, 'PUBLIC_WS_ONCE_CONSUMED'))).isFile(), true);
+});
+
+test('late workspace namespace replacement fails closed before pending success', async t => {
+  for (const phase of ['after-paid-fetch', 'after-pending-candidate', 'after-pending-state']) {
+    await t.test(phase, async subtest => {
+      const options = await fixture(subtest, {
+        walletText: '{"secretVersion":1,"mnemonic":"offline-placeholder-only","accountIndex":0}\n',
+      });
+      const candidate = await validOutcome(fixtureConfiguration(options));
+      const moved = `${options.workspaceRoot}-original`;
+      let replaced = false;
+      await assert.rejects(executePublicWsOnceRun(options, {
+        ...successfulPublicWsExecution(options, candidate),
+        workspaceBoundaryObserver: async observedPhase => {
+          if (observedPhase !== phase || replaced) return;
+          replaced = true;
+          await rename(options.workspaceRoot, moved);
+          await mkdir(options.workspaceRoot, { mode: 0o700 });
+        },
+      }), fixedFailure);
+      assert.equal(replaced, true);
+      assert.equal((await lstat(join(moved, 'PUBLIC_WS_ONCE_CONSUMED'))).isFile(), true);
+    });
+  }
+});
+
+test('late run-directory namespace replacement fails closed before pending success', async t => {
+  for (const phase of ['after-paid-fetch', 'after-pending-candidate', 'after-pending-state']) {
+    await t.test(phase, async subtest => {
+      const options = await fixture(subtest, {
+        walletText: '{"secretVersion":1,"mnemonic":"offline-placeholder-only","accountIndex":0}\n',
+      });
+      const candidate = await validOutcome(fixtureConfiguration(options));
+      const runDirectory = join(options.workspaceRoot, options.runName);
+      const moved = join(options.workspaceRoot, `${options.runName}-original`);
+      let replaced = false;
+      await assert.rejects(executePublicWsOnceRun(options, {
+        ...successfulPublicWsExecution(options, candidate),
+        workspaceBoundaryObserver: async observedPhase => {
+          if (observedPhase !== phase || replaced) return;
+          replaced = true;
+          await rename(runDirectory, moved);
+          await mkdir(runDirectory, { mode: 0o700 });
+        },
+      }), fixedFailure);
+      assert.equal(replaced, true);
+      assert.equal((await lstat(moved)).isDirectory(), true);
+      assert.equal(
+        (await lstat(join(options.workspaceRoot, 'PUBLIC_WS_ONCE_CONSUMED'))).isFile(),
+        true,
+      );
+    });
+  }
+});
+
+test('workspace-scoped execution consumes before effects and retains exact private pending capture state', async t => {
   const options = await fixture(t, {
     walletText: '{"secretVersion":1,"mnemonic":"offline-placeholder-only","accountIndex":0}\n',
   });
@@ -531,17 +738,19 @@ test('one-shot execution consumes before effects and produces pending-only sanit
   const candidate = await validOutcome(configuration);
   const outcome = candidate.outcome;
   const effectOrder = [];
+  let journal;
   const controller = {
     async start() { effectOrder.push('worker-start'); },
     async snapshotObservations() {
       return { evidenceEligible: true, events: observations('facilitator') };
     },
     async closeAndSnapshot() {
+      const snapshot = await journal.load();
       return {
         quiescent: true,
-        schemaVersion: 1,
-        revision: 5,
-        records: [structuredClone(candidate.record)],
+        schemaVersion: snapshot.schemaVersion,
+        revision: snapshot.revision,
+        records: snapshot.records,
       };
     },
     async terminate() { effectOrder.push('terminate'); },
@@ -554,6 +763,10 @@ test('one-shot execution consumes before effects and produces pending-only sanit
     },
     async startFacilitator({ recovery }) {
       assert.equal(recovery, false);
+      journal = await createRetainedProductionState(
+        join(options.workspaceRoot, options.runName),
+        candidate.record,
+      );
       effectOrder.push('worker-create');
       return controller;
     },
@@ -579,21 +792,42 @@ test('one-shot execution consumes before effects and produces pending-only sanit
   });
   assert.equal(effectOrder[0], 'buyer-readiness');
   const runDirectory = join(options.workspaceRoot, options.runName);
+  assert.deepEqual((await readdir(options.workspaceRoot)).sort(), [
+    basename(options.authorizationPath),
+    basename(options.buyerRpcPath),
+    basename(options.buyerWalletPath),
+    basename(options.configPath),
+    basename(options.facilitatorRpcPath),
+    'PUBLIC_WS_ONCE_CONSUMED',
+    options.runName,
+  ].sort());
   const entries = await readdir(runDirectory);
-  assert.deepEqual(entries, ['pending-independent-verification']);
+  assert.deepEqual(entries.sort(), [
+    'SUBMISSION_ARMED', 'journal', 'pending-independent-verification',
+  ]);
+  assert.deepEqual((await readdir(join(runDirectory, 'journal'))).sort(), [
+    '.settlement-journal.initialized', 'settlement-journal.json',
+  ]);
   const pendingDirectory = join(runDirectory, 'pending-independent-verification');
   assert.deepEqual((await readdir(pendingDirectory)).sort(), [
     'PENDING_INDEPENDENT_VERIFICATION',
+    'capture',
     'metadata.json',
   ]);
   const metadataText = await readFile(join(pendingDirectory, 'metadata.json'), 'utf8');
   const metadata = JSON.parse(metadataText);
   assert.deepEqual(Object.keys(metadata), [
     'candidateVersion', 'status', 'publicationEligible', 'transport',
-    'independentVerification', 'nonClaims',
+    'independentVerification', 'privateCapture', 'nonClaims',
   ]);
   assert.equal(metadata.status, 'PENDING_INDEPENDENT_VERIFICATION');
   assert.equal(metadata.publicationEligible, false);
+  assert.deepEqual(metadata.privateCapture, {
+    complete: true,
+    independentlyVerified: false,
+    publicBundleProduced: false,
+    fragmentCount: 5,
+  });
   assert.deepEqual(metadata.transport, {
     scheme: 'ws',
     confidentiality: false,
@@ -604,6 +838,135 @@ test('one-shot execution consumes before effects and produces pending-only sanit
   assert.equal(metadataText.includes(ENDPOINT), false);
   assert.equal(/\b[0-9a-f]{64}\b/.test(metadataText), false);
   assert.equal(entries.includes('evidence'), false);
+  assert.equal(entries.includes('COMPLETE'), false);
+  const captureDirectory = join(pendingDirectory, 'capture');
+  const captureNames = ['manifest', 'chain', 'http', 'journal', 'timing'];
+  assert.deepEqual((await readdir(captureDirectory)).sort(),
+    captureNames.map(name => `${name}.json`).sort());
+  const fragments = {};
+  let rawCapture = '';
+  for (const name of captureNames) {
+    const text = await readFile(join(captureDirectory, `${name}.json`), 'utf8');
+    rawCapture += text;
+    fragments[name] = parseLiveEvidenceFragment(
+      text,
+      name,
+    );
+  }
+  assert.equal(rawCapture.includes(ENDPOINT), false);
+  assert.equal(rawCapture.includes(options.workspaceRoot), false);
+  assert.equal(rawCapture.includes('offline-placeholder-only'), false);
+  for (const path of [
+    options.configPath,
+    options.buyerRpcPath,
+    options.buyerWalletPath,
+    options.facilitatorRpcPath,
+    options.authorizationPath,
+  ]) assert.equal(rawCapture.includes(path), false);
+  for (const directory of [
+    options.workspaceRoot,
+    runDirectory,
+    join(runDirectory, 'journal'),
+    pendingDirectory,
+    captureDirectory,
+  ]) await assertPrivateTestDirectory(directory);
+  for (const path of [
+    options.configPath,
+    options.buyerRpcPath,
+    options.buyerWalletPath,
+    options.facilitatorRpcPath,
+    options.authorizationPath,
+    join(options.workspaceRoot, 'PUBLIC_WS_ONCE_CONSUMED'),
+    join(runDirectory, 'SUBMISSION_ARMED'),
+    join(runDirectory, 'journal', '.settlement-journal.initialized'),
+    join(runDirectory, 'journal', 'settlement-journal.json'),
+    join(pendingDirectory, 'metadata.json'),
+    join(pendingDirectory, 'PENDING_INDEPENDENT_VERIFICATION'),
+    ...captureNames.map(name => join(captureDirectory, `${name}.json`)),
+  ]) await assertPrivateTestFile(path);
+  const independent = {
+    verificationVersion: 1,
+    runName: options.runName,
+    route: 'different-operator-wss-or-https',
+    sameEndpoint: false,
+    sameOperatorRoute: false,
+    exactBlockConfirmed: true,
+    paymentIntentBindingConfirmed: true,
+    momentumInclusionConfirmed: true,
+  };
+  assert.deepEqual(parsePublicWsOnceIndependentVerification(
+    `${JSON.stringify(independent)}\n`,
+    options.runName,
+  ), independent);
+  const bundle = await assembleLiveEvidenceBundle(fragments);
+  assert.deepEqual(
+    await verifyLiveEvidenceBundle(bundle),
+    { valid: true, evidenceVersion: 1 },
+  );
+});
+
+test('successful validation rejects unexpected retained-tree entries and produces no bundle', async t => {
+  const options = await fixture(t, {
+    walletText: '{"secretVersion":1,"mnemonic":"offline-placeholder-only","accountIndex":0}\n',
+  });
+  const configuration = fixtureConfiguration(options);
+  const candidate = await validOutcome(configuration);
+  let journal;
+  const controller = {
+    async start() {},
+    async snapshotObservations() {
+      return { evidenceEligible: true, events: observations('facilitator') };
+    },
+    async closeAndSnapshot() {
+      const snapshot = await journal.load();
+      return { quiescent: true, ...snapshot };
+    },
+    async terminate() {},
+  };
+  await assert.rejects(executePublicWsOnceRun(options, {
+    operations: {
+      async probeBuyerReadiness() {},
+      async startFacilitator() {
+        const runDirectory = join(options.workspaceRoot, options.runName);
+        journal = await createRetainedProductionState(runDirectory, candidate.record);
+        await writeFile(join(runDirectory, 'unexpected'), 'unexpected\n', { mode: 0o600 });
+        return controller;
+      },
+      async probePublicEndpoint() {},
+      async readBuyerWallet() {
+        return { mnemonic: 'offline-placeholder-only', accountIndex: 0 };
+      },
+      async paidFetch({ openWallet, onChallenge }) {
+        await onChallenge(configuration.expectedPaymentRequired);
+        await openWallet();
+        return candidate.outcome;
+      },
+    },
+    lifecycleObserver: fixedObserver(),
+  }), fixedFailure);
+  const entries = await readdir(join(options.workspaceRoot, options.runName));
+  assert.equal(entries.includes('evidence'), false);
+  assert.equal(entries.includes('COMPLETE'), false);
+  assert.equal(entries.includes('pending-independent-verification'), false);
+});
+
+test('successful validation rejects unexpected journal entries', async t => {
+  const options = await fixture(t, {
+    walletText: '{"secretVersion":1,"mnemonic":"offline-placeholder-only","accountIndex":0}\n',
+  });
+  const candidate = await validOutcome(fixtureConfiguration(options));
+  const injected = successfulPublicWsExecution(options, candidate, async runDirectory => {
+    await writeFile(
+      join(runDirectory, 'journal', 'unexpected'),
+      'unexpected\n',
+      { mode: 0o600 },
+    );
+  });
+  await assert.rejects(executePublicWsOnceRun(options, injected), fixedFailure);
+  const runDirectory = join(options.workspaceRoot, options.runName);
+  assert.equal((await readdir(runDirectory)).includes('pending-independent-verification'), false);
+  assert.equal((await readdir(runDirectory)).includes('evidence'), false);
+  assert.equal((await readdir(runDirectory)).includes('COMPLETE'), false);
 });
 
 test('pending state cross-binding rejects every mismatched payment or delivery record', async t => {
@@ -748,6 +1111,8 @@ test('worker protocol uses an exact internal public-WS mode and rejects confusio
     journalDirectory: 'protected/journal',
     recovery: false,
     executionMode: PUBLIC_WS_ONCE_POLICY.executionMode,
+    workspaceIdentity: SYNTHETIC_DIRECTORY_IDENTITY,
+    runDirectoryIdentity: SYNTHETIC_DIRECTORY_IDENTITY,
     forkProcess: () => child,
   });
   await controller.start();
@@ -783,6 +1148,8 @@ test('worker protocol uses an exact internal public-WS mode and rejects confusio
     journalDirectory: 'protected/journal',
     recovery: true,
     executionMode: PUBLIC_WS_ONCE_POLICY.executionMode,
+    workspaceIdentity: SYNTHETIC_DIRECTORY_IDENTITY,
+    runDirectoryIdentity: SYNTHETIC_DIRECTORY_IDENTITY,
   });
   await new Promise(resolve => setImmediate(resolve));
   assert.deepEqual(replies, [{
@@ -846,8 +1213,10 @@ test('dedicated CLI has exact commands and fixed endpoint-free output', async ()
     argv: ['preflight-public-ws-once', ...flags],
     stdout: value => { stdout.push(value); },
     stderr: value => { stderr.push(value); },
-    preflight: async () => ({ valid: true }),
-    execute: async () => { throw new Error('not used'); },
+    supervise: async command => {
+      assert.equal(command, 'preflight-public-ws-once');
+      return { status: 'preflight-valid' };
+    },
   }), true);
   assert.deepEqual(stdout, ['LIVE_EVIDENCE_PUBLIC_WS_ONCE_PREFLIGHT_VALID\n']);
   assert.deepEqual(stderr, []);
@@ -856,11 +1225,10 @@ test('dedicated CLI has exact commands and fixed endpoint-free output', async ()
     argv: ['run-public-ws-once', ...flags],
     stdout: value => { stdout.push(value); },
     stderr: value => { stderr.push(value); },
-    preflight: async () => { throw new Error('not used'); },
-    execute: async () => ({
-      status: 'pending-independent-verification',
-      evidenceEligible: false,
-    }),
+    supervise: async command => {
+      assert.equal(command, 'run-public-ws-once');
+      return { status: 'pending-independent-verification' };
+    },
   }), true);
   assert.deepEqual(stdout, [
     'LIVE_EVIDENCE_PUBLIC_WS_ONCE_PENDING_INDEPENDENT_VERIFICATION\n',
@@ -874,4 +1242,290 @@ test('dedicated CLI has exact commands and fixed endpoint-free output', async ()
   }), false);
   assert.deepEqual(stdout, []);
   assert.deepEqual(stderr, ['LIVE_EVIDENCE_PUBLIC_WS_ONCE_FAILED\n']);
+});
+
+test('operator-facing supervisor modules do not import the runner or SDK', async () => {
+  const sources = await Promise.all([
+    readFile(fileURLToPath(
+      new URL('../src/live-evidence-public-ws-once-cli.js', import.meta.url),
+    ), 'utf8'),
+    readFile(fileURLToPath(
+      new URL('../src/live-evidence-public-ws-once-supervisor.js', import.meta.url),
+    ), 'utf8'),
+  ]);
+  for (const source of sources) {
+    assert.equal(source.includes('live-evidence-runner'), false);
+    assert.equal(source.includes('znn-typescript-sdk'), false);
+  }
+});
+
+test('supervised CLI suppresses child console and direct standard-stream output', async t => {
+  const options = await fixture(t);
+  const flags = [
+    '--config', options.configPath,
+    '--buyer-rpc', options.buyerRpcPath,
+    '--buyer-wallet', options.buyerWalletPath,
+    '--facilitator-rpc', options.facilitatorRpcPath,
+    '--authorization', options.authorizationPath,
+    '--workspace', options.workspaceRoot,
+    '--run-name', options.runName,
+    '--transport-exception', options.transportException,
+  ];
+  const stdout = [];
+  const stderr = [];
+  const childModule = fileURLToPath(
+    new URL('./fixtures/public-ws-once-noisy-child.js', import.meta.url),
+  );
+  assert.equal(await runPublicWsOnceRunnerCli({
+    argv: ['run-public-ws-once', ...flags],
+    stdout: value => { stdout.push(value); },
+    stderr: value => { stderr.push(value); },
+    supervisorInjections: { childModule, forkProcess, timeoutMs: 5000 },
+  }), true);
+  assert.deepEqual(stdout, [
+    'LIVE_EVIDENCE_PUBLIC_WS_ONCE_PENDING_INDEPENDENT_VERIFICATION\n',
+  ]);
+  assert.deepEqual(stderr, []);
+});
+
+test('supervisor uses the fixed spawn and bounded bootstrap/control contracts', async t => {
+  const options = await fixture(t);
+  const childModule = fileURLToPath(
+    new URL('./fixtures/public-ws-once-noisy-child.js', import.meta.url),
+  );
+  const bootstrapChunks = [];
+  let invocation;
+  let request;
+  const child = new EventEmitter();
+  child.connected = true;
+  child.stdio = [null, null, null, null, new PassThrough()];
+  child.stdio[4].on('data', chunk => bootstrapChunks.push(Buffer.from(chunk)));
+  child.stdio[4].once('finish', () => {
+    setImmediate(() => child.emit('message', {
+      ipcVersion: 1,
+      requestId: 1,
+      type: 'READY',
+    }));
+  });
+  child.send = (message, callback) => {
+    request = structuredClone(message);
+    callback?.();
+    setImmediate(() => {
+      child.emit('message', { ipcVersion: 1, requestId: 1, type: 'PENDING' });
+      child.connected = false;
+      child.emit('exit', 0, null);
+      child.emit('close', 0, null);
+    });
+    return true;
+  };
+  child.kill = () => true;
+  const result = await supervisePublicWsOnceChild('run-public-ws-once', options, {
+    childModule,
+    timeoutMs: 1000,
+    forkProcess: (modulePath, args, forkOptions) => {
+      invocation = { modulePath, args, forkOptions };
+      return child;
+    },
+  });
+  assert.deepEqual(result, { status: 'pending-independent-verification' });
+  assert.equal(invocation.modulePath, childModule);
+  assert.deepEqual(invocation.args, []);
+  assert.equal(invocation.forkOptions.cwd, options.workspaceRoot);
+  assert.deepEqual(invocation.forkOptions.stdio, ['ignore', 'ignore', 'ignore', 'ipc', 'pipe']);
+  assert.deepEqual(invocation.forkOptions.env, {});
+  assert.deepEqual(invocation.forkOptions.execArgv, []);
+  assert.deepEqual(JSON.parse(Buffer.concat(bootstrapChunks).toString('utf8')), options);
+  assert.deepEqual(request, { ipcVersion: 1, requestId: 1, type: 'RUN' });
+});
+
+function syntheticSupervisorChild(mode) {
+  const child = new EventEmitter();
+  child.connected = true;
+  child.stdio = [null, null, null, null, new PassThrough()];
+  let closed = false;
+  const close = (code, signal = null) => {
+    if (closed) return;
+    closed = true;
+    child.connected = false;
+    child.emit('exit', code, signal);
+    child.emit('close', code, signal);
+  };
+  child.send = (message, callback) => {
+    callback?.();
+    setImmediate(() => {
+      if (message.type !== 'RUN') return;
+      if (mode === 'malformed') {
+        child.emit('message', {
+          ipcVersion: 1,
+          requestId: 1,
+          type: 'PENDING',
+          unexpected: true,
+        });
+        return;
+      }
+      if (mode === 'stale-request') {
+        child.emit('message', { ipcVersion: 1, requestId: 2, type: 'PENDING' });
+        return;
+      }
+      if (mode === 'disconnect') {
+        child.connected = false;
+        child.emit('disconnect');
+        return;
+      }
+      child.emit('message', { ipcVersion: 1, requestId: 1, type: 'PENDING' });
+      if (mode === 'duplicate') {
+        child.emit('message', { ipcVersion: 1, requestId: 1, type: 'PENDING' });
+        close(0);
+      } else if (mode === 'nonzero') {
+        close(1);
+      } else if (mode === 'signal') {
+        close(null, 'SIGTERM');
+      }
+    });
+    return true;
+  };
+  child.kill = () => {
+    close(null, 'SIGTERM');
+    return true;
+  };
+  child.stdio[4].once('finish', () => {
+    setImmediate(() => child.emit('message', {
+      ipcVersion: 1,
+      requestId: 1,
+      type: 'READY',
+    }));
+  });
+  return child;
+}
+
+test('supervisor rejects malformed, duplicate, stale, disconnected, and unclean children', async t => {
+  const options = await fixture(t);
+  for (const mode of [
+    'duplicate', 'malformed', 'stale-request', 'disconnect', 'nonzero', 'signal',
+  ]) {
+    await assert.rejects(supervisePublicWsOnceChild(
+      'run-public-ws-once',
+      options,
+      {
+        forkProcess: () => syntheticSupervisorChild(mode),
+        childModule: fileURLToPath(
+          new URL('./fixtures/public-ws-once-noisy-child.js', import.meta.url),
+        ),
+        timeoutMs: 1000,
+      },
+    ));
+  }
+});
+
+test('CLI maps supervised child failure to one fixed line', async t => {
+  const options = await fixture(t);
+  const flags = [
+    '--config', options.configPath,
+    '--buyer-rpc', options.buyerRpcPath,
+    '--buyer-wallet', options.buyerWalletPath,
+    '--facilitator-rpc', options.facilitatorRpcPath,
+    '--authorization', options.authorizationPath,
+    '--workspace', options.workspaceRoot,
+    '--run-name', options.runName,
+    '--transport-exception', options.transportException,
+  ];
+  const stdout = [];
+  const stderr = [];
+  assert.equal(await runPublicWsOnceRunnerCli({
+    argv: ['run-public-ws-once', ...flags],
+    stdout: value => { stdout.push(value); },
+    stderr: value => { stderr.push(value); },
+    supervisorInjections: {
+      forkProcess: () => syntheticSupervisorChild('malformed'),
+      childModule: fileURLToPath(
+        new URL('./fixtures/public-ws-once-noisy-child.js', import.meta.url),
+      ),
+      timeoutMs: 1000,
+    },
+  }), false);
+  assert.deepEqual(stdout, []);
+  assert.deepEqual(stderr, ['LIVE_EVIDENCE_PUBLIC_WS_ONCE_FAILED\n']);
+});
+
+test('execution child terminates fail closed when its supervisor disconnects', async t => {
+  const options = await fixture(t);
+  const channel = new EventEmitter();
+  channel.connected = true;
+  const sent = [];
+  channel.send = (message, callback) => {
+    sent.push(message);
+    callback?.();
+    return true;
+  };
+  let exitCode;
+  await runPublicWsOnceExecutionChild({
+    channel,
+    readBootstrap: async () => options,
+    preflight: async () => ({ valid: true }),
+    execute: async () => new Promise(() => {}),
+    forceExit: code => { exitCode = code; },
+  });
+  assert.deepEqual(sent, [{ ipcVersion: 1, requestId: 1, type: 'READY' }]);
+  channel.emit('message', { ipcVersion: 1, requestId: 1, type: 'RUN' });
+  await new Promise(resolve => setImmediate(resolve));
+  channel.connected = false;
+  channel.emit('disconnect');
+  assert.equal(exitCode, 1);
+});
+
+test('execution child rejects malformed, stale, extra, and concurrent control IPC', async t => {
+  const options = await fixture(t);
+  const invalidMessages = [
+    { ipcVersion: 1, requestId: 1, type: 'UNKNOWN' },
+    { ipcVersion: 1, requestId: 2, type: 'RUN' },
+    { ipcVersion: 1, requestId: 1, type: 'RUN', unexpected: true },
+  ];
+  for (const message of invalidMessages) {
+    const channel = new EventEmitter();
+    channel.connected = true;
+    channel.send = (_value, callback) => {
+      callback?.();
+      return true;
+    };
+    let calls = 0;
+    let exitCode;
+    await runPublicWsOnceExecutionChild({
+      channel,
+      readBootstrap: async () => options,
+      preflight: async () => { calls += 1; },
+      execute: async () => { calls += 1; },
+      forceExit: code => { exitCode = code; },
+    });
+    channel.emit('message', message);
+    await new Promise(resolve => setImmediate(resolve));
+    assert.equal(calls, 0);
+    assert.equal(exitCode, 1);
+  }
+
+  const channel = new EventEmitter();
+  channel.connected = true;
+  const sent = [];
+  channel.send = (message, callback) => {
+    sent.push(structuredClone(message));
+    callback?.();
+    return true;
+  };
+  let calls = 0;
+  let exitCode;
+  await runPublicWsOnceExecutionChild({
+    channel,
+    readBootstrap: async () => options,
+    preflight: async () => ({ valid: true }),
+    execute: async () => {
+      calls += 1;
+      channel.emit('message', { ipcVersion: 1, requestId: 1, type: 'RUN' });
+      return { status: 'pending-independent-verification', evidenceEligible: false };
+    },
+    forceExit: code => { exitCode = code; },
+  });
+  channel.emit('message', { ipcVersion: 1, requestId: 1, type: 'RUN' });
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(calls, 1);
+  assert.equal(exitCode, 1);
+  assert.deepEqual(sent, [{ ipcVersion: 1, requestId: 1, type: 'READY' }]);
 });
