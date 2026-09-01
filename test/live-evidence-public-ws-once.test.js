@@ -22,11 +22,12 @@ import { PassThrough } from 'node:stream';
 import { fileURLToPath } from 'node:url';
 import * as sdk from 'znn-typescript-sdk';
 
-import { paymentIntentDigest } from '../src/canonical.js';
+import { canonicalJson, paymentIntentDigest, sha256Hex } from '../src/canonical.js';
 import { runPublicWsOnceRunnerCli } from '../src/live-evidence-public-ws-once-cli.js';
 import { runPublicWsOnceExecutionChild } from '../src/live-evidence-public-ws-once-run-child.js';
 import { supervisePublicWsOnceChild } from '../src/live-evidence-public-ws-once-supervisor.js';
 import {
+  assertLiveEvidenceFacilitatorController,
   runLiveEvidenceFacilitatorWorker,
   startLiveEvidenceFacilitatorWorker,
 } from '../src/live-evidence-facilitator-worker.js';
@@ -39,6 +40,7 @@ import {
   parsePublicWsOnceRunConfig,
   persistPublicWsOnceConsumedMarker,
   preflightPublicWsOnceRun,
+  publicWsOnceConfigDigest,
   PUBLIC_WS_ONCE_POLICY,
 } from '../src/live-evidence-runner.js';
 import {
@@ -160,6 +162,7 @@ function authorization(configuration, endpoint = ENDPOINT, changes = {}) {
     runName: 'single-public-ws-run',
     sourceRevision: configuration.sourceRevision,
     profileName: configuration.profileName,
+    configDigest: publicWsOnceConfigDigest(configuration),
     paymentIntentDigest: paymentIntentDigest(
       configuration.expectedPaymentRequired,
       configuration.expectedPaymentRequired.accepts[0],
@@ -385,6 +388,7 @@ async function createRetainedProductionState(runDirectory, record) {
 function successfulPublicWsExecution(options, candidate, afterState = async () => {}) {
   let journal;
   const controller = {
+    async preload() {},
     async start() {},
     async snapshotObservations() {
       return { evidenceEligible: true, events: observations('facilitator') };
@@ -396,6 +400,7 @@ function successfulPublicWsExecution(options, candidate, afterState = async () =
     async terminate() {},
   };
   return {
+    sourceTreeAttestor: async () => true,
     operations: {
       async probeBuyerReadiness() {},
       async startFacilitator() {
@@ -539,7 +544,7 @@ test('public WS parser is a closed v2 numeric-public-IP lane and generic roles r
   ));
 });
 
-test('config and authorization require exact current profile, zero recovery, and exact acknowledgements', () => {
+test('config and authorization require exact profile, digest, recovery, and acknowledgements', () => {
   const valid = config();
   assert.deepEqual(parsePublicWsOnceRunConfig(`${JSON.stringify(valid)}\n`), valid);
   for (const mutate of [
@@ -563,12 +568,37 @@ test('config and authorization require exact current profile, zero recovery, and
     value => { value.acknowledgements.payment = 'wrong'; },
     value => { value.acknowledgements.publication = 'wrong'; },
     value => { value.profileName = OPERATOR_TRUSTED_PUBLIC_TESTNET_PROFILE_NAME; },
+    value => { value.configDigest = '0'.repeat(63); },
+    value => { value.configDigest = 'A'.repeat(64); },
     value => { value.paymentIntentDigest = '0'.repeat(63); },
     value => { value.extra = true; },
   ]) {
     const candidate = structuredClone(approved);
     mutate(candidate);
     assert.throws(() => parsePublicWsOnceAuthorization(`${JSON.stringify(candidate)}\n`));
+  }
+});
+
+test('authorization config digest changes across every mutable config subtree', () => {
+  const baseline = config();
+  const baselineDigest = publicWsOnceConfigDigest(baseline);
+  const parsed = parsePublicWsOnceRunConfig(`${JSON.stringify(baseline)}\n`);
+  assert.equal(
+    baselineDigest,
+    sha256Hex(`zenon-x402-public-ws-once-config-v1\n${canonicalJson(parsed)}`),
+  );
+  const mutations = [
+    value => { value.sourceRevision = 'c'.repeat(40); },
+    value => { value.expectedPaymentRequired.resource.description = 'different'; },
+    value => { value.expectedPaymentRequired.accepts[0].amount = '2'; },
+    value => { value.runtime.listenPort += 1; },
+    value => { value.runtime.rpcTimeoutMs += 1; },
+    value => { value.runtime.maxRecoveryElapsedMs += 1; },
+  ];
+  for (const mutate of mutations) {
+    const candidate = structuredClone(baseline);
+    mutate(candidate);
+    assert.notEqual(publicWsOnceConfigDigest(candidate), baselineDigest);
   }
 });
 
@@ -592,6 +622,36 @@ test('preflight validates five distinct protected files without reading wallet c
   await assert.rejects(preflightPublicWsOnceRun(wrongIntentFixture), fixedFailure);
 });
 
+test('preflight rejects valid config mutations against one frozen authorization', async t => {
+  const baseline = config();
+  const approved = authorization(baseline);
+  const mutations = [
+    ['runner version', value => { value.runnerVersion = 2; }],
+    ['revision', value => { value.sourceRevision = 'c'.repeat(40); }],
+    ['profile', value => { value.profileName = OPERATOR_TRUSTED_PUBLIC_TESTNET_PROFILE_NAME; }],
+    ['live acknowledgement', value => { value.acknowledgements.live = 'different'; }],
+    ['trust acknowledgement', value => { value.acknowledgements.operatorTrust = 'different'; }],
+    ['requirement', value => { value.expectedPaymentRequired.accepts[0].amount = '2'; }],
+    ['resource', value => { value.expectedPaymentRequired.resource.description = 'different'; }],
+    ['listen port', value => { value.runtime.listenPort += 1; }],
+    ['RPC timeout', value => { value.runtime.rpcTimeoutMs += 1; }],
+    ['recovery attempts', value => { value.runtime.maxRecoveryAttempts = 1; }],
+    ['recovery delay', value => { value.runtime.recoveryDelayMs = 1; }],
+    ['recovery elapsed bound', value => { value.runtime.maxRecoveryElapsedMs += 1; }],
+  ];
+  for (const [name, mutate] of mutations) {
+    await t.test(name, async subtest => {
+      const candidate = structuredClone(baseline);
+      mutate(candidate);
+      const options = await fixture(subtest, {
+        config: candidate,
+        authorization: approved,
+      });
+      await assert.rejects(preflightPublicWsOnceRun(options), fixedFailure);
+    });
+  }
+});
+
 test('preflight rejects mode, hardlink, and protected-file alias failures', async t => {
   const modeFixture = await fixture(t);
   await chmod(modeFixture.authorizationPath, 0o644);
@@ -605,6 +665,155 @@ test('preflight rejects mode, hardlink, and protected-file alias failures', asyn
   const aliasFixture = await fixture(t);
   aliasFixture.authorizationPath = aliasFixture.buyerRpcPath;
   await assert.rejects(preflightPublicWsOnceRun(aliasFixture), fixedFailure);
+});
+
+test('source drift at the first check prevents module loading, consumption, and effects', async t => {
+  const options = await fixture(t);
+  let checks = 0;
+  let moduleLoads = 0;
+  let effects = 0;
+  await assert.rejects(executePublicWsOnceRun(options, {
+    sourceTreeAttestor: async () => {
+      checks += 1;
+      throw new Error('private first-check drift detail');
+    },
+    repositoryModuleLoader: async () => {
+      moduleLoads += 1;
+      return {
+        assertLiveEvidenceFacilitatorController,
+        startLiveEvidenceFacilitatorWorker,
+      };
+    },
+    operations: {
+      async probeBuyerReadiness() { effects += 1; },
+      async probePublicEndpoint() { effects += 1; },
+      async startFacilitator() { effects += 1; },
+      async readBuyerWallet() { effects += 1; },
+      async paidFetch() { effects += 1; },
+    },
+  }), fixedFailure);
+  assert.equal(checks, 1);
+  assert.equal(moduleLoads, 0);
+  assert.equal(effects, 0);
+  await assert.rejects(
+    lstat(join(options.workspaceRoot, 'PUBLIC_WS_ONCE_CONSUMED')),
+    error => error?.code === 'ENOENT',
+  );
+});
+
+test('source drift after the last parent module load fails before consumption or effects', async t => {
+  const options = await fixture(t);
+  let checks = 0;
+  let moduleLoads = 0;
+  let effects = 0;
+  await assert.rejects(executePublicWsOnceRun(options, {
+    sourceTreeAttestor: async () => {
+      checks += 1;
+      if (checks === 2) throw new Error('private Git drift detail');
+      return true;
+    },
+    repositoryModuleLoader: async () => {
+      moduleLoads += 1;
+      return {
+        assertLiveEvidenceFacilitatorController,
+        startLiveEvidenceFacilitatorWorker,
+      };
+    },
+    operations: {
+      async probeBuyerReadiness() { effects += 1; },
+      async probePublicEndpoint() { effects += 1; },
+      async startFacilitator() { effects += 1; },
+      async readBuyerWallet() { effects += 1; },
+      async paidFetch() { effects += 1; },
+    },
+  }), fixedFailure);
+  assert.equal(checks, 2);
+  assert.equal(moduleLoads, 1);
+  assert.equal(effects, 0);
+  await assert.rejects(
+    lstat(join(options.workspaceRoot, 'PUBLIC_WS_ONCE_CONSUMED')),
+    error => error?.code === 'ENOENT',
+  );
+  await assert.rejects(
+    lstat(join(options.workspaceRoot, options.runName)),
+    error => error?.code === 'ENOENT',
+  );
+});
+
+test('source drift at the third check reaps the preloaded child before RPC effects', async t => {
+  const options = await fixture(t);
+  let checks = 0;
+  let workerCreates = 0;
+  let preloads = 0;
+  let starts = 0;
+  let effects = 0;
+  let terminations = 0;
+  const controller = {
+    async preload() { preloads += 1; },
+    async start() { starts += 1; },
+    async snapshotObservations() { effects += 1; },
+    async closeAndSnapshot() { effects += 1; },
+    async terminate() { terminations += 1; },
+  };
+  await assert.rejects(executePublicWsOnceRun(options, {
+    sourceTreeAttestor: async () => {
+      checks += 1;
+      if (checks === 3) throw new Error('private final-check drift detail');
+      return true;
+    },
+    operations: {
+      async probeBuyerReadiness() { effects += 1; },
+      async probePublicEndpoint() { effects += 1; },
+      async startFacilitator() {
+        workerCreates += 1;
+        return controller;
+      },
+      async readBuyerWallet() { effects += 1; },
+      async paidFetch() { effects += 1; },
+    },
+  }), fixedFailure);
+  assert.equal(checks, 3);
+  assert.equal(workerCreates, 1);
+  assert.equal(preloads, 1);
+  assert.equal(starts, 0);
+  assert.equal(effects, 0);
+  assert.equal(terminations, 1);
+  assert.equal((await lstat(join(options.workspaceRoot, 'PUBLIC_WS_ONCE_CONSUMED'))).isFile(), true);
+  assert.equal((await lstat(join(options.workspaceRoot, options.runName))).isDirectory(), true);
+});
+
+test('preload failure reaps the idle child and retains the consumed attempt', async t => {
+  const options = await fixture(t);
+  let checks = 0;
+  let starts = 0;
+  let effects = 0;
+  let terminations = 0;
+  const controller = {
+    async preload() { throw new Error('private preload failure detail'); },
+    async start() { starts += 1; },
+    async snapshotObservations() { effects += 1; },
+    async closeAndSnapshot() { effects += 1; },
+    async terminate() { terminations += 1; },
+  };
+  await assert.rejects(executePublicWsOnceRun(options, {
+    sourceTreeAttestor: async () => {
+      checks += 1;
+      return true;
+    },
+    operations: {
+      async probeBuyerReadiness() { effects += 1; },
+      async probePublicEndpoint() { effects += 1; },
+      async startFacilitator() { return controller; },
+      async readBuyerWallet() { effects += 1; },
+      async paidFetch() { effects += 1; },
+    },
+  }), fixedFailure);
+  assert.equal(checks, 2);
+  assert.equal(starts, 0);
+  assert.equal(effects, 0);
+  assert.equal(terminations, 1);
+  assert.equal((await lstat(join(options.workspaceRoot, 'PUBLIC_WS_ONCE_CONSUMED'))).isFile(), true);
+  assert.equal((await lstat(join(options.workspaceRoot, options.runName))).isDirectory(), true);
 });
 
 test('fixed workspace marker is exclusive, durable, and one-attempt within an unchanged workspace', async t => {
@@ -637,6 +846,7 @@ test('workspace rename and replacement fail closed before every later effect bou
       const original = `${options.workspaceRoot}-original`;
       let replaced = false;
       await assert.rejects(executePublicWsOnceRun(options, {
+        sourceTreeAttestor: async () => true,
         operations: {},
         workspaceBoundaryObserver: async observedPhase => {
           if (observedPhase !== phase || replaced) return;
@@ -657,16 +867,24 @@ test('run-directory rename and replacement fails closed before RPC or wallet eff
   let replaced = false;
   const runDirectory = join(options.workspaceRoot, options.runName);
   const moved = join(options.workspaceRoot, `${options.runName}-original`);
+  const controller = {
+    async preload() {},
+    async start() { effects += 1; },
+    async snapshotObservations() { effects += 1; },
+    async closeAndSnapshot() { effects += 1; },
+    async terminate() {},
+  };
   await assert.rejects(executePublicWsOnceRun(options, {
+    sourceTreeAttestor: async () => true,
     operations: {
       async probeBuyerReadiness() { effects += 1; },
       async probePublicEndpoint() { effects += 1; },
-      async startFacilitator() { effects += 1; },
+      async startFacilitator() { return controller; },
       async readBuyerWallet() { effects += 1; },
       async paidFetch() { effects += 1; },
     },
     workspaceBoundaryObserver: async phase => {
-      if (phase !== 'before-buyer-readiness' || replaced) return;
+      if (phase !== 'before-final-source-attestation' || replaced) return;
       replaced = true;
       await rename(runDirectory, moved);
       await mkdir(runDirectory, { mode: 0o700 });
@@ -738,8 +956,10 @@ test('workspace-scoped execution consumes before effects and retains exact priva
   const candidate = await validOutcome(configuration);
   const outcome = candidate.outcome;
   const effectOrder = [];
+  let sourceChecks = 0;
   let journal;
   const controller = {
+    async preload() { effectOrder.push('worker-preload'); },
     async start() { effectOrder.push('worker-start'); },
     async snapshotObservations() {
       return { evidenceEligible: true, events: observations('facilitator') };
@@ -783,6 +1003,18 @@ test('workspace-scoped execution consumes before effects and retains exact priva
     },
   };
   const result = await executePublicWsOnceRun(options, {
+    sourceTreeAttestor: async () => {
+      sourceChecks += 1;
+      effectOrder.push(`source-check-${sourceChecks}`);
+      return true;
+    },
+    repositoryModuleLoader: async () => {
+      effectOrder.push('parent-module-load');
+      return {
+        assertLiveEvidenceFacilitatorController,
+        startLiveEvidenceFacilitatorWorker,
+      };
+    },
     operations,
     lifecycleObserver: fixedObserver(),
   });
@@ -790,7 +1022,10 @@ test('workspace-scoped execution consumes before effects and retains exact priva
     status: 'pending-independent-verification',
     evidenceEligible: false,
   });
-  assert.equal(effectOrder[0], 'buyer-readiness');
+  assert.deepEqual(effectOrder.slice(0, 8), [
+    'source-check-1', 'parent-module-load', 'source-check-2', 'worker-create',
+    'worker-preload', 'source-check-3', 'buyer-readiness', 'worker-start',
+  ]);
   const runDirectory = join(options.workspaceRoot, options.runName);
   assert.deepEqual((await readdir(options.workspaceRoot)).sort(), [
     basename(options.authorizationPath),
@@ -913,6 +1148,7 @@ test('successful validation rejects unexpected retained-tree entries and produce
   const candidate = await validOutcome(configuration);
   let journal;
   const controller = {
+    async preload() {},
     async start() {},
     async snapshotObservations() {
       return { evidenceEligible: true, events: observations('facilitator') };
@@ -924,6 +1160,7 @@ test('successful validation rejects unexpected retained-tree entries and produce
     async terminate() {},
   };
   await assert.rejects(executePublicWsOnceRun(options, {
+    sourceTreeAttestor: async () => true,
     operations: {
       async probeBuyerReadiness() {},
       async startFacilitator() {
@@ -987,6 +1224,7 @@ test('pending state cross-binding rejects every mismatched payment or delivery r
       const candidate = await validOutcome(configuration);
       mutate(candidate);
       const controller = {
+        async preload() {},
         async start() {},
         async snapshotObservations() {
           return { evidenceEligible: true, events: observations('facilitator') };
@@ -1018,6 +1256,7 @@ test('pending state cross-binding rejects every mismatched payment or delivery r
         },
       };
       await assert.rejects(executePublicWsOnceRun(options, {
+        sourceTreeAttestor: async () => true,
         operations,
         lifecycleObserver: fixedObserver(),
       }), fixedFailure);
@@ -1041,6 +1280,7 @@ test('unknown outcome hard-stops without recovery, replacement, or cleanup', asy
   let reconciliations = 0;
   let starts = 0;
   const controller = {
+    async preload() {},
     async start() { starts += 1; },
     async snapshotObservations() { return { evidenceEligible: false, events: [] }; },
     async closeAndSnapshot() { throw new Error('must not close as success'); },
@@ -1061,6 +1301,7 @@ test('unknown outcome hard-stops without recovery, replacement, or cleanup', asy
     async reconcilePayment() { reconciliations += 1; },
   };
   await assert.rejects(executePublicWsOnceRun(options, {
+    sourceTreeAttestor: async () => true,
     operations,
     lifecycleObserver: fixedObserver(),
   }), fixedFailure);
@@ -1072,13 +1313,21 @@ test('unknown outcome hard-stops without recovery, replacement, or cleanup', asy
 
 test('worker protocol uses an exact internal public-WS mode and rejects confusion', async () => {
   let startMessage;
+  let preloadMessage;
   const child = new EventEmitter();
   child.connected = true;
   child.stdout = new PassThrough();
   child.stderr = new PassThrough();
   child.send = (message, callback) => {
     callback?.();
-    if (message.type === 'START_PUBLIC_WS_ONCE') {
+    if (message.type === 'PRELOAD') {
+      preloadMessage = structuredClone(message);
+      setImmediate(() => child.emit('message', {
+        ipcVersion: 1,
+        requestId: message.requestId,
+        type: 'PRELOADED',
+      }));
+    } else if (message.type === 'START_PUBLIC_WS_ONCE') {
       startMessage = structuredClone(message);
       setImmediate(() => child.emit('message', {
         ipcVersion: 1,
@@ -1115,6 +1364,9 @@ test('worker protocol uses an exact internal public-WS mode and rejects confusio
     runDirectoryIdentity: SYNTHETIC_DIRECTORY_IDENTITY,
     forkProcess: () => child,
   });
+  await controller.preload();
+  assert.deepEqual(preloadMessage, { ipcVersion: 1, requestId: 1, type: 'PRELOAD' });
+  assert.equal(startMessage, undefined);
   await controller.start();
   assert.equal(startMessage.type, 'START_PUBLIC_WS_ONCE');
   assert.equal(startMessage.executionMode, PUBLIC_WS_ONCE_POLICY.executionMode);
@@ -1132,15 +1384,31 @@ test('worker protocol uses an exact internal public-WS mode and rejects confusio
     return true;
   };
   channel.disconnect = () => { channel.connected = false; };
+  let startCalls = 0;
   await runLiveEvidenceFacilitatorWorker({
     channel,
-    start: async () => { throw new Error('must not start'); },
+    start: async () => {
+      startCalls += 1;
+      throw new Error('must not start');
+    },
     shutdownTimeoutMs: 1000,
     forceExit: () => {},
   });
   channel.emit('message', {
     ipcVersion: 1,
     requestId: 1,
+    type: 'PRELOAD',
+  });
+  await new Promise(resolve => setImmediate(resolve));
+  assert.deepEqual(replies, [{
+    ipcVersion: 1,
+    requestId: 1,
+    type: 'PRELOADED',
+  }]);
+  assert.equal(startCalls, 0);
+  channel.emit('message', {
+    ipcVersion: 1,
+    requestId: 2,
     type: 'START_PUBLIC_WS_ONCE',
     config: config(),
     facilitatorRpcGeneration: SYNTHETIC_GENERATION,
@@ -1152,12 +1420,77 @@ test('worker protocol uses an exact internal public-WS mode and rejects confusio
     runDirectoryIdentity: SYNTHETIC_DIRECTORY_IDENTITY,
   });
   await new Promise(resolve => setImmediate(resolve));
-  assert.deepEqual(replies, [{
+  assert.deepEqual(replies.slice(1), [{
     ipcVersion: 1,
-    requestId: 1,
+    requestId: 2,
     type: 'FAILED',
     code: 'live_evidence_worker_failed',
   }]);
+  assert.equal(startCalls, 0);
+});
+
+test('public preload is mandatory, single-use, and cannot enter ordinary WSS start', async t => {
+  const publicStart = requestId => ({
+    ipcVersion: 1,
+    requestId,
+    type: 'START_PUBLIC_WS_ONCE',
+    config: config(),
+    facilitatorRpcGeneration: SYNTHETIC_GENERATION,
+    workspaceRoot: 'protected',
+    journalDirectory: 'protected/journal',
+    recovery: false,
+    executionMode: PUBLIC_WS_ONCE_POLICY.executionMode,
+    workspaceIdentity: SYNTHETIC_DIRECTORY_IDENTITY,
+    runDirectoryIdentity: SYNTHETIC_DIRECTORY_IDENTITY,
+  });
+  const ordinaryStart = requestId => ({
+    ipcVersion: 1,
+    requestId,
+    type: 'START',
+    config: config(),
+    facilitatorRpcGeneration: SYNTHETIC_GENERATION,
+    workspaceRoot: 'protected',
+    journalDirectory: 'protected/journal',
+    recovery: false,
+  });
+  const cases = [
+    ['missing preload', [publicStart(1)]],
+    ['ordinary start after preload', [
+      { ipcVersion: 1, requestId: 1, type: 'PRELOAD' },
+      ordinaryStart(2),
+    ]],
+    ['duplicate preload', [
+      { ipcVersion: 1, requestId: 1, type: 'PRELOAD' },
+      { ipcVersion: 1, requestId: 2, type: 'PRELOAD' },
+    ]],
+  ];
+  for (const [name, messages] of cases) {
+    await t.test(name, async () => {
+      const replies = [];
+      let starts = 0;
+      const channel = new EventEmitter();
+      channel.connected = true;
+      channel.send = (message, callback) => {
+        replies.push(message);
+        callback?.();
+        return true;
+      };
+      channel.disconnect = () => { channel.connected = false; };
+      await runLiveEvidenceFacilitatorWorker({
+        channel,
+        start: async () => { starts += 1; },
+        shutdownTimeoutMs: 1000,
+        forceExit: () => {},
+      });
+      for (const message of messages) {
+        channel.emit('message', message);
+        await new Promise(resolve => setImmediate(resolve));
+      }
+      assert.equal(starts, 0);
+      assert.equal(replies.at(-1).type, 'FAILED');
+      assert.equal(replies.at(-1).code, 'live_evidence_worker_failed');
+    });
+  }
 });
 
 test('manual independent-verification gate rejects unavailable, same-route, and mismatch records', () => {
@@ -1240,6 +1573,32 @@ test('dedicated CLI has exact commands and fixed endpoint-free output', async ()
     stdout: value => { stdout.push(value); },
     stderr: value => { stderr.push(value); },
   }), false);
+  assert.deepEqual(stdout, []);
+  assert.deepEqual(stderr, ['LIVE_EVIDENCE_PUBLIC_WS_ONCE_FAILED\n']);
+});
+
+test('source freshness failure cannot escape the fixed CLI output contract', async () => {
+  const stdout = [];
+  const stderr = [];
+  const ok = await runPublicWsOnceRunnerCli({
+    argv: [
+      'run-public-ws-once',
+      '--config', 'config.json',
+      '--buyer-rpc', 'buyer-rpc.json',
+      '--buyer-wallet', 'buyer-wallet.json',
+      '--facilitator-rpc', 'facilitator-rpc.json',
+      '--authorization', 'authorization.json',
+      '--workspace', 'workspace',
+      '--run-name', 'single-public-ws-run',
+      '--transport-exception', PUBLIC_WS_ONCE_POLICY.transportException,
+    ],
+    stdout: value => { stdout.push(value); },
+    stderr: value => { stderr.push(value); },
+    supervise: async () => {
+      throw new Error('revision path identity environment endpoint hash secret');
+    },
+  });
+  assert.equal(ok, false);
   assert.deepEqual(stdout, []);
   assert.deepEqual(stderr, ['LIVE_EVIDENCE_PUBLIC_WS_ONCE_FAILED\n']);
 });
