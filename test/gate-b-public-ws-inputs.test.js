@@ -16,7 +16,7 @@ import {
   unlink,
   writeFile,
 } from 'node:fs/promises';
-import { spawnSync } from 'node:child_process';
+import { spawn } from 'node:child_process';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { PassThrough } from 'node:stream';
@@ -524,26 +524,88 @@ test('CLI emits exactly one applicable fixed line and one fixed failure line', a
   assert.equal(stderr.join('').includes(ENDPOINT), false);
 });
 
-test('direct CLI invocation with no private/bootstrap frame on an open immediate-EOF-producing FD3 fails with only the fixed line', async () => {
+test('direct CLI invocation with no private/bootstrap frame on an open immediate-EOF-producing FD3 fails with only the fixed line', {
+  timeout: 10_000,
+}, async () => {
   const cli = fileURLToPath(new URL('../src/gate-b-public-ws-inputs-cli.js', import.meta.url));
-  const fd3 = await open('/dev/null', 'r');
-  let result;
+  const outputLimit = 4096;
+  const stdoutChunks = [];
+  const stderrChunks = [];
+  let capturedBytes = 0;
+  let outputOverflow = false;
+  let outputError = false;
+  let spawnError = false;
+  let fd3Error = false;
+  let timedOut = false;
+  let child;
   try {
-    result = spawnSync(process.execPath, [cli, 'PREPARE'], {
+    child = spawn(process.execPath, [cli, 'PREPARE'], {
       cwd: fileURLToPath(new URL('../', import.meta.url)),
       env: {},
-      encoding: 'utf8',
-      stdio: ['ignore', 'pipe', 'pipe', fd3.fd],
-      timeout: 5000,
+      shell: false,
+      stdio: ['ignore', 'pipe', 'pipe', 'pipe'],
     });
-  } finally {
-    await fd3.close();
+  } catch {
+    spawnError = true;
   }
-  assert.equal(result.error, undefined);
+  assert.equal(spawnError, false);
+
+  const capture = chunks => chunk => {
+    const buffer = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
+    const remaining = outputLimit - capturedBytes;
+    if (buffer.length > remaining) {
+      outputOverflow = true;
+      if (remaining > 0) chunks.push(buffer.subarray(0, remaining));
+      capturedBytes = outputLimit;
+      return;
+    }
+    chunks.push(buffer);
+    capturedBytes += buffer.length;
+  };
+  child.stdout.on('data', capture(stdoutChunks));
+  child.stderr.on('data', capture(stderrChunks));
+  child.stdout.on('error', () => { outputError = true; });
+  child.stderr.on('error', () => { outputError = true; });
+  child.on('error', () => { spawnError = true; });
+  child.stdio[3].on('error', () => { fd3Error = true; });
+
+  const closed = new Promise(resolve => {
+    child.once('close', (code, signal) => resolve({ code, signal }));
+  });
+  let killTimer;
+  const termTimer = setTimeout(() => {
+    timedOut = true;
+    child.kill('SIGTERM');
+    killTimer = setTimeout(() => {
+      child.kill('SIGKILL');
+    }, 250);
+  }, 5000);
+
+  try {
+    child.stdio[3].end();
+  } catch {
+    fd3Error = true;
+  }
+  let result;
+  try {
+    result = await closed;
+  } finally {
+    clearTimeout(termTimer);
+    if (killTimer !== undefined) clearTimeout(killTimer);
+  }
+
+  assert.equal(timedOut, false);
+  assert.equal(spawnError, false);
+  assert.equal(fd3Error, false);
+  assert.equal(outputError, false);
+  assert.equal(outputOverflow, false);
+  assert.equal(result.code, 1);
   assert.equal(result.signal, null);
-  assert.equal(result.status, 1);
-  assert.equal(result.stdout, '');
-  assert.equal(result.stderr, GATE_B_PUBLIC_WS_INPUT_STATUS_LINES.FAILURE);
+  assert.equal(Buffer.concat(stdoutChunks).toString('utf8'), '');
+  assert.equal(
+    Buffer.concat(stderrChunks).toString('utf8'),
+    GATE_B_PUBLIC_WS_INPUT_STATUS_LINES.FAILURE,
+  );
 });
 
 test('supervisor forwards the exact frame on FD4 and IPC contains enums only', async t => {
@@ -1356,11 +1418,27 @@ test('generated five-file set reaches existing preflight without reading wallet 
     authorizeBootstrap(context.root, digest), operationInjections(context.root),
   );
   const walletPath = join(context.root, GATE_B_PUBLIC_WS_INPUT_LEAVES.buyerWallet);
-  const beforeWallet = await lstat(walletPath, { bigint: true });
-  await unlink(walletPath);
-  await writeFile(walletPath,
-    'not-read-during-preflight\n', { mode: 0o600 });
+  const replacementWalletPath = join(
+    context.root, `${GATE_B_PUBLIC_WS_INPUT_LEAVES.buyerWallet}.replacement`,
+  );
+  await writeFile(replacementWalletPath,
+    'not-read-during-preflight\n', { flag: 'wx', mode: 0o600 });
+  await chmod(replacementWalletPath, 0o600);
+  const [beforeWallet, replacementWallet] = await Promise.all([
+    lstat(walletPath, { bigint: true }),
+    lstat(replacementWalletPath, { bigint: true }),
+  ]);
+  assert.equal(replacementWallet.mode & 0o777n, 0o600n);
+  assert.equal(
+    beforeWallet.dev === replacementWallet.dev && beforeWallet.ino === replacementWallet.ino,
+    false,
+  );
+  await rename(replacementWalletPath, walletPath);
   const afterWallet = await lstat(walletPath, { bigint: true });
+  assert.equal(
+    afterWallet.dev === replacementWallet.dev && afterWallet.ino === replacementWallet.ino,
+    true,
+  );
   assert.equal(beforeWallet.dev === afterWallet.dev && beforeWallet.ino === afterWallet.ino, false);
   const result = await preflightPublicWsOnceRun({
     configPath: join(context.root, GATE_B_PUBLIC_WS_INPUT_LEAVES.runConfig),
