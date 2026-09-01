@@ -129,25 +129,78 @@ function destroyBootstrap(child) {
   } catch {}
 }
 
+function removeOwnedListener(emitter, event, listener) {
+  try {
+    if (emitter && typeof emitter.removeListener === 'function') {
+      emitter.removeListener(event, listener);
+    }
+  } catch {}
+}
+
+function releaseAbandonedChildHandles(child) {
+  let channel;
+  let disconnected = false;
+  try { channel = child?.channel; } catch {}
+  try {
+    if (child?.connected === true && typeof child.disconnect === 'function') {
+      child.disconnect();
+      disconnected = true;
+    }
+  } catch {}
+  if (!disconnected) {
+    try {
+      if (channel && typeof channel.close === 'function') channel.close();
+    } catch {}
+  }
+  try {
+    if (channel && typeof channel.unref === 'function') channel.unref();
+  } catch {}
+  try {
+    if (typeof child?.unref === 'function') child.unref();
+  } catch {}
+}
+
 async function reap(child, alreadyClosed) {
-  if (alreadyClosed || !child || typeof child.once !== 'function' ||
-      typeof child.kill !== 'function') return;
+  if (alreadyClosed || !child) return;
+  if (typeof child.on !== 'function' || typeof child.once !== 'function' ||
+      typeof child.kill !== 'function') {
+    releaseAbandonedChildHandles(child);
+    return;
+  }
   await new Promise(resolveReap => {
     let finished = false;
+    let closeListenerAttached = false;
+    let errorListenerAttached = false;
     let forceTimer;
     let abandonTimer;
-    const done = () => {
+    const onClose = () => done(false);
+    const onError = () => {};
+    const done = abandoned => {
       if (finished) return;
       finished = true;
       clearTimeout(forceTimer);
       clearTimeout(abandonTimer);
+      forceTimer = undefined;
+      abandonTimer = undefined;
+      if (abandoned) releaseAbandonedChildHandles(child);
+      if (closeListenerAttached) removeOwnedListener(child, 'close', onClose);
+      if (errorListenerAttached) removeOwnedListener(child, 'error', onError);
       resolveReap();
     };
-    try { child.once('close', done); } catch { return done(); }
+    try {
+      errorListenerAttached = true;
+      child.on('error', onError);
+      closeListenerAttached = true;
+      child.once('close', onClose);
+    } catch {
+      done(true);
+      return;
+    }
+    if (finished) return;
     forceTimer = setTimeout(() => {
       try { child.kill('SIGKILL'); } catch {}
     }, REAP_FORCE_MS);
-    abandonTimer = setTimeout(done, REAP_ABANDON_MS);
+    abandonTimer = setTimeout(() => done(true), REAP_ABANDON_MS);
     try { child.kill('SIGTERM'); } catch {}
   });
 }
@@ -156,6 +209,7 @@ export async function superviseGateBBuyerWalletChild(workspaceRoot, injected) {
   let child;
   let childClosed = false;
   let bootstrapBytes;
+  let clearTerminalListeners = () => {};
   try {
     const dependencies = captureInjections(injected);
     const snapshot = snapshotWorkspaceRoot(workspaceRoot, dependencies);
@@ -178,37 +232,43 @@ export async function superviseGateBBuyerWalletChild(workspaceRoot, injected) {
     const terminal = await new Promise((resolveTerminal, rejectTerminal) => {
       let phase = 'ready';
       let closeSeen = false;
+      let acceptingEvents = true;
       let settled = false;
       let terminalType;
-      const finish = success => {
-        if (settled) return;
-        settled = true;
-        clearTimeout(timer);
-        if (success) resolveTerminal(terminalType);
-        else rejectTerminal(new GateBBuyerWalletSupervisorError());
+      let timer;
+      const onError = () => {
+        if (acceptingEvents) finish(false);
       };
-      const timer = setTimeout(() => finish(false), dependencies.timeoutMs);
-      child.on('error', () => finish(false));
-      child.on('disconnect', () => {
-        if (phase !== 'close') finish(false);
-      });
-      child.on('message', message => {
+      const onDisconnect = () => {
+        if (acceptingEvents && phase !== 'close') finish(false);
+      };
+      const onMessage = message => {
+        if (!acceptingEvents) return;
         try {
           if (phase === 'ready') {
             exactMessage(message, 'READY');
+            if (!acceptingEvents) return;
             phase = 'terminal';
-            const accepted = child.send({
-              ipcVersion: IPC_VERSION,
-              requestId: REQUEST_ID,
-              type: 'CREATE',
-            }, error => {
-              if (error) finish(false);
-            });
+            const sendMessage = child.send;
+            if (typeof sendMessage !== 'function') return finish(false);
+            if (!acceptingEvents) return;
+            const accepted = Reflect.apply(sendMessage, child, [
+              {
+                ipcVersion: IPC_VERSION,
+                requestId: REQUEST_ID,
+                type: 'CREATE',
+              },
+              error => {
+                if (acceptingEvents && error) finish(false);
+              },
+            ]);
+            if (!acceptingEvents) return;
             if (accepted === false && child.connected === false) finish(false);
             return;
           }
           if (phase === 'terminal') {
             exactMessage(message, 'CREATED');
+            if (!acceptingEvents) return;
             terminalType = message.type;
             phase = 'close';
             return;
@@ -217,31 +277,67 @@ export async function superviseGateBBuyerWalletChild(workspaceRoot, injected) {
         } catch {
           finish(false);
         }
-      });
-      child.on('exit', (code, signal) => {
+      };
+      const onExit = (code, signal) => {
+        if (!acceptingEvents) return;
         if (code !== 0 || signal !== null || phase !== 'close') finish(false);
-      });
-      child.on('close', (code, signal) => {
+      };
+      const onClose = (code, signal) => {
+        if (!acceptingEvents) return;
         childClosed = true;
         if (closeSeen) return finish(false);
         closeSeen = true;
         if (phase !== 'close' || terminalType !== 'CREATED' ||
             code !== 0 || signal !== null) return finish(false);
         finish(true);
-      });
-      bootstrap.once('error', () => finish(false));
-      bootstrap.end(bootstrapBytes, error => {
-        bootstrapBytes.fill(0);
-        bootstrapBytes = undefined;
-        if (error) finish(false);
-      });
+      };
+      const onBootstrapError = () => {
+        if (acceptingEvents) finish(false);
+      };
+      clearTerminalListeners = () => {
+        removeOwnedListener(child, 'error', onError);
+        removeOwnedListener(child, 'disconnect', onDisconnect);
+        removeOwnedListener(child, 'message', onMessage);
+        removeOwnedListener(child, 'exit', onExit);
+        removeOwnedListener(child, 'close', onClose);
+        removeOwnedListener(bootstrap, 'error', onBootstrapError);
+      };
+      const finish = success => {
+        if (settled || !acceptingEvents) return;
+        acceptingEvents = false;
+        settled = true;
+        clearTimeout(timer);
+        timer = undefined;
+        clearTerminalListeners();
+        if (success) resolveTerminal(terminalType);
+        else rejectTerminal(new GateBBuyerWalletSupervisorError());
+      };
+      try {
+        timer = setTimeout(() => finish(false), dependencies.timeoutMs);
+        child.on('error', onError);
+        child.on('disconnect', onDisconnect);
+        child.on('message', onMessage);
+        child.on('exit', onExit);
+        child.on('close', onClose);
+        bootstrap.once('error', onBootstrapError);
+        bootstrap.end(bootstrapBytes, error => {
+          if (Buffer.isBuffer(bootstrapBytes)) bootstrapBytes.fill(0);
+          bootstrapBytes = undefined;
+          if (acceptingEvents && error) finish(false);
+        });
+      } catch {
+        finish(false);
+      }
     });
     if (terminal !== 'CREATED') fail();
+    clearTerminalListeners();
+    destroyBootstrap(child);
     return { status: 'created' };
   } catch {
     if (Buffer.isBuffer(bootstrapBytes)) bootstrapBytes.fill(0);
     destroyBootstrap(child);
     await reap(child, childClosed);
+    clearTerminalListeners();
     fail();
   }
 }

@@ -422,6 +422,134 @@ test('supervisor escalates to SIGKILL and has a bounded no-close reap policy', a
   assert.equal(Date.now() - started < 3000, true);
 });
 
+test('supervisor abandons pathological handles without retaining IPC or late lifecycle work', async t => {
+  const root = await fixture(t);
+  const childModule = join(root, 'fixed-child.js');
+  const child = new FakeChild();
+  const references = { bootstrap: true, channel: true, child: true, ipc: true };
+  const cleanup = { channelUnref: 0, childUnref: 0, disconnect: 0 };
+  const originalDestroy = child.bootstrap.destroy.bind(child.bootstrap);
+  child.bootstrap.destroy = (...args) => {
+    references.bootstrap = false;
+    return originalDestroy(...args);
+  };
+  child.channel = {
+    unref() {
+      cleanup.channelUnref += 1;
+      references.channel = false;
+    },
+  };
+  child.disconnect = function disconnect() {
+    cleanup.disconnect += 1;
+    references.ipc = false;
+    this.connected = false;
+    queueMicrotask(() => this.emit('disconnect'));
+  };
+  child.unref = function unref() {
+    cleanup.childUnref += 1;
+    references.child = false;
+  };
+  child.kill = function kill(signal) {
+    this.kills.push(signal);
+    return true;
+  };
+  const unhandled = [];
+  const onUnhandled = reason => unhandled.push(reason);
+  process.on('unhandledRejection', onUnhandled);
+  t.after(() => process.removeListener('unhandledRejection', onUnhandled));
+
+  await rejectsFixedSupervisorFailure(superviseGateBBuyerWalletChild(
+    root,
+    supervisorInjections(root, {
+      forkProcess: () => child,
+      childModule,
+      timeoutMs: 5,
+    }),
+  ));
+  assert.deepEqual(child.kills, ['SIGTERM', 'SIGKILL']);
+  assert.deepEqual(cleanup, { channelUnref: 1, childUnref: 1, disconnect: 1 });
+  assert.deepEqual(references, { bootstrap: false, channel: false, child: false, ipc: false });
+  assert.equal(child.bootstrap.destroyed, true);
+  assert.equal(child.bootstrap.listenerCount('error'), 0);
+  for (const event of ['error', 'disconnect', 'message', 'exit', 'close']) {
+    assert.equal(child.listenerCount(event), 0);
+  }
+
+  const afterAbandonment = { cleanup: { ...cleanup }, kills: [...child.kills] };
+  child.emit('exit', 0, null);
+  child.emit('exit', 0, null);
+  child.emit('close', 0, null);
+  child.emit('close', 0, null);
+  child.emit('disconnect');
+  child.emit('disconnect');
+  await new Promise(resolve => setImmediate(resolve));
+  assert.deepEqual({ cleanup, kills: child.kills }, afterAbandonment);
+  assert.deepEqual(unhandled, []);
+
+  const successful = [];
+  await superviseGateBBuyerWalletChild(root, supervisorInjections(root, {
+    forkProcess: successfulFork(successful),
+    childModule,
+    timeoutMs: 1000,
+  }));
+  assert.equal(successful[0].child.bootstrap.destroyed, true);
+  assert.equal(successful[0].child.bootstrap.listenerCount('error'), 0);
+  for (const event of ['error', 'disconnect', 'message', 'exit', 'close']) {
+    assert.equal(successful[0].child.listenerCount(event), 0);
+  }
+});
+
+test('supervisor disables protocol actions before late reap-window events', async t => {
+  const root = await fixture(t);
+  const childModule = join(root, 'fixed-child.js');
+  const effects = { rng: 0, sdk: 0 };
+  let lateEvents = 0;
+  const child = new FakeChild((_current, message) => {
+    if (message.type !== 'CREATE') return;
+    effects.sdk += 1;
+    effects.rng += 1;
+  });
+  child.kill = function kill(signal) {
+    this.kills.push(signal);
+    if (signal === 'SIGTERM') {
+      queueMicrotask(() => {
+        const messages = [
+          { ipcVersion: 1, requestId: 1, type: 'READY' },
+          { ipcVersion: 1, requestId: 1, type: 'CREATED' },
+          { ipcVersion: 1, requestId: 1, type: 'CREATED' },
+        ];
+        for (const message of messages) {
+          lateEvents += 1;
+          this.emit('message', message);
+        }
+        lateEvents += 1;
+        this.emit('error', new Error(syntheticSecretCanary()));
+        lateEvents += 1;
+        this.emit('disconnect');
+      });
+    }
+    return true;
+  };
+  const unhandled = [];
+  const onUnhandled = reason => unhandled.push(reason);
+  process.on('unhandledRejection', onUnhandled);
+  t.after(() => process.removeListener('unhandledRejection', onUnhandled));
+
+  await rejectsFixedSupervisorFailure(superviseGateBBuyerWalletChild(
+    root,
+    supervisorInjections(root, {
+      forkProcess: () => child,
+      childModule,
+      timeoutMs: 5,
+    }),
+  ));
+  assert.equal(lateEvents, 5);
+  assert.deepEqual(child.messages, []);
+  assert.deepEqual(effects, { rng: 0, sdk: 0 });
+  assert.deepEqual(child.kills, ['SIGTERM', 'SIGKILL']);
+  assert.deepEqual(unhandled, []);
+});
+
 test('child accepts one exact control message and terminates on disconnect or duplication', async () => {
   const channel = new EventEmitter();
   channel.connected = true;
@@ -1396,6 +1524,7 @@ test('hardening source and documentation retain chain-neutral and threat-boundar
       /(?:not|do not provide) all-or-nothing file-content atomicity/,
     );
     assert.equal(document.includes('hostile same-UID'), true);
+    assert.equal(document.includes('kernel-unreapable process'), true);
     assert.equal(document.includes('backup and synchronization services'), true);
     assert.match(
       document,
