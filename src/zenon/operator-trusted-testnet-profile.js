@@ -24,6 +24,9 @@ const REGEXP_EXEC = RegExp.prototype.exec;
 const WEAK_SET_CONSTRUCTOR = WeakSet;
 const WEAK_SET_ADD = WeakSet.prototype.add;
 const WEAK_SET_HAS = WeakSet.prototype.has;
+const WEAK_MAP_CONSTRUCTOR = WeakMap;
+const WEAK_MAP_GET = WeakMap.prototype.get;
+const WEAK_MAP_SET = WeakMap.prototype.set;
 const PROMISE_CONSTRUCTOR = Promise;
 const PROMISE_PROTOTYPE = Promise.prototype;
 const PROMISE_THEN = Promise.prototype.then;
@@ -40,6 +43,45 @@ export const OPERATOR_TRUST_ACKNOWLEDGEMENT =
   'I_UNDERSTAND_THIS_ANCHOR_DOES_NOT_AUTHENTICATE_THE_CONNECTED_NODE';
 
 export const TESTNET_LIVE_ACKNOWLEDGEMENT = 'I_UNDERSTAND_TESTNET_ONLY';
+
+export const GATE_B_CURRENT_TESTNET_PROFILE_NAME =
+  'gate-b-current-testnet-live-height-2-operator-trusted-v1';
+
+export const GATE_B_CURRENT_TESTNET_OPERATOR_TRUST_ACKNOWLEDGEMENT =
+  'I_UNDERSTAND_THIS_CURRENT_TESTNET_ANCHOR_IS_OPERATOR_TRUSTED_AND_INDEPENDENTLY_UNVERIFIED';
+
+export const GATE_B_CURRENT_TESTNET_WARNING =
+  'Warning: this current Gate-B testnet anchor was observed through operator-trusted plaintext RPC and is not independently authenticated.';
+
+export const GATE_B_CURRENT_TESTNET_CHAIN_PROFILE = FREEZE({
+  version: 1,
+  chainIdentifier: '73404',
+  genesisMomentumHash: '54f039f21649ec1c5fa453a55afb35361149f56a736821c1d8f36fce52f10590',
+});
+
+export const GATE_B_CURRENT_TESTNET_SDK_NETWORK_ID = '3';
+
+export const GATE_B_CURRENT_TESTNET_PROVENANCE = FREEZE({
+  source: 'operator-trusted-live-plaintext-rpc-observation',
+  sourceDate: '2026-09-01',
+  observationHeight: 2,
+  observationHash: 'c688b5f3ad898938b3b65c369fb29d84c327abef9337780d7c3d8491d4dd772b',
+  derivation: 'height-2 previousHash',
+  sameSourceReproduced: true,
+  publicGenesisDerivationCompleted: false,
+  independentlyVerified: false,
+});
+
+export const GATE_B_CURRENT_TESTNET_NON_CLAIMS = FREEZE({
+  authoritativeCurrentNetworkRelease: false,
+  signedTrustArtifact: false,
+  authenticatedRpcEndpoint: false,
+  canonicalRemoteChainIdentity: false,
+  verifiedFrontierLineage: false,
+  publicGenesisIndependentlyVerified: false,
+  reproducibleNodeBinary: false,
+  productionReadiness: false,
+});
 
 export const OPERATOR_TRUSTED_PUBLIC_TESTNET_WARNING =
   'Warning: this historical public-testnet anchor is operator trusted; remote chain identity is not authenticated.';
@@ -266,12 +308,11 @@ function ownDataDescriptor(value, key) {
   return descriptor;
 }
 
-function cloneChainProfile() {
+function cloneChainProfile(specification = HISTORICAL_SPECIFICATION) {
   return {
-    version: OPERATOR_TRUSTED_PUBLIC_TESTNET_CHAIN_PROFILE.version,
-    chainIdentifier: OPERATOR_TRUSTED_PUBLIC_TESTNET_CHAIN_PROFILE.chainIdentifier,
-    genesisMomentumHash:
-      OPERATOR_TRUSTED_PUBLIC_TESTNET_CHAIN_PROFILE.genesisMomentumHash,
+    version: specification.chainProfile.version,
+    chainIdentifier: specification.chainProfile.chainIdentifier,
+    genesisMomentumHash: specification.chainProfile.genesisMomentumHash,
   };
 }
 
@@ -332,12 +373,11 @@ function canonicalHash(value) {
   return encoded;
 }
 
-function snapshotPinnedProfile(value) {
+function snapshotPinnedProfile(value, specification = HISTORICAL_SPECIFICATION) {
   const snapshot = snapshotKnownObject(value, [{ keys: PROFILE_KEYS, prototype: 'plain' }]);
-  if (snapshot.version !== OPERATOR_TRUSTED_PUBLIC_TESTNET_CHAIN_PROFILE.version ||
-      snapshot.chainIdentifier !== OPERATOR_TRUSTED_PUBLIC_TESTNET_CHAIN_PROFILE.chainIdentifier ||
-      snapshot.genesisMomentumHash !==
-        OPERATOR_TRUSTED_PUBLIC_TESTNET_CHAIN_PROFILE.genesisMomentumHash) {
+  if (snapshot.version !== specification.chainProfile.version ||
+      snapshot.chainIdentifier !== specification.chainProfile.chainIdentifier ||
+      snapshot.genesisMomentumHash !== specification.chainProfile.genesisMomentumHash) {
     fail('operator_trusted_profile_mismatch');
   }
   return snapshot;
@@ -429,7 +469,27 @@ function sameFrontier(left, right) {
     left.height === right.height && left.hash === right.hash;
 }
 
-async function checkHistoricalHeightTwo(context) {
+const HISTORICAL_SPECIFICATION = FREEZE({
+  profileName: OPERATOR_TRUSTED_PUBLIC_TESTNET_PROFILE_NAME,
+  chainProfile: OPERATOR_TRUSTED_PUBLIC_TESTNET_CHAIN_PROFILE,
+  provenance: OPERATOR_TRUSTED_PUBLIC_TESTNET_PROVENANCE,
+  observationHash: OPERATOR_TRUSTED_PUBLIC_TESTNET_PROVENANCE.observationHash,
+  operatorTrustAcknowledgement: OPERATOR_TRUST_ACKNOWLEDGEMENT,
+  trustMode: 'operator-trusted-historical-observation',
+  warning: OPERATOR_TRUSTED_PUBLIC_TESTNET_WARNING,
+});
+
+const GATE_B_CURRENT_SPECIFICATION = FREEZE({
+  profileName: GATE_B_CURRENT_TESTNET_PROFILE_NAME,
+  chainProfile: GATE_B_CURRENT_TESTNET_CHAIN_PROFILE,
+  provenance: GATE_B_CURRENT_TESTNET_PROVENANCE,
+  observationHash: GATE_B_CURRENT_TESTNET_PROVENANCE.observationHash,
+  operatorTrustAcknowledgement: GATE_B_CURRENT_TESTNET_OPERATOR_TRUST_ACKNOWLEDGEMENT,
+  trustMode: 'operator-trusted-current-testnet-live-height-2',
+  warning: GATE_B_CURRENT_TESTNET_WARNING,
+});
+
+async function checkPinnedHeightTwo(specification, context) {
   let expectedChainProfile;
   let zenon;
   let frontierMomentum;
@@ -440,10 +500,10 @@ async function checkHistoricalHeightTwo(context) {
   } catch {
     fail('operator_trusted_profile_evidence_invalid');
   }
-  const expectedBefore = snapshotPinnedProfile(expectedChainProfile);
+  const expectedBefore = snapshotPinnedProfile(expectedChainProfile, specification);
   const frontierBefore = snapshotFrontier(frontierMomentum);
   if (frontierBefore.chainIdentifier !==
-      toNumber(OPERATOR_TRUSTED_PUBLIC_TESTNET_CHAIN_PROFILE.chainIdentifier)) {
+      toNumber(specification.chainProfile.chainIdentifier)) {
     fail('operator_trusted_profile_evidence_mismatch');
   }
 
@@ -471,7 +531,10 @@ async function checkHistoricalHeightTwo(context) {
     observation = settlement.value;
   }
 
-  const expectedAfter = snapshotPinnedProfile(readOwnDataProperty(context, 'expectedChainProfile'));
+  const expectedAfter = snapshotPinnedProfile(
+    readOwnDataProperty(context, 'expectedChainProfile'),
+    specification,
+  );
   if (readOwnDataProperty(context, 'frontierMomentum') !== frontierMomentum ||
       !sameProfile(expectedBefore, expectedAfter)) fail('operator_trusted_profile_evidence_invalid');
   const frontierAfter = snapshotFrontier(frontierMomentum);
@@ -481,20 +544,20 @@ async function checkHistoricalHeightTwo(context) {
   const normalized = snapshotMomentumList(observation);
   if (normalized.count < frontierBefore.height || normalized.heightTwo.version !== 1 ||
       normalized.heightTwo.height !==
-        OPERATOR_TRUSTED_PUBLIC_TESTNET_PROVENANCE.observationHeight ||
+        specification.provenance.observationHeight ||
       normalized.heightTwo.chainIdentifier !==
-        toNumber(OPERATOR_TRUSTED_PUBLIC_TESTNET_CHAIN_PROFILE.chainIdentifier) ||
-      normalized.heightTwo.hash !== OPERATOR_TRUSTED_PUBLIC_TESTNET_PROVENANCE.observationHash ||
+        toNumber(specification.chainProfile.chainIdentifier) ||
+      normalized.heightTwo.hash !== specification.observationHash ||
       normalized.heightTwo.previousHash !==
-        OPERATOR_TRUSTED_PUBLIC_TESTNET_CHAIN_PROFILE.genesisMomentumHash) {
+        specification.chainProfile.genesisMomentumHash) {
     fail('operator_trusted_profile_evidence_mismatch');
   }
 
   const evidence = FREEZE(shieldAsyncReturn({
-    trustMode: 'operator-trusted-historical-observation',
+    trustMode: specification.trustMode,
     remoteChainAuthenticated: false,
-    chainProfile: FREEZE(cloneChainProfile()),
-    observationHeight: OPERATOR_TRUSTED_PUBLIC_TESTNET_PROVENANCE.observationHeight,
+    chainProfile: FREEZE(cloneChainProfile(specification)),
+    observationHeight: specification.provenance.observationHeight,
   }));
   weakSetAdd(OPERATOR_TRUST_EVIDENCE, evidence);
   return evidence;
@@ -502,15 +565,29 @@ async function checkHistoricalHeightTwo(context) {
 
 const OPERATOR_TRUST_POLICIES = new WEAK_SET_CONSTRUCTOR();
 const OPERATOR_TRUST_EVIDENCE = new WEAK_SET_CONSTRUCTOR();
+const GATE_B_CURRENT_POLICIES = new WEAK_SET_CONSTRUCTOR();
+const POLICY_SPECIFICATIONS = new WEAK_MAP_CONSTRUCTOR();
 const POLICY = FREEZE({
   profileName: OPERATOR_TRUSTED_PUBLIC_TESTNET_PROFILE_NAME,
   trustMode: 'operator-trusted-historical-observation',
   remoteChainAuthenticated: false,
   warning: OPERATOR_TRUSTED_PUBLIC_TESTNET_WARNING,
-  chainProfile: cloneChainProfile,
-  observeChainTrust: checkHistoricalHeightTwo,
+  chainProfile: () => cloneChainProfile(HISTORICAL_SPECIFICATION),
+  observeChainTrust: context => checkPinnedHeightTwo(HISTORICAL_SPECIFICATION, context),
+});
+const GATE_B_CURRENT_POLICY = FREEZE({
+  profileName: GATE_B_CURRENT_TESTNET_PROFILE_NAME,
+  trustMode: GATE_B_CURRENT_SPECIFICATION.trustMode,
+  remoteChainAuthenticated: false,
+  warning: GATE_B_CURRENT_TESTNET_WARNING,
+  chainProfile: () => cloneChainProfile(GATE_B_CURRENT_SPECIFICATION),
+  observeChainTrust: context => checkPinnedHeightTwo(GATE_B_CURRENT_SPECIFICATION, context),
 });
 weakSetAdd(OPERATOR_TRUST_POLICIES, POLICY);
+weakSetAdd(OPERATOR_TRUST_POLICIES, GATE_B_CURRENT_POLICY);
+weakSetAdd(GATE_B_CURRENT_POLICIES, GATE_B_CURRENT_POLICY);
+apply(WEAK_MAP_SET, POLICY_SPECIFICATIONS, [POLICY, HISTORICAL_SPECIFICATION]);
+apply(WEAK_MAP_SET, POLICY_SPECIFICATIONS, [GATE_B_CURRENT_POLICY, GATE_B_CURRENT_SPECIFICATION]);
 
 export function isOperatorTrustedTestnetPolicy(value) {
   return (typeof value === 'object' || typeof value === 'function') && value !== null &&
@@ -522,11 +599,18 @@ export function isOperatorTrustedTestnetEvidence(value) {
     !isProxy(value) && weakSetHas(OPERATOR_TRUST_EVIDENCE, value);
 }
 
+export function isGateBCurrentTestnetPolicy(value) {
+  return (typeof value === 'object' || typeof value === 'function') && value !== null &&
+    !isProxy(value) && weakSetHas(GATE_B_CURRENT_POLICIES, value);
+}
+
 export async function observeOperatorTrustedTestnetPolicy(policy, context) {
   if (!isOperatorTrustedTestnetPolicy(policy)) {
     fail('operator_trusted_chain_policy_invalid');
   }
-  const evidence = await checkHistoricalHeightTwo(context);
+  const specification = apply(WEAK_MAP_GET, POLICY_SPECIFICATIONS, [policy]);
+  if (!specification) fail('operator_trusted_chain_policy_invalid');
+  const evidence = await checkPinnedHeightTwo(specification, context);
   return evidence;
 }
 
@@ -548,4 +632,26 @@ export function selectOperatorTrustedTestnetPolicy(
     fail('testnet_live_acknowledgement_invalid');
   }
   return POLICY;
+}
+
+
+export function selectGateBCurrentTestnetPolicy(
+  profileName,
+  operatorTrustAcknowledgement,
+  liveAcknowledgement,
+) {
+  if (typeof profileName !== 'string' ||
+      profileName !== GATE_B_CURRENT_TESTNET_PROFILE_NAME) {
+    fail('gate_b_current_testnet_profile_selection_invalid');
+  }
+  if (typeof operatorTrustAcknowledgement !== 'string' ||
+      operatorTrustAcknowledgement !==
+        GATE_B_CURRENT_TESTNET_OPERATOR_TRUST_ACKNOWLEDGEMENT) {
+    fail('gate_b_current_testnet_acknowledgement_invalid');
+  }
+  if (typeof liveAcknowledgement !== 'string' ||
+      liveAcknowledgement !== TESTNET_LIVE_ACKNOWLEDGEMENT) {
+    fail('testnet_live_acknowledgement_invalid');
+  }
+  return GATE_B_CURRENT_POLICY;
 }

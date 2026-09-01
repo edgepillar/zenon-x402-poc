@@ -12,6 +12,9 @@ import {
 import {
   parseLiveRoleInput,
   parseLiveEvidenceRunConfig,
+  parsePublicWsOnceRoleInput,
+  parsePublicWsOnceRunConfig,
+  PUBLIC_WS_ONCE_POLICY,
 } from './live-evidence-runner.js';
 import { liveSdkRuntime } from './live-runtime.js';
 import { createResourceServer } from './resource-server.js';
@@ -22,7 +25,8 @@ import {
 } from './settlement-journal.js';
 import { ExactZenonFacilitator, probeZenonRoleReadiness } from './zenon-payment.js';
 import {
-  OPERATOR_TRUSTED_PUBLIC_TESTNET_CHAIN_PROFILE,
+  GATE_B_CURRENT_TESTNET_SDK_NETWORK_ID,
+  selectGateBCurrentTestnetPolicy,
   selectOperatorTrustedTestnetPolicy,
 } from './zenon/operator-trusted-testnet-profile.js';
 
@@ -41,6 +45,7 @@ const TERMINATE_GRACE_MS = 1_000;
 const SEND_TIMEOUT_MS = 5_000;
 const DISCONNECT_STOP_TIMEOUT_MS = 1_000;
 const INHERITED_FACILITATOR_RPC_FD = 4;
+const HISTORICAL_WSS_EXECUTION_MODE = 'historical-wss-v1';
 const ROLE_INPUT_MAX_BYTES = 64 * 1024;
 const DEFINE_PROPERTY = Object.defineProperty;
 const FREEZE = Object.freeze;
@@ -259,10 +264,15 @@ export function createObservedFacilitatorAdapter(facilitator, observer) {
   return FREEZE(adapter);
 }
 
-function explicitEnvironment(config, rpcEndpoint) {
+function explicitEnvironment(config, rpcEndpoint, executionMode = HISTORICAL_WSS_EXECUTION_MODE) {
+  const sdkNetworkId = executionMode === PUBLIC_WS_ONCE_POLICY.executionMode
+    ? GATE_B_CURRENT_TESTNET_SDK_NETWORK_ID
+    : executionMode === HISTORICAL_WSS_EXECUTION_MODE
+      ? '3'
+      : fail();
   return FREEZE({
     ZENON_LIVE_ACK: config.acknowledgements.live,
-    ZENON_NETWORK_ID: OPERATOR_TRUSTED_PUBLIC_TESTNET_CHAIN_PROFILE.chainIdentifier,
+    ZENON_NETWORK_ID: sdkNetworkId,
     ZENON_RPC_URL: rpcEndpoint,
     ZENON_ASSET: config.expectedPaymentRequired.accepts[0].asset,
   });
@@ -311,7 +321,8 @@ export async function readInheritedLiveRoleInput(
 ) {
   let bytes;
   try {
-    if (!Number.isSafeInteger(fd) || fd < 0 || role !== 'facilitator-rpc') fail();
+    if (!Number.isSafeInteger(fd) || fd < 0 ||
+        (role !== 'facilitator-rpc' && role !== 'facilitator-public-ws-once-rpc')) fail();
     const generation = exactFileGeneration(expectedGeneration);
     const before = fstatSync(fd, { bigint: true });
     assertInheritedFileStat(before);
@@ -327,7 +338,9 @@ export async function readInheritedLiveRoleInput(
     const after = fstatSync(fd, { bigint: true });
     assertInheritedFileStat(after);
     if (!sameGeneration(generationFromStat(after), generation)) fail();
-    return parseLiveRoleInput(bytes.toString('utf8'), role);
+    return role === 'facilitator-public-ws-once-rpc'
+      ? parsePublicWsOnceRoleInput(bytes.toString('utf8'), 'facilitator-rpc')
+      : parseLiveRoleInput(bytes.toString('utf8'), role);
   } catch {
     fail();
   } finally {
@@ -416,17 +429,33 @@ export async function startDefaultLiveEvidenceFacilitatorRuntime(
   dependencies = undefined,
 ) {
   const runtimeDependencies = exactStartDependencies(dependencies);
-  const config = parseLiveEvidenceRunConfig(`${JSON.stringify(message.config)}\n`);
+  const executionMode = message.executionMode === undefined
+    ? HISTORICAL_WSS_EXECUTION_MODE
+    : message.executionMode;
+  if (executionMode !== HISTORICAL_WSS_EXECUTION_MODE &&
+      executionMode !== PUBLIC_WS_ONCE_POLICY.executionMode) fail();
+  const publicWsOnce = executionMode === PUBLIC_WS_ONCE_POLICY.executionMode;
+  if (publicWsOnce && message.recovery !== false) fail();
+  const config = publicWsOnce
+    ? parsePublicWsOnceRunConfig(`${JSON.stringify(message.config)}\n`)
+    : parseLiveEvidenceRunConfig(`${JSON.stringify(message.config)}\n`);
   const secret = await readInheritedLiveRoleInput(
     INHERITED_FACILITATOR_RPC_FD,
     message.facilitatorRpcGeneration,
+    publicWsOnce ? 'facilitator-public-ws-once-rpc' : 'facilitator-rpc',
   );
-  const policy = selectOperatorTrustedTestnetPolicy(
-    config.profileName,
-    config.acknowledgements.operatorTrust,
-    config.acknowledgements.live,
-  );
-  const environment = explicitEnvironment(config, secret.rpcEndpoint);
+  const policy = publicWsOnce
+    ? selectGateBCurrentTestnetPolicy(
+      config.profileName,
+      config.acknowledgements.operatorTrust,
+      config.acknowledgements.live,
+    )
+    : selectOperatorTrustedTestnetPolicy(
+      config.profileName,
+      config.acknowledgements.operatorTrust,
+      config.acknowledgements.live,
+    );
+  const environment = explicitEnvironment(config, secret.rpcEndpoint, executionMode);
   assertJournalDescendant(message.workspaceRoot, message.journalDirectory);
   await assertPrivateWorkerDirectory(dirname(message.journalDirectory));
   const journal = new SettlementJournal({
@@ -699,12 +728,20 @@ export async function runLiveEvidenceFacilitatorWorker(options = {}) {
     try {
       if (requestId !== expectedRequestId || requestId > MAX_REQUEST_ID) fail();
       const messageType = ownMessageType(rawMessage);
-      if (messageType === 'START') {
-        const message = exactRequest(rawMessage, 'START', [
-          'config', 'facilitatorRpcGeneration', 'workspaceRoot',
-          'journalDirectory', 'recovery',
-        ]);
-        if (running || typeof message.recovery !== 'boolean') fail();
+      if (messageType === 'START' || messageType === 'START_PUBLIC_WS_ONCE') {
+        const publicWsOnce = messageType === 'START_PUBLIC_WS_ONCE';
+        const message = exactRequest(rawMessage, messageType, publicWsOnce
+          ? [
+            'config', 'facilitatorRpcGeneration', 'workspaceRoot',
+            'journalDirectory', 'recovery', 'executionMode',
+          ]
+          : [
+            'config', 'facilitatorRpcGeneration', 'workspaceRoot',
+            'journalDirectory', 'recovery',
+          ]);
+        if (running || typeof message.recovery !== 'boolean' ||
+            (publicWsOnce && (message.recovery !== false ||
+              message.executionMode !== PUBLIC_WS_ONCE_POLICY.executionMode))) fail();
         for (const field of ['workspaceRoot', 'journalDirectory']) {
           if (typeof message[field] !== 'string' || message[field].length === 0 ||
               Buffer.byteLength(message[field], 'utf8') > MAX_IPC_STRING_BYTES) fail();
@@ -901,7 +938,7 @@ async function terminatePartialChild(child, knownLifecycleState) {
 function captureControllerOptions(options) {
   const descriptors = exactPlainObject(options, [
     'config', 'facilitatorRpcFd', 'facilitatorRpcGeneration', 'workspaceRoot',
-    'journalDirectory', 'recovery', 'forkProcess',
+    'journalDirectory', 'recovery', 'forkProcess', 'executionMode',
   ]);
   const config = detachedIpcSnapshot(descriptors.config.value);
   const stringFields = ['workspaceRoot', 'journalDirectory'];
@@ -921,8 +958,14 @@ function captureControllerOptions(options) {
   ownData(captured, 'facilitatorRpcGeneration', generation);
   if (typeof descriptors.recovery.value !== 'boolean' ||
       typeof descriptors.forkProcess.value !== 'function') fail();
+  const executionMode = descriptors.executionMode.value;
+  if (executionMode !== HISTORICAL_WSS_EXECUTION_MODE &&
+      executionMode !== PUBLIC_WS_ONCE_POLICY.executionMode) fail();
+  if (executionMode === PUBLIC_WS_ONCE_POLICY.executionMode &&
+      descriptors.recovery.value !== false) fail();
   ownData(captured, 'recovery', descriptors.recovery.value);
   ownData(captured, 'forkProcess', descriptors.forkProcess.value);
+  ownData(captured, 'executionMode', executionMode);
   return captured;
 }
 
@@ -941,10 +984,14 @@ export async function startLiveEvidenceFacilitatorWorker(options = {}) {
     let keys;
     try { keys = REFLECT_OWN_KEYS(options); } catch { fail(); }
     const normalized = {};
-    const defaults = { recovery: false, forkProcess: fork };
+    const defaults = {
+      recovery: false,
+      forkProcess: fork,
+      executionMode: HISTORICAL_WSS_EXECUTION_MODE,
+    };
     const allowed = [
       'config', 'facilitatorRpcFd', 'facilitatorRpcGeneration', 'workspaceRoot',
-      'journalDirectory', 'recovery', 'forkProcess',
+      'journalDirectory', 'recovery', 'forkProcess', 'executionMode',
     ];
     for (let index = 0; index < allowed.length; index += 1) {
       const key = allowed[index];
@@ -963,16 +1010,22 @@ export async function startLiveEvidenceFacilitatorWorker(options = {}) {
       if (typeof keys[index] !== 'string' || !allowed.includes(keys[index])) fail();
     }
     const captured = captureControllerOptions(normalized);
-    const startSnapshot = detachedIpcSnapshot({
+    const startSnapshot = {
       ipcVersion: IPC_VERSION,
       requestId: 1,
-      type: 'START',
+      type: captured.executionMode === PUBLIC_WS_ONCE_POLICY.executionMode
+        ? 'START_PUBLIC_WS_ONCE'
+        : 'START',
       config: captured.config,
       facilitatorRpcGeneration: captured.facilitatorRpcGeneration,
       workspaceRoot: captured.workspaceRoot,
       journalDirectory: captured.journalDirectory,
       recovery: captured.recovery,
-    });
+    };
+    if (captured.executionMode === PUBLIC_WS_ONCE_POLICY.executionMode) {
+      ownData(startSnapshot, 'executionMode', captured.executionMode);
+    }
+    const capturedStartSnapshot = detachedIpcSnapshot(startSnapshot);
 
     child = Reflect.apply(captured.forkProcess, undefined, [
       fileURLToPath(import.meta.url),
@@ -1163,12 +1216,15 @@ export async function startLiveEvidenceFacilitatorWorker(options = {}) {
 
     const controller = FREEZE({
       async start() {
-        await request('START', {
-          config: startSnapshot.config,
-          facilitatorRpcGeneration: startSnapshot.facilitatorRpcGeneration,
-          workspaceRoot: startSnapshot.workspaceRoot,
-          journalDirectory: startSnapshot.journalDirectory,
-          recovery: startSnapshot.recovery,
+        await request(capturedStartSnapshot.type, {
+          config: capturedStartSnapshot.config,
+          facilitatorRpcGeneration: capturedStartSnapshot.facilitatorRpcGeneration,
+          workspaceRoot: capturedStartSnapshot.workspaceRoot,
+          journalDirectory: capturedStartSnapshot.journalDirectory,
+          recovery: capturedStartSnapshot.recovery,
+          ...(captured.executionMode === PUBLIC_WS_ONCE_POLICY.executionMode
+            ? { executionMode: captured.executionMode }
+            : {}),
         }, 'READY');
       },
       async snapshotObservations() {
