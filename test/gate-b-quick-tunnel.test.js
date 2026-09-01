@@ -122,6 +122,14 @@ class SyntheticChild extends EventEmitter {
     this.sent = [];
     this.killSignals = [];
     this.groupAlive = true;
+    this.disconnectCalls = 0;
+    this.unrefCalls = 0;
+    this.channelCloseCalls = 0;
+    this.channelUnrefCalls = 0;
+    this.channel = {
+      close: () => { this.channelCloseCalls += 1; },
+      unref: () => { this.channelUnrefCalls += 1; },
+    };
   }
 
   send(message, callback) {
@@ -133,6 +141,15 @@ class SyntheticChild extends EventEmitter {
   kill(signal) {
     this.killSignals.push(signal);
     return true;
+  }
+
+  disconnect() {
+    this.disconnectCalls += 1;
+    this.connected = false;
+  }
+
+  unref() {
+    this.unrefCalls += 1;
   }
 }
 
@@ -849,6 +866,88 @@ test('failure cleanup outlives leader close until hostile descendants are gone',
   assert.equal(harness.child.groupAlive, false);
 });
 
+test('failure abandonment releases owned handles and listeners while preserving caller listeners',
+  async () => {
+    const harness = launcherHarness({ reapForceMs: 5, reapAbandonMs: 30 });
+    const callerMessage = () => {};
+    const callerDisconnect = () => {};
+    const callerExit = () => {};
+    const callerClose = () => {};
+    harness.child.on('message', callerMessage);
+    harness.child.on('disconnect', callerDisconnect);
+    harness.child.on('exit', callerExit);
+    harness.child.on('close', callerClose);
+    const { lease } = await activateLauncher(harness);
+    const closure = waitGateBQuickTunnelClosed(lease);
+    harness.child.emit('message', {});
+    await assert.rejects(closure, LAUNCH_ERROR);
+    assert.equal(harness.child.privateFd.destroyed, true);
+    assert.equal(harness.child.disconnectCalls, 1);
+    assert.equal(harness.child.channelCloseCalls >= 1, true);
+    assert.equal(harness.child.channelUnrefCalls >= 1, true);
+    assert.equal(harness.child.unrefCalls, 1);
+    assert.deepEqual(harness.child.listeners('message'), [callerMessage]);
+    assert.deepEqual(harness.child.listeners('disconnect'), [callerDisconnect]);
+    assert.deepEqual(harness.child.listeners('exit'), [callerExit]);
+    assert.deepEqual(harness.child.listeners('close'), [callerClose]);
+    const sentAfterClosure = harness.child.sent.length;
+    harness.child.emit('message', createGateBQuickTunnelIpcMessage(
+      GATE_B_QUICK_TUNNEL_IPC_TYPES.READY,
+      1,
+    ));
+    harness.child.emit('disconnect');
+    harness.child.emit('exit', 0, null);
+    harness.child.emit('close', 0, null);
+    assert.equal(harness.child.sent.length, sentAfterClosure);
+  });
+
+test('unproved group abandonment still releases owned state and leaves late events inert',
+  async () => {
+    const harness = launcherHarness({
+      killProcessGroup(pid, signal) {
+        harness.groupKills.push([pid, signal]);
+      },
+      probeProcessGroup: () => true,
+      reapForceMs: 5,
+      reapAbandonMs: 15,
+    });
+    const callerMessage = () => {};
+    const callerDisconnect = () => {};
+    const callerExit = () => {};
+    const callerClose = () => {};
+    harness.child.on('message', callerMessage);
+    harness.child.on('disconnect', callerDisconnect);
+    harness.child.on('exit', callerExit);
+    harness.child.on('close', callerClose);
+    const { lease } = await activateLauncher(harness);
+    const closure = waitGateBQuickTunnelClosed(lease);
+    harness.child.emit('message', {});
+    await assert.rejects(closure, LAUNCH_ERROR);
+    assert.deepEqual(harness.groupKills, [
+      [harness.child.pid, 'SIGTERM'],
+      [harness.child.pid, 'SIGKILL'],
+    ]);
+    assert.equal(harness.child.privateFd.destroyed, true);
+    assert.equal(harness.child.disconnectCalls, 1);
+    assert.equal(harness.child.channelCloseCalls >= 1, true);
+    assert.equal(harness.child.channelUnrefCalls >= 1, true);
+    assert.equal(harness.child.unrefCalls, 1);
+    assert.deepEqual(harness.child.listeners('message'), [callerMessage]);
+    assert.deepEqual(harness.child.listeners('disconnect'), [callerDisconnect]);
+    assert.deepEqual(harness.child.listeners('exit'), [callerExit]);
+    assert.deepEqual(harness.child.listeners('close'), [callerClose]);
+    const sentAfterClosure = harness.child.sent.length;
+    harness.child.emit('message', createGateBQuickTunnelIpcMessage(
+      GATE_B_QUICK_TUNNEL_IPC_TYPES.READY,
+      1,
+    ));
+    harness.child.emit('disconnect');
+    harness.child.emit('exit', 0, null);
+    harness.child.emit('close', 0, null);
+    assert.equal(harness.child.sent.length, sentAfterClosure);
+    assert.equal(harness.groupKills.length, 2);
+  });
+
 test('malformed detached fork return with a usable PGID gets exact-group cleanup', async () => {
   const directKills = [];
   const harness = launcherHarness();
@@ -893,6 +992,79 @@ test('malformed detached fork return with unusable identity never signals a gues
     assert.deepEqual(harness.groupKills, []);
     assert.deepEqual(directKills, ['SIGTERM', 'SIGKILL']);
   });
+
+test('proxy detached fork return is rejected without property access or guessed cleanup',
+  async () => {
+    let proxyReads = 0;
+    const retained = new Proxy({}, {
+      get() {
+        proxyReads += 1;
+        throw new Error('synthetic proxy access');
+      },
+    });
+    const harness = launcherHarness({ forkProcess: () => retained });
+    await assert.rejects(launchGateBQuickTunnel(bootstrap(), harness.injected), LAUNCH_ERROR);
+    assert.equal(proxyReads, 0);
+    assert.deepEqual(harness.groupKills, []);
+  });
+
+test('accessor-backed malformed fork returns are never evaluated during cleanup', async t => {
+  for (const field of ['on', 'stdio', 'channel', 'connected']) {
+    await t.test(field, async () => {
+      let getterReads = 0;
+      const directKills = [];
+      const retained = new EventEmitter();
+      retained.pid = 43210;
+      retained.send = () => true;
+      retained.kill = signal => { directKills.push(signal); return true; };
+      retained.stdio = [null, null, null, new ControlledPrivateFd(), null];
+      retained.connected = true;
+      retained.channel = { close() {}, unref() {} };
+      Object.defineProperty(retained, field, {
+        configurable: true,
+        get() {
+          getterReads += 1;
+          throw new Error('synthetic accessor');
+        },
+      });
+      const callerClose = () => {};
+      EventEmitter.prototype.on.call(retained, 'close', callerClose);
+      const harness = launcherHarness({ forkProcess: () => retained });
+      const pending = launchGateBQuickTunnel(bootstrap(), harness.injected);
+      if (field === 'channel' || field === 'connected') {
+        await tick();
+        retained.emit('error', new Error('synthetic lifecycle failure'));
+      }
+      await assert.rejects(pending, LAUNCH_ERROR);
+      assert.equal(getterReads, 0);
+      assert.deepEqual(harness.groupKills, [
+        [retained.pid, 'SIGTERM'],
+        [retained.pid, 'SIGKILL'],
+      ]);
+      assert.deepEqual(directKills, []);
+      assert.deepEqual(retained.listeners('close'), [callerClose]);
+    });
+  }
+
+  await t.test('no safe identity', async () => {
+    let getterReads = 0;
+    const directKills = [];
+    const retained = {
+      kill(signal) { directKills.push(signal); return true; },
+    };
+    Object.defineProperty(retained, 'once', {
+      get() {
+        getterReads += 1;
+        throw new Error('synthetic accessor');
+      },
+    });
+    const harness = launcherHarness({ forkProcess: () => retained });
+    await assert.rejects(launchGateBQuickTunnel(bootstrap(), harness.injected), LAUNCH_ERROR);
+    assert.equal(getterReads, 0);
+    assert.deepEqual(harness.groupKills, []);
+    assert.deepEqual(directKills, ['SIGTERM', 'SIGKILL']);
+  });
+});
 
 test('launcher rejects non-Darwin before any fork or process cleanup effect', async () => {
   const harness = launcherHarness({ platform: 'linux' });
