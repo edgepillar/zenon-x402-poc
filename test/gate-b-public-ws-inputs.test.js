@@ -524,15 +524,23 @@ test('CLI emits exactly one applicable fixed line and one fixed failure line', a
   assert.equal(stderr.join('').includes(ENDPOINT), false);
 });
 
-test('direct CLI invocation without FD3 fails with only the fixed line', () => {
+test('direct CLI invocation with no private/bootstrap frame on an open immediate-EOF-producing FD3 fails with only the fixed line', async () => {
   const cli = fileURLToPath(new URL('../src/gate-b-public-ws-inputs-cli.js', import.meta.url));
-  const result = spawnSync(process.execPath, [cli, 'PREPARE'], {
-    cwd: fileURLToPath(new URL('../', import.meta.url)),
-    env: {},
-    encoding: 'utf8',
-    stdio: ['ignore', 'pipe', 'pipe'],
-    timeout: 5000,
-  });
+  const fd3 = await open('/dev/null', 'r');
+  let result;
+  try {
+    result = spawnSync(process.execPath, [cli, 'PREPARE'], {
+      cwd: fileURLToPath(new URL('../', import.meta.url)),
+      env: {},
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'pipe', fd3.fd],
+      timeout: 5000,
+    });
+  } finally {
+    await fd3.close();
+  }
+  assert.equal(result.error, undefined);
+  assert.equal(result.signal, null);
   assert.equal(result.status, 1);
   assert.equal(result.stdout, '');
   assert.equal(result.stderr, GATE_B_PUBLIC_WS_INPUT_STATUS_LINES.FAILURE);
