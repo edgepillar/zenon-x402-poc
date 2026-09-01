@@ -16,7 +16,8 @@ import {
   unlink,
   writeFile,
 } from 'node:fs/promises';
-import { spawn } from 'node:child_process';
+import childProcess, { spawn } from 'node:child_process';
+import { syncBuiltinESMExports } from 'node:module';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { PassThrough } from 'node:stream';
@@ -51,7 +52,10 @@ import {
 } from '../src/gate-b-public-ws-inputs-schema.js';
 import { openGateBPublicWsPrivateWorkspace } from
   '../src/gate-b-public-ws-private-workspace.js';
-import { superviseGateBPublicWsInputs } from '../src/gate-b-public-ws-inputs-supervisor.js';
+import {
+  GateBPublicWsInputsSupervisorError,
+  superviseGateBPublicWsInputs,
+} from '../src/gate-b-public-ws-inputs-supervisor.js';
 import {
   parsePublicWsOnceAuthorization,
   parsePublicWsOnceRoleInput,
@@ -229,6 +233,8 @@ function fakeSpawn(successLine, capture) {
     capture.argv = argv;
     capture.options = options;
     const child = new EventEmitter();
+    capture.child = child;
+    child.pid = 43120;
     child.stdout = new PassThrough();
     child.stderr = new PassThrough();
     child.stdio = [null, child.stdout, child.stderr, new PassThrough()];
@@ -248,6 +254,25 @@ function fakeSpawn(successLine, capture) {
       });
     });
     return child;
+  };
+}
+
+function launcherGroupInjections(capture, changes = {}) {
+  return {
+    platform: 'darwin',
+    killProcessGroup(pid, signal) {
+      assert.equal(pid, 43120);
+      capture.groupKills ??= [];
+      capture.groupKills.push([pid, signal]);
+      if (signal === 'SIGKILL') capture.groupAlive = false;
+    },
+    probeProcessGroup(pid) {
+      assert.equal(pid, 43120);
+      return capture.groupAlive === true;
+    },
+    reapForceMs: 5,
+    reapAbandonMs: 30,
+    ...changes,
   };
 }
 
@@ -449,9 +474,10 @@ test('shared private-workspace capability is opaque and directly composes with h
 
 test('launcher uses one literal operation argv, empty env, ignored stdin, and private FD3 only', async t => {
   const { root } = await fixture(t);
-  const capture = {};
+  const capture = { groupAlive: false };
   const bootstrap = provisionBootstrap(root);
   const result = await launchGateBPublicWsInputs(bootstrap, {
+    ...launcherGroupInjections(capture),
     spawnProcess: fakeSpawn(GATE_B_PUBLIC_WS_INPUT_STATUS_LINES.PROVISION_ENDPOINT, capture),
     executable: '/fixed/node',
     cliModule: '/fixed/cli.js',
@@ -461,6 +487,7 @@ test('launcher uses one literal operation argv, empty env, ignored stdin, and pr
   assert.equal(capture.executable, '/fixed/node');
   assert.deepEqual(capture.argv, ['/fixed/cli.js', 'PROVISION_ENDPOINT']);
   assert.deepEqual(capture.options.env, {});
+  assert.equal(capture.options.detached, true);
   assert.deepEqual(capture.options.stdio, ['ignore', 'pipe', 'pipe', 'pipe']);
   assert.equal(capture.options.shell, false);
   assert.equal(JSON.stringify([capture.argv, capture.options.env]).includes(ENDPOINT), false);
@@ -470,9 +497,10 @@ test('launcher uses one literal operation argv, empty env, ignored stdin, and pr
 
 test('launcher rejects any nonfixed output without reflecting private bytes', async t => {
   const { root } = await fixture(t);
-  const capture = {};
+  const capture = { groupAlive: false };
   await assert.rejects(
     launchGateBPublicWsInputs(provisionBootstrap(root), {
+      ...launcherGroupInjections(capture),
       spawnProcess: fakeSpawn(`leak:${ENDPOINT}\n`, capture),
       executable: '/fixed/node',
       cliModule: '/fixed/cli.js',
@@ -485,14 +513,280 @@ test('launcher rejects any nonfixed output without reflecting private bytes', as
       return true;
     },
   );
-  const overflowCapture = {};
+  const overflowCapture = { groupAlive: false };
   await assert.rejects(launchGateBPublicWsInputs(provisionBootstrap(root), {
+    ...launcherGroupInjections(overflowCapture),
     spawnProcess: fakeSpawn(Buffer.alloc(129, 0x41), overflowCapture),
     executable: '/fixed/node',
     cliModule: '/fixed/cli.js',
     timeoutMs: 1000,
   }), GateBPublicWsInputsLaunchError);
 });
+
+test('launcher rejects clean leader output while a detached descendant survives', async t => {
+  const temporary = await mkdtemp(join(tmpdir(), 'gate-b-inputs-tree-'));
+  t.after(() => rm(temporary, { recursive: true, force: true }));
+  for (const operation of [
+    GATE_B_PUBLIC_WS_INPUT_OPERATIONS.PREPARE,
+    GATE_B_PUBLIC_WS_INPUT_OPERATIONS.AUTHORIZE,
+  ]) {
+    const marker = join(temporary, `delayed-marker-${operation.toLowerCase()}`);
+    const script = join(temporary, `synthetic-tree-${operation.toLowerCase()}.js`);
+    const descendantCode = [
+      "process.on('SIGTERM', () => {});",
+      "process.send?.('TERM_HANDLER_READY');",
+      `setTimeout(() => { require('node:fs').writeFileSync(${JSON.stringify(marker)}, 'x'); }, 250);`,
+      'setTimeout(() => process.exit(0), 350);',
+    ].join('');
+    await writeFile(script, [
+      "import { spawn } from 'node:child_process';",
+      `const descendant = spawn(process.execPath, ['-e', ${JSON.stringify(descendantCode)}], { detached: false, stdio: ['ignore', 'ignore', 'ignore', 'ipc'] });`,
+      "descendant.once('message', message => {",
+      "  if (message !== 'TERM_HANDLER_READY') process.exit(1);",
+      `  process.stdout.write(${JSON.stringify(
+        operation === GATE_B_PUBLIC_WS_INPUT_OPERATIONS.PREPARE
+          ? GATE_B_PUBLIC_WS_INPUT_STATUS_LINES.PREPARE
+          : GATE_B_PUBLIC_WS_INPUT_STATUS_LINES.AUTHORIZE,
+      )});`,
+      '  process.exit(0);',
+      '});',
+    ].join('\n'));
+    const candidate = operation === GATE_B_PUBLIC_WS_INPUT_OPERATIONS.PREPARE
+      ? prepareBootstrap(temporary)
+      : authorizeBootstrap(temporary, 'b'.repeat(64));
+    const groupSignals = [];
+    await assert.rejects(launchGateBPublicWsInputs(candidate, {
+      cliModule: script,
+      executable: process.execPath,
+      killProcessGroup(pid, signal) {
+        groupSignals.push(signal);
+        process.kill(-pid, signal);
+      },
+      probeProcessGroup(pid) {
+        try {
+          process.kill(-pid, 0);
+          return true;
+        } catch (error) {
+          if (error && error.code === 'ESRCH') return false;
+          throw error;
+        }
+      },
+      platform: 'darwin',
+      reapAbandonMs: 1000,
+      reapForceMs: 25,
+      timeoutMs: 1000,
+    }), GateBPublicWsInputsLaunchError);
+    assert.deepEqual(groupSignals, ['SIGTERM', 'SIGKILL']);
+    await new Promise(resolve => setTimeout(resolve, 300));
+    await assert.rejects(lstat(marker));
+  }
+});
+
+test('launcher signals only the retained process group and never guesses an unsafe identity',
+  async t => {
+    const { root } = await fixture(t);
+    const capture = { groupAlive: true };
+    const groupKills = [];
+    await assert.rejects(launchGateBPublicWsInputs(prepareBootstrap(root), {
+      ...launcherGroupInjections(capture, {
+        killProcessGroup(pid, signal) {
+          groupKills.push([pid, signal]);
+          if (signal === 'SIGKILL') capture.groupAlive = false;
+        },
+      }),
+      cliModule: '/fixed/cli.js',
+      executable: '/fixed/node',
+      spawnProcess: fakeSpawn(GATE_B_PUBLIC_WS_INPUT_STATUS_LINES.PREPARE, capture),
+      timeoutMs: 1000,
+    }), GateBPublicWsInputsLaunchError);
+    assert.deepEqual(groupKills, [[43120, 'SIGTERM'], [43120, 'SIGKILL']]);
+
+    let pidReads = 0;
+    const unsafe = new EventEmitter();
+    Object.defineProperty(unsafe, 'pid', {
+      enumerable: true,
+      get() {
+        pidReads += 1;
+        return 43121;
+      },
+    });
+    unsafe.stdout = new PassThrough();
+    unsafe.stderr = new PassThrough();
+    unsafe.stdio = [null, unsafe.stdout, unsafe.stderr, new PassThrough()];
+    unsafe.kill = () => true;
+    const guessedSignals = [];
+    await assert.rejects(launchGateBPublicWsInputs(prepareBootstrap(root), {
+      ...launcherGroupInjections({}, {
+        killProcessGroup(pid, signal) { guessedSignals.push([pid, signal]); },
+        probeProcessGroup: () => true,
+      }),
+      cliModule: '/fixed/cli.js',
+      executable: '/fixed/node',
+      spawnProcess: () => unsafe,
+      timeoutMs: 1000,
+    }), GateBPublicWsInputsLaunchError);
+    assert.equal(pidReads, 0);
+    assert.deepEqual(guessedSignals, []);
+
+    let proxyReads = 0;
+    const proxyChild = new Proxy({}, {
+      get() {
+        proxyReads += 1;
+        throw new Error('synthetic proxy access');
+      },
+    });
+    await assert.rejects(launchGateBPublicWsInputs(prepareBootstrap(root), {
+      ...launcherGroupInjections({}, {
+        killProcessGroup(pid, signal) { guessedSignals.push([pid, signal]); },
+        probeProcessGroup: () => true,
+      }),
+      cliModule: '/fixed/cli.js',
+      executable: '/fixed/node',
+      spawnProcess: () => proxyChild,
+      timeoutMs: 1000,
+    }), GateBPublicWsInputsLaunchError);
+    assert.equal(proxyReads, 0);
+    assert.deepEqual(guessedSignals, []);
+
+    const malformedCapture = { groupAlive: true };
+    const malformedSignals = [];
+    await assert.rejects(launchGateBPublicWsInputs(prepareBootstrap(root), {
+      ...launcherGroupInjections(malformedCapture, {
+        killProcessGroup(pid, signal) {
+          malformedSignals.push([pid, signal]);
+          if (signal === 'SIGKILL') malformedCapture.groupAlive = false;
+        },
+      }),
+      cliModule: '/fixed/cli.js',
+      executable: '/fixed/node',
+      spawnProcess: () => ({ pid: 43120 }),
+      timeoutMs: 1000,
+    }), GateBPublicWsInputsLaunchError);
+    assert.deepEqual(malformedSignals, [[43120, 'SIGTERM'], [43120, 'SIGKILL']]);
+
+    let cleanupGetterReads = 0;
+    const accessorMalformed = { pid: 43120 };
+    Object.defineProperty(accessorMalformed, 'stdout', {
+      get() {
+        cleanupGetterReads += 1;
+        throw new Error('synthetic cleanup getter');
+      },
+    });
+    malformedCapture.groupAlive = true;
+    malformedSignals.length = 0;
+    await assert.rejects(launchGateBPublicWsInputs(prepareBootstrap(root), {
+      ...launcherGroupInjections(malformedCapture, {
+        killProcessGroup(pid, signal) {
+          malformedSignals.push([pid, signal]);
+          if (signal === 'SIGKILL') malformedCapture.groupAlive = false;
+        },
+      }),
+      cliModule: '/fixed/cli.js',
+      executable: '/fixed/node',
+      spawnProcess: () => accessorMalformed,
+      timeoutMs: 1000,
+    }), GateBPublicWsInputsLaunchError);
+    assert.equal(cleanupGetterReads, 0);
+    assert.deepEqual(malformedSignals, [[43120, 'SIGTERM'], [43120, 'SIGKILL']]);
+
+    let validationGetterReads = 0;
+    const accessorShape = { pid: 43120 };
+    Object.defineProperty(accessorShape, 'on', {
+      get() {
+        validationGetterReads += 1;
+        throw new Error('synthetic validation getter');
+      },
+    });
+    malformedCapture.groupAlive = true;
+    malformedSignals.length = 0;
+    await assert.rejects(launchGateBPublicWsInputs(prepareBootstrap(root), {
+      ...launcherGroupInjections(malformedCapture, {
+        killProcessGroup(pid, signal) {
+          malformedSignals.push([pid, signal]);
+          if (signal === 'SIGKILL') malformedCapture.groupAlive = false;
+        },
+      }),
+      cliModule: '/fixed/cli.js',
+      executable: '/fixed/node',
+      spawnProcess: () => accessorShape,
+      timeoutMs: 1000,
+    }), GateBPublicWsInputsLaunchError);
+    assert.equal(validationGetterReads, 0);
+    assert.deepEqual(malformedSignals, [[43120, 'SIGTERM'], [43120, 'SIGKILL']]);
+  });
+
+test('launcher platform gate precedes spawn for omitted and supplied dependencies', async t => {
+  const { root } = await fixture(t);
+  let suppliedSpawns = 0;
+  await assert.rejects(launchGateBPublicWsInputs(prepareBootstrap(root), {
+    ...launcherGroupInjections({}, { platform: 'linux' }),
+    cliModule: '/fixed/cli.js',
+    executable: '/fixed/node',
+    spawnProcess() {
+      suppliedSpawns += 1;
+      throw new Error('synthetic forbidden spawn');
+    },
+    timeoutMs: 1000,
+  }), GateBPublicWsInputsLaunchError);
+  assert.equal(suppliedSpawns, 0);
+
+  const platformDescriptor = Object.getOwnPropertyDescriptor(process, 'platform');
+  const originalSpawn = childProcess.spawn;
+  let defaultSpawns = 0;
+  try {
+    childProcess.spawn = () => {
+      defaultSpawns += 1;
+      throw new Error('synthetic forbidden spawn');
+    };
+    syncBuiltinESMExports();
+    Object.defineProperty(process, 'platform', {
+      configurable: true,
+      enumerable: platformDescriptor.enumerable,
+      value: 'linux',
+    });
+    await assert.rejects(launchGateBPublicWsInputs(prepareBootstrap(root)),
+      GateBPublicWsInputsLaunchError);
+  } finally {
+    Object.defineProperty(process, 'platform', platformDescriptor);
+    childProcess.spawn = originalSpawn;
+    syncBuiltinESMExports();
+  }
+  assert.equal(defaultSpawns, 0);
+});
+
+test('launcher group-proof abandonment cleans owned state and preserves caller listeners',
+  async t => {
+    const { root } = await fixture(t);
+    const capture = { groupAlive: true };
+    const groupSignals = [];
+    const pending = launchGateBPublicWsInputs(prepareBootstrap(root), {
+      ...launcherGroupInjections(capture, {
+        killProcessGroup(pid, signal) { groupSignals.push([pid, signal]); },
+        probeProcessGroup: () => true,
+        reapAbandonMs: 15,
+        reapForceMs: 5,
+      }),
+      cliModule: '/fixed/cli.js',
+      executable: '/fixed/node',
+      spawnProcess: fakeSpawn(GATE_B_PUBLIC_WS_INPUT_STATUS_LINES.PREPARE, capture),
+      timeoutMs: 1000,
+    });
+    const callerClose = () => {};
+    const callerData = () => {};
+    capture.child.on('close', callerClose);
+    capture.child.stdout.on('data', callerData);
+    await assert.rejects(pending, GateBPublicWsInputsLaunchError);
+    assert.deepEqual(groupSignals, [[43120, 'SIGTERM'], [43120, 'SIGKILL']]);
+    assert.equal(capture.child.stdout.destroyed, true);
+    assert.equal(capture.child.stderr.destroyed, true);
+    assert.equal(capture.child.stdio[3].destroyed, true);
+    assert.deepEqual(capture.child.listeners('close'), [callerClose]);
+    assert.deepEqual(capture.child.stdout.listeners('data'), [callerData]);
+    const signalCount = groupSignals.length;
+    capture.child.emit('exit', 0, null);
+    capture.child.emit('close', 0, null);
+    assert.equal(groupSignals.length, signalCount);
+  });
 
 test('CLI emits exactly one applicable fixed line and one fixed failure line', async () => {
   for (const [operation, status] of [
@@ -624,6 +918,7 @@ test('supervisor forwards the exact frame on FD4 and IPC contains enums only', a
   assert.equal(capture.options.cwd, root);
   assert.deepEqual(capture.options.env, {});
   assert.deepEqual(capture.options.execArgv, []);
+  assert.equal(capture.options.detached, false);
   assert.deepEqual(capture.options.stdio, ['ignore', 'ignore', 'ignore', 'ipc', 'pipe']);
   assert.deepEqual(capture.messages, [{ ipcVersion: 1, requestId: 1, type: 'EXECUTE' }]);
   assert.equal(capture.frame.equals(frame), true);
@@ -706,6 +1001,281 @@ test('supervisor gates EXECUTE on both READY and completed FD4 frame EOF', async
     await assert.rejects(pending);
     assert.deepEqual(capture.messages, []);
   });
+});
+
+test('supervisor terminal settlement makes late protocol callbacks inert and releases owned handles',
+  async t => {
+    for (const operation of [
+      GATE_B_PUBLIC_WS_INPUT_OPERATIONS.PREPARE,
+      GATE_B_PUBLIC_WS_INPUT_OPERATIONS.AUTHORIZE,
+    ]) {
+      await t.test(operation, async nested => {
+        const { root } = await fixture(nested);
+        const frame = frameGateBPublicWsInputsBootstrap(
+          operation === GATE_B_PUBLIC_WS_INPUT_OPERATIONS.PREPARE
+            ? prepareBootstrap(root)
+            : authorizeBootstrap(root, 'b'.repeat(64)),
+        );
+        const capture = {
+          channelCloses: 0,
+          channelUnrefs: 0,
+          childUnrefs: 0,
+          directSignals: [],
+          disconnects: 0,
+          messages: [],
+          sendCallbacks: [],
+        };
+        const child = new EventEmitter();
+        const callerMessage = () => {};
+        const callerDisconnect = () => {};
+        const callerExit = () => {};
+        const callerClose = () => {};
+        child.on('message', callerMessage);
+        child.on('disconnect', callerDisconnect);
+        child.on('exit', callerExit);
+        child.on('close', callerClose);
+        child.connected = true;
+        child.channel = {
+          close() { capture.channelCloses += 1; },
+          unref() { capture.channelUnrefs += 1; },
+        };
+        child.disconnect = () => { capture.disconnects += 1; child.connected = false; };
+        child.unref = () => { capture.childUnrefs += 1; };
+        const fd4 = new PassThrough();
+        let lateFrameCallback;
+        const originalEnd = fd4.end.bind(fd4);
+        fd4.end = (value, callback) => {
+          lateFrameCallback = callback;
+          return originalEnd(value, callback);
+        };
+        child.stdio = [null, null, null, null, fd4];
+        child.kill = signal => {
+          capture.directSignals.push(signal);
+          setImmediate(() => child.emit('close', 1, signal));
+          return true;
+        };
+        child.send = (message, callback) => {
+          capture.messages.push(message);
+          capture.sendCallbacks.push(callback);
+          return true;
+        };
+        const pending = superviseGateBPublicWsInputs(operation, {
+          childModule: '/fixed/child.js',
+          forkProcess: () => child,
+          readBootstrapFrame: async () => Buffer.from(frame),
+          timeoutMs: 5,
+        });
+        await new Promise(resolve => setImmediate(resolve));
+        child.emit('message', { ipcVersion: 1, requestId: 1, type: 'READY' });
+        await new Promise(resolve => setImmediate(resolve));
+        assert.equal(capture.messages.length, 1);
+        await assert.rejects(pending, GateBPublicWsInputsSupervisorError);
+        const sentAtSettlement = capture.messages.length;
+        lateFrameCallback?.(new Error('synthetic late descriptor failure'));
+        capture.sendCallbacks[0]?.(new Error('synthetic late send failure'));
+        child.emit('message', {
+          ipcVersion: 1,
+          requestId: 1,
+          type: operation === GATE_B_PUBLIC_WS_INPUT_OPERATIONS.PREPARE
+            ? 'INPUTS_PREPARED'
+            : 'INPUTS_AUTHORIZED',
+        });
+        child.emit('disconnect');
+        child.emit('exit', 0, null);
+        child.emit('close', 0, null);
+        assert.equal(capture.messages.length, sentAtSettlement);
+        assert.equal(fd4.destroyed, true);
+        assert.equal(capture.disconnects, 1);
+        assert.equal(capture.channelCloses >= 1, true);
+        assert.equal(capture.channelUnrefs >= 1, true);
+        assert.equal(capture.childUnrefs, 1);
+        assert.deepEqual(capture.directSignals, []);
+        assert.deepEqual(child.listeners('message'), [callerMessage]);
+        assert.deepEqual(child.listeners('disconnect'), [callerDisconnect]);
+        assert.deepEqual(child.listeners('exit'), [callerExit]);
+        assert.deepEqual(child.listeners('close'), [callerClose]);
+      });
+    }
+  });
+
+test('successful supervisor settlement keeps every late callback inert', async t => {
+  for (const operation of [
+    GATE_B_PUBLIC_WS_INPUT_OPERATIONS.PREPARE,
+    GATE_B_PUBLIC_WS_INPUT_OPERATIONS.AUTHORIZE,
+  ]) {
+    await t.test(operation, async nested => {
+      const { root } = await fixture(nested);
+      const frame = frameGateBPublicWsInputsBootstrap(
+        operation === GATE_B_PUBLIC_WS_INPUT_OPERATIONS.PREPARE
+          ? prepareBootstrap(root)
+          : authorizeBootstrap(root, 'b'.repeat(64)),
+      );
+      const capture = {
+        channelCloses: 0,
+        channelUnrefs: 0,
+        childUnrefs: 0,
+        disconnects: 0,
+        messages: [],
+        sendCallbacks: [],
+      };
+      const child = new EventEmitter();
+      const callerMessage = () => {};
+      const callerDisconnect = () => {};
+      const callerExit = () => {};
+      const callerClose = () => {};
+      child.on('message', callerMessage);
+      child.on('disconnect', callerDisconnect);
+      child.on('exit', callerExit);
+      child.on('close', callerClose);
+      child.connected = true;
+      child.channel = {
+        close() { capture.channelCloses += 1; },
+        unref() { capture.channelUnrefs += 1; },
+      };
+      child.disconnect = () => { capture.disconnects += 1; child.connected = false; };
+      child.unref = () => { capture.childUnrefs += 1; };
+      const fd4 = new PassThrough();
+      let frameCallback;
+      const originalEnd = fd4.end.bind(fd4);
+      fd4.end = (value, callback) => {
+        frameCallback = callback;
+        return originalEnd(value);
+      };
+      child.stdio = [null, null, null, null, fd4];
+      child.send = (message, callback) => {
+        capture.messages.push(message);
+        capture.sendCallbacks.push(callback);
+        return true;
+      };
+      const pending = superviseGateBPublicWsInputs(operation, {
+        childModule: '/fixed/child.js',
+        forkProcess: () => child,
+        readBootstrapFrame: async () => Buffer.from(frame),
+        timeoutMs: 1000,
+      });
+      await new Promise(resolve => setImmediate(resolve));
+      child.emit('message', { ipcVersion: 1, requestId: 1, type: 'READY' });
+      frameCallback();
+      capture.sendCallbacks[0]?.();
+      child.emit('message', {
+        ipcVersion: 1,
+        requestId: 1,
+        type: operation === GATE_B_PUBLIC_WS_INPUT_OPERATIONS.PREPARE
+          ? 'INPUTS_PREPARED'
+          : 'INPUTS_AUTHORIZED',
+      });
+      child.emit('exit', 0, null);
+      child.emit('close', 0, null);
+      assert.deepEqual(await pending, {
+        status: operation === GATE_B_PUBLIC_WS_INPUT_OPERATIONS.PREPARE
+          ? 'prepared'
+          : 'authorized',
+      });
+      const sentAtSettlement = capture.messages.length;
+      frameCallback(new Error('synthetic late descriptor failure'));
+      capture.sendCallbacks[0]?.(new Error('synthetic late send failure'));
+      child.emit('message', { ipcVersion: 1, requestId: 1, type: 'READY' });
+      child.emit('message', {
+        ipcVersion: 1,
+        requestId: 1,
+        type: operation === GATE_B_PUBLIC_WS_INPUT_OPERATIONS.PREPARE
+          ? 'INPUTS_PREPARED'
+          : 'INPUTS_AUTHORIZED',
+      });
+      child.emit('disconnect');
+      child.emit('exit', 1, null);
+      child.emit('close', 1, null);
+      assert.equal(capture.messages.length, sentAtSettlement);
+      assert.equal(fd4.destroyed, true);
+      assert.equal(capture.disconnects, 1);
+      assert.equal(capture.channelCloses >= 1, true);
+      assert.equal(capture.channelUnrefs >= 1, true);
+      assert.equal(capture.childUnrefs, 1);
+      assert.deepEqual(child.listeners('message'), [callerMessage]);
+      assert.deepEqual(child.listeners('disconnect'), [callerDisconnect]);
+      assert.deepEqual(child.listeners('exit'), [callerExit]);
+      assert.deepEqual(child.listeners('close'), [callerClose]);
+    });
+  }
+});
+
+test('supervisor rejects a proxy fork return without reading or signaling it', async t => {
+  const { root } = await fixture(t);
+  let proxyReads = 0;
+  const proxyChild = new Proxy({}, {
+    get() {
+      proxyReads += 1;
+      throw new Error('synthetic proxy access');
+    },
+  });
+  await assert.rejects(superviseGateBPublicWsInputs('PREPARE', {
+    forkProcess: () => proxyChild,
+    childModule: '/fixed/child.js',
+    readBootstrapFrame: async () => frameGateBPublicWsInputsBootstrap(prepareBootstrap(root)),
+    timeoutMs: 1000,
+  }), GateBPublicWsInputsSupervisorError);
+  assert.equal(proxyReads, 0);
+});
+
+test('supervisor never evaluates accessor-backed child lifecycle or cleanup fields', async t => {
+  const { root } = await fixture(t);
+  for (const field of ['on', 'stdio']) {
+    let getterReads = 0;
+    const retained = new EventEmitter();
+    retained.send = () => true;
+    retained.stdio = [null, null, null, null, new PassThrough()];
+    Object.defineProperty(retained, field, {
+      configurable: true,
+      get() {
+        getterReads += 1;
+        throw new Error('synthetic accessor');
+      },
+    });
+    const callerClose = () => {};
+    EventEmitter.prototype.on.call(retained, 'close', callerClose);
+    await assert.rejects(superviseGateBPublicWsInputs('PREPARE', {
+      forkProcess: () => retained,
+      childModule: '/fixed/child.js',
+      readBootstrapFrame: async () => frameGateBPublicWsInputsBootstrap(prepareBootstrap(root)),
+      timeoutMs: 1000,
+    }), GateBPublicWsInputsSupervisorError);
+    assert.equal(getterReads, 0);
+    assert.deepEqual(retained.listeners('close'), [callerClose]);
+  }
+
+  let cleanupGetterReads = 0;
+  const retained = new EventEmitter();
+  retained.send = () => true;
+  retained.stdio = [null, null, null, null, new PassThrough()];
+  retained.connected = true;
+  retained.channel = { close() {}, unref() {} };
+  Object.defineProperty(retained, 'connected', {
+    configurable: true,
+    get() {
+      cleanupGetterReads += 1;
+      throw new Error('synthetic connected accessor');
+    },
+  });
+  Object.defineProperty(retained, 'channel', {
+    configurable: true,
+    get() {
+      cleanupGetterReads += 1;
+      throw new Error('synthetic channel accessor');
+    },
+  });
+  const callerClose = () => {};
+  EventEmitter.prototype.on.call(retained, 'close', callerClose);
+  const pending = superviseGateBPublicWsInputs('PREPARE', {
+    forkProcess: () => retained,
+    childModule: '/fixed/child.js',
+    readBootstrapFrame: async () => frameGateBPublicWsInputsBootstrap(prepareBootstrap(root)),
+    timeoutMs: 1000,
+  });
+  await new Promise(resolve => setImmediate(resolve));
+  retained.emit('error', new Error('synthetic lifecycle failure'));
+  await assert.rejects(pending, GateBPublicWsInputsSupervisorError);
+  assert.equal(cleanupGetterReads, 0);
+  assert.deepEqual(retained.listeners('close'), [callerClose]);
 });
 
 test('supervisor rejects malformed or operation-mismatched FD3 frames before forking', async t => {

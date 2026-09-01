@@ -16,8 +16,6 @@ const REQUEST_ID = 1;
 const BOOTSTRAP_FD = 3;
 const DEFAULT_TIMEOUT_MS = 60_000;
 const MAX_TIMEOUT_MS = 60_000;
-const REAP_FORCE_MS = 250;
-const REAP_ABANDON_MS = 1250;
 const CHILD_MODULE = fileURLToPath(new URL('./gate-b-public-ws-inputs-child.js', import.meta.url));
 const ARRAY_IS_ARRAY = Array.isArray;
 const GET_OWN_PROPERTY_DESCRIPTOR = Object.getOwnPropertyDescriptor;
@@ -26,6 +24,7 @@ const HAS_OWN = Object.hasOwn;
 const IS_PROXY = utilTypes.isProxy;
 const OBJECT_PROTOTYPE = Object.prototype;
 const REFLECT_OWN_KEYS = Reflect.ownKeys;
+const RELEASED_CHILDREN = new WeakSet();
 
 export class GateBPublicWsInputsSupervisorError extends Error {
   constructor() {
@@ -133,32 +132,101 @@ function exactInjections(value) {
   return output;
 }
 
-async function reap(child, alreadyClosed) {
-  if (alreadyClosed || !child || typeof child.once !== 'function') return;
-  await new Promise(resolveReap => {
-    let finished = false;
-    let forceTimer;
-    let abandonTimer;
-    const done = () => {
-      if (finished) return;
-      finished = true;
-      clearTimeout(forceTimer);
-      clearTimeout(abandonTimer);
-      resolveReap();
-    };
-    child.once('close', done);
-    forceTimer = setTimeout(() => {
-      try { child.kill('SIGKILL'); } catch {}
-    }, REAP_FORCE_MS);
-    abandonTimer = setTimeout(done, REAP_ABANDON_MS);
-    try { child.kill('SIGTERM'); } catch {}
+function dataProperty(value, name) {
+  if (!value || (typeof value !== 'object' && typeof value !== 'function') ||
+      IS_PROXY(value)) return undefined;
+  let current = value;
+  while (current !== null) {
+    if (IS_PROXY(current)) return undefined;
+    const descriptor = GET_OWN_PROPERTY_DESCRIPTOR(current, name);
+    if (descriptor) return HAS_OWN(descriptor, 'value') ? descriptor.value : undefined;
+    current = GET_PROTOTYPE_OF(current);
+  }
+  return undefined;
+}
+
+function ownDataProperty(value, name) {
+  if (!value || (typeof value !== 'object' && typeof value !== 'function') ||
+      IS_PROXY(value)) return undefined;
+  const descriptor = GET_OWN_PROPERTY_DESCRIPTOR(value, name);
+  return descriptor && HAS_OWN(descriptor, 'value') ? descriptor.value : undefined;
+}
+
+function snapshotChild(child) {
+  if (!child || (typeof child !== 'object' && typeof child !== 'function') ||
+      IS_PROXY(child)) return undefined;
+  const stdio = ownDataProperty(child, 'stdio');
+  const privateFd = ARRAY_IS_ARRAY(stdio) && !IS_PROXY(stdio)
+    ? ownDataProperty(stdio, '4')
+    : undefined;
+  const channel = ownDataProperty(child, 'channel');
+  return Object.freeze({
+    channel,
+    channelClose: dataProperty(channel, 'close'),
+    channelUnref: dataProperty(channel, 'unref'),
+    child,
+    connected: ownDataProperty(child, 'connected'),
+    disconnect: dataProperty(child, 'disconnect'),
+    on: dataProperty(child, 'on'),
+    once: dataProperty(child, 'once'),
+    privateDestroy: dataProperty(privateFd, 'destroy'),
+    privateEnd: dataProperty(privateFd, 'end'),
+    privateFd,
+    privateOnce: dataProperty(privateFd, 'once'),
+    privateRemoveListener: dataProperty(privateFd, 'removeListener'),
+    removeListener: dataProperty(child, 'removeListener'),
+    send: dataProperty(child, 'send'),
+    unref: dataProperty(child, 'unref'),
   });
+}
+
+function exactChild(snapshot) {
+  if (!snapshot || typeof snapshot.on !== 'function' ||
+      typeof snapshot.once !== 'function' || typeof snapshot.removeListener !== 'function' ||
+      typeof snapshot.send !== 'function' || !snapshot.privateFd ||
+      typeof snapshot.privateEnd !== 'function' ||
+      typeof snapshot.privateOnce !== 'function' ||
+      typeof snapshot.privateRemoveListener !== 'function') fail();
+  return snapshot;
+}
+
+function destroyOwnedHandle(handle, destroy) {
+  try {
+    if (handle && typeof destroy === 'function') Reflect.apply(destroy, handle, []);
+  } catch {}
+}
+
+function releaseOwnedChild(snapshot) {
+  if (!snapshot || RELEASED_CHILDREN.has(snapshot.child)) return;
+  RELEASED_CHILDREN.add(snapshot.child);
+  destroyOwnedHandle(snapshot.privateFd, snapshot.privateDestroy);
+  try {
+    if (snapshot.connected === true && typeof snapshot.disconnect === 'function') {
+      Reflect.apply(snapshot.disconnect, snapshot.child, []);
+    }
+  } catch {}
+  try {
+    if (typeof snapshot.channelClose === 'function') {
+      Reflect.apply(snapshot.channelClose, snapshot.channel, []);
+    }
+  } catch {}
+  try {
+    if (typeof snapshot.channelUnref === 'function') {
+      Reflect.apply(snapshot.channelUnref, snapshot.channel, []);
+    }
+  } catch {}
+  try {
+    if (typeof snapshot.unref === 'function') {
+      Reflect.apply(snapshot.unref, snapshot.child, []);
+    }
+  } catch {}
 }
 
 export async function superviseGateBPublicWsInputs(operation, injected) {
   let child;
-  let childClosed = false;
+  let childSnapshot;
   let frame;
+  let detachOwned = () => {};
   try {
     operation = exactOperation(operation);
     const dependencies = exactInjections(injected);
@@ -171,6 +239,7 @@ export async function superviseGateBPublicWsInputs(operation, injected) {
       [],
       {
         cwd: bootstrap.workspaceRoot,
+        detached: false,
         env: {},
         execArgv: [],
         shell: false,
@@ -178,9 +247,8 @@ export async function superviseGateBPublicWsInputs(operation, injected) {
         windowsHide: true,
       },
     ]);
-    if (!child || typeof child.on !== 'function' || typeof child.send !== 'function' ||
-        typeof child.kill !== 'function' || !ARRAY_IS_ARRAY(child.stdio) ||
-        !child.stdio[4] || typeof child.stdio[4].end !== 'function') fail();
+    childSnapshot = snapshotChild(child);
+    exactChild(childSnapshot);
 
     const expectedTerminal = terminalType(operation);
     const terminal = await new Promise((resolveTerminal, rejectTerminal) => {
@@ -190,40 +258,58 @@ export async function superviseGateBPublicWsInputs(operation, injected) {
       let readyReceived = false;
       let frameWritten = false;
       let executeSent = false;
+      let acceptingProtocol = true;
+      let connected = childSnapshot.connected;
+      const owned = [];
       const timer = setTimeout(() => finish(false), dependencies.timeoutMs);
+      detachOwned = () => {
+        for (let index = 0; index < owned.length; index += 1) {
+          const [emitter, removeListener, event, handler] = owned[index];
+          try { Reflect.apply(removeListener, emitter, [event, handler]); } catch {}
+        }
+        owned.length = 0;
+      };
       const finish = success => {
         if (settled) return;
         settled = true;
+        acceptingProtocol = false;
         clearTimeout(timer);
+        detachOwned();
         if (success) resolveTerminal(terminalMessage);
         else rejectTerminal(new GateBPublicWsInputsSupervisorError());
       };
       const sendExecute = () => {
-        if (settled || !readyReceived || !frameWritten || executeSent) return;
+        if (!acceptingProtocol || settled || !readyReceived || !frameWritten || executeSent) return;
         executeSent = true;
         try {
-          const accepted = child.send({
+          if (!acceptingProtocol) return;
+          const accepted = Reflect.apply(childSnapshot.send, child, [{
             ipcVersion: IPC_VERSION,
             requestId: REQUEST_ID,
             type: 'EXECUTE',
           }, error => {
+            if (!acceptingProtocol) return;
             if (error) finish(false);
-          });
-          if (accepted === false && child.connected === false) finish(false);
+          }]);
+          if (accepted === false && connected === false) finish(false);
         } catch {
           finish(false);
         }
       };
-      child.on('error', () => finish(false));
-      child.on('disconnect', () => {
+      const onError = () => finish(false);
+      const onDisconnect = () => {
+        connected = false;
+        if (!acceptingProtocol) return;
         if (terminalMessage !== expectedTerminal) finish(false);
-      });
-      child.on('message', message => {
+      };
+      const onMessage = message => {
+        if (!acceptingProtocol) return;
         try {
           if (!executeSent) {
             exactMessage(message, 'READY');
             if (readyReceived) fail();
             readyReceived = true;
+            if (!acceptingProtocol) return;
             sendExecute();
             return;
           }
@@ -236,33 +322,58 @@ export async function superviseGateBPublicWsInputs(operation, injected) {
         } catch {
           finish(false);
         }
-      });
-      child.on('exit', (code, signal) => {
+      };
+      const onExit = (code, signal) => {
+        if (!acceptingProtocol) return;
         if (code !== 0 || signal !== null || terminalMessage !== expectedTerminal ||
             !readyReceived || !frameWritten || !executeSent) finish(false);
-      });
-      child.on('close', (code, signal) => {
-        childClosed = true;
+      };
+      const onClose = (code, signal) => {
+        if (!acceptingProtocol) return;
         if (closed) return finish(false);
         closed = true;
         if (terminalMessage !== expectedTerminal || !readyReceived || !frameWritten ||
             !executeSent || code !== 0 || signal !== null) return finish(false);
         finish(true);
-      });
-      child.stdio[4].once('error', () => finish(false));
-      child.stdio[4].end(frame, error => {
+      };
+      const onPrivateError = () => finish(false);
+      for (const [emitter, event, handler] of [
+        [child, 'error', onError],
+        [child, 'disconnect', onDisconnect],
+        [child, 'message', onMessage],
+        [child, 'exit', onExit],
+        [child, 'close', onClose],
+      ]) {
+        Reflect.apply(childSnapshot.on, emitter, [event, handler]);
+        owned.push([emitter, childSnapshot.removeListener, event, handler]);
+      }
+      Reflect.apply(childSnapshot.privateOnce, childSnapshot.privateFd, [
+        'error',
+        onPrivateError,
+      ]);
+      owned.push([
+        childSnapshot.privateFd,
+        childSnapshot.privateRemoveListener,
+        'error',
+        onPrivateError,
+      ]);
+      Reflect.apply(childSnapshot.privateEnd, childSnapshot.privateFd, [frame, error => {
+        if (!acceptingProtocol) return;
         if (frameWritten) return finish(false);
         frameWritten = error === undefined || error === null;
         if (!frameWritten) finish(false);
         else sendExecute();
-      });
+      }]);
     });
     if (terminal !== expectedTerminal) fail();
     return Object.freeze({ status: successStatus(operation) });
   } catch {
-    await reap(child, childClosed);
+    detachOwned();
+    releaseOwnedChild(childSnapshot);
     fail();
   } finally {
+    detachOwned();
+    releaseOwnedChild(childSnapshot);
     if (Buffer.isBuffer(frame)) frame.fill(0);
   }
 }
