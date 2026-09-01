@@ -219,7 +219,7 @@ Gate B is a separate authorization boundary for the actual public-testnet endpoi
 ### Gate B operator handoff
 
 1. Obtain separate authority for the external operational inputs and a private workspace; commit none of their values.
-2. Outside the repository, confirm a disposable, minimally funded, single-use test wallet and authority for exactly one payment.
+2. Outside the repository, have the identified operator create and review a disposable, single-use test wallet, then fund it minimally under a separate authority. The optional fixed-output local helper can create only the protected wallet and address files; it does not fund or authorize them.
 3. Require the existing preflight to succeed before authorizing run mode.
 4. Treat only an uninterrupted evidence-eligible result as a publication candidate; recovery, restart or ambiguity remains nonpublishable.
 5. Apply the existing offline verifier, then human-review every intended public string and the deliberate disclosure boundary.
@@ -228,6 +228,8 @@ Gate B is a separate authorization boundary for the actual public-testnet endpoi
 ### Mandatory operator stop rules
 
 Automation must stop before creating or populating private role files, provisioning live ingress, or accessing or funding the disposable wallet. An identified human operator must supply and approve those inputs. Only after that operator-authorized provisioning may preflight validate protected input-file identity, metadata, generation, public configuration, RPC syntax, and output noncollision. Ordinary WSS preflight opens every protected role file, reads only the public config and buyer-RPC input, and does not read buyer-wallet or facilitator-RPC contents. Exceptional preflight opens all five protected files and reads the public config, both RPC role files, and authorization, but never reads wallet contents. Neither preflight performs network activity.
+
+The source-only macOS wallet helper is prepared and tested before this stop, but its invocation remains an identified operator action because it creates real secret material. It accepts only `create --workspace <absolute-private-workspace>`, refuses any existing fixed target, and creates exactly `buyer-wallet.json` plus private `buyer-address.json` after reserving and verifying both files before SDK randomness. Its parent has synchronous fixed-descriptor output and no SDK import; its fixed child receives the workspace over a private bounded pipe, verifies current-user restrictive modes and Darwin ACL absence, derives only account index zero, syncs both files and the directory, and best-effort clears reachable secret state before immediate exit. ACL inspection is pathname-based but bracketed by retained-descriptor identity checks; unsupported inspection fails closed, while any namespace-authorized actor remains inside the trust boundary. JavaScript memory clearing is not reliable zeroization. The helper intentionally invokes no network operation but is not an OS sandbox for the dynamically imported SDK. Every post-reservation failure preserves restrictive sensitive residue because portable identity-checked unlink is unavailable; the operator must inspect or quarantine it and must not delete or retry automatically. Helper success grants no authority for funding, preflight, run, or publication.
 
 A successful `preflight` does not authorize `run`. Stop again before invoking `run`; a separate explicit human authorization permits exactly one payment. Preflight and run do not themselves authorize evidence publication.
 
