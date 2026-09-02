@@ -12,10 +12,20 @@ import {
 } from 'node:fs/promises';
 import { request as httpRequest } from 'node:http';
 import { tmpdir } from 'node:os';
-import { isAbsolute, join, resolve } from 'node:path';
+import { basename, dirname, isAbsolute, join, resolve } from 'node:path';
+import { performance } from 'node:perf_hooks';
 import { pathToFileURL } from 'node:url';
 import { types as utilTypes } from 'node:util';
 
+import {
+  GATE_B_QUICK_TUNNEL_ARTIFACT_MANIFEST,
+  GATE_B_QUICK_TUNNEL_HOSTNAME_PERSISTENCE_POLICY,
+  GATE_B_QUICK_TUNNEL_RUNTIME_CONTROL_POLICY,
+  GATE_B_QUICK_TUNNEL_TELEMETRY_POLICIES,
+  matchesGateBQuickTunnelCanonicalVersionOutput,
+  validateGateBQuickTunnelArtifactSelection,
+  validateGateBQuickTunnelStableBinding,
+} from './gate-b-quick-tunnel-artifact.js';
 import {
   GATE_B_PUBLIC_WS_INPUT_LEAVES,
   parseGateBQuickTunnelHostnameSource,
@@ -47,9 +57,11 @@ const REAP_FORCE_MS = 500;
 const RUNTIME_MAX_BYTES = 256 * 1024 * 1024;
 const LSOF_MAX_BYTES = GATE_B_QUICK_TUNNEL_LIMITS.lsofBytes;
 const VERSION_MAX_BYTES = 256;
-const CLOUDFLARED_VERSION_OUTPUT =
-  /^cloudflared version 2026\.8\.2 \(built [A-Za-z0-9:+._ -]{1,96}\)\n$/;
-const CLOUDFLARED_ARGV0 = 'cloudflared';
+const ACL_MAX_BYTES = 64 * 1024;
+const ACL_COMPONENT_TIMEOUT_MS = 200;
+const ACL_AGGREGATE_TIMEOUT_MS = 4_000;
+const PATH_COMPONENT_MAX = 16;
+const CLOUDFLARED_ARGV0 = GATE_B_QUICK_TUNNEL_ARTIFACT_MANIFEST.executableBasename;
 const ARRAY_IS_ARRAY = Array.isArray;
 const GET_OWN_PROPERTY_DESCRIPTOR = Object.getOwnPropertyDescriptor;
 const GET_PROTOTYPE_OF = Object.getPrototypeOf;
@@ -58,6 +70,8 @@ const IS_PROXY = utilTypes.isProxy;
 const OBJECT_PROTOTYPE = Object.prototype;
 const REFLECT_OWN_KEYS = Reflect.ownKeys;
 const ATTESTATIONS = new WeakMap();
+const ATTESTATION_LAUNCHES = new WeakMap();
+const EXECUTABLE_PATH_GUARDS = new WeakMap();
 const RUNTIME_DIRECTORIES = new WeakMap();
 
 const CLOUDFLARED_ARGUMENTS = Object.freeze([
@@ -114,6 +128,17 @@ function sameGeneration(left, right) {
     left.mtimeNs === right.mtimeNs && left.ctimeNs === right.ctimeNs;
 }
 
+function exactExecutableIdentity(value, sourcePin) {
+  exactPlainObject(value, [
+    'ctimeNs', 'dev', 'digest', 'ino', 'mode', 'mtimeNs', 'nlink', 'size',
+  ]);
+  for (const field of ['ctimeNs', 'dev', 'ino', 'mode', 'mtimeNs', 'nlink', 'size']) {
+    if (typeof value[field] !== 'bigint' || value[field] < 0n) fail();
+  }
+  if (value.nlink !== 1n || value.size < 1n || value.digest !== sourcePin) fail();
+  return value;
+}
+
 function mode(stat) {
   return Number(stat.mode & 0o7777n);
 }
@@ -126,7 +151,8 @@ function exactCurrentUid() {
 
 function exactCanonicalPath(value) {
   if (typeof value !== 'string' || value.length < 1 || value.length > 4096 ||
-      value.includes('\0') || !isAbsolute(value) || resolve(value) !== value) fail();
+      /[\u0000-\u001f\u007f]/u.test(value) || !isAbsolute(value) ||
+      resolve(value) !== value) fail();
   return value;
 }
 
@@ -135,15 +161,101 @@ function executableStat(stat, uid) {
   return stat && typeof stat.isFile === 'function' && stat.isFile() &&
     !stat.isSymbolicLink() && stat.uid === BigInt(uid) && stat.nlink === 1n &&
     stat.size >= 4096n && stat.size <= BigInt(RUNTIME_MAX_BYTES) &&
-    (permissions & 0o100) !== 0 && (permissions & 0o6022) === 0;
+    permissions === 0o500;
 }
 
-function nativeMachO(header) {
+function trustedParentStat(stat, uid, belowAnchor) {
+  if (!stat || typeof stat.isDirectory !== 'function' || !stat.isDirectory() ||
+      stat.isSymbolicLink() || typeof stat.uid !== 'bigint') return false;
+  const permissions = mode(stat);
+  if ((permissions & 0o6022) !== 0 || (permissions & 0o500) !== 0o500) return false;
+  if (belowAnchor) return stat.uid === BigInt(uid) && permissions === 0o700;
+  return stat.uid === 0n || stat.uid === BigInt(uid);
+}
+
+function pathParents(executablePath) {
+  const reversed = [];
+  let cursor = dirname(executablePath);
+  while (true) {
+    reversed.push(cursor);
+    if (reversed.length > PATH_COMPONENT_MAX) fail();
+    const parent = dirname(cursor);
+    if (parent === cursor) break;
+    cursor = parent;
+  }
+  return reversed.reverse();
+}
+
+function permissionText(kind, permissions) {
+  const bits = [0o400, 0o200, 0o100, 0o040, 0o020, 0o010, 0o004, 0o002, 0o001];
+  const letters = ['r', 'w', 'x', 'r', 'w', 'x', 'r', 'w', 'x'];
+  let output = kind === 'directory' ? 'd' : '-';
+  for (let index = 0; index < bits.length; index += 1) {
+    output += (permissions & bits[index]) === 0 ? '-' : letters[index];
+  }
+  return output;
+}
+
+function inspectDarwinAcl(
+  { cwd, identity, kind, target, timeoutMs },
+  spawnSyncProcess = spawnSync,
+) {
+  let stdout;
+  let stderr;
+  try {
+    exactCanonicalPath(cwd);
+    if ((kind !== 'directory' && kind !== 'file') ||
+        (target !== '.' && target !== `./${CLOUDFLARED_ARGV0}`) ||
+        (kind === 'directory') !== (target === '.') ||
+        !identity || typeof identity.ino !== 'bigint' || identity.ino < 1n ||
+        !Number.isSafeInteger(timeoutMs) || timeoutMs < 1 ||
+        timeoutMs > ACL_COMPONENT_TIMEOUT_MS ||
+        typeof spawnSyncProcess !== 'function') fail();
+    const args = ['-lide', target];
+    const result = Reflect.apply(spawnSyncProcess, undefined, [
+      '/bin/ls',
+      args,
+      {
+        cwd,
+        env: {},
+        killSignal: 'SIGKILL',
+        maxBuffer: ACL_MAX_BYTES,
+        shell: false,
+        stdio: ['ignore', 'pipe', 'pipe'],
+        timeout: timeoutMs,
+        windowsHide: true,
+      },
+    ]);
+    stdout = result.stdout;
+    stderr = result.stderr;
+    if (result.error !== undefined || result.status !== 0 || result.signal !== null ||
+        !Buffer.isBuffer(stdout) || !Buffer.isBuffer(stderr) || stderr.length !== 0 ||
+        stdout.length < 12 || stdout.length > ACL_MAX_BYTES) fail();
+    const expected = permissionText(kind, mode(identity));
+    const lines = stdout.toString('utf8').split('\n');
+    let matches = 0;
+    for (const line of lines) {
+      const candidate = /^\s*([0-9]+)\s+([-drwx]{10})([ +@])(?:\s|$)/u.exec(line);
+      if (candidate?.[1] !== String(identity.ino)) continue;
+      matches += 1;
+      if (candidate[2] !== expected || candidate[3] === '+') fail();
+    }
+    if (matches !== 1) fail();
+    return true;
+  } catch {
+    fail();
+  } finally {
+    if (Buffer.isBuffer(stdout)) stdout.fill(0);
+    if (Buffer.isBuffer(stderr)) stderr.fill(0);
+  }
+}
+
+function nativeMachO(header, architecture = process.arch) {
   if (!Buffer.isBuffer(header) || header.length !== 8 ||
       !header.subarray(0, 4).equals(Buffer.from([0xcf, 0xfa, 0xed, 0xfe]))) return false;
   const cpuType = header.readUInt32LE(4);
-  if (process.arch === 'arm64') return cpuType === 0x0100000c;
-  if (process.arch === 'x64') return cpuType === 0x01000007;
+  if (architecture === 'arm64') return cpuType === 0x0100000c;
+  if (architecture === 'x64') return cpuType === 0x01000007;
   return false;
 }
 
@@ -173,7 +285,7 @@ function attestVersion(executablePath, spawnSyncProcess = spawnSync) {
         !Buffer.isBuffer(stdout) || !Buffer.isBuffer(stderr) || stderr.length !== 0 ||
         stdout.length < 1 || stdout.length > VERSION_MAX_BYTES) fail();
     const line = stdout.toString('utf8');
-    if (!CLOUDFLARED_VERSION_OUTPUT.test(line)) fail();
+    if (matchesGateBQuickTunnelCanonicalVersionOutput(line) !== true) fail();
     return true;
   } catch {
     fail();
@@ -212,70 +324,511 @@ async function readExactFileHash(handle, size) {
   }
 }
 
+function createAttestationLaunch() {
+  const token = Object.freeze(Object.create(null));
+  ATTESTATION_LAUNCHES.set(token, { stage: 'CREATED' });
+  return token;
+}
+
+function executableDependencies(value) {
+  const output = value ?? {
+    architecture: process.arch,
+    inspectExecutableAcl: inspectDarwinAcl,
+    lstatExecutablePath: lstat,
+    monotonicNow: () => performance.now(),
+    openExecutablePath: open,
+    platform: process.platform,
+    readExecutableHash: readExactFileHash,
+    realpathExecutablePath: realpath,
+  };
+  if (typeof output.architecture !== 'string' || typeof output.platform !== 'string') fail();
+  for (const name of [
+    'inspectExecutableAcl', 'lstatExecutablePath', 'openExecutablePath',
+    'monotonicNow', 'readExecutableHash', 'realpathExecutablePath',
+  ]) {
+    if (typeof output[name] !== 'function') fail();
+  }
+  return output;
+}
+
+async function closeExecutablePathGuard(token) {
+  const record = EXECUTABLE_PATH_GUARDS.get(token);
+  if (!record || record.closed) return false;
+  let failed = false;
+  record.closed = true;
+  const handles = [record.leaf?.handle];
+  for (let index = record.parents.length - 1; index >= 0; index -= 1) {
+    handles.push(record.parents[index]?.handle);
+  }
+  for (const handle of handles) {
+    try { await handle?.close(); } catch { failed = true; }
+  }
+  if (record.leaf) {
+    record.leaf.handle = undefined;
+    record.leaf.identity = undefined;
+    record.leaf.parentPath = undefined;
+    record.leaf.path = undefined;
+  }
+  for (const parent of record.parents) {
+    parent.handle = undefined;
+    parent.identity = undefined;
+    parent.path = undefined;
+  }
+  record.leaf = undefined;
+  record.parents.length = 0;
+  record.path = undefined;
+  record.uid = undefined;
+  EXECUTABLE_PATH_GUARDS.delete(token);
+  if (failed) fail();
+  return true;
+}
+
+async function openExecutablePathGuard(executablePath, dependencies) {
+  const parents = [];
+  let leaf;
+  try {
+    if (basename(executablePath) !== CLOUDFLARED_ARGV0) fail();
+    const uid = exactCurrentUid();
+    const {
+      O_CLOEXEC = 0, O_DIRECTORY, O_NOFOLLOW, O_RDONLY,
+    } = fsConstants;
+    if (![O_CLOEXEC, O_DIRECTORY, O_NOFOLLOW, O_RDONLY].every(Number.isInteger) ||
+        O_DIRECTORY === 0 || O_NOFOLLOW === 0) fail();
+    const aclStarted = Reflect.apply(dependencies.monotonicNow, undefined, []);
+    if (!Number.isFinite(aclStarted) || aclStarted < 0) fail();
+    const aclDeadline = aclStarted + ACL_AGGREGATE_TIMEOUT_MS;
+    if (!Number.isFinite(aclDeadline)) fail();
+    const aclTimeout = () => {
+      const now = Reflect.apply(dependencies.monotonicNow, undefined, []);
+      if (!Number.isFinite(now) || now < aclStarted || now >= aclDeadline) fail();
+      const remaining = Math.floor(aclDeadline - now);
+      if (remaining < 1) fail();
+      return Math.min(ACL_COMPONENT_TIMEOUT_MS, remaining);
+    };
+    let anchorFound = false;
+    for (const parentPath of pathParents(executablePath)) {
+      if (await Reflect.apply(dependencies.realpathExecutablePath, undefined, [parentPath]) !==
+          parentPath) fail();
+      const before = await Reflect.apply(dependencies.lstatExecutablePath, undefined, [
+        parentPath, { bigint: true },
+      ]);
+      const anchor = !anchorFound && before?.uid === BigInt(uid) && mode(before) === 0o700;
+      if (!trustedParentStat(before, uid, anchorFound || anchor)) fail();
+      const handle = await Reflect.apply(dependencies.openExecutablePath, undefined, [
+        parentPath, O_RDONLY | O_DIRECTORY | O_NOFOLLOW | O_CLOEXEC,
+      ]);
+      const parent = {
+        belowAnchor: anchorFound || anchor,
+        handle,
+        identity: undefined,
+        path: parentPath,
+      };
+      parents.push(parent);
+      const opened = await handle.stat({ bigint: true });
+      if (!trustedParentStat(opened, uid, anchorFound || anchor) ||
+          !sameGeneration(before, opened)) fail();
+      if (await Reflect.apply(dependencies.inspectExecutableAcl, undefined, [{
+            cwd: parentPath,
+            identity: opened,
+            kind: 'directory',
+            target: '.',
+            timeoutMs: aclTimeout(),
+          }]) !== true) fail();
+      const afterPath = await Reflect.apply(dependencies.lstatExecutablePath, undefined, [
+        parentPath, { bigint: true },
+      ]);
+      const afterHandle = await handle.stat({ bigint: true });
+      if (await Reflect.apply(dependencies.realpathExecutablePath, undefined, [parentPath]) !==
+          parentPath || !trustedParentStat(afterPath, uid, anchorFound || anchor) ||
+          !trustedParentStat(afterHandle, uid, anchorFound || anchor) ||
+          !sameGeneration(opened, afterPath) || !sameGeneration(opened, afterHandle)) fail();
+      anchorFound ||= anchor;
+      parent.belowAnchor = anchorFound;
+      parent.identity = afterHandle;
+    }
+    if (!anchorFound || parents.length < 2) fail();
+    const before = await Reflect.apply(dependencies.lstatExecutablePath, undefined, [
+      executablePath, { bigint: true },
+    ]);
+    if (!executableStat(before, uid)) fail();
+    const handle = await Reflect.apply(dependencies.openExecutablePath, undefined, [
+      executablePath, O_RDONLY | O_NOFOLLOW | O_CLOEXEC,
+    ]);
+    leaf = {
+      handle,
+      identity: undefined,
+      parentPath: dirname(executablePath),
+      path: executablePath,
+    };
+    const opened = await handle.stat({ bigint: true });
+    if (!executableStat(opened, uid) || !sameGeneration(before, opened)) fail();
+    if (await Reflect.apply(dependencies.inspectExecutableAcl, undefined, [{
+          cwd: dirname(executablePath),
+          identity: opened,
+          kind: 'file',
+          target: `./${CLOUDFLARED_ARGV0}`,
+          timeoutMs: aclTimeout(),
+        }]) !== true) fail();
+    const afterPath = await Reflect.apply(dependencies.lstatExecutablePath, undefined, [
+      executablePath, { bigint: true },
+    ]);
+    const afterHandle = await handle.stat({ bigint: true });
+    if (await Reflect.apply(dependencies.realpathExecutablePath, undefined, [executablePath]) !==
+        executablePath || !executableStat(afterPath, uid) ||
+        !executableStat(afterHandle, uid) || !sameGeneration(opened, afterPath) ||
+        !sameGeneration(opened, afterHandle)) fail();
+    leaf.identity = afterHandle;
+    const token = Object.freeze(Object.create(null));
+    EXECUTABLE_PATH_GUARDS.set(token, {
+      closed: false,
+      leaf,
+      parents,
+      path: executablePath,
+      uid,
+    });
+    return token;
+  } catch {
+    try { await leaf?.handle?.close(); } catch {}
+    for (let index = parents.length - 1; index >= 0; index -= 1) {
+      try { await parents[index]?.handle?.close(); } catch {}
+    }
+    fail();
+  }
+}
+
+async function assertExecutablePathGuard(token, dependencies) {
+  const record = EXECUTABLE_PATH_GUARDS.get(token);
+  if (!record || record.closed || !record.leaf || record.parents.length < 2 ||
+      record.path !== record.leaf.path || record.leaf.parentPath !== dirname(record.path)) fail();
+  for (const parent of record.parents) {
+    if (await Reflect.apply(dependencies.realpathExecutablePath, undefined, [parent.path]) !==
+        parent.path) fail();
+    const pathState = await Reflect.apply(dependencies.lstatExecutablePath, undefined, [
+      parent.path, { bigint: true },
+    ]);
+    const handleState = await parent.handle.stat({ bigint: true });
+    if (!trustedParentStat(pathState, record.uid, parent.belowAnchor) ||
+        !trustedParentStat(handleState, record.uid, parent.belowAnchor) ||
+        !sameGeneration(parent.identity, pathState) ||
+        !sameGeneration(parent.identity, handleState)) fail();
+  }
+  if (await Reflect.apply(dependencies.realpathExecutablePath, undefined, [record.path]) !==
+      record.path) fail();
+  const pathState = await Reflect.apply(dependencies.lstatExecutablePath, undefined, [
+    record.path, { bigint: true },
+  ]);
+  const handleState = await record.leaf.handle.stat({ bigint: true });
+  if (!executableStat(pathState, record.uid) || !executableStat(handleState, record.uid) ||
+      !sameGeneration(record.leaf.identity, pathState) ||
+      !sameGeneration(record.leaf.identity, handleState)) fail();
+  return record;
+}
+
+async function inspectExecutable(
+  executablePath,
+  sourcePin,
+  versionAttestor = attestVersion,
+  retainedPathGuard,
+  suppliedDependencies,
+) {
+  let pathGuard = retainedPathGuard;
+  let createdGuard = false;
+  let digest;
+  let expected;
+  try {
+    exactCanonicalPath(executablePath);
+    const dependencies = executableDependencies(suppliedDependencies);
+    if (validateGateBQuickTunnelArtifactSelection({
+      architecture: dependencies.architecture,
+      platform: dependencies.platform,
+      sourcePin,
+    }) !== true) fail();
+    if (pathGuard === undefined) {
+      pathGuard = await openExecutablePathGuard(executablePath, dependencies);
+      createdGuard = true;
+    }
+    const guarded = await assertExecutablePathGuard(pathGuard, dependencies);
+    if (guarded.path !== executablePath) fail();
+    const opened = guarded.leaf.identity;
+    const handle = guarded.leaf.handle;
+    const header = Buffer.alloc(8);
+    try {
+      const result = await handle.read(header, 0, header.length, 0);
+      if (!result || result.bytesRead !== header.length ||
+          !nativeMachO(header, dependencies.architecture)) fail();
+    } finally {
+      header.fill(0);
+    }
+    digest = await Reflect.apply(dependencies.readExecutableHash, undefined, [
+      handle, Number(opened.size),
+    ]);
+    if (!Buffer.isBuffer(digest)) fail();
+    expected = Buffer.from(sourcePin, 'hex');
+    if (expected.length !== digest.length || !timingSafeEqual(digest, expected)) fail();
+    await assertExecutablePathGuard(pathGuard, dependencies);
+    if (typeof versionAttestor !== 'function' ||
+        await Reflect.apply(versionAttestor, undefined, [executablePath]) !== true) fail();
+    await assertExecutablePathGuard(pathGuard, dependencies);
+    return {
+      identity: {
+        dev: opened.dev,
+        ino: opened.ino,
+        size: opened.size,
+        mode: opened.mode,
+        nlink: opened.nlink,
+        mtimeNs: opened.mtimeNs,
+        ctimeNs: opened.ctimeNs,
+        digest: digest.toString('hex'),
+      },
+      pathGuard,
+    };
+  } catch {
+    if (createdGuard) {
+      try { await closeExecutablePathGuard(pathGuard); } catch {}
+    }
+    fail();
+  } finally {
+    if (Buffer.isBuffer(digest)) digest.fill(0);
+    if (Buffer.isBuffer(expected)) expected.fill(0);
+  }
+}
+
 async function attestExecutable(
   executablePath,
   sourcePin,
   previous,
   versionAttestor = attestVersion,
+  launchToken,
+  child,
+  executableInspector = inspectExecutable,
+  platform = process.platform,
+  architecture = process.arch,
+  executableInspectionDependencies,
 ) {
-  let handle;
-  let digest;
-  let expected;
   try {
-    exactCanonicalPath(executablePath);
-    if (typeof sourcePin !== 'string' || !/^[0-9a-f]{64}$/.test(sourcePin) ||
-        await realpath(executablePath) !== executablePath) fail();
-    const uid = exactCurrentUid();
-    const before = await lstat(executablePath, { bigint: true });
-    if (!executableStat(before, uid)) fail();
-    const { O_CLOEXEC = 0, O_NOFOLLOW, O_RDONLY } = fsConstants;
-    if (![O_CLOEXEC, O_NOFOLLOW, O_RDONLY].every(Number.isInteger) || O_NOFOLLOW === 0) fail();
-    handle = await open(executablePath, O_RDONLY | O_NOFOLLOW | O_CLOEXEC);
-    const opened = await handle.stat({ bigint: true });
-    if (!executableStat(opened, uid) || !sameGeneration(before, opened)) fail();
-    const header = Buffer.alloc(8);
-    try {
-      const result = await handle.read(header, 0, header.length, 0);
-      if (!result || result.bytesRead !== header.length || !nativeMachO(header)) fail();
-    } finally {
-      header.fill(0);
-    }
-    digest = await readExactFileHash(handle, Number(opened.size));
-    expected = Buffer.from(sourcePin, 'hex');
-    if (expected.length !== digest.length || !timingSafeEqual(digest, expected)) fail();
-    if (typeof versionAttestor !== 'function' ||
-        await Reflect.apply(versionAttestor, undefined, [executablePath]) !== true) fail();
-    const afterHandle = await handle.stat({ bigint: true });
-    const afterPath = await lstat(executablePath, { bigint: true });
-    if (!sameGeneration(opened, afterHandle) || !sameGeneration(opened, afterPath)) fail();
-    const identity = {
-      dev: opened.dev,
-      ino: opened.ino,
-      size: opened.size,
-      mode: opened.mode,
-      nlink: opened.nlink,
-      mtimeNs: opened.mtimeNs,
-      ctimeNs: opened.ctimeNs,
-      digest: digest.toString('hex'),
-    };
-    if (previous !== undefined) {
-      const prior = ATTESTATIONS.get(previous);
-      if (!prior || prior.path !== executablePath ||
-          !sameGeneration(prior.identity, identity) || prior.identity.digest !== identity.digest) {
-        fail();
+    if (validateGateBQuickTunnelArtifactSelection({
+      architecture,
+      platform,
+      sourcePin,
+    }) !== true || typeof executableInspector !== 'function') fail();
+    const launch = ATTESTATION_LAUNCHES.get(launchToken);
+    if (!launch) fail();
+    if (previous === undefined) {
+      if (launch.stage !== 'CREATED' || child !== undefined) fail();
+      const inspected = await Reflect.apply(executableInspector, undefined, [
+        executablePath,
+        sourcePin,
+        versionAttestor,
+        undefined,
+        executableInspectionDependencies,
+      ]);
+      let identity;
+      let pathGuard;
+      if (executableInspector === inspectExecutable) {
+        exactPlainObject(inspected, ['identity', 'pathGuard']);
+        identity = exactExecutableIdentity(inspected.identity, sourcePin);
+        pathGuard = inspected.pathGuard;
+        if (!EXECUTABLE_PATH_GUARDS.has(pathGuard)) fail();
+      } else {
+        identity = exactExecutableIdentity(inspected, sourcePin);
       }
-      return previous;
+      const token = Object.freeze(Object.create(null));
+      const record = {
+        child: undefined,
+        identity,
+        launchToken,
+        path: executablePath,
+        pathGuard,
+        sourcePin,
+        stage: 'PRE_SPAWN',
+      };
+      ATTESTATIONS.set(token, record);
+      launch.attestationToken = token;
+      launch.stage = 'PRE_SPAWN';
+      return token;
     }
-    const token = Object.freeze(Object.create(null));
-    ATTESTATIONS.set(token, { path: executablePath, identity });
-    return token;
+    const prior = ATTESTATIONS.get(previous);
+    exactChild(child);
+    if (launch.stage !== 'PRE_SPAWN' || launch.attestationToken !== previous ||
+        !prior || prior.stage !== 'PRE_SPAWN' || prior.launchToken !== launchToken ||
+        prior.path !== executablePath || prior.sourcePin !== sourcePin) fail();
+    const inspected = await Reflect.apply(executableInspector, undefined, [
+      executablePath,
+      sourcePin,
+      versionAttestor,
+      prior.pathGuard,
+      executableInspectionDependencies,
+    ]);
+    let identity;
+    if (executableInspector === inspectExecutable) {
+      exactPlainObject(inspected, ['identity', 'pathGuard']);
+      if (inspected.pathGuard !== prior.pathGuard ||
+          !EXECUTABLE_PATH_GUARDS.has(inspected.pathGuard)) fail();
+      identity = exactExecutableIdentity(inspected.identity, sourcePin);
+    } else {
+      identity = exactExecutableIdentity(inspected, sourcePin);
+    }
+    if (!sameGeneration(prior.identity, identity) || prior.identity.digest !== identity.digest) {
+      fail();
+    }
+    prior.child = child;
+    prior.stage = 'POST_SPAWN';
+    launch.child = child;
+    launch.stage = 'POST_SPAWN';
+    return previous;
   } catch {
     fail();
-  } finally {
-    try { await handle?.close(); } catch {}
-    if (Buffer.isBuffer(digest)) digest.fill(0);
-    if (Buffer.isBuffer(expected)) expected.fill(0);
   }
+}
+
+async function assertAttestationPathGuard(
+  launchToken,
+  attestationToken,
+  executableInspector,
+  executableInspectionDependencies,
+) {
+  const launch = ATTESTATION_LAUNCHES.get(launchToken);
+  const attestation = ATTESTATIONS.get(attestationToken);
+  if (!launch || launch.stage !== 'PRE_SPAWN' ||
+      launch.attestationToken !== attestationToken ||
+      !attestation || attestation.stage !== 'PRE_SPAWN' ||
+      attestation.launchToken !== launchToken) fail();
+  if (executableInspector === inspectExecutable) {
+    const dependencies = executableDependencies(executableInspectionDependencies);
+    if (!attestation.pathGuard) fail();
+    await assertExecutablePathGuard(attestation.pathGuard, dependencies);
+  }
+  return true;
+}
+
+function artifactBindingFromAttestation(
+  launchToken,
+  attestationToken,
+  child,
+  telemetryMode,
+  telemetryAcknowledgement,
+) {
+  try {
+    const launch = ATTESTATION_LAUNCHES.get(launchToken);
+    const attestation = ATTESTATIONS.get(attestationToken);
+    exactChild(child);
+    if (!launch || launch.stage !== 'POST_SPAWN' ||
+        launch.attestationToken !== attestationToken || launch.child !== child ||
+        !attestation || attestation.stage !== 'POST_SPAWN' ||
+        attestation.launchToken !== launchToken || attestation.child !== child) fail();
+    const telemetry = GATE_B_QUICK_TUNNEL_TELEMETRY_POLICIES[telemetryMode];
+    if (!telemetry || telemetry.acknowledgement !== telemetryAcknowledgement) fail();
+    const manifest = GATE_B_QUICK_TUNNEL_ARTIFACT_MANIFEST;
+    const binding = Object.freeze({
+      artifact: Object.freeze({
+        architecture: manifest.architecture,
+        archiveSha256: manifest.archiveSha256,
+        asset: manifest.asset,
+        executableSha256: manifest.executableSha256,
+        manifestVersion: manifest.manifestVersion,
+        platform: manifest.platform,
+        release: manifest.release,
+      }),
+      hostnamePersistence: Object.freeze({
+        ...GATE_B_QUICK_TUNNEL_HOSTNAME_PERSISTENCE_POLICY,
+      }),
+      runtimeControl: Object.freeze({ ...GATE_B_QUICK_TUNNEL_RUNTIME_CONTROL_POLICY }),
+      telemetry: Object.freeze({ ...telemetry }),
+    });
+    if (validateGateBQuickTunnelStableBinding(binding) !== true) fail();
+    attestation.stage = 'CONSUMED';
+    launch.stage = 'CONSUMED';
+    return binding;
+  } catch {
+    fail();
+  }
+}
+
+function completeAttestationSourceWrite(launchToken, attestationToken) {
+  try {
+    const launch = ATTESTATION_LAUNCHES.get(launchToken);
+    const attestation = ATTESTATIONS.get(attestationToken);
+    if (!launch || launch.stage !== 'CONSUMED' ||
+        launch.attestationToken !== attestationToken ||
+        !attestation || attestation.stage !== 'CONSUMED' ||
+        attestation.launchToken !== launchToken) fail();
+    launch.stage = 'SOURCE_WRITTEN';
+    attestation.stage = 'SOURCE_WRITTEN';
+    return true;
+  } catch {
+    fail();
+  }
+}
+
+async function verifyRetainedAttestation(
+  launchToken,
+  attestationToken,
+  child,
+  versionAttestor = attestVersion,
+  executableInspector = inspectExecutable,
+  platform = process.platform,
+  architecture = process.arch,
+  executableInspectionDependencies,
+) {
+  try {
+    const launch = ATTESTATION_LAUNCHES.get(launchToken);
+    const attestation = ATTESTATIONS.get(attestationToken);
+    exactChild(child);
+    if (!launch || launch.stage !== 'SOURCE_WRITTEN' ||
+        launch.attestationToken !== attestationToken || launch.child !== child ||
+        !attestation || attestation.stage !== 'SOURCE_WRITTEN' ||
+        attestation.launchToken !== launchToken || attestation.child !== child) fail();
+    if (validateGateBQuickTunnelArtifactSelection({
+      architecture,
+      platform,
+      sourcePin: attestation.sourcePin,
+    }) !== true || typeof executableInspector !== 'function') fail();
+    const inspected = await Reflect.apply(executableInspector, undefined, [
+      attestation.path,
+      attestation.sourcePin,
+      versionAttestor,
+      attestation.pathGuard,
+      executableInspectionDependencies,
+    ]);
+    let current;
+    if (executableInspector === inspectExecutable) {
+      exactPlainObject(inspected, ['identity', 'pathGuard']);
+      if (inspected.pathGuard !== attestation.pathGuard ||
+          !EXECUTABLE_PATH_GUARDS.has(inspected.pathGuard)) fail();
+      current = exactExecutableIdentity(inspected.identity, attestation.sourcePin);
+    } else {
+      current = exactExecutableIdentity(inspected, attestation.sourcePin);
+    }
+    if (!sameGeneration(attestation.identity, current) ||
+        attestation.identity.digest !== current.digest) fail();
+    return true;
+  } catch {
+    fail();
+  }
+}
+
+async function retireAttestationLaunch(launchToken) {
+  const launch = ATTESTATION_LAUNCHES.get(launchToken);
+  if (!launch || launch.stage === 'RETIRED') return false;
+  const attestationToken = launch.attestationToken;
+  const attestation = ATTESTATIONS.get(attestationToken);
+  const pathGuard = attestation?.pathGuard;
+  if (attestation) {
+    attestation.child = undefined;
+    attestation.identity = undefined;
+    attestation.launchToken = undefined;
+    attestation.path = undefined;
+    attestation.pathGuard = undefined;
+    attestation.sourcePin = undefined;
+    attestation.stage = 'RETIRED';
+  }
+  launch.attestationToken = undefined;
+  launch.stage = 'RETIRED';
+  launch.child = undefined;
+  if (attestationToken) ATTESTATIONS.delete(attestationToken);
+  ATTESTATION_LAUNCHES.delete(launchToken);
+  if (EXECUTABLE_PATH_GUARDS.has(pathGuard)) await closeExecutablePathGuard(pathGuard);
+  return true;
 }
 
 async function assertDevNull() {
@@ -573,11 +1126,18 @@ function exactIpc(value) {
 
 function exactInjections(value) {
   const output = {
+    architecture: process.arch,
     platform: process.platform,
     ipc: process,
     readBootstrapFrame: () => readGateBQuickTunnelFrameFromFd(),
     openWorkspace: openGateBPublicWsPrivateWorkspace,
-    attestExecutable,
+    inspectExecutable,
+    inspectExecutableAcl: inspectDarwinAcl,
+    lstatExecutablePath: lstat,
+    monotonicNow: () => performance.now(),
+    openExecutablePath: open,
+    readExecutableHash: readExactFileHash,
+    realpathExecutablePath: realpath,
     assertDevNull,
     createRuntimeDirectory,
     runtimeDirectoryPath,
@@ -600,10 +1160,12 @@ function exactInjections(value) {
     exactPlainObject(value, Object.keys(output));
     for (const key of REFLECT_OWN_KEYS(value)) output[key] = value[key];
   }
-  if (output.platform !== 'darwin') fail();
+  if (output.platform !== 'darwin' || output.architecture !== 'arm64') fail();
   exactIpc(output.ipc);
   for (const name of [
-    'readBootstrapFrame', 'openWorkspace', 'attestExecutable', 'assertDevNull',
+    'readBootstrapFrame', 'openWorkspace', 'inspectExecutable', 'assertDevNull',
+    'inspectExecutableAcl', 'lstatExecutablePath', 'openExecutablePath',
+    'monotonicNow', 'readExecutableHash', 'realpathExecutablePath',
     'createRuntimeDirectory', 'runtimeDirectoryPath', 'removeRuntimeDirectory',
     'spawnProcess', 'spawnSyncProcess', 'scheduleTimer', 'cancelTimer',
     'runLsof', 'httpGet', 'sleep',
@@ -884,6 +1446,11 @@ async function cleanup(state) {
         failed = true;
       }
     }
+    if (state.attestationLaunch) {
+      try {
+        await retireAttestationLaunch(state.attestationLaunch);
+      } catch { failed = true; }
+    }
     try { await state.workspace?.close(); } catch { failed = true; }
     if (failed) fail();
     return true;
@@ -891,7 +1458,7 @@ async function cleanup(state) {
   return state.cleanupPromise;
 }
 
-async function initialReadiness(state, bootstrap) {
+async function initialReadiness(state, quickTunnel) {
   const first = await observe(state, state.startupAbort.signal);
   await Reflect.apply(state.dependencies.sleep, undefined, [
     state.dependencies.observationGapMs,
@@ -899,7 +1466,7 @@ async function initialReadiness(state, bootstrap) {
   ]);
   const second = await observe(state, state.startupAbort.signal);
   if (!sameObservation(first, second)) fail();
-  let source = serializeGateBQuickTunnelHostnameSource(first.hostname);
+  let source = serializeGateBQuickTunnelHostnameSource(first.hostname, quickTunnel);
   try {
     await state.workspace.write(state.hostnameRecord, source);
     await state.workspace.syncDirectories();
@@ -915,12 +1482,17 @@ async function initialReadiness(state, bootstrap) {
   const reread = await state.workspace.read(state.hostnameRecord);
   try {
     const parsed = parseGateBQuickTunnelHostnameSource(reread);
-    if (parsed.hostname !== first.hostname) fail();
+    if (parsed.hostname !== first.hostname ||
+        validateGateBQuickTunnelStableBinding(parsed.quickTunnel) !== true) fail();
   } finally {
     reread.fill(0);
   }
+  if (completeAttestationSourceWrite(
+    state.attestationLaunch,
+    state.attestation,
+  ) !== true) fail();
   state.pinned = first;
-  bootstrap = undefined;
+  quickTunnel = undefined;
   return true;
 }
 
@@ -931,6 +1503,20 @@ async function freshCheck(state, requestId, controller) {
     if (state.mode !== 'CHECKING' || state.pendingCheckId !== requestId ||
         controller.signal.aborted) return;
     if (!sameObservation(current, state.pinned)) fail();
+    const versionAttestor = executablePath => attestVersion(
+      executablePath,
+      state.dependencies.spawnSyncProcess,
+    );
+    if (await verifyRetainedAttestation(
+      state.attestationLaunch,
+      state.attestation,
+      state.child,
+      versionAttestor,
+      state.dependencies.inspectExecutable,
+      state.dependencies.platform,
+      state.dependencies.architecture,
+      state.dependencies,
+    ) !== true) fail();
     await sendIpc(
       state,
       GATE_B_QUICK_TUNNEL_IPC_TYPES.CHECKED,
@@ -963,6 +1549,7 @@ async function completeNormalStop(state, requestId) {
 
 async function startTunnel(state, bootstrap) {
   state.mode = 'STARTING';
+  state.attestationLaunch = createAttestationLaunch();
   await Reflect.apply(state.dependencies.assertDevNull, undefined, []);
   state.runtimeDirectory = await Reflect.apply(
     state.dependencies.createRuntimeDirectory,
@@ -979,12 +1566,24 @@ async function startTunnel(state, bootstrap) {
     executablePath,
     state.dependencies.spawnSyncProcess,
   );
-  state.attestation = await Reflect.apply(state.dependencies.attestExecutable, undefined, [
+  state.attestation = await attestExecutable(
     bootstrap.cloudflaredExecutable,
     bootstrap.sourcePin,
     undefined,
     versionAttestor,
-  ]);
+    state.attestationLaunch,
+    undefined,
+    state.dependencies.inspectExecutable,
+    state.dependencies.platform,
+    state.dependencies.architecture,
+    state.dependencies,
+  );
+  await assertAttestationPathGuard(
+    state.attestationLaunch,
+    state.attestation,
+    state.dependencies.inspectExecutable,
+    state.dependencies,
+  );
   state.spawnAttempted = true;
   state.child = Reflect.apply(state.dependencies.spawnProcess, undefined, [
     bootstrap.cloudflaredExecutable,
@@ -1000,15 +1599,29 @@ async function startTunnel(state, bootstrap) {
     },
   ]);
   createChildState(state, state.child);
-  const after = await Reflect.apply(state.dependencies.attestExecutable, undefined, [
+  const after = await attestExecutable(
     bootstrap.cloudflaredExecutable,
     bootstrap.sourcePin,
     state.attestation,
     versionAttestor,
-  ]);
+    state.attestationLaunch,
+    state.child,
+    state.dependencies.inspectExecutable,
+    state.dependencies.platform,
+    state.dependencies.architecture,
+    state.dependencies,
+  );
   if (after !== state.attestation) fail();
+  const quickTunnel = artifactBindingFromAttestation(
+    state.attestationLaunch,
+    state.attestation,
+    state.child,
+    bootstrap.telemetryMode,
+    bootstrap.telemetryAcknowledgement,
+  );
+  if (validateGateBQuickTunnelStableBinding(quickTunnel) !== true) fail();
   bootstrap = undefined;
-  await initialReadiness(state);
+  await initialReadiness(state, quickTunnel);
   state.mode = 'ACTIVE_IDLE';
   clearTimeout(state.startupTimer);
   state.hardLifetimeTimer = setTimeout(
@@ -1032,6 +1645,8 @@ export async function superviseGateBQuickTunnel(injected) {
     workspace: undefined,
     hostnameRecord: undefined,
     runtimeDirectory: undefined,
+    attestationLaunch: undefined,
+    attestation: undefined,
     child: undefined,
     spawnAttempted: false,
     spawnIdentityKnown: false,

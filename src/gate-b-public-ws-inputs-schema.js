@@ -1,6 +1,7 @@
 import { canonicalJson } from './canonical.js';
 import { isAbsolute, resolve } from 'node:path';
 import { types as utilTypes } from 'node:util';
+import { validateGateBQuickTunnelStableBinding } from './gate-b-quick-tunnel-artifact.js';
 
 const ERROR_CODE = 'gate_b_public_ws_inputs_schema_invalid';
 const BOOTSTRAP_MAX_BYTES = 8192;
@@ -63,7 +64,7 @@ const GATE_B_PUBLIC_WS_SOURCE_KINDS = Object.freeze({
 
 export const GATE_B_QUICK_TUNNEL_HOSTNAME_POLICY = Object.freeze({
   kind: GATE_B_PUBLIC_WS_SOURCE_KINDS.hostname,
-  schemaVersion: 1,
+  schemaVersion: 2,
   suffix: '.trycloudflare.com',
 });
 
@@ -180,6 +181,15 @@ function exactQuickTunnelHostname(value) {
   return value;
 }
 
+export function validateGateBQuickTunnelHostname(value) {
+  try {
+    exactQuickTunnelHostname(value);
+    return true;
+  } catch {
+    fail();
+  }
+}
+
 function serializeSource(value) {
   const bytes = Buffer.from(`${canonicalJson(value)}\n`, 'utf8');
   if (bytes.length < 2 || bytes.length > SOURCE_MAX_BYTES) {
@@ -226,12 +236,14 @@ export function parseGateBProtectedEndpointSource(bytes) {
   }
 }
 
-export function serializeGateBQuickTunnelHostnameSource(hostname) {
+export function serializeGateBQuickTunnelHostnameSource(hostname, quickTunnel) {
   try {
     exactQuickTunnelHostname(hostname);
+    if (validateGateBQuickTunnelStableBinding(quickTunnel) !== true) fail();
     return serializeSource({
       hostname,
       kind: GATE_B_QUICK_TUNNEL_HOSTNAME_POLICY.kind,
+      quickTunnel,
       schemaVersion: GATE_B_QUICK_TUNNEL_HOSTNAME_POLICY.schemaVersion,
     });
   } catch {
@@ -241,10 +253,16 @@ export function serializeGateBQuickTunnelHostnameSource(hostname) {
 
 export function parseGateBQuickTunnelHostnameSource(bytes) {
   try {
-    const value = parseSource(bytes, ['hostname', 'kind', 'schemaVersion']);
+    const value = parseSource(bytes, ['hostname', 'kind', 'quickTunnel', 'schemaVersion']);
     if (value.kind !== GATE_B_QUICK_TUNNEL_HOSTNAME_POLICY.kind ||
         value.schemaVersion !== GATE_B_QUICK_TUNNEL_HOSTNAME_POLICY.schemaVersion) fail();
     exactQuickTunnelHostname(value.hostname);
+    if (validateGateBQuickTunnelStableBinding(value.quickTunnel) !== true) fail();
+    Object.freeze(value.quickTunnel.artifact);
+    Object.freeze(value.quickTunnel.hostnamePersistence);
+    Object.freeze(value.quickTunnel.runtimeControl);
+    Object.freeze(value.quickTunnel.telemetry);
+    Object.freeze(value.quickTunnel);
     return Object.freeze(value);
   } catch {
     fail();

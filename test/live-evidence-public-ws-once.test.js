@@ -23,6 +23,16 @@ import { fileURLToPath } from 'node:url';
 import * as sdk from 'znn-typescript-sdk';
 
 import { canonicalJson, paymentIntentDigest, sha256Hex } from '../src/canonical.js';
+import {
+  GATE_B_QUICK_TUNNEL_ARTIFACT_MANIFEST,
+  GATE_B_QUICK_TUNNEL_HOSTNAME_PERSISTENCE_POLICY,
+  GATE_B_QUICK_TUNNEL_RUNTIME_CONTROL_POLICY,
+  GATE_B_QUICK_TUNNEL_TELEMETRY_POLICIES,
+} from '../src/gate-b-quick-tunnel-artifact.js';
+import {
+  GATE_B_PUBLIC_WS_INPUT_LEAVES,
+  serializeGateBQuickTunnelHostnameSource,
+} from '../src/gate-b-public-ws-inputs-schema.js';
 import { runPublicWsOnceRunnerCli } from '../src/live-evidence-public-ws-once-cli.js';
 import { runPublicWsOnceExecutionChild } from '../src/live-evidence-public-ws-once-run-child.js';
 import { supervisePublicWsOnceChild } from '../src/live-evidence-public-ws-once-supervisor.js';
@@ -74,7 +84,8 @@ import {
 import { computeBlockHash, preflightZenonPayment } from '../src/zenon-payment.js';
 
 const ENDPOINT = 'ws://8.8.8.8:35998/';
-const RESOURCE_URL = 'https://evidence.zenon.network/paid';
+const HOSTNAME = 'evidence.trycloudflare.com';
+const RESOURCE_URL = `https://${HOSTNAME}/paid`;
 const UTC = '2026-09-01T00:00:00.000Z';
 const FIXTURE_CONFIGURATIONS = new WeakMap();
 const SYNTHETIC_GENERATION = Object.freeze({
@@ -110,6 +121,54 @@ const PHASES = Object.freeze({
   ]),
 });
 
+function canonicalQuickTunnelBinding(changes = {}) {
+  const manifest = GATE_B_QUICK_TUNNEL_ARTIFACT_MANIFEST;
+  return {
+    artifact: {
+      architecture: manifest.architecture,
+      archiveSha256: manifest.archiveSha256,
+      asset: manifest.asset,
+      executableSha256: manifest.executableSha256,
+      manifestVersion: manifest.manifestVersion,
+      platform: manifest.platform,
+      release: manifest.release,
+    },
+    hostnamePersistence: { ...GATE_B_QUICK_TUNNEL_HOSTNAME_PERSISTENCE_POLICY },
+    runtimeControl: { ...GATE_B_QUICK_TUNNEL_RUNTIME_CONTROL_POLICY },
+    telemetry: {
+      ...GATE_B_QUICK_TUNNEL_TELEMETRY_POLICIES.ACCEPT_POSSIBLE_ERROR_TELEMETRY,
+    },
+    ...changes,
+  };
+}
+
+function quickTunnelBindingMutations() {
+  return [
+    ['artifact-architecture', value => { value.artifact.architecture = 'x64'; }],
+    ['artifact-archive', value => { value.artifact.archiveSha256 = '0'.repeat(64); }],
+    ['artifact-asset', value => { value.artifact.asset = 'alternate.tgz'; }],
+    ['artifact-executable', value => { value.artifact.executableSha256 = '0'.repeat(64); }],
+    ['artifact-version', value => { value.artifact.manifestVersion = 2; }],
+    ['artifact-platform', value => { value.artifact.platform = 'linux'; }],
+    ['artifact-release', value => { value.artifact.release = 'latest'; }],
+    ['persistence-lifetime', value => { value.hostnamePersistence.lifetime = 'different'; }],
+    ['persistence-version', value => { value.hostnamePersistence.policyVersion = 2; }],
+    ['persistence-storage', value => { value.hostnamePersistence.storage = 'different'; }],
+    ['runtime-auto-update', value => { value.runtimeControl.autoUpdate = 'different'; }],
+    ['runtime-configuration', value => { value.runtimeControl.configuration = 'different'; }],
+    ['runtime-credentials', value => { value.runtimeControl.credentials = 'different'; }],
+    ['runtime-diagnostics', value => { value.runtimeControl.managementDiagnostics = 'different'; }],
+    ['runtime-origin-certificate', value => { value.runtimeControl.originCertificate = 'different'; }],
+    ['runtime-version', value => { value.runtimeControl.policyVersion = 2; }],
+    ['runtime-prechecks', value => { value.runtimeControl.prechecks = 'different'; }],
+    ['runtime-topology', value => { value.runtimeControl.processTopology = 'different'; }],
+    ['runtime-storage', value => { value.runtimeControl.runtimeStorage = 'different'; }],
+    ['telemetry-acknowledgement', value => { value.telemetry.acknowledgement = 'different'; }],
+    ['telemetry-classification', value => { value.telemetry.classification = 'disabled'; }],
+    ['telemetry-mode', value => { value.telemetry.mode = 'DISABLED'; }],
+  ];
+}
+
 function paymentRequired() {
   return {
     x402Version: 2,
@@ -137,13 +196,14 @@ function paymentRequired() {
 
 function config() {
   return {
-    runnerVersion: 1,
+    runnerVersion: 2,
     sourceRevision: 'b'.repeat(40),
     profileName: GATE_B_CURRENT_TESTNET_PROFILE_NAME,
     acknowledgements: {
       live: TESTNET_LIVE_ACKNOWLEDGEMENT,
       operatorTrust: GATE_B_CURRENT_TESTNET_OPERATOR_TRUST_ACKNOWLEDGEMENT,
     },
+    quickTunnel: canonicalQuickTunnelBinding(),
     expectedPaymentRequired: paymentRequired(),
     runtime: {
       listenPort: 41000,
@@ -157,7 +217,7 @@ function config() {
 
 function authorization(configuration, endpoint = ENDPOINT, changes = {}) {
   return {
-    authorizationVersion: 1,
+    authorizationVersion: 2,
     transportException: PUBLIC_WS_ONCE_POLICY.transportException,
     runName: 'single-public-ws-run',
     sourceRevision: configuration.sourceRevision,
@@ -168,6 +228,7 @@ function authorization(configuration, endpoint = ENDPOINT, changes = {}) {
       configuration.expectedPaymentRequired.accepts[0],
     ),
     rpcEndpoint: endpoint,
+    quickTunnel: configuration.quickTunnel,
     acknowledgements: {
       payment: PUBLIC_WS_ONCE_POLICY.paymentAcknowledgement,
       publication: PUBLIC_WS_ONCE_POLICY.publicationAcknowledgement,
@@ -214,6 +275,14 @@ async function fixture(t, changes = {}) {
   await writeFile(
     paths.authorizationPath,
     `${JSON.stringify(authorizationValue)}\n`,
+    { mode: 0o600 },
+  );
+  await writeFile(
+    join(workspaceRoot, GATE_B_PUBLIC_WS_INPUT_LEAVES.hostnameSource),
+    changes.hostnameSourceBytes ?? serializeGateBQuickTunnelHostnameSource(
+      changes.hostname ?? HOSTNAME,
+      changes.quickTunnel ?? configuration.quickTunnel,
+    ),
     { mode: 0o600 },
   );
   const options = {
@@ -585,9 +654,9 @@ test('authorization config digest changes across every mutable config subtree', 
   const parsed = parsePublicWsOnceRunConfig(`${JSON.stringify(baseline)}\n`);
   assert.equal(
     baselineDigest,
-    sha256Hex(`zenon-x402-public-ws-once-config-v1\n${canonicalJson(parsed)}`),
+    sha256Hex(`zenon-x402-public-ws-once-config-v2\n${canonicalJson(parsed)}`),
   );
-  const mutations = [
+  const validMutations = [
     value => { value.sourceRevision = 'c'.repeat(40); },
     value => { value.expectedPaymentRequired.resource.description = 'different'; },
     value => { value.expectedPaymentRequired.accepts[0].amount = '2'; },
@@ -595,14 +664,29 @@ test('authorization config digest changes across every mutable config subtree', 
     value => { value.runtime.rpcTimeoutMs += 1; },
     value => { value.runtime.maxRecoveryElapsedMs += 1; },
   ];
-  for (const mutate of mutations) {
+  for (const mutate of validMutations) {
     const candidate = structuredClone(baseline);
     mutate(candidate);
     assert.notEqual(publicWsOnceConfigDigest(candidate), baselineDigest);
   }
+  const boundMutations = [
+    value => { value.quickTunnel.artifact.release = '2026.8.1'; },
+    value => { value.quickTunnel.telemetry.classification = 'different'; },
+    value => { value.quickTunnel.runtimeControl.autoUpdate = 'different'; },
+    value => { value.quickTunnel.hostnamePersistence.lifetime = 'different'; },
+  ];
+  for (const mutate of boundMutations) {
+    const candidate = structuredClone(baseline);
+    mutate(candidate);
+    assert.throws(() => publicWsOnceConfigDigest(candidate));
+    assert.notEqual(
+      sha256Hex(`zenon-x402-public-ws-once-config-v2\n${canonicalJson(candidate)}`),
+      baselineDigest,
+    );
+  }
 });
 
-test('preflight validates five distinct protected files without reading wallet contents', async t => {
+test('preflight validates six distinct protected files without reading wallet contents', async t => {
   const options = await fixture(t);
   assert.deepEqual(await preflightPublicWsOnceRun(options), { valid: true });
   const mismatched = await fixture(t, { facilitatorEndpoint: 'ws://8.8.4.4:35998/' });
@@ -626,7 +710,7 @@ test('preflight rejects valid config mutations against one frozen authorization'
   const baseline = config();
   const approved = authorization(baseline);
   const mutations = [
-    ['runner version', value => { value.runnerVersion = 2; }],
+    ['runner version', value => { value.runnerVersion = 1; }],
     ['revision', value => { value.sourceRevision = 'c'.repeat(40); }],
     ['profile', value => { value.profileName = OPERATOR_TRUSTED_PUBLIC_TESTNET_PROFILE_NAME; }],
     ['live acknowledgement', value => { value.acknowledgements.live = 'different'; }],
@@ -651,6 +735,92 @@ test('preflight rejects valid config mutations against one frozen authorization'
     });
   }
 });
+
+test('strict cutover rejects every old-v1 and mixed source, config, authorization chain', async t => {
+  const baseline = config();
+  const approved = authorization(baseline);
+  const v2Source = serializeGateBQuickTunnelHostnameSource(
+    HOSTNAME,
+    baseline.quickTunnel,
+  );
+  const v1Source = Buffer.from(`${canonicalJson({
+    hostname: HOSTNAME,
+    kind: 'gate-b-quick-tunnel-hostname-source',
+    schemaVersion: 1,
+  })}\n`, 'utf8');
+  for (let mask = 0; mask < 7; mask += 1) {
+    await t.test(`old-or-mixed-${mask + 1}`, async subtest => {
+      const sourceV2 = (mask & 1) !== 0;
+      const configV2 = (mask & 2) !== 0;
+      const authorizationV2 = (mask & 4) !== 0;
+      const candidateConfig = structuredClone(baseline);
+      if (!configV2) {
+        candidateConfig.runnerVersion = 1;
+        delete candidateConfig.quickTunnel;
+      }
+      const candidateAuthorization = structuredClone(approved);
+      if (!authorizationV2) {
+        candidateAuthorization.authorizationVersion = 1;
+        delete candidateAuthorization.quickTunnel;
+      }
+      const options = await fixture(subtest, {
+        authorization: candidateAuthorization,
+        config: candidateConfig,
+        hostnameSourceBytes: sourceV2 ? v2Source : v1Source,
+      });
+      await assert.rejects(preflightPublicWsOnceRun(options), fixedFailure);
+    });
+  }
+});
+
+test('preflight rejects every bound field mutation at each source, config, and authorization layer',
+  async t => {
+    for (const layer of ['source', 'config', 'authorization']) {
+      for (const [name, mutate] of quickTunnelBindingMutations()) {
+        await t.test(`${layer}-${name}`, async subtest => {
+          const configuration = config();
+          const approved = authorization(configuration);
+          let sourceBinding = structuredClone(configuration.quickTunnel);
+          if (layer === 'source') mutate(sourceBinding);
+          if (layer === 'config') mutate(configuration.quickTunnel);
+          if (layer === 'authorization') mutate(approved.quickTunnel);
+          const hostnameSourceBytes = Buffer.from(`${canonicalJson({
+            hostname: HOSTNAME,
+            kind: 'gate-b-quick-tunnel-hostname-source',
+            quickTunnel: sourceBinding,
+            schemaVersion: 2,
+          })}\n`, 'utf8');
+          const options = await fixture(subtest, {
+            authorization: approved,
+            config: configuration,
+            hostnameSourceBytes,
+          });
+          await assert.rejects(preflightPublicWsOnceRun(options), fixedFailure);
+        });
+      }
+    }
+  });
+
+test('preflight accepts either exact honest telemetry policy and rejects cross-layer pairing',
+  async t => {
+    const external = canonicalQuickTunnelBinding();
+    external.telemetry = {
+      ...GATE_B_QUICK_TUNNEL_TELEMETRY_POLICIES.EXTERNAL_SENTRY_EGRESS_CONTROL_ATTESTED,
+    };
+    const matchingConfig = config();
+    matchingConfig.quickTunnel = external;
+    const matching = await fixture(t, {
+      config: matchingConfig,
+      authorization: authorization(matchingConfig),
+      quickTunnel: external,
+    });
+    assert.deepEqual(await preflightPublicWsOnceRun(matching), { valid: true });
+
+    const mismatched = await fixture(t, {
+      quickTunnel: external,
+    });
+    await assert.rejects(preflightPublicWsOnceRun(mismatched), fixedFailure);
+  });
 
 test('preflight rejects mode, hardlink, and protected-file alias failures', async t => {
   const modeFixture = await fixture(t);
@@ -1033,6 +1203,7 @@ test('workspace-scoped execution consumes before effects and retains exact priva
     basename(options.buyerWalletPath),
     basename(options.configPath),
     basename(options.facilitatorRpcPath),
+    GATE_B_PUBLIC_WS_INPUT_LEAVES.hostnameSource,
     'PUBLIC_WS_ONCE_CONSUMED',
     options.runName,
   ].sort());

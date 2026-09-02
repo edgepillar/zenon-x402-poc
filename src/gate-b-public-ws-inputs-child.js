@@ -379,9 +379,10 @@ function buildRunConfig(bootstrap, revision, endpointSource, hostnameSource, acc
   const asset = modules.sdk.ZNN_ZTS?.toString?.();
   exactString(asset, 128);
   const config = {
-    runnerVersion: 1,
+    runnerVersion: 2,
     sourceRevision: revision,
     profileName: modules.profile.GATE_B_CURRENT_TESTNET_PROFILE_NAME,
+    quickTunnel: hostnameSource.quickTunnel,
     acknowledgements: {
       live: bootstrap.acknowledgements.live,
       operatorTrust: bootstrap.acknowledgements.operatorTrust,
@@ -463,7 +464,7 @@ function assertFrozenPreparation(
   exactPolicy(modules);
   const accepted = configuration.expectedPaymentRequired?.accepts?.[0];
   const expectedProfile = modules.profile.GATE_B_CURRENT_TESTNET_CHAIN_PROFILE;
-  if (configuration.runnerVersion !== 1 ||
+  if (configuration.runnerVersion !== 2 ||
       configuration.profileName !== modules.profile.GATE_B_CURRENT_TESTNET_PROFILE_NAME ||
       configuration.acknowledgements.live !== GATE_B_PUBLIC_WS_INPUT_ACKNOWLEDGEMENTS.live ||
       configuration.acknowledgements.operatorTrust !==
@@ -492,6 +493,8 @@ function assertFrozenPreparation(
       buyerRpc.rpcEndpoint !== endpointSource.rpcEndpoint ||
       facilitatorRpc.rpcEndpoint !== endpointSource.rpcEndpoint ||
       buyerRpc.rpcEndpoint !== facilitatorRpc.rpcEndpoint ||
+      modules.canonical.canonicalJson(configuration.quickTunnel) !==
+        modules.canonical.canonicalJson(hostnameSource.quickTunnel) ||
       bootstrap.runName.length < 1) fail();
 }
 
@@ -720,7 +723,7 @@ async function authorizeInputs(bootstrap, dependencies) {
       configuration.expectedPaymentRequired.accepts[0],
     ]);
     const authorization = {
-      authorizationVersion: 1,
+      authorizationVersion: 2,
       transportException: bootstrap.acknowledgements.transportException,
       runName: bootstrap.runName,
       sourceRevision: configuration.sourceRevision,
@@ -728,6 +731,7 @@ async function authorizeInputs(bootstrap, dependencies) {
       configDigest: digest,
       paymentIntentDigest: intentDigest,
       rpcEndpoint: buyerRpc.rpcEndpoint,
+      quickTunnel: configuration.quickTunnel,
       acknowledgements: {
         payment: bootstrap.acknowledgements.payment,
         publication: bootstrap.acknowledgements.publication,
@@ -758,6 +762,8 @@ async function authorizeInputs(bootstrap, dependencies) {
         parsedAuthorization.configDigest !== digest ||
         parsedAuthorization.runName !== bootstrap.runName ||
         parsedAuthorization.rpcEndpoint !== endpointSource.rpcEndpoint ||
+        modules.canonical.canonicalJson(parsedAuthorization.quickTunnel) !==
+          modules.canonical.canonicalJson(hostnameSource.quickTunnel) ||
         parsedAuthorization.sourceRevision !== currentRevision) fail();
     await workspace.syncDirectories();
     await workspace.verify(output, authorizationBytes.length);

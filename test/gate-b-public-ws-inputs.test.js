@@ -26,6 +26,12 @@ import * as sdk from 'znn-typescript-sdk';
 
 import { canonicalJson } from '../src/canonical.js';
 import {
+  GATE_B_QUICK_TUNNEL_ARTIFACT_MANIFEST,
+  GATE_B_QUICK_TUNNEL_HOSTNAME_PERSISTENCE_POLICY,
+  GATE_B_QUICK_TUNNEL_RUNTIME_CONTROL_POLICY,
+  GATE_B_QUICK_TUNNEL_TELEMETRY_POLICIES,
+} from '../src/gate-b-quick-tunnel-artifact.js';
+import {
   executeGateBPublicWsInputs,
   GateBPublicWsInputsChildError,
   runGateBPublicWsInputsChild,
@@ -77,6 +83,54 @@ const HOSTNAME = 'gatebfixture.trycloudflare.com';
 const RUN_NAME = 'public-ws-once-20260901-01';
 const REVISION = 'a'.repeat(40);
 const TEST_ENTROPY = Buffer.from(Array.from({ length: 32 }, (_, index) => index + 1));
+
+function canonicalQuickTunnelBinding(changes = {}) {
+  const manifest = GATE_B_QUICK_TUNNEL_ARTIFACT_MANIFEST;
+  return {
+    artifact: {
+      architecture: manifest.architecture,
+      archiveSha256: manifest.archiveSha256,
+      asset: manifest.asset,
+      executableSha256: manifest.executableSha256,
+      manifestVersion: manifest.manifestVersion,
+      platform: manifest.platform,
+      release: manifest.release,
+    },
+    hostnamePersistence: { ...GATE_B_QUICK_TUNNEL_HOSTNAME_PERSISTENCE_POLICY },
+    runtimeControl: { ...GATE_B_QUICK_TUNNEL_RUNTIME_CONTROL_POLICY },
+    telemetry: {
+      ...GATE_B_QUICK_TUNNEL_TELEMETRY_POLICIES.ACCEPT_POSSIBLE_ERROR_TELEMETRY,
+    },
+    ...changes,
+  };
+}
+
+function quickTunnelBindingMutations() {
+  return [
+    ['artifact-architecture', value => { value.artifact.architecture = 'x64'; }],
+    ['artifact-archive', value => { value.artifact.archiveSha256 = '0'.repeat(64); }],
+    ['artifact-asset', value => { value.artifact.asset = 'alternate.tgz'; }],
+    ['artifact-executable', value => { value.artifact.executableSha256 = '0'.repeat(64); }],
+    ['artifact-version', value => { value.artifact.manifestVersion = 2; }],
+    ['artifact-platform', value => { value.artifact.platform = 'linux'; }],
+    ['artifact-release', value => { value.artifact.release = 'latest'; }],
+    ['persistence-lifetime', value => { value.hostnamePersistence.lifetime = 'different'; }],
+    ['persistence-version', value => { value.hostnamePersistence.policyVersion = 2; }],
+    ['persistence-storage', value => { value.hostnamePersistence.storage = 'different'; }],
+    ['runtime-auto-update', value => { value.runtimeControl.autoUpdate = 'different'; }],
+    ['runtime-configuration', value => { value.runtimeControl.configuration = 'different'; }],
+    ['runtime-credentials', value => { value.runtimeControl.credentials = 'different'; }],
+    ['runtime-diagnostics', value => { value.runtimeControl.managementDiagnostics = 'different'; }],
+    ['runtime-origin-certificate', value => { value.runtimeControl.originCertificate = 'different'; }],
+    ['runtime-version', value => { value.runtimeControl.policyVersion = 2; }],
+    ['runtime-prechecks', value => { value.runtimeControl.prechecks = 'different'; }],
+    ['runtime-topology', value => { value.runtimeControl.processTopology = 'different'; }],
+    ['runtime-storage', value => { value.runtimeControl.runtimeStorage = 'different'; }],
+    ['telemetry-acknowledgement', value => { value.telemetry.acknowledgement = 'different'; }],
+    ['telemetry-classification', value => { value.telemetry.classification = 'disabled'; }],
+    ['telemetry-mode', value => { value.telemetry.mode = 'DISABLED'; }],
+  ];
+}
 
 function prepareBootstrap(root, changes = {}) {
   return {
@@ -148,7 +202,7 @@ async function fixture(t, options = {}) {
   }
   if (options.hostname !== false) {
     await privateWrite(root, GATE_B_PUBLIC_WS_INPUT_LEAVES.hostnameSource,
-      serializeGateBQuickTunnelHostnameSource(HOSTNAME));
+      serializeGateBQuickTunnelHostnameSource(HOSTNAME, canonicalQuickTunnelBinding()));
   }
   return { root, payer, payee, mnemonic };
 }
@@ -416,12 +470,16 @@ test('pure source helpers own the exact canonical endpoint and hostname contract
   });
   assert.equal(Object.isFrozen(endpoint), true);
 
-  const hostnameBytes = serializeGateBQuickTunnelHostnameSource(HOSTNAME);
+  const hostnameBytes = serializeGateBQuickTunnelHostnameSource(
+    HOSTNAME,
+    canonicalQuickTunnelBinding(),
+  );
   const hostname = parseGateBQuickTunnelHostnameSource(hostnameBytes);
   assert.deepEqual(hostname, {
     hostname: HOSTNAME,
     kind: 'gate-b-quick-tunnel-hostname-source',
-    schemaVersion: 1,
+    quickTunnel: canonicalQuickTunnelBinding(),
+    schemaVersion: 2,
   });
   assert.equal(Object.isFrozen(hostname), true);
   assert.equal(Object.isFrozen(GATE_B_QUICK_TUNNEL_HOSTNAME_POLICY), true);
@@ -433,7 +491,10 @@ test('pure source helpers own the exact canonical endpoint and hostname contract
     'xn--label.trycloudflare.com',
     'label.trycloudflare.com:443',
     'label.trycloudflare.com/path',
-  ]) assert.throws(() => serializeGateBQuickTunnelHostnameSource(invalid));
+  ]) assert.throws(() => serializeGateBQuickTunnelHostnameSource(
+    invalid,
+    canonicalQuickTunnelBinding(),
+  ));
   assert.throws(() => parseGateBQuickTunnelHostnameSource(Buffer.from(
     '{"hostname":"label.trycloudflare.com","hostname":"label.trycloudflare.com","kind":"gate-b-quick-tunnel-hostname-source","schemaVersion":1}\n',
   )));
@@ -441,6 +502,29 @@ test('pure source helpers own the exact canonical endpoint and hostname contract
     endpointBytes,
     Buffer.from(' '),
   ])));
+});
+
+test('hostname source rejects every artifact, runtime, persistence, and telemetry mutation', () => {
+  for (const [name, mutate] of quickTunnelBindingMutations()) {
+    const quickTunnel = structuredClone(canonicalQuickTunnelBinding());
+    mutate(quickTunnel);
+    const bytes = Buffer.from(`${canonicalJson({
+      hostname: HOSTNAME,
+      kind: GATE_B_QUICK_TUNNEL_HOSTNAME_POLICY.kind,
+      quickTunnel,
+      schemaVersion: 2,
+    })}\n`, 'utf8');
+    assert.throws(() => parseGateBQuickTunnelHostnameSource(bytes), undefined, name);
+  }
+  for (const version of [
+    { hostname: HOSTNAME, kind: GATE_B_QUICK_TUNNEL_HOSTNAME_POLICY.kind, schemaVersion: 1 },
+    { hostname: HOSTNAME, kind: GATE_B_QUICK_TUNNEL_HOSTNAME_POLICY.kind,
+      quickTunnel: canonicalQuickTunnelBinding(), schemaVersion: 1 },
+  ]) {
+    assert.throws(() => parseGateBQuickTunnelHostnameSource(
+      Buffer.from(`${canonicalJson(version)}\n`, 'utf8'),
+    ));
+  }
 });
 
 test('shared private-workspace capability is opaque and directly composes with hostname helpers', async t => {
@@ -461,7 +545,10 @@ test('shared private-workspace capability is opaque and directly composes with h
       'directory-sync:cwd',
       'directory-sync:path',
     ]);
-    const bytes = serializeGateBQuickTunnelHostnameSource(HOSTNAME);
+    const bytes = serializeGateBQuickTunnelHostnameSource(
+      HOSTNAME,
+      canonicalQuickTunnelBinding(),
+    );
     await workspace.write(record, bytes);
     await workspace.syncDirectories();
     const written = await workspace.read(record);
@@ -1582,6 +1669,8 @@ test('PREPARE derives canonical account1 and freezes the exact Gate-B inputs', a
     join(context.root, GATE_B_PUBLIC_WS_INPUT_LEAVES.runConfig), 'utf8',
   ));
   const accepted = configuration.expectedPaymentRequired.accepts[0];
+  assert.equal(configuration.runnerVersion, 2);
+  assert.deepEqual(configuration.quickTunnel, canonicalQuickTunnelBinding());
   assert.equal(configuration.sourceRevision, REVISION);
   assert.equal(configuration.profileName, GATE_B_CURRENT_TESTNET_PROFILE_NAME);
   assert.deepEqual(configuration.acknowledgements, {
@@ -1628,10 +1717,16 @@ test('PREPARE proves the stored account0 before emitting account1', async t => {
 
 test('PREPARE rejects hostname schema deviations and forbidden hostnames after quarantine', async t => {
   const invalidSources = [
-    { hostname: 'UPPER.trycloudflare.com', kind: 'gate-b-quick-tunnel-hostname-source', schemaVersion: 1 },
-    { hostname: 'a.b.trycloudflare.com', kind: 'gate-b-quick-tunnel-hostname-source', schemaVersion: 1 },
-    { hostname: 'xn--label.trycloudflare.com', kind: 'gate-b-quick-tunnel-hostname-source', schemaVersion: 1 },
-    { hostname: 'label.trycloudflare.com', kind: 'wrong', schemaVersion: 1 },
+    { hostname: 'UPPER.trycloudflare.com', kind: 'gate-b-quick-tunnel-hostname-source',
+      quickTunnel: canonicalQuickTunnelBinding(), schemaVersion: 2 },
+    { hostname: 'a.b.trycloudflare.com', kind: 'gate-b-quick-tunnel-hostname-source',
+      quickTunnel: canonicalQuickTunnelBinding(), schemaVersion: 2 },
+    { hostname: 'xn--label.trycloudflare.com', kind: 'gate-b-quick-tunnel-hostname-source',
+      quickTunnel: canonicalQuickTunnelBinding(), schemaVersion: 2 },
+    { hostname: 'label.trycloudflare.com', kind: 'wrong',
+      quickTunnel: canonicalQuickTunnelBinding(), schemaVersion: 2 },
+    { hostname: 'label.trycloudflare.com', kind: 'gate-b-quick-tunnel-hostname-source',
+      schemaVersion: 1 },
   ];
   for (const source of invalidSources) {
     await t.test(source.hostname, async nested => {
@@ -1844,6 +1939,8 @@ test('AUTHORIZE binds reviewed config, endpoint, payee, intent, revision, run, a
     join(context.root, GATE_B_PUBLIC_WS_INPUT_LEAVES.authorization), 'utf8',
   ));
   assert.equal(authorization.configDigest, digest);
+  assert.equal(authorization.authorizationVersion, 2);
+  assert.deepEqual(authorization.quickTunnel, canonicalQuickTunnelBinding());
   assert.equal(authorization.runName, RUN_NAME);
   assert.equal(authorization.sourceRevision, REVISION);
   assert.equal(authorization.rpcEndpoint, ENDPOINT);
@@ -2002,7 +2099,7 @@ test('AUTHORIZE write failure leaves permanent authorization residue', async t =
   ));
 });
 
-test('generated five-file set reaches existing preflight without reading wallet contents', async t => {
+test('generated six-file binding chain reaches preflight without reading wallet contents', async t => {
   const context = await prepare(t);
   const digest = await configDigest(context.root);
   await executeGateBPublicWsInputs(

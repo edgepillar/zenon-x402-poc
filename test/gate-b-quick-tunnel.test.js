@@ -4,6 +4,19 @@ import { EventEmitter } from 'node:events';
 import { readFile } from 'node:fs/promises';
 import { PassThrough } from 'node:stream';
 
+import {
+  GATE_B_QUICK_TUNNEL_ARTIFACT_MANIFEST,
+  GATE_B_QUICK_TUNNEL_HOSTNAME_PERSISTENCE_POLICY,
+  GATE_B_QUICK_TUNNEL_RUNTIME_CONTROL_POLICY,
+  GATE_B_QUICK_TUNNEL_TELEMETRY_POLICIES,
+  validateGateBQuickTunnelArtifactIdentity,
+  validateGateBQuickTunnelStableBinding,
+} from '../src/gate-b-quick-tunnel-artifact.js';
+import * as artifactModule from '../src/gate-b-quick-tunnel-artifact.js';
+import {
+  parseGateBQuickTunnelHostnameSource,
+  validateGateBQuickTunnelHostname,
+} from '../src/gate-b-public-ws-inputs-schema.js';
 import * as quickTunnelLauncher from '../src/gate-b-quick-tunnel-launcher.js';
 import {
   assertGateBQuickTunnelReady,
@@ -13,6 +26,7 @@ import {
   waitGateBQuickTunnelClosed,
 } from '../src/gate-b-quick-tunnel-launcher.js';
 import { superviseGateBQuickTunnel } from '../src/gate-b-quick-tunnel-supervisor.js';
+import * as supervisorModule from '../src/gate-b-quick-tunnel-supervisor.js';
 
 import {
   createGateBQuickTunnelIpcMessage,
@@ -31,10 +45,69 @@ import {
 
 const WORKSPACE_ROOT = '/private/tmp/gate-b-quick-tunnel-fixture';
 const EXECUTABLE = '/usr/local/bin/cloudflared-fixture';
-const SOURCE_PIN = 'a'.repeat(64);
+const SOURCE_PIN = GATE_B_QUICK_TUNNEL_ARTIFACT_MANIFEST.executableSha256;
 const HOSTNAME = 'schema-fixture.trycloudflare.com';
 const CONNECTOR_ID = '11111111-2222-4333-8444-555555555555';
 const FIXTURE_DATE = 'Mon, 01 Jan 2024 00:00:00 GMT';
+
+test('canonical artifact manifest accepts only the evidenced non-floating macOS arm64 tuple', () => {
+  const manifest = GATE_B_QUICK_TUNNEL_ARTIFACT_MANIFEST;
+  assert.equal(Object.isFrozen(manifest), true);
+  assert.equal(manifest.manifestVersion, 1);
+  assert.equal(manifest.release, '2026.8.2');
+  assert.equal(manifest.platform, 'darwin');
+  assert.equal(manifest.architecture, 'arm64');
+  assert.equal(manifest.asset, 'cloudflared-darwin-arm64.tgz');
+  assert.equal(manifest.executableBasename, 'cloudflared');
+  assert.match(manifest.archiveSha256, /^[0-9a-f]{64}$/);
+  assert.match(manifest.executableSha256, /^[0-9a-f]{64}$/);
+  assert.equal(
+    GATE_B_QUICK_TUNNEL_HOSTNAME_PERSISTENCE_POLICY.lifetime,
+    'persists-with-protected-one-shot-workspace-beyond-lease-closure',
+  );
+  assert.equal(validateGateBQuickTunnelArtifactIdentity({
+    architecture: manifest.architecture,
+    archiveSha256: manifest.archiveSha256,
+    asset: manifest.asset,
+    executableSha256: manifest.executableSha256,
+    manifestVersion: manifest.manifestVersion,
+    platform: manifest.platform,
+    release: manifest.release,
+  }), true);
+  for (const changes of [
+    { architecture: 'x64' },
+    { platform: 'linux' },
+    { release: 'latest' },
+    { release: '2026.8.1' },
+    { asset: 'cloudflared-darwin-amd64.tgz' },
+    { archiveSha256: '0'.repeat(64) },
+    { executableSha256: '0'.repeat(64) },
+  ]) {
+    assert.throws(() => validateGateBQuickTunnelArtifactIdentity({
+      architecture: manifest.architecture,
+      archiveSha256: manifest.archiveSha256,
+      asset: manifest.asset,
+      executableSha256: manifest.executableSha256,
+      manifestVersion: manifest.manifestVersion,
+      platform: manifest.platform,
+      release: manifest.release,
+      ...changes,
+    }));
+  }
+});
+
+test('artifact authority has no public plain-object or token-resolution factory', () => {
+  for (const name of [
+    'createGateBQuickTunnelArtifactIdentityFromAttestation',
+    'createGateBQuickTunnelStableBinding',
+    'artifactBindingFromAttestation',
+    'attestExecutable',
+    'createAttestationLaunch',
+  ]) {
+    assert.equal(Object.hasOwn(artifactModule, name), false);
+    assert.equal(Object.hasOwn(supervisorModule, name), false);
+  }
+});
 
 function bootstrap(changes = {}) {
   return {
@@ -49,6 +122,67 @@ function bootstrap(changes = {}) {
     ...changes,
   };
 }
+
+function canonicalQuickTunnelBinding(changes = {}) {
+  const manifest = GATE_B_QUICK_TUNNEL_ARTIFACT_MANIFEST;
+  return {
+    artifact: {
+      architecture: manifest.architecture,
+      archiveSha256: manifest.archiveSha256,
+      asset: manifest.asset,
+      executableSha256: manifest.executableSha256,
+      manifestVersion: manifest.manifestVersion,
+      platform: manifest.platform,
+      release: manifest.release,
+    },
+    hostnamePersistence: { ...GATE_B_QUICK_TUNNEL_HOSTNAME_PERSISTENCE_POLICY },
+    runtimeControl: { ...GATE_B_QUICK_TUNNEL_RUNTIME_CONTROL_POLICY },
+    telemetry: {
+      ...GATE_B_QUICK_TUNNEL_TELEMETRY_POLICIES.ACCEPT_POSSIBLE_ERROR_TELEMETRY,
+    },
+    ...changes,
+  };
+}
+
+function quickTunnelBindingMutations() {
+  return [
+    ['artifact-architecture', value => { value.artifact.architecture = 'x64'; }],
+    ['artifact-archive', value => { value.artifact.archiveSha256 = '0'.repeat(64); }],
+    ['artifact-asset', value => { value.artifact.asset = 'alternate.tgz'; }],
+    ['artifact-executable', value => { value.artifact.executableSha256 = '0'.repeat(64); }],
+    ['artifact-manifest-version', value => { value.artifact.manifestVersion = 2; }],
+    ['artifact-platform', value => { value.artifact.platform = 'linux'; }],
+    ['artifact-release', value => { value.artifact.release = 'latest'; }],
+    ['persistence-lifetime', value => { value.hostnamePersistence.lifetime = 'different'; }],
+    ['persistence-version', value => { value.hostnamePersistence.policyVersion = 2; }],
+    ['persistence-storage', value => { value.hostnamePersistence.storage = 'different'; }],
+    ['runtime-auto-update', value => { value.runtimeControl.autoUpdate = 'different'; }],
+    ['runtime-configuration', value => { value.runtimeControl.configuration = 'different'; }],
+    ['runtime-credentials', value => { value.runtimeControl.credentials = 'different'; }],
+    ['runtime-diagnostics', value => { value.runtimeControl.managementDiagnostics = 'different'; }],
+    ['runtime-origin-certificate', value => { value.runtimeControl.originCertificate = 'different'; }],
+    ['runtime-version', value => { value.runtimeControl.policyVersion = 2; }],
+    ['runtime-prechecks', value => { value.runtimeControl.prechecks = 'different'; }],
+    ['runtime-topology', value => { value.runtimeControl.processTopology = 'different'; }],
+    ['runtime-storage', value => { value.runtimeControl.runtimeStorage = 'different'; }],
+    ['telemetry-acknowledgement', value => { value.telemetry.acknowledgement = 'different'; }],
+    ['telemetry-classification', value => { value.telemetry.classification = 'disabled'; }],
+    ['telemetry-mode', value => { value.telemetry.mode = 'DISABLED'; }],
+  ];
+}
+
+test('stable binding rejects mutation of every artifact, runtime, persistence, and telemetry field', () => {
+  assert.equal(validateGateBQuickTunnelStableBinding(canonicalQuickTunnelBinding()), true);
+  for (const [name, mutate] of quickTunnelBindingMutations()) {
+    const candidate = structuredClone(canonicalQuickTunnelBinding());
+    mutate(candidate);
+    assert.throws(
+      () => validateGateBQuickTunnelStableBinding(candidate),
+      undefined,
+      name,
+    );
+  }
+});
 
 function snapshot(body, changes = {}) {
   return {
@@ -412,6 +546,46 @@ test('quick-tunnel HTTP parser accepts exact complete normalized response', () =
   const result = parseGateBQuickTunnelHttpSnapshot(snapshot(body));
   assert.deepEqual(result, { hostname: HOSTNAME });
   assert.equal(Object.isFrozen(result), true);
+});
+
+test('shared hostname validator rejects coercion and hostile objects without evaluating them', () => {
+  for (const hostname of [
+    'a.trycloudflare.com',
+    '0.trycloudflare.com',
+    `${'a'.repeat(63)}.trycloudflare.com`,
+    HOSTNAME,
+  ]) assert.equal(validateGateBQuickTunnelHostname(hostname), true);
+
+  for (const hostname of [
+    '.trycloudflare.com',
+    '-a.trycloudflare.com',
+    'a-.trycloudflare.com',
+    `${'a'.repeat(64)}.trycloudflare.com`,
+    'A.trycloudflare.com',
+    'a.b.trycloudflare.com',
+    'xn--fixture.trycloudflare.com',
+    'fixture.example.com',
+    'fixture.trycloudflare.com:443',
+    'fixture.trycloudflare.com/path',
+    'fixture.trycloudflare.com\n',
+    '',
+  ]) assert.throws(() => validateGateBQuickTunnelHostname(hostname));
+
+  let reads = 0;
+  const hostile = new Proxy({}, {
+    get() { reads += 1; throw new Error('synthetic getter'); },
+    getOwnPropertyDescriptor() { reads += 1; throw new Error('synthetic descriptor'); },
+    getPrototypeOf() { reads += 1; throw new Error('synthetic prototype'); },
+    ownKeys() { reads += 1; throw new Error('synthetic keys'); },
+  });
+  const coercible = {};
+  Object.defineProperty(coercible, Symbol.toPrimitive, {
+    get() { reads += 1; throw new Error('synthetic coercion'); },
+  });
+  for (const value of [hostile, coercible, new String(HOSTNAME), null, undefined, 1]) {
+    assert.throws(() => validateGateBQuickTunnelHostname(value));
+  }
+  assert.equal(reads, 0);
 });
 
 test('ready HTTP parser accepts status 200, one connection, and canonical nonnil UUID', () => {
@@ -1260,14 +1434,12 @@ function supervisorHarness(changes = {}) {
   const child = new SupervisorChild(order);
   const workspaceRecord = Object.freeze(Object.create(null));
   const runtimeToken = Object.freeze(Object.create(null));
-  const attestationToken = Object.freeze(Object.create(null));
   const state = {
     order,
     ipc,
     child,
     workspaceRecord,
     runtimeToken,
-    attestationToken,
     reserveCalls: 0,
     sourceWrites: 0,
     sourceReads: 0,
@@ -1317,12 +1489,24 @@ function supervisorHarness(changes = {}) {
     },
   });
   const injections = {
+    architecture: 'arm64',
     assertDevNull: async () => { order.push('devnull'); return true; },
-    async attestExecutable(path, pin, previous, versionAttestor) {
-      state.attestCalls.push([path, pin, previous]);
-      order.push(previous === undefined ? 'attest:before' : 'attest:after');
+    async inspectExecutable(path, pin, versionAttestor) {
+      state.attestCalls.push([path, pin]);
+      order.push(state.attestCalls.length === 1
+        ? 'attest:before'
+        : state.attestCalls.length === 2 ? 'attest:after' : 'attest:retained');
       assert.equal(await versionAttestor(path), true);
-      return previous === undefined ? attestationToken : previous;
+      return {
+        ctimeNs: 1n,
+        dev: 2n,
+        digest: pin,
+        ino: 3n,
+        mode: 0o100500n,
+        mtimeNs: 4n,
+        nlink: 1n,
+        size: 5n,
+      };
     },
     checkTimeoutMs: 200,
     async createRuntimeDirectory() {
@@ -1410,6 +1594,112 @@ function supervisorHarness(changes = {}) {
   return { state, injections, workspace };
 }
 
+function guardedExecutableSupervisorHarness(changes = {}) {
+  const executablePath = changes.executablePath ?? '/trusted/private/runtime/cloudflared';
+  const uid = typeof process.getuid === 'function' ? process.getuid() : 501;
+  let nextFd = 20;
+  const closedHandles = [];
+  const aclCalls = [];
+  const identities = new Map();
+  const makeStat = ({ directory, ino, permissions, owner = uid, size = 4096n }) => ({
+    ctimeNs: 1n,
+    dev: 1n,
+    gid: BigInt(owner),
+    ino: BigInt(ino),
+    mode: BigInt((directory ? 0o040000 : 0o100000) | permissions),
+    mtimeNs: 1n,
+    nlink: 1n,
+    size: directory ? 0n : size,
+    uid: BigInt(owner),
+    isDirectory: () => directory,
+    isFile: () => !directory,
+    isSymbolicLink: () => false,
+  });
+  identities.set('/', makeStat({ directory: true, ino: 1, owner: 0, permissions: 0o755 }));
+  identities.set('/trusted', makeStat({
+    directory: true, ino: 2, owner: 0, permissions: 0o755,
+  }));
+  identities.set('/trusted/private', makeStat({
+    directory: true, ino: 3, permissions: 0o700,
+  }));
+  identities.set('/trusted/private/runtime', makeStat({
+    directory: true, ino: 4, permissions: 0o700,
+  }));
+  identities.set(executablePath, makeStat({
+    directory: false, ino: 5, permissions: 0o500,
+  }));
+  const handles = [];
+  const harness = supervisorHarness({
+    async readBootstrapFrame() {
+      return frameGateBQuickTunnelBootstrap(bootstrap({
+        cloudflaredExecutable: executablePath,
+      }));
+    },
+  });
+  const order = harness.state.order;
+  delete harness.injections.inspectExecutable;
+  harness.injections.inspectExecutableAcl = async request => {
+    aclCalls.push({ ...request });
+    order.push(`acl:${request.kind}:${request.cwd}`);
+    if (typeof changes.aclResult === 'function') return changes.aclResult(request);
+    return true;
+  };
+  harness.injections.lstatExecutablePath = async path => {
+    order.push(`lstat:${path}`);
+    const state = identities.get(path);
+    if (!state) throw new Error('synthetic missing path');
+    return state;
+  };
+  harness.injections.openExecutablePath = async path => {
+    order.push(`open:${path}`);
+    const identity = identities.get(path);
+    if (!identity) throw new Error('synthetic missing path');
+    const captured = identity;
+    const fd = nextFd;
+    nextFd += 1;
+    const handle = {
+      fd,
+      async close() {
+        if (closedHandles.includes(fd)) throw new Error('synthetic duplicate close');
+        closedHandles.push(fd);
+        order.push(`close:${path}`);
+      },
+      async read(buffer, offset, length) {
+        if (path !== executablePath || offset !== 0 || length !== 8) {
+          throw new Error('synthetic unexpected read');
+        }
+        Buffer.from([0xcf, 0xfa, 0xed, 0xfe, 0x0c, 0x00, 0x00, 0x01])
+          .copy(buffer, offset);
+        return { bytesRead: 8 };
+      },
+      async stat() { return captured; },
+    };
+    handles.push(handle);
+    return handle;
+  };
+  harness.injections.readExecutableHash = async () => Buffer.from(SOURCE_PIN, 'hex');
+  harness.injections.realpathExecutablePath = async path => {
+    order.push(`realpath:${path}`);
+    if (changes.symlinkParent === path) return `${path}-resolved`;
+    return path;
+  };
+  const originalSpawn = harness.injections.spawnProcess;
+  harness.injections.spawnProcess = (...args) => {
+    order.push('spawn:runtime');
+    changes.beforeSpawn?.({ executablePath, identities });
+    return originalSpawn(...args);
+  };
+  return {
+    ...harness,
+    aclCalls,
+    closedHandles,
+    executablePath,
+    handles,
+    identities,
+    order,
+  };
+}
+
 async function startSupervisor(harness) {
   const promise = superviseGateBQuickTunnel(harness.injections);
   await eventually(() => harness.state.ipc.sent.some(message =>
@@ -1482,6 +1772,20 @@ test('supervisor reserves durably before fixed version/child policies and observ
       windowsHide: true,
     });
     assert.equal(state.attestCalls.length, 2);
+    assert.ok(state.order.indexOf('attest:after') <
+      state.order.indexOf('workspace:write'));
+    const parsedSource = parseGateBQuickTunnelHostnameSource(state.sourceBytes);
+    assert.equal(parsedSource.schemaVersion, 2);
+    assert.equal(validateGateBQuickTunnelStableBinding(parsedSource.quickTunnel), true);
+    assert.deepEqual(parsedSource.quickTunnel, canonicalQuickTunnelBinding());
+    const persistedText = state.sourceBytes.toString('utf8');
+    assert.equal(parsedSource.quickTunnel.runtimeControl.processTopology,
+      'non-detached-child-of-retained-supervisor');
+    assert.equal(persistedText.includes('watchdog'), false);
+    for (const prohibited of [
+      EXECUTABLE, WORKSPACE_ROOT, String(state.child.pid), 'device', 'inode',
+      'signer', 'diagnostic',
+    ]) assert.equal(persistedText.includes(prohibited), false);
     assert.equal(state.versionCalls.length, 2);
     for (const [versionExecutable, versionArgv, versionOptions] of state.versionCalls) {
       assert.equal(versionExecutable, EXECUTABLE);
@@ -1777,12 +2081,245 @@ test('supervisor rejects stale IDs, overlapping commands, and late CHECKED messa
   }
 });
 
+test('production path guard rejects leaf ACL and hostile parent-chain authority before spawn',
+  async t => {
+    const cases = [
+      ['leaf ACL', () => guardedExecutableSupervisorHarness({
+        aclResult: request => request.kind !== 'file',
+      })],
+      ['parent ACL', () => guardedExecutableSupervisorHarness({
+        aclResult: request => request.cwd !== '/trusted/private',
+      })],
+      ['writable parent', () => {
+        const harness = guardedExecutableSupervisorHarness();
+        harness.identities.get('/trusted').mode = BigInt(0o040775);
+        return harness;
+      }],
+      ['wrong leaf mode', () => {
+        const harness = guardedExecutableSupervisorHarness();
+        harness.identities.get(harness.executablePath).mode = BigInt(0o100700);
+        return harness;
+      }],
+      ['wrong canonical basename', () => guardedExecutableSupervisorHarness({
+        executablePath: '/trusted/private/runtime/cloudflared-copy',
+      })],
+      ['missing private anchor', () => {
+        const harness = guardedExecutableSupervisorHarness();
+        harness.identities.get('/trusted/private').mode = BigInt(0o040755);
+        harness.identities.get('/trusted/private/runtime').mode = BigInt(0o040755);
+        return harness;
+      }],
+      ['other-owner parent', () => {
+        const harness = guardedExecutableSupervisorHarness();
+        harness.identities.get('/trusted').uid = 99999n;
+        return harness;
+      }],
+      ['wrong descendant mode', () => {
+        const harness = guardedExecutableSupervisorHarness();
+        harness.identities.get('/trusted/private/runtime').mode = BigInt(0o040755);
+        return harness;
+      }],
+      ['symlink parent', () => {
+        const harness = guardedExecutableSupervisorHarness();
+        harness.identities.get('/trusted').isSymbolicLink = () => true;
+        return harness;
+      }],
+      ['noncanonical parent realpath', () => guardedExecutableSupervisorHarness({
+        symlinkParent: '/trusted',
+      })],
+    ];
+    for (const [name, createHarness] of cases) {
+      await t.test(name, async () => {
+        const harness = createHarness();
+        const supervision = superviseGateBQuickTunnel(harness.injections);
+        await eventually(() => harness.state.ipc.sent.some(message =>
+          message.type === GATE_B_QUICK_TUNNEL_IPC_TYPES.READY));
+        harness.state.ipc.emit('message', createGateBQuickTunnelIpcMessage(
+          GATE_B_QUICK_TUNNEL_IPC_TYPES.START,
+          1,
+        ));
+        await assert.rejects(supervision);
+        assert.equal(harness.state.spawnCalls.length, 0);
+        assert.equal(harness.state.sourceWrites, 0);
+        assert.equal(harness.closedHandles.length, harness.handles.length);
+        for (const request of harness.aclCalls) {
+          assert.equal(
+            request.target === '.' || request.target === './cloudflared',
+            true,
+          );
+          assert.equal(request.target.includes(harness.executablePath), false);
+        }
+      });
+    }
+  });
+
+test('production path guard catches pre-spawn parent generation drift with zero authority',
+  async () => {
+    const harness = guardedExecutableSupervisorHarness();
+    let mutated = false;
+    const baseAcl = harness.injections.inspectExecutableAcl;
+    harness.injections.inspectExecutableAcl = async request => {
+      const accepted = await baseAcl(request);
+      if (!mutated && request.kind === 'file') {
+        mutated = true;
+        const original = harness.identities.get('/trusted/private');
+        harness.identities.set('/trusted/private', {
+          ...original,
+          ctimeNs: original.ctimeNs + 1n,
+        });
+      }
+      return accepted;
+    };
+    const supervision = superviseGateBQuickTunnel(harness.injections);
+    await eventually(() => harness.state.ipc.sent.some(message =>
+      message.type === GATE_B_QUICK_TUNNEL_IPC_TYPES.READY));
+    harness.state.ipc.emit('message', createGateBQuickTunnelIpcMessage(
+      GATE_B_QUICK_TUNNEL_IPC_TYPES.START,
+      1,
+    ));
+    await assert.rejects(supervision);
+    assert.equal(mutated, true);
+    assert.equal(harness.state.spawnCalls.length, 0);
+    assert.equal(harness.state.sourceWrites, 0);
+    assert.equal(harness.closedHandles.length, harness.handles.length);
+  });
+
+test('production path guard brackets spawn and reaps on parent generation replacement', async () => {
+  const harness = guardedExecutableSupervisorHarness({
+    beforeSpawn({ identities }) {
+      const original = identities.get('/trusted/private');
+      identities.set('/trusted/private', { ...original, ctimeNs: original.ctimeNs + 1n });
+    },
+  });
+  const supervision = superviseGateBQuickTunnel(harness.injections);
+  await eventually(() => harness.state.ipc.sent.some(message =>
+    message.type === GATE_B_QUICK_TUNNEL_IPC_TYPES.READY));
+  harness.state.ipc.emit('message', createGateBQuickTunnelIpcMessage(
+    GATE_B_QUICK_TUNNEL_IPC_TYPES.START,
+    1,
+  ));
+  await assert.rejects(supervision);
+  assert.equal(harness.state.spawnCalls.length, 1);
+  assert.equal(harness.state.sourceWrites, 0);
+  assert.deepEqual(harness.state.child.killSignals, ['SIGTERM']);
+  assert.equal(harness.closedHandles.length, harness.handles.length);
+  const spawnIndex = harness.order.indexOf('spawn:runtime');
+  assert.notEqual(spawnIndex, -1);
+  assert.equal(harness.order.slice(0, spawnIndex).some(entry =>
+    entry === 'acl:file:/trusted/private/runtime'), true);
+  assert.equal(harness.order.slice(spawnIndex + 1).some(entry =>
+    entry === 'lstat:/trusted/private'), true);
+});
+
+test('production path guard proves ACL once, rechecks by stat, and closes every descriptor',
+  async () => {
+    const harness = guardedExecutableSupervisorHarness();
+    const { promise: supervision } = await startSupervisor(harness);
+    assert.equal(harness.closedHandles.length, 0);
+    assert.equal(harness.aclCalls.length, 5);
+    assert.equal(harness.aclCalls.every(request =>
+      Number.isSafeInteger(request.timeoutMs) &&
+      request.timeoutMs >= 1 && request.timeoutMs <= 200), true);
+    harness.state.ipc.emit('message', createGateBQuickTunnelIpcMessage(
+      GATE_B_QUICK_TUNNEL_IPC_TYPES.CHECK,
+      2,
+    ));
+    await eventually(() => harness.state.ipc.sent.some(message =>
+      message.type === GATE_B_QUICK_TUNNEL_IPC_TYPES.CHECKED &&
+      message.requestId === 2));
+    assert.equal(harness.aclCalls.length, 5);
+    await stopSupervisor(harness, 3);
+    assert.equal(await supervision, true);
+    assert.equal(harness.handles.length, 5);
+    assert.equal(harness.closedHandles.length, harness.handles.length);
+    const lastClose = Math.max(...harness.order.map((entry, index) =>
+      entry.startsWith('close:') ? index : -1));
+    assert.ok(lastClose < harness.state.order.indexOf('ipc:STOPPED:3'));
+  });
+
+test('production path guard enforces one aggregate ACL deadline before spawn', async () => {
+  const harness = guardedExecutableSupervisorHarness();
+  let now = -1_000;
+  harness.injections.monotonicNow = () => {
+    now += 1_000;
+    return now;
+  };
+  const supervision = superviseGateBQuickTunnel(harness.injections);
+  await eventually(() => harness.state.ipc.sent.some(message =>
+    message.type === GATE_B_QUICK_TUNNEL_IPC_TYPES.READY));
+  harness.state.ipc.emit('message', createGateBQuickTunnelIpcMessage(
+    GATE_B_QUICK_TUNNEL_IPC_TYPES.START,
+    1,
+  ));
+  await assert.rejects(supervision);
+  assert.equal(harness.aclCalls.length, 3);
+  assert.equal(harness.handles.length, 4);
+  assert.equal(harness.aclCalls.every(request => request.timeoutMs === 200), true);
+  assert.equal(now, 4_000);
+  assert.equal(harness.state.spawnCalls.length, 0);
+  assert.equal(harness.state.sourceWrites, 0);
+  assert.equal(harness.closedHandles.length, harness.handles.length);
+});
+
+test('retained production path guard rejects CHECK-time parent drift and cannot reuse source authority',
+  async () => {
+    const harness = guardedExecutableSupervisorHarness();
+    const { promise: supervision } = await startSupervisor(harness);
+    const original = harness.identities.get('/trusted/private');
+    harness.identities.set('/trusted/private', {
+      ...original,
+      ctimeNs: original.ctimeNs + 1n,
+    });
+    harness.state.ipc.emit('message', createGateBQuickTunnelIpcMessage(
+      GATE_B_QUICK_TUNNEL_IPC_TYPES.CHECK,
+      2,
+    ));
+    await assert.rejects(supervision);
+    assert.equal(harness.state.sourceWrites, 1);
+    assert.equal(harness.state.ipc.sent.some(message =>
+      message.type === GATE_B_QUICK_TUNNEL_IPC_TYPES.CHECKED), false);
+    assert.deepEqual(harness.state.child.killSignals, ['SIGTERM']);
+    assert.equal(harness.closedHandles.length, harness.handles.length);
+  });
+
+test('ACL inspection selects only fixed dot or canonical leaf targets with bounded output',
+  async () => {
+    const source = await readFile(
+      new URL('../src/gate-b-quick-tunnel-supervisor.js', import.meta.url),
+      'utf8',
+    );
+    const acl = /function inspectDarwinAcl[\s\S]*?\n}/.exec(source)?.[0] ?? '';
+    assert.match(acl, /target !== '\.' && target !== `\.\/\$\{CLOUDFLARED_ARGV0}`/);
+    assert.match(acl, /const args = \['-lide', target\]/);
+    assert.doesNotMatch(acl, /\['-lie'\]/);
+    assert.match(acl, /maxBuffer: ACL_MAX_BYTES/);
+    assert.match(acl, /timeout: timeoutMs/);
+    assert.match(acl, /stdout\.fill\(0\)/);
+    assert.match(acl, /stderr\.fill\(0\)/);
+    assert.match(source, /const ACL_COMPONENT_TIMEOUT_MS = 200/);
+    assert.match(source, /const ACL_AGGREGATE_TIMEOUT_MS = 4_000/);
+    assert.match(source, /const PATH_COMPONENT_MAX = 16/);
+    const retainedAssertion = /async function assertExecutablePathGuard[\s\S]*?\n}/
+      .exec(source)?.[0] ?? '';
+    assert.doesNotMatch(retainedAssertion, /inspectExecutableAcl/);
+  });
+
 test('attestation replacement after spawn fails closed and reaps before cleanup', async () => {
+  let calls = 0;
   const harness = supervisorHarness({
-    async attestExecutable(path, pin, previous) {
-      harness.state.attestCalls.push([path, pin, previous]);
-      harness.state.order.push(previous === undefined ? 'attest:before' : 'attest:after');
-      return Object.freeze(Object.create(null));
+    async inspectExecutable(path, pin, versionAttestor) {
+      calls += 1;
+      assert.equal(await versionAttestor(path), true);
+      return {
+        ctimeNs: BigInt(calls),
+        dev: 2n,
+        digest: pin,
+        ino: 3n,
+        mode: 0o100500n,
+        mtimeNs: 4n,
+        nlink: 1n,
+        size: 5n,
+      };
     },
   });
   const supervision = superviseGateBQuickTunnel(harness.injections);
@@ -1799,6 +2336,111 @@ test('attestation replacement after spawn fails closed and reaps before cleanup'
   assert.ok(harness.state.order.indexOf('child:close') <
     harness.state.order.indexOf('runtime:remove'));
 });
+
+test('unsupported artifact selection fails before inspection, spawn, or source authority', async () => {
+  let inspections = 0;
+  const harness = supervisorHarness({
+    async inspectExecutable() {
+      inspections += 1;
+      assert.fail('unsupported selection must not inspect');
+    },
+    async readBootstrapFrame() {
+      return frameGateBQuickTunnelBootstrap(bootstrap({ sourcePin: '0'.repeat(64) }));
+    },
+  });
+  const supervision = superviseGateBQuickTunnel(harness.injections);
+  await eventually(() => harness.state.ipc.sent.some(message =>
+    message.type === GATE_B_QUICK_TUNNEL_IPC_TYPES.READY));
+  harness.state.ipc.emit('message', createGateBQuickTunnelIpcMessage(
+    GATE_B_QUICK_TUNNEL_IPC_TYPES.START,
+    1,
+  ));
+  await assert.rejects(supervision);
+  assert.equal(inspections, 0);
+  assert.equal(harness.state.spawnCalls.length, 0);
+  assert.equal(harness.state.sourceWrites, 0);
+});
+
+test('retained executable drift poisons CHECK before CHECKED or token reuse', async () => {
+  let calls = 0;
+  const harness = supervisorHarness({
+    async inspectExecutable(path, pin, versionAttestor) {
+      calls += 1;
+      assert.equal(await versionAttestor(path), true);
+      return {
+        ctimeNs: calls < 3 ? 1n : 2n,
+        dev: 2n,
+        digest: pin,
+        ino: 3n,
+        mode: 0o100500n,
+        mtimeNs: 4n,
+        nlink: 1n,
+        size: 5n,
+      };
+    },
+  });
+  const { promise: supervision } = await startSupervisor(harness);
+  harness.state.ipc.emit('message', createGateBQuickTunnelIpcMessage(
+    GATE_B_QUICK_TUNNEL_IPC_TYPES.CHECK,
+    2,
+  ));
+  await assert.rejects(supervision);
+  assert.equal(calls, 3);
+  assert.equal(harness.state.sourceWrites, 1);
+  assert.equal(harness.state.ipc.sent.some(message =>
+    message.type === GATE_B_QUICK_TUNNEL_IPC_TYPES.CHECKED), false);
+});
+
+test('hostile inspection lookalikes cannot mint a source or evaluate getters', async () => {
+  let reads = 0;
+  const lookalike = {
+    ctimeNs: 1n,
+    dev: 2n,
+    digest: SOURCE_PIN,
+    ino: 3n,
+    mode: 0o100500n,
+    mtimeNs: 4n,
+    nlink: 1n,
+  };
+  Object.defineProperty(lookalike, 'size', {
+    enumerable: true,
+    get() { reads += 1; return 5n; },
+  });
+  const harness = supervisorHarness({ inspectExecutable: async () => lookalike });
+  const supervision = superviseGateBQuickTunnel(harness.injections);
+  await eventually(() => harness.state.ipc.sent.some(message =>
+    message.type === GATE_B_QUICK_TUNNEL_IPC_TYPES.READY));
+  harness.state.ipc.emit('message', createGateBQuickTunnelIpcMessage(
+    GATE_B_QUICK_TUNNEL_IPC_TYPES.START,
+    1,
+  ));
+  await assert.rejects(supervision);
+  assert.equal(reads, 0);
+  assert.equal(harness.state.spawnCalls.length, 0);
+  assert.equal(harness.state.sourceWrites, 0);
+});
+
+test('attestation retirement clears retained child, path, pin, generation, and token links',
+  async () => {
+    const source = await readFile(
+      new URL('../src/gate-b-quick-tunnel-supervisor.js', import.meta.url),
+      'utf8',
+    );
+    const retirement = /function retireAttestationLaunch[\s\S]*?return true;\n}/
+      .exec(source)?.[0] ?? '';
+    for (const field of [
+      'attestation.child = undefined',
+      'attestation.identity = undefined',
+      'attestation.launchToken = undefined',
+      'attestation.path = undefined',
+      'attestation.sourcePin = undefined',
+      'launch.attestationToken = undefined',
+      'launch.child = undefined',
+    ]) assert.equal(retirement.includes(field), true, field);
+    assert.match(retirement, /launch\.stage === 'RETIRED'\) return false/);
+    assert.match(retirement, /ATTESTATIONS\.delete\(attestationToken\)/);
+    assert.match(retirement, /ATTESTATION_LAUNCHES\.delete\(launchToken\)/);
+  });
 
 test('an ambiguous spawn result preserves the private runtime quarantine', async t => {
   await t.test('throw leaves no return handle and quarantines', async () => {
@@ -1985,5 +2627,53 @@ test('quick-tunnel source and documentation retain the privacy and nonclaim boun
       assert.equal(text.includes('Issue #45'), true);
       assert.equal(text.includes('no live-evidence claim') ||
         text.includes('creates no tunnel'), true);
+    }
+  });
+
+test('binding documentation fixes provenance, policy, cutover, rollback, and scope claims',
+  async () => {
+    const documents = await Promise.all([
+      readFile(new URL('../README.md', import.meta.url), 'utf8'),
+      readFile(new URL('../SECURITY.md', import.meta.url), 'utf8'),
+      readFile(new URL('../docs/IMPLEMENTATION_PLAN.md', import.meta.url), 'utf8'),
+    ]);
+    for (const document of documents) {
+      for (const claim of [
+        'official-release-derived byte identity',
+        'fixed executable basename `cloudflared`',
+        'current-user-owned mode `0500`',
+        'root-to-leaf canonical symlink-free parent chain',
+        'current-user mode-`0700` anchor',
+        '200-millisecond per-call cap and four-second aggregate deadline',
+        'later pre-spawn, post-spawn, and `CHECK` guard checks are stat-only',
+        'two-second timeout targets only the trusted direct leader',
+        'does not prove arbitrary descendant absence',
+        'Outer whole-group lifecycle cleanup and the hard lifetime provide the eventual bound',
+        'not proof of vendor signing',
+        'The runtime verifier proves byte identity, not acquisition history',
+        'provides no download, update, or fallback path',
+        'cannot verify firewall truth or telemetry disablement',
+        'non-detached runtime child of the retained supervisor',
+        'Same-process module plumbing remains trusted',
+        'moves the token from `POST_SPAWN` to `CONSUMED`',
+        'moves it from `CONSUMED` to `SOURCE_WRITTEN`',
+        'strict cutover',
+        'hostname source v1',
+        'exceptional runner v1',
+        'authorization v1',
+        'no migration or in-place workspace upgrade',
+        'fresh one-shot workspace',
+        'affected workspace remains quarantined',
+        'exactly fourteen paths',
+        'GATE_B_CONTROLLER_PREFLIGHT_VALID_RUN_NOT_AUTHORIZED',
+        'adds no new RUN entry point, invocation, authority, effect transition, selector, or execution behavior',
+        'tightens the existing exceptional RUN/preflight validation',
+      ]) assert.equal(document.includes(claim), true, claim);
+      assert.doesNotMatch(document, /zenon-x402-public-ws-once-config-v1/);
+      assert.doesNotMatch(document, /(?:opens all|opens exactly|the) five protected files/);
+      assert.doesNotMatch(document, /(?:or|no) RUN (?:path|change)/);
+      assert.doesNotMatch(document, /runtime[- ]download(?:ed)?[^.]{0,80}fail/i);
+      assert.doesNotMatch(document, /non-group\/world-writable, no-setid/);
+      assert.doesNotMatch(document, /bounded fixed-argument version probe/);
     }
   });

@@ -3,8 +3,7 @@ import { types as utilTypes } from 'node:util';
 
 import { canonicalJson } from './canonical.js';
 import {
-  parseGateBQuickTunnelHostnameSource,
-  serializeGateBQuickTunnelHostnameSource,
+  validateGateBQuickTunnelHostname,
 } from './gate-b-public-ws-inputs-schema.js';
 
 const ERROR_CODE = 'gate_b_quick_tunnel_schema_invalid';
@@ -285,20 +284,16 @@ function exactUtf8(bytes) {
 }
 
 export function parseGateBQuickTunnelHttpSnapshot(value) {
-  let sourceBytes;
   try {
     const text = exactUtf8(validateHttpSnapshot(value));
     const body = JSON.parse(text);
     exactPlainObject(body, ['hostname']);
     exactString(body.hostname, 253);
     if (text !== `{"hostname":${JSON.stringify(body.hostname)}}`) fail();
-    sourceBytes = serializeGateBQuickTunnelHostnameSource(body.hostname);
-    const source = parseGateBQuickTunnelHostnameSource(sourceBytes);
-    return Object.freeze({ hostname: source.hostname });
+    if (validateGateBQuickTunnelHostname(body.hostname) !== true) fail();
+    return Object.freeze({ hostname: body.hostname });
   } catch {
     fail();
-  } finally {
-    if (Buffer.isBuffer(sourceBytes)) sourceBytes.fill(0);
   }
 }
 
