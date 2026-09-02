@@ -5,6 +5,12 @@ import { pathToFileURL } from 'node:url';
 import { types as utilTypes } from 'node:util';
 
 import {
+  GATE_B_QUICK_TUNNEL_ARTIFACT_MANIFEST,
+  GATE_B_QUICK_TUNNEL_HOSTNAME_PERSISTENCE_POLICY,
+  GATE_B_QUICK_TUNNEL_RUNTIME_CONTROL_POLICY,
+  GATE_B_QUICK_TUNNEL_TELEMETRY_POLICIES,
+} from './gate-b-quick-tunnel-artifact.js';
+import {
   GATE_B_OPERATOR_COORDINATOR_ACKNOWLEDGEMENTS,
   GATE_B_OPERATOR_REVIEW_CHILD_IPC_TYPES,
   createGateBOperatorReviewChildIpcMessage,
@@ -31,7 +37,7 @@ const REVISION = /^(?:[0-9a-f]{40}|[0-9a-f]{64})$/;
 const HASH_64 = /^[0-9a-f]{64}$/;
 const HOSTNAME =
   /^(?:[a-z0-9]|[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9]))\.trycloudflare\.com$/;
-const CONFIG_DIGEST_DOMAIN = 'zenon-x402-public-ws-once-config-v1';
+const CONFIG_DIGEST_DOMAIN = 'zenon-x402-public-ws-once-config-v2';
 const REVIEW_RESULT_FD = 4;
 const PUBLIC_ADDRESS_BLOCKLIST = new BlockList();
 const ARRAY_IS_ARRAY = Array.isArray;
@@ -235,9 +241,45 @@ function parseEndpointSource(bytes) {
 
 function parseHostnameSource(bytes) {
   const { value } = strictJsonLine(bytes);
-  exactPlainObject(value, ['hostname', 'kind', 'schemaVersion']);
-  if (value.kind !== 'gate-b-quick-tunnel-hostname-source' || value.schemaVersion !== 1) fail();
+  exactPlainObject(value, ['hostname', 'kind', 'quickTunnel', 'schemaVersion']);
+  if (value.kind !== 'gate-b-quick-tunnel-hostname-source' || value.schemaVersion !== 2) fail();
   exactTunnelHostname(value.hostname);
+  exactQuickTunnelBinding(value.quickTunnel);
+  return value;
+}
+
+function exactQuickTunnelBinding(value) {
+  exactPlainObject(value, [
+    'artifact', 'hostnamePersistence', 'runtimeControl', 'telemetry',
+  ]);
+  exactPlainObject(value.artifact, [
+    'architecture', 'archiveSha256', 'asset', 'executableSha256',
+    'manifestVersion', 'platform', 'release',
+  ]);
+  const manifest = GATE_B_QUICK_TUNNEL_ARTIFACT_MANIFEST;
+  for (const field of [
+    'architecture', 'archiveSha256', 'asset', 'executableSha256',
+    'manifestVersion', 'platform', 'release',
+  ]) if (value.artifact[field] !== manifest[field]) fail();
+  exactPlainObject(value.hostnamePersistence, ['lifetime', 'policyVersion', 'storage']);
+  for (const field of ['lifetime', 'policyVersion', 'storage']) {
+    if (value.hostnamePersistence[field] !==
+        GATE_B_QUICK_TUNNEL_HOSTNAME_PERSISTENCE_POLICY[field]) fail();
+  }
+  exactPlainObject(value.runtimeControl, [
+    'autoUpdate', 'configuration', 'credentials', 'managementDiagnostics',
+    'originCertificate', 'policyVersion', 'prechecks', 'processTopology',
+    'runtimeStorage',
+  ]);
+  for (const field of [
+    'autoUpdate', 'configuration', 'credentials', 'managementDiagnostics',
+    'originCertificate', 'policyVersion', 'prechecks', 'processTopology',
+    'runtimeStorage',
+  ]) if (value.runtimeControl[field] !== GATE_B_QUICK_TUNNEL_RUNTIME_CONTROL_POLICY[field]) fail();
+  exactPlainObject(value.telemetry, ['acknowledgement', 'classification', 'mode']);
+  const telemetry = GATE_B_QUICK_TUNNEL_TELEMETRY_POLICIES[value.telemetry.mode];
+  if (!telemetry || value.telemetry.acknowledgement !== telemetry.acknowledgement ||
+      value.telemetry.classification !== telemetry.classification) fail();
   return value;
 }
 
@@ -312,15 +354,16 @@ function exactAccepted(value, payee, asset) {
 
 export function validateIndependentGateBOperatorConfig(value, context) {
   try {
-    exactPlainObject(context, ['asset', 'hostname', 'payee']);
+    exactPlainObject(context, ['asset', 'hostname', 'payee', 'quickTunnel']);
     exactString(context.asset, 128);
     exactTunnelHostname(context.hostname);
     exactString(context.payee, ADDRESS_MAX_BYTES);
+    exactQuickTunnelBinding(context.quickTunnel);
     exactPlainObject(value, [
       'acknowledgements', 'expectedPaymentRequired', 'profileName', 'runnerVersion',
-      'runtime', 'sourceRevision',
+      'quickTunnel', 'runtime', 'sourceRevision',
     ]);
-    if (value.runnerVersion !== 1 || typeof value.sourceRevision !== 'string' ||
+    if (value.runnerVersion !== 2 || typeof value.sourceRevision !== 'string' ||
         !REVISION.test(value.sourceRevision) ||
         value.profileName !== GATE_B_CURRENT_TESTNET_PROFILE_NAME) fail();
     exactPlainObject(value.acknowledgements, ['live', 'operatorTrust']);
@@ -331,6 +374,9 @@ export function validateIndependentGateBOperatorConfig(value, context) {
           GATE_B_OPERATOR_COORDINATOR_ACKNOWLEDGEMENTS.live ||
         value.acknowledgements.operatorTrust !==
           GATE_B_OPERATOR_COORDINATOR_ACKNOWLEDGEMENTS.operatorTrust) fail();
+    exactQuickTunnelBinding(value.quickTunnel);
+    if (independentCanonicalJson(value.quickTunnel) !==
+        independentCanonicalJson(context.quickTunnel)) fail();
     exactPlainObject(value.expectedPaymentRequired, ['accepts', 'resource', 'x402Version']);
     if (value.expectedPaymentRequired.x402Version !== 2) fail();
     exactResource(value.expectedPaymentRequired.resource, context.hostname);
@@ -480,6 +526,7 @@ export async function reviewGateBOperatorConfiguration(injected) {
       asset,
       hostname: hostnameSource.hostname,
       payee: payeeAddress.address,
+      quickTunnel: hostnameSource.quickTunnel,
     });
     const independentDigest = independentGateBOperatorConfigDigest(config);
     if (!HASH_64.test(independentDigest)) fail();

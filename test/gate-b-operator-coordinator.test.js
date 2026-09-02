@@ -9,6 +9,12 @@ import { PassThrough } from 'node:stream';
 
 import { canonicalJson } from '../src/canonical.js';
 import {
+  GATE_B_QUICK_TUNNEL_ARTIFACT_MANIFEST,
+  GATE_B_QUICK_TUNNEL_HOSTNAME_PERSISTENCE_POLICY,
+  GATE_B_QUICK_TUNNEL_RUNTIME_CONTROL_POLICY,
+  GATE_B_QUICK_TUNNEL_TELEMETRY_POLICIES,
+} from '../src/gate-b-quick-tunnel-artifact.js';
+import {
   GATE_B_OPERATOR_COORDINATOR_ACKNOWLEDGEMENTS,
   GATE_B_OPERATOR_COORDINATOR_LIMITS,
   GATE_B_OPERATOR_COORDINATOR_STATUS_LINES,
@@ -67,6 +73,54 @@ import {
 
 const WORKSPACE_ROOT = '/private/tmp/gate-b-operator-coordinator-fixture';
 
+function canonicalQuickTunnelBinding(changes = {}) {
+  const manifest = GATE_B_QUICK_TUNNEL_ARTIFACT_MANIFEST;
+  return {
+    artifact: {
+      architecture: manifest.architecture,
+      archiveSha256: manifest.archiveSha256,
+      asset: manifest.asset,
+      executableSha256: manifest.executableSha256,
+      manifestVersion: manifest.manifestVersion,
+      platform: manifest.platform,
+      release: manifest.release,
+    },
+    hostnamePersistence: { ...GATE_B_QUICK_TUNNEL_HOSTNAME_PERSISTENCE_POLICY },
+    runtimeControl: { ...GATE_B_QUICK_TUNNEL_RUNTIME_CONTROL_POLICY },
+    telemetry: {
+      ...GATE_B_QUICK_TUNNEL_TELEMETRY_POLICIES.ACCEPT_POSSIBLE_ERROR_TELEMETRY,
+    },
+    ...changes,
+  };
+}
+
+function quickTunnelBindingMutations() {
+  return [
+    ['artifact-architecture', value => { value.artifact.architecture = 'x64'; }],
+    ['artifact-archive', value => { value.artifact.archiveSha256 = '0'.repeat(64); }],
+    ['artifact-asset', value => { value.artifact.asset = 'alternate.tgz'; }],
+    ['artifact-executable', value => { value.artifact.executableSha256 = '0'.repeat(64); }],
+    ['artifact-version', value => { value.artifact.manifestVersion = 2; }],
+    ['artifact-platform', value => { value.artifact.platform = 'linux'; }],
+    ['artifact-release', value => { value.artifact.release = 'latest'; }],
+    ['persistence-lifetime', value => { value.hostnamePersistence.lifetime = 'different'; }],
+    ['persistence-version', value => { value.hostnamePersistence.policyVersion = 2; }],
+    ['persistence-storage', value => { value.hostnamePersistence.storage = 'different'; }],
+    ['runtime-auto-update', value => { value.runtimeControl.autoUpdate = 'different'; }],
+    ['runtime-configuration', value => { value.runtimeControl.configuration = 'different'; }],
+    ['runtime-credentials', value => { value.runtimeControl.credentials = 'different'; }],
+    ['runtime-diagnostics', value => { value.runtimeControl.managementDiagnostics = 'different'; }],
+    ['runtime-origin-certificate', value => { value.runtimeControl.originCertificate = 'different'; }],
+    ['runtime-version', value => { value.runtimeControl.policyVersion = 2; }],
+    ['runtime-prechecks', value => { value.runtimeControl.prechecks = 'different'; }],
+    ['runtime-topology', value => { value.runtimeControl.processTopology = 'different'; }],
+    ['runtime-storage', value => { value.runtimeControl.runtimeStorage = 'different'; }],
+    ['telemetry-acknowledgement', value => { value.telemetry.acknowledgement = 'different'; }],
+    ['telemetry-classification', value => { value.telemetry.classification = 'disabled'; }],
+    ['telemetry-mode', value => { value.telemetry.mode = 'DISABLED'; }],
+  ];
+}
+
 test('watchdog ownership exposes setup and one-time bootstrap as separate capabilities', () => {
   assert.equal(typeof launchGateBOperatorWatchdogSetup, 'function');
   assert.equal(typeof submitGateBOperatorBootstrap, 'function');
@@ -80,7 +134,7 @@ function bootstrap(changes = {}) {
     },
     quickTunnel: {
       cloudflaredExecutable: '/usr/local/bin/gate-b-tunnel-fixture',
-      sourcePin: 'a'.repeat(64),
+      sourcePin: GATE_B_QUICK_TUNNEL_ARTIFACT_MANIFEST.executableSha256,
       telemetryAcknowledgement:
         GATE_B_QUICK_TUNNEL_TELEMETRY_ACKNOWLEDGEMENTS
           .ACCEPT_POSSIBLE_ERROR_TELEMETRY,
@@ -139,13 +193,14 @@ const FAKE_SDK = Object.freeze({
 
 function runConfig(changes = {}) {
   const value = {
-    runnerVersion: 1,
+    runnerVersion: 2,
     sourceRevision: 'a'.repeat(40),
     profileName: GATE_B_CURRENT_TESTNET_PROFILE_NAME,
     acknowledgements: {
       live: TESTNET_LIVE_ACKNOWLEDGEMENT,
       operatorTrust: GATE_B_CURRENT_TESTNET_OPERATOR_TRUST_ACKNOWLEDGEMENT,
     },
+    quickTunnel: canonicalQuickTunnelBinding(),
     expectedPaymentRequired: {
       x402Version: 2,
       resource: {
@@ -195,7 +250,10 @@ function reviewFiles(config = runConfig()) {
     [GATE_B_PUBLIC_WS_INPUT_LEAVES.endpointSource,
       serializeGateBProtectedEndpointSource(endpoint)],
     [GATE_B_PUBLIC_WS_INPUT_LEAVES.hostnameSource,
-      serializeGateBQuickTunnelHostnameSource('fixture.trycloudflare.com')],
+      serializeGateBQuickTunnelHostnameSource(
+        'fixture.trycloudflare.com',
+        canonicalQuickTunnelBinding(),
+      )],
     [GATE_B_PUBLIC_WS_INPUT_LEAVES.payeeAddress, jsonLine({
       addressVersion: 1,
       address: 'z1payee-fixture',
@@ -503,7 +561,7 @@ test('independent digest matches the normative implementation across each mutabl
 
 test('independent reviewer rejects every frozen semantic mutation before authorization', async t => {
   const mutations = [
-    ['runner-version', value => { value.runnerVersion = 2; }],
+    ['runner-version', value => { value.runnerVersion = 1; }],
     ['revision', value => { value.sourceRevision = 'invalid'; }],
     ['profile', value => { value.profileName = 'other'; }],
     ['live-ack', value => { value.acknowledgements.live = 'other'; }],
@@ -530,6 +588,10 @@ test('independent reviewer rejects every frozen semantic mutation before authori
     ['recovery-attempts', value => { value.runtime.maxRecoveryAttempts = 1; }],
     ['recovery-delay', value => { value.runtime.recoveryDelayMs = 1; }],
     ['recovery-elapsed', value => { value.runtime.maxRecoveryElapsedMs = 2; }],
+    ...quickTunnelBindingMutations().map(([name, mutate]) => [
+      `quick-tunnel-${name}`,
+      value => mutate(value.quickTunnel),
+    ]),
     ['root-extra', value => { value.extra = true; }],
     ['resource-extra', value => { value.expectedPaymentRequired.resource.serviceName = 'other'; }],
     ['accepted-extra', value => { value.expectedPaymentRequired.accepts[0].other = true; }],
@@ -583,7 +645,24 @@ test('independent reviewer rejects cross-file mismatch, authorization presence, 
     ['hostname-resource-mismatch', files => {
       files.set(
         GATE_B_PUBLIC_WS_INPUT_LEAVES.hostnameSource,
-        serializeGateBQuickTunnelHostnameSource('alternate.trycloudflare.com'),
+        serializeGateBQuickTunnelHostnameSource(
+          'alternate.trycloudflare.com',
+          canonicalQuickTunnelBinding(),
+        ),
+      );
+    }],
+    ['hostname-binding-mismatch', files => {
+      const quickTunnel = canonicalQuickTunnelBinding();
+      quickTunnel.telemetry = {
+        ...GATE_B_QUICK_TUNNEL_TELEMETRY_POLICIES
+          .EXTERNAL_SENTRY_EGRESS_CONTROL_ATTESTED,
+      };
+      files.set(
+        GATE_B_PUBLIC_WS_INPUT_LEAVES.hostnameSource,
+        serializeGateBQuickTunnelHostnameSource(
+          'fixture.trycloudflare.com',
+          quickTunnel,
+        ),
       );
     }],
     ['payee-offer-mismatch', files => {
@@ -625,6 +704,7 @@ test('in-memory independent validator rejects hostile containers without getter 
     asset: 'zts-fixture-native-asset',
     hostname: 'fixture.trycloudflare.com',
     payee: 'z1payee-fixture',
+    quickTunnel: canonicalQuickTunnelBinding(),
   };
   const accessor = runConfig();
   let reads = 0;

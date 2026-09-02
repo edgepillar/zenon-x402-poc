@@ -21,6 +21,12 @@ import { types as utilTypes } from 'node:util';
 
 import { paidFetch, reconcilePayment } from './buyer.js';
 import { canonicalJson, paymentIntentDigest, sha256Hex } from './canonical.js';
+import { validateGateBQuickTunnelStableBinding } from './gate-b-quick-tunnel-artifact.js';
+import {
+  GATE_B_PUBLIC_WS_INPUT_LEAVES,
+  GATE_B_PUBLIC_WS_INPUT_LIMITS,
+  parseGateBQuickTunnelHostnameSource,
+} from './gate-b-public-ws-inputs-schema.js';
 import {
   assembleLiveEvidenceBundle,
   parseLiveEvidenceFragment,
@@ -88,7 +94,7 @@ const PUBLIC_WS_ONCE_PAYMENT_ACKNOWLEDGEMENT =
   'I_ACCEPT_ONE_DISPOSABLE_MINIMALLY_FUNDED_TESTNET_PAYMENT_OVER_UNENCRYPTED_UNAUTHENTICATED_PUBLIC_RPC';
 const PUBLIC_WS_ONCE_PUBLICATION_ACKNOWLEDGEMENT =
   'I_UNDERSTAND_ARTIFACTS_MUST_NOT_BE_PUBLISHED_UNTIL_INDEPENDENT_VERIFICATION';
-const PUBLIC_WS_ONCE_CONFIG_DIGEST_DOMAIN = 'zenon-x402-public-ws-once-config-v1';
+const PUBLIC_WS_ONCE_CONFIG_DIGEST_DOMAIN = 'zenon-x402-public-ws-once-config-v2';
 const MAX_RECOVERY_ATTEMPTS = 8;
 const MAX_RPC_TIMEOUT_MS = 60_000;
 const MAX_RECOVERY_DELAY_MS = 60_000;
@@ -702,15 +708,16 @@ export function parsePublicWsOnceRunConfig(jsonText) {
     const value = parseStrictJson(jsonText, CONFIG_MAX_BYTES);
     exactObject(value, [
       'runnerVersion', 'sourceRevision', 'profileName', 'acknowledgements',
-      'expectedPaymentRequired', 'runtime',
+      'expectedPaymentRequired', 'quickTunnel', 'runtime',
     ]);
-    if (value.runnerVersion !== 1 || typeof value.sourceRevision !== 'string' ||
+    if (value.runnerVersion !== 2 || typeof value.sourceRevision !== 'string' ||
         !REVISION.test(value.sourceRevision) ||
         value.profileName !== GATE_B_CURRENT_TESTNET_PROFILE_NAME) fail();
     exactObject(value.acknowledgements, ['live', 'operatorTrust']);
     if (value.acknowledgements.live !== TESTNET_LIVE_ACKNOWLEDGEMENT ||
         value.acknowledgements.operatorTrust !==
           GATE_B_CURRENT_TESTNET_OPERATOR_TRUST_ACKNOWLEDGEMENT) fail();
+    if (validateGateBQuickTunnelStableBinding(value.quickTunnel) !== true) fail();
     validateExpectedPaymentRequired(
       value.expectedPaymentRequired,
       GATE_B_CURRENT_TESTNET_CHAIN_PROFILE,
@@ -1163,9 +1170,9 @@ export function parsePublicWsOnceAuthorization(jsonText) {
     exactObject(value, [
       'authorizationVersion', 'transportException', 'runName', 'sourceRevision',
       'profileName', 'configDigest', 'paymentIntentDigest', 'rpcEndpoint',
-      'acknowledgements',
+      'quickTunnel', 'acknowledgements',
     ]);
-    if (value.authorizationVersion !== 1 ||
+    if (value.authorizationVersion !== 2 ||
         value.transportException !== PUBLIC_WS_ONCE_TRANSPORT_EXCEPTION ||
         typeof value.runName !== 'string' || !RUN_NAME.test(value.runName) ||
         typeof value.sourceRevision !== 'string' || !REVISION.test(value.sourceRevision) ||
@@ -1174,6 +1181,7 @@ export function parsePublicWsOnceAuthorization(jsonText) {
         !LOWERCASE_HASH_64.test(value.configDigest) ||
         typeof value.paymentIntentDigest !== 'string' ||
         !LOWERCASE_HASH_64.test(value.paymentIntentDigest)) fail();
+    if (validateGateBQuickTunnelStableBinding(value.quickTunnel) !== true) fail();
     exactPublicWsOnceEndpoint(value.rpcEndpoint);
     exactObject(value.acknowledgements, ['payment', 'publication']);
     if (value.acknowledgements.payment !== PUBLIC_WS_ONCE_PAYMENT_ACKNOWLEDGEMENT ||
@@ -1289,10 +1297,12 @@ async function performPublicWsOncePreflight(options, retainInputs) {
       options.buyerWalletPath,
       options.facilitatorRpcPath,
       options.authorizationPath,
+      join(workspaceRoot, GATE_B_PUBLIC_WS_INPUT_LEAVES.hostnameSource),
     ];
     const maximums = [
       CONFIG_MAX_BYTES, ROLE_INPUT_MAX_BYTES, ROLE_INPUT_MAX_BYTES,
       ROLE_INPUT_MAX_BYTES, ROLE_INPUT_MAX_BYTES,
+      GATE_B_PUBLIC_WS_INPUT_LIMITS.sourceBytes,
     ];
     for (let index = 0; index < paths.length; index += 1) {
       await assertPrivateDirectoryState(workspaceState);
@@ -1323,6 +1333,10 @@ async function performPublicWsOncePreflight(options, retainInputs) {
     const buyerRpcBytes = await readVerifiedOpenInput(opened[1], ROLE_INPUT_MAX_BYTES);
     const facilitatorRpcBytes = await readVerifiedOpenInput(opened[3], ROLE_INPUT_MAX_BYTES);
     const authorizationBytes = await readVerifiedOpenInput(opened[4], ROLE_INPUT_MAX_BYTES);
+    const hostnameSourceBytes = await readVerifiedOpenInput(
+      opened[5],
+      GATE_B_PUBLIC_WS_INPUT_LIMITS.sourceBytes,
+    );
     const config = parsePublicWsOnceRunConfig(configBytes.toString('utf8'));
     const buyerRpc = parsePublicWsOnceRoleInput(
       buyerRpcBytes.toString('utf8'),
@@ -1335,6 +1349,7 @@ async function performPublicWsOncePreflight(options, retainInputs) {
     const authorization = parsePublicWsOnceAuthorization(
       authorizationBytes.toString('utf8'),
     );
+    const hostnameSource = parseGateBQuickTunnelHostnameSource(hostnameSourceBytes);
     const intentDigest = paymentIntentDigest(
       config.expectedPaymentRequired,
       config.expectedPaymentRequired.accepts[0],
@@ -1347,11 +1362,18 @@ async function performPublicWsOncePreflight(options, retainInputs) {
         authorization.profileName !== config.profileName ||
         authorization.configDigest !== configDigest ||
         authorization.paymentIntentDigest !== intentDigest ||
-        authorization.transportException !== options.transportException) fail();
+        authorization.transportException !== options.transportException ||
+        config.expectedPaymentRequired.resource.url !==
+          `https://${hostnameSource.hostname}/paid` ||
+        canonicalJson(hostnameSource.quickTunnel) !== canonicalJson(config.quickTunnel) ||
+        canonicalJson(hostnameSource.quickTunnel) !==
+          canonicalJson(authorization.quickTunnel)) fail();
     await opened[0].handle.close();
     opened[0].handle = undefined;
     await opened[4].handle.close();
     opened[4].handle = undefined;
+    await opened[5].handle.close();
+    opened[5].handle = undefined;
     const state = {
       workspaceRoot,
       config,
@@ -1360,6 +1382,7 @@ async function performPublicWsOncePreflight(options, retainInputs) {
       buyerWalletInput: opened[2],
       facilitatorRpcInput: opened[3],
       authorizationInput: opened[4],
+      hostnameSourceInput: opened[5],
       workspaceState,
     };
     if (!retainInputs) {
@@ -1787,6 +1810,7 @@ async function assertPublicWsOnceInputGenerations(preflightState) {
     preflightState.buyerWalletInput,
     preflightState.facilitatorRpcInput,
     preflightState.authorizationInput,
+    preflightState.hostnameSourceInput,
   ];
   for (let index = 0; index < inputs.length; index += 1) {
     await assertOpenInputPath(inputs[index], inputs[index].generation);
@@ -2737,6 +2761,7 @@ export async function executeLiveEvidenceRun(options, injected = {}) {
       await disposeVerifiedInput(preflightState.buyerRpcInput);
       await disposeVerifiedInput(preflightState.buyerWalletInput);
       await disposeVerifiedInput(preflightState.facilitatorRpcInput);
+      await disposeVerifiedInput(preflightState.hostnameSourceInput);
     }
   }
 }
@@ -2938,6 +2963,7 @@ export async function executePublicWsOnceRun(options, injected = {}) {
       await disposeVerifiedInput(preflightState.buyerWalletInput);
       await disposeVerifiedInput(preflightState.facilitatorRpcInput);
       await disposeVerifiedInput(preflightState.authorizationInput);
+      await disposeVerifiedInput(preflightState.hostnameSourceInput);
       await disposePrivateDirectoryState(preflightState.workspaceState);
     }
     await disposePrivateDirectoryState(runDirectoryState);
