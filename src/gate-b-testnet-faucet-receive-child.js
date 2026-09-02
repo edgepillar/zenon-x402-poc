@@ -9,6 +9,7 @@ import { canonicalJson } from './canonical.js';
 import { GATE_B_PUBLIC_WS_INPUT_LEAVES } from './gate-b-public-ws-inputs-schema.js';
 import { openGateBPublicWsPrivateWorkspace } from './gate-b-public-ws-private-workspace.js';
 import {
+  GATE_B_TESTNET_FAUCET_RECEIVE_EXECUTION_MODES,
   GATE_B_TESTNET_FAUCET_RECEIVE_LIMITS,
   frameGateBTestnetFaucetReceiveBootstrap,
   parseGateBTestnetFaucetReceiveFrame,
@@ -50,6 +51,8 @@ const EXPECTED_CHAIN_ID = Number(GATE_B_CURRENT_TESTNET_CHAIN_PROFILE.chainIdent
 const ARRAY_IS_ARRAY = Array.isArray;
 const ARRAY_PROTOTYPE = Array.prototype;
 const BIGINT_TO_STRING = BigInt.prototype.toString;
+const BUFFER_EQUALS = Buffer.prototype.equals;
+const BUFFER_FROM = Buffer.from;
 const BUFFER_IS_BUFFER = Buffer.isBuffer;
 const BUFFER_TO_STRING = Buffer.prototype.toString;
 const DEFINE_PROPERTY = Object.defineProperty;
@@ -157,6 +160,7 @@ function captureExecutionInjections(value) {
     invokeComposite: invokeLegacySdk105SignedComposite,
     loadDependencies: defaultLoadDependencies,
     now: () => performance.now(),
+    onExecutionMode: async () => true,
     onPublicationStart: async () => true,
     openReceiveState: openGateBTestnetFaucetReceiveState,
     openWalletWorkspace: openGateBPublicWsPrivateWorkspace,
@@ -176,7 +180,7 @@ function captureExecutionInjections(value) {
   }
   for (const field of [
     'applicationSupportRoot', 'assertNodeReady', 'createPolicy', 'invokeComposite',
-    'loadDependencies', 'now', 'onPublicationStart', 'openReceiveState',
+    'loadDependencies', 'now', 'onExecutionMode', 'onPublicationStart', 'openReceiveState',
     'openWalletWorkspace', 'wait',
   ]) {
     if (typeof output[field] !== 'function' || IS_PROXY(output[field])) fail();
@@ -297,15 +301,58 @@ function defineEnumerable(target, field, value) {
   }]);
 }
 
-function signedBlockSnapshot(value, expectedPrototype, sdk) {
+function rpcObservedBinaryField(value, expectedLength) {
+  exactBuffer(value);
+  if (value.length === expectedLength) {
+    return Object.freeze({
+      encoding: 'binary',
+      value: REFLECT_APPLY(BUFFER_TO_STRING, value, ['base64']),
+    });
+  }
+  const expectedEncodedLength = expectedLength === 32 ? 44 : expectedLength === 64 ? 88 : 0;
+  if (value.length !== expectedEncodedLength) fail();
+  const encoded = REFLECT_APPLY(BUFFER_TO_STRING, value, ['utf8']);
+  if (!BASE64.test(encoded)) fail();
+  let decoded;
+  let ascii;
+  try {
+    ascii = REFLECT_APPLY(BUFFER_FROM, Buffer, [encoded, 'ascii']);
+    if (!REFLECT_APPLY(BUFFER_EQUALS, ascii, [value])) fail();
+    decoded = REFLECT_APPLY(BUFFER_FROM, Buffer, [encoded, 'base64']);
+    if (decoded.length !== expectedLength ||
+        REFLECT_APPLY(BUFFER_TO_STRING, decoded, ['base64']) !== encoded) fail();
+  } finally {
+    try { ascii?.fill(0); } catch {}
+    try { decoded?.fill(0); } catch {}
+  }
+  return Object.freeze({ encoding: 'base64-ascii', value: encoded });
+}
+
+function signedBlockSnapshot(value, expectedPrototype, sdk, rpcObservation = false) {
   exactSdkValue(value, expectedPrototype);
   const momentum = exactSdkValue(
     ownData(value, 'momentumAcknowledged'),
     sdk.HashHeight.prototype,
   );
   const data = exactBuffer(ownData(value, 'data'));
-  const publicKey = exactBuffer(ownData(value, 'publicKey'), 32);
-  const signature = exactBuffer(ownData(value, 'signature'), 64);
+  const rawPublicKey = ownData(value, 'publicKey');
+  const rawSignature = ownData(value, 'signature');
+  let publicKey;
+  let signature;
+  if (rpcObservation) {
+    publicKey = rpcObservedBinaryField(rawPublicKey, 32);
+    signature = rpcObservedBinaryField(rawSignature, 64);
+    if (publicKey.encoding !== signature.encoding) fail();
+  } else {
+    publicKey = Object.freeze({
+      encoding: 'binary',
+      value: REFLECT_APPLY(BUFFER_TO_STRING, exactBuffer(rawPublicKey, 32), ['base64']),
+    });
+    signature = Object.freeze({
+      encoding: 'binary',
+      value: REFLECT_APPLY(BUFFER_TO_STRING, exactBuffer(rawSignature, 64), ['base64']),
+    });
+  }
   const output = {};
   for (const [field, fieldValue] of [
     ['address', sdkAddressString(ownData(value, 'address'), sdk)],
@@ -324,8 +371,8 @@ function signedBlockSnapshot(value, expectedPrototype, sdk) {
     }],
     ['nonce', ownData(value, 'nonce')],
     ['previousHash', sdkHashString(ownData(value, 'previousHash'), sdk)],
-    ['publicKey', REFLECT_APPLY(BUFFER_TO_STRING, publicKey, ['base64'])],
-    ['signature', REFLECT_APPLY(BUFFER_TO_STRING, signature, ['base64'])],
+    ['publicKey', publicKey.value],
+    ['signature', signature.value],
     ['toAddress', sdkAddressString(ownData(value, 'toAddress'), sdk)],
     ['tokenStandard', sdkTokenString(ownData(value, 'tokenStandard'), sdk)],
     ['version', ownData(value, 'version')],
@@ -333,46 +380,121 @@ function signedBlockSnapshot(value, expectedPrototype, sdk) {
   return output;
 }
 
-function normalizePendingList(result, sdk, expectedAddress) {
+function normalizeNativeSource(block, sdk, expectedAddress) {
+  exactSdkValue(block, sdk.AccountBlock.prototype);
+  const blockType = ownData(block, 'blockType');
+  const hashObject = exactSdkValue(ownData(block, 'hash'), sdk.Hash.prototype);
+  const addressObject = exactSdkValue(ownData(block, 'toAddress'), sdk.Address.prototype);
+  const tokenObject = exactSdkValue(ownData(block, 'tokenStandard'), sdk.TokenStandard.prototype);
+  const amount = ownData(block, 'amount');
+  const hash = sdkHashString(hashObject, sdk);
+  const address = sdkAddressString(addressObject, sdk);
+  const asset = sdkTokenString(tokenObject, sdk);
+  const znn = sdkTokenString(sdk.ZNN_ZTS, sdk);
+  const qsr = sdkTokenString(sdk.QSR_ZTS, sdk);
+  if ((blockType !== sdk.BlockTypeEnum.UserSend &&
+      blockType !== sdk.BlockTypeEnum.ContractSend) || typeof amount !== 'bigint' ||
+      amount <= 0n || !HASH.test(hash) || address !== expectedAddress ||
+      (asset !== znn && asset !== qsr)) fail();
+  return Object.freeze({
+    address,
+    amount: REFLECT_APPLY(BIGINT_TO_STRING, amount, []),
+    asset,
+    blockType,
+    hash,
+    hashObject,
+  });
+}
+
+function sourceIdentity(source) {
+  return Object.freeze({
+    address: source.address,
+    amount: source.amount,
+    asset: source.asset,
+    blockType: source.blockType,
+    confirmationMomentumHeight: source.confirmationMomentumHeight,
+    hash: source.hash,
+  });
+}
+
+function pendingSourceIdentity(source) {
+  return Object.freeze({
+    address: source.address,
+    amount: source.amount,
+    asset: source.asset,
+    blockType: source.blockType,
+    hash: source.hash,
+  });
+}
+
+function secondReceiveAttempt(record, source) {
+  const first = record.blocks[0];
+  const signed = first.signedAccountBlock;
+  return Object.freeze({
+    firstReceive: Object.freeze({
+      hash: signed.hash,
+      height: signed.height,
+      momentumAcknowledgedHeight: signed.momentumAcknowledged.height,
+      sourceHash: first.sourceHash,
+    }),
+    schemaVersion: 1,
+    secondSource: pendingSourceIdentity(source),
+  });
+}
+
+function normalizeHistoricalNativeSource(
+  block,
+  sdk,
+  expectedAddress,
+  expectedHash,
+  maximumMomentumHeight,
+) {
+  const source = normalizeNativeSource(block, sdk, expectedAddress);
+  if (source.hash !== expectedHash ||
+      sdkHashString(computeBlockHash(block, sdk), sdk) !== expectedHash) fail();
+  const confirmation = ownData(block, 'confirmationDetail');
+  if (confirmation === undefined || confirmation === null) fail();
+  const normalized = normalizeConfirmationDetail(confirmation);
+  if (!Number.isSafeInteger(normalized.numConfirmations) ||
+      normalized.numConfirmations < 1 ||
+      !Number.isSafeInteger(normalized.momentumHeight) ||
+      normalized.momentumHeight < 1 ||
+      normalized.momentumHeight > maximumMomentumHeight) fail();
+  return Object.freeze({
+    ...source,
+    confirmationMomentumHeight: normalized.momentumHeight,
+  });
+}
+
+function exactComplementaryNativeSources(first, second, sdk) {
+  const znn = sdkTokenString(sdk.ZNN_ZTS, sdk);
+  const qsr = sdkTokenString(sdk.QSR_ZTS, sdk);
+  if (first.hash === second.hash || first.address !== second.address ||
+      !((first.asset === znn && second.asset === qsr) ||
+        (first.asset === qsr && second.asset === znn))) fail();
+}
+
+function normalizePendingList(result, sdk, expectedAddress, expectedCount = 2) {
   exactSdkValue(result, sdk.AccountBlockList.prototype);
   const count = ownData(result, 'count');
   const list = ownData(result, 'list');
   const more = ownData(result, 'more');
-  if (count !== GATE_B_TESTNET_FAUCET_RECEIVE_LIMITS.expectedTransfers || more !== false ||
+  if ((expectedCount !== 1 &&
+      expectedCount !== GATE_B_TESTNET_FAUCET_RECEIVE_LIMITS.expectedTransfers) ||
+      count !== expectedCount || more !== false ||
       !ARRAY_IS_ARRAY(list) || IS_PROXY(list) || GET_PROTOTYPE_OF(list) !== ARRAY_PROTOTYPE ||
       list.length !== count) fail();
   const output = [];
   const seen = new Set();
-  const assetCounts = new Map([
-    [sdkTokenString(sdk.ZNN_ZTS, sdk), 0],
-    [sdkTokenString(sdk.QSR_ZTS, sdk), 0],
-  ]);
   for (let index = 0; index < list.length; index += 1) {
-    const block = exactSdkValue(list[index], sdk.AccountBlock.prototype);
-    const blockType = ownData(block, 'blockType');
-    const hashObject = exactSdkValue(ownData(block, 'hash'), sdk.Hash.prototype);
-    const addressObject = exactSdkValue(ownData(block, 'toAddress'), sdk.Address.prototype);
-    const tokenObject = exactSdkValue(ownData(block, 'tokenStandard'), sdk.TokenStandard.prototype);
-    const amount = ownData(block, 'amount');
-    const hash = sdkHashString(hashObject, sdk);
-    const address = sdkAddressString(addressObject, sdk);
-    const asset = sdkTokenString(tokenObject, sdk);
-    if ((blockType !== sdk.BlockTypeEnum.UserSend &&
-        blockType !== sdk.BlockTypeEnum.ContractSend) || typeof amount !== 'bigint' ||
-        amount <= 0n || !HASH.test(hash) || seen.has(hash) || address !== expectedAddress ||
-        !assetCounts.has(asset)) fail();
-    seen.add(hash);
-    assetCounts.set(asset, assetCounts.get(asset) + 1);
-    output.push(Object.freeze({
-      address,
-      amount: REFLECT_APPLY(BIGINT_TO_STRING, amount, []),
-      asset,
-      blockType,
-      hash,
-      hashObject,
-    }));
+    const source = normalizeNativeSource(list[index], sdk, expectedAddress);
+    if (seen.has(source.hash)) fail();
+    seen.add(source.hash);
+    output.push(source);
   }
-  if ([...assetCounts.values()].some(countValue => countValue !== 1)) fail();
+  if (expectedCount === GATE_B_TESTNET_FAUCET_RECEIVE_LIMITS.expectedTransfers) {
+    exactComplementaryNativeSources(output[0], output[1], sdk);
+  }
   return Object.freeze(output);
 }
 
@@ -428,7 +550,7 @@ function exactSignedJson(value, source, expectedAddress, sdk, ed, prepared) {
 }
 
 function observedBaseJson(observed, sdk) {
-  return signedBlockSnapshot(observed, sdk.AccountBlock.prototype, sdk);
+  return signedBlockSnapshot(observed, sdk.AccountBlock.prototype, sdk, true);
 }
 
 function exactIncludedObservation(observed, preparedJson, sdk) {
@@ -516,31 +638,178 @@ async function recoverExisting(record, context) {
     try { context.scope.poison(new GateBTestnetFaucetReceiveChildError()); } catch {}
     return 'outcome-unknown';
   };
-  if (record.blocks.length !== GATE_B_TESTNET_FAUCET_RECEIVE_LIMITS.expectedTransfers) {
+  let secondAttempt;
+  try {
+    secondAttempt = await context.state.loadSecondReceiveAttempt();
+  } catch {
     return outcomeUnknown();
   }
-  for (let index = 0; index < record.blocks.length; index += 1) {
-    let included;
+  if (record.blocks.length === GATE_B_TESTNET_FAUCET_RECEIVE_LIMITS.expectedTransfers) {
+    for (let index = 0; index < record.blocks.length; index += 1) {
+      let included;
+      try {
+        included = await lookupIncluded({
+          ...context,
+          preparedJson: record.blocks[index].signedAccountBlock,
+          waitForMore: false,
+        });
+      } catch {
+        return outcomeUnknown();
+      }
+      if (!included) return outcomeUnknown();
+    }
+    if (record.state !== GATE_B_TESTNET_FAUCET_RECEIVE_STATES.COMPLETE &&
+        record.state !== GATE_B_TESTNET_FAUCET_RECEIVE_STATES.RECOVERED) {
+      try {
+        await context.state.update(recoveredRecord(record));
+      } catch {
+        return outcomeUnknown();
+      }
+    }
+    return 'recovered';
+  }
+
+  if (secondAttempt !== null) return outcomeUnknown();
+
+  const firstRecord = record.blocks[0];
+  const firstSigned = firstRecord.signedAccountBlock;
+  let emptyHash;
+  try {
+    emptyHash = sdkHashString(context.sdk.EMPTY_HASH, context.sdk);
+  } catch {
+    return outcomeUnknown();
+  }
+  if (firstSigned.height !== 1 || firstSigned.previousHash !== emptyHash) {
+    return outcomeUnknown();
+  }
+  let included;
+  try {
+    included = await lookupIncluded({
+      ...context,
+      preparedJson: firstRecord.signedAccountBlock,
+      waitForMore: false,
+    });
+  } catch {
+    return outcomeUnknown();
+  }
+  if (!included) return outcomeUnknown();
+  if (record.state !== GATE_B_TESTNET_FAUCET_RECEIVE_STATES.INCLUDED) {
     try {
-      included = await lookupIncluded({
-        ...context,
-        preparedJson: record.blocks[index].signedAccountBlock,
-        waitForMore: false,
-      });
+      record = await context.state.update(advanceRecord(
+        record,
+        GATE_B_TESTNET_FAUCET_RECEIVE_STATES.INCLUDED,
+      ));
     } catch {
       return outcomeUnknown();
     }
-    if (!included) return outcomeUnknown();
   }
-  if (record.state !== GATE_B_TESTNET_FAUCET_RECEIVE_STATES.COMPLETE &&
-      record.state !== GATE_B_TESTNET_FAUCET_RECEIVE_STATES.RECOVERED) {
-    try {
-      await context.state.update(recoveredRecord(record));
-    } catch {
-      return outcomeUnknown();
+
+  try {
+    const expectedAddress = firstSigned.address;
+    const addressObject = context.sdk.Address.parse(expectedAddress);
+    if (sdkAddressString(addressObject, context.sdk) !== expectedAddress) fail();
+    const frontier = await runRead(
+      context.scope,
+      'ledger.getFrontierAccountBlock.recovery',
+      () => context.zenon.ledger.getFrontierAccountBlock(addressObject),
+    );
+    if (!exactIncludedObservation(frontier, firstSigned, context.sdk)) fail();
+    const maximumMomentumHeight = firstSigned.momentumAcknowledged.height;
+    const sourceObserved = await runRead(
+      context.scope,
+      'ledger.getAccountBlockByHash.source.0',
+      () => context.zenon.ledger.getAccountBlockByHash(
+        context.sdk.Hash.parse(firstRecord.sourceHash),
+      ),
+    );
+    const firstSource = normalizeHistoricalNativeSource(
+      sourceObserved,
+      context.sdk,
+      expectedAddress,
+      firstRecord.sourceHash,
+      maximumMomentumHeight,
+    );
+    const firstPending = normalizePendingList(await runRead(
+      context.scope,
+      'ledger.getUnreceivedBlocksByAddress.recovery.first',
+      () => context.zenon.ledger.getUnreceivedBlocksByAddress(
+        addressObject,
+        0,
+        GATE_B_TESTNET_FAUCET_RECEIVE_LIMITS.pageSize,
+      ),
+    ), context.sdk, expectedAddress, 1);
+    const secondPending = normalizePendingList(await runRead(
+      context.scope,
+      'ledger.getUnreceivedBlocksByAddress.recovery.second',
+      () => context.zenon.ledger.getUnreceivedBlocksByAddress(
+        addressObject,
+        0,
+        GATE_B_TESTNET_FAUCET_RECEIVE_LIMITS.pageSize,
+      ),
+    ), context.sdk, expectedAddress, 1);
+    const pending = stablePendingSnapshot(firstPending, secondPending);
+    for (const label of ['first', 'second']) {
+      exactZeroUnconfirmed(await runRead(
+        context.scope,
+        `ledger.getUnconfirmedBlocksByAddress.recovery.${label}`,
+        () => context.zenon.ledger.getUnconfirmedBlocksByAddress(
+          addressObject,
+          0,
+          GATE_B_TESTNET_FAUCET_RECEIVE_LIMITS.pageSize,
+        ),
+      ), context.sdk);
     }
+    const remainingObserved = await runRead(
+      context.scope,
+      'ledger.getAccountBlockByHash.source.1',
+      () => context.zenon.ledger.getAccountBlockByHash(pending[0].hashObject),
+    );
+    const remainingSource = normalizeHistoricalNativeSource(
+      remainingObserved,
+      context.sdk,
+      expectedAddress,
+      pending[0].hash,
+      maximumMomentumHeight,
+    );
+    if (canonicalJson(pendingSourceIdentity(remainingSource)) !==
+        canonicalJson(pendingSourceIdentity(pending[0]))) fail();
+    exactComplementaryNativeSources(firstSource, remainingSource, context.sdk);
+    const attempt = secondReceiveAttempt(record, remainingSource);
+    const expectedHistoricalSource = sourceIdentity(remainingSource);
+    const committed = await context.state.commitSecondReceiveAttempt(attempt);
+    if (canonicalJson(committed) !== canonicalJson(attempt)) fail();
+    const remainingRecheck = normalizeHistoricalNativeSource(
+      await runRead(
+        context.scope,
+        'ledger.getAccountBlockByHash.source.1.recheck',
+        () => context.zenon.ledger.getAccountBlockByHash(
+          context.sdk.Hash.parse(attempt.secondSource.hash),
+        ),
+      ),
+      context.sdk,
+      expectedAddress,
+      remainingSource.hash,
+      maximumMomentumHeight,
+    );
+    if (canonicalJson(sourceIdentity(remainingRecheck)) !==
+        canonicalJson(expectedHistoricalSource) ||
+        canonicalJson(pendingSourceIdentity(remainingRecheck)) !==
+        canonicalJson(attempt.secondSource)) fail();
+    return Object.freeze({
+      expectedAddress,
+      record,
+      workItems: Object.freeze([Object.freeze({
+        index: 1,
+        requiredSuccessor: Object.freeze({
+          height: firstSigned.height + 1,
+          previousHash: firstSigned.hash,
+        }),
+        source: remainingRecheck,
+      })]),
+    });
+  } catch {
+    return outcomeUnknown();
   }
-  return 'recovered';
 }
 
 async function readWorkspaceInput(workspace, name) {
@@ -630,55 +899,99 @@ export async function executeGateBTestnetFaucetReceive(bootstrap, injected) {
             dependencies.receiveStateInjections,
           ]);
           const existing = await state.load();
+          let expectedAddress;
+          let record;
+          let workItems;
+          let completionStatus = 'complete';
+          let secondAttemptCommitted = false;
           if (existing) {
-            return recoverExisting(existing, { dependencies, scope, sdk, state, zenon });
-          }
-          workspace = await REFLECT_APPLY(dependencies.openWalletWorkspace, undefined, [
-            workspaceRoot,
-            dependencies.walletWorkspaceInjections,
-          ]);
-          addressBytes = await readWorkspaceInput(
-            workspace,
-            GATE_B_PUBLIC_WS_INPUT_LEAVES.buyerAddress,
-          );
-          const expectedAddress = parseAddressInput(addressBytes);
-          addressBytes.fill(0);
-          addressBytes = undefined;
-          const addressObject = sdk.Address.parse(expectedAddress);
-          if (addressObject.toString() !== expectedAddress) fail();
+            if (existing.blocks.length ===
+                GATE_B_TESTNET_FAUCET_RECEIVE_LIMITS.expectedTransfers &&
+                await REFLECT_APPLY(dependencies.onExecutionMode, undefined, [
+                  GATE_B_TESTNET_FAUCET_RECEIVE_EXECUTION_MODES.READ_ONLY_RECOVERY,
+                ]) !== true) fail();
+            const recovery = await recoverExisting(
+              existing,
+              { dependencies, scope, sdk, state, zenon },
+            );
+            if (typeof recovery === 'string') return recovery;
+            if (await REFLECT_APPLY(dependencies.onExecutionMode, undefined, [
+              GATE_B_TESTNET_FAUCET_RECEIVE_EXECUTION_MODES.PARTIAL_RECOVERY,
+            ]) !== true) fail();
+            expectedAddress = recovery.expectedAddress;
+            record = recovery.record;
+            workItems = recovery.workItems;
+            completionStatus = 'partial-complete';
+            secondAttemptCommitted = true;
+          } else {
+            if (await REFLECT_APPLY(dependencies.onExecutionMode, undefined, [
+              GATE_B_TESTNET_FAUCET_RECEIVE_EXECUTION_MODES.FRESH,
+            ]) !== true) fail();
+            workspace = await REFLECT_APPLY(dependencies.openWalletWorkspace, undefined, [
+              workspaceRoot,
+              dependencies.walletWorkspaceInjections,
+            ]);
+            addressBytes = await readWorkspaceInput(
+              workspace,
+              GATE_B_PUBLIC_WS_INPUT_LEAVES.buyerAddress,
+            );
+            expectedAddress = parseAddressInput(addressBytes);
+            addressBytes.fill(0);
+            addressBytes = undefined;
+            const addressObject = sdk.Address.parse(expectedAddress);
+            if (addressObject.toString() !== expectedAddress) fail();
 
-          const firstPending = normalizePendingList(await runRead(
-            scope,
-            'ledger.getUnreceivedBlocksByAddress.first',
-            () => zenon.ledger.getUnreceivedBlocksByAddress(
-              addressObject,
-              0,
-              GATE_B_TESTNET_FAUCET_RECEIVE_LIMITS.pageSize,
-            ),
-          ), sdk, expectedAddress);
-          const secondPending = normalizePendingList(await runRead(
-            scope,
-            'ledger.getUnreceivedBlocksByAddress.second',
-            () => zenon.ledger.getUnreceivedBlocksByAddress(
-              addressObject,
-              0,
-              GATE_B_TESTNET_FAUCET_RECEIVE_LIMITS.pageSize,
-            ),
-          ), sdk, expectedAddress);
-          const pending = stablePendingSnapshot(firstPending, secondPending);
-          for (const label of ['first', 'second']) {
-            exactZeroUnconfirmed(await runRead(
+            const firstPending = normalizePendingList(await runRead(
               scope,
-              `ledger.getUnconfirmedBlocksByAddress.${label}`,
-              () => zenon.ledger.getUnconfirmedBlocksByAddress(
+              'ledger.getUnreceivedBlocksByAddress.first',
+              () => zenon.ledger.getUnreceivedBlocksByAddress(
                 addressObject,
                 0,
                 GATE_B_TESTNET_FAUCET_RECEIVE_LIMITS.pageSize,
               ),
-            ), sdk);
+            ), sdk, expectedAddress);
+            const secondPending = normalizePendingList(await runRead(
+              scope,
+              'ledger.getUnreceivedBlocksByAddress.second',
+              () => zenon.ledger.getUnreceivedBlocksByAddress(
+                addressObject,
+                0,
+                GATE_B_TESTNET_FAUCET_RECEIVE_LIMITS.pageSize,
+              ),
+            ), sdk, expectedAddress);
+            const pending = stablePendingSnapshot(firstPending, secondPending);
+            for (const label of ['first', 'second']) {
+              exactZeroUnconfirmed(await runRead(
+                scope,
+                `ledger.getUnconfirmedBlocksByAddress.${label}`,
+                () => zenon.ledger.getUnconfirmedBlocksByAddress(
+                  addressObject,
+                  0,
+                  GATE_B_TESTNET_FAUCET_RECEIVE_LIMITS.pageSize,
+                ),
+              ), sdk);
+            }
+            record = await state.arm();
+            workItems = Object.freeze(pending.map((source, index) => Object.freeze({
+              index,
+              source,
+            })));
           }
 
-          let record = await state.arm();
+          if (!workspace) {
+            workspace = await REFLECT_APPLY(dependencies.openWalletWorkspace, undefined, [
+              workspaceRoot,
+              dependencies.walletWorkspaceInjections,
+            ]);
+            addressBytes = await readWorkspaceInput(
+              workspace,
+              GATE_B_PUBLIC_WS_INPUT_LEAVES.buyerAddress,
+            );
+            const protectedAddress = parseAddressInput(addressBytes);
+            addressBytes.fill(0);
+            addressBytes = undefined;
+            if (protectedAddress !== expectedAddress) fail();
+          }
           walletBytes = await readWorkspaceInput(
             workspace,
             GATE_B_PUBLIC_WS_INPUT_LEAVES.buyerWallet,
@@ -689,10 +1002,22 @@ export async function executeGateBTestnetFaucetReceive(bootstrap, injected) {
           walletBytes = undefined;
           keyPair = wallet.getKeyPair(0);
           const derived = keyPair.getAddress().toString();
-          if (derived !== expectedAddress || pending.some(source => source.address !== derived)) fail();
+          if (derived !== expectedAddress ||
+              workItems.some(item => item.source.address !== derived)) fail();
 
-          for (let index = 0; index < pending.length; index += 1) {
-            const source = pending[index];
+          for (let itemIndex = 0; itemIndex < workItems.length; itemIndex += 1) {
+            const { index, requiredSuccessor, source } = workItems[itemIndex];
+            if (index === 1 && !secondAttemptCommitted) {
+              try {
+                const attempt = secondReceiveAttempt(record, source);
+                const committed = await state.commitSecondReceiveAttempt(attempt);
+                if (canonicalJson(committed) !== canonicalJson(attempt)) fail();
+                secondAttemptCommitted = true;
+              } catch {
+                try { scope.poison(new GateBTestnetFaucetReceiveChildError()); } catch {}
+                return 'outcome-unknown';
+              }
+            }
             const template = sdk.AccountBlockTemplate.receive(source.hashObject);
             const prepared = await scope.runRpcWithDeadline({
               category: 'read',
@@ -716,6 +1041,9 @@ export async function executeGateBTestnetFaucetReceive(bootstrap, injected) {
               ed,
               prepared,
             );
+            if (requiredSuccessor &&
+                (preparedJson.height !== requiredSuccessor.height ||
+                  preparedJson.previousHash !== requiredSuccessor.previousHash)) fail();
             record = await state.update(preparedRecord(
               record,
               index,
@@ -762,7 +1090,7 @@ export async function executeGateBTestnetFaucetReceive(bootstrap, injected) {
             record = await state.update(advanceRecord(record, 'INCLUDED'));
           }
           record = await state.update(completeRecord(record));
-          return record.state === 'COMPLETE' ? 'complete' : fail();
+          return record.state === 'COMPLETE' ? completionStatus : fail();
         } finally {
           clearConnection();
         }
@@ -857,14 +1185,24 @@ export async function runGateBTestnetFaucetReceiveChild(options = {}) {
           bootstrap,
           {
             ...(dependencies.executionInjections ?? {}),
-            onPublicationStart: async () => {
-              await send(dependencies.channel, 'PUBLISHING');
+            onExecutionMode: async mode => {
+              if (mode !== GATE_B_TESTNET_FAUCET_RECEIVE_EXECUTION_MODES.FRESH &&
+                  mode !== GATE_B_TESTNET_FAUCET_RECEIVE_EXECUTION_MODES.PARTIAL_RECOVERY &&
+                  mode !== GATE_B_TESTNET_FAUCET_RECEIVE_EXECUTION_MODES.READ_ONLY_RECOVERY) fail();
+              await send(dependencies.channel, mode);
+              return true;
+            },
+            onPublicationStart: async index => {
+              if (index !== 0 && index !== 1) fail();
+              await send(dependencies.channel, `PUBLISHING_${index}`);
               return true;
             },
           },
         ]);
         const terminal = status === 'complete'
           ? 'COMPLETE'
+          : status === 'partial-complete'
+            ? 'PARTIAL_COMPLETE'
           : status === 'recovered'
             ? 'RECOVERED'
             : status === 'outcome-unknown'

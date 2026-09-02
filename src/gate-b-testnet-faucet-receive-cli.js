@@ -77,7 +77,7 @@ export async function runGateBTestnetFaucetReceiveCli(options = {}) {
         ? supplied.supervisorInjections
         : undefined,
     ]);
-    if (status === 'complete') {
+    if (status === 'complete' || status === 'partial-complete') {
       writeFixed(stdout, GATE_B_TESTNET_FAUCET_RECEIVE_STATUS_LINES.COMPLETE);
       return 0;
     }

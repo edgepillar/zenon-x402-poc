@@ -10,6 +10,7 @@ import * as sdk from 'znn-typescript-sdk';
 
 import {
   GATE_B_TESTNET_FAUCET_RECEIVE_ACKNOWLEDGEMENT,
+  GATE_B_TESTNET_FAUCET_RECEIVE_EXECUTION_MODES,
   GATE_B_TESTNET_FAUCET_RECEIVE_STATUS_LINES,
   frameGateBTestnetFaucetReceiveBootstrap,
   parseGateBTestnetFaucetReceiveFrame,
@@ -104,10 +105,29 @@ function stateInjections(changes = {}) {
   };
 }
 
+function persistedRecoverySource(index) {
+  const address = sdk.Address.fromPublicKey(Buffer.alloc(32, 1));
+  return sourceBlock(
+    address,
+    index === 0 ? sdk.ZNN_ZTS : sdk.QSR_ZTS,
+    `recovery-source-${index}`,
+  );
+}
+
 function persistedRecoveryRecord(state, blockCount = 2) {
   const blocks = [];
   for (let index = 0; index < blockCount; index += 1) {
-    const signedAccountBlock = signedReceiveJson({}, `recovery-${index}`);
+    const source = persistedRecoverySource(index);
+    const serialized = signedReceiveJson({}, `recovery-${index}`);
+    serialized.fromBlockHash = source.hash.toString();
+    if (index === 0) serialized.previousHash = sdk.EMPTY_HASH.toString();
+    const prepared = sdk.AccountBlockTemplate.fromJson(serialized);
+    prepared.hash = computeBlockHash(prepared, sdk);
+    const signedAccountBlock = {
+      ...prepared.toJson(),
+      publicKey: serialized.publicKey,
+      signature: serialized.signature,
+    };
     blocks.push({
       index,
       signedAccountBlock,
@@ -126,10 +146,27 @@ function persistedRecoveryRecord(state, blockCount = 2) {
   };
 }
 
-function memoryState(events, initial = null) {
+function memoryState(
+  events,
+  initial = null,
+  initialAttempt = null,
+  commitAttemptError = false,
+  failSecondPreparedOnce = false,
+) {
   let record = initial === null ? null : structuredClone(initial);
+  let secondAttempt = initialAttempt === null ? null : structuredClone(initialAttempt);
   return {
     async load() { events.push('state.load'); return record && structuredClone(record); },
+    async loadSecondReceiveAttempt() {
+      events.push('state.second-attempt.load');
+      return secondAttempt && structuredClone(secondAttempt);
+    },
+    async commitSecondReceiveAttempt(next) {
+      events.push('state.second-attempt.commit');
+      if (commitAttemptError || secondAttempt !== null) throw new Error('synthetic');
+      secondAttempt = structuredClone(next);
+      return structuredClone(secondAttempt);
+    },
     async arm() {
       events.push('state.arm');
       record = { activeIndex: null, blocks: [], revision: 0, schemaVersion: 1, state: 'ARMED' };
@@ -137,22 +174,74 @@ function memoryState(events, initial = null) {
     },
     async update(next) {
       events.push(`state.${next.state}.${next.activeIndex ?? 'none'}`);
+      if (failSecondPreparedOnce && next.state === 'PREPARED' && next.activeIndex === 1) {
+        failSecondPreparedOnce = false;
+        throw new Error('synthetic');
+      }
       record = structuredClone(next);
       return structuredClone(record);
     },
     async close() { events.push('state.close'); },
+    attemptSnapshot() { return secondAttempt && structuredClone(secondAttempt); },
     snapshot() { return record && structuredClone(record); },
   };
 }
 
 function sourceBlock(address, tokenStandard, label) {
-  return new sdk.AccountBlock({
+  const block = new sdk.AccountBlock({
+    address: sdk.Address.fromPublicKey(Buffer.alloc(32, 3)),
     blockType: sdk.BlockTypeEnum.ContractSend,
-    hash: sdk.Hash.digest(Buffer.from(label)),
+    chainIdentifier: EXPECTED_CHAIN_ID,
+    data: Buffer.alloc(0),
+    difficulty: 0,
+    fromBlockHash: sdk.EMPTY_HASH,
+    fusedPlasma: 0,
+    height: 1,
+    momentumAcknowledged: new sdk.HashHeight(
+      sdk.Hash.digest(Buffer.from(`source-momentum-${label}`)),
+      1,
+    ),
+    nonce: '0000000000000000',
+    previousHash: sdk.Hash.digest(Buffer.from(`source-previous-${label}`)),
+    publicKey: Buffer.alloc(32, 3),
+    signature: Buffer.alloc(64, 4),
     amount: 1n,
     tokenStandard,
     toAddress: address,
+    version: 1,
   });
+  block.hash = computeBlockHash(block, sdk);
+  block.confirmationDetail = new sdk.AccountBlockConfirmationDetail(
+    1,
+    1,
+    sdk.Hash.digest(Buffer.from(`source-confirmation-${label}`)),
+    1,
+  );
+  return block;
+}
+
+function secondSourceSnapshot(block) {
+  return {
+    address: block.toAddress.toString(),
+    amount: block.amount.toString(),
+    asset: block.tokenStandard.toString(),
+    blockType: block.blockType,
+    hash: block.hash.toString(),
+  };
+}
+
+function secondReceiveAttemptFor(record) {
+  return {
+    firstReceive: {
+      hash: record.blocks[0].signedAccountBlock.hash,
+      height: record.blocks[0].signedAccountBlock.height,
+      momentumAcknowledgedHeight:
+        record.blocks[0].signedAccountBlock.momentumAcknowledged.height,
+      sourceHash: record.blocks[0].sourceHash,
+    },
+    schemaVersion: 1,
+    secondSource: secondSourceSnapshot(persistedRecoverySource(1)),
+  };
 }
 
 function executionHarness({ failPublicationAt = -1, pendingMutation = false,
@@ -160,6 +249,16 @@ function executionHarness({ failPublicationAt = -1, pendingMutation = false,
   mutateSources = value => value, unconfirmedCount = 0,
   derivedAddressMatches = true, recoveredIndexes = [],
   recoveryObservationMutation = value => value,
+  recoveryPendingMutation = value => value,
+  recoverySourceMutation = value => value,
+  recoverySourceLookupThrows = false,
+  recoveryRemainingSourceMutation = value => value,
+  recoveryRemainingLookupMutation = value => value,
+  recoveryFrontierMutation = value => value,
+  secondAttempt = null,
+  secondCommitAttemptError = false,
+  failSecondPreparedOnce = false,
+  partialSuccessorMutation = value => value,
   readinessChainId = EXPECTED_CHAIN_ID } = {}) {
   const events = [];
   const publicKey = Buffer.alloc(32, 1);
@@ -171,7 +270,24 @@ function executionHarness({ failPublicationAt = -1, pendingMutation = false,
   ], { expectedAddressObject, sdk });
   const preparedByHash = new Map();
   const observedByHash = new Map();
+  let recoverySource;
+  let recoveryRemainingSource;
   if (existing) {
+    for (let index = 0; index < existing.blocks.length; index += 1) {
+      preparedByHash.set(existing.blocks[index].signedAccountBlock.hash, index);
+    }
+    if (existing.blocks.length === 1) {
+      recoverySource = persistedRecoverySource(0);
+      recoverySource = recoverySourceMutation(recoverySource, {
+        expectedAddressObject,
+        remainingSource: sources[1],
+        sdk,
+      });
+      recoveryRemainingSource = recoveryRemainingSourceMutation(
+        persistedRecoverySource(1),
+        { expectedAddressObject, recoverySource, sdk },
+      );
+    }
     for (const index of recoveredIndexes) {
       const stored = existing.blocks[index]?.signedAccountBlock;
       if (!stored) continue;
@@ -195,6 +311,7 @@ function executionHarness({ failPublicationAt = -1, pendingMutation = false,
   let poisonCalls = 0;
   let clearCalls = 0;
   let keyClearCalls = 0;
+  let remainingSourceReads = 0;
   const zenon = {
     client: undefined,
     async initialize() { events.push('initialize'); },
@@ -203,7 +320,15 @@ function executionHarness({ failPublicationAt = -1, pendingMutation = false,
       async getUnreceivedBlocksByAddress() {
         pendingReads += 1;
         events.push(`pending.${pendingReads}`);
-        const list = pendingMutation && pendingReads === 2 ? [sources[1], sources[0]] : sources;
+        const base = existing?.blocks.length === 1 ? [recoveryRemainingSource] : sources;
+        const list = existing?.blocks.length === 1
+          ? recoveryPendingMutation(base, pendingReads, {
+              expectedAddressObject,
+              recoverySource,
+              sdk,
+              sources,
+            })
+          : pendingMutation && pendingReads === 2 ? [sources[1], sources[0]] : sources;
         return new sdk.AccountBlockList(list.length, list, false);
       },
       async getUnconfirmedBlocksByAddress() {
@@ -212,7 +337,7 @@ function executionHarness({ failPublicationAt = -1, pendingMutation = false,
         return new sdk.AccountBlockList(unconfirmedCount, list, false);
       },
       async publishRawTransaction(prepared) {
-        const index = publicationCalls;
+        const index = preparedByHash.get(prepared.hash.toString());
         publicationCalls += 1;
         events.push(`publish.${index}`);
         if (index === failPublicationAt) throw new Error('synthetic');
@@ -232,7 +357,24 @@ function executionHarness({ failPublicationAt = -1, pendingMutation = false,
       async getAccountBlockByHash(hash) {
         const key = hash.toString();
         events.push(`lookup.${preparedByHash.get(key) ?? 'unknown'}`);
+        if (recoverySource && key === existing.blocks[0].sourceHash) {
+          if (recoverySourceLookupThrows) throw new Error('synthetic');
+          return recoverySource;
+        }
+        if (recoveryRemainingSource && key === recoveryRemainingSource.hash.toString()) {
+          remainingSourceReads += 1;
+          return recoveryRemainingLookupMutation(
+            recoveryRemainingSource,
+            remainingSourceReads,
+            { expectedAddressObject, recoverySource, sdk },
+          );
+        }
         return observedByHash.get(key) ?? null;
+      },
+      async getFrontierAccountBlock() {
+        events.push('frontier.account');
+        const observed = observedByHash.get(existing?.blocks[0]?.signedAccountBlock.hash) ?? null;
+        return recoveryFrontierMutation(observed, { expectedAddressObject, sdk });
       },
     },
   };
@@ -280,7 +422,13 @@ function executionHarness({ failPublicationAt = -1, pendingMutation = false,
     async verify() { return true; },
     async close() { events.push('workspace.close'); },
   };
-  const state = memoryState(events, existing);
+  const state = memoryState(
+    events,
+    existing,
+    secondAttempt,
+    secondCommitAttemptError,
+    failSecondPreparedOnce,
+  );
   const runtime = {
     async withOwner(_owner, work) {
       events.push('owner');
@@ -313,7 +461,9 @@ function executionHarness({ failPublicationAt = -1, pendingMutation = false,
       events.push(`prepare.${index}`);
       template.version = 1;
       template.chainIdentifier = EXPECTED_CHAIN_ID;
-      template.previousHash = sdk.Hash.digest(Buffer.from(`previous-${index}`));
+      template.previousHash = existing?.blocks.length === 1 && index === 1
+        ? sdk.Hash.parse(existing.blocks[0].signedAccountBlock.hash)
+        : sdk.Hash.digest(Buffer.from(`previous-${index}`));
       template.height = index + 1;
       template.momentumAcknowledged = new sdk.HashHeight(
         sdk.Hash.digest(Buffer.from(`momentum-${index}`)),
@@ -332,6 +482,11 @@ function executionHarness({ failPublicationAt = -1, pendingMutation = false,
       template.nonce = index === noPowAt ? '0000000000000000' : '0100000000000000';
       template.publicKey = publicKey;
       template.signature = Buffer.alloc(64, 2);
+      partialSuccessorMutation(template, {
+        existing,
+        index,
+        sdk,
+      });
       template.hash = computeBlockHash(template, sdk);
       preparedByHash.set(template.hash.toString(), index);
       return template;
@@ -341,6 +496,7 @@ function executionHarness({ failPublicationAt = -1, pendingMutation = false,
       return { ed: { verify: () => true }, sdk: fakeSdk };
     },
     now: (() => { let current = 0; return () => { current += 120_001; return current; }; })(),
+    onExecutionMode: async mode => { events.push(`mode.${mode}`); return true; },
     onPublicationStart: async index => { events.push(`publishing.${index}`); return true; },
     openReceiveState: async () => state,
     openWalletWorkspace: async () => workspace,
@@ -354,6 +510,7 @@ function executionHarness({ failPublicationAt = -1, pendingMutation = false,
     keyClearCalls: () => keyClearCalls,
     poisonCalls: () => poisonCalls,
     publicationCalls: () => publicationCalls,
+    sources,
     state,
   };
 }
@@ -391,6 +548,16 @@ test('faucet receiver CLI emits only fixed complete and unknown records', async 
   }), 0);
   assert.equal(complete.stdout, GATE_B_TESTNET_FAUCET_RECEIVE_STATUS_LINES.COMPLETE);
   assert.equal(complete.stderr, '');
+
+  const partial = { stdout: '', stderr: '' };
+  assert.equal(await runGateBTestnetFaucetReceiveCli({
+    argv: [],
+    supervise: async () => 'partial-complete',
+    stdout: value => { partial.stdout += value; return Buffer.byteLength(value); },
+    stderr: value => { partial.stderr += value; return Buffer.byteLength(value); },
+  }), 0);
+  assert.equal(partial.stdout, GATE_B_TESTNET_FAUCET_RECEIVE_STATUS_LINES.COMPLETE);
+  assert.equal(partial.stderr, '');
 
   const unknown = { stdout: '', stderr: '' };
   assert.equal(await runGateBTestnetFaucetReceiveCli({
@@ -467,6 +634,9 @@ test('faucet receiver state creates a durable one-shot marker and exact private 
     fixture.walletRoot,
     stateInjections(),
   );
+  t.after(async () => {
+    await Promise.allSettled([first.close(), second.close()]);
+  });
   assert.deepEqual(await second.load(), armed);
   await assert.rejects(() => second.arm());
   const stateRoot = join(fixture.supportRoot, 'zenon-x402-gate-b-faucet-receive');
@@ -498,6 +668,174 @@ test('faucet receiver state durably preserves an exact prepared block', async t 
     stateInjections(),
   );
   assert.deepEqual(await reopened.load(), prepared);
+  await reopened.close();
+});
+
+test('faucet receiver state permits exact included recovery before preparing index one', async t => {
+  const fixture = await stateFixture(t);
+  const store = await openGateBTestnetFaucetReceiveState(
+    fixture.walletRoot,
+    stateInjections(),
+  );
+  let record = await store.arm();
+  const first = signedReceiveJson({}, 'partial-first');
+  record = await store.update({
+    activeIndex: 0,
+    blocks: [{
+      index: 0,
+      signedAccountBlock: first,
+      sourceHash: first.fromBlockHash,
+      state: 'PREPARED',
+    }],
+    revision: record.revision + 1,
+    schemaVersion: 1,
+    state: 'PREPARED',
+  });
+  record = structuredClone(record);
+  record.revision += 1;
+  record.state = 'UNKNOWN';
+  record.blocks[0].state = 'UNKNOWN';
+  record = await store.update(record);
+
+  const included = structuredClone(record);
+  included.revision += 1;
+  included.state = 'INCLUDED';
+  included.blocks[0].state = 'INCLUDED';
+  record = await store.update(included);
+
+  const second = signedReceiveJson({}, 'partial-second');
+  const prepared = structuredClone(record);
+  prepared.revision += 1;
+  prepared.activeIndex = 1;
+  prepared.state = 'PREPARED';
+  prepared.blocks.push({
+    index: 1,
+    signedAccountBlock: second,
+    sourceHash: second.fromBlockHash,
+    state: 'PREPARED',
+  });
+  assert.deepEqual(await store.update(prepared), prepared);
+  await store.close();
+});
+
+test('faucet receiver state rejects same-length INCLUDED to PREPARED regressions', async t => {
+  const fixture = await stateFixture(t);
+  const store = await openGateBTestnetFaucetReceiveState(
+    fixture.walletRoot,
+    stateInjections(),
+  );
+  let record = await store.arm();
+  const first = signedReceiveJson({}, 'same-length-first');
+  record = await store.update({
+    activeIndex: 0,
+    blocks: [{
+      index: 0,
+      signedAccountBlock: first,
+      sourceHash: first.fromBlockHash,
+      state: 'PREPARED',
+    }],
+    revision: record.revision + 1,
+    schemaVersion: 1,
+    state: 'PREPARED',
+  });
+  for (const state of ['PUBLISHING', 'INCLUDED']) {
+    const next = structuredClone(record);
+    next.revision += 1;
+    next.state = state;
+    next.blocks[0].state = state;
+    record = await store.update(next);
+  }
+  const oneBlockRegression = structuredClone(record);
+  oneBlockRegression.revision += 1;
+  oneBlockRegression.state = 'PREPARED';
+  oneBlockRegression.blocks[0].state = 'PREPARED';
+  await assert.rejects(() => store.update(oneBlockRegression));
+
+  const second = signedReceiveJson({}, 'same-length-second');
+  record = await store.update({
+    activeIndex: 1,
+    blocks: [
+      structuredClone(record.blocks[0]),
+      {
+        index: 1,
+        signedAccountBlock: second,
+        sourceHash: second.fromBlockHash,
+        state: 'PREPARED',
+      },
+    ],
+    revision: record.revision + 1,
+    schemaVersion: 1,
+    state: 'PREPARED',
+  });
+  for (const state of ['PUBLISHING', 'INCLUDED']) {
+    const next = structuredClone(record);
+    next.revision += 1;
+    next.state = state;
+    next.blocks[1].state = state;
+    record = await store.update(next);
+  }
+  const twoBlockRegression = structuredClone(record);
+  twoBlockRegression.revision += 1;
+  twoBlockRegression.state = 'PREPARED';
+  twoBlockRegression.blocks[1].state = 'PREPARED';
+  await assert.rejects(() => store.update(twoBlockRegression));
+  await store.close();
+});
+
+test('faucet receiver state grants one durable second-receive attempt atomically', async t => {
+  const fixture = await stateFixture(t);
+  const first = await openGateBTestnetFaucetReceiveState(
+    fixture.walletRoot,
+    stateInjections(),
+  );
+  const second = await openGateBTestnetFaucetReceiveState(
+    fixture.walletRoot,
+    stateInjections(),
+  );
+  t.after(async () => {
+    await Promise.allSettled([first.close(), second.close()]);
+  });
+  let record = await first.arm();
+  const persisted = persistedRecoveryRecord('INCLUDED', 1);
+  record = await first.update({
+    activeIndex: 0,
+    blocks: [{
+      ...persisted.blocks[0],
+      state: 'PREPARED',
+    }],
+    revision: record.revision + 1,
+    schemaVersion: 1,
+    state: 'PREPARED',
+  });
+  for (const state of ['UNKNOWN', 'INCLUDED']) {
+    const next = structuredClone(record);
+    next.revision += 1;
+    next.state = state;
+    next.blocks[0].state = state;
+    record = await first.update(next);
+  }
+  const attempt = secondReceiveAttemptFor(record);
+  const settled = await Promise.allSettled([
+    first.commitSecondReceiveAttempt(attempt),
+    second.commitSecondReceiveAttempt(attempt),
+  ]);
+  assert.equal(settled.filter(result => result.status === 'fulfilled').length, 1);
+  assert.equal(settled.filter(result => result.status === 'rejected').length, 1);
+  assert.deepEqual(await first.loadSecondReceiveAttempt(), attempt);
+  assert.deepEqual(await second.loadSecondReceiveAttempt(), attempt);
+  const stateRoot = join(fixture.supportRoot, 'zenon-x402-gate-b-faucet-receive');
+  assert.equal(
+    (await lstat(join(stateRoot, 'faucet-receive-second-attempt.json'))).mode & 0o777,
+    0o600,
+  );
+  await first.close();
+  await second.close();
+  const reopened = await openGateBTestnetFaucetReceiveState(
+    fixture.walletRoot,
+    stateInjections(),
+  );
+  assert.deepEqual(await reopened.loadSecondReceiveAttempt(), attempt);
+  await assert.rejects(() => reopened.commitSecondReceiveAttempt(attempt));
   await reopened.close();
 });
 
@@ -640,7 +978,58 @@ test('faucet receiver validates readiness before wallet access and completes two
   assert.equal(harness.clearCalls(), 1);
   assert.ok(harness.events.indexOf('readiness') < harness.events.indexOf('workspace.open.buyer-wallet.json'));
   assert.ok(harness.events.indexOf('lookup.0') < harness.events.indexOf('prepare.1'));
+  assert.ok(harness.events.indexOf('state.second-attempt.commit') <
+    harness.events.indexOf('prepare.1'));
+  assert.deepEqual(
+    harness.state.attemptSnapshot().secondSource,
+    secondSourceSnapshot(harness.sources[1]),
+  );
   assert.equal(harness.state.snapshot().state, 'COMPLETE');
+});
+
+test('fresh execution losing the shared second-attempt race stops before index-one preparation',
+  async () => {
+    const harness = executionHarness({ secondCommitAttemptError: true });
+    assert.equal(
+      await executeGateBTestnetFaucetReceive(bootstrap(), harness.injections),
+      'outcome-unknown',
+    );
+    assert.equal(harness.events.includes('state.second-attempt.commit'), true);
+    assert.equal(harness.events.includes('prepare.0'), true);
+    assert.equal(harness.events.includes('publish.0'), true);
+    assert.equal(harness.events.includes('prepare.1'), false);
+    assert.equal(harness.events.includes('publish.1'), false);
+    assert.equal(harness.publicationCalls(), 1);
+    assert.equal(harness.state.snapshot().state, 'INCLUDED');
+    assert.equal(harness.state.snapshot().blocks.length, 1);
+  });
+
+test('post-sign pre-persistence failure permanently blocks index-one re-signing', async () => {
+  const harness = executionHarness({ failSecondPreparedOnce: true });
+  await assert.rejects(() => executeGateBTestnetFaucetReceive(
+    bootstrap(),
+    harness.injections,
+  ));
+  assert.equal(harness.events.includes('state.second-attempt.commit'), true);
+  assert.equal(harness.events.includes('prepare.1'), true);
+  assert.equal(harness.events.includes('publish.1'), false);
+  assert.equal(harness.state.snapshot().state, 'INCLUDED');
+  assert.equal(harness.state.snapshot().blocks.length, 1);
+  const walletReads = harness.events.filter(value =>
+    value === 'workspace.read.buyer-wallet.json').length;
+  const indexOnePreparations = harness.events.filter(value => value === 'prepare.1').length;
+  const publications = harness.publicationCalls();
+  assert.equal(
+    await executeGateBTestnetFaucetReceive(bootstrap(), harness.injections),
+    'outcome-unknown',
+  );
+  assert.equal(harness.events.filter(value =>
+    value === 'workspace.read.buyer-wallet.json').length, walletReads);
+  assert.equal(harness.events.filter(value => value === 'prepare.1').length,
+    indexOnePreparations);
+  assert.equal(harness.publicationCalls(), publications);
+  assert.equal(harness.state.snapshot().state, 'INCLUDED');
+  assert.equal(harness.state.snapshot().blocks.length, 1);
 });
 
 test('production receive validator accepts the actual pinned SDK composite with deterministic PoW',
@@ -931,21 +1320,460 @@ test('second publication ambiguity preserves first inclusion and never retries',
   assert.equal(harness.state.snapshot().blocks[1].state, 'UNKNOWN');
 });
 
-test('every one-block crash state is permanently partial even when its block is included', async () => {
-  for (const state of ['PREPARED', 'PUBLISHING', 'UNKNOWN', 'INCLUDED']) {
-    const existing = persistedRecoveryRecord(state, 1);
-    const harness = executionHarness({ existing, recoveredIndexes: [0] });
+test('released SDK base64-as-ASCII observation normalizes only both signature fields', async () => {
+  for (const encoding of ['binary', 'base64-as-ascii']) {
+    const existing = persistedRecoveryRecord('COMPLETE');
+    const harness = executionHarness({
+      existing,
+      recoveredIndexes: [0, 1],
+      recoveryObservationMutation(observed, index) {
+        if (encoding === 'base64-as-ascii') {
+          const released = sdk.AccountBlock.fromJson(
+            existing.blocks[index].signedAccountBlock,
+          );
+          observed.publicKey = released.publicKey;
+          observed.signature = released.signature;
+        }
+        return observed;
+      },
+    });
+    assert.equal(
+      await executeGateBTestnetFaucetReceive(bootstrap(), harness.injections),
+      'recovered',
+      encoding,
+    );
+    assert.equal(harness.publicationCalls(), 0, encoding);
+    assert.equal(harness.events.some(value => value.startsWith('workspace.')), false, encoding);
+  }
+});
+
+test('RPC signature compatibility rejects malformed or mixed encodings', async () => {
+  const cases = [
+    (observed, stored) => { observed.publicKey = Buffer.from(stored.publicKey); },
+    (observed, stored) => { observed.signature = Buffer.from(stored.signature); },
+    observed => { observed.publicKey = Buffer.alloc(31); },
+    observed => { observed.signature = Buffer.alloc(63); },
+    (observed, stored) => {
+      observed.publicKey = Buffer.from(`${stored.publicKey.slice(0, -1)}A`);
+      observed.signature = Buffer.from(stored.signature);
+    },
+  ];
+  for (const mutate of cases) {
+    const existing = persistedRecoveryRecord('COMPLETE');
+    const harness = executionHarness({
+      existing,
+      recoveredIndexes: [0, 1],
+      recoveryObservationMutation(observed, index) {
+        if (index === 0) mutate(observed, existing.blocks[index].signedAccountBlock);
+        return observed;
+      },
+    });
     assert.equal(
       await executeGateBTestnetFaucetReceive(bootstrap(), harness.injections),
       'outcome-unknown',
-      state,
     );
-    assert.equal(harness.events.some(value => value.startsWith('workspace.')), false, state);
-    assert.equal(harness.events.some(value => value.startsWith('prepare.')), false, state);
-    assert.equal(harness.publicationCalls(), 0, state);
-    assert.equal(harness.keyClearCalls(), 0, state);
-    assert.equal(harness.poisonCalls(), 1, state);
+    assert.equal(harness.publicationCalls(), 0);
+    assert.equal(harness.events.some(value => value.startsWith('workspace.')), false);
   }
+});
+
+test('RPC inclusion compatibility preserves exact equality for every other signed field', async () => {
+  const otherAddress = sdk.Address.fromPublicKey(Buffer.alloc(32, 9));
+  const mutations = [
+    observed => { observed.version += 1; },
+    observed => { observed.chainIdentifier += 1; },
+    observed => { observed.blockType = sdk.BlockTypeEnum.UserSend; },
+    observed => { observed.hash = sdk.Hash.digest(Buffer.from('mismatch-hash')); },
+    observed => { observed.previousHash = sdk.Hash.digest(Buffer.from('mismatch-previous')); },
+    observed => { observed.height += 1; },
+    observed => {
+      observed.momentumAcknowledged = new sdk.HashHeight(
+        sdk.Hash.digest(Buffer.from('mismatch-momentum')),
+        observed.momentumAcknowledged.height,
+      );
+    },
+    observed => {
+      observed.momentumAcknowledged = new sdk.HashHeight(
+        observed.momentumAcknowledged.hash,
+        observed.momentumAcknowledged.height + 1,
+      );
+    },
+    observed => { observed.address = otherAddress; },
+    observed => { observed.toAddress = otherAddress; },
+    observed => { observed.amount = 1n; },
+    observed => { observed.tokenStandard = sdk.ZNN_ZTS; },
+    observed => { observed.fromBlockHash = sdk.Hash.digest(Buffer.from('mismatch-source')); },
+    observed => { observed.data = Buffer.from('mismatch-data'); },
+    observed => { observed.fusedPlasma = 1; },
+    observed => { observed.difficulty += 1; },
+    observed => { observed.nonce = '0200000000000000'; },
+  ];
+  for (const mutate of mutations) {
+    const existing = persistedRecoveryRecord('COMPLETE');
+    const harness = executionHarness({
+      existing,
+      recoveredIndexes: [0, 1],
+      recoveryObservationMutation(observed, index) {
+        if (index === 0) mutate(observed);
+        return observed;
+      },
+    });
+    assert.equal(
+      await executeGateBTestnetFaucetReceive(bootstrap(), harness.injections),
+      'outcome-unknown',
+    );
+    assert.equal(harness.publicationCalls(), 0);
+  }
+});
+
+test('one-record UNKNOWN continues only the complementary index-one receive after exact recovery',
+  async () => {
+    const existing = persistedRecoveryRecord('UNKNOWN', 1);
+    const harness = executionHarness({ existing, recoveredIndexes: [0] });
+    assert.equal(
+      await executeGateBTestnetFaucetReceive(bootstrap(), harness.injections),
+      'partial-complete',
+    );
+    assert.equal(harness.publicationCalls(), 1);
+    assert.equal(harness.events.includes('prepare.0'), false);
+    assert.equal(harness.events.includes('publish.0'), false);
+    assert.equal(harness.events.includes('prepare.1'), true);
+    assert.equal(harness.events.includes('publish.1'), true);
+    assert.ok(harness.events.indexOf('state.INCLUDED.0') < harness.events.indexOf('pending.1'));
+    assert.ok(harness.events.indexOf('unconfirmed') <
+      harness.events.indexOf('workspace.open.buyer-wallet.json'));
+    assert.ok(harness.events.indexOf('state.second-attempt.commit') <
+      harness.events.indexOf('workspace.open.buyer-wallet.json'));
+    assert.ok(harness.events.lastIndexOf('lookup.unknown') <
+      harness.events.indexOf('workspace.open.buyer-wallet.json'));
+    assert.deepEqual(harness.state.attemptSnapshot(), secondReceiveAttemptFor(existing));
+    assert.equal(harness.state.snapshot().state, 'COMPLETE');
+    assert.deepEqual(harness.state.snapshot().blocks.map(block => block.state), [
+      'INCLUDED',
+      'INCLUDED',
+    ]);
+    assert.equal(harness.state.snapshot().blocks[1].signedAccountBlock.height, 2);
+    assert.equal(
+      harness.state.snapshot().blocks[1].signedAccountBlock.previousHash,
+      harness.state.snapshot().blocks[0].signedAccountBlock.hash,
+    );
+  });
+
+test('one-record recovery rejects a non-successor index-one preparation before publication',
+  async () => {
+    const cases = [
+      {
+        name: 'wrong-height',
+        mutate(template) { template.height += 1; },
+      },
+      {
+        name: 'wrong-predecessor',
+        mutate(template) {
+          template.previousHash = sdk.Hash.digest(Buffer.from('wrong-partial-predecessor'));
+        },
+      },
+    ];
+    for (const fixture of cases) {
+      const existing = persistedRecoveryRecord('UNKNOWN', 1);
+      const harness = executionHarness({
+        existing,
+        partialSuccessorMutation: fixture.mutate,
+        recoveredIndexes: [0],
+      });
+      await assert.rejects(
+        () => executeGateBTestnetFaucetReceive(bootstrap(), harness.injections),
+        fixture.name,
+      );
+      assert.equal(harness.events.includes('prepare.1'), true, fixture.name);
+      assert.equal(harness.events.includes('publishing.1'), false, fixture.name);
+      assert.equal(harness.publicationCalls(), 0, fixture.name);
+      assert.equal(harness.state.snapshot().blocks.length, 1, fixture.name);
+    }
+  });
+
+test('one-record recovery is fresh-account-only and frontier-bound before wallet access',
+  async () => {
+    const cases = [
+      {
+        name: 'non-first-height',
+        mutate(existing) {
+          existing.blocks[0].signedAccountBlock.height = 2;
+        },
+      },
+      {
+        name: 'non-empty-predecessor',
+        mutate(existing) {
+          existing.blocks[0].signedAccountBlock.previousHash =
+            sdk.Hash.digest(Buffer.from('nonempty-predecessor')).toString();
+        },
+      },
+      { name: 'missing-frontier', options: { recoveryFrontierMutation: () => null } },
+      {
+        name: 'intervening-frontier',
+        options: {
+          recoveryFrontierMutation(frontier) {
+            const other = new sdk.AccountBlock({ ...frontier, height: frontier.height + 1 });
+            other.hash = computeBlockHash(other, sdk);
+            return other;
+          },
+        },
+      },
+    ];
+    for (const fixture of cases) {
+      const existing = persistedRecoveryRecord('UNKNOWN', 1);
+      fixture.mutate?.(existing);
+      const harness = executionHarness({
+        existing,
+        recoveredIndexes: [0],
+        ...(fixture.options ?? {}),
+      });
+      assert.equal(
+        await executeGateBTestnetFaucetReceive(bootstrap(), harness.injections),
+        'outcome-unknown',
+        fixture.name,
+      );
+      assert.equal(harness.events.some(value => value.startsWith('workspace.')), false,
+        fixture.name);
+      assert.equal(harness.events.some(value => value.startsWith('prepare.')), false,
+        fixture.name);
+      assert.equal(harness.publicationCalls(), 0, fixture.name);
+    }
+  });
+
+test('one-record recovery binds both source contents and rejects a changed committed source',
+  async () => {
+    const cases = [
+      {
+        name: 'declared-hash-disagrees-with-content',
+        options: {
+          recoveryRemainingSourceMutation(source) {
+            source.amount += 1n;
+            return source;
+          },
+        },
+      },
+      {
+        name: 'first-source-declared-hash-disagrees-with-content',
+        options: {
+          recoverySourceMutation(source) {
+            source.amount += 1n;
+            return source;
+          },
+        },
+      },
+      {
+        name: 'pending-and-looked-up-remaining-source-disagree',
+        options: {
+          recoveryRemainingLookupMutation(source, read) {
+            if (read !== 1) return source;
+            const changed = new sdk.AccountBlock({ ...source, amount: source.amount + 1n });
+            changed.hash = source.hash;
+            return changed;
+          },
+        },
+      },
+      {
+        name: 'remaining-source-confirmed-after-receive-boundary',
+        options: {
+          recoveryRemainingSourceMutation(source) {
+            source.confirmationDetail = new sdk.AccountBlockConfirmationDetail(
+              1,
+              3,
+              sdk.Hash.digest(Buffer.from('late-source-confirmation')),
+              1,
+            );
+            return source;
+          },
+        },
+      },
+      {
+        name: 'first-source-confirmation-unavailable',
+        options: {
+          recoverySourceMutation(source) {
+            source.confirmationDetail = null;
+            return source;
+          },
+        },
+      },
+      {
+        name: 'remaining-source-changes-after-commit',
+        options: {
+          recoveryRemainingLookupMutation(source, read) {
+            if (read === 1) return source;
+            const changed = new sdk.AccountBlock({ ...source, amount: source.amount + 1n });
+            changed.hash = source.hash;
+            return changed;
+          },
+        },
+      },
+    ];
+    for (const fixture of cases) {
+      const existing = persistedRecoveryRecord('UNKNOWN', 1);
+      const harness = executionHarness({
+        existing,
+        recoveredIndexes: [0],
+        ...fixture.options,
+      });
+      assert.equal(
+        await executeGateBTestnetFaucetReceive(bootstrap(), harness.injections),
+        'outcome-unknown',
+        fixture.name,
+      );
+      assert.equal(harness.events.some(value => value.startsWith('workspace.')), false,
+        fixture.name);
+      assert.equal(harness.events.some(value => value.startsWith('prepare.')), false,
+        fixture.name);
+      assert.equal(harness.publicationCalls(), 0, fixture.name);
+    }
+  });
+
+test('a durable second-receive attempt blocks every later wallet reopening', async () => {
+  const existing = persistedRecoveryRecord('UNKNOWN', 1);
+  const harness = executionHarness({
+    existing,
+    recoveredIndexes: [0],
+    secondAttempt: secondReceiveAttemptFor(existing),
+  });
+  assert.equal(
+    await executeGateBTestnetFaucetReceive(bootstrap(), harness.injections),
+    'outcome-unknown',
+  );
+  assert.equal(harness.events.some(value => value.startsWith('workspace.')), false);
+  assert.equal(harness.events.some(value => value.startsWith('prepare.')), false);
+  assert.equal(harness.publicationCalls(), 0);
+});
+
+test('recovery losing the shared second-attempt race stops before wallet access', async () => {
+  const existing = persistedRecoveryRecord('UNKNOWN', 1);
+  const harness = executionHarness({
+    existing,
+    recoveredIndexes: [0],
+    secondCommitAttemptError: true,
+  });
+  assert.equal(
+    await executeGateBTestnetFaucetReceive(bootstrap(), harness.injections),
+    'outcome-unknown',
+  );
+  assert.equal(harness.events.includes('state.second-attempt.commit'), true);
+  assert.equal(harness.events.some(value => value.startsWith('workspace.')), false);
+  assert.equal(harness.events.some(value => value.startsWith('prepare.')), false);
+  assert.equal(harness.publicationCalls(), 0);
+  assert.equal(harness.state.snapshot().state, 'INCLUDED');
+  assert.equal(harness.state.snapshot().blocks.length, 1);
+});
+
+test('one-record recovery rejects every pre-publication identity ambiguity before wallet access',
+  async () => {
+    const cases = [
+      { name: 'first-not-included', options: { recoveredIndexes: [] } },
+      {
+        name: 'first-still-pending',
+        options: {
+          recoveredIndexes: [0],
+          recoveryPendingMutation(_base, _read, context) { return [context.recoverySource]; },
+        },
+      },
+      {
+        name: 'extra-pending',
+        options: {
+          recoveredIndexes: [0],
+          recoveryPendingMutation(_base, _read, context) { return context.sources; },
+        },
+      },
+      {
+        name: 'unstable-replacement',
+        options: {
+          recoveredIndexes: [0],
+          recoveryPendingMutation(base, read, context) {
+            return read === 1 ? base : [sourceBlock(
+              context.expectedAddressObject,
+              context.sdk.QSR_ZTS,
+              'unstable-replacement',
+            )];
+          },
+        },
+      },
+      {
+        name: 'same-asset-pair',
+        options: {
+          recoveredIndexes: [0],
+          recoveryPendingMutation(_base, _read, context) {
+            return [sourceBlock(context.expectedAddressObject, context.sdk.ZNN_ZTS, 'same-asset')];
+          },
+        },
+      },
+      {
+        name: 'non-native-source',
+        options: {
+          recoveredIndexes: [0],
+          recoveryPendingMutation(_base, _read, context) {
+            return [sourceBlock(context.expectedAddressObject, context.sdk.EMPTY_ZTS, 'non-native')];
+          },
+        },
+      },
+      {
+        name: 'address-mismatch',
+        options: {
+          recoveredIndexes: [0],
+          recoveryPendingMutation(_base, _read, context) {
+            return [sourceBlock(
+              context.sdk.Address.fromPublicKey(Buffer.alloc(32, 8)),
+              context.sdk.QSR_ZTS,
+              'wrong-address',
+            )];
+          },
+        },
+      },
+      { name: 'unconfirmed', options: { recoveredIndexes: [0], unconfirmedCount: 1 } },
+      {
+        name: 'malformed-first-source',
+        options: {
+          recoveredIndexes: [0],
+          recoverySourceMutation(source) { source.amount = 0n; return source; },
+        },
+      },
+      {
+        name: 'source-lookup-ambiguity',
+        options: { recoveredIndexes: [0], recoverySourceLookupThrows: true },
+      },
+    ];
+    for (const fixture of cases) {
+      const existing = persistedRecoveryRecord('UNKNOWN', 1);
+      const harness = executionHarness({ existing, ...fixture.options });
+      assert.equal(
+        await executeGateBTestnetFaucetReceive(bootstrap(), harness.injections),
+        'outcome-unknown',
+        fixture.name,
+      );
+      assert.equal(harness.events.some(value => value.startsWith('workspace.')), false,
+        fixture.name);
+      assert.equal(harness.events.some(value => value.startsWith('prepare.')), false,
+        fixture.name);
+      assert.equal(harness.publicationCalls(), 0, fixture.name);
+      assert.equal(harness.keyClearCalls(), 0, fixture.name);
+      assert.equal(harness.poisonCalls(), 1, fixture.name);
+    }
+  });
+
+test('one-record recovery preserves an ambiguous index-one block without replacement', async () => {
+  const existing = persistedRecoveryRecord('UNKNOWN', 1);
+  const harness = executionHarness({
+    existing,
+    failPublicationAt: 1,
+    recoveredIndexes: [0],
+  });
+  assert.equal(
+    await executeGateBTestnetFaucetReceive(bootstrap(), harness.injections),
+    'outcome-unknown',
+  );
+  assert.equal(harness.publicationCalls(), 1);
+  assert.deepEqual(
+    harness.events.filter(value => value.startsWith('publish.')),
+    ['publish.1'],
+  );
+  assert.equal(harness.state.snapshot().blocks[0].state, 'INCLUDED');
+  assert.equal(harness.state.snapshot().blocks[1].state, 'UNKNOWN');
+  assert.equal(harness.state.snapshot().blocks.length, 2);
 });
 
 test('two persisted receives recover only after both exact blocks are Momentum-included', async () => {
@@ -966,6 +1794,23 @@ test('two persisted receives recover only after both exact blocks are Momentum-i
       state === 'COMPLETE' ? 'COMPLETE' : 'RECOVERED', state);
   }
 });
+
+test('a persisted index one keeps recovery observation-only after a partial-attempt record',
+  async () => {
+    const existing = persistedRecoveryRecord('UNKNOWN');
+    const harness = executionHarness({
+      existing,
+      recoveredIndexes: [0, 1],
+      secondAttempt: secondReceiveAttemptFor(existing),
+    });
+    assert.equal(
+      await executeGateBTestnetFaucetReceive(bootstrap(), harness.injections),
+      'recovered',
+    );
+    assert.equal(harness.events.some(value => value.startsWith('workspace.')), false);
+    assert.equal(harness.events.some(value => value.startsWith('prepare.')), false);
+    assert.equal(harness.publicationCalls(), 0);
+  });
 
 test('two persisted receives remain unknown when either inclusion is absent or field-mismatched',
   async () => {
@@ -1007,7 +1852,14 @@ test('isolated child emits only primitive protocol messages', async () => {
   };
   const work = runGateBTestnetFaucetReceiveChild({
     channel,
-    execute: async () => 'complete',
+    execute: async (_bootstrap, injections) => {
+      await injections.onExecutionMode(
+        GATE_B_TESTNET_FAUCET_RECEIVE_EXECUTION_MODES.FRESH,
+      );
+      await injections.onPublicationStart(0);
+      await injections.onPublicationStart(1);
+      return 'complete';
+    },
     forceExit: code => { exitCode = code; },
     readBootstrap: async () => frameGateBTestnetFaucetReceiveBootstrap(bootstrap()),
   });
@@ -1015,9 +1867,66 @@ test('isolated child emits only primitive protocol messages', async () => {
   assert.deepEqual(messages, ['READY']);
   channel.emit('message', 'EXECUTE');
   await new Promise(resolve => setImmediate(resolve));
-  assert.deepEqual(messages, ['READY', 'COMPLETE']);
+  assert.deepEqual(messages, [
+    'READY',
+    GATE_B_TESTNET_FAUCET_RECEIVE_EXECUTION_MODES.FRESH,
+    'PUBLISHING_0',
+    'PUBLISHING_1',
+    'COMPLETE',
+  ]);
   assert.equal(exitCode, 0);
   assert.equal(messages.every(value => typeof value === 'string'), true);
+});
+
+test('isolated child emits mode-matched partial and read-only terminal protocols', async () => {
+  const cases = [
+    {
+      expected: [
+        'READY',
+        GATE_B_TESTNET_FAUCET_RECEIVE_EXECUTION_MODES.PARTIAL_RECOVERY,
+        'PUBLISHING_1',
+        'PARTIAL_COMPLETE',
+      ],
+      index: 1,
+      mode: GATE_B_TESTNET_FAUCET_RECEIVE_EXECUTION_MODES.PARTIAL_RECOVERY,
+      status: 'partial-complete',
+    },
+    {
+      expected: [
+        'READY',
+        GATE_B_TESTNET_FAUCET_RECEIVE_EXECUTION_MODES.READ_ONLY_RECOVERY,
+        'RECOVERED',
+      ],
+      mode: GATE_B_TESTNET_FAUCET_RECEIVE_EXECUTION_MODES.READ_ONLY_RECOVERY,
+      status: 'recovered',
+    },
+  ];
+  for (const fixture of cases) {
+    const channel = new EventEmitter();
+    const messages = [];
+    let exitCode;
+    channel.send = (message, callback) => {
+      messages.push(message);
+      callback();
+    };
+    const work = runGateBTestnetFaucetReceiveChild({
+      channel,
+      execute: async (_bootstrap, injections) => {
+        await injections.onExecutionMode(fixture.mode);
+        if (fixture.index !== undefined) {
+          await injections.onPublicationStart(fixture.index);
+        }
+        return fixture.status;
+      },
+      forceExit: code => { exitCode = code; },
+      readBootstrap: async () => frameGateBTestnetFaucetReceiveBootstrap(bootstrap()),
+    });
+    await work;
+    channel.emit('message', 'EXECUTE');
+    await new Promise(resolve => setImmediate(resolve));
+    assert.deepEqual(messages, fixture.expected);
+    assert.equal(exitCode, 0);
+  }
 });
 
 test('supervisor ignores child output and accepts exactly two publication boundaries', async t => {
@@ -1034,8 +1943,9 @@ test('supervisor ignores child output and accepts exactly two publication bounda
       assert.equal(message, 'EXECUTE');
       callback();
       queueMicrotask(() => {
-        this.emit('message', 'PUBLISHING');
-        this.emit('message', 'PUBLISHING');
+        this.emit('message', GATE_B_TESTNET_FAUCET_RECEIVE_EXECUTION_MODES.FRESH);
+        this.emit('message', 'PUBLISHING_0');
+        this.emit('message', 'PUBLISHING_1');
         this.emit('message', 'COMPLETE');
         this.emit('exit', 0, null);
         this.emit('close', 0, null);
@@ -1072,6 +1982,7 @@ test('supervisor rejects a false completion without both publication boundaries'
       assert.equal(message, 'EXECUTE');
       callback();
       queueMicrotask(() => {
+        this.emit('message', GATE_B_TESTNET_FAUCET_RECEIVE_EXECUTION_MODES.FRESH);
         this.emit('message', 'COMPLETE');
         this.emit('exit', 0, null);
         this.emit('close', 0, null);
@@ -1106,7 +2017,10 @@ test('supervisor converts a post-publication timeout to unknown and reaps the ch
     send(message, callback) {
       assert.equal(message, 'EXECUTE');
       callback();
-      queueMicrotask(() => this.emit('message', 'PUBLISHING'));
+      queueMicrotask(() => {
+        this.emit('message', GATE_B_TESTNET_FAUCET_RECEIVE_EXECUTION_MODES.FRESH);
+        this.emit('message', 'PUBLISHING_0');
+      });
       return true;
     }
     kill() {
@@ -1186,7 +2100,8 @@ test('supervisor maps malformed terminal data after PUBLISHING to unknown', asyn
     send(_message, callback) {
       callback();
       queueMicrotask(() => {
-        this.emit('message', 'PUBLISHING');
+        this.emit('message', GATE_B_TESTNET_FAUCET_RECEIVE_EXECUTION_MODES.FRESH);
+        this.emit('message', 'PUBLISHING_0');
         this.emit('message', 'MALFORMED');
       });
       return true;
@@ -1228,7 +2143,10 @@ test('supervisor quarantines a never-closing child after PUBLISHING and remains 
       kill(signal) { signals.push(signal); return true; }
       send(_message, callback) {
         callback();
-        queueMicrotask(() => this.emit('message', 'PUBLISHING'));
+        queueMicrotask(() => {
+          this.emit('message', GATE_B_TESTNET_FAUCET_RECEIVE_EXECUTION_MODES.FRESH);
+          this.emit('message', 'PUBLISHING_0');
+        });
         return true;
       }
       unref() { childUnref += 1; }
@@ -1250,6 +2168,166 @@ test('supervisor quarantines a never-closing child after PUBLISHING and remains 
     assert.equal(childUnref >= 1, true);
     assert.equal(channelClose >= 1, true);
     assert.equal(channelUnref >= 1, true);
+  });
+
+test('supervisor accepts only mode-matched indexed partial and read-only traces', async t => {
+  const fixture = await stateFixture(t);
+  async function run(messages) {
+    class Child extends EventEmitter {
+      constructor() {
+        super();
+        this.connected = true;
+        this.channel = { close() {}, unref() {} };
+        this.stdio = [null, null, null, null, new PassThrough()];
+      }
+      disconnect() { this.connected = false; }
+      kill() { return true; }
+      send(_message, callback) {
+        callback();
+        queueMicrotask(() => {
+          for (const message of messages) this.emit('message', message);
+          this.emit('exit', 0, null);
+          this.emit('close', 0, null);
+        });
+        return true;
+      }
+    }
+    const child = new Child();
+    child.stdio[4].on('finish', () => child.emit('message', 'READY'));
+    return superviseGateBTestnetFaucetReceive({
+      applicationSupportRoot: () => fixture.supportRoot,
+      childModule: join(fixture.supportRoot, 'synthetic-child.js'),
+      forkProcess: () => child,
+      platform: 'darwin',
+      readBootstrapFrame: async () => frameGateBTestnetFaucetReceiveBootstrap(bootstrap()),
+      timeoutMs: 1000,
+    });
+  }
+  assert.equal(await run([
+    GATE_B_TESTNET_FAUCET_RECEIVE_EXECUTION_MODES.PARTIAL_RECOVERY,
+    'PUBLISHING_1',
+    'PARTIAL_COMPLETE',
+  ]), 'partial-complete');
+  assert.equal(await run([
+    GATE_B_TESTNET_FAUCET_RECEIVE_EXECUTION_MODES.READ_ONLY_RECOVERY,
+    'RECOVERED',
+  ]), 'recovered');
+});
+
+test('supervisor treats any wrong-index or pre-mode publication boundary as unknown', async t => {
+  const fixture = await stateFixture(t);
+  async function run(messages) {
+    class Child extends EventEmitter {
+      constructor() {
+        super();
+        this.connected = true;
+        this.channel = { close() {}, unref() {} };
+        this.stdio = [null, null, null, null, new PassThrough()];
+      }
+      disconnect() { this.connected = false; }
+      kill(signal) {
+        queueMicrotask(() => this.emit('close', null, signal));
+        return true;
+      }
+      send(_message, callback) {
+        callback();
+        queueMicrotask(() => {
+          for (const message of messages) this.emit('message', message);
+        });
+        return true;
+      }
+      unref() {}
+    }
+    const child = new Child();
+    child.stdio[4].on('finish', () => child.emit('message', 'READY'));
+    return superviseGateBTestnetFaucetReceive({
+      applicationSupportRoot: () => fixture.supportRoot,
+      childModule: join(fixture.supportRoot, 'synthetic-child.js'),
+      forkProcess: () => child,
+      killMs: 20,
+      platform: 'darwin',
+      readBootstrapFrame: async () => frameGateBTestnetFaucetReceiveBootstrap(bootstrap()),
+      termMs: 5,
+      timeoutMs: 1000,
+    });
+  }
+  const riskyInvalidSequences = [
+    [GATE_B_TESTNET_FAUCET_RECEIVE_EXECUTION_MODES.FRESH, 'PUBLISHING_1'],
+    ['PUBLISHING_0'],
+    [
+      GATE_B_TESTNET_FAUCET_RECEIVE_EXECUTION_MODES.FRESH,
+      'PUBLISHING_0',
+      'PUBLISHING_0',
+    ],
+    [
+      GATE_B_TESTNET_FAUCET_RECEIVE_EXECUTION_MODES.READ_ONLY_RECOVERY,
+      'PUBLISHING_0',
+    ],
+    [
+      GATE_B_TESTNET_FAUCET_RECEIVE_EXECUTION_MODES.FRESH,
+      'PUBLISHING_0',
+      'PUBLISHING_1',
+      'COMPLETE',
+      'PUBLISHING_1',
+    ],
+    [
+      GATE_B_TESTNET_FAUCET_RECEIVE_EXECUTION_MODES.PARTIAL_RECOVERY,
+      'PUBLISHING_1',
+      'COMPLETE',
+    ],
+  ];
+  for (const messages of riskyInvalidSequences) {
+    assert.equal(await run(messages), 'outcome-unknown');
+  }
+  await assert.rejects(() => run([
+    GATE_B_TESTNET_FAUCET_RECEIVE_EXECUTION_MODES.READ_ONLY_RECOVERY,
+    'COMPLETE',
+  ]));
+});
+
+test('supervisor latches indexed publication risk that arrives during bounded reaping',
+  async t => {
+    const fixture = await stateFixture(t);
+    async function run(initialMessage) {
+      class Child extends EventEmitter {
+        constructor() {
+          super();
+          this.connected = true;
+          this.channel = { close() {}, unref() {} };
+          this.stdio = [null, null, null, null, new PassThrough()];
+        }
+        disconnect() { this.connected = false; }
+        kill(signal) {
+          queueMicrotask(() => {
+            this.emit('message', 'PUBLISHING_0');
+            this.emit('close', null, signal);
+          });
+          return true;
+        }
+        send(_message, callback) {
+          callback();
+          if (initialMessage !== undefined) {
+            queueMicrotask(() => this.emit('message', initialMessage));
+          }
+          return true;
+        }
+        unref() {}
+      }
+      const child = new Child();
+      child.stdio[4].on('finish', () => child.emit('message', 'READY'));
+      return superviseGateBTestnetFaucetReceive({
+        applicationSupportRoot: () => fixture.supportRoot,
+        childModule: join(fixture.supportRoot, 'synthetic-child.js'),
+        forkProcess: () => child,
+        killMs: 20,
+        platform: 'darwin',
+        readBootstrapFrame: async () => frameGateBTestnetFaucetReceiveBootstrap(bootstrap()),
+        termMs: 5,
+        timeoutMs: 1000,
+      });
+    }
+    assert.equal(await run('MALFORMED'), 'outcome-unknown');
+    assert.equal(await run(undefined), 'outcome-unknown');
   });
 
 test('receiver modules are import safe and perform no action', () => {

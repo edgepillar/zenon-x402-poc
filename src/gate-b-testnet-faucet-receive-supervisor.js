@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url';
 import { types as utilTypes } from 'node:util';
 
 import {
+  GATE_B_TESTNET_FAUCET_RECEIVE_EXECUTION_MODES,
   GATE_B_TESTNET_FAUCET_RECEIVE_LIMITS,
   parseGateBTestnetFaucetReceiveFrame,
 } from './gate-b-testnet-faucet-receive-schema.js';
@@ -308,9 +309,39 @@ async function terminateAndAwait(snapshot, alreadyClosed, termMs, killMs) {
 
 function terminalStatus(message) {
   if (message === 'COMPLETE') return 'complete';
+  if (message === 'PARTIAL_COMPLETE') return 'partial-complete';
   if (message === 'RECOVERED') return 'recovered';
   if (message === 'OUTCOME_UNKNOWN') return 'outcome-unknown';
   return undefined;
+}
+
+function expectedPublicationTrace(mode) {
+  if (mode === GATE_B_TESTNET_FAUCET_RECEIVE_EXECUTION_MODES.FRESH) return [0, 1];
+  if (mode === GATE_B_TESTNET_FAUCET_RECEIVE_EXECUTION_MODES.PARTIAL_RECOVERY) return [1];
+  if (mode === GATE_B_TESTNET_FAUCET_RECEIVE_EXECUTION_MODES.READ_ONLY_RECOVERY) return [];
+  return undefined;
+}
+
+function terminalMatchesTrace(mode, terminal, trace) {
+  const expected = expectedPublicationTrace(mode);
+  if (terminal === 'outcome-unknown') {
+    if (mode === undefined) return trace.length === 0;
+    if (!expected || trace.length > expected.length) return false;
+    for (let index = 0; index < trace.length; index += 1) {
+      if (trace[index] !== expected[index]) return false;
+    }
+    return true;
+  }
+  if (!expected || trace.length !== expected.length) return false;
+  for (let index = 0; index < trace.length; index += 1) {
+    if (trace[index] !== expected[index]) return false;
+  }
+  return (terminal === 'complete' &&
+      mode === GATE_B_TESTNET_FAUCET_RECEIVE_EXECUTION_MODES.FRESH) ||
+    (terminal === 'partial-complete' &&
+      mode === GATE_B_TESTNET_FAUCET_RECEIVE_EXECUTION_MODES.PARTIAL_RECOVERY) ||
+    (terminal === 'recovered' &&
+      mode === GATE_B_TESTNET_FAUCET_RECEIVE_EXECUTION_MODES.READ_ONLY_RECOVERY);
 }
 
 export async function superviseGateBTestnetFaucetReceive(injected) {
@@ -319,7 +350,8 @@ export async function superviseGateBTestnetFaucetReceive(injected) {
   let fallback;
   let dependencies;
   let childClosed = false;
-  let publicationCount = 0;
+  let publicationSeen = false;
+  const publicationTrace = [];
   const owned = [];
   const detach = () => {
     if (!snapshot) return;
@@ -356,6 +388,7 @@ export async function superviseGateBTestnetFaucetReceive(injected) {
       let ready = false;
       let frameWritten = false;
       let executeSent = false;
+      let executionMode;
       let terminal;
       let exitSeen = false;
       const timer = setTimeout(() => finish(false), dependencies.timeoutMs);
@@ -378,6 +411,9 @@ export async function superviseGateBTestnetFaucetReceive(injected) {
         }
       };
       const onMessage = message => {
+        const publicationBoundary = typeof message === 'string' &&
+          (message === 'PUBLISHING_0' || message === 'PUBLISHING_1');
+        if (publicationBoundary) publicationSeen = true;
         if (settled || typeof message !== 'string') return finish(false);
         if (!ready) {
           if (message !== 'READY') return finish(false);
@@ -386,18 +422,24 @@ export async function superviseGateBTestnetFaucetReceive(injected) {
           return;
         }
         if (!executeSent || terminal !== undefined) return finish(false);
-        if (message === 'PUBLISHING') {
-          publicationCount += 1;
-          if (publicationCount > GATE_B_TESTNET_FAUCET_RECEIVE_LIMITS.expectedTransfers) {
-            return finish(false);
-          }
+        if (message === GATE_B_TESTNET_FAUCET_RECEIVE_EXECUTION_MODES.FRESH ||
+            message === GATE_B_TESTNET_FAUCET_RECEIVE_EXECUTION_MODES.PARTIAL_RECOVERY ||
+            message === GATE_B_TESTNET_FAUCET_RECEIVE_EXECUTION_MODES.READ_ONLY_RECOVERY) {
+          if (executionMode !== undefined || publicationTrace.length !== 0) return finish(false);
+          executionMode = message;
+          return;
+        }
+        if (publicationBoundary) {
+          const expected = expectedPublicationTrace(executionMode);
+          const index = message === 'PUBLISHING_0' ? 0 : 1;
+          if (!expected || publicationTrace.length >= expected.length ||
+              index !== expected[publicationTrace.length]) return finish(false);
+          publicationTrace.push(index);
           return;
         }
         terminal = terminalStatus(message);
         if (terminal === undefined ||
-            (terminal === 'complete' &&
-              publicationCount !== GATE_B_TESTNET_FAUCET_RECEIVE_LIMITS.expectedTransfers) ||
-            (terminal === 'recovered' && publicationCount !== 0)) finish(false);
+            !terminalMatchesTrace(executionMode, terminal, publicationTrace)) finish(false);
       };
       const onError = () => finish(false);
       const onDisconnect = () => {
@@ -439,7 +481,8 @@ export async function superviseGateBTestnetFaucetReceive(injected) {
     });
     if (!childClosed || !terminalStatus(
       outcome === 'complete' ? 'COMPLETE' :
-        outcome === 'recovered' ? 'RECOVERED' : 'OUTCOME_UNKNOWN',
+        outcome === 'partial-complete' ? 'PARTIAL_COMPLETE' :
+          outcome === 'recovered' ? 'RECOVERED' : 'OUTCOME_UNKNOWN',
     )) fail();
     detach();
     return outcome;
@@ -455,7 +498,7 @@ export async function superviseGateBTestnetFaucetReceive(injected) {
       : true;
     detach();
     releaseFallback(fallback);
-    if (publicationCount > 0) return 'outcome-unknown';
+    if (publicationSeen) return 'outcome-unknown';
     if (!reaped) fail();
     fail();
   } finally {

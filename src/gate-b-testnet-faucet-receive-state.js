@@ -14,7 +14,9 @@ const WALLET_WORKSPACE_NAME = 'zenon-x402-gate-b-wallet';
 const STATE_WORKSPACE_NAME = 'zenon-x402-gate-b-faucet-receive';
 const MARKER_NAME = '.faucet-receive-once';
 const RECORD_NAME = 'faucet-receive-recovery.json';
+const SECOND_ATTEMPT_NAME = 'faucet-receive-second-attempt.json';
 const MAX_RECORD_BYTES = 64 * 1024;
+const MAX_SECOND_ATTEMPT_BYTES = 4096;
 const ACL_OUTPUT_MAX_BYTES = 8192;
 const ARRAY_IS_ARRAY = Array.isArray;
 const GET_OWN_PROPERTY_DESCRIPTOR = Object.getOwnPropertyDescriptor;
@@ -31,13 +33,15 @@ const BASE64 = /^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$
 const ADDRESS = /^z1[0-9a-z]{38}$/u;
 const TOKEN = /^zts1[0-9a-z]{22}$/u;
 const NONCE = /^[0-9a-f]{16}$/u;
+const POSITIVE_DECIMAL = /^[1-9][0-9]*$/u;
 const EXPECTED_CHAIN_ID = Number(GATE_B_CURRENT_TESTNET_CHAIN_PROFILE.chainIdentifier);
 const RECOVERABLE_STATES = new Set([
   'PREPARED', 'PUBLISHING', 'UNKNOWN', 'INCLUDED',
 ]);
 const ALLOWED_TRANSITIONS = new Set([
   'ARMED:PREPARED', 'PREPARED:PUBLISHING', 'PREPARED:UNKNOWN',
-  'PUBLISHING:INCLUDED', 'PUBLISHING:UNKNOWN', 'INCLUDED:PREPARED',
+  'PREPARED:INCLUDED', 'PUBLISHING:INCLUDED', 'PUBLISHING:UNKNOWN',
+  'UNKNOWN:INCLUDED', 'INCLUDED:PREPARED',
   'INCLUDED:COMPLETE', 'PREPARED:RECOVERED', 'PUBLISHING:RECOVERED',
   'UNKNOWN:RECOVERED', 'INCLUDED:RECOVERED',
 ]);
@@ -47,6 +51,15 @@ const SIGNED_FIELDS = Object.freeze([
   'fromBlockHash', 'fusedPlasma', 'hash', 'height', 'momentumAcknowledged',
   'nonce', 'previousHash', 'publicKey', 'signature', 'toAddress',
   'tokenStandard', 'version',
+]);
+const SECOND_SOURCE_FIELDS = Object.freeze([
+  'address', 'amount', 'asset', 'blockType', 'hash',
+]);
+const FIRST_RECEIVE_FIELDS = Object.freeze([
+  'hash', 'height', 'momentumAcknowledgedHeight', 'sourceHash',
+]);
+const SECOND_ATTEMPT_FIELDS = Object.freeze([
+  'firstReceive', 'schemaVersion', 'secondSource',
 ]);
 
 export const GATE_B_TESTNET_FAUCET_RECEIVE_STATES = Object.freeze({
@@ -144,7 +157,38 @@ function validateRecord(value) {
   return value;
 }
 
+function validateSecondSource(value, expectedAddress) {
+  exactObject(value, SECOND_SOURCE_FIELDS);
+  if (!ADDRESS.test(value.address) || value.address !== expectedAddress ||
+      typeof value.amount !== 'string' || !POSITIVE_DECIMAL.test(value.amount) ||
+      !TOKEN.test(value.asset) || (value.blockType !== 2 && value.blockType !== 4) ||
+      !HASH.test(value.hash)) fail();
+  return value;
+}
+
+function validateSecondAttempt(value, record) {
+  exactObject(value, SECOND_ATTEMPT_FIELDS);
+  if (value.schemaVersion !== 1 || !record || record.blocks.length < 1) fail();
+  const firstBlock = record.blocks[0];
+  const firstSigned = firstBlock.signedAccountBlock;
+  exactObject(value.firstReceive, FIRST_RECEIVE_FIELDS);
+  if (value.firstReceive.hash !== firstSigned.hash ||
+      value.firstReceive.height !== firstSigned.height ||
+      value.firstReceive.momentumAcknowledgedHeight !==
+        firstSigned.momentumAcknowledged.height ||
+      value.firstReceive.sourceHash !== firstBlock.sourceHash) fail();
+  validateSecondSource(value.secondSource, firstSigned.address);
+  if (firstBlock.sourceHash === value.secondSource.hash) fail();
+  if (record.blocks.length === 2 &&
+      value.secondSource.hash !== record.blocks[1].sourceHash) fail();
+  return value;
+}
+
 function cloneRecord(value) {
+  return JSON_PARSE(JSON_STRINGIFY(value));
+}
+
+function cloneSecondAttempt(value) {
   return JSON_PARSE(JSON_STRINGIFY(value));
 }
 
@@ -162,6 +206,7 @@ function validAclTarget(target) {
   if (typeof target !== 'string' || !isAbsolute(target) || resolve(target) !== target) return false;
   const leaf = basename(target);
   return leaf === STATE_WORKSPACE_NAME || leaf === MARKER_NAME || leaf === RECORD_NAME ||
+    leaf === SECOND_ATTEMPT_NAME ||
     (leaf.startsWith(`.${RECORD_NAME}.`) && leaf.endsWith('.tmp'));
 }
 
@@ -367,12 +412,12 @@ async function existsSafeFile(state, path, maximumBytes) {
   }
 }
 
-async function createNewFile(state, path, bytes) {
+async function createNewFile(state, path, bytes, maximumBytes = MAX_RECORD_BYTES) {
   const dependencies = state.dependencies;
   let rawHandle;
   let handle;
   try {
-    if (!Buffer.isBuffer(bytes) || bytes.length > MAX_RECORD_BYTES) fail();
+    if (!Buffer.isBuffer(bytes) || bytes.length > maximumBytes) fail();
     await assertRootStable(state);
     const { O_CLOEXEC = 0, O_CREAT, O_EXCL, O_NOFOLLOW, O_RDWR } = dependencies.constants;
     if (![O_CLOEXEC, O_CREAT, O_EXCL, O_NOFOLLOW, O_RDWR].every(Number.isInteger) ||
@@ -385,8 +430,8 @@ async function createNewFile(state, path, bytes) {
     handle = REFLECT_APPLY(dependencies.decorateFileHandle, undefined, [rawHandle, basename(path)]);
     if (!validFileHandle(handle, true)) fail();
     const initial = await handle.stat({ bigint: true });
-    const record = { handle, identity: initial, maximumBytes: MAX_RECORD_BYTES, path };
-    if (!fileValid(initial, state.uid, MAX_RECORD_BYTES, 0)) fail();
+    const record = { handle, identity: initial, maximumBytes, path };
+    if (!fileValid(initial, state.uid, maximumBytes, 0)) fail();
     await assertFileStable(state, record, 0);
     let offset = 0;
     while (offset < bytes.length) {
@@ -488,6 +533,22 @@ async function readRecord(state, recordPath) {
   }
 }
 
+async function readSecondAttempt(state, attemptPath, record) {
+  const bytes = await readExactFile(state, attemptPath, MAX_SECOND_ATTEMPT_BYTES);
+  try {
+    if (bytes.length < 2 || bytes[bytes.length - 1] !== 0x0a) fail();
+    const text = bytes.subarray(0, bytes.length - 1).toString('utf8');
+    const value = JSON_PARSE(text);
+    validateSecondAttempt(value, record);
+    if (`${canonicalJson(value)}\n` !== bytes.toString('utf8')) fail();
+    return cloneSecondAttempt(value);
+  } catch {
+    fail();
+  } finally {
+    bytes.fill(0);
+  }
+}
+
 function immutableBlocks(previous, next) {
   if (next.blocks.length !== previous.blocks.length) return false;
   for (let index = 0; index < previous.blocks.length; index += 1) {
@@ -509,6 +570,16 @@ function validTransition(previous, next) {
   if (next.state === 'RECOVERED') {
     return RECOVERABLE_STATES.has(previous.state) && previous.blocks.length === 2 &&
       terminalRecord(next) && immutableBlocks(previous, next);
+  }
+  if (previous.state === GATE_B_TESTNET_FAUCET_RECEIVE_STATES.INCLUDED &&
+      next.state === GATE_B_TESTNET_FAUCET_RECEIVE_STATES.PREPARED) {
+    return previous.activeIndex === 0 && previous.blocks.length === 1 &&
+      previous.blocks[0].index === 0 &&
+      previous.blocks[0].state === GATE_B_TESTNET_FAUCET_RECEIVE_STATES.INCLUDED &&
+      next.activeIndex === 1 && next.blocks.length === 2 &&
+      next.blocks[1].index === 1 &&
+      next.blocks[1].state === GATE_B_TESTNET_FAUCET_RECEIVE_STATES.PREPARED &&
+      canonicalJson(previous.blocks[0]) === canonicalJson(next.blocks[0]);
   }
   if (next.blocks.length < previous.blocks.length || next.blocks.length > previous.blocks.length + 1) {
     return false;
@@ -571,6 +642,7 @@ export async function openGateBTestnetFaucetReceiveState(walletWorkspaceRoot, in
     await assertRootStable(state);
     const markerPath = join(root, MARKER_NAME);
     const recordPath = join(root, RECORD_NAME);
+    const secondAttemptPath = join(root, SECOND_ATTEMPT_NAME);
     let closed = false;
     const assertOpen = () => { if (closed) fail(); };
     return Object.freeze({
@@ -581,6 +653,45 @@ export async function openGateBTestnetFaucetReceiveState(walletWorkspaceRoot, in
         if (!marker && !record) return null;
         if (!marker || !record) fail();
         return readRecord(state, recordPath);
+      },
+      async loadSecondReceiveAttempt() {
+        assertOpen();
+        if (!await existsSafeFile(
+          state,
+          secondAttemptPath,
+          MAX_SECOND_ATTEMPT_BYTES,
+        )) return null;
+        const record = await readRecord(state, recordPath);
+        return readSecondAttempt(state, secondAttemptPath, record);
+      },
+      async commitSecondReceiveAttempt(attempt) {
+        assertOpen();
+        const recordBefore = await readRecord(state, recordPath);
+        if (recordBefore.state !== GATE_B_TESTNET_FAUCET_RECEIVE_STATES.INCLUDED ||
+            recordBefore.activeIndex !== 0 || recordBefore.blocks.length !== 1 ||
+            recordBefore.blocks[0].state !== GATE_B_TESTNET_FAUCET_RECEIVE_STATES.INCLUDED) fail();
+        validateSecondAttempt(attempt, recordBefore);
+        const bytes = Buffer.from(`${canonicalJson(attempt)}\n`, 'utf8');
+        if (bytes.length < 2 || bytes.length > MAX_SECOND_ATTEMPT_BYTES) fail();
+        let created;
+        try {
+          created = await createNewFile(
+            state,
+            secondAttemptPath,
+            bytes,
+            MAX_SECOND_ATTEMPT_BYTES,
+          );
+          await syncDirectory(state);
+          await assertFileStable(state, created, bytes.length);
+        } finally {
+          bytes.fill(0);
+          try { await created?.handle.close(); } catch { fail(); }
+        }
+        const recordAfter = await readRecord(state, recordPath);
+        validateSecondAttempt(attempt, recordAfter);
+        const persisted = await readSecondAttempt(state, secondAttemptPath, recordAfter);
+        if (canonicalJson(persisted) !== canonicalJson(attempt)) fail();
+        return persisted;
       },
       async arm() {
         assertOpen();
