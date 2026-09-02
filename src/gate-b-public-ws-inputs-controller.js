@@ -2,7 +2,10 @@ import { isAbsolute, join, resolve } from 'node:path';
 import { types as utilTypes } from 'node:util';
 
 import { preflightPublicWsOnceRun } from './live-evidence-runner.js';
-import { launchGateBPublicWsInputs } from './gate-b-public-ws-inputs-launcher.js';
+import {
+  launchGateBPublicWsInputs,
+  launchGateBPublicWsInputsInInheritedProcessGroup,
+} from './gate-b-public-ws-inputs-launcher.js';
 import {
   GATE_B_PUBLIC_WS_INPUT_ACKNOWLEDGEMENTS,
   GATE_B_PUBLIC_WS_INPUT_LEAVES,
@@ -11,6 +14,7 @@ import {
 import {
   assertGateBQuickTunnelReady,
   launchGateBQuickTunnel,
+  launchGateBQuickTunnelInInheritedProcessGroup,
   stopGateBQuickTunnel,
   waitGateBQuickTunnelClosed,
 } from './gate-b-quick-tunnel-launcher.js';
@@ -148,11 +152,11 @@ function exactReview(value) {
   });
 }
 
-function exactDependencies(value) {
+function exactDependencies(value, defaultQuickTunnelLauncher, defaultPublicWsLauncher) {
   const output = {
     assertQuickTunnelReady: assertGateBQuickTunnelReady,
-    launchPublicWsInputs: launchGateBPublicWsInputs,
-    launchQuickTunnel: launchGateBQuickTunnel,
+    launchPublicWsInputs: defaultPublicWsLauncher,
+    launchQuickTunnel: defaultQuickTunnelLauncher,
     preflightPublicWsOnce: preflightPublicWsOnceRun,
     stopQuickTunnel: stopGateBQuickTunnel,
     waitQuickTunnelClosed: waitGateBQuickTunnelClosed,
@@ -312,9 +316,18 @@ function closeRecord(record, forceQuarantine) {
   return record.stopPromise;
 }
 
-export async function prepareGateBPublicWsInputsForReview(options, injected) {
+async function prepareGateBPublicWsInputsForReviewInternal(
+  options,
+  injected,
+  defaultQuickTunnelLauncher,
+  defaultPublicWsLauncher,
+) {
   const snapshot = exactInitialOptions(options);
-  const dependencies = exactDependencies(injected);
+  const dependencies = exactDependencies(
+    injected,
+    defaultQuickTunnelLauncher,
+    defaultPublicWsLauncher,
+  );
   const record = {
     cancelled: false,
     activeStagePromise: undefined,
@@ -396,6 +409,24 @@ export async function prepareGateBPublicWsInputsForReview(options, injected) {
     await closeRecord(record, true);
     return capability;
   }
+}
+
+export function prepareGateBPublicWsInputsForReview(options, injected) {
+  return prepareGateBPublicWsInputsForReviewInternal(
+    options,
+    injected,
+    launchGateBQuickTunnel,
+    launchGateBPublicWsInputs,
+  );
+}
+
+export function prepareGateBPublicWsInputsForReviewInInheritedProcessGroup(options, injected) {
+  return prepareGateBPublicWsInputsForReviewInternal(
+    options,
+    injected,
+    launchGateBQuickTunnelInInheritedProcessGroup,
+    launchGateBPublicWsInputsInInheritedProcessGroup,
+  );
 }
 
 export async function authorizeAndPreflightGateBPublicWsInputs(capability, review) {

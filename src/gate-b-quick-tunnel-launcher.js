@@ -309,12 +309,12 @@ function beginGroupReap(record) {
   return record.reapPromise;
 }
 
-async function reapUnvalidatedChild(snapshot, dependencies) {
+async function reapUnvalidatedChild(snapshot, dependencies, authoritativeGroup) {
   if (!snapshot) return false;
   let onClose;
   try {
     const groupId = snapshot.pid;
-    if (groupId !== undefined) {
+    if (authoritativeGroup && groupId !== undefined) {
       const reapRecord = {
         dependencies,
         groupId,
@@ -388,6 +388,49 @@ async function reapUnvalidatedChild(snapshot, dependencies) {
   }
 }
 
+function beginInheritedChildCleanup(record) {
+  if (record.reapPromise) return record.reapPromise;
+  record.reapPromise = new Promise(resolve => {
+    let finished = false;
+    let closed = record.closeObserved;
+    let forceTimer;
+    let abandonTimer;
+    const snapshot = record.childSnapshot;
+    const onClose = () => {
+      closed = true;
+      finish(true);
+    };
+    const finish = observed => {
+      if (finished) return;
+      finished = true;
+      clearTimer(forceTimer);
+      clearTimer(abandonTimer);
+      try {
+        Reflect.apply(snapshot.removeListener, snapshot.child, ['close', onClose]);
+      } catch {}
+      releaseOwnedChild(record);
+      resolve(observed === true && closed === true);
+    };
+    const directKill = signal => {
+      try { Reflect.apply(snapshot.kill, snapshot.child, [signal]); } catch {}
+    };
+    if (closed) {
+      finish(true);
+      return;
+    }
+    try { Reflect.apply(snapshot.once, snapshot.child, ['close', onClose]); } catch {
+      finish(false);
+      return;
+    }
+    directKill('SIGTERM');
+    forceTimer = setTimeout(() => {
+      if (!closed) directKill('SIGKILL');
+    }, record.dependencies.reapForceMs);
+    abandonTimer = setTimeout(() => finish(false), record.dependencies.reapAbandonMs);
+  });
+  return record.reapPromise;
+}
+
 function failRecord(record) {
   if (record.state === 'FAILING' || record.state === 'CLOSED_FAILED' ||
       record.state === 'QUARANTINED' || record.state === 'STOPPED') return;
@@ -396,6 +439,18 @@ function failRecord(record) {
   clearTimer(record.shutdownTimer);
   clearTimer(record.hardLifetimeTimer);
   rejectPendingCheck(record);
+  if (!record.authoritativeGroup) {
+    void beginInheritedChildCleanup(record).then(closed => {
+      if (record.state === 'STOPPED') return;
+      record.state = closed ? 'CLOSED_FAILED' : 'QUARANTINED';
+      if (!record.launchSettled) {
+        record.launchSettled = true;
+        record.rejectLaunch(error());
+      }
+      settleClosureFailure(record);
+    });
+    return;
+  }
   releaseOwnedChild(record);
   if (!record.launchSettled) {
     record.launchSettled = true;
@@ -454,6 +509,15 @@ function maybeSettleClosed(record) {
       record.closeCode === 0 && record.closeSignal === null) {
     clearTimer(record.shutdownTimer);
     clearTimer(record.hardLifetimeTimer);
+    if (!record.authoritativeGroup) {
+      record.state = 'STOPPED';
+      releaseOwnedChild(record);
+      if (!record.closureSettled) {
+        record.closureSettled = true;
+        record.resolveClosure(true);
+      }
+      return;
+    }
     record.state = 'REAPING';
     releaseOwnedChild(record);
     void beginGroupReap(record).then(() => {
@@ -562,7 +626,7 @@ function attachLifecycle(record) {
   }
 }
 
-export async function launchGateBQuickTunnel(bootstrap, injected) {
+async function launchGateBQuickTunnelInternal(bootstrap, injected, authoritativeGroup) {
   let frame;
   let record;
   let dependencies;
@@ -577,7 +641,7 @@ export async function launchGateBQuickTunnel(bootstrap, injected) {
       [],
       {
         cwd: workspaceRoot,
-        detached: true,
+        detached: authoritativeGroup,
         env: {},
         execArgv: [],
         execPath: dependencies.executable,
@@ -611,6 +675,7 @@ export async function launchGateBQuickTunnel(bootstrap, injected) {
       child,
       childSnapshot,
       connected: childSnapshot.connected,
+      authoritativeGroup,
       groupId,
       dependencies,
       lease,
@@ -677,12 +742,20 @@ export async function launchGateBQuickTunnel(bootstrap, injected) {
       failRecord(record);
       try { await record.reapPromise; } catch {}
     } else if (retainedSnapshot && dependencies) {
-      await reapUnvalidatedChild(retainedSnapshot, dependencies);
+      await reapUnvalidatedChild(retainedSnapshot, dependencies, authoritativeGroup);
     }
     fail();
   } finally {
     if (Buffer.isBuffer(frame)) frame.fill(0);
   }
+}
+
+export function launchGateBQuickTunnel(bootstrap, injected) {
+  return launchGateBQuickTunnelInternal(bootstrap, injected, true);
+}
+
+export function launchGateBQuickTunnelInInheritedProcessGroup(bootstrap, injected) {
+  return launchGateBQuickTunnelInternal(bootstrap, injected, false);
 }
 
 export function assertGateBQuickTunnelReady(lease) {
