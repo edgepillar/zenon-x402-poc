@@ -2682,12 +2682,218 @@ function withinBound(promise, timeoutMs, label = 'bounded') {
   });
 }
 
+function observePrivatePipeSettlement(stream, timeoutMs = 3000) {
+  const errorCodes = [];
+  let cleanupArmed = false;
+  let closed = false;
+  let resolveCleanup;
+  const cleanupClosed = new Promise(resolve => { resolveCleanup = resolve; });
+  const onCleanupError = () => {};
+  const onCleanupClose = () => {
+    closed = true;
+    stream.removeListener('error', onCleanupError);
+    resolveCleanup(true);
+  };
+  const armCleanup = () => {
+    if (cleanupArmed || closed) return;
+    cleanupArmed = true;
+    stream.on('error', onCleanupError);
+    stream.once('close', onCleanupClose);
+  };
+  const settled = new Promise((resolve, reject) => {
+    const timer = setTimeout(() => {
+      stream.removeListener('error', onError);
+      stream.removeListener('close', onClose);
+      armCleanup();
+      reject(new Error('private pipe settlement timeout'));
+    }, timeoutMs);
+    const onError = error => errorCodes.push(error?.code);
+    const onClose = () => {
+      clearTimeout(timer);
+      closed = true;
+      stream.removeListener('error', onError);
+      stream.removeListener('close', onClose);
+      resolveCleanup(true);
+      resolve(Object.freeze([...errorCodes]));
+    };
+    stream.on('error', onError);
+    stream.once('close', onClose);
+  });
+  stream.resume();
+  return Object.freeze({
+    cleanup() {
+      if (closed) return cleanupClosed;
+      armCleanup();
+      try { stream.destroy(); } catch {}
+      return cleanupClosed;
+    },
+    settled,
+  });
+}
+
+function assertExpectedPrivatePipeSettlement(errorCodes) {
+  assert.equal(errorCodes.length === 0 ||
+    (errorCodes.length === 1 &&
+      (errorCodes[0] === 'ECONNRESET' || errorCodes[0] === 'EPIPE')), true);
+}
+
+function observeDetachedFixture(child, {
+  hasIpc = true,
+  privatePipes = [],
+  requireClose = true,
+  timeoutMs = 8000,
+} = {}) {
+  assert.equal(Number.isSafeInteger(child.pid) && child.pid > 1, true);
+  const groupId = child.pid;
+  const pipeStates = privatePipes.map(() => 'pending');
+  const pipeObservers = privatePipes.map(stream =>
+    observePrivatePipeSettlement(stream, timeoutMs));
+  const pipeSettlements = pipeObservers.map((observer, index) => observer.settled.then(
+    value => {
+      pipeStates[index] = 'closed';
+      return { ok: true, value };
+    },
+    () => {
+      pipeStates[index] = 'timeout';
+      return { ok: false };
+    },
+  ));
+  const childErrors = [];
+  let disconnected = hasIpc !== true || child.connected !== true;
+  let resolveDisconnected;
+  const ipcDisconnected = new Promise(resolve => {
+    resolveDisconnected = resolve;
+    if (disconnected) resolve(true);
+  });
+  const onDisconnect = () => {
+    disconnected = true;
+    resolveDisconnected(true);
+  };
+  if (!disconnected) child.once('disconnect', onDisconnect);
+  let closeObserved = false;
+  const exited = new Promise(resolve => {
+    child.once('exit', (code, signal) => resolve(Object.freeze({ code, signal })));
+  });
+  let closeOutcome;
+  let resolveClosed;
+  const closed = new Promise(resolve => { resolveClosed = resolve; });
+  const onError = error => childErrors.push(error?.code);
+  const onClose = (code, signal) => {
+    closeObserved = true;
+    closeOutcome = Object.freeze({ code, signal });
+    child.removeListener('error', onError);
+    if (!disconnected && child.connected !== true) {
+      child.removeListener('disconnect', onDisconnect);
+      onDisconnect();
+    }
+    resolveClosed(closeOutcome);
+  };
+  child.on('error', onError);
+  child.once('close', onClose);
+  const retireCloseObservers = () => {
+    child.removeListener('close', onClose);
+    child.removeListener('error', onError);
+    child.removeListener('disconnect', onDisconnect);
+  };
+  let joined;
+  const closePrivatePipes = () => {
+    for (const stream of privatePipes) {
+      if (stream.destroyed === true) continue;
+      try { stream.destroy(); } catch {}
+    }
+  };
+  const join = async ({ requireNaturalPipeSettlement = true } = {}) => {
+    if (joined) return joined;
+    joined = (async () => {
+      let timer;
+      const bounded = new Promise((resolve, reject) => {
+        timer = setTimeout(() => reject(new Error(
+          `detached fixture settlement timeout ` +
+          `close=${closeObserved} ipc=${disconnected} pipes=${pipeStates.join(',')}`,
+        )), timeoutMs);
+        Promise.all([
+          requireClose ? closed : exited,
+          ipcDisconnected,
+          ...pipeSettlements,
+        ]).then(resolve, reject);
+      });
+      const [outcome, , ...pipes] = await bounded.finally(() => clearTimeout(timer));
+      assert.deepEqual(childErrors, []);
+      assert.equal(disconnected, true);
+      assert.equal(child.connected, false);
+      if (requireNaturalPipeSettlement) {
+        assert.equal(pipes.every(record => record.ok), true);
+        for (const record of pipes) assertExpectedPrivatePipeSettlement(record.value);
+      }
+      assert.equal(await waitForGroupAbsent(groupId, timeoutMs), true);
+      if (!requireClose) {
+        retireCloseObservers();
+        if (closeObserved) assert.deepEqual(closeOutcome, outcome);
+      }
+      return Object.freeze({ outcome, pipeSettlements: Object.freeze(pipes) });
+    })();
+    return joined;
+  };
+  return Object.freeze({
+    closePrivatePipes,
+    async cleanup() {
+      if (!await waitForGroupAbsent(groupId, 100)) {
+        try { process.kill(-groupId, 'SIGKILL'); } catch (error) {
+          if (error?.code !== 'ESRCH') throw error;
+        }
+      }
+      assert.equal(await waitForGroupAbsent(groupId, 1000), true);
+      closePrivatePipes();
+      await Promise.all(pipeObservers.map(observer => observer.cleanup()));
+      try {
+        const [outcome] = await withinBound(Promise.all([
+          requireClose ? closed : exited,
+          ipcDisconnected,
+        ]), timeoutMs, 'detached fixture cleanup join');
+        assert.deepEqual(childErrors, []);
+        assert.equal(disconnected, true);
+        assert.equal(child.connected, false);
+        if (!requireClose && closeObserved) assert.deepEqual(closeOutcome, outcome);
+        return Object.freeze({ outcome });
+      } finally {
+        retireCloseObservers();
+      }
+    },
+    exited: () => withinBound(exited, timeoutMs, 'detached fixture exit'),
+    settled: join,
+  });
+}
+
+function writePrivateTargetFrame(stream, magic, target) {
+  const frame = Buffer.alloc(8);
+  frame.writeUInt32BE(magic, 0);
+  frame.writeUInt32BE(target, 4);
+  return new Promise((resolve, reject) => {
+    let settled = false;
+    const finish = (ok, error) => {
+      if (settled) return;
+      settled = true;
+      stream.removeListener('error', onError);
+      frame.fill(0);
+      ok ? resolve(true) : reject(error);
+    };
+    const onError = error => finish(false, error);
+    stream.once('error', onError);
+    try { stream.end(frame, () => finish(true)); }
+    catch (error) { finish(false, error); }
+  });
+}
+
 test('real inert watchdog self-cleans silently when outer liveness ends before START',
   { timeout: 10_000 }, async () => {
     const watchdog = fileURLToPath(new URL('../src/gate-b-operator-watchdog.js', import.meta.url));
     const child = spawn(process.execPath, [watchdog], {
       cwd: dirname(watchdog), detached: true, env: {}, shell: false,
       stdio: ['ignore', 'pipe', 'pipe', 'pipe', 'pipe', 'pipe', 'ipc'],
+    });
+    const fixture = observeDetachedFixture(child, {
+      privatePipes: child.stdio.slice(3, 6),
+      timeoutMs: 5000,
     });
     const stdout = [];
     const stderr = [];
@@ -2700,23 +2906,14 @@ test('real inert watchdog self-cleans silently when outer liveness ends before S
       child.stdio[3].destroy();
       child.stdio[4].destroy();
       child.stdio[5].destroy();
-      const outcome = await new Promise((resolve, reject) => {
-        const timer = setTimeout(() => reject(new Error('bounded timeout')), 3000);
-        child.once('exit', (code, signal) => {
-          clearTimeout(timer);
-          resolve({ code, signal });
-        });
-      });
+      const { outcome } = await fixture.settled();
       assert.deepEqual(outcome, { code: 1, signal: null });
       assert.equal(Buffer.concat(stdout).length, 0);
       assert.equal(Buffer.concat(stderr).length, 0);
       assert.deepEqual(messages, []);
       assert.equal(await waitForGroupAbsent(child.pid), true);
     } finally {
-      if (!await waitForGroupAbsent(child.pid, 100)) {
-        try { process.kill(-child.pid, 'SIGKILL'); } catch {}
-        await waitForGroupAbsent(child.pid, 1000);
-      }
+      await fixture.cleanup();
       for (const chunks of [stdout, stderr]) for (const chunk of chunks) chunk.fill(0);
     }
   });
@@ -2737,8 +2934,11 @@ test('outer liveness loss retains the same listener in reaper and guard until ta
       cwd: dirname(hostile), detached: true, env: {}, shell: false,
       stdio: ['ignore', 'ignore', 'ignore', 'ipc'],
     });
+    const targetFixture = observeDetachedFixture(target);
     let reaper;
     let guard;
+    let reaperFixture;
+    let guardFixture;
     let parentGuard;
     const waitReady = child => new Promise((resolve, reject) => {
       const timer = setTimeout(() => reject(new Error('bounded timeout')), 3000);
@@ -2769,9 +2969,15 @@ test('outer liveness loss retains the same listener in reaper and guard until ta
         cwd: dirname(guardModule), detached: true, env: {}, shell: false,
         stdio: ['ignore', 'ignore', 'ignore', 'pipe', 'pipe', 'pipe', 'ipc'],
       });
+      guardFixture = observeDetachedFixture(guard, {
+        privatePipes: guard.stdio.slice(3, 6),
+      });
       reaper = spawn(process.execPath, [reaperModule], {
         cwd: dirname(reaperModule), detached: true, env: {}, shell: false,
         stdio: ['ignore', 'ignore', 'ignore', 'pipe', 'pipe', guard.stdio[5], 'ipc'],
+      });
+      reaperFixture = observeDetachedFixture(reaper, {
+        privatePipes: reaper.stdio.slice(3, 5),
       });
       guard.stdio[5].destroy();
       const guardReady = waitReady(guard);
@@ -2793,8 +2999,18 @@ test('outer liveness loss retains the same listener in reaper and guard until ta
       await assert.rejects(createGateBOperatorOriginGuard());
       reaper.stdio[4].destroy();
       guard.stdio[4].destroy();
-      try { reaper.disconnect(); } catch {}
-      try { guard.disconnect(); } catch {}
+      await Promise.all([
+        targetFixture.exited(),
+        reaperFixture.exited(),
+        guardFixture.exited(),
+      ]);
+      reaperFixture.closePrivatePipes();
+      guardFixture.closePrivatePipes();
+      await Promise.all([
+        targetFixture.settled(),
+        reaperFixture.settled(),
+        guardFixture.settled(),
+      ]);
       assert.equal(await waitForGroupAbsent(target.pid, 6000), true);
       assert.equal(await waitForGroupAbsent(reaper.pid, 6000), true);
       assert.equal(await waitForGroupAbsent(guard.pid, 6000), true);
@@ -2802,13 +3018,11 @@ test('outer liveness loss retains the same listener in reaper and guard until ta
       assert.equal(await closeGateBOperatorOriginGuard(rebound), true);
     } finally {
       if (parentGuard) await closeGateBOperatorOriginGuard(parentGuard);
-      for (const child of [reaper, guard, target]) {
-        if (!child || !Number.isSafeInteger(child.pid)) continue;
-        if (!await waitForGroupAbsent(child.pid, 100)) {
-          try { process.kill(-child.pid, 'SIGKILL'); } catch {}
-          await waitForGroupAbsent(child.pid, 1000);
-        }
-      }
+      await Promise.all([
+        reaperFixture?.cleanup(),
+        guardFixture?.cleanup(),
+        targetFixture.cleanup(),
+      ].filter(Boolean));
     }
   });
 
@@ -2828,9 +3042,12 @@ test('guard alone retains the listener through TERM-resistant cleanup after oute
       cwd: dirname(hostile), detached: true, env: {}, shell: false,
       stdio: ['ignore', 'ignore', 'ignore', 'ipc'],
     });
+    const targetFixture = observeDetachedFixture(target);
     const targetMessages = [];
     let reaper;
     let guard;
+    let reaperFixture;
+    let guardFixture;
     let parentGuard;
     const waitReady = child => new Promise((resolve, reject) => {
       const timer = setTimeout(() => reject(new Error('bounded timeout')), 3000);
@@ -2867,41 +3084,23 @@ test('guard alone retains the listener through TERM-resistant cleanup after oute
         };
         target.on('message', observe);
       });
-      const targetClosed = new Promise((resolve, reject) => {
-        const timer = setTimeout(() => reject(new Error('bounded timeout')), 6000);
-        target.once('close', (code, signal) => {
-          clearTimeout(timer);
-          resolve({ code, signal });
-        });
-      });
       parentGuard = await createGateBOperatorOriginGuard();
       guard = spawn(process.execPath, [guardModule], {
         cwd: dirname(guardModule), detached: true, env: {}, shell: false,
         stdio: ['ignore', 'ignore', 'ignore', 'pipe', 'pipe', 'pipe', 'ipc'],
       });
-      for (const stream of guard.stdio.slice(3, 6)) stream.resume();
-      const guardPipeCloses = guard.stdio.slice(3, 6).map(stream =>
-        new Promise(resolve => stream.once('close', () => resolve(true))));
+      guardFixture = observeDetachedFixture(guard, {
+        privatePipes: guard.stdio.slice(3, 6),
+      });
       reaper = spawn(process.execPath, [reaperModule], {
         cwd: dirname(reaperModule), detached: true, env: {}, shell: false,
         stdio: ['ignore', 'ignore', 'ignore', 'pipe', 'pipe', guard.stdio[5], 'ipc'],
       });
+      reaperFixture = observeDetachedFixture(reaper, {
+        privatePipes: reaper.stdio.slice(3, 5),
+      });
       const guardReady = waitReady(guard);
       const reaperReady = waitReady(reaper);
-      const guardExited = new Promise((resolve, reject) => {
-        const timer = setTimeout(() => reject(new Error('bounded timeout')), 7000);
-        guard.once('exit', (code, signal) => {
-          clearTimeout(timer);
-          resolve({ code, signal });
-        });
-      });
-      const reaperClosed = new Promise((resolve, reject) => {
-        const timer = setTimeout(() => reject(new Error('bounded timeout')), 3000);
-        reaper.once('close', (code, signal) => {
-          clearTimeout(timer);
-          resolve({ code, signal });
-        });
-      });
       const reaperFrame = Buffer.alloc(8);
       reaperFrame.writeUInt32BE(0x47425250, 0);
       reaperFrame.writeUInt32BE(target.pid, 4);
@@ -2919,23 +3118,32 @@ test('guard alone retains the listener through TERM-resistant cleanup after oute
       await assert.rejects(createGateBOperatorOriginGuard());
 
       process.kill(-reaper.pid, 'SIGKILL');
-      assert.deepEqual(await reaperClosed, { code: null, signal: 'SIGKILL' });
+      const reaperExit = await reaperFixture.exited();
+      reaperFixture.closePrivatePipes();
+      const reaperRecord = await reaperFixture.settled();
+      assert.deepEqual(reaperRecord.outcome, reaperExit);
+      assert.deepEqual(reaperRecord.outcome, { code: null, signal: 'SIGKILL' });
       assert.equal(await waitForGroupAbsent(reaper.pid), true);
       guard.stdio[5].destroy();
       await assert.rejects(createGateBOperatorOriginGuard());
       await requestFixedOriginDenial();
 
       guard.stdio[4].destroy();
-      guard.disconnect();
       await targetTerm;
       await assert.rejects(createGateBOperatorOriginGuard());
-      assert.deepEqual(await targetClosed, { code: null, signal: 'SIGKILL' });
-      assert.deepEqual(await guardExited, { code: 0, signal: null });
-      for (const stream of guard.stdio.slice(3, 6)) {
-        stream.once('error', () => {});
-        if (stream.destroyed !== true) stream.destroy();
-      }
-      await withinBound(Promise.all(guardPipeCloses), 1000, 'guard pipe-close join');
+      const [targetExit, guardExit] = await Promise.all([
+        targetFixture.exited(),
+        guardFixture.exited(),
+      ]);
+      guardFixture.closePrivatePipes();
+      const [targetRecord, guardRecord] = await Promise.all([
+        targetFixture.settled(),
+        guardFixture.settled(),
+      ]);
+      assert.deepEqual(targetRecord.outcome, targetExit);
+      assert.deepEqual(guardRecord.outcome, guardExit);
+      assert.deepEqual(targetRecord.outcome, { code: null, signal: 'SIGKILL' });
+      assert.deepEqual(guardRecord.outcome, { code: 0, signal: null });
       assert.equal(guard.connected, false);
       assert.equal(guard.exitCode, 0);
       assert.equal(guard.signalCode, null);
@@ -2947,13 +3155,11 @@ test('guard alone retains the listener through TERM-resistant cleanup after oute
       assert.equal(await closeGateBOperatorOriginGuard(rebound), true);
     } finally {
       if (parentGuard) await closeGateBOperatorOriginGuard(parentGuard);
-      for (const child of [reaper, guard, target]) {
-        if (!child || !Number.isSafeInteger(child.pid)) continue;
-        if (!await waitForGroupAbsent(child.pid, 100)) {
-          try { process.kill(-child.pid, 'SIGKILL'); } catch {}
-          await waitForGroupAbsent(child.pid, 1000);
-        }
-      }
+      await Promise.all([
+        reaperFixture?.cleanup(),
+        guardFixture?.cleanup(),
+        targetFixture.cleanup(),
+      ].filter(Boolean));
     }
   });
 
@@ -2970,7 +3176,9 @@ test('reaper setup deadline aborts a missing-handle wait and removes the capture
       cwd: dirname(hostile), detached: true, env: {}, shell: false,
       stdio: ['ignore', 'ignore', 'ignore', 'ipc'],
     });
+    const targetFixture = observeDetachedFixture(target);
     let reaper;
+    let reaperFixture;
     try {
       await new Promise((resolve, reject) => {
         const timer = setTimeout(() => reject(new Error('bounded timeout')), 2000);
@@ -2984,28 +3192,26 @@ test('reaper setup deadline aborts a missing-handle wait and removes the capture
         cwd: dirname(reaperModule), detached: true, env: {}, shell: false,
         stdio: ['ignore', 'ignore', 'ignore', 'pipe', 'pipe', 'ignore', 'ipc'],
       });
+      reaperFixture = observeDetachedFixture(reaper, {
+        privatePipes: reaper.stdio.slice(3, 5),
+      });
       const frame = Buffer.alloc(8);
       frame.writeUInt32BE(0x47425250, 0);
       frame.writeUInt32BE(target.pid, 4);
       reaper.stdio[3].end(frame, () => frame.fill(0));
-      const outcome = await new Promise((resolve, reject) => {
-        const timer = setTimeout(() => reject(new Error('bounded timeout')), 8000);
-        reaper.once('exit', (code, signal) => {
-          clearTimeout(timer);
-          resolve({ code, signal });
-        });
-      });
+      const exitOutcome = await reaperFixture.exited();
+      reaperFixture.closePrivatePipes();
+      const { outcome } = await reaperFixture.settled();
+      assert.deepEqual(outcome, exitOutcome);
       assert.deepEqual(outcome, { code: 1, signal: null });
+      await targetFixture.settled();
       assert.equal(await waitForGroupAbsent(target.pid), true);
       assert.equal(await waitForGroupAbsent(reaper.pid), true);
     } finally {
-      for (const child of [reaper, target]) {
-        if (!child || !Number.isSafeInteger(child.pid)) continue;
-        if (!await waitForGroupAbsent(child.pid, 100)) {
-          try { process.kill(-child.pid, 'SIGKILL'); } catch {}
-          await waitForGroupAbsent(child.pid, 1000);
-        }
-      }
+      await Promise.all([
+        reaperFixture?.cleanup(),
+        targetFixture.cleanup(),
+      ].filter(Boolean));
     }
   });
 
@@ -3027,7 +3233,9 @@ test('reaper missing-handle setup aborts on outer EOF, disconnect, and TERM',
         cwd: dirname(hostile), detached: true, env: {}, shell: false,
         stdio: ['ignore', 'ignore', 'ignore', 'ipc'],
       });
+      const targetFixture = observeDetachedFixture(target);
       let reaper;
+      let reaperFixture;
       const messages = [];
       try {
         await new Promise((resolve, reject) => {
@@ -3037,13 +3245,6 @@ test('reaper missing-handle setup aborts on outer EOF, disconnect, and TERM',
             if (message?.type !== 'HOSTILE_READY_runtime') return;
             clearTimeout(timer);
             resolve(true);
-          });
-        });
-        const targetClosed = new Promise((resolve, reject) => {
-          const timer = setTimeout(() => reject(new Error('bounded timeout')), 5000);
-          target.once('close', (code, signal) => {
-            clearTimeout(timer);
-            resolve({ code, signal });
           });
         });
         const targetTerm = new Promise((resolve, reject) => {
@@ -3060,15 +3261,9 @@ test('reaper missing-handle setup aborts on outer EOF, disconnect, and TERM',
           cwd: dirname(reaperModule), detached: true, env: {}, shell: false,
           stdio: ['ignore', 'ignore', 'ignore', 'pipe', 'pipe', 'ignore', 'ipc'],
         });
-        for (const stream of reaper.stdio.slice(3, 5)) stream.resume();
-        const reaperPipeCloses = reaper.stdio.slice(3, 5).map(stream =>
-          new Promise(resolve => stream.once('close', () => resolve(true))));
-        const reaperExited = new Promise((resolve, reject) => {
-          const timer = setTimeout(() => reject(new Error('bounded timeout')), 5000);
-          reaper.once('exit', (code, signal) => {
-            clearTimeout(timer);
-            resolve({ code, signal });
-          });
+        reaperFixture = observeDetachedFixture(reaper, {
+          privatePipes: reaper.stdio.slice(3, 5),
+          requireClose: name !== 'disconnect',
         });
         const frame = Buffer.alloc(8);
         frame.writeUInt32BE(0x47425250, 0);
@@ -3077,13 +3272,19 @@ test('reaper missing-handle setup aborts on outer EOF, disconnect, and TERM',
         await new Promise(resolve => setTimeout(resolve, 100));
         activate(reaper);
         await targetTerm;
-        for (const stream of reaper.stdio.slice(3, 5)) {
-          stream.once('error', () => {});
-          if (stream.destroyed !== true) stream.destroy();
-        }
-        assert.deepEqual(await targetClosed, { code: null, signal: 'SIGKILL' });
-        assert.deepEqual(await reaperExited, { code: 1, signal: null });
-        await withinBound(Promise.all(reaperPipeCloses), 1000, 'reaper pipe-close join');
+        const [targetExit, reaperExit] = await Promise.all([
+          targetFixture.exited(),
+          reaperFixture.exited(),
+        ]);
+        reaperFixture.closePrivatePipes();
+        const [targetRecord, reaperRecord] = await Promise.all([
+          targetFixture.settled(),
+          reaperFixture.settled(),
+        ]);
+        assert.deepEqual(targetRecord.outcome, targetExit);
+        assert.deepEqual(reaperRecord.outcome, reaperExit);
+        assert.deepEqual(targetRecord.outcome, { code: null, signal: 'SIGKILL' });
+        assert.deepEqual(reaperRecord.outcome, { code: 1, signal: null });
         assert.equal(reaper.connected, false);
         assert.equal(reaper.exitCode, 1);
         assert.equal(reaper.signalCode, null);
@@ -3093,13 +3294,10 @@ test('reaper missing-handle setup aborts on outer EOF, disconnect, and TERM',
         assert.equal(await waitForGroupAbsent(target.pid), true);
         assert.equal(await waitForGroupAbsent(reaper.pid), true);
       } finally {
-        for (const child of [reaper, target]) {
-          if (!child || !Number.isSafeInteger(child.pid)) continue;
-          if (!await waitForGroupAbsent(child.pid, 100)) {
-            try { process.kill(-child.pid, 'SIGKILL'); } catch {}
-            await waitForGroupAbsent(child.pid, 1000);
-          }
-        }
+        await Promise.all([
+          reaperFixture?.cleanup(),
+          targetFixture.cleanup(),
+        ].filter(Boolean));
       }
     });
   });
@@ -3117,7 +3315,9 @@ test('guard aborts a missing-handle wait when both independent owners are gone',
       cwd: dirname(hostile), detached: true, env: {}, shell: false,
       stdio: ['ignore', 'ignore', 'ignore', 'ipc'],
     });
+    const targetFixture = observeDetachedFixture(target);
     let guard;
+    let guardFixture;
     try {
       await new Promise((resolve, reject) => {
         const timer = setTimeout(() => reject(new Error('bounded timeout')), 2000);
@@ -3131,6 +3331,9 @@ test('guard aborts a missing-handle wait when both independent owners are gone',
         cwd: dirname(guardModule), detached: true, env: {}, shell: false,
         stdio: ['ignore', 'ignore', 'ignore', 'pipe', 'pipe', 'pipe', 'ipc'],
       });
+      guardFixture = observeDetachedFixture(guard, {
+        privatePipes: guard.stdio.slice(3, 6),
+      });
       const frame = Buffer.alloc(8);
       frame.writeUInt32BE(GATE_B_OPERATOR_ORIGIN_GUARD_TARGET_MAGIC, 0);
       frame.writeUInt32BE(target.pid, 4);
@@ -3138,25 +3341,22 @@ test('guard aborts a missing-handle wait when both independent owners are gone',
       await new Promise(resolve => setTimeout(resolve, 100));
       guard.stdio[4].destroy();
       guard.stdio[5].destroy();
-      guard.disconnect();
-      const outcome = await new Promise((resolve, reject) => {
-        const timer = setTimeout(() => reject(new Error('bounded timeout')), 8000);
-        guard.once('exit', (code, signal) => {
-          clearTimeout(timer);
-          resolve({ code, signal });
-        });
-      });
+      const [targetExit, guardExit] = await Promise.all([
+        targetFixture.exited(),
+        guardFixture.exited(),
+      ]);
+      guardFixture.closePrivatePipes();
+      const { outcome } = await guardFixture.settled();
+      assert.deepEqual(outcome, guardExit);
       assert.deepEqual(outcome, { code: 1, signal: null });
+      assert.deepEqual((await targetFixture.settled()).outcome, targetExit);
       assert.equal(await waitForGroupAbsent(target.pid), true);
       assert.equal(await waitForGroupAbsent(guard.pid), true);
     } finally {
-      for (const child of [guard, target]) {
-        if (!child || !Number.isSafeInteger(child.pid)) continue;
-        if (!await waitForGroupAbsent(child.pid, 100)) {
-          try { process.kill(-child.pid, 'SIGKILL'); } catch {}
-          await waitForGroupAbsent(child.pid, 1000);
-        }
-      }
+      await Promise.all([
+        guardFixture?.cleanup(),
+        targetFixture.cleanup(),
+      ].filter(Boolean));
     }
   });
 
@@ -3166,12 +3366,16 @@ test('ambiguous guard setup remains a fixed-denial protective quarantine',
       '../src/gate-b-operator-origin-guard.js', import.meta.url,
     ));
     let guard;
+    let guardFixture;
     let parentGuard;
     try {
       parentGuard = await createGateBOperatorOriginGuard();
       guard = spawn(process.execPath, [guardModule], {
         cwd: dirname(guardModule), detached: true, env: {}, shell: false,
         stdio: ['ignore', 'ignore', 'ignore', 'pipe', 'pipe', 'pipe', 'ipc'],
+      });
+      guardFixture = observeDetachedFixture(guard, {
+        privatePipes: guard.stdio.slice(3, 6),
       });
       await new Promise((resolve, reject) => {
         const timer = setTimeout(() => reject(new Error('bounded timeout')), 1000);
@@ -3191,23 +3395,25 @@ test('ambiguous guard setup remains a fixed-denial protective quarantine',
       await requestFixedOriginDenial();
       guard.stdio[4].destroy();
       guard.stdio[5].destroy();
-      guard.disconnect();
       await new Promise(resolve => setTimeout(resolve, 2300));
       assert.equal(await waitForGroupAbsent(guard.pid, 50), false);
       await assert.rejects(createGateBOperatorOriginGuard());
       await requestFixedOriginDenial();
       process.kill(-guard.pid, 'SIGKILL');
+      const exitOutcome = await guardFixture.exited();
+      guardFixture.closePrivatePipes();
+      assert.deepEqual((await guardFixture.settled()).outcome, {
+        code: null,
+        signal: 'SIGKILL',
+      });
+      assert.deepEqual(exitOutcome, { code: null, signal: 'SIGKILL' });
       assert.equal(await waitForGroupAbsent(guard.pid), true);
       guard.stdio[3].destroy();
       const rebound = await createGateBOperatorOriginGuard();
       assert.equal(await closeGateBOperatorOriginGuard(rebound), true);
     } finally {
       if (parentGuard) await closeGateBOperatorOriginGuard(parentGuard);
-      if (guard && Number.isSafeInteger(guard.pid) &&
-          !await waitForGroupAbsent(guard.pid, 100)) {
-        try { process.kill(-guard.pid, 'SIGKILL'); } catch {}
-        await waitForGroupAbsent(guard.pid, 1000);
-      }
+      if (guardFixture) await guardFixture.cleanup();
     }
   });
 
@@ -3288,23 +3494,214 @@ test('fixed reaper rejects partial and mismatched private targets before activat
       ['partial', Buffer.from([0x47, 0x42, 0x52])],
       ['mismatched', (() => {
         const value = Buffer.alloc(8);
-        value.writeUInt32BE(0x47425250, 0);
-        value.writeUInt32BE(2, 4);
+        value.writeUInt32BE(0x47425251, 0);
+        value.writeUInt32BE(0, 4);
         return value;
       })()],
     ]) await t.test(name, async () => {
+      let frameCleared = false;
+      const clearFrame = () => {
+        if (frameCleared) return;
+        frameCleared = true;
+        frame.fill(0);
+      };
       const child = spawn(process.execPath, [reaper], {
         cwd: dirname(reaper), detached: true, env: {}, shell: false,
         stdio: ['ignore', 'ignore', 'ignore', 'pipe', 'pipe', 'ipc'],
       });
-      child.stdio[3].end(frame, () => frame.fill(0));
-      child.stdio[4].end();
-      const outcome = await new Promise(resolve => child.once('close', (code, signal) => {
-        resolve({ code, signal });
-      }));
-      assert.deepEqual(outcome, { code: 1, signal: null });
-      assert.equal(await waitForGroupAbsent(child.pid), true);
+      const messages = [];
+      child.on('message', message => messages.push(message));
+      const fixture = observeDetachedFixture(child, {
+        privatePipes: child.stdio.slice(3, 5),
+        timeoutMs: 3000,
+      });
+      try {
+        child.stdio[3].end(frame, clearFrame);
+        const { outcome, pipeSettlements } = await fixture.settled();
+        assert.equal(pipeSettlements.length, 2);
+        assert.deepEqual(outcome, { code: 1, signal: null });
+        assert.deepEqual(messages, []);
+        assert.equal(await waitForGroupAbsent(child.pid), true);
+      } finally {
+        clearFrame();
+        await fixture.cleanup();
+      }
     });
+  });
+
+test('reaper alone retains denial after joined readiness and outer plus guard hard loss',
+  { timeout: 15_000 }, async () => {
+    const hostile = fileURLToPath(new URL(
+      '../test-support/gate-b-operator-coordinator-hostile-child.js',
+      import.meta.url,
+    ));
+    const reaperModule = fileURLToPath(new URL(
+      '../src/gate-b-operator-reaper.js',
+      import.meta.url,
+    ));
+    const guardModule = fileURLToPath(new URL(
+      '../src/gate-b-operator-origin-guard.js',
+      import.meta.url,
+    ));
+    const target = spawn(process.execPath, [hostile, 'runtime'], {
+      cwd: dirname(hostile), detached: true, env: {}, shell: false,
+      stdio: ['ignore', 'ignore', 'ignore', 'ipc'],
+    });
+    const targetFixture = observeDetachedFixture(target);
+    const targetMessages = [];
+    const guardMessages = [];
+    const reaperMessages = [];
+    let guard;
+    let reaper;
+    let guardFixture;
+    let reaperFixture;
+    let parentGuard;
+    const holderReady = (child, messages) => new Promise((resolve, reject) => {
+      const timer = setTimeout(() => reject(new Error('bounded timeout')), 3000);
+      child.on('message', message => {
+        messages.push(message);
+        if (message?.type !== 'READY') return;
+        clearTimeout(timer);
+        resolve(true);
+      });
+    });
+    const sendHandle = (child, handle) => new Promise((resolve, reject) => {
+      const timer = setTimeout(() => reject(new Error('bounded timeout')), 1000);
+      child.send({ type: 'ARM_ORIGIN_GUARD' }, handle, { keepOpen: true }, error => {
+        clearTimeout(timer);
+        error ? reject(error) : resolve(true);
+      });
+    });
+    try {
+      const targetReady = new Promise((resolve, reject) => {
+        const timer = setTimeout(() => reject(new Error('bounded timeout')), 2000);
+        target.on('message', message => {
+          if (typeof message?.type === 'string') targetMessages.push(message.type);
+          if (message?.type !== 'HOSTILE_READY_runtime') return;
+          clearTimeout(timer);
+          resolve(true);
+        });
+      });
+      const targetTerm = new Promise((resolve, reject) => {
+        const timer = setTimeout(() => reject(new Error('bounded timeout')), 5000);
+        const observe = message => {
+          if (message?.type !== 'HOSTILE_TERM_runtime') return;
+          clearTimeout(timer);
+          target.removeListener('message', observe);
+          resolve(true);
+        };
+        target.on('message', observe);
+      });
+      await targetReady;
+
+      parentGuard = await createGateBOperatorOriginGuard();
+      guard = spawn(process.execPath, [guardModule], {
+        cwd: dirname(guardModule), detached: true, env: {}, shell: false,
+        stdio: ['ignore', 'ignore', 'ignore', 'pipe', 'pipe', 'pipe', 'ipc'],
+      });
+      guardFixture = observeDetachedFixture(guard, {
+        privatePipes: guard.stdio.slice(3, 6),
+      });
+      const guardReady = holderReady(guard, guardMessages);
+
+      reaper = spawn(process.execPath, [reaperModule], {
+        cwd: dirname(reaperModule), detached: true, env: {}, shell: false,
+        stdio: ['ignore', 'ignore', 'ignore', 'pipe', 'pipe', guard.stdio[5], 'ipc'],
+      });
+      reaperFixture = observeDetachedFixture(reaper, {
+        privatePipes: reaper.stdio.slice(3, 5),
+      });
+      const reaperClosed = new Promise((resolve, reject) => {
+        const timer = setTimeout(() => reject(new Error('bounded timeout')), 7000);
+        reaper.once('error', reject);
+        reaper.once('close', (code, signal) => {
+          clearTimeout(timer);
+          let targetGroupAbsent = false;
+          try { process.kill(-target.pid, 0); } catch (error) {
+            if (error?.code === 'ESRCH') targetGroupAbsent = true;
+            else return reject(error);
+          }
+          resolve({ code, signal, targetGroupAbsent });
+        });
+      });
+      const reaperReady = holderReady(reaper, reaperMessages);
+      guard.stdio[5].destroy();
+
+      const handle = getGateBOperatorOriginGuardHandle(parentGuard);
+      await Promise.all([
+        writePrivateTargetFrame(reaper.stdio[3], 0x47425250, target.pid),
+        writePrivateTargetFrame(
+          guard.stdio[3],
+          GATE_B_OPERATOR_ORIGIN_GUARD_TARGET_MAGIC,
+          target.pid,
+        ),
+        sendHandle(reaper, handle),
+        sendHandle(guard, handle),
+      ]);
+      await Promise.all([reaperReady, guardReady]);
+      assert.deepEqual(guardMessages.map(message => message?.type), ['READY']);
+      assert.deepEqual(reaperMessages.map(message => message?.type), ['READY']);
+      assert.equal([...guardMessages, ...reaperMessages].every(message =>
+        Reflect.ownKeys(message).length === 1 &&
+        Reflect.ownKeys(message)[0] === 'type'), true);
+
+      process.kill(-guard.pid, 'SIGKILL');
+      const guardExit = await guardFixture.exited();
+      guardFixture.closePrivatePipes();
+      const guardRecord = await guardFixture.settled();
+      assert.deepEqual(guardRecord.outcome, guardExit);
+      assert.deepEqual(guardRecord.outcome, { code: null, signal: 'SIGKILL' });
+      assert.equal(await waitForGroupAbsent(guard.pid), true);
+      assert.equal(await closeGateBOperatorOriginGuard(parentGuard), true);
+      parentGuard = undefined;
+
+      await requestFixedOriginDenial();
+      await assert.rejects(createGateBOperatorOriginGuard());
+
+      reaper.stdio[4].destroy();
+      await targetTerm;
+      assert.doesNotThrow(() => process.kill(-target.pid, 0));
+      await requestFixedOriginDenial();
+      await assert.rejects(createGateBOperatorOriginGuard());
+      await new Promise(resolve => setTimeout(resolve, 200));
+      assert.doesNotThrow(() => process.kill(-target.pid, 0));
+      await requestFixedOriginDenial();
+      await assert.rejects(createGateBOperatorOriginGuard());
+
+      assert.deepEqual((await targetFixture.settled()).outcome, {
+        code: null,
+        signal: 'SIGKILL',
+      });
+      assert.equal(await waitForGroupAbsent(target.pid), true);
+      await reaperFixture.exited();
+      reaperFixture.closePrivatePipes();
+      const [closedRecord, reaperRecord] = await Promise.all([
+        reaperClosed,
+        reaperFixture.settled(),
+      ]);
+      assert.deepEqual(closedRecord, {
+        code: 0,
+        signal: null,
+        targetGroupAbsent: true,
+      });
+      assert.deepEqual(reaperRecord.outcome, { code: 0, signal: null });
+      assert.equal(await waitForGroupAbsent(reaper.pid), true);
+      assert.deepEqual(reaperMessages.map(message => message?.type), ['READY']);
+      assert.equal(reaperMessages.some(message => message?.type === 'ABSENT'), false);
+      await new Promise(resolve => setTimeout(resolve, 850));
+      assert.equal(targetMessages.includes('HOSTILE_TERM_runtime'), true);
+      assert.equal(targetMessages.includes('HOSTILE_LATE_runtime'), false);
+
+      const rebound = await createGateBOperatorOriginGuard();
+      assert.equal(await closeGateBOperatorOriginGuard(rebound), true);
+    } finally {
+      if (parentGuard) await closeGateBOperatorOriginGuard(parentGuard);
+      await Promise.all([
+        reaperFixture?.cleanup(),
+        guardFixture?.cleanup(),
+        targetFixture.cleanup(),
+      ].filter(Boolean));
+    }
   });
 
 test('reaper alone retains the listener and emits ABSENT only after target-group proof',
@@ -3321,14 +3718,9 @@ test('reaper alone retains the listener and emits ABSENT only after target-group
       cwd: dirname(hostile), detached: true, env: {}, shell: false,
       stdio: ['ignore', 'ignore', 'ignore', 'ipc'],
     });
-    const targetClosed = new Promise((resolve, reject) => {
-      const timer = setTimeout(() => reject(new Error('bounded timeout')), 5000);
-      target.once('close', (code, signal) => {
-        clearTimeout(timer);
-        resolve({ code, signal });
-      });
-    });
+    const targetFixture = observeDetachedFixture(target);
     let reaper;
+    let reaperFixture;
     let parentGuard;
     const targetMessages = [];
     try {
@@ -3345,6 +3737,9 @@ test('reaper alone retains the listener and emits ABSENT only after target-group
       reaper = spawn(process.execPath, [reaperModule], {
         cwd: dirname(reaperModule), detached: true, env: {}, shell: false,
         stdio: ['ignore', 'ignore', 'ignore', 'pipe', 'pipe', 'ignore', 'ipc'],
+      });
+      reaperFixture = observeDetachedFixture(reaper, {
+        privatePipes: reaper.stdio.slice(3, 5),
       });
       const messages = [];
       const ready = new Promise((resolve, reject) => {
@@ -3387,21 +3782,20 @@ test('reaper alone retains the listener and emits ABSENT only after target-group
         };
         reaper.on('message', observe);
       });
-      const closed = new Promise((resolve, reject) => {
-        const timer = setTimeout(() => reject(new Error('bounded timeout')), 4000);
-        reaper.once('close', (code, signal) => {
-          clearTimeout(timer);
-          resolve({ code, signal });
-        });
-      });
       reaper.send({ type: 'CLEANUP' });
       await waitFor(() => targetMessages.includes('HOSTILE_TERM_runtime'), 2000);
       await assert.rejects(createGateBOperatorOriginGuard());
       await absent;
-      assert.deepEqual(await targetClosed, { code: null, signal: 'SIGKILL' });
+      assert.deepEqual((await targetFixture.settled()).outcome, {
+        code: null,
+        signal: 'SIGKILL',
+      });
       assert.throws(() => process.kill(-target.pid, 0), error => error?.code === 'ESRCH');
       reaper.stdio[4].destroy();
-      const outcome = await closed;
+      const exitOutcome = await reaperFixture.exited();
+      reaperFixture.closePrivatePipes();
+      const { outcome } = await reaperFixture.settled();
+      assert.deepEqual(outcome, exitOutcome);
       assert.deepEqual(outcome, { code: 0, signal: null });
       assert.deepEqual(messages.map(message => message.type), ['READY', 'ABSENT']);
       assert.equal(messages.every(message =>
@@ -3411,14 +3805,11 @@ test('reaper alone retains the listener and emits ABSENT only after target-group
       await new Promise(resolve => setTimeout(resolve, 850));
       assert.equal(targetMessages.includes('HOSTILE_LATE_runtime'), false);
     } finally {
-      for (const child of [reaper, target]) {
-        if (!child || !Number.isSafeInteger(child.pid)) continue;
-        if (!await waitForGroupAbsent(child.pid, 100)) {
-          try { process.kill(-child.pid, 'SIGKILL'); } catch {}
-          await waitForGroupAbsent(child.pid, 1000);
-        }
-      }
       if (parentGuard) await closeGateBOperatorOriginGuard(parentGuard);
+      await Promise.all([
+        reaperFixture?.cleanup(),
+        targetFixture.cleanup(),
+      ].filter(Boolean));
     }
   });
 
