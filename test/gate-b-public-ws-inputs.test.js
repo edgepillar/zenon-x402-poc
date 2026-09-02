@@ -34,6 +34,7 @@ import { runGateBPublicWsInputsCli } from '../src/gate-b-public-ws-inputs-cli.js
 import {
   GateBPublicWsInputsLaunchError,
   launchGateBPublicWsInputs,
+  launchGateBPublicWsInputsInInheritedProcessGroup,
 } from '../src/gate-b-public-ws-inputs-launcher.js';
 import {
   frameGateBPublicWsInputsBootstrap,
@@ -493,6 +494,26 @@ test('launcher uses one literal operation argv, empty env, ignored stdin, and pr
   assert.equal(JSON.stringify([capture.argv, capture.options.env]).includes(ENDPOINT), false);
   assert.equal(JSON.stringify([capture.argv, capture.options.env]).includes(root), false);
   assert.equal(parseGateBPublicWsInputsFrame(capture.frame).rpcEndpoint, ENDPOINT);
+});
+
+test('coordinator-only public-input launcher inherits its caller group without group signals', async t => {
+  const { root } = await fixture(t);
+  const capture = { groupAlive: true };
+  const result = await launchGateBPublicWsInputsInInheritedProcessGroup(
+    provisionBootstrap(root),
+    {
+      ...launcherGroupInjections(capture),
+      spawnProcess: fakeSpawn(GATE_B_PUBLIC_WS_INPUT_STATUS_LINES.PROVISION_ENDPOINT, capture),
+      executable: '/fixed/node',
+      cliModule: '/fixed/cli.js',
+      timeoutMs: 1000,
+      killProcessGroup() { assert.fail('inherited mode must not signal a group'); },
+      probeProcessGroup() { assert.fail('inherited mode must not probe a group'); },
+    },
+  );
+  assert.deepEqual(result, { status: 'endpoint-provisioned' });
+  assert.equal(capture.options.detached, false);
+  assert.deepEqual(capture.options.env, {});
 });
 
 test('launcher rejects any nonfixed output without reflecting private bytes', async t => {

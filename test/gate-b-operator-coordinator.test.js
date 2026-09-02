@@ -1,0 +1,2881 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { EventEmitter } from 'node:events';
+import { spawn } from 'node:child_process';
+import { readFile } from 'node:fs/promises';
+import { dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { PassThrough } from 'node:stream';
+
+import { canonicalJson } from '../src/canonical.js';
+import {
+  GATE_B_OPERATOR_COORDINATOR_ACKNOWLEDGEMENTS,
+  GATE_B_OPERATOR_COORDINATOR_LIMITS,
+  GATE_B_OPERATOR_COORDINATOR_STATUS_LINES,
+  frameGateBOperatorCoordinatorBootstrap,
+  frameGateBOperatorCoordinatorReview,
+  parseGateBOperatorCoordinatorBootstrapFrame,
+  parseGateBOperatorCoordinatorReviewFrame,
+  parseGateBOperatorReviewResultFrame,
+  createGateBOperatorCoordinatorIpcMessage,
+  frameGateBOperatorReviewResult,
+} from '../src/gate-b-operator-coordinator-schema.js';
+import {
+  createGateBOperatorCoordinatorFrameReader,
+  launchGateBOperatorConfigReview,
+  runGateBOperatorCoordinatorCli,
+} from '../src/gate-b-operator-coordinator-cli.js';
+import {
+  getGateBOperatorCoordinatorStatus,
+  launchGateBOperatorCoordinator,
+  launchGateBOperatorWatchdogSetup,
+  stopGateBOperatorCoordinator,
+  submitGateBOperatorBootstrap,
+  submitGateBOperatorCoordinatorReview,
+  waitGateBOperatorCoordinatorClosed,
+} from '../src/gate-b-operator-coordinator-launcher.js';
+import {
+  GATE_B_OPERATOR_REVIEW_LEAVES,
+  independentGateBOperatorConfigDigest,
+  reviewGateBOperatorConfiguration,
+  runGateBOperatorConfigReviewChild,
+  validateIndependentGateBOperatorConfig,
+} from '../src/gate-b-operator-config-review-child.js';
+import {
+  GATE_B_OPERATOR_FRONT_END_PHASE_1_REQUIRED,
+  runGateBOperatorFrontEnd,
+} from '../src/gate-b-operator-front-end.js';
+import {
+  GATE_B_PUBLIC_WS_INPUT_LEAVES,
+  serializeGateBProtectedEndpointSource,
+  serializeGateBQuickTunnelHostnameSource,
+} from '../src/gate-b-public-ws-inputs-schema.js';
+import {
+  parsePublicWsOnceRunConfig,
+  publicWsOnceConfigDigest,
+} from '../src/live-evidence-runner.js';
+import {
+  GATE_B_QUICK_TUNNEL_TELEMETRY_ACKNOWLEDGEMENTS,
+  GATE_B_QUICK_TUNNEL_TELEMETRY_MODES,
+} from '../src/gate-b-quick-tunnel-schema.js';
+import {
+  GATE_B_CURRENT_TESTNET_CHAIN_PROFILE,
+  GATE_B_CURRENT_TESTNET_OPERATOR_TRUST_ACKNOWLEDGEMENT,
+  GATE_B_CURRENT_TESTNET_PROFILE_NAME,
+  TESTNET_LIVE_ACKNOWLEDGEMENT,
+} from '../src/zenon/operator-trusted-testnet-profile.js';
+
+const WORKSPACE_ROOT = '/private/tmp/gate-b-operator-coordinator-fixture';
+
+test('watchdog ownership exposes setup and one-time bootstrap as separate capabilities', () => {
+  assert.equal(typeof launchGateBOperatorWatchdogSetup, 'function');
+  assert.equal(typeof submitGateBOperatorBootstrap, 'function');
+});
+
+function bootstrap(changes = {}) {
+  return {
+    acknowledgements: {
+      live: GATE_B_OPERATOR_COORDINATOR_ACKNOWLEDGEMENTS.live,
+      operatorTrust: GATE_B_OPERATOR_COORDINATOR_ACKNOWLEDGEMENTS.operatorTrust,
+    },
+    quickTunnel: {
+      cloudflaredExecutable: '/usr/local/bin/gate-b-tunnel-fixture',
+      sourcePin: 'a'.repeat(64),
+      telemetryAcknowledgement:
+        GATE_B_QUICK_TUNNEL_TELEMETRY_ACKNOWLEDGEMENTS
+          .ACCEPT_POSSIBLE_ERROR_TELEMETRY,
+      telemetryMode:
+        GATE_B_QUICK_TUNNEL_TELEMETRY_MODES.ACCEPT_POSSIBLE_ERROR_TELEMETRY,
+    },
+    rpcEndpoint: 'ws://192.0.2.10:35998/',
+    runName: 'gate-b-operator-coordinator-fixture',
+    schemaVersion: 1,
+    workspaceRoot: WORKSPACE_ROOT,
+    ...changes,
+  };
+}
+
+function review(changes = {}) {
+  return {
+    acknowledgements: {
+      payment: GATE_B_OPERATOR_COORDINATOR_ACKNOWLEDGEMENTS.payment,
+      publication: GATE_B_OPERATOR_COORDINATOR_ACKNOWLEDGEMENTS.publication,
+      transportException:
+        GATE_B_OPERATOR_COORDINATOR_ACKNOWLEDGEMENTS.transportException,
+    },
+    schemaVersion: 1,
+    ...changes,
+  };
+}
+
+function deferred() {
+  let resolve;
+  let reject;
+  const promise = new Promise((accept, decline) => {
+    resolve = accept;
+    reject = decline;
+  });
+  return { promise, reject, resolve };
+}
+
+class FakeAddress {
+  constructor(value) { this.value = value; }
+  toString() { return this.value; }
+}
+
+class FakeAsset {
+  toString() { return 'zts-fixture-native-asset'; }
+}
+
+const FAKE_SDK = Object.freeze({
+  Address: Object.freeze({
+    parse(value) {
+      if (typeof value !== 'string' || !value.startsWith('z1')) throw new Error('invalid');
+      return new FakeAddress(value);
+    },
+  }),
+  ZNN_ZTS: Object.freeze(new FakeAsset()),
+});
+
+function runConfig(changes = {}) {
+  const value = {
+    runnerVersion: 1,
+    sourceRevision: 'a'.repeat(40),
+    profileName: GATE_B_CURRENT_TESTNET_PROFILE_NAME,
+    acknowledgements: {
+      live: TESTNET_LIVE_ACKNOWLEDGEMENT,
+      operatorTrust: GATE_B_CURRENT_TESTNET_OPERATOR_TRUST_ACKNOWLEDGEMENT,
+    },
+    expectedPaymentRequired: {
+      x402Version: 2,
+      resource: {
+        url: 'https://fixture.trycloudflare.com/paid',
+        description: 'Zenon x402 PoC protected resource',
+        mimeType: 'application/json',
+      },
+      accepts: [{
+        scheme: 'exact',
+        network: 'zenon:testnet',
+        asset: 'zts-fixture-native-asset',
+        amount: '1',
+        payTo: 'z1payee-fixture',
+        maxTimeoutSeconds: 60,
+        extra: {
+          paymentFlow: 'upfront',
+          poc: true,
+          settlement: 'account-block',
+          zenonChain: { ...GATE_B_CURRENT_TESTNET_CHAIN_PROFILE },
+        },
+      }],
+    },
+    runtime: {
+      listenPort: 41000,
+      rpcTimeoutMs: 30000,
+      maxRecoveryAttempts: 0,
+      recoveryDelayMs: 0,
+      maxRecoveryElapsedMs: 1,
+    },
+  };
+  return Object.assign(value, changes);
+}
+
+function jsonLine(value, canonical = true) {
+  return Buffer.from(`${canonical ? canonicalJson(value) : JSON.stringify(value)}\n`, 'utf8');
+}
+
+function reviewFiles(config = runConfig()) {
+  const endpoint = 'ws://8.8.8.8:35998/';
+  const rpc = jsonLine({ secretVersion: 2, rpcEndpoint: endpoint });
+  return new Map([
+    [GATE_B_PUBLIC_WS_INPUT_LEAVES.buyerAddress, jsonLine({
+      addressVersion: 1,
+      address: 'z1buyer-fixture',
+      accountIndex: 0,
+    }, false)],
+    [GATE_B_PUBLIC_WS_INPUT_LEAVES.endpointSource,
+      serializeGateBProtectedEndpointSource(endpoint)],
+    [GATE_B_PUBLIC_WS_INPUT_LEAVES.hostnameSource,
+      serializeGateBQuickTunnelHostnameSource('fixture.trycloudflare.com')],
+    [GATE_B_PUBLIC_WS_INPUT_LEAVES.payeeAddress, jsonLine({
+      addressVersion: 1,
+      address: 'z1payee-fixture',
+      accountIndex: 1,
+    })],
+    [GATE_B_PUBLIC_WS_INPUT_LEAVES.runConfig, jsonLine(config)],
+    [GATE_B_PUBLIC_WS_INPUT_LEAVES.buyerRpc, Buffer.from(rpc)],
+    [GATE_B_PUBLIC_WS_INPUT_LEAVES.facilitatorRpc, Buffer.from(rpc)],
+  ]);
+}
+
+function reviewHarness({ files = reviewFiles(), beforeFinalVerification } = {}) {
+  const events = [];
+  const versions = new Map([...files.keys()].map(name => [name, 1]));
+  const records = new Map([...files.keys()].map(name => [name, Object.freeze({
+    name,
+    version: 1,
+  })]));
+  const workspace = {
+    async assertAbsent(names) {
+      assert.deepEqual(names, [GATE_B_PUBLIC_WS_INPUT_LEAVES.authorization]);
+      events.push('authorization:absent');
+    },
+    assertDistinct(values) {
+      assert.equal(new Set(values).size, values.length);
+      events.push('distinct');
+      return true;
+    },
+    async close() { events.push('close'); },
+    async openInputs(names) {
+      assert.deepEqual(names, GATE_B_OPERATOR_REVIEW_LEAVES);
+      assert.equal(names.includes(GATE_B_PUBLIC_WS_INPUT_LEAVES.buyerWallet), false);
+      events.push(...names.map(name => `open:${name}`));
+      return names.map(name => records.get(name));
+    },
+    async read(record) {
+      events.push(`read:${record.name}`);
+      return Buffer.from(files.get(record.name));
+    },
+    async verify(record) {
+      if (versions.get(record.name) !== record.version) throw new Error('changed');
+      events.push(`verify:${record.name}`);
+    },
+  };
+  const injected = {
+    attestSourceTree: async () => {
+      events.push('attest');
+      return true;
+    },
+    beforeFinalVerification: beforeFinalVerification ?? (async () => {
+      events.push('before-final');
+    }),
+    cwd: () => WORKSPACE_ROOT,
+    openWorkspace: async () => workspace,
+    sdk: FAKE_SDK,
+    workspaceInjections: undefined,
+  };
+  return { events, files, injected, records, versions, workspace };
+}
+
+test('operator coordinator framing is canonical, exact, and phase-specific', () => {
+  const initial = frameGateBOperatorCoordinatorBootstrap(bootstrap());
+  const second = frameGateBOperatorCoordinatorReview(review());
+  assert.deepEqual(parseGateBOperatorCoordinatorBootstrapFrame(initial), bootstrap());
+  assert.deepEqual(parseGateBOperatorCoordinatorReviewFrame(second), review());
+  assert.ok(initial.length <= GATE_B_OPERATOR_COORDINATOR_LIMITS.bootstrapFrameBytes);
+  assert.ok(second.length <= GATE_B_OPERATOR_COORDINATOR_LIMITS.reviewFrameBytes);
+
+  for (const candidate of [
+    initial.subarray(0, initial.length - 1),
+    Buffer.concat([initial, Buffer.from([0])]),
+    Buffer.from(initial).fill(0, 0, 4),
+  ]) assert.throws(() => parseGateBOperatorCoordinatorBootstrapFrame(candidate));
+
+  assert.throws(() => parseGateBOperatorCoordinatorBootstrapFrame(second));
+  assert.throws(() => parseGateBOperatorCoordinatorReviewFrame(initial));
+});
+
+test('review frame contains exactly three acknowledgements and no config-bearing fields', () => {
+  for (const candidate of [
+    { ...review(), runName: 'forbidden' },
+    { ...review(), reviewedConfigDigest: 'b'.repeat(64) },
+    { ...review(), config: {} },
+  ]) assert.throws(() => frameGateBOperatorCoordinatorReview(candidate));
+});
+
+test('one non-TTY stream rejects an early second frame and accepts phase-gated EOF', async () => {
+  const earlyStream = new PassThrough();
+  const earlyReader = createGateBOperatorCoordinatorFrameReader(earlyStream, {
+    initialTimeoutMs: 1000,
+    reviewTimeoutMs: 1000,
+  });
+  earlyStream.write(Buffer.concat([
+    frameGateBOperatorCoordinatorBootstrap(bootstrap()),
+    frameGateBOperatorCoordinatorReview(review()),
+  ]));
+  await assert.rejects(earlyReader.readInitial());
+
+  const stream = new PassThrough();
+  const reader = createGateBOperatorCoordinatorFrameReader(stream, {
+    initialTimeoutMs: 1000,
+    reviewTimeoutMs: 1000,
+  });
+  stream.write(frameGateBOperatorCoordinatorBootstrap(bootstrap()));
+  assert.deepEqual(
+    parseGateBOperatorCoordinatorBootstrapFrame(await reader.readInitial()),
+    bootstrap(),
+  );
+  reader.openReviewPhase();
+  stream.end(frameGateBOperatorCoordinatorReview(review()));
+  assert.deepEqual(
+    parseGateBOperatorCoordinatorReviewFrame(await reader.readReview()),
+    review(),
+  );
+});
+
+test('private frame stream rejects EOF, error, timeout, duplicate calls, and TTY input', async t => {
+  await t.test('initial-eof', async () => {
+    const stream = new PassThrough();
+    const reader = createGateBOperatorCoordinatorFrameReader(stream, {
+      initialTimeoutMs: 1000, reviewTimeoutMs: 1000,
+    });
+    stream.end(frameGateBOperatorCoordinatorBootstrap(bootstrap()).subarray(0, 7));
+    await assert.rejects(reader.readInitial());
+  });
+
+  await t.test('stream-error', async () => {
+    const stream = new PassThrough();
+    const reader = createGateBOperatorCoordinatorFrameReader(stream, {
+      initialTimeoutMs: 1000, reviewTimeoutMs: 1000,
+    });
+    stream.emit('error', new Error('synthetic'));
+    await assert.rejects(reader.readInitial());
+  });
+
+  await t.test('initial-timeout', async () => {
+    const stream = new PassThrough();
+    const reader = createGateBOperatorCoordinatorFrameReader(stream, {
+      initialTimeoutMs: 5, reviewTimeoutMs: 1000,
+    });
+    await assert.rejects(reader.readInitial());
+  });
+
+  await t.test('review-timeout', async () => {
+    const stream = new PassThrough();
+    const reader = createGateBOperatorCoordinatorFrameReader(stream, {
+      initialTimeoutMs: 1000, reviewTimeoutMs: 5,
+    });
+    stream.write(frameGateBOperatorCoordinatorBootstrap(bootstrap()));
+    await reader.readInitial();
+    reader.openReviewPhase();
+    const pending = reader.readReview();
+    await assert.rejects(pending);
+  });
+
+  await t.test('duplicate-lifecycle-calls', async () => {
+    const stream = new PassThrough();
+    const reader = createGateBOperatorCoordinatorFrameReader(stream, {
+      initialTimeoutMs: 1000, reviewTimeoutMs: 1000,
+    });
+    const initial = reader.readInitial();
+    assert.throws(() => reader.readInitial());
+    stream.write(frameGateBOperatorCoordinatorBootstrap(bootstrap()));
+    await initial;
+    reader.openReviewPhase();
+    assert.throws(() => reader.openReviewPhase());
+    const second = reader.readReview();
+    assert.throws(() => reader.readReview());
+    stream.end(frameGateBOperatorCoordinatorReview(review()));
+    await second;
+  });
+
+  await t.test('tty', () => {
+    const stream = new PassThrough();
+    stream.isTTY = true;
+    assert.throws(() => createGateBOperatorCoordinatorFrameReader(stream, {
+      initialTimeoutMs: 1000, reviewTimeoutMs: 1000,
+    }));
+  });
+});
+
+test('status lines remain byte exact and never claim run authority', () => {
+  assert.deepEqual(GATE_B_OPERATOR_COORDINATOR_STATUS_LINES, {
+    REVIEW_REQUIRED: 'GATE_B_CONTROLLER_REVIEW_REQUIRED_RUN_NOT_AUTHORIZED\n',
+    PREFLIGHT_VALID: 'GATE_B_CONTROLLER_PREFLIGHT_VALID_RUN_NOT_AUTHORIZED\n',
+    CLOSED: 'GATE_B_CONTROLLER_CLOSED_RUN_NOT_EXECUTED\n',
+    QUARANTINED: 'GATE_B_CONTROLLER_FAILED_WORKSPACE_QUARANTINED\n',
+  });
+});
+
+test('framing rejects truncation, oversize, invalid UTF-8, duplicates, trailing bytes, and a third frame', async t => {
+  const initial = frameGateBOperatorCoordinatorBootstrap(bootstrap());
+  const second = frameGateBOperatorCoordinatorReview(review());
+  const malformed = [
+    initial.subarray(0, 3),
+    Buffer.concat([Buffer.from([0, 0, 32, 1]), Buffer.alloc(32)]),
+    Buffer.concat([Buffer.from([0, 0, 0, 2]), Buffer.from([0xc3, 0x28])]),
+    (() => {
+      const body = Buffer.from('{"schemaVersion":1,"schemaVersion":1}', 'utf8');
+      const value = Buffer.alloc(4 + body.length);
+      value.writeUInt32BE(body.length, 0);
+      body.copy(value, 4);
+      return value;
+    })(),
+    Buffer.concat([second, Buffer.from([0])]),
+  ];
+  for (const [index, candidate] of malformed.entries()) {
+    await t.test(`malformed-${index}`, () => {
+      assert.throws(() => parseGateBOperatorCoordinatorReviewFrame(candidate));
+    });
+  }
+
+  await t.test('third-frame', async () => {
+    const stream = new PassThrough();
+    const reader = createGateBOperatorCoordinatorFrameReader(stream, {
+      initialTimeoutMs: 1000,
+      reviewTimeoutMs: 1000,
+    });
+    stream.write(initial);
+    await reader.readInitial();
+    reader.openReviewPhase();
+    stream.end(Buffer.concat([second, second]));
+    await assert.rejects(reader.readReview());
+  });
+});
+
+test('schema rejects proxies, accessors, symbols, sparse arrays, custom prototypes, boxed values, and thenables', () => {
+  const accessor = bootstrap();
+  Object.defineProperty(accessor, 'runName', {
+    enumerable: true,
+    get: () => 'hidden',
+  });
+  const symbol = bootstrap();
+  symbol[Symbol('extra')] = true;
+  const inherited = Object.assign(Object.create({ hidden: true }), bootstrap());
+  for (const candidate of [
+    new Proxy(bootstrap(), {}),
+    accessor,
+    symbol,
+    inherited,
+    { ...bootstrap(), then() {} },
+    new String('boxed'),
+  ]) assert.throws(() => frameGateBOperatorCoordinatorBootstrap(candidate));
+
+  const acknowledgements = [];
+  acknowledgements.length = 3;
+  const sparse = review({ acknowledgements });
+  assert.throws(() => frameGateBOperatorCoordinatorReview(sparse));
+});
+
+test('independent reviewer opens exactly seven non-wallet leaves and returns only a private digest result', async () => {
+  const context = reviewHarness();
+  const result = await reviewGateBOperatorConfiguration(context.injected);
+  assert.deepEqual(Object.keys(result).sort(), ['configDigest', 'resultVersion', 'type']);
+  assert.equal(result.type, 'REVIEW_VALID');
+  assert.equal(result.resultVersion, 1);
+  assert.match(result.configDigest, /^[0-9a-f]{64}$/);
+  assert.equal(
+    context.events.some(value => value.includes(GATE_B_PUBLIC_WS_INPUT_LEAVES.buyerWallet)),
+    false,
+  );
+  assert.equal(
+    context.events.filter(value => value.startsWith('open:')).length,
+    7,
+  );
+  assert.equal(context.events.filter(value => value === 'attest').length, 2);
+  assert.equal(context.events.filter(value => value === 'authorization:absent').length, 2);
+});
+
+test('independent digest matches the normative implementation across each mutable config subtree', () => {
+  const variants = [];
+  const source = runConfig();
+  variants.push(source);
+  const revision = structuredClone(source);
+  revision.sourceRevision = 'b'.repeat(40);
+  variants.push(revision);
+  const resource = structuredClone(source);
+  resource.expectedPaymentRequired.resource.description = 'Alternate fixture description';
+  variants.push(resource);
+  const mime = structuredClone(source);
+  mime.expectedPaymentRequired.resource.mimeType = 'application/problem+json';
+  variants.push(mime);
+  const route = structuredClone(source);
+  route.expectedPaymentRequired.resource.url = 'https://alternate.trycloudflare.com/paid';
+  variants.push(route);
+  const accepted = structuredClone(source);
+  accepted.expectedPaymentRequired.accepts[0].amount = '2';
+  variants.push(accepted);
+  const payee = structuredClone(source);
+  payee.expectedPaymentRequired.accepts[0].payTo = 'z1alternate-payee-fixture';
+  variants.push(payee);
+  const runtime = structuredClone(source);
+  runtime.runtime.listenPort = 41001;
+  runtime.runtime.rpcTimeoutMs = 29999;
+  runtime.runtime.maxRecoveryElapsedMs = 2;
+  variants.push(runtime);
+  for (const value of variants) {
+    const normative = parsePublicWsOnceRunConfig(`${canonicalJson(value)}\n`);
+    assert.equal(
+      independentGateBOperatorConfigDigest(value),
+      publicWsOnceConfigDigest(normative),
+    );
+  }
+});
+
+test('independent reviewer rejects every frozen semantic mutation before authorization', async t => {
+  const mutations = [
+    ['runner-version', value => { value.runnerVersion = 2; }],
+    ['revision', value => { value.sourceRevision = 'invalid'; }],
+    ['profile', value => { value.profileName = 'other'; }],
+    ['live-ack', value => { value.acknowledgements.live = 'other'; }],
+    ['operator-ack', value => { value.acknowledgements.operatorTrust = 'other'; }],
+    ['x402-version', value => { value.expectedPaymentRequired.x402Version = 3; }],
+    ['resource-url', value => { value.expectedPaymentRequired.resource.url = 'https://other.invalid/paid'; }],
+    ['resource-description', value => { value.expectedPaymentRequired.resource.description = 'other'; }],
+    ['resource-mime', value => { value.expectedPaymentRequired.resource.mimeType = 'text/plain'; }],
+    ['offer-count', value => { value.expectedPaymentRequired.accepts.push(structuredClone(value.expectedPaymentRequired.accepts[0])); }],
+    ['scheme', value => { value.expectedPaymentRequired.accepts[0].scheme = 'other'; }],
+    ['network', value => { value.expectedPaymentRequired.accepts[0].network = 'other'; }],
+    ['asset', value => { value.expectedPaymentRequired.accepts[0].asset = 'other'; }],
+    ['amount', value => { value.expectedPaymentRequired.accepts[0].amount = '2'; }],
+    ['payee', value => { value.expectedPaymentRequired.accepts[0].payTo = 'z1other'; }],
+    ['timeout', value => { value.expectedPaymentRequired.accepts[0].maxTimeoutSeconds = 59; }],
+    ['flow', value => { value.expectedPaymentRequired.accepts[0].extra.paymentFlow = 'other'; }],
+    ['poc', value => { value.expectedPaymentRequired.accepts[0].extra.poc = false; }],
+    ['settlement', value => { value.expectedPaymentRequired.accepts[0].extra.settlement = 'other'; }],
+    ['chain-version', value => { value.expectedPaymentRequired.accepts[0].extra.zenonChain.version = 2; }],
+    ['chain-id', value => { value.expectedPaymentRequired.accepts[0].extra.zenonChain.chainIdentifier = '0'; }],
+    ['chain-anchor', value => { value.expectedPaymentRequired.accepts[0].extra.zenonChain.genesisMomentumHash = '0'.repeat(64); }],
+    ['listen-port', value => { value.runtime.listenPort = 41001; }],
+    ['rpc-timeout', value => { value.runtime.rpcTimeoutMs = 29999; }],
+    ['recovery-attempts', value => { value.runtime.maxRecoveryAttempts = 1; }],
+    ['recovery-delay', value => { value.runtime.recoveryDelayMs = 1; }],
+    ['recovery-elapsed', value => { value.runtime.maxRecoveryElapsedMs = 2; }],
+    ['root-extra', value => { value.extra = true; }],
+    ['resource-extra', value => { value.expectedPaymentRequired.resource.serviceName = 'other'; }],
+    ['accepted-extra', value => { value.expectedPaymentRequired.accepts[0].other = true; }],
+  ];
+  for (const [name, mutate] of mutations) {
+    await t.test(name, async () => {
+      const config = runConfig();
+      mutate(config);
+      const context = reviewHarness({ files: reviewFiles(config) });
+      await assert.rejects(reviewGateBOperatorConfiguration(context.injected));
+      assert.equal(context.events.includes('authorization:reserved'), false);
+    });
+  }
+});
+
+test('review detects post-read generation change and source-attestation failure', async t => {
+  await t.test('generation-change', async () => {
+    let context;
+    context = reviewHarness({
+      beforeFinalVerification: async () => {
+        context.versions.set(GATE_B_PUBLIC_WS_INPUT_LEAVES.runConfig, 2);
+      },
+    });
+    await assert.rejects(reviewGateBOperatorConfiguration(context.injected));
+  });
+  await t.test('attestation-failure', async () => {
+    const context = reviewHarness();
+    context.injected.attestSourceTree = async () => false;
+    await assert.rejects(reviewGateBOperatorConfiguration(context.injected));
+  });
+});
+
+test('independent reviewer rejects cross-file mismatch, authorization presence, and record aliasing', async t => {
+  const mutations = [
+    ['buyer-equals-payee', files => {
+      files.set(GATE_B_PUBLIC_WS_INPUT_LEAVES.buyerAddress, jsonLine({
+        addressVersion: 1, address: 'z1payee-fixture', accountIndex: 0,
+      }, false));
+    }],
+    ['endpoint-source-mismatch', files => {
+      files.set(
+        GATE_B_PUBLIC_WS_INPUT_LEAVES.endpointSource,
+        serializeGateBProtectedEndpointSource('ws://8.8.4.4:35998/'),
+      );
+    }],
+    ['facilitator-rpc-mismatch', files => {
+      files.set(GATE_B_PUBLIC_WS_INPUT_LEAVES.facilitatorRpc, jsonLine({
+        secretVersion: 2, rpcEndpoint: 'ws://8.8.4.4:35998/',
+      }));
+    }],
+    ['hostname-resource-mismatch', files => {
+      files.set(
+        GATE_B_PUBLIC_WS_INPUT_LEAVES.hostnameSource,
+        serializeGateBQuickTunnelHostnameSource('alternate.trycloudflare.com'),
+      );
+    }],
+    ['payee-offer-mismatch', files => {
+      files.set(GATE_B_PUBLIC_WS_INPUT_LEAVES.payeeAddress, jsonLine({
+        addressVersion: 1, address: 'z1alternate-payee', accountIndex: 1,
+      }));
+    }],
+    ['rpc-schema-mismatch', files => {
+      files.set(GATE_B_PUBLIC_WS_INPUT_LEAVES.buyerRpc, jsonLine({
+        secretVersion: 1, rpcEndpoint: 'ws://8.8.8.8:35998/',
+      }));
+    }],
+  ];
+  for (const [name, mutate] of mutations) {
+    await t.test(name, async () => {
+      const files = reviewFiles();
+      mutate(files);
+      const context = reviewHarness({ files });
+      await assert.rejects(reviewGateBOperatorConfiguration(context.injected));
+    });
+  }
+
+  await t.test('authorization-present', async () => {
+    const context = reviewHarness();
+    context.workspace.assertAbsent = async () => { throw new Error('present'); };
+    await assert.rejects(reviewGateBOperatorConfiguration(context.injected));
+  });
+
+  await t.test('record-alias', async () => {
+    const context = reviewHarness();
+    const aliased = context.records.get(GATE_B_OPERATOR_REVIEW_LEAVES[0]);
+    context.workspace.openInputs = async names => names.map(() => aliased);
+    await assert.rejects(reviewGateBOperatorConfiguration(context.injected));
+  });
+});
+
+test('in-memory independent validator rejects hostile containers without getter or thenable evaluation', () => {
+  const context = {
+    asset: 'zts-fixture-native-asset',
+    hostname: 'fixture.trycloudflare.com',
+    payee: 'z1payee-fixture',
+  };
+  const accessor = runConfig();
+  let reads = 0;
+  Object.defineProperty(accessor, 'runtime', {
+    enumerable: true,
+    get() { reads += 1; return runConfig().runtime; },
+  });
+  for (const candidate of [
+    new Proxy(runConfig(), {}),
+    accessor,
+    Object.assign(Object.create({ hidden: true }), runConfig()),
+    { ...runConfig(), then() { reads += 1; } },
+  ]) assert.throws(() => validateIndependentGateBOperatorConfig(candidate, context));
+  assert.equal(reads, 0);
+});
+
+class FakeChannel extends EventEmitter {
+  constructor() {
+    super();
+    this.sent = [];
+  }
+
+  send(message, callback) {
+    this.sent.push(structuredClone(message));
+    queueMicrotask(() => callback?.(null));
+    if (message.type === 'REVIEW_REQUIRED') {
+      setImmediate(() => this.emit('message', { type: 'REVIEW_OPEN' }));
+    }
+    return true;
+  }
+}
+
+function cliHarness(changes = {}) {
+  const channel = new FakeChannel();
+  const events = [];
+  const lines = [];
+  const capability = Object.freeze(Object.create(null));
+  let status = 'GATE_B_CONTROLLER_REVIEW_REQUIRED_RUN_NOT_AUTHORIZED';
+  let stopCalls = 0;
+  let waitCalls = 0;
+  const reader = Object.freeze({
+    close() { events.push('reader:close'); return true; },
+    openReviewPhase() { events.push('reader:review-open'); return true; },
+    readInitial() {
+      events.push('reader:initial');
+      return Promise.resolve(frameGateBOperatorCoordinatorBootstrap(bootstrap()));
+    },
+    readReview() {
+      events.push('reader:review');
+      return Promise.resolve(frameGateBOperatorCoordinatorReview(review()));
+    },
+  });
+  const options = {
+    argv: [],
+    authorizeController: async (candidate, supplied) => {
+      assert.equal(candidate, capability);
+      assert.deepEqual(Object.keys(supplied).sort(), [
+        'acknowledgements', 'reviewedConfigDigest', 'schemaVersion',
+      ]);
+      events.push('controller:authorize');
+      status = 'GATE_B_CONTROLLER_PREFLIGHT_VALID_RUN_NOT_AUTHORIZED';
+      return status;
+    },
+    channel,
+    createFrameReader() { return reader; },
+    getControllerStatus(candidate) {
+      assert.equal(candidate, capability);
+      return status;
+    },
+    inputStream: Object.freeze({}),
+    lifetimeMs: 1000,
+    prepareController: async supplied => {
+      assert.deepEqual(supplied, bootstrap());
+      events.push('controller:prepare');
+      return capability;
+    },
+    reviewConfiguration: async (_root, supplied) => {
+      assert.equal(supplied.signal instanceof AbortSignal, true);
+      events.push('review');
+      return Object.freeze({
+        configDigest: 'b'.repeat(64),
+        resultVersion: 1,
+        type: 'REVIEW_VALID',
+      });
+    },
+    stderr: async line => { lines.push(['stderr', line]); return true; },
+    stdout: async line => { lines.push(['stdout', line]); return true; },
+    stopController: candidate => {
+      assert.equal(candidate, capability);
+      stopCalls += 1;
+      events.push('controller:stop');
+      return Promise.resolve('GATE_B_CONTROLLER_CLOSED_RUN_NOT_EXECUTED');
+    },
+    waitControllerClosed: candidate => {
+      assert.equal(candidate, capability);
+      waitCalls += 1;
+      events.push('controller:wait');
+      return Promise.resolve('GATE_B_CONTROLLER_CLOSED_RUN_NOT_EXECUTED');
+    },
+    ...changes,
+  };
+  return {
+    channel,
+    events,
+    lines,
+    options,
+    reader,
+    state: {
+      get stopCalls() { return stopCalls; },
+      get waitCalls() { return waitCalls; },
+    },
+  };
+}
+
+async function waitFor(check, timeoutMs = 250) {
+  const deadline = performance.now() + timeoutMs;
+  while (performance.now() <= deadline) {
+    if (check()) return;
+    const remainingMs = deadline - performance.now();
+    if (remainingMs <= 0) break;
+    await new Promise(resolve => setTimeout(resolve, Math.min(5, remainingMs)));
+  }
+  assert.fail('bounded condition not reached');
+}
+
+test('waitFor yields to zero and short timers without the legacy immediate seam',
+  { concurrency: false }, async () => {
+    const originalSetImmediate = globalThis.setImmediate;
+    let immediateCalls = 0;
+    globalThis.setImmediate = () => {
+      immediateCalls += 1;
+      throw new Error('legacy immediate seam invoked');
+    };
+    try {
+      async function legacyWaitFor(check, attempts = 50) {
+        for (let index = 0; index < attempts; index += 1) {
+          if (check()) return;
+          await new Promise(resolve => setImmediate(resolve));
+        }
+        assert.fail('bounded condition not reached');
+      }
+
+      await assert.rejects(legacyWaitFor(() => false), {
+        message: 'legacy immediate seam invoked',
+      });
+      assert.equal(immediateCalls, 1);
+
+      immediateCalls = 0;
+      let zeroTimerFired = false;
+      let shortTimerFired = false;
+      setTimeout(() => { zeroTimerFired = true; }, 0);
+      setTimeout(() => { shortTimerFired = true; }, 10);
+      await waitFor(() => zeroTimerFired && shortTimerFired, 100);
+      assert.equal(zeroTimerFired, true);
+      assert.equal(shortTimerFired, true);
+      assert.equal(immediateCalls, 0);
+    } finally {
+      globalThis.setImmediate = originalSetImmediate;
+    }
+  });
+
+test('coordinator CLI retains one process across review, preflight, STOP, and exact closure', async () => {
+  const context = cliHarness();
+  const pending = runGateBOperatorCoordinatorCli(context.options);
+  await waitFor(() => context.channel.sent.some(message =>
+    message.type === 'PREFLIGHT_VALID'));
+  assert.deepEqual(context.events.slice(0, 6), [
+    'reader:initial',
+    'controller:prepare',
+    'reader:review-open',
+    'reader:review',
+    'review',
+    'controller:authorize',
+  ]);
+  context.channel.emit('message', createGateBOperatorCoordinatorIpcMessage('STOP'));
+  assert.equal(await pending, true);
+  assert.equal(context.state.stopCalls, 1);
+  assert.equal(context.state.waitCalls, 1);
+  assert.deepEqual(context.lines, [
+    ['stdout', GATE_B_OPERATOR_COORDINATOR_STATUS_LINES.REVIEW_REQUIRED],
+    ['stdout', GATE_B_OPERATOR_COORDINATOR_STATUS_LINES.PREFLIGHT_VALID],
+    ['stdout', GATE_B_OPERATOR_COORDINATOR_STATUS_LINES.CLOSED],
+  ]);
+  assert.deepEqual(context.channel.sent.map(message => message.type), [
+    'REVIEW_REQUIRED', 'REVIEW_OPENED', 'PREFLIGHT_VALID', 'STOPPED',
+  ]);
+});
+
+test('STOP during review, authorize, and synchronous prepare reentrancy disables later actions', async t => {
+  await t.test('review', async () => {
+    const entered = deferred();
+    const held = deferred();
+    const context = cliHarness({
+      reviewConfiguration() {
+        entered.resolve(true);
+        return held.promise;
+      },
+    });
+    const pending = runGateBOperatorCoordinatorCli(context.options);
+    await entered.promise;
+    context.channel.emit('message', createGateBOperatorCoordinatorIpcMessage('STOP'));
+    held.resolve(Object.freeze({
+      configDigest: 'b'.repeat(64), resultVersion: 1, type: 'REVIEW_VALID',
+    }));
+    assert.equal(await pending, true);
+    assert.equal(context.events.includes('controller:authorize'), false);
+    assert.equal(context.state.stopCalls, 1);
+    assert.equal(context.state.waitCalls, 1);
+  });
+
+  await t.test('authorize', async () => {
+    const entered = deferred();
+    const held = deferred();
+    const context = cliHarness({
+      authorizeController() {
+        entered.resolve(true);
+        return held.promise;
+      },
+    });
+    const pending = runGateBOperatorCoordinatorCli(context.options);
+    await entered.promise;
+    context.channel.emit('message', createGateBOperatorCoordinatorIpcMessage('STOP'));
+    held.resolve('GATE_B_CONTROLLER_FAILED_WORKSPACE_QUARANTINED');
+    assert.equal(await pending, true);
+    assert.equal(context.state.stopCalls, 1);
+    assert.equal(context.state.waitCalls, 1);
+  });
+
+  await t.test('synchronous-prepare-reentrancy', async () => {
+    let context;
+    context = cliHarness({
+      prepareController() {
+        context.channel.emit('message', createGateBOperatorCoordinatorIpcMessage('STOP'));
+        return Promise.resolve(Object.freeze(Object.create(null)));
+      },
+      getControllerStatus: () => 'GATE_B_CONTROLLER_REVIEW_REQUIRED_RUN_NOT_AUTHORIZED',
+      stopController: () => Promise.resolve('GATE_B_CONTROLLER_CLOSED_RUN_NOT_EXECUTED'),
+      waitControllerClosed: () => Promise.resolve('GATE_B_CONTROLLER_CLOSED_RUN_NOT_EXECUTED'),
+    });
+    assert.equal(await runGateBOperatorCoordinatorCli(context.options), true);
+    assert.equal(context.events.includes('review'), false);
+  });
+});
+
+test('coordinator process termination and disconnect controls stop and wait exactly once', async t => {
+  for (const event of ['SIGTERM', 'SIGINT', 'disconnect']) {
+    await t.test(event, async () => {
+      const entered = deferred();
+      const held = deferred();
+      const context = cliHarness({
+        reviewConfiguration() {
+          entered.resolve(true);
+          return held.promise;
+        },
+      });
+      const pending = runGateBOperatorCoordinatorCli(context.options);
+      await entered.promise;
+      context.channel.emit(event);
+      held.resolve(Object.freeze({
+        configDigest: 'b'.repeat(64), resultVersion: 1, type: 'REVIEW_VALID',
+      }));
+      const clean = await pending;
+      assert.equal(clean, event === 'disconnect' ? false : true);
+      assert.equal(context.events.includes('controller:authorize'), false);
+      assert.equal(context.state.stopCalls, 1);
+      assert.equal(context.state.waitCalls, 1);
+      assert.equal(context.channel.listenerCount(event), 0);
+    });
+  }
+});
+
+test('coordinator rejects hostile thenables without evaluating then and emits fixed quarantine only', async () => {
+  let reads = 0;
+  const hostile = {};
+  Object.defineProperty(hostile, 'then', {
+    get() { reads += 1; return () => {}; },
+  });
+  const context = cliHarness({ prepareController: () => hostile });
+  assert.equal(await runGateBOperatorCoordinatorCli(context.options), false);
+  assert.equal(reads, 0);
+  assert.deepEqual(context.lines, [[
+    'stderr', GATE_B_OPERATOR_COORDINATOR_STATUS_LINES.QUARANTINED,
+  ]]);
+  assert.deepEqual(context.channel.sent.map(message => message.type), ['QUARANTINED']);
+});
+
+test('coordinator opens frame two only after the fixed line, enum, and private barrier',
+  async () => {
+  const context = cliHarness();
+  const original = context.reader;
+  context.options.createFrameReader = () => Object.freeze({
+    close: original.close,
+    readInitial: original.readInitial,
+    readReview: original.readReview,
+    openReviewPhase() {
+      assert.deepEqual(context.lines, [[
+        'stdout', GATE_B_OPERATOR_COORDINATOR_STATUS_LINES.REVIEW_REQUIRED,
+      ]]);
+      assert.deepEqual(context.channel.sent.map(message => message.type), ['REVIEW_REQUIRED']);
+      return original.openReviewPhase();
+    },
+  });
+  const pending = runGateBOperatorCoordinatorCli(context.options);
+  await waitFor(() => context.channel.sent.some(message =>
+    message.type === 'PREFLIGHT_VALID'));
+  context.channel.emit('message', createGateBOperatorCoordinatorIpcMessage('STOP'));
+  assert.equal(await pending, true);
+});
+
+test('review phase opens before the private barrier acknowledgement callback settles',
+  async () => {
+    const input = new PassThrough();
+    const lifecycleEntered = deferred();
+    const lifecycleReleased = deferred();
+    const acknowledgementEntered = deferred();
+    const acknowledgementReleased = deferred();
+    const channel = new FakeChannel();
+    channel.send = function send(message, callback) {
+      this.sent.push(structuredClone(message));
+      if (message.type === 'REVIEW_REQUIRED') {
+        lifecycleEntered.resolve(true);
+        void lifecycleReleased.promise.then(() => callback?.(null));
+      } else if (message.type === 'REVIEW_OPENED') {
+        acknowledgementEntered.resolve(true);
+        void acknowledgementReleased.promise.then(() => callback?.(null));
+      } else {
+        queueMicrotask(() => callback?.(null));
+      }
+      return true;
+    };
+    const context = cliHarness({
+      channel,
+      createFrameReader: stream => createGateBOperatorCoordinatorFrameReader(stream),
+      inputStream: input,
+    });
+    const pending = runGateBOperatorCoordinatorCli(context.options);
+    input.write(frameGateBOperatorCoordinatorBootstrap(bootstrap()));
+    await lifecycleEntered.promise;
+    channel.emit('message', { type: 'REVIEW_OPEN' });
+    await acknowledgementEntered.promise;
+    input.end(frameGateBOperatorCoordinatorReview(review()));
+    await new Promise(resolve => setImmediate(resolve));
+    lifecycleReleased.resolve(true);
+    acknowledgementReleased.resolve(true);
+    await waitFor(() => channel.sent.some(message =>
+      message.type === 'PREFLIGHT_VALID' || message.type === 'QUARANTINED'));
+    if (channel.sent.some(message => message.type === 'PREFLIGHT_VALID')) {
+      channel.emit('message', createGateBOperatorCoordinatorIpcMessage('STOP'));
+    }
+    assert.equal(await pending, true);
+    assert.deepEqual(channel.sent.map(message => message.type), [
+      'REVIEW_REQUIRED', 'REVIEW_OPENED', 'PREFLIGHT_VALID', 'STOPPED',
+    ]);
+  });
+
+test('post-review mismatch and malformed control quarantine without preflight authority', async t => {
+  await t.test('digest-mismatch', async () => {
+    const context = cliHarness({
+      authorizeController: async () => {
+        context.events.push('controller:authorize-mismatch');
+        return 'GATE_B_CONTROLLER_FAILED_WORKSPACE_QUARANTINED';
+      },
+    });
+    assert.equal(await runGateBOperatorCoordinatorCli(context.options), false);
+    assert.equal(context.lines.some(([, line]) =>
+      line === GATE_B_OPERATOR_COORDINATOR_STATUS_LINES.PREFLIGHT_VALID), false);
+    assert.equal(context.state.stopCalls, 1);
+    assert.equal(context.state.waitCalls, 1);
+  });
+
+  await t.test('malformed-control-during-review', async () => {
+    const entered = deferred();
+    const held = deferred();
+    const context = cliHarness({
+      reviewConfiguration() {
+        entered.resolve(true);
+        return held.promise;
+      },
+    });
+    const pending = runGateBOperatorCoordinatorCli(context.options);
+    await entered.promise;
+    context.channel.emit('message', { ipcVersion: 1, type: 'UNEXPECTED' });
+    held.resolve(Object.freeze({
+      configDigest: 'b'.repeat(64), resultVersion: 1, type: 'REVIEW_VALID',
+    }));
+    assert.equal(await pending, false);
+    const sentBeforeLateEvent = context.channel.sent.length;
+    context.channel.emit('message', createGateBOperatorCoordinatorIpcMessage('STOP'));
+    assert.equal(context.channel.sent.length, sentBeforeLateEvent);
+    assert.equal(context.events.includes('controller:authorize'), false);
+  });
+});
+
+test('review child emits only enum lifecycle and one private result frame', async () => {
+  const channel = new FakeChannel();
+  const frames = [];
+  const pending = runGateBOperatorConfigReviewChild({
+    channel,
+    review: () => Promise.resolve(Object.freeze({
+      configDigest: 'b'.repeat(64), resultVersion: 1, type: 'REVIEW_VALID',
+    })),
+    writeResult: frame => {
+      frames.push(Buffer.from(frame));
+      return Promise.resolve(true);
+    },
+  });
+  await waitFor(() => channel.sent.some(message => message.type === 'READY'));
+  channel.emit('message', { ipcVersion: 1, type: 'REVIEW' });
+  assert.equal(await pending, true);
+  assert.deepEqual(channel.sent.map(message => message.type), ['READY', 'REVIEWED']);
+  assert.equal(frames.length, 1);
+  assert.equal(parseGateBOperatorReviewResultFrame(frames[0]).type, 'REVIEW_VALID');
+  frames[0].fill(0);
+});
+
+test('review child STOP and malformed lifecycle prevent late result publication', async t => {
+  await t.test('stop-during-review', async () => {
+    const channel = new FakeChannel();
+    const held = deferred();
+    let writes = 0;
+    const pending = runGateBOperatorConfigReviewChild({
+      channel,
+      review: () => held.promise,
+      writeResult: () => { writes += 1; return Promise.resolve(true); },
+    });
+    await waitFor(() => channel.sent.some(message => message.type === 'READY'));
+    channel.emit('message', { ipcVersion: 1, type: 'REVIEW' });
+    channel.emit('message', { ipcVersion: 1, type: 'STOP' });
+    assert.equal(await pending, true);
+    held.resolve(Object.freeze({
+      configDigest: 'b'.repeat(64), resultVersion: 1, type: 'REVIEW_VALID',
+    }));
+    await new Promise(resolve => setImmediate(resolve));
+    assert.equal(writes, 0);
+    assert.deepEqual(channel.sent.map(message => message.type), ['READY', 'STOPPED']);
+  });
+
+  await t.test('duplicate-review', async () => {
+    const channel = new FakeChannel();
+    const held = deferred();
+    const pending = runGateBOperatorConfigReviewChild({
+      channel,
+      review: () => held.promise,
+      writeResult: () => Promise.resolve(true),
+    });
+    await waitFor(() => channel.sent.some(message => message.type === 'READY'));
+    channel.emit('message', { ipcVersion: 1, type: 'REVIEW' });
+    channel.emit('message', { ipcVersion: 1, type: 'REVIEW' });
+    assert.equal(await pending, false);
+    held.resolve(Object.freeze({
+      configDigest: 'b'.repeat(64), resultVersion: 1, type: 'REVIEW_VALID',
+    }));
+  });
+
+  await t.test('hostile-thenable', async () => {
+    const channel = new FakeChannel();
+    let reads = 0;
+    const hostile = {};
+    Object.defineProperty(hostile, 'then', {
+      get() { reads += 1; return () => {}; },
+    });
+    const pending = runGateBOperatorConfigReviewChild({
+      channel,
+      review: () => hostile,
+      writeResult: () => Promise.resolve(true),
+    });
+    await waitFor(() => channel.sent.some(message => message.type === 'READY'));
+    channel.emit('message', { ipcVersion: 1, type: 'REVIEW' });
+    assert.equal(await pending, false);
+    assert.equal(reads, 0);
+  });
+});
+
+function fakeReviewChild(mode = 'success') {
+  const child = new EventEmitter();
+  child.pid = 41001;
+  child.connected = true;
+  child.channel = Object.freeze({ close() {}, unref() {} });
+  child.stdout = new PassThrough();
+  child.stderr = new PassThrough();
+  const result = new PassThrough();
+  child.stdio = [null, child.stdout, child.stderr, null, result];
+  child.kill = signal => {
+    child.signals ??= [];
+    child.signals.push(signal);
+    return true;
+  };
+  child.disconnect = () => { child.connected = false; child.emit('disconnect'); };
+  child.send = (message, callback) => {
+    queueMicrotask(() => callback?.(null));
+    if (message.type === 'REVIEW') {
+      queueMicrotask(() => {
+        if (mode === 'noise') {
+          child.stdout.write('noise');
+          return;
+        }
+        if (mode === 'malformed') {
+          child.emit('message', { ipcVersion: 1, type: 'OTHER' });
+          return;
+        }
+        if (mode === 'duplicate-ready') {
+          child.emit('message', { ipcVersion: 1, type: 'READY' });
+          return;
+        }
+        if (mode === 'overflow') {
+          result.end(Buffer.alloc(GATE_B_OPERATOR_COORDINATOR_LIMITS.resultFrameBytes + 1));
+          return;
+        }
+        const frame = frameGateBOperatorReviewResult({
+          configDigest: 'b'.repeat(64),
+          resultVersion: 1,
+          type: 'REVIEW_VALID',
+        });
+        if (mode === 'trailing-result') result.end(Buffer.concat([frame, frame]));
+        else if (mode !== 'missing-result-eof') result.end(frame);
+        else result.write(frame);
+        child.emit('message', mode === 'wrong-enum'
+          ? createGateBOperatorCoordinatorIpcMessage('STOP')
+          : { ipcVersion: 1, type: 'REVIEWED' });
+        if (mode === 'wrong-enum') return;
+        if (mode === 'duplicate-reviewed') {
+          child.emit('message', { ipcVersion: 1, type: 'REVIEWED' });
+          return;
+        }
+        if (mode === 'missing-close') return;
+        setImmediate(() => {
+          const code = mode === 'nonzero' ? 1 : 0;
+          child.emit('exit', code, null);
+          child.emit('close', code, null);
+        });
+      });
+    }
+    return true;
+  };
+  queueMicrotask(() => {
+    if (mode === 'early-result') result.write(frameGateBOperatorReviewResult({
+      configDigest: 'b'.repeat(64), resultVersion: 1, type: 'REVIEW_VALID',
+    }));
+    child.emit('message', { ipcVersion: 1, type: 'READY' });
+  });
+  return child;
+}
+
+test('review-child launcher requires a single private result frame, exact enum, clean exit, and silence', async t => {
+  await t.test('success', async () => {
+    const child = fakeReviewChild();
+    const result = await launchGateBOperatorConfigReview(WORKSPACE_ROOT, {
+      childModule: '/private/tmp/gate-b-review-fixture.js',
+      forkProcess: () => child,
+      signal: new AbortController().signal,
+      timeoutMs: 1000,
+    });
+    assert.equal(result.type, 'REVIEW_VALID');
+  });
+  for (const mode of [
+    'noise', 'malformed', 'wrong-enum', 'nonzero', 'duplicate-ready',
+    'duplicate-reviewed', 'early-result', 'overflow', 'trailing-result',
+    'missing-result-eof', 'missing-close',
+  ]) {
+    await t.test(mode, async () => {
+      const child = fakeReviewChild(mode);
+      await assert.rejects(launchGateBOperatorConfigReview(WORKSPACE_ROOT, {
+        childModule: '/private/tmp/gate-b-review-fixture.js',
+        forkProcess: () => child,
+        signal: new AbortController().signal,
+        timeoutMs: mode === 'missing-close' ? 20 : 1000,
+      }));
+    });
+  }
+
+  await t.test('abort', async () => {
+    const child = fakeReviewChild('missing-close');
+    const controller = new AbortController();
+    const pending = launchGateBOperatorConfigReview(WORKSPACE_ROOT, {
+      childModule: '/private/tmp/gate-b-review-fixture.js',
+      forkProcess: () => child,
+      signal: controller.signal,
+      timeoutMs: 1000,
+    });
+    controller.abort();
+    await assert.rejects(pending);
+  });
+
+  await t.test('hostile-signal-getter', () => {
+    let reads = 0;
+    const hostile = {
+      addEventListener() {},
+      removeEventListener() {},
+      get aborted() { reads += 1; return false; },
+    };
+    assert.throws(() => launchGateBOperatorConfigReview(WORKSPACE_ROOT, {
+      childModule: '/private/tmp/gate-b-review-fixture.js',
+      forkProcess: () => fakeReviewChild(),
+      signal: hostile,
+      timeoutMs: 1000,
+    }));
+    assert.equal(reads, 0);
+  });
+});
+
+function fakeCoordinatorProcess() {
+  const child = new EventEmitter();
+  child.pid = 42001;
+  child.connected = true;
+  child.channel = Object.freeze({ close() {}, unref() {} });
+  child.stdout = new PassThrough();
+  child.stderr = new PassThrough();
+  const privatePipe = new PassThrough();
+  const lifetimePipe = new PassThrough();
+  child.stdio = [null, child.stdout, child.stderr, privatePipe, null, lifetimePipe];
+  child.disconnect = () => { child.connected = false; };
+  child.unref = () => {};
+  let inputPhase = 0;
+  privatePipe.on('data', chunk => {
+    if (inputPhase === 0) {
+      parseGateBOperatorCoordinatorBootstrapFrame(chunk);
+      inputPhase = 1;
+      queueMicrotask(() => {
+        child.stdout.write(GATE_B_OPERATOR_COORDINATOR_STATUS_LINES.REVIEW_REQUIRED);
+        child.emit('message', createGateBOperatorCoordinatorIpcMessage('REVIEW_REQUIRED'));
+      });
+    } else {
+      parseGateBOperatorCoordinatorReviewFrame(chunk);
+      inputPhase = 2;
+      queueMicrotask(() => {
+        child.stdout.write(GATE_B_OPERATOR_COORDINATOR_STATUS_LINES.PREFLIGHT_VALID);
+        child.emit('message', createGateBOperatorCoordinatorIpcMessage('PREFLIGHT_VALID'));
+      });
+    }
+  });
+  child.send = (message, callback) => {
+    queueMicrotask(() => callback?.(null));
+    if (message.type === 'REVIEW_OPEN') {
+      setImmediate(() => child.emit('message', { type: 'REVIEW_OPENED' }));
+    }
+    if (message.type === 'STOP') {
+      queueMicrotask(() => {
+        child.stdout.write(GATE_B_OPERATOR_COORDINATOR_STATUS_LINES.CLOSED);
+        child.emit('message', createGateBOperatorCoordinatorIpcMessage('STOPPED'));
+        child.emit('exit', 0, null);
+        child.emit('close', 0, null);
+      });
+    }
+    return true;
+  };
+  return child;
+}
+
+function fakeSiblingOwnerProcesses(changes = {}) {
+  const events = [];
+  const emitted = [];
+  const alive = new Map([[43001, true], [43002, true]]);
+  const watchdog = new EventEmitter();
+  watchdog.pid = 43001;
+  watchdog.connected = true;
+  watchdog.channel = Object.freeze({ close() {}, unref() {} });
+  watchdog.stdout = new PassThrough();
+  watchdog.stderr = new PassThrough();
+  const startPipe = new PassThrough();
+  const protocolPipe = new PassThrough();
+  const watchdogLifetime = new PassThrough();
+  watchdog.stdio = [
+    null, watchdog.stdout, watchdog.stderr, startPipe, protocolPipe, watchdogLifetime, null,
+  ];
+  watchdog.disconnect = () => { watchdog.connected = false; };
+  watchdog.unref = () => {};
+
+  const reaper = new EventEmitter();
+  reaper.pid = 43002;
+  reaper.connected = true;
+  reaper.channel = Object.freeze({ close() {}, unref() {} });
+  const targetPipe = new PassThrough();
+  const reaperLifetime = new PassThrough();
+  reaper.stdio = [null, null, null, targetPipe, reaperLifetime, null];
+  reaper.disconnect = () => { reaper.connected = false; };
+  reaper.unref = () => {};
+  if (changes.recordTargetCallback === true) {
+    const targetEnd = targetPipe.end;
+    targetPipe.end = function end(chunk, callback) {
+      return Reflect.apply(targetEnd, this, [chunk, error => {
+        if (changes.holdTargetCallback === true) {
+          events.push('TARGET_CALLBACK_HELD');
+          changes.releaseTargetCallback = () => {
+            events.push('TARGET_CALLBACK');
+            callback?.(error);
+          };
+        } else {
+          events.push('TARGET_CALLBACK');
+          callback?.(error);
+        }
+      }]);
+    };
+  }
+
+  let startBytes = Buffer.alloc(0);
+  startPipe.on('data', chunk => {
+    startBytes = Buffer.concat([startBytes, chunk]);
+    chunk.fill(0);
+  });
+  startPipe.on('end', () => {
+    events.push('START');
+    assert.equal(startBytes.length, 4);
+    assert.equal(startBytes.readUInt32BE(0), 0x47425354);
+    startBytes.fill(0);
+    queueMicrotask(() => {
+      emitted.push({ source: 'watchdog', value: { type: 'STARTED' } });
+      watchdog.emit('message', { type: 'STARTED' });
+    });
+  });
+
+  let protocolPhase = 0;
+  protocolPipe.on('data', chunk => {
+    if (protocolPhase === 0) {
+      events.push('BOOTSTRAP');
+      parseGateBOperatorCoordinatorBootstrapFrame(chunk);
+      protocolPhase = 1;
+      queueMicrotask(() => {
+        watchdog.stdout.write(GATE_B_OPERATOR_COORDINATOR_STATUS_LINES.REVIEW_REQUIRED);
+        const value = createGateBOperatorCoordinatorIpcMessage('REVIEW_REQUIRED');
+        emitted.push({ source: 'watchdog', value });
+        watchdog.emit('message', value);
+      });
+    } else {
+      events.push('REVIEW');
+      parseGateBOperatorCoordinatorReviewFrame(chunk);
+      protocolPhase = 2;
+      queueMicrotask(() => {
+        watchdog.stdout.write(GATE_B_OPERATOR_COORDINATOR_STATUS_LINES.PREFLIGHT_VALID);
+        const value = createGateBOperatorCoordinatorIpcMessage('PREFLIGHT_VALID');
+        emitted.push({ source: 'watchdog', value });
+        watchdog.emit('message', value);
+      });
+    }
+  });
+
+  let targetBytes = Buffer.alloc(0);
+  targetPipe.on('data', chunk => {
+    targetBytes = Buffer.concat([targetBytes, chunk]);
+    chunk.fill(0);
+  });
+  targetPipe.on('end', () => {
+    events.push('TARGET');
+    assert.equal(targetBytes.length, 8);
+    assert.equal(targetBytes.readUInt32BE(0), 0x47425250);
+    assert.equal(targetBytes.readUInt32BE(4), watchdog.pid);
+    targetBytes.fill(0);
+    if (changes.publicBeforeReady === true) queueMicrotask(() => {
+      watchdog.stdout.write(GATE_B_OPERATOR_COORDINATOR_STATUS_LINES.REVIEW_REQUIRED);
+      watchdog.emit('message', createGateBOperatorCoordinatorIpcMessage('REVIEW_REQUIRED'));
+    });
+    if (changes.reaperReady !== false) queueMicrotask(() => {
+      emitted.push({ source: 'reaper', value: { type: 'READY' } });
+      reaper.emit('message', { type: 'READY' });
+    });
+  });
+
+  watchdog.send = (message, callback) => {
+    events.push(`WATCHDOG_${message.type}`);
+    queueMicrotask(() => callback?.(null));
+    if (message.type === 'BOOTSTRAP_OPEN' || message.type === 'REVIEW_OPEN') {
+      const allowed = message.type === 'BOOTSTRAP_OPEN'
+        ? changes.bootstrapOpenAck !== false
+        : changes.reviewOpenAck !== false;
+      if (allowed) setImmediate(() => {
+        watchdog.emit('message', { type: `${message.type}ED` });
+        if (changes.duplicateOpenAck === message.type) {
+          watchdog.emit('message', { type: `${message.type}ED` });
+        }
+      });
+    }
+    if (message.type === 'STOP' && changes.watchdogHang !== true) {
+      setTimeout(() => {
+        if (changes.exitBeforeFinalProtocol === true) {
+          alive.set(watchdog.pid, false);
+          watchdog.emit('exit', 0, null);
+        }
+        watchdog.stdout.write(GATE_B_OPERATOR_COORDINATOR_STATUS_LINES.CLOSED);
+        const value = createGateBOperatorCoordinatorIpcMessage('STOPPED');
+        emitted.push({ source: 'watchdog', value });
+        watchdog.emit('message', value);
+        if (changes.exitBeforeFinalProtocol !== true) {
+          alive.set(watchdog.pid, false);
+          watchdog.emit('exit', 0, null);
+        }
+        if (changes.holdWatchdogClose === true) {
+          changes.releaseWatchdogClose = () => watchdog.emit('close', 0, null);
+        } else {
+          watchdog.emit('close', 0, null);
+        }
+      }, 0);
+    }
+    return true;
+  };
+  reaper.send = (message, callback) => {
+    events.push(`REAPER_${message.type}`);
+    queueMicrotask(() => callback?.(null));
+    if (message.type === 'CLEANUP' && changes.reaperHang !== true) {
+      setTimeout(() => {
+        if (changes.falseAbsent !== true && alive.get(watchdog.pid) === true) {
+          alive.set(watchdog.pid, false);
+          watchdog.emit('exit', null, 'SIGTERM');
+          watchdog.emit('close', null, 'SIGTERM');
+        }
+        emitted.push({ source: 'reaper', value: { type: 'ABSENT' } });
+        reaper.emit('message', { type: 'ABSENT' });
+        alive.set(reaper.pid, false);
+        reaper.emit('exit', 0, null);
+        reaper.emit('close', 0, null);
+      }, 0);
+    }
+    return true;
+  };
+
+  const spawnCalls = [];
+  return {
+    alive,
+    emitted,
+    events,
+    reaper,
+    spawnCalls,
+    spawnProcess(executable, args, options) {
+      spawnCalls.push({ executable, args, options });
+      return spawnCalls.length === 1 ? watchdog : reaper;
+    },
+    terminate(groupId, signal) {
+      events.push(`SIGNAL_${groupId}_${signal}`);
+      if (alive.get(groupId) !== true) return;
+      if (groupId === reaper.pid && signal === 'SIGTERM' && changes.ignoreReaperTerm) return;
+      if (groupId === watchdog.pid && signal === 'SIGTERM' && changes.ignoreWatchdogTerm) return;
+      alive.set(groupId, false);
+      const child = groupId === watchdog.pid ? watchdog : reaper;
+      child.emit('exit', null, signal);
+      child.emit('close', null, signal);
+    },
+    watchdog,
+  };
+}
+
+function fakeSiblingOwnerOptions(fixture, changes = {}) {
+  return {
+    executable: process.execPath,
+    gracefulStopMs: 40,
+    killProcessGroup: (groupId, signal) => fixture.terminate(groupId, signal),
+    lifetimeMs: 1000,
+    platform: 'darwin',
+    probeProcessGroup: groupId => fixture.alive.get(groupId) ?? false,
+    reapAbandonMs: 30,
+    reapForceMs: 10,
+    reaperModule: '/private/tmp/gate-b-reaper-fixture.js',
+    setupTimeoutMs: 30,
+    spawnProcess: fixture.spawnProcess,
+    terminalWaitMs: 40,
+    watchdogModule: '/private/tmp/gate-b-watchdog-fixture.js',
+    ...changes,
+  };
+}
+
+test('launcher owns one detached group and exposes a phase-separated opaque lifecycle', async () => {
+  const child = fakeCoordinatorProcess();
+  const spawnCalls = [];
+  const capability = await launchGateBOperatorCoordinator(bootstrap(), {
+    cliModule: '/private/tmp/gate-b-operator-coordinator-cli-fixture.js',
+    executable: process.execPath,
+    killProcessGroup() { assert.fail('clean closure must not signal'); },
+    lifetimeMs: 1000,
+    platform: 'darwin',
+    probeProcessGroup: () => false,
+    reapAbandonMs: 1000,
+    reapForceMs: 100,
+    spawnProcess(executable, args, options) {
+      spawnCalls.push({ executable, args, options });
+      return child;
+    },
+  });
+  assert.equal(Object.getPrototypeOf(capability), null);
+  assert.equal(Object.isFrozen(capability), true);
+  assert.equal(getGateBOperatorCoordinatorStatus(capability), 'REVIEW_REQUIRED');
+  assert.equal(await submitGateBOperatorCoordinatorReview(capability, review()), 'PREFLIGHT_VALID');
+  assert.equal(getGateBOperatorCoordinatorStatus(capability), 'PREFLIGHT_VALID');
+  assert.equal(await stopGateBOperatorCoordinator(capability), 'CLOSED');
+  assert.equal(await waitGateBOperatorCoordinatorClosed(capability), 'CLOSED');
+  assert.equal(getGateBOperatorCoordinatorStatus(capability), 'CLOSED');
+  assert.equal(spawnCalls.length, 1);
+  assert.equal(spawnCalls[0].executable, process.execPath);
+  assert.equal(spawnCalls[0].args.length, 1);
+  assert.equal(spawnCalls[0].options.detached, true);
+  assert.equal(spawnCalls[0].options.shell, false);
+  assert.deepEqual(spawnCalls[0].options.env, {});
+  assert.deepEqual(spawnCalls[0].options.stdio,
+    ['ignore', 'pipe', 'pipe', 'pipe', 'ipc', 'pipe']);
+});
+
+test('outer setup owns detached sibling groups and submits bootstrap only after READY then START',
+  async () => {
+    const fixture = fakeSiblingOwnerProcesses();
+    const signals = [];
+    const options = {
+      executable: process.execPath,
+      killProcessGroup(groupId, signal) {
+        signals.push([groupId, signal]);
+        fixture.alive.set(groupId, false);
+      },
+      lifetimeMs: 1000,
+      platform: 'darwin',
+      probeProcessGroup: groupId => fixture.alive.get(groupId) ?? false,
+      reapAbandonMs: 1000,
+      reapForceMs: 100,
+      reaperModule: '/private/tmp/gate-b-reaper-fixture.js',
+      setupTimeoutMs: 1000,
+      spawnProcess: fixture.spawnProcess,
+      terminalWaitMs: 1000,
+      watchdogModule: '/private/tmp/gate-b-watchdog-fixture.js',
+    };
+    const capability = await launchGateBOperatorWatchdogSetup(options);
+    assert.deepEqual(fixture.events, ['TARGET', 'START']);
+    assert.equal(fixture.spawnCalls.length, 2);
+    assert.deepEqual(fixture.spawnCalls.map(call => call.args.length), [1, 1]);
+    assert.deepEqual(fixture.spawnCalls.map(call => call.options.detached), [true, true]);
+    assert.deepEqual(fixture.spawnCalls.map(call => call.options.env), [{}, {}]);
+    assert.deepEqual(fixture.spawnCalls[0].options.stdio,
+      ['ignore', 'pipe', 'pipe', 'pipe', 'pipe', 'pipe', 'ipc']);
+    assert.deepEqual(fixture.spawnCalls[1].options.stdio,
+      ['ignore', 'ignore', 'ignore', 'pipe', 'pipe', 'ipc']);
+
+    assert.equal(await submitGateBOperatorBootstrap(capability, bootstrap()), capability);
+    assert.deepEqual(fixture.events.slice(0, 4), [
+      'TARGET', 'START', 'WATCHDOG_BOOTSTRAP_OPEN', 'BOOTSTRAP',
+    ]);
+    assert.equal(getGateBOperatorCoordinatorStatus(capability), 'REVIEW_REQUIRED');
+    assert.equal(await submitGateBOperatorCoordinatorReview(capability, review()),
+      'PREFLIGHT_VALID');
+    assert.equal(await stopGateBOperatorCoordinator(capability), 'CLOSED');
+    assert.equal(await waitGateBOperatorCoordinatorClosed(capability), 'CLOSED');
+    assert.deepEqual(signals, []);
+    assert.equal(fixture.alive.get(43001), false);
+    assert.equal(fixture.alive.get(43002), false);
+    for (const { source, value } of fixture.emitted) {
+      if (source === 'reaper' || value.type === 'STARTED') {
+        assert.deepEqual(Reflect.ownKeys(value), ['type']);
+      }
+      assert.equal(Reflect.ownKeys(value).some(key => key === 'pid' || key === 'groupId'), false);
+    }
+  });
+
+test('canonical phase bytes wait for exact one-shot private OPEN acknowledgements', async () => {
+  const changes = { bootstrapOpenAck: false, reviewOpenAck: false };
+  const fixture = fakeSiblingOwnerProcesses(changes);
+  const capability = await launchGateBOperatorWatchdogSetup(
+    fakeSiblingOwnerOptions(fixture),
+  );
+  const submitted = submitGateBOperatorBootstrap(capability, bootstrap());
+  await waitFor(() => fixture.events.includes('WATCHDOG_BOOTSTRAP_OPEN'));
+  assert.equal(fixture.events.includes('BOOTSTRAP'), false);
+  fixture.watchdog.emit('message', { type: 'BOOTSTRAP_OPENED' });
+  assert.equal(await submitted, capability);
+
+  const reviewed = submitGateBOperatorCoordinatorReview(capability, review());
+  await waitFor(() => fixture.events.includes('WATCHDOG_REVIEW_OPEN'));
+  assert.equal(fixture.events.includes('REVIEW'), false);
+  fixture.watchdog.emit('message', { type: 'REVIEW_OPENED' });
+  assert.equal(await reviewed, 'PREFLIGHT_VALID');
+  assert.equal(await stopGateBOperatorCoordinator(capability), 'CLOSED');
+});
+
+test('early, duplicate, and stale private OPEN acknowledgements poison captured owners',
+  async t => {
+    await t.test('early', async () => {
+      const fixture = fakeSiblingOwnerProcesses();
+      const capability = await launchGateBOperatorWatchdogSetup(
+        fakeSiblingOwnerOptions(fixture),
+      );
+      fixture.watchdog.emit('message', { type: 'BOOTSTRAP_OPENED' });
+      assert.equal(await waitGateBOperatorCoordinatorClosed(capability), 'QUARANTINED');
+      assert.equal(fixture.events.includes('BOOTSTRAP'), false);
+    });
+
+    await t.test('duplicate', async () => {
+      const fixture = fakeSiblingOwnerProcesses({ duplicateOpenAck: 'BOOTSTRAP_OPEN' });
+      const capability = await launchGateBOperatorWatchdogSetup(
+        fakeSiblingOwnerOptions(fixture),
+      );
+      await assert.rejects(submitGateBOperatorBootstrap(capability, bootstrap()));
+      assert.equal(await waitGateBOperatorCoordinatorClosed(capability), 'QUARANTINED');
+    });
+
+    await t.test('stale-after-submit', async () => {
+      const fixture = fakeSiblingOwnerProcesses();
+      const capability = await launchGateBOperatorWatchdogSetup(
+        fakeSiblingOwnerOptions(fixture),
+      );
+      await submitGateBOperatorBootstrap(capability, bootstrap());
+      fixture.watchdog.emit('message', { type: 'BOOTSTRAP_OPENED' });
+      assert.equal(await waitGateBOperatorCoordinatorClosed(capability), 'QUARANTINED');
+    });
+  });
+
+test('duplicate bootstrap submission poisons the setup capability and closes both groups',
+  async () => {
+    const fixture = fakeSiblingOwnerProcesses();
+    const options = {
+      executable: process.execPath,
+      killProcessGroup(groupId) { fixture.alive.set(groupId, false); },
+      lifetimeMs: 1000,
+      platform: 'darwin',
+      probeProcessGroup: groupId => fixture.alive.get(groupId) ?? false,
+      reapAbandonMs: 1000,
+      reapForceMs: 100,
+      reaperModule: '/private/tmp/gate-b-reaper-fixture.js',
+      setupTimeoutMs: 1000,
+      spawnProcess: fixture.spawnProcess,
+      terminalWaitMs: 1000,
+      watchdogModule: '/private/tmp/gate-b-watchdog-fixture.js',
+    };
+    const capability = await launchGateBOperatorWatchdogSetup(options);
+    const submitted = submitGateBOperatorBootstrap(capability, bootstrap());
+    await assert.rejects(submitGateBOperatorBootstrap(capability, bootstrap()));
+    await assert.rejects(submitted);
+    assert.equal(await waitGateBOperatorCoordinatorClosed(capability), 'QUARANTINED');
+  });
+
+test('malformed and wrong-capability bootstrap submissions poison only captured owners',
+  async () => {
+    const fixture = fakeSiblingOwnerProcesses();
+    const setup = await launchGateBOperatorWatchdogSetup(fakeSiblingOwnerOptions(fixture));
+    await assert.rejects(submitGateBOperatorBootstrap(setup, { schemaVersion: 1 }));
+    assert.equal(await waitGateBOperatorCoordinatorClosed(setup), 'QUARANTINED');
+
+    const child = fakeCoordinatorProcess();
+    const ordinary = await launchGateBOperatorCoordinator(bootstrap(), {
+      cliModule: '/private/tmp/gate-b-operator-coordinator-cli-fixture.js',
+      executable: process.execPath,
+      killProcessGroup() {},
+      lifetimeMs: 1000,
+      platform: 'darwin',
+      probeProcessGroup: () => false,
+      reapAbandonMs: 30,
+      reapForceMs: 10,
+      spawnProcess: () => child,
+    });
+    await assert.rejects(submitGateBOperatorBootstrap(ordinary, bootstrap()));
+    assert.equal(await waitGateBOperatorCoordinatorClosed(ordinary), 'QUARANTINED');
+  });
+
+test('pre-READY loss never sends START and outer cleanup terminates reaper before watchdog',
+  async () => {
+    const fixture = fakeSiblingOwnerProcesses({
+      ignoreReaperTerm: true,
+      ignoreWatchdogTerm: true,
+      reaperReady: false,
+    });
+    await assert.rejects(launchGateBOperatorWatchdogSetup(fakeSiblingOwnerOptions(fixture)));
+    assert.equal(fixture.events.includes('START'), false);
+    assert.equal(fixture.events.includes('BOOTSTRAP'), false);
+    const reaperTerm = fixture.events.indexOf('SIGNAL_43002_SIGTERM');
+    const reaperKill = fixture.events.indexOf('SIGNAL_43002_SIGKILL');
+    const watchdogTerm = fixture.events.indexOf('SIGNAL_43001_SIGTERM');
+    const watchdogKill = fixture.events.indexOf('SIGNAL_43001_SIGKILL');
+    assert.equal(reaperTerm >= 0 && reaperKill > reaperTerm, true);
+    assert.equal(watchdogTerm > reaperKill && watchdogKill > watchdogTerm, true);
+    assert.equal(fixture.alive.get(43001), false);
+    assert.equal(fixture.alive.get(43002), false);
+  });
+
+test('setup rejection keeps one cleanup owner and never targets a late recycled group',
+  async () => {
+    const fixture = fakeSiblingOwnerProcesses({
+      ignoreReaperTerm: true,
+      ignoreWatchdogTerm: true,
+      reaperReady: false,
+    });
+    const falseProbes = new Map();
+    await assert.rejects(launchGateBOperatorWatchdogSetup(fakeSiblingOwnerOptions(fixture, {
+      probeProcessGroup(groupId) {
+        const alive = fixture.alive.get(groupId) ?? false;
+        if (alive) return true;
+        const count = (falseProbes.get(groupId) ?? 0) + 1;
+        falseProbes.set(groupId, count);
+        if (count >= 5) {
+          fixture.alive.set(groupId, true);
+          return true;
+        }
+        return false;
+      },
+    })));
+    assert.deepEqual(fixture.events.filter(event => event.startsWith('SIGNAL_')), [
+      'SIGNAL_43002_SIGTERM',
+      'SIGNAL_43002_SIGKILL',
+      'SIGNAL_43001_SIGTERM',
+      'SIGNAL_43001_SIGKILL',
+    ]);
+    assert.equal(falseProbes.get(43001), 4);
+    assert.equal(falseProbes.get(43002), 4);
+  });
+
+test('unsolicited ABSENT before the target callback poisons before READY or START', async () => {
+  const changes = {
+    holdTargetCallback: true,
+    reaperReady: false,
+    recordTargetCallback: true,
+  };
+  const fixture = fakeSiblingOwnerProcesses(changes);
+  const pending = launchGateBOperatorWatchdogSetup(fakeSiblingOwnerOptions(fixture, {
+    setupTimeoutMs: 1000,
+  }));
+  await waitFor(() => typeof changes.releaseTargetCallback === 'function');
+  fixture.reaper.emit('message', { type: 'ABSENT' });
+  changes.releaseTargetCallback();
+  fixture.reaper.emit('message', { type: 'READY' });
+  let capability;
+  try { capability = await pending; } catch {}
+  if (capability) await stopGateBOperatorCoordinator(capability);
+  assert.equal(capability, undefined);
+  assert.equal(fixture.events.includes('START'), false);
+  assert.equal(fixture.events.includes('BOOTSTRAP'), false);
+});
+
+test('unsolicited ABSENT after the target callback poisons before a later READY', async () => {
+  const changes = { reaperReady: false, recordTargetCallback: true };
+  const fixture = fakeSiblingOwnerProcesses(changes);
+  const pending = launchGateBOperatorWatchdogSetup(fakeSiblingOwnerOptions(fixture, {
+    setupTimeoutMs: 1000,
+  }));
+  await waitFor(() => fixture.events.includes('TARGET_CALLBACK'));
+  fixture.reaper.emit('message', { type: 'ABSENT' });
+  fixture.reaper.emit('message', { type: 'READY' });
+  let capability;
+  try { capability = await pending; } catch {}
+  if (capability) await stopGateBOperatorCoordinator(capability);
+  assert.equal(capability, undefined);
+  assert.equal(fixture.events.includes('START'), false);
+});
+
+test('unsolicited ABSENT after setup prevents bootstrap and later milestones', async () => {
+  const fixture = fakeSiblingOwnerProcesses();
+  const capability = await launchGateBOperatorWatchdogSetup(
+    fakeSiblingOwnerOptions(fixture),
+  );
+  fixture.reaper.emit('message', { type: 'ABSENT' });
+  let accepted = false;
+  try {
+    await submitGateBOperatorBootstrap(capability, bootstrap());
+    accepted = true;
+  } catch {}
+  if (accepted) fixture.reaper.emit('error', new Error('fixture'));
+  assert.equal(await waitGateBOperatorCoordinatorClosed(capability), 'QUARANTINED');
+  assert.equal(accepted, false);
+  assert.equal(fixture.events.includes('BOOTSTRAP'), false);
+});
+
+test('public watchdog bytes cannot substitute for private START before reaper READY', async () => {
+  const fixture = fakeSiblingOwnerProcesses({ publicBeforeReady: true });
+  await assert.rejects(launchGateBOperatorWatchdogSetup(fakeSiblingOwnerOptions(fixture)));
+  assert.equal(fixture.events.includes('START'), false);
+  assert.equal(fixture.events.includes('BOOTSTRAP'), false);
+  assert.equal(fixture.alive.get(43001), false);
+  assert.equal(fixture.alive.get(43002), false);
+});
+
+test('post-READY reaper loss is terminal and outer takes over the captured watchdog group',
+  async () => {
+    const fixture = fakeSiblingOwnerProcesses();
+    const capability = await launchGateBOperatorWatchdogSetup(fakeSiblingOwnerOptions(fixture));
+    fixture.alive.set(43002, false);
+    fixture.reaper.emit('exit', 1, null);
+    fixture.reaper.emit('close', 1, null);
+    assert.equal(await waitGateBOperatorCoordinatorClosed(capability), 'QUARANTINED');
+    assert.equal(fixture.events.includes('SIGNAL_43001_SIGTERM'), true);
+    assert.equal(fixture.alive.get(43001), false);
+  });
+
+test('watchdog crash activates the armed reaper without concurrent outer group signalling',
+  async () => {
+    const fixture = fakeSiblingOwnerProcesses();
+    const capability = await launchGateBOperatorWatchdogSetup(fakeSiblingOwnerOptions(fixture));
+    fixture.alive.set(43001, false);
+    fixture.watchdog.emit('exit', 1, null);
+    fixture.watchdog.emit('close', 1, null);
+    assert.equal(await waitGateBOperatorCoordinatorClosed(capability), 'QUARANTINED');
+    assert.equal(fixture.events.includes('REAPER_CLEANUP'), true);
+    assert.equal(fixture.events.some(value => value.startsWith('SIGNAL_43001_')), false);
+  });
+
+test('watchdog exit starts reaper cleanup before held close and clean adjudication waits',
+  async () => {
+    const changes = { holdWatchdogClose: true };
+    const fixture = fakeSiblingOwnerProcesses(changes);
+    const capability = await launchGateBOperatorWatchdogSetup(
+      fakeSiblingOwnerOptions(fixture),
+    );
+    await submitGateBOperatorBootstrap(capability, bootstrap());
+    await submitGateBOperatorCoordinatorReview(capability, review());
+    const stopped = stopGateBOperatorCoordinator(capability);
+    await waitFor(() => typeof changes.releaseWatchdogClose === 'function');
+    await new Promise(resolve => setImmediate(resolve));
+    const cleanupBeforeClose = fixture.events.includes('REAPER_CLEANUP');
+    let settledBeforeClose = false;
+    void stopped.then(() => { settledBeforeClose = true; });
+    await new Promise(resolve => setImmediate(resolve));
+    const observedSettledBeforeClose = settledBeforeClose;
+    changes.releaseWatchdogClose();
+    assert.equal(await stopped, 'CLOSED');
+    assert.equal(cleanupBeforeClose, true);
+    assert.equal(observedSettledBeforeClose, false);
+  });
+
+test('clean watchdog exit retains bounded final output and STOPPED until delayed close',
+  async () => {
+    const changes = { exitBeforeFinalProtocol: true, holdWatchdogClose: true };
+    const fixture = fakeSiblingOwnerProcesses(changes);
+    const capability = await launchGateBOperatorWatchdogSetup(
+      fakeSiblingOwnerOptions(fixture),
+    );
+    await submitGateBOperatorBootstrap(capability, bootstrap());
+    await submitGateBOperatorCoordinatorReview(capability, review());
+    const stopped = stopGateBOperatorCoordinator(capability);
+    await waitFor(() => typeof changes.releaseWatchdogClose === 'function');
+    assert.equal(fixture.events.includes('REAPER_CLEANUP'), true);
+    changes.releaseWatchdogClose();
+    assert.equal(await stopped, 'CLOSED');
+    assert.equal(await waitGateBOperatorCoordinatorClosed(capability), 'CLOSED');
+  });
+
+test('reaper hang after clean watchdog exit quarantines before outer reaper takeover', async () => {
+  const fixture = fakeSiblingOwnerProcesses({ reaperHang: true });
+  const capability = await launchGateBOperatorWatchdogSetup(fakeSiblingOwnerOptions(fixture));
+  await submitGateBOperatorBootstrap(capability, bootstrap());
+  await submitGateBOperatorCoordinatorReview(capability, review());
+  assert.equal(await stopGateBOperatorCoordinator(capability), 'QUARANTINED');
+  assert.equal(fixture.events.includes('REAPER_CLEANUP'), true);
+  assert.equal(fixture.events.includes('SIGNAL_43002_SIGTERM'), true);
+  assert.equal(fixture.alive.get(43001), false);
+  assert.equal(fixture.alive.get(43002), false);
+});
+
+test('false ABSENT cannot hide a hung watchdog and forces serialized outer TERM then KILL',
+  async () => {
+    const fixture = fakeSiblingOwnerProcesses({
+      falseAbsent: true,
+      ignoreWatchdogTerm: true,
+      watchdogHang: true,
+    });
+    const capability = await launchGateBOperatorWatchdogSetup(fakeSiblingOwnerOptions(fixture));
+    assert.equal(await stopGateBOperatorCoordinator(capability), 'QUARANTINED');
+    const cleanup = fixture.events.indexOf('REAPER_CLEANUP');
+    const watchdogTerm = fixture.events.indexOf('SIGNAL_43001_SIGTERM');
+    const watchdogKill = fixture.events.indexOf('SIGNAL_43001_SIGKILL');
+    assert.equal(cleanup >= 0 && watchdogTerm > cleanup && watchdogKill > watchdogTerm, true);
+    assert.equal(fixture.alive.get(43001), false);
+    assert.equal(fixture.alive.get(43002), false);
+  });
+
+test('launcher STOP watchdog quarantines and reaps a child that ignores STOP', async () => {
+  const child = fakeCoordinatorProcess();
+  const signals = [];
+  let groupAlive = true;
+  child.send = (_message, callback) => {
+    queueMicrotask(() => callback?.(null));
+    return true;
+  };
+  const capability = await launchGateBOperatorCoordinator(bootstrap(), {
+    cliModule: '/private/tmp/gate-b-operator-coordinator-cli-fixture.js',
+    executable: process.execPath,
+    killProcessGroup(_pid, signal) {
+      signals.push(signal);
+      groupAlive = false;
+    },
+    lifetimeMs: 1000,
+    gracefulStopMs: 20,
+    platform: 'darwin',
+    probeProcessGroup: () => groupAlive,
+    reapAbandonMs: 20,
+    reapForceMs: 5,
+    spawnProcess: () => child,
+  });
+  assert.equal(await stopGateBOperatorCoordinator(capability), 'QUARANTINED');
+  assert.equal(await waitGateBOperatorCoordinatorClosed(capability), 'QUARANTINED');
+  assert.deepEqual(signals, ['SIGTERM']);
+  child.emit('message', createGateBOperatorCoordinatorIpcMessage('STOPPED'));
+  child.emit('exit', 0, null);
+  child.emit('close', 0, null);
+  assert.equal(getGateBOperatorCoordinatorStatus(capability), 'QUARANTINED');
+});
+
+test('launcher allows cleanup beyond the reap window when it remains inside the graceful STOP window', async () => {
+  const child = fakeCoordinatorProcess();
+  const signals = [];
+  let groupAlive = true;
+  child.send = (message, callback) => {
+    queueMicrotask(() => callback?.(null));
+    if (message.type === 'STOP') {
+      setTimeout(() => {
+        groupAlive = false;
+        child.stdout.write(GATE_B_OPERATOR_COORDINATOR_STATUS_LINES.CLOSED);
+        child.emit('message', createGateBOperatorCoordinatorIpcMessage('STOPPED'));
+        child.emit('exit', 0, null);
+        child.emit('close', 0, null);
+      }, 30);
+    }
+    return true;
+  };
+  const capability = await launchGateBOperatorCoordinator(bootstrap(), {
+    cliModule: '/private/tmp/gate-b-operator-coordinator-cli-fixture.js',
+    executable: process.execPath,
+    gracefulStopMs: 80,
+    killProcessGroup(_pid, signal) { signals.push(signal); },
+    lifetimeMs: 1000,
+    platform: 'darwin',
+    probeProcessGroup: () => groupAlive,
+    reapAbandonMs: 10,
+    reapForceMs: 5,
+    spawnProcess: () => child,
+  });
+  assert.equal(await stopGateBOperatorCoordinator(capability), 'CLOSED');
+  assert.deepEqual(signals, []);
+});
+
+test('launcher joins milestones to successful private-pipe write completion', async () => {
+  const child = fakeCoordinatorProcess();
+  const pipe = child.stdio[3];
+  const write = pipe.write;
+  const end = pipe.end;
+  let finishBootstrap;
+  let finishReview;
+  pipe.write = function controlledWrite(chunk, callback) {
+    return Reflect.apply(write, this, [chunk, () => { finishBootstrap = callback; }]);
+  };
+  pipe.end = function controlledEnd(chunk, callback) {
+    return Reflect.apply(end, this, [chunk, () => { finishReview = callback; }]);
+  };
+  const launch = launchGateBOperatorCoordinator(bootstrap(), {
+    cliModule: '/private/tmp/gate-b-operator-coordinator-cli-fixture.js',
+    executable: process.execPath,
+    gracefulStopMs: 100,
+    killProcessGroup() { assert.fail('clean closure must not signal'); },
+    lifetimeMs: 1000,
+    platform: 'darwin',
+    probeProcessGroup: () => false,
+    reapAbandonMs: 20,
+    reapForceMs: 5,
+    spawnProcess: () => child,
+  });
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(typeof finishBootstrap, 'function');
+  let launchSettled = false;
+  void launch.then(() => { launchSettled = true; });
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(launchSettled, false);
+  finishBootstrap(null);
+  const capability = await launch;
+  const reviewed = submitGateBOperatorCoordinatorReview(capability, review());
+  await waitFor(() => typeof finishReview === 'function', 500);
+  assert.equal(typeof finishReview, 'function');
+  let reviewSettled = false;
+  void reviewed.then(() => { reviewSettled = true; });
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(reviewSettled, false);
+  finishReview(null);
+  assert.equal(await reviewed, 'PREFLIGHT_VALID');
+  assert.equal(await stopGateBOperatorCoordinator(capability), 'CLOSED');
+});
+
+test('private-pipe callback failure and duplication quarantine before authority', async t => {
+  await t.test('bootstrap-callback-failure', async () => {
+    const child = fakeCoordinatorProcess();
+    const pipe = child.stdio[3];
+    const write = pipe.write;
+    let finishBootstrap;
+    pipe.write = function controlledWrite(chunk, callback) {
+      return Reflect.apply(write, this, [chunk, () => { finishBootstrap = callback; }]);
+    };
+    let groupAlive = true;
+    const pending = launchGateBOperatorCoordinator(bootstrap(), {
+      cliModule: '/private/tmp/gate-b-operator-coordinator-cli-fixture.js',
+      executable: process.execPath,
+      gracefulStopMs: 100,
+      killProcessGroup() { groupAlive = false; },
+      lifetimeMs: 1000,
+      platform: 'darwin',
+      probeProcessGroup: () => groupAlive,
+      reapAbandonMs: 20,
+      reapForceMs: 5,
+      spawnProcess: () => child,
+    });
+    await waitFor(() => typeof finishBootstrap === 'function');
+    finishBootstrap(new Error('synthetic'));
+    await assert.rejects(pending);
+  });
+
+  await t.test('bootstrap-callback-duplicate', async () => {
+    const child = fakeCoordinatorProcess();
+    const pipe = child.stdio[3];
+    const write = pipe.write;
+    let finishBootstrap;
+    pipe.write = function controlledWrite(chunk, callback) {
+      return Reflect.apply(write, this, [chunk, () => { finishBootstrap = callback; }]);
+    };
+    let groupAlive = true;
+    const pending = launchGateBOperatorCoordinator(bootstrap(), {
+      cliModule: '/private/tmp/gate-b-operator-coordinator-cli-fixture.js',
+      executable: process.execPath,
+      gracefulStopMs: 100,
+      killProcessGroup() { groupAlive = false; },
+      lifetimeMs: 1000,
+      platform: 'darwin',
+      probeProcessGroup: () => groupAlive,
+      reapAbandonMs: 20,
+      reapForceMs: 5,
+      spawnProcess: () => child,
+    });
+    await waitFor(() => typeof finishBootstrap === 'function');
+    finishBootstrap(null);
+    const capability = await pending;
+    finishBootstrap(null);
+    assert.equal(await waitGateBOperatorCoordinatorClosed(capability), 'QUARANTINED');
+  });
+
+  await t.test('review-callback-failure', async () => {
+    const child = fakeCoordinatorProcess();
+    const pipe = child.stdio[3];
+    const end = pipe.end;
+    let finishReview;
+    pipe.end = function controlledEnd(chunk, callback) {
+      return Reflect.apply(end, this, [chunk, () => { finishReview = callback; }]);
+    };
+    let groupAlive = true;
+    const capability = await launchGateBOperatorCoordinator(bootstrap(), {
+      cliModule: '/private/tmp/gate-b-operator-coordinator-cli-fixture.js',
+      executable: process.execPath,
+      gracefulStopMs: 100,
+      killProcessGroup() { groupAlive = false; },
+      lifetimeMs: 1000,
+      platform: 'darwin',
+      probeProcessGroup: () => groupAlive,
+      reapAbandonMs: 20,
+      reapForceMs: 5,
+      spawnProcess: () => child,
+    });
+    const pending = submitGateBOperatorCoordinatorReview(capability, review());
+    await waitFor(() => typeof finishReview === 'function', 500);
+    finishReview(new Error('synthetic'));
+    await assert.rejects(pending);
+    assert.equal(await waitGateBOperatorCoordinatorClosed(capability), 'QUARANTINED');
+  });
+});
+
+test('duplicate review submission poisons the active submission and rejects after cleanup', async () => {
+  const child = fakeCoordinatorProcess();
+  const pipe = child.stdio[3];
+  const end = pipe.end;
+  let finishReview;
+  pipe.end = function controlledEnd(chunk, callback) {
+    return Reflect.apply(end, this, [chunk, () => { finishReview = callback; }]);
+  };
+  let groupAlive = true;
+  const capability = await launchGateBOperatorCoordinator(bootstrap(), {
+    cliModule: '/private/tmp/gate-b-operator-coordinator-cli-fixture.js',
+    executable: process.execPath,
+    gracefulStopMs: 100,
+    killProcessGroup() { groupAlive = false; },
+    lifetimeMs: 1000,
+    platform: 'darwin',
+    probeProcessGroup: () => groupAlive,
+    reapAbandonMs: 20,
+    reapForceMs: 5,
+    spawnProcess: () => child,
+  });
+  const first = submitGateBOperatorCoordinatorReview(capability, review());
+  const duplicate = submitGateBOperatorCoordinatorReview(capability, review());
+  await assert.rejects(duplicate);
+  await assert.rejects(first);
+  assert.equal(await waitGateBOperatorCoordinatorClosed(capability), 'QUARANTINED');
+  finishReview?.(null);
+  child.emit('message', createGateBOperatorCoordinatorIpcMessage('PREFLIGHT_VALID'));
+  assert.equal(getGateBOperatorCoordinatorStatus(capability), 'QUARANTINED');
+});
+
+test('launcher rejects an unusable coordinator PID before returning a capability', async () => {
+  const child = fakeCoordinatorProcess();
+  child.pid = 0;
+  await assert.rejects(launchGateBOperatorCoordinator(bootstrap(), {
+    cliModule: '/private/tmp/gate-b-operator-coordinator-cli-fixture.js',
+    executable: process.execPath,
+    killProcessGroup() {},
+    lifetimeMs: 1000,
+    platform: 'darwin',
+    probeProcessGroup: () => false,
+    reapAbandonMs: 20,
+    reapForceMs: 5,
+    spawnProcess: () => child,
+  }));
+});
+
+test('launcher retains a valid PGID before later spawn-shape validation and reaps on failure', async () => {
+  const child = fakeCoordinatorProcess();
+  child.stdout = Object.freeze({});
+  const signals = [];
+  let groupAlive = true;
+  await assert.rejects(launchGateBOperatorCoordinator(bootstrap(), {
+    cliModule: '/private/tmp/gate-b-operator-coordinator-cli-fixture.js',
+    executable: process.execPath,
+    killProcessGroup(_pid, signal) {
+      signals.push(signal);
+      groupAlive = false;
+    },
+    lifetimeMs: 1000,
+    platform: 'darwin',
+    probeProcessGroup: () => groupAlive,
+    reapAbandonMs: 20,
+    reapForceMs: 5,
+    spawnProcess: () => child,
+  }));
+  assert.deepEqual(signals, ['SIGTERM']);
+});
+
+test('real CLI fork with private-pipe EOF fails before controller or operational effects and leaves no referenced handles',
+  { timeout: 10_000 }, async () => {
+    const modulePath = fileURLToPath(
+      new URL('../src/gate-b-operator-coordinator-cli.js', import.meta.url),
+    );
+    const child = spawn(process.execPath, [modulePath], {
+      cwd: dirname(modulePath),
+      detached: true,
+      env: {},
+      shell: false,
+      stdio: ['ignore', 'pipe', 'pipe', 'pipe', 'ipc'],
+    });
+    const stdout = [];
+    const stderr = [];
+    child.stdout.on('data', chunk => stdout.push(chunk));
+    child.stderr.on('data', chunk => stderr.push(chunk));
+    child.stdio[3].end();
+    const closed = new Promise((resolve, reject) => {
+      const timer = setTimeout(() => reject(new Error('bounded timeout')), 5000);
+      child.once('close', (code, signal) => {
+        clearTimeout(timer);
+        resolve({ code, signal });
+      });
+    });
+    const outcome = await closed;
+    assert.equal(outcome.code, 1);
+    assert.equal(outcome.signal, null);
+    assert.equal(Buffer.concat(stdout).length, 0);
+    assert.equal(
+      Buffer.concat(stderr).toString('utf8'),
+      GATE_B_OPERATOR_COORDINATOR_STATUS_LINES.QUARANTINED,
+    );
+    assert.throws(() => process.kill(-child.pid, 0), error => error?.code === 'ESRCH');
+    for (const chunks of [stdout, stderr]) {
+      for (const chunk of chunks) chunk.fill(0);
+    }
+  });
+
+test('coordinator launcher direct import is inert after the front-end becomes the sole entrypoint',
+  { timeout: 10_000 }, async () => {
+    const modulePath = fileURLToPath(
+      new URL('../src/gate-b-operator-coordinator-launcher.js', import.meta.url),
+    );
+    const child = spawn(process.execPath, [modulePath], {
+      cwd: dirname(modulePath),
+      detached: false,
+      env: {},
+      shell: false,
+      stdio: ['pipe', 'pipe', 'pipe'],
+    });
+    const stdout = [];
+    const stderr = [];
+    child.stdout.on('data', chunk => stdout.push(chunk));
+    child.stderr.on('data', chunk => stderr.push(chunk));
+    child.stdin.end();
+    const outcome = await new Promise((resolve, reject) => {
+      const timer = setTimeout(() => reject(new Error('bounded timeout')), 5000);
+      child.once('close', (code, signal) => {
+        clearTimeout(timer);
+        resolve({ code, signal });
+      });
+    });
+    assert.deepEqual(outcome, { code: 0, signal: null });
+    assert.equal(Buffer.concat(stdout).length, 0);
+    assert.equal(Buffer.concat(stderr).length, 0);
+    for (const chunks of [stdout, stderr]) {
+      for (const chunk of chunks) chunk.fill(0);
+    }
+  });
+
+async function waitForGroupAbsent(groupId, timeoutMs = 4000) {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    try { process.kill(-groupId, 0); } catch (error) {
+      if (error?.code === 'ESRCH') return true;
+    }
+    await new Promise(resolve => setTimeout(resolve, 20));
+  }
+  return false;
+}
+
+test('real inert watchdog self-cleans silently when outer liveness ends before START',
+  { timeout: 10_000 }, async () => {
+    const watchdog = fileURLToPath(new URL('../src/gate-b-operator-watchdog.js', import.meta.url));
+    const child = spawn(process.execPath, [watchdog], {
+      cwd: dirname(watchdog), detached: true, env: {}, shell: false,
+      stdio: ['ignore', 'pipe', 'pipe', 'pipe', 'pipe', 'pipe', 'ipc'],
+    });
+    const stdout = [];
+    const stderr = [];
+    const messages = [];
+    child.stdout.on('data', chunk => stdout.push(chunk));
+    child.stderr.on('data', chunk => stderr.push(chunk));
+    child.on('message', message => messages.push(message));
+    try {
+      await new Promise(resolve => setTimeout(resolve, 50));
+      child.stdio[3].destroy();
+      child.stdio[4].destroy();
+      child.stdio[5].destroy();
+      const outcome = await new Promise((resolve, reject) => {
+        const timer = setTimeout(() => reject(new Error('bounded timeout')), 3000);
+        child.once('exit', (code, signal) => {
+          clearTimeout(timer);
+          resolve({ code, signal });
+        });
+      });
+      assert.deepEqual(outcome, { code: 1, signal: null });
+      assert.equal(Buffer.concat(stdout).length, 0);
+      assert.equal(Buffer.concat(stderr).length, 0);
+      assert.deepEqual(messages, []);
+      assert.equal(await waitForGroupAbsent(child.pid), true);
+    } finally {
+      if (!await waitForGroupAbsent(child.pid, 100)) {
+        try { process.kill(-child.pid, 'SIGKILL'); } catch {}
+        await waitForGroupAbsent(child.pid, 1000);
+      }
+      for (const chunks of [stdout, stderr]) for (const chunk of chunks) chunk.fill(0);
+    }
+  });
+
+test('post-READY outer hard death makes the sibling reaper kill a hung inert watchdog',
+  { timeout: 15_000 }, async () => {
+    const fixture = fileURLToPath(new URL(
+      '../test-support/gate-b-operator-coordinator-hostile-child.js',
+      import.meta.url,
+    ));
+    const outer = spawn(process.execPath, [fixture, 'outer-setup'], {
+      cwd: dirname(fixture), detached: false, env: {}, shell: false,
+      stdio: ['ignore', 'ignore', 'ignore', 'pipe'],
+    });
+    let privateBytes = Buffer.alloc(0);
+    let resolvePrivate;
+    let privateTimer;
+    const privateReady = new Promise((resolve, reject) => {
+      resolvePrivate = resolve;
+      privateTimer = setTimeout(() => reject(new Error('bounded timeout')), 5000);
+    });
+    outer.stdio[3].on('data', chunk => {
+      const next = Buffer.concat([privateBytes, chunk]);
+      privateBytes.fill(0);
+      chunk.fill(0);
+      privateBytes = next;
+      if (privateBytes.length === 9) {
+        clearTimeout(privateTimer);
+        resolvePrivate(true);
+      }
+    });
+    await privateReady;
+    const watchdogGroup = privateBytes.readUInt32BE(0);
+    const reaperGroup = privateBytes.readUInt32BE(4);
+    assert.equal(privateBytes[8], 1);
+    privateBytes.fill(0);
+    process.kill(outer.pid, 'SIGKILL');
+    await new Promise(resolve => outer.once('close', resolve));
+    assert.equal(await waitForGroupAbsent(watchdogGroup, 6000), true);
+    assert.equal(await waitForGroupAbsent(reaperGroup, 6000), true);
+  });
+
+test('fixed reaper rejects partial and mismatched private targets before activation',
+  { timeout: 10_000 }, async t => {
+    const reaper = fileURLToPath(new URL('../src/gate-b-operator-reaper.js', import.meta.url));
+    for (const [name, frame] of [
+      ['partial', Buffer.from([0x47, 0x42, 0x52])],
+      ['mismatched', (() => {
+        const value = Buffer.alloc(8);
+        value.writeUInt32BE(0x47425250, 0);
+        value.writeUInt32BE(2, 4);
+        return value;
+      })()],
+    ]) await t.test(name, async () => {
+      const child = spawn(process.execPath, [reaper], {
+        cwd: dirname(reaper), detached: true, env: {}, shell: false,
+        stdio: ['ignore', 'ignore', 'ignore', 'pipe', 'pipe', 'ipc'],
+      });
+      child.stdio[3].end(frame, () => frame.fill(0));
+      child.stdio[4].end();
+      const outcome = await new Promise(resolve => child.once('close', (code, signal) => {
+        resolve({ code, signal });
+      }));
+      assert.deepEqual(outcome, { code: 1, signal: null });
+      assert.equal(await waitForGroupAbsent(child.pid), true);
+    });
+  });
+
+test('real reaper emits ABSENT only after a TERM-resistant target group is gone',
+  { timeout: 10_000 }, async () => {
+    const hostile = fileURLToPath(new URL(
+      '../test-support/gate-b-operator-coordinator-hostile-child.js',
+      import.meta.url,
+    ));
+    const reaperModule = fileURLToPath(new URL(
+      '../src/gate-b-operator-reaper.js',
+      import.meta.url,
+    ));
+    const target = spawn(process.execPath, [hostile, 'runtime'], {
+      cwd: dirname(hostile), detached: true, env: {}, shell: false,
+      stdio: ['ignore', 'ignore', 'ignore', 'ipc'],
+    });
+    let reaper;
+    const targetMessages = [];
+    try {
+      await new Promise((resolve, reject) => {
+        const timer = setTimeout(() => reject(new Error('bounded timeout')), 2000);
+        target.on('message', message => {
+          if (typeof message?.type === 'string') targetMessages.push(message.type);
+          if (message?.type !== 'HOSTILE_READY_runtime') return;
+          clearTimeout(timer);
+          resolve(true);
+        });
+      });
+      reaper = spawn(process.execPath, [reaperModule], {
+        cwd: dirname(reaperModule), detached: true, env: {}, shell: false,
+        stdio: ['ignore', 'ignore', 'ignore', 'pipe', 'pipe', 'ipc'],
+      });
+      const messages = [];
+      const ready = new Promise((resolve, reject) => {
+        const timer = setTimeout(() => reject(new Error('bounded timeout')), 2000);
+        reaper.on('message', message => {
+          messages.push(message);
+          if (message?.type !== 'READY') return;
+          clearTimeout(timer);
+          resolve(true);
+        });
+      });
+      const frame = Buffer.alloc(8);
+      frame.writeUInt32BE(0x47425250, 0);
+      frame.writeUInt32BE(target.pid, 4);
+      reaper.stdio[3].end(frame, () => frame.fill(0));
+      await ready;
+      const absent = new Promise((resolve, reject) => {
+        const timer = setTimeout(() => reject(new Error('bounded timeout')), 4000);
+        const observe = message => {
+          if (message?.type !== 'ABSENT') return;
+          clearTimeout(timer);
+          reaper.removeListener('message', observe);
+          resolve(true);
+        };
+        reaper.on('message', observe);
+      });
+      const closed = new Promise((resolve, reject) => {
+        const timer = setTimeout(() => reject(new Error('bounded timeout')), 4000);
+        reaper.once('close', (code, signal) => {
+          clearTimeout(timer);
+          resolve({ code, signal });
+        });
+      });
+      reaper.send({ type: 'CLEANUP' });
+      await absent;
+      assert.throws(() => process.kill(-target.pid, 0), error => error?.code === 'ESRCH');
+      reaper.stdio[4].destroy();
+      const outcome = await closed;
+      assert.deepEqual(outcome, { code: 0, signal: null });
+      assert.deepEqual(messages.map(message => message.type), ['READY', 'ABSENT']);
+      assert.equal(messages.every(message =>
+        Reflect.ownKeys(message).length === 1 && Reflect.ownKeys(message)[0] === 'type'), true);
+      assert.equal(await waitForGroupAbsent(reaper.pid), true);
+      assert.equal(targetMessages.includes('HOSTILE_TERM_runtime'), true);
+      await new Promise(resolve => setTimeout(resolve, 850));
+      assert.equal(targetMessages.includes('HOSTILE_LATE_runtime'), false);
+    } finally {
+      for (const child of [reaper, target]) {
+        if (!child || !Number.isSafeInteger(child.pid)) continue;
+        if (!await waitForGroupAbsent(child.pid, 100)) {
+          try { process.kill(-child.pid, 'SIGKILL'); } catch {}
+          await waitForGroupAbsent(child.pid, 1000);
+        }
+      }
+    }
+  });
+
+test('real hostile coordinator and same-group descendant are reaped as one quarantined PGID',
+  { timeout: 10_000 }, async () => {
+    const hostileModule = fileURLToPath(new URL(
+      '../test-support/gate-b-operator-coordinator-hostile-child.js',
+      import.meta.url,
+    ));
+    let groupId;
+    const observed = [];
+    await assert.rejects(launchGateBOperatorCoordinator(bootstrap(), {
+      cliModule: hostileModule,
+      executable: process.execPath,
+      killProcessGroup(pid, signal) { process.kill(-pid, signal); },
+      lifetimeMs: 1000,
+      platform: 'darwin',
+      probeProcessGroup(pid) {
+        try { process.kill(-pid, 0); return true; } catch (error) {
+          if (error?.code === 'ESRCH') return false;
+          if (error?.code === 'EPERM') return true;
+          throw error;
+        }
+      },
+      reapAbandonMs: 1500,
+      reapForceMs: 500,
+      spawnProcess(executable, args, options) {
+        const child = spawn(executable, args, options);
+        child.on('message', message => {
+          if (typeof message?.type === 'string') observed.push(message.type);
+        });
+        groupId = child.pid;
+        return child;
+      },
+    }));
+    assert.equal(Number.isSafeInteger(groupId), true);
+    assert.throws(() => process.kill(-groupId, 0), error => error?.code === 'ESRCH');
+    assert.equal(observed.includes('HOSTILE_READY'), true);
+    assert.equal(observed.some(type => type.startsWith('HOSTILE_TERM_')), true);
+    await new Promise(resolve => setTimeout(resolve, 850));
+    assert.equal(observed.some(type => type.startsWith('HOSTILE_LATE_')), false);
+  });
+
+test('source boundary has fixed module launch, no shell or ad hoc code, and no run/payment seam', async () => {
+  const files = [
+    '../src/gate-b-operator-coordinator-launcher.js',
+    '../src/gate-b-operator-coordinator-cli.js',
+    '../src/gate-b-operator-config-review-child.js',
+    '../src/gate-b-operator-front-end.js',
+    '../src/gate-b-operator-watchdog.js',
+    '../src/gate-b-operator-reaper.js',
+  ];
+  const source = (await Promise.all(files.map(file => readFile(
+    new URL(file, import.meta.url),
+    'utf8',
+  )))).join('\n');
+  for (const token of [
+    "'-e'", 'shell: true', 'process.env', 'runPublicWsOnce', 'executePublicWsOnce',
+    'paidFetch', 'publishRawTransaction', 'createGateBBuyerWallet', 'buyer-wallet.json',
+  ]) assert.equal(source.includes(token), false);
+  const cliSource = await readFile(
+    new URL('../src/gate-b-operator-coordinator-cli.js', import.meta.url),
+    'utf8',
+  );
+  assert.match(cliSource, /prepareGateBPublicWsInputsForReviewInInheritedProcessGroup/);
+  const launcherSource = await readFile(
+    new URL('../src/gate-b-operator-coordinator-launcher.js', import.meta.url),
+    'utf8',
+  );
+  assert.doesNotMatch(launcherSource, /createGateBOperatorCoordinatorFrameReader/);
+  assert.doesNotMatch(launcherSource, /pathToFileURL/);
+  assert.doesNotMatch(launcherSource, /fstatSync/);
+  const watchdogSource = await readFile(
+    new URL('../src/gate-b-operator-watchdog.js', import.meta.url),
+    'utf8',
+  );
+  assert.match(watchdogSource, /createGateBOperatorCoordinatorFrameReader/);
+  assert.match(watchdogSource, /pathToFileURL/);
+  assert.doesNotMatch(watchdogSource, /REAPER_MODULE|REAPER_READY|process\.(?:pid|ppid)/);
+  const schemaSource = await readFile(
+    new URL('../src/gate-b-operator-coordinator-schema.js', import.meta.url),
+    'utf8',
+  );
+  assert.doesNotMatch(schemaSource, /REAPER_READY|groupId/);
+  const frontEndSource = await readFile(
+    new URL('../src/gate-b-operator-front-end.js', import.meta.url),
+    'utf8',
+  );
+  assert.match(frontEndSource, /launchGateBOperatorWatchdogSetup/);
+  assert.match(frontEndSource, /submitGateBOperatorBootstrap/);
+  assert.doesNotMatch(frontEndSource, /launchGateBOperatorWatchdog\b/);
+  assert.match(watchdogSource,
+    /exactFieldlessControl\(candidate, 'BOOTSTRAP_OPEN'\)[\s\S]{0,700}createReadStream/);
+  assert.match(watchdogSource,
+    /exactFieldlessControl\(candidate, 'REVIEW_OPEN'\)[\s\S]{0,500}openReviewPhase/);
+  assert.match(launcherSource, /'BOOTSTRAP_OPEN'[\s\S]{0,1000}bootstrapOpenAck/);
+  assert.match(launcherSource, /'REVIEW_OPEN'[\s\S]{0,1000}reviewOpenAck/);
+});
+
+test('documentation limits terminal recovery to exact Node controls and Boolean raw state',
+  async () => {
+    const documents = await Promise.all([
+      '../README.md', '../SECURITY.md', '../docs/IMPLEMENTATION_PLAN.md',
+    ].map(file => readFile(new URL(file, import.meta.url), 'utf8')));
+    for (const document of documents) {
+      assert.doesNotMatch(document, /every catchable|exact restoration of (?:the )?(?:prior|original) terminal mode|prior terminal state must be exactly restored/i);
+      assert.match(document, /captured Node `isRaw` Boolean/);
+      assert.match(document, /`SIGINT`, `SIGTERM`, process `disconnect`/);
+      assert.match(document, /raw-mode control-byte rejection/);
+      assert.match(document, /`SIGKILL` or `SIGSTOP`/);
+      assert.match(document, /`SIGHUP`, `SIGQUIT`, or `SIGTSTP`/);
+      assert.match(document, /no echo and captured Boolean raw-state recovery/);
+      assert.match(document, /not complete termios equivalence/);
+    }
+  });
+
+function fakeOperatorTty() {
+  const stream = new PassThrough();
+  Object.defineProperties(stream, {
+    isRaw: { configurable: false, enumerable: true, writable: true, value: false },
+    isTTY: { configurable: false, enumerable: true, writable: false, value: true },
+    setRawMode: {
+      configurable: true,
+      enumerable: true,
+      writable: false,
+      value(value) { this.isRaw = value; return this; },
+    },
+  });
+  return stream;
+}
+
+test('operator front-end accepts two canonical no-echo phases and restores the TTY', async () => {
+  const input = fakeOperatorTty();
+  const channel = new EventEmitter();
+  const output = new PassThrough();
+  const errorOutput = new PassThrough();
+  const lines = [];
+  output.on('data', chunk => lines.push(chunk.toString('utf8')));
+  const capability = Object.freeze(Object.create(null));
+  let stops = 0;
+  const pending = runGateBOperatorFrontEnd({
+    argv: [], channel, errorOutput, input, output,
+    outputTimeoutMs: 100, phase1TimeoutMs: 1000, phase2TimeoutMs: 1000,
+    launchSetup: async () => capability,
+    submitBootstrap: async (candidate, value) => {
+      assert.equal(candidate, capability);
+      assert.deepEqual(value, bootstrap());
+      return capability;
+    },
+    submitReview: async (candidate, value) => {
+      assert.equal(candidate, capability);
+      assert.deepEqual(value, review());
+      return 'PREFLIGHT_VALID';
+    },
+    stopCoordinator: async candidate => {
+      assert.equal(candidate, capability);
+      stops += 1;
+      return 'CLOSED';
+    },
+    waitClosed: async candidate => candidate === capability ? 'CLOSED' : 'FAILED',
+  });
+  await waitFor(() => lines.includes(GATE_B_OPERATOR_FRONT_END_PHASE_1_REQUIRED) && input.isRaw);
+  input.write(Buffer.from(`${canonicalJson(bootstrap())}\r`, 'utf8'));
+  await waitFor(() =>
+    lines.includes(GATE_B_OPERATOR_COORDINATOR_STATUS_LINES.REVIEW_REQUIRED) && input.isRaw);
+  input.write(Buffer.from(`${canonicalJson(review())}\r`, 'utf8'));
+  assert.equal(await pending, true);
+  assert.equal(input.isRaw, false);
+  assert.equal(stops, 1);
+  assert.deepEqual(lines, [
+    GATE_B_OPERATOR_FRONT_END_PHASE_1_REQUIRED,
+    GATE_B_OPERATOR_COORDINATOR_STATUS_LINES.REVIEW_REQUIRED,
+    GATE_B_OPERATOR_COORDINATOR_STATUS_LINES.PREFLIGHT_VALID,
+    GATE_B_OPERATOR_COORDINATOR_STATUS_LINES.CLOSED,
+  ]);
+  assert.equal(errorOutput.readableLength, 0);
+});
+
+test('held prompt callbacks cannot start phase clocks before near-boundary input', async () => {
+  const input = fakeOperatorTty();
+  const channel = new EventEmitter();
+  const callbacks = new Map();
+  const output = {
+    write(line, callback) {
+      if (line === GATE_B_OPERATOR_FRONT_END_PHASE_1_REQUIRED ||
+          line === GATE_B_OPERATOR_COORDINATOR_STATUS_LINES.REVIEW_REQUIRED) {
+        callbacks.set(line, callback);
+      } else {
+        queueMicrotask(() => callback(null));
+      }
+      return true;
+    },
+  };
+  const errorOutput = new PassThrough();
+  const capability = Object.freeze(Object.create(null));
+  let bootstrapSubmissions = 0;
+  let reviewSubmissions = 0;
+  const pending = runGateBOperatorFrontEnd({
+    argv: [], channel, errorOutput, input, output,
+    outputTimeoutMs: 200, phase1TimeoutMs: 30, phase2TimeoutMs: 30,
+    launchSetup: async () => capability,
+    submitBootstrap: async () => { bootstrapSubmissions += 1; return capability; },
+    submitReview: async () => { reviewSubmissions += 1; return 'PREFLIGHT_VALID'; },
+    stopCoordinator: async () => 'CLOSED',
+    waitClosed: async () => 'CLOSED',
+  });
+  await waitFor(() => callbacks.has(GATE_B_OPERATOR_FRONT_END_PHASE_1_REQUIRED));
+  await new Promise(resolve => setTimeout(resolve, 40));
+  assert.equal(input.isRaw, false);
+  assert.equal(bootstrapSubmissions, 0);
+  callbacks.get(GATE_B_OPERATOR_FRONT_END_PHASE_1_REQUIRED)(null);
+  await waitFor(() => input.isRaw === true);
+  await new Promise(resolve => setTimeout(resolve, 20));
+  input.write(Buffer.from(`${canonicalJson(bootstrap())}\r`, 'utf8'));
+
+  await waitFor(() => callbacks.has(
+    GATE_B_OPERATOR_COORDINATOR_STATUS_LINES.REVIEW_REQUIRED));
+  await new Promise(resolve => setTimeout(resolve, 40));
+  assert.equal(input.isRaw, false);
+  assert.equal(reviewSubmissions, 0);
+  callbacks.get(GATE_B_OPERATOR_COORDINATOR_STATUS_LINES.REVIEW_REQUIRED)(null);
+  await waitFor(() => input.isRaw === true);
+  await new Promise(resolve => setTimeout(resolve, 20));
+  input.write(Buffer.from(`${canonicalJson(review())}\r`, 'utf8'));
+  assert.equal(await pending, true);
+  assert.equal(bootstrapSubmissions, 1);
+  assert.equal(reviewSubmissions, 1);
+});
+
+test('operator front-end rejects non-TTY input before coordinator effects', async () => {
+  let launches = 0;
+  const input = new PassThrough();
+  const output = new PassThrough();
+  const errorOutput = new PassThrough();
+  const success = await runGateBOperatorFrontEnd({
+    argv: [], channel: new EventEmitter(), errorOutput, input, output,
+    launchSetup: async () => { launches += 1; },
+    outputTimeoutMs: 20, phase1TimeoutMs: 20, phase2TimeoutMs: 20,
+    stopCoordinator: async () => 'CLOSED',
+    submitBootstrap: async () => Object.freeze(Object.create(null)),
+    submitReview: async () => 'PREFLIGHT_VALID',
+    waitClosed: async () => 'CLOSED',
+  });
+  assert.equal(success, false);
+  assert.equal(launches, 0);
+});
+
+test('operator front-end rejects phase-two bytes delivered while bootstrap submission is pending',
+  async () => {
+  const input = fakeOperatorTty();
+  const channel = new EventEmitter();
+  const output = new PassThrough();
+  const errorOutput = new PassThrough();
+  let releaseSubmit;
+  const capability = Object.freeze(Object.create(null));
+  let stops = 0;
+  const pending = runGateBOperatorFrontEnd({
+    argv: [], channel, errorOutput, input, output,
+    outputTimeoutMs: 100, phase1TimeoutMs: 1000, phase2TimeoutMs: 1000,
+    launchSetup: async () => capability,
+    submitBootstrap: () => new Promise(resolve => { releaseSubmit = resolve; }),
+    submitReview: async () => assert.fail('early bytes must prevent review'),
+    stopCoordinator: async () => { stops += 1; return 'CLOSED'; },
+    waitClosed: async () => 'CLOSED',
+  });
+  await waitFor(() => input.isRaw === true);
+  input.write(Buffer.from(`${canonicalJson(bootstrap())}\r`, 'utf8'));
+  await waitFor(() => typeof releaseSubmit === 'function');
+  input.write(Buffer.from(`${canonicalJson(review())}\r`, 'utf8'));
+  releaseSubmit(capability);
+  assert.equal(await pending, false);
+  assert.equal(stops, 1);
+  assert.equal(input.isRaw, false);
+});
+
+test('operator front-end quarantines when exact TTY restoration cannot be proved', async () => {
+  const input = fakeOperatorTty();
+  Object.defineProperty(input, 'setRawMode', {
+    configurable: false,
+    enumerable: true,
+    writable: false,
+    value(value) {
+      if (value === false) throw new TypeError('restore failed');
+      this.isRaw = value;
+      return this;
+    },
+  });
+  const output = new PassThrough();
+  const errorOutput = new PassThrough();
+  let setups = 0;
+  let submissions = 0;
+  const capability = Object.freeze(Object.create(null));
+  const pending = runGateBOperatorFrontEnd({
+    argv: [], channel: new EventEmitter(), errorOutput, input, output,
+    outputTimeoutMs: 100, phase1TimeoutMs: 1000, phase2TimeoutMs: 1000,
+    launchSetup: async () => { setups += 1; return capability; },
+    submitBootstrap: async () => { submissions += 1; return capability; },
+    submitReview: async () => 'PREFLIGHT_VALID',
+    stopCoordinator: async () => 'CLOSED',
+    waitClosed: async () => 'CLOSED',
+  });
+  await waitFor(() => input.isRaw === true);
+  input.write(Buffer.from(`${canonicalJson(bootstrap())}\r`, 'utf8'));
+  assert.equal(await pending, false);
+  assert.equal(setups, 1);
+  assert.equal(submissions, 0);
+  assert.equal(errorOutput.read().toString('utf8'),
+    GATE_B_OPERATOR_COORDINATOR_STATUS_LINES.QUARANTINED);
+});
+
+test('operator front-end raw Ctrl-C and repeated controls restore state and preserve listeners',
+  async () => {
+    const input = fakeOperatorTty();
+    const channel = new EventEmitter();
+    const caller = () => {};
+    channel.on('SIGTERM', caller);
+    const output = new PassThrough();
+    const errorOutput = new PassThrough();
+    let setups = 0;
+    const capability = Object.freeze(Object.create(null));
+    const pending = runGateBOperatorFrontEnd({
+      argv: [], channel, errorOutput, input, output,
+      outputTimeoutMs: 100, phase1TimeoutMs: 1000, phase2TimeoutMs: 1000,
+      launchSetup: async () => { setups += 1; return capability; },
+      submitBootstrap: async () => capability,
+      submitReview: async () => 'PREFLIGHT_VALID',
+      stopCoordinator: async () => 'CLOSED',
+      waitClosed: async () => 'CLOSED',
+    });
+    await waitFor(() => input.isRaw === true);
+    input.write(Buffer.from([0x03]));
+    channel.emit('SIGTERM');
+    channel.emit('SIGTERM');
+    assert.equal(await pending, false);
+    assert.equal(input.isRaw, false);
+    assert.equal(setups, 1);
+    assert.deepEqual(channel.listeners('SIGTERM'), [caller]);
+  });
+
+test('operator front-end settles phase-two cancellation once and rejects late data', async () => {
+  const input = fakeOperatorTty();
+  const channel = new EventEmitter();
+  const output = new PassThrough();
+  const errorOutput = new PassThrough();
+  const capability = Object.freeze(Object.create(null));
+  let stops = 0;
+  let reviews = 0;
+  const pending = runGateBOperatorFrontEnd({
+    argv: [], channel, errorOutput, input, output,
+    outputTimeoutMs: 100, phase1TimeoutMs: 1000, phase2TimeoutMs: 1000,
+    launchSetup: async () => capability,
+    submitBootstrap: async () => capability,
+    submitReview: async () => { reviews += 1; return 'PREFLIGHT_VALID'; },
+    stopCoordinator: async () => { stops += 1; return 'CLOSED'; },
+    waitClosed: async () => 'CLOSED',
+  });
+  await waitFor(() => input.isRaw === true);
+  input.write(Buffer.from(`${canonicalJson(bootstrap())}\r`, 'utf8'));
+  await waitFor(() => input.isRaw === true);
+  channel.emit('SIGINT');
+  channel.emit('SIGTERM');
+  input.write(Buffer.from(`${canonicalJson(review())}\r`, 'utf8'));
+  assert.equal(await pending, false);
+  assert.equal(input.isRaw, false);
+  assert.equal(stops, 1);
+  assert.equal(reviews, 0);
+});
+
+test('signal during held preflight output callback cannot later produce clean closure', async () => {
+  const input = fakeOperatorTty();
+  const channel = new EventEmitter();
+  const lines = [];
+  let heldCallback;
+  const output = {
+    write(line, callback) {
+      lines.push(line);
+      if (line === GATE_B_OPERATOR_COORDINATOR_STATUS_LINES.PREFLIGHT_VALID) {
+        heldCallback = callback;
+      } else queueMicrotask(() => callback(null));
+      return true;
+    },
+  };
+  const errorOutput = new PassThrough();
+  const capability = Object.freeze(Object.create(null));
+  const pending = runGateBOperatorFrontEnd({
+    argv: [], channel, errorOutput, input, output,
+    outputTimeoutMs: 1000, phase1TimeoutMs: 1000, phase2TimeoutMs: 1000,
+    launchSetup: async () => capability,
+    submitBootstrap: async () => capability,
+    submitReview: async () => 'PREFLIGHT_VALID',
+    stopCoordinator: async () => 'CLOSED',
+    waitClosed: async () => 'CLOSED',
+  });
+  await waitFor(() => input.isRaw === true);
+  input.write(Buffer.from(`${canonicalJson(bootstrap())}\r`, 'utf8'));
+  await waitFor(() => input.isRaw === true);
+  input.write(Buffer.from(`${canonicalJson(review())}\r`, 'utf8'));
+  await waitFor(() => typeof heldCallback === 'function');
+  channel.emit('SIGTERM');
+  heldCallback(null);
+  heldCallback(null);
+  assert.equal(await pending, false);
+  assert.equal(lines.includes(GATE_B_OPERATOR_COORDINATOR_STATUS_LINES.CLOSED), false);
+});
+
+test('direct non-TTY front-end rejects before setup descendants or setup status',
+  { timeout: 10_000 }, async () => {
+    const frontEnd = fileURLToPath(new URL(
+      '../src/gate-b-operator-front-end.js',
+      import.meta.url,
+    ));
+    const child = spawn(process.execPath, [frontEnd], {
+      cwd: dirname(frontEnd), detached: false, env: {}, shell: false,
+      stdio: ['pipe', 'pipe', 'pipe'],
+    });
+    let stdout = '';
+    let stderr = '';
+    child.stdout.on('data', chunk => { stdout += chunk.toString('utf8'); });
+    child.stderr.on('data', chunk => { stderr += chunk.toString('utf8'); });
+    child.stdin.end(`${canonicalJson(bootstrap())}\n${canonicalJson(review())}\n`);
+    const outcome = await new Promise((resolve, reject) => {
+      const timer = setTimeout(() => reject(new Error('bounded timeout')), 5000);
+      child.once('close', (code, signal) => {
+        clearTimeout(timer);
+        resolve({ code, signal });
+      });
+    });
+    assert.deepEqual(outcome, { code: 1, signal: null });
+    assert.equal(stdout, '');
+    assert.equal(stderr, '');
+  });
+
+test('actual OS PTY suppresses canonical input echo and restores terminal state',
+  { timeout: 10_000, skip: process.platform !== 'darwin' }, async () => {
+    const fixture = fileURLToPath(new URL(
+      '../test-support/gate-b-operator-front-end-fixture.js',
+      import.meta.url,
+    ));
+    const first = canonicalJson(bootstrap());
+    const second = canonicalJson(review());
+    const expectProgram = [
+      `spawn ${process.execPath} ${fixture}`,
+      `expect ${JSON.stringify(GATE_B_OPERATOR_FRONT_END_PHASE_1_REQUIRED.trim())}`,
+      'after 100',
+      `send -- ${JSON.stringify(`${first}\r`)}`,
+      `expect ${JSON.stringify(GATE_B_OPERATOR_COORDINATOR_STATUS_LINES.REVIEW_REQUIRED.trim())}`,
+      'after 100',
+      `send -- ${JSON.stringify(`${second}\r`)}`,
+      `expect ${JSON.stringify(GATE_B_OPERATOR_COORDINATOR_STATUS_LINES.CLOSED.trim())}`,
+      'set outcome [wait]',
+      'exit [lindex $outcome 3]',
+    ].join('; ');
+    const child = spawn('/usr/bin/expect', ['-c', expectProgram], {
+      cwd: dirname(fixture), detached: false, env: {}, shell: false,
+      stdio: ['pipe', 'pipe', 'pipe'],
+    });
+    let stdout = '';
+    let stderr = '';
+    child.stdout.on('data', chunk => { stdout += chunk.toString('utf8'); });
+    child.stderr.on('data', chunk => { stderr += chunk.toString('utf8'); });
+    const outcome = await new Promise((resolve, reject) => {
+      const timer = setTimeout(() => reject(new Error('bounded timeout')), 5000);
+      child.once('close', (code, signal) => {
+        clearTimeout(timer);
+        resolve({ code, signal });
+      });
+    });
+    assert.equal(stderr, '');
+    assert.equal(stdout.includes(first), false);
+    assert.equal(stdout.includes(second), false);
+    assert.equal(stdout.includes(GATE_B_OPERATOR_COORDINATOR_STATUS_LINES.CLOSED.trim()), true);
+    assert.deepEqual(outcome, { code: 0, signal: null });
+  });

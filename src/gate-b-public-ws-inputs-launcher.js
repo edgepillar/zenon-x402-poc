@@ -297,7 +297,7 @@ function successStatus(operation) {
   fail();
 }
 
-export async function launchGateBPublicWsInputs(bootstrap, injected) {
+async function launchGateBPublicWsInputsInternal(bootstrap, injected, authoritativeGroup) {
   const stdoutChunks = [];
   const stderrChunks = [];
   const stdoutState = { total: 0 };
@@ -321,7 +321,7 @@ export async function launchGateBPublicWsInputs(bootstrap, injected) {
       [dependencies.cliModule, operation],
       {
         cwd: dirname(dependencies.cliModule),
-        detached: true,
+        detached: authoritativeGroup,
         env: {},
         shell: false,
         stdio: ['ignore', 'pipe', 'pipe', 'pipe'],
@@ -397,10 +397,10 @@ export async function launchGateBPublicWsInputs(bootstrap, injected) {
       }]);
     });
     if (result !== true) fail();
-    await proveGroupAbsent(groupId, dependencies);
+    if (authoritativeGroup) await proveGroupAbsent(groupId, dependencies);
     return Object.freeze({ status: successStatus(operation) });
   } catch {
-    if (groupId !== undefined && dependencies) {
+    if (authoritativeGroup && groupId !== undefined && dependencies) {
       try { await reapProcessGroup(groupId, dependencies); } catch {}
     }
     fail();
@@ -410,4 +410,12 @@ export async function launchGateBPublicWsInputs(bootstrap, injected) {
     for (let index = 0; index < stdoutChunks.length; index += 1) stdoutChunks[index].fill(0);
     for (let index = 0; index < stderrChunks.length; index += 1) stderrChunks[index].fill(0);
   }
+}
+
+export function launchGateBPublicWsInputs(bootstrap, injected) {
+  return launchGateBPublicWsInputsInternal(bootstrap, injected, true);
+}
+
+export function launchGateBPublicWsInputsInInheritedProcessGroup(bootstrap, injected) {
+  return launchGateBPublicWsInputsInternal(bootstrap, injected, false);
 }

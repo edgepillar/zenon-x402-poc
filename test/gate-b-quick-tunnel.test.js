@@ -8,6 +8,7 @@ import * as quickTunnelLauncher from '../src/gate-b-quick-tunnel-launcher.js';
 import {
   assertGateBQuickTunnelReady,
   launchGateBQuickTunnel,
+  launchGateBQuickTunnelInInheritedProcessGroup,
   stopGateBQuickTunnel,
   waitGateBQuickTunnelClosed,
 } from '../src/gate-b-quick-tunnel-launcher.js';
@@ -218,6 +219,25 @@ async function activateLauncher(harness, readyBeforeFrame = false) {
     GATE_B_QUICK_TUNNEL_IPC_TYPES.START,
     1,
   ));
+  harness.child.emit('message', createGateBQuickTunnelIpcMessage(
+    GATE_B_QUICK_TUNNEL_IPC_TYPES.ACTIVE,
+    1,
+  ));
+  return { launchPromise, lease: await launchPromise };
+}
+
+async function activateInheritedLauncher(harness) {
+  const launchPromise = launchGateBQuickTunnelInInheritedProcessGroup(
+    bootstrap(),
+    harness.injected,
+  );
+  await eventually(() => harness.forkCalls.length === 1);
+  harness.child.privateFd.release();
+  harness.child.emit('message', createGateBQuickTunnelIpcMessage(
+    GATE_B_QUICK_TUNNEL_IPC_TYPES.READY,
+    1,
+  ));
+  await eventually(() => harness.child.sent.length === 1);
   harness.child.emit('message', createGateBQuickTunnelIpcMessage(
     GATE_B_QUICK_TUNNEL_IPC_TYPES.ACTIVE,
     1,
@@ -500,10 +520,42 @@ test('launcher exports only the reviewed public lifecycle surface', () => {
     'GateBQuickTunnelLaunchError',
     'assertGateBQuickTunnelReady',
     'launchGateBQuickTunnel',
+    'launchGateBQuickTunnelInInheritedProcessGroup',
     'stopGateBQuickTunnel',
     'waitGateBQuickTunnelClosed',
   ]);
 });
+
+test('coordinator-only inherited launcher is non-detached and never signals or probes a group',
+  async t => {
+    await t.test('clean', async () => {
+      const harness = launcherHarness({
+        killProcessGroup() { assert.fail('inherited mode must not signal a group'); },
+        probeProcessGroup() { assert.fail('inherited mode must not probe a group'); },
+      });
+      const { lease } = await activateInheritedLauncher(harness);
+      assert.equal(harness.forkCalls[0][2].detached, false);
+      const closure = stopGateBQuickTunnel(lease);
+      emitSuccessfulClosure(harness.child, 2);
+      assert.equal(await closure, true);
+      assert.deepEqual(harness.child.killSignals, []);
+    });
+
+    await t.test('failure', async () => {
+      const harness = launcherHarness({
+        killProcessGroup() { assert.fail('inherited mode must not signal a group'); },
+        probeProcessGroup() { assert.fail('inherited mode must not probe a group'); },
+      });
+      const { lease } = await activateInheritedLauncher(harness);
+      const closure = waitGateBQuickTunnelClosed(lease);
+      harness.child.emit('message', {});
+      await eventually(() => harness.child.killSignals.length === 1);
+      assert.deepEqual(harness.child.killSignals, ['SIGTERM']);
+      harness.child.emit('exit', null, 'SIGTERM');
+      harness.child.emit('close', null, 'SIGTERM');
+      await assert.rejects(closure, LAUNCH_ERROR);
+    });
+  });
 
 test('launcher uses the workspace cwd and exact detached private-FD contract', async () => {
   const harness = launcherHarness();

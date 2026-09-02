@@ -8,6 +8,7 @@ import {
   authorizeAndPreflightGateBPublicWsInputs,
   getGateBPublicWsInputsControllerStatus,
   prepareGateBPublicWsInputsForReview,
+  prepareGateBPublicWsInputsForReviewInInheritedProcessGroup,
   stopGateBPublicWsInputsController,
   waitGateBPublicWsInputsControllerClosed,
 } from '../src/gate-b-public-ws-inputs-controller.js';
@@ -154,10 +155,31 @@ test('controller exposes only the reviewed opaque lifecycle surface', () => {
     'authorizeAndPreflightGateBPublicWsInputs',
     'getGateBPublicWsInputsControllerStatus',
     'prepareGateBPublicWsInputsForReview',
+    'prepareGateBPublicWsInputsForReviewInInheritedProcessGroup',
     'stopGateBPublicWsInputsController',
     'waitGateBPublicWsInputsControllerClosed',
   ]);
 });
+
+test('coordinator-specific controller entrypoint selects inherited tunnel launch internally',
+  async () => {
+    const context = harness();
+    const capability = await prepareGateBPublicWsInputsForReviewInInheritedProcessGroup(
+      options(),
+      context.injected,
+    );
+    assert.equal(getGateBPublicWsInputsControllerStatus(capability), REVIEW_REQUIRED);
+    assert.equal(context.tunnelBootstraps.length, 1);
+    assert.equal(await stopGateBPublicWsInputsController(capability), CLOSED);
+    const source = await readFile(
+      new URL('../src/gate-b-public-ws-inputs-controller.js', import.meta.url),
+      'utf8',
+    );
+    assert.match(
+      source,
+      /prepareGateBPublicWsInputsForReviewInInheritedProcessGroup[\s\S]*launchGateBQuickTunnelInInheritedProcessGroup/,
+    );
+  });
 
 test('controller enforces the exact two-readiness review and preflight order without RUN',
   async () => {
