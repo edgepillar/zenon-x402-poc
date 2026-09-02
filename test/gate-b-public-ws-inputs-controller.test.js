@@ -6,6 +6,7 @@ import { readFile } from 'node:fs/promises';
 import * as controllerModule from '../src/gate-b-public-ws-inputs-controller.js';
 import {
   authorizeAndPreflightGateBPublicWsInputs,
+  executeGateBPublicWsInputsOnce,
   getGateBPublicWsInputsControllerStatus,
   prepareGateBPublicWsInputsForReview,
   prepareGateBPublicWsInputsForReviewInInheritedProcessGroup,
@@ -22,10 +23,15 @@ import {
   GATE_B_QUICK_TUNNEL_TELEMETRY_ACKNOWLEDGEMENTS,
   GATE_B_QUICK_TUNNEL_TELEMETRY_MODES,
 } from '../src/gate-b-quick-tunnel-schema.js';
+import {
+  GATE_B_OPERATOR_COORDINATOR_ACKNOWLEDGEMENTS,
+} from '../src/gate-b-operator-coordinator-schema.js';
 
 const REVIEW_REQUIRED = 'GATE_B_CONTROLLER_REVIEW_REQUIRED_RUN_NOT_AUTHORIZED';
 const PREFLIGHT_VALID = 'GATE_B_CONTROLLER_PREFLIGHT_VALID_RUN_NOT_AUTHORIZED';
+const PENDING = 'GATE_B_CONTROLLER_PENDING_INDEPENDENT_VERIFICATION';
 const CLOSED = 'GATE_B_CONTROLLER_CLOSED_RUN_NOT_EXECUTED';
+const CLOSED_PENDING = 'GATE_B_CONTROLLER_CLOSED_PENDING_INDEPENDENT_VERIFICATION';
 const QUARANTINED = 'GATE_B_CONTROLLER_FAILED_WORKSPACE_QUARANTINED';
 const WORKSPACE_ROOT = '/private/tmp/gate-b-controller-fixture';
 const RUN_NAME = 'public-ws-once-controller-fixture';
@@ -66,6 +72,14 @@ function review(changes = {}) {
   };
 }
 
+function runAuthorization(changes = {}) {
+  return {
+    acknowledgement: GATE_B_OPERATOR_COORDINATOR_ACKNOWLEDGEMENTS.run,
+    schemaVersion: 1,
+    ...changes,
+  };
+}
+
 function deferred() {
   let resolve;
   let reject;
@@ -96,6 +110,7 @@ function harness(changes = {}) {
   const inputBootstraps = [];
   const tunnelBootstraps = [];
   const preflights = [];
+  const runs = [];
   const lease = Object.freeze(Object.create(null));
   const state = { stopCalls: 0, waitCalls: 0 };
   const injected = {
@@ -125,6 +140,13 @@ function harness(changes = {}) {
       events.push('preflight');
       return Object.freeze({ valid: true });
     },
+    async runPublicWsOnce(candidate, beforeOriginBind) {
+      runs.push(structuredClone(candidate));
+      events.push('run');
+      assert.equal(await beforeOriginBind(), true);
+      events.push('origin-released');
+      return Object.freeze({ status: 'pending-independent-verification' });
+    },
     stopQuickTunnel(candidate) {
       assert.equal(candidate, lease);
       state.stopCalls += 1;
@@ -145,6 +167,7 @@ function harness(changes = {}) {
     inputBootstraps,
     lease,
     preflights,
+    runs,
     state,
     tunnelBootstraps,
   };
@@ -153,12 +176,70 @@ function harness(changes = {}) {
 test('controller exposes only the reviewed opaque lifecycle surface', () => {
   assert.deepEqual(Object.keys(controllerModule).sort(), [
     'authorizeAndPreflightGateBPublicWsInputs',
+    'executeGateBPublicWsInputsOnce',
     'getGateBPublicWsInputsControllerStatus',
     'prepareGateBPublicWsInputsForReview',
     'prepareGateBPublicWsInputsForReviewInInheritedProcessGroup',
     'stopGateBPublicWsInputsController',
     'waitGateBPublicWsInputsControllerClosed',
   ]);
+});
+
+test('Phase 3 is distinct, one-use, freshly checks the retained lease, and closes pending',
+  async () => {
+    const context = harness();
+    const capability = await prepareGateBPublicWsInputsForReview(options(), context.injected);
+    assert.equal(await authorizeAndPreflightGateBPublicWsInputs(capability, review()),
+      PREFLIGHT_VALID);
+    let releases = 0;
+    const status = await executeGateBPublicWsInputsOnce(
+      capability,
+      runAuthorization(),
+      async () => { releases += 1; return true; },
+    );
+    assert.equal(status, PENDING);
+    assert.equal(releases, 1);
+    assert.equal(context.runs.length, 1);
+    assert.equal(context.events.slice(-3).join(','), 'ready,run,origin-released');
+    assert.deepEqual(Object.keys(context.runs[0]).sort(), [
+      'authorizationPath', 'buyerRpcPath', 'buyerWalletPath', 'configPath',
+      'facilitatorRpcPath', 'runName', 'transportException', 'workspaceRoot',
+    ]);
+    assert.equal(await stopGateBPublicWsInputsController(capability), CLOSED_PENDING);
+    assert.equal(await waitGateBPublicWsInputsControllerClosed(capability), CLOSED_PENDING);
+    assert.equal(context.state.stopCalls, 1);
+    assert.equal(context.state.waitCalls, 1);
+    assert.equal(await executeGateBPublicWsInputsOnce(
+      capability,
+      runAuthorization(),
+      async () => true,
+    ), CLOSED_PENDING);
+    assert.equal(context.runs.length, 1);
+  });
+
+test('malformed or early Phase 3 consumes the one-use latch and never invokes RUN', async t => {
+  for (const [name, authorizeFirst, authority] of [
+    ['early', false, runAuthorization()],
+    ['malformed', true, runAuthorization({ acknowledgement: 'wrong' })],
+  ]) await t.test(name, async () => {
+    const context = harness();
+    const capability = await prepareGateBPublicWsInputsForReview(options(), context.injected);
+    if (authorizeFirst) {
+      assert.equal(await authorizeAndPreflightGateBPublicWsInputs(capability, review()),
+        PREFLIGHT_VALID);
+    }
+    assert.equal(await executeGateBPublicWsInputsOnce(
+      capability,
+      authority,
+      async () => true,
+    ), QUARANTINED);
+    assert.equal(await executeGateBPublicWsInputsOnce(
+      capability,
+      runAuthorization(),
+      async () => true,
+    ), QUARANTINED);
+    assert.equal(context.runs.length, 0);
+  });
 });
 
 test('coordinator-specific controller entrypoint selects inherited tunnel launch internally',
@@ -760,15 +841,16 @@ test('unproved owned-group closure yields quarantine and never retries', async (
   assert.equal(getGateBPublicWsInputsControllerStatus(capability), QUARANTINED);
 });
 
-test('controller source has no run, wallet-read, funding, publication, or network execution seam',
+test('controller RUN seam delegates to the isolated supervisor without direct sensitive effects',
   async () => {
     const source = await readFile(
       new URL('../src/gate-b-public-ws-inputs-controller.js', import.meta.url),
       'utf8',
     );
     for (const token of [
-      'runPublicWsOnce', 'executePublicWsOnce', 'paidFetch', 'publishRawTransaction',
+      'executePublicWsOnce', 'paidFetch', 'publishRawTransaction',
       'randomBytes', 'KeyStore', 'readFile(', 'fetch(', 'WebSocket', 'node:http',
       'node:https', 'node:net', 'node:dns',
     ]) assert.equal(source.includes(token), false);
+    assert.equal(source.includes('supervisePublicWsOnceChild'), true);
   });

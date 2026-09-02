@@ -7,10 +7,14 @@ import {
   GATE_B_OPERATOR_COORDINATOR_IPC_TYPES,
   GATE_B_OPERATOR_COORDINATOR_LIMITS,
   GATE_B_OPERATOR_COORDINATOR_STATUS_LINES,
+  GATE_B_OPERATOR_ORIGIN_RELEASE_IPC_TYPES,
   createGateBOperatorCoordinatorIpcMessage,
+  createGateBOperatorOriginReleaseIpcMessage,
   frameGateBOperatorCoordinatorBootstrap,
   frameGateBOperatorCoordinatorReview,
+  frameGateBOperatorCoordinatorRun,
   parseGateBOperatorCoordinatorIpcMessage,
+  parseGateBOperatorOriginReleaseIpcMessage,
 } from './gate-b-operator-coordinator-schema.js';
 import {
   GATE_B_OPERATOR_ORIGIN_GUARD_HOST,
@@ -367,6 +371,8 @@ function rejectMilestones(record) {
   const error = new GateBOperatorCoordinatorLaunchError();
   if (record.rejectLaunch) record.rejectLaunch(error);
   if (record.rejectReview) record.rejectReview(error);
+  if (record.rejectRun) record.rejectRun(error);
+  if (record.originReleaseDeferred) record.originReleaseDeferred.reject(error);
 }
 
 function settleTerminal(record, status) {
@@ -418,6 +424,18 @@ function checkMilestones(record) {
       ) && record.stderrState.lines.length === 0 && record.stderrState.chunks.length === 0) {
     record.state = 'PREFLIGHT_VALID';
     record.resolveReview('PREFLIGHT_VALID');
+    return;
+  }
+  if (record.state === 'RUN_SUBMITTED' && record.runWritten && record.pendingIpc &&
+      record.originReleaseConfirmed &&
+      exactLineCount(
+        record,
+        'stdoutState',
+        GATE_B_OPERATOR_COORDINATOR_STATUS_LINES.PENDING,
+        3,
+      ) && record.stderrState.lines.length === 0 && record.stderrState.chunks.length === 0) {
+    record.state = 'PENDING';
+    record.resolveRun('PENDING');
   }
 }
 
@@ -486,6 +504,27 @@ function installHandlers(record) {
       record.reviewOpenAck = true;
       return;
     }
+    if (exactFieldlessMessage(message, 'RUN_OPENED')) {
+      if (record.state !== 'RUN_OPENING' || record.runOpenAck) {
+        void quarantineAndReap(record);
+        return;
+      }
+      record.runOpenAck = true;
+      return;
+    }
+    try {
+      const origin = parseGateBOperatorOriginReleaseIpcMessage(message);
+      if (origin.type !== GATE_B_OPERATOR_ORIGIN_RELEASE_IPC_TYPES.RELEASE_ORIGIN ||
+          record.state !== 'RUN_SUBMITTED' || record.originReleaseRequested) fail();
+      record.originReleaseRequested = true;
+      record.originReleaseDeferred.resolve(true);
+      return;
+    } catch {
+      if (record.state === 'RUN_SUBMITTED' && !record.originReleaseRequested) {
+        // Continue with lifecycle parsing below; malformed release-shaped input
+        // is rejected by that closed protocol.
+      }
+    }
     let parsed;
     try { parsed = parseGateBOperatorCoordinatorIpcMessage(message); } catch {
       void quarantineAndReap(record);
@@ -500,6 +539,13 @@ function installHandlers(record) {
     if (parsed.type === GATE_B_OPERATOR_COORDINATOR_IPC_TYPES.PREFLIGHT_VALID &&
         record.state === 'REVIEW_SUBMITTED' && !record.preflightIpc) {
       record.preflightIpc = true;
+      checkMilestones(record);
+      return;
+    }
+    if (parsed.type === GATE_B_OPERATOR_COORDINATOR_IPC_TYPES.PENDING &&
+        record.state === 'RUN_SUBMITTED' && record.originReleaseRequested &&
+        !record.pendingIpc) {
+      record.pendingIpc = true;
       checkMilestones(record);
       return;
     }
@@ -525,14 +571,18 @@ function installHandlers(record) {
     record.closeSeen = true;
     record.acceptingProtocol = false;
     clearTimeout(record.stopWatchdog);
-    const expectedCleanLineCount = record.preflightIpc ? 3 : record.reviewIpc ? 2 : 1;
+    const expectedCleanLineCount = record.pendingIpc ? 4 :
+      record.preflightIpc ? 3 : record.reviewIpc ? 2 : 1;
+    const expectedClosedLine = record.pendingIpc
+      ? GATE_B_OPERATOR_COORDINATOR_STATUS_LINES.CLOSED_PENDING
+      : GATE_B_OPERATOR_COORDINATOR_STATUS_LINES.CLOSED;
     const candidateClean = record.exitSeen && code === record.exitCode &&
       signal === record.exitSignal && code === 0 && signal === null &&
       record.finalIpc === GATE_B_OPERATOR_COORDINATOR_IPC_TYPES.STOPPED &&
       exactLineCount(
         record,
         'stdoutState',
-        GATE_B_OPERATOR_COORDINATOR_STATUS_LINES.CLOSED,
+        expectedClosedLine,
         expectedCleanLineCount,
       ) && record.stderrState.lines.length === 0 && record.stderrState.chunks.length === 0;
     const stdoutBeforeQuarantine = record.stdoutState.chunks.length === 0 && (
@@ -545,6 +595,12 @@ function installHandlers(record) {
           GATE_B_OPERATOR_COORDINATOR_STATUS_LINES.REVIEW_REQUIRED &&
         record.stdoutState.lines[1] ===
           GATE_B_OPERATOR_COORDINATOR_STATUS_LINES.PREFLIGHT_VALID)
+      || (record.stdoutState.lines.length === 3 &&
+        record.stdoutState.lines[0] ===
+          GATE_B_OPERATOR_COORDINATOR_STATUS_LINES.REVIEW_REQUIRED &&
+        record.stdoutState.lines[1] ===
+          GATE_B_OPERATOR_COORDINATOR_STATUS_LINES.PREFLIGHT_VALID &&
+        record.stdoutState.lines[2] === GATE_B_OPERATOR_COORDINATOR_STATUS_LINES.PENDING)
     );
     const candidateQuarantine = record.finalIpc ===
         GATE_B_OPERATOR_COORDINATOR_IPC_TYPES.QUARANTINED &&
@@ -569,7 +625,9 @@ function installHandlers(record) {
           try { absent = await proveGroupAbsent(record.groupId, record.dependencies); } catch {}
         }
       }
-      if (candidateClean && absent) settleTerminal(record, 'CLOSED');
+      if (candidateClean && absent) {
+        settleTerminal(record, record.pendingIpc ? 'CLOSED_PENDING' : 'CLOSED');
+      }
       else {
         if (record.authoritativeGroup && !absent) {
           try { await reapGroup(record.groupId, record.dependencies); } catch {}
@@ -643,6 +701,8 @@ function launchGateBOperatorProcess(
     let rejectLaunch;
     let resolveReview;
     let rejectReview;
+    let resolveRun;
+    let rejectRun;
     let resolveClosed;
     const launchPromise = new Promise((resolve, reject) => {
       resolveLaunch = resolve;
@@ -653,6 +713,11 @@ function launchGateBOperatorProcess(
       rejectReview = reject;
     });
     void reviewPromise.catch(() => {});
+    const runPromise = new Promise((resolve, reject) => {
+      resolveRun = resolve;
+      rejectRun = reject;
+    });
+    void runPromise.catch(() => {});
     const closedPromise = new Promise(resolve => { resolveClosed = resolve; });
     const record = {
       acceptingProtocol: true,
@@ -672,8 +737,10 @@ function launchGateBOperatorProcess(
       lifetimeTimer: undefined,
       ownedHandlers: [],
       preflightIpc: false,
+      pendingIpc: false,
       rejectLaunch,
       rejectReview,
+      rejectRun,
       released: false,
       resolveClosed,
       resolveLaunch,
@@ -684,6 +751,17 @@ function launchGateBOperatorProcess(
       reviewWriteCallbackSeen: false,
       reviewWritten: false,
       reviewPromise,
+      runCallbackSeen: false,
+      runAttempted: false,
+      runOpenAck: false,
+      runPromise,
+      runWriteCallbackSeen: false,
+      runWritten: false,
+      resolveRun,
+      originReleaseRequested: false,
+      originReleaseConfirming: false,
+      originReleaseConfirmed: false,
+      originReleaseDeferred: createDeferred(true),
       snapshot,
       state: 'LAUNCHING',
       stderrState: { chunks: [], lines: [], total: 0 },
@@ -734,6 +812,7 @@ function captureWatchdogDependencies(injected) {
     'closeOriginGuard', 'createOriginGuard', 'executable', 'getOriginGuardAddress',
     'getOriginGuardHandle', 'gracefulStopMs', 'killProcessGroup', 'lifetimeMs',
     'observeOriginGuardFault', 'originGuardModule', 'platform', 'probeProcessGroup',
+    'originReleaseTimeoutMs',
     'reapAbandonMs', 'reapForceMs', 'reaperModule', 'setupTimeoutMs', 'spawnProcess',
     'terminalWaitMs', 'testOnlyOriginPort', 'watchdogModule',
   ]);
@@ -755,6 +834,8 @@ function captureWatchdogDependencies(injected) {
     observeOriginGuardFault: supplied.observeOriginGuardFault ??
       observeGateBOperatorOriginGuardFault,
     originGuardModule: supplied.originGuardModule ?? ORIGIN_GUARD_MODULE,
+    originReleaseTimeoutMs: supplied.originReleaseTimeoutMs ??
+      GATE_B_OPERATOR_COORDINATOR_LIMITS.originReleaseTimeoutMs,
     originPort: supplied.testOnlyOriginPort ?? GATE_B_OPERATOR_ORIGIN_GUARD_PORT,
     platform: supplied.platform ?? process.platform,
     probeProcessGroup: supplied.probeProcessGroup ?? defaultProbeProcessGroup,
@@ -789,6 +870,9 @@ function captureWatchdogDependencies(injected) {
       output.reapForceMs >= output.reapAbandonMs ||
       !Number.isSafeInteger(output.setupTimeoutMs) || output.setupTimeoutMs < 1 ||
       output.setupTimeoutMs > SETUP_TIMEOUT_MS ||
+      !Number.isSafeInteger(output.originReleaseTimeoutMs) ||
+      output.originReleaseTimeoutMs < 1 ||
+      output.originReleaseTimeoutMs > GATE_B_OPERATOR_COORDINATOR_LIMITS.originReleaseTimeoutMs ||
       !Number.isSafeInteger(output.terminalWaitMs) || output.terminalWaitMs < 1 ||
       output.terminalWaitMs > TERMINAL_WAIT_MS ||
       !Number.isSafeInteger(output.originPort) || output.originPort < 0 ||
@@ -944,6 +1028,7 @@ function rejectSiblingMilestones(record) {
   record.setupDeferred.reject(error);
   record.bootstrapDeferred?.reject(error);
   record.reviewDeferred?.reject(error);
+  record.runDeferred?.reject(error);
 }
 
 function settleSiblingTerminal(record, status) {
@@ -992,6 +1077,25 @@ function sendSiblingMessage(snapshot, type, timeoutMs) {
       Reflect.apply(snapshot.send, snapshot.child, [Object.freeze({ type }), error => {
         finish(error == null);
       }]);
+    } catch { finish(false); }
+  });
+}
+
+function sendOriginReleaseMessage(snapshot, type, timeoutMs) {
+  return new Promise((resolve, reject) => {
+    let settled = false;
+    const finish = ok => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      ok ? resolve(true) : reject(new GateBOperatorCoordinatorLaunchError());
+    };
+    const timer = setTimeout(() => finish(false), timeoutMs);
+    try {
+      Reflect.apply(snapshot.send, snapshot.child, [
+        createGateBOperatorOriginReleaseIpcMessage(type),
+        error => finish(error == null),
+      ]);
     } catch { finish(false); }
   });
 }
@@ -1057,6 +1161,41 @@ async function closeOuterOriginGuard(record) {
   return record.outerGuardClosePromise;
 }
 
+function releaseOriginHolders(record) {
+  if (record.originReleasePromise) return record.originReleasePromise;
+  if (record.originReleaseStarted || record.originReleased || record.terminalWork ||
+      record.reaperLost || record.guardLost || record.state !== 'RUN_SUBMITTED') {
+    return Promise.reject(new GateBOperatorCoordinatorLaunchError());
+  }
+  record.originReleaseStarted = true;
+  record.originReleasePromise = (async () => {
+    await Promise.all([
+      sendOriginReleaseMessage(
+        record.guard,
+        GATE_B_OPERATOR_ORIGIN_RELEASE_IPC_TYPES.RELEASE_ORIGIN,
+        record.dependencies.originReleaseTimeoutMs,
+      ),
+      sendOriginReleaseMessage(
+        record.reaper,
+        GATE_B_OPERATOR_ORIGIN_RELEASE_IPC_TYPES.RELEASE_ORIGIN,
+        record.dependencies.originReleaseTimeoutMs,
+      ),
+    ]);
+    const acknowledged = await waitForSibling(
+      record,
+      () => (record.guardOriginReleaseAck && record.reaperOriginReleaseAck) ||
+        Boolean(record.terminalWork),
+      record.dependencies.originReleaseTimeoutMs,
+    );
+    if (!acknowledged || !record.guardOriginReleaseAck || !record.reaperOriginReleaseAck ||
+        record.terminalWork || record.state !== 'RUN_SUBMITTED') fail();
+    if (await closeOuterOriginGuard(record) !== true || record.terminalWork) fail();
+    record.originReleased = true;
+    return true;
+  })();
+  return record.originReleasePromise;
+}
+
 async function proveSiblingGroupsAbsent(record) {
   try {
     await proveGroupAbsent(record.watchdog.groupId, record.dependencies);
@@ -1070,7 +1209,11 @@ async function proveSiblingGroupsAbsent(record) {
 }
 
 function cleanWatchdogCandidate(record) {
-  const expectedLines = record.preflightIpc ? 3 : record.reviewIpc ? 2 : 1;
+  const expectedLines = record.pendingIpc ? 4 :
+    record.preflightIpc ? 3 : record.reviewIpc ? 2 : 1;
+  const expectedClosedLine = record.pendingIpc
+    ? GATE_B_OPERATOR_COORDINATOR_STATUS_LINES.CLOSED_PENDING
+    : GATE_B_OPERATOR_COORDINATOR_STATUS_LINES.CLOSED;
   return !record.protocolFault && record.watchdogExitSeen && record.watchdogCloseSeen &&
     record.watchdogExitCode === 0 && record.watchdogExitSignal === null &&
     record.watchdogCloseCode === record.watchdogExitCode &&
@@ -1079,7 +1222,7 @@ function cleanWatchdogCandidate(record) {
     exactLineCount(
       record,
       'stdoutState',
-      GATE_B_OPERATOR_COORDINATOR_STATUS_LINES.CLOSED,
+      expectedClosedLine,
       expectedLines,
     ) && record.stderrState.lines.length === 0 && record.stderrState.chunks.length === 0;
 }
@@ -1197,8 +1340,9 @@ async function reconcileSiblingRecord(record, cleanRequested) {
   const clean = cleanRequested && serialized && reaperProof && guardProof && watchdogClosed &&
     outerGuardClosed && groupsAbsent &&
     cleanWatchdogCandidate(record);
-  settleSiblingTerminal(record, clean ? 'CLOSED' : 'QUARANTINED');
-  return clean ? 'CLOSED' : 'QUARANTINED';
+  const closedStatus = record.pendingIpc ? 'CLOSED_PENDING' : 'CLOSED';
+  settleSiblingTerminal(record, clean ? closedStatus : 'QUARANTINED');
+  return clean ? closedStatus : 'QUARANTINED';
 }
 
 function beginSiblingCleanup(record, cleanRequested = false) {
@@ -1249,6 +1393,18 @@ function checkSiblingMilestones(record) {
       ) && record.stderrState.lines.length === 0 && record.stderrState.chunks.length === 0) {
     record.state = 'PREFLIGHT_VALID';
     record.reviewDeferred.resolve('PREFLIGHT_VALID');
+    return;
+  }
+  if (record.state === 'RUN_SUBMITTED' && record.runWritten && record.pendingIpc &&
+      record.originReleaseConfirmed &&
+      exactLineCount(
+        record,
+        'stdoutState',
+        GATE_B_OPERATOR_COORDINATOR_STATUS_LINES.PENDING,
+        3,
+      ) && record.stderrState.lines.length === 0 && record.stderrState.chunks.length === 0) {
+    record.state = 'PENDING';
+    record.runDeferred.resolve('PENDING');
   }
 }
 
@@ -1315,7 +1471,7 @@ function installSiblingHandlers(record) {
       }
       try {
         appendOutput(record, streamName, chunk);
-        if (record.stdoutState.lines.length > 3 || record.stderrState.lines.length > 1) fail();
+        if (record.stdoutState.lines.length > 4 || record.stderrState.lines.length > 1) fail();
       } catch { record.protocolFault = true; }
       return;
     }
@@ -1360,11 +1516,37 @@ function installSiblingHandlers(record) {
       record.reviewOpenAck = true;
       return;
     }
+    if (exactFieldlessMessage(message, 'RUN_OPENED')) {
+      if (record.state !== 'RUN_OPENING' || record.runOpenAck) return poison();
+      record.runOpenAck = true;
+      return;
+    }
     if (exactFieldlessMessage(message, 'STARTED')) {
       if (record.state !== 'WAIT_WATCHDOG_START' || record.startedIpc) return poison();
       record.startedIpc = true;
       checkSiblingMilestones(record);
       return;
+    }
+    try {
+      const origin = parseGateBOperatorOriginReleaseIpcMessage(message);
+      if (origin.type !== GATE_B_OPERATOR_ORIGIN_RELEASE_IPC_TYPES.RELEASE_ORIGIN ||
+          record.state !== 'RUN_SUBMITTED' || record.originReleaseStarted) fail();
+      void releaseOriginHolders(record).then(async () => {
+        const confirmed = await sendOriginReleaseMessage(
+          record.watchdog,
+          GATE_B_OPERATOR_ORIGIN_RELEASE_IPC_TYPES.ORIGIN_RELEASED,
+          record.dependencies.originReleaseTimeoutMs,
+        );
+        if (confirmed !== true || record.terminalWork ||
+            record.state !== 'RUN_SUBMITTED') fail();
+        record.originReleaseConfirmed = true;
+        checkSiblingMilestones(record);
+      }).catch(() => void beginSiblingCleanup(record));
+      return;
+    } catch {
+      if (record.state === 'RUN_SUBMITTED' && !record.originReleaseStarted) {
+        // Continue with the closed lifecycle protocol below.
+      }
     }
     let parsed;
     try { parsed = parseGateBOperatorCoordinatorIpcMessage(message); } catch { return poison(); }
@@ -1377,6 +1559,13 @@ function installSiblingHandlers(record) {
     if (parsed.type === GATE_B_OPERATOR_COORDINATOR_IPC_TYPES.PREFLIGHT_VALID &&
         record.state === 'REVIEW_SUBMITTED' && !record.preflightIpc) {
       record.preflightIpc = true;
+      checkSiblingMilestones(record);
+      return;
+    }
+    if (parsed.type === GATE_B_OPERATOR_COORDINATOR_IPC_TYPES.PENDING &&
+        record.state === 'RUN_SUBMITTED' && record.originReleased &&
+        !record.pendingIpc) {
+      record.pendingIpc = true;
       checkSiblingMilestones(record);
       return;
     }
@@ -1422,6 +1611,18 @@ function installSiblingHandlers(record) {
       record.reaperReady = true;
       checkHolderReadiness(record);
       return;
+    }
+    try {
+      const origin = parseGateBOperatorOriginReleaseIpcMessage(message);
+      if (origin.type !== GATE_B_OPERATOR_ORIGIN_RELEASE_IPC_TYPES.ORIGIN_RELEASED ||
+          !record.originReleaseStarted || record.reaperOriginReleaseAck) fail();
+      record.reaperOriginReleaseAck = true;
+      return;
+    } catch {
+      if (record.originReleaseStarted && !record.reaperOriginReleaseAck) {
+        record.reaperLost = true;
+        return poison();
+      }
     }
     if (exactFieldlessMessage(message, 'ABSENT')) {
       if (record.state !== 'CLEANING_REAPER' || !record.cleanupSent ||
@@ -1494,6 +1695,18 @@ function installSiblingHandlers(record) {
       record.guardReady = true;
       checkHolderReadiness(record);
       return;
+    }
+    try {
+      const origin = parseGateBOperatorOriginReleaseIpcMessage(message);
+      if (origin.type !== GATE_B_OPERATOR_ORIGIN_RELEASE_IPC_TYPES.ORIGIN_RELEASED ||
+          !record.originReleaseStarted || record.guardOriginReleaseAck) fail();
+      record.guardOriginReleaseAck = true;
+      return;
+    } catch {
+      if (record.originReleaseStarted && !record.guardOriginReleaseAck) {
+        record.guardLost = true;
+        return poison();
+      }
     }
     if (exactFieldlessMessage(message, 'ABSENT')) {
       if (record.state !== 'CLEANING_GUARD' || !record.guardCleanupSent ||
@@ -1643,6 +1856,7 @@ function createWatchdogRecord(dependencies, watchdog, reaper, guard, originGuard
     outerGuardClosePromise: undefined,
     outerGuardClosed: false,
     preflightIpc: false,
+    pendingIpc: false,
     protocolFault: false,
     protocolEnded: false,
     reaper,
@@ -1664,6 +1878,18 @@ function createWatchdogRecord(dependencies, watchdog, reaper, guard, originGuard
     reviewIpc: false,
     reviewOpenAck: false,
     reviewWritten: false,
+    runCallbackSeen: false,
+    runAttempted: false,
+    runDeferred: undefined,
+    runIpc: false,
+    runOpenAck: false,
+    runWritten: false,
+    originReleaseStarted: false,
+    originReleased: false,
+    originReleaseConfirmed: false,
+    guardOriginReleaseAck: false,
+    reaperOriginReleaseAck: false,
+    originReleasePromise: undefined,
     setupDeferred,
     setupTimer: undefined,
     startCallbackSeen: false,
@@ -1920,7 +2146,6 @@ export function submitGateBOperatorCoordinatorReview(capability, review) {
       frame = frameGateBOperatorCoordinatorReview(review);
       sibling.reviewDeferred = createDeferred(true);
       sibling.state = 'REVIEW_OPENING';
-      sibling.protocolEnded = true;
       const reviewFrame = frame;
       void (async () => {
         try {
@@ -1938,7 +2163,7 @@ export function submitGateBOperatorCoordinatorReview(capability, review) {
               sibling.reaperLost || sibling.guardLost ||
               sibling.state !== 'REVIEW_OPENING') fail();
           sibling.state = 'REVIEW_SUBMITTED';
-          Reflect.apply(sibling.watchdog.secondEnd, sibling.watchdog.secondPipe,
+          Reflect.apply(sibling.watchdog.secondWrite, sibling.watchdog.secondPipe,
             [reviewFrame, error => {
               if (sibling.reviewCallbackSeen) return void beginSiblingCleanup(sibling);
               sibling.reviewCallbackSeen = true;
@@ -1992,7 +2217,7 @@ export function submitGateBOperatorCoordinatorReview(capability, review) {
         if (!opened || !record.reviewOpenAck || !record.acceptingProtocol ||
             record.state !== 'REVIEW_OPENING') fail();
         record.state = 'REVIEW_SUBMITTED';
-        Reflect.apply(record.snapshot.privateEnd, record.snapshot.privatePipe,
+        Reflect.apply(record.snapshot.privateWrite, record.snapshot.privatePipe,
           [reviewFrame, error => {
             if (record.reviewWriteCallbackSeen) {
               if (record.acceptingProtocol) void quarantineAndReap(record);
@@ -2022,11 +2247,170 @@ export function submitGateBOperatorCoordinatorReview(capability, review) {
   }
 }
 
+export function submitGateBOperatorCoordinatorRun(capability, authorization) {
+  const sibling = siblingRecordFor(capability);
+  if (sibling) {
+    if (sibling.runAttempted) {
+      if (!sibling.terminalSettled) void beginSiblingCleanup(sibling);
+      return Promise.reject(new GateBOperatorCoordinatorLaunchError());
+    }
+    sibling.runAttempted = true;
+    if (sibling.state !== 'PREFLIGHT_VALID' || sibling.terminalSettled ||
+        sibling.terminalWork || sibling.reaperLost || sibling.guardLost ||
+        sibling.runDeferred) {
+      if (!sibling.terminalSettled) void beginSiblingCleanup(sibling);
+      return Promise.reject(new GateBOperatorCoordinatorLaunchError());
+    }
+    let frame;
+    try {
+      frame = frameGateBOperatorCoordinatorRun(authorization);
+      sibling.runDeferred = createDeferred(true);
+      sibling.state = 'RUN_OPENING';
+      sibling.protocolEnded = true;
+      const runFrame = frame;
+      void (async () => {
+        try {
+          await sendSiblingMessage(
+            sibling.watchdog,
+            'RUN_OPEN',
+            sibling.dependencies.setupTimeoutMs,
+          );
+          const opened = await waitForSibling(
+            sibling,
+            () => sibling.runOpenAck || Boolean(sibling.terminalWork),
+            sibling.dependencies.setupTimeoutMs,
+          );
+          if (!opened || !sibling.runOpenAck || sibling.terminalWork ||
+              sibling.reaperLost || sibling.guardLost ||
+              sibling.state !== 'RUN_OPENING') fail();
+          sibling.state = 'RUN_SUBMITTED';
+          Reflect.apply(sibling.watchdog.secondEnd, sibling.watchdog.secondPipe,
+            [runFrame, error => {
+              if (sibling.runCallbackSeen) return void beginSiblingCleanup(sibling);
+              sibling.runCallbackSeen = true;
+              runFrame.fill(0);
+              frame = undefined;
+              if (sibling.terminalWork) return;
+              if (error) void beginSiblingCleanup(sibling);
+              else {
+                sibling.runWritten = true;
+                checkSiblingMilestones(sibling);
+              }
+            }]);
+        } catch {
+          runFrame.fill(0);
+          frame = undefined;
+          void beginSiblingCleanup(sibling);
+        }
+      })();
+      return sibling.runDeferred.promise;
+    } catch {
+      if (Buffer.isBuffer(frame)) frame.fill(0);
+      void beginSiblingCleanup(sibling);
+      return Promise.reject(new GateBOperatorCoordinatorLaunchError());
+    }
+  }
+
+  const record = recordFor(capability);
+  if (record.runAttempted) {
+    if (!record.terminalSettled) void quarantineAndReap(record);
+    return Promise.reject(new GateBOperatorCoordinatorLaunchError());
+  }
+  record.runAttempted = true;
+  if (record.state !== 'PREFLIGHT_VALID' || record.terminalSettled) {
+    if (record.terminalSettled) return Promise.reject(new GateBOperatorCoordinatorLaunchError());
+    return quarantineAndReap(record).then(() => {
+      throw new GateBOperatorCoordinatorLaunchError();
+    });
+  }
+  let frame;
+  try {
+    frame = frameGateBOperatorCoordinatorRun(authorization);
+    record.state = 'RUN_OPENING';
+    const runFrame = frame;
+    void (async () => {
+      try {
+        await sendSiblingMessage(
+          record.snapshot,
+          'RUN_OPEN',
+          GATE_B_OPERATOR_COORDINATOR_LIMITS.originReleaseTimeoutMs,
+        );
+        const opened = await waitForSibling(
+          record,
+          () => record.runOpenAck || !record.acceptingProtocol,
+          GATE_B_OPERATOR_COORDINATOR_LIMITS.originReleaseTimeoutMs,
+        );
+        if (!opened || !record.runOpenAck || !record.acceptingProtocol ||
+            record.state !== 'RUN_OPENING') fail();
+        record.state = 'RUN_SUBMITTED';
+        Reflect.apply(record.snapshot.privateEnd, record.snapshot.privatePipe,
+          [runFrame, error => {
+            if (record.runWriteCallbackSeen) {
+              if (record.acceptingProtocol) void quarantineAndReap(record);
+              return;
+            }
+            record.runWriteCallbackSeen = true;
+            runFrame.fill(0);
+            frame = undefined;
+            if (!record.acceptingProtocol) return;
+            if (error) void quarantineAndReap(record);
+            else {
+              record.runWritten = true;
+              checkMilestones(record);
+            }
+          }]);
+      } catch {
+        runFrame.fill(0);
+        frame = undefined;
+        void quarantineAndReap(record);
+      }
+    })();
+    return record.runPromise;
+  } catch {
+    if (Buffer.isBuffer(frame)) frame.fill(0);
+    void quarantineAndReap(record);
+    return Promise.reject(new GateBOperatorCoordinatorLaunchError());
+  }
+}
+
+export function waitGateBOperatorCoordinatorOriginReleaseRequest(capability) {
+  const record = recordFor(capability);
+  if ((record.state !== 'RUN_OPENING' && record.state !== 'RUN_SUBMITTED') ||
+      !record.runAttempted || record.terminalSettled) fail();
+  return record.originReleaseDeferred.promise;
+}
+
+export function confirmGateBOperatorCoordinatorOriginReleased(capability) {
+  const record = recordFor(capability);
+  if (record.state !== 'RUN_SUBMITTED' || record.terminalSettled ||
+      !record.originReleaseRequested || record.originReleaseConfirming ||
+      record.originReleaseConfirmed) {
+    return Promise.reject(new GateBOperatorCoordinatorLaunchError());
+  }
+  record.originReleaseConfirming = true;
+  return sendOriginReleaseMessage(
+    record.snapshot,
+    GATE_B_OPERATOR_ORIGIN_RELEASE_IPC_TYPES.ORIGIN_RELEASED,
+    GATE_B_OPERATOR_COORDINATOR_LIMITS.originReleaseTimeoutMs,
+  ).then(value => {
+    if (value !== true || record.terminalSettled ||
+        record.state !== 'RUN_SUBMITTED') fail();
+    record.originReleaseConfirming = false;
+    record.originReleaseConfirmed = true;
+    checkMilestones(record);
+    return true;
+  }).catch(() => quarantineAndReap(record).then(() => {
+    throw new GateBOperatorCoordinatorLaunchError();
+  }));
+}
+
 export function getGateBOperatorCoordinatorStatus(capability) {
   const sibling = siblingRecordFor(capability);
   const record = sibling ?? recordFor(capability);
   if (record.state === 'REVIEW_REQUIRED' || record.state === 'PREFLIGHT_VALID' ||
-      record.state === 'CLOSED' || record.state === 'QUARANTINED') return record.state;
+      record.state === 'PENDING' ||
+      record.state === 'CLOSED' || record.state === 'CLOSED_PENDING' ||
+      record.state === 'QUARANTINED') return record.state;
   fail();
 }
 

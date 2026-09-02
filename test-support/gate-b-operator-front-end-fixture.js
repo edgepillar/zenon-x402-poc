@@ -12,10 +12,12 @@ const success = await runGateBOperatorFrontEnd({
   outputTimeoutMs: 1_000,
   phase1TimeoutMs: 5_000,
   phase2TimeoutMs: 5_000,
-  stopCoordinator: async candidate => candidate === capability ? 'CLOSED' : 'FAILED',
+  phase3TimeoutMs: 5_000,
+  stopCoordinator: async candidate => candidate === capability ? 'CLOSED_PENDING' : 'FAILED',
   submitBootstrap: async candidate => candidate === capability ? capability : undefined,
   submitReview: async candidate => candidate === capability ? 'PREFLIGHT_VALID' : 'FAILED',
-  waitClosed: async candidate => candidate === capability ? 'CLOSED' : 'FAILED',
+  submitRun: async candidate => candidate === capability ? 'PENDING' : 'FAILED',
+  waitClosed: async candidate => candidate === capability ? 'CLOSED_PENDING' : 'FAILED',
 });
 
 process.exitCode = success && input.isRaw === false ? 0 : 1;

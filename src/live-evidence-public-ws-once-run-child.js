@@ -39,7 +39,22 @@ function exactControlMessage(message) {
   return message.type;
 }
 
-function send(channel, type) {
+function exactOriginReleaseMessage(message) {
+  if (!message || typeof message !== 'object' || IS_PROXY(message) ||
+      ARRAY_IS_ARRAY(message) || GET_PROTOTYPE_OF(message) !== OBJECT_PROTOTYPE) fail();
+  const fields = ['ipcVersion', 'requestId', 'type'];
+  const keys = REFLECT_OWN_KEYS(message);
+  if (keys.length !== fields.length) fail();
+  for (let index = 0; index < fields.length; index += 1) {
+    const descriptor = GET_OWN_PROPERTY_DESCRIPTOR(message, fields[index]);
+    if (!descriptor || !HAS_OWN(descriptor, 'value') || descriptor.enumerable !== true) fail();
+  }
+  if (message.ipcVersion !== IPC_VERSION || message.requestId !== 2 ||
+      message.type !== 'ORIGIN_RELEASED') fail();
+  return true;
+}
+
+function send(channel, type, requestId = REQUEST_ID) {
   return new Promise((resolve, reject) => {
     let settled = false;
     const finish = error => {
@@ -51,7 +66,7 @@ function send(channel, type) {
     try {
       const accepted = channel.send({
         ipcVersion: IPC_VERSION,
-        requestId: REQUEST_ID,
+        requestId,
         type,
       }, finish);
       if (accepted === false && channel.connected === false) finish(new Error());
@@ -122,16 +137,32 @@ export async function runPublicWsOnceExecutionChild(options = {}) {
   const dependencies = captureOptions(options);
   let handling = false;
   let finished = false;
+  let originReleaseRequested = false;
+  let originReleasePending;
   const terminate = code => {
     if (finished) return;
     finished = true;
+    if (originReleasePending) {
+      originReleasePending.reject(new Error('live_evidence_public_ws_once_child_failed'));
+      originReleasePending = undefined;
+    }
     try { Reflect.apply(dependencies.forceExit, undefined, [code]); } catch {}
   };
   try {
     const bootstrap = await Reflect.apply(dependencies.readBootstrap, undefined, []);
     dependencies.channel.once('disconnect', () => terminate(1));
     dependencies.channel.on('message', async message => {
-      if (handling || finished) return terminate(1);
+      if (finished) return;
+      if (handling) {
+        if (!originReleasePending) return terminate(1);
+        try {
+          exactOriginReleaseMessage(message);
+          const pending = originReleasePending;
+          originReleasePending = undefined;
+          pending.resolve(true);
+        } catch { terminate(1); }
+        return;
+      }
       handling = true;
       try {
         const type = exactControlMessage(message);
@@ -141,8 +172,22 @@ export async function runPublicWsOnceExecutionChild(options = {}) {
           if (!result || result.valid !== true || REFLECT_OWN_KEYS(result).length !== 1) fail();
           await send(dependencies.channel, 'PREFLIGHT_VALID');
         } else {
-          const result = await Reflect.apply(dependencies.execute, undefined, [bootstrap]);
+          const beforeOriginBind = () => {
+            if (originReleaseRequested || originReleasePending || finished) fail();
+            originReleaseRequested = true;
+            const acknowledgement = new Promise((resolve, reject) => {
+              originReleasePending = { reject, resolve };
+            });
+            const requestSent = send(dependencies.channel, 'ORIGIN_RELEASE', 2);
+            void requestSent.catch(() => terminate(1));
+            return Promise.all([requestSent, acknowledgement]).then(() => true);
+          };
+          const result = await Reflect.apply(dependencies.execute, undefined, [
+            bootstrap,
+            Object.freeze({ beforeOriginBind }),
+          ]);
           if (finished) return;
+          if (!originReleaseRequested || originReleasePending) fail();
           if (!result || result.status !== 'pending-independent-verification' ||
               result.evidenceEligible !== false || REFLECT_OWN_KEYS(result).length !== 2) fail();
           await send(dependencies.channel, 'PENDING');

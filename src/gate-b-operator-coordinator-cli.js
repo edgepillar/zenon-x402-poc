@@ -6,6 +6,7 @@ import { types as utilTypes } from 'node:util';
 
 import {
   authorizeAndPreflightGateBPublicWsInputs,
+  executeGateBPublicWsInputsOnce,
   getGateBPublicWsInputsControllerStatus,
   prepareGateBPublicWsInputsForReviewInInheritedProcessGroup,
   stopGateBPublicWsInputsController,
@@ -15,13 +16,17 @@ import {
   GATE_B_OPERATOR_COORDINATOR_IPC_TYPES,
   GATE_B_OPERATOR_COORDINATOR_LIMITS,
   GATE_B_OPERATOR_COORDINATOR_STATUS_LINES,
+  GATE_B_OPERATOR_ORIGIN_RELEASE_IPC_TYPES,
   GATE_B_OPERATOR_REVIEW_CHILD_IPC_TYPES,
   createGateBOperatorCoordinatorIpcMessage,
+  createGateBOperatorOriginReleaseIpcMessage,
   frameGateBOperatorReviewResult,
   createGateBOperatorReviewChildIpcMessage,
   parseGateBOperatorCoordinatorBootstrapFrame,
   parseGateBOperatorCoordinatorIpcMessage,
   parseGateBOperatorCoordinatorReviewFrame,
+  parseGateBOperatorCoordinatorRunFrame,
+  parseGateBOperatorOriginReleaseIpcMessage,
   parseGateBOperatorReviewChildIpcMessage,
   parseGateBOperatorReviewResultFrame,
 } from './gate-b-operator-coordinator-schema.js';
@@ -36,7 +41,10 @@ const CONTROLLER_REVIEW_REQUIRED =
   'GATE_B_CONTROLLER_REVIEW_REQUIRED_RUN_NOT_AUTHORIZED';
 const CONTROLLER_PREFLIGHT_VALID =
   'GATE_B_CONTROLLER_PREFLIGHT_VALID_RUN_NOT_AUTHORIZED';
+const CONTROLLER_PENDING = 'GATE_B_CONTROLLER_PENDING_INDEPENDENT_VERIFICATION';
 const CONTROLLER_CLOSED = 'GATE_B_CONTROLLER_CLOSED_RUN_NOT_EXECUTED';
+const CONTROLLER_CLOSED_PENDING =
+  'GATE_B_CONTROLLER_CLOSED_PENDING_INDEPENDENT_VERIFICATION';
 const CONTROLLER_QUARANTINED = 'GATE_B_CONTROLLER_FAILED_WORKSPACE_QUARANTINED';
 const REVIEW_FORCE_MS = 500;
 const ARRAY_IS_ARRAY = Array.isArray;
@@ -140,7 +148,7 @@ function exactTimeout(value, maximum) {
 
 export function createGateBOperatorCoordinatorFrameReader(stream, options = undefined) {
   const supplied = options === undefined ? {} : exactPartialOptions(options, [
-    'initialTimeoutMs', 'reviewTimeoutMs',
+    'initialTimeoutMs', 'reviewTimeoutMs', 'runTimeoutMs',
   ]);
   const initialTimeoutMs = exactTimeout(
     supplied.initialTimeoutMs ?? GATE_B_OPERATOR_COORDINATOR_LIMITS.initialFrameTimeoutMs,
@@ -149,6 +157,10 @@ export function createGateBOperatorCoordinatorFrameReader(stream, options = unde
   const reviewTimeoutMs = exactTimeout(
     supplied.reviewTimeoutMs ?? GATE_B_OPERATOR_COORDINATOR_LIMITS.reviewFrameTimeoutMs,
     GATE_B_OPERATOR_COORDINATOR_LIMITS.reviewFrameTimeoutMs,
+  );
+  const runTimeoutMs = exactTimeout(
+    supplied.runTimeoutMs ?? GATE_B_OPERATOR_COORDINATOR_LIMITS.runFrameTimeoutMs,
+    GATE_B_OPERATOR_COORDINATOR_LIMITS.runFrameTimeoutMs,
   );
   if (!stream || typeof stream !== 'object' || IS_PROXY(stream) ||
       ownDataProperty(stream, 'isTTY') === true) fail();
@@ -162,16 +174,22 @@ export function createGateBOperatorCoordinatorFrameReader(stream, options = unde
   let expected;
   let initialFrame;
   let reviewFrame;
+  let runFrame;
   let terminalError;
   let initialRead = false;
   let reviewRead = false;
+  let runRead = false;
   let reviewOpened = false;
+  let runOpened = false;
   let initialTimer;
   let reviewTimer;
+  let runTimer;
   let resolveInitial;
   let rejectInitial;
   let resolveReview;
   let rejectReview;
+  let resolveRun;
+  let rejectRun;
   const initialPromise = new Promise((resolve, reject) => {
     resolveInitial = resolve;
     rejectInitial = reject;
@@ -180,8 +198,13 @@ export function createGateBOperatorCoordinatorFrameReader(stream, options = unde
     resolveReview = resolve;
     rejectReview = reject;
   });
+  const runPromise = new Promise((resolve, reject) => {
+    resolveRun = resolve;
+    rejectRun = reject;
+  });
   void initialPromise.catch(() => {});
   void reviewPromise.catch(() => {});
+  void runPromise.catch(() => {});
   const detach = () => {
     for (const [event, handler] of [
       ['data', onData], ['end', onEnd], ['error', onFailure], ['close', onClose],
@@ -200,32 +223,37 @@ export function createGateBOperatorCoordinatorFrameReader(stream, options = unde
     phase = 'FAILED';
     clearTimeout(initialTimer);
     clearTimeout(reviewTimer);
+    clearTimeout(runTimer);
     clearCurrent();
     try { if (Buffer.isBuffer(initialFrame)) initialFrame.fill(0); } catch {}
     try { if (Buffer.isBuffer(reviewFrame)) reviewFrame.fill(0); } catch {}
+    try { if (Buffer.isBuffer(runFrame)) runFrame.fill(0); } catch {}
     initialFrame = undefined;
     reviewFrame = undefined;
+    runFrame = undefined;
     detach();
     try { if (typeof destroy === 'function') Reflect.apply(destroy, stream, []); } catch {}
     rejectInitial(terminalError);
     rejectReview(terminalError);
+    rejectRun(terminalError);
   };
   function onFailure() { failReader(); }
   function onClose() {
     if (phase !== 'COMPLETE' && phase !== 'FAILED') failReader();
   }
   function onEnd() {
-    if (phase === 'REVIEW_COMPLETE' && Buffer.isBuffer(reviewFrame)) {
+    if (phase === 'RUN_COMPLETE' && Buffer.isBuffer(runFrame)) {
       phase = 'COMPLETE';
-      clearTimeout(reviewTimer);
+      clearTimeout(runTimer);
       detach();
-      resolveReview(reviewFrame);
+      resolveRun(runFrame);
       return;
     }
     failReader();
   }
   function onData(chunk) {
-    if (!Buffer.isBuffer(chunk) || phase === 'WAIT_REVIEW' || phase === 'REVIEW_COMPLETE' ||
+    if (!Buffer.isBuffer(chunk) || phase === 'WAIT_REVIEW' || phase === 'WAIT_RUN' ||
+        phase === 'RUN_COMPLETE' ||
         phase === 'COMPLETE' || phase === 'FAILED') {
       try { if (Buffer.isBuffer(chunk)) chunk.fill(0); } catch {}
       failReader();
@@ -233,7 +261,9 @@ export function createGateBOperatorCoordinatorFrameReader(stream, options = unde
     }
     const maximum = phase === 'INITIAL'
       ? GATE_B_OPERATOR_COORDINATOR_LIMITS.bootstrapFrameBytes
-      : GATE_B_OPERATOR_COORDINATOR_LIMITS.reviewFrameBytes;
+      : phase === 'REVIEW'
+        ? GATE_B_OPERATOR_COORDINATOR_LIMITS.reviewFrameBytes
+        : GATE_B_OPERATOR_COORDINATOR_LIMITS.runFrameBytes;
     if (current.length + chunk.length > maximum) {
       try { chunk.fill(0); } catch {}
       failReader();
@@ -257,9 +287,14 @@ export function createGateBOperatorCoordinatorFrameReader(stream, options = unde
       clearTimeout(initialTimer);
       initialFrame = completed;
       resolveInitial(initialFrame);
-    } else {
-      phase = 'REVIEW_COMPLETE';
+    } else if (phase === 'REVIEW') {
+      phase = 'WAIT_RUN';
+      clearTimeout(reviewTimer);
       reviewFrame = completed;
+      resolveReview(reviewFrame);
+    } else {
+      phase = 'RUN_COMPLETE';
+      runFrame = completed;
     }
   }
   Reflect.apply(on, stream, ['data', onData]);
@@ -285,6 +320,13 @@ export function createGateBOperatorCoordinatorFrameReader(stream, options = unde
       reviewTimer = setTimeout(failReader, reviewTimeoutMs);
       return true;
     },
+    openRunPhase() {
+      if (terminalError || phase !== 'WAIT_RUN' || runOpened) fail();
+      runOpened = true;
+      phase = 'RUN';
+      runTimer = setTimeout(failReader, runTimeoutMs);
+      return true;
+    },
     readInitial() {
       if (initialRead) fail();
       initialRead = true;
@@ -294,6 +336,11 @@ export function createGateBOperatorCoordinatorFrameReader(stream, options = unde
       if (!reviewOpened || reviewRead) fail();
       reviewRead = true;
       return reviewPromise;
+    },
+    readRun() {
+      if (!runOpened || runRead) fail();
+      runRead = true;
+      return runPromise;
     },
   });
 }
@@ -528,7 +575,7 @@ export function launchGateBOperatorConfigReview(workspaceRoot, injected = undefi
 function captureCliDependencies(options) {
   const supplied = options === undefined ? {} : exactPartialOptions(options, [
     'argv', 'authorizeController', 'channel', 'createFrameReader', 'getControllerStatus',
-    'inputStream', 'lifetimeMs', 'prepareController', 'reviewConfiguration',
+    'inputStream', 'lifetimeMs', 'prepareController', 'reviewConfiguration', 'runController',
     'stderr', 'stdout', 'stopController', 'waitControllerClosed',
   ]);
   const output = {
@@ -549,6 +596,7 @@ function captureCliDependencies(options) {
     prepareController: supplied.prepareController ??
       prepareGateBPublicWsInputsForReviewInInheritedProcessGroup,
     reviewConfiguration: supplied.reviewConfiguration ?? launchGateBOperatorConfigReview,
+    runController: supplied.runController ?? executeGateBPublicWsInputsOnce,
     stderr: supplied.stderr ?? (async line => {
       process.stderr.write(line);
       return true;
@@ -566,7 +614,8 @@ function captureCliDependencies(options) {
   exactTimeout(output.lifetimeMs, GATE_B_OPERATOR_COORDINATOR_LIMITS.lifetimeMs);
   for (const key of [
     'authorizeController', 'createFrameReader', 'getControllerStatus', 'prepareController',
-    'reviewConfiguration', 'stderr', 'stdout', 'stopController', 'waitControllerClosed',
+    'reviewConfiguration', 'runController', 'stderr', 'stdout', 'stopController',
+    'waitControllerClosed',
   ]) if (typeof output[key] !== 'function') fail();
   const channelOn = dataProperty(output.channel, 'on');
   const channelRemoveListener = dataProperty(output.channel, 'removeListener');
@@ -593,9 +642,15 @@ export async function runGateBOperatorCoordinatorCli(options = undefined) {
   let quarantine = false;
   let acceptingControl = true;
   let reviewOpenState = 'LOCKED';
+  let runOpenState = 'LOCKED';
   let resolveReviewOpen;
   const reviewOpened = new Promise(resolve => { resolveReviewOpen = resolve; });
+  let resolveRunOpen;
+  const runOpened = new Promise(resolve => { resolveRunOpen = resolve; });
   const reviewAbort = new AbortController();
+  let originReleasePending;
+  let originReleaseRequested = false;
+  let runSucceeded = false;
   let resolveStop;
   const stopRequested = new Promise(resolve => { resolveStop = resolve; });
   const beginControllerStop = () => {
@@ -616,6 +671,11 @@ export async function runGateBOperatorCoordinatorCli(options = undefined) {
     stopping = true;
     acceptingControl = false;
     try { reviewAbort.abort(); } catch {}
+    if (originReleasePending) {
+      const pending = originReleasePending;
+      originReleasePending = undefined;
+      pending.reject(new GateBOperatorCoordinatorCliError());
+    }
     beginControllerStop();
     resolveStop(true);
   };
@@ -649,6 +709,46 @@ export async function runGateBOperatorCoordinatorCli(options = undefined) {
       reject(new GateBOperatorCoordinatorCliError());
     }
   });
+  const requestOriginRelease = () => {
+    if (originReleaseRequested || originReleasePending || stopping || terminal) fail();
+    originReleaseRequested = true;
+    let resolveRelease;
+    let rejectRelease;
+    const promise = new Promise((resolve, reject) => {
+      resolveRelease = resolve;
+      rejectRelease = reject;
+    });
+    const timer = setTimeout(() => {
+      if (!originReleasePending) return;
+      originReleasePending = undefined;
+      rejectRelease(new GateBOperatorCoordinatorCliError());
+      requestStop();
+    }, GATE_B_OPERATOR_COORDINATOR_LIMITS.originReleaseTimeoutMs);
+    originReleasePending = {
+      reject(error) { clearTimeout(timer); rejectRelease(error); },
+      resolve(value) { clearTimeout(timer); resolveRelease(value); },
+    };
+    try {
+      Reflect.apply(dependencies.channelSend, dependencies.channel, [
+        createGateBOperatorOriginReleaseIpcMessage(
+          GATE_B_OPERATOR_ORIGIN_RELEASE_IPC_TYPES.RELEASE_ORIGIN,
+        ),
+        error => {
+          if (!error || !originReleasePending) return;
+          const pending = originReleasePending;
+          originReleasePending = undefined;
+          pending.reject(new GateBOperatorCoordinatorCliError());
+          requestStop();
+        },
+      ]);
+    } catch {
+      const pending = originReleasePending;
+      originReleasePending = undefined;
+      pending?.reject(new GateBOperatorCoordinatorCliError());
+      requestStop();
+    }
+    return promise;
+  };
   const emitLine = (writer, line) => callAsync(writer, undefined, [line]);
   const finalize = async () => {
     requestStop();
@@ -660,7 +760,8 @@ export async function runGateBOperatorCoordinatorCli(options = undefined) {
           controllerStopPromise,
           controllerWaitPromise,
         ]);
-        closed = stopped === CONTROLLER_CLOSED && waited === CONTROLLER_CLOSED;
+        const expectedClosed = runSucceeded ? CONTROLLER_CLOSED_PENDING : CONTROLLER_CLOSED;
+        closed = stopped === expectedClosed && waited === expectedClosed;
         if (stopped === CONTROLLER_QUARANTINED || waited === CONTROLLER_QUARANTINED) {
           quarantine = true;
         }
@@ -675,7 +776,9 @@ export async function runGateBOperatorCoordinatorCli(options = undefined) {
       await emitLine(
         clean ? dependencies.stdout : dependencies.stderr,
         clean
-          ? GATE_B_OPERATOR_COORDINATOR_STATUS_LINES.CLOSED
+          ? runSucceeded
+            ? GATE_B_OPERATOR_COORDINATOR_STATUS_LINES.CLOSED_PENDING
+            : GATE_B_OPERATOR_COORDINATOR_STATUS_LINES.CLOSED
           : GATE_B_OPERATOR_COORDINATOR_STATUS_LINES.QUARANTINED,
       );
       await sendLifecycle(clean
@@ -710,6 +813,38 @@ export async function runGateBOperatorCoordinatorCli(options = undefined) {
         }
         return;
       }
+      if (exactFieldlessControl(message, 'RUN_OPEN')) {
+        if (runOpenState !== 'WAITING' || !reader || !readerMethods) {
+          quarantine = true;
+          requestStop();
+          return;
+        }
+        try {
+          Reflect.apply(readerMethods.openRunPhase, reader, []);
+          runOpenState = 'OPEN';
+          void sendControl('RUN_OPENED').then(
+            () => resolveRunOpen(true),
+            () => { quarantine = true; requestStop(); },
+          );
+        } catch {
+          quarantine = true;
+          requestStop();
+        }
+        return;
+      }
+      if (originReleasePending) {
+        try {
+          const origin = parseGateBOperatorOriginReleaseIpcMessage(message);
+          if (origin.type !== GATE_B_OPERATOR_ORIGIN_RELEASE_IPC_TYPES.ORIGIN_RELEASED) fail();
+          const pending = originReleasePending;
+          originReleasePending = undefined;
+          pending.resolve(true);
+        } catch {
+          quarantine = true;
+          requestStop();
+        }
+        return;
+      }
       let parsed;
       try { parsed = parseGateBOperatorCoordinatorIpcMessage(message); } catch {
         quarantine = true;
@@ -738,8 +873,10 @@ export async function runGateBOperatorCoordinatorCli(options = undefined) {
     readerMethods = Object.freeze({
       close: dataProperty(reader, 'close'),
       openReviewPhase: dataProperty(reader, 'openReviewPhase'),
+      openRunPhase: dataProperty(reader, 'openRunPhase'),
       readInitial: dataProperty(reader, 'readInitial'),
       readReview: dataProperty(reader, 'readReview'),
+      readRun: dataProperty(reader, 'readRun'),
     });
     for (const method of Object.values(readerMethods)) {
       if (typeof method !== 'function') fail();
@@ -763,10 +900,8 @@ export async function runGateBOperatorCoordinatorCli(options = undefined) {
     );
     reviewOpenState = 'WAITING';
     await sendLifecycle(GATE_B_OPERATOR_COORDINATOR_IPC_TYPES.REVIEW_REQUIRED);
-    await Promise.race([
-      reviewOpened,
-      stopRequested.then(() => { throw new GateBOperatorCoordinatorCliError(); }),
-    ]);
+    await Promise.race([reviewOpened, stopRequested]);
+    if (stopping) return await finalize();
     const reviewFrame = await callAsync(readerMethods.readReview, reader, []);
     let review;
     try { review = parseGateBOperatorCoordinatorReviewFrame(reviewFrame); } finally {
@@ -806,6 +941,31 @@ export async function runGateBOperatorCoordinatorCli(options = undefined) {
       GATE_B_OPERATOR_COORDINATOR_STATUS_LINES.PREFLIGHT_VALID,
     );
     await sendLifecycle(GATE_B_OPERATOR_COORDINATOR_IPC_TYPES.PREFLIGHT_VALID);
+    runOpenState = 'WAITING';
+    await Promise.race([runOpened, stopRequested]);
+    if (stopping) return await finalize();
+    const runFrame = await callAsync(readerMethods.readRun, reader, []);
+    let runAuthorization;
+    try { runAuthorization = parseGateBOperatorCoordinatorRunFrame(runFrame); } finally {
+      try { if (Buffer.isBuffer(runFrame)) runFrame.fill(0); } catch {}
+    }
+    if (stopping) return await finalize();
+    const runResult = await callAsync(dependencies.runController, undefined, [
+      capability,
+      runAuthorization,
+      requestOriginRelease,
+    ]);
+    runAuthorization = undefined;
+    if (stopping || runResult !== CONTROLLER_PENDING || !originReleaseRequested ||
+        originReleasePending ||
+        Reflect.apply(dependencies.getControllerStatus, undefined, [capability]) !==
+          CONTROLLER_PENDING) {
+      quarantine = true;
+      return await finalize();
+    }
+    runSucceeded = true;
+    await emitLine(dependencies.stdout, GATE_B_OPERATOR_COORDINATOR_STATUS_LINES.PENDING);
+    await sendLifecycle(GATE_B_OPERATOR_COORDINATOR_IPC_TYPES.PENDING);
     await stopRequested;
     return await finalize();
   } catch {
