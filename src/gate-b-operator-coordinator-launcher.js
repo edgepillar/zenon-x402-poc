@@ -12,11 +12,24 @@ import {
   frameGateBOperatorCoordinatorReview,
   parseGateBOperatorCoordinatorIpcMessage,
 } from './gate-b-operator-coordinator-schema.js';
+import {
+  GATE_B_OPERATOR_ORIGIN_GUARD_HOST,
+  GATE_B_OPERATOR_ORIGIN_GUARD_PORT,
+  GATE_B_OPERATOR_ORIGIN_GUARD_TARGET_MAGIC,
+  closeGateBOperatorOriginGuard,
+  createGateBOperatorOriginGuard,
+  getGateBOperatorOriginGuardAddress,
+  getGateBOperatorOriginGuardHandle,
+  observeGateBOperatorOriginGuardFault,
+} from './gate-b-operator-origin-guard.js';
 
 const ERROR_CODE = 'gate_b_operator_coordinator_launch_failed';
 const CLI_MODULE = fileURLToPath(new URL('./gate-b-operator-coordinator-cli.js', import.meta.url));
 const WATCHDOG_MODULE = fileURLToPath(new URL('./gate-b-operator-watchdog.js', import.meta.url));
 const REAPER_MODULE = fileURLToPath(new URL('./gate-b-operator-reaper.js', import.meta.url));
+const ORIGIN_GUARD_MODULE = fileURLToPath(
+  new URL('./gate-b-operator-origin-guard.js', import.meta.url),
+);
 const REAP_FORCE_MS = 500;
 const REAP_ABANDON_MS = 2000;
 const SETUP_TIMEOUT_MS = 1_000;
@@ -718,16 +731,31 @@ function launchGateBOperatorProcess(
 
 function captureWatchdogDependencies(injected) {
   const supplied = injected === undefined ? {} : exactPartialOptions(injected, [
-    'executable', 'gracefulStopMs', 'killProcessGroup', 'lifetimeMs', 'platform',
-    'probeProcessGroup', 'reapAbandonMs', 'reapForceMs', 'reaperModule',
-    'setupTimeoutMs', 'spawnProcess', 'terminalWaitMs', 'watchdogModule',
+    'closeOriginGuard', 'createOriginGuard', 'executable', 'getOriginGuardAddress',
+    'getOriginGuardHandle', 'gracefulStopMs', 'killProcessGroup', 'lifetimeMs',
+    'observeOriginGuardFault', 'originGuardModule', 'platform', 'probeProcessGroup',
+    'reapAbandonMs', 'reapForceMs', 'reaperModule', 'setupTimeoutMs', 'spawnProcess',
+    'terminalWaitMs', 'testOnlyOriginPort', 'watchdogModule',
   ]);
+  const customOriginGuard = supplied.createOriginGuard !== undefined ||
+    supplied.getOriginGuardAddress !== undefined ||
+    supplied.getOriginGuardHandle !== undefined || supplied.closeOriginGuard !== undefined ||
+    supplied.observeOriginGuardFault !== undefined || supplied.testOnlyOriginPort !== undefined;
   const output = {
+    closeOriginGuard: supplied.closeOriginGuard ?? closeGateBOperatorOriginGuard,
+    createOriginGuard: supplied.createOriginGuard ?? createGateBOperatorOriginGuard,
     executable: supplied.executable ?? process.execPath,
+    getOriginGuardAddress: supplied.getOriginGuardAddress ??
+      getGateBOperatorOriginGuardAddress,
+    getOriginGuardHandle: supplied.getOriginGuardHandle ?? getGateBOperatorOriginGuardHandle,
     gracefulStopMs: supplied.gracefulStopMs ??
       GATE_B_OPERATOR_COORDINATOR_LIMITS.gracefulStopMs,
     killProcessGroup: supplied.killProcessGroup ?? defaultKillProcessGroup,
     lifetimeMs: supplied.lifetimeMs ?? GATE_B_OPERATOR_COORDINATOR_LIMITS.lifetimeMs,
+    observeOriginGuardFault: supplied.observeOriginGuardFault ??
+      observeGateBOperatorOriginGuardFault,
+    originGuardModule: supplied.originGuardModule ?? ORIGIN_GUARD_MODULE,
+    originPort: supplied.testOnlyOriginPort ?? GATE_B_OPERATOR_ORIGIN_GUARD_PORT,
     platform: supplied.platform ?? process.platform,
     probeProcessGroup: supplied.probeProcessGroup ?? defaultProbeProcessGroup,
     reapAbandonMs: supplied.reapAbandonMs ?? REAP_ABANDON_MS,
@@ -741,6 +769,12 @@ function captureWatchdogDependencies(injected) {
   if (typeof output.executable !== 'string' || !isAbsolute(output.executable) ||
       typeof output.watchdogModule !== 'string' || !isAbsolute(output.watchdogModule) ||
       typeof output.reaperModule !== 'string' || !isAbsolute(output.reaperModule) ||
+      typeof output.originGuardModule !== 'string' || !isAbsolute(output.originGuardModule) ||
+      typeof output.closeOriginGuard !== 'function' ||
+      typeof output.createOriginGuard !== 'function' ||
+      typeof output.getOriginGuardAddress !== 'function' ||
+      typeof output.getOriginGuardHandle !== 'function' ||
+      typeof output.observeOriginGuardFault !== 'function' ||
       typeof output.spawnProcess !== 'function' ||
       typeof output.killProcessGroup !== 'function' ||
       typeof output.probeProcessGroup !== 'function' || output.platform !== 'darwin' ||
@@ -756,7 +790,15 @@ function captureWatchdogDependencies(injected) {
       !Number.isSafeInteger(output.setupTimeoutMs) || output.setupTimeoutMs < 1 ||
       output.setupTimeoutMs > SETUP_TIMEOUT_MS ||
       !Number.isSafeInteger(output.terminalWaitMs) || output.terminalWaitMs < 1 ||
-      output.terminalWaitMs > TERMINAL_WAIT_MS) fail();
+      output.terminalWaitMs > TERMINAL_WAIT_MS ||
+      !Number.isSafeInteger(output.originPort) || output.originPort < 0 ||
+      output.originPort > 65_535 ||
+      (customOriginGuard && supplied.createOriginGuard === undefined) ||
+      (customOriginGuard && supplied.getOriginGuardAddress === undefined) ||
+      (customOriginGuard && supplied.getOriginGuardHandle === undefined) ||
+      (customOriginGuard && supplied.closeOriginGuard === undefined) ||
+      (customOriginGuard && supplied.observeOriginGuardFault === undefined) ||
+      (!customOriginGuard && output.originPort !== GATE_B_OPERATOR_ORIGIN_GUARD_PORT)) fail();
   return Object.freeze(output);
 }
 
@@ -766,7 +808,9 @@ function snapshotSiblingChild(child, groupId, role) {
   if (!ARRAY_IS_ARRAY(stdio) || IS_PROXY(stdio)) fail();
   const firstPipe = ownDataProperty(stdio, '3');
   const secondPipe = ownDataProperty(stdio, '4');
-  const thirdPipe = role === 'watchdog' ? ownDataProperty(stdio, '5') : undefined;
+  const thirdPipe = role === 'watchdog' || role === 'guard'
+    ? ownDataProperty(stdio, '5')
+    : undefined;
   const stdout = role === 'watchdog' ? ownDataProperty(child, 'stdout') : undefined;
   const stderr = role === 'watchdog' ? ownDataProperty(child, 'stderr') : undefined;
   const channel = ownDataProperty(child, 'channel');
@@ -814,6 +858,10 @@ function snapshotSiblingChild(child, groupId, role) {
       'firstWrite', 'secondWrite', 'thirdEnd', 'stdoutOn', 'stdoutRemoveListener',
       'stderrOn', 'stderrRemoveListener',
     ]) if (typeof snapshot[key] !== 'function') fail();
+  } else if (role === 'guard') {
+    for (const key of ['firstWrite', 'thirdDestroy']) {
+      if (typeof snapshot[key] !== 'function') fail();
+    }
   } else if (role !== 'reaper' || typeof snapshot.firstWrite !== 'function') fail();
   return snapshot;
 }
@@ -842,11 +890,13 @@ function siblingRecordFor(capability) {
 function releaseSiblingRecord(record) {
   if (!record || record.released) return;
   record.released = true;
+  try { record.stopObservingOriginGuard?.(); } catch {}
+  record.stopObservingOriginGuard = undefined;
   for (const [emitter, remove, event, handler] of record.ownedHandlers) {
     try { Reflect.apply(remove, emitter, [event, handler]); } catch {}
   }
   record.ownedHandlers.length = 0;
-  for (const snapshot of [record.watchdog, record.reaper]) {
+  for (const snapshot of [record.watchdog, record.reaper, record.guard]) {
     if (!snapshot) continue;
     for (const [handle, destroy] of [
       [snapshot.firstPipe, snapshot.firstDestroy],
@@ -885,6 +935,7 @@ function releaseSiblingRecord(record) {
     state.total = 0;
   }
   if (Buffer.isBuffer(record.targetFrame)) record.targetFrame.fill(0);
+  if (Buffer.isBuffer(record.guardTargetFrame)) record.guardTargetFrame.fill(0);
   if (Buffer.isBuffer(record.startFrame)) record.startFrame.fill(0);
 }
 
@@ -945,12 +996,75 @@ function sendSiblingMessage(snapshot, type, timeoutMs) {
   });
 }
 
+function exactOriginAddress(record) {
+  let address;
+  try {
+    address = Reflect.apply(record.dependencies.getOriginGuardAddress, undefined,
+      [record.originGuard]);
+  } catch { fail(); }
+  if (!address || typeof address !== 'object' || IS_PROXY(address) ||
+      GET_PROTOTYPE_OF(address) !== OBJECT_PROTOTYPE ||
+      REFLECT_OWN_KEYS(address).length !== 3 ||
+      ownDataProperty(address, 'address') !== GATE_B_OPERATOR_ORIGIN_GUARD_HOST ||
+      ownDataProperty(address, 'family') !== 'IPv4') fail();
+  const port = ownDataProperty(address, 'port');
+  if (!Number.isSafeInteger(port) || port < 1 || port > 65_535 ||
+      (record.dependencies.originPort !== 0 && port !== record.dependencies.originPort)) fail();
+  return true;
+}
+
+function transferOriginGuard(record, snapshot, seenKey, successKey) {
+  if (record.terminalWork || record[seenKey]) return;
+  let handle;
+  try {
+    exactOriginAddress(record);
+    handle = Reflect.apply(record.dependencies.getOriginGuardHandle, undefined,
+      [record.originGuard]);
+    Reflect.apply(snapshot.send, snapshot.child, [
+      Object.freeze({ type: 'ARM_ORIGIN_GUARD' }),
+      handle,
+      Object.freeze({ keepOpen: true }),
+      error => {
+        if (record[seenKey]) return void beginSiblingCleanup(record);
+        record[seenKey] = true;
+        record[successKey] = error == null;
+        if (record.terminalWork) return;
+        if (error) void beginSiblingCleanup(record);
+        else checkHolderReadiness(record);
+      },
+    ]);
+  } catch {
+    void beginSiblingCleanup(record);
+  } finally {
+    handle = undefined;
+  }
+}
+
+async function closeOuterOriginGuard(record) {
+  if (!record.originGuard || record.outerGuardClosed) return record.outerGuardClosed === true;
+  if (record.outerGuardClosePromise) return record.outerGuardClosePromise;
+  record.outerGuardClosePromise = (async () => {
+    try {
+      const promise = Reflect.apply(record.dependencies.closeOriginGuard, undefined,
+        [record.originGuard]);
+      if (!IS_PROMISE(promise) || IS_PROXY(promise) ||
+          GET_PROTOTYPE_OF(promise) !== Promise.prototype) return false;
+      const closed = await promise;
+      record.outerGuardClosed = closed === true;
+      return record.outerGuardClosed;
+    } catch { return false; }
+  })();
+  return record.outerGuardClosePromise;
+}
+
 async function proveSiblingGroupsAbsent(record) {
   try {
     await proveGroupAbsent(record.watchdog.groupId, record.dependencies);
     await proveGroupAbsent(record.reaper.groupId, record.dependencies);
+    await proveGroupAbsent(record.guard.groupId, record.dependencies);
     await proveGroupAbsent(record.watchdog.groupId, record.dependencies);
     await proveGroupAbsent(record.reaper.groupId, record.dependencies);
+    await proveGroupAbsent(record.guard.groupId, record.dependencies);
     return true;
   } catch { return false; }
 }
@@ -972,6 +1086,7 @@ function cleanWatchdogCandidate(record) {
 
 async function reconcileSiblingRecord(record, cleanRequested) {
   let reaperProof = false;
+  let guardProof = false;
   let serialized = record.reaperArmed && !record.reaperLost;
   if (serialized) {
     record.state = 'CLEANING_REAPER';
@@ -1032,8 +1147,55 @@ async function reconcileSiblingRecord(record, cleanRequested) {
     () => record.watchdogExitSeen && record.watchdogCloseSeen,
     record.dependencies.terminalWaitMs,
   );
-  const groupsAbsent = await proveSiblingGroupsAbsent(record);
-  const clean = cleanRequested && serialized && reaperProof && watchdogClosed && groupsAbsent &&
+  let watchdogAbsent = false;
+  try {
+    watchdogAbsent = Reflect.apply(record.dependencies.probeProcessGroup, undefined,
+      [record.watchdog.groupId]) === false;
+  } catch {}
+
+  if (watchdogAbsent && record.guardArmed && !record.guardLost) {
+    record.state = 'CLEANING_GUARD';
+    try {
+      record.guardCleanupSent = true;
+      await sendSiblingMessage(record.guard, 'CLEANUP', record.dependencies.setupTimeoutMs);
+      const absentSeen = await waitForSibling(
+        record,
+        () => record.guardAbsent || record.guardLost,
+        record.dependencies.terminalWaitMs,
+      );
+      if (absentSeen && record.guardAbsent && !record.guardLost) {
+        const guardClosed = await waitForSibling(
+          record,
+          () => record.guardExitSeen && record.guardCloseSeen,
+          record.dependencies.terminalWaitMs,
+        );
+        guardProof = guardClosed && record.guardExitCode === 0 &&
+          record.guardExitSignal === null &&
+          record.guardCloseCode === record.guardExitCode &&
+          record.guardCloseSignal === record.guardExitSignal;
+      }
+    } catch {}
+  }
+  if (watchdogAbsent && !guardProof) {
+    record.guardLost = true;
+    try { await reapGroup(record.guard.groupId, record.dependencies); } catch {}
+    await waitForSibling(
+      record,
+      () => record.guardExitSeen && record.guardCloseSeen,
+      record.dependencies.terminalWaitMs,
+    );
+    try {
+      guardProof = Reflect.apply(record.dependencies.probeProcessGroup, undefined,
+        [record.guard.groupId]) === false;
+    } catch {}
+  }
+
+  const outerGuardClosed = watchdogAbsent ? await closeOuterOriginGuard(record) : false;
+  const groupsAbsent = watchdogAbsent && outerGuardClosed
+    ? await proveSiblingGroupsAbsent(record)
+    : false;
+  const clean = cleanRequested && serialized && reaperProof && guardProof && watchdogClosed &&
+    outerGuardClosed && groupsAbsent &&
     cleanWatchdogCandidate(record);
   settleSiblingTerminal(record, clean ? 'CLOSED' : 'QUARANTINED');
   return clean ? 'CLOSED' : 'QUARANTINED';
@@ -1056,7 +1218,7 @@ function beginSiblingCleanup(record, cleanRequested = false) {
 
 function checkSiblingMilestones(record) {
   if (record.terminalSettled || record.terminalWork) return;
-  if (record.reaperLost) {
+  if (record.reaperLost || record.guardLost) {
     void beginSiblingCleanup(record);
     return;
   }
@@ -1091,8 +1253,10 @@ function checkSiblingMilestones(record) {
 }
 
 function sendWatchdogStart(record) {
-  if (record.startSent || record.terminalWork || record.reaperLost) {
-    if (record.reaperLost && !record.terminalWork) void beginSiblingCleanup(record);
+  if (record.startSent || record.terminalWork || record.reaperLost || record.guardLost) {
+    if ((record.reaperLost || record.guardLost) && !record.terminalWork) {
+      void beginSiblingCleanup(record);
+    }
     return;
   }
   record.startSent = true;
@@ -1123,10 +1287,13 @@ function sendWatchdogStart(record) {
   }
 }
 
-function checkReaperReady(record) {
-  if (record.terminalWork || record.state !== 'WAIT_REAPER_READY' ||
-      record.reaperLost || !record.reaperReady || !record.targetWritten) return;
+function checkHolderReadiness(record) {
+  if (record.terminalWork || record.state !== 'WAIT_HOLDERS_READY' ||
+      record.reaperLost || record.guardLost || !record.reaperReady || !record.guardReady ||
+      !record.targetWritten || !record.guardTargetWritten ||
+      !record.reaperHandleTransferred || !record.guardHandleTransferred) return;
   record.reaperArmed = true;
+  record.guardArmed = true;
   sendWatchdogStart(record);
 }
 
@@ -1152,7 +1319,7 @@ function installSiblingHandlers(record) {
       } catch { record.protocolFault = true; }
       return;
     }
-    if (record.state === 'WAIT_REAPER_READY' || record.state === 'WAIT_WATCHDOG_START' ||
+    if (record.state === 'WAIT_HOLDERS_READY' || record.state === 'WAIT_WATCHDOG_START' ||
         record.state === 'AWAITING_BOOTSTRAP') {
       try { if (Buffer.isBuffer(chunk)) chunk.fill(0); } catch {}
       poison();
@@ -1164,9 +1331,10 @@ function installSiblingHandlers(record) {
       checkSiblingMilestones(record);
     } catch { poison(); }
   };
-  const onWatchdogMessage = message => {
+  const onWatchdogMessage = (message, handle) => {
     if (record.terminalSettled) return;
-    if (record.reaperLost) return poison();
+    if (handle !== undefined) return poison();
+    if (record.reaperLost || record.guardLost) return poison();
     if (record.terminalWork) {
       let parsed;
       try { parsed = parseGateBOperatorCoordinatorIpcMessage(message); } catch {
@@ -1241,14 +1409,18 @@ function installSiblingHandlers(record) {
       else poison();
     }
   };
-  const onReaperMessage = message => {
+  const onReaperMessage = (message, handle) => {
     if (record.terminalSettled) return;
+    if (handle !== undefined) {
+      record.reaperLost = true;
+      return poison();
+    }
     if (exactFieldlessMessage(message, 'READY')) {
-      if (record.state !== 'WAIT_REAPER_READY' || record.reaperReady || record.reaperLost) {
+      if (record.state !== 'WAIT_HOLDERS_READY' || record.reaperReady || record.reaperLost) {
         return poison();
       }
       record.reaperReady = true;
-      checkReaperReady(record);
+      checkHolderReadiness(record);
       return;
     }
     if (exactFieldlessMessage(message, 'ABSENT')) {
@@ -1309,6 +1481,70 @@ function installSiblingHandlers(record) {
       poison();
     }
   };
+  const onGuardMessage = (message, handle) => {
+    if (record.terminalSettled) return;
+    if (handle !== undefined) {
+      record.guardLost = true;
+      return poison();
+    }
+    if (exactFieldlessMessage(message, 'READY')) {
+      if (record.state !== 'WAIT_HOLDERS_READY' || record.guardReady || record.guardLost) {
+        return poison();
+      }
+      record.guardReady = true;
+      checkHolderReadiness(record);
+      return;
+    }
+    if (exactFieldlessMessage(message, 'ABSENT')) {
+      if (record.state !== 'CLEANING_GUARD' || !record.guardCleanupSent ||
+          record.guardAbsent) {
+        record.guardLost = true;
+        poison();
+        return;
+      }
+      try {
+        const alive = Reflect.apply(record.dependencies.probeProcessGroup, undefined,
+          [record.watchdog.groupId]);
+        if (alive !== false) {
+          record.guardLost = true;
+          return poison();
+        }
+      } catch {
+        record.guardLost = true;
+        return poison();
+      }
+      record.guardAbsent = true;
+      return;
+    }
+    record.guardLost = true;
+    poison();
+  };
+  const onGuardExit = (code, signal) => {
+    if (record.guardExitSeen) return poison();
+    record.guardExitSeen = true;
+    record.guardExitCode = code;
+    record.guardExitSignal = signal;
+    if (!record.guardAbsent) {
+      record.guardLost = true;
+      poison();
+    }
+  };
+  const onGuardClose = (code, signal) => {
+    if (record.guardCloseSeen) return;
+    record.guardCloseSeen = true;
+    record.guardCloseCode = code;
+    record.guardCloseSignal = signal;
+    if (!record.guardAbsent) {
+      record.guardLost = true;
+      poison();
+    }
+  };
+  const onGuardDisconnect = () => {
+    if (!record.guardAbsent) {
+      record.guardLost = true;
+      poison();
+    }
+  };
 
   listen(record.watchdog.child, record.watchdog.on, record.watchdog.removeListener,
     'error', poison);
@@ -1334,34 +1570,44 @@ function installSiblingHandlers(record) {
     'exit', onReaperExit);
   listen(record.reaper.child, record.reaper.on, record.reaper.removeListener,
     'close', onReaperClose);
+  listen(record.guard.child, record.guard.on, record.guard.removeListener,
+    'error', () => { record.guardLost = true; poison(); });
+  listen(record.guard.child, record.guard.on, record.guard.removeListener,
+    'disconnect', onGuardDisconnect);
+  listen(record.guard.child, record.guard.on, record.guard.removeListener,
+    'message', onGuardMessage);
+  listen(record.guard.child, record.guard.on, record.guard.removeListener,
+    'exit', onGuardExit);
+  listen(record.guard.child, record.guard.on, record.guard.removeListener,
+    'close', onGuardClose);
 }
 
-function writeReaperTarget(record) {
+function writeHolderTarget(record, snapshot, magic, callbackKey, frameKey, writtenKey) {
   const frame = Buffer.alloc(8);
-  frame.writeUInt32BE(REAPER_TARGET_MAGIC, 0);
+  frame.writeUInt32BE(magic, 0);
   frame.writeUInt32BE(record.watchdog.groupId, 4);
-  record.targetFrame = frame;
+  record[frameKey] = frame;
   try {
-    Reflect.apply(record.reaper.firstEnd, record.reaper.firstPipe, [frame, error => {
-      if (record.targetCallbackSeen) return void beginSiblingCleanup(record);
-      record.targetCallbackSeen = true;
+    Reflect.apply(snapshot.firstEnd, snapshot.firstPipe, [frame, error => {
+      if (record[callbackKey]) return void beginSiblingCleanup(record);
+      record[callbackKey] = true;
       frame.fill(0);
-      record.targetFrame = undefined;
+      record[frameKey] = undefined;
       if (record.terminalWork) return;
       if (error) void beginSiblingCleanup(record);
       else {
-        record.targetWritten = true;
-        checkReaperReady(record);
+        record[writtenKey] = true;
+        checkHolderReadiness(record);
       }
     }]);
   } catch {
     frame.fill(0);
-    record.targetFrame = undefined;
+    record[frameKey] = undefined;
     void beginSiblingCleanup(record);
   }
 }
 
-function createWatchdogRecord(dependencies, watchdog, reaper) {
+function createWatchdogRecord(dependencies, watchdog, reaper, guard, originGuard) {
   const setupDeferred = createDeferred();
   const closedDeferred = createDeferred();
   const record = {
@@ -1374,8 +1620,28 @@ function createWatchdogRecord(dependencies, watchdog, reaper) {
     closedDeferred,
     dependencies,
     finalIpc: undefined,
+    guard,
+    guardAbsent: false,
+    guardArmed: false,
+    guardCleanupSent: false,
+    guardCloseCode: undefined,
+    guardCloseSeen: false,
+    guardCloseSignal: undefined,
+    guardExitCode: undefined,
+    guardExitSeen: false,
+    guardExitSignal: undefined,
+    guardHandleCallbackSeen: false,
+    guardHandleTransferred: false,
+    guardLost: false,
+    guardReady: false,
+    guardTargetCallbackSeen: false,
+    guardTargetFrame: undefined,
+    guardTargetWritten: false,
     lifetimeTimer: undefined,
     ownedHandlers: [],
+    originGuard,
+    outerGuardClosePromise: undefined,
+    outerGuardClosed: false,
     preflightIpc: false,
     protocolFault: false,
     protocolEnded: false,
@@ -1388,6 +1654,8 @@ function createWatchdogRecord(dependencies, watchdog, reaper) {
     reaperExitCode: undefined,
     reaperExitSeen: false,
     reaperExitSignal: undefined,
+    reaperHandleCallbackSeen: false,
+    reaperHandleTransferred: false,
     reaperLost: false,
     reaperReady: false,
     released: false,
@@ -1403,7 +1671,7 @@ function createWatchdogRecord(dependencies, watchdog, reaper) {
     startFrame: undefined,
     startSent: false,
     startWritten: false,
-    state: 'WAIT_REAPER_READY',
+    state: 'WAIT_HOLDERS_READY',
     stderrState: { chunks: [], lines: [], total: 0 },
     stdoutState: { chunks: [], lines: [], total: 0 },
     stopDeferred: undefined,
@@ -1415,6 +1683,7 @@ function createWatchdogRecord(dependencies, watchdog, reaper) {
     targetWritten: false,
     terminalSettled: false,
     terminalWork: undefined,
+    stopObservingOriginGuard: undefined,
     watchdog,
     watchdogCloseCode: undefined,
     watchdogCloseSeen: false,
@@ -1425,10 +1694,32 @@ function createWatchdogRecord(dependencies, watchdog, reaper) {
   };
   record.capability = Object.freeze(Object.create(null));
   WATCHDOG_RECORDS.set(record.capability, record);
+  try {
+    exactOriginAddress(record);
+    record.stopObservingOriginGuard = Reflect.apply(
+      dependencies.observeOriginGuardFault,
+      undefined,
+      [originGuard, () => {
+        record.protocolFault = true;
+        if (!record.terminalSettled) void beginSiblingCleanup(record);
+      }],
+    );
+    if (typeof record.stopObservingOriginGuard !== 'function') fail();
+  } catch {
+    WATCHDOG_RECORDS.delete(record.capability);
+    fail();
+  }
   installSiblingHandlers(record);
   record.setupTimer = setTimeout(() => void beginSiblingCleanup(record),
     dependencies.setupTimeoutMs);
-  writeReaperTarget(record);
+  writeHolderTarget(record, reaper, REAPER_TARGET_MAGIC,
+    'targetCallbackSeen', 'targetFrame', 'targetWritten');
+  writeHolderTarget(record, guard, GATE_B_OPERATOR_ORIGIN_GUARD_TARGET_MAGIC,
+    'guardTargetCallbackSeen', 'guardTargetFrame', 'guardTargetWritten');
+  transferOriginGuard(record, reaper,
+    'reaperHandleCallbackSeen', 'reaperHandleTransferred');
+  transferOriginGuard(record, guard,
+    'guardHandleCallbackSeen', 'guardHandleTransferred');
   return record;
 }
 
@@ -1460,11 +1751,17 @@ export function launchGateBOperatorCoordinator(bootstrap, injected = undefined) 
 
 export async function launchGateBOperatorWatchdogSetup(injected = undefined) {
   let dependencies;
+  let originGuard;
   let watchdogGroupId;
+  let guardGroupId;
   let reaperGroupId;
   let record;
   try {
     dependencies = captureWatchdogDependencies(injected);
+    const originPromise = Reflect.apply(dependencies.createOriginGuard, undefined, []);
+    originGuard = exactNativePromise(originPromise);
+    originGuard = await originGuard;
+    exactOriginAddress({ dependencies, originGuard });
     const watchdogChild = Reflect.apply(dependencies.spawnProcess, undefined, [
       dependencies.executable,
       [dependencies.watchdogModule],
@@ -1479,6 +1776,21 @@ export async function launchGateBOperatorWatchdogSetup(injected = undefined) {
     ]);
     watchdogGroupId = captureGroupId(watchdogChild);
     const watchdog = snapshotSiblingChild(watchdogChild, watchdogGroupId, 'watchdog');
+    const guardChild = Reflect.apply(dependencies.spawnProcess, undefined, [
+      dependencies.executable,
+      [dependencies.originGuardModule],
+      {
+        cwd: dirname(dependencies.originGuardModule),
+        detached: true,
+        env: {},
+        shell: false,
+        stdio: ['ignore', 'ignore', 'ignore', 'pipe', 'pipe', 'pipe', 'ipc'],
+        windowsHide: true,
+      },
+    ]);
+    guardGroupId = captureGroupId(guardChild);
+    if (guardGroupId === watchdogGroupId) fail();
+    const guard = snapshotSiblingChild(guardChild, guardGroupId, 'guard');
     const reaperChild = Reflect.apply(dependencies.spawnProcess, undefined, [
       dependencies.executable,
       [dependencies.reaperModule],
@@ -1487,14 +1799,15 @@ export async function launchGateBOperatorWatchdogSetup(injected = undefined) {
         detached: true,
         env: {},
         shell: false,
-        stdio: ['ignore', 'ignore', 'ignore', 'pipe', 'pipe', 'ipc'],
+        stdio: ['ignore', 'ignore', 'ignore', 'pipe', 'pipe', guard.thirdPipe, 'ipc'],
         windowsHide: true,
       },
     ]);
     reaperGroupId = captureGroupId(reaperChild);
-    if (reaperGroupId === watchdogGroupId) fail();
+    if (reaperGroupId === watchdogGroupId || reaperGroupId === guardGroupId) fail();
     const reaper = snapshotSiblingChild(reaperChild, reaperGroupId, 'reaper');
-    record = createWatchdogRecord(dependencies, watchdog, reaper);
+    Reflect.apply(guard.thirdDestroy, guard.thirdPipe, []);
+    record = createWatchdogRecord(dependencies, watchdog, reaper, guard, originGuard);
     return await record.setupDeferred.promise;
   } catch {
     if (record) {
@@ -1506,6 +1819,16 @@ export async function launchGateBOperatorWatchdogSetup(injected = undefined) {
       }
       if (dependencies && Number.isSafeInteger(watchdogGroupId) && watchdogGroupId > 0) {
         try { await reapGroup(watchdogGroupId, dependencies); } catch {}
+      }
+      if (dependencies && Number.isSafeInteger(guardGroupId) && guardGroupId > 0) {
+        try { await reapGroup(guardGroupId, dependencies); } catch {}
+      }
+      if (dependencies && originGuard) {
+        try {
+          const closed = Reflect.apply(dependencies.closeOriginGuard, undefined, [originGuard]);
+          if (IS_PROMISE(closed) && !IS_PROXY(closed) &&
+              GET_PROTOTYPE_OF(closed) === Promise.prototype) await closed;
+        } catch {}
       }
     }
     throw new GateBOperatorCoordinatorLaunchError();
@@ -1520,7 +1843,8 @@ export function submitGateBOperatorBootstrap(capability, bootstrap) {
     return Promise.reject(new GateBOperatorCoordinatorLaunchError());
   }
   if (record.state !== 'AWAITING_BOOTSTRAP' || record.terminalSettled ||
-      record.terminalWork || record.reaperLost || record.bootstrapDeferred) {
+      record.terminalWork || record.reaperLost || record.guardLost ||
+      record.bootstrapDeferred) {
     if (!record.terminalSettled) void beginSiblingCleanup(record);
     return Promise.reject(new GateBOperatorCoordinatorLaunchError());
   }
@@ -1545,7 +1869,8 @@ export function submitGateBOperatorBootstrap(capability, bootstrap) {
           record.dependencies.setupTimeoutMs,
         );
         if (!opened || !record.bootstrapOpenAck || record.terminalWork ||
-            record.reaperLost || record.state !== 'BOOTSTRAP_OPENING') fail();
+            record.reaperLost || record.guardLost ||
+            record.state !== 'BOOTSTRAP_OPENING') fail();
         record.state = 'BOOTSTRAP_SUBMITTED';
         Reflect.apply(record.watchdog.secondWrite, record.watchdog.secondPipe,
           [bootstrapFrame, error => {
@@ -1585,7 +1910,8 @@ export function submitGateBOperatorCoordinatorReview(capability, review) {
   const sibling = siblingRecordFor(capability);
   if (sibling) {
     if (sibling.state !== 'REVIEW_REQUIRED' || sibling.terminalSettled ||
-        sibling.terminalWork || sibling.reaperLost || sibling.reviewDeferred) {
+        sibling.terminalWork || sibling.reaperLost || sibling.guardLost ||
+        sibling.reviewDeferred) {
       if (!sibling.terminalSettled) void beginSiblingCleanup(sibling);
       return Promise.reject(new GateBOperatorCoordinatorLaunchError());
     }
@@ -1609,7 +1935,8 @@ export function submitGateBOperatorCoordinatorReview(capability, review) {
             sibling.dependencies.setupTimeoutMs,
           );
           if (!opened || !sibling.reviewOpenAck || sibling.terminalWork ||
-              sibling.reaperLost || sibling.state !== 'REVIEW_OPENING') fail();
+              sibling.reaperLost || sibling.guardLost ||
+              sibling.state !== 'REVIEW_OPENING') fail();
           sibling.state = 'REVIEW_SUBMITTED';
           Reflect.apply(sibling.watchdog.secondEnd, sibling.watchdog.secondPipe,
             [reviewFrame, error => {
