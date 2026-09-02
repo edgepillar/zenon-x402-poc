@@ -739,13 +739,52 @@ function cliHarness(changes = {}) {
   };
 }
 
-async function waitFor(check, attempts = 50) {
-  for (let index = 0; index < attempts; index += 1) {
+async function waitFor(check, timeoutMs = 250) {
+  const deadline = performance.now() + timeoutMs;
+  while (performance.now() <= deadline) {
     if (check()) return;
-    await new Promise(resolve => setImmediate(resolve));
+    const remainingMs = deadline - performance.now();
+    if (remainingMs <= 0) break;
+    await new Promise(resolve => setTimeout(resolve, Math.min(5, remainingMs)));
   }
   assert.fail('bounded condition not reached');
 }
+
+test('waitFor yields to zero and short timers without the legacy immediate seam',
+  { concurrency: false }, async () => {
+    const originalSetImmediate = globalThis.setImmediate;
+    let immediateCalls = 0;
+    globalThis.setImmediate = () => {
+      immediateCalls += 1;
+      throw new Error('legacy immediate seam invoked');
+    };
+    try {
+      async function legacyWaitFor(check, attempts = 50) {
+        for (let index = 0; index < attempts; index += 1) {
+          if (check()) return;
+          await new Promise(resolve => setImmediate(resolve));
+        }
+        assert.fail('bounded condition not reached');
+      }
+
+      await assert.rejects(legacyWaitFor(() => false), {
+        message: 'legacy immediate seam invoked',
+      });
+      assert.equal(immediateCalls, 1);
+
+      immediateCalls = 0;
+      let zeroTimerFired = false;
+      let shortTimerFired = false;
+      setTimeout(() => { zeroTimerFired = true; }, 0);
+      setTimeout(() => { shortTimerFired = true; }, 10);
+      await waitFor(() => zeroTimerFired && shortTimerFired, 100);
+      assert.equal(zeroTimerFired, true);
+      assert.equal(shortTimerFired, true);
+      assert.equal(immediateCalls, 0);
+    } finally {
+      globalThis.setImmediate = originalSetImmediate;
+    }
+  });
 
 test('coordinator CLI retains one process across review, preflight, STOP, and exact closure', async () => {
   const context = cliHarness();
