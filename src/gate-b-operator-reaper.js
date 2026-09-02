@@ -6,6 +6,11 @@ import {
   closeGateBOperatorOriginGuard,
   observeGateBOperatorOriginGuardFault,
 } from './gate-b-operator-origin-guard.js';
+import {
+  GATE_B_OPERATOR_ORIGIN_RELEASE_IPC_TYPES,
+  createGateBOperatorOriginReleaseIpcMessage,
+  parseGateBOperatorOriginReleaseIpcMessage,
+} from './gate-b-operator-coordinator-schema.js';
 
 const CAPTURED_OUTER_PID = process.ppid;
 const MAGIC = 0x47425250;
@@ -28,6 +33,24 @@ function send(type) {
     const timer = setTimeout(() => finish(false), SEND_TIMEOUT_MS);
     try { process.send(Object.freeze({ type }), error => finish(error == null)); }
     catch { finish(false); }
+  });
+}
+
+function sendOriginReleased() {
+  return new Promise((resolve, reject) => {
+    let settled = false;
+    const finish = ok => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      ok ? resolve(true) : reject(new Error('reaper_failed'));
+    };
+    const timer = setTimeout(() => finish(false), SEND_TIMEOUT_MS);
+    try {
+      process.send(createGateBOperatorOriginReleaseIpcMessage(
+        GATE_B_OPERATOR_ORIGIN_RELEASE_IPC_TYPES.ORIGIN_RELEASED,
+      ), error => finish(error == null));
+    } catch { finish(false); }
   });
 }
 
@@ -140,6 +163,7 @@ export async function runGateBOperatorReaper() {
   let activated = false;
   let ready = false;
   let validCleanupRequest = false;
+  let originReleaseRequested = false;
   let poisoned = false;
   let setupAborted = false;
   let resolveArmed;
@@ -179,6 +203,32 @@ export async function runGateBOperatorReaper() {
         activate();
       }
       return;
+    }
+    try {
+      const release = parseGateBOperatorOriginReleaseIpcMessage(message);
+      if (release.type !== GATE_B_OPERATOR_ORIGIN_RELEASE_IPC_TYPES.RELEASE_ORIGIN ||
+          handle !== undefined || !ready || !originGuard || originReleaseRequested) {
+        throw new Error('reaper_failed');
+      }
+      originReleaseRequested = true;
+      void closeGateBOperatorOriginGuard(originGuard).then(async closed => {
+        if (closed !== true || poisoned || validCleanupRequest || !process.connected) {
+          poisoned = true;
+          activate();
+          return;
+        }
+        try { await sendOriginReleased(); } catch {
+          poisoned = true;
+          activate();
+        }
+      }, () => {
+        poisoned = true;
+        activate();
+      });
+      return;
+    } catch {
+      if (message && typeof message === 'object' &&
+          Object.hasOwn(message, 'requestId')) return poison();
     }
     if (!exactFieldless(message, 'CLEANUP') || handle !== undefined || !ready ||
         validCleanupRequest) return poison();

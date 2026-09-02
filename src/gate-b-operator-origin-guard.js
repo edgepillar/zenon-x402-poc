@@ -2,6 +2,12 @@ import { createServer, Socket } from 'node:net';
 import { pathToFileURL } from 'node:url';
 import { types as utilTypes } from 'node:util';
 
+import {
+  GATE_B_OPERATOR_ORIGIN_RELEASE_IPC_TYPES,
+  createGateBOperatorOriginReleaseIpcMessage,
+  parseGateBOperatorOriginReleaseIpcMessage,
+} from './gate-b-operator-coordinator-schema.js';
+
 const ERROR_CODE = 'gate_b_operator_origin_guard_failed';
 const HOST = '127.0.0.1';
 const PORT = 41000;
@@ -327,6 +333,24 @@ function send(type) {
   });
 }
 
+function sendOriginReleased() {
+  return new Promise((resolve, reject) => {
+    let settled = false;
+    const finish = ok => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      ok ? resolve(true) : reject(new GateBOperatorOriginGuardError());
+    };
+    const timer = setTimeout(() => finish(false), SEND_TIMEOUT_MS);
+    try {
+      process.send(createGateBOperatorOriginReleaseIpcMessage(
+        GATE_B_OPERATOR_ORIGIN_RELEASE_IPC_TYPES.ORIGIN_RELEASED,
+      ), error => finish(error == null));
+    } catch { finish(false); }
+  });
+}
+
 async function protectiveResidue() {
   await new Promise(() => {});
 }
@@ -351,6 +375,8 @@ export async function runGateBOperatorOriginGuard() {
   let reaperLifetime;
   let ready = false;
   let cleanupRequested = false;
+  let originReleaseRequested = false;
+  let originReleased = false;
   let poisoned = false;
   let setupAborted = false;
   let target;
@@ -407,6 +433,37 @@ export async function runGateBOperatorOriginGuard() {
       }
       return;
     }
+    try {
+      const release = parseGateBOperatorOriginReleaseIpcMessage(message);
+      if (release.type !== GATE_B_OPERATOR_ORIGIN_RELEASE_IPC_TYPES.RELEASE_ORIGIN ||
+          handle !== undefined || !ready || !capability || originReleaseRequested) {
+        throw new GateBOperatorOriginGuardError();
+      }
+      originReleaseRequested = true;
+      void closeGateBOperatorOriginGuard(capability).then(async closed => {
+        if (closed !== true || poisoned || cleanupRequested || !process.connected) {
+          poisoned = true;
+          resolveActivation(true);
+          return;
+        }
+        originReleased = true;
+        try { await sendOriginReleased(); } catch {
+          poisoned = true;
+          resolveActivation(true);
+        }
+      }, () => {
+        poisoned = true;
+        resolveActivation(true);
+      });
+      return;
+    } catch {
+      if (message && typeof message === 'object' && !IS_PROXY(message) &&
+          Object.hasOwn(message, 'requestId')) {
+        poisoned = true;
+        abortSetup();
+        return;
+      }
+    }
     if (exactFieldless(message, 'CLEANUP') && handle === undefined && ready &&
         !cleanupRequested) {
       cleanupRequested = true;
@@ -456,7 +513,8 @@ export async function runGateBOperatorOriginGuard() {
       await protectiveResidue();
       return false;
     }
-    if (await closeGateBOperatorOriginGuard(capability) !== true) {
+    if (await closeGateBOperatorOriginGuard(capability) !== true ||
+        (originReleaseRequested && !originReleased && !poisoned)) {
       await protectiveResidue();
       return false;
     }

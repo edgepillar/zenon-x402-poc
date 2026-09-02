@@ -20,7 +20,9 @@ const GET_OWN_PROPERTY_DESCRIPTOR = Object.getOwnPropertyDescriptor;
 const GET_PROTOTYPE_OF = Object.getPrototypeOf;
 const HAS_OWN = Object.hasOwn;
 const IS_PROXY = utilTypes.isProxy;
+const IS_PROMISE = utilTypes.isPromise;
 const OBJECT_PROTOTYPE = Object.prototype;
+const PROMISE_PROTOTYPE = Promise.prototype;
 const REFLECT_OWN_KEYS = Reflect.ownKeys;
 
 function fail() {
@@ -53,7 +55,7 @@ function exactPlainDataObject(value, fields) {
   return output;
 }
 
-function exactMessage(message, expectedType) {
+function exactMessage(message, expectedType, expectedRequestId = REQUEST_ID) {
   if (!message || typeof message !== 'object' || IS_PROXY(message) ||
       ARRAY_IS_ARRAY(message) || GET_PROTOTYPE_OF(message) !== OBJECT_PROTOTYPE) fail();
   const fields = ['ipcVersion', 'requestId', 'type'];
@@ -63,23 +65,36 @@ function exactMessage(message, expectedType) {
     const descriptor = GET_OWN_PROPERTY_DESCRIPTOR(message, fields[index]);
     if (!descriptor || !HAS_OWN(descriptor, 'value') || descriptor.enumerable !== true) fail();
   }
-  if (message.ipcVersion !== IPC_VERSION || message.requestId !== REQUEST_ID ||
+  if (message.ipcVersion !== IPC_VERSION || message.requestId !== expectedRequestId ||
       message.type !== expectedType) fail();
+}
+
+function exactNativePromise(value) {
+  if (!IS_PROMISE(value) || IS_PROXY(value) ||
+      GET_PROTOTYPE_OF(value) !== PROMISE_PROTOTYPE ||
+      GET_OWN_PROPERTY_DESCRIPTOR(value, 'then') !== undefined) fail();
+  return value;
+}
+
+async function allowExistingDirectOriginBind() {
+  return true;
 }
 
 function captureInjections(injected) {
   if (injected === undefined) return {
     forkProcess: fork,
     childModule: CHILD_MODULE,
+    beforeOriginBind: allowExistingDirectOriginBind,
     timeoutMs: DEFAULT_TIMEOUT_MS,
   };
   if (!injected || typeof injected !== 'object' || IS_PROXY(injected) ||
       ARRAY_IS_ARRAY(injected) || GET_PROTOTYPE_OF(injected) !== OBJECT_PROTOTYPE) fail();
-  const allowed = ['forkProcess', 'childModule', 'timeoutMs'];
+  const allowed = ['forkProcess', 'childModule', 'beforeOriginBind', 'timeoutMs'];
   const keys = REFLECT_OWN_KEYS(injected);
   const output = {
     forkProcess: fork,
     childModule: CHILD_MODULE,
+    beforeOriginBind: allowExistingDirectOriginBind,
     timeoutMs: DEFAULT_TIMEOUT_MS,
   };
   for (let index = 0; index < keys.length; index += 1) {
@@ -91,7 +106,8 @@ function captureInjections(injected) {
         descriptor.enumerable !== true) fail();
     output[key] = descriptor.value;
   }
-  if (typeof output.forkProcess !== 'function' || typeof output.childModule !== 'string' ||
+  if (typeof output.forkProcess !== 'function' || typeof output.beforeOriginBind !== 'function' ||
+      IS_PROXY(output.beforeOriginBind) || typeof output.childModule !== 'string' ||
       !isAbsolute(output.childModule) || !Number.isSafeInteger(output.timeoutMs) ||
       output.timeoutMs < 1 || output.timeoutMs > MAX_TIMEOUT_MS) fail();
   return output;
@@ -148,7 +164,11 @@ export async function supervisePublicWsOnceChild(command, options, injected) {
     const terminal = await new Promise((resolveTerminal, rejectTerminal) => {
       let phase = 'ready';
       let terminalType;
+      let originReleaseAcknowledged = false;
+      let originReleaseRequested = false;
       let closed = false;
+      let closeCode;
+      let closeSignal;
       let settled = false;
       const timer = setTimeout(() => finish(false), dependencies.timeoutMs);
       const finish = success => {
@@ -178,9 +198,39 @@ export async function supervisePublicWsOnceChild(command, options, injected) {
             return;
           }
           if (phase === 'terminal') {
+            if (requestType === 'RUN' && !originReleaseRequested) {
+              exactMessage(message, 'ORIGIN_RELEASE', 2);
+              originReleaseRequested = true;
+              const released = exactNativePromise(Reflect.apply(
+                dependencies.beforeOriginBind,
+                undefined,
+                [],
+              ));
+              void released.then(value => {
+                if (settled || phase !== 'terminal' || value !== true) return finish(false);
+                try {
+                  const accepted = child.send({
+                    ipcVersion: IPC_VERSION,
+                    requestId: 2,
+                    type: 'ORIGIN_RELEASED',
+                  }, error => {
+                    if (error || settled) return finish(false);
+                    originReleaseAcknowledged = true;
+                    if (terminalType === expectedTerminal) {
+                      phase = 'close';
+                      if (closed && closeCode === 0 && closeSignal === null) finish(true);
+                    }
+                  });
+                  if (accepted === false && child.connected === false) finish(false);
+                } catch { finish(false); }
+              }, () => finish(false));
+              return;
+            }
+            if (terminalType !== undefined) fail();
             exactMessage(message, expectedTerminal);
+            if (requestType === 'RUN' && !originReleaseRequested) fail();
             terminalType = message.type;
-            phase = 'close';
+            if (requestType !== 'RUN' || originReleaseAcknowledged) phase = 'close';
             return;
           }
           finish(false);
@@ -195,8 +245,14 @@ export async function supervisePublicWsOnceChild(command, options, injected) {
         childClosed = true;
         if (closed) return finish(false);
         closed = true;
-        if (phase !== 'close' || terminalType !== expectedTerminal ||
-            code !== 0 || signal !== null) return finish(false);
+        closeCode = code;
+        closeSignal = signal;
+        if (code !== 0 || signal !== null || terminalType !== expectedTerminal) {
+          return finish(false);
+        }
+        if (phase === 'terminal' && requestType === 'RUN' &&
+            !originReleaseAcknowledged) return;
+        if (phase !== 'close') return finish(false);
         finish(true);
       });
       child.stdio[4].once('error', () => finish(false));

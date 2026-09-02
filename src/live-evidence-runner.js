@@ -114,6 +114,8 @@ const GET_OWN_PROPERTY_DESCRIPTORS = Object.getOwnPropertyDescriptors;
 const GET_PROTOTYPE_OF = Object.getPrototypeOf;
 const HAS_OWN = Object.hasOwn;
 const IS_PROXY = utilTypes.isProxy;
+const IS_PROMISE = utilTypes.isPromise;
+const PROMISE_PROTOTYPE = Promise.prototype;
 const JSON_PARSE = JSON.parse;
 const JSON_STRINGIFY = JSON.stringify;
 const OBJECT_IS = Object.is;
@@ -2482,6 +2484,7 @@ function captureExecutionInjections(injected, publicWsOnce = false) {
   if (publicWsOnce) {
     append(allowed, 'sourceTreeAttestor');
     append(allowed, 'repositoryModuleLoader');
+    append(allowed, 'beforeOriginBind');
   }
   let keys;
   try { keys = REFLECT_OWN_KEYS(injected); } catch { fail(); }
@@ -2523,12 +2526,23 @@ function captureExecutionInjections(injected, publicWsOnce = false) {
       ownData(captured, key, FREEZE(dependencySnapshot));
     } else {
       if ((key === 'workspaceBoundaryObserver' || key === 'sourceTreeAttestor' ||
-          key === 'repositoryModuleLoader') &&
+          key === 'repositoryModuleLoader' || key === 'beforeOriginBind') &&
           typeof descriptor.value !== 'function') fail();
       ownData(captured, key, descriptor.value);
     }
   }
   return FREEZE(captured);
+}
+
+function exactNativePromise(value) {
+  if (!IS_PROMISE(value) || IS_PROXY(value) ||
+      GET_PROTOTYPE_OF(value) !== PROMISE_PROTOTYPE ||
+      GET_OWN_PROPERTY_DESCRIPTOR(value, 'then') !== undefined) fail();
+  return value;
+}
+
+async function allowExistingDirectOriginBind() {
+  return true;
 }
 
 export async function executeLiveEvidenceRun(options, injected = {}) {
@@ -2860,6 +2874,12 @@ export async function executePublicWsOnceRun(options, injected = {}) {
     await assertBoundary();
     await operations.probeBuyerReadiness({ config });
     await boundaryPoint('after-buyer-readiness');
+    const beforeOriginBind = injected.beforeOriginBind ?? allowExistingDirectOriginBind;
+    const originReleased = await exactNativePromise(
+      Reflect.apply(beforeOriginBind, undefined, []),
+    );
+    if (originReleased !== true) fail();
+    await boundaryPoint('after-origin-release');
     await controller.start();
     await boundaryPoint('after-facilitator-start');
     await boundaryPoint('before-public-endpoint');

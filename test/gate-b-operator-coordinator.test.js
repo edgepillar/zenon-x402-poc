@@ -19,10 +19,14 @@ import {
   GATE_B_OPERATOR_COORDINATOR_ACKNOWLEDGEMENTS,
   GATE_B_OPERATOR_COORDINATOR_LIMITS,
   GATE_B_OPERATOR_COORDINATOR_STATUS_LINES,
+  GATE_B_OPERATOR_ORIGIN_RELEASE_IPC_TYPES,
+  createGateBOperatorOriginReleaseIpcMessage,
   frameGateBOperatorCoordinatorBootstrap,
   frameGateBOperatorCoordinatorReview,
+  frameGateBOperatorCoordinatorRun,
   parseGateBOperatorCoordinatorBootstrapFrame,
   parseGateBOperatorCoordinatorReviewFrame,
+  parseGateBOperatorCoordinatorRunFrame,
   parseGateBOperatorReviewResultFrame,
   createGateBOperatorCoordinatorIpcMessage,
   frameGateBOperatorReviewResult,
@@ -39,6 +43,9 @@ import {
   stopGateBOperatorCoordinator,
   submitGateBOperatorBootstrap,
   submitGateBOperatorCoordinatorReview,
+  submitGateBOperatorCoordinatorRun,
+  confirmGateBOperatorCoordinatorOriginReleased,
+  waitGateBOperatorCoordinatorOriginReleaseRequest,
   waitGateBOperatorCoordinatorClosed,
 } from '../src/gate-b-operator-coordinator-launcher.js';
 import {
@@ -62,6 +69,7 @@ import {
 } from '../src/gate-b-operator-config-review-child.js';
 import {
   GATE_B_OPERATOR_FRONT_END_PHASE_1_REQUIRED,
+  GATE_B_OPERATOR_FRONT_END_PHASE_3_REQUIRED,
   runGateBOperatorFrontEnd,
 } from '../src/gate-b-operator-front-end.js';
 import {
@@ -324,6 +332,14 @@ function review(changes = {}) {
   };
 }
 
+function runAuthorization(changes = {}) {
+  return {
+    acknowledgement: GATE_B_OPERATOR_COORDINATOR_ACKNOWLEDGEMENTS.run,
+    schemaVersion: 1,
+    ...changes,
+  };
+}
+
 function deferred() {
   let resolve;
   let reject;
@@ -479,10 +495,13 @@ function reviewHarness({ files = reviewFiles(), beforeFinalVerification } = {}) 
 test('operator coordinator framing is canonical, exact, and phase-specific', () => {
   const initial = frameGateBOperatorCoordinatorBootstrap(bootstrap());
   const second = frameGateBOperatorCoordinatorReview(review());
+  const third = frameGateBOperatorCoordinatorRun(runAuthorization());
   assert.deepEqual(parseGateBOperatorCoordinatorBootstrapFrame(initial), bootstrap());
   assert.deepEqual(parseGateBOperatorCoordinatorReviewFrame(second), review());
+  assert.deepEqual(parseGateBOperatorCoordinatorRunFrame(third), runAuthorization());
   assert.ok(initial.length <= GATE_B_OPERATOR_COORDINATOR_LIMITS.bootstrapFrameBytes);
   assert.ok(second.length <= GATE_B_OPERATOR_COORDINATOR_LIMITS.reviewFrameBytes);
+  assert.ok(third.length <= GATE_B_OPERATOR_COORDINATOR_LIMITS.runFrameBytes);
 
   for (const candidate of [
     initial.subarray(0, initial.length - 1),
@@ -492,6 +511,7 @@ test('operator coordinator framing is canonical, exact, and phase-specific', () 
 
   assert.throws(() => parseGateBOperatorCoordinatorBootstrapFrame(second));
   assert.throws(() => parseGateBOperatorCoordinatorReviewFrame(initial));
+  assert.throws(() => parseGateBOperatorCoordinatorRunFrame(second));
 });
 
 test('review frame contains exactly three acknowledgements and no config-bearing fields', () => {
@@ -502,7 +522,7 @@ test('review frame contains exactly three acknowledgements and no config-bearing
   ]) assert.throws(() => frameGateBOperatorCoordinatorReview(candidate));
 });
 
-test('one non-TTY stream rejects an early second frame and accepts phase-gated EOF', async () => {
+test('one non-TTY stream rejects early input and accepts three phase-gated frames', async () => {
   const earlyStream = new PassThrough();
   const earlyReader = createGateBOperatorCoordinatorFrameReader(earlyStream, {
     initialTimeoutMs: 1000,
@@ -518,6 +538,7 @@ test('one non-TTY stream rejects an early second frame and accepts phase-gated E
   const reader = createGateBOperatorCoordinatorFrameReader(stream, {
     initialTimeoutMs: 1000,
     reviewTimeoutMs: 1000,
+    runTimeoutMs: 1000,
   });
   stream.write(frameGateBOperatorCoordinatorBootstrap(bootstrap()));
   assert.deepEqual(
@@ -525,10 +546,16 @@ test('one non-TTY stream rejects an early second frame and accepts phase-gated E
     bootstrap(),
   );
   reader.openReviewPhase();
-  stream.end(frameGateBOperatorCoordinatorReview(review()));
+  stream.write(frameGateBOperatorCoordinatorReview(review()));
   assert.deepEqual(
     parseGateBOperatorCoordinatorReviewFrame(await reader.readReview()),
     review(),
+  );
+  reader.openRunPhase();
+  stream.end(frameGateBOperatorCoordinatorRun(runAuthorization()));
+  assert.deepEqual(
+    parseGateBOperatorCoordinatorRunFrame(await reader.readRun()),
+    runAuthorization(),
   );
 });
 
@@ -584,8 +611,14 @@ test('private frame stream rejects EOF, error, timeout, duplicate calls, and TTY
     assert.throws(() => reader.openReviewPhase());
     const second = reader.readReview();
     assert.throws(() => reader.readReview());
-    stream.end(frameGateBOperatorCoordinatorReview(review()));
+    stream.write(frameGateBOperatorCoordinatorReview(review()));
     await second;
+    reader.openRunPhase();
+    assert.throws(() => reader.openRunPhase());
+    const third = reader.readRun();
+    assert.throws(() => reader.readRun());
+    stream.end(frameGateBOperatorCoordinatorRun(runAuthorization()));
+    await third;
   });
 
   await t.test('tty', () => {
@@ -597,16 +630,18 @@ test('private frame stream rejects EOF, error, timeout, duplicate calls, and TTY
   });
 });
 
-test('status lines remain byte exact and never claim run authority', () => {
+test('status lines remain byte exact and distinguish one pending run', () => {
   assert.deepEqual(GATE_B_OPERATOR_COORDINATOR_STATUS_LINES, {
     REVIEW_REQUIRED: 'GATE_B_CONTROLLER_REVIEW_REQUIRED_RUN_NOT_AUTHORIZED\n',
     PREFLIGHT_VALID: 'GATE_B_CONTROLLER_PREFLIGHT_VALID_RUN_NOT_AUTHORIZED\n',
+    PENDING: 'GATE_B_CONTROLLER_PENDING_INDEPENDENT_VERIFICATION\n',
     CLOSED: 'GATE_B_CONTROLLER_CLOSED_RUN_NOT_EXECUTED\n',
+    CLOSED_PENDING: 'GATE_B_CONTROLLER_CLOSED_PENDING_INDEPENDENT_VERIFICATION\n',
     QUARANTINED: 'GATE_B_CONTROLLER_FAILED_WORKSPACE_QUARANTINED\n',
   });
 });
 
-test('framing rejects truncation, oversize, invalid UTF-8, duplicates, trailing bytes, and a third frame', async t => {
+test('framing rejects truncation, oversize, invalid UTF-8, duplicates, and early Phase 3', async t => {
   const initial = frameGateBOperatorCoordinatorBootstrap(bootstrap());
   const second = frameGateBOperatorCoordinatorReview(review());
   const malformed = [
@@ -628,7 +663,7 @@ test('framing rejects truncation, oversize, invalid UTF-8, duplicates, trailing 
     });
   }
 
-  await t.test('third-frame', async () => {
+  await t.test('early-third-frame', async () => {
     const stream = new PassThrough();
     const reader = createGateBOperatorCoordinatorFrameReader(stream, {
       initialTimeoutMs: 1000,
@@ -895,6 +930,13 @@ class FakeChannel extends EventEmitter {
     if (message.type === 'REVIEW_REQUIRED') {
       setImmediate(() => this.emit('message', { type: 'REVIEW_OPEN' }));
     }
+    if (message.type === 'RELEASE_ORIGIN') {
+      setImmediate(() => this.emit('message', {
+        ipcVersion: 1,
+        requestId: 1,
+        type: 'ORIGIN_RELEASED',
+      }));
+    }
     return true;
   }
 }
@@ -905,11 +947,13 @@ function cliHarness(changes = {}) {
   const lines = [];
   const capability = Object.freeze(Object.create(null));
   let status = 'GATE_B_CONTROLLER_REVIEW_REQUIRED_RUN_NOT_AUTHORIZED';
+  let runSucceeded = false;
   let stopCalls = 0;
   let waitCalls = 0;
   const reader = Object.freeze({
     close() { events.push('reader:close'); return true; },
     openReviewPhase() { events.push('reader:review-open'); return true; },
+    openRunPhase() { events.push('reader:run-open'); return true; },
     readInitial() {
       events.push('reader:initial');
       return Promise.resolve(frameGateBOperatorCoordinatorBootstrap(bootstrap()));
@@ -917,6 +961,10 @@ function cliHarness(changes = {}) {
     readReview() {
       events.push('reader:review');
       return Promise.resolve(frameGateBOperatorCoordinatorReview(review()));
+    },
+    readRun() {
+      events.push('reader:run');
+      return Promise.resolve(frameGateBOperatorCoordinatorRun(runAuthorization()));
     },
   });
   const options = {
@@ -952,19 +1000,34 @@ function cliHarness(changes = {}) {
         type: 'REVIEW_VALID',
       });
     },
+    runController: async (candidate, supplied, beforeOriginBind) => {
+      assert.equal(candidate, capability);
+      assert.deepEqual(supplied, runAuthorization());
+      events.push('controller:run');
+      assert.equal(await beforeOriginBind(), true);
+      events.push('controller:origin-released');
+      runSucceeded = true;
+      status = 'GATE_B_CONTROLLER_PENDING_INDEPENDENT_VERIFICATION';
+      return status;
+    },
     stderr: async line => { lines.push(['stderr', line]); return true; },
     stdout: async line => { lines.push(['stdout', line]); return true; },
     stopController: candidate => {
       assert.equal(candidate, capability);
       stopCalls += 1;
       events.push('controller:stop');
-      return Promise.resolve('GATE_B_CONTROLLER_CLOSED_RUN_NOT_EXECUTED');
+      status = runSucceeded
+        ? 'GATE_B_CONTROLLER_CLOSED_PENDING_INDEPENDENT_VERIFICATION'
+        : 'GATE_B_CONTROLLER_CLOSED_RUN_NOT_EXECUTED';
+      return Promise.resolve(status);
     },
     waitControllerClosed: candidate => {
       assert.equal(candidate, capability);
       waitCalls += 1;
       events.push('controller:wait');
-      return Promise.resolve('GATE_B_CONTROLLER_CLOSED_RUN_NOT_EXECUTED');
+      return Promise.resolve(runSucceeded
+        ? 'GATE_B_CONTROLLER_CLOSED_PENDING_INDEPENDENT_VERIFICATION'
+        : 'GATE_B_CONTROLLER_CLOSED_RUN_NOT_EXECUTED');
     },
     ...changes,
   };
@@ -1054,6 +1117,37 @@ test('coordinator CLI retains one process across review, preflight, STOP, and ex
     'REVIEW_REQUIRED', 'REVIEW_OPENED', 'PREFLIGHT_VALID', 'STOPPED',
   ]);
 });
+
+test('coordinator CLI accepts one distinct Phase 3 only after preflight and origin release',
+  async () => {
+    const context = cliHarness();
+    const pending = runGateBOperatorCoordinatorCli(context.options);
+    await waitFor(() => context.channel.sent.some(message =>
+      message.type === 'PREFLIGHT_VALID'));
+    context.channel.emit('message', { type: 'RUN_OPEN' });
+    await waitFor(() => context.channel.sent.some(message => message.type === 'PENDING'));
+    assert.deepEqual(context.events.filter(event => event.startsWith('controller:') ||
+      event === 'reader:run-open' || event === 'reader:run'), [
+      'controller:prepare',
+      'controller:authorize',
+      'reader:run-open',
+      'reader:run',
+      'controller:run',
+      'controller:origin-released',
+    ]);
+    context.channel.emit('message', createGateBOperatorCoordinatorIpcMessage('STOP'));
+    assert.equal(await pending, true);
+    assert.deepEqual(context.lines, [
+      ['stdout', GATE_B_OPERATOR_COORDINATOR_STATUS_LINES.REVIEW_REQUIRED],
+      ['stdout', GATE_B_OPERATOR_COORDINATOR_STATUS_LINES.PREFLIGHT_VALID],
+      ['stdout', GATE_B_OPERATOR_COORDINATOR_STATUS_LINES.PENDING],
+      ['stdout', GATE_B_OPERATOR_COORDINATOR_STATUS_LINES.CLOSED_PENDING],
+    ]);
+    assert.deepEqual(context.channel.sent.map(message => message.type), [
+      'REVIEW_REQUIRED', 'REVIEW_OPENED', 'PREFLIGHT_VALID', 'RUN_OPENED',
+      'RELEASE_ORIGIN', 'PENDING', 'STOPPED',
+    ]);
+  });
 
 test('STOP during review, authorize, and synchronous prepare reentrancy disables later actions', async t => {
   await t.test('review', async () => {
@@ -1161,6 +1255,7 @@ test('coordinator opens frame two only after the fixed line, enum, and private b
     close: original.close,
     readInitial: original.readInitial,
     readReview: original.readReview,
+    readRun: original.readRun,
     openReviewPhase() {
       assert.deepEqual(context.lines, [[
         'stdout', GATE_B_OPERATOR_COORDINATOR_STATUS_LINES.REVIEW_REQUIRED,
@@ -1168,6 +1263,7 @@ test('coordinator opens frame two only after the fixed line, enum, and private b
       assert.deepEqual(context.channel.sent.map(message => message.type), ['REVIEW_REQUIRED']);
       return original.openReviewPhase();
     },
+    openRunPhase: original.openRunPhase,
   });
   const pending = runGateBOperatorCoordinatorCli(context.options);
   await waitFor(() => context.channel.sent.some(message =>
@@ -1207,7 +1303,7 @@ test('review phase opens before the private barrier acknowledgement callback set
     await lifecycleEntered.promise;
     channel.emit('message', { type: 'REVIEW_OPEN' });
     await acknowledgementEntered.promise;
-    input.end(frameGateBOperatorCoordinatorReview(review()));
+    input.write(frameGateBOperatorCoordinatorReview(review()));
     await new Promise(resolve => setImmediate(resolve));
     lifecycleReleased.resolve(true);
     acknowledgementReleased.resolve(true);
@@ -1467,7 +1563,7 @@ test('review-child launcher requires a single private result frame, exact enum, 
   });
 });
 
-function fakeCoordinatorProcess() {
+function fakeCoordinatorProcess(changes = {}) {
   const child = new EventEmitter();
   child.pid = 42001;
   child.connected = true;
@@ -1480,6 +1576,7 @@ function fakeCoordinatorProcess() {
   child.disconnect = () => { child.connected = false; };
   child.unref = () => {};
   let inputPhase = 0;
+  let pendingRun = false;
   privatePipe.on('data', chunk => {
     if (inputPhase === 0) {
       parseGateBOperatorCoordinatorBootstrapFrame(chunk);
@@ -1488,23 +1585,52 @@ function fakeCoordinatorProcess() {
         child.stdout.write(GATE_B_OPERATOR_COORDINATOR_STATUS_LINES.REVIEW_REQUIRED);
         child.emit('message', createGateBOperatorCoordinatorIpcMessage('REVIEW_REQUIRED'));
       });
-    } else {
+    } else if (inputPhase === 1) {
       parseGateBOperatorCoordinatorReviewFrame(chunk);
       inputPhase = 2;
       queueMicrotask(() => {
         child.stdout.write(GATE_B_OPERATOR_COORDINATOR_STATUS_LINES.PREFLIGHT_VALID);
         child.emit('message', createGateBOperatorCoordinatorIpcMessage('PREFLIGHT_VALID'));
       });
+    } else {
+      parseGateBOperatorCoordinatorRunFrame(chunk);
+      inputPhase = 3;
+      queueMicrotask(() => child.emit('message',
+        createGateBOperatorOriginReleaseIpcMessage(
+          GATE_B_OPERATOR_ORIGIN_RELEASE_IPC_TYPES.RELEASE_ORIGIN,
+        )));
     }
   });
   child.send = (message, callback) => {
+    if (message.type === 'ORIGIN_RELEASED' &&
+        changes.ambiguousOriginReleaseAcknowledgement === true) {
+      setImmediate(() => {
+        pendingRun = true;
+        child.stdout.write(GATE_B_OPERATOR_COORDINATOR_STATUS_LINES.PENDING);
+        child.emit('message', createGateBOperatorCoordinatorIpcMessage('PENDING'));
+        callback?.(new Error('fixture'));
+      });
+      return true;
+    }
     queueMicrotask(() => callback?.(null));
     if (message.type === 'REVIEW_OPEN') {
       setImmediate(() => child.emit('message', { type: 'REVIEW_OPENED' }));
     }
+    if (message.type === 'RUN_OPEN') {
+      setImmediate(() => child.emit('message', { type: 'RUN_OPENED' }));
+    }
+    if (message.type === 'ORIGIN_RELEASED') {
+      setImmediate(() => {
+        pendingRun = true;
+        child.stdout.write(GATE_B_OPERATOR_COORDINATOR_STATUS_LINES.PENDING);
+        child.emit('message', createGateBOperatorCoordinatorIpcMessage('PENDING'));
+      });
+    }
     if (message.type === 'STOP') {
       queueMicrotask(() => {
-        child.stdout.write(GATE_B_OPERATOR_COORDINATOR_STATUS_LINES.CLOSED);
+        child.stdout.write(pendingRun
+          ? GATE_B_OPERATOR_COORDINATOR_STATUS_LINES.CLOSED_PENDING
+          : GATE_B_OPERATOR_COORDINATOR_STATUS_LINES.CLOSED);
         child.emit('message', createGateBOperatorCoordinatorIpcMessage('STOPPED'));
         child.emit('exit', 0, null);
         child.emit('close', 0, null);
@@ -1596,6 +1722,7 @@ function fakeSiblingOwnerProcesses(changes = {}) {
   });
 
   let protocolPhase = 0;
+  let pendingRun = false;
   protocolPipe.on('data', chunk => {
     if (protocolPhase === 0) {
       events.push('BOOTSTRAP');
@@ -1607,13 +1734,24 @@ function fakeSiblingOwnerProcesses(changes = {}) {
         emitted.push({ source: 'watchdog', value });
         watchdog.emit('message', value);
       });
-    } else {
+    } else if (protocolPhase === 1) {
       events.push('REVIEW');
       parseGateBOperatorCoordinatorReviewFrame(chunk);
       protocolPhase = 2;
       queueMicrotask(() => {
         watchdog.stdout.write(GATE_B_OPERATOR_COORDINATOR_STATUS_LINES.PREFLIGHT_VALID);
         const value = createGateBOperatorCoordinatorIpcMessage('PREFLIGHT_VALID');
+        emitted.push({ source: 'watchdog', value });
+        watchdog.emit('message', value);
+      });
+    } else {
+      events.push('RUN');
+      parseGateBOperatorCoordinatorRunFrame(chunk);
+      protocolPhase = 3;
+      queueMicrotask(() => {
+        const value = createGateBOperatorOriginReleaseIpcMessage(
+          GATE_B_OPERATOR_ORIGIN_RELEASE_IPC_TYPES.RELEASE_ORIGIN,
+        );
         emitted.push({ source: 'watchdog', value });
         watchdog.emit('message', value);
       });
@@ -1674,11 +1812,29 @@ function fakeSiblingOwnerProcesses(changes = {}) {
 
   watchdog.send = (message, callback) => {
     events.push(`WATCHDOG_${message.type}`);
+    if (message.type === 'ORIGIN_RELEASED') {
+      queueMicrotask(() => {
+        events.push('WATCHDOG_ORIGIN_RELEASED_CALLBACK');
+        callback?.(null);
+      });
+      setImmediate(() => {
+        pendingRun = true;
+        events.push('WATCHDOG_PENDING');
+        watchdog.stdout.write(GATE_B_OPERATOR_COORDINATOR_STATUS_LINES.PENDING);
+        const value = createGateBOperatorCoordinatorIpcMessage('PENDING');
+        emitted.push({ source: 'watchdog', value });
+        watchdog.emit('message', value);
+      });
+      return true;
+    }
     queueMicrotask(() => callback?.(null));
-    if (message.type === 'BOOTSTRAP_OPEN' || message.type === 'REVIEW_OPEN') {
+    if (message.type === 'BOOTSTRAP_OPEN' || message.type === 'REVIEW_OPEN' ||
+        message.type === 'RUN_OPEN') {
       const allowed = message.type === 'BOOTSTRAP_OPEN'
         ? changes.bootstrapOpenAck !== false
-        : changes.reviewOpenAck !== false;
+        : message.type === 'REVIEW_OPEN'
+          ? changes.reviewOpenAck !== false
+          : changes.runOpenAck !== false;
       if (allowed) setImmediate(() => {
         watchdog.emit('message', { type: `${message.type}ED` });
         if (changes.duplicateOpenAck === message.type) {
@@ -1692,7 +1848,9 @@ function fakeSiblingOwnerProcesses(changes = {}) {
           alive.set(watchdog.pid, false);
           watchdog.emit('exit', 0, null);
         }
-        watchdog.stdout.write(GATE_B_OPERATOR_COORDINATOR_STATUS_LINES.CLOSED);
+        watchdog.stdout.write(pendingRun
+          ? GATE_B_OPERATOR_COORDINATOR_STATUS_LINES.CLOSED_PENDING
+          : GATE_B_OPERATOR_COORDINATOR_STATUS_LINES.CLOSED);
         const value = createGateBOperatorCoordinatorIpcMessage('STOPPED');
         emitted.push({ source: 'watchdog', value });
         watchdog.emit('message', value);
@@ -1726,6 +1884,27 @@ function fakeSiblingOwnerProcesses(changes = {}) {
       return true;
     }
     queueMicrotask(() => callback?.(null));
+    if (message.type === 'RELEASE_ORIGIN') {
+      const mode = changes.reaperOriginReleaseAcknowledgement ?? 'valid';
+      if (mode !== 'missing') setImmediate(() => {
+        if (mode === 'malformed') {
+          events.push('REAPER_ORIGIN_RELEASE_MALFORMED');
+          reaper.emit('message', { ipcVersion: 1, requestId: 1, type: 'MALFORMED' });
+          return;
+        }
+        events.push('REAPER_ORIGIN_RELEASED_ACK');
+        const value = createGateBOperatorOriginReleaseIpcMessage(
+          GATE_B_OPERATOR_ORIGIN_RELEASE_IPC_TYPES.ORIGIN_RELEASED,
+        );
+        emitted.push({ source: 'reaper', value });
+        reaper.emit('message', value);
+        if (mode === 'duplicate') {
+          events.push('REAPER_ORIGIN_RELEASED_DUPLICATE');
+          reaper.emit('message', value);
+        }
+      });
+      return true;
+    }
     if (message.type === 'CLEANUP' && changes.reaperHang !== true) {
       setTimeout(() => {
         if (changes.falseAbsent !== true && alive.get(watchdog.pid) === true) {
@@ -1759,6 +1938,27 @@ function fakeSiblingOwnerProcesses(changes = {}) {
       return true;
     }
     queueMicrotask(() => callback?.(null));
+    if (message.type === 'RELEASE_ORIGIN') {
+      const mode = changes.guardOriginReleaseAcknowledgement ?? 'valid';
+      if (mode !== 'missing') setImmediate(() => {
+        if (mode === 'malformed') {
+          events.push('GUARD_ORIGIN_RELEASE_MALFORMED');
+          guard.emit('message', { ipcVersion: 1, requestId: 1, type: 'MALFORMED' });
+          return;
+        }
+        events.push('GUARD_ORIGIN_RELEASED_ACK');
+        const value = createGateBOperatorOriginReleaseIpcMessage(
+          GATE_B_OPERATOR_ORIGIN_RELEASE_IPC_TYPES.ORIGIN_RELEASED,
+        );
+        emitted.push({ source: 'guard', value });
+        guard.emit('message', value);
+        if (mode === 'duplicate') {
+          events.push('GUARD_ORIGIN_RELEASED_DUPLICATE');
+          guard.emit('message', value);
+        }
+      });
+      return true;
+    }
     if (message.type === 'CLEANUP' && changes.guardHang !== true) {
       setTimeout(() => {
         emitted.push({ source: 'guard', value: { type: 'ABSENT' } });
@@ -1777,9 +1977,11 @@ function fakeSiblingOwnerProcesses(changes = {}) {
     closeOriginGuard: async candidate => {
       assert.equal(candidate, originGuard);
       if (outerGuardClosed) return true;
-      outerGuardClosed = true;
       events.push('OUTER_GUARD_CLOSE');
-      return changes.outerGuardCloseFailure !== true;
+      if (changes.outerGuardCloseReject === true) throw new Error('fixture');
+      if (changes.outerGuardCloseFailure === true) return false;
+      outerGuardClosed = true;
+      return true;
     },
     createOriginGuard: async () => {
       events.push('BIND_ORIGIN');
@@ -1852,6 +2054,20 @@ function fakeSiblingOwnerOptions(fixture, changes = {}) {
   };
 }
 
+async function prepareSiblingOwnerForRun(fixture) {
+  const capability = await launchGateBOperatorWatchdogSetup(
+    fakeSiblingOwnerOptions(fixture, {
+      originReleaseTimeoutMs: 60,
+      setupTimeoutMs: 100,
+      terminalWaitMs: 100,
+    }),
+  );
+  assert.equal(await submitGateBOperatorBootstrap(capability, bootstrap()), capability);
+  assert.equal(await submitGateBOperatorCoordinatorReview(capability, review()),
+    'PREFLIGHT_VALID');
+  return capability;
+}
+
 test('launcher owns one detached group and exposes a phase-separated opaque lifecycle', async () => {
   const child = fakeCoordinatorProcess();
   const spawnCalls = [];
@@ -1885,6 +2101,84 @@ test('launcher owns one detached group and exposes a phase-separated opaque life
   assert.deepEqual(spawnCalls[0].options.env, {});
   assert.deepEqual(spawnCalls[0].options.stdio,
     ['ignore', 'pipe', 'pipe', 'pipe', 'ipc', 'pipe']);
+});
+
+function ordinaryRunLauncherOptions(child, changes = {}) {
+  return {
+    cliModule: '/private/tmp/gate-b-operator-coordinator-cli-fixture.js',
+    executable: process.execPath,
+    gracefulStopMs: 100,
+    killProcessGroup() {},
+    lifetimeMs: 10_000,
+    platform: 'darwin',
+    probeProcessGroup: () => false,
+    reapAbandonMs: 20,
+    reapForceMs: 5,
+    spawnProcess: () => child,
+    ...changes,
+  };
+}
+
+test('production RUN API permits the watchdog submit-then-immediate-release-wait order',
+  async () => {
+    const child = fakeCoordinatorProcess();
+    const capability = await launchGateBOperatorCoordinator(
+      bootstrap(), ordinaryRunLauncherOptions(child),
+    );
+    assert.equal(await submitGateBOperatorCoordinatorReview(capability, review()),
+      'PREFLIGHT_VALID');
+    const runWork = submitGateBOperatorCoordinatorRun(capability, runAuthorization());
+    const releaseWork = waitGateBOperatorCoordinatorOriginReleaseRequest(capability);
+    assert.equal(await releaseWork, true);
+    assert.equal(await confirmGateBOperatorCoordinatorOriginReleased(capability), true);
+    assert.equal(await runWork, 'PENDING');
+    assert.equal(getGateBOperatorCoordinatorStatus(capability), 'PENDING');
+    assert.equal(await stopGateBOperatorCoordinator(capability), 'CLOSED_PENDING');
+    assert.equal(await waitGateBOperatorCoordinatorClosed(capability), 'CLOSED_PENDING');
+  });
+
+test('RUN opening failure and timeout reject the immediate waiter without release authority',
+  { timeout: 12_000 }, async t => {
+    for (const mode of ['failure', 'timeout']) await t.test(mode, async () => {
+      const child = fakeCoordinatorProcess();
+      const send = child.send;
+      const sent = [];
+      child.send = (message, callback) => {
+        sent.push(message.type);
+        if (message.type === 'RUN_OPEN') {
+          queueMicrotask(() => callback?.(mode === 'failure' ? new Error('fixture') : null));
+          return true;
+        }
+        return Reflect.apply(send, child, [message, callback]);
+      };
+      const capability = await launchGateBOperatorCoordinator(
+        bootstrap(), ordinaryRunLauncherOptions(child),
+      );
+      assert.equal(await submitGateBOperatorCoordinatorReview(capability, review()),
+        'PREFLIGHT_VALID');
+      const runWork = submitGateBOperatorCoordinatorRun(capability, runAuthorization());
+      const releaseWork = waitGateBOperatorCoordinatorOriginReleaseRequest(capability);
+      await assert.rejects(releaseWork);
+      await assert.rejects(runWork);
+      await assert.rejects(confirmGateBOperatorCoordinatorOriginReleased(capability));
+      assert.equal(sent.includes('ORIGIN_RELEASED'), false);
+      assert.equal(child.stdout.readableLength, 0);
+      assert.equal(await waitGateBOperatorCoordinatorClosed(capability), 'QUARANTINED');
+    });
+  });
+
+test('ambiguous origin-release acknowledgement cannot resolve RUN success', async () => {
+  const child = fakeCoordinatorProcess({ ambiguousOriginReleaseAcknowledgement: true });
+  const capability = await launchGateBOperatorCoordinator(
+    bootstrap(), ordinaryRunLauncherOptions(child),
+  );
+  assert.equal(await submitGateBOperatorCoordinatorReview(capability, review()),
+    'PREFLIGHT_VALID');
+  const runWork = submitGateBOperatorCoordinatorRun(capability, runAuthorization());
+  assert.equal(await waitGateBOperatorCoordinatorOriginReleaseRequest(capability), true);
+  await assert.rejects(confirmGateBOperatorCoordinatorOriginReleased(capability));
+  await assert.rejects(runWork);
+  assert.equal(await waitGateBOperatorCoordinatorClosed(capability), 'QUARANTINED');
 });
 
 test('outer setup owns detached sibling groups and submits bootstrap only after READY then START',
@@ -1944,6 +2238,79 @@ test('outer setup owns detached sibling groups and submits bootstrap only after 
       }
       assert.equal(Reflect.ownKeys(value).some(key => key === 'pid' || key === 'groupId'), false);
     }
+  });
+
+test('outer Phase-3 release joins both holders and one outer close before confirmation',
+  async () => {
+    const fixture = fakeSiblingOwnerProcesses();
+    const capability = await prepareSiblingOwnerForRun(fixture);
+
+    assert.equal(await submitGateBOperatorCoordinatorRun(capability, runAuthorization()),
+      'PENDING');
+
+    const guardAck = fixture.events.indexOf('GUARD_ORIGIN_RELEASED_ACK');
+    const reaperAck = fixture.events.indexOf('REAPER_ORIGIN_RELEASED_ACK');
+    const outerClose = fixture.events.indexOf('OUTER_GUARD_CLOSE');
+    const confirmation = fixture.events.indexOf('WATCHDOG_ORIGIN_RELEASED');
+    const confirmationCallback = fixture.events.indexOf(
+      'WATCHDOG_ORIGIN_RELEASED_CALLBACK',
+    );
+    const pending = fixture.events.indexOf('WATCHDOG_PENDING');
+    assert.equal(guardAck >= 0 && reaperAck >= 0, true);
+    assert.equal(outerClose > guardAck && outerClose > reaperAck, true);
+    assert.equal(confirmation > outerClose, true);
+    assert.equal(confirmationCallback > confirmation, true);
+    assert.equal(pending > confirmationCallback, true);
+    assert.equal(fixture.events.filter(value => value === 'OUTER_GUARD_CLOSE').length, 1);
+    assert.equal(fixture.events.filter(value => value === 'GUARD_RELEASE_ORIGIN').length, 1);
+    assert.equal(fixture.events.filter(value => value === 'REAPER_RELEASE_ORIGIN').length, 1);
+
+    assert.equal(await stopGateBOperatorCoordinator(capability), 'CLOSED_PENDING');
+    assert.equal(await waitGateBOperatorCoordinatorClosed(capability), 'CLOSED_PENDING');
+    assert.equal(fixture.events.filter(value => value === 'OUTER_GUARD_CLOSE').length, 1);
+  });
+
+test('outer Phase-3 missing, malformed, or duplicate holder acknowledgement quarantines',
+  async t => {
+    for (const holder of ['guard', 'reaper']) {
+      for (const mode of ['missing', 'malformed', 'duplicate']) {
+        await t.test(`${holder}-${mode}`, async () => {
+          const fixture = fakeSiblingOwnerProcesses({
+            [`${holder}OriginReleaseAcknowledgement`]: mode,
+          });
+          const capability = await prepareSiblingOwnerForRun(fixture);
+          const runWork = submitGateBOperatorCoordinatorRun(
+            capability,
+            runAuthorization(),
+          );
+
+          await assert.rejects(runWork);
+          assert.equal(await waitGateBOperatorCoordinatorClosed(capability), 'QUARANTINED');
+          assert.equal(fixture.events.includes('WATCHDOG_ORIGIN_RELEASED'), false);
+          assert.equal(fixture.events.includes('WATCHDOG_PENDING'), false);
+        });
+      }
+    }
+  });
+
+test('outer Phase-3 close false or rejection after both acknowledgements quarantines',
+  async t => {
+    for (const [name, changes] of [
+      ['false', { outerGuardCloseFailure: true }],
+      ['rejection', { outerGuardCloseReject: true }],
+    ]) await t.test(name, async () => {
+      const fixture = fakeSiblingOwnerProcesses(changes);
+      const capability = await prepareSiblingOwnerForRun(fixture);
+      const runWork = submitGateBOperatorCoordinatorRun(capability, runAuthorization());
+
+      await assert.rejects(runWork);
+      assert.equal(await waitGateBOperatorCoordinatorClosed(capability), 'QUARANTINED');
+      assert.equal(fixture.events.includes('GUARD_ORIGIN_RELEASED_ACK'), true);
+      assert.equal(fixture.events.includes('REAPER_ORIGIN_RELEASED_ACK'), true);
+      assert.equal(fixture.events.filter(value => value === 'OUTER_GUARD_CLOSE').length, 1);
+      assert.equal(fixture.events.includes('WATCHDOG_ORIGIN_RELEASED'), false);
+      assert.equal(fixture.events.includes('WATCHDOG_PENDING'), false);
+    });
   });
 
 test('outer rejects wildcard, IPv6, and wrong-port guard identities before spawning', async t => {
@@ -2394,14 +2761,16 @@ test('launcher joins milestones to successful private-pipe write completion', as
   const child = fakeCoordinatorProcess();
   const pipe = child.stdio[3];
   const write = pipe.write;
-  const end = pipe.end;
+  let writeCount = 0;
   let finishBootstrap;
   let finishReview;
   pipe.write = function controlledWrite(chunk, callback) {
-    return Reflect.apply(write, this, [chunk, () => { finishBootstrap = callback; }]);
-  };
-  pipe.end = function controlledEnd(chunk, callback) {
-    return Reflect.apply(end, this, [chunk, () => { finishReview = callback; }]);
+    writeCount += 1;
+    const phase = writeCount;
+    return Reflect.apply(write, this, [chunk, () => {
+      if (phase === 1) finishBootstrap = callback;
+      else finishReview = callback;
+    }]);
   };
   const launch = launchGateBOperatorCoordinator(bootstrap(), {
     cliModule: '/private/tmp/gate-b-operator-coordinator-cli-fixture.js',
@@ -2493,10 +2862,16 @@ test('private-pipe callback failure and duplication quarantine before authority'
   await t.test('review-callback-failure', async () => {
     const child = fakeCoordinatorProcess();
     const pipe = child.stdio[3];
-    const end = pipe.end;
+    const write = pipe.write;
+    let writeCount = 0;
     let finishReview;
-    pipe.end = function controlledEnd(chunk, callback) {
-      return Reflect.apply(end, this, [chunk, () => { finishReview = callback; }]);
+    pipe.write = function controlledWrite(chunk, callback) {
+      writeCount += 1;
+      const phase = writeCount;
+      return Reflect.apply(write, this, [chunk, error => {
+        if (phase === 1) callback?.(error);
+        else finishReview = callback;
+      }]);
     };
     let groupAlive = true;
     const capability = await launchGateBOperatorCoordinator(bootstrap(), {
@@ -2522,10 +2897,16 @@ test('private-pipe callback failure and duplication quarantine before authority'
 test('duplicate review submission poisons the active submission and rejects after cleanup', async () => {
   const child = fakeCoordinatorProcess();
   const pipe = child.stdio[3];
-  const end = pipe.end;
+  const write = pipe.write;
+  let writeCount = 0;
   let finishReview;
-  pipe.end = function controlledEnd(chunk, callback) {
-    return Reflect.apply(end, this, [chunk, () => { finishReview = callback; }]);
+  pipe.write = function controlledWrite(chunk, callback) {
+    writeCount += 1;
+    const phase = writeCount;
+    return Reflect.apply(write, this, [chunk, error => {
+      if (phase === 1) callback?.(error);
+      else finishReview = callback;
+    }]);
   };
   let groupAlive = true;
   const capability = await launchGateBOperatorCoordinator(bootstrap(), {
@@ -3927,7 +4308,7 @@ test('documentation limits terminal recovery to exact Node controls and Boolean 
     }
   });
 
-test('documentation freezes active three-holder origin custody and the no-gap future boundary',
+test('documentation distinguishes pre-run custody from the bounded Phase-3 exception',
   async () => {
     const documents = await Promise.all([
       '../README.md', '../SECURITY.md', '../docs/IMPLEMENTATION_PLAN.md',
@@ -3936,9 +4317,7 @@ test('documentation freezes active three-holder origin custody and the no-gap fu
       assert.match(document, /exactly `127\.0\.0\.1:41000` as an exclusive IPv4 listener/);
       assert.match(document, /same kernel listening socket, not three independent binds/);
       assert.match(document, /All three holders actively accept/);
-      assert.match(document, /watchdog, guard and reaper are three detached siblings/);
-      assert.match(document, /Each has a distinct exclusive outer-liveness descriptor not inherited by either other sibling or any operational descendant/);
-      assert.match(document, /guard and reaper additionally hold opposite ends of one private peer-liveness channel/);
+      assert.match(document, /watchdog, guard and reaper (?:are|remain) three detached siblings/);
       assert.doesNotMatch(document, /Both siblings have distinct outer-liveness descriptors/);
       assert.match(document, /holder `READY` covers only the child-observable/);
       assert.match(document, /separately joins both holder `READY` frames with both target-write callbacks and both handle-transfer callbacks/);
@@ -3948,20 +4327,28 @@ test('documentation freezes active three-holder origin custody and the no-gap fu
       assert.match(document, /Every accepted connection is ended with the fixed denial; idle, failed or over-limit sockets are destroyed/);
       assert.doesNotMatch(document, /malformed[^\n]{0,80}(?:is|are) destroyed/i);
       assert.match(document, /intentional pre-RUN loopback network effect/);
-      assert.match(document, /protective quarantine indefinitely/);
       assert.match(document, /After the outer has joined both holder `READY` frames with both target-write and handle-transfer callbacks, any surviving holder preserves fixed-denial port custody/);
       assert.doesNotMatch(document, /(?:^|\n)Any surviving holder preserves fixed-denial port custody/m);
-      assert.match(document, /At or after both holder `READY` frames and watchdog `START`, only simultaneous hard loss of the outer, reaper and guard/);
-      assert.match(document, /may leave only that inert watchdog group/);
-      assert.match(document, /Listener custody is not claimed before the outer has joined both holder `READY` frames/);
-      assert.match(document, /watchdog `START` was never sent, so no tunnel or operational descendant exists/);
       assert.doesNotMatch(document, /inert (?:watchdog )?group under (?:the )?(?:listener's )?protective (?:listener )?custody/i);
-      assert.match(document, /Module imports are inert\./);
-      assert.match(document, /Offline validation uses only synthetic processes and local loopback; it invokes no live tunnel, external-network endpoint, RPC, wallet, funding, signing, payment, publication or RUN effect/);
+      assert.match(document, /Module imports(?: and offline validation)? (?:are|remain) inert/);
+      assert.match(document, /(?:Offline validation uses only synthetic processes and local loopback; it invokes no live tunnel, external-network endpoint|offline validation remain inert and invoke no live tunnel, external endpoint), RPC, wallet, funding, signing, payment, publication or RUN effect/i);
       assert.doesNotMatch(document, /This offline-tested slice performed none of those effects|Import and local tests invoke no live tunnel, network/);
+      assert.match(document, /bounded testnet-only close\/rebind exception/);
+      assert.match(document, /not the production listener-handoff design/);
+      assert.match(document, /guard and reaper close and acknowledge their listener copies, then the outer closes its copy once/);
+      assert.match(document, /Only after the existing facilitator exclusively binds the exact loopback port, public-route health succeeds, and the exact expected 402 is observed may lazy wallet opening, signing and the one payment proceed/);
+      assert.match(document, /competing bind, a holder-release timeout, or a facilitator bind timeout quarantines before wallet access/);
+      assert.match(document, /If delivery of `ORIGIN_RELEASED` is ambiguous, the one-use latch remains burned and the sender quarantines with no retry or replacement/);
+      assert.match(document, /watchdog may already have consumed the message and downstream effects, including the exact payment, may already have occurred/);
+      assert.match(document, /Subsequent reconciliation is limited to that exact attempt and payment/);
+      assert.doesNotMatch(document, /ambiguous acknowledgement quarantines before wallet access/);
+      assert.match(document, /trusted host kernel, root and same-UID processes remain inside the security boundary/);
+      assert.match(document, /deliberate availability gap removes guard fallback during the run/);
+      assert.match(document, /crash recovery cannot preserve the earlier fixed-denial listener/);
       assert.match(document, /same kernel listener with no close\/rebind gap/);
       assert.match(document, /retire every active fixed-denial acceptor/);
-      assert.match(document, /adds no (?:such )?handoff or RUN authority/);
+      assert.match(document, /retain the guard as the 503 fallback on server loss/);
+      assert.match(document, /default-off, non-production, never publishes, and does not close Issue #45/);
       assert.doesNotMatch(document, /passive (?:copy|holder)/i);
     }
     assert.match(documents[2], /previously merged coordinator base was confined to exactly nineteen paths/);
@@ -3987,7 +4374,7 @@ function fakeOperatorTty() {
   return stream;
 }
 
-test('operator front-end accepts two canonical no-echo phases and restores the TTY', async () => {
+test('operator front-end accepts three canonical no-echo phases and restores the TTY', async () => {
   const input = fakeOperatorTty();
   const channel = new EventEmitter();
   const output = new PassThrough();
@@ -3999,6 +4386,7 @@ test('operator front-end accepts two canonical no-echo phases and restores the T
   const pending = runGateBOperatorFrontEnd({
     argv: [], channel, errorOutput, input, output,
     outputTimeoutMs: 100, phase1TimeoutMs: 1000, phase2TimeoutMs: 1000,
+    phase3TimeoutMs: 1000,
     launchSetup: async () => capability,
     submitBootstrap: async (candidate, value) => {
       assert.equal(candidate, capability);
@@ -4010,18 +4398,25 @@ test('operator front-end accepts two canonical no-echo phases and restores the T
       assert.deepEqual(value, review());
       return 'PREFLIGHT_VALID';
     },
+    submitRun: async (candidate, value) => {
+      assert.equal(candidate, capability);
+      assert.deepEqual(value, runAuthorization());
+      return 'PENDING';
+    },
     stopCoordinator: async candidate => {
       assert.equal(candidate, capability);
       stops += 1;
-      return 'CLOSED';
+      return 'CLOSED_PENDING';
     },
-    waitClosed: async candidate => candidate === capability ? 'CLOSED' : 'FAILED',
+    waitClosed: async candidate => candidate === capability ? 'CLOSED_PENDING' : 'FAILED',
   });
   await waitFor(() => lines.includes(GATE_B_OPERATOR_FRONT_END_PHASE_1_REQUIRED) && input.isRaw);
   input.write(Buffer.from(`${canonicalJson(bootstrap())}\r`, 'utf8'));
   await waitFor(() =>
     lines.includes(GATE_B_OPERATOR_COORDINATOR_STATUS_LINES.REVIEW_REQUIRED) && input.isRaw);
   input.write(Buffer.from(`${canonicalJson(review())}\r`, 'utf8'));
+  await waitFor(() => lines.includes(GATE_B_OPERATOR_FRONT_END_PHASE_3_REQUIRED) && input.isRaw);
+  input.write(Buffer.from(`${canonicalJson(runAuthorization())}\r`, 'utf8'));
   assert.equal(await pending, true);
   assert.equal(input.isRaw, false);
   assert.equal(stops, 1);
@@ -4029,7 +4424,9 @@ test('operator front-end accepts two canonical no-echo phases and restores the T
     GATE_B_OPERATOR_FRONT_END_PHASE_1_REQUIRED,
     GATE_B_OPERATOR_COORDINATOR_STATUS_LINES.REVIEW_REQUIRED,
     GATE_B_OPERATOR_COORDINATOR_STATUS_LINES.PREFLIGHT_VALID,
-    GATE_B_OPERATOR_COORDINATOR_STATUS_LINES.CLOSED,
+    GATE_B_OPERATOR_FRONT_END_PHASE_3_REQUIRED,
+    GATE_B_OPERATOR_COORDINATOR_STATUS_LINES.PENDING,
+    GATE_B_OPERATOR_COORDINATOR_STATUS_LINES.CLOSED_PENDING,
   ]);
   assert.equal(errorOutput.readableLength, 0);
 });
@@ -4053,14 +4450,17 @@ test('held prompt callbacks cannot start phase clocks before near-boundary input
   const capability = Object.freeze(Object.create(null));
   let bootstrapSubmissions = 0;
   let reviewSubmissions = 0;
+  let runSubmissions = 0;
   const pending = runGateBOperatorFrontEnd({
     argv: [], channel, errorOutput, input, output,
     outputTimeoutMs: 200, phase1TimeoutMs: 30, phase2TimeoutMs: 30,
+    phase3TimeoutMs: 1000,
     launchSetup: async () => capability,
     submitBootstrap: async () => { bootstrapSubmissions += 1; return capability; },
     submitReview: async () => { reviewSubmissions += 1; return 'PREFLIGHT_VALID'; },
-    stopCoordinator: async () => 'CLOSED',
-    waitClosed: async () => 'CLOSED',
+    submitRun: async () => { runSubmissions += 1; return 'PENDING'; },
+    stopCoordinator: async () => 'CLOSED_PENDING',
+    waitClosed: async () => 'CLOSED_PENDING',
   });
   await waitFor(() => callbacks.has(GATE_B_OPERATOR_FRONT_END_PHASE_1_REQUIRED));
   await new Promise(resolve => setTimeout(resolve, 40));
@@ -4092,9 +4492,12 @@ test('held prompt callbacks cannot start phase clocks before near-boundary input
   await phase2Reading;
   await new Promise(resolve => setTimeout(resolve, 20));
   input.write(Buffer.from(`${canonicalJson(review())}\r`, 'utf8'));
+  await waitFor(() => input.isRaw === true);
+  input.write(Buffer.from(`${canonicalJson(runAuthorization())}\r`, 'utf8'));
   assert.equal(await pending, true);
   assert.equal(bootstrapSubmissions, 1);
   assert.equal(reviewSubmissions, 1);
+  assert.equal(runSubmissions, 1);
 });
 
 test('operator front-end rejects non-TTY input before coordinator effects', async () => {
@@ -4308,6 +4711,7 @@ test('actual OS PTY suppresses canonical input echo and restores terminal state'
     ));
     const first = canonicalJson(bootstrap());
     const second = canonicalJson(review());
+    const third = canonicalJson(runAuthorization());
     const expectProgram = [
       `spawn ${process.execPath} ${fixture}`,
       `expect ${JSON.stringify(GATE_B_OPERATOR_FRONT_END_PHASE_1_REQUIRED.trim())}`,
@@ -4316,7 +4720,10 @@ test('actual OS PTY suppresses canonical input echo and restores terminal state'
       `expect ${JSON.stringify(GATE_B_OPERATOR_COORDINATOR_STATUS_LINES.REVIEW_REQUIRED.trim())}`,
       'after 100',
       `send -- ${JSON.stringify(`${second}\r`)}`,
-      `expect ${JSON.stringify(GATE_B_OPERATOR_COORDINATOR_STATUS_LINES.CLOSED.trim())}`,
+      `expect ${JSON.stringify(GATE_B_OPERATOR_FRONT_END_PHASE_3_REQUIRED.trim())}`,
+      'after 100',
+      `send -- ${JSON.stringify(`${third}\r`)}`,
+      `expect ${JSON.stringify(GATE_B_OPERATOR_COORDINATOR_STATUS_LINES.CLOSED_PENDING.trim())}`,
       'set outcome [wait]',
       'exit [lindex $outcome 3]',
     ].join('; ');
@@ -4338,6 +4745,8 @@ test('actual OS PTY suppresses canonical input echo and restores terminal state'
     assert.equal(stderr, '');
     assert.equal(stdout.includes(first), false);
     assert.equal(stdout.includes(second), false);
-    assert.equal(stdout.includes(GATE_B_OPERATOR_COORDINATOR_STATUS_LINES.CLOSED.trim()), true);
+    assert.equal(stdout.includes(third), false);
+    assert.equal(stdout.includes(
+      GATE_B_OPERATOR_COORDINATOR_STATUS_LINES.CLOSED_PENDING.trim()), true);
     assert.deepEqual(outcome, { code: 0, signal: null });
   });

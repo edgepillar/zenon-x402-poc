@@ -13,14 +13,23 @@ async function runNoisyChild() {
   process.stderr.write('synthetic direct stderr\n');
   process._rawDebug('synthetic raw debug output');
 
-  process.on('message', message => {
-    const expected = message?.type === 'PREFLIGHT' ? 'PREFLIGHT_VALID' : 'PENDING';
+  const finish = expected => {
     process.send({ ipcVersion: 1, requestId: 1, type: expected }, () => {
       console.log('synthetic post-result console output');
       process.stdout.write('synthetic post-result direct stdout\n');
       process._rawDebug('synthetic post-result raw debug output');
       process.exit(0);
     });
+  };
+  process.on('message', message => {
+    if (message?.type === 'PREFLIGHT') return finish('PREFLIGHT_VALID');
+    if (message?.type === 'RUN') {
+      process.send({ ipcVersion: 1, requestId: 2, type: 'ORIGIN_RELEASE' });
+      return;
+    }
+    if (message?.type === 'ORIGIN_RELEASED' && message?.requestId === 2) {
+      finish('PENDING');
+    }
   });
 
   process.send({ ipcVersion: 1, requestId: 1, type: 'READY' });

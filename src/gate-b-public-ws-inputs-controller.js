@@ -2,6 +2,10 @@ import { isAbsolute, join, resolve } from 'node:path';
 import { types as utilTypes } from 'node:util';
 
 import { preflightPublicWsOnceRun } from './live-evidence-runner.js';
+import { supervisePublicWsOnceChild } from './live-evidence-public-ws-once-supervisor.js';
+import {
+  GATE_B_OPERATOR_COORDINATOR_ACKNOWLEDGEMENTS,
+} from './gate-b-operator-coordinator-schema.js';
 import {
   launchGateBPublicWsInputs,
   launchGateBPublicWsInputsInInheritedProcessGroup,
@@ -27,7 +31,9 @@ import {
 const ERROR_CODE = 'gate_b_public_ws_inputs_controller_failed';
 const REVIEW_REQUIRED = 'GATE_B_CONTROLLER_REVIEW_REQUIRED_RUN_NOT_AUTHORIZED';
 const PREFLIGHT_VALID = 'GATE_B_CONTROLLER_PREFLIGHT_VALID_RUN_NOT_AUTHORIZED';
+const PENDING = 'GATE_B_CONTROLLER_PENDING_INDEPENDENT_VERIFICATION';
 const CLOSED = 'GATE_B_CONTROLLER_CLOSED_RUN_NOT_EXECUTED';
+const CLOSED_PENDING = 'GATE_B_CONTROLLER_CLOSED_PENDING_INDEPENDENT_VERIFICATION';
 const QUARANTINED = 'GATE_B_CONTROLLER_FAILED_WORKSPACE_QUARANTINED';
 const RUN_NAME = /^[a-z0-9](?:[a-z0-9-]{0,62}[a-z0-9])?$/;
 const LOWERCASE_HASH_64 = /^[0-9a-f]{64}$/;
@@ -152,18 +158,35 @@ function exactReview(value) {
   });
 }
 
+function exactRunAuthorization(value) {
+  exactPlainObject(value, ['acknowledgement', 'schemaVersion']);
+  if (value.schemaVersion !== 1 ||
+      value.acknowledgement !== GATE_B_OPERATOR_COORDINATOR_ACKNOWLEDGEMENTS.run) fail();
+  return Object.freeze({
+    acknowledgement: GATE_B_OPERATOR_COORDINATOR_ACKNOWLEDGEMENTS.run,
+    schemaVersion: 1,
+  });
+}
+
+async function runPublicWsOnce(options, beforeOriginBind) {
+  return supervisePublicWsOnceChild('run-public-ws-once', options, { beforeOriginBind });
+}
+
 function exactDependencies(value, defaultQuickTunnelLauncher, defaultPublicWsLauncher) {
   const output = {
     assertQuickTunnelReady: assertGateBQuickTunnelReady,
     launchPublicWsInputs: defaultPublicWsLauncher,
     launchQuickTunnel: defaultQuickTunnelLauncher,
     preflightPublicWsOnce: preflightPublicWsOnceRun,
+    runPublicWsOnce,
     stopQuickTunnel: stopGateBQuickTunnel,
     waitQuickTunnelClosed: waitGateBQuickTunnelClosed,
   };
   if (value !== undefined) {
-    exactPlainObject(value, Object.keys(output));
-    const fields = Object.keys(output);
+    const fields = Object.hasOwn(value, 'runPublicWsOnce')
+      ? Object.keys(output)
+      : Object.keys(output).filter(field => field !== 'runPublicWsOnce');
+    exactPlainObject(value, fields);
     for (let index = 0; index < fields.length; index += 1) {
       output[fields[index]] = value[fields[index]];
     }
@@ -212,7 +235,8 @@ function createCapability(record) {
 }
 
 function isFinal(record) {
-  return record.status === CLOSED || record.status === QUARANTINED;
+  return record.status === CLOSED || record.status === CLOSED_PENDING ||
+    record.status === QUARANTINED;
 }
 
 function current(record, generation, phase) {
@@ -282,8 +306,10 @@ async function finishCloseRecord(record, activeStage) {
   try {
     closureProved = await closeOwnedTunnel(record);
   } catch {}
-  record.status = closureProved && !record.workspaceQuarantined ? CLOSED : QUARANTINED;
-  record.phase = record.status === CLOSED ? 'CLOSED' : 'QUARANTINED';
+  record.status = closureProved && !record.workspaceQuarantined
+    ? record.runSucceeded ? CLOSED_PENDING : CLOSED
+    : QUARANTINED;
+  record.phase = record.status === QUARANTINED ? 'QUARANTINED' : 'CLOSED';
   return record.status;
 }
 
@@ -340,6 +366,9 @@ async function prepareGateBPublicWsInputsForReviewInternal(
     phase: 'PREPARING',
     status: undefined,
     stopPromise: undefined,
+    runAttempted: false,
+    runSucceeded: false,
+    transportException: undefined,
     tunnelBootstrap: Object.freeze({
       cloudflaredExecutable: snapshot.quickTunnel.cloudflaredExecutable,
       operation: GATE_B_QUICK_TUNNEL_OPERATIONS.START,
@@ -488,6 +517,64 @@ export async function authorizeAndPreflightGateBPublicWsInputs(capability, revie
     if (!current(record, generation, 'AUTHORIZING')) return closeRecord(record, true);
     record.phase = 'PREFLIGHT_VALID';
     record.status = PREFLIGHT_VALID;
+    record.transportException = snapshot.acknowledgements.transportException;
+    return record.status;
+  } catch {
+    return closeRecord(record, true);
+  }
+}
+
+export async function executeGateBPublicWsInputsOnce(
+  capability,
+  authorization,
+  beforeOriginBind,
+) {
+  const record = recordFor(capability);
+  if (record.runAttempted) {
+    return closeRecord(record, true);
+  }
+  // Every Phase-3 call consumes the process-local RUN capability, including an
+  // early, late, malformed, cancelled, duplicate, or reentrant call.
+  record.runAttempted = true;
+  if (isFinal(record)) return record.status;
+  if (record.phase !== 'PREFLIGHT_VALID' || record.cancelled) {
+    return closeRecord(record, true);
+  }
+  try {
+    exactRunAuthorization(authorization);
+    if (typeof beforeOriginBind !== 'function' || IS_PROXY(beforeOriginBind)) fail();
+  } catch {
+    return closeRecord(record, true);
+  }
+  record.phase = 'RUNNING';
+  record.status = undefined;
+  record.generation += 1;
+  const generation = record.generation;
+  try {
+    const readiness = await invokeActiveStage(record, () => callDependency(
+      record.dependencies.assertQuickTunnelReady,
+      [record.lease],
+    ));
+    if (readiness !== true || !current(record, generation, 'RUNNING')) fail();
+    const root = record.initial.workspaceRoot;
+    const result = await invokeActiveStage(record, () => callDependency(
+      record.dependencies.runPublicWsOnce,
+      [{
+        authorizationPath: join(root, GATE_B_PUBLIC_WS_INPUT_LEAVES.authorization),
+        buyerRpcPath: join(root, GATE_B_PUBLIC_WS_INPUT_LEAVES.buyerRpc),
+        buyerWalletPath: join(root, GATE_B_PUBLIC_WS_INPUT_LEAVES.buyerWallet),
+        configPath: join(root, GATE_B_PUBLIC_WS_INPUT_LEAVES.runConfig),
+        facilitatorRpcPath: join(root, GATE_B_PUBLIC_WS_INPUT_LEAVES.facilitatorRpc),
+        runName: record.initial.runName,
+        transportException: record.transportException,
+        workspaceRoot: root,
+      }, beforeOriginBind],
+    ));
+    exactResult(result, 'status', 'pending-independent-verification');
+    if (!current(record, generation, 'RUNNING')) fail();
+    record.runSucceeded = true;
+    record.phase = 'PENDING';
+    record.status = PENDING;
     return record.status;
   } catch {
     return closeRecord(record, true);

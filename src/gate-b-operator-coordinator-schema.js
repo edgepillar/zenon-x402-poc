@@ -14,7 +14,11 @@ const ERROR_CODE = 'gate_b_operator_coordinator_schema_invalid';
 const FRAME_HEADER_BYTES = 4;
 const BOOTSTRAP_MAX_BYTES = 8192;
 const REVIEW_MAX_BYTES = 2048;
+const RUN_MAX_BYTES = 512;
 const RESULT_MAX_BYTES = 1024;
+const ORIGIN_RELEASE_REQUEST_ID = 1;
+const RUN_ACKNOWLEDGEMENT =
+  'I_AUTHORIZE_EXACTLY_ONE_PUBLIC_TESTNET_GATE_B_PAYMENT_NOW_WITH_NO_RECOVERY_OR_PUBLICATION';
 const RUN_NAME = /^[a-z0-9](?:[a-z0-9-]{0,62}[a-z0-9])?$/;
 const LOWERCASE_HASH_64 = /^[0-9a-f]{64}$/;
 const ARRAY_IS_ARRAY = Array.isArray;
@@ -31,6 +35,7 @@ export const GATE_B_OPERATOR_COORDINATOR_ACKNOWLEDGEMENTS = Object.freeze({
   operatorTrust: GATE_B_PUBLIC_WS_INPUT_ACKNOWLEDGEMENTS.operatorTrust,
   payment: GATE_B_PUBLIC_WS_INPUT_ACKNOWLEDGEMENTS.payment,
   publication: GATE_B_PUBLIC_WS_INPUT_ACKNOWLEDGEMENTS.publication,
+  run: RUN_ACKNOWLEDGEMENT,
   transportException: GATE_B_PUBLIC_WS_INPUT_ACKNOWLEDGEMENTS.transportException,
 });
 
@@ -38,6 +43,7 @@ export const GATE_B_OPERATOR_COORDINATOR_LIMITS = Object.freeze({
   bootstrapBytes: BOOTSTRAP_MAX_BYTES,
   bootstrapFrameBytes: BOOTSTRAP_MAX_BYTES + FRAME_HEADER_BYTES,
   initialFrameTimeoutMs: 30_000,
+  originReleaseTimeoutMs: 4_000,
   gracefulStopMs: 4 * 60_000,
   lifetimeMs: 9 * 60_000,
   resultBytes: RESULT_MAX_BYTES,
@@ -46,21 +52,32 @@ export const GATE_B_OPERATOR_COORDINATOR_LIMITS = Object.freeze({
   reviewChildTimeoutMs: 30_000,
   reviewFrameBytes: REVIEW_MAX_BYTES + FRAME_HEADER_BYTES,
   reviewFrameTimeoutMs: 120_000,
+  runBytes: RUN_MAX_BYTES,
+  runFrameBytes: RUN_MAX_BYTES + FRAME_HEADER_BYTES,
+  runFrameTimeoutMs: 120_000,
 });
 
 export const GATE_B_OPERATOR_COORDINATOR_STATUS_LINES = Object.freeze({
   REVIEW_REQUIRED: 'GATE_B_CONTROLLER_REVIEW_REQUIRED_RUN_NOT_AUTHORIZED\n',
   PREFLIGHT_VALID: 'GATE_B_CONTROLLER_PREFLIGHT_VALID_RUN_NOT_AUTHORIZED\n',
+  PENDING: 'GATE_B_CONTROLLER_PENDING_INDEPENDENT_VERIFICATION\n',
   CLOSED: 'GATE_B_CONTROLLER_CLOSED_RUN_NOT_EXECUTED\n',
+  CLOSED_PENDING: 'GATE_B_CONTROLLER_CLOSED_PENDING_INDEPENDENT_VERIFICATION\n',
   QUARANTINED: 'GATE_B_CONTROLLER_FAILED_WORKSPACE_QUARANTINED\n',
 });
 
 export const GATE_B_OPERATOR_COORDINATOR_IPC_TYPES = Object.freeze({
   REVIEW_REQUIRED: 'REVIEW_REQUIRED',
   PREFLIGHT_VALID: 'PREFLIGHT_VALID',
+  PENDING: 'PENDING',
   STOP: 'STOP',
   STOPPED: 'STOPPED',
   QUARANTINED: 'QUARANTINED',
+});
+
+export const GATE_B_OPERATOR_ORIGIN_RELEASE_IPC_TYPES = Object.freeze({
+  RELEASE_ORIGIN: 'RELEASE_ORIGIN',
+  ORIGIN_RELEASED: 'ORIGIN_RELEASED',
 });
 
 export const GATE_B_OPERATOR_REVIEW_CHILD_IPC_TYPES = Object.freeze({
@@ -185,6 +202,15 @@ function freezeReview(value) {
   });
 }
 
+function freezeRun(value) {
+  const root = exactPlainObject(value, ['acknowledgement', 'schemaVersion']);
+  if (root.schemaVersion !== 1 || root.acknowledgement !== RUN_ACKNOWLEDGEMENT) fail();
+  return Object.freeze({
+    acknowledgement: RUN_ACKNOWLEDGEMENT,
+    schemaVersion: 1,
+  });
+}
+
 function freezeReviewResult(value) {
   const root = exactPlainObject(value, ['configDigest', 'resultVersion', 'type']);
   if (root.resultVersion !== 1 || root.type !== 'REVIEW_VALID' ||
@@ -260,6 +286,14 @@ export function parseGateBOperatorCoordinatorReviewFrame(value) {
   return parseFrame(value, freezeReview, REVIEW_MAX_BYTES);
 }
 
+export function frameGateBOperatorCoordinatorRun(value) {
+  return frame(value, freezeRun, RUN_MAX_BYTES);
+}
+
+export function parseGateBOperatorCoordinatorRunFrame(value) {
+  return parseFrame(value, freezeRun, RUN_MAX_BYTES);
+}
+
 export function frameGateBOperatorReviewResult(value) {
   return frame(value, freezeReviewResult, RESULT_MAX_BYTES);
 }
@@ -278,6 +312,26 @@ export function parseGateBOperatorCoordinatorIpcMessage(value) {
   if (message.ipcVersion !== 1 ||
       !Object.values(GATE_B_OPERATOR_COORDINATOR_IPC_TYPES).includes(message.type)) fail();
   return Object.freeze({ ipcVersion: 1, type: message.type });
+}
+
+export function createGateBOperatorOriginReleaseIpcMessage(type) {
+  if (!Object.values(GATE_B_OPERATOR_ORIGIN_RELEASE_IPC_TYPES).includes(type)) fail();
+  return Object.freeze({
+    ipcVersion: 1,
+    requestId: ORIGIN_RELEASE_REQUEST_ID,
+    type,
+  });
+}
+
+export function parseGateBOperatorOriginReleaseIpcMessage(value) {
+  const message = exactPlainObject(value, ['ipcVersion', 'requestId', 'type']);
+  if (message.ipcVersion !== 1 || message.requestId !== ORIGIN_RELEASE_REQUEST_ID ||
+      !Object.values(GATE_B_OPERATOR_ORIGIN_RELEASE_IPC_TYPES).includes(message.type)) fail();
+  return Object.freeze({
+    ipcVersion: 1,
+    requestId: ORIGIN_RELEASE_REQUEST_ID,
+    type: message.type,
+  });
 }
 
 export function createGateBOperatorReviewChildIpcMessage(type) {

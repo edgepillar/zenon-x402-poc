@@ -1118,6 +1118,57 @@ test('late run-directory namespace replacement fails closed before pending succe
   }
 });
 
+test('release, exclusive bind, and public-health failures precede wallet and publication effects',
+  async t => {
+    for (const mode of ['release-ambiguous', 'bind-failure', 'public-health-failure']) {
+      await t.test(mode, async subtest => {
+        const options = await fixture(subtest, {
+          walletText: '{"secretVersion":1,"mnemonic":"offline-placeholder-only","accountIndex":0}\n',
+        });
+        const effects = [];
+        const controller = {
+          async preload() { effects.push('preload'); },
+          async start() {
+            effects.push('bind');
+            if (mode === 'bind-failure') throw new Error('fixture');
+          },
+          async snapshotObservations() { effects.push('snapshot'); },
+          async closeAndSnapshot() { effects.push('close'); },
+          async terminate() { effects.push('terminate'); },
+        };
+        await assert.rejects(executePublicWsOnceRun(options, {
+          beforeOriginBind: async () => {
+            effects.push('release');
+            return mode !== 'release-ambiguous';
+          },
+          sourceTreeAttestor: async () => true,
+          operations: {
+            async probeBuyerReadiness() { effects.push('buyer-readiness'); },
+            async probePublicEndpoint() {
+              effects.push('public-health');
+              if (mode === 'public-health-failure') throw new Error('fixture');
+            },
+            async startFacilitator() { effects.push('create'); return controller; },
+            async readBuyerWallet() { effects.push('wallet'); },
+            async paidFetch() { effects.push('payment'); },
+          },
+        }), fixedFailure);
+        assert.equal(effects.includes('wallet'), false);
+        assert.equal(effects.includes('payment'), false);
+        assert.equal(effects.includes('snapshot'), false);
+        assert.equal(effects.includes('close'), false);
+        assert.equal((await lstat(join(
+          options.workspaceRoot, 'PUBLIC_WS_ONCE_CONSUMED',
+        ))).isFile(), true);
+        await assert.rejects(lstat(join(
+          options.workspaceRoot,
+          options.runName,
+          'pending-independent-verification',
+        )));
+      });
+    }
+  });
+
 test('workspace-scoped execution consumes before effects and retains exact private pending capture state', async t => {
   const options = await fixture(t, {
     walletText: '{"secretVersion":1,"mnemonic":"offline-placeholder-only","accountIndex":0}\n',
@@ -1167,12 +1218,17 @@ test('workspace-scoped execution consumes before effects and retains exact priva
     },
     async paidFetch({ openWallet, onChallenge }) {
       await onChallenge(configuration.expectedPaymentRequired);
+      effectOrder.push('challenge-402');
       await openWallet();
       effectOrder.push('payment');
       return outcome;
     },
   };
   const result = await executePublicWsOnceRun(options, {
+    beforeOriginBind: async () => {
+      effectOrder.push('origin-release');
+      return true;
+    },
     sourceTreeAttestor: async () => {
       sourceChecks += 1;
       effectOrder.push(`source-check-${sourceChecks}`);
@@ -1194,8 +1250,15 @@ test('workspace-scoped execution consumes before effects and retains exact priva
   });
   assert.deepEqual(effectOrder.slice(0, 8), [
     'source-check-1', 'parent-module-load', 'source-check-2', 'worker-create',
-    'worker-preload', 'source-check-3', 'buyer-readiness', 'worker-start',
+    'worker-preload', 'source-check-3', 'buyer-readiness', 'origin-release',
   ]);
+  assert.equal(effectOrder[8], 'worker-start');
+  assert.equal(effectOrder.indexOf('worker-start') <
+    effectOrder.indexOf('public-endpoint'), true);
+  assert.equal(effectOrder.indexOf('public-endpoint') <
+    effectOrder.indexOf('challenge-402'), true);
+  assert.equal(effectOrder.indexOf('challenge-402') < effectOrder.indexOf('wallet'), true);
+  assert.equal(effectOrder.indexOf('wallet') < effectOrder.indexOf('payment'), true);
   const runDirectory = join(options.workspaceRoot, options.runName);
   assert.deepEqual((await readdir(options.workspaceRoot)).sort(), [
     basename(options.authorizationPath),
@@ -1825,7 +1888,8 @@ test('supervisor uses the fixed spawn and bounded bootstrap/control contracts', 
   );
   const bootstrapChunks = [];
   let invocation;
-  let request;
+  const requests = [];
+  let originReleaseCalls = 0;
   const child = new EventEmitter();
   child.connected = true;
   child.stdio = [null, null, null, null, new PassThrough()];
@@ -1838,19 +1902,27 @@ test('supervisor uses the fixed spawn and bounded bootstrap/control contracts', 
     }));
   });
   child.send = (message, callback) => {
-    request = structuredClone(message);
+    requests.push(structuredClone(message));
     callback?.();
     setImmediate(() => {
-      child.emit('message', { ipcVersion: 1, requestId: 1, type: 'PENDING' });
-      child.connected = false;
-      child.emit('exit', 0, null);
-      child.emit('close', 0, null);
+      if (message.type === 'RUN') {
+        child.emit('message', { ipcVersion: 1, requestId: 2, type: 'ORIGIN_RELEASE' });
+      } else if (message.type === 'ORIGIN_RELEASED') {
+        child.emit('message', { ipcVersion: 1, requestId: 1, type: 'PENDING' });
+        child.connected = false;
+        child.emit('exit', 0, null);
+        child.emit('close', 0, null);
+      }
     });
     return true;
   };
   child.kill = () => true;
   const result = await supervisePublicWsOnceChild('run-public-ws-once', options, {
     childModule,
+    beforeOriginBind: async () => {
+      originReleaseCalls += 1;
+      return true;
+    },
     timeoutMs: 1000,
     forkProcess: (modulePath, args, forkOptions) => {
       invocation = { modulePath, args, forkOptions };
@@ -1865,7 +1937,11 @@ test('supervisor uses the fixed spawn and bounded bootstrap/control contracts', 
   assert.deepEqual(invocation.forkOptions.env, {});
   assert.deepEqual(invocation.forkOptions.execArgv, []);
   assert.deepEqual(JSON.parse(Buffer.concat(bootstrapChunks).toString('utf8')), options);
-  assert.deepEqual(request, { ipcVersion: 1, requestId: 1, type: 'RUN' });
+  assert.equal(originReleaseCalls, 1);
+  assert.deepEqual(requests, [
+    { ipcVersion: 1, requestId: 1, type: 'RUN' },
+    { ipcVersion: 1, requestId: 2, type: 'ORIGIN_RELEASED' },
+  ]);
 });
 
 function syntheticSupervisorChild(mode) {
@@ -1883,7 +1959,11 @@ function syntheticSupervisorChild(mode) {
   child.send = (message, callback) => {
     callback?.();
     setImmediate(() => {
-      if (message.type !== 'RUN') return;
+      if (message.type === 'RUN') {
+        child.emit('message', { ipcVersion: 1, requestId: 2, type: 'ORIGIN_RELEASE' });
+        return;
+      }
+      if (message.type !== 'ORIGIN_RELEASED') return;
       if (mode === 'malformed') {
         child.emit('message', {
           ipcVersion: 1,

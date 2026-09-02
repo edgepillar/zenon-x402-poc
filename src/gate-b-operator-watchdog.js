@@ -6,15 +6,23 @@ import {
   launchGateBOperatorCoordinatorInInheritedProcessGroup,
   stopGateBOperatorCoordinator,
   submitGateBOperatorCoordinatorReview,
+  submitGateBOperatorCoordinatorRun,
+  confirmGateBOperatorCoordinatorOriginReleased,
+  waitGateBOperatorCoordinatorOriginReleaseRequest,
   waitGateBOperatorCoordinatorClosed,
 } from './gate-b-operator-coordinator-launcher.js';
 import {
   GATE_B_OPERATOR_COORDINATOR_IPC_TYPES,
+  GATE_B_OPERATOR_COORDINATOR_LIMITS,
   GATE_B_OPERATOR_COORDINATOR_STATUS_LINES,
+  GATE_B_OPERATOR_ORIGIN_RELEASE_IPC_TYPES,
   createGateBOperatorCoordinatorIpcMessage,
+  createGateBOperatorOriginReleaseIpcMessage,
   parseGateBOperatorCoordinatorBootstrapFrame,
   parseGateBOperatorCoordinatorIpcMessage,
   parseGateBOperatorCoordinatorReviewFrame,
+  parseGateBOperatorCoordinatorRunFrame,
+  parseGateBOperatorOriginReleaseIpcMessage,
 } from './gate-b-operator-coordinator-schema.js';
 
 const OUTPUT_TIMEOUT_MS = 1_000;
@@ -136,13 +144,23 @@ export async function runGateBOperatorWatchdog() {
   let controlPhase = 'WAIT_START';
   let resolveBootstrapOpened;
   let resolveReviewOpened;
+  let resolveRunOpened;
   const bootstrapOpened = new Promise(resolve => { resolveBootstrapOpened = resolve; });
   const reviewOpened = new Promise(resolve => { resolveReviewOpened = resolve; });
+  const runOpened = new Promise(resolve => { resolveRunOpened = resolve; });
+  let originReleasePending;
+  let originReleaseRequested = false;
+  let runSucceeded = false;
   let releaseStop;
   const stopped = new Promise(resolve => { releaseStop = resolve; });
   const requestStop = () => {
     if (stopping) return;
     stopping = true;
+    if (originReleasePending) {
+      const pending = originReleasePending;
+      originReleasePending = undefined;
+      pending.reject(new Error('watchdog_failed'));
+    }
     releaseStop(true);
   };
   const poison = () => { quarantine = true; requestStop(); };
@@ -176,6 +194,30 @@ export async function runGateBOperatorWatchdog() {
       } catch { poison(); }
       return;
     }
+    if (exactFieldlessControl(candidate, 'RUN_OPEN')) {
+      if (controlPhase !== 'WAIT_RUN_OPEN' || !reader) return poison();
+      try {
+        reader.openRunPhase();
+        controlPhase = 'RUN_OPEN';
+        void fixedSendMessage(Object.freeze({ type: 'RUN_OPENED' })).then(
+          () => resolveRunOpened(true),
+          poison,
+        );
+      } catch { poison(); }
+      return;
+    }
+    if (originReleasePending) {
+      try {
+        const parsed = parseGateBOperatorOriginReleaseIpcMessage(candidate);
+        if (parsed.type !== GATE_B_OPERATOR_ORIGIN_RELEASE_IPC_TYPES.ORIGIN_RELEASED) {
+          return poison();
+        }
+        const pending = originReleasePending;
+        originReleasePending = undefined;
+        pending.resolve(true);
+      } catch { poison(); }
+      return;
+    }
     try {
       if (parseGateBOperatorCoordinatorIpcMessage(candidate).type !==
           GATE_B_OPERATOR_COORDINATOR_IPC_TYPES.STOP) return poison();
@@ -186,6 +228,38 @@ export async function runGateBOperatorWatchdog() {
   const onLifetimeData = poison;
   const onLifetimeEnd = poison;
   const onSignal = requestStop;
+  const requestOriginRelease = () => {
+    if (originReleaseRequested || originReleasePending || stopping) {
+      return Promise.reject(new Error('watchdog_failed'));
+    }
+    originReleaseRequested = true;
+    let resolveRelease;
+    let rejectRelease;
+    const promise = new Promise((resolve, reject) => {
+      resolveRelease = resolve;
+      rejectRelease = reject;
+    });
+    const timer = setTimeout(() => {
+      if (!originReleasePending) return;
+      originReleasePending = undefined;
+      rejectRelease(new Error('watchdog_failed'));
+      poison();
+    }, GATE_B_OPERATOR_COORDINATOR_LIMITS.originReleaseTimeoutMs);
+    originReleasePending = {
+      reject(error) { clearTimeout(timer); rejectRelease(error); },
+      resolve(value) { clearTimeout(timer); resolveRelease(value); },
+    };
+    const requestSent = fixedSendMessage(createGateBOperatorOriginReleaseIpcMessage(
+      GATE_B_OPERATOR_ORIGIN_RELEASE_IPC_TYPES.RELEASE_ORIGIN,
+    ));
+    return Promise.all([requestSent, promise]).then(() => true).catch(error => {
+      const pending = originReleasePending;
+      originReleasePending = undefined;
+      pending?.reject(new Error('watchdog_failed'));
+      poison();
+      throw error;
+    });
+  };
   const cleanup = async () => {
     if (!capability) return true;
     if (!stopWork) stopWork = (async () => {
@@ -193,7 +267,8 @@ export async function runGateBOperatorWatchdog() {
       let closedResult;
       try { stoppedResult = await stopGateBOperatorCoordinator(capability); } catch {}
       try { closedResult = await waitGateBOperatorCoordinatorClosed(capability); } catch {}
-      return stoppedResult === 'CLOSED' && closedResult === 'CLOSED';
+      const expected = runSucceeded ? 'CLOSED_PENDING' : 'CLOSED';
+      return stoppedResult === expected && closedResult === expected;
     })();
     return stopWork;
   };
@@ -248,9 +323,38 @@ export async function runGateBOperatorWatchdog() {
     review = undefined;
     await fixedWrite(process.stdout, GATE_B_OPERATOR_COORDINATOR_STATUS_LINES.PREFLIGHT_VALID);
     await fixedSend(GATE_B_OPERATOR_COORDINATOR_IPC_TYPES.PREFLIGHT_VALID);
+    controlPhase = 'WAIT_RUN_OPEN';
+    await Promise.race([
+      runOpened,
+      stopped.then(() => { throw new Error('watchdog_failed'); }),
+    ]);
+    const third = await Promise.race([
+      reader.readRun(),
+      stopped.then(() => { throw new Error('watchdog_failed'); }),
+    ]);
+    let runAuthorization;
+    try { runAuthorization = parseGateBOperatorCoordinatorRunFrame(third); }
+    finally { third.fill(0); }
+    if (stopping) throw new Error('watchdog_failed');
+    const runWork = submitGateBOperatorCoordinatorRun(capability, runAuthorization);
+    runAuthorization = undefined;
+    if (await waitGateBOperatorCoordinatorOriginReleaseRequest(capability) !== true) {
+      throw new Error('watchdog_failed');
+    }
+    if (await requestOriginRelease() !== true) throw new Error('watchdog_failed');
+    if (await confirmGateBOperatorCoordinatorOriginReleased(capability) !== true) {
+      throw new Error('watchdog_failed');
+    }
+    if (await runWork !== 'PENDING') throw new Error('watchdog_failed');
+    if (!originReleaseRequested || originReleasePending) throw new Error('watchdog_failed');
+    runSucceeded = true;
+    await fixedWrite(process.stdout, GATE_B_OPERATOR_COORDINATOR_STATUS_LINES.PENDING);
+    await fixedSend(GATE_B_OPERATOR_COORDINATOR_IPC_TYPES.PENDING);
     await stopped;
     if (await cleanup() !== true || quarantine) throw new Error('watchdog_failed');
-    await fixedWrite(process.stdout, GATE_B_OPERATOR_COORDINATOR_STATUS_LINES.CLOSED);
+    await fixedWrite(process.stdout, runSucceeded
+      ? GATE_B_OPERATOR_COORDINATOR_STATUS_LINES.CLOSED_PENDING
+      : GATE_B_OPERATOR_COORDINATOR_STATUS_LINES.CLOSED);
     await fixedSend(GATE_B_OPERATOR_COORDINATOR_IPC_TYPES.STOPPED);
     return true;
   } catch {

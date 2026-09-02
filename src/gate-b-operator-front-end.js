@@ -6,19 +6,23 @@ import {
   GATE_B_OPERATOR_COORDINATOR_STATUS_LINES,
   frameGateBOperatorCoordinatorBootstrap,
   frameGateBOperatorCoordinatorReview,
+  frameGateBOperatorCoordinatorRun,
   parseGateBOperatorCoordinatorBootstrapFrame,
   parseGateBOperatorCoordinatorReviewFrame,
+  parseGateBOperatorCoordinatorRunFrame,
 } from './gate-b-operator-coordinator-schema.js';
 import {
   launchGateBOperatorWatchdogSetup,
   stopGateBOperatorCoordinator,
   submitGateBOperatorBootstrap,
   submitGateBOperatorCoordinatorReview,
+  submitGateBOperatorCoordinatorRun,
   waitGateBOperatorCoordinatorClosed,
 } from './gate-b-operator-coordinator-launcher.js';
 
 const ERROR_CODE = 'gate_b_operator_front_end_failed';
 const PHASE_1_REQUIRED = 'GATE_B_OPERATOR_PHASE_1_INPUT_REQUIRED\n';
+const PHASE_3_REQUIRED = 'GATE_B_OPERATOR_PHASE_3_INPUT_REQUIRED\n';
 const OUTPUT_TIMEOUT_MS = 1_000;
 const ARRAY_IS_ARRAY = Array.isArray;
 const GET_OWN_PROPERTY_DESCRIPTOR = Object.getOwnPropertyDescriptor;
@@ -83,8 +87,8 @@ function callAsync(fn, receiver, args) {
 function captureDependencies(options) {
   const supplied = options === undefined ? {} : exactPartialOptions(options, [
     'argv', 'channel', 'errorOutput', 'input', 'launchSetup', 'output', 'outputTimeoutMs',
-    'phase1TimeoutMs', 'phase2TimeoutMs', 'stopCoordinator', 'submitBootstrap',
-    'submitReview', 'waitClosed',
+    'phase1TimeoutMs', 'phase2TimeoutMs', 'phase3TimeoutMs', 'stopCoordinator',
+    'submitBootstrap', 'submitReview', 'submitRun', 'waitClosed',
   ]);
   const channel = supplied.channel ?? process;
   const input = supplied.input ?? process.stdin;
@@ -105,9 +109,12 @@ function captureDependencies(options) {
       GATE_B_OPERATOR_COORDINATOR_LIMITS.initialFrameTimeoutMs,
     phase2TimeoutMs: supplied.phase2TimeoutMs ??
       GATE_B_OPERATOR_COORDINATOR_LIMITS.reviewFrameTimeoutMs,
+    phase3TimeoutMs: supplied.phase3TimeoutMs ??
+      GATE_B_OPERATOR_COORDINATOR_LIMITS.runFrameTimeoutMs,
     stopCoordinator: supplied.stopCoordinator ?? stopGateBOperatorCoordinator,
     submitBootstrap: supplied.submitBootstrap ?? submitGateBOperatorBootstrap,
     submitReview: supplied.submitReview ?? submitGateBOperatorCoordinatorReview,
+    submitRun: supplied.submitRun ?? submitGateBOperatorCoordinatorRun,
     waitClosed: supplied.waitClosed ?? waitGateBOperatorCoordinatorClosed,
     inputOn: dataProperty(input, 'on'),
     inputRemoveListener: dataProperty(input, 'removeListener'),
@@ -120,12 +127,13 @@ function captureDependencies(options) {
     errorOutputWrite: dataProperty(errorOutput, 'write'),
   };
   for (const key of [
-    'launchSetup', 'stopCoordinator', 'submitBootstrap', 'submitReview', 'waitClosed', 'inputOn',
+    'launchSetup', 'stopCoordinator', 'submitBootstrap', 'submitReview', 'submitRun',
+    'waitClosed', 'inputOn',
     'inputRemoveListener', 'inputResume', 'inputPause', 'inputSetRawMode', 'channelOn',
     'channelRemoveListener', 'outputWrite', 'errorOutputWrite',
   ]) if (typeof dependencies[key] !== 'function') fail();
   for (const value of [dependencies.outputTimeoutMs, dependencies.phase1TimeoutMs,
-    dependencies.phase2TimeoutMs]) {
+    dependencies.phase2TimeoutMs, dependencies.phase3TimeoutMs]) {
     if (!Number.isSafeInteger(value) || value < 1) fail();
   }
   const raw = dataProperty(input, 'isRaw');
@@ -308,6 +316,8 @@ export async function runGateBOperatorFrontEnd(options = undefined) {
   let stopWork;
   let stopping = false;
   let cancelled = false;
+  let runAttempted = false;
+  let runSucceeded = false;
   let terminalLineWritten = false;
   const requestStop = () => { stopping = true; };
   const requestCancel = () => { cancelled = true; stopping = true; };
@@ -331,7 +341,8 @@ export async function runGateBOperatorFrontEnd(options = undefined) {
           undefined,
           [capability],
         ); } catch {}
-        return stopped === 'CLOSED' && closed === 'CLOSED';
+        const expected = runSucceeded ? 'CLOSED_PENDING' : 'CLOSED';
+        return stopped === expected && closed === expected;
       })();
     }
     return stopWork ? await stopWork : capability === undefined;
@@ -397,8 +408,38 @@ export async function runGateBOperatorFrontEnd(options = undefined) {
     if (cancelled) fail();
     await writeFixed(dependencies, GATE_B_OPERATOR_COORDINATOR_STATUS_LINES.PREFLIGHT_VALID);
     if (cancelled) fail();
+    await writeFixed(dependencies, PHASE_3_REQUIRED);
+    if (cancelled) fail();
+    const phase3 = await tty.read(
+      GATE_B_OPERATOR_COORDINATOR_LIMITS.runBytes,
+      dependencies.phase3TimeoutMs,
+    );
+    let runAuthorization;
+    runAttempted = true;
+    try {
+      runAuthorization = canonicalInput(
+        phase3,
+        frameGateBOperatorCoordinatorRun,
+        parseGateBOperatorCoordinatorRunFrame,
+        GATE_B_OPERATOR_COORDINATOR_LIMITS.runBytes,
+      );
+    } finally { phase3.fill(0); }
+    if (cancelled) fail();
+    const pending = await callAsync(
+      dependencies.submitRun,
+      undefined,
+      [capability, runAuthorization],
+    );
+    runAuthorization = undefined;
+    if (pending !== 'PENDING' || cancelled || !runAttempted) fail();
+    runSucceeded = true;
+    await writeFixed(dependencies, GATE_B_OPERATOR_COORDINATOR_STATUS_LINES.PENDING);
+    if (cancelled) fail();
     if (await cleanup() !== true || tty.close() !== true || cancelled) fail();
-    await writeFixed(dependencies, GATE_B_OPERATOR_COORDINATOR_STATUS_LINES.CLOSED);
+    await writeFixed(
+      dependencies,
+      GATE_B_OPERATOR_COORDINATOR_STATUS_LINES.CLOSED_PENDING,
+    );
     if (cancelled) fail();
     terminalLineWritten = true;
     return true;
@@ -435,3 +476,4 @@ async function launchDirect() {
 void launchDirect().catch(() => { process.exitCode = 1; });
 
 export const GATE_B_OPERATOR_FRONT_END_PHASE_1_REQUIRED = PHASE_1_REQUIRED;
+export const GATE_B_OPERATOR_FRONT_END_PHASE_3_REQUIRED = PHASE_3_REQUIRED;
