@@ -1125,7 +1125,8 @@ async function httpGet({ port, path, signal }) {
 }
 
 function exactIpc(value) {
-  if (!value || typeof value !== 'object' || typeof value.on !== 'function' ||
+  if (!value || typeof value !== 'object' || IS_PROXY(value) ||
+      typeof value.on !== 'function' || typeof value.removeListener !== 'function' ||
       typeof value.send !== 'function' || typeof value.disconnect !== 'function') fail();
   return value;
 }
@@ -1629,12 +1630,43 @@ async function freshCheck(state, requestId, controller) {
 async function completeNormalStop(state, requestId) {
   await cleanup(state);
   await sendIpc(state, GATE_B_QUICK_TUNNEL_IPC_TYPES.STOPPED, requestId);
-  state.intentionalDisconnect = true;
-  Reflect.apply(state.dependencies.ipc.disconnect, state.dependencies.ipc, []);
-  if (!state.settled) {
-    state.settled = true;
-    state.resolveController(true);
+  if (state.mode !== 'STOPPING' || state.settled) return;
+  const released = releaseIpc(state);
+  state.mode = released ? 'STOPPED' : 'FAILED';
+  state.settled = true;
+  if (released) state.resolveController(true);
+  else state.rejectController(error());
+}
+
+function releaseIpc(state) {
+  if (state.ipcReleased) return state.ipcReleaseSucceeded;
+  state.ipcReleased = true;
+  const ipc = state.dependencies.ipc;
+  let failed = false;
+  try { Reflect.apply(ipc.removeListener, ipc, ['message', state.onMessage]); } catch {
+    failed = true;
   }
+  try { Reflect.apply(ipc.removeListener, ipc, ['disconnect', state.onDisconnect]); } catch {
+    failed = true;
+  }
+  let channel;
+  try { channel = ipc.channel; } catch { failed = true; }
+  try {
+    if (channel && typeof channel.unref === 'function') {
+      Reflect.apply(channel.unref, channel, []);
+    }
+  } catch { failed = true; }
+  state.intentionalDisconnect = true;
+  let connected = true;
+  try { connected = ipc.connected !== false; } catch { failed = true; }
+  try {
+    if (connected) Reflect.apply(ipc.disconnect, ipc, []);
+  } catch { failed = true; }
+  try {
+    if (ipc.connected !== false) failed = true;
+  } catch { failed = true; }
+  state.ipcReleaseSucceeded = !failed;
+  return state.ipcReleaseSucceeded;
 }
 
 async function startTunnel(state, bootstrap) {
@@ -1745,6 +1777,10 @@ export async function superviseGateBQuickTunnel(injected) {
     cleanupPromise: undefined,
     settled: false,
     intentionalDisconnect: false,
+    ipcReleased: false,
+    ipcReleaseSucceeded: undefined,
+    onMessage: undefined,
+    onDisconnect: undefined,
   };
   let resolveController;
   let rejectController;
@@ -1753,6 +1789,7 @@ export async function superviseGateBQuickTunnel(injected) {
     rejectController = reject;
   });
   state.resolveController = resolveController;
+  state.rejectController = rejectController;
   void controllerPromise.catch(() => {});
   state.failController = () => {
     if (state.settled || state.mode === 'FAILING') return;
@@ -1763,7 +1800,9 @@ export async function superviseGateBQuickTunnel(injected) {
     clearTimeout(state.hardLifetimeTimer);
     void cleanup(state).catch(() => {}).finally(() => {
       if (state.settled) return;
+      state.mode = 'FAILED';
       state.settled = true;
+      releaseIpc(state);
       rejectController(error());
     });
   };
@@ -1812,10 +1851,13 @@ export async function superviseGateBQuickTunnel(injected) {
     }
     state.failController();
   };
-  dependencies.ipc.on('message', onMessage);
-  dependencies.ipc.on('disconnect', () => {
+  const onDisconnect = () => {
     if (!state.intentionalDisconnect && !state.settled) state.failController();
-  });
+  };
+  state.onMessage = onMessage;
+  state.onDisconnect = onDisconnect;
+  dependencies.ipc.on('message', onMessage);
+  dependencies.ipc.on('disconnect', onDisconnect);
   state.startupTimer = setTimeout(() => state.failController(), dependencies.startupTimeoutMs);
   try {
     frame = await Reflect.apply(dependencies.readBootstrapFrame, undefined, []);
