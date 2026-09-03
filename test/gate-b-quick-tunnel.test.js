@@ -442,6 +442,7 @@ test('bootstrap rejects proxies, accessors, symbols, extras, and noncanonical pa
     accessorObject(bootstrap(), 'sourcePin'),
     withSymbol,
     bootstrap({ extra: true }),
+    bootstrap({ protocol: 'quic' }),
     bootstrap({ workspaceRoot: '/private/tmp/../tmp/gate-b-quick-tunnel-fixture' }),
     bootstrap({ cloudflaredExecutable: 'cloudflared-fixture' }),
     bootstrap({ sourcePin: 'A'.repeat(64) }),
@@ -1833,6 +1834,7 @@ test('supervisor reserves durably before fixed version/child policies and observ
     assert.equal(executable, EXECUTABLE);
     assert.deepEqual(argv, [
       'tunnel',
+      '--protocol', 'http2',
       '--config', '/dev/null',
       '--origincert', '/dev/null',
       '--credentials-file', '/dev/null',
@@ -1842,6 +1844,8 @@ test('supervisor reserves durably before fixed version/child policies and observ
       '--url', 'http://127.0.0.1:41000',
       '--metrics', '127.0.0.1:0',
     ]);
+    assert.equal(argv.includes('quic'), false);
+    assert.equal(argv.includes('auto'), false);
     const runtimePath = injections.runtimeDirectoryPath(state.runtimeToken);
     assert.deepEqual(options, {
       argv0: 'cloudflared',

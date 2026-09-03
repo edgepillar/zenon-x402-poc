@@ -77,6 +77,7 @@ const RUNTIME_DIRECTORIES = new WeakMap();
 
 const CLOUDFLARED_ARGUMENTS = Object.freeze([
   'tunnel',
+  '--protocol', 'http2',
   '--config', DEV_NULL,
   '--origincert', DEV_NULL,
   '--credentials-file', DEV_NULL,
