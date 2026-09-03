@@ -6,13 +6,13 @@ import { isAbsolute, join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { types as utilTypes } from 'node:util';
 
+import { selectGateBBuyerWalletWorkspace } from './gate-b-buyer-wallet-selector.js';
 import { openGateBPublicWsPrivateWorkspace } from './gate-b-public-ws-private-workspace.js';
 
 const IPC_VERSION = 1;
 const REQUEST_ID = 1;
 const BOOTSTRAP_FD = 4;
 const BOOTSTRAP_MAX_BYTES = 8192;
-const WORKSPACE_NAME = 'zenon-x402-gate-b-wallet';
 const WALLET_NAME = 'buyer-wallet.json';
 const ADDRESS_NAME = 'buyer-address.json';
 const ENTROPY_BYTES = 32;
@@ -141,6 +141,7 @@ async function readBootstrapFd() {
 
 function captureCreationInjections(injected) {
   const output = {
+    actualCwdPath: () => process.cwd(),
     applicationSupportRoot: defaultApplicationSupportRoot,
     realpathPath: realpath,
     readDirectory: readdir,
@@ -166,6 +167,7 @@ function captureCreationInjections(injected) {
     output[key] = descriptor.value;
   }
   for (const name of [
+    'actualCwdPath',
     'applicationSupportRoot',
     'realpathPath',
     'readDirectory',
@@ -210,12 +212,23 @@ function captureChildOptions(options) {
 
 async function assertWorkspacePlacement(workspaceRoot, dependencies) {
   exactAbsolutePath(workspaceRoot);
+  const actualCwd = exactAbsolutePath(Reflect.apply(
+    dependencies.actualCwdPath,
+    undefined,
+    [],
+  ));
   const supportRoot = exactAbsolutePath(Reflect.apply(
     dependencies.applicationSupportRoot,
     undefined,
     [],
   ));
-  if (workspaceRoot !== join(supportRoot, WORKSPACE_NAME)) fail();
+  let selected;
+  try {
+    selected = selectGateBBuyerWalletWorkspace(workspaceRoot, supportRoot);
+  } catch {
+    fail();
+  }
+  if (selected.walletWorkspaceRoot !== workspaceRoot || actualCwd !== workspaceRoot) fail();
   const [canonicalSupportRoot, canonicalWorkspaceRoot] = await Promise.all([
     Reflect.apply(dependencies.realpathPath, undefined, [supportRoot]),
     Reflect.apply(dependencies.realpathPath, undefined, [workspaceRoot]),

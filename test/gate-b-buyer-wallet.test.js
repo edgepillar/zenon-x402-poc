@@ -29,15 +29,76 @@ import {
   runGateBBuyerWalletChild,
 } from '../src/gate-b-buyer-wallet-child.js';
 import { superviseGateBBuyerWalletChild } from '../src/gate-b-buyer-wallet-supervisor.js';
+import {
+  GATE_B_BUYER_WALLET_LEGACY_WORKSPACE_NAME,
+  GATE_B_TESTNET_FAUCET_RECEIVE_LEGACY_STATE_NAME,
+  selectGateBBuyerWalletWorkspace,
+} from '../src/gate-b-buyer-wallet-selector.js';
 import { parsePublicWsOnceRoleInput } from '../src/live-evidence-runner.js';
 
 const TEST_ENTROPY = '00'.repeat(32);
 const WORKSPACE_NAME = 'zenon-x402-gate-b-wallet';
+const GENERATION_TOKEN = '09af'.repeat(8);
 
-async function fixture(t) {
+test('wallet selector preserves legacy placement and binds one exact generated sibling', () => {
+  const supportRoot = '/private/synthetic/Application Support';
+  const legacyRoot = join(supportRoot, WORKSPACE_NAME);
+  const generatedRoot = join(supportRoot, `${WORKSPACE_NAME}-${GENERATION_TOKEN}`);
+  const legacy = selectGateBBuyerWalletWorkspace(legacyRoot, supportRoot);
+  const generated = selectGateBBuyerWalletWorkspace(generatedRoot, supportRoot);
+
+  assert.equal(GATE_B_BUYER_WALLET_LEGACY_WORKSPACE_NAME, WORKSPACE_NAME);
+  assert.equal(GATE_B_TESTNET_FAUCET_RECEIVE_LEGACY_STATE_NAME,
+    'zenon-x402-gate-b-faucet-receive');
+  assert.deepEqual(legacy, {
+    generationToken: null,
+    stateWorkspaceRoot: join(supportRoot,
+      GATE_B_TESTNET_FAUCET_RECEIVE_LEGACY_STATE_NAME),
+    walletWorkspaceRoot: legacyRoot,
+  });
+  assert.deepEqual(generated, {
+    generationToken: GENERATION_TOKEN,
+    stateWorkspaceRoot: join(supportRoot,
+      `${GATE_B_TESTNET_FAUCET_RECEIVE_LEGACY_STATE_NAME}-${GENERATION_TOKEN}`),
+    walletWorkspaceRoot: generatedRoot,
+  });
+  assert.equal(Object.isFrozen(legacy), true);
+  assert.equal(Object.isFrozen(generated), true);
+
+  const nonAsciiSupportRoot = '/private/synthetic/unicode-\u00e9/Application Support';
+  const nonAsciiGeneratedRoot = join(
+    nonAsciiSupportRoot,
+    `${WORKSPACE_NAME}-${GENERATION_TOKEN}`,
+  );
+  assert.equal(
+    selectGateBBuyerWalletWorkspace(
+      nonAsciiGeneratedRoot,
+      nonAsciiSupportRoot,
+    ).walletWorkspaceRoot,
+    nonAsciiGeneratedRoot,
+  );
+
+  for (const rejected of [
+    `${generatedRoot}0`,
+    join(supportRoot, `${WORKSPACE_NAME}-${GENERATION_TOKEN.toUpperCase()}`),
+    join(supportRoot, `${WORKSPACE_NAME}-${GENERATION_TOKEN.slice(0, -1)}g`),
+    join(supportRoot, `${WORKSPACE_NAME}-${'a'.repeat(31)}`),
+    join(supportRoot, `${WORKSPACE_NAME}-${'a'.repeat(33)}`),
+    join(supportRoot, `${WORKSPACE_NAME}-${'a'.repeat(16)}-${'b'.repeat(15)}`),
+    join(supportRoot, 'nested', `${WORKSPACE_NAME}-${GENERATION_TOKEN}`),
+    `${supportRoot}/../Application Support/${WORKSPACE_NAME}-${GENERATION_TOKEN}`,
+  ]) {
+    assert.throws(
+      () => selectGateBBuyerWalletWorkspace(rejected, supportRoot),
+      /gate_b_buyer_wallet_selector_invalid/,
+    );
+  }
+});
+
+async function fixture(t, workspaceName = WORKSPACE_NAME) {
   const temporary = await realpath(await mkdtemp(join(tmpdir(), 'gate-b-wallet-')));
   t.after(() => rm(temporary, { recursive: true, force: true }));
-  const root = join(temporary, 'Library', 'Application Support', WORKSPACE_NAME);
+  const root = join(temporary, 'Library', 'Application Support', workspaceName);
   await mkdir(root, { recursive: true, mode: 0o700 });
   await chmod(root, 0o700);
   return realpath(root);
@@ -69,6 +130,7 @@ function deterministicSdk(counter = { random: 0, index: [] }) {
 
 function injectedSdk(root, counter, changes = {}) {
   const {
+    actualCwdPath,
     afterEntropy,
     afterRandomness,
     afterReservations,
@@ -103,6 +165,7 @@ function injectedSdk(root, counter, changes = {}) {
     workspaceInjections.decorateDirectoryHandle = decorateDirectoryHandle;
   }
   const output = {
+    actualCwdPath: actualCwdPath ?? (() => root),
     applicationSupportRoot: applicationSupportRoot ?? (() => dirname(root)),
     privateWorkspaceInjections: workspaceInjections,
     sdkLoader: sdkLoader ?? (async () => deterministicSdk(counter)),
@@ -664,6 +727,96 @@ test('deterministic creation produces parser-compatible distinct owner-only file
   const independentlyDerived = sdk.KeyStore.fromMnemonic(parsedWallet.mnemonic)
     .getKeyPair(0).getAddress().toString();
   assert.equal(independentlyDerived === addressRecord.address, true);
+});
+
+test('generated wallet selection is independently bound, isolated, and one-shot', async t => {
+  const temporary = await realpath(await mkdtemp(join(tmpdir(), 'gate-b-wallet-generation-')));
+  t.after(() => rm(temporary, { recursive: true, force: true }));
+  const supportRoot = join(temporary, 'Library', 'Application Support');
+  const legacyRoot = join(supportRoot, WORKSPACE_NAME);
+  const generatedRoot = join(supportRoot, `${WORKSPACE_NAME}-${GENERATION_TOKEN}`);
+  await mkdir(legacyRoot, { recursive: true, mode: 0o700 });
+  await mkdir(generatedRoot, { mode: 0o700 });
+  await chmod(legacyRoot, 0o700);
+  await chmod(generatedRoot, 0o700);
+  const legacyWallet = join(legacyRoot, 'buyer-wallet.json');
+  const legacyAddress = join(legacyRoot, 'buyer-address.json');
+  await writeFile(legacyWallet, 'preserved-wallet-evidence', { flag: 'wx', mode: 0o600 });
+  await writeFile(legacyAddress, 'preserved-address-evidence', { flag: 'wx', mode: 0o600 });
+  const legacyBefore = await Promise.all([
+    readFile(legacyWallet),
+    readFile(legacyAddress),
+    lstat(legacyWallet, { bigint: true }),
+    lstat(legacyAddress, { bigint: true }),
+  ]);
+
+  const captured = [];
+  assert.deepEqual(await superviseGateBBuyerWalletChild(
+    generatedRoot,
+    supervisorInjections(generatedRoot, {
+      childModule: join(temporary, 'fixed-wallet-child.js'),
+      forkProcess: successfulFork(captured),
+      timeoutMs: 1000,
+    }),
+  ), { status: 'created' });
+  assert.equal(captured.length, 1);
+  assert.equal(captured[0].options.cwd, generatedRoot);
+
+  const firstCounter = { random: 0, index: [] };
+  let releaseReservations;
+  let reservationsReady;
+  const reservationBarrier = new Promise(resolveBarrier => {
+    releaseReservations = resolveBarrier;
+  });
+  const ready = new Promise(resolveReady => { reservationsReady = resolveReady; });
+  const first = createGateBBuyerWallet(generatedRoot, injectedSdk(
+    generatedRoot,
+    firstCounter,
+    {
+      async afterReservations() {
+        reservationsReady();
+        await reservationBarrier;
+      },
+    },
+  ));
+  await ready;
+  const concurrentCounter = { random: 0, index: [] };
+  await assert.rejects(createGateBBuyerWallet(
+    generatedRoot,
+    injectedSdk(generatedRoot, concurrentCounter),
+  ));
+  assert.equal(concurrentCounter.random, 0);
+  releaseReservations();
+  assert.deepEqual(await first, { status: 'created' });
+  assert.equal(firstCounter.random, 1);
+  await assert.rejects(createGateBBuyerWallet(
+    generatedRoot,
+    injectedSdk(generatedRoot, { random: 0, index: [] }),
+  ));
+
+  const legacyAfter = await Promise.all([
+    readFile(legacyWallet),
+    readFile(legacyAddress),
+    lstat(legacyWallet, { bigint: true }),
+    lstat(legacyAddress, { bigint: true }),
+  ]);
+  assert.deepEqual(legacyAfter.slice(0, 2), legacyBefore.slice(0, 2));
+  assert.deepEqual(
+    legacyAfter.slice(2).map(value => [value.dev, value.ino, value.size, value.mode]),
+    legacyBefore.slice(2).map(value => [value.dev, value.ino, value.size, value.mode]),
+  );
+
+  const mismatchedRoot = join(supportRoot, `${WORKSPACE_NAME}-${'f'.repeat(32)}`);
+  await mkdir(mismatchedRoot, { mode: 0o700 });
+  await chmod(mismatchedRoot, 0o700);
+  const mismatchCounter = { random: 0, index: [] };
+  await assert.rejects(createGateBBuyerWallet(
+    mismatchedRoot,
+    injectedSdk(mismatchedRoot, mismatchCounter, {
+      actualCwdPath: () => generatedRoot,
+    }),
+  ));
+  assert.equal(mismatchCounter.random, 0);
 });
 
 test('creation reserves and verifies both files before invoking randomness', async t => {

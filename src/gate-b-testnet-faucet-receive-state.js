@@ -5,13 +5,15 @@ import { lstat, mkdir, open, realpath, rename, unlink } from 'node:fs/promises';
 import { basename, dirname, isAbsolute, join, resolve } from 'node:path';
 import { types as utilTypes } from 'node:util';
 
+import {
+  GATE_B_TESTNET_FAUCET_RECEIVE_LEGACY_STATE_NAME,
+  selectGateBBuyerWalletWorkspace,
+} from './gate-b-buyer-wallet-selector.js';
 import { canonicalJson } from './canonical.js';
 import { GATE_B_CURRENT_TESTNET_CHAIN_PROFILE } from
   './zenon/operator-trusted-testnet-profile.js';
 
 const ERROR_CODE = 'gate_b_testnet_faucet_receive_state_invalid';
-const WALLET_WORKSPACE_NAME = 'zenon-x402-gate-b-wallet';
-const STATE_WORKSPACE_NAME = 'zenon-x402-gate-b-faucet-receive';
 const MARKER_NAME = '.faucet-receive-once';
 const RECORD_NAME = 'faucet-receive-recovery.json';
 const SECOND_ATTEMPT_NAME = 'faucet-receive-second-attempt.json';
@@ -205,7 +207,13 @@ function missing(error) {
 function validAclTarget(target) {
   if (typeof target !== 'string' || !isAbsolute(target) || resolve(target) !== target) return false;
   const leaf = basename(target);
-  return leaf === STATE_WORKSPACE_NAME || leaf === MARKER_NAME || leaf === RECORD_NAME ||
+  const generatedState = leaf.startsWith(
+    `${GATE_B_TESTNET_FAUCET_RECEIVE_LEGACY_STATE_NAME}-`,
+  ) && /^[0-9a-f]{32}$/u.test(leaf.slice(
+    GATE_B_TESTNET_FAUCET_RECEIVE_LEGACY_STATE_NAME.length + 1,
+  ));
+  return leaf === GATE_B_TESTNET_FAUCET_RECEIVE_LEGACY_STATE_NAME || generatedState ||
+    leaf === MARKER_NAME || leaf === RECORD_NAME ||
     leaf === SECOND_ATTEMPT_NAME ||
     (leaf.startsWith(`.${RECORD_NAME}.`) && leaf.endsWith('.tmp'));
 }
@@ -607,12 +615,21 @@ export async function openGateBTestnetFaucetReceiveState(walletWorkspaceRoot, in
   let handle;
   try {
     if (dependencies.platform !== 'darwin' || typeof walletWorkspaceRoot !== 'string' ||
-        !isAbsolute(walletWorkspaceRoot) || resolve(walletWorkspaceRoot) !== walletWorkspaceRoot ||
-        basename(walletWorkspaceRoot) !== WALLET_WORKSPACE_NAME) fail();
+        !isAbsolute(walletWorkspaceRoot) || resolve(walletWorkspaceRoot) !== walletWorkspaceRoot) {
+      fail();
+    }
     const uid = REFLECT_APPLY(dependencies.getuid, undefined, []);
     if (!safeInteger(uid)) fail();
     const parent = dirname(walletWorkspaceRoot);
-    const root = join(parent, STATE_WORKSPACE_NAME);
+    let root;
+    try {
+      root = selectGateBBuyerWalletWorkspace(
+        walletWorkspaceRoot,
+        parent,
+      ).stateWorkspaceRoot;
+    } catch {
+      fail();
+    }
     try {
       await REFLECT_APPLY(dependencies.mkdirPath, undefined, [root, { mode: 0o700 }]);
     } catch (error) {
