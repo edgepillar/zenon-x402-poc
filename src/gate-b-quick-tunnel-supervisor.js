@@ -50,6 +50,7 @@ const DEV_NULL = '/dev/null';
 const LSOF_EXECUTABLE = '/usr/sbin/lsof';
 const ORIGIN_PORT = 41000;
 const OBSERVATION_GAP_MS = 250;
+const STARTUP_READY_OBSERVATIONS = 3;
 const STARTUP_TIMEOUT_MS = 60_000;
 const CHECK_TIMEOUT_MS = 10_000;
 const SHUTDOWN_TIMEOUT_MS = 10_000;
@@ -1535,54 +1536,54 @@ function assertStartupActivation(state, budget, observation) {
 async function initialReadiness(state, quickTunnel) {
   const budget = createStartupPollBudget(state);
   let provisional;
-  let first;
+  let stableReady;
+  let consecutiveReady = 0;
   for (let attempt = 0; attempt < budget.maximumAttempts; attempt += 1) {
     startupRemaining(state, budget);
     const candidate = await observe(state, state.startupAbort.signal, true);
     startupRemaining(state, budget);
     if (candidate === undefined) {
-      if (provisional !== undefined) fail();
+      stableReady = undefined;
+      consecutiveReady = 0;
     } else {
       if (provisional !== undefined && !sameObservationIdentity(candidate, provisional)) fail();
       if (provisional === undefined) provisional = candidate;
       if (readyObservation(candidate)) {
-        first = candidate;
-        break;
+        if (stableReady !== undefined && !sameObservation(stableReady, candidate)) fail();
+        stableReady = candidate;
+        consecutiveReady += 1;
+        if (consecutiveReady === STARTUP_READY_OBSERVATIONS) break;
+      } else {
+        stableReady = undefined;
+        consecutiveReady = 0;
       }
     }
     if (attempt + 1 >= budget.maximumAttempts) fail();
     await startupGap(state, budget);
   }
-  if (first === undefined) fail();
-  await startupGap(state, budget);
-  const second = await observe(state, state.startupAbort.signal);
-  startupRemaining(state, budget);
-  if (!sameObservation(first, second)) fail();
-  let source = serializeGateBQuickTunnelHostnameSource(first.hostname, quickTunnel);
+  if (stableReady === undefined ||
+      consecutiveReady !== STARTUP_READY_OBSERVATIONS) fail();
+  let source = serializeGateBQuickTunnelHostnameSource(stableReady.hostname, quickTunnel);
   try {
     await state.workspace.write(state.hostnameRecord, source);
     await state.workspace.syncDirectories();
   } finally {
     source.fill(0);
   }
-  await startupGap(state, budget);
-  const final = await observe(state, state.startupAbort.signal);
-  startupRemaining(state, budget);
-  if (!sameObservation(first, final)) fail();
   const reread = await state.workspace.read(state.hostnameRecord);
   try {
     const parsed = parseGateBQuickTunnelHostnameSource(reread);
-    if (parsed.hostname !== first.hostname ||
+    if (parsed.hostname !== stableReady.hostname ||
         validateGateBQuickTunnelStableBinding(parsed.quickTunnel) !== true) fail();
   } finally {
     reread.fill(0);
   }
-  assertStartupActivation(state, budget, first);
+  assertStartupActivation(state, budget, stableReady);
   if (completeAttestationSourceWrite(
     state.attestationLaunch,
     state.attestation,
   ) !== true) fail();
-  state.pinned = first;
+  state.pinned = stableReady;
   quickTunnel = undefined;
   return budget;
 }

@@ -2089,7 +2089,7 @@ test('a deferred source reread cannot send ACTIVE after startup timeout or disco
     }
   });
 
-test('startup polls only while the live child has no listener, then requires three successes',
+test('startup waits through initial listener absence, then requires three stable observations',
   async () => {
     const harness = supervisorHarness();
     const originalRunLsof = harness.injections.runLsof;
@@ -2184,7 +2184,7 @@ test('startup rejects a non-503 non-ready response without polling', async () =>
   assert.equal(harness.state.runtimeRemoved, 1);
 });
 
-test('a 503/zero readiness regression after the first 200 success is fatal', async () => {
+test('a 503/zero reconnect resets readiness before three new stable observations', async () => {
   const harness = supervisorHarness();
   const originalHttpGet = harness.injections.httpGet;
   let readyCalls = 0;
@@ -2196,19 +2196,14 @@ test('a 503/zero readiness regression after the first 200 success is fatal', asy
     }
     return originalHttpGet(options);
   };
-  const supervision = superviseGateBQuickTunnel(harness.injections);
-  await eventually(() => harness.state.ipc.sent.some(message =>
-    message.type === GATE_B_QUICK_TUNNEL_IPC_TYPES.READY));
-  harness.state.ipc.emit('message', createGateBQuickTunnelIpcMessage(
-    GATE_B_QUICK_TUNNEL_IPC_TYPES.START,
-    1,
-  ));
-  await assert.rejects(supervision);
-  assert.equal(readyCalls, 2);
-  assert.equal(harness.state.sourceWrites, 0);
-  assert.equal(harness.state.ipc.sent.some(message =>
-    message.type === GATE_B_QUICK_TUNNEL_IPC_TYPES.ACTIVE), false);
-  assert.equal(harness.state.runtimeRemoved, 1);
+  const { promise: supervision } = await startSupervisor(harness);
+  assert.equal(readyCalls, 5);
+  assert.equal(harness.state.lsofCalls, 10);
+  assert.equal(harness.state.httpCalls.length, 10);
+  assert.equal(harness.state.order.filter(entry => entry === 'sleep').length, 4);
+  assert.equal(harness.state.sourceWrites, 1);
+  await stopSupervisor(harness, 2);
+  assert.equal(await supervision, true);
 });
 
 test('startup no-listener polling has a deterministic deadline-derived attempt bound',
@@ -2294,15 +2289,39 @@ test('startup rejects a non-buffer absence without retrying', async () => {
   assert.equal(harness.state.runtimeRemoved, 1);
 });
 
-test('startup rejects listener disappearance after the first successful observation', async () => {
+test('startup reconnect tolerates a temporary listener loss before three stable observations',
+  async () => {
+    const harness = supervisorHarness();
+    const originalRunLsof = harness.injections.runLsof;
+    harness.injections.runLsof = async options => {
+      if (harness.state.lsofCalls !== 2) return originalRunLsof(options);
+      assert.equal(options.pid, harness.state.child.pid);
+      assert.equal(options.signal.aborted, false);
+      harness.state.lsofCalls += 1;
+      harness.state.order.push('lsof');
+      return Buffer.alloc(0);
+    };
+    const { promise: supervision } = await startSupervisor(harness);
+    assert.equal(harness.state.lsofCalls, 9);
+    assert.equal(harness.state.httpCalls.length, 8);
+    assert.equal(harness.state.order.filter(entry => entry === 'sleep').length, 4);
+    assert.equal(harness.state.sourceWrites, 1);
+    assert.ok(harness.state.order.lastIndexOf('lsof') <
+      harness.state.order.indexOf('workspace:write'));
+    await stopSupervisor(harness, 2);
+    assert.equal(await supervision, true);
+  });
+
+test('startup reconnect rejects recovered listener identity drift before persistence', async () => {
   const harness = supervisorHarness();
   const originalRunLsof = harness.injections.runLsof;
   harness.injections.runLsof = async options => {
-    if (harness.state.lsofCalls < 2) return originalRunLsof(options);
+    if (harness.state.lsofCalls !== 2) return originalRunLsof(options);
     assert.equal(options.pid, harness.state.child.pid);
     assert.equal(options.signal.aborted, false);
     harness.state.lsofCalls += 1;
     harness.state.order.push('lsof');
+    harness.state.metricsPort += 1;
     return Buffer.alloc(0);
   };
   const supervision = superviseGateBQuickTunnel(harness.injections);
@@ -2313,12 +2332,53 @@ test('startup rejects listener disappearance after the first successful observat
     1,
   ));
   await assert.rejects(supervision);
-  assert.equal(harness.state.lsofCalls, 3);
-  assert.equal(harness.state.httpCalls.length, 2);
-  assert.equal(harness.state.order.filter(entry => entry === 'sleep').length, 1);
+  assert.equal(harness.state.lsofCalls, 5);
+  assert.equal(harness.state.httpCalls.length, 4);
+  assert.equal(harness.state.order.filter(entry => entry === 'sleep').length, 2);
   assert.equal(harness.state.sourceWrites, 0);
+  assert.equal(harness.state.ipc.sent.some(message =>
+    message.type === GATE_B_QUICK_TUNNEL_IPC_TYPES.ACTIVE), false);
   assert.equal(harness.state.runtimeRemoved, 1);
 });
+
+test('startup rejects persistent listener disappearance within its original attempt budget',
+  async () => {
+    let now = 0;
+    const harness = supervisorHarness({
+      monotonicNow: () => now,
+      observationGapMs: 1,
+      startupTimeoutMs: 5,
+    });
+    const originalRunLsof = harness.injections.runLsof;
+    harness.injections.runLsof = async options => {
+      if (harness.state.lsofCalls < 2) return originalRunLsof(options);
+      assert.equal(options.pid, harness.state.child.pid);
+      assert.equal(options.signal.aborted, false);
+      harness.state.lsofCalls += 1;
+      harness.state.order.push('lsof');
+      return Buffer.alloc(0);
+    };
+    harness.injections.sleep = async (milliseconds, signal) => {
+      assert.equal(milliseconds, 1);
+      assert.equal(signal.aborted, false);
+      now += milliseconds;
+      harness.state.order.push('sleep');
+      return true;
+    };
+    const supervision = superviseGateBQuickTunnel(harness.injections);
+    await eventually(() => harness.state.ipc.sent.some(message =>
+      message.type === GATE_B_QUICK_TUNNEL_IPC_TYPES.READY));
+    harness.state.ipc.emit('message', createGateBQuickTunnelIpcMessage(
+      GATE_B_QUICK_TUNNEL_IPC_TYPES.START,
+      1,
+    ));
+    await assert.rejects(supervision);
+    assert.equal(harness.state.lsofCalls, 6);
+    assert.equal(harness.state.httpCalls.length, 2);
+    assert.equal(harness.state.order.filter(entry => entry === 'sleep').length, 4);
+    assert.equal(harness.state.sourceWrites, 0);
+    assert.equal(harness.state.runtimeRemoved, 1);
+  });
 
 test('startup child exit during no-listener polling fails closed and cleans up', async () => {
   const harness = supervisorHarness();
@@ -2374,7 +2434,7 @@ test('startup observation drift fails before ACTIVE and preserves one-shot sourc
         message.type === GATE_B_QUICK_TUNNEL_IPC_TYPES.ACTIVE), false);
     });
 
-    await t.test('connector changes after the durable source write', async () => {
+    await t.test('connector changes before the third stable observation', async () => {
       const harness = supervisorHarness();
       const originalHttpGet = harness.injections.httpGet;
       harness.injections.httpGet = async options => {
@@ -2392,7 +2452,7 @@ test('startup observation drift fails before ACTIVE and preserves one-shot sourc
         1,
       ));
       await assert.rejects(supervision);
-      assert.equal(harness.state.sourceWrites, 1);
+      assert.equal(harness.state.sourceWrites, 0);
       assert.equal(harness.state.sourceReads, 0);
       assert.equal(harness.state.ipc.sent.some(message =>
         message.type === GATE_B_QUICK_TUNNEL_IPC_TYPES.ACTIVE), false);
