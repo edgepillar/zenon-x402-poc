@@ -1533,6 +1533,50 @@ function assertStartupActivation(state, budget, observation) {
   startupRemaining(state, budget);
 }
 
+function createCheckPollBudget(state, requestId, controller) {
+  assertLive(state);
+  const startedAt = Reflect.apply(state.dependencies.monotonicNow, undefined, []);
+  const deadline = startedAt + state.dependencies.checkTimeoutMs;
+  const maximumAttempts = Math.ceil(
+    state.dependencies.checkTimeoutMs / state.dependencies.observationGapMs,
+  );
+  if (!Number.isFinite(startedAt) || startedAt < 0 || !Number.isFinite(deadline) ||
+      !Number.isSafeInteger(maximumAttempts) || maximumAttempts < 1 ||
+      state.mode !== 'CHECKING' || state.pendingCheckId !== requestId ||
+      controller.signal.aborted) fail();
+  return {
+    child: state.child,
+    deadline,
+    lastObservedAt: startedAt,
+    maximumAttempts,
+    pid: state.child.pid,
+  };
+}
+
+function checkRemaining(state, budget, requestId, controller) {
+  if (state.mode !== 'CHECKING' || state.pendingCheckId !== requestId ||
+      controller.signal.aborted || state.child !== budget.child ||
+      state.child?.pid !== budget.pid) fail();
+  assertLive(state);
+  const now = Reflect.apply(state.dependencies.monotonicNow, undefined, []);
+  if (!Number.isFinite(now) || now < budget.lastObservedAt || now >= budget.deadline) fail();
+  budget.lastObservedAt = now;
+  const remaining = Math.floor(budget.deadline - now);
+  if (!Number.isSafeInteger(remaining) || remaining < 1) fail();
+  return remaining;
+}
+
+async function checkGap(state, budget, requestId, controller) {
+  if (checkRemaining(state, budget, requestId, controller) <
+      state.dependencies.observationGapMs) fail();
+  const slept = await Reflect.apply(state.dependencies.sleep, undefined, [
+    state.dependencies.observationGapMs,
+    controller.signal,
+  ]);
+  if (slept !== true) fail();
+  checkRemaining(state, budget, requestId, controller);
+}
+
 async function initialReadiness(state, quickTunnel) {
   const budget = createStartupPollBudget(state);
   let provisional;
@@ -1591,9 +1635,27 @@ async function initialReadiness(state, quickTunnel) {
 async function freshCheck(state, requestId, controller) {
   const timer = setTimeout(() => controller.abort(), state.dependencies.checkTimeoutMs);
   try {
-    const current = await observe(state, controller.signal);
-    if (state.mode !== 'CHECKING' || state.pendingCheckId !== requestId ||
-        controller.signal.aborted) return;
+    const budget = createCheckPollBudget(state, requestId, controller);
+    let current;
+    for (let attempt = 0; attempt < budget.maximumAttempts; attempt += 1) {
+      checkRemaining(state, budget, requestId, controller);
+      const candidate = await observe(state, controller.signal, true);
+      checkRemaining(state, budget, requestId, controller);
+      if (candidate === undefined) {
+        current = undefined;
+      } else {
+        if (!sameObservationIdentity(candidate, state.pinned)) fail();
+        if (readyObservation(candidate)) {
+          current = candidate;
+          break;
+        }
+        if (candidate.status !== 503 || candidate.readyConnections !== 0) fail();
+        current = undefined;
+      }
+      if (attempt + 1 >= budget.maximumAttempts) fail();
+      await checkGap(state, budget, requestId, controller);
+    }
+    if (current === undefined) fail();
     if (!sameObservation(current, state.pinned)) fail();
     const versionAttestor = executablePath => attestVersion(
       executablePath,
