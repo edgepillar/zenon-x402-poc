@@ -12,6 +12,7 @@ import {
   GATE_B_TESTNET_FAUCET_RECEIVE_ACKNOWLEDGEMENT,
   GATE_B_TESTNET_FAUCET_RECEIVE_EXECUTION_MODES,
   GATE_B_TESTNET_FAUCET_RECEIVE_STATUS_LINES,
+  GATE_B_TESTNET_FAUCET_RECEIVE_WORKSPACE_OPTION,
   frameGateBTestnetFaucetReceiveBootstrap,
   parseGateBTestnetFaucetReceiveFrame,
 } from '../src/gate-b-testnet-faucet-receive-schema.js';
@@ -25,8 +26,13 @@ import {
   GATE_B_TESTNET_FAUCET_RECEIVE_STATES,
   openGateBTestnetFaucetReceiveState,
 } from '../src/gate-b-testnet-faucet-receive-state.js';
-import { superviseGateBTestnetFaucetReceive } from
+import {
+  superviseGateBTestnetFaucetReceive,
+  superviseGateBTestnetFaucetReceiveForWorkspace,
+} from
   '../src/gate-b-testnet-faucet-receive-supervisor.js';
+import { selectGateBBuyerWalletWorkspace } from
+  '../src/gate-b-buyer-wallet-selector.js';
 import { computeBlockHash } from '../src/zenon-payment.js';
 import { invokeLegacySdk105SignedComposite } from
   '../src/zenon/internal/legacy-sdk-1-0-5-signed-composite.js';
@@ -40,6 +46,7 @@ import {
 
 const SYNTHETIC_PUBLIC_WS = `ws://${[8, 8, 4, 4].join('.')}:35998/`;
 const WALLET_WORKSPACE_NAME = 'zenon-x402-gate-b-wallet';
+const GENERATION_TOKEN = '09af'.repeat(8);
 const EXPECTED_CHAIN_ID = Number(GATE_B_CURRENT_TESTNET_CHAIN_PROFILE.chainIdentifier);
 
 function bootstrap() {
@@ -49,6 +56,25 @@ function bootstrap() {
     schemaVersion: 1,
   };
 }
+
+test('faucet selection keeps bootstrap path-free and isolates generated state', () => {
+  const supportRoot = '/private/synthetic/Application Support';
+  const legacyRoot = join(supportRoot, WALLET_WORKSPACE_NAME);
+  const generatedRoot = join(
+    supportRoot,
+    `${WALLET_WORKSPACE_NAME}-${GENERATION_TOKEN}`,
+  );
+  const legacy = selectGateBBuyerWalletWorkspace(legacyRoot, supportRoot);
+  const generated = selectGateBBuyerWalletWorkspace(generatedRoot, supportRoot);
+
+  assert.equal(GATE_B_TESTNET_FAUCET_RECEIVE_WORKSPACE_OPTION, '--workspace');
+  assert.notEqual(legacy.stateWorkspaceRoot, generated.stateWorkspaceRoot);
+  assert.equal(generated.generationToken, GENERATION_TOKEN);
+  assert.deepEqual(Object.keys(bootstrap()), [
+    'acknowledgement', 'rpcEndpoint', 'schemaVersion',
+  ]);
+  assert.equal(JSON.stringify(bootstrap()).includes(generatedRoot), false);
+});
 
 function policy() {
   return selectGateBCurrentTestnetPolicy(
@@ -442,6 +468,7 @@ function executionHarness({ failPublicationAt = -1, pendingMutation = false,
     },
   };
   const injections = {
+    actualCwdPath: () => join(process.cwd(), 'synthetic', WALLET_WORKSPACE_NAME),
     applicationSupportRoot: () => {
       events.push('support-root');
       return dirname(join(process.cwd(), 'synthetic', WALLET_WORKSPACE_NAME));
@@ -570,6 +597,95 @@ test('faucet receiver CLI emits only fixed complete and unknown records', async 
   assert.equal(unknown.stderr, GATE_B_TESTNET_FAUCET_RECEIVE_STATUS_LINES.OUTCOME_UNKNOWN);
 });
 
+test('faucet CLI has one legacy encoding and one explicit generated encoding', async () => {
+  const supportRoot = '/private/synthetic/Application Support';
+  const legacyRoot = join(supportRoot, WALLET_WORKSPACE_NAME);
+  const generatedRoot = join(
+    supportRoot,
+    `${WALLET_WORKSPACE_NAME}-${GENERATION_TOKEN}`,
+  );
+  const calls = [];
+  const output = { stdout: '', stderr: '' };
+  const common = {
+    stdout: value => { output.stdout += value; return Buffer.byteLength(value); },
+    stderr: value => { output.stderr += value; return Buffer.byteLength(value); },
+    supervise: async injections => {
+      calls.push(['legacy', injections]);
+      return 'complete';
+    },
+    superviseGenerated: async (workspaceRoot, injections) => {
+      calls.push(['generated', workspaceRoot, injections]);
+      return 'complete';
+    },
+    supervisorInjections: { synthetic: true },
+  };
+
+  assert.equal(await runGateBTestnetFaucetReceiveCli({ argv: [], ...common }), 0);
+  assert.deepEqual(calls, [['legacy', common.supervisorInjections]]);
+  calls.length = 0;
+  output.stdout = '';
+  assert.equal(await runGateBTestnetFaucetReceiveCli({
+    argv: [GATE_B_TESTNET_FAUCET_RECEIVE_WORKSPACE_OPTION, generatedRoot],
+    ...common,
+  }), 0);
+  assert.deepEqual(calls, [[
+    'generated', generatedRoot, common.supervisorInjections,
+  ]]);
+
+  for (const argv of [
+    [GATE_B_TESTNET_FAUCET_RECEIVE_WORKSPACE_OPTION, legacyRoot],
+    [`${GATE_B_TESTNET_FAUCET_RECEIVE_WORKSPACE_OPTION}=${generatedRoot}`],
+    ['--workspace-root', generatedRoot],
+    [GATE_B_TESTNET_FAUCET_RECEIVE_WORKSPACE_OPTION, generatedRoot, 'extra'],
+    [GATE_B_TESTNET_FAUCET_RECEIVE_WORKSPACE_OPTION,
+      `${supportRoot}/../Application Support/${WALLET_WORKSPACE_NAME}-${GENERATION_TOKEN}`],
+    [GATE_B_TESTNET_FAUCET_RECEIVE_WORKSPACE_OPTION,
+      join(supportRoot, `${WALLET_WORKSPACE_NAME}-${GENERATION_TOKEN.toUpperCase()}`)],
+    [GATE_B_TESTNET_FAUCET_RECEIVE_WORKSPACE_OPTION,
+      join(supportRoot, `${WALLET_WORKSPACE_NAME}-${GENERATION_TOKEN.slice(0, -1)}g`)],
+    [GATE_B_TESTNET_FAUCET_RECEIVE_WORKSPACE_OPTION],
+  ]) {
+    calls.length = 0;
+    output.stdout = '';
+    output.stderr = '';
+    assert.equal(await runGateBTestnetFaucetReceiveCli({ argv, ...common }), 1);
+    assert.deepEqual(calls, []);
+    assert.equal(output.stdout, '');
+    assert.equal(output.stderr, GATE_B_TESTNET_FAUCET_RECEIVE_STATUS_LINES.FAILURE);
+    assert.equal(output.stderr.includes(GENERATION_TOKEN), false);
+    assert.equal(output.stderr.includes(legacyRoot), false);
+  }
+});
+
+test('generated faucet CLI preserves an ambiguous result once without path disclosure',
+  async () => {
+    const supportRoot = '/private/synthetic/Application Support';
+    const generatedRoot = join(
+      supportRoot,
+      `${WALLET_WORKSPACE_NAME}-${GENERATION_TOKEN}`,
+    );
+    const output = { stdout: '', stderr: '' };
+    let generatedCalls = 0;
+    let legacyCalls = 0;
+    assert.equal(await runGateBTestnetFaucetReceiveCli({
+      argv: [GATE_B_TESTNET_FAUCET_RECEIVE_WORKSPACE_OPTION, generatedRoot],
+      stderr: value => { output.stderr += value; return Buffer.byteLength(value); },
+      stdout: value => { output.stdout += value; return Buffer.byteLength(value); },
+      async supervise() { legacyCalls += 1; return 'complete'; },
+      async superviseGenerated(workspaceRoot) {
+        generatedCalls += 1;
+        assert.equal(workspaceRoot, generatedRoot);
+        return 'outcome-unknown';
+      },
+    }), 2);
+    assert.equal(generatedCalls, 1);
+    assert.equal(legacyCalls, 0);
+    assert.equal(output.stdout, '');
+    assert.equal(output.stderr, GATE_B_TESTNET_FAUCET_RECEIVE_STATUS_LINES.OUTCOME_UNKNOWN);
+    assert.equal(output.stderr.includes(GENERATION_TOKEN), false);
+    assert.equal(output.stderr.includes(generatedRoot), false);
+  });
+
 test('faucet receiver CLI rejects argv without echoing private input', async () => {
   const output = { stdout: '', stderr: '' };
   assert.equal(await runGateBTestnetFaucetReceiveCli({
@@ -645,6 +761,114 @@ test('faucet receiver state creates a durable one-shot marker and exact private 
   assert.equal((await lstat(join(stateRoot, 'faucet-receive-recovery.json'))).mode & 0o777, 0o600);
   await second.close();
 });
+
+test('generated faucet state is token-isolated and rejects malformed generations pre-effect',
+  async t => {
+    const temporary = await realpath(await mkdtemp(join(tmpdir(), 'gate-b-state-generation-')));
+    t.after(() => rm(temporary, { recursive: true, force: true }));
+    const supportRoot = join(temporary, 'Library', 'Application Support');
+    const tokenA = GENERATION_TOKEN;
+    const tokenB = 'f0a9'.repeat(8);
+    const walletA = join(supportRoot, `${WALLET_WORKSPACE_NAME}-${tokenA}`);
+    const walletB = join(supportRoot, `${WALLET_WORKSPACE_NAME}-${tokenB}`);
+    await mkdir(walletA, { recursive: true, mode: 0o700 });
+    await mkdir(walletB, { mode: 0o700 });
+    await chmod(supportRoot, 0o700);
+    await chmod(walletA, 0o700);
+    await chmod(walletB, 0o700);
+
+    const selectionA = selectGateBBuyerWalletWorkspace(walletA, supportRoot);
+    const selectionB = selectGateBBuyerWalletWorkspace(walletB, supportRoot);
+    assert.notEqual(selectionA.stateWorkspaceRoot, selectionB.stateWorkspaceRoot);
+    const stateA = await openGateBTestnetFaucetReceiveState(
+      walletA,
+      stateInjections(),
+    );
+    const stateB = await openGateBTestnetFaucetReceiveState(
+      walletB,
+      stateInjections(),
+    );
+    await stateA.arm();
+    assert.equal((await stateA.load()).state, 'ARMED');
+    assert.equal(await stateB.load(), null);
+    await stateA.close();
+    await stateB.close();
+    assert.equal((await lstat(selectionA.stateWorkspaceRoot)).isDirectory(), true);
+    assert.equal((await lstat(selectionB.stateWorkspaceRoot)).isDirectory(), true);
+
+    let mkdirCalls = 0;
+    const malformed = join(
+      supportRoot,
+      `${WALLET_WORKSPACE_NAME}-${GENERATION_TOKEN.toUpperCase()}`,
+    );
+    await assert.rejects(openGateBTestnetFaucetReceiveState(
+      malformed,
+      stateInjections({
+        async mkdirPath() { mkdirCalls += 1; },
+      }),
+    ));
+    assert.equal(mkdirCalls, 0);
+  });
+
+test('generated faucet child reparses cwd and binds wallet and state to one generation',
+  async () => {
+    const supportRoot = join(
+      process.cwd(),
+      'synthetic-unicode-\u00e9',
+      'Application Support',
+    );
+    const generatedRoot = join(
+      supportRoot,
+      `${WALLET_WORKSPACE_NAME}-${GENERATION_TOKEN}`,
+    );
+    const harness = executionHarness();
+    const opened = { state: [], wallet: [] };
+    const openReceiveState = harness.injections.openReceiveState;
+    const openWalletWorkspace = harness.injections.openWalletWorkspace;
+    harness.injections.actualCwdPath = () => generatedRoot;
+    harness.injections.applicationSupportRoot = () => supportRoot;
+    harness.injections.openReceiveState = async workspaceRoot => {
+      opened.state.push(workspaceRoot);
+      return openReceiveState(workspaceRoot);
+    };
+    harness.injections.openWalletWorkspace = async workspaceRoot => {
+      opened.wallet.push(workspaceRoot);
+      return openWalletWorkspace(workspaceRoot);
+    };
+
+    assert.equal(
+      await executeGateBTestnetFaucetReceive(bootstrap(), harness.injections),
+      'complete',
+    );
+    assert.deepEqual(opened, {
+      state: [generatedRoot],
+      wallet: [generatedRoot],
+    });
+    assert.equal(harness.publicationCalls(), 2);
+  });
+
+test('faucet child rejects malformed and cross-root cwd before dependencies or effects',
+  async () => {
+    const supportRoot = join(process.cwd(), 'synthetic-selector-a', 'Application Support');
+    const otherSupportRoot = join(process.cwd(), 'synthetic-selector-b', 'Application Support');
+    const candidates = [
+      join(otherSupportRoot, `${WALLET_WORKSPACE_NAME}-${GENERATION_TOKEN}`),
+      join(supportRoot, `${WALLET_WORKSPACE_NAME}-${GENERATION_TOKEN.toUpperCase()}`),
+      `${supportRoot}/../Application Support/${WALLET_WORKSPACE_NAME}-${GENERATION_TOKEN}`,
+    ];
+    for (const actualCwd of candidates) {
+      const harness = executionHarness();
+      harness.injections.actualCwdPath = () => actualCwd;
+      harness.injections.applicationSupportRoot = () => supportRoot;
+      await assert.rejects(() => executeGateBTestnetFaucetReceive(
+        bootstrap(),
+        harness.injections,
+      ));
+      assert.deepEqual(harness.events, []);
+      assert.equal(harness.publicationCalls(), 0);
+      assert.equal(harness.poisonCalls(), 0);
+    }
+  });
 
 test('faucet receiver state durably preserves an exact prepared block', async t => {
   const fixture = await stateFixture(t);
@@ -1127,6 +1351,11 @@ test('production receive validator accepts the actual pinned SDK composite with 
       const { sha512 } = await import('@noble/hashes/sha2');
       ed.etc.sha512Sync = (...messages) => sha512(ed.etc.concatBytes(...messages));
       const result = await executeGateBTestnetFaucetReceive(bootstrap(), {
+        actualCwdPath: () => join(
+          process.cwd(),
+          'synthetic-actual-sdk',
+          WALLET_WORKSPACE_NAME,
+        ),
         applicationSupportRoot: () => dirname(join(
           process.cwd(),
           'synthetic-actual-sdk',
@@ -1931,7 +2160,11 @@ test('isolated child emits mode-matched partial and read-only terminal protocols
 
 test('supervisor ignores child output and accepts exactly two publication boundaries', async t => {
   const fixture = await stateFixture(t);
+  assert.equal(superviseGateBTestnetFaucetReceive.length, 1);
+  assert.equal(superviseGateBTestnetFaucetReceiveForWorkspace.length, 2);
   let spawnOptions;
+  let spawnArgs;
+  const bootstrapChunks = [];
   class Child extends EventEmitter {
     constructor() {
       super();
@@ -1956,18 +2189,143 @@ test('supervisor ignores child output and accepts exactly two publication bounda
     disconnect() { this.connected = false; }
   }
   const child = new Child();
+  child.stdio[4].on('data', chunk => bootstrapChunks.push(Buffer.from(chunk)));
   child.stdio[4].on('finish', () => child.emit('message', 'READY'));
   assert.equal(await superviseGateBTestnetFaucetReceive({
     applicationSupportRoot: () => fixture.supportRoot,
     childModule: join(fixture.supportRoot, 'synthetic-child.js'),
-    forkProcess(_module, _args, options) { spawnOptions = options; return child; },
+    forkProcess(_module, args, options) {
+      spawnArgs = args;
+      spawnOptions = options;
+      return child;
+    },
     platform: 'darwin',
     readBootstrapFrame: async () => frameGateBTestnetFaucetReceiveBootstrap(bootstrap()),
     timeoutMs: 1000,
   }), 'complete');
+  assert.deepEqual(spawnArgs, []);
+  assert.equal(spawnOptions.cwd, fixture.walletRoot);
   assert.deepEqual(spawnOptions.stdio.slice(0, 3), ['ignore', 'ignore', 'ignore']);
   assert.deepEqual(spawnOptions.env, {});
+  assert.deepEqual(
+    parseGateBTestnetFaucetReceiveFrame(Buffer.concat(bootstrapChunks)),
+    bootstrap(),
+  );
 });
+
+test('production generated faucet path uses cwd alone and keeps bootstrap and IPC path-free',
+  async t => {
+    const fixture = await stateFixture(t);
+    const generatedRoot = join(
+      fixture.supportRoot,
+      `${WALLET_WORKSPACE_NAME}-${GENERATION_TOKEN}`,
+    );
+    await mkdir(generatedRoot, { mode: 0o700 });
+    await chmod(generatedRoot, 0o700);
+    const bootstrapChunks = [];
+    const transcript = [];
+    let spawnRecord;
+    class Child extends EventEmitter {
+      constructor() {
+        super();
+        this.connected = true;
+        this.channel = { close() {}, unref() {} };
+        this.stdio = [null, null, null, null, new PassThrough()];
+      }
+      send(message, callback) {
+        transcript.push(message);
+        callback();
+        queueMicrotask(() => {
+          for (const response of [
+            GATE_B_TESTNET_FAUCET_RECEIVE_EXECUTION_MODES.FRESH,
+            'PUBLISHING_0',
+            'PUBLISHING_1',
+            'COMPLETE',
+          ]) {
+            transcript.push(response);
+            this.emit('message', response);
+          }
+          this.emit('exit', 0, null);
+          this.emit('close', 0, null);
+        });
+        return true;
+      }
+      kill() { return true; }
+      disconnect() { this.connected = false; }
+    }
+    const child = new Child();
+    child.stdio[4].on('data', chunk => bootstrapChunks.push(Buffer.from(chunk)));
+    child.stdio[4].on('finish', () => {
+      transcript.push('READY');
+      child.emit('message', 'READY');
+    });
+    const output = { stdout: '', stderr: '' };
+    assert.equal(await runGateBTestnetFaucetReceiveCli({
+      argv: [GATE_B_TESTNET_FAUCET_RECEIVE_WORKSPACE_OPTION, generatedRoot],
+      stderr: value => { output.stderr += value; return Buffer.byteLength(value); },
+      stdout: value => { output.stdout += value; return Buffer.byteLength(value); },
+      supervisorInjections: {
+        applicationSupportRoot: () => fixture.supportRoot,
+        childModule: join(fixture.supportRoot, 'fixed-generated-child.js'),
+        forkProcess(modulePath, argv, options) {
+          spawnRecord = { argv, modulePath, options };
+          return child;
+        },
+        platform: 'darwin',
+        readBootstrapFrame: async () =>
+          frameGateBTestnetFaucetReceiveBootstrap(bootstrap()),
+        timeoutMs: 1000,
+      },
+    }), 0);
+    assert.equal(output.stdout, GATE_B_TESTNET_FAUCET_RECEIVE_STATUS_LINES.COMPLETE);
+    assert.equal(output.stderr, '');
+    assert.deepEqual(spawnRecord.argv, []);
+    assert.equal(spawnRecord.options.cwd, generatedRoot);
+    assert.equal(spawnRecord.options.detached, false);
+    assert.deepEqual(spawnRecord.options.env, {});
+    assert.deepEqual(spawnRecord.options.execArgv, []);
+    assert.equal(spawnRecord.options.shell, false);
+    const framedBootstrap = Buffer.concat(bootstrapChunks);
+    assert.deepEqual(parseGateBTestnetFaucetReceiveFrame(framedBootstrap), bootstrap());
+    assert.equal(framedBootstrap.includes(Buffer.from(generatedRoot)), false);
+    assert.equal(framedBootstrap.includes(Buffer.from(GENERATION_TOKEN)), false);
+    assert.equal(transcript.every(value => typeof value === 'string'), true);
+    assert.equal(JSON.stringify(transcript).includes(generatedRoot), false);
+    assert.equal(JSON.stringify(transcript).includes(GENERATION_TOKEN), false);
+  });
+
+test('generated faucet supervisor rejects legacy, nested, and cross-root selection before fork',
+  async t => {
+    const fixture = await stateFixture(t);
+    const rejected = [
+      fixture.walletRoot,
+      join(
+        fixture.supportRoot,
+        'nested',
+        `${WALLET_WORKSPACE_NAME}-${GENERATION_TOKEN}`,
+      ),
+      join(
+        dirname(fixture.supportRoot),
+        `${WALLET_WORKSPACE_NAME}-${GENERATION_TOKEN}`,
+      ),
+    ];
+    for (const workspaceRoot of rejected) {
+      let forks = 0;
+      await assert.rejects(() => superviseGateBTestnetFaucetReceiveForWorkspace(
+        workspaceRoot,
+        {
+          applicationSupportRoot: () => fixture.supportRoot,
+          childModule: join(fixture.supportRoot, 'fixed-generated-child.js'),
+          forkProcess() { forks += 1; throw new Error('unexpected'); },
+          platform: 'darwin',
+          readBootstrapFrame: async () =>
+            frameGateBTestnetFaucetReceiveBootstrap(bootstrap()),
+          timeoutMs: 1000,
+        },
+      ));
+      assert.equal(forks, 0);
+    }
+  });
 
 test('supervisor rejects a false completion without both publication boundaries', async t => {
   const fixture = await stateFixture(t);

@@ -1,10 +1,11 @@
 import { createReadStream } from 'node:fs';
 import { userInfo } from 'node:os';
-import { isAbsolute, join } from 'node:path';
+import { isAbsolute, join, resolve } from 'node:path';
 import { performance } from 'node:perf_hooks';
 import { pathToFileURL } from 'node:url';
 import { types as utilTypes } from 'node:util';
 
+import { selectGateBBuyerWalletWorkspace } from './gate-b-buyer-wallet-selector.js';
 import { canonicalJson } from './canonical.js';
 import { GATE_B_PUBLIC_WS_INPUT_LEAVES } from './gate-b-public-ws-inputs-schema.js';
 import { openGateBPublicWsPrivateWorkspace } from './gate-b-public-ws-private-workspace.js';
@@ -37,7 +38,6 @@ import {
 
 const ERROR_CODE = 'gate_b_testnet_faucet_receive_child_failed';
 const CHILD_BOOTSTRAP_FD = 4;
-const WALLET_WORKSPACE_NAME = 'zenon-x402-gate-b-wallet';
 const READ_TIMEOUT_MS = 30_000;
 const PREPARE_TIMEOUT_MS = 3 * 60_000;
 const PUBLICATION_TIMEOUT_MS = 30_000;
@@ -154,6 +154,7 @@ function defaultWait(milliseconds) {
 
 function captureExecutionInjections(value) {
   const output = {
+    actualCwdPath: () => process.cwd(),
     applicationSupportRoot: defaultApplicationSupportRoot,
     assertNodeReady: assertZenonNodeReady,
     createPolicy: defaultPolicy,
@@ -179,7 +180,7 @@ function captureExecutionInjections(value) {
     output[key] = descriptor.value;
   }
   for (const field of [
-    'applicationSupportRoot', 'assertNodeReady', 'createPolicy', 'invokeComposite',
+    'actualCwdPath', 'applicationSupportRoot', 'assertNodeReady', 'createPolicy', 'invokeComposite',
     'loadDependencies', 'now', 'onExecutionMode', 'onPublicationStart', 'openReceiveState',
     'openWalletWorkspace', 'wait',
   ]) {
@@ -191,8 +192,15 @@ function captureExecutionInjections(value) {
 
 function walletWorkspaceRoot(dependencies) {
   const supportRoot = REFLECT_APPLY(dependencies.applicationSupportRoot, undefined, []);
-  if (typeof supportRoot !== 'string' || !isAbsolute(supportRoot)) fail();
-  return join(supportRoot, WALLET_WORKSPACE_NAME);
+  const actualCwd = REFLECT_APPLY(dependencies.actualCwdPath, undefined, []);
+  if (typeof supportRoot !== 'string' || !isAbsolute(supportRoot) ||
+      resolve(supportRoot) !== supportRoot || typeof actualCwd !== 'string' ||
+      !isAbsolute(actualCwd) || resolve(actualCwd) !== actualCwd) fail();
+  try {
+    return selectGateBBuyerWalletWorkspace(actualCwd, supportRoot).walletWorkspaceRoot;
+  } catch {
+    fail();
+  }
 }
 
 function parseJsonLine(bytes, fields) {

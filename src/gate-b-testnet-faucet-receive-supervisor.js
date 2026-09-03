@@ -7,6 +7,10 @@ import { fileURLToPath } from 'node:url';
 import { types as utilTypes } from 'node:util';
 
 import {
+  GATE_B_BUYER_WALLET_LEGACY_WORKSPACE_NAME,
+  selectGateBBuyerWalletWorkspace,
+} from './gate-b-buyer-wallet-selector.js';
+import {
   GATE_B_TESTNET_FAUCET_RECEIVE_EXECUTION_MODES,
   GATE_B_TESTNET_FAUCET_RECEIVE_LIMITS,
   parseGateBTestnetFaucetReceiveFrame,
@@ -19,7 +23,6 @@ const DEFAULT_TIMEOUT_MS = 10 * 60_000;
 const MAX_TIMEOUT_MS = 15 * 60_000;
 const TERM_MS = 1000;
 const KILL_MS = 5000;
-const WORKSPACE_NAME = 'zenon-x402-gate-b-wallet';
 const CHILD_MODULE = fileURLToPath(new URL(
   './gate-b-testnet-faucet-receive-child.js',
   import.meta.url,
@@ -99,11 +102,24 @@ function exactInjections(value) {
   return output;
 }
 
-async function canonicalWalletWorkspace(dependencies) {
+async function canonicalWalletWorkspace(workspaceRoot, requireGenerated, dependencies) {
   const supportRoot = REFLECT_APPLY(dependencies.applicationSupportRoot, undefined, []);
   if (typeof supportRoot !== 'string' || !isAbsolute(supportRoot) ||
       resolve(supportRoot) !== supportRoot) fail();
-  const root = join(supportRoot, WORKSPACE_NAME);
+  const requestedRoot = workspaceRoot === undefined
+    ? join(supportRoot, GATE_B_BUYER_WALLET_LEGACY_WORKSPACE_NAME)
+    : workspaceRoot;
+  let selection;
+  try {
+    selection = selectGateBBuyerWalletWorkspace(
+      requestedRoot,
+      supportRoot,
+    );
+  } catch {
+    fail();
+  }
+  if (requireGenerated && selection.generationToken === null) fail();
+  const root = selection.walletWorkspaceRoot;
   const [canonicalSupport, canonicalRoot, stat] = await Promise.all([
     REFLECT_APPLY(dependencies.realpathPath, undefined, [supportRoot]),
     REFLECT_APPLY(dependencies.realpathPath, undefined, [root]),
@@ -344,7 +360,11 @@ function terminalMatchesTrace(mode, terminal, trace) {
       mode === GATE_B_TESTNET_FAUCET_RECEIVE_EXECUTION_MODES.READ_ONLY_RECOVERY);
 }
 
-export async function superviseGateBTestnetFaucetReceive(injected) {
+async function superviseSelectedGateBTestnetFaucetReceive(
+  workspaceRoot,
+  requireGenerated,
+  injected,
+) {
   let frame;
   let snapshot;
   let fallback;
@@ -366,7 +386,11 @@ export async function superviseGateBTestnetFaucetReceive(injected) {
     frame = await REFLECT_APPLY(dependencies.readBootstrapFrame, undefined, []);
     const bootstrap = parseGateBTestnetFaucetReceiveFrame(frame);
     if (!bootstrap || bootstrap.schemaVersion !== 1) fail();
-    const workspaceRoot = await canonicalWalletWorkspace(dependencies);
+    workspaceRoot = await canonicalWalletWorkspace(
+      workspaceRoot,
+      requireGenerated,
+      dependencies,
+    );
     const child = REFLECT_APPLY(dependencies.forkProcess, undefined, [
       dependencies.childModule,
       [],
@@ -507,4 +531,16 @@ export async function superviseGateBTestnetFaucetReceive(injected) {
     if (Buffer.isBuffer(frame)) frame.fill(0);
     releaseFallback(fallback);
   }
+}
+
+export async function superviseGateBTestnetFaucetReceive(injected) {
+  return superviseSelectedGateBTestnetFaucetReceive(undefined, false, injected);
+}
+
+export async function superviseGateBTestnetFaucetReceiveForWorkspace(
+  workspaceRoot,
+  injected,
+) {
+  if (typeof workspaceRoot !== 'string') fail();
+  return superviseSelectedGateBTestnetFaucetReceive(workspaceRoot, true, injected);
 }

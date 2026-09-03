@@ -4,6 +4,8 @@ import { isAbsolute, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { types as utilTypes } from 'node:util';
 
+import { selectGateBBuyerWalletWorkspace } from './gate-b-buyer-wallet-selector.js';
+
 const IPC_VERSION = 1;
 const REQUEST_ID = 1;
 const BOOTSTRAP_MAX_BYTES = 8192;
@@ -11,7 +13,6 @@ const DEFAULT_TIMEOUT_MS = 30_000;
 const MAX_TIMEOUT_MS = 60_000;
 const REAP_FORCE_MS = 250;
 const REAP_ABANDON_MS = 1250;
-const WORKSPACE_NAME = 'zenon-x402-gate-b-wallet';
 const CHILD_MODULE = fileURLToPath(new URL('./gate-b-buyer-wallet-child.js', import.meta.url));
 const ARRAY_IS_ARRAY = Array.isArray;
 const GET_OWN_PROPERTY_DESCRIPTOR = Object.getOwnPropertyDescriptor;
@@ -101,8 +102,11 @@ function snapshotWorkspaceRoot(value, dependencies) {
     undefined,
     [],
   ));
-  if (workspaceRoot !== join(supportRoot, WORKSPACE_NAME)) fail();
-  return workspaceRoot;
+  try {
+    return selectGateBBuyerWalletWorkspace(workspaceRoot, supportRoot).walletWorkspaceRoot;
+  } catch {
+    fail();
+  }
 }
 
 function processBootstrap(child) {
