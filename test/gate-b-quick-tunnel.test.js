@@ -41,6 +41,7 @@ import {
   parseGateBQuickTunnelIpcMessage,
   parseGateBQuickTunnelLsofSnapshot,
   parseGateBQuickTunnelReadyHttpSnapshot,
+  parseGateBQuickTunnelStartupReadyHttpSnapshot,
 } from '../src/gate-b-quick-tunnel-schema.js';
 
 const WORKSPACE_ROOT = '/private/tmp/gate-b-quick-tunnel-fixture';
@@ -48,6 +49,7 @@ const EXECUTABLE = '/usr/local/bin/cloudflared-fixture';
 const SOURCE_PIN = GATE_B_QUICK_TUNNEL_ARTIFACT_MANIFEST.executableSha256;
 const HOSTNAME = 'schema-fixture.trycloudflare.com';
 const CONNECTOR_ID = '11111111-2222-4333-8444-555555555555';
+const NIL_CONNECTOR_ID = '00000000-0000-0000-0000-000000000000';
 const FIXTURE_DATE = 'Mon, 01 Jan 2024 00:00:00 GMT';
 
 test('canonical artifact manifest accepts only the evidenced non-floating macOS arm64 tuple', () => {
@@ -211,7 +213,8 @@ function accessorObject(source, field) {
 
 function lsofFixture(pid, port) {
   return Buffer.from(
-    `p${pid}\0\nf9\0tIPv4\0n127.0.0.1:${port}\0PTCP\0TST=LISTEN\0\n`,
+    `p${pid}\0\nf9\0tIPv4\0PTCP\0n127.0.0.1:${port}\0` +
+      'TST=LISTEN\0TQR=0\0TQS=0\0\n',
     'ascii',
   );
 }
@@ -516,7 +519,21 @@ test('lsof parser accepts one exact process-owned IPv4 loopback TCP listener', (
   assert.equal(Object.isFrozen(result), true);
 });
 
-test('lsof parser rejects wrong identity, socket kind, state, address, or listener count', () => {
+test('lsof parser accepts canonical nonzero Darwin TCP queue fields', () => {
+  const pid = 4321;
+  const port = 43210;
+  const bytes = Buffer.from(
+    lsofFixture(pid, port).toString('latin1')
+      .replace('TQR=0', 'TQR=12')
+      .replace('TQS=0', 'TQS=34'),
+    'latin1',
+  );
+  assert.deepEqual(parseGateBQuickTunnelLsofSnapshot(bytes, pid), {
+    address: '127.0.0.1', pid, port,
+  });
+});
+
+test('lsof parser rejects malformed, contradictory, duplicate, extra, or wrong listeners', () => {
   const pid = 4321;
   const valid = lsofFixture(pid, 43210);
   for (const bytes of [
@@ -529,11 +546,30 @@ test('lsof parser rejects wrong identity, socket kind, state, address, or listen
     Buffer.concat([valid, valid]),
     valid.subarray(0, valid.length - 1),
     Buffer.from(valid.toString('latin1').replace('\0\nf9', '\nf9'), 'latin1'),
+    Buffer.from(valid.toString('latin1').replace('f9\0', 'f09\0'), 'latin1'),
+    Buffer.from(valid.toString('latin1').replace(
+      'f9\0',
+      `f${'9'.repeat(32)}\0`,
+    ), 'latin1'),
     Buffer.from(valid.toString('latin1').replace('\0tIPv4', '\0\ntIPv4'), 'latin1'),
     Buffer.from(valid.toString('latin1').replace(
-      '\0tIPv4\0n127.0.0.1:43210\0PTCP\0',
       '\0tIPv4\0PTCP\0n127.0.0.1:43210\0',
+      '\0tIPv4\0n127.0.0.1:43210\0PTCP\0',
     ), 'latin1'),
+    Buffer.from(valid.toString('latin1').replace('PTCP\0', 'PTCP\0PTCP\0'), 'latin1'),
+    Buffer.from(valid.toString('latin1').replace(
+      'n127.0.0.1:43210\0',
+      'n127.0.0.1:43210\0n127.0.0.1:43210\0',
+    ), 'latin1'),
+    Buffer.from(valid.toString('latin1').replace(
+      'TST=LISTEN\0',
+      'TST=LISTEN\0TST=ESTABLISHED\0',
+    ), 'latin1'),
+    Buffer.from(valid.toString('latin1').replace('TQR=0\0', 'TQR=0\0TQR=1\0'), 'latin1'),
+    Buffer.from(valid.toString('latin1').replace('TQS=0\0', 'TQS=0\0TQS=1\0'), 'latin1'),
+    Buffer.from(valid.toString('latin1').replace('TQR=0', 'TQR=00'), 'latin1'),
+    Buffer.from(valid.toString('latin1').replace('TQS=0', 'TQS=-1'), 'latin1'),
+    Buffer.from(valid.toString('latin1').replace('TQS=0\0', 'TQS=0\0TF=EXTRA\0'), 'latin1'),
   ]) assert.throws(() => parseGateBQuickTunnelLsofSnapshot(bytes, pid));
   assert.throws(() => parseGateBQuickTunnelLsofSnapshot(
     Buffer.alloc(GATE_B_QUICK_TUNNEL_LIMITS.lsofBytes + 1),
@@ -600,6 +636,48 @@ test('ready HTTP parser accepts status 200, one connection, and canonical nonnil
     status: 200,
   });
   assert.equal(Object.isFrozen(result), true);
+});
+
+test('startup ready parser accepts only exact 200/one or 503/zero readiness states', () => {
+  const readyBody = Buffer.from(
+    `{"status":200,"readyConnections":1,"connectorId":"${CONNECTOR_ID}"}`,
+    'utf8',
+  );
+  const pendingBody = Buffer.from(
+    `{"status":503,"readyConnections":0,"connectorId":"${CONNECTOR_ID}"}`,
+    'utf8',
+  );
+  assert.deepEqual(parseGateBQuickTunnelStartupReadyHttpSnapshot(snapshot(readyBody)), {
+    connectorId: CONNECTOR_ID,
+    readyConnections: 1,
+    status: 200,
+  });
+  assert.deepEqual(parseGateBQuickTunnelStartupReadyHttpSnapshot(snapshot(pendingBody, {
+    statusCode: 503,
+  })), {
+    connectorId: CONNECTOR_ID,
+    readyConnections: 0,
+    status: 503,
+  });
+  assert.throws(() => parseGateBQuickTunnelReadyHttpSnapshot(snapshot(pendingBody, {
+    statusCode: 503,
+  })));
+  for (const value of [
+    snapshot(pendingBody),
+    snapshot(pendingBody, { statusCode: 502 }),
+    snapshot(Buffer.from(
+      `{"status":503,"readyConnections":1,"connectorId":"${CONNECTOR_ID}"}`,
+      'utf8',
+    ), { statusCode: 503 }),
+    snapshot(Buffer.from(
+      `{"status":503,"readyConnections":0,"connectorId":"${NIL_CONNECTOR_ID}"}`,
+      'utf8',
+    ), { statusCode: 503 }),
+    snapshot(Buffer.from(
+      `{"readyConnections":0,"status":503,"connectorId":"${CONNECTOR_ID}"}`,
+      'utf8',
+    ), { statusCode: 503 }),
+  ]) assert.throws(() => parseGateBQuickTunnelStartupReadyHttpSnapshot(value));
 });
 
 test('HTTP parsers reject status, version, completion, bounds, framing, and extra fields', () => {
@@ -1454,6 +1532,8 @@ function supervisorHarness(changes = {}) {
     runtimeRemoved: 0,
     hostname: HOSTNAME,
     connectorId: CONNECTOR_ID,
+    readyStatus: 200,
+    readyConnections: 1,
     metricsPort: 43210,
     blockHttp: false,
     blockedHttp: false,
@@ -1530,10 +1610,11 @@ function supervisorHarness(changes = {}) {
         return snapshot(body);
       }
       const body = Buffer.from(
-        `{"status":200,"readyConnections":1,"connectorId":"${state.connectorId}"}`,
+        `{"status":${state.readyStatus},"readyConnections":${state.readyConnections},` +
+          `"connectorId":"${state.connectorId}"}`,
         'utf8',
       );
-      return snapshot(body);
+      return snapshot(body, { statusCode: state.readyStatus });
     },
     ipc,
     observationGapMs: 1,
@@ -1846,6 +1927,321 @@ test('supervisor emits no ACTIVE while the first readiness observation is blocke
   assert.equal(harness.state.runtimeRemoved, 1);
 });
 
+test('a deferred source reread cannot send ACTIVE after startup timeout or disconnect cleanup',
+  async t => {
+    for (const trigger of ['timeout', 'disconnect']) {
+      await t.test(trigger, async () => {
+        const harness = supervisorHarness({
+          startupTimeoutMs: trigger === 'timeout' ? 50 : 200,
+        });
+        const originalOpenWorkspace = harness.injections.openWorkspace;
+        let markReadStarted;
+        let releaseRead;
+        const readStarted = new Promise(resolve => { markReadStarted = resolve; });
+        const readGate = new Promise(resolve => { releaseRead = resolve; });
+        harness.injections.openWorkspace = async root => {
+          const workspace = await originalOpenWorkspace(root);
+          return Object.freeze({
+            ...workspace,
+            async read(record) {
+              assert.equal(record, harness.state.workspaceRecord);
+              harness.state.sourceReads += 1;
+              harness.state.order.push('workspace:read:deferred');
+              markReadStarted(true);
+              await readGate;
+              return Buffer.from(harness.state.sourceBytes);
+            },
+          });
+        };
+        const supervision = superviseGateBQuickTunnel(harness.injections);
+        await eventually(() => harness.state.ipc.sent.some(message =>
+          message.type === GATE_B_QUICK_TUNNEL_IPC_TYPES.READY));
+        harness.state.ipc.emit('message', createGateBQuickTunnelIpcMessage(
+          GATE_B_QUICK_TUNNEL_IPC_TYPES.START,
+          1,
+        ));
+        await readStarted;
+        if (trigger === 'disconnect') {
+          harness.state.ipc.connected = false;
+          harness.state.ipc.emit('disconnect');
+        }
+        await assert.rejects(supervision);
+        assert.equal(harness.state.runtimeRemoved, 1);
+        assert.equal(harness.state.ipc.sent.some(message =>
+          message.type === GATE_B_QUICK_TUNNEL_IPC_TYPES.ACTIVE), false);
+        releaseRead(true);
+        await tick();
+        await tick();
+        assert.equal(harness.state.ipc.sent.some(message =>
+          message.type === GATE_B_QUICK_TUNNEL_IPC_TYPES.ACTIVE), false);
+        assert.ok(harness.state.order.indexOf('child:close') <
+          harness.state.order.indexOf('runtime:remove'));
+      });
+    }
+  });
+
+test('startup polls only while the live child has no listener, then requires three successes',
+  async () => {
+    const harness = supervisorHarness();
+    const originalRunLsof = harness.injections.runLsof;
+    let absent = 2;
+    harness.injections.runLsof = async options => {
+      if (absent === 0) return originalRunLsof(options);
+      assert.equal(options.pid, harness.state.child.pid);
+      assert.equal(options.signal.aborted, false);
+      absent -= 1;
+      harness.state.lsofCalls += 1;
+      harness.state.order.push('lsof');
+      return Buffer.alloc(0);
+    };
+    const { promise: supervision } = await startSupervisor(harness);
+    assert.equal(harness.state.lsofCalls, 8);
+    assert.equal(harness.state.httpCalls.length, 6);
+    assert.equal(harness.state.order.filter(entry => entry === 'sleep').length, 4);
+    assert.equal(harness.state.sourceWrites, 1);
+    await stopSupervisor(harness, 2);
+    assert.equal(await supervision, true);
+  });
+
+test('startup preserves identity across exact 503/zero transients before three ready successes',
+  async () => {
+    const harness = supervisorHarness();
+    const originalHttpGet = harness.injections.httpGet;
+    let readyCalls = 0;
+    harness.injections.httpGet = async options => {
+      if (options.path === '/ready') {
+        readyCalls += 1;
+        harness.state.readyStatus = readyCalls <= 2 ? 503 : 200;
+        harness.state.readyConnections = readyCalls <= 2 ? 0 : 1;
+      }
+      return originalHttpGet(options);
+    };
+    const { promise: supervision } = await startSupervisor(harness);
+    assert.equal(readyCalls, 5);
+    assert.equal(harness.state.lsofCalls, 10);
+    assert.equal(harness.state.httpCalls.length, 10);
+    assert.equal(harness.state.order.filter(entry => entry === 'sleep').length, 4);
+    assert.equal(harness.state.sourceWrites, 1);
+    await stopSupervisor(harness, 2);
+    assert.equal(await supervision, true);
+  });
+
+test('startup rejects identity drift between exact 503/zero transient observations', async () => {
+  const harness = supervisorHarness();
+  const originalHttpGet = harness.injections.httpGet;
+  let readyCalls = 0;
+  harness.injections.httpGet = async options => {
+    if (options.path === '/ready') {
+      readyCalls += 1;
+      harness.state.readyStatus = 503;
+      harness.state.readyConnections = 0;
+      if (readyCalls === 2) {
+        harness.state.connectorId = '22222222-3333-4444-8555-666666666666';
+      }
+    }
+    return originalHttpGet(options);
+  };
+  const supervision = superviseGateBQuickTunnel(harness.injections);
+  await eventually(() => harness.state.ipc.sent.some(message =>
+    message.type === GATE_B_QUICK_TUNNEL_IPC_TYPES.READY));
+  harness.state.ipc.emit('message', createGateBQuickTunnelIpcMessage(
+    GATE_B_QUICK_TUNNEL_IPC_TYPES.START,
+    1,
+  ));
+  await assert.rejects(supervision);
+  assert.equal(readyCalls, 2);
+  assert.equal(harness.state.sourceWrites, 0);
+  assert.equal(harness.state.ipc.sent.some(message =>
+    message.type === GATE_B_QUICK_TUNNEL_IPC_TYPES.ACTIVE), false);
+  assert.equal(harness.state.runtimeRemoved, 1);
+});
+
+test('startup rejects a non-503 non-ready response without polling', async () => {
+  const harness = supervisorHarness();
+  harness.state.readyStatus = 502;
+  harness.state.readyConnections = 0;
+  const supervision = superviseGateBQuickTunnel(harness.injections);
+  await eventually(() => harness.state.ipc.sent.some(message =>
+    message.type === GATE_B_QUICK_TUNNEL_IPC_TYPES.READY));
+  harness.state.ipc.emit('message', createGateBQuickTunnelIpcMessage(
+    GATE_B_QUICK_TUNNEL_IPC_TYPES.START,
+    1,
+  ));
+  await assert.rejects(supervision);
+  assert.equal(harness.state.lsofCalls, 1);
+  assert.equal(harness.state.httpCalls.length, 2);
+  assert.equal(harness.state.order.includes('sleep'), false);
+  assert.equal(harness.state.sourceWrites, 0);
+  assert.equal(harness.state.runtimeRemoved, 1);
+});
+
+test('a 503/zero readiness regression after the first 200 success is fatal', async () => {
+  const harness = supervisorHarness();
+  const originalHttpGet = harness.injections.httpGet;
+  let readyCalls = 0;
+  harness.injections.httpGet = async options => {
+    if (options.path === '/ready') {
+      readyCalls += 1;
+      harness.state.readyStatus = readyCalls === 2 ? 503 : 200;
+      harness.state.readyConnections = readyCalls === 2 ? 0 : 1;
+    }
+    return originalHttpGet(options);
+  };
+  const supervision = superviseGateBQuickTunnel(harness.injections);
+  await eventually(() => harness.state.ipc.sent.some(message =>
+    message.type === GATE_B_QUICK_TUNNEL_IPC_TYPES.READY));
+  harness.state.ipc.emit('message', createGateBQuickTunnelIpcMessage(
+    GATE_B_QUICK_TUNNEL_IPC_TYPES.START,
+    1,
+  ));
+  await assert.rejects(supervision);
+  assert.equal(readyCalls, 2);
+  assert.equal(harness.state.sourceWrites, 0);
+  assert.equal(harness.state.ipc.sent.some(message =>
+    message.type === GATE_B_QUICK_TUNNEL_IPC_TYPES.ACTIVE), false);
+  assert.equal(harness.state.runtimeRemoved, 1);
+});
+
+test('startup no-listener polling has a deterministic deadline-derived attempt bound',
+  async () => {
+    let now = 0;
+    const harness = supervisorHarness({
+      monotonicNow: () => now,
+      observationGapMs: 1,
+      startupTimeoutMs: 3,
+    });
+    harness.injections.runLsof = async ({ pid, signal }) => {
+      assert.equal(pid, harness.state.child.pid);
+      assert.equal(signal.aborted, false);
+      harness.state.lsofCalls += 1;
+      harness.state.order.push('lsof');
+      return Buffer.alloc(0);
+    };
+    harness.injections.sleep = async (milliseconds, signal) => {
+      assert.equal(milliseconds, 1);
+      assert.equal(signal.aborted, false);
+      now += milliseconds;
+      harness.state.order.push('sleep');
+      return true;
+    };
+    const supervision = superviseGateBQuickTunnel(harness.injections);
+    await eventually(() => harness.state.ipc.sent.some(message =>
+      message.type === GATE_B_QUICK_TUNNEL_IPC_TYPES.READY));
+    harness.state.ipc.emit('message', createGateBQuickTunnelIpcMessage(
+      GATE_B_QUICK_TUNNEL_IPC_TYPES.START,
+      1,
+    ));
+    await assert.rejects(supervision);
+    assert.equal(harness.state.lsofCalls, 3);
+    assert.equal(harness.state.order.filter(entry => entry === 'sleep').length, 2);
+    assert.equal(harness.state.httpCalls.length, 0);
+    assert.equal(harness.state.sourceWrites, 0);
+    assert.equal(harness.state.runtimeRemoved, 1);
+  });
+
+test('startup rejects malformed listener evidence without retrying', async () => {
+  const harness = supervisorHarness();
+  harness.injections.runLsof = async ({ pid, signal }) => {
+    assert.equal(pid, harness.state.child.pid);
+    assert.equal(signal.aborted, false);
+    harness.state.lsofCalls += 1;
+    harness.state.order.push('lsof');
+    return Buffer.from('malformed\n', 'ascii');
+  };
+  const supervision = superviseGateBQuickTunnel(harness.injections);
+  await eventually(() => harness.state.ipc.sent.some(message =>
+    message.type === GATE_B_QUICK_TUNNEL_IPC_TYPES.READY));
+  harness.state.ipc.emit('message', createGateBQuickTunnelIpcMessage(
+    GATE_B_QUICK_TUNNEL_IPC_TYPES.START,
+    1,
+  ));
+  await assert.rejects(supervision);
+  assert.equal(harness.state.lsofCalls, 1);
+  assert.equal(harness.state.order.includes('sleep'), false);
+  assert.equal(harness.state.sourceWrites, 0);
+  assert.equal(harness.state.runtimeRemoved, 1);
+});
+
+test('startup rejects a non-buffer absence without retrying', async () => {
+  const harness = supervisorHarness();
+  harness.injections.runLsof = async ({ pid, signal }) => {
+    assert.equal(pid, harness.state.child.pid);
+    assert.equal(signal.aborted, false);
+    harness.state.lsofCalls += 1;
+    harness.state.order.push('lsof');
+    return '';
+  };
+  const supervision = superviseGateBQuickTunnel(harness.injections);
+  await eventually(() => harness.state.ipc.sent.some(message =>
+    message.type === GATE_B_QUICK_TUNNEL_IPC_TYPES.READY));
+  harness.state.ipc.emit('message', createGateBQuickTunnelIpcMessage(
+    GATE_B_QUICK_TUNNEL_IPC_TYPES.START,
+    1,
+  ));
+  await assert.rejects(supervision);
+  assert.equal(harness.state.lsofCalls, 1);
+  assert.equal(harness.state.order.includes('sleep'), false);
+  assert.equal(harness.state.sourceWrites, 0);
+  assert.equal(harness.state.runtimeRemoved, 1);
+});
+
+test('startup rejects listener disappearance after the first successful observation', async () => {
+  const harness = supervisorHarness();
+  const originalRunLsof = harness.injections.runLsof;
+  harness.injections.runLsof = async options => {
+    if (harness.state.lsofCalls < 2) return originalRunLsof(options);
+    assert.equal(options.pid, harness.state.child.pid);
+    assert.equal(options.signal.aborted, false);
+    harness.state.lsofCalls += 1;
+    harness.state.order.push('lsof');
+    return Buffer.alloc(0);
+  };
+  const supervision = superviseGateBQuickTunnel(harness.injections);
+  await eventually(() => harness.state.ipc.sent.some(message =>
+    message.type === GATE_B_QUICK_TUNNEL_IPC_TYPES.READY));
+  harness.state.ipc.emit('message', createGateBQuickTunnelIpcMessage(
+    GATE_B_QUICK_TUNNEL_IPC_TYPES.START,
+    1,
+  ));
+  await assert.rejects(supervision);
+  assert.equal(harness.state.lsofCalls, 3);
+  assert.equal(harness.state.httpCalls.length, 2);
+  assert.equal(harness.state.order.filter(entry => entry === 'sleep').length, 1);
+  assert.equal(harness.state.sourceWrites, 0);
+  assert.equal(harness.state.runtimeRemoved, 1);
+});
+
+test('startup child exit during no-listener polling fails closed and cleans up', async () => {
+  const harness = supervisorHarness();
+  harness.injections.runLsof = async ({ pid, signal }) => {
+    assert.equal(pid, harness.state.child.pid);
+    assert.equal(signal.aborted, false);
+    harness.state.lsofCalls += 1;
+    harness.state.order.push('lsof');
+    return Buffer.alloc(0);
+  };
+  harness.injections.sleep = async (milliseconds, signal) => {
+    assert.equal(milliseconds, 1);
+    assert.equal(signal.aborted, false);
+    harness.state.order.push('sleep');
+    harness.state.child.unexpectedExit();
+    return true;
+  };
+  const supervision = superviseGateBQuickTunnel(harness.injections);
+  await eventually(() => harness.state.ipc.sent.some(message =>
+    message.type === GATE_B_QUICK_TUNNEL_IPC_TYPES.READY));
+  harness.state.ipc.emit('message', createGateBQuickTunnelIpcMessage(
+    GATE_B_QUICK_TUNNEL_IPC_TYPES.START,
+    1,
+  ));
+  await assert.rejects(supervision);
+  assert.equal(harness.state.lsofCalls, 1);
+  assert.equal(harness.state.sourceWrites, 0);
+  assert.equal(harness.state.ipc.sent.some(message =>
+    message.type === GATE_B_QUICK_TUNNEL_IPC_TYPES.ACTIVE), false);
+  assert.equal(harness.state.runtimeRemoved, 1);
+});
+
 test('startup observation drift fails before ACTIVE and preserves one-shot source semantics',
   async t => {
     await t.test('listener changes inside one observation', async () => {
@@ -1927,6 +2323,22 @@ test('a fresh CHECK that differs from the pinned tunnel identity fails closed', 
   const harness = supervisorHarness();
   const { promise: supervision } = await startSupervisor(harness);
   harness.state.hostname = 'changed-fixture.trycloudflare.com';
+  harness.state.ipc.emit('message', createGateBQuickTunnelIpcMessage(
+    GATE_B_QUICK_TUNNEL_IPC_TYPES.CHECK,
+    2,
+  ));
+  await assert.rejects(supervision);
+  assert.equal(harness.state.ipc.sent.some(message =>
+    message.type === GATE_B_QUICK_TUNNEL_IPC_TYPES.CHECKED), false);
+  assert.equal(harness.state.sourceWrites, 1);
+  assert.equal(harness.state.runtimeRemoved, 1);
+});
+
+test('a fresh CHECK rejects the startup-only 503/zero readiness state', async () => {
+  const harness = supervisorHarness();
+  const { promise: supervision } = await startSupervisor(harness);
+  harness.state.readyStatus = 503;
+  harness.state.readyConnections = 0;
   harness.state.ipc.emit('message', createGateBQuickTunnelIpcMessage(
     GATE_B_QUICK_TUNNEL_IPC_TYPES.CHECK,
     2,

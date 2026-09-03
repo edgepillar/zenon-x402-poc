@@ -41,6 +41,7 @@ import {
   parseGateBQuickTunnelIpcMessage,
   parseGateBQuickTunnelLsofSnapshot,
   parseGateBQuickTunnelReadyHttpSnapshot,
+  parseGateBQuickTunnelStartupReadyHttpSnapshot,
 } from './gate-b-quick-tunnel-schema.js';
 
 const ERROR_CODE = 'gate_b_quick_tunnel_supervisor_failed';
@@ -1004,11 +1005,15 @@ async function runLsof({ pid, signal }) {
       });
       child.on('close', (code, childSignal) => {
         if (childError || !exited || code !== exitCode || childSignal !== exitSignal ||
-            code !== 0 || childSignal !== null || stderrBytes !== 0) rejectChild(error());
-        else resolveChild(true);
+            (code !== 0 && code !== 1) || childSignal !== null || stderrBytes !== 0) {
+          rejectChild(error());
+        } else {
+          resolveChild(code);
+        }
       });
     });
-    if (result !== true || state.total < 1) fail();
+    if ((result === 0 && state.total < 1) || (result === 1 && state.total !== 0)) fail();
+    if (result === 1) return Buffer.alloc(0);
     return Buffer.concat(chunks, state.total);
   } catch {
     try { child?.kill('SIGKILL'); } catch {}
@@ -1202,11 +1207,21 @@ function assertLive(state) {
 }
 
 function sameObservation(left, right) {
-  return left.port === right.port && left.hostname === right.hostname &&
-    left.connectorId === right.connectorId;
+  return sameObservationIdentity(left, right) && left.status === right.status &&
+    left.readyConnections === right.readyConnections;
 }
 
-async function observe(state, signal) {
+function sameObservationIdentity(left, right) {
+  return left.pid === right.pid && left.port === right.port &&
+    left.hostname === right.hostname && left.connectorId === right.connectorId;
+}
+
+function readyObservation(value) {
+  return value?.status === 200 && value?.readyConnections === 1;
+}
+
+async function observe(state, signal, startup = false) {
+  if (typeof startup !== 'boolean') fail();
   assertLive(state);
   const firstLsofBytes = await Reflect.apply(state.dependencies.runLsof, undefined, [{
     pid: state.child.pid,
@@ -1214,6 +1229,12 @@ async function observe(state, signal) {
   }]);
   let secondLsofBytes;
   try {
+    if (!Buffer.isBuffer(firstLsofBytes)) fail();
+    if (firstLsofBytes.length === 0) {
+      assertLive(state);
+      if (startup) return undefined;
+      fail();
+    }
     const first = parseGateBQuickTunnelLsofSnapshot(firstLsofBytes, state.child.pid);
     assertLive(state);
     const quickSnapshot = await Reflect.apply(state.dependencies.httpGet, undefined, [{
@@ -1235,7 +1256,9 @@ async function observe(state, signal) {
     }]);
     let ready;
     try {
-      ready = parseGateBQuickTunnelReadyHttpSnapshot(readySnapshot);
+      ready = startup
+        ? parseGateBQuickTunnelStartupReadyHttpSnapshot(readySnapshot)
+        : parseGateBQuickTunnelReadyHttpSnapshot(readySnapshot);
     } finally {
       if (Buffer.isBuffer(readySnapshot?.body)) readySnapshot.body.fill(0);
     }
@@ -1248,9 +1271,12 @@ async function observe(state, signal) {
     assertLive(state);
     if (first.port !== second.port) fail();
     return Object.freeze({
-      port: first.port,
-      hostname: quick.hostname,
       connectorId: ready.connectorId,
+      hostname: quick.hostname,
+      pid: state.child.pid,
+      port: first.port,
+      readyConnections: ready.readyConnections,
+      status: ready.status,
     });
   } catch {
     fail();
@@ -1458,13 +1484,77 @@ async function cleanup(state) {
   return state.cleanupPromise;
 }
 
-async function initialReadiness(state, quickTunnel) {
-  const first = await observe(state, state.startupAbort.signal);
-  await Reflect.apply(state.dependencies.sleep, undefined, [
+function createStartupPollBudget(state) {
+  assertLive(state);
+  const startedAt = Reflect.apply(state.dependencies.monotonicNow, undefined, []);
+  const deadline = startedAt + state.dependencies.startupTimeoutMs;
+  const maximumAttempts = Math.ceil(
+    state.dependencies.startupTimeoutMs / state.dependencies.observationGapMs,
+  );
+  if (!Number.isFinite(startedAt) || startedAt < 0 || !Number.isFinite(deadline) ||
+      !Number.isSafeInteger(maximumAttempts) || maximumAttempts < 1) fail();
+  return {
+    child: state.child,
+    deadline,
+    lastObservedAt: startedAt,
+    maximumAttempts,
+    pid: state.child.pid,
+  };
+}
+
+function startupRemaining(state, budget) {
+  const now = Reflect.apply(state.dependencies.monotonicNow, undefined, []);
+  if (!Number.isFinite(now) || now < budget.lastObservedAt || now >= budget.deadline) fail();
+  budget.lastObservedAt = now;
+  const remaining = Math.floor(budget.deadline - now);
+  if (!Number.isSafeInteger(remaining) || remaining < 1) fail();
+  return remaining;
+}
+
+async function startupGap(state, budget) {
+  if (startupRemaining(state, budget) < state.dependencies.observationGapMs) fail();
+  const slept = await Reflect.apply(state.dependencies.sleep, undefined, [
     state.dependencies.observationGapMs,
     state.startupAbort.signal,
   ]);
+  if (slept !== true) fail();
+  startupRemaining(state, budget);
+}
+
+function assertStartupActivation(state, budget, observation) {
+  if (state.mode !== 'STARTING' || state.startupAbort.signal.aborted || state.settled ||
+      state.stopping || state.cleanupPromise !== undefined || state.child !== budget.child ||
+      state.child?.pid !== budget.pid || observation?.pid !== budget.pid ||
+      !readyObservation(observation)) fail();
+  assertLive(state);
+  startupRemaining(state, budget);
+}
+
+async function initialReadiness(state, quickTunnel) {
+  const budget = createStartupPollBudget(state);
+  let provisional;
+  let first;
+  for (let attempt = 0; attempt < budget.maximumAttempts; attempt += 1) {
+    startupRemaining(state, budget);
+    const candidate = await observe(state, state.startupAbort.signal, true);
+    startupRemaining(state, budget);
+    if (candidate === undefined) {
+      if (provisional !== undefined) fail();
+    } else {
+      if (provisional !== undefined && !sameObservationIdentity(candidate, provisional)) fail();
+      if (provisional === undefined) provisional = candidate;
+      if (readyObservation(candidate)) {
+        first = candidate;
+        break;
+      }
+    }
+    if (attempt + 1 >= budget.maximumAttempts) fail();
+    await startupGap(state, budget);
+  }
+  if (first === undefined) fail();
+  await startupGap(state, budget);
   const second = await observe(state, state.startupAbort.signal);
+  startupRemaining(state, budget);
   if (!sameObservation(first, second)) fail();
   let source = serializeGateBQuickTunnelHostnameSource(first.hostname, quickTunnel);
   try {
@@ -1473,11 +1563,9 @@ async function initialReadiness(state, quickTunnel) {
   } finally {
     source.fill(0);
   }
-  await Reflect.apply(state.dependencies.sleep, undefined, [
-    state.dependencies.observationGapMs,
-    state.startupAbort.signal,
-  ]);
+  await startupGap(state, budget);
   const final = await observe(state, state.startupAbort.signal);
+  startupRemaining(state, budget);
   if (!sameObservation(first, final)) fail();
   const reread = await state.workspace.read(state.hostnameRecord);
   try {
@@ -1487,13 +1575,14 @@ async function initialReadiness(state, quickTunnel) {
   } finally {
     reread.fill(0);
   }
+  assertStartupActivation(state, budget, first);
   if (completeAttestationSourceWrite(
     state.attestationLaunch,
     state.attestation,
   ) !== true) fail();
   state.pinned = first;
   quickTunnel = undefined;
-  return true;
+  return budget;
 }
 
 async function freshCheck(state, requestId, controller) {
@@ -1621,9 +1710,10 @@ async function startTunnel(state, bootstrap) {
   );
   if (validateGateBQuickTunnelStableBinding(quickTunnel) !== true) fail();
   bootstrap = undefined;
-  await initialReadiness(state, quickTunnel);
-  state.mode = 'ACTIVE_IDLE';
+  const startupBudget = await initialReadiness(state, quickTunnel);
+  assertStartupActivation(state, startupBudget, state.pinned);
   clearTimeout(state.startupTimer);
+  state.mode = 'ACTIVE_IDLE';
   state.hardLifetimeTimer = setTimeout(
     () => state.failController(),
     state.dependencies.hardLifetimeMs,

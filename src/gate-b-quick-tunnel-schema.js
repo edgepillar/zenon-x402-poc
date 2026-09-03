@@ -12,6 +12,8 @@ const FRAME_HEADER_BYTES = 4;
 const HTTP_BODY_MAX_BYTES = 256;
 const LSOF_MAX_BYTES = 1024;
 const ORIGIN_LISTENER_PORT = 41000;
+const HTTP_OK_STATUSES = Object.freeze([200]);
+const STARTUP_READY_STATUSES = Object.freeze([200, 503]);
 const LOWERCASE_HASH_64 = /^[0-9a-f]{64}$/;
 const CANONICAL_UUID =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
@@ -246,27 +248,40 @@ export function parseGateBQuickTunnelLsofSnapshot(bytes, expectedPid) {
           (bytes[index] < 0x20 || bytes[index] > 0x7e)) fail();
     }
     const text = bytes.toString('latin1');
-    const match = new RegExp(
-      `^p${expectedPid}\\0\\nf(0|[1-9][0-9]*)\\0tIPv4\\0` +
-      'n127\\.0\\.0\\.1:([1-9][0-9]{0,4})\\0PTCP\\0TST=LISTEN\\0\\n$',
-    ).exec(text);
-    if (!match) fail();
-    const port = Number(match[2]);
+    const lines = text.split('\n');
+    if (lines.length !== 3 || lines[2] !== '') fail();
+    const processFields = lines[0].split('\0');
+    const fileFields = lines[1].split('\0');
+    if (processFields.length !== 2 || processFields[1] !== '' ||
+        processFields[0] !== `p${expectedPid}` ||
+        fileFields.length !== 8 || fileFields[7] !== '') fail();
+    const [descriptor, kind, protocol, name, state, receiveQueue, sendQueue] = fileFields;
+    if (!/^f(?:0|[1-9][0-9]*)$/.test(descriptor) || kind !== 'tIPv4' ||
+        protocol !== 'PTCP' || state !== 'TST=LISTEN' ||
+        !/^TQR=(?:0|[1-9][0-9]*)$/.test(receiveQueue) ||
+        !/^TQS=(?:0|[1-9][0-9]*)$/.test(sendQueue)) fail();
+    const nameMatch = /^n127\.0\.0\.1:([1-9][0-9]{0,4})$/.exec(name);
+    if (!nameMatch) fail();
+    const canonicalNumbers = [
+      descriptor.slice(1), receiveQueue.slice(4), sendQueue.slice(4),
+    ];
+    if (canonicalNumbers.some(value => !Number.isSafeInteger(Number(value)))) fail();
+    const port = Number(nameMatch[1]);
     if (!Number.isSafeInteger(port) || port < 1 || port > 65535 ||
-        port === ORIGIN_LISTENER_PORT || String(port) !== match[2]) fail();
+        port === ORIGIN_LISTENER_PORT || String(port) !== nameMatch[1]) fail();
     return Object.freeze({ address: '127.0.0.1', pid: expectedPid, port });
   } catch {
     fail();
   }
 }
 
-function validateHttpSnapshot(value) {
+function validateHttpSnapshot(value, allowedStatusCodes) {
   exactPlainObject(value, [
     'body', 'complete', 'httpVersion', 'rawHeaders', 'rawTrailers', 'statusCode',
   ]);
   if (!Buffer.isBuffer(value.body) || IS_PROXY(value.body) || value.body.length < 1 ||
       value.body.length > HTTP_BODY_MAX_BYTES || value.complete !== true ||
-      value.httpVersion !== '1.1' || value.statusCode !== 200) fail();
+      value.httpVersion !== '1.1' || !allowedStatusCodes.includes(value.statusCode)) fail();
   exactArray(value.rawHeaders, 4);
   exactArray(value.rawTrailers, 0);
   if (value.rawHeaders[0] !== 'Content-Type' ||
@@ -285,7 +300,7 @@ function exactUtf8(bytes) {
 
 export function parseGateBQuickTunnelHttpSnapshot(value) {
   try {
-    const text = exactUtf8(validateHttpSnapshot(value));
+    const text = exactUtf8(validateHttpSnapshot(value, HTTP_OK_STATUSES));
     const body = JSON.parse(text);
     exactPlainObject(body, ['hostname']);
     exactString(body.hostname, 253);
@@ -297,22 +312,34 @@ export function parseGateBQuickTunnelHttpSnapshot(value) {
   }
 }
 
+function parseReadyHttpSnapshot(value, allowedStatusCodes) {
+  const text = exactUtf8(validateHttpSnapshot(value, allowedStatusCodes));
+  const body = JSON.parse(text);
+  exactPlainObject(body, ['status', 'readyConnections', 'connectorId']);
+  const expectedConnections = body.status === 200 ? 1 : body.status === 503 ? 0 : undefined;
+  if (body.status !== value.statusCode || body.readyConnections !== expectedConnections ||
+      typeof body.connectorId !== 'string' || body.connectorId === NIL_UUID ||
+      !CANONICAL_UUID.test(body.connectorId) ||
+      text !== `{"status":${body.status},"readyConnections":${expectedConnections},` +
+        `"connectorId":${JSON.stringify(body.connectorId)}}`) fail();
+  return Object.freeze({
+    connectorId: body.connectorId,
+    readyConnections: body.readyConnections,
+    status: body.status,
+  });
+}
+
 export function parseGateBQuickTunnelReadyHttpSnapshot(value) {
   try {
-    const text = exactUtf8(validateHttpSnapshot(value));
-    const body = JSON.parse(text);
-    exactPlainObject(body, ['status', 'readyConnections', 'connectorId']);
-    if (body.status !== 200 || body.readyConnections !== 1 ||
-        typeof body.connectorId !== 'string' || body.connectorId === NIL_UUID ||
-        !CANONICAL_UUID.test(body.connectorId) ||
-        text !== `{"status":200,"readyConnections":1,"connectorId":${
-          JSON.stringify(body.connectorId)
-        }}`) fail();
-    return Object.freeze({
-      connectorId: body.connectorId,
-      readyConnections: body.readyConnections,
-      status: body.status,
-    });
+    return parseReadyHttpSnapshot(value, HTTP_OK_STATUSES);
+  } catch {
+    fail();
+  }
+}
+
+export function parseGateBQuickTunnelStartupReadyHttpSnapshot(value) {
+  try {
+    return parseReadyHttpSnapshot(value, STARTUP_READY_STATUSES);
   } catch {
     fail();
   }
