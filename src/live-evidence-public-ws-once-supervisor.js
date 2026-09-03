@@ -11,10 +11,15 @@ const MAX_TIMEOUT_MS = 30 * 60 * 1000;
 const CHILD_MODULE = fileURLToPath(
   new URL('./live-evidence-public-ws-once-run-child.js', import.meta.url),
 );
-const OPTION_FIELDS = Object.freeze([
+const PUBLIC_WS_OPTION_FIELDS = Object.freeze([
   'configPath', 'buyerRpcPath', 'buyerWalletPath', 'facilitatorRpcPath',
   'authorizationPath', 'workspaceRoot', 'runName', 'transportException',
 ]);
+const CURRENT_TESTNET_WSS_OPTION_FIELDS = Object.freeze([
+  'configPath', 'buyerRpcPath', 'buyerWalletPath', 'facilitatorRpcPath',
+  'authorizationPath', 'workspaceRoot', 'runName', 'executionMode',
+]);
+const CURRENT_TESTNET_WSS_EXECUTION_MODE = 'current-testnet-wss-once-v1';
 const ARRAY_IS_ARRAY = Array.isArray;
 const GET_OWN_PROPERTY_DESCRIPTOR = Object.getOwnPropertyDescriptor;
 const GET_PROTOTYPE_OF = Object.getPrototypeOf;
@@ -138,7 +143,14 @@ export async function supervisePublicWsOnceChild(command, options, injected) {
   let bootstrapBytes;
   try {
     if (command !== 'preflight-public-ws-once' && command !== 'run-public-ws-once') fail();
-    const snapshot = exactPlainDataObject(options, OPTION_FIELDS);
+    if (!options || typeof options !== 'object' || IS_PROXY(options) ||
+        ARRAY_IS_ARRAY(options) || GET_PROTOTYPE_OF(options) !== OBJECT_PROTOTYPE) fail();
+    const fields = GET_OWN_PROPERTY_DESCRIPTOR(options, 'executionMode') !== undefined
+      ? CURRENT_TESTNET_WSS_OPTION_FIELDS
+      : PUBLIC_WS_OPTION_FIELDS;
+    const snapshot = exactPlainDataObject(options, fields);
+    if (fields === CURRENT_TESTNET_WSS_OPTION_FIELDS &&
+        snapshot.executionMode !== CURRENT_TESTNET_WSS_EXECUTION_MODE) fail();
     const dependencies = captureInjections(injected);
     bootstrapBytes = Buffer.from(JSON.stringify(snapshot), 'utf8');
     if (bootstrapBytes.length < 1 || bootstrapBytes.length > BOOTSTRAP_MAX_BYTES) fail();

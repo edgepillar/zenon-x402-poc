@@ -73,11 +73,16 @@ import {
   runGateBOperatorFrontEnd,
 } from '../src/gate-b-operator-front-end.js';
 import {
+  GATE_B_CURRENT_TESTNET_WSS_ENDPOINT,
+  GATE_B_CURRENT_TESTNET_WSS_INPUT_ACKNOWLEDGEMENTS,
   GATE_B_PUBLIC_WS_INPUT_LEAVES,
+  serializeGateBCurrentTestnetWssEndpointSource,
   serializeGateBProtectedEndpointSource,
   serializeGateBQuickTunnelHostnameSource,
 } from '../src/gate-b-public-ws-inputs-schema.js';
 import {
+  currentTestnetWssOnceConfigDigest,
+  parseCurrentTestnetWssOnceRunConfig,
   parsePublicWsOnceRunConfig,
   publicWsOnceConfigDigest,
 } from '../src/live-evidence-runner.js';
@@ -412,6 +417,16 @@ function runConfig(changes = {}) {
   return Object.assign(value, changes);
 }
 
+function currentTestnetWssRunConfig(changes = {}) {
+  return {
+    ...runConfig(),
+    runnerVersion: 3,
+    executionMode: 'current-testnet-wss-once-v1',
+    rpcEndpoint: GATE_B_CURRENT_TESTNET_WSS_ENDPOINT,
+    ...changes,
+  };
+}
+
 function jsonLine(value, canonical = true) {
   return Buffer.from(`${canonical ? canonicalJson(value) : JSON.stringify(value)}\n`, 'utf8');
 }
@@ -441,6 +456,21 @@ function reviewFiles(config = runConfig()) {
     [GATE_B_PUBLIC_WS_INPUT_LEAVES.buyerRpc, Buffer.from(rpc)],
     [GATE_B_PUBLIC_WS_INPUT_LEAVES.facilitatorRpc, Buffer.from(rpc)],
   ]);
+}
+
+function currentTestnetWssReviewFiles(config = currentTestnetWssRunConfig()) {
+  const files = reviewFiles(config);
+  const rpc = jsonLine({
+    secretVersion: 3,
+    rpcEndpoint: GATE_B_CURRENT_TESTNET_WSS_ENDPOINT,
+  });
+  files.set(
+    GATE_B_PUBLIC_WS_INPUT_LEAVES.endpointSource,
+    serializeGateBCurrentTestnetWssEndpointSource(GATE_B_CURRENT_TESTNET_WSS_ENDPOINT),
+  );
+  files.set(GATE_B_PUBLIC_WS_INPUT_LEAVES.buyerRpc, Buffer.from(rpc));
+  files.set(GATE_B_PUBLIC_WS_INPUT_LEAVES.facilitatorRpc, Buffer.from(rpc));
+  return files;
 }
 
 function reviewHarness({ files = reviewFiles(), beforeFinalVerification } = {}) {
@@ -756,6 +786,44 @@ test('independent digest matches the normative implementation across each mutabl
   }
 });
 
+test('independent review accepts only the closed current-testnet WSS artifact family', async t => {
+  const configuration = currentTestnetWssRunConfig();
+  const context = reviewHarness({ files: currentTestnetWssReviewFiles(configuration) });
+  const result = await reviewGateBOperatorConfiguration(context.injected);
+  assert.equal(result.resultVersion, 2);
+  assert.equal(result.configDigest, currentTestnetWssOnceConfigDigest(
+    parseCurrentTestnetWssOnceRunConfig(`${canonicalJson(configuration)}\n`),
+  ));
+  assert.throws(() => parsePublicWsOnceRunConfig(`${canonicalJson(configuration)}\n`));
+
+  const mixedFamilies = [
+    () => currentTestnetWssReviewFiles(runConfig()),
+    () => reviewFiles(currentTestnetWssRunConfig()),
+    () => {
+      const files = currentTestnetWssReviewFiles();
+      files.set(GATE_B_PUBLIC_WS_INPUT_LEAVES.buyerRpc, jsonLine({
+        secretVersion: 2,
+        rpcEndpoint: 'ws://8.8.8.8:35998/',
+      }));
+      return files;
+    },
+    () => {
+      const files = currentTestnetWssReviewFiles();
+      files.set(
+        GATE_B_PUBLIC_WS_INPUT_LEAVES.endpointSource,
+        serializeGateBProtectedEndpointSource('ws://8.8.8.8:35998/'),
+      );
+      return files;
+    },
+  ];
+  for (const [index, createFiles] of mixedFamilies.entries()) {
+    await t.test(`mixed-family-${index + 1}`, async () => {
+      const mixed = reviewHarness({ files: createFiles() });
+      await assert.rejects(reviewGateBOperatorConfiguration(mixed.injected));
+    });
+  }
+});
+
 test('independent reviewer rejects every frozen semantic mutation before authorization', async t => {
   const mutations = [
     ['runner-version', value => { value.runnerVersion = 1; }],
@@ -942,6 +1010,23 @@ class FakeChannel extends EventEmitter {
 }
 
 function cliHarness(changes = {}) {
+  const { familySchemaVersion = 1, ...optionChanges } = changes;
+  const initialFrameValue = familySchemaVersion === 2
+    ? bootstrap({
+      rpcEndpoint: GATE_B_CURRENT_TESTNET_WSS_ENDPOINT,
+      schemaVersion: 2,
+    })
+    : bootstrap();
+  const reviewFrameValue = familySchemaVersion === 2
+    ? review({
+      acknowledgements: {
+        payment: GATE_B_CURRENT_TESTNET_WSS_INPUT_ACKNOWLEDGEMENTS.payment,
+        publication: GATE_B_CURRENT_TESTNET_WSS_INPUT_ACKNOWLEDGEMENTS.publication,
+      },
+      schemaVersion: 2,
+    })
+    : review();
+  const runFrameValue = runAuthorization({ schemaVersion: familySchemaVersion });
   const channel = new FakeChannel();
   const events = [];
   const lines = [];
@@ -956,15 +1041,15 @@ function cliHarness(changes = {}) {
     openRunPhase() { events.push('reader:run-open'); return true; },
     readInitial() {
       events.push('reader:initial');
-      return Promise.resolve(frameGateBOperatorCoordinatorBootstrap(bootstrap()));
+      return Promise.resolve(frameGateBOperatorCoordinatorBootstrap(initialFrameValue));
     },
     readReview() {
       events.push('reader:review');
-      return Promise.resolve(frameGateBOperatorCoordinatorReview(review()));
+      return Promise.resolve(frameGateBOperatorCoordinatorReview(reviewFrameValue));
     },
     readRun() {
       events.push('reader:run');
-      return Promise.resolve(frameGateBOperatorCoordinatorRun(runAuthorization()));
+      return Promise.resolve(frameGateBOperatorCoordinatorRun(runFrameValue));
     },
   });
   const options = {
@@ -987,7 +1072,7 @@ function cliHarness(changes = {}) {
     inputStream: Object.freeze({}),
     lifetimeMs: 1000,
     prepareController: async supplied => {
-      assert.deepEqual(supplied, bootstrap());
+      assert.deepEqual(supplied, initialFrameValue);
       events.push('controller:prepare');
       return capability;
     },
@@ -996,13 +1081,13 @@ function cliHarness(changes = {}) {
       events.push('review');
       return Object.freeze({
         configDigest: 'b'.repeat(64),
-        resultVersion: 1,
+        resultVersion: familySchemaVersion,
         type: 'REVIEW_VALID',
       });
     },
     runController: async (candidate, supplied, beforeOriginBind) => {
       assert.equal(candidate, capability);
-      assert.deepEqual(supplied, runAuthorization());
+      assert.deepEqual(supplied, runFrameValue);
       events.push('controller:run');
       assert.equal(await beforeOriginBind(), true);
       events.push('controller:origin-released');
@@ -1029,7 +1114,7 @@ function cliHarness(changes = {}) {
         ? 'GATE_B_CONTROLLER_CLOSED_PENDING_INDEPENDENT_VERIFICATION'
         : 'GATE_B_CONTROLLER_CLOSED_RUN_NOT_EXECUTED');
     },
-    ...changes,
+    ...optionChanges,
   };
   return {
     channel,
@@ -1148,6 +1233,69 @@ test('coordinator CLI accepts one distinct Phase 3 only after preflight and orig
       'RELEASE_ORIGIN', 'PENDING', 'STOPPED',
     ]);
   });
+
+test('coordinator CLI carries the WSS family through review, authorization, and Phase 3',
+  async () => {
+    const context = cliHarness({ familySchemaVersion: 2 });
+    const pending = runGateBOperatorCoordinatorCli(context.options);
+    await waitFor(() => context.channel.sent.some(message =>
+      message.type === 'PREFLIGHT_VALID'));
+    context.channel.emit('message', { type: 'RUN_OPEN' });
+    await waitFor(() => context.channel.sent.some(message => message.type === 'PENDING'));
+    context.channel.emit('message', createGateBOperatorCoordinatorIpcMessage('STOP'));
+    assert.equal(await pending, true);
+    assert.deepEqual(context.channel.sent.map(message => message.type), [
+      'REVIEW_REQUIRED', 'REVIEW_OPENED', 'PREFLIGHT_VALID', 'RUN_OPENED',
+      'RELEASE_ORIGIN', 'PENDING', 'STOPPED',
+    ]);
+  });
+
+test('coordinator CLI rejects cross-family review, review-result, and Phase-3 frames', async t => {
+  await t.test('review', async () => {
+    const context = cliHarness({ familySchemaVersion: 2 });
+    const original = context.reader;
+    context.options.createFrameReader = () => Object.freeze({
+      ...original,
+      readReview() {
+        context.events.push('reader:review');
+        return Promise.resolve(frameGateBOperatorCoordinatorReview(review()));
+      },
+    });
+    assert.equal(await runGateBOperatorCoordinatorCli(context.options), false);
+    assert.equal(context.events.includes('controller:authorize'), false);
+  });
+
+  await t.test('review-result', async () => {
+    const context = cliHarness({
+      familySchemaVersion: 2,
+      reviewConfiguration: async () => Object.freeze({
+        configDigest: 'b'.repeat(64),
+        resultVersion: 1,
+        type: 'REVIEW_VALID',
+      }),
+    });
+    assert.equal(await runGateBOperatorCoordinatorCli(context.options), false);
+    assert.equal(context.events.includes('controller:authorize'), false);
+  });
+
+  await t.test('phase-3', async () => {
+    const context = cliHarness({ familySchemaVersion: 2 });
+    const original = context.reader;
+    context.options.createFrameReader = () => Object.freeze({
+      ...original,
+      readRun() {
+        context.events.push('reader:run');
+        return Promise.resolve(frameGateBOperatorCoordinatorRun(runAuthorization()));
+      },
+    });
+    const pending = runGateBOperatorCoordinatorCli(context.options);
+    await waitFor(() => context.channel.sent.some(message =>
+      message.type === 'PREFLIGHT_VALID'));
+    context.channel.emit('message', { type: 'RUN_OPEN' });
+    assert.equal(await pending, false);
+    assert.equal(context.events.includes('controller:run'), false);
+  });
+});
 
 test('STOP during review, authorize, and synchronous prepare reentrancy disables later actions', async t => {
   await t.test('review', async () => {
@@ -4289,6 +4437,41 @@ test('source boundary has fixed module launch, no shell or ad hoc code, and no r
     /exactFieldlessControl\(candidate, 'REVIEW_OPEN'\)[\s\S]{0,500}openReviewPhase/);
   assert.match(launcherSource, /'BOOTSTRAP_OPEN'[\s\S]{0,1000}bootstrapOpenAck/);
   assert.match(launcherSource, /'REVIEW_OPEN'[\s\S]{0,1000}reviewOpenAck/);
+});
+
+test('operator framing keeps current-testnet WSS phases version-closed', () => {
+  const initial = bootstrap({
+    rpcEndpoint: GATE_B_CURRENT_TESTNET_WSS_ENDPOINT,
+    schemaVersion: 2,
+  });
+  const second = review({
+    acknowledgements: {
+      payment: GATE_B_CURRENT_TESTNET_WSS_INPUT_ACKNOWLEDGEMENTS.payment,
+      publication: GATE_B_CURRENT_TESTNET_WSS_INPUT_ACKNOWLEDGEMENTS.publication,
+    },
+    schemaVersion: 2,
+  });
+  const third = runAuthorization({ schemaVersion: 2 });
+  assert.deepEqual(
+    parseGateBOperatorCoordinatorBootstrapFrame(
+      frameGateBOperatorCoordinatorBootstrap(initial),
+    ), initial,
+  );
+  assert.deepEqual(
+    parseGateBOperatorCoordinatorReviewFrame(frameGateBOperatorCoordinatorReview(second)),
+    second,
+  );
+  assert.deepEqual(
+    parseGateBOperatorCoordinatorRunFrame(frameGateBOperatorCoordinatorRun(third)),
+    third,
+  );
+  assert.throws(() => frameGateBOperatorCoordinatorReview({
+    ...second,
+    acknowledgements: {
+      ...second.acknowledgements,
+      transportException: GATE_B_OPERATOR_COORDINATOR_ACKNOWLEDGEMENTS.transportException,
+    },
+  }));
 });
 
 test('documentation limits terminal recovery to exact Node controls and Boolean raw state',

@@ -23,6 +23,7 @@ import { paidFetch, reconcilePayment } from './buyer.js';
 import { canonicalJson, paymentIntentDigest, sha256Hex } from './canonical.js';
 import { validateGateBQuickTunnelStableBinding } from './gate-b-quick-tunnel-artifact.js';
 import {
+  GATE_B_CURRENT_TESTNET_WSS_ENDPOINT,
   GATE_B_PUBLIC_WS_INPUT_LEAVES,
   GATE_B_PUBLIC_WS_INPUT_LIMITS,
   parseGateBQuickTunnelHostnameSource,
@@ -86,6 +87,7 @@ const MAX_MEMBERS = 4096;
 const PRIVATE_FILE_MODE = 0o600;
 const PRIVATE_DIRECTORY_MODE = 0o700;
 const PUBLIC_WS_ONCE_EXECUTION_MODE = 'public-ws-once-v1';
+const CURRENT_TESTNET_WSS_ONCE_EXECUTION_MODE = 'current-testnet-wss-once-v1';
 const HISTORICAL_WSS_EXECUTION_MODE = 'historical-wss-v1';
 const PUBLIC_WS_ONCE_MARKER_NAME = 'PUBLIC_WS_ONCE_CONSUMED';
 const PUBLIC_WS_ONCE_TRANSPORT_EXCEPTION =
@@ -95,6 +97,10 @@ const PUBLIC_WS_ONCE_PAYMENT_ACKNOWLEDGEMENT =
 const PUBLIC_WS_ONCE_PUBLICATION_ACKNOWLEDGEMENT =
   'I_UNDERSTAND_ARTIFACTS_MUST_NOT_BE_PUBLISHED_UNTIL_INDEPENDENT_VERIFICATION';
 const PUBLIC_WS_ONCE_CONFIG_DIGEST_DOMAIN = 'zenon-x402-public-ws-once-config-v2';
+const CURRENT_TESTNET_WSS_ONCE_PAYMENT_ACKNOWLEDGEMENT =
+  'I_ACCEPT_ONE_DISPOSABLE_MINIMALLY_FUNDED_TESTNET_PAYMENT_OVER_OPERATOR_TRUSTED_WSS_RPC';
+const CURRENT_TESTNET_WSS_ONCE_CONFIG_DIGEST_DOMAIN =
+  'zenon-x402-current-testnet-wss-once-config-v1';
 const MAX_RECOVERY_ATTEMPTS = 8;
 const MAX_RPC_TIMEOUT_MS = 60_000;
 const MAX_RECOVERY_DELAY_MS = 60_000;
@@ -749,6 +755,54 @@ export function publicWsOnceConfigDigest(parsedConfig) {
   }
 }
 
+export function parseCurrentTestnetWssOnceRunConfig(jsonText) {
+  try {
+    const value = parseStrictJson(jsonText, CONFIG_MAX_BYTES);
+    exactObject(value, [
+      'runnerVersion', 'executionMode', 'rpcEndpoint', 'sourceRevision', 'profileName',
+      'acknowledgements', 'expectedPaymentRequired', 'quickTunnel', 'runtime',
+    ]);
+    if (value.runnerVersion !== 3 ||
+        value.executionMode !== CURRENT_TESTNET_WSS_ONCE_EXECUTION_MODE ||
+        value.rpcEndpoint !== GATE_B_CURRENT_TESTNET_WSS_ENDPOINT ||
+        typeof value.sourceRevision !== 'string' || !REVISION.test(value.sourceRevision) ||
+        value.profileName !== GATE_B_CURRENT_TESTNET_PROFILE_NAME) fail();
+    exactObject(value.acknowledgements, ['live', 'operatorTrust']);
+    if (value.acknowledgements.live !== TESTNET_LIVE_ACKNOWLEDGEMENT ||
+        value.acknowledgements.operatorTrust !==
+          GATE_B_CURRENT_TESTNET_OPERATOR_TRUST_ACKNOWLEDGEMENT) fail();
+    if (validateGateBQuickTunnelStableBinding(value.quickTunnel) !== true) fail();
+    validateExpectedPaymentRequired(
+      value.expectedPaymentRequired,
+      GATE_B_CURRENT_TESTNET_CHAIN_PROFILE,
+    );
+    exactObject(value.runtime, [
+      'listenPort', 'rpcTimeoutMs', 'maxRecoveryAttempts', 'recoveryDelayMs',
+      'maxRecoveryElapsedMs',
+    ]);
+    integer(value.runtime.listenPort, 1, 65_535);
+    integer(value.runtime.rpcTimeoutMs, 1, MAX_RPC_TIMEOUT_MS);
+    if (value.runtime.maxRecoveryAttempts !== 0 || value.runtime.recoveryDelayMs !== 0) fail();
+    integer(value.runtime.maxRecoveryElapsedMs, 1, MAX_RECOVERY_ELAPSED_MS);
+    return deepFreeze(value);
+  } catch {
+    fail();
+  }
+}
+
+export function currentTestnetWssOnceConfigDigest(parsedConfig) {
+  try {
+    const validated = parseCurrentTestnetWssOnceRunConfig(
+      `${JSON_STRINGIFY(parsedConfig)}\n`,
+    );
+    return sha256Hex(
+      `${CURRENT_TESTNET_WSS_ONCE_CONFIG_DIGEST_DOMAIN}\n${canonicalJson(validated)}`,
+    );
+  } catch {
+    fail();
+  }
+}
+
 function parseRpcSecret(value) {
   exactObject(value, ['secretVersion', 'rpcEndpoint']);
   if (value.secretVersion !== 1) fail();
@@ -794,6 +848,13 @@ function parsePublicWsOnceRpcSecret(value) {
   return value;
 }
 
+function parseCurrentTestnetWssOnceRpcSecret(value) {
+  exactObject(value, ['secretVersion', 'rpcEndpoint']);
+  if (value.secretVersion !== 3 ||
+      value.rpcEndpoint !== GATE_B_CURRENT_TESTNET_WSS_ENDPOINT) fail();
+  return value;
+}
+
 export function parseLiveRoleInput(jsonText, role) {
   try {
     const value = parseStrictJson(jsonText, ROLE_INPUT_MAX_BYTES);
@@ -818,6 +879,25 @@ export function parsePublicWsOnceRoleInput(jsonText, role) {
     const value = parseStrictJson(jsonText, ROLE_INPUT_MAX_BYTES);
     if (role === 'buyer-rpc' || role === 'facilitator-rpc') {
       parsePublicWsOnceRpcSecret(value);
+    } else if (role === 'buyer-wallet') {
+      exactObject(value, ['secretVersion', 'mnemonic', 'accountIndex']);
+      if (value.secretVersion !== 1) fail();
+      stringValue(value.mnemonic, 4096);
+      integer(value.accountIndex, 0, Number.MAX_SAFE_INTEGER);
+    } else {
+      fail();
+    }
+    return deepFreeze(value);
+  } catch {
+    fail();
+  }
+}
+
+export function parseCurrentTestnetWssOnceRoleInput(jsonText, role) {
+  try {
+    const value = parseStrictJson(jsonText, ROLE_INPUT_MAX_BYTES);
+    if (role === 'buyer-rpc' || role === 'facilitator-rpc') {
+      parseCurrentTestnetWssOnceRpcSecret(value);
     } else if (role === 'buyer-wallet') {
       exactObject(value, ['secretVersion', 'mnemonic', 'accountIndex']);
       if (value.secretVersion !== 1) fail();
@@ -1166,6 +1246,29 @@ function exactPublicWsOnceOptions(options) {
   return FREEZE(snapshot);
 }
 
+function exactCurrentTestnetWssOnceOptions(options) {
+  exactObject(options, [
+    'configPath', 'buyerRpcPath', 'buyerWalletPath', 'facilitatorRpcPath',
+    'authorizationPath', 'workspaceRoot', 'runName', 'executionMode',
+  ]);
+  const names = [
+    'configPath', 'buyerRpcPath', 'buyerWalletPath', 'facilitatorRpcPath',
+    'authorizationPath', 'workspaceRoot',
+  ];
+  for (let index = 0; index < names.length; index += 1) {
+    stringValue(options[names[index]], 4096);
+  }
+  if (typeof options.runName !== 'string' || !RUN_NAME.test(options.runName) ||
+      options.executionMode !== CURRENT_TESTNET_WSS_ONCE_EXECUTION_MODE) fail();
+  const snapshot = {};
+  for (let index = 0; index < names.length; index += 1) {
+    ownData(snapshot, names[index], options[names[index]]);
+  }
+  ownData(snapshot, 'runName', options.runName);
+  ownData(snapshot, 'executionMode', options.executionMode);
+  return FREEZE(snapshot);
+}
+
 export function parsePublicWsOnceAuthorization(jsonText) {
   try {
     const value = parseStrictJson(jsonText, ROLE_INPUT_MAX_BYTES);
@@ -1195,9 +1298,46 @@ export function parsePublicWsOnceAuthorization(jsonText) {
   }
 }
 
+export function parseCurrentTestnetWssOnceAuthorization(jsonText) {
+  try {
+    const value = parseStrictJson(jsonText, ROLE_INPUT_MAX_BYTES);
+    exactObject(value, [
+      'authorizationVersion', 'executionMode', 'runName', 'sourceRevision',
+      'profileName', 'configDigest', 'paymentIntentDigest', 'rpcEndpoint',
+      'quickTunnel', 'acknowledgements',
+    ]);
+    if (value.authorizationVersion !== 3 ||
+        value.executionMode !== CURRENT_TESTNET_WSS_ONCE_EXECUTION_MODE ||
+        typeof value.runName !== 'string' || !RUN_NAME.test(value.runName) ||
+        typeof value.sourceRevision !== 'string' || !REVISION.test(value.sourceRevision) ||
+        value.profileName !== GATE_B_CURRENT_TESTNET_PROFILE_NAME ||
+        typeof value.configDigest !== 'string' || !LOWERCASE_HASH_64.test(value.configDigest) ||
+        typeof value.paymentIntentDigest !== 'string' ||
+        !LOWERCASE_HASH_64.test(value.paymentIntentDigest) ||
+        value.rpcEndpoint !== GATE_B_CURRENT_TESTNET_WSS_ENDPOINT) fail();
+    if (validateGateBQuickTunnelStableBinding(value.quickTunnel) !== true) fail();
+    exactObject(value.acknowledgements, ['payment', 'publication']);
+    if (value.acknowledgements.payment !==
+          CURRENT_TESTNET_WSS_ONCE_PAYMENT_ACKNOWLEDGEMENT ||
+        value.acknowledgements.publication !==
+          PUBLIC_WS_ONCE_PUBLICATION_ACKNOWLEDGEMENT) fail();
+    return deepFreeze(value);
+  } catch {
+    fail();
+  }
+}
+
 export function parsePublicWsOnceSupervisorBootstrap(jsonText) {
   try {
     return exactPublicWsOnceOptions(parseStrictJson(jsonText, ROLE_INPUT_MAX_BYTES));
+  } catch {
+    fail();
+  }
+}
+
+export function parseCurrentTestnetWssOnceSupervisorBootstrap(jsonText) {
+  try {
+    return exactCurrentTestnetWssOnceOptions(parseStrictJson(jsonText, ROLE_INPUT_MAX_BYTES));
   } catch {
     fail();
   }
@@ -1286,11 +1426,14 @@ async function persistPublicWsOnceConsumedMarkerInState(workspaceState) {
   }
 }
 
-async function performPublicWsOncePreflight(options, retainInputs) {
+async function performPublicWsOncePreflight(options, retainInputs, currentTestnetWss = false) {
   const opened = [];
   let workspaceState;
   try {
-    options = exactPublicWsOnceOptions(options);
+    if (typeof currentTestnetWss !== 'boolean') fail();
+    options = currentTestnetWss
+      ? exactCurrentTestnetWssOnceOptions(options)
+      : exactPublicWsOnceOptions(options);
     workspaceState = await capturePrivateDirectoryState(options.workspaceRoot, true);
     const workspaceRoot = workspaceState.path;
     const paths = [
@@ -1339,16 +1482,28 @@ async function performPublicWsOncePreflight(options, retainInputs) {
       opened[5],
       GATE_B_PUBLIC_WS_INPUT_LIMITS.sourceBytes,
     );
-    const config = parsePublicWsOnceRunConfig(configBytes.toString('utf8'));
-    const buyerRpc = parsePublicWsOnceRoleInput(
+    const parseConfig = currentTestnetWss
+      ? parseCurrentTestnetWssOnceRunConfig
+      : parsePublicWsOnceRunConfig;
+    const parseRole = currentTestnetWss
+      ? parseCurrentTestnetWssOnceRoleInput
+      : parsePublicWsOnceRoleInput;
+    const parseAuthorization = currentTestnetWss
+      ? parseCurrentTestnetWssOnceAuthorization
+      : parsePublicWsOnceAuthorization;
+    const digestConfiguration = currentTestnetWss
+      ? currentTestnetWssOnceConfigDigest
+      : publicWsOnceConfigDigest;
+    const config = parseConfig(configBytes.toString('utf8'));
+    const buyerRpc = parseRole(
       buyerRpcBytes.toString('utf8'),
       'buyer-rpc',
     );
-    const facilitatorRpc = parsePublicWsOnceRoleInput(
+    const facilitatorRpc = parseRole(
       facilitatorRpcBytes.toString('utf8'),
       'facilitator-rpc',
     );
-    const authorization = parsePublicWsOnceAuthorization(
+    const authorization = parseAuthorization(
       authorizationBytes.toString('utf8'),
     );
     const hostnameSource = parseGateBQuickTunnelHostnameSource(hostnameSourceBytes);
@@ -1356,7 +1511,7 @@ async function performPublicWsOncePreflight(options, retainInputs) {
       config.expectedPaymentRequired,
       config.expectedPaymentRequired.accepts[0],
     );
-    const configDigest = publicWsOnceConfigDigest(config);
+    const configDigest = digestConfiguration(config);
     if (buyerRpc.rpcEndpoint !== facilitatorRpc.rpcEndpoint ||
         authorization.rpcEndpoint !== buyerRpc.rpcEndpoint ||
         authorization.runName !== options.runName ||
@@ -1364,7 +1519,11 @@ async function performPublicWsOncePreflight(options, retainInputs) {
         authorization.profileName !== config.profileName ||
         authorization.configDigest !== configDigest ||
         authorization.paymentIntentDigest !== intentDigest ||
-        authorization.transportException !== options.transportException ||
+        (currentTestnetWss
+          ? authorization.executionMode !== options.executionMode ||
+            config.executionMode !== options.executionMode ||
+            config.rpcEndpoint !== buyerRpc.rpcEndpoint
+          : authorization.transportException !== options.transportException) ||
         config.expectedPaymentRequired.resource.url !==
           `https://${hostnameSource.hostname}/paid` ||
         canonicalJson(hostnameSource.quickTunnel) !== canonicalJson(config.quickTunnel) ||
@@ -1406,6 +1565,10 @@ async function performPublicWsOncePreflight(options, retainInputs) {
 
 export async function preflightPublicWsOnceRun(options) {
   return (await performPublicWsOncePreflight(options, false)).result;
+}
+
+export async function preflightCurrentTestnetWssOnceRun(options) {
+  return (await performPublicWsOncePreflight(options, false, true)).result;
 }
 
 async function performLiveEvidencePreflight(options, retainInputs) {
@@ -1700,7 +1863,41 @@ async function assertExactPrivateFile(path, expectedContents, allowEmpty = false
   }
 }
 
-function publicWsOncePendingMetadata() {
+function publicWsOncePendingMetadata(
+  executionMode = PUBLIC_WS_ONCE_EXECUTION_MODE,
+) {
+  if (executionMode !== PUBLIC_WS_ONCE_EXECUTION_MODE &&
+      executionMode !== CURRENT_TESTNET_WSS_ONCE_EXECUTION_MODE) fail();
+  if (executionMode === CURRENT_TESTNET_WSS_ONCE_EXECUTION_MODE) {
+    return {
+      candidateVersion: 2,
+      status: 'PENDING_INDEPENDENT_VERIFICATION',
+      publicationEligible: false,
+      transport: {
+        scheme: 'wss',
+        confidentialityInTransit: true,
+        tlsServerNameAuthenticated: true,
+        chainIdentityAuthenticated: false,
+        operatorTrustRequired: true,
+        endpointDisclosed: false,
+      },
+      independentVerification: {
+        required: true,
+        completed: false,
+        sameEndpointOrOperatorRouteSufficient: false,
+        exactBlockRequired: true,
+        paymentIntentBindingRequired: true,
+        momentumInclusionRequired: true,
+      },
+      privateCapture: {
+        complete: true,
+        independentlyVerified: false,
+        publicBundleProduced: false,
+        fragmentCount: 5,
+      },
+      nonClaims: publicWsOnceFalseNonClaims(),
+    };
+  }
   return {
     candidateVersion: 1,
     status: 'PENDING_INDEPENDENT_VERIFICATION',
@@ -1736,6 +1933,7 @@ async function assertPublicWsOnceRetainedState(
   pending,
   expectedJournalSnapshot,
   expectedArtifacts,
+  executionMode = PUBLIC_WS_ONCE_EXECUTION_MODE,
 ) {
   await assertPrivateDirectoryState(workspaceState);
   await assertPrivateDirectoryState(runState);
@@ -1794,7 +1992,7 @@ async function assertPublicWsOnceRetainedState(
     );
     await assertExactPrivateFile(
       join(pendingDirectory, 'metadata.json'),
-      `${JSON_STRINGIFY(publicWsOncePendingMetadata())}\n`,
+      `${JSON_STRINGIFY(publicWsOncePendingMetadata(executionMode))}\n`,
     );
     for (let index = 0; index < artifactNames.length; index += 1) {
       const name = artifactNames[index];
@@ -1819,7 +2017,12 @@ async function assertPublicWsOnceInputGenerations(preflightState) {
   }
 }
 
-async function publishPublicWsOncePendingSet(runDirectory, artifacts, boundary) {
+async function publishPublicWsOncePendingSet(
+  runDirectory,
+  artifacts,
+  boundary,
+  executionMode = PUBLIC_WS_ONCE_EXECUTION_MODE,
+) {
   const artifactNames = [
     'manifest.json', 'chain.json', 'http.json', 'journal.json', 'timing.json',
   ];
@@ -1836,7 +2039,7 @@ async function publishPublicWsOncePendingSet(runDirectory, artifacts, boundary) 
     if (boundary) await boundary();
     await chmod(captureDirectory, PRIVATE_DIRECTORY_MODE);
     await assertPrivateDirectory(captureDirectory);
-    const metadata = publicWsOncePendingMetadata();
+    const metadata = publicWsOncePendingMetadata(executionMode);
     for (let index = 0; index < artifactNames.length; index += 1) {
       const name = artifactNames[index];
       if (typeof artifacts[name] !== 'string' || artifacts[name].length === 0) fail();
@@ -1871,8 +2074,10 @@ async function publishPublicWsOncePendingSet(runDirectory, artifacts, boundary) 
 
 function environmentForRpc(config, rpcEndpoint, executionMode = HISTORICAL_WSS_EXECUTION_MODE) {
   if (executionMode !== HISTORICAL_WSS_EXECUTION_MODE &&
-      executionMode !== PUBLIC_WS_ONCE_EXECUTION_MODE) fail();
-  const sdkNetworkId = executionMode === PUBLIC_WS_ONCE_EXECUTION_MODE
+      executionMode !== PUBLIC_WS_ONCE_EXECUTION_MODE &&
+      executionMode !== CURRENT_TESTNET_WSS_ONCE_EXECUTION_MODE) fail();
+  const sdkNetworkId = executionMode === PUBLIC_WS_ONCE_EXECUTION_MODE ||
+      executionMode === CURRENT_TESTNET_WSS_ONCE_EXECUTION_MODE
     ? GATE_B_CURRENT_TESTNET_SDK_NETWORK_ID
     : '3';
   return FREEZE({
@@ -1931,9 +2136,16 @@ async function defaultOperations(
   facilitatorWorkerModule,
 ) {
   if (executionMode !== HISTORICAL_WSS_EXECUTION_MODE &&
-      executionMode !== PUBLIC_WS_ONCE_EXECUTION_MODE) fail();
-  const publicWsOnce = executionMode === PUBLIC_WS_ONCE_EXECUTION_MODE;
-  const buyerRpc = (publicWsOnce ? parsePublicWsOnceRoleInput : parseLiveRoleInput)(
+      executionMode !== PUBLIC_WS_ONCE_EXECUTION_MODE &&
+      executionMode !== CURRENT_TESTNET_WSS_ONCE_EXECUTION_MODE) fail();
+  const currentTestnetOnce = executionMode === PUBLIC_WS_ONCE_EXECUTION_MODE ||
+    executionMode === CURRENT_TESTNET_WSS_ONCE_EXECUTION_MODE;
+  const roleParser = executionMode === PUBLIC_WS_ONCE_EXECUTION_MODE
+    ? parsePublicWsOnceRoleInput
+    : executionMode === CURRENT_TESTNET_WSS_ONCE_EXECUTION_MODE
+      ? parseCurrentTestnetWssOnceRoleInput
+      : parseLiveRoleInput;
+  const buyerRpc = roleParser(
     preflightState.buyerRpcInput.buffer.toString('utf8'),
     'buyer-rpc',
   );
@@ -1943,7 +2155,7 @@ async function defaultOperations(
   const httpsRequester = dependencies.requestHttps ?? requestHttps;
   const zenonClientFactory = dependencies.createZenonClient ??
     (clientOptions => new ExactZenonClient(clientOptions));
-  const policy = publicWsOnce
+  const policy = currentTestnetOnce
     ? selectGateBCurrentTestnetPolicy(
       config.profileName,
       config.acknowledgements.operatorTrust,
@@ -2004,8 +2216,8 @@ async function defaultOperations(
     },
     async startFacilitator({ recovery = false }) {
       await boundary();
-      if (publicWsOnce && recovery !== false) fail();
-      const worker = publicWsOnce
+      if (currentTestnetOnce && recovery !== false) fail();
+      const worker = currentTestnetOnce
         ? facilitatorWorkerModule
         : await import('./live-evidence-facilitator-worker.js');
       if (!worker || typeof worker.startLiveEvidenceFacilitatorWorker !== 'function' ||
@@ -2018,8 +2230,8 @@ async function defaultOperations(
         journalDirectory: join(runDirectory, 'journal'),
         recovery,
       };
-      if (publicWsOnce) ownData(workerOptions, 'executionMode', PUBLIC_WS_ONCE_EXECUTION_MODE);
-      if (publicWsOnce) {
+      if (currentTestnetOnce) ownData(workerOptions, 'executionMode', executionMode);
+      if (currentTestnetOnce) {
         exactObject(directoryIdentities, ['workspace', 'runDirectory']);
         ownData(workerOptions, 'workspaceIdentity', directoryIdentities.workspace);
         ownData(workerOptions, 'runDirectoryIdentity', directoryIdentities.runDirectory);
@@ -2780,20 +2992,36 @@ export async function executeLiveEvidenceRun(options, injected = {}) {
   }
 }
 
-export async function executePublicWsOnceRun(options, injected = {}) {
+async function executeCurrentTestnetOneShotRun(
+  options,
+  injected,
+  currentTestnetWss,
+) {
   let runDirectory;
   let runDirectoryState;
   let controller;
   let preflightState;
   let boundControllerCleanup = operation => boundedPromise(operation, MAX_RPC_TIMEOUT_MS);
   try {
+    if (typeof currentTestnetWss !== 'boolean') fail();
     injected = captureExecutionInjections(injected, true);
-    const runOptions = exactPublicWsOnceOptions(options);
-    const preflight = await performPublicWsOncePreflight(runOptions, true);
+    const executionMode = currentTestnetWss
+      ? CURRENT_TESTNET_WSS_ONCE_EXECUTION_MODE
+      : PUBLIC_WS_ONCE_EXECUTION_MODE;
+    const runOptions = currentTestnetWss
+      ? exactCurrentTestnetWssOnceOptions(options)
+      : exactPublicWsOnceOptions(options);
+    const preflight = await performPublicWsOncePreflight(
+      runOptions,
+      true,
+      currentTestnetWss,
+    );
     preflightState = preflight.state;
     const config = preflightState.config;
     boundControllerCleanup = operation => boundedPromise(operation, config.runtime.rpcTimeoutMs);
-    parsePublicWsOnceRunConfig(`${JSON_STRINGIFY(config)}\n`);
+    (currentTestnetWss
+      ? parseCurrentTestnetWssOnceRunConfig
+      : parsePublicWsOnceRunConfig)(`${JSON_STRINGIFY(config)}\n`);
     const sourceTreeAttestor = injected.sourceTreeAttestor ?? attestPublicWsOnceSourceTree;
     if (await Reflect.apply(sourceTreeAttestor, undefined, [config.sourceRevision]) !== true) {
       fail();
@@ -2838,7 +3066,7 @@ export async function executePublicWsOnceRun(options, injected = {}) {
       runDirectory,
       preflightState,
       injected.dependencies,
-      PUBLIC_WS_ONCE_EXECUTION_MODE,
+      executionMode,
       assertBoundary,
       {
         workspace: preflightState.workspaceState.identity,
@@ -2953,12 +3181,15 @@ export async function executePublicWsOnceRun(options, injected = {}) {
       runDirectoryState,
       false,
       journalSnapshot,
+      undefined,
+      executionMode,
     );
     await assertPublicWsOnceInputGenerations(preflightState);
     await publishPublicWsOncePendingSet(
       runDirectory,
       candidate.encodedFragments,
       assertBoundary,
+      executionMode,
     );
     await assertPublicWsOnceRetainedState(
       preflightState.workspaceState,
@@ -2966,6 +3197,7 @@ export async function executePublicWsOnceRun(options, injected = {}) {
       true,
       journalSnapshot,
       candidate.encodedFragments,
+      executionMode,
     );
     await assertPublicWsOnceInputGenerations(preflightState);
     await boundaryPoint('after-pending-state');
@@ -2990,6 +3222,14 @@ export async function executePublicWsOnceRun(options, injected = {}) {
   }
 }
 
+export async function executePublicWsOnceRun(options, injected = {}) {
+  return executeCurrentTestnetOneShotRun(options, injected, false);
+}
+
+export async function executeCurrentTestnetWssOnceRun(options, injected = {}) {
+  return executeCurrentTestnetOneShotRun(options, injected, true);
+}
+
 export const LIVE_EVIDENCE_RUN_LIMITS = FREEZE({
   configBytes: CONFIG_MAX_BYTES,
   roleInputBytes: ROLE_INPUT_MAX_BYTES,
@@ -3000,5 +3240,12 @@ export const PUBLIC_WS_ONCE_POLICY = FREEZE({
   executionMode: PUBLIC_WS_ONCE_EXECUTION_MODE,
   transportException: PUBLIC_WS_ONCE_TRANSPORT_EXCEPTION,
   paymentAcknowledgement: PUBLIC_WS_ONCE_PAYMENT_ACKNOWLEDGEMENT,
+  publicationAcknowledgement: PUBLIC_WS_ONCE_PUBLICATION_ACKNOWLEDGEMENT,
+});
+
+export const CURRENT_TESTNET_WSS_ONCE_POLICY = FREEZE({
+  executionMode: CURRENT_TESTNET_WSS_ONCE_EXECUTION_MODE,
+  rpcEndpoint: GATE_B_CURRENT_TESTNET_WSS_ENDPOINT,
+  paymentAcknowledgement: CURRENT_TESTNET_WSS_ONCE_PAYMENT_ACKNOWLEDGEMENT,
   publicationAcknowledgement: PUBLIC_WS_ONCE_PUBLICATION_ACKNOWLEDGEMENT,
 });

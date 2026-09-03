@@ -3,8 +3,12 @@ import { pathToFileURL } from 'node:url';
 import { types as utilTypes } from 'node:util';
 
 import {
+  CURRENT_TESTNET_WSS_ONCE_POLICY,
+  executeCurrentTestnetWssOnceRun,
   executePublicWsOnceRun,
+  parseCurrentTestnetWssOnceSupervisorBootstrap,
   parsePublicWsOnceSupervisorBootstrap,
+  preflightCurrentTestnetWssOnceRun,
   preflightPublicWsOnceRun,
 } from './live-evidence-runner.js';
 
@@ -94,7 +98,12 @@ async function readBootstrapFd() {
     if (total < 1) fail();
     const bytes = Buffer.concat(chunks, total);
     try {
-      return parsePublicWsOnceSupervisorBootstrap(bytes.toString('utf8'));
+      const text = bytes.toString('utf8');
+      try {
+        return parsePublicWsOnceSupervisorBootstrap(text);
+      } catch {
+        return parseCurrentTestnetWssOnceSupervisorBootstrap(text);
+      }
     } finally {
       bytes.fill(0);
     }
@@ -112,8 +121,8 @@ function captureOptions(options) {
   const defaults = {
     channel: process,
     readBootstrap: readBootstrapFd,
-    preflight: preflightPublicWsOnceRun,
-    execute: executePublicWsOnceRun,
+    preflight: undefined,
+    execute: undefined,
     forceExit: code => process.exit(code),
   };
   const keys = REFLECT_OWN_KEYS(options);
@@ -128,8 +137,10 @@ function captureOptions(options) {
   }
   if (!defaults.channel || typeof defaults.channel.on !== 'function' ||
       typeof defaults.channel.send !== 'function' ||
-      typeof defaults.readBootstrap !== 'function' || typeof defaults.preflight !== 'function' ||
-      typeof defaults.execute !== 'function' || typeof defaults.forceExit !== 'function') fail();
+      typeof defaults.readBootstrap !== 'function' ||
+      (defaults.preflight !== undefined && typeof defaults.preflight !== 'function') ||
+      (defaults.execute !== undefined && typeof defaults.execute !== 'function') ||
+      typeof defaults.forceExit !== 'function') fail();
   return defaults;
 }
 
@@ -150,6 +161,14 @@ export async function runPublicWsOnceExecutionChild(options = {}) {
   };
   try {
     const bootstrap = await Reflect.apply(dependencies.readBootstrap, undefined, []);
+    const currentTestnetWss = bootstrap.executionMode ===
+      CURRENT_TESTNET_WSS_ONCE_POLICY.executionMode;
+    const preflight = dependencies.preflight ?? (currentTestnetWss
+      ? preflightCurrentTestnetWssOnceRun
+      : preflightPublicWsOnceRun);
+    const execute = dependencies.execute ?? (currentTestnetWss
+      ? executeCurrentTestnetWssOnceRun
+      : executePublicWsOnceRun);
     dependencies.channel.once('disconnect', () => terminate(1));
     dependencies.channel.on('message', async message => {
       if (finished) return;
@@ -167,7 +186,7 @@ export async function runPublicWsOnceExecutionChild(options = {}) {
       try {
         const type = exactControlMessage(message);
         if (type === 'PREFLIGHT') {
-          const result = await Reflect.apply(dependencies.preflight, undefined, [bootstrap]);
+          const result = await Reflect.apply(preflight, undefined, [bootstrap]);
           if (finished) return;
           if (!result || result.valid !== true || REFLECT_OWN_KEYS(result).length !== 1) fail();
           await send(dependencies.channel, 'PREFLIGHT_VALID');
@@ -182,7 +201,7 @@ export async function runPublicWsOnceExecutionChild(options = {}) {
             void requestSent.catch(() => terminate(1));
             return Promise.all([requestSent, acknowledgement]).then(() => true);
           };
-          const result = await Reflect.apply(dependencies.execute, undefined, [
+          const result = await Reflect.apply(execute, undefined, [
             bootstrap,
             Object.freeze({ beforeOriginBind }),
           ]);

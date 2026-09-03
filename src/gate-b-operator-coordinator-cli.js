@@ -907,6 +907,7 @@ export async function runGateBOperatorCoordinatorCli(options = undefined) {
     try { review = parseGateBOperatorCoordinatorReviewFrame(reviewFrame); } finally {
       try { if (Buffer.isBuffer(reviewFrame)) reviewFrame.fill(0); } catch {}
     }
+    if (review.schemaVersion !== bootstrap.schemaVersion) fail();
     if (stopping) return await finalize();
     const reviewedCandidate = await callAsync(dependencies.reviewConfiguration, undefined, [
       bootstrap.workspaceRoot,
@@ -920,13 +921,14 @@ export async function runGateBOperatorCoordinatorCli(options = undefined) {
     } finally {
       if (Buffer.isBuffer(reviewedFrame)) reviewedFrame.fill(0);
     }
+    if (reviewed.resultVersion !== bootstrap.schemaVersion) fail();
     if (stopping) return await finalize();
     const authorization = await callAsync(dependencies.authorizeController, undefined, [
       capability,
       {
         acknowledgements: review.acknowledgements,
         reviewedConfigDigest: reviewed.configDigest,
-        schemaVersion: 1,
+        schemaVersion: bootstrap.schemaVersion,
       },
     ]);
     if (stopping) return await finalize();
@@ -949,6 +951,7 @@ export async function runGateBOperatorCoordinatorCli(options = undefined) {
     try { runAuthorization = parseGateBOperatorCoordinatorRunFrame(runFrame); } finally {
       try { if (Buffer.isBuffer(runFrame)) runFrame.fill(0); } catch {}
     }
+    if (runAuthorization.schemaVersion !== bootstrap.schemaVersion) fail();
     if (stopping) return await finalize();
     const runResult = await callAsync(dependencies.runController, undefined, [
       capability,

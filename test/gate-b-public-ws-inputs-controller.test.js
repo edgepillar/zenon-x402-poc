@@ -15,9 +15,12 @@ import {
 } from '../src/gate-b-public-ws-inputs-controller.js';
 import {
   GATE_B_PUBLIC_WS_INPUT_ACKNOWLEDGEMENTS,
+  GATE_B_CURRENT_TESTNET_WSS_ENDPOINT,
+  GATE_B_CURRENT_TESTNET_WSS_INPUT_ACKNOWLEDGEMENTS,
   GATE_B_PUBLIC_WS_INPUT_LEAVES,
   GATE_B_PUBLIC_WS_INPUT_OPERATIONS,
 } from '../src/gate-b-public-ws-inputs-schema.js';
+import { CURRENT_TESTNET_WSS_ONCE_POLICY } from '../src/live-evidence-runner.js';
 import {
   GATE_B_QUICK_TUNNEL_OPERATIONS,
   GATE_B_QUICK_TUNNEL_TELEMETRY_ACKNOWLEDGEMENTS,
@@ -854,3 +857,56 @@ test('controller RUN seam delegates to the isolated supervisor without direct se
     ]) assert.equal(source.includes(token), false);
     assert.equal(source.includes('supervisePublicWsOnceChild'), true);
   });
+
+test('controller carries one closed WSS family through all phases without a plaintext exception',
+  async () => {
+    const context = harness();
+    const initial = options({
+      rpcEndpoint: GATE_B_CURRENT_TESTNET_WSS_ENDPOINT,
+      schemaVersion: 2,
+    });
+    const capability = await prepareGateBPublicWsInputsForReview(initial, context.injected);
+    const reviewed = review({
+      acknowledgements: {
+        payment: GATE_B_CURRENT_TESTNET_WSS_INPUT_ACKNOWLEDGEMENTS.payment,
+        publication: GATE_B_CURRENT_TESTNET_WSS_INPUT_ACKNOWLEDGEMENTS.publication,
+      },
+      schemaVersion: 2,
+    });
+    assert.equal(await authorizeAndPreflightGateBPublicWsInputs(capability, reviewed),
+      PREFLIGHT_VALID);
+    assert.equal(await executeGateBPublicWsInputsOnce(
+      capability,
+      runAuthorization({ schemaVersion: 2 }),
+      async () => true,
+    ), PENDING);
+    assert.deepEqual(context.inputBootstraps.map(value => value.schemaVersion), [2, 2, 2]);
+    assert.equal(context.inputBootstraps[2].acknowledgements.transportException, undefined);
+    assert.equal(context.preflights[0].executionMode,
+      CURRENT_TESTNET_WSS_ONCE_POLICY.executionMode);
+    assert.equal(context.preflights[0].transportException, undefined);
+    assert.equal(context.runs[0].executionMode,
+      CURRENT_TESTNET_WSS_ONCE_POLICY.executionMode);
+    assert.equal(context.runs[0].transportException, undefined);
+  });
+
+test('controller rejects cross-family review and run frames before new effects', async () => {
+  const context = harness();
+  const capability = await prepareGateBPublicWsInputsForReview(options({
+    rpcEndpoint: GATE_B_CURRENT_TESTNET_WSS_ENDPOINT,
+    schemaVersion: 2,
+  }), context.injected);
+  assert.equal(await authorizeAndPreflightGateBPublicWsInputs(capability, review()), CLOSED);
+  assert.equal(context.preflights.length, 0);
+
+  const second = harness();
+  const secondCapability = await prepareGateBPublicWsInputsForReview(options(), second.injected);
+  assert.equal(await authorizeAndPreflightGateBPublicWsInputs(secondCapability, review()),
+    PREFLIGHT_VALID);
+  assert.equal(await executeGateBPublicWsInputsOnce(
+    secondCapability,
+    runAuthorization({ schemaVersion: 2 }),
+    async () => true,
+  ), QUARANTINED);
+  assert.equal(second.runs.length, 0);
+});
