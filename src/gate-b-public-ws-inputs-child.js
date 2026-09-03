@@ -5,14 +5,17 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { types as utilTypes } from 'node:util';
 
 import {
+  GATE_B_CURRENT_TESTNET_WSS_INPUT_ACKNOWLEDGEMENTS,
   GATE_B_PUBLIC_WS_INPUT_ACKNOWLEDGEMENTS,
   GATE_B_PUBLIC_WS_INPUT_LEAVES,
   GATE_B_PUBLIC_WS_INPUT_LIMITS,
   GATE_B_PUBLIC_WS_INPUT_OPERATIONS,
   frameGateBPublicWsInputsBootstrap,
+  parseGateBCurrentTestnetWssEndpointSource,
   parseGateBProtectedEndpointSource,
   parseGateBPublicWsInputsFrame,
   parseGateBQuickTunnelHostnameSource,
+  serializeGateBCurrentTestnetWssEndpointSource,
   serializeGateBProtectedEndpointSource,
 } from './gate-b-public-ws-inputs-schema.js';
 import { openGateBPublicWsPrivateWorkspace } from './gate-b-public-ws-private-workspace.js';
@@ -208,9 +211,12 @@ function parseAddressRecord(bytes, expectedIndex, sdk) {
   return parsed.value;
 }
 
-function parseWallet(bytes, runner) {
+function parseWallet(bytes, runner, currentTestnetWss = false) {
   const parsed = strictJsonLine(bytes);
-  const wallet = Reflect.apply(runner.parsePublicWsOnceRoleInput, undefined, [
+  const parser = currentTestnetWss
+    ? runner.parseCurrentTestnetWssOnceRoleInput
+    : runner.parsePublicWsOnceRoleInput;
+  const wallet = Reflect.apply(parser, undefined, [
     `${parsed.text}\n`,
     'buyer-wallet',
   ]);
@@ -218,11 +224,17 @@ function parseWallet(bytes, runner) {
   return wallet;
 }
 
-function deriveAccounts(walletInput, buyerAddressInput, runner, sdk) {
+function deriveAccounts(
+  walletInput,
+  buyerAddressInput,
+  runner,
+  sdk,
+  currentTestnetWss = false,
+) {
   let wallet;
   const keyPairs = [];
   try {
-    const secret = parseWallet(walletInput, runner);
+    const secret = parseWallet(walletInput, runner, currentTestnetWss);
     const storedBuyer = parseAddressRecord(buyerAddressInput, 0, sdk);
     if (!sdk.KeyStore || typeof sdk.KeyStore.fromMnemonic !== 'function') fail();
     wallet = Reflect.apply(sdk.KeyStore.fromMnemonic, sdk.KeyStore, [secret.mnemonic]);
@@ -328,6 +340,11 @@ async function loadModules(dependencies, needAttestation) {
       typeof runner.parsePublicWsOnceRunConfig !== 'function' ||
       typeof runner.parsePublicWsOnceAuthorization !== 'function' ||
       typeof runner.publicWsOnceConfigDigest !== 'function' ||
+      typeof runner.parseCurrentTestnetWssOnceRoleInput !== 'function' ||
+      typeof runner.parseCurrentTestnetWssOnceRunConfig !== 'function' ||
+      typeof runner.parseCurrentTestnetWssOnceAuthorization !== 'function' ||
+      typeof runner.currentTestnetWssOnceConfigDigest !== 'function' ||
+      !runner.CURRENT_TESTNET_WSS_ONCE_POLICY ||
       !runner.PUBLIC_WS_ONCE_POLICY || !sdk || !canonical ||
       typeof canonical.canonicalJson !== 'function' ||
       typeof canonical.paymentIntentDigest !== 'function' || !profile) fail();
@@ -341,14 +358,19 @@ async function attestRevision(revision, sourceTreeAttestor) {
   if (await Reflect.apply(sourceTreeAttestor, undefined, [revision]) !== true) fail();
 }
 
-function validateEndpointSource(bytes, modules) {
-  const source = parseGateBProtectedEndpointSource(bytes);
+function validateEndpointSource(bytes, modules, currentTestnetWss = false) {
+  const source = currentTestnetWss
+    ? parseGateBCurrentTestnetWssEndpointSource(bytes)
+    : parseGateBProtectedEndpointSource(bytes);
   const rpcBytes = canonicalJsonLine({
-    secretVersion: 2,
+    secretVersion: currentTestnetWss ? 3 : 2,
     rpcEndpoint: source.rpcEndpoint,
   }, modules.canonical);
+  const parser = currentTestnetWss
+    ? modules.runner.parseCurrentTestnetWssOnceRoleInput
+    : modules.runner.parsePublicWsOnceRoleInput;
   try {
-    Reflect.apply(modules.runner.parsePublicWsOnceRoleInput, undefined, [
+    Reflect.apply(parser, undefined, [
       rpcBytes.toString('utf8'),
       'buyer-rpc',
     ]);
@@ -362,11 +384,18 @@ function validateHostnameSource(bytes) {
   return parseGateBQuickTunnelHostnameSource(bytes);
 }
 
-function exactPolicy(modules) {
-  const policy = modules.runner.PUBLIC_WS_ONCE_POLICY;
-  if (policy.transportException !== GATE_B_PUBLIC_WS_INPUT_ACKNOWLEDGEMENTS.transportException ||
-      policy.paymentAcknowledgement !== GATE_B_PUBLIC_WS_INPUT_ACKNOWLEDGEMENTS.payment ||
-      policy.publicationAcknowledgement !== GATE_B_PUBLIC_WS_INPUT_ACKNOWLEDGEMENTS.publication ||
+function exactPolicy(modules, currentTestnetWss = false) {
+  const policy = currentTestnetWss
+    ? modules.runner.CURRENT_TESTNET_WSS_ONCE_POLICY
+    : modules.runner.PUBLIC_WS_ONCE_POLICY;
+  if ((!currentTestnetWss &&
+      policy.transportException !== GATE_B_PUBLIC_WS_INPUT_ACKNOWLEDGEMENTS.transportException) ||
+      policy.paymentAcknowledgement !== (currentTestnetWss
+        ? GATE_B_CURRENT_TESTNET_WSS_INPUT_ACKNOWLEDGEMENTS.payment
+        : GATE_B_PUBLIC_WS_INPUT_ACKNOWLEDGEMENTS.payment) ||
+      policy.publicationAcknowledgement !== (currentTestnetWss
+        ? GATE_B_CURRENT_TESTNET_WSS_INPUT_ACKNOWLEDGEMENTS.publication
+        : GATE_B_PUBLIC_WS_INPUT_ACKNOWLEDGEMENTS.publication) ||
       modules.profile.TESTNET_LIVE_ACKNOWLEDGEMENT !==
         GATE_B_PUBLIC_WS_INPUT_ACKNOWLEDGEMENTS.live ||
       modules.profile.GATE_B_CURRENT_TESTNET_OPERATOR_TRUST_ACKNOWLEDGEMENT !==
@@ -374,12 +403,24 @@ function exactPolicy(modules) {
   return policy;
 }
 
-function buildRunConfig(bootstrap, revision, endpointSource, hostnameSource, accounts, modules) {
-  exactPolicy(modules);
+function buildRunConfig(
+  bootstrap,
+  revision,
+  endpointSource,
+  hostnameSource,
+  accounts,
+  modules,
+  currentTestnetWss = false,
+) {
+  const policy = exactPolicy(modules, currentTestnetWss);
   const asset = modules.sdk.ZNN_ZTS?.toString?.();
   exactString(asset, 128);
   const config = {
-    runnerVersion: 2,
+    runnerVersion: currentTestnetWss ? 3 : 2,
+    ...(currentTestnetWss ? {
+      executionMode: policy.executionMode,
+      rpcEndpoint: endpointSource.rpcEndpoint,
+    } : {}),
     sourceRevision: revision,
     profileName: modules.profile.GATE_B_CURRENT_TESTNET_PROFILE_NAME,
     quickTunnel: hostnameSource.quickTunnel,
@@ -419,7 +460,7 @@ function buildRunConfig(bootstrap, revision, endpointSource, hostnameSource, acc
   };
   const configBytes = canonicalJsonLine(config, modules.canonical);
   const rpcBytes = canonicalJsonLine({
-    secretVersion: 2,
+    secretVersion: currentTestnetWss ? 3 : 2,
     rpcEndpoint: endpointSource.rpcEndpoint,
   }, modules.canonical);
   const payeeBytes = canonicalJsonLine({
@@ -428,14 +469,20 @@ function buildRunConfig(bootstrap, revision, endpointSource, hostnameSource, acc
     accountIndex: 1,
   }, modules.canonical);
   try {
-    Reflect.apply(modules.runner.parsePublicWsOnceRunConfig, undefined, [
+    const configParser = currentTestnetWss
+      ? modules.runner.parseCurrentTestnetWssOnceRunConfig
+      : modules.runner.parsePublicWsOnceRunConfig;
+    const roleParser = currentTestnetWss
+      ? modules.runner.parseCurrentTestnetWssOnceRoleInput
+      : modules.runner.parsePublicWsOnceRoleInput;
+    Reflect.apply(configParser, undefined, [
       configBytes.toString('utf8'),
     ]);
-    Reflect.apply(modules.runner.parsePublicWsOnceRoleInput, undefined, [
+    Reflect.apply(roleParser, undefined, [
       rpcBytes.toString('utf8'),
       'buyer-rpc',
     ]);
-    Reflect.apply(modules.runner.parsePublicWsOnceRoleInput, undefined, [
+    Reflect.apply(roleParser, undefined, [
       rpcBytes.toString('utf8'),
       'facilitator-rpc',
     ]);
@@ -460,11 +507,15 @@ function assertFrozenPreparation(
   buyerRpc,
   facilitatorRpc,
   modules,
+  currentTestnetWss = false,
 ) {
-  exactPolicy(modules);
+  const policy = exactPolicy(modules, currentTestnetWss);
   const accepted = configuration.expectedPaymentRequired?.accepts?.[0];
   const expectedProfile = modules.profile.GATE_B_CURRENT_TESTNET_CHAIN_PROFILE;
-  if (configuration.runnerVersion !== 2 ||
+  if (configuration.runnerVersion !== (currentTestnetWss ? 3 : 2) ||
+      (currentTestnetWss && (
+        configuration.executionMode !== policy.executionMode ||
+        configuration.rpcEndpoint !== endpointSource.rpcEndpoint)) ||
       configuration.profileName !== modules.profile.GATE_B_CURRENT_TESTNET_PROFILE_NAME ||
       configuration.acknowledgements.live !== GATE_B_PUBLIC_WS_INPUT_ACKNOWLEDGEMENTS.live ||
       configuration.acknowledgements.operatorTrust !==
@@ -510,8 +561,11 @@ async function provisionEndpoint(bootstrap, dependencies) {
   let writtenBytes;
   try {
     const modules = await loadModules(dependencies, false);
-    sourceBytes = serializeGateBProtectedEndpointSource(bootstrap.rpcEndpoint);
-    validateEndpointSource(sourceBytes, modules);
+    const currentTestnetWss = bootstrap.schemaVersion === 2;
+    sourceBytes = currentTestnetWss
+      ? serializeGateBCurrentTestnetWssEndpointSource(bootstrap.rpcEndpoint)
+      : serializeGateBProtectedEndpointSource(bootstrap.rpcEndpoint);
+    validateEndpointSource(sourceBytes, modules, currentTestnetWss);
     workspace = await openGateBPublicWsPrivateWorkspace(
       bootstrap.workspaceRoot,
       dependencies.workspaceInjections,
@@ -523,7 +577,7 @@ async function provisionEndpoint(bootstrap, dependencies) {
     await workspace.write(output, sourceBytes);
     writtenBytes = await workspace.read(output);
     if (!writtenBytes.equals(sourceBytes)) fail();
-    validateEndpointSource(writtenBytes, modules);
+    validateEndpointSource(writtenBytes, modules, currentTestnetWss);
     await workspace.syncDirectories();
     await workspace.verify(output, sourceBytes.length);
     return Object.freeze({ status: 'endpoint-provisioned' });
@@ -541,6 +595,7 @@ async function prepareInputs(bootstrap, dependencies) {
   let workspace;
   let prepared;
   try {
+    const currentTestnetWss = bootstrap.schemaVersion === 2;
     const revision = await captureSourceRevision(dependencies);
     const modules = await loadModules(dependencies, true);
     await attestRevision(revision, modules.sourceTreeAttestor);
@@ -583,9 +638,15 @@ async function prepareInputs(bootstrap, dependencies) {
     const hostnameBytes = await read(inputs[GATE_B_PUBLIC_WS_INPUT_LEAVES.hostnameSource]);
     const walletBytes = await read(inputs[GATE_B_PUBLIC_WS_INPUT_LEAVES.buyerWallet]);
     const buyerAddressBytes = await read(inputs[GATE_B_PUBLIC_WS_INPUT_LEAVES.buyerAddress]);
-    const endpointSource = validateEndpointSource(endpointBytes, modules);
+    const endpointSource = validateEndpointSource(endpointBytes, modules, currentTestnetWss);
     const hostnameSource = validateHostnameSource(hostnameBytes);
-    const accounts = deriveAccounts(walletBytes, buyerAddressBytes, modules.runner, modules.sdk);
+    const accounts = deriveAccounts(
+      walletBytes,
+      buyerAddressBytes,
+      modules.runner,
+      modules.sdk,
+      currentTestnetWss,
+    );
     prepared = buildRunConfig(
       bootstrap,
       revision,
@@ -593,6 +654,7 @@ async function prepareInputs(bootstrap, dependencies) {
       hostnameSource,
       accounts,
       modules,
+      currentTestnetWss,
     );
     buffers.push(prepared.configBytes, prepared.rpcBytes, prepared.payeeBytes);
 
@@ -627,19 +689,26 @@ async function prepareInputs(bootstrap, dependencies) {
     );
     buffers.push(payeeWritten, configWritten, buyerRpcWritten, facilitatorRpcWritten);
     const payee = parseAddressRecord(payeeWritten, 1, modules.sdk);
-    const configuration = Reflect.apply(modules.runner.parsePublicWsOnceRunConfig, undefined, [
+    const configParser = currentTestnetWss
+      ? modules.runner.parseCurrentTestnetWssOnceRunConfig
+      : modules.runner.parsePublicWsOnceRunConfig;
+    const roleParser = currentTestnetWss
+      ? modules.runner.parseCurrentTestnetWssOnceRoleInput
+      : modules.runner.parsePublicWsOnceRoleInput;
+    const configuration = Reflect.apply(configParser, undefined, [
       configWritten.toString('utf8'),
     ]);
-    const buyerRpc = Reflect.apply(modules.runner.parsePublicWsOnceRoleInput, undefined, [
+    const buyerRpc = Reflect.apply(roleParser, undefined, [
       buyerRpcWritten.toString('utf8'), 'buyer-rpc',
     ]);
-    const facilitatorRpc = Reflect.apply(modules.runner.parsePublicWsOnceRoleInput, undefined, [
+    const facilitatorRpc = Reflect.apply(roleParser, undefined, [
       facilitatorRpcWritten.toString('utf8'), 'facilitator-rpc',
     ]);
     const buyerAddress = parseAddressRecord(buyerAddressBytes, 0, modules.sdk);
     assertFrozenPreparation(
       bootstrap, configuration, endpointSource, hostnameSource, buyerAddress, payee,
       accounts, buyerRpc, facilitatorRpc, modules,
+      currentTestnetWss,
     );
     if (configuration.sourceRevision !== revision) fail();
     await workspace.syncDirectories();
@@ -661,8 +730,9 @@ async function authorizeInputs(bootstrap, dependencies) {
   let workspace;
   let authorizationBytes;
   try {
+    const currentTestnetWss = bootstrap.schemaVersion === 2;
     const modules = await loadModules(dependencies, true);
-    exactPolicy(modules);
+    const policy = exactPolicy(modules, currentTestnetWss);
     workspace = await openGateBPublicWsPrivateWorkspace(
       bootstrap.workspaceRoot,
       dependencies.workspaceInjections,
@@ -694,25 +764,44 @@ async function authorizeInputs(bootstrap, dependencies) {
     const buyerRpcBytes = await read(GATE_B_PUBLIC_WS_INPUT_LEAVES.buyerRpc);
     const facilitatorRpcBytes = await read(GATE_B_PUBLIC_WS_INPUT_LEAVES.facilitatorRpc);
 
-    const endpointSource = validateEndpointSource(endpointBytes, modules);
+    const endpointSource = validateEndpointSource(endpointBytes, modules, currentTestnetWss);
     const hostnameSource = validateHostnameSource(hostnameBytes);
-    const accounts = deriveAccounts(walletBytes, buyerAddressBytes, modules.runner, modules.sdk);
+    const accounts = deriveAccounts(
+      walletBytes,
+      buyerAddressBytes,
+      modules.runner,
+      modules.sdk,
+      currentTestnetWss,
+    );
     const buyerAddress = parseAddressRecord(buyerAddressBytes, 0, modules.sdk);
     const payeeAddress = parseAddressRecord(payeeBytes, 1, modules.sdk);
-    const configuration = Reflect.apply(modules.runner.parsePublicWsOnceRunConfig, undefined, [
+    const configParser = currentTestnetWss
+      ? modules.runner.parseCurrentTestnetWssOnceRunConfig
+      : modules.runner.parsePublicWsOnceRunConfig;
+    const roleParser = currentTestnetWss
+      ? modules.runner.parseCurrentTestnetWssOnceRoleInput
+      : modules.runner.parsePublicWsOnceRoleInput;
+    const authorizationParser = currentTestnetWss
+      ? modules.runner.parseCurrentTestnetWssOnceAuthorization
+      : modules.runner.parsePublicWsOnceAuthorization;
+    const configuration = Reflect.apply(configParser, undefined, [
       configBytes.toString('utf8'),
     ]);
-    const buyerRpc = Reflect.apply(modules.runner.parsePublicWsOnceRoleInput, undefined, [
+    const buyerRpc = Reflect.apply(roleParser, undefined, [
       buyerRpcBytes.toString('utf8'), 'buyer-rpc',
     ]);
-    const facilitatorRpc = Reflect.apply(modules.runner.parsePublicWsOnceRoleInput, undefined, [
+    const facilitatorRpc = Reflect.apply(roleParser, undefined, [
       facilitatorRpcBytes.toString('utf8'), 'facilitator-rpc',
     ]);
     assertFrozenPreparation(
       bootstrap, configuration, endpointSource, hostnameSource, buyerAddress, payeeAddress,
       accounts, buyerRpc, facilitatorRpc, modules,
+      currentTestnetWss,
     );
-    const digest = Reflect.apply(modules.runner.publicWsOnceConfigDigest, undefined, [
+    const digestFunction = currentTestnetWss
+      ? modules.runner.currentTestnetWssOnceConfigDigest
+      : modules.runner.publicWsOnceConfigDigest;
+    const digest = Reflect.apply(digestFunction, undefined, [
       configuration,
     ]);
     if (digest !== bootstrap.reviewedConfigDigest) fail();
@@ -723,8 +812,10 @@ async function authorizeInputs(bootstrap, dependencies) {
       configuration.expectedPaymentRequired.accepts[0],
     ]);
     const authorization = {
-      authorizationVersion: 2,
-      transportException: bootstrap.acknowledgements.transportException,
+      authorizationVersion: currentTestnetWss ? 3 : 2,
+      ...(currentTestnetWss
+        ? { executionMode: policy.executionMode }
+        : { transportException: bootstrap.acknowledgements.transportException }),
       runName: bootstrap.runName,
       sourceRevision: configuration.sourceRevision,
       profileName: configuration.profileName,
@@ -738,7 +829,7 @@ async function authorizeInputs(bootstrap, dependencies) {
       },
     };
     authorizationBytes = canonicalJsonLine(authorization, modules.canonical);
-    Reflect.apply(modules.runner.parsePublicWsOnceAuthorization, undefined, [
+    Reflect.apply(authorizationParser, undefined, [
       authorizationBytes.toString('utf8'),
     ]);
     for (let index = 0; index < inputRecords.length; index += 1) {
@@ -754,7 +845,7 @@ async function authorizeInputs(bootstrap, dependencies) {
     const written = await workspace.read(output);
     buffers.push(written);
     const parsedAuthorization = Reflect.apply(
-      modules.runner.parsePublicWsOnceAuthorization,
+      authorizationParser,
       undefined,
       [written.toString('utf8')],
     );

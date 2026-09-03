@@ -10,8 +10,11 @@ import {
   recordLiveEvidencePhase,
 } from './live-observation.js';
 import {
+  CURRENT_TESTNET_WSS_ONCE_POLICY,
   parseLiveRoleInput,
   parseLiveEvidenceRunConfig,
+  parseCurrentTestnetWssOnceRoleInput,
+  parseCurrentTestnetWssOnceRunConfig,
   parsePublicWsOnceRoleInput,
   parsePublicWsOnceRunConfig,
   PUBLIC_WS_ONCE_POLICY,
@@ -266,7 +269,8 @@ export function createObservedFacilitatorAdapter(facilitator, observer) {
 }
 
 function explicitEnvironment(config, rpcEndpoint, executionMode = HISTORICAL_WSS_EXECUTION_MODE) {
-  const sdkNetworkId = executionMode === PUBLIC_WS_ONCE_POLICY.executionMode
+  const sdkNetworkId = executionMode === PUBLIC_WS_ONCE_POLICY.executionMode ||
+      executionMode === CURRENT_TESTNET_WSS_ONCE_POLICY.executionMode
     ? GATE_B_CURRENT_TESTNET_SDK_NETWORK_ID
     : executionMode === HISTORICAL_WSS_EXECUTION_MODE
       ? '3'
@@ -344,7 +348,8 @@ export async function readInheritedLiveRoleInput(
   let bytes;
   try {
     if (!Number.isSafeInteger(fd) || fd < 0 ||
-        (role !== 'facilitator-rpc' && role !== 'facilitator-public-ws-once-rpc')) fail();
+        (role !== 'facilitator-rpc' && role !== 'facilitator-public-ws-once-rpc' &&
+          role !== 'facilitator-current-testnet-wss-once-rpc')) fail();
     const generation = exactFileGeneration(expectedGeneration);
     const before = fstatSync(fd, { bigint: true });
     assertInheritedFileStat(before);
@@ -360,9 +365,16 @@ export async function readInheritedLiveRoleInput(
     const after = fstatSync(fd, { bigint: true });
     assertInheritedFileStat(after);
     if (!sameGeneration(generationFromStat(after), generation)) fail();
-    return role === 'facilitator-public-ws-once-rpc'
-      ? parsePublicWsOnceRoleInput(bytes.toString('utf8'), 'facilitator-rpc')
-      : parseLiveRoleInput(bytes.toString('utf8'), role);
+    if (role === 'facilitator-public-ws-once-rpc') {
+      return parsePublicWsOnceRoleInput(bytes.toString('utf8'), 'facilitator-rpc');
+    }
+    if (role === 'facilitator-current-testnet-wss-once-rpc') {
+      return parseCurrentTestnetWssOnceRoleInput(
+        bytes.toString('utf8'),
+        'facilitator-rpc',
+      );
+    }
+    return parseLiveRoleInput(bytes.toString('utf8'), role);
   } catch {
     fail();
   } finally {
@@ -502,10 +514,12 @@ export async function startDefaultLiveEvidenceFacilitatorRuntime(
     ? HISTORICAL_WSS_EXECUTION_MODE
     : message.executionMode;
   if (executionMode !== HISTORICAL_WSS_EXECUTION_MODE &&
-      executionMode !== PUBLIC_WS_ONCE_POLICY.executionMode) fail();
-  const publicWsOnce = executionMode === PUBLIC_WS_ONCE_POLICY.executionMode;
-  if (publicWsOnce && message.recovery !== false) fail();
-  const assertBoundary = publicWsOnce
+      executionMode !== PUBLIC_WS_ONCE_POLICY.executionMode &&
+      executionMode !== CURRENT_TESTNET_WSS_ONCE_POLICY.executionMode) fail();
+  const currentTestnetOnce = executionMode === PUBLIC_WS_ONCE_POLICY.executionMode ||
+    executionMode === CURRENT_TESTNET_WSS_ONCE_POLICY.executionMode;
+  if (currentTestnetOnce && message.recovery !== false) fail();
+  const assertBoundary = currentTestnetOnce
     ? async () => {
       await assertExpectedPrivateDirectory(message.workspaceRoot, message.workspaceIdentity);
       await assertExpectedPrivateDirectory(
@@ -514,15 +528,22 @@ export async function startDefaultLiveEvidenceFacilitatorRuntime(
       );
     }
     : async () => {};
-  const config = publicWsOnce
+  const config = executionMode === PUBLIC_WS_ONCE_POLICY.executionMode
     ? parsePublicWsOnceRunConfig(`${JSON.stringify(message.config)}\n`)
-    : parseLiveEvidenceRunConfig(`${JSON.stringify(message.config)}\n`);
+    : executionMode === CURRENT_TESTNET_WSS_ONCE_POLICY.executionMode
+      ? parseCurrentTestnetWssOnceRunConfig(`${JSON.stringify(message.config)}\n`)
+      : parseLiveEvidenceRunConfig(`${JSON.stringify(message.config)}\n`);
+  const role = executionMode === PUBLIC_WS_ONCE_POLICY.executionMode
+    ? 'facilitator-public-ws-once-rpc'
+    : executionMode === CURRENT_TESTNET_WSS_ONCE_POLICY.executionMode
+      ? 'facilitator-current-testnet-wss-once-rpc'
+      : 'facilitator-rpc';
   const secret = await readInheritedLiveRoleInput(
     INHERITED_FACILITATOR_RPC_FD,
     message.facilitatorRpcGeneration,
-    publicWsOnce ? 'facilitator-public-ws-once-rpc' : 'facilitator-rpc',
+    role,
   );
-  const policy = publicWsOnce
+  const policy = currentTestnetOnce
     ? selectGateBCurrentTestnetPolicy(
       config.profileName,
       config.acknowledgements.operatorTrust,
@@ -537,12 +558,12 @@ export async function startDefaultLiveEvidenceFacilitatorRuntime(
   await assertBoundary();
   assertJournalDescendant(message.workspaceRoot, message.journalDirectory);
   await assertPrivateWorkerDirectory(dirname(message.journalDirectory));
-  const Journal = publicWsOnce ? BoundaryCheckedSettlementJournal : SettlementJournal;
+  const Journal = currentTestnetOnce ? BoundaryCheckedSettlementJournal : SettlementJournal;
   const journalOptions = {
     directory: message.journalDirectory,
     allowedRoot: dirname(message.journalDirectory),
   };
-  const journal = publicWsOnce
+  const journal = currentTestnetOnce
     ? new Journal(journalOptions, assertBoundary)
     : new Journal(journalOptions);
   const initial = await journal.load();
@@ -832,9 +853,16 @@ export async function runLiveEvidenceFacilitatorWorker(options = {}) {
         });
         return;
       }
-      if (messageType === 'START' || messageType === 'START_PUBLIC_WS_ONCE') {
-        const publicWsOnce = messageType === 'START_PUBLIC_WS_ONCE';
-        const message = exactRequest(rawMessage, messageType, publicWsOnce
+      if (messageType === 'START' || messageType === 'START_PUBLIC_WS_ONCE' ||
+          messageType === 'START_CURRENT_TESTNET_WSS_ONCE') {
+        const currentTestnetOnce = messageType === 'START_PUBLIC_WS_ONCE' ||
+          messageType === 'START_CURRENT_TESTNET_WSS_ONCE';
+        const expectedExecutionMode = messageType === 'START_PUBLIC_WS_ONCE'
+          ? PUBLIC_WS_ONCE_POLICY.executionMode
+          : messageType === 'START_CURRENT_TESTNET_WSS_ONCE'
+            ? CURRENT_TESTNET_WSS_ONCE_POLICY.executionMode
+            : HISTORICAL_WSS_EXECUTION_MODE;
+        const message = exactRequest(rawMessage, messageType, currentTestnetOnce
           ? [
             'config', 'facilitatorRpcGeneration', 'workspaceRoot',
             'journalDirectory', 'recovery', 'executionMode',
@@ -845,15 +873,15 @@ export async function runLiveEvidenceFacilitatorWorker(options = {}) {
             'journalDirectory', 'recovery',
           ]);
         if (running || typeof message.recovery !== 'boolean' ||
-            publicPreloaded !== publicWsOnce ||
-            (publicWsOnce && (message.recovery !== false ||
-              message.executionMode !== PUBLIC_WS_ONCE_POLICY.executionMode))) fail();
+            publicPreloaded !== currentTestnetOnce ||
+            (currentTestnetOnce && (message.recovery !== false ||
+              message.executionMode !== expectedExecutionMode))) fail();
         for (const field of ['workspaceRoot', 'journalDirectory']) {
           if (typeof message[field] !== 'string' || message[field].length === 0 ||
               Buffer.byteLength(message[field], 'utf8') > MAX_IPC_STRING_BYTES) fail();
         }
         exactFileGeneration(message.facilitatorRpcGeneration);
-        if (publicWsOnce) {
+        if (currentTestnetOnce) {
           exactDirectoryIdentity(message.workspaceIdentity);
           exactDirectoryIdentity(message.runDirectoryIdentity);
         }
@@ -1071,10 +1099,13 @@ function captureControllerOptions(options) {
       typeof descriptors.forkProcess.value !== 'function') fail();
   const executionMode = descriptors.executionMode.value;
   if (executionMode !== HISTORICAL_WSS_EXECUTION_MODE &&
-      executionMode !== PUBLIC_WS_ONCE_POLICY.executionMode) fail();
-  if (executionMode === PUBLIC_WS_ONCE_POLICY.executionMode &&
+      executionMode !== PUBLIC_WS_ONCE_POLICY.executionMode &&
+      executionMode !== CURRENT_TESTNET_WSS_ONCE_POLICY.executionMode) fail();
+  const currentTestnetOnce = executionMode === PUBLIC_WS_ONCE_POLICY.executionMode ||
+    executionMode === CURRENT_TESTNET_WSS_ONCE_POLICY.executionMode;
+  if (currentTestnetOnce &&
       descriptors.recovery.value !== false) fail();
-  if (executionMode === PUBLIC_WS_ONCE_POLICY.executionMode) {
+  if (currentTestnetOnce) {
     ownData(captured, 'workspaceIdentity', exactDirectoryIdentity(
       detachedIpcSnapshot(descriptors.workspaceIdentity.value),
     ));
@@ -1140,14 +1171,18 @@ export async function startLiveEvidenceFacilitatorWorker(options = {}) {
       requestId: 1,
       type: captured.executionMode === PUBLIC_WS_ONCE_POLICY.executionMode
         ? 'START_PUBLIC_WS_ONCE'
-        : 'START',
+        : captured.executionMode === CURRENT_TESTNET_WSS_ONCE_POLICY.executionMode
+          ? 'START_CURRENT_TESTNET_WSS_ONCE'
+          : 'START',
       config: captured.config,
       facilitatorRpcGeneration: captured.facilitatorRpcGeneration,
       workspaceRoot: captured.workspaceRoot,
       journalDirectory: captured.journalDirectory,
       recovery: captured.recovery,
     };
-    if (captured.executionMode === PUBLIC_WS_ONCE_POLICY.executionMode) {
+    const currentTestnetOnce = captured.executionMode === PUBLIC_WS_ONCE_POLICY.executionMode ||
+      captured.executionMode === CURRENT_TESTNET_WSS_ONCE_POLICY.executionMode;
+    if (currentTestnetOnce) {
       ownData(startSnapshot, 'executionMode', captured.executionMode);
       ownData(startSnapshot, 'workspaceIdentity', captured.workspaceIdentity);
       ownData(startSnapshot, 'runDirectoryIdentity', captured.runDirectoryIdentity);
@@ -1352,7 +1387,7 @@ export async function startLiveEvidenceFacilitatorWorker(options = {}) {
           workspaceRoot: capturedStartSnapshot.workspaceRoot,
           journalDirectory: capturedStartSnapshot.journalDirectory,
           recovery: capturedStartSnapshot.recovery,
-          ...(captured.executionMode === PUBLIC_WS_ONCE_POLICY.executionMode
+          ...(currentTestnetOnce
             ? {
               executionMode: captured.executionMode,
               workspaceIdentity: captured.workspaceIdentity,
@@ -1386,7 +1421,7 @@ export async function startLiveEvidenceFacilitatorWorker(options = {}) {
         return lifecycleState.closed;
       },
     };
-    if (captured.executionMode === PUBLIC_WS_ONCE_POLICY.executionMode) {
+    if (currentTestnetOnce) {
       ownData(controller, 'preload', async () => {
         await request('PRELOAD', {}, 'PRELOADED');
       });

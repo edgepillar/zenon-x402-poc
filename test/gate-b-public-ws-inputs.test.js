@@ -44,6 +44,8 @@ import {
 } from '../src/gate-b-public-ws-inputs-launcher.js';
 import {
   frameGateBPublicWsInputsBootstrap,
+  GATE_B_CURRENT_TESTNET_WSS_ENDPOINT,
+  GATE_B_CURRENT_TESTNET_WSS_INPUT_ACKNOWLEDGEMENTS,
   GATE_B_PUBLIC_WS_INPUT_ACKNOWLEDGEMENTS,
   GATE_B_PUBLIC_WS_INPUT_LEAVES,
   GATE_B_PUBLIC_WS_INPUT_LIMITS,
@@ -51,9 +53,11 @@ import {
   GATE_B_PUBLIC_WS_INPUT_STATUS_LINES,
   GATE_B_QUICK_TUNNEL_HOSTNAME_POLICY,
   parseGateBProtectedEndpointSource,
+  parseGateBCurrentTestnetWssEndpointSource,
   parseGateBPublicWsInputsFrame,
   parseGateBQuickTunnelHostnameSource,
   serializeGateBProtectedEndpointSource,
+  serializeGateBCurrentTestnetWssEndpointSource,
   serializeGateBQuickTunnelHostnameSource,
   serializeGateBPublicWsInputsBootstrap,
 } from '../src/gate-b-public-ws-inputs-schema.js';
@@ -64,12 +68,18 @@ import {
   superviseGateBPublicWsInputs,
 } from '../src/gate-b-public-ws-inputs-supervisor.js';
 import {
+  currentTestnetWssOnceConfigDigest,
   parsePublicWsOnceAuthorization,
+  parseCurrentTestnetWssOnceAuthorization,
+  parseCurrentTestnetWssOnceRoleInput,
+  parseCurrentTestnetWssOnceRunConfig,
   parsePublicWsOnceRoleInput,
   parsePublicWsOnceRunConfig,
+  preflightCurrentTestnetWssOnceRun,
   preflightPublicWsOnceRun,
   publicWsOnceConfigDigest,
   PUBLIC_WS_ONCE_POLICY,
+  CURRENT_TESTNET_WSS_ONCE_POLICY,
 } from '../src/live-evidence-runner.js';
 import {
   GATE_B_CURRENT_TESTNET_CHAIN_PROFILE,
@@ -81,6 +91,7 @@ import {
 const ENDPOINT = 'ws://8.8.8.8:35998/';
 const HOSTNAME = 'gatebfixture.trycloudflare.com';
 const RUN_NAME = 'public-ws-once-20260901-01';
+const CURRENT_TESTNET_WSS_RUN_NAME = 'current-testnet-wss-once-20260903-01';
 const REVISION = 'a'.repeat(40);
 const TEST_ENTROPY = Buffer.from(Array.from({ length: 32 }, (_, index) => index + 1));
 
@@ -272,6 +283,11 @@ async function prepare(t, options = {}) {
 async function configDigest(root) {
   const text = await readFile(join(root, GATE_B_PUBLIC_WS_INPUT_LEAVES.runConfig), 'utf8');
   return publicWsOnceConfigDigest(parsePublicWsOnceRunConfig(text));
+}
+
+async function currentTestnetWssConfigDigest(root) {
+  const text = await readFile(join(root, GATE_B_PUBLIC_WS_INPUT_LEAVES.runConfig), 'utf8');
+  return currentTestnetWssOnceConfigDigest(parseCurrentTestnetWssOnceRunConfig(text));
 }
 
 async function expectRejected(promise) {
@@ -2178,3 +2194,161 @@ test('parent and shared modules are import-safe and network-free with one source
   assert.equal(workspaceSource.includes('live-evidence-runner'), false);
   assert.equal(workspaceSource.includes('znn-typescript-sdk'), false);
 });
+
+test('current-testnet WSS inputs form a closed canonical schema-v2 family', () => {
+  const source = serializeGateBCurrentTestnetWssEndpointSource(
+    GATE_B_CURRENT_TESTNET_WSS_ENDPOINT,
+  );
+  assert.deepEqual(parseGateBCurrentTestnetWssEndpointSource(source), {
+    kind: 'gate-b-current-testnet-wss-endpoint-source',
+    rpcEndpoint: GATE_B_CURRENT_TESTNET_WSS_ENDPOINT,
+    schemaVersion: 2,
+  });
+  assert.throws(() => parseGateBProtectedEndpointSource(source));
+  assert.throws(() => parseGateBCurrentTestnetWssEndpointSource(
+    serializeGateBProtectedEndpointSource(ENDPOINT),
+  ));
+
+  for (const rpcEndpoint of [
+    'wss://rpc.testnet.zenon.info',
+    'ws://rpc.testnet.zenon.info/',
+    'https://rpc.testnet.zenon.info/',
+    'wss://rpc.testnet.zenon.info:443/',
+    'wss://user@rpc.testnet.zenon.info/',
+    'wss://rpc.testnet.zenon.info/path',
+    'wss://rpc.testnet.zenon.info/?query=1',
+    'wss://rpc.testnet.zenon.info/#fragment',
+    'wss://rpc%2etestnet.zenon.info/',
+    'wss://RPC.testnet.zenon.info/',
+  ]) assert.throws(() => serializeGateBCurrentTestnetWssEndpointSource(rpcEndpoint));
+
+  const phase1 = {
+    schemaVersion: 2,
+    operation: GATE_B_PUBLIC_WS_INPUT_OPERATIONS.PROVISION_ENDPOINT,
+    workspaceRoot: '/private/tmp/gate-b-wss-family',
+    rpcEndpoint: GATE_B_CURRENT_TESTNET_WSS_ENDPOINT,
+  };
+  const phase2 = {
+    schemaVersion: 2,
+    operation: GATE_B_PUBLIC_WS_INPUT_OPERATIONS.AUTHORIZE,
+    workspaceRoot: phase1.workspaceRoot,
+    runName: 'current-testnet-wss-once',
+    reviewedConfigDigest: 'c'.repeat(64),
+    acknowledgements: {
+      payment: GATE_B_CURRENT_TESTNET_WSS_INPUT_ACKNOWLEDGEMENTS.payment,
+      publication: GATE_B_CURRENT_TESTNET_WSS_INPUT_ACKNOWLEDGEMENTS.publication,
+    },
+  };
+  assert.equal(parseGateBPublicWsInputsFrame(
+    frameGateBPublicWsInputsBootstrap(phase1),
+  ).schemaVersion, 2);
+  assert.equal(parseGateBPublicWsInputsFrame(
+    frameGateBPublicWsInputsBootstrap(phase2),
+  ).schemaVersion, 2);
+  assert.throws(() => frameGateBPublicWsInputsBootstrap({
+    ...phase2,
+    acknowledgements: {
+      ...phase2.acknowledgements,
+      transportException: GATE_B_PUBLIC_WS_INPUT_ACKNOWLEDGEMENTS.transportException,
+    },
+  }));
+  assert.equal(
+    CURRENT_TESTNET_WSS_ONCE_POLICY.paymentAcknowledgement,
+    GATE_B_CURRENT_TESTNET_WSS_INPUT_ACKNOWLEDGEMENTS.payment,
+  );
+  assert.equal(
+    CURRENT_TESTNET_WSS_ONCE_POLICY.publicationAcknowledgement,
+    GATE_B_CURRENT_TESTNET_WSS_INPUT_ACKNOWLEDGEMENTS.publication,
+  );
+});
+
+test('current-testnet WSS generation is independently authorized and reaches lazy-wallet preflight',
+  async t => {
+    const context = await fixture(t, { endpoint: false });
+    const provision = {
+      schemaVersion: 2,
+      operation: GATE_B_PUBLIC_WS_INPUT_OPERATIONS.PROVISION_ENDPOINT,
+      workspaceRoot: context.root,
+      rpcEndpoint: GATE_B_CURRENT_TESTNET_WSS_ENDPOINT,
+    };
+    assert.deepEqual(
+      await executeGateBPublicWsInputs(provision, operationInjections(context.root)),
+      { status: 'endpoint-provisioned' },
+    );
+    const prepareWss = prepareBootstrap(context.root, {
+      runName: CURRENT_TESTNET_WSS_RUN_NAME,
+      schemaVersion: 2,
+    });
+    assert.deepEqual(
+      await executeGateBPublicWsInputs(prepareWss, operationInjections(context.root)),
+      { status: 'prepared' },
+    );
+
+    const configText = await readFile(
+      join(context.root, GATE_B_PUBLIC_WS_INPUT_LEAVES.runConfig),
+      'utf8',
+    );
+    const configuration = parseCurrentTestnetWssOnceRunConfig(configText);
+    assert.equal(configuration.runnerVersion, 3);
+    assert.equal(configuration.executionMode, CURRENT_TESTNET_WSS_ONCE_POLICY.executionMode);
+    assert.equal(configuration.rpcEndpoint, GATE_B_CURRENT_TESTNET_WSS_ENDPOINT);
+    assert.throws(() => parsePublicWsOnceRunConfig(configText));
+    for (const name of [
+      GATE_B_PUBLIC_WS_INPUT_LEAVES.buyerRpc,
+      GATE_B_PUBLIC_WS_INPUT_LEAVES.facilitatorRpc,
+    ]) {
+      const rpcText = await readFile(join(context.root, name), 'utf8');
+      assert.deepEqual(parseCurrentTestnetWssOnceRoleInput(rpcText, name ===
+        GATE_B_PUBLIC_WS_INPUT_LEAVES.buyerRpc ? 'buyer-rpc' : 'facilitator-rpc'), {
+        secretVersion: 3,
+        rpcEndpoint: GATE_B_CURRENT_TESTNET_WSS_ENDPOINT,
+      });
+      assert.throws(() => parsePublicWsOnceRoleInput(
+        rpcText,
+        name === GATE_B_PUBLIC_WS_INPUT_LEAVES.buyerRpc ? 'buyer-rpc' : 'facilitator-rpc',
+      ));
+    }
+
+    const digest = await currentTestnetWssConfigDigest(context.root);
+    const authorizeWss = authorizeBootstrap(context.root, digest, {
+      acknowledgements: {
+        payment: GATE_B_CURRENT_TESTNET_WSS_INPUT_ACKNOWLEDGEMENTS.payment,
+        publication: GATE_B_CURRENT_TESTNET_WSS_INPUT_ACKNOWLEDGEMENTS.publication,
+      },
+      runName: CURRENT_TESTNET_WSS_RUN_NAME,
+      schemaVersion: 2,
+    });
+    assert.deepEqual(
+      await executeGateBPublicWsInputs(authorizeWss, operationInjections(context.root)),
+      { status: 'authorized' },
+    );
+    const authorizationText = await readFile(
+      join(context.root, GATE_B_PUBLIC_WS_INPUT_LEAVES.authorization),
+      'utf8',
+    );
+    const authorization = parseCurrentTestnetWssOnceAuthorization(authorizationText);
+    assert.equal(authorization.authorizationVersion, 3);
+    assert.equal(authorization.configDigest, digest);
+    assert.equal(Object.hasOwn(authorization, 'transportException'), false);
+    assert.throws(() => parsePublicWsOnceAuthorization(authorizationText));
+
+    const walletPath = join(context.root, GATE_B_PUBLIC_WS_INPUT_LEAVES.buyerWallet);
+    const replacement = `${walletPath}.replacement`;
+    await writeFile(replacement, 'not-read-during-preflight\n', { flag: 'wx', mode: 0o600 });
+    await rename(replacement, walletPath);
+    const options = {
+      configPath: join(context.root, GATE_B_PUBLIC_WS_INPUT_LEAVES.runConfig),
+      buyerRpcPath: join(context.root, GATE_B_PUBLIC_WS_INPUT_LEAVES.buyerRpc),
+      buyerWalletPath: walletPath,
+      facilitatorRpcPath: join(context.root, GATE_B_PUBLIC_WS_INPUT_LEAVES.facilitatorRpc),
+      authorizationPath: join(context.root, GATE_B_PUBLIC_WS_INPUT_LEAVES.authorization),
+      workspaceRoot: context.root,
+      runName: CURRENT_TESTNET_WSS_RUN_NAME,
+      executionMode: CURRENT_TESTNET_WSS_ONCE_POLICY.executionMode,
+    };
+    assert.deepEqual(await preflightCurrentTestnetWssOnceRun(options), { valid: true });
+    await assert.rejects(preflightPublicWsOnceRun({
+      ...options,
+      transportException: PUBLIC_WS_ONCE_POLICY.transportException,
+    }));
+  });

@@ -3,6 +3,8 @@ import { types as utilTypes } from 'node:util';
 
 import { canonicalJson } from './canonical.js';
 import {
+  GATE_B_CURRENT_TESTNET_WSS_ENDPOINT,
+  GATE_B_CURRENT_TESTNET_WSS_INPUT_ACKNOWLEDGEMENTS,
   GATE_B_PUBLIC_WS_INPUT_ACKNOWLEDGEMENTS,
 } from './gate-b-public-ws-inputs-schema.js';
 import {
@@ -34,6 +36,7 @@ export const GATE_B_OPERATOR_COORDINATOR_ACKNOWLEDGEMENTS = Object.freeze({
   live: GATE_B_PUBLIC_WS_INPUT_ACKNOWLEDGEMENTS.live,
   operatorTrust: GATE_B_PUBLIC_WS_INPUT_ACKNOWLEDGEMENTS.operatorTrust,
   payment: GATE_B_PUBLIC_WS_INPUT_ACKNOWLEDGEMENTS.payment,
+  currentTestnetWssPayment: GATE_B_CURRENT_TESTNET_WSS_INPUT_ACKNOWLEDGEMENTS.payment,
   publication: GATE_B_PUBLIC_WS_INPUT_ACKNOWLEDGEMENTS.publication,
   run: RUN_ACKNOWLEDGEMENT,
   transportException: GATE_B_PUBLIC_WS_INPUT_ACKNOWLEDGEMENTS.transportException,
@@ -137,10 +140,14 @@ function freezeBootstrap(value) {
     'acknowledgements', 'quickTunnel', 'rpcEndpoint', 'runName',
     'schemaVersion', 'workspaceRoot',
   ]);
-  if (root.schemaVersion !== 1 || typeof root.runName !== 'string' ||
+  if ((root.schemaVersion !== 1 && root.schemaVersion !== 2) ||
+      typeof root.runName !== 'string' ||
       !RUN_NAME.test(root.runName)) fail();
   exactAbsolutePath(root.workspaceRoot);
   exactString(root.rpcEndpoint);
+  if (root.schemaVersion === 2 && root.rpcEndpoint !== GATE_B_CURRENT_TESTNET_WSS_ENDPOINT) {
+    fail();
+  }
   const acknowledgements = exactPlainObject(root.acknowledgements, [
     'live', 'operatorTrust',
   ]);
@@ -177,47 +184,57 @@ function freezeBootstrap(value) {
     }),
     rpcEndpoint: root.rpcEndpoint,
     runName: root.runName,
-    schemaVersion: 1,
+    schemaVersion: root.schemaVersion,
     workspaceRoot: root.workspaceRoot,
   });
 }
 
 function freezeReview(value) {
   const root = exactPlainObject(value, ['acknowledgements', 'schemaVersion']);
-  if (root.schemaVersion !== 1) fail();
-  const acknowledgements = exactPlainObject(root.acknowledgements, [
-    'payment', 'publication', 'transportException',
-  ]);
-  for (const field of ['payment', 'publication', 'transportException']) {
-    if (acknowledgements[field] !==
-        GATE_B_OPERATOR_COORDINATOR_ACKNOWLEDGEMENTS[field]) fail();
+  if (root.schemaVersion !== 1 && root.schemaVersion !== 2) fail();
+  const fields = root.schemaVersion === 1
+    ? ['payment', 'publication', 'transportException']
+    : ['payment', 'publication'];
+  const acknowledgements = exactPlainObject(root.acknowledgements, fields);
+  const expectedPayment = root.schemaVersion === 1
+    ? GATE_B_OPERATOR_COORDINATOR_ACKNOWLEDGEMENTS.payment
+    : GATE_B_OPERATOR_COORDINATOR_ACKNOWLEDGEMENTS.currentTestnetWssPayment;
+  if (acknowledgements.payment !== expectedPayment ||
+      acknowledgements.publication !==
+        GATE_B_OPERATOR_COORDINATOR_ACKNOWLEDGEMENTS.publication ||
+      (root.schemaVersion === 1 && acknowledgements.transportException !==
+        GATE_B_OPERATOR_COORDINATOR_ACKNOWLEDGEMENTS.transportException)) fail();
+  const snapshot = {
+    payment: acknowledgements.payment,
+    publication: acknowledgements.publication,
+  };
+  if (root.schemaVersion === 1) {
+    snapshot.transportException = acknowledgements.transportException;
   }
   return Object.freeze({
-    acknowledgements: Object.freeze({
-      payment: acknowledgements.payment,
-      publication: acknowledgements.publication,
-      transportException: acknowledgements.transportException,
-    }),
-    schemaVersion: 1,
+    acknowledgements: Object.freeze(snapshot),
+    schemaVersion: root.schemaVersion,
   });
 }
 
 function freezeRun(value) {
   const root = exactPlainObject(value, ['acknowledgement', 'schemaVersion']);
-  if (root.schemaVersion !== 1 || root.acknowledgement !== RUN_ACKNOWLEDGEMENT) fail();
+  if ((root.schemaVersion !== 1 && root.schemaVersion !== 2) ||
+      root.acknowledgement !== RUN_ACKNOWLEDGEMENT) fail();
   return Object.freeze({
     acknowledgement: RUN_ACKNOWLEDGEMENT,
-    schemaVersion: 1,
+    schemaVersion: root.schemaVersion,
   });
 }
 
 function freezeReviewResult(value) {
   const root = exactPlainObject(value, ['configDigest', 'resultVersion', 'type']);
-  if (root.resultVersion !== 1 || root.type !== 'REVIEW_VALID' ||
+  if ((root.resultVersion !== 1 && root.resultVersion !== 2) ||
+      root.type !== 'REVIEW_VALID' ||
       typeof root.configDigest !== 'string' || !LOWERCASE_HASH_64.test(root.configDigest)) fail();
   return Object.freeze({
     configDigest: root.configDigest,
-    resultVersion: 1,
+    resultVersion: root.resultVersion,
     type: 'REVIEW_VALID',
   });
 }

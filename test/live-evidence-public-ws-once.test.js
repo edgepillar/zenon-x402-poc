@@ -31,6 +31,7 @@ import {
 } from '../src/gate-b-quick-tunnel-artifact.js';
 import {
   GATE_B_PUBLIC_WS_INPUT_LEAVES,
+  GATE_B_CURRENT_TESTNET_WSS_ENDPOINT,
   serializeGateBQuickTunnelHostnameSource,
 } from '../src/gate-b-public-ws-inputs-schema.js';
 import { runPublicWsOnceRunnerCli } from '../src/live-evidence-public-ws-once-cli.js';
@@ -42,7 +43,13 @@ import {
   startLiveEvidenceFacilitatorWorker,
 } from '../src/live-evidence-facilitator-worker.js';
 import {
+  executeCurrentTestnetWssOnceRun,
   executePublicWsOnceRun,
+  currentTestnetWssOnceConfigDigest,
+  CURRENT_TESTNET_WSS_ONCE_POLICY,
+  parseCurrentTestnetWssOnceAuthorization,
+  parseCurrentTestnetWssOnceRoleInput,
+  parseCurrentTestnetWssOnceRunConfig,
   parseLiveRoleInput,
   parsePublicWsOnceAuthorization,
   parsePublicWsOnceIndependentVerification,
@@ -50,6 +57,7 @@ import {
   parsePublicWsOnceRunConfig,
   persistPublicWsOnceConsumedMarker,
   preflightPublicWsOnceRun,
+  preflightCurrentTestnetWssOnceRun,
   publicWsOnceConfigDigest,
   PUBLIC_WS_ONCE_POLICY,
 } from '../src/live-evidence-runner.js';
@@ -244,7 +252,14 @@ async function fixture(t, changes = {}) {
   await chmod(root, 0o700);
   const workspaceRoot = join(root, 'workspace');
   await mkdir(workspaceRoot, { mode: 0o700 });
-  const configuration = changes.config ?? config();
+  const currentTestnetWss = changes.currentTestnetWss === true;
+  const configuration = changes.config ?? (currentTestnetWss
+    ? currentTestnetWssConfig()
+    : config());
+  const defaultRpcEndpoint = currentTestnetWss
+    ? GATE_B_CURRENT_TESTNET_WSS_ENDPOINT
+    : ENDPOINT;
+  const rpcSecretVersion = currentTestnetWss ? 3 : 2;
   const paths = {
     configPath: join(workspaceRoot, 'run.json'),
     buyerRpcPath: join(workspaceRoot, 'buyer-rpc.json'),
@@ -255,7 +270,10 @@ async function fixture(t, changes = {}) {
   await writeFile(paths.configPath, `${JSON.stringify(configuration)}\n`, { mode: 0o600 });
   await writeFile(
     paths.buyerRpcPath,
-    `${JSON.stringify({ secretVersion: 2, rpcEndpoint: changes.buyerEndpoint ?? ENDPOINT })}\n`,
+    `${JSON.stringify({
+      secretVersion: rpcSecretVersion,
+      rpcEndpoint: changes.buyerEndpoint ?? defaultRpcEndpoint,
+    })}\n`,
     { mode: 0o600 },
   );
   await writeFile(
@@ -266,12 +284,14 @@ async function fixture(t, changes = {}) {
   await writeFile(
     paths.facilitatorRpcPath,
     `${JSON.stringify({
-      secretVersion: 2,
-      rpcEndpoint: changes.facilitatorEndpoint ?? ENDPOINT,
+      secretVersion: rpcSecretVersion,
+      rpcEndpoint: changes.facilitatorEndpoint ?? defaultRpcEndpoint,
     })}\n`,
     { mode: 0o600 },
   );
-  const authorizationValue = changes.authorization ?? authorization(configuration);
+  const authorizationValue = changes.authorization ?? (currentTestnetWss
+    ? currentTestnetWssAuthorization(configuration)
+    : authorization(configuration));
   await writeFile(
     paths.authorizationPath,
     `${JSON.stringify(authorizationValue)}\n`,
@@ -288,8 +308,12 @@ async function fixture(t, changes = {}) {
   const options = {
     ...paths,
     workspaceRoot,
-    runName: 'single-public-ws-run',
-    transportException: PUBLIC_WS_ONCE_POLICY.transportException,
+    runName: currentTestnetWss
+      ? 'single-current-testnet-wss-run'
+      : 'single-public-ws-run',
+    ...(currentTestnetWss
+      ? { executionMode: CURRENT_TESTNET_WSS_ONCE_POLICY.executionMode }
+      : { transportException: PUBLIC_WS_ONCE_POLICY.transportException }),
   };
   FIXTURE_CONFIGURATIONS.set(options, configuration);
   return options;
@@ -2139,3 +2163,372 @@ test('execution child rejects malformed, stale, extra, and concurrent control IP
   assert.equal(exitCode, 1);
   assert.deepEqual(sent, [{ ipcVersion: 1, requestId: 1, type: 'READY' }]);
 });
+
+function currentTestnetWssConfig(changes = {}) {
+  return {
+    ...config(),
+    runnerVersion: 3,
+    executionMode: CURRENT_TESTNET_WSS_ONCE_POLICY.executionMode,
+    rpcEndpoint: GATE_B_CURRENT_TESTNET_WSS_ENDPOINT,
+    ...changes,
+  };
+}
+
+function currentTestnetWssAuthorization(configuration, changes = {}) {
+  return {
+    authorizationVersion: 3,
+    executionMode: CURRENT_TESTNET_WSS_ONCE_POLICY.executionMode,
+    runName: 'single-current-testnet-wss-run',
+    sourceRevision: configuration.sourceRevision,
+    profileName: configuration.profileName,
+    configDigest: currentTestnetWssOnceConfigDigest(configuration),
+    paymentIntentDigest: paymentIntentDigest(
+      configuration.expectedPaymentRequired,
+      configuration.expectedPaymentRequired.accepts[0],
+    ),
+    rpcEndpoint: GATE_B_CURRENT_TESTNET_WSS_ENDPOINT,
+    quickTunnel: configuration.quickTunnel,
+    acknowledgements: {
+      payment: CURRENT_TESTNET_WSS_ONCE_POLICY.paymentAcknowledgement,
+      publication: CURRENT_TESTNET_WSS_ONCE_POLICY.publicationAcknowledgement,
+    },
+    ...changes,
+  };
+}
+
+test('current-testnet WSS parsers are exact, version-disjoint, and digest-bound', () => {
+  const configuration = currentTestnetWssConfig();
+  const encodedConfig = `${JSON.stringify(configuration)}\n`;
+  assert.deepEqual(parseCurrentTestnetWssOnceRunConfig(encodedConfig), configuration);
+  assert.throws(() => parsePublicWsOnceRunConfig(encodedConfig));
+  assert.throws(() => parseCurrentTestnetWssOnceRunConfig(`${JSON.stringify(config())}\n`));
+
+  const wssRpc = `${JSON.stringify({
+    secretVersion: 3,
+    rpcEndpoint: GATE_B_CURRENT_TESTNET_WSS_ENDPOINT,
+  })}\n`;
+  assert.equal(parseCurrentTestnetWssOnceRoleInput(wssRpc, 'buyer-rpc').secretVersion, 3);
+  assert.throws(() => parsePublicWsOnceRoleInput(wssRpc, 'buyer-rpc'));
+  assert.throws(() => parseLiveRoleInput(wssRpc, 'buyer-rpc'));
+  assert.throws(() => parseCurrentTestnetWssOnceRoleInput(`${JSON.stringify({
+    secretVersion: 2,
+    rpcEndpoint: ENDPOINT,
+  })}\n`, 'buyer-rpc'));
+
+  for (const rpcEndpoint of [
+    'wss://rpc.testnet.zenon.info',
+    'ws://rpc.testnet.zenon.info/',
+    'https://rpc.testnet.zenon.info/',
+    'wss://rpc.testnet.zenon.info:443/',
+    'wss://user:pass@rpc.testnet.zenon.info/',
+    'wss://rpc.testnet.zenon.info/path',
+    'wss://rpc.testnet.zenon.info/?q=1',
+    'wss://rpc.testnet.zenon.info/#f',
+    'wss://rpc%2etestnet.zenon.info/',
+    'wss://RPC.testnet.zenon.info/',
+  ]) assert.throws(() => parseCurrentTestnetWssOnceRoleInput(`${JSON.stringify({
+    secretVersion: 3,
+    rpcEndpoint,
+  })}\n`, 'buyer-rpc'));
+
+  const authorizationValue = currentTestnetWssAuthorization(configuration);
+  assert.deepEqual(parseCurrentTestnetWssOnceAuthorization(
+    `${JSON.stringify(authorizationValue)}\n`,
+  ), authorizationValue);
+  assert.throws(() => parsePublicWsOnceAuthorization(
+    `${JSON.stringify(authorizationValue)}\n`,
+  ));
+  assert.throws(() => parseCurrentTestnetWssOnceAuthorization(
+    `${JSON.stringify(authorization(config()))}\n`,
+  ));
+  assert.equal(Object.hasOwn(authorizationValue, 'transportException'), false);
+
+  const baseline = currentTestnetWssOnceConfigDigest(configuration);
+  for (const mutation of [
+    value => { value.sourceRevision = 'c'.repeat(40); },
+    value => { value.runtime.rpcTimeoutMs += 1; },
+    value => { value.expectedPaymentRequired.accepts[0].amount = '2'; },
+  ]) {
+    const changed = structuredClone(configuration);
+    mutation(changed);
+    assert.notEqual(currentTestnetWssOnceConfigDigest(changed), baseline);
+  }
+  const invalidTunnel = structuredClone(configuration);
+  invalidTunnel.quickTunnel.hostnamePersistence.storage = 'other';
+  assert.throws(() => currentTestnetWssOnceConfigDigest(invalidTunnel));
+  assert.notEqual(baseline, sha256Hex(
+    `zenon-x402-public-ws-once-config-v2\n${canonicalJson(configuration)}`,
+  ));
+});
+
+test('current-testnet WSS execution preserves the one-shot and truthful-evidence boundaries',
+  async t => {
+    const options = await fixture(t, {
+      currentTestnetWss: true,
+      walletText: '{"secretVersion":1,"mnemonic":"offline-placeholder-only","accountIndex":0}\n',
+    });
+    const configuration = fixtureConfiguration(options);
+    const candidate = await validOutcome(configuration);
+    const events = [];
+    let journal;
+    const controller = {
+      async preload() { events.push('preload'); },
+      async start() { events.push('facilitator-start'); },
+      async snapshotObservations() {
+        return { evidenceEligible: true, events: observations('facilitator') };
+      },
+      async closeAndSnapshot() {
+        const snapshot = await journal.load();
+        return { quiescent: true, ...snapshot };
+      },
+      async terminate() { events.push('terminate'); },
+    };
+    const injected = {
+      sourceTreeAttestor: async () => true,
+      lifecycleObserver: fixedObserver(),
+      operations: {
+        async probeBuyerReadiness() { events.push('buyer-ready'); },
+        async startFacilitator({ recovery }) {
+          assert.equal(recovery, false);
+          journal = await createRetainedProductionState(
+            join(options.workspaceRoot, options.runName),
+            candidate.record,
+          );
+          events.push('facilitator-create');
+          return controller;
+        },
+        async probePublicEndpoint() { events.push('public-ready'); },
+        async readBuyerWallet() {
+          events.push('wallet-read');
+          return { mnemonic: 'offline-placeholder-only', accountIndex: 0 };
+        },
+        async paidFetch({ openWallet, onChallenge }) {
+          await onChallenge(configuration.expectedPaymentRequired);
+          events.push('challenge');
+          await openWallet();
+          events.push('payment');
+          return candidate.outcome;
+        },
+      },
+    };
+    assert.deepEqual(await executeCurrentTestnetWssOnceRun(options, injected), {
+      status: 'pending-independent-verification',
+      evidenceEligible: false,
+    });
+    assert.equal(events.indexOf('public-ready') < events.indexOf('challenge'), true);
+    assert.equal(events.indexOf('challenge') < events.indexOf('wallet-read'), true);
+    assert.equal(events.indexOf('wallet-read') < events.indexOf('payment'), true);
+    assert.equal((await lstat(join(
+      options.workspaceRoot,
+      'PUBLIC_WS_ONCE_CONSUMED',
+    ))).isFile(), true);
+
+    const metadataText = await readFile(join(
+      options.workspaceRoot,
+      options.runName,
+      'pending-independent-verification',
+      'metadata.json',
+    ), 'utf8');
+    const metadata = JSON.parse(metadataText);
+    assert.equal(metadata.candidateVersion, 2);
+    assert.equal(metadata.publicationEligible, false);
+    assert.deepEqual(metadata.transport, {
+      scheme: 'wss',
+      confidentialityInTransit: true,
+      tlsServerNameAuthenticated: true,
+      chainIdentityAuthenticated: false,
+      operatorTrustRequired: true,
+      endpointDisclosed: false,
+    });
+    assert.equal(Object.values(metadata.nonClaims).every(value => value === false), true);
+    assert.equal(metadataText.includes(GATE_B_CURRENT_TESTNET_WSS_ENDPOINT), false);
+    assert.equal(metadataText.includes('authenticated chain'), false);
+
+    const effectCount = events.length;
+    await assert.rejects(
+      executeCurrentTestnetWssOnceRun(options, injected),
+      fixedFailure,
+    );
+    assert.equal(events.length, effectCount);
+    await assert.rejects(executePublicWsOnceRun(options, injected), fixedFailure);
+    assert.equal(events.length, effectCount);
+  });
+
+test('current-testnet WSS worker uses a distinct start message and rejects mode confusion',
+  async () => {
+    const sent = [];
+    const child = new EventEmitter();
+    child.connected = true;
+    child.stdout = new PassThrough();
+    child.stderr = new PassThrough();
+    child.send = (message, callback) => {
+      sent.push(structuredClone(message));
+      callback?.();
+      setImmediate(() => {
+        if (message.type === 'PRELOAD') {
+          child.emit('message', {
+            ipcVersion: 1,
+            requestId: message.requestId,
+            type: 'PRELOADED',
+          });
+        } else if (message.type === 'START_CURRENT_TESTNET_WSS_ONCE') {
+          child.emit('message', {
+            ipcVersion: 1,
+            requestId: message.requestId,
+            type: 'READY',
+          });
+        } else if (message.type === 'STOP') {
+          child.emit('message', {
+            ipcVersion: 1,
+            requestId: message.requestId,
+            type: 'STOPPED',
+            snapshot: null,
+          });
+          child.connected = false;
+          child.emit('disconnect');
+          child.emit('exit', 0, null);
+          child.emit('close', 0, null);
+        }
+      });
+      return true;
+    };
+    child.disconnect = () => { child.connected = false; };
+    child.kill = () => true;
+    const controller = await startLiveEvidenceFacilitatorWorker({
+      config: currentTestnetWssConfig(),
+      facilitatorRpcFd: 0,
+      facilitatorRpcGeneration: SYNTHETIC_GENERATION,
+      workspaceRoot: 'protected',
+      journalDirectory: 'protected/journal',
+      recovery: false,
+      executionMode: CURRENT_TESTNET_WSS_ONCE_POLICY.executionMode,
+      workspaceIdentity: SYNTHETIC_DIRECTORY_IDENTITY,
+      runDirectoryIdentity: SYNTHETIC_DIRECTORY_IDENTITY,
+      forkProcess: () => child,
+    });
+    await controller.preload();
+    await controller.start();
+    assert.equal(sent[1].type, 'START_CURRENT_TESTNET_WSS_ONCE');
+    assert.equal(sent[1].executionMode, CURRENT_TESTNET_WSS_ONCE_POLICY.executionMode);
+    assert.equal(sent[1].recovery, false);
+    assert.equal(Object.hasOwn(sent[1], 'transportException'), false);
+    await controller.exit();
+
+    const replies = [];
+    const channel = new EventEmitter();
+    channel.connected = true;
+    channel.send = (message, callback) => {
+      replies.push(structuredClone(message));
+      callback?.();
+      return true;
+    };
+    channel.disconnect = () => { channel.connected = false; };
+    let starts = 0;
+    await runLiveEvidenceFacilitatorWorker({
+      channel,
+      start: async () => { starts += 1; },
+      shutdownTimeoutMs: 1000,
+      forceExit: () => {},
+    });
+    channel.emit('message', { ipcVersion: 1, requestId: 1, type: 'PRELOAD' });
+    await new Promise(resolve => setImmediate(resolve));
+    channel.emit('message', {
+      ipcVersion: 1,
+      requestId: 2,
+      type: 'START_CURRENT_TESTNET_WSS_ONCE',
+      config: currentTestnetWssConfig(),
+      facilitatorRpcGeneration: SYNTHETIC_GENERATION,
+      workspaceRoot: 'protected',
+      journalDirectory: 'protected/journal',
+      recovery: false,
+      executionMode: PUBLIC_WS_ONCE_POLICY.executionMode,
+      workspaceIdentity: SYNTHETIC_DIRECTORY_IDENTITY,
+      runDirectoryIdentity: SYNTHETIC_DIRECTORY_IDENTITY,
+    });
+    await new Promise(resolve => setImmediate(resolve));
+    assert.equal(starts, 0);
+    assert.equal(replies.at(-1).type, 'FAILED');
+  });
+
+test('supervisor preserves the closed WSS bootstrap without command or IPC expansion',
+  async t => {
+    const options = await fixture(t, { currentTestnetWss: true });
+    const bootstrapChunks = [];
+    const requests = [];
+    const child = new EventEmitter();
+    child.connected = true;
+    child.stdio = [null, null, null, null, new PassThrough()];
+    child.stdio[4].on('data', chunk => bootstrapChunks.push(Buffer.from(chunk)));
+    child.stdio[4].once('finish', () => {
+      setImmediate(() => child.emit('message', {
+        ipcVersion: 1,
+        requestId: 1,
+        type: 'READY',
+      }));
+    });
+    child.send = (message, callback) => {
+      requests.push(structuredClone(message));
+      callback?.();
+      if (message.type === 'PREFLIGHT') setImmediate(() => {
+        child.emit('message', {
+          ipcVersion: 1,
+          requestId: 1,
+          type: 'PREFLIGHT_VALID',
+        });
+        child.connected = false;
+        child.emit('exit', 0, null);
+        child.emit('close', 0, null);
+      });
+      return true;
+    };
+    child.kill = () => true;
+    const result = await supervisePublicWsOnceChild(
+      'preflight-public-ws-once',
+      options,
+      {
+        childModule: fileURLToPath(
+          new URL('./fixtures/public-ws-once-noisy-child.js', import.meta.url),
+        ),
+        forkProcess: () => child,
+        timeoutMs: 1000,
+      },
+    );
+    assert.deepEqual(result, { status: 'preflight-valid' });
+    assert.deepEqual(JSON.parse(Buffer.concat(bootstrapChunks).toString('utf8')), options);
+    assert.deepEqual(requests, [{ ipcVersion: 1, requestId: 1, type: 'PREFLIGHT' }]);
+    await assert.rejects(supervisePublicWsOnceChild(
+      'preflight-public-ws-once',
+      { ...options, transportException: PUBLIC_WS_ONCE_POLICY.transportException },
+      { forkProcess: () => { assert.fail('must reject before fork'); } },
+    ));
+
+    let proxyReads = 0;
+    const hostileProxy = new Proxy({}, {
+      getOwnPropertyDescriptor() {
+        proxyReads += 1;
+        throw new Error('must not inspect hostile options');
+      },
+    });
+    await assert.rejects(supervisePublicWsOnceChild(
+      'preflight-public-ws-once',
+      hostileProxy,
+      { forkProcess: () => { assert.fail('must reject before fork'); } },
+    ));
+    assert.equal(proxyReads, 0);
+
+    let accessorReads = 0;
+    const hostileAccessor = { ...options };
+    Object.defineProperty(hostileAccessor, 'executionMode', {
+      enumerable: true,
+      get() {
+        accessorReads += 1;
+        return CURRENT_TESTNET_WSS_ONCE_POLICY.executionMode;
+      },
+    });
+    await assert.rejects(supervisePublicWsOnceChild(
+      'preflight-public-ws-once',
+      hostileAccessor,
+      { forkProcess: () => { assert.fail('must reject before fork'); } },
+    ));
+    assert.equal(accessorReads, 0);
+  });

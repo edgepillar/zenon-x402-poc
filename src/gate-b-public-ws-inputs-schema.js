@@ -38,6 +38,17 @@ export const GATE_B_PUBLIC_WS_INPUT_ACKNOWLEDGEMENTS = Object.freeze({
     'I_UNDERSTAND_ARTIFACTS_MUST_NOT_BE_PUBLISHED_UNTIL_INDEPENDENT_VERIFICATION',
 });
 
+export const GATE_B_CURRENT_TESTNET_WSS_ENDPOINT =
+  'wss://rpc.testnet.zenon.info/';
+
+export const GATE_B_CURRENT_TESTNET_WSS_INPUT_ACKNOWLEDGEMENTS = Object.freeze({
+  live: GATE_B_PUBLIC_WS_INPUT_ACKNOWLEDGEMENTS.live,
+  operatorTrust: GATE_B_PUBLIC_WS_INPUT_ACKNOWLEDGEMENTS.operatorTrust,
+  payment:
+    'I_ACCEPT_ONE_DISPOSABLE_MINIMALLY_FUNDED_TESTNET_PAYMENT_OVER_OPERATOR_TRUSTED_WSS_RPC',
+  publication: GATE_B_PUBLIC_WS_INPUT_ACKNOWLEDGEMENTS.publication,
+});
+
 export const GATE_B_PUBLIC_WS_INPUT_STATUS_LINES = Object.freeze({
   PROVISION_ENDPOINT: 'GATE_B_PUBLIC_WS_ENDPOINT_PROVISIONED\n',
   PREPARE: 'GATE_B_PUBLIC_WS_INPUTS_PREPARED\n',
@@ -59,6 +70,7 @@ export const GATE_B_PUBLIC_WS_INPUT_LEAVES = Object.freeze({
 
 const GATE_B_PUBLIC_WS_SOURCE_KINDS = Object.freeze({
   endpoint: 'gate-b-protected-endpoint-source',
+  currentTestnetWssEndpoint: 'gate-b-current-testnet-wss-endpoint-source',
   hostname: 'gate-b-quick-tunnel-hostname-source',
 });
 
@@ -129,6 +141,21 @@ function exactAcknowledgements(value, fields) {
   return value;
 }
 
+function exactCurrentTestnetWssAcknowledgements(value, fields) {
+  exactPlainObject(value, fields);
+  for (let index = 0; index < fields.length; index += 1) {
+    const field = fields[index];
+    if (value[field] !== GATE_B_CURRENT_TESTNET_WSS_INPUT_ACKNOWLEDGEMENTS[field]) fail();
+  }
+  return value;
+}
+
+function exactCurrentTestnetWssEndpoint(value) {
+  exactString(value);
+  if (value !== GATE_B_CURRENT_TESTNET_WSS_ENDPOINT) fail();
+  return value;
+}
+
 function validateBootstrap(value, expectedOperation) {
   if (!value || typeof value !== 'object' || IS_PROXY(value) || ARRAY_IS_ARRAY(value) ||
       GET_PROTOTYPE_OF(value) !== OBJECT_PROTOTYPE) fail();
@@ -139,31 +166,55 @@ function validateBootstrap(value, expectedOperation) {
   if (expectedOperation !== undefined && operation !== expectedOperation) fail();
   if (operation === GATE_B_PUBLIC_WS_INPUT_OPERATIONS.PROVISION_ENDPOINT) {
     exactPlainObject(value, ['operation', 'rpcEndpoint', 'schemaVersion', 'workspaceRoot']);
-    if (value.schemaVersion !== 1) fail();
+    if (value.schemaVersion !== 1 && value.schemaVersion !== 2) fail();
     exactWorkspaceRoot(value.workspaceRoot);
-    exactString(value.rpcEndpoint);
+    if (value.schemaVersion === 1) exactString(value.rpcEndpoint);
+    else exactCurrentTestnetWssEndpoint(value.rpcEndpoint);
   } else if (operation === GATE_B_PUBLIC_WS_INPUT_OPERATIONS.PREPARE) {
     exactPlainObject(value, [
       'acknowledgements', 'operation', 'runName', 'schemaVersion', 'workspaceRoot',
     ]);
-    if (value.schemaVersion !== 1 || typeof value.runName !== 'string' ||
+    if ((value.schemaVersion !== 1 && value.schemaVersion !== 2) ||
+        typeof value.runName !== 'string' ||
         !RUN_NAME.test(value.runName)) fail();
     exactWorkspaceRoot(value.workspaceRoot);
-    exactAcknowledgements(value.acknowledgements, ['live', 'operatorTrust']);
+    if (value.schemaVersion === 1) {
+      exactAcknowledgements(value.acknowledgements, ['live', 'operatorTrust']);
+    } else {
+      exactCurrentTestnetWssAcknowledgements(
+        value.acknowledgements,
+        ['live', 'operatorTrust'],
+      );
+    }
   } else {
-    exactPlainObject(value, [
-      'acknowledgements', 'operation', 'reviewedConfigDigest', 'runName',
-      'schemaVersion', 'workspaceRoot',
-    ]);
-    if (value.schemaVersion !== 1 || typeof value.runName !== 'string' ||
+    const schemaVersion = GET_OWN_PROPERTY_DESCRIPTOR(value, 'schemaVersion')?.value;
+    if (schemaVersion === 1) {
+      exactPlainObject(value, [
+        'acknowledgements', 'operation', 'reviewedConfigDigest', 'runName',
+        'schemaVersion', 'workspaceRoot',
+      ]);
+    } else if (schemaVersion === 2) {
+      exactPlainObject(value, [
+        'acknowledgements', 'operation', 'reviewedConfigDigest', 'runName',
+        'schemaVersion', 'workspaceRoot',
+      ]);
+    } else fail();
+    if (typeof value.runName !== 'string' ||
         !RUN_NAME.test(value.runName) ||
         typeof value.reviewedConfigDigest !== 'string' ||
         !LOWERCASE_HASH_64.test(value.reviewedConfigDigest)) fail();
     exactWorkspaceRoot(value.workspaceRoot);
-    exactAcknowledgements(
-      value.acknowledgements,
-      ['payment', 'publication', 'transportException'],
-    );
+    if (schemaVersion === 1) {
+      exactAcknowledgements(
+        value.acknowledgements,
+        ['payment', 'publication', 'transportException'],
+      );
+    } else {
+      exactCurrentTestnetWssAcknowledgements(
+        value.acknowledgements,
+        ['payment', 'publication'],
+      );
+    }
   }
   return value;
 }
@@ -230,6 +281,31 @@ export function parseGateBProtectedEndpointSource(bytes) {
     const value = parseSource(bytes, ['kind', 'rpcEndpoint', 'schemaVersion']);
     if (value.kind !== GATE_B_PUBLIC_WS_SOURCE_KINDS.endpoint || value.schemaVersion !== 1) fail();
     exactString(value.rpcEndpoint);
+    return Object.freeze(value);
+  } catch {
+    fail();
+  }
+}
+
+export function serializeGateBCurrentTestnetWssEndpointSource(rpcEndpoint) {
+  try {
+    exactCurrentTestnetWssEndpoint(rpcEndpoint);
+    return serializeSource({
+      kind: GATE_B_PUBLIC_WS_SOURCE_KINDS.currentTestnetWssEndpoint,
+      rpcEndpoint,
+      schemaVersion: 2,
+    });
+  } catch {
+    fail();
+  }
+}
+
+export function parseGateBCurrentTestnetWssEndpointSource(bytes) {
+  try {
+    const value = parseSource(bytes, ['kind', 'rpcEndpoint', 'schemaVersion']);
+    if (value.kind !== GATE_B_PUBLIC_WS_SOURCE_KINDS.currentTestnetWssEndpoint ||
+        value.schemaVersion !== 2) fail();
+    exactCurrentTestnetWssEndpoint(value.rpcEndpoint);
     return Object.freeze(value);
   } catch {
     fail();

@@ -38,6 +38,10 @@ const HASH_64 = /^[0-9a-f]{64}$/;
 const HOSTNAME =
   /^(?:[a-z0-9]|[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9]))\.trycloudflare\.com$/;
 const CONFIG_DIGEST_DOMAIN = 'zenon-x402-public-ws-once-config-v2';
+const CURRENT_TESTNET_WSS_CONFIG_DIGEST_DOMAIN =
+  'zenon-x402-current-testnet-wss-once-config-v1';
+const CURRENT_TESTNET_WSS_ENDPOINT = 'wss://rpc.testnet.zenon.info/';
+const CURRENT_TESTNET_WSS_EXECUTION_MODE = 'current-testnet-wss-once-v1';
 const REVIEW_RESULT_FD = 4;
 const PUBLIC_ADDRESS_BLOCKLIST = new BlockList();
 const ARRAY_IS_ARRAY = Array.isArray;
@@ -234,8 +238,13 @@ function exactTunnelHostname(value) {
 function parseEndpointSource(bytes) {
   const { value } = strictJsonLine(bytes);
   exactPlainObject(value, ['kind', 'rpcEndpoint', 'schemaVersion']);
-  if (value.kind !== 'gate-b-protected-endpoint-source' || value.schemaVersion !== 1) fail();
-  exactPublicWsEndpoint(value.rpcEndpoint);
+  if (value.schemaVersion === 1) {
+    if (value.kind !== 'gate-b-protected-endpoint-source') fail();
+    exactPublicWsEndpoint(value.rpcEndpoint);
+  } else if (value.schemaVersion === 2) {
+    if (value.kind !== 'gate-b-current-testnet-wss-endpoint-source' ||
+        value.rpcEndpoint !== CURRENT_TESTNET_WSS_ENDPOINT) fail();
+  } else fail();
   return value;
 }
 
@@ -283,11 +292,15 @@ function exactQuickTunnelBinding(value) {
   return value;
 }
 
-function parseRpc(bytes) {
+function parseRpc(bytes, schemaVersion) {
   const { value } = strictJsonLine(bytes);
   exactPlainObject(value, ['rpcEndpoint', 'secretVersion']);
-  if (value.secretVersion !== 2) fail();
-  exactPublicWsEndpoint(value.rpcEndpoint);
+  if (schemaVersion === 1) {
+    if (value.secretVersion !== 2) fail();
+    exactPublicWsEndpoint(value.rpcEndpoint);
+  } else if (schemaVersion === 2) {
+    if (value.secretVersion !== 3 || value.rpcEndpoint !== CURRENT_TESTNET_WSS_ENDPOINT) fail();
+  } else fail();
   return value;
 }
 
@@ -359,11 +372,26 @@ export function validateIndependentGateBOperatorConfig(value, context) {
     exactTunnelHostname(context.hostname);
     exactString(context.payee, ADDRESS_MAX_BYTES);
     exactQuickTunnelBinding(context.quickTunnel);
-    exactPlainObject(value, [
-      'acknowledgements', 'expectedPaymentRequired', 'profileName', 'runnerVersion',
-      'quickTunnel', 'runtime', 'sourceRevision',
-    ]);
-    if (value.runnerVersion !== 2 || typeof value.sourceRevision !== 'string' ||
+    if (!value || typeof value !== 'object' || IS_PROXY(value) ||
+        GET_PROTOTYPE_OF(value) !== OBJECT_PROTOTYPE) fail();
+    const runnerDescriptor = GET_OWN_PROPERTY_DESCRIPTOR(value, 'runnerVersion');
+    if (!runnerDescriptor || !HAS_OWN(runnerDescriptor, 'value') ||
+        runnerDescriptor.enumerable !== true) fail();
+    const currentTestnetWss = runnerDescriptor.value === 3;
+    exactPlainObject(value, currentTestnetWss
+      ? [
+        'acknowledgements', 'executionMode', 'expectedPaymentRequired', 'profileName',
+        'quickTunnel', 'rpcEndpoint', 'runnerVersion', 'runtime', 'sourceRevision',
+      ]
+      : [
+        'acknowledgements', 'expectedPaymentRequired', 'profileName', 'runnerVersion',
+        'quickTunnel', 'runtime', 'sourceRevision',
+      ]);
+    if ((value.runnerVersion !== 2 && value.runnerVersion !== 3) ||
+        (currentTestnetWss && (
+          value.executionMode !== CURRENT_TESTNET_WSS_EXECUTION_MODE ||
+          value.rpcEndpoint !== CURRENT_TESTNET_WSS_ENDPOINT)) ||
+        typeof value.sourceRevision !== 'string' ||
         !REVISION.test(value.sourceRevision) ||
         value.profileName !== GATE_B_CURRENT_TESTNET_PROFILE_NAME) fail();
     exactPlainObject(value.acknowledgements, ['live', 'operatorTrust']);
@@ -397,9 +425,17 @@ export function validateIndependentGateBOperatorConfig(value, context) {
 
 export function independentGateBOperatorConfigDigest(value) {
   try {
+    if (!value || typeof value !== 'object' || IS_PROXY(value) ||
+        GET_PROTOTYPE_OF(value) !== OBJECT_PROTOTYPE) fail();
+    const runnerDescriptor = GET_OWN_PROPERTY_DESCRIPTOR(value, 'runnerVersion');
+    if (!runnerDescriptor || !HAS_OWN(runnerDescriptor, 'value') ||
+        (runnerDescriptor.value !== 2 && runnerDescriptor.value !== 3)) fail();
     const canonical = independentCanonicalJson(value);
+    const domain = runnerDescriptor.value === 3
+      ? CURRENT_TESTNET_WSS_CONFIG_DIGEST_DOMAIN
+      : CONFIG_DIGEST_DOMAIN;
     return createHash('sha256')
-      .update(`${CONFIG_DIGEST_DOMAIN}\n${canonical}`, 'utf8')
+      .update(`${domain}\n${canonical}`, 'utf8')
       .digest('hex');
   } catch {
     fail();
@@ -514,8 +550,8 @@ export async function reviewGateBOperatorConfiguration(injected) {
     const configBytes = await read(GATE_B_PUBLIC_WS_INPUT_LEAVES.runConfig);
     const buyerRpcBytes = await read(GATE_B_PUBLIC_WS_INPUT_LEAVES.buyerRpc);
     const facilitatorRpcBytes = await read(GATE_B_PUBLIC_WS_INPUT_LEAVES.facilitatorRpc);
-    const buyerRpc = parseRpc(buyerRpcBytes);
-    const facilitatorRpc = parseRpc(facilitatorRpcBytes);
+    const buyerRpc = parseRpc(buyerRpcBytes, endpointSource.schemaVersion);
+    const facilitatorRpc = parseRpc(facilitatorRpcBytes, endpointSource.schemaVersion);
     if (buyerAddress.address === payeeAddress.address ||
         endpointSource.rpcEndpoint !== buyerRpc.rpcEndpoint ||
         endpointSource.rpcEndpoint !== facilitatorRpc.rpcEndpoint ||
@@ -528,6 +564,9 @@ export async function reviewGateBOperatorConfiguration(injected) {
       payee: payeeAddress.address,
       quickTunnel: hostnameSource.quickTunnel,
     });
+    if ((endpointSource.schemaVersion === 1 && config.runnerVersion !== 2) ||
+        (endpointSource.schemaVersion === 2 && config.runnerVersion !== 3) ||
+        (config.runnerVersion === 3 && config.rpcEndpoint !== endpointSource.rpcEndpoint)) fail();
     const independentDigest = independentGateBOperatorConfigDigest(config);
     if (!HASH_64.test(independentDigest)) fail();
     if (await callAsync(dependencies.attestSourceTree, undefined, [config.sourceRevision]) !== true) {
@@ -545,7 +584,7 @@ export async function reviewGateBOperatorConfiguration(injected) {
     }
     return Object.freeze({
       configDigest: independentDigest,
-      resultVersion: 1,
+      resultVersion: endpointSource.schemaVersion,
       type: 'REVIEW_VALID',
     });
   } catch {

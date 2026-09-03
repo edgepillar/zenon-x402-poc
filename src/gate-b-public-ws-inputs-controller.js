@@ -1,7 +1,11 @@
 import { isAbsolute, join, resolve } from 'node:path';
 import { types as utilTypes } from 'node:util';
 
-import { preflightPublicWsOnceRun } from './live-evidence-runner.js';
+import {
+  CURRENT_TESTNET_WSS_ONCE_POLICY,
+  preflightCurrentTestnetWssOnceRun,
+  preflightPublicWsOnceRun,
+} from './live-evidence-runner.js';
 import { supervisePublicWsOnceChild } from './live-evidence-public-ws-once-supervisor.js';
 import {
   GATE_B_OPERATOR_COORDINATOR_ACKNOWLEDGEMENTS,
@@ -11,6 +15,8 @@ import {
   launchGateBPublicWsInputsInInheritedProcessGroup,
 } from './gate-b-public-ws-inputs-launcher.js';
 import {
+  GATE_B_CURRENT_TESTNET_WSS_ENDPOINT,
+  GATE_B_CURRENT_TESTNET_WSS_INPUT_ACKNOWLEDGEMENTS,
   GATE_B_PUBLIC_WS_INPUT_ACKNOWLEDGEMENTS,
   GATE_B_PUBLIC_WS_INPUT_LEAVES,
   GATE_B_PUBLIC_WS_INPUT_OPERATIONS,
@@ -93,10 +99,14 @@ function exactInitialOptions(value) {
     'acknowledgements', 'quickTunnel', 'rpcEndpoint', 'runName',
     'schemaVersion', 'workspaceRoot',
   ]);
-  if (value.schemaVersion !== 1 || typeof value.runName !== 'string' ||
+  if ((value.schemaVersion !== 1 && value.schemaVersion !== 2) ||
+      typeof value.runName !== 'string' ||
       !RUN_NAME.test(value.runName)) fail();
   exactAbsolutePath(value.workspaceRoot);
   exactString(value.rpcEndpoint);
+  if (value.schemaVersion === 2 && value.rpcEndpoint !== GATE_B_CURRENT_TESTNET_WSS_ENDPOINT) {
+    fail();
+  }
   exactPlainObject(value.acknowledgements, ['live', 'operatorTrust']);
   if (value.acknowledgements.live !== GATE_B_PUBLIC_WS_INPUT_ACKNOWLEDGEMENTS.live ||
       value.acknowledgements.operatorTrust !==
@@ -131,40 +141,45 @@ function exactInitialOptions(value) {
     }),
     rpcEndpoint: value.rpcEndpoint,
     runName: value.runName,
-    schemaVersion: 1,
+    schemaVersion: value.schemaVersion,
     workspaceRoot: value.workspaceRoot,
   });
 }
 
 function exactReview(value) {
   exactPlainObject(value, ['acknowledgements', 'reviewedConfigDigest', 'schemaVersion']);
-  if (value.schemaVersion !== 1 || typeof value.reviewedConfigDigest !== 'string' ||
+  if ((value.schemaVersion !== 1 && value.schemaVersion !== 2) ||
+      typeof value.reviewedConfigDigest !== 'string' ||
       !LOWERCASE_HASH_64.test(value.reviewedConfigDigest)) fail();
-  exactPlainObject(value.acknowledgements, [
-    'payment', 'publication', 'transportException',
-  ]);
-  for (const field of ['payment', 'publication', 'transportException']) {
-    if (value.acknowledgements[field] !==
-        GATE_B_PUBLIC_WS_INPUT_ACKNOWLEDGEMENTS[field]) fail();
+  const fields = value.schemaVersion === 1
+    ? ['payment', 'publication', 'transportException']
+    : ['payment', 'publication'];
+  const expected = value.schemaVersion === 1
+    ? GATE_B_PUBLIC_WS_INPUT_ACKNOWLEDGEMENTS
+    : GATE_B_CURRENT_TESTNET_WSS_INPUT_ACKNOWLEDGEMENTS;
+  exactPlainObject(value.acknowledgements, fields);
+  for (const field of fields) if (value.acknowledgements[field] !== expected[field]) fail();
+  const acknowledgements = {
+    payment: value.acknowledgements.payment,
+    publication: value.acknowledgements.publication,
+  };
+  if (value.schemaVersion === 1) {
+    acknowledgements.transportException = value.acknowledgements.transportException;
   }
   return Object.freeze({
-    acknowledgements: Object.freeze({
-      payment: value.acknowledgements.payment,
-      publication: value.acknowledgements.publication,
-      transportException: value.acknowledgements.transportException,
-    }),
+    acknowledgements: Object.freeze(acknowledgements),
     reviewedConfigDigest: value.reviewedConfigDigest,
-    schemaVersion: 1,
+    schemaVersion: value.schemaVersion,
   });
 }
 
 function exactRunAuthorization(value) {
   exactPlainObject(value, ['acknowledgement', 'schemaVersion']);
-  if (value.schemaVersion !== 1 ||
+  if ((value.schemaVersion !== 1 && value.schemaVersion !== 2) ||
       value.acknowledgement !== GATE_B_OPERATOR_COORDINATOR_ACKNOWLEDGEMENTS.run) fail();
   return Object.freeze({
     acknowledgement: GATE_B_OPERATOR_COORDINATOR_ACKNOWLEDGEMENTS.run,
-    schemaVersion: 1,
+    schemaVersion: value.schemaVersion,
   });
 }
 
@@ -172,12 +187,18 @@ async function runPublicWsOnce(options, beforeOriginBind) {
   return supervisePublicWsOnceChild('run-public-ws-once', options, { beforeOriginBind });
 }
 
+async function preflightCurrentTestnetOnce(options) {
+  return options.executionMode === CURRENT_TESTNET_WSS_ONCE_POLICY.executionMode
+    ? preflightCurrentTestnetWssOnceRun(options)
+    : preflightPublicWsOnceRun(options);
+}
+
 function exactDependencies(value, defaultQuickTunnelLauncher, defaultPublicWsLauncher) {
   const output = {
     assertQuickTunnelReady: assertGateBQuickTunnelReady,
     launchPublicWsInputs: defaultPublicWsLauncher,
     launchQuickTunnel: defaultQuickTunnelLauncher,
-    preflightPublicWsOnce: preflightPublicWsOnceRun,
+    preflightPublicWsOnce: preflightCurrentTestnetOnce,
     runPublicWsOnce,
     stopQuickTunnel: stopGateBQuickTunnel,
     waitQuickTunnelClosed: waitGateBQuickTunnelClosed,
@@ -368,6 +389,7 @@ async function prepareGateBPublicWsInputsForReviewInternal(
     stopPromise: undefined,
     runAttempted: false,
     runSucceeded: false,
+    executionMode: undefined,
     transportException: undefined,
     tunnelBootstrap: Object.freeze({
       cloudflaredExecutable: snapshot.quickTunnel.cloudflaredExecutable,
@@ -388,7 +410,7 @@ async function prepareGateBPublicWsInputsForReviewInternal(
       [{
       operation: GATE_B_PUBLIC_WS_INPUT_OPERATIONS.PROVISION_ENDPOINT,
       rpcEndpoint: snapshot.rpcEndpoint,
-      schemaVersion: 1,
+      schemaVersion: snapshot.schemaVersion,
       workspaceRoot: snapshot.workspaceRoot,
       }],
     ));
@@ -422,7 +444,7 @@ async function prepareGateBPublicWsInputsForReviewInternal(
       },
       operation: GATE_B_PUBLIC_WS_INPUT_OPERATIONS.PREPARE,
       runName: snapshot.runName,
-      schemaVersion: 1,
+      schemaVersion: snapshot.schemaVersion,
       workspaceRoot: snapshot.workspaceRoot,
       }],
     ));
@@ -465,6 +487,7 @@ export async function authorizeAndPreflightGateBPublicWsInputs(capability, revie
   let snapshot;
   try {
     snapshot = exactReview(review);
+    if (snapshot.schemaVersion !== record.initial.schemaVersion) fail();
   } catch {
     return closeRecord(record, false);
   }
@@ -482,42 +505,54 @@ export async function authorizeAndPreflightGateBPublicWsInputs(capability, revie
     ));
     if (readiness !== true) fail();
     if (!current(record, generation, 'AUTHORIZING')) return closeRecord(record, false);
+    const authorizationAcknowledgements = {
+      payment: snapshot.acknowledgements.payment,
+      publication: snapshot.acknowledgements.publication,
+    };
+    if (snapshot.schemaVersion === 1) {
+      authorizationAcknowledgements.transportException =
+        snapshot.acknowledgements.transportException;
+    }
     const authorized = await invokeActiveStage(record, () => callDependency(
       record.dependencies.launchPublicWsInputs,
       [{
-        acknowledgements: {
-          payment: snapshot.acknowledgements.payment,
-          publication: snapshot.acknowledgements.publication,
-          transportException: snapshot.acknowledgements.transportException,
-        },
+        acknowledgements: authorizationAcknowledgements,
         operation: GATE_B_PUBLIC_WS_INPUT_OPERATIONS.AUTHORIZE,
         reviewedConfigDigest: snapshot.reviewedConfigDigest,
         runName: record.initial.runName,
-        schemaVersion: 1,
+        schemaVersion: snapshot.schemaVersion,
         workspaceRoot: record.initial.workspaceRoot,
       }],
     ));
     exactResult(authorized, 'status', 'authorized');
     if (!current(record, generation, 'AUTHORIZING')) return closeRecord(record, true);
     const root = record.initial.workspaceRoot;
+    const preflightOptions = {
+      authorizationPath: join(root, GATE_B_PUBLIC_WS_INPUT_LEAVES.authorization),
+      buyerRpcPath: join(root, GATE_B_PUBLIC_WS_INPUT_LEAVES.buyerRpc),
+      buyerWalletPath: join(root, GATE_B_PUBLIC_WS_INPUT_LEAVES.buyerWallet),
+      configPath: join(root, GATE_B_PUBLIC_WS_INPUT_LEAVES.runConfig),
+      facilitatorRpcPath: join(root, GATE_B_PUBLIC_WS_INPUT_LEAVES.facilitatorRpc),
+      runName: record.initial.runName,
+      workspaceRoot: root,
+    };
+    if (snapshot.schemaVersion === 1) {
+      preflightOptions.transportException = snapshot.acknowledgements.transportException;
+    } else {
+      preflightOptions.executionMode = CURRENT_TESTNET_WSS_ONCE_POLICY.executionMode;
+    }
     const preflight = await invokeActiveStage(record, () => callDependency(
       record.dependencies.preflightPublicWsOnce,
-      [{
-        authorizationPath: join(root, GATE_B_PUBLIC_WS_INPUT_LEAVES.authorization),
-        buyerRpcPath: join(root, GATE_B_PUBLIC_WS_INPUT_LEAVES.buyerRpc),
-        buyerWalletPath: join(root, GATE_B_PUBLIC_WS_INPUT_LEAVES.buyerWallet),
-        configPath: join(root, GATE_B_PUBLIC_WS_INPUT_LEAVES.runConfig),
-        facilitatorRpcPath: join(root, GATE_B_PUBLIC_WS_INPUT_LEAVES.facilitatorRpc),
-        runName: record.initial.runName,
-        transportException: snapshot.acknowledgements.transportException,
-        workspaceRoot: root,
-      }],
+      [preflightOptions],
     ));
     exactResult(preflight, 'valid', true);
     if (!current(record, generation, 'AUTHORIZING')) return closeRecord(record, true);
     record.phase = 'PREFLIGHT_VALID';
     record.status = PREFLIGHT_VALID;
     record.transportException = snapshot.acknowledgements.transportException;
+    record.executionMode = snapshot.schemaVersion === 2
+      ? CURRENT_TESTNET_WSS_ONCE_POLICY.executionMode
+      : undefined;
     return record.status;
   } catch {
     return closeRecord(record, true);
@@ -541,7 +576,8 @@ export async function executeGateBPublicWsInputsOnce(
     return closeRecord(record, true);
   }
   try {
-    exactRunAuthorization(authorization);
+    const runAuthorization = exactRunAuthorization(authorization);
+    if (runAuthorization.schemaVersion !== record.initial.schemaVersion) fail();
     if (typeof beforeOriginBind !== 'function' || IS_PROXY(beforeOriginBind)) fail();
   } catch {
     return closeRecord(record, true);
@@ -557,18 +593,23 @@ export async function executeGateBPublicWsInputsOnce(
     ));
     if (readiness !== true || !current(record, generation, 'RUNNING')) fail();
     const root = record.initial.workspaceRoot;
+    const runOptions = {
+      authorizationPath: join(root, GATE_B_PUBLIC_WS_INPUT_LEAVES.authorization),
+      buyerRpcPath: join(root, GATE_B_PUBLIC_WS_INPUT_LEAVES.buyerRpc),
+      buyerWalletPath: join(root, GATE_B_PUBLIC_WS_INPUT_LEAVES.buyerWallet),
+      configPath: join(root, GATE_B_PUBLIC_WS_INPUT_LEAVES.runConfig),
+      facilitatorRpcPath: join(root, GATE_B_PUBLIC_WS_INPUT_LEAVES.facilitatorRpc),
+      runName: record.initial.runName,
+      workspaceRoot: root,
+    };
+    if (record.initial.schemaVersion === 1) {
+      runOptions.transportException = record.transportException;
+    } else {
+      runOptions.executionMode = record.executionMode;
+    }
     const result = await invokeActiveStage(record, () => callDependency(
       record.dependencies.runPublicWsOnce,
-      [{
-        authorizationPath: join(root, GATE_B_PUBLIC_WS_INPUT_LEAVES.authorization),
-        buyerRpcPath: join(root, GATE_B_PUBLIC_WS_INPUT_LEAVES.buyerRpc),
-        buyerWalletPath: join(root, GATE_B_PUBLIC_WS_INPUT_LEAVES.buyerWallet),
-        configPath: join(root, GATE_B_PUBLIC_WS_INPUT_LEAVES.runConfig),
-        facilitatorRpcPath: join(root, GATE_B_PUBLIC_WS_INPUT_LEAVES.facilitatorRpc),
-        runName: record.initial.runName,
-        transportException: record.transportException,
-        workspaceRoot: root,
-      }, beforeOriginBind],
+      [runOptions, beforeOriginBind],
     ));
     exactResult(result, 'status', 'pending-independent-verification');
     if (!current(record, generation, 'RUNNING')) fail();
