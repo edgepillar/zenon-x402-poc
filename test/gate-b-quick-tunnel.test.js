@@ -2488,6 +2488,337 @@ test('each supervisor CHECK performs a fresh complete pinned observation', async
   assert.equal(await supervision, true);
 });
 
+test('a fresh CHECK tolerates one exact listener absence before pinned recovery', async () => {
+  const harness = supervisorHarness();
+  const originalRunLsof = harness.injections.runLsof;
+  let absent = true;
+  harness.injections.runLsof = async ({ pid, signal }) => {
+    if (harness.state.sourceWrites === 1 && absent) {
+      absent = false;
+      assert.equal(pid, harness.state.child.pid);
+      assert.equal(signal.aborted, false);
+      harness.state.lsofCalls += 1;
+      harness.state.order.push('lsof');
+      return Buffer.alloc(0);
+    }
+    return originalRunLsof({ pid, signal });
+  };
+  const { promise: supervision } = await startSupervisor(harness);
+  const lsofBefore = harness.state.lsofCalls;
+  harness.state.ipc.emit('message', createGateBQuickTunnelIpcMessage(
+    GATE_B_QUICK_TUNNEL_IPC_TYPES.CHECK,
+    2,
+  ));
+  await eventually(() => harness.state.ipc.sent.some(message =>
+    message.type === GATE_B_QUICK_TUNNEL_IPC_TYPES.CHECKED && message.requestId === 2));
+  assert.equal(harness.state.lsofCalls - lsofBefore, 3);
+  assert.equal(harness.state.sourceWrites, 1);
+  assert.equal(harness.state.attestCalls.length, 3);
+  await stopSupervisor(harness, 3);
+  assert.equal(await supervision, true);
+});
+
+test('a fresh CHECK tolerates one canonical pinned 503/zero before recovery', async () => {
+  const harness = supervisorHarness();
+  const originalSleep = harness.injections.sleep;
+  let transientRecovered = false;
+  harness.injections.sleep = async (milliseconds, signal) => {
+    if (harness.state.sourceWrites === 1 && !transientRecovered) {
+      transientRecovered = true;
+      harness.state.readyStatus = 200;
+      harness.state.readyConnections = 1;
+    }
+    return originalSleep(milliseconds, signal);
+  };
+  const { promise: supervision } = await startSupervisor(harness);
+  const lsofBefore = harness.state.lsofCalls;
+  const httpBefore = harness.state.httpCalls.length;
+  harness.state.readyStatus = 503;
+  harness.state.readyConnections = 0;
+  harness.state.ipc.emit('message', createGateBQuickTunnelIpcMessage(
+    GATE_B_QUICK_TUNNEL_IPC_TYPES.CHECK,
+    2,
+  ));
+  await eventually(() => harness.state.ipc.sent.some(message =>
+    message.type === GATE_B_QUICK_TUNNEL_IPC_TYPES.CHECKED && message.requestId === 2));
+  assert.equal(harness.state.lsofCalls - lsofBefore, 4);
+  assert.equal(harness.state.httpCalls.length - httpBefore, 4);
+  assert.equal(transientRecovered, true);
+  assert.equal(harness.state.sourceWrites, 1);
+  assert.equal(harness.state.attestCalls.length, 3);
+  await stopSupervisor(harness, 3);
+  assert.equal(await supervision, true);
+});
+
+test('fresh CHECK transient polling remains bounded by one deadline and attempt cap',
+  async t => {
+    await t.test('persistent exact listener absence', async () => {
+      const harness = supervisorHarness({ checkTimeoutMs: 4 });
+      const originalRunLsof = harness.injections.runLsof;
+      harness.injections.runLsof = async ({ pid, signal }) => {
+        if (harness.state.sourceWrites === 1) {
+          assert.equal(pid, harness.state.child.pid);
+          assert.equal(signal.aborted, false);
+          harness.state.lsofCalls += 1;
+          harness.state.order.push('lsof');
+          return Buffer.alloc(0);
+        }
+        return originalRunLsof({ pid, signal });
+      };
+      const { promise: supervision } = await startSupervisor(harness);
+      const lsofBefore = harness.state.lsofCalls;
+      harness.state.ipc.emit('message', createGateBQuickTunnelIpcMessage(
+        GATE_B_QUICK_TUNNEL_IPC_TYPES.CHECK,
+        2,
+      ));
+      await assert.rejects(supervision);
+      assert.equal(harness.state.lsofCalls - lsofBefore, 4);
+      assert.equal(harness.state.sourceWrites, 1);
+      assert.equal(harness.state.ipc.sent.some(message =>
+        message.type === GATE_B_QUICK_TUNNEL_IPC_TYPES.CHECKED), false);
+    });
+
+    await t.test('persistent canonical pinned 503/zero', async () => {
+      const harness = supervisorHarness({ checkTimeoutMs: 4 });
+      const { promise: supervision } = await startSupervisor(harness);
+      const lsofBefore = harness.state.lsofCalls;
+      const httpBefore = harness.state.httpCalls.length;
+      harness.state.readyStatus = 503;
+      harness.state.readyConnections = 0;
+      harness.state.ipc.emit('message', createGateBQuickTunnelIpcMessage(
+        GATE_B_QUICK_TUNNEL_IPC_TYPES.CHECK,
+        2,
+      ));
+      await assert.rejects(supervision);
+      assert.equal(harness.state.lsofCalls - lsofBefore, 8);
+      assert.equal(harness.state.httpCalls.length - httpBefore, 8);
+      assert.equal(harness.state.sourceWrites, 1);
+      assert.equal(harness.state.ipc.sent.some(message =>
+        message.type === GATE_B_QUICK_TUNNEL_IPC_TYPES.CHECKED), false);
+    });
+  });
+
+test('fresh CHECK rejects every pinned identity drift after an exact transient', async t => {
+  const driftCases = [
+    ['pid', harness => { harness.state.child.pid += 1; }],
+    ['port', harness => { harness.state.metricsPort += 1; }],
+    ['hostname', harness => {
+      harness.state.hostname = 'changed-fixture.trycloudflare.com';
+    }],
+    ['connector', harness => {
+      harness.state.connectorId = '22222222-3333-4444-8555-666666666666';
+    }],
+  ];
+  for (const [name, mutate] of driftCases) {
+    await t.test(name, async () => {
+      const harness = supervisorHarness();
+      const originalSleep = harness.injections.sleep;
+      let mutationApplied = false;
+      harness.injections.sleep = async (milliseconds, signal) => {
+        if (harness.state.sourceWrites === 1 && !mutationApplied) {
+          harness.state.readyStatus = 200;
+          harness.state.readyConnections = 1;
+          mutationApplied = true;
+          mutate(harness);
+        }
+        return originalSleep(milliseconds, signal);
+      };
+      const { promise: supervision } = await startSupervisor(harness);
+      const lsofBefore = harness.state.lsofCalls;
+      harness.state.readyStatus = 503;
+      harness.state.readyConnections = 0;
+      harness.state.ipc.emit('message', createGateBQuickTunnelIpcMessage(
+        GATE_B_QUICK_TUNNEL_IPC_TYPES.CHECK,
+        2,
+      ));
+      await assert.rejects(supervision);
+      assert.equal(mutationApplied, true);
+      assert.equal(harness.state.lsofCalls - lsofBefore, name === 'pid' ? 2 : 4);
+      assert.equal(harness.state.sourceWrites, 1);
+      assert.equal(harness.state.ipc.sent.some(message =>
+        message.type === GATE_B_QUICK_TUNNEL_IPC_TYPES.CHECKED), false);
+    });
+  }
+});
+
+test('fresh CHECK never retries malformed listener or readiness evidence', async t => {
+  await t.test('non-buffer listener evidence', async () => {
+    const harness = supervisorHarness();
+    const originalRunLsof = harness.injections.runLsof;
+    harness.injections.runLsof = async ({ pid, signal }) => {
+      if (harness.state.sourceWrites === 1) {
+        assert.equal(pid, harness.state.child.pid);
+        assert.equal(signal.aborted, false);
+        harness.state.lsofCalls += 1;
+        harness.state.order.push('lsof');
+        return '';
+      }
+      return originalRunLsof({ pid, signal });
+    };
+    const { promise: supervision } = await startSupervisor(harness);
+    const sleepsBefore = harness.state.order.filter(entry => entry === 'sleep').length;
+    const lsofBefore = harness.state.lsofCalls;
+    harness.state.ipc.emit('message', createGateBQuickTunnelIpcMessage(
+      GATE_B_QUICK_TUNNEL_IPC_TYPES.CHECK,
+      2,
+    ));
+    await assert.rejects(supervision);
+    assert.equal(harness.state.lsofCalls - lsofBefore, 1);
+    assert.equal(harness.state.order.filter(entry => entry === 'sleep').length,
+      sleepsBefore);
+    assert.equal(harness.state.sourceWrites, 1);
+  });
+
+  await t.test('noncanonical readiness evidence', async () => {
+    const harness = supervisorHarness();
+    const { promise: supervision } = await startSupervisor(harness);
+    const sleepsBefore = harness.state.order.filter(entry => entry === 'sleep').length;
+    const lsofBefore = harness.state.lsofCalls;
+    const httpBefore = harness.state.httpCalls.length;
+    harness.state.readyStatus = 503;
+    harness.state.readyConnections = 1;
+    harness.state.ipc.emit('message', createGateBQuickTunnelIpcMessage(
+      GATE_B_QUICK_TUNNEL_IPC_TYPES.CHECK,
+      2,
+    ));
+    await assert.rejects(supervision);
+    assert.equal(harness.state.lsofCalls - lsofBefore, 1);
+    assert.equal(harness.state.httpCalls.length - httpBefore, 2);
+    assert.equal(harness.state.order.filter(entry => entry === 'sleep').length,
+      sleepsBefore);
+    assert.equal(harness.state.sourceWrites, 1);
+  });
+});
+
+test('fresh CHECK revalidates retained executable and path only after transient recovery',
+  async t => {
+    await t.test('executable attestation drift', async () => {
+      let calls = 0;
+      const harness = supervisorHarness({
+        async inspectExecutable(path, pin, versionAttestor) {
+          calls += 1;
+          assert.equal(await versionAttestor(path), true);
+          return {
+            ctimeNs: calls < 3 ? 1n : 2n,
+            dev: 2n,
+            digest: pin,
+            ino: 3n,
+            mode: 0o100500n,
+            mtimeNs: 4n,
+            nlink: 1n,
+            size: 5n,
+          };
+        },
+      });
+      const originalRunLsof = harness.injections.runLsof;
+      let absent = true;
+      harness.injections.runLsof = async options => {
+        if (harness.state.sourceWrites === 1 && absent) {
+          absent = false;
+          harness.state.lsofCalls += 1;
+          harness.state.order.push('lsof');
+          return Buffer.alloc(0);
+        }
+        return originalRunLsof(options);
+      };
+      const { promise: supervision } = await startSupervisor(harness);
+      const lsofBefore = harness.state.lsofCalls;
+      harness.state.ipc.emit('message', createGateBQuickTunnelIpcMessage(
+        GATE_B_QUICK_TUNNEL_IPC_TYPES.CHECK,
+        2,
+      ));
+      await assert.rejects(supervision);
+      assert.equal(calls, 3);
+      assert.equal(harness.state.lsofCalls - lsofBefore, 3);
+      assert.equal(harness.state.sourceWrites, 1);
+      assert.equal(harness.state.ipc.sent.some(message =>
+        message.type === GATE_B_QUICK_TUNNEL_IPC_TYPES.CHECKED), false);
+    });
+
+    await t.test('retained path-generation drift', async () => {
+      const harness = guardedExecutableSupervisorHarness();
+      const originalRunLsof = harness.injections.runLsof;
+      let absent = true;
+      harness.injections.runLsof = async options => {
+        if (harness.state.sourceWrites === 1 && absent) {
+          absent = false;
+          harness.state.lsofCalls += 1;
+          harness.state.order.push('lsof');
+          return Buffer.alloc(0);
+        }
+        return originalRunLsof(options);
+      };
+      const { promise: supervision } = await startSupervisor(harness);
+      const lsofBefore = harness.state.lsofCalls;
+      const original = harness.identities.get('/trusted/private');
+      harness.identities.set('/trusted/private', {
+        ...original,
+        ctimeNs: original.ctimeNs + 1n,
+      });
+      harness.state.ipc.emit('message', createGateBQuickTunnelIpcMessage(
+        GATE_B_QUICK_TUNNEL_IPC_TYPES.CHECK,
+        2,
+      ));
+      await assert.rejects(supervision);
+      assert.equal(harness.state.lsofCalls - lsofBefore, 3);
+      assert.equal(harness.state.sourceWrites, 1);
+      assert.equal(harness.state.ipc.sent.some(message =>
+        message.type === GATE_B_QUICK_TUNNEL_IPC_TYPES.CHECKED), false);
+    });
+  });
+
+test('STOP and overlapping CHECK preempt transient retry without CHECKED', async t => {
+  for (const trigger of ['STOP', 'overlap']) {
+    await t.test(trigger, async () => {
+      const harness = supervisorHarness();
+      const originalRunLsof = harness.injections.runLsof;
+      const originalSleep = harness.injections.sleep;
+      let absent = true;
+      let gapStarted = false;
+      harness.injections.runLsof = async ({ pid, signal }) => {
+        if (harness.state.sourceWrites === 1 && absent) {
+          absent = false;
+          assert.equal(pid, harness.state.child.pid);
+          assert.equal(signal.aborted, false);
+          harness.state.lsofCalls += 1;
+          harness.state.order.push('lsof');
+          return Buffer.alloc(0);
+        }
+        return originalRunLsof({ pid, signal });
+      };
+      harness.injections.sleep = async (milliseconds, signal) => {
+        if (harness.state.sourceWrites === 1) {
+          assert.equal(milliseconds, 1);
+          gapStarted = true;
+          return new Promise(resolve => {
+            signal.addEventListener('abort', () => resolve(false), { once: true });
+          });
+        }
+        return originalSleep(milliseconds, signal);
+      };
+      const { promise: supervision } = await startSupervisor(harness);
+      harness.state.ipc.emit('message', createGateBQuickTunnelIpcMessage(
+        GATE_B_QUICK_TUNNEL_IPC_TYPES.CHECK,
+        2,
+      ));
+      await eventually(() => gapStarted);
+      if (trigger === 'STOP') {
+        await stopSupervisor(harness, 3);
+        assert.equal(await supervision, true);
+      } else {
+        harness.state.ipc.emit('message', createGateBQuickTunnelIpcMessage(
+          GATE_B_QUICK_TUNNEL_IPC_TYPES.CHECK,
+          3,
+        ));
+        await assert.rejects(supervision);
+      }
+      assert.equal(harness.state.sourceWrites, 1);
+      assert.equal(harness.state.ipc.sent.some(message =>
+        message.type === GATE_B_QUICK_TUNNEL_IPC_TYPES.CHECKED), false);
+    });
+  }
+});
+
 test('a fresh CHECK that differs from the pinned tunnel identity fails closed', async () => {
   const harness = supervisorHarness();
   const { promise: supervision } = await startSupervisor(harness);
@@ -2503,7 +2834,7 @@ test('a fresh CHECK that differs from the pinned tunnel identity fails closed', 
   assert.equal(harness.state.runtimeRemoved, 1);
 });
 
-test('a fresh CHECK rejects the startup-only 503/zero readiness state', async () => {
+test('a fresh CHECK rejects persistent canonical 503/zero after its bounded retry budget is exhausted', async () => {
   const harness = supervisorHarness();
   const { promise: supervision } = await startSupervisor(harness);
   harness.state.readyStatus = 503;
