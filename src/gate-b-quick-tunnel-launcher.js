@@ -15,6 +15,8 @@ const SUPERVISOR_MODULE = fileURLToPath(
   new URL('./gate-b-quick-tunnel-supervisor.js', import.meta.url),
 );
 const STARTUP_TIMEOUT_MS = 60_000;
+// Match the supervisor's fixed fresh-CHECK bound; test injection may only shorten it.
+const CHECK_TIMEOUT_MS = 10_000;
 const SHUTDOWN_TIMEOUT_MS = 10_000;
 const HARD_LIFETIME_MS = 10 * 60_000;
 const REAP_FORCE_MS = 500;
@@ -63,11 +65,14 @@ function exactInjections(value) {
   const output = {
     platform: process.platform,
     forkProcess: fork,
+    scheduleTimer: setTimeout,
+    cancelTimer: clearTimeout,
     executable: process.execPath,
     supervisorModule: SUPERVISOR_MODULE,
     killProcessGroup,
     probeProcessGroup,
     startupTimeoutMs: STARTUP_TIMEOUT_MS,
+    checkTimeoutMs: CHECK_TIMEOUT_MS,
     shutdownTimeoutMs: SHUTDOWN_TIMEOUT_MS,
     hardLifetimeMs: HARD_LIFETIME_MS,
     reapForceMs: REAP_FORCE_MS,
@@ -89,19 +94,22 @@ function exactInjections(value) {
       output[key] = descriptor.value;
     }
   }
-  for (const name of ['forkProcess', 'killProcessGroup', 'probeProcessGroup']) {
+  for (const name of [
+    'cancelTimer', 'forkProcess', 'killProcessGroup', 'probeProcessGroup', 'scheduleTimer',
+  ]) {
     if (typeof output[name] !== 'function') fail();
   }
   for (const name of ['executable', 'supervisorModule']) {
     if (typeof output[name] !== 'string' || !isAbsolute(output[name])) fail();
   }
   for (const name of [
-    'startupTimeoutMs', 'shutdownTimeoutMs', 'hardLifetimeMs',
+    'startupTimeoutMs', 'checkTimeoutMs', 'shutdownTimeoutMs', 'hardLifetimeMs',
     'reapForceMs', 'reapAbandonMs', 'maxRequestId',
   ]) {
     if (!Number.isSafeInteger(output[name]) || output[name] < 1) fail();
   }
   if (output.startupTimeoutMs > STARTUP_TIMEOUT_MS ||
+      output.checkTimeoutMs > CHECK_TIMEOUT_MS ||
       output.shutdownTimeoutMs > SHUTDOWN_TIMEOUT_MS ||
       output.hardLifetimeMs > HARD_LIFETIME_MS ||
       output.reapForceMs > REAP_FORCE_MS ||
@@ -231,10 +239,23 @@ function releaseOwnedChild(record) {
   } catch {}
 }
 
+function cancelPendingCheckTimer(record, pending) {
+  if (!pending || pending.timer === undefined) return true;
+  const timer = pending.timer;
+  pending.timer = undefined;
+  try {
+    Reflect.apply(record.dependencies.cancelTimer, undefined, [timer]);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 function rejectPendingCheck(record) {
   if (!record.pendingCheck) return;
   const pending = record.pendingCheck;
   record.pendingCheck = null;
+  cancelPendingCheckTimer(record, pending);
   pending.reject(error());
 }
 
@@ -570,6 +591,7 @@ function onMessage(record, candidate) {
         message.type !== GATE_B_QUICK_TUNNEL_IPC_TYPES.CHECKED ||
         message.requestId !== record.pendingCheck.requestId) return failRecord(record);
     const pending = record.pendingCheck;
+    if (!cancelPendingCheckTimer(record, pending)) return failRecord(record);
     record.pendingCheck = null;
     record.state = 'ACTIVE_IDLE';
     pending.resolve(true);
@@ -777,9 +799,30 @@ export function assertGateBQuickTunnelReady(lease) {
       promise,
       resolve: resolveCheck,
       reject: rejectCheck,
+      timer: undefined,
     };
+    const pending = record.pendingCheck;
     record.lastIssuedRequestId = requestId;
     record.state = 'CHECKING';
+    let timer;
+    try {
+      timer = Reflect.apply(record.dependencies.scheduleTimer, undefined, [
+        () => {
+          if (record.state === 'CHECKING' && record.pendingCheck === pending) {
+            failRecord(record);
+          }
+        },
+        record.dependencies.checkTimeoutMs,
+      ]);
+    } catch {
+      failRecord(record);
+      return promise;
+    }
+    if (record.state !== 'CHECKING' || record.pendingCheck !== pending) {
+      try { Reflect.apply(record.dependencies.cancelTimer, undefined, [timer]); } catch {}
+      return promise;
+    }
+    pending.timer = timer;
     sendMessage(record, createGateBQuickTunnelIpcMessage(
       GATE_B_QUICK_TUNNEL_IPC_TYPES.CHECK,
       requestId,

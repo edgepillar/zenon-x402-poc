@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { spawn } from 'node:child_process';
 import { join } from 'node:path';
 import { readFile } from 'node:fs/promises';
 
@@ -22,10 +23,19 @@ import {
 } from '../src/gate-b-public-ws-inputs-schema.js';
 import { CURRENT_TESTNET_WSS_ONCE_POLICY } from '../src/live-evidence-runner.js';
 import {
+  GATE_B_QUICK_TUNNEL_ARTIFACT_MANIFEST,
+} from '../src/gate-b-quick-tunnel-artifact.js';
+import {
   GATE_B_QUICK_TUNNEL_OPERATIONS,
   GATE_B_QUICK_TUNNEL_TELEMETRY_ACKNOWLEDGEMENTS,
   GATE_B_QUICK_TUNNEL_TELEMETRY_MODES,
 } from '../src/gate-b-quick-tunnel-schema.js';
+import {
+  assertGateBQuickTunnelReady,
+  launchGateBQuickTunnelInInheritedProcessGroup,
+  stopGateBQuickTunnel,
+  waitGateBQuickTunnelClosed,
+} from '../src/gate-b-quick-tunnel-launcher.js';
 import {
   GATE_B_OPERATOR_COORDINATOR_ACKNOWLEDGEMENTS,
 } from '../src/gate-b-operator-coordinator-schema.js';
@@ -91,6 +101,149 @@ function deferred() {
     reject = decline;
   });
   return { promise, reject, resolve };
+}
+
+function processExists(pid) {
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch (candidate) {
+    if (candidate?.code === 'ESRCH') return false;
+    throw candidate;
+  }
+}
+
+async function eventuallyMissingProcess(pid, attempts = 200) {
+  for (let attempt = 0; attempt < attempts; attempt += 1) {
+    if (!processExists(pid)) return true;
+    await new Promise(resolve => setTimeout(resolve, 5));
+  }
+  return false;
+}
+
+function realFailingSupervisorScript() {
+  const supervisorUrl = new URL(
+    '../src/gate-b-quick-tunnel-supervisor.js',
+    import.meta.url,
+  ).href;
+  return String.raw`
+import { spawn } from 'node:child_process';
+import { createReadStream, writeSync } from 'node:fs';
+import { superviseGateBQuickTunnel } from ${JSON.stringify(supervisorUrl)};
+
+let sourceBytes;
+let tunnel;
+let lsofCalls = 0;
+const record = Object.freeze(Object.create(null));
+const runtime = Object.freeze(Object.create(null));
+const frame = () => new Promise((resolve, reject) => {
+  const chunks = [];
+  const stream = createReadStream('', { autoClose: true, fd: 3 });
+  stream.on('data', chunk => chunks.push(chunk));
+  stream.once('error', reject);
+  stream.once('end', () => resolve(Buffer.concat(chunks)));
+});
+const snapshot = body => ({
+  body,
+  complete: true,
+  httpVersion: '1.1',
+  rawHeaders: [
+    'Content-Type', 'text/plain; charset=utf-8',
+    'Content-Length', String(body.length),
+  ],
+  rawTrailers: [],
+  statusCode: 200,
+});
+const workspace = Object.freeze({
+  async close() { return true; },
+  async read(candidate) {
+    if (candidate !== record) throw new Error('fixture');
+    return Buffer.from(sourceBytes);
+  },
+  async reserveOutputs() { return Object.freeze([record]); },
+  async syncDirectories() { return true; },
+  async write(candidate, bytes) {
+    if (candidate !== record) throw new Error('fixture');
+    sourceBytes = Buffer.from(bytes);
+    return true;
+  },
+});
+try {
+  await superviseGateBQuickTunnel({
+    architecture: 'arm64',
+    assertDevNull: async () => true,
+    async inspectExecutable(path, pin, versionAttestor) {
+      if (await versionAttestor(path) !== true) throw new Error('fixture');
+      return {
+        ctimeNs: 1n,
+        dev: 2n,
+        digest: pin,
+        ino: 3n,
+        mode: 0o100500n,
+        mtimeNs: 4n,
+        nlink: 1n,
+        size: 4096n,
+      };
+    },
+    checkTimeoutMs: 100,
+    async createRuntimeDirectory() { return runtime; },
+    hardLifetimeMs: 2_000,
+    async httpGet({ path }) {
+      const body = path === '/quicktunnel'
+        ? Buffer.from('{"hostname":"controller-fixture.trycloudflare.com"}', 'utf8')
+        : Buffer.from('{"status":200,"readyConnections":1,' +
+          '"connectorId":"11111111-2222-4333-8444-555555555555"}', 'utf8');
+      return snapshot(body);
+    },
+    ipc: process,
+    observationGapMs: 1,
+    async openWorkspace() { return workspace; },
+    platform: 'darwin',
+    readBootstrapFrame: frame,
+    reapForceMs: 20,
+    async removeRuntimeDirectory() {
+      if (!tunnel || (tunnel.exitCode === null && tunnel.signalCode === null)) {
+        throw new Error('fixture');
+      }
+      return true;
+    },
+    async runLsof({ pid, signal }) {
+      lsofCalls += 1;
+      if (lsofCalls === 7) {
+        writeSync(1, 'CHECK_FAILURE\n');
+        throw new Error('fixture');
+      }
+      if (signal.aborted) throw new Error('fixture');
+      return Buffer.from('p' + pid + '\0\nf9\0tIPv4\0PTCP\0' +
+        'n127.0.0.1:43210\0TST=LISTEN\0TQR=0\0TQS=0\0\n', 'ascii');
+    },
+    runtimeDirectoryPath() { return process.cwd(); },
+    shutdownTimeoutMs: 250,
+    async sleep() { return true; },
+    spawnProcess() {
+      tunnel = spawn(process.execPath, ['-e', 'setInterval(() => {}, 1000)'], {
+        cwd: process.cwd(),
+        env: {},
+        stdio: 'ignore',
+      });
+      writeSync(1, 'TUNNEL_PID=' + tunnel.pid + '\n');
+      return tunnel;
+    },
+    spawnSyncProcess() {
+      return {
+        signal: null,
+        status: 0,
+        stderr: Buffer.alloc(0),
+        stdout: Buffer.from('cloudflared version 2026.8.2 (built fixture)\n'),
+      };
+    },
+    startupTimeoutMs: 500,
+  });
+  process.exitCode = 0;
+} catch {
+  process.exitCode = 1;
+}
+`;
 }
 
 function hostileThenable(counter) {
@@ -263,6 +416,129 @@ test('coordinator-specific controller entrypoint selects inherited tunnel launch
       source,
       /prepareGateBPublicWsInputsForReviewInInheritedProcessGroup[\s\S]*launchGateBQuickTunnelInInheritedProcessGroup/,
     );
+  });
+
+test('a rejected initial tunnel CHECK quarantines without invoking PREPARE', async () => {
+  const context = harness({
+    async assertQuickTunnelReady(candidate) {
+      assert.equal(candidate, context.lease);
+      context.events.push('ready');
+      throw new Error('synthetic check deadline');
+    },
+  });
+  const capability = await prepareGateBPublicWsInputsForReview(options(), context.injected);
+  assert.equal(getGateBPublicWsInputsControllerStatus(capability), QUARANTINED);
+  assert.deepEqual(context.inputBootstraps.map(candidate => candidate.operation), [
+    GATE_B_PUBLIC_WS_INPUT_OPERATIONS.PROVISION_ENDPOINT,
+  ]);
+  assert.equal(context.state.stopCalls, 1);
+  assert.equal(context.state.waitCalls, 1);
+});
+
+test('real inherited supervisor post-ACTIVE CHECK failure terminates before PREPARE',
+  { timeout: 5_000 }, async t => {
+    let supervisor;
+    let tunnelPid;
+    let output = '';
+    let disconnected = false;
+    let exited = false;
+    let launcherRejected = false;
+    let outerExpired = false;
+    const operations = [];
+    t.after(async () => {
+      if (supervisor && supervisor.exitCode === null && supervisor.signalCode === null) {
+        supervisor.kill('SIGKILL');
+      }
+      if (Number.isSafeInteger(tunnelPid) && processExists(tunnelPid)) {
+        try { process.kill(tunnelPid, 'SIGKILL'); } catch {}
+      }
+    });
+    const forkProcess = () => {
+      supervisor = spawn(process.execPath, [
+        '--input-type=module',
+        '--eval',
+        realFailingSupervisorScript(),
+      ], {
+        cwd: process.cwd(),
+        detached: false,
+        env: {},
+        stdio: ['ignore', 'pipe', 'ignore', 'pipe', 'ipc'],
+      });
+      supervisor.stdout.setEncoding('utf8');
+      supervisor.stdout.on('data', chunk => {
+        output += chunk;
+        const match = /(?:^|\n)TUNNEL_PID=([0-9]+)(?:\n|$)/u.exec(output);
+        if (match) tunnelPid = Number(match[1]);
+      });
+      supervisor.on('disconnect', () => { disconnected = true; });
+      supervisor.on('exit', () => { exited = true; });
+      return supervisor;
+    };
+    const launch = candidate => launchGateBQuickTunnelInInheritedProcessGroup(candidate, {
+      executable: process.execPath,
+      forkProcess,
+      hardLifetimeMs: 2_000,
+      killProcessGroup() { assert.fail('inherited cleanup must not signal a group'); },
+      maxRequestId: 10,
+      platform: 'darwin',
+      probeProcessGroup() { assert.fail('inherited cleanup must not probe a group'); },
+      reapAbandonMs: 500,
+      reapForceMs: 100,
+      shutdownTimeoutMs: 500,
+      startupTimeoutMs: 1_000,
+      supervisorModule: '/private/tmp/unused-supervisor-fixture.js',
+    });
+    const context = harness({
+      async assertQuickTunnelReady(candidate) {
+        try {
+          return await assertGateBQuickTunnelReady(candidate);
+        } catch (candidateError) {
+          launcherRejected = true;
+          throw candidateError;
+        }
+      },
+      async launchPublicWsInputs(candidate) {
+        operations.push(candidate.operation);
+        return Object.freeze({
+          status: candidate.operation === GATE_B_PUBLIC_WS_INPUT_OPERATIONS.PROVISION_ENDPOINT
+            ? 'endpoint-provisioned'
+            : 'prepared',
+        });
+      },
+      launchQuickTunnel: launch,
+      stopQuickTunnel: stopGateBQuickTunnel,
+      waitQuickTunnelClosed: waitGateBQuickTunnelClosed,
+    });
+    let outerTimer;
+    const outer = new Promise((resolve, reject) => {
+      outerTimer = setTimeout(() => {
+        outerExpired = true;
+        reject(new Error('outer fixture deadline'));
+      }, 2_000);
+    });
+    const capability = await Promise.race([
+      prepareGateBPublicWsInputsForReviewInInheritedProcessGroup(options({
+        quickTunnel: {
+          ...options().quickTunnel,
+          cloudflaredExecutable: '/private/tmp/cloudflared',
+          sourcePin: GATE_B_QUICK_TUNNEL_ARTIFACT_MANIFEST.executableSha256,
+        },
+      }), context.injected),
+      outer,
+    ]).finally(() => clearTimeout(outerTimer));
+
+    assert.equal(outerExpired, false);
+    assert.equal(launcherRejected, true);
+    assert.equal(getGateBPublicWsInputsControllerStatus(capability), QUARANTINED);
+    assert.deepEqual(operations, [GATE_B_PUBLIC_WS_INPUT_OPERATIONS.PROVISION_ENDPOINT]);
+    assert.equal((output.match(/CHECK_FAILURE\n/gu) ?? []).length, 1);
+    assert.equal(Number.isSafeInteger(tunnelPid), true);
+    assert.equal(disconnected, true);
+    assert.equal(await eventuallyMissingProcess(tunnelPid), true);
+    for (let attempt = 0; attempt < 200 && !exited; attempt += 1) {
+      await new Promise(resolve => setTimeout(resolve, 5));
+    }
+    assert.equal(exited, true);
   });
 
 test('controller enforces the exact two-readiness review and preflight order without RUN',

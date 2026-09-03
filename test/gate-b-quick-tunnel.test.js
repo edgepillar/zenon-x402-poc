@@ -322,6 +322,33 @@ function launcherHarness(changes = {}) {
   return { child, forkCalls, groupKills, injected };
 }
 
+function launcherDeadlineTimers() {
+  let nextId = 1;
+  const active = new Map();
+  const cancelled = [];
+  return {
+    active,
+    cancelled,
+    cancelTimer(id) {
+      cancelled.push(id);
+      active.delete(id);
+    },
+    fire(id) {
+      const callback = active.get(id);
+      if (!callback) return false;
+      active.delete(id);
+      callback();
+      return true;
+    },
+    scheduleTimer(callback, milliseconds) {
+      const id = nextId;
+      nextId += 1;
+      active.set(id, callback);
+      return id;
+    },
+  };
+}
+
 function tick() {
   return new Promise(resolve => setImmediate(resolve));
 }
@@ -930,6 +957,69 @@ test('sequential readiness checks use fresh IDs and a concurrent check consumes 
   assert.equal(await closure, true);
 });
 
+test('launcher CHECK deadline has one deterministic success-or-timeout winner', async t => {
+  await t.test('CHECKED wins and cancels the deadline', async () => {
+    const timers = launcherDeadlineTimers();
+    const harness = launcherHarness({
+      cancelTimer: timers.cancelTimer,
+      checkTimeoutMs: 25,
+      scheduleTimer: timers.scheduleTimer,
+    });
+    const { lease } = await activateLauncher(harness);
+    const check = assertGateBQuickTunnelReady(lease);
+    const [timerId] = timers.active.keys();
+    assert.equal(timers.active.size, 1);
+    harness.child.emit('message', createGateBQuickTunnelIpcMessage(
+      GATE_B_QUICK_TUNNEL_IPC_TYPES.CHECKED,
+      2,
+    ));
+    assert.equal(await check, true);
+    assert.deepEqual(timers.cancelled, [timerId]);
+    assert.equal(timers.fire(timerId), false);
+    assert.deepEqual(harness.groupKills, []);
+
+    const closure = stopGateBQuickTunnel(lease);
+    emitSuccessfulClosure(harness.child, 3);
+    assert.equal(await closure, true);
+  });
+
+  await t.test('deadline wins, rejects once, and makes late CHECKED inert', async () => {
+    const timers = launcherDeadlineTimers();
+    const harness = launcherHarness({
+      cancelTimer: timers.cancelTimer,
+      checkTimeoutMs: 25,
+      scheduleTimer: timers.scheduleTimer,
+    });
+    const { lease } = await activateLauncher(harness);
+    const closure = waitGateBQuickTunnelClosed(lease);
+    const check = assertGateBQuickTunnelReady(lease);
+    const [timerId] = timers.active.keys();
+    assert.equal(timers.fire(timerId), true);
+    await assert.rejects(check, LAUNCH_ERROR);
+    await eventually(() => harness.groupKills.length === 1);
+    harness.child.groupAlive = false;
+    await assert.rejects(closure, LAUNCH_ERROR);
+    assert.equal(stopGateBQuickTunnel(lease), closure);
+    assert.equal(waitGateBQuickTunnelClosed(lease), closure);
+    assert.equal(timers.fire(timerId), false);
+    const effects = {
+      disconnects: harness.child.disconnectCalls,
+      kills: harness.groupKills.length,
+      sends: harness.child.sent.length,
+    };
+    harness.child.emit('message', createGateBQuickTunnelIpcMessage(
+      GATE_B_QUICK_TUNNEL_IPC_TYPES.CHECKED,
+      2,
+    ));
+    harness.child.emit('disconnect');
+    assert.deepEqual({
+      disconnects: harness.child.disconnectCalls,
+      kills: harness.groupKills.length,
+      sends: harness.child.sent.length,
+    }, effects);
+  });
+});
+
 test('malformed, stale, duplicate, and wrong-field IPC all fail closed', async t => {
   const candidates = [
     {},
@@ -1407,6 +1497,14 @@ class SupervisorIpc extends EventEmitter {
     this.connected = true;
     this.sent = [];
     this.order = order;
+    this.disconnectCalls = 0;
+    this.channelUnrefCalls = 0;
+    this.channel = {
+      unref: () => {
+        this.channelUnrefCalls += 1;
+        this.order.push('ipc:unref');
+      },
+    };
     this.stallType = undefined;
     this.stalledCallbacks = [];
   }
@@ -1423,6 +1521,7 @@ class SupervisorIpc extends EventEmitter {
   }
 
   disconnect() {
+    this.disconnectCalls += 1;
     this.connected = false;
     this.order.push('ipc:disconnect');
     queueMicrotask(() => this.emit('disconnect'));
@@ -1909,6 +2008,12 @@ test('supervisor reserves durably before fixed version/child policies and observ
     assert.equal(state.runtimeRemoved, 1);
     assert.ok(state.order.indexOf('child:close') < state.order.indexOf('runtime:remove'));
     assert.ok(state.order.indexOf('runtime:remove') < state.order.indexOf('ipc:STOPPED:2'));
+    assert.ok(state.order.indexOf('ipc:STOPPED:2') < state.order.indexOf('ipc:unref'));
+    assert.ok(state.order.indexOf('ipc:unref') < state.order.indexOf('ipc:disconnect'));
+    assert.equal(state.ipc.disconnectCalls, 1);
+    assert.equal(state.ipc.channelUnrefCalls, 1);
+    assert.equal(state.ipc.listenerCount('message'), 0);
+    assert.equal(state.ipc.listenerCount('disconnect'), 0);
   });
 
 test('supervisor emits no ACTIVE while the first readiness observation is blocked', async () => {
@@ -2915,6 +3020,19 @@ test('a bounded fresh-CHECK timeout fails closed and reaps before cleanup', asyn
   assert.equal(harness.state.runtimeRemoved, 1);
   assert.ok(harness.state.order.indexOf('child:close') <
     harness.state.order.indexOf('runtime:remove'));
+  assert.equal(harness.state.ipc.connected, false);
+  assert.equal(harness.state.ipc.disconnectCalls, 1);
+  assert.equal(harness.state.ipc.channelUnrefCalls, 1);
+  assert.equal(harness.state.ipc.listenerCount('message'), 0);
+  assert.equal(harness.state.ipc.listenerCount('disconnect'), 0);
+  const effects = harness.state.order.length;
+  harness.state.ipc.emit('message', createGateBQuickTunnelIpcMessage(
+    GATE_B_QUICK_TUNNEL_IPC_TYPES.CHECK,
+    3,
+  ));
+  harness.state.ipc.emit('disconnect');
+  await tick();
+  assert.equal(harness.state.order.length, effects);
 });
 
 test('reservation and source-write failures preserve one-shot behavior without runtime retry',
