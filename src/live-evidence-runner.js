@@ -50,15 +50,19 @@ import {
   decodeB64Json,
   EXPERIMENTAL_LIVE_NETWORK,
   HEADERS,
+  MAX_SETTLEMENT_TIMEOUT_SECONDS,
+  MAX_X402_HEADER_ENCODED_BYTES,
   sameRequirements,
   sameResource,
   validateActiveUpfrontRequirement,
+  validatePaymentPayloadEnvelope,
   validatePaymentRequired,
 } from './x402-wire.js';
 import {
   ExactZenonClient,
   preflightZenonPayment,
   probeZenonRoleReadiness,
+  validateAccountBlockJson,
 } from './zenon-payment.js';
 import {
   GATE_B_CURRENT_TESTNET_CHAIN_PROFILE,
@@ -103,6 +107,10 @@ const CURRENT_TESTNET_WSS_ONCE_CONFIG_DIGEST_DOMAIN =
   'zenon-x402-current-testnet-wss-once-config-v1';
 const MAX_RECOVERY_ATTEMPTS = 8;
 const MAX_RPC_TIMEOUT_MS = 60_000;
+const PAID_RESPONSE_RPC_GRACE_MULTIPLIER = 2;
+const MAX_PAID_RESPONSE_TIMEOUT_MS =
+  MAX_SETTLEMENT_TIMEOUT_SECONDS * 1000 +
+  PAID_RESPONSE_RPC_GRACE_MULTIPLIER * MAX_RPC_TIMEOUT_MS;
 const MAX_RECOVERY_DELAY_MS = 60_000;
 const MAX_RECOVERY_ELAPSED_MS = 5 * 60_000;
 const RUN_NAME = /^[a-z0-9](?:[a-z0-9-]{0,62}[a-z0-9])?$/;
@@ -129,6 +137,9 @@ const OBJECT_KEYS = Object.keys;
 const OBJECT_PROTOTYPE = Object.prototype;
 const REFLECT_OWN_KEYS = Reflect.ownKeys;
 const PUBLIC_ADDRESS_BLOCKLIST = new BlockList();
+const SIGNED_PAYMENT_TRANSPORT_BINDING_STATES = new WeakMap();
+const WEAK_MAP_GET = WeakMap.prototype.get;
+const WEAK_MAP_SET = WeakMap.prototype.set;
 
 for (const [network, prefix, family] of [
   ['0.0.0.0', 8, 'ipv4'], ['10.0.0.0', 8, 'ipv4'], ['100.64.0.0', 10, 'ipv4'],
@@ -633,6 +644,122 @@ function httpsFetchWithPinnedTarget(url, options, target, timeoutMs, requester) 
   });
 }
 
+export function computeLiveEvidencePaidResponseTimeoutMs(acceptedRequirement, rpcTimeoutMs) {
+  try {
+    validateActiveUpfrontRequirement(acceptedRequirement);
+    integer(rpcTimeoutMs, 1, MAX_RPC_TIMEOUT_MS);
+    const inclusionWindowMs = acceptedRequirement.maxTimeoutSeconds * 1000;
+    const rpcGraceMs = rpcTimeoutMs * PAID_RESPONSE_RPC_GRACE_MULTIPLIER;
+    const timeoutMs = inclusionWindowMs + rpcGraceMs;
+    if (!Number.isSafeInteger(inclusionWindowMs) ||
+        !Number.isSafeInteger(rpcGraceMs) ||
+        !Number.isSafeInteger(timeoutMs) ||
+        timeoutMs <= inclusionWindowMs ||
+        timeoutMs > MAX_PAID_RESPONSE_TIMEOUT_MS) fail();
+    return timeoutMs;
+  } catch {
+    fail();
+  }
+}
+
+function signedPaymentHeader(options) {
+  try {
+    exactObject(options, ['redirect', 'headers']);
+    if (options.redirect !== 'manual') fail();
+    exactObject(options.headers, [HEADERS.PAYMENT_SIGNATURE]);
+    return stringValue(
+      options.headers[HEADERS.PAYMENT_SIGNATURE],
+      MAX_X402_HEADER_ENCODED_BYTES,
+    );
+  } catch {
+    fail();
+  }
+}
+
+export function createLiveEvidenceSignedPaymentTransportBinding(
+  paymentRequired,
+  acceptedRequirement,
+  rpcTimeoutMs,
+  paidResponseTimeoutMs,
+) {
+  try {
+    validatePaymentRequired(paymentRequired);
+    validateActiveUpfrontRequirement(acceptedRequirement);
+    if (!Object.isFrozen(paymentRequired) ||
+        !Object.isFrozen(paymentRequired.resource) ||
+        !Object.isFrozen(paymentRequired.accepts) ||
+        !Object.isFrozen(acceptedRequirement) ||
+        !Object.isFrozen(acceptedRequirement.extra) ||
+        !Object.isFrozen(acceptedRequirement.extra.zenonChain) ||
+        (HAS_OWN(paymentRequired, 'extensions') &&
+          !Object.isFrozen(paymentRequired.extensions)) ||
+        (HAS_OWN(paymentRequired.resource, 'tags') &&
+          !Object.isFrozen(paymentRequired.resource.tags)) ||
+        paymentRequired.accepts.length !== 1 ||
+        paymentRequired.accepts[0] !== acceptedRequirement ||
+        !sameRequirements(paymentRequired.accepts[0], acceptedRequirement) ||
+        paymentRequired.resource.url === undefined) fail();
+    const canonicalTimeoutMs = computeLiveEvidencePaidResponseTimeoutMs(
+      acceptedRequirement,
+      rpcTimeoutMs,
+    );
+    integer(paidResponseTimeoutMs, 1, MAX_PAID_RESPONSE_TIMEOUT_MS);
+    if (paidResponseTimeoutMs !== canonicalTimeoutMs) fail();
+    const binding = FREEZE({});
+    const state = {
+      acceptedRequirement,
+      encodedPayment: undefined,
+      paidResponseTimeoutMs,
+      paymentRequired,
+      resourceUrl: paymentRequired.resource.url,
+      rpcTimeoutMs,
+      state: 'UNUSED',
+    };
+    Reflect.apply(WEAK_MAP_SET, SIGNED_PAYMENT_TRANSPORT_BINDING_STATES, [binding, state]);
+    return binding;
+  } catch {
+    fail();
+  }
+}
+
+function signedPaymentTransportBindingState(binding, resourceUrl, baseTimeoutMs) {
+  try {
+    const state = Reflect.apply(
+      WEAK_MAP_GET,
+      SIGNED_PAYMENT_TRANSPORT_BINDING_STATES,
+      [binding],
+    );
+    if (!state || !Object.isFrozen(binding) || REFLECT_OWN_KEYS(binding).length !== 0 ||
+        state.resourceUrl !== resourceUrl || state.rpcTimeoutMs !== baseTimeoutMs ||
+        state.paidResponseTimeoutMs <= baseTimeoutMs) fail();
+    return state;
+  } catch {
+    fail();
+  }
+}
+
+function validateSignedPaymentForTransport(encodedPayment, state) {
+  try {
+    const paymentPayload = decodeB64Json(encodedPayment, {
+      maxDecodedBytes: MAX_X402_HEADER_ENCODED_BYTES,
+      maxEncodedBytes: MAX_X402_HEADER_ENCODED_BYTES,
+    });
+    validatePaymentPayloadEnvelope(paymentPayload);
+    validateAccountBlockJson(paymentPayload.payload.transaction);
+    if (paymentPayload.x402Version !== state.paymentRequired.x402Version ||
+        !sameRequirements(paymentPayload.accepted, state.acceptedRequirement) ||
+        !sameResource(paymentPayload.resource, state.paymentRequired.resource) ||
+        paymentPayload.payload.intentDigest !== paymentIntentDigest(
+          state.paymentRequired,
+          state.acceptedRequirement,
+        ) ||
+        !LOWERCASE_HASH_64.test(paymentPayload.payload.transaction.hash)) fail();
+    return paymentPayload;
+  } catch {
+    fail();
+  }
+}
+
 export async function createLiveEvidencePublicTransport(options) {
   try {
     const descriptors = exactObject(options, [
@@ -653,6 +780,59 @@ export async function createLiveEvidencePublicTransport(options) {
           fetchOptions,
           target,
           timeoutMs,
+          requester,
+        );
+      },
+      async fetchSignedPayment(url, fetchOptions, suppliedBinding) {
+        let state;
+        let requestOptions;
+        try {
+          if (url !== resourceUrl) fail();
+          const encodedPayment = signedPaymentHeader(fetchOptions);
+          requestOptions = FREEZE({
+            redirect: 'manual',
+            headers: FREEZE({ [HEADERS.PAYMENT_SIGNATURE]: encodedPayment }),
+          });
+          state = signedPaymentTransportBindingState(
+            suppliedBinding,
+            resourceUrl,
+            timeoutMs,
+          );
+          if (state.state === 'BOUND') {
+            if (encodedPayment !== state.encodedPayment) fail();
+          } else {
+            if (state.state === 'VALIDATING') {
+              state.state = 'POISONED';
+              fail();
+            }
+            if (state.state !== 'UNUSED') fail();
+            const paymentPayload = validateSignedPaymentForTransport(encodedPayment, state);
+            state.state = 'VALIDATING';
+            try {
+              await preflightZenonPayment(
+                paymentPayload,
+                state.acceptedRequirement,
+                state.paymentRequired,
+              );
+            } catch {
+              state.state = 'POISONED';
+              fail();
+            }
+            if (state.state !== 'VALIDATING') {
+              state.state = 'POISONED';
+              fail();
+            }
+            state.encodedPayment = encodedPayment;
+            state.state = 'BOUND';
+          }
+        } catch {
+          fail();
+        }
+        return httpsFetchWithPinnedTarget(
+          url,
+          requestOptions,
+          target,
+          state.paidResponseTimeoutMs,
           requester,
         );
       },
@@ -2170,6 +2350,7 @@ async function defaultOperations(
   let challengeEvent;
   let fetchCalls = 0;
   let armed = false;
+  let signedPaymentTransportBinding;
   let publicTransport;
   const armSubmission = async () => {
     if (!armed) {
@@ -2290,7 +2471,14 @@ async function defaultOperations(
         if (!publicTransport || url !== config.expectedPaymentRequired.resource.url || fetchCalls > 2) fail();
         if (fetchCalls === 2) await armSubmission();
         await boundary();
-        const response = await publicTransport.fetch(url, { ...fetchOptions, redirect: 'manual' });
+        const transportFetch = fetchCalls === 2
+          ? () => publicTransport.fetchSignedPayment(
+            url,
+            { ...fetchOptions, redirect: 'manual' },
+            signedPaymentTransportBinding,
+          )
+          : () => publicTransport.fetch(url, { ...fetchOptions, redirect: 'manual' });
+        const response = await transportFetch();
         await boundary();
         if (!response || response.redirected || response.url !== url ||
             (response.status >= 300 && response.status < 400)) fail();
@@ -2300,6 +2488,16 @@ async function defaultOperations(
           if (typeof encoded !== 'string') fail();
           const required = decodeB64Json(encoded);
           if (!paymentRequiredEqual(required, config.expectedPaymentRequired)) fail();
+          const paidResponseTimeoutMs = computeLiveEvidencePaidResponseTimeoutMs(
+            config.expectedPaymentRequired.accepts[0],
+            config.runtime.rpcTimeoutMs,
+          );
+          signedPaymentTransportBinding = createLiveEvidenceSignedPaymentTransportBinding(
+            config.expectedPaymentRequired,
+            config.expectedPaymentRequired.accepts[0],
+            config.runtime.rpcTimeoutMs,
+            paidResponseTimeoutMs,
+          );
           challengeEvent = await onChallenge(required);
         }
         return response;
@@ -2352,7 +2550,11 @@ async function defaultOperations(
       try {
         const outcome = await reconcilePayment(owner, async (url, fetchOptions) => {
           if (!publicTransport || url !== config.expectedPaymentRequired.resource.url) fail();
-          const response = await publicTransport.fetch(url, { ...fetchOptions, redirect: 'manual' });
+          const response = await publicTransport.fetchSignedPayment(
+            url,
+            { ...fetchOptions, redirect: 'manual' },
+            signedPaymentTransportBinding,
+          );
           if (!response || response.redirected || response.url !== url ||
               (response.status >= 300 && response.status < 400)) fail();
           return response;

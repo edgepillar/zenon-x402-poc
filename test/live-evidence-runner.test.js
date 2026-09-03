@@ -39,6 +39,8 @@ import { encodeB64Json, HEADERS } from '../src/x402-wire.js';
 import {
   createLifecycleCollector,
   createLiveEvidencePublicTransport,
+  createLiveEvidenceSignedPaymentTransportBinding,
+  computeLiveEvidencePaidResponseTimeoutMs,
   assembleLiveEvidenceRunCandidate,
   executeLiveEvidenceRun,
   parseLiveEvidenceRunConfig,
@@ -68,6 +70,8 @@ import {
 
 const PUBLIC_RESOURCE_URL = 'https://evidence.zenon.network/paid';
 const SYNTHETIC_UTC = '2026-01-01T00:00:00.000Z';
+const REAL_SET_TIMEOUT = globalThis.setTimeout;
+const REAL_CLEAR_TIMEOUT = globalThis.clearTimeout;
 const SYNTHETIC_FILE_GENERATION = Object.freeze({
   dev: '1',
   ino: '2',
@@ -75,6 +79,27 @@ const SYNTHETIC_FILE_GENERATION = Object.freeze({
   mtimeNs: '4',
   ctimeNs: '5',
 });
+
+function testRequestSignal() {
+  let emit;
+  const reached = new Promise(resolve => { emit = resolve; });
+  return {
+    emit,
+    async wait() {
+      let watchdog;
+      try {
+        await Promise.race([
+          reached,
+          new Promise((_, reject) => {
+            watchdog = REAL_SET_TIMEOUT(() => reject(new Error('request signal timeout')), 2_000);
+          }),
+        ]);
+      } finally {
+        if (watchdog !== undefined) REAL_CLEAR_TIMEOUT(watchdog);
+      }
+    },
+  };
+}
 const CLOSING_FAKE_CHILDREN = new WeakSet();
 const PHASES = Object.freeze({
   buyer: Object.freeze([
@@ -705,6 +730,268 @@ test('public HTTPS transport resolves once, rejects private answers, and pins re
   );
 });
 
+test('signed-payment response deadlines are finite, exact, and fail closed', () => {
+  const parsed = parseLiveEvidenceRunConfig(configText());
+  const accepted = parsed.expectedPaymentRequired.accepts[0];
+  assert.equal(computeLiveEvidencePaidResponseTimeoutMs(accepted, 30_000), 120_000);
+  assert.equal(computeLiveEvidencePaidResponseTimeoutMs(accepted, 1), 60_002);
+
+  const maximum = structuredClone(accepted);
+  maximum.maxTimeoutSeconds = 300;
+  assert.equal(computeLiveEvidencePaidResponseTimeoutMs(maximum, 60_000), 420_000);
+
+  for (const [candidate, rpcTimeoutMs] of [
+    [{ ...structuredClone(accepted), maxTimeoutSeconds: Number.MAX_SAFE_INTEGER }, 30_000],
+    [{ ...structuredClone(accepted), maxTimeoutSeconds: 0 }, 30_000],
+    [{ ...structuredClone(accepted), maxTimeoutSeconds: 0.5 }, 30_000],
+    [accepted, Number.MAX_SAFE_INTEGER],
+    [accepted, 0],
+    [accepted, 0.5],
+  ]) {
+    assert.throws(
+      () => computeLiveEvidencePaidResponseTimeoutMs(candidate, rpcTimeoutMs),
+      assertFixedRunFailure,
+    );
+  }
+
+  assert.throws(() => createLiveEvidenceSignedPaymentTransportBinding(
+    structuredClone(parsed.expectedPaymentRequired),
+    structuredClone(accepted),
+    30_000,
+    120_000,
+  ), assertFixedRunFailure);
+  assert.throws(() => createLiveEvidenceSignedPaymentTransportBinding(
+    parsed.expectedPaymentRequired,
+    Object.freeze({ ...accepted }),
+    30_000,
+    120_000,
+  ), assertFixedRunFailure);
+  assert.throws(() => createLiveEvidenceSignedPaymentTransportBinding(
+    parsed.expectedPaymentRequired,
+    accepted,
+    30_000,
+    120_001,
+  ), assertFixedRunFailure);
+  const binding = createLiveEvidenceSignedPaymentTransportBinding(
+    parsed.expectedPaymentRequired,
+    accepted,
+    30_000,
+    120_000,
+  );
+  assert.equal(Object.isFrozen(binding), true);
+  assert.deepEqual(Reflect.ownKeys(binding), []);
+});
+
+test('only exact signed-payment transport gets the longer bounded deadline',
+  { concurrency: false }, async t => {
+    t.mock.timers.enable({ apis: ['setTimeout'] });
+    const candidate = await validRunnerCandidate();
+    const secondCandidate = await validRunnerCandidate();
+    const parsed = parseLiveEvidenceRunConfig(configText());
+    const accepted = parsed.expectedPaymentRequired.accepts[0];
+    const paidResponseTimeoutMs = computeLiveEvidencePaidResponseTimeoutMs(accepted, 30_000);
+    const createBinding = () => createLiveEvidenceSignedPaymentTransportBinding(
+      parsed.expectedPaymentRequired,
+      accepted,
+      30_000,
+      paidResponseTimeoutMs,
+    );
+    const binding = createBinding();
+    const encodedPayment = encodeB64Json(candidate.context.outcome.paymentPayload);
+    const secondEncodedPayment = encodeB64Json(secondCandidate.context.outcome.paymentPayload);
+    assert.notEqual(encodedPayment, secondEncodedPayment);
+    const requests = [];
+    let nextRequestSignal;
+    const requestHttps = (url, options, callback) => {
+      const request = new EventEmitter();
+      request.destroyed = false;
+      request.destroy = () => { request.destroyed = true; };
+      request.end = () => {
+        requests.push({ callback, options, request, url });
+        nextRequestSignal?.emit();
+        nextRequestSignal = undefined;
+      };
+      return request;
+    };
+    const transport = await createLiveEvidencePublicTransport({
+      resourceUrl: PUBLIC_RESOURCE_URL,
+      timeoutMs: 30_000,
+      resolveAddresses: async () => [{ address: '93.184.216.34', family: 4 }],
+      requestHttps,
+    });
+    const mismatchedBaseTransport = await createLiveEvidencePublicTransport({
+      resourceUrl: PUBLIC_RESOURCE_URL,
+      timeoutMs: 29_999,
+      resolveAddresses: async () => [{ address: '93.184.216.34', family: 4 }],
+      requestHttps,
+    });
+
+    const health = transport.fetch(transport.healthUrl, { redirect: 'manual' });
+    const healthRejected = assert.rejects(health, assertFixedRunFailure);
+    assert.equal(requests.length, 1);
+    t.mock.timers.tick(29_999);
+    assert.equal(requests[0].request.destroyed, false);
+    t.mock.timers.tick(1);
+    await healthRejected;
+    assert.equal(requests[0].request.destroyed, true);
+
+    const challengeRequest = transport.fetch(PUBLIC_RESOURCE_URL, { redirect: 'manual' });
+    const challengeRejected = assert.rejects(challengeRequest, assertFixedRunFailure);
+    assert.equal(requests.length, 2);
+    t.mock.timers.tick(30_000);
+    await challengeRejected;
+    assert.equal(requests[1].request.destroyed, true);
+
+    await assert.rejects(
+      transport.fetchSignedPayment(
+        PUBLIC_RESOURCE_URL,
+        { redirect: 'manual', headers: {} },
+        binding,
+      ),
+      assertFixedRunFailure,
+    );
+    await assert.rejects(mismatchedBaseTransport.fetchSignedPayment(PUBLIC_RESOURCE_URL, {
+      redirect: 'manual',
+      headers: { [HEADERS.PAYMENT_SIGNATURE]: encodedPayment },
+    }, binding), assertFixedRunFailure);
+    await assert.rejects(transport.fetchSignedPayment(PUBLIC_RESOURCE_URL, {
+      redirect: 'manual',
+      headers: { [HEADERS.PAYMENT_SIGNATURE]: 'malformed' },
+    }, binding), assertFixedRunFailure);
+    await assert.rejects(transport.fetchSignedPayment(PUBLIC_RESOURCE_URL, {
+      redirect: 'manual',
+      headers: {
+        [HEADERS.PAYMENT_SIGNATURE]: encodedPayment,
+        'payment-response': 'unexpected',
+      },
+    }, binding), assertFixedRunFailure);
+    let accessorReads = 0;
+    const accessorHeaders = {};
+    Object.defineProperty(accessorHeaders, HEADERS.PAYMENT_SIGNATURE, {
+      enumerable: true,
+      get() { accessorReads += 1; return encodedPayment; },
+    });
+    await assert.rejects(transport.fetchSignedPayment(PUBLIC_RESOURCE_URL, {
+      redirect: 'manual',
+      headers: accessorHeaders,
+    }, binding), assertFixedRunFailure);
+    assert.equal(accessorReads, 0);
+    const inheritedHeaders = Object.create({ [HEADERS.PAYMENT_SIGNATURE]: encodedPayment });
+    await assert.rejects(transport.fetchSignedPayment(PUBLIC_RESOURCE_URL, {
+      redirect: 'manual',
+      headers: inheritedHeaders,
+    }, binding), assertFixedRunFailure);
+    await assert.rejects(transport.fetchSignedPayment(PUBLIC_RESOURCE_URL, {
+      redirect: 'manual',
+      headers: { [HEADERS.PAYMENT_SIGNATURE]: encodedPayment },
+    }, Object.freeze({ ...binding })), assertFixedRunFailure);
+    const mismatchedPayloads = [];
+    for (const mutate of [
+      value => { value.x402Version = 3; },
+      value => { value.resource.description = 'different resource'; },
+      value => { value.accepted.amount = '2'; },
+      value => { value.payload.intentDigest = '0'.repeat(64); },
+      value => { value.payload.transaction.hash = '0'.repeat(64); },
+    ]) {
+      const value = structuredClone(candidate.context.outcome.paymentPayload);
+      mutate(value);
+      mismatchedPayloads.push(value);
+    }
+    for (const payload of mismatchedPayloads) {
+      await assert.rejects(transport.fetchSignedPayment(PUBLIC_RESOURCE_URL, {
+        redirect: 'manual',
+        headers: { [HEADERS.PAYMENT_SIGNATURE]: encodeB64Json(payload) },
+      }, createBinding()), assertFixedRunFailure);
+    }
+    assert.equal(requests.length, 2);
+
+    const raceBinding = createBinding();
+    const racingFirst = transport.fetchSignedPayment(PUBLIC_RESOURCE_URL, {
+      redirect: 'manual',
+      headers: { [HEADERS.PAYMENT_SIGNATURE]: encodedPayment },
+    }, raceBinding);
+    const racingSecond = transport.fetchSignedPayment(PUBLIC_RESOURCE_URL, {
+      redirect: 'manual',
+      headers: { [HEADERS.PAYMENT_SIGNATURE]: secondEncodedPayment },
+    }, raceBinding);
+    await assert.rejects(racingSecond, assertFixedRunFailure);
+    await assert.rejects(racingFirst, assertFixedRunFailure);
+    assert.equal(requests.length, 2);
+
+    const signedOptions = {
+      redirect: 'manual',
+      headers: { [HEADERS.PAYMENT_SIGNATURE]: encodedPayment },
+    };
+    const signedRequestSignal = testRequestSignal();
+    nextRequestSignal = signedRequestSignal;
+    const signed = transport.fetchSignedPayment(
+      PUBLIC_RESOURCE_URL,
+      signedOptions,
+      binding,
+    );
+    signedOptions.headers[HEADERS.PAYMENT_SIGNATURE] = secondEncodedPayment;
+    await signedRequestSignal.wait();
+    assert.equal(requests.length, 3);
+    assert.equal(requests[2].options.headers[HEADERS.PAYMENT_SIGNATURE], encodedPayment);
+    assert.equal(Object.isFrozen(requests[2].options.headers), true);
+    t.mock.timers.tick(30_001);
+    assert.equal(requests[2].request.destroyed, false);
+    const response = new EventEmitter();
+    response.statusCode = 200;
+    response.headers = {
+      'content-type': 'application/json; charset=utf-8',
+      'cache-control': 'private, no-store, max-age=0',
+      vary: 'PAYMENT-SIGNATURE',
+    };
+    requests[2].callback(response);
+    response.emit('data', Buffer.from('{"ok":true}'));
+    response.emit('end');
+    const completed = await signed;
+    assert.equal(completed.status, 200);
+    assert.equal(requests.length, 3);
+
+    await assert.rejects(transport.fetchSignedPayment(PUBLIC_RESOURCE_URL, {
+      redirect: 'manual',
+      headers: { [HEADERS.PAYMENT_SIGNATURE]: secondEncodedPayment },
+    }, binding), assertFixedRunFailure);
+    assert.equal(requests.length, 3);
+
+    const boundedRequestSignal = testRequestSignal();
+    nextRequestSignal = boundedRequestSignal;
+    const bounded = transport.fetchSignedPayment(PUBLIC_RESOURCE_URL, {
+      redirect: 'manual',
+      headers: { [HEADERS.PAYMENT_SIGNATURE]: encodedPayment },
+    }, binding);
+    assert.equal(
+      requests.length,
+      4,
+      'bound same-payment reconciliation must construct its request before yielding',
+    );
+    let lateResolutionCount = 0;
+    void bounded.then(
+      () => { lateResolutionCount += 1; },
+      () => {},
+    );
+    const boundedRejected = assert.rejects(bounded, assertFixedRunFailure);
+    await boundedRequestSignal.wait();
+    assert.equal(requests.length, 4);
+    t.mock.timers.tick(paidResponseTimeoutMs - 1);
+    assert.equal(requests[3].request.destroyed, false);
+    t.mock.timers.tick(1);
+    await boundedRejected;
+    assert.equal(requests[3].request.destroyed, true);
+    assert.equal(requests.length, 4, 'timeout must not retry or replace the signed payment');
+    const lateResponse = new EventEmitter();
+    lateResponse.statusCode = 200;
+    lateResponse.headers = {};
+    requests[3].callback(lateResponse);
+    lateResponse.emit('data', Buffer.from('{"late":true}'));
+    lateResponse.emit('end');
+    await Promise.resolve();
+    assert.equal(lateResolutionCount, 0, 'a late response cannot reverse the timeout result');
+    assert.equal(requests.length, 4, 'a late response must not retry or replace the payment');
+  });
+
 test('preflight binds verified role descriptors and rejects permissions, aliases, links, and swaps', async t => {
   const fixture = await privateFixture(t);
   const result = await preflightLiveEvidenceRun(fixture);
@@ -930,11 +1217,16 @@ test('clean operational path uses the exact operations contract and one payment 
   assert.equal(runStat.mode & 0o777, 0o700);
 });
 
-test('real default runner composition stays offline and produces a verified private bundle', async t => {
+test('real default runner composition keeps a post-30-second paid response alive',
+  { concurrency: false }, async t => {
+  t.mock.timers.enable({ apis: ['setTimeout'] });
   const candidate = await validRunnerCandidate();
   const fixture = await privateFixture(t, candidate.config);
   const facilitatorEvents = recordRole(fixedObserver(), 'facilitator');
   const requestKinds = [];
+  const healthRequestSignal = testRequestSignal();
+  const challengeRequestSignal = testRequestSignal();
+  const paidRequestSignal = testRequestSignal();
   let paymentConstructions = 0;
   let readinessCalls = 0;
   let inheritedFd;
@@ -960,18 +1252,23 @@ test('real default runner composition stays offline and produces a verified priv
           response.headers = { 'content-type': 'application/json; charset=utf-8' };
           callback(response);
           response.emit('data', Buffer.from(JSON.stringify({ ok: true }, null, 2)));
+          healthRequestSignal.emit();
         } else if (isPaid && !hasPayment) {
           response.statusCode = 402;
           response.headers = {
             [HEADERS.PAYMENT_REQUIRED]: encodeB64Json(candidate.context.outcome.paymentRequired),
           };
           callback(response);
+          challengeRequestSignal.emit();
         } else {
           assert.equal(isPaid, true);
           assert.equal(
             (await lstat(join(fixture.workspaceRoot, fixture.runName, 'SUBMISSION_ARMED'))).isFile(),
             true,
           );
+          const delayedResponse = new Promise(resolve => setTimeout(resolve, 30_001));
+          paidRequestSignal.emit();
+          await delayedResponse;
           response.statusCode = 200;
           response.headers = {
             [HEADERS.PAYMENT_RESPONSE]: encodeB64Json(candidate.context.outcome.settlement),
@@ -1061,7 +1358,7 @@ test('real default runner composition stays offline and produces a verified priv
   }), true);
   assert.deepEqual(preflightOutput, ['LIVE_EVIDENCE_RUN_PREFLIGHT_VALID\n']);
   assert.deepEqual(preflightErrors, []);
-  const cliResult = await runLiveEvidenceRunnerCli({
+  const cliPending = runLiveEvidenceRunnerCli({
     argv: ['run', ...flags],
     stdout: value => { stdout.push(value); },
     stderr: value => { stderr.push(value); },
@@ -1076,6 +1373,20 @@ test('real default runner composition stays offline and produces a verified priv
       },
     },
   });
+  let cliSettled = false;
+  void cliPending.then(
+    () => { cliSettled = true; },
+    () => { cliSettled = true; },
+  );
+  await healthRequestSignal.wait();
+  await challengeRequestSignal.wait();
+  await paidRequestSignal.wait();
+  assert.deepEqual(requestKinds, ['health', 'challenge', 'paid']);
+  t.mock.timers.tick(30_000);
+  await Promise.resolve();
+  assert.equal(cliSettled, false);
+  t.mock.timers.tick(1);
+  const cliResult = await cliPending;
   assert.equal(cliResult, true);
   assert.deepEqual(stdout, ['LIVE_EVIDENCE_RUN_COMPLETE\n']);
   assert.deepEqual(stderr, []);
@@ -1159,9 +1470,21 @@ test('same-size wallet rewrite after verified open fails before payment construc
   assert.equal(paymentConstructions, 0);
 });
 
-test('default runner recovery reuses one payment lineage and remains nonpublishable', async t => {
+test('default runner recovery keeps the same signed payment on the longer response deadline',
+  { concurrency: false }, async t => {
+  t.mock.timers.enable({ apis: ['setTimeout'] });
   const candidate = await validRunnerCandidate();
-  const fixture = await privateFixture(t, candidate.config);
+  const recoveryConfig = structuredClone(candidate.config);
+  recoveryConfig.runtime.rpcTimeoutMs = 30_000;
+  recoveryConfig.runtime.maxRecoveryElapsedMs = 120_000;
+  const fixture = await privateFixture(t, recoveryConfig);
+  const healthRequestSignal = testRequestSignal();
+  const challengeRequestSignal = testRequestSignal();
+  const paidRequestSignals = [
+    testRequestSignal(),
+    testRequestSignal(),
+    testRequestSignal(),
+  ];
   let paymentConstructions = 0;
   let paidRequests = 0;
   const paymentHeaders = [];
@@ -1185,27 +1508,40 @@ test('default runner recovery reuses one payment lineage and remains nonpublisha
         response.headers = { 'content-type': 'application/json; charset=utf-8' };
         callback(response);
         response.emit('data', Buffer.from(JSON.stringify({ ok: true }, null, 2)));
+        healthRequestSignal.emit();
       } else if (!options.headers?.[HEADERS.PAYMENT_SIGNATURE]) {
         response.statusCode = 402;
         response.headers = {
           [HEADERS.PAYMENT_REQUIRED]: encodeB64Json(candidate.context.outcome.paymentRequired),
         };
         callback(response);
+        challengeRequestSignal.emit();
       } else {
         paidRequests += 1;
         paymentHeaders.push(options.headers[HEADERS.PAYMENT_SIGNATURE]);
         const final = paidRequests === 3;
-        response.statusCode = final ? 200 : 409;
-        response.headers = {
-          [HEADERS.PAYMENT_RESPONSE]: encodeB64Json(
-            final ? candidate.context.outcome.settlement : recoverySettlement,
-          ),
-          'content-type': candidate.context.outcome.final.contentType,
-          'cache-control': candidate.context.outcome.final.cacheControl,
-          vary: candidate.context.outcome.final.vary,
+        const complete = () => {
+          response.statusCode = final ? 200 : 409;
+          response.headers = {
+            [HEADERS.PAYMENT_RESPONSE]: encodeB64Json(
+              final ? candidate.context.outcome.settlement : recoverySettlement,
+            ),
+            'content-type': candidate.context.outcome.final.contentType,
+            'cache-control': candidate.context.outcome.final.cacheControl,
+            vary: candidate.context.outcome.final.vary,
+          };
+          callback(response);
+          if (final) response.emit('data', Buffer.from(candidate.context.outcome.final.bodyText));
+          response.emit('end');
         };
-        callback(response);
-        if (final) response.emit('data', Buffer.from(candidate.context.outcome.final.bodyText));
+        if (final) {
+          setTimeout(complete, 30_001);
+          paidRequestSignals[paidRequests - 1].emit();
+        } else {
+          complete();
+          paidRequestSignals[paidRequests - 1].emit();
+        }
+        return;
       }
       response.emit('end');
     };
@@ -1247,7 +1583,7 @@ test('default runner recovery reuses one payment lineage and remains nonpublisha
   };
   const output = [];
   const errors = [];
-  const result = await runLiveEvidenceRunnerCli({
+  const resultPending = runLiveEvidenceRunnerCli({
     argv: [
       'run',
       '--config', fixture.configPath,
@@ -1280,6 +1616,22 @@ test('default runner recovery reuses one payment lineage and remains nonpublisha
       },
     },
   });
+  let resultSettled = false;
+  void resultPending.then(
+    () => { resultSettled = true; },
+    () => { resultSettled = true; },
+  );
+  await healthRequestSignal.wait();
+  await challengeRequestSignal.wait();
+  await paidRequestSignals[0].wait();
+  await paidRequestSignals[1].wait();
+  await paidRequestSignals[2].wait();
+  assert.equal(paidRequests, 3);
+  t.mock.timers.tick(30_000);
+  await Promise.resolve();
+  assert.equal(resultSettled, false);
+  t.mock.timers.tick(1);
+  const result = await resultPending;
   assert.equal(result, true);
   assert.deepEqual(output, ['LIVE_EVIDENCE_RUN_RESOLVED_NONPUBLISHABLE\n']);
   assert.deepEqual(errors, []);
