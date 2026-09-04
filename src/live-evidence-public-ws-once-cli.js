@@ -7,7 +7,10 @@ const FAILURE = 'LIVE_EVIDENCE_PUBLIC_WS_ONCE_FAILED\n';
 const PREFLIGHT_SUCCESS = 'LIVE_EVIDENCE_PUBLIC_WS_ONCE_PREFLIGHT_VALID\n';
 const PENDING_SUCCESS =
   'LIVE_EVIDENCE_PUBLIC_WS_ONCE_PENDING_INDEPENDENT_VERIFICATION\n';
-const FLAGS = Object.freeze({
+const INDEPENDENT_SUCCESS = 'INDEPENDENT_VERIFICATION_SUCCESS\n';
+const INDEPENDENT_FAILURE = 'INDEPENDENT_VERIFICATION_FAILED\n';
+const INDEPENDENT_COMMAND = 'finalize-independent-public-ws-once';
+const LEGACY_FLAGS = Object.freeze({
   '--config': 'configPath',
   '--buyer-rpc': 'buyerRpcPath',
   '--buyer-wallet': 'buyerWalletPath',
@@ -16,6 +19,13 @@ const FLAGS = Object.freeze({
   '--workspace': 'workspaceRoot',
   '--run-name': 'runName',
   '--transport-exception': 'transportException',
+});
+const INDEPENDENT_FLAGS = Object.freeze({
+  '--endpoint-config': 'endpointConfigPath',
+  '--operator-review': 'operatorReviewPath',
+  '--workspace': 'workspaceRoot',
+  '--run-name': 'runName',
+  '--attempt-id': 'attemptId',
 });
 const ARRAY_IS_ARRAY = Array.isArray;
 const GET_OWN_PROPERTY_DESCRIPTOR = Object.getOwnPropertyDescriptor;
@@ -40,7 +50,7 @@ function snapshotArray(value) {
   } catch {
     fail();
   }
-  if (length !== 17 || keys.length !== length + 1) fail();
+  if ((length !== 17 && length !== 11) || keys.length !== length + 1) fail();
   const result = [];
   for (let index = 0; index < length; index += 1) {
     const descriptor = GET_OWN_PROPERTY_DESCRIPTOR(value, String(index));
@@ -81,10 +91,15 @@ function snapshotOptions(options) {
 function parseArguments(argv) {
   const values = snapshotArray(argv);
   const command = values[0];
-  if (command !== 'preflight-public-ws-once' && command !== 'run-public-ws-once') fail();
+  const independent = command === INDEPENDENT_COMMAND;
+  if (!independent && command !== 'preflight-public-ws-once' &&
+      command !== 'run-public-ws-once') fail();
+  const flags = independent ? INDEPENDENT_FLAGS : LEGACY_FLAGS;
+  const expectedFields = independent ? 5 : 8;
+  if (values.length !== expectedFields * 2 + 1) fail();
   const parsed = {};
   for (let index = 1; index < values.length; index += 2) {
-    const field = FLAGS[values[index]];
+    const field = flags[values[index]];
     if (!field || HAS_OWN(parsed, field)) fail();
     Object.defineProperty(parsed, field, {
       value: values[index + 1],
@@ -93,7 +108,7 @@ function parseArguments(argv) {
       writable: true,
     });
   }
-  if (Object.keys(parsed).length !== 8) fail();
+  if (Object.keys(parsed).length !== expectedFields) fail();
   return { command, options: parsed };
 }
 
@@ -104,7 +119,9 @@ function exactSupervisorSuccess(value, command) {
   const descriptor = GET_OWN_PROPERTY_DESCRIPTOR(value, 'status');
   const expected = command === 'preflight-public-ws-once'
     ? 'preflight-valid'
-    : 'pending-independent-verification';
+    : command === INDEPENDENT_COMMAND
+      ? 'independent-verification-complete'
+      : 'pending-independent-verification';
   if (keys.length !== 1 || keys[0] !== 'status' || !descriptor ||
       !HAS_OWN(descriptor, 'value') || descriptor.enumerable !== true ||
       descriptor.value !== expected) fail();
@@ -112,11 +129,17 @@ function exactSupervisorSuccess(value, command) {
 
 export async function runPublicWsOnceRunnerCli(options = {}) {
   let stderr = line => process.stderr.write(line);
+  let failure = FAILURE;
   try {
     const supplied = snapshotOptions(options);
     const argv = HAS_OWN(supplied, 'argv') ? supplied.argv : process.argv.slice(2);
     const stdout = HAS_OWN(supplied, 'stdout') ? supplied.stdout : line => process.stdout.write(line);
     stderr = HAS_OWN(supplied, 'stderr') ? supplied.stderr : stderr;
+    if (!IS_PROXY(argv) && ARRAY_IS_ARRAY(argv)) {
+      const commandDescriptor = GET_OWN_PROPERTY_DESCRIPTOR(argv, '0');
+      if (commandDescriptor && HAS_OWN(commandDescriptor, 'value') &&
+          commandDescriptor.value === INDEPENDENT_COMMAND) failure = INDEPENDENT_FAILURE;
+    }
     const supervise = HAS_OWN(supplied, 'supervise')
       ? supplied.supervise
       : supervisePublicWsOnceChild;
@@ -131,12 +154,14 @@ export async function runPublicWsOnceRunnerCli(options = {}) {
     exactSupervisorSuccess(result, parsed.command);
     if (parsed.command === 'preflight-public-ws-once') {
       await stdout(PREFLIGHT_SUCCESS);
+    } else if (parsed.command === INDEPENDENT_COMMAND) {
+      await stdout(INDEPENDENT_SUCCESS);
     } else {
       await stdout(PENDING_SUCCESS);
     }
     return true;
   } catch {
-    try { await stderr(FAILURE); } catch {}
+    try { await stderr(failure); } catch {}
     return false;
   }
 }

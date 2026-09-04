@@ -5,6 +5,9 @@ import { types as utilTypes } from 'node:util';
 
 const IPC_VERSION = 1;
 const REQUEST_ID = 1;
+const FINALIZER_IPC_VERSION = 2;
+const FINALIZER_REQUEST_ID = 81;
+const FINALIZER_COMMAND = 'finalize-independent-public-ws-once';
 const BOOTSTRAP_MAX_BYTES = 64 * 1024;
 const DEFAULT_TIMEOUT_MS = 15 * 60 * 1000;
 const MAX_TIMEOUT_MS = 30 * 60 * 1000;
@@ -18,6 +21,10 @@ const PUBLIC_WS_OPTION_FIELDS = Object.freeze([
 const CURRENT_TESTNET_WSS_OPTION_FIELDS = Object.freeze([
   'configPath', 'buyerRpcPath', 'buyerWalletPath', 'facilitatorRpcPath',
   'authorizationPath', 'workspaceRoot', 'runName', 'executionMode',
+]);
+const INDEPENDENT_FINALIZER_OPTION_FIELDS = Object.freeze([
+  'endpointConfigPath', 'operatorReviewPath', 'workspaceRoot', 'runName',
+  'attemptId',
 ]);
 const CURRENT_TESTNET_WSS_EXECUTION_MODE = 'current-testnet-wss-once-v1';
 const ARRAY_IS_ARRAY = Array.isArray;
@@ -60,7 +67,12 @@ function exactPlainDataObject(value, fields) {
   return output;
 }
 
-function exactMessage(message, expectedType, expectedRequestId = REQUEST_ID) {
+function exactMessage(
+  message,
+  expectedType,
+  expectedRequestId = REQUEST_ID,
+  expectedIpcVersion = IPC_VERSION,
+) {
   if (!message || typeof message !== 'object' || IS_PROXY(message) ||
       ARRAY_IS_ARRAY(message) || GET_PROTOTYPE_OF(message) !== OBJECT_PROTOTYPE) fail();
   const fields = ['ipcVersion', 'requestId', 'type'];
@@ -70,7 +82,8 @@ function exactMessage(message, expectedType, expectedRequestId = REQUEST_ID) {
     const descriptor = GET_OWN_PROPERTY_DESCRIPTOR(message, fields[index]);
     if (!descriptor || !HAS_OWN(descriptor, 'value') || descriptor.enumerable !== true) fail();
   }
-  if (message.ipcVersion !== IPC_VERSION || message.requestId !== expectedRequestId ||
+  if (message.ipcVersion !== expectedIpcVersion ||
+      message.requestId !== expectedRequestId ||
       message.type !== expectedType) fail();
 }
 
@@ -142,17 +155,32 @@ export async function supervisePublicWsOnceChild(command, options, injected) {
   let childClosed = false;
   let bootstrapBytes;
   try {
-    if (command !== 'preflight-public-ws-once' && command !== 'run-public-ws-once') fail();
+    const independentFinalizer = command === FINALIZER_COMMAND;
+    if (!independentFinalizer && command !== 'preflight-public-ws-once' &&
+        command !== 'run-public-ws-once') fail();
     if (!options || typeof options !== 'object' || IS_PROXY(options) ||
         ARRAY_IS_ARRAY(options) || GET_PROTOTYPE_OF(options) !== OBJECT_PROTOTYPE) fail();
-    const fields = GET_OWN_PROPERTY_DESCRIPTOR(options, 'executionMode') !== undefined
-      ? CURRENT_TESTNET_WSS_OPTION_FIELDS
-      : PUBLIC_WS_OPTION_FIELDS;
+    const fields = independentFinalizer
+      ? INDEPENDENT_FINALIZER_OPTION_FIELDS
+      : GET_OWN_PROPERTY_DESCRIPTOR(options, 'executionMode') !== undefined
+        ? CURRENT_TESTNET_WSS_OPTION_FIELDS
+        : PUBLIC_WS_OPTION_FIELDS;
     const snapshot = exactPlainDataObject(options, fields);
     if (fields === CURRENT_TESTNET_WSS_OPTION_FIELDS &&
         snapshot.executionMode !== CURRENT_TESTNET_WSS_EXECUTION_MODE) fail();
     const dependencies = captureInjections(injected);
-    bootstrapBytes = Buffer.from(JSON.stringify(snapshot), 'utf8');
+    const bootstrap = independentFinalizer
+      ? {
+          bootstrapVersion: 1,
+          command: FINALIZER_COMMAND,
+          endpointConfigPath: snapshot.endpointConfigPath,
+          operatorReviewPath: snapshot.operatorReviewPath,
+          workspaceRoot: snapshot.workspaceRoot,
+          runName: snapshot.runName,
+          attemptId: snapshot.attemptId,
+        }
+      : snapshot;
+    bootstrapBytes = Buffer.from(JSON.stringify(bootstrap), 'utf8');
     if (bootstrapBytes.length < 1 || bootstrapBytes.length > BOOTSTRAP_MAX_BYTES) fail();
 
     child = Reflect.apply(dependencies.forkProcess, undefined, [
@@ -169,10 +197,17 @@ export async function supervisePublicWsOnceChild(command, options, injected) {
         !ARRAY_IS_ARRAY(child.stdio) || !child.stdio[4] ||
         typeof child.stdio[4].end !== 'function') fail();
 
-    const expectedTerminal = command === 'preflight-public-ws-once'
-      ? 'PREFLIGHT_VALID'
-      : 'PENDING';
-    const requestType = command === 'preflight-public-ws-once' ? 'PREFLIGHT' : 'RUN';
+    const expectedTerminal = independentFinalizer
+      ? 'FINALIZED'
+      : command === 'preflight-public-ws-once'
+        ? 'PREFLIGHT_VALID'
+        : 'PENDING';
+    const requestType = independentFinalizer
+      ? 'FINALIZE'
+      : command === 'preflight-public-ws-once' ? 'PREFLIGHT' : 'RUN';
+    const readyType = independentFinalizer ? 'FINALIZER_READY' : 'READY';
+    const requestId = independentFinalizer ? FINALIZER_REQUEST_ID : REQUEST_ID;
+    const ipcVersion = independentFinalizer ? FINALIZER_IPC_VERSION : IPC_VERSION;
     const terminal = await new Promise((resolveTerminal, rejectTerminal) => {
       let phase = 'ready';
       let terminalType;
@@ -197,11 +232,11 @@ export async function supervisePublicWsOnceChild(command, options, injected) {
       child.on('message', message => {
         try {
           if (phase === 'ready') {
-            exactMessage(message, 'READY');
+            exactMessage(message, readyType, requestId, ipcVersion);
             phase = 'terminal';
             const accepted = child.send({
-              ipcVersion: IPC_VERSION,
-              requestId: REQUEST_ID,
+              ipcVersion,
+              requestId,
               type: requestType,
             }, error => {
               if (error) finish(false);
@@ -239,7 +274,7 @@ export async function supervisePublicWsOnceChild(command, options, injected) {
               return;
             }
             if (terminalType !== undefined) fail();
-            exactMessage(message, expectedTerminal);
+            exactMessage(message, expectedTerminal, requestId, ipcVersion);
             if (requestType === 'RUN' && !originReleaseRequested) fail();
             terminalType = message.type;
             if (requestType !== 'RUN' || originReleaseAcknowledged) phase = 'close';
@@ -278,7 +313,9 @@ export async function supervisePublicWsOnceChild(command, options, injected) {
     return Object.freeze({
       status: terminal === 'PREFLIGHT_VALID'
         ? 'preflight-valid'
-        : 'pending-independent-verification',
+        : terminal === 'FINALIZED'
+          ? 'independent-verification-complete'
+          : 'pending-independent-verification',
     });
   } catch {
     if (Buffer.isBuffer(bootstrapBytes)) bootstrapBytes.fill(0);

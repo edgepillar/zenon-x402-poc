@@ -45,8 +45,17 @@ import {
 import {
   executeCurrentTestnetWssOnceRun,
   executePublicWsOnceRun,
+  exerciseIndependentPublicWsOnceFinalizerTestOnly,
+  finalizeIndependentPublicWsOnce,
+  independentPublicWsOnceCandidateBundleDigest,
+  independentPublicWsOnceEndpointConfigDigest,
+  INDEPENDENT_PUBLIC_WS_ONCE_FINALIZER_POLICY,
   currentTestnetWssOnceConfigDigest,
   CURRENT_TESTNET_WSS_ONCE_POLICY,
+  parseIndependentPublicWsOnceEndpointConfig,
+  parseIndependentPublicWsOnceFinalizerAssertion,
+  parseIndependentPublicWsOnceOperatorReview,
+  parseIndependentPublicWsOnceSupervisorBootstrap,
   parseCurrentTestnetWssOnceAuthorization,
   parseCurrentTestnetWssOnceRoleInput,
   parseCurrentTestnetWssOnceRunConfig,
@@ -55,6 +64,7 @@ import {
   parsePublicWsOnceIndependentVerification,
   parsePublicWsOnceRoleInput,
   parsePublicWsOnceRunConfig,
+  parsePublicWsOnceSupervisorBootstrap,
   persistPublicWsOnceConsumedMarker,
   preflightPublicWsOnceRun,
   preflightCurrentTestnetWssOnceRun,
@@ -63,7 +73,9 @@ import {
 } from '../src/live-evidence-runner.js';
 import {
   assembleLiveEvidenceBundle,
+  parseLiveEvidenceBundle,
   parseLiveEvidenceFragment,
+  serializeLiveEvidenceBundle,
   verifyLiveEvidenceBundle,
 } from '../src/live-evidence.js';
 import {
@@ -534,6 +546,2013 @@ async function assertPrivateTestDirectory(path) {
 function fixedFailure(error) {
   return error?.code === 'live_evidence_run_invalid' && error?.cause === undefined;
 }
+
+test('independent finalizer exposes one disjoint HTTPS-only seven-read contract', () => {
+  assert.equal(typeof finalizeIndependentPublicWsOnce, 'function');
+  assert.equal(typeof independentPublicWsOnceCandidateBundleDigest, 'function');
+  assert.equal(typeof independentPublicWsOnceEndpointConfigDigest, 'function');
+  assert.equal(typeof parseIndependentPublicWsOnceEndpointConfig, 'function');
+  assert.equal(typeof parseIndependentPublicWsOnceFinalizerAssertion, 'function');
+  assert.equal(typeof parseIndependentPublicWsOnceOperatorReview, 'function');
+  assert.equal(typeof parseIndependentPublicWsOnceSupervisorBootstrap, 'function');
+  assert.deepEqual(INDEPENDENT_PUBLIC_WS_ONCE_FINALIZER_POLICY.transcript, [
+    'stats.networkInfo',
+    'stats.syncInfo',
+    'ledger.getFrontierMomentum',
+    'ledger.getMomentumsByHeight',
+    'ledger.getAccountBlockByHash',
+    'ledger.getMomentumByHash',
+    'ledger.getFrontierMomentum',
+  ]);
+  assert.equal(
+    INDEPENDENT_PUBLIC_WS_ONCE_FINALIZER_POLICY.command,
+    'finalize-independent-public-ws-once',
+  );
+  assert.equal(
+    INDEPENDENT_PUBLIC_WS_ONCE_FINALIZER_POLICY.transport,
+    'https-json-rpc-v1',
+  );
+});
+
+const INDEPENDENT_RPC_URL = 'https://independent-route.synthetic/rpc';
+const INDEPENDENT_HOSTNAME = 'independent-route.synthetic';
+const ORIGINAL_ROUTE_HOSTNAME = 'original-route.synthetic';
+const ORIGINAL_ROUTE_ADDRESS = '8.8.8.8';
+const INDEPENDENT_ROUTE_ADDRESS = '8.8.4.4';
+const ORIGINAL_NODE_KEY = 'synthetic-original-node-key';
+const INDEPENDENT_NODE_KEY = 'synthetic-independent-node-key';
+const FINALIZER_ATTEMPT_ID = 'a'.repeat(64);
+const FINALIZER_SOURCE_REVISION = 'c'.repeat(40);
+
+function independentEndpointConfigValue(changes = {}) {
+  return {
+    endpointConfigVersion: 1,
+    transport: INDEPENDENT_PUBLIC_WS_ONCE_FINALIZER_POLICY.transport,
+    rpcUrl: INDEPENDENT_RPC_URL,
+    originalRoute: {
+      hostname: ORIGINAL_ROUTE_HOSTNAME,
+      addresses: [{ address: ORIGINAL_ROUTE_ADDRESS, family: 4 }],
+      nodePublicKey: ORIGINAL_NODE_KEY,
+    },
+    selectedFamily: 4,
+    dnsTimeoutMs: 1000,
+    rpcTimeoutMs: 1000,
+    ...changes,
+  };
+}
+
+function independentOperatorReviewValue(
+  bundle,
+  candidateBundleText,
+  endpointConfiguration,
+  changes = {},
+) {
+  return {
+    reviewVersion: 1,
+    reviewType: 'independent-public-ws-once-operator-review',
+    finalizerVersion: 1,
+    verifierSourceRevision: FINALIZER_SOURCE_REVISION,
+    source: { ...bundle.source },
+    run: {
+      name: 'single-current-testnet-wss-run',
+      attemptId: FINALIZER_ATTEMPT_ID,
+    },
+    bindings: {
+      candidateBundleDigest:
+        independentPublicWsOnceCandidateBundleDigest(candidateBundleText),
+      endpointConfigDigest:
+        independentPublicWsOnceEndpointConfigDigest(endpointConfiguration),
+    },
+    route: {
+      transport: INDEPENDENT_PUBLIC_WS_ONCE_FINALIZER_POLICY.transport,
+      relationship: 'different-operator-route',
+    },
+    attestations: {
+      separateAdministration: true,
+      noProxyOrAlias: true,
+      readOnlyUse: true,
+      humanAcceptance: INDEPENDENT_PUBLIC_WS_ONCE_FINALIZER_POLICY.reviewAcceptance,
+    },
+    ...changes,
+  };
+}
+
+async function independentFinalizerFixture(t, changes = {}) {
+  const runOptions = await fixture(t, { currentTestnetWss: true });
+  const configuration = fixtureConfiguration(runOptions);
+  const candidate = await validOutcome(configuration);
+  candidate.record.momentumEvidence.confirmationDetail = {
+    numConfirmations: 2,
+    momentumHeight: 5,
+    momentumHash: sha256Hex('synthetic independent inclusion'),
+    momentumTimestamp: 5,
+  };
+  await executeCurrentTestnetWssOnceRun(
+    runOptions,
+    successfulPublicWsExecution(runOptions, candidate),
+  );
+  const captureDirectory = join(
+    runOptions.workspaceRoot,
+    runOptions.runName,
+    'pending-independent-verification',
+    'capture',
+  );
+  const fragmentTexts = {};
+  const fragments = {};
+  for (const name of ['manifest', 'chain', 'http', 'journal', 'timing']) {
+    const text = await readFile(join(captureDirectory, `${name}.json`), 'utf8');
+    fragmentTexts[`${name}.json`] = text;
+    fragments[name] = parseLiveEvidenceFragment(text, name);
+  }
+  const bundle = await assembleLiveEvidenceBundle(fragments);
+  await verifyLiveEvidenceBundle(bundle);
+  const candidateBundleText = await serializeLiveEvidenceBundle(bundle);
+  const endpointConfiguration = changes.endpointConfiguration ??
+    independentEndpointConfigValue();
+  const review = changes.review ?? independentOperatorReviewValue(
+    bundle,
+    candidateBundleText,
+    endpointConfiguration,
+  );
+  const endpointConfigPath = join(runOptions.workspaceRoot, 'independent-endpoint.json');
+  const operatorReviewPath = join(runOptions.workspaceRoot, 'independent-operator-review.json');
+  await writeFile(
+    endpointConfigPath,
+    `${JSON.stringify(endpointConfiguration)}\n`,
+    { mode: 0o600 },
+  );
+  await writeFile(operatorReviewPath, `${JSON.stringify(review)}\n`, { mode: 0o600 });
+  await writeFile(
+    join(runOptions.workspaceRoot, 'legacy-independent-verification.json'),
+    '{"verificationVersion":1,"forged":true}\n',
+    { mode: 0o600 },
+  );
+  return {
+    runOptions,
+    options: {
+      endpointConfigPath,
+      operatorReviewPath,
+      workspaceRoot: runOptions.workspaceRoot,
+      runName: runOptions.runName,
+      attemptId: FINALIZER_ATTEMPT_ID,
+    },
+    captureDirectory,
+    fragmentTexts,
+    bundle,
+    candidateBundleText,
+    endpointConfiguration,
+    review,
+    outputDirectory: join(
+      runOptions.workspaceRoot,
+      runOptions.runName,
+      INDEPENDENT_PUBLIC_WS_ONCE_FINALIZER_POLICY.outputName,
+    ),
+    testOutputDirectory: join(
+      runOptions.workspaceRoot,
+      runOptions.runName,
+      INDEPENDENT_PUBLIC_WS_ONCE_FINALIZER_POLICY.testOnlyOutputName,
+    ),
+    attemptRecordPath: join(
+      runOptions.workspaceRoot,
+      runOptions.runName,
+      `.independent-finalizer-attempt-${FINALIZER_ATTEMPT_ID}.consumed.json`,
+    ),
+  };
+}
+
+function independentFiveFragmentSetDigestForTest(fragmentTexts) {
+  const digests = {};
+  for (const name of ['manifest', 'chain', 'http', 'journal', 'timing']) {
+    digests[name] = sha256Hex(
+      `zenon-x402-independent-fragment-bytes-v1:${name}\0${
+        fragmentTexts[`${name}.json`]}`,
+    );
+  }
+  return sha256Hex(
+    `zenon-x402-independent-five-fragment-set-v1\0${canonicalJson(digests)}`,
+  );
+}
+
+function independentAssertionValue(prepared, inclusionMomentum, address) {
+  return {
+    assertionVersion: 1,
+    assertionType: 'independent-public-ws-once-finalization',
+    source: { ...prepared.bundle.source },
+    run: {
+      name: prepared.options.runName,
+      attemptId: prepared.options.attemptId,
+    },
+    candidate: {
+      evidenceVersion: 1,
+      candidateBundleDigest:
+        independentPublicWsOnceCandidateBundleDigest(prepared.candidateBundleText),
+      fiveFragmentSetDigest:
+        independentFiveFragmentSetDigestForTest(prepared.fragmentTexts),
+    },
+    payment: {
+      intentDigest: prepared.bundle.payment.intentDigest,
+      accountBlockDigest: sha256Hex(
+        `zenon-x402-independent-account-block-v1\0${
+          canonicalJson(prepared.bundle.chain.accountBlock)}`,
+      ),
+      inclusionMomentumDigest: sha256Hex(
+        `zenon-x402-independent-inclusion-momentum-v1\0${canonicalJson(inclusionMomentum)}`,
+      ),
+    },
+    bindings: {
+      endpointConfigDigest:
+        independentPublicWsOnceEndpointConfigDigest(prepared.endpointConfiguration),
+      operatorReviewDigest: sha256Hex(
+        `zenon-x402-independent-operator-review-v1\0${canonicalJson(prepared.review)}`,
+      ),
+    },
+    route: {
+      transport: INDEPENDENT_PUBLIC_WS_ONCE_FINALIZER_POLICY.transport,
+      relationship: 'different-operator-route',
+      routeDigest: sha256Hex(
+        `zenon-x402-independent-pinned-route-v1\0${canonicalJson({
+          transport: INDEPENDENT_PUBLIC_WS_ONCE_FINALIZER_POLICY.transport,
+          hostname: INDEPENDENT_HOSTNAME,
+          addresses: [{ address, family: 4 }],
+        })}`,
+      ),
+      tlsServerNameAuthenticated: true,
+      hostnameDifferent: true,
+      addressSetsDisjoint: true,
+      nodeIdentityDifferent: true,
+    },
+    verifier: {
+      name: 'zenon-x402-independent-public-ws-once-finalizer',
+      sourceRevision: FINALIZER_SOURCE_REVISION,
+      verifierVersion: 1,
+      finalizerVersion: 1,
+      transcriptVersion: 1,
+      transcriptLength: 7,
+    },
+    confirmations: {
+      operatorReviewAccepted: true,
+      separateAdministration: true,
+      noProxyOrAlias: true,
+      readOnlyUse: true,
+      exactCandidateBundle: true,
+      exactFiveFragmentSet: true,
+      exactPaymentIntent: true,
+      exactAccountBlock: true,
+      exactInclusionMomentum: true,
+      pinnedHeightTwoProfile: true,
+      nonRegressingFrontier: true,
+      laterMomentum: true,
+    },
+  };
+}
+
+function independentMomentum({
+  bundle,
+  hash,
+  previousHash = sha256Hex('synthetic previous momentum'),
+  height,
+  timestamp,
+  content = [],
+}) {
+  return {
+    version: 1,
+    chainIdentifier: Number(bundle.trust.chainIdentifier),
+    hash,
+    previousHash,
+    height,
+    timestamp,
+    data: '',
+    content,
+    changesHash: sha256Hex(`synthetic changes ${height}`),
+    publicKey: '',
+    signature: '',
+    producer: bundle.chain.accountBlock.address,
+  };
+}
+
+function independentFinalizerResponses(finalizerFixture) {
+  const { bundle } = finalizerFixture;
+  const accountBlock = bundle.chain.accountBlock;
+  const confirmation = bundle.chain.confirmation;
+  const opening = independentMomentum({
+    bundle,
+    hash: sha256Hex('synthetic opening frontier'),
+    height: 10,
+    timestamp: 10,
+  });
+  const heightTwo = independentMomentum({
+    bundle,
+    hash: GATE_B_CURRENT_TESTNET_PROVENANCE.observationHash,
+    previousHash: bundle.trust.genesisMomentumHash,
+    height: 2,
+    timestamp: 2,
+  });
+  const includedBlock = {
+    ...structuredClone(accountBlock),
+    token: null,
+    descendantBlocks: [],
+    basePlasma: 0,
+    usedPlasma: 0,
+    changesHash: sha256Hex('synthetic account changes'),
+    confirmationDetail: {
+      numConfirmations: 6,
+      momentumHeight: confirmation.momentumHeight,
+      momentumHash: confirmation.momentumHash,
+      momentumTimestamp: confirmation.momentumTimestamp,
+    },
+    pairedAccountBlock: null,
+  };
+  const inclusion = independentMomentum({
+    bundle,
+    hash: confirmation.momentumHash,
+    height: confirmation.momentumHeight,
+    timestamp: confirmation.momentumTimestamp,
+    content: [{
+      address: accountBlock.address,
+      hash: accountBlock.hash,
+      height: accountBlock.height,
+    }],
+  });
+  const closing = independentMomentum({
+    bundle,
+    hash: sha256Hex('synthetic closing frontier'),
+    previousHash: opening.hash,
+    height: 11,
+    timestamp: 11,
+  });
+  return [
+    {
+      numPeers: 1,
+      self: { publicKey: INDEPENDENT_NODE_KEY, ip: 'public', name: 'observer' },
+      peers: [],
+    },
+    { state: 2, currentHeight: 10, targetHeight: 10 },
+    opening,
+    { count: 10, list: [heightTwo] },
+    includedBlock,
+    inclusion,
+    closing,
+  ];
+}
+
+function independentTransportHarness(finalizerFixture, behavior = {}) {
+  const responses = independentFinalizerResponses(finalizerFixture);
+  const state = {
+    activeRequestId: null,
+    aborts: 0,
+    closes: 0,
+    destroyedRequests: 0,
+    factories: 0,
+    hardShutdowns: 0,
+    poisoned: false,
+    requests: [],
+    resolutions: [],
+    transportClosed: false,
+  };
+  const dependencies = {
+    async sourceTreeAttestor(revision) {
+      state.sourceAttestations = (state.sourceAttestations ?? 0) + 1;
+      state.attestedRevisions ??= [];
+      state.attestedRevisions.push(revision);
+      if (typeof behavior.sourceAttestationResult === 'function') {
+        return behavior.sourceAttestationResult(
+          state.sourceAttestations,
+          revision,
+        );
+      }
+      return behavior.sourceAttestationResult ?? revision === FINALIZER_SOURCE_REVISION;
+    },
+    async resolveAddresses(hostname, options) {
+      state.resolutions.push({ hostname, options: structuredClone(options) });
+      return behavior.resolvedAddresses ?? [
+        { address: INDEPENDENT_ROUTE_ADDRESS, family: 4 },
+      ];
+    },
+    createRawTransport(endpointConfiguration, route) {
+      state.factories += 1;
+      state.endpointConfiguration = endpointConfiguration;
+      state.route = route;
+      const hardShutdown = () => {
+        if (state.hardShutdowns !== 0) return false;
+        state.hardShutdowns += 1;
+        state.poisoned = true;
+        state.transportClosed = true;
+        if (state.activeRequestId !== null) state.destroyedRequests += 1;
+        state.activeRequestId = null;
+        return true;
+      };
+      const tracked = (requestId, promise) => {
+        state.activeRequestId = requestId;
+        return promise.then(
+          value => {
+            if (state.activeRequestId === requestId) state.activeRequestId = null;
+            return value;
+          },
+          error => {
+            if (state.activeRequestId === requestId) state.activeRequestId = null;
+            state.poisoned = true;
+            throw error;
+          },
+        );
+      };
+      return {
+        request(requestText, timeoutMs) {
+          const request = JSON.parse(requestText);
+          assert.equal(state.activeRequestId, null);
+          assert.equal(state.transportClosed, false);
+          state.requests.push({ request, timeoutMs });
+          if (behavior.hangAt === request.id) {
+            return tracked(request.id, new Promise(resolve => {
+              if (behavior.lateAfterMs !== undefined) {
+                setTimeout(() => resolve(JSON.stringify({
+                  jsonrpc: '2.0', id: request.id, result: responses[request.id - 1],
+                })), behavior.lateAfterMs);
+              }
+            }));
+          }
+          if (behavior.rejectAt === request.id) {
+            return tracked(request.id, Promise.reject(new Error('synthetic disconnect')));
+          }
+          if (behavior.rawResponse) {
+            const raw = behavior.rawResponse(request, responses[request.id - 1]);
+            if (raw !== undefined) return tracked(request.id, Promise.resolve(raw));
+          }
+          const mutate = behavior.mutateResponse;
+          const result = structuredClone(responses[request.id - 1]);
+          if (mutate) mutate(request.id, result);
+          return tracked(request.id, Promise.resolve(JSON.stringify({
+            jsonrpc: '2.0',
+            id: behavior.responseId?.(request.id) ?? request.id,
+            result,
+          })));
+        },
+        abort() {
+          state.aborts += 1;
+          if (!behavior.abortLeavesActive) hardShutdown();
+          return true;
+        },
+        close() {
+          state.closes += 1;
+          if (state.activeRequestId !== null || state.poisoned) {
+            hardShutdown();
+            return Promise.reject(new Error('synthetic poisoned close'));
+          }
+          if (state.transportClosed) {
+            return Promise.reject(new Error('synthetic duplicate close'));
+          }
+          if (behavior.closeHang) return new Promise(() => {});
+          state.transportClosed = true;
+          if (behavior.closeFailure) return Promise.reject(new Error('synthetic close'));
+          return Promise.resolve(behavior.closeValue ?? true);
+        },
+      };
+    },
+  };
+  return { dependencies, responses, state };
+}
+
+async function assertIndependentFinalizerFailure(finalizerFixture, behavior = {}) {
+  const harness = independentTransportHarness(finalizerFixture, behavior);
+  await assert.rejects(
+    exerciseIndependentPublicWsOnceFinalizerTestOnly(
+      finalizerFixture.options,
+      harness.dependencies,
+    ),
+    fixedFailure,
+  );
+  await assert.rejects(lstat(finalizerFixture.testOutputDirectory), { code: 'ENOENT' });
+  await assertPrivateTestFile(finalizerFixture.attemptRecordPath);
+  const retry = independentTransportHarness(finalizerFixture);
+  await assert.rejects(
+    exerciseIndependentPublicWsOnceFinalizerTestOnly(
+      finalizerFixture.options,
+      retry.dependencies,
+    ),
+    fixedFailure,
+  );
+  assert.equal(retry.state.sourceAttestations, undefined);
+  assert.equal(retry.state.resolutions.length, 0);
+  assert.equal(retry.state.factories, 0);
+  assert.equal(retry.state.requests.length, 0);
+  return harness;
+}
+
+test('synthetic independent finalizer execution is explicitly ineligible and preserves inputs',
+  async t => {
+    const prepared = await independentFinalizerFixture(t);
+    const harness = independentTransportHarness(prepared);
+    const result = await exerciseIndependentPublicWsOnceFinalizerTestOnly(
+      prepared.options,
+      harness.dependencies,
+    );
+    assert.deepEqual(result, {
+      status: 'ineligible-test-observation-complete',
+      eligible: false,
+    });
+    assert.equal(harness.state.sourceAttestations, 2);
+    assert.deepEqual(harness.state.attestedRevisions, [
+      FINALIZER_SOURCE_REVISION,
+      FINALIZER_SOURCE_REVISION,
+    ]);
+    assert.notEqual(FINALIZER_SOURCE_REVISION, prepared.bundle.source.revision);
+    assert.deepEqual(harness.state.resolutions, [{
+      hostname: INDEPENDENT_HOSTNAME,
+      options: { all: true, verbatim: true },
+    }]);
+    assert.deepEqual(
+      harness.state.requests.map(entry => entry.request.method),
+      INDEPENDENT_PUBLIC_WS_ONCE_FINALIZER_POLICY.transcript,
+    );
+    assert.deepEqual(
+      harness.state.requests.map(entry => entry.request.id),
+      [1, 2, 3, 4, 5, 6, 7],
+    );
+    assert.deepEqual(
+      harness.state.requests.map(entry => entry.request.params),
+      [
+        [], [], [], [2, 1], [prepared.bundle.chain.accountBlock.hash],
+        [prepared.bundle.chain.confirmation.momentumHash], [],
+      ],
+    );
+    const expectedNames = [
+      'INELIGIBLE_TEST_ONLY', 'candidate-bundle.json', 'chain.json', 'http.json',
+      'ineligible-test-observation.json', 'journal.json', 'manifest.json',
+      'operator-review.json', 'timing.json',
+    ];
+    assert.deepEqual((await readdir(prepared.testOutputDirectory)).sort(), expectedNames);
+    await assertPrivateTestDirectory(prepared.testOutputDirectory);
+    for (const name of expectedNames) {
+      await assertPrivateTestFile(join(prepared.testOutputDirectory, name));
+    }
+    for (const name of ['manifest', 'chain', 'http', 'journal', 'timing']) {
+      assert.equal(
+        await readFile(join(prepared.testOutputDirectory, `${name}.json`), 'utf8'),
+        prepared.fragmentTexts[`${name}.json`],
+      );
+      assert.equal(
+        await readFile(join(prepared.captureDirectory, `${name}.json`), 'utf8'),
+        prepared.fragmentTexts[`${name}.json`],
+      );
+    }
+    assert.equal(
+      await readFile(join(prepared.testOutputDirectory, 'candidate-bundle.json'), 'utf8'),
+      prepared.candidateBundleText,
+    );
+    const persistedBundle = parseLiveEvidenceBundle(prepared.candidateBundleText);
+    assert.deepEqual(await verifyLiveEvidenceBundle(persistedBundle), {
+      valid: true,
+      evidenceVersion: 1,
+    });
+    const reviewText = await readFile(
+      join(prepared.testOutputDirectory, 'operator-review.json'),
+      'utf8',
+    );
+    assert.equal(reviewText, `${canonicalJson(prepared.review)}\n`);
+    assert.deepEqual(
+      parseIndependentPublicWsOnceOperatorReview(reviewText),
+      prepared.review,
+    );
+    const allOutput = (await Promise.all(expectedNames.map(name =>
+      readFile(join(prepared.testOutputDirectory, name), 'utf8')))).join('\n');
+    assert.equal(allOutput.includes(INDEPENDENT_RPC_URL), false);
+    assert.equal(allOutput.includes(INDEPENDENT_ROUTE_ADDRESS), false);
+    assert.equal(allOutput.includes(ORIGINAL_NODE_KEY), false);
+    assert.equal(allOutput.includes('independent-public-ws-once-finalization'), false);
+    await assert.rejects(lstat(prepared.outputDirectory), { code: 'ENOENT' });
+    await assertPrivateTestFile(prepared.attemptRecordPath);
+    const attemptRecordText = await readFile(prepared.attemptRecordPath, 'utf8');
+    const attemptRecord = JSON.parse(attemptRecordText);
+    const { recordDigest, ...attemptBody } = attemptRecord;
+    assert.equal(
+      recordDigest,
+      sha256Hex(
+        `zenon-x402-independent-finalizer-attempt-consumed-v1\0${
+          canonicalJson(attemptBody)}`,
+      ),
+    );
+    assert.equal(attemptRecord.verifierSourceRevision, FINALIZER_SOURCE_REVISION);
+    assert.equal(attemptRecord.source.revision, prepared.bundle.source.revision);
+    assert.equal(attemptRecord.run.attemptId, prepared.options.attemptId);
+    assert.equal(attemptRecordText, `${canonicalJson(attemptRecord)}\n`);
+    assert.deepEqual((await readdir(join(
+      prepared.runOptions.workspaceRoot,
+      prepared.runOptions.runName,
+      'pending-independent-verification',
+    ))).sort(), ['PENDING_INDEPENDENT_VERIFICATION', 'capture', 'metadata.json']);
+  });
+
+test('independent endpoint, review, assertion, and bootstrap schemas are strict and disjoint',
+  async t => {
+    const prepared = await independentFinalizerFixture(t);
+    const endpoint = parseIndependentPublicWsOnceEndpointConfig(
+      `${JSON.stringify(prepared.endpointConfiguration)}\n`,
+    );
+    assert.deepEqual(endpoint, prepared.endpointConfiguration);
+    const endpointDigest = independentPublicWsOnceEndpointConfigDigest(endpoint);
+    for (const mutate of [
+      value => { value.endpointConfigVersion = 2; },
+      value => { value.transport = 'wss-json-rpc-v1'; },
+      value => { value.rpcUrl = 'http://independent-route.synthetic/rpc'; },
+      value => { value.rpcUrl = `${INDEPENDENT_RPC_URL}?credential=forbidden`; },
+      value => { value.originalRoute.hostname = INDEPENDENT_HOSTNAME; },
+      value => { value.originalRoute.addresses[0].address = '127.0.0.1'; },
+      value => { value.originalRoute.nodePublicKey = ''; },
+      value => { value.selectedFamily = 5; },
+      value => { value.dnsTimeoutMs = 0; },
+      value => { value.rpcTimeoutMs = 0; },
+      value => { value.unexpected = true; },
+      value => { delete value.originalRoute; },
+    ]) {
+      const candidate = structuredClone(endpoint);
+      mutate(candidate);
+      assert.throws(() => parseIndependentPublicWsOnceEndpointConfig(
+        `${JSON.stringify(candidate)}\n`,
+      ), fixedFailure);
+    }
+    const changedEndpoint = structuredClone(endpoint);
+    changedEndpoint.rpcTimeoutMs += 1;
+    assert.notEqual(
+      independentPublicWsOnceEndpointConfigDigest(changedEndpoint),
+      endpointDigest,
+    );
+
+    const review = parseIndependentPublicWsOnceOperatorReview(
+      `${JSON.stringify(prepared.review)}\n`,
+    );
+    for (const mutate of [
+      value => { value.reviewVersion = 2; },
+      value => { value.reviewType = 'legacy'; },
+      value => { value.finalizerVersion = 2; },
+      value => { value.verifierSourceRevision = 'invalid'; },
+      value => { value.route.transport = 'wss-json-rpc-v1'; },
+      value => { value.route.relationship = 'same-operator-route'; },
+      value => { value.attestations.separateAdministration = false; },
+      value => { value.attestations.noProxyOrAlias = false; },
+      value => { value.attestations.readOnlyUse = false; },
+      value => { value.attestations.humanAcceptance = 'no'; },
+      value => { value.extra = true; },
+      value => { delete value.bindings; },
+    ]) {
+      const candidate = structuredClone(review);
+      mutate(candidate);
+      assert.throws(() => parseIndependentPublicWsOnceOperatorReview(
+        `${JSON.stringify(candidate)}\n`,
+      ), fixedFailure);
+    }
+
+    const bootstrap = {
+      bootstrapVersion: 1,
+      command: 'finalize-independent-public-ws-once',
+      ...prepared.options,
+    };
+    assert.deepEqual(
+      parseIndependentPublicWsOnceSupervisorBootstrap(JSON.stringify(bootstrap)),
+      bootstrap,
+    );
+    assert.throws(() => parsePublicWsOnceSupervisorBootstrap(JSON.stringify(bootstrap)));
+    assert.throws(() => parseIndependentPublicWsOnceSupervisorBootstrap(JSON.stringify({
+      ...prepared.runOptions,
+    })), fixedFailure);
+  });
+
+test('independent review bindings reject forged source, run, candidate, endpoint, and attempt replay',
+  async t => {
+    const cases = [
+      ['candidate source', review => { review.source.revision = 'd'.repeat(40); }],
+      ['verifier source', review => { review.verifierSourceRevision = 'd'.repeat(40); }],
+      ['source package', review => { review.source.packageVersion = '9.9.9'; }],
+      ['source runtime', review => { review.source.nodeMajor += 1; }],
+      ['run', review => { review.run.name = 'different-run'; }],
+      ['candidate', review => { review.bindings.candidateBundleDigest = 'c'.repeat(64); }],
+      ['endpoint', review => { review.bindings.endpointConfigDigest = 'c'.repeat(64); }],
+      ['attempt', review => { review.run.attemptId = 'c'.repeat(64); }],
+    ];
+    for (const [name, mutate] of cases) {
+      await t.test(name, async subtest => {
+        const prepared = await independentFinalizerFixture(subtest);
+        const review = structuredClone(prepared.review);
+        mutate(review);
+        await writeFile(
+          prepared.options.operatorReviewPath,
+          `${JSON.stringify(review)}\n`,
+          { mode: 0o600 },
+        );
+        let resolverCalls = 0;
+        let factoryCalls = 0;
+        await assert.rejects(exerciseIndependentPublicWsOnceFinalizerTestOnly(prepared.options, {
+          async resolveAddresses() {
+            resolverCalls += 1;
+            return [{ address: INDEPENDENT_ROUTE_ADDRESS, family: 4 }];
+          },
+          createRawTransport() {
+            factoryCalls += 1;
+            assert.fail('binding failure must precede transport creation');
+          },
+        }), fixedFailure);
+        assert.equal(resolverCalls, 0);
+        assert.equal(factoryCalls, 0);
+        await assert.rejects(lstat(prepared.testOutputDirectory), { code: 'ENOENT' });
+      });
+    }
+
+    await t.test('endpoint file changed after review', async subtest => {
+      const prepared = await independentFinalizerFixture(subtest);
+      const changed = structuredClone(prepared.endpointConfiguration);
+      changed.rpcTimeoutMs += 1;
+      await writeFile(
+        prepared.options.endpointConfigPath,
+        `${JSON.stringify(changed)}\n`,
+        { mode: 0o600 },
+      );
+      let effects = 0;
+      await assert.rejects(exerciseIndependentPublicWsOnceFinalizerTestOnly(prepared.options, {
+        async resolveAddresses() {
+          effects += 1;
+          return [{ address: INDEPENDENT_ROUTE_ADDRESS, family: 4 }];
+        },
+        createRawTransport() {
+          effects += 1;
+          assert.fail('endpoint digest mismatch must precede transport');
+        },
+      }), fixedFailure);
+      assert.equal(effects, 0);
+    });
+
+    await t.test('cross-candidate review', async subtest => {
+      const first = await independentFinalizerFixture(subtest);
+      const second = await independentFinalizerFixture(subtest);
+      await writeFile(
+        second.options.operatorReviewPath,
+        `${JSON.stringify(first.review)}\n`,
+        { mode: 0o600 },
+      );
+      let effects = 0;
+      await assert.rejects(exerciseIndependentPublicWsOnceFinalizerTestOnly(second.options, {
+        async resolveAddresses() {
+          effects += 1;
+          return [{ address: INDEPENDENT_ROUTE_ADDRESS, family: 4 }];
+        },
+        createRawTransport() {
+          effects += 1;
+          assert.fail('cross-candidate replay must precede transport');
+        },
+      }), fixedFailure);
+      assert.equal(effects, 0);
+    });
+  });
+
+test('independent route requires a distinct hostname, disjoint addresses, and different node',
+  async t => {
+    await t.test('hostname alias', async subtest => {
+      const endpointConfiguration = independentEndpointConfigValue({
+        rpcUrl: 'https://original-route.synthetic/rpc',
+      });
+      assert.throws(() => parseIndependentPublicWsOnceEndpointConfig(
+        `${JSON.stringify(endpointConfiguration)}\n`,
+      ), fixedFailure);
+    });
+    await t.test('address overlap', async subtest => {
+      const prepared = await independentFinalizerFixture(subtest);
+      const harness = independentTransportHarness(prepared, {
+        resolvedAddresses: [{ address: ORIGINAL_ROUTE_ADDRESS, family: 4 }],
+      });
+      await assert.rejects(
+        exerciseIndependentPublicWsOnceFinalizerTestOnly(
+          prepared.options,
+          harness.dependencies,
+        ),
+        fixedFailure,
+      );
+      assert.equal(harness.state.resolutions.length, 1);
+      assert.equal(harness.state.factories, 0);
+      assert.equal(harness.state.requests.length, 0);
+    });
+    await t.test('one canonical configured-family address is selected deterministically',
+      async subtest => {
+        const prepared = await independentFinalizerFixture(subtest);
+        const harness = independentTransportHarness(prepared, {
+          resolvedAddresses: [
+            { address: '9.9.9.9', family: 4 },
+            { address: '2606:4700:4700::1111', family: 6 },
+            { address: '1.1.1.1', family: 4 },
+          ],
+        });
+        await exerciseIndependentPublicWsOnceFinalizerTestOnly(
+          prepared.options,
+          harness.dependencies,
+        );
+        assert.deepEqual(harness.state.route.selected, {
+          address: '1.1.1.1',
+          family: 4,
+        });
+        assert.deepEqual(harness.state.route.target.addresses, [{
+          address: '1.1.1.1',
+          family: 4,
+        }]);
+      });
+    await t.test('absence of the reviewed address family rejects before transport',
+      async subtest => {
+        const prepared = await independentFinalizerFixture(subtest);
+        const harness = independentTransportHarness(prepared, {
+          resolvedAddresses: [{ address: '2606:4700:4700::1111', family: 6 }],
+        });
+        await assert.rejects(
+          exerciseIndependentPublicWsOnceFinalizerTestOnly(
+            prepared.options,
+            harness.dependencies,
+          ),
+          fixedFailure,
+        );
+        assert.equal(harness.state.factories, 0);
+        assert.equal(harness.state.requests.length, 0);
+      });
+    await t.test('same node identity', async subtest => {
+      const prepared = await independentFinalizerFixture(subtest);
+      const harness = await assertIndependentFinalizerFailure(prepared, {
+        mutateResponse(id, result) {
+          if (id === 1) result.self.publicKey = ORIGINAL_NODE_KEY;
+        },
+      });
+      assert.equal(harness.state.requests.length, 1);
+      assert.equal(harness.state.closes, 1);
+    });
+  });
+
+test('existing selected output collision causes zero DNS and zero RPC calls', async t => {
+  const prepared = await independentFinalizerFixture(t);
+  await mkdir(prepared.testOutputDirectory, { mode: 0o700 });
+  let resolverCalls = 0;
+  let factoryCalls = 0;
+  await assert.rejects(exerciseIndependentPublicWsOnceFinalizerTestOnly(prepared.options, {
+    async resolveAddresses() {
+      resolverCalls += 1;
+      return [{ address: INDEPENDENT_ROUTE_ADDRESS, family: 4 }];
+    },
+    createRawTransport() {
+      factoryCalls += 1;
+      assert.fail('collision must precede transport creation');
+    },
+  }), fixedFailure);
+  assert.equal(resolverCalls, 0);
+  assert.equal(factoryCalls, 0);
+  await assert.rejects(lstat(prepared.attemptRecordPath), { code: 'ENOENT' });
+
+  const production = await independentFinalizerFixture(t);
+  await mkdir(production.outputDirectory, { mode: 0o700 });
+  await assert.rejects(
+    finalizeIndependentPublicWsOnce(production.options),
+    fixedFailure,
+  );
+  await assert.rejects(lstat(production.attemptRecordPath), { code: 'ENOENT' });
+});
+
+test('independent source attestation is revision-bound before RPC and before final rename',
+  async t => {
+    await t.test('initial verifier attestation failure is pre-latch and pre-DNS',
+      async subtest => {
+        const prepared = await independentFinalizerFixture(subtest);
+        const harness = independentTransportHarness(prepared, {
+          sourceAttestationResult: false,
+        });
+        await assert.rejects(
+          exerciseIndependentPublicWsOnceFinalizerTestOnly(
+            prepared.options,
+            harness.dependencies,
+          ),
+          fixedFailure,
+        );
+        assert.deepEqual(harness.state.attestedRevisions, [FINALIZER_SOURCE_REVISION]);
+        assert.equal(harness.state.resolutions.length, 0);
+        assert.equal(harness.state.factories, 0);
+        await assert.rejects(lstat(prepared.attemptRecordPath), { code: 'ENOENT' });
+      });
+
+    await t.test('final verifier attestation failure preserves the consumed attempt',
+      async subtest => {
+        const prepared = await independentFinalizerFixture(subtest);
+        const harness = independentTransportHarness(prepared, {
+          sourceAttestationResult: call => call === 1,
+        });
+        await assert.rejects(
+          exerciseIndependentPublicWsOnceFinalizerTestOnly(
+            prepared.options,
+            harness.dependencies,
+          ),
+          fixedFailure,
+        );
+        assert.deepEqual(harness.state.attestedRevisions, [
+          FINALIZER_SOURCE_REVISION,
+          FINALIZER_SOURCE_REVISION,
+        ]);
+        assert.equal(harness.state.requests.length, 7);
+        assert.equal(harness.state.closes, 1);
+        await assertPrivateTestFile(prepared.attemptRecordPath);
+        await assert.rejects(lstat(prepared.testOutputDirectory), { code: 'ENOENT' });
+        const retry = independentTransportHarness(prepared);
+        await assert.rejects(
+          exerciseIndependentPublicWsOnceFinalizerTestOnly(
+            prepared.options,
+            retry.dependencies,
+          ),
+          fixedFailure,
+        );
+        assert.equal(retry.state.sourceAttestations, undefined);
+        assert.equal(retry.state.resolutions.length, 0);
+      });
+
+    await t.test('production export rejects synthetic dependencies without inspecting them',
+      async subtest => {
+        const prepared = await independentFinalizerFixture(subtest);
+        let calls = 0;
+        const injected = {
+          async resolveAddresses() { calls += 1; },
+          createRawTransport() { calls += 1; },
+          async sourceTreeAttestor() { calls += 1; return true; },
+        };
+        await assert.rejects(
+          finalizeIndependentPublicWsOnce(prepared.options, injected),
+          fixedFailure,
+        );
+        assert.equal(calls, 0);
+        await assert.rejects(lstat(prepared.attemptRecordPath), { code: 'ENOENT' });
+      });
+
+    await t.test('production export rejects the reviewed synthetic verifier revision offline',
+      async subtest => {
+        const prepared = await independentFinalizerFixture(subtest);
+        await assert.rejects(
+          finalizeIndependentPublicWsOnce(prepared.options),
+          fixedFailure,
+        );
+        await assert.rejects(lstat(prepared.attemptRecordPath), { code: 'ENOENT' });
+        await assert.rejects(lstat(prepared.outputDirectory), { code: 'ENOENT' });
+      });
+  });
+
+test('independent attempt consumption is exclusive, irreversible, and permits only a fresh review',
+  async t => {
+    await t.test('concurrent same-attempt invocation has one effect path', async subtest => {
+      const prepared = await independentFinalizerFixture(subtest);
+      const first = independentTransportHarness(prepared);
+      const second = independentTransportHarness(prepared);
+      const outcomes = await Promise.allSettled([
+        exerciseIndependentPublicWsOnceFinalizerTestOnly(
+          prepared.options,
+          first.dependencies,
+        ),
+        exerciseIndependentPublicWsOnceFinalizerTestOnly(
+          prepared.options,
+          second.dependencies,
+        ),
+      ]);
+      assert.deepEqual(
+        outcomes.map(outcome => outcome.status).sort(),
+        ['fulfilled', 'rejected'],
+      );
+      assert.equal(first.state.requests.length + second.state.requests.length, 7);
+      assert.equal(first.state.factories + second.state.factories, 1);
+      assert.equal(first.state.resolutions.length + second.state.resolutions.length, 1);
+      await assertPrivateTestFile(prepared.attemptRecordPath);
+      await assertPrivateTestDirectory(prepared.testOutputDirectory);
+
+      await rm(prepared.testOutputDirectory, { recursive: true });
+      const replay = independentTransportHarness(prepared);
+      await assert.rejects(
+        exerciseIndependentPublicWsOnceFinalizerTestOnly(
+          prepared.options,
+          replay.dependencies,
+        ),
+        fixedFailure,
+      );
+      assert.equal(replay.state.sourceAttestations, undefined);
+      assert.equal(replay.state.resolutions.length, 0);
+      assert.equal(replay.state.factories, 0);
+      assert.equal(replay.state.requests.length, 0);
+      await assertPrivateTestFile(prepared.attemptRecordPath);
+    });
+
+    await t.test('fresh attempt ID requires a newly bound review', async subtest => {
+      const prepared = await independentFinalizerFixture(subtest);
+      const failed = independentTransportHarness(prepared, {
+        resolvedAddresses: [{ address: ORIGINAL_ROUTE_ADDRESS, family: 4 }],
+      });
+      await assert.rejects(
+        exerciseIndependentPublicWsOnceFinalizerTestOnly(
+          prepared.options,
+          failed.dependencies,
+        ),
+        fixedFailure,
+      );
+      assert.equal(failed.state.factories, 0);
+      await assertPrivateTestFile(prepared.attemptRecordPath);
+
+      const nextAttemptId = 'e'.repeat(64);
+      const staleOptions = { ...prepared.options, attemptId: nextAttemptId };
+      const stale = independentTransportHarness(prepared);
+      await assert.rejects(
+        exerciseIndependentPublicWsOnceFinalizerTestOnly(
+          staleOptions,
+          stale.dependencies,
+        ),
+        fixedFailure,
+      );
+      assert.equal(stale.state.sourceAttestations, undefined);
+      assert.equal(stale.state.resolutions.length, 0);
+
+      const nextReview = structuredClone(prepared.review);
+      nextReview.run.attemptId = nextAttemptId;
+      await writeFile(
+        prepared.options.operatorReviewPath,
+        `${JSON.stringify(nextReview)}\n`,
+        { mode: 0o600 },
+      );
+      const fresh = independentTransportHarness(prepared);
+      await exerciseIndependentPublicWsOnceFinalizerTestOnly(
+        staleOptions,
+        fresh.dependencies,
+      );
+      assert.equal(fresh.state.requests.length, 7);
+      await assertPrivateTestFile(join(
+        prepared.runOptions.workspaceRoot,
+        prepared.runOptions.runName,
+        `.independent-finalizer-attempt-${nextAttemptId}.consumed.json`,
+      ));
+      await assertPrivateTestDirectory(prepared.testOutputDirectory);
+    });
+  });
+
+test('independent transcript rejects hostile envelopes, response IDs, and ordering', async t => {
+  const cases = [
+    ['malformed JSON', () => '{'],
+    ['batch response', (request, result) => JSON.stringify([{
+      jsonrpc: '2.0', id: request.id, result,
+    }])],
+    ['duplicate envelope', (request, result) => {
+      const envelope = JSON.stringify({ jsonrpc: '2.0', id: request.id, result });
+      return `${envelope}${envelope}`;
+    }],
+    ['duplicate key', (request, result) =>
+      `{"jsonrpc":"2.0","id":${request.id},"id":${request.id},"result":${JSON.stringify(result)}}`],
+    ['error envelope', request => JSON.stringify({
+      jsonrpc: '2.0', id: request.id, error: { code: -1 },
+    })],
+    ['extra member', (request, result) => JSON.stringify({
+      jsonrpc: '2.0', id: request.id, result, extra: true,
+    })],
+    ['future response ID', (request, result) => JSON.stringify({
+      jsonrpc: '2.0', id: request.id + 1, result,
+    })],
+  ];
+  for (const [name, rawResponse] of cases) {
+    await t.test(name, async subtest => {
+      const prepared = await independentFinalizerFixture(subtest);
+      const harness = await assertIndependentFinalizerFailure(prepared, { rawResponse });
+      assert.equal(harness.state.requests.length, 1);
+      assert.equal(harness.state.closes, 1);
+    });
+  }
+
+  await t.test('previously seen response ID', async subtest => {
+    const prepared = await independentFinalizerFixture(subtest);
+    const harness = await assertIndependentFinalizerFailure(prepared, {
+      responseId(id) { return id === 2 ? 1 : id; },
+    });
+    assert.equal(harness.state.requests.length, 2);
+    assert.equal(harness.state.closes, 1);
+  });
+});
+
+test('independent transcript rejects timeout, late response, disconnect, and teardown failure',
+  async t => {
+    const fastEndpoint = independentEndpointConfigValue({
+      dnsTimeoutMs: 20,
+      rpcTimeoutMs: 20,
+    });
+    await t.test('timeout and late response', async subtest => {
+      const prepared = await independentFinalizerFixture(subtest, {
+        endpointConfiguration: fastEndpoint,
+      });
+      const harness = await assertIndependentFinalizerFailure(prepared, {
+        hangAt: 1,
+        lateAfterMs: 50,
+      });
+      assert.equal(harness.state.requests.length, 1);
+      assert.equal(harness.state.aborts, 1);
+      assert.equal(harness.state.closes, 1);
+      assert.equal(harness.state.hardShutdowns, 1);
+      assert.equal(harness.state.destroyedRequests, 1);
+      assert.equal(harness.state.activeRequestId, null);
+      assert.equal(harness.state.transportClosed, true);
+      await new Promise(resolve => setTimeout(resolve, 60));
+      await assert.rejects(lstat(prepared.testOutputDirectory), { code: 'ENOENT' });
+    });
+
+    await t.test('active request retained until close', async subtest => {
+      const prepared = await independentFinalizerFixture(subtest, {
+        endpointConfiguration: fastEndpoint,
+      });
+      const harness = await assertIndependentFinalizerFailure(prepared, {
+        hangAt: 1,
+        abortLeavesActive: true,
+      });
+      assert.equal(harness.state.aborts, 1);
+      assert.equal(harness.state.closes, 1);
+      assert.equal(harness.state.hardShutdowns, 1);
+      assert.equal(harness.state.destroyedRequests, 1);
+      assert.equal(harness.state.activeRequestId, null);
+      assert.equal(harness.state.transportClosed, true);
+    });
+
+    await t.test('disconnect', async subtest => {
+      const prepared = await independentFinalizerFixture(subtest);
+      const harness = await assertIndependentFinalizerFailure(prepared, { rejectAt: 4 });
+      assert.equal(harness.state.requests.length, 4);
+      assert.equal(harness.state.aborts, 0);
+      assert.equal(harness.state.closes, 1);
+    });
+
+    await t.test('disconnect with hung cleanup close', async subtest => {
+      const prepared = await independentFinalizerFixture(subtest, {
+        endpointConfiguration: fastEndpoint,
+      });
+      const startedAt = performance.now();
+      const harness = await assertIndependentFinalizerFailure(prepared, {
+        rejectAt: 1,
+        closeHang: true,
+      });
+      assert.equal(harness.state.requests.length, 1);
+      assert.equal(harness.state.closes, 1);
+      assert.equal(performance.now() - startedAt < 2000, true);
+    });
+
+    for (const [name, behavior] of [
+      ['rejected close', { closeFailure: true }],
+      ['false close', { closeValue: false }],
+      ['hung close', { closeHang: true }],
+    ]) {
+      await t.test(name, async subtest => {
+        const prepared = await independentFinalizerFixture(subtest, {
+          endpointConfiguration: fastEndpoint,
+        });
+        const harness = await assertIndependentFinalizerFailure(prepared, behavior);
+        assert.equal(harness.state.requests.length, 7);
+        assert.equal(harness.state.closes, 1);
+        assert.equal(harness.state.aborts, 0);
+      });
+    }
+  });
+
+test('independent chain observation rejects profile, frontier, block, intent, and inclusion drift',
+  async t => {
+    const cases = [
+      ['network peer missing name', 1, (_id, result) => { delete result.self.name; }],
+      ['network peer name too large', 1, (_id, result) => {
+        result.self.name = 'x'.repeat(4097);
+      }],
+      ['network chain mismatch', 3, (_id, result) => { result.chainIdentifier += 1; }],
+      ['height-two profile mismatch', 4, (_id, result) => {
+        result.list[0].hash = sha256Hex('different height two');
+      }],
+      ['height-two reported frontier above closing', 4, (_id, result) => {
+        result.count = 12;
+      }],
+      ['call-five frontier regresses behind call-four count', 4, (_id, result) => {
+        result.count = 11;
+      }],
+      ['opening frontier regresses behind sync snapshot', 2, (_id, result) => {
+        result.currentHeight = 11;
+        result.targetHeight = 11;
+      }],
+      ['regressing closing frontier', 7, (_id, result) => { result.height = 9; }],
+      ['same-height different closing frontier', 7, (_id, result) => {
+        result.height = 10;
+        result.hash = sha256Hex('different equal-height frontier');
+      }],
+      ['closing timestamp precedes opening frontier', 7, (_id, result) => {
+        result.timestamp = 9;
+      }],
+      ['higher closing frontier shares the opening timestamp', 7, (_id, result) => {
+        result.timestamp = 10;
+      }],
+      ['higher opening frontier shares the inclusion timestamp', 3,
+        (_id, result, prepared) => {
+          result.timestamp = prepared.bundle.chain.confirmation.momentumTimestamp;
+        }],
+      ['higher opening frontier precedes the inclusion timestamp', 3,
+        (_id, result, prepared) => {
+          result.timestamp = prepared.bundle.chain.confirmation.momentumTimestamp - 1;
+        }],
+      ['closing hash reuses opening identity', 7, (_id, result) => {
+        result.hash = sha256Hex('synthetic opening frontier');
+      }],
+      ['closing hash reuses inclusion identity', 7, (_id, result, prepared) => {
+        result.hash = prepared.bundle.chain.confirmation.momentumHash;
+      }],
+      ['account block mismatch', 5, (_id, result) => {
+        result.amount = String(BigInt(result.amount) + 1n);
+      }],
+      ['account signature mismatch', 5, (_id, result) => {
+        const signature = Buffer.from(result.signature, 'base64');
+        signature[0] ^= 1;
+        result.signature = signature.toString('base64');
+      }],
+      ['account confirmation hash mismatch', 5, (_id, result) => {
+        result.confirmationDetail.momentumHash = sha256Hex('different confirmed momentum');
+      }],
+      ['account confirmation height mismatch', 5, (_id, result) => {
+        result.confirmationDetail.momentumHeight += 1;
+      }],
+      ['account confirmation timestamp mismatch', 5, (_id, result) => {
+        result.confirmationDetail.momentumTimestamp += 1;
+      }],
+      ['account confirmation count regression', 5, (_id, result) => {
+        result.confirmationDetail.numConfirmations = 1;
+      }],
+      ['confirmation-derived frontier above closing', 5, (_id, result) => {
+        result.confirmationDetail.numConfirmations = 8;
+      }],
+      ['confirmation count overflows derived frontier', 5, (_id, result) => {
+        result.confirmationDetail.numConfirmations = Number.MAX_SAFE_INTEGER;
+      }],
+      ['inclusion hash mismatch', 6, (_id, result) => {
+        result.hash = sha256Hex('different inclusion hash');
+      }],
+      ['inclusion height mismatch', 6, (_id, result) => { result.height += 1; }],
+      ['inclusion timestamp mismatch', 6, (_id, result) => { result.timestamp += 1; }],
+      ['inclusion chain mismatch', 6, (_id, result) => { result.chainIdentifier += 1; }],
+      ['missing retained header', 6, (_id, result) => { result.content = []; }],
+      ['duplicate retained header', 6, (_id, result) => {
+        result.content.push(structuredClone(result.content[0]));
+      }],
+      ['closing frontier not later than inclusion', 7, (_id, result) => {
+        result.height = 5;
+        result.timestamp = 5;
+      }],
+      ['closing timestamp precedes inclusion', 7, (_id, result) => { result.timestamp = 4; }],
+    ];
+    for (const [name, failureAt, mutation] of cases) {
+      await t.test(name, async subtest => {
+        const prepared = await independentFinalizerFixture(subtest);
+        const harness = await assertIndependentFinalizerFailure(prepared, {
+          mutateResponse(id, result) {
+            if (id === failureAt) mutation(id, result, prepared);
+          },
+        });
+        assert.equal(harness.state.requests.length >= failureAt, true);
+        assert.equal(harness.state.requests.length <= 7, true);
+        assert.equal(harness.state.closes, 1);
+      });
+    }
+
+    await t.test('opening frontier may advance after the sync snapshot', async subtest => {
+      const prepared = await independentFinalizerFixture(subtest);
+      const harness = independentTransportHarness(prepared, {
+        mutateResponse(id, result) {
+          if (id === 2) {
+            result.currentHeight = 9;
+            result.targetHeight = 9;
+          } else if (id === 4) {
+            result.count = 11;
+          } else if (id === 5) {
+            result.confirmationDetail.numConfirmations = 8;
+          } else if (id === 7) {
+            result.height = 13;
+            result.timestamp = 13;
+          }
+        },
+      });
+      const result = await exerciseIndependentPublicWsOnceFinalizerTestOnly(
+        prepared.options,
+        harness.dependencies,
+      );
+      assert.deepEqual(result, {
+        status: 'ineligible-test-observation-complete',
+        eligible: false,
+      });
+      assert.equal(harness.state.requests.length, 7);
+      assert.equal(harness.state.closes, 1);
+    });
+
+    await t.test('opening and inclusion cannot conflict at the same height', async subtest => {
+      const prepared = await independentFinalizerFixture(subtest);
+      const harness = await assertIndependentFinalizerFailure(prepared, {
+        mutateResponse(id, result) {
+          if (id === 2) {
+            result.currentHeight = prepared.bundle.chain.confirmation.momentumHeight;
+            result.targetHeight = prepared.bundle.chain.confirmation.momentumHeight;
+          } else if (id === 3) {
+            result.height = prepared.bundle.chain.confirmation.momentumHeight;
+          }
+        },
+      });
+      assert.equal(harness.state.requests.length, 7);
+      assert.equal(harness.state.closes, 1);
+    });
+
+    await t.test('confirmation-derived frontier precedes opening bracket', async subtest => {
+      const prepared = await independentFinalizerFixture(subtest);
+      const harness = await assertIndependentFinalizerFailure(prepared, {
+        mutateResponse(id, result) {
+          if (id === 2) {
+            result.currentHeight = 11;
+            result.targetHeight = 11;
+          } else if (id === 3) {
+            result.height = 11;
+          } else if (id === 4) {
+            result.count = 11;
+          } else if (id === 7) {
+            result.height = 12;
+            result.timestamp = 12;
+          }
+        },
+      });
+      assert.equal(harness.state.requests.length, 7);
+      assert.equal(harness.state.closes, 1);
+    });
+
+    await t.test('response-derived inclusion request binding', async subtest => {
+      const prepared = await independentFinalizerFixture(subtest);
+      const changedHash = sha256Hex('response-derived inclusion request');
+      const harness = await assertIndependentFinalizerFailure(prepared, {
+        mutateResponse(id, result) {
+          if (id === 5) result.confirmationDetail.momentumHash = changedHash;
+        },
+      });
+      assert.deepEqual(harness.state.requests[5].request.params, [changedHash]);
+    });
+  });
+
+test('independent protected inputs stay pinned before reads, across RPC, and after close',
+  async t => {
+    const replacementCases = [
+      ['endpoint', prepared => prepared.options.endpointConfigPath],
+      ['operator review', prepared => prepared.options.operatorReviewPath],
+      ['capture fragment', prepared => join(prepared.captureDirectory, 'chain.json')],
+      ['consumed marker', prepared => join(
+        prepared.runOptions.workspaceRoot,
+        'PUBLIC_WS_ONCE_CONSUMED',
+      )],
+      ['submission marker', prepared => join(
+        prepared.runOptions.workspaceRoot,
+        prepared.runOptions.runName,
+        'SUBMISSION_ARMED',
+      )],
+      ['pending marker', prepared => join(
+        prepared.runOptions.workspaceRoot,
+        prepared.runOptions.runName,
+        'pending-independent-verification',
+        'PENDING_INDEPENDENT_VERIFICATION',
+      )],
+      ['pending metadata', prepared => join(
+        prepared.runOptions.workspaceRoot,
+        prepared.runOptions.runName,
+        'pending-independent-verification',
+        'metadata.json',
+      )],
+      ['journal marker', prepared => join(
+        prepared.runOptions.workspaceRoot,
+        prepared.runOptions.runName,
+        'journal',
+        '.settlement-journal.initialized',
+      )],
+      ['journal', prepared => join(
+        prepared.runOptions.workspaceRoot,
+        prepared.runOptions.runName,
+        'journal',
+        'settlement-journal.json',
+      )],
+    ];
+    for (const [name, selectPath] of replacementCases) {
+      await t.test(`${name} replacement before read`, async subtest => {
+        const prepared = await independentFinalizerFixture(subtest);
+        const selectedPath = selectPath(prepared);
+        let replaced = false;
+        const harness = independentTransportHarness(prepared);
+        harness.dependencies.boundaryObserver = async phase => {
+          if (phase !== 'before-protected-input-read' || replaced) return;
+          replaced = true;
+          await rename(selectedPath, `${selectedPath}.replaced`);
+          await writeFile(selectedPath, '{}\n', { mode: 0o600 });
+        };
+        await assert.rejects(
+          exerciseIndependentPublicWsOnceFinalizerTestOnly(
+            prepared.options,
+            harness.dependencies,
+          ),
+          fixedFailure,
+        );
+        assert.equal(replaced, true);
+        assert.equal(harness.state.resolutions.length, 0);
+        assert.equal(harness.state.factories, 0);
+        await assert.rejects(lstat(prepared.testOutputDirectory), { code: 'ENOENT' });
+      });
+    }
+
+    await t.test('endpoint replacement after transport close', async subtest => {
+      const prepared = await independentFinalizerFixture(subtest);
+      let replaced = false;
+      const harness = independentTransportHarness(prepared);
+      harness.dependencies.boundaryObserver = async phase => {
+        if (phase !== 'after-transport-close' || replaced) return;
+        replaced = true;
+        const path = prepared.options.endpointConfigPath;
+        await rename(path, `${path}.replaced`);
+        await writeFile(path, '{}\n', { mode: 0o600 });
+      };
+      await assert.rejects(
+        exerciseIndependentPublicWsOnceFinalizerTestOnly(
+          prepared.options,
+          harness.dependencies,
+        ),
+        fixedFailure,
+      );
+      assert.equal(replaced, true);
+      assert.equal(harness.state.requests.length, 7);
+      assert.equal(harness.state.closes, 1);
+      await assert.rejects(lstat(prepared.testOutputDirectory), { code: 'ENOENT' });
+    });
+
+    await t.test('operator review replacement between serial RPC reads', async subtest => {
+      const prepared = await independentFinalizerFixture(subtest);
+      let replaced = false;
+      const harness = independentTransportHarness(prepared);
+      harness.dependencies.boundaryObserver = async phase => {
+        if (phase !== 'after-rpc-3' || replaced) return;
+        replaced = true;
+        const path = prepared.options.operatorReviewPath;
+        await rename(path, `${path}.replaced`);
+        await writeFile(path, '{}\n', { mode: 0o600 });
+      };
+      await assert.rejects(
+        exerciseIndependentPublicWsOnceFinalizerTestOnly(
+          prepared.options,
+          harness.dependencies,
+        ),
+        fixedFailure,
+      );
+      assert.equal(replaced, true);
+      assert.equal(harness.state.requests.length, 3);
+      assert.equal(harness.state.closes, 1);
+      await assert.rejects(lstat(prepared.testOutputDirectory), { code: 'ENOENT' });
+    });
+  });
+
+test('independent retained baseline rejects incomplete, fabricated, or foreign state pre-effect',
+  async t => {
+    const cases = [
+      ['consumed marker content', async prepared => {
+        await writeFile(
+          join(prepared.runOptions.workspaceRoot, 'PUBLIC_WS_ONCE_CONSUMED'),
+          'different\n',
+          { mode: 0o600 },
+        );
+      }],
+      ['missing submission marker', async prepared => {
+        await rm(join(
+          prepared.runOptions.workspaceRoot,
+          prepared.runOptions.runName,
+          'SUBMISSION_ARMED',
+        ));
+      }],
+      ['pending metadata content', async prepared => {
+        await writeFile(join(
+          prepared.runOptions.workspaceRoot,
+          prepared.runOptions.runName,
+          'pending-independent-verification',
+          'metadata.json',
+        ), '{}\n', { mode: 0o600 });
+      }],
+      ['journal content', async prepared => {
+        await writeFile(join(
+          prepared.runOptions.workspaceRoot,
+          prepared.runOptions.runName,
+          'journal',
+          'settlement-journal.json',
+        ), '{}\n', { mode: 0o600 });
+      }],
+      ['hard-linked pending metadata', async prepared => {
+        const path = join(
+          prepared.runOptions.workspaceRoot,
+          prepared.runOptions.runName,
+          'pending-independent-verification',
+          'metadata.json',
+        );
+        const retained = `${path}.retained`;
+        await rename(path, retained);
+        await link(retained, path);
+      }],
+      ['foreign run entry', async prepared => {
+        await writeFile(join(
+          prepared.runOptions.workspaceRoot,
+          prepared.runOptions.runName,
+          'foreign-state',
+        ), 'foreign\n', { mode: 0o600 });
+      }],
+      ['fabricated prior attempt', async prepared => {
+        await writeFile(join(
+          prepared.runOptions.workspaceRoot,
+          prepared.runOptions.runName,
+          `.independent-finalizer-attempt-${'d'.repeat(64)}.consumed.json`,
+        ), '{}\n', { mode: 0o600 });
+      }],
+    ];
+    for (const [name, mutate] of cases) {
+      await t.test(name, async subtest => {
+        const prepared = await independentFinalizerFixture(subtest);
+        await mutate(prepared);
+        const harness = independentTransportHarness(prepared);
+        await assert.rejects(
+          exerciseIndependentPublicWsOnceFinalizerTestOnly(
+            prepared.options,
+            harness.dependencies,
+          ),
+          fixedFailure,
+        );
+        assert.equal(harness.state.sourceAttestations, undefined);
+        assert.equal(harness.state.resolutions.length, 0);
+        assert.equal(harness.state.factories, 0);
+        assert.equal(harness.state.requests.length, 0);
+        await assert.rejects(lstat(prepared.attemptRecordPath), { code: 'ENOENT' });
+        await assert.rejects(lstat(prepared.testOutputDirectory), { code: 'ENOENT' });
+      });
+    }
+  });
+
+test('independent atomic writer removes only invocation staging on write and rename faults',
+  async t => {
+    const phases = [
+      'before-staging-create',
+      'after-staging-create',
+      'artifact-manifest.json-before-write',
+      'artifact-manifest.json-after-file-fsync',
+      'artifact-manifest.json-after-file-rename',
+      'artifact-manifest.json-after-file-verify',
+      'before-staging-fsync',
+      'before-artifact-write',
+      'after-artifact-rename',
+    ];
+    for (const phase of phases) {
+      await t.test(phase, async subtest => {
+        const prepared = await independentFinalizerFixture(subtest);
+        const runDirectory = join(
+          prepared.runOptions.workspaceRoot,
+          prepared.runOptions.runName,
+        );
+        const entriesBefore = (await readdir(runDirectory)).sort();
+        const harness = independentTransportHarness(prepared);
+        let injected = false;
+        let cleanupObserved = false;
+        harness.dependencies.artifactObserver = async observedPhase => {
+          if (observedPhase === 'cleanup-attempted') {
+            cleanupObserved = true;
+            if (phase === 'artifact-manifest.json-after-file-fsync') {
+              throw new Error('synthetic cleanup observer fault');
+            }
+          }
+          if (observedPhase === phase && !injected) {
+            injected = true;
+            throw new Error('synthetic artifact fault');
+          }
+        };
+        await assert.rejects(
+          exerciseIndependentPublicWsOnceFinalizerTestOnly(
+            prepared.options,
+            harness.dependencies,
+          ),
+          fixedFailure,
+        );
+        assert.equal(injected, true);
+        if (phase === 'before-staging-create') assert.equal(cleanupObserved, false);
+        else assert.equal(cleanupObserved, true);
+        assert.deepEqual((await readdir(runDirectory)).sort(), [
+          ...entriesBefore,
+          basename(prepared.attemptRecordPath),
+        ].sort());
+        await assertPrivateTestFile(prepared.attemptRecordPath);
+        await assert.rejects(lstat(prepared.testOutputDirectory), { code: 'ENOENT' });
+        for (const name of ['manifest', 'chain', 'http', 'journal', 'timing']) {
+          assert.equal(
+            await readFile(join(prepared.captureDirectory, `${name}.json`), 'utf8'),
+            prepared.fragmentTexts[`${name}.json`],
+          );
+        }
+      });
+    }
+
+    await t.test('destination collision immediately before rename', async subtest => {
+      const prepared = await independentFinalizerFixture(subtest);
+      const runDirectory = join(
+        prepared.runOptions.workspaceRoot,
+        prepared.runOptions.runName,
+      );
+      const harness = independentTransportHarness(prepared);
+      let collided = false;
+      harness.dependencies.artifactObserver = async phase => {
+        if (phase === 'before-artifact-write' && !collided) {
+          collided = true;
+          await mkdir(prepared.testOutputDirectory, { mode: 0o700 });
+        }
+      };
+      await assert.rejects(
+        exerciseIndependentPublicWsOnceFinalizerTestOnly(
+          prepared.options,
+          harness.dependencies,
+        ),
+        fixedFailure,
+      );
+      assert.equal(collided, true);
+      assert.deepEqual(await readdir(prepared.testOutputDirectory), []);
+      assert.equal(
+        (await readdir(runDirectory)).some(name =>
+          /^\.independent-evidence-v1-ineligible-test-only-partial-[0-9a-f]{32}$/.test(name)),
+        false,
+      );
+    });
+
+    await t.test('post-verification output replacement', async subtest => {
+      const prepared = await independentFinalizerFixture(subtest);
+      const harness = independentTransportHarness(prepared);
+      let replaced = false;
+      harness.dependencies.boundaryObserver = async phase => {
+        if (phase !== 'after-artifact-verification' || replaced) return;
+        replaced = true;
+        await writeFile(
+          join(prepared.testOutputDirectory, 'ineligible-test-observation.json'),
+          '{}\n',
+          { mode: 0o600 },
+        );
+      };
+      await assert.rejects(
+        exerciseIndependentPublicWsOnceFinalizerTestOnly(
+          prepared.options,
+          harness.dependencies,
+        ),
+        fixedFailure,
+      );
+      assert.equal(replaced, true);
+      await assert.rejects(lstat(prepared.testOutputDirectory), { code: 'ENOENT' });
+    });
+  });
+
+test('independent HTTPS transport policy and DNS route fail closed without real networking',
+  async t => {
+    const invalidEndpointMutations = [
+      value => { value.rpcUrl = 'https://user@independent-route.synthetic/rpc'; },
+      value => { value.rpcUrl = 'https://independent-route.synthetic:444/rpc'; },
+      value => { value.rpcUrl = 'https://independent-route.synthetic/rpc#fragment'; },
+      value => { value.rpcUrl = 'https://independent-route.synthetic/%72pc'; },
+      value => { value.rpcUrl = 'https://8.8.4.4/rpc'; },
+      value => { value.rpcUrl = 'wss://independent-route.synthetic/rpc'; },
+      value => { value.originalRoute.addresses.push({
+        address: ORIGINAL_ROUTE_ADDRESS,
+        family: 4,
+      }); },
+      value => { value.proxy = 'forbidden'; },
+    ];
+    for (const mutate of invalidEndpointMutations) {
+      const endpoint = independentEndpointConfigValue();
+      mutate(endpoint);
+      assert.throws(() => parseIndependentPublicWsOnceEndpointConfig(
+        `${JSON.stringify(endpoint)}\n`,
+      ), fixedFailure);
+    }
+
+    const runnerSource = await readFile(
+      new URL('../src/live-evidence-runner.js', import.meta.url),
+      'utf8',
+    );
+    const transportStart = runnerSource.indexOf(
+      'function createIndependentFinalizerHttpsRawTransport',
+    );
+    const transportEnd = runnerSource.indexOf(
+      'function captureIndependentFinalizerInjections',
+      transportStart,
+    );
+    assert.equal(transportStart >= 0 && transportEnd > transportStart, true);
+    const transportSource = runnerSource.slice(transportStart, transportEnd);
+    assert.match(transportSource, /maxSockets: 1/);
+    assert.match(transportSource, /maxTotalSockets: 1/);
+    assert.match(transportSource, /rejectUnauthorized: true/);
+    assert.match(transportSource, /autoSelectFamily: false/);
+    assert.match(transportSource, /family: route\.selected\.family/);
+    assert.match(transportSource, /lookup: pinnedLookup\(route\.target\)/);
+    assert.match(transportSource, /const hardShutdown = \(\) =>/);
+    assert.match(transportSource, /request\?\.destroy\(\)/);
+    assert.match(transportSource, /connection\?\.destroy\(\)/);
+    assert.match(transportSource, /agent\.destroy\(\)/);
+    assert.doesNotMatch(transportSource, /process\.env|proxy|redirect|WebSocket/);
+
+    const fastEndpoint = independentEndpointConfigValue({
+      dnsTimeoutMs: 20,
+      rpcTimeoutMs: 20,
+    });
+    const dnsCases = [
+      ['resolver rejection', () => Promise.reject(new Error('synthetic DNS failure'))],
+      ['private address', async () => [{ address: '127.0.0.1', family: 4 }]],
+      ['malformed address', async () => [{ address: 'not-an-address', family: 4 }]],
+      ['proxied result', async () => new Proxy([], {})],
+      ['timeout', () => new Promise(resolve => {
+        setTimeout(() => resolve([{ address: INDEPENDENT_ROUTE_ADDRESS, family: 4 }]), 50);
+      })],
+    ];
+    for (const [name, resolveAddresses] of dnsCases) {
+      await t.test(name, async subtest => {
+        const prepared = await independentFinalizerFixture(subtest, {
+          endpointConfiguration: fastEndpoint,
+        });
+        const harness = independentTransportHarness(prepared);
+        harness.dependencies.resolveAddresses = resolveAddresses;
+        await assert.rejects(
+          exerciseIndependentPublicWsOnceFinalizerTestOnly(
+            prepared.options,
+            harness.dependencies,
+          ),
+          fixedFailure,
+        );
+        assert.equal(harness.state.factories, 0);
+        assert.equal(harness.state.requests.length, 0);
+        await assert.rejects(lstat(prepared.testOutputDirectory), { code: 'ENOENT' });
+        await assertPrivateTestFile(prepared.attemptRecordPath);
+        const retry = independentTransportHarness(prepared);
+        await assert.rejects(
+          exerciseIndependentPublicWsOnceFinalizerTestOnly(
+            prepared.options,
+            retry.dependencies,
+          ),
+          fixedFailure,
+        );
+        assert.equal(retry.state.resolutions.length, 0);
+        assert.equal(retry.state.factories, 0);
+        if (name === 'timeout') {
+          await new Promise(resolve => setTimeout(resolve, 60));
+          assert.equal(harness.state.factories, 0);
+        }
+      });
+    }
+
+    await t.test('hostile injected dependency object', async subtest => {
+      const prepared = await independentFinalizerFixture(subtest);
+      let traps = 0;
+      const hostile = new Proxy({}, {
+        ownKeys() {
+          traps += 1;
+          throw new Error('must not inspect proxy');
+        },
+      });
+      await assert.rejects(
+        finalizeIndependentPublicWsOnce(prepared.options, hostile),
+        fixedFailure,
+      );
+      assert.equal(traps, 0);
+      await assert.rejects(lstat(prepared.outputDirectory), { code: 'ENOENT' });
+    });
+  });
+
+test('independent route observation and assertion schema bind exact routes and leaves',
+  async t => {
+    const routeDigests = [];
+    let validAssertion;
+    for (const address of [INDEPENDENT_ROUTE_ADDRESS, '1.1.1.1']) {
+      const prepared = await independentFinalizerFixture(t);
+      const harness = independentTransportHarness(prepared, {
+        resolvedAddresses: [{ address, family: 4 }],
+      });
+      await exerciseIndependentPublicWsOnceFinalizerTestOnly(
+        prepared.options,
+        harness.dependencies,
+      );
+      const observation = JSON.parse(await readFile(
+        join(prepared.testOutputDirectory, 'ineligible-test-observation.json'),
+        'utf8',
+      ));
+      const expected = independentAssertionValue(prepared, harness.responses[5], address);
+      assert.equal(observation.eligibleForIndependentVerification, false);
+      assert.equal(observation.routeDigest, expected.route.routeDigest);
+      routeDigests.push(observation.routeDigest);
+      validAssertion ??= expected;
+    }
+    assert.notEqual(routeDigests[0], routeDigests[1]);
+    const assertion = parseIndependentPublicWsOnceFinalizerAssertion(
+      `${JSON.stringify(validAssertion)}\n`,
+    );
+    const mutations = [
+      value => { value.assertionVersion = 2; },
+      value => { value.source.revision = 'invalid'; },
+      value => { value.run.attemptId = 'invalid'; },
+      value => { value.candidate.evidenceVersion = 2; },
+      value => { value.candidate.candidateBundleDigest = 'invalid'; },
+      value => { value.candidate.fiveFragmentSetDigest = 'invalid'; },
+      value => { value.payment.intentDigest = 'invalid'; },
+      value => { value.payment.accountBlockDigest = 'invalid'; },
+      value => { value.payment.inclusionMomentumDigest = 'invalid'; },
+      value => { value.bindings.endpointConfigDigest = 'invalid'; },
+      value => { value.bindings.operatorReviewDigest = 'invalid'; },
+      value => { value.route.routeDigest = 'invalid'; },
+      value => { value.route.addressSetsDisjoint = false; },
+      value => { value.verifier.sourceRevision = 'invalid'; },
+      value => { value.verifier.finalizerVersion = 2; },
+      value => { value.confirmations.exactPaymentIntent = false; },
+      value => { value.confirmations.exactAccountBlock = false; },
+      value => { value.confirmations.exactInclusionMomentum = false; },
+      value => { value.unexpected = true; },
+    ];
+    for (const mutate of mutations) {
+      const changed = structuredClone(assertion);
+      mutate(changed);
+      assert.throws(() => parseIndependentPublicWsOnceFinalizerAssertion(
+        `${JSON.stringify(changed)}\n`,
+      ), fixedFailure);
+    }
+  });
+
+test('independent finalizer CLI and IPC stay disjoint with fixed terminal output', async t => {
+  const finalizerOptions = {
+    endpointConfigPath: 'endpoint-config.json',
+    operatorReviewPath: 'operator-review.json',
+    workspaceRoot: 'workspace',
+    runName: 'single-current-testnet-wss-run',
+    attemptId: FINALIZER_ATTEMPT_ID,
+  };
+  const finalizerArguments = [
+    'finalize-independent-public-ws-once',
+    '--endpoint-config', finalizerOptions.endpointConfigPath,
+    '--operator-review', finalizerOptions.operatorReviewPath,
+    '--workspace', finalizerOptions.workspaceRoot,
+    '--run-name', finalizerOptions.runName,
+    '--attempt-id', finalizerOptions.attemptId,
+  ];
+
+  await t.test('CLI', async () => {
+    const stdout = [];
+    const stderr = [];
+    let supervised;
+    assert.equal(await runPublicWsOnceRunnerCli({
+      argv: finalizerArguments,
+      stdout: value => { stdout.push(value); },
+      stderr: value => { stderr.push(value); },
+      supervise: async (command, options) => {
+        supervised = { command, options };
+        return { status: 'independent-verification-complete' };
+      },
+    }), true);
+    assert.deepEqual(supervised, {
+      command: 'finalize-independent-public-ws-once',
+      options: finalizerOptions,
+    });
+    assert.deepEqual(stdout, ['INDEPENDENT_VERIFICATION_SUCCESS\n']);
+    assert.deepEqual(stderr, []);
+
+    stdout.length = 0;
+    assert.equal(await runPublicWsOnceRunnerCli({
+      argv: finalizerArguments.slice(0, -2),
+      stdout: value => { stdout.push(value); },
+      stderr: value => { stderr.push(value); },
+      supervise: async () => assert.fail('malformed finalizer argv must not dispatch'),
+    }), false);
+    assert.deepEqual(stdout, []);
+    assert.deepEqual(stderr, ['INDEPENDENT_VERIFICATION_FAILED\n']);
+  });
+
+  await t.test('supervisor', async () => {
+    const bootstrapChunks = [];
+    const requests = [];
+    let invocation;
+    let originReleaseCalls = 0;
+    const child = new EventEmitter();
+    child.connected = true;
+    child.stdio = [null, null, null, null, new PassThrough()];
+    child.stdio[4].on('data', chunk => bootstrapChunks.push(Buffer.from(chunk)));
+    child.stdio[4].once('finish', () => setImmediate(() => child.emit('message', {
+      ipcVersion: 2,
+      requestId: 81,
+      type: 'FINALIZER_READY',
+    })));
+    child.send = (message, callback) => {
+      requests.push(structuredClone(message));
+      callback?.();
+      if (message.type === 'FINALIZE') setImmediate(() => {
+        child.emit('message', { ipcVersion: 2, requestId: 81, type: 'FINALIZED' });
+        child.connected = false;
+        child.emit('exit', 0, null);
+        child.emit('close', 0, null);
+      });
+      return true;
+    };
+    child.kill = () => true;
+    const result = await supervisePublicWsOnceChild(
+      'finalize-independent-public-ws-once',
+      finalizerOptions,
+      {
+        childModule: fileURLToPath(
+          new URL('./fixtures/public-ws-once-noisy-child.js', import.meta.url),
+        ),
+        forkProcess: (modulePath, args, options) => {
+          invocation = { modulePath, args, options };
+          return child;
+        },
+        beforeOriginBind: async () => {
+          originReleaseCalls += 1;
+          return true;
+        },
+        timeoutMs: 1000,
+      },
+    );
+    assert.deepEqual(result, { status: 'independent-verification-complete' });
+    assert.deepEqual(requests, [{ ipcVersion: 2, requestId: 81, type: 'FINALIZE' }]);
+    assert.equal(originReleaseCalls, 0);
+    assert.deepEqual(invocation.args, []);
+    assert.deepEqual(invocation.options.stdio, ['ignore', 'ignore', 'ignore', 'ipc', 'pipe']);
+    assert.deepEqual(invocation.options.env, {});
+    assert.deepEqual(JSON.parse(Buffer.concat(bootstrapChunks).toString('utf8')), {
+      bootstrapVersion: 1,
+      command: 'finalize-independent-public-ws-once',
+      ...finalizerOptions,
+    });
+    await assert.rejects(supervisePublicWsOnceChild(
+      'run-public-ws-once',
+      finalizerOptions,
+      { forkProcess: () => assert.fail('finalizer options must not select legacy IPC') },
+    ));
+  });
+
+  await t.test('execution child', async () => {
+    const bootstrap = {
+      bootstrapVersion: 1,
+      command: 'finalize-independent-public-ws-once',
+      ...finalizerOptions,
+    };
+    const channel = new EventEmitter();
+    channel.connected = true;
+    const sent = [];
+    channel.send = (message, callback) => {
+      sent.push(structuredClone(message));
+      callback?.();
+      return true;
+    };
+    let exitCode;
+    let resolveExit;
+    const exitDone = new Promise(resolve => { resolveExit = resolve; });
+    await runPublicWsOnceExecutionChild({
+      channel,
+      readBootstrap: async () => bootstrap,
+      preflight: async () => assert.fail('finalizer must not preflight'),
+      execute: async () => assert.fail('finalizer must not execute legacy run'),
+      forceExit: code => {
+        exitCode = code;
+        resolveExit();
+      },
+    });
+    assert.deepEqual(sent, [{ ipcVersion: 2, requestId: 81, type: 'FINALIZER_READY' }]);
+    channel.emit('message', { ipcVersion: 2, requestId: 81, type: 'FINALIZE' });
+    await exitDone;
+    assert.deepEqual(sent, [{ ipcVersion: 2, requestId: 81, type: 'FINALIZER_READY' }]);
+    assert.equal(exitCode, 1);
+
+    const injectedChannel = new EventEmitter();
+    injectedChannel.connected = true;
+    const injectedSent = [];
+    injectedChannel.send = (message, callback) => {
+      injectedSent.push(structuredClone(message));
+      callback?.();
+      return true;
+    };
+    let injectedCalls = 0;
+    let injectedExitCode;
+    await assert.rejects(runPublicWsOnceExecutionChild({
+      channel: injectedChannel,
+      readBootstrap: async () => bootstrap,
+      finalize: async () => {
+        injectedCalls += 1;
+        return { status: 'independent-verification-complete' };
+      },
+      forceExit: code => { injectedExitCode = code; },
+    }));
+    assert.equal(injectedCalls, 0);
+    assert.deepEqual(injectedSent, []);
+    assert.equal(injectedExitCode, undefined);
+
+    const confusedChannel = new EventEmitter();
+    confusedChannel.connected = true;
+    confusedChannel.send = (_message, callback) => {
+      callback?.();
+      return true;
+    };
+    let confusedExit;
+    let resolveConfusedExit;
+    const confusedExitDone = new Promise(resolve => { resolveConfusedExit = resolve; });
+    await runPublicWsOnceExecutionChild({
+      channel: confusedChannel,
+      readBootstrap: async () => bootstrap,
+      forceExit: code => {
+        confusedExit = code;
+        resolveConfusedExit();
+      },
+    });
+    confusedChannel.emit('message', { ipcVersion: 1, requestId: 1, type: 'RUN' });
+    await confusedExitDone;
+    assert.equal(confusedExit, 1);
+  });
+});
 
 test('current Gate-B profile is distinct, branded, and never cross-pairs with historical policy', async () => {
   assert.equal(GATE_B_CURRENT_TESTNET_SDK_NETWORK_ID, '3');
