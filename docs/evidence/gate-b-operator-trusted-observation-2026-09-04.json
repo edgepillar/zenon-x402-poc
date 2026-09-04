@@ -1,0 +1,380 @@
+{
+  "recordVersion": 1,
+  "recordType": "operator-trusted-same-route-live-observation",
+  "evidenceV1Bundle": false,
+  "issue": "edgepillar/zenon-x402-poc#45",
+  "publicationClassification": {
+    "trustModel": "operator-trusted",
+    "routeRelationship": "same-route",
+    "independentOperatorVerification": false
+  },
+  "retainedFragmentProjections": {
+    "manifest": {
+      "fragmentVersion": 1,
+      "fragmentType": "manifest",
+      "payment": {
+        "paymentRequired": {
+          "accepts": [
+            {
+              "amount": "1",
+              "asset": "zts1znnxxxxxxxxxxxxx9z4ulx",
+              "extra": {
+                "paymentFlow": "upfront",
+                "poc": true,
+                "settlement": "account-block",
+                "zenonChain": {
+                  "chainIdentifier": "73404",
+                  "genesisMomentumHash": "54f039f21649ec1c5fa453a55afb35361149f56a736821c1d8f36fce52f10590",
+                  "version": 1
+                }
+              },
+              "maxTimeoutSeconds": 60,
+              "network": "zenon:testnet",
+              "payTo": "z1qq6kammvn0qexrhhaaqkuxecwfmysa8gn9slg8",
+              "scheme": "exact"
+            }
+          ],
+          "resource": {
+            "description": "Zenon x402 PoC protected resource",
+            "mimeType": "application/json",
+            "url": "https://humor-streaming-annually-franklin.trycloudflare.com/paid"
+          },
+          "x402Version": 2
+        },
+        "selectedIndex": 0,
+        "intentDigest": "074cd37648afd206df520d900a83d226c79b8de2da62f3153f18679e848d38a7"
+      }
+    },
+    "chain": {
+      "fragmentVersion": 1,
+      "fragmentType": "chain",
+      "chain": {
+        "accountBlock": {
+          "version": 1,
+          "chainIdentifier": 73404,
+          "blockType": 2,
+          "hash": "eacb0d7ecabbf93d4de9f0b00a9c58842d44a59e18ddbc2b022dd2bf8f00aaa3",
+          "height": 3,
+          "momentumAcknowledged": {
+            "height": 419295
+          },
+          "address": "z1qrkzzd3aqkflmd6uj9p0cu766vkg0ayvehm4zg",
+          "toAddress": "z1qq6kammvn0qexrhhaaqkuxecwfmysa8gn9slg8",
+          "amount": "1",
+          "tokenStandard": "zts1znnxxxxxxxxxxxxx9z4ulx",
+          "data": "B0zTdkiv0gbfUg2QCoPSJsebjeLaYvMVPxhnnoSNOKc=",
+          "fusedPlasma": 0,
+          "difficulty": 34764000
+        },
+        "confirmation": {
+          "observedAt": "2026-09-04T00:09:30.271Z",
+          "numConfirmations": 1,
+          "momentumHeight": 419297,
+          "momentumTimestamp": 1788480570
+        }
+      }
+    },
+    "http": {
+      "fragmentVersion": 1,
+      "fragmentType": "http",
+      "http": {
+        "initial": {
+          "status": 402,
+          "observedAt": "2026-09-04T00:09:05.975Z"
+        },
+        "final": {
+          "status": 200,
+          "observedAt": "2026-09-04T00:09:30.350Z",
+          "paymentResponse": {
+            "success": true,
+            "network": "zenon:testnet",
+            "transaction": "eacb0d7ecabbf93d4de9f0b00a9c58842d44a59e18ddbc2b022dd2bf8f00aaa3",
+            "payer": "z1qrkzzd3aqkflmd6uj9p0cu766vkg0ayvehm4zg",
+            "state": "MOMENTUM_INCLUDED"
+          },
+          "contentType": "application/json; charset=utf-8",
+          "cacheControl": "private, no-store, max-age=0",
+          "vary": "PAYMENT-SIGNATURE",
+          "bodyText": "{\n  \"ok\": true,\n  \"message\": \"paid resource unlocked\",\n  \"network\": \"zenon:testnet\",\n  \"payer\": \"z1qrkzzd3aqkflmd6uj9p0cu766vkg0ayvehm4zg\",\n  \"transaction\": \"eacb0d7ecabbf93d4de9f0b00a9c58842d44a59e18ddbc2b022dd2bf8f00aaa3\",\n  \"generatedAt\": \"2026-09-04T00:09:30.306Z\"\n}"
+        }
+      }
+    },
+    "journal": {
+      "fragmentVersion": 1,
+      "fragmentType": "journal",
+      "journal": {
+        "sourceSchemaVersion": 1,
+        "sourceRevision": 5,
+        "activeRecordCount": 1,
+        "tombstoneCount": 0,
+        "record": {
+          "transactionHash": "eacb0d7ecabbf93d4de9f0b00a9c58842d44a59e18ddbc2b022dd2bf8f00aaa3",
+          "chainProfile": {
+            "version": 1,
+            "chainIdentifier": "73404",
+            "genesisMomentumHash": "54f039f21649ec1c5fa453a55afb35361149f56a736821c1d8f36fce52f10590"
+          },
+          "intentDigest": "074cd37648afd206df520d900a83d226c79b8de2da62f3153f18679e848d38a7",
+          "resourceIdentity": {
+            "url": "https://humor-streaming-annually-franklin.trycloudflare.com/paid",
+            "description": "Zenon x402 PoC protected resource",
+            "mimeType": "application/json"
+          },
+          "resourceDigest": "2995dba00be36cb0751a696d2f51ffb1a42ee6e085409ae004162c4c7eb2e8a1",
+          "payer": "z1qrkzzd3aqkflmd6uj9p0cu766vkg0ayvehm4zg",
+          "signedAccountBlock": {
+            "version": 1,
+            "chainIdentifier": 73404,
+            "blockType": 2,
+            "hash": "eacb0d7ecabbf93d4de9f0b00a9c58842d44a59e18ddbc2b022dd2bf8f00aaa3",
+            "height": 3,
+            "momentumAcknowledged": {
+              "height": 419295
+            },
+            "address": "z1qrkzzd3aqkflmd6uj9p0cu766vkg0ayvehm4zg",
+            "toAddress": "z1qq6kammvn0qexrhhaaqkuxecwfmysa8gn9slg8",
+            "amount": "1",
+            "tokenStandard": "zts1znnxxxxxxxxxxxxx9z4ulx",
+            "data": "B0zTdkiv0gbfUg2QCoPSJsebjeLaYvMVPxhnnoSNOKc=",
+            "fusedPlasma": 0,
+            "difficulty": 34764000
+          },
+          "evidenceState": "MOMENTUM_INCLUDED",
+          "momentumEvidence": {
+            "observedAt": "2026-09-04T00:09:30.271Z",
+            "confirmationDetail": {
+              "numConfirmations": 1,
+              "momentumHeight": 419297,
+              "momentumTimestamp": 1788480570
+            }
+          },
+          "deliveryState": "DELIVERED",
+          "cachedResponse": {
+            "status": 200,
+            "headers": {
+              "content-type": "application/json; charset=utf-8"
+            },
+            "body": {
+              "ok": true,
+              "message": "paid resource unlocked",
+              "network": "zenon:testnet",
+              "payer": "z1qrkzzd3aqkflmd6uj9p0cu766vkg0ayvehm4zg",
+              "transaction": "eacb0d7ecabbf93d4de9f0b00a9c58842d44a59e18ddbc2b022dd2bf8f00aaa3",
+              "generatedAt": "2026-09-04T00:09:30.306Z"
+            }
+          },
+          "createdAt": "2026-09-04T00:09:18.021Z",
+          "updatedAt": "2026-09-04T00:09:30.307Z"
+        }
+      }
+    },
+    "timing": {
+      "fragmentVersion": 1,
+      "fragmentType": "timing",
+      "timing": {
+        "events": [
+          {
+            "sequence": 0,
+            "phase": "challenge_request_started",
+            "role": "runner",
+            "clockDomain": "runner-monotonic-v1",
+            "utc": "2026-09-04T00:09:05.793Z",
+            "monotonicMs": 4456
+          },
+          {
+            "sequence": 1,
+            "phase": "challenge_402_received",
+            "role": "runner",
+            "clockDomain": "runner-monotonic-v1",
+            "utc": "2026-09-04T00:09:05.975Z",
+            "monotonicMs": 4637
+          },
+          {
+            "sequence": 2,
+            "phase": "buyer_owner_wait_started",
+            "role": "buyer",
+            "clockDomain": "buyer-monotonic-v1",
+            "utc": "2026-09-04T00:09:05.980Z",
+            "monotonicMs": 4642
+          },
+          {
+            "sequence": 3,
+            "phase": "buyer_owner_acquired",
+            "role": "buyer",
+            "clockDomain": "buyer-monotonic-v1",
+            "utc": "2026-09-04T00:09:05.980Z",
+            "monotonicMs": 4642
+          },
+          {
+            "sequence": 4,
+            "phase": "buyer_readiness_started",
+            "role": "buyer",
+            "clockDomain": "buyer-monotonic-v1",
+            "utc": "2026-09-04T00:09:05.980Z",
+            "monotonicMs": 4642
+          },
+          {
+            "sequence": 5,
+            "phase": "buyer_readiness_finished",
+            "role": "buyer",
+            "clockDomain": "buyer-monotonic-v1",
+            "utc": "2026-09-04T00:09:07.628Z",
+            "monotonicMs": 6291
+          },
+          {
+            "sequence": 6,
+            "phase": "prepare_block_started",
+            "role": "buyer",
+            "clockDomain": "buyer-monotonic-v1",
+            "utc": "2026-09-04T00:09:07.655Z",
+            "monotonicMs": 6317
+          },
+          {
+            "sequence": 7,
+            "phase": "prepare_block_finished",
+            "role": "buyer",
+            "clockDomain": "buyer-monotonic-v1",
+            "utc": "2026-09-04T00:09:14.542Z",
+            "monotonicMs": 13204
+          },
+          {
+            "sequence": 8,
+            "phase": "buyer_owner_released",
+            "role": "buyer",
+            "clockDomain": "buyer-monotonic-v1",
+            "utc": "2026-09-04T00:09:14.545Z",
+            "monotonicMs": 13208
+          },
+          {
+            "sequence": 9,
+            "phase": "facilitator_owner_wait_started",
+            "role": "facilitator",
+            "clockDomain": "facilitator-monotonic-v1",
+            "utc": "2026-09-04T00:09:14.679Z",
+            "monotonicMs": 12746
+          },
+          {
+            "sequence": 10,
+            "phase": "facilitator_owner_acquired",
+            "role": "facilitator",
+            "clockDomain": "facilitator-monotonic-v1",
+            "utc": "2026-09-04T00:09:14.679Z",
+            "monotonicMs": 12746
+          },
+          {
+            "sequence": 11,
+            "phase": "facilitator_readiness_started",
+            "role": "facilitator",
+            "clockDomain": "facilitator-monotonic-v1",
+            "utc": "2026-09-04T00:09:14.679Z",
+            "monotonicMs": 12746
+          },
+          {
+            "sequence": 12,
+            "phase": "facilitator_readiness_finished",
+            "role": "facilitator",
+            "clockDomain": "facilitator-monotonic-v1",
+            "utc": "2026-09-04T00:09:16.352Z",
+            "monotonicMs": 14418
+          },
+          {
+            "sequence": 13,
+            "phase": "publication_started",
+            "role": "facilitator",
+            "clockDomain": "facilitator-monotonic-v1",
+            "utc": "2026-09-04T00:09:18.039Z",
+            "monotonicMs": 16106
+          },
+          {
+            "sequence": 14,
+            "phase": "publication_acknowledged",
+            "role": "facilitator",
+            "clockDomain": "facilitator-monotonic-v1",
+            "utc": "2026-09-04T00:09:18.278Z",
+            "monotonicMs": 16344
+          },
+          {
+            "sequence": 15,
+            "phase": "inclusion_wait_started",
+            "role": "facilitator",
+            "clockDomain": "facilitator-monotonic-v1",
+            "utc": "2026-09-04T00:09:18.298Z",
+            "monotonicMs": 16364
+          },
+          {
+            "sequence": 16,
+            "phase": "momentum_inclusion_observed",
+            "role": "facilitator",
+            "clockDomain": "facilitator-monotonic-v1",
+            "utc": "2026-09-04T00:09:30.271Z",
+            "monotonicMs": 28337
+          },
+          {
+            "sequence": 17,
+            "phase": "facilitator_owner_released",
+            "role": "facilitator",
+            "clockDomain": "facilitator-monotonic-v1",
+            "utc": "2026-09-04T00:09:30.291Z",
+            "monotonicMs": 28357
+          },
+          {
+            "sequence": 18,
+            "phase": "delivery_started",
+            "role": "facilitator",
+            "clockDomain": "facilitator-monotonic-v1",
+            "utc": "2026-09-04T00:09:30.291Z",
+            "monotonicMs": 28358
+          },
+          {
+            "sequence": 19,
+            "phase": "delivery_finished",
+            "role": "facilitator",
+            "clockDomain": "facilitator-monotonic-v1",
+            "utc": "2026-09-04T00:09:30.320Z",
+            "monotonicMs": 28387
+          },
+          {
+            "sequence": 20,
+            "phase": "paid_response_received",
+            "role": "runner",
+            "clockDomain": "runner-monotonic-v1",
+            "utc": "2026-09-04T00:09:30.350Z",
+            "monotonicMs": 29012
+          }
+        ],
+        "durationsMs": {
+          "challenge": 181,
+          "total": 24375,
+          "buyerOwnerWait": 0,
+          "buyerOwnerHeld": 8566,
+          "buyerReadiness": 1649,
+          "prepareBlock": 6887,
+          "facilitatorOwnerWait": 0,
+          "facilitatorOwnerHeld": 15611,
+          "facilitatorReadiness": 1672,
+          "publication": 238,
+          "inclusionWait": 11973,
+          "delivery": 29
+        }
+      }
+    }
+  },
+  "nonClaims": {
+    "authenticatedChainIdentity": false,
+    "canonicalRemoteChainIdentity": false,
+    "verifiedFrontierLineage": false,
+    "irreversibleFinality": false,
+    "facilitatorAuthorship": false,
+    "facilitatorPublicationProven": false,
+    "chainObservationIndependentlyAttested": false,
+    "httpExchangeIndependentlyAttested": false,
+    "buyerReceiptCryptographicallyProven": false,
+    "recipientReceiveObserved": false,
+    "recipientSpendabilityEstablished": false,
+    "initial402BodyOrHeaderCaptured": false,
+    "cleanShutdown": false,
+    "release": false,
+    "activation": false,
+    "productionReadiness": false
+  }
+}

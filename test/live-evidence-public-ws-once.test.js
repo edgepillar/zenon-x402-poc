@@ -2533,12 +2533,16 @@ test('supervisor preserves the closed WSS bootstrap without command or IPC expan
     assert.equal(accessorReads, 0);
   });
 
-test('documentation records the quarantined live observation without weakening offline claims',
+test('documentation and the operator-trusted record preserve the quarantined live boundary without weakening evidence v1',
   async () => {
-    const [readme, security, plan] = await Promise.all([
+    const [readme, security, plan, operatorRecordText] = await Promise.all([
       readFile(new URL('../README.md', import.meta.url), 'utf8'),
       readFile(new URL('../SECURITY.md', import.meta.url), 'utf8'),
       readFile(new URL('../docs/IMPLEMENTATION_PLAN.md', import.meta.url), 'utf8'),
+      readFile(new URL(
+        '../docs/evidence/gate-b-operator-trusted-observation-2026-09-04.json',
+        import.meta.url,
+      ), 'utf8'),
     ]);
     const heading = 'Observed Gate-B run boundary (2026-09-04)';
     const slice = (document, endMarker) => {
@@ -2598,6 +2602,12 @@ test('documentation records the quarantined live observation without weakening o
       /facilitator authorship/,
       /independent(?:ly attested)? HTTP (?:attestation|exchange)/,
       /clean shutdown is not claimed|No .* clean shutdown is claimed/,
+      /evidence-version-1 bundle publication/i,
+      /operator-trusted (?:same-route observation )?record/i,
+      /explicitly not evidence version 1/i,
+      /human disclosure review and merge/i,
+      /bounded operator-trusted Path-B acceptance|bounded Path-B acceptance criteria/i,
+      /publication hold (?:is not retroactively reinterpreted|remains binding)/i,
     ]) {
       assert.match(combinedObserved, invariant);
     }
@@ -2645,4 +2655,218 @@ test('documentation records the quarantined live observation without weakening o
       verification,
       /(?:\/Users\/|\/home\/|[A-Za-z]:\\\\|BEGIN PRIVATE KEY|mnemonic|seed phrase|private key|wallet secret|RPC credential|access token)/iu,
     );
+
+    const operatorRecord = JSON.parse(operatorRecordText);
+    assert.deepEqual(Object.keys(operatorRecord), [
+      'recordVersion', 'recordType', 'evidenceV1Bundle', 'issue',
+      'publicationClassification', 'retainedFragmentProjections', 'nonClaims',
+    ]);
+    assert.equal(operatorRecord.recordVersion, 1);
+    assert.equal(operatorRecord.recordType, 'operator-trusted-same-route-live-observation');
+    assert.equal(operatorRecord.evidenceV1Bundle, false);
+    assert.equal(operatorRecord.issue, 'edgepillar/zenon-x402-poc#45');
+    assert.equal(Object.hasOwn(operatorRecord, 'evidenceVersion'), false);
+    assert.equal(Object.hasOwn(operatorRecord, 'integrity'), false);
+
+    assert.deepEqual(operatorRecord.publicationClassification, {
+      trustModel: 'operator-trusted',
+      routeRelationship: 'same-route',
+      independentOperatorVerification: false,
+    });
+
+    const projections = operatorRecord.retainedFragmentProjections;
+    assert.deepEqual(Object.keys(projections), [
+      'manifest', 'chain', 'http', 'journal', 'timing',
+    ]);
+    for (const type of Object.keys(projections)) {
+      assert.equal(projections[type].fragmentVersion, 1);
+      assert.equal(projections[type].fragmentType, type);
+    }
+
+    const manifest = projections.manifest;
+    assert.deepEqual(Object.keys(manifest), ['fragmentVersion', 'fragmentType', 'payment']);
+    assert.deepEqual(Object.keys(manifest.payment), [
+      'paymentRequired', 'selectedIndex', 'intentDigest',
+    ]);
+    const { paymentRequired, selectedIndex } = manifest.payment;
+    assert.equal(paymentRequired.x402Version, 2);
+    assert.equal(paymentRequired.accepts.length, 1);
+    assert.equal(selectedIndex, 0);
+    const accepted = paymentRequired.accepts[selectedIndex];
+    assert.equal(accepted.scheme, 'exact');
+    assert.equal(accepted.extra.paymentFlow, 'upfront');
+    assert.equal(accepted.amount, '1');
+
+    const chainProjection = projections.chain;
+    assert.deepEqual(Object.keys(chainProjection), ['fragmentVersion', 'fragmentType', 'chain']);
+    assert.deepEqual(Object.keys(chainProjection.chain), ['accountBlock', 'confirmation']);
+    const accountBlockKeys = [
+      'version', 'chainIdentifier', 'blockType', 'hash', 'height',
+      'momentumAcknowledged', 'address', 'toAddress', 'amount', 'tokenStandard',
+      'data', 'fusedPlasma', 'difficulty',
+    ];
+    const accountBlock = chainProjection.chain.accountBlock;
+    assert.deepEqual(Object.keys(accountBlock), accountBlockKeys);
+    assert.deepEqual(Object.keys(accountBlock.momentumAcknowledged), ['height']);
+    assert.deepEqual(Object.keys(chainProjection.chain.confirmation), [
+      'observedAt', 'numConfirmations', 'momentumHeight', 'momentumTimestamp',
+    ]);
+
+    const httpProjection = projections.http;
+    assert.deepEqual(Object.keys(httpProjection), ['fragmentVersion', 'fragmentType', 'http']);
+    const http = httpProjection.http;
+    assert.deepEqual(Object.keys(http), ['initial', 'final']);
+    assert.deepEqual(Object.keys(http.initial), ['status', 'observedAt']);
+    assert.deepEqual(Object.keys(http.final), [
+      'status', 'observedAt', 'paymentResponse', 'contentType', 'cacheControl',
+      'vary', 'bodyText',
+    ]);
+    assert.equal(http.initial.status, 402);
+    assert.equal(http.final.status, 200);
+    const responseBody = JSON.parse(http.final.bodyText);
+    assert.deepEqual(Object.keys(responseBody), [
+      'ok', 'message', 'network', 'payer', 'transaction', 'generatedAt',
+    ]);
+
+    const journalProjection = projections.journal;
+    assert.deepEqual(Object.keys(journalProjection), [
+      'fragmentVersion', 'fragmentType', 'journal',
+    ]);
+    const journal = journalProjection.journal;
+    assert.deepEqual(Object.keys(journal), [
+      'sourceSchemaVersion', 'sourceRevision', 'activeRecordCount',
+      'tombstoneCount', 'record',
+    ]);
+    assert.deepEqual(Object.keys(journal.record), [
+      'transactionHash', 'chainProfile', 'intentDigest', 'resourceIdentity',
+      'resourceDigest', 'payer', 'signedAccountBlock', 'evidenceState',
+      'momentumEvidence', 'deliveryState', 'cachedResponse', 'createdAt', 'updatedAt',
+    ]);
+    assert.deepEqual(Object.keys(journal.record.signedAccountBlock), accountBlockKeys);
+
+    const timingProjection = projections.timing;
+    assert.deepEqual(Object.keys(timingProjection), [
+      'fragmentVersion', 'fragmentType', 'timing',
+    ]);
+    assert.deepEqual(Object.keys(timingProjection.timing), ['events', 'durationsMs']);
+
+    const expectedIntent = paymentIntentDigest(paymentRequired, accepted);
+    assert.equal(manifest.payment.intentDigest, expectedIntent);
+    assert.equal(journal.record.intentDigest, expectedIntent);
+    assert.equal(/^[0-9a-f]{64}$/.test(accountBlock.hash), true);
+    assert.equal(Buffer.from(accountBlock.data, 'base64').length, 32);
+    assert.equal(Buffer.from(accountBlock.data, 'base64').toString('base64'), accountBlock.data);
+    assert.equal(Buffer.from(accountBlock.data, 'base64').toString('hex'), expectedIntent);
+    assert.equal(sha256Hex(paymentRequired.resource), journal.record.resourceDigest);
+    assert.equal(canonicalJson(paymentRequired.resource), canonicalJson(journal.record.resourceIdentity));
+
+    assert.deepEqual(journal.record.signedAccountBlock, accountBlock);
+    assert.equal(http.final.paymentResponse.transaction, accountBlock.hash);
+    assert.equal(responseBody.transaction, accountBlock.hash);
+    assert.equal(journal.record.transactionHash, accountBlock.hash);
+    assert.equal(accepted.amount, accountBlock.amount);
+    assert.equal(accepted.asset, accountBlock.tokenStandard);
+    assert.equal(accepted.payTo, accountBlock.toAddress);
+    assert.equal(http.final.paymentResponse.payer, accountBlock.address);
+    assert.equal(responseBody.payer, accountBlock.address);
+    assert.equal(journal.record.payer, accountBlock.address);
+    assert.equal(http.final.paymentResponse.network, accepted.network);
+    assert.equal(responseBody.network, accepted.network);
+    assert.equal(String(accountBlock.chainIdentifier), accepted.extra.zenonChain.chainIdentifier);
+    assert.equal(journal.record.chainProfile.chainIdentifier,
+      accepted.extra.zenonChain.chainIdentifier);
+    assert.equal(journal.record.chainProfile.genesisMomentumHash,
+      accepted.extra.zenonChain.genesisMomentumHash);
+
+    const confirmation = chainProjection.chain.confirmation;
+    const journalConfirmation = journal.record.momentumEvidence.confirmationDetail;
+    assert.equal(journal.record.momentumEvidence.observedAt, confirmation.observedAt);
+    assert.equal(journalConfirmation.numConfirmations, confirmation.numConfirmations);
+    assert.equal(journalConfirmation.momentumHeight, confirmation.momentumHeight);
+    assert.equal(journalConfirmation.momentumTimestamp, confirmation.momentumTimestamp);
+    assert.equal(http.final.paymentResponse.success, true);
+    assert.equal(http.final.paymentResponse.state, journal.record.evidenceState);
+    assert.equal(journal.record.evidenceState, 'MOMENTUM_INCLUDED');
+    assert.equal(journal.record.deliveryState, 'DELIVERED');
+    assert.equal(journal.activeRecordCount, 1);
+    assert.equal(journal.tombstoneCount, 0);
+    assert.equal(journal.record.cachedResponse.status, http.final.status);
+    assert.equal(journal.record.cachedResponse.headers['content-type'], http.final.contentType);
+    assert.equal(canonicalJson(journal.record.cachedResponse.body), canonicalJson(responseBody));
+
+    const events = timingProjection.timing.events;
+    const expectedPhases = [
+      'challenge_request_started', 'challenge_402_received',
+      'buyer_owner_wait_started', 'buyer_owner_acquired', 'buyer_readiness_started',
+      'buyer_readiness_finished', 'prepare_block_started', 'prepare_block_finished',
+      'buyer_owner_released', 'facilitator_owner_wait_started',
+      'facilitator_owner_acquired', 'facilitator_readiness_started',
+      'facilitator_readiness_finished', 'publication_started',
+      'publication_acknowledged', 'inclusion_wait_started',
+      'momentum_inclusion_observed', 'facilitator_owner_released',
+      'delivery_started', 'delivery_finished', 'paid_response_received',
+    ];
+    assert.deepEqual(events.map(event => event.phase), expectedPhases);
+    assert.deepEqual(events.map(event => event.sequence), expectedPhases.map((_, index) => index));
+    for (const event of events) assert.deepEqual(Object.keys(event), [
+      'sequence', 'phase', 'role', 'clockDomain', 'utc', 'monotonicMs',
+    ]);
+    const byPhase = new Map(events.map(event => [event.phase, event]));
+    const elapsed = (start, end) => {
+      const first = byPhase.get(start);
+      const last = byPhase.get(end);
+      assert.equal(first.clockDomain, last.clockDomain);
+      assert.equal(last.monotonicMs >= first.monotonicMs, true);
+      return last.monotonicMs - first.monotonicMs;
+    };
+    const derivedDurations = {
+      challenge: elapsed('challenge_request_started', 'challenge_402_received'),
+      total: elapsed('challenge_402_received', 'paid_response_received'),
+      buyerOwnerWait: elapsed('buyer_owner_wait_started', 'buyer_owner_acquired'),
+      buyerOwnerHeld: elapsed('buyer_owner_acquired', 'buyer_owner_released'),
+      buyerReadiness: elapsed('buyer_readiness_started', 'buyer_readiness_finished'),
+      prepareBlock: elapsed('prepare_block_started', 'prepare_block_finished'),
+      facilitatorOwnerWait: elapsed(
+        'facilitator_owner_wait_started', 'facilitator_owner_acquired',
+      ),
+      facilitatorOwnerHeld: elapsed(
+        'facilitator_owner_acquired', 'facilitator_owner_released',
+      ),
+      facilitatorReadiness: elapsed(
+        'facilitator_readiness_started', 'facilitator_readiness_finished',
+      ),
+      publication: elapsed('publication_started', 'publication_acknowledged'),
+      inclusionWait: elapsed('inclusion_wait_started', 'momentum_inclusion_observed'),
+      delivery: elapsed('delivery_started', 'delivery_finished'),
+    };
+    assert.deepEqual(timingProjection.timing.durationsMs, derivedDurations);
+    assert.equal(http.initial.observedAt, byPhase.get('challenge_402_received').utc);
+    assert.equal(http.final.observedAt, byPhase.get('paid_response_received').utc);
+    assert.equal(confirmation.observedAt, byPhase.get('momentum_inclusion_observed').utc);
+    assert.equal(Date.parse(http.final.observedAt) - Date.parse(http.initial.observedAt),
+      derivedDurations.total);
+
+    assert.deepEqual(Object.keys(operatorRecord.nonClaims), [
+      'authenticatedChainIdentity', 'canonicalRemoteChainIdentity',
+      'verifiedFrontierLineage', 'irreversibleFinality', 'facilitatorAuthorship',
+      'facilitatorPublicationProven', 'chainObservationIndependentlyAttested',
+      'httpExchangeIndependentlyAttested', 'buyerReceiptCryptographicallyProven',
+      'recipientReceiveObserved', 'recipientSpendabilityEstablished',
+      'initial402BodyOrHeaderCaptured', 'cleanShutdown', 'release', 'activation',
+      'productionReadiness',
+    ]);
+    assert.equal(Object.values(operatorRecord.nonClaims).every(value => value === false), true);
+
+    assert.doesNotMatch(
+      operatorRecordText,
+      /(?:\/Users\/|\/home\/|[A-Za-z]:\\\\|BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY|mnemonic|seed phrase|private key|wallet secret|password|RPC credential|access token|authorizationKey|rawPayment|recoveryOwner|stack trace)/iu,
+    );
+    assert.doesNotMatch(operatorRecordText, /wss?:\/\/(?:rpc\.|(?:\d{1,3}\.){3})/iu);
+    for (const forbiddenKey of [
+      'signature', 'publicKey', 'nonce', 'previousHash', 'rawPayment',
+      'recoveryOwner', 'rpcEndpoint', 'executionBoundary', 'trustBoundary',
+      'outerClosureProven', 'workspaceQuarantined', 'postRunComparison',
+      'recoveryAttempted', 'transport', 'tlsServerNameAuthenticated',
+      'sameRouteCorroboration', 'explorerUrl', 'assetSymbol', 'observedDate',
+    ]) assert.equal(operatorRecordText.includes(`\"${forbiddenKey}\"`), false);
   });
