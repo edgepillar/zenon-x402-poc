@@ -2568,6 +2568,31 @@ test('documentation and the operator-trusted record preserve the quarantined liv
     }
 
     const combinedObserved = observedSections.join('\n');
+    assert.doesNotMatch(
+      readme,
+      /Publication remains a separate manual gate\.|No evidence is uploaded or made public\./,
+    );
+    assert.doesNotMatch(
+      security,
+      /Until that gate passes, no artifact may be published/,
+    );
+    assert.match(
+      readme,
+      /Publication of the five retained private fragments or any evidence-version-1 bundle remains a separate manual gate\./,
+    );
+    assert.match(
+      readme,
+      /The exceptional runner itself uploads or publishes nothing/,
+    );
+    assert.match(
+      security,
+      /neither those private fragments nor an evidence-version-1 bundle may be published/,
+    );
+    for (const document of [readme, security]) {
+      assert.match(document, /operator-trusted same-route projection/);
+      assert.match(document, /human-reviewed/);
+      assert.match(document, /not evidence version 1 and (?:is )?not independently verified/);
+    }
     for (const invariant of [
       /x402 v2 `exact` upfront payment/,
       /one atomic unit of ZNN/,
