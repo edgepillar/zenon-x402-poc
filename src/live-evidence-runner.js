@@ -911,6 +911,7 @@ function validateExpectedPaymentRequired(
   }
   exactPublicHttpsPaidUrl(value.resource.url);
   const accepted = value.accepts[0];
+  if (HAS_OWN(accepted.extra, 'minimumMomentumConfirmations')) fail();
   if (accepted.network !== EXPERIMENTAL_LIVE_NETWORK ||
       accepted.extra.zenonChain.version !== expectedProfile.version ||
       accepted.extra.zenonChain.chainIdentifier !== expectedProfile.chainIdentifier ||

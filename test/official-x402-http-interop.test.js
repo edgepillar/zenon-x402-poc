@@ -18,7 +18,9 @@ import {
   MOCK_NETWORK,
   decodeB64Json,
   encodeB64Json,
+  EXPERIMENTAL_LIVE_NETWORK,
   makePaymentRequired,
+  validatePaymentPayloadEnvelope,
   validatePaymentRequired,
 } from '../src/x402-wire.js';
 
@@ -233,4 +235,87 @@ test('official payment encoding reaches local mock settlement while local 400 an
   assert.equal(Object.hasOwn(paymentResponse, 'extensions'), false);
 
   // HTTP 409 remains a PoC-specific uncertain-settlement lane, not an official codec claim.
+});
+
+function thresholdInteropArtifacts(minimumMomentumConfirmations) {
+  const requirement = {
+    scheme: 'exact',
+    network: EXPERIMENTAL_LIVE_NETWORK,
+    asset: 'zts1qqqqqqqqqqqqtq587y',
+    amount: '1',
+    payTo: 'synthetic-live-recipient',
+    maxTimeoutSeconds: 30,
+    extra: {
+      paymentFlow: 'upfront',
+      poc: true,
+      settlement: 'account-block',
+      zenonChain: {
+        version: 1,
+        chainIdentifier: '7',
+        genesisMomentumHash: 'a'.repeat(64),
+      },
+      minimumMomentumConfirmations,
+    },
+  };
+  const paymentRequired = {
+    x402Version: 2,
+    resource: {
+      url: SYNTHETIC_RESOURCE_URL,
+      description: 'Synthetic threshold interoperability resource',
+      mimeType: 'application/json',
+    },
+    accepts: [structuredClone(requirement)],
+  };
+  const paymentPayload = {
+    x402Version: 2,
+    resource: structuredClone(paymentRequired.resource),
+    accepted: structuredClone(requirement),
+    payload: {
+      transaction: { synthetic: true },
+      intentDigest: paymentIntentDigest(paymentRequired, requirement),
+    },
+  };
+  return { paymentPayload, paymentRequired, requirement };
+}
+
+test('official codecs transport explicit confirmation thresholds while the local layer remains strict', () => {
+  for (const minimum of [2, 30]) {
+    const { paymentPayload, paymentRequired } = thresholdInteropArtifacts(minimum);
+    const requirementFromOfficial = decodeB64Json(
+      officialEncodePaymentRequired(paymentRequired),
+    );
+    const requirementFromLocal = officialDecodePaymentRequired(
+      encodeB64Json(paymentRequired),
+    );
+    const signatureFromOfficial = decodeB64Json(
+      officialEncodePaymentSignature(paymentPayload),
+    );
+    const signatureFromLocal = officialDecodePaymentSignature(
+      encodeB64Json(paymentPayload),
+    );
+
+    for (const decoded of [requirementFromOfficial, requirementFromLocal]) {
+      assert.equal(
+        decoded.accepts[0].extra.minimumMomentumConfirmations,
+        minimum,
+      );
+      assert.doesNotThrow(() => validatePaymentRequired(decoded));
+    }
+    for (const decoded of [signatureFromOfficial, signatureFromLocal]) {
+      assert.equal(decoded.accepted.extra.minimumMomentumConfirmations, minimum);
+      assert.doesNotThrow(() => validatePaymentPayloadEnvelope(decoded));
+    }
+  }
+
+  for (const invalid of [1, '2', 2.5, 0, 31, Number.MAX_SAFE_INTEGER + 1]) {
+    const { paymentPayload, paymentRequired } = thresholdInteropArtifacts(invalid);
+    const transportedRequirement = officialDecodePaymentRequired(
+      officialEncodePaymentRequired(paymentRequired),
+    );
+    const transportedSignature = officialDecodePaymentSignature(
+      officialEncodePaymentSignature(paymentPayload),
+    );
+    assert.throws(() => validatePaymentRequired(transportedRequirement));
+    assert.throws(() => validatePaymentPayloadEnvelope(transportedSignature));
+  }
 });

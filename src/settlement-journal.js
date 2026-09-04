@@ -10,7 +10,11 @@ import {
 import { createHash, randomBytes } from 'node:crypto';
 import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { MAX_ZENON_AMOUNT, validateResource } from './x402-wire.js';
+import {
+  MAX_ZENON_AMOUNT,
+  snapshotActiveUpfrontRequirement,
+  validateResource,
+} from './x402-wire.js';
 
 export const JOURNAL_SCHEMA_VERSION = 2;
 export const EVIDENCE_STATES = Object.freeze({
@@ -1397,8 +1401,31 @@ export class SettlementJournal {
       if (!record) journalError('journal_record_not_found');
 
       const current = record.evidenceState;
+      if (current === EVIDENCE_STATES.MOMENTUM_INCLUDED) {
+        if (evidenceState !== EVIDENCE_STATES.MOMENTUM_INCLUDED) return cloneJson(record);
+
+        const currentDetail = record.momentumEvidence.confirmationDetail;
+        const nextDetail = immutableMomentumEvidence.confirmationDetail;
+        if (canonicalJson(currentDetail, 16 * 1024) === canonicalJson(nextDetail, 16 * 1024)) {
+          return cloneJson(record);
+        }
+        if (record.deliveryState !== DELIVERY_STATES.NONE ||
+            nextDetail.momentumHeight !== currentDetail.momentumHeight ||
+            nextDetail.momentumHash !== currentDetail.momentumHash ||
+            nextDetail.momentumTimestamp !== currentDetail.momentumTimestamp ||
+            nextDetail.numConfirmations <= currentDetail.numConfirmations) {
+          journalError('journal_momentum_evidence_invalid');
+        }
+
+        record.momentumEvidence.confirmationDetail.numConfirmations = nextDetail.numConfirmations;
+        record.updatedAt = this.#nextTimestamp(record.updatedAt);
+        if (!validateRecord(record)) journalError('journal_record_invalid');
+        data.revision += 1;
+        await this.#write(data);
+        return cloneJson(record);
+      }
+
       const shouldIgnore =
-        current === EVIDENCE_STATES.MOMENTUM_INCLUDED ||
         (current === EVIDENCE_STATES.SUBMISSION_ACKNOWLEDGED &&
           [EVIDENCE_STATES.VALIDATED, EVIDENCE_STATES.SUBMISSION_OUTCOME_UNKNOWN].includes(evidenceState)) ||
         (current === EVIDENCE_STATES.SUBMISSION_OUTCOME_UNKNOWN && evidenceState === EVIDENCE_STATES.VALIDATED);
@@ -1418,16 +1445,49 @@ export class SettlementJournal {
     });
   }
 
-  async markDeliveryPending(authorizationKey, transactionHash) {
+  async markDeliveryPending(authorizationKey, transactionHash, acceptedRequirement) {
+    let immutableAcceptedRequirement;
+    try {
+      immutableAcceptedRequirement = snapshotActiveUpfrontRequirement(acceptedRequirement);
+    } catch {
+      journalError('journal_delivery_claim_invalid');
+    }
+
     return this.#withWriter(async () => {
       const data = await this.#read();
       const key = recordKey(authorizationKey, transactionHash);
       const record = mapEntry(journalRecords(data), key);
       if (!record) journalError('journal_record_not_found');
+      if (!validateRecord(record)) journalError('journal_record_invalid');
+
+      let durableRequirement;
+      try {
+        durableRequirement = snapshotActiveUpfrontRequirement(immutableAcceptedRequirement);
+      } catch {
+        journalError('journal_delivery_claim_invalid');
+      }
+      const expectedIntentDigest = sha256Hex({
+        x402Version: 2,
+        resource: record.resourceIdentity,
+        accepted: durableRequirement,
+      });
+      if (expectedIntentDigest !== record.intentDigest) {
+        journalError('journal_delivery_claim_invalid');
+      }
+      const minimumMomentumConfirmations = HAS_OWN(
+        durableRequirement.extra,
+        'minimumMomentumConfirmations',
+      )
+        ? durableRequirement.extra.minimumMomentumConfirmations
+        : 1;
+      if (record.evidenceState !== EVIDENCE_STATES.MOMENTUM_INCLUDED ||
+          record.momentumEvidence.confirmationDetail.numConfirmations < minimumMomentumConfirmations) {
+        journalError('journal_momentum_required');
+      }
+
       if (record.deliveryState === DELIVERY_STATES.DELIVERED || record.deliveryState === DELIVERY_STATES.DELIVERY_PENDING) {
         return { ...cloneJson(record), deliveryClaimed: false };
       }
-      if (record.evidenceState !== EVIDENCE_STATES.MOMENTUM_INCLUDED) journalError('journal_momentum_required');
       record.deliveryState = DELIVERY_STATES.DELIVERY_PENDING;
       record.updatedAt = this.#nextTimestamp(record.updatedAt);
       if (!validateRecord(record)) journalError('journal_record_invalid');

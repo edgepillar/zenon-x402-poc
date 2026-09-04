@@ -3,6 +3,7 @@ import { types as utilTypes } from 'node:util';
 import { paymentIntentDigest, sha256Hex } from './canonical.js';
 import {
   createPaymentCapabilities,
+  effectiveMinimumMomentumConfirmations,
   EXPERIMENTAL_LIVE_NETWORK,
   MAX_ZENON_AMOUNT,
   sameRequirements,
@@ -1610,6 +1611,19 @@ function noteRecordEvidence(attempt, record) {
 
 function terminalJournalSettlement(requirements, preflight, record) {
   if (!record) return null;
+  if (record.evidenceState === EVIDENCE_STATES.MOMENTUM_INCLUDED) {
+    const minimumMomentumConfirmations = effectiveMinimumMomentumConfirmations(requirements);
+    const observedConfirmations = record.momentumEvidence?.confirmationDetail?.numConfirmations;
+    if (!Number.isSafeInteger(observedConfirmations) || observedConfirmations < 1) {
+      safetyError('journal_record_invalid');
+    }
+    if (observedConfirmations < minimumMomentumConfirmations) {
+      if (record.deliveryState !== DELIVERY_STATES.NONE) {
+        safetyError('journal_confirmation_threshold_inconsistent');
+      }
+      return null;
+    }
+  }
   if (record.deliveryState === DELIVERY_STATES.DELIVERED) {
     return successful(requirements, preflight, record);
   }
@@ -1630,6 +1644,48 @@ function terminalJournalSettlement(requirements, preflight, record) {
   return record.evidenceState === EVIDENCE_STATES.MOMENTUM_INCLUDED
     ? successful(requirements, preflight, record)
     : null;
+}
+
+function thresholdPending(requirements, preflight, record) {
+  const minimumMomentumConfirmations = effectiveMinimumMomentumConfirmations(requirements);
+  const observedConfirmations = record?.momentumEvidence?.confirmationDetail?.numConfirmations;
+  if (record?.evidenceState !== EVIDENCE_STATES.MOMENTUM_INCLUDED ||
+      record.deliveryState !== DELIVERY_STATES.NONE ||
+      !Number.isSafeInteger(observedConfirmations) || observedConfirmations < 1 ||
+      observedConfirmations >= minimumMomentumConfirmations) {
+    safetyError('journal_confirmation_threshold_inconsistent');
+  }
+  return failed(
+    requirements,
+    preflight.transactionHash,
+    preflight.payer,
+    'momentum_confirmation_threshold_pending',
+    EVIDENCE_STATES.MOMENTUM_INCLUDED,
+    {
+      authorizationKey: preflight.authorizationKey,
+      retrySamePayment: true,
+      deliveryState: DELIVERY_STATES.NONE,
+    },
+  );
+}
+
+function includedSettlement(requirements, preflight, record) {
+  const minimumMomentumConfirmations = effectiveMinimumMomentumConfirmations(requirements);
+  const observedConfirmations = record?.momentumEvidence?.confirmationDetail?.numConfirmations;
+  if (record?.evidenceState !== EVIDENCE_STATES.MOMENTUM_INCLUDED ||
+      !Number.isSafeInteger(observedConfirmations) || observedConfirmations < 1) {
+    safetyError('journal_record_invalid');
+  }
+  if (observedConfirmations < minimumMomentumConfirmations) {
+    return thresholdPending(requirements, preflight, record);
+  }
+  return successful(requirements, preflight, record);
+}
+
+function sameMomentumInclusion(left, right) {
+  return left?.momentumHeight === right?.momentumHeight &&
+    left?.momentumHash === right?.momentumHash &&
+    left?.momentumTimestamp === right?.momentumTimestamp;
 }
 
 function configuredReconciliationRetention(value) {
@@ -2232,7 +2288,22 @@ export class ExactZenonFacilitator {
     // between that evidence and its durable journal update.
     await this.#verifyChainAndAsset(preflight, connection, callRead);
     connection.finishReadiness();
-    let observed = await lookup();
+    const minimumMomentumConfirmations = effectiveMinimumMomentumConfirmations(requirements);
+    const durableSubthresholdInclusion = initialRecord?.evidenceState ===
+        EVIDENCE_STATES.MOMENTUM_INCLUDED &&
+      initialRecord.deliveryState === DELIVERY_STATES.NONE &&
+      initialRecord.momentumEvidence.confirmationDetail.numConfirmations <
+        minimumMomentumConfirmations;
+    let observed;
+    if (durableSubthresholdInclusion) {
+      try {
+        observed = await lookup();
+      } catch {
+        return thresholdPending(requirements, preflight, initialRecord);
+      }
+    } else {
+      observed = await lookup();
+    }
     if (!initialRecord && observed === null) {
       let accountObservation;
       try {
@@ -2287,6 +2358,19 @@ export class ExactZenonFacilitator {
     const concurrentlyRecovered = terminalJournalSettlement(requirements, preflight, initialRecord);
     if (concurrentlyRecovered) return concurrentlyRecovered;
 
+    if (durableSubthresholdInclusion) {
+      let retained = initialRecord;
+      if (observed?.confirmationDetail) {
+        const observedDetail = normalizeConfirmationDetail(observed.confirmationDetail);
+        const durableDetail = initialRecord.momentumEvidence.confirmationDetail;
+        if (sameMomentumInclusion(observedDetail, durableDetail) &&
+            observedDetail.numConfirmations > durableDetail.numConfirmations) {
+          retained = await this.#recordMomentum(preflight, observed, attempt);
+        }
+      }
+      return includedSettlement(requirements, preflight, retained);
+    }
+
     if (observed) {
       initialRecord = await this.#ensureValidatedRecord(preflight, initialRecord, attempt);
       const observedRecovery = terminalJournalSettlement(requirements, preflight, initialRecord);
@@ -2294,7 +2378,7 @@ export class ExactZenonFacilitator {
     }
     if (observed?.confirmationDetail) {
       const included = await this.#recordMomentum(preflight, observed, attempt);
-      return successful(requirements, preflight, included);
+      return includedSettlement(requirements, preflight, included);
     }
     if (observed) {
       attempt.evidenceState = strongestEvidenceState(
@@ -2310,6 +2394,25 @@ export class ExactZenonFacilitator {
         ),
       );
       noteRecordEvidence(attempt, initialRecord);
+    }
+
+    if (minimumMomentumConfirmations > 1 && initialRecord &&
+        [
+          EVIDENCE_STATES.SUBMISSION_ACKNOWLEDGED,
+          EVIDENCE_STATES.SUBMISSION_OUTCOME_UNKNOWN,
+        ].includes(initialRecord.evidenceState)) {
+      return failed(
+        requirements,
+        preflight.transactionHash,
+        preflight.payer,
+        'momentum_inclusion_timeout',
+        initialRecord.evidenceState,
+        {
+          authorizationKey: preflight.authorizationKey,
+          retrySamePayment: true,
+          deliveryState: initialRecord.deliveryState,
+        },
+      );
     }
 
     const wake = observed ? createInactiveWakeup() : await subscribeForSettlementWakeup({
@@ -2370,7 +2473,7 @@ export class ExactZenonFacilitator {
           }
           if (publication.state === EVIDENCE_STATES.MOMENTUM_INCLUDED) {
             const included = await this.#recordMomentum(preflight, observed, attempt);
-            return successful(requirements, preflight, included);
+            return includedSettlement(requirements, preflight, included);
           }
           attempt.evidenceState = strongestEvidenceState(
             attempt.evidenceState,
@@ -2411,7 +2514,7 @@ export class ExactZenonFacilitator {
         );
       }
       const record = await this.#recordMomentum(preflight, included, attempt);
-      return successful(requirements, preflight, record);
+      return includedSettlement(requirements, preflight, record);
     } finally {
       wake.close();
     }
@@ -2442,8 +2545,8 @@ export class ExactZenonFacilitator {
 
   async #recordMomentum(preflight, observed, attempt) {
     const confirmationDetail = normalizeConfirmationDetail(observed.confirmationDetail);
-    // Retain this strongest observed evidence in memory before attempting the
-    // durable write. A write failure must never downgrade the response.
+    // Retain the strongest observation for fail-closed recovery reporting.
+    // Only the journal result below may authorize threshold success.
     attempt.evidenceState = EVIDENCE_STATES.MOMENTUM_INCLUDED;
     const record = await this.#journalCall(
       attempt,
@@ -2473,9 +2576,13 @@ export class ExactZenonFacilitator {
     return tombstone ? terminalTombstoneSettlement(requirements, preflight, tombstone) : null;
   }
 
-  async markDeliveryPending(settlement) {
+  async markDeliveryPending(settlement, acceptedRequirement) {
     validateSettlementIdentity(settlement);
-    return this.journal.markDeliveryPending(settlement.authorizationKey, settlement.transaction);
+    return this.journal.markDeliveryPending(
+      settlement.authorizationKey,
+      settlement.transaction,
+      acceptedRequirement,
+    );
   }
 
   async markDelivered(settlement, cachedResponse) {

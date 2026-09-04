@@ -35,7 +35,11 @@ import {
   OPERATOR_TRUSTED_PUBLIC_TESTNET_PROFILE_NAME,
   TESTNET_LIVE_ACKNOWLEDGEMENT,
 } from '../src/zenon/operator-trusted-testnet-profile.js';
-import { encodeB64Json, HEADERS } from '../src/x402-wire.js';
+import {
+  encodeB64Json,
+  HEADERS,
+  validatePaymentRequired,
+} from '../src/x402-wire.js';
 import {
   createLifecycleCollector,
   createLiveEvidencePublicTransport,
@@ -1746,7 +1750,11 @@ test('default schema-v1 journal persistence has one clean record lane and no cap
     EVIDENCE_STATES.MOMENTUM_INCLUDED,
     completed.momentumEvidence,
   );
-  await journal.markDeliveryPending(completed.authorizationKey, completed.transactionHash);
+  await journal.markDeliveryPending(
+    completed.authorizationKey,
+    completed.transactionHash,
+    candidate.config.expectedPaymentRequired.accepts[0],
+  );
   await journal.markDelivered(
     completed.authorizationKey,
     completed.transactionHash,
@@ -1975,19 +1983,42 @@ test('observed delivery adapter captures once and records only durable delivery 
   let snapshots = 0;
   let pending = 0;
   let delivered = 0;
+  let pendingSettlement;
+  let pendingRequirement;
   const facilitator = {
     async settle() { return { success: true }; },
-    async markDeliveryPending() { pending += 1; return { deliveryState: 'PENDING' }; },
+    async markDeliveryPending(settlement, acceptedRequirement) {
+      pending += 1;
+      pendingSettlement = settlement;
+      pendingRequirement = acceptedRequirement;
+      return { deliveryState: 'PENDING' };
+    },
     async markDelivered() { delivered += 1; return { deliveryState: 'DELIVERED' }; },
     snapshotLiveEvidenceObservations() { snapshots += 1; return []; },
   };
   const adapter = createObservedFacilitatorAdapter(facilitator, observer);
-  await adapter.markDeliveryPending({});
+  const settlement = Object.freeze({ transaction: 'synthetic-transaction' });
+  const acceptedRequirement = parseLiveEvidenceRunConfig(
+    configText(),
+  ).expectedPaymentRequired.accepts[0];
+  await adapter.markDeliveryPending(settlement, acceptedRequirement);
   await adapter.markDelivered({}, {});
   const events = adapter.snapshotLiveEvidenceObservations();
   assert.equal(snapshots, 1);
   assert.equal(pending, 1);
   assert.equal(delivered, 1);
+  assert.strictEqual(pendingSettlement, settlement);
+  assert.strictEqual(
+    pendingRequirement,
+    acceptedRequirement,
+    'the adapter must forward the complete detached accepted requirement',
+  );
+  assert.equal(pendingRequirement.extra.paymentFlow, 'upfront');
+  assert.equal(
+    Object.hasOwn(pendingRequirement.extra, 'minimumMomentumConfirmations'),
+    false,
+    'default-one evidence must retain the legacy requirement bytes',
+  );
   assert.deepEqual(events.map(event => event.phase), ['delivery_started', 'delivery_finished']);
   assert.throws(() => createObservedFacilitatorAdapter({
     settle() {}, markDeliveryPending() {}, markDelivered() {},
@@ -2254,7 +2285,11 @@ function fixedInput(config) {
   const resourceIdentity = structuredClone(config.expectedPaymentRequired.resource);
   const accepted = config.expectedPaymentRequired.accepts[0];
   const chainProfile = structuredClone(accepted.extra.zenonChain);
-  const intentDigest = Buffer.alloc(32, 1).toString('hex');
+  const intentDigest = sha256Hex({
+    x402Version: 2,
+    resource: resourceIdentity,
+    accepted,
+  });
   const transactionHash = Buffer.alloc(32, 2).toString('hex');
   const resourceDigest = sha256Hex(resourceIdentity);
   const authorizationKey = sha256Hex({
@@ -2344,8 +2379,12 @@ function lowLevelDependencies(config) {
           );
           return { authorizationKey: input.authorizationKey, transaction: input.transactionHash };
         },
-        async markDeliveryPending() {
-          return journal.markDeliveryPending(input.authorizationKey, input.transactionHash);
+        async markDeliveryPending(_settlement, acceptedRequirement) {
+          return journal.markDeliveryPending(
+            input.authorizationKey,
+            input.transactionHash,
+            acceptedRequirement,
+          );
         },
         async markDelivered() {
           return journal.markDelivered(
@@ -2360,7 +2399,10 @@ function lowLevelDependencies(config) {
     createServer: options => ({
       async listen() {
         const settlement = await options.facilitator.settle({});
-        await options.facilitator.markDeliveryPending(settlement);
+        await options.facilitator.markDeliveryPending(
+          settlement,
+          config.expectedPaymentRequired.accepts[0],
+        );
         await options.facilitator.markDelivered(settlement, cachedResponse);
       },
       async close() {},
@@ -2878,4 +2920,89 @@ test('runner CLI has fixed success and failure output with strict flags and resu
     execute: async () => {},
   }), false);
   assert.deepEqual(badResult, ['LIVE_EVIDENCE_RUN_FAILED\n']);
+});
+
+test('evidence-v1 rejects an otherwise valid explicit confirmation threshold before effects', async t => {
+  const thresholdConfig = structuredClone(CONFIG);
+  thresholdConfig.expectedPaymentRequired.accepts[0].extra.minimumMomentumConfirmations = 2;
+
+  assert.doesNotThrow(
+    () => validatePaymentRequired(thresholdConfig.expectedPaymentRequired),
+    'the general live wire layer must accept the explicit threshold',
+  );
+  assert.throws(
+    () => parseLiveEvidenceRunConfig(configText(thresholdConfig)),
+    assertFixedRunFailure,
+    'evidence-v1 must reject the otherwise valid non-default policy',
+  );
+
+  const fixture = await privateFixture(t, thresholdConfig);
+  const originalEntries = (await readdir(fixture.workspaceRoot)).sort();
+  const effects = {
+    assemble: 0,
+    buyerReadiness: 0,
+    facilitator: 0,
+    payment: 0,
+    publicEndpoint: 0,
+    reconcile: 0,
+    wallet: 0,
+  };
+  const operations = {
+    async probeBuyerReadiness() { effects.buyerReadiness += 1; },
+    async probePublicEndpoint() { effects.publicEndpoint += 1; },
+    async startFacilitator() { effects.facilitator += 1; return cleanController(); },
+    async readBuyerWallet() { effects.wallet += 1; return {}; },
+    async paidFetch() { effects.payment += 1; return {}; },
+    async reconcilePayment() { effects.reconcile += 1; return {}; },
+    async assembleCandidate() { effects.assemble += 1; },
+    submissionArmed() { return false; },
+  };
+
+  await assert.rejects(preflightLiveEvidenceRun(fixture), assertFixedRunFailure);
+  await assert.rejects(
+    executeLiveEvidenceRun(fixture, { operations }),
+    assertFixedRunFailure,
+  );
+  assert.deepEqual(effects, {
+    assemble: 0,
+    buyerReadiness: 0,
+    facilitator: 0,
+    payment: 0,
+    publicEndpoint: 0,
+    reconcile: 0,
+    wallet: 0,
+  });
+  assert.deepEqual((await readdir(fixture.workspaceRoot)).sort(), originalEntries);
+  await assert.rejects(
+    lstat(join(fixture.workspaceRoot, fixture.runName)),
+    error => error?.code === 'ENOENT',
+  );
+});
+
+test('default-one evidence-v1 keeps its literal event, revision, and HTTP artifact contracts', async () => {
+  const parsed = parseLiveEvidenceRunConfig(configText());
+  assert.equal(
+    Object.hasOwn(
+      parsed.expectedPaymentRequired.accepts[0].extra,
+      'minimumMomentumConfirmations',
+    ),
+    false,
+  );
+  assert.equal(configText(parsed), configText(CONFIG));
+
+  const candidate = await validRunnerCandidate();
+  assert.equal(candidate.context.events.length, 21);
+  assert.deepEqual(candidate.context.events.map(event => event.phase), [
+    'challenge_request_started',
+    'challenge_402_received',
+    ...PHASES.buyer,
+    ...PHASES.facilitator,
+    'paid_response_received',
+  ]);
+  assert.equal(candidate.context.journalSnapshot.schemaVersion, 1);
+  assert.equal(candidate.context.journalSnapshot.revision, 5);
+  assert.equal(
+    candidate.context.outcome.final.bodyText,
+    JSON.stringify(candidate.body, null, 2),
+  );
 });

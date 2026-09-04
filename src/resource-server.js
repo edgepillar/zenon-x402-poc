@@ -1,4 +1,5 @@
 import http from 'node:http';
+import { types as utilTypes } from 'node:util';
 import { Address } from 'znn-typescript-sdk';
 import { paymentIntentDigest, sha256Hex } from './canonical.js';
 import {
@@ -11,6 +12,7 @@ import {
   MOCK_NETWORK,
   sameResource,
   sameRequirements,
+  snapshotActiveUpfrontRequirement,
   validateActiveUpfrontRequirement,
   validatePaymentPayloadEnvelope,
   validatePaymentPayloadStructure,
@@ -18,6 +20,7 @@ import {
 
 const CREATE_OBJECT = Object.create;
 const DEFINE_PROPERTY = Object.defineProperty;
+const HAS_OWN = Object.hasOwn;
 const MAX_CACHED_RESPONSE_BYTES = 64 * 1024;
 const MAX_CACHED_RESPONSE_MEMBERS = 4096;
 const MAX_CACHED_RESPONSE_NODES = 4096;
@@ -29,6 +32,7 @@ const DEFINITIVE_SETTLEMENT_FAILURE = 'payment_settlement_failed';
 const TERMINAL_RECONCILIATION_FAILURE = 'payment_reconciliation_terminal';
 const MALFORMED_DEFINITE_REJECTION = Symbol('malformed-definite-rejection');
 const MALFORMED_TERMINAL_RECONCILIATION = Symbol('malformed-terminal-reconciliation');
+const MALFORMED_THRESHOLD_PENDING = Symbol('malformed-threshold-pending');
 const TERMINAL_RECONCILIATION_STATES = new Set([
   'VALIDATED',
   'SUBMISSION_ACKNOWLEDGED',
@@ -62,8 +66,7 @@ export function createResourceServer({
   if (resourceHandler !== undefined && typeof resourceHandler !== 'function') {
     throw new Error('resourceHandler must be a function');
   }
-  const configuredRequirement = structuredClone(requirement);
-  validateActiveUpfrontRequirement(configuredRequirement);
+  const configuredRequirement = snapshotActiveUpfrontRequirement(requirement);
   let actualPort = port;
   const inFlight = new Map();
 
@@ -224,7 +227,7 @@ function ownDataSnapshot(value, fields) {
   return snapshot;
 }
 
-function exactFacilitatorResultKeys(value, fields) {
+function exactFacilitatorResultKeys(value, fields, { requireShield = false } = {}) {
   let keys;
   try {
     keys = Reflect.ownKeys(value);
@@ -234,6 +237,7 @@ function exactFacilitatorResultKeys(value, fields) {
   if (keys.some(key => typeof key !== 'string')) return false;
   const allowed = new Set(fields);
   const hasShield = keys.includes('then');
+  if (requireShield && !hasShield) return false;
   if (hasShield) {
     let descriptor;
     try {
@@ -246,6 +250,74 @@ function exactFacilitatorResultKeys(value, fields) {
     allowed.add('then');
   }
   return keys.length === allowed.size && keys.every(key => allowed.has(key));
+}
+
+function exactEnumerableDataSnapshot(value, fields) {
+  try {
+    if (!isPlainObject(value)) return null;
+  } catch {
+    return null;
+  }
+  const snapshot = Object.create(null);
+  for (const field of fields) {
+    let descriptor;
+    try {
+      descriptor = Object.getOwnPropertyDescriptor(value, field);
+    } catch {
+      return null;
+    }
+    if (!descriptor || !Object.hasOwn(descriptor, 'value') || descriptor.enumerable !== true) {
+      return null;
+    }
+    snapshot[field] = descriptor.value;
+  }
+  return snapshot;
+}
+
+function exactThresholdPendingDataSnapshot(value, fields) {
+  let keys;
+  try {
+    if (utilTypes.isProxy(value) || !isPlainObject(value)) return null;
+    keys = Reflect.ownKeys(value);
+  } catch {
+    return null;
+  }
+  if (keys.length !== fields.length + 1) return null;
+
+  const snapshot = Object.create(null);
+  let hasShield = false;
+  for (let index = 0; index < keys.length; index += 1) {
+    const key = keys[index];
+    if (typeof key !== 'string') return null;
+    let descriptor;
+    try {
+      descriptor = Object.getOwnPropertyDescriptor(value, key);
+    } catch {
+      return null;
+    }
+    if (key === 'then') {
+      if (hasShield || !descriptor || !HAS_OWN(descriptor, 'value') ||
+          descriptor.value !== undefined || descriptor.enumerable ||
+          descriptor.writable || descriptor.configurable) return null;
+      hasShield = true;
+      continue;
+    }
+    let allowed = false;
+    for (let fieldIndex = 0; fieldIndex < fields.length; fieldIndex += 1) {
+      if (fields[fieldIndex] === key) {
+        allowed = true;
+        break;
+      }
+    }
+    if (!allowed || !descriptor || !HAS_OWN(descriptor, 'value') ||
+        descriptor.enumerable !== true) return null;
+    snapshot[key] = descriptor.value;
+  }
+  if (!hasShield) return null;
+  for (let index = 0; index < fields.length; index += 1) {
+    if (!HAS_OWN(snapshot, fields[index])) return null;
+  }
+  return snapshot;
 }
 
 function submittedSettlementIdentity(paymentPayload, requirement, paymentRequired) {
@@ -382,14 +454,71 @@ function nonPositiveSettlementOutcome(value, submitted, success) {
   return { kind: 'payment-required' };
 }
 
+function thresholdPendingEvidence(value, submitted, acceptedRequirement) {
+  if (acceptedRequirement.network !== EXPERIMENTAL_LIVE_NETWORK ||
+      !Object.hasOwn(acceptedRequirement.extra, 'minimumMomentumConfirmations') ||
+      acceptedRequirement.extra.minimumMomentumConfirmations <= 1) {
+    return null;
+  }
+
+  if ((typeof value === 'object' || typeof value === 'function') &&
+      value !== null && utilTypes.isProxy(value)) {
+    return MALFORMED_THRESHOLD_PENDING;
+  }
+
+  const success = inspectOwnProperty(value, 'success');
+  const state = inspectOwnProperty(value, 'state');
+  const errorReason = inspectOwnProperty(value, 'errorReason');
+  const isCandidate = (errorReason.kind === 'data' &&
+      errorReason.value === 'momentum_confirmation_threshold_pending') ||
+    (success.kind === 'data' && success.value === false &&
+      state.kind === 'data' && state.value === 'MOMENTUM_INCLUDED');
+  if (!isCandidate) return null;
+
+  const requiredFields = [
+    'success',
+    'network',
+    'transaction',
+    'payer',
+    'errorReason',
+    'state',
+    'authorizationKey',
+    'retrySamePayment',
+    'deliveryState',
+  ];
+  const evidence = exactThresholdPendingDataSnapshot(value, requiredFields);
+  if (!evidence ||
+      evidence.success !== false ||
+      evidence.network !== submitted.network ||
+      submitted.acceptedNetwork !== submitted.network ||
+      evidence.transaction !== submitted.transaction ||
+      typeof evidence.transaction !== 'string' || !HASH_HEX.test(evidence.transaction) ||
+      evidence.payer !== submitted.payer ||
+      !isCanonicalPayer(evidence.payer, submitted.network) ||
+      evidence.errorReason !== 'momentum_confirmation_threshold_pending' ||
+      evidence.state !== 'MOMENTUM_INCLUDED' ||
+      evidence.authorizationKey !== submitted.authorizationKey ||
+      typeof evidence.authorizationKey !== 'string' || !HASH_HEX.test(evidence.authorizationKey) ||
+      evidence.retrySamePayment !== true ||
+      evidence.deliveryState !== 'NONE') {
+    return MALFORMED_THRESHOLD_PENDING;
+  }
+  return submittedPaymentRecovery(submitted, 'MOMENTUM_INCLUDED');
+}
+
 async function authorizeAndDeliver({ facilitator, paymentPayload, requirement, paymentRequired, resourceHandler }) {
   // Settlement owns strict offline verification, journal reconciliation,
   // frontier-sensitive checks, publication and Momentum-inclusion observation.
   // Calling verify() first would reject a safe retry after its frontier moved.
-  const submittedIdentity = submittedSettlementIdentity(paymentPayload, requirement, paymentRequired);
+  const reservedAcceptedRequirement = snapshotActiveUpfrontRequirement(requirement);
+  const submittedIdentity = submittedSettlementIdentity(
+    paymentPayload,
+    reservedAcceptedRequirement,
+    paymentRequired,
+  );
   const settlementResult = await facilitator.settle(
     structuredClone(paymentPayload),
-    structuredClone(requirement),
+    structuredClone(reservedAcceptedRequirement),
     structuredClone(paymentRequired),
   );
   const terminal = terminalReconciliationEvidence(settlementResult, submittedIdentity);
@@ -399,6 +528,15 @@ async function authorizeAndDeliver({ facilitator, paymentPayload, requirement, p
   if (terminal) {
     return shieldAuthorizationOutcome({ kind: 'terminal-reconciliation', settlement: terminal });
   }
+  const thresholdPending = thresholdPendingEvidence(
+    settlementResult,
+    submittedIdentity,
+    reservedAcceptedRequirement,
+  );
+  if (thresholdPending === MALFORMED_THRESHOLD_PENDING) {
+    return shieldAuthorizationOutcome({ kind: 'internal-error' });
+  }
+  if (thresholdPending) return shieldAuthorizationOutcome(thresholdPending);
   const success = inspectOwnProperty(settlementResult, 'success');
   if (success.kind !== 'data' || success.value !== true) {
     const rejection = definiteRejectionEvidence(settlementResult, submittedIdentity);
@@ -446,6 +584,7 @@ async function authorizeAndDeliver({ facilitator, paymentPayload, requirement, p
     const claimResult = await capabilities.markDeliveryPending.call(
       capabilities.receiver,
       structuredClone(settlement),
+      reservedAcceptedRequirement,
     );
     claim = positiveTransitionEvidence(
       claimResult,

@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { isDeepStrictEqual } from 'node:util';
 import { paymentIntentDigest } from '../src/canonical.js';
 import { buildRequirement } from '../src/config.js';
@@ -87,6 +88,33 @@ async function withEnvironment(values, operation) {
   }
 }
 
+function liveConfigurationEnvironment(overrides = {}) {
+  return {
+    X402_NETWORK: 'zenon:testnet',
+    ZENON_PAY_TO: 'configured-test-recipient',
+    ZENON_ASSET: 'ZNN',
+    ZENON_AMOUNT: '1',
+    ZENON_MAX_TIMEOUT_SECONDS: '60',
+    ...overrides,
+  };
+}
+
+function independentCanonicalJson(value) {
+  if (value === null || typeof value !== 'object') return JSON.stringify(value);
+  if (Array.isArray(value)) return `[${value.map(independentCanonicalJson).join(',')}]`;
+  return `{${Object.keys(value).sort().map(key =>
+    `${JSON.stringify(key)}:${independentCanonicalJson(value[key])}`).join(',')}}`;
+}
+
+function independentIntentDigest(paymentRequiredValue, accepted) {
+  const preimage = {
+    x402Version: paymentRequiredValue.x402Version,
+    resource: paymentRequiredValue.resource,
+    accepted,
+  };
+  return createHash('sha256').update(independentCanonicalJson(preimage)).digest('hex');
+}
+
 test('Zenon amount validation uses the canonical positive 255-bit limit', () => {
   assert.equal(MAX_ZENON_AMOUNT, (1n << 255n) - 1n);
   assert.doesNotThrow(() => validateCanonicalZenonAmount(MAX_ZENON_AMOUNT.toString()));
@@ -95,6 +123,448 @@ test('Zenon amount validation uses the canonical positive 255-bit limit', () => 
   ]) {
     assert.throws(() => validateCanonicalZenonAmount(value));
   }
+});
+
+test('minimum confirmation configuration preserves literal default-one wire bytes and intent', async () => {
+  const expectedWire = '{"scheme":"exact","network":"zenon:testnet","asset":"zts1qqqqqqqqqqqqtq587y","amount":"1","payTo":"configured-test-recipient","maxTimeoutSeconds":60,"extra":{"paymentFlow":"upfront","poc":true,"settlement":"account-block","zenonChain":{"version":1,"chainIdentifier":"42424242","genesisMomentumHash":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}}}';
+  const variants = [undefined, '', '1'];
+  const observed = [];
+  let assetResolutions = 0;
+
+  for (const value of variants) {
+    const environment = liveConfigurationEnvironment();
+    if (value !== undefined) environment.ZENON_MINIMUM_MOMENTUM_CONFIRMATIONS = value;
+    const accepted = await buildRequirement('zenon', {
+      zenonChain: LIVE_PROFILE,
+      resolveAsset: async () => {
+        assetResolutions += 1;
+        return 'zts1qqqqqqqqqqqqtq587y';
+      },
+    }, environment);
+    assert.equal(Object.hasOwn(accepted.extra, 'minimumMomentumConfirmations'), false);
+    assert.equal(JSON.stringify(accepted), expectedWire);
+    const required = paymentRequired(accepted);
+    assert.equal(paymentIntentDigest(required, accepted), independentIntentDigest(required, accepted));
+    observed.push({ wire: JSON.stringify(accepted), intent: paymentIntentDigest(required, accepted) });
+  }
+
+  assert.deepEqual(observed, [observed[0], observed[0], observed[0]]);
+  assert.equal(assetResolutions, variants.length);
+});
+
+test('canonical minimum confirmation configuration is emitted as a signed numeric live field', async () => {
+  for (const [encoded, numeric] of [['2', 2], ['30', 30]]) {
+    const accepted = await buildRequirement('zenon', {
+      zenonChain: LIVE_PROFILE,
+      resolveAsset: async () => 'zts1qqqqqqqqqqqqtq587y',
+    }, liveConfigurationEnvironment({
+      ZENON_MINIMUM_MOMENTUM_CONFIRMATIONS: encoded,
+    }));
+    assert.equal(accepted.extra.minimumMomentumConfirmations, numeric);
+    assert.equal(typeof accepted.extra.minimumMomentumConfirmations, 'number');
+    assert.doesNotThrow(() => validateRequirement(accepted));
+  }
+});
+
+test('effective confirmation policy exposes only the absent-one and explicit live range', async () => {
+  const wire = await import('../src/x402-wire.js');
+  assert.equal(typeof wire.effectiveMinimumMomentumConfirmations, 'function');
+  assert.equal(wire.effectiveMinimumMomentumConfirmations(liveRequirement()), 1);
+  for (const value of [2, 30]) {
+    const candidate = liveRequirement();
+    candidate.extra.minimumMomentumConfirmations = value;
+    assert.equal(wire.effectiveMinimumMomentumConfirmations(candidate), value);
+  }
+  for (const value of [
+    undefined,
+    1,
+    '2',
+    0,
+    2.5,
+    31,
+    Number.NaN,
+    Number.POSITIVE_INFINITY,
+    Number.MAX_SAFE_INTEGER + 1,
+    null,
+  ]) {
+    const candidate = liveRequirement();
+    candidate.extra.minimumMomentumConfirmations = value;
+    assert.throws(() => wire.effectiveMinimumMomentumConfirmations(candidate));
+  }
+  const malformed = liveRequirement();
+  malformed.amount = '0';
+  malformed.extra.minimumMomentumConfirmations = 2;
+  assert.throws(() => wire.effectiveMinimumMomentumConfirmations(malformed));
+});
+
+test('active requirement snapshots are descriptor-safe, detached, and deeply immutable', async () => {
+  const wire = await import('../src/x402-wire.js');
+  assert.equal(typeof wire.snapshotActiveUpfrontRequirement, 'function');
+
+  const accepted = liveRequirement();
+  accepted.extra.minimumMomentumConfirmations = 2;
+  const snapshot = wire.snapshotActiveUpfrontRequirement(accepted);
+  assert.deepEqual(snapshot, accepted);
+  assert.notEqual(snapshot, accepted);
+  assert.notEqual(snapshot.extra, accepted.extra);
+  assert.notEqual(snapshot.extra.zenonChain, accepted.extra.zenonChain);
+  assert.equal(Object.isFrozen(snapshot), true);
+  assert.equal(Object.isFrozen(snapshot.extra), true);
+  assert.equal(Object.isFrozen(snapshot.extra.zenonChain), true);
+
+  accepted.amount = '2';
+  accepted.extra.minimumMomentumConfirmations = 30;
+  accepted.extra.zenonChain.chainIdentifier = '42424243';
+  assert.equal(snapshot.amount, '1');
+  assert.equal(snapshot.extra.minimumMomentumConfirmations, 2);
+  assert.equal(snapshot.extra.zenonChain.chainIdentifier, LIVE_PROFILE.chainIdentifier);
+
+  let accessorReads = 0;
+  const accessorBacked = liveRequirement();
+  Object.defineProperty(accessorBacked.extra, 'minimumMomentumConfirmations', {
+    enumerable: true,
+    get() {
+      accessorReads += 1;
+      return 2;
+    },
+  });
+  assert.throws(() => wire.snapshotActiveUpfrontRequirement(accessorBacked));
+  assert.equal(accessorReads, 0);
+
+  assert.throws(() => wire.snapshotActiveUpfrontRequirement(
+    new Proxy(liveRequirement(), {}),
+  ));
+  const proxiedNested = liveRequirement();
+  proxiedNested.extra = new Proxy(proxiedNested.extra, {});
+  assert.throws(() => wire.snapshotActiveUpfrontRequirement(proxiedNested));
+  const proxiedChain = liveRequirement();
+  proxiedChain.extra.zenonChain = new Proxy(proxiedChain.extra.zenonChain, {});
+  assert.throws(() => wire.snapshotActiveUpfrontRequirement(proxiedChain));
+});
+
+test('requirement equality ignores poisoned canonicalization and collection methods',
+  { concurrency: false }, () => {
+    const absent = liveRequirement();
+    const explicit = liveRequirement();
+    explicit.extra.minimumMomentumConfirmations = 30;
+    const mapDescriptor = Object.getOwnPropertyDescriptor(Array.prototype, 'map');
+    const sortDescriptor = Object.getOwnPropertyDescriptor(Array.prototype, 'sort');
+    const joinDescriptor = Object.getOwnPropertyDescriptor(Array.prototype, 'join');
+    const setAddDescriptor = Object.getOwnPropertyDescriptor(Set.prototype, 'add');
+    const setHasDescriptor = Object.getOwnPropertyDescriptor(Set.prototype, 'has');
+    const mapSetDescriptor = Object.getOwnPropertyDescriptor(Map.prototype, 'set');
+    const mapGetDescriptor = Object.getOwnPropertyDescriptor(Map.prototype, 'get');
+    const mapHasDescriptor = Object.getOwnPropertyDescriptor(Map.prototype, 'has');
+    let hookCalls = 0;
+    let equal;
+    try {
+      Object.defineProperty(Array.prototype, 'map', {
+        ...mapDescriptor,
+        value() {
+          hookCalls += 1;
+          return [];
+        },
+      });
+      Object.defineProperty(Array.prototype, 'sort', {
+        ...sortDescriptor,
+        value() {
+          hookCalls += 1;
+          return [];
+        },
+      });
+      Object.defineProperty(Array.prototype, 'join', {
+        ...joinDescriptor,
+        value() {
+          hookCalls += 1;
+          return '';
+        },
+      });
+      Object.defineProperty(Set.prototype, 'add', {
+        ...setAddDescriptor,
+        value() {
+          hookCalls += 1;
+          return this;
+        },
+      });
+      Object.defineProperty(Set.prototype, 'has', {
+        ...setHasDescriptor,
+        value() {
+          hookCalls += 1;
+          return true;
+        },
+      });
+      Object.defineProperty(Map.prototype, 'set', {
+        ...mapSetDescriptor,
+        value() {
+          hookCalls += 1;
+          return this;
+        },
+      });
+      Object.defineProperty(Map.prototype, 'get', {
+        ...mapGetDescriptor,
+        value() {
+          hookCalls += 1;
+          return undefined;
+        },
+      });
+      Object.defineProperty(Map.prototype, 'has', {
+        ...mapHasDescriptor,
+        value() {
+          hookCalls += 1;
+          return false;
+        },
+      });
+      equal = sameRequirements(absent, explicit);
+    } finally {
+      Object.defineProperty(Array.prototype, 'map', mapDescriptor);
+      Object.defineProperty(Array.prototype, 'sort', sortDescriptor);
+      Object.defineProperty(Array.prototype, 'join', joinDescriptor);
+      Object.defineProperty(Set.prototype, 'add', setAddDescriptor);
+      Object.defineProperty(Set.prototype, 'has', setHasDescriptor);
+      Object.defineProperty(Map.prototype, 'set', mapSetDescriptor);
+      Object.defineProperty(Map.prototype, 'get', mapGetDescriptor);
+      Object.defineProperty(Map.prototype, 'has', mapHasDescriptor);
+    }
+    assert.equal(equal, false);
+    assert.equal(hookCalls, 0);
+  });
+
+test('active requirement snapshots reject unexpected fields without mutable collection hooks',
+  { concurrency: false }, () => {
+    const candidate = liveRequirement();
+    candidate.extra.unexpected = true;
+    const someDescriptor = Object.getOwnPropertyDescriptor(Array.prototype, 'some');
+    const setAddDescriptor = Object.getOwnPropertyDescriptor(Set.prototype, 'add');
+    const setHasDescriptor = Object.getOwnPropertyDescriptor(Set.prototype, 'has');
+    const mapSetDescriptor = Object.getOwnPropertyDescriptor(Map.prototype, 'set');
+    const mapGetDescriptor = Object.getOwnPropertyDescriptor(Map.prototype, 'get');
+    const mapHasDescriptor = Object.getOwnPropertyDescriptor(Map.prototype, 'has');
+    let hookCalls = 0;
+    let rejected = false;
+    try {
+      Object.defineProperty(Array.prototype, 'some', {
+        ...someDescriptor,
+        value() {
+          hookCalls += 1;
+          return false;
+        },
+      });
+      Object.defineProperty(Set.prototype, 'add', {
+        ...setAddDescriptor,
+        value() {
+          hookCalls += 1;
+          return this;
+        },
+      });
+      Object.defineProperty(Set.prototype, 'has', {
+        ...setHasDescriptor,
+        value() {
+          hookCalls += 1;
+          return true;
+        },
+      });
+      Object.defineProperty(Map.prototype, 'set', {
+        ...mapSetDescriptor,
+        value() {
+          hookCalls += 1;
+          return this;
+        },
+      });
+      Object.defineProperty(Map.prototype, 'get', {
+        ...mapGetDescriptor,
+        value() {
+          hookCalls += 1;
+          return undefined;
+        },
+      });
+      Object.defineProperty(Map.prototype, 'has', {
+        ...mapHasDescriptor,
+        value() {
+          hookCalls += 1;
+          return false;
+        },
+      });
+      try {
+        validateActiveUpfrontRequirement(candidate);
+      } catch {
+        rejected = true;
+      }
+    } finally {
+      Object.defineProperty(Array.prototype, 'some', someDescriptor);
+      Object.defineProperty(Set.prototype, 'add', setAddDescriptor);
+      Object.defineProperty(Set.prototype, 'has', setHasDescriptor);
+      Object.defineProperty(Map.prototype, 'set', mapSetDescriptor);
+      Object.defineProperty(Map.prototype, 'get', mapGetDescriptor);
+      Object.defineProperty(Map.prototype, 'has', mapHasDescriptor);
+    }
+    assert.equal(rejected, true);
+    assert.equal(hookCalls, 0);
+  });
+
+test('invalid minimum confirmation configuration fails before asset resolution', async () => {
+  const invalidValues = [
+    '0', '01', '+2', '-2', '2.0', '2e0', ' 2', '2 ', '31',
+    2, 2n, null, false, {}, [], Number.MAX_SAFE_INTEGER,
+  ];
+
+  for (const value of invalidValues) {
+    let assetResolutions = 0;
+    await assert.rejects(buildRequirement('zenon', {
+      zenonChain: LIVE_PROFILE,
+      resolveAsset: async () => {
+        assetResolutions += 1;
+        return 'zts1qqqqqqqqqqqqtq587y';
+      },
+    }, liveConfigurationEnvironment({
+      ZENON_MINIMUM_MOMENTUM_CONFIRMATIONS: value,
+    })));
+    assert.equal(assetResolutions, 0);
+  }
+
+  let undefinedAssetResolutions = 0;
+  await assert.rejects(buildRequirement('zenon', {
+    zenonChain: LIVE_PROFILE,
+    resolveAsset: async () => {
+      undefinedAssetResolutions += 1;
+      return 'zts1qqqqqqqqqqqqtq587y';
+    },
+  }, liveConfigurationEnvironment({
+    ZENON_MINIMUM_MOMENTUM_CONFIRMATIONS: undefined,
+  })));
+  assert.equal(undefinedAssetResolutions, 0);
+
+  let accessorReads = 0;
+  let accessorAssetResolutions = 0;
+  const accessorEnvironment = liveConfigurationEnvironment();
+  Object.defineProperty(accessorEnvironment, 'ZENON_MINIMUM_MOMENTUM_CONFIRMATIONS', {
+    enumerable: true,
+    get() {
+      accessorReads += 1;
+      return '2';
+    },
+  });
+  await assert.rejects(buildRequirement('zenon', {
+    zenonChain: LIVE_PROFILE,
+    resolveAsset: async () => {
+      accessorAssetResolutions += 1;
+      return 'zts1qqqqqqqqqqqqtq587y';
+    },
+  }, accessorEnvironment));
+  assert.equal(accessorReads, 0);
+  assert.equal(accessorAssetResolutions, 0);
+
+  let proxyAssetResolutions = 0;
+  const proxiedEnvironment = new Proxy(liveConfigurationEnvironment({
+    ZENON_MINIMUM_MOMENTUM_CONFIRMATIONS: '2',
+  }), {});
+  await assert.rejects(buildRequirement('zenon', {
+    zenonChain: LIVE_PROFILE,
+    resolveAsset: async () => {
+      proxyAssetResolutions += 1;
+      return 'zts1qqqqqqqqqqqqtq587y';
+    },
+  }, proxiedEnvironment));
+  assert.equal(proxyAssetResolutions, 0);
+});
+
+test('wire minimum confirmation policy is live-only, descriptor-safe, and intent-bound', async () => {
+  const absent = liveRequirement();
+  assert.doesNotThrow(() => validateRequirement(absent));
+
+  const explicit = [];
+  for (const value of [2, 30]) {
+    const candidate = structuredClone(absent);
+    candidate.extra.minimumMomentumConfirmations = value;
+    assert.doesNotThrow(() => validateRequirement(candidate));
+    explicit.push(candidate);
+  }
+  assert.notEqual(
+    paymentIntentDigest(paymentRequired(absent), absent),
+    paymentIntentDigest(paymentRequired(explicit[0]), explicit[0]),
+  );
+  assert.notEqual(
+    paymentIntentDigest(paymentRequired(explicit[0]), explicit[0]),
+    paymentIntentDigest(paymentRequired(explicit[1]), explicit[1]),
+  );
+
+  for (const value of [
+    undefined,
+    1,
+    '2',
+    0,
+    -0,
+    2.5,
+    31,
+    Number.NaN,
+    Number.POSITIVE_INFINITY,
+    Number.MAX_SAFE_INTEGER,
+    Number.MAX_SAFE_INTEGER + 1,
+    2n,
+    null,
+    {},
+    [],
+  ]) {
+    const candidate = structuredClone(absent);
+    candidate.extra.minimumMomentumConfirmations = value;
+    assert.throws(() => validateRequirement(candidate));
+  }
+
+  const thresholdRequired = paymentRequired(explicit[0]);
+  const thresholdPayload = paymentPayload(explicit[0]);
+  assert.doesNotThrow(() => validatePaymentRequired(thresholdRequired));
+  assert.doesNotThrow(() => validatePaymentRequiredForOfferSelection(thresholdRequired));
+  assert.doesNotThrow(() => validatePaymentPayloadStructure(thresholdPayload));
+  assert.doesNotThrow(() => validatePaymentPayloadEnvelope(thresholdPayload));
+  assert.equal(sameRequirements(explicit[0], structuredClone(explicit[0])), true);
+  assert.equal(sameRequirements(absent, explicit[0]), false);
+  assert.equal(sameRequirements(explicit[0], explicit[1]), false);
+
+  let getterReads = 0;
+  const accessorBacked = structuredClone(absent);
+  Object.defineProperty(accessorBacked.extra, 'minimumMomentumConfirmations', {
+    enumerable: true,
+    get() {
+      getterReads += 1;
+      return 2;
+    },
+  });
+  assert.throws(() => validateRequirement(accessorBacked));
+  assert.equal(getterReads, 0);
+
+  const structuralAccessor = paymentPayload(absent);
+  Object.defineProperty(structuralAccessor.accepted.extra, 'minimumMomentumConfirmations', {
+    enumerable: true,
+    get() {
+      getterReads += 1;
+      return 2;
+    },
+  });
+  assert.throws(() => validatePaymentPayloadStructure(structuralAccessor));
+  assert.equal(getterReads, 0);
+
+  const proxied = structuredClone(explicit[0]);
+  proxied.extra = new Proxy(proxied.extra, {});
+  assert.throws(() => validateRequirement(proxied));
+
+  let mockEnvironmentTouches = 0;
+  const mock = await buildRequirement('mock', {}, new Proxy({}, {
+    get() {
+      mockEnvironmentTouches += 1;
+      throw new Error('mock configuration must not be consulted');
+    },
+    ownKeys() {
+      mockEnvironmentTouches += 1;
+      throw new Error('mock configuration must not be consulted');
+    },
+    getOwnPropertyDescriptor() {
+      mockEnvironmentTouches += 1;
+      throw new Error('mock configuration must not be consulted');
+    },
+  }));
+  assert.equal(mockEnvironmentTouches, 0);
+  assert.equal(Object.hasOwn(mock.extra, 'minimumMomentumConfirmations'), false);
+  mock.extra.minimumMomentumConfirmations = 2;
+  assert.throws(() => validateRequirement(mock));
 });
 
 test('Zenon chain profile has an exact, canonical, SDK-safe schema', () => {

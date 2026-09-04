@@ -1,3 +1,4 @@
+import { types as utilTypes } from 'node:util';
 import { envInt } from './env.js';
 import { resolveZenonAsset } from './zenon-payment.js';
 import {
@@ -8,6 +9,29 @@ import {
   validateCanonicalZenonAmount,
   validateZenonChainProfile,
 } from './x402-wire.js';
+
+const MINIMUM_MOMENTUM_CONFIRMATIONS_ENV = 'ZENON_MINIMUM_MOMENTUM_CONFIRMATIONS';
+const CANONICAL_MINIMUM_MOMENTUM_CONFIRMATIONS = /^(?:[2-9]|[12][0-9]|30)$/;
+
+function liveMinimumMomentumConfirmations(environment) {
+  if (environment === null || typeof environment !== 'object' || utilTypes.isProxy(environment)) {
+    throw new Error(`${MINIMUM_MOMENTUM_CONFIRMATIONS_ENV} requires a trusted environment object`);
+  }
+  const descriptor = Object.getOwnPropertyDescriptor(
+    environment,
+    MINIMUM_MOMENTUM_CONFIRMATIONS_ENV,
+  );
+  if (!descriptor) return undefined;
+  if (!Object.hasOwn(descriptor, 'value')) {
+    throw new Error(`${MINIMUM_MOMENTUM_CONFIRMATIONS_ENV} must be an own data property`);
+  }
+  const value = descriptor.value;
+  if (value === '' || value === '1') return undefined;
+  if (typeof value !== 'string' || !CANONICAL_MINIMUM_MOMENTUM_CONFIRMATIONS.test(value)) {
+    throw new Error(`${MINIMUM_MOMENTUM_CONFIRMATIONS_ENV} must be 1 or a canonical integer from 2 to 30`);
+  }
+  return Number(value);
+}
 
 /**
  * Build the single payment option exposed by the PoC.
@@ -45,6 +69,7 @@ export async function buildRequirement(
     throw new Error('live mode requires an explicit programmatic Zenon chain profile');
   }
   validateZenonChainProfile(zenonChain);
+  const minimumMomentumConfirmations = liveMinimumMomentumConfirmations(environment);
 
   const network = environment.X402_NETWORK ?? EXPERIMENTAL_LIVE_NETWORK;
   if (network !== EXPERIMENTAL_LIVE_NETWORK) {
@@ -68,6 +93,9 @@ export async function buildRequirement(
       poc: true,
       settlement: 'account-block',
       zenonChain: { ...zenonChain },
+      ...(minimumMomentumConfirmations === undefined
+        ? {}
+        : { minimumMomentumConfirmations }),
     },
   };
   validateActiveUpfrontRequirement(requirement);

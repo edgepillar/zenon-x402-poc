@@ -244,9 +244,9 @@ export function createObservedFacilitatorAdapter(facilitator, observer) {
   const deliveryEvents = [];
   const adapter = {
     settle: facilitator.settle.bind(facilitator),
-    async markDeliveryPending(settlement) {
+    async markDeliveryPending(settlement, acceptedRequirement) {
       recordContained(observer, deliveryEvents, 'delivery_started');
-      return facilitator.markDeliveryPending(settlement);
+      return facilitator.markDeliveryPending(settlement, acceptedRequirement);
     },
     async markDelivered(settlement, cachedResponse) {
       const delivered = await facilitator.markDelivered(settlement, cachedResponse);

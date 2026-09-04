@@ -82,6 +82,7 @@ import {
   createLiveEvidenceObserver,
   recordLiveEvidencePhase,
 } from '../src/live-observation.js';
+import { validatePaymentRequired } from '../src/x402-wire.js';
 import { EVIDENCE_STATES, SettlementJournal } from '../src/settlement-journal.js';
 import {
   assertOperatorTrustedChainPolicy,
@@ -459,7 +460,7 @@ function journalInputFromRecord(record) {
   };
 }
 
-async function createRetainedProductionState(runDirectory, record) {
+async function createRetainedProductionState(runDirectory, record, acceptedRequirement) {
   await writeFile(join(runDirectory, 'SUBMISSION_ARMED'), 'SUBMISSION_ARMED\n', {
     mode: 0o600,
   });
@@ -481,7 +482,11 @@ async function createRetainedProductionState(runDirectory, record) {
     EVIDENCE_STATES.MOMENTUM_INCLUDED,
     record.momentumEvidence,
   );
-  await journal.markDeliveryPending(record.authorizationKey, record.transactionHash);
+  await journal.markDeliveryPending(
+    record.authorizationKey,
+    record.transactionHash,
+    acceptedRequirement,
+  );
   await journal.markDelivered(
     record.authorizationKey,
     record.transactionHash,
@@ -510,7 +515,11 @@ function successfulPublicWsExecution(options, candidate, afterState = async () =
       async probeBuyerReadiness() {},
       async startFacilitator() {
         const runDirectory = join(options.workspaceRoot, options.runName);
-        journal = await createRetainedProductionState(runDirectory, candidate.record);
+        journal = await createRetainedProductionState(
+          runDirectory,
+          candidate.record,
+          fixtureConfiguration(options).expectedPaymentRequired.accepts[0],
+        );
         await afterState(runDirectory);
         return controller;
       },
@@ -3250,6 +3259,7 @@ test('workspace-scoped execution consumes before effects and retains exact priva
       journal = await createRetainedProductionState(
         join(options.workspaceRoot, options.runName),
         candidate.record,
+        configuration.expectedPaymentRequired.accepts[0],
       );
       effectOrder.push('worker-create');
       return controller;
@@ -3442,7 +3452,11 @@ test('successful validation rejects unexpected retained-tree entries and produce
       async probeBuyerReadiness() {},
       async startFacilitator() {
         const runDirectory = join(options.workspaceRoot, options.runName);
-        journal = await createRetainedProductionState(runDirectory, candidate.record);
+        journal = await createRetainedProductionState(
+          runDirectory,
+          candidate.record,
+          configuration.expectedPaymentRequired.accepts[0],
+        );
         await writeFile(join(runDirectory, 'unexpected'), 'unexpected\n', { mode: 0o600 });
         return controller;
       },
@@ -4312,6 +4326,7 @@ test('current-testnet WSS execution preserves the one-shot and truthful-evidence
           journal = await createRetainedProductionState(
             join(options.workspaceRoot, options.runName),
             candidate.record,
+            configuration.expectedPaymentRequired.accepts[0],
           );
           events.push('facilitator-create');
           return controller;
@@ -4914,3 +4929,98 @@ test('documentation and the operator-trusted record preserve the quarantined liv
       'sameRouteCorroboration', 'explorerUrl', 'assetSymbol', 'observedDate',
     ]) assert.equal(operatorRecordText.includes(`\"${forbiddenKey}\"`), false);
   });
+
+test('every public evidence-v1 runner rejects an explicit confirmation threshold before mutation or effects', async t => {
+  const cases = [
+    {
+      name: 'public-ws-once-v2',
+      baseline: () => config(),
+      authorize: (value, changes) => authorization(value, ENDPOINT, changes),
+      configDigestDomain: 'zenon-x402-public-ws-once-config-v2',
+      execute: executePublicWsOnceRun,
+      parse: parsePublicWsOnceRunConfig,
+      preflight: preflightPublicWsOnceRun,
+      fixtureChanges: {},
+    },
+    {
+      name: 'current-testnet-wss-once-v3',
+      baseline: () => currentTestnetWssConfig(),
+      authorize: (value, changes) => currentTestnetWssAuthorization(value, changes),
+      configDigestDomain: 'zenon-x402-current-testnet-wss-once-config-v1',
+      execute: executeCurrentTestnetWssOnceRun,
+      parse: parseCurrentTestnetWssOnceRunConfig,
+      preflight: preflightCurrentTestnetWssOnceRun,
+      fixtureChanges: { currentTestnetWss: true },
+    },
+  ];
+
+  for (const entry of cases) {
+    await t.test(entry.name, async subtest => {
+      const baseline = entry.baseline();
+      const candidate = structuredClone(baseline);
+      candidate.expectedPaymentRequired.accepts[0].extra.minimumMomentumConfirmations = 2;
+      assert.doesNotThrow(
+        () => validatePaymentRequired(candidate.expectedPaymentRequired),
+        'the general live wire layer must accept the explicit threshold',
+      );
+      assert.throws(
+        () => entry.parse(`${JSON.stringify(candidate)}\n`),
+        fixedFailure,
+        'evidence-v1 configuration must reject the explicit threshold',
+      );
+
+      const candidateConfigDigest = sha256Hex(
+        `${entry.configDigestDomain}\n${canonicalJson(candidate)}`,
+      );
+      const candidateIntentDigest = paymentIntentDigest(
+        candidate.expectedPaymentRequired,
+        candidate.expectedPaymentRequired.accepts[0],
+      );
+      const candidateAuthorization = entry.authorize(baseline, {
+        configDigest: candidateConfigDigest,
+        paymentIntentDigest: candidateIntentDigest,
+      });
+      assert.equal(candidateAuthorization.configDigest, candidateConfigDigest);
+      assert.equal(candidateAuthorization.paymentIntentDigest, candidateIntentDigest);
+
+      const options = await fixture(subtest, {
+        ...entry.fixtureChanges,
+        config: candidate,
+        authorization: candidateAuthorization,
+      });
+      const originalEntries = (await readdir(options.workspaceRoot)).sort();
+      let effects = 0;
+      const operations = {
+        async probeBuyerReadiness() { effects += 1; },
+        async probePublicEndpoint() { effects += 1; },
+        async startFacilitator() { effects += 1; return {}; },
+        async readBuyerWallet() { effects += 1; return {}; },
+        async paidFetch() { effects += 1; return {}; },
+      };
+      const injected = {
+        sourceTreeAttestor: async () => { effects += 1; return true; },
+        repositoryModuleLoader: async () => {
+          effects += 1;
+          return {
+            assertLiveEvidenceFacilitatorController,
+            startLiveEvidenceFacilitatorWorker,
+          };
+        },
+        operations,
+      };
+
+      await assert.rejects(entry.preflight(options), fixedFailure);
+      await assert.rejects(entry.execute(options, injected), fixedFailure);
+      assert.equal(effects, 0);
+      assert.deepEqual((await readdir(options.workspaceRoot)).sort(), originalEntries);
+      await assert.rejects(
+        lstat(join(options.workspaceRoot, 'PUBLIC_WS_ONCE_CONSUMED')),
+        error => error?.code === 'ENOENT',
+      );
+      await assert.rejects(
+        lstat(join(options.workspaceRoot, options.runName)),
+        error => error?.code === 'ENOENT',
+      );
+    });
+  }
+});

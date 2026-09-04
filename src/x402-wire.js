@@ -1,4 +1,10 @@
-import { canonicalJson } from './canonical.js';
+import { types as utilTypes } from 'node:util';
+
+const CREATE_OBJECT = Object.create;
+const GET_OWN_PROPERTY_DESCRIPTOR = Object.getOwnPropertyDescriptor;
+const HAS_OWN = Object.hasOwn;
+const OBJECT_IS = Object.is;
+const OWN_KEYS = Reflect.ownKeys;
 
 export const X402_VERSION = 2;
 export const MAX_ZENON_AMOUNT = (1n << 255n) - 1n;
@@ -27,7 +33,9 @@ const REQUIREMENT_FIELDS = Object.freeze([
   'scheme', 'network', 'asset', 'amount', 'payTo', 'maxTimeoutSeconds', 'extra',
 ]);
 const REQUIREMENT_EXTRA_FIELDS = Object.freeze(['poc', 'settlement', 'zenonChain']);
-const REQUIREMENT_EXTRA_OPTIONAL_FIELDS = Object.freeze(['paymentFlow']);
+const REQUIREMENT_EXTRA_OPTIONAL_FIELDS = Object.freeze([
+  'paymentFlow', 'minimumMomentumConfirmations',
+]);
 const CHAIN_PROFILE_FIELDS = Object.freeze(['version', 'chainIdentifier', 'genesisMomentumHash']);
 const RESOURCE_REQUIRED_FIELDS = Object.freeze(['url']);
 const RESOURCE_OPTIONAL_FIELDS = Object.freeze(['description', 'mimeType', 'serviceName', 'tags', 'iconUrl']);
@@ -49,7 +57,7 @@ const MAX_RESOURCE_ICON_URL_LENGTH = 2048;
 const PRINTABLE_ASCII = /^[\x20-\x7e]+$/;
 
 function isPlainObject(value) {
-  if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
+  if (!value || typeof value !== 'object' || utilTypes.isProxy(value) || Array.isArray(value)) return false;
   const prototype = Object.getPrototypeOf(value);
   return prototype === Object.prototype || prototype === null;
 }
@@ -66,6 +74,75 @@ function assertExactKeys(value, required, { optional = [], label } = {}) {
   }
   for (const key of required) {
     if (!Object.hasOwn(value, key)) throw new Error(`${label}.${key} is required`);
+  }
+}
+
+function readExactEnumerableDataObject(value, required, { optional = [], label } = {}) {
+  if (!isPlainObject(value)) throw new Error(`${label} must be an object`);
+  const prototype = Object.getPrototypeOf(value);
+  const keys = OWN_KEYS(value);
+  const observedKeys = CREATE_OBJECT(null);
+  for (let index = 0; index < keys.length; index += 1) {
+    const key = keys[index];
+    let allowed = false;
+    if (typeof key === 'string') {
+      for (let requiredIndex = 0; requiredIndex < required.length; requiredIndex += 1) {
+        if (required[requiredIndex] === key) {
+          allowed = true;
+          break;
+        }
+      }
+      if (!allowed) {
+        for (let optionalIndex = 0; optionalIndex < optional.length; optionalIndex += 1) {
+          if (optional[optionalIndex] === key) {
+            allowed = true;
+            break;
+          }
+        }
+      }
+    }
+    if (!allowed) {
+      throw new Error(`${label} contains an unexpected field`);
+    }
+    observedKeys[key] = true;
+  }
+  for (let index = 0; index < required.length; index += 1) {
+    const key = required[index];
+    if (!HAS_OWN(observedKeys, key)) throw new Error(`${label}.${key} is required`);
+  }
+
+  const descriptors = CREATE_OBJECT(null);
+  const values = CREATE_OBJECT(null);
+  for (let index = 0; index < keys.length; index += 1) {
+    const key = keys[index];
+    const descriptor = GET_OWN_PROPERTY_DESCRIPTOR(value, key);
+    if (!descriptor || !HAS_OWN(descriptor, 'value') || descriptor.enumerable !== true) {
+      throw new Error(`${label}.${key} must be an enumerable own data property`);
+    }
+    descriptors[key] = descriptor;
+    values[key] = descriptor.value;
+  }
+  return { descriptors, keys, prototype, source: value, values };
+}
+
+function assertDataObjectUnchanged(snapshot, required, { optional = [], label } = {}) {
+  const current = readExactEnumerableDataObject(snapshot.source, required, { optional, label });
+  if (current.prototype !== snapshot.prototype || current.keys.length !== snapshot.keys.length) {
+    throw new Error(`${label} changed during validation`);
+  }
+  for (let index = 0; index < current.keys.length; index += 1) {
+    if (!HAS_OWN(snapshot.descriptors, current.keys[index])) {
+      throw new Error(`${label} changed during validation`);
+    }
+  }
+  for (let index = 0; index < snapshot.keys.length; index += 1) {
+    const key = snapshot.keys[index];
+    const before = snapshot.descriptors[key];
+    const after = current.descriptors[key];
+    if (!after || !OBJECT_IS(before.value, after.value) || before.writable !== after.writable ||
+        before.enumerable !== after.enumerable || before.configurable !== after.configurable) {
+      throw new Error(`${label} changed during validation`);
+    }
   }
 }
 
@@ -362,8 +439,7 @@ export function validateCanonicalZenonAmount(value, label = 'amount') {
   }
 }
 
-export function validateZenonChainProfile(profile) {
-  assertExactKeys(profile, CHAIN_PROFILE_FIELDS, { label: 'zenonChain' });
+function validateZenonChainProfileSnapshot(profile) {
   if (profile.version !== 1) throw new Error('zenonChain.version must equal 1');
   if (typeof profile.chainIdentifier !== 'string' || profile.chainIdentifier.length > 20 ||
       !CANONICAL_POSITIVE_DECIMAL.test(profile.chainIdentifier)) {
@@ -378,11 +454,52 @@ export function validateZenonChainProfile(profile) {
   }
 }
 
+function snapshotZenonChainProfile(profile, label = 'zenonChain') {
+  const scanned = readExactEnumerableDataObject(profile, CHAIN_PROFILE_FIELDS, { label });
+  const snapshot = {
+    version: scanned.values.version,
+    chainIdentifier: scanned.values.chainIdentifier,
+    genesisMomentumHash: scanned.values.genesisMomentumHash,
+  };
+  validateZenonChainProfileSnapshot(snapshot);
+  assertDataObjectUnchanged(scanned, CHAIN_PROFILE_FIELDS, { label });
+  return Object.freeze(snapshot);
+}
+
+export function validateZenonChainProfile(profile) {
+  snapshotZenonChainProfile(profile);
+}
+
 export function sameRequirements(a, b) {
   try {
-    validateRequirement(a);
-    validateRequirement(b);
-    return canonicalJson(a) === canonicalJson(b);
+    const left = snapshotRequirement(a);
+    const right = snapshotRequirement(b);
+    const leftHasPaymentFlow = Object.hasOwn(left.extra, 'paymentFlow');
+    const rightHasPaymentFlow = Object.hasOwn(right.extra, 'paymentFlow');
+    const leftHasMinimumConfirmations = Object.hasOwn(
+      left.extra,
+      'minimumMomentumConfirmations',
+    );
+    const rightHasMinimumConfirmations = Object.hasOwn(
+      right.extra,
+      'minimumMomentumConfirmations',
+    );
+    return left.scheme === right.scheme &&
+      left.network === right.network &&
+      left.asset === right.asset &&
+      left.amount === right.amount &&
+      left.payTo === right.payTo &&
+      left.maxTimeoutSeconds === right.maxTimeoutSeconds &&
+      left.extra.poc === right.extra.poc &&
+      left.extra.settlement === right.extra.settlement &&
+      leftHasPaymentFlow === rightHasPaymentFlow &&
+      (!leftHasPaymentFlow || left.extra.paymentFlow === right.extra.paymentFlow) &&
+      leftHasMinimumConfirmations === rightHasMinimumConfirmations &&
+      (!leftHasMinimumConfirmations ||
+        left.extra.minimumMomentumConfirmations === right.extra.minimumMomentumConfirmations) &&
+      left.extra.zenonChain.version === right.extra.zenonChain.version &&
+      left.extra.zenonChain.chainIdentifier === right.extra.zenonChain.chainIdentifier &&
+      left.extra.zenonChain.genesisMomentumHash === right.extra.zenonChain.genesisMomentumHash;
   } catch {
     return false;
   }
@@ -507,6 +624,11 @@ function validateLocalZenonRequirementStructure(values) {
   // The stable extra container permits arbitrary JSON values. Reading only the
   // descriptor rejects accessors without applying local flow policy here.
   readOptionalDataProperty(values.extra, 'paymentFlow', 'PaymentRequirements.extra');
+  readOptionalDataProperty(
+    values.extra,
+    'minimumMomentumConfirmations',
+    'PaymentRequirements.extra',
+  );
 }
 
 export function validatePaymentPayloadStructure(paymentPayload) {
@@ -544,8 +666,7 @@ export function validatePaymentPayloadStructure(paymentPayload) {
   }
 }
 
-export function validateRequirement(req) {
-  assertExactKeys(req, REQUIREMENT_FIELDS, { label: 'PaymentRequirements' });
+function validateRequirementSnapshot(req, { requireActive = false } = {}) {
   for (const key of ['scheme', 'network', 'asset', 'amount', 'payTo']) {
     if (typeof req[key] !== 'string' || !req[key]) throw new Error(`PaymentRequirements.${key} is required`);
   }
@@ -562,10 +683,6 @@ export function validateRequirement(req) {
     throw new Error(`maxTimeoutSeconds must be between 1 and ${MAX_SETTLEMENT_TIMEOUT_SECONDS}`);
   }
 
-  assertExactKeys(req.extra, REQUIREMENT_EXTRA_FIELDS, {
-    optional: REQUIREMENT_EXTRA_OPTIONAL_FIELDS,
-    label: 'PaymentRequirements.extra',
-  });
   if (req.extra.poc !== true) throw new Error('PaymentRequirements.extra.poc must equal true');
   if (req.extra.settlement !== 'account-block') {
     throw new Error('PaymentRequirements.extra.settlement must equal account-block');
@@ -573,7 +690,10 @@ export function validateRequirement(req) {
   if (Object.hasOwn(req.extra, 'paymentFlow') && req.extra.paymentFlow !== 'upfront') {
     throw new Error('PaymentRequirements.extra.paymentFlow must equal upfront');
   }
-  validateZenonChainProfile(req.extra.zenonChain);
+  if (requireActive && !Object.hasOwn(req.extra, 'paymentFlow')) {
+    throw new Error('active HTTP payments require PaymentRequirements.extra.paymentFlow=upfront');
+  }
+  validateZenonChainProfileSnapshot(req.extra.zenonChain);
   const isSyntheticMock = sameChainProfile(req.extra.zenonChain, MOCK_ZENON_CHAIN_PROFILE);
   if (req.network === MOCK_NETWORK && !isSyntheticMock) {
     throw new Error('mock requirements must use the reserved synthetic mock chain profile');
@@ -582,13 +702,88 @@ export function validateRequirement(req) {
       (isSyntheticMock || req.extra.zenonChain.genesisMomentumHash === MOCK_ZENON_CHAIN_PROFILE.genesisMomentumHash)) {
     throw new Error('live requirements cannot use the synthetic mock chain profile');
   }
+  const hasMinimumConfirmations = Object.hasOwn(req.extra, 'minimumMomentumConfirmations');
+  if (req.network === MOCK_NETWORK && hasMinimumConfirmations) {
+    throw new Error('mock requirements must not set minimumMomentumConfirmations');
+  }
+  if (req.network === EXPERIMENTAL_LIVE_NETWORK && hasMinimumConfirmations) {
+    const minimum = req.extra.minimumMomentumConfirmations;
+    if (!Number.isSafeInteger(minimum) || minimum < 2 || minimum > 30) {
+      throw new Error('minimumMomentumConfirmations must be an integer from 2 to 30 when present');
+    }
+  }
+}
+
+function snapshotRequirement(requirement, { requireActive = false } = {}) {
+  const root = readExactEnumerableDataObject(requirement, REQUIREMENT_FIELDS, {
+    label: 'PaymentRequirements',
+  });
+  const extra = readExactEnumerableDataObject(root.values.extra, REQUIREMENT_EXTRA_FIELDS, {
+    optional: REQUIREMENT_EXTRA_OPTIONAL_FIELDS,
+    label: 'PaymentRequirements.extra',
+  });
+  const chain = readExactEnumerableDataObject(extra.values.zenonChain, CHAIN_PROFILE_FIELDS, {
+    label: 'PaymentRequirements.extra.zenonChain',
+  });
+
+  const chainSnapshot = {
+    version: chain.values.version,
+    chainIdentifier: chain.values.chainIdentifier,
+    genesisMomentumHash: chain.values.genesisMomentumHash,
+  };
+  const extraSnapshot = {
+    ...(HAS_OWN(extra.descriptors, 'paymentFlow')
+      ? { paymentFlow: extra.values.paymentFlow }
+      : {}),
+    poc: extra.values.poc,
+    settlement: extra.values.settlement,
+    zenonChain: chainSnapshot,
+    ...(HAS_OWN(extra.descriptors, 'minimumMomentumConfirmations')
+      ? { minimumMomentumConfirmations: extra.values.minimumMomentumConfirmations }
+      : {}),
+  };
+  const snapshot = {
+    scheme: root.values.scheme,
+    network: root.values.network,
+    asset: root.values.asset,
+    amount: root.values.amount,
+    payTo: root.values.payTo,
+    maxTimeoutSeconds: root.values.maxTimeoutSeconds,
+    extra: extraSnapshot,
+  };
+
+  validateRequirementSnapshot(snapshot, { requireActive });
+  assertDataObjectUnchanged(chain, CHAIN_PROFILE_FIELDS, {
+    label: 'PaymentRequirements.extra.zenonChain',
+  });
+  assertDataObjectUnchanged(extra, REQUIREMENT_EXTRA_FIELDS, {
+    optional: REQUIREMENT_EXTRA_OPTIONAL_FIELDS,
+    label: 'PaymentRequirements.extra',
+  });
+  assertDataObjectUnchanged(root, REQUIREMENT_FIELDS, { label: 'PaymentRequirements' });
+
+  Object.freeze(chainSnapshot);
+  Object.freeze(extraSnapshot);
+  return Object.freeze(snapshot);
+}
+
+export function snapshotActiveUpfrontRequirement(requirement) {
+  return snapshotRequirement(requirement, { requireActive: true });
+}
+
+export function effectiveMinimumMomentumConfirmations(requirement) {
+  const snapshot = snapshotActiveUpfrontRequirement(requirement);
+  return Object.hasOwn(snapshot.extra, 'minimumMomentumConfirmations')
+    ? snapshot.extra.minimumMomentumConfirmations
+    : 1;
+}
+
+export function validateRequirement(req) {
+  snapshotRequirement(req);
 }
 
 export function validateActiveUpfrontRequirement(req) {
-  validateRequirement(req);
-  if (!Object.hasOwn(req.extra, 'paymentFlow')) {
-    throw new Error('active HTTP payments require PaymentRequirements.extra.paymentFlow=upfront');
-  }
+  snapshotActiveUpfrontRequirement(req);
 }
 
 function snapshotValidatedResource(resource) {
