@@ -2532,3 +2532,74 @@ test('supervisor preserves the closed WSS bootstrap without command or IPC expan
     ));
     assert.equal(accessorReads, 0);
   });
+
+test('documentation records the quarantined live observation without weakening offline claims',
+  async () => {
+    const [readme, security, plan] = await Promise.all([
+      readFile(new URL('../README.md', import.meta.url), 'utf8'),
+      readFile(new URL('../SECURITY.md', import.meta.url), 'utf8'),
+      readFile(new URL('../docs/IMPLEMENTATION_PLAN.md', import.meta.url), 'utf8'),
+    ]);
+    const heading = 'Observed Gate-B run boundary (2026-09-04)';
+    const slice = (document, endMarker) => {
+      const start = document.indexOf(heading);
+      const end = document.indexOf(endMarker, start);
+      assert.notEqual(start, -1);
+      assert.notEqual(end, -1);
+      assert.equal(end > start, true);
+      return document.slice(start, end);
+    };
+    const observedSections = [
+      slice(readme, '\nThe older `preflight-public-ws-once`'),
+      slice(security, '\nThe optional macOS local buyer-wallet helper'),
+      slice(plan, '\nThe older plaintext transport exception'),
+    ];
+    for (const section of observedSections) {
+      assert.match(section, /Issue #45 remains open/);
+      assert.match(section, /quarantin/i);
+      assert.doesNotMatch(
+        section,
+        /(?:\/Users\/|\/home\/|[A-Za-z]:\\\\|BEGIN PRIVATE KEY|mnemonic|seed phrase|private key|wallet secret|RPC credential|access token)/iu,
+      );
+    }
+
+    const combinedObserved = observedSections.join('\n');
+    for (const invariant of [
+      /x402 v2 `exact` upfront payment/,
+      /one atomic unit of ZNN/,
+      /Chain 73404/,
+      /`fusedPlasma` 0/,
+      /difficulty 34,764,000/,
+      /24,375 ms/,
+      /schema 1|schema-1/,
+      /revision 5/,
+      /`MOMENTUM_INCLUDED` \/ `DELIVERED`/,
+      /exact six-field protected response body|exact six-field response body/,
+      /account-height advance/,
+      /one-atomic-unit debit/,
+      /exact signed-block identity and payment-intent\/resource bindings/,
+      /later Momentum/,
+      /`PENDING_INDEPENDENT_VERIFICATION`/,
+      /`GATE_B_CONTROLLER_FAILED_WORKSPACE_QUARANTINED`/,
+      /human-approved different-operator-route observation/,
+      /accepted strict independent-review assertion record/,
+      /separate publication authorization/,
+      /cleanup-quarantine addendum kept outside the version-1 JSON bundle/,
+      /protocol finality/,
+      /authenticated chain identity/,
+      /recipient receive or spendability/,
+      /facilitator authorship/,
+      /independent(?:ly attested)? HTTP (?:attestation|exchange)/,
+      /clean shutdown is not claimed|No .* clean shutdown is claimed/,
+    ]) {
+      assert.match(combinedObserved, invariant);
+    }
+    assert.doesNotMatch(
+      plan,
+      /\| Public-testnet Gate B \| `WS_ONCE_OFFLINE_TESTED` \| `NOT_EXECUTED` \| `ISSUE_45_OPEN` \|/,
+    );
+    assert.match(
+      plan,
+      /\| Public-testnet Gate B \| `WS_ONCE_OFFLINE_TESTED` \| `LIVE_CAPTURE_RETAINED` \| `PENDING_INDEPENDENT_REVIEW_WORKSPACE_QUARANTINED` \|/,
+    );
+  });
