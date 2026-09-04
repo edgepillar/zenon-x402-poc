@@ -2579,6 +2579,13 @@ test('documentation records the quarantined live observation without weakening o
       /one-atomic-unit debit/,
       /exact signed-block identity and payment-intent\/resource bindings/,
       /later Momentum/,
+      /freshly generated, dedicated, disposable testnet wallet/i,
+      /publish-RPC acknowledgement interval (?:was|of) 238 ms/i,
+      /uninterrupted, non-recovery inner runner path/i,
+      /post-run read-only comparison/i,
+      /not protocol reconciliation/i,
+      /no retry, resubmission, or replacement-payment authority/i,
+      /non-recovery inner runner reached[\s\S]*outer (?:operator )?front end/i,
       /`PENDING_INDEPENDENT_VERIFICATION`/,
       /`GATE_B_CONTROLLER_FAILED_WORKSPACE_QUARANTINED`/,
       /human-approved different-operator-route observation/,
@@ -2601,5 +2608,41 @@ test('documentation records the quarantined live observation without weakening o
     assert.match(
       plan,
       /\| Public-testnet Gate B \| `WS_ONCE_OFFLINE_TESTED` \| `LIVE_CAPTURE_RETAINED` \| `PENDING_INDEPENDENT_REVIEW_WORKSPACE_QUARANTINED` \|/,
+    );
+
+    const verificationStart = readme.indexOf('#### How to verify the x402 binding');
+    const verificationEnd = readme.indexOf('\n### Experimental chain profile', verificationStart);
+    assert.notEqual(verificationStart, -1);
+    assert.notEqual(verificationEnd, -1);
+    assert.equal(verificationEnd > verificationStart, true);
+    const verification = readme.slice(verificationStart, verificationEnd);
+    for (const invariant of [
+      /ordinary included `UserSend` account block/,
+      /This PoC's x402-intent commitment/,
+      /exact 32-byte value in `accountBlock\.data`/,
+      /paymentIntentDigest\(paymentRequired, accepted\)/,
+      /SHA-256\(UTF-8\(canonicalJson/,
+      /sorts object keys recursively while preserving array order/,
+      /SDK and RPC JSON representations encode those bytes as canonical Base64/,
+      /Explorer rendering may vary or omit the field/,
+      /paymentRequired\.accepts\[selectedIndex\]/,
+      /Reproducing this byte comparison requires a public manifest/,
+      /exact `paymentRequired` object and its exact `selectedIndex`/,
+      /Do not apply semantic defaults or value normalization/,
+      /`paymentRequired\.accepts` to contain exactly one offer and `selectedIndex` to equal 0/,
+      /proves only data\/preimage byte equality/,
+      /does not validate the account-block signature/,
+      /version-1 live-evidence verifier/,
+      /records and orders declared initial 402 and final 200 observations/,
+      /`http\.initial` contains only the status and observation time/,
+      /cannot prove that the observed 402 carried the exact `paymentRequired` object/,
+      /exact six-field protected response body/,
+      /does not independently establish|Neither[\s\S]*independently establishes/,
+    ]) {
+      assert.match(verification, invariant);
+    }
+    assert.doesNotMatch(
+      verification,
+      /(?:\/Users\/|\/home\/|[A-Za-z]:\\\\|BEGIN PRIVATE KEY|mnemonic|seed phrase|private key|wallet secret|RPC credential|access token)/iu,
     );
   });

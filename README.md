@@ -148,11 +148,11 @@ TLS encrypts the RPC connection and authenticates its server name under the host
 
 #### Observed Gate-B run boundary (2026-09-04)
 
-One fresh, disposable-wallet invocation exercised one x402 v2 `exact` upfront payment on the descriptive `zenon:testnet` label and operator-trusted Chain 73404 profile. The selected amount was one atomic unit of ZNN. The signed block used the PoW path with `fusedPlasma` 0 and difficulty 34,764,000. The private capture measured 24,375 ms from the initial 402 to the final 200: `prepareBlock()` took 6,887 ms; the buyer SDK owner was held for 8,566 ms after a 0 ms wait; the publication call took 238 ms; Momentum inclusion wait took 11,973 ms; delivery took 29 ms; and the facilitator SDK owner was held for 15,611 ms after a 0 ms wait.
+One invocation using a freshly generated, dedicated, disposable testnet wallet exercised one x402 v2 `exact` upfront payment on the descriptive `zenon:testnet` label and operator-trusted Chain 73404 profile. The selected amount was one atomic unit of ZNN. The signed block used the PoW path with `fusedPlasma` 0 and difficulty 34,764,000. The private capture measured 24,375 ms from the initial 402 to the final 200: `prepareBlock()` took 6,887 ms; the buyer SDK owner was held for 8,566 ms after a 0 ms wait; the publish-RPC acknowledgement interval was 238 ms; Momentum inclusion wait took 11,973 ms; delivery took 29 ms; and the facilitator SDK owner was held for 15,611 ms after a 0 ms wait.
 
-The retained schema-1 journal reached revision 5 with one active `MOMENTUM_INCLUDED` / `DELIVERED` record. Its exact six-field protected response body is retained privately but is not reproduced here. The five retained fragments came from the uninterrupted first-attempt runner path and were assembled and verified in memory. A separately implemented read-only reconciliation, still using the operator-trusted route rather than an independent operator route, observed one account-height advance, the exact one-atomic-unit debit, exact signed-block identity and payment-intent/resource bindings, and a later Momentum.
+The retained schema-1 journal reached revision 5 with one active `MOMENTUM_INCLUDED` / `DELIVERED` record. Its exact six-field protected response body is retained privately but is not reproduced here. The five retained fragments came from the uninterrupted, non-recovery inner runner path and were assembled and verified in memory. A separately implemented post-run read-only comparison, still using the operator-trusted route rather than an independent operator route, observed one account-height advance, the exact one-atomic-unit debit, exact signed-block identity and payment-intent/resource bindings, and a later Momentum. This comparison was not protocol reconciliation and provided no retry, resubmission, or replacement-payment authority.
 
-After private `PENDING_INDEPENDENT_VERIFICATION` capture, the front end emitted `GATE_B_CONTROLLER_FAILED_WORKSPACE_QUARANTINED` because post-delivery closure did not prove every clean-shutdown predicate. The fixed cause-free result does not identify the exact failed predicate. This cleanup-proof failure does not invalidate the retained payment and delivery observations, but clean shutdown is not claimed. The consumed workspace remains quarantined and cannot be reused, resumed, retried, or upgraded in place.
+After the non-recovery inner runner reached private `PENDING_INDEPENDENT_VERIFICATION` capture, the outer front end emitted `GATE_B_CONTROLLER_FAILED_WORKSPACE_QUARANTINED` because post-delivery closure did not prove every clean-shutdown predicate. The fixed cause-free result does not identify the exact failed predicate. This cleanup-proof failure does not invalidate the retained payment and delivery observations, but clean shutdown is not claimed. The consumed workspace remains quarantined and cannot be reused, resumed, retried, or upgraded in place.
 
 The observation remains operator-trusted and same-route. It does not establish protocol finality, authenticated chain identity, recipient receive or spendability, facilitator authorship, or independent HTTP attestation. No independent operator-route verification or public bundle exists yet. The existing manual workflow requires a human-approved different-operator-route observation and an accepted strict independent-review assertion record before the retained fragments are supplied to the network-free assembler and verifier. Publication requires that observation, the accepted assertion record, successful retained-fragment assembly and offline verification, separate publication authorization, and an explicit cleanup-quarantine addendum kept outside the version-1 JSON bundle. Issue #45 remains open because its required public transaction identifier and evidence are not yet in the repository and independently reviewed. Clean controller closure is not an Issue #45 acceptance criterion. A fresh successful run is required only if the project separately wants to demonstrate clean end-to-end controller closure.
 
@@ -267,6 +267,45 @@ The controller and lifecycle-hardening slice is confined to ten paths: this READ
 Ordinary live CLI output withholds the requirement, settlement object, payer, transaction identifier, listening URL, and protected response body. A future evidence package must be produced by a separate, explicitly reviewed workflow that discloses only its agreed public artifacts.
 
 The live adapter remains fail-closed. Do not use it with real funds, mainnet, or a valuable wallet.
+
+#### How to verify the x402 binding
+
+A Zenon explorer does not define an x402 transaction type, so it presents this payment as an ordinary included `UserSend` account block. This PoC's x402-intent commitment is the exact 32-byte value in `accountBlock.data`.
+
+For this implementation, `paymentIntentDigest(paymentRequired, accepted)` is:
+
+```text
+SHA-256(UTF-8(canonicalJson({
+  x402Version: paymentRequired.x402Version,
+  resource: paymentRequired.resource,
+  accepted
+})))
+```
+
+`canonicalJson` sorts object keys recursively while preserving array order. The resulting lowercase hexadecimal digest is decoded to 32 raw bytes before the block is signed. The SDK and RPC JSON representations encode those bytes as canonical Base64. Explorer rendering may vary or omit the field, so the comparison requires the raw account-block JSON. The following comparison checks only whether the declared intent preimage produces the bytes in `accountBlock.data`:
+
+```js
+import { Buffer } from 'node:buffer';
+import { paymentIntentDigest } from './src/canonical.js';
+
+const accepted = paymentRequired.accepts[selectedIndex];
+const expectedData = Buffer.from(
+  paymentIntentDigest(paymentRequired, accepted),
+  'hex',
+);
+const observedData = Buffer.from(accountBlock.data, 'base64');
+
+const blockDataMatchesIntent =
+  observedData.length === 32 &&
+  observedData.toString('base64') === accountBlock.data &&
+  observedData.equals(expectedData);
+```
+
+Reproducing this byte comparison requires a public manifest containing the exact `paymentRequired` object and its exact `selectedIndex`, plus the included signed account block. The selected index identifies the exact member of `paymentRequired.accepts` supplied as `accepted`. Do not apply semantic defaults or value normalization; `canonicalJson` performs only its defined recursive object-key sorting while preserving array order. Evidence version 1 further requires `paymentRequired.accepts` to contain exactly one offer and `selectedIndex` to equal 0. The digest binds only `x402Version`, `resource`, and that selected offer.
+
+`blockDataMatchesIntent` proves only data/preimage byte equality for the supplied values. It does not validate the account-block signature, transaction identity, amount, asset, payer, payee, frontier, inclusion observation, or any HTTP or journal evidence. Use the repository's version-1 live-evidence verifier for those field, signature, cross-section, and evidence-consistency checks.
+
+A successful full verification validates the manifest-to-block intent binding; cross-checks the signed account block, declared confirmation observation, final payment response, exact six-field protected response body, final journal state, trust disclosures, and integrity digests; and records and orders declared initial 402 and final 200 observations through the timing assertions. Evidence version 1's `http.initial` contains only the status and observation time, so it cannot prove that the observed 402 carried the exact `paymentRequired` object in the manifest. Neither the explorer comparison nor the offline bundle independently establishes authenticated chain identity, protocol finality, recipient receive or spendability, facilitator authorship, independently attested HTTP delivery, buyer receipt, clean controller shutdown, release, activation, or production readiness.
 
 ### Experimental chain profile
 
