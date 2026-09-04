@@ -6,6 +6,8 @@ import {
   CURRENT_TESTNET_WSS_ONCE_POLICY,
   executeCurrentTestnetWssOnceRun,
   executePublicWsOnceRun,
+  finalizeIndependentPublicWsOnce,
+  parseIndependentPublicWsOnceSupervisorBootstrap,
   parseCurrentTestnetWssOnceSupervisorBootstrap,
   parsePublicWsOnceSupervisorBootstrap,
   preflightCurrentTestnetWssOnceRun,
@@ -14,6 +16,9 @@ import {
 
 const IPC_VERSION = 1;
 const REQUEST_ID = 1;
+const FINALIZER_IPC_VERSION = 2;
+const FINALIZER_REQUEST_ID = 81;
+const FINALIZER_COMMAND = 'finalize-independent-public-ws-once';
 const BOOTSTRAP_FD = 4;
 const BOOTSTRAP_MAX_BYTES = 64 * 1024;
 const ARRAY_IS_ARRAY = Array.isArray;
@@ -28,7 +33,7 @@ function fail() {
   throw new Error('live_evidence_public_ws_once_child_failed');
 }
 
-function exactControlMessage(message) {
+function exactControlMessage(message, independentFinalizer) {
   if (!message || typeof message !== 'object' || IS_PROXY(message) ||
       ARRAY_IS_ARRAY(message) || GET_PROTOTYPE_OF(message) !== OBJECT_PROTOTYPE) fail();
   const fields = ['ipcVersion', 'requestId', 'type'];
@@ -38,7 +43,10 @@ function exactControlMessage(message) {
     const descriptor = GET_OWN_PROPERTY_DESCRIPTOR(message, fields[index]);
     if (!descriptor || !HAS_OWN(descriptor, 'value') || descriptor.enumerable !== true) fail();
   }
-  if (message.ipcVersion !== IPC_VERSION || message.requestId !== REQUEST_ID ||
+  if (independentFinalizer) {
+    if (message.ipcVersion !== FINALIZER_IPC_VERSION ||
+        message.requestId !== FINALIZER_REQUEST_ID || message.type !== 'FINALIZE') fail();
+  } else if (message.ipcVersion !== IPC_VERSION || message.requestId !== REQUEST_ID ||
       (message.type !== 'PREFLIGHT' && message.type !== 'RUN')) fail();
   return message.type;
 }
@@ -58,7 +66,7 @@ function exactOriginReleaseMessage(message) {
   return true;
 }
 
-function send(channel, type, requestId = REQUEST_ID) {
+function send(channel, type, requestId = REQUEST_ID, ipcVersion = IPC_VERSION) {
   return new Promise((resolve, reject) => {
     let settled = false;
     const finish = error => {
@@ -69,7 +77,7 @@ function send(channel, type, requestId = REQUEST_ID) {
     };
     try {
       const accepted = channel.send({
-        ipcVersion: IPC_VERSION,
+        ipcVersion,
         requestId,
         type,
       }, finish);
@@ -99,6 +107,9 @@ async function readBootstrapFd() {
     const bytes = Buffer.concat(chunks, total);
     try {
       const text = bytes.toString('utf8');
+      if (text.includes(`"command":"${FINALIZER_COMMAND}"`)) {
+        return parseIndependentPublicWsOnceSupervisorBootstrap(text);
+      }
       try {
         return parsePublicWsOnceSupervisorBootstrap(text);
       } catch {
@@ -117,7 +128,9 @@ async function readBootstrapFd() {
 function captureOptions(options) {
   if (!options || typeof options !== 'object' || IS_PROXY(options) ||
       ARRAY_IS_ARRAY(options) || GET_PROTOTYPE_OF(options) !== OBJECT_PROTOTYPE) fail();
-  const allowed = ['channel', 'readBootstrap', 'preflight', 'execute', 'forceExit'];
+  const allowed = [
+    'channel', 'readBootstrap', 'preflight', 'execute', 'forceExit',
+  ];
   const defaults = {
     channel: process,
     readBootstrap: readBootstrapFd,
@@ -161,7 +174,8 @@ export async function runPublicWsOnceExecutionChild(options = {}) {
   };
   try {
     const bootstrap = await Reflect.apply(dependencies.readBootstrap, undefined, []);
-    const currentTestnetWss = bootstrap.executionMode ===
+    const independentFinalizer = bootstrap.command === FINALIZER_COMMAND;
+    const currentTestnetWss = !independentFinalizer && bootstrap.executionMode ===
       CURRENT_TESTNET_WSS_ONCE_POLICY.executionMode;
     const preflight = dependencies.preflight ?? (currentTestnetWss
       ? preflightCurrentTestnetWssOnceRun
@@ -184,13 +198,13 @@ export async function runPublicWsOnceExecutionChild(options = {}) {
       }
       handling = true;
       try {
-        const type = exactControlMessage(message);
+        const type = exactControlMessage(message, independentFinalizer);
         if (type === 'PREFLIGHT') {
           const result = await Reflect.apply(preflight, undefined, [bootstrap]);
           if (finished) return;
           if (!result || result.valid !== true || REFLECT_OWN_KEYS(result).length !== 1) fail();
           await send(dependencies.channel, 'PREFLIGHT_VALID');
-        } else {
+        } else if (type === 'RUN') {
           const beforeOriginBind = () => {
             if (originReleaseRequested || originReleasePending || finished) fail();
             originReleaseRequested = true;
@@ -210,6 +224,24 @@ export async function runPublicWsOnceExecutionChild(options = {}) {
           if (!result || result.status !== 'pending-independent-verification' ||
               result.evidenceEligible !== false || REFLECT_OWN_KEYS(result).length !== 2) fail();
           await send(dependencies.channel, 'PENDING');
+        } else {
+          const finalizerOptions = {
+            endpointConfigPath: bootstrap.endpointConfigPath,
+            operatorReviewPath: bootstrap.operatorReviewPath,
+            workspaceRoot: bootstrap.workspaceRoot,
+            runName: bootstrap.runName,
+            attemptId: bootstrap.attemptId,
+          };
+          const result = await finalizeIndependentPublicWsOnce(finalizerOptions);
+          if (finished) return;
+          if (!result || result.status !== 'independent-verification-complete' ||
+              REFLECT_OWN_KEYS(result).length !== 1) fail();
+          await send(
+            dependencies.channel,
+            'FINALIZED',
+            FINALIZER_REQUEST_ID,
+            FINALIZER_IPC_VERSION,
+          );
         }
         if (finished) return;
         terminate(0);
@@ -217,7 +249,12 @@ export async function runPublicWsOnceExecutionChild(options = {}) {
         terminate(1);
       }
     });
-    await send(dependencies.channel, 'READY');
+    await send(
+      dependencies.channel,
+      independentFinalizer ? 'FINALIZER_READY' : 'READY',
+      independentFinalizer ? FINALIZER_REQUEST_ID : REQUEST_ID,
+      independentFinalizer ? FINALIZER_IPC_VERSION : IPC_VERSION,
+    );
   } catch {
     terminate(1);
   }
