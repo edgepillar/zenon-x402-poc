@@ -28,7 +28,7 @@ export class SettlementRepository {
     return notImplemented('SettlementRepository', 'updateEvidence()');
   }
 
-  async markDeliveryPending(_authorizationKey, _transactionHash) {
+  async markDeliveryPending(_authorizationKey, _transactionHash, _acceptedRequirement) {
     return notImplemented('SettlementRepository', 'markDeliveryPending()');
   }
 

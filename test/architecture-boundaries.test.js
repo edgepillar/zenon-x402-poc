@@ -22,6 +22,7 @@ import {
   assertSettlementRepository,
 } from '../src/settlement/settlement-repository.js';
 import { SettlementJournal } from '../src/settlement-journal.js';
+import { ExactZenonFacilitator } from '../src/zenon-payment.js';
 import {
   sameRequirements,
   validatePaymentPayloadEnvelope,
@@ -159,4 +160,22 @@ test('the mechanism contract can facade the current validation functions without
     sameRequirements,
   };
   assert.equal(assertX402PaymentMechanism(mechanism), mechanism);
+});
+
+test('delivery claims carry the authenticated accepted requirement across every concrete boundary', () => {
+  assert.equal(
+    SettlementRepository.prototype.markDeliveryPending.length,
+    3,
+    'the repository contract must reject the legacy two-argument claim boundary',
+  );
+  assert.equal(
+    SettlementJournal.prototype.markDeliveryPending.length,
+    3,
+    'the journal must receive authorization, transaction, and accepted requirement',
+  );
+  assert.equal(
+    ExactZenonFacilitator.prototype.markDeliveryPending.length,
+    2,
+    'the facilitator must receive settlement evidence and the accepted requirement',
+  );
 });

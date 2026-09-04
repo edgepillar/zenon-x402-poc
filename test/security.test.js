@@ -1657,6 +1657,77 @@ test('resource server rejects exact ResourceInfo mismatches before facilitator i
   }
 });
 
+test('resource server detaches the accepted requirement before settlement and reuses it for delivery claim', async () => {
+  const configuredRequirement = requirement();
+  const expectedClaimRequirement = structuredClone(configuredRequirement);
+  const honest = new MockExactZenonFacilitator();
+  let settleRequirement;
+  let claimRequirement;
+  let claimCalls = 0;
+  let handlerCalls = 0;
+  const events = [];
+  const facilitator = {
+    async settle(paymentPayload, acceptedRequirement, required) {
+      settleRequirement = acceptedRequirement;
+      events.push('settle-start');
+      const settlement = await honest.settle(paymentPayload, acceptedRequirement, required);
+      const reordered = Object.entries(acceptedRequirement).reverse();
+      for (const key of Object.keys(acceptedRequirement)) delete acceptedRequirement[key];
+      Object.assign(acceptedRequirement, reordered);
+      acceptedRequirement.amount = '999';
+      acceptedRequirement.extra = {
+        ...acceptedRequirement.extra,
+        poc: false,
+      };
+      events.push('settle-return');
+      return settlement;
+    },
+    async markDeliveryPending(settlement, acceptedRequirement) {
+      claimCalls += 1;
+      claimRequirement = acceptedRequirement;
+      events.push('claim');
+      assert.notStrictEqual(acceptedRequirement, settleRequirement);
+      assert.deepEqual(acceptedRequirement, expectedClaimRequirement);
+      return honest.markDeliveryPending(settlement);
+    },
+    async markDelivered(...args) {
+      events.push('delivered');
+      return honest.markDelivered(...args);
+    },
+  };
+  const app = createResourceServer({
+    facilitator,
+    requirement: configuredRequirement,
+    resourceHandler: async () => {
+      handlerCalls += 1;
+      events.push('handler');
+      return { ok: true, source: 'detached-requirement-test' };
+    },
+  });
+  configuredRequirement.amount = '777';
+  configuredRequirement.extra.poc = false;
+  const listening = await app.listen();
+  try {
+    const challenge = await fetch(`${listening.url}/paid`);
+    const required = decodeB64Json(challenge.headers.get(HEADERS.PAYMENT_REQUIRED));
+    assert.deepEqual(required.accepts[0], expectedClaimRequirement);
+    const client = new MockExactZenonClient();
+    const payload = await client.createPaymentPayload(required, required.accepts[0]);
+    const response = await fetch(`${listening.url}/paid`, {
+      headers: { [HEADERS.PAYMENT_SIGNATURE]: encodeB64Json(payload) },
+    });
+    assert.equal(response.status, 200);
+    assert.deepEqual(await response.json(), { ok: true, source: 'detached-requirement-test' });
+    assert.equal(claimCalls, 1);
+    assert.equal(handlerCalls, 1);
+    assert.notStrictEqual(claimRequirement, expectedClaimRequirement);
+    assert.deepEqual(claimRequirement, expectedClaimRequirement);
+    assert.deepEqual(events, ['settle-start', 'settle-return', 'claim', 'handler', 'delivered']);
+  } finally {
+    await app.close();
+  }
+});
+
 test('buyer refuses to sign for a different advertised resource URL', async () => {
   const accepted = requirement();
   const required = paymentRequired(accepted);

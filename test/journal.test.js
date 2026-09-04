@@ -7,6 +7,7 @@ import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { createHash } from 'node:crypto';
 import { isDeepStrictEqual } from 'node:util';
+import { paymentIntentDigest } from '../src/canonical.js';
 import {
   DELIVERY_STATES,
   EVIDENCE_STATES,
@@ -222,7 +223,6 @@ function includedEvidence(overrides = {}) {
 
 function validatedAttempt(overrides = {}) {
   const transactionHash = overrides.transactionHash ?? '1'.repeat(64);
-  const intentDigest = overrides.intentDigest ?? '3'.repeat(64);
   const chainProfile = overrides.chainProfile ?? {
     version: 1,
     chainIdentifier: '7',
@@ -233,6 +233,25 @@ function validatedAttempt(overrides = {}) {
     description: 'deterministic test resource',
     mimeType: 'application/json',
   };
+  const acceptedRequirement = {
+    scheme: 'exact',
+    network: 'zenon:testnet',
+    asset: 'zts1qqqqqqqqqqqqtq587y',
+    amount: '100',
+    payTo: 'z1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqsggv2f',
+    maxTimeoutSeconds: 30,
+    extra: {
+      paymentFlow: 'upfront',
+      poc: true,
+      settlement: 'account-block',
+      zenonChain: structuredClone(chainProfile),
+    },
+  };
+  const intentDigest = overrides.intentDigest ?? paymentIntentDigest({
+    x402Version: 2,
+    resource: resourceIdentity,
+    accepts: [acceptedRequirement],
+  }, acceptedRequirement);
   const payer = overrides.payer ?? 'z1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqsggv2f';
   const signedAccountBlock = overrides.signedAccountBlock ?? {
     version: 1,
@@ -272,6 +291,47 @@ function validatedAttempt(overrides = {}) {
     payer,
     signedAccountBlock,
   };
+}
+
+function acceptedRequirementForAttempt(attempt, minimumMomentumConfirmations = undefined) {
+  const accepted = {
+    scheme: 'exact',
+    network: 'zenon:testnet',
+    asset: attempt.signedAccountBlock.tokenStandard,
+    amount: attempt.signedAccountBlock.amount,
+    payTo: attempt.signedAccountBlock.toAddress,
+    maxTimeoutSeconds: 30,
+    extra: {
+      paymentFlow: 'upfront',
+      poc: true,
+      settlement: 'account-block',
+      zenonChain: structuredClone(attempt.chainProfile),
+    },
+  };
+  if (minimumMomentumConfirmations !== undefined) {
+    accepted.extra.minimumMomentumConfirmations = minimumMomentumConfirmations;
+  }
+  return accepted;
+}
+
+function thresholdClaimFixture(minimumMomentumConfirmations, overrides = {}) {
+  const resourceIdentity = overrides.resourceIdentity ?? {
+    url: 'http://example.test/paid',
+    description: 'deterministic test resource',
+    mimeType: 'application/json',
+  };
+  const seed = validatedAttempt({ ...overrides, resourceIdentity });
+  const acceptedRequirement = acceptedRequirementForAttempt(
+    seed,
+    minimumMomentumConfirmations,
+  );
+  const intentDigest = paymentIntentDigest({
+    x402Version: 2,
+    resource: resourceIdentity,
+    accepts: [acceptedRequirement],
+  }, acceptedRequirement);
+  const attempt = validatedAttempt({ ...overrides, resourceIdentity, intentDigest });
+  return { attempt, acceptedRequirement };
 }
 
 async function fixture(t, options = {}) {
@@ -1171,6 +1231,7 @@ test('public journal array validation rejects prototype and iterator hooks',
     await deliveryJournal.markDeliveryPending(
       deliveryAttempt.authorizationKey,
       deliveryAttempt.transactionHash,
+      acceptedRequirementForAttempt(deliveryAttempt),
     );
     const deliveryRevision = (await deliveryJournal.load()).revision;
     const deliveryBefore = await readFile(join(deliveryDirectory, 'settlement-journal.json'));
@@ -1269,7 +1330,11 @@ test('journal checksum and serialization ignore mutable Array prototype hooks',
         EVIDENCE_STATES.MOMENTUM_INCLUDED,
         includedEvidence(),
       );
-      await context.journal.markDeliveryPending(attempt.authorizationKey, attempt.transactionHash);
+      await context.journal.markDeliveryPending(
+        attempt.authorizationKey,
+        attempt.transactionHash,
+        acceptedRequirementForAttempt(attempt),
+      );
       return { ...context, attempt, current };
     }
 
@@ -1527,7 +1592,11 @@ test('public journal payloads use one contained descriptor snapshot',
     evidence.confirmationDetail.momentumHeight = originalHeight + 1;
     const updated = await evidenceCall;
     assert.equal(updated.momentumEvidence.confirmationDetail.momentumHeight, originalHeight);
-    await journal.markDeliveryPending(mutationAttempt.authorizationKey, mutationAttempt.transactionHash);
+    await journal.markDeliveryPending(
+      mutationAttempt.authorizationKey,
+      mutationAttempt.transactionHash,
+      acceptedRequirementForAttempt(mutationAttempt),
+    );
     const cachedResponse = { body: { items: ['fixed', 'ordered'] } };
     const deliveredCall = journal.markDelivered(
       mutationAttempt.authorizationKey,
@@ -1594,6 +1663,482 @@ test('deep malformed v1 and v2 files fail with the fixed corruption code', async
       error => error?.code === 'journal_corrupt' && error?.cause === undefined &&
         error?.stack === 'SettlementJournalError: journal_corrupt',
     );
+  }
+});
+
+test('Momentum evidence strengthens only the count for one immutable inclusion tuple', async t => {
+  const clock = { value: '2026-01-01T00:00:00.000Z' };
+  const { directory, journal } = await fixture(t, { clock: () => clock.value });
+  const { attempt, acceptedRequirement } = thresholdClaimFixture(3);
+  await journal.putValidated(attempt);
+  const firstEvidence = includedEvidence({ numConfirmations: 1 });
+  const first = await journal.updateEvidence(
+    attempt.authorizationKey,
+    attempt.transactionHash,
+    EVIDENCE_STATES.MOMENTUM_INCLUDED,
+    firstEvidence,
+  );
+  const firstState = await journal.load();
+  const firstBytes = await readFile(join(directory, 'settlement-journal.json'));
+
+  clock.value = '2026-01-01T00:01:00.000Z';
+  const equal = await journal.updateEvidence(
+    attempt.authorizationKey,
+    attempt.transactionHash,
+    EVIDENCE_STATES.MOMENTUM_INCLUDED,
+    {
+      observedAt: '2026-01-01T00:01:00.000Z',
+      confirmationDetail: structuredClone(firstEvidence.confirmationDetail),
+    },
+  );
+  assert.deepEqual(equal, first);
+  assert.equal((await journal.load()).revision, firstState.revision);
+  assert.equal((await readFile(join(directory, 'settlement-journal.json'))).equals(firstBytes), true);
+
+  const strongerDetail = {
+    ...structuredClone(firstEvidence.confirmationDetail),
+    numConfirmations: 2,
+  };
+  const stronger = await journal.updateEvidence(
+    attempt.authorizationKey,
+    attempt.transactionHash,
+    EVIDENCE_STATES.MOMENTUM_INCLUDED,
+    { observedAt: '2026-01-01T00:01:00.000Z', confirmationDetail: strongerDetail },
+  );
+  assert.equal(stronger.momentumEvidence.observedAt, firstEvidence.observedAt);
+  assert.deepEqual(stronger.momentumEvidence.confirmationDetail, strongerDetail);
+  assert.equal(stronger.updatedAt, clock.value);
+  assert.equal((await journal.load()).revision, firstState.revision + 1);
+
+  for (const changedDetail of [
+    { ...strongerDetail, numConfirmations: 1 },
+    { ...strongerDetail, numConfirmations: 3, momentumHeight: strongerDetail.momentumHeight + 1 },
+    { ...strongerDetail, numConfirmations: 3, momentumHash: digest('different-inclusion') },
+    { ...strongerDetail, numConfirmations: 3, momentumTimestamp: strongerDetail.momentumTimestamp + 1 },
+  ]) {
+    const before = await readFile(join(directory, 'settlement-journal.json'));
+    const revision = (await journal.load()).revision;
+    await assert.rejects(journal.updateEvidence(
+      attempt.authorizationKey,
+      attempt.transactionHash,
+      EVIDENCE_STATES.MOMENTUM_INCLUDED,
+      { observedAt: '2026-01-01T00:02:00.000Z', confirmationDetail: changedDetail },
+    ));
+    assert.equal((await journal.load()).revision, revision);
+    assert.equal((await readFile(join(directory, 'settlement-journal.json'))).equals(before), true);
+  }
+
+  const belowThreshold = await readFile(join(directory, 'settlement-journal.json'));
+  await assert.rejects(journal.markDeliveryPending(
+    attempt.authorizationKey,
+    attempt.transactionHash,
+    acceptedRequirement,
+  ));
+  assert.equal((await readFile(join(directory, 'settlement-journal.json'))).equals(belowThreshold), true);
+
+  clock.value = '2026-01-01T00:03:00.000Z';
+  await journal.updateEvidence(
+    attempt.authorizationKey,
+    attempt.transactionHash,
+    EVIDENCE_STATES.MOMENTUM_INCLUDED,
+    {
+      observedAt: '2026-01-01T00:03:00.000Z',
+      confirmationDetail: { ...strongerDetail, numConfirmations: 3 },
+    },
+  );
+  const claims = await Promise.all([
+    journal.markDeliveryPending(
+      attempt.authorizationKey,
+      attempt.transactionHash,
+      acceptedRequirement,
+    ),
+    journal.markDeliveryPending(
+      attempt.authorizationKey,
+      attempt.transactionHash,
+      {
+        amount: acceptedRequirement.amount,
+        scheme: acceptedRequirement.scheme,
+        maxTimeoutSeconds: acceptedRequirement.maxTimeoutSeconds,
+        payTo: acceptedRequirement.payTo,
+        asset: acceptedRequirement.asset,
+        network: acceptedRequirement.network,
+        extra: {
+          zenonChain: {
+            genesisMomentumHash: acceptedRequirement.extra.zenonChain.genesisMomentumHash,
+            version: acceptedRequirement.extra.zenonChain.version,
+            chainIdentifier: acceptedRequirement.extra.zenonChain.chainIdentifier,
+          },
+          minimumMomentumConfirmations:
+            acceptedRequirement.extra.minimumMomentumConfirmations,
+          settlement: acceptedRequirement.extra.settlement,
+          poc: acceptedRequirement.extra.poc,
+          paymentFlow: acceptedRequirement.extra.paymentFlow,
+        },
+      },
+    ),
+  ]);
+  assert.deepEqual(claims.map(value => value.deliveryClaimed).sort(), [false, true]);
+  assert.equal((await journal.get(
+    attempt.authorizationKey,
+    attempt.transactionHash,
+  )).deliveryState, DELIVERY_STATES.DELIVERY_PENDING);
+});
+
+test('delivery claim reauthenticates the full accepted requirement in every delivery state', async t => {
+  for (const state of [DELIVERY_STATES.NONE, DELIVERY_STATES.DELIVERY_PENDING, DELIVERY_STATES.DELIVERED]) {
+    const { directory, journal } = await fixture(t);
+    const { attempt, acceptedRequirement } = thresholdClaimFixture(2, {
+      transactionHash: digest(`claim-state-${state}`),
+    });
+    await journal.putValidated(attempt);
+    await journal.updateEvidence(
+      attempt.authorizationKey,
+      attempt.transactionHash,
+      EVIDENCE_STATES.MOMENTUM_INCLUDED,
+      includedEvidence({ numConfirmations: 2 }),
+    );
+    if (state !== DELIVERY_STATES.NONE) {
+      await journal.markDeliveryPending(
+        attempt.authorizationKey,
+        attempt.transactionHash,
+        acceptedRequirement,
+      );
+    }
+    if (state === DELIVERY_STATES.DELIVERED) {
+      await journal.markDelivered(
+        attempt.authorizationKey,
+        attempt.transactionHash,
+        { status: 200, headers: {}, body: { ok: true } },
+      );
+    }
+
+    const wrongRequirement = structuredClone(acceptedRequirement);
+    delete wrongRequirement.extra.minimumMomentumConfirmations;
+    const before = await readFile(join(directory, 'settlement-journal.json'));
+    const revision = (await journal.load()).revision;
+    await assert.rejects(journal.markDeliveryPending(
+      attempt.authorizationKey,
+      attempt.transactionHash,
+      wrongRequirement,
+    ));
+    assert.equal((await journal.load()).revision, revision);
+    assert.equal((await readFile(join(directory, 'settlement-journal.json'))).equals(before), true);
+  }
+});
+
+test('delivery claim checks the durable count before pending and delivered early returns', async t => {
+  for (const state of [DELIVERY_STATES.DELIVERY_PENDING, DELIVERY_STATES.DELIVERED]) {
+    const { directory, journal } = await fixture(t);
+    const { attempt, acceptedRequirement } = thresholdClaimFixture(2, {
+      transactionHash: digest(`below-threshold-early-return-${state}`),
+    });
+    const record = fullRecord(attempt, {
+      evidenceState: EVIDENCE_STATES.MOMENTUM_INCLUDED,
+      momentumEvidence: includedEvidence({ numConfirmations: 1 }),
+      deliveryState: state,
+      cachedResponse: state === DELIVERY_STATES.DELIVERED
+        ? { status: 200, headers: {}, body: { ok: true } }
+        : null,
+    });
+    const key = recordKey(attempt.authorizationKey, attempt.transactionHash);
+    await writeState(directory, {
+      schemaVersion: 2,
+      revision: 7,
+      records: { [key]: record },
+      tombstones: {},
+    });
+    assert.equal((await journal.load()).revision, 7);
+    const before = await readFile(join(directory, 'settlement-journal.json'));
+
+    await assert.rejects(journal.markDeliveryPending(
+      attempt.authorizationKey,
+      attempt.transactionHash,
+      acceptedRequirement,
+    ));
+
+    assert.equal((await journal.load()).revision, 7);
+    assert.equal((await readFile(join(directory, 'settlement-journal.json'))).equals(before), true);
+  }
+});
+
+test('delivery claim rejects legacy, raw-count, malformed, accessor, proxy, and digest-mismatched inputs', async t => {
+  {
+    const { directory, journal } = await fixture(t);
+    const { attempt } = thresholdClaimFixture(2, {
+      transactionHash: digest('literal-two-argument-claim'),
+    });
+    await journal.putValidated(attempt);
+    await journal.updateEvidence(
+      attempt.authorizationKey,
+      attempt.transactionHash,
+      EVIDENCE_STATES.MOMENTUM_INCLUDED,
+      includedEvidence({ numConfirmations: 2 }),
+    );
+    const before = await readFile(join(directory, 'settlement-journal.json'));
+    const revision = (await journal.load()).revision;
+    await assert.rejects(journal.markDeliveryPending(
+      attempt.authorizationKey,
+      attempt.transactionHash,
+    ));
+    assert.equal((await journal.load()).revision, revision);
+    assert.equal((await readFile(join(directory, 'settlement-journal.json'))).equals(before), true);
+  }
+
+  const cases = [
+    { name: 'missing', make: () => undefined },
+    { name: 'raw-count', make: () => 2 },
+    { name: 'count-container', make: () => ({ numConfirmations: 2 }) },
+    {
+      name: 'additional-field',
+      make: accepted => ({ ...structuredClone(accepted), unexpected: true }),
+    },
+    {
+      name: 'lower-threshold',
+      make: accepted => {
+        const value = structuredClone(accepted);
+        delete value.extra.minimumMomentumConfirmations;
+        return value;
+      },
+    },
+    {
+      name: 'different-threshold',
+      make: accepted => ({
+        ...structuredClone(accepted),
+        extra: { ...structuredClone(accepted.extra), minimumMomentumConfirmations: 3 },
+      }),
+    },
+    {
+      name: 'accessor',
+      make: (accepted, observation) => {
+        const value = structuredClone(accepted);
+        Object.defineProperty(value.extra, 'minimumMomentumConfirmations', {
+          enumerable: true,
+          get() {
+            observation.reads += 1;
+            return 2;
+          },
+        });
+        return value;
+      },
+    },
+    {
+      name: 'stable-proxy',
+      make: accepted => new Proxy(structuredClone(accepted), {}),
+    },
+    {
+      name: 'stable-extra-proxy',
+      make: accepted => {
+        const value = structuredClone(accepted);
+        value.extra = new Proxy(value.extra, {});
+        return value;
+      },
+    },
+    {
+      name: 'stable-chain-profile-proxy',
+      make: accepted => {
+        const value = structuredClone(accepted);
+        value.extra.zenonChain = new Proxy(value.extra.zenonChain, {});
+        return value;
+      },
+    },
+  ];
+
+  for (const entry of cases) {
+    const { directory, journal } = await fixture(t);
+    const { attempt, acceptedRequirement } = thresholdClaimFixture(2, {
+      transactionHash: digest(`invalid-claim-${entry.name}`),
+    });
+    await journal.putValidated(attempt);
+    await journal.updateEvidence(
+      attempt.authorizationKey,
+      attempt.transactionHash,
+      EVIDENCE_STATES.MOMENTUM_INCLUDED,
+      includedEvidence({ numConfirmations: 2 }),
+    );
+    const observation = { reads: 0 };
+    const candidate = entry.make(acceptedRequirement, observation);
+    const before = await readFile(join(directory, 'settlement-journal.json'));
+    const revision = (await journal.load()).revision;
+    await assert.rejects(journal.markDeliveryPending(
+      attempt.authorizationKey,
+      attempt.transactionHash,
+      candidate,
+    ));
+    assert.equal(observation.reads, 0);
+    assert.equal((await journal.load()).revision, revision);
+    assert.equal((await readFile(join(directory, 'settlement-journal.json'))).equals(before), true);
+  }
+});
+
+test('delivery claim snapshots synchronously before its writer queue', async t => {
+  const validContext = await fixture(t);
+  const validFixture = thresholdClaimFixture(2, {
+    transactionHash: digest('valid-before-queue'),
+  });
+  await validContext.journal.putValidated(validFixture.attempt);
+  await validContext.journal.updateEvidence(
+    validFixture.attempt.authorizationKey,
+    validFixture.attempt.transactionHash,
+    EVIDENCE_STATES.MOMENTUM_INCLUDED,
+    includedEvidence({ numConfirmations: 2 }),
+  );
+  const validInput = structuredClone(validFixture.acceptedRequirement);
+  const validCall = validContext.journal.markDeliveryPending(
+    validFixture.attempt.authorizationKey,
+    validFixture.attempt.transactionHash,
+    validInput,
+  );
+  validInput.extra.minimumMomentumConfirmations = 30;
+  const validClaim = await validCall;
+  assert.equal(validClaim.deliveryClaimed, true);
+
+  const invalidContext = await fixture(t);
+  const invalidFixture = thresholdClaimFixture(2, {
+    transactionHash: digest('invalid-before-queue'),
+  });
+  await invalidContext.journal.putValidated(invalidFixture.attempt);
+  await invalidContext.journal.updateEvidence(
+    invalidFixture.attempt.authorizationKey,
+    invalidFixture.attempt.transactionHash,
+    EVIDENCE_STATES.MOMENTUM_INCLUDED,
+    includedEvidence({ numConfirmations: 2 }),
+  );
+  const invalidInput = structuredClone(invalidFixture.acceptedRequirement);
+  invalidInput.amount = String(Number(invalidInput.amount) + 1);
+  const before = await invalidContext.journal.load();
+  const invalidCall = invalidContext.journal.markDeliveryPending(
+    invalidFixture.attempt.authorizationKey,
+    invalidFixture.attempt.transactionHash,
+    invalidInput,
+  );
+  invalidInput.amount = invalidFixture.acceptedRequirement.amount;
+  await assert.rejects(invalidCall);
+  assert.equal((await invalidContext.journal.load()).revision, before.revision);
+  assert.equal((await invalidContext.journal.get(
+    invalidFixture.attempt.authorizationKey,
+    invalidFixture.attempt.transactionHash,
+  )).deliveryState, DELIVERY_STATES.NONE);
+});
+
+test('delivery claim intent reauthentication ignores mutable Array prototype methods',
+  { concurrency: false, timeout: 30_000 }, async t => {
+    const name = 'delivery claim intent reauthentication ignores mutable Array prototype methods';
+    if (await isolatePrototypeSensitiveTest(
+      name,
+      'X402_JOURNAL_DELIVERY_INTENT_ARRAY_ISOLATED',
+    )) return;
+
+    const { directory, journal } = await fixture(t);
+    const { attempt } = thresholdClaimFixture(30, {
+      transactionHash: digest('array-prototype-delivery-intent'),
+    });
+    await journal.putValidated(attempt);
+    await journal.updateEvidence(
+      attempt.authorizationKey,
+      attempt.transactionHash,
+      EVIDENCE_STATES.MOMENTUM_INCLUDED,
+      includedEvidence({ numConfirmations: 1 }),
+    );
+    const weakerRequirement = acceptedRequirementForAttempt(attempt);
+    const beforeState = await journal.load();
+    const beforeBytes = await readFile(join(directory, 'settlement-journal.json'));
+
+    const prototype = Array.prototype;
+    const names = ['map', 'sort', 'join'];
+    const prior = new Map();
+    for (let index = 0; index < names.length; index += 1) {
+      prior.set(names[index], Object.getOwnPropertyDescriptor(prototype, names[index]));
+    }
+    let hookInvocations = 0;
+    let rejectionCode = null;
+    try {
+      for (let index = 0; index < names.length; index += 1) {
+        Object.defineProperty(prototype, names[index], {
+          configurable: true,
+          value() {
+            hookInvocations += 1;
+            throw new Error('mutable Array prototype method used');
+          },
+          writable: true,
+        });
+      }
+      try {
+        await journal.markDeliveryPending(
+          attempt.authorizationKey,
+          attempt.transactionHash,
+          weakerRequirement,
+        );
+      } catch (error) {
+        rejectionCode = error?.code ?? null;
+      }
+    } finally {
+      for (let index = 0; index < names.length; index += 1) {
+        restoreOwnProperty(prototype, names[index], prior.get(names[index]));
+      }
+    }
+
+    assert.equal(hookInvocations, 0);
+    assert.equal(rejectionCode, 'journal_delivery_claim_invalid');
+    const afterState = await journal.load();
+    assert.equal(afterState.revision, beforeState.revision);
+    assert.equal(afterState.records[0].deliveryState, DELIVERY_STATES.NONE);
+    assert.equal(afterState.records[0].momentumEvidence.confirmationDetail.numConfirmations, 1);
+    assert.equal(
+      (await readFile(join(directory, 'settlement-journal.json'))).equals(beforeBytes),
+      true,
+    );
+  });
+
+test('pending and delivered evidence permit only an exact confirmation duplicate', async t => {
+  for (const state of [DELIVERY_STATES.DELIVERY_PENDING, DELIVERY_STATES.DELIVERED]) {
+    const { directory, journal } = await fixture(t);
+    const { attempt, acceptedRequirement } = thresholdClaimFixture(2, {
+      transactionHash: digest(`immutable-evidence-${state}`),
+    });
+    const evidence = includedEvidence({ numConfirmations: 2 });
+    await journal.putValidated(attempt);
+    await journal.updateEvidence(
+      attempt.authorizationKey,
+      attempt.transactionHash,
+      EVIDENCE_STATES.MOMENTUM_INCLUDED,
+      evidence,
+    );
+    await journal.markDeliveryPending(
+      attempt.authorizationKey,
+      attempt.transactionHash,
+      acceptedRequirement,
+    );
+    if (state === DELIVERY_STATES.DELIVERED) {
+      await journal.markDelivered(
+        attempt.authorizationKey,
+        attempt.transactionHash,
+        { status: 200, headers: {}, body: { ok: true } },
+      );
+    }
+    const before = await readFile(join(directory, 'settlement-journal.json'));
+    const revision = (await journal.load()).revision;
+    await journal.updateEvidence(
+      attempt.authorizationKey,
+      attempt.transactionHash,
+      EVIDENCE_STATES.MOMENTUM_INCLUDED,
+      structuredClone(evidence),
+    );
+    assert.equal((await journal.load()).revision, revision);
+    assert.equal((await readFile(join(directory, 'settlement-journal.json'))).equals(before), true);
+    await assert.rejects(journal.updateEvidence(
+      attempt.authorizationKey,
+      attempt.transactionHash,
+      EVIDENCE_STATES.MOMENTUM_INCLUDED,
+      {
+        observedAt: evidence.observedAt,
+        confirmationDetail: {
+          ...evidence.confirmationDetail,
+          numConfirmations: evidence.confirmationDetail.numConfirmations + 1,
+        },
+      },
+    ));
+    assert.equal((await journal.load()).revision, revision);
+    assert.equal((await readFile(join(directory, 'settlement-journal.json'))).equals(before), true);
   }
 });
 
@@ -1851,9 +2396,17 @@ test('Momentum inclusion and delivered cached response survive reload without do
   await journal.putValidated(attempt);
   await journal.updateEvidence(attempt.authorizationKey, attempt.transactionHash, EVIDENCE_STATES.MOMENTUM_INCLUDED, momentumEvidence);
   await journal.updateEvidence(attempt.authorizationKey, attempt.transactionHash, EVIDENCE_STATES.SUBMISSION_OUTCOME_UNKNOWN);
-  const claim = await journal.markDeliveryPending(attempt.authorizationKey, attempt.transactionHash);
+  const claim = await journal.markDeliveryPending(
+    attempt.authorizationKey,
+    attempt.transactionHash,
+    acceptedRequirementForAttempt(attempt),
+  );
   assert.equal(claim.deliveryClaimed, true);
-  const duplicateClaim = await journal.markDeliveryPending(attempt.authorizationKey, attempt.transactionHash);
+  const duplicateClaim = await journal.markDeliveryPending(
+    attempt.authorizationKey,
+    attempt.transactionHash,
+    acceptedRequirementForAttempt(attempt),
+  );
   assert.equal(duplicateClaim.deliveryClaimed, false);
   await journal.markDelivered(attempt.authorizationKey, attempt.transactionHash, cachedResponse);
 
@@ -1878,7 +2431,11 @@ test('cached response arrays use encoded bytes and a separate element-count boun
       EVIDENCE_STATES.MOMENTUM_INCLUDED,
       includedEvidence(),
     );
-    await journal.markDeliveryPending(attempt.authorizationKey, attempt.transactionHash);
+    await journal.markDeliveryPending(
+      attempt.authorizationKey,
+      attempt.transactionHash,
+      acceptedRequirementForAttempt(attempt),
+    );
     return attempt;
   }
 
@@ -1999,7 +2556,11 @@ test('journal update timestamps remain valid when the wall clock moves backwards
       },
     },
   );
-  const pending = await journal.markDeliveryPending(attempt.authorizationKey, attempt.transactionHash);
+  const pending = await journal.markDeliveryPending(
+    attempt.authorizationKey,
+    attempt.transactionHash,
+    acceptedRequirementForAttempt(attempt),
+  );
 
   assert.equal(included.updatedAt, stored.updatedAt);
   assert.equal(pending.updatedAt, stored.updatedAt);
@@ -2499,7 +3060,11 @@ test('tombstone compare-and-replace rejects stale, changed, ineligible, and wron
 
   const included = includedEvidence();
   await journal.updateEvidence(target.authorizationKey, target.transactionHash, EVIDENCE_STATES.MOMENTUM_INCLUDED, included);
-  await journal.markDeliveryPending(target.authorizationKey, target.transactionHash);
+  await journal.markDeliveryPending(
+    target.authorizationKey,
+    target.transactionHash,
+    acceptedRequirementForAttempt(target),
+  );
   const ineligible = await journal.load();
   const ineligibleRecord = ineligible.records.find(record => record.transactionHash === target.transactionHash);
   await assert.rejects(

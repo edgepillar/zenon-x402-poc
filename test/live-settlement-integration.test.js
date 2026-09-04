@@ -448,10 +448,13 @@ test('synchronous accessor observation failures are sanitized without hooks', as
   assertObservationFailureReadBoundary(rejected.counters);
 });
 
-function requirement({ asset = sdk.ZNN_ZTS.toString() } = {}) {
+function requirement({
+  asset = sdk.ZNN_ZTS.toString(),
+  minimumMomentumConfirmations = undefined,
+} = {}) {
   const seller = sdk.KeyPair.fromPrivateKey(Buffer.alloc(32, 18));
   try {
-    return {
+    const accepted = {
       scheme: 'exact',
       network: 'zenon:testnet',
       asset,
@@ -465,6 +468,10 @@ function requirement({ asset = sdk.ZNN_ZTS.toString() } = {}) {
         zenonChain: { ...PROFILE },
       },
     };
+    if (minimumMomentumConfirmations !== undefined) {
+      accepted.extra.minimumMomentumConfirmations = minimumMomentumConfirmations;
+    }
+    return accepted;
   } finally {
     seller.clear();
   }
@@ -523,19 +530,43 @@ function signedPayment(
   }
 }
 
-function observedBlock(transaction, { included = false } = {}) {
+function observedBlock(transaction, {
+  included = false,
+  numConfirmations = 1,
+  momentumHeight = 11,
+  momentumHash = undefined,
+  momentumTimestamp = 1,
+} = {}) {
   const block = sdk.AccountBlockTemplate.fromJson(transaction);
   block.publicKey = Buffer.from(transaction.publicKey, 'base64');
   block.signature = Buffer.from(transaction.signature, 'base64');
   if (included) {
     block.confirmationDetail = {
-      numConfirmations: 1,
-      momentumHeight: 11,
-      momentumHash: sdk.Hash.digest(Buffer.from('synthetic inclusion momentum')),
-      momentumTimestamp: 1,
+      numConfirmations,
+      momentumHeight,
+      momentumHash: momentumHash ?? sdk.Hash.digest(Buffer.from('synthetic inclusion momentum')),
+      momentumTimestamp,
     };
   }
   return block;
+}
+
+function includedMomentumEvidence({
+  numConfirmations = 1,
+  momentumHeight = 11,
+  momentumHash = sdk.Hash.digest(Buffer.from('synthetic inclusion momentum')).toString(),
+  momentumTimestamp = 1,
+  observedAt = '2026-01-01T00:00:00.000Z',
+} = {}) {
+  return {
+    observedAt,
+    confirmationDetail: {
+      numConfirmations,
+      momentumHeight,
+      momentumHash,
+      momentumTimestamp,
+    },
+  };
 }
 
 function accountInfo(address, {
@@ -732,6 +763,81 @@ function deferred() {
   let resolve;
   const promise = new Promise(complete => { resolve = complete; });
   return { promise, resolve };
+}
+
+function trackTimeouts(t) {
+  const originalSetTimeout = globalThis.setTimeout;
+  const originalClearTimeout = globalThis.clearTimeout;
+  const active = new Set();
+  globalThis.setTimeout = (callback, delay, ...args) => {
+    let handle;
+    handle = originalSetTimeout((...callbackArgs) => {
+      active.delete(handle);
+      callback(...callbackArgs);
+    }, delay, ...args);
+    active.add(handle);
+    return handle;
+  };
+  globalThis.clearTimeout = handle => {
+    active.delete(handle);
+    return originalClearTimeout(handle);
+  };
+  t.after(() => {
+    globalThis.setTimeout = originalSetTimeout;
+    globalThis.clearTimeout = originalClearTimeout;
+  });
+  return active;
+}
+
+function assertThresholdPendingSettlement(result, preflight, accepted) {
+  const expectedFields = [
+    'authorizationKey',
+    'deliveryState',
+    'errorReason',
+    'network',
+    'payer',
+    'retrySamePayment',
+    'state',
+    'success',
+    'transaction',
+  ];
+  assert.deepEqual(Object.keys(result).sort(), expectedFields);
+  assert.deepEqual(
+    Reflect.ownKeys(result).map(String).sort(),
+    [...expectedFields, 'then'].sort(),
+  );
+  for (const field of expectedFields) {
+    const descriptor = Object.getOwnPropertyDescriptor(result, field);
+    assert.ok(descriptor && Object.hasOwn(descriptor, 'value'));
+    assert.equal(descriptor.enumerable, true);
+  }
+  assert.deepEqual(Object.getOwnPropertyDescriptor(result, 'then'), {
+    value: undefined,
+    enumerable: false,
+    writable: false,
+    configurable: false,
+  });
+  assert.deepEqual({
+    success: result.success,
+    network: result.network,
+    transaction: result.transaction,
+    payer: result.payer,
+    errorReason: result.errorReason,
+    state: result.state,
+    authorizationKey: result.authorizationKey,
+    retrySamePayment: result.retrySamePayment,
+    deliveryState: result.deliveryState,
+  }, {
+    success: false,
+    network: accepted.network,
+    transaction: preflight.transactionHash,
+    payer: preflight.payer,
+    errorReason: 'momentum_confirmation_threshold_pending',
+    state: EVIDENCE_STATES.MOMENTUM_INCLUDED,
+    authorizationKey: preflight.authorizationKey,
+    retrySamePayment: true,
+    deliveryState: DELIVERY_STATES.NONE,
+  });
 }
 
 const MAINTENANCE_RESULT_KEYS = Object.freeze([
@@ -3174,6 +3280,461 @@ test('ExactZenonFacilitator deterministic settlement integration scenarios', asy
         'buyer_owner_released',
       ]);
     });
+  });
+
+  await t.test('every first sub-threshold inclusion exit persists once and returns immediately', async t => {
+    const cases = [
+      { name: 'publication-recovery', publicationRejects: true, waitExpected: false },
+      { name: 'wait-completion', publicationRejects: false, waitExpected: true },
+    ];
+    for (const [index, entry] of cases.entries()) {
+      await t.test(entry.name, async t => {
+        const accepted = requirement({ minimumMomentumConfirmations: 2 });
+        const required = challenge(accepted);
+        const payload = signedPayment(required, accepted, 57 + index);
+        const preflight = await preflightZenonPayment(payload, accepted, required);
+        const { journal } = await journalFixture(t);
+        const included = observedBlock(payload.payload.transaction, {
+          included: true,
+          numConfirmations: 1,
+        });
+        let published = false;
+        let inclusionLookupCall = null;
+        const node = installSyntheticNode(t, {
+          lookup: call => {
+            if (!published) return null;
+            inclusionLookupCall ??= call;
+            return included;
+          },
+          publish: () => {
+            published = true;
+            if (entry.publicationRejects) throw new Error();
+          },
+        });
+        let monotonic = 0;
+        const observer = createLiveEvidenceObserver({
+          utcNow: () => '2026-01-01T00:00:00.000Z',
+          monotonicNow: () => ++monotonic,
+        });
+        const exact = facilitator(journal, { lifecycleObserver: observer });
+        const activeTimeouts = trackTimeouts(t);
+
+        const result = await exact.settle(payload, accepted, required);
+        assertThresholdPendingSettlement(result, preflight, accepted);
+        assert.equal(node.counters.lookup, inclusionLookupCall);
+        assert.equal(node.counters.lookup, 3);
+        assert.equal(node.counters.publish, 1);
+        assert.equal(node.counters.subscribe, 1);
+        assert.equal(node.counters.prepareBlock, 0);
+        const record = await journal.get(preflight.authorizationKey, preflight.transactionHash);
+        assert.equal(record.evidenceState, EVIDENCE_STATES.MOMENTUM_INCLUDED);
+        assert.equal(record.deliveryState, DELIVERY_STATES.NONE);
+        assert.equal(record.momentumEvidence.confirmationDetail.numConfirmations, 1);
+        const phases = exact.snapshotLiveEvidenceObservations().map(event => event.phase);
+        assert.equal(phases.includes('inclusion_wait_started'), entry.waitExpected);
+        assert.equal(phases.at(-1), 'facilitator_owner_released');
+
+        const afterResponse = structuredClone(node.counters);
+        await new Promise(resolve => setImmediate(resolve));
+        assert.deepEqual(node.counters, afterResponse);
+        assert.equal(activeTimeouts.size, 0);
+      });
+    }
+  });
+
+  await t.test('Option A stops at first inclusion and advances only on a later same-payment request', async t => {
+    const accepted = requirement({ minimumMomentumConfirmations: 2 });
+    const required = challenge(accepted);
+    const payload = signedPayment(required, accepted, 51);
+    const preflight = await preflightZenonPayment(payload, accepted, required);
+    const { journal } = await journalFixture(t);
+    const firstIncluded = observedBlock(payload.payload.transaction, {
+      included: true,
+      numConfirmations: 1,
+    });
+    const readyIncluded = observedBlock(payload.payload.transaction, {
+      included: true,
+      numConfirmations: 2,
+    });
+    let phase = 'first';
+    let exact;
+    const node = installSyntheticNode(t, {
+      lookup: (_call, hash) => {
+        assert.equal(
+          exact.snapshotLiveEvidenceObservations().at(-1)?.phase,
+          'facilitator_readiness_finished',
+        );
+        assert.equal(hash.toString(), preflight.transactionHash);
+        return phase === 'first' ? firstIncluded : readyIncluded;
+      },
+      publish: () => { throw new Error(); },
+    });
+    let monotonic = 0;
+    const observer = createLiveEvidenceObserver({
+      utcNow: () => '2026-01-01T00:00:00.000Z',
+      monotonicNow: () => ++monotonic,
+    });
+    exact = facilitator(journal, { lifecycleObserver: observer });
+    const activeTimeouts = trackTimeouts(t);
+
+    const first = await exact.settle(payload, accepted, required);
+    assertThresholdPendingSettlement(first, preflight, accepted);
+    assert.equal(node.counters.lookup, 1);
+    assert.equal(node.counters.publish, 0);
+    assert.equal(node.counters.subscribe, 0);
+    assert.equal(node.counters.frontier, 0);
+    assert.equal(node.counters.unconfirmed, 0);
+    assert.equal(node.counters.prepareBlock, 0);
+    const firstRecord = await journal.get(preflight.authorizationKey, preflight.transactionHash);
+    assert.equal(firstRecord.evidenceState, EVIDENCE_STATES.MOMENTUM_INCLUDED);
+    assert.equal(firstRecord.deliveryState, DELIVERY_STATES.NONE);
+    assert.equal(firstRecord.momentumEvidence.confirmationDetail.numConfirmations, 1);
+    const firstObservedAt = firstRecord.momentumEvidence.observedAt;
+    assert.equal(
+      exact.snapshotLiveEvidenceObservations().at(-1)?.phase,
+      'facilitator_owner_released',
+    );
+    const afterResponse = structuredClone(node.counters);
+    await new Promise(resolve => setImmediate(resolve));
+    assert.deepEqual(node.counters, afterResponse);
+    assert.equal(activeTimeouts.size, 0);
+
+    phase = 'ready';
+    const lookupsBeforeRetry = node.counters.lookup;
+    const ready = await exact.settle(payload, accepted, required);
+    assert.equal(ready.success, true);
+    assert.equal(ready.state, EVIDENCE_STATES.MOMENTUM_INCLUDED);
+    assert.equal(ready.deliveryState, DELIVERY_STATES.NONE);
+    assert.equal(node.counters.lookup, lookupsBeforeRetry + 1);
+    assert.equal(node.counters.publish, 0);
+    assert.equal(node.counters.subscribe, 0);
+    assert.equal(node.counters.frontier, 0);
+    assert.equal(node.counters.unconfirmed, 0);
+    assert.equal(node.counters.prepareBlock, 0);
+    const readyRecord = await journal.get(preflight.authorizationKey, preflight.transactionHash);
+    assert.equal(readyRecord.momentumEvidence.observedAt, firstObservedAt);
+    assert.equal(readyRecord.momentumEvidence.confirmationDetail.numConfirmations, 2);
+
+    node.behavior.lookup = () => { throw new Error(); };
+    const countersBeforeDurableRetry = structuredClone(node.counters);
+    const durable = await exact.settle(payload, accepted, required);
+    assert.equal(durable.success, true);
+    assert.equal(durable.transaction, preflight.transactionHash);
+    assert.deepEqual(node.counters, countersBeforeDurableRetry);
+    assert.equal(activeTimeouts.size, 0);
+  });
+
+  await t.test('threshold-pending retries perform one lookup and retain strongest evidence on failure', async t => {
+    const cases = [
+      {
+        name: 'equal-count',
+        observe: transaction => observedBlock(transaction, {
+          included: true,
+          numConfirmations: 2,
+        }),
+      },
+      {
+        name: 'higher-count-still-below-threshold',
+        minimumMomentumConfirmations: 4,
+        observe: transaction => observedBlock(transaction, {
+          included: true,
+          numConfirmations: 3,
+        }),
+      },
+      {
+        name: 'lower-count',
+        observe: transaction => observedBlock(transaction, {
+          included: true,
+          numConfirmations: 1,
+        }),
+      },
+      {
+        name: 'tuple-drift',
+        observe: transaction => observedBlock(transaction, {
+          included: true,
+          numConfirmations: 3,
+          momentumHeight: 12,
+          momentumHash: sdk.Hash.digest(Buffer.from('different inclusion tuple')),
+        }),
+      },
+      { name: 'exact-absence', observe: () => null },
+      { name: 'unavailable', observe: () => { throw new Error(); } },
+    ];
+
+    for (const entry of cases) {
+      await t.test(entry.name, async t => {
+        const accepted = requirement({
+          minimumMomentumConfirmations: entry.minimumMomentumConfirmations ?? 3,
+        });
+        const required = challenge(accepted);
+        const payload = signedPayment(required, accepted, 52);
+        const preflight = await preflightZenonPayment(payload, accepted, required);
+        const { journal } = await journalFixture(t);
+        await persistRecord(journal, payload, accepted, required);
+        const strongestDetail = {
+          numConfirmations: 2,
+          momentumHeight: 11,
+          momentumHash: sdk.Hash.digest(Buffer.from('synthetic inclusion momentum')).toString(),
+          momentumTimestamp: 1,
+        };
+        await journal.updateEvidence(
+          preflight.authorizationKey,
+          preflight.transactionHash,
+          EVIDENCE_STATES.MOMENTUM_INCLUDED,
+          {
+            observedAt: '2026-01-01T00:00:00.000Z',
+            confirmationDetail: strongestDetail,
+          },
+        );
+        const before = await journal.get(preflight.authorizationKey, preflight.transactionHash);
+        const beforeState = await journal.load();
+        let exact;
+        const observer = createLiveEvidenceObserver({
+          utcNow: () => '2026-01-01T00:00:00.000Z',
+          monotonicNow: (() => { let value = 0; return () => ++value; })(),
+        });
+        const node = installSyntheticNode(t, {
+          lookup: (_call, hash) => {
+            assert.equal(
+              exact.snapshotLiveEvidenceObservations().at(-1)?.phase,
+              'facilitator_readiness_finished',
+            );
+            assert.equal(hash.toString(), preflight.transactionHash);
+            return entry.observe(payload.payload.transaction);
+          },
+          publish: () => { throw new Error(); },
+        });
+
+        exact = facilitator(journal, { lifecycleObserver: observer });
+        const result = await exact.settle(payload, accepted, required);
+        assertThresholdPendingSettlement(result, preflight, accepted);
+        assert.equal(node.counters.lookup, 1);
+        assert.equal(node.counters.publish, 0);
+        assert.equal(node.counters.subscribe, 0);
+        const retained = await journal.get(preflight.authorizationKey, preflight.transactionHash);
+        const afterState = await journal.load();
+        if (entry.name === 'higher-count-still-below-threshold') {
+          assert.equal(retained.momentumEvidence.observedAt, before.momentumEvidence.observedAt);
+          assert.deepEqual(retained.momentumEvidence.confirmationDetail, {
+            ...before.momentumEvidence.confirmationDetail,
+            numConfirmations: 3,
+          });
+          assert.notEqual(retained.updatedAt, before.updatedAt);
+          assert.equal(afterState.revision, beforeState.revision + 1);
+        } else {
+          assert.deepEqual(retained.momentumEvidence, before.momentumEvidence);
+          assert.equal(retained.updatedAt, before.updatedAt);
+          assert.equal(afterState.revision, beforeState.revision);
+        }
+        assert.equal(retained.deliveryState, DELIVERY_STATES.NONE);
+        const afterResponse = structuredClone(node.counters);
+        await new Promise(resolve => setImmediate(resolve));
+        assert.deepEqual(node.counters, afterResponse);
+      });
+    }
+  });
+
+  await t.test('threshold-pending restart is exact-hash-only and configuration rotation is fail-closed', async t => {
+    const accepted = requirement({ minimumMomentumConfirmations: 2 });
+    const required = challenge(accepted);
+    const payload = signedPayment(required, accepted, 53);
+    const preflight = await preflightZenonPayment(payload, accepted, required);
+    const { root, directory, journal } = await journalFixture(t);
+    await persistRecord(journal, payload, accepted, required);
+    await journal.updateEvidence(
+      preflight.authorizationKey,
+      preflight.transactionHash,
+      EVIDENCE_STATES.MOMENTUM_INCLUDED,
+      {
+        observedAt: '2026-01-01T00:00:00.000Z',
+        confirmationDetail: {
+          numConfirmations: 1,
+          momentumHeight: 11,
+          momentumHash: sdk.Hash.digest(Buffer.from('synthetic inclusion momentum')).toString(),
+          momentumTimestamp: 1,
+        },
+      },
+    );
+    const reloaded = new SettlementJournal({ directory, allowedRoot: root });
+    const readyIncluded = observedBlock(payload.payload.transaction, {
+      included: true,
+      numConfirmations: 2,
+    });
+    const node = installSyntheticNode(t, {
+      lookup: (_call, hash) => {
+        assert.equal(hash.toString(), preflight.transactionHash);
+        return readyIncluded;
+      },
+      frontier: () => { throw new Error(); },
+      unconfirmed: () => { throw new Error(); },
+      publish: () => { throw new Error(); },
+    });
+    const exact = facilitator(reloaded);
+
+    const rotated = requirement({ minimumMomentumConfirmations: 3 });
+    const rotatedResult = await exact.settle(payload, rotated, challenge(rotated));
+    assert.equal(rotatedResult.success, false);
+    assert.equal(node.counters.lookup, 0);
+    assert.equal(node.counters.publish, 0);
+    assert.equal((await reloaded.get(
+      preflight.authorizationKey,
+      preflight.transactionHash,
+    )).momentumEvidence.confirmationDetail.numConfirmations, 1);
+
+    const restored = await exact.settle(payload, accepted, required);
+    assert.equal(restored.success, true);
+    assert.equal(node.counters.lookup, 1);
+    assert.equal(node.counters.frontier, 0);
+    assert.equal(node.counters.unconfirmed, 0);
+    assert.equal(node.counters.publish, 0);
+  });
+
+  await t.test('threshold-bearing acknowledged and unknown restarts never republish', async t => {
+    for (const evidenceState of [
+      EVIDENCE_STATES.SUBMISSION_ACKNOWLEDGED,
+      EVIDENCE_STATES.SUBMISSION_OUTCOME_UNKNOWN,
+    ]) {
+      await t.test(evidenceState, async t => {
+        const accepted = requirement({ minimumMomentumConfirmations: 2 });
+        const required = challenge(accepted);
+        const payload = signedPayment(required, accepted, 55);
+        const preflight = await preflightZenonPayment(payload, accepted, required);
+        const { root, directory, journal } = await journalFixture(t);
+        await persistRecord(journal, payload, accepted, required, evidenceState);
+        const reloaded = new SettlementJournal({ directory, allowedRoot: root });
+        const included = evidenceState === EVIDENCE_STATES.SUBMISSION_ACKNOWLEDGED
+          ? observedBlock(payload.payload.transaction, {
+            included: true,
+            numConfirmations: 1,
+          })
+          : null;
+        const node = installSyntheticNode(t, {
+          lookup: (_call, hash) => {
+            assert.equal(hash.toString(), preflight.transactionHash);
+            return included;
+          },
+          frontier: () => { throw new Error(); },
+          unconfirmed: () => { throw new Error(); },
+          publish: () => { throw new Error(); },
+        });
+
+        const result = await facilitator(reloaded).settle(payload, accepted, required);
+        if (included) {
+          assertThresholdPendingSettlement(result, preflight, accepted);
+        } else {
+          assert.equal(result.success, false);
+          assert.equal(result.state, evidenceState);
+          assert.equal(result.retrySamePayment, true);
+        }
+        assert.equal(node.counters.lookup, 1);
+        assert.equal(node.counters.frontier, 0);
+        assert.equal(node.counters.unconfirmed, 0);
+        assert.equal(node.counters.publish, 0);
+        assert.equal(node.counters.prepareBlock, 0);
+      });
+    }
+  });
+
+  await t.test('concurrent threshold retries share durable evidence without duplicate lookup', async t => {
+    const accepted = requirement({ minimumMomentumConfirmations: 2 });
+    const required = challenge(accepted);
+    const payload = signedPayment(required, accepted, 56);
+    const preflight = await preflightZenonPayment(payload, accepted, required);
+    const { journal } = await journalFixture(t);
+    await persistRecord(journal, payload, accepted, required);
+    await journal.updateEvidence(
+      preflight.authorizationKey,
+      preflight.transactionHash,
+      EVIDENCE_STATES.MOMENTUM_INCLUDED,
+      includedMomentumEvidence({ numConfirmations: 1 }),
+    );
+    const node = installSyntheticNode(t, {
+      lookup: (_call, hash) => {
+        assert.equal(hash.toString(), preflight.transactionHash);
+        return observedBlock(payload.payload.transaction, {
+          included: true,
+          numConfirmations: 2,
+        });
+      },
+      publish: () => { throw new Error(); },
+    });
+    const exact = facilitator(journal);
+
+    const results = await Promise.all([
+      exact.settle(payload, accepted, required),
+      exact.settle(payload, accepted, required),
+    ]);
+    assert.deepEqual(results.map(result => result.success), [true, true]);
+    assert.equal(node.counters.lookup, 1);
+    assert.equal(node.counters.publish, 0);
+    assert.equal((await journal.get(
+      preflight.authorizationKey,
+      preflight.transactionHash,
+    )).momentumEvidence.confirmationDetail.numConfirmations, 2);
+  });
+
+  await t.test('maintenance records sub-threshold inclusion but never advances delivery autonomously', async t => {
+    const accepted = requirement({ minimumMomentumConfirmations: 2 });
+    const required = challenge(accepted);
+    const payload = signedPayment(required, accepted, 54);
+    const preflight = await preflightZenonPayment(payload, accepted, required);
+    const current = { value: '2026-01-01T00:00:00.000Z' };
+    const { journal } = await journalFixture(t, { clock: () => current.value });
+    let markDeliveryPendingCalls = 0;
+    let markDeliveredCalls = 0;
+    const originalMarkDeliveryPending = journal.markDeliveryPending.bind(journal);
+    const originalMarkDelivered = journal.markDelivered.bind(journal);
+    journal.markDeliveryPending = (...args) => {
+      markDeliveryPendingCalls += 1;
+      return originalMarkDeliveryPending(...args);
+    };
+    journal.markDelivered = (...args) => {
+      markDeliveredCalls += 1;
+      return originalMarkDelivered(...args);
+    };
+    await persistRecord(
+      journal,
+      payload,
+      accepted,
+      required,
+      EVIDENCE_STATES.SUBMISSION_ACKNOWLEDGED,
+    );
+    const included = observedBlock(payload.payload.transaction, {
+      included: true,
+      numConfirmations: 1,
+    });
+    const node = installSyntheticNode(t, {
+      lookup: () => included,
+      publish: () => { throw new Error(); },
+    });
+    const exact = facilitator(journal, { reconciliationRetentionMs: 3_600_000 });
+
+    current.value = '2026-01-01T01:00:00.001Z';
+    const first = await exact.runReconciliationMaintenance();
+    assert.equal(first.included, 1);
+    const record = await journal.get(preflight.authorizationKey, preflight.transactionHash);
+    assert.equal(record.evidenceState, EVIDENCE_STATES.MOMENTUM_INCLUDED);
+    assert.equal(record.momentumEvidence.confirmationDetail.numConfirmations, 1);
+    assert.equal(record.deliveryState, DELIVERY_STATES.NONE);
+    assert.equal(node.counters.lookup, 1);
+    assert.equal(node.counters.publish, 0);
+    assert.equal(markDeliveryPendingCalls, 0);
+    assert.equal(markDeliveredCalls, 0);
+
+    node.behavior.lookup = () => observedBlock(payload.payload.transaction, {
+      included: true,
+      numConfirmations: 2,
+    });
+    const lookupsBeforeSecondPass = node.counters.lookup;
+    const second = await exact.runReconciliationMaintenance();
+    assert.equal(second.examined, 0);
+    assert.equal(node.counters.lookup, lookupsBeforeSecondPass);
+    assert.equal((await journal.get(
+      preflight.authorizationKey,
+      preflight.transactionHash,
+    )).momentumEvidence.confirmationDetail.numConfirmations, 1);
+    assert.equal(markDeliveryPendingCalls, 0);
+    assert.equal(markDeliveredCalls, 0);
   });
 
   // This scenario permanently poisons the module-wide live runtime and must be

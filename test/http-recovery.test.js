@@ -1,12 +1,18 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
+import * as sdk from 'znn-typescript-sdk';
 import { paidFetch, PaymentSubmissionOutcomeUnknownError, reconcilePayment } from '../src/buyer.js';
 import { paymentIntentDigest, sha256Hex } from '../src/canonical.js';
 import { createResourceServer } from '../src/resource-server.js';
 import { MockExactZenonClient, MockExactZenonFacilitator } from '../src/mock-payment.js';
 import { buildRequirement } from '../src/config.js';
-import { decodeB64Json, encodeB64Json, HEADERS } from '../src/x402-wire.js';
+import {
+  createPaymentCapabilities,
+  decodeB64Json,
+  encodeB64Json,
+  HEADERS,
+} from '../src/x402-wire.js';
 
 async function isolatePrototypeSensitiveTest(name, flag) {
   if (process.env[flag] === '1') return false;
@@ -5551,4 +5557,603 @@ test('buyer keeps terminal ambiguity private and transfers same-payment recovery
   assert.equal(recovery.settlement.retrySamePayment, true);
   assert.equal(Object.hasOwn(recovery, 'recoveryHandle'), true);
   assert.equal(recoveryCalls, 2);
+});
+
+function issue85LiveRequirement(minimumMomentumConfirmations = 2) {
+  const payTo = sdk.Address.fromPublicKey(Uint8Array.from({ length: 32 }, (_, index) => index + 1))
+    .toString();
+  return {
+    scheme: 'exact',
+    network: 'zenon:testnet',
+    asset: sdk.TokenStandard.fromCore(Uint8Array.from({ length: 10 }, (_, index) => index + 11))
+      .toString(),
+    amount: '1',
+    payTo,
+    maxTimeoutSeconds: 30,
+    extra: {
+      paymentFlow: 'upfront',
+      poc: true,
+      settlement: 'account-block',
+      zenonChain: {
+        version: 1,
+        chainIdentifier: '7',
+        genesisMomentumHash: sha256Hex('issue-85 synthetic chain profile'),
+      },
+      minimumMomentumConfirmations,
+    },
+  };
+}
+
+function issue85PaymentPayload(paymentRequired, label = 'payment') {
+  const accepted = structuredClone(paymentRequired.accepts[0]);
+  return {
+    x402Version: paymentRequired.x402Version,
+    resource: structuredClone(paymentRequired.resource),
+    accepted,
+    payload: {
+      transaction: {
+        hash: sha256Hex(`issue-85 synthetic ${label}`),
+        address: sdk.Address.fromPublicKey(
+          Uint8Array.from({ length: 32 }, (_, index) => 63 - index),
+        ).toString(),
+      },
+      intentDigest: paymentIntentDigest(paymentRequired, accepted),
+    },
+  };
+}
+
+function issue85AuthorizationKey(paymentPayload, paymentRequired) {
+  const accepted = paymentPayload.accepted;
+  return sha256Hex({
+    domain: 'zenon-x402-authorization-v1',
+    chainProfile: accepted.extra.zenonChain,
+    intentDigest: paymentIntentDigest(paymentRequired, accepted),
+    resourceDigest: sha256Hex(paymentRequired.resource),
+    transactionHash: paymentPayload.payload.transaction.hash,
+  });
+}
+
+function issue85ShieldedThresholdResult(paymentPayload, paymentRequired) {
+  const result = {
+    success: false,
+    network: paymentPayload.accepted.network,
+    transaction: paymentPayload.payload.transaction.hash,
+    payer: paymentPayload.payload.transaction.address,
+    errorReason: 'momentum_confirmation_threshold_pending',
+    state: 'MOMENTUM_INCLUDED',
+    authorizationKey: issue85AuthorizationKey(paymentPayload, paymentRequired),
+    retrySamePayment: true,
+    deliveryState: 'NONE',
+  };
+  Object.defineProperty(result, 'then', {
+    value: undefined,
+    enumerable: false,
+    writable: false,
+    configurable: false,
+  });
+  return result;
+}
+
+function issue85CopyShieldedResult(value, overrides = {}) {
+  const copy = { ...value, ...overrides };
+  Object.defineProperty(copy, 'then', {
+    value: undefined,
+    enumerable: false,
+    writable: false,
+    configurable: false,
+  });
+  return copy;
+}
+
+async function issue85ChallengeAndPayment(url, label) {
+  const challenge = await fetch(`${url}/paid`);
+  assert.equal(challenge.status, 402);
+  const paymentRequired = decodeB64Json(challenge.headers.get(HEADERS.PAYMENT_REQUIRED));
+  return {
+    paymentRequired,
+    paymentPayload: issue85PaymentPayload(paymentRequired, label),
+  };
+}
+
+test('exact authenticated threshold-pending evidence maps only to same-payment HTTP reconciliation',
+  { concurrency: false, timeout: 30_000 }, async () => {
+    if (await isolatePrototypeSensitiveTest(
+      'exact authenticated threshold-pending evidence maps only to same-payment HTTP reconciliation',
+      'X402_THRESHOLD_PENDING_THEN_ISOLATED',
+    )) return;
+
+    const requirement = issue85LiveRequirement(2);
+    let claimCalls = 0;
+    let deliveredCalls = 0;
+    let handlerCalls = 0;
+    let inheritedThenReads = 0;
+    let arrayHookCalls = 0;
+    const facilitator = {
+      async settle(paymentPayload, accepted, paymentRequired) {
+        assert.deepEqual(accepted, requirement);
+        const result = issue85ShieldedThresholdResult(paymentPayload, paymentRequired);
+        assert.deepEqual(Object.keys(result), [
+          'success',
+          'network',
+          'transaction',
+          'payer',
+          'errorReason',
+          'state',
+          'authorizationKey',
+          'retrySamePayment',
+          'deliveryState',
+        ]);
+        assert.deepEqual(Object.getOwnPropertyDescriptor(result, 'then'), {
+          value: undefined,
+          enumerable: false,
+          writable: false,
+          configurable: false,
+        });
+        return result;
+      },
+      async markDeliveryPending() {
+        claimCalls += 1;
+        throw new Error('threshold-pending evidence must not claim delivery');
+      },
+      async markDelivered() {
+        deliveredCalls += 1;
+        throw new Error('threshold-pending evidence must not cache delivery');
+      },
+    };
+    const app = createResourceServer({
+      facilitator,
+      requirement,
+      resourceHandler: async () => {
+        handlerCalls += 1;
+        return { ok: true };
+      },
+    });
+    const listening = await app.listen();
+    const previousThen = Object.getOwnPropertyDescriptor(Object.prototype, 'then');
+    const someDescriptor = Object.getOwnPropertyDescriptor(Array.prototype, 'some');
+    const everyDescriptor = Object.getOwnPropertyDescriptor(Array.prototype, 'every');
+    const includesDescriptor = Object.getOwnPropertyDescriptor(Array.prototype, 'includes');
+    const iteratorDescriptor = Object.getOwnPropertyDescriptor(Array.prototype, Symbol.iterator);
+    const isPendingShapeArray = value => {
+      if (!Array.isArray(value) || (value.length !== 9 && value.length !== 10)) return false;
+      let hasSuccess = false;
+      let hasReason = false;
+      let hasAuthorization = false;
+      let hasDeliveryState = false;
+      for (let index = 0; index < value.length; index += 1) {
+        if (value[index] === 'success') hasSuccess = true;
+        else if (value[index] === 'errorReason') hasReason = true;
+        else if (value[index] === 'authorizationKey') hasAuthorization = true;
+        else if (value[index] === 'deliveryState') hasDeliveryState = true;
+      }
+      return hasSuccess && hasReason && hasAuthorization && hasDeliveryState;
+    };
+    const poisonPendingArrayMethod = descriptor => ({
+      ...descriptor,
+      value: function poisonPendingShape(...args) {
+        if (isPendingShapeArray(this)) {
+          arrayHookCalls += 1;
+          throw new Error('pending evidence reached a mutable Array hook');
+        }
+        return Reflect.apply(descriptor.value, this, args);
+      },
+    });
+    let response;
+    let paymentPayload;
+    try {
+      ({ paymentPayload } = await issue85ChallengeAndPayment(listening.url, 'honest threshold'));
+      Object.defineProperty(Object.prototype, 'then', {
+        configurable: true,
+        get() {
+          const state = Object.getOwnPropertyDescriptor(this, 'state');
+          const reason = Object.getOwnPropertyDescriptor(this, 'errorReason');
+          if (state?.value !== 'MOMENTUM_INCLUDED' ||
+              reason?.value !== 'momentum_confirmation_threshold_pending') return undefined;
+          inheritedThenReads += 1;
+          throw new Error('threshold result inherited then was observed');
+        },
+      });
+      Object.defineProperty(
+        Array.prototype,
+        'some',
+        poisonPendingArrayMethod(someDescriptor),
+      );
+      Object.defineProperty(
+        Array.prototype,
+        'every',
+        poisonPendingArrayMethod(everyDescriptor),
+      );
+      Object.defineProperty(
+        Array.prototype,
+        'includes',
+        poisonPendingArrayMethod(includesDescriptor),
+      );
+      Object.defineProperty(Array.prototype, Symbol.iterator, {
+        ...iteratorDescriptor,
+        value: function poisonPendingShapeIterator() {
+          if (isPendingShapeArray(this)) {
+            arrayHookCalls += 1;
+            throw new Error('pending evidence reached the mutable Array iterator');
+          }
+          return Reflect.apply(iteratorDescriptor.value, this, []);
+        },
+      });
+      response = await submitPayment(listening.url, paymentPayload);
+    } finally {
+      Object.defineProperty(Array.prototype, 'some', someDescriptor);
+      Object.defineProperty(Array.prototype, 'every', everyDescriptor);
+      Object.defineProperty(Array.prototype, 'includes', includesDescriptor);
+      Object.defineProperty(Array.prototype, Symbol.iterator, iteratorDescriptor);
+      if (previousThen) Object.defineProperty(Object.prototype, 'then', previousThen);
+      else delete Object.prototype.then;
+    }
+
+    try {
+      const observation = await observePaidSubmission(response);
+      assertSubmittedIdentityRecovery(observation, paymentPayload, {
+        state: 'MOMENTUM_INCLUDED',
+        reason: 'payment_reconciliation_required',
+      });
+      assert.equal(response.headers.get(HEADERS.PAYMENT_REQUIRED), null);
+      assert.equal(inheritedThenReads, 0);
+      assert.equal(arrayHookCalls, 0);
+      assert.equal(claimCalls, 0);
+      assert.equal(deliveredCalls, 0);
+      assert.equal(handlerCalls, 0);
+    } finally {
+      await app.close();
+    }
+  });
+
+test('malformed threshold-pending candidates never authenticate or release the resource', async () => {
+  const variants = [
+    {
+      label: 'missing immutable then shield',
+      transform(value) {
+        const copy = { ...value };
+        return copy;
+      },
+    },
+    {
+      label: 'invalid then descriptor',
+      transform(value) {
+        const copy = { ...value };
+        Object.defineProperty(copy, 'then', {
+          value: null,
+          enumerable: false,
+          writable: false,
+          configurable: false,
+        });
+        return copy;
+      },
+    },
+    {
+      label: 'additional field',
+      transform: value => issue85CopyShieldedResult(value, { unexpected: true }),
+    },
+    {
+      label: 'missing error reason',
+      transform(value) {
+        const copy = issue85CopyShieldedResult(value);
+        delete copy.errorReason;
+        return copy;
+      },
+    },
+    {
+      label: 'wrong error reason',
+      transform: value => issue85CopyShieldedResult(value, { errorReason: 'payment_outcome_unknown' }),
+    },
+    {
+      label: 'wrong state',
+      transform: value => issue85CopyShieldedResult(value, { state: 'SUBMISSION_OUTCOME_UNKNOWN' }),
+    },
+    {
+      label: 'wrong retry policy',
+      transform: value => issue85CopyShieldedResult(value, { retrySamePayment: false }),
+    },
+    {
+      label: 'wrong delivery state',
+      transform: value => issue85CopyShieldedResult(value, { deliveryState: 'DELIVERY_PENDING' }),
+    },
+    {
+      label: 'wrong success value',
+      transform: value => issue85CopyShieldedResult(value, { success: true }),
+    },
+    {
+      label: 'network mismatch',
+      transform: value => issue85CopyShieldedResult(value, { network: 'zenon:other' }),
+    },
+    {
+      label: 'transaction mismatch',
+      transform: value => issue85CopyShieldedResult(value, {
+        transaction: sha256Hex('issue-85 other transaction'),
+      }),
+    },
+    {
+      label: 'payer mismatch',
+      transform: value => issue85CopyShieldedResult(value, {
+        payer: sdk.Address.fromPublicKey(Uint8Array.from({ length: 32 }, (_, index) => index + 21))
+          .toString(),
+      }),
+    },
+    {
+      label: 'authorization mismatch',
+      transform: value => issue85CopyShieldedResult(value, {
+        authorizationKey: sha256Hex('issue-85 other authorization'),
+      }),
+    },
+    {
+      label: 'accessor-backed identity',
+      transform(value, observations) {
+        const copy = issue85CopyShieldedResult(value);
+        delete copy.authorizationKey;
+        Object.defineProperty(copy, 'authorizationKey', {
+          enumerable: true,
+          configurable: true,
+          get() {
+            observations.accessorReads += 1;
+            return issue85AuthorizationKey(observations.paymentPayload, observations.paymentRequired);
+          },
+        });
+        return copy;
+      },
+    },
+    {
+      label: 'proxy-backed candidate',
+      transform(value, observations) {
+        return new Proxy(value, {
+          ownKeys(target) {
+            observations.proxyReads += 1;
+            throw new Error('private synthetic proxy failure');
+          },
+        });
+      },
+    },
+  ];
+
+  for (const variant of variants) {
+    const requirement = issue85LiveRequirement(2);
+    const observations = {
+      accessorReads: 0,
+      proxyReads: 0,
+      claimCalls: 0,
+      deliveredCalls: 0,
+      handlerCalls: 0,
+    };
+    const facilitator = {
+      async settle(paymentPayload, _accepted, paymentRequired) {
+        observations.paymentPayload = paymentPayload;
+        observations.paymentRequired = paymentRequired;
+        return variant.transform(
+          issue85ShieldedThresholdResult(paymentPayload, paymentRequired),
+          observations,
+        );
+      },
+      async markDeliveryPending() {
+        observations.claimCalls += 1;
+        throw new Error('malformed threshold evidence must not claim delivery');
+      },
+      async markDelivered() {
+        observations.deliveredCalls += 1;
+        throw new Error('malformed threshold evidence must not cache delivery');
+      },
+    };
+    const app = createResourceServer({
+      facilitator,
+      requirement,
+      resourceHandler: async () => {
+        observations.handlerCalls += 1;
+        return { ok: true };
+      },
+    });
+    const listening = await app.listen();
+    try {
+      const { paymentPayload } = await issue85ChallengeAndPayment(listening.url, variant.label);
+      const response = await submitPayment(listening.url, paymentPayload);
+      const settlementHeader = response.headers.get(HEADERS.PAYMENT_RESPONSE);
+      const settlement = settlementHeader === null ? null : decodeB64Json(settlementHeader);
+      assert.notEqual(response.status, 200, `${variant.label} must not authorize delivery`);
+      assert.equal(
+        settlement?.errorReason === 'payment_reconciliation_required' &&
+          settlement?.state === 'MOMENTUM_INCLUDED',
+        false,
+        `${variant.label} must not authenticate as threshold-pending evidence`,
+      );
+      assert.equal(observations.accessorReads, 0, `${variant.label} accessor must not execute`);
+      assert.equal(observations.claimCalls, 0, `${variant.label} must not acquire a claim`);
+      assert.equal(observations.deliveredCalls, 0, `${variant.label} must not persist a response`);
+      assert.equal(observations.handlerCalls, 0, `${variant.label} must not invoke the handler`);
+      assert.equal((await response.text()).includes('private synthetic proxy failure'), false);
+    } finally {
+      await app.close();
+    }
+  }
+});
+
+test('exact-threshold concurrent HTTP requests acquire one claim, handler, and cached response', async () => {
+  const requirement = issue85LiveRequirement(2);
+  let settlementCalls = 0;
+  let claimCalls = 0;
+  let deliveredCalls = 0;
+  let handlerCalls = 0;
+  let deliveryState = 'NONE';
+  let cachedResponse = null;
+  let releaseDelivery;
+  let deliveryStarted;
+  const started = new Promise(resolve => { deliveryStarted = resolve; });
+  const deliveryGate = new Promise(resolve => { releaseDelivery = resolve; });
+  const facilitator = {
+    async settle(paymentPayload, accepted, paymentRequired) {
+      settlementCalls += 1;
+      assert.equal(accepted.extra.minimumMomentumConfirmations, 2);
+      const settlement = {
+        success: true,
+        network: accepted.network,
+        transaction: paymentPayload.payload.transaction.hash,
+        payer: paymentPayload.payload.transaction.address,
+        state: 'MOMENTUM_INCLUDED',
+        authorizationKey: issue85AuthorizationKey(paymentPayload, paymentRequired),
+        deliveryState,
+        ...(deliveryState === 'DELIVERED' ? { cachedResponse } : {}),
+      };
+      return issue85CopyShieldedResult(settlement);
+    },
+    async markDeliveryPending(settlement, acceptedRequirement) {
+      claimCalls += 1;
+      assert.deepEqual(acceptedRequirement, requirement);
+      assert.equal(deliveryState, 'NONE');
+      deliveryState = 'DELIVERY_PENDING';
+      return issue85CopyShieldedResult({
+        authorizationKey: settlement.authorizationKey,
+        payer: settlement.payer,
+        transaction: settlement.transaction,
+        deliveryState,
+        deliveryClaimed: true,
+      });
+    },
+    async markDelivered(settlement, cached) {
+      deliveredCalls += 1;
+      assert.equal(deliveryState, 'DELIVERY_PENDING');
+      deliveryState = 'DELIVERED';
+      cachedResponse = structuredClone(cached);
+      return issue85CopyShieldedResult({
+        authorizationKey: settlement.authorizationKey,
+        payer: settlement.payer,
+        transaction: settlement.transaction,
+        deliveryState,
+        cachedResponse,
+      });
+    },
+  };
+  const app = createResourceServer({
+    facilitator,
+    requirement,
+    resourceHandler: async () => {
+      handlerCalls += 1;
+      deliveryStarted();
+      await deliveryGate;
+      return {
+        ok: true,
+        entitlement: 'synthetic-threshold-result',
+        handlerInvocation: handlerCalls,
+      };
+    },
+  });
+  const listening = await app.listen();
+  let observeSecondPaidRequest;
+  const secondPaidRequestEntered = new Promise(resolve => {
+    observeSecondPaidRequest = resolve;
+  });
+  let enteredPaidRequests = 0;
+  const observePaidRequest = request => {
+    if (request.url === '/paid' && request.headers[HEADERS.PAYMENT_SIGNATURE] !== undefined &&
+        ++enteredPaidRequests === 2) {
+      observeSecondPaidRequest();
+    }
+  };
+  app.server.on('request', observePaidRequest);
+  try {
+    const { paymentPayload } = await issue85ChallengeAndPayment(listening.url, 'exact threshold');
+    const encodedPayment = encodeB64Json(paymentPayload);
+    const request = () => fetch(`${listening.url}/paid`, {
+      headers: { [HEADERS.PAYMENT_SIGNATURE]: encodedPayment },
+    });
+    const firstPending = request();
+    await started;
+    const secondPending = request();
+    await secondPaidRequestEntered;
+    await new Promise(resolve => setImmediate(resolve));
+    releaseDelivery();
+    const [first, second] = await Promise.all([firstPending, secondPending]);
+    const firstBody = await first.text();
+    const secondBody = await second.text();
+    const replay = await request();
+    const replayBody = await replay.text();
+    assert.deepEqual([first.status, second.status, replay.status], [200, 200, 200]);
+    assert.equal(secondBody, firstBody);
+    assert.equal(replayBody, firstBody);
+    assert.equal(settlementCalls, 2);
+    assert.equal(claimCalls, 1);
+    assert.equal(handlerCalls, 1);
+    assert.equal(deliveredCalls, 1);
+    assert.equal(deliveryState, 'DELIVERED');
+  } finally {
+    releaseDelivery?.();
+    app.server.off('request', observePaidRequest);
+    await app.close();
+  }
+});
+
+test('paidFetch threshold reconciliation reuses one byte-identical payment without replacement', async () => {
+  const requirement = issue85LiveRequirement(2);
+  const paymentRequired = {
+    x402Version: 2,
+    resource: {
+      url: 'https://issue-85-resource.invalid/paid',
+      description: 'synthetic threshold resource',
+      mimeType: 'application/json',
+    },
+    accepts: [requirement],
+  };
+  const retainedPayment = issue85PaymentPayload(paymentRequired, 'buyer reconciliation');
+  const capabilities = createPaymentCapabilities([{
+    scheme: 'exact',
+    network: 'zenon:testnet',
+    paymentFlows: ['upfront'],
+  }]);
+  let constructions = 0;
+  const client = {
+    async createPaymentPayload() {
+      constructions += 1;
+      return retainedPayment;
+    },
+  };
+  Object.defineProperty(client, 'paymentCapabilities', {
+    value: capabilities,
+    enumerable: false,
+    writable: false,
+    configurable: false,
+  });
+
+  const submittedHeaders = [];
+  let requests = 0;
+  const fetchImpl = async (_url, options) => {
+    requests += 1;
+    if (!options) return challengeResponse(paymentRequired);
+    const encodedPayment = options.headers[HEADERS.PAYMENT_SIGNATURE];
+    submittedHeaders.push(encodedPayment);
+    const submitted = decodeB64Json(encodedPayment);
+    const pending = submittedHeaders.length < 3;
+    return {
+      status: pending ? 409 : 200,
+      headers: new Headers({
+        [HEADERS.PAYMENT_RESPONSE]: encodeB64Json({
+          success: !pending,
+          network: submitted.accepted.network,
+          transaction: submitted.payload.transaction.hash,
+          payer: submitted.payload.transaction.address,
+          state: 'MOMENTUM_INCLUDED',
+          ...(pending ? {
+            errorReason: 'payment_reconciliation_required',
+            retrySamePayment: true,
+          } : {}),
+        }),
+      }),
+    };
+  };
+
+  const first = await paidFetch(paymentRequired.resource.url, client, fetchImpl);
+  assert.equal(first.response.status, 409);
+  assert.equal(first.settlement.errorReason, 'payment_reconciliation_required');
+  const second = await reconcilePayment(first, fetchImpl);
+  assert.equal(second.response.status, 409);
+  assert.equal(second.settlement.errorReason, 'payment_reconciliation_required');
+  const delivered = await reconcilePayment(second, fetchImpl);
+  assert.equal(delivered.response.status, 200);
+  assert.equal(delivered.settlement.success, true);
+  assert.equal(constructions, 1);
+  assert.equal(requests, 4);
+  assert.equal(submittedHeaders.length, 3);
+  assert.ok(submittedHeaders.every(value => value === submittedHeaders[0]));
+  assert.equal(submittedHeaders[0], encodeB64Json(retainedPayment));
 });
