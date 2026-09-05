@@ -345,6 +345,49 @@ A successful `preflight` does not authorize `run`. Stop again before invoking `r
 
 For the historical WSS runner, if publication becomes `SUBMISSION_OUTCOME_UNKNOWN` or `SUBMISSION_ACKNOWLEDGED`, or a process crashes after submission is armed, reconcile only the byte-identical payment and never construct or publish a replacement payment. Both current-testnet one-shot families perform no automatic reconciliation; quarantine their payer and journal for manual independent resolution. Recovery, ambiguity, or crash remains nonpublishable, and Issue #45 remains open.
 
+## Experimental prepaid service-credit lane
+
+This lane separates funding latency from per-request service latency. One ordinary, independently verified Zenon/x402 exact settlement funds a bounded provider-local grant. Later API calls reserve and consume units from that grant without waiting for another Momentum. They are off-chain metered service uses, not additional Zenon transfers, independent x402 settlements, official `batch-settlement`, or a trustless payment channel.
+
+Current implementation status:
+
+| Boundary | Status |
+| --- | --- |
+| Immutable offers and deterministic server pricing | Implemented offline |
+| Grant accounting, expiry, and revocation | Implemented offline |
+| Idempotent request reservation, signed maximum cost, and pinned server cost | Implemented offline |
+| Conservative execution and ambiguity lifecycle | Implemented offline |
+| Single-host SQLite persistence and local cross-process writer serialization | Implemented offline |
+| Exact synthetic mock funding-settlement verification and atomic grant activation | Implemented offline and inactive |
+| Authoritative live funding-settlement verification and activation | Not implemented |
+| Client-key commitment and Ed25519 proof of possession | Implemented offline |
+| Fixed empty-body HTTP execution route and fixed JSON result | Implemented offline |
+| Client-key generation, recovery, and lifecycle | Not implemented |
+| General protected-response persistence | Not implemented |
+| Refund, redemption, and unused-balance policy | Not implemented |
+| Distributed or multi-host coordination | Not implemented |
+| Live activation or production deployment | Not implemented |
+
+The completed capability slice commits each grant to a canonical client Ed25519 public key under one domain and verifies proof of possession over a separately domain-separated request message. The signed request includes `maxCostUnits`; the model refuses a higher server-derived cost before reservation. The module accepts no private key or raw bearer preimage and exports only public commitment derivation, signing bytes for an external signer, and verification. It does not generate, recover, rotate, or identify the client key as a human, wallet, settlement, or chain identity.
+
+The completed standalone HTTP slice accepts only exact `POST /service-credit/v1/execute` with an empty body and returns only a fixed JSON result code. Construction fully validates one immutable durable grant-admission snapshot; a later grant requires handler reconstruction. Each handler permits 64 request starts per second and eight active executions with no queue. It verifies the signed proof and maximum cost, durably reserves and begins, invokes one application callback, then durably completes or conservatively retains ambiguity. The callback has no timeout, limits are not shared across processes or hosts, arbitrary response bodies are unsupported, and the handler is not mounted by the current CLI or `/paid` path. Later exposure requires authenticated transport and log redaction.
+
+The completed mock-only activation slice captures one exact trusted verifier, authority profile/version/record digest, store, and clock in its constructor. It accepts only exact `zenon:mock` / `exact` / `upfront` funding and a full first-use `MOMENTUM_INCLUDED` result with no prior delivery. The holder must equal the signed payer. The payer-signed resource tags carry the marker and two exact halves of a domain-separated grant-funding commitment; the adapter recomputes the payment-resource digest, exact selected-requirement digest, full one-offer resource-and-requirement payment-intent, signed transaction-data, authorization, settlement, and transaction bindings. The commitment covers verifier-policy identifiers; immutable offer funding/cost-policy identifiers and versions; exact provider/service/resource/offer scope; holder and capability commitment; exact total units and expiry; scheme/flow/network/profile; and asset/amount/payee. Description text carries no authority.
+
+`activateGrantFromTrustedRecord` is the privileged model/store composition operation after verification. A raw model or store handle is grant-minting and administration authority, and the method name supplies no cryptographic inaccessibility. It must not cross an HTTP/client boundary or reach client-controlled callback code. The standalone HTTP source does not reference it and admits only already-created grants from its validated boot snapshot. The mock adapter is the untrusted-input verification boundary.
+
+The `deriveCost` callback and funding-policy implementation are trusted server code whose semantics are not hashed or authenticated. Only their declared immutable identifiers and versions are bound. Semantic changes must use new policy identifiers or versions and a new offer version; reuse of an old identity for changed code is undetectable here. This limitation does not weaken the payer-signed exact `totalUnits`/expiry funding terms or the separately signed per-request `maxCostUnits` ceiling.
+
+State schema v2 embeds one immutable activation record in each grant. The activation and `ACTIVE` grant commit atomically in one `BEGIN IMMEDIATE` transaction, and the activation itself is the settlement-consumption marker. Exact replays converge without a revision change; changed authority/settlement, transaction, capability, activation, or grant bindings conflict before mutation. Hydration recomputes the identifiers and cross-bindings and rejects corrupt, duplicate, orphaned, inconsistent, or noncanonical records. State-v1 databases are rejected without migration, downgrade, or deletion. The SQLite table, one-row envelope, and `user_version` remain physical schema version 1 because their shape did not change.
+
+Expiry is checked before verification and again after positive evidence inside the store transaction. Positive settlement followed by expiry or a definite pre-commit failure returns `SERVICE_CREDIT_ACTIVATION_SETTLED_NOT_GRANTED` and grants no replacement-payment authority. Once commit is attempted, an exception or ambiguity returns `SERVICE_CREDIT_ACTIVATION_OUTCOME_UNKNOWN`, quarantines the store, claims neither success nor rollback, and is never automatically retried. Recovery is reopen plus explicit exact re-verification. This is one-database atomicity on one reliable local filesystem, not cross-store or multi-host coordination.
+
+An authoritative live activation remains future integration work. It must not reuse the operator-trusted live record as an authority, and it requires its own authenticated verifier policy, evidence versioning, chain identity, confirmation and reorganization policy, and production persistence boundary. Success consumes the hold; a definitely pre-execution failure releases it; a possible post-execution side effect remains held until privileged evidence-based reconciliation.
+
+The provider is trusted for service accounting, availability, refunds, and unused value. Without enforceable redemption or escrow, this design must not be described as trustless, a payment channel, or official x402 batch settlement.
+
+The implemented store uses the built-in `node:sqlite` API on the Node.js 24+ package baseline, remains confined to one reliable local filesystem, and stores only reviewed bounded facts and commitments in plaintext. Raw payment headers, signed blocks or signatures, keys beyond the one-way capability commitment, bearer proofs or preimages, response bodies, personal data, arbitrary verifier output, and secrets are excluded. Node.js 24 documents this API as Stability 1.2, release candidate. Because no active runtime imports the modules, this milestone can be rolled back without changing live behavior; any created state-v2 database must be preserved and opened only by a schema-v2 reader during rollback.
+
 ## Frontier architecture
 
 `prepareBlock()` fixes `height` and `previousHash`. Two payments prepared from one payer frontier can conflict.
@@ -396,15 +439,19 @@ A production facilitator still needs:
 - an authenticated chain trust root and independently verified inclusion policy;
 - explicit client sessions rather than a mutable SDK singleton, or a Go service with clear lifecycle ownership;
 - cancellable RPC with deadlines below the transport;
-- a transactional multi-process database and distributed coordination;
+- an integrated production-grade entitlement store shared by every service instance, plus distributed coordination; the single-host SQLite reference does not satisfy this requirement;
 - durable entitlement/delivery design appropriate to each resource side effect;
 - rate limiting, RPC failover and operational telemetry without wallet secrets;
 - an explicit confirmation-depth and reorganization policy;
 - merchant receive-account-block handling where the business requires it;
-- an audited payment-intent encoding and x402 conformance suite.
+- an audited payment-intent encoding and x402 conformance suite;
+- client-key provisioning, authentication, rotation, revocation and recovery without persisting private keys or bearer secrets;
+- explicit expiry, refund, redemption and unused-balance terms visible to the payer.
 
 ## Test roadmap
 
 The local suite covers strict wire shapes, amount/profile boundaries, hash/signature reconstruction, offline preflight, singleton ownership, poisoning, journal corruption/reload, state monotonicity, pagination, retries, duplicate delivery and ambiguous HTTP outcomes.
+
+The offline service-credit tests additionally cover immutable offers, activations, and grants; every durable activation binding; exact mock settlement-to-grant activation and signed funding tags; asserted, partial, malformed, unconfirmed, expired, mismatched, and holder/payer evidence rejection; exact accounting; signed maximum cost; pinned request cost; replay; expiry; revocation; conservative ambiguity; state hydration; state-v1 rejection; SQLite corruption and path rejection; commit uncertainty; restart recovery; same-process and local cross-process exact/conflicting activation races; bounded capacity; Ed25519 proof binding and rejection; exact HTTP routing and framing; fixed responses; boot-time grant admission; per-handler admission limits; concurrent replay convergence; and callback ambiguity. Future integration tests must cover authoritative live settlement activation, client-key lifecycle, authenticated transport and log redaction, general response persistence, callback cancellation policy, deliberate successor-schema migration and downgrade policy, multi-host contention, reconciliation authorization, and load behavior before any production claim.
 
 Future isolated devnet tests should cover protected operator material, local-only exposure, fresh accounts, Plasma and PoW, sequential and conflicting preparations, process restart at every journal transition, delayed inclusion, node disconnect/reconnect and merchant receive. The committed offline artifact boundary must remain separate from the public-testnet policy, and no live-network integration test should run by default.
