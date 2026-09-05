@@ -8,7 +8,7 @@ This is not an official Zenon integration, not an official x402 network implemen
 
 ## Current architecture status
 
-The current `main` branch contains the v0.3 architecture checkpoint; this is not a v0.3 package or production release. The planner, wallet, Plasma, payment-mechanism, chain-profile, and settlement-repository interfaces are additive design boundaries. They document intended ownership and separation but are not wired into the active transaction path.
+The current `main` branch contains the v0.3 architecture checkpoint; this is not a v0.3 package or production release. The planner, wallet, Plasma, payment-mechanism, chain-profile, settlement-repository, and prepaid service-credit interfaces are additive design boundaries. They document intended ownership and separation but are not wired into the active transaction path.
 
 Package semantic versioning is intentionally independent of architecture-checkpoint and payload-generation labels; those labels do not represent a published package release.
 
@@ -55,6 +55,22 @@ Protected resource or a non-authorizing reconciliation response
 The additive `WalletAdapter`, `ZenonTransactionPlanner`, and `PlasmaStrategy` boundaries describe intended future ownership only; they are not active runtime components. The legacy composite SDK path remains active for live Zenon payments through the transparent Phase 2B.1 seam.
 
 The facilitator never receives the buyer mnemonic or private key.
+
+### Experimental prepaid service-credit reference
+
+The repository also contains a separate offline reference for prepaid service credits. The intended design is one ordinary, independently verified Zenon/x402 funding settlement followed by many provider-local metered API calls. Those later calls consume service units; they are not additional Zenon transfers, independent x402 settlements, an official `batch-settlement` scheme, or a trustless payment channel.
+
+`src/service-credit-model.js` implements immutable versioned offers, bounded expiring or revocable grants, idempotent request reservation, a client-signed `maxCostUnits` ceiling, server-derived pinned cost, execution authorization, and conservative post-execution ambiguity. `src/service-credit-sqlite-store.js` persists the complete model on one reliable local filesystem and serializes local writers across processes. Only a successfully committed `RESERVED -> EXECUTING` transition can return `executionAuthorized: true`; a restarted `EXECUTING` or `OUTCOME_UNKNOWN` request is never automatically reauthorized or released.
+
+`activateGrantFromTrustedRecord` is a privileged model/store composition operation. Possession of the raw model or store handle is grant-minting and administration authority; the conspicuous name does not make the method cryptographically inaccessible. It must never cross an HTTP/client boundary or reach client-controlled callback code. The standalone HTTP module does not reference this operation and admits only grants already present in its validated construction-time snapshot. Only the mock activation adapter is the untrusted-input settlement-verification boundary.
+
+`src/service-credit-capability.js` verifies client-key Ed25519 proof of possession. A domain-separated commitment binds the grant to the public key, and a separate domain-separated signature binds the model version, grant and request identifiers, method, route, empty-body digest, selected content type, and `maxCostUnits`. It accepts no private key or raw bearer preimage and exports no signing operation.
+
+`src/service-credit-http.js` is a standalone exact `POST /service-credit/v1/execute` handler with an empty request body and a fixed JSON result shape. Construction validates the complete durable state and freezes one bounded grant-admission snapshot; a grant activated later requires handler reconstruction. Each handler admits at most 64 request starts per second and eight active executions, with no queue. It durably reserves and begins before invoking the application callback, then completes or conservatively records an unknown outcome. It has no callback timeout, supports no arbitrary response body, and exposes no settlement, grant-activation, administration, or reconciliation route.
+
+These modules remain inactive: they are not imported by the buyer, current `/paid` resource server, facilitator, or any CLI or package script. The synthetic mock-only adapter verifies and activates only the exact offline profile described below; it provides no authoritative live funding-settlement verification or live activation. The modules do not generate or recover client keys, provide rate limiting across processes or hosts, define refunds, or activate live payment behavior. Any later network exposure requires authenticated transport and strict redaction of authorization proofs and credit identifiers from logs. The provider remains trusted for off-chain accounting, availability, refunds, and unused-balance policy. The store is not distributed, multi-host, encrypted, or production-ready.
+
+The persistent reference uses the built-in `node:sqlite` API on the repository's Node.js 24+ baseline. The [versioned Node.js 24 documentation](https://nodejs.org/download/release/latest-v24.x/docs/api/sqlite.html) classifies that API as Stability 1.2, release candidate; production use requires a separate version-specific support review.
 
 ## Local mock demo
 
@@ -453,6 +469,18 @@ Changing `N` while a threshold-bearing payment is unresolved is a fail-closed av
 
 This locally implemented and tested policy is pending review and integration. This tranche executed no new live payment and makes no new evidence, release, activation, finality, or production-readiness claim. Issue #81's different-operator verification remains separate, deferred, nonblocking work, and Phase 2C remains deferred.
 
+## Experimental prepaid service-credit activation
+
+The inactive service-credit lane now includes a synthetic mock-only activation boundary. A constructor captures one exact trusted mock verifier, authority profile and version, authority-record digest, store, and clock. One exact `zenon:mock` / `exact` / `upfront` payment with first-use `MOMENTUM_INCLUDED` evidence and `deliveryState: "NONE"` can create one immutable activation record and one `ACTIVE` grant in the same SQLite commit. The holder must be the payer. The adapter is not mounted by the current server, `/paid` path, buyer, facilitator, CLI, wallet, RPC, or live-evidence code, and the operator-trusted live record is not an accepted authority.
+
+The payer-signed `PaymentRequired.resource.tags` contains the fixed `x402-service-credit-funding-v1` marker and the two exact halves of a domain-separated grant-funding commitment. That commitment binds the captured verifier-policy identifiers, immutable offer policy identifiers and versions, provider, service, resource and resource binding, offer version, holder and one-way capability commitment, exact total units and absolute expiry, exact/upfront flow, synthetic network and full chain profile, asset, amount and payee. The adapter recomputes that commitment, the payment-resource digest, exact selected-requirement digest, x402 payment-intent digest over the full one-offer resource-and-requirement envelope, transaction data binding, mock authorization key, source-settlement identity, and canonical transaction reference. Description text has no funding authority.
+
+The `deriveCost` callback and funding-policy implementation are trusted server code; their semantics are neither hashed nor authenticated. Only their declared identifiers and versions, the offer version, the exact payer-signed grant units/expiry, and the per-request signed `maxCostUnits` boundary are enforced. Any semantic implementation change must use a new policy identifier or version and a new offer version. Reusing an old identity for changed server code cannot be detected by this model.
+
+Durable service-credit state is schema v2. Every grant contains and references its recomputed activation record; corrupt, duplicate, orphaned, or inconsistent activation, grant, offer, settlement, transaction, capability, or grant identifiers are rejected on hydration. State-v1 databases are rejected and are never silently migrated, downgraded, or deleted. The SQLite physical envelope and `user_version` remain version 1 because the one-row physical shape is unchanged.
+
+Expiry is checked before mock settlement verification and again after positive evidence inside the atomic store transaction. An already-expired intent is rejected before the verifier is called. Positive settlement followed by expiry or a definite pre-commit store failure returns `SERVICE_CREDIT_ACTIVATION_SETTLED_NOT_GRANTED`; it must not be interpreted as permission for a replacement payment. Once commit is attempted, any thrown or ambiguous result becomes `SERVICE_CREDIT_ACTIVATION_OUTCOME_UNKNOWN`, quarantines the store, claims neither success nor rollback, and is never automatically retried. Recovery requires reopening the same database and explicit byte-exact re-verification. These guarantees cover one SQLite database on one reliable local filesystem only; they provide no cross-store, network-filesystem, distributed, or multi-host atomicity.
+
 ## Important limitations
 
 - Phase 2C is deferred and remains `NO-GO`; production deployment is also `NO-GO`.
@@ -461,12 +489,15 @@ This locally implemented and tested policy is pending review and integration. Th
 - No supported public unsigned-preparation or canonical-account-block-hash SDK API is consumed.
 - The only shipped live profile is an operator-trusted historical observation; no authenticated live chain profile ships.
 - The RPC node remains a trust boundary; no SPV or checkpoint verification is implemented.
-- The journal and queues coordinate one process on one host only.
+- The active live-settlement journal and payer queues coordinate one process on one host only. The separate offline service-credit SQLite store serializes local writers across processes on one reliable local filesystem, but it is not integrated into that live path and supplies no distributed coordination.
 - Other facilitators, buyer-side concurrent preparation and external publishers can still advance the same payer frontier.
 - Account-frontier and unconfirmed views can become stale after observation.
 - The mock does not model live RPC, SDK singleton behavior, consensus validation, Plasma/PoW or genuine Momentum inclusion.
 - No audited binary payment-intent encoding or formal Zenon x402 network namespace exists.
-- No rate limiting, RPC failover, distributed lock or production database is included.
+- The active `/paid` path includes no rate limiting or RPC failover. The inactive service-credit handler has only per-handler admission limits; no limit is coordinated across handlers, processes, or hosts, and no distributed lock or production database is included.
+- The service-credit capability proof establishes possession of one committed client public key; it does not establish human, wallet, settlement, or chain identity, and the credit lane still defines no refund or redemption rights.
+- Service-credit identifiers and commitments are stored in plaintext; raw bearer capabilities, secrets, personal information, and sensitive response content must remain outside the database.
+- The standalone service-credit HTTP handler is not mounted by the current server, has no callback timeout, accepts only its fixed empty-body route and fixed JSON result, and applies admission limits per handler rather than across processes or hosts.
 - Key-pair `clear()` is defense in depth; JavaScript memory zeroization is not guaranteed.
 
 ## Repository structure
@@ -484,6 +515,14 @@ src/
   zenon-payment.js            active legacy client and live facilitator
   live-runtime.js             process-wide SDK ownership and poisoning
   settlement-journal.js       dependency-free recovery journal
+  service-credit-capability.js
+                              inactive client-key proof verifier
+  service-credit-activation.js
+                              inactive exact mock funding-to-grant adapter
+  service-credit-http.js      inactive fixed service-credit HTTP handler
+  service-credit-model.js     inactive offline prepaid-credit state machine
+  service-credit-sqlite-store.js
+                              inactive single-host SQLite reference store
   config.js                   payment requirement configuration
   env.js                      dotenv and integer environment parsing
   local-devnet-readiness-runner.js
@@ -552,6 +591,11 @@ test/
   http-recovery.test.js
   live-settlement-integration.test.js
   security.test.js
+  service-credit-capability.test.js
+  service-credit-activation.test.js
+  service-credit-http.test.js
+  service-credit-model.test.js
+  service-credit-sqlite-store.test.js
   wire-profile.test.js
 docs/
   IMPLEMENTATION_PLAN.md
@@ -567,9 +611,10 @@ This project is licensed under the [Apache License, Version 2.0](LICENSE). The l
 
 ## Next target
 
-Future work has two separate lanes:
+Future work has three separate lanes:
 
 1. Near-term work continues x402 correctness, interoperability, and operational hardening on the frozen legacy signing baseline.
-2. A separately approved Phase 2C remains gated on a supported upstream unsigned-preparation and canonical-hash API, a wallet identity/lease/disposal and cleanup contract, and a separately versioned successor characterization suite.
+2. The prepaid-credit lane has an inactive mock-only verified settlement-to-grant activation and exact signed funding-payment binding. Any authoritative live activation, client-key lifecycle, or general protected-response persistence remains separate future work.
+3. A separately approved Phase 2C remains gated on a supported upstream unsigned-preparation and canonical-hash API, a wallet identity/lease/disposal and cleanup contract, and a separately versioned successor characterization suite.
 
-Production prerequisites across either lane include independently authenticated chain-profile verification, durable multi-process settlement, an explicit confirmation policy, and official interoperability testing. Phase 2C and hardware-wallet work are not required for the current mock x402 flow.
+Production prerequisites across these lanes include independently authenticated chain-profile verification, durable multi-process settlement, an explicit confirmation policy, and official interoperability testing. Phase 2C and hardware-wallet work are not required for the current mock x402 flow.

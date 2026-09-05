@@ -129,8 +129,11 @@ export class MockExactZenonClient {
 }
 
 export class MockExactZenonFacilitator {
+  #settlementVerifier;
+
   constructor() {
     this.records = new Map();
+    this.#settlementVerifier = this.verify;
   }
 
   async verify(paymentPayload, requirements, paymentRequired) {
@@ -185,7 +188,11 @@ export class MockExactZenonFacilitator {
   }
 
   async settle(paymentPayload, requirements, paymentRequired) {
-    const verification = await this.verify(paymentPayload, requirements, paymentRequired);
+    const verification = await REFLECT_APPLY(this.#settlementVerifier, this, [
+      paymentPayload,
+      requirements,
+      paymentRequired,
+    ]);
     if (!verification.isValid) {
       return shieldAsyncEvidence({
         success: false,
