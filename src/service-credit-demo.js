@@ -34,6 +34,7 @@ import {
   createServiceCreditCapabilitySigningBytes,
   deriveServiceCreditCapabilityCommitment,
 } from './service-credit-capability.js';
+import { createServiceCreditAuthorization } from './service-credit-client.js';
 import { createServiceCreditCompositionOwner } from './service-credit-composition.js';
 import {
   SERVICE_CREDIT_HTTP_PATH,
@@ -340,7 +341,8 @@ function createCapabilityKey() {
   };
 }
 
-function signedServiceRequest(capability, grantId, requestId) {
+function signedServiceRequest(capability, grant, requestId) {
+  const grantId = grant.grantId;
   const request = Object.freeze({
     modelVersion: SERVICE_CREDIT_MODEL_VERSION,
     grantId,
@@ -367,7 +369,14 @@ function signedServiceRequest(capability, grantId, requestId) {
     signature,
   });
   const proofText = canonicalJson(proof);
-  const authorization = `ServiceCredit ${Buffer.from(proofText, 'utf8').toString('base64url')}`;
+  const authorization = createServiceCreditAuthorization({
+    grant: {
+      grantId,
+      capabilityCommitment: grant.capabilityCommitment,
+    },
+    request,
+    proof,
+  });
   return Object.freeze({ authorization, proofText, signature });
 }
 
@@ -505,9 +514,9 @@ export async function runServiceCreditMockDemo() {
     const grantId = activated.grant.grantId;
     const revisions = { afterActivation: store.load().revision };
 
-    const requestA = signedServiceRequest(capability, grantId, 'request.demo.a');
-    const requestB = signedServiceRequest(capability, grantId, 'request.demo.b');
-    const requestC = signedServiceRequest(capability, grantId, 'request.demo.c');
+    const requestA = signedServiceRequest(capability, activated.grant, 'request.demo.a');
+    const requestB = signedServiceRequest(capability, activated.grant, 'request.demo.b');
+    const requestC = signedServiceRequest(capability, activated.grant, 'request.demo.c');
     for (const request of [requestA, requestB, requestC]) {
       protectedStrings.push(request.signature, request.proofText, request.authorization);
     }

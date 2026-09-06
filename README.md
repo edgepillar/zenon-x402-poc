@@ -66,6 +66,8 @@ The repository also contains a separate offline reference for prepaid service cr
 
 `src/service-credit-capability.js` verifies client-key Ed25519 proof of possession. A domain-separated commitment binds the grant to the public key, and a separate domain-separated signature binds the model version, grant and request identifiers, method, route, empty-body digest, selected content type, and `maxCostUnits`. It accepts no private key or raw bearer preimage and exports no signing operation.
 
+`src/service-credit-client.js` is the isolated client-side serialization boundary for an already-signed request. `createServiceCreditAuthorization({ grant, request, proof })` captures exact plain-data inputs once, verifies the existing capability binding, and returns only the canonical unpadded `ServiceCredit` authorization string. Successful serialization proves only cryptographic consistency among the supplied grant, request, and proof. The header payload contains only the six-field proof: it does not encode the method, route, body digest, or content type and does not guarantee admission by a particular handler. It must accompany the identical out-of-band request context. The current handler selects only exact `POST`, route `service-credit.execute.v1`, the empty-body digest, and `application/json`; a future transport or session must enforce or select that same context. A shared client-and-handler wire module is a possible later refactor, not a current behavior claim. The serializer accepts no signer or private key and performs no I/O. The authorization and its proof, signature, public key, grant identifier, and request identifier are bearer-like single-request credential material and must be redacted from logs, diagnostics, snapshots, and general persistence. The existing ledger still retains its documented privacy-reviewed grant and request identifiers as accounting keys, but it never stores the authorization, proof, signature, or public key. Temporary encoding bytes are cleared where practical; JavaScript strings cannot be reliably erased from process memory. Carry this value only over an authenticated future transport.
+
 `src/service-credit-http.js` is a standalone exact `POST /service-credit/v1/execute` handler with an empty request body and a fixed JSON result shape. Construction validates the complete durable state and freezes one bounded grant-admission snapshot; a grant activated later requires handler reconstruction. Each handler admits at most 64 request starts per second and eight active executions, with no queue. It durably reserves and begins before invoking the application callback, then completes or conservatively records an unknown outcome. It has no callback timeout, supports no arbitrary response body, and exposes no settlement, grant-activation, administration, or reconciliation route.
 
 These modules remain outside every active path: they are not imported by the buyer, current `/paid` resource server, facilitator, wallet, RPC, or live-evidence code. Only the separately invoked mock demo below imports the lane. The synthetic mock-only adapter verifies and activates only the exact offline profile described below; it provides no authoritative live funding-settlement verification or live activation. The modules do not provide production client-key generation, recovery, or lifecycle, rate limiting across processes or hosts, refunds, or live payment behavior. Any later network exposure requires authenticated transport and strict redaction of authorization proofs and credit identifiers from logs. The provider remains trusted for off-chain accounting, availability, refunds, and unused-balance policy. The store is not distributed, multi-host, encrypted, or production-ready.
@@ -539,6 +541,7 @@ src/
   settlement-journal.js       dependency-free recovery journal
   service-credit-capability.js
                               isolated client-key proof verifier
+  service-credit-client.js    isolated signed-proof authorization serializer
   service-credit-activation.js
                               isolated exact mock funding-to-grant adapter
   service-credit-http.js      isolated fixed service-credit HTTP handler
@@ -616,6 +619,7 @@ test/
   live-settlement-integration.test.js
   security.test.js
   service-credit-capability.test.js
+  service-credit-client.test.js
   service-credit-activation.test.js
   service-credit-http.test.js
   service-credit-demo.test.js
