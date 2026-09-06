@@ -222,6 +222,7 @@ test('core import closure matches exact local-file and external-module allowlist
     'src/mock-payment.js',
     'src/service-credit-activation.js',
     'src/service-credit-capability.js',
+    'src/service-credit-client.js',
     'src/service-credit-composition.js',
     'src/service-credit-demo.js',
     'src/service-credit-http.js',
@@ -725,6 +726,12 @@ test('package script and documentation preserve the isolated non-benchmark bound
   assert.equal(packageJson.scripts.server, 'node src/server-cli.js');
   assert.equal(packageJson.scripts.buyer, 'node src/buyer-cli.js');
   assert.equal(packageJson.scripts.test, 'node --test');
+  const demoSource = readFileSync(CORE_PATH, 'utf8');
+  assert.equal(
+    demoSource.includes("import { createServiceCreditAuthorization } from './service-credit-client.js';"),
+    true,
+  );
+  assert.equal(demoSource.includes('const authorization = `ServiceCredit ${'), false);
   for (const path of [
     join(ROOT, 'README.md'),
     join(ROOT, 'SECURITY.md'),
@@ -745,5 +752,23 @@ test('package script and documentation preserve the isolated non-benchmark bound
       true,
     );
     assert.equal(document.toLowerCase().includes('not implemented'), true);
+    assert.equal(document.includes('createServiceCreditAuthorization'), true);
+    assert.equal(
+      document.includes('bearer-like single-request credential material'),
+      true,
+    );
+    assert.equal(document.includes('authenticated future transport'), true);
+    assert.equal(document.includes('JavaScript strings cannot be reliably erased'), true);
+    assert.equal(
+      document.includes('Successful serialization proves only cryptographic consistency'),
+      true,
+    );
+    assert.equal(document.includes('header payload contains only the six-field proof'), true);
+    assert.equal(document.includes('identical out-of-band request context'), true);
+    assert.equal(document.includes('route `service-credit.execute.v1`'), true);
+    assert.equal(
+      document.includes('shared client-and-handler wire module is a possible later refactor'),
+      true,
+    );
   }
 });
