@@ -68,9 +68,19 @@ The repository also contains a separate offline reference for prepaid service cr
 
 `src/service-credit-http.js` is a standalone exact `POST /service-credit/v1/execute` handler with an empty request body and a fixed JSON result shape. Construction validates the complete durable state and freezes one bounded grant-admission snapshot; a grant activated later requires handler reconstruction. Each handler admits at most 64 request starts per second and eight active executions, with no queue. It durably reserves and begins before invoking the application callback, then completes or conservatively records an unknown outcome. It has no callback timeout, supports no arbitrary response body, and exposes no settlement, grant-activation, administration, or reconciliation route.
 
-These modules remain inactive: they are not imported by the buyer, current `/paid` resource server, facilitator, or any CLI or package script. The synthetic mock-only adapter verifies and activates only the exact offline profile described below; it provides no authoritative live funding-settlement verification or live activation. The modules do not generate or recover client keys, provide rate limiting across processes or hosts, define refunds, or activate live payment behavior. Any later network exposure requires authenticated transport and strict redaction of authorization proofs and credit identifiers from logs. The provider remains trusted for off-chain accounting, availability, refunds, and unused-balance policy. The store is not distributed, multi-host, encrypted, or production-ready.
+These modules remain outside every active path: they are not imported by the buyer, current `/paid` resource server, facilitator, wallet, RPC, or live-evidence code. Only the separately invoked mock demo below imports the lane. The synthetic mock-only adapter verifies and activates only the exact offline profile described below; it provides no authoritative live funding-settlement verification or live activation. The modules do not provide production client-key generation, recovery, or lifecycle, rate limiting across processes or hosts, refunds, or live payment behavior. Any later network exposure requires authenticated transport and strict redaction of authorization proofs and credit identifiers from logs. The provider remains trusted for off-chain accounting, availability, refunds, and unused-balance policy. The store is not distributed, multi-host, encrypted, or production-ready.
 
 The persistent reference uses the built-in `node:sqlite` API on the repository's Node.js 24+ baseline. The [versioned Node.js 24 documentation](https://nodejs.org/download/release/latest-v24.x/docs/api/sqlite.html) classifies that API as Stability 1.2, release candidate; production use requires a separate version-specific support review.
+
+Run the isolated functional demonstration explicitly:
+
+```bash
+npm run --silent demo:service-credit
+```
+
+This opt-in synthetic mock-only in-process demo performs one mock funding settlement, then three unique signed provider-local service uses plus one exact replay. Seven units are funded, each unique request consumes two, and the replay neither charges nor executes twice. Provider-local uses are not additional Zenon transfers or x402 settlements. The demo opens no listener, wallet, RPC, blockchain, or live x402 path. It creates a private ephemeral SQLite ledger and removes it after verified normal completion; abrupt termination or cleanup quarantine can leave that plaintext synthetic ledger behind. The filesystem boundary requires a POSIX reliable local filesystem; user-ID, mode, link-count, canonical-path, and inode checks fail closed when unavailable or inconsistent.
+
+This is not a benchmark. It records no duration, latency, throughput, concurrency, Momentum, finality, scalability, or production-readiness result. Its output contains only fixed aggregate counters. Ephemeral demonstration keys are generated in memory and are neither output nor persisted, but production client-key generation, recovery, and lifecycle remain not implemented.
 
 ## Local mock demo
 
@@ -471,7 +481,7 @@ This locally implemented and tested policy is pending review and integration. Th
 
 ## Experimental prepaid service-credit activation
 
-The inactive service-credit lane now includes a synthetic mock-only activation boundary. A constructor captures one exact trusted mock verifier, authority profile and version, authority-record digest, store, and clock. One exact `zenon:mock` / `exact` / `upfront` payment with first-use `MOMENTUM_INCLUDED` evidence and `deliveryState: "NONE"` can create one immutable activation record and one `ACTIVE` grant in the same SQLite commit. The holder must be the payer. The adapter is not mounted by the current server, `/paid` path, buyer, facilitator, CLI, wallet, RPC, or live-evidence code, and the operator-trusted live record is not an accepted authority.
+The isolated service-credit lane includes a synthetic mock-only activation boundary. A constructor captures one exact trusted mock verifier, authority profile and version, authority-record digest, store, and clock. One exact `zenon:mock` / `exact` / `upfront` payment with first-use `MOMENTUM_INCLUDED` evidence and `deliveryState: "NONE"` can create one immutable activation record and one `ACTIVE` grant in the same SQLite commit. The holder must be the payer. The adapter is used only by the separately invoked service-credit mock demo and remains unmounted by the current server, `/paid` path, buyer, facilitator, wallet, RPC, and live-evidence code; the operator-trusted live record is not an accepted authority.
 
 The payer-signed `PaymentRequired.resource.tags` contains the fixed `x402-service-credit-funding-v1` marker and the two exact halves of a domain-separated grant-funding commitment. That commitment binds the captured verifier-policy identifiers, immutable offer policy identifiers and versions, provider, service, resource and resource binding, offer version, holder and one-way capability commitment, exact total units and absolute expiry, exact/upfront flow, synthetic network and full chain profile, asset, amount and payee. The adapter recomputes that commitment, the payment-resource digest, exact selected-requirement digest, x402 payment-intent digest over the full one-offer resource-and-requirement envelope, transaction data binding, mock authorization key, source-settlement identity, and canonical transaction reference. Description text has no funding authority.
 
@@ -481,7 +491,7 @@ Durable service-credit state is schema v2. Every grant contains and references i
 
 Expiry is checked before mock settlement verification and again after positive evidence inside the atomic store transaction. An already-expired intent is rejected before the verifier is called. Positive settlement followed by expiry or a definite pre-commit store failure returns `SERVICE_CREDIT_ACTIVATION_SETTLED_NOT_GRANTED`; it must not be interpreted as permission for a replacement payment. Once commit is attempted, any thrown or ambiguous result becomes `SERVICE_CREDIT_ACTIVATION_OUTCOME_UNKNOWN`, quarantines the store, claims neither success nor rollback, and is never automatically retried. Recovery requires reopening the same database and explicit byte-exact re-verification. These guarantees cover one SQLite database on one reliable local filesystem only; they provide no cross-store, network-filesystem, distributed, or multi-host atomicity.
 
-The inactive `createServiceCreditCompositionOwner` factory is the single-process owner of one exact raw SQLite store, one exact descriptor-safe `activationOptions` object containing only `verifySettlement`, `authorityProfile`, and `now`, and one application callback. It captures those values and trusted methods once, internally constructs and owns the mock activation adapter with that exact store, and returns a deeply frozen surface containing only `createFundingResource`, `activateFunding`, and one stable-identity `handle`. Each HTTP handler receives only a frozen `load`, `reserveRequest`, `beginExecution`, `completeExecution`, and `markOutcomeUnknown` facade. The raw store, activation adapter, callback, handler factory, activation/admin/revocation/reconciliation operations, state, and test hooks do not cross the returned surface or the handler boundary.
+The isolated `createServiceCreditCompositionOwner` factory is the single-process owner of one exact raw SQLite store, one exact descriptor-safe `activationOptions` object containing only `verifySettlement`, `authorityProfile`, and `now`, and one application callback. It captures those values and trusted methods once, internally constructs and owns the mock activation adapter with that exact store, and returns a deeply frozen surface containing only `createFundingResource`, `activateFunding`, and one stable-identity `handle`. Each HTTP handler receives only a frozen `load`, `reserveRequest`, `beginExecution`, `completeExecution`, and `markOutcomeUnknown` facade. The raw store, activation adapter, callback, handler factory, activation/admin/revocation/reconciliation operations, state, and test hooks do not cross the returned surface or the handler boundary.
 
 After exact outer-shape, store, and callback validation, the factory synchronously consumes the exact store object before constructing the internal adapter or initial handler. Reusing that store object returns the fixed cause-free `SERVICE_CREDIT_COMPOSITION_DEPENDENCY_OWNED`; consumption lasts for the loaded module instance's lifetime even if adapter or handler construction fails or the resulting owner later latches. Recovery therefore closes the old store, opens a new exact store instance, and constructs a new owner, which creates its own adapter. This registry is only exact JavaScript store-object identity protection within that loaded module instance. It does not coordinate separately opened SQLite handles, workers, another loaded module copy, processes, or hosts, even when they address the same database file.
 
@@ -489,7 +499,7 @@ The owner constructs the first immutable grant-admission snapshot immediately. O
 
 A request that starts while activation is pending keeps the previous snapshot. Only confirmed mock activation followed by successful replacement-handler construction atomically changes later admissions; the public `handle` identity does not change. Confirmation requires the returned activation and immutable grant identity/binding fields to match the activation embedded in the freshly validated persisted grant. That fresh snapshot, not an earlier returned grant copy, is authoritative for mutable lifecycle and accounting counters, so an admitted request completing during reconstruction does not cause a false owner latch. Exact replay may invoke the trusted verifier again and may reconstruct the handler, but converges under the adapter/store replay rules without another activation record, grant, or store revision. Replays of durably revoked or expired grants converge without admitting those inactive grants, because the store still enforces lifecycle transactionally. Definite rejection does not swap or retry and supplies no replacement-payment authority.
 
-`SERVICE_CREDIT_ACTIVATION_OUTCOME_UNKNOWN` permanently latches that owner instance unavailable before queued or later funding and activation calls can reach dependencies. A confirmed activation whose replacement handler cannot be constructed instead latches `SERVICE_CREDIT_COMPOSITION_ACTIVATED_UNAVAILABLE`; it does not resettle, roll back, or authorize a replacement payment. In either latch state, later `handle` calls bypass every authorizing handler and application callback and return the HTTP slice's fixed private `503 {"error":"service_unavailable"}` response. A callback already invoked by an earlier in-flight handler cannot be canceled by a later latch and may finish under the existing handler/store lifecycle. In particular, an outcome-unknown activation quarantines its store, so a later durable completion attempt is uncertain and the in-flight request conservatively returns the same fixed private `503`; later requests never invoke the callback. Recovery is explicit close/reopen or process restart followed by construction from a new store object, which internally creates a new adapter and whose normal startup validation may admit persisted active grants. There is no background retry, listener, scheduler, CLI, environment switch, wallet, RPC, network, live settlement, refund, or redemption behavior.
+`SERVICE_CREDIT_ACTIVATION_OUTCOME_UNKNOWN` permanently latches that owner instance unavailable before queued or later funding and activation calls can reach dependencies. A confirmed activation whose replacement handler cannot be constructed instead latches `SERVICE_CREDIT_COMPOSITION_ACTIVATED_UNAVAILABLE`; it does not resettle, roll back, or authorize a replacement payment. In either latch state, later `handle` calls bypass every authorizing handler and application callback and return the HTTP slice's fixed private `503 {"error":"service_unavailable"}` response. A callback already invoked by an earlier in-flight handler cannot be canceled by a later latch and may finish under the existing handler/store lifecycle. In particular, an outcome-unknown activation quarantines its store, so a later durable completion attempt is uncertain and the in-flight request conservatively returns the same fixed private `503`; later requests never invoke the callback. Recovery is explicit close/reopen or process restart followed by construction from a new store object, which internally creates a new adapter and whose normal startup validation may admit persisted active grants. There is no background retry, listener, scheduler, environment switch, wallet, RPC, network, live settlement, refund, or redemption behavior. The only CLI is the explicit synthetic mock demo described above; it does not connect this owner to an active path.
 
 ## Important limitations
 
@@ -504,7 +514,7 @@ A request that starts while activation is pending keeps the previous snapshot. O
 - Account-frontier and unconfirmed views can become stale after observation.
 - The mock does not model live RPC, SDK singleton behavior, consensus validation, Plasma/PoW or genuine Momentum inclusion.
 - No audited binary payment-intent encoding or formal Zenon x402 network namespace exists.
-- The active `/paid` path includes no rate limiting or RPC failover. The inactive service-credit handler has only per-handler admission limits; no limit is coordinated across handlers, processes, or hosts, and no distributed lock or production database is included.
+- The active `/paid` path includes no rate limiting or RPC failover. The isolated service-credit handler has only per-handler admission limits; no limit is coordinated across handlers, processes, or hosts, and no distributed lock or production database is included.
 - The service-credit capability proof establishes possession of one committed client public key; it does not establish human, wallet, settlement, or chain identity, and the credit lane still defines no refund or redemption rights.
 - Service-credit identifiers and commitments are stored in plaintext; raw bearer capabilities, secrets, personal information, and sensitive response content must remain outside the database.
 - The standalone service-credit HTTP handler is not mounted by the current server, has no callback timeout, accepts only its fixed empty-body route and fixed JSON result, and applies admission limits per handler rather than across processes or hosts.
@@ -522,19 +532,21 @@ src/
   canonical.js                canonical JSON and payment-intent digests
   mock-payment.js             local mock client and facilitator
   demo.js                     local mock end-to-end demonstration
+  service-credit-demo.js      isolated synthetic service-credit demonstration
+  service-credit-demo-cli.js  fixed-output service-credit demo entry point
   zenon-payment.js            active legacy client and live facilitator
   live-runtime.js             process-wide SDK ownership and poisoning
   settlement-journal.js       dependency-free recovery journal
   service-credit-capability.js
-                              inactive client-key proof verifier
+                              isolated client-key proof verifier
   service-credit-activation.js
-                              inactive exact mock funding-to-grant adapter
-  service-credit-http.js      inactive fixed service-credit HTTP handler
+                              isolated exact mock funding-to-grant adapter
+  service-credit-http.js      isolated fixed service-credit HTTP handler
   service-credit-composition.js
-                              inactive single-process authority owner
-  service-credit-model.js     inactive offline prepaid-credit state machine
+                              isolated single-process authority owner
+  service-credit-model.js     isolated offline prepaid-credit state machine
   service-credit-sqlite-store.js
-                              inactive single-host SQLite reference store
+                              isolated single-host SQLite reference store
   config.js                   payment requirement configuration
   env.js                      dotenv and integer environment parsing
   local-devnet-readiness-runner.js
@@ -606,6 +618,7 @@ test/
   service-credit-capability.test.js
   service-credit-activation.test.js
   service-credit-http.test.js
+  service-credit-demo.test.js
   service-credit-model.test.js
   service-credit-sqlite-store.test.js
   wire-profile.test.js
@@ -626,7 +639,7 @@ This project is licensed under the [Apache License, Version 2.0](LICENSE). The l
 Future work has three separate lanes:
 
 1. Near-term work continues x402 correctness, interoperability, and operational hardening on the frozen legacy signing baseline.
-2. The prepaid-credit lane has an inactive mock-only verified settlement-to-grant activation, exact signed funding-payment binding, and a local single-process composition owner. Any authoritative live activation, client-key lifecycle, or general protected-response persistence remains separate future work.
+2. The prepaid-credit lane has an isolated mock-only verified settlement-to-grant activation, exact signed funding-payment binding, a local single-process composition owner, and the explicit offline functional demo. Any authoritative live activation, production client-key lifecycle, or general protected-response persistence remains separate future work.
 3. A separately approved Phase 2C remains gated on a supported upstream unsigned-preparation and canonical-hash API, a wallet identity/lease/disposal and cleanup contract, and a separately versioned successor characterization suite.
 
 Production prerequisites across these lanes include independently authenticated chain-profile verification, durable multi-process settlement, an explicit confirmation policy, and official interoperability testing. Phase 2C and hardware-wallet work are not required for the current mock x402 flow.
