@@ -102,6 +102,18 @@ Normal completion successfully closes the loopback server before closing the sto
 
 The authenticated future transport requirement remains mandatory for every non-synthetic or consequential credential use; the narrow local plaintext exception above does not weaken it.
 
+Run the separate local scenario benchmark explicitly:
+
+```bash
+npm run --silent benchmark:service-credit-local
+```
+
+This opt-in benchmark runs the complete listener-free and loopback synthetic demos repeatedly in one warm Node.js 24 process. It uses 35 paired rounds per lane: the first 5 are warmups and the following 30 are measured. Lane order alternates every round and execution remains strictly sequential with concurrency one. A module-local latch rejects concurrent or reentrant use of one loaded benchmark module instance and is released after success or failure; it is not cross-worker, cross-process, or global authority. Each sample covers one whole demo invocation, including that demo's normal cleanup, and excludes benchmark-side summary validation. The only variable timing measurements are median and nearest-rank p95 microseconds for each lane. Fixed allowlisted metadata also identifies the Node major, monotonic clock, measurement target, warmup and sample counts, concurrency, order, duration unit, rounding method, and percentile method. The benchmark has no threshold, performs no retry, does not persist or upload results, and does not run as part of the standard test suite.
+
+These are host-, filesystem-, and runtime-specific descriptive observations. The listener-free and loopback lanes are structurally different scenarios, so their difference is not isolated loopback overhead and is not a universal comparison. Each demo uses the current invocation's POSIX local temporary filesystem and synchronous SQLite durability. The JSON output omits detailed host and process identifiers, environment values, paths, ports, origins, credential identifiers, authorization material, and raw samples; aggregate timing can nevertheless characterize host performance and should be handled deliberately. Before clock or runner use, the runtime gate verifies only Node major 24, an empty live `execArgv`, and empty or absent `NODE_OPTIONS`, `NODE_V8_COVERAGE`, `NODE_DEBUG`, and `NODE_DEBUG_NATIVE`. Use an operator-controlled fresh process: this gate cannot attest the absence of external instrumentation, trusted same-process mutation or module replacement, workers, or operating-system observation. The benchmark does not persist or commit its result automatically. It does not upload results.
+
+Interruption, underlying cleanup failure or quarantine, and loopback-close uncertainty inherit each demo's documented possibility of a residual plaintext synthetic SQLite ledger. The CLI attempts one synchronous stdout write only after complete success and one fixed stderr write on failure. A failed or short descriptor write may already have emitted an allowlisted partial prefix; stdout and stderr from every nonzero run are invalid and must be discarded. This is not a production, per-request latency, TPS, throughput, concurrency-capacity, network or payment latency, L1-capacity, Momentum, finality, live-payment, release, or production-readiness measurement. There is no general timeout or `Promise.race`; adding a deadline without separately designed cancellation could leave a measured scenario running after the benchmark reports failure. Consequential credentials still require authenticated transport.
+
 ## Local mock demo
 
 Requires Node.js 24+. Node 24 is the configured CI-tested minimum; CI does not exercise every higher Node major admitted by the package engine range.
