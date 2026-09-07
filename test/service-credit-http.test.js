@@ -585,17 +585,64 @@ test('startup admission rejects duplicate capability commitments', t => {
   );
 });
 
-test('the fixed execution ceiling rejects a new request pre-store while duplicates still converge', async t => {
+test('the generic handler fixed eight-operation ceiling remains above the ledger admission guard', async t => {
   const ledger = createLedger(t, { totalUnits: 30 });
   const requests = Array.from({ length: 9 }, (_, index) => requestDescription(
     ledger.activeGrant.grantId,
     { requestId: `request.active.${index + 1}` },
   ));
+  const records = new Map();
+  const recordFor = (input, state, cachedResult = null) => ({
+    modelVersion: input.modelVersion,
+    grantId: input.grantId,
+    requestId: input.requestId,
+    requestDigest: digest('f'),
+    offerId: ledger.activeGrant.offerId,
+    offerVersion: ledger.activeGrant.offerVersion,
+    method: input.method,
+    routeId: input.routeId,
+    canonicalBodyDigest: input.canonicalBodyDigest,
+    selectedContentType: input.selectedContentType,
+    maxCostUnits: input.maxCostUnits,
+    costUnits: 3,
+    state,
+    cachedResult,
+  });
+  const genericStore = storeFacade(ledger.store, {
+    reserveRequest(input) {
+      const existing = records.get(input.requestId);
+      if (existing) {
+        return { replayed: true, executionAuthorized: false, request: existing };
+      }
+      const reserved = recordFor(input, REQUEST_STATE.RESERVED);
+      records.set(input.requestId, reserved);
+      return { replayed: false, executionAuthorized: false, request: reserved };
+    },
+    beginExecution(input) {
+      const executing = { ...records.get(input.requestId), state: REQUEST_STATE.EXECUTING };
+      records.set(input.requestId, executing);
+      return { executionAuthorized: true, request: executing };
+    },
+    completeExecution(input) {
+      const succeeded = {
+        ...records.get(input.requestId),
+        state: REQUEST_STATE.SUCCEEDED,
+        cachedResult: input.cachedResult,
+      };
+      records.set(input.requestId, succeeded);
+      return { transitioned: true, request: succeeded };
+    },
+    markOutcomeUnknown(input) {
+      const unknown = { ...records.get(input.requestId), state: REQUEST_STATE.OUTCOME_UNKNOWN };
+      records.set(input.requestId, unknown);
+      return { transitioned: true, request: unknown };
+    },
+  });
   const releases = [];
   let startedResolve;
   const started = new Promise(resolve => { startedResolve = resolve; });
   let calls = 0;
-  const port = await listen(t, handler(ledger.store, () => new Promise(resolve => {
+  const port = await listen(t, handler(genericStore, () => new Promise(resolve => {
     calls += 1;
     releases.push(() => resolve({ resultCode: 'service.active' }));
     if (calls === 8) startedResolve();
@@ -610,10 +657,7 @@ test('the fixed execution ceiling rejects a new request pre-store while duplicat
   });
   assert.equal(excess.statusCode, 503);
   assert.deepEqual(parsed(excess), { error: 'service_unavailable' });
-  assert.equal(ledger.store.getRequest({
-    grantId: requests[8].grantId,
-    requestId: requests[8].requestId,
-  }), null);
+  assert.equal(records.has(requests[8].requestId), false);
   const duplicate = exchange(port, {
     headers: { Authorization: authorization(ledger.keys, requests[0]) },
   });
@@ -737,7 +781,7 @@ test('same-process concurrent retries converge on one execution and one result',
   assert.equal(calls, 1);
 });
 
-test('different request IDs are never coalesced even when their model request digests match', async t => {
+test('distinct requests on one ledger wait for the unresolved admission guard', async t => {
   const ledger = createLedger(t);
   const firstRequest = requestDescription(ledger.activeGrant.grantId, { requestId: 'request.first' });
   const secondRequest = requestDescription(ledger.activeGrant.grantId, { requestId: 'request.second' });
@@ -745,20 +789,35 @@ test('different request IDs are never coalesced even when their model request di
   let startedResolve;
   const started = new Promise(resolve => { startedResolve = resolve; });
   const executionIds = [];
-  const port = await listen(t, handler(ledger.store, identity => new Promise(resolve => {
+  const port = await listen(t, handler(ledger.store, identity => {
     executionIds.push(identity.executionId);
-    releases.push(() => resolve({ resultCode: 'service.distinct' }));
-    if (releases.length === 2) startedResolve();
-  })));
+    if (executionIds.length > 1) return { resultCode: 'service.distinct' };
+    return new Promise(resolve => {
+      releases.push(() => resolve({ resultCode: 'service.distinct' }));
+      startedResolve();
+    });
+  }));
   const firstPromise = exchange(port, {
     headers: { Authorization: authorization(ledger.keys, firstRequest) },
   });
-  const secondPromise = exchange(port, {
+  await started;
+  const beforeBlocked = ledger.store.load();
+  const blocked = await exchange(port, {
     headers: { Authorization: authorization(ledger.keys, secondRequest) },
   });
-  await started;
+  assert.equal(blocked.statusCode, 503);
+  assert.deepEqual(parsed(blocked), { error: 'service_unavailable' });
+  assert.equal(executionIds.length, 1);
+  assert.equal(ledger.store.getRequest({
+    grantId: secondRequest.grantId,
+    requestId: secondRequest.requestId,
+  }), null);
+  assert.deepEqual(ledger.store.load(), beforeBlocked);
   for (const release of releases) release();
-  const [first, second] = await Promise.all([firstPromise, secondPromise]);
+  const first = await firstPromise;
+  const second = await exchange(port, {
+    headers: { Authorization: authorization(ledger.keys, secondRequest) },
+  });
   assert.equal(first.statusCode, 200);
   assert.equal(second.statusCode, 200);
   assert.equal(new Set(executionIds).size, 2);
@@ -897,6 +956,62 @@ test('callback failure and invalid callback results durably enter OUTCOME_UNKNOW
       assert.equal(response.body.includes(Buffer.from('private-detail')), false);
     });
   }
+});
+
+test('an unresolved request blocks unrelated HTTP admission without changing durable state', async t => {
+  const ledger = createLedger(t, { totalUnits: 12 });
+  const completedRequest = requestDescription(ledger.activeGrant.grantId, {
+    requestId: 'request.completed',
+  });
+  const blockerRequest = requestDescription(ledger.activeGrant.grantId, {
+    requestId: 'request.blocker',
+  });
+  const laterRequest = requestDescription(ledger.activeGrant.grantId, {
+    requestId: 'request.later',
+  });
+  let calls = 0;
+  const port = await listen(t, handler(ledger.store, () => {
+    calls += 1;
+    if (calls === 2) throw new Error('synthetic-private-detail');
+    return { resultCode: 'service.completed' };
+  }));
+
+  const completed = await exchange(port, {
+    headers: { Authorization: authorization(ledger.keys, completedRequest) },
+  });
+  assert.equal(completed.statusCode, 200);
+  const unknown = await exchange(port, {
+    headers: { Authorization: authorization(ledger.keys, blockerRequest) },
+  });
+  assert.equal(unknown.statusCode, 409);
+  assert.equal(
+    ledger.store.getRequest({
+      grantId: blockerRequest.grantId,
+      requestId: blockerRequest.requestId,
+    }).state,
+    REQUEST_STATE.OUTCOME_UNKNOWN,
+  );
+  const before = ledger.store.load();
+
+  const blocked = await exchange(port, {
+    headers: { Authorization: authorization(ledger.keys, laterRequest) },
+  });
+  assert.equal(blocked.statusCode, 503);
+  assert.deepEqual(parsed(blocked), { error: 'service_unavailable' });
+  assert.deepEqual(ledger.store.load(), before);
+  assert.equal(calls, 2);
+
+  const unknownReplay = await exchange(port, {
+    headers: { Authorization: authorization(ledger.keys, blockerRequest) },
+  });
+  assert.equal(unknownReplay.statusCode, 409);
+  const successReplay = await exchange(port, {
+    headers: { Authorization: authorization(ledger.keys, completedRequest) },
+  });
+  assert.equal(successReplay.statusCode, 200);
+  assert.deepEqual(successReplay.body, completed.body);
+  assert.deepEqual(ledger.store.load(), before);
+  assert.equal(calls, 2);
 });
 
 test('begin commit ambiguity returns 503 and never authorizes application execution', async t => {

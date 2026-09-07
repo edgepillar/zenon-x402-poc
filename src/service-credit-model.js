@@ -1106,6 +1106,12 @@ export class InMemoryServiceCreditModel {
         });
       }
 
+      const admission = this.#requestAdmissionState();
+      if (admission.hasUnresolvedExecution) fail('UNRESOLVED_EXECUTION');
+      if (admission.requestCount >= MAX_HYDRATED_REQUESTS) {
+        fail('REQUEST_CAPACITY_EXCEEDED');
+      }
+
       this.#refreshGrant(grant);
       if (grant.lifecycle !== GRANT_LIFECYCLE.ACTIVE) fail('GRANT_NOT_ACTIVE');
 
@@ -1166,6 +1172,9 @@ export class InMemoryServiceCreditModel {
       const { grant, request } = this.#requireRequest(input);
       if (request.state !== REQUEST_STATE.RESERVED) {
         return snapshot({ executionAuthorized: false, request: this.#requestValue(request) });
+      }
+      if (this.#requestAdmissionState().hasUnresolvedExecution) {
+        fail('UNRESOLVED_EXECUTION');
       }
       this.#refreshGrant(grant);
       if (grant.lifecycle !== GRANT_LIFECYCLE.ACTIVE) fail('GRANT_NOT_ACTIVE');
@@ -1350,6 +1359,24 @@ export class InMemoryServiceCreditModel {
     const request = this.#requests.get(reference.grantId)?.get(reference.requestId);
     if (!request) fail('REQUEST_NOT_FOUND');
     return { grant, request };
+  }
+
+  #requestAdmissionState() {
+    let requestCount = 0;
+    let hasUnresolvedExecution = false;
+    for (const requests of this.#requests.values()) {
+      for (const request of requests.values()) {
+        requestCount += 1;
+        if (requestCount > MAX_HYDRATED_REQUESTS) fail('INVARIANT_VIOLATION');
+        if (
+          request.state === REQUEST_STATE.EXECUTING
+          || request.state === REQUEST_STATE.OUTCOME_UNKNOWN
+        ) {
+          hasUnresolvedExecution = true;
+        }
+      }
+    }
+    return { requestCount, hasUnresolvedExecution };
   }
 
   #serverCost(offer, grant, request) {

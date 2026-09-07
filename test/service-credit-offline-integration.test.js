@@ -697,10 +697,8 @@ test('offline funding composes once with durable service-credit execution and fa
   assert.equal(settlementCalls, 1);
   assert.equal(observer.calls, 3);
 
-  const insufficientD = await exchange(handler, signed[3].authorization, protectedMaterial);
-  assert.equal(insufficientD.statusCode, 403);
-  assert.deepEqual(parsed(insufficientD), { error: 'credit_not_authorized' });
-  assertPrivateJson(insufficientD);
+  const blockedD = await exchange(handler, signed[3].authorization, protectedMaterial);
+  assertUnavailable(blockedD);
   assert.equal(requestFrom(store, grantId, signed[3].request.requestId), null);
   assertAccounting(store, grantId, {
     revision: 11,
@@ -712,17 +710,15 @@ test('offline funding composes once with durable service-credit execution and fa
   assert.equal(observer.calls, 3);
 
   clock.value = expiresAt + 1;
-  const expiredE = await exchange(handler, signed[4].authorization, protectedMaterial);
-  assert.equal(expiredE.statusCode, 403);
-  assert.deepEqual(parsed(expiredE), { error: 'credit_not_authorized' });
-  assertPrivateJson(expiredE);
+  const blockedE = await exchange(handler, signed[4].authorization, protectedMaterial);
+  assertUnavailable(blockedE);
   assert.equal(requestFrom(store, grantId, signed[4].request.requestId), null);
   assertAccounting(store, grantId, {
-    revision: 12,
+    revision: 11,
     availableUnits: 1,
     heldUnits: 2,
     consumedUnits: 4,
-    lifecycle: GRANT_LIFECYCLE.EXPIRED,
+    lifecycle: GRANT_LIFECYCLE.ACTIVE,
   });
   assert.equal(settlementCalls, 1);
   assert.equal(observer.calls, 3);
@@ -734,11 +730,11 @@ test('offline funding composes once with durable service-credit execution and fa
   );
   assert.deepEqual(postExpiryReplayA, firstA);
   const finalView = assertAccounting(store, grantId, {
-    revision: 12,
+    revision: 11,
     availableUnits: 1,
     heldUnits: 2,
     consumedUnits: 4,
-    lifecycle: GRANT_LIFECYCLE.EXPIRED,
+    lifecycle: GRANT_LIFECYCLE.ACTIVE,
   });
   assert.equal(finalView.requests.length, 3);
   assert.equal(settlementCalls, 1);
@@ -1176,6 +1172,79 @@ test('definite activation rejection neither swaps nor latches admission', async 
   ]);
   assert.equal(response.statusCode, 200);
   assert.equal(executeCalls, 1);
+});
+
+test('unresolved execution admission survives grant activation and owner reconstruction', async t => {
+  const ledger = ownedStore(t);
+  const facilitator = new MockExactZenonFacilitator();
+  const activation = activationFor(
+    ledger.store,
+    facilitator.settle.bind(facilitator),
+  );
+  let executeCalls = 0;
+  const owner = createServiceCreditCompositionOwner({
+    store: ledger.store,
+    activationOptions: optionsForActivation(activation),
+    execute: () => {
+      executeCalls += 1;
+      if (executeCalls === 1) throw new Error('synthetic-private-detail');
+      return { resultCode: 'service.must-not-run' };
+    },
+  });
+  const blockerPayment = await paymentFor(owner);
+  const blockerGrant = await owner.activateFunding(activationInput(blockerPayment));
+  const blocker = signedServiceRequest(
+    blockerPayment.capability,
+    blockerGrant.grant.grantId,
+    'request.blocker',
+  );
+  const unknown = await exchange(owner.handle, blocker.authorization, [
+    Buffer.from(blocker.authorization, 'utf8'),
+  ]);
+  assert.equal(unknown.statusCode, 409);
+  assert.equal(executeCalls, 1);
+
+  const laterPayment = await paymentFor(owner);
+  const laterGrant = await owner.activateFunding(activationInput(laterPayment));
+  const later = signedServiceRequest(
+    laterPayment.capability,
+    laterGrant.grant.grantId,
+    'request.later-grant',
+  );
+  const blockedAfterActivation = await exchange(owner.handle, later.authorization, [
+    Buffer.from(later.authorization, 'utf8'),
+  ]);
+  assertUnavailable(blockedAfterActivation);
+  assert.equal(executeCalls, 1);
+
+  ledger.store.close();
+  const reopened = ServiceCreditSqliteStore.openExisting({
+    databasePath: ledger.configuration.databasePath,
+    allowedRoot: ledger.configuration.allowedRoot,
+    deriveCost: () => FIXED_COST_UNITS,
+    now: () => NOW,
+  });
+  ledger.replaceStore(reopened);
+  const freshFacilitator = new MockExactZenonFacilitator();
+  const freshActivation = activationFor(
+    reopened,
+    freshFacilitator.settle.bind(freshFacilitator),
+  );
+  let recoveredCalls = 0;
+  const recoveredOwner = createServiceCreditCompositionOwner({
+    store: reopened,
+    activationOptions: optionsForActivation(freshActivation),
+    execute: () => {
+      recoveredCalls += 1;
+      return { resultCode: 'service.must-not-run' };
+    },
+  });
+  const blockedAfterReopen = await exchange(recoveredOwner.handle, later.authorization, [
+    Buffer.from(later.authorization, 'utf8'),
+  ]);
+  assertUnavailable(blockedAfterReopen);
+  assert.equal(recoveredCalls, 0);
+  assert.equal(freshFacilitator.records.size, 0);
 });
 
 test('OUTCOME_UNKNOWN latches all authority and a validated new owner admits persisted state', async t => {

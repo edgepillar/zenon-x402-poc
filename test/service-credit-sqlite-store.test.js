@@ -909,6 +909,12 @@ test('before-commit failure rolls back while after-commit ambiguity never return
       }).executionAuthorized,
       false,
     );
+    expectCode(
+      () => reopened.reserveRequest(request(activeGrant.grantId, {
+        requestId: 'request.after-ambiguous-begin',
+      })),
+      'UNRESOLVED_EXECUTION',
+    );
     reopened.close();
   });
 });
@@ -945,6 +951,12 @@ test('process death around COMMIT recovers conservatively across restart', async
     const recovered = ServiceCreditSqliteStore.openExisting(options(directory));
     assert.equal(recovered.getRequest(reference).state, REQUEST_STATE.EXECUTING);
     assert.equal(recovered.beginExecution(reference).executionAuthorized, false);
+    expectCode(
+      () => recovered.reserveRequest(request(activeGrant.grantId, {
+        requestId: 'request.after-crash',
+      })),
+      'UNRESOLVED_EXECUTION',
+    );
     recovered.close();
   });
 });
@@ -1093,6 +1105,68 @@ test('cross-process beginExecution authorizes exactly one contender', async t =>
   const reopened = ServiceCreditSqliteStore.openExisting(options(directory));
   assert.equal(reopened.getRequest(reference).state, REQUEST_STATE.EXECUTING);
   assert.equal(reopened.beginExecution(reference).executionAuthorized, false);
+  reopened.close();
+});
+
+test('unresolved admission survives reopen and blocked operations preserve revision', t => {
+  const directory = privateDirectoryFor(t);
+  const { activeGrant, store } = initializedStore(directory, {}, { totalUnits: 12 });
+  const blocker = { grantId: activeGrant.grantId, requestId: 'request.blocker' };
+  const waiting = { grantId: activeGrant.grantId, requestId: 'request.waiting' };
+  store.reserveRequest(request(activeGrant.grantId, { requestId: blocker.requestId }));
+  store.reserveRequest(request(activeGrant.grantId, { requestId: waiting.requestId }));
+  store.beginExecution(blocker);
+  const revision = store.getMetadata().revision;
+
+  expectCode(
+    () => store.reserveRequest(request(activeGrant.grantId, { requestId: 'request.new' })),
+    'UNRESOLVED_EXECUTION',
+  );
+  expectCode(() => store.beginExecution(waiting), 'UNRESOLVED_EXECUTION');
+  assert.equal(store.getMetadata().revision, revision);
+  store.close();
+
+  const reopened = ServiceCreditSqliteStore.openExisting(options(directory));
+  assert.equal(reopened.getMetadata().revision, revision);
+  expectCode(() => reopened.beginExecution(waiting), 'UNRESOLVED_EXECUTION');
+  reopened.markOutcomeUnknown(blocker);
+  const unknownRevision = reopened.getMetadata().revision;
+  expectCode(
+    () => reopened.reserveRequest(request(activeGrant.grantId, { requestId: 'request.later' })),
+    'UNRESOLVED_EXECUTION',
+  );
+  assert.equal(reopened.getMetadata().revision, unknownRevision);
+  reopened.reconcileRequest({ ...blocker, outcome: REQUEST_STATE.FAILED_RELEASED });
+  assert.equal(reopened.beginExecution(waiting).executionAuthorized, true);
+  reopened.close();
+});
+
+test('cross-process distinct pre-reserved begins have one unresolved-admission winner', async t => {
+  const directory = privateDirectoryFor(t);
+  const { activeGrant, store } = initializedStore(directory, {}, { totalUnits: 12 });
+  const first = { grantId: activeGrant.grantId, requestId: 'request.first' };
+  const second = { grantId: activeGrant.grantId, requestId: 'request.second' };
+  store.reserveRequest(request(activeGrant.grantId, { requestId: first.requestId }));
+  store.reserveRequest(request(activeGrant.grantId, { requestId: second.requestId }));
+  store.close();
+
+  const responses = await runBarrierRace(directory, [
+    { kind: 'begin', input: first },
+    { kind: 'begin', input: second },
+  ]);
+  assert.equal(responses.filter(response => response.ok).length, 1);
+  assert.equal(
+    responses.filter(response => response.ok)[0].executionAuthorized,
+    true,
+  );
+  assert.deepEqual(
+    responses.filter(response => !response.ok).map(response => response.code),
+    ['UNRESOLVED_EXECUTION'],
+  );
+
+  const reopened = ServiceCreditSqliteStore.openExisting(options(directory));
+  const states = [reopened.getRequest(first).state, reopened.getRequest(second).state].sort();
+  assert.deepEqual(states, [REQUEST_STATE.EXECUTING, REQUEST_STATE.RESERVED].sort());
   reopened.close();
 });
 
