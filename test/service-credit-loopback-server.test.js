@@ -1148,7 +1148,23 @@ test('source closure, active paths, output, package surface, and docs stay bound
     );
   }
   const packageJson = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8'));
-  assert.equal(Object.values(packageJson.scripts).some(value => value.includes('loopback')), false);
+  assert.deepEqual(
+    Object.entries(packageJson.scripts).filter(([, value]) => value.includes('loopback')),
+    [[
+      'demo:service-credit-loopback',
+      'node src/service-credit-loopback-demo-cli.js',
+    ]],
+  );
+  assert.equal(
+    Object.values(packageJson.scripts).some(
+      value => value.includes('service-credit-loopback-server'),
+    ),
+    false,
+  );
+  for (const [name, command] of Object.entries(packageJson.scripts)) {
+    if (name === 'demo:service-credit-loopback') continue;
+    assert.equal(command.includes('service-credit-loopback-demo'), false);
+  }
   assert.equal(readdirSync(ROOT).includes('service-credit-loopback-server'), false);
   for (const relativePath of ['README.md', 'SECURITY.md', 'docs/IMPLEMENTATION_PLAN.md']) {
     const document = readFileSync(join(ROOT, relativePath), 'utf8');
@@ -1172,11 +1188,24 @@ test('source closure, active paths, output, package surface, and docs stay bound
   const readme = readFileSync(join(ROOT, 'README.md'), 'utf8');
   const security = readFileSync(join(ROOT, 'SECURITY.md'), 'utf8');
   const plan = readFileSync(join(ROOT, 'docs/IMPLEMENTATION_PLAN.md'), 'utf8');
-  assert.equal(readme.includes('no package script or active CLI'), true);
+  assert.equal(
+    readme.includes('transport owner itself has no package script or active CLI'),
+    true,
+  );
+  assert.equal(
+    readme.includes('only the isolated synthetic loopback demo below composes it'),
+    true,
+  );
   assert.equal(readme.includes('fixed two-second deadline'), true);
+  assert.equal(readme.includes('not a benchmark'), true);
+  assert.equal(readme.includes('performs no wallet, RPC, blockchain, live settlement, or live x402 operation'), true);
   assert.equal(security.includes('caller must successfully await `server.close()`'), true);
   assert.equal(security.includes('leaves lifecycle state unchanged'), true);
+  assert.equal(security.includes('callback cancellation'), true);
+  assert.equal(security.includes('preserves and quarantines the higher-level store and ledger'), true);
+  assert.equal(security.includes('not a benchmark'), true);
   assert.equal(plan.includes('generic handler cannot enforce credential provenance'), true);
   assert.equal(plan.includes('separately named, separately reviewed future milestone'), true);
   assert.equal(plan.includes('removing only `src/service-credit-loopback-server.js`'), true);
+  assert.equal(plan.includes('leaves the listener-free demo, transport owner, active runtime, and persisted schema unchanged'), true);
 });

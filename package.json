@@ -15,6 +15,7 @@
   "scripts": {
     "demo": "node src/demo.js",
     "demo:service-credit": "node src/service-credit-demo-cli.js",
+    "demo:service-credit-loopback": "node src/service-credit-loopback-demo-cli.js",
     "server": "node src/server-cli.js",
     "buyer": "node src/buyer-cli.js",
     "verify:operator-trusted-observation": "node src/operator-trusted-observation-cli.js",

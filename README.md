@@ -70,7 +70,7 @@ The repository also contains a separate offline reference for prepaid service cr
 
 `src/service-credit-http.js` is a standalone exact `POST /service-credit/v1/execute` handler with an empty request body and a fixed JSON result shape. Construction validates the complete durable state and freezes one bounded grant-admission snapshot; a grant activated later requires handler reconstruction. Each handler admits at most 64 request starts per second and eight active executions, with no queue. It durably reserves and begins before invoking the application callback, then completes or conservatively records an unknown outcome. It has no callback timeout, supports no arbitrary response body, and exposes no settlement, grant-activation, administration, or reconciliation route.
 
-`src/service-credit-loopback-server.js` adds an unreleased, opt-in imported API for local synthetic interoperability only. `createServiceCreditLoopbackServer({ handler })` is expected to receive the stable `owner.handle` from a trusted caller and exposes only frozen zero-argument `start` and `close` operations. It binds one ephemeral numeric IPv4 `127.0.0.1` listener, publishes a frozen local origin and the existing fixed path, and never binds again after close or uncertainty. Startup has a fixed two-second deadline; a silent or faulty bind fails closed, aborts the owned partial listener, and permanently quarantines the transport. Passing any argument to either operation rejects with fixed `SERVICE_CREDIT_LOOPBACK_INVALID_INVOCATION` without changing lifecycle state. The origin is routing metadata, not authentication. There is deliberately no package script or active CLI for this API.
+`src/service-credit-loopback-server.js` adds an unreleased, opt-in imported API for local synthetic interoperability only. `createServiceCreditLoopbackServer({ handler })` is expected to receive the stable `owner.handle` from a trusted caller and exposes only frozen zero-argument `start` and `close` operations. It binds one ephemeral numeric IPv4 `127.0.0.1` listener, publishes a frozen local origin and the existing fixed path, and never binds again after close or uncertainty. Startup has a fixed two-second deadline; a silent or faulty bind fails closed, aborts the owned partial listener, and permanently quarantines the transport. Passing any argument to either operation rejects with fixed `SERVICE_CREDIT_LOOPBACK_INVALID_INVOCATION` without changing lifecycle state. The origin is routing metadata, not authentication. The transport owner itself has no package script or active CLI that invokes it directly; only the isolated synthetic loopback demo below composes it through a separately named opt-in command.
 
 The loopback listener is plaintext and unauthenticated. It is permitted only with disposable synthetic authorization material inside this local test and demo trust boundary. Any real, durable, funded, or otherwise consequential bearer material requires authenticated transport, including on loopback whenever same-user, privileged, host-inspection, or other same-host observers are not trusted. Loopback routing is not a security boundary. The generic handler API cannot enforce credential provenance; the caller owns that policy. The listener applies bounded headers, connections, requests per socket, receive timeouts, and socket inactivity, but all bounds are per-process. Transport timeouts and disconnects terminate transport only: they do not cancel an application callback or establish its accounting outcome. A caller must close the listener successfully before closing its store. `SERVICE_CREDIT_LOOPBACK_CLOSE_UNCERTAIN` requires the caller to preserve and quarantine higher-level state until any retained handler work settles or an explicit recovery process adjudicates it. Abrupt termination has no cleanup guarantee.
 
@@ -87,6 +87,18 @@ npm run --silent demo:service-credit
 This opt-in synthetic mock-only in-process demo performs one mock funding settlement, then three unique signed provider-local service uses plus one exact replay. Seven units are funded, each unique request consumes two, and the replay neither charges nor executes twice. Provider-local uses are not additional Zenon transfers or x402 settlements. The demo opens no listener, wallet, RPC, blockchain, or live x402 path. It creates a private ephemeral SQLite ledger and removes it after verified normal completion; abrupt termination or cleanup quarantine can leave that plaintext synthetic ledger behind. The filesystem boundary requires a POSIX reliable local filesystem; user-ID, mode, link-count, canonical-path, and inode checks fail closed when unavailable or inconsistent.
 
 This is not a benchmark. It records no duration, latency, throughput, concurrency, Momentum, finality, scalability, or production-readiness result. Its output contains only fixed aggregate counters. Ephemeral demonstration keys are generated in memory and are neither output nor persisted, but production client-key generation, recovery, and lifecycle remain not implemented.
+
+Run the separate synthetic loopback demonstration explicitly:
+
+```bash
+npm run --silent demo:service-credit-loopback
+```
+
+This opt-in, unreleased functional demo prepares one synthetic mock settlement and seven-unit grant before starting the listener, then exercises the existing authorization codec, composition owner, HTTP handler, SQLite store, and bounded loopback transport. It sends request A, one byte-identical replay of A, request B, and request C sequentially. The three unique requests execute exactly once and consume two units each; the replay causes no second debit, execution, settlement, or revision change, leaving six units consumed, zero held, and one available. These provider-local requests are not additional Zenon transfers or x402 settlements. The existing listener-free demo remains unchanged and listener-free.
+
+The client opens a fresh connection for each request, follows no redirects, and performs no retry or replacement after timeout, disconnect, malformed response, or ambiguous completion. Its fixed deadline is only a safety bound and is not recorded as a duration or performance result. The returned origin and port are used only for local routing and never appear in the public summary or CLI output. Plaintext unauthenticated loopback is permitted here only for disposable synthetic credentials; real, durable, funded, or otherwise consequential bearer material still requires authenticated transport whenever same-host observers are not trusted.
+
+Normal completion successfully closes the loopback server before closing the store, then removes only the identity-verified ledger file and empty process-owned directory without recursive deletion. Close uncertainty preserves and quarantines the higher-level store and ledger rather than claiming cancellation, rollback, or cleanup. Abrupt termination can also leave the plaintext synthetic ledger. This is not a benchmark: it records no duration, latency, throughput, concurrency, percentile, Momentum, finality, scalability, release, activation, or production-readiness result, and it performs no wallet, RPC, blockchain, live settlement, or live x402 operation.
 
 The authenticated future transport requirement remains mandatory for every non-synthetic or consequential credential use; the narrow local plaintext exception above does not weaken it.
 
@@ -527,6 +539,7 @@ A request that starts while activation is pending keeps the previous snapshot. O
 - Service-credit identifiers and commitments are stored in plaintext; raw bearer capabilities, secrets, personal information, and sensitive response content must remain outside the database.
 - The standalone service-credit HTTP handler is not mounted by the current server, has no callback timeout, accepts only its fixed empty-body route and fixed JSON result, and applies admission limits per handler rather than across processes or hosts.
 - The unreleased service-credit loopback owner can mount a trusted caller-supplied handler only on numeric IPv4 `127.0.0.1`; it is plaintext, unauthenticated, per-process, has no callback cancellation, and is not an active CLI or live x402 path.
+- The separately invoked synthetic loopback demo uses only disposable credentials, sequential requests, and a local plaintext listener. It supplies no authenticated transport, callback cancellation, retry authority, live settlement, or performance evidence.
 - Key-pair `clear()` is defense in depth; JavaScript memory zeroization is not guaranteed.
 
 ## Repository structure
@@ -554,6 +567,10 @@ src/
   service-credit-http.js      isolated fixed service-credit HTTP handler
   service-credit-loopback-server.js
                               opt-in local synthetic loopback transport owner
+  service-credit-loopback-demo.js
+                              isolated synthetic real-loopback demonstration
+  service-credit-loopback-demo-cli.js
+                              fixed-output loopback demo entry point
   service-credit-composition.js
                               isolated single-process authority owner
   service-credit-model.js     isolated offline prepaid-credit state machine
@@ -633,6 +650,7 @@ test/
   service-credit-http.test.js
   service-credit-loopback-server.test.js
   service-credit-demo.test.js
+  service-credit-loopback-demo.test.js
   service-credit-model.test.js
   service-credit-sqlite-store.test.js
   wire-profile.test.js
@@ -653,7 +671,7 @@ This project is licensed under the [Apache License, Version 2.0](LICENSE). The l
 Future work has three separate lanes:
 
 1. Near-term work continues x402 correctness, interoperability, and operational hardening on the frozen legacy signing baseline.
-2. The prepaid-credit lane has an isolated mock-only verified settlement-to-grant activation, exact signed funding-payment binding, a local single-process composition owner, and the explicit offline functional demo. Any authoritative live activation, production client-key lifecycle, or general protected-response persistence remains separate future work.
+2. The prepaid-credit lane has an isolated mock-only verified settlement-to-grant activation, exact signed funding-payment binding, a local single-process composition owner, the explicit listener-free functional demo, and a separately invoked synthetic loopback interoperability demo. Any authoritative live activation, authenticated production transport, production client-key lifecycle, or general protected-response persistence remains separate future work.
 3. A separately approved Phase 2C remains gated on a supported upstream unsigned-preparation and canonical-hash API, a wallet identity/lease/disposal and cleanup contract, and a separately versioned successor characterization suite.
 
 Production prerequisites across these lanes include independently authenticated chain-profile verification, durable multi-process settlement, an explicit confirmation policy, and official interoperability testing. Phase 2C and hardware-wallet work are not required for the current mock x402 flow.
