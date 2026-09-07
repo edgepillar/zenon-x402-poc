@@ -196,6 +196,238 @@ function assertConserved(snapshot) {
   assert.ok(snapshot.consumedUnits >= 0);
 }
 
+test('unresolved execution admission blocks new reservations before policy effects', () => {
+  const effects = { clock: 0, pricing: 0 };
+  const model = new InMemoryServiceCreditModel({
+    now: () => {
+      effects.clock += 1;
+      return NOW;
+    },
+    deriveCost: () => {
+      effects.pricing += 1;
+      return 2;
+    },
+  });
+  model.registerOffer(offer());
+  const activeGrant = model.activateGrantFromTrustedRecord(grant());
+  const crossGrant = model.activateGrantFromTrustedRecord(grant({
+    sourceSettlementId: 'settlement.public.cross',
+    transactionId: 'transaction.public.cross',
+    holderId: 'holder.public.cross',
+    payer: 'holder.public.cross',
+    capabilityCommitment: digest('c'),
+  }));
+  model.reserveRequest(request(activeGrant.grantId, { requestId: 'request.blocker' }));
+  model.beginExecution({ grantId: activeGrant.grantId, requestId: 'request.blocker' });
+
+  const assertBlockedWithoutEffects = (targetGrantId, requestId) => {
+    const before = model.exportState();
+    const effectsBefore = { ...effects };
+    expectCode(
+      () => model.reserveRequest(request(targetGrantId, { requestId })),
+      'UNRESOLVED_EXECUTION',
+    );
+    assert.deepEqual(model.exportState(), before);
+    assert.deepEqual(effects, effectsBefore);
+  };
+  assertBlockedWithoutEffects(activeGrant.grantId, 'request.executing.same-grant');
+  assertBlockedWithoutEffects(crossGrant.grantId, 'request.executing.cross-grant');
+
+  model.markOutcomeUnknown({ grantId: activeGrant.grantId, requestId: 'request.blocker' });
+  assertBlockedWithoutEffects(activeGrant.grantId, 'request.unknown.same-grant');
+  assertBlockedWithoutEffects(crossGrant.grantId, 'request.unknown.cross-grant');
+});
+
+test('unresolved execution admission permits only one distinct pre-reserved begin', () => {
+  const { model, activeGrant } = setup({ totalUnits: 10, cost: 2 });
+  const first = { grantId: activeGrant.grantId, requestId: 'request.first' };
+  const second = { grantId: activeGrant.grantId, requestId: 'request.second' };
+  model.reserveRequest(request(activeGrant.grantId, { requestId: first.requestId }));
+  model.reserveRequest(request(activeGrant.grantId, { requestId: second.requestId }));
+  assert.equal(model.beginExecution(first).executionAuthorized, true);
+
+  const before = model.exportState();
+  expectCode(() => model.beginExecution(second), 'UNRESOLVED_EXECUTION');
+  assert.deepEqual(model.exportState(), before);
+  assert.equal(model.getRequest(second).state, REQUEST_STATE.RESERVED);
+});
+
+test('unresolved execution admission spans grants and preserves every exact replay state', () => {
+  const { model, activeGrant } = setup({ totalUnits: 20, cost: 2 });
+  const otherGrant = model.activateGrantFromTrustedRecord(grant({
+    sourceSettlementId: 'settlement.public.2',
+    transactionId: 'transaction.public.2',
+    holderId: 'holder.public.2',
+    payer: 'holder.public.2',
+    capabilityCommitment: digest('c'),
+  }));
+  const completedInput = request(otherGrant.grantId, { requestId: 'request.completed' });
+  const releasedInput = request(otherGrant.grantId, { requestId: 'request.released' });
+  const waitingInput = request(otherGrant.grantId, { requestId: 'request.waiting' });
+  const blockerInput = request(activeGrant.grantId, { requestId: 'request.blocker' });
+
+  model.reserveRequest(completedInput);
+  model.beginExecution({ grantId: otherGrant.grantId, requestId: completedInput.requestId });
+  model.completeExecution({
+    grantId: otherGrant.grantId,
+    requestId: completedInput.requestId,
+    cachedResult: result(),
+  });
+  model.reserveRequest(releasedInput);
+  model.releaseBeforeExecution({ grantId: otherGrant.grantId, requestId: releasedInput.requestId });
+  model.reserveRequest(waitingInput);
+  model.reserveRequest(blockerInput);
+  model.beginExecution({ grantId: activeGrant.grantId, requestId: blockerInput.requestId });
+
+  assert.equal(model.reserveRequest(completedInput).request.state, REQUEST_STATE.SUCCEEDED);
+  assert.equal(model.reserveRequest(releasedInput).request.state, REQUEST_STATE.FAILED_RELEASED);
+  assert.equal(model.reserveRequest(waitingInput).request.state, REQUEST_STATE.RESERVED);
+  assert.equal(model.reserveRequest(blockerInput).request.state, REQUEST_STATE.EXECUTING);
+  expectCode(
+    () => model.beginExecution({ grantId: otherGrant.grantId, requestId: waitingInput.requestId }),
+    'UNRESOLVED_EXECUTION',
+  );
+  expectCode(
+    () => model.reserveRequest(request(otherGrant.grantId, { requestId: 'request.new' })),
+    'UNRESOLVED_EXECUTION',
+  );
+
+  model.markOutcomeUnknown({ grantId: activeGrant.grantId, requestId: blockerInput.requestId });
+  assert.equal(model.reserveRequest(blockerInput).request.state, REQUEST_STATE.OUTCOME_UNKNOWN);
+  expectCode(
+    () => model.beginExecution({ grantId: otherGrant.grantId, requestId: waitingInput.requestId }),
+    'UNRESOLVED_EXECUTION',
+  );
+  model.reconcileRequest({
+    grantId: activeGrant.grantId,
+    requestId: blockerInput.requestId,
+    outcome: REQUEST_STATE.FAILED_RELEASED,
+  });
+  assert.equal(
+    model.beginExecution({ grantId: otherGrant.grantId, requestId: waitingInput.requestId })
+      .executionAuthorized,
+    true,
+  );
+});
+
+test('hydrated schema-v2 blockers remain byte-compatible until every blocker is terminal', () => {
+  const { model, activeGrant } = setup({ totalUnits: 12, cost: 2 });
+  const first = request(activeGrant.grantId, { requestId: 'request.first' });
+  const second = request(activeGrant.grantId, { requestId: 'request.second' });
+  model.reserveRequest(first);
+  model.reserveRequest(second);
+  const legacy = structuredClone(model.exportState());
+  legacy.requests.find(entry => entry.requestId === first.requestId).state = REQUEST_STATE.EXECUTING;
+  legacy.requests.find(entry => entry.requestId === second.requestId).state = REQUEST_STATE.OUTCOME_UNKNOWN;
+
+  const recovered = InMemoryServiceCreditModel.fromState({
+    deriveCost: () => 2,
+    now: () => NOW,
+  }, legacy);
+  assert.equal(recovered.exportState().schemaVersion, SERVICE_CREDIT_STATE_SCHEMA_VERSION);
+  assert.deepEqual(recovered.exportState(), legacy);
+  expectCode(
+    () => recovered.reserveRequest(request(activeGrant.grantId, { requestId: 'request.blocked' })),
+    'UNRESOLVED_EXECUTION',
+  );
+
+  recovered.completeExecution({
+    grantId: activeGrant.grantId,
+    requestId: first.requestId,
+    cachedResult: result(),
+  });
+  expectCode(
+    () => recovered.reserveRequest(request(activeGrant.grantId, { requestId: 'request.still-blocked' })),
+    'UNRESOLVED_EXECUTION',
+  );
+  const reconciliation = {
+    grantId: activeGrant.grantId,
+    requestId: second.requestId,
+    outcome: REQUEST_STATE.FAILED_RELEASED,
+  };
+  assert.equal(recovered.reconcileRequest(reconciliation).transitioned, true);
+  const afterReconciliation = recovered.getGrant(activeGrant.grantId);
+  assert.equal(recovered.reconcileRequest(reconciliation).transitioned, false);
+  assert.deepEqual(recovered.getGrant(activeGrant.grantId), afterReconciliation);
+  assert.equal(
+    recovered.reserveRequest(request(activeGrant.grantId, { requestId: 'request.admitted' }))
+      .replayed,
+    false,
+  );
+});
+
+test('request capacity preserves replay precedence and admits no off-by-one reservation', () => {
+  const { model, activeGrant } = setup({ totalUnits: 2, cost: 1 });
+  const seedInput = request(activeGrant.grantId, { requestId: 'request.capacity.000000' });
+  model.reserveRequest(seedInput);
+  model.releaseBeforeExecution({
+    grantId: activeGrant.grantId,
+    requestId: seedInput.requestId,
+  });
+  const state = structuredClone(model.exportState());
+  const terminalTemplate = state.requests[0];
+  state.requests = Array.from({ length: 99_999 }, (_, index) => {
+    const record = {
+      ...terminalTemplate,
+      requestId: `request.capacity.${String(index).padStart(6, '0')}`,
+    };
+    record.requestDigest = deterministicRequestDigest(record);
+    return record;
+  });
+
+  const effects = { clock: 0, pricing: 0 };
+  const recovered = InMemoryServiceCreditModel.fromState({
+    deriveCost: () => {
+      effects.pricing += 1;
+      return 1;
+    },
+    now: () => {
+      effects.clock += 1;
+      return NOW;
+    },
+  }, state);
+  assert.deepEqual(effects, { clock: 0, pricing: 0 });
+
+  const finalInput = request(activeGrant.grantId, { requestId: 'request.capacity.999999' });
+  const finalReservation = recovered.reserveRequest(finalInput);
+  assert.equal(finalReservation.replayed, false);
+  assert.equal(finalReservation.request.state, REQUEST_STATE.RESERVED);
+  assert.equal(recovered.exportState().requests.length, 100_000);
+
+  assert.equal(recovered.reserveRequest(finalInput).replayed, true);
+  expectCode(
+    () => recovered.reserveRequest({ ...finalInput, routeId: 'lookup.changed.v1' }),
+    'REQUEST_ID_CONFLICT',
+  );
+
+  const effectsAtCapacity = { ...effects };
+  const stateAtCapacity = recovered.exportState();
+  const overflowInput = request(activeGrant.grantId, { requestId: 'request.capacity.overflow' });
+  assert.throws(
+    () => recovered.reserveRequest(overflowInput),
+    error => {
+      assert.equal(error?.name, 'ServiceCreditModelError');
+      assert.equal(error?.code, 'REQUEST_CAPACITY_EXCEEDED');
+      assert.equal(error?.message, 'REQUEST_CAPACITY_EXCEEDED');
+      assert.equal(Object.hasOwn(error, 'cause'), false);
+      return true;
+    },
+  );
+  assert.deepEqual(effects, effectsAtCapacity);
+  assert.equal(recovered.getRequest({
+    grantId: activeGrant.grantId,
+    requestId: overflowInput.requestId,
+  }), null);
+  assert.deepEqual(recovered.exportState(), stateAtCapacity);
+  assert.equal(
+    recovered.beginExecution({
+      grantId: activeGrant.grantId,
+      requestId: finalInput.requestId,
+    }).executionAuthorized,
+    true,
+  );
+});
+
 test('the model version is a named public constant', () => {
   assert.equal(SERVICE_CREDIT_MODEL_VERSION, 1);
   assert.equal(SERVICE_CREDIT_ACTIVATION_VERSION, 1);
@@ -640,11 +872,9 @@ test('replays of EXECUTING and OUTCOME_UNKNOWN never invoke or reauthorize execu
 
 test('explicit reconciliation can consume or release an unknown hold and is idempotent', () => {
   const { model, activeGrant } = setup({ totalUnits: 10, cost: 3 });
-  for (const requestId of ['request.success', 'request.release']) {
-    model.reserveRequest(request(activeGrant.grantId, { requestId }));
-    model.beginExecution({ grantId: activeGrant.grantId, requestId });
-    model.markOutcomeUnknown({ grantId: activeGrant.grantId, requestId });
-  }
+  model.reserveRequest(request(activeGrant.grantId, { requestId: 'request.success' }));
+  model.beginExecution({ grantId: activeGrant.grantId, requestId: 'request.success' });
+  model.markOutcomeUnknown({ grantId: activeGrant.grantId, requestId: 'request.success' });
 
   const successInput = {
     grantId: activeGrant.grantId,
@@ -667,6 +897,10 @@ test('explicit reconciliation can consume or release an unknown hold and is idem
     }),
     'RECONCILIATION_CONFLICT',
   );
+
+  model.reserveRequest(request(activeGrant.grantId, { requestId: 'request.release' }));
+  model.beginExecution({ grantId: activeGrant.grantId, requestId: 'request.release' });
+  model.markOutcomeUnknown({ grantId: activeGrant.grantId, requestId: 'request.release' });
 
   const releaseInput = {
     grantId: activeGrant.grantId,
@@ -999,7 +1233,7 @@ test('expiry blocks new reservations while preserving unresolved and completed r
   assert.equal(model.getGrant(activeGrant.grantId).lifecycle, GRANT_LIFECYCLE.EXPIRED);
   expectCode(
     () => model.reserveRequest(request(activeGrant.grantId, { requestId: 'request.new' })),
-    'GRANT_NOT_ACTIVE',
+    'UNRESOLVED_EXECUTION',
   );
   assert.equal(model.reserveRequest(completedInput).request.state, REQUEST_STATE.SUCCEEDED);
   assert.equal(model.reserveRequest(unresolvedInput).request.state, REQUEST_STATE.OUTCOME_UNKNOWN);
@@ -1009,6 +1243,15 @@ test('expiry blocks new reservations while preserving unresolved and completed r
   assert.equal(afterExpiry.heldUnits, beforeExpiry.heldUnits);
   assert.equal(afterExpiry.consumedUnits, beforeExpiry.consumedUnits);
   assertConserved(afterExpiry);
+  model.reconcileRequest({
+    grantId: activeGrant.grantId,
+    requestId: unresolvedInput.requestId,
+    outcome: REQUEST_STATE.FAILED_RELEASED,
+  });
+  expectCode(
+    () => model.reserveRequest(request(activeGrant.grantId, { requestId: 'request.after-release' })),
+    'GRANT_NOT_ACTIVE',
+  );
 });
 
 test('reservation fails closed when pricing reaches grant expiry before commit', () => {
@@ -1054,9 +1297,20 @@ test('revocation is monotonic, blocks new reservations, and preserves history', 
   assert.deepEqual(replay, revoked);
   expectCode(
     () => model.reserveRequest(request(activeGrant.grantId, { requestId: 'request.new' })),
-    'GRANT_NOT_ACTIVE',
+    'UNRESOLVED_EXECUTION',
   );
   assert.equal(model.reserveRequest(input).request.state, REQUEST_STATE.EXECUTING);
+  model.completeExecution({
+    grantId: activeGrant.grantId,
+    requestId: input.requestId,
+    cachedResult: result(),
+  });
+  expectCode(
+    () => model.reserveRequest(request(activeGrant.grantId, {
+      requestId: 'request.after-completion',
+    })),
+    'GRANT_NOT_ACTIVE',
+  );
   clock.value = NOW + 20_000;
   assert.equal(model.getGrant(activeGrant.grantId).lifecycle, GRANT_LIFECYCLE.REVOKED);
 
