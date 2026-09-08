@@ -13,16 +13,21 @@ import { dirname, isAbsolute, relative, resolve, sep } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import {
   InMemoryServiceCreditModel,
+  REQUEST_STATE,
   SERVICE_CREDIT_MODEL_VERSION,
   SERVICE_CREDIT_STATE_SCHEMA_VERSION,
   ServiceCreditModelError,
 } from './service-credit-model.js';
 
-export const SERVICE_CREDIT_SQLITE_SCHEMA_VERSION = 1;
+export const SERVICE_CREDIT_SQLITE_SCHEMA_VERSION = 2;
 
 const APPLICATION_ID = 0x53435244;
 const TABLE_NAME = 'service_credit_ledger';
 const TABLE_SQL = 'CREATE TABLE service_credit_ledger(singleton INTEGER PRIMARY KEY CHECK(singleton = 1), envelope TEXT NOT NULL) STRICT';
+const LEGACY_SQLITE_SCHEMA_VERSION = 1;
+const PUBLIC_LEDGER_ENVELOPE_SCHEMA_VERSION = 1;
+const PHYSICAL_V2_CHECKSUM_DOMAIN = 'zenon-x402:service-credit-sqlite-physical-v2';
+const MAX_PHYSICAL_ENVELOPE_OVERHEAD_BYTES = 4_096;
 const DEFAULT_BUSY_TIMEOUT_MS = 5_000;
 const MAX_BUSY_TIMEOUT_MS = 60_000;
 const DEFAULT_MAX_STATE_BYTES = 4 * 1024 * 1024;
@@ -490,12 +495,25 @@ function canonicalJson(value) {
   return `{${keys.map(key => `${JSON.stringify(key)}:${canonicalJson(value[key])}`).join(',')}}`;
 }
 
-function checksumFor(schemaVersion, revision, state) {
+function publicChecksumFor(schemaVersion, revision, state) {
   return `sha256:${crypto.createHash('sha256').update(canonicalJson({
     revision,
     schemaVersion,
     state,
   })).digest('hex')}`;
+}
+
+function physicalV2ChecksumFor(physicalVersion, revision, ledgerState, executionState) {
+  return `sha256:${crypto.createHash('sha256')
+    .update(PHYSICAL_V2_CHECKSUM_DOMAIN)
+    .update('\0')
+    .update(canonicalJson({
+      executionState,
+      ledgerState,
+      physicalVersion,
+      revision,
+    }))
+    .digest('hex')}`;
 }
 
 function frozenSnapshot(value) {
@@ -506,15 +524,33 @@ function frozenSnapshot(value) {
   return Object.freeze(copy);
 }
 
-function envelopeFor(revision, state) {
+function publicEnvelopeFor(revision, state) {
   const envelope = {
-    schemaVersion: SERVICE_CREDIT_SQLITE_SCHEMA_VERSION,
+    schemaVersion: PUBLIC_LEDGER_ENVELOPE_SCHEMA_VERSION,
     revision,
     state,
   };
   return Object.freeze({
     ...envelope,
-    checksum: checksumFor(envelope.schemaVersion, envelope.revision, envelope.state),
+    checksum: publicChecksumFor(envelope.schemaVersion, envelope.revision, envelope.state),
+  });
+}
+
+function physicalEnvelopeFor(revision, ledgerState) {
+  const envelope = {
+    physicalVersion: SERVICE_CREDIT_SQLITE_SCHEMA_VERSION,
+    revision,
+    ledgerState,
+    executionState: null,
+  };
+  return Object.freeze({
+    ...envelope,
+    checksum: physicalV2ChecksumFor(
+      envelope.physicalVersion,
+      envelope.revision,
+      envelope.ledgerState,
+      envelope.executionState,
+    ),
   });
 }
 
@@ -532,6 +568,15 @@ function assertCapacity(configuration, state) {
     || state.grants.length > configuration.maxGrants
     || state.requests.length > configuration.maxRequests
     || Buffer.byteLength(canonicalJson(state)) > configuration.maxStateBytes
+  ) {
+    failStore('SERVICE_CREDIT_STORE_CAPACITY_EXCEEDED');
+  }
+}
+
+function assertPhysicalEnvelopeCapacity(configuration, envelope) {
+  if (
+    Buffer.byteLength(canonicalJson(envelope))
+      > configuration.maxStateBytes + MAX_PHYSICAL_ENVELOPE_OVERHEAD_BYTES
   ) {
     failStore('SERVICE_CREDIT_STORE_CAPACITY_EXCEEDED');
   }
@@ -573,6 +618,13 @@ function syncParentDirectory(parent) {
  * external effects. The fixed busy timeout therefore makes callback duration
  * and writer contention an explicit availability limit.
  *
+ * Physical format v2 stores the current ledger state and a reserved null
+ * execution-state slot under one revision and integrity commitment. Public
+ * load and metadata results intentionally retain the legacy schema-v1 envelope
+ * projection used by the current HTTP and composition boundaries. Physical-v1
+ * files are accepted only by the explicit fail-closed migrator; ordinary open
+ * never migrates, repairs, downgrades, or deletes a database.
+ *
  * This persistence class does not itself perform HTTP handling, capability
  * proof verification, or settlement verification. The separate inactive mock
  * activation adapter verifies its exact synthetic evidence before atomically
@@ -580,7 +632,8 @@ function syncParentDirectory(parent) {
  * activation, capability issuance, and live service-credit wiring remain
  * unimplemented. This class also does not implement wallet or RPC integration,
  * live payments, external-effect execution, reconciliation evidence, deletion,
- * retention, compaction, tombstones, migration, or distributed transactions,
+ * retention, compaction, tombstones, execution-state transitions, downgrade,
+ * automatic migration, or distributed transactions,
  * and it is not a production-readiness claim.
  * Same-UID code and the host kernel are trusted;
  * no portable ACL claim is made. reconcileRequest remains a privileged
@@ -659,6 +712,50 @@ export class ServiceCreditSqliteStore {
     }
   }
 
+  static migrateExisting(options) {
+    const configuration = captureConfiguration(options);
+    const boundary = validatePathBoundary(configuration);
+    const before = inspectExistingDatabaseFile(configuration, boundary);
+    const database = openDatabase(configuration, before, false);
+    const store = new ServiceCreditSqliteStore(
+      CONSTRUCTOR_TOKEN,
+      configuration,
+      database,
+      before,
+    );
+    try {
+      store.#runTransaction('migrateExisting', () => {
+        store.#validateDatabase(LEGACY_SQLITE_SCHEMA_VERSION);
+        const { envelope, model } = store.#readLegacyLedger();
+        const state = model.exportState();
+        for (let index = 0; index < state.requests.length; index += 1) {
+          const requestState = state.requests[index].state;
+          if (
+            requestState === REQUEST_STATE.EXECUTING
+            || requestState === REQUEST_STATE.OUTCOME_UNKNOWN
+          ) {
+            failStore('SERVICE_CREDIT_STORE_MIGRATION_UNSAFE');
+          }
+        }
+        const next = physicalEnvelopeFor(envelope.revision, state);
+        assertPhysicalEnvelopeCapacity(configuration, next);
+        const updated = store.#database.prepare(
+          `UPDATE ${TABLE_NAME} SET envelope = ? WHERE singleton = 1`,
+        ).run(canonicalJson(next));
+        if (updated.changes !== 1) failStore('SERVICE_CREDIT_STORE_CORRUPT');
+        store.#database.exec(`PRAGMA user_version = ${SERVICE_CREDIT_SQLITE_SCHEMA_VERSION}`);
+        store.#validateDatabase();
+        store.#readLedger();
+        return { changed: true };
+      });
+      return store;
+    } catch (error) {
+      store.#closeAfterFailure();
+      const code = storeErrorCode(error);
+      throw storeFailure(code ?? 'SERVICE_CREDIT_STORE_MIGRATION_FAILED');
+    }
+  }
+
   registerOffer(input) {
     return this.#modelOperation('registerOffer', input);
   }
@@ -714,20 +811,20 @@ export class ServiceCreditSqliteStore {
   load() {
     return this.#runPublicOperation(() => this.#runTransaction('load', () => {
       this.#validateDatabase();
-      const { envelope } = this.#readLedger();
-      return frozenSnapshot(envelope);
+      const { publicEnvelope } = this.#readLedger();
+      return frozenSnapshot(publicEnvelope);
     }));
   }
 
   getMetadata() {
     return this.#runPublicOperation(() => this.#runTransaction('getMetadata', () => {
       this.#validateDatabase();
-      const { envelope } = this.#readLedger();
+      const { publicEnvelope } = this.#readLedger();
       return frozenSnapshot({
-        schemaVersion: envelope.schemaVersion,
-        modelVersion: envelope.state.modelVersion,
-        revision: envelope.revision,
-        checksum: envelope.checksum,
+        schemaVersion: publicEnvelope.schemaVersion,
+        modelVersion: publicEnvelope.state.modelVersion,
+        revision: publicEnvelope.revision,
+        checksum: publicEnvelope.checksum,
       });
     }));
   }
@@ -758,7 +855,8 @@ export class ServiceCreditSqliteStore {
     });
     const state = model.exportState();
     assertCapacity(this.#configuration, state);
-    const envelope = envelopeFor(0, state);
+    const envelope = physicalEnvelopeFor(0, state);
+    assertPhysicalEnvelopeCapacity(this.#configuration, envelope);
     this.#runTransaction('create', () => {
       this.#database.exec(`PRAGMA application_id = ${APPLICATION_ID}`);
       this.#database.exec(`PRAGMA user_version = ${SERVICE_CREDIT_SQLITE_SCHEMA_VERSION}`);
@@ -776,7 +874,7 @@ export class ServiceCreditSqliteStore {
     return this.#runPublicOperation(() => {
       const outcome = this.#runTransaction(operation, () => {
         this.#validateDatabase();
-        const { envelope, model } = this.#readLedger();
+        const { physicalEnvelope, model } = this.#readLedger();
         const beforeState = model.exportState();
         const beforeCanonical = canonicalJson(beforeState);
         let result;
@@ -794,10 +892,11 @@ export class ServiceCreditSqliteStore {
         if (changed) {
           this.#assertPersistableState(afterState);
           assertCapacity(this.#configuration, afterState);
-          if (envelope.revision === Number.MAX_SAFE_INTEGER) {
+          if (physicalEnvelope.revision === Number.MAX_SAFE_INTEGER) {
             failStore('SERVICE_CREDIT_STORE_CAPACITY_EXCEEDED');
           }
-          const next = envelopeFor(envelope.revision + 1, afterState);
+          const next = physicalEnvelopeFor(physicalEnvelope.revision + 1, afterState);
+          assertPhysicalEnvelopeCapacity(this.#configuration, next);
           const updated = this.#database.prepare(
             `UPDATE ${TABLE_NAME} SET envelope = ? WHERE singleton = 1`,
           ).run(canonicalJson(next));
@@ -812,38 +911,55 @@ export class ServiceCreditSqliteStore {
 
   #readLedger() {
     try {
-      const countRow = this.#database.prepare(
-        `SELECT count(*) AS entries FROM ${TABLE_NAME}`,
-      ).get();
-      if (countRow?.entries !== 1) failStore('SERVICE_CREDIT_STORE_CORRUPT');
-      const sizeRow = this.#database.prepare(
-        `SELECT singleton, typeof(envelope) AS kind, length(CAST(envelope AS BLOB)) AS bytes FROM ${TABLE_NAME}`,
-      ).get();
+      const { envelope, text } = this.#readRawEnvelope();
+      if (!exactKeys(envelope, [
+        'physicalVersion',
+        'revision',
+        'ledgerState',
+        'executionState',
+        'checksum',
+      ])) {
+        failStore('SERVICE_CREDIT_STORE_CORRUPT');
+      }
+      if (envelope.physicalVersion !== SERVICE_CREDIT_SQLITE_SCHEMA_VERSION) {
+        failStore('SERVICE_CREDIT_STORE_SCHEMA_UNSUPPORTED');
+      }
       if (
-        sizeRow?.singleton !== 1
-        || sizeRow?.kind !== 'text'
-        || !Number.isSafeInteger(sizeRow?.bytes)
-        || sizeRow.bytes < 1
-        || sizeRow.bytes > this.#configuration.maxStateBytes + 4_096
+        !Number.isSafeInteger(envelope.revision)
+        || envelope.revision < 0
+        || envelope.executionState !== null
+        || !CHECKSUM.test(envelope.checksum ?? '')
       ) {
         failStore('SERVICE_CREDIT_STORE_CORRUPT');
       }
-      const text = this.#database.prepare(
-        `SELECT envelope FROM ${TABLE_NAME} WHERE singleton = 1`,
-      ).get()?.envelope;
-      if (typeof text !== 'string' || Buffer.byteLength(text) !== sizeRow.bytes) {
+      const { model, normalizedState } = this.#hydrateLedgerState(envelope.ledgerState);
+      const normalizedEnvelope = physicalEnvelopeFor(envelope.revision, normalizedState);
+      if (
+        canonicalJson(normalizedState) !== canonicalJson(envelope.ledgerState)
+        || normalizedEnvelope.checksum !== envelope.checksum
+        || canonicalJson(envelope) !== text
+      ) {
         failStore('SERVICE_CREDIT_STORE_CORRUPT');
       }
-      let envelope;
-      try {
-        envelope = JSON.parse(text);
-      } catch {
-        failStore('SERVICE_CREDIT_STORE_CORRUPT');
-      }
+      assertPhysicalEnvelopeCapacity(this.#configuration, normalizedEnvelope);
+      return {
+        physicalEnvelope: normalizedEnvelope,
+        publicEnvelope: publicEnvelopeFor(envelope.revision, normalizedState),
+        model,
+      };
+    } catch (error) {
+      const code = storeErrorCode(error);
+      throw storeFailure(code ?? 'SERVICE_CREDIT_STORE_CORRUPT');
+    }
+  }
+
+  #readLegacyLedger() {
+    try {
+      const { envelope, text } = this.#readRawEnvelope();
       if (!exactKeys(envelope, ['schemaVersion', 'revision', 'state', 'checksum'])) {
         failStore('SERVICE_CREDIT_STORE_CORRUPT');
       }
-      if (envelope.schemaVersion !== SERVICE_CREDIT_SQLITE_SCHEMA_VERSION) {
+      if (envelope.schemaVersion !== LEGACY_SQLITE_SCHEMA_VERSION) {
         failStore('SERVICE_CREDIT_STORE_SCHEMA_UNSUPPORTED');
       }
       if (
@@ -853,43 +969,8 @@ export class ServiceCreditSqliteStore {
       ) {
         failStore('SERVICE_CREDIT_STORE_CORRUPT');
       }
-      if (
-        !isPlainObject(envelope.state)
-        || !Object.hasOwn(envelope.state, 'schemaVersion')
-        || !Object.hasOwn(envelope.state, 'modelVersion')
-        || !Number.isSafeInteger(envelope.state.schemaVersion)
-        || !Number.isSafeInteger(envelope.state.modelVersion)
-      ) {
-        failStore('SERVICE_CREDIT_STORE_CORRUPT');
-      }
-      if (
-        envelope.state.schemaVersion !== SERVICE_CREDIT_STATE_SCHEMA_VERSION
-        || envelope.state.modelVersion !== SERVICE_CREDIT_MODEL_VERSION
-      ) {
-        failStore('SERVICE_CREDIT_STORE_SCHEMA_UNSUPPORTED');
-      }
-      if (
-        !Array.isArray(envelope.state.offers)
-        || !Array.isArray(envelope.state.grants)
-        || !Array.isArray(envelope.state.requests)
-      ) {
-        failStore('SERVICE_CREDIT_STORE_CORRUPT');
-      }
-      assertCapacity(this.#configuration, envelope.state);
-      let model;
-      try {
-        model = InMemoryServiceCreditModel.fromState({
-          deriveCost: context => this.#invokeTrustedCallback(
-            this.#configuration.deriveCost,
-            [context],
-          ),
-          now: () => this.#invokeTrustedCallback(this.#configuration.now, []),
-        }, envelope.state);
-      } catch {
-        failStore('SERVICE_CREDIT_STORE_CORRUPT');
-      }
-      const normalizedState = model.exportState();
-      const normalizedEnvelope = envelopeFor(envelope.revision, normalizedState);
+      const { model, normalizedState } = this.#hydrateLedgerState(envelope.state);
+      const normalizedEnvelope = publicEnvelopeFor(envelope.revision, normalizedState);
       if (
         canonicalJson(normalizedState) !== canonicalJson(envelope.state)
         || normalizedEnvelope.checksum !== envelope.checksum
@@ -904,7 +985,79 @@ export class ServiceCreditSqliteStore {
     }
   }
 
-  #validateDatabase() {
+  #readRawEnvelope() {
+    const countRow = this.#database.prepare(
+      `SELECT count(*) AS entries FROM ${TABLE_NAME}`,
+    ).get();
+    if (countRow?.entries !== 1) failStore('SERVICE_CREDIT_STORE_CORRUPT');
+    const sizeRow = this.#database.prepare(
+      `SELECT singleton, typeof(envelope) AS kind, length(CAST(envelope AS BLOB)) AS bytes FROM ${TABLE_NAME}`,
+    ).get();
+    if (
+      sizeRow?.singleton !== 1
+      || sizeRow?.kind !== 'text'
+      || !Number.isSafeInteger(sizeRow?.bytes)
+      || sizeRow.bytes < 1
+      || sizeRow.bytes
+        > this.#configuration.maxStateBytes + MAX_PHYSICAL_ENVELOPE_OVERHEAD_BYTES
+    ) {
+      failStore('SERVICE_CREDIT_STORE_CORRUPT');
+    }
+    const text = this.#database.prepare(
+      `SELECT envelope FROM ${TABLE_NAME} WHERE singleton = 1`,
+    ).get()?.envelope;
+    if (typeof text !== 'string' || Buffer.byteLength(text) !== sizeRow.bytes) {
+      failStore('SERVICE_CREDIT_STORE_CORRUPT');
+    }
+    let envelope;
+    try {
+      envelope = JSON.parse(text);
+    } catch {
+      failStore('SERVICE_CREDIT_STORE_CORRUPT');
+    }
+    return { envelope, text };
+  }
+
+  #hydrateLedgerState(state) {
+    if (
+      !isPlainObject(state)
+      || !Object.hasOwn(state, 'schemaVersion')
+      || !Object.hasOwn(state, 'modelVersion')
+      || !Number.isSafeInteger(state.schemaVersion)
+      || !Number.isSafeInteger(state.modelVersion)
+    ) {
+      failStore('SERVICE_CREDIT_STORE_CORRUPT');
+    }
+    if (
+      state.schemaVersion !== SERVICE_CREDIT_STATE_SCHEMA_VERSION
+      || state.modelVersion !== SERVICE_CREDIT_MODEL_VERSION
+    ) {
+      failStore('SERVICE_CREDIT_STORE_SCHEMA_UNSUPPORTED');
+    }
+    if (
+      !Array.isArray(state.offers)
+      || !Array.isArray(state.grants)
+      || !Array.isArray(state.requests)
+    ) {
+      failStore('SERVICE_CREDIT_STORE_CORRUPT');
+    }
+    assertCapacity(this.#configuration, state);
+    let model;
+    try {
+      model = InMemoryServiceCreditModel.fromState({
+        deriveCost: context => this.#invokeTrustedCallback(
+          this.#configuration.deriveCost,
+          [context],
+        ),
+        now: () => this.#invokeTrustedCallback(this.#configuration.now, []),
+      }, state);
+    } catch {
+      failStore('SERVICE_CREDIT_STORE_CORRUPT');
+    }
+    return { model, normalizedState: model.exportState() };
+  }
+
+  #validateDatabase(expectedVersion = SERVICE_CREDIT_SQLITE_SCHEMA_VERSION) {
     try {
       assertConnectionSettings(this.#database, this.#configuration.busyTimeoutMs);
       const integrityRows = this.#database.prepare('PRAGMA integrity_check').all();
@@ -917,7 +1070,7 @@ export class ServiceCreditSqliteStore {
       if (
         pragmaValue(this.#database, 'PRAGMA application_id', 'application_id') !== APPLICATION_ID
         || pragmaValue(this.#database, 'PRAGMA user_version', 'user_version')
-          !== SERVICE_CREDIT_SQLITE_SCHEMA_VERSION
+          !== expectedVersion
       ) {
         failStore('SERVICE_CREDIT_STORE_SCHEMA_UNSUPPORTED');
       }
@@ -1129,4 +1282,8 @@ export function createServiceCreditSqliteStore(options) {
 
 export function openServiceCreditSqliteStore(options) {
   return ServiceCreditSqliteStore.openExisting(options);
+}
+
+export function migrateServiceCreditSqliteStore(options) {
+  return ServiceCreditSqliteStore.migrateExisting(options);
 }

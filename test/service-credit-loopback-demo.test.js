@@ -334,6 +334,7 @@ test('retained ledger independently proves settlement, replay, accounting, and p
   try {
     const source = `
       import { mock } from 'node:test';
+      import * as originalCrypto from 'node:crypto';
       import * as originalFs from 'node:fs';
       import { dirname } from 'node:path';
       import { DatabaseSync } from 'node:sqlite';
@@ -418,7 +419,27 @@ test('retained ledger independently proves settlement, replay, accounting, and p
         ).get();
         database.close();
         const envelope = JSON.parse(row.envelope);
-        const state = envelope.state;
+        const exactKeys = (value, expected) => value !== null
+          && typeof value === 'object'
+          && !Array.isArray(value)
+          && JSON.stringify(Object.keys(value).sort()) === JSON.stringify([...expected].sort());
+        const canonicalJson = value => {
+          if (value === null || typeof value !== 'object') return JSON.stringify(value);
+          if (Array.isArray(value)) return \`[\${value.map(canonicalJson).join(',')}]\`;
+          const keys = Object.keys(value).sort();
+          return \`{\${keys.map(key => \`\${JSON.stringify(key)}:\${canonicalJson(value[key])}\`).join(',')}}\`;
+        };
+        const expectedChecksum = \`sha256:\${originalCrypto.createHash('sha256')
+          .update('zenon-x402:service-credit-sqlite-physical-v2')
+          .update(String.fromCharCode(0))
+          .update(canonicalJson({
+            executionState: envelope.executionState,
+            ledgerState: envelope.ledgerState,
+            physicalVersion: envelope.physicalVersion,
+            revision: envelope.revision,
+          }))
+          .digest('hex')}\`;
+        const state = envelope.ledgerState;
         const grant = state?.grants?.[0];
         const requests = state?.requests;
         const frequencies = new Map();
@@ -441,7 +462,14 @@ test('retained ledger independently proves settlement, replay, accounting, and p
         };
         visit(envelope);
         passed = passed
+          && exactKeys(envelope, [
+            'physicalVersion', 'revision', 'ledgerState', 'executionState', 'checksum',
+          ])
+          && envelope.physicalVersion === 2
           && envelope.revision === 11
+          && envelope.executionState === null
+          && envelope.checksum === expectedChecksum
+          && row.envelope === canonicalJson(envelope)
           && Array.isArray(state?.offers) && state.offers.length === 1
           && Array.isArray(state?.grants) && state.grants.length === 1
           && grant.lifecycle === 'ACTIVE'

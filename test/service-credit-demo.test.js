@@ -591,7 +591,9 @@ test('the retained final ledger independently proves the scenario and strict per
           && typeof value === 'object'
           && !Array.isArray(value)
           && JSON.stringify(Object.keys(value).sort()) === JSON.stringify([...expected].sort());
-        const envelopeKeys = ['schemaVersion', 'revision', 'state', 'checksum'];
+        const envelopeKeys = [
+          'physicalVersion', 'revision', 'ledgerState', 'executionState', 'checksum',
+        ];
         const stateKeys = ['schemaVersion', 'modelVersion', 'offers', 'grants', 'requests'];
         const offerKeys = [
           'modelVersion', 'providerId', 'serviceId', 'resourceId', 'resourceBinding',
@@ -623,7 +625,23 @@ test('the retained final ledger independently proves the scenario and strict per
           'selectedContentType', 'maxCostUnits', 'costUnits', 'state',
           'cachedResult',
         ];
-        const state = envelope.state;
+        const canonicalJson = value => {
+          if (value === null || typeof value !== 'object') return JSON.stringify(value);
+          if (Array.isArray(value)) return \`[\${value.map(canonicalJson).join(',')}]\`;
+          const keys = Object.keys(value).sort();
+          return \`{\${keys.map(key => \`\${JSON.stringify(key)}:\${canonicalJson(value[key])}\`).join(',')}}\`;
+        };
+        const expectedChecksum = \`sha256:\${originalCrypto.createHash('sha256')
+          .update('zenon-x402:service-credit-sqlite-physical-v2')
+          .update(String.fromCharCode(0))
+          .update(canonicalJson({
+            executionState: envelope.executionState,
+            ledgerState: envelope.ledgerState,
+            physicalVersion: envelope.physicalVersion,
+            revision: envelope.revision,
+          }))
+          .digest('hex')}\`;
+        const state = envelope.ledgerState;
         const grant = state?.grants?.[0];
         const requests = state?.requests;
         const authorizationFrequencies = new Map();
@@ -638,8 +656,11 @@ test('the retained final ledger independently proves the scenario and strict per
           .sort((left, right) => left - right);
         passed = passed
           && exactKeys(envelope, envelopeKeys)
-          && envelope.schemaVersion === 1
+          && envelope.physicalVersion === 2
           && envelope.revision === 11
+          && envelope.executionState === null
+          && envelope.checksum === expectedChecksum
+          && row.envelope === canonicalJson(envelope)
           && exactKeys(state, stateKeys)
           && state.schemaVersion === 2
           && state.modelVersion === 1

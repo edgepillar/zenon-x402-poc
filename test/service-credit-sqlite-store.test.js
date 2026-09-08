@@ -10,6 +10,7 @@ import {
   lstatSync,
   mkdtempSync,
   openSync,
+  readFileSync,
   realpathSync,
   renameSync,
   rmSync,
@@ -20,7 +21,9 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import {
+  SERVICE_CREDIT_SQLITE_SCHEMA_VERSION,
   ServiceCreditSqliteStore,
+  migrateServiceCreditSqliteStore,
 } from '../src/service-credit-sqlite-store.js';
 import {
   GRANT_LIFECYCLE,
@@ -30,6 +33,8 @@ import {
 } from '../src/service-credit-model.js';
 
 const NOW = 2_000_000_000_000;
+const APPLICATION_ID = 0x53435244;
+const PHYSICAL_V2_CHECKSUM_DOMAIN = 'zenon-x402:service-credit-sqlite-physical-v2';
 
 function digest(fill) {
   return `sha256:${fill.repeat(64)}`;
@@ -42,17 +47,93 @@ function canonicalJson(value) {
   return `{${keys.map(key => `${JSON.stringify(key)}:${canonicalJson(value[key])}`).join(',')}}`;
 }
 
+function publicChecksumFor(schemaVersion, revision, state) {
+  return `sha256:${createHash('sha256').update(canonicalJson({
+    revision,
+    schemaVersion,
+    state,
+  })).digest('hex')}`;
+}
+
+function physicalV2ChecksumFor(physicalVersion, revision, ledgerState, executionState) {
+  return `sha256:${createHash('sha256')
+    .update(PHYSICAL_V2_CHECKSUM_DOMAIN)
+    .update('\0')
+    .update(canonicalJson({
+      executionState,
+      ledgerState,
+      physicalVersion,
+      revision,
+    }))
+    .digest('hex')}`;
+}
+
+function physicalV2Envelope(revision, ledgerState, executionState = null) {
+  const envelope = {
+    physicalVersion: 2,
+    revision,
+    ledgerState,
+    executionState,
+  };
+  return {
+    ...envelope,
+    checksum: physicalV2ChecksumFor(
+      envelope.physicalVersion,
+      envelope.revision,
+      envelope.ledgerState,
+      envelope.executionState,
+    ),
+  };
+}
+
+function publicEnvelope(revision, state) {
+  return {
+    schemaVersion: 1,
+    revision,
+    state,
+    checksum: publicChecksumFor(1, revision, state),
+  };
+}
+
+function readPersistedEnvelope(configuration) {
+  const database = new DatabaseSync(configuration.databasePath, { readOnly: true });
+  const userVersion = database.prepare('PRAGMA user_version').get().user_version;
+  const envelopeText = database.prepare(
+    'SELECT envelope FROM service_credit_ledger WHERE singleton = 1',
+  ).get().envelope;
+  database.close();
+  return { envelope: JSON.parse(envelopeText), envelopeText, userVersion };
+}
+
+function writePersistedEnvelope(configuration, userVersion, envelopeText) {
+  const database = new DatabaseSync(configuration.databasePath);
+  database.prepare(
+    'UPDATE service_credit_ledger SET envelope = ? WHERE singleton = 1',
+  ).run(envelopeText);
+  database.exec(`PRAGMA user_version = ${userVersion}`);
+  database.close();
+}
+
+function rewriteAsPhysicalV1(configuration) {
+  const persisted = readPersistedEnvelope(configuration);
+  const legacy = publicEnvelope(persisted.envelope.revision, persisted.envelope.ledgerState);
+  const envelopeText = canonicalJson(legacy);
+  writePersistedEnvelope(configuration, 1, envelopeText);
+  return { envelope: legacy, envelopeText };
+}
+
 function rewriteLedgerState(configuration, mutate) {
   const database = new DatabaseSync(configuration.databasePath);
   const envelope = JSON.parse(
     database.prepare('SELECT envelope FROM service_credit_ledger').get().envelope,
   );
-  mutate(envelope.state);
-  envelope.checksum = `sha256:${createHash('sha256').update(canonicalJson({
-    revision: envelope.revision,
-    schemaVersion: envelope.schemaVersion,
-    state: envelope.state,
-  })).digest('hex')}`;
+  mutate(envelope.ledgerState);
+  envelope.checksum = physicalV2ChecksumFor(
+    envelope.physicalVersion,
+    envelope.revision,
+    envelope.ledgerState,
+    envelope.executionState,
+  );
   database.prepare('UPDATE service_credit_ledger SET envelope = ?').run(canonicalJson(envelope));
   database.close();
 }
@@ -198,6 +279,15 @@ function initializedStore(directory, overrides = {}, grantOverrides = {}) {
   store.registerOffer(offer());
   const activeGrant = store.activateGrantFromTrustedRecord(grant(grantOverrides));
   return { activeGrant, store };
+}
+
+function createPhysicalV1(configuration, populate = () => {}) {
+  const store = ServiceCreditSqliteStore.create(configuration);
+  populate(store);
+  const projection = store.load();
+  store.close();
+  const legacy = rewriteAsPhysicalV1(configuration);
+  return { legacy, projection };
 }
 
 const RACE_CHILD_SOURCE = String.raw`
@@ -360,6 +450,140 @@ function crashAtCommitBoundary(directory, phase, reference) {
       now: NOW,
       phase,
       reference,
+    });
+  });
+}
+
+const MIGRATION_RACE_CHILD_SOURCE = String.raw`
+  import { migrateServiceCreditSqliteStore } from './src/service-credit-sqlite-store.js';
+  let configuration;
+  process.on('message', message => {
+    if (message.type === 'initialize') {
+      configuration = {
+        databasePath: message.databasePath,
+        allowedRoot: message.allowedRoot,
+        busyTimeoutMs: 10000,
+        now: () => message.now,
+        deriveCost: () => message.cost,
+      };
+      process.send({ type: 'ready' });
+      return;
+    }
+    if (message.type !== 'go') return;
+    let response;
+    try {
+      const store = migrateServiceCreditSqliteStore(configuration);
+      store.close();
+      response = { ok: true };
+    } catch (error) {
+      response = { ok: false, code: error?.code ?? 'UNKNOWN' };
+    }
+    process.send({ type: 'done', response }, () => process.disconnect());
+  });
+`;
+
+function runMigrationRace(directory) {
+  return new Promise((resolveRace, rejectRace) => {
+    const children = [0, 1].map(() => spawn(
+      process.execPath,
+      ['--input-type=module', '--eval', MIGRATION_RACE_CHILD_SOURCE],
+      {
+        cwd: process.cwd(),
+        stdio: ['ignore', 'ignore', 'ignore', 'ipc'],
+      },
+    ));
+    const responses = new Array(children.length);
+    let ready = 0;
+    let done = 0;
+    let settled = false;
+    const timer = setTimeout(() => finish(new Error('migration-race-timeout')), 15_000);
+
+    function finish(error) {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      for (const child of children) {
+        if (child.connected) child.disconnect();
+        if (error && child.exitCode === null) child.kill('SIGKILL');
+      }
+      if (error) rejectRace(error);
+      else resolveRace(responses);
+    }
+
+    children.forEach((child, index) => {
+      child.on('error', finish);
+      child.on('exit', code => {
+        if (!settled && code !== 0 && responses[index] === undefined) {
+          finish(new Error('migration-race-child-failed'));
+        }
+      });
+      child.on('message', message => {
+        if (message?.type === 'ready') {
+          ready += 1;
+          if (ready === children.length) {
+            for (const candidate of children) candidate.send({ type: 'go' });
+          }
+        } else if (message?.type === 'done') {
+          responses[index] = message.response;
+          done += 1;
+          if (done === children.length) finish();
+        }
+      });
+      child.send({
+        type: 'initialize',
+        databasePath: join(directory, 'ledger.sqlite'),
+        allowedRoot: directory,
+        cost: 3,
+        now: NOW,
+      });
+    });
+  });
+}
+
+const MIGRATION_CRASH_CHILD_SOURCE = String.raw`
+  import { migrateServiceCreditSqliteStore } from './src/service-credit-sqlite-store.js';
+  process.on('message', message => {
+    const hook = () => process.kill(process.pid, 'SIGKILL');
+    migrateServiceCreditSqliteStore({
+      databasePath: message.databasePath,
+      allowedRoot: message.allowedRoot,
+      busyTimeoutMs: 10000,
+      now: () => message.now,
+      deriveCost: () => message.cost,
+      testHooks: { [message.phase]: hook },
+    });
+  });
+`;
+
+function crashMigrationAtBoundary(directory, phase) {
+  return new Promise((resolveCrash, rejectCrash) => {
+    const child = spawn(process.execPath, [
+      '--input-type=module',
+      '--eval',
+      MIGRATION_CRASH_CHILD_SOURCE,
+    ], {
+      cwd: process.cwd(),
+      stdio: ['ignore', 'ignore', 'ignore', 'ipc'],
+    });
+    const timer = setTimeout(() => {
+      child.kill('SIGKILL');
+      rejectCrash(new Error('migration-crash-timeout'));
+    }, 10_000);
+    child.once('error', error => {
+      clearTimeout(timer);
+      rejectCrash(error);
+    });
+    child.once('exit', (code, signal) => {
+      clearTimeout(timer);
+      if (code === null && signal === 'SIGKILL') resolveCrash();
+      else rejectCrash(new Error('migration-child-did-not-crash'));
+    });
+    child.send({
+      databasePath: join(directory, 'ledger.sqlite'),
+      allowedRoot: directory,
+      cost: 3,
+      now: NOW,
+      phase,
     });
   });
 }
@@ -692,7 +916,7 @@ test('unknown schema, invalid checksum, malformed bytes, and schema drift are re
     );
   });
 
-  await t.test('unknown envelope schema', t => {
+  await t.test('unknown physical envelope schema', t => {
     const directory = privateDirectoryFor(t);
     const configuration = options(directory);
     const store = ServiceCreditSqliteStore.create(configuration);
@@ -701,7 +925,7 @@ test('unknown schema, invalid checksum, malformed bytes, and schema drift are re
     const envelope = JSON.parse(
       database.prepare('SELECT envelope FROM service_credit_ledger').get().envelope,
     );
-    envelope.schemaVersion = 2;
+    envelope.physicalVersion = 3;
     database.prepare('UPDATE service_credit_ledger SET envelope = ?').run(
       JSON.stringify(envelope),
     );
@@ -721,7 +945,7 @@ test('unknown schema, invalid checksum, malformed bytes, and schema drift are re
     const envelope = JSON.parse(
       database.prepare('SELECT envelope FROM service_credit_ledger').get().envelope,
     );
-    envelope.state.schemaVersion = 1;
+    envelope.ledgerState.schemaVersion = 1;
     database.prepare('UPDATE service_credit_ledger SET envelope = ?').run(
       JSON.stringify(envelope),
     );
@@ -736,7 +960,7 @@ test('unknown schema, invalid checksum, malformed bytes, and schema drift are re
       verify.prepare('SELECT envelope FROM service_credit_ledger').get().envelope,
     );
     verify.close();
-    assert.equal(persisted.state.schemaVersion, 1);
+    assert.equal(persisted.ledgerState.schemaVersion, 1);
   });
 
   await t.test('malformed SQLite bytes', t => {
@@ -1413,5 +1637,494 @@ test('cross-process exact activation races converge and conflicting races commit
     assert.equal(reopened.getMetadata().revision, before + 1);
     assert.equal(reopened.load().state.grants.length, 1);
     reopened.close();
+  });
+});
+
+test('new databases use the physical-v2 compound envelope', t => {
+  const directory = privateDirectoryFor(t);
+  const configuration = options(directory);
+  const store = ServiceCreditSqliteStore.create(configuration);
+  assert.equal(SERVICE_CREDIT_SQLITE_SCHEMA_VERSION, 2);
+  const initialProjection = store.load();
+  assert.deepEqual(Object.keys(initialProjection), [
+    'schemaVersion',
+    'revision',
+    'state',
+    'checksum',
+  ]);
+  assert.equal(initialProjection.schemaVersion, 1);
+  assert.equal(
+    initialProjection.checksum,
+    publicChecksumFor(1, initialProjection.revision, initialProjection.state),
+  );
+  assert.deepEqual(store.getMetadata(), {
+    schemaVersion: 1,
+    modelVersion: SERVICE_CREDIT_MODEL_VERSION,
+    revision: initialProjection.revision,
+    checksum: initialProjection.checksum,
+  });
+
+  store.registerOffer(offer());
+  const projection = store.load();
+  store.close();
+  const persisted = readPersistedEnvelope(configuration);
+  const expected = physicalV2Envelope(projection.revision, projection.state);
+
+  assert.equal(persisted.userVersion, 2);
+  assert.deepEqual(Object.keys(persisted.envelope).sort(), [
+    'checksum',
+    'executionState',
+    'ledgerState',
+    'physicalVersion',
+    'revision',
+  ]);
+  assert.equal(persisted.envelope.physicalVersion, 2);
+  assert.equal(persisted.envelope.executionState, null);
+  assert.deepEqual(persisted.envelope, expected);
+  assert.equal(persisted.envelopeText, canonicalJson(expected));
+
+  const reopened = ServiceCreditSqliteStore.openExisting(configuration);
+  assert.deepEqual(reopened.load(), projection);
+  reopened.close();
+});
+
+test('explicit physical-v1 migration accepts only eligible ledger states', async t => {
+  const scenarios = [
+    { name: 'empty', populate() {} },
+    {
+      name: 'reserved',
+      populate(store) {
+        store.registerOffer(offer());
+        const activeGrant = store.activateGrantFromTrustedRecord(grant());
+        store.reserveRequest(request(activeGrant.grantId));
+      },
+    },
+    {
+      name: 'terminal success',
+      populate(store) {
+        store.registerOffer(offer());
+        const activeGrant = store.activateGrantFromTrustedRecord(grant());
+        const reference = { grantId: activeGrant.grantId, requestId: 'request.1' };
+        store.reserveRequest(request(activeGrant.grantId));
+        store.beginExecution(reference);
+        store.completeExecution({ ...reference, cachedResult: result() });
+      },
+    },
+  ];
+
+  for (const [index, scenario] of scenarios.entries()) {
+    await t.test(scenario.name, t => {
+      const directory = privateDirectoryFor(t);
+      const configuration = options(directory);
+      const { legacy, projection } = createPhysicalV1(configuration, scenario.populate);
+      const beforeOpen = readFileSync(configuration.databasePath);
+
+      expectCode(
+        () => ServiceCreditSqliteStore.openExisting(configuration),
+        'SERVICE_CREDIT_STORE_SCHEMA_UNSUPPORTED',
+      );
+      assert.deepEqual(readFileSync(configuration.databasePath), beforeOpen);
+      assert.deepEqual(readPersistedEnvelope(configuration), {
+        envelope: legacy.envelope,
+        envelopeText: legacy.envelopeText,
+        userVersion: 1,
+      });
+
+      const migrated = index % 2 === 0
+        ? ServiceCreditSqliteStore.migrateExisting(configuration)
+        : migrateServiceCreditSqliteStore(configuration);
+      assert.deepEqual(migrated.load(), projection);
+      assert.deepEqual(migrated.getMetadata(), {
+        schemaVersion: 1,
+        modelVersion: SERVICE_CREDIT_MODEL_VERSION,
+        revision: projection.revision,
+        checksum: projection.checksum,
+      });
+      migrated.close();
+
+      const persisted = readPersistedEnvelope(configuration);
+      const expected = physicalV2Envelope(projection.revision, projection.state);
+      assert.equal(persisted.userVersion, 2);
+      assert.equal(persisted.envelopeText, canonicalJson(expected));
+      assert.deepEqual(persisted.envelope, expected);
+      const reopened = ServiceCreditSqliteStore.openExisting(configuration);
+      assert.deepEqual(reopened.load(), projection);
+      reopened.close();
+    });
+  }
+});
+
+test('physical-v1 migration is deterministic and migrated stores retain ledger operations', t => {
+  const migratedEnvelopes = [];
+  for (let index = 0; index < 2; index += 1) {
+    const directory = privateDirectoryFor(t);
+    const configuration = options(directory);
+    const { projection } = createPhysicalV1(configuration, store => {
+      store.registerOffer(offer());
+      const activeGrant = store.activateGrantFromTrustedRecord(grant());
+      store.reserveRequest(request(activeGrant.grantId));
+    });
+    const migrated = migrateServiceCreditSqliteStore(configuration);
+    assert.deepEqual(migrated.load(), projection);
+    const migratedEnvelope = readPersistedEnvelope(configuration);
+    assert.equal(
+      migratedEnvelope.envelopeText,
+      canonicalJson(physicalV2Envelope(projection.revision, projection.state)),
+    );
+    migratedEnvelopes.push(migratedEnvelope.envelopeText);
+    const reference = {
+      grantId: projection.state.grants[0].grantId,
+      requestId: 'request.1',
+    };
+    assert.equal(migrated.beginExecution(reference).executionAuthorized, true);
+    migrated.completeExecution({ ...reference, cachedResult: result() });
+    const completed = migrated.load();
+    migrated.close();
+    const persisted = readPersistedEnvelope(configuration);
+    assert.equal(persisted.envelope.executionState, null);
+    assert.deepEqual(persisted.envelope.ledgerState, completed.state);
+    const reopened = ServiceCreditSqliteStore.openExisting(configuration);
+    assert.equal(reopened.getRequest(reference).state, REQUEST_STATE.SUCCEEDED);
+    reopened.close();
+  }
+  assert.equal(migratedEnvelopes[0], migratedEnvelopes[1]);
+});
+
+test('migration rejects physical-v2 and unresolved physical-v1 databases without writes', async t => {
+  await t.test('physical v2', t => {
+    const directory = privateDirectoryFor(t);
+    const configuration = options(directory);
+    const store = ServiceCreditSqliteStore.create(configuration);
+    store.close();
+    const before = readFileSync(configuration.databasePath);
+    expectCode(
+      () => ServiceCreditSqliteStore.migrateExisting(configuration),
+      'SERVICE_CREDIT_STORE_SCHEMA_UNSUPPORTED',
+    );
+    expectCode(
+      () => migrateServiceCreditSqliteStore(configuration),
+      'SERVICE_CREDIT_STORE_SCHEMA_UNSUPPORTED',
+    );
+    assert.deepEqual(readFileSync(configuration.databasePath), before);
+  });
+
+  for (const state of [REQUEST_STATE.EXECUTING, REQUEST_STATE.OUTCOME_UNKNOWN]) {
+    await t.test(state, t => {
+      const directory = privateDirectoryFor(t);
+      const configuration = options(directory);
+      const { projection } = createPhysicalV1(configuration, store => {
+        store.registerOffer(offer());
+        const activeGrant = store.activateGrantFromTrustedRecord(grant());
+        const reference = { grantId: activeGrant.grantId, requestId: 'request.1' };
+        store.reserveRequest(request(activeGrant.grantId));
+        store.beginExecution(reference);
+        if (state === REQUEST_STATE.OUTCOME_UNKNOWN) store.markOutcomeUnknown(reference);
+      });
+      const before = readFileSync(configuration.databasePath);
+      expectCode(
+        () => migrateServiceCreditSqliteStore(configuration),
+        'SERVICE_CREDIT_STORE_MIGRATION_UNSAFE',
+      );
+      assert.deepEqual(readFileSync(configuration.databasePath), before);
+      const persisted = readPersistedEnvelope(configuration);
+      assert.equal(persisted.userVersion, 1);
+      assert.deepEqual(persisted.envelope, publicEnvelope(
+        projection.revision,
+        projection.state,
+      ));
+    });
+  }
+});
+
+test('physical-v2 and migration validation reject corrupt or incompatible envelopes', async t => {
+  await t.test('non-null execution state', t => {
+    const directory = privateDirectoryFor(t);
+    const configuration = options(directory);
+    const store = ServiceCreditSqliteStore.create(configuration);
+    const projection = store.load();
+    store.close();
+    const invalid = physicalV2Envelope(projection.revision, projection.state, {});
+    writePersistedEnvelope(configuration, 2, canonicalJson(invalid));
+    expectCode(
+      () => ServiceCreditSqliteStore.openExisting(configuration),
+      'SERVICE_CREDIT_STORE_CORRUPT',
+    );
+  });
+
+  await t.test('extra physical key', t => {
+    const directory = privateDirectoryFor(t);
+    const configuration = options(directory);
+    const store = ServiceCreditSqliteStore.create(configuration);
+    store.close();
+    const persisted = readPersistedEnvelope(configuration);
+    persisted.envelope.extra = null;
+    writePersistedEnvelope(configuration, 2, canonicalJson(persisted.envelope));
+    expectCode(
+      () => ServiceCreditSqliteStore.openExisting(configuration),
+      'SERVICE_CREDIT_STORE_CORRUPT',
+    );
+  });
+
+  await t.test('noncanonical physical bytes', t => {
+    const directory = privateDirectoryFor(t);
+    const configuration = options(directory);
+    const store = ServiceCreditSqliteStore.create(configuration);
+    store.close();
+    const persisted = readPersistedEnvelope(configuration);
+    const noncanonical = {
+      physicalVersion: persisted.envelope.physicalVersion,
+      revision: persisted.envelope.revision,
+      ledgerState: persisted.envelope.ledgerState,
+      executionState: persisted.envelope.executionState,
+      checksum: persisted.envelope.checksum,
+    };
+    writePersistedEnvelope(configuration, 2, JSON.stringify(noncanonical));
+    expectCode(
+      () => ServiceCreditSqliteStore.openExisting(configuration),
+      'SERVICE_CREDIT_STORE_CORRUPT',
+    );
+  });
+
+  await t.test('noncanonical legacy bytes', t => {
+    const directory = privateDirectoryFor(t);
+    const configuration = options(directory);
+    const { legacy } = createPhysicalV1(configuration);
+    writePersistedEnvelope(configuration, 1, JSON.stringify(legacy.envelope));
+    expectCode(
+      () => migrateServiceCreditSqliteStore(configuration),
+      'SERVICE_CREDIT_STORE_CORRUPT',
+    );
+  });
+
+  await t.test('legacy extra key', t => {
+    const directory = privateDirectoryFor(t);
+    const configuration = options(directory);
+    const { legacy } = createPhysicalV1(configuration);
+    legacy.envelope.extra = null;
+    writePersistedEnvelope(configuration, 1, canonicalJson(legacy.envelope));
+    expectCode(
+      () => migrateServiceCreditSqliteStore(configuration),
+      'SERVICE_CREDIT_STORE_CORRUPT',
+    );
+  });
+
+  await t.test('legacy checksum mismatch', t => {
+    const directory = privateDirectoryFor(t);
+    const configuration = options(directory);
+    const { legacy } = createPhysicalV1(configuration);
+    legacy.envelope.checksum = digest('f');
+    writePersistedEnvelope(configuration, 1, canonicalJson(legacy.envelope));
+    expectCode(
+      () => migrateServiceCreditSqliteStore(configuration),
+      'SERVICE_CREDIT_STORE_CORRUPT',
+    );
+  });
+
+  await t.test('legacy model schema mismatch', t => {
+    const directory = privateDirectoryFor(t);
+    const configuration = options(directory);
+    const { legacy } = createPhysicalV1(configuration);
+    legacy.envelope.state.schemaVersion = 1;
+    legacy.envelope.checksum = publicChecksumFor(
+      1,
+      legacy.envelope.revision,
+      legacy.envelope.state,
+    );
+    writePersistedEnvelope(configuration, 1, canonicalJson(legacy.envelope));
+    expectCode(
+      () => migrateServiceCreditSqliteStore(configuration),
+      'SERVICE_CREDIT_STORE_SCHEMA_UNSUPPORTED',
+    );
+  });
+
+  await t.test('crossed user version and physical envelope', t => {
+    const directory = privateDirectoryFor(t);
+    const configuration = options(directory);
+    const store = ServiceCreditSqliteStore.create(configuration);
+    store.close();
+    const persisted = readPersistedEnvelope(configuration);
+    writePersistedEnvelope(configuration, 1, persisted.envelopeText);
+    expectCode(
+      () => migrateServiceCreditSqliteStore(configuration),
+      'SERVICE_CREDIT_STORE_CORRUPT',
+    );
+    expectCode(
+      () => ServiceCreditSqliteStore.openExisting(configuration),
+      'SERVICE_CREDIT_STORE_SCHEMA_UNSUPPORTED',
+    );
+  });
+
+  await t.test('configured request capacity', t => {
+    const directory = privateDirectoryFor(t);
+    const baseConfiguration = options(directory);
+    createPhysicalV1(baseConfiguration, store => {
+      store.registerOffer(offer());
+      const activeGrant = store.activateGrantFromTrustedRecord(grant({ totalUnits: 10 }));
+      store.reserveRequest(request(activeGrant.grantId, { requestId: 'request.first' }));
+      store.reserveRequest(request(activeGrant.grantId, { requestId: 'request.second' }));
+    });
+    const before = readFileSync(baseConfiguration.databasePath);
+    expectCode(
+      () => migrateServiceCreditSqliteStore(options(directory, { maxRequests: 1 })),
+      'SERVICE_CREDIT_STORE_CAPACITY_EXCEEDED',
+    );
+    assert.deepEqual(readFileSync(baseConfiguration.databasePath), before);
+  });
+});
+
+test('migration commit boundaries fail closed without retry', async t => {
+  await t.test('pre-commit callback failure preserves physical v1', t => {
+    const directory = privateDirectoryFor(t);
+    const baseConfiguration = options(directory);
+    const { legacy } = createPhysicalV1(baseConfiguration);
+    const before = readFileSync(baseConfiguration.databasePath);
+    expectCode(
+      () => migrateServiceCreditSqliteStore(options(directory, {
+        testHooks: {
+          beforeCommit({ operation, changed }) {
+            assert.equal(operation, 'migrateExisting');
+            assert.equal(changed, true);
+            throw new Error('synthetic-migration-precommit');
+          },
+        },
+      })),
+      'SERVICE_CREDIT_STORE_CALLBACK_FAILED',
+    );
+    assert.deepEqual(readFileSync(baseConfiguration.databasePath), before);
+    assert.deepEqual(readPersistedEnvelope(baseConfiguration), {
+      envelope: legacy.envelope,
+      envelopeText: legacy.envelopeText,
+      userVersion: 1,
+    });
+  });
+
+  await t.test('post-commit acknowledgement ambiguity requires reopen', t => {
+    const directory = privateDirectoryFor(t);
+    const baseConfiguration = options(directory);
+    const { projection } = createPhysicalV1(baseConfiguration);
+    expectCode(
+      () => migrateServiceCreditSqliteStore(options(directory, {
+        testHooks: {
+          afterCommit({ operation, changed }) {
+            assert.equal(operation, 'migrateExisting');
+            assert.equal(changed, true);
+            throw new Error('synthetic-migration-postcommit');
+          },
+        },
+      })),
+      'SERVICE_CREDIT_STORE_COMMIT_FAILED',
+    );
+    const reopened = ServiceCreditSqliteStore.openExisting(baseConfiguration);
+    assert.deepEqual(reopened.load(), projection);
+    reopened.close();
+    expectCode(
+      () => migrateServiceCreditSqliteStore(baseConfiguration),
+      'SERVICE_CREDIT_STORE_SCHEMA_UNSUPPORTED',
+    );
+  });
+
+  for (const phase of ['beforeCommit', 'afterCommit']) {
+    await t.test(`process death at ${phase}`, async t => {
+      const directory = privateDirectoryFor(t);
+      const configuration = options(directory);
+      const { projection } = createPhysicalV1(configuration);
+      await crashMigrationAtBoundary(directory, phase);
+      if (phase === 'beforeCommit') {
+        const persisted = readPersistedEnvelope(configuration);
+        assert.equal(persisted.userVersion, 1);
+        const migrated = migrateServiceCreditSqliteStore(configuration);
+        assert.deepEqual(migrated.load(), projection);
+        migrated.close();
+      } else {
+        const reopened = ServiceCreditSqliteStore.openExisting(configuration);
+        assert.deepEqual(reopened.load(), projection);
+        reopened.close();
+        expectCode(
+          () => migrateServiceCreditSqliteStore(configuration),
+          'SERVICE_CREDIT_STORE_SCHEMA_UNSUPPORTED',
+        );
+      }
+    });
+  }
+});
+
+test('concurrent migration has one durable winner and no second rewrite', async t => {
+  const directory = privateDirectoryFor(t);
+  const configuration = options(directory);
+  const { projection } = createPhysicalV1(configuration, store => {
+    store.registerOffer(offer());
+  });
+  const responses = await runMigrationRace(directory);
+  assert.equal(responses.filter(response => response.ok).length, 1);
+  assert.deepEqual(
+    responses.filter(response => !response.ok).map(response => response.code),
+    ['SERVICE_CREDIT_STORE_SCHEMA_UNSUPPORTED'],
+  );
+  const persisted = readPersistedEnvelope(configuration);
+  assert.equal(persisted.userVersion, 2);
+  assert.deepEqual(persisted.envelope, physicalV2Envelope(
+    projection.revision,
+    projection.state,
+  ));
+  const reopened = ServiceCreditSqliteStore.openExisting(configuration);
+  assert.deepEqual(reopened.load(), projection);
+  reopened.close();
+});
+
+test('migration retains filesystem, hostile-input, and callback-inert boundaries', async t => {
+  await t.test('symlink and hardlink targets', t => {
+    const directory = privateDirectoryFor(t);
+    const configuration = options(directory);
+    createPhysicalV1(configuration);
+    const alias = join(directory, 'alias.sqlite');
+    symlinkSync(configuration.databasePath, alias);
+    expectCode(
+      () => migrateServiceCreditSqliteStore({ ...configuration, databasePath: alias }),
+      'SERVICE_CREDIT_STORE_UNSAFE_FILE',
+    );
+    const linked = join(directory, 'linked.sqlite');
+    linkSync(configuration.databasePath, linked);
+    expectCode(
+      () => migrateServiceCreditSqliteStore(configuration),
+      'SERVICE_CREDIT_STORE_UNSAFE_FILE',
+    );
+  });
+
+  await t.test('hostile configuration shapes', t => {
+    const directory = privateDirectoryFor(t);
+    const configuration = options(directory);
+    createPhysicalV1(configuration);
+    const before = readFileSync(configuration.databasePath);
+    expectCode(
+      () => migrateServiceCreditSqliteStore(new Proxy(configuration, {
+        ownKeys() { throw new Error('hostile-own-keys'); },
+      })),
+      'SERVICE_CREDIT_STORE_INVALID_CONFIGURATION',
+    );
+    const accessor = { ...configuration };
+    Object.defineProperty(accessor, 'databasePath', {
+      enumerable: true,
+      get() { throw new Error('hostile-accessor'); },
+    });
+    expectCode(
+      () => ServiceCreditSqliteStore.migrateExisting(accessor),
+      'SERVICE_CREDIT_STORE_INVALID_CONFIGURATION',
+    );
+    assert.deepEqual(readFileSync(configuration.databasePath), before);
+  });
+
+  await t.test('migration performs no clock or pricing callback', t => {
+    const directory = privateDirectoryFor(t);
+    const baseConfiguration = options(directory);
+    const { projection } = createPhysicalV1(baseConfiguration);
+    const migrated = migrateServiceCreditSqliteStore(options(directory, {
+      now: () => { throw new Error('migration-clock-must-remain-inert'); },
+      deriveCost: () => { throw new Error('migration-pricing-must-remain-inert'); },
+    }));
+    assert.deepEqual(migrated.load(), projection);
+    migrated.close();
+    assert.equal(existsSync(`${baseConfiguration.databasePath}-journal`), false);
+    assert.equal(existsSync(`${baseConfiguration.databasePath}-wal`), false);
+    assert.equal(existsSync(`${baseConfiguration.databasePath}-shm`), false);
   });
 });
