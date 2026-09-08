@@ -729,6 +729,7 @@ test('source closure, package command, active paths, and documentation stay boun
     'src/service-credit-capability.js',
     'src/service-credit-client.js',
     'src/service-credit-composition.js',
+    'src/service-credit-execution-contract.js',
     'src/service-credit-http.js',
     'src/service-credit-loopback-demo.js',
     'src/service-credit-loopback-server.js',

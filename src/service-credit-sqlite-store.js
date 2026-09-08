@@ -11,6 +11,7 @@ import {
 } from 'node:fs';
 import { dirname, isAbsolute, relative, resolve, sep } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
+import { types as utilTypes } from 'node:util';
 import {
   InMemoryServiceCreditModel,
   REQUEST_STATE,
@@ -18,6 +19,15 @@ import {
   SERVICE_CREDIT_STATE_SCHEMA_VERSION,
   ServiceCreditModelError,
 } from './service-credit-model.js';
+import {
+  completeServiceCreditExecution,
+  createServiceCreditExecutionContract,
+  fenceServiceCreditExecution,
+  hydrateServiceCreditExecutionContract,
+  markServiceCreditExecutionUnknown,
+  prepareServiceCreditExecution,
+  recoverServiceCreditExecutions,
+} from './service-credit-execution-contract.js';
 
 export const SERVICE_CREDIT_SQLITE_SCHEMA_VERSION = 2;
 
@@ -27,6 +37,7 @@ const TABLE_SQL = 'CREATE TABLE service_credit_ledger(singleton INTEGER PRIMARY 
 const LEGACY_SQLITE_SCHEMA_VERSION = 1;
 const PUBLIC_LEDGER_ENVELOPE_SCHEMA_VERSION = 1;
 const PHYSICAL_V2_CHECKSUM_DOMAIN = 'zenon-x402:service-credit-sqlite-physical-v2';
+const DURABLE_RESULT_COMMITMENT_DOMAIN = 'zenon-x402:service-credit-sqlite-result-v1';
 const MAX_PHYSICAL_ENVELOPE_OVERHEAD_BYTES = 4_096;
 const DEFAULT_BUSY_TIMEOUT_MS = 5_000;
 const MAX_BUSY_TIMEOUT_MS = 60_000;
@@ -37,7 +48,32 @@ const DEFAULT_MAX_GRANTS = 1_024;
 const DEFAULT_MAX_REQUESTS = 4_096;
 const HARD_MAX_RECORDS = 10_000;
 const CHECKSUM = /^sha256:[0-9a-f]{64}$/;
+const IDENTIFIER = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/;
+const METHOD = /^[A-Z][A-Z0-9_-]{0,15}$/;
+const CONTENT_TYPE = /^[a-z0-9][a-z0-9!#$&^_.+-]{0,63}\/[a-z0-9][a-z0-9!#$&^_.+-]{0,63}$/;
 const CONSTRUCTOR_TOKEN = Symbol('ServiceCreditSqliteStore');
+const OBJECT_PROTOTYPE = Object.prototype;
+const ARRAY_IS_ARRAY = Array.isArray;
+const NUMBER_IS_SAFE_INTEGER = Number.isSafeInteger;
+const OBJECT_HAS_OWN = Object.hasOwn;
+const OBJECT_FREEZE = Object.freeze;
+const OBJECT_DEFINE_PROPERTY = Object.defineProperty;
+const OBJECT_CREATE = Object.create;
+const OBJECT_KEYS = Object.keys;
+const REFLECT_GET_PROTOTYPE_OF = Reflect.getPrototypeOf;
+const REFLECT_GET_OWN_PROPERTY_DESCRIPTOR = Reflect.getOwnPropertyDescriptor;
+const REFLECT_OWN_KEYS = Reflect.ownKeys;
+const REFLECT_APPLY = Reflect.apply;
+const REGEXP_TEST = RegExp.prototype.test;
+const STRING_INCLUDES = String.prototype.includes;
+const ARRAY_INCLUDES = Array.prototype.includes;
+const ARRAY_SORT = Array.prototype.sort;
+const STRING_FROM = String;
+const SET_CONSTRUCTOR = Set;
+const SET_HAS = Set.prototype.has;
+const SET_ADD = Set.prototype.add;
+const JSON_STRINGIFY = JSON.stringify;
+const IS_PROXY = utilTypes.isProxy;
 
 export class ServiceCreditSqliteStoreError extends Error {
   constructor(code) {
@@ -54,6 +90,164 @@ function storeFailure(code) {
 
 function failStore(code) {
   throw storeFailure(code);
+}
+
+function regexpMatches(pattern, value) {
+  return REFLECT_APPLY(REGEXP_TEST, pattern, [value]);
+}
+
+function validIdentifier(value) {
+  return typeof value === 'string'
+    && regexpMatches(IDENTIFIER, value)
+    && !REFLECT_APPLY(STRING_INCLUDES, value, ['://']);
+}
+
+function captureDurableObject(value, requiredKeys) {
+  try {
+    if (
+      value === null
+      || typeof value !== 'object'
+      || IS_PROXY(value)
+      || ARRAY_IS_ARRAY(value)
+      || REFLECT_GET_PROTOTYPE_OF(value) !== OBJECT_PROTOTYPE
+    ) {
+      failStore('SERVICE_CREDIT_STORE_INVALID_EXECUTION_INPUT');
+    }
+    const keys = REFLECT_OWN_KEYS(value);
+    if (keys.length !== requiredKeys.length) {
+      failStore('SERVICE_CREDIT_STORE_INVALID_EXECUTION_INPUT');
+    }
+    const captured = OBJECT_CREATE(null);
+    for (let index = 0; index < requiredKeys.length; index += 1) {
+      const key = requiredKeys[index];
+      if (!REFLECT_APPLY(ARRAY_INCLUDES, keys, [key])) {
+        failStore('SERVICE_CREDIT_STORE_INVALID_EXECUTION_INPUT');
+      }
+      const descriptor = REFLECT_GET_OWN_PROPERTY_DESCRIPTOR(value, key);
+      if (!descriptor?.enumerable || !OBJECT_HAS_OWN(descriptor, 'value')) {
+        failStore('SERVICE_CREDIT_STORE_INVALID_EXECUTION_INPUT');
+      }
+      OBJECT_DEFINE_PROPERTY(captured, key, {
+        value: descriptor.value,
+        enumerable: true,
+        writable: false,
+        configurable: false,
+      });
+    }
+    for (let index = 0; index < keys.length; index += 1) {
+      if (typeof keys[index] !== 'string') {
+        failStore('SERVICE_CREDIT_STORE_INVALID_EXECUTION_INPUT');
+      }
+    }
+    return captured;
+  } catch (error) {
+    const code = storeErrorCode(error);
+    throw storeFailure(code ?? 'SERVICE_CREDIT_STORE_INVALID_EXECUTION_INPUT');
+  }
+}
+
+function captureExpectedRevision(value) {
+  if (!NUMBER_IS_SAFE_INTEGER(value) || value < 0) {
+    failStore('SERVICE_CREDIT_STORE_INVALID_EXECUTION_INPUT');
+  }
+  return value;
+}
+
+function captureReservationInput(value) {
+  const input = captureDurableObject(value, [
+    'modelVersion',
+    'grantId',
+    'requestId',
+    'method',
+    'routeId',
+    'canonicalBodyDigest',
+    'selectedContentType',
+    'maxCostUnits',
+  ]);
+  if (
+    input.modelVersion !== SERVICE_CREDIT_MODEL_VERSION
+    || !validIdentifier(input.grantId)
+    || !validIdentifier(input.requestId)
+    || typeof input.method !== 'string'
+    || !regexpMatches(METHOD, input.method)
+    || !validIdentifier(input.routeId)
+    || typeof input.canonicalBodyDigest !== 'string'
+    || !regexpMatches(CHECKSUM, input.canonicalBodyDigest)
+    || typeof input.selectedContentType !== 'string'
+    || !regexpMatches(CONTENT_TYPE, input.selectedContentType)
+    || !NUMBER_IS_SAFE_INTEGER(input.maxCostUnits)
+    || input.maxCostUnits < 1
+  ) {
+    failStore('SERVICE_CREDIT_STORE_INVALID_EXECUTION_INPUT');
+  }
+  return OBJECT_FREEZE({ ...input });
+}
+
+function captureCachedResult(value) {
+  const input = captureDurableObject(value, ['statusCode', 'contentType', 'resultCode']);
+  if (
+    !NUMBER_IS_SAFE_INTEGER(input.statusCode)
+    || input.statusCode < 100
+    || input.statusCode > 599
+    || typeof input.contentType !== 'string'
+    || !regexpMatches(CONTENT_TYPE, input.contentType)
+    || !validIdentifier(input.resultCode)
+  ) {
+    failStore('SERVICE_CREDIT_STORE_INVALID_EXECUTION_INPUT');
+  }
+  return OBJECT_FREEZE({
+    statusCode: input.statusCode,
+    contentType: input.contentType,
+    resultCode: input.resultCode,
+  });
+}
+
+function executionContractErrorCode(error) {
+  try {
+    const descriptor = REFLECT_GET_OWN_PROPERTY_DESCRIPTOR(error, 'code');
+    return descriptor && OBJECT_HAS_OWN(descriptor, 'value')
+      && typeof descriptor.value === 'string'
+      && (
+        descriptor.value === 'SERVICE_CREDIT_EXECUTION_CONTRACT_INVALID_INPUT'
+        || descriptor.value === 'SERVICE_CREDIT_EXECUTION_CONTRACT_INVALID_STATE'
+        || descriptor.value === 'SERVICE_CREDIT_EXECUTION_CONTRACT_CONFLICT'
+        || descriptor.value === 'SERVICE_CREDIT_EXECUTION_CONTRACT_GENERATION_SEALED'
+        || descriptor.value === 'SERVICE_CREDIT_EXECUTION_CONTRACT_CAPACITY_EXCEEDED'
+        || descriptor.value === 'SERVICE_CREDIT_EXECUTION_CONTRACT_INVALID_TRANSITION'
+      )
+      ? descriptor.value
+      : null;
+  } catch {
+    return null;
+  }
+}
+
+function mappedExecutionFailure(error, persistedState = false) {
+  const code = executionContractErrorCode(error);
+  if (persistedState || code === 'SERVICE_CREDIT_EXECUTION_CONTRACT_INVALID_STATE') {
+    return storeFailure('SERVICE_CREDIT_STORE_CORRUPT');
+  }
+  const mapped = {
+    SERVICE_CREDIT_EXECUTION_CONTRACT_INVALID_INPUT:
+      'SERVICE_CREDIT_STORE_INVALID_EXECUTION_INPUT',
+    SERVICE_CREDIT_EXECUTION_CONTRACT_CONFLICT:
+      'SERVICE_CREDIT_STORE_EXECUTION_CONFLICT',
+    SERVICE_CREDIT_EXECUTION_CONTRACT_GENERATION_SEALED:
+      'SERVICE_CREDIT_STORE_EXECUTION_GENERATION_SEALED',
+    SERVICE_CREDIT_EXECUTION_CONTRACT_CAPACITY_EXCEEDED:
+      'SERVICE_CREDIT_STORE_CAPACITY_EXCEEDED',
+    SERVICE_CREDIT_EXECUTION_CONTRACT_INVALID_TRANSITION:
+      'SERVICE_CREDIT_STORE_EXECUTION_INVALID_TRANSITION',
+  }[code];
+  return storeFailure(mapped ?? 'SERVICE_CREDIT_STORE_EXECUTION_FAILED');
+}
+
+function invokeExecutionContract(operation, persistedState = false) {
+  try {
+    return operation();
+  } catch (error) {
+    throw mappedExecutionFailure(error, persistedState);
+  }
 }
 
 function fixedModelFailure(code) {
@@ -98,9 +292,11 @@ function captureDataObject(value, requiredKeys, optionalKeys = []) {
     ) {
       failStore('SERVICE_CREDIT_STORE_INVALID_CONFIGURATION');
     }
-    const allowed = new Set([...requiredKeys, ...optionalKeys]);
+    const allowed = new SET_CONSTRUCTOR([...requiredKeys, ...optionalKeys]);
     const keys = Reflect.ownKeys(value);
-    if (keys.some(key => typeof key !== 'string' || !allowed.has(key))) {
+    if (keys.some(
+      key => typeof key !== 'string' || !REFLECT_APPLY(SET_HAS, allowed, [key]),
+    )) {
       failStore('SERVICE_CREDIT_STORE_INVALID_CONFIGURATION');
     }
     const captured = Object.create(null);
@@ -471,28 +667,51 @@ function assertConnectionSettings(database, busyTimeoutMs) {
 function isPlainObject(value) {
   return value !== null
     && typeof value === 'object'
-    && !Array.isArray(value)
-    && Object.getPrototypeOf(value) === Object.prototype;
+    && !IS_PROXY(value)
+    && !ARRAY_IS_ARRAY(value)
+    && REFLECT_GET_PROTOTYPE_OF(value) === OBJECT_PROTOTYPE;
 }
 
 function exactKeys(value, expected) {
   if (!isPlainObject(value)) return false;
-  const keys = Reflect.ownKeys(value);
+  const keys = REFLECT_OWN_KEYS(value);
   if (keys.length !== expected.length) return false;
-  const allowed = new Set(expected);
-  for (const key of keys) {
-    if (typeof key !== 'string' || !allowed.has(key)) return false;
-    const descriptor = Reflect.getOwnPropertyDescriptor(value, key);
-    if (!descriptor?.enumerable || !Object.hasOwn(descriptor, 'value')) return false;
+  for (let keyIndex = 0; keyIndex < keys.length; keyIndex += 1) {
+    const key = keys[keyIndex];
+    if (typeof key !== 'string') return false;
+    let allowed = false;
+    for (let index = 0; index < expected.length; index += 1) {
+      if (expected[index] === key) {
+        allowed = true;
+        break;
+      }
+    }
+    if (!allowed) return false;
+    const descriptor = REFLECT_GET_OWN_PROPERTY_DESCRIPTOR(value, key);
+    if (!descriptor?.enumerable || !OBJECT_HAS_OWN(descriptor, 'value')) return false;
   }
   return true;
 }
 
 function canonicalJson(value) {
-  if (value === null || typeof value !== 'object') return JSON.stringify(value);
-  if (Array.isArray(value)) return `[${value.map(canonicalJson).join(',')}]`;
-  const keys = Object.keys(value).sort();
-  return `{${keys.map(key => `${JSON.stringify(key)}:${canonicalJson(value[key])}`).join(',')}}`;
+  if (value === null || typeof value !== 'object') return JSON_STRINGIFY(value);
+  if (ARRAY_IS_ARRAY(value)) {
+    let output = '[';
+    for (let index = 0; index < value.length; index += 1) {
+      if (index > 0) output += ',';
+      output += canonicalJson(value[index]);
+    }
+    return `${output}]`;
+  }
+  const keys = OBJECT_KEYS(value);
+  REFLECT_APPLY(ARRAY_SORT, keys, []);
+  let output = '{';
+  for (let index = 0; index < keys.length; index += 1) {
+    if (index > 0) output += ',';
+    const key = keys[index];
+    output += `${JSON_STRINGIFY(key)}:${canonicalJson(value[key])}`;
+  }
+  return `${output}}`;
 }
 
 function publicChecksumFor(schemaVersion, revision, state) {
@@ -516,12 +735,40 @@ function physicalV2ChecksumFor(physicalVersion, revision, ledgerState, execution
     .digest('hex')}`;
 }
 
+function durableResultCommitmentFor(cachedResult) {
+  return `sha256:${crypto.createHash('sha256')
+    .update(DURABLE_RESULT_COMMITMENT_DOMAIN)
+    .update('\0')
+    .update(canonicalJson(cachedResult))
+    .digest('hex')}`;
+}
+
 function frozenSnapshot(value) {
   if (value === null || typeof value !== 'object') return value;
-  const copy = Array.isArray(value)
-    ? value.map(frozenSnapshot)
-    : Object.fromEntries(Object.keys(value).map(key => [key, frozenSnapshot(value[key])]));
-  return Object.freeze(copy);
+  if (ARRAY_IS_ARRAY(value)) {
+    const copy = [];
+    for (let index = 0; index < value.length; index += 1) {
+      OBJECT_DEFINE_PROPERTY(copy, STRING_FROM(index), {
+        value: frozenSnapshot(value[index]),
+        enumerable: true,
+        writable: true,
+        configurable: true,
+      });
+    }
+    return OBJECT_FREEZE(copy);
+  }
+  const copy = {};
+  const keys = OBJECT_KEYS(value);
+  for (let index = 0; index < keys.length; index += 1) {
+    const key = keys[index];
+    OBJECT_DEFINE_PROPERTY(copy, key, {
+      value: frozenSnapshot(value[key]),
+      enumerable: true,
+      writable: true,
+      configurable: true,
+    });
+  }
+  return OBJECT_FREEZE(copy);
 }
 
 function publicEnvelopeFor(revision, state) {
@@ -530,20 +777,20 @@ function publicEnvelopeFor(revision, state) {
     revision,
     state,
   };
-  return Object.freeze({
+  return OBJECT_FREEZE({
     ...envelope,
     checksum: publicChecksumFor(envelope.schemaVersion, envelope.revision, envelope.state),
   });
 }
 
-function physicalEnvelopeFor(revision, ledgerState) {
+function physicalEnvelopeFor(revision, ledgerState, executionState) {
   const envelope = {
     physicalVersion: SERVICE_CREDIT_SQLITE_SCHEMA_VERSION,
     revision,
     ledgerState,
-    executionState: null,
+    executionState,
   };
-  return Object.freeze({
+  return OBJECT_FREEZE({
     ...envelope,
     checksum: physicalV2ChecksumFor(
       envelope.physicalVersion,
@@ -552,6 +799,173 @@ function physicalEnvelopeFor(revision, ledgerState) {
       envelope.executionState,
     ),
   });
+}
+
+function ledgerRequestKey(request) {
+  return `${request.grantId}\0${request.requestId}`;
+}
+
+function executionRequestProjection(request) {
+  return {
+    modelVersion: request.modelVersion,
+    grantId: request.grantId,
+    requestId: request.requestId,
+    requestDigest: request.requestDigest,
+    method: request.method,
+    routeId: request.routeId,
+    canonicalBodyDigest: request.canonicalBodyDigest,
+    selectedContentType: request.selectedContentType,
+    maxCostUnits: request.maxCostUnits,
+    costUnits: request.costUnits,
+  };
+}
+
+function reservationMatchesLedger(request, input) {
+  return request.modelVersion === input.modelVersion
+    && request.grantId === input.grantId
+    && request.requestId === input.requestId
+    && request.method === input.method
+    && request.routeId === input.routeId
+    && request.canonicalBodyDigest === input.canonicalBodyDigest
+    && request.selectedContentType === input.selectedContentType
+    && request.maxCostUnits === input.maxCostUnits;
+}
+
+function findLedgerRequest(ledgerState, grantId, requestId) {
+  for (let index = 0; index < ledgerState.requests.length; index += 1) {
+    const request = ledgerState.requests[index];
+    if (request.grantId === grantId && request.requestId === requestId) return request;
+  }
+  return null;
+}
+
+function findDurableExecutionByRequest(executionState, grantId, requestId) {
+  for (let index = 0; index < executionState.executions.length; index += 1) {
+    const execution = executionState.executions[index];
+    if (execution.request.grantId === grantId && execution.request.requestId === requestId) {
+      return execution;
+    }
+  }
+  return null;
+}
+
+function findDurableExecution(executionState, executionId) {
+  for (let index = 0; index < executionState.executions.length; index += 1) {
+    if (executionState.executions[index].executionId === executionId) {
+      return executionState.executions[index];
+    }
+  }
+  return null;
+}
+
+function assertDurableCrossLinks(configuration, ledgerState, executionState) {
+  if (executionState === null) return;
+  if (executionState.capacity > configuration.maxRequests) {
+    failStore('SERVICE_CREDIT_STORE_CAPACITY_EXCEEDED');
+  }
+  const linked = new SET_CONSTRUCTOR();
+  let nonterminalCount = 0;
+  for (let index = 0; index < executionState.executions.length; index += 1) {
+    const execution = executionState.executions[index];
+    const request = findLedgerRequest(
+      ledgerState,
+      execution.request.grantId,
+      execution.request.requestId,
+    );
+    if (
+      request === null
+      || canonicalJson(execution.request) !== canonicalJson(executionRequestProjection(request))
+    ) {
+      failStore('SERVICE_CREDIT_STORE_CORRUPT');
+    }
+    const key = ledgerRequestKey(request);
+    if (REFLECT_APPLY(SET_HAS, linked, [key])) failStore('SERVICE_CREDIT_STORE_CORRUPT');
+    REFLECT_APPLY(SET_ADD, linked, [key]);
+    if (execution.terminalClassification === 'NONE') {
+      nonterminalCount += 1;
+      if (
+        request.state !== REQUEST_STATE.EXECUTING
+        || !REFLECT_APPLY(
+          ARRAY_INCLUDES,
+          ['PREPARED', 'MAY_HAVE_STARTED'],
+          [execution.fencePhase],
+        )
+      ) {
+        failStore('SERVICE_CREDIT_STORE_CORRUPT');
+      }
+    } else if (execution.terminalClassification === 'NOT_INVOKED') {
+      if (request.state !== REQUEST_STATE.FAILED_RELEASED) {
+        failStore('SERVICE_CREDIT_STORE_CORRUPT');
+      }
+    } else if (execution.terminalClassification === 'SUCCEEDED') {
+      if (
+        request.state !== REQUEST_STATE.SUCCEEDED
+        || request.cachedResult === null
+        || execution.resultCommitment !== durableResultCommitmentFor(request.cachedResult)
+      ) {
+        failStore('SERVICE_CREDIT_STORE_CORRUPT');
+      }
+    } else if (
+      execution.terminalClassification !== 'OUTCOME_UNKNOWN'
+      || request.state !== REQUEST_STATE.OUTCOME_UNKNOWN
+    ) {
+      failStore('SERVICE_CREDIT_STORE_CORRUPT');
+    }
+  }
+  if (nonterminalCount > 1) failStore('SERVICE_CREDIT_STORE_CORRUPT');
+  for (let index = 0; index < ledgerState.requests.length; index += 1) {
+    const request = ledgerState.requests[index];
+    if (
+      (request.state === REQUEST_STATE.RESERVED
+        || request.state === REQUEST_STATE.EXECUTING
+        || request.state === REQUEST_STATE.OUTCOME_UNKNOWN)
+      && !REFLECT_APPLY(SET_HAS, linked, [ledgerRequestKey(request)])
+    ) {
+      failStore('SERVICE_CREDIT_STORE_CORRUPT');
+    }
+  }
+}
+
+function legacyRequestMutation(operation) {
+  return operation === 'reserveRequest'
+    || operation === 'beginExecution'
+    || operation === 'releaseBeforeExecution'
+    || operation === 'completeExecution'
+    || operation === 'markOutcomeUnknown'
+    || operation === 'reconcileRequest';
+}
+
+function sameExecutionConfiguration(state, candidate) {
+  return state.contractVersion === candidate.contractVersion
+    && state.ledgerId === candidate.ledgerId
+    && state.capacity === candidate.capacity
+    && canonicalJson(state.policy) === canonicalJson(candidate.policy)
+    && state.generation.generationId === candidate.generation.generationId;
+}
+
+function hasNonterminalLedgerRequest(ledgerState) {
+  for (let index = 0; index < ledgerState.requests.length; index += 1) {
+    const state = ledgerState.requests[index].state;
+    if (
+      state === REQUEST_STATE.RESERVED
+      || state === REQUEST_STATE.EXECUTING
+      || state === REQUEST_STATE.OUTCOME_UNKNOWN
+    ) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function hasNonterminalExecution(executionState) {
+  for (let index = 0; index < executionState.executions.length; index += 1) {
+    if (executionState.executions[index].terminalClassification === 'NONE') return true;
+  }
+  return false;
+}
+
+function receipt(value) {
+  return frozenSnapshot(value);
 }
 
 function assertCapacity(configuration, state) {
@@ -618,12 +1032,17 @@ function syncParentDirectory(parent) {
  * external effects. The fixed busy timeout therefore makes callback duration
  * and writer contention an explicit availability limit.
  *
- * Physical format v2 stores the current ledger state and a reserved null
- * execution-state slot under one revision and integrity commitment. Public
+ * Physical format v2 stores the current ledger state and nullable exact
+ * execution-contract state under one revision and integrity commitment. New
+ * and migrated stores retain null until explicit one-way initialization. Public
  * load and metadata results intentionally retain the legacy schema-v1 envelope
  * projection used by the current HTTP and composition boundaries. Physical-v1
  * files are accepted only by the explicit fail-closed migrator; ordinary open
  * never migrates, repairs, downgrades, or deletes a database.
+ * Explicit durable methods recompute pure execution-contract transitions from
+ * freshly read compound state under BEGIN IMMEDIATE. Their APPLIED, UNCHANGED,
+ * and STALE receipts never expose invocation permission; runtime ownership is
+ * a separate boundary.
  *
  * This persistence class does not itself perform HTTP handling, capability
  * proof verification, or settlement verification. The separate inactive mock
@@ -631,9 +1050,9 @@ function syncParentDirectory(parent) {
  * asking this store to persist the activation and grant. Authoritative live
  * activation, capability issuance, and live service-credit wiring remain
  * unimplemented. This class also does not implement wallet or RPC integration,
- * live payments, external-effect execution, reconciliation evidence, deletion,
- * retention, compaction, tombstones, execution-state transitions, downgrade,
- * automatic migration, or distributed transactions,
+ * live payments, callback invocation, runtime deadline enforcement,
+ * reconciliation evidence, deletion, retention, compaction, tombstones,
+ * downgrade, automatic migration, or distributed transactions,
  * and it is not a production-readiness claim.
  * Same-UID code and the host kernel are trusted;
  * no portable ACL claim is made. reconcileRequest remains a privileged
@@ -737,7 +1156,7 @@ export class ServiceCreditSqliteStore {
             failStore('SERVICE_CREDIT_STORE_MIGRATION_UNSAFE');
           }
         }
-        const next = physicalEnvelopeFor(envelope.revision, state);
+        const next = physicalEnvelopeFor(envelope.revision, state, null);
         assertPhysicalEnvelopeCapacity(configuration, next);
         const updated = store.#database.prepare(
           `UPDATE ${TABLE_NAME} SET envelope = ? WHERE singleton = 1`,
@@ -808,6 +1227,517 @@ export class ServiceCreditSqliteStore {
     return this.#modelOperation('reconcileRequest', input);
   }
 
+  getDurableExecutionSnapshot() {
+    if (arguments.length !== 0) {
+      failStore('SERVICE_CREDIT_STORE_INVALID_EXECUTION_INPUT');
+    }
+    return this.#runPublicOperation(() => this.#runTransaction(
+      'getDurableExecutionSnapshot',
+      () => {
+        this.#validateDatabase();
+        const { executionState, physicalEnvelope } = this.#readLedger();
+        return receipt({
+          revision: physicalEnvelope.revision,
+          executionState,
+        });
+      },
+    ));
+  }
+
+  initializeDurableExecution(options) {
+    if (arguments.length !== 1) {
+      failStore('SERVICE_CREDIT_STORE_INVALID_EXECUTION_INPUT');
+    }
+    return this.#runPublicOperation(() => {
+      const input = captureDurableObject(options, [
+        'expectedRevision',
+        'ledgerId',
+        'policy',
+        'capacity',
+      ]);
+      const expectedRevision = captureExpectedRevision(input.expectedRevision);
+      const candidate = invokeExecutionContract(() => createServiceCreditExecutionContract({
+        ledgerId: input.ledgerId,
+        policy: input.policy,
+        capacity: input.capacity,
+      }));
+      const outcome = this.#runTransaction('initializeDurableExecution', () => {
+        this.#validateDatabase();
+        const { executionState, physicalEnvelope } = this.#readLedger();
+        if (physicalEnvelope.revision !== expectedRevision) {
+          return {
+            changed: false,
+            result: receipt({
+              disposition: 'STALE',
+              revision: physicalEnvelope.revision,
+              executionState,
+            }),
+          };
+        }
+        if (candidate.capacity > this.#configuration.maxRequests) {
+          failStore('SERVICE_CREDIT_STORE_CAPACITY_EXCEEDED');
+        }
+        if (executionState !== null) {
+          if (!sameExecutionConfiguration(executionState, candidate)) {
+            failStore('SERVICE_CREDIT_STORE_EXECUTION_CONFLICT');
+          }
+          return {
+            changed: false,
+            result: receipt({
+              disposition: 'UNCHANGED',
+              revision: physicalEnvelope.revision,
+              executionState,
+            }),
+          };
+        }
+        if (hasNonterminalLedgerRequest(physicalEnvelope.ledgerState)) {
+          failStore('SERVICE_CREDIT_STORE_EXECUTION_INITIALIZATION_UNSAFE');
+        }
+        const next = this.#persistCompound(
+          physicalEnvelope,
+          physicalEnvelope.ledgerState,
+          candidate,
+        );
+        return {
+          changed: true,
+          result: receipt({
+            disposition: 'APPLIED',
+            revision: next.revision,
+            executionState: candidate,
+          }),
+        };
+      });
+      return outcome.result;
+    });
+  }
+
+  prepareDurableExecution(options) {
+    if (arguments.length !== 1) {
+      failStore('SERVICE_CREDIT_STORE_INVALID_EXECUTION_INPUT');
+    }
+    return this.#runPublicOperation(() => {
+      const input = captureDurableObject(options, [
+        'expectedRevision',
+        'request',
+        'selectedDurationMs',
+      ]);
+      const expectedRevision = captureExpectedRevision(input.expectedRevision);
+      const requestInput = captureReservationInput(input.request);
+      if (!NUMBER_IS_SAFE_INTEGER(input.selectedDurationMs) || input.selectedDurationMs < 1) {
+        failStore('SERVICE_CREDIT_STORE_INVALID_EXECUTION_INPUT');
+      }
+      const outcome = this.#runTransaction('prepareDurableExecution', () => {
+        this.#validateDatabase();
+        const { executionState, physicalEnvelope } = this.#readLedger();
+        if (physicalEnvelope.revision !== expectedRevision) {
+          return {
+            changed: false,
+            result: receipt({
+              disposition: 'STALE',
+              revision: physicalEnvelope.revision,
+              request: null,
+              execution: null,
+            }),
+          };
+        }
+        if (executionState === null) {
+          failStore('SERVICE_CREDIT_STORE_DURABLE_EXECUTION_DISABLED');
+        }
+        const existingRequest = findLedgerRequest(
+          physicalEnvelope.ledgerState,
+          requestInput.grantId,
+          requestInput.requestId,
+        );
+        if (existingRequest !== null && !reservationMatchesLedger(existingRequest, requestInput)) {
+          throw fixedModelFailure('REQUEST_ID_CONFLICT');
+        }
+        const existingExecution = findDurableExecutionByRequest(
+          executionState,
+          requestInput.grantId,
+          requestInput.requestId,
+        );
+        if (existingExecution !== null) {
+          if (existingExecution.selectedDurationMs !== input.selectedDurationMs) {
+            failStore('SERVICE_CREDIT_STORE_EXECUTION_CONFLICT');
+          }
+          return {
+            changed: false,
+            result: receipt({
+              disposition: 'UNCHANGED',
+              revision: physicalEnvelope.revision,
+              request: existingRequest,
+              execution: existingExecution,
+            }),
+          };
+        }
+        if (input.selectedDurationMs > executionState.policy.maxDurationMs) {
+          failStore('SERVICE_CREDIT_STORE_INVALID_EXECUTION_INPUT');
+        }
+        if (existingRequest !== null) {
+          failStore('SERVICE_CREDIT_STORE_EXECUTION_INVALID_TRANSITION');
+        }
+        if (executionState.generation.state === 'SEALED') {
+          failStore('SERVICE_CREDIT_STORE_EXECUTION_GENERATION_SEALED');
+        }
+        if (executionState.executions.length >= executionState.capacity) {
+          failStore('SERVICE_CREDIT_STORE_CAPACITY_EXCEEDED');
+        }
+        if (hasNonterminalExecution(executionState)) {
+          throw fixedModelFailure('UNRESOLVED_EXECUTION');
+        }
+        const wallClockStartMs = this.#captureTrustedNow();
+        if (!NUMBER_IS_SAFE_INTEGER(wallClockStartMs + input.selectedDurationMs)) {
+          failStore('SERVICE_CREDIT_STORE_INVALID_EXECUTION_INPUT');
+        }
+        const model = this.#modelAt(physicalEnvelope.ledgerState, wallClockStartMs);
+        const reserved = model.reserveRequest(requestInput);
+        const began = model.beginExecution({
+          grantId: reserved.request.grantId,
+          requestId: reserved.request.requestId,
+        });
+        if (began.executionAuthorized !== true) {
+          failStore('SERVICE_CREDIT_STORE_EXECUTION_INVALID_TRANSITION');
+        }
+        const prepared = invokeExecutionContract(() => prepareServiceCreditExecution({
+          state: executionState,
+          request: executionRequestProjection(began.request),
+          policy: executionState.policy,
+          selectedDurationMs: input.selectedDurationMs,
+          wallClockStartMs,
+        }));
+        if (prepared.replayed || prepared.execution.fencePhase !== 'PREPARED') {
+          failStore('SERVICE_CREDIT_STORE_INVARIANT_VIOLATION');
+        }
+        const ledgerState = model.exportState();
+        const next = this.#persistCompound(physicalEnvelope, ledgerState, prepared.state);
+        return {
+          changed: true,
+          result: receipt({
+            disposition: 'APPLIED',
+            revision: next.revision,
+            request: began.request,
+            execution: prepared.execution,
+          }),
+        };
+      });
+      return outcome.result;
+    });
+  }
+
+  persistDurableExecutionFence(options) {
+    if (arguments.length !== 1) {
+      failStore('SERVICE_CREDIT_STORE_INVALID_EXECUTION_INPUT');
+    }
+    return this.#runPublicOperation(() => {
+      const input = captureDurableObject(options, ['expectedRevision', 'executionId']);
+      const expectedRevision = captureExpectedRevision(input.expectedRevision);
+      if (!validIdentifier(input.executionId)) {
+        failStore('SERVICE_CREDIT_STORE_INVALID_EXECUTION_INPUT');
+      }
+      const outcome = this.#runTransaction('persistDurableExecutionFence', () => {
+        this.#validateDatabase();
+        const { executionState, physicalEnvelope } = this.#readLedger();
+        if (physicalEnvelope.revision !== expectedRevision) {
+          return {
+            changed: false,
+            result: receipt({
+              disposition: 'STALE',
+              revision: physicalEnvelope.revision,
+              execution: null,
+            }),
+          };
+        }
+        if (executionState === null) {
+          failStore('SERVICE_CREDIT_STORE_DURABLE_EXECUTION_DISABLED');
+        }
+        const current = findDurableExecution(executionState, input.executionId);
+        if (current === null) failStore('SERVICE_CREDIT_STORE_EXECUTION_NOT_FOUND');
+        if (
+          current.terminalClassification !== 'NONE'
+          || current.fencePhase === 'MAY_HAVE_STARTED'
+        ) {
+          return {
+            changed: false,
+            result: receipt({
+              disposition: 'UNCHANGED',
+              revision: physicalEnvelope.revision,
+              execution: current,
+            }),
+          };
+        }
+        if (executionState.generation.state === 'SEALED') {
+          failStore('SERVICE_CREDIT_STORE_EXECUTION_GENERATION_SEALED');
+        }
+        const wallClockNowMs = this.#captureTrustedNow();
+        const fenced = invokeExecutionContract(() => fenceServiceCreditExecution({
+          state: executionState,
+          executionId: input.executionId,
+          wallClockNowMs,
+        })).fenceTransitionCandidate;
+        const model = this.#modelAt(physicalEnvelope.ledgerState, wallClockNowMs);
+        if (fenced.execution.terminalClassification === 'NOT_INVOKED') {
+          this.#releaseExecutingWithoutDurableUnknown(model, fenced.execution.request);
+        } else if (fenced.execution.fencePhase !== 'MAY_HAVE_STARTED') {
+          failStore('SERVICE_CREDIT_STORE_INVARIANT_VIOLATION');
+        }
+        const ledgerState = model.exportState();
+        const next = this.#persistCompound(physicalEnvelope, ledgerState, fenced.state);
+        return {
+          changed: true,
+          result: receipt({
+            disposition: 'APPLIED',
+            revision: next.revision,
+            execution: fenced.execution,
+          }),
+        };
+      });
+      return outcome.result;
+    });
+  }
+
+  completeDurableExecution(options) {
+    if (arguments.length !== 1) {
+      failStore('SERVICE_CREDIT_STORE_INVALID_EXECUTION_INPUT');
+    }
+    return this.#runPublicOperation(() => {
+      const input = captureDurableObject(options, [
+        'expectedRevision',
+        'executionId',
+        'cachedResult',
+      ]);
+      const expectedRevision = captureExpectedRevision(input.expectedRevision);
+      if (!validIdentifier(input.executionId)) {
+        failStore('SERVICE_CREDIT_STORE_INVALID_EXECUTION_INPUT');
+      }
+      const cachedResult = captureCachedResult(input.cachedResult);
+      const resultCommitment = durableResultCommitmentFor(cachedResult);
+      const outcome = this.#runTransaction('completeDurableExecution', () => {
+        this.#validateDatabase();
+        const { executionState, physicalEnvelope } = this.#readLedger();
+        if (physicalEnvelope.revision !== expectedRevision) {
+          return {
+            changed: false,
+            result: receipt({
+              disposition: 'STALE',
+              revision: physicalEnvelope.revision,
+              winner: null,
+              request: null,
+              execution: null,
+            }),
+          };
+        }
+        if (executionState === null) {
+          failStore('SERVICE_CREDIT_STORE_DURABLE_EXECUTION_DISABLED');
+        }
+        const current = findDurableExecution(executionState, input.executionId);
+        if (current === null) failStore('SERVICE_CREDIT_STORE_EXECUTION_NOT_FOUND');
+        if (cachedResult.contentType !== current.request.selectedContentType) {
+          failStore('SERVICE_CREDIT_STORE_INVALID_EXECUTION_INPUT');
+        }
+        const completed = invokeExecutionContract(() => completeServiceCreditExecution({
+          state: executionState,
+          executionId: input.executionId,
+          resultCommitment,
+        }));
+        if (!completed.transitioned) {
+          if (completed.winner === 'SUCCEEDED') {
+            const model = this.#modelAt(physicalEnvelope.ledgerState, 0);
+            model.completeExecution({
+              grantId: current.request.grantId,
+              requestId: current.request.requestId,
+              cachedResult,
+            });
+          }
+          const requestState = findLedgerRequest(
+            physicalEnvelope.ledgerState,
+            current.request.grantId,
+            current.request.requestId,
+          );
+          return {
+            changed: false,
+            result: receipt({
+              disposition: 'UNCHANGED',
+              revision: physicalEnvelope.revision,
+              winner: completed.winner,
+              request: requestState,
+              execution: completed.execution,
+            }),
+          };
+        }
+        const model = this.#modelAt(physicalEnvelope.ledgerState, 0);
+        const modelResult = model.completeExecution({
+          grantId: current.request.grantId,
+          requestId: current.request.requestId,
+          cachedResult,
+        });
+        const ledgerState = model.exportState();
+        const next = this.#persistCompound(physicalEnvelope, ledgerState, completed.state);
+        return {
+          changed: true,
+          result: receipt({
+            disposition: 'APPLIED',
+            revision: next.revision,
+            winner: completed.winner,
+            request: modelResult.request,
+            execution: completed.execution,
+          }),
+        };
+      });
+      return outcome.result;
+    });
+  }
+
+  markDurableExecutionUnknown(options) {
+    if (arguments.length !== 1) {
+      failStore('SERVICE_CREDIT_STORE_INVALID_EXECUTION_INPUT');
+    }
+    return this.#runPublicOperation(() => {
+      const input = captureDurableObject(options, [
+        'expectedRevision',
+        'executionId',
+        'reason',
+      ]);
+      const expectedRevision = captureExpectedRevision(input.expectedRevision);
+      if (!validIdentifier(input.executionId) || typeof input.reason !== 'string') {
+        failStore('SERVICE_CREDIT_STORE_INVALID_EXECUTION_INPUT');
+      }
+      const outcome = this.#runTransaction('markDurableExecutionUnknown', () => {
+        this.#validateDatabase();
+        const { executionState, physicalEnvelope } = this.#readLedger();
+        if (physicalEnvelope.revision !== expectedRevision) {
+          return {
+            changed: false,
+            result: receipt({
+              disposition: 'STALE',
+              revision: physicalEnvelope.revision,
+              winner: null,
+              request: null,
+              execution: null,
+            }),
+          };
+        }
+        if (executionState === null) {
+          failStore('SERVICE_CREDIT_STORE_DURABLE_EXECUTION_DISABLED');
+        }
+        const current = findDurableExecution(executionState, input.executionId);
+        if (current === null) failStore('SERVICE_CREDIT_STORE_EXECUTION_NOT_FOUND');
+        const unknown = invokeExecutionContract(() => markServiceCreditExecutionUnknown({
+          state: executionState,
+          executionId: input.executionId,
+          reason: input.reason,
+        }));
+        if (!unknown.transitioned) {
+          const requestState = findLedgerRequest(
+            physicalEnvelope.ledgerState,
+            current.request.grantId,
+            current.request.requestId,
+          );
+          return {
+            changed: false,
+            result: receipt({
+              disposition: 'UNCHANGED',
+              revision: physicalEnvelope.revision,
+              winner: unknown.winner,
+              request: requestState,
+              execution: unknown.execution,
+            }),
+          };
+        }
+        const model = this.#modelAt(physicalEnvelope.ledgerState, 0);
+        const modelResult = model.markOutcomeUnknown({
+          grantId: current.request.grantId,
+          requestId: current.request.requestId,
+        });
+        const ledgerState = model.exportState();
+        const next = this.#persistCompound(physicalEnvelope, ledgerState, unknown.state);
+        return {
+          changed: true,
+          result: receipt({
+            disposition: 'APPLIED',
+            revision: next.revision,
+            winner: unknown.winner,
+            request: modelResult.request,
+            execution: unknown.execution,
+          }),
+        };
+      });
+      return outcome.result;
+    });
+  }
+
+  recoverDurableExecutionsAfterRestart(options) {
+    if (arguments.length !== 1) {
+      failStore('SERVICE_CREDIT_STORE_INVALID_EXECUTION_INPUT');
+    }
+    return this.#runPublicOperation(() => {
+      const input = captureDurableObject(options, ['expectedRevision']);
+      const expectedRevision = captureExpectedRevision(input.expectedRevision);
+      const outcome = this.#runTransaction('recoverDurableExecutionsAfterRestart', () => {
+        this.#validateDatabase();
+        const { executionState, physicalEnvelope } = this.#readLedger();
+        if (physicalEnvelope.revision !== expectedRevision) {
+          return {
+            changed: false,
+            result: receipt({
+              disposition: 'STALE',
+              revision: physicalEnvelope.revision,
+              noInvocationCount: 0,
+              outcomeUnknownCount: 0,
+              executionState: null,
+            }),
+          };
+        }
+        if (executionState === null) {
+          failStore('SERVICE_CREDIT_STORE_DURABLE_EXECUTION_DISABLED');
+        }
+        const wallClockNowMs = this.#captureTrustedNow();
+        const recovered = invokeExecutionContract(() => recoverServiceCreditExecutions({
+          state: executionState,
+          wallClockNowMs,
+        }));
+        if (!recovered.transitioned) {
+          return {
+            changed: false,
+            result: receipt({
+              disposition: 'UNCHANGED',
+              revision: physicalEnvelope.revision,
+              noInvocationCount: 0,
+              outcomeUnknownCount: 0,
+              executionState,
+            }),
+          };
+        }
+        const model = this.#modelAt(physicalEnvelope.ledgerState, wallClockNowMs);
+        for (let index = 0; index < executionState.executions.length; index += 1) {
+          const before = executionState.executions[index];
+          const after = findDurableExecution(recovered.state, before.executionId);
+          if (before.terminalClassification !== 'NONE' || after === null) continue;
+          if (after.terminalClassification === 'NOT_INVOKED') {
+            this.#releaseExecutingWithoutDurableUnknown(model, before.request);
+          } else if (after.terminalClassification === 'OUTCOME_UNKNOWN') {
+            model.markOutcomeUnknown({
+              grantId: before.request.grantId,
+              requestId: before.request.requestId,
+            });
+          }
+        }
+        const ledgerState = model.exportState();
+        const next = this.#persistCompound(physicalEnvelope, ledgerState, recovered.state);
+        return {
+          changed: true,
+          result: receipt({
+            disposition: 'APPLIED',
+            revision: next.revision,
+            noInvocationCount: recovered.noInvocationCount,
+            outcomeUnknownCount: recovered.outcomeUnknownCount,
+            executionState: recovered.state,
+          }),
+        };
+      });
+      return outcome.result;
+    });
+  }
+
   load() {
     return this.#runPublicOperation(() => this.#runTransaction('load', () => {
       this.#validateDatabase();
@@ -848,6 +1778,70 @@ export class ServiceCreditSqliteStore {
     });
   }
 
+  #captureTrustedNow() {
+    const value = this.#invokeTrustedCallback(this.#configuration.now, []);
+    if (!NUMBER_IS_SAFE_INTEGER(value) || value < 0) {
+      failStore('SERVICE_CREDIT_STORE_INVALID_CLOCK');
+    }
+    return value;
+  }
+
+  #modelAt(ledgerState, wallClockNowMs) {
+    try {
+      return InMemoryServiceCreditModel.fromState({
+        deriveCost: context => this.#invokeTrustedCallback(
+          this.#configuration.deriveCost,
+          [context],
+        ),
+        now: () => wallClockNowMs,
+      }, ledgerState);
+    } catch (error) {
+      const code = modelErrorCode(error);
+      if (code !== null) throw fixedModelFailure(code);
+      const storeCode = storeErrorCode(error);
+      throw storeFailure(storeCode ?? 'SERVICE_CREDIT_STORE_CORRUPT');
+    }
+  }
+
+  #releaseExecutingWithoutDurableUnknown(model, request) {
+    const reference = {
+      grantId: request.grantId,
+      requestId: request.requestId,
+    };
+    const unknown = model.markOutcomeUnknown(reference);
+    if (!unknown.transitioned || unknown.request.state !== REQUEST_STATE.OUTCOME_UNKNOWN) {
+      failStore('SERVICE_CREDIT_STORE_INVARIANT_VIOLATION');
+    }
+    const released = model.reconcileRequest({
+      ...reference,
+      outcome: REQUEST_STATE.FAILED_RELEASED,
+    });
+    if (!released.transitioned || released.request.state !== REQUEST_STATE.FAILED_RELEASED) {
+      failStore('SERVICE_CREDIT_STORE_INVARIANT_VIOLATION');
+    }
+    return released.request;
+  }
+
+  #persistCompound(physicalEnvelope, ledgerState, executionState) {
+    this.#assertPersistableState(ledgerState);
+    assertCapacity(this.#configuration, ledgerState);
+    assertDurableCrossLinks(this.#configuration, ledgerState, executionState);
+    if (physicalEnvelope.revision === Number.MAX_SAFE_INTEGER) {
+      failStore('SERVICE_CREDIT_STORE_CAPACITY_EXCEEDED');
+    }
+    const next = physicalEnvelopeFor(
+      physicalEnvelope.revision + 1,
+      ledgerState,
+      executionState,
+    );
+    assertPhysicalEnvelopeCapacity(this.#configuration, next);
+    const updated = this.#database.prepare(
+      `UPDATE ${TABLE_NAME} SET envelope = ? WHERE singleton = 1 AND envelope = ?`,
+    ).run(canonicalJson(next), canonicalJson(physicalEnvelope));
+    if (updated.changes !== 1) failStore('SERVICE_CREDIT_STORE_CORRUPT');
+    return next;
+  }
+
   #initializeNew() {
     const model = new InMemoryServiceCreditModel({
       deriveCost: this.#configuration.deriveCost,
@@ -855,7 +1849,7 @@ export class ServiceCreditSqliteStore {
     });
     const state = model.exportState();
     assertCapacity(this.#configuration, state);
-    const envelope = physicalEnvelopeFor(0, state);
+    const envelope = physicalEnvelopeFor(0, state, null);
     assertPhysicalEnvelopeCapacity(this.#configuration, envelope);
     this.#runTransaction('create', () => {
       this.#database.exec(`PRAGMA application_id = ${APPLICATION_ID}`);
@@ -874,7 +1868,10 @@ export class ServiceCreditSqliteStore {
     return this.#runPublicOperation(() => {
       const outcome = this.#runTransaction(operation, () => {
         this.#validateDatabase();
-        const { physicalEnvelope, model } = this.#readLedger();
+        const { executionState, physicalEnvelope, model } = this.#readLedger();
+        if (executionState !== null && legacyRequestMutation(operation)) {
+          failStore('SERVICE_CREDIT_STORE_LEGACY_EXECUTION_MUTATION_BLOCKED');
+        }
         const beforeState = model.exportState();
         const beforeCanonical = canonicalJson(beforeState);
         let result;
@@ -895,7 +1892,12 @@ export class ServiceCreditSqliteStore {
           if (physicalEnvelope.revision === Number.MAX_SAFE_INTEGER) {
             failStore('SERVICE_CREDIT_STORE_CAPACITY_EXCEEDED');
           }
-          const next = physicalEnvelopeFor(physicalEnvelope.revision + 1, afterState);
+          assertDurableCrossLinks(this.#configuration, afterState, executionState);
+          const next = physicalEnvelopeFor(
+            physicalEnvelope.revision + 1,
+            afterState,
+            executionState,
+          );
           assertPhysicalEnvelopeCapacity(this.#configuration, next);
           const updated = this.#database.prepare(
             `UPDATE ${TABLE_NAME} SET envelope = ? WHERE singleton = 1`,
@@ -927,13 +1929,28 @@ export class ServiceCreditSqliteStore {
       if (
         !Number.isSafeInteger(envelope.revision)
         || envelope.revision < 0
-        || envelope.executionState !== null
-        || !CHECKSUM.test(envelope.checksum ?? '')
+        || !regexpMatches(CHECKSUM, envelope.checksum ?? '')
       ) {
         failStore('SERVICE_CREDIT_STORE_CORRUPT');
       }
       const { model, normalizedState } = this.#hydrateLedgerState(envelope.ledgerState);
-      const normalizedEnvelope = physicalEnvelopeFor(envelope.revision, normalizedState);
+      let normalizedExecutionState = null;
+      if (envelope.executionState !== null) {
+        normalizedExecutionState = invokeExecutionContract(
+          () => hydrateServiceCreditExecutionContract(envelope.executionState),
+          true,
+        );
+      }
+      assertDurableCrossLinks(
+        this.#configuration,
+        normalizedState,
+        normalizedExecutionState,
+      );
+      const normalizedEnvelope = physicalEnvelopeFor(
+        envelope.revision,
+        normalizedState,
+        normalizedExecutionState,
+      );
       if (
         canonicalJson(normalizedState) !== canonicalJson(envelope.ledgerState)
         || normalizedEnvelope.checksum !== envelope.checksum
@@ -943,6 +1960,7 @@ export class ServiceCreditSqliteStore {
       }
       assertPhysicalEnvelopeCapacity(this.#configuration, normalizedEnvelope);
       return {
+        executionState: normalizedExecutionState,
         physicalEnvelope: normalizedEnvelope,
         publicEnvelope: publicEnvelopeFor(envelope.revision, normalizedState),
         model,
@@ -965,7 +1983,7 @@ export class ServiceCreditSqliteStore {
       if (
         !Number.isSafeInteger(envelope.revision)
         || envelope.revision < 0
-        || !CHECKSUM.test(envelope.checksum ?? '')
+        || !regexpMatches(CHECKSUM, envelope.checksum ?? '')
       ) {
         failStore('SERVICE_CREDIT_STORE_CORRUPT');
       }
