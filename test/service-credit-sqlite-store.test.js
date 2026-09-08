@@ -239,6 +239,15 @@ function result(overrides = {}) {
   };
 }
 
+function executionPolicy(overrides = {}) {
+  return {
+    policyId: 'execution.local.fixed',
+    policyVersion: 1,
+    maxDurationMs: 5_000,
+    ...overrides,
+  };
+}
+
 function withPrivateDirectory(run) {
   const directory = realpathSync(mkdtempSync(join(tmpdir(), 'service-credit-store-')));
   chmodSync(directory, 0o700);
@@ -330,6 +339,24 @@ const RACE_CHILD_SOURCE = String.raw`
           activationId: value.activationId,
           grantId: value.grantId,
         };
+      } else if (operation.kind === 'durablePrepare') {
+        const value = store.prepareDurableExecution(operation.input);
+        response = { ok: true, disposition: value.disposition };
+      } else if (operation.kind === 'durableInitialize') {
+        const value = store.initializeDurableExecution(operation.input);
+        response = { ok: true, disposition: value.disposition };
+      } else if (operation.kind === 'durableFence') {
+        const value = store.persistDurableExecutionFence(operation.input);
+        response = { ok: true, disposition: value.disposition };
+      } else if (operation.kind === 'durableComplete') {
+        const value = store.completeDurableExecution(operation.input);
+        response = { ok: true, disposition: value.disposition, winner: value.winner };
+      } else if (operation.kind === 'durableUnknown') {
+        const value = store.markDurableExecutionUnknown(operation.input);
+        response = { ok: true, disposition: value.disposition, winner: value.winner };
+      } else if (operation.kind === 'durableRecover') {
+        const value = store.recoverDurableExecutionsAfterRestart(operation.input);
+        response = { ok: true, disposition: value.disposition };
       } else {
         response = { ok: false, code: 'UNKNOWN_OPERATION' };
       }
@@ -2127,4 +2154,1324 @@ test('migration retains filesystem, hostile-input, and callback-inert boundaries
     assert.equal(existsSync(`${baseConfiguration.databasePath}-wal`), false);
     assert.equal(existsSync(`${baseConfiguration.databasePath}-shm`), false);
   });
+});
+
+test('durable execution activation is explicit and preserves physical format v2', t => {
+  const directory = privateDirectoryFor(t);
+  const configuration = options(directory);
+  const store = ServiceCreditSqliteStore.create(configuration);
+
+  assert.deepEqual(store.getDurableExecutionSnapshot(), {
+    revision: 0,
+    executionState: null,
+  });
+  const initialized = store.initializeDurableExecution({
+    expectedRevision: 0,
+    ledgerId: 'ledger.local.1',
+    policy: executionPolicy(),
+    capacity: 8,
+  });
+  assert.equal(initialized.disposition, 'APPLIED');
+  assert.equal(initialized.revision, 1);
+  assert.equal(initialized.executionState.ledgerId, 'ledger.local.1');
+  assert.equal(Object.isFrozen(initialized), true);
+  assert.equal(Object.isFrozen(initialized.executionState), true);
+  assert.equal(store.load().revision, 1);
+  store.close();
+
+  const persisted = readPersistedEnvelope(configuration);
+  assert.equal(persisted.userVersion, 2);
+  assert.equal(persisted.envelope.physicalVersion, 2);
+  assert.notEqual(persisted.envelope.executionState, null);
+
+  const reopened = ServiceCreditSqliteStore.openExisting(configuration);
+  assert.deepEqual(
+    reopened.getDurableExecutionSnapshot(),
+    { revision: 1, executionState: initialized.executionState },
+  );
+  reopened.close();
+});
+
+test('durable prepare, fence, completion, replay, and public projection converge', t => {
+  const directory = privateDirectoryFor(t);
+  let now = NOW;
+  let clockCalls = 0;
+  const { activeGrant, store } = initializedStore(directory, {
+    now: () => {
+      clockCalls += 1;
+      return now;
+    },
+  });
+  const initialized = store.initializeDurableExecution({
+    expectedRevision: store.getMetadata().revision,
+    ledgerId: 'ledger.local.lifecycle',
+    policy: executionPolicy(),
+    capacity: 8,
+  });
+  const input = request(activeGrant.grantId);
+  const callsBeforePrepare = clockCalls;
+  const prepared = store.prepareDurableExecution({
+    expectedRevision: initialized.revision,
+    request: input,
+    selectedDurationMs: 1_000,
+  });
+  assert.equal(prepared.disposition, 'APPLIED');
+  assert.equal(prepared.request.state, REQUEST_STATE.EXECUTING);
+  assert.equal(prepared.execution.fencePhase, 'PREPARED');
+  assert.equal(prepared.execution.terminalClassification, 'NONE');
+  assert.equal(clockCalls, callsBeforePrepare + 1);
+
+  const fenced = store.persistDurableExecutionFence({
+    expectedRevision: prepared.revision,
+    executionId: prepared.execution.executionId,
+  });
+  assert.equal(fenced.disposition, 'APPLIED');
+  assert.equal(fenced.execution.fencePhase, 'MAY_HAVE_STARTED');
+  assert.equal(fenced.execution.terminalClassification, 'NONE');
+  assert.equal(clockCalls, callsBeforePrepare + 2);
+
+  const completed = store.completeDurableExecution({
+    expectedRevision: fenced.revision,
+    executionId: fenced.execution.executionId,
+    cachedResult: result(),
+  });
+  assert.equal(completed.disposition, 'APPLIED');
+  assert.equal(completed.winner, 'SUCCEEDED');
+  assert.equal(completed.request.state, REQUEST_STATE.SUCCEEDED);
+  assert.match(completed.execution.resultCommitment, /^sha256:[0-9a-f]{64}$/);
+
+  const replay = store.completeDurableExecution({
+    expectedRevision: completed.revision,
+    executionId: completed.execution.executionId,
+    cachedResult: result(),
+  });
+  assert.equal(replay.disposition, 'UNCHANGED');
+  assert.equal(replay.winner, 'SUCCEEDED');
+  assert.equal(replay.revision, completed.revision);
+  const requestReplay = store.prepareDurableExecution({
+    expectedRevision: completed.revision,
+    request: input,
+    selectedDurationMs: 1_000,
+  });
+  assert.equal(requestReplay.disposition, 'UNCHANGED');
+  assert.equal(requestReplay.execution.terminalClassification, 'SUCCEEDED');
+  assert.equal(clockCalls, callsBeforePrepare + 2);
+
+  const projection = store.load();
+  assert.equal(projection.revision, completed.revision);
+  assert.equal(projection.state.requests[0].state, REQUEST_STATE.SUCCEEDED);
+  assert.equal(projection.state.grants[0].availableUnits, 7);
+  assert.equal(projection.state.grants[0].heldUnits, 0);
+  assert.equal(projection.state.grants[0].consumedUnits, 3);
+  store.close();
+
+  const reopened = ServiceCreditSqliteStore.openExisting(options(directory));
+  assert.deepEqual(reopened.load(), projection);
+  assert.equal(
+    reopened.getDurableExecutionSnapshot().executionState.executions[0]
+      .terminalClassification,
+    'SUCCEEDED',
+  );
+  reopened.close();
+});
+
+test('durable fence releases at deadline equality or clock regression without persisting unknown', async t => {
+  for (const scenario of [
+    { name: 'deadline equality', nextNow: NOW + 1_000, reason: 'DEADLINE_REACHED' },
+    { name: 'clock regression', nextNow: NOW - 1, reason: 'CLOCK_REGRESSION' },
+  ]) {
+    await t.test(scenario.name, t => {
+      const directory = privateDirectoryFor(t);
+      let now = NOW;
+      const { activeGrant, store } = initializedStore(directory, { now: () => now });
+      const initialized = store.initializeDurableExecution({
+        expectedRevision: store.getMetadata().revision,
+        ledgerId: `ledger.local.${scenario.name.replace(' ', '.')}`,
+        policy: executionPolicy(),
+        capacity: 8,
+      });
+      const prepared = store.prepareDurableExecution({
+        expectedRevision: initialized.revision,
+        request: request(activeGrant.grantId),
+        selectedDurationMs: 1_000,
+      });
+      now = scenario.nextNow;
+      const fenced = store.persistDurableExecutionFence({
+        expectedRevision: prepared.revision,
+        executionId: prepared.execution.executionId,
+      });
+      assert.equal(fenced.disposition, 'APPLIED');
+      assert.equal(fenced.execution.terminalClassification, 'NOT_INVOKED');
+      assert.equal(fenced.execution.terminalReason, scenario.reason);
+      const persistedRequest = store.getRequest({
+        grantId: activeGrant.grantId,
+        requestId: 'request.1',
+      });
+      assert.equal(persistedRequest.state, REQUEST_STATE.FAILED_RELEASED);
+      const persisted = readPersistedEnvelope(options(directory));
+      assert.equal(
+        persisted.envelope.ledgerState.requests.some(
+          entry => entry.state === REQUEST_STATE.OUTCOME_UNKNOWN,
+        ),
+        false,
+      );
+      assert.equal(persisted.envelope.ledgerState.grants[0].availableUnits, 10);
+      assert.equal(persisted.envelope.ledgerState.grants[0].heldUnits, 0);
+      store.close();
+    });
+  }
+});
+
+test('durable success and uncertainty have one persisted winner in either order', async t => {
+  for (const first of ['success', 'unknown']) {
+    await t.test(first, t => {
+      const directory = privateDirectoryFor(t);
+      const { activeGrant, store } = initializedStore(directory);
+      const initialized = store.initializeDurableExecution({
+        expectedRevision: store.getMetadata().revision,
+        ledgerId: `ledger.local.winner.${first}`,
+        policy: executionPolicy(),
+        capacity: 8,
+      });
+      const prepared = store.prepareDurableExecution({
+        expectedRevision: initialized.revision,
+        request: request(activeGrant.grantId),
+        selectedDurationMs: 1_000,
+      });
+      const fenced = store.persistDurableExecutionFence({
+        expectedRevision: prepared.revision,
+        executionId: prepared.execution.executionId,
+      });
+      const complete = revision => store.completeDurableExecution({
+        expectedRevision: revision,
+        executionId: fenced.execution.executionId,
+        cachedResult: result(),
+      });
+      const unknown = revision => store.markDurableExecutionUnknown({
+        expectedRevision: revision,
+        executionId: fenced.execution.executionId,
+        reason: 'LOST_CONTROL',
+      });
+      const winner = first === 'success' ? complete(fenced.revision) : unknown(fenced.revision);
+      const loser = first === 'success' ? unknown(winner.revision) : complete(winner.revision);
+      assert.equal(winner.disposition, 'APPLIED');
+      assert.equal(loser.disposition, 'UNCHANGED');
+      assert.equal(loser.winner, first === 'success' ? 'SUCCEEDED' : 'OUTCOME_UNKNOWN');
+      assert.equal(
+        store.getRequest({ grantId: activeGrant.grantId, requestId: 'request.1' }).state,
+        first === 'success' ? REQUEST_STATE.SUCCEEDED : REQUEST_STATE.OUTCOME_UNKNOWN,
+      );
+      assert.equal(
+        store.getDurableExecutionSnapshot().executionState.generation.state,
+        first === 'success' ? 'OPEN' : 'SEALED',
+      );
+      store.close();
+    });
+  }
+});
+
+test('explicit durable restart recovery classifies prepared, fenced, and terminal work', async t => {
+  for (const phase of ['prepared', 'fenced', 'succeeded']) {
+    await t.test(phase, t => {
+      const directory = privateDirectoryFor(t);
+      const { activeGrant, store } = initializedStore(directory);
+      const initialized = store.initializeDurableExecution({
+        expectedRevision: store.getMetadata().revision,
+        ledgerId: `ledger.local.recovery.${phase}`,
+        policy: executionPolicy(),
+        capacity: 8,
+      });
+      const prepared = store.prepareDurableExecution({
+        expectedRevision: initialized.revision,
+        request: request(activeGrant.grantId),
+        selectedDurationMs: 1_000,
+      });
+      let revision = prepared.revision;
+      let execution = prepared.execution;
+      if (phase !== 'prepared') {
+        const fenced = store.persistDurableExecutionFence({
+          expectedRevision: revision,
+          executionId: execution.executionId,
+        });
+        revision = fenced.revision;
+        execution = fenced.execution;
+      }
+      if (phase === 'succeeded') {
+        const completed = store.completeDurableExecution({
+          expectedRevision: revision,
+          executionId: execution.executionId,
+          cachedResult: result(),
+        });
+        revision = completed.revision;
+      }
+      store.close();
+
+      const reopened = ServiceCreditSqliteStore.openExisting(options(directory));
+      const recovered = reopened.recoverDurableExecutionsAfterRestart({
+        expectedRevision: revision,
+      });
+      const expectedDisposition = phase === 'succeeded' ? 'UNCHANGED' : 'APPLIED';
+      assert.equal(recovered.disposition, expectedDisposition);
+      assert.equal(recovered.noInvocationCount, phase === 'prepared' ? 1 : 0);
+      assert.equal(recovered.outcomeUnknownCount, phase === 'fenced' ? 1 : 0);
+      const storedRequest = reopened.getRequest({
+        grantId: activeGrant.grantId,
+        requestId: 'request.1',
+      });
+      assert.equal(storedRequest.state, {
+        prepared: REQUEST_STATE.FAILED_RELEASED,
+        fenced: REQUEST_STATE.OUTCOME_UNKNOWN,
+        succeeded: REQUEST_STATE.SUCCEEDED,
+      }[phase]);
+      reopened.close();
+    });
+  }
+});
+
+test('durable mode blocks every legacy request mutation before callbacks or revision changes', t => {
+  const directory = privateDirectoryFor(t);
+  let clockCalls = 0;
+  let pricingCalls = 0;
+  const { activeGrant, store } = initializedStore(directory, {
+    now: () => {
+      clockCalls += 1;
+      return NOW;
+    },
+    deriveCost: () => {
+      pricingCalls += 1;
+      return 3;
+    },
+  });
+  store.initializeDurableExecution({
+    expectedRevision: store.getMetadata().revision,
+    ledgerId: 'ledger.local.legacy-block',
+    policy: executionPolicy(),
+    capacity: 8,
+  });
+  const before = store.load();
+  const beforeClock = clockCalls;
+  const beforePricing = pricingCalls;
+  const reference = { grantId: activeGrant.grantId, requestId: 'request.1' };
+  const operations = [
+    () => store.reserveRequest(request(activeGrant.grantId)),
+    () => store.beginExecution(reference),
+    () => store.releaseBeforeExecution(reference),
+    () => store.completeExecution({ ...reference, cachedResult: result() }),
+    () => store.markOutcomeUnknown(reference),
+    () => store.reconcileRequest({ ...reference, outcome: REQUEST_STATE.FAILED_RELEASED }),
+  ];
+  for (const operation of operations) {
+    expectCode(operation, 'SERVICE_CREDIT_STORE_LEGACY_EXECUTION_MUTATION_BLOCKED');
+  }
+  assert.deepEqual(store.load(), before);
+  assert.equal(clockCalls, beforeClock);
+  assert.equal(pricingCalls, beforePricing);
+  store.close();
+});
+
+test('cross-process durable prepare, fence, and terminal races have one applied writer', async t => {
+  const directory = privateDirectoryFor(t);
+  const { activeGrant, store } = initializedStore(directory);
+  const initialized = store.initializeDurableExecution({
+    expectedRevision: store.getMetadata().revision,
+    ledgerId: 'ledger.local.process-race',
+    policy: executionPolicy(),
+    capacity: 8,
+  });
+  store.close();
+
+  const prepareInput = {
+    expectedRevision: initialized.revision,
+    request: request(activeGrant.grantId),
+    selectedDurationMs: 1_000,
+  };
+  const prepareRace = await runBarrierRace(directory, [
+    { kind: 'durablePrepare', input: prepareInput },
+    { kind: 'durablePrepare', input: prepareInput },
+  ]);
+  assert.deepEqual(
+    prepareRace.map(entry => entry.disposition).sort(),
+    ['APPLIED', 'STALE'],
+  );
+
+  let reopened = ServiceCreditSqliteStore.openExisting(options(directory));
+  let durable = reopened.getDurableExecutionSnapshot();
+  const executionId = durable.executionState.executions[0].executionId;
+  reopened.close();
+  const fenceInput = { expectedRevision: durable.revision, executionId };
+  const fenceRace = await runBarrierRace(directory, [
+    { kind: 'durableFence', input: fenceInput },
+    { kind: 'durableFence', input: fenceInput },
+  ]);
+  assert.deepEqual(
+    fenceRace.map(entry => entry.disposition).sort(),
+    ['APPLIED', 'STALE'],
+  );
+
+  reopened = ServiceCreditSqliteStore.openExisting(options(directory));
+  durable = reopened.getDurableExecutionSnapshot();
+  reopened.close();
+  const terminalRace = await runBarrierRace(directory, [
+    {
+      kind: 'durableComplete',
+      input: {
+        expectedRevision: durable.revision,
+        executionId,
+        cachedResult: result(),
+      },
+    },
+    {
+      kind: 'durableUnknown',
+      input: {
+        expectedRevision: durable.revision,
+        executionId,
+        reason: 'LOST_CONTROL',
+      },
+    },
+  ]);
+  assert.deepEqual(
+    terminalRace.map(entry => entry.disposition).sort(),
+    ['APPLIED', 'STALE'],
+  );
+  reopened = ServiceCreditSqliteStore.openExisting(options(directory));
+  const terminal = reopened.getDurableExecutionSnapshot().executionState.executions[0];
+  assert.equal(['SUCCEEDED', 'OUTCOME_UNKNOWN'].includes(terminal.terminalClassification), true);
+  reopened.close();
+});
+
+test('durable APIs reject wrong arity, accessors, proxies, and stale revisions without effects', t => {
+  const directory = privateDirectoryFor(t);
+  let clockCalls = 0;
+  let pricingCalls = 0;
+  const { activeGrant, store } = initializedStore(directory, {
+    now: () => {
+      clockCalls += 1;
+      return NOW;
+    },
+    deriveCost: () => {
+      pricingCalls += 1;
+      return 3;
+    },
+  });
+  const baseRevision = store.getMetadata().revision;
+  expectCode(
+    () => store.getDurableExecutionSnapshot(null),
+    'SERVICE_CREDIT_STORE_INVALID_EXECUTION_INPUT',
+  );
+  for (const invoke of [
+    () => store.initializeDurableExecution(),
+    () => store.prepareDurableExecution(),
+    () => store.persistDurableExecutionFence(),
+    () => store.completeDurableExecution(),
+    () => store.markDurableExecutionUnknown(),
+    () => store.recoverDurableExecutionsAfterRestart(),
+  ]) {
+    expectCode(invoke, 'SERVICE_CREDIT_STORE_INVALID_EXECUTION_INPUT');
+  }
+  const hostile = new Proxy({
+    expectedRevision: baseRevision,
+    ledgerId: 'ledger.local.hostile',
+    policy: executionPolicy(),
+    capacity: 8,
+  }, {});
+  expectCode(
+    () => store.initializeDurableExecution(hostile),
+    'SERVICE_CREDIT_STORE_INVALID_EXECUTION_INPUT',
+  );
+  const accessor = {
+    expectedRevision: baseRevision,
+    request: request(activeGrant.grantId),
+    selectedDurationMs: 1_000,
+  };
+  Object.defineProperty(accessor, 'request', {
+    enumerable: true,
+    get() { throw new Error('hostile-request-accessor'); },
+  });
+  expectCode(
+    () => store.prepareDurableExecution(accessor),
+    'SERVICE_CREDIT_STORE_INVALID_EXECUTION_INPUT',
+  );
+
+  const initialized = store.initializeDurableExecution({
+    expectedRevision: baseRevision,
+    ledgerId: 'ledger.local.strict-input',
+    policy: executionPolicy(),
+    capacity: 8,
+  });
+  const before = store.load();
+  const beforeClock = clockCalls;
+  const beforePricing = pricingCalls;
+  const stale = store.prepareDurableExecution({
+    expectedRevision: baseRevision,
+    request: request(activeGrant.grantId),
+    selectedDurationMs: 1_000,
+  });
+  assert.deepEqual(stale, {
+    disposition: 'STALE',
+    revision: initialized.revision,
+    request: null,
+    execution: null,
+  });
+  assert.deepEqual(store.load(), before);
+  assert.equal(clockCalls, beforeClock);
+  assert.equal(pricingCalls, beforePricing);
+  store.close();
+});
+
+test('durable receipts remain detached and frozen under inherited setter poisoning', t => {
+  const directory = privateDirectoryFor(t);
+  const store = ServiceCreditSqliteStore.create(options(directory));
+  let setterCalls = 0;
+  Object.defineProperty(Object.prototype, 'disposition', {
+    configurable: true,
+    set() { setterCalls += 1; },
+  });
+  Object.defineProperty(Array.prototype, '0', {
+    configurable: true,
+    set() { setterCalls += 1; },
+  });
+  try {
+    const initialized = store.initializeDurableExecution({
+      expectedRevision: 0,
+      ledgerId: 'ledger.local.setter-poison',
+      policy: executionPolicy(),
+      capacity: 8,
+    });
+    assert.equal(initialized.disposition, 'APPLIED');
+    assert.equal(Object.isFrozen(initialized), true);
+    assert.equal(Object.isFrozen(initialized.executionState.executions), true);
+    assert.equal(setterCalls, 0);
+  } finally {
+    delete Object.prototype.disposition;
+    delete Array.prototype[0];
+    store.close();
+  }
+});
+
+test('durable store-local snapshot and cross-link helpers use captured String and Set', t => {
+  const nullDirectory = privateDirectoryFor(t);
+  const durableDirectory = privateDirectoryFor(t);
+  const nullStore = ServiceCreditSqliteStore.create(options(nullDirectory));
+  const durableStore = ServiceCreditSqliteStore.create(options(durableDirectory));
+  const initialized = durableStore.initializeDurableExecution({
+    expectedRevision: 0,
+    ledgerId: 'ledger.local.intrinsic-differential',
+    policy: executionPolicy(),
+    capacity: 8,
+  });
+  const originalStringDescriptor = Object.getOwnPropertyDescriptor(globalThis, 'String');
+  const originalSetDescriptor = Object.getOwnPropertyDescriptor(globalThis, 'Set');
+  const OriginalString = globalThis.String;
+  const OriginalSet = globalThis.Set;
+  let stringHookCalls = 0;
+  let setHookCalls = 0;
+  let nullHydrationSetCalls;
+  let durableHydrationSetCalls;
+  Object.defineProperty(globalThis, 'Set', {
+    ...originalSetDescriptor,
+    value: function PoisonedSet(iterable) {
+      setHookCalls += 1;
+      return new OriginalSet(iterable);
+    },
+  });
+  try {
+    nullStore.getMetadata();
+    nullHydrationSetCalls = setHookCalls;
+    setHookCalls = 0;
+    durableStore.getMetadata();
+    durableHydrationSetCalls = setHookCalls;
+  } finally {
+    Object.defineProperty(globalThis, 'Set', originalSetDescriptor);
+  }
+  assert.equal(durableHydrationSetCalls, nullHydrationSetCalls);
+
+  durableStore.registerOffer(offer());
+  const activeGrant = durableStore.activateGrantFromTrustedRecord(grant());
+  const prepared = durableStore.prepareDurableExecution({
+    expectedRevision: durableStore.getMetadata().revision,
+    request: request(activeGrant.grantId),
+    selectedDurationMs: 1_000,
+  });
+  let metadataStringCalls;
+  let snapshotStringCalls;
+  let snapshot;
+  Object.defineProperty(globalThis, 'String', {
+    ...originalStringDescriptor,
+    value(value) {
+      stringHookCalls += 1;
+      return OriginalString(value);
+    },
+  });
+  try {
+    durableStore.getMetadata();
+    metadataStringCalls = stringHookCalls;
+    stringHookCalls = 0;
+    snapshot = durableStore.getDurableExecutionSnapshot();
+    snapshotStringCalls = stringHookCalls;
+  } finally {
+    Object.defineProperty(globalThis, 'String', originalStringDescriptor);
+    nullStore.close();
+    durableStore.close();
+  }
+  assert.equal(snapshotStringCalls, metadataStringCalls);
+  assert.equal(prepared.disposition, 'APPLIED');
+  assert.equal(prepared.request.state, REQUEST_STATE.EXECUTING);
+  assert.equal(snapshot.executionState.executions.length, 1);
+  assert.equal(Object.isFrozen(snapshot.executionState.executions), true);
+});
+
+test('every durable mutation rolls back before commit and quarantines after ambiguous acknowledgement', async t => {
+  const operations = [
+    'initializeDurableExecution',
+    'prepareDurableExecution',
+    'persistDurableExecutionFence',
+    'completeDurableExecution',
+    'markDurableExecutionUnknown',
+    'recoverDurableExecutionsAfterRestart',
+  ];
+
+  function scenario(directory, target, testHooks) {
+    const configuration = options(directory, { testHooks });
+    const { activeGrant, store } = initializedStore(directory, { testHooks });
+    let initialized;
+    let prepared;
+    let fenced;
+    if (target !== 'initializeDurableExecution') {
+      initialized = store.initializeDurableExecution({
+        expectedRevision: store.getMetadata().revision,
+        ledgerId: `ledger.local.fault.${target}`,
+        policy: executionPolicy(),
+        capacity: 8,
+      });
+    }
+    if (!['initializeDurableExecution', 'prepareDurableExecution'].includes(target)) {
+      prepared = store.prepareDurableExecution({
+        expectedRevision: initialized.revision,
+        request: request(activeGrant.grantId),
+        selectedDurationMs: 1_000,
+      });
+    }
+    if (['completeDurableExecution', 'markDurableExecutionUnknown'].includes(target)) {
+      fenced = store.persistDurableExecutionFence({
+        expectedRevision: prepared.revision,
+        executionId: prepared.execution.executionId,
+      });
+    }
+    const invoke = {
+      initializeDurableExecution: () => store.initializeDurableExecution({
+        expectedRevision: store.getMetadata().revision,
+        ledgerId: 'ledger.local.fault.initialize',
+        policy: executionPolicy(),
+        capacity: 8,
+      }),
+      prepareDurableExecution: () => store.prepareDurableExecution({
+        expectedRevision: initialized.revision,
+        request: request(activeGrant.grantId),
+        selectedDurationMs: 1_000,
+      }),
+      persistDurableExecutionFence: () => store.persistDurableExecutionFence({
+        expectedRevision: prepared.revision,
+        executionId: prepared.execution.executionId,
+      }),
+      completeDurableExecution: () => store.completeDurableExecution({
+        expectedRevision: fenced.revision,
+        executionId: fenced.execution.executionId,
+        cachedResult: result(),
+      }),
+      markDurableExecutionUnknown: () => store.markDurableExecutionUnknown({
+        expectedRevision: fenced.revision,
+        executionId: fenced.execution.executionId,
+        reason: 'LOST_CONTROL',
+      }),
+      recoverDurableExecutionsAfterRestart: () => store.recoverDurableExecutionsAfterRestart({
+        expectedRevision: prepared.revision,
+      }),
+    }[target];
+    return { configuration, invoke, store };
+  }
+
+  for (const phase of ['beforeCommit', 'afterCommit']) {
+    for (const operation of operations) {
+      await t.test(`${operation} ${phase}`, t => {
+        const directory = privateDirectoryFor(t);
+        let armed = false;
+        const hooks = {
+          [phase]({ operation: observed, changed }) {
+            if (!armed || observed !== operation) return;
+            assert.equal(changed, true);
+            throw new Error('synthetic-durable-commit-boundary');
+          },
+        };
+        const candidate = scenario(directory, operation, hooks);
+        const before = readPersistedEnvelope(candidate.configuration);
+        armed = true;
+        expectCode(
+          candidate.invoke,
+          phase === 'beforeCommit'
+            ? 'SERVICE_CREDIT_STORE_CALLBACK_FAILED'
+            : 'SERVICE_CREDIT_STORE_COMMIT_FAILED',
+        );
+        armed = false;
+        if (phase === 'beforeCommit') {
+          assert.deepEqual(readPersistedEnvelope(candidate.configuration), before);
+          candidate.store.close();
+        } else {
+          expectCode(
+            () => candidate.store.getDurableExecutionSnapshot(),
+            'SERVICE_CREDIT_STORE_CLOSED',
+          );
+          const reopened = ServiceCreditSqliteStore.openExisting(candidate.configuration);
+          assert.equal(reopened.getMetadata().revision, before.envelope.revision + 1);
+          assert.notDeepEqual(readPersistedEnvelope(candidate.configuration), before);
+          reopened.close();
+        }
+      });
+    }
+  }
+});
+
+test('durable initialization and capacity guards fail closed without automatic activation', async t => {
+  await t.test('disabled until explicit initialization', t => {
+    const directory = privateDirectoryFor(t);
+    const { activeGrant, store } = initializedStore(directory);
+    const before = store.load();
+    expectCode(
+      () => store.prepareDurableExecution({
+        expectedRevision: before.revision,
+        request: request(activeGrant.grantId),
+        selectedDurationMs: 1_000,
+      }),
+      'SERVICE_CREDIT_STORE_DURABLE_EXECUTION_DISABLED',
+    );
+    assert.deepEqual(store.load(), before);
+    store.close();
+  });
+
+  await t.test('initialization replay and conflict', t => {
+    const directory = privateDirectoryFor(t);
+    const store = ServiceCreditSqliteStore.create(options(directory));
+    const first = store.initializeDurableExecution({
+      expectedRevision: 0,
+      ledgerId: 'ledger.local.initialization',
+      policy: executionPolicy(),
+      capacity: 8,
+    });
+    const replay = store.initializeDurableExecution({
+      expectedRevision: first.revision,
+      ledgerId: 'ledger.local.initialization',
+      policy: executionPolicy(),
+      capacity: 8,
+    });
+    assert.equal(replay.disposition, 'UNCHANGED');
+    expectCode(
+      () => store.initializeDurableExecution({
+        expectedRevision: first.revision,
+        ledgerId: 'ledger.local.changed',
+        policy: executionPolicy(),
+        capacity: 8,
+      }),
+      'SERVICE_CREDIT_STORE_EXECUTION_CONFLICT',
+    );
+    store.close();
+  });
+
+  for (const unresolvedState of [REQUEST_STATE.EXECUTING, REQUEST_STATE.OUTCOME_UNKNOWN]) {
+    await t.test(`legacy ${unresolvedState}`, t => {
+      const directory = privateDirectoryFor(t);
+      const { activeGrant, store } = initializedStore(directory);
+      const reference = { grantId: activeGrant.grantId, requestId: 'request.1' };
+      store.reserveRequest(request(activeGrant.grantId));
+      store.beginExecution(reference);
+      if (unresolvedState === REQUEST_STATE.OUTCOME_UNKNOWN) {
+        store.markOutcomeUnknown(reference);
+      }
+      const before = store.load();
+      expectCode(
+        () => store.initializeDurableExecution({
+          expectedRevision: before.revision,
+          ledgerId: `ledger.local.unsafe.${unresolvedState.toLowerCase()}`,
+          policy: executionPolicy(),
+          capacity: 8,
+        }),
+        'SERVICE_CREDIT_STORE_EXECUTION_INITIALIZATION_UNSAFE',
+      );
+      assert.deepEqual(store.load(), before);
+      store.close();
+    });
+  }
+
+  await t.test('configured and execution capacity', t => {
+    const directory = privateDirectoryFor(t);
+    const { activeGrant, store } = initializedStore(directory, { maxRequests: 1 });
+    const revision = store.getMetadata().revision;
+    expectCode(
+      () => store.initializeDurableExecution({
+        expectedRevision: revision,
+        ledgerId: 'ledger.local.too-large',
+        policy: executionPolicy(),
+        capacity: 2,
+      }),
+      'SERVICE_CREDIT_STORE_CAPACITY_EXCEEDED',
+    );
+    const initialized = store.initializeDurableExecution({
+      expectedRevision: revision,
+      ledgerId: 'ledger.local.capacity',
+      policy: executionPolicy(),
+      capacity: 1,
+    });
+    const prepared = store.prepareDurableExecution({
+      expectedRevision: initialized.revision,
+      request: request(activeGrant.grantId),
+      selectedDurationMs: 1_000,
+    });
+    const fenced = store.persistDurableExecutionFence({
+      expectedRevision: prepared.revision,
+      executionId: prepared.execution.executionId,
+    });
+    const completed = store.completeDurableExecution({
+      expectedRevision: fenced.revision,
+      executionId: fenced.execution.executionId,
+      cachedResult: result(),
+    });
+    const before = store.load();
+    expectCode(
+      () => store.prepareDurableExecution({
+        expectedRevision: completed.revision,
+        request: request(activeGrant.grantId, { requestId: 'request.2' }),
+        selectedDurationMs: 1_000,
+      }),
+      'SERVICE_CREDIT_STORE_CAPACITY_EXCEEDED',
+    );
+    assert.deepEqual(store.load(), before);
+    store.close();
+  });
+});
+
+test('durable initialization requires a clean cutover with no legacy reservation', async t => {
+  const scenarios = [
+    { name: 'active grant' },
+    { name: 'revoked grant', revoke: true },
+    { name: 'expired grant', expire: true },
+    { name: 'execution capacity constrained', maxRequests: 1, capacity: 1 },
+  ];
+  for (const scenario of scenarios) {
+    await t.test(scenario.name, t => {
+      const directory = privateDirectoryFor(t);
+      let now = NOW;
+      let clockCalls = 0;
+      let pricingCalls = 0;
+      const { activeGrant, store } = initializedStore(directory, {
+        maxRequests: scenario.maxRequests,
+        now: () => {
+          clockCalls += 1;
+          return now;
+        },
+        deriveCost: () => {
+          pricingCalls += 1;
+          return 3;
+        },
+      }, scenario.expire ? { expiresAt: NOW + 1 } : {});
+      const reference = { grantId: activeGrant.grantId, requestId: 'request.1' };
+      store.reserveRequest(request(activeGrant.grantId));
+      if (scenario.revoke) store.revokeGrant({ grantId: activeGrant.grantId });
+      if (scenario.expire) now = NOW + 2;
+      const before = store.load();
+      const beforeClock = clockCalls;
+      const beforePricing = pricingCalls;
+      expectCode(
+        () => store.initializeDurableExecution({
+          expectedRevision: before.revision,
+          ledgerId: `ledger.local.clean-cutover.${scenario.name.replaceAll(' ', '.')}`,
+          policy: executionPolicy(),
+          capacity: scenario.capacity ?? 8,
+        }),
+        'SERVICE_CREDIT_STORE_EXECUTION_INITIALIZATION_UNSAFE',
+      );
+      assert.deepEqual(store.load(), before);
+      assert.equal(clockCalls, beforeClock);
+      assert.equal(pricingCalls, beforePricing);
+      assert.equal(store.getRequest(reference).state, REQUEST_STATE.RESERVED);
+      const released = store.releaseBeforeExecution(reference);
+      assert.equal(released.request.state, REQUEST_STATE.FAILED_RELEASED);
+      const grantState = store.getGrant(activeGrant.grantId);
+      assert.equal(grantState.availableUnits, 10);
+      assert.equal(grantState.heldUnits, 0);
+      assert.equal(grantState.consumedUnits, 0);
+      store.close();
+    });
+  }
+
+  await t.test('two concurrent handles reject without activating or stranding the hold', async t => {
+    const directory = privateDirectoryFor(t);
+    const { activeGrant, store } = initializedStore(directory);
+    const reference = { grantId: activeGrant.grantId, requestId: 'request.1' };
+    store.reserveRequest(request(activeGrant.grantId));
+    const before = store.load();
+    store.close();
+    const initialization = {
+      expectedRevision: before.revision,
+      ledgerId: 'ledger.local.clean-cutover.concurrent',
+      policy: executionPolicy(),
+      capacity: 8,
+    };
+    const responses = await runBarrierRace(directory, [
+      { kind: 'durableInitialize', input: initialization },
+      { kind: 'durableInitialize', input: initialization },
+    ]);
+    assert.deepEqual(responses, [
+      { ok: false, code: 'SERVICE_CREDIT_STORE_EXECUTION_INITIALIZATION_UNSAFE' },
+      { ok: false, code: 'SERVICE_CREDIT_STORE_EXECUTION_INITIALIZATION_UNSAFE' },
+    ]);
+    const reopened = ServiceCreditSqliteStore.openExisting(options(directory));
+    assert.deepEqual(reopened.load(), before);
+    assert.equal(reopened.getDurableExecutionSnapshot().executionState, null);
+    const released = reopened.releaseBeforeExecution(reference);
+    assert.equal(released.request.state, REQUEST_STATE.FAILED_RELEASED);
+    assert.equal(reopened.getGrant(activeGrant.grantId).heldUnits, 0);
+    reopened.close();
+  });
+
+  await t.test('hydration rejects a durable compound state with an unlinked reservation', t => {
+    const directory = privateDirectoryFor(t);
+    const reservedConfiguration = options(directory, {
+      databasePath: join(directory, 'reserved.sqlite'),
+    });
+    const { activeGrant, store } = initializedStore(directory, {
+      databasePath: reservedConfiguration.databasePath,
+    });
+    store.reserveRequest(request(activeGrant.grantId));
+    store.close();
+
+    const emptyDirectory = privateDirectoryFor(t);
+    const emptyConfiguration = options(emptyDirectory);
+    const emptyStore = ServiceCreditSqliteStore.create(emptyConfiguration);
+    const initialized = emptyStore.initializeDurableExecution({
+      expectedRevision: 0,
+      ledgerId: 'ledger.local.clean-cutover.corrupt',
+      policy: executionPolicy(),
+      capacity: 8,
+    });
+    emptyStore.close();
+
+    const persisted = readPersistedEnvelope(reservedConfiguration);
+    persisted.envelope.executionState = initialized.executionState;
+    persisted.envelope.checksum = physicalV2ChecksumFor(
+      persisted.envelope.physicalVersion,
+      persisted.envelope.revision,
+      persisted.envelope.ledgerState,
+      persisted.envelope.executionState,
+    );
+    writePersistedEnvelope(reservedConfiguration, 2, canonicalJson(persisted.envelope));
+    expectCode(
+      () => ServiceCreditSqliteStore.openExisting(reservedConfiguration),
+      'SERVICE_CREDIT_STORE_CORRUPT',
+    );
+  });
+});
+
+test('durable preparation validates duration before clock and pricing effects', async t => {
+  await t.test('stale and replay or conflict precedence remains pre-effect', t => {
+    const directory = privateDirectoryFor(t);
+    let clockCalls = 0;
+    let pricingCalls = 0;
+    const { activeGrant, store } = initializedStore(directory, {
+      now: () => {
+        clockCalls += 1;
+        return NOW;
+      },
+      deriveCost: () => {
+        pricingCalls += 1;
+        return 3;
+      },
+    });
+    const baseRevision = store.getMetadata().revision;
+    const initialized = store.initializeDurableExecution({
+      expectedRevision: baseRevision,
+      ledgerId: 'ledger.local.duration-precedence',
+      policy: executionPolicy({ maxDurationMs: 1_000 }),
+      capacity: 8,
+    });
+    const input = request(activeGrant.grantId);
+    const beforeStaleClock = clockCalls;
+    const beforeStalePricing = pricingCalls;
+    const stale = store.prepareDurableExecution({
+      expectedRevision: baseRevision,
+      request: input,
+      selectedDurationMs: 1_001,
+    });
+    assert.equal(stale.disposition, 'STALE');
+    assert.equal(clockCalls, beforeStaleClock);
+    assert.equal(pricingCalls, beforeStalePricing);
+
+    const prepared = store.prepareDurableExecution({
+      expectedRevision: initialized.revision,
+      request: input,
+      selectedDurationMs: 1_000,
+    });
+    const beforeReplay = store.load();
+    const beforeReplayClock = clockCalls;
+    const beforeReplayPricing = pricingCalls;
+    assert.equal(store.prepareDurableExecution({
+      expectedRevision: prepared.revision,
+      request: input,
+      selectedDurationMs: 1_000,
+    }).disposition, 'UNCHANGED');
+    expectCode(
+      () => store.prepareDurableExecution({
+        expectedRevision: prepared.revision,
+        request: { ...input, canonicalBodyDigest: digest('c') },
+        selectedDurationMs: 1_001,
+      }),
+      'REQUEST_ID_CONFLICT',
+    );
+    expectCode(
+      () => store.prepareDurableExecution({
+        expectedRevision: prepared.revision,
+        request: input,
+        selectedDurationMs: 1_001,
+      }),
+      'SERVICE_CREDIT_STORE_EXECUTION_CONFLICT',
+    );
+    assert.deepEqual(store.load(), beforeReplay);
+    assert.equal(clockCalls, beforeReplayClock);
+    assert.equal(pricingCalls, beforeReplayPricing);
+    store.close();
+  });
+
+  await t.test('over-policy duration performs zero callbacks or writes', t => {
+    const directory = privateDirectoryFor(t);
+    let clockCalls = 0;
+    let pricingCalls = 0;
+    const { activeGrant, store } = initializedStore(directory, {
+      now: () => {
+        clockCalls += 1;
+        return NOW;
+      },
+      deriveCost: () => {
+        pricingCalls += 1;
+        return 3;
+      },
+    });
+    const initialized = store.initializeDurableExecution({
+      expectedRevision: store.getMetadata().revision,
+      ledgerId: 'ledger.local.duration-over-policy',
+      policy: executionPolicy({ maxDurationMs: 1_000 }),
+      capacity: 8,
+    });
+    const before = store.load();
+    const beforeClock = clockCalls;
+    const beforePricing = pricingCalls;
+    expectCode(
+      () => store.prepareDurableExecution({
+        expectedRevision: initialized.revision,
+        request: request(activeGrant.grantId),
+        selectedDurationMs: 1_001,
+      }),
+      'SERVICE_CREDIT_STORE_INVALID_EXECUTION_INPUT',
+    );
+    assert.deepEqual(store.load(), before);
+    assert.equal(clockCalls, beforeClock);
+    assert.equal(pricingCalls, beforePricing);
+    store.close();
+  });
+
+  await t.test('deadline overflow performs one clock callback and zero pricing or writes', t => {
+    const directory = privateDirectoryFor(t);
+    let now = NOW;
+    let clockCalls = 0;
+    let pricingCalls = 0;
+    const { activeGrant, store } = initializedStore(directory, {
+      now: () => {
+        clockCalls += 1;
+        return now;
+      },
+      deriveCost: () => {
+        pricingCalls += 1;
+        return 3;
+      },
+    }, { expiresAt: Number.MAX_SAFE_INTEGER });
+    const initialized = store.initializeDurableExecution({
+      expectedRevision: store.getMetadata().revision,
+      ledgerId: 'ledger.local.duration-overflow',
+      policy: executionPolicy(),
+      capacity: 8,
+    });
+    now = Number.MAX_SAFE_INTEGER - 1;
+    const before = store.load();
+    const beforeClock = clockCalls;
+    const beforePricing = pricingCalls;
+    expectCode(
+      () => store.prepareDurableExecution({
+        expectedRevision: initialized.revision,
+        request: request(activeGrant.grantId),
+        selectedDurationMs: 2,
+      }),
+      'SERVICE_CREDIT_STORE_INVALID_EXECUTION_INPUT',
+    );
+    assert.deepEqual(store.load(), before);
+    assert.equal(clockCalls, beforeClock + 1);
+    assert.equal(pricingCalls, beforePricing);
+    store.close();
+  });
+});
+
+test('durable recovery and completion races honor the expected compound revision', async t => {
+  for (const winner of ['recovery', 'completion']) {
+    await t.test(winner, t => {
+      const directory = privateDirectoryFor(t);
+      const { activeGrant, store } = initializedStore(directory);
+      const initialized = store.initializeDurableExecution({
+        expectedRevision: store.getMetadata().revision,
+        ledgerId: `ledger.local.recovery-race.${winner}`,
+        policy: executionPolicy(),
+        capacity: 8,
+      });
+      const prepared = store.prepareDurableExecution({
+        expectedRevision: initialized.revision,
+        request: request(activeGrant.grantId),
+        selectedDurationMs: 1_000,
+      });
+      const fenced = store.persistDurableExecutionFence({
+        expectedRevision: prepared.revision,
+        executionId: prepared.execution.executionId,
+      });
+      store.close();
+
+      const first = ServiceCreditSqliteStore.openExisting(options(directory));
+      const second = ServiceCreditSqliteStore.openExisting(options(directory));
+      const recover = candidate => candidate.recoverDurableExecutionsAfterRestart({
+        expectedRevision: fenced.revision,
+      });
+      const complete = candidate => candidate.completeDurableExecution({
+        expectedRevision: fenced.revision,
+        executionId: fenced.execution.executionId,
+        cachedResult: result(),
+      });
+      const applied = winner === 'recovery' ? recover(first) : complete(first);
+      const stale = winner === 'recovery' ? complete(second) : recover(second);
+      assert.equal(applied.disposition, 'APPLIED');
+      assert.equal(stale.disposition, 'STALE');
+      const requestState = first.getRequest({
+        grantId: activeGrant.grantId,
+        requestId: 'request.1',
+      });
+      assert.equal(
+        requestState.state,
+        winner === 'recovery' ? REQUEST_STATE.OUTCOME_UNKNOWN : REQUEST_STATE.SUCCEEDED,
+      );
+      first.close();
+      second.close();
+    });
+  }
+});
+
+test('durable compound cross-links and result commitments reject checksum-valid corruption', async t => {
+  async function fixture(name, terminal = false) {
+    const directory = privateDirectoryFor(t);
+    const configuration = options(directory, { databasePath: join(directory, `${name}.sqlite`) });
+    const store = ServiceCreditSqliteStore.create(configuration);
+    store.registerOffer(offer());
+    const activeGrant = store.activateGrantFromTrustedRecord(grant({
+      transactionId: `transaction.${name}`,
+    }));
+    const initialized = store.initializeDurableExecution({
+      expectedRevision: store.getMetadata().revision,
+      ledgerId: `ledger.local.corrupt.${name}`,
+      policy: executionPolicy(),
+      capacity: 8,
+    });
+    const prepared = store.prepareDurableExecution({
+      expectedRevision: initialized.revision,
+      request: request(activeGrant.grantId),
+      selectedDurationMs: 1_000,
+    });
+    if (terminal) {
+      const fenced = store.persistDurableExecutionFence({
+        expectedRevision: prepared.revision,
+        executionId: prepared.execution.executionId,
+      });
+      store.completeDurableExecution({
+        expectedRevision: fenced.revision,
+        executionId: fenced.execution.executionId,
+        cachedResult: result(),
+      });
+    }
+    store.close();
+    return configuration;
+  }
+
+  await t.test('ledger state mismatch', async () => {
+    const configuration = await fixture('ledger-mismatch');
+    const persisted = readPersistedEnvelope(configuration);
+    persisted.envelope.ledgerState.requests[0].state = REQUEST_STATE.RESERVED;
+    persisted.envelope.checksum = physicalV2ChecksumFor(
+      persisted.envelope.physicalVersion,
+      persisted.envelope.revision,
+      persisted.envelope.ledgerState,
+      persisted.envelope.executionState,
+    );
+    writePersistedEnvelope(configuration, 2, canonicalJson(persisted.envelope));
+    expectCode(
+      () => ServiceCreditSqliteStore.openExisting(configuration),
+      'SERVICE_CREDIT_STORE_CORRUPT',
+    );
+  });
+
+  await t.test('duplicate execution', async () => {
+    const configuration = await fixture('duplicate-execution');
+    const persisted = readPersistedEnvelope(configuration);
+    persisted.envelope.executionState.executions.push(
+      structuredClone(persisted.envelope.executionState.executions[0]),
+    );
+    persisted.envelope.checksum = physicalV2ChecksumFor(
+      persisted.envelope.physicalVersion,
+      persisted.envelope.revision,
+      persisted.envelope.ledgerState,
+      persisted.envelope.executionState,
+    );
+    writePersistedEnvelope(configuration, 2, canonicalJson(persisted.envelope));
+    expectCode(
+      () => ServiceCreditSqliteStore.openExisting(configuration),
+      'SERVICE_CREDIT_STORE_CORRUPT',
+    );
+  });
+
+  await t.test('result commitment mismatch', async () => {
+    const configuration = await fixture('result-mismatch', true);
+    const persisted = readPersistedEnvelope(configuration);
+    persisted.envelope.executionState.executions[0].resultCommitment = digest('f');
+    persisted.envelope.checksum = physicalV2ChecksumFor(
+      persisted.envelope.physicalVersion,
+      persisted.envelope.revision,
+      persisted.envelope.ledgerState,
+      persisted.envelope.executionState,
+    );
+    writePersistedEnvelope(configuration, 2, canonicalJson(persisted.envelope));
+    expectCode(
+      () => ServiceCreditSqliteStore.openExisting(configuration),
+      'SERVICE_CREDIT_STORE_CORRUPT',
+    );
+  });
+});
+
+test('durable revision exhaustion and sealed admission fail without mutation', async t => {
+  await t.test('revision exhaustion', t => {
+    const directory = privateDirectoryFor(t);
+    const configuration = options(directory);
+    const store = ServiceCreditSqliteStore.create(configuration);
+    store.close();
+    const persisted = readPersistedEnvelope(configuration);
+    persisted.envelope.revision = Number.MAX_SAFE_INTEGER;
+    persisted.envelope.checksum = physicalV2ChecksumFor(
+      persisted.envelope.physicalVersion,
+      persisted.envelope.revision,
+      persisted.envelope.ledgerState,
+      persisted.envelope.executionState,
+    );
+    writePersistedEnvelope(configuration, 2, canonicalJson(persisted.envelope));
+    const reopened = ServiceCreditSqliteStore.openExisting(configuration);
+    const before = readPersistedEnvelope(configuration);
+    expectCode(
+      () => reopened.initializeDurableExecution({
+        expectedRevision: Number.MAX_SAFE_INTEGER,
+        ledgerId: 'ledger.local.revision-max',
+        policy: executionPolicy(),
+        capacity: 8,
+      }),
+      'SERVICE_CREDIT_STORE_CAPACITY_EXCEEDED',
+    );
+    assert.deepEqual(readPersistedEnvelope(configuration), before);
+    reopened.close();
+  });
+
+  await t.test('sealed generation', t => {
+    const directory = privateDirectoryFor(t);
+    const { activeGrant, store } = initializedStore(directory);
+    const initialized = store.initializeDurableExecution({
+      expectedRevision: store.getMetadata().revision,
+      ledgerId: 'ledger.local.sealed',
+      policy: executionPolicy(),
+      capacity: 8,
+    });
+    const prepared = store.prepareDurableExecution({
+      expectedRevision: initialized.revision,
+      request: request(activeGrant.grantId),
+      selectedDurationMs: 1_000,
+    });
+    const fenced = store.persistDurableExecutionFence({
+      expectedRevision: prepared.revision,
+      executionId: prepared.execution.executionId,
+    });
+    const unknown = store.markDurableExecutionUnknown({
+      expectedRevision: fenced.revision,
+      executionId: fenced.execution.executionId,
+      reason: 'LOST_CONTROL',
+    });
+    const before = store.load();
+    expectCode(
+      () => store.prepareDurableExecution({
+        expectedRevision: unknown.revision,
+        request: request(activeGrant.grantId, { requestId: 'request.2' }),
+        selectedDurationMs: 1_000,
+      }),
+      'SERVICE_CREDIT_STORE_EXECUTION_GENERATION_SEALED',
+    );
+    assert.deepEqual(store.load(), before);
+    store.close();
+  });
+});
+
+test('durable receipts expose no invocation authority and admin writes preserve execution state', t => {
+  const directory = privateDirectoryFor(t);
+  const { activeGrant, store } = initializedStore(directory);
+  const initialized = store.initializeDurableExecution({
+    expectedRevision: store.getMetadata().revision,
+    ledgerId: 'ledger.local.no-authority',
+    policy: executionPolicy(),
+    capacity: 8,
+  });
+  const prepared = store.prepareDurableExecution({
+    expectedRevision: initialized.revision,
+    request: request(activeGrant.grantId),
+    selectedDurationMs: 1_000,
+  });
+  const fenced = store.persistDurableExecutionFence({
+    expectedRevision: prepared.revision,
+    executionId: prepared.execution.executionId,
+  });
+  const serialized = JSON.stringify({ initialized, prepared, fenced });
+  assert.equal(/authoriz|permission|token/i.test(serialized), false);
+  const beforeExecution = store.getDurableExecutionSnapshot().executionState;
+  const revoked = store.revokeGrant({ grantId: activeGrant.grantId });
+  assert.equal(revoked.lifecycle, GRANT_LIFECYCLE.REVOKED);
+  const after = store.getDurableExecutionSnapshot();
+  assert.deepEqual(after.executionState, beforeExecution);
+  assert.equal(after.revision, fenced.revision + 1);
+  store.close();
+});
+
+test('durable SQLite integration exposes only the reviewed inert store boundary', () => {
+  const durableMethods = Object.getOwnPropertyNames(ServiceCreditSqliteStore.prototype)
+    .filter(name => name === 'getDurableExecutionSnapshot' || name.includes('DurableExecution'))
+    .sort();
+  assert.deepEqual(durableMethods, [
+    'completeDurableExecution',
+    'getDurableExecutionSnapshot',
+    'initializeDurableExecution',
+    'markDurableExecutionUnknown',
+    'persistDurableExecutionFence',
+    'prepareDurableExecution',
+    'recoverDurableExecutionsAfterRestart',
+  ]);
+
+  const source = readFileSync(
+    new URL('../src/service-credit-sqlite-store.js', import.meta.url),
+    'utf8',
+  );
+  assert.doesNotMatch(
+    source,
+    /from ['"]node:(?:http|https|net|tls|timers|worker_threads|child_process)['"];/,
+  );
+  assert.doesNotMatch(source, /\bprocess\.(?:on|once|addListener|env)\b/);
+  assert.doesNotMatch(source, /\bset(?:Timeout|Interval|Immediate)\s*\(/);
 });
