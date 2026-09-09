@@ -1203,9 +1203,23 @@ test('source closure, active paths, output, package surface, and docs stay bound
     true,
   );
   assert.equal(
-    readme.includes('synthetic loopback and durable loopback demos are its only package-script callers'),
+    readme.includes('synthetic loopback and durable loopback demos plus the bounded durable local-load pilot are its only package-script paths'),
     true,
   );
+  assert.equal(
+    packageJson.scripts['pilot:service-credit-durable-local-load'],
+    'node src/service-credit-durable-local-load-pilot-cli.js',
+  );
+  const loadPilotSource = readFileSync(
+    join(ROOT, 'src/service-credit-durable-local-load-pilot.js'),
+    'utf8',
+  );
+  const loadPilotCliSource = readFileSync(
+    join(ROOT, 'src/service-credit-durable-local-load-pilot-cli.js'),
+    'utf8',
+  );
+  assert.equal(loadPilotSource.includes('./service-credit-durable-loopback-demo.js'), true);
+  assert.equal(loadPilotCliSource.includes('./service-credit-durable-local-load-pilot.js'), true);
   assert.equal(readme.includes('fixed two-second deadline'), true);
   assert.equal(readme.includes('not a benchmark'), true);
   assert.equal(readme.includes('performs no wallet, RPC, blockchain, live settlement, or live x402 operation'), true);
