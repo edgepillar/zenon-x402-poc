@@ -2237,6 +2237,7 @@ test('durable prepare, fence, completion, replay, and public projection converge
   });
   assert.equal(completed.disposition, 'APPLIED');
   assert.equal(completed.winner, 'SUCCEEDED');
+  assert.equal(completed.completionWallClockNowMs, now);
   assert.equal(completed.request.state, REQUEST_STATE.SUCCEEDED);
   assert.match(completed.execution.resultCommitment, /^sha256:[0-9a-f]{64}$/);
 
@@ -2247,6 +2248,7 @@ test('durable prepare, fence, completion, replay, and public projection converge
   });
   assert.equal(replay.disposition, 'UNCHANGED');
   assert.equal(replay.winner, 'SUCCEEDED');
+  assert.equal(replay.completionWallClockNowMs, null);
   assert.equal(replay.revision, completed.revision);
   const requestReplay = store.prepareDurableExecution({
     expectedRevision: completed.revision,
@@ -2255,7 +2257,7 @@ test('durable prepare, fence, completion, replay, and public projection converge
   });
   assert.equal(requestReplay.disposition, 'UNCHANGED');
   assert.equal(requestReplay.execution.terminalClassification, 'SUCCEEDED');
-  assert.equal(clockCalls, callsBeforePrepare + 2);
+  assert.equal(clockCalls, callsBeforePrepare + 3);
 
   const projection = store.load();
   assert.equal(projection.revision, completed.revision);
@@ -2368,6 +2370,166 @@ test('durable success and uncertainty have one persisted winner in either order'
       store.close();
     });
   }
+});
+
+test('durable fence and completion expose transactional clock evidence and reject late success', t => {
+  const directory = privateDirectoryFor(t);
+  let now = NOW;
+  let clockCalls = 0;
+  const { activeGrant, store } = initializedStore(directory, {
+    now: () => {
+      clockCalls += 1;
+      return now;
+    },
+  });
+  const initialized = store.initializeDurableExecution({
+    expectedRevision: store.getMetadata().revision,
+    ledgerId: 'ledger.local.transaction-clock',
+    policy: executionPolicy(),
+    capacity: 8,
+  });
+  const prepared = store.prepareDurableExecution({
+    expectedRevision: initialized.revision,
+    request: request(activeGrant.grantId),
+    selectedDurationMs: 1_000,
+  });
+  now = NOW + 1;
+  const fenced = store.persistDurableExecutionFence({
+    expectedRevision: prepared.revision,
+    executionId: prepared.execution.executionId,
+  });
+  assert.deepEqual(Reflect.ownKeys(fenced), [
+    'disposition',
+    'revision',
+    'fenceWallClockNowMs',
+    'execution',
+  ]);
+  assert.equal(Object.isFrozen(fenced), true);
+  assert.equal(Object.isFrozen(fenced.execution), true);
+  assert.equal(fenced.fenceWallClockNowMs, NOW + 1);
+
+  const beforeCompletionClock = clockCalls;
+  now = NOW + 1_000;
+  const completed = store.completeDurableExecution({
+    expectedRevision: fenced.revision,
+    executionId: fenced.execution.executionId,
+    cachedResult: result(),
+  });
+  assert.equal(clockCalls, beforeCompletionClock + 1);
+  assert.deepEqual(Reflect.ownKeys(completed), [
+    'disposition',
+    'revision',
+    'winner',
+    'completionWallClockNowMs',
+    'request',
+    'execution',
+  ]);
+  assert.equal(Object.isFrozen(completed), true);
+  assert.equal(Object.isFrozen(completed.execution), true);
+  assert.equal(completed.disposition, 'APPLIED');
+  assert.equal(completed.winner, 'OUTCOME_UNKNOWN');
+  assert.equal(completed.completionWallClockNowMs, NOW + 1_000);
+  assert.equal(completed.request.state, REQUEST_STATE.OUTCOME_UNKNOWN);
+  assert.equal(completed.execution.uncertaintyReason, 'DEADLINE_EXPIRED');
+  assert.equal(/authoriz|permission|token/i.test(JSON.stringify(completed)), false);
+  store.close();
+});
+
+test('durable deadline receipts sample the clock only for fresh applied transitions', t => {
+  const directory = privateDirectoryFor(t);
+  let now = NOW;
+  let clockCalls = 0;
+  let advanceAfterCompletionLock = false;
+  const { activeGrant, store } = initializedStore(directory, {
+    now: () => {
+      clockCalls += 1;
+      return now;
+    },
+    testHooks: {
+      afterBegin({ operation }) {
+        if (advanceAfterCompletionLock && operation === 'completeDurableExecution') {
+          now = NOW + 1_000;
+        }
+      },
+    },
+  });
+  const initialized = store.initializeDurableExecution({
+    expectedRevision: store.getMetadata().revision,
+    ledgerId: 'ledger.local.clock-precedence',
+    policy: executionPolicy(),
+    capacity: 8,
+  });
+  const prepared = store.prepareDurableExecution({
+    expectedRevision: initialized.revision,
+    request: request(activeGrant.grantId),
+    selectedDurationMs: 1_000,
+  });
+  const callsAfterPrepare = clockCalls;
+
+  const staleFence = store.persistDurableExecutionFence({
+    expectedRevision: initialized.revision,
+    executionId: prepared.execution.executionId,
+  });
+  assert.equal(staleFence.disposition, 'STALE');
+  assert.equal(staleFence.fenceWallClockNowMs, null);
+  assert.equal(clockCalls, callsAfterPrepare);
+  expectCode(
+    () => store.completeDurableExecution({
+      expectedRevision: prepared.revision,
+      executionId: prepared.execution.executionId,
+      cachedResult: result(),
+    }),
+    'SERVICE_CREDIT_STORE_EXECUTION_INVALID_TRANSITION',
+  );
+  assert.equal(clockCalls, callsAfterPrepare);
+
+  now = NOW + 1;
+  const fenced = store.persistDurableExecutionFence({
+    expectedRevision: prepared.revision,
+    executionId: prepared.execution.executionId,
+  });
+  assert.equal(fenced.disposition, 'APPLIED');
+  assert.equal(fenced.fenceWallClockNowMs, NOW + 1);
+  assert.equal(clockCalls, callsAfterPrepare + 1);
+  const replayFence = store.persistDurableExecutionFence({
+    expectedRevision: fenced.revision,
+    executionId: fenced.execution.executionId,
+  });
+  assert.equal(replayFence.disposition, 'UNCHANGED');
+  assert.equal(replayFence.fenceWallClockNowMs, null);
+  assert.equal(clockCalls, callsAfterPrepare + 1);
+
+  const staleCompletion = store.completeDurableExecution({
+    expectedRevision: prepared.revision,
+    executionId: fenced.execution.executionId,
+    cachedResult: result(),
+  });
+  assert.equal(staleCompletion.disposition, 'STALE');
+  assert.equal(staleCompletion.completionWallClockNowMs, null);
+  assert.equal(clockCalls, callsAfterPrepare + 1);
+
+  advanceAfterCompletionLock = true;
+  const completed = store.completeDurableExecution({
+    expectedRevision: fenced.revision,
+    executionId: fenced.execution.executionId,
+    cachedResult: result(),
+  });
+  advanceAfterCompletionLock = false;
+  assert.equal(completed.disposition, 'APPLIED');
+  assert.equal(completed.winner, 'OUTCOME_UNKNOWN');
+  assert.equal(completed.completionWallClockNowMs, NOW + 1_000);
+  assert.equal(clockCalls, callsAfterPrepare + 2);
+
+  const replayCompletion = store.completeDurableExecution({
+    expectedRevision: completed.revision,
+    executionId: completed.execution.executionId,
+    cachedResult: result(),
+  });
+  assert.equal(replayCompletion.disposition, 'UNCHANGED');
+  assert.equal(replayCompletion.winner, 'OUTCOME_UNKNOWN');
+  assert.equal(replayCompletion.completionWallClockNowMs, null);
+  assert.equal(clockCalls, callsAfterPrepare + 2);
+  store.close();
 });
 
 test('explicit durable restart recovery classifies prepared, fenced, and terminal work', async t => {

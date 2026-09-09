@@ -420,12 +420,72 @@ test('deadline equality and backward wall movement never authorize or seal a pre
   }
 });
 
+test('completion transaction time deterministically chooses success or sealed uncertainty', () => {
+  let success;
+  for (const wallClockNowMs of [10_000, 10_999]) {
+    const beforeDeadline = fenced(create()).fence;
+    success = completeServiceCreditExecution({
+      state: beforeDeadline.state,
+      executionId: beforeDeadline.execution.executionId,
+      resultCommitment: SHA_C,
+      wallClockNowMs,
+    });
+    assert.equal(success.winner, 'SUCCEEDED');
+    assert.equal(success.execution.terminalClassification, 'SUCCEEDED');
+  }
+
+  const live = fenced(create()).fence;
+  errorCode(
+    () => completeServiceCreditExecution({
+      state: live.state,
+      executionId: live.execution.executionId,
+      resultCommitment: SHA_C,
+      wallClockNowMs: null,
+    }),
+    'SERVICE_CREDIT_EXECUTION_CONTRACT_INVALID_INPUT',
+  );
+
+  for (const [wallClockNowMs, reason] of [
+    [9_999, 'CLOCK_REGRESSION'],
+    [11_000, 'DEADLINE_EXPIRED'],
+    [12_000, 'DEADLINE_EXPIRED'],
+  ]) {
+    const live = fenced(create()).fence;
+    const outcome = completeServiceCreditExecution({
+      state: live.state,
+      executionId: live.execution.executionId,
+      resultCommitment: SHA_C,
+      wallClockNowMs,
+    });
+    assert.equal(outcome.transitioned, true);
+    assert.equal(outcome.winner, 'OUTCOME_UNKNOWN');
+    assert.equal(outcome.execution.terminalClassification, 'OUTCOME_UNKNOWN');
+    assert.equal(outcome.execution.uncertaintyReason, reason);
+    assert.equal(outcome.execution.resultCommitment, null);
+    assert.equal(outcome.state.generation.state, 'SEALED');
+    assert.deepEqual(outcome.state.generation.seal, {
+      executionId: outcome.execution.executionId,
+      reason,
+    });
+  }
+
+  const replay = completeServiceCreditExecution({
+    state: success.state,
+    executionId: success.execution.executionId,
+    resultCommitment: SHA_C,
+    wallClockNowMs: null,
+  });
+  assert.equal(replay.transitioned, false);
+  assert.equal(replay.winner, 'SUCCEEDED');
+});
+
 test('success wins immutably and later uncertainty cannot downgrade or seal it', () => {
   const { fence } = fenced(create());
   const success = completeServiceCreditExecution({
     state: fence.state,
     executionId: fence.execution.executionId,
     resultCommitment: SHA_C,
+    wallClockNowMs: 10_002,
   });
   assert.equal(success.transitioned, true);
   assert.equal(success.winner, 'SUCCEEDED');
@@ -446,6 +506,7 @@ test('success wins immutably and later uncertainty cannot downgrade or seal it',
     state: success.state,
     executionId: success.execution.executionId,
     resultCommitment: SHA_C,
+    wallClockNowMs: null,
   });
   assert.equal(replay.transitioned, false);
   assert.equal(replay.winner, 'SUCCEEDED');
@@ -454,6 +515,7 @@ test('success wins immutably and later uncertainty cannot downgrade or seal it',
       state: success.state,
       executionId: success.execution.executionId,
       resultCommitment: SHA_B,
+      wallClockNowMs: null,
     }),
     'SERVICE_CREDIT_EXECUTION_CONTRACT_CONFLICT',
   );
@@ -480,6 +542,7 @@ test('uncertainty wins immutably, seals globally, and late success cannot mutate
     state: unknown.state,
     executionId: unknown.execution.executionId,
     resultCommitment: SHA_C,
+    wallClockNowMs: null,
   });
   assert.equal(late.transitioned, false);
   assert.equal(late.winner, 'OUTCOME_UNKNOWN');
@@ -546,6 +609,7 @@ test('already-fenced siblings can terminalize after one sibling seals the genera
     state: sealed.state,
     executionId: second.execution.executionId,
     resultCommitment: SHA_C,
+    wallClockNowMs: 10_002,
   });
   assert.equal(completedSibling.winner, 'SUCCEEDED');
   assert.equal(completedSibling.state.generation.state, 'SEALED');
@@ -619,6 +683,7 @@ test('recovery handles prepared, fenced, and terminal siblings deterministically
     state: succeededValue.fence.state,
     executionId: succeededValue.fence.execution.executionId,
     resultCommitment: SHA_C,
+    wallClockNowMs: 10_002,
   });
   const recovered = recoverServiceCreditExecutions({
     state: succeeded.state,
@@ -670,7 +735,12 @@ test('malformed transitions and arbitrary values produce fixed private failures'
   for (const operation of [
     () => prepareServiceCreditExecution({ state, request: request(), policy: POLICY }),
     () => fenceServiceCreditExecution({ state, executionId: protectedText, wallClockNowMs: 0 }),
-    () => completeServiceCreditExecution({ state, executionId: protectedText, resultCommitment: SHA_C }),
+    () => completeServiceCreditExecution({
+      state,
+      executionId: protectedText,
+      resultCommitment: SHA_C,
+      wallClockNowMs: 0,
+    }),
     () => markServiceCreditExecutionUnknown({ state, executionId: protectedText, reason: 'UNKNOWN_REASON' }),
     () => recoverServiceCreditExecutions({ state, wallClockNowMs: -1 }),
   ]) {
@@ -947,6 +1017,7 @@ test('post-import intrinsic poisoning cannot alter selection, authorization, sea
         state: unknownB.state,
         executionId: expectedB,
         resultCommitment: 'sha256:' + 'c'.repeat(64),
+        wallClockNowMs: null,
       });
       let conflict = null;
       let sealed = null;
