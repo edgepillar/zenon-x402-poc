@@ -21,8 +21,11 @@ import {
 } from '../src/service-credit-model.js';
 import { ServiceCreditSqliteStore } from '../src/service-credit-sqlite-store.js';
 
-const { createDurableServiceCreditExecutionOwner } = durableOwnerModule;
+const {
+  createDurableServiceCreditExecutionOwner: createReviewedDurableExecutionOwner,
+} = durableOwnerModule;
 const NOW = 2_000_000_000_000;
+const EXPECTED_ABORT_REASON = 'SERVICE_CREDIT_DURABLE_EXECUTION_OUTCOME_UNKNOWN';
 const TEST_DEFINE_PROPERTY = Object.defineProperty;
 const TEST_GET_OWN_PROPERTY_DESCRIPTOR = Object.getOwnPropertyDescriptor;
 const TEST_DELETE_PROPERTY = Reflect.deleteProperty;
@@ -165,11 +168,61 @@ function deferred() {
   return { promise, resolve, reject };
 }
 
+function passiveDeadlineRuntime() {
+  return {
+    monotonicNowNs: () => 0n,
+    schedule: () => Object.freeze({}),
+    cancel: () => undefined,
+  };
+}
+
+function createDurableServiceCreditExecutionOwner({
+  store,
+  execute,
+  deadlineRuntime = passiveDeadlineRuntime(),
+}) {
+  return createReviewedDurableExecutionOwner({ store, execute, deadlineRuntime });
+}
+
+function controlledDeadlineRuntime(initialNowNs = 0n) {
+  let nowNs = initialNowNs;
+  let nextIdentifier = 1;
+  const scheduled = new Set();
+  const runtime = {
+    monotonicNowNs: () => nowNs,
+    schedule(callback, delayMs) {
+      const handle = { callback, delayMs, identifier: nextIdentifier };
+      nextIdentifier += 1;
+      scheduled.add(handle);
+      return handle;
+    },
+    cancel(handle) {
+      scheduled.delete(handle);
+    },
+  };
+  return {
+    runtime,
+    setNowNs(value) { nowNs = value; },
+    fireNext() {
+      const [handle] = scheduled;
+      assert.notEqual(handle, undefined);
+      scheduled.delete(handle);
+      handle.callback();
+    },
+    nextDelayMs() {
+      const [handle] = scheduled;
+      return handle?.delayMs ?? null;
+    },
+    scheduledCount() { return scheduled.size; },
+  };
+}
+
 async function expectRejectedCode(promise, code) {
   await assert.rejects(promise, error => {
     assert.equal(error?.code, code);
     assert.equal(error?.message, code);
     assert.equal(Object.hasOwn(error, 'cause'), false);
+    assert.equal(Object.isFrozen(error), true);
     return true;
   });
 }
@@ -190,12 +243,12 @@ test('durable execution owner exposes only the reviewed inert factory', () => {
   assert.deepEqual(Object.keys(durableOwnerModule), [
     'createDurableServiceCreditExecutionOwner',
   ]);
-  assert.equal(createDurableServiceCreditExecutionOwner.length, 1);
+  assert.equal(createReviewedDurableExecutionOwner.length, 1);
   const source = readFileSync(
     new URL('../src/service-credit-durable-execution-owner.js', import.meta.url),
     'utf8',
   );
-  assert.doesNotMatch(source, /\b(?:setTimeout|setInterval|AbortController|AbortSignal|Date)\b/);
+  assert.doesNotMatch(source, /\b(?:setTimeout|setInterval|Date)\b/);
   assert.doesNotMatch(
     source,
     /from ['"]node:(?:http|https|net|tls|timers|worker_threads|child_process|fs)['"]/,
@@ -203,11 +256,35 @@ test('durable execution owner exposes only the reviewed inert factory', () => {
   assert.doesNotMatch(source, /\bprocess\.(?:on|once|addListener|env)\b/);
 });
 
+test('documentation classifies the opt-in deadline runtime as implemented and narrows future gates', () => {
+  const readme = readFileSync(new URL('../README.md', import.meta.url), 'utf8');
+  const security = readFileSync(new URL('../SECURITY.md', import.meta.url), 'utf8');
+  const plan = readFileSync(
+    new URL('../docs/IMPLEMENTATION_PLAN.md', import.meta.url),
+    'utf8',
+  );
+
+  assert.doesNotMatch(readme, /does not implement the runtime callback-deadline contract/);
+  assert.doesNotMatch(
+    readme,
+    /Runtime monotonic enforcement and late-settlement draining[\s\S]*future work/,
+  );
+  assert.doesNotMatch(security, /unchanged by this documentation gate/);
+  assert.doesNotMatch(plan, /\*\*Required future red tests\.\*\*/);
+  assert.doesNotMatch(plan, /The deadline milestone remains deferred/);
+  for (const document of [readme, security, plan]) {
+    assert.match(document, /trusted same-process/);
+    assert.match(document, /abort listener/);
+    assert.match(document, /not process-isolated/);
+  }
+});
+
 test('factory is inert, captures exact dependencies, and exposes a frozen two-method surface', async t => {
   const directory = directoryFor(t);
   let clockCalls = 0;
   let pricingCalls = 0;
   let callbackCalls = 0;
+  let runtimeCalls = 0;
   const store = ServiceCreditSqliteStore.create(configuration(directory, {
     now: () => { clockCalls += 1; return NOW; },
     deriveCost: () => { pricingCalls += 1; return 2; },
@@ -217,8 +294,13 @@ test('factory is inert, captures exact dependencies, and exposes a frozen two-me
   const beforeClock = clockCalls;
   const beforePricing = pricingCalls;
   const execute = () => { callbackCalls += 1; return callbackResult(); };
-  const options = { store, execute };
-  const owner = createDurableServiceCreditExecutionOwner(options);
+  const runtime = {
+    monotonicNowNs: () => { runtimeCalls += 1; return 0n; },
+    schedule: () => { runtimeCalls += 1; return Object.freeze({}); },
+    cancel: () => { runtimeCalls += 1; },
+  };
+  const options = { store, execute, deadlineRuntime: runtime };
+  const owner = createReviewedDurableExecutionOwner(options);
 
   assert.deepEqual(Reflect.ownKeys(owner), ['run', 'close']);
   assert.equal(Object.isFrozen(owner), true);
@@ -232,13 +314,16 @@ test('factory is inert, captures exact dependencies, and exposes a frozen two-me
   assert.equal(clockCalls, beforeClock);
   assert.equal(pricingCalls, beforePricing);
   assert.equal(callbackCalls, 0);
+  assert.equal(runtimeCalls, 0);
 
   options.store = null;
   options.execute = () => { throw new Error('replacement'); };
+  options.deadlineRuntime = null;
   assert.deepEqual(await owner.run({
     request: request('grant_unavailable'),
     selectedDurationMs: 1,
   }), { status: 'RECOVERY_REQUIRED', cachedResult: null });
+  assert.equal(runtimeCalls, 0);
   await owner.close();
   assert.deepEqual(store.load(), before);
 });
@@ -247,11 +332,11 @@ test('factory rejects wrong arity, hostile shapes, callback proxies, and reused 
   const ledger = initializedLedger(t);
   const execute = () => callbackResult();
   assert.throws(
-    () => createDurableServiceCreditExecutionOwner(),
+    () => createReviewedDurableExecutionOwner(),
     error => error?.code === 'SERVICE_CREDIT_DURABLE_OWNER_INVALID_CONFIGURATION',
   );
   assert.throws(
-    () => createDurableServiceCreditExecutionOwner({
+    () => createReviewedDurableExecutionOwner({
       store: ledger.store,
       execute,
       extra: true,
@@ -259,26 +344,70 @@ test('factory rejects wrong arity, hostile shapes, callback proxies, and reused 
     error => error?.code === 'SERVICE_CREDIT_DURABLE_OWNER_INVALID_CONFIGURATION',
   );
   let trapCalls = 0;
-  const hostile = new Proxy({ store: ledger.store, execute }, {
+  const hostile = new Proxy({
+    store: ledger.store,
+    execute,
+    deadlineRuntime: passiveDeadlineRuntime(),
+  }, {
     ownKeys() { trapCalls += 1; throw new Error('hostile'); },
   });
   assert.throws(
-    () => createDurableServiceCreditExecutionOwner(hostile),
+    () => createReviewedDurableExecutionOwner(hostile),
     error => error?.code === 'SERVICE_CREDIT_DURABLE_OWNER_INVALID_CONFIGURATION',
   );
   assert.equal(trapCalls, 0);
   assert.throws(
-    () => createDurableServiceCreditExecutionOwner({
+    () => createReviewedDurableExecutionOwner({
       store: ledger.store,
       execute: new Proxy(execute, {}),
+      deadlineRuntime: passiveDeadlineRuntime(),
     }),
     error => error?.code === 'SERVICE_CREDIT_DURABLE_OWNER_INVALID_CONFIGURATION',
   );
-  const owner = createDurableServiceCreditExecutionOwner({ store: ledger.store, execute });
   assert.throws(
-    () => createDurableServiceCreditExecutionOwner({ store: ledger.store, execute }),
+    () => createReviewedDurableExecutionOwner({ store: ledger.store, execute }),
     error => error?.code === 'SERVICE_CREDIT_DURABLE_OWNER_INVALID_CONFIGURATION',
   );
+  assert.throws(
+    () => createReviewedDurableExecutionOwner({
+      store: ledger.store,
+      execute,
+      deadlineRuntime: { ...passiveDeadlineRuntime(), extra: true },
+    }),
+    error => error?.code === 'SERVICE_CREDIT_DURABLE_OWNER_INVALID_CONFIGURATION',
+  );
+  assert.throws(
+    () => createReviewedDurableExecutionOwner({
+      store: ledger.store,
+      execute,
+      deadlineRuntime: {
+        ...passiveDeadlineRuntime(),
+        schedule: new Proxy(() => Object.freeze({}), {}),
+      },
+    }),
+    error => error?.code === 'SERVICE_CREDIT_DURABLE_OWNER_INVALID_CONFIGURATION',
+  );
+  const capturedRuntime = passiveDeadlineRuntime();
+  const owner = createReviewedDurableExecutionOwner({
+    store: ledger.store,
+    execute,
+    deadlineRuntime: capturedRuntime,
+  });
+  capturedRuntime.monotonicNowNs = () => { throw new Error('replacement'); };
+  capturedRuntime.schedule = () => { throw new Error('replacement'); };
+  capturedRuntime.cancel = () => { throw new Error('replacement'); };
+  assert.throws(
+    () => createReviewedDurableExecutionOwner({
+      store: ledger.store,
+      execute,
+      deadlineRuntime: passiveDeadlineRuntime(),
+    }),
+    error => error?.code === 'SERVICE_CREDIT_DURABLE_OWNER_INVALID_CONFIGURATION',
+  );
+  assert.equal((await owner.run({
+    request: request(ledger.activeGrant.grantId),
+    selectedDurationMs: 1_000,
+  })).status, 'SUCCEEDED');
   await owner.close();
 });
 
@@ -339,7 +468,7 @@ test('fresh execution succeeds once and exact replay returns cached success with
   assert.equal(Object.isFrozen(first), true);
   assert.equal(Object.isFrozen(first.cachedResult), true);
   assert.equal(identities.length, 1);
-  assert.deepEqual(Reflect.ownKeys(identities[0]), ['executionId']);
+  assert.deepEqual(Reflect.ownKeys(identities[0]), ['executionId', 'signal']);
   assert.equal(Object.isFrozen(identities[0]), true);
   const revision = ledger.store.getMetadata().revision;
   const replay = await owner.run(input);
@@ -353,7 +482,7 @@ test('fresh execution succeeds once and exact replay returns cached success with
   assert.equal(ledger.store.getDurableExecutionSnapshot().executionState !== null, true);
 });
 
-test('asynchronous callback success is observed and persisted without a timer or retry', async t => {
+test('asynchronous callback success is observed and persisted before deadline without retry', async t => {
   const ledger = initializedLedger(t);
   let calls = 0;
   const owner = createDurableServiceCreditExecutionOwner({
@@ -407,7 +536,7 @@ test('deadline equality is a latest-start rejection with zero callback starts', 
   await owner.close();
 });
 
-test('a callback fenced before the deadline may complete after it without continuous enforcement', async t => {
+test('transactional completion adjudication rejects callback success after the deadline', async t => {
   let now = NOW;
   const ledger = initializedLedger(t, {
     configuration: {
@@ -420,10 +549,14 @@ test('a callback fenced before the deadline may complete after it without contin
     },
   });
   let callbackCalls = 0;
+  let aborts = 0;
+  let signal;
   const owner = createDurableServiceCreditExecutionOwner({
     store: ledger.store,
-    execute: () => {
+    execute: identity => {
       callbackCalls += 1;
+      signal = identity.signal;
+      signal.addEventListener('abort', () => { aborts += 1; }, { once: true });
       now = NOW + 10_000;
       return callbackResult();
     },
@@ -432,10 +565,460 @@ test('a callback fenced before the deadline may complete after it without contin
     request: request(ledger.activeGrant.grantId),
     selectedDurationMs: 1_000,
   });
-  assert.equal(outcome.status, 'SUCCEEDED');
+  assert.equal(outcome.status, 'OUTCOME_UNKNOWN');
   assert.equal(callbackCalls, 1);
+  assert.equal(signal.aborted, true);
+  assert.equal(aborts, 1);
   assert.equal(now > NOW + 1_000, true);
   await owner.close();
+});
+
+test('runtime deadline persists unknown, aborts once, returns early, and drains before close', async t => {
+  let now = NOW;
+  const runtime = controlledDeadlineRuntime(1_000_000n);
+  const ledger = initializedLedger(t, { configuration: { now: () => now } });
+  const callback = deferred();
+  let callbackCalls = 0;
+  let observedIdentity;
+  let observedSignal;
+  const owner = createDurableServiceCreditExecutionOwner({
+    store: ledger.store,
+    deadlineRuntime: runtime.runtime,
+    execute: identity => {
+      callbackCalls += 1;
+      observedIdentity = identity;
+      observedSignal = identity.signal;
+      return callback.promise;
+    },
+  });
+  const operation = owner.run({
+    request: request(ledger.activeGrant.grantId),
+    selectedDurationMs: 1_000,
+  });
+  await Promise.resolve();
+  assert.equal(callbackCalls, 1);
+  assert.deepEqual(Reflect.ownKeys(observedIdentity), ['executionId', 'signal']);
+  assert.equal(Object.isFrozen(observedIdentity), true);
+  assert.equal(observedSignal.aborted, false);
+  assert.equal(runtime.scheduledCount(), 1);
+
+  const closing = owner.close();
+  let closed = false;
+  closing.then(() => { closed = true; });
+  await Promise.resolve();
+  assert.equal(closed, false);
+
+  now = NOW + 1_000;
+  runtime.setNowNs(1_001_000_000n);
+  runtime.fireNext();
+  assert.deepEqual(await operation, { status: 'OUTCOME_UNKNOWN', cachedResult: null });
+  assert.equal(observedSignal.aborted, true);
+  await Promise.resolve();
+  assert.equal(closed, false);
+  callback.resolve(callbackResult('owner.late'));
+  await closing;
+  assert.equal(closed, true);
+  assert.equal(callbackCalls, 1);
+});
+
+test('deadline unknown drains a late rejection without another durable transition', async t => {
+  let now = NOW;
+  let unknownAttempts = 0;
+  let completionAttempts = 0;
+  const runtime = controlledDeadlineRuntime();
+  const ledger = initializedLedger(t, {
+    ledgerId: 'ledger.owner.timer.late-rejection',
+    configuration: {
+      now: () => now,
+      testHooks: {
+        beforeBegin({ operation }) {
+          if (operation === 'markDurableExecutionUnknown') unknownAttempts += 1;
+          if (operation === 'completeDurableExecution') completionAttempts += 1;
+        },
+      },
+    },
+  });
+  const callback = deferred();
+  let callbackCalls = 0;
+  let observedSignal;
+  let abortReason;
+  const owner = createDurableServiceCreditExecutionOwner({
+    store: ledger.store,
+    deadlineRuntime: runtime.runtime,
+    execute: identity => {
+      callbackCalls += 1;
+      observedSignal = identity.signal;
+      identity.signal.addEventListener('abort', () => {
+        abortReason = identity.signal.reason;
+      }, { once: true });
+      return callback.promise;
+    },
+  });
+  const operation = owner.run({
+    request: request(ledger.activeGrant.grantId),
+    selectedDurationMs: 1_000,
+  });
+  await Promise.resolve();
+  now = NOW + 1_000;
+  runtime.setNowNs(1_000_000_000n);
+  runtime.fireNext();
+  assert.deepEqual(await operation, { status: 'OUTCOME_UNKNOWN', cachedResult: null });
+  assert.equal(observedSignal.aborted, true);
+  assert.equal(abortReason, EXPECTED_ABORT_REASON);
+  assert.equal(typeof abortReason, 'string');
+  assert.equal(Object.hasOwn(Object(abortReason), 'stack'), false);
+  assert.equal(Object.hasOwn(Object(abortReason), 'cause'), false);
+  assert.equal(abortReason.includes(ledger.activeGrant.grantId), false);
+  assert.equal(abortReason.includes('request.owner.1'), false);
+  assert.equal(callbackCalls, 1);
+  assert.equal(unknownAttempts, 1);
+  assert.equal(completionAttempts, 0);
+  const durableRevision = ledger.store.getMetadata().revision;
+
+  const closing = owner.close();
+  let closed = false;
+  closing.then(() => { closed = true; });
+  await Promise.resolve();
+  assert.equal(closed, false);
+  callback.reject(new Error('private late rejection'));
+  await closing;
+  assert.equal(closed, true);
+  assert.equal(unknownAttempts, 1);
+  assert.equal(completionAttempts, 0);
+  assert.equal(ledger.store.getMetadata().revision, durableRevision);
+  assert.equal(ledger.store.getRequest({
+    grantId: ledger.activeGrant.grantId,
+    requestId: 'request.owner.1',
+  }).state, REQUEST_STATE.OUTCOME_UNKNOWN);
+});
+
+test('a durable success that precedes timer uncertainty suppresses abort and waits for local drain', async t => {
+  let unknownAttempts = 0;
+  let completionAttempts = 0;
+  const runtime = controlledDeadlineRuntime();
+  const ledger = initializedLedger(t, {
+    ledgerId: 'ledger.owner.timer.success-winner',
+    configuration: {
+      testHooks: {
+        beforeBegin({ operation }) {
+          if (operation === 'markDurableExecutionUnknown') unknownAttempts += 1;
+          if (operation === 'completeDurableExecution') completionAttempts += 1;
+        },
+      },
+    },
+  });
+  const competingStore = ServiceCreditSqliteStore.openExisting(ledger.config);
+  t.after(() => safeClose(competingStore));
+  const callback = deferred();
+  let callbackCalls = 0;
+  let aborts = 0;
+  let observedSignal;
+  const owner = createDurableServiceCreditExecutionOwner({
+    store: ledger.store,
+    deadlineRuntime: runtime.runtime,
+    execute: identity => {
+      callbackCalls += 1;
+      observedSignal = identity.signal;
+      identity.signal.addEventListener('abort', () => { aborts += 1; }, { once: true });
+      return callback.promise;
+    },
+  });
+  const operation = owner.run({
+    request: request(ledger.activeGrant.grantId),
+    selectedDurationMs: 1_000,
+  });
+  await Promise.resolve();
+  const snapshot = competingStore.getDurableExecutionSnapshot();
+  const execution = snapshot.executionState.executions[0];
+  const competingResult = competingStore.completeDurableExecution({
+    expectedRevision: snapshot.revision,
+    executionId: execution.executionId,
+    cachedResult: {
+      statusCode: 200,
+      contentType: 'application/json',
+      resultCode: 'owner.completed',
+    },
+  });
+  assert.equal(competingResult.winner, 'SUCCEEDED');
+  const durableRevision = competingStore.getMetadata().revision;
+  const completionAttemptsAfterWinner = completionAttempts;
+
+  runtime.setNowNs(1_000_000_000n);
+  runtime.fireNext();
+  await expectRejectedCode(operation, 'SERVICE_CREDIT_DURABLE_OWNER_QUARANTINED');
+  assert.equal(callbackCalls, 1);
+  assert.equal(observedSignal.aborted, false);
+  assert.equal(aborts, 0);
+  assert.equal(unknownAttempts, 1);
+  assert.equal(completionAttempts, completionAttemptsAfterWinner);
+  assert.equal(ledger.store.getMetadata().revision, durableRevision);
+  assert.equal(ledger.store.getRequest({
+    grantId: ledger.activeGrant.grantId,
+    requestId: 'request.owner.1',
+  }).state, REQUEST_STATE.SUCCEEDED);
+
+  const closing = owner.close();
+  let closed = false;
+  closing.then(() => { closed = true; });
+  await Promise.resolve();
+  assert.equal(closed, false);
+  callback.resolve(callbackResult());
+  await closing;
+  assert.equal(closed, true);
+  assert.equal(aborts, 0);
+  assert.equal(unknownAttempts, 1);
+  assert.equal(completionAttempts, completionAttemptsAfterWinner);
+  assert.equal(ledger.store.getMetadata().revision, durableRevision);
+});
+
+test('deadline runtime handles early wakes, delayed control, chunking, and clock regression', async t => {
+  await t.test('early wake reschedules and pre-target completion succeeds', async t => {
+    const runtime = controlledDeadlineRuntime();
+    const ledger = initializedLedger(t, { ledgerId: 'ledger.owner.timer.early' });
+    const callback = deferred();
+    const owner = createDurableServiceCreditExecutionOwner({
+      store: ledger.store,
+      deadlineRuntime: runtime.runtime,
+      execute: () => callback.promise,
+    });
+    const operation = owner.run({
+      request: request(ledger.activeGrant.grantId),
+      selectedDurationMs: 1_000,
+    });
+    await Promise.resolve();
+    assert.equal(runtime.nextDelayMs(), 1_000);
+    runtime.setNowNs(500_000_000n);
+    runtime.fireNext();
+    assert.equal(runtime.nextDelayMs(), 500);
+    runtime.setNowNs(999_000_000n);
+    callback.resolve(callbackResult('owner.early'));
+    assert.equal((await operation).status, 'SUCCEEDED');
+    assert.equal(runtime.scheduledCount(), 0);
+    await owner.close();
+  });
+
+  await t.test('delayed event-loop control at exact target invokes no callback', async t => {
+    const ledger = initializedLedger(t, { ledgerId: 'ledger.owner.timer.delayed' });
+    let reads = 0;
+    let schedules = 0;
+    let callbackCalls = 0;
+    const owner = createDurableServiceCreditExecutionOwner({
+      store: ledger.store,
+      deadlineRuntime: {
+        monotonicNowNs() {
+          reads += 1;
+          return reads === 1 ? 0n : 1_000_000_000n;
+        },
+        schedule() { schedules += 1; return Object.freeze({}); },
+        cancel() {},
+      },
+      execute: () => { callbackCalls += 1; return callbackResult(); },
+    });
+    assert.deepEqual(await owner.run({
+      request: request(ledger.activeGrant.grantId),
+      selectedDurationMs: 1_000,
+    }), { status: 'OUTCOME_UNKNOWN', cachedResult: null });
+    assert.equal(reads, 2);
+    assert.equal(schedules, 0);
+    assert.equal(callbackCalls, 0);
+    await owner.close();
+  });
+
+  await t.test('duplicate synchronous wakes are collapsed before callback start', async t => {
+    const ledger = initializedLedger(t, { ledgerId: 'ledger.owner.timer.synchronous' });
+    let nowNs = 0n;
+    let schedules = 0;
+    let cancels = 0;
+    let callbackCalls = 0;
+    const owner = createDurableServiceCreditExecutionOwner({
+      store: ledger.store,
+      deadlineRuntime: {
+        monotonicNowNs: () => nowNs,
+        schedule(wake) {
+          schedules += 1;
+          nowNs = 1_000_000_000n;
+          wake();
+          wake();
+          return Object.freeze({});
+        },
+        cancel() { cancels += 1; },
+      },
+      execute: () => { callbackCalls += 1; return callbackResult(); },
+    });
+    assert.equal((await owner.run({
+      request: request(ledger.activeGrant.grantId),
+      selectedDurationMs: 1_000,
+    })).status, 'OUTCOME_UNKNOWN');
+    assert.equal(schedules, 1);
+    assert.equal(cancels, 1);
+    assert.equal(callbackCalls, 0);
+    await owner.close();
+  });
+
+  await t.test('large safe duration is scheduled in bounded chunks', async t => {
+    const selectedDurationMs = 3_000_000_000;
+    const runtime = controlledDeadlineRuntime();
+    const ledger = initializedLedger(t, {
+      ledgerId: 'ledger.owner.timer.chunked',
+      policy: { maxDurationMs: selectedDurationMs },
+    });
+    const callback = deferred();
+    const owner = createDurableServiceCreditExecutionOwner({
+      store: ledger.store,
+      deadlineRuntime: runtime.runtime,
+      execute: () => callback.promise,
+    });
+    const operation = owner.run({
+      request: request(ledger.activeGrant.grantId),
+      selectedDurationMs,
+    });
+    await Promise.resolve();
+    assert.equal(runtime.nextDelayMs(), 2_147_483_646);
+    callback.resolve(callbackResult('owner.chunked'));
+    assert.equal((await operation).status, 'SUCCEEDED');
+    assert.equal(runtime.scheduledCount(), 0);
+    await owner.close();
+  });
+
+  await t.test('synchronous callback crossing the monotonic target cannot complete', async t => {
+    const runtime = controlledDeadlineRuntime();
+    const ledger = initializedLedger(t, { ledgerId: 'ledger.owner.timer.crossed' });
+    let signal;
+    const owner = createDurableServiceCreditExecutionOwner({
+      store: ledger.store,
+      deadlineRuntime: runtime.runtime,
+      execute: identity => {
+        signal = identity.signal;
+        runtime.setNowNs(1_000_000_000n);
+        return callbackResult('owner.crossed');
+      },
+    });
+    assert.equal((await owner.run({
+      request: request(ledger.activeGrant.grantId),
+      selectedDurationMs: 1_000,
+    })).status, 'OUTCOME_UNKNOWN');
+    assert.equal(signal.aborted, true);
+    assert.equal(runtime.scheduledCount(), 0);
+    await owner.close();
+  });
+
+  await t.test('monotonic regression persists uncertainty and latches', async t => {
+    const ledger = initializedLedger(t, { ledgerId: 'ledger.owner.timer.regression' });
+    let reads = 0;
+    let callbackCalls = 0;
+    const owner = createDurableServiceCreditExecutionOwner({
+      store: ledger.store,
+      deadlineRuntime: {
+        monotonicNowNs() { reads += 1; return reads === 1 ? 10n : 9n; },
+        schedule() { return Object.freeze({}); },
+        cancel() {},
+      },
+      execute: () => { callbackCalls += 1; return callbackResult(); },
+    });
+    await expectRejectedCode(owner.run({
+      request: request(ledger.activeGrant.grantId),
+      selectedDurationMs: 1_000,
+    }), 'SERVICE_CREDIT_DURABLE_OWNER_QUARANTINED');
+    assert.equal(callbackCalls, 0);
+    assert.equal(ledger.store.getRequest({
+      grantId: ledger.activeGrant.grantId,
+      requestId: 'request.owner.1',
+    }).state, REQUEST_STATE.OUTCOME_UNKNOWN);
+    await owner.close();
+  });
+});
+
+test('deadline runtime control faults report no success and retain uncertain cleanup', async t => {
+  for (const fault of ['schedule', 'cancel']) {
+    await t.test(fault, async t => {
+      const ledger = initializedLedger(t, { ledgerId: `ledger.owner.timer.${fault}` });
+      let callbackCalls = 0;
+      const owner = createDurableServiceCreditExecutionOwner({
+        store: ledger.store,
+        deadlineRuntime: {
+          monotonicNowNs: () => 0n,
+          schedule() {
+            if (fault === 'schedule') throw new Error('private');
+            return Object.freeze({});
+          },
+          cancel() {
+            if (fault === 'cancel') throw new Error('private');
+          },
+        },
+        execute: () => { callbackCalls += 1; return callbackResult(); },
+      });
+      await expectRejectedCode(owner.run({
+        request: request(ledger.activeGrant.grantId),
+        selectedDurationMs: 1_000,
+      }), 'SERVICE_CREDIT_DURABLE_OWNER_QUARANTINED');
+      assert.equal(callbackCalls, fault === 'cancel' ? 1 : 0);
+      assert.equal(ledger.store.getRequest({
+        grantId: ledger.activeGrant.grantId,
+        requestId: 'request.owner.1',
+      }).state, REQUEST_STATE.OUTCOME_UNKNOWN);
+      const closing = owner.close();
+      let closed = false;
+      closing.then(() => { closed = true; });
+      await Promise.resolve();
+      assert.equal(closed, false);
+    });
+  }
+});
+
+test('deadline abort context rejects same-owner and cross-owner reentry before effects', async t => {
+  const firstLedger = initializedLedger(t, { ledgerId: 'ledger.owner.abort.1' });
+  const secondLedger = initializedLedger(t, {
+    directory: directoryFor(t),
+    ledgerId: 'ledger.owner.abort.2',
+  });
+  const runtime = controlledDeadlineRuntime();
+  const callback = deferred();
+  const reentry = [];
+  let firstOwner;
+  const secondOwner = createDurableServiceCreditExecutionOwner({
+    store: secondLedger.store,
+    execute: () => callbackResult('owner.second'),
+  });
+  firstOwner = createDurableServiceCreditExecutionOwner({
+    store: firstLedger.store,
+    deadlineRuntime: runtime.runtime,
+    execute: identity => {
+      identity.signal.addEventListener('abort', () => {
+        reentry.push(firstOwner.run({
+          request: request(firstLedger.activeGrant.grantId, {
+            requestId: 'request.abort.reentry',
+          }),
+          selectedDurationMs: 1,
+        }));
+        reentry.push(firstOwner.close());
+        reentry.push(secondOwner.run({
+          request: request(secondLedger.activeGrant.grantId),
+          selectedDurationMs: 1,
+        }));
+        reentry.push(secondOwner.close());
+      }, { once: true });
+      return callback.promise;
+    },
+  });
+  const operation = firstOwner.run({
+    request: request(firstLedger.activeGrant.grantId),
+    selectedDurationMs: 1_000,
+  });
+  await Promise.resolve();
+  runtime.setNowNs(1_000_000_000n);
+  runtime.fireNext();
+  assert.equal((await operation).status, 'OUTCOME_UNKNOWN');
+  assert.equal(reentry.length, 4);
+  for (const rejected of reentry) {
+    await expectRejectedCode(rejected, 'SERVICE_CREDIT_DURABLE_OWNER_CALLBACK_CONTEXT');
+  }
+  callback.resolve(callbackResult('owner.late'));
+  await firstOwner.close();
+  assert.equal((await secondOwner.run({
+    request: request(secondLedger.activeGrant.grantId),
+    selectedDurationMs: 1_000,
+  })).status, 'SUCCEEDED');
+  await secondOwner.close();
 });
 
 test('expired grant denial performs no callback and no automatic retry', async t => {
@@ -643,10 +1226,12 @@ test('post-callback contention preserves invocation-aware success and mismatch s
       const competingStore = ServiceCreditSqliteStore.openExisting(ledger.config);
       t.after(() => safeClose(competingStore));
       let calls = 0;
+      let aborts = 0;
       let winnerRevision = null;
-      const execute = () => ({
+      const execute = identity => ({
         then(resolve) {
           calls += 1;
+          identity.signal.addEventListener('abort', () => { aborts += 1; }, { once: true });
           const snapshot = competingStore.getDurableExecutionSnapshot();
           const execution = snapshot.executionState.executions[0];
           if (winner !== 'OUTCOME_UNKNOWN') {
@@ -692,6 +1277,7 @@ test('post-callback contention preserves invocation-aware success and mismatch s
         );
       }
       assert.equal(calls, 1);
+      assert.equal(aborts, winner === 'OUTCOME_UNKNOWN' ? 1 : 0);
       await owner.close();
     });
   }
@@ -985,30 +1571,37 @@ test('failure after callback settlement but before completion commit reports no 
   await owner.close();
 });
 
-test('a never-settling callback intentionally keeps run and close pending without owner handles', async t => {
+test('an ignored abort can return unknown while a never-settling callback keeps close pending', async t => {
   const ledger = initializedLedger(t);
+  const runtime = controlledDeadlineRuntime();
   const never = new Promise(() => {});
+  let signal;
   const owner = createDurableServiceCreditExecutionOwner({
     store: ledger.store,
-    execute: () => never,
+    deadlineRuntime: runtime.runtime,
+    execute: identity => {
+      signal = identity.signal;
+      return never;
+    },
   });
   const run = owner.run({
     request: request(ledger.activeGrant.grantId),
     selectedDurationMs: 1_000,
   });
+  await Promise.resolve();
   const close = owner.close();
-  let runSettled = false;
   let closeSettled = false;
-  run.then(() => { runSettled = true; }, () => { runSettled = true; });
   close.then(() => { closeSettled = true; }, () => { closeSettled = true; });
+  runtime.setNowNs(1_000_000_000n);
+  runtime.fireNext();
+  assert.deepEqual(await run, { status: 'OUTCOME_UNKNOWN', cachedResult: null });
+  assert.equal(signal.aborted, true);
   await Promise.resolve();
-  await Promise.resolve();
-  assert.equal(runSettled, false);
   assert.equal(closeSettled, false);
   assert.equal(ledger.store.getRequest({
     grantId: ledger.activeGrant.grantId,
     requestId: 'request.owner.1',
-  }).state, REQUEST_STATE.EXECUTING);
+  }).state, REQUEST_STATE.OUTCOME_UNKNOWN);
 });
 
 test('captured exercised intrinsics and inherited setters survive bounded poisoning', async t => {
@@ -1035,7 +1628,14 @@ test('captured exercised intrinsics and inherited setters survive bounded poison
   const originalMethodDescriptors = poisonedMethods.map(([target, name]) => (
     [target, name, TEST_GET_OWN_PROPERTY_DESCRIPTOR(target, name)]
   ));
-  const inheritedKeys = ['request', 'selectedDurationMs', 'status', 'cachedResult'];
+  const inheritedKeys = [
+    'request',
+    'selectedDurationMs',
+    'status',
+    'cachedResult',
+    'executionId',
+    'signal',
+  ];
   const originalInheritedDescriptors = inheritedKeys.map(name => (
     [name, TEST_GET_OWN_PROPERTY_DESCRIPTOR(Object.prototype, name)]
   ));
@@ -1126,6 +1726,57 @@ test('captured exercised intrinsics and inherited setters survive bounded poison
       await owner.close();
     });
   }
+
+  await t.test('captured abort constructor and prototype operations', async t => {
+    const ledger = initializedLedger(t, {
+      directory: directoryFor(t),
+      ledgerId: 'ledger.owner.poison.abort',
+    });
+    const runtime = controlledDeadlineRuntime();
+    const callback = deferred();
+    let signal;
+    const owner = createDurableServiceCreditExecutionOwner({
+      store: ledger.store,
+      deadlineRuntime: runtime.runtime,
+      execute: identity => {
+        signal = identity.signal;
+        return callback.promise;
+      },
+    });
+    const controllerDescriptor = TEST_GET_OWN_PROPERTY_DESCRIPTOR(globalThis, 'AbortController');
+    const abortDescriptor = TEST_GET_OWN_PROPERTY_DESCRIPTOR(AbortController.prototype, 'abort');
+    const signalDescriptor = TEST_GET_OWN_PROPERTY_DESCRIPTOR(AbortController.prototype, 'signal');
+    let operation;
+    try {
+      TEST_DEFINE_PROPERTY(globalThis, 'AbortController', {
+        ...controllerDescriptor,
+        value: poison,
+      });
+      TEST_DEFINE_PROPERTY(controllerDescriptor.value.prototype, 'abort', {
+        ...abortDescriptor,
+        value: poison,
+      });
+      TEST_DEFINE_PROPERTY(controllerDescriptor.value.prototype, 'signal', {
+        configurable: true,
+        get: poison,
+      });
+      operation = owner.run({
+        request: request(ledger.activeGrant.grantId),
+        selectedDurationMs: 1_000,
+      });
+      await Promise.resolve();
+      runtime.setNowNs(1_000_000_000n);
+      runtime.fireNext();
+    } finally {
+      TEST_DEFINE_PROPERTY(globalThis, 'AbortController', controllerDescriptor);
+      TEST_DEFINE_PROPERTY(controllerDescriptor.value.prototype, 'abort', abortDescriptor);
+      TEST_DEFINE_PROPERTY(controllerDescriptor.value.prototype, 'signal', signalDescriptor);
+    }
+    assert.equal((await operation).status, 'OUTCOME_UNKNOWN');
+    assert.equal(signal.aborted, true);
+    callback.resolve(callbackResult('owner.late'));
+    await owner.close();
+  });
   assert.equal(poisonCalls, 0);
   await secondOwner.close();
 });
@@ -1143,6 +1794,11 @@ const CALLBACK_CRASH_SOURCE = String.raw`
     });
     const owner = createDurableServiceCreditExecutionOwner({
       store,
+      deadlineRuntime: {
+        monotonicNowNs: () => 0n,
+        schedule: () => Object.freeze({}),
+        cancel: () => undefined,
+      },
       execute: () => {
         process.send({ type: 'callback-started' });
         return new Promise(() => {});
@@ -1230,6 +1886,11 @@ const PROCESS_RACE_SOURCE = String.raw`
       });
       owner = createDurableServiceCreditExecutionOwner({
         store,
+        deadlineRuntime: {
+          monotonicNowNs: () => 0n,
+          schedule: () => Object.freeze({}),
+          cancel: () => undefined,
+        },
         execute: () => ({ resultCode: 'owner.process' }),
       });
       input = message.input;

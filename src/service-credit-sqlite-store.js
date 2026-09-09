@@ -1443,6 +1443,7 @@ export class ServiceCreditSqliteStore {
             result: receipt({
               disposition: 'STALE',
               revision: physicalEnvelope.revision,
+              fenceWallClockNowMs: null,
               execution: null,
             }),
           };
@@ -1461,6 +1462,7 @@ export class ServiceCreditSqliteStore {
             result: receipt({
               disposition: 'UNCHANGED',
               revision: physicalEnvelope.revision,
+              fenceWallClockNowMs: null,
               execution: current,
             }),
           };
@@ -1487,6 +1489,7 @@ export class ServiceCreditSqliteStore {
           result: receipt({
             disposition: 'APPLIED',
             revision: next.revision,
+            fenceWallClockNowMs: wallClockNowMs,
             execution: fenced.execution,
           }),
         };
@@ -1521,6 +1524,7 @@ export class ServiceCreditSqliteStore {
               disposition: 'STALE',
               revision: physicalEnvelope.revision,
               winner: null,
+              completionWallClockNowMs: null,
               request: null,
               execution: null,
             }),
@@ -1534,10 +1538,17 @@ export class ServiceCreditSqliteStore {
         if (cachedResult.contentType !== current.request.selectedContentType) {
           failStore('SERVICE_CREDIT_STORE_INVALID_EXECUTION_INPUT');
         }
+        const completionWallClockNowMs = (
+          current.terminalClassification === 'NONE'
+          && current.fencePhase === 'MAY_HAVE_STARTED'
+        )
+          ? this.#captureTrustedNow()
+          : null;
         const completed = invokeExecutionContract(() => completeServiceCreditExecution({
           state: executionState,
           executionId: input.executionId,
           resultCommitment,
+          wallClockNowMs: completionWallClockNowMs,
         }));
         if (!completed.transitioned) {
           if (completed.winner === 'SUCCEEDED') {
@@ -1559,17 +1570,28 @@ export class ServiceCreditSqliteStore {
               disposition: 'UNCHANGED',
               revision: physicalEnvelope.revision,
               winner: completed.winner,
+              completionWallClockNowMs: null,
               request: requestState,
               execution: completed.execution,
             }),
           };
         }
         const model = this.#modelAt(physicalEnvelope.ledgerState, 0);
-        const modelResult = model.completeExecution({
-          grantId: current.request.grantId,
-          requestId: current.request.requestId,
-          cachedResult,
-        });
+        let modelResult;
+        if (completed.winner === 'SUCCEEDED') {
+          modelResult = model.completeExecution({
+            grantId: current.request.grantId,
+            requestId: current.request.requestId,
+            cachedResult,
+          });
+        } else if (completed.winner === 'OUTCOME_UNKNOWN') {
+          modelResult = model.markOutcomeUnknown({
+            grantId: current.request.grantId,
+            requestId: current.request.requestId,
+          });
+        } else {
+          failStore('SERVICE_CREDIT_STORE_INVARIANT_VIOLATION');
+        }
         const ledgerState = model.exportState();
         const next = this.#persistCompound(physicalEnvelope, ledgerState, completed.state);
         return {
@@ -1578,6 +1600,7 @@ export class ServiceCreditSqliteStore {
             disposition: 'APPLIED',
             revision: next.revision,
             winner: completed.winner,
+            completionWallClockNowMs,
             request: modelResult.request,
             execution: completed.execution,
           }),

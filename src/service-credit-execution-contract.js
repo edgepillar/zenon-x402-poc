@@ -97,7 +97,12 @@ const PREPARE_KEYS = OBJECT_FREEZE([
   'wallClockStartMs',
 ]);
 const FENCE_KEYS = OBJECT_FREEZE(['state', 'executionId', 'wallClockNowMs']);
-const COMPLETE_KEYS = OBJECT_FREEZE(['state', 'executionId', 'resultCommitment']);
+const COMPLETE_KEYS = OBJECT_FREEZE([
+  'state',
+  'executionId',
+  'resultCommitment',
+  'wallClockNowMs',
+]);
 const UNKNOWN_KEYS = OBJECT_FREEZE(['state', 'executionId', 'reason']);
 const RECOVER_KEYS = OBJECT_FREEZE(['state', 'wallClockNowMs']);
 const FENCE_PHASES = OBJECT_FREEZE(['PREPARED', 'MAY_HAVE_STARTED']);
@@ -794,6 +799,10 @@ export function completeServiceCreditExecution(options) {
   if (
     typeof input.resultCommitment !== 'string'
     || !regexpMatches(SHA256_COMMITMENT, input.resultCommitment)
+    || (
+      input.wallClockNowMs !== null
+      && !nonnegativeSafeInteger(input.wallClockNowMs)
+    )
   ) {
     fail(CODE.invalidInput);
   }
@@ -811,17 +820,45 @@ export function completeServiceCreditExecution(options) {
   ) {
     fail(CODE.invalidTransition);
   }
-  const replacement = {
-    ...execution,
-    terminalClassification: 'SUCCEEDED',
-    resultCommitment: input.resultCommitment,
-  };
-  const next = replaceExecution(state, replacement);
+  if (input.wallClockNowMs === null) fail(CODE.invalidInput);
+
+  let replacement;
+  let generation = state.generation;
+  let winner;
+  if (input.wallClockNowMs < execution.wallClockStartMs) {
+    replacement = {
+      ...execution,
+      terminalClassification: 'OUTCOME_UNKNOWN',
+      uncertaintyReason: 'CLOCK_REGRESSION',
+    };
+    generation = state.generation.state === 'OPEN'
+      ? sealFor(replacement, replacement.uncertaintyReason)
+      : state.generation;
+    winner = 'OUTCOME_UNKNOWN';
+  } else if (input.wallClockNowMs >= execution.wallClockDeadlineMs) {
+    replacement = {
+      ...execution,
+      terminalClassification: 'OUTCOME_UNKNOWN',
+      uncertaintyReason: 'DEADLINE_EXPIRED',
+    };
+    generation = state.generation.state === 'OPEN'
+      ? sealFor(replacement, replacement.uncertaintyReason)
+      : state.generation;
+    winner = 'OUTCOME_UNKNOWN';
+  } else {
+    replacement = {
+      ...execution,
+      terminalClassification: 'SUCCEEDED',
+      resultCommitment: input.resultCommitment,
+    };
+    winner = 'SUCCEEDED';
+  }
+  const next = replaceExecution(state, replacement, generation);
   return snapshot({
     state: next,
     execution: executionOutcome(next, execution.executionId),
     transitioned: true,
-    winner: 'SUCCEEDED',
+    winner,
   });
 }
 

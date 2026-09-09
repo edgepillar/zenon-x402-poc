@@ -25,8 +25,12 @@ const NUMBER_IS_SAFE_INTEGER = Number.isSafeInteger;
 const REGEXP_EXEC = RegExp.prototype.exec;
 const STRING_INCLUDES = String.prototype.includes;
 const IS_PROXY = utilTypes.isProxy;
+const BIGINT_FROM = BigInt;
+const NUMBER_FROM = Number;
 const NATIVE_PROMISE = Promise;
 const PROMISE_RESOLVE = Promise.resolve;
+const PROMISE_THEN = Promise.prototype.then;
+const NATIVE_ABORT_CONTROLLER = AbortController;
 const WEAK_SET_HAS = WeakSet.prototype.has;
 const WEAK_SET_ADD = WeakSet.prototype.add;
 
@@ -44,7 +48,8 @@ const METHOD = /^[A-Z][A-Z0-9_-]{0,15}$/;
 const CONTENT_TYPE = /^[a-z0-9][a-z0-9!#$&^_.+-]{0,63}\/[a-z0-9][a-z0-9!#$&^_.+-]{0,63}$/;
 const CHECKSUM = /^sha256:[0-9a-f]{64}$/;
 
-const OWNER_KEYS = OBJECT_FREEZE(['store', 'execute']);
+const OWNER_KEYS = OBJECT_FREEZE(['store', 'execute', 'deadlineRuntime']);
+const DEADLINE_RUNTIME_KEYS = OBJECT_FREEZE(['monotonicNowNs', 'schedule', 'cancel']);
 const RUN_KEYS = OBJECT_FREEZE(['request', 'selectedDurationMs']);
 const REQUEST_KEYS = OBJECT_FREEZE([
   'modelVersion',
@@ -65,8 +70,21 @@ const PREPARE_RECEIPT_KEYS = OBJECT_FREEZE([
   'request',
   'execution',
 ]);
-const FENCE_RECEIPT_KEYS = OBJECT_FREEZE(['disposition', 'revision', 'execution']);
-const TERMINAL_RECEIPT_KEYS = OBJECT_FREEZE([
+const FENCE_RECEIPT_KEYS = OBJECT_FREEZE([
+  'disposition',
+  'revision',
+  'fenceWallClockNowMs',
+  'execution',
+]);
+const COMPLETION_RECEIPT_KEYS = OBJECT_FREEZE([
+  'disposition',
+  'revision',
+  'winner',
+  'completionWallClockNowMs',
+  'request',
+  'execution',
+]);
+const UNKNOWN_RECEIPT_KEYS = OBJECT_FREEZE([
   'disposition',
   'revision',
   'winner',
@@ -111,6 +129,11 @@ const CALLBACK_OWN_KEYS = OBJECT_FREEZE([
   'caller',
   'prototype',
 ]);
+const NANOSECONDS_PER_MILLISECOND = 1_000_000n;
+const TIMER_ROUNDING_NANOSECONDS = NANOSECONDS_PER_MILLISECOND - 1n;
+const MAX_TIMER_CHUNK_MS = 2_147_483_646;
+const MAX_SYNCHRONOUS_EARLY_WAKES = 16;
+const ABORT_REASON = 'SERVICE_CREDIT_DURABLE_EXECUTION_OUTCOME_UNKNOWN';
 
 const STORE_METHOD_NAMES = OBJECT_FREEZE([
   'getDurableExecutionSnapshot',
@@ -146,7 +169,7 @@ class ServiceCreditDurableExecutionOwnerError extends Error {
 }
 
 function ownerFailure(code) {
-  return new ServiceCreditDurableExecutionOwnerError(code);
+  return OBJECT_FREEZE(new ServiceCreditDurableExecutionOwnerError(code));
 }
 
 function failOwner(code) {
@@ -159,6 +182,14 @@ function prototypeMethod(prototype, name) {
     failOwner(INVALID_CONFIGURATION);
   }
   return descriptor.value;
+}
+
+function prototypeGetter(prototype, name) {
+  const descriptor = GET_OWN_PROPERTY_DESCRIPTOR(prototype, name);
+  if (!descriptor || typeof descriptor.get !== 'function') {
+    failOwner(INVALID_CONFIGURATION);
+  }
+  return descriptor.get;
 }
 
 const storeMethods = OBJECT_CREATE(null);
@@ -174,6 +205,8 @@ for (let index = 0; index < STORE_METHOD_NAMES.length; index += 1) {
 const STORE_METHODS = OBJECT_FREEZE(storeMethods);
 const ASYNC_CONTEXT_RUN = prototypeMethod(AsyncLocalStorage.prototype, 'run');
 const ASYNC_CONTEXT_GET_STORE = prototypeMethod(AsyncLocalStorage.prototype, 'getStore');
+const ABORT_CONTROLLER_ABORT = prototypeMethod(NATIVE_ABORT_CONTROLLER.prototype, 'abort');
+const ABORT_CONTROLLER_SIGNAL = prototypeGetter(NATIVE_ABORT_CONTROLLER.prototype, 'signal');
 const CALLBACK_CONTEXT = new AsyncLocalStorage();
 OBJECT_DEFINE_PROPERTY(CALLBACK_CONTEXT, 'getStore', {
   value: ASYNC_CONTEXT_GET_STORE,
@@ -261,6 +294,23 @@ function safeCallback(value) {
   } catch {
     return false;
   }
+}
+
+function captureDeadlineRuntime(value) {
+  const runtime = exactDataObject(value, DEADLINE_RUNTIME_KEYS);
+  if (
+    runtime === null
+    || !safeCallback(runtime.monotonicNowNs)
+    || !safeCallback(runtime.schedule)
+    || !safeCallback(runtime.cancel)
+  ) {
+    return null;
+  }
+  return OBJECT_FREEZE({
+    monotonicNowNs: runtime.monotonicNowNs,
+    schedule: runtime.schedule,
+    cancel: runtime.cancel,
+  });
 }
 
 function reserveStore(store) {
@@ -474,16 +524,21 @@ function executionFromSnapshot(executionState, executionId) {
 
 /**
  * Creates an inert owner for one already-initialized durable service-credit
- * store and one trusted application callback. The owner neither initializes nor
- * recovers durable state and exposes no reusable invocation authority.
+ * store, one trusted application callback, and one trusted monotonic deadline
+ * runtime. The owner neither initializes nor recovers durable state and exposes
+ * no reusable invocation authority.
  */
 export function createDurableServiceCreditExecutionOwner(options) {
   if (arguments.length !== 1) failOwner(INVALID_CONFIGURATION);
   const configuration = exactDataObject(options, OWNER_KEYS);
+  const deadlineRuntime = configuration === null
+    ? null
+    : captureDeadlineRuntime(configuration.deadlineRuntime);
   if (
     configuration === null
     || !exactUnadornedStore(configuration.store)
     || !safeCallback(configuration.execute)
+    || deadlineRuntime === null
   ) {
     failOwner(INVALID_CONFIGURATION);
   }
@@ -508,6 +563,11 @@ export function createDurableServiceCreditExecutionOwner(options) {
 
   function settleClose() {
     if (closing && !active && closeCapability !== null) closeCapability.resolve(undefined);
+  }
+
+  function releaseActive() {
+    active = false;
+    settleClose();
   }
 
   function latchAndThrow() {
@@ -616,8 +676,8 @@ export function createDurableServiceCreditExecutionOwner(options) {
     return classifyExecution(execution, null, callbackStarted, localCachedResult);
   }
 
-  async function invokeApplication(executionId) {
-    const identity = OBJECT_FREEZE({ executionId });
+  function invokeApplication(identity) {
+    const outcome = nativePromiseCapability();
     let callbackPromise;
     try {
       callbackPromise = REFLECT_APPLY(ASYNC_CONTEXT_RUN, CALLBACK_CONTEXT, [
@@ -627,61 +687,518 @@ export function createDurableServiceCreditExecutionOwner(options) {
           return REFLECT_APPLY(PROMISE_RESOLVE, NATIVE_PROMISE, [value]);
         },
       ]);
+      REFLECT_APPLY(PROMISE_THEN, callbackPromise, [
+        callbackResult => {
+          try {
+            const resultCode = captureCallbackResult(callbackResult);
+            outcome.resolve(OBJECT_FREEZE({
+              ok: true,
+              cachedResult: OBJECT_FREEZE({
+                statusCode: 200,
+                contentType: null,
+                resultCode,
+              }),
+            }));
+          } catch {
+            outcome.resolve(OBJECT_FREEZE({ ok: false, cachedResult: null }));
+          }
+        },
+        () => outcome.resolve(OBJECT_FREEZE({ ok: false, cachedResult: null })),
+      ]);
     } catch {
-      return OBJECT_FREEZE({ ok: false, cachedResult: null });
+      outcome.resolve(OBJECT_FREEZE({ ok: false, cachedResult: null }));
     }
-    try {
-      const callbackResult = await callbackPromise;
-      const resultCode = captureCallbackResult(callbackResult);
+    return outcome.promise;
+  }
+
+  function createDeadlineTimer(targetNs, readNow, onExpired, onFault) {
+    let stopped = false;
+    let current = null;
+    let cleanupCertain = true;
+
+    function cancelToken(token) {
+      token.active = false;
+      if (current === token) current = null;
+      let cancelResult;
+      try {
+        cancelResult = REFLECT_APPLY(deadlineRuntime.cancel, undefined, [token.handle]);
+      } catch {
+        cleanupCertain = false;
+        throw ownerFailure(QUARANTINED);
+      }
+      if (cancelResult !== undefined) {
+        cleanupCertain = false;
+        throw ownerFailure(QUARANTINED);
+      }
+    }
+
+    function processWake(token) {
+      if (stopped || current !== token || token.active !== true) return;
+      try {
+        cancelToken(token);
+        const nowNs = readNow();
+        if (nowNs >= targetNs) {
+          stopped = true;
+          onExpired();
+          return;
+        }
+        arm();
+      } catch {
+        stopped = true;
+        onFault(cleanupCertain);
+      }
+    }
+
+    function arm() {
+      let synchronousWakeCount = 0;
+      while (!stopped) {
+        const nowNs = readNow();
+        if (nowNs >= targetNs) {
+          stopped = true;
+          onExpired();
+          return 'EXPIRED';
+        }
+        const remainingNs = targetNs - nowNs;
+        let delayMs = (remainingNs + TIMER_ROUNDING_NANOSECONDS)
+          / NANOSECONDS_PER_MILLISECOND;
+        const maximumDelay = BIGINT_FROM(MAX_TIMER_CHUNK_MS);
+        if (delayMs > maximumDelay) delayMs = maximumDelay;
+        const token = OBJECT_CREATE(null);
+        token.active = true;
+        token.handle = undefined;
+        current = token;
+        let returned = false;
+        let synchronousWake = false;
+        const wake = () => {
+          if (stopped || current !== token || token.active !== true) return;
+          if (!returned) {
+            synchronousWake = true;
+            return;
+          }
+          processWake(token);
+        };
+        let handle;
+        try {
+          handle = REFLECT_APPLY(deadlineRuntime.schedule, undefined, [
+            wake,
+            NUMBER_FROM(delayMs),
+          ]);
+        } catch {
+          token.active = false;
+          current = null;
+          cleanupCertain = false;
+          throw ownerFailure(QUARANTINED);
+        }
+        token.handle = handle;
+        returned = true;
+        if (!synchronousWake) return 'ARMED';
+        cancelToken(token);
+        synchronousWakeCount += 1;
+        if (synchronousWakeCount > MAX_SYNCHRONOUS_EARLY_WAKES) {
+          throw ownerFailure(QUARANTINED);
+        }
+      }
+      return 'STOPPED';
+    }
+
+    function stop() {
+      if (stopped) return;
+      stopped = true;
+      if (current !== null) cancelToken(current);
+    }
+
+    return OBJECT_FREEZE({
+      start: OBJECT_FREEZE(arm),
+      stop: OBJECT_FREEZE(stop),
+      cleanupCertain: OBJECT_FREEZE(() => cleanupCertain),
+    });
+  }
+
+  function performDeadlineRun(input, fenced, execution, monotonicBeforeFenceNs) {
+    const runCapability = nativePromiseCapability();
+    let operationSettled = false;
+    let callbackStarted = false;
+    let callbackSettled = false;
+    let callbackObserved = false;
+    let localCachedResult = null;
+    let terminalClaimed = false;
+    let cleanupCertain = true;
+    let lastMonotonicNs = monotonicBeforeFenceNs;
+    let timer = null;
+    let abortDispatched = false;
+    let controller;
+    let signal;
+    let identity;
+
+    const remainingWallMs = execution.wallClockDeadlineMs - fenced.fenceWallClockNowMs;
+    if (
+      !NUMBER_IS_SAFE_INTEGER(fenced.fenceWallClockNowMs)
+      || fenced.fenceWallClockNowMs < execution.wallClockStartMs
+      || remainingWallMs < 1
+    ) {
+      latchAndThrow();
+    }
+    const targetNs = monotonicBeforeFenceNs
+      + BIGINT_FROM(remainingWallMs) * NANOSECONDS_PER_MILLISECOND;
+
+    function releaseWhenSafe() {
+      if (!cleanupCertain || (callbackStarted && (!callbackSettled || !callbackObserved))) return;
+      releaseActive();
+    }
+
+    function resolveOnce(value) {
+      if (operationSettled) return;
+      operationSettled = true;
+      runCapability.resolve(value);
+    }
+
+    function rejectOnce() {
+      if (operationSettled) return;
+      operationSettled = true;
+      runCapability.reject(ownerFailure(QUARANTINED));
+    }
+
+    function quarantine() {
+      latched = true;
+      rejectOnce();
+      releaseWhenSafe();
+    }
+
+    function readMonotonicNow() {
+      let value;
+      try {
+        value = REFLECT_APPLY(deadlineRuntime.monotonicNowNs, undefined, []);
+      } catch {
+        throw ownerFailure(QUARANTINED);
+      }
+      if (typeof value !== 'bigint' || value < 0n || value < lastMonotonicNs) {
+        throw ownerFailure(QUARANTINED);
+      }
+      lastMonotonicNs = value;
+      return value;
+    }
+
+    function currentWinner(executionId) {
+      const snapshotValue = invokeStore('getDurableExecutionSnapshot', []);
+      if (typeof snapshotValue === 'string') return null;
+      const snapshot = captureTrustedObject(snapshotValue, SNAPSHOT_RECEIPT_KEYS);
+      const currentExecution = executionFromSnapshot(snapshot.executionState, executionId);
+      if (currentExecution === null) return null;
+      const captured = captureExecution(currentExecution);
+      if (captured.terminalClassification === 'OUTCOME_UNKNOWN') {
+        return OBJECT_FREEZE({
+          winner: 'OUTCOME_UNKNOWN',
+          execution: currentExecution,
+          request: null,
+        });
+      }
+      if (captured.terminalClassification === 'SUCCEEDED') {
+        return OBJECT_FREEZE({
+          winner: 'SUCCEEDED',
+          execution: currentExecution,
+          request: null,
+        });
+      }
+      return null;
+    }
+
+    function winnerFromUnknownReceipt(value) {
+      const unknown = captureTrustedObject(value, UNKNOWN_RECEIPT_KEYS);
+      if (!durableDisposition(unknown.disposition)) return null;
+      if (unknown.disposition === 'STALE') return currentWinner(execution.executionId);
+      if (unknown.winner !== 'SUCCEEDED' && unknown.winner !== 'OUTCOME_UNKNOWN') return null;
       return OBJECT_FREEZE({
-        ok: true,
-        cachedResult: OBJECT_FREEZE({
-          statusCode: 200,
-          contentType: null,
-          resultCode,
-        }),
+        winner: unknown.winner,
+        execution: unknown.execution,
+        request: unknown.request,
       });
+    }
+
+    function abortAfterUnknown() {
+      if (!callbackStarted || abortDispatched) return;
+      let abortResult;
+      try {
+        abortResult = REFLECT_APPLY(ASYNC_CONTEXT_RUN, CALLBACK_CONTEXT, [
+          identity,
+          () => REFLECT_APPLY(ABORT_CONTROLLER_ABORT, controller, [ABORT_REASON]),
+        ]);
+      } catch {
+        throw ownerFailure(QUARANTINED);
+      }
+      if (abortResult !== undefined) throw ownerFailure(QUARANTINED);
+      abortDispatched = true;
+    }
+
+    function settleWinner(winner, abortOnUnknown, failureAfterWinner) {
+      if (winner === null) {
+        quarantine();
+        return;
+      }
+      let durableExecution;
+      try {
+        durableExecution = captureExecution(winner.execution);
+      } catch {
+        quarantine();
+        return;
+      }
+      if (
+        durableExecution === null
+        || durableExecution.terminalClassification !== winner.winner
+      ) {
+        quarantine();
+        return;
+      }
+      if (winner.winner === 'OUTCOME_UNKNOWN') {
+        latched = true;
+        if (abortOnUnknown) {
+          try {
+            abortAfterUnknown();
+          } catch {
+            quarantine();
+            return;
+          }
+        }
+        if (failureAfterWinner) rejectOnce();
+        else resolveOnce(result('OUTCOME_UNKNOWN'));
+        releaseWhenSafe();
+        return;
+      }
+      if (!callbackSettled || localCachedResult === null) {
+        quarantine();
+        return;
+      }
+      try {
+        const classified = classifyExecution(
+          winner.execution,
+          winner.request,
+          true,
+          localCachedResult,
+        );
+        if (classified.status !== 'SUCCEEDED') {
+          quarantine();
+          return;
+        }
+        resolveOnce(classified);
+      } catch {
+        quarantine();
+        return;
+      }
+      releaseWhenSafe();
+    }
+
+    function attemptUnknown(reason, abortOnUnknown, failureAfterWinner = false) {
+      let unknownValue;
+      try {
+        unknownValue = invokeStore('markDurableExecutionUnknown', [{
+          expectedRevision: fenced.revision,
+          executionId: execution.executionId,
+          reason,
+        }]);
+        if (typeof unknownValue === 'string') {
+          quarantine();
+          return;
+        }
+        settleWinner(
+          winnerFromUnknownReceipt(unknownValue),
+          abortOnUnknown,
+          failureAfterWinner,
+        );
+      } catch {
+        quarantine();
+      }
+    }
+
+    function stopTimer() {
+      if (timer === null) return true;
+      try {
+        timer.stop();
+      } catch {
+        cleanupCertain = timer.cleanupCertain();
+        return false;
+      }
+      cleanupCertain = timer.cleanupCertain();
+      return cleanupCertain;
+    }
+
+    function deadlineExpired() {
+      if (terminalClaimed) return;
+      terminalClaimed = true;
+      attemptUnknown('DEADLINE_EXPIRED', true);
+    }
+
+    function timerFault(timerCleanupCertain) {
+      if (terminalClaimed) return;
+      cleanupCertain = timerCleanupCertain;
+      terminalClaimed = true;
+      attemptUnknown('LOST_CONTROL', true, true);
+    }
+
+    function completeCallback(cachedResult) {
+      let completedValue;
+      try {
+        completedValue = invokeStore('completeDurableExecution', [{
+          expectedRevision: fenced.revision,
+          executionId: execution.executionId,
+          cachedResult,
+        }]);
+        if (typeof completedValue === 'string') {
+          quarantine();
+          return;
+        }
+        const completed = captureTrustedObject(completedValue, COMPLETION_RECEIPT_KEYS);
+        if (!durableDisposition(completed.disposition)) {
+          quarantine();
+          return;
+        }
+        if (
+          (completed.disposition === 'APPLIED'
+            && (
+              !NUMBER_IS_SAFE_INTEGER(completed.completionWallClockNowMs)
+              || completed.completionWallClockNowMs < 0
+            ))
+          || (completed.disposition !== 'APPLIED'
+            && completed.completionWallClockNowMs !== null)
+        ) {
+          quarantine();
+          return;
+        }
+        if (completed.disposition === 'STALE') {
+          const current = currentWinner(execution.executionId);
+          settleWinner(current, current?.winner === 'OUTCOME_UNKNOWN', false);
+          return;
+        }
+        if (
+          completed.winner !== 'SUCCEEDED'
+          && completed.winner !== 'OUTCOME_UNKNOWN'
+        ) {
+          quarantine();
+          return;
+        }
+        settleWinner(OBJECT_FREEZE({
+          winner: completed.winner,
+          execution: completed.execution,
+          request: completed.request,
+        }), completed.winner === 'OUTCOME_UNKNOWN', false);
+      } catch {
+        quarantine();
+      }
+    }
+
+    function callbackFinished(callback) {
+      callbackSettled = true;
+      if (terminalClaimed) {
+        releaseWhenSafe();
+        return;
+      }
+      terminalClaimed = true;
+      if (!stopTimer()) {
+        attemptUnknown('LOST_CONTROL', false, true);
+        return;
+      }
+      let monotonicNowNs;
+      try {
+        monotonicNowNs = readMonotonicNow();
+      } catch {
+        attemptUnknown('LOST_CONTROL', true, true);
+        return;
+      }
+      if (!callback.ok) {
+        attemptUnknown('LOST_CONTROL', false);
+        return;
+      }
+      localCachedResult = OBJECT_FREEZE({
+        statusCode: callback.cachedResult.statusCode,
+        contentType: input.request.selectedContentType,
+        resultCode: callback.cachedResult.resultCode,
+      });
+      if (monotonicNowNs >= targetNs) {
+        attemptUnknown('DEADLINE_EXPIRED', true);
+        return;
+      }
+      completeCallback(localCachedResult);
+    }
+
+    try {
+      controller = new NATIVE_ABORT_CONTROLLER();
+      signal = REFLECT_APPLY(ABORT_CONTROLLER_SIGNAL, controller, []);
+      if (signal === null || typeof signal !== 'object' || IS_PROXY(signal)) latchAndThrow();
+      identity = OBJECT_FREEZE({ executionId: execution.executionId, signal });
+      timer = createDeadlineTimer(
+        targetNs,
+        readMonotonicNow,
+        deadlineExpired,
+        timerFault,
+      );
+      timer.start();
     } catch {
-      return OBJECT_FREEZE({ ok: false, cachedResult: null });
+      cleanupCertain = timer === null ? true : timer.cleanupCertain();
+      terminalClaimed = true;
+      attemptUnknown('LOST_CONTROL', false, true);
+      return runCapability.promise;
     }
+    if (terminalClaimed) return runCapability.promise;
+
+    callbackStarted = true;
+    const callbackPromise = invokeApplication(identity);
+    try {
+      REFLECT_APPLY(PROMISE_THEN, callbackPromise, [
+        callback => {
+          callbackObserved = true;
+          try {
+            callbackFinished(callback);
+          } catch {
+            quarantine();
+          }
+        },
+        () => {
+          callbackObserved = false;
+          quarantine();
+        },
+      ]);
+      callbackObserved = true;
+    } catch {
+      callbackObserved = false;
+      terminalClaimed = true;
+      attemptUnknown('LOST_CONTROL', true, true);
+    }
+    return runCapability.promise;
   }
 
-  function unknownAfterCallback(revision, executionId) {
-    const unknownValue = invokeStore('markDurableExecutionUnknown', [{
-      expectedRevision: revision,
-      executionId,
-      reason: 'LOST_CONTROL',
-    }]);
-    if (typeof unknownValue === 'string') latchAndThrow();
-    const unknown = captureTrustedObject(unknownValue, TERMINAL_RECEIPT_KEYS);
-    if (!durableDisposition(unknown.disposition)) latchAndThrow();
-    if (unknown.disposition === 'STALE') return classifyCurrent(executionId, true);
-    if (unknown.winner === 'OUTCOME_UNKNOWN') return result('OUTCOME_UNKNOWN');
-    if (unknown.winner === 'SUCCEEDED') {
-      return classifyExecution(unknown.execution, unknown.request, true);
-    }
-    latchAndThrow();
-  }
-
-  async function performRun(input) {
+  function performRun(input) {
     try {
       const snapshotValue = invokeStore('getDurableExecutionSnapshot', []);
-      if (typeof snapshotValue === 'string') return result(snapshotValue);
+      if (typeof snapshotValue === 'string') {
+        releaseActive();
+        return REFLECT_APPLY(PROMISE_RESOLVE, NATIVE_PROMISE, [result(snapshotValue)]);
+      }
       const snapshot = captureTrustedObject(snapshotValue, SNAPSHOT_RECEIPT_KEYS);
       if (!NUMBER_IS_SAFE_INTEGER(snapshot.revision) || snapshot.revision < 0) latchAndThrow();
-      if (snapshot.executionState === null) return result('RECOVERY_REQUIRED');
+      if (snapshot.executionState === null) {
+        releaseActive();
+        return REFLECT_APPLY(PROMISE_RESOLVE, NATIVE_PROMISE, [
+          result('RECOVERY_REQUIRED'),
+        ]);
+      }
 
       const preparedValue = invokeStore('prepareDurableExecution', [{
         expectedRevision: snapshot.revision,
         request: input.request,
         selectedDurationMs: input.selectedDurationMs,
       }]);
-      if (typeof preparedValue === 'string') return result(preparedValue);
+      if (typeof preparedValue === 'string') {
+        releaseActive();
+        return REFLECT_APPLY(PROMISE_RESOLVE, NATIVE_PROMISE, [result(preparedValue)]);
+      }
       const prepared = captureTrustedObject(preparedValue, PREPARE_RECEIPT_KEYS);
       if (!durableDisposition(prepared.disposition)) latchAndThrow();
-      if (prepared.disposition === 'STALE') return result('STALE');
+      if (prepared.disposition === 'STALE') {
+        releaseActive();
+        return REFLECT_APPLY(PROMISE_RESOLVE, NATIVE_PROMISE, [result('STALE')]);
+      }
       if (prepared.disposition === 'UNCHANGED') {
-        return classifyExecution(prepared.execution, prepared.request);
+        const classification = classifyExecution(prepared.execution, prepared.request);
+        releaseActive();
+        return REFLECT_APPLY(PROMISE_RESOLVE, NATIVE_PROMISE, [classification]);
       }
       const preparedExecution = captureExecution(prepared.execution);
       if (
@@ -692,54 +1209,65 @@ export function createDurableServiceCreditExecutionOwner(options) {
         latchAndThrow();
       }
 
+      let monotonicBeforeFenceNs;
+      try {
+        monotonicBeforeFenceNs = REFLECT_APPLY(
+          deadlineRuntime.monotonicNowNs,
+          undefined,
+          [],
+        );
+      } catch {
+        latchAndThrow();
+      }
+      if (typeof monotonicBeforeFenceNs !== 'bigint' || monotonicBeforeFenceNs < 0n) {
+        latchAndThrow();
+      }
+
       const fencedValue = invokeStore('persistDurableExecutionFence', [{
         expectedRevision: prepared.revision,
         executionId: preparedExecution.executionId,
       }]);
-      if (typeof fencedValue === 'string') return result(fencedValue);
+      if (typeof fencedValue === 'string') {
+        releaseActive();
+        return REFLECT_APPLY(PROMISE_RESOLVE, NATIVE_PROMISE, [result(fencedValue)]);
+      }
       const fenced = captureTrustedObject(fencedValue, FENCE_RECEIPT_KEYS);
       if (!durableDisposition(fenced.disposition)) latchAndThrow();
-      if (fenced.disposition === 'STALE') return result('STALE');
-      if (fenced.disposition === 'UNCHANGED') return classifyExecution(fenced.execution);
+      if (
+        (fenced.disposition === 'APPLIED'
+          && (
+            !NUMBER_IS_SAFE_INTEGER(fenced.fenceWallClockNowMs)
+            || fenced.fenceWallClockNowMs < 0
+          ))
+        || (fenced.disposition !== 'APPLIED' && fenced.fenceWallClockNowMs !== null)
+      ) {
+        latchAndThrow();
+      }
+      if (fenced.disposition === 'STALE') {
+        releaseActive();
+        return REFLECT_APPLY(PROMISE_RESOLVE, NATIVE_PROMISE, [result('STALE')]);
+      }
+      if (fenced.disposition === 'UNCHANGED') {
+        const classification = classifyExecution(fenced.execution);
+        releaseActive();
+        return REFLECT_APPLY(PROMISE_RESOLVE, NATIVE_PROMISE, [classification]);
+      }
       const execution = captureExecution(fenced.execution);
       if (execution === null) latchAndThrow();
-      if (execution.terminalClassification === 'NOT_INVOKED') return result('NOT_INVOKED');
+      if (execution.terminalClassification === 'NOT_INVOKED') {
+        releaseActive();
+        return REFLECT_APPLY(PROMISE_RESOLVE, NATIVE_PROMISE, [result('NOT_INVOKED')]);
+      }
       if (
         execution.terminalClassification !== 'NONE'
         || execution.fencePhase !== 'MAY_HAVE_STARTED'
       ) {
         latchAndThrow();
       }
-
-      const callback = await invokeApplication(execution.executionId);
-      if (!callback.ok) return unknownAfterCallback(fenced.revision, execution.executionId);
-      const cachedResult = OBJECT_FREEZE({
-        statusCode: callback.cachedResult.statusCode,
-        contentType: input.request.selectedContentType,
-        resultCode: callback.cachedResult.resultCode,
-      });
-      const completedValue = invokeStore('completeDurableExecution', [{
-        expectedRevision: fenced.revision,
-        executionId: execution.executionId,
-        cachedResult,
-      }]);
-      if (typeof completedValue === 'string') latchAndThrow();
-      const completed = captureTrustedObject(completedValue, TERMINAL_RECEIPT_KEYS);
-      if (!durableDisposition(completed.disposition)) latchAndThrow();
-      if (completed.disposition === 'STALE') {
-        return classifyCurrent(execution.executionId, true, cachedResult);
-      }
-      if (completed.winner === 'OUTCOME_UNKNOWN') return result('OUTCOME_UNKNOWN');
-      if (completed.winner !== 'SUCCEEDED') latchAndThrow();
-      return classifyExecution(
-        completed.execution,
-        completed.request,
-        true,
-        cachedResult,
-      );
-    } finally {
-      active = false;
-      settleClose();
+      return performDeadlineRun(input, fenced, execution, monotonicBeforeFenceNs);
+    } catch (error) {
+      releaseActive();
+      return nativeRejected(error);
     }
   }
 
