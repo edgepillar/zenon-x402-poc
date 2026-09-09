@@ -1150,10 +1150,16 @@ test('source closure, active paths, output, package surface, and docs stay bound
   const packageJson = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8'));
   assert.deepEqual(
     Object.entries(packageJson.scripts).filter(([, value]) => value.includes('loopback')),
-    [[
-      'demo:service-credit-loopback',
-      'node src/service-credit-loopback-demo-cli.js',
-    ]],
+    [
+      [
+        'demo:service-credit-loopback',
+        'node src/service-credit-loopback-demo-cli.js',
+      ],
+      [
+        'demo:service-credit-durable-loopback',
+        'node src/service-credit-durable-loopback-demo-cli.js',
+      ],
+    ],
   );
   assert.equal(
     Object.values(packageJson.scripts).some(
@@ -1162,8 +1168,12 @@ test('source closure, active paths, output, package surface, and docs stay bound
     false,
   );
   for (const [name, command] of Object.entries(packageJson.scripts)) {
-    if (name === 'demo:service-credit-loopback') continue;
+    if (
+      name === 'demo:service-credit-loopback'
+      || name === 'demo:service-credit-durable-loopback'
+    ) continue;
     assert.equal(command.includes('service-credit-loopback-demo'), false);
+    assert.equal(command.includes('service-credit-durable-loopback-demo'), false);
   }
   assert.equal(readdirSync(ROOT).includes('service-credit-loopback-server'), false);
   for (const relativePath of ['README.md', 'SECURITY.md', 'docs/IMPLEMENTATION_PLAN.md']) {
@@ -1189,11 +1199,11 @@ test('source closure, active paths, output, package surface, and docs stay bound
   const security = readFileSync(join(ROOT, 'SECURITY.md'), 'utf8');
   const plan = readFileSync(join(ROOT, 'docs/IMPLEMENTATION_PLAN.md'), 'utf8');
   assert.equal(
-    readme.includes('transport owner itself has no package script or active CLI'),
+    readme.includes('transport owner itself has no default or active CLI'),
     true,
   );
   assert.equal(
-    readme.includes('only the isolated synthetic loopback demo below composes it'),
+    readme.includes('synthetic loopback and durable loopback demos are its only package-script callers'),
     true,
   );
   assert.equal(readme.includes('fixed two-second deadline'), true);
@@ -1207,5 +1217,5 @@ test('source closure, active paths, output, package surface, and docs stay bound
   assert.equal(plan.includes('generic handler cannot enforce credential provenance'), true);
   assert.equal(plan.includes('separately named, separately reviewed future milestone'), true);
   assert.equal(plan.includes('removing only `src/service-credit-loopback-server.js`'), true);
-  assert.equal(plan.includes('leaves the listener-free demo, transport owner, active runtime, and persisted schema unchanged'), true);
+  assert.equal(plan.includes('leaves the listener-free and durable demos, transport owner, active runtime, and persisted schema unchanged'), true);
 });

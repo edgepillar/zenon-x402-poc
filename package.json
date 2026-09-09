@@ -16,6 +16,7 @@
     "demo": "node src/demo.js",
     "demo:service-credit": "node src/service-credit-demo-cli.js",
     "demo:service-credit-loopback": "node src/service-credit-loopback-demo-cli.js",
+    "demo:service-credit-durable-loopback": "node src/service-credit-durable-loopback-demo-cli.js",
     "benchmark:service-credit-local": "node src/service-credit-local-benchmark-cli.js",
     "server": "node src/server-cli.js",
     "buyer": "node src/buyer-cli.js",
