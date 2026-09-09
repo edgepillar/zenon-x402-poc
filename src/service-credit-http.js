@@ -15,6 +15,50 @@ import {
 export const SERVICE_CREDIT_HTTP_PATH = '/service-credit/v1/execute';
 export const SERVICE_CREDIT_HTTP_ROUTE_ID = 'service-credit.execute.v1';
 
+const REFLECT_APPLY = Reflect.apply;
+const GET_OWN_PROPERTY_DESCRIPTOR = Reflect.getOwnPropertyDescriptor;
+const GET_PROTOTYPE_OF = Reflect.getPrototypeOf;
+const OWN_KEYS = Reflect.ownKeys;
+const OBJECT_DEFINE_PROPERTY = Object.defineProperty;
+const OBJECT_FREEZE = Object.freeze;
+const OBJECT_HAS_OWN = Object.hasOwn;
+const OBJECT_IS_FROZEN = Object.isFrozen;
+const OBJECT_PROTOTYPE = Object.prototype;
+const OBJECT_VALUES = Object.values;
+const ARRAY_IS_ARRAY = Array.isArray;
+const ARRAY_PROTOTYPE = Array.prototype;
+const ARRAY_SORT = Array.prototype.sort;
+const NUMBER_IS_FINITE = Number.isFinite;
+const NUMBER_IS_SAFE_INTEGER = Number.isSafeInteger;
+const STRING_FROM = String;
+const STRING_INCLUDES = String.prototype.includes;
+const STRING_SLICE = String.prototype.slice;
+const STRING_STARTS_WITH = String.prototype.startsWith;
+const STRING_TO_LOWER_CASE = String.prototype.toLowerCase;
+const REGEXP_TEST = RegExp.prototype.test;
+const MAP_CONSTRUCTOR = Map;
+const MAP_GET = Map.prototype.get;
+const MAP_HAS = Map.prototype.has;
+const MAP_SET = Map.prototype.set;
+const SET_CONSTRUCTOR = Set;
+const SET_ADD = Set.prototype.add;
+const SET_HAS = Set.prototype.has;
+const BUFFER_CONSTRUCTOR = Buffer;
+const BUFFER_BYTE_LENGTH = Buffer.byteLength;
+const BUFFER_FROM = Buffer.from;
+const BUFFER_TO_STRING = Buffer.prototype.toString;
+const JSON_OBJECT = JSON;
+const JSON_PARSE = JSON.parse;
+const JSON_STRINGIFY = JSON.stringify;
+const TEXT_DECODER_DECODE = TextDecoder.prototype.decode;
+const IS_PROXY = utilTypes.isProxy;
+const TYPE_ERROR = TypeError;
+const HASH_UPDATE = createHash('sha256').update;
+const HASH_DIGEST = createHash('sha256').digest;
+const MODEL_FROM_STATE = InMemoryServiceCreditModel.fromState;
+const MODEL_EXPORT_STATE = InMemoryServiceCreditModel.prototype.exportState;
+const VERIFY_CAPABILITY = verifyServiceCreditCapability;
+
 const APPLICATION_CONTENT_TYPE = 'application/json';
 const EMPTY_BODY_DIGEST = `sha256:${createHash('sha256').update(Buffer.alloc(0)).digest('hex')}`;
 const AUTHORIZATION_SCHEME = 'ServiceCredit ';
@@ -36,7 +80,7 @@ const MAX_REQUEST_STARTS_PER_WINDOW = 64;
 const REQUEST_START_WINDOW_MS = 1_000;
 const MAX_ACTIVE_EXECUTIONS = 8;
 const monotonicMilliseconds = performance.now.bind(performance);
-const PRIVATE_HEADERS = Object.freeze({
+const PRIVATE_HEADERS = OBJECT_FREEZE({
   'Cache-Control': 'private, no-store, max-age=0',
   'Content-Type': APPLICATION_CONTENT_TYPE,
   Vary: 'Authorization',
@@ -48,56 +92,101 @@ function isPlainDataObject(value) {
     if (
       value === null
       || typeof value !== 'object'
-      || Array.isArray(value)
-      || utilTypes.isProxy(value)
-      || Reflect.getPrototypeOf(value) !== Object.prototype
+      || ARRAY_IS_ARRAY(value)
+      || IS_PROXY(value)
+      || GET_PROTOTYPE_OF(value) !== OBJECT_PROTOTYPE
     ) {
       return false;
     }
-    return Reflect.ownKeys(value).every(key => {
+    const keys = OWN_KEYS(value);
+    for (let index = 0; index < keys.length; index += 1) {
+      const key = keys[index];
       if (typeof key !== 'string') return false;
-      const descriptor = Reflect.getOwnPropertyDescriptor(value, key);
-      return descriptor?.enumerable === true && Object.hasOwn(descriptor, 'value');
-    });
+      const descriptor = GET_OWN_PROPERTY_DESCRIPTOR(value, key);
+      if (descriptor?.enumerable !== true || !OBJECT_HAS_OWN(descriptor, 'value')) return false;
+    }
+    return true;
   } catch {
     return false;
   }
 }
 
+function keyAllowed(key, keys) {
+  for (let index = 0; index < keys.length; index += 1) {
+    if (keys[index] === key) return true;
+  }
+  return false;
+}
+
+function exactDataMethod(value, name) {
+  try {
+    if (
+      value === null
+      || (typeof value !== 'object' && typeof value !== 'function')
+      || IS_PROXY(value)
+    ) return null;
+    let descriptor = GET_OWN_PROPERTY_DESCRIPTOR(value, name);
+    if (descriptor === undefined) {
+      const prototype = GET_PROTOTYPE_OF(value);
+      if (prototype === null || IS_PROXY(prototype)) return null;
+      descriptor = GET_OWN_PROPERTY_DESCRIPTOR(prototype, name);
+    }
+    if (
+      descriptor === undefined
+      || !OBJECT_HAS_OWN(descriptor, 'value')
+      || typeof descriptor.value !== 'function'
+      || IS_PROXY(descriptor.value)
+    ) return null;
+    return descriptor.value;
+  } catch {
+    return null;
+  }
+}
+
 function exactKeys(value, keys) {
   if (!isPlainDataObject(value)) return false;
-  const observed = Reflect.ownKeys(value);
-  return observed.length === keys.length && observed.every(key => keys.includes(key));
+  const observed = OWN_KEYS(value);
+  if (observed.length !== keys.length) return false;
+  for (let index = 0; index < observed.length; index += 1) {
+    if (!keyAllowed(observed[index], keys)) return false;
+  }
+  return true;
 }
 
 function captureBoundedArray(value, maximumLength) {
   try {
     if (
-      !Array.isArray(value)
-      || utilTypes.isProxy(value)
-      || Reflect.getPrototypeOf(value) !== Array.prototype
+      !ARRAY_IS_ARRAY(value)
+      || IS_PROXY(value)
+      || GET_PROTOTYPE_OF(value) !== ARRAY_PROTOTYPE
     ) {
       return null;
     }
-    const length = Reflect.getOwnPropertyDescriptor(value, 'length');
+    const length = GET_OWN_PROPERTY_DESCRIPTOR(value, 'length');
     if (
       !length
       || length.enumerable
-      || !Object.hasOwn(length, 'value')
-      || !Number.isSafeInteger(length.value)
+      || !OBJECT_HAS_OWN(length, 'value')
+      || !NUMBER_IS_SAFE_INTEGER(length.value)
       || length.value < 0
       || length.value > maximumLength
     ) {
       return null;
     }
-    const keys = Reflect.ownKeys(value);
-    if (keys.length !== length.value + 1 || keys.at(-1) !== 'length') return null;
+    const keys = OWN_KEYS(value);
+    if (keys.length !== length.value + 1 || keys[keys.length - 1] !== 'length') return null;
     const captured = [];
     for (let index = 0; index < length.value; index += 1) {
-      if (keys[index] !== String(index)) return null;
-      const descriptor = Reflect.getOwnPropertyDescriptor(value, String(index));
-      if (!descriptor?.enumerable || !Object.hasOwn(descriptor, 'value')) return null;
-      captured.push(descriptor.value);
+      const key = STRING_FROM(index);
+      if (keys[index] !== key) return null;
+      const descriptor = GET_OWN_PROPERTY_DESCRIPTOR(value, key);
+      if (!descriptor?.enumerable || !OBJECT_HAS_OWN(descriptor, 'value')) return null;
+      OBJECT_DEFINE_PROPERTY(captured, key, {
+        value: descriptor.value,
+        enumerable: true,
+        writable: true,
+        configurable: true,
+      });
     }
     return captured;
   } catch {
@@ -107,26 +196,39 @@ function captureBoundedArray(value, maximumLength) {
 
 function canonicalJson(value) {
   if (value === null || typeof value === 'boolean' || typeof value === 'string') {
-    return JSON.stringify(value);
+    return REFLECT_APPLY(JSON_STRINGIFY, JSON_OBJECT, [value]);
   }
   if (typeof value === 'number') {
-    if (!Number.isFinite(value)) throw new TypeError('invalid canonical value');
-    return JSON.stringify(value);
+    if (!NUMBER_IS_FINITE(value)) throw new TYPE_ERROR('invalid canonical value');
+    return REFLECT_APPLY(JSON_STRINGIFY, JSON_OBJECT, [value]);
   }
-  if (Array.isArray(value)) {
+  if (ARRAY_IS_ARRAY(value)) {
     const captured = captureBoundedArray(value, MAX_CANONICAL_ARRAY_LENGTH);
-    if (!captured) throw new TypeError('invalid canonical value');
-    return `[${captured.map(canonicalJson).join(',')}]`;
+    if (!captured) throw new TYPE_ERROR('invalid canonical value');
+    let output = '[';
+    for (let index = 0; index < captured.length; index += 1) {
+      if (index !== 0) output += ',';
+      output += canonicalJson(captured[index]);
+    }
+    return `${output}]`;
   }
-  if (!isPlainDataObject(value)) throw new TypeError('invalid canonical value');
-  const keys = Reflect.ownKeys(value).sort();
-  return `{${keys.map(key => `${JSON.stringify(key)}:${canonicalJson(value[key])}`).join(',')}}`;
+  if (!isPlainDataObject(value)) throw new TYPE_ERROR('invalid canonical value');
+  const keys = OWN_KEYS(value);
+  REFLECT_APPLY(ARRAY_SORT, keys, []);
+  let output = '{';
+  for (let index = 0; index < keys.length; index += 1) {
+    if (index !== 0) output += ',';
+    const key = keys[index];
+    output += `${REFLECT_APPLY(JSON_STRINGIFY, JSON_OBJECT, [key])}:${canonicalJson(ownValue(value, key))}`;
+  }
+  return `${output}}`;
 }
 
 function freezeJson(value) {
-  if (value !== null && typeof value === 'object' && !Object.isFrozen(value)) {
-    for (const child of Object.values(value)) freezeJson(child);
-    Object.freeze(value);
+  if (value !== null && typeof value === 'object' && !OBJECT_IS_FROZEN(value)) {
+    const children = OBJECT_VALUES(value);
+    for (let index = 0; index < children.length; index += 1) freezeJson(children[index]);
+    OBJECT_FREEZE(value);
   }
   return value;
 }
@@ -135,17 +237,20 @@ function parseAuthorization(value) {
   try {
     if (
       typeof value !== 'string'
-      || Buffer.byteLength(value, 'utf8') > MAX_AUTHORIZATION_BYTES
-      || !value.startsWith(AUTHORIZATION_SCHEME)
+      || REFLECT_APPLY(BUFFER_BYTE_LENGTH, BUFFER_CONSTRUCTOR, [value, 'utf8']) > MAX_AUTHORIZATION_BYTES
+      || !REFLECT_APPLY(STRING_STARTS_WITH, value, [AUTHORIZATION_SCHEME])
     ) {
       return null;
     }
-    const encoded = value.slice(AUTHORIZATION_SCHEME.length);
-    if (!BASE64URL.test(encoded)) return null;
-    const bytes = Buffer.from(encoded, 'base64url');
-    if (bytes.length === 0 || bytes.toString('base64url') !== encoded) return null;
-    const text = UTF8_DECODER.decode(bytes);
-    const proof = JSON.parse(text);
+    const encoded = REFLECT_APPLY(STRING_SLICE, value, [AUTHORIZATION_SCHEME.length]);
+    if (!REFLECT_APPLY(REGEXP_TEST, BASE64URL, [encoded])) return null;
+    const bytes = REFLECT_APPLY(BUFFER_FROM, BUFFER_CONSTRUCTOR, [encoded, 'base64url']);
+    if (
+      bytes.length === 0
+      || REFLECT_APPLY(BUFFER_TO_STRING, bytes, ['base64url']) !== encoded
+    ) return null;
+    const text = REFLECT_APPLY(TEXT_DECODER_DECODE, UTF8_DECODER, [bytes]);
+    const proof = REFLECT_APPLY(JSON_PARSE, JSON_OBJECT, [text]);
     if (!isPlainDataObject(proof) || canonicalJson(proof) !== text) return null;
     return freezeJson(proof);
   } catch {
@@ -155,13 +260,41 @@ function parseAuthorization(value) {
 
 function rawHeaderValues(request, wantedName) {
   try {
-    if (!Array.isArray(request.rawHeaders) || request.rawHeaders.length % 2 !== 0) return null;
+    const rawHeaders = ownValue(request, 'rawHeaders');
+    if (
+      !ARRAY_IS_ARRAY(rawHeaders)
+      || IS_PROXY(rawHeaders)
+      || GET_PROTOTYPE_OF(rawHeaders) !== ARRAY_PROTOTYPE
+    ) return null;
+    const lengthDescriptor = GET_OWN_PROPERTY_DESCRIPTOR(rawHeaders, 'length');
+    if (
+      lengthDescriptor === undefined
+      || !OBJECT_HAS_OWN(lengthDescriptor, 'value')
+      || !NUMBER_IS_SAFE_INTEGER(lengthDescriptor.value)
+      || lengthDescriptor.value < 0
+      || lengthDescriptor.value % 2 !== 0
+    ) return null;
     const values = [];
-    for (let index = 0; index < request.rawHeaders.length; index += 2) {
-      const name = request.rawHeaders[index];
-      const value = request.rawHeaders[index + 1];
+    for (let index = 0; index < lengthDescriptor.value; index += 2) {
+      const nameDescriptor = GET_OWN_PROPERTY_DESCRIPTOR(rawHeaders, STRING_FROM(index));
+      const valueDescriptor = GET_OWN_PROPERTY_DESCRIPTOR(rawHeaders, STRING_FROM(index + 1));
+      if (
+        nameDescriptor === undefined
+        || valueDescriptor === undefined
+        || !OBJECT_HAS_OWN(nameDescriptor, 'value')
+        || !OBJECT_HAS_OWN(valueDescriptor, 'value')
+      ) return null;
+      const name = nameDescriptor.value;
+      const value = valueDescriptor.value;
       if (typeof name !== 'string' || typeof value !== 'string') return null;
-      if (name.toLowerCase() === wantedName) values.push(value);
+      if (REFLECT_APPLY(STRING_TO_LOWER_CASE, name, []) === wantedName) {
+        OBJECT_DEFINE_PROPERTY(values, STRING_FROM(values.length), {
+          value,
+          enumerable: true,
+          writable: true,
+          configurable: true,
+        });
+      }
     }
     return values;
   } catch {
@@ -240,7 +373,9 @@ function send(response, descriptor) {
 }
 
 function validIdentifier(value) {
-  return typeof value === 'string' && IDENTIFIER.test(value) && !value.includes('://');
+  return typeof value === 'string'
+    && REFLECT_APPLY(REGEXP_TEST, IDENTIFIER, [value])
+    && !REFLECT_APPLY(STRING_INCLUDES, value, ['://']);
 }
 
 function minimalGrant(value) {
@@ -251,11 +386,11 @@ function minimalGrant(value) {
     if (
       !validIdentifier(grantId)
       || typeof capabilityCommitment !== 'string'
-      || !SHA256_COMMITMENT.test(capabilityCommitment)
+      || !REFLECT_APPLY(REGEXP_TEST, SHA256_COMMITMENT, [capabilityCommitment])
     ) {
       return null;
     }
-    return Object.freeze({
+    return OBJECT_FREEZE({
       grantId,
       capabilityCommitment,
     });
@@ -269,35 +404,40 @@ function validateStartupState(state) {
   let callbackInvoked = false;
   const forbiddenCallback = () => {
     callbackInvoked = true;
-    throw new TypeError('startup callback invoked');
+    throw new TYPE_ERROR('startup callback invoked');
   };
-  const normalizedState = InMemoryServiceCreditModel.fromState({
+  const model = REFLECT_APPLY(MODEL_FROM_STATE, InMemoryServiceCreditModel, [{
     deriveCost: forbiddenCallback,
     now: forbiddenCallback,
-  }, state).exportState();
+  }, state]);
+  const normalizedState = REFLECT_APPLY(MODEL_EXPORT_STATE, model, []);
   if (
     callbackInvoked
     || ownValue(normalizedState, 'schemaVersion') !== SERVICE_CREDIT_STATE_SCHEMA_VERSION
     || canonicalJson(normalizedState) !== suppliedCanonicalState
   ) {
-    throw new TypeError('invalid snapshot');
+    throw new TYPE_ERROR('invalid snapshot');
   }
   return normalizedState;
 }
 
 function snapshotChecksum(schemaVersion, revision, state) {
-  return `sha256:${createHash('sha256').update(canonicalJson({
+  const hash = createHash('sha256');
+  REFLECT_APPLY(HASH_UPDATE, hash, [canonicalJson({
     revision,
     schemaVersion,
     state,
-  })).digest('hex')}`;
+  })]);
+  return `sha256:${REFLECT_APPLY(HASH_DIGEST, hash, ['hex'])}`;
 }
 
 function buildGrantAdmissionIndex(store) {
   try {
-    const snapshot = Reflect.apply(store.load, store, []);
+    const load = exactDataMethod(store, 'load');
+    if (load === null) throw new TYPE_ERROR('invalid snapshot');
+    const snapshot = REFLECT_APPLY(load, store, []);
     if (!exactKeys(snapshot, ['schemaVersion', 'revision', 'state', 'checksum'])) {
-      throw new TypeError('invalid snapshot');
+      throw new TYPE_ERROR('invalid snapshot');
     }
     const schemaVersion = ownValue(snapshot, 'schemaVersion');
     const revision = ownValue(snapshot, 'revision');
@@ -305,49 +445,51 @@ function buildGrantAdmissionIndex(store) {
     const state = ownValue(snapshot, 'state');
     if (
       schemaVersion !== SERVICE_CREDIT_STORE_ENVELOPE_SCHEMA_VERSION
-      || !Number.isSafeInteger(revision)
+      || !NUMBER_IS_SAFE_INTEGER(revision)
       || revision < 0
       || typeof checksum !== 'string'
-      || !SHA256_COMMITMENT.test(checksum)
+      || !REFLECT_APPLY(REGEXP_TEST, SHA256_COMMITMENT, [checksum])
       || !exactKeys(state, ['schemaVersion', 'modelVersion', 'offers', 'grants', 'requests'])
       || ownValue(state, 'schemaVersion') !== SERVICE_CREDIT_STATE_SCHEMA_VERSION
       || ownValue(state, 'modelVersion') !== SERVICE_CREDIT_MODEL_VERSION
     ) {
-      throw new TypeError('invalid snapshot');
+      throw new TYPE_ERROR('invalid snapshot');
     }
     const normalizedState = validateStartupState(state);
     if (checksum !== snapshotChecksum(schemaVersion, revision, normalizedState)) {
-      throw new TypeError('invalid snapshot');
+      throw new TYPE_ERROR('invalid snapshot');
     }
     const records = captureBoundedArray(
       ownValue(normalizedState, 'grants'),
       MAX_ADMITTED_GRANTS,
     );
-    if (!records) throw new TypeError('invalid snapshot');
-    const admitted = new Map();
-    const commitments = new Set();
-    for (const record of records) {
+    if (!records) throw new TYPE_ERROR('invalid snapshot');
+    const admitted = new MAP_CONSTRUCTOR();
+    const commitments = new SET_CONSTRUCTOR();
+    for (let index = 0; index < records.length; index += 1) {
+      const record = records[index];
       const grant = minimalGrant(record);
       if (
         !grant
-        || admitted.has(grant.grantId)
-        || commitments.has(grant.capabilityCommitment)
+        || REFLECT_APPLY(MAP_HAS, admitted, [grant.grantId])
+        || REFLECT_APPLY(SET_HAS, commitments, [grant.capabilityCommitment])
       ) {
-        throw new TypeError('invalid snapshot');
+        throw new TYPE_ERROR('invalid snapshot');
       }
-      admitted.set(grant.grantId, grant);
-      commitments.add(grant.capabilityCommitment);
+      REFLECT_APPLY(MAP_SET, admitted, [grant.grantId, grant]);
+      REFLECT_APPLY(SET_ADD, commitments, [grant.capabilityCommitment]);
     }
     return admitted;
   } catch {
-    throw new TypeError('SERVICE_CREDIT_HTTP_INVALID_CONFIGURATION');
+    throw new TYPE_ERROR('SERVICE_CREDIT_HTTP_INVALID_CONFIGURATION');
   }
 }
 
 function proofIdentity(proof) {
   try {
-    if (!isPlainDataObject(proof) || !validIdentifier(proof.grantId)) return null;
-    return proof.grantId;
+    if (!isPlainDataObject(proof)) return null;
+    const grantId = ownValue(proof, 'grantId');
+    return validIdentifier(grantId) ? grantId : null;
   } catch {
     return null;
   }
@@ -355,15 +497,15 @@ function proofIdentity(proof) {
 
 function buildRequest(proof) {
   try {
-    return Object.freeze({
+    return OBJECT_FREEZE({
       modelVersion: SERVICE_CREDIT_MODEL_VERSION,
-      grantId: proof.grantId,
-      requestId: proof.requestId,
+      grantId: ownValue(proof, 'grantId'),
+      requestId: ownValue(proof, 'requestId'),
       method: 'POST',
       routeId: SERVICE_CREDIT_HTTP_ROUTE_ID,
       canonicalBodyDigest: EMPTY_BODY_DIGEST,
       selectedContentType: APPLICATION_CONTENT_TYPE,
-      maxCostUnits: proof.maxCostUnits,
+      maxCostUnits: ownValue(proof, 'maxCostUnits'),
     });
   } catch {
     return null;
@@ -372,8 +514,8 @@ function buildRequest(proof) {
 
 function ownValue(value, key) {
   try {
-    const descriptor = Reflect.getOwnPropertyDescriptor(value, key);
-    return descriptor?.enumerable === true && Object.hasOwn(descriptor, 'value')
+    const descriptor = GET_OWN_PROPERTY_DESCRIPTOR(value, key);
+    return descriptor?.enumerable === true && OBJECT_HAS_OWN(descriptor, 'value')
       ? descriptor.value
       : undefined;
   } catch {
@@ -493,7 +635,7 @@ function createRequestStartAdmission() {
   let starts = 0;
   return function admitRequestStart() {
     const now = monotonicMilliseconds();
-    if (!Number.isFinite(now) || now < windowStartedAt) return false;
+    if (!NUMBER_IS_FINITE(now) || now < windowStartedAt) return false;
     if (now - windowStartedAt >= REQUEST_START_WINDOW_MS) {
       windowStartedAt = now;
       starts = 0;
@@ -661,6 +803,92 @@ async function processAuthorizedRequest(configuration, normalizedRequest) {
   );
 }
 
+function authorizationDecision(status, request = null) {
+  return OBJECT_FREEZE({ status, request });
+}
+
+function authorizeServiceCreditRequest(request, admittedGrants, admitRequestStart) {
+  if (ownValue(request, 'url') !== SERVICE_CREDIT_HTTP_PATH) {
+    return authorizationDecision('NOT_FOUND');
+  }
+  if (ownValue(request, 'method') !== 'POST') {
+    return authorizationDecision('METHOD_NOT_ALLOWED');
+  }
+  if (!framingIsEmpty(request)) {
+    return authorizationDecision('BAD_REQUEST');
+  }
+  if (!admitRequestStart()) {
+    return authorizationDecision('UNAVAILABLE');
+  }
+
+  const proof = parseAuthorization(authorizationHeader(request));
+  const grantId = proofIdentity(proof);
+  if (!proof || !grantId) {
+    return authorizationDecision('UNAUTHORIZED');
+  }
+  const grant = REFLECT_APPLY(MAP_GET, admittedGrants, [grantId]);
+  if (!grant) {
+    return authorizationDecision('UNAUTHORIZED');
+  }
+  const normalizedRequest = buildRequest(proof);
+  if (normalizedRequest === null) return authorizationDecision('UNAUTHORIZED');
+  try {
+    const result = REFLECT_APPLY(VERIFY_CAPABILITY, undefined, [{
+      grant,
+      request: normalizedRequest,
+      proof,
+    }]);
+    if (
+      !exactKeys(result, ['verified', 'proofVersion', 'grantId', 'requestId', 'maxCostUnits'])
+      || !OBJECT_IS_FROZEN(result)
+      || ownValue(result, 'verified') !== true
+      || ownValue(result, 'proofVersion') !== ownValue(proof, 'proofVersion')
+      || ownValue(result, 'grantId') !== ownValue(normalizedRequest, 'grantId')
+      || ownValue(result, 'requestId') !== ownValue(normalizedRequest, 'requestId')
+      || ownValue(result, 'maxCostUnits') !== ownValue(normalizedRequest, 'maxCostUnits')
+    ) {
+      throw new TYPE_ERROR('capability mismatch');
+    }
+  } catch {
+    return authorizationDecision('UNAUTHORIZED');
+  }
+  return authorizationDecision('AUTHORIZED', normalizedRequest);
+}
+
+function responseForAuthorizationDecision(status) {
+  if (status === 'NOT_FOUND') return RESPONSE.notFound;
+  if (status === 'METHOD_NOT_ALLOWED') return RESPONSE.methodNotAllowed;
+  if (status === 'BAD_REQUEST') return RESPONSE.badRequest;
+  if (status === 'UNAUTHORIZED') return RESPONSE.unauthorized;
+  return RESPONSE.unavailable;
+}
+
+/**
+ * Creates a non-authorizing parser and capability-admission boundary. An
+ * accepted decision contains only the normalized request; it performs no
+ * reservation, execution, outcome mapping, response write, or retry.
+ */
+export function createServiceCreditHttpAdmission(options) {
+  if (arguments.length !== 1 || !exactKeys(options, ['store'])) {
+    throw new TYPE_ERROR('SERVICE_CREDIT_HTTP_INVALID_CONFIGURATION');
+  }
+  const store = ownValue(options, 'store');
+  if (store === null || (typeof store !== 'object' && typeof store !== 'function')) {
+    throw new TYPE_ERROR('SERVICE_CREDIT_HTTP_INVALID_CONFIGURATION');
+  }
+  const admittedGrants = buildGrantAdmissionIndex(store);
+  const admitRequestStart = createRequestStartAdmission();
+  const admit = OBJECT_FREEZE((request, ...extra) => {
+    if (extra.length !== 0) return authorizationDecision('UNAVAILABLE');
+    try {
+      return authorizeServiceCreditRequest(request, admittedGrants, admitRequestStart);
+    } catch {
+      return authorizationDecision('UNAVAILABLE');
+    }
+  });
+  return OBJECT_FREEZE({ admit });
+}
+
 /**
  * Creates the standalone service-credit execution boundary. It intentionally
  * exposes no credit activation, settlement, administration, or reconciliation
@@ -672,75 +900,36 @@ async function processAuthorizedRequest(configuration, normalizedRequest) {
  */
 export function createServiceCreditHttpHandler(options) {
   const configuration = captureConfiguration(options);
-  const admittedGrants = buildGrantAdmissionIndex(configuration.store);
-  const admitRequestStart = createRequestStartAdmission();
+  const admission = createServiceCreditHttpAdmission({ store: configuration.store });
   const inFlight = new Map();
   let activeExecutions = 0;
 
   return async function serviceCreditHttpHandler(request, response) {
     let descriptor = RESPONSE.unavailable;
     try {
-      if (request.url !== SERVICE_CREDIT_HTTP_PATH) {
-        descriptor = RESPONSE.notFound;
-      } else if (request.method !== 'POST') {
-        descriptor = RESPONSE.methodNotAllowed;
-      } else if (!framingIsEmpty(request)) {
-        descriptor = RESPONSE.badRequest;
-      } else if (!admitRequestStart()) {
-        descriptor = RESPONSE.unavailable;
+      const decision = admission.admit(request);
+      if (decision.status !== 'AUTHORIZED') {
+        descriptor = responseForAuthorizationDecision(decision.status);
       } else {
-        const proof = parseAuthorization(authorizationHeader(request));
-        const grantId = proofIdentity(proof);
-        if (!proof || !grantId) {
-          descriptor = RESPONSE.unauthorized;
+        const normalizedRequest = decision.request;
+        const operationId = requestOperationId(normalizedRequest);
+        const existing = inFlight.get(operationId);
+        if (existing) {
+          descriptor = await existing;
+        } else if (activeExecutions >= MAX_ACTIVE_EXECUTIONS) {
+          descriptor = RESPONSE.unavailable;
         } else {
-          const grant = admittedGrants.get(grantId);
-          if (!grant) {
-            descriptor = RESPONSE.unauthorized;
-          } else {
-            const normalizedRequest = buildRequest(proof);
-            let verified = false;
-            try {
-              const result = verifyServiceCreditCapability({
-                grant,
-                request: normalizedRequest,
-                proof,
-              });
-              if (
-                result.verified !== true
-                || result.grantId !== normalizedRequest.grantId
-                || result.requestId !== normalizedRequest.requestId
-                || result.maxCostUnits !== normalizedRequest.maxCostUnits
-              ) {
-                throw new TypeError('capability mismatch');
-              }
-              verified = true;
-            } catch {
-              descriptor = RESPONSE.unauthorized;
-            }
-
-            if (verified) {
-              const operationId = requestOperationId(normalizedRequest);
-              const existing = inFlight.get(operationId);
-              if (existing) {
-                descriptor = await existing;
-              } else if (activeExecutions >= MAX_ACTIVE_EXECUTIONS) {
-                descriptor = RESPONSE.unavailable;
-              } else {
-                activeExecutions += 1;
-                const operation = Promise.resolve().then(() => processAuthorizedRequest(
-                  configuration,
-                  normalizedRequest,
-                ));
-                inFlight.set(operationId, operation);
-                try {
-                  descriptor = await operation;
-                } finally {
-                  if (inFlight.get(operationId) === operation) inFlight.delete(operationId);
-                  activeExecutions -= 1;
-                }
-              }
-            }
+          activeExecutions += 1;
+          const operation = Promise.resolve().then(() => processAuthorizedRequest(
+            configuration,
+            normalizedRequest,
+          ));
+          inFlight.set(operationId, operation);
+          try {
+            descriptor = await operation;
+          } finally {
+            if (inFlight.get(operationId) === operation) inFlight.delete(operationId);
+            activeExecutions -= 1;
           }
         }
       }
