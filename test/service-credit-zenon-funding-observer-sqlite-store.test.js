@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
-import { createHash } from 'node:crypto';
+import { createHash, generateKeyPairSync, sign } from 'node:crypto';
 import {
   chmodSync,
   copyFileSync,
@@ -28,24 +28,37 @@ import {
   ZenonFundingObserverSqliteStore,
 } from '../src/service-credit-zenon-funding-observer-sqlite-store.js';
 import {
+  applyZenonFundingInclusionObservation,
+  applyZenonFundingObserverPage,
   createZenonFundingObserverState,
+  planZenonFundingObserverBackfill,
   serializeZenonFundingObserverState,
   ZENON_FUNDING_OBSERVER_STATUS,
 } from '../src/service-credit-zenon-funding-observer-state.js';
+import {
+  createZenonFundingProviderAttestationSigningBytes,
+  parseZenonFundingProviderAttestationAuthorityRecord,
+} from '../src/service-credit-zenon-funding-provider-attestation.js';
 import { createZenonFundingEvidenceActivation } from '../src/service-credit-zenon-funding-evidence.js';
 import {
   InMemoryServiceCreditModel,
   SERVICE_CREDIT_MODEL_VERSION,
 } from '../src/service-credit-model.js';
+import { ServiceCreditSqliteStore } from '../src/service-credit-sqlite-store.js';
 import { deriveServiceCreditResourceBinding } from '../src/service-credit-activation.js';
 
 const NOW = 2_000_000_000_000;
+const ATTESTATION_NOW = 2_000_000_000;
 const INITIAL_HEIGHT = 10;
 const INITIAL_HASH = 'a'.repeat(64);
 const TRANSACTION_HASH = 'c'.repeat(64);
 const APPLICATION_ID = 0x5a464f53;
 const TABLE_NAME = 'zenon_funding_observer_state';
-const ENVELOPE_DOMAIN = 'zenon-x402:funding-observer-sqlite-envelope-v1';
+const ENVELOPE_DOMAIN = 'zenon-x402:funding-observer-sqlite-envelope-v2';
+const ATTESTATION_ID_DOMAIN = 'zenon-x402:funding-provider-attestation-id-v1';
+const ATTESTATION_EVIDENCE_DOMAIN = 'zenon-x402:funding-provider-attestation-evidence-v1';
+const RESOURCE_DIGEST_DOMAIN = 'zenon-x402-service-credit-payment-resource-v1';
+const REQUIREMENT_DIGEST_DOMAIN = 'zenon-x402-service-credit-payment-requirement-v1';
 const CHAIN_PROFILE = Object.freeze({
   version: 1,
   chainIdentifier: '12345',
@@ -56,6 +69,14 @@ function digest(fill) {
   return `sha256:${fill.repeat(64)}`;
 }
 
+function domainCommitment(domain, value) {
+  return `sha256:${createHash('sha256')
+    .update(domain)
+    .update('\0')
+    .update(canonicalJson(value))
+    .digest('hex')}`;
+}
+
 function canonicalJson(value) {
   if (value === null || typeof value !== 'object') return JSON.stringify(value);
   if (Array.isArray(value)) return `[${value.map(canonicalJson).join(',')}]`;
@@ -64,18 +85,86 @@ function canonicalJson(value) {
 }
 
 function envelopeChecksum(envelope) {
+  const value = { ...envelope };
+  delete value.checksum;
   return `sha256:${createHash('sha256')
     .update(ENVELOPE_DOMAIN)
     .update('\0')
-    .update(canonicalJson({
-      envelopeVersion: envelope.envelopeVersion,
-      observerRevision: envelope.observerRevision,
-      observerStateSchemaVersion: envelope.observerStateSchemaVersion,
-      recordKey: envelope.recordKey,
-      stateBytes: envelope.stateBytes,
-    }))
+    .update(canonicalJson(value))
     .digest('hex')}`;
 }
+
+function attestationRequestIdentity(request) {
+  return {
+    requestVersion: request.requestVersion,
+    requestType: request.requestType,
+    recordKey: request.recordKey,
+    authorityRecordDigest: request.authorityRecordDigest,
+    generationCommitment: request.generationCommitment,
+    keyId: request.keyId,
+    audienceDigest: request.audienceDigest,
+    observerRecordId: request.observerRecordId,
+    targetBindingDigest: request.targetBindingDigest,
+    candidateDigest: request.candidateDigest,
+    inclusionAuthorizationId: request.inclusionAuthorizationId,
+    bootstrapCheckpoint: request.bootstrapCheckpoint,
+    sourcePolicyCommitment: request.sourcePolicyCommitment,
+    unsignedFundingEvidenceDigest: request.unsignedFundingEvidenceDigest,
+  };
+}
+
+function rebindStoredRequest(envelope, mutate) {
+  mutate(envelope.outbox.request);
+  envelope.outbox.request.unsignedFundingEvidenceDigest = domainCommitment(
+    ATTESTATION_EVIDENCE_DOMAIN,
+    envelope.outbox.request.unsignedFundingEvidence,
+  );
+  envelope.outbox.request.attestationId = domainCommitment(
+    ATTESTATION_ID_DOMAIN,
+    attestationRequestIdentity(envelope.outbox.request),
+  );
+  envelope.outbox.attestationId = envelope.outbox.request.attestationId;
+}
+
+const STORE_KEY_PAIR = generateKeyPairSync('ed25519');
+const STORE_PUBLIC_KEY = STORE_KEY_PAIR.publicKey
+  .export({ format: 'der', type: 'spki' })
+  .subarray(-32)
+  .toString('base64url');
+const AUTHORITY_RECORD_TEXT = canonicalJson({
+  authorityRecordVersion: 1,
+  authorityProfileId: 'zenon.provider-attestation',
+  authorityProfileVersion: 1,
+  verifierVersion: 1,
+  providerAuthorityId: 'provider.reference',
+  generationId: 'provider.attestation.generation',
+  generationVersion: 1,
+  keyId: 'provider.attestation.key',
+  algorithm: 'Ed25519',
+  publicKey: STORE_PUBLIC_KEY,
+  network: 'zenon:testnet',
+  chainProfile: CHAIN_PROFILE,
+  observerPolicy: {
+    policyId: 'zenon.injected-observer',
+    policyVersion: 1,
+    verifierVersion: 1,
+  },
+  confirmationPolicy: {
+    policyId: 'zenon.authenticated-momentum-inclusion',
+    policyVersion: 1,
+    minimumConfirmations: 3,
+  },
+  bootstrapCheckpoint: { height: INITIAL_HEIGHT, hash: INITIAL_HASH },
+  sourcePolicyCommitment: digest('8'),
+  maximumAttestationBytes: 4096,
+  maximumCanonicalBytes: 524288,
+  maximumInitialAgeSeconds: 300,
+  maximumFutureSkewSeconds: 5,
+  maximumValiditySeconds: 300,
+});
+const AUTHORITY = parseZenonFundingProviderAttestationAuthorityRecord(
+  AUTHORITY_RECORD_TEXT,
+);
 
 function momentumHash(height) {
   return createHash('sha256').update(`observer-store-momentum-${height}`).digest('hex');
@@ -113,22 +202,10 @@ function target(overrides = {}) {
 
 function observerConfiguration(overrides = {}) {
   const base = {
-    observerPolicy: {
-      policyId: 'zenon.injected-observer',
-      policyVersion: 1,
-      verifierVersion: 1,
-    },
-    authorityGeneration: {
-      generationId: 'authority.generation.reference',
-      generationVersion: 1,
-      generationCommitment: digest('7'),
-    },
-    chainProfile: { ...CHAIN_PROFILE },
-    confirmationPolicy: {
-      policyId: 'zenon.injected-contiguous-confirmations',
-      policyVersion: 1,
-      minimumConfirmations: 3,
-    },
+    observerPolicy: { ...AUTHORITY.observerPolicy },
+    authorityGeneration: { ...AUTHORITY.authorityGeneration },
+    chainProfile: { ...AUTHORITY.chainProfile },
+    confirmationPolicy: { ...AUTHORITY.confirmationPolicy },
     target: target(),
     checkpoint: { height: INITIAL_HEIGHT, hash: INITIAL_HASH },
     catchUp: {
@@ -160,6 +237,69 @@ function initialState(overrides = {}) {
   return createZenonFundingObserverState(observerConfiguration(overrides));
 }
 
+function observerContext(state) {
+  return {
+    observerRecordId: state.observerRecordId,
+    targetBindingDigest: state.targetBindingDigest,
+    authorityGeneration: structuredClone(state.authorityGeneration),
+    chainProfile: structuredClone(state.chainProfile),
+  };
+}
+
+function pureBackfill(state, startCheckpoint, memberHeight = null) {
+  const planned = planZenonFundingObserverBackfill({
+    state,
+    expectedRevision: state.revision,
+    ...observerContext(state),
+    source: {
+      status: 'AVAILABLE',
+      frontier: structuredClone(AUTHORITY.bootstrapCheckpoint),
+      checkpointHash: startCheckpoint.hash,
+    },
+  });
+  let previousHash = planned.plan.startCheckpoint.hash;
+  const entries = [];
+  for (let height = planned.plan.fromHeight; height <= planned.plan.throughHeight; height += 1) {
+    const hash = height === AUTHORITY.bootstrapCheckpoint.height
+      ? AUTHORITY.bootstrapCheckpoint.hash
+      : momentumHash(height);
+    entries.push({
+      height,
+      hash,
+      previousHash,
+      members: height === memberHeight
+        ? [{
+          transactionId: state.target.transactionId,
+          targetBindingDigest: state.targetBindingDigest,
+        }]
+        : [],
+    });
+    previousHash = hash;
+  }
+  return applyZenonFundingObserverPage({
+    state,
+    expectedRevision: state.revision,
+    plan: planned.plan,
+    page: {
+      pageVersion: 1,
+      ...observerContext(state),
+      planId: planned.plan.planId,
+      startCheckpoint: structuredClone(planned.plan.startCheckpoint),
+      frontier: structuredClone(planned.plan.frontier),
+      entries,
+    },
+  }).state;
+}
+
+function pureObserveFound(state) {
+  return applyZenonFundingInclusionObservation({
+    state,
+    expectedRevision: state.revision,
+    ...observerContext(state),
+    observation: foundObservation(state),
+  }).state;
+}
+
 function privateDirectoryFor(t) {
   const directory = realpathSync(mkdtempSync(join(tmpdir(), 'zenon-observer-store-')));
   chmodSync(directory, 0o700);
@@ -172,6 +312,7 @@ function createOptions(directory, state = initialState(), overrides = {}) {
     databasePath: join(directory, 'observer.sqlite'),
     allowedRoot: directory,
     initialState: state,
+    authorityRecord: AUTHORITY_RECORD_TEXT,
     ...overrides,
   };
 }
@@ -181,6 +322,7 @@ function openOptions(configuration, recordKey, overrides = {}) {
     databasePath: configuration.databasePath,
     allowedRoot: configuration.allowedRoot,
     expectedRecordKey: recordKey,
+    authorityRecord: configuration.authorityRecord,
     ...overrides,
   };
 }
@@ -217,6 +359,24 @@ function foundObservation(state, overrides = {}) {
     momentumHash: receipt.targetMembership.momentumHash,
     pageDigest: receipt.pageDigest,
     ...overrides,
+  };
+}
+
+function signedAttestationEnvelope(request, overrides = {}) {
+  const issuedAt = overrides.issuedAt ?? ATTESTATION_NOW;
+  const validUntil = overrides.validUntil ?? issuedAt + 120;
+  const signingBytes = createZenonFundingProviderAttestationSigningBytes({
+    request,
+    issuedAt,
+    validUntil,
+  });
+  return {
+    envelopeVersion: 1,
+    attestationId: request.attestationId,
+    keyId: AUTHORITY.keyId,
+    issuedAt,
+    validUntil,
+    signature: sign(null, signingBytes, STORE_KEY_PAIR.privateKey).toString('base64url'),
   };
 }
 
@@ -303,6 +463,7 @@ const RACE_CHILD_SOURCE = String.raw`
           databasePath: message.databasePath,
           allowedRoot: message.allowedRoot,
           expectedRecordKey: message.recordKey,
+          authorityRecord: message.authorityRecord,
           busyTimeoutMs: 10000,
         });
         process.send({ type: 'ready' });
@@ -371,6 +532,7 @@ function runWriterRace(configuration, recordKey, operation) {
         databasePath: configuration.databasePath,
         allowedRoot: configuration.allowedRoot,
         recordKey,
+        authorityRecord: configuration.authorityRecord,
         operation,
       });
     });
@@ -387,6 +549,7 @@ const CRASH_CHILD_SOURCE = String.raw`
       databasePath: message.databasePath,
       allowedRoot: message.allowedRoot,
       expectedRecordKey: message.recordKey,
+      authorityRecord: message.authorityRecord,
       busyTimeoutMs: 10000,
       testHooks: { [message.phase]: hook },
     });
@@ -417,6 +580,7 @@ function crashAt(configuration, recordKey, phase, operation) {
       databasePath: configuration.databasePath,
       allowedRoot: configuration.allowedRoot,
       recordKey,
+      authorityRecord: configuration.authorityRecord,
       phase,
       operation,
     });
@@ -434,6 +598,7 @@ const SNAPSHOT_WRITER_CHILD_SOURCE = String.raw`
         databasePath: message.databasePath,
         allowedRoot: message.allowedRoot,
         expectedRecordKey: message.recordKey,
+        authorityRecord: message.authorityRecord,
         busyTimeoutMs: 10000,
       });
       process.send({ type: 'ready' });
@@ -511,13 +676,14 @@ function startSnapshotWriter(configuration, recordKey, iterations) {
     databasePath: configuration.databasePath,
     allowedRoot: configuration.allowedRoot,
     recordKey,
+    authorityRecord: configuration.authorityRecord,
     iterations,
   });
   return { child, ready, done };
 }
 
 test('import is inert and dependency closure remains offline and default-inactive', () => {
-  assert.equal(ZENON_FUNDING_OBSERVER_SQLITE_STORE_SCHEMA_VERSION, 1);
+  assert.equal(ZENON_FUNDING_OBSERVER_SQLITE_STORE_SCHEMA_VERSION, 2);
   assert.equal(typeof ZenonFundingObserverSqliteStore.create, 'function');
   assert.equal(typeof deriveZenonFundingObserverSqliteRecordKey, 'function');
   const source = readFileSync(
@@ -527,6 +693,7 @@ test('import is inert and dependency closure remains offline and default-inactiv
   const imports = [...source.matchAll(/from '([^']+)'/g)].map(match => match[1]).sort();
   assert.deepEqual(imports, [
     './service-credit-zenon-funding-observer-state.js',
+    './service-credit-zenon-funding-provider-attestation.js',
     'node:crypto',
     'node:fs',
     'node:path',
@@ -550,7 +717,7 @@ test('exclusive create and explicit open preserve exact frozen state and stable 
   const configuration = createOptions(directory, state);
   const store = createZenonFundingObserverSqliteStore(configuration);
   const created = store.load();
-  assert.equal(created.storeSchemaVersion, 1);
+  assert.equal(created.storeSchemaVersion, 2);
   assert.deepEqual(created.state, state);
   assertDeepFrozen(created);
   const recordKey = created.recordKey;
@@ -574,9 +741,15 @@ test('exclusive create and explicit open preserve exact frozen state and stable 
 test('record key derivation is pure, strict, and identical to exclusive create', t => {
   const directory = privateDirectoryFor(t);
   const state = initialState();
-  const recordKey = deriveZenonFundingObserverSqliteRecordKey(state);
+  const recordKey = deriveZenonFundingObserverSqliteRecordKey(state, AUTHORITY_RECORD_TEXT);
   assert.match(recordKey, /^sha256:[0-9a-f]{64}$/);
-  assert.equal(deriveZenonFundingObserverSqliteRecordKey(structuredClone(state)), recordKey);
+  assert.equal(
+    deriveZenonFundingObserverSqliteRecordKey(
+      structuredClone(state),
+      AUTHORITY_RECORD_TEXT,
+    ),
+    recordKey,
+  );
   const store = createZenonFundingObserverSqliteStore(createOptions(directory, state));
   assert.equal(store.load().recordKey, recordKey);
   store.close();
@@ -584,11 +757,14 @@ test('record key derivation is pure, strict, and identical to exclusive create',
   const extra = structuredClone(state);
   extra.extra = true;
   expectCode(
-    () => deriveZenonFundingObserverSqliteRecordKey(extra),
+    () => deriveZenonFundingObserverSqliteRecordKey(extra, AUTHORITY_RECORD_TEXT),
     'ZENON_FUNDING_OBSERVER_STORE_INVALID_INPUT',
   );
   expectCode(
-    () => deriveZenonFundingObserverSqliteRecordKey(new Proxy(structuredClone(state), {})),
+    () => deriveZenonFundingObserverSqliteRecordKey(
+      new Proxy(structuredClone(state), {}),
+      AUTHORITY_RECORD_TEXT,
+    ),
     'ZENON_FUNDING_OBSERVER_STORE_INVALID_INPUT',
   );
 });
@@ -605,7 +781,10 @@ test('create faults reconcile from initial state through the pure record key onl
       const configuration = createOptions(directory, state, {
         testHooks: { [phase]: () => { throw new Error('synthetic'); } },
       });
-      const expectedRecordKey = deriveZenonFundingObserverSqliteRecordKey(state);
+      const expectedRecordKey = deriveZenonFundingObserverSqliteRecordKey(
+        state,
+        AUTHORITY_RECORD_TEXT,
+      );
       expectCode(() => createZenonFundingObserverSqliteStore(configuration), createCode);
       if (!committed) {
         expectCode(
@@ -722,7 +901,7 @@ test('SQLite application, schema, row, envelope, checksum, and size grammar is e
     store.close();
     const persisted = readEnvelope(configuration);
     assert.equal(persisted.metadata.applicationId, APPLICATION_ID);
-    assert.equal(persisted.metadata.userVersion, 1);
+    assert.equal(persisted.metadata.userVersion, 2);
     assert.equal(persisted.row.record_key, recordKey);
     assert.equal(persisted.envelope.checksum, envelopeChecksum(persisted.envelope));
     assert.equal(persisted.envelope.stateBytes, serializeZenonFundingObserverState(initialState()));
@@ -748,7 +927,7 @@ test('SQLite application, schema, row, envelope, checksum, and size grammar is e
     const recordKey = store.load().recordKey;
     store.close();
     const database = new DatabaseSync(configuration.databasePath);
-    database.exec('PRAGMA user_version = 2');
+    database.exec('PRAGMA user_version = 3');
     database.close();
     expectCode(
       () => openZenonFundingObserverSqliteStore(openOptions(configuration, recordKey)),
@@ -939,6 +1118,836 @@ test('page, inclusion, threshold, candidate, and later strengthening survive reo
   );
   assert.equal(canonicalJson(store.projectCommittedCandidate()), stableCandidate);
   store.close();
+});
+
+test('threshold, prepared request, and authenticated READY artifact commit atomically', t => {
+  const directory = privateDirectoryFor(t);
+  const configuration = createOptions(directory);
+  let store = createZenonFundingObserverSqliteStore(configuration);
+  assert.deepEqual(store.load().outbox, {
+    outboxVersion: 1,
+    revision: 0,
+    status: 'NONE',
+  });
+  assert.equal(store.peekPreparedAttestation(), null);
+  const threshold = reachThreshold(store);
+  assert.deepEqual(store.load().outbox, {
+    outboxVersion: 1,
+    revision: 1,
+    status: 'PREPARED',
+  });
+  const request = store.peekPreparedAttestation();
+  assert.equal(request.requestType, 'zenon-funding-provider-attestation-request');
+  assertDeepFrozen(request);
+  const committed = store.commitAuthenticatedEnvelope({
+    expectedObserverRevision: threshold.state.revision,
+    expectedOutboxRevision: 1,
+    attestationId: request.attestationId,
+    envelope: signedAttestationEnvelope(request),
+    nowEpochSeconds: ATTESTATION_NOW,
+  });
+  assert.equal(committed.disposition, 'READY');
+  assert.equal(committed.fundingEvidence.artifact.artifactType,
+    'zenon-provider-attestation-ready-reference');
+  assert.deepEqual(store.projectCommittedFundingEvidence(), committed.fundingEvidence);
+  const verified = store.matchReadyFundingEvidence(committed.fundingEvidence);
+  assert.equal(verified.evidenceType, 'zenon-authenticated-funding-evidence');
+  assert.equal(verified.transactionId, threshold.state.target.transactionId);
+  assertDeepFrozen(committed);
+  assertDeepFrozen(verified);
+  for (const ineligible of [
+    store.projectCommittedCandidate(),
+    { authenticated: true },
+    { trustClassification: 'operator-trusted', gate: 'Gate-B' },
+    { transport: 'ws', paymentObserved: true },
+  ]) {
+    expectCode(
+      () => store.matchReadyFundingEvidence(ineligible),
+      'ZENON_FUNDING_OBSERVER_STORE_INVALID_INPUT',
+    );
+  }
+  const genericLoad = JSON.stringify(store.load());
+  for (const forbidden of [
+    'publicKey', 'signature', 'unsignedFundingEvidence', 'attestationId',
+    'authorityRecordText', 'envelopeDigest',
+  ]) {
+    assert.equal(genericLoad.includes(forbidden), false);
+  }
+  const recordKey = store.load().recordKey;
+  store.close();
+  store = openZenonFundingObserverSqliteStore(openOptions(configuration, recordKey));
+  assert.deepEqual(store.projectCommittedFundingEvidence(), committed.fundingEvidence);
+  assert.deepEqual(store.matchReadyFundingEvidence(committed.fundingEvidence), verified);
+  store.close();
+});
+
+test('PREPARED request remains byte-stable across reopen and confirmation growth', t => {
+  const directory = privateDirectoryFor(t);
+  const configuration = createOptions(directory);
+  let store = createZenonFundingObserverSqliteStore(configuration);
+  const threshold = reachThreshold(store);
+  const request = store.peekPreparedAttestation();
+  const requestBytes = canonicalJson(request);
+  const recordKey = store.load().recordKey;
+  store.close();
+
+  store = openZenonFundingObserverSqliteStore(openOptions(configuration, recordKey));
+  assert.equal(canonicalJson(store.peekPreparedAttestation()), requestBytes);
+  const beforeGrowth = store.load().state;
+  const planned = store.planBackfill({
+    expectedRevision: beforeGrowth.revision,
+    frontier: {
+      height: beforeGrowth.checkpoint.height + 1,
+      hash: momentumHash(beforeGrowth.checkpoint.height + 1),
+    },
+  });
+  const grown = store.applyPage({
+    expectedRevision: beforeGrowth.revision,
+    plan: planned.plan,
+    momentums: momentumsFor(planned, beforeGrowth),
+  });
+  assert.equal(canonicalJson(store.peekPreparedAttestation()), requestBytes);
+  assert.equal(store.load().outbox.revision, 1);
+  const committed = store.commitAuthenticatedEnvelope({
+    expectedObserverRevision: grown.state.revision,
+    expectedOutboxRevision: 1,
+    attestationId: request.attestationId,
+    envelope: signedAttestationEnvelope(request),
+    nowEpochSeconds: ATTESTATION_NOW,
+  });
+  assert.equal(committed.disposition, 'READY');
+  assert.equal(threshold.state.firstThreshold.confirmations,
+    grown.state.firstThreshold.confirmations);
+  store.close();
+});
+
+test('only the exact committed store artifact can activate #104 once', async t => {
+  const directory = privateDirectoryFor(t);
+  const resourceUrl = 'https://service.example/credits/zenon-fund';
+  const resourceBinding = deriveServiceCreditResourceBinding({
+    resourceId: 'resource.zenon.funding',
+    resourceUrl,
+  });
+  const activationOffer = {
+    modelVersion: SERVICE_CREDIT_MODEL_VERSION,
+    providerId: 'provider.reference',
+    serviceId: 'service.reference',
+    resourceId: 'resource.zenon.funding',
+    resourceBinding,
+    offerId: 'offer.zenon.reference',
+    offerVersion: 1,
+    costPolicyId: 'cost.fixed',
+    fundingPolicyId: 'funding.exact.zenon.observer',
+    fundingPolicyVersion: 1,
+  };
+  const requirement = {
+    scheme: 'exact',
+    network: 'zenon:testnet',
+    asset: 'zts1syntheticasset',
+    amount: '7',
+    payTo: 'z1syntheticpayee',
+    maxTimeoutSeconds: 30,
+    extra: {
+      paymentFlow: 'upfront',
+      poc: true,
+      settlement: 'account-block',
+      zenonChain: structuredClone(AUTHORITY.chainProfile),
+      minimumMomentumConfirmations: AUTHORITY.confirmationPolicy.minimumConfirmations,
+    },
+  };
+  const deriveFundingTerms = input => ({
+    fundingPolicyId: input.offer.fundingPolicyId,
+    fundingPolicyVersion: input.offer.fundingPolicyVersion,
+    totalUnits: 10,
+    expiresAt: NOW + 10_000,
+    requirement: structuredClone(requirement),
+  });
+  const model = new InMemoryServiceCreditModel({ deriveCost: () => 1, now: () => NOW });
+  model.registerOffer(activationOffer);
+  let store;
+  const activation = createZenonFundingEvidenceActivation({
+    store: {
+      getOffer: input => model.getOffer(input),
+      activateGrantFromTrustedRecord: input => model.activateGrantFromTrustedRecord(input),
+    },
+    deriveFundingTerms,
+    verifyFundingEvidence: async evidence => store.matchReadyFundingEvidence(evidence),
+    authorityProfile: structuredClone(AUTHORITY.authorityProfile),
+    now: () => NOW,
+  });
+  const prepared = activation.createFundingResource({
+    selection: {
+      offerId: activationOffer.offerId,
+      offerVersion: activationOffer.offerVersion,
+      holderId: 'z1syntheticpayer',
+      capabilityCommitment: digest('5'),
+    },
+    resourceUrl,
+  });
+  const accepted = prepared.paymentRequired.accepts[0];
+  const tags = prepared.paymentRequired.resource.tags;
+  const liveState = initialState({
+    target: {
+      transactionId: `zenontx:${TRANSACTION_HASH}`,
+      payer: prepared.activationIntent.holderId,
+      payee: accepted.payTo,
+      asset: accepted.asset,
+      amount: accepted.amount,
+      scheme: 'exact',
+      paymentFlow: 'upfront',
+      settlement: 'account-block',
+      network: 'zenon:testnet',
+      providerId: prepared.activationIntent.providerId,
+      serviceId: prepared.activationIntent.serviceId,
+      resourceId: prepared.activationIntent.resourceId,
+      resourceBinding,
+      paymentResourceDigest: domainCommitment(
+        RESOURCE_DIGEST_DOMAIN,
+        prepared.paymentRequired.resource,
+      ),
+      paymentRequirementDigest: domainCommitment(REQUIREMENT_DIGEST_DOMAIN, accepted),
+      paymentIntentDigest: `sha256:${createHash('sha256').update(canonicalJson({
+        x402Version: prepared.paymentRequired.x402Version,
+        resource: prepared.paymentRequired.resource,
+        accepted,
+      })).digest('hex')}`,
+      offerId: prepared.activationIntent.offerId,
+      offerVersion: prepared.activationIntent.offerVersion,
+      fundingPolicyId: activationOffer.fundingPolicyId,
+      fundingPolicyVersion: activationOffer.fundingPolicyVersion,
+      capabilityCommitment: prepared.activationIntent.capabilityCommitment,
+      totalUnits: prepared.activationIntent.totalUnits,
+      expiresAt: prepared.activationIntent.expiresAt,
+      grantFundingCommitment: `sha256:${tags[1]}${tags[2]}`,
+    },
+  });
+  const configuration = createOptions(directory, liveState);
+  store = createZenonFundingObserverSqliteStore(configuration);
+  const threshold = reachThreshold(store);
+  const request = store.peekPreparedAttestation();
+  const committed = store.commitAuthenticatedEnvelope({
+    expectedObserverRevision: threshold.state.revision,
+    expectedOutboxRevision: 1,
+    attestationId: request.attestationId,
+    envelope: signedAttestationEnvelope(request),
+    nowEpochSeconds: ATTESTATION_NOW,
+  });
+  const first = await activation.activate({
+    intent: prepared.activationIntent,
+    paymentRequired: prepared.paymentRequired,
+    fundingEvidence: committed.fundingEvidence,
+  });
+  const replay = await activation.activate({
+    intent: prepared.activationIntent,
+    paymentRequired: prepared.paymentRequired,
+    fundingEvidence: structuredClone(committed.fundingEvidence),
+  });
+  assert.deepEqual(replay, first);
+  assert.equal(model.exportState().grants.length, 1);
+  const forged = structuredClone(committed.fundingEvidence);
+  forged.artifact.attestationId = digest('f');
+  await assert.rejects(
+    () => activation.activate({
+      intent: prepared.activationIntent,
+      paymentRequired: prepared.paymentRequired,
+      fundingEvidence: forged,
+    }),
+    error => error?.code === 'SERVICE_CREDIT_ZENON_FUNDING_EVIDENCE_REJECTED',
+  );
+  assert.equal(model.exportState().grants.length, 1);
+
+  const creditConfiguration = {
+    databasePath: join(directory, 'service-credit.sqlite'),
+    allowedRoot: directory,
+    deriveCost: () => 1,
+    now: () => NOW,
+  };
+  let creditStore = ServiceCreditSqliteStore.create(creditConfiguration);
+  creditStore.registerOffer(activationOffer);
+  let sqliteActivation = createZenonFundingEvidenceActivation({
+    store: creditStore,
+    deriveFundingTerms,
+    verifyFundingEvidence: async evidence => store.matchReadyFundingEvidence(evidence),
+    authorityProfile: structuredClone(AUTHORITY.authorityProfile),
+    now: () => NOW,
+  });
+  const sqliteFirst = await sqliteActivation.activate({
+    intent: prepared.activationIntent,
+    paymentRequired: prepared.paymentRequired,
+    fundingEvidence: committed.fundingEvidence,
+  });
+  creditStore.close();
+  creditStore = ServiceCreditSqliteStore.openExisting(creditConfiguration);
+  sqliteActivation = createZenonFundingEvidenceActivation({
+    store: creditStore,
+    deriveFundingTerms,
+    verifyFundingEvidence: async evidence => store.matchReadyFundingEvidence(evidence),
+    authorityProfile: structuredClone(AUTHORITY.authorityProfile),
+    now: () => NOW,
+  });
+  const sqliteReplay = await sqliteActivation.activate({
+    intent: prepared.activationIntent,
+    paymentRequired: prepared.paymentRequired,
+    fundingEvidence: structuredClone(committed.fundingEvidence),
+  });
+  assert.deepEqual(sqliteReplay, sqliteFirst);
+  assert.equal(creditStore.load().state.grants.length, 1);
+  creditStore.close();
+  store.close();
+});
+
+test('exact READY replay survives expiry and confirmation growth without identity change', t => {
+  const directory = privateDirectoryFor(t);
+  const configuration = createOptions(directory);
+  const store = createZenonFundingObserverSqliteStore(configuration);
+  const threshold = reachThreshold(store);
+  const request = store.peekPreparedAttestation();
+  const envelope = signedAttestationEnvelope(request);
+  const first = store.commitAuthenticatedEnvelope({
+    expectedObserverRevision: threshold.state.revision,
+    expectedOutboxRevision: 1,
+    attestationId: request.attestationId,
+    envelope,
+    nowEpochSeconds: ATTESTATION_NOW,
+  });
+  const replay = store.commitAuthenticatedEnvelope({
+    expectedObserverRevision: threshold.state.revision,
+    expectedOutboxRevision: 1,
+    attestationId: request.attestationId,
+    envelope: structuredClone(envelope),
+    nowEpochSeconds: ATTESTATION_NOW + 10_000,
+  });
+  assert.deepEqual(replay, first);
+  assert.equal(store.load().outbox.revision, 2);
+
+  const beforeGrowth = store.load().state;
+  const planned = store.planBackfill({
+    expectedRevision: beforeGrowth.revision,
+    frontier: {
+      height: beforeGrowth.checkpoint.height + 1,
+      hash: momentumHash(beforeGrowth.checkpoint.height + 1),
+    },
+  });
+  store.applyPage({
+    expectedRevision: beforeGrowth.revision,
+    plan: planned.plan,
+    momentums: momentumsFor(planned, beforeGrowth),
+  });
+  assert.deepEqual(store.projectCommittedFundingEvidence(), first.fundingEvidence);
+  assert.equal(store.load().outbox.revision, 2);
+  store.close();
+});
+
+test('a multi-page threshold retains the creation bootstrap through reopen', t => {
+  const directory = privateDirectoryFor(t);
+  const configuration = createOptions(directory, initialState({
+    catchUp: { maximumPageEntries: 2, maximumBackfillSpan: 4 },
+  }));
+  let store = createZenonFundingObserverSqliteStore(configuration);
+  const initial = store.load().state;
+  const firstPlan = store.planBackfill({
+    expectedRevision: initial.revision,
+    frontier: { height: INITIAL_HEIGHT + 4, hash: momentumHash(INITIAL_HEIGHT + 4) },
+  });
+  const firstPage = store.applyPage({
+    expectedRevision: initial.revision,
+    plan: firstPlan.plan,
+    momentums: momentumsFor(firstPlan, initial, { memberHeight: INITIAL_HEIGHT + 1 }),
+  });
+  const included = store.applyInclusion({
+    expectedRevision: firstPage.state.revision,
+    target: structuredClone(firstPage.state.target),
+    observation: foundObservation(firstPage.state),
+  });
+  assert.equal(included.state.status, ZENON_FUNDING_OBSERVER_STATUS.INCLUDED_BELOW_THRESHOLD);
+  const secondPlan = store.planBackfill({
+    expectedRevision: included.state.revision,
+    frontier: { height: INITIAL_HEIGHT + 4, hash: momentumHash(INITIAL_HEIGHT + 4) },
+  });
+  const threshold = store.applyPage({
+    expectedRevision: included.state.revision,
+    plan: secondPlan.plan,
+    momentums: momentumsFor(secondPlan, included.state),
+  });
+  assert.equal(threshold.state.status, ZENON_FUNDING_OBSERVER_STATUS.THRESHOLD_OBSERVED);
+  assert.equal(store.load().outbox.status, 'PREPARED');
+  assert.notDeepEqual(
+    threshold.state.firstThreshold.lineageReceipt.startCheckpoint,
+    AUTHORITY.bootstrapCheckpoint,
+  );
+  const stableRequest = store.peekPreparedAttestation();
+  const recordKey = store.load().recordKey;
+  store.close();
+  store = openZenonFundingObserverSqliteStore(openOptions(configuration, recordKey));
+  assert.deepEqual(store.peekPreparedAttestation(), stableRequest);
+  assert.equal(store.load().state.status, ZENON_FUNDING_OBSERVER_STATUS.THRESHOLD_OBSERVED);
+  store.close();
+});
+
+test('create and record-key derivation reject every valid non-pristine bootstrap snapshot', async t => {
+  const awaitingStart = initialState({
+    checkpoint: { height: INITIAL_HEIGHT - 1, hash: momentumHash(INITIAL_HEIGHT - 1) },
+  });
+  const awaiting = pureBackfill(awaitingStart, awaitingStart.checkpoint);
+
+  const includedStart = initialState({
+    checkpoint: { height: INITIAL_HEIGHT - 1, hash: momentumHash(INITIAL_HEIGHT - 1) },
+  });
+  const included = pureObserveFound(
+    pureBackfill(includedStart, includedStart.checkpoint, INITIAL_HEIGHT),
+  );
+
+  const thresholdStart = initialState({
+    checkpoint: { height: INITIAL_HEIGHT - 3, hash: momentumHash(INITIAL_HEIGHT - 3) },
+  });
+  const threshold = pureObserveFound(
+    pureBackfill(thresholdStart, thresholdStart.checkpoint, INITIAL_HEIGHT - 2),
+  );
+
+  const quarantineStart = initialState();
+  const quarantined = planZenonFundingObserverBackfill({
+    state: quarantineStart,
+    expectedRevision: quarantineStart.revision,
+    ...observerContext(quarantineStart),
+    source: {
+      status: 'AVAILABLE',
+      frontier: structuredClone(AUTHORITY.bootstrapCheckpoint),
+      checkpointHash: 'b'.repeat(64),
+    },
+  }).state;
+
+  const cases = [
+    ['revision and retained page', awaiting, ZENON_FUNDING_OBSERVER_STATUS.AWAITING_INCLUSION],
+    ['latched inclusion', included, ZENON_FUNDING_OBSERVER_STATUS.INCLUDED_BELOW_THRESHOLD],
+    ['first threshold receipt', threshold, ZENON_FUNDING_OBSERVER_STATUS.THRESHOLD_OBSERVED],
+    ['terminal quarantine', quarantined, ZENON_FUNDING_OBSERVER_STATUS.QUARANTINED],
+  ];
+
+  for (const [name, state, expectedStatus] of cases) {
+    await t.test(name, t => {
+      assert.equal(state.status, expectedStatus);
+      assert.equal(state.revision > 0, true);
+      assert.deepEqual(state.checkpoint, AUTHORITY.bootstrapCheckpoint);
+      expectCode(
+        () => deriveZenonFundingObserverSqliteRecordKey(state, AUTHORITY_RECORD_TEXT),
+        'ZENON_FUNDING_OBSERVER_STORE_INVALID_INPUT',
+      );
+      const directory = privateDirectoryFor(t);
+      const configuration = createOptions(directory, state);
+      expectCode(
+        () => createZenonFundingObserverSqliteStore(configuration),
+        'ZENON_FUNDING_OBSERVER_STORE_INVALID_CONFIGURATION',
+      );
+      assert.equal(existsSync(configuration.databasePath), false);
+    });
+  }
+});
+
+test('disconnected initial state, authority substitution, and v1 rollback fail read-only', async t => {
+  await t.test('disconnected initial state is rejected before database creation', t => {
+    const directory = privateDirectoryFor(t);
+    const disconnected = initialState({
+      checkpoint: { height: INITIAL_HEIGHT + 1, hash: momentumHash(INITIAL_HEIGHT + 1) },
+    });
+    const configuration = createOptions(directory, disconnected);
+    expectCode(
+      () => createZenonFundingObserverSqliteStore(configuration),
+      'ZENON_FUNDING_OBSERVER_STORE_INVALID_CONFIGURATION',
+    );
+    assert.equal(existsSync(configuration.databasePath), false);
+  });
+
+  await t.test('a different pinned authority cannot open the same namespace', t => {
+    const directory = privateDirectoryFor(t);
+    const configuration = createOptions(directory);
+    const store = createZenonFundingObserverSqliteStore(configuration);
+    const recordKey = store.load().recordKey;
+    store.close();
+    const otherKey = generateKeyPairSync('ed25519').publicKey
+      .export({ format: 'der', type: 'spki' })
+      .subarray(-32)
+      .toString('base64url');
+    const otherRecord = { ...JSON.parse(AUTHORITY_RECORD_TEXT), publicKey: otherKey };
+    expectCode(
+      () => openZenonFundingObserverSqliteStore(openOptions(configuration, recordKey, {
+        authorityRecord: canonicalJson(otherRecord),
+      })),
+      'ZENON_FUNDING_OBSERVER_STORE_AUTHORITY_MISMATCH',
+    );
+  });
+
+  await t.test('a v1 user version is rejected without modifying bytes', t => {
+    const directory = privateDirectoryFor(t);
+    const configuration = createOptions(directory);
+    const store = createZenonFundingObserverSqliteStore(configuration);
+    const recordKey = store.load().recordKey;
+    store.close();
+    const database = new DatabaseSync(configuration.databasePath);
+    database.exec('PRAGMA user_version = 1');
+    database.close();
+    const before = readFileSync(configuration.databasePath);
+    expectCode(
+      () => openZenonFundingObserverSqliteStore(openOptions(configuration, recordKey)),
+      'ZENON_FUNDING_OBSERVER_STORE_SCHEMA_UNSUPPORTED',
+    );
+    assert.deepEqual(readFileSync(configuration.databasePath), before);
+  });
+});
+
+test('invalid assertions are no-write and READY commit ambiguity reconciles on reopen', async t => {
+  await t.test('invalid signature preserves PREPARED bytes', t => {
+    const directory = privateDirectoryFor(t);
+    const configuration = createOptions(directory);
+    const store = createZenonFundingObserverSqliteStore(configuration);
+    const threshold = reachThreshold(store);
+    const request = store.peekPreparedAttestation();
+    const before = readEnvelope(configuration).envelopeText;
+    const invalid = signedAttestationEnvelope(request);
+    invalid.signature = Buffer.alloc(64).toString('base64url');
+    expectCode(
+      () => store.commitAuthenticatedEnvelope({
+        expectedObserverRevision: threshold.state.revision,
+        expectedOutboxRevision: 1,
+        attestationId: request.attestationId,
+        envelope: invalid,
+        nowEpochSeconds: ATTESTATION_NOW,
+      }),
+      'ZENON_FUNDING_OBSERVER_STORE_ATTESTATION_REJECTED',
+    );
+    assert.equal(readEnvelope(configuration).envelopeText, before);
+    assert.equal(store.load().outbox.status, 'PREPARED');
+    store.close();
+  });
+
+  for (const [name, phase, expectedStatus, expectedCode] of [
+    ['before write', 'beforeWrite', 'PREPARED', 'ZENON_FUNDING_OBSERVER_STORE_TEST_HOOK_FAILED'],
+    ['after write', 'afterWrite', 'PREPARED', 'ZENON_FUNDING_OBSERVER_STORE_TEST_HOOK_FAILED'],
+    ['before commit', 'beforeCommit', 'PREPARED', 'ZENON_FUNDING_OBSERVER_STORE_TEST_HOOK_FAILED'],
+    ['at commit attempt', 'commitAttempt', 'PREPARED', 'ZENON_FUNDING_OBSERVER_STORE_COMMIT_OUTCOME_UNKNOWN'],
+    ['after commit', 'afterCommit', 'READY', 'ZENON_FUNDING_OBSERVER_STORE_COMMIT_OUTCOME_UNKNOWN'],
+  ]) {
+    await t.test(name, t => {
+      const directory = privateDirectoryFor(t);
+      const configuration = createOptions(directory);
+      let store = createZenonFundingObserverSqliteStore(configuration);
+      const threshold = reachThreshold(store);
+      const request = store.peekPreparedAttestation();
+      const recordKey = store.load().recordKey;
+      store.close();
+      store = openZenonFundingObserverSqliteStore(openOptions(configuration, recordKey, {
+        testHooks: { [phase]: ({ operation }) => {
+          if (operation === 'commitAuthenticatedEnvelope') throw new Error('synthetic');
+        } },
+      }));
+      expectCode(
+        () => store.commitAuthenticatedEnvelope({
+          expectedObserverRevision: threshold.state.revision,
+          expectedOutboxRevision: 1,
+          attestationId: request.attestationId,
+          envelope: signedAttestationEnvelope(request),
+          nowEpochSeconds: ATTESTATION_NOW,
+        }),
+        expectedCode,
+      );
+      try { store.close(); } catch {}
+      const reopened = openZenonFundingObserverSqliteStore(openOptions(configuration, recordKey));
+      assert.equal(reopened.load().outbox.status, expectedStatus);
+      assert.equal(
+        reopened.projectCommittedFundingEvidence() === null,
+        expectedStatus === 'PREPARED',
+      );
+      reopened.close();
+    });
+  }
+});
+
+test('threshold state and PREPARED request commit both-or-neither', async t => {
+  for (const [name, phase, committed, expectedCode] of [
+    ['before write', 'beforeWrite', false, 'ZENON_FUNDING_OBSERVER_STORE_TEST_HOOK_FAILED'],
+    ['after write', 'afterWrite', false, 'ZENON_FUNDING_OBSERVER_STORE_TEST_HOOK_FAILED'],
+    ['before commit', 'beforeCommit', false, 'ZENON_FUNDING_OBSERVER_STORE_TEST_HOOK_FAILED'],
+    ['at commit attempt', 'commitAttempt', false, 'ZENON_FUNDING_OBSERVER_STORE_COMMIT_OUTCOME_UNKNOWN'],
+    ['after commit', 'afterCommit', true, 'ZENON_FUNDING_OBSERVER_STORE_COMMIT_OUTCOME_UNKNOWN'],
+  ]) {
+    await t.test(name, t => {
+      const directory = privateDirectoryFor(t);
+      const configuration = createOptions(directory);
+      let store = createZenonFundingObserverSqliteStore(configuration);
+      const initial = store.load().state;
+      const planned = store.planBackfill({
+        expectedRevision: initial.revision,
+        frontier: { height: INITIAL_HEIGHT + 3, hash: momentumHash(INITIAL_HEIGHT + 3) },
+      });
+      const pending = store.applyPage({
+        expectedRevision: initial.revision,
+        plan: planned.plan,
+        momentums: momentumsFor(planned, initial, { memberHeight: INITIAL_HEIGHT + 1 }),
+      });
+      const recordKey = store.load().recordKey;
+      store.close();
+      store = openZenonFundingObserverSqliteStore(openOptions(configuration, recordKey, {
+        testHooks: { [phase]: ({ operation }) => {
+          if (operation === 'applyInclusion') throw new Error('synthetic');
+        } },
+      }));
+      expectCode(
+        () => store.applyInclusion({
+          expectedRevision: pending.state.revision,
+          target: structuredClone(pending.state.target),
+          observation: foundObservation(pending.state),
+        }),
+        expectedCode,
+      );
+      try { store.close(); } catch {}
+      const reopened = openZenonFundingObserverSqliteStore(openOptions(configuration, recordKey));
+      const loaded = reopened.load();
+      assert.equal(
+        loaded.state.status === ZENON_FUNDING_OBSERVER_STATUS.THRESHOLD_OBSERVED,
+        committed,
+      );
+      assert.equal(loaded.outbox.status, committed ? 'PREPARED' : 'NONE');
+      assert.equal(reopened.peekPreparedAttestation() === null, !committed);
+      reopened.close();
+    });
+  }
+});
+
+test('two handles converge on one READY envelope and never duplicate outbox revision', t => {
+  const directory = privateDirectoryFor(t);
+  const configuration = createOptions(directory);
+  const first = createZenonFundingObserverSqliteStore(configuration);
+  const threshold = reachThreshold(first);
+  const request = first.peekPreparedAttestation();
+  const envelope = signedAttestationEnvelope(request);
+  const recordKey = first.load().recordKey;
+  const second = openZenonFundingObserverSqliteStore(openOptions(configuration, recordKey));
+  const winner = first.commitAuthenticatedEnvelope({
+    expectedObserverRevision: threshold.state.revision,
+    expectedOutboxRevision: 1,
+    attestationId: request.attestationId,
+    envelope,
+    nowEpochSeconds: ATTESTATION_NOW,
+  });
+  const converged = second.commitAuthenticatedEnvelope({
+    expectedObserverRevision: threshold.state.revision,
+    expectedOutboxRevision: 1,
+    attestationId: request.attestationId,
+    envelope: structuredClone(envelope),
+    nowEpochSeconds: ATTESTATION_NOW + 10_000,
+  });
+  assert.deepEqual(converged, winner);
+  assert.equal(first.load().outbox.revision, 2);
+  assert.equal(second.load().outbox.revision, 2);
+  first.close();
+  second.close();
+});
+
+test('checksum-valid removal of a required PREPARED outbox fails closed', t => {
+  const directory = privateDirectoryFor(t);
+  const configuration = createOptions(directory);
+  const store = createZenonFundingObserverSqliteStore(configuration);
+  const threshold = reachThreshold(store);
+  const recordKey = store.load().recordKey;
+  assert.equal(store.load().outbox.status, 'PREPARED');
+  store.close();
+  writeEnvelope(configuration, envelope => {
+    envelope.outboxRevision = 0;
+    envelope.outbox = {
+      outboxVersion: 1,
+      revision: 0,
+      status: 'NONE',
+      attestationId: null,
+      request: null,
+      envelope: null,
+      envelopeDigest: null,
+      conflictingEnvelope: null,
+      conflictingEnvelopeDigest: null,
+      priorStatus: null,
+      invalidationReason: null,
+    };
+  });
+  const before = readFileSync(configuration.databasePath);
+  expectCode(
+    () => openZenonFundingObserverSqliteStore(openOptions(configuration, recordKey)),
+    'ZENON_FUNDING_OBSERVER_STORE_CORRUPT',
+  );
+  assert.deepEqual(readFileSync(configuration.databasePath), before);
+  assert.equal(threshold.state.status, ZENON_FUNDING_OBSERVER_STATUS.THRESHOLD_OBSERVED);
+});
+
+test('self-consistent stored request drift fails every immutable binding before projection', async t => {
+  const mutations = [
+    ['authority generation', request => { request.generationCommitment = digest('0'); }],
+    ['audience', request => { request.audienceDigest = digest('0'); }],
+    ['observer', request => { request.observerRecordId = digest('0'); }],
+    ['target', request => { request.targetBindingDigest = digest('0'); }],
+    ['candidate', request => { request.candidateDigest = digest('0'); }],
+    ['inclusion authorization', request => { request.inclusionAuthorizationId = digest('0'); }],
+    ['bootstrap', request => { request.bootstrapCheckpoint.hash = 'b'.repeat(64); }],
+    ['source policy', request => { request.sourcePolicyCommitment = digest('0'); }],
+    ['chain genesis', request => {
+      request.unsignedFundingEvidence.chainProfile.genesisMomentumHash = '2'.repeat(64);
+    }],
+    ['payer target', request => { request.unsignedFundingEvidence.payer = 'z1otherpayer'; }],
+    ['payment intent', request => {
+      request.unsignedFundingEvidence.paymentIntentDigest = digest('0');
+    }],
+    ['economic amount', request => { request.unsignedFundingEvidence.amount = '8'; }],
+    ['unit grant', request => { request.unsignedFundingEvidence.totalUnits += 1; }],
+    ['expiry', request => { request.unsignedFundingEvidence.expiresAt += 1; }],
+    ['inclusion tuple', request => {
+      request.unsignedFundingEvidence.inclusionEvidence.momentumHash = 'f'.repeat(64);
+    }],
+    ['confirmation observation', request => {
+      request.unsignedFundingEvidence.inclusionEvidence.observedConfirmations += 1;
+    }],
+  ];
+  for (const [name, mutate] of mutations) {
+    await t.test(name, t => {
+      const directory = privateDirectoryFor(t);
+      const configuration = createOptions(directory);
+      const store = createZenonFundingObserverSqliteStore(configuration);
+      reachThreshold(store);
+      const recordKey = store.load().recordKey;
+      store.close();
+      writeEnvelope(configuration, envelope => rebindStoredRequest(envelope, mutate));
+      const before = readFileSync(configuration.databasePath);
+      expectCode(
+        () => openZenonFundingObserverSqliteStore(openOptions(configuration, recordKey)),
+        'ZENON_FUNDING_OBSERVER_STORE_CORRUPT',
+      );
+      assert.deepEqual(readFileSync(configuration.databasePath), before);
+    });
+  }
+});
+
+test('quarantine and valid equivocation durably suppress every projection', async t => {
+  await t.test('pre-READY quarantine invalidates PREPARED', t => {
+    const directory = privateDirectoryFor(t);
+    const configuration = createOptions(directory);
+    let store = createZenonFundingObserverSqliteStore(configuration);
+    const threshold = reachThreshold(store);
+    assert.notEqual(store.peekPreparedAttestation(), null);
+    const conflict = store.planBackfill({
+      expectedRevision: threshold.state.revision,
+      frontier: {
+        height: threshold.state.checkpoint.height,
+        hash: 'f'.repeat(64),
+      },
+    });
+    assert.equal(conflict.state.status, ZENON_FUNDING_OBSERVER_STATUS.QUARANTINED);
+    assert.equal(store.load().outbox.status, 'INVALIDATED');
+    assert.equal(store.peekPreparedAttestation(), null);
+    assert.equal(store.projectCommittedCandidate(), null);
+    assert.equal(store.projectCommittedFundingEvidence(), null);
+    const recordKey = store.load().recordKey;
+    store.close();
+    store = openZenonFundingObserverSqliteStore(openOptions(configuration, recordKey));
+    assert.equal(store.load().outbox.status, 'INVALIDATED');
+    assert.equal(store.peekPreparedAttestation(), null);
+    store.close();
+  });
+
+  await t.test('post-READY quarantine invalidates the outbox', t => {
+    const directory = privateDirectoryFor(t);
+    const configuration = createOptions(directory);
+    let store = createZenonFundingObserverSqliteStore(configuration);
+    const threshold = reachThreshold(store);
+    const request = store.peekPreparedAttestation();
+    const ready = store.commitAuthenticatedEnvelope({
+      expectedObserverRevision: threshold.state.revision,
+      expectedOutboxRevision: 1,
+      attestationId: request.attestationId,
+      envelope: signedAttestationEnvelope(request),
+      nowEpochSeconds: ATTESTATION_NOW,
+    });
+    const conflict = store.planBackfill({
+      expectedRevision: threshold.state.revision,
+      frontier: {
+        height: threshold.state.checkpoint.height,
+        hash: 'f'.repeat(64),
+      },
+    });
+    assert.equal(conflict.state.status, ZENON_FUNDING_OBSERVER_STATUS.QUARANTINED);
+    assert.equal(store.load().outbox.status, 'INVALIDATED');
+    assert.equal(store.projectCommittedCandidate(), null);
+    assert.equal(store.projectCommittedFundingEvidence(), null);
+    expectCode(
+      () => store.matchReadyFundingEvidence(ready.fundingEvidence),
+      'ZENON_FUNDING_OBSERVER_STORE_ATTESTATION_UNAVAILABLE',
+    );
+    const recordKey = store.load().recordKey;
+    store.close();
+    store = openZenonFundingObserverSqliteStore(openOptions(configuration, recordKey));
+    assert.equal(store.load().outbox.status, 'INVALIDATED');
+    assert.equal(store.projectCommittedCandidate(), null);
+    assert.equal(store.projectCommittedFundingEvidence(), null);
+    store.close();
+
+    writeEnvelope(configuration, envelope => {
+      envelope.outboxRevision = 0;
+      envelope.outbox = {
+        outboxVersion: 1,
+        revision: 0,
+        status: 'NONE',
+        attestationId: null,
+        request: null,
+        envelope: null,
+        envelopeDigest: null,
+        conflictingEnvelope: null,
+        conflictingEnvelopeDigest: null,
+        priorStatus: null,
+        invalidationReason: null,
+      };
+    });
+    const before = readFileSync(configuration.databasePath);
+    expectCode(
+      () => openZenonFundingObserverSqliteStore(openOptions(configuration, recordKey)),
+      'ZENON_FUNDING_OBSERVER_STORE_CORRUPT',
+    );
+    assert.deepEqual(readFileSync(configuration.databasePath), before);
+  });
+
+  await t.test('a second distinct valid assertion is terminal equivocation', t => {
+    const directory = privateDirectoryFor(t);
+    const configuration = createOptions(directory);
+    let store = createZenonFundingObserverSqliteStore(configuration);
+    const threshold = reachThreshold(store);
+    const request = store.peekPreparedAttestation();
+    const first = store.commitAuthenticatedEnvelope({
+      expectedObserverRevision: threshold.state.revision,
+      expectedOutboxRevision: 1,
+      attestationId: request.attestationId,
+      envelope: signedAttestationEnvelope(request),
+      nowEpochSeconds: ATTESTATION_NOW,
+    });
+    const second = store.commitAuthenticatedEnvelope({
+      expectedObserverRevision: threshold.state.revision,
+      expectedOutboxRevision: 2,
+      attestationId: request.attestationId,
+      envelope: signedAttestationEnvelope(request, {
+        issuedAt: ATTESTATION_NOW + 1,
+        validUntil: ATTESTATION_NOW + 121,
+      }),
+      nowEpochSeconds: ATTESTATION_NOW + 1,
+    });
+    assert.equal(second.disposition, 'EQUIVOCATED');
+    assert.equal(second.fundingEvidence, null);
+    assert.equal(store.load().outbox.status, 'EQUIVOCATED');
+    assert.equal(store.projectCommittedCandidate(), null);
+    assert.equal(store.projectCommittedFundingEvidence(), null);
+    expectCode(
+      () => store.matchReadyFundingEvidence(first.fundingEvidence),
+      'ZENON_FUNDING_OBSERVER_STORE_ATTESTATION_UNAVAILABLE',
+    );
+    const recordKey = store.load().recordKey;
+    store.close();
+    store = openZenonFundingObserverSqliteStore(openOptions(configuration, recordKey));
+    assert.equal(store.load().outbox.status, 'EQUIVOCATED');
+    assert.equal(store.projectCommittedCandidate(), null);
+    assert.equal(store.projectCommittedFundingEvidence(), null);
+    store.close();
+  });
 });
 
 test('pending membership and terminal quarantine remain durable across reconnect', t => {
@@ -1521,10 +2530,11 @@ test('projected committed candidate remains privacy-safe and cannot activate ser
   const serialized = JSON.stringify(candidate);
   for (const forbidden of [
     'endpoint', 'authorizationHeader', 'signedBlock', 'signature', 'wallet',
-    'rawTransaction', 'rawPayment', 'privateKey', 'mnemonic', 'authenticated',
+    'rawTransaction', 'rawPayment', 'privateKey', 'mnemonic',
   ]) {
     assert.equal(serialized.includes(forbidden), false);
   }
+  assert.equal(serialized.includes('"authenticated":true'), false);
   assert.equal(Object.hasOwn(candidate, 'evidenceVersion'), false);
   assert.equal(Object.hasOwn(candidate, 'evidenceType'), false);
 
