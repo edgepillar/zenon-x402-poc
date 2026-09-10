@@ -16,29 +16,53 @@ import { types as utilTypes } from 'node:util';
 import {
   applyZenonFundingInclusionObservation,
   applyZenonFundingObserverPage,
+  createZenonFundingObserverState,
   parseZenonFundingObserverState,
   planZenonFundingObserverBackfill,
   projectZenonFundingObservationCandidate,
   serializeZenonFundingObserverState,
+  ZENON_FUNDING_OBSERVATION_CANDIDATE_TYPE,
+  ZENON_FUNDING_OBSERVER_STATUS,
   ZENON_FUNDING_OBSERVER_STATE_SCHEMA_VERSION,
+  ZENON_FUNDING_OBSERVER_TRUST_CLASSIFICATION,
   ZenonFundingObserverStateError,
 } from './service-credit-zenon-funding-observer-state.js';
+import {
+  parseZenonFundingProviderAttestationAuthorityRecord,
+  parseZenonFundingProviderAttestationRequest,
+  verifyZenonFundingProviderAttestationEnvelope,
+  ZenonFundingProviderAttestationError,
+} from './service-credit-zenon-funding-provider-attestation.js';
 
-export const ZENON_FUNDING_OBSERVER_SQLITE_STORE_SCHEMA_VERSION = 1;
+export const ZENON_FUNDING_OBSERVER_SQLITE_STORE_SCHEMA_VERSION = 2;
+export const ZENON_FUNDING_OBSERVER_ATTESTATION_OUTBOX_VERSION = 1;
+export const ZENON_FUNDING_OBSERVER_ATTESTATION_OUTBOX_STATUS = Object.freeze({
+  NONE: 'NONE',
+  PREPARED: 'PREPARED',
+  READY: 'READY',
+  INVALIDATED: 'INVALIDATED',
+  EQUIVOCATED: 'EQUIVOCATED',
+});
 
 const APPLICATION_ID = 0x5a464f53;
 const TABLE_NAME = 'zenon_funding_observer_state';
 const INDEX_NAME = 'zenon_funding_observer_state_record_key';
 const TABLE_SQL = 'CREATE TABLE zenon_funding_observer_state(singleton INTEGER PRIMARY KEY CHECK(singleton = 1), record_key TEXT NOT NULL, envelope TEXT NOT NULL) STRICT';
 const INDEX_SQL = 'CREATE UNIQUE INDEX zenon_funding_observer_state_record_key ON zenon_funding_observer_state(record_key)';
-const RECORD_KEY_DOMAIN = 'zenon-x402:funding-observer-sqlite-record-v1';
-const ENVELOPE_DOMAIN = 'zenon-x402:funding-observer-sqlite-envelope-v1';
-const ENVELOPE_VERSION = 1;
+const RECORD_KEY_DOMAIN = 'zenon-x402:funding-observer-sqlite-record-v2';
+const ENVELOPE_DOMAIN = 'zenon-x402:funding-observer-sqlite-envelope-v2';
+const READY_ARTIFACT_DOMAIN = 'zenon-x402:funding-observer-ready-artifact-v1';
+const ATTESTATION_AUDIENCE_DOMAIN = 'zenon-x402:funding-provider-attestation-audience-v1';
+const ATTESTATION_CANDIDATE_DOMAIN = 'zenon-x402:funding-provider-attestation-candidate-v1';
+const ATTESTATION_EVIDENCE_DOMAIN = 'zenon-x402:funding-provider-attestation-evidence-v1';
+const ATTESTATION_ID_DOMAIN = 'zenon-x402:funding-provider-attestation-id-v1';
+const ATTESTATION_REQUEST_TYPE = 'zenon-funding-provider-attestation-request';
+const ENVELOPE_VERSION = 2;
 const DEFAULT_BUSY_TIMEOUT_MS = 5_000;
 const MAX_BUSY_TIMEOUT_MS = 60_000;
 const DEFAULT_MAX_STATE_BYTES = 512 * 1024;
 const HARD_MAX_STATE_BYTES = 1024 * 1024;
-const MAX_ENVELOPE_OVERHEAD_BYTES = 4_096;
+const MAX_ENVELOPE_OVERHEAD_BYTES = 256 * 1024;
 const RECORD_KEY_BYTES = 71;
 const MAX_INPUT_NODES = 16_384;
 const MAX_INPUT_MEMBERS = 16_384;
@@ -65,8 +89,14 @@ const REFLECT_GET_OWN_PROPERTY_DESCRIPTOR = Reflect.getOwnPropertyDescriptor;
 const REFLECT_GET_PROTOTYPE_OF = Reflect.getPrototypeOf;
 const REFLECT_OWN_KEYS = Reflect.ownKeys;
 const ARRAY_SORT = Array.prototype.sort;
+const STRING_SLICE = String.prototype.slice;
 const STRING_STARTS_WITH = String.prototype.startsWith;
 const IS_PROXY = utilTypes.isProxy;
+const HASH_PROTOTYPE = REFLECT_APPLY(REFLECT_GET_PROTOTYPE_OF, Reflect, [
+  createHash('sha256'),
+]);
+const HASH_UPDATE = HASH_PROTOTYPE.update;
+const HASH_DIGEST = HASH_PROTOTYPE.digest;
 
 export class ZenonFundingObserverSqliteStoreError extends Error {
   constructor(code) {
@@ -111,16 +141,29 @@ function observerErrorCode(error) {
   }
 }
 
+function attestationErrorCode(error) {
+  try {
+    if (!(error instanceof ZenonFundingProviderAttestationError)) return null;
+    const descriptor = REFLECT_GET_OWN_PROPERTY_DESCRIPTOR(error, 'code');
+    return descriptor && OBJECT_HAS_OWN(descriptor, 'value')
+      && typeof descriptor.value === 'string'
+      ? descriptor.value
+      : null;
+  } catch {
+    return null;
+  }
+}
+
 function byteLength(value) {
   return REFLECT_APPLY(BUFFER_BYTE_LENGTH, Buffer, [value, 'utf8']);
 }
 
 function hashCommitment(domain, value) {
-  return `sha256:${createHash('sha256')
-    .update(domain)
-    .update('\0')
-    .update(canonicalJson(value))
-    .digest('hex')}`;
+  const hash = createHash('sha256');
+  REFLECT_APPLY(HASH_UPDATE, hash, [domain, 'ascii']);
+  REFLECT_APPLY(HASH_UPDATE, hash, ['\0', 'ascii']);
+  REFLECT_APPLY(HASH_UPDATE, hash, [canonicalJson(value), 'utf8']);
+  return `sha256:${REFLECT_APPLY(HASH_DIGEST, hash, ['hex'])}`;
 }
 
 function isPlainObject(value) {
@@ -296,16 +339,233 @@ function validDigest(value) {
   return typeof value === 'string' && CHECKSUM.test(value);
 }
 
-function recordKeyFor(state) {
+function authorityStateMatches(authority, state, requireBootstrapProof) {
+  const sameBootstrap = canonicalJson(state.checkpoint)
+    === canonicalJson(authority.bootstrapCheckpoint);
+  const retainedBootstrap = canonicalJson(
+    state.firstThreshold?.lineageReceipt?.startCheckpoint
+      ?? state.catchUp?.lastAppliedPage?.startCheckpoint
+      ?? null,
+  ) === canonicalJson(authority.bootstrapCheckpoint);
+  return state.target.network === authority.network
+    && canonicalJson(state.authorityGeneration) === canonicalJson(authority.authorityGeneration)
+    && canonicalJson(state.chainProfile) === canonicalJson(authority.chainProfile)
+    && canonicalJson(state.observerPolicy) === canonicalJson(authority.observerPolicy)
+    && canonicalJson(state.confirmationPolicy) === canonicalJson(authority.confirmationPolicy)
+    && state.checkpoint.height >= authority.bootstrapCheckpoint.height
+    && (
+      state.checkpoint.height !== authority.bootstrapCheckpoint.height
+      || state.checkpoint.hash === authority.bootstrapCheckpoint.hash
+    )
+    && (!requireBootstrapProof || sameBootstrap || retainedBootstrap);
+}
+
+function assertAuthorityState(authority, state, requireBootstrapProof = false) {
+  if (!authorityStateMatches(authority, state, requireBootstrapProof)) {
+    fail('ZENON_FUNDING_OBSERVER_STORE_AUTHORITY_MISMATCH');
+  }
+}
+
+function assertPristineInitialState(authority, state, code) {
+  try {
+    const reconstructed = createZenonFundingObserverState({
+      observerPolicy: cloneTrusted(state.observerPolicy),
+      authorityGeneration: cloneTrusted(state.authorityGeneration),
+      chainProfile: cloneTrusted(state.chainProfile),
+      confirmationPolicy: cloneTrusted(state.confirmationPolicy),
+      target: cloneTrusted(state.target),
+      checkpoint: cloneTrusted(authority.bootstrapCheckpoint),
+      catchUp: {
+        maximumPageEntries: state.catchUp.maximumPageEntries,
+        maximumBackfillSpan: state.catchUp.maximumBackfillSpan,
+        maximumMembersPerMomentum: state.catchUp.maximumMembersPerMomentum,
+      },
+    });
+    if (canonicalJson(reconstructed) !== canonicalJson(state)) fail(code);
+  } catch (error) {
+    const known = storeErrorCode(error);
+    throw failure(known ?? code);
+  }
+}
+
+function emptyOutbox() {
+  return deepFreeze({
+    outboxVersion: ZENON_FUNDING_OBSERVER_ATTESTATION_OUTBOX_VERSION,
+    revision: 0,
+    status: ZENON_FUNDING_OBSERVER_ATTESTATION_OUTBOX_STATUS.NONE,
+    attestationId: null,
+    request: null,
+    envelope: null,
+    envelopeDigest: null,
+    conflictingEnvelope: null,
+    conflictingEnvelopeDigest: null,
+    priorStatus: null,
+    invalidationReason: null,
+  });
+}
+
+function candidateForState(state) {
+  try {
+    const projected = projectZenonFundingObservationCandidate(cloneTrusted(state));
+    if (projected !== null) return projected;
+    if (
+      state.status !== ZENON_FUNDING_OBSERVER_STATUS.QUARANTINED
+      || state.inclusion === null
+      || state.firstThreshold === null
+    ) {
+      return null;
+    }
+    return deepFreeze({
+      candidateVersion: 1,
+      candidateType: ZENON_FUNDING_OBSERVATION_CANDIDATE_TYPE,
+      trustClassification: ZENON_FUNDING_OBSERVER_TRUST_CLASSIFICATION,
+      authorization: 'NONE',
+      observerRecordId: state.observerRecordId,
+      targetBindingDigest: state.targetBindingDigest,
+      transactionId: state.target.transactionId,
+      chainProfile: cloneTrusted(state.chainProfile),
+      confirmationPolicy: cloneTrusted(state.confirmationPolicy),
+      inclusionAuthorizationId: state.inclusion.inclusionAuthorizationId,
+      inclusion: deepFreeze({
+        transactionId: state.inclusion.transactionId,
+        targetBindingDigest: state.inclusion.targetBindingDigest,
+        momentumHeight: state.inclusion.momentumHeight,
+        momentumHash: state.inclusion.momentumHash,
+      }),
+      firstThreshold: cloneTrusted(state.firstThreshold),
+    });
+  } catch (error) {
+    mapObserverFailure(error, true);
+  }
+}
+
+function requestForState(authority, recordKey, state) {
+  const candidate = candidateForState(state);
+  if (candidate === null) return null;
+  try {
+    const target = state.target;
+    const unsignedFundingEvidence = deepFreeze({
+      evidenceVersion: 1,
+      evidenceType: 'zenon-authenticated-funding-evidence',
+      authorityProfileId: authority.authorityProfileId,
+      authorityProfileVersion: authority.authorityProfileVersion,
+      verifierVersion: authority.verifierVersion,
+      authorityRecordDigest: authority.authorityRecordDigest,
+      network: authority.network,
+      chainProfile: cloneTrusted(authority.chainProfile),
+      transactionId: target.transactionId,
+      payer: target.payer,
+      payee: target.payee,
+      asset: target.asset,
+      amount: target.amount,
+      paymentResourceDigest: target.paymentResourceDigest,
+      paymentRequirementDigest: target.paymentRequirementDigest,
+      paymentIntentDigest: target.paymentIntentDigest,
+      resourceBinding: target.resourceBinding,
+      offerId: target.offerId,
+      offerVersion: target.offerVersion,
+      fundingPolicyId: target.fundingPolicyId,
+      fundingPolicyVersion: target.fundingPolicyVersion,
+      capabilityCommitment: target.capabilityCommitment,
+      totalUnits: target.totalUnits,
+      expiresAt: target.expiresAt,
+      grantFundingCommitment: target.grantFundingCommitment,
+      inclusionEvidence: deepFreeze({
+        state: 'MOMENTUM_INCLUDED',
+        transactionHash: REFLECT_APPLY(STRING_SLICE, target.transactionId, [
+          'zenontx:'.length,
+        ]),
+        momentumHeight: candidate.inclusion.momentumHeight,
+        momentumHash: candidate.inclusion.momentumHash,
+        observedConfirmations: candidate.firstThreshold.confirmations,
+      }),
+      confirmationPolicy: cloneTrusted(authority.confirmationPolicy),
+    });
+    const base = {
+      requestVersion: 1,
+      requestType: ATTESTATION_REQUEST_TYPE,
+      recordKey,
+      authorityRecordDigest: authority.authorityRecordDigest,
+      generationCommitment: authority.authorityGeneration.generationCommitment,
+      keyId: authority.keyId,
+      audienceDigest: hashCommitment(ATTESTATION_AUDIENCE_DOMAIN, target),
+      observerRecordId: state.observerRecordId,
+      targetBindingDigest: state.targetBindingDigest,
+      candidateDigest: hashCommitment(ATTESTATION_CANDIDATE_DOMAIN, candidate),
+      inclusionAuthorizationId: candidate.inclusionAuthorizationId,
+      bootstrapCheckpoint: cloneTrusted(authority.bootstrapCheckpoint),
+      sourcePolicyCommitment: authority.sourcePolicyCommitment,
+      unsignedFundingEvidenceDigest: hashCommitment(
+        ATTESTATION_EVIDENCE_DOMAIN,
+        unsignedFundingEvidence,
+      ),
+    };
+    return parseZenonFundingProviderAttestationRequest({
+      authorityRecord: authority,
+      request: {
+        ...base,
+        attestationId: hashCommitment(ATTESTATION_ID_DOMAIN, base),
+        unsignedFundingEvidence,
+      },
+    });
+  } catch (error) {
+    if (attestationErrorCode(error) !== null) {
+      fail('ZENON_FUNDING_OBSERVER_STORE_ATTESTATION_REJECTED');
+    }
+    fail('ZENON_FUNDING_OBSERVER_STORE_CORRUPT');
+  }
+}
+
+function preparedOutbox(authority, recordKey, state) {
+  const request = requestForState(authority, recordKey, state);
+  if (request === null) return emptyOutbox();
+  return deepFreeze({
+    ...emptyOutbox(),
+    revision: 1,
+    status: ZENON_FUNDING_OBSERVER_ATTESTATION_OUTBOX_STATUS.PREPARED,
+    attestationId: request.attestationId,
+    request,
+  });
+}
+
+function publicOutbox(outbox) {
+  return deepFreeze({
+    outboxVersion: outbox.outboxVersion,
+    revision: outbox.revision,
+    status: outbox.status,
+  });
+}
+
+function fundingEvidenceArtifact(recordKey, authority, outbox) {
+  const artifact = {
+    artifactVersion: 1,
+    artifactType: 'zenon-provider-attestation-ready-reference',
+    recordKey,
+    authorityRecordDigest: authority.authorityRecordDigest,
+    attestationId: outbox.attestationId,
+    envelopeDigest: outbox.envelopeDigest,
+  };
+  return deepFreeze({
+    evidenceVersion: 1,
+    artifact: deepFreeze({
+      ...artifact,
+      artifactDigest: hashCommitment(READY_ARTIFACT_DOMAIN, artifact),
+    }),
+  });
+}
+
+function recordKeyFor(state, authority) {
   return hashCommitment(RECORD_KEY_DOMAIN, {
     storeSchemaVersion: ZENON_FUNDING_OBSERVER_SQLITE_STORE_SCHEMA_VERSION,
     observerRecordId: state.observerRecordId,
     targetBindingDigest: state.targetBindingDigest,
+    authorityRecordDigest: authority.authorityRecordDigest,
   });
 }
 
-export function deriveZenonFundingObserverSqliteRecordKey(initialState) {
+export function deriveZenonFundingObserverSqliteRecordKey(initialState, authorityRecordText) {
   try {
+    const authority = parseZenonFundingProviderAttestationAuthorityRecord(authorityRecordText);
     const stateBytes = serializeZenonFundingObserverState(initialState);
     if (
       stateBytes.length === 0
@@ -314,20 +574,32 @@ export function deriveZenonFundingObserverSqliteRecordKey(initialState) {
     ) {
       fail('ZENON_FUNDING_OBSERVER_STORE_INVALID_INPUT');
     }
-    return recordKeyFor(parseZenonFundingObserverState(stateBytes));
+    const state = parseZenonFundingObserverState(stateBytes);
+    if (canonicalJson(state.checkpoint) !== canonicalJson(authority.bootstrapCheckpoint)) {
+      fail('ZENON_FUNDING_OBSERVER_STORE_INVALID_INPUT');
+    }
+    assertAuthorityState(authority, state, true);
+    assertPristineInitialState(authority, state, 'ZENON_FUNDING_OBSERVER_STORE_INVALID_INPUT');
+    return recordKeyFor(state, authority);
   } catch (error) {
     const known = storeErrorCode(error);
     throw failure(known ?? 'ZENON_FUNDING_OBSERVER_STORE_INVALID_INPUT');
   }
 }
 
-function envelopeFor(recordKey, stateBytes, observerRevision) {
+function envelopeFor(recordKey, authority, stateBytes, observerRevision, outbox) {
   const withoutChecksum = {
     envelopeVersion: ENVELOPE_VERSION,
+    storeSchemaVersion: ZENON_FUNDING_OBSERVER_SQLITE_STORE_SCHEMA_VERSION,
     observerRevision,
     observerStateSchemaVersion: ZENON_FUNDING_OBSERVER_STATE_SCHEMA_VERSION,
+    outboxRevision: outbox.revision,
     recordKey,
+    authorityRecordDigest: authority.authorityRecordDigest,
+    authorityRecordText: authority.canonicalText,
+    bootstrapCheckpoint: authority.bootstrapCheckpoint,
     stateBytes,
+    outbox,
   };
   return {
     ...withoutChecksum,
@@ -396,20 +668,32 @@ function captureCreateConfiguration(options) {
     'databasePath',
     'allowedRoot',
     'initialState',
+    'authorityRecord',
   ], ['busyTimeoutMs', 'maxStateBytes', 'testHooks']);
   const common = captureCommon(value);
   let state;
+  let authority;
   try {
+    authority = parseZenonFundingProviderAttestationAuthorityRecord(value.authorityRecord);
     const stateBytes = serializeZenonFundingObserverState(value.initialState);
     if (byteLength(stateBytes) > common.maxStateBytes) {
       fail('ZENON_FUNDING_OBSERVER_STORE_CAPACITY_EXCEEDED');
     }
     state = parseZenonFundingObserverState(stateBytes);
+    if (canonicalJson(state.checkpoint) !== canonicalJson(authority.bootstrapCheckpoint)) {
+      fail('ZENON_FUNDING_OBSERVER_STORE_INVALID_CONFIGURATION');
+    }
+    assertAuthorityState(authority, state, true);
+    assertPristineInitialState(
+      authority,
+      state,
+      'ZENON_FUNDING_OBSERVER_STORE_INVALID_CONFIGURATION',
+    );
   } catch (error) {
     const known = storeErrorCode(error);
     throw failure(known ?? 'ZENON_FUNDING_OBSERVER_STORE_INVALID_CONFIGURATION');
   }
-  return OBJECT_FREEZE({ ...common, initialState: state });
+  return OBJECT_FREEZE({ ...common, initialState: state, authority });
 }
 
 function captureOpenConfiguration(options) {
@@ -417,12 +701,23 @@ function captureOpenConfiguration(options) {
     'databasePath',
     'allowedRoot',
     'expectedRecordKey',
+    'authorityRecord',
   ], ['busyTimeoutMs', 'maxStateBytes', 'testHooks']);
   const common = captureCommon(value);
   if (!validDigest(value.expectedRecordKey)) {
     fail('ZENON_FUNDING_OBSERVER_STORE_INVALID_CONFIGURATION');
   }
-  return OBJECT_FREEZE({ ...common, expectedRecordKey: value.expectedRecordKey });
+  let authority;
+  try {
+    authority = parseZenonFundingProviderAttestationAuthorityRecord(value.authorityRecord);
+  } catch {
+    fail('ZENON_FUNDING_OBSERVER_STORE_INVALID_CONFIGURATION');
+  }
+  return OBJECT_FREEZE({
+    ...common,
+    expectedRecordKey: value.expectedRecordKey,
+    authority,
+  });
 }
 
 function within(root, candidate) {
@@ -506,7 +801,9 @@ function validatePathBoundary(configuration) {
 function inspectSidecars(configuration, uid, creating = false) {
   try {
     const parent = dirname(configuration.databasePath);
-    const basename = configuration.databasePath.slice(parent.length + 1);
+    const basename = REFLECT_APPLY(STRING_SLICE, configuration.databasePath, [
+      parent.length + 1,
+    ]);
     let hotJournal = false;
     for (const entry of readdirSync(parent)) {
       if (!REFLECT_APPLY(STRING_STARTS_WITH, entry, [`${basename}-`])) continue;
@@ -684,16 +981,335 @@ function captureExpectedRevision(value) {
   return value;
 }
 
-function publicRecord(recordKey, state) {
+const OUTBOX_KEYS = [
+  'outboxVersion',
+  'revision',
+  'status',
+  'attestationId',
+  'request',
+  'envelope',
+  'envelopeDigest',
+  'conflictingEnvelope',
+  'conflictingEnvelopeDigest',
+  'priorStatus',
+  'invalidationReason',
+];
+
+function outboxHasPayload(value) {
+  for (let index = 3; index < OUTBOX_KEYS.length; index += 1) {
+    if (value[OUTBOX_KEYS[index]] !== null) return true;
+  }
+  return false;
+}
+
+function parseStoredRequest(authority, request) {
+  try {
+    return parseZenonFundingProviderAttestationRequest({
+      authorityRecord: authority,
+      request: cloneTrusted(request),
+    });
+  } catch {
+    fail('ZENON_FUNDING_OBSERVER_STORE_CORRUPT');
+  }
+}
+
+function requestMatchesState(request, state, recordKey) {
+  const evidence = request.unsignedFundingEvidence;
+  const target = state.target;
+  return request.recordKey === recordKey
+    && request.observerRecordId === state.observerRecordId
+    && request.targetBindingDigest === state.targetBindingDigest
+    && request.inclusionAuthorizationId === state.inclusion?.inclusionAuthorizationId
+    && evidence.transactionId === target.transactionId
+    && evidence.payer === target.payer
+    && evidence.payee === target.payee
+    && evidence.asset === target.asset
+    && evidence.amount === target.amount
+    && evidence.paymentResourceDigest === target.paymentResourceDigest
+    && evidence.paymentRequirementDigest === target.paymentRequirementDigest
+    && evidence.paymentIntentDigest === target.paymentIntentDigest
+    && evidence.resourceBinding === target.resourceBinding
+    && evidence.offerId === target.offerId
+    && evidence.offerVersion === target.offerVersion
+    && evidence.fundingPolicyId === target.fundingPolicyId
+    && evidence.fundingPolicyVersion === target.fundingPolicyVersion
+    && evidence.capabilityCommitment === target.capabilityCommitment
+    && evidence.totalUnits === target.totalUnits
+    && evidence.expiresAt === target.expiresAt
+    && evidence.grantFundingCommitment === target.grantFundingCommitment
+    && evidence.inclusionEvidence?.transactionHash === REFLECT_APPLY(
+      STRING_SLICE,
+      target.transactionId,
+      ['zenontx:'.length],
+    )
+    && evidence.inclusionEvidence?.momentumHeight === state.inclusion?.momentumHeight
+    && evidence.inclusionEvidence?.momentumHash === state.inclusion?.momentumHash
+    && evidence.inclusionEvidence?.observedConfirmations === state.firstThreshold?.confirmations;
+}
+
+function verifyStoredEnvelope(authority, request, envelope, expectedDigest) {
+  try {
+    const verified = verifyZenonFundingProviderAttestationEnvelope({
+      authorityRecord: authority,
+      request: cloneTrusted(request),
+      envelope: cloneTrusted(envelope),
+      nowEpochSeconds: 0,
+      replayMode: 'COMMITTED_REPLAY',
+    });
+    if (verified.envelopeDigest !== expectedDigest) {
+      fail('ZENON_FUNDING_OBSERVER_STORE_CORRUPT');
+    }
+    return deepFreeze({
+      ...verified,
+      verifiedRecord: cloneTrusted(request.unsignedFundingEvidence),
+    });
+  } catch (error) {
+    const known = storeErrorCode(error);
+    throw failure(known ?? 'ZENON_FUNDING_OBSERVER_STORE_CORRUPT');
+  }
+}
+
+function normalizeOutbox(input, authority, state, recordKey) {
+  const value = exactDataObject(
+    snapshotJson(input),
+    OUTBOX_KEYS,
+    [],
+    'ZENON_FUNDING_OBSERVER_STORE_CORRUPT',
+  );
+  if (
+    value.outboxVersion !== ZENON_FUNDING_OBSERVER_ATTESTATION_OUTBOX_VERSION
+    || !NUMBER_IS_SAFE_INTEGER(value.revision)
+    || value.revision < 0
+    || (
+      value.status !== ZENON_FUNDING_OBSERVER_ATTESTATION_OUTBOX_STATUS.NONE
+      && value.status !== ZENON_FUNDING_OBSERVER_ATTESTATION_OUTBOX_STATUS.PREPARED
+      && value.status !== ZENON_FUNDING_OBSERVER_ATTESTATION_OUTBOX_STATUS.READY
+      && value.status !== ZENON_FUNDING_OBSERVER_ATTESTATION_OUTBOX_STATUS.INVALIDATED
+      && value.status !== ZENON_FUNDING_OBSERVER_ATTESTATION_OUTBOX_STATUS.EQUIVOCATED
+    )
+  ) {
+    fail('ZENON_FUNDING_OBSERVER_STORE_CORRUPT');
+  }
+  if (value.status === ZENON_FUNDING_OBSERVER_ATTESTATION_OUTBOX_STATUS.NONE) {
+    if (
+      value.revision !== 0
+      || state.firstThreshold !== null
+      || outboxHasPayload(value)
+    ) {
+      fail('ZENON_FUNDING_OBSERVER_STORE_CORRUPT');
+    }
+    return emptyOutbox();
+  }
+  if (value.request === null || value.attestationId === null) {
+    fail('ZENON_FUNDING_OBSERVER_STORE_CORRUPT');
+  }
+  const request = parseStoredRequest(authority, value.request);
+  if (
+    request.attestationId !== value.attestationId
+    || !requestMatchesState(request, state, recordKey)
+  ) {
+    fail('ZENON_FUNDING_OBSERVER_STORE_CORRUPT');
+  }
+  const expected = requestForState(authority, recordKey, state);
+  if (expected === null || canonicalJson(expected) !== canonicalJson(request)) {
+    fail('ZENON_FUNDING_OBSERVER_STORE_CORRUPT');
+  }
+  if (value.status === ZENON_FUNDING_OBSERVER_ATTESTATION_OUTBOX_STATUS.PREPARED) {
+    if (
+      value.revision !== 1
+      || state.status !== ZENON_FUNDING_OBSERVER_STATUS.THRESHOLD_OBSERVED
+      || value.envelope !== null
+      || value.envelopeDigest !== null
+      || value.conflictingEnvelope !== null
+      || value.conflictingEnvelopeDigest !== null
+      || value.priorStatus !== null
+      || value.invalidationReason !== null
+    ) {
+      fail('ZENON_FUNDING_OBSERVER_STORE_CORRUPT');
+    }
+  } else if (value.status === ZENON_FUNDING_OBSERVER_ATTESTATION_OUTBOX_STATUS.READY) {
+    if (
+      value.revision !== 2
+      || state.status !== ZENON_FUNDING_OBSERVER_STATUS.THRESHOLD_OBSERVED
+      || value.envelope === null
+      || !validDigest(value.envelopeDigest)
+      || value.conflictingEnvelope !== null
+      || value.conflictingEnvelopeDigest !== null
+      || value.priorStatus !== null
+      || value.invalidationReason !== null
+    ) {
+      fail('ZENON_FUNDING_OBSERVER_STORE_CORRUPT');
+    }
+    verifyStoredEnvelope(authority, request, value.envelope, value.envelopeDigest);
+  } else if (
+    value.status === ZENON_FUNDING_OBSERVER_ATTESTATION_OUTBOX_STATUS.INVALIDATED
+  ) {
+    const fromPrepared = value.priorStatus
+      === ZENON_FUNDING_OBSERVER_ATTESTATION_OUTBOX_STATUS.PREPARED;
+    const fromReady = value.priorStatus
+      === ZENON_FUNDING_OBSERVER_ATTESTATION_OUTBOX_STATUS.READY;
+    if (
+      (!fromPrepared && !fromReady)
+      || value.revision !== (fromPrepared ? 2 : 3)
+      || state.status !== ZENON_FUNDING_OBSERVER_STATUS.QUARANTINED
+      || value.invalidationReason !== state.quarantine?.reason
+      || value.conflictingEnvelope !== null
+      || value.conflictingEnvelopeDigest !== null
+      || (fromPrepared && (value.envelope !== null || value.envelopeDigest !== null))
+      || (fromReady && (value.envelope === null || !validDigest(value.envelopeDigest)))
+    ) {
+      fail('ZENON_FUNDING_OBSERVER_STORE_CORRUPT');
+    }
+    if (fromReady) {
+      verifyStoredEnvelope(authority, request, value.envelope, value.envelopeDigest);
+    }
+  } else if (value.status === ZENON_FUNDING_OBSERVER_ATTESTATION_OUTBOX_STATUS.EQUIVOCATED) {
+    if (
+      value.revision !== 3
+      || (
+        state.status !== ZENON_FUNDING_OBSERVER_STATUS.THRESHOLD_OBSERVED
+        && state.status !== ZENON_FUNDING_OBSERVER_STATUS.QUARANTINED
+      )
+      || value.priorStatus !== ZENON_FUNDING_OBSERVER_ATTESTATION_OUTBOX_STATUS.READY
+      || value.invalidationReason !== null
+      || value.envelope === null
+      || value.conflictingEnvelope === null
+      || !validDigest(value.envelopeDigest)
+      || !validDigest(value.conflictingEnvelopeDigest)
+      || canonicalJson(value.envelope) === canonicalJson(value.conflictingEnvelope)
+    ) {
+      fail('ZENON_FUNDING_OBSERVER_STORE_CORRUPT');
+    }
+    verifyStoredEnvelope(authority, request, value.envelope, value.envelopeDigest);
+    verifyStoredEnvelope(
+      authority,
+      request,
+      value.conflictingEnvelope,
+      value.conflictingEnvelopeDigest,
+    );
+  }
   return deepFreeze({
-    storeSchemaVersion: ZENON_FUNDING_OBSERVER_SQLITE_STORE_SCHEMA_VERSION,
-    recordKey,
-    state: cloneTrusted(state),
+    outboxVersion: value.outboxVersion,
+    revision: value.revision,
+    status: value.status,
+    attestationId: value.attestationId,
+    request,
+    envelope: value.envelope === null ? null : cloneTrusted(value.envelope),
+    envelopeDigest: value.envelopeDigest,
+    conflictingEnvelope: value.conflictingEnvelope === null
+      ? null
+      : cloneTrusted(value.conflictingEnvelope),
+    conflictingEnvelopeDigest: value.conflictingEnvelopeDigest,
+    priorStatus: value.priorStatus,
+    invalidationReason: value.invalidationReason,
   });
 }
 
-function publicTransition(state, disposition) {
-  return deepFreeze({ state: cloneTrusted(state), disposition });
+function reconcileOutbox(authority, recordKey, previous, nextState) {
+  if (nextState.status === ZENON_FUNDING_OBSERVER_STATUS.QUARANTINED) {
+    if (
+      previous.status === ZENON_FUNDING_OBSERVER_ATTESTATION_OUTBOX_STATUS.PREPARED
+      || previous.status === ZENON_FUNDING_OBSERVER_ATTESTATION_OUTBOX_STATUS.READY
+    ) {
+      return deepFreeze({
+        ...previous,
+        revision: previous.revision + 1,
+        status: ZENON_FUNDING_OBSERVER_ATTESTATION_OUTBOX_STATUS.INVALIDATED,
+        priorStatus: previous.status,
+        invalidationReason: nextState.quarantine.reason,
+      });
+    }
+    return previous;
+  }
+  const expectedRequest = requestForState(authority, recordKey, nextState);
+  if (expectedRequest === null) return previous;
+  if (previous.status === ZENON_FUNDING_OBSERVER_ATTESTATION_OUTBOX_STATUS.NONE) {
+    return deepFreeze({
+      ...emptyOutbox(),
+      revision: 1,
+      status: ZENON_FUNDING_OBSERVER_ATTESTATION_OUTBOX_STATUS.PREPARED,
+      attestationId: expectedRequest.attestationId,
+      request: expectedRequest,
+    });
+  }
+  if (
+    previous.status === ZENON_FUNDING_OBSERVER_ATTESTATION_OUTBOX_STATUS.PREPARED
+    || previous.status === ZENON_FUNDING_OBSERVER_ATTESTATION_OUTBOX_STATUS.READY
+  ) {
+    if (canonicalJson(previous.request) !== canonicalJson(expectedRequest)) {
+      fail('ZENON_FUNDING_OBSERVER_STORE_INVARIANT_VIOLATION');
+    }
+  }
+  return previous;
+}
+
+function captureFundingEvidenceReference(input) {
+  const value = exactDataObject(
+    snapshotJson(input),
+    ['evidenceVersion', 'artifact'],
+    [],
+    'ZENON_FUNDING_OBSERVER_STORE_INVALID_INPUT',
+  );
+  const artifact = exactDataObject(
+    value.artifact,
+    [
+      'artifactVersion',
+      'artifactType',
+      'recordKey',
+      'authorityRecordDigest',
+      'attestationId',
+      'envelopeDigest',
+      'artifactDigest',
+    ],
+    [],
+    'ZENON_FUNDING_OBSERVER_STORE_INVALID_INPUT',
+  );
+  if (
+    value.evidenceVersion !== 1
+    || artifact.artifactVersion !== 1
+    || artifact.artifactType !== 'zenon-provider-attestation-ready-reference'
+  ) {
+    fail('ZENON_FUNDING_OBSERVER_STORE_INVALID_INPUT');
+  }
+  for (const key of [
+    'recordKey',
+    'authorityRecordDigest',
+    'attestationId',
+    'envelopeDigest',
+    'artifactDigest',
+  ]) {
+    if (!validDigest(artifact[key])) fail('ZENON_FUNDING_OBSERVER_STORE_INVALID_INPUT');
+  }
+  const withoutDigest = {
+    artifactVersion: artifact.artifactVersion,
+    artifactType: artifact.artifactType,
+    recordKey: artifact.recordKey,
+    authorityRecordDigest: artifact.authorityRecordDigest,
+    attestationId: artifact.attestationId,
+    envelopeDigest: artifact.envelopeDigest,
+  };
+  if (hashCommitment(READY_ARTIFACT_DOMAIN, withoutDigest) !== artifact.artifactDigest) {
+    fail('ZENON_FUNDING_OBSERVER_STORE_INVALID_INPUT');
+  }
+  return deepFreeze({ evidenceVersion: 1, artifact: deepFreeze({ ...artifact }) });
+}
+
+function publicRecord(recordKey, authority, state, outbox) {
+  return deepFreeze({
+    storeSchemaVersion: ZENON_FUNDING_OBSERVER_SQLITE_STORE_SCHEMA_VERSION,
+    recordKey,
+    authorityRecordDigest: authority.authorityRecordDigest,
+    state: cloneTrusted(state),
+    outbox: publicOutbox(outbox),
+  });
+}
+
+function publicTransition(state, outbox, disposition) {
+  return deepFreeze({
+    state: cloneTrusted(state),
+    outbox: publicOutbox(outbox),
+    disposition,
+  });
 }
 
 export class ZenonFundingObserverSqliteStore {
@@ -701,13 +1317,14 @@ export class ZenonFundingObserverSqliteStore {
   #database;
   #identity;
   #recordKey;
+  #authority;
   #closed = false;
   #quarantined = false;
   #operationActive = false;
   #hookActive = false;
   #hookReentry = false;
 
-  constructor(token, configuration, database, identity, recordKey) {
+  constructor(token, configuration, database, identity, recordKey, authority) {
     if (token !== CONSTRUCTOR_TOKEN) {
       fail('ZENON_FUNDING_OBSERVER_STORE_INVALID_CONFIGURATION');
     }
@@ -718,11 +1335,15 @@ export class ZenonFundingObserverSqliteStore {
     this.#database = database;
     this.#identity = identity;
     this.#recordKey = recordKey;
+    this.#authority = authority;
   }
 
   static create(options) {
     const configuration = captureCreateConfiguration(options);
-    const recordKey = deriveZenonFundingObserverSqliteRecordKey(configuration.initialState);
+    const recordKey = deriveZenonFundingObserverSqliteRecordKey(
+      configuration.initialState,
+      configuration.authority.canonicalText,
+    );
     const boundary = validatePathBoundary(configuration);
     inspectSidecars(configuration, boundary.uid, true);
     const before = createExclusiveDatabaseFile(configuration, boundary);
@@ -733,6 +1354,7 @@ export class ZenonFundingObserverSqliteStore {
       database,
       before,
       recordKey,
+      configuration.authority,
     );
     try {
       store.#initialize();
@@ -755,6 +1377,7 @@ export class ZenonFundingObserverSqliteStore {
       database,
       before,
       configuration.expectedRecordKey,
+      configuration.authority,
     );
     try {
       const loaded = store.#readCommitted();
@@ -773,7 +1396,7 @@ export class ZenonFundingObserverSqliteStore {
   load() {
     return this.#runPublic(() => {
       const loaded = this.#safeRead();
-      return publicRecord(loaded.recordKey, loaded.state);
+      return publicRecord(loaded.recordKey, this.#authority, loaded.state, loaded.outbox);
     });
   }
 
@@ -869,6 +1492,14 @@ export class ZenonFundingObserverSqliteStore {
   projectCommittedCandidate() {
     return this.#runPublic(() => {
       const loaded = this.#safeRead();
+      if (
+        loaded.outbox.status
+          === ZENON_FUNDING_OBSERVER_ATTESTATION_OUTBOX_STATUS.INVALIDATED
+        || loaded.outbox.status
+          === ZENON_FUNDING_OBSERVER_ATTESTATION_OUTBOX_STATUS.EQUIVOCATED
+      ) {
+        return null;
+      }
       let candidate;
       try {
         candidate = projectZenonFundingObservationCandidate(cloneTrusted(loaded.state));
@@ -876,6 +1507,231 @@ export class ZenonFundingObserverSqliteStore {
         mapObserverFailure(error, true);
       }
       return candidate === null ? null : cloneTrusted(candidate);
+    });
+  }
+
+  peekPreparedAttestation() {
+    return this.#runPublic(() => {
+      const loaded = this.#safeRead();
+      if (
+        loaded.outbox.status
+        !== ZENON_FUNDING_OBSERVER_ATTESTATION_OUTBOX_STATUS.PREPARED
+      ) {
+        return null;
+      }
+      return cloneTrusted(loaded.outbox.request);
+    });
+  }
+
+  commitAuthenticatedEnvelope(input) {
+    const captured = exactDataObject(input, [
+      'expectedObserverRevision',
+      'expectedOutboxRevision',
+      'attestationId',
+      'envelope',
+      'nowEpochSeconds',
+    ], [], 'ZENON_FUNDING_OBSERVER_STORE_INVALID_INPUT');
+    const expectedObserverRevision = captureExpectedRevision(
+      captured.expectedObserverRevision,
+    );
+    const expectedOutboxRevision = captureExpectedRevision(captured.expectedOutboxRevision);
+    if (!validDigest(captured.attestationId)) {
+      fail('ZENON_FUNDING_OBSERVER_STORE_INVALID_INPUT');
+    }
+    const envelope = snapshotJson(captured.envelope);
+    const nowEpochSeconds = captureExpectedRevision(captured.nowEpochSeconds);
+    return this.#runPublic(() => this.#runTransaction(
+      'commitAuthenticatedEnvelope',
+      () => {
+        this.#validateDatabase();
+        const loaded = this.#readRecord();
+        if (
+          loaded.state.revision !== expectedObserverRevision
+          || loaded.outbox.attestationId !== captured.attestationId
+        ) {
+          fail('ZENON_FUNDING_OBSERVER_STORE_STALE_REVISION');
+        }
+        if (
+          loaded.outbox.status
+          === ZENON_FUNDING_OBSERVER_ATTESTATION_OUTBOX_STATUS.READY
+          && canonicalJson(loaded.outbox.envelope) === canonicalJson(envelope)
+          && (
+            expectedOutboxRevision === loaded.outbox.revision
+            || expectedOutboxRevision === loaded.outbox.revision - 1
+          )
+        ) {
+          verifyStoredEnvelope(
+            this.#authority,
+            loaded.outbox.request,
+            loaded.outbox.envelope,
+            loaded.outbox.envelopeDigest,
+          );
+          return {
+            changed: false,
+            expectedEnvelopeText: loaded.envelopeText,
+            expectedStateBytes: loaded.stateBytes,
+            expectedOutbox: loaded.outbox,
+            recordKey: loaded.recordKey,
+          };
+        }
+        if (
+          loaded.outbox.status
+            !== ZENON_FUNDING_OBSERVER_ATTESTATION_OUTBOX_STATUS.PREPARED
+          && loaded.outbox.status
+            !== ZENON_FUNDING_OBSERVER_ATTESTATION_OUTBOX_STATUS.READY
+        ) {
+          fail('ZENON_FUNDING_OBSERVER_STORE_ATTESTATION_UNAVAILABLE');
+        }
+        const permittedRevision = expectedOutboxRevision === loaded.outbox.revision
+          || (
+            loaded.outbox.status
+              === ZENON_FUNDING_OBSERVER_ATTESTATION_OUTBOX_STATUS.READY
+            && expectedOutboxRevision === loaded.outbox.revision - 1
+          );
+        if (!permittedRevision) {
+          fail('ZENON_FUNDING_OBSERVER_STORE_STALE_REVISION');
+        }
+        let verified;
+        try {
+          verified = verifyZenonFundingProviderAttestationEnvelope({
+            authorityRecord: this.#authority,
+            request: cloneTrusted(loaded.outbox.request),
+            envelope: cloneTrusted(envelope),
+            nowEpochSeconds,
+            replayMode: 'INITIAL',
+          });
+        } catch (error) {
+          if (attestationErrorCode(error) !== null) {
+            fail('ZENON_FUNDING_OBSERVER_STORE_ATTESTATION_REJECTED');
+          }
+          fail('ZENON_FUNDING_OBSERVER_STORE_TRANSACTION_FAILED');
+        }
+        let nextOutbox;
+        if (
+          loaded.outbox.status
+          === ZENON_FUNDING_OBSERVER_ATTESTATION_OUTBOX_STATUS.PREPARED
+        ) {
+          nextOutbox = deepFreeze({
+            ...loaded.outbox,
+            revision: loaded.outbox.revision + 1,
+            status: ZENON_FUNDING_OBSERVER_ATTESTATION_OUTBOX_STATUS.READY,
+            envelope: cloneTrusted(envelope),
+            envelopeDigest: verified.envelopeDigest,
+          });
+        } else {
+          nextOutbox = deepFreeze({
+            ...loaded.outbox,
+            revision: loaded.outbox.revision + 1,
+            status: ZENON_FUNDING_OBSERVER_ATTESTATION_OUTBOX_STATUS.EQUIVOCATED,
+            conflictingEnvelope: cloneTrusted(envelope),
+            conflictingEnvelopeDigest: verified.envelopeDigest,
+            priorStatus: ZENON_FUNDING_OBSERVER_ATTESTATION_OUTBOX_STATUS.READY,
+          });
+        }
+        const nextEnvelope = envelopeFor(
+          loaded.recordKey,
+          this.#authority,
+          loaded.stateBytes,
+          loaded.state.revision,
+          nextOutbox,
+        );
+        this.#assertEnvelopeCapacity(nextEnvelope);
+        const expectedEnvelopeText = canonicalJson(nextEnvelope);
+        this.#invokeHook('beforeWrite', 'commitAuthenticatedEnvelope', true);
+        const updated = this.#database.prepare(
+          `UPDATE ${TABLE_NAME} SET envelope = ? WHERE singleton = 1 AND record_key = ? AND envelope = ?`,
+        ).run(expectedEnvelopeText, loaded.recordKey, loaded.envelopeText);
+        if (updated.changes !== 1) {
+          fail('ZENON_FUNDING_OBSERVER_STORE_CONCURRENT_CONFLICT');
+        }
+        this.#invokeHook('afterWrite', 'commitAuthenticatedEnvelope', true);
+        return {
+          changed: true,
+          expectedEnvelopeText,
+          expectedStateBytes: loaded.stateBytes,
+          expectedOutbox: nextOutbox,
+          recordKey: loaded.recordKey,
+        };
+      },
+      transactionResult => {
+        this.#validateDatabase();
+        const committed = this.#readRecord();
+        if (
+          committed.recordKey !== transactionResult.recordKey
+          || committed.stateBytes !== transactionResult.expectedStateBytes
+          || committed.envelopeText !== transactionResult.expectedEnvelopeText
+          || canonicalJson(committed.outbox)
+            !== canonicalJson(transactionResult.expectedOutbox)
+        ) {
+          fail('ZENON_FUNDING_OBSERVER_STORE_CORRUPT');
+        }
+        if (
+          committed.outbox.status
+          === ZENON_FUNDING_OBSERVER_ATTESTATION_OUTBOX_STATUS.EQUIVOCATED
+        ) {
+          return deepFreeze({ disposition: 'EQUIVOCATED', fundingEvidence: null });
+        }
+        if (
+          committed.outbox.status
+          !== ZENON_FUNDING_OBSERVER_ATTESTATION_OUTBOX_STATUS.READY
+        ) {
+          fail('ZENON_FUNDING_OBSERVER_STORE_CORRUPT');
+        }
+        return deepFreeze({
+          disposition: 'READY',
+          fundingEvidence: fundingEvidenceArtifact(
+            committed.recordKey,
+            this.#authority,
+            committed.outbox,
+          ),
+        });
+      },
+    ));
+  }
+
+  projectCommittedFundingEvidence() {
+    return this.#runPublic(() => {
+      const loaded = this.#safeRead();
+      if (
+        loaded.outbox.status
+        !== ZENON_FUNDING_OBSERVER_ATTESTATION_OUTBOX_STATUS.READY
+      ) {
+        return null;
+      }
+      verifyStoredEnvelope(
+        this.#authority,
+        loaded.outbox.request,
+        loaded.outbox.envelope,
+        loaded.outbox.envelopeDigest,
+      );
+      return fundingEvidenceArtifact(loaded.recordKey, this.#authority, loaded.outbox);
+    });
+  }
+
+  matchReadyFundingEvidence(input) {
+    const reference = captureFundingEvidenceReference(input);
+    return this.#runPublic(() => {
+      const loaded = this.#safeRead();
+      if (
+        loaded.outbox.status
+        !== ZENON_FUNDING_OBSERVER_ATTESTATION_OUTBOX_STATUS.READY
+      ) {
+        fail('ZENON_FUNDING_OBSERVER_STORE_ATTESTATION_UNAVAILABLE');
+      }
+      const expected = fundingEvidenceArtifact(
+        loaded.recordKey,
+        this.#authority,
+        loaded.outbox,
+      );
+      if (canonicalJson(reference) !== canonicalJson(expected)) {
+        fail('ZENON_FUNDING_OBSERVER_STORE_ATTESTATION_REJECTED');
+      }
+      return cloneTrusted(verifyStoredEnvelope(
+        this.#authority,
+        loaded.outbox.request,
+        loaded.outbox.envelope,
+        loaded.outbox.envelopeDigest,
+      ).verifiedRecord);
     });
   }
 
@@ -900,11 +1756,18 @@ export class ZenonFundingObserverSqliteStore {
 
   #initialize() {
     const stateBytes = serializeZenonFundingObserverState(this.#configuration.initialState);
-    const recordKey = recordKeyFor(this.#configuration.initialState);
+    const recordKey = this.#recordKey;
+    const outbox = preparedOutbox(
+      this.#authority,
+      recordKey,
+      this.#configuration.initialState,
+    );
     const envelope = envelopeFor(
       recordKey,
+      this.#authority,
       stateBytes,
       this.#configuration.initialState.revision,
+      outbox,
     );
     this.#assertEnvelopeCapacity(envelope);
     this.#runTransaction('create', () => {
@@ -922,10 +1785,14 @@ export class ZenonFundingObserverSqliteStore {
       if (loaded.recordKey !== recordKey || loaded.stateBytes !== stateBytes) {
         fail('ZENON_FUNDING_OBSERVER_STORE_CORRUPT');
       }
-      return { changed: true, recordKey, stateBytes };
+      return { changed: true, envelopeText: canonicalJson(envelope), recordKey, stateBytes };
     }, outcome => {
       const loaded = this.#readRecord();
-      if (loaded.recordKey !== outcome.recordKey || loaded.stateBytes !== outcome.stateBytes) {
+      if (
+        loaded.recordKey !== outcome.recordKey
+        || loaded.stateBytes !== outcome.stateBytes
+        || loaded.envelopeText !== outcome.envelopeText
+      ) {
         fail('ZENON_FUNDING_OBSERVER_STORE_CORRUPT');
       }
       return null;
@@ -958,14 +1825,24 @@ export class ZenonFundingObserverSqliteStore {
       if (byteLength(nextStateBytes) > this.#configuration.maxStateBytes) {
         fail('ZENON_FUNDING_OBSERVER_STORE_CAPACITY_EXCEEDED');
       }
-      const changed = nextStateBytes !== loaded.stateBytes;
+      assertAuthorityState(this.#authority, outcome.state);
+      const nextOutbox = reconcileOutbox(
+        this.#authority,
+        loaded.recordKey,
+        loaded.outbox,
+        outcome.state,
+      );
+      const changed = nextStateBytes !== loaded.stateBytes
+        || canonicalJson(nextOutbox) !== canonicalJson(loaded.outbox);
       let expectedEnvelopeText = loaded.envelopeText;
       if (changed) {
         this.#invokeHook('beforeWrite', operation, true);
         const nextEnvelope = envelopeFor(
           loaded.recordKey,
+          this.#authority,
           nextStateBytes,
           outcome.state.revision,
+          nextOutbox,
         );
         this.#assertEnvelopeCapacity(nextEnvelope);
         expectedEnvelopeText = canonicalJson(nextEnvelope);
@@ -981,6 +1858,7 @@ export class ZenonFundingObserverSqliteStore {
         changed,
         disposition: outcome.disposition,
         expectedEnvelopeText,
+        expectedOutbox: nextOutbox,
         expectedStateBytes: nextStateBytes,
         recordKey: loaded.recordKey,
       };
@@ -991,10 +1869,12 @@ export class ZenonFundingObserverSqliteStore {
         committed.recordKey !== transactionResult.recordKey
         || committed.stateBytes !== transactionResult.expectedStateBytes
         || committed.envelopeText !== transactionResult.expectedEnvelopeText
+        || canonicalJson(committed.outbox)
+          !== canonicalJson(transactionResult.expectedOutbox)
       ) {
         fail('ZENON_FUNDING_OBSERVER_STORE_CORRUPT');
       }
-      return publicTransition(committed.state, transactionResult.disposition);
+      return publicTransition(committed.state, committed.outbox, transactionResult.disposition);
     }));
   }
 
@@ -1043,10 +1923,19 @@ export class ZenonFundingObserverSqliteStore {
         fail('ZENON_FUNDING_OBSERVER_STORE_INVARIANT_VIOLATION');
       }
       this.#invokeHook('beforeWrite', 'planBackfill', true);
+      assertAuthorityState(this.#authority, outcome.state);
+      const nextOutbox = reconcileOutbox(
+        this.#authority,
+        loaded.recordKey,
+        loaded.outbox,
+        outcome.state,
+      );
       const nextEnvelope = envelopeFor(
         loaded.recordKey,
+        this.#authority,
         nextStateBytes,
         outcome.state.revision,
+        nextOutbox,
       );
       this.#assertEnvelopeCapacity(nextEnvelope);
       const expectedEnvelopeText = canonicalJson(nextEnvelope);
@@ -1061,6 +1950,7 @@ export class ZenonFundingObserverSqliteStore {
         changed: true,
         disposition: outcome.disposition,
         expectedEnvelopeText,
+        expectedOutbox: nextOutbox,
         expectedStateBytes: nextStateBytes,
         recordKey: loaded.recordKey,
       };
@@ -1071,6 +1961,8 @@ export class ZenonFundingObserverSqliteStore {
         committed.recordKey !== transactionResult.recordKey
         || committed.stateBytes !== transactionResult.expectedStateBytes
         || committed.envelopeText !== transactionResult.expectedEnvelopeText
+        || canonicalJson(committed.outbox)
+          !== canonicalJson(transactionResult.expectedOutbox)
       ) {
         fail('ZENON_FUNDING_OBSERVER_STORE_CORRUPT');
       }
@@ -1140,13 +2032,19 @@ export class ZenonFundingObserverSqliteStore {
       }
       if (
         !isPlainObject(envelope)
-        || REFLECT_OWN_KEYS(envelope).length !== 6
+        || REFLECT_OWN_KEYS(envelope).length !== 12
         || ![
           'envelopeVersion',
+          'storeSchemaVersion',
           'observerRevision',
           'observerStateSchemaVersion',
+          'outboxRevision',
           'recordKey',
+          'authorityRecordDigest',
+          'authorityRecordText',
+          'bootstrapCheckpoint',
           'stateBytes',
+          'outbox',
           'checksum',
         ].every(key => {
           const descriptor = REFLECT_GET_OWN_PROPERTY_DESCRIPTOR(envelope, key);
@@ -1157,6 +2055,8 @@ export class ZenonFundingObserverSqliteStore {
       }
       if (
         envelope.envelopeVersion !== ENVELOPE_VERSION
+        || envelope.storeSchemaVersion
+          !== ZENON_FUNDING_OBSERVER_SQLITE_STORE_SCHEMA_VERSION
         || envelope.observerStateSchemaVersion !== ZENON_FUNDING_OBSERVER_STATE_SCHEMA_VERSION
       ) {
         fail('ZENON_FUNDING_OBSERVER_STORE_SCHEMA_UNSUPPORTED');
@@ -1164,8 +2064,15 @@ export class ZenonFundingObserverSqliteStore {
       if (
         !NUMBER_IS_SAFE_INTEGER(envelope.observerRevision)
         || envelope.observerRevision < 0
+        || !NUMBER_IS_SAFE_INTEGER(envelope.outboxRevision)
+        || envelope.outboxRevision < 0
         || !validDigest(envelope.recordKey)
         || envelope.recordKey !== row.record_key
+        || !validDigest(envelope.authorityRecordDigest)
+        || typeof envelope.authorityRecordText !== 'string'
+        || envelope.authorityRecordText.length === 0
+        || envelope.authorityRecordText.length > 64 * 1024
+        || byteLength(envelope.authorityRecordText) > 64 * 1024
         || typeof envelope.stateBytes !== 'string'
         || envelope.stateBytes.length === 0
         || envelope.stateBytes.length > this.#configuration.maxStateBytes
@@ -1177,16 +2084,30 @@ export class ZenonFundingObserverSqliteStore {
       if (envelope.recordKey !== this.#recordKey) {
         fail('ZENON_FUNDING_OBSERVER_STORE_RECORD_KEY_MISMATCH');
       }
-      const expectedEnvelope = envelopeFor(
-        envelope.recordKey,
-        envelope.stateBytes,
-        envelope.observerRevision,
-      );
+      const withoutChecksum = { ...envelope };
+      delete withoutChecksum.checksum;
       if (
-        expectedEnvelope.checksum !== envelope.checksum
+        hashCommitment(ENVELOPE_DOMAIN, withoutChecksum) !== envelope.checksum
         || canonicalJson(envelope) !== row.envelope
       ) {
         fail('ZENON_FUNDING_OBSERVER_STORE_CORRUPT');
+      }
+      let authority;
+      try {
+        authority = parseZenonFundingProviderAttestationAuthorityRecord(
+          envelope.authorityRecordText,
+        );
+      } catch {
+        fail('ZENON_FUNDING_OBSERVER_STORE_CORRUPT');
+      }
+      if (
+        authority.authorityRecordDigest !== envelope.authorityRecordDigest
+        || authority.authorityRecordDigest !== this.#authority.authorityRecordDigest
+        || authority.canonicalText !== this.#authority.canonicalText
+        || canonicalJson(envelope.bootstrapCheckpoint)
+          !== canonicalJson(authority.bootstrapCheckpoint)
+      ) {
+        fail('ZENON_FUNDING_OBSERVER_STORE_AUTHORITY_MISMATCH');
       }
       let state;
       try {
@@ -1197,7 +2118,35 @@ export class ZenonFundingObserverSqliteStore {
       if (
         state.schemaVersion !== envelope.observerStateSchemaVersion
         || state.revision !== envelope.observerRevision
-        || recordKeyFor(state) !== envelope.recordKey
+        || recordKeyFor(state, authority) !== envelope.recordKey
+      ) {
+        fail('ZENON_FUNDING_OBSERVER_STORE_CORRUPT');
+      }
+      assertAuthorityState(authority, state);
+      let outbox;
+      try {
+        outbox = normalizeOutbox(
+          envelope.outbox,
+          authority,
+          state,
+          envelope.recordKey,
+        );
+      } catch {
+        fail('ZENON_FUNDING_OBSERVER_STORE_CORRUPT');
+      }
+      if (outbox.revision !== envelope.outboxRevision) {
+        fail('ZENON_FUNDING_OBSERVER_STORE_CORRUPT');
+      }
+      const expectedEnvelope = envelopeFor(
+        envelope.recordKey,
+        authority,
+        envelope.stateBytes,
+        envelope.observerRevision,
+        outbox,
+      );
+      if (
+        expectedEnvelope.checksum !== envelope.checksum
+        || canonicalJson(expectedEnvelope) !== row.envelope
       ) {
         fail('ZENON_FUNDING_OBSERVER_STORE_CORRUPT');
       }
@@ -1206,6 +2155,7 @@ export class ZenonFundingObserverSqliteStore {
         recordKey: envelope.recordKey,
         state,
         stateBytes: envelope.stateBytes,
+        outbox,
       };
     } catch (error) {
       const known = storeErrorCode(error);
@@ -1437,6 +2387,7 @@ export class ZenonFundingObserverSqliteStore {
     return code === 'ZENON_FUNDING_OBSERVER_STORE_CORRUPT'
       || code === 'ZENON_FUNDING_OBSERVER_STORE_SCHEMA_UNSUPPORTED'
       || code === 'ZENON_FUNDING_OBSERVER_STORE_RECORD_KEY_MISMATCH'
+      || code === 'ZENON_FUNDING_OBSERVER_STORE_AUTHORITY_MISMATCH'
       || code === 'ZENON_FUNDING_OBSERVER_STORE_UNSAFE_FILE'
       || code === 'ZENON_FUNDING_OBSERVER_STORE_UNEXPECTED_SIDECAR';
   }
