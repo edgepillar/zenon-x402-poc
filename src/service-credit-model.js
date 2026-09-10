@@ -17,14 +17,19 @@ export const REQUEST_STATE = Object.freeze({
 export const SERVICE_CREDIT_MODEL_VERSION = 1;
 export const SERVICE_CREDIT_STATE_SCHEMA_VERSION = 2;
 export const SERVICE_CREDIT_ACTIVATION_VERSION = 1;
+export const SERVICE_CREDIT_ZENON_ACTIVATION_RECORD_VERSION = 2;
 const IDENTIFIER = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/;
 const METHOD = /^[A-Z][A-Z0-9_-]{0,15}$/;
 const CONTENT_TYPE = /^[a-z0-9][a-z0-9!#$&^_.+-]{0,63}\/[a-z0-9][a-z0-9!#$&^_.+-]{0,63}$/;
 const SHA256_COMMITMENT = /^sha256:[0-9a-f]{64}$/;
 const CANONICAL_POSITIVE_DECIMAL = /^[1-9][0-9]*$/;
 const MOCK_TRANSACTION_REFERENCE = /^mocktx:[0-9a-f]{64}$/;
+const ZENON_TRANSACTION_REFERENCE = /^zenontx:[0-9a-f]{64}$/;
+const LOWERCASE_HASH = /^[0-9a-f]{64}$/;
 const MOCK_CHAIN_IDENTIFIER = Number.MAX_SAFE_INTEGER.toString();
 const MOCK_GENESIS_MOMENTUM_HASH = '0'.repeat(64);
+const EXPERIMENTAL_LIVE_NETWORK = 'zenon:testnet';
+const ZENON_CONFIRMATION_POLICY_ID = 'zenon.authenticated-momentum-inclusion';
 const ACTIVATION_DOMAIN = 'zenon-x402-service-credit-activation-v1';
 const GRANT_DOMAIN = 'zenon-x402-service-credit-grant-v1';
 const MAX_HYDRATED_OFFERS = 10_000;
@@ -132,6 +137,17 @@ function assertCommitment(value) {
 
 function assertPositiveSafeInteger(value) {
   if (!Number.isSafeInteger(value) || value <= 0) fail('INVALID_INPUT');
+}
+
+function isSdkSafeChainIdentifier(value) {
+  return (
+    typeof value === 'string'
+    && CANONICAL_POSITIVE_DECIMAL.test(value)
+    && (
+      value.length < MOCK_CHAIN_IDENTIFIER.length
+      || (value.length === MOCK_CHAIN_IDENTIFIER.length && value <= MOCK_CHAIN_IDENTIFIER)
+    )
+  );
 }
 
 function cloneJson(value) {
@@ -248,8 +264,7 @@ function normalizeActivation(input) {
     'grantFundingCommitment',
     'evidenceState',
     'confirmationPolicy',
-  ]);
-  if (value.activationVersion !== SERVICE_CREDIT_ACTIVATION_VERSION) fail('INVALID_INPUT');
+  ], ['evidenceVersion', 'inclusionAuthorizationDigest']);
   for (const identifier of [
     value.authorityProfileId,
     value.fundingPolicyId,
@@ -270,9 +285,6 @@ function normalizeActivation(input) {
   assertPositiveSafeInteger(value.verifierVersion);
   assertCommitment(value.authorityRecordDigest);
   assertPositiveSafeInteger(value.fundingPolicyVersion);
-  if (typeof value.transactionId !== 'string' || !MOCK_TRANSACTION_REFERENCE.test(value.transactionId)) {
-    fail('INVALID_INPUT');
-  }
   assertCommitment(value.resourceBinding);
   assertPositiveSafeInteger(value.offerVersion);
   assertCommitment(value.capabilityCommitment);
@@ -281,7 +293,6 @@ function normalizeActivation(input) {
   if (
     value.scheme !== 'exact'
     || value.paymentFlow !== 'upfront'
-    || value.network !== 'zenon:mock'
     || typeof value.amount !== 'string'
     || !CANONICAL_POSITIVE_DECIMAL.test(value.amount)
     || value.amount.length > 77
@@ -293,10 +304,30 @@ function normalizeActivation(input) {
     'chainIdentifier',
     'genesisMomentumHash',
   ]);
+  if (chainProfile.version !== 1) {
+    fail('INVALID_INPUT');
+  }
+  const mockActivation = (
+    value.activationVersion === SERVICE_CREDIT_ACTIVATION_VERSION
+    && value.network === 'zenon:mock'
+  );
+  const authenticatedZenonActivation = (
+    value.activationVersion === SERVICE_CREDIT_ZENON_ACTIVATION_RECORD_VERSION
+    && value.network === EXPERIMENTAL_LIVE_NETWORK
+  );
   if (
-    chainProfile.version !== 1
-    || chainProfile.chainIdentifier !== MOCK_CHAIN_IDENTIFIER
-    || chainProfile.genesisMomentumHash !== MOCK_GENESIS_MOMENTUM_HASH
+    (!mockActivation && !authenticatedZenonActivation)
+    || (mockActivation && !MOCK_TRANSACTION_REFERENCE.test(value.transactionId))
+    || (authenticatedZenonActivation && !ZENON_TRANSACTION_REFERENCE.test(value.transactionId))
+    || (mockActivation && (
+      chainProfile.chainIdentifier !== MOCK_CHAIN_IDENTIFIER
+      || chainProfile.genesisMomentumHash !== MOCK_GENESIS_MOMENTUM_HASH
+    ))
+    || (authenticatedZenonActivation && (
+      !isSdkSafeChainIdentifier(chainProfile.chainIdentifier)
+      || !LOWERCASE_HASH.test(chainProfile.genesisMomentumHash)
+      || chainProfile.genesisMomentumHash === MOCK_GENESIS_MOMENTUM_HASH
+    ))
   ) {
     fail('INVALID_INPUT');
   }
@@ -315,15 +346,29 @@ function normalizeActivation(input) {
     'minimumConfirmations',
   ]);
   if (
-    confirmationPolicy.policyId !== 'mock.momentum-included'
-    || confirmationPolicy.policyVersion !== 1
-    || confirmationPolicy.minimumConfirmations !== 1
+    (mockActivation && (
+      confirmationPolicy.policyId !== 'mock.momentum-included'
+      || confirmationPolicy.policyVersion !== 1
+      || confirmationPolicy.minimumConfirmations !== 1
+      || Object.hasOwn(value, 'evidenceVersion')
+      || Object.hasOwn(value, 'inclusionAuthorizationDigest')
+    ))
+    || (authenticatedZenonActivation && (
+      value.evidenceVersion !== 1
+      || confirmationPolicy.policyId !== ZENON_CONFIRMATION_POLICY_ID
+      || confirmationPolicy.policyVersion !== 1
+      || !Number.isSafeInteger(confirmationPolicy.minimumConfirmations)
+      || confirmationPolicy.minimumConfirmations < 2
+      || confirmationPolicy.minimumConfirmations > 30
+      || value.inclusionAuthorizationDigest === undefined
+    ))
   ) {
     fail('INVALID_INPUT');
   }
+  if (authenticatedZenonActivation) assertCommitment(value.inclusionAuthorizationDigest);
 
   return deepFreeze({
-    activationVersion: SERVICE_CREDIT_ACTIVATION_VERSION,
+    activationVersion: value.activationVersion,
     authorityProfileId: value.authorityProfileId,
     authorityProfileVersion: value.authorityProfileVersion,
     verifierVersion: value.verifierVersion,
@@ -358,6 +403,12 @@ function normalizeActivation(input) {
     paymentRequirementDigest: value.paymentRequirementDigest,
     paymentIntentDigest: value.paymentIntentDigest,
     grantFundingCommitment: value.grantFundingCommitment,
+    ...(authenticatedZenonActivation
+      ? {
+        evidenceVersion: value.evidenceVersion,
+        inclusionAuthorizationDigest: value.inclusionAuthorizationDigest,
+      }
+      : {}),
     evidenceState: value.evidenceState,
     confirmationPolicy: {
       policyId: confirmationPolicy.policyId,
@@ -552,6 +603,8 @@ function normalizeExportedGrant(input) {
     'paymentRequirementDigest',
     'paymentIntentDigest',
     'grantFundingCommitment',
+    'evidenceVersion',
+    'inclusionAuthorizationDigest',
     'evidenceState',
     'confirmationPolicy',
   ]);
@@ -700,8 +753,10 @@ function sameRequestIdentity(record, normalized) {
  * raw model handle therefore carries grant-minting/admin authority; the method
  * name does not make that authority cryptographically inaccessible. It must
  * never be exposed to a client or HTTP handler. This method does not verify
- * payment evidence; the inactive mock activation adapter is the untrusted-input
- * verification boundary and calls it only after exact mock verification.
+ * payment evidence; the inactive mock activation adapter calls it only after
+ * exact mock verification. The separate default-inactive Zenon evidence
+ * consumer calls it only after one constructor-fixed trusted verifier returns
+ * a complete record and every local cross-binding has been revalidated.
  * Other integration layers remain responsible for authentication, capability
  * proof, request-body canonicalization, and safe classification or redaction of
  * values placed in allowed identifier fields.
