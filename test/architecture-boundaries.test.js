@@ -181,11 +181,16 @@ test('delivery claims carry the authenticated accepted requirement across every 
   );
 });
 
-test('Zenon funding composition remains absent from package and active runtime import graphs', () => {
-  const compositionName = 'service-credit-zenon-funding-composition.js';
+test('Zenon funding compositions remain absent from package and active runtime import graphs', () => {
+  const compositionNames = [
+    'service-credit-zenon-funding-composition.js',
+    'service-credit-zenon-durable-http-composition.js',
+  ];
   const packageText = readFileSync(new URL('../package.json', import.meta.url), 'utf8');
   const packageJson = JSON.parse(packageText);
-  assert.equal(packageText.includes(compositionName), false);
+  for (const compositionName of compositionNames) {
+    assert.equal(packageText.includes(compositionName), false);
+  }
 
   const roots = new Set([
     '../src/buyer.js',
@@ -203,7 +208,9 @@ test('Zenon funding composition remains absent from package and active runtime i
     const href = pending.pop();
     if (visited.has(href)) continue;
     visited.add(href);
-    assert.equal(href.endsWith(`/${compositionName}`), false);
+    for (const compositionName of compositionNames) {
+      assert.equal(href.endsWith(`/${compositionName}`), false);
+    }
     const url = new URL(href);
     if (!existsSync(url)) continue;
     const source = readFileSync(url, 'utf8');
