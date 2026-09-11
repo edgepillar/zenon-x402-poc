@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { existsSync, readFileSync } from 'node:fs';
 import {
   X402PaymentMechanism,
   assertX402PaymentMechanism,
@@ -178,4 +179,39 @@ test('delivery claims carry the authenticated accepted requirement across every 
     2,
     'the facilitator must receive settlement evidence and the accepted requirement',
   );
+});
+
+test('Zenon funding composition remains absent from package and active runtime import graphs', () => {
+  const compositionName = 'service-credit-zenon-funding-composition.js';
+  const packageText = readFileSync(new URL('../package.json', import.meta.url), 'utf8');
+  const packageJson = JSON.parse(packageText);
+  assert.equal(packageText.includes(compositionName), false);
+
+  const roots = new Set([
+    '../src/buyer.js',
+    '../src/resource-server.js',
+    '../src/zenon-payment.js',
+  ].map(path => new URL(path, import.meta.url).href));
+  for (const script of Object.values(packageJson.scripts)) {
+    const match = /^node (src\/[A-Za-z0-9._/-]+\.js)$/.exec(script);
+    if (match !== null) roots.add(new URL(`../${match[1]}`, import.meta.url).href);
+  }
+
+  const visited = new Set();
+  const pending = [...roots];
+  while (pending.length > 0) {
+    const href = pending.pop();
+    if (visited.has(href)) continue;
+    visited.add(href);
+    assert.equal(href.endsWith(`/${compositionName}`), false);
+    const url = new URL(href);
+    if (!existsSync(url)) continue;
+    const source = readFileSync(url, 'utf8');
+    for (const match of source.matchAll(
+      /(?:from\s+|import\s*(?:\(\s*)?)['"](\.[^'"]+)['"]/g,
+    )) {
+      const dependency = new URL(match[1], url);
+      if (dependency.pathname.endsWith('.js')) pending.push(dependency.href);
+    }
+  }
 });
