@@ -18,6 +18,11 @@ const RESPONSE_TYPE = 'zenon-funding-provider-signing-response';
 const OPERATION_ID_DOMAIN = 'zenon-x402:funding-provider-signing-operation-v1';
 const DEFAULT_MAXIMUM_PAYLOAD_BYTES = 512 * 1024;
 const HARD_MAXIMUM_PAYLOAD_BYTES = 1024 * 1024;
+// The inner request remains bounded by the authority's maximumCanonicalBytes.
+// The fixed outer schema adds at most 610 bytes: four 71-byte commitments,
+// one 128-byte identifier, and the fixed keys, punctuation, type, and version.
+export const ZENON_FUNDING_PROVIDER_SIGNING_CHILD_REQUEST_MAXIMUM_PAYLOAD_BYTES
+  = DEFAULT_MAXIMUM_PAYLOAD_BYTES + 610;
 const MAX_DEPTH = 32;
 const MAX_ARRAY_LENGTH = 8_192;
 const MAX_NODES = 16_384;
@@ -527,7 +532,7 @@ function parseFrame(frame, maximumPayloadBytes, normalize, code) {
 export function frameZenonFundingProviderSigningChildRequest(
   input,
   authorityRecord,
-  maximumPayloadBytes = DEFAULT_MAXIMUM_PAYLOAD_BYTES,
+  maximumPayloadBytes = ZENON_FUNDING_PROVIDER_SIGNING_CHILD_REQUEST_MAXIMUM_PAYLOAD_BYTES,
 ) {
   if (authorityRecord === undefined || authorityRecord === null) {
     fail('ZENON_FUNDING_PROVIDER_SIGNING_PROTOCOL_INVALID_REQUEST');
@@ -542,7 +547,7 @@ export function frameZenonFundingProviderSigningChildRequest(
 export function parseZenonFundingProviderSigningChildRequestFrame(
   frame,
   authorityRecord,
-  maximumPayloadBytes = DEFAULT_MAXIMUM_PAYLOAD_BYTES,
+  maximumPayloadBytes = ZENON_FUNDING_PROVIDER_SIGNING_CHILD_REQUEST_MAXIMUM_PAYLOAD_BYTES,
 ) {
   if (authorityRecord === undefined || authorityRecord === null) {
     fail('ZENON_FUNDING_PROVIDER_SIGNING_PROTOCOL_INVALID_REQUEST');
