@@ -193,6 +193,9 @@ test('Zenon funding and signing compositions remain absent from package and acti
   for (const compositionName of compositionNames) {
     assert.equal(packageText.includes(compositionName), false);
   }
+  assert.doesNotMatch(packageText, /native\/provider-attestor|provider-attestor-release-candidate/);
+  assert.equal(packageJson.bin, undefined);
+  assert.equal(packageJson.exports, undefined);
 
   const roots = new Set([
     '../src/buyer.js',
@@ -200,8 +203,10 @@ test('Zenon funding and signing compositions remain absent from package and acti
     '../src/zenon-payment.js',
   ].map(path => new URL(path, import.meta.url).href));
   for (const script of Object.values(packageJson.scripts)) {
+    if (script === 'node --test') continue;
     const match = /^node (src\/[A-Za-z0-9._/-]+\.js)$/.exec(script);
-    if (match !== null) roots.add(new URL(`../${match[1]}`, import.meta.url).href);
+    assert.ok(match, 'every non-test package script must be an inspected Node CLI');
+    roots.add(new URL(`../${match[1]}`, import.meta.url).href);
   }
 
   const visited = new Set();
@@ -216,6 +221,10 @@ test('Zenon funding and signing compositions remain absent from package and acti
     const url = new URL(href);
     if (!existsSync(url)) continue;
     const source = readFileSync(url, 'utf8');
+    assert.doesNotMatch(source, /native\/provider-attestor|provider-attestor-release-candidate/);
+    for (const compositionName of compositionNames.slice(2)) {
+      assert.equal(source.includes(compositionName), false);
+    }
     for (const match of source.matchAll(
       /(?:from\s+|import\s*(?:\(\s*)?)['"](\.[^'"]+)['"]/g,
     )) {
@@ -223,4 +232,169 @@ test('Zenon funding and signing compositions remain absent from package and acti
       if (dependency.pathname.endsWith('.js')) pending.push(dependency.href);
     }
   }
+});
+
+test('native attestor release source excludes test fixtures and keeps signing denied', () => {
+  const makefile = readFileSync(new URL('../native/provider-attestor/Makefile', import.meta.url), 'utf8');
+  const releaseRule = /^\$\(BUILD_DIR\)\/provider-attestor-release-candidate:([^\n]*)\n\t([^\n]*)$/m.exec(makefile);
+  assert.ok(releaseRule, 'the release candidate must have an explicit link recipe');
+  const [, prerequisites, compile] = releaseRule;
+  assert.match(prerequisites, /src\/provider_attestor_release_child\.m/);
+  assert.match(compile, /-DPA_RELEASE_BUILD=1/);
+  assert.match(compile, /\$\(RELEASE_PIN_FLAGS\)/);
+  for (const text of [prerequisites, compile]) {
+    assert.doesNotMatch(text, /tests\/|test_grant_adapter|TEST_PIN_FLAGS|CHILD_TEST_PIN_FLAGS/);
+    assert.doesNotMatch(text, /PA_TESTING|PA_SYNTHETIC_CHILD_TESTING|PA_MACOS_APPROVAL_TESTING|PA_SIGNER_PROFILE_TESTING|PA_SIGNER_LOADER_TESTING/);
+  }
+
+  const releaseChild = readFileSync(new URL('../native/provider-attestor/src/provider_attestor_release_child.m', import.meta.url), 'utf8');
+  const runtime = readFileSync(new URL('../native/provider-attestor/src/provider_attestor_runtime.m', import.meta.url), 'utf8');
+  const signer = readFileSync(new URL('../native/provider-attestor/src/provider_attestor_signer.m', import.meta.url), 'utf8');
+  assert.match(releaseChild, /#if !defined\(PA_RELEASE_BUILD\) \|\| defined\(PA_TESTING\) \|\| defined\(PA_MACOS_APPROVAL_TESTING\)/);
+  assert.match(releaseChild, /#if defined\(PA_SYNTHETIC_CHILD_TESTING\) \|\| defined\(PA_TEST_AUTHORITY_RECORD\)/);
+  assert.match(runtime, /#if defined\(PA_TESTING\) && defined\(PA_RELEASE_BUILD\)/);
+  assert.match(runtime, /#if defined\(PA_TEST_FIXTURE_ONLY\)\s*\n#error Synthetic fixture pins cannot be used in a release runtime/);
+  assert.match(signer, /static BOOL PADynamicLoaderQualified\(void\) \{\s*return NO;\s*\}/);
+  assert.match(signer, /if \(!PADynamicLoaderQualified\(\)\)/);
+});
+
+test('development/testnet child is a separate pinned test-only FD3/FD4 target', () => {
+  const makefile = readFileSync(new URL('../native/provider-attestor/Makefile', import.meta.url), 'utf8');
+  const allRule = /^all: ([^\n]+)$/m.exec(makefile);
+  assert.equal(allRule?.[1], 'conformance conformance-only');
+  const developmentRule = /^\$\(BUILD_DIR\)\/provider-attestor-development-testnet-child:([^\n]*)\n\t([^\n]*)$/m.exec(makefile);
+  assert.ok(developmentRule);
+  assert.match(developmentRule[1], /tests\/development_testnet_ui\.m/);
+  assert.match(developmentRule[1], /tests\/disposable_token_signer\.m/);
+  assert.match(developmentRule[2], /-DPA_TESTING=1/);
+  assert.match(developmentRule[2], /-DPA_DEVELOPMENT_TESTNET_CHILD=1/);
+  assert.match(developmentRule[2], /\$\(DEV_TESTNET_PIN_FLAGS\)/);
+  assert.doesNotMatch(developmentRule[2], /PA_RELEASE_BUILD|PA_DISPOSABLE_SIGNER_TEST_FAULTS|development_testnet_test_ui|test_grant_adapter/);
+  const releaseRule = /^\$\(BUILD_DIR\)\/provider-attestor-release-candidate:([^\n]*)\n\t([^\n]*)$/m.exec(makefile);
+  assert.ok(releaseRule);
+  assert.doesNotMatch(releaseRule[0], /development_testnet|disposable_token_signer|DEV_TESTNET/);
+  const child = readFileSync(new URL('../native/provider-attestor/tests/development_testnet_child_main.m', import.meta.url), 'utf8');
+  const ui = readFileSync(new URL('../native/provider-attestor/tests/development_testnet_ui.m', import.meta.url), 'utf8');
+  const sharedSigner = readFileSync(new URL('../native/provider-attestor/tests/disposable_token_signer.m', import.meta.url), 'utf8');
+  assert.match(sharedSigner, /C_VerifyInit/);
+  assert.match(sharedSigner, /C_Verify\(/);
+  assert.match(sharedSigner, /#if defined\(PA_DISPOSABLE_SIGNER_TEST_FAULTS\)\s*if \(self\.corruptSignatureForTesting\)/);
+  assert.match(child, /defined\(PA_RELEASE_BUILD\)/);
+  assert.match(child, /if \(argc != 1\)/);
+  assert.match(child, /PAReadOneFrame\(3\)/);
+  assert.match(child, /PAWriteOneFrame\(4, response\)/);
+  assert.match(ui, /addButtonWithTitle:@"Cancel"\];\s*NSButton \*approve = \[alert addButtonWithTitle:@"Approve this operation"\]/);
+  assert.match(ui, /addButtonWithTitle:@"Cancel"\];\s*NSButton \*unlock = \[alert addButtonWithTitle:@"Unlock once"\]/);
+  assert.match(ui, /NSSecureTextField/);
+  for (const source of [child, ui, sharedSigner]) {
+    assert.doesNotMatch(source, /SecItem|LAContext|CK_GenerateKeyPair|getenv\(/);
+  }
+});
+
+test('synthetic manual GUI target is isolated and its automated variant cannot show a dialog', () => {
+  const makefile = readFileSync(new URL('../native/provider-attestor/Makefile', import.meta.url), 'utf8');
+  const packageText = readFileSync(new URL('../package.json', import.meta.url), 'utf8');
+  const manual = /^\$\(BUILD_DIR\)\/provider-attestor-development-testnet-synthetic-manual-gui:([^\n]*)\n\t([^\n]*)$/m.exec(makefile);
+  const noDialog = /^\$\(BUILD_DIR\)\/provider-attestor-development-testnet-synthetic-manual-gui-no-dialog-test:([^\n]*)\n\t([^\n]*)$/m.exec(makefile);
+  const release = /^\$\(BUILD_DIR\)\/provider-attestor-release-candidate:([^\n]*)\n\t([^\n]*)$/m.exec(makefile);
+  assert.ok(manual);
+  assert.ok(noDialog);
+  assert.ok(release);
+  for (const rule of [manual, noDialog]) {
+    assert.match(rule[1], /tests\/development_testnet_ui\.m/);
+    assert.match(rule[1], /tests\/development_testnet_child_main\.m/);
+    assert.match(rule[2], /-DPA_TESTING=1/);
+    assert.match(rule[2], /-DPA_SYNTHETIC_MANUAL_GUI_TESTING=1/);
+    assert.match(rule[2], /-framework AppKit/);
+    assert.doesNotMatch(rule[0], /test_grant_adapter|development_testnet_test_ui|PA_RELEASE_BUILD|PA_DEVELOPMENT_TESTNET_TESTING|PA_DEV_TEST_ROOT/);
+  }
+  assert.doesNotMatch(manual[2], /PA_SYNTHETIC_MANUAL_NO_DIALOG_TESTING/);
+  assert.match(noDialog[2], /-DPA_SYNTHETIC_MANUAL_NO_DIALOG_TESTING=1/);
+  assert.doesNotMatch(release[0], /synthetic-manual-gui|PA_SYNTHETIC_MANUAL_GUI_TESTING/);
+  assert.doesNotMatch(packageText, /synthetic-manual-gui/);
+  const child = readFileSync(new URL('../native/provider-attestor/tests/development_testnet_child_main.m', import.meta.url), 'utf8');
+  const ui = readFileSync(new URL('../native/provider-attestor/tests/development_testnet_ui.m', import.meta.url), 'utf8');
+  assert.match(child, /defined\(PA_DEVELOPMENT_TESTNET_TESTING\) && defined\(PA_SYNTHETIC_MANUAL_GUI_TESTING\)/);
+  assert.match(child, /sizeof\(PA_SYNTHETIC_MANUAL_ROOT_TAG\) == 17U/);
+  assert.match(child, /const char \*temporary = "\/private\/tmp";/);
+  assert.match(child, /before\.st_nlink < 1/);
+  assert.match(child, /testRoot isEqualToString:fixedRoot/);
+  assert.match(child, /if \(argc != 1\)/);
+  assert.match(child, /PAReadOneFrame\(3\)/);
+  assert.match(child, /PAWriteOneFrame\(4, response\)/);
+  assert.match(ui, /SYNTHETIC\/OFFLINE SOFTWARE ATTESTOR/);
+  assert.match(ui, /#if defined\(PA_SYNTHETIC_MANUAL_NO_DIALOG_TESTING\)[\s\S]*?return PAOperatorDisplayOutcomeAmbiguous;/);
+  assert.match(ui, /#if defined\(PA_SYNTHETIC_MANUAL_NO_DIALOG_TESTING\)[\s\S]*?return NO;/);
+});
+
+test('synthetic bootstrap GUI collector is absent from default and release paths', () => {
+  const makefile = readFileSync(new URL('../native/provider-attestor/Makefile', import.meta.url), 'utf8');
+  const packageText = readFileSync(new URL('../package.json', import.meta.url), 'utf8');
+  const source = readFileSync(new URL('../native/provider-attestor/tests/disposable_token_bootstrap_gui_main.m', import.meta.url), 'utf8');
+  const fake = readFileSync(new URL('../native/provider-attestor/tests/disposable_token_bootstrap_fd_fake_main.c', import.meta.url), 'utf8');
+  const manual = /^\$\(BUILD_DIR\)\/provider-attestor-disposable-token-bootstrap-synthetic-gui:([^\n]*)\n\t([^\n]*)$/m.exec(makefile);
+  const offline = /^\$\(BUILD_DIR\)\/provider-attestor-disposable-token-bootstrap-synthetic-gui-fake-ui-test:([^\n]*)\n\t([^\n]*)$/m.exec(makefile);
+  const release = /^\$\(BUILD_DIR\)\/provider-attestor-release-candidate:([^\n]*)\n\t([^\n]*)$/m.exec(makefile);
+  assert.ok(manual);
+  assert.ok(offline);
+  assert.ok(release);
+  for (const rule of [manual, offline]) {
+    assert.match(rule[2], /-DPA_TESTING=1/);
+    assert.match(rule[2], /-DPA_SYNTHETIC_BOOTSTRAP_GUI=1/);
+    assert.match(rule[2], /BOOTSTRAP_GUI_PIN_FLAGS/);
+  }
+  assert.match(manual[2], /-framework AppKit/);
+  assert.doesNotMatch(manual[2], /PA_GUI_BOOTSTRAP_FAKE_UI/);
+  assert.match(offline[2], /PA_GUI_BOOTSTRAP_FAKE_UI=1/);
+  assert.doesNotMatch(release[0], /bootstrap_gui|BOOTSTRAP_GUI|synthetic-gui/);
+  assert.doesNotMatch(/^all:[^\n]*/m.exec(makefile)[0], /synthetic-gui/);
+  assert.doesNotMatch(packageText, /bootstrap-synthetic-gui/);
+  assert.match(source, /defined\(PA_RELEASE_BUILD\)/);
+  assert.match(source, /NSSecureTextField/);
+  assert.match(source, /addButtonWithTitle:@"Cancel"/);
+  assert.match(source, /NSAlertSecondButtonReturn/);
+  assert.match(source, /POSIX_SPAWN_CLOEXEC_DEFAULT/);
+  assert.match(source, /PAEstablishWaitableSIGCHLD\(\)/);
+  assert.match(source, /action\.sa_handler = SIG_DFL/);
+  assert.match(source, /if \(valid\) valid = PAEstablishWaitableSIGCHLD\(\);\s*if \(valid\) valid = posix_spawn/);
+  assert.match(source, /waitpid\(child, NULL, WNOHANG\)[\s\S]*?if \(waited == 0\) break;[\s\S]*?kill\(child, SIGKILL\)/);
+  assert.match(source, /char \*emptyEnvironment\[\] = \{ NULL \}/);
+  assert.match(source, /posix_spawn\(&child, PA_GUI_BOOTSTRAP_EXECUTABLE_PATH/);
+  assert.match(source, /PAHasNoExtendedACL\(descriptor\)/);
+  assert.doesNotMatch(source, /posix_spawnp|system\(|popen\(|getenv\(|SecItem|LAContext/);
+  assert.match(fake, /PA_GUI_BOOTSTRAP_OFFLINE_TEST/);
+});
+
+test('native private roots and files reject extended ACL entries', () => {
+  const acl = readFileSync(new URL('../native/provider-attestor/include/provider_attestor_private_acl.h', import.meta.url), 'utf8');
+  const runtime = readFileSync(new URL('../native/provider-attestor/src/provider_attestor_runtime.m', import.meta.url), 'utf8');
+  const child = readFileSync(new URL('../native/provider-attestor/tests/development_testnet_child_main.m', import.meta.url), 'utf8');
+  const bootstrap = readFileSync(new URL('../native/provider-attestor/tests/disposable_token_bootstrap_main.m', import.meta.url), 'utf8');
+  assert.match(acl, /acl_get_fd_np\(descriptor, ACL_TYPE_EXTENDED\)/);
+  assert.match(acl, /acl_get_entry\(acl, ACL_FIRST_ENTRY/);
+  assert.match(acl, /errno == ENOENT/);
+  assert.match(acl, /acl_free\(acl\)/);
+  assert.match(runtime, /PAValidatePrivateDirectory[\s\S]*?PAHasNoExtendedACL\(descriptor\)/);
+  assert.match(runtime, /PAOpenOwnerPrivateFile[\s\S]*?PAHasNoExtendedACL\(descriptor\)/);
+  assert.match(runtime, /PAValidateSidecarIfPresent[\s\S]*?PAHasNoExtendedACL\(descriptor\)/);
+  assert.match(child, /PADevDirectoryHasNoACL/);
+  assert.match(child, /PADevReadPrivateConfiguration[\s\S]*?PAHasNoExtendedACL\(descriptor\)/);
+  assert.match(child, /PADevPinnedTokenConfiguration[\s\S]*?PAHasNoExtendedACL\(descriptor\)/);
+  assert.match(bootstrap, /PAWritePrivateConfig[\s\S]*?PAHasNoExtendedACL\(rootDescriptor\)/);
+});
+
+test('development provisioning preflight remains a read-only opt-in source', () => {
+  const source = readFileSync(new URL('../native/provider-attestor/tests/development_testnet_provision_plan.mjs', import.meta.url), 'utf8');
+  const makefile = readFileSync(new URL('../native/provider-attestor/Makefile', import.meta.url), 'utf8');
+  const packageText = readFileSync(new URL('../package.json', import.meta.url), 'utf8');
+  assert.match(source, /parseZenonFundingProviderAttestationAuthorityRecord/);
+  assert.match(source, /inspectPinnedImageReadOnly/);
+  assert.match(source, /inspectFixedDevelopmentTargetsAbsentReadOnly/);
+  assert.match(source, /readSync\(descriptor, probe, 0, 1, null\)/);
+  assert.doesNotMatch(source, /readFileSync\(descriptor\)/);
+  assert.match(source, /process\.stdout\.write\(passed \? 'PLAN_PREFLIGHT=PASS\\n' : 'PLAN_PREFLIGHT=FAIL\\n'\)/);
+  assert.doesNotMatch(source, /process\.stderr|console\.|process\.env/);
+  assert.doesNotMatch(source, /\b(?:mkdirSync|writeFileSync|renameSync|unlinkSync|spawn|execFile|dlopen|NSSecureTextField)\b/);
+  assert.doesNotMatch(makefile, /development_testnet_provision_plan/);
+  assert.doesNotMatch(packageText, /development_testnet_provision_plan/);
 });
