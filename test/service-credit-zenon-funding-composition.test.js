@@ -20,7 +20,7 @@ import {
 } from 'node:fs';
 import { createServer as createHttpsServer, request as httpsRequest } from 'node:https';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import { PassThrough } from 'node:stream';
 
@@ -608,13 +608,43 @@ function authorization(request, grant = undefined) {
 }
 
 // Test-only TLS ingress; no production funding route or process restart is implied.
+const SYNTHETIC_HTTPS_FAILURE = Object.freeze({
+  prerequisite: 'SYNTHETIC_HTTPS_PREREQUISITE_UNAVAILABLE',
+  material: 'SYNTHETIC_HTTPS_MATERIAL_UNAVAILABLE',
+  generation: 'SYNTHETIC_HTTPS_GENERATION_FAILED',
+  certificate: 'SYNTHETIC_HTTPS_CERTIFICATE_INVALID',
+  listen: 'SYNTHETIC_HTTPS_LISTEN_FAILED',
+  fixture: 'SYNTHETIC_HTTPS_FIXTURE_UNAVAILABLE',
+  request: 'SYNTHETIC_HTTPS_REQUEST_FAILED',
+  response: 'SYNTHETIC_HTTPS_RESPONSE_FAILED',
+  deadline: 'SYNTHETIC_HTTPS_DEADLINE_EXCEEDED',
+  close: 'SYNTHETIC_HTTPS_TRANSPORT_CLOSE_UNCERTAIN',
+  ownerClose: 'SYNTHETIC_HTTPS_OWNER_CLOSE_UNCERTAIN',
+  cleanup: 'SYNTHETIC_HTTPS_CLEANUP_UNCERTAIN',
+});
+
+function syntheticHttpsFailure(code) {
+  const error = new Error(code);
+  error.name = 'SyntheticHttpsPilotError';
+  error.code = code;
+  error.stack = `SyntheticHttpsPilotError: ${code}`;
+  return error;
+}
+
+function isSyntheticHttpsFailure(error, code) {
+  try {
+    return error?.name === 'SyntheticHttpsPilotError'
+      && error?.code === code
+      && error?.message === code
+      && error?.stack === `SyntheticHttpsPilotError: ${code}`;
+  } catch { return false; }
+}
+
 function syntheticHttpsMaterial() {
   const executable = '/usr/bin/openssl';
-  const binary = lstatSync(executable);
-  assert.equal(binary.isFile() && binary.uid === 0 && (binary.mode & 0o022) === 0, true);
-  accessSync(executable, fsConstants.X_OK);
-  const directory = realpathSync(mkdtempSync(join(tmpdir(), 'zenon-composition-tls-')));
-  const uid = process.getuid();
+  let directory = null;
+  let root = null;
+  let uid = null;
   const identity = (path, directoryExpected) => {
     const state = lstatSync(path);
     assert.equal(state.uid, uid);
@@ -624,7 +654,6 @@ function syntheticHttpsMaterial() {
   };
   const same = (path, expected, directoryExpected) =>
     assert.deepEqual(identity(path, directoryExpected), expected);
-  let root = identity(directory, true);
   const files = new Map();
   const capture = name => {
     const state = identity(join(directory, name), false);
@@ -637,6 +666,7 @@ function syntheticHttpsMaterial() {
   let cleaned = false;
   const cleanup = () => {
     if (cleaned) return;
+    assert.notEqual(root, null);
     same(directory, root, true);
     const found = readdirSync(directory);
     assert.equal(found.every(name => files.has(name)), true);
@@ -655,7 +685,16 @@ function syntheticHttpsMaterial() {
     assert.equal(existsSync(directory), false);
     cleaned = true;
   };
+  let failureCode = SYNTHETIC_HTTPS_FAILURE.prerequisite;
   try {
+    const binary = lstatSync(executable);
+    assert.equal(binary.isFile() && binary.uid === 0 && (binary.mode & 0o022) === 0, true);
+    accessSync(executable, fsConstants.X_OK);
+    uid = process.getuid();
+    const privateParent = realpathSync(tmpdir());
+    failureCode = SYNTHETIC_HTTPS_FAILURE.material;
+    directory = mkdtempSync(join(privateParent, 'zenon-composition-tls-'));
+    root = identity(directory, true);
     chmodSync(directory, 0o700);
     root = identity(directory, true);
     assert.equal(root.mode, 0o700);
@@ -669,6 +708,7 @@ function syntheticHttpsMaterial() {
       + 'keyUsage=digitalSignature,keyEncipherment\nextendedKeyUsage=serverAuth\n',
       { encoding: 'utf8', mode: 0o600, flag: 'wx' });
     capture('tls.cnf');
+    failureCode = SYNTHETIC_HTTPS_FAILURE.generation;
     const previousUmask = process.umask(0o077);
     let generated;
     try {
@@ -682,8 +722,10 @@ function syntheticHttpsMaterial() {
     for (const name of ['key.pem', 'cert.pem']) {
       if (existsSync(join(directory, name))) capture(name);
     }
-    assert.equal(generated.status, 0);
-    assert.equal(generated.error, undefined);
+    if (generated.status !== 0 || generated.error !== undefined) {
+      throw syntheticHttpsFailure(SYNTHETIC_HTTPS_FAILURE.generation);
+    }
+    failureCode = SYNTHETIC_HTTPS_FAILURE.certificate;
     assert.equal(files.get('key.pem').mode, 0o600);
     key = readFileSync(keyPath);
     cert = readFileSync(certPath);
@@ -693,8 +735,10 @@ function syntheticHttpsMaterial() {
     assert.equal(validityHours > 0 && validityHours <= 24, true);
     return { key, cert, cleanup };
   } catch {
-    try { cleanup(); } catch { throw new Error('synthetic TLS cleanup uncertain'); }
-    throw new Error('synthetic TLS setup failed');
+    if (directory !== null) {
+      try { cleanup(); } catch { throw syntheticHttpsFailure(SYNTHETIC_HTTPS_FAILURE.cleanup); }
+    }
+    throw syntheticHttpsFailure(failureCode);
   }
 }
 
@@ -702,40 +746,67 @@ function httpsExchange(route, cert, authorizationValue = undefined) {
   return new Promise((resolve, reject) => {
     const chunks = [];
     let bytes = 0;
-    const request = httpsRequest({
-      hostname: '127.0.0.1',
-      port: route.port,
-      path: route.path,
-      method: 'POST',
-      agent: false,
-      ca: cert,
-      rejectUnauthorized: true,
-      headers: {
-        'Content-Length': '0',
-        Connection: 'close',
-        ...(authorizationValue === undefined ? {} : { Authorization: authorizationValue }),
-      },
-    }, response => {
-      const verified = response.socket.authorized === true;
-      response.on('data', chunk => {
-        bytes += chunk.length;
-        if (bytes > 16 * 1024) {
-          request.destroy(new Error('synthetic HTTPS response exceeded bound'));
-          return;
-        }
-        chunks.push(chunk);
+    let request = null;
+    let responseStarted = false;
+    let settled = false;
+    const fail = code => {
+      if (settled) return;
+      settled = true;
+      try { request?.destroy(); } catch {}
+      reject(syntheticHttpsFailure(code));
+    };
+    try {
+      request = httpsRequest({
+        hostname: '127.0.0.1',
+        port: route.port,
+        path: route.path,
+        method: 'POST',
+        agent: false,
+        ca: cert,
+        rejectUnauthorized: true,
+        headers: {
+          'Content-Length': '0',
+          Connection: 'close',
+          ...(authorizationValue === undefined ? {} : { Authorization: authorizationValue }),
+        },
+      }, response => {
+        responseStarted = true;
+        let verified;
+        try { verified = response.socket.authorized === true; }
+        catch { fail(SYNTHETIC_HTTPS_FAILURE.response); return; }
+        response.on('data', chunk => {
+          bytes += chunk.length;
+          if (bytes > 16 * 1024) {
+            fail(SYNTHETIC_HTTPS_FAILURE.response);
+            return;
+          }
+          chunks.push(chunk);
+        });
+        response.once('error', () => fail(SYNTHETIC_HTTPS_FAILURE.response));
+        response.once('aborted', () => fail(SYNTHETIC_HTTPS_FAILURE.response));
+        response.once('close', () => fail(SYNTHETIC_HTTPS_FAILURE.response));
+        response.once('end', () => {
+          if (settled) return;
+          if (!verified) { fail(SYNTHETIC_HTTPS_FAILURE.response); return; }
+          try {
+            const result = {
+              verified,
+              statusCode: response.statusCode,
+              headers: response.headers,
+              body: Buffer.concat(chunks),
+            };
+            settled = true;
+            resolve(result);
+          } catch { fail(SYNTHETIC_HTTPS_FAILURE.response); }
+        });
       });
-      response.once('error', reject);
-      response.once('end', () => resolve({
-        verified,
-        statusCode: response.statusCode,
-        headers: response.headers,
-        body: Buffer.concat(chunks),
-      }));
-    });
-    request.setTimeout(5_000, () => request.destroy(new Error('synthetic HTTPS request timed out')));
-    request.once('error', reject);
-    request.end();
+      request.setTimeout(5_000, () => fail(SYNTHETIC_HTTPS_FAILURE.deadline));
+      request.once('error', () => fail(SYNTHETIC_HTTPS_FAILURE.request));
+      request.once('close', () => {
+        if (!responseStarted) fail(SYNTHETIC_HTTPS_FAILURE.request);
+      });
+      request.end();
+    } catch { fail(SYNTHETIC_HTTPS_FAILURE.request); }
   });
 }
 
@@ -746,93 +817,147 @@ async function offlineHttpsPilot(t) {
   let phase = 'UNAVAILABLE';
   let handlerFailures = 0;
   let server = null;
+  let listenAttempted = false;
+  let closeObserved = false;
   t.after(async () => {
+    // Quiesce admission and prove transport closure before owner or TLS cleanup.
+    // Existing fixture hooks separately own only synthetic SQLite test files.
     phase = 'UNAVAILABLE';
-    let ownerClosed = true;
-    try { await activeOwner?.close(); } catch { ownerClosed = false; }
-    let transportClosed = false;
-    try {
-      if (server?.listening) {
+    if (server !== null && listenAttempted && !closeObserved) {
+      try {
         await new Promise((resolve, reject) => {
-          const deadline = setTimeout(() => reject(new Error('synthetic HTTPS close timed out')), 3_000);
+          const deadline = setTimeout(
+            () => reject(syntheticHttpsFailure(SYNTHETIC_HTTPS_FAILURE.close)), 3_000,
+          );
           server.close(error => {
             clearTimeout(deadline);
-            error ? reject(error) : resolve();
+            error ? reject(syntheticHttpsFailure(SYNTHETIC_HTTPS_FAILURE.close)) : resolve();
           });
           server.closeAllConnections();
         });
-      }
-      transportClosed = true;
-    } catch { try { server?.unref(); } catch {} }
-    if (!transportClosed) throw new Error('synthetic HTTPS transport closure uncertain');
-    try { tls.cleanup(); } catch { throw new Error('synthetic TLS cleanup uncertain'); }
-    if (!ownerClosed) throw new Error('synthetic durable owner closure uncertain');
-  });
-  server = createHttpsServer({ key: tls.key, cert: tls.cert }, (request, response) => {
-    if (request.method !== 'POST' || request.url !== SERVICE_CREDIT_HTTP_PATH) {
-      response.writeHead(404);
-      response.end();
-      return;
-    }
-    if (phase === 'CHALLENGE') {
-      try {
-        const challenge = context.composition.createFundingResource({
-          selection: selection(),
-          resourceUrl: context.resourceUrl,
-        });
-        response.writeHead(402, {
-          'Content-Type': 'application/json',
-          'Cache-Control': 'private, no-store',
-          [HEADERS.PAYMENT_REQUIRED]: encodeB64Json(
-            challenge.paymentRequired,
-            { maxEncodedBytes: MAX_X402_HEADER_ENCODED_BYTES },
-          ),
-        });
-        response.end('{"error":"payment_required"}');
       } catch {
-        handlerFailures += 1;
-        response.writeHead(503);
-        response.end();
+        try { server.unref(); } catch {}
+        throw syntheticHttpsFailure(SYNTHETIC_HTTPS_FAILURE.close);
       }
-    } else if (phase === 'ACTIVE') {
-      void activeOwner.handle(request, response).catch(() => { handlerFailures += 1; });
-    } else {
-      response.writeHead(503);
-      response.end();
     }
+    if (server !== null && listenAttempted && !closeObserved) {
+      throw syntheticHttpsFailure(SYNTHETIC_HTTPS_FAILURE.close);
+    }
+    let ownerCloseFailed = false;
+    for (const close of [
+      () => activeOwner?.close(),
+      () => context?.session?.close(),
+      () => context?.serviceStore?.close(),
+      () => context?.observerStore?.close(),
+    ]) {
+      try { await close(); } catch { ownerCloseFailed = true; }
+    }
+    try { tls.cleanup(); }
+    catch { throw syntheticHttpsFailure(SYNTHETIC_HTTPS_FAILURE.cleanup); }
+    if (ownerCloseFailed) throw syntheticHttpsFailure(SYNTHETIC_HTTPS_FAILURE.ownerClose);
   });
-  server.maxHeadersCount = 8;
-  server.maxConnections = 8;
-  server.maxRequestsPerSocket = 1;
-  server.headersTimeout = 2_000;
-  server.requestTimeout = 3_000;
-  server.setTimeout(5_000, socket => socket.destroy());
-  server.on('error', () => { handlerFailures += 1; });
-  const address = await new Promise((resolve, reject) => {
-    server.once('error', reject);
-    server.listen({ host: '127.0.0.1', port: 0, exclusive: true }, () => resolve(server.address()));
-  });
-  assert.equal(address.address, '127.0.0.1');
-  assert.equal(address.family, 'IPv4');
-  assert.equal(Number.isSafeInteger(address.port) && address.port > 0, true);
-  const route = {
-    origin: `https://127.0.0.1:${address.port}`,
-    path: SERVICE_CREDIT_HTTP_PATH,
-    port: address.port,
-  };
-  context = fixture(t, {
-    stage: 'PREPARED',
-    resourceUrl: `${route.origin}${route.path}`,
-  });
-  phase = 'CHALLENGE';
-  return {
-    context,
-    route,
-    cert: tls.cert,
-    activate(owner) { activeOwner = owner; phase = 'ACTIVE'; },
-    quiesce() { phase = 'UNAVAILABLE'; },
-    handlerFailureCount() { return handlerFailures; },
-  };
+  let setupFailureCode = SYNTHETIC_HTTPS_FAILURE.listen;
+  try {
+    server = createHttpsServer({ key: tls.key, cert: tls.cert }, (request, response) => {
+      const unavailable = () => {
+        handlerFailures += 1;
+        try {
+          if (!response.writableEnded) {
+            response.writeHead(503);
+            response.end();
+          }
+        } catch { try { response.destroy(); } catch {} }
+      };
+      if (request.method !== 'POST' || request.url !== SERVICE_CREDIT_HTTP_PATH) {
+        try { response.writeHead(404); response.end(); } catch { unavailable(); }
+        return;
+      }
+      if (phase === 'CHALLENGE') {
+        try {
+          const challenge = context.composition.createFundingResource({
+            selection: selection(),
+            resourceUrl: context.resourceUrl,
+          });
+          response.writeHead(402, {
+            'Content-Type': 'application/json',
+            'Cache-Control': 'private, no-store',
+            [HEADERS.PAYMENT_REQUIRED]: encodeB64Json(
+              challenge.paymentRequired,
+              { maxEncodedBytes: MAX_X402_HEADER_ENCODED_BYTES },
+            ),
+          });
+          response.end('{"error":"payment_required"}');
+        } catch { unavailable(); }
+      } else if (phase === 'ACTIVE') {
+        try { void activeOwner.handle(request, response).catch(unavailable); }
+        catch { unavailable(); }
+      } else {
+        try { response.writeHead(503); response.end(); } catch { unavailable(); }
+      }
+    });
+    server.once('close', () => { closeObserved = true; });
+    server.maxHeadersCount = 8;
+    server.maxConnections = 8;
+    server.maxRequestsPerSocket = 1;
+    server.headersTimeout = 2_000;
+    server.requestTimeout = 3_000;
+    server.setTimeout(5_000, socket => { try { socket.destroy(); } catch { handlerFailures += 1; } });
+    server.on('error', () => { handlerFailures += 1; });
+    server.on('tlsClientError', () => { handlerFailures += 1; });
+    const address = await new Promise((resolve, reject) => {
+      let settled = false;
+      const deadline = setTimeout(() => {
+        if (settled) return;
+        settled = true;
+        reject(syntheticHttpsFailure(SYNTHETIC_HTTPS_FAILURE.listen));
+      }, 3_000);
+      server.once('error', () => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(deadline);
+        reject(syntheticHttpsFailure(SYNTHETIC_HTTPS_FAILURE.listen));
+      });
+      try {
+        listenAttempted = true;
+        server.listen({ host: '127.0.0.1', port: 0, exclusive: true }, () => {
+          if (settled) return;
+          settled = true;
+          clearTimeout(deadline);
+          resolve(server.address());
+        });
+      } catch {
+        if (settled) return;
+        settled = true;
+        clearTimeout(deadline);
+        reject(syntheticHttpsFailure(SYNTHETIC_HTTPS_FAILURE.listen));
+      }
+    });
+    assert.equal(address.address, '127.0.0.1');
+    assert.equal(address.family, 'IPv4');
+    assert.equal(Number.isSafeInteger(address.port) && address.port > 0, true);
+    const route = {
+      origin: `https://127.0.0.1:${address.port}`,
+      path: SERVICE_CREDIT_HTTP_PATH,
+      port: address.port,
+    };
+    setupFailureCode = SYNTHETIC_HTTPS_FAILURE.fixture;
+    context = fixture(t, {
+      stage: 'PREPARED',
+      resourceUrl: `${route.origin}${route.path}`,
+    });
+    phase = 'CHALLENGE';
+    return {
+      context,
+      route,
+      cert: tls.cert,
+      activate(owner) { activeOwner = owner; phase = 'ACTIVE'; },
+      quiesce() { phase = 'UNAVAILABLE'; },
+      handlerFailureCount() {
+        if (handlerFailures !== 0) throw syntheticHttpsFailure(SYNTHETIC_HTTPS_FAILURE.response);
+        return 0;
+      },
+    };
+  } catch { throw syntheticHttpsFailure(setupFailureCode); }
 }
 
 function exchange(handle, auth) {
@@ -1169,6 +1294,40 @@ test('non-READY and uncertain synthetic child outcomes create no grant', async t
   }
 });
 
+test('offline HTTPS synthetic material failure is sanitized and removes owned files', t => {
+  let generatedDirectory = null;
+  const mocked = t.mock.method(childProcess, 'spawnSync', (_executable, args) => {
+    generatedDirectory = dirname(args[args.indexOf('-keyout') + 1]);
+    return { status: null, error: new Error('synthetic spawn failure') };
+  });
+  let caught = null;
+  let material = null;
+  try {
+    material = syntheticHttpsMaterial();
+  } catch (error) {
+    caught = error;
+  } finally {
+    mocked.mock.restore();
+    if (material !== null) {
+      try { material.cleanup(); }
+      catch { throw syntheticHttpsFailure(SYNTHETIC_HTTPS_FAILURE.cleanup); }
+    }
+  }
+  assert.equal(isSyntheticHttpsFailure(caught, SYNTHETIC_HTTPS_FAILURE.generation), true);
+  assert.notEqual(generatedDirectory, null);
+  assert.equal(existsSync(generatedDirectory), false);
+});
+
+test('offline HTTPS client request failure is sanitized', async () => {
+  let caught = null;
+  try {
+    await httpsExchange({ port: -1, path: SERVICE_CREDIT_HTTP_PATH }, Buffer.alloc(0));
+  } catch (error) {
+    caught = error;
+  }
+  assert.equal(isSyntheticHttpsFailure(caught, SYNTHETIC_HTTPS_FAILURE.request), true);
+});
+
 test('offline HTTPS harness serves bound 402 then durable credit across store and owner reopen', async t => {
   const pilot = await offlineHttpsPilot(t);
   const { context, route, cert } = pilot;
@@ -1265,7 +1424,6 @@ test('offline HTTPS harness serves bound 402 then durable credit across store an
   assert.equal(callbacks, 2);
   assert.equal(pilot.handlerFailureCount(), 0);
   pilot.quiesce();
-  await owner.close();
 });
 
 test('offline HTTPS harness denies credit for non-READY synthetic child outcomes', async t => {
