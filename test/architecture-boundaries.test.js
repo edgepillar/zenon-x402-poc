@@ -187,6 +187,8 @@ test('Zenon funding and signing compositions remain absent from package and acti
     'service-credit-zenon-durable-http-composition.js',
     'service-credit-zenon-provider-signing-child-protocol.js',
     'service-credit-zenon-provider-signing-operation.js',
+    'service-credit-zenon-funding-intake-sqlite-store.js',
+    'service-credit-zenon-funding-intake.js',
   ];
   const packageText = readFileSync(new URL('../package.json', import.meta.url), 'utf8');
   const packageJson = JSON.parse(packageText);

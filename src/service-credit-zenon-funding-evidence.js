@@ -1026,6 +1026,104 @@ function errorCode(error) {
  * evidence producer, authenticate a node, or accept caller-chosen terms or a
  * caller assertion as settlement evidence.
  */
+/** Derive an issuance candidate from one captured offer; this does not persist or serve it. */
+export function prepareZenonFundingResource(input) {
+  const value = exactDataObject(input, [
+    'offer', 'selection', 'resourceUrl', 'deriveFundingTerms', 'authorityProfile', 'now',
+  ], failConfiguration);
+  if (
+    typeof value.deriveFundingTerms !== 'function'
+    || REFLECT_APPLY(IS_PROXY, undefined, [value.deriveFundingTerms])
+    || typeof value.now !== 'function'
+    || REFLECT_APPLY(IS_PROXY, undefined, [value.now])
+  ) failConfiguration();
+  const selection = normalizeFundingSelection(value.selection);
+  const offer = normalizeOffer(value.offer, selection);
+  const authority = normalizeAuthority(value.authorityProfile);
+  const { activationIntent, accepted } = deriveProviderTerms(
+    value.deriveFundingTerms,
+    authority,
+    offer,
+    selection,
+  );
+  const challengeTime = readClock(value.now, 'SERVICE_CREDIT_ZENON_FUNDING_EVIDENCE_CLOCK_FAILED');
+  if (activationIntent.expiresAt <= challengeTime) failRejected();
+  if (resourceBinding(activationIntent.resourceId, value.resourceUrl) !== offer.resourceBinding) {
+    failRejected();
+  }
+  const funding = fundingCommitment(authority, offer, activationIntent, accepted);
+  return deepFreeze({
+    offer,
+    challenge: {
+      activationIntent,
+      fundingCommitment: funding,
+      paymentRequired: {
+        x402Version: 2,
+        resource: fundingResource(value.resourceUrl, funding),
+        accepts: [accepted],
+      },
+    },
+  });
+}
+
+/** Bind one verified transaction to the exact issued funding terms without re-running policy. */
+export function deriveZenonFundingObserverTarget(input) {
+  const value = exactDataObject(input, [
+    'offer', 'challenge', 'authorityProfile', 'transactionHash', 'payer', 'resourceUrl',
+  ]);
+  const challenge = exactDataObject(value.challenge, [
+    'activationIntent', 'fundingCommitment', 'paymentRequired',
+  ]);
+  const intent = normalizeIntent(challenge.activationIntent);
+  const offer = normalizeOffer(value.offer, selectionFromIntent(intent));
+  const authority = normalizeAuthority(value.authorityProfile);
+  const required = exactDataObject(challenge.paymentRequired, ['x402Version', 'resource', 'accepts']);
+  if (
+    required.x402Version !== 2
+    || !REFLECT_APPLY(ARRAY_IS_ARRAY, undefined, [required.accepts])
+    || required.accepts.length !== 1
+    || typeof value.transactionHash !== 'string'
+    || !REFLECT_APPLY(REGEXP_TEST, /^[0-9a-f]{64}$/, [value.transactionHash])
+    || value.payer !== intent.holderId
+    || intent.providerId !== offer.providerId
+    || intent.serviceId !== offer.serviceId
+    || intent.resourceId !== offer.resourceId
+  ) failRejected();
+  const accepted = snapshotRequirement(required.accepts[0], authority);
+  if (
+    !sameJson(accepted, required.accepts[0])
+    || resourceBinding(intent.resourceId, value.resourceUrl) !== offer.resourceBinding
+    || fundingCommitment(authority, offer, intent, accepted) !== challenge.fundingCommitment
+  ) failRejected();
+  assertFundingResource(required.resource, intent.resourceId, offer.resourceBinding, challenge.fundingCommitment);
+  return deepFreeze({
+    transactionId: `zenontx:${value.transactionHash}`,
+    payer: value.payer,
+    payee: accepted.payTo,
+    asset: accepted.asset,
+    amount: accepted.amount,
+    scheme: accepted.scheme,
+    paymentFlow: accepted.extra.paymentFlow,
+    settlement: accepted.extra.settlement,
+    network: accepted.network,
+    providerId: intent.providerId,
+    serviceId: intent.serviceId,
+    resourceId: intent.resourceId,
+    resourceBinding: offer.resourceBinding,
+    paymentResourceDigest: commitment(RESOURCE_DIGEST_DOMAIN, required.resource),
+    paymentRequirementDigest: commitment(REQUIREMENT_DIGEST_DOMAIN, accepted),
+    paymentIntentDigest: `sha256:${paymentIntentDigest(required, accepted)}`,
+    offerId: intent.offerId,
+    offerVersion: intent.offerVersion,
+    fundingPolicyId: offer.fundingPolicyId,
+    fundingPolicyVersion: offer.fundingPolicyVersion,
+    capabilityCommitment: intent.capabilityCommitment,
+    totalUnits: intent.totalUnits,
+    expiresAt: intent.expiresAt,
+    grantFundingCommitment: challenge.fundingCommitment,
+  });
+}
+
 export class ZenonFundingEvidenceActivation {
   #store;
   #getOffer;
@@ -1086,40 +1184,14 @@ export class ZenonFundingEvidenceActivation {
       failRejected();
     }
     if (storedOffer === null) failRejected();
-    const activationOffer = normalizeOffer(storedOffer, selection);
-    const { activationIntent, accepted } = deriveProviderTerms(
-      this.#deriveFundingTerms,
-      this.#authority,
-      activationOffer,
+    return prepareZenonFundingResource({
+      offer: storedOffer,
       selection,
-    );
-    const challengeTime = readClock(
-      this.#now,
-      'SERVICE_CREDIT_ZENON_FUNDING_EVIDENCE_CLOCK_FAILED',
-    );
-    if (activationIntent.expiresAt <= challengeTime) failRejected();
-    if (
-      resourceBinding(activationIntent.resourceId, value.resourceUrl)
-      !== activationOffer.resourceBinding
-    ) {
-      failRejected();
-    }
-    const funding = fundingCommitment(
-      this.#authority,
-      activationOffer,
-      activationIntent,
-      accepted,
-    );
-    const resource = fundingResource(value.resourceUrl, funding);
-    return deepFreeze({
-      activationIntent,
-      fundingCommitment: funding,
-      paymentRequired: {
-        x402Version: 2,
-        resource,
-        accepts: [accepted],
-      },
-    });
+      resourceUrl: value.resourceUrl,
+      deriveFundingTerms: this.#deriveFundingTerms,
+      authorityProfile: this.#authority,
+      now: this.#now,
+    }).challenge;
   }
 
   async activate(input) {
