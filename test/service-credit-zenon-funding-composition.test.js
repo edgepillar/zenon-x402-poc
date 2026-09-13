@@ -1,16 +1,24 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import childProcess from 'node:child_process';
-import { createHash, generateKeyPairSync, sign } from 'node:crypto';
+import { createHash, generateKeyPairSync, sign, X509Certificate } from 'node:crypto';
 import { EventEmitter } from 'node:events';
 import {
   chmodSync,
+  accessSync,
+  constants as fsConstants,
+  existsSync,
+  lstatSync,
   mkdtempSync,
+  readdirSync,
   readFileSync,
   realpathSync,
+  rmdirSync,
   rmSync,
+  unlinkSync,
   writeFileSync,
 } from 'node:fs';
+import { createServer as createHttpsServer, request as httpsRequest } from 'node:https';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
@@ -51,6 +59,8 @@ import {
 import {
   createDurableServiceCreditHttpSession,
 } from '../src/service-credit-durable-http-session.js';
+import { createZenonDurableHttpComposition } from '../src/service-credit-zenon-durable-http-composition.js';
+import { createServiceCreditAuthorization } from '../src/service-credit-client.js';
 import {
   SERVICE_CREDIT_HTTP_PATH,
   SERVICE_CREDIT_HTTP_ROUTE_ID,
@@ -59,6 +69,12 @@ import {
   SERVICE_CREDIT_MODEL_VERSION,
 } from '../src/service-credit-model.js';
 import { ServiceCreditSqliteStore } from '../src/service-credit-sqlite-store.js';
+import {
+  decodeB64Json,
+  encodeB64Json,
+  HEADERS,
+  MAX_X402_HEADER_ENCODED_BYTES,
+} from '../src/x402-wire.js';
 
 const NOW = 2_000_000_000_000;
 const ATTESTATION_NOW = 2_000_000_000;
@@ -148,7 +164,7 @@ function privateDirectoryFor(t) {
   return directory;
 }
 
-function offer() {
+function offer(resourceUrl = RESOURCE_URL) {
   return {
     modelVersion: SERVICE_CREDIT_MODEL_VERSION,
     providerId: 'provider.reference',
@@ -156,7 +172,7 @@ function offer() {
     resourceId: 'resource.zenon.funding',
     resourceBinding: deriveServiceCreditResourceBinding({
       resourceId: 'resource.zenon.funding',
-      resourceUrl: RESOURCE_URL,
+      resourceUrl,
     }),
     offerId: 'offer.zenon.reference',
     offerVersion: 1,
@@ -201,7 +217,7 @@ function selection() {
   };
 }
 
-function preliminaryChallenge(serviceStore) {
+function preliminaryChallenge(serviceStore, resourceUrl = RESOURCE_URL) {
   const activation = createZenonFundingEvidenceActivation({
     store: serviceStore,
     deriveFundingTerms: fundingTerms,
@@ -211,10 +227,10 @@ function preliminaryChallenge(serviceStore) {
     authorityProfile: structuredClone(AUTHORITY.authorityProfile),
     now: () => NOW,
   });
-  return activation.createFundingResource({ selection: selection(), resourceUrl: RESOURCE_URL });
+  return activation.createFundingResource({ selection: selection(), resourceUrl });
 }
 
-function observerTarget(prepared) {
+function observerTarget(prepared, resourceUrl = RESOURCE_URL) {
   const accepted = prepared.paymentRequired.accepts[0];
   const tags = prepared.paymentRequired.resource.tags;
   return {
@@ -230,7 +246,7 @@ function observerTarget(prepared) {
     providerId: prepared.activationIntent.providerId,
     serviceId: prepared.activationIntent.serviceId,
     resourceId: prepared.activationIntent.resourceId,
-    resourceBinding: offer().resourceBinding,
+    resourceBinding: offer(resourceUrl).resourceBinding,
     paymentResourceDigest: domainCommitment(
       RESOURCE_DIGEST_DOMAIN,
       prepared.paymentRequired.resource,
@@ -252,13 +268,13 @@ function observerTarget(prepared) {
   };
 }
 
-function observerState(prepared, targetOverrides = {}) {
+function observerState(prepared, targetOverrides = {}, resourceUrl = RESOURCE_URL) {
   return createZenonFundingObserverState({
     observerPolicy: structuredClone(AUTHORITY.observerPolicy),
     authorityGeneration: structuredClone(AUTHORITY.authorityGeneration),
     chainProfile: structuredClone(AUTHORITY.chainProfile),
     confirmationPolicy: structuredClone(AUTHORITY.confirmationPolicy),
-    target: { ...observerTarget(prepared), ...targetOverrides },
+    target: { ...observerTarget(prepared, resourceUrl), ...targetOverrides },
     checkpoint: structuredClone(AUTHORITY.bootstrapCheckpoint),
     catchUp: {
       maximumPageEntries: 4,
@@ -455,6 +471,7 @@ function fixture(t, {
   serviceHooks = undefined,
   targetOverrides = {},
   skipOwnerChallenge = false,
+  resourceUrl = RESOURCE_URL,
 } = {}) {
   const directory = privateDirectoryFor(t);
   const serviceConfiguration = {
@@ -471,12 +488,12 @@ function fixture(t, {
     now: () => NOW,
   };
   const serviceStore = ServiceCreditSqliteStore.create(serviceConfiguration);
-  serviceStore.registerOffer(offer());
-  const prepared = preliminaryChallenge(serviceStore);
+  serviceStore.registerOffer(offer(resourceUrl));
+  const prepared = preliminaryChallenge(serviceStore, resourceUrl);
   const observerConfiguration = {
     databasePath: join(directory, 'observer.sqlite'),
     allowedRoot: directory,
-    initialState: observerState(prepared, targetOverrides),
+    initialState: observerState(prepared, targetOverrides, resourceUrl),
     authorityRecord: AUTHORITY_RECORD_TEXT,
   };
   const observerStore = createZenonFundingObserverSqliteStore(observerConfiguration);
@@ -489,6 +506,7 @@ function fixture(t, {
     observerStore,
     observerRecordKey: observerStore.load().recordKey,
     prepared,
+    resourceUrl,
     composition: null,
     session: null,
   };
@@ -502,7 +520,7 @@ function fixture(t, {
   if (!skipOwnerChallenge) {
     const fromOwner = context.composition.createFundingResource({
       selection: selection(),
-      resourceUrl: RESOURCE_URL,
+      resourceUrl,
     });
     assert.deepEqual(fromOwner, prepared);
   }
@@ -563,7 +581,7 @@ function requestDescription(grantId, requestId) {
   };
 }
 
-function authorization(request) {
+function authorization(request, grant = undefined) {
   const proof = {
     proofVersion: 1,
     grantId: request.grantId,
@@ -576,7 +594,245 @@ function authorization(request) {
       CAPABILITY_KEYS.privateKey,
     ).toString('base64url'),
   };
+  if (grant !== undefined) {
+    return createServiceCreditAuthorization({
+      grant: {
+        grantId: grant.grantId,
+        capabilityCommitment: grant.capabilityCommitment,
+      },
+      request,
+      proof,
+    });
+  }
   return `ServiceCredit ${Buffer.from(canonicalJson(proof), 'utf8').toString('base64url')}`;
+}
+
+// Test-only TLS ingress; no production funding route or process restart is implied.
+function syntheticHttpsMaterial() {
+  const executable = '/usr/bin/openssl';
+  const binary = lstatSync(executable);
+  assert.equal(binary.isFile() && binary.uid === 0 && (binary.mode & 0o022) === 0, true);
+  accessSync(executable, fsConstants.X_OK);
+  const directory = realpathSync(mkdtempSync(join(tmpdir(), 'zenon-composition-tls-')));
+  const uid = process.getuid();
+  const identity = (path, directoryExpected) => {
+    const state = lstatSync(path);
+    assert.equal(state.uid, uid);
+    assert.equal(state.isSymbolicLink(), false);
+    assert.equal(directoryExpected ? state.isDirectory() : state.isFile(), true);
+    return { dev: state.dev, ino: state.ino, uid: state.uid, mode: state.mode & 0o777 };
+  };
+  const same = (path, expected, directoryExpected) =>
+    assert.deepEqual(identity(path, directoryExpected), expected);
+  let root = identity(directory, true);
+  const files = new Map();
+  const capture = name => {
+    const state = identity(join(directory, name), false);
+    assert.equal(state.dev, root.dev);
+    files.set(name, state);
+    return state;
+  };
+  let key = null;
+  let cert = null;
+  let cleaned = false;
+  const cleanup = () => {
+    if (cleaned) return;
+    same(directory, root, true);
+    const found = readdirSync(directory);
+    assert.equal(found.every(name => files.has(name)), true);
+    for (const name of found) same(join(directory, name), files.get(name), false);
+    key?.fill(0);
+    cert?.fill(0);
+    for (const name of ['key.pem', 'cert.pem', 'tls.cnf']) {
+      if (!files.has(name)) continue;
+      same(directory, root, true);
+      same(join(directory, name), files.get(name), false);
+      unlinkSync(join(directory, name));
+    }
+    same(directory, root, true);
+    assert.deepEqual(readdirSync(directory), []);
+    rmdirSync(directory);
+    assert.equal(existsSync(directory), false);
+    cleaned = true;
+  };
+  try {
+    chmodSync(directory, 0o700);
+    root = identity(directory, true);
+    assert.equal(root.mode, 0o700);
+    const configPath = join(directory, 'tls.cnf');
+    const keyPath = join(directory, 'key.pem');
+    const certPath = join(directory, 'cert.pem');
+    writeFileSync(configPath,
+      '[req]\nprompt=no\ndistinguished_name=dn\nx509_extensions=v3_req\n'
+      + '[dn]\nCN=127.0.0.1\n'
+      + '[v3_req]\nsubjectAltName=IP:127.0.0.1\nbasicConstraints=CA:FALSE\n'
+      + 'keyUsage=digitalSignature,keyEncipherment\nextendedKeyUsage=serverAuth\n',
+      { encoding: 'utf8', mode: 0o600, flag: 'wx' });
+    capture('tls.cnf');
+    const previousUmask = process.umask(0o077);
+    let generated;
+    try {
+      generated = childProcess.spawnSync(executable, [
+        'req', '-x509', '-newkey', 'rsa:2048', '-sha256', '-nodes', '-days', '1',
+        '-keyout', keyPath, '-out', certPath, '-config', configPath, '-extensions', 'v3_req',
+      ], { env: {}, encoding: 'utf8', timeout: 15_000, maxBuffer: 1024 * 1024 });
+    } finally {
+      process.umask(previousUmask);
+    }
+    for (const name of ['key.pem', 'cert.pem']) {
+      if (existsSync(join(directory, name))) capture(name);
+    }
+    assert.equal(generated.status, 0);
+    assert.equal(generated.error, undefined);
+    assert.equal(files.get('key.pem').mode, 0o600);
+    key = readFileSync(keyPath);
+    cert = readFileSync(certPath);
+    const parsed = new X509Certificate(cert);
+    assert.equal(parsed.subjectAltName?.includes('IP Address:127.0.0.1'), true);
+    const validityHours = (Date.parse(parsed.validTo) - Date.parse(parsed.validFrom)) / 3_600_000;
+    assert.equal(validityHours > 0 && validityHours <= 24, true);
+    return { key, cert, cleanup };
+  } catch {
+    try { cleanup(); } catch { throw new Error('synthetic TLS cleanup uncertain'); }
+    throw new Error('synthetic TLS setup failed');
+  }
+}
+
+function httpsExchange(route, cert, authorizationValue = undefined) {
+  return new Promise((resolve, reject) => {
+    const chunks = [];
+    let bytes = 0;
+    const request = httpsRequest({
+      hostname: '127.0.0.1',
+      port: route.port,
+      path: route.path,
+      method: 'POST',
+      agent: false,
+      ca: cert,
+      rejectUnauthorized: true,
+      headers: {
+        'Content-Length': '0',
+        Connection: 'close',
+        ...(authorizationValue === undefined ? {} : { Authorization: authorizationValue }),
+      },
+    }, response => {
+      const verified = response.socket.authorized === true;
+      response.on('data', chunk => {
+        bytes += chunk.length;
+        if (bytes > 16 * 1024) {
+          request.destroy(new Error('synthetic HTTPS response exceeded bound'));
+          return;
+        }
+        chunks.push(chunk);
+      });
+      response.once('error', reject);
+      response.once('end', () => resolve({
+        verified,
+        statusCode: response.statusCode,
+        headers: response.headers,
+        body: Buffer.concat(chunks),
+      }));
+    });
+    request.setTimeout(5_000, () => request.destroy(new Error('synthetic HTTPS request timed out')));
+    request.once('error', reject);
+    request.end();
+  });
+}
+
+async function offlineHttpsPilot(t) {
+  const tls = syntheticHttpsMaterial();
+  let context = null;
+  let activeOwner = null;
+  let phase = 'UNAVAILABLE';
+  let handlerFailures = 0;
+  let server = null;
+  t.after(async () => {
+    phase = 'UNAVAILABLE';
+    let ownerClosed = true;
+    try { await activeOwner?.close(); } catch { ownerClosed = false; }
+    let transportClosed = false;
+    try {
+      if (server?.listening) {
+        await new Promise((resolve, reject) => {
+          const deadline = setTimeout(() => reject(new Error('synthetic HTTPS close timed out')), 3_000);
+          server.close(error => {
+            clearTimeout(deadline);
+            error ? reject(error) : resolve();
+          });
+          server.closeAllConnections();
+        });
+      }
+      transportClosed = true;
+    } catch { try { server?.unref(); } catch {} }
+    if (!transportClosed) throw new Error('synthetic HTTPS transport closure uncertain');
+    try { tls.cleanup(); } catch { throw new Error('synthetic TLS cleanup uncertain'); }
+    if (!ownerClosed) throw new Error('synthetic durable owner closure uncertain');
+  });
+  server = createHttpsServer({ key: tls.key, cert: tls.cert }, (request, response) => {
+    if (request.method !== 'POST' || request.url !== SERVICE_CREDIT_HTTP_PATH) {
+      response.writeHead(404);
+      response.end();
+      return;
+    }
+    if (phase === 'CHALLENGE') {
+      try {
+        const challenge = context.composition.createFundingResource({
+          selection: selection(),
+          resourceUrl: context.resourceUrl,
+        });
+        response.writeHead(402, {
+          'Content-Type': 'application/json',
+          'Cache-Control': 'private, no-store',
+          [HEADERS.PAYMENT_REQUIRED]: encodeB64Json(
+            challenge.paymentRequired,
+            { maxEncodedBytes: MAX_X402_HEADER_ENCODED_BYTES },
+          ),
+        });
+        response.end('{"error":"payment_required"}');
+      } catch {
+        handlerFailures += 1;
+        response.writeHead(503);
+        response.end();
+      }
+    } else if (phase === 'ACTIVE') {
+      void activeOwner.handle(request, response).catch(() => { handlerFailures += 1; });
+    } else {
+      response.writeHead(503);
+      response.end();
+    }
+  });
+  server.maxHeadersCount = 8;
+  server.maxConnections = 8;
+  server.maxRequestsPerSocket = 1;
+  server.headersTimeout = 2_000;
+  server.requestTimeout = 3_000;
+  server.setTimeout(5_000, socket => socket.destroy());
+  server.on('error', () => { handlerFailures += 1; });
+  const address = await new Promise((resolve, reject) => {
+    server.once('error', reject);
+    server.listen({ host: '127.0.0.1', port: 0, exclusive: true }, () => resolve(server.address()));
+  });
+  assert.equal(address.address, '127.0.0.1');
+  assert.equal(address.family, 'IPv4');
+  assert.equal(Number.isSafeInteger(address.port) && address.port > 0, true);
+  const route = {
+    origin: `https://127.0.0.1:${address.port}`,
+    path: SERVICE_CREDIT_HTTP_PATH,
+    port: address.port,
+  };
+  context = fixture(t, {
+    stage: 'PREPARED',
+    resourceUrl: `${route.origin}${route.path}`,
+  });
+  phase = 'CHALLENGE';
+  return {
+    context,
+    route,
+    cert: tls.cert,
+    activate(owner) { activeOwner = owner; phase = 'ACTIVE'; },
+    quiesce() { phase = 'UNAVAILABLE'; },
+    handlerFailureCount() { return handlerFailures; },
+  };
 }
 
 function exchange(handle, auth) {
@@ -909,6 +1165,128 @@ test('non-READY and uncertain synthetic child outcomes create no grant', async t
       assert.deepEqual(context.serviceStore.load(), before);
       assert.equal(context.serviceStore.load().state.grants.length, 0);
       await owner.close();
+    });
+  }
+});
+
+test('offline HTTPS harness serves bound 402 then durable credit across store and owner reopen', async t => {
+  const pilot = await offlineHttpsPilot(t);
+  const { context, route, cert } = pilot;
+  const challenge = await httpsExchange(route, cert);
+  assert.equal(challenge.verified, true);
+  assert.equal(challenge.statusCode, 402);
+  const paymentRequired = decodeB64Json(challenge.headers[HEADERS.PAYMENT_REQUIRED], {
+    maxEncodedBytes: MAX_X402_HEADER_ENCODED_BYTES,
+  });
+  assert.deepEqual(paymentRequired, context.prepared.paymentRequired);
+  assert.equal(paymentRequired.resource.url, context.resourceUrl);
+  assert.equal((await httpsExchange(route, cert, 'ServiceCredit synthetic')).statusCode, 402);
+  assert.equal(context.serviceStore.load().state.grants.length, 0);
+
+  const observed = {};
+  const makeSigner = await syntheticSigningOperation(t, context, 'READY', observed);
+  const signer = makeSigner();
+  assert.deepEqual(await signer.start(), { status: 'READY_COMMITTED' });
+  assert.equal(observed.dispatches, 1);
+  assert.equal(context.observerStore.load().outbox.status, 'READY');
+  await signer.close();
+
+  let callbacks = 0;
+  const makeOwner = () => createZenonDurableHttpComposition({
+    serviceCreditStore: context.serviceStore,
+    fundingObserverStore: context.observerStore,
+    authorityRecord: AUTHORITY_RECORD_TEXT,
+    deriveFundingTerms: fundingTerms,
+    now: () => NOW,
+    durableExecution: {
+      ledgerId: 'ledger.offline.https.pilot',
+      policy: {
+        policyId: 'execution.offline.https.pilot',
+        policyVersion: 1,
+        maxDurationMs: 1_000,
+      },
+      capacity: 8,
+      selectedDurationMs: 1_000,
+    },
+    execute: () => {
+      callbacks += 1;
+      return { resultCode: 'offline.https.pilot.delivered' };
+    },
+    deadlineRuntime: passiveDeadlineRuntime(),
+  });
+  let owner = makeOwner();
+  assert.deepEqual(await owner.start(activationInput(context)), { status: 'ACTIVE' });
+  assert.equal(context.serviceStore.load().state.grants.length, 1);
+  pilot.activate(owner);
+  const grant = context.serviceStore.load().state.grants[0];
+  const requestA = requestDescription(grant.grantId, 'request.offline.https.pilot.a');
+  const authorizationA = authorization(requestA, grant);
+  const first = await httpsExchange(route, cert, authorizationA);
+  assert.equal(first.verified, true);
+  assert.equal(first.statusCode, 200);
+  assert.equal(callbacks, 1);
+  assert.equal(context.serviceStore.load().state.grants[0].consumedUnits, 2);
+  const afterFirst = context.serviceStore.load();
+  const replay = await httpsExchange(route, cert, authorizationA);
+  assert.equal(replay.statusCode, 200);
+  assert.deepEqual(replay.body, first.body);
+  assert.deepEqual(context.serviceStore.load(), afterFirst);
+  assert.equal(callbacks, 1);
+  assert.equal(observed.dispatches, 1);
+
+  // Only the durable owner and stores reopen; this same test listener stays bound.
+  pilot.quiesce();
+  assert.equal((await httpsExchange(route, cert, authorizationA)).statusCode, 503);
+  await owner.close();
+  context.serviceStore = ServiceCreditSqliteStore.openExisting(context.serviceOpenConfiguration);
+  context.observerStore = openZenonFundingObserverSqliteStore({
+    databasePath: context.observerConfiguration.databasePath,
+    allowedRoot: context.directory,
+    expectedRecordKey: context.observerRecordKey,
+    authorityRecord: AUTHORITY_RECORD_TEXT,
+  });
+  owner = makeOwner();
+  assert.deepEqual(await owner.start(activationInput(context)), { status: 'ACTIVE' });
+  pilot.activate(owner);
+  const reopenedReplay = await httpsExchange(route, cert, authorizationA);
+  assert.equal(reopenedReplay.statusCode, 200);
+  assert.deepEqual(reopenedReplay.body, first.body);
+  assert.equal(context.serviceStore.load().state.grants.length, 1);
+  assert.equal(context.serviceStore.load().state.grants[0].consumedUnits, 2);
+  assert.equal(callbacks, 1);
+  const replaySigner = makeSigner();
+  await assert.rejects(replaySigner.start(),
+    error => error?.code === 'ZENON_FUNDING_PROVIDER_SIGNING_ATTESTATION_UNAVAILABLE');
+  await replaySigner.close();
+  assert.equal(observed.dispatches, 1);
+  const requestB = requestDescription(grant.grantId, 'request.offline.https.pilot.b');
+  assert.equal((await httpsExchange(route, cert, authorization(requestB, grant))).statusCode, 200);
+  assert.equal(context.serviceStore.load().state.grants[0].consumedUnits, 4);
+  assert.equal(callbacks, 2);
+  assert.equal(pilot.handlerFailureCount(), 0);
+  pilot.quiesce();
+  await owner.close();
+});
+
+test('offline HTTPS harness denies credit for non-READY synthetic child outcomes', async t => {
+  for (const [outcome, expected] of [
+    ['APPROVAL_REQUIRED', 'APPROVAL_REQUIRED'],
+    ['uncertain', 'SIGNER_OUTCOME_UNKNOWN'],
+  ]) {
+    await t.test(outcome, async t => {
+      const pilot = await offlineHttpsPilot(t);
+      const { context, route, cert } = pilot;
+      assert.equal((await httpsExchange(route, cert)).statusCode, 402);
+      const observed = {};
+      const makeSigner = await syntheticSigningOperation(t, context, outcome, observed);
+      const signer = makeSigner();
+      assert.deepEqual(await signer.start(), { status: expected });
+      assert.equal(context.observerStore.load().outbox.status, 'PREPARED');
+      assert.equal(context.serviceStore.load().state.grants.length, 0);
+      assert.equal((await httpsExchange(route, cert, 'ServiceCredit synthetic')).statusCode, 402);
+      assert.equal(observed.dispatches, 1);
+      assert.equal(pilot.handlerFailureCount(), 0);
+      await signer.close();
     });
   }
 });
