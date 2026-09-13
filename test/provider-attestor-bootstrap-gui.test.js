@@ -27,6 +27,16 @@ function test(name, callback) {
   });
 }
 
+function macOnlyTest(name, callback) {
+  return test(name, t => {
+    if (process.platform !== 'darwin') {
+      t.skip('native provider attestor GUI harness is macOS-only');
+      return;
+    }
+    return callback(t);
+  });
+}
+
 function spawnSync(...args) {
   try {
     const result = nodeSpawnSync(...args);
@@ -186,7 +196,7 @@ test('synthetic collector child spawn failure exposes only a fixed category', as
     && error.stack === 'synthetic collector response mismatch');
 });
 
-test('synthetic collector cancels and refuses malformed PIN before root creation', async t => {
+macOnlyTest('synthetic collector cancels and refuses malformed PIN before root creation', async t => {
   const target = fixture(t);
   for (const [input, status] of [
     [Buffer.alloc(0), 'BOOTSTRAP_GUI=CANCELLED\n'],
@@ -201,7 +211,7 @@ test('synthetic collector cancels and refuses malformed PIN before root creation
   }
 });
 
-test('synthetic collector accepts exact one-shot FD5/FD4 and refuses replay', async t => {
+macOnlyTest('synthetic collector accepts exact one-shot FD5/FD4 and refuses replay', async t => {
   const target = fixture(t);
   const first = await invoke(target.executable, validSyntheticPIN());
   assertFixedCollectorResult(first, 0, 'BOOTSTRAP_GUI=PASS\n');
@@ -216,7 +226,7 @@ test('synthetic collector accepts exact one-shot FD5/FD4 and refuses replay', as
 });
 
 for (const [mode, label] of [[1, 'ignored'], [2, 'no-cldwait']]) {
-  test(`synthetic collector restores waitable SIGCHLD after inherited ${label} disposition`, async t => {
+  macOnlyTest(`synthetic collector restores waitable SIGCHLD after inherited ${label} disposition`, async t => {
     const target = fixture(t);
     const launcher = compileIgnoredSIGCHLDLauncher(target.directory, mode);
     const first = await invoke(target.executable, validSyntheticPIN(), launcher);
@@ -226,7 +236,7 @@ for (const [mode, label] of [[1, 'ignored'], [2, 'no-cldwait']]) {
     assertFixedCollectorResult(replay, 3, 'BOOTSTRAP_GUI=REFUSED\n');
   });
 
-  test(`synthetic timeout under inherited ${label} disposition preserves root and witness`, async t => {
+  macOnlyTest(`synthetic timeout under inherited ${label} disposition preserves root and witness`, async t => {
     const target = fixture(t, 4);
     const launcher = compileIgnoredSIGCHLDLauncher(target.directory, mode);
     let witness;
@@ -250,7 +260,7 @@ for (const [mode, label] of [[1, 'ignored'], [2, 'no-cldwait']]) {
 
 for (const [mode, label] of [[1, 'short'], [2, 'extra'], [3, 'failure'],
   [4, 'timeout'], [5, 'nonzero exit after complete FD4']]) {
-  test(`synthetic collector preserves one-shot root on ${label} child outcome`, async t => {
+  macOnlyTest(`synthetic collector preserves one-shot root on ${label} child outcome`, async t => {
     const target = fixture(t, mode);
     const first = await invoke(target.executable, validSyntheticPIN());
     assertFixedCollectorResult(first, 3, 'BOOTSTRAP_GUI=UNKNOWN\n');
@@ -262,7 +272,7 @@ for (const [mode, label] of [[1, 'short'], [2, 'extra'], [3, 'failure'],
   });
 }
 
-test('synthetic collector refuses wrong fixed image digest before PIN input', async t => {
+macOnlyTest('synthetic collector refuses wrong fixed image digest before PIN input', async t => {
   const target = fixture(t);
   writeFileSync(target.module, 'changed synthetic module bytes');
   const run = await invoke(target.executable, validSyntheticPIN());
@@ -270,7 +280,7 @@ test('synthetic collector refuses wrong fixed image digest before PIN input', as
   assert.equal(existsSync(target.root), false);
 });
 
-test('synthetic collector refuses wrong fixed executable digest before PIN input', async t => {
+macOnlyTest('synthetic collector refuses wrong fixed executable digest before PIN input', async t => {
   const target = fixture(t);
   writeFileSync(target.fake, 'changed synthetic executable bytes');
   const run = await invoke(target.executable, validSyntheticPIN());
@@ -278,7 +288,7 @@ test('synthetic collector refuses wrong fixed executable digest before PIN input
   assert.equal(existsSync(target.root), false);
 });
 
-test('synthetic collector refuses an extended ACL on a pinned-image ancestor', async t => {
+macOnlyTest('synthetic collector refuses an extended ACL on a pinned-image ancestor', async t => {
   const target = fixture(t);
   const marked = spawnSync('/bin/chmod', ['+a', 'everyone allow read', target.directory], {
     env: {}, encoding: 'utf8',
@@ -289,7 +299,7 @@ test('synthetic collector refuses an extended ACL on a pinned-image ancestor', a
   assert.equal(existsSync(target.root), false);
 });
 
-test('real AppKit collector compiles with synthetic pins but is never launched', t => {
+macOnlyTest('real AppKit collector compiles with synthetic pins but is never launched', t => {
   const target = fixture(t);
   const built = spawnSync('/usr/bin/make', [
     '-C', nativeDirectory, 'disposable-token-bootstrap-synthetic-gui',
