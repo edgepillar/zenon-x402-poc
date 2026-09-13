@@ -1,16 +1,20 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import childProcess from 'node:child_process';
 import { createHash, generateKeyPairSync, sign } from 'node:crypto';
+import { EventEmitter } from 'node:events';
 import {
   chmodSync,
   mkdtempSync,
   readFileSync,
   realpathSync,
   rmSync,
+  writeFileSync,
 } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
+import { PassThrough } from 'node:stream';
 
 import {
   createZenonFundingComposition,
@@ -32,6 +36,11 @@ import {
   createZenonFundingProviderAttestationSigningBytes,
   parseZenonFundingProviderAttestationAuthorityRecord,
 } from '../src/service-credit-zenon-funding-provider-attestation.js';
+import {
+  createZenonFundingProviderSigningChildResponse,
+  frameZenonFundingProviderSigningChildResponse,
+  parseZenonFundingProviderSigningChildRequestFrame,
+} from '../src/service-credit-zenon-provider-signing-child-protocol.js';
 import {
   deriveServiceCreditResourceBinding,
 } from '../src/service-credit-activation.js';
@@ -130,6 +139,7 @@ const AUTHORITY_RECORD_TEXT = canonicalJson({
 const AUTHORITY = parseZenonFundingProviderAttestationAuthorityRecord(
   AUTHORITY_RECORD_TEXT,
 );
+let signingBridgeImportSequence = 0;
 
 function privateDirectoryFor(t) {
   const directory = realpathSync(mkdtempSync(join(tmpdir(), 'zenon-composition-')));
@@ -324,6 +334,81 @@ function signedEnvelope(request, overrides = {}) {
     validUntil,
     signature: sign(null, bytes, PROVIDER_KEYS.privateKey).toString('base64url'),
   };
+}
+
+async function syntheticSigningOperation(t, context, outcome, observed) {
+  const executablePath = join(context.directory, 'synthetic-signing-child');
+  writeFileSync(executablePath, '#!/bin/sh\nexit 0\n', { mode: 0o700 });
+  chmodSync(executablePath, 0o700);
+  const signerExecutable = {
+    executablePath: realpathSync(executablePath),
+    executableDigest: `sha256:${createHash('sha256')
+      .update(readFileSync(executablePath)).digest('hex')}`,
+    protocolVersion: 1,
+  };
+  const spawn = () => {
+    observed.dispatches = (observed.dispatches ?? 0) + 1;
+    const child = new EventEmitter();
+    const request = new PassThrough();
+    const response = new PassThrough();
+    child.stdio = [null, null, null, request, response];
+    child.kill = signal => {
+      queueMicrotask(() => child.emit('close', null, signal));
+      return true;
+    };
+    const chunks = [];
+    request.on('data', chunk => chunks.push(Buffer.from(chunk)));
+    request.once('finish', () => {
+      try {
+        const wire = parseZenonFundingProviderSigningChildRequestFrame(
+          Buffer.concat(chunks), AUTHORITY,
+        );
+        observed.request = wire.attestationRequest;
+        if (outcome === 'uncertain') {
+          response.end(Buffer.from([0, 0, 0, 1, 0]));
+        } else {
+          response.end(frameZenonFundingProviderSigningChildResponse(
+            createZenonFundingProviderSigningChildResponse({
+              protocolVersion: 1,
+              messageType: 'zenon-funding-provider-signing-response',
+              operationId: wire.operationId,
+              status: outcome,
+              reasonCode: outcome === 'APPROVAL_REQUIRED'
+                ? 'OPERATOR_APPROVAL_REQUIRED' : null,
+              envelope: outcome === 'READY' ? signedEnvelope(wire.attestationRequest) : null,
+            }),
+          ));
+        }
+        queueMicrotask(() => child.emit('close', 0, null));
+      } catch {
+        child.emit('error', new Error('synthetic child failure'));
+      }
+    });
+    return child;
+  };
+  const restore = t.mock.method(childProcess, 'spawn', spawn);
+  let createOperation;
+  try {
+    signingBridgeImportSequence += 1;
+    ({ createZenonFundingProviderSigningOperation: createOperation } = await import(
+      `../src/service-credit-zenon-provider-signing-operation.js?bridge=${signingBridgeImportSequence}`
+    ));
+  } finally {
+    restore.mock.restore();
+  }
+  const makeOwner = () => createOperation({
+    fundingObserverStore: context.observerStore,
+    authorityRecord: AUTHORITY_RECORD_TEXT,
+    signerExecutable,
+    now: () => ATTESTATION_NOW,
+    deadlineRuntime: {
+      schedule(callback, delayMs) { return setTimeout(callback, delayMs); },
+      cancel(handle) { clearTimeout(handle); },
+    },
+    timeoutMs: 1_000,
+    maximumResponseBytes: 16 * 1024,
+  });
+  return makeOwner;
 }
 
 function setObserverStage(store, stage) {
@@ -752,6 +837,80 @@ test('complete READY-to-grant flow survives direct durable HTTP replay and reope
   assert.equal(executionCalls, 2);
   assert.equal(context.serviceStore.load().state.grants[0].consumedUnits, 4);
   assert.equal(canonicalJson(context.observerStore.projectCommittedFundingEvidence()), readyBefore);
+});
+
+test('synthetic signing child commits one READY-to-grant lifecycle across reopen', async t => {
+  const context = fixture(t, { stage: 'PREPARED' });
+  const observed = {};
+  const makeOwner = await syntheticSigningOperation(t, context, 'READY', observed);
+  const owner = makeOwner();
+  const first = owner.start();
+  assert.strictEqual(owner.start(), first);
+  assert.deepEqual(await first, { status: 'READY_COMMITTED' });
+  assert.equal(observed.dispatches, 1);
+  assert.equal(canonicalJson(observed.request), canonicalJson(context.stageResult.request));
+  assert.equal(context.observerStore.load().outbox.status, 'READY');
+  assert.equal(context.serviceStore.load().state.grants.length, 0);
+
+  const activated = await context.composition.activateCommittedFunding(activationInput(context));
+  assert.equal(context.serviceStore.load().state.grants.length, 1);
+  await owner.close();
+  context.serviceStore.close();
+  context.observerStore.close();
+  context.serviceStore = ServiceCreditSqliteStore.openExisting(context.serviceOpenConfiguration);
+  context.observerStore = openZenonFundingObserverSqliteStore({
+    databasePath: context.observerConfiguration.databasePath,
+    allowedRoot: context.directory,
+    expectedRecordKey: context.observerRecordKey,
+    authorityRecord: AUTHORITY_RECORD_TEXT,
+  });
+  context.composition = createZenonFundingComposition({
+    serviceCreditStore: context.serviceStore,
+    fundingObserverStore: context.observerStore,
+    authorityRecord: AUTHORITY_RECORD_TEXT,
+    deriveFundingTerms: fundingTerms,
+    now: () => NOW,
+  });
+  const replayOwner = makeOwner();
+  await assert.rejects(
+    replayOwner.start(),
+    error => error?.code === 'ZENON_FUNDING_PROVIDER_SIGNING_ATTESTATION_UNAVAILABLE',
+  );
+  await replayOwner.close();
+  assert.equal(observed.dispatches, 1);
+  const replay = await context.composition.activateCommittedFunding(activationInput(context));
+  assert.equal(replay.activation.activationId, activated.activation.activationId);
+  assert.equal(replay.grant.grantId, activated.grant.grantId);
+  assert.equal(context.observerStore.load().outbox.status, 'READY');
+  assert.equal(context.serviceStore.load().state.grants.length, 1);
+  assert.equal(observed.dispatches, 1);
+});
+
+test('non-READY and uncertain synthetic child outcomes create no grant', async t => {
+  for (const [outcome, expected] of [
+    ['APPROVAL_REQUIRED', 'APPROVAL_REQUIRED'],
+    ['uncertain', 'SIGNER_OUTCOME_UNKNOWN'],
+  ]) {
+    await t.test(outcome, async t => {
+      const context = fixture(t, { stage: 'PREPARED' });
+      const before = context.serviceStore.load();
+      const observed = {};
+      const makeOwner = await syntheticSigningOperation(t, context, outcome, observed);
+      const owner = makeOwner();
+      const first = owner.start();
+      assert.deepEqual(await first, { status: expected });
+      assert.strictEqual(owner.start(), first);
+      assert.equal(observed.dispatches, 1);
+      assert.equal(context.observerStore.load().outbox.status, 'PREPARED');
+      await expectCodeAsync(
+        () => context.composition.activateCommittedFunding(activationInput(context)),
+        'SERVICE_CREDIT_ZENON_FUNDING_COMPOSITION_NOT_READY',
+      );
+      assert.deepEqual(context.serviceStore.load(), before);
+      assert.equal(context.serviceStore.load().state.grants.length, 0);
+      await owner.close();
+    });
+  }
 });
 
 test('non-READY outbox states fail before any service-credit grant mutation', async t => {
