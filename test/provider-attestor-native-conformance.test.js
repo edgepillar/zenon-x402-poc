@@ -9,6 +9,7 @@ import {
   readdirSync,
   readFileSync,
   realpathSync,
+  renameSync,
   rmSync,
   statSync,
   chmodSync,
@@ -80,12 +81,51 @@ function nativeConformanceTest(name, callback) {
   return test(name, t => runSanitizedNativeCase(name, callback, t));
 }
 
-function afterNativeCleanup(t, path) {
+function afterNativeCleanup(t, path, claimedIdentity = null) {
   t.after(() => {
-    try { rmSync(path, { recursive: true, force: true }); } catch {
+    try {
+      if (claimedIdentity !== null) {
+        const claim = claimedIdentity();
+        if (!sameManualRootIdentity(captureManualRootIdentity(path), claim)) {
+          throw sanitizedNativeFailure('native fixture cleanup failed');
+        }
+      }
+      rmSync(path, { recursive: true, force: true });
+    } catch {
       throw sanitizedNativeFailure('native fixture cleanup failed');
     }
   });
+}
+
+function captureManualRootIdentity(path) {
+  const parent = realpathSync('/private/tmp');
+  if (parent !== '/private/tmp' || dirname(path) !== parent
+      || !/^ProviderAttestorSyntheticManualGUI-[0-9a-f]{16}$/.test(basename(path))) {
+    throw sanitizedNativeFailure('native manual fixture identity invalid');
+  }
+  const base = lstatSync(parent, { bigint: true });
+  const root = lstatSync(path, { bigint: true });
+  if (!base.isDirectory() || base.isSymbolicLink() || base.uid !== 0n
+      || (base.mode & 0o7777n) !== 0o1777n
+      || !root.isDirectory() || root.isSymbolicLink()
+      || root.uid !== BigInt(process.geteuid())
+      || (root.mode & 0o7777n) !== 0o700n) {
+    throw sanitizedNativeFailure('native manual fixture identity invalid');
+  }
+  const identity = value => Object.freeze({
+    dev: value.dev, ino: value.ino, uid: value.uid, gid: value.gid, mode: value.mode,
+  });
+  return Object.freeze({ parent: identity(base), root: identity(root) });
+}
+
+function sameManualRootIdentity(left, right) {
+  if (left === null || right === null) return false;
+  for (const section of ['parent', 'root']) {
+    for (const field of ['dev', 'ino', 'uid', 'gid', 'mode']) {
+      if (left[section]?.[field] !== right[section]?.[field]) return false;
+    }
+  }
+  return true;
 }
 
 function canonicalJson(value) {
@@ -519,6 +559,53 @@ nativeConformanceTest('native protocol child spawn failures expose only a fixed 
   );
 });
 
+nativeConformanceTest('manual synthetic cleanup preserves a substituted same-user root', t => {
+  if (process.platform !== 'darwin') {
+    t.skip('native provider attestor is macOS-only');
+    return;
+  }
+  const holding = realpathSync(mkdtempSync(join(tmpdir(), 'pa-manual-cleanup-')));
+  const holdingIdentity = lstatSync(holding, { bigint: true });
+  const tag = randomBytes(8).toString('hex');
+  const root = join(realpathSync('/private/tmp'), `ProviderAttestorSyntheticManualGUI-${tag}`);
+  const replacement = join(holding, 'replacement');
+  let originalIdentity = null;
+  let replacementIdentity = null;
+  try {
+    assert.equal(existsSync(root), false);
+    mkdirSync(root, { mode: 0o700 });
+    originalIdentity = captureManualRootIdentity(root);
+    mkdirSync(replacement, { mode: 0o700 });
+    writeFileSync(join(replacement, 'sentinel'), 'preserve', { mode: 0o600 });
+    renameSync(root, join(holding, 'original'));
+    renameSync(replacement, root);
+    replacementIdentity = captureManualRootIdentity(root);
+    let cleanup;
+    afterNativeCleanup({ after(callback) { cleanup = callback; } }, root, () => originalIdentity);
+    assert.throws(cleanup, { message: 'native fixture cleanup failed' });
+    assert.equal(readFileSync(join(root, 'sentinel'), 'utf8'), 'preserve');
+  } finally {
+    if (existsSync(root)) {
+      const current = captureManualRootIdentity(root);
+      if (!sameManualRootIdentity(current, originalIdentity)
+          && !sameManualRootIdentity(current, replacementIdentity)) {
+        throw sanitizedNativeFailure('native manual fixture test cleanup refused');
+      }
+      rmSync(root, { recursive: true });
+    }
+    const currentHolding = lstatSync(holding, { bigint: true });
+    if (!currentHolding.isDirectory() || currentHolding.isSymbolicLink()
+        || currentHolding.dev !== holdingIdentity.dev
+        || currentHolding.ino !== holdingIdentity.ino
+        || currentHolding.uid !== holdingIdentity.uid
+        || currentHolding.gid !== holdingIdentity.gid
+        || currentHolding.mode !== holdingIdentity.mode) {
+      throw sanitizedNativeFailure('native manual fixture test cleanup refused');
+    }
+    rmSync(holding, { recursive: true });
+  }
+});
+
 nativeConformanceTest('release candidate revalidates pins in a reused build directory', t => {
   if (process.platform !== 'darwin') {
     t.skip('native provider attestor is macOS-only');
@@ -698,12 +785,13 @@ nativeConformanceTest('native journal runner proves ordering and replay only wit
   const requestPath = join(temporary, 'request.frame');
   writeFileSync(requestPath, vector.frame, { mode: 0o600 });
   let rootNumber = 0;
-  function newRoot(rootOverride = null) {
+  function newRoot(rootOverride = null, onRootCreated = null) {
     rootNumber += 1;
     const root = rootOverride ?? join(temporary, `authority-${rootNumber}`);
     const generations = join(root, 'generations');
     const generation = join(generations, 'provider.synthetic.non-live.generation');
     mkdirSync(root, { mode: 0o700 });
+    onRootCreated?.(root);
     mkdirSync(generations, { mode: 0o700 });
     mkdirSync(generation, { mode: 0o700 });
     const configurationPath = join(root, 'configuration.json');
@@ -955,7 +1043,8 @@ nativeConformanceTest('native journal runner proves ordering and replay only wit
   const manualTag = randomBytes(8).toString('hex');
   const manualRoot = join(realpathSync('/private/tmp'),
     `ProviderAttestorSyntheticManualGUI-${manualTag}`);
-  afterNativeCleanup(t, manualRoot);
+  let manualRootIdentity = null;
+  afterNativeCleanup(t, manualRoot, () => manualRootIdentity);
   const manualPinsPath = join(temporary, 'synthetic-manual-gui-pins.h');
   writeFileSync(manualPinsPath, [
     readFileSync(fixtureHeader, 'utf8').trimEnd(),
@@ -984,7 +1073,9 @@ nativeConformanceTest('native journal runner proves ordering and replay only wit
   assert.equal(absentManual.stdout.length, 0);
   assert.equal(absentManual.stderr.length, 0);
   assert.equal(existsSync(manualRoot), false);
-  const manualFixture = newRoot(manualRoot);
+  const manualFixture = newRoot(manualRoot, root => {
+    manualRootIdentity = captureManualRootIdentity(root);
+  });
   const manualDropped = invoke(manualFixture, 'drop_ready_output');
   assert.equal(manualDropped.code, 4);
   assert.equal(manualDropped.frame.length, 0);
