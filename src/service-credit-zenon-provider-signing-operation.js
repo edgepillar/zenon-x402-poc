@@ -10,6 +10,7 @@ import {
   createZenonFundingProviderSigningChildRequest,
   frameZenonFundingProviderSigningChildRequest,
   parseZenonFundingProviderSigningChildResponseFrame,
+  ZENON_FUNDING_PROVIDER_SIGNING_CHILD_REQUEST_MAXIMUM_PAYLOAD_BYTES,
   ZENON_FUNDING_PROVIDER_SIGNING_CHILD_PROTOCOL_VERSION,
   ZENON_FUNDING_PROVIDER_SIGNING_CHILD_RESPONSE_STATUS,
 } from './service-credit-zenon-provider-signing-child-protocol.js';
@@ -947,7 +948,7 @@ export function createZenonFundingProviderSigningOperation(options) {
       const requestFrame = frameZenonFundingProviderSigningChildRequest(
         wireRequest,
         authority,
-        authority.maximumCanonicalBytes,
+        ZENON_FUNDING_PROVIDER_SIGNING_CHILD_REQUEST_MAXIMUM_PAYLOAD_BYTES,
       );
       const exchanged = await channel.beginDispatch(
         requestFrame,

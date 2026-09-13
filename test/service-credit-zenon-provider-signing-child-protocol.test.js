@@ -11,6 +11,7 @@ import {
   frameZenonFundingProviderSigningChildResponse,
   parseZenonFundingProviderSigningChildRequestFrame,
   parseZenonFundingProviderSigningChildResponseFrame,
+  ZENON_FUNDING_PROVIDER_SIGNING_CHILD_REQUEST_MAXIMUM_PAYLOAD_BYTES,
   ZENON_FUNDING_PROVIDER_SIGNING_CHILD_PROTOCOL_VERSION,
 } from '../src/service-credit-zenon-provider-signing-child-protocol.js';
 import {
@@ -40,8 +41,7 @@ function digest(fill) {
   return `sha256:${fill.repeat(64)}`;
 }
 
-function authorityFixture() {
-  const keys = generateKeyPairSync('ed25519');
+function authorityFixture(overrides = {}, keys = generateKeyPairSync('ed25519')) {
   const publicKey = keys.publicKey.export({ format: 'der', type: 'spki' })
     .subarray(-32).toString('base64url');
   const text = canonicalJson({
@@ -78,12 +78,44 @@ function authorityFixture() {
     maximumInitialAgeSeconds: 300,
     maximumFutureSkewSeconds: 5,
     maximumValiditySeconds: 300,
+    ...overrides,
   });
   return {
     authority: parseZenonFundingProviderAttestationAuthorityRecord(text),
     text,
   };
 }
+
+test('request wrapper has exact fixed headroom above an exact inner authority ceiling', () => {
+  const keys = generateKeyPairSync('ed25519');
+  const loose = authorityFixture({}, keys);
+  const observedInnerBytes = Buffer.byteLength(
+    canonicalJson(preparedRequest(loose.authority)),
+  );
+  const exact = authorityFixture({ maximumCanonicalBytes: observedInnerBytes }, keys);
+  const request = preparedRequest(exact.authority);
+  assert.equal(Buffer.byteLength(canonicalJson(request)), observedInnerBytes);
+
+  const wire = createZenonFundingProviderSigningChildRequest({
+    authorityRecord: exact.authority,
+    request,
+  });
+  const frame = frameZenonFundingProviderSigningChildRequest(wire, exact.authority);
+  const payloadBytes = frame.readUInt32BE(0);
+  assert.equal(payloadBytes > exact.authority.maximumCanonicalBytes, true);
+  assert.equal(
+    ZENON_FUNDING_PROVIDER_SIGNING_CHILD_REQUEST_MAXIMUM_PAYLOAD_BYTES,
+    (512 * 1024) + 610,
+  );
+  assert.equal(
+    payloadBytes <= ZENON_FUNDING_PROVIDER_SIGNING_CHILD_REQUEST_MAXIMUM_PAYLOAD_BYTES,
+    true,
+  );
+  assert.deepEqual(
+    parseZenonFundingProviderSigningChildRequestFrame(frame, exact.authority),
+    wire,
+  );
+});
 
 function requestIdentity(request) {
   return {
