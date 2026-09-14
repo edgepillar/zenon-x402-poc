@@ -453,6 +453,12 @@ export function createZenonFundingIntake(options) {
         observerInitialState: initialState,
         observerRecordKey,
         observerFileName: `funding-observer-${checked.transactionHash}.sqlite`,
+        publication: {
+          version: 1,
+          paymentPayload: captured,
+          acceptedRequirement: issued.challenge.paymentRequired.accepts[0],
+          paymentRequired: issued.challenge.paymentRequired,
+        },
       };
       if (row.status === 'ISSUED' && time(now) >= issued.challenge.activationIntent.expiresAt) {
         fail('ZENON_FUNDING_INTAKE_EXPIRED');

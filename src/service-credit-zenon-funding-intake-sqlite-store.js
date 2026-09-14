@@ -14,10 +14,15 @@ import { basename, dirname, isAbsolute, join, resolve } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import { types as utilTypes } from 'node:util';
 import { paymentIntentDigest } from './canonical.js';
-import { MAX_X402_HEADER_ENCODED_BYTES, validatePaymentRequired } from './x402-wire.js';
+import {
+  MAX_X402_HEADER_ENCODED_BYTES,
+  validatePaymentPayloadEnvelope,
+  validatePaymentRequired,
+} from './x402-wire.js';
 import { deriveZenonFundingObserverSqliteRecordKey } from './service-credit-zenon-funding-observer-sqlite-store.js';
 
 export const ZENON_FUNDING_INTAKE_SQLITE_STORE_SCHEMA_VERSION = 1;
+export const ZENON_FUNDING_INTAKE_ENVELOPE_SCHEMA_VERSION = 2;
 export const ZENON_FUNDING_INTAKE_STATUS = Object.freeze({
   ISSUED: 'ISSUED',
   BOUND: 'BOUND',
@@ -31,6 +36,15 @@ const MAX_DEPTH = 24;
 const DIGEST = /^sha256:[0-9a-f]{64}$/;
 const HASH = /^[0-9a-f]{64}$/;
 const OBSERVER_FILE = /^funding-observer-[0-9a-f]{64}\.sqlite$/;
+const INITIAL_ENVELOPE_SCHEMA_VERSION = 1;
+const PUBLICATION_INPUT_VERSION = 1;
+const BINDING_FIELDS = Object.freeze([
+  'transactionHash', 'authorizationKey', 'payloadDigest', 'payer',
+  'observerTarget', 'observerInitialState', 'observerRecordKey', 'observerFileName',
+]);
+const PUBLICATION_FIELDS = Object.freeze([
+  'version', 'paymentPayload', 'acceptedRequirement', 'paymentRequired',
+]);
 const TABLE_META = 'CREATE TABLE intake_meta(singleton INTEGER PRIMARY KEY CHECK(singleton = 1), ledger_domain TEXT NOT NULL) STRICT';
 const TABLE_CHALLENGES = 'CREATE TABLE intake_challenges(selection_key TEXT PRIMARY KEY, funding_commitment TEXT NOT NULL UNIQUE, intent_digest TEXT NOT NULL UNIQUE, status TEXT NOT NULL CHECK(status IN (\'ISSUED\',\'BOUND\')), transaction_hash TEXT UNIQUE, authorization_key TEXT UNIQUE, payload_digest TEXT, observer_record_key TEXT UNIQUE, observer_file_name TEXT UNIQUE, envelope TEXT NOT NULL, CHECK((status = \'ISSUED\' AND transaction_hash IS NULL AND authorization_key IS NULL AND payload_digest IS NULL AND observer_record_key IS NULL AND observer_file_name IS NULL) OR (status = \'BOUND\' AND transaction_hash IS NOT NULL AND authorization_key IS NOT NULL AND payload_digest IS NOT NULL AND observer_record_key IS NOT NULL AND observer_file_name IS NOT NULL))) STRICT';
 
@@ -229,11 +243,47 @@ function validateIssue(raw, ledgerDomain) {
   }
 }
 
-function validateBindingUnchecked(raw, issue) {
-  const binding = exact(snapshot(raw), [
-    'transactionHash', 'authorizationKey', 'payloadDigest', 'payer',
-    'observerTarget', 'observerInitialState', 'observerRecordKey', 'observerFileName',
-  ]);
+function retainedPaymentPayloadDigest(paymentPayload) {
+  return digest('zenon-x402:funding-intake-payment-payload-v1', {
+    x402Version: paymentPayload.x402Version,
+    resource: paymentPayload.resource,
+    accepted: paymentPayload.accepted,
+    transaction: paymentPayload.payload.transaction,
+    intentDigest: paymentPayload.payload.intentDigest,
+  });
+}
+
+function validatePublicationUnchecked(raw, issue, binding) {
+  const publication = exact(raw, PUBLICATION_FIELDS);
+  try {
+    validatePaymentRequired(publication.paymentRequired);
+    validatePaymentPayloadEnvelope(publication.paymentPayload);
+  } catch {
+    fail('ZENON_FUNDING_INTAKE_STORE_INVALID_INPUT');
+  }
+  const accepted = publication.acceptedRequirement;
+  const payment = publication.paymentPayload;
+  const required = publication.paymentRequired;
+  if (
+    publication.version !== PUBLICATION_INPUT_VERSION
+    || canonicalJson(required) !== canonicalJson(issue.challenge.paymentRequired)
+    || required.accepts.length !== 1
+    || canonicalJson(accepted) !== canonicalJson(required.accepts[0])
+    || canonicalJson(payment.accepted) !== canonicalJson(accepted)
+    || canonicalJson(payment.resource) !== canonicalJson(required.resource)
+    || payment.x402Version !== required.x402Version
+    || payment.payload.intentDigest !== paymentIntentDigest(required, accepted)
+    || payment.payload.transaction?.hash !== binding.transactionHash
+    || payment.payload.transaction?.address !== binding.payer
+    || retainedPaymentPayloadDigest(payment) !== binding.payloadDigest
+  ) fail('ZENON_FUNDING_INTAKE_STORE_INVALID_INPUT');
+  return publication;
+}
+
+function validateBindingUnchecked(raw, issue, schemaVersion) {
+  const binding = exact(snapshot(raw), schemaVersion === ZENON_FUNDING_INTAKE_ENVELOPE_SCHEMA_VERSION
+    ? [...BINDING_FIELDS, 'publication']
+    : BINDING_FIELDS);
   if (
     !HASH.test(binding.transactionHash)
     || !HASH.test(binding.authorizationKey)
@@ -253,12 +303,15 @@ function validateBindingUnchecked(raw, issue) {
     || deriveZenonFundingObserverSqliteRecordKey(binding.observerInitialState, issue.authorityRecord)
       !== binding.observerRecordKey
   ) fail('ZENON_FUNDING_INTAKE_STORE_INVALID_INPUT');
+  if (schemaVersion === ZENON_FUNDING_INTAKE_ENVELOPE_SCHEMA_VERSION) {
+    validatePublicationUnchecked(binding.publication, issue, binding);
+  }
   return binding;
 }
 
-function validateBinding(raw, issue) {
+function validateBinding(raw, issue, schemaVersion) {
   try {
-    return validateBindingUnchecked(raw, issue);
+    return validateBindingUnchecked(raw, issue, schemaVersion);
   } catch (error) {
     throw new ZenonFundingIntakeSqliteStoreError(
       knownCode(error) ?? 'ZENON_FUNDING_INTAKE_STORE_INVALID_INPUT',
@@ -267,8 +320,14 @@ function validateBinding(raw, issue) {
 }
 
 function envelope(issue, binding) {
-  const core = { schemaVersion: 1, issue, binding };
-  return { ...core, checksum: digest('zenon-x402:funding-intake-envelope-v1', core) };
+  const schemaVersion = binding !== null && Object.hasOwn(binding, 'publication')
+    ? ZENON_FUNDING_INTAKE_ENVELOPE_SCHEMA_VERSION
+    : INITIAL_ENVELOPE_SCHEMA_VERSION;
+  const core = { schemaVersion, issue, binding };
+  return {
+    ...core,
+    checksum: digest(`zenon-x402:funding-intake-envelope-v${schemaVersion}`, core),
+  };
 }
 
 function privateRoot(path) {
@@ -471,11 +530,21 @@ function parseRow(row, ledgerDomain) {
     }
     const parsed = JSON.parse(row.envelope);
     exact(parsed, ['schemaVersion', 'issue', 'binding', 'checksum']);
-    if (parsed.schemaVersion !== 1 || canonicalJson(parsed) !== row.envelope) {
+    if (
+      ![
+        INITIAL_ENVELOPE_SCHEMA_VERSION,
+        ZENON_FUNDING_INTAKE_ENVELOPE_SCHEMA_VERSION,
+      ].includes(parsed.schemaVersion)
+      || (parsed.schemaVersion === ZENON_FUNDING_INTAKE_ENVELOPE_SCHEMA_VERSION
+        && parsed.binding === null)
+      || canonicalJson(parsed) !== row.envelope
+    ) {
       fail('ZENON_FUNDING_INTAKE_STORE_CORRUPT');
     }
     const issue = validateIssue(parsed.issue, ledgerDomain);
-    const binding = parsed.binding === null ? null : validateBinding(parsed.binding, issue);
+    const binding = parsed.binding === null
+      ? null
+      : validateBinding(parsed.binding, issue, parsed.schemaVersion);
     const expected = envelope(issue, binding);
     if (
       canonicalJson(expected) !== row.envelope
@@ -612,13 +681,21 @@ export class ZenonFundingIntakeSqliteStore {
     if (!DIGEST.test(selectionKey)) fail('ZENON_FUNDING_INTAKE_STORE_INVALID_INPUT');
     const prior = this.loadBySelectionKey(selectionKey);
     if (prior === null) fail('ZENON_FUNDING_INTAKE_STORE_MISSING');
-    const binding = validateBinding(rawBinding, prior.issue);
+    const binding = validateBinding(
+      rawBinding,
+      prior.issue,
+      ZENON_FUNDING_INTAKE_ENVELOPE_SCHEMA_VERSION,
+    );
     return this.#write(() => {
       const row = this.#database.prepare('SELECT * FROM intake_challenges WHERE selection_key = ?').get(selectionKey);
       if (!row) fail('ZENON_FUNDING_INTAKE_STORE_MISSING');
       const current = parseRow(row, this.#configuration.ledgerDomain);
       if (current.binding !== null) {
-        if (canonicalJson(current.binding) !== canonicalJson(binding)) {
+        const compatibleLegacy = !Object.hasOwn(current.binding, 'publication')
+          && canonicalJson(current.binding) === canonicalJson(Object.fromEntries(
+            BINDING_FIELDS.map(field => [field, binding[field]]),
+          ));
+        if (!compatibleLegacy && canonicalJson(current.binding) !== canonicalJson(binding)) {
           fail('ZENON_FUNDING_INTAKE_STORE_CONFLICT');
         }
         return current;
