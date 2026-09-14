@@ -1062,6 +1062,150 @@ test('ExactZenonFacilitator deterministic settlement integration scenarios', asy
     assert.equal(node.counters.publish, 1);
   });
 
+  for (const publicationOutcome of [
+    {
+      name: 'acknowledged',
+      evidenceState: EVIDENCE_STATES.SUBMISSION_ACKNOWLEDGED,
+      publish: async () => {},
+      errorReasons: ['momentum_inclusion_timeout', 'momentum_inclusion_timeout'],
+    },
+    {
+      name: 'unknown',
+      evidenceState: EVIDENCE_STATES.SUBMISSION_OUTCOME_UNKNOWN,
+      publish: async () => { throw new Error(); },
+      errorReasons: ['momentum_inclusion_timeout', 'submission_outcome_unknown'],
+    },
+  ]) {
+    await t.test(
+      `two facilitator stale VALIDATED snapshots do not republish after ${publicationOutcome.name}`,
+      async t => {
+        const accepted = requirement();
+        const required = challenge(accepted);
+        const payload = signedPayment(required, accepted, 97);
+        const { journal } = await journalFixture(t);
+        const preflight = await persistRecord(journal, payload, accepted, required);
+        const originalFind = journal.findByTransactionHash.bind(journal);
+        const bothInitialReadsFinished = deferred();
+        let initialReads = 0;
+        journal.findByTransactionHash = async transactionHash => {
+          const record = await originalFind(transactionHash);
+          initialReads += 1;
+          if (initialReads === 2) bothInitialReadsFinished.resolve();
+          return record;
+        };
+        const node = installSyntheticNode(t, {
+          lookup: () => null,
+          publish: publicationOutcome.publish,
+        });
+        const firstFacilitator = facilitator(journal);
+        const secondFacilitator = facilitator(journal);
+        const ownerEntered = deferred();
+        const releaseOwner = deferred();
+        t.after(() => releaseOwner.resolve());
+        const owner = firstFacilitator.runtime.withOwner(
+          `test.stale-validated-${publicationOutcome.name}-holder`,
+          async () => {
+            ownerEntered.resolve();
+            await releaseOwner.promise;
+          },
+        );
+        await ownerEntered.promise;
+
+        const settlements = [
+          firstFacilitator.settle(payload, accepted, required),
+          secondFacilitator.settle(payload, accepted, required),
+        ];
+        await bothInitialReadsFinished.promise;
+        releaseOwner.resolve();
+        await owner;
+        const results = await Promise.all(settlements);
+
+        assert.deepEqual(
+          results.map(result => result.errorReason).sort(),
+          [...publicationOutcome.errorReasons].sort(),
+        );
+        for (const result of results) {
+          assert.equal(result.success, false);
+          assert.equal(result.state, publicationOutcome.evidenceState);
+          assert.equal(result.retrySamePayment, true);
+          assert.equal(result.deliveryState, DELIVERY_STATES.NONE);
+        }
+        const durable = await journal.get(
+          preflight.authorizationKey,
+          preflight.transactionHash,
+        );
+        assert.equal(durable.evidenceState, publicationOutcome.evidenceState);
+        assert.equal(node.counters.publish, 1);
+        assert.equal(node.counters.frontier, 1);
+        assert.equal(node.counters.unconfirmed, 2);
+        assert.equal(node.counters.balanceLookup, 0);
+        assert.equal(node.counters.lookup >= 2, true);
+      },
+    );
+  }
+
+  await t.test('in-owner stale-record refresh preserves journal identity conflicts', async t => {
+    const accepted = requirement();
+    const required = challenge(accepted);
+    const payload = signedPayment(required, accepted, 98);
+    const conflictingPayload = signedPayment(required, accepted, 99);
+    const { journal } = await journalFixture(t);
+    const preflight = await persistRecord(journal, payload, accepted, required);
+    const conflictingPreflight = await persistRecord(
+      journal,
+      conflictingPayload,
+      accepted,
+      required,
+    );
+    const conflictingRecord = await journal.get(
+      conflictingPreflight.authorizationKey,
+      conflictingPreflight.transactionHash,
+    );
+    const originalFind = journal.findByTransactionHash.bind(journal);
+    const initialReadFinished = deferred();
+    let targetReads = 0;
+    journal.findByTransactionHash = async transactionHash => {
+      const record = await originalFind(transactionHash);
+      if (transactionHash !== preflight.transactionHash) return record;
+      targetReads += 1;
+      if (targetReads === 1) {
+        initialReadFinished.resolve();
+        return record;
+      }
+      return conflictingRecord;
+    };
+    const node = installSyntheticNode(t, {
+      lookup: () => null,
+      publish: async () => { throw new Error(); },
+    });
+    const exact = facilitator(journal);
+    const ownerEntered = deferred();
+    const releaseOwner = deferred();
+    t.after(() => releaseOwner.resolve());
+    const owner = exact.runtime.withOwner('test.stale-identity-holder', async () => {
+      ownerEntered.resolve();
+      await releaseOwner.promise;
+    });
+    await ownerEntered.promise;
+
+    const settlement = exact.settle(payload, accepted, required);
+    await initialReadFinished.promise;
+    releaseOwner.resolve();
+    await owner;
+    const result = await settlement;
+
+    assert.equal(result.success, false);
+    assert.equal(result.errorReason, 'journal_identity_conflict');
+    assert.equal(result.state, EVIDENCE_STATES.VALIDATED);
+    assert.equal(result.retrySamePayment, true);
+    assert.equal(result.deliveryState, DELIVERY_STATES.NONE);
+    assert.equal(node.counters.assetLookup, 0);
+    assert.equal(node.counters.lookup, 0);
+    assert.equal(node.counters.frontier, 0);
+    assert.equal(node.counters.unconfirmed, 0);
+    assert.equal(node.counters.publish, 0);
+  });
+
   await t.test('hostile gate: an unknown same-frontier payment contains its distinct loser and exact retry reconciles', async t => {
     const accepted = requirement();
     const required = challenge(accepted);
