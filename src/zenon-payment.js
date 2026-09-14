@@ -2269,18 +2269,17 @@ export class ExactZenonFacilitator {
       });
     };
 
-    // Another facilitator instance may have journaled this attempt while this
-    // caller waited for process-wide SDK ownership. Reconcile it before the
-    // frontier check as well.
-    if (!initialRecord) {
-      initialRecord = await this.#journalCall(
-        attempt,
-        () => this.journal.findByTransactionHash(preflight.transactionHash),
-      );
-      if (initialRecord) {
-        assertJournalRecordMatches(initialRecord, preflight);
-        noteRecordEvidence(attempt, initialRecord);
-      }
+    // Another facilitator instance may have journaled or advanced this attempt
+    // while this caller waited for process-wide SDK ownership. Always discard
+    // the pre-owner snapshot and reconcile the durable state before the
+    // frontier check or publication gate.
+    initialRecord = await this.#journalCall(
+      attempt,
+      () => this.journal.findByTransactionHash(preflight.transactionHash),
+    );
+    if (initialRecord) {
+      assertJournalRecordMatches(initialRecord, preflight);
+      noteRecordEvidence(attempt, initialRecord);
     }
 
     // Resolve chain/asset validity before observing the transaction. Once an
