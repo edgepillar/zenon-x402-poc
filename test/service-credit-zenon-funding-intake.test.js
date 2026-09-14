@@ -462,8 +462,11 @@ test('a competing valid transaction for the same challenge conflicts without rep
   assertSafeEqual((await preflightZenonPayment(secondPayment, challenge.accepts[0], challenge)).transactionHash,
     secondPayment.payload.transaction.hash);
   const first = await owner.bind(firstPayment);
+  const retained = context.intakeStore.loadBound()[0].binding.publication;
+  assertSafeSame(retained.paymentPayload, firstPayment);
   await assertRejectsCode(owner.bind(secondPayment), 'ZENON_FUNDING_INTAKE_CONFLICT');
   assertSafeSame(await owner.bind(firstPayment), first);
+  assertSafeSame(context.intakeStore.loadBound()[0].binding.publication, retained);
   assertSafeEqual(context.intakeStore.loadBound().length, 1);
 });
 
