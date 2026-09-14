@@ -1075,65 +1075,141 @@ test('selection and retained signed-block mismatches fail before facilitator eff
   }
 });
 
-test('ACKNOWLEDGED and UNKNOWN restart recovery reconcile only the retained block', async t => {
+test('ACKNOWLEDGED and UNKNOWN survive SIGKILL and fresh-process reconciliation', async t => {
   for (const evidenceState of [
     EVIDENCE_STATES.SUBMISSION_ACKNOWLEDGED,
     EVIDENCE_STATES.SUBMISSION_OUTCOME_UNKNOWN,
   ]) {
     await subtest(t, evidenceState, async t => {
+      let settlement;
+      let recovery;
+      t.after(async () => {
+        const runs = [settlement, recovery].filter(Boolean);
+        for (const run of runs) {
+          if (run.child.exitCode === null && run.child.signalCode === null) {
+            run.child.kill('SIGKILL');
+          }
+        }
+        await Promise.all(runs.map(run => run.exit));
+      });
       const context = fixture(t);
       const { paymentPayload, paymentRequired } = await bindPayment(context);
+      const substitutePayment = syntheticSignedPayment(paymentRequired, 2);
       const preflight = await preflightZenonPayment(
         paymentPayload,
         paymentRequired.accepts[0],
         paymentRequired,
       );
+      const substitutePreflight = await preflightZenonPayment(
+        substitutePayment,
+        paymentRequired.accepts[0],
+        paymentRequired,
+      );
+      assert.notEqual(preflight.transactionHash, substitutePreflight.transactionHash);
       const journalDirectory = join(context.directory, 'journal');
-      const firstJournal = new SettlementJournal({
+      context.intakeStore.close();
+      context.serviceStore.close();
+
+      settlement = startBridgeChild('settle-uncertain', 'EVIDENCE_DURABLE', {
+        directory: context.directory,
+        evidenceState,
+        intakeConfiguration: context.intakeConfiguration,
+        journalDirectory,
+        originalPayment: paymentPayload,
+        paymentRequired,
+        selection: selection(),
+        substitutePayment,
+      });
+      assert.deepEqual(await settlement.message, {
+        ipcVersion: 1,
+        type: 'EVIDENCE_DURABLE',
+      });
+      assert.equal(settlement.child.exitCode, null);
+      assert.equal(settlement.child.signalCode, null);
+
+      const independentlyReopenedJournal = new SettlementJournal({
         directory: journalDirectory,
         allowedRoot: context.directory,
       });
-      await firstJournal.putValidated(journalInput(preflight));
-      await firstJournal.updateEvidence(
+      const durableRecord = await independentlyReopenedJournal.get(
         preflight.authorizationKey,
         preflight.transactionHash,
-        evidenceState,
       );
-      context.reopenIntake();
+      assert.equal(durableRecord.evidenceState, evidenceState);
+      assert.equal(durableRecord.deliveryState, DELIVERY_STATES.NONE);
+      assert.deepEqual(
+        durableRecord.signedAccountBlock,
+        paymentPayload.payload.transaction,
+      );
+      const durableSnapshot = await independentlyReopenedJournal.load();
+      assert.equal(durableSnapshot.records.length, 1);
 
-      const reloadedJournal = new SettlementJournal({
+      assert.equal(settlement.child.kill('SIGKILL'), true);
+      assert.deepEqual(await settlement.exit, {
+        code: null,
+        signal: 'SIGKILL',
+        spawnFailed: false,
+      });
+
+      recovery = startBridgeChild('recover-uncertain', 'RECONCILIATION_COMPLETE', {
+        directory: context.directory,
+        evidenceState,
+        intakeConfiguration: context.intakeConfiguration,
+        journalDirectory,
+        now: NOW,
+        originalPayment: paymentPayload,
+        paymentRequired,
+        selection: selection(),
+        serviceDatabasePath: join(context.directory, 'service.sqlite'),
+        substitutePayment,
+      });
+      assert.deepEqual(await recovery.message, {
+        ipcVersion: 1,
+        type: 'RECONCILIATION_COMPLETE',
+        creditActivated: false,
+        deliveryState: DELIVERY_STATES.NONE,
+        evidenceState,
+        exactPaymentPublished: false,
+        exactPaymentRetained: true,
+        accountFrontierCalls: 0,
+        momentumFrontierCalls: 1,
+        journalUnchanged: true,
+        lookupCount: 1,
+        lookupOnlyOriginal: true,
+        publicationCount: 0,
+        status: 'RECONCILIATION_REQUIRED',
+        substitutePublished: false,
+        unconfirmedCalls: 0,
+      });
+      assert.deepEqual(await recovery.exit, {
+        code: 0,
+        signal: null,
+        spawnFailed: false,
+      });
+
+      const afterRecoveryJournal = new SettlementJournal({
         directory: journalDirectory,
         allowedRoot: context.directory,
       });
-      let exactLookup = false;
-      const counters = installSyntheticNode(t, {
-        lookup: hash => {
-          exactLookup = hash.toString() === preflight.transactionHash;
-          return null;
-        },
-        publish: () => { throw fixedTestFailure('MUST_NOT_REPUBLISH'); },
-      });
-      const publicationBridge = bridge(context, facilitator(reloadedJournal));
-      assert.deepEqual(await publicationBridge.recover(), { status: 'RECOVERED' });
-      const result = await publicationBridge.settleBound();
-      assert.deepEqual(result, {
-        status: 'RECONCILIATION_REQUIRED',
-        evidenceState,
-      });
-      assert.equal(exactLookup, true);
-      assert.equal(counters.lookup, 1);
-      assert.equal(counters.frontier, 0);
-      assert.equal(counters.unconfirmed, 0);
-      assert.equal(counters.publish, 0);
-      const retained = await reloadedJournal.get(
+      assert.deepEqual(await afterRecoveryJournal.load(), durableSnapshot);
+      const retained = await afterRecoveryJournal.get(
         preflight.authorizationKey,
         preflight.transactionHash,
       );
       assert.equal(retained.evidenceState, evidenceState);
       assert.equal(retained.deliveryState, DELIVERY_STATES.NONE);
       assert.deepEqual(retained.signedAccountBlock, paymentPayload.payload.transaction);
-      assert.equal(context.serviceStore.load().state.grants.length, 0);
-      await publicationBridge.close();
+      const afterRecoveryServiceStore = ServiceCreditSqliteStore.openExisting({
+        databasePath: join(context.directory, 'service.sqlite'),
+        allowedRoot: context.directory,
+        deriveCost: () => 2,
+        now: () => NOW,
+      });
+      try {
+        assert.equal(afterRecoveryServiceStore.load().state.grants.length, 0);
+      } finally {
+        afterRecoveryServiceStore.close();
+      }
     });
   }
 });

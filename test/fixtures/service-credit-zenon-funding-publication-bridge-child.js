@@ -194,6 +194,125 @@ function installFakePublisher(journal, originalPreflight, originalPayment, subst
   return { restore, state };
 }
 
+function installAbsentExactLookupNode(
+  originalPreflight,
+  originalPayment,
+  substitutePayment,
+  publicationOutcome,
+) {
+  check(
+    [
+      EVIDENCE_STATES.SUBMISSION_ACKNOWLEDGED,
+      EVIDENCE_STATES.SUBMISSION_OUTCOME_UNKNOWN,
+      'FAIL_IF_CALLED',
+    ].includes(publicationOutcome),
+    'BRIDGE_CHILD_PUBLICATION_OUTCOME_INVALID',
+  );
+  const zenon = sdk.Zenon.getInstance();
+  const original = {
+    initialize: zenon.initialize,
+    clearConnection: zenon.clearConnection,
+    ledger: zenon.ledger,
+    stats: zenon.stats,
+    subscribe: zenon.subscribe,
+    embedded: zenon.embedded,
+    hadClient: Object.hasOwn(zenon, 'client'),
+    client: zenon.client,
+    chainIdentifier: sdk.Zenon.getChainIdentifier(),
+    networkId: sdk.Zenon.getNetworkID(),
+  };
+  const state = {
+    exactPaymentPublished: false,
+    accountFrontierCalls: 0,
+    momentumFrontierCalls: 0,
+    lookupCount: 0,
+    lookupOnlyOriginal: true,
+    publicationCount: 0,
+    substitutePublished: false,
+    unconfirmedCalls: 0,
+  };
+  zenon.initialize = async () => { zenon.client = { synthetic: true }; };
+  zenon.clearConnection = () => { zenon.client = undefined; };
+  zenon.stats = {
+    networkInfo: async () => ({
+      numPeers: 1,
+      self: { publicKey: 'synthetic-node-key', ip: 'loopback' },
+      peers: [],
+    }),
+    syncInfo: async () => ({
+      state: sdk.SyncState.SyncDone,
+      currentHeight: 10,
+      targetHeight: 10,
+    }),
+  };
+  zenon.embedded = {
+    token: { getByZts: async tokenStandard => ({ tokenStandard }) },
+  };
+  zenon.ledger = {
+    getFrontierMomentum: async () => {
+      state.momentumFrontierCalls += 1;
+      return {
+        chainIdentifier: Number(originalPreflight.chainProfile.chainIdentifier),
+        height: 10,
+        hash: sdk.Hash.digest(Buffer.from('uncertain-restart-frontier')),
+      };
+    },
+    getAccountBlockByHash: async hash => {
+      state.lookupCount += 1;
+      if (hash.toString() !== originalPreflight.transactionHash) {
+        state.lookupOnlyOriginal = false;
+        fail('BRIDGE_CHILD_NON_RETAINED_LOOKUP');
+      }
+      return null;
+    },
+    getAccountInfoByAddress: async address => accountInfo(address),
+    getFrontierAccountBlock: async () => {
+      state.accountFrontierCalls += 1;
+      return null;
+    },
+    getUnconfirmedBlocksByAddress: async () => {
+      state.unconfirmedCalls += 1;
+      return { count: 0, list: [] };
+    },
+    publishRawTransaction: block => {
+      state.publicationCount += 1;
+      const published = block.toJson();
+      state.exactPaymentPublished = canonicalJson(published)
+        === canonicalJson(originalPayment.payload.transaction);
+      state.substitutePublished = canonicalJson(published)
+        === canonicalJson(substitutePayment.payload.transaction);
+      check(state.publicationCount === 1, 'BRIDGE_CHILD_MULTIPLE_PUBLICATIONS');
+      check(state.exactPaymentPublished, 'BRIDGE_CHILD_NON_RETAINED_PUBLICATION');
+      check(!state.substitutePublished, 'BRIDGE_CHILD_SUBSTITUTE_PUBLICATION');
+      if (publicationOutcome === 'FAIL_IF_CALLED') {
+        fail('BRIDGE_CHILD_RECOVERY_REPUBLISHED');
+      }
+      if (publicationOutcome === EVIDENCE_STATES.SUBMISSION_ACKNOWLEDGED) {
+        return Promise.resolve();
+      }
+      return Promise.resolve().then(() => {
+        fail('BRIDGE_CHILD_SYNTHETIC_ASYNC_REJECTION');
+      });
+    },
+  };
+  zenon.subscribe = {
+    toAccountBlocksByAddress: async () => ({ onNotification() {} }),
+  };
+  const restore = () => {
+    zenon.initialize = original.initialize;
+    zenon.clearConnection = original.clearConnection;
+    zenon.ledger = original.ledger;
+    zenon.stats = original.stats;
+    zenon.subscribe = original.subscribe;
+    zenon.embedded = original.embedded;
+    if (original.hadClient) zenon.client = original.client;
+    else delete zenon.client;
+    sdk.Zenon.setChainID(original.chainIdentifier);
+    sdk.Zenon.setNetworkID(original.networkId);
+  };
+  return { restore, state };
+}
+
 async function expectCode(operation, expected) {
   let actual;
   try { await operation(); } catch (error) { actual = safeErrorCode(error); }
@@ -366,11 +485,235 @@ async function recoverAndSettle(input) {
   if (process.connected) process.disconnect();
 }
 
+async function settleUntilEvidenceDurable(input) {
+  check(input?.ipcVersion === 1, 'BRIDGE_CHILD_INPUT_INVALID');
+  check(
+    [
+      EVIDENCE_STATES.SUBMISSION_ACKNOWLEDGED,
+      EVIDENCE_STATES.SUBMISSION_OUTCOME_UNKNOWN,
+    ].includes(input.evidenceState),
+    'BRIDGE_CHILD_EVIDENCE_STATE_INVALID',
+  );
+  const intakeStore = openZenonFundingIntakeSqliteStore(input.intakeConfiguration);
+  const journal = new SettlementJournal({
+    directory: input.journalDirectory,
+    allowedRoot: input.directory,
+  });
+  let publicationBridge;
+  let fake;
+  try {
+    check((await journal.load()).records.length === 0, 'BRIDGE_CHILD_JOURNAL_NOT_EMPTY');
+    const originalPreflight = await preflightZenonPayment(
+      input.originalPayment,
+      input.paymentRequired.accepts[0],
+      input.paymentRequired,
+    );
+    const substitutePreflight = await preflightZenonPayment(
+      input.substitutePayment,
+      input.paymentRequired.accepts[0],
+      input.paymentRequired,
+    );
+    check(
+      originalPreflight.transactionHash !== substitutePreflight.transactionHash,
+      'BRIDGE_CHILD_SUBSTITUTE_NOT_DISTINCT',
+    );
+    fake = installAbsentExactLookupNode(
+      originalPreflight,
+      input.originalPayment,
+      input.substitutePayment,
+      input.evidenceState,
+    );
+    const realUpdateEvidence = journal.updateEvidence.bind(journal);
+    journal.updateEvidence = async (...args) => {
+      const retained = await realUpdateEvidence(...args);
+      if (args[2] === input.evidenceState) {
+        check(
+          retained.evidenceState === input.evidenceState,
+          'BRIDGE_CHILD_DURABLE_EVIDENCE_MISMATCH',
+        );
+        check(
+          retained.deliveryState === DELIVERY_STATES.NONE,
+          'BRIDGE_CHILD_DELIVERY_STATE_CHANGED',
+        );
+        check(
+          canonicalJson(retained.signedAccountBlock)
+            === canonicalJson(input.originalPayment.payload.transaction),
+          'BRIDGE_CHILD_DURABLE_BLOCK_MISMATCH',
+        );
+        check(fake.state.lookupCount > 0, 'BRIDGE_CHILD_EXACT_LOOKUP_MISSING');
+        check(fake.state.lookupOnlyOriginal, 'BRIDGE_CHILD_NON_RETAINED_LOOKUP');
+        check(fake.state.publicationCount === 1, 'BRIDGE_CHILD_PUBLICATION_COUNT_INVALID');
+        check(fake.state.exactPaymentPublished, 'BRIDGE_CHILD_NON_RETAINED_PUBLICATION');
+        check(!fake.state.substitutePublished, 'BRIDGE_CHILD_SUBSTITUTE_PUBLICATION');
+        await send({ ipcVersion: 1, type: 'EVIDENCE_DURABLE' });
+        await new Promise(resolve => process.once('disconnect', resolve));
+        fail('BRIDGE_CHILD_PARENT_DISCONNECTED_AFTER_DURABILITY');
+      }
+      return retained;
+    };
+    const facilitator = new ExactZenonFacilitator({
+      journal,
+      environment: {
+        ZENON_LIVE_ACK: 'I_UNDERSTAND_TESTNET_ONLY',
+        ZENON_NETWORK_ID: '3',
+        ZENON_RPC_URL: 'ws://rpc.invalid',
+      },
+      rpcTimeoutMs: 100,
+      authenticateChainProfile: async () => structuredClone(originalPreflight.chainProfile),
+    });
+    publicationBridge = createZenonFundingPublicationBridge({
+      store: intakeStore,
+      facilitator,
+      selection: input.selection,
+    });
+    const recovered = await publicationBridge.recover();
+    check(recovered.status === 'RECOVERED', 'BRIDGE_CHILD_BOUND_NOT_RECOVERED');
+    await publicationBridge.settleBound();
+    fail('BRIDGE_CHILD_SETTLEMENT_RETURNED_BEFORE_KILL');
+  } finally {
+    try { await publicationBridge?.close(); } catch {}
+    try { fake?.restore(); } catch {}
+    try { intakeStore.close(); } catch {}
+  }
+}
+
+async function recoverUncertainEvidence(input) {
+  check(input?.ipcVersion === 1, 'BRIDGE_CHILD_INPUT_INVALID');
+  check(
+    [
+      EVIDENCE_STATES.SUBMISSION_ACKNOWLEDGED,
+      EVIDENCE_STATES.SUBMISSION_OUTCOME_UNKNOWN,
+    ].includes(input.evidenceState),
+    'BRIDGE_CHILD_EVIDENCE_STATE_INVALID',
+  );
+  const intakeStore = openZenonFundingIntakeSqliteStore(input.intakeConfiguration);
+  const serviceStore = ServiceCreditSqliteStore.openExisting({
+    databasePath: input.serviceDatabasePath,
+    allowedRoot: input.directory,
+    deriveCost: () => 2,
+    now: () => input.now,
+  });
+  const journal = new SettlementJournal({
+    directory: input.journalDirectory,
+    allowedRoot: input.directory,
+  });
+  let publicationBridge;
+  let fake;
+  let report;
+  try {
+    const originalPreflight = await preflightZenonPayment(
+      input.originalPayment,
+      input.paymentRequired.accepts[0],
+      input.paymentRequired,
+    );
+    const substitutePreflight = await preflightZenonPayment(
+      input.substitutePayment,
+      input.paymentRequired.accepts[0],
+      input.paymentRequired,
+    );
+    check(
+      originalPreflight.transactionHash !== substitutePreflight.transactionHash,
+      'BRIDGE_CHILD_SUBSTITUTE_NOT_DISTINCT',
+    );
+    const before = await journal.load();
+    const beforeRecord = before.records[0];
+    check(before.records.length === 1, 'BRIDGE_CHILD_JOURNAL_RECORD_COUNT_INVALID');
+    check(
+      beforeRecord?.evidenceState === input.evidenceState,
+      'BRIDGE_CHILD_INITIAL_EVIDENCE_MISMATCH',
+    );
+    check(
+      beforeRecord?.deliveryState === DELIVERY_STATES.NONE,
+      'BRIDGE_CHILD_INITIAL_DELIVERY_STATE_CHANGED',
+    );
+    check(
+      canonicalJson(beforeRecord?.signedAccountBlock)
+        === canonicalJson(input.originalPayment.payload.transaction),
+      'BRIDGE_CHILD_INITIAL_BLOCK_MISMATCH',
+    );
+    fake = installAbsentExactLookupNode(
+      originalPreflight,
+      input.originalPayment,
+      input.substitutePayment,
+      'FAIL_IF_CALLED',
+    );
+    const facilitator = new ExactZenonFacilitator({
+      journal,
+      environment: {
+        ZENON_LIVE_ACK: 'I_UNDERSTAND_TESTNET_ONLY',
+        ZENON_NETWORK_ID: '3',
+        ZENON_RPC_URL: 'ws://rpc.invalid',
+      },
+      rpcTimeoutMs: 100,
+      authenticateChainProfile: async () => structuredClone(originalPreflight.chainProfile),
+    });
+    publicationBridge = createZenonFundingPublicationBridge({
+      store: intakeStore,
+      facilitator,
+      selection: input.selection,
+    });
+    const recovered = await publicationBridge.recover();
+    check(recovered.status === 'RECOVERED', 'BRIDGE_CHILD_BOUND_NOT_RECOVERED');
+    const result = await publicationBridge.settleBound();
+    const after = await journal.load();
+    const retained = after.records[0];
+    const journalUnchanged = canonicalJson(after) === canonicalJson(before);
+    const exactPaymentRetained = after.records.length === 1
+      && canonicalJson(retained?.signedAccountBlock)
+        === canonicalJson(input.originalPayment.payload.transaction);
+    const creditActivated = serviceStore.load().state.grants.length !== 0;
+    check(result.status === 'RECONCILIATION_REQUIRED', 'BRIDGE_CHILD_RECOVERY_STATUS_INVALID');
+    check(result.evidenceState === input.evidenceState, 'BRIDGE_CHILD_RECOVERY_EVIDENCE_INVALID');
+    check(fake.state.lookupCount === 1, 'BRIDGE_CHILD_RECOVERY_LOOKUP_COUNT_INVALID');
+    check(fake.state.lookupOnlyOriginal, 'BRIDGE_CHILD_NON_RETAINED_LOOKUP');
+    check(fake.state.publicationCount === 0, 'BRIDGE_CHILD_RECOVERY_REPUBLISHED');
+    check(!fake.state.exactPaymentPublished, 'BRIDGE_CHILD_RECOVERY_REPUBLISHED');
+    check(!fake.state.substitutePublished, 'BRIDGE_CHILD_SUBSTITUTE_PUBLICATION');
+    check(fake.state.momentumFrontierCalls === 1, 'BRIDGE_CHILD_RECOVERY_MOMENTUM_READ_INVALID');
+    check(fake.state.accountFrontierCalls === 0, 'BRIDGE_CHILD_RECOVERY_ACCOUNT_FRONTIER_CALLED');
+    check(fake.state.unconfirmedCalls === 0, 'BRIDGE_CHILD_RECOVERY_UNCONFIRMED_CALLED');
+    check(!creditActivated, 'BRIDGE_CHILD_CREDIT_ACTIVATED');
+    check(
+      retained?.deliveryState === DELIVERY_STATES.NONE,
+      'BRIDGE_CHILD_DELIVERY_STATE_CHANGED',
+    );
+    check(exactPaymentRetained, 'BRIDGE_CHILD_DURABLE_BLOCK_MISMATCH');
+    check(journalUnchanged, 'BRIDGE_CHILD_JOURNAL_CHANGED');
+    report = {
+      ipcVersion: 1,
+      type: 'RECONCILIATION_COMPLETE',
+      creditActivated,
+      deliveryState: retained.deliveryState,
+      evidenceState: result.evidenceState,
+      exactPaymentPublished: fake.state.exactPaymentPublished,
+      exactPaymentRetained,
+      accountFrontierCalls: fake.state.accountFrontierCalls,
+      momentumFrontierCalls: fake.state.momentumFrontierCalls,
+      journalUnchanged,
+      lookupCount: fake.state.lookupCount,
+      lookupOnlyOriginal: fake.state.lookupOnlyOriginal,
+      publicationCount: fake.state.publicationCount,
+      status: result.status,
+      substitutePublished: fake.state.substitutePublished,
+      unconfirmedCalls: fake.state.unconfirmedCalls,
+    };
+  } finally {
+    try { await publicationBridge?.close(); } catch {}
+    try { fake?.restore(); } catch {}
+    try { intakeStore.close(); } catch {}
+    try { serviceStore.close(); } catch {}
+  }
+  await send(report);
+  if (process.connected) process.disconnect();
+}
+
 async function main() {
   const mode = process.argv[2];
   const input = await receiveInput();
   if (mode === 'bind') return bindAndWait(input);
   if (mode === 'recover') return recoverAndSettle(input);
+  if (mode === 'settle-uncertain') return settleUntilEvidenceDurable(input);
+  if (mode === 'recover-uncertain') return recoverUncertainEvidence(input);
   fail('BRIDGE_CHILD_MODE_INVALID');
 }
 
