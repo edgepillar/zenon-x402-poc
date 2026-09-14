@@ -9,6 +9,11 @@ import {
   createZenonDurableHttpComposition,
   ZenonDurableHttpCompositionError,
 } from '../src/service-credit-zenon-durable-http-composition.js';
+import {
+  ServiceCreditExternalHolderGrantDescriptorHandoffError,
+  createServiceCreditExternalHolderGrantDescriptorHandoff,
+  createServiceCreditExternalHolderGrantDescriptorSigningBytes,
+} from '../src/service-credit-external-holder-grant-descriptor-handoff.js';
 import { createZenonFundingComposition } from '../src/service-credit-zenon-funding-composition.js';
 import { createZenonFundingEvidenceActivation } from '../src/service-credit-zenon-funding-evidence.js';
 import {
@@ -40,6 +45,9 @@ const INITIAL_HASH = createHash('sha256').update('runtime-bootstrap').digest('he
 const TRANSACTION_HASH = createHash('sha256').update('runtime-transaction').digest('hex');
 const RESOURCE_URL = 'https://service.example/credits/zenon-fund';
 const EMPTY_BODY_DIGEST = `sha256:${createHash('sha256').update(Buffer.alloc(0)).digest('hex')}`;
+const EXTERNAL_HANDOFF_ORIGIN = 'https://service.example';
+const EXTERNAL_HANDOFF_UNAVAILABLE =
+  'SERVICE_CREDIT_EXTERNAL_HOLDER_GRANT_DESCRIPTOR_HANDOFF_UNAVAILABLE';
 const EXECUTION = Object.freeze({
   ledgerId: 'ledger.zenon.runtime',
   policy: Object.freeze({
@@ -442,6 +450,53 @@ async function expectCodeAsync(operation, code) {
   });
 }
 
+function expectExternalHandoffUnavailable(operation) {
+  assert.throws(operation, error => {
+    assert.equal(
+      error instanceof ServiceCreditExternalHolderGrantDescriptorHandoffError,
+      true,
+    );
+    assert.equal(error.code, EXTERNAL_HANDOFF_UNAVAILABLE);
+    assert.equal(error.message, EXTERNAL_HANDOFF_UNAVAILABLE);
+    assert.equal(
+      error.stack,
+      `ServiceCreditExternalHolderGrantDescriptorHandoffError: ${EXTERNAL_HANDOFF_UNAVAILABLE}`,
+    );
+    return true;
+  });
+}
+
+function externalHandoff(owner, fixedSelection, signingKeys = CAPABILITY_KEYS) {
+  let ownerSelectionReads = 0;
+  const handoff = createServiceCreditExternalHolderGrantDescriptorHandoff({
+    origin: EXTERNAL_HANDOFF_ORIGIN,
+    selection: fixedSelection,
+    challengeLifetimeMs: 1_000,
+    now: Object.freeze(() => NOW),
+    getActiveGrantDescriptorForSelection: Object.freeze(requestedSelection => {
+      ownerSelectionReads += 1;
+      return owner.getActiveGrantDescriptorForSelection(requestedSelection);
+    }),
+  });
+  const redeem = () => {
+    const challenge = handoff.issueChallenge();
+    return handoff.redeem({
+      challenge,
+      publicKey: signingKeys.publicKey,
+      signature: sign(
+        null,
+        createServiceCreditExternalHolderGrantDescriptorSigningBytes({
+          ...challenge,
+          origin: EXTERNAL_HANDOFF_ORIGIN,
+          selection: fixedSelection,
+        }),
+        signingKeys.privateKey,
+      ).toString('base64url'),
+    });
+  };
+  return Object.freeze({ handoff, ownerSelectionReads: () => ownerSelectionReads, redeem });
+}
+
 test('import is inert and production source has no active or private-key capability', () => {
   const source = readFileSync(new URL('../src/service-credit-zenon-durable-http-composition.js', import.meta.url), 'utf8');
   for (const forbidden of [
@@ -455,10 +510,17 @@ test('READY construction is read-only and exposes only the frozen lifecycle surf
   const context = fixture(t);
   assert.deepEqual(
     Reflect.ownKeys(context.owner),
-    ['start', 'handle', 'getActiveGrantDescriptor', 'close'],
+    [
+      'start',
+      'handle',
+      'getActiveGrantDescriptor',
+      'getActiveGrantDescriptorForSelection',
+      'close',
+    ],
   );
   assert.equal(Object.isFrozen(context.owner), true);
   assert.equal(Object.isFrozen(context.owner.getActiveGrantDescriptor), true);
+  assert.equal(Object.isFrozen(context.owner.getActiveGrantDescriptorForSelection), true);
   assert.equal(context.serviceStore.load().state.grants.length, 0);
   assert.equal(context.serviceStore.getDurableExecutionSnapshot().executionState, null);
   for (const key of ['serviceCreditStore', 'fundingObserverStore', 'authorityRecord', 'outbox', 'matcher', 'verifier', 'grant', 'activeGrantDescriptor', 'session']) {
@@ -546,8 +608,92 @@ test('active grant descriptor is frozen, detached, and stable across activation 
   assert.deepEqual(replayed, first);
 });
 
+test('selection-aware descriptor requires the exact committed ACTIVE grant binding', async t => {
+  const context = fixture(t);
+  const input = activationInput(context);
+  await context.owner.start(input);
+  const exactSelection = {
+    offerId: input.intent.offerId,
+    offerVersion: input.intent.offerVersion,
+    holderId: input.intent.holderId,
+    capabilityCommitment: input.intent.capabilityCommitment,
+  };
+  const privileged = context.owner.getActiveGrantDescriptor();
+  const selected = context.owner.getActiveGrantDescriptorForSelection(exactSelection);
+  assert.deepEqual(Reflect.ownKeys(selected), ['grantId', 'capabilityCommitment']);
+  assert.equal(Object.isFrozen(selected), true);
+  assert.notEqual(selected, privileged);
+  assert.deepEqual(selected, privileged);
+
+  for (const mismatched of [
+    { ...exactSelection, offerId: 'offer.zenon.other' },
+    { ...exactSelection, offerVersion: exactSelection.offerVersion + 1 },
+    { ...exactSelection, holderId: 'z1syntheticother' },
+    { ...exactSelection, capabilityCommitment: digest('other-capability') },
+  ]) expectCode(
+    () => context.owner.getActiveGrantDescriptorForSelection(mismatched),
+    'SERVICE_CREDIT_ZENON_DURABLE_HTTP_COMPOSITION_ACTIVATED_UNAVAILABLE',
+  );
+});
+
+test('external handoff discloses only for the exact ACTIVE owner selection', async t => {
+  const context = fixture(t);
+  const input = activationInput(context);
+  await context.owner.start(input);
+  const exactSelection = {
+    offerId: input.intent.offerId,
+    offerVersion: input.intent.offerVersion,
+    holderId: input.intent.holderId,
+    capabilityCommitment: input.intent.capabilityCommitment,
+  };
+
+  for (const [field, fixedSelection, expectedOwnerReads] of [
+    ['offerId', { ...exactSelection, offerId: 'offer.zenon.other' }, 1],
+    [
+      'offerVersion',
+      { ...exactSelection, offerVersion: exactSelection.offerVersion + 1 },
+      1,
+    ],
+    ['holderId', { ...exactSelection, holderId: 'z1syntheticother' }, 1],
+    [
+      'capabilityCommitment',
+      { ...exactSelection, capabilityCommitment: digest('other-capability') },
+      0,
+    ],
+  ]) await t.test(`same-key ${field} mismatch`, () => {
+    const wrong = externalHandoff(context.owner, fixedSelection);
+    expectExternalHandoffUnavailable(wrong.redeem);
+    assert.equal(wrong.ownerSelectionReads(), expectedOwnerReads);
+    wrong.handoff.close();
+  });
+
+  await t.test('different-key commitment mismatch reaches the owner check', () => {
+    const otherKeys = keys();
+    const wrongCommitment = externalHandoff(context.owner, {
+      ...exactSelection,
+      capabilityCommitment: deriveServiceCreditCapabilityCommitment({
+        publicKey: otherKeys.publicKey,
+      }),
+    }, otherKeys);
+    expectExternalHandoffUnavailable(wrongCommitment.redeem);
+    assert.equal(wrongCommitment.ownerSelectionReads(), 1);
+    wrongCommitment.handoff.close();
+  });
+
+  await t.test('exact selection', () => {
+    const exact = externalHandoff(context.owner, exactSelection);
+    const descriptor = exact.redeem();
+    assert.deepEqual(Reflect.ownKeys(descriptor), ['grantId', 'capabilityCommitment']);
+    assert.equal(Object.isFrozen(descriptor), true);
+    assert.deepEqual(descriptor, context.owner.getActiveGrantDescriptor());
+    assert.equal(exact.ownerSelectionReads(), 1);
+    exact.handoff.close();
+  });
+});
+
 test('handle and active grant descriptor are unavailable outside ACTIVE', async t => {
   const context = fixture(t);
+  const fixedSelection = selection();
   const before = await exchange(context.owner.handle, 'forbidden');
   assert.equal(before.statusCode, 503);
   assert.deepEqual(JSON.parse(before.body.toString('utf8')), { error: 'service_unavailable' });
@@ -555,9 +701,17 @@ test('handle and active grant descriptor are unavailable outside ACTIVE', async 
     () => context.owner.getActiveGrantDescriptor(),
     'SERVICE_CREDIT_ZENON_DURABLE_HTTP_COMPOSITION_ACTIVATED_UNAVAILABLE',
   );
+  expectCode(
+    () => context.owner.getActiveGrantDescriptorForSelection(fixedSelection),
+    'SERVICE_CREDIT_ZENON_DURABLE_HTTP_COMPOSITION_ACTIVATED_UNAVAILABLE',
+  );
   const starting = context.owner.start(activationInput(context));
   expectCode(
     () => context.owner.getActiveGrantDescriptor(),
+    'SERVICE_CREDIT_ZENON_DURABLE_HTTP_COMPOSITION_ACTIVATED_UNAVAILABLE',
+  );
+  expectCode(
+    () => context.owner.getActiveGrantDescriptorForSelection(fixedSelection),
     'SERVICE_CREDIT_ZENON_DURABLE_HTTP_COMPOSITION_ACTIVATED_UNAVAILABLE',
   );
   await starting;
@@ -567,10 +721,18 @@ test('handle and active grant descriptor are unavailable outside ACTIVE', async 
     () => context.owner.getActiveGrantDescriptor(),
     'SERVICE_CREDIT_ZENON_DURABLE_HTTP_COMPOSITION_ACTIVATED_UNAVAILABLE',
   );
+  expectCode(
+    () => context.owner.getActiveGrantDescriptorForSelection(fixedSelection),
+    'SERVICE_CREDIT_ZENON_DURABLE_HTTP_COMPOSITION_ACTIVATED_UNAVAILABLE',
+  );
   await closing;
   assert.equal((await exchange(context.owner.handle, 'forbidden')).statusCode, 503);
   expectCode(
     () => context.owner.getActiveGrantDescriptor(),
+    'SERVICE_CREDIT_ZENON_DURABLE_HTTP_COMPOSITION_ACTIVATED_UNAVAILABLE',
+  );
+  expectCode(
+    () => context.owner.getActiveGrantDescriptorForSelection(fixedSelection),
     'SERVICE_CREDIT_ZENON_DURABLE_HTTP_COMPOSITION_ACTIVATED_UNAVAILABLE',
   );
   await expectCodeAsync(() => context.owner.start(activationInput(context)),
