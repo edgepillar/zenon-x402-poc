@@ -21,6 +21,7 @@ import {
 } from './x402-wire.js';
 import { deriveZenonFundingObserverSqliteRecordKey } from './service-credit-zenon-funding-observer-sqlite-store.js';
 
+// Physical table grammar; database user_version is a separate store-wide marker.
 export const ZENON_FUNDING_INTAKE_SQLITE_STORE_SCHEMA_VERSION = 1;
 export const ZENON_FUNDING_INTAKE_ENVELOPE_SCHEMA_VERSION = 2;
 export const ZENON_FUNDING_INTAKE_STATUS = Object.freeze({
@@ -29,6 +30,8 @@ export const ZENON_FUNDING_INTAKE_STATUS = Object.freeze({
 });
 
 const APPLICATION_ID = 0x5a464953;
+const INITIAL_DATABASE_USER_VERSION = 1;
+const RETAINED_PAYMENT_DATABASE_USER_VERSION = 2;
 const MAX_CHALLENGES = 16;
 const MAX_RECORD_BYTES = 64 * 1024;
 const MAX_NODES = 4096;
@@ -492,14 +495,18 @@ function openDatabase(config, identity, creating) {
     ) fail('ZENON_FUNDING_INTAKE_STORE_SCHEMA_UNSUPPORTED');
     if (creating) {
       database.exec(`PRAGMA application_id = ${APPLICATION_ID}`);
-      database.exec(`PRAGMA user_version = ${ZENON_FUNDING_INTAKE_SQLITE_STORE_SCHEMA_VERSION}`);
+      database.exec(`PRAGMA user_version = ${INITIAL_DATABASE_USER_VERSION}`);
       database.exec(TABLE_META);
       database.exec(TABLE_CHALLENGES);
       database.prepare('INSERT INTO intake_meta(singleton,ledger_domain) VALUES(1,?)').run(config.ledgerDomain);
     }
+    const databaseUserVersion = database.prepare('PRAGMA user_version').get()?.user_version;
     if (
       database.prepare('PRAGMA application_id').get()?.application_id !== APPLICATION_ID
-      || database.prepare('PRAGMA user_version').get()?.user_version !== ZENON_FUNDING_INTAKE_SQLITE_STORE_SCHEMA_VERSION
+      || ![
+        INITIAL_DATABASE_USER_VERSION,
+        RETAINED_PAYMENT_DATABASE_USER_VERSION,
+      ].includes(databaseUserVersion)
       || database.prepare('PRAGMA integrity_check').get()?.integrity_check !== 'ok'
       || database.prepare('SELECT ledger_domain FROM intake_meta WHERE singleton = 1').get()?.ledger_domain !== config.ledgerDomain
     ) fail('ZENON_FUNDING_INTAKE_STORE_SCHEMA_UNSUPPORTED');
@@ -513,6 +520,20 @@ function openDatabase(config, identity, creating) {
       || definitions[1].name !== 'intake_meta'
       || definitions[1].sql !== TABLE_META
     ) fail('ZENON_FUNDING_INTAKE_STORE_SCHEMA_UNSUPPORTED');
+    let hasRetainedPayment = false;
+    const rows = database.prepare('SELECT * FROM intake_challenges ORDER BY selection_key').all();
+    for (const row of rows) {
+      parseRow(row, config.ledgerDomain);
+      if (JSON.parse(row.envelope).schemaVersion
+        === ZENON_FUNDING_INTAKE_ENVELOPE_SCHEMA_VERSION) {
+        hasRetainedPayment = true;
+      }
+    }
+    if (databaseUserVersion !== (hasRetainedPayment
+      ? RETAINED_PAYMENT_DATABASE_USER_VERSION
+      : INITIAL_DATABASE_USER_VERSION)) {
+      fail('ZENON_FUNDING_INTAKE_STORE_SCHEMA_UNSUPPORTED');
+    }
     inspectFile(config, identity);
     return database;
   } catch (error) {
@@ -635,6 +656,7 @@ export class ZenonFundingIntakeSqliteStore {
       this.#database.exec('BEGIN IMMEDIATE');
       begun = true;
       const result = operation();
+      if (this.#testHooks?.beforeCommit) this.#testHooks.beforeCommit();
       commitAttempted = true;
       this.#database.exec('COMMIT');
       this.#identity = inspectFile(this.#configuration, this.#identity);
@@ -717,6 +739,22 @@ export class ZenonFundingIntakeSqliteStore {
         selectionKey,
       );
       if (updated.changes !== 1) fail('ZENON_FUNDING_INTAKE_STORE_OUTCOME_UNKNOWN');
+      const databaseUserVersion = pragmaValue(
+        this.#database,
+        'PRAGMA user_version',
+        'user_version',
+      );
+      if (databaseUserVersion === INITIAL_DATABASE_USER_VERSION) {
+        this.#database.exec(
+          `PRAGMA user_version = ${RETAINED_PAYMENT_DATABASE_USER_VERSION}`,
+        );
+      } else if (databaseUserVersion !== RETAINED_PAYMENT_DATABASE_USER_VERSION) {
+        fail('ZENON_FUNDING_INTAKE_STORE_SCHEMA_UNSUPPORTED');
+      }
+      if (pragmaValue(this.#database, 'PRAGMA user_version', 'user_version')
+        !== RETAINED_PAYMENT_DATABASE_USER_VERSION) {
+        fail('ZENON_FUNDING_INTAKE_STORE_SCHEMA_UNSUPPORTED');
+      }
       return { issue: current.issue, binding, status: 'BOUND' };
     });
   }
@@ -753,7 +791,10 @@ function open(options, creating) {
   if (testHooks !== undefined && (
     testHooks === null
     || typeof testHooks !== 'object'
-    || Reflect.ownKeys(testHooks).some(key => key !== 'afterCommit')
+    || Reflect.ownKeys(testHooks).some(
+      key => key !== 'beforeCommit' && key !== 'afterCommit',
+    )
+    || (testHooks.beforeCommit !== undefined && typeof testHooks.beforeCommit !== 'function')
     || (testHooks.afterCommit !== undefined && typeof testHooks.afterCommit !== 'function')
   )) fail('ZENON_FUNDING_INTAKE_STORE_INVALID_CONFIGURATION');
   const config = configuration(configurationInput);

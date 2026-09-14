@@ -46,6 +46,8 @@ import { decodeB64Json } from '../src/x402-wire.js';
 const NOW = 2_000_000_000_000;
 const RESOURCE_URL = 'https://service.example/credits/zenon-fund';
 const LEDGER_DOMAIN = 'service-credit-zenon-publication-bridge-test-v1';
+const INITIAL_INTAKE_DATABASE_USER_VERSION = 1;
+const RETAINED_PAYMENT_DATABASE_USER_VERSION = 2;
 const INTAKE_ENVELOPE_V1_DOMAIN = 'zenon-x402:funding-intake-envelope-v1';
 const INTAKE_ENVELOPE_V2_DOMAIN = 'zenon-x402:funding-intake-envelope-v2';
 const PAYMENT_PAYLOAD_DOMAIN = 'zenon-x402:funding-intake-payment-payload-v1';
@@ -90,6 +92,12 @@ function safeErrorCode(error) {
 async function assertRejectsCode(promise, expected) {
   let actual;
   try { await promise; } catch (error) { actual = safeErrorCode(error); }
+  assert.equal(actual, expected);
+}
+
+function assertThrowsCode(operation, expected) {
+  let actual;
+  try { operation(); } catch (error) { actual = safeErrorCode(error); }
   assert.equal(actual, expected);
 }
 
@@ -224,7 +232,7 @@ function fundingTerms(input) {
   };
 }
 
-function fixture(t, { afterCommit } = {}) {
+function fixture(t, { beforeCommit, afterCommit } = {}) {
   const directory = realpathSync(mkdtempSync(join(tmpdir(), 'zenon-publication-bridge-')));
   chmodSync(directory, 0o700);
   const serviceConfiguration = {
@@ -243,7 +251,12 @@ function fixture(t, { afterCommit } = {}) {
   serviceStore.registerOffer(offer());
   let intakeStore = createZenonFundingIntakeSqliteStore({
     ...intakeConfiguration,
-    ...(afterCommit === undefined ? {} : { testHooks: { afterCommit } }),
+    ...(beforeCommit === undefined && afterCommit === undefined ? {} : {
+      testHooks: {
+        ...(beforeCommit === undefined ? {} : { beforeCommit }),
+        ...(afterCommit === undefined ? {} : { afterCommit }),
+      },
+    }),
   });
 
   function owner() {
@@ -348,16 +361,68 @@ function readIntakeEnvelope(context) {
   }
 }
 
-function replaceIntakeEnvelope(context, binding, schemaVersion) {
+function openWithPriorV1ReaderStrictVersionContract(context) {
+  const database = new DatabaseSync(context.intakeConfiguration.databasePath, { readOnly: true });
+  try {
+    if (database.prepare('PRAGMA user_version').get().user_version
+      !== ZENON_FUNDING_INTAKE_SQLITE_STORE_SCHEMA_VERSION) {
+      const error = fixedTestFailure('ZENON_FUNDING_INTAKE_STORE_SCHEMA_UNSUPPORTED');
+      error.code = 'ZENON_FUNDING_INTAKE_STORE_SCHEMA_UNSUPPORTED';
+      throw error;
+    }
+  } finally {
+    database.close();
+  }
+}
+
+function currentReaderOpenCode(context) {
+  let opened;
+  try {
+    opened = openZenonFundingIntakeSqliteStore(context.intakeConfiguration);
+    return undefined;
+  } catch (error) {
+    return safeErrorCode(error);
+  } finally {
+    try { opened?.close(); } catch {}
+  }
+}
+
+function setIntakeUserVersion(context, userVersion) {
+  assert.ok([
+    INITIAL_INTAKE_DATABASE_USER_VERSION,
+    RETAINED_PAYMENT_DATABASE_USER_VERSION,
+  ].includes(userVersion));
+  context.intakeStore.close();
+  const database = new DatabaseSync(context.intakeConfiguration.databasePath);
+  try {
+    database.exec(`PRAGMA user_version = ${userVersion}`);
+  } finally {
+    database.close();
+  }
+}
+
+function replaceIntakeEnvelope(context, binding, schemaVersion, { userVersion } = {}) {
   const current = context.intakeStore.loadBySelectionKey(selectionKey());
   const core = { schemaVersion, issue: current.issue, binding };
   const envelope = { ...core, checksum: envelopeChecksum(schemaVersion, core) };
   context.intakeStore.close();
   const database = new DatabaseSync(context.intakeConfiguration.databasePath);
   try {
+    database.exec('BEGIN IMMEDIATE');
     database.prepare(
       'UPDATE intake_challenges SET payload_digest = ?, envelope = ? WHERE selection_key = ?',
     ).run(binding.payloadDigest, canonicalJson(envelope), selectionKey());
+    if (userVersion !== undefined) {
+      assert.ok([
+        INITIAL_INTAKE_DATABASE_USER_VERSION,
+        RETAINED_PAYMENT_DATABASE_USER_VERSION,
+      ].includes(userVersion));
+      database.exec(`PRAGMA user_version = ${userVersion}`);
+    }
+    database.exec('COMMIT');
+  } catch (error) {
+    try { database.exec('ROLLBACK'); } catch {}
+    throw error;
   } finally {
     database.close();
   }
@@ -522,13 +587,23 @@ function journalInput(preflight) {
   };
 }
 
-test('physical schema v1 stores a new BOUND as one envelope-v2 exact settlement tuple', async t => {
+test('first envelope-v2 BOUND atomically advances the database marker and excludes the prior reader', async t => {
   const context = fixture(t);
-  const { paymentPayload, paymentRequired } = await bindPayment(context);
-  const onDisk = readIntakeEnvelope(context);
+  const owner = context.owner();
+  const paymentRequired = issue(owner);
+  const issued = readIntakeEnvelope(context);
 
   assert.equal(ZENON_FUNDING_INTAKE_SQLITE_STORE_SCHEMA_VERSION, 1);
-  assert.equal(onDisk.userVersion, 1);
+  assert.equal(issued.userVersion, INITIAL_INTAKE_DATABASE_USER_VERSION);
+  assert.equal(issued.envelope.schemaVersion, 1);
+  assert.equal(issued.envelope.binding, null);
+  openWithPriorV1ReaderStrictVersionContract(context);
+
+  const paymentPayload = syntheticSignedPayment(paymentRequired);
+  await owner.bind(paymentPayload);
+  const onDisk = readIntakeEnvelope(context);
+
+  assert.equal(onDisk.userVersion, RETAINED_PAYMENT_DATABASE_USER_VERSION);
   assert.equal(onDisk.envelope.schemaVersion, 2);
   assert.deepEqual(onDisk.envelope.binding.publication, {
     version: 1,
@@ -544,7 +619,77 @@ test('physical schema v1 stores a new BOUND as one envelope-v2 exact settlement 
     onDisk.envelope.binding.payloadDigest,
     retainedPayloadDigest(paymentPayload),
   );
+  assertThrowsCode(
+    () => openWithPriorV1ReaderStrictVersionContract(context),
+    'ZENON_FUNDING_INTAKE_STORE_SCHEMA_UNSUPPORTED',
+  );
+  const committedEnvelope = onDisk.envelopeText;
+  context.reopenIntake();
+  assert.equal(readIntakeEnvelope(context).userVersion, RETAINED_PAYMENT_DATABASE_USER_VERSION);
+  assert.equal(readIntakeEnvelope(context).envelopeText, committedEnvelope);
   assert.equal(context.serviceStore.load().state.grants.length, 0);
+});
+
+test('a pre-COMMIT bind failure rolls back both BOUND and its database marker', async t => {
+  let armed = false;
+  const context = fixture(t, {
+    beforeCommit: () => { if (armed) throw fixedTestFailure('SYNTHETIC_PRE_COMMIT_FAILURE'); },
+  });
+  const owner = context.owner();
+  const paymentRequired = issue(owner);
+  const paymentPayload = syntheticSignedPayment(paymentRequired);
+  const issuedEnvelope = readIntakeEnvelope(context).envelopeText;
+
+  armed = true;
+  await assertRejectsCode(owner.bind(paymentPayload), 'ZENON_FUNDING_INTAKE_REJECTED');
+  const rolledBack = readIntakeEnvelope(context);
+  assert.equal(rolledBack.userVersion, INITIAL_INTAKE_DATABASE_USER_VERSION);
+  assert.equal(rolledBack.envelopeText, issuedEnvelope);
+  assert.equal(rolledBack.envelope.schemaVersion, 1);
+  assert.equal(rolledBack.envelope.binding, null);
+  openWithPriorV1ReaderStrictVersionContract(context);
+
+  armed = false;
+  context.reopenIntake();
+  assert.equal(readIntakeEnvelope(context).envelopeText, issuedEnvelope);
+  await context.owner().bind(paymentPayload);
+  const committed = readIntakeEnvelope(context);
+  assert.equal(committed.userVersion, RETAINED_PAYMENT_DATABASE_USER_VERSION);
+  assert.equal(committed.envelope.schemaVersion, 2);
+});
+
+test('database open rejects marker and row-envelope combinations without repairing either', async t => {
+  await subtest(t, 'envelope-v2 BOUND under the original marker', async t => {
+    const context = fixture(t);
+    await bindPayment(context);
+    const committedEnvelope = readIntakeEnvelope(context).envelopeText;
+    setIntakeUserVersion(context, INITIAL_INTAKE_DATABASE_USER_VERSION);
+
+    assert.equal(
+      currentReaderOpenCode(context),
+      'ZENON_FUNDING_INTAKE_STORE_SCHEMA_UNSUPPORTED',
+    );
+    const mismatched = readIntakeEnvelope(context);
+    assert.equal(mismatched.userVersion, INITIAL_INTAKE_DATABASE_USER_VERSION);
+    assert.equal(mismatched.envelope.schemaVersion, 2);
+    assert.equal(mismatched.envelopeText, committedEnvelope);
+  });
+
+  await subtest(t, 'advanced marker without an envelope-v2 BOUND', async t => {
+    const context = fixture(t);
+    issue(context.owner());
+    const issuedEnvelope = readIntakeEnvelope(context).envelopeText;
+    setIntakeUserVersion(context, RETAINED_PAYMENT_DATABASE_USER_VERSION);
+
+    assert.equal(
+      currentReaderOpenCode(context),
+      'ZENON_FUNDING_INTAKE_STORE_SCHEMA_UNSUPPORTED',
+    );
+    const mismatched = readIntakeEnvelope(context);
+    assert.equal(mismatched.userVersion, RETAINED_PAYMENT_DATABASE_USER_VERSION);
+    assert.equal(mismatched.envelope.schemaVersion, 1);
+    assert.equal(mismatched.envelopeText, issuedEnvelope);
+  });
 });
 
 test('restart after an ambiguous BOUND revalidates retained bytes before exact facilitator publication', async t => {
@@ -567,8 +712,19 @@ test('restart after an ambiguous BOUND revalidates retained bytes before exact f
     owner.bind(paymentPayload),
     'ZENON_FUNDING_INTAKE_OUTCOME_UNKNOWN',
   );
+  const ambiguousCommit = readIntakeEnvelope(context);
+  assert.equal(ambiguousCommit.userVersion, RETAINED_PAYMENT_DATABASE_USER_VERSION);
+  assert.equal(ambiguousCommit.envelope.schemaVersion, 2);
+  assertThrowsCode(
+    () => openWithPriorV1ReaderStrictVersionContract(context),
+    'ZENON_FUNDING_INTAKE_STORE_SCHEMA_UNSUPPORTED',
+  );
   armed = false;
   context.reopenIntake();
+  assert.equal(
+    readIntakeEnvelope(context).envelopeText,
+    ambiguousCommit.envelopeText,
+  );
 
   const journal = new SettlementJournal({
     directory: join(context.directory, 'journal'),
@@ -633,12 +789,22 @@ test('legacy envelope-v1 BOUND remains unchanged and is permanently unpublishabl
   const { paymentPayload } = await bindPayment(context);
   const row = context.intakeStore.loadBySelectionKey(selectionKey());
   const { publication: _publication, ...legacyBinding } = row.binding;
-  const legacy = replaceIntakeEnvelope(context, legacyBinding, 1);
-  const before = readIntakeEnvelope(context).envelopeText;
+  const legacy = replaceIntakeEnvelope(context, legacyBinding, 1, {
+    userVersion: INITIAL_INTAKE_DATABASE_USER_VERSION,
+  });
+  const legacyOnDisk = readIntakeEnvelope(context);
+  const before = legacyOnDisk.envelopeText;
+
+  assert.equal(legacyOnDisk.userVersion, INITIAL_INTAKE_DATABASE_USER_VERSION);
+  openWithPriorV1ReaderStrictVersionContract(context);
 
   const replay = await context.owner().bind(paymentPayload);
   assert.equal(replay.status, 'BOUND');
   assert.equal(readIntakeEnvelope(context).envelopeText, before);
+  assert.equal(
+    readIntakeEnvelope(context).userVersion,
+    INITIAL_INTAKE_DATABASE_USER_VERSION,
+  );
   assert.equal(JSON.parse(before).schemaVersion, legacy.schemaVersion);
 
   const journal = new SettlementJournal({
