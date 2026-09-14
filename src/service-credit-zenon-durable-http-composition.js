@@ -49,6 +49,7 @@ const WEAK_SET_HAS = WeakSet.prototype.has;
 
 const SERVICE_STORE_PROTOTYPE = ServiceCreditSqliteStore.prototype;
 const SERVICE_GET_OFFER = SERVICE_STORE_PROTOTYPE.getOffer;
+const SERVICE_GET_GRANT = SERVICE_STORE_PROTOTYPE.getGrant;
 const SERVICE_ACTIVATE_GRANT = SERVICE_STORE_PROTOTYPE.activateGrantFromTrustedRecord;
 const SERVICE_DURABLE_SNAPSHOT = SERVICE_STORE_PROTOTYPE.getDurableExecutionSnapshot;
 const SERVICE_INITIALIZE_DURABLE = SERVICE_STORE_PROTOTYPE.initializeDurableExecution;
@@ -75,6 +76,18 @@ const CALLBACK_OWN_KEYS = OBJECT_FREEZE([
   'arguments',
   'caller',
   'prototype',
+]);
+const ACTIVE_GRANT_BINDING_KEYS = OBJECT_FREEZE([
+  'modelVersion',
+  'providerId',
+  'serviceId',
+  'resourceId',
+  'offerId',
+  'offerVersion',
+  'holderId',
+  'capabilityCommitment',
+  'totalUnits',
+  'expiresAt',
 ]);
 
 const PHASE = OBJECT_FREEZE({
@@ -250,6 +263,7 @@ function assertStores(serviceStore, observerStore, code = CODE.invalidConfigurat
   if (
     !exactStore(serviceStore, SERVICE_STORE_PROTOTYPE, [
       ['getOffer', SERVICE_GET_OFFER],
+      ['getGrant', SERVICE_GET_GRANT],
       ['activateGrantFromTrustedRecord', SERVICE_ACTIVATE_GRANT],
       ['getDurableExecutionSnapshot', SERVICE_DURABLE_SNAPSHOT],
       ['initializeDurableExecution', SERVICE_INITIALIZE_DURABLE],
@@ -656,6 +670,7 @@ export function createZenonDurableHttpComposition(options) {
     activationCompleted: false,
     terminalCode: null,
     session: null,
+    activeGrantDescriptor: null,
     closePromise: null,
     closeCapability: null,
     callbackActive: false,
@@ -663,6 +678,68 @@ export function createZenonDurableHttpComposition(options) {
 
   function assertBoundStores(code = CODE.activatedUnavailable) {
     assertStores(serviceStore, observerStore, code);
+  }
+
+  function captureActiveGrantDescriptor(activationResult, fixedIntent) {
+    try {
+      const capturedResult = exactDataObject(
+        activationResult,
+        ['activation', 'grant'],
+        CODE.activatedUnavailable,
+      );
+      const activatedGrant = snapshotJson(capturedResult.grant);
+      if (
+        activatedGrant === null
+        || typeof activatedGrant !== 'object'
+        || REFLECT_APPLY(ARRAY_IS_ARRAY, undefined, [activatedGrant])
+        || REFLECT_APPLY(REFLECT_GET_PROTOTYPE_OF, Reflect, [activatedGrant])
+          !== OBJECT_PROTOTYPE
+        || !OBJECT_HAS_OWN(activatedGrant, 'grantId')
+        || typeof activatedGrant.grantId !== 'string'
+        || activatedGrant.grantId.length === 0
+        || activatedGrant.grantId.length > MAX_STRING_CODE_UNITS
+      ) fail(CODE.activatedUnavailable);
+
+      assertBoundStores();
+      const committedGrant = snapshotJson(REFLECT_APPLY(
+        SERVICE_GET_GRANT,
+        serviceStore,
+        [activatedGrant.grantId],
+      ));
+      if (
+        committedGrant === null
+        || typeof committedGrant !== 'object'
+        || REFLECT_APPLY(ARRAY_IS_ARRAY, undefined, [committedGrant])
+        || REFLECT_APPLY(REFLECT_GET_PROTOTYPE_OF, Reflect, [committedGrant])
+          !== OBJECT_PROTOTYPE
+        || committedGrant.lifecycle !== 'ACTIVE'
+        || canonicalJson(activatedGrant) !== canonicalJson(committedGrant)
+      ) fail(CODE.activatedUnavailable);
+
+      for (let index = 0; index < ACTIVE_GRANT_BINDING_KEYS.length; index += 1) {
+        const key = ACTIVE_GRANT_BINDING_KEYS[index];
+        if (
+          !OBJECT_HAS_OWN(fixedIntent, key)
+          || !OBJECT_HAS_OWN(activatedGrant, key)
+          || canonicalJson(fixedIntent[key]) !== canonicalJson(activatedGrant[key])
+        ) fail(CODE.activatedUnavailable);
+      }
+      if (
+        OBJECT_HAS_OWN(fixedIntent, 'grantId')
+        && canonicalJson(fixedIntent.grantId) !== canonicalJson(activatedGrant.grantId)
+      ) fail(CODE.activatedUnavailable);
+      if (
+        typeof committedGrant.capabilityCommitment !== 'string'
+        || committedGrant.capabilityCommitment.length === 0
+        || committedGrant.capabilityCommitment.length > MAX_STRING_CODE_UNITS
+      ) fail(CODE.activatedUnavailable);
+      return OBJECT_FREEZE({
+        grantId: committedGrant.grantId,
+        capabilityCommitment: committedGrant.capabilityCommitment,
+      });
+    } catch {
+      fail(CODE.activatedUnavailable);
+    }
   }
 
   const guardedExecute = OBJECT_FREEZE(function zenonDurableExecute(identity) {
@@ -735,6 +812,7 @@ export function createZenonDurableHttpComposition(options) {
   function settleStartupFailure(code) {
     state.startupPending = false;
     state.terminalCode = code;
+    state.activeGrantDescriptor = null;
     if (state.phase !== PHASE.CLOSING) {
       state.phase = terminalPhase(code);
     }
@@ -792,9 +870,13 @@ export function createZenonDurableHttpComposition(options) {
     }
 
     REFLECT_APPLY(PROMISE_THEN, activationPromise, [
-      () => {
+      activationResult => {
         state.activationCompleted = true;
         try {
+          const activeGrantDescriptor = captureActiveGrantDescriptor(
+            activationResult,
+            captured.intent,
+          );
           buildSession();
           state.startupPending = false;
           if (state.phase === PHASE.CLOSING) {
@@ -802,6 +884,7 @@ export function createZenonDurableHttpComposition(options) {
             finishClose();
             return;
           }
+          state.activeGrantDescriptor = activeGrantDescriptor;
           state.phase = PHASE.ACTIVE;
           capability.resolve(ACTIVE_RESULT);
         } catch (error) {
@@ -836,6 +919,20 @@ export function createZenonDurableHttpComposition(options) {
       return nativeResolved(undefined);
     }
   });
+
+  const getActiveGrantDescriptor = OBJECT_FREEZE(
+    function getActiveGrantDescriptor(...args) {
+      if (
+        args.length !== 0
+        || state.phase !== PHASE.ACTIVE
+        || state.activeGrantDescriptor === null
+      ) fail(CODE.activatedUnavailable);
+      return OBJECT_FREEZE({
+        grantId: state.activeGrantDescriptor.grantId,
+        capabilityCommitment: state.activeGrantDescriptor.capabilityCommitment,
+      });
+    },
+  );
 
   function closeStores() {
     try {
@@ -907,6 +1004,7 @@ export function createZenonDurableHttpComposition(options) {
     if (args.length !== 0) return nativeRejected(failure(CODE.invalidInput));
     if (state.callbackActive) {
       state.phase = PHASE.CLOSING;
+      state.activeGrantDescriptor = null;
       return nativeRejected(failure(CODE.closeFailed));
     }
     if (state.phase === PHASE.CLOSED) return state.closePromise ?? nativeResolved(undefined);
@@ -923,9 +1021,15 @@ export function createZenonDurableHttpComposition(options) {
     state.closeCapability = capability;
     state.closePromise = capability.promise;
     state.phase = PHASE.CLOSING;
+    state.activeGrantDescriptor = null;
     finishClose();
     return capability.promise;
   }
 
-  return OBJECT_FREEZE({ start: OBJECT_FREEZE(start), handle, close: OBJECT_FREEZE(close) });
+  return OBJECT_FREEZE({
+    start: OBJECT_FREEZE(start),
+    handle,
+    getActiveGrantDescriptor,
+    close: OBJECT_FREEZE(close),
+  });
 }

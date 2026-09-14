@@ -453,11 +453,15 @@ test('import is inert and production source has no active or private-key capabil
 
 test('READY construction is read-only and exposes only the frozen lifecycle surface', t => {
   const context = fixture(t);
-  assert.deepEqual(Reflect.ownKeys(context.owner), ['start', 'handle', 'close']);
+  assert.deepEqual(
+    Reflect.ownKeys(context.owner),
+    ['start', 'handle', 'getActiveGrantDescriptor', 'close'],
+  );
   assert.equal(Object.isFrozen(context.owner), true);
+  assert.equal(Object.isFrozen(context.owner.getActiveGrantDescriptor), true);
   assert.equal(context.serviceStore.load().state.grants.length, 0);
   assert.equal(context.serviceStore.getDurableExecutionSnapshot().executionState, null);
-  for (const key of ['serviceCreditStore', 'fundingObserverStore', 'authorityRecord', 'outbox', 'matcher', 'verifier', 'grant', 'session']) {
+  for (const key of ['serviceCreditStore', 'fundingObserverStore', 'authorityRecord', 'outbox', 'matcher', 'verifier', 'grant', 'activeGrantDescriptor', 'session']) {
     assert.equal(Object.hasOwn(context.owner, key), false);
   }
 });
@@ -517,13 +521,58 @@ test('READY startup drives listener-free HTTP replay and restart without duplica
   assert.equal(canonicalJson(context.observerStore.projectCommittedFundingEvidence()), readyBefore);
 });
 
-test('handle is unavailable before ACTIVE and after CLOSED', async t => {
+test('active grant descriptor is frozen, detached, and stable across activation replay', async t => {
+  const context = fixture(t);
+  const input = activationInput(context);
+  const firstStart = context.owner.start(input);
+  assert.deepEqual(await firstStart, { status: 'ACTIVE' });
+  const first = context.owner.getActiveGrantDescriptor();
+  const detached = context.owner.getActiveGrantDescriptor();
+  assert.deepEqual(Reflect.ownKeys(first), ['grantId', 'capabilityCommitment']);
+  assert.equal(Object.isFrozen(first), true);
+  assert.equal(Object.isFrozen(detached), true);
+  assert.notEqual(first, detached);
+  assert.deepEqual(detached, first);
+  assert.equal(first.capabilityCommitment, input.intent.capabilityCommitment);
+  assert.equal(context.owner.start(structuredClone(input)), firstStart);
+
+  await context.owner.close();
+  context.owner = null;
+  reopen(context);
+  assert.deepEqual(await context.owner.start(input), { status: 'ACTIVE' });
+  const replayed = context.owner.getActiveGrantDescriptor();
+  assert.notEqual(replayed, first);
+  assert.equal(Object.isFrozen(replayed), true);
+  assert.deepEqual(replayed, first);
+});
+
+test('handle and active grant descriptor are unavailable outside ACTIVE', async t => {
   const context = fixture(t);
   const before = await exchange(context.owner.handle, 'forbidden');
   assert.equal(before.statusCode, 503);
   assert.deepEqual(JSON.parse(before.body.toString('utf8')), { error: 'service_unavailable' });
-  await context.owner.close();
+  expectCode(
+    () => context.owner.getActiveGrantDescriptor(),
+    'SERVICE_CREDIT_ZENON_DURABLE_HTTP_COMPOSITION_ACTIVATED_UNAVAILABLE',
+  );
+  const starting = context.owner.start(activationInput(context));
+  expectCode(
+    () => context.owner.getActiveGrantDescriptor(),
+    'SERVICE_CREDIT_ZENON_DURABLE_HTTP_COMPOSITION_ACTIVATED_UNAVAILABLE',
+  );
+  await starting;
+  assert.equal(Object.isFrozen(context.owner.getActiveGrantDescriptor()), true);
+  const closing = context.owner.close();
+  expectCode(
+    () => context.owner.getActiveGrantDescriptor(),
+    'SERVICE_CREDIT_ZENON_DURABLE_HTTP_COMPOSITION_ACTIVATED_UNAVAILABLE',
+  );
+  await closing;
   assert.equal((await exchange(context.owner.handle, 'forbidden')).statusCode, 503);
+  expectCode(
+    () => context.owner.getActiveGrantDescriptor(),
+    'SERVICE_CREDIT_ZENON_DURABLE_HTTP_COMPOSITION_ACTIVATED_UNAVAILABLE',
+  );
   await expectCodeAsync(() => context.owner.start(activationInput(context)),
     'SERVICE_CREDIT_ZENON_DURABLE_HTTP_COMPOSITION_CLOSED');
 });
@@ -868,6 +917,10 @@ test('session construction failure after activation is terminal and never silent
     'SERVICE_CREDIT_ZENON_DURABLE_HTTP_COMPOSITION_ACTIVATED_UNAVAILABLE');
   assert.equal(context.serviceStore.load().state.grants.length, 1);
   assert.equal((await exchange(context.owner.handle, 'forbidden')).statusCode, 503);
+  expectCode(
+    () => context.owner.getActiveGrantDescriptor(),
+    'SERVICE_CREDIT_ZENON_DURABLE_HTTP_COMPOSITION_ACTIVATED_UNAVAILABLE',
+  );
   await expectCodeAsync(() => context.owner.start(activationInput(context)),
     'SERVICE_CREDIT_ZENON_DURABLE_HTTP_COMPOSITION_ACTIVATED_UNAVAILABLE');
   const closing = context.owner.close();
@@ -876,6 +929,50 @@ test('session construction failure after activation is terminal and never silent
     () => closing,
     'SERVICE_CREDIT_ZENON_DURABLE_HTTP_COMPOSITION_ACTIVATED_UNAVAILABLE',
   );
+});
+
+test('activation and committed grant mismatch is terminal and exposes no descriptor', async t => {
+  const context = fixture(t, { createOwner: false });
+  const prototype = ServiceCreditSqliteStore.prototype;
+  const originalDescriptor = Object.getOwnPropertyDescriptor(prototype, 'getGrant');
+  let owner = null;
+  let reads = 0;
+  Object.defineProperty(prototype, 'getGrant', {
+    ...originalDescriptor,
+    value(grantId) {
+      reads += 1;
+      const grant = Reflect.apply(originalDescriptor.value, this, [grantId]);
+      return Object.freeze({
+        ...grant,
+        capabilityCommitment: digest('committed-grant-mismatch'),
+      });
+    },
+  });
+  try {
+    const isolated = await import(
+      '../src/service-credit-zenon-durable-http-composition.js?committed-grant-mismatch'
+    );
+    owner = isolated.createZenonDurableHttpComposition(context.options);
+    context.owner = owner;
+    const code = 'SERVICE_CREDIT_ZENON_DURABLE_HTTP_COMPOSITION_ACTIVATED_UNAVAILABLE';
+    const matchesFixedError = error => {
+      assert.equal(error instanceof isolated.ZenonDurableHttpCompositionError, true);
+      assert.equal(error.code, code);
+      assert.equal(error.message, code);
+      assert.equal(error.stack, `ZenonDurableHttpCompositionError: ${code}`);
+      return true;
+    };
+    await assert.rejects(owner.start(activationInput(context)), matchesFixedError);
+    assert.equal(reads, 1);
+    assert.throws(() => owner.getActiveGrantDescriptor(), matchesFixedError);
+    await assert.rejects(owner.close(), matchesFixedError);
+  } finally {
+    if (owner !== null) {
+      try { await owner.close(); } catch {}
+    }
+    context.owner = null;
+    Object.defineProperty(prototype, 'getGrant', originalDescriptor);
+  }
 });
 
 test('close gates new admission and waits for active callback settlement', async t => {
