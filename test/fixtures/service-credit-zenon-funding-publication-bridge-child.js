@@ -374,6 +374,63 @@ async function bindAndWait(input) {
   fail('BRIDGE_BIND_CHILD_PARENT_DISCONNECTED');
 }
 
+async function bindAndKillAfterCommit(input) {
+  check(input?.ipcVersion === 1, 'BRIDGE_CHILD_INPUT_INVALID');
+  const serviceStore = ServiceCreditSqliteStore.openExisting({
+    databasePath: input.serviceDatabasePath,
+    allowedRoot: input.directory,
+    deriveCost: () => 2,
+    now: () => input.now,
+  });
+  let armed = false;
+  const intakeStore = openZenonFundingIntakeSqliteStore({
+    ...input.intakeConfiguration,
+    testHooks: {
+      afterCommit: () => {
+        check(armed, 'BRIDGE_CHILD_AFTER_COMMIT_NOT_ARMED');
+        process.kill(process.pid, 'SIGKILL');
+        fail('BRIDGE_CHILD_SIGKILL_RETURNED');
+      },
+    },
+  });
+  const originalSelectionKey = deriveZenonFundingIntakeSelectionKey({
+    ledgerDomain: intakeStore.ledgerDomain,
+    selection: input.selection,
+  });
+  const unrelatedSelectionKey = deriveZenonFundingIntakeSelectionKey({
+    ledgerDomain: intakeStore.ledgerDomain,
+    selection: input.unboundSelection,
+  });
+  check(
+    intakeStore.loadBySelectionKey(originalSelectionKey)?.status === 'ISSUED',
+    'BRIDGE_CHILD_ORIGINAL_NOT_ISSUED',
+  );
+  check(
+    intakeStore.loadBySelectionKey(unrelatedSelectionKey)?.status === 'ISSUED',
+    'BRIDGE_CHILD_UNRELATED_NOT_ISSUED',
+  );
+  check(!existsSync(input.journalDirectory), 'BRIDGE_CHILD_JOURNAL_CREATED_BEFORE_KILL');
+  check(serviceStore.load().state.grants.length === 0, 'BRIDGE_CHILD_CREDIT_ACTIVATED');
+  const owner = createZenonFundingIntake({
+    store: intakeStore,
+    serviceCreditStore: serviceStore,
+    authorityRecord: input.authorityRecord,
+    deriveFundingTerms: () => fail('BRIDGE_BIND_CHILD_MUST_NOT_REISSUE'),
+    now: () => input.now,
+    observerRoot: input.directory,
+    observerCatchUp: input.observerCatchUp,
+  });
+
+  armed = true;
+  const bound = await owner.bind(input.originalPayment);
+  await send({
+    ipcVersion: 1,
+    type: 'BOUND_RETURNED',
+    status: bound.status,
+  });
+  if (process.connected) process.disconnect();
+}
+
 async function recoverAndSettle(input) {
   check(input?.ipcVersion === 1, 'BRIDGE_CHILD_INPUT_INVALID');
   const intakeStore = openZenonFundingIntakeSqliteStore(input.intakeConfiguration);
@@ -711,6 +768,7 @@ async function main() {
   const mode = process.argv[2];
   const input = await receiveInput();
   if (mode === 'bind') return bindAndWait(input);
+  if (mode === 'bind-kill-after-commit') return bindAndKillAfterCommit(input);
   if (mode === 'recover') return recoverAndSettle(input);
   if (mode === 'settle-uncertain') return settleUntilEvidenceDurable(input);
   if (mode === 'recover-uncertain') return recoverUncertainEvidence(input);
