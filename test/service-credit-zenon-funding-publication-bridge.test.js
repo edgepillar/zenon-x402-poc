@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { fork } from 'node:child_process';
 import { createHash, generateKeyPairSync } from 'node:crypto';
 import {
   chmodSync,
@@ -11,6 +12,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import nodeTest from 'node:test';
+import { fileURLToPath } from 'node:url';
 import * as sdk from 'znn-typescript-sdk';
 
 import { canonicalJson, paymentIntentDigest } from '../src/canonical.js';
@@ -51,10 +53,21 @@ const RETAINED_PAYMENT_DATABASE_USER_VERSION = 2;
 const INTAKE_ENVELOPE_V1_DOMAIN = 'zenon-x402:funding-intake-envelope-v1';
 const INTAKE_ENVELOPE_V2_DOMAIN = 'zenon-x402:funding-intake-envelope-v2';
 const PAYMENT_PAYLOAD_DOMAIN = 'zenon-x402:funding-intake-payment-payload-v1';
+const CHILD_FIXTURE_PATH = fileURLToPath(new URL(
+  './fixtures/service-credit-zenon-funding-publication-bridge-child.js',
+  import.meta.url,
+));
+const CHILD_MESSAGE_TIMEOUT_MS = 15_000;
 
 function fixedTestFailure(code) {
   const error = new Error(code);
   error.stack = `Error: ${code}`;
+  return error;
+}
+
+function codedTestFailure(code) {
+  const error = fixedTestFailure(code);
+  error.code = code;
   return error;
 }
 
@@ -587,6 +600,72 @@ function journalInput(preflight) {
   };
 }
 
+function startBridgeChild(mode, expectedType, input) {
+  const child = fork(CHILD_FIXTURE_PATH, [mode], {
+    cwd: input.directory,
+    env: {},
+    execArgv: [],
+    serialization: 'json',
+    stdio: ['ignore', 'ignore', 'ignore', 'ipc'],
+  });
+  const exit = new Promise(resolve => {
+    let settled = false;
+    const finish = value => {
+      if (settled) return;
+      settled = true;
+      resolve(value);
+    };
+    child.once('error', () => finish({ code: null, signal: null, spawnFailed: true }));
+    child.once('exit', (code, signal) => finish({ code, signal, spawnFailed: false }));
+  });
+  const message = new Promise((resolve, reject) => {
+    let settled = false;
+    let timeout;
+    let onError;
+    let onExit;
+    let onMessage;
+    const cleanup = () => {
+      clearTimeout(timeout);
+      child.off('error', onError);
+      child.off('exit', onExit);
+      child.off('message', onMessage);
+    };
+    const finish = (complete, value) => {
+      if (settled) return;
+      settled = true;
+      cleanup();
+      complete(value);
+    };
+    onError = () => {
+      finish(reject, codedTestFailure('BRIDGE_CHILD_SPAWN_FAILED'));
+    };
+    onExit = () => {
+      finish(reject, codedTestFailure('BRIDGE_CHILD_EXITED_BEFORE_RESULT'));
+    };
+    onMessage = value => {
+      if (value?.ipcVersion !== 1 || value?.type !== expectedType) {
+        finish(reject, codedTestFailure(
+          value?.type === 'FAILED' && /^[A-Z0-9_]+$/.test(value?.code ?? '')
+            ? value.code
+            : 'BRIDGE_CHILD_PROTOCOL_FAILED',
+        ));
+        return;
+      }
+      finish(resolve, value);
+    };
+    timeout = setTimeout(() => {
+      finish(reject, codedTestFailure('BRIDGE_CHILD_MESSAGE_TIMEOUT'));
+    }, CHILD_MESSAGE_TIMEOUT_MS);
+    child.once('error', onError);
+    child.once('exit', onExit);
+    child.on('message', onMessage);
+    child.send({ ipcVersion: 1, ...input }, error => {
+      if (error) finish(reject, codedTestFailure('BRIDGE_CHILD_SEND_FAILED'));
+    });
+  });
+  return { child, exit, message };
+}
+
 test('first envelope-v2 BOUND atomically advances the database marker and excludes the prior reader', async t => {
   const context = fixture(t);
   const owner = context.owner();
@@ -656,6 +735,115 @@ test('a pre-COMMIT bind failure rolls back both BOUND and its database marker', 
   const committed = readIntakeEnvelope(context);
   assert.equal(committed.userVersion, RETAINED_PAYMENT_DATABASE_USER_VERSION);
   assert.equal(committed.envelope.schemaVersion, 2);
+});
+
+test('SIGKILL after a child commits BOUND reopens and publishes only that payment', async t => {
+  let binding;
+  let recovery;
+  t.after(async () => {
+    const runs = [binding, recovery].filter(Boolean);
+    for (const run of runs) {
+      if (run.child.exitCode === null && run.child.signalCode === null) {
+        run.child.kill('SIGKILL');
+      }
+    }
+    await Promise.all(runs.map(run => run.exit));
+  });
+  const context = fixture(t);
+  const owner = context.owner();
+  const paymentRequired = issue(owner);
+  const originalPayment = syntheticSignedPayment(paymentRequired, 1);
+  const substitutePayment = syntheticSignedPayment(paymentRequired, 2);
+  const unboundSelection = selection(OTHER_CAPABILITY_PUBLIC_KEY);
+  owner.issue({ selection: unboundSelection, resourceUrl: RESOURCE_URL });
+  assert.equal(
+    context.intakeStore.loadBySelectionKey(deriveZenonFundingIntakeSelectionKey({
+      ledgerDomain: LEDGER_DOMAIN,
+      selection: unboundSelection,
+    })).status,
+    'ISSUED',
+  );
+  const originalPreflight = await preflightZenonPayment(
+    originalPayment,
+    paymentRequired.accepts[0],
+    paymentRequired,
+  );
+  const substitutePreflight = await preflightZenonPayment(
+    substitutePayment,
+    paymentRequired.accepts[0],
+    paymentRequired,
+  );
+  assert.notEqual(originalPreflight.transactionHash, substitutePreflight.transactionHash);
+
+  context.intakeStore.close();
+  context.serviceStore.close();
+  const journalDirectory = join(context.directory, 'kill-reopen-journal');
+  binding = startBridgeChild('bind', 'BOUND_COMMITTED', {
+    authorityRecord: AUTHORITY_RECORD,
+    directory: context.directory,
+    intakeConfiguration: context.intakeConfiguration,
+    journalDirectory,
+    now: NOW,
+    observerCatchUp: {
+      maximumPageEntries: 4,
+      maximumBackfillSpan: 8,
+      maximumMembersPerMomentum: 4,
+    },
+    originalPayment,
+    selection: selection(),
+    serviceDatabasePath: join(context.directory, 'service.sqlite'),
+    substitutePayment,
+  });
+  const committed = await binding.message;
+  assert.deepEqual(committed, {
+    ipcVersion: 1,
+    type: 'BOUND_COMMITTED',
+    exactPaymentRetained: true,
+    journalAbsent: true,
+    sqlitePrivate: true,
+    substituteRejected: true,
+  });
+  assert.equal(binding.child.exitCode, null);
+  assert.equal(binding.child.signalCode, null);
+  assert.equal(binding.child.kill('SIGKILL'), true);
+  assert.deepEqual(await binding.exit, {
+    code: null,
+    signal: 'SIGKILL',
+    spawnFailed: false,
+  });
+
+  recovery = startBridgeChild('recover', 'RECOVERY_COMPLETE', {
+    directory: context.directory,
+    intakeConfiguration: context.intakeConfiguration,
+    journalDirectory,
+    originalPayment,
+    paymentRequired,
+    selection: selection(),
+    substitutePayment,
+    unboundSelection,
+  });
+  const recovered = await recovery.message;
+  assert.deepEqual(recovered, {
+    ipcVersion: 1,
+    type: 'RECOVERY_COMPLETE',
+    durableBeforePublication: true,
+    evidenceState: EVIDENCE_STATES.MOMENTUM_INCLUDED,
+    exactPaymentRetained: true,
+    exactPaymentPublished: true,
+    journalPrivate: true,
+    journalRecords: 1,
+    lookupOnlyOriginal: true,
+    publicationCount: 1,
+    status: 'INCLUDED',
+    substitutePublished: false,
+    unboundRecoveryRejected: true,
+    unboundSettleRejected: true,
+  });
+  assert.deepEqual(await recovery.exit, {
+    code: 0,
+    signal: null,
+    spawnFailed: false,
+  });
 });
 
 test('database open rejects marker and row-envelope combinations without repairing either', async t => {
