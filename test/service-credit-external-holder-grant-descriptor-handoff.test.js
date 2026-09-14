@@ -54,6 +54,7 @@ function fixture(overrides = {}) {
   const origin = overrides.origin ?? ORIGIN;
   const state = {
     now: overrides.now ?? NOW,
+    nowReads: 0,
     phase: overrides.phase ?? 'ACTIVE',
     descriptorReads: 0,
     reenter: overrides.reenter ?? null,
@@ -76,7 +77,10 @@ function fixture(overrides = {}) {
       return ownerDescriptor;
     },
   );
-  const now = Object.freeze(() => state.now);
+  const now = Object.freeze(() => {
+    state.nowReads += 1;
+    return state.now;
+  });
   const handoff = createServiceCreditExternalHolderGrantDescriptorHandoff({
     origin,
     selection,
@@ -374,6 +378,28 @@ test('expiry burns the exact challenge without a privileged read or retry', () =
   const next = context.handoff.issueChallenge();
   assert.notEqual(next.challenge, challenge.challenge);
   context.handoff.close();
+});
+
+test('expiry reached by the trusted owner read discloses nothing and burns the challenge', () => {
+  const context = fixture();
+  const challenge = context.handoff.issueChallenge();
+  const redemption = signedRedemption(challenge, context);
+  let nowReadsInsideOwner = null;
+  context.state.reenter = () => {
+    nowReadsInsideOwner = context.state.nowReads;
+    context.state.now = challenge.expiresAtMs;
+  };
+  let disclosed;
+
+  assertUnavailable(() => { disclosed = context.handoff.redeem(redemption); });
+  assert.equal(disclosed, undefined);
+  assert.equal(context.state.descriptorReads, 1);
+  assert.notEqual(nowReadsInsideOwner, null);
+  assert.equal(context.state.nowReads > nowReadsInsideOwner, true);
+  const nowReadsAfterRejection = context.state.nowReads;
+  assertUnavailable(() => context.handoff.redeem(redemption));
+  assert.equal(context.state.descriptorReads, 1);
+  assert.equal(context.state.nowReads, nowReadsAfterRejection);
 });
 
 test('concurrent issue preserves the pending challenge and concurrent redeem has one winner', async () => {

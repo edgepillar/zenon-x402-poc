@@ -1,9 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { fork } from 'node:child_process';
 import { createHash, generateKeyPairSync, sign } from 'node:crypto';
 import { chmodSync, mkdtempSync, readFileSync, realpathSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import {
   createZenonDurableHttpComposition,
@@ -48,6 +50,11 @@ const EMPTY_BODY_DIGEST = `sha256:${createHash('sha256').update(Buffer.alloc(0))
 const EXTERNAL_HANDOFF_ORIGIN = 'https://service.example';
 const EXTERNAL_HANDOFF_UNAVAILABLE =
   'SERVICE_CREDIT_EXTERNAL_HOLDER_GRANT_DESCRIPTOR_HANDOFF_UNAVAILABLE';
+const EXTERNAL_HANDOFF_CHILD_PATH = fileURLToPath(new URL(
+  './fixtures/service-credit-external-holder-grant-descriptor-handoff-child.js',
+  import.meta.url,
+));
+const EXTERNAL_HANDOFF_CHILD_TIMEOUT_MS = 10_000;
 const EXECUTION = Object.freeze({
   ledgerId: 'ledger.zenon.runtime',
   policy: Object.freeze({
@@ -466,6 +473,22 @@ function expectExternalHandoffUnavailable(operation) {
   });
 }
 
+function externalRedemption(challenge, fixedSelection, signingKeys = CAPABILITY_KEYS) {
+  return {
+    challenge,
+    publicKey: signingKeys.publicKey,
+    signature: sign(
+      null,
+      createServiceCreditExternalHolderGrantDescriptorSigningBytes({
+        ...challenge,
+        origin: EXTERNAL_HANDOFF_ORIGIN,
+        selection: fixedSelection,
+      }),
+      signingKeys.privateKey,
+    ).toString('base64url'),
+  };
+}
+
 function externalHandoff(owner, fixedSelection, signingKeys = CAPABILITY_KEYS) {
   let ownerSelectionReads = 0;
   const handoff = createServiceCreditExternalHolderGrantDescriptorHandoff({
@@ -480,21 +503,170 @@ function externalHandoff(owner, fixedSelection, signingKeys = CAPABILITY_KEYS) {
   });
   const redeem = () => {
     const challenge = handoff.issueChallenge();
-    return handoff.redeem({
-      challenge,
-      publicKey: signingKeys.publicKey,
-      signature: sign(
-        null,
-        createServiceCreditExternalHolderGrantDescriptorSigningBytes({
-          ...challenge,
-          origin: EXTERNAL_HANDOFF_ORIGIN,
-          selection: fixedSelection,
-        }),
-        signingKeys.privateKey,
-      ).toString('base64url'),
-    });
+    return handoff.redeem(externalRedemption(challenge, fixedSelection, signingKeys));
   };
   return Object.freeze({ handoff, ownerSelectionReads: () => ownerSelectionReads, redeem });
+}
+
+function externalHandoffChildFailure(code) {
+  const error = new Error(code);
+  error.stack = `Error: ${code}`;
+  return error;
+}
+
+function startExternalHandoffOwnerChild(t, context, fixedSelection) {
+  const child = fork(EXTERNAL_HANDOFF_CHILD_PATH, [], {
+    cwd: process.cwd(),
+    env: {},
+    execArgv: [],
+    serialization: 'json',
+    stdio: ['ignore', 'ignore', 'ignore', 'ipc'],
+  });
+  let inFlight = false;
+  let exited = false;
+  const ipcEvents = [];
+  child.on('message', response => {
+    ipcEvents.push({
+      ipcVersion: response?.ipcVersion,
+      type: response?.type,
+      hasDescriptor: response !== null
+        && typeof response === 'object'
+        && Object.hasOwn(response, 'descriptor'),
+    });
+  });
+  const exit = new Promise(resolve => {
+    let settled = false;
+    const finish = result => {
+      if (settled) return;
+      settled = true;
+      exited = true;
+      resolve(result);
+    };
+    child.once('error', () => finish({ code: null, signal: null, spawnFailed: true }));
+    child.once('exit', (code, signal) => finish({ code, signal, spawnFailed: false }));
+  });
+  const close = new Promise(resolve => { child.once('close', resolve); });
+
+  function request(message, expectedTypes) {
+    if (inFlight) return Promise.reject(externalHandoffChildFailure('CHILD_REQUEST_BUSY'));
+    inFlight = true;
+    return new Promise((resolve, reject) => {
+      let settled = false;
+      const timer = setTimeout(() => {
+        if (child.exitCode === null && child.signalCode === null) child.kill('SIGKILL');
+        finish(reject, externalHandoffChildFailure('CHILD_REQUEST_TIMEOUT'));
+      }, EXTERNAL_HANDOFF_CHILD_TIMEOUT_MS);
+      const cleanup = () => {
+        clearTimeout(timer);
+        child.off('error', onError);
+        child.off('exit', onExit);
+        child.off('message', onMessage);
+      };
+      const finish = (complete, value) => {
+        if (settled) return;
+        settled = true;
+        inFlight = false;
+        cleanup();
+        complete(value);
+      };
+      const onError = () => finish(reject, externalHandoffChildFailure('CHILD_SPAWN_FAILED'));
+      const onExit = () => finish(reject, externalHandoffChildFailure('CHILD_EXITED_EARLY'));
+      const onMessage = response => {
+        if (
+          response?.ipcVersion !== 1
+          || !expectedTypes.includes(response.type)
+        ) {
+          finish(reject, externalHandoffChildFailure('CHILD_RESPONSE_INVALID'));
+          return;
+        }
+        finish(resolve, response);
+      };
+      child.once('error', onError);
+      child.once('exit', onExit);
+      child.once('message', onMessage);
+      try {
+        child.send(message, error => {
+          if (error) finish(reject, externalHandoffChildFailure('CHILD_SEND_FAILED'));
+        });
+      } catch {
+        finish(reject, externalHandoffChildFailure('CHILD_SEND_FAILED'));
+      }
+    });
+  }
+
+  function waitForExit() {
+    return new Promise((resolve, reject) => {
+      const timer = setTimeout(() => {
+        if (child.exitCode === null && child.signalCode === null) child.kill('SIGKILL');
+        reject(externalHandoffChildFailure('CHILD_EXIT_TIMEOUT'));
+      }, EXTERNAL_HANDOFF_CHILD_TIMEOUT_MS);
+      exit.then(result => {
+        clearTimeout(timer);
+        resolve(result);
+      });
+    });
+  }
+
+  function waitForClose() {
+    return new Promise((resolve, reject) => {
+      const timer = setTimeout(() => {
+        if (child.exitCode === null && child.signalCode === null) child.kill('SIGKILL');
+        reject(externalHandoffChildFailure('CHILD_CLOSE_TIMEOUT'));
+      }, EXTERNAL_HANDOFF_CHILD_TIMEOUT_MS);
+      close.then(() => {
+        clearTimeout(timer);
+        resolve();
+      });
+    });
+  }
+
+  t.after(async () => {
+    if (exited) return;
+    try { if (child.connected) child.disconnect(); } catch {}
+    try {
+      if (child.exitCode === null && child.signalCode === null) child.kill('SIGKILL');
+    } catch {}
+    try { await waitForExit(); } catch {}
+  });
+
+  const active = request({
+    ipcVersion: 1,
+    type: 'START',
+    directory: context.directory,
+    observerRecordKey: context.observerRecordKey,
+    authorityRecord: AUTHORITY_RECORD_TEXT,
+    activationInput: activationInput(context),
+    fundingTerms: fundingTerms({ offer: offer() }),
+    durableExecution: structuredClone(EXECUTION),
+    selection: fixedSelection,
+  }, ['ACTIVE']);
+
+  return Object.freeze({
+    active,
+    issue: () => request({ ipcVersion: 1, type: 'ISSUE' }, ['CHALLENGE']),
+    redeem: redemption => request(
+      { ipcVersion: 1, type: 'REDEEM', redemption },
+      ['REDEEMED', 'UNAVAILABLE'],
+    ),
+    async killWithSigkill() {
+      if (
+        inFlight
+        || exited
+        || child.exitCode !== null
+        || child.signalCode !== null
+      ) throw externalHandoffChildFailure('CHILD_KILL_INVALID');
+      let killed = false;
+      try { killed = child.kill('SIGKILL'); } catch {}
+      if (!killed) throw externalHandoffChildFailure('CHILD_KILL_FAILED');
+      const exitResult = await waitForExit();
+      await waitForClose();
+      return { exit: exitResult, ipcEvents: structuredClone(ipcEvents) };
+    },
+    async stop() {
+      const response = await request({ ipcVersion: 1, type: 'STOP' }, ['STOPPED']);
+      return { response, exit: await waitForExit() };
+    },
+  });
 }
 
 test('import is inert and production source has no active or private-key capability', () => {
@@ -689,6 +861,97 @@ test('external handoff discloses only for the exact ACTIVE owner selection', asy
     assert.equal(exact.ownerSelectionReads(), 1);
     exact.handoff.close();
   });
+});
+
+test('a pending handoff challenge cannot cross a real durable owner process restart', async t => {
+  const context = fixture(t, { createOwner: false });
+  const input = activationInput(context);
+  const exactSelection = {
+    offerId: input.intent.offerId,
+    offerVersion: input.intent.offerVersion,
+    holderId: input.intent.holderId,
+    capabilityCommitment: input.intent.capabilityCommitment,
+  };
+  assert.deepEqual(Reflect.ownKeys(exactSelection), [
+    'offerId', 'offerVersion', 'holderId', 'capabilityCommitment',
+  ]);
+
+  const childSource = readFileSync(EXTERNAL_HANDOFF_CHILD_PATH, 'utf8');
+  assert.equal(
+    childSource.includes(
+      'return owner.getActiveGrantDescriptorForSelection(requestedSelection);',
+    ),
+    true,
+  );
+  for (const forbidden of ['node:crypto', 'privateKey', 'generateKeyPair', 'sign(', 'process.env']) {
+    assert.equal(childSource.includes(forbidden), false);
+  }
+
+  context.observerStore.close();
+  context.observerStore = null;
+  context.serviceStore.close();
+  context.serviceStore = null;
+
+  const first = startExternalHandoffOwnerChild(t, context, exactSelection);
+  assert.deepEqual(await first.active, { ipcVersion: 1, type: 'ACTIVE' });
+  const pending = await first.issue();
+  assert.deepEqual(Reflect.ownKeys(pending), ['ipcVersion', 'type', 'challenge']);
+  const staleRedemption = externalRedemption(pending.challenge, exactSelection);
+  assert.deepEqual(await first.killWithSigkill(), {
+    exit: { code: null, signal: 'SIGKILL', spawnFailed: false },
+    ipcEvents: [
+      { ipcVersion: 1, type: 'ACTIVE', hasDescriptor: false },
+      { ipcVersion: 1, type: 'CHALLENGE', hasDescriptor: false },
+    ],
+  });
+
+  const reopened = startExternalHandoffOwnerChild(t, context, exactSelection);
+  assert.deepEqual(await reopened.active, { ipcVersion: 1, type: 'ACTIVE' });
+  assert.deepEqual(await reopened.redeem(staleRedemption), {
+    ipcVersion: 1,
+    type: 'UNAVAILABLE',
+    ownerReads: 0,
+  });
+
+  const fresh = await reopened.issue();
+  assert.notEqual(fresh.challenge.challenge, pending.challenge.challenge);
+  const redeemed = await reopened.redeem(externalRedemption(
+    fresh.challenge,
+    exactSelection,
+  ));
+  assert.deepEqual(Reflect.ownKeys(redeemed), [
+    'ipcVersion', 'type', 'descriptor', 'ownerReads',
+  ]);
+  assert.equal(redeemed.type, 'REDEEMED');
+  assert.equal(redeemed.ownerReads, 1);
+  assert.deepEqual(Reflect.ownKeys(redeemed.descriptor), [
+    'grantId', 'capabilityCommitment',
+  ]);
+  assert.equal(
+    redeemed.descriptor.capabilityCommitment,
+    exactSelection.capabilityCommitment,
+  );
+  assert.deepEqual(await reopened.stop(), {
+    response: { ipcVersion: 1, type: 'STOPPED' },
+    exit: { code: 0, signal: null, spawnFailed: false },
+  });
+
+  context.serviceStore = ServiceCreditSqliteStore.openExisting(context.serviceOpenConfiguration);
+  const committed = context.serviceStore.getGrant(redeemed.descriptor.grantId);
+  assert.equal(committed.lifecycle, 'ACTIVE');
+  const committedBinding = {
+    offerId: committed.offerId,
+    offerVersion: committed.offerVersion,
+    holderId: committed.holderId,
+    capabilityCommitment: committed.capabilityCommitment,
+  };
+  assert.deepEqual(committedBinding, exactSelection);
+  assert.deepEqual(redeemed.descriptor, {
+    grantId: committed.grantId,
+    capabilityCommitment: committedBinding.capabilityCommitment,
+  });
+  context.serviceStore.close();
+  context.serviceStore = null;
 });
 
 test('handle and active grant descriptor are unavailable outside ACTIVE', async t => {
