@@ -54,7 +54,7 @@ const CONFIGURATION_KEYS = OBJECT_FREEZE([
   'selection',
   'challengeLifetimeMs',
   'now',
-  'getActiveGrantDescriptor',
+  'getActiveGrantDescriptorForSelection',
 ]);
 const SELECTION_KEYS = OBJECT_FREEZE([
   'offerId',
@@ -344,8 +344,10 @@ export function createServiceCreditExternalHolderGrantDescriptorSigningBytes(inp
  * nor activates the privileged owner. This pure listenerless protocol alone
  * does not provide authenticated HTTPS ingress or evidence of live activation.
  * A future unauthenticated public challenge route still needs rate limits and
- * TLS. The supplied getActiveGrantDescriptor callback is a trusted privileged
- * owner dependency, not independent proof of committed-store state.
+ * TLS. The supplied getActiveGrantDescriptorForSelection callback is a
+ * selection-aware trusted privileged owner dependency, not independent proof
+ * of committed-store state. It must compare the complete selection with the
+ * owner-validated committed ACTIVE grant binding before returning a descriptor.
  */
 export function createServiceCreditExternalHolderGrantDescriptorHandoff(options) {
   if (arguments.length !== 1) fail(CODE.invalidConfiguration);
@@ -361,12 +363,13 @@ export function createServiceCreditExternalHolderGrantDescriptorHandoff(options)
     || configuration.challengeLifetimeMs
       > SERVICE_CREDIT_EXTERNAL_HOLDER_GRANT_DESCRIPTOR_MAX_CHALLENGE_LIFETIME_MS
     || !safeCallable(configuration.now)
-    || !safeCallable(configuration.getActiveGrantDescriptor)
+    || !safeCallable(configuration.getActiveGrantDescriptorForSelection)
   ) fail(CODE.invalidConfiguration);
 
   const challengeLifetimeMs = configuration.challengeLifetimeMs;
   const now = configuration.now;
-  const getActiveGrantDescriptor = configuration.getActiveGrantDescriptor;
+  const getActiveGrantDescriptorForSelection =
+    configuration.getActiveGrantDescriptorForSelection;
   let closed = false;
   let operationActive = false;
   let pending = null;
@@ -471,7 +474,7 @@ export function createServiceCreditExternalHolderGrantDescriptorHandoff(options)
       if (closed || !live(expected, readNow())) unavailable();
 
       const descriptor = exactDataObject(
-        REFLECT_APPLY(getActiveGrantDescriptor, undefined, []),
+        REFLECT_APPLY(getActiveGrantDescriptorForSelection, undefined, [selection]),
         DESCRIPTOR_KEYS,
       );
       if (

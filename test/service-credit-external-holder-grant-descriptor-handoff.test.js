@@ -50,6 +50,7 @@ function selectedHolder(publicKey) {
 function fixture(overrides = {}) {
   const keys = overrides.keys ?? keyMaterial();
   const selection = overrides.selection ?? selectedHolder(keys.publicKey);
+  const ownerSelection = Object.freeze({ ...selection });
   const origin = overrides.origin ?? ORIGIN;
   const state = {
     now: overrides.now ?? NOW,
@@ -61,19 +62,27 @@ function fixture(overrides = {}) {
     grantId: GRANT_ID,
     capabilityCommitment: selection.capabilityCommitment,
   });
-  const getActiveGrantDescriptor = Object.freeze(function getActiveGrantDescriptor() {
-    state.descriptorReads += 1;
-    if (state.reenter !== null) state.reenter();
-    if (state.phase !== 'ACTIVE') throw new Error('synthetic-private-detail');
-    return ownerDescriptor;
-  });
+  const getActiveGrantDescriptorForSelection = Object.freeze(
+    function getActiveGrantDescriptorForSelection(requestedSelection) {
+      state.descriptorReads += 1;
+      if (state.reenter !== null) state.reenter();
+      if (
+        state.phase !== 'ACTIVE'
+        || requestedSelection.offerId !== ownerSelection.offerId
+        || requestedSelection.offerVersion !== ownerSelection.offerVersion
+        || requestedSelection.holderId !== ownerSelection.holderId
+        || requestedSelection.capabilityCommitment !== ownerSelection.capabilityCommitment
+      ) throw new Error('synthetic-private-detail');
+      return ownerDescriptor;
+    },
+  );
   const now = Object.freeze(() => state.now);
   const handoff = createServiceCreditExternalHolderGrantDescriptorHandoff({
     origin,
     selection,
     challengeLifetimeMs: overrides.challengeLifetimeMs ?? LIFETIME_MS,
     now,
-    getActiveGrantDescriptor,
+    getActiveGrantDescriptorForSelection,
   });
   return { handoff, keys, origin, ownerDescriptor, selection, state };
 }
@@ -151,7 +160,11 @@ test('the opt-in module is inert, listenerless, and captures detached fixed inpu
     true,
   );
   assert.equal(
-    source.includes('trusted privileged\n * owner dependency, not independent proof of committed-store state'),
+    source.includes('selection-aware trusted privileged owner dependency, not independent proof'),
+    true,
+  );
+  assert.equal(
+    source.includes('owner-validated committed ACTIVE grant binding'),
     true,
   );
 
@@ -169,8 +182,9 @@ test('the opt-in module is inert, listenerless, and captures detached fixed inpu
     selection,
     challengeLifetimeMs: LIFETIME_MS,
     now: Object.freeze(() => { nowCalls += 1; return NOW; }),
-    getActiveGrantDescriptor: Object.freeze(() => {
+    getActiveGrantDescriptorForSelection: Object.freeze(requestedSelection => {
       descriptorReads += 1;
+      assert.deepEqual(requestedSelection, fixedSelection);
       return ownerDescriptor;
     }),
   });
@@ -237,6 +251,38 @@ test('an exact holder proof discloses only one new frozen active descriptor', ()
   assert.notEqual(descriptor, context.ownerDescriptor);
   assert.equal(Object.isFrozen(descriptor), true);
   assert.equal(context.state.descriptorReads, 1);
+});
+
+test('signing bytes match an independently assembled fixed v1 known answer', () => {
+  const challenge = 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA';
+  const capabilityCommitment = `sha256:${'1'.repeat(64)}`;
+  const input = {
+    handoffVersion: 1,
+    origin: 'https://service.example',
+    selection: {
+      offerId: 'offer.external-holder.reference',
+      offerVersion: 1,
+      holderId: 'holder.external.reference',
+      capabilityCommitment,
+    },
+    challenge,
+    expiresAtMs: 2_000_000_001_000,
+  };
+  const expected = Buffer.from(
+    'zenon-x402-service-credit-external-holder-grant-descriptor-handoff-v1\0'
+      + '{"challenge":"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",'
+      + '"expiresAtMs":2000000001000,"handoffVersion":1,'
+      + '"origin":"https://service.example","selection":{'
+      + `"capabilityCommitment":"${capabilityCommitment}",`
+      + '"holderId":"holder.external.reference",'
+      + '"offerId":"offer.external-holder.reference","offerVersion":1}}',
+    'utf8',
+  );
+
+  assert.deepEqual(
+    createServiceCreditExternalHolderGrantDescriptorSigningBytes(input),
+    expected,
+  );
 });
 
 test('a successful challenge is one-use and the next challenge is fresh', () => {
@@ -453,7 +499,7 @@ test('construction and signing use strict bounded canonical schemas', () => {
     selection,
     challengeLifetimeMs: LIFETIME_MS,
     now: Object.freeze(() => NOW),
-    getActiveGrantDescriptor: Object.freeze(() => Object.freeze({
+    getActiveGrantDescriptorForSelection: Object.freeze(() => Object.freeze({
       grantId: GRANT_ID,
       capabilityCommitment: selection.capabilityCommitment,
     })),

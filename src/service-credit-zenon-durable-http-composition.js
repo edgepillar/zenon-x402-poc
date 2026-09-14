@@ -89,6 +89,12 @@ const ACTIVE_GRANT_BINDING_KEYS = OBJECT_FREEZE([
   'totalUnits',
   'expiresAt',
 ]);
+const ACTIVE_GRANT_SELECTION_KEYS = OBJECT_FREEZE([
+  'offerId',
+  'offerVersion',
+  'holderId',
+  'capabilityCommitment',
+]);
 
 const PHASE = OBJECT_FREEZE({
   NEW: 'NEW',
@@ -670,7 +676,7 @@ export function createZenonDurableHttpComposition(options) {
     activationCompleted: false,
     terminalCode: null,
     session: null,
-    activeGrantDescriptor: null,
+    activeGrantBinding: null,
     closePromise: null,
     closeCapability: null,
     callbackActive: false,
@@ -680,7 +686,7 @@ export function createZenonDurableHttpComposition(options) {
     assertStores(serviceStore, observerStore, code);
   }
 
-  function captureActiveGrantDescriptor(activationResult, fixedIntent) {
+  function captureActiveGrantBinding(activationResult, fixedIntent) {
     try {
       const capturedResult = exactDataObject(
         activationResult,
@@ -735,6 +741,9 @@ export function createZenonDurableHttpComposition(options) {
       ) fail(CODE.activatedUnavailable);
       return OBJECT_FREEZE({
         grantId: committedGrant.grantId,
+        offerId: committedGrant.offerId,
+        offerVersion: committedGrant.offerVersion,
+        holderId: committedGrant.holderId,
         capabilityCommitment: committedGrant.capabilityCommitment,
       });
     } catch {
@@ -812,7 +821,7 @@ export function createZenonDurableHttpComposition(options) {
   function settleStartupFailure(code) {
     state.startupPending = false;
     state.terminalCode = code;
-    state.activeGrantDescriptor = null;
+    state.activeGrantBinding = null;
     if (state.phase !== PHASE.CLOSING) {
       state.phase = terminalPhase(code);
     }
@@ -873,7 +882,7 @@ export function createZenonDurableHttpComposition(options) {
       activationResult => {
         state.activationCompleted = true;
         try {
-          const activeGrantDescriptor = captureActiveGrantDescriptor(
+          const activeGrantBinding = captureActiveGrantBinding(
             activationResult,
             captured.intent,
           );
@@ -884,7 +893,7 @@ export function createZenonDurableHttpComposition(options) {
             finishClose();
             return;
           }
-          state.activeGrantDescriptor = activeGrantDescriptor;
+          state.activeGrantBinding = activeGrantBinding;
           state.phase = PHASE.ACTIVE;
           capability.resolve(ACTIVE_RESULT);
         } catch (error) {
@@ -925,11 +934,34 @@ export function createZenonDurableHttpComposition(options) {
       if (
         args.length !== 0
         || state.phase !== PHASE.ACTIVE
-        || state.activeGrantDescriptor === null
+        || state.activeGrantBinding === null
       ) fail(CODE.activatedUnavailable);
       return OBJECT_FREEZE({
-        grantId: state.activeGrantDescriptor.grantId,
-        capabilityCommitment: state.activeGrantDescriptor.capabilityCommitment,
+        grantId: state.activeGrantBinding.grantId,
+        capabilityCommitment: state.activeGrantBinding.capabilityCommitment,
+      });
+    },
+  );
+
+  const getActiveGrantDescriptorForSelection = OBJECT_FREEZE(
+    function getActiveGrantDescriptorForSelection(selection, ...extra) {
+      if (
+        extra.length !== 0
+        || state.phase !== PHASE.ACTIVE
+        || state.activeGrantBinding === null
+      ) fail(CODE.activatedUnavailable);
+      const captured = exactDataObject(
+        selection,
+        ACTIVE_GRANT_SELECTION_KEYS,
+        CODE.activatedUnavailable,
+      );
+      for (let index = 0; index < ACTIVE_GRANT_SELECTION_KEYS.length; index += 1) {
+        const key = ACTIVE_GRANT_SELECTION_KEYS[index];
+        if (captured[key] !== state.activeGrantBinding[key]) fail(CODE.activatedUnavailable);
+      }
+      return OBJECT_FREEZE({
+        grantId: state.activeGrantBinding.grantId,
+        capabilityCommitment: state.activeGrantBinding.capabilityCommitment,
       });
     },
   );
@@ -1004,7 +1036,7 @@ export function createZenonDurableHttpComposition(options) {
     if (args.length !== 0) return nativeRejected(failure(CODE.invalidInput));
     if (state.callbackActive) {
       state.phase = PHASE.CLOSING;
-      state.activeGrantDescriptor = null;
+      state.activeGrantBinding = null;
       return nativeRejected(failure(CODE.closeFailed));
     }
     if (state.phase === PHASE.CLOSED) return state.closePromise ?? nativeResolved(undefined);
@@ -1021,7 +1053,7 @@ export function createZenonDurableHttpComposition(options) {
     state.closeCapability = capability;
     state.closePromise = capability.promise;
     state.phase = PHASE.CLOSING;
-    state.activeGrantDescriptor = null;
+    state.activeGrantBinding = null;
     finishClose();
     return capability.promise;
   }
@@ -1030,6 +1062,7 @@ export function createZenonDurableHttpComposition(options) {
     start: OBJECT_FREEZE(start),
     handle,
     getActiveGrantDescriptor,
+    getActiveGrantDescriptorForSelection,
     close: OBJECT_FREEZE(close),
   });
 }
