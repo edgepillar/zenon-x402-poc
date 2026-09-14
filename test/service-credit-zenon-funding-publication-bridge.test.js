@@ -3,6 +3,8 @@ import { fork } from 'node:child_process';
 import { createHash, generateKeyPairSync } from 'node:crypto';
 import {
   chmodSync,
+  existsSync,
+  lstatSync,
   mkdtempSync,
   readFileSync,
   realpathSync,
@@ -100,6 +102,14 @@ function safeErrorCode(error) {
   } catch {
     return undefined;
   }
+}
+
+function assertPrivateMode(path, expectedMode, expectedType) {
+  const stat = lstatSync(path, { bigint: true });
+  assert.equal(stat.isSymbolicLink(), false);
+  assert.equal(expectedType === 'directory' ? stat.isDirectory() : stat.isFile(), true);
+  assert.equal(stat.mode & 0o777n, expectedMode);
+  assert.equal(stat.mode & 0o7000n, 0n);
 }
 
 async function assertRejectsCode(promise, expected) {
@@ -618,6 +628,51 @@ function startBridgeChild(mode, expectedType, input) {
     child.once('error', () => finish({ code: null, signal: null, spawnFailed: true }));
     child.once('exit', (code, signal) => finish({ code, signal, spawnFailed: false }));
   });
+  if (expectedType === null) {
+    const exitOnly = new Promise((resolve, reject) => {
+      let settled = false;
+      let timeout;
+      const messages = [];
+      let onError;
+      let onExit;
+      let onMessage;
+      const cleanup = () => {
+        clearTimeout(timeout);
+        child.off('error', onError);
+        child.off('exit', onExit);
+        child.off('message', onMessage);
+      };
+      const finish = (complete, value) => {
+        if (settled) return;
+        settled = true;
+        cleanup();
+        complete(value);
+      };
+      onError = () => {
+        finish(reject, codedTestFailure('BRIDGE_CHILD_SPAWN_FAILED'));
+      };
+      onExit = (code, signal) => {
+        finish(resolve, {
+          code,
+          signal,
+          spawnFailed: false,
+          messages: structuredClone(messages),
+        });
+      };
+      onMessage = value => { messages.push(value); };
+      timeout = setTimeout(() => {
+        if (child.exitCode === null && child.signalCode === null) child.kill('SIGKILL');
+        finish(reject, codedTestFailure('BRIDGE_CHILD_EXIT_TIMEOUT'));
+      }, CHILD_MESSAGE_TIMEOUT_MS);
+      child.once('error', onError);
+      child.once('exit', onExit);
+      child.on('message', onMessage);
+      child.send({ ipcVersion: 1, ...input }, error => {
+        if (error) finish(reject, codedTestFailure('BRIDGE_CHILD_SEND_FAILED'));
+      });
+    });
+    return { child, exit, exitOnly };
+  }
   const message = new Promise((resolve, reject) => {
     let settled = false;
     let timeout;
@@ -735,6 +790,178 @@ test('a pre-COMMIT bind failure rolls back both BOUND and its database marker', 
   const committed = readIntakeEnvelope(context);
   assert.equal(committed.userVersion, RETAINED_PAYMENT_DATABASE_USER_VERSION);
   assert.equal(committed.envelope.schemaVersion, 2);
+});
+
+test('SIGKILL inside the BOUND afterCommit hook retains only that payment for recovery', async t => {
+  let binding;
+  let recovery;
+  t.after(async () => {
+    const runs = [binding, recovery].filter(Boolean);
+    for (const run of runs) {
+      if (run.child.exitCode === null && run.child.signalCode === null) {
+        run.child.kill('SIGKILL');
+      }
+    }
+    await Promise.all(runs.map(run => run.exit));
+  });
+  const context = fixture(t);
+  const owner = context.owner();
+  const paymentRequired = issue(owner);
+  const originalPayment = syntheticSignedPayment(paymentRequired, 1);
+  const substitutePayment = syntheticSignedPayment(paymentRequired, 2);
+  const unboundSelection = selection(OTHER_CAPABILITY_PUBLIC_KEY);
+  owner.issue({ selection: unboundSelection, resourceUrl: RESOURCE_URL });
+  const originalPreflight = await preflightZenonPayment(
+    originalPayment,
+    paymentRequired.accepts[0],
+    paymentRequired,
+  );
+  const substitutePreflight = await preflightZenonPayment(
+    substitutePayment,
+    paymentRequired.accepts[0],
+    paymentRequired,
+  );
+  assert.notEqual(originalPreflight.transactionHash, substitutePreflight.transactionHash);
+
+  context.intakeStore.close();
+  context.serviceStore.close();
+  const journalDirectory = join(context.directory, 'after-commit-kill-journal');
+  binding = startBridgeChild('bind-kill-after-commit', null, {
+    authorityRecord: AUTHORITY_RECORD,
+    directory: context.directory,
+    intakeConfiguration: context.intakeConfiguration,
+    journalDirectory,
+    now: NOW,
+    observerCatchUp: {
+      maximumPageEntries: 4,
+      maximumBackfillSpan: 8,
+      maximumMembersPerMomentum: 4,
+    },
+    originalPayment,
+    selection: selection(),
+    serviceDatabasePath: join(context.directory, 'service.sqlite'),
+    unboundSelection,
+  });
+  assert.deepEqual(await binding.exitOnly, {
+    code: null,
+    signal: 'SIGKILL',
+    spawnFailed: false,
+    messages: [],
+  });
+
+  const onDisk = readIntakeEnvelope(context);
+  assert.equal(onDisk.userVersion, RETAINED_PAYMENT_DATABASE_USER_VERSION);
+  assert.equal(onDisk.envelope.schemaVersion, 2);
+  assert.deepEqual(onDisk.envelope.binding.publication.paymentPayload, originalPayment);
+  assert.notDeepEqual(onDisk.envelope.binding.publication.paymentPayload, substitutePayment);
+  assert.equal(onDisk.envelope.binding.payloadDigest, retainedPayloadDigest(originalPayment));
+  const verificationStore = openZenonFundingIntakeSqliteStore(context.intakeConfiguration);
+  let retained;
+  try {
+    const originalSelectionKey = deriveZenonFundingIntakeSelectionKey({
+      ledgerDomain: verificationStore.ledgerDomain,
+      selection: selection(),
+    });
+    const unrelatedSelectionKey = deriveZenonFundingIntakeSelectionKey({
+      ledgerDomain: verificationStore.ledgerDomain,
+      selection: unboundSelection,
+    });
+    retained = verificationStore.loadBySelectionKey(originalSelectionKey);
+    const unrelated = verificationStore.loadBySelectionKey(unrelatedSelectionKey);
+    const bound = verificationStore.loadBound();
+    assert.equal(retained.status, 'BOUND');
+    assert.deepEqual(retained.binding.publication.paymentPayload, originalPayment);
+    assert.notDeepEqual(retained.binding.publication.paymentPayload, substitutePayment);
+    assert.equal(bound.length, 1);
+    assert.equal(bound[0].issue.selectionKey, originalSelectionKey);
+    assert.equal(unrelated.status, 'ISSUED');
+    assert.equal(unrelated.binding, null);
+  } finally {
+    verificationStore.close();
+  }
+  assert.equal(existsSync(join(context.directory, retained.binding.observerFileName)), false);
+  assert.equal(existsSync(journalDirectory), false);
+  assertPrivateMode(context.directory, 0o700n, 'directory');
+  assertPrivateMode(context.intakeConfiguration.databasePath, 0o600n, 'file');
+  assertPrivateMode(join(context.directory, 'service.sqlite'), 0o600n, 'file');
+  const serviceStoreAfterKill = ServiceCreditSqliteStore.openExisting({
+    databasePath: join(context.directory, 'service.sqlite'),
+    allowedRoot: context.directory,
+    deriveCost: () => 2,
+    now: () => NOW,
+  });
+  try {
+    assert.equal(serviceStoreAfterKill.load().state.grants.length, 0);
+  } finally {
+    serviceStoreAfterKill.close();
+  }
+
+  recovery = startBridgeChild('recover', 'RECOVERY_COMPLETE', {
+    directory: context.directory,
+    intakeConfiguration: context.intakeConfiguration,
+    journalDirectory,
+    originalPayment,
+    paymentRequired,
+    selection: selection(),
+    substitutePayment,
+    unboundSelection,
+  });
+  assert.deepEqual(await recovery.message, {
+    ipcVersion: 1,
+    type: 'RECOVERY_COMPLETE',
+    durableBeforePublication: true,
+    evidenceState: EVIDENCE_STATES.MOMENTUM_INCLUDED,
+    exactPaymentRetained: true,
+    exactPaymentPublished: true,
+    journalPrivate: true,
+    journalRecords: 1,
+    lookupOnlyOriginal: true,
+    publicationCount: 1,
+    status: 'INCLUDED',
+    substitutePublished: false,
+    unboundRecoveryRejected: true,
+    unboundSettleRejected: true,
+  });
+  assert.deepEqual(await recovery.exit, {
+    code: 0,
+    signal: null,
+    spawnFailed: false,
+  });
+
+  const recoveredJournal = new SettlementJournal({
+    directory: journalDirectory,
+    allowedRoot: context.directory,
+  });
+  const recoveredSnapshot = await recoveredJournal.load();
+  assert.equal(recoveredSnapshot.records.length, 1);
+  assert.equal(recoveredSnapshot.records[0].evidenceState, EVIDENCE_STATES.MOMENTUM_INCLUDED);
+  assert.equal(recoveredSnapshot.records[0].deliveryState, DELIVERY_STATES.NONE);
+  assert.deepEqual(
+    recoveredSnapshot.records[0].signedAccountBlock,
+    originalPayment.payload.transaction,
+  );
+  assert.notDeepEqual(
+    recoveredSnapshot.records[0].signedAccountBlock,
+    substitutePayment.payload.transaction,
+  );
+  assertPrivateMode(journalDirectory, 0o700n, 'directory');
+  assertPrivateMode(join(journalDirectory, 'settlement-journal.json'), 0o600n, 'file');
+  assertPrivateMode(
+    join(journalDirectory, '.settlement-journal.initialized'),
+    0o600n,
+    'file',
+  );
+  const serviceStoreAfterRecovery = ServiceCreditSqliteStore.openExisting({
+    databasePath: join(context.directory, 'service.sqlite'),
+    allowedRoot: context.directory,
+    deriveCost: () => 2,
+    now: () => NOW,
+  });
+  try {
+    assert.equal(serviceStoreAfterRecovery.load().state.grants.length, 0);
+  } finally {
+    serviceStoreAfterRecovery.close();
+  }
 });
 
 test('SIGKILL after a child commits BOUND reopens and publishes only that payment', async t => {
