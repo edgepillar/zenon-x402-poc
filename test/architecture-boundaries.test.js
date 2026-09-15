@@ -187,6 +187,7 @@ test('Zenon funding, signing, and external-holder handoff sources remain inactiv
     'service-credit-zenon-durable-http-composition.js',
     'service-credit-zenon-provider-signing-child-protocol.js',
     'service-credit-zenon-provider-signing-operation.js',
+    'service-credit-bounded-https-ingress-owner.js',
     'service-credit-zenon-funding-intake-sqlite-store.js',
     'service-credit-zenon-funding-intake.js',
     'service-credit-zenon-funding-intake-http.js',
@@ -239,6 +240,1184 @@ test('Zenon funding, signing, and external-holder handoff sources remain inactiv
       if (dependency.pathname.endsWith('.js')) pending.push(dependency.href);
     }
   }
+});
+
+test('bounded HTTPS owner is dormant and keeps TLS material and binding in one factory seam', () => {
+  const source = readFileSync(
+    new URL('../src/service-credit-bounded-https-ingress-owner.js', import.meta.url),
+    'utf8',
+  );
+  const compositionTest = readFileSync(
+    new URL('../test/service-credit-zenon-funding-composition.test.js', import.meta.url),
+    'utf8',
+  );
+  const readme = readFileSync(new URL('../README.md', import.meta.url), 'utf8');
+  const security = readFileSync(new URL('../SECURITY.md', import.meta.url), 'utf8');
+  const implementationPlan = readFileSync(
+    new URL('../docs/IMPLEMENTATION_PLAN.md', import.meta.url),
+    'utf8',
+  );
+  const packageText = readFileSync(new URL('../package.json', import.meta.url), 'utf8');
+
+  assert.doesNotMatch(source, /node:https|createServer|process\.env|console\.|WebSocket/);
+  assert.doesNotMatch(source, /remoteAddress|remotePort|x-forwarded|cf-connecting|authorization/iu);
+  assert.match(source, /minVersion: 'TLSv1\.3'/);
+  assert.match(source, /maxVersion: 'TLSv1\.3'/);
+  assert.match(source, /ALPNProtocols: OBJECT_FREEZE\(\['http\/1\.1'\]\)/);
+  assert.match(source, /requestCert: false/);
+  assert.match(source, /maxRequestsPerSocket: 1/);
+  assert.match(source, /joinDuplicateHeaders: false/);
+  assert.match(source, /rejectNonStandardBodyWrites: true/);
+  assert.match(source, /REFLECT_APPLY\(trustedFactory, undefined, \[serverOptions, callbacks\]\)/);
+  assert.match(source, /REFLECT_APPLY\(downstreamHandle, undefined, \[/);
+  for (const capture of [
+    'const SET_ADD = NATIVE_SET.prototype.add;',
+    'const SET_DELETE = NATIVE_SET.prototype.delete;',
+    'const SET_HAS = NATIVE_SET.prototype.has;',
+    'const SET_VALUES = NATIVE_SET.prototype.values;',
+    'const MAP_DELETE = NATIVE_MAP.prototype.delete;',
+    'const MAP_GET = NATIVE_MAP.prototype.get;',
+    'const MAP_HAS = NATIVE_MAP.prototype.has;',
+    'const MAP_SET = NATIVE_MAP.prototype.set;',
+    'const MAP_VALUES = NATIVE_MAP.prototype.values;',
+    'const WEAK_MAP_DELETE = NATIVE_WEAK_MAP.prototype.delete;',
+    'const WEAK_MAP_GET = NATIVE_WEAK_MAP.prototype.get;',
+    'const WEAK_MAP_SET = NATIVE_WEAK_MAP.prototype.set;',
+  ]) assert.equal(source.includes(capture), true);
+  assert.match(
+    source,
+    /const SET_SIZE_GETTER = REFLECT_APPLY\([\s\S]*?\[NATIVE_SET\.prototype, 'size'\],[\s\S]*?\)\.get;/,
+  );
+  assert.match(
+    source,
+    /const MAP_SIZE_GETTER = REFLECT_APPLY\([\s\S]*?\[NATIVE_MAP\.prototype, 'size'\],[\s\S]*?\)\.get;/,
+  );
+  for (const [helper, intrinsic] of [
+    ['setAdd', 'SET_ADD'],
+    ['setDelete', 'SET_DELETE'],
+    ['setHas', 'SET_HAS'],
+    ['setSize', 'SET_SIZE_GETTER'],
+    ['mapDelete', 'MAP_DELETE'],
+    ['mapGet', 'MAP_GET'],
+    ['mapHas', 'MAP_HAS'],
+    ['mapSet', 'MAP_SET'],
+    ['mapSize', 'MAP_SIZE_GETTER'],
+    ['weakMapDelete', 'WEAK_MAP_DELETE'],
+    ['weakMapGet', 'WEAK_MAP_GET'],
+    ['weakMapSet', 'WEAK_MAP_SET'],
+  ]) assert.match(
+    source,
+    new RegExp(`function ${helper}\\([\\s\\S]*?REFLECT_APPLY\\(${intrinsic},`),
+  );
+  const moduleOwnedCollections = [
+    'observed',
+    'names',
+    'allowedTargets',
+    'ownedTimers',
+    'trackedSockets',
+    'acceptedConnections',
+    'connectionAdmissions',
+    'pendingSecureAdmissions',
+    'socketCapabilities',
+    'seenSecureSockets',
+    'secureSockets',
+    'activeRequests',
+    'activeHandlers',
+    'downstreamOwnedRequests',
+  ].join('|');
+  assert.doesNotMatch(
+    source,
+    new RegExp(`\\b(?:${moduleOwnedCollections})\\.(?:add|delete|get|has|set|values)\\s*\\(`),
+  );
+  assert.doesNotMatch(source, /\.(?:add|delete|get|has|set|values)\s*\(/);
+  assert.doesNotMatch(
+    source,
+    new RegExp(`\\b(?:${moduleOwnedCollections})\\.size\\b`),
+  );
+  assert.doesNotMatch(
+    source,
+    new RegExp(`\\[\\.\\.\\.(?:${moduleOwnedCollections})\\]|\\bof (?:${moduleOwnedCollections})\\b`),
+  );
+  assert.equal(source.includes('new NATIVE_SET(requestTargets)'), false);
+  assert.match(
+    source,
+    /function snapshotSetValues\(collection\) \{[\s\S]*?REFLECT_APPLY\(SET_VALUES, collection, \[\]\)[\s\S]*?REFLECT_APPLY\(SET_ITERATOR_NEXT, iterator, \[\]\)/,
+  );
+  assert.match(
+    source,
+    /function snapshotMapValues\(collection\) \{[\s\S]*?REFLECT_APPLY\(MAP_VALUES, collection, \[\]\)[\s\S]*?REFLECT_APPLY\(MAP_ITERATOR_NEXT, iterator, \[\]\)/,
+  );
+  assert.match(source, /setHas\(pendingSecureAdmissions, connectionAdmission\)/);
+  assert.match(source, /setHas\(acceptedConnections, connectionAdmission\.socket\)/);
+  assert.match(source, /const NATIVE_WEAK_SET = WeakSet;/);
+  assert.match(source, /const WEAK_SET_ADD = NATIVE_WEAK_SET\.prototype\.add;/);
+  assert.match(source, /const WEAK_SET_HAS = NATIVE_WEAK_SET\.prototype\.has;/);
+  assert.match(
+    source,
+    /REFLECT_APPLY\(WEAK_SET_HAS, seenSecureSockets, \[socket\]\)[\s\S]*?REFLECT_APPLY\(WEAK_SET_ADD, seenSecureSockets, \[socket\]\)/,
+  );
+  assert.doesNotMatch(source, /seenSecureSockets\.delete/);
+  assert.match(
+    source,
+    /setDelete\(pendingSecureAdmissions, connectionAdmission\);\s*mapDelete\(connectionAdmissions, connectionAdmission\.socket\);/,
+  );
+  assert.match(
+    source,
+    /if \(existing !== undefined\) \{\s*increment\('tlsRejected'\);\s*destroySocket\(socket\);\s*return;/,
+  );
+  assert.doesNotMatch(
+    source,
+    /connectionAdmission\.(?:peerToken|secureSocket)|secureState\.connectionAdmission/,
+  );
+  assert.match(source, /const peerToken = REFLECT_APPLY\(NATIVE_SYMBOL, undefined, \[\]\);/);
+  assert.doesNotMatch(source, /observePropertyValue/);
+  assert.match(
+    source,
+    /function captureOwnDataProperty\(value, key\)[\s\S]*?REFLECT_GET_OWN_PROPERTY_DESCRIPTOR[\s\S]*?descriptor === undefined \|\| !OBJECT_HAS_OWN\(descriptor, 'value'\)/,
+  );
+  assert.match(
+    source,
+    /function captureTlsPolicySnapshot\(socket\)[\s\S]*?captureOwnDataProperty\(socket, 'alpnProtocol'\)[\s\S]*?alpn\.value !== 'http\/1\.1'[\s\S]*?captureOwnDataProperty\(socket, 'servername'\)[\s\S]*?!applicableServernameValid\(servername\.value\)/,
+  );
+  assert.match(
+    source,
+    /function sameTlsPolicySnapshot\(socket, snapshot\)[\s\S]*?sameCapturedOwnDataProperty\(socket, 'alpnProtocol', snapshot\.alpn\)[\s\S]*?sameCapturedOwnDataProperty\(socket, 'servername', snapshot\.servername\)/,
+  );
+  assert.match(
+    source,
+    /const transportContext = OBJECT_FREEZE\(\{\s*peerToken,\s*abort,\s*\}\);[\s\S]*?abortCapabilityCell\.context = transportContext;[\s\S]*?secureState\.transportContext = transportContext;/,
+  );
+  assert.match(
+    source,
+    /\|\| mapSize\(connectionAdmissions\) !== 0\s*\|\| setSize\(pendingSecureAdmissions\) !== 0\s*\|\| mapSize\(secureSockets\) !== 0/,
+  );
+  assert.match(source, /const IS_PROMISE = utilTypes\.isPromise;/);
+  assert.doesNotMatch(source, /\b(?:operation|promise)\.then\b/);
+  assert.match(
+    source,
+    /function containDiscardedPromiseRejection\(promise\)[\s\S]*?PROMISE_CONTAINMENT_NOOP,\s*PROMISE_CONTAINMENT_NOOP,[\s\S]*?return attached && restored;/,
+  );
+  assert.match(
+    source,
+    /if \(isGenuinePromise\(handle\)\) \{\s*containDiscardedPromiseRejection\(handle\);/,
+  );
+  assert.match(
+    source,
+    /if \(isGenuinePromise\(result\)\) containDiscardedPromiseRejection\(result\);\s*const cancellationClean = result === true;/,
+  );
+  assert.match(source, /if \(!cancellationClean\) markPermanentUncertainty\(\);/);
+  assert.match(source, /if \(timerRuntimeOperationsInFlight !== 0\) return;/);
+  assert.match(source, /if \(rawConnectionOperationsInFlight !== 0\) return;/);
+  const rawCallback = source.indexOf('function onConnection(socket)');
+  const rawLifetimeReservation = source.indexOf(
+    "if (!increment('connectionStarts'))",
+    rawCallback,
+  );
+  const rawConcurrencyReservation = source.indexOf(
+    'setAdd(acceptedConnections, socket);',
+    rawLifetimeReservation,
+  );
+  const rawTrackedReservation = source.indexOf(
+    'setAdd(trackedSockets, socket);',
+    rawConcurrencyReservation,
+  );
+  const rawTrack = source.indexOf('const capability = trackSocket(socket);');
+  const rawFinalGate = source.indexOf('|| mapHas(connectionAdmissions, socket)', rawTrack);
+  const rawAcceptance = source.indexOf("increment('connectionsAccepted')", rawFinalGate);
+  const rawAdmissionPublication = source.indexOf(
+    'mapSet(connectionAdmissions, socket, connectionAdmission);',
+    rawAcceptance,
+  );
+  assert.equal(rawCallback >= 0 && rawCallback < rawLifetimeReservation, true);
+  assert.equal(rawLifetimeReservation < rawConcurrencyReservation, true);
+  assert.equal(rawConcurrencyReservation < rawTrackedReservation, true);
+  assert.equal(rawTrackedReservation < rawTrack, true);
+  assert.equal(rawTrack < rawFinalGate, true);
+  assert.equal(rawFinalGate < rawAcceptance, true);
+  assert.equal(rawAcceptance < rawAdmissionPublication, true);
+  const trackSocketSourceStart = source.indexOf('function trackSocket(socket)');
+  const trackSocketSourceEnd = source.indexOf(
+    'function markFirstSecureSocketAppearance(socket)',
+    trackSocketSourceStart,
+  );
+  const trackSocketSource = source.slice(trackSocketSourceStart, trackSocketSourceEnd);
+  const trackedSocketReservation = trackSocketSource.indexOf('setAdd(trackedSockets, socket);');
+  const firstSocketListener = trackSocketSource.indexOf(
+    "REFLECT_APPLY(emitter.once, socket, ['close', onClose]);",
+  );
+  assert.equal(trackedSocketReservation >= 0, true);
+  assert.equal(trackedSocketReservation < firstSocketListener, true);
+  let socketSetupOffset = 0;
+  for (const marker of [
+    'if (closeTerminal || closePromise !== null) return null;',
+    'if (!setHas(trackedSockets, socket)) setAdd(trackedSockets, socket);',
+    'const capability = captureSocketCapability(socket);',
+    'weakMapGet(socketCapabilities, socket) !== capability',
+    'const emitter = capability.emitter;',
+    "REFLECT_APPLY(emitter.once, socket, ['close', onClose]);",
+    'if (!socketSetupOwned(socket, capability)) {',
+    'removeSocketSetupListenersBestEffort(',
+    "REFLECT_APPLY(emitter.once, socket, ['error', onError]);",
+    'if (!socketSetupOwned(socket, capability)) {',
+    'capability.listenersInstalled = true;',
+  ]) {
+    const index = trackSocketSource.indexOf(marker, socketSetupOffset);
+    assert.notEqual(index, -1, `missing ordered socket setup marker: ${marker}`);
+    socketSetupOffset = index + marker.length;
+  }
+  assert.match(
+    trackSocketSource,
+    /catch \{[\s\S]*?if \(capability\.closed\) \{\s*capability\.tracked = false;\s*setDelete\(trackedSockets, socket\);/,
+  );
+  assert.match(
+    trackSocketSource,
+    /REFLECT_APPLY\(emitter\.once, socket, \['error', onError\]\);[\s\S]*?capability\.listenersInstalled = true;\s*return capability;/,
+  );
+  assert.match(
+    source,
+    /function captureSocketCapability\(socket\)[\s\S]*?\|\| closeTerminal[\s\S]*?const destroy = ownOrInheritedValue\(socket, 'destroy'\);[\s\S]*?\|\| closeTerminal\) return null;[\s\S]*?const reentrantCapability = weakMapGet\(socketCapabilities, socket\);[\s\S]*?if \(closeTerminal\) return null;\s*weakMapSet\(socketCapabilities, socket, capability\);/,
+  );
+  assert.match(
+    source,
+    /function removeSocketSetupListenersBestEffort\([\s\S]*?REFLECT_APPLY\(emitter\.removeListener, socket, \[name, callback\]\);[\s\S]*?Setup cleanup cannot revise an already fixed terminal result/,
+  );
+  assert.equal((source.match(/setDelete\(acceptedConnections, socket\)/g) ?? []).length, 2);
+  assert.doesNotMatch(source, /counters\.(?:connectionStarts|requestStarts)\s*(?:-=|--)/);
+  const secureLifetimeMarker = source.indexOf('if (!markFirstSecureSocketAppearance(socket))');
+  const pendingAdmissionSelection = source.indexOf(
+    'const connectionAdmission = firstSetValue(pendingSecureAdmissions);',
+    secureLifetimeMarker,
+  );
+  assert.equal(
+    secureLifetimeMarker >= 0 && secureLifetimeMarker < pendingAdmissionSelection,
+    true,
+  );
+  const secureStatePublication = source.indexOf(
+    'mapSet(secureSockets, socket, secureState);',
+    pendingAdmissionSelection,
+  );
+  const tlsPolicyCapture = source.indexOf(
+    'const tlsPolicySnapshot = captureTlsPolicySnapshot(socket);',
+    pendingAdmissionSelection,
+  );
+  const headerDeadlineSchedule = source.indexOf(
+    "'headerDeadline',\n      limits.headerDeadlineMs,",
+    secureStatePublication,
+  );
+  const headerSetupGate = source.indexOf(
+    '!secureHeaderSetupOwned(socket, secureCapability, secureState)',
+    headerDeadlineSchedule,
+  );
+  const installedTlsPolicyGate = source.indexOf(
+    '|| !sameTlsPolicySnapshot(socket, tlsPolicySnapshot)',
+    headerSetupGate,
+  );
+  const secureEligibility = source.indexOf(
+    'secureState.setupState = SECURE_SETUP.REQUEST_ELIGIBLE;',
+    installedTlsPolicyGate,
+  );
+  assert.equal(
+    tlsPolicyCapture >= 0
+      && tlsPolicyCapture < secureStatePublication
+      && secureStatePublication < headerDeadlineSchedule
+      && headerDeadlineSchedule < headerSetupGate
+      && headerSetupGate < installedTlsPolicyGate
+      && installedTlsPolicyGate < secureEligibility,
+    true,
+  );
+  assert.match(
+    source,
+    /tlsPolicySnapshot,[\s\S]*?setupState: SECURE_SETUP\.INSTALLING_HEADER_DEADLINE,[\s\S]*?mapSet\(secureSockets, socket, secureState\);/,
+  );
+  assert.match(
+    source,
+    /function secureHeaderSetupOwned\(socket, capability, secureState\)[\s\S]*?timerRuntimeOperationsInFlight === 0[\s\S]*?secureState\.tlsPolicySnapshot !== null[\s\S]*?ticket\.active === true[\s\S]*?ticket\.handleReady === true[\s\S]*?setHas\(ownedTimers, ticket\)/,
+  );
+  const requestCallback = source.indexOf('function onRequest(request, response');
+  const requestCapture = source.indexOf(
+    'const requestAdmission = captureRequestAdmission(',
+    requestCallback,
+  );
+  const requestOneShotMarker = source.indexOf(
+    'secureState.requestStarted = true;',
+    requestCapture,
+  );
+  const requestEligibilityGate = source.indexOf(
+    'secureState.setupState !== SECURE_SETUP.REQUEST_ELIGIBLE',
+    requestCapture,
+  );
+  const requestTlsPolicyGate = source.indexOf(
+    '|| !sameTlsPolicySnapshot(socket, secureState.tlsPolicySnapshot)',
+    requestEligibilityGate,
+  );
+  const requestStartReservation = source.indexOf(
+    "if (!increment('requestStarts'))",
+    requestOneShotMarker,
+  );
+  const forcedRejectionGate = source.indexOf(
+    'forcedRejection\n      || setSize(activeRequests) >= limits.maxConcurrentRequests',
+    requestStartReservation,
+  );
+  const forcedRejectionCancellation = source.indexOf(
+    "cancelTicket(secureState, 'headerDeadline');",
+    forcedRejectionGate,
+  );
+  const forcedRejectionResponse = source.indexOf(
+    'rejectParsed(response, socket);',
+    forcedRejectionCancellation,
+  );
+  const requestPublication = source.indexOf('setAdd(activeRequests, requestState)', requestCapture);
+  const handlerPublication = source.indexOf(
+    'setAdd(activeHandlers, requestState)',
+    requestPublication,
+  );
+  const responseRegistration = source.indexOf(
+    'let status = registerResponse(requestState)',
+    handlerPublication,
+  );
+  const responseHeaderCall = source.indexOf(
+    "REFLECT_APPLY(requestState.responseSetHeader, response, ['Connection', 'close'])",
+    responseRegistration,
+  );
+  const requestDeadlineSchedule = source.indexOf(
+    "'deadline',\n      limits.requestResponseDeadlineMs,",
+    responseRegistration,
+  );
+  const postHeaderStableGate = source.indexOf(
+    'status = inspectRequestAdmission(requestState, true);',
+    responseHeaderCall,
+  );
+  const downstreamOwnership = source.indexOf(
+    'setAdd(downstreamOwnedRequests, requestState)',
+    postHeaderStableGate,
+  );
+  const requestFinalGate = source.indexOf(
+    'status = inspectRequestAdmission(requestState, true);',
+    downstreamOwnership,
+  );
+  const downstreamCall = source.indexOf(
+    'operation = REFLECT_APPLY(downstreamHandle, undefined, [',
+    requestFinalGate,
+  );
+  assert.equal(requestCallback >= 0 && requestCallback < requestCapture, true);
+  assert.equal(requestCapture < requestEligibilityGate, true);
+  assert.equal(requestEligibilityGate < requestTlsPolicyGate, true);
+  assert.equal(requestTlsPolicyGate < requestOneShotMarker, true);
+  assert.equal(requestCapture < requestOneShotMarker, true);
+  assert.equal(requestOneShotMarker < requestStartReservation, true);
+  assert.equal(requestStartReservation < forcedRejectionGate, true);
+  assert.equal(forcedRejectionGate < forcedRejectionCancellation, true);
+  assert.equal(forcedRejectionCancellation < forcedRejectionResponse, true);
+  assert.equal(requestCapture < requestPublication, true);
+  assert.equal(requestPublication < handlerPublication, true);
+  assert.equal(handlerPublication < responseRegistration, true);
+  assert.equal(responseRegistration < requestDeadlineSchedule, true);
+  assert.equal(requestDeadlineSchedule < responseHeaderCall, true);
+  assert.equal(responseHeaderCall < postHeaderStableGate, true);
+  assert.equal(postHeaderStableGate < downstreamOwnership, true);
+  assert.equal(downstreamOwnership < requestFinalGate, true);
+  assert.equal(requestFinalGate < downstreamCall, true);
+  assert.match(
+    source,
+    /trackedSockets: setSize\(trackedSockets\),\s*trackedRequests: setSize\(activeRequests\),\s*trackedHandlers: setSize\(activeHandlers\),\s*ownedTimers: setSize\(ownedTimers\),/,
+  );
+  assert.equal(
+    source.slice(requestFinalGate, downstreamCall),
+    "status = inspectRequestAdmission(requestState, true);\n"
+      + "    if (status !== 'READY') {\n"
+      + '      handleRequestAdmissionFailure(requestState, status);\n'
+      + '      return;\n'
+      + '    }\n'
+      + '    try {\n'
+      + '      ',
+  );
+  assert.match(
+    source,
+    /function captureRequestAdmission\(request,[\s\S]*?REFLECT_APPLY\(IS_PROXY, undefined, \[request\]\)[\s\S]*?REFLECT_GET_OWN_PROPERTY_DESCRIPTOR[\s\S]*?!OBJECT_HAS_OWN\(descriptor, 'value'\)/,
+  );
+  assert.match(
+    source,
+    /function sameRequestAdmission\(left, right\)[\s\S]*?samePropertyDescriptor\(left\.descriptors\[key\], right\.descriptors\[key\]\)/,
+  );
+  const sourceSection = (startMarker, endMarker) => {
+    const start = source.indexOf(startMarker);
+    assert.notEqual(start, -1, `missing source marker: ${startMarker}`);
+    const end = source.indexOf(endMarker, start + startMarker.length);
+    assert.equal(end > start, true, `missing source marker: ${endMarker}`);
+    return source.slice(start, end);
+  };
+  const assertSourceOrder = (section, markers) => {
+    let offset = 0;
+    for (const marker of markers) {
+      const index = section.indexOf(marker, offset);
+      assert.notEqual(index, -1, `missing ordered source marker: ${marker}`);
+      offset = index + marker.length;
+    }
+  };
+
+  assert.match(source, /let trustedFactory = configuration\.httpsServerFactory;/);
+  assert.match(source, /let downstreamHandle = downstream\.handle;/);
+  assert.match(source, /let downstreamClose = downstream\.close;/);
+  assert.match(source, /let schedule = deadlineRuntime\.schedule;/);
+  assert.match(source, /let cancel = deadlineRuntime\.cancel;/);
+  assert.match(source, /const INERT_CALLBACK_DISPATCH = OBJECT_FREEZE\(\{\}\);/);
+  const terminalDetachmentSource = sourceSection(
+    'function detachTerminalOwnerReferences() {',
+    'function runBestEffortTerminalCleanup(cleanup) {',
+  );
+  assertSourceOrder(terminalDetachmentSource, [
+    'callbackDispatchCell.target = INERT_CALLBACK_DISPATCH;',
+    'abortCapabilityCell.operation = null;',
+    'abortCapabilityCell.socket = null;',
+    'abortCapabilityCell.context = null;',
+    'trustedFactory = null;',
+    'downstreamHandle = null;',
+    'downstreamClose = null;',
+    'schedule = null;',
+    'cancel = null;',
+    'serverCapability = null;',
+    'startCapability = null;',
+    'closeCapability = null;',
+  ]);
+  assert.doesNotMatch(
+    terminalDetachmentSource,
+    /REFLECT_APPLY\(|removeListener\(|cancelHandle\(|destroySocket\(|safeCallable\(/,
+  );
+  assert.equal(
+    (source.match(/const terminalCleanup = detachTerminalOwnerReferences\(\);/g) ?? []).length,
+    2,
+  );
+  assert.match(
+    source,
+    /const abortCapabilityCell = \{\s*operation: null,\s*socket,\s*context: null,\s*\};[\s\S]*?const abort = OBJECT_FREEZE\(function abortOwnedHttpsSocket\(\) \{\s*const operation = abortCapabilityCell\.operation;\s*if \(operation === null\) return;\s*REFLECT_APPLY\(operation, undefined, \[\]\);\s*\}\);/,
+  );
+  assert.match(
+    source,
+    /const callbacks = OBJECT_FREEZE\(\{[\s\S]*?const dispatchTarget = callbackDispatchCell\.target;\s*if \(dispatchTarget === INERT_CALLBACK_DISPATCH\) return;/,
+  );
+  const callbackShellSource = sourceSection(
+    'const callbacks = OBJECT_FREEZE({',
+    'function requestDownstreamClose() {',
+  );
+  assert.equal(
+    (callbackShellSource.match(
+      /const dispatchTarget = callbackDispatchCell\.target;\s*if \(dispatchTarget === INERT_CALLBACK_DISPATCH\) return;\s*REFLECT_APPLY\(dispatchTarget\./g,
+    ) ?? []).length,
+    15,
+  );
+
+  assertSourceOrder(terminalDetachmentSource, [
+    'requestState.terminalDetached = true;',
+    'setDelete(activeRequests, requestState);',
+    'setDelete(activeHandlers, requestState);',
+    'setDelete(downstreamOwnedRequests, requestState);',
+    "detachTerminalTicket(requestState, 'deadline', cancellationHandles);",
+    "detachTerminalTicket(secureState, 'headerDeadline', cancellationHandles);",
+    'mapDelete(secureSockets, secureState.socket);',
+    'setDelete(pendingSecureAdmissions, admission);',
+    'mapDelete(connectionAdmissions, admission.socket);',
+    'setDelete(trackedSockets, socket);',
+    'setDelete(acceptedConnections, socket);',
+    'weakMapDelete(socketCapabilities, socket);',
+    "detachTerminalTicket(timerState, 'start', cancellationHandles);",
+    "detachTerminalTicket(timerState, 'close', cancellationHandles);",
+    'setDelete(ownedTimers, ticket);',
+    'abortCapabilityCell.operation = null;',
+    'abortCapabilityCell.socket = null;',
+    'abortCapabilityCell.context = null;',
+    'requestState.socket = null;',
+    'secureState.socket = null;',
+    'admissions[index].socket = null;',
+  ]);
+  assert.doesNotMatch(
+    terminalDetachmentSource,
+    /increment\('handlersSettled'\)|handlerSettled = true|completed = true/,
+  );
+
+  const terminalCleanupSource = sourceSection(
+    'function runBestEffortTerminalCleanup(cleanup) {',
+    'function finishCloseUncertain() {',
+  );
+  assertSourceOrder(terminalCleanupSource, [
+    'const cancelOperation = cleanup.cancelOperation;',
+    'cleanup.cancellationHandles.length',
+    'REFLECT_APPLY(',
+    'cancelOperation,',
+    'cleanup.responseOperations.length',
+    'operation.emitter.removeListener',
+    'cleanup.socketOperations.length',
+    "operation.emitter.removeListener, operation.socket, [\n            'close',",
+    "operation.emitter.removeListener, operation.socket, [\n            'error',",
+    'REFLECT_APPLY(operation.destroy, operation.socket, []);',
+    'cleanup.cancelOperation = null;',
+    'cleanup.cancellationHandles.length = 0;',
+    'cleanup.responseOperations.length = 0;',
+    'cleanup.socketOperations.length = 0;',
+  ]);
+  assert.doesNotMatch(
+    terminalCleanupSource,
+    /markPermanentUncertainty\(|finishCloseUncertain\(|increment\(|terminalMetricsSnapshot\s*=/,
+  );
+
+  const finishCloseUncertainSource = sourceSection(
+    'function finishCloseUncertain() {',
+    'function failStart() {',
+  );
+  assertSourceOrder(finishCloseUncertainSource, [
+    'permanentUncertainty = true;',
+    'admissionOpen = false;',
+    'acceptingConnections = false;',
+    'acceptingRequests = false;',
+    'phase = PHASE.CLOSE_UNCERTAIN;',
+    "increment('closeUncertain');",
+    'closeTerminal = true;',
+    'const terminalCloseCapability = closeCapability;',
+    'const terminalCleanup = detachTerminalOwnerReferences();',
+    'terminalMetricsSnapshot = captureMetricsSnapshot();',
+    'terminalCloseCapability.reject(failure(CODE.closeUncertain));',
+    'runBestEffortTerminalCleanup(terminalCleanup);',
+  ]);
+
+  const maybeFinishCloseSource = sourceSection(
+    'function maybeFinishClose() {',
+    'function destroySocket(socket) {',
+  );
+  assertSourceOrder(maybeFinishCloseSource, [
+    'if (permanentUncertainty) {',
+    'finishCloseUncertain();',
+    'if (timerRuntimeOperationsInFlight !== 0) return;',
+    "const cancellationClean = cancelTicket(timerState, 'close');",
+    'if (closeTerminal) return;',
+    "if (!increment('closeClean')) {",
+    'phase = PHASE.CLOSED;',
+    'closeTerminal = true;',
+    'const terminalCloseCapability = closeCapability;',
+    'const terminalCleanup = detachTerminalOwnerReferences();',
+    'terminalMetricsSnapshot = captureMetricsSnapshot();',
+    "terminalCloseCapability.resolve(OBJECT_FREEZE({ status: 'CLOSED' }));",
+    'runBestEffortTerminalCleanup(terminalCleanup);',
+  ]);
+
+  const settleHandlerSource = sourceSection(
+    'function settleHandler(requestState, clean) {',
+    'function captureResponseListener(listener) {',
+  );
+  assertSourceOrder(settleHandlerSource, [
+    'if (requestState.terminalDetached || closeTerminal || requestState.handlerSettled) return;',
+    'requestState.handlerSettled = true;',
+    'setDelete(activeHandlers, requestState);',
+    "increment('handlersSettled');",
+  ]);
+
+  const settleResponseSource = sourceSection(
+    'function settleResponse(requestState, clean) {',
+    'function onSocketClose(socket) {',
+  );
+  assertSourceOrder(settleResponseSource, [
+    'if (requestState.terminalDetached || closeTerminal || requestState.responseSettled) return;',
+    'requestState.responseSettled = true;',
+    'requestState.responseClean = clean;',
+  ]);
+
+  assert.equal(
+    source.includes('const EVENT_EMITTER_ON = EventEmitter.prototype.on;'),
+    true,
+  );
+  assert.equal(
+    source.includes(
+      'const EVENT_EMITTER_REMOVE_LISTENER = EventEmitter.prototype.removeListener;',
+    ),
+    true,
+  );
+  assert.equal(source.includes('EVENT_EMITTER_ONCE'), false);
+
+  const captureDataPropertySource = sourceSection(
+    'function captureDataProperty(value, key) {',
+    'function sameCapturedDataProperty(value, key, captured) {',
+  );
+  assertSourceOrder(captureDataPropertySource, [
+    'REFLECT_GET_OWN_PROPERTY_DESCRIPTOR,',
+    '[owner, key],',
+    "if (!OBJECT_HAS_OWN(descriptor, 'value')) return null;",
+    'owner,',
+    'descriptor: OBJECT_FREEZE(descriptor),',
+    'value: descriptor.value,',
+  ]);
+
+  const sameCapturedDataPropertySource = sourceSection(
+    'function sameCapturedDataProperty(value, key, captured) {',
+    'function capturePropertyRoute(value, key) {',
+  );
+  assertSourceOrder(sameCapturedDataPropertySource, [
+    'const current = captureDataProperty(value, key);',
+    'current.owner === captured.owner',
+    'samePropertyDescriptor(captured.descriptor, current.descriptor)',
+  ]);
+
+  const captureResponseTerminalPropertySource = sourceSection(
+    'function captureResponseTerminalProperty(response, key, nativeDescriptor, backingKey) {',
+    'function sameResponseTerminalProperty(',
+  );
+  assertSourceOrder(captureResponseTerminalPropertySource, [
+    'const route = capturePropertyRoute(response, key);',
+    "if (OBJECT_HAS_OWN(route.descriptor, 'value')) {",
+    'route.owner !== response',
+    'route.descriptor.value !== false',
+    'route.owner !== OUTGOING_MESSAGE_PROTOTYPE',
+    '!samePropertyDescriptor(nativeDescriptor, route.descriptor)',
+    'const backing = captureDataProperty(response, backingKey);',
+    'backing.owner !== response',
+    'backing.value !== expectedBacking',
+    'REFLECT_APPLY(nativeDescriptor.get, response, []) !== false',
+  ]);
+  const sameResponseTerminalPropertySource = sourceSection(
+    'function sameResponseTerminalProperty(',
+    'function captureEmitter(value) {',
+  );
+  assertSourceOrder(sameResponseTerminalPropertySource, [
+    'const route = capturePropertyRoute(response, key);',
+    'route.owner !== captured.route.owner',
+    '!samePropertyDescriptor(captured.route.descriptor, route.descriptor)',
+    'if (captured.backing === null) return true;',
+    '!sameCapturedDataProperty(response, backingKey, captured.backing)',
+    'REFLECT_APPLY(nativeDescriptor.get, response, []) === false',
+  ]);
+  assert.match(
+    source,
+    /const OUTGOING_MESSAGE_HEADERS_SENT_DESCRIPTOR = OBJECT_FREEZE\(REFLECT_APPLY\([\s\S]*?\[OUTGOING_MESSAGE_PROTOTYPE, 'headersSent'\]/,
+  );
+  assert.match(
+    source,
+    /const OUTGOING_MESSAGE_WRITABLE_ENDED_DESCRIPTOR = OBJECT_FREEZE\(REFLECT_APPLY\([\s\S]*?\[OUTGOING_MESSAGE_PROTOTYPE, 'writableEnded'\]/,
+  );
+
+  const captureResponseEmitterSource = sourceSection(
+    'function captureResponseEmitter(value) {',
+    'function sameResponseMethodSurface(response, emitter, setHeader) {',
+  );
+  assertSourceOrder(captureResponseEmitterSource, [
+    "const on = captureDataProperty(value, 'on');",
+    "const removeListener = captureDataProperty(value, 'removeListener');",
+    'on === null',
+    'removeListener === null',
+    'on.value !== EVENT_EMITTER_ON',
+    'removeListener.value !== EVENT_EMITTER_REMOVE_LISTENER',
+    'on: EVENT_EMITTER_ON,',
+    'removeListener: EVENT_EMITTER_REMOVE_LISTENER,',
+    'onProperty: on,',
+    'removeListenerProperty: removeListener,',
+  ]);
+  assert.doesNotMatch(captureResponseEmitterSource, /\bonce\b/);
+
+  const sameResponseMethodSurfaceSource = sourceSection(
+    'function sameResponseMethodSurface(response, emitter, setHeader) {',
+    'function captureResponseBookkeeping(response) {',
+  );
+  assertSourceOrder(sameResponseMethodSurfaceSource, [
+    "sameCapturedDataProperty(response, 'setHeader', setHeader)",
+    "sameCapturedDataProperty(response, 'on', emitter.onProperty)",
+    "'removeListener',",
+    'emitter.removeListenerProperty,',
+  ]);
+  assert.doesNotMatch(sameResponseMethodSurfaceSource, /\bonce\b/);
+
+  const captureResponseBookkeepingSource = sourceSection(
+    'function captureResponseBookkeeping(response) {',
+    'function captureResponseAdmission(response) {',
+  );
+  assertSourceOrder(captureResponseBookkeepingSource, [
+    "const eventsCount = captureDataProperty(response, '_eventsCount');",
+    "const maxListeners = captureDataProperty(response, '_maxListeners');",
+    'eventsCount === null',
+    'maxListeners === null',
+    'eventsCount.owner !== response',
+    'maxListeners.owner !== response',
+    '!NUMBER_IS_SAFE_INTEGER(eventsCount.value)',
+    'eventsCount.value < 0',
+    'eventsCount.descriptor.writable !== true',
+    'maxListeners.value !== undefined',
+    '!NUMBER_IS_SAFE_INTEGER(maxListeners.value)',
+    'maxListeners.value < 0',
+    'return OBJECT_FREEZE({ eventsCount, maxListeners });',
+  ]);
+
+  const captureResponseAdmissionSource = sourceSection(
+    'function captureResponseAdmission(response) {',
+    'function sameResponseAdmission(',
+  );
+  assertSourceOrder(captureResponseAdmissionSource, [
+    "const headersSent = captureResponseTerminalProperty(",
+    "'headersSent',",
+    "const writableEnded = captureResponseTerminalProperty(",
+    "'writableEnded',",
+    'const bookkeeping = captureResponseBookkeeping(response);',
+    'headersSent === null',
+    'writableEnded === null',
+    'bookkeeping === null',
+    'headersSent,',
+    'writableEnded,',
+    'eventsCount: bookkeeping.eventsCount,',
+    'maxListeners: bookkeeping.maxListeners,',
+  ]);
+  const responseAdmissionCapture = source.indexOf(
+    'const responseAdmission = captureResponseAdmission(response);',
+    requestCallback,
+  );
+  const responseEventsCountCapture = source.indexOf(
+    'responseEventsCount: responseAdmission.eventsCount,',
+    responseAdmissionCapture,
+  );
+  const responseMaxListenersCapture = source.indexOf(
+    'responseMaxListeners: responseAdmission.maxListeners,',
+    responseEventsCountCapture,
+  );
+  assert.equal(
+    responseAdmissionCapture >= 0
+      && responseAdmissionCapture < responseEventsCountCapture
+      && responseEventsCountCapture < responseMaxListenersCapture
+      && responseMaxListenersCapture < responseRegistration,
+    true,
+  );
+
+  const sameResponseAdmissionSource = sourceSection(
+    'function sameResponseAdmission(',
+    'function scanRawHeaders(rawHeaders, authority, limits) {',
+  );
+  assert.match(
+    sameResponseAdmissionSource,
+    /sameResponseTerminalProperty\(\s*response,\s*'headersSent',[\s\S]*?sameResponseTerminalProperty\(\s*response,\s*'writableEnded',/,
+  );
+  assert.match(
+    sameResponseAdmissionSource,
+    /sameCapturedDataProperty\(\s*response,\s*'_eventsCount',\s*expectedEventsCount,\s*\)/,
+  );
+  assert.match(
+    sameResponseAdmissionSource,
+    /sameCapturedDataProperty\(\s*response,\s*'_maxListeners',\s*expectedMaxListeners,\s*\)/,
+  );
+
+  const sameResponseEventSlotSnapshotSource = sourceSection(
+    'function sameResponseEventSlotSnapshot(expected, current) {',
+    'function sameSettledResponseEventSlotSubset(expected, current, callback) {',
+  );
+  assertSourceOrder(sameResponseEventSlotSnapshotSource, [
+    '!samePropertyDescriptor(expected.eventsDescriptor, current.eventsDescriptor)',
+    '!samePropertyDescriptor(expected.eventDescriptor, current.eventDescriptor)',
+    'expected.container !== current.container',
+    'expected.array !== current.array',
+    '!samePropertyDescriptor(expected.lengthDescriptor, current.lengthDescriptor)',
+    'expected.indexDescriptors.length !== current.indexDescriptors.length',
+    'expected.entries.length !== current.entries.length',
+    'expected.entries[index].listener !== current.entries[index].listener',
+    'expected.entries[index].listenerDescriptor,',
+    'current.entries[index].listenerDescriptor,',
+  ]);
+
+  const settledResponseEventSlotSubsetSource = sourceSection(
+    'function sameSettledResponseEventSlotSubset(expected, current, callback) {',
+    'function responseEventSlotCanAppend(slot) {',
+  );
+  assertSourceOrder(settledResponseEventSlotSubsetSource, [
+    'expected === null',
+    'current === null',
+    '!expected.array',
+    'expected.entries.length < 2',
+    'expected.indexDescriptors.length !== expected.entries.length',
+    '!samePropertyDescriptor(expected.eventsDescriptor, current.eventsDescriptor)',
+    'sameDataPropertyDescriptorSurface(',
+    'expected.eventDescriptor,',
+    'current.eventDescriptor,',
+    'current.entries.length < 1',
+    'current.entries.length > expected.entries.length',
+    'expected.entries[expectedOwnerIndex].listener !== callback',
+    'expected.entries[expectedOwnerIndex].listenerDescriptor !== undefined',
+    'current.entries[currentOwnerIndex].listener !== callback',
+    'current.entries[currentOwnerIndex].listenerDescriptor !== undefined',
+    'if (entry.listener === callback) ownerMatches += 1;',
+    'if (entry.listenerDescriptor?.value === callback) return false;',
+    'if (ownerMatches !== 1) return false;',
+    'current.entries.length < 2',
+    'expected.lengthDescriptor,',
+    'current.lengthDescriptor,',
+    'current.lengthDescriptor.value !== current.entries.length',
+    'current.container !== callback',
+    'while (expectedIndex < expectedOwnerIndex) {',
+    'expected.entries[expectedIndex].listener',
+    'current.entries[currentIndex].listener',
+    'expected.entries[expectedIndex].listenerDescriptor,',
+    'current.entries[currentIndex].listenerDescriptor,',
+    'expected.indexDescriptors[expectedIndex],',
+    'current.indexDescriptors[currentIndex],',
+    'if (!matched) return false;',
+    'expected.indexDescriptors[expectedOwnerIndex],',
+    'current.indexDescriptors[currentOwnerIndex],',
+  ]);
+  assert.doesNotMatch(settledResponseEventSlotSubsetSource, /expected\.container/);
+
+  const removeResponseListenerSource = sourceSection(
+    'function removeResponseListener(',
+    'function cleanupRequest(requestState) {',
+  );
+  assert.match(
+    removeResponseListenerSource,
+    /sameResponseEventSlotSnapshot\(slotSnapshot, currentSlot\)[\s\S]*?eventObserved[\s\S]*?sameSettledResponseEventSlotSubset\(slotSnapshot, currentSlot, callback\)/,
+  );
+  assert.equal(
+    (source.match(/sameSettledResponseEventSlotSubset/g) ?? []).length,
+    2,
+  );
+
+  const captureRegisteredResponseCallbackSource = sourceSection(
+    'function captureRegisteredResponseCallback(',
+    'function responseSettlementOwned(requestState) {',
+  );
+  assertSourceOrder(captureRegisteredResponseCallbackSource, [
+    'const afterBookkeeping = captureResponseBookkeeping(requestState.response);',
+    'const afterSlot = captureResponseEventSlot(requestState, name);',
+    'const countIncrement = beforeSlot.eventDescriptor === undefined ? 1 : 0;',
+    'const expectedCount = beforeEventsCount.value + countIncrement;',
+    'afterBookkeeping.eventsCount.owner !== beforeEventsCount.owner',
+    'beforeEventsCount.descriptor,',
+    'afterBookkeeping.eventsCount.descriptor,',
+    'afterBookkeeping.eventsCount.value !== expectedCount',
+    "'_maxListeners',",
+    'requestState.responseMaxListeners,',
+    'samePropertyDescriptor(beforeSlot.eventsDescriptor, afterSlot.eventsDescriptor)',
+    'afterSlot.entries.length !== beforeSlot.entries.length + 1',
+    'afterSlot.entries[afterSlot.entries.length - 1].listener !== callback',
+    'afterSlot.entries[afterSlot.entries.length - 1].listenerDescriptor !== undefined',
+    'if (beforeSlot.eventDescriptor === undefined) {',
+    'afterSlot.container !== callback',
+    '!standardAssignedDataProperty(afterSlot.eventDescriptor, callback)',
+    '} else if (!beforeSlot.array) {',
+    'afterSlot.lengthDescriptor?.value !== 2',
+    'afterSlot.indexDescriptors.length !== 2',
+    'afterSlot.indexDescriptors[0],',
+    'beforeSlot.container,',
+    'afterSlot.indexDescriptors[1], callback',
+    '} else {',
+    'afterSlot.container !== beforeSlot.container',
+    'afterSlot.lengthDescriptor.value !== beforeSlot.lengthDescriptor.value + 1',
+    'afterSlot.indexDescriptors.length !== beforeSlot.indexDescriptors.length + 1',
+    'afterSlot.indexDescriptors[afterSlot.indexDescriptors.length - 1],',
+    'callback,',
+  ]);
+
+  const registerResponseSource = sourceSection(
+    'function registerResponse(requestState) {',
+    'function requestDeadline(requestState) {',
+  );
+  assertSourceOrder(registerResponseSource, [
+    'const onFinish = OBJECT_FREEZE(() => {',
+    'requestState.responseFinishObserved = true;',
+    'settleResponse(requestState, true);',
+    'const onClose = OBJECT_FREEZE(() => {',
+    'requestState.responseCloseObserved = true;',
+    'settleResponse(requestState, false);',
+    'const onError = OBJECT_FREEZE(() => {',
+    'requestState.responseErrorObserved = true;',
+    'settleResponse(requestState, false);',
+    "const beforeFinish = captureResponseEventSlot(requestState, 'finish');",
+    "REFLECT_APPLY(emitter.on, requestState.response, ['finish', onFinish]);",
+    'const finishCapture = captureRegisteredResponseCallback(',
+    'requestState.responseFinishSlotSnapshot = finishCapture.slotSnapshot;',
+    'requestState.responseEventsCount = finishCapture.eventsCount;',
+    'let status = inspectRequestAdmission(requestState);',
+    "const beforeClose = captureResponseEventSlot(requestState, 'close');",
+    "REFLECT_APPLY(emitter.on, requestState.response, ['close', onClose]);",
+    'const closeCapture = captureRegisteredResponseCallback(',
+    'requestState.responseCloseSlotSnapshot = closeCapture.slotSnapshot;',
+    'requestState.responseEventsCount = closeCapture.eventsCount;',
+    'status = inspectRequestAdmission(requestState);',
+    "const beforeError = captureResponseEventSlot(requestState, 'error');",
+    "REFLECT_APPLY(emitter.on, requestState.response, ['error', onError]);",
+    'const errorCapture = captureRegisteredResponseCallback(',
+    'requestState.responseErrorSlotSnapshot = errorCapture.slotSnapshot;',
+    'requestState.responseEventsCount = errorCapture.eventsCount;',
+    'requestState.responseListenersInstalled = true;',
+    'return inspectRequestAdmission(requestState);',
+  ]);
+  assert.equal(
+    (registerResponseSource.match(/REFLECT_APPLY\(emitter\.on,/g) ?? []).length,
+    3,
+  );
+  assert.equal(
+    (registerResponseSource.match(
+      /if \(requestState\.terminalDetached \|\| closeTerminal\) return;/g,
+    ) ?? []).length,
+    3,
+  );
+  assert.doesNotMatch(registerResponseSource, /\bonce\b|EVENT_EMITTER_ONCE/);
+
+  const responseSettlementOwnedSource = sourceSection(
+    'function responseSettlementOwned(requestState) {',
+    'function inspectRequestAdmission(requestState, requireDeadline = false) {',
+  );
+  assertSourceOrder(responseSettlementOwnedSource, [
+    "['finish', requestState.onResponseFinish]",
+    "['close', requestState.onResponseClose]",
+    "['error', requestState.onResponseError]",
+    'const currentSlot = captureResponseEventSlot(requestState, name);',
+    'if (!sameResponseEventSlotSnapshot(slotSnapshot, currentSlot)) return false;',
+    'let matches = 0;',
+    'if (entry.listener === callback) {',
+    'if (entry.listenerDescriptor !== undefined) return false;',
+    'matches += 1;',
+    'if (entry.listenerDescriptor?.value === callback) return false;',
+    'matches !== 1',
+    'entries[entries.length - 1].listener !== callback',
+  ]);
+  assert.doesNotMatch(responseSettlementOwnedSource, /sameSettledResponseEventSlotSubset/);
+
+  const inspectRequestAdmissionSource = sourceSection(
+    'function inspectRequestAdmission(requestState, requireDeadline = false) {',
+    'function settleUnstartedHandler(requestState) {',
+  );
+  assertSourceOrder(inspectRequestAdmissionSource, [
+    'if (!sameResponseAdmission(',
+    'requestState.responseEventsCount,',
+    'requestState.responseMaxListeners,',
+    'if (!sameResponseMethodSurface(',
+    'requestState.responseSetHeaderProperty,',
+    'requestState.responseListenersInstalled',
+    '&& !responseSettlementOwned(requestState)',
+    'requestState.secureState.setupState !== SECURE_SETUP.REQUEST_ELIGIBLE',
+    'if (!sameTlsPolicySnapshot(',
+    'requestState.secureState.tlsPolicySnapshot,',
+    ")) return 'TLS_POLICY';",
+  ]);
+  for (const eventName of ['Finish', 'Close', 'Error']) assert.equal(
+    (registerResponseSource.match(
+      new RegExp(`requestState\\.response${eventName}Observed = true;`, 'g'),
+    ) ?? []).length,
+    1,
+  );
+  assert.doesNotMatch(registerResponseSource, /responseSettlementObserved/);
+  const cleanupRequestSource = sourceSection(
+    'function cleanupRequest(requestState) {',
+    'function maybeCompleteRequest(requestState) {',
+  );
+  for (const [eventName, stateName] of [
+    ['finish', 'Finish'],
+    ['close', 'Close'],
+    ['error', 'Error'],
+  ]) assert.match(
+    cleanupRequestSource,
+    new RegExp(
+      `removeResponseListener\\(\\s*requestState,\\s*'${eventName}',`
+        + `\\s*requestState\\.onResponse${stateName},`
+        + `\\s*requestState\\.response${stateName}SlotSnapshot,`
+        + `\\s*requestState\\.response${stateName}Observed,\\s*\\);`,
+    ),
+  );
+  assertSourceOrder(cleanupRequestSource, [
+    'requestState.responseListenersInstalled = false;',
+    'requestState.responseFinishObserved = false;',
+    'requestState.responseCloseObserved = false;',
+    'requestState.responseErrorObserved = false;',
+  ]);
+  assert.match(
+    source,
+    /responseListenersInstalled: false,[\s\S]*?responseFinishObserved: false,[\s\S]*?responseCloseObserved: false,[\s\S]*?responseErrorObserved: false,[\s\S]*?abortRequested: false,[\s\S]*?terminalDetached: false,[\s\S]*?let status = registerResponse\(requestState\)/,
+  );
+  assert.doesNotMatch(source, /responseSettlementObserved/);
+  const requestFinalReadyCheck = source.indexOf(
+    "if (status !== 'READY') {",
+    requestFinalGate,
+  );
+  assert.equal(
+    requestFinalGate < requestFinalReadyCheck && requestFinalReadyCheck < downstreamCall,
+    true,
+  );
+  const startCancellation = source.indexOf("if (!cancelTicket(timerState, 'start'))");
+  const startRevalidation = source.indexOf('|| counters.listenerErrors !== 0', startCancellation);
+  const startSuccess = source.indexOf("increment('startSucceeded')", startRevalidation);
+  assert.equal(startCancellation >= 0 && startCancellation < startRevalidation, true);
+  assert.equal(startRevalidation < startSuccess, true);
+  const closeCancellation = source.indexOf(
+    "const cancellationClean = cancelTicket(timerState, 'close');",
+  );
+  const closeRevalidation = source.indexOf('if (closeTerminal) return;', closeCancellation);
+  const closeSuccess = source.indexOf("increment('closeClean')", closeRevalidation);
+  assert.equal(closeCancellation >= 0 && closeCancellation < closeRevalidation, true);
+  assert.equal(closeRevalidation < closeSuccess, true);
+  const requestDownstreamCloseSource = sourceSection(
+    'function requestDownstreamClose() {',
+    'const start = OBJECT_FREEZE(function startServiceCreditBoundedHttpsIngressOwner',
+  );
+  assert.equal(
+    (requestDownstreamCloseSource.match(/if \(closeTerminal\) return;/g) ?? []).length,
+    2,
+  );
+  const localServerDisposalSource = sourceSection(
+    'function disposeLocalServerCapabilityBestEffort(capability) {',
+    'const start = OBJECT_FREEZE(function startServiceCreditBoundedHttpsIngressOwner',
+  );
+  assertSourceOrder(localServerDisposalSource, [
+    'for (const operation of [capability.close, capability.closeAllConnections])',
+    'result = REFLECT_APPLY(operation, undefined, []);',
+    'if (isGenuinePromise(result)) containDiscardedPromiseRejection(result);',
+  ]);
+  assert.doesNotMatch(localServerDisposalSource, /capability\.listen|markPermanentUncertainty/);
+  const startSource = sourceSection(
+    'const start = OBJECT_FREEZE(function startServiceCreditBoundedHttpsIngressOwner',
+    'const close = OBJECT_FREEZE(function closeServiceCreditBoundedHttpsIngressOwner',
+  );
+  assertSourceOrder(startSource, [
+    'const attemptStartCapability = startCapability;',
+    'const attemptStartPromise = startPromise;',
+    'const attemptStartTicket = timerState.start;',
+    'returned = REFLECT_APPLY(trustedFactory, undefined, [serverOptions, callbacks]);',
+    'let returnedCapability = null;',
+    'returnedCapability = captureServerCapability(returned);',
+    'returned = null;',
+    'if (returnedCapability === null) {',
+    'closeTerminal',
+    'startCapability !== attemptStartCapability',
+    'startPromise !== attemptStartPromise',
+    'timerState.start !== attemptStartTicket',
+    'disposeLocalServerCapabilityBestEffort(returnedCapability);',
+    'factoryReturned = true;',
+    'serverCapability = returnedCapability;',
+    'listenInvoked = true;',
+    'listenResult = REFLECT_APPLY(serverCapability.listen, undefined, []);',
+  ]);
+  assert.equal(packageText.includes('service-credit-bounded-https-ingress-owner.js'), false);
+
+  assert.equal(
+    compositionTest.includes(
+      "from '../src/service-credit-bounded-https-ingress-owner.js'",
+    ),
+    true,
+  );
+  assert.equal((compositionTest.match(/createHttpsServer\(/g) ?? []).length, 1);
+  assert.match(
+    compositionTest,
+    /server\.on\('secureConnection', socket => \{[\s\S]*?Object\.getOwnPropertyDescriptor\(socket, property\)[\s\S]*?Object\.hasOwn\(descriptor, 'value'\)/,
+  );
+  assert.equal((compositionTest.match(/server\.listen\(/g) ?? []).length, 1);
+  assert.equal(compositionTest.includes('const ownedSockets = new Set()'), false);
+  assert.equal(compositionTest.includes('server.closeAllConnections();'), true);
+  assert.match(
+    readme,
+    /configured origin and HTTP authority are only SNI\/Host admission policy; `LISTENING` does not observe or attest the factory's actual bind origin/,
+  );
+  assert.match(
+    security,
+    /configured origin and authority are validation policy, not observed bind metadata/,
+  );
+  assert.match(
+    implementationPlan,
+    /configured origin and HTTP authority are SNI\/Host policy only; neither they nor a `LISTENING` result are observed proof of the factory's actual bind origin/,
+  );
+  assert.match(
+    readme,
+    /cardinality and one-use capability enforcement only; it creates no retained raw-to-TLS mapping and proves no object identity or physical association/,
+  );
+  assert.match(
+    security,
+    /cardinality and one-use capability enforcement, not raw-to-TLS identity or physical-association proof/,
+  );
+  assert.match(
+    implementationPlan,
+    /coupling enforces cardinality and a one-use capability only; it neither proves object identity or physical association nor leaves a raw-to-TLS mapping after consumption/,
+  );
+  assert.match(
+    readme,
+    /destroys that secure socket without consuming another pending raw admission/,
+  );
+  assert.match(
+    security,
+    /an in-progress trusted scheduler or cancellation call cannot be treated as quiescence during synchronous reentry/,
+  );
+  assert.match(
+    implementationPlan,
+    /terminal and permanent state are checked again before `closeClean` or `CLOSED` can be committed/,
+  );
+  assert.match(
+    readme,
+    /Both clean `CLOSED` and fixed `CLOSE_UNCERTAIN` paths publish their canonical terminal state[\s\S]*?Zero tracked sockets, requests, handlers, and owned timers prove only release of those owner-held references and accounting/,
+  );
+  assert.match(
+    security,
+    /Both clean `CLOSED` and fixed `CLOSE_UNCERTAIN` publish terminal and admission-closed state[\s\S]*?prove only release of those owner-held references and accounting/,
+  );
+  assert.match(
+    implementationPlan,
+    /Both clean `CLOSED` and fixed `CLOSE_UNCERTAIN` use the same ordered terminal boundary[\s\S]*?prove only release of those owner-held references and accounting, not termination of external operations, sockets, callbacks, or foreign emitters/,
+  );
+  assert.match(
+    readme,
+    /generation-lifetime weak marker is set before pending-admission selection/,
+  );
+  assert.match(
+    readme,
+    /Before any observable socket capability access or listener registration, the owner consumes the lifetime start and publishes both its concurrent admission reservation and tracked-socket reservation/,
+  );
+  assert.match(
+    security,
+    /ambiguous capability or listener setup retains the reservation and permanently quarantines the generation, and the consumed lifetime start is never restored/,
+  );
+  assert.match(
+    implementationPlan,
+    /Before any response method can affect admission, the request lifetime start is consumed and tracked request and handler concurrency ownership is published/,
+  );
+  assert.match(
+    readme,
+    /Reentrant setup during response registration, deadline scheduling, or `setHeader` sees that reservation and is rejected without a body read or downstream invocation/,
+  );
+  assert.match(
+    security,
+    /deterministic use of those module-owned collections after injected callbacks, not isolation of arbitrary same-process code/,
+  );
+  assert.match(
+    implementationPlan,
+    /synchronous reentry cannot displace it or become a second authoritative request/,
+  );
+  assert.match(
+    security,
+    /rejection containment only when they are genuine non-Proxy Promises whose bounded prototype chain reaches the captured same-realm Promise prototype/,
+  );
+  assert.match(
+    implementationPlan,
+    /request whose own final lifetime reservation seals acceptance remains eligible/,
+  );
+  assert.match(
+    readme,
+    /A returned capability stays local until the same start attempt, phase, ticket, unsettled state, nonterminal lifecycle, and absence of permanent uncertainty are revalidated/,
+  );
+  assert.match(
+    security,
+    /Terminal close during factory execution makes callback dispatch inert and prevents publication or `listen`/,
+  );
+  assert.match(
+    implementationPlan,
+    /factory result remains local until the exact start capability, Promise, ticket, phase, unsettled state, nonterminal lifecycle, and absence of permanent uncertainty are revalidated/,
+  );
+  assert.match(
+    readme,
+    /consumed secure admission is published to the cleanup-visible map in an explicit request-ineligible setup state/,
+  );
+  assert.match(
+    security,
+    /secure state is cleanup-visible but explicitly request-ineligible while its header deadline is being installed/,
+  );
+  assert.match(
+    implementationPlan,
+    /Secure state is first published only for bounded cleanup and remains explicitly request-ineligible during header-deadline installation/,
+  );
+  assert.match(
+    readme,
+    /captures response `headersSent`, `writableEnded`, `finished`, and `destroyed` as false/,
+  );
+  assert.match(
+    security,
+    /Response admission additionally binds false `headersSent`, `writableEnded`, `finished`, and `destroyed` state/,
+  );
+  assert.match(
+    implementationPlan,
+    /Response admission also retains false `headersSent`, `writableEnded`, `finished`, and `destroyed` state/,
+  );
 });
 
 test('external-holder ingress keeps native-Promise containment and terminal-safe deadlines local', () => {
