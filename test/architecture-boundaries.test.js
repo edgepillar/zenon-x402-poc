@@ -181,7 +181,7 @@ test('delivery claims carry the authenticated accepted requirement across every 
   );
 });
 
-test('Zenon funding and signing compositions remain absent from package and active runtime import graphs', () => {
+test('Zenon funding, signing, and external-holder handoff sources remain inactive', () => {
   const compositionNames = [
     'service-credit-zenon-funding-composition.js',
     'service-credit-zenon-durable-http-composition.js',
@@ -191,6 +191,8 @@ test('Zenon funding and signing compositions remain absent from package and acti
     'service-credit-zenon-funding-intake.js',
     'service-credit-zenon-funding-intake-http.js',
     'service-credit-zenon-funding-publication-bridge.js',
+    'service-credit-external-holder-grant-descriptor-handoff-http.js',
+    'service-credit-external-holder-grant-descriptor-handoff.js',
   ];
   const packageText = readFileSync(new URL('../package.json', import.meta.url), 'utf8');
   const packageJson = JSON.parse(packageText);
