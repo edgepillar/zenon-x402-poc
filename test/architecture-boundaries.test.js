@@ -191,6 +191,7 @@ test('Zenon funding, signing, and external-holder handoff sources remain inactiv
     'service-credit-zenon-funding-intake.js',
     'service-credit-zenon-funding-intake-http.js',
     'service-credit-zenon-funding-publication-bridge.js',
+    'service-credit-external-holder-grant-descriptor-handoff-http-ingress.js',
     'service-credit-external-holder-grant-descriptor-handoff-http.js',
     'service-credit-external-holder-grant-descriptor-handoff.js',
   ];
@@ -238,6 +239,64 @@ test('Zenon funding, signing, and external-holder handoff sources remain inactiv
       if (dependency.pathname.endsWith('.js')) pending.push(dependency.href);
     }
   }
+});
+
+test('external-holder ingress keeps native-Promise containment and terminal-safe deadlines local', () => {
+  const source = readFileSync(
+    new URL(
+      '../src/service-credit-external-holder-grant-descriptor-handoff-http-ingress.js',
+      import.meta.url,
+    ),
+    'utf8',
+  );
+  assert.match(source, /const IS_PROMISE = utilTypes\.isPromise;/);
+  assert.match(
+    source,
+    /const PROMISE_THEN_DESCRIPTOR = OBJECT_FREEZE\(REFLECT_APPLY\([\s\S]*?\[PROMISE_PROTOTYPE, 'then'\]/,
+  );
+  assert.match(
+    source,
+    /const PROMISE_PROTOTYPE_CONSTRUCTOR_DESCRIPTOR = OBJECT_FREEZE\(REFLECT_APPLY\([\s\S]*?\[PROMISE_PROTOTYPE, 'constructor'\]/,
+  );
+  assert.match(
+    source,
+    /const PROMISE_SPECIES_DESCRIPTOR = OBJECT_FREEZE\(REFLECT_APPLY\([\s\S]*?\[NATIVE_PROMISE, PROMISE_SPECIES\]/,
+  );
+  assert.doesNotMatch(source, /\bpromise\.(?:then|constructor)\b/);
+  assert.doesNotMatch(source, /NATIVE_PROMISE\s*\[\s*PROMISE_SPECIES\s*\]/);
+  assert.match(
+    source,
+    /\[promise, 'constructor', temporaryDescriptor\][\s\S]*?REFLECT_APPLY\(PROMISE_THEN, promise, \[onFulfilled, onRejected\]\)[\s\S]*?const restored = restorePromiseConstructorDescriptor\(promise, constructorDescriptor\);[\s\S]*?if \(!attached \|\| !restored\) return PROMISE_OBSERVATION\.UNOBSERVABLE;[\s\S]*?callbacksEnabled = true;/,
+  );
+  assert.match(
+    source,
+    /observation === PROMISE_OBSERVATION\.UNOBSERVABLE\) \{\s*unexpectedNativePromises\.add\(operation\);/,
+  );
+  assert.match(
+    source,
+    /owner\[slot\] = ticket;[\s\S]*?REFLECT_APPLY\(schedule, undefined, \[onDeadline, milliseconds\]\)/,
+  );
+  assert.match(
+    source,
+    /if \(owner\[slot\] === ticket && ticket\.active === true\) \{\s*ticket\.handle = handle;\s*ticket\.handleReady = true;/,
+  );
+  assert.match(
+    source,
+    /ticket\.active = false;\s*return cancelHandle\(handle\)[\s\S]*?DEADLINE_OUTCOME\.TERMINATED/,
+  );
+  assert.doesNotMatch(
+    source,
+    /(?:bodyDeadline|responseDeadline|closeState\.deadline)\s*=\s*scheduleTicket/,
+  );
+  assert.match(source, /unexpectedNativePromises\.size !== 0/);
+  assert.match(
+    source,
+    /const cancellationClean = clearCloseDeadline\(\);[\s\S]*?increment\('closeClean'\)/,
+  );
+  assert.match(
+    source,
+    /closeTerminal = true;\s*phase = PHASE\.CLOSED;\s*emitEvent\(EVENT\.closeClean\)/,
+  );
 });
 
 test('native attestor release source excludes test fixtures and keeps signing denied', () => {

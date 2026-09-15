@@ -23,6 +23,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import { PassThrough } from 'node:stream';
+import { connect as connectTls } from 'node:tls';
 
 import {
   createZenonFundingComposition,
@@ -71,8 +72,10 @@ import {
     EXTERNAL_HOLDER_HANDOFF_MAX_HEADER_COUNT,
   SERVICE_CREDIT_EXTERNAL_HOLDER_GRANT_DESCRIPTOR_HANDOFF_HTTP_MAX_REDEMPTION_BYTES as
     EXTERNAL_HOLDER_HANDOFF_MAX_REDEMPTION_BYTES,
-  createServiceCreditExternalHolderGrantDescriptorHandoffHttpAdapter,
 } from '../src/service-credit-external-holder-grant-descriptor-handoff-http.js';
+import {
+  createServiceCreditExternalHolderGrantDescriptorHandoffHttpIngress,
+} from '../src/service-credit-external-holder-grant-descriptor-handoff-http-ingress.js';
 import {
   SERVICE_CREDIT_HTTP_PATH,
   SERVICE_CREDIT_HTTP_ROUTE_ID,
@@ -1015,42 +1018,68 @@ function httpsHandoffExchange(route, cert, {
 function beginPausedHandoffRedemption(route, cert, redemption) {
   const body = Buffer.from(canonicalJson(redemption), 'utf8');
   if (body.length < 2) throw syntheticHttpsFailure(SYNTHETIC_HTTPS_FAILURE.fixture);
-  let finishRequest = null;
+  let resolveFirstWrite = null;
+  const firstWrite = new Promise(resolve => { resolveFirstWrite = resolve; });
   const response = httpsHandoffExchange(route, cert, {
     path: EXTERNAL_HOLDER_HANDOFF_REDEEM_PATH,
     body,
     expectedStatus: 503,
     dispatchRequest(request) {
-      request.write(body.subarray(0, 1));
-      finishRequest = () => request.end(body.subarray(1));
+      request.write(body.subarray(0, 1), () => resolveFirstWrite());
     },
   });
-  if (finishRequest === null) throw syntheticHttpsFailure(SYNTHETIC_HTTPS_FAILURE.fixture);
   return Object.freeze({
     response,
-    finish: finishRequest,
+    firstWrite,
   });
 }
 
-function observeFirstHandoffBodyChunk(request, onChunk) {
-  const originalIterator = request[Symbol.asyncIterator];
-  let observed = false;
-  Object.defineProperty(request, Symbol.asyncIterator, {
-    configurable: true,
-    value() {
-      const iterator = Reflect.apply(originalIterator, request, []);
-      return {
-        [Symbol.asyncIterator]() { return this; },
-        async next() {
-          const step = await iterator.next();
-          if (!observed && step.done === false && Buffer.isBuffer(step.value)) {
-            observed = true;
-            onChunk(step.value.length);
-          }
-          return step;
-        },
-      };
-    },
+function rawPinnedTlsExchange(route, cert, requestBytes) {
+  return new Promise((resolve, reject) => {
+    let socket = null;
+    let settled = false;
+    let responseBytes = 0;
+    const finish = callback => {
+      if (settled) return;
+      settled = true;
+      callback();
+    };
+    try {
+      socket = connectTls({
+        host: '127.0.0.1',
+        port: route.port,
+        ca: cert,
+        rejectUnauthorized: true,
+        ALPNProtocols: ['http/1.1'],
+      });
+      socket.setTimeout(3_000, () => {
+        try { socket.destroy(); } catch {}
+        finish(() => reject(syntheticHttpsFailure(SYNTHETIC_HTTPS_FAILURE.deadline)));
+      });
+      socket.once('secureConnect', () => {
+        try { socket.end(requestBytes); }
+        catch {
+          finish(() => reject(syntheticHttpsFailure(SYNTHETIC_HTTPS_FAILURE.request)));
+        }
+      });
+      socket.on('data', chunk => {
+        responseBytes += chunk.length;
+        if (responseBytes > 16 * 1024) {
+          try { socket.destroy(); } catch {}
+          finish(() => reject(syntheticHttpsFailure(SYNTHETIC_HTTPS_FAILURE.response)));
+        }
+      });
+      socket.once('error', () => {
+        finish(() => {
+          if (responseBytes > 0) resolve(responseBytes);
+          else reject(syntheticHttpsFailure(SYNTHETIC_HTTPS_FAILURE.request));
+        });
+      });
+      socket.once('close', () => finish(() => resolve(responseBytes)));
+    } catch {
+      try { socket?.destroy(); } catch {}
+      finish(() => reject(syntheticHttpsFailure(SYNTHETIC_HTTPS_FAILURE.request)));
+    }
   });
 }
 
@@ -1091,8 +1120,8 @@ async function offlineHttpsPilot(t) {
   const holderSelection = Object.freeze({ ...selection() });
   let context = null;
   let activeOwner = null;
-  let handoffAdapter = null;
-  let handoffAdapterClose = Promise.resolve();
+  let handoffController = null;
+  let handoffControllerClose = Promise.resolve();
   let handoffNow = NOW;
   let phase = 'UNAVAILABLE';
   let handlerFailures = 0;
@@ -1124,10 +1153,10 @@ async function offlineHttpsPilot(t) {
   });
   const closeHandoff = () => {
     phase = 'UNAVAILABLE';
-    const activeAdapter = handoffAdapter;
-    handoffAdapter = null;
-    if (activeAdapter !== null) handoffAdapterClose = activeAdapter.close();
-    return handoffAdapterClose;
+    const activeController = handoffController;
+    handoffController = null;
+    if (activeController !== null) handoffControllerClose = activeController.close();
+    return handoffControllerClose;
   };
   t.after(async () => {
     // Quiesce admission and prove transport closure before owner or TLS cleanup.
@@ -1243,24 +1272,24 @@ async function offlineHttpsPilot(t) {
       } catch { try { socket.destroy(); } catch {} }
     };
     const handleRequest = (request, response) => {
-      handlerAdmissions += 1;
       if (
         request.url === EXTERNAL_HOLDER_HANDOFF_CHALLENGE_PATH
         || request.url === EXTERNAL_HOLDER_HANDOFF_REDEEM_PATH
       ) {
-        const mountedAdapter = handoffAdapter;
-        if (mountedAdapter === null) {
+        const mountedController = handoffController;
+        if (mountedController === null) {
           sendHandoffFailure(response);
           return;
         }
-        if (request.url === EXTERNAL_HOLDER_HANDOFF_REDEEM_PATH) {
-          observeFirstHandoffBodyChunk(request, receivedBytes => {
-            handoffEvents.emit('partial-redemption', Object.freeze({ receivedBytes }));
-          });
-        }
-        void mountedAdapter.handle(request, response).catch(() => {
+        const transportContext = Object.freeze({
+          peerToken: Symbol('synthetic-pinned-tls-peer'),
+          abort: Object.freeze(() => {
+            try { request.destroy(); } catch {}
+          }),
+        });
+        void mountedController.handle(request, response, transportContext).catch(() => {
           handlerFailures += 1;
-          sendHandoffFailure(response);
+          try { response.destroy(); } catch {}
         });
         return;
       }
@@ -1306,6 +1335,12 @@ async function offlineHttpsPilot(t) {
       cert: tls.cert,
       maxHeaderSize:
         SERVICE_CREDIT_EXTERNAL_HOLDER_GRANT_DESCRIPTOR_HANDOFF_HTTP_MAX_RAW_HEADER_BYTES,
+      insecureHTTPParser: false,
+      requireHostHeader: true,
+      joinDuplicateHeaders: false,
+      rejectNonStandardBodyWrites: true,
+      connectionsCheckingInterval: 1_000,
+      ALPNProtocols: ['http/1.1'],
     }, handleRequest);
     server.once('close', () => { closeObserved = true; });
     server.on('connection', socket => {
@@ -1315,13 +1350,20 @@ async function offlineHttpsPilot(t) {
         if (ownedSockets.size === 0) handoffEvents.emit('socket-drain');
       });
     });
-    server.on('checkContinue', handleRequest);
-    server.on('checkExpectation', handleRequest);
+    server.on('checkContinue', (_request, response) => { sendHandoffFailure(response); });
+    server.on('checkExpectation', (_request, response) => { sendHandoffFailure(response); });
     server.on('upgrade', (_request, socket, head) => {
       try { head.fill(0); } catch {}
       rejectRawHandoff(socket);
     });
+    server.on('connect', (_request, socket, head) => {
+      try { head.fill(0); } catch {}
+      rejectRawHandoff(socket);
+    });
     server.on('clientError', (_error, socket) => { rejectRawHandoff(socket); });
+    server.on('tlsClientError', () => {});
+    server.on('drop', () => {});
+    server.on('dropRequest', (_request, socket) => { rejectRawHandoff(socket); });
     server.maxHeadersCount = EXTERNAL_HOLDER_HANDOFF_MAX_HEADER_COUNT * 2;
     server.maxConnections = 8;
     server.maxRequestsPerSocket = 1;
@@ -1377,7 +1419,7 @@ async function offlineHttpsPilot(t) {
       cert: tls.cert,
       holderSelection,
       activate(owner) {
-        if (phase === 'ACTIVE' || handoffAdapter !== null) {
+        if (phase === 'ACTIVE' || handoffController !== null) {
           throw syntheticHttpsFailure(SYNTHETIC_HTTPS_FAILURE.fixture);
         }
         const ownerDescriptorForSelection = owner?.getActiveGrantDescriptorForSelection;
@@ -1389,8 +1431,12 @@ async function offlineHttpsPilot(t) {
           ownerReads += 1;
           return ownerDescriptorForSelection(requestedSelection);
         });
-        let nextAdapter = null;
-        nextAdapter = createServiceCreditExternalHolderGrantDescriptorHandoffHttpAdapter({
+        const deadlineRuntime = Object.freeze({
+          schedule: Object.freeze((callback, milliseconds) => setTimeout(callback, milliseconds)),
+          cancel: Object.freeze(handle => clearTimeout(handle)),
+        });
+        let nextController = null;
+        nextController = createServiceCreditExternalHolderGrantDescriptorHandoffHttpIngress({
           origin: route.origin,
           selection: holderSelection,
           challengeLifetimeMs: EXTERNAL_HOLDER_HANDOFF_CHALLENGE_LIFETIME_MS,
@@ -1398,16 +1444,25 @@ async function offlineHttpsPilot(t) {
           getActiveGrantDescriptorForSelection: countedOwnerDescriptorForSelection,
           challengeRequestTarget: EXTERNAL_HOLDER_HANDOFF_CHALLENGE_PATH,
           redemptionRequestTarget: EXTERNAL_HOLDER_HANDOFF_REDEEM_PATH,
-          admitRequest: Object.freeze(() => (
-            phase === 'ACTIVE' && handoffAdapter === nextAdapter
-          )),
+          admitRequest: Object.freeze(admission => {
+            handlerAdmissions += 1;
+            if (admission.operation === 'REDEMPTION') {
+              handoffEvents.emit('redemption-admitted', admission.operation);
+            }
+            return phase === 'ACTIVE' && handoffController === nextController;
+          }),
+          deadlineRuntime,
+          bodyDeadlineMs: 2_000,
+          responseDeadlineMs: 2_000,
+          closeGraceMs: 3_000,
+          metricsCounterLimit: Number.MAX_SAFE_INTEGER,
         });
         activeOwner = owner;
-        handoffAdapter = nextAdapter;
+        handoffController = nextController;
         phase = 'ACTIVE';
       },
       quiesce() { return closeHandoff(); },
-      waitForPartialRedemption() { return waitForHandoffEvent('partial-redemption'); },
+      waitForRedemptionAdmission() { return waitForHandoffEvent('redemption-admitted'); },
       waitForSocketDrain() {
         return ownedSockets.size === 0
           ? Promise.resolve()
@@ -1876,25 +1931,99 @@ test('offline HTTPS harness hands an external holder durable credit across owner
     wrongTls.cleanup();
   }
 
+  const rawOuterIngressCases = [
+    [
+      'equal duplicate content length',
+      `POST ${EXTERNAL_HOLDER_HANDOFF_CHALLENGE_PATH} HTTP/1.1\r\n`
+        + 'Host: 127.0.0.1\r\nContent-Length: 0\r\nContent-Length: 0\r\n'
+        + 'Connection: close\r\n\r\n',
+    ],
+    [
+      'conflicting duplicate content length',
+      `POST ${EXTERNAL_HOLDER_HANDOFF_CHALLENGE_PATH} HTTP/1.1\r\n`
+        + 'Host: 127.0.0.1\r\nContent-Length: 0\r\nContent-Length: 1\r\n'
+        + 'Connection: close\r\n\r\nx',
+    ],
+    [
+      'content length with transfer encoding',
+      `POST ${EXTERNAL_HOLDER_HANDOFF_CHALLENGE_PATH} HTTP/1.1\r\n`
+        + 'Host: 127.0.0.1\r\nContent-Length: 0\r\nTransfer-Encoding: chunked\r\n'
+        + 'Connection: close\r\n\r\n0\r\n\r\n',
+    ],
+    [
+      'malformed header delimiter',
+      `POST ${EXTERNAL_HOLDER_HANDOFF_CHALLENGE_PATH} HTTP/1.1\r\n`
+        + 'Host : 127.0.0.1\r\nContent-Length: 0\r\nConnection: close\r\n\r\n',
+    ],
+    [
+      'malformed line endings',
+      `POST ${EXTERNAL_HOLDER_HANDOFF_CHALLENGE_PATH} HTTP/1.1\n`
+        + 'Host: 127.0.0.1\nContent-Length: 0\nConnection: close\n\n',
+    ],
+    [
+      'oversized headers',
+      `POST ${EXTERNAL_HOLDER_HANDOFF_CHALLENGE_PATH} HTTP/1.1\r\n`
+        + `Host: 127.0.0.1\r\nX-Pad: ${'x'.repeat(
+          SERVICE_CREDIT_EXTERNAL_HOLDER_GRANT_DESCRIPTOR_HANDOFF_HTTP_MAX_RAW_HEADER_BYTES,
+        )}\r\nContent-Length: 0\r\nConnection: close\r\n\r\n`,
+    ],
+    [
+      'http 1.0',
+      `POST ${EXTERNAL_HOLDER_HANDOFF_CHALLENGE_PATH} HTTP/1.0\r\n`
+        + 'Host: 127.0.0.1\r\nContent-Length: 0\r\nConnection: close\r\n\r\n',
+    ],
+    [
+      'expect',
+      `POST ${EXTERNAL_HOLDER_HANDOFF_CHALLENGE_PATH} HTTP/1.1\r\n`
+        + 'Host: 127.0.0.1\r\nContent-Length: 0\r\nExpect: 100-continue\r\n'
+        + 'Connection: close\r\n\r\n',
+    ],
+    [
+      'upgrade',
+      `GET ${EXTERNAL_HOLDER_HANDOFF_CHALLENGE_PATH} HTTP/1.1\r\n`
+        + 'Host: 127.0.0.1\r\nConnection: Upgrade\r\nUpgrade: synthetic\r\n\r\n',
+    ],
+    [
+      'connect',
+      'CONNECT service.example:443 HTTP/1.1\r\nHost: service.example:443\r\n'
+        + 'Connection: close\r\n\r\n',
+    ],
+    [
+      'pipelined second request',
+      `POST ${EXTERNAL_HOLDER_HANDOFF_CHALLENGE_PATH}?first-rejected=1 HTTP/1.1\r\n`
+        + 'Host: 127.0.0.1\r\nContent-Length: 0\r\nConnection: keep-alive\r\n\r\n'
+        + `POST ${EXTERNAL_HOLDER_HANDOFF_CHALLENGE_PATH} HTTP/1.1\r\n`
+        + 'Host: 127.0.0.1\r\nContent-Length: 0\r\nConnection: close\r\n\r\n',
+    ],
+  ];
+  for (const [name, rawRequest] of rawOuterIngressCases) await t.test(name, async () => {
+    const admissionsBefore = pilot.handlerAdmissionCount();
+    const responseBytes = await rawPinnedTlsExchange(route, cert, rawRequest);
+    assert.equal(responseBytes > 0, true);
+    assert.equal(pilot.handlerAdmissionCount(), admissionsBefore);
+  });
   for (const request of [
     { path: `${EXTERNAL_HOLDER_HANDOFF_CHALLENGE_PATH}?not-accepted=1`, method: 'POST' },
     { path: EXTERNAL_HOLDER_HANDOFF_CHALLENGE_PATH, method: 'GET' },
   ]) {
     await expectHandoffUnavailable(route, cert, request);
   }
-  for (const negativeHeaderOverrides of [
-    { 'Content-Length': '00' },
-    { 'Transfer-Encoding': 'chunked' },
-    { Expect: '100-continue' },
-    { Connection: 'Upgrade', Upgrade: 'synthetic' },
-    { 'Content-Type': 'application/json' },
-    Object.fromEntries(Array.from({ length: 6 }, (_, index) => [`X-Bound-${index}`, 'x'])),
-  ]) {
+  for (const [name, negativeHeaderOverrides] of [
+    ['noncanonical content length', { 'Content-Length': '00' }],
+    ['transfer encoding', { 'Transfer-Encoding': 'chunked' }],
+    ['client expectation', { Expect: '100-continue' }],
+    ['client upgrade', { Connection: 'Upgrade', Upgrade: 'synthetic' }],
+    ['challenge content type', { 'Content-Type': 'application/json' }],
+    [
+      'raw header pair ceiling',
+      Object.fromEntries(Array.from({ length: 6 }, (_, index) => [`X-Bound-${index}`, 'x'])),
+    ],
+  ]) await t.test(name, async () => {
     await expectHandoffUnavailable(route, cert, {
       path: EXTERNAL_HOLDER_HANDOFF_CHALLENGE_PATH,
       negativeHeaderOverrides,
     });
-  }
+  });
   await expectHandoffUnavailable(route, cert, {
     path: EXTERNAL_HOLDER_HANDOFF_REDEEM_PATH,
     body: Buffer.from('{"unexpected":true}', 'utf8'),
@@ -2038,21 +2167,26 @@ test('offline HTTPS harness hands an external holder durable credit across owner
 
   const raceChallenge = await obtainExternalHolderChallenge(route, cert);
   const raceProof = externalHolderRedemption(raceChallenge, route.origin, holderSelection);
-  const partialAdmission = pilot.waitForPartialRedemption();
+  const redemptionAdmission = pilot.waitForRedemptionAdmission();
   const pausedRedemption = beginPausedHandoffRedemption(route, cert, raceProof);
-  assert.deepEqual(await partialAdmission, {
-    receivedBytes: 1,
-  });
+  await pausedRedemption.firstWrite;
+  assert.equal(await redemptionAdmission, 'REDEMPTION');
   const ownerReadsBeforeQuiesce = pilot.ownerReadCount();
-  let adapterCloseSettled = false;
-  const adapterClose = pilot.quiesce();
-  adapterClose.then(() => { adapterCloseSettled = true; });
+  let controllerCloseSettled = false;
+  const controllerClose = pilot.quiesce();
+  controllerClose.then(() => { controllerCloseSettled = true; });
   await Promise.resolve();
-  assert.equal(adapterCloseSettled, false);
-  pausedRedemption.finish();
-  assertHandoffUnavailableResponse(await pausedRedemption.response);
-  await adapterClose;
-  assert.equal(adapterCloseSettled, true);
+  assert.equal(controllerCloseSettled, false);
+  await pausedRedemption.response.then(
+    response => assertHandoffUnavailableResponse(response),
+    error => assert.equal(
+      isSyntheticHttpsFailure(error, SYNTHETIC_HTTPS_FAILURE.request)
+        || isSyntheticHttpsFailure(error, SYNTHETIC_HTTPS_FAILURE.response),
+      true,
+    ),
+  );
+  await controllerClose;
+  assert.equal(controllerCloseSettled, true);
   await pilot.waitForSocketDrain();
   assert.equal(pilot.ownerReadCount(), ownerReadsBeforeQuiesce);
   assert.equal(pilot.ownedSocketCount(), 0);
