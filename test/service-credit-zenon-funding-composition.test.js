@@ -62,6 +62,11 @@ import {
 import { createZenonDurableHttpComposition } from '../src/service-credit-zenon-durable-http-composition.js';
 import { createServiceCreditAuthorization } from '../src/service-credit-client.js';
 import {
+  SERVICE_CREDIT_EXTERNAL_HOLDER_GRANT_DESCRIPTOR_HANDOFF_VERSION,
+  createServiceCreditExternalHolderGrantDescriptorHandoff,
+  createServiceCreditExternalHolderGrantDescriptorSigningBytes,
+} from '../src/service-credit-external-holder-grant-descriptor-handoff.js';
+import {
   SERVICE_CREDIT_HTTP_PATH,
   SERVICE_CREDIT_HTTP_ROUTE_ID,
 } from '../src/service-credit-http.js';
@@ -607,6 +612,185 @@ function authorization(request, grant = undefined) {
   return `ServiceCredit ${Buffer.from(canonicalJson(proof), 'utf8').toString('base64url')}`;
 }
 
+const EXTERNAL_HOLDER_HANDOFF_CHALLENGE_PATH =
+  '/test-only/service-credit/external-holder/grant-descriptor/challenge';
+const EXTERNAL_HOLDER_HANDOFF_REDEEM_PATH =
+  '/test-only/service-credit/external-holder/grant-descriptor/redeem';
+const EXTERNAL_HOLDER_HANDOFF_CHALLENGE_LIFETIME_MS = 1_000;
+const EXTERNAL_HOLDER_HANDOFF_MAX_HEADER_COUNT = 8;
+const EXTERNAL_HOLDER_HANDOFF_MAX_REDEMPTION_BYTES = 1_024;
+const EXTERNAL_HOLDER_HANDOFF_MAX_CHALLENGE_RESPONSE_BYTES = 256;
+const EXTERNAL_HOLDER_HANDOFF_MAX_REDEMPTION_RESPONSE_BYTES = 384;
+const EXTERNAL_HOLDER_HANDOFF_FAILURE_BODY = '{"error":"unavailable"}';
+const CANONICAL_CONTENT_LENGTH = /^(?:0|[1-9][0-9]*)$/;
+const EXTERNAL_HOLDER_CHALLENGE_VALUE = /^[A-Za-z0-9_-]{43}$/;
+const EXTERNAL_HOLDER_PUBLIC_KEY = /^[A-Za-z0-9_-]{43}$/;
+const EXTERNAL_HOLDER_SIGNATURE = /^[A-Za-z0-9_-]{86}$/;
+const SERVICE_CREDIT_COMMITMENT = /^sha256:[0-9a-f]{64}$/;
+const SERVICE_CREDIT_IDENTIFIER = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/;
+
+function hasExactPlainDataShape(value, expectedKeys) {
+  if (value === null || typeof value !== 'object' || Object.getPrototypeOf(value) !== Object.prototype) {
+    return false;
+  }
+  const keys = Reflect.ownKeys(value);
+  if (keys.length !== expectedKeys.length) return false;
+  return expectedKeys.every(key => {
+    const descriptor = Object.getOwnPropertyDescriptor(value, key);
+    return descriptor !== undefined
+      && descriptor.enumerable
+      && Object.hasOwn(descriptor, 'value');
+  });
+}
+
+function parseCanonicalHandoffJson(body) {
+  try {
+    const text = body.toString('utf8');
+    if (!Buffer.from(text, 'utf8').equals(body)) return null;
+    const parsed = JSON.parse(text);
+    return canonicalJson(parsed) === text ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+function isPublicHandoffChallenge(challenge) {
+  return hasExactPlainDataShape(challenge, ['handoffVersion', 'challenge', 'expiresAtMs'])
+    && challenge.handoffVersion
+      === SERVICE_CREDIT_EXTERNAL_HOLDER_GRANT_DESCRIPTOR_HANDOFF_VERSION
+    && EXTERNAL_HOLDER_CHALLENGE_VALUE.test(challenge.challenge)
+    && Number.isSafeInteger(challenge.expiresAtMs)
+    && challenge.expiresAtMs > 0;
+}
+
+function parseHandoffRedemptionBody(body) {
+  const redemption = Buffer.isBuffer(body)
+    && body.length <= EXTERNAL_HOLDER_HANDOFF_MAX_REDEMPTION_BYTES
+    ? parseCanonicalHandoffJson(body)
+    : null;
+  return hasExactPlainDataShape(redemption, ['challenge', 'publicKey', 'signature'])
+    && isPublicHandoffChallenge(redemption.challenge)
+    && EXTERNAL_HOLDER_PUBLIC_KEY.test(redemption.publicKey)
+    && EXTERNAL_HOLDER_SIGNATURE.test(redemption.signature)
+    ? redemption
+    : null;
+}
+
+function parseHandoffChallengeResponse(body) {
+  const challenge = parseCanonicalHandoffJson(body);
+  if (!isPublicHandoffChallenge(challenge)) {
+    throw syntheticHttpsFailure(SYNTHETIC_HTTPS_FAILURE.response);
+  }
+  return Object.freeze({
+    handoffVersion: challenge.handoffVersion,
+    challenge: challenge.challenge,
+    expiresAtMs: challenge.expiresAtMs,
+  });
+}
+
+function parseHandoffDescriptorResponse(body) {
+  const descriptor = parseCanonicalHandoffJson(body);
+  if (
+    !hasExactPlainDataShape(descriptor, ['grantId', 'capabilityCommitment'])
+    || !SERVICE_CREDIT_IDENTIFIER.test(descriptor.grantId)
+    || !SERVICE_CREDIT_COMMITMENT.test(descriptor.capabilityCommitment)
+  ) {
+    throw syntheticHttpsFailure(SYNTHETIC_HTTPS_FAILURE.response);
+  }
+  return Object.freeze({
+    grantId: descriptor.grantId,
+    capabilityCommitment: descriptor.capabilityCommitment,
+  });
+}
+
+function externalHolderRedemption(challenge, origin, holderSelection, signingOrigin = origin) {
+  return {
+    challenge,
+    publicKey: CAPABILITY_KEYS.publicKey,
+    signature: sign(
+      null,
+      createServiceCreditExternalHolderGrantDescriptorSigningBytes({
+        ...challenge,
+        origin: signingOrigin,
+        selection: holderSelection,
+      }),
+      CAPABILITY_KEYS.privateKey,
+    ).toString('base64url'),
+  };
+}
+
+function canonicalHandoffContentLength(request, maximumBytes, requiresJsonBody) {
+  try {
+    if (
+      !Array.isArray(request.rawHeaders)
+      || request.rawHeaders.length % 2 !== 0
+      || request.rawHeaders.length / 2 > EXTERNAL_HOLDER_HANDOFF_MAX_HEADER_COUNT
+      || Object.hasOwn(request.headers, 'transfer-encoding')
+      || Object.hasOwn(request.headers, 'expect')
+      || Object.hasOwn(request.headers, 'upgrade')
+    ) return null;
+    let captured = null;
+    let contentTypeSeen = false;
+    for (let index = 0; index < request.rawHeaders.length; index += 2) {
+      const name = request.rawHeaders[index];
+      const value = request.rawHeaders[index + 1];
+      const lowerName = String(name).toLowerCase();
+      if (lowerName === 'transfer-encoding' || lowerName === 'expect' || lowerName === 'upgrade') {
+        return null;
+      }
+      if (lowerName === 'connection' && String(value).toLowerCase() !== 'close') return null;
+      if (lowerName === 'content-type') {
+        if (
+          !requiresJsonBody
+          || contentTypeSeen
+          || name !== 'Content-Type'
+          || value !== 'application/json'
+        ) return null;
+        contentTypeSeen = true;
+        continue;
+      }
+      if (lowerName !== 'content-length') continue;
+      if (
+        captured !== null
+        || name !== 'Content-Length'
+        || typeof value !== 'string'
+        || !CANONICAL_CONTENT_LENGTH.test(value)
+      ) return null;
+      const parsed = Number(value);
+      if (!Number.isSafeInteger(parsed) || parsed < 0 || parsed > maximumBytes) return null;
+      captured = parsed;
+    }
+    return contentTypeSeen === requiresJsonBody ? captured : null;
+  } catch {
+    return null;
+  }
+}
+
+async function materializeHandoffBody(request, expectedBytes, onPartial = undefined) {
+  try {
+    const chunks = [];
+    let bytes = 0;
+    let partialObserved = false;
+    for await (const chunk of request) {
+      bytes += chunk.length;
+      if (bytes > expectedBytes) {
+        try { request.destroy(); } catch {}
+        return null;
+      }
+      chunks.push(chunk);
+      if (!partialObserved && bytes > 0 && bytes < expectedBytes) {
+        partialObserved = true;
+        onPartial?.(bytes);
+      }
+    }
+    return request.complete && bytes === expectedBytes
+      ? Buffer.concat(chunks, bytes)
+      : null;
+  } catch {
+    return null;
+  }
+}
+
 // Test-only TLS ingress; no production funding route or process restart is implied.
 const SYNTHETIC_HTTPS_FAILURE = Object.freeze({
   prerequisite: 'SYNTHETIC_HTTPS_PREREQUISITE_UNAVAILABLE',
@@ -742,13 +926,31 @@ function syntheticHttpsMaterial() {
   }
 }
 
-function httpsExchange(route, cert, authorizationValue = undefined) {
+function pinnedHttpsExchange({
+  route,
+  cert,
+  path,
+  method,
+  body,
+  headers,
+  maximumResponseBytes,
+  expectedStatus = null,
+  expectedContentType = null,
+  expectedCacheControl = null,
+  requireContentLength = false,
+  dispatchRequest = request => request.end(body),
+}) {
   return new Promise((resolve, reject) => {
     const chunks = [];
     let bytes = 0;
     let request = null;
     let responseStarted = false;
     let settled = false;
+    let successfulResult = null;
+    let requestClosed = false;
+    const finishSuccess = () => {
+      if (successfulResult !== null && requestClosed) resolve(successfulResult);
+    };
     const fail = code => {
       if (settled) return;
       settled = true;
@@ -759,24 +961,39 @@ function httpsExchange(route, cert, authorizationValue = undefined) {
       request = httpsRequest({
         hostname: '127.0.0.1',
         port: route.port,
-        path: route.path,
-        method: 'POST',
+        path,
+        method,
         agent: false,
         ca: cert,
         rejectUnauthorized: true,
-        headers: {
-          'Content-Length': '0',
-          Connection: 'close',
-          ...(authorizationValue === undefined ? {} : { Authorization: authorizationValue }),
-        },
+        headers,
       }, response => {
         responseStarted = true;
         let verified;
         try { verified = response.socket.authorized === true; }
         catch { fail(SYNTHETIC_HTTPS_FAILURE.response); return; }
+        const declaredLength = response.headers['content-length'];
+        const validDeclaredLength = typeof declaredLength === 'string'
+          && CANONICAL_CONTENT_LENGTH.test(declaredLength)
+          && Number(declaredLength) <= maximumResponseBytes;
+        if (
+          !verified
+          || (expectedStatus !== null && response.statusCode !== expectedStatus)
+          || (expectedContentType !== null
+            && response.headers['content-type'] !== expectedContentType)
+          || (expectedCacheControl !== null
+            && response.headers['cache-control'] !== expectedCacheControl)
+          || (requireContentLength && !validDeclaredLength)
+        ) {
+          fail(SYNTHETIC_HTTPS_FAILURE.response);
+          return;
+        }
         response.on('data', chunk => {
           bytes += chunk.length;
-          if (bytes > 16 * 1024) {
+          if (
+            bytes > maximumResponseBytes
+            || (validDeclaredLength && bytes > Number(declaredLength))
+          ) {
             fail(SYNTHETIC_HTTPS_FAILURE.response);
             return;
           }
@@ -787,53 +1004,237 @@ function httpsExchange(route, cert, authorizationValue = undefined) {
         response.once('close', () => fail(SYNTHETIC_HTTPS_FAILURE.response));
         response.once('end', () => {
           if (settled) return;
-          if (!verified) { fail(SYNTHETIC_HTTPS_FAILURE.response); return; }
+          if (requireContentLength && bytes !== Number(declaredLength)) {
+            fail(SYNTHETIC_HTTPS_FAILURE.response);
+            return;
+          }
           try {
-            const result = {
+            successfulResult = {
               verified,
               statusCode: response.statusCode,
               headers: response.headers,
               body: Buffer.concat(chunks),
             };
             settled = true;
-            resolve(result);
+            finishSuccess();
           } catch { fail(SYNTHETIC_HTTPS_FAILURE.response); }
         });
       });
       request.setTimeout(5_000, () => fail(SYNTHETIC_HTTPS_FAILURE.deadline));
       request.once('error', () => fail(SYNTHETIC_HTTPS_FAILURE.request));
       request.once('close', () => {
+        requestClosed = true;
         if (!responseStarted) fail(SYNTHETIC_HTTPS_FAILURE.request);
+        else finishSuccess();
       });
-      request.end();
+      dispatchRequest(request);
     } catch { fail(SYNTHETIC_HTTPS_FAILURE.request); }
   });
 }
 
+function httpsExchange(route, cert, authorizationValue = undefined) {
+  return pinnedHttpsExchange({
+    route,
+    cert,
+    path: route.path,
+    method: 'POST',
+    body: Buffer.alloc(0),
+    headers: {
+      'Content-Length': '0',
+      Connection: 'close',
+      ...(authorizationValue === undefined ? {} : { Authorization: authorizationValue }),
+    },
+    maximumResponseBytes: 16 * 1024,
+  });
+}
+
+function handoffRequestHeaders(path, bodyLength, negativeHeaderOverrides = undefined) {
+  const headers = {
+    'Content-Length': String(bodyLength),
+    Connection: 'close',
+    ...(path === EXTERNAL_HOLDER_HANDOFF_REDEEM_PATH
+      ? { 'Content-Type': 'application/json' }
+      : {}),
+  };
+  if (negativeHeaderOverrides === undefined) return headers;
+  for (const [name, value] of Object.entries(negativeHeaderOverrides)) {
+    const existing = Object.keys(headers).find(
+      headerName => headerName.toLowerCase() === name.toLowerCase(),
+    );
+    if (existing !== undefined) delete headers[existing];
+    if (value !== null) headers[name] = value;
+  }
+  return headers;
+}
+
+function httpsHandoffExchange(route, cert, {
+  path,
+  body = Buffer.alloc(0),
+  method = 'POST',
+  negativeHeaderOverrides,
+  expectedStatus,
+  dispatchRequest,
+}) {
+  const maximumResponseBytes = path === EXTERNAL_HOLDER_HANDOFF_REDEEM_PATH
+    ? EXTERNAL_HOLDER_HANDOFF_MAX_REDEMPTION_RESPONSE_BYTES
+    : EXTERNAL_HOLDER_HANDOFF_MAX_CHALLENGE_RESPONSE_BYTES;
+  return pinnedHttpsExchange({
+    route,
+    cert,
+    path,
+    method,
+    body,
+    headers: handoffRequestHeaders(path, body.length, negativeHeaderOverrides),
+    maximumResponseBytes,
+    expectedStatus,
+    expectedContentType: 'application/json',
+    expectedCacheControl: 'private, no-store',
+    requireContentLength: true,
+    ...(dispatchRequest === undefined ? {} : { dispatchRequest }),
+  });
+}
+
+function beginPausedHandoffRedemption(route, cert, redemption) {
+  const body = Buffer.from(canonicalJson(redemption), 'utf8');
+  if (body.length < 2) throw syntheticHttpsFailure(SYNTHETIC_HTTPS_FAILURE.fixture);
+  let finishRequest = null;
+  const response = httpsHandoffExchange(route, cert, {
+    path: EXTERNAL_HOLDER_HANDOFF_REDEEM_PATH,
+    body,
+    expectedStatus: 503,
+    dispatchRequest(request) {
+      request.write(body.subarray(0, 1));
+      finishRequest = () => request.end(body.subarray(1));
+    },
+  });
+  if (finishRequest === null) throw syntheticHttpsFailure(SYNTHETIC_HTTPS_FAILURE.fixture);
+  return Object.freeze({
+    declaredLength: body.length,
+    response,
+    finish: finishRequest,
+  });
+}
+
+function assertHandoffUnavailableResponse(response) {
+  assert.equal(response.statusCode, 503);
+  assert.equal(response.body.toString('utf8'), EXTERNAL_HOLDER_HANDOFF_FAILURE_BODY);
+}
+
+async function expectHandoffUnavailable(route, cert, request) {
+  const response = await httpsHandoffExchange(route, cert, {
+    ...request,
+    expectedStatus: 503,
+  });
+  assertHandoffUnavailableResponse(response);
+}
+
+async function obtainExternalHolderChallenge(route, cert) {
+  const response = await httpsHandoffExchange(route, cert, {
+    path: EXTERNAL_HOLDER_HANDOFF_CHALLENGE_PATH,
+    expectedStatus: 200,
+  });
+  return parseHandoffChallengeResponse(response.body);
+}
+
+async function redeemExternalHolderDescriptor(route, cert, redemption) {
+  const response = await httpsHandoffExchange(route, cert, {
+    path: EXTERNAL_HOLDER_HANDOFF_REDEEM_PATH,
+    body: Buffer.from(canonicalJson(redemption), 'utf8'),
+    expectedStatus: 200,
+  });
+  return parseHandoffDescriptorResponse(response.body);
+}
+
 async function offlineHttpsPilot(t) {
   const tls = syntheticHttpsMaterial();
+  const holderSelection = Object.freeze({ ...selection() });
   let context = null;
   let activeOwner = null;
+  let handoff = null;
+  let handoffNow = NOW;
   let phase = 'UNAVAILABLE';
   let handlerFailures = 0;
+  let handlerAdmissions = 0;
+  let ownerReads = 0;
   let server = null;
   let listenAttempted = false;
   let closeObserved = false;
+  const ownedSockets = new Set();
+  const handoffEvents = new EventEmitter();
+  const latchTimers = new Set();
+  const waitForHandoffEvent = eventName => new Promise((resolve, reject) => {
+    let deadline = null;
+    const settle = (callback, value) => {
+      handoffEvents.off(eventName, onEvent);
+      if (deadline !== null) {
+        clearTimeout(deadline);
+        latchTimers.delete(deadline);
+      }
+      callback(value);
+    };
+    const onEvent = value => settle(resolve, value);
+    handoffEvents.once(eventName, onEvent);
+    deadline = setTimeout(
+      () => settle(reject, syntheticHttpsFailure(SYNTHETIC_HTTPS_FAILURE.deadline)),
+      3_000,
+    );
+    latchTimers.add(deadline);
+  });
+  const closeHandoff = () => {
+    phase = 'UNAVAILABLE';
+    const activeHandoff = handoff;
+    handoff = null;
+    activeHandoff?.close();
+  };
   t.after(async () => {
     // Quiesce admission and prove transport closure before owner or TLS cleanup.
     // Existing fixture hooks separately own only synthetic SQLite test files.
-    phase = 'UNAVAILABLE';
+    let handoffCloseFailed = false;
+    try { closeHandoff(); } catch { handoffCloseFailed = true; }
+    for (const deadline of latchTimers) clearTimeout(deadline);
+    latchTimers.clear();
+    handoffEvents.removeAllListeners();
     if (server !== null && listenAttempted && !closeObserved) {
       try {
         await new Promise((resolve, reject) => {
+          let settled = false;
+          let serverClosed = false;
+          const pendingSockets = new Set(ownedSockets);
           const deadline = setTimeout(
-            () => reject(syntheticHttpsFailure(SYNTHETIC_HTTPS_FAILURE.close)), 3_000,
+            () => {
+              if (settled) return;
+              settled = true;
+              reject(syntheticHttpsFailure(SYNTHETIC_HTTPS_FAILURE.close));
+            },
+            3_000,
           );
-          server.close(error => {
+          const finish = () => {
+            if (settled || !serverClosed || pendingSockets.size !== 0) return;
+            settled = true;
             clearTimeout(deadline);
-            error ? reject(syntheticHttpsFailure(SYNTHETIC_HTTPS_FAILURE.close)) : resolve();
+            resolve();
+          };
+          for (const socket of pendingSockets) {
+            socket.once('close', () => {
+              pendingSockets.delete(socket);
+              finish();
+            });
+          }
+          server.close(error => {
+            if (settled) return;
+            if (error) {
+              settled = true;
+              clearTimeout(deadline);
+              reject(syntheticHttpsFailure(SYNTHETIC_HTTPS_FAILURE.close));
+              return;
+            }
+            serverClosed = true;
+            finish();
           });
           server.closeAllConnections();
+          for (const socket of ownedSockets) {
+            try { socket.destroy(); } catch {}
+          }
         });
       } catch {
         try { server.unref(); } catch {}
@@ -841,6 +1242,9 @@ async function offlineHttpsPilot(t) {
       }
     }
     if (server !== null && listenAttempted && !closeObserved) {
+      throw syntheticHttpsFailure(SYNTHETIC_HTTPS_FAILURE.close);
+    }
+    if (server !== null && (server.listening || ownedSockets.size !== 0)) {
       throw syntheticHttpsFailure(SYNTHETIC_HTTPS_FAILURE.close);
     }
     let ownerCloseFailed = false;
@@ -854,11 +1258,135 @@ async function offlineHttpsPilot(t) {
     }
     try { tls.cleanup(); }
     catch { throw syntheticHttpsFailure(SYNTHETIC_HTTPS_FAILURE.cleanup); }
-    if (ownerCloseFailed) throw syntheticHttpsFailure(SYNTHETIC_HTTPS_FAILURE.ownerClose);
+    if (handoffCloseFailed || ownerCloseFailed) {
+      throw syntheticHttpsFailure(SYNTHETIC_HTTPS_FAILURE.ownerClose);
+    }
   });
   let setupFailureCode = SYNTHETIC_HTTPS_FAILURE.listen;
   try {
-    server = createHttpsServer({ key: tls.key, cert: tls.cert }, (request, response) => {
+    const sendHandoffResponse = (response, statusCode, bodyText, maximumBytes) => {
+      const body = Buffer.from(bodyText, 'utf8');
+      if (body.length > maximumBytes) throw syntheticHttpsFailure(
+        SYNTHETIC_HTTPS_FAILURE.response,
+      );
+      response.writeHead(statusCode, {
+        'Content-Type': 'application/json',
+        'Cache-Control': 'private, no-store',
+        'Content-Length': String(body.length),
+        Connection: 'close',
+      });
+      response.end(body);
+    };
+    const sendHandoffFailure = response => {
+      try {
+        if (response.headersSent || response.writableEnded) {
+          if (!response.writableEnded) response.destroy();
+          return;
+        }
+        sendHandoffResponse(
+          response,
+          503,
+          EXTERNAL_HOLDER_HANDOFF_FAILURE_BODY,
+          EXTERNAL_HOLDER_HANDOFF_MAX_REDEMPTION_RESPONSE_BYTES,
+        );
+      } catch { try { response.destroy(); } catch {} }
+    };
+    const rejectRawHandoff = socket => {
+      try {
+        const bodyLength = Buffer.byteLength(EXTERNAL_HOLDER_HANDOFF_FAILURE_BODY, 'utf8');
+        socket.end(
+          'HTTP/1.1 503 Service Unavailable\r\n'
+          + 'Content-Type: application/json\r\n'
+          + 'Cache-Control: private, no-store\r\n'
+          + `Content-Length: ${bodyLength}\r\n`
+          + 'Connection: close\r\n\r\n'
+          + EXTERNAL_HOLDER_HANDOFF_FAILURE_BODY,
+        );
+      } catch { try { socket.destroy(); } catch {} }
+    };
+    const handleHandoffRequest = async (request, response, path) => {
+      const maximumRequestBytes = path === EXTERNAL_HOLDER_HANDOFF_CHALLENGE_PATH
+        ? 0
+        : EXTERNAL_HOLDER_HANDOFF_MAX_REDEMPTION_BYTES;
+      const requiresJsonBody = path === EXTERNAL_HOLDER_HANDOFF_REDEEM_PATH;
+      const declaredLength = canonicalHandoffContentLength(
+        request,
+        maximumRequestBytes,
+        requiresJsonBody,
+      );
+      if (declaredLength === null) {
+        request.resume();
+        sendHandoffFailure(response);
+        return;
+      }
+      const admittedHandoff = handoff;
+      if (phase !== 'ACTIVE' || admittedHandoff === null) {
+        request.resume();
+        sendHandoffFailure(response);
+        return;
+      }
+      const body = await materializeHandoffBody(
+        request,
+        declaredLength,
+        requiresJsonBody
+          ? receivedBytes => handoffEvents.emit('partial-redemption', Object.freeze({
+            declaredLength,
+            receivedBytes,
+          }))
+          : undefined,
+      );
+      if (
+        body === null
+        || phase !== 'ACTIVE'
+        || handoff !== admittedHandoff
+      ) {
+        sendHandoffFailure(response);
+        return;
+      }
+      try {
+        if (path === EXTERNAL_HOLDER_HANDOFF_CHALLENGE_PATH) {
+          const publicChallenge = admittedHandoff.issueChallenge();
+          sendHandoffResponse(
+            response,
+            200,
+            canonicalJson(publicChallenge),
+            EXTERNAL_HOLDER_HANDOFF_MAX_CHALLENGE_RESPONSE_BYTES,
+          );
+          return;
+        }
+        const redemption = parseHandoffRedemptionBody(body);
+        if (redemption === null) {
+          sendHandoffFailure(response);
+          return;
+        }
+        const descriptor = admittedHandoff.redeem(redemption);
+        sendHandoffResponse(
+          response,
+          200,
+          canonicalJson(descriptor),
+          EXTERNAL_HOLDER_HANDOFF_MAX_REDEMPTION_RESPONSE_BYTES,
+        );
+      } catch {
+        sendHandoffFailure(response);
+      }
+    };
+    const handleRequest = (request, response) => {
+      handlerAdmissions += 1;
+      if (
+        request.url === EXTERNAL_HOLDER_HANDOFF_CHALLENGE_PATH
+        || request.url === EXTERNAL_HOLDER_HANDOFF_REDEEM_PATH
+      ) {
+        if (request.method !== 'POST') {
+          request.resume();
+          sendHandoffFailure(response);
+          return;
+        }
+        void handleHandoffRequest(request, response, request.url).catch(() => {
+          handlerFailures += 1;
+          sendHandoffFailure(response);
+        });
+        return;
+      }
       const unavailable = () => {
         handlerFailures += 1;
         try {
@@ -869,7 +1397,8 @@ async function offlineHttpsPilot(t) {
         } catch { try { response.destroy(); } catch {} }
       };
       if (request.method !== 'POST' || request.url !== SERVICE_CREDIT_HTTP_PATH) {
-        try { response.writeHead(404); response.end(); } catch { unavailable(); }
+        request.resume();
+        sendHandoffFailure(response);
         return;
       }
       if (phase === 'CHALLENGE') {
@@ -894,16 +1423,34 @@ async function offlineHttpsPilot(t) {
       } else {
         try { response.writeHead(503); response.end(); } catch { unavailable(); }
       }
-    });
+    };
+    server = createHttpsServer({
+      key: tls.key,
+      cert: tls.cert,
+      maxHeaderSize: 8 * 1024,
+    }, handleRequest);
     server.once('close', () => { closeObserved = true; });
-    server.maxHeadersCount = 8;
+    server.on('connection', socket => {
+      ownedSockets.add(socket);
+      socket.once('close', () => {
+        ownedSockets.delete(socket);
+        if (ownedSockets.size === 0) handoffEvents.emit('socket-drain');
+      });
+    });
+    server.on('checkContinue', handleRequest);
+    server.on('checkExpectation', handleRequest);
+    server.on('upgrade', (_request, socket, head) => {
+      try { head.fill(0); } catch {}
+      rejectRawHandoff(socket);
+    });
+    server.on('clientError', (_error, socket) => { rejectRawHandoff(socket); });
+    server.maxHeadersCount = EXTERNAL_HOLDER_HANDOFF_MAX_HEADER_COUNT * 2;
     server.maxConnections = 8;
     server.maxRequestsPerSocket = 1;
     server.headersTimeout = 2_000;
     server.requestTimeout = 3_000;
     server.setTimeout(5_000, socket => { try { socket.destroy(); } catch { handlerFailures += 1; } });
     server.on('error', () => { handlerFailures += 1; });
-    server.on('tlsClientError', () => { handlerFailures += 1; });
     const address = await new Promise((resolve, reject) => {
       let settled = false;
       const deadline = setTimeout(() => {
@@ -950,12 +1497,50 @@ async function offlineHttpsPilot(t) {
       context,
       route,
       cert: tls.cert,
-      activate(owner) { activeOwner = owner; phase = 'ACTIVE'; },
-      quiesce() { phase = 'UNAVAILABLE'; },
-      handlerFailureCount() {
-        if (handlerFailures !== 0) throw syntheticHttpsFailure(SYNTHETIC_HTTPS_FAILURE.response);
-        return 0;
+      holderSelection,
+      activate(owner) {
+        if (phase === 'ACTIVE' || handoff !== null) {
+          throw syntheticHttpsFailure(SYNTHETIC_HTTPS_FAILURE.fixture);
+        }
+        const ownerDescriptorForSelection = owner?.getActiveGrantDescriptorForSelection;
+        if (typeof ownerDescriptorForSelection !== 'function') {
+          throw syntheticHttpsFailure(SYNTHETIC_HTTPS_FAILURE.fixture);
+        }
+        // Count only delegation to the real durable owner's selection-aware operation.
+        const countedOwnerDescriptorForSelection = Object.freeze(requestedSelection => {
+          ownerReads += 1;
+          return ownerDescriptorForSelection(requestedSelection);
+        });
+        const nextHandoff = createServiceCreditExternalHolderGrantDescriptorHandoff({
+          origin: route.origin,
+          selection: holderSelection,
+          challengeLifetimeMs: EXTERNAL_HOLDER_HANDOFF_CHALLENGE_LIFETIME_MS,
+          now: Object.freeze(() => handoffNow),
+          getActiveGrantDescriptorForSelection: countedOwnerDescriptorForSelection,
+        });
+        activeOwner = owner;
+        handoff = nextHandoff;
+        phase = 'ACTIVE';
       },
+      quiesce() { closeHandoff(); },
+      waitForPartialRedemption() { return waitForHandoffEvent('partial-redemption'); },
+      waitForSocketDrain() {
+        return ownedSockets.size === 0
+          ? Promise.resolve()
+          : waitForHandoffEvent('socket-drain');
+      },
+      expireHandoffChallenge(publicChallenge) {
+        if (
+          !Number.isSafeInteger(publicChallenge?.expiresAtMs)
+          || publicChallenge.expiresAtMs < handoffNow
+        ) throw syntheticHttpsFailure(SYNTHETIC_HTTPS_FAILURE.fixture);
+        handoffNow = publicChallenge.expiresAtMs;
+      },
+      handlerAdmissionCount: () => handlerAdmissions,
+      ownerReadCount: () => ownerReads,
+      ownedSocketCount: () => ownedSockets.size,
+      pendingLatchCount: () => latchTimers.size,
+      handlerFailureCount: () => handlerFailures,
     };
   } catch { throw syntheticHttpsFailure(setupFailureCode); }
 }
@@ -1328,13 +1913,27 @@ test('offline HTTPS client request failure is sanitized', async () => {
   assert.equal(isSyntheticHttpsFailure(caught, SYNTHETIC_HTTPS_FAILURE.request), true);
 });
 
-test('offline HTTPS harness serves bound 402 then durable credit across store and owner reopen', async t => {
+test('offline HTTPS harness hands an external holder durable credit across owner reopen', async t => {
   const pilot = await offlineHttpsPilot(t);
-  const { context, route, cert } = pilot;
-  const challenge = await httpsExchange(route, cert);
-  assert.equal(challenge.verified, true);
-  assert.equal(challenge.statusCode, 402);
-  const paymentRequired = decodeB64Json(challenge.headers[HEADERS.PAYMENT_REQUIRED], {
+  const { context, route, cert, holderSelection } = pilot;
+  assert.notEqual(EXTERNAL_HOLDER_HANDOFF_CHALLENGE_PATH, SERVICE_CREDIT_HTTP_PATH);
+  assert.notEqual(EXTERNAL_HOLDER_HANDOFF_REDEEM_PATH, SERVICE_CREDIT_HTTP_PATH);
+  assert.notEqual(
+    EXTERNAL_HOLDER_HANDOFF_CHALLENGE_PATH,
+    EXTERNAL_HOLDER_HANDOFF_REDEEM_PATH,
+  );
+  assert.deepEqual(Reflect.ownKeys(holderSelection), [
+    'offerId', 'offerVersion', 'holderId', 'capabilityCommitment',
+  ]);
+  assert.equal(Object.isFrozen(holderSelection), true);
+  await expectHandoffUnavailable(route, cert, {
+    path: EXTERNAL_HOLDER_HANDOFF_CHALLENGE_PATH,
+  });
+  assert.equal(pilot.ownerReadCount(), 0);
+
+  const fundingChallenge = await httpsExchange(route, cert);
+  assert.equal(fundingChallenge.statusCode, 402);
+  const paymentRequired = decodeB64Json(fundingChallenge.headers[HEADERS.PAYMENT_REQUIRED], {
     maxEncodedBytes: MAX_X402_HEADER_ENCODED_BYTES,
   });
   assert.deepEqual(paymentRequired, context.prepared.paymentRequired);
@@ -1375,13 +1974,125 @@ test('offline HTTPS harness serves bound 402 then durable credit across store an
   });
   let owner = makeOwner();
   assert.deepEqual(await owner.start(activationInput(context)), { status: 'ACTIVE' });
-  assert.equal(context.serviceStore.load().state.grants.length, 1);
   pilot.activate(owner);
-  const grant = context.serviceStore.load().state.grants[0];
-  const requestA = requestDescription(grant.grantId, 'request.offline.https.pilot.a');
-  const authorizationA = authorization(requestA, grant);
+  assert.equal(pilot.ownerReadCount(), 0);
+
+  const wrongTls = syntheticHttpsMaterial();
+  try {
+    const admissionsBeforeWrongPin = pilot.handlerAdmissionCount();
+    await assert.rejects(
+      httpsHandoffExchange(route, wrongTls.cert, {
+        path: EXTERNAL_HOLDER_HANDOFF_CHALLENGE_PATH,
+        expectedStatus: 200,
+      }),
+      error => isSyntheticHttpsFailure(error, SYNTHETIC_HTTPS_FAILURE.request),
+    );
+    assert.equal(pilot.handlerAdmissionCount(), admissionsBeforeWrongPin);
+  } finally {
+    wrongTls.cleanup();
+  }
+
+  for (const request of [
+    { path: `${EXTERNAL_HOLDER_HANDOFF_CHALLENGE_PATH}?not-accepted=1`, method: 'POST' },
+    { path: EXTERNAL_HOLDER_HANDOFF_CHALLENGE_PATH, method: 'GET' },
+  ]) {
+    await expectHandoffUnavailable(route, cert, request);
+  }
+  for (const negativeHeaderOverrides of [
+    { 'Content-Length': '00' },
+    { 'Transfer-Encoding': 'chunked' },
+    { Expect: '100-continue' },
+    { Connection: 'Upgrade', Upgrade: 'synthetic' },
+    { 'Content-Type': 'application/json' },
+    Object.fromEntries(Array.from({ length: 6 }, (_, index) => [`X-Bound-${index}`, 'x'])),
+  ]) {
+    await expectHandoffUnavailable(route, cert, {
+      path: EXTERNAL_HOLDER_HANDOFF_CHALLENGE_PATH,
+      negativeHeaderOverrides,
+    });
+  }
+  await expectHandoffUnavailable(route, cert, {
+    path: EXTERNAL_HOLDER_HANDOFF_REDEEM_PATH,
+    body: Buffer.from('{"unexpected":true}', 'utf8'),
+  });
+  await expectHandoffUnavailable(route, cert, {
+    path: EXTERNAL_HOLDER_HANDOFF_REDEEM_PATH,
+    body: Buffer.alloc(EXTERNAL_HOLDER_HANDOFF_MAX_REDEMPTION_BYTES + 1, 0x20),
+  });
+  assert.equal(pilot.ownerReadCount(), 0);
+
+  const wrongOriginChallenge = await obtainExternalHolderChallenge(route, cert);
+  const wrongOriginProof = externalHolderRedemption(
+    wrongOriginChallenge,
+    route.origin,
+    holderSelection,
+    'https://wrong-origin.invalid',
+  );
+  await expectHandoffUnavailable(route, cert, {
+    path: EXTERNAL_HOLDER_HANDOFF_REDEEM_PATH,
+    body: Buffer.from(canonicalJson(wrongOriginProof), 'utf8'),
+  });
+  assert.equal(pilot.ownerReadCount(), 0);
+
+  const expiredChallenge = await obtainExternalHolderChallenge(route, cert);
+  const expiredProof = externalHolderRedemption(
+    expiredChallenge,
+    route.origin,
+    holderSelection,
+  );
+  pilot.expireHandoffChallenge(expiredChallenge);
+  await expectHandoffUnavailable(route, cert, {
+    path: EXTERNAL_HOLDER_HANDOFF_REDEEM_PATH,
+    body: Buffer.from(canonicalJson(expiredProof), 'utf8'),
+  });
+  assert.equal(pilot.ownerReadCount(), 0);
+
+  const holderChallenge = await obtainExternalHolderChallenge(route, cert);
+  const holderProof = externalHolderRedemption(holderChallenge, route.origin, holderSelection);
+  const holderProofBody = Buffer.from(canonicalJson(holderProof), 'utf8');
+  for (const negativeHeaderOverrides of [
+    { 'Content-Type': null },
+    { 'Content-Type': ['application/json', 'application/json'] },
+    { 'content-type': 'application/json' },
+    { 'Content-Type': 'Application/Json' },
+    { 'Content-Type': 'application/json; charset=utf-8' },
+  ]) {
+    await expectHandoffUnavailable(route, cert, {
+      path: EXTERNAL_HOLDER_HANDOFF_REDEEM_PATH,
+      body: holderProofBody,
+      negativeHeaderOverrides,
+    });
+    assert.equal(pilot.ownerReadCount(), 0);
+  }
+  const grantDescriptor = await redeemExternalHolderDescriptor(
+    route,
+    cert,
+    holderProof,
+  );
+  assert.deepEqual(Reflect.ownKeys(grantDescriptor), ['grantId', 'capabilityCommitment']);
+  assert.equal(Object.getPrototypeOf(grantDescriptor), Object.prototype);
+  assert.equal(Object.isFrozen(grantDescriptor), true);
+  assert.equal(grantDescriptor.capabilityCommitment, holderSelection.capabilityCommitment);
+  assert.equal(pilot.ownerReadCount(), 1);
+  const durableGrantAfterHandoff = context.serviceStore.load().state.grants;
+  assert.equal(durableGrantAfterHandoff.length, 1);
+  assert.deepEqual({
+    grantId: durableGrantAfterHandoff[0].grantId,
+    capabilityCommitment: durableGrantAfterHandoff[0].capabilityCommitment,
+  }, grantDescriptor);
+
+  await expectHandoffUnavailable(route, cert, {
+    path: EXTERNAL_HOLDER_HANDOFF_REDEEM_PATH,
+    body: Buffer.from(canonicalJson(holderProof), 'utf8'),
+  });
+  assert.equal(pilot.ownerReadCount(), 1);
+
+  const requestA = requestDescription(
+    grantDescriptor.grantId,
+    'request.offline.https.pilot.a',
+  );
+  const authorizationA = authorization(requestA, grantDescriptor);
   const first = await httpsExchange(route, cert, authorizationA);
-  assert.equal(first.verified, true);
   assert.equal(first.statusCode, 200);
   assert.equal(callbacks, 1);
   assert.equal(context.serviceStore.load().state.grants[0].consumedUnits, 2);
@@ -1396,7 +2107,18 @@ test('offline HTTPS harness serves bound 402 then durable credit across store an
   // Only the durable owner and stores reopen; this same test listener stays bound.
   pilot.quiesce();
   assert.equal((await httpsExchange(route, cert, authorizationA)).statusCode, 503);
+  await expectHandoffUnavailable(route, cert, {
+    path: EXTERNAL_HOLDER_HANDOFF_CHALLENGE_PATH,
+  });
+  await expectHandoffUnavailable(route, cert, {
+    path: EXTERNAL_HOLDER_HANDOFF_REDEEM_PATH,
+    body: Buffer.from(canonicalJson(holderProof), 'utf8'),
+  });
+  assert.equal(pilot.ownerReadCount(), 1);
   await owner.close();
+  await expectHandoffUnavailable(route, cert, {
+    path: EXTERNAL_HOLDER_HANDOFF_CHALLENGE_PATH,
+  });
   context.serviceStore = ServiceCreditSqliteStore.openExisting(context.serviceOpenConfiguration);
   context.observerStore = openZenonFundingObserverSqliteStore({
     databasePath: context.observerConfiguration.databasePath,
@@ -1418,12 +2140,35 @@ test('offline HTTPS harness serves bound 402 then durable credit across store an
     error => error?.code === 'ZENON_FUNDING_PROVIDER_SIGNING_ATTESTATION_UNAVAILABLE');
   await replaySigner.close();
   assert.equal(observed.dispatches, 1);
-  const requestB = requestDescription(grant.grantId, 'request.offline.https.pilot.b');
-  assert.equal((await httpsExchange(route, cert, authorization(requestB, grant))).statusCode, 200);
+  const requestB = requestDescription(
+    grantDescriptor.grantId,
+    'request.offline.https.pilot.b',
+  );
+  assert.equal(
+    (await httpsExchange(route, cert, authorization(requestB, grantDescriptor))).statusCode,
+    200,
+  );
   assert.equal(context.serviceStore.load().state.grants[0].consumedUnits, 4);
   assert.equal(callbacks, 2);
-  assert.equal(pilot.handlerFailureCount(), 0);
+  assert.equal(pilot.ownerReadCount(), 1);
+
+  const raceChallenge = await obtainExternalHolderChallenge(route, cert);
+  const raceProof = externalHolderRedemption(raceChallenge, route.origin, holderSelection);
+  const partialAdmission = pilot.waitForPartialRedemption();
+  const pausedRedemption = beginPausedHandoffRedemption(route, cert, raceProof);
+  assert.deepEqual(await partialAdmission, {
+    declaredLength: pausedRedemption.declaredLength,
+    receivedBytes: 1,
+  });
+  const ownerReadsBeforeQuiesce = pilot.ownerReadCount();
   pilot.quiesce();
+  pausedRedemption.finish();
+  assertHandoffUnavailableResponse(await pausedRedemption.response);
+  await pilot.waitForSocketDrain();
+  assert.equal(pilot.ownerReadCount(), ownerReadsBeforeQuiesce);
+  assert.equal(pilot.ownedSocketCount(), 0);
+  assert.equal(pilot.pendingLatchCount(), 0);
+  assert.equal(pilot.handlerFailureCount(), 0);
 });
 
 test('offline HTTPS harness denies credit for non-READY synthetic child outcomes', async t => {
