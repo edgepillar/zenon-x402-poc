@@ -505,17 +505,38 @@ test('import and construction are inert with one exact configuration and frozen 
 });
 
 test('the dormant ingress has no package export or active import reachability', () => {
-  const name = 'service-credit-external-holder-grant-descriptor-handoff-http-ingress.js';
+  const ingressName = 'service-credit-external-holder-grant-descriptor-handoff-http-ingress.js';
+  const pilotName = 'service-credit-zenon-https-operator-pilot.js';
   const packageText = readFileSync(new URL('../package.json', import.meta.url), 'utf8');
   const packageJson = JSON.parse(packageText);
-  assert.equal(packageText.includes(name), false);
+  assert.equal(packageText.includes(ingressName), false);
+  assert.equal(packageText.includes(pilotName), false);
   assert.equal(packageJson.exports, undefined);
   assert.equal(packageJson.bin, undefined);
-  for (const entry of readdirSync(new URL('../src/', import.meta.url))) {
-    if (!entry.endsWith('.js') || entry === name) continue;
-    const source = readFileSync(new URL(`../src/${entry}`, import.meta.url), 'utf8');
-    assert.equal(source.includes(name), false);
+  for (const script of Object.values(packageJson.scripts)) {
+    assert.equal(script.includes(ingressName), false);
+    assert.equal(script.includes(pilotName), false);
   }
+  const ingressImporters = [];
+  const pilotImporters = [];
+  for (const entry of readdirSync(new URL('../src/', import.meta.url))) {
+    if (!entry.endsWith('.js')) continue;
+    const source = readFileSync(new URL(`../src/${entry}`, import.meta.url), 'utf8');
+    if (entry !== ingressName && source.includes(ingressName)) {
+      ingressImporters.push(entry);
+    }
+    if (entry !== pilotName && source.includes(pilotName)) {
+      pilotImporters.push(entry);
+    }
+  }
+  assert.deepEqual(ingressImporters.sort(), [pilotName]);
+  assert.deepEqual(pilotImporters, []);
+  const pilotSource = readFileSync(new URL(`../src/${pilotName}`, import.meta.url), 'utf8');
+  assert.equal(
+    pilotSource.includes(`from './${ingressName}'`),
+    true,
+  );
+  assert.equal(pilotSource.split(ingressName).length - 1, 1);
 });
 
 test('exact HTTP/1.1 and exact context gates precede adapter admission and body access', async t => {

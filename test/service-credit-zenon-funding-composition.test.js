@@ -75,17 +75,8 @@ import {
     EXTERNAL_HOLDER_HANDOFF_MAX_REDEMPTION_BYTES,
 } from '../src/service-credit-external-holder-grant-descriptor-handoff-http.js';
 import {
-  createServiceCreditExternalHolderGrantDescriptorHandoffHttpIngress,
-} from '../src/service-credit-external-holder-grant-descriptor-handoff-http-ingress.js';
-import {
-  createServiceCreditBoundedHttpsIngressOwner,
-} from '../src/service-credit-bounded-https-ingress-owner.js';
-import {
-  createServiceCreditBoundedNodeHttpsServerFactory,
-} from '../src/service-credit-bounded-node-https-server-factory.js';
-import {
-  createServiceCreditZenonDurableHttpsRouter,
-} from '../src/service-credit-zenon-durable-https-router.js';
+  createServiceCreditZenonHttpsOperatorPilot,
+} from '../src/service-credit-zenon-https-operator-pilot.js';
 import {
   SERVICE_CREDIT_HTTP_PATH,
   SERVICE_CREDIT_HTTP_ROUTE_ID,
@@ -1190,7 +1181,7 @@ async function redeemExternalHolderDescriptor(route, cert, redemption) {
   return parseHandoffDescriptorResponse(response.body);
 }
 
-async function offlineHttpsPilot(t) {
+async function offlineHttpsPilot(t, existingContext = null, executionState = null) {
   const tls = syntheticHttpsMaterial();
   // The fixed-port adapter contract requires this test-only release-before-use
   // reservation. Another local process could win the resulting allocation race.
@@ -1202,19 +1193,13 @@ async function offlineHttpsPilot(t) {
     throw error;
   }
   const holderSelection = Object.freeze({ ...selection() });
-  let context = null;
-  let activeOwner = null;
-  let handoffController = null;
-  let handoffControllerClose = Promise.resolve();
+  const routerResourceUrl = `https://127.0.0.1${SERVICE_CREDIT_HTTP_PATH}`;
+  const context = existingContext ?? fixture(t, {
+    stage: 'PREPARED',
+    resourceUrl: routerResourceUrl,
+  });
+  const executions = executionState ?? { count: 0 };
   let handoffNow = NOW;
-  let phase = 'UNAVAILABLE';
-  let handlerAdmissions = 0;
-  let ownerReads = 0;
-  let ingressOwner = null;
-  let factoryEntered = false;
-  let factoryCompleted = false;
-  const handoffEvents = new EventEmitter();
-  const latchTimers = new Set();
   const outerDeadlineHandles = new Set();
   const controllerDeadlineHandles = new Set();
   const deadlineRuntimeFor = handles => Object.freeze({
@@ -1235,184 +1220,122 @@ async function offlineHttpsPilot(t) {
   });
   const outerDeadlineRuntime = deadlineRuntimeFor(outerDeadlineHandles);
   const controllerDeadlineRuntime = deadlineRuntimeFor(controllerDeadlineHandles);
-  const waitForHandoffEvent = eventName => new Promise((resolve, reject) => {
-    let deadline = null;
-    const settle = (callback, value) => {
-      handoffEvents.off(eventName, onEvent);
-      if (deadline !== null) {
-        clearTimeout(deadline);
-        latchTimers.delete(deadline);
-      }
-      callback(value);
-    };
-    const onEvent = value => settle(resolve, value);
-    handoffEvents.once(eventName, onEvent);
-    deadline = setTimeout(
-      () => settle(reject, syntheticHttpsFailure(SYNTHETIC_HTTPS_FAILURE.deadline)),
-      3_000,
-    );
-    latchTimers.add(deadline);
+  const durableDeadlineRuntime = Object.freeze({
+    monotonicNowNs: Object.freeze(() => 0n),
+    schedule: Object.freeze(() => Object.freeze({})),
+    cancel: Object.freeze(() => undefined),
   });
-  const closeHandoff = () => {
-    phase = 'UNAVAILABLE';
-    const activeController = handoffController;
-    handoffController = null;
-    if (activeController !== null) handoffControllerClose = activeController.close();
-    return handoffControllerClose;
-  };
+  let operator = null;
+  let expectedAdversarialCloseForTestCleanup = false;
   t.after(async () => {
-    // The production transport owner gates and closes its downstream router
-    // before the durable owner and stores are closed by this outer composition.
-    let ingressCloseFailed = false;
-    try {
-      if (ingressOwner !== null) await ingressOwner.close();
-    } catch { ingressCloseFailed = true; }
-    for (const deadline of latchTimers) clearTimeout(deadline);
-    latchTimers.clear();
-    handoffEvents.removeAllListeners();
-    if (ingressOwner !== null) {
-      const metrics = ingressOwner.snapshotMetrics();
-      if (
-        metrics.phase !== 'CLOSED'
-        || metrics.trackedSockets !== 0
-        || metrics.trackedRequests !== 0
-        || metrics.trackedHandlers !== 0
-        || metrics.ownedTimers !== 0
-      ) ingressCloseFailed = true;
-    }
+    let closeFailed = false;
+    let closeRejected = false;
+    try { if (operator !== null) await operator.close(); }
+    catch { closeRejected = true; }
+    const metrics = operator?.snapshot();
+    const expectedUncertainCleanup = closeRejected
+      && expectedAdversarialCloseForTestCleanup
+      && metrics?.phase === 'TRANSPORT_UNCERTAIN'
+      && metrics.transportCloseClean === 0
+      && metrics.transportCloseUncertain === 1
+      && metrics.handlerFailures === 1
+      && metrics.descriptorReads === 0
+      && metrics.trackedSockets === 0
+      && metrics.trackedRequests === 0
+      && metrics.trackedHandlers === 0
+      && metrics.ownedTimers === 0;
+    if (closeRejected && !expectedUncertainCleanup) closeFailed = true;
+    if (
+      metrics !== undefined
+      && metrics.phase !== 'CLOSED'
+      && metrics.phase !== 'PRE_ACTIVATION_UNAVAILABLE'
+      && metrics.phase !== 'RECOVERY_REQUIRED'
+      && metrics.phase !== 'ACTIVATED_UNAVAILABLE'
+      && !expectedUncertainCleanup
+    ) closeFailed = true;
     if (outerDeadlineHandles.size !== 0 || controllerDeadlineHandles.size !== 0) {
-      ingressCloseFailed = true;
-    }
-    let ownerCloseFailed = false;
-    for (const close of [
-      () => activeOwner?.close(),
-      () => context?.session?.close(),
-      () => context?.serviceStore?.close(),
-      () => context?.observerStore?.close(),
-    ]) {
-      try { await close(); } catch { ownerCloseFailed = true; }
+      closeFailed = true;
     }
     try { tls.cleanup(); }
     catch { throw syntheticHttpsFailure(SYNTHETIC_HTTPS_FAILURE.cleanup); }
-    if (ingressCloseFailed || ownerCloseFailed) {
+    if (closeFailed) {
       throw syntheticHttpsFailure(SYNTHETIC_HTTPS_FAILURE.ownerClose);
     }
   });
   let setupFailureCode = SYNTHETIC_HTTPS_FAILURE.listen;
   try {
-    const routerResourceUrl = `https://127.0.0.1${SERVICE_CREDIT_HTTP_PATH}`;
-    const downstream = createServiceCreditZenonDurableHttpsRouter(Object.freeze({
-      requestTargets: Object.freeze({
+    setupFailureCode = SYNTHETIC_HTTPS_FAILURE.fixture;
+    operator = createServiceCreditZenonHttpsOperatorPilot(Object.freeze({
+      transport: Object.freeze({
+        origin: 'https://127.0.0.1',
+        bind: Object.freeze({ host: '127.0.0.1', port: bindPort, exclusive: true }),
+        tlsMaterial: Object.freeze({ key: tls.key, cert: tls.cert }),
+        generation: Object.freeze({
+          generationId: 'synthetic.offline.https.pilot',
+          generationVersion: 1,
+        }),
+        limits: Object.freeze({
+          maxHeaderBytes:
+            SERVICE_CREDIT_EXTERNAL_HOLDER_GRANT_DESCRIPTOR_HANDOFF_HTTP_MAX_RAW_HEADER_BYTES,
+          maxHeaderCount: EXTERNAL_HOLDER_HANDOFF_MAX_HEADER_COUNT * 2,
+          maxConcurrentSockets: 8,
+          maxConnectionStarts: 256,
+          maxConcurrentRequests: 8,
+          maxRequestStarts: 192,
+          tlsHandshakeDeadlineMs: 2_000,
+          headerDeadlineMs: 2_000,
+          requestResponseDeadlineMs: 4_000,
+          idleSocketDeadlineMs: 5_000,
+          startDeadlineMs: 3_000,
+          closeGraceMs: 6_000,
+          metricsCounterLimit: 10_000,
+        }),
+        deadlineRuntime: outerDeadlineRuntime,
+      }),
+      routes: Object.freeze({
         serviceCredit: SERVICE_CREDIT_HTTP_PATH,
         handoffChallenge: EXTERNAL_HOLDER_HANDOFF_CHALLENGE_PATH,
         handoffRedemption: EXTERNAL_HOLDER_HANDOFF_REDEEM_PATH,
       }),
-      getPhase: Object.freeze(() => phase),
-      fundingComposition: Object.freeze({
-        createFundingResource: Object.freeze(resource =>
-          context.composition.createFundingResource(resource)),
-      }),
-      fundingResource: Object.freeze({
+      funding: Object.freeze({
+        serviceCreditStore: context.serviceStore,
+        fundingObserverStore: context.observerStore,
+        authorityRecord: AUTHORITY_RECORD_TEXT,
+        deriveFundingTerms: Object.freeze(input => fundingTerms(input)),
+        now: Object.freeze(() => NOW),
         selection: Object.freeze(selection()),
         resourceUrl: routerResourceUrl,
       }),
-      durableComposition: Object.freeze({
-        handle: Object.freeze((request, response) => {
-          if (activeOwner === null) throw syntheticHttpsFailure(
-            SYNTHETIC_HTTPS_FAILURE.fixture,
-          );
-          return activeOwner.handle(request, response);
+      durable: Object.freeze({
+        execution: Object.freeze({
+          ledgerId: 'ledger.offline.https.pilot',
+          policy: Object.freeze({
+            policyId: 'execution.offline.https.pilot',
+            policyVersion: 1,
+            maxDurationMs: 1_000,
+          }),
+          capacity: 8,
+          selectedDurationMs: 1_000,
         }),
+        execute: Object.freeze(() => {
+          executions.count += 1;
+          return { resultCode: 'offline.https.pilot.delivered' };
+        }),
+        deadlineRuntime: durableDeadlineRuntime,
       }),
-      handoffController: Object.freeze({
-        handle: Object.freeze((request, response, transportContext) => {
-          if (handoffController === null) throw syntheticHttpsFailure(
-            SYNTHETIC_HTTPS_FAILURE.fixture,
-          );
-          return handoffController.handle(request, response, transportContext);
-        }),
-        close: Object.freeze(() => closeHandoff()),
+      handoff: Object.freeze({
+        challengeLifetimeMs: EXTERNAL_HOLDER_HANDOFF_CHALLENGE_LIFETIME_MS,
+        now: Object.freeze(() => handoffNow),
+        deadlineRuntime: controllerDeadlineRuntime,
+        bodyDeadlineMs: 2_000,
+        responseDeadlineMs: 2_000,
+        closeGraceMs: 3_000,
+        metricsCounterLimit: Number.MAX_SAFE_INTEGER,
       }),
     }));
-    const nativeHttpsServerFactory = createServiceCreditBoundedNodeHttpsServerFactory(
-      Object.freeze({
-        bind: Object.freeze({ host: '127.0.0.1', port: bindPort, exclusive: true }),
-        tlsMaterial: Object.freeze({ key: tls.key, cert: tls.cert }),
-      }),
-    );
-    const trustedHttpsServerFactory = Object.freeze((serverOptions, callbacks) => {
-      factoryEntered = true;
-      const observedCallbacks = Object.freeze({
-        connection: Object.freeze(socket => {
-          callbacks.connection(socket);
-          handoffEvents.emit('raw-connection-accounted');
-        }),
-        secureConnection: Object.freeze(socket => {
-          for (const property of ['alpnProtocol', 'servername']) {
-            const descriptor = Object.getOwnPropertyDescriptor(socket, property);
-            assert.notEqual(descriptor, undefined);
-            assert.equal(Object.hasOwn(descriptor, 'value'), true);
-          }
-          callbacks.secureConnection(socket);
-        }),
-        request: callbacks.request,
-        checkContinue: callbacks.checkContinue,
-        checkExpectation: callbacks.checkExpectation,
-        upgrade: callbacks.upgrade,
-        connect: callbacks.connect,
-        clientError: callbacks.clientError,
-        tlsClientError: callbacks.tlsClientError,
-        dropRequest: callbacks.dropRequest,
-        drop: callbacks.drop,
-        timeout: callbacks.timeout,
-        listening: callbacks.listening,
-        close: callbacks.close,
-        error: callbacks.error,
-      });
-      const capability = nativeHttpsServerFactory(serverOptions, observedCallbacks);
-      factoryCompleted = true;
-      return capability;
-    });
-    setupFailureCode = SYNTHETIC_HTTPS_FAILURE.fixture;
-    ingressOwner = createServiceCreditBoundedHttpsIngressOwner({
-      origin: 'https://127.0.0.1',
-      requestTargets: Object.freeze([
-        EXTERNAL_HOLDER_HANDOFF_CHALLENGE_PATH,
-        EXTERNAL_HOLDER_HANDOFF_REDEEM_PATH,
-        SERVICE_CREDIT_HTTP_PATH,
-      ]),
-      generation: Object.freeze({
-        generationId: 'synthetic.offline.https.pilot',
-        generationVersion: 1,
-      }),
-      limits: Object.freeze({
-        maxHeaderBytes:
-          SERVICE_CREDIT_EXTERNAL_HOLDER_GRANT_DESCRIPTOR_HANDOFF_HTTP_MAX_RAW_HEADER_BYTES,
-        maxHeaderCount: EXTERNAL_HOLDER_HANDOFF_MAX_HEADER_COUNT * 2,
-        maxConcurrentSockets: 8,
-        maxConnectionStarts: 256,
-        maxConcurrentRequests: 8,
-        maxRequestStarts: 192,
-        tlsHandshakeDeadlineMs: 2_000,
-        headerDeadlineMs: 2_000,
-        requestResponseDeadlineMs: 4_000,
-        idleSocketDeadlineMs: 5_000,
-        startDeadlineMs: 3_000,
-        closeGraceMs: 6_000,
-        metricsCounterLimit: 10_000,
-      }),
-      downstream,
-      deadlineRuntime: outerDeadlineRuntime,
-      httpsServerFactory: trustedHttpsServerFactory,
-    });
     setupFailureCode = SYNTHETIC_HTTPS_FAILURE.listen;
-    try { await ingressOwner.start(); }
+    try { await operator.start(); }
     catch {
-      if (!factoryEntered) setupFailureCode = SYNTHETIC_HTTPS_FAILURE.fixture;
-      else if (!factoryCompleted) setupFailureCode = SYNTHETIC_HTTPS_FAILURE.generation;
-      else if (ingressOwner.snapshotMetrics().listenerErrors !== 0) {
-        setupFailureCode = SYNTHETIC_HTTPS_FAILURE.response;
-      }
       throw syntheticHttpsFailure(setupFailureCode);
     }
     const route = {
@@ -1421,74 +1344,95 @@ async function offlineHttpsPilot(t) {
       path: SERVICE_CREDIT_HTTP_PATH,
       port: bindPort,
     };
-    setupFailureCode = SYNTHETIC_HTTPS_FAILURE.fixture;
-    context = fixture(t, {
-      stage: 'PREPARED',
-      resourceUrl: routerResourceUrl,
-    });
-    phase = 'CHALLENGE';
     return {
       context,
       route,
       cert: tls.cert,
       holderSelection,
-      activate(owner) {
-        if (phase === 'ACTIVE' || handoffController !== null) {
-          throw syntheticHttpsFailure(SYNTHETIC_HTTPS_FAILURE.fixture);
+      executionState: executions,
+      activate() { return operator.activateCommittedReady(activationInput(context)); },
+      close() { return operator.close(); },
+      snapshot() { return operator.snapshot(); },
+      async waitForHandoffAdmission(previousCount) {
+        for (let turn = 0; turn < 64; turn += 1) {
+          if (operator.snapshot().handoffAdmissions > previousCount) return;
+          await new Promise(resolve => setImmediate(resolve));
         }
-        const ownerDescriptorForSelection = owner?.getActiveGrantDescriptorForSelection;
-        if (typeof ownerDescriptorForSelection !== 'function') {
-          throw syntheticHttpsFailure(SYNTHETIC_HTTPS_FAILURE.fixture);
-        }
-        // Count only delegation to the real durable owner's selection-aware operation.
-        const countedOwnerDescriptorForSelection = Object.freeze(requestedSelection => {
-          ownerReads += 1;
-          return ownerDescriptorForSelection(requestedSelection);
-        });
-        let nextController = null;
-        nextController = createServiceCreditExternalHolderGrantDescriptorHandoffHttpIngress({
-          origin: route.origin,
-          selection: holderSelection,
-          challengeLifetimeMs: EXTERNAL_HOLDER_HANDOFF_CHALLENGE_LIFETIME_MS,
-          now: Object.freeze(() => handoffNow),
-          getActiveGrantDescriptorForSelection: countedOwnerDescriptorForSelection,
-          challengeRequestTarget: EXTERNAL_HOLDER_HANDOFF_CHALLENGE_PATH,
-          redemptionRequestTarget: EXTERNAL_HOLDER_HANDOFF_REDEEM_PATH,
-          admitRequest: Object.freeze(admission => {
-            handlerAdmissions += 1;
-            if (admission.operation === 'REDEMPTION') {
-              handoffEvents.emit('redemption-admitted', admission.operation);
-            }
-            return phase === 'ACTIVE' && handoffController === nextController;
-          }),
-          deadlineRuntime: controllerDeadlineRuntime,
-          bodyDeadlineMs: 2_000,
-          responseDeadlineMs: 2_000,
-          closeGraceMs: 3_000,
-          metricsCounterLimit: Number.MAX_SAFE_INTEGER,
-        });
-        activeOwner = owner;
-        handoffController = nextController;
-        phase = 'ACTIVE';
+        throw syntheticHttpsFailure(SYNTHETIC_HTTPS_FAILURE.deadline);
       },
-      quiesce() { return closeHandoff(); },
-      waitForRedemptionAdmission() { return waitForHandoffEvent('redemption-admitted'); },
       async waitForSocketDrain() {
         for (let turn = 0; turn < 64; turn += 1) {
-          if (ingressOwner.snapshotMetrics().trackedSockets === 0) return;
+          if (operator.snapshot().trackedSockets === 0) return;
           await new Promise(resolve => setImmediate(resolve));
         }
         throw syntheticHttpsFailure(SYNTHETIC_HTTPS_FAILURE.deadline);
       },
       async closeWithUnresolvedPreHandshake() {
-        const accounted = waitForHandoffEvent('raw-connection-accounted');
+        const before = operator.snapshot().connectionStarts;
         const socket = connectNet({ host: '127.0.0.1', port: route.port });
-        socket.once('error', () => {});
-        const clientClosed = new Promise(resolve => { socket.once('close', resolve); });
-        await accounted;
-        const result = await ingressOwner.close();
-        await clientClosed;
-        return Object.freeze({ result, metrics: ingressOwner.snapshotMetrics() });
+        let connected = false;
+        let closed = false;
+        let deadlineExpired = false;
+        let resolveConnected;
+        let resolveClosed;
+        let resolveDeadline;
+        const clientConnected = new Promise(resolve => { resolveConnected = resolve; });
+        const clientClosed = new Promise(resolve => { resolveClosed = resolve; });
+        const clientDeadline = new Promise(resolve => { resolveDeadline = resolve; });
+        const onError = () => {
+          if (!connected) resolveConnected('FAILED');
+        };
+        socket.once('connect', () => {
+          connected = true;
+          resolveConnected('CONNECTED');
+        });
+        socket.on('error', onError);
+        socket.once('close', () => {
+          closed = true;
+          socket.removeListener('error', onError);
+          resolveClosed('CLOSED');
+          if (!connected) resolveConnected('FAILED');
+        });
+        // Drain only this owned raw peer so TLS termination bytes cannot keep
+        // its readable side paused after the real owner has quiesced.
+        socket.resume();
+        const deadlineHandle = setTimeout(() => {
+          deadlineExpired = true;
+          try { socket.destroy(); } catch {}
+          resolveDeadline('DEADLINE');
+        }, 10_000);
+        try {
+          const connectionEvidence = await Promise.race([clientConnected, clientDeadline]);
+          if (connectionEvidence !== 'CONNECTED') {
+            throw syntheticHttpsFailure(SYNTHETIC_HTTPS_FAILURE.deadline);
+          }
+          let admitted = false;
+          for (let turn = 0; turn < 64; turn += 1) {
+            if (operator.snapshot().connectionStarts > before) {
+              admitted = true;
+              break;
+            }
+            if (deadlineExpired) break;
+            await new Promise(resolve => setImmediate(resolve));
+          }
+          if (!admitted) throw syntheticHttpsFailure(SYNTHETIC_HTTPS_FAILURE.deadline);
+          const ownerClose = operator.close().then(result => Object.freeze({ result }));
+          const ownerCloseEvidence = await Promise.race([ownerClose, clientDeadline]);
+          if (ownerCloseEvidence === 'DEADLINE') {
+            throw syntheticHttpsFailure(SYNTHETIC_HTTPS_FAILURE.deadline);
+          }
+          const { result } = ownerCloseEvidence;
+          const closeEvidence = await Promise.race([clientClosed, clientDeadline]);
+          if (closeEvidence !== 'CLOSED' || !connected || !closed) {
+            throw syntheticHttpsFailure(SYNTHETIC_HTTPS_FAILURE.deadline);
+          }
+          return Object.freeze({ result, metrics: operator.snapshot() });
+        } finally {
+          clearTimeout(deadlineHandle);
+          if (!closed) {
+            try { socket.destroy(); } catch {}
+          }
+        }
       },
       expireHandoffChallenge(publicChallenge) {
         if (
@@ -1497,13 +1441,29 @@ async function offlineHttpsPilot(t) {
         ) throw syntheticHttpsFailure(SYNTHETIC_HTTPS_FAILURE.fixture);
         handoffNow = publicChallenge.expiresAtMs;
       },
-      handlerAdmissionCount: () => handlerAdmissions,
-      ownerReadCount: () => ownerReads,
-      ownedSocketCount: () => ingressOwner.snapshotMetrics().trackedSockets,
+      handlerAdmissionCount: () => operator.snapshot().handoffAdmissions,
+      ownerReadCount: () => operator.snapshot().descriptorReads,
+      ownedSocketCount: () => operator.snapshot().trackedSockets,
       pendingLatchCount: () =>
-        latchTimers.size + outerDeadlineHandles.size + controllerDeadlineHandles.size,
-      handlerFailureCount: () =>
-        ingressOwner.snapshotMetrics().handlerFailures,
+        outerDeadlineHandles.size + controllerDeadlineHandles.size,
+      handlerFailureCount: () => operator.snapshot().handlerFailures,
+      allowExpectedAdversarialCloseForTestCleanup() {
+        const metrics = operator.snapshot();
+        if (
+          metrics.phase !== 'TRANSPORT_UNCERTAIN'
+          || metrics.transportCloseClean !== 0
+          || metrics.transportCloseUncertain !== 1
+          || metrics.handlerFailures !== 1
+          || metrics.descriptorReads !== 0
+          || metrics.trackedSockets !== 0
+          || metrics.trackedRequests !== 0
+          || metrics.trackedHandlers !== 0
+          || metrics.ownedTimers !== 0
+          || outerDeadlineHandles.size !== 0
+          || controllerDeadlineHandles.size !== 0
+        ) throw syntheticHttpsFailure(SYNTHETIC_HTTPS_FAILURE.fixture);
+        expectedAdversarialCloseForTestCleanup = true;
+      },
     };
   } catch { throw syntheticHttpsFailure(setupFailureCode); }
 }
@@ -1877,8 +1837,10 @@ test('offline HTTPS client request failure is sanitized', async () => {
 });
 
 test('offline HTTPS harness hands an external holder durable credit across owner reopen', async t => {
-  const pilot = await offlineHttpsPilot(t);
-  const { context, route, cert, holderSelection } = pilot;
+  let pilot = await offlineHttpsPilot(t);
+  const { context, holderSelection } = pilot;
+  let route = pilot.route;
+  let cert = pilot.cert;
   assert.notEqual(EXTERNAL_HOLDER_HANDOFF_CHALLENGE_PATH, SERVICE_CREDIT_HTTP_PATH);
   assert.notEqual(EXTERNAL_HOLDER_HANDOFF_REDEEM_PATH, SERVICE_CREDIT_HTTP_PATH);
   assert.notEqual(
@@ -1912,32 +1874,8 @@ test('offline HTTPS harness hands an external holder durable credit across owner
   assert.equal(context.observerStore.load().outbox.status, 'READY');
   await signer.close();
 
-  let callbacks = 0;
-  const makeOwner = () => createZenonDurableHttpComposition({
-    serviceCreditStore: context.serviceStore,
-    fundingObserverStore: context.observerStore,
-    authorityRecord: AUTHORITY_RECORD_TEXT,
-    deriveFundingTerms: fundingTerms,
-    now: () => NOW,
-    durableExecution: {
-      ledgerId: 'ledger.offline.https.pilot',
-      policy: {
-        policyId: 'execution.offline.https.pilot',
-        policyVersion: 1,
-        maxDurationMs: 1_000,
-      },
-      capacity: 8,
-      selectedDurationMs: 1_000,
-    },
-    execute: () => {
-      callbacks += 1;
-      return { resultCode: 'offline.https.pilot.delivered' };
-    },
-    deadlineRuntime: passiveDeadlineRuntime(),
-  });
-  let owner = makeOwner();
-  assert.deepEqual(await owner.start(activationInput(context)), { status: 'ACTIVE' });
-  pilot.activate(owner);
+  const executionState = pilot.executionState;
+  assert.deepEqual(await pilot.activate(), { status: 'ACTIVE' });
   assert.equal(pilot.ownerReadCount(), 0);
 
   const wrongCertificate = syntheticWrongPinnedCertificate();
@@ -2139,31 +2077,19 @@ test('offline HTTPS harness hands an external holder durable credit across owner
   const authorizationA = authorization(requestA, grantDescriptor);
   const first = await httpsExchange(route, cert, authorizationA);
   assert.equal(first.statusCode, 200);
-  assert.equal(callbacks, 1);
+  assert.equal(executionState.count, 1);
   assert.equal(context.serviceStore.load().state.grants[0].consumedUnits, 2);
   const afterFirst = context.serviceStore.load();
   const replay = await httpsExchange(route, cert, authorizationA);
   assert.equal(replay.statusCode, 200);
   assert.deepEqual(replay.body, first.body);
   assert.deepEqual(context.serviceStore.load(), afterFirst);
-  assert.equal(callbacks, 1);
+  assert.equal(executionState.count, 1);
   assert.equal(observed.dispatches, 1);
 
-  // Only the durable owner and stores reopen; this same test listener stays bound.
-  await pilot.quiesce();
-  assert.equal((await httpsExchange(route, cert, authorizationA)).statusCode, 503);
-  await expectHandoffUnavailable(route, cert, {
-    path: EXTERNAL_HOLDER_HANDOFF_CHALLENGE_PATH,
-  });
-  await expectHandoffUnavailable(route, cert, {
-    path: EXTERNAL_HOLDER_HANDOFF_REDEEM_PATH,
-    body: Buffer.from(canonicalJson(holderProof), 'utf8'),
-  });
+  // Reconstruction reopens stores and creates a new one-use transport generation.
+  assert.deepEqual(await pilot.close(), { status: 'CLOSED' });
   assert.equal(pilot.ownerReadCount(), 1);
-  await owner.close();
-  await expectHandoffUnavailable(route, cert, {
-    path: EXTERNAL_HOLDER_HANDOFF_CHALLENGE_PATH,
-  });
   context.serviceStore = ServiceCreditSqliteStore.openExisting(context.serviceOpenConfiguration);
   context.observerStore = openZenonFundingObserverSqliteStore({
     databasePath: context.observerConfiguration.databasePath,
@@ -2171,15 +2097,16 @@ test('offline HTTPS harness hands an external holder durable credit across owner
     expectedRecordKey: context.observerRecordKey,
     authorityRecord: AUTHORITY_RECORD_TEXT,
   });
-  owner = makeOwner();
-  assert.deepEqual(await owner.start(activationInput(context)), { status: 'ACTIVE' });
-  pilot.activate(owner);
+  pilot = await offlineHttpsPilot(t, context, executionState);
+  route = pilot.route;
+  cert = pilot.cert;
+  assert.deepEqual(await pilot.activate(), { status: 'ACTIVE' });
   const reopenedReplay = await httpsExchange(route, cert, authorizationA);
   assert.equal(reopenedReplay.statusCode, 200);
   assert.deepEqual(reopenedReplay.body, first.body);
   assert.equal(context.serviceStore.load().state.grants.length, 1);
   assert.equal(context.serviceStore.load().state.grants[0].consumedUnits, 2);
-  assert.equal(callbacks, 1);
+  assert.equal(executionState.count, 1);
   const replaySigner = makeSigner();
   await assert.rejects(replaySigner.start(),
     error => error?.code === 'ZENON_FUNDING_PROVIDER_SIGNING_ATTESTATION_UNAVAILABLE');
@@ -2194,21 +2121,46 @@ test('offline HTTPS harness hands an external holder durable credit across owner
     200,
   );
   assert.equal(context.serviceStore.load().state.grants[0].consumedUnits, 4);
-  assert.equal(callbacks, 2);
-  assert.equal(pilot.ownerReadCount(), 1);
+  assert.equal(executionState.count, 2);
+  // Descriptor reads are generation-local; this reopened owner has not completed a handoff.
+  assert.equal(pilot.ownerReadCount(), 0);
 
   const raceChallenge = await obtainExternalHolderChallenge(route, cert);
   const raceProof = externalHolderRedemption(raceChallenge, route.origin, holderSelection);
-  const redemptionAdmission = pilot.waitForRedemptionAdmission();
+  const admissionsBeforeRace = pilot.handlerAdmissionCount();
   const pausedRedemption = beginPausedHandoffRedemption(route, cert, raceProof);
   await pausedRedemption.firstWrite;
-  assert.equal(await redemptionAdmission, 'REDEMPTION');
+  await pilot.waitForHandoffAdmission(admissionsBeforeRace);
   const ownerReadsBeforeQuiesce = pilot.ownerReadCount();
-  let controllerCloseSettled = false;
-  const controllerClose = pilot.quiesce();
-  controllerClose.then(() => { controllerCloseSettled = true; });
+  const admissionsAtQuiescence = pilot.handlerAdmissionCount();
+  const durableStateAtQuiescence = context.serviceStore.load();
+  const observerStateAtQuiescence = context.observerStore.load();
+  const executionsAtQuiescence = executionState.count;
+  const signingDispatchesAtQuiescence = observed.dispatches;
+  assert.equal(admissionsAtQuiescence, admissionsBeforeRace + 1);
+  let pilotCloseSettled = false;
+  let pilotCloseOutcome = 'PENDING';
+  const expectedCloseCode =
+    'SERVICE_CREDIT_ZENON_HTTPS_OPERATOR_PILOT_CLOSE_UNCERTAIN';
+  const pilotClose = pilot.closeWithUnresolvedPreHandshake();
+  const pilotCloseObserver = pilotClose.then(
+    () => {
+      pilotCloseSettled = true;
+      pilotCloseOutcome = 'FULFILLED';
+    },
+    error => {
+      pilotCloseSettled = true;
+      pilotCloseOutcome = 'UNKNOWN';
+      try {
+        const descriptor = Object.getOwnPropertyDescriptor(error, 'code');
+        if (descriptor?.value === expectedCloseCode) {
+          pilotCloseOutcome = descriptor.value;
+        }
+      } catch {}
+    },
+  );
   await Promise.resolve();
-  assert.equal(controllerCloseSettled, false);
+  assert.equal(pilotCloseSettled, false);
   await pausedRedemption.response.then(
     response => assertHandoffUnavailableResponse(response),
     error => assert.equal(
@@ -2217,19 +2169,37 @@ test('offline HTTPS harness hands an external holder durable credit across owner
       true,
     ),
   );
-  await controllerClose;
-  assert.equal(controllerCloseSettled, true);
+  await pilotCloseObserver;
+  assert.equal(pilotCloseSettled, true);
+  assert.equal(pilotCloseOutcome, expectedCloseCode);
+  await assert.rejects(pilotClose, error => {
+    try {
+      return Object.getOwnPropertyDescriptor(error, 'code')?.value === expectedCloseCode;
+    } catch { return false; }
+  });
   await pilot.waitForSocketDrain();
+  const terminal = pilot.snapshot();
   assert.equal(pilot.ownerReadCount(), ownerReadsBeforeQuiesce);
+  assert.equal(pilot.handlerAdmissionCount(), admissionsAtQuiescence);
   assert.equal(pilot.ownedSocketCount(), 0);
   assert.equal(pilot.pendingLatchCount(), 0);
-  assert.equal(pilot.handlerFailureCount(), 0);
-  const ingressClose = await pilot.closeWithUnresolvedPreHandshake();
-  assert.deepEqual(ingressClose.result, { status: 'CLOSED' });
-  assert.equal(ingressClose.metrics.phase, 'CLOSED');
-  assert.equal(ingressClose.metrics.closeClean, 1);
-  assert.equal(ingressClose.metrics.closeUncertain, 0);
-  assert.equal(ingressClose.metrics.trackedSockets, 0);
+  assert.equal(pilot.handlerFailureCount(), 1);
+  assert.equal(terminal.phase, 'TRANSPORT_UNCERTAIN');
+  assert.equal(terminal.transportCloseClean, 0);
+  assert.equal(terminal.transportCloseUncertain, 1);
+  assert.equal(terminal.trackedSockets, 0);
+  assert.equal(terminal.trackedRequests, 0);
+  assert.equal(terminal.trackedHandlers, 0);
+  assert.equal(terminal.ownedTimers, 0);
+  assert.deepEqual(context.serviceStore.load(), durableStateAtQuiescence);
+  assert.deepEqual(context.observerStore.load(), observerStateAtQuiescence);
+  assert.equal(context.serviceStore.load().state.grants.length, 1);
+  assert.equal(context.serviceStore.load().state.grants[0].consumedUnits, 4);
+  assert.equal(executionState.count, executionsAtQuiescence);
+  assert.equal(observed.dispatches, signingDispatchesAtQuiescence);
+  // This permits only task-owned fixture cleanup after the asserted uncertain
+  // result; it does not claim clean transport close, rollback, or returned custody.
+  pilot.allowExpectedAdversarialCloseForTestCleanup();
 });
 
 test('offline HTTPS harness denies credit for non-READY synthetic child outcomes', async t => {
