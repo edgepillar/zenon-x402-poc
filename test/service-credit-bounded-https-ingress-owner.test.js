@@ -113,15 +113,34 @@ function lifecycle({
   handle = (_request, response) => {
     response.statusCode = 204;
     response.end();
-    return Promise.resolve(undefined);
   },
-  close = () => Promise.resolve(undefined),
+  close = () => {},
 } = {}) {
   const captured = {
-    handle: frozenFunction(handle),
-    close: frozenFunction(close),
+    handle: frozenFunction((request, response, transportContext, completion) => {
+      Reflect.apply(handle, undefined, [request, response, transportContext]);
+      queueMicrotask(completion.success);
+    }),
+    close: frozenFunction(completion => {
+      Reflect.apply(close, undefined, []);
+      queueMicrotask(completion.success);
+    }),
   };
   return Object.freeze(captured);
+}
+
+function capabilityLifecycle({
+  handle = (_request, response, _transportContext, completion) => {
+    response.statusCode = 204;
+    response.end();
+    completion.success();
+  },
+  close = completion => { completion.success(); },
+} = {}) {
+  return Object.freeze({
+    handle: frozenFunction(handle),
+    close: frozenFunction(close),
+  });
 }
 
 function serverFactoryHarness({
@@ -416,20 +435,6 @@ function hostileLateArguments() {
 function invokeEveryServerCallback(callbacks, argument) {
   for (const callback of Object.values(callbacks)) {
     Reflect.apply(callback, undefined, [argument, argument, argument]);
-  }
-}
-
-async function countUnhandledRejections(operation) {
-  let count = 0;
-  const onUnhandledRejection = () => { count += 1; };
-  process.on('unhandledRejection', onUnhandledRejection);
-  try {
-    await operation();
-    await new Promise(resolve => { setImmediate(resolve); });
-    await new Promise(resolve => { setImmediate(resolve); });
-    return count;
-  } finally {
-    process.removeListener('unhandledRejection', onUnhandledRejection);
   }
 }
 
@@ -1350,15 +1355,14 @@ test('request Proxy and accessor surfaces reject without attacker observation', 
 });
 
 test('native response callbacks settle cleanly and preserve ordered non-owner listeners', async () => {
-  let releaseHandler;
-  const pendingHandler = new Promise(resolve => { releaseHandler = resolve; });
+  let handlerCompletion;
   let downstreamCalls = 0;
   const observedNonOwnerCalls = [];
   const started = await startedOwner({
-    downstream: lifecycle({
-      handle() {
+    downstream: capabilityLifecycle({
+      handle(_request, _response, _context, completion) {
         downstreamCalls += 1;
-        return pendingHandler;
+        handlerCompletion = completion;
       },
     }),
   });
@@ -1397,7 +1401,7 @@ test('native response callbacks settle cleanly and preserve ordered non-owner li
 
   response.emit('finish');
   assert.deepEqual(observedNonOwnerCalls, ['finish:first', 'finish:second']);
-  releaseHandler();
+  handlerCompletion.success();
   await settle();
 
   for (const eventName of ['finish', 'close', 'error']) {
@@ -1416,15 +1420,14 @@ test('native response callbacks settle cleanly and preserve ordered non-owner li
 });
 
 test('post-settlement cleanup accepts native same-event once-listener slot collapse only', async () => {
-  let releaseHandler;
-  const pendingHandler = new Promise(resolve => { releaseHandler = resolve; });
+  let handlerCompletion;
   let downstreamCalls = 0;
   const observedFinishCalls = [];
   const started = await startedOwner({
-    downstream: lifecycle({
-      handle() {
+    downstream: capabilityLifecycle({
+      handle(_request, _response, _context, completion) {
         downstreamCalls += 1;
-        return pendingHandler;
+        handlerCompletion = completion;
       },
     }),
   });
@@ -1494,7 +1497,7 @@ test('post-settlement cleanup accepts native same-event once-listener slot colla
   );
   assert.strictEqual(finishAfterSettlement[finishAfterSettlement.length - 1], finishOwnerCallback);
 
-  releaseHandler();
+  handlerCompletion.success();
   await settle();
 
   assert.equal(socket.destroyed, false);
@@ -1521,16 +1524,15 @@ test('post-settlement cleanup accepts native same-event once-listener slot colla
 for (const targetEventName of ['close', 'error']) test(
   `finish settlement does not authorize cross-slot ${targetEventName} listener collapse`,
   async () => {
-    let releaseHandler;
-    const pendingHandler = new Promise(resolve => { releaseHandler = resolve; });
+    let handlerCompletion;
     let downstreamCalls = 0;
     let targetOwnerCallback = null;
     let targetOwnerCallbackObservations = 0;
     const started = await startedOwner({
-      downstream: lifecycle({
-        handle() {
+      downstream: capabilityLifecycle({
+        handle(_request, _response, _context, completion) {
           downstreamCalls += 1;
-          return pendingHandler;
+          handlerCompletion = completion;
         },
       }),
     });
@@ -1593,7 +1595,7 @@ for (const targetEventName of ['close', 'error']) test(
     assert.strictEqual(driftedTargetSlot.value, targetOwnerCallback);
     assert.deepEqual(response.rawListeners(targetEventName), [targetOwnerCallback]);
 
-    releaseHandler();
+    handlerCompletion.success();
     await settle();
 
     assert.equal(targetOwnerCallbackObservations, 0);
@@ -1765,14 +1767,13 @@ test('settled cleanup rejects unsafe response listener drift without rewriting i
     }],
   ];
   for (const [name, mutate] of cases) await t.test(name, async () => {
-    let releaseHandler;
-    const operation = new Promise(resolve => { releaseHandler = resolve; });
+    let handlerCompletion;
     let downstreamCalls = 0;
     const started = await startedOwner({
-      downstream: lifecycle({
-        handle() {
+      downstream: capabilityLifecycle({
+        handle(_request, _response, _context, completion) {
           downstreamCalls += 1;
-          return operation;
+          handlerCompletion = completion;
         },
       }),
     });
@@ -1799,7 +1800,7 @@ test('settled cleanup rejects unsafe response listener drift without rewriting i
       persistentFinish,
     });
 
-    releaseHandler();
+    handlerCompletion.success();
     await settle();
 
     assert.equal(downstreamCalls, 1);
@@ -1965,7 +1966,7 @@ test('response ownership rejects request drift and settlement before downstream'
     async () => {
       let calls = 0;
       const started = await startedOwner({
-        downstream: lifecycle({
+        downstream: capabilityLifecycle({
           handle() {
             calls += 1;
             return Promise.resolve();
@@ -2428,7 +2429,7 @@ test('response ownership rejects request drift and settlement before downstream'
     assert.equal(started.owner.snapshotMetrics().closeClean, 0);
   });
 
-  await t.test('setHeader reentrant close retains ownership until cleanup', async () => {
+  await t.test('setHeader reentrant close completes owned cleanup before returning', async () => {
     let calls = 0;
     let closing = null;
     let duringClose = null;
@@ -2454,8 +2455,8 @@ test('response ownership rejects request drift and settlement before downstream'
     assert.notEqual(closing, null);
     assert.equal(duringClose.closeClean, 0);
     assert.equal(duringClose.trackedSockets, 0);
-    assert.equal(duringClose.trackedRequests, 1);
-    assert.equal(duringClose.trackedHandlers, 1);
+    assert.equal(duringClose.trackedRequests, 0);
+    assert.equal(duringClose.trackedHandlers, 0);
     assert.equal(calls, 0);
     assert.deepEqual(await closing, Object.freeze({ status: 'CLOSED' }));
     const metrics = started.owner.snapshotMetrics();
@@ -2600,18 +2601,21 @@ test('header and complete request deadlines destroy only owned sockets with no b
 
   await t.test('complete request and response deadline', async () => {
     const deadlines = controlledDeadlineRuntime();
-    let resolveHandler;
-    const operation = new Promise(resolve => { resolveHandler = resolve; });
+    let handlerCompletion;
     const started = await startedOwner({
       deadlines,
-      downstream: lifecycle({ handle: () => operation }),
+      downstream: capabilityLifecycle({
+        handle(_request, _response, _context, completion) {
+          handlerCompletion = completion;
+        },
+      }),
     });
     const socket = connect(started.callbacks);
     const exchange = dispatch(started.callbacks, socket, {}, { finishOnEnd: false });
     assert.equal(exchange.request.bodyTouches, 0);
     deadlines.fire(LIMITS.requestResponseDeadlineMs);
     assert.equal(socket.destroyed, true);
-    resolveHandler();
+    handlerCompletion.success();
     await settle();
     await assert.rejects(started.owner.close(), error => exactError(error, CLOSE_UNCERTAIN));
     assert.deepEqual(deadlines.durations(), []);
@@ -3270,15 +3274,15 @@ test('connection-scoped tokens are opaque, stable, reconnect-distinct and unrela
   await started.owner.close();
 });
 
-test('secureConnection consumes one admitted raw-connection capability and cannot bypass budgets', async () => {
+test('secureConnection consumes one accepted-handshake unit and cannot bypass budgets', async () => {
   const contexts = [];
   let calls = 0;
   const limits = Object.freeze({
     ...LIMITS,
     maxConcurrentSockets: 1,
-    maxConnectionStarts: 1,
+    maxConnectionStarts: 2,
     maxConcurrentRequests: 1,
-    maxRequestStarts: 1,
+    maxRequestStarts: 2,
   });
   const started = await startedOwner({
     limits,
@@ -3315,19 +3319,260 @@ test('secureConnection consumes one admitted raw-connection capability and canno
   assert.equal(duplicateSecureSocket.destroyed, true);
   const replacementRawSocket = new SyntheticSocket();
   started.callbacks.connection(replacementRawSocket);
-  assert.equal(replacementRawSocket.destroyed, true);
-  assert.equal(started.owner.snapshotMetrics().connectionStarts, 1);
+  assert.equal(replacementRawSocket.destroyed, false);
+  const replacementTlsFailure = new SyntheticSocket();
+  started.callbacks.tlsClientError(undefined, replacementTlsFailure);
+  assert.equal(replacementTlsFailure.destroyed, true);
+  const exhaustedRawSocket = new SyntheticSocket();
+  started.callbacks.connection(exhaustedRawSocket);
+  assert.equal(exhaustedRawSocket.destroyed, true);
+  assert.equal(started.owner.snapshotMetrics().connectionStarts, 2);
   assert.equal(started.owner.snapshotMetrics().requestsAdmitted, 1);
   assert.equal(calls, 1);
 
   secureSocket.destroy();
   rawSocket.destroy();
+  replacementRawSocket.destroy();
   await started.owner.close();
   assert.equal(secureSocket.listenerCount('close'), 0);
   assert.equal(secureSocket.listenerCount('error'), 0);
   assert.equal(rawSocket.listenerCount('close'), 0);
   assert.equal(rawSocket.listenerCount('error'), 0);
 });
+
+test('accepted raw handshakes settle out of order without wrapper identity or cross-revocation',
+  async () => {
+    let calls = 0;
+    const started = await startedOwner({
+      downstream: capabilityLifecycle({
+        handle(_request, response, _context, completion) {
+          calls += 1;
+          response.end();
+          completion.success();
+        },
+      }),
+    });
+    const firstRaw = new SyntheticSocket({ closeOnDestroy: false });
+    const secondRaw = new SyntheticSocket({ closeOnDestroy: false });
+    const failedTls = new SyntheticSocket({ closeOnDestroy: false });
+    const secure = new SyntheticSocket();
+
+    started.callbacks.connection(firstRaw);
+    started.callbacks.connection(secondRaw);
+    assert.equal(firstRaw.destroyed, false);
+    assert.equal(secondRaw.destroyed, false);
+    assert.equal(firstRaw.listenerCount('close'), 0);
+    assert.equal(firstRaw.listenerCount('error'), 0);
+    assert.equal(secondRaw.listenerCount('close'), 0);
+    assert.equal(secondRaw.listenerCount('error'), 0);
+    assert.equal(started.owner.snapshotMetrics().connectionStarts, 2);
+    assert.equal(started.owner.snapshotMetrics().trackedSockets, 0);
+
+    started.callbacks.tlsClientError(undefined, failedTls);
+    assert.equal(failedTls.destroyed, true);
+    assert.equal(firstRaw.destroyed, false);
+    assert.equal(secondRaw.destroyed, false);
+
+    started.callbacks.secureConnection(secure);
+    assert.equal(secure.destroyed, false);
+    dispatch(started.callbacks, secure);
+    await settle();
+    assert.equal(calls, 1);
+    assert.equal(started.owner.snapshotMetrics().requestsAdmitted, 1);
+
+    secure.destroy();
+    firstRaw.destroy();
+    secondRaw.destroy();
+    failedTls.emit('close');
+    assert.deepEqual(await started.owner.close(), Object.freeze({ status: 'CLOSED' }));
+  });
+
+test('unsolicited and excess TLS terminal callbacks cannot transfer accounting authority',
+  async () => {
+    let calls = 0;
+    const started = await startedOwner({
+      downstream: capabilityLifecycle({
+        handle(_request, response, _context, completion) {
+          calls += 1;
+          response.end();
+          completion.success();
+        },
+      }),
+    });
+    const unsolicitedSecure = new SyntheticSocket();
+    const unsolicitedFailure = new SyntheticSocket();
+    const excessFailure = new SyntheticSocket();
+    started.callbacks.secureConnection(unsolicitedSecure);
+    started.callbacks.tlsClientError(undefined, unsolicitedFailure);
+    started.callbacks.tlsClientError(undefined, excessFailure);
+    assert.equal(unsolicitedSecure.destroyed, true);
+    assert.equal(unsolicitedFailure.destroyed, true);
+    assert.equal(excessFailure.destroyed, true);
+    assert.equal(started.owner.snapshotMetrics().connectionStarts, 0);
+    assert.equal(started.owner.snapshotMetrics().trackedSockets, 0);
+
+    const raw = new SyntheticSocket({ closeOnDestroy: false });
+    const secure = new SyntheticSocket();
+    started.callbacks.connection(raw);
+    assert.equal(raw.listenerCount('close'), 0);
+    assert.equal(raw.listenerCount('error'), 0);
+    started.callbacks.secureConnection(secure);
+    dispatch(started.callbacks, secure);
+    await settle();
+    assert.equal(calls, 1);
+    assert.equal(started.owner.snapshotMetrics().connectionStarts, 1);
+    assert.equal(started.owner.snapshotMetrics().requestsAdmitted, 1);
+
+    secure.destroy();
+    raw.destroy();
+    assert.deepEqual(await started.owner.close(), Object.freeze({ status: 'CLOSED' }));
+  });
+
+test('TLS failure destroys only its candidate while an active secure reservation stays eligible',
+  async () => {
+    let calls = 0;
+    const limits = Object.freeze({
+      ...LIMITS,
+      maxConcurrentSockets: 1,
+      maxConcurrentRequests: 1,
+    });
+    const started = await startedOwner({
+      limits,
+      downstream: capabilityLifecycle({
+        handle(_request, response, _context, completion) {
+          calls += 1;
+          response.end();
+          completion.success();
+        },
+      }),
+    });
+    const activeRaw = new SyntheticSocket({ closeOnDestroy: false });
+    const activeSecure = new SyntheticSocket();
+    started.callbacks.connection(activeRaw);
+    started.callbacks.secureConnection(activeSecure);
+
+    const failingRaw = new SyntheticSocket({ closeOnDestroy: false });
+    const failingTls = new SyntheticSocket({ closeOnDestroy: false });
+    started.callbacks.connection(failingRaw);
+    assert.equal(failingRaw.destroyed, false);
+    assert.equal(failingRaw.listenerCount('close'), 0);
+    assert.equal(failingRaw.listenerCount('error'), 0);
+    started.callbacks.tlsClientError(undefined, failingTls);
+    assert.equal(failingTls.destroyed, true);
+    assert.equal(failingRaw.destroyed, false);
+    assert.equal(activeSecure.destroyed, false);
+
+    dispatch(started.callbacks, activeSecure);
+    await settle();
+    assert.equal(calls, 1);
+    assert.equal(started.owner.snapshotMetrics().requestsAdmitted, 1);
+
+    activeSecure.destroy();
+    activeRaw.destroy();
+    failingRaw.destroy();
+    failingTls.emit('close');
+    assert.deepEqual(await started.owner.close(), Object.freeze({ status: 'CLOSED' }));
+  });
+
+test('failed handshakes consume lifetime starts while secure concurrency begins post-handshake',
+  async () => {
+    let calls = 0;
+    const limits = Object.freeze({
+      ...LIMITS,
+      maxConcurrentSockets: 1,
+      maxConnectionStarts: 5,
+      maxConcurrentRequests: 1,
+      maxRequestStarts: 2,
+    });
+    const started = await startedOwner({
+      limits,
+      downstream: capabilityLifecycle({
+        handle(_request, response, _context, completion) {
+          calls += 1;
+          response.end();
+          completion.success();
+        },
+      }),
+    });
+    const failedRawA = new SyntheticSocket({ closeOnDestroy: false });
+    const failedRawB = new SyntheticSocket({ closeOnDestroy: false });
+    const failedTlsA = new SyntheticSocket({ closeOnDestroy: false });
+    const failedTlsB = new SyntheticSocket({ closeOnDestroy: false });
+    started.callbacks.connection(failedRawA);
+    started.callbacks.connection(failedRawB);
+    started.callbacks.tlsClientError(undefined, failedTlsB);
+    started.callbacks.tlsClientError(undefined, failedTlsA);
+
+    const activeRaw = new SyntheticSocket({ closeOnDestroy: false });
+    const activeSecure = new SyntheticSocket();
+    started.callbacks.connection(activeRaw);
+    started.callbacks.secureConnection(activeSecure);
+    assert.equal(activeSecure.destroyed, false);
+
+    const capacityRaw = new SyntheticSocket({ closeOnDestroy: false });
+    const capacitySecure = new SyntheticSocket();
+    started.callbacks.connection(capacityRaw);
+    assert.equal(capacityRaw.destroyed, false);
+    started.callbacks.secureConnection(capacitySecure);
+    assert.equal(capacitySecure.destroyed, true);
+    assert.equal(activeSecure.destroyed, false);
+
+    const finalRaw = new SyntheticSocket({ closeOnDestroy: false });
+    const finalFailure = new SyntheticSocket({ closeOnDestroy: false });
+    started.callbacks.connection(finalRaw);
+    started.callbacks.tlsClientError(undefined, finalFailure);
+    const rejectedRaw = new SyntheticSocket();
+    started.callbacks.connection(rejectedRaw);
+    assert.equal(rejectedRaw.destroyed, true);
+    assert.equal(started.owner.snapshotMetrics().connectionStarts, 5);
+
+    dispatch(started.callbacks, activeSecure);
+    await settle();
+    assert.equal(calls, 1);
+    assert.equal(started.owner.snapshotMetrics().requestsAdmitted, 1);
+
+    activeSecure.destroy();
+    for (const raw of [failedRawA, failedRawB, activeRaw, capacityRaw, finalRaw]) raw.destroy();
+    for (const failed of [failedTlsA, failedTlsB, finalFailure]) failed.emit('close');
+    assert.deepEqual(await started.owner.close(), Object.freeze({ status: 'CLOSED' }));
+  });
+
+test('unresolved handshake accounting requires trusted listener terminal evidence for clean close',
+  async t => {
+    await t.test('missing listener terminal evidence remains bounded and uncertain', async () => {
+      const deadlines = controlledDeadlineRuntime();
+      const factoryHarness = serverFactoryHarness({ close: () => {} });
+      const started = await startedOwner({ deadlines, factoryHarness });
+      const raw = new SyntheticSocket({ closeOnDestroy: false });
+      started.callbacks.connection(raw);
+      assert.equal(raw.listenerCount('close'), 0);
+      assert.equal(raw.listenerCount('error'), 0);
+      const closing = started.owner.close();
+      deadlines.fire(LIMITS.closeGraceMs);
+      await assert.rejects(closing, error => exactError(error, CLOSE_UNCERTAIN));
+      assert.equal(started.owner.snapshotMetrics().closeClean, 0);
+      assert.equal(started.owner.snapshotMetrics().closeUncertain, 1);
+      raw.destroy();
+    });
+
+    await t.test('listener close supplies terminal evidence for unresolved handshakes', async () => {
+      const deadlines = controlledDeadlineRuntime();
+      const started = await startedOwner({ deadlines });
+      const raw = new SyntheticSocket({ closeOnDestroy: false });
+      started.callbacks.connection(raw);
+      assert.equal(raw.listenerCount('close'), 0);
+      assert.equal(raw.listenerCount('error'), 0);
+      const closing = started.owner.close();
+      await settle();
+      if (deadlines.durations().includes(LIMITS.closeGraceMs)) {
+        deadlines.fire(LIMITS.closeGraceMs);
+      }
+      assert.deepEqual(await closing, Object.freeze({ status: 'CLOSED' }));
+      assert.equal(started.owner.snapshotMetrics().closeClean, 1);
+      assert.equal(started.owner.snapshotMetrics().closeUncertain, 0);
+      raw.destroy();
+    });
+  });
 
 test('duplicate secureConnection rejects that socket without consuming another admission', async () => {
   let calls = 0;
@@ -3411,106 +3656,170 @@ test('a late lifetime duplicate TLS socket cannot consume a later raw admission'
   assert.deepEqual(await started.owner.close(), Object.freeze({ status: 'CLOSED' }));
 });
 
-test('raw close removes a pending admission and each first secure event burns one gate slot', async () => {
-  let calls = 0;
-  const started = await startedOwner({
-    downstream: lifecycle({
-      handle(_request, response) {
-        calls += 1;
-        response.statusCode = 204;
-        response.end();
-        return Promise.resolve();
-      },
-    }),
-  });
-  const closedRaw = new SyntheticSocket();
-  started.callbacks.connection(closedRaw);
-  closedRaw.destroy();
-  const lateTls = new SyntheticSocket();
-  started.callbacks.secureConnection(lateTls);
-  assert.equal(lateTls.destroyed, true);
+test('secure-only reservations ignore raw termination and release exactly once', async t => {
+  await t.test('raw wrappers do not own secure eligibility or concurrent capacity', async () => {
+    const limits = Object.freeze({
+      ...LIMITS,
+      maxConcurrentSockets: 1,
+      maxConnectionStarts: 8,
+      maxConcurrentRequests: 1,
+    });
+    const started = await startedOwner({ limits, downstream: capabilityLifecycle() });
 
-  const rawA = new SyntheticSocket();
-  const rawB = new SyntheticSocket();
-  started.callbacks.connection(rawA);
-  started.callbacks.connection(rawB);
-  const closingTls = new SyntheticSocket();
-  const nativeOnce = closingTls.once;
-  let emitted = false;
-  closingTls.once = function onceWithSynchronousClose(name, callback) {
+    for (let cycle = 0; cycle < 3; cycle += 1) {
+      const raw = new SyntheticSocket({ closeOnDestroy: false });
+      const secure = new SyntheticSocket();
+      started.callbacks.connection(raw);
+      started.callbacks.secureConnection(secure);
+      assert.equal(secure.destroyed, false);
+
+      raw.destroy();
+      assert.equal(secure.destroyed, false);
+      const capacityRaw = new SyntheticSocket({ closeOnDestroy: false });
+      const capacitySecure = new SyntheticSocket();
+      started.callbacks.connection(capacityRaw);
+      started.callbacks.secureConnection(capacitySecure);
+      assert.equal(capacityRaw.destroyed, false);
+      assert.equal(capacitySecure.destroyed, true);
+      assert.equal(secure.destroyed, false);
+
+      secure.destroy();
+      capacityRaw.destroy();
+    }
+
+    assert.equal(started.owner.snapshotMetrics().connectionStarts, 6);
+    assert.deepEqual(await started.owner.close(), Object.freeze({ status: 'CLOSED' }));
+    assert.equal(started.owner.snapshotMetrics().trackedSockets, 0);
+  });
+
+  await t.test('owned request delays secure-capacity release after transport terminal', async () => {
+    let handlerCompletion;
+    const limits = Object.freeze({
+      ...LIMITS,
+      maxConcurrentSockets: 1,
+      maxConnectionStarts: 5,
+      maxConcurrentRequests: 1,
+      maxRequestStarts: 5,
+    });
+    const started = await startedOwner({
+      limits,
+      downstream: capabilityLifecycle({
+        handle(_request, _response, _context, completion) {
+          handlerCompletion = completion;
+        },
+      }),
+    });
+    const raw = new SyntheticSocket({ closeOnDestroy: false });
+    const secure = new SyntheticSocket();
+    started.callbacks.connection(raw);
+    started.callbacks.secureConnection(secure);
+    dispatch(started.callbacks, secure, {}, { finishOnEnd: false });
+    secure.destroy();
+
+    const capacityRaw = new SyntheticSocket({ closeOnDestroy: false });
+    const capacitySecure = new SyntheticSocket();
+    started.callbacks.connection(capacityRaw);
+    started.callbacks.secureConnection(capacitySecure);
+    assert.equal(capacitySecure.destroyed, true);
+
+    handlerCompletion.success();
+    await settle();
+    const replacementRaw = new SyntheticSocket({ closeOnDestroy: false });
+    const replacementSecure = new SyntheticSocket();
+    started.callbacks.connection(replacementRaw);
+    started.callbacks.secureConnection(replacementSecure);
+    assert.equal(replacementSecure.destroyed, false);
+
+    replacementSecure.destroy();
+    raw.destroy();
+    capacityRaw.destroy();
+    replacementRaw.destroy();
+    const closing = started.owner.close();
+    await settle();
+    const closingMetrics = started.owner.snapshotMetrics();
+    assert.equal(closingMetrics.trackedSockets, 0);
+    assert.equal(closingMetrics.trackedRequests, 0);
+    assert.equal(closingMetrics.trackedHandlers, 0);
+    assert.equal(closingMetrics.ownedTimers, 0);
+    assert.equal(closingMetrics.phase, 'CLOSED');
+    assert.deepEqual(await closing, Object.freeze({ status: 'CLOSED' }));
+  });
+});
+
+test('exact secure terminal signals revoke post-handshake authority', async t => {
+  const terminalCases = [
+    ['clientError on secure',
+      (started, _raw, secure) => started.callbacks.clientError(undefined, secure)],
+    ['error on secure',
+      (_started, _raw, secure) => secure.emit('error', new Error('synthetic secure error'))],
+    ['close on secure', (_started, _raw, secure) => secure.destroy()],
+  ];
+
+  for (const [name, terminalize] of terminalCases) await t.test(name, async () => {
+    let downstreamCalls = 0;
+    const started = await startedOwner({
+      downstream: lifecycle({
+        handle(_request, response) {
+          downstreamCalls += 1;
+          response.end();
+          return Promise.resolve();
+        },
+      }),
+    });
+    const raw = new SyntheticSocket();
+    const secure = new SyntheticSocket();
+    started.callbacks.connection(raw);
+    started.callbacks.secureConnection(secure);
+
+    terminalize(started, raw, secure);
+    const exchange = dispatch(started.callbacks, secure);
+    await settle();
+
+    assert.equal(downstreamCalls, 0);
+    assert.equal(exchange.request.bodyTouches, 0);
+    assert.equal(secure.destroyed, true);
+    raw.destroy();
+    secure.destroy();
+    assert.deepEqual(await started.owner.close(), Object.freeze({ status: 'CLOSED' }));
+  });
+});
+
+test('failed distinct secure tracking rolls back reservation eligibility and capacity', async () => {
+  const limits = Object.freeze({
+    ...LIMITS,
+    maxConcurrentSockets: 1,
+    maxConnectionStarts: 3,
+    maxConcurrentRequests: 1,
+    maxRequestStarts: 3,
+  });
+  const started = await startedOwner({ limits, downstream: capabilityLifecycle() });
+  const raw = new SyntheticSocket();
+  const secure = new SyntheticSocket();
+  const nativeOnce = secure.once;
+  let closedDuringTracking = false;
+  secure.once = function onceWithSynchronousClose(name, callback) {
     const result = Reflect.apply(nativeOnce, this, [name, callback]);
-    if (name === 'close' && !emitted) {
-      emitted = true;
-      this.emit('close');
+    if (name === 'close' && !closedDuringTracking) {
+      closedDuringTracking = true;
+      this.destroy();
     }
     return result;
   };
-  started.callbacks.secureConnection(closingTls);
 
-  const acceptedTls = new SyntheticSocket();
-  started.callbacks.secureConnection(acceptedTls);
-  const extraTls = new SyntheticSocket();
-  started.callbacks.secureConnection(extraTls);
-  assert.equal(extraTls.destroyed, true);
-  const exchange = dispatch(started.callbacks, acceptedTls);
-  await settle();
-  assert.equal(exchange.response.statusCode, 204);
-  assert.equal(calls, 1);
-  assert.equal(started.owner.snapshotMetrics().connectionStarts, 3);
-  assert.equal(started.owner.snapshotMetrics().requestsAdmitted, 1);
+  started.callbacks.connection(raw);
+  started.callbacks.secureConnection(secure);
+  assert.equal(closedDuringTracking, true);
+  assert.equal(raw.destroyed, false);
 
-  acceptedTls.destroy();
-  rawA.destroy();
-  rawB.destroy();
-  await started.owner.close();
-});
-
-test('reverse TLS completion cannot let one raw close invalidate another secure transport', async () => {
-  const contexts = [];
-  let calls = 0;
-  const started = await startedOwner({
-    downstream: lifecycle({
-      handle(_request, response, context) {
-        calls += 1;
-        contexts.push(context);
-        response.statusCode = 204;
-        response.end();
-        return Promise.resolve();
-      },
-    }),
-  });
-  const rawA = new SyntheticSocket();
-  const rawB = new SyntheticSocket();
-  const tlsA = new SyntheticSocket();
-  const tlsB = new SyntheticSocket();
-
-  started.callbacks.connection(rawA);
-  started.callbacks.connection(rawB);
-  started.callbacks.secureConnection(tlsB);
-  started.callbacks.secureConnection(tlsB);
-  started.callbacks.secureConnection(tlsA);
-  rawB.destroy();
-  tlsB.destroy();
-
-  assert.equal(tlsA.destroyed, false);
-  const exchange = dispatch(started.callbacks, tlsA);
-  await settle();
-  assert.equal(exchange.response.statusCode, 204);
-  assert.equal(calls, 1);
-  assert.equal(contexts.length, 1);
-  assert.equal(typeof contexts[0].peerToken, 'symbol');
-  assert.equal(contexts[0].peerToken.description, undefined);
-  assert.equal(tlsA.destroyed, false);
-  assert.equal(started.owner.snapshotMetrics().requestsAdmitted, 1);
-
-  tlsA.destroy();
-  rawA.destroy();
+  const replacementRaw = new SyntheticSocket();
+  const replacementSecure = new SyntheticSocket();
+  started.callbacks.connection(replacementRaw);
+  started.callbacks.secureConnection(replacementSecure);
+  assert.equal(replacementSecure.destroyed, false);
+  replacementSecure.destroy();
+  replacementRaw.destroy();
+  raw.destroy();
   assert.deepEqual(await started.owner.close(), Object.freeze({ status: 'CLOSED' }));
-  const metrics = started.owner.snapshotMetrics();
-  assert.equal(metrics.trackedSockets, 0);
-  assert.equal(metrics.trackedRequests, 0);
-  assert.equal(metrics.trackedHandlers, 0);
-  assert.equal(metrics.ownedTimers, 0);
 });
 
 // Pre-repair regression record: secure state was request-visible while scheduling ran.
@@ -3640,6 +3949,7 @@ test('terminal reentry cannot publish socket state or listeners after setup resu
     }
 
     configured.factoryHarness.observed.callbacks.connection(socket);
+    configured.factoryHarness.observed.callbacks.secureConnection(socket);
     assert.equal(reentered, true);
     assert.notEqual(closing, null);
     await assert.rejects(closing, error => exactError(error, CLOSE_UNCERTAIN));
@@ -3666,7 +3976,119 @@ test('terminal reentry cannot publish socket state or listeners after setup resu
   );
 });
 
-test('synchronous socket close during listener registration cannot leave an admission', async () => {
+test('socket lifecycle operations prevent reentrant close from overtaking exact destruction', async t => {
+  await t.test('untracked destroy accessor reenters close before returning destroy', async () => {
+    const started = await startedOwner({ downstream: capabilityLifecycle() });
+    const socket = new SyntheticSocket();
+    const nativeDestroy = SyntheticSocket.prototype.destroy;
+    let closing = null;
+    let duringAccessor = null;
+    Object.defineProperty(socket, 'destroy', {
+      configurable: true,
+      enumerable: false,
+      get() {
+        if (closing === null) {
+          closing = started.owner.close();
+          duringAccessor = started.owner.snapshotMetrics();
+        }
+        return nativeDestroy;
+      },
+    });
+
+    started.callbacks.secureConnection(socket);
+    assert.notEqual(closing, null);
+    assert.notEqual(duringAccessor, null);
+    assert.equal(duringAccessor.closeClean, 0);
+    assert.equal(duringAccessor.closeUncertain, 0);
+    assert.equal(socket.destroyed, true);
+    assert.deepEqual(await closing, Object.freeze({ status: 'CLOSED' }));
+    const terminal = started.owner.snapshotMetrics();
+    const terminalBytes = JSON.stringify(terminal);
+    assert.equal(terminal.closeClean, 1);
+    assert.equal(terminal.closeUncertain, 0);
+    started.callbacks.close();
+    await settle();
+    assert.equal(JSON.stringify(started.owner.snapshotMetrics()), terminalBytes);
+  });
+
+  await t.test('tracked destroy emits close and then throws', async () => {
+    const started = await startedOwner({ downstream: capabilityLifecycle() });
+    const socket = new SyntheticSocket({ closeOnDestroy: false });
+    socket.destroy = function destroyWithPostCloseThrow() {
+      this.destroyCalls += 1;
+      if (!this.destroyed) {
+        this.destroyed = true;
+        this.emit('close');
+      }
+      throw new Error('synthetic post-close destroy failure');
+    };
+    started.callbacks.connection(socket);
+    started.callbacks.secureConnection(socket);
+
+    const closing = started.owner.close();
+    await assert.rejects(closing, error => exactError(error, CLOSE_UNCERTAIN));
+    const terminal = started.owner.snapshotMetrics();
+    const terminalBytes = JSON.stringify(terminal);
+    assert.equal(socket.destroyed, true);
+    assert.equal(terminal.closeClean, 0);
+    assert.equal(terminal.closeUncertain, 1);
+    started.callbacks.close();
+    socket.emit('close');
+    await settle();
+    assert.equal(JSON.stringify(started.owner.snapshotMetrics()), terminalBytes);
+  });
+
+  await t.test('nested socket reentry neither underflows nor publishes clean early', async () => {
+    const started = await startedOwner({ downstream: capabilityLifecycle() });
+    const tracked = new SyntheticSocket({ closeOnDestroy: false });
+    tracked.destroy = function nestedTrackedDestroy() {
+      this.destroyCalls += 1;
+      if (!this.destroyed) {
+        this.destroyed = true;
+        this.emit('close');
+      }
+      throw new Error('synthetic nested destroy failure');
+    };
+    started.callbacks.connection(tracked);
+    started.callbacks.secureConnection(tracked);
+
+    const untracked = new SyntheticSocket();
+    const nativeDestroy = SyntheticSocket.prototype.destroy;
+    let closing = null;
+    let duringAccessor = null;
+    Object.defineProperty(untracked, 'destroy', {
+      configurable: true,
+      enumerable: false,
+      get() {
+        if (closing === null) {
+          closing = started.owner.close();
+          duringAccessor = started.owner.snapshotMetrics();
+        }
+        return nativeDestroy;
+      },
+    });
+
+    started.callbacks.secureConnection(untracked);
+    assert.notEqual(closing, null);
+    assert.notEqual(duringAccessor, null);
+    assert.equal(duringAccessor.closeClean, 0);
+    assert.equal(tracked.destroyed, true);
+    assert.equal(untracked.destroyed, true);
+    await assert.rejects(closing, error => exactError(error, CLOSE_UNCERTAIN));
+    const terminal = started.owner.snapshotMetrics();
+    const terminalBytes = JSON.stringify(terminal);
+    assert.equal(terminal.closeClean, 0);
+    assert.equal(terminal.closeUncertain, 1);
+    assert.equal(terminal.trackedSockets, 0);
+    started.callbacks.close();
+    tracked.emit('close');
+    untracked.emit('close');
+    await settle();
+    assert.equal(JSON.stringify(started.owner.snapshotMetrics()), terminalBytes);
+  });
+});
+
+test('synchronous secure close during listener registration leaves no reservation', async () => {
   let calls = 0;
   const started = await startedOwner({
     downstream: lifecycle({ handle() { calls += 1; return Promise.resolve(); } }),
@@ -3683,17 +4105,19 @@ test('synchronous socket close during listener registration cannot leave an admi
     return result;
   };
   started.callbacks.connection(socket);
+  started.callbacks.secureConnection(socket);
   const metrics = started.owner.snapshotMetrics();
   assert.equal(calls, 0);
   assert.equal(metrics.connectionStarts, 1);
-  assert.equal(metrics.connectionsAccepted, 0);
+  assert.equal(metrics.connectionsAccepted, 1);
+  assert.equal(metrics.tlsRejected, 1);
   assert.equal(metrics.trackedSockets, 0);
   assert.equal(socket.listenerCount('close'), 0);
   assert.equal(socket.listenerCount('error'), 0);
-  await assert.rejects(started.owner.close(), error => exactError(error, CLOSE_UNCERTAIN));
+  assert.deepEqual(await started.owner.close(), Object.freeze({ status: 'CLOSED' }));
 });
 
-test('listener registration failure retains one bounded connection reservation', async () => {
+test('listener registration failure rolls back tracked state and bounds terminal ambiguity', async () => {
   const limits = Object.freeze({
     ...LIMITS,
     maxConcurrentSockets: 1,
@@ -3708,14 +4132,15 @@ test('listener registration failure retains one bounded connection reservation',
   };
 
   started.callbacks.connection(socket);
+  started.callbacks.secureConnection(socket);
 
   assert.notEqual(duringRegistration, null);
   assert.equal(duringRegistration.connectionStarts, 1);
   assert.equal(duringRegistration.trackedSockets, 1);
   const metrics = started.owner.snapshotMetrics();
   assert.equal(metrics.connectionStarts, 1);
-  assert.equal(metrics.connectionsAccepted, 0);
-  assert.equal(metrics.trackedSockets, 1);
+  assert.equal(metrics.connectionsAccepted, 1);
+  assert.equal(metrics.trackedSockets, 0);
   assert.equal(socket.destroyed, true);
   await assert.rejects(started.owner.close(), error => exactError(error, CLOSE_UNCERTAIN));
   assert.equal(started.owner.snapshotMetrics().trackedSockets, 0);
@@ -3723,123 +4148,60 @@ test('listener registration failure retains one bounded connection reservation',
   assert.equal(socket.listenerCount('error'), 0);
 });
 
-test('raw connection listener reentrancy cannot exceed concurrent or lifetime admission', async t => {
-  await t.test('the outer reservation owns the only capacity before reentry', async () => {
-    const limits = Object.freeze({
-      ...LIMITS,
-      maxConcurrentSockets: 1,
-      maxConnectionStarts: 1,
-      maxConcurrentRequests: 1,
-      maxRequestStarts: 1,
-    });
-    const started = await startedOwner({ limits });
-    const reentrantSocket = new SyntheticSocket();
-    const outerSocket = new SyntheticSocket();
-    const nativeOnce = outerSocket.once;
-    let reentered = false;
-    outerSocket.once = function onceWithReentrantConnection(name, callback) {
-      const result = Reflect.apply(nativeOnce, this, [name, callback]);
-      if (name === 'close' && !reentered) {
-        reentered = true;
-        started.callbacks.connection(reentrantSocket);
-      }
-      return result;
-    };
-
-    started.callbacks.connection(outerSocket);
-    const metrics = started.owner.snapshotMetrics();
-    assert.equal(reentered, true);
-    assert.equal(reentrantSocket.destroyed, true);
-    assert.equal(outerSocket.destroyed, false);
-    assert.equal(metrics.connectionStarts, 1);
-    assert.equal(metrics.connectionsAccepted, 1);
-    assert.equal(metrics.trackedSockets, 1);
-
-    outerSocket.destroy();
-    reentrantSocket.destroy();
-    assert.deepEqual(await started.owner.close(), Object.freeze({ status: 'CLOSED' }));
-  });
-
-  await t.test('close reentry during listener registration cannot report clean', async () => {
-    let owner;
-    let closing = null;
-    const configured = configuration();
-    owner = createServiceCreditBoundedHttpsIngressOwner(configured.options);
-    await owner.start();
-    const socket = new SyntheticSocket();
-    const nativeOnce = socket.once;
-    let reentered = false;
-    socket.once = function onceWithReentrantClose(name, callback) {
-      const result = Reflect.apply(nativeOnce, this, [name, callback]);
-      if (name === 'close' && !reentered) {
-        reentered = true;
-        closing = owner.close();
-        closing.then(() => {}, () => {});
-      }
-      return result;
-    };
-
-    configured.factoryHarness.observed.callbacks.connection(socket);
-    assert.equal(reentered, true);
-    assert.notEqual(closing, null);
-    await assert.rejects(closing, error => exactError(error, CLOSE_UNCERTAIN));
-    const metrics = owner.snapshotMetrics();
-    assert.equal(metrics.closeClean, 0);
-    assert.equal(metrics.closeUncertain, 1);
-  });
-});
-
-test('raw connection reservation bounds tracked sockets during listener-registration reentry', async () => {
+test('secure reservation publication bounds listener-registration reentry', async () => {
   const limits = Object.freeze({
     ...LIMITS,
     maxConcurrentSockets: 1,
-    maxConnectionStarts: 1,
+    maxConnectionStarts: 3,
     maxConcurrentRequests: 1,
     maxRequestStarts: 1,
   });
   const started = await startedOwner({ limits });
-  const reentrantSocket = new SyntheticSocket();
-  const outerSocket = new SyntheticSocket();
-  const nativeOnce = outerSocket.once;
+  const outerRaw = new SyntheticSocket({ closeOnDestroy: false });
+  const innerRaw = new SyntheticSocket({ closeOnDestroy: false });
+  const outerSecure = new SyntheticSocket();
+  const innerSecure = new SyntheticSocket();
+  started.callbacks.connection(outerRaw);
+  started.callbacks.connection(innerRaw);
+  const nativeOnce = outerSecure.once;
   let duringRegistration = null;
   let reentered = false;
-  outerSocket.once = function onceWithBoundedReentrantConnection(name, callback) {
+  outerSecure.once = function onceWithReentrantSecure(name, callback) {
     const result = Reflect.apply(nativeOnce, this, [name, callback]);
     if (name === 'close' && !reentered) {
       reentered = true;
-      started.callbacks.connection(reentrantSocket);
+      started.callbacks.secureConnection(innerSecure);
       duringRegistration = started.owner.snapshotMetrics();
     }
     return result;
   };
 
-  try {
-    started.callbacks.connection(outerSocket);
-    assert.equal(reentered, true);
-    assert.notEqual(duringRegistration, null);
-    assert.equal(duringRegistration.trackedSockets, 1);
-    assert.equal(duringRegistration.connectionStarts, 1);
-    assert.equal(outerSocket.destroyed, false);
-    assert.equal(reentrantSocket.destroyed, true);
-    const metrics = started.owner.snapshotMetrics();
-    assert.equal(metrics.trackedSockets, 1);
-    assert.equal(metrics.connectionStarts, 1);
-  } finally {
-    outerSocket.destroy();
-    reentrantSocket.destroy();
-    await started.owner.close().catch(() => {});
-  }
+  started.callbacks.secureConnection(outerSecure);
+  assert.equal(reentered, true);
+  assert.notEqual(duringRegistration, null);
+  assert.equal(duringRegistration.connectionStarts, 2);
+  assert.equal(duringRegistration.trackedSockets, 1);
+  assert.equal(innerSecure.destroyed, true);
+  assert.equal(outerSecure.destroyed, false);
+  assert.equal(started.owner.snapshotMetrics().trackedSockets, 1);
+
+  outerSecure.destroy();
+  outerRaw.destroy();
+  innerRaw.destroy();
+  assert.deepEqual(await started.owner.close(), Object.freeze({ status: 'CLOSED' }));
 });
 
-test('raw connection reservation is visible during socket capability reentry', async () => {
+test('secure reservation is visible during socket capability reentry', async () => {
   const limits = Object.freeze({
     ...LIMITS,
     maxConcurrentSockets: 1,
-    maxConnectionStarts: 1,
+    maxConnectionStarts: 3,
     maxConcurrentRequests: 1,
     maxRequestStarts: 1,
   });
   const started = await startedOwner({ limits });
+  const outerRaw = new SyntheticSocket({ closeOnDestroy: false });
+  const innerRaw = new SyntheticSocket({ closeOnDestroy: false });
   const reentrantSocket = new SyntheticSocket();
   const outerSocket = new SyntheticSocket();
   const nativeDestroy = SyntheticSocket.prototype.destroy;
@@ -3851,7 +4213,7 @@ test('raw connection reservation is visible during socket capability reentry', a
     get() {
       if (!reentered) {
         reentered = true;
-        started.callbacks.connection(reentrantSocket);
+        started.callbacks.secureConnection(reentrantSocket);
         duringCapture = started.owner.snapshotMetrics();
       }
       return nativeDestroy;
@@ -3859,22 +4221,179 @@ test('raw connection reservation is visible during socket capability reentry', a
   });
 
   try {
-    started.callbacks.connection(outerSocket);
+    started.callbacks.connection(outerRaw);
+    started.callbacks.connection(innerRaw);
+    started.callbacks.secureConnection(outerSocket);
     assert.equal(reentered, true);
     assert.notEqual(duringCapture, null);
-    assert.equal(duringCapture.connectionStarts, 1);
+    assert.equal(duringCapture.connectionStarts, 2);
     assert.equal(duringCapture.trackedSockets, 1);
     assert.equal(outerSocket.destroyed, false);
     assert.equal(reentrantSocket.destroyed, true);
     const metrics = started.owner.snapshotMetrics();
-    assert.equal(metrics.connectionStarts, 1);
-    assert.equal(metrics.connectionsAccepted, 1);
+    assert.equal(metrics.connectionStarts, 2);
+    assert.equal(metrics.connectionsAccepted, 2);
     assert.equal(metrics.trackedSockets, 1);
   } finally {
     outerSocket.destroy();
     reentrantSocket.destroy();
+    outerRaw.destroy();
+    innerRaw.destroy();
     await started.owner.close().catch(() => {});
   }
+});
+
+test('pre-eligibility request reentry seals only its exact secure reservation', async t => {
+  await t.test('request during secure capability capture cannot gain later authority', async () => {
+    let calls = 0;
+    const deadlines = controlledDeadlineRuntime();
+    const started = await startedOwner({
+      deadlines,
+      downstream: capabilityLifecycle({
+        handle(_request, response, _context, completion) {
+          calls += 1;
+          response.end();
+          completion.success();
+        },
+      }),
+    });
+    const raw = new SyntheticSocket({ closeOnDestroy: false });
+    const secure = new SyntheticSocket();
+    const firstRequest = new SyntheticRequest(secure);
+    const firstResponse = new SyntheticResponse(secure);
+    const nativeDestroy = SyntheticSocket.prototype.destroy;
+    let reentered = false;
+    Object.defineProperty(secure, 'destroy', {
+      configurable: true,
+      enumerable: false,
+      get() {
+        if (!reentered) {
+          reentered = true;
+          started.callbacks.request(firstRequest, firstResponse);
+        }
+        return nativeDestroy;
+      },
+    });
+
+    started.callbacks.connection(raw);
+    started.callbacks.secureConnection(secure);
+    const later = dispatch(started.callbacks, secure);
+    assert.equal(reentered, true);
+    assert.equal(calls, 0);
+    assert.equal(firstRequest.bodyTouches, 0);
+    assert.equal(later.request.bodyTouches, 0);
+    assert.equal(secure.destroyed, true);
+    raw.destroy();
+
+    const closing = started.owner.close();
+    if (deadlines.durations().includes(LIMITS.closeGraceMs)) {
+      deadlines.fire(LIMITS.closeGraceMs);
+    }
+    await assert.rejects(closing, error => exactError(error, CLOSE_UNCERTAIN));
+    const terminal = started.owner.snapshotMetrics();
+    const terminalBytes = JSON.stringify(terminal);
+    assert.equal(terminal.closeClean, 0);
+    assert.equal(terminal.closeUncertain, 1);
+    started.callbacks.request(firstRequest, firstResponse);
+    await settle();
+    assert.equal(JSON.stringify(started.owner.snapshotMetrics()), terminalBytes);
+  });
+
+  await t.test('request during secure listener registration cannot gain later authority',
+    async () => {
+      let calls = 0;
+      const started = await startedOwner({
+        downstream: capabilityLifecycle({
+          handle(_request, response, _context, completion) {
+            calls += 1;
+            response.end();
+            completion.success();
+          },
+        }),
+      });
+      const raw = new SyntheticSocket({ closeOnDestroy: false });
+      const secure = new SyntheticSocket();
+      const firstRequest = new SyntheticRequest(secure);
+      const firstResponse = new SyntheticResponse(secure);
+      const nativeOnce = secure.once;
+      let reentered = false;
+      secure.once = function onceWithRequestReentry(name, callback) {
+        const result = Reflect.apply(nativeOnce, this, [name, callback]);
+        if (name === 'close' && !reentered) {
+          reentered = true;
+          started.callbacks.request(firstRequest, firstResponse);
+        }
+        return result;
+      };
+
+      started.callbacks.connection(raw);
+      started.callbacks.secureConnection(secure);
+      const later = dispatch(started.callbacks, secure);
+      assert.equal(reentered, true);
+      assert.equal(calls, 0);
+      assert.equal(firstRequest.bodyTouches, 0);
+      assert.equal(later.request.bodyTouches, 0);
+      assert.equal(secure.destroyed, true);
+      raw.destroy();
+      assert.deepEqual(await started.owner.close(), Object.freeze({ status: 'CLOSED' }));
+    });
+
+  await t.test('sealing one setup reservation preserves an unrelated active secure socket',
+    async () => {
+      let calls = 0;
+      const limits = Object.freeze({
+        ...LIMITS,
+        maxConcurrentSockets: 2,
+        maxConcurrentRequests: 2,
+      });
+      const started = await startedOwner({
+        limits,
+        downstream: capabilityLifecycle({
+          handle(_request, response, _context, completion) {
+            calls += 1;
+            response.end();
+            completion.success();
+          },
+        }),
+      });
+      const activeRaw = new SyntheticSocket({ closeOnDestroy: false });
+      const activeSecure = new SyntheticSocket();
+      started.callbacks.connection(activeRaw);
+      started.callbacks.secureConnection(activeSecure);
+
+      const hostileRaw = new SyntheticSocket({ closeOnDestroy: false });
+      const hostileSecure = new SyntheticSocket();
+      const hostileRequest = new SyntheticRequest(hostileSecure);
+      const hostileResponse = new SyntheticResponse(hostileSecure);
+      const nativeOnce = hostileSecure.once;
+      let reentered = false;
+      hostileSecure.once = function onceWithIsolatedRequestReentry(name, callback) {
+        const result = Reflect.apply(nativeOnce, this, [name, callback]);
+        if (name === 'close' && !reentered) {
+          reentered = true;
+          started.callbacks.request(hostileRequest, hostileResponse);
+        }
+        return result;
+      };
+      started.callbacks.connection(hostileRaw);
+      started.callbacks.secureConnection(hostileSecure);
+
+      const activeExchange = dispatch(started.callbacks, activeSecure);
+      const hostileLater = dispatch(started.callbacks, hostileSecure);
+      await settle();
+      assert.equal(reentered, true);
+      assert.equal(calls, 1);
+      assert.equal(activeExchange.request.bodyTouches, 0);
+      assert.equal(hostileRequest.bodyTouches, 0);
+      assert.equal(hostileLater.request.bodyTouches, 0);
+      assert.equal(activeSecure.destroyed, false);
+      assert.equal(hostileSecure.destroyed, true);
+
+      activeSecure.destroy();
+      activeRaw.destroy();
+      hostileRaw.destroy();
+      assert.deepEqual(await started.owner.close(), Object.freeze({ status: 'CLOSED' }));
+    });
 });
 
 test('global concurrent and lifetime socket/request budgets reject without a queue or body read', async t => {
@@ -3890,13 +4409,17 @@ test('global concurrent and lifetime socket/request budgets reject without a que
   });
 
   await t.test('concurrent requests', async () => {
-    let release;
-    const pending = new Promise(resolve => { release = resolve; });
+    let handlerCompletion;
     let calls = 0;
     const limits = Object.freeze({ ...LIMITS, maxConcurrentRequests: 1 });
     const started = await startedOwner({
       limits,
-      downstream: lifecycle({ handle() { calls += 1; return pending; } }),
+      downstream: capabilityLifecycle({
+        handle(_request, _response, _context, completion) {
+          calls += 1;
+          handlerCompletion = completion;
+        },
+      }),
     });
     const firstSocket = connect(started.callbacks);
     dispatch(started.callbacks, firstSocket, {}, { finishOnEnd: false });
@@ -3905,7 +4428,7 @@ test('global concurrent and lifetime socket/request budgets reject without a que
     assert.equal(calls, 1);
     assert.equal(rejected.request.bodyTouches, 0);
     assert.equal(rejected.response.statusCode, 503);
-    release();
+    handlerCompletion.success();
     firstSocket.destroy();
     secondSocket.destroy();
     await settle();
@@ -3971,13 +4494,17 @@ test('global concurrent and lifetime socket/request budgets reject without a que
 
 test('request admission reserves concurrency before response methods', async t => {
   async function runReentrantAdmission(trigger) {
-    let release;
-    const pending = new Promise(resolve => { release = resolve; });
+    let handlerCompletion;
     let calls = 0;
     const limits = Object.freeze({ ...LIMITS, maxConcurrentRequests: 1 });
     const started = await startedOwner({
       limits,
-      downstream: lifecycle({ handle() { calls += 1; return pending; } }),
+      downstream: capabilityLifecycle({
+        handle(_request, _response, _context, completion) {
+          calls += 1;
+          handlerCompletion = completion;
+        },
+      }),
     });
     const outerSocket = connect(started.callbacks);
     const innerSocket = connect(started.callbacks);
@@ -4004,7 +4531,7 @@ test('request admission reserves concurrency before response methods', async t =
     assert.equal(started.owner.snapshotMetrics().trackedRequests, 1);
     assert.equal(started.owner.snapshotMetrics().trackedHandlers, 1);
 
-    release();
+    handlerCompletion.success();
     outerResponse.emit('finish');
     await settle();
     outerSocket.destroy();
@@ -4190,29 +4717,16 @@ test('request reservation is visible during deadline scheduling reentry', async 
   }
 });
 
-test('terminal uncertainty drains an unobservable native handler without observing it', async () => {
-  let speciesReads = 0;
-  let thenReads = 0;
-  const hostileConstructor = Object.defineProperty(function FixedHostileConstructor() {},
-    Symbol.species, {
-      configurable: false,
-      enumerable: false,
-      get() { speciesReads += 1; throw new Error('must not be read'); },
-    });
-  const operation = new Promise(() => {});
-  Object.defineProperty(operation, 'constructor', {
-    configurable: false,
-    enumerable: false,
-    writable: false,
-    value: hostileConstructor,
-  });
-  Object.defineProperty(operation, 'then', {
-    configurable: false,
-    enumerable: false,
-    get() { thenReads += 1; throw new Error('must not be read'); },
-  });
+test('missing handler completion remains bounded by close grace', async () => {
+  let retainedCompletion;
+  const deadlines = controlledDeadlineRuntime();
   const started = await startedOwner({
-    downstream: lifecycle({ handle: () => operation }),
+    deadlines,
+    downstream: capabilityLifecycle({
+      handle(_request, _response, _context, completion) {
+        retainedCompletion = completion;
+      },
+    }),
   });
   const socket = connect(started.callbacks, { closeOnDestroy: false });
   const exchange = dispatch(started.callbacks, socket, {}, { finishOnEnd: false });
@@ -4224,6 +4738,7 @@ test('terminal uncertainty drains an unobservable native handler without observi
 
   const closing = started.owner.close();
   assert.strictEqual(started.owner.close(), closing);
+  deadlines.fire(LIMITS.closeGraceMs);
   await assert.rejects(closing, error => exactError(error, CLOSE_UNCERTAIN));
 
   const terminal = started.owner.snapshotMetrics();
@@ -4232,7 +4747,7 @@ test('terminal uncertainty drains an unobservable native handler without observi
   assert.equal(terminal.trackedRequests, 0);
   assert.equal(terminal.trackedHandlers, 0);
   assert.equal(terminal.ownedTimers, 0);
-  assert.equal(terminal.handlersSettled, 0);
+  assert.equal(terminal.handlersSettled, 1);
   assert.equal(terminal.closeClean, 0);
   assert.equal(terminal.closeUncertain, 1);
   assert.equal(socket.listenerCount('close'), 0);
@@ -4240,17 +4755,21 @@ test('terminal uncertainty drains an unobservable native handler without observi
   assert.equal(exchange.response.listenerCount('finish'), 0);
   assert.equal(exchange.response.listenerCount('close'), 0);
   assert.equal(exchange.response.listenerCount('error'), 0);
-  assert.equal(thenReads, 0);
-  assert.equal(speciesReads, 0);
+  retainedCompletion.success();
+  retainedCompletion.failure();
+  assert.deepEqual(started.owner.snapshotMetrics(), terminal);
 });
 
-test('close-grace terminal drains observed pending work and ignores late settlement', async () => {
+test('close-grace terminal drains pending completion work and ignores late calls', async () => {
   const deadlines = controlledDeadlineRuntime();
-  let releaseHandler;
-  const operation = new Promise(resolve => { releaseHandler = resolve; });
+  let retainedCompletion;
   const started = await startedOwner({
     deadlines,
-    downstream: lifecycle({ handle: () => operation }),
+    downstream: capabilityLifecycle({
+      handle(_request, _response, _context, completion) {
+        retainedCompletion = completion;
+      },
+    }),
   });
   const socket = connect(started.callbacks, { closeOnDestroy: false });
   const exchange = dispatch(started.callbacks, socket, {}, { finishOnEnd: false });
@@ -4259,7 +4778,7 @@ test('close-grace terminal drains observed pending work and ignores late settlem
   const duringClose = started.owner.snapshotMetrics();
   assert.equal(duringClose.trackedSockets, 1);
   assert.equal(duringClose.trackedRequests, 1);
-  assert.equal(duringClose.trackedHandlers, 1);
+  assert.equal(duringClose.trackedHandlers, 0);
   assert.equal(duringClose.ownedTimers, 1);
 
   deadlines.fire(LIMITS.closeGraceMs);
@@ -4274,7 +4793,7 @@ test('close-grace terminal drains observed pending work and ignores late settlem
   assert.equal(terminal.trackedRequests, 0);
   assert.equal(terminal.trackedHandlers, 0);
   assert.equal(terminal.ownedTimers, 0);
-  assert.equal(terminal.handlersSettled, 0);
+  assert.equal(terminal.handlersSettled, 1);
   assert.equal(socket.listenerCount('close'), 0);
   assert.equal(socket.listenerCount('error'), 0);
   assert.equal(exchange.response.listenerCount('finish'), 0);
@@ -4288,7 +4807,8 @@ test('close-grace terminal drains observed pending work and ignores late settlem
     destroyed: exchange.response.destroyed,
   });
 
-  releaseHandler();
+  retainedCompletion.success();
+  retainedCompletion.failure();
   await settle();
   assert.deepEqual(started.owner.snapshotMetrics(), terminal);
   assert.deepEqual({
@@ -4310,16 +4830,15 @@ test('clean terminal detachment makes retained callbacks and abort exactly inert
     onCancel() { cancelCalls += 1; },
   });
   let downstreamCalls = 0;
-  let releaseHandler;
+  let retainedCompletion;
   let retainedAbort;
-  const handler = new Promise(resolve => { releaseHandler = resolve; });
   const started = await startedOwner({
     deadlines,
-    downstream: lifecycle({
-      handle(_request, _response, transportContext) {
+    downstream: capabilityLifecycle({
+      handle(_request, _response, transportContext, completion) {
         downstreamCalls += 1;
         retainedAbort = transportContext.abort;
-        return handler;
+        retainedCompletion = completion;
       },
     }),
   });
@@ -4328,7 +4847,7 @@ test('clean terminal detachment makes retained callbacks and abort exactly inert
   const retainedResponseCallbacks = ['finish', 'close', 'error']
     .flatMap(name => exchange.response.rawListeners(name));
   exchange.response.emit('finish');
-  releaseHandler();
+  retainedCompletion.success();
   await settle();
   socket.destroy();
   assert.deepEqual(await started.owner.close(), Object.freeze({ status: 'CLOSED' }));
@@ -4346,7 +4865,8 @@ test('clean terminal detachment makes retained callbacks and abort exactly inert
   for (const callback of retainedResponseCallbacks) {
     Reflect.apply(callback, undefined, [hostile.proxy, hostile.accessor]);
   }
-  releaseHandler();
+  retainedCompletion.success();
+  retainedCompletion.failure();
   for (let index = 0; index < 3; index += 1) retainedAbort();
   invokeEveryServerCallback(started.callbacks, hostile.proxy);
   invokeEveryServerCallback(started.callbacks, hostile.accessor);
@@ -4371,16 +4891,15 @@ test('uncertain terminal detachment makes retained callbacks and abort exactly i
     onCancel() { cancelCalls += 1; },
   });
   let downstreamCalls = 0;
-  let releaseHandler;
+  let retainedCompletion;
   let retainedAbort;
-  const handler = new Promise(resolve => { releaseHandler = resolve; });
   const started = await startedOwner({
     deadlines,
-    downstream: lifecycle({
-      handle(_request, _response, transportContext) {
+    downstream: capabilityLifecycle({
+      handle(_request, _response, transportContext, completion) {
         downstreamCalls += 1;
         retainedAbort = transportContext.abort;
-        return handler;
+        retainedCompletion = completion;
       },
     }),
   });
@@ -4405,7 +4924,8 @@ test('uncertain terminal detachment makes retained callbacks and abort exactly i
   for (const callback of retainedResponseCallbacks) {
     Reflect.apply(callback, undefined, [hostile.proxy, hostile.accessor]);
   }
-  releaseHandler();
+  retainedCompletion.success();
+  retainedCompletion.failure();
   for (let index = 0; index < 3; index += 1) retainedAbort();
   invokeEveryServerCallback(started.callbacks, hostile.proxy);
   invokeEveryServerCallback(started.callbacks, hostile.accessor);
@@ -4422,322 +4942,37 @@ test('uncertain terminal detachment makes retained callbacks and abort exactly i
   }, terminalEffects);
 });
 
-test('terminal uncertainty drains a safely contained rejected invalid Promise', async () => {
-  const unhandled = await countUnhandledRejections(async () => {
-    class InvalidDownstreamPromise extends Promise {}
-    let thenReads = 0;
-    const operation = InvalidDownstreamPromise.reject(
-      new Error('synthetic rejected invalid operation'),
+test('caller return values never authorize handler or downstream-close success', async t => {
+  const foreignPromiseConstructor = runInNewContext('Promise');
+  const foreignOperation = (reject, localPrototype) => {
+    const operation = Reflect.construct(
+      foreignPromiseConstructor,
+      [(_resolve, rejectPromise) => {
+        if (reject) rejectPromise(new Error('synthetic foreign rejection'));
+        else _resolve(undefined);
+      }],
+      localPrototype ? Promise : foreignPromiseConstructor,
     );
-    Object.defineProperty(operation, 'constructor', {
-      configurable: false,
-      enumerable: false,
-      writable: false,
-      value: undefined,
-    });
-    Object.defineProperty(operation, 'then', {
-      configurable: false,
-      enumerable: false,
-      get() { thenReads += 1; throw new Error('must not be read'); },
-    });
-    const started = await startedOwner({
-      downstream: lifecycle({ handle: () => operation }),
-    });
-    const socket = connect(started.callbacks, { closeOnDestroy: false });
-    const exchange = dispatch(started.callbacks, socket, {}, { finishOnEnd: false });
-    await settle();
-    const beforeClose = started.owner.snapshotMetrics();
-    assert.equal(beforeClose.trackedSockets, 1);
-    assert.equal(beforeClose.trackedRequests, 1);
-    assert.equal(beforeClose.trackedHandlers, 0);
-    assert.equal(beforeClose.handlersSettled, 0);
-    assert.equal(beforeClose.handlerFailures, 1);
-
-    await assert.rejects(started.owner.close(), error => exactError(error, CLOSE_UNCERTAIN));
-    const terminal = started.owner.snapshotMetrics();
-    assert.equal(terminal.phase, 'CLOSE_UNCERTAIN');
-    assert.equal(terminal.trackedSockets, 0);
-    assert.equal(terminal.trackedRequests, 0);
-    assert.equal(terminal.trackedHandlers, 0);
-    assert.equal(terminal.ownedTimers, 0);
-    assert.equal(terminal.handlersSettled, 0);
-    assert.equal(terminal.closeClean, 0);
-    assert.equal(terminal.closeUncertain, 1);
-    assert.equal(socket.listenerCount('close'), 0);
-    assert.equal(socket.listenerCount('error'), 0);
-    assert.equal(exchange.response.listenerCount('finish'), 0);
-    assert.equal(exchange.response.listenerCount('close'), 0);
-    assert.equal(exchange.response.listenerCount('error'), 0);
-    assert.equal(thenReads, 0);
-  });
-  assert.equal(unhandled, 0);
-});
-
-test('only same-realm genuine native Promises satisfy the downstream contract', async t => {
-  await t.test('arbitrary thenable is neither read nor assimilated', async () => {
-    let thenReads = 0;
-    const thenable = Object.defineProperty({}, 'then', {
-      get() { thenReads += 1; throw new Error('must not be read'); },
-    });
-    const started = await startedOwner({
-      downstream: lifecycle({ handle: () => thenable }),
-    });
-    const socket = connect(started.callbacks);
-    dispatch(started.callbacks, socket);
-    assert.equal(thenReads, 0);
-    assert.equal(socket.destroyed, true);
-    await assert.rejects(started.owner.close(), error => exactError(error, CLOSE_UNCERTAIN));
-    assert.equal(thenReads, 0);
-  });
-
-  await t.test('cross-realm Promise is rejected without reading a then property', async () => {
-    const foreignPromise = runInNewContext('Promise.resolve(undefined)');
-    Object.defineProperty(foreignPromise, 'then', {
-      configurable: true,
-      get() { throw new Error('must not be read'); },
-    });
-    const started = await startedOwner({
-      downstream: lifecycle({ handle: () => foreignPromise }),
-    });
-    const socket = connect(started.callbacks);
-    dispatch(started.callbacks, socket);
-    assert.equal(socket.destroyed, true);
-    await assert.rejects(started.owner.close(), error => exactError(error, CLOSE_UNCERTAIN));
-  });
-
-  await t.test('captured species-safe path observes a native Promise without invoking its constructor getter', async () => {
-    let constructorReads = 0;
-    const operation = Promise.resolve(undefined);
-    Object.defineProperty(operation, 'constructor', {
-      configurable: true,
-      enumerable: false,
-      get() { constructorReads += 1; throw new Error('must not be read'); },
-    });
-    const started = await startedOwner({
-      downstream: lifecycle({
-        handle(_request, response) {
-          response.end();
-          return operation;
-        },
-      }),
-    });
-    const socket = connect(started.callbacks);
-    dispatch(started.callbacks, socket);
-    await settle();
-    assert.equal(constructorReads, 0);
-    socket.destroy();
-    await started.owner.close();
-  });
-
-  await t.test('hostile constructor species is bypassed and the exact descriptor is restored', async () => {
-    let speciesReads = 0;
-    const hostileConstructor = Object.defineProperty(function HostilePromiseConstructor() {},
-      Symbol.species, {
-        configurable: false,
-        enumerable: false,
-        get() { speciesReads += 1; throw new Error('must not be read'); },
-      });
-    const operation = Promise.resolve(undefined);
-    const constructorDescriptor = {
-      configurable: true,
-      enumerable: false,
-      writable: false,
-      value: hostileConstructor,
-    };
-    Object.defineProperty(operation, 'constructor', constructorDescriptor);
-    const started = await startedOwner({
-      downstream: lifecycle({
-        handle(_request, response) {
-          response.end();
-          return operation;
-        },
-      }),
-    });
-    const socket = connect(started.callbacks);
-    dispatch(started.callbacks, socket);
-    await settle();
-    assert.equal(speciesReads, 0);
-    assert.deepEqual(
-      Object.getOwnPropertyDescriptor(operation, 'constructor'),
-      constructorDescriptor,
-    );
-    socket.destroy();
-    await started.owner.close();
-  });
-
-  await t.test('post-import native species poisoning is bypassed without invoking the getter', async () => {
-    let speciesReads = 0;
-    const operation = Promise.resolve(undefined);
-    const started = await startedOwner({
-      downstream: lifecycle({
-        handle(_request, response) {
-          response.end();
-          return operation;
-        },
-      }),
-    });
-    const originalSpeciesDescriptor = Object.getOwnPropertyDescriptor(Promise, Symbol.species);
-    Object.defineProperty(Promise, Symbol.species, {
-      configurable: true,
-      enumerable: originalSpeciesDescriptor.enumerable,
-      get() { speciesReads += 1; throw new Error('must not be read'); },
-    });
-    const socket = connect(started.callbacks);
-    try {
-      dispatch(started.callbacks, socket);
-    } finally {
-      Object.defineProperty(Promise, Symbol.species, originalSpeciesDescriptor);
+    if (reject) {
+      Reflect.apply(Promise.prototype.then, operation, [undefined, () => {}]);
     }
-    await settle();
-    assert.equal(speciesReads, 0);
-    socket.destroy();
-    await started.owner.close();
-  });
+    assert.strictEqual(
+      Object.getPrototypeOf(operation),
+      localPrototype ? Promise.prototype : foreignPromiseConstructor.prototype,
+    );
+    assert.equal(utilTypes.isPromise(operation), true);
+    return operation;
+  };
 
-  await t.test('unmodifiable hostile constructor is unobservable without species execution', async () => {
-    let speciesReads = 0;
-    const hostileConstructor = Object.defineProperty(function FixedHostileConstructor() {},
-      Symbol.species, {
-        configurable: false,
-        enumerable: false,
-        get() { speciesReads += 1; throw new Error('must not be read'); },
-      });
-    const operation = Promise.resolve(undefined);
-    Object.defineProperty(operation, 'constructor', {
-      configurable: false,
-      enumerable: false,
-      writable: false,
-      value: hostileConstructor,
-    });
-    const started = await startedOwner({
-      downstream: lifecycle({ handle: () => operation }),
-    });
-    const socket = connect(started.callbacks);
-    dispatch(started.callbacks, socket);
-    assert.equal(socket.destroyed, true);
-    assert.equal(speciesReads, 0);
-    await assert.rejects(started.owner.close(), error => exactError(error, CLOSE_UNCERTAIN));
-    assert.equal(speciesReads, 0);
-  });
-});
-
-test('invalid rejected Promise returns are contained without changing authority', async t => {
-  await t.test('schedule return', async () => {
-    const unhandled = await countUnhandledRejections(async () => {
-      let factoryCalls = 0;
-      const deadlines = {
-        runtime: Object.freeze({
-          schedule: frozenFunction(() => Promise.reject(new Error('synthetic rejection'))),
-          cancel: frozenFunction(() => true),
-        }),
-      };
-      const factoryHarness = {
-        observed: { calls: 0 },
-        factory: frozenFunction(() => { factoryCalls += 1; }),
-      };
-      const configured = configuration({ deadlines, factoryHarness });
-      const owner = createServiceCreditBoundedHttpsIngressOwner(configured.options);
-      await assert.rejects(owner.start(), error => exactError(error, START_UNCERTAIN));
-      assert.equal(factoryCalls, 0);
-      assert.equal(owner.snapshotMetrics().startSucceeded, 0);
-      await assert.rejects(owner.close(), error => exactError(error, CLOSE_UNCERTAIN));
-      assert.equal(owner.snapshotMetrics().closeClean, 0);
-    });
-    assert.equal(unhandled, 0);
-  });
-
-  await t.test('cancel return', async () => {
-    const unhandled = await countUnhandledRejections(async () => {
-      const deadlines = controlledDeadlineRuntime({
-        cancelResult: Promise.reject(new Error('synthetic rejection')),
-      });
-      const configured = configuration({ deadlines });
-      const owner = createServiceCreditBoundedHttpsIngressOwner(configured.options);
-      await assert.rejects(owner.start(), error => exactError(error, START_UNCERTAIN));
-      assert.equal(owner.snapshotMetrics().startSucceeded, 0);
-      await assert.rejects(owner.close(), error => exactError(error, CLOSE_UNCERTAIN));
-      assert.equal(owner.snapshotMetrics().closeClean, 0);
-    });
-    assert.equal(unhandled, 0);
-  });
-
-  await t.test('factory and server capability returns', async () => {
-    const unhandled = await countUnhandledRejections(async () => {
-      const factoryPromiseConfiguration = configuration({
-        factoryHarness: {
-          observed: {},
-          factory: frozenFunction(() => Promise.reject(
-            new Error('synthetic rejection'),
-          )),
-        },
-      });
-      const factoryPromiseOwner = createServiceCreditBoundedHttpsIngressOwner(
-        factoryPromiseConfiguration.options,
-      );
-      await assert.rejects(
-        factoryPromiseOwner.start(),
-        error => exactError(error, START_UNCERTAIN),
-      );
-      await assert.rejects(
-        factoryPromiseOwner.close(),
-        error => exactError(error, CLOSE_UNCERTAIN),
-      );
-      assert.equal(factoryPromiseOwner.snapshotMetrics().startSucceeded, 0);
-
-      const listenPromiseConfiguration = configuration({
-        factoryHarness: serverFactoryHarness({
-          listen: () => Promise.reject(new Error('synthetic rejection')),
-        }),
-      });
-      const listenPromiseOwner = createServiceCreditBoundedHttpsIngressOwner(
-        listenPromiseConfiguration.options,
-      );
-      await assert.rejects(
-        listenPromiseOwner.start(),
-        error => exactError(error, START_UNCERTAIN),
-      );
-      await assert.rejects(
-        listenPromiseOwner.close(),
-        error => exactError(error, CLOSE_UNCERTAIN),
-      );
-      assert.equal(listenPromiseOwner.snapshotMetrics().startSucceeded, 0);
-
-      const closePromiseConfiguration = configuration({
-        factoryHarness: serverFactoryHarness({
-          close: () => Promise.reject(new Error('synthetic rejection')),
-          closeAllConnections: () => Promise.reject(new Error('synthetic rejection')),
-        }),
-      });
-      const closePromiseOwner = createServiceCreditBoundedHttpsIngressOwner(
-        closePromiseConfiguration.options,
-      );
-      await closePromiseOwner.start();
-      await assert.rejects(
-        closePromiseOwner.close(),
-        error => exactError(error, CLOSE_UNCERTAIN),
-      );
-      assert.equal(closePromiseOwner.snapshotMetrics().closeClean, 0);
-    });
-    assert.equal(unhandled, 0);
-  });
-
-  await t.test('invalid same-realm Promise subclass from downstream', async () => {
-    const unhandled = await countUnhandledRejections(async () => {
-      class InvalidDownstreamPromise extends Promise {}
-      let thenReads = 0;
+  for (const localPrototype of [false, true]) for (const rejected of [false, true]) {
+    await t.test(
+      `foreign constructed handler Promise local=${localPrototype} rejected=${rejected}`,
+      async () => {
+      const operation = foreignOperation(rejected, localPrototype);
       const started = await startedOwner({
-        downstream: lifecycle({
-          handle() {
-            const operation = InvalidDownstreamPromise.reject(
-              new Error('synthetic rejection'),
-            );
-            Object.defineProperty(operation, 'then', {
-              configurable: true,
-              get() {
-                thenReads += 1;
-                throw new Error('must not be read');
-              },
-            });
+        downstream: capabilityLifecycle({
+          handle(_request, response) {
+            response.end();
             return operation;
           },
         }),
@@ -4745,57 +4980,401 @@ test('invalid rejected Promise returns are contained without changing authority'
       const socket = connect(started.callbacks);
       dispatch(started.callbacks, socket);
       await settle();
-      assert.equal(socket.destroyed, true);
-      assert.equal(started.owner.snapshotMetrics().requestsAdmitted, 1);
       assert.equal(started.owner.snapshotMetrics().handlerFailures, 1);
-      assert.equal(thenReads, 0);
+      assert.equal(socket.destroyed, true);
+      await assert.rejects(started.owner.close(), error => exactError(error, CLOSE_UNCERTAIN));
+      },
+    );
+
+    await t.test(
+      `foreign constructed close Promise local=${localPrototype} rejected=${rejected}`,
+      async () => {
+      const operation = foreignOperation(rejected, localPrototype);
+      const started = await startedOwner({
+        downstream: capabilityLifecycle({ close: () => operation }),
+      });
       await assert.rejects(started.owner.close(), error => exactError(error, CLOSE_UNCERTAIN));
       assert.equal(started.owner.snapshotMetrics().closeClean, 0);
-      assert.equal(thenReads, 0);
+      },
+    );
+  }
+
+  const returnCases = [
+    ['Promise', Promise.resolve(undefined)],
+    ['thenable', Object.defineProperty({}, 'then', {
+      get() { throw new Error('returned then must not be read'); },
+    })],
+    ['object', Object.freeze({})],
+  ];
+  for (const [name, returned] of returnCases) await t.test(
+    `${name} plus handler success is still a contract violation`,
+    async () => {
+    const started = await startedOwner({
+      downstream: capabilityLifecycle({
+        handle(_request, response, _transportContext, completion) {
+          response.end();
+          completion.success();
+          return returned;
+        },
+      }),
     });
-    assert.equal(unhandled, 0);
+    const socket = connect(started.callbacks);
+    dispatch(started.callbacks, socket);
+    await settle();
+    assert.equal(started.owner.snapshotMetrics().handlerFailures, 1);
+    assert.equal(socket.destroyed, true);
+    await assert.rejects(started.owner.close(), error => exactError(error, CLOSE_UNCERTAIN));
+    },
+  );
+  for (const [name, returned] of returnCases) await t.test(
+    `${name} plus close success is still a contract violation`,
+    async () => {
+      const started = await startedOwner({
+        downstream: capabilityLifecycle({
+          close(completion) {
+            completion.success();
+            return returned;
+          },
+        }),
+      });
+      await assert.rejects(started.owner.close(), error => exactError(error, CLOSE_UNCERTAIN));
+      assert.equal(started.owner.snapshotMetrics().closeClean, 0);
+    },
+  );
+
+  const hostileReturnFactories = [
+    ['Promise subclass species', () => {
+      let observations = 0;
+      class HostilePromise extends Promise {
+        static get [Symbol.species]() {
+          observations += 1;
+          throw new Error('returned Promise species must not be read');
+        }
+      }
+      const value = new HostilePromise(resolve => { resolve(undefined); });
+      Object.defineProperties(value, {
+        then: {
+          configurable: true,
+          get() {
+            observations += 1;
+            throw new Error('returned Promise then must not be read');
+          },
+        },
+        constructor: {
+          configurable: true,
+          get() {
+            observations += 1;
+            throw new Error('returned Promise constructor must not be read');
+          },
+        },
+      });
+      return { value, observations: () => observations };
+    }],
+    ['accessor-shaped value', () => {
+      let observations = 0;
+      const fail = () => {
+        observations += 1;
+        throw new Error('returned accessor must not be read');
+      };
+      const value = Object.defineProperties({}, {
+        then: { configurable: true, get: fail },
+        constructor: { configurable: true, get: fail },
+        [Symbol.species]: { configurable: true, get: fail },
+      });
+      return { value, observations: () => observations };
+    }],
+    ['proxy-shaped value', () => {
+      let observations = 0;
+      const value = new Proxy(Object.freeze({}), {
+        get() {
+          observations += 1;
+          throw new Error('returned proxy property must not be read');
+        },
+        getOwnPropertyDescriptor() {
+          observations += 1;
+          throw new Error('returned proxy descriptor must not be read');
+        },
+        ownKeys() {
+          observations += 1;
+          throw new Error('returned proxy keys must not be read');
+        },
+      });
+      return { value, observations: () => observations };
+    }],
+  ];
+  for (const [name, makeReturned] of hostileReturnFactories) {
+    await t.test(`${name} handler return is rejected without observation`, async () => {
+      const returned = makeReturned();
+      const started = await startedOwner({
+        downstream: capabilityLifecycle({
+          handle(_request, response, _context, completion) {
+            response.end();
+            completion.success();
+            return returned.value;
+          },
+        }),
+      });
+      const socket = connect(started.callbacks);
+      dispatch(started.callbacks, socket);
+      await settle();
+      assert.equal(returned.observations(), 0);
+      assert.equal(started.owner.snapshotMetrics().handlerFailures, 1);
+      await assert.rejects(started.owner.close(), error => exactError(error, CLOSE_UNCERTAIN));
+      assert.equal(returned.observations(), 0);
+    });
+
+    await t.test(`${name} close return is rejected without observation`, async () => {
+      const returned = makeReturned();
+      const started = await startedOwner({
+        downstream: capabilityLifecycle({
+          close(completion) {
+            completion.success();
+            return returned.value;
+          },
+        }),
+      });
+      await assert.rejects(started.owner.close(), error => exactError(error, CLOSE_UNCERTAIN));
+      assert.equal(returned.observations(), 0);
+      assert.equal(started.owner.snapshotMetrics().closeClean, 0);
+    });
+  }
+});
+
+test('owner completion capabilities commit only after exact-undefined normal return', async t => {
+  for (const [name, handle] of [
+    ['success then throw', (_request, response, _context, completion) => {
+      response.end();
+      completion.success();
+      throw new Error('synthetic handler throw');
+    }],
+    ['success then non-undefined', (_request, response, _context, completion) => {
+      response.end();
+      completion.success();
+      return false;
+    }],
+  ]) await t.test(name, async () => {
+    const started = await startedOwner({
+      downstream: capabilityLifecycle({ handle }),
+    });
+    const socket = connect(started.callbacks);
+    dispatch(started.callbacks, socket);
+    await settle();
+    assert.equal(started.owner.snapshotMetrics().handlerFailures, 1);
+    assert.equal(socket.destroyed, true);
+    await assert.rejects(started.owner.close(), error => exactError(error, CLOSE_UNCERTAIN));
+  });
+
+  for (const [name, close] of [
+    ['close success then throw', completion => {
+      completion.success();
+      throw new Error('synthetic close throw');
+    }],
+    ['close success then non-undefined', completion => {
+      completion.success();
+      return false;
+    }],
+  ]) await t.test(name, async () => {
+    const started = await startedOwner({
+      downstream: capabilityLifecycle({ close }),
+    });
+    await assert.rejects(started.owner.close(), error => exactError(error, CLOSE_UNCERTAIN));
   });
 });
 
-test('downstream close has the same genuine-Promise contract and invalid close cannot claim ownership', async () => {
-  let thenReads = 0;
-  const thenable = Object.defineProperty({}, 'then', {
-    get() { thenReads += 1; throw new Error('must not be read'); },
-  });
-  let closeCalls = 0;
-  const configured = configuration({
-    downstream: lifecycle({
-      close() {
-        closeCalls += 1;
-        return thenable;
+test('asynchronous owner completion capabilities drive valid handler and close paths', async () => {
+  let handlerCompletion;
+  let closeCompletion;
+  const started = await startedOwner({
+    downstream: capabilityLifecycle({
+      handle(_request, response, _transportContext, completion) {
+        handlerCompletion = completion;
+        response.end();
       },
+      close(completion) { closeCompletion = completion; },
     }),
   });
-  const owner = createServiceCreditBoundedHttpsIngressOwner(configured.options);
-  await owner.start();
-  await assert.rejects(owner.close('extra'), error => exactError(error, INVALID_INPUT));
-  assert.equal(closeCalls, 0);
-  const closing = owner.close();
-  assert.strictEqual(owner.close(), closing);
-  await assert.rejects(closing, error => exactError(error, CLOSE_UNCERTAIN));
-  assert.equal(closeCalls, 1);
-  assert.equal(thenReads, 0);
+  const socket = connect(started.callbacks);
+  dispatch(started.callbacks, socket);
+  assert.equal(started.owner.snapshotMetrics().trackedHandlers, 1);
+  handlerCompletion.success();
+  await settle();
+  assert.equal(started.owner.snapshotMetrics().trackedHandlers, 0);
+  socket.destroy();
+
+  let closeSettled = false;
+  const closing = started.owner.close();
+  closing.then(() => { closeSettled = true; });
+  await settle();
+  assert.equal(closeSettled, false);
+  closeCompletion.success();
+  assert.deepEqual(await closing, Object.freeze({ status: 'CLOSED' }));
 });
 
-test('reentrant concurrent handlers remain tracked until both native operations and responses settle', async () => {
-  const releases = [];
+test('asynchronous failure capabilities drive handler and close failure paths', async () => {
+  let handlerCompletion;
+  let closeCompletion;
+  const started = await startedOwner({
+    downstream: capabilityLifecycle({
+      handle(_request, response, _transportContext, completion) {
+        handlerCompletion = completion;
+        response.end();
+      },
+      close(completion) { closeCompletion = completion; },
+    }),
+  });
+  const socket = connect(started.callbacks);
+  dispatch(started.callbacks, socket);
+  handlerCompletion.failure();
+  await settle();
+  assert.equal(started.owner.snapshotMetrics().handlerFailures, 1);
+  assert.equal(socket.destroyed, true);
+
+  const closing = started.owner.close();
+  closeCompletion.failure();
+  await assert.rejects(closing, error => exactError(error, CLOSE_UNCERTAIN));
+});
+
+test('completion capabilities are frozen, one-shot, generation-bound, and inert after detachment',
+  async () => {
+    const retained = [];
+    const started = await startedOwner({
+      downstream: capabilityLifecycle({
+        handle(_request, response, _transportContext, completion) {
+          retained.push(completion);
+          assert.deepEqual(Reflect.ownKeys(completion), ['success', 'failure']);
+          assert.equal(Object.isFrozen(completion), true);
+          assert.equal(Object.isFrozen(completion.success), true);
+          assert.equal(Object.isFrozen(completion.failure), true);
+          assert.deepEqual(
+            Reflect.ownKeys(completion.success),
+            ['length', 'name'],
+          );
+          response.end();
+          completion.success();
+          completion.success();
+        },
+        close(completion) {
+          retained.push(completion);
+          completion.success();
+          completion.success();
+        },
+      }),
+    });
+    const socket = connect(started.callbacks);
+    dispatch(started.callbacks, socket);
+    await settle();
+    socket.destroy();
+    assert.deepEqual(await started.owner.close(), Object.freeze({ status: 'CLOSED' }));
+    const terminal = started.owner.snapshotMetrics();
+
+    for (const completion of retained) {
+      completion.failure();
+      completion.success();
+    }
+    await settle();
+    assert.deepEqual(started.owner.snapshotMetrics(), terminal);
+  });
+
+test('conflicting, reentrant, and late completion calls fail closed or become inert', async t => {
+  await t.test('synchronous conflicting handler completion fails closed', async () => {
+    const started = await startedOwner({
+      downstream: capabilityLifecycle({
+        handle(_request, response, _context, completion) {
+          response.end();
+          completion.success();
+          completion.failure();
+        },
+      }),
+    });
+    const socket = connect(started.callbacks);
+    dispatch(started.callbacks, socket);
+    await settle();
+    assert.equal(socket.destroyed, true);
+    assert.equal(started.owner.snapshotMetrics().handlerFailures, 1);
+    await assert.rejects(started.owner.close(), error => exactError(error, CLOSE_UNCERTAIN));
+  });
+
+  await t.test('active asynchronous conflict cannot revise prior success to clean state', async () => {
+    let completion;
+    const started = await startedOwner({
+      downstream: capabilityLifecycle({
+        handle(_request, _response, _context, value) { completion = value; },
+      }),
+    });
+    const socket = connect(started.callbacks);
+    dispatch(started.callbacks, socket, {}, { finishOnEnd: false });
+    completion.success();
+    completion.failure();
+    assert.equal(socket.destroyed, true);
+    await assert.rejects(started.owner.close(), error => exactError(error, CLOSE_UNCERTAIN));
+  });
+
+  await t.test('request completion retained past its deadline is inert', async () => {
+    let completion;
+    const deadlines = controlledDeadlineRuntime();
+    const started = await startedOwner({
+      deadlines,
+      downstream: capabilityLifecycle({
+        handle(_request, _response, _context, value) { completion = value; },
+      }),
+    });
+    const socket = connect(started.callbacks);
+    dispatch(started.callbacks, socket, {}, { finishOnEnd: false });
+    deadlines.fire(LIMITS.requestResponseDeadlineMs);
+    const beforeLate = started.owner.snapshotMetrics();
+    completion.success();
+    completion.failure();
+    await settle();
+    assert.deepEqual(started.owner.snapshotMetrics(), beforeLate);
+    await assert.rejects(started.owner.close(), error => exactError(error, CLOSE_UNCERTAIN));
+  });
+
+  await t.test('request completion retained past owner close is inert', async () => {
+    let completion;
+    const started = await startedOwner({
+      downstream: capabilityLifecycle({
+        handle(_request, _response, _context, value) { completion = value; },
+      }),
+    });
+    const socket = connect(started.callbacks);
+    dispatch(started.callbacks, socket, {}, { finishOnEnd: false });
+    const closing = started.owner.close();
+    completion.success();
+    completion.failure();
+    assert.deepEqual(await closing, Object.freeze({ status: 'CLOSED' }));
+  });
+
+  await t.test('active downstream-close conflict cannot claim clean close', async () => {
+    let closeCompletion;
+    const factoryHarness = serverFactoryHarness({ close: () => {} });
+    const started = await startedOwner({
+      factoryHarness,
+      downstream: capabilityLifecycle({
+        close(completion) { closeCompletion = completion; },
+      }),
+    });
+    const closing = started.owner.close();
+    closeCompletion.success();
+    closeCompletion.failure();
+    started.callbacks.close();
+    await assert.rejects(closing, error => exactError(error, CLOSE_UNCERTAIN));
+  });
+});
+
+test('reentrant concurrent handlers remain tracked until both completions and responses settle', async () => {
+  const completions = [];
   const responses = [];
   let callbacks;
   let reentered = false;
-  const downstream = lifecycle({
-    handle(_request, response) {
+  const downstream = capabilityLifecycle({
+    handle(_request, response, _context, completion) {
       responses.push(response);
+      completions.push(completion);
       if (!reentered) {
         reentered = true;
         const socket = connect(callbacks);
         dispatch(callbacks, socket, {}, { finishOnEnd: false });
       }
-      return new Promise(resolve => { releases.push(resolve); });
     },
   });
   const started = await startedOwner({ downstream });
@@ -4803,8 +5382,8 @@ test('reentrant concurrent handlers remain tracked until both native operations 
   const firstSocket = connect(callbacks);
   dispatch(callbacks, firstSocket, {}, { finishOnEnd: false });
   assert.equal(started.owner.snapshotMetrics().trackedHandlers, 2);
-  releases[0]();
-  releases[1]();
+  completions[0].success();
+  completions[1].success();
   await settle();
   assert.equal(started.owner.snapshotMetrics().trackedHandlers, 0);
   assert.equal(started.owner.snapshotMetrics().trackedRequests, 2);
@@ -4816,23 +5395,97 @@ test('reentrant concurrent handlers remain tracked until both native operations 
   await started.owner.close();
 });
 
+test('server shutdown calls cannot publish clean close before exact return validation', async t => {
+  for (const [operation, outcome] of [
+    ['close', 'throw'],
+    ['close', 'return'],
+    ['closeAllConnections', 'throw'],
+    ['closeAllConnections', 'return'],
+  ]) await t.test(`${operation} listener close then ${outcome}`, async () => {
+    const invoke = callbacks => {
+      callbacks.close();
+      if (outcome === 'throw') throw new Error('synthetic shutdown failure');
+      return false;
+    };
+    const factoryHarness = serverFactoryHarness({
+      close: operation === 'close' ? invoke : () => {},
+      closeAllConnections: operation === 'closeAllConnections' ? invoke : () => {},
+    });
+    const started = await startedOwner({
+      downstream: capabilityLifecycle(),
+      factoryHarness,
+    });
+
+    const closing = started.owner.close();
+    await assert.rejects(closing, error => exactError(error, CLOSE_UNCERTAIN));
+    const terminal = started.owner.snapshotMetrics();
+    const terminalBytes = JSON.stringify(terminal);
+    assert.equal(terminal.phase, 'CLOSE_UNCERTAIN');
+    assert.equal(terminal.closeClean, 0);
+    assert.equal(terminal.closeUncertain, 1);
+
+    started.callbacks.close();
+    started.callbacks.error(new Error('synthetic late listener failure'));
+    await settle();
+    assert.strictEqual(started.owner.close(), closing);
+    assert.equal(JSON.stringify(started.owner.snapshotMetrics()), terminalBytes);
+  });
+
+  for (const outcome of ['throw', 'return']) await t.test(
+    `budget exhaustion close listener reentry then ${outcome}`,
+    async () => {
+      const limits = Object.freeze({
+        ...LIMITS,
+        maxConcurrentSockets: 1,
+        maxConnectionStarts: 1,
+        maxConcurrentRequests: 1,
+        maxRequestStarts: 1,
+      });
+      const factoryHarness = serverFactoryHarness({
+        close(callbacks) {
+          callbacks.close();
+          if (outcome === 'throw') throw new Error('synthetic exhausted close failure');
+          return false;
+        },
+      });
+      const started = await startedOwner({
+        limits,
+        downstream: capabilityLifecycle(),
+        factoryHarness,
+      });
+      started.callbacks.connection(new SyntheticSocket({ closeOnDestroy: false }));
+      assert.equal(factoryHarness.observed.closes, 1);
+
+      const closing = started.owner.close();
+      await assert.rejects(closing, error => exactError(error, CLOSE_UNCERTAIN));
+      const terminal = started.owner.snapshotMetrics();
+      const terminalBytes = JSON.stringify(terminal);
+      assert.equal(terminal.closeClean, 0);
+      assert.equal(terminal.closeUncertain, 1);
+      started.callbacks.close();
+      await settle();
+      assert.equal(JSON.stringify(started.owner.snapshotMetrics()), terminalBytes);
+    },
+  );
+});
+
 test('close gates admission first, closes downstream before listener, aborts owned work and is idempotent', async () => {
   const order = [];
   let callbacks;
-  let closeDownstream;
-  const downstreamClose = new Promise(resolve => { closeDownstream = resolve; });
-  let releaseHandler;
-  const handler = new Promise(resolve => { releaseHandler = resolve; });
-  const downstream = lifecycle({
-    handle: () => handler,
-    close() {
+  let downstreamCloseCompletion;
+  let handlerCompletion;
+  const downstream = capabilityLifecycle({
+    handle(_request, _response, _context, completion) {
+      handlerCompletion = completion;
+    },
+    close(completion) {
+      downstreamCloseCompletion = completion;
       order.push('downstream');
       const probeSocket = connect(callbacks);
       const probe = dispatch(callbacks, probeSocket);
       assert.equal(probe.response.statusCode, 503);
       assert.equal(probe.request.bodyTouches, 0);
       probeSocket.destroy();
-      return downstreamClose;
     },
   });
   const factoryHarness = serverFactoryHarness({
@@ -4849,12 +5502,15 @@ test('close gates admission first, closes downstream before listener, aborts own
   assert.strictEqual(started.owner.close(), first);
   assert.deepEqual(order, ['downstream', 'listener']);
   assert.equal(socket.destroyed, true);
-  releaseHandler();
-  closeDownstream();
+  handlerCompletion.success();
+  downstreamCloseCompletion.success();
   assert.deepEqual(await first, Object.freeze({ status: 'CLOSED' }));
   const metrics = started.owner.snapshotMetrics();
   assert.equal(metrics.closeStarted, 1);
   assert.equal(metrics.closeClean + metrics.closeUncertain, 1);
+  assert.equal(metrics.handlersSettled, 1);
+  assert.equal(metrics.handlerFailures, 1);
+  assert.equal(metrics.trackedHandlers, 0);
 });
 
 test('clean close proves downstream, listener, handlers, requests, sockets and timers are quiescent', async () => {
@@ -4939,17 +5595,17 @@ test('close-ticket cancellation revalidates reentrant terminal and permanent sta
 test('close deadline and cancellation failure produce one permanent privacy-safe uncertain result', async t => {
   await t.test('close deadline', async () => {
     const deadlines = controlledDeadlineRuntime();
-    let closeDownstream;
+    let closeCompletion;
     const started = await startedOwner({
       deadlines,
-      downstream: lifecycle({
-        close: () => new Promise(resolve => { closeDownstream = resolve; }),
+      downstream: capabilityLifecycle({
+        close(completion) { closeCompletion = completion; },
       }),
     });
     const closing = started.owner.close();
     deadlines.fire(LIMITS.closeGraceMs);
     await assert.rejects(closing, error => exactError(error, CLOSE_UNCERTAIN));
-    closeDownstream();
+    closeCompletion.success();
     await settle();
     assert.equal(started.owner.snapshotMetrics().closeUncertain, 1);
     assert.equal(started.owner.snapshotMetrics().closeClean, 0);

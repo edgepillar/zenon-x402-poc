@@ -23,11 +23,8 @@ const OBJECT_PROTOTYPE = NATIVE_OBJECT.prototype;
 const EVENT_EMITTER_ON = EventEmitter.prototype.on;
 const EVENT_EMITTER_REMOVE_LISTENER = EventEmitter.prototype.removeListener;
 const NATIVE_PROMISE = Promise;
-const PROMISE_PROTOTYPE = NATIVE_PROMISE.prototype;
 const NATIVE_REFLECT = Reflect;
 const REFLECT_APPLY = NATIVE_REFLECT.apply;
-const REFLECT_DEFINE_PROPERTY = NATIVE_REFLECT.defineProperty;
-const REFLECT_DELETE_PROPERTY = NATIVE_REFLECT.deleteProperty;
 const REFLECT_GET_OWN_PROPERTY_DESCRIPTOR = NATIVE_REFLECT.getOwnPropertyDescriptor;
 const REFLECT_GET_PROTOTYPE_OF = NATIVE_REFLECT.getPrototypeOf;
 const REFLECT_OWN_KEYS = NATIVE_REFLECT.ownKeys;
@@ -41,23 +38,6 @@ const OUTGOING_MESSAGE_WRITABLE_ENDED_DESCRIPTOR = OBJECT_FREEZE(REFLECT_APPLY(
   REFLECT_GET_OWN_PROPERTY_DESCRIPTOR,
   NATIVE_REFLECT,
   [OUTGOING_MESSAGE_PROTOTYPE, 'writableEnded'],
-));
-const PROMISE_THEN_DESCRIPTOR = OBJECT_FREEZE(REFLECT_APPLY(
-  REFLECT_GET_OWN_PROPERTY_DESCRIPTOR,
-  NATIVE_REFLECT,
-  [PROMISE_PROTOTYPE, 'then'],
-));
-const PROMISE_THEN = PROMISE_THEN_DESCRIPTOR.value;
-const PROMISE_PROTOTYPE_CONSTRUCTOR_DESCRIPTOR = OBJECT_FREEZE(REFLECT_APPLY(
-  REFLECT_GET_OWN_PROPERTY_DESCRIPTOR,
-  NATIVE_REFLECT,
-  [PROMISE_PROTOTYPE, 'constructor'],
-));
-const PROMISE_SPECIES = Symbol.species;
-const PROMISE_SPECIES_DESCRIPTOR = OBJECT_FREEZE(REFLECT_APPLY(
-  REFLECT_GET_OWN_PROPERTY_DESCRIPTOR,
-  NATIVE_REFLECT,
-  [NATIVE_PROMISE, PROMISE_SPECIES],
 ));
 const NATIVE_REGEXP = RegExp;
 const REGEXP_EXEC = NATIVE_REGEXP.prototype.exec;
@@ -116,9 +96,7 @@ const NATIVE_SYMBOL = Symbol;
 const NATIVE_TYPE_ERROR = TypeError;
 const NATIVE_URL = URL;
 const IS_IP = isIP;
-const IS_PROMISE = utilTypes.isPromise;
 const IS_PROXY = utilTypes.isProxy;
-const PROMISE_CONTAINMENT_NOOP = OBJECT_FREEZE(() => {});
 const INERT_CALLBACK_DISPATCH = OBJECT_FREEZE({});
 
 function setAdd(collection, value) {
@@ -189,10 +167,83 @@ function snapshotMapValues(collection) {
   }
 }
 
-function firstSetValue(collection) {
-  const iterator = REFLECT_APPLY(SET_VALUES, collection, []);
-  const step = REFLECT_APPLY(SET_ITERATOR_NEXT, iterator, []);
-  return step.done ? undefined : step.value;
+function invokeOperationCompletion(cell, clean) {
+  const dispatch = cell.dispatch;
+  if (dispatch === null) return;
+  if (!cell.callReturned) {
+    if (cell.pending === null) cell.pending = clean;
+    else if (cell.pending !== clean) cell.conflicted = true;
+    return;
+  }
+  if (!cell.settled) {
+    cell.settled = true;
+    cell.result = clean;
+    REFLECT_APPLY(dispatch.settle, undefined, [clean]);
+    return;
+  }
+  if (cell.result !== clean && !cell.conflictReported) {
+    cell.conflictReported = true;
+    REFLECT_APPLY(dispatch.conflict, undefined, []);
+  }
+}
+
+function createOperationCompletion(dispatch) {
+  const cell = {
+    dispatch,
+    capability: null,
+    callReturned: false,
+    pending: null,
+    conflicted: false,
+    settled: false,
+    result: null,
+    conflictReported: false,
+  };
+  const success = OBJECT_FREEZE(() => {
+    invokeOperationCompletion(cell, true);
+  });
+  const failure = OBJECT_FREEZE(() => {
+    invokeOperationCompletion(cell, false);
+  });
+  cell.capability = OBJECT_FREEZE({ success, failure });
+  return cell;
+}
+
+function finishOperationCall(cell, returnedNormally, returnedValue) {
+  const dispatch = cell.dispatch;
+  if (dispatch === null) return;
+  cell.callReturned = true;
+  if (!returnedNormally || returnedValue !== undefined) {
+    cell.pending = null;
+    cell.conflicted = false;
+    cell.settled = true;
+    cell.result = false;
+    REFLECT_APPLY(dispatch.violation, undefined, []);
+    return;
+  }
+  if (cell.conflicted) {
+    cell.pending = null;
+    cell.settled = true;
+    cell.result = false;
+    cell.conflictReported = true;
+    REFLECT_APPLY(dispatch.conflict, undefined, []);
+    return;
+  }
+  if (cell.pending !== null) {
+    const clean = cell.pending;
+    cell.pending = null;
+    cell.settled = true;
+    cell.result = clean;
+    REFLECT_APPLY(dispatch.settle, undefined, [clean]);
+  }
+}
+
+function detachOperationCompletion(cell) {
+  if (cell === null || cell === undefined) return;
+  cell.dispatch = null;
+  cell.capability = null;
+  cell.pending = null;
+  cell.conflicted = false;
+  cell.callReturned = true;
 }
 
 const CONFIGURATION_KEYS = OBJECT_FREEZE([
@@ -255,7 +306,6 @@ const MAX_HEADER_COUNT = 256;
 const MAX_CONCURRENT = 10_000;
 const MAX_LIFETIME_STARTS = 1_000_000;
 const MAX_DEADLINE_MS = 60_000;
-const MAX_PROMISE_PROTOTYPE_DEPTH = 16;
 const MAX_PROPERTY_PROTOTYPE_DEPTH = 32;
 const METRIC_RESERVE = 32;
 const FAILURE_TEXT = '{"error":"unavailable"}';
@@ -276,18 +326,20 @@ const SECURE_SETUP = OBJECT_FREEZE({
   REQUEST_ELIGIBLE: 'REQUEST_ELIGIBLE',
 });
 
+const CONNECTION_STATE = OBJECT_FREEZE({
+  PROMOTING: 'PROMOTING',
+  REQUEST_ELIGIBLE: 'REQUEST_ELIGIBLE',
+  REQUEST_ACTIVE: 'REQUEST_ACTIVE',
+  TERMINATING: 'TERMINATING',
+  RELEASED: 'RELEASED',
+});
+
 const CODE = OBJECT_FREEZE({
   invalidConfiguration:
     'SERVICE_CREDIT_BOUNDED_HTTPS_INGRESS_OWNER_INVALID_CONFIGURATION',
   invalidInput: 'SERVICE_CREDIT_BOUNDED_HTTPS_INGRESS_OWNER_INVALID_INPUT',
   startUncertain: 'SERVICE_CREDIT_BOUNDED_HTTPS_INGRESS_OWNER_START_UNCERTAIN',
   closeUncertain: 'SERVICE_CREDIT_BOUNDED_HTTPS_INGRESS_OWNER_CLOSE_UNCERTAIN',
-});
-
-const PROMISE_OBSERVATION = OBJECT_FREEZE({
-  NOT_PROMISE: 'NOT_PROMISE',
-  OBSERVED: 'OBSERVED',
-  UNOBSERVABLE: 'UNOBSERVABLE',
 });
 
 function failure(code) {
@@ -582,294 +634,6 @@ function sameDataPropertyDescriptorSurface(left, right) {
     && left.configurable === right.configurable
     && left.enumerable === right.enumerable
     && left.writable === right.writable;
-}
-
-function capturedNativePromiseRouteIsCurrent() {
-  try {
-    const constructorDescriptor = REFLECT_APPLY(
-      REFLECT_GET_OWN_PROPERTY_DESCRIPTOR,
-      NATIVE_REFLECT,
-      [PROMISE_PROTOTYPE, 'constructor'],
-    );
-    const speciesDescriptor = REFLECT_APPLY(
-      REFLECT_GET_OWN_PROPERTY_DESCRIPTOR,
-      NATIVE_REFLECT,
-      [NATIVE_PROMISE, PROMISE_SPECIES],
-    );
-    return (
-      OBJECT_HAS_OWN(PROMISE_THEN_DESCRIPTOR, 'value')
-      && safeCallable(PROMISE_THEN)
-      && OBJECT_HAS_OWN(PROMISE_PROTOTYPE_CONSTRUCTOR_DESCRIPTOR, 'value')
-      && PROMISE_PROTOTYPE_CONSTRUCTOR_DESCRIPTOR.value === NATIVE_PROMISE
-      && !OBJECT_HAS_OWN(PROMISE_SPECIES_DESCRIPTOR, 'value')
-      && safeCallable(PROMISE_SPECIES_DESCRIPTOR.get)
-      && PROMISE_SPECIES_DESCRIPTOR.set === undefined
-      && samePropertyDescriptor(
-        constructorDescriptor,
-        PROMISE_PROTOTYPE_CONSTRUCTOR_DESCRIPTOR,
-      )
-      && samePropertyDescriptor(speciesDescriptor, PROMISE_SPECIES_DESCRIPTOR)
-    );
-  } catch {
-    return false;
-  }
-}
-
-function isSameRealmNativePromise(value) {
-  try {
-    return value !== null
-      && typeof value === 'object'
-      && !REFLECT_APPLY(IS_PROXY, undefined, [value])
-      && REFLECT_APPLY(IS_PROMISE, undefined, [value]) === true
-      && REFLECT_APPLY(REFLECT_GET_PROTOTYPE_OF, NATIVE_REFLECT, [value]) === PROMISE_PROTOTYPE;
-  } catch {
-    return false;
-  }
-}
-
-function isSameRealmGenuinePromise(value) {
-  try {
-    if (
-      value === null
-      || typeof value !== 'object'
-      || REFLECT_APPLY(IS_PROXY, undefined, [value])
-      || REFLECT_APPLY(IS_PROMISE, undefined, [value]) !== true
-    ) return false;
-    let prototype = REFLECT_APPLY(REFLECT_GET_PROTOTYPE_OF, NATIVE_REFLECT, [value]);
-    for (let depth = 0; depth < MAX_PROMISE_PROTOTYPE_DEPTH; depth += 1) {
-      if (prototype === PROMISE_PROTOTYPE) return true;
-      if (
-        prototype === null
-        || (typeof prototype !== 'object' && typeof prototype !== 'function')
-        || REFLECT_APPLY(IS_PROXY, undefined, [prototype])
-      ) return false;
-      prototype = REFLECT_APPLY(
-        REFLECT_GET_PROTOTYPE_OF,
-        NATIVE_REFLECT,
-        [prototype],
-      );
-    }
-    return false;
-  } catch {
-    return false;
-  }
-}
-
-function isGenuinePromise(value) {
-  try {
-    return value !== null
-      && typeof value === 'object'
-      && !REFLECT_APPLY(IS_PROXY, undefined, [value])
-      && REFLECT_APPLY(IS_PROMISE, undefined, [value]) === true;
-  } catch {
-    return false;
-  }
-}
-
-function hasSafeDirectPromiseRoute(promise, constructorDescriptor) {
-  if (constructorDescriptor !== undefined) {
-    if (!OBJECT_HAS_OWN(constructorDescriptor, 'value')) return false;
-    if (constructorDescriptor.value === undefined) return true;
-    return constructorDescriptor.value === NATIVE_PROMISE
-      && capturedNativePromiseRouteIsCurrent();
-  }
-  return capturedNativePromiseRouteIsCurrent();
-}
-
-function temporaryPromiseConstructorDescriptor(promise, originalDescriptor) {
-  if (originalDescriptor === undefined) {
-    try {
-      if (!REFLECT_APPLY(OBJECT_IS_EXTENSIBLE, NATIVE_OBJECT, [promise])) return null;
-    } catch {
-      return null;
-    }
-    return {
-      configurable: true,
-      enumerable: false,
-      writable: false,
-      value: undefined,
-    };
-  }
-  if (OBJECT_HAS_OWN(originalDescriptor, 'value') && originalDescriptor.value === undefined) {
-    return null;
-  }
-  if (originalDescriptor.configurable === true) {
-    return {
-      configurable: true,
-      enumerable: originalDescriptor.enumerable,
-      writable: false,
-      value: undefined,
-    };
-  }
-  if (OBJECT_HAS_OWN(originalDescriptor, 'value') && originalDescriptor.writable === true) {
-    return {
-      configurable: false,
-      enumerable: originalDescriptor.enumerable,
-      writable: true,
-      value: undefined,
-    };
-  }
-  return null;
-}
-
-function restorePromiseConstructorDescriptor(promise, originalDescriptor) {
-  try {
-    if (originalDescriptor === undefined) {
-      if (!REFLECT_APPLY(REFLECT_DELETE_PROPERTY, NATIVE_REFLECT, [promise, 'constructor'])) {
-        return false;
-      }
-    } else if (!REFLECT_APPLY(
-      REFLECT_DEFINE_PROPERTY,
-      NATIVE_REFLECT,
-      [promise, 'constructor', originalDescriptor],
-    )) return false;
-    const restored = REFLECT_APPLY(
-      REFLECT_GET_OWN_PROPERTY_DESCRIPTOR,
-      NATIVE_REFLECT,
-      [promise, 'constructor'],
-    );
-    return samePropertyDescriptor(restored, originalDescriptor);
-  } catch {
-    return false;
-  }
-}
-
-function containDiscardedPromiseRejection(promise) {
-  if (!isSameRealmGenuinePromise(promise)) return false;
-  let constructorDescriptor;
-  let directRoute = false;
-  try {
-    constructorDescriptor = REFLECT_APPLY(
-      REFLECT_GET_OWN_PROPERTY_DESCRIPTOR,
-      NATIVE_REFLECT,
-      [promise, 'constructor'],
-    );
-    const promisePrototype = REFLECT_APPLY(
-      REFLECT_GET_PROTOTYPE_OF,
-      NATIVE_REFLECT,
-      [promise],
-    );
-    directRoute = (
-      promisePrototype === PROMISE_PROTOTYPE
-      || constructorDescriptor !== undefined
-    ) && hasSafeDirectPromiseRoute(promise, constructorDescriptor);
-  } catch {
-    return false;
-  }
-  if (directRoute) {
-    try {
-      REFLECT_APPLY(PROMISE_THEN, promise, [
-        PROMISE_CONTAINMENT_NOOP,
-        PROMISE_CONTAINMENT_NOOP,
-      ]);
-      return true;
-    } catch {
-      return false;
-    }
-  }
-  const temporaryDescriptor = temporaryPromiseConstructorDescriptor(
-    promise,
-    constructorDescriptor,
-  );
-  if (temporaryDescriptor === null) return false;
-  let installed = false;
-  try {
-    installed = REFLECT_APPLY(
-      REFLECT_DEFINE_PROPERTY,
-      NATIVE_REFLECT,
-      [promise, 'constructor', temporaryDescriptor],
-    );
-    if (!installed) return false;
-    const observedDescriptor = REFLECT_APPLY(
-      REFLECT_GET_OWN_PROPERTY_DESCRIPTOR,
-      NATIVE_REFLECT,
-      [promise, 'constructor'],
-    );
-    if (!samePropertyDescriptor(observedDescriptor, temporaryDescriptor)) {
-      restorePromiseConstructorDescriptor(promise, constructorDescriptor);
-      return false;
-    }
-  } catch {
-    if (installed) restorePromiseConstructorDescriptor(promise, constructorDescriptor);
-    return false;
-  }
-  let attached = false;
-  try {
-    REFLECT_APPLY(PROMISE_THEN, promise, [
-      PROMISE_CONTAINMENT_NOOP,
-      PROMISE_CONTAINMENT_NOOP,
-    ]);
-    attached = true;
-  } catch {}
-  const restored = restorePromiseConstructorDescriptor(promise, constructorDescriptor);
-  return attached && restored;
-}
-
-function observeNativePromise(promise, fulfilled, rejected) {
-  if (!isSameRealmNativePromise(promise)) return PROMISE_OBSERVATION.NOT_PROMISE;
-  let constructorDescriptor;
-  try {
-    constructorDescriptor = REFLECT_APPLY(
-      REFLECT_GET_OWN_PROPERTY_DESCRIPTOR,
-      NATIVE_REFLECT,
-      [promise, 'constructor'],
-    );
-  } catch {
-    return PROMISE_OBSERVATION.UNOBSERVABLE;
-  }
-  let callbacksEnabled = false;
-  const onFulfilled = value => {
-    if (!callbacksEnabled) return;
-    try { REFLECT_APPLY(fulfilled, undefined, [value]); } catch {}
-  };
-  const onRejected = reason => {
-    if (!callbacksEnabled) return;
-    try { REFLECT_APPLY(rejected, undefined, [reason]); } catch {}
-  };
-  if (hasSafeDirectPromiseRoute(promise, constructorDescriptor)) {
-    try {
-      REFLECT_APPLY(PROMISE_THEN, promise, [onFulfilled, onRejected]);
-    } catch {
-      return PROMISE_OBSERVATION.UNOBSERVABLE;
-    }
-    callbacksEnabled = true;
-    return PROMISE_OBSERVATION.OBSERVED;
-  }
-  const temporaryDescriptor = temporaryPromiseConstructorDescriptor(
-    promise,
-    constructorDescriptor,
-  );
-  if (temporaryDescriptor === null) return PROMISE_OBSERVATION.UNOBSERVABLE;
-  let installed = false;
-  try {
-    installed = REFLECT_APPLY(
-      REFLECT_DEFINE_PROPERTY,
-      NATIVE_REFLECT,
-      [promise, 'constructor', temporaryDescriptor],
-    );
-    if (!installed) return PROMISE_OBSERVATION.UNOBSERVABLE;
-    const observedDescriptor = REFLECT_APPLY(
-      REFLECT_GET_OWN_PROPERTY_DESCRIPTOR,
-      NATIVE_REFLECT,
-      [promise, 'constructor'],
-    );
-    if (!samePropertyDescriptor(observedDescriptor, temporaryDescriptor)) {
-      restorePromiseConstructorDescriptor(promise, constructorDescriptor);
-      return PROMISE_OBSERVATION.UNOBSERVABLE;
-    }
-  } catch {
-    if (installed) restorePromiseConstructorDescriptor(promise, constructorDescriptor);
-    return PROMISE_OBSERVATION.UNOBSERVABLE;
-  }
-  let attached = false;
-  try {
-    REFLECT_APPLY(PROMISE_THEN, promise, [onFulfilled, onRejected]);
-    attached = true;
-  } catch {}
-  const restored = restorePromiseConstructorDescriptor(promise, constructorDescriptor);
-  if (!attached || !restored) return PROMISE_OBSERVATION.UNOBSERVABLE;
-  callbacksEnabled = true;
-  return PROMISE_OBSERVATION.OBSERVED;
 }
 
 function ownOrInheritedValue(value, key) {
@@ -1483,17 +1247,21 @@ export function createServiceCreditBoundedHttpsIngressOwner(options) {
   let downstreamCloseInvoked = false;
   let downstreamCloseSettled = false;
   let downstreamCloseClean = false;
+  let downstreamCloseCompletionCell = null;
   let timerRuntimeOperationsInFlight = 0;
   let rawConnectionOperationsInFlight = 0;
+  let serverShutdownOperationsInFlight = 0;
+  let socketLifecycleOperationsInFlight = 0;
+  let closeSetupOperationsInFlight = 0;
+  let outstandingAcceptedHandshakes = 0;
 
   const timerState = { start: null, close: null };
   const ownedTimers = new NATIVE_SET();
   const trackedSockets = new NATIVE_SET();
-  const acceptedConnections = new NATIVE_SET();
-  const connectionAdmissions = new NATIVE_MAP();
-  const pendingSecureAdmissions = new NATIVE_SET();
+  const connectionReservations = new NATIVE_SET();
   const socketCapabilities = new NATIVE_WEAK_MAP();
-  const seenSecureSockets = new NATIVE_WEAK_SET();
+  const socketReservations = new NATIVE_WEAK_MAP();
+  const seenTlsOutcomeSockets = new NATIVE_WEAK_SET();
   const secureSockets = new NATIVE_MAP();
   const activeRequests = new NATIVE_SET();
   const activeHandlers = new NATIVE_SET();
@@ -1546,7 +1314,6 @@ export function createServiceCreditBoundedHttpsIngressOwner(options) {
       markPermanentUncertainty();
       return false;
     }
-    if (isGenuinePromise(result)) containDiscardedPromiseRejection(result);
     const cancellationClean = result === true;
     if (!cancellationClean) markPermanentUncertainty();
     return cancellationClean;
@@ -1593,14 +1360,6 @@ export function createServiceCreditBoundedHttpsIngressOwner(options) {
       timerRuntimeOperationsInFlight -= 1;
       return false;
     }
-    if (isGenuinePromise(handle)) {
-      containDiscardedPromiseRejection(handle);
-      if (owner[slot] === ticket) owner[slot] = null;
-      ticket.active = false;
-      setDelete(ownedTimers, ticket);
-      timerRuntimeOperationsInFlight -= 1;
-      return false;
-    }
     if (handle === null || handle === undefined) {
       if (owner[slot] === ticket) owner[slot] = null;
       ticket.active = false;
@@ -1629,6 +1388,83 @@ export function createServiceCreditBoundedHttpsIngressOwner(options) {
     if (!closeTerminal && phase !== PHASE.CLOSED) phase = PHASE.QUARANTINED;
   }
 
+  function beginServerShutdownOperation() {
+    if (closeTerminal) return false;
+    if (
+      !NUMBER_IS_SAFE_INTEGER(serverShutdownOperationsInFlight)
+      || serverShutdownOperationsInFlight < 0
+      || serverShutdownOperationsInFlight === NUMBER_MAX_SAFE_INTEGER
+    ) {
+      markPermanentUncertainty();
+      return false;
+    }
+    serverShutdownOperationsInFlight += 1;
+    return true;
+  }
+
+  function endServerShutdownOperation() {
+    if (
+      !NUMBER_IS_SAFE_INTEGER(serverShutdownOperationsInFlight)
+      || serverShutdownOperationsInFlight < 1
+    ) {
+      serverShutdownOperationsInFlight = 0;
+      markPermanentUncertainty();
+    } else {
+      serverShutdownOperationsInFlight -= 1;
+    }
+    maybeFinishClose();
+  }
+
+  function beginSocketLifecycleOperation() {
+    if (closeTerminal) return false;
+    if (
+      !NUMBER_IS_SAFE_INTEGER(socketLifecycleOperationsInFlight)
+      || socketLifecycleOperationsInFlight < 0
+      || socketLifecycleOperationsInFlight === NUMBER_MAX_SAFE_INTEGER
+    ) {
+      markPermanentUncertainty();
+      return false;
+    }
+    socketLifecycleOperationsInFlight += 1;
+    return true;
+  }
+
+  function endSocketLifecycleOperation() {
+    if (
+      !NUMBER_IS_SAFE_INTEGER(socketLifecycleOperationsInFlight)
+      || socketLifecycleOperationsInFlight < 1
+    ) {
+      socketLifecycleOperationsInFlight = 0;
+      markPermanentUncertainty();
+    } else {
+      socketLifecycleOperationsInFlight -= 1;
+    }
+    maybeFinishClose();
+  }
+
+  function beginCloseSetupOperation() {
+    if (closeTerminal) return false;
+    if (
+      !NUMBER_IS_SAFE_INTEGER(closeSetupOperationsInFlight)
+      || closeSetupOperationsInFlight !== 0
+    ) {
+      markPermanentUncertainty();
+      return false;
+    }
+    closeSetupOperationsInFlight = 1;
+    return true;
+  }
+
+  function endCloseSetupOperation() {
+    if (closeSetupOperationsInFlight !== 1) {
+      closeSetupOperationsInFlight = 0;
+      markPermanentUncertainty();
+    } else {
+      closeSetupOperationsInFlight = 0;
+    }
+    maybeFinishClose();
+  }
+
   function deactivateAbortCapability(abortCapabilityCell) {
     if (abortCapabilityCell === null) return;
     abortCapabilityCell.operation = null;
@@ -1638,6 +1474,7 @@ export function createServiceCreditBoundedHttpsIngressOwner(options) {
   }
 
   function captureSocketCapability(socket) {
+    if (!beginSocketLifecycleOperation()) return null;
     try {
       if (
         socket === null
@@ -1668,17 +1505,22 @@ export function createServiceCreditBoundedHttpsIngressOwner(options) {
       return capability;
     } catch {
       return null;
+    } finally {
+      endSocketLifecycleOperation();
     }
   }
 
   function removeListener(target, emitter, name, callback) {
     if (emitter === null || callback === null) return true;
+    if (!beginSocketLifecycleOperation()) return false;
     try {
       REFLECT_APPLY(emitter.removeListener, target, [name, callback]);
       return true;
     } catch {
       markPermanentUncertainty();
       return false;
+    } finally {
+      endSocketLifecycleOperation();
     }
   }
 
@@ -1711,20 +1553,22 @@ export function createServiceCreditBoundedHttpsIngressOwner(options) {
 
   function maybeFinishClose() {
     if (closeCapability === null || closeTerminal) return;
+    if (timerRuntimeOperationsInFlight !== 0) return;
+    if (rawConnectionOperationsInFlight !== 0) return;
+    if (serverShutdownOperationsInFlight !== 0) return;
+    if (socketLifecycleOperationsInFlight !== 0) return;
+    if (closeSetupOperationsInFlight !== 0) return;
     if (permanentUncertainty) {
       finishCloseUncertain();
       return;
     }
-    if (timerRuntimeOperationsInFlight !== 0) return;
-    if (rawConnectionOperationsInFlight !== 0) return;
     if (
       !downstreamCloseSettled
       || !downstreamCloseClean
       || !listenerClosed
+      || outstandingAcceptedHandshakes !== 0
       || setSize(trackedSockets) !== 0
-      || setSize(acceptedConnections) !== 0
-      || mapSize(connectionAdmissions) !== 0
-      || setSize(pendingSecureAdmissions) !== 0
+      || setSize(connectionReservations) !== 0
       || mapSize(secureSockets) !== 0
       || setSize(activeRequests) !== 0
       || setSize(activeHandlers) !== 0
@@ -1752,22 +1596,60 @@ export function createServiceCreditBoundedHttpsIngressOwner(options) {
 
   function destroySocket(socket) {
     if (closeTerminal) return false;
-    const capability = captureSocketCapability(socket);
-    if (capability === null) {
-      markPermanentUncertainty();
-      maybeFinishClose();
-      return false;
-    }
-    if (capability.closed || capability.destroyRequested) return true;
-    capability.destroyRequested = true;
-    increment('socketsDestroyed');
+    if (!beginSocketLifecycleOperation()) return false;
     try {
-      REFLECT_APPLY(capability.destroy, socket, []);
+      const capability = captureSocketCapability(socket);
+      if (capability === null) {
+        markPermanentUncertainty();
+        maybeFinishClose();
+        return false;
+      }
+      if (capability.closed || capability.destroyRequested) return true;
+      capability.destroyRequested = true;
+      increment('socketsDestroyed');
+      try {
+        REFLECT_APPLY(capability.destroy, socket, []);
+        return true;
+      } catch {
+        markPermanentUncertainty();
+        maybeFinishClose();
+        return false;
+      }
+    } finally {
+      endSocketLifecycleOperation();
+    }
+  }
+
+  function destroyUntrackedSocket(socket) {
+    if (closeTerminal) return false;
+    if (!beginSocketLifecycleOperation()) return false;
+    try {
+      let destroy;
+      if (
+        socket === null
+        || (typeof socket !== 'object' && typeof socket !== 'function')
+        || REFLECT_APPLY(IS_PROXY, undefined, [socket])
+      ) {
+        markPermanentUncertainty();
+        maybeFinishClose();
+        return false;
+      }
+      destroy = ownOrInheritedValue(socket, 'destroy');
+      if (!safeCallable(destroy)) {
+        markPermanentUncertainty();
+        maybeFinishClose();
+        return false;
+      }
+      if (!increment('socketsDestroyed')) return false;
+      const returned = REFLECT_APPLY(destroy, socket, []);
+      void returned;
       return true;
     } catch {
       markPermanentUncertainty();
       maybeFinishClose();
       return false;
+    } finally {
+      endSocketLifecycleOperation();
     }
   }
 
@@ -1817,6 +1699,8 @@ export function createServiceCreditBoundedHttpsIngressOwner(options) {
   }
 
   function cleanupRequest(requestState) {
+    const connectionReservation = requestState.connectionReservation;
+    const secureState = requestState.secureState;
     cancelTicket(requestState, 'deadline');
     removeResponseListener(
       requestState,
@@ -1839,6 +1723,8 @@ export function createServiceCreditBoundedHttpsIngressOwner(options) {
       requestState.responseErrorSlotSnapshot,
       requestState.responseErrorObserved,
     );
+    detachOperationCompletion(requestState.handlerCompletionCell);
+    requestState.handlerCompletionCell = null;
     requestState.socket = null;
     requestState.request = null;
     requestState.response = null;
@@ -1855,6 +1741,7 @@ export function createServiceCreditBoundedHttpsIngressOwner(options) {
     requestState.responseEventsCount = null;
     requestState.responseMaxListeners = null;
     requestState.socketCapability = null;
+    requestState.connectionReservation = null;
     requestState.secureState = null;
     requestState.responseSetHeader = null;
     requestState.responseSetHeaderProperty = null;
@@ -1863,6 +1750,11 @@ export function createServiceCreditBoundedHttpsIngressOwner(options) {
     requestState.responseCloseObserved = false;
     requestState.responseErrorObserved = false;
     setDelete(downstreamOwnedRequests, requestState);
+    if (secureState?.requestState === requestState) secureState.requestState = null;
+    if (connectionReservation?.requestState === requestState) {
+      connectionReservation.requestState = null;
+      maybeReleaseConnectionReservation(connectionReservation);
+    }
   }
 
   function maybeCompleteRequest(requestState) {
@@ -1886,113 +1778,213 @@ export function createServiceCreditBoundedHttpsIngressOwner(options) {
     maybeCompleteRequest(requestState);
   }
 
+  function connectionReservationIsOwned(reservation) {
+    return reservation !== null
+      && reservation !== undefined
+      && reservation.released === false
+      && reservation.state !== CONNECTION_STATE.RELEASED
+      && setHas(connectionReservations, reservation);
+  }
+
+  function maybeReleaseConnectionReservation(reservation) {
+    if (
+      !connectionReservationIsOwned(reservation)
+      || reservation.secureLive
+      || reservation.requestEligible
+      || reservation.requestState !== null
+    ) return false;
+    reservation.released = true;
+    reservation.state = CONNECTION_STATE.RELEASED;
+    setDelete(connectionReservations, reservation);
+    if (
+      reservation.secureSocket !== null
+      && weakMapGet(socketReservations, reservation.secureSocket) === reservation
+    ) weakMapDelete(socketReservations, reservation.secureSocket);
+    reservation.secureSocket = null;
+    reservation.secureLive = false;
+    reservation.requestEligible = false;
+    reservation.requestState = null;
+    reservation.revoking = false;
+    return true;
+  }
+
+  function detachSecureStateForTerminal(reservation) {
+    if (reservation.secureSocket === null) return;
+    const secureState = mapGet(secureSockets, reservation.secureSocket);
+    if (secureState === undefined) return;
+    cancelTicket(secureState, 'headerDeadline');
+    mapDelete(secureSockets, reservation.secureSocket);
+    secureState.setupState = null;
+    deactivateAbortCapability(secureState.abortCapabilityCell);
+    if (secureState.requestState !== null) settleResponse(secureState.requestState, false);
+  }
+
+  function revokeConnectionReservation(reservation, candidateSocket = null) {
+    if (!connectionReservationIsOwned(reservation)) {
+      if (candidateSocket !== null) destroySocket(candidateSocket);
+      return false;
+    }
+    reservation.state = CONNECTION_STATE.TERMINATING;
+    reservation.requestEligible = false;
+    detachSecureStateForTerminal(reservation);
+    if (reservation.revoking) {
+      maybeReleaseConnectionReservation(reservation);
+      return true;
+    }
+    reservation.revoking = true;
+    const secureSocket = reservation.secureSocket;
+    if (secureSocket !== null) destroySocket(secureSocket);
+    if (
+      candidateSocket !== null
+      && candidateSocket !== secureSocket
+    ) destroySocket(candidateSocket);
+    reservation.revoking = false;
+    maybeReleaseConnectionReservation(reservation);
+    return true;
+  }
+
   function onSocketClose(socket) {
     if (closeTerminal) return;
-    const capability = weakMapGet(socketCapabilities, socket);
-    if (capability !== undefined) {
-      if (capability.closed) return;
-      capability.closed = true;
-      capability.tracked = false;
-      capability.listenersInstalled = false;
-      removeListener(socket, capability.emitter, 'close', capability.onClose);
-      removeListener(socket, capability.emitter, 'error', capability.onError);
-      capability.onClose = null;
-      capability.onError = null;
+    if (!beginSocketLifecycleOperation()) return;
+    try {
+      const capability = weakMapGet(socketCapabilities, socket);
+      if (capability !== undefined) {
+        if (capability.closed) return;
+        capability.closed = true;
+        capability.tracked = false;
+        capability.listenersInstalled = false;
+        removeListener(socket, capability.emitter, 'close', capability.onClose);
+        removeListener(socket, capability.emitter, 'error', capability.onError);
+        capability.onClose = null;
+        capability.onError = null;
+      }
+      setDelete(trackedSockets, socket);
+      const reservation = weakMapGet(socketReservations, socket);
+      if (connectionReservationIsOwned(reservation)) {
+        if (reservation.secureSocket === socket) reservation.secureLive = false;
+        reservation.requestEligible = false;
+        reservation.state = CONNECTION_STATE.TERMINATING;
+        if (weakMapGet(socketReservations, socket) === reservation) {
+          weakMapDelete(socketReservations, socket);
+        }
+        detachSecureStateForTerminal(reservation);
+        if (!reservation.revoking) revokeConnectionReservation(reservation);
+        else maybeReleaseConnectionReservation(reservation);
+      } else {
+        const secureState = mapGet(secureSockets, socket);
+        if (secureState !== undefined) {
+          cancelTicket(secureState, 'headerDeadline');
+          mapDelete(secureSockets, socket);
+          secureState.setupState = null;
+          deactivateAbortCapability(secureState.abortCapabilityCell);
+          if (secureState.requestState !== null) settleResponse(secureState.requestState, false);
+        }
+      }
+      maybeFinishClose();
+    } finally {
+      endSocketLifecycleOperation();
     }
-    setDelete(trackedSockets, socket);
-    setDelete(acceptedConnections, socket);
-    const connectionAdmission = mapGet(connectionAdmissions, socket);
-    if (connectionAdmission !== undefined) {
-      setDelete(pendingSecureAdmissions, connectionAdmission);
-      mapDelete(connectionAdmissions, socket);
-    }
-    const secureState = mapGet(secureSockets, socket);
-    if (secureState !== undefined) {
-      cancelTicket(secureState, 'headerDeadline');
-      mapDelete(secureSockets, socket);
-      deactivateAbortCapability(secureState.abortCapabilityCell);
-      if (secureState.requestState !== null) settleResponse(secureState.requestState, false);
-    }
-    maybeFinishClose();
   }
 
   function trackSocket(socket) {
     if (closeTerminal || closePromise !== null) return null;
-    if (!setHas(trackedSockets, socket)) setAdd(trackedSockets, socket);
-    if (closeTerminal || closePromise !== null || !setHas(trackedSockets, socket)) {
-      return null;
-    }
-    const capability = captureSocketCapability(socket);
-    if (capability === null) return null;
-    if (
-      closeTerminal
-      || closePromise !== null
-      || weakMapGet(socketCapabilities, socket) !== capability
-      || !setHas(trackedSockets, socket)
-    ) return null;
-    if (capability.closed || capability.destroyRequested) return null;
-    if (capability.tracked) {
-      if (socketSetupOwned(socket, capability) && capability.listenersInstalled) {
-        return capability;
-      }
-      markPermanentUncertainty();
-      return null;
-    }
-    const onClose = OBJECT_FREEZE(() => onSocketClose(socket));
-    const onError = OBJECT_FREEZE(() => {
-      if (closeTerminal) return;
-      destroySocket(socket);
-    });
-    const emitter = capability.emitter;
-    capability.onClose = onClose;
-    capability.onError = onError;
-    capability.tracked = true;
+    if (!beginSocketLifecycleOperation()) return null;
     try {
-      REFLECT_APPLY(emitter.once, socket, ['close', onClose]);
-      if (!socketSetupOwned(socket, capability)) {
-        removeSocketSetupListenersBestEffort(
-          socket,
-          emitter,
-          onClose,
-          onError,
-        );
+      if (!setHas(trackedSockets, socket)) setAdd(trackedSockets, socket);
+      if (closeTerminal || closePromise !== null || !setHas(trackedSockets, socket)) {
         return null;
       }
-      REFLECT_APPLY(emitter.once, socket, ['error', onError]);
-    } catch {
-      removeSocketSetupListenersBestEffort(socket, emitter, onClose, onError);
-      if (!closeTerminal) {
+      const capability = captureSocketCapability(socket);
+      if (capability === null) {
+        setDelete(trackedSockets, socket);
+        return null;
+      }
+      if (
+        closeTerminal
+        || closePromise !== null
+        || weakMapGet(socketCapabilities, socket) !== capability
+        || !setHas(trackedSockets, socket)
+      ) return null;
+      if (capability.closed || capability.destroyRequested) {
+        if (!capability.tracked) setDelete(trackedSockets, socket);
+        return null;
+      }
+      if (capability.tracked) {
+        if (socketSetupOwned(socket, capability) && capability.listenersInstalled) {
+          return capability;
+        }
+        markPermanentUncertainty();
+        return null;
+      }
+      const onClose = OBJECT_FREEZE(() => onSocketClose(socket));
+      const onError = OBJECT_FREEZE(() => {
+        if (closeTerminal) return;
+        const reservation = weakMapGet(socketReservations, socket);
+        if (!revokeConnectionReservation(reservation)) destroySocket(socket);
+      });
+      const emitter = capability.emitter;
+      const abandonTracking = () => {
+        const reservation = weakMapGet(socketReservations, socket);
+        const setupSealed = connectionReservationIsOwned(reservation)
+          && reservation.secureSocket === socket
+          && reservation.state === CONNECTION_STATE.TERMINATING
+          && reservation.requestEligible === false
+          && reservation.requestState === null;
+        removeSocketSetupListenersBestEffort(socket, emitter, onClose, onError);
+        if (closeTerminal) return;
         capability.onClose = null;
         capability.onError = null;
         capability.listenersInstalled = false;
-        if (capability.closed) {
-          capability.tracked = false;
-          setDelete(trackedSockets, socket);
+        capability.tracked = false;
+        setDelete(trackedSockets, socket);
+        if (!capability.closed && !setupSealed) markPermanentUncertainty();
+      };
+      capability.onClose = onClose;
+      capability.onError = onError;
+      capability.tracked = true;
+      try {
+        REFLECT_APPLY(emitter.once, socket, ['close', onClose]);
+        if (!socketSetupOwned(socket, capability)) {
+          abandonTracking();
+          return null;
         }
+        REFLECT_APPLY(emitter.once, socket, ['error', onError]);
+      } catch {
+        abandonTracking();
+        return null;
       }
-      return null;
+      if (!socketSetupOwned(socket, capability)) {
+        abandonTracking();
+        return null;
+      }
+      capability.listenersInstalled = true;
+      return capability;
+    } finally {
+      endSocketLifecycleOperation();
     }
-    if (!socketSetupOwned(socket, capability)) {
-      removeSocketSetupListenersBestEffort(socket, emitter, onClose, onError);
-      return null;
-    }
-    capability.listenersInstalled = true;
-    return capability;
   }
 
-  function markFirstSecureSocketAppearance(socket) {
+  function markFirstTlsOutcomeSocket(socket) {
     try {
       if (
         socket === null
         || (typeof socket !== 'object' && typeof socket !== 'function')
         || REFLECT_APPLY(IS_PROXY, undefined, [socket])
-        || REFLECT_APPLY(WEAK_SET_HAS, seenSecureSockets, [socket])
-      ) return false;
-      REFLECT_APPLY(WEAK_SET_ADD, seenSecureSockets, [socket]);
-      return true;
+      ) return 'INVALID';
+      if (REFLECT_APPLY(WEAK_SET_HAS, seenTlsOutcomeSockets, [socket])) {
+        return 'DUPLICATE';
+      }
+      REFLECT_APPLY(WEAK_SET_ADD, seenTlsOutcomeSockets, [socket]);
+      return 'FIRST';
     } catch {
-      return false;
+      return 'INVALID';
     }
+  }
+
+  function consumeAcceptedHandshakeOutcome() {
+    if (outstandingAcceptedHandshakes === 0) return false;
+    outstandingAcceptedHandshakes -= 1;
+    return true;
   }
 
   function sendUnavailable(response) {
@@ -2027,23 +2019,27 @@ export function createServiceCreditBoundedHttpsIngressOwner(options) {
     return framed;
   }
 
+  function invokeServerShutdownOperation(operation) {
+    if (!beginServerShutdownOperation()) return false;
+    let clean = false;
+    try {
+      const result = REFLECT_APPLY(operation, undefined, []);
+      if (result === undefined) clean = true;
+      else markPermanentUncertainty();
+    } catch {
+      markPermanentUncertainty();
+    } finally {
+      endServerShutdownOperation();
+    }
+    return clean;
+  }
+
   function stopAccepting() {
     acceptingConnections = false;
     if (serverCapability === null || listenerClosed || listenerCloseRequested) return true;
     listenerCloseRequested = true;
-    let result;
-    try {
-      result = REFLECT_APPLY(serverCapability.close, undefined, []);
-    } catch {
-      markPermanentUncertainty();
-      return false;
-    }
-    if (result !== undefined) {
-      if (isGenuinePromise(result)) containDiscardedPromiseRejection(result);
-      markPermanentUncertainty();
-      return false;
-    }
-    return true;
+    const operation = serverCapability.close;
+    return invokeServerShutdownOperation(operation);
   }
 
   function detachTerminalTicket(owner, slot, cancellationHandles) {
@@ -2072,7 +2068,7 @@ export function createServiceCreditBoundedHttpsIngressOwner(options) {
     const socketOperations = cleanup.socketOperations;
     const terminalRequests = new NATIVE_SET();
     const terminalSecureStates = new NATIVE_SET();
-    const terminalAdmissions = new NATIVE_SET();
+    const terminalReservations = new NATIVE_SET();
     const terminalSockets = new NATIVE_SET();
 
     callbackDispatchCell.target = INERT_CALLBACK_DISPATCH;
@@ -2093,13 +2089,20 @@ export function createServiceCreditBoundedHttpsIngressOwner(options) {
     for (let index = 0; index < values.length; index += 1) {
       setAdd(terminalSecureStates, values[index]);
     }
-    values = snapshotMapValues(connectionAdmissions);
+    values = snapshotSetValues(connectionReservations);
     for (let index = 0; index < values.length; index += 1) {
-      setAdd(terminalAdmissions, values[index]);
+      setAdd(terminalReservations, values[index]);
     }
-    values = snapshotSetValues(pendingSecureAdmissions);
-    for (let index = 0; index < values.length; index += 1) {
-      setAdd(terminalAdmissions, values[index]);
+
+    const reservations = snapshotSetValues(terminalReservations);
+    for (let index = 0; index < reservations.length; index += 1) {
+      const reservation = reservations[index];
+      if (reservation.requestState !== null) {
+        setAdd(terminalRequests, reservation.requestState);
+      }
+      if (reservation.secureSocket !== null) {
+        setAdd(terminalSockets, reservation.secureSocket);
+      }
     }
 
     let secureStates = snapshotSetValues(terminalSecureStates);
@@ -2128,22 +2131,14 @@ export function createServiceCreditBoundedHttpsIngressOwner(options) {
     }
     requestStates = snapshotSetValues(terminalRequests);
 
-    let admissions = snapshotSetValues(terminalAdmissions);
-    for (let index = 0; index < admissions.length; index += 1) {
-      if (admissions[index].socket !== null) setAdd(terminalSockets, admissions[index].socket);
-    }
     values = snapshotSetValues(trackedSockets);
     for (let index = 0; index < values.length; index += 1) {
       setAdd(terminalSockets, values[index]);
     }
-    values = snapshotSetValues(acceptedConnections);
-    for (let index = 0; index < values.length; index += 1) {
-      setAdd(terminalSockets, values[index]);
-    }
-
     for (let index = 0; index < requestStates.length; index += 1) {
       const requestState = requestStates[index];
       requestState.terminalDetached = true;
+      detachOperationCompletion(requestState.handlerCompletionCell);
       setDelete(activeRequests, requestState);
       setDelete(activeHandlers, requestState);
       setDelete(downstreamOwnedRequests, requestState);
@@ -2182,6 +2177,9 @@ export function createServiceCreditBoundedHttpsIngressOwner(options) {
       if (requestState.secureState?.requestState === requestState) {
         requestState.secureState.requestState = null;
       }
+      if (requestState.connectionReservation?.requestState === requestState) {
+        requestState.connectionReservation.requestState = null;
+      }
     }
 
     for (let index = 0; index < secureStates.length; index += 1) {
@@ -2190,12 +2188,6 @@ export function createServiceCreditBoundedHttpsIngressOwner(options) {
       if (secureState.socket !== null) mapDelete(secureSockets, secureState.socket);
       secureState.requestState = null;
     }
-    for (let index = 0; index < admissions.length; index += 1) {
-      const admission = admissions[index];
-      setDelete(pendingSecureAdmissions, admission);
-      if (admission.socket !== null) mapDelete(connectionAdmissions, admission.socket);
-    }
-
     values = snapshotSetValues(activeRequests);
     for (let index = 0; index < values.length; index += 1) {
       setDelete(activeRequests, values[index]);
@@ -2208,16 +2200,11 @@ export function createServiceCreditBoundedHttpsIngressOwner(options) {
     for (let index = 0; index < values.length; index += 1) {
       setDelete(downstreamOwnedRequests, values[index]);
     }
-    values = snapshotSetValues(pendingSecureAdmissions);
-    for (let index = 0; index < values.length; index += 1) {
-      setDelete(pendingSecureAdmissions, values[index]);
-    }
-
     const sockets = snapshotSetValues(terminalSockets);
     for (let index = 0; index < sockets.length; index += 1) {
       const socket = sockets[index];
       setDelete(trackedSockets, socket);
-      setDelete(acceptedConnections, socket);
+      weakMapDelete(socketReservations, socket);
       const capability = weakMapGet(socketCapabilities, socket);
       if (capability === undefined) continue;
       weakMapDelete(socketCapabilities, socket);
@@ -2244,6 +2231,17 @@ export function createServiceCreditBoundedHttpsIngressOwner(options) {
       capability.onClose = null;
       capability.onError = null;
       socketOperations[socketOperations.length] = operation;
+    }
+    for (let index = 0; index < reservations.length; index += 1) {
+      const reservation = reservations[index];
+      setDelete(connectionReservations, reservation);
+      reservation.released = true;
+      reservation.state = CONNECTION_STATE.RELEASED;
+      reservation.secureSocket = null;
+      reservation.secureLive = false;
+      reservation.requestEligible = false;
+      reservation.requestState = null;
+      reservation.revoking = false;
     }
 
     detachTerminalTicket(timerState, 'start', cancellationHandles);
@@ -2288,6 +2286,8 @@ export function createServiceCreditBoundedHttpsIngressOwner(options) {
       requestState.responseEventsCount = null;
       requestState.responseMaxListeners = null;
       requestState.socketCapability = null;
+      requestState.handlerCompletionCell = null;
+      requestState.connectionReservation = null;
       requestState.secureState = null;
       requestState.responseSetHeader = null;
       requestState.responseSetHeaderProperty = null;
@@ -2301,16 +2301,18 @@ export function createServiceCreditBoundedHttpsIngressOwner(options) {
       secureState.abortCapabilityCell = null;
       secureState.transportContext = null;
       secureState.requestState = null;
+      secureState.connectionReservation = null;
       secureState.tlsPolicySnapshot = null;
       secureState.headerDeadline = null;
       secureState.setupState = null;
     }
-    admissions = snapshotSetValues(terminalAdmissions);
-    for (let index = 0; index < admissions.length; index += 1) {
-      admissions[index].socket = null;
-    }
-
+    outstandingAcceptedHandshakes = 0;
+    serverShutdownOperationsInFlight = 0;
+    socketLifecycleOperationsInFlight = 0;
+    closeSetupOperationsInFlight = 0;
     trustedFactory = null;
+    detachOperationCompletion(downstreamCloseCompletionCell);
+    downstreamCloseCompletionCell = null;
     downstreamHandle = null;
     downstreamClose = null;
     schedule = null;
@@ -2335,7 +2337,7 @@ export function createServiceCreditBoundedHttpsIngressOwner(options) {
         } catch {
           continue;
         }
-        if (isGenuinePromise(result)) containDiscardedPromiseRejection(result);
+        void result;
       }
     }
     for (let index = 0; index < cleanup.responseOperations.length; index += 1) {
@@ -2381,7 +2383,7 @@ export function createServiceCreditBoundedHttpsIngressOwner(options) {
         } catch {
           result = undefined;
         }
-        if (isGenuinePromise(result)) containDiscardedPromiseRejection(result);
+        void result;
       }
       operation.socket = null;
       operation.emitter = null;
@@ -2402,6 +2404,11 @@ export function createServiceCreditBoundedHttpsIngressOwner(options) {
     acceptingConnections = false;
     acceptingRequests = false;
     phase = PHASE.CLOSE_UNCERTAIN;
+    if (timerRuntimeOperationsInFlight !== 0) return;
+    if (rawConnectionOperationsInFlight !== 0) return;
+    if (serverShutdownOperationsInFlight !== 0) return;
+    if (socketLifecycleOperationsInFlight !== 0) return;
+    if (closeSetupOperationsInFlight !== 0) return;
     if (startCapability !== null && !startSettled) {
       startSettled = true;
       if (counters.startUncertain === 0) increment('startUncertain');
@@ -2469,7 +2476,7 @@ export function createServiceCreditBoundedHttpsIngressOwner(options) {
     if (!startSettled || !listeningObserved) {
       increment('connectionsRejected');
       markPermanentUncertainty();
-      destroySocket(socket);
+      destroyUntrackedSocket(socket);
       failStart();
       return;
     }
@@ -2477,17 +2484,15 @@ export function createServiceCreditBoundedHttpsIngressOwner(options) {
       permanentUncertainty
       || !admissionOpen
       || !acceptingConnections
+      || rawConnectionOperationsInFlight !== 1
       || counters.connectionStarts >= limits.maxConnectionStarts
-      || setSize(acceptedConnections) >= limits.maxConcurrentSockets
-      || setHas(acceptedConnections, socket)
-      || setHas(trackedSockets, socket)
     ) {
       increment('connectionsRejected');
-      destroySocket(socket);
+      destroyUntrackedSocket(socket);
       return;
     }
     if (!increment('connectionStarts')) {
-      destroySocket(socket);
+      destroyUntrackedSocket(socket);
       return;
     }
     const connectionBudgetSealed = counters.connectionStarts === limits.maxConnectionStarts;
@@ -2495,53 +2500,13 @@ export function createServiceCreditBoundedHttpsIngressOwner(options) {
       acceptingConnections = false;
       if (phase === PHASE.LISTENING) phase = PHASE.EXHAUSTED;
     }
-    setAdd(acceptedConnections, socket);
-    setAdd(trackedSockets, socket);
-    const capability = trackSocket(socket);
-    if (
-      capability === null
-      || capability.closed
-      || capability.destroyRequested
-      || !capability.tracked
-      || !capability.listenersInstalled
-      || permanentUncertainty
-    ) {
-      increment('connectionsRejected');
-      markPermanentUncertainty();
-      if (connectionBudgetSealed) stopAccepting();
-      destroySocket(socket);
-      return;
-    }
-    if (
-      !startSettled
-      || !listeningObserved
-      || permanentUncertainty
-      || !admissionOpen
-      || (!acceptingConnections && !connectionBudgetSealed)
-      || counters.connectionStarts > limits.maxConnectionStarts
-      || setSize(acceptedConnections) > limits.maxConcurrentSockets
-      || !setHas(acceptedConnections, socket)
-      || mapHas(connectionAdmissions, socket)
-      || weakMapGet(socketCapabilities, socket) !== capability
-      || capability.closed
-      || capability.destroyRequested
-      || !capability.tracked
-      || !capability.listenersInstalled
-      || !setHas(trackedSockets, socket)
-    ) {
-      increment('connectionsRejected');
-      if (connectionBudgetSealed) stopAccepting();
-      destroySocket(socket);
-      return;
-    }
+    outstandingAcceptedHandshakes += 1;
     if (!increment('connectionsAccepted')) {
+      outstandingAcceptedHandshakes -= 1;
       if (connectionBudgetSealed) stopAccepting();
-      destroySocket(socket);
+      destroyUntrackedSocket(socket);
       return;
     }
-    const connectionAdmission = { socket };
-    mapSet(connectionAdmissions, socket, connectionAdmission);
-    setAdd(pendingSecureAdmissions, connectionAdmission);
     if (connectionBudgetSealed) stopAccepting();
   }
 
@@ -2568,6 +2533,7 @@ export function createServiceCreditBoundedHttpsIngressOwner(options) {
 
   function secureHeaderSetupOwned(socket, capability, secureState) {
     const ticket = secureState.headerDeadline;
+    const connectionReservation = secureState.connectionReservation;
     return !closeTerminal
       && closePromise === null
       && startSettled
@@ -2579,6 +2545,13 @@ export function createServiceCreditBoundedHttpsIngressOwner(options) {
       && secureState.socket === socket
       && secureState.requestStarted === false
       && secureState.requestState === null
+      && connectionReservationIsOwned(connectionReservation)
+      && connectionReservation.state === CONNECTION_STATE.PROMOTING
+      && connectionReservation.secureSocket === socket
+      && connectionReservation.secureLive === true
+      && connectionReservation.requestEligible === false
+      && connectionReservation.requestState === null
+      && weakMapGet(socketReservations, socket) === connectionReservation
       && secureState.tlsPolicySnapshot !== null
       && secureState.abort !== null
       && secureState.abortCapabilityCell !== null
@@ -2600,55 +2573,70 @@ export function createServiceCreditBoundedHttpsIngressOwner(options) {
       && setHas(ownedTimers, ticket);
   }
 
+  function destroyTlsOutcomeSocket(socket) {
+    const reservation = weakMapGet(socketReservations, socket);
+    if (
+      connectionReservationIsOwned(reservation)
+      && reservation.secureSocket === socket
+    ) return revokeConnectionReservation(reservation);
+    if (setHas(trackedSockets, socket)) return destroySocket(socket);
+    return destroyUntrackedSocket(socket);
+  }
+
   function onSecureConnection(socket) {
-    if (!markFirstSecureSocketAppearance(socket)) {
+    const outcome = markFirstTlsOutcomeSocket(socket);
+    if (outcome !== 'FIRST') {
       increment('tlsRejected');
-      destroySocket(socket);
+      destroyTlsOutcomeSocket(socket);
       return;
     }
     if (!startSettled || !listeningObserved) {
       increment('tlsRejected');
       markPermanentUncertainty();
-      destroySocket(socket);
+      destroyUntrackedSocket(socket);
       failStart();
       return;
     }
-    if (permanentUncertainty || !admissionOpen) {
+    if (!consumeAcceptedHandshakeOutcome()) {
       increment('tlsRejected');
-      destroySocket(socket);
+      destroyUntrackedSocket(socket);
       return;
     }
-    const existing = mapGet(secureSockets, socket);
-    if (existing !== undefined) {
-      increment('tlsRejected');
-      destroySocket(socket);
-      return;
-    }
-    const connectionAdmission = firstSetValue(pendingSecureAdmissions);
-    const connectionCapability = connectionAdmission === undefined
-      ? undefined
-      : weakMapGet(socketCapabilities, connectionAdmission.socket);
     if (
-      connectionAdmission === undefined
-      || !setHas(pendingSecureAdmissions, connectionAdmission)
-      || mapGet(connectionAdmissions, connectionAdmission.socket) !== connectionAdmission
-      || connectionCapability === undefined
-      || connectionCapability.closed
-      || connectionCapability.destroyRequested
-      || !connectionCapability.tracked
-      || !connectionCapability.listenersInstalled
-      || !setHas(acceptedConnections, connectionAdmission.socket)
-      || !setHas(trackedSockets, connectionAdmission.socket)
+      permanentUncertainty
+      || !admissionOpen
+      || closePromise !== null
+      || setSize(connectionReservations) >= limits.maxConcurrentSockets
     ) {
       increment('tlsRejected');
-      destroySocket(socket);
+      destroyUntrackedSocket(socket);
       return;
     }
-    setDelete(pendingSecureAdmissions, connectionAdmission);
-    mapDelete(connectionAdmissions, connectionAdmission.socket);
-    const secureCapability = socket === connectionAdmission.socket
-      ? connectionCapability
-      : trackSocket(socket);
+    if (
+      weakMapGet(socketReservations, socket) !== undefined
+      || weakMapGet(socketCapabilities, socket) !== undefined
+      || mapGet(secureSockets, socket) !== undefined
+      || setHas(trackedSockets, socket)
+    ) {
+      increment('tlsRejected');
+      destroyTlsOutcomeSocket(socket);
+      return;
+    }
+    const connectionReservation = {
+      state: CONNECTION_STATE.PROMOTING,
+      secureSocket: socket,
+      secureLive: true,
+      requestEligible: false,
+      requestState: null,
+      revoking: false,
+      released: false,
+    };
+    setAdd(connectionReservations, connectionReservation);
+    weakMapSet(socketReservations, socket, connectionReservation);
+    const secureCapability = trackSocket(socket);
+    if (
+      closeTerminal
+    ) return;
     if (
       permanentUncertainty
       || !admissionOpen
@@ -2658,10 +2646,21 @@ export function createServiceCreditBoundedHttpsIngressOwner(options) {
       || secureCapability.destroyRequested
       || !secureCapability.tracked
       || !secureCapability.listenersInstalled
+      || !connectionReservationIsOwned(connectionReservation)
+      || connectionReservation.state !== CONNECTION_STATE.PROMOTING
+      || connectionReservation.secureSocket !== socket
+      || connectionReservation.secureLive !== true
+      || connectionReservation.requestEligible !== false
+      || connectionReservation.requestState !== null
+      || weakMapGet(socketReservations, socket) !== connectionReservation
       || !setHas(trackedSockets, socket)
     ) {
       increment('tlsRejected');
-      destroySocket(socket);
+      if (connectionReservationIsOwned(connectionReservation)) {
+        revokeConnectionReservation(connectionReservation);
+      } else {
+        destroyTlsOutcomeSocket(socket);
+      }
       return;
     }
     const tlsPolicySnapshot = captureTlsPolicySnapshot(socket);
@@ -2672,11 +2671,18 @@ export function createServiceCreditBoundedHttpsIngressOwner(options) {
       || secureCapability.destroyRequested
       || !secureCapability.tracked
       || !secureCapability.listenersInstalled
+      || !connectionReservationIsOwned(connectionReservation)
+      || connectionReservation.state !== CONNECTION_STATE.PROMOTING
+      || connectionReservation.secureSocket !== socket
+      || connectionReservation.secureLive !== true
+      || connectionReservation.requestEligible !== false
+      || connectionReservation.requestState !== null
+      || weakMapGet(socketReservations, socket) !== connectionReservation
       || !setHas(trackedSockets, socket)
       || tlsPolicySnapshot === null
     ) {
       increment('tlsRejected');
-      destroySocket(socket);
+      revokeConnectionReservation(connectionReservation);
       return;
     }
     const peerToken = REFLECT_APPLY(NATIVE_SYMBOL, undefined, []);
@@ -2687,6 +2693,7 @@ export function createServiceCreditBoundedHttpsIngressOwner(options) {
       transportContext: null,
       requestStarted: false,
       requestState: null,
+      connectionReservation,
       tlsPolicySnapshot,
       headerDeadline: null,
       setupState: SECURE_SETUP.INSTALLING_HEADER_DEADLINE,
@@ -2729,7 +2736,7 @@ export function createServiceCreditBoundedHttpsIngressOwner(options) {
     if (closeTerminal) return;
     if (!scheduled) {
       markPermanentUncertainty();
-      destroySocket(socket);
+      revokeConnectionReservation(connectionReservation);
       return;
     }
     if (
@@ -2737,10 +2744,12 @@ export function createServiceCreditBoundedHttpsIngressOwner(options) {
       || !sameTlsPolicySnapshot(socket, tlsPolicySnapshot)
     ) {
       markPermanentUncertainty();
-      destroySocket(socket);
+      revokeConnectionReservation(connectionReservation);
       return;
     }
     secureState.setupState = SECURE_SETUP.REQUEST_ELIGIBLE;
+    connectionReservation.state = CONNECTION_STATE.REQUEST_ELIGIBLE;
+    connectionReservation.requestEligible = true;
   }
 
   function settleHandler(requestState, clean) {
@@ -2753,6 +2762,16 @@ export function createServiceCreditBoundedHttpsIngressOwner(options) {
       destroySocket(requestState.socket);
     }
     maybeCompleteRequest(requestState);
+  }
+
+  function failHandlerCompletionContract(requestState) {
+    if (requestState.terminalDetached || closeTerminal) return;
+    markPermanentUncertainty();
+    if (!requestState.handlerSettled) settleHandler(requestState, false);
+    else {
+      increment('handlerFailures');
+      destroySocket(requestState.socket);
+    }
   }
 
   function captureResponseListener(listener) {
@@ -3159,6 +3178,12 @@ export function createServiceCreditBoundedHttpsIngressOwner(options) {
   }
 
   function inspectRequestAdmission(requestState, requireDeadline = false) {
+    if (
+      requestState.terminalDetached
+      || closeTerminal
+      || requestState.completed
+    ) return 'DETACHED';
+    if (closePromise !== null || !admissionOpen) return 'CLOSED';
     const currentAdmission = captureRequestAdmission(
       requestState.request,
       origin.authority,
@@ -3187,7 +3212,6 @@ export function createServiceCreditBoundedHttpsIngressOwner(options) {
       && !responseSettlementOwned(requestState)
     ) return 'OWNERSHIP';
     if (permanentUncertainty) return 'UNCERTAIN';
-    if (!admissionOpen || closePromise !== null) return 'CLOSED';
     if (
       requestState.completed
       || requestState.handlerSettled
@@ -3200,6 +3224,16 @@ export function createServiceCreditBoundedHttpsIngressOwner(options) {
       || !requestState.socketCapability.listenersInstalled
       || !setHas(trackedSockets, requestState.socket)
       || mapGet(secureSockets, requestState.socket) !== requestState.secureState
+      || !connectionReservationIsOwned(requestState.connectionReservation)
+      || requestState.connectionReservation.state !== CONNECTION_STATE.REQUEST_ACTIVE
+      || requestState.connectionReservation.secureSocket !== requestState.socket
+      || requestState.connectionReservation.secureLive !== true
+      || requestState.connectionReservation.requestEligible !== false
+      || requestState.connectionReservation.requestState !== requestState
+      || weakMapGet(socketReservations, requestState.socket)
+        !== requestState.connectionReservation
+      || requestState.secureState.connectionReservation
+        !== requestState.connectionReservation
       || requestState.secureState.setupState !== SECURE_SETUP.REQUEST_ELIGIBLE
       || requestState.secureState.requestStarted !== true
       || requestState.secureState.requestState !== requestState
@@ -3243,6 +3277,7 @@ export function createServiceCreditBoundedHttpsIngressOwner(options) {
   }
 
   function handleRequestAdmissionFailure(requestState, status) {
+    if (status === 'DETACHED') return;
     if (status === 'CAPACITY') {
       rejectOwnedRequest(requestState);
       return;
@@ -3351,7 +3386,10 @@ export function createServiceCreditBoundedHttpsIngressOwner(options) {
     if (requestState.terminalDetached || closeTerminal) return;
     increment('deadlineExpirations');
     markPermanentUncertainty();
+    detachOperationCompletion(requestState.handlerCompletionCell);
+    requestState.handlerCompletionCell = null;
     requestAbort(requestState);
+    settleHandler(requestState, false);
   }
 
   function onRequest(request, response, forcedRejection = false) {
@@ -3372,6 +3410,22 @@ export function createServiceCreditBoundedHttpsIngressOwner(options) {
     }
     const socket = requestAdmission.socket;
     const secureState = mapGet(secureSockets, socket);
+    if (secureState === undefined) {
+      const setupReservation = weakMapGet(socketReservations, socket);
+      if (
+        connectionReservationIsOwned(setupReservation)
+        && setupReservation.secureSocket === socket
+        && setupReservation.requestEligible === false
+        && setupReservation.requestState === null
+      ) {
+        setupReservation.state = CONNECTION_STATE.TERMINATING;
+        setupReservation.requestEligible = false;
+        increment('requestsRejected');
+        sendUnavailable(response);
+        revokeConnectionReservation(setupReservation);
+        return;
+      }
+    }
     if (!startSettled || !listeningObserved || secureState === undefined) {
       increment('requestsRejected');
       if (!startSettled || !listeningObserved) {
@@ -3384,6 +3438,7 @@ export function createServiceCreditBoundedHttpsIngressOwner(options) {
       }
       return;
     }
+    const connectionReservation = secureState.connectionReservation;
     const socketCapability = weakMapGet(socketCapabilities, socket);
     if (
       socketCapability === undefined
@@ -3399,9 +3454,20 @@ export function createServiceCreditBoundedHttpsIngressOwner(options) {
     }
     if (
       secureState.setupState !== SECURE_SETUP.REQUEST_ELIGIBLE
+      || !connectionReservationIsOwned(connectionReservation)
+      || connectionReservation.state !== CONNECTION_STATE.REQUEST_ELIGIBLE
+      || connectionReservation.secureSocket !== socket
+      || connectionReservation.secureLive !== true
+      || connectionReservation.requestEligible !== true
+      || connectionReservation.requestState !== null
+      || weakMapGet(socketReservations, socket) !== connectionReservation
       || !sameTlsPolicySnapshot(socket, secureState.tlsPolicySnapshot)
     ) {
       secureState.requestStarted = true;
+      if (connectionReservationIsOwned(connectionReservation)) {
+        connectionReservation.state = CONNECTION_STATE.TERMINATING;
+        connectionReservation.requestEligible = false;
+      }
       increment('requestsRejected');
       markPermanentUncertainty();
       destroySocket(socket);
@@ -3413,6 +3479,8 @@ export function createServiceCreditBoundedHttpsIngressOwner(options) {
       return;
     }
     secureState.requestStarted = true;
+    connectionReservation.state = CONNECTION_STATE.REQUEST_ACTIVE;
+    connectionReservation.requestEligible = false;
     if (
       !admissionOpen
       || !acceptingRequests
@@ -3475,6 +3543,7 @@ export function createServiceCreditBoundedHttpsIngressOwner(options) {
       responseEventsCount: responseAdmission.eventsCount,
       responseMaxListeners: responseAdmission.maxListeners,
       socketCapability,
+      connectionReservation,
       secureState,
       responseSetHeader: responseSetHeader.value,
       responseSetHeaderProperty: responseSetHeader,
@@ -3485,6 +3554,7 @@ export function createServiceCreditBoundedHttpsIngressOwner(options) {
       requestStartReserved: true,
       abortRequested: false,
       terminalDetached: false,
+      handlerCompletionCell: null,
       handlerSettled: false,
       responseSettled: false,
       responseClean: false,
@@ -3492,6 +3562,7 @@ export function createServiceCreditBoundedHttpsIngressOwner(options) {
       deadline: null,
     };
     secureState.requestState = requestState;
+    connectionReservation.requestState = requestState;
     setAdd(activeRequests, requestState);
     setAdd(activeHandlers, requestState);
     let status = registerResponse(requestState);
@@ -3544,42 +3615,30 @@ export function createServiceCreditBoundedHttpsIngressOwner(options) {
       handleRequestAdmissionFailure(requestState, 'UNCERTAIN');
       return;
     }
-    let operation;
     status = inspectRequestAdmission(requestState, true);
     if (status !== 'READY') {
       handleRequestAdmissionFailure(requestState, status);
       return;
     }
+    const handlerCompletionCell = createOperationCompletion(OBJECT_FREEZE({
+      settle: OBJECT_FREEZE(clean => settleHandler(requestState, clean)),
+      conflict: OBJECT_FREEZE(() => failHandlerCompletionContract(requestState)),
+      violation: OBJECT_FREEZE(() => failHandlerCompletionContract(requestState)),
+    }));
+    requestState.handlerCompletionCell = handlerCompletionCell;
+    let returnedNormally = false;
+    let returnedValue;
     try {
-      operation = REFLECT_APPLY(downstreamHandle, undefined, [
+      returnedValue = REFLECT_APPLY(downstreamHandle, undefined, [
         request,
         response,
         secureState.transportContext,
+        handlerCompletionCell.capability,
       ]);
-    } catch {
-      increment('handlerFailures');
-      setDelete(activeHandlers, requestState);
-      requestState.handlerSettled = true;
-      markPermanentUncertainty();
-      destroySocket(socket);
-      maybeCompleteRequest(requestState);
-      return;
-    }
-    const observation = observeNativePromise(
-      operation,
-      () => settleHandler(requestState, true),
-      () => settleHandler(requestState, false),
-    );
-    if (observation !== PROMISE_OBSERVATION.OBSERVED) {
-      containDiscardedPromiseRejection(operation);
-      increment('handlerFailures');
-      if (observation === PROMISE_OBSERVATION.NOT_PROMISE) {
-        setDelete(activeHandlers, requestState);
-        requestState.handlerSettled = true;
-      }
-      markPermanentUncertainty();
-      destroySocket(socket);
-    }
+      returnedNormally = true;
+    } catch {}
+    finishOperationCall(handlerCompletionCell, returnedNormally, returnedValue);
+    returnedValue = undefined;
   }
 
   function onRawSocketEvent(socket) {
@@ -3588,7 +3647,8 @@ export function createServiceCreditBoundedHttpsIngressOwner(options) {
       markPermanentUncertainty();
       failStart();
     }
-    destroySocket(socket);
+    const reservation = weakMapGet(socketReservations, socket);
+    if (!revokeConnectionReservation(reservation)) destroySocket(socket);
   }
 
   function onListening() {
@@ -3601,6 +3661,7 @@ export function createServiceCreditBoundedHttpsIngressOwner(options) {
   }
 
   function onListenerClose() {
+    outstandingAcceptedHandshakes = 0;
     if (!listenerCloseRequested) {
       listenerClosed = true;
       if (!startSettled) failStart();
@@ -3652,9 +3713,13 @@ export function createServiceCreditBoundedHttpsIngressOwner(options) {
       increment('tlsRejected');
       if (!startSettled || !listeningObserved) {
         markPermanentUncertainty();
+        destroyTlsOutcomeSocket(socket);
         failStart();
+        return;
       }
-      destroySocket(socket);
+      const outcome = markFirstTlsOutcomeSocket(socket);
+      if (outcome === 'FIRST') consumeAcceptedHandshakeOutcome();
+      destroyTlsOutcomeSocket(socket);
     }),
     dropRequest: OBJECT_FREEZE(function activeBoundedHttpsDropRequest(_request, socket) {
       onRawSocketEvent(socket);
@@ -3672,7 +3737,8 @@ export function createServiceCreditBoundedHttpsIngressOwner(options) {
         markPermanentUncertainty();
         failStart();
       }
-      destroySocket(socket);
+      const reservation = weakMapGet(socketReservations, socket);
+      if (!revokeConnectionReservation(reservation)) destroySocket(socket);
     }),
     listening: OBJECT_FREEZE(function activeBoundedHttpsListening() {
       onListening();
@@ -3766,47 +3832,48 @@ export function createServiceCreditBoundedHttpsIngressOwner(options) {
   function requestDownstreamClose() {
     if (downstreamCloseInvoked) return;
     downstreamCloseInvoked = true;
-    let operation;
-    try {
-      operation = REFLECT_APPLY(downstreamClose, undefined, []);
-    } catch {
+    const settle = OBJECT_FREEZE(clean => {
+      if (closeTerminal || downstreamCloseSettled) return;
+      downstreamCloseSettled = true;
+      downstreamCloseClean = clean;
+      if (!clean) markPermanentUncertainty();
+      maybeFinishClose();
+    });
+    const failContract = OBJECT_FREEZE(() => {
+      if (closeTerminal) return;
       downstreamCloseSettled = true;
       downstreamCloseClean = false;
       markPermanentUncertainty();
-      return;
-    }
-    const observation = observeNativePromise(
-      operation,
-      () => {
-        if (closeTerminal) return;
-        downstreamCloseSettled = true;
-        downstreamCloseClean = true;
-        maybeFinishClose();
-      },
-      () => {
-        if (closeTerminal) return;
-        downstreamCloseSettled = true;
-        downstreamCloseClean = false;
-        markPermanentUncertainty();
-        maybeFinishClose();
-      },
+      maybeFinishClose();
+    });
+    downstreamCloseCompletionCell = createOperationCompletion(OBJECT_FREEZE({
+      settle,
+      conflict: failContract,
+      violation: failContract,
+    }));
+    let returnedNormally = false;
+    let returnedValue;
+    try {
+      returnedValue = REFLECT_APPLY(downstreamClose, undefined, [
+        downstreamCloseCompletionCell.capability,
+      ]);
+      returnedNormally = true;
+    } catch {}
+    finishOperationCall(
+      downstreamCloseCompletionCell,
+      returnedNormally,
+      returnedValue,
     );
-    if (observation !== PROMISE_OBSERVATION.OBSERVED) {
-      containDiscardedPromiseRejection(operation);
-      downstreamCloseClean = false;
-      markPermanentUncertainty();
-    }
+    returnedValue = undefined;
   }
 
   function disposeLocalServerCapabilityBestEffort(capability) {
     for (const operation of [capability.close, capability.closeAllConnections]) {
-      let result;
       try {
-        result = REFLECT_APPLY(operation, undefined, []);
+        REFLECT_APPLY(operation, undefined, []);
       } catch {
         continue;
       }
-      if (isGenuinePromise(result)) containDiscardedPromiseRejection(result);
     }
   }
 
@@ -3842,12 +3909,7 @@ export function createServiceCreditBoundedHttpsIngressOwner(options) {
       failStart();
       return startPromise;
     }
-    let returnedCapability = null;
-    if (isGenuinePromise(returned)) {
-      containDiscardedPromiseRejection(returned);
-    } else {
-      returnedCapability = captureServerCapability(returned);
-    }
+    let returnedCapability = captureServerCapability(returned);
     returned = null;
     if (returnedCapability === null) {
       if (!closeTerminal) failStart();
@@ -3883,9 +3945,6 @@ export function createServiceCreditBoundedHttpsIngressOwner(options) {
     }
     listenReturned = true;
     if (listenResult !== undefined) {
-      if (isGenuinePromise(listenResult)) {
-        containDiscardedPromiseRejection(listenResult);
-      }
       failStart();
       return startPromise;
     }
@@ -3903,49 +3962,51 @@ export function createServiceCreditBoundedHttpsIngressOwner(options) {
     acceptingRequests = false;
     increment('closeStarted');
     if (!permanentUncertainty && phase !== PHASE.CLOSED) phase = PHASE.CLOSING;
-
-    requestDownstreamClose();
-    if (startPromise !== null && !startSettled) failStart();
-    if (serverCapability === null) {
-      listenerClosed = true;
-    } else {
-      stopAccepting();
+    if (!beginCloseSetupOperation()) {
+      finishCloseUncertain();
+      return closePromise;
     }
-    const secureStates = snapshotMapValues(secureSockets);
-    for (let index = 0; index < secureStates.length; index += 1) {
-      if (!cancelTicket(secureStates[index], 'headerDeadline')) markPermanentUncertainty();
-    }
-    const requestStates = snapshotSetValues(activeRequests);
-    for (let index = 0; index < requestStates.length; index += 1) {
-      const requestState = requestStates[index];
-      if (!cancelTicket(requestState, 'deadline')) markPermanentUncertainty();
-      requestAbort(requestState);
-    }
-    const sockets = snapshotSetValues(trackedSockets);
-    for (let index = 0; index < sockets.length; index += 1) {
-      destroySocket(sockets[index]);
-    }
-    if (serverCapability !== null && !closeAllInvoked) {
-      closeAllInvoked = true;
-      let result;
-      try {
-        result = REFLECT_APPLY(serverCapability.closeAllConnections, undefined, []);
-      } catch {
+    try {
+      requestDownstreamClose();
+      if (startPromise !== null && !startSettled) failStart();
+      if (serverCapability === null) {
+        listenerClosed = true;
+      } else {
+        stopAccepting();
+      }
+      const secureStates = snapshotMapValues(secureSockets);
+      for (let index = 0; index < secureStates.length; index += 1) {
+        if (!cancelTicket(secureStates[index], 'headerDeadline')) markPermanentUncertainty();
+      }
+      const requestStates = snapshotSetValues(activeRequests);
+      for (let index = 0; index < requestStates.length; index += 1) {
+        const requestState = requestStates[index];
+        if (!cancelTicket(requestState, 'deadline')) markPermanentUncertainty();
+        detachOperationCompletion(requestState.handlerCompletionCell);
+        requestState.handlerCompletionCell = null;
+        requestAbort(requestState);
+        settleHandler(requestState, false);
+      }
+      const sockets = snapshotSetValues(trackedSockets);
+      for (let index = 0; index < sockets.length; index += 1) {
+        destroySocket(sockets[index]);
+      }
+      if (serverCapability !== null && !closeAllInvoked) {
+        closeAllInvoked = true;
+        const operation = serverCapability.closeAllConnections;
+        invokeServerShutdownOperation(operation);
+      }
+      if (
+        !closeTerminal
+        && !scheduleTicket(timerState, 'close', limits.closeGraceMs, finishCloseUncertain)
+      ) {
         markPermanentUncertainty();
       }
-      if (result !== undefined) {
-        if (isGenuinePromise(result)) containDiscardedPromiseRejection(result);
-        markPermanentUncertainty();
-      }
+      if (permanentUncertainty) finishCloseUncertain();
+      else maybeFinishClose();
+    } finally {
+      endCloseSetupOperation();
     }
-    if (
-      !closeTerminal
-      && !scheduleTicket(timerState, 'close', limits.closeGraceMs, finishCloseUncertain)
-    ) {
-      markPermanentUncertainty();
-    }
-    if (permanentUncertainty) finishCloseUncertain();
-    else maybeFinishClose();
     return closePromise;
   });
 

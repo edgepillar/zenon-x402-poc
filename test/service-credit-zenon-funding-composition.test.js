@@ -19,11 +19,12 @@ import {
   writeFileSync,
 } from 'node:fs';
 import { createServer as createHttpsServer, request as httpsRequest } from 'node:https';
+import { connect as connectNet } from 'node:net';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import { PassThrough } from 'node:stream';
-import { connect as connectTls } from 'node:tls';
+import { connect as connectTls, rootCertificates as tlsRootCertificates } from 'node:tls';
 
 import {
   createZenonFundingComposition,
@@ -821,7 +822,8 @@ function syntheticHttpsMaterial() {
     let generated;
     try {
       generated = childProcess.spawnSync(executable, [
-        'req', '-x509', '-newkey', 'rsa:2048', '-sha256', '-nodes', '-days', '1',
+        'req', '-x509', '-newkey', 'ec', '-pkeyopt',
+        'ec_paramgen_curve:prime256v1', '-sha256', '-nodes', '-days', '1',
         '-keyout', keyPath, '-out', certPath, '-config', configPath, '-extensions', 'v3_req',
       ], { env: {}, encoding: 'utf8', timeout: 15_000, maxBuffer: 1024 * 1024 });
     } finally {
@@ -838,7 +840,7 @@ function syntheticHttpsMaterial() {
     key = readFileSync(keyPath);
     cert = readFileSync(certPath);
     const parsed = new X509Certificate(cert);
-    assert.equal(parsed.subjectAltName?.includes('IP Address:127.0.0.1'), true);
+    assert.equal(parsed.checkIP('127.0.0.1'), '127.0.0.1');
     const validityHours = (Date.parse(parsed.validTo) - Date.parse(parsed.validFrom)) / 3_600_000;
     assert.equal(validityHours > 0 && validityHours <= 24, true);
     return { key, cert, cleanup };
@@ -847,6 +849,18 @@ function syntheticHttpsMaterial() {
       try { cleanup(); } catch { throw syntheticHttpsFailure(SYNTHETIC_HTTPS_FAILURE.cleanup); }
     }
     throw syntheticHttpsFailure(failureCode);
+  }
+}
+
+function syntheticWrongPinnedCertificate() {
+  try {
+    const certificate = tlsRootCertificates[0];
+    assert.equal(typeof certificate, 'string');
+    const pinned = Buffer.from(certificate, 'ascii');
+    new X509Certificate(pinned);
+    return pinned;
+  } catch {
+    throw syntheticHttpsFailure(SYNTHETIC_HTTPS_FAILURE.certificate);
   }
 }
 
@@ -1256,7 +1270,26 @@ async function offlineHttpsPilot(t) {
         response.end(body);
       } catch { try { response.destroy(); } catch {} }
     };
-    const handleRequest = Object.freeze((request, response, transportContext) => {
+    const settleTrustedOperation = (operation, completion, onFailure) => {
+      try {
+        operation.then(
+          () => { completion.success(); },
+          () => {
+            if (onFailure !== null) onFailure();
+            completion.failure();
+          },
+        );
+      } catch {
+        if (onFailure !== null) onFailure();
+        completion.failure();
+      }
+    };
+    const handleRequest = Object.freeze((
+      request,
+      response,
+      transportContext,
+      completion,
+    ) => {
       if (
         request.url === EXTERNAL_HOLDER_HANDOFF_CHALLENGE_PATH
         || request.url === EXTERNAL_HOLDER_HANDOFF_REDEEM_PATH
@@ -1264,9 +1297,19 @@ async function offlineHttpsPilot(t) {
         const mountedController = handoffController;
         if (mountedController === null) {
           sendHandoffFailure(response);
-          return Promise.resolve();
+          completion.success();
+          return;
         }
-        return mountedController.handle(request, response, transportContext);
+        let operation;
+        try {
+          operation = mountedController.handle(request, response, transportContext);
+        } catch {
+          sendHandoffFailure(response);
+          completion.failure();
+          return;
+        }
+        settleTrustedOperation(operation, completion, () => sendHandoffFailure(response));
+        return;
       }
       const unavailable = () => {
         routerFailures += 1;
@@ -1293,16 +1336,21 @@ async function offlineHttpsPilot(t) {
           });
           response.end('{"error":"payment_required"}');
         } catch { unavailable(); }
-        return Promise.resolve();
+        completion.success();
       } else if (phase === 'ACTIVE') {
-        try { return activeOwner.handle(request, response); }
-        catch { unavailable(); return Promise.resolve(); }
+        let operation;
+        try { operation = activeOwner.handle(request, response); }
+        catch { unavailable(); completion.success(); return; }
+        settleTrustedOperation(operation, completion, unavailable);
       } else {
         try { response.writeHead(503); response.end(); } catch { unavailable(); }
-        return Promise.resolve();
+        completion.success();
       }
     });
-    const closeRouter = Object.freeze(() => closeHandoff());
+    const closeRouter = Object.freeze(completion => {
+      const operation = closeHandoff();
+      settleTrustedOperation(operation, completion, null);
+    });
     const downstream = Object.freeze({ handle: handleRequest, close: closeRouter });
     const trustedHttpsServerFactory = Object.freeze((serverOptions, callbacks) => {
       factoryEntered = true;
@@ -1326,8 +1374,11 @@ async function offlineHttpsPilot(t) {
           assert.equal(Object.hasOwn(descriptor, 'value'), true);
         }
       });
+      server.on('connection', socket => {
+        callbacks.connection(socket);
+        handoffEvents.emit('raw-connection-accounted');
+      });
       for (const eventName of [
-        'connection',
         'secureConnection',
         'checkContinue',
         'checkExpectation',
@@ -1464,6 +1515,16 @@ async function offlineHttpsPilot(t) {
           await new Promise(resolve => setImmediate(resolve));
         }
         throw syntheticHttpsFailure(SYNTHETIC_HTTPS_FAILURE.deadline);
+      },
+      async closeWithUnresolvedPreHandshake() {
+        const accounted = waitForHandoffEvent('raw-connection-accounted');
+        const socket = connectNet({ host: '127.0.0.1', port: route.port });
+        socket.once('error', () => {});
+        const clientClosed = new Promise(resolve => { socket.once('close', resolve); });
+        await accounted;
+        const result = await ingressOwner.close();
+        await clientClosed;
+        return Object.freeze({ result, metrics: ingressOwner.snapshotMetrics() });
       },
       expireHandoffChallenge(publicChallenge) {
         if (
@@ -1915,11 +1976,11 @@ test('offline HTTPS harness hands an external holder durable credit across owner
   pilot.activate(owner);
   assert.equal(pilot.ownerReadCount(), 0);
 
-  const wrongTls = syntheticHttpsMaterial();
+  const wrongCertificate = syntheticWrongPinnedCertificate();
   try {
     const admissionsBeforeWrongPin = pilot.handlerAdmissionCount();
     await assert.rejects(
-      httpsHandoffExchange(route, wrongTls.cert, {
+      httpsHandoffExchange(route, wrongCertificate, {
         path: EXTERNAL_HOLDER_HANDOFF_CHALLENGE_PATH,
         expectedStatus: 200,
       }),
@@ -1927,7 +1988,7 @@ test('offline HTTPS harness hands an external holder durable credit across owner
     );
     assert.equal(pilot.handlerAdmissionCount(), admissionsBeforeWrongPin);
   } finally {
-    wrongTls.cleanup();
+    wrongCertificate.fill(0);
   }
 
   const rawOuterIngressCases = [
@@ -2199,6 +2260,12 @@ test('offline HTTPS harness hands an external holder durable credit across owner
   assert.equal(pilot.ownedSocketCount(), 0);
   assert.equal(pilot.pendingLatchCount(), 0);
   assert.equal(pilot.handlerFailureCount(), 0);
+  const ingressClose = await pilot.closeWithUnresolvedPreHandshake();
+  assert.deepEqual(ingressClose.result, { status: 'CLOSED' });
+  assert.equal(ingressClose.metrics.phase, 'CLOSED');
+  assert.equal(ingressClose.metrics.closeClean, 1);
+  assert.equal(ingressClose.metrics.closeUncertain, 0);
+  assert.equal(ingressClose.metrics.trackedSockets, 0);
 });
 
 test('offline HTTPS harness denies credit for non-READY synthetic child outcomes', async t => {

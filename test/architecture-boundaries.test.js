@@ -242,6 +242,32 @@ test('Zenon funding, signing, and external-holder handoff sources remain inactiv
   }
 });
 
+test('bounded HTTPS owner import is process-global-observer-free', () => {
+  const source = readFileSync(
+    new URL('../src/service-credit-bounded-https-ingress-owner.js', import.meta.url),
+    'utf8',
+  );
+  const importedModules = [...source.matchAll(/^import .* from '([^']+)';$/gm)]
+    .map(match => match[1]);
+  assert.deepEqual(importedModules, ['node:events', 'node:http', 'node:net', 'node:util']);
+  assert.doesNotMatch(
+    source,
+    /node:(?:v8|async_hooks)|['"]async_hooks['"]|\bpromiseHooks\b|\bcreateHook\b|\bhook\.enable\b|\bhook\.disable\b|\bAsyncLocalStorage\b/,
+  );
+  assert.doesNotMatch(
+    source,
+    /\bprocess\s*\.\s*(?:on|once|addListener|prependListener|prependOnceListener)\s*\(/,
+  );
+  assert.doesNotMatch(
+    source,
+    /\bprocess\s*\[\s*['"](?:on|once|addListener|prependListener|prependOnceListener)['"]\s*\]\s*\(/,
+  );
+  assert.doesNotMatch(
+    source,
+    /unhandledRejection|rejectionHandled|multipleResolves|uncaughtExceptionMonitor/,
+  );
+});
+
 test('bounded HTTPS owner is dormant and keeps TLS material and binding in one factory seam', () => {
   const source = readFileSync(
     new URL('../src/service-credit-bounded-https-ingress-owner.js', import.meta.url),
@@ -265,11 +291,45 @@ test('bounded HTTPS owner is dormant and keeps TLS material and binding in one f
   assert.match(source, /maxVersion: 'TLSv1\.3'/);
   assert.match(source, /ALPNProtocols: OBJECT_FREEZE\(\['http\/1\.1'\]\)/);
   assert.match(source, /requestCert: false/);
+  assert.match(source, /handshakeTimeout: limits\.tlsHandshakeDeadlineMs/);
   assert.match(source, /maxRequestsPerSocket: 1/);
+  assert.match(source, /maxConnections: limits\.maxConcurrentSockets/);
   assert.match(source, /joinDuplicateHeaders: false/);
   assert.match(source, /rejectNonStandardBodyWrites: true/);
   assert.match(source, /REFLECT_APPLY\(trustedFactory, undefined, \[serverOptions, callbacks\]\)/);
   assert.match(source, /REFLECT_APPLY\(downstreamHandle, undefined, \[/);
+  for (const gate of [
+    'let serverShutdownOperationsInFlight = 0;',
+    'let socketLifecycleOperationsInFlight = 0;',
+    'let closeSetupOperationsInFlight = 0;',
+    'if (serverShutdownOperationsInFlight !== 0) return;',
+    'if (socketLifecycleOperationsInFlight !== 0) return;',
+    'if (closeSetupOperationsInFlight !== 0) return;',
+  ]) assert.equal(source.includes(gate), true);
+  assert.match(
+    source,
+    /function invokeServerShutdownOperation\(operation\) \{[\s\S]*?beginServerShutdownOperation\(\)[\s\S]*?REFLECT_APPLY\(operation, undefined, \[\]\)[\s\S]*?result === undefined[\s\S]*?markPermanentUncertainty\(\)[\s\S]*?finally \{\s*endServerShutdownOperation\(\);/,
+  );
+  assert.match(
+    source,
+    /if \(!beginCloseSetupOperation\(\)\)[\s\S]*?requestDownstreamClose\(\);[\s\S]*?invokeServerShutdownOperation\(operation\);[\s\S]*?finally \{\s*endCloseSetupOperation\(\);/,
+  );
+  assert.doesNotMatch(
+    source,
+    /REFLECT_APPLY\(serverCapability\.(?:close|closeAllConnections), undefined, \[\]\)/,
+  );
+  assert.match(
+    source,
+    /function destroySocket\(socket\) \{[\s\S]*?beginSocketLifecycleOperation\(\)[\s\S]*?REFLECT_APPLY\(capability\.destroy, socket, \[\]\)[\s\S]*?finally \{\s*endSocketLifecycleOperation\(\);/,
+  );
+  assert.match(
+    source,
+    /function trackSocket\(socket\) \{[\s\S]*?beginSocketLifecycleOperation\(\)[\s\S]*?REFLECT_APPLY\(emitter\.once, socket, \['close', onClose\]\)[\s\S]*?REFLECT_APPLY\(emitter\.once, socket, \['error', onError\]\)[\s\S]*?finally \{\s*endSocketLifecycleOperation\(\);/,
+  );
+  assert.match(
+    source,
+    /if \(secureState === undefined\) \{[\s\S]*?weakMapGet\(socketReservations, socket\)[\s\S]*?setupReservation\.state = CONNECTION_STATE\.TERMINATING;[\s\S]*?sendUnavailable\(response\);[\s\S]*?revokeConnectionReservation\(setupReservation\);/,
+  );
   for (const capture of [
     'const SET_ADD = NATIVE_SET.prototype.add;',
     'const SET_DELETE = NATIVE_SET.prototype.delete;',
@@ -315,11 +375,10 @@ test('bounded HTTPS owner is dormant and keeps TLS material and binding in one f
     'allowedTargets',
     'ownedTimers',
     'trackedSockets',
-    'acceptedConnections',
-    'connectionAdmissions',
-    'pendingSecureAdmissions',
+    'connectionReservations',
     'socketCapabilities',
-    'seenSecureSockets',
+    'socketReservations',
+    'seenTlsOutcomeSockets',
     'secureSockets',
     'activeRequests',
     'activeHandlers',
@@ -347,28 +406,19 @@ test('bounded HTTPS owner is dormant and keeps TLS material and binding in one f
     source,
     /function snapshotMapValues\(collection\) \{[\s\S]*?REFLECT_APPLY\(MAP_VALUES, collection, \[\]\)[\s\S]*?REFLECT_APPLY\(MAP_ITERATOR_NEXT, iterator, \[\]\)/,
   );
-  assert.match(source, /setHas\(pendingSecureAdmissions, connectionAdmission\)/);
-  assert.match(source, /setHas\(acceptedConnections, connectionAdmission\.socket\)/);
+  assert.match(source, /connectionReservationIsOwned\(connectionReservation\)/);
+  assert.doesNotMatch(
+    source,
+    /connectionAdmissions|pendingSecureAdmissions|RAW_PENDING|rawSocket|rawLive|secureAttached|selectSecureConnectionAdmission|selectSolePendingConnectionReservation|revokePendingConnectionReservation/,
+  );
   assert.match(source, /const NATIVE_WEAK_SET = WeakSet;/);
   assert.match(source, /const WEAK_SET_ADD = NATIVE_WEAK_SET\.prototype\.add;/);
   assert.match(source, /const WEAK_SET_HAS = NATIVE_WEAK_SET\.prototype\.has;/);
   assert.match(
     source,
-    /REFLECT_APPLY\(WEAK_SET_HAS, seenSecureSockets, \[socket\]\)[\s\S]*?REFLECT_APPLY\(WEAK_SET_ADD, seenSecureSockets, \[socket\]\)/,
+    /REFLECT_APPLY\(WEAK_SET_HAS, seenTlsOutcomeSockets, \[socket\]\)[\s\S]*?REFLECT_APPLY\(WEAK_SET_ADD, seenTlsOutcomeSockets, \[socket\]\)/,
   );
-  assert.doesNotMatch(source, /seenSecureSockets\.delete/);
-  assert.match(
-    source,
-    /setDelete\(pendingSecureAdmissions, connectionAdmission\);\s*mapDelete\(connectionAdmissions, connectionAdmission\.socket\);/,
-  );
-  assert.match(
-    source,
-    /if \(existing !== undefined\) \{\s*increment\('tlsRejected'\);\s*destroySocket\(socket\);\s*return;/,
-  );
-  assert.doesNotMatch(
-    source,
-    /connectionAdmission\.(?:peerToken|secureSocket)|secureState\.connectionAdmission/,
-  );
+  assert.doesNotMatch(source, /seenTlsOutcomeSockets\.delete/);
   assert.match(source, /const peerToken = REFLECT_APPLY\(NATIVE_SYMBOL, undefined, \[\]\);/);
   assert.doesNotMatch(source, /observePropertyValue/);
   assert.match(
@@ -389,21 +439,20 @@ test('bounded HTTPS owner is dormant and keeps TLS material and binding in one f
   );
   assert.match(
     source,
-    /\|\| mapSize\(connectionAdmissions\) !== 0\s*\|\| setSize\(pendingSecureAdmissions\) !== 0\s*\|\| mapSize\(secureSockets\) !== 0/,
+    /\|\| outstandingAcceptedHandshakes !== 0\s*\|\| setSize\(trackedSockets\) !== 0\s*\|\| setSize\(connectionReservations\) !== 0[\s\S]*?\|\| mapSize\(secureSockets\) !== 0/,
   );
-  assert.match(source, /const IS_PROMISE = utilTypes\.isPromise;/);
-  assert.doesNotMatch(source, /\b(?:operation|promise)\.then\b/);
+  assert.doesNotMatch(source, /\bcreateHook\b|\bhook\.enable\b|\bhook\.disable\b/);
   assert.match(
     source,
-    /function containDiscardedPromiseRejection\(promise\)[\s\S]*?PROMISE_CONTAINMENT_NOOP,\s*PROMISE_CONTAINMENT_NOOP,[\s\S]*?return attached && restored;/,
-  );
-  assert.match(
-    source,
-    /if \(isGenuinePromise\(handle\)\) \{\s*containDiscardedPromiseRejection\(handle\);/,
+    /function createOperationCompletion\(dispatch\)[\s\S]*?const success = OBJECT_FREEZE\(\(\) => \{[\s\S]*?const failure = OBJECT_FREEZE\(\(\) => \{[\s\S]*?cell\.capability = OBJECT_FREEZE\(\{ success, failure \}\);/,
   );
   assert.match(
     source,
-    /if \(isGenuinePromise\(result\)\) containDiscardedPromiseRejection\(result\);\s*const cancellationClean = result === true;/,
+    /function finishOperationCall\(cell, returnedNormally, returnedValue\)[\s\S]*?!returnedNormally \|\| returnedValue !== undefined[\s\S]*?dispatch\.violation/,
+  );
+  assert.match(
+    source,
+    /function detachOperationCompletion\(cell\)[\s\S]*?cell\.dispatch = null;[\s\S]*?cell\.capability = null;/,
   );
   assert.match(source, /if \(!cancellationClean\) markPermanentUncertainty\(\);/);
   assert.match(source, /if \(timerRuntimeOperationsInFlight !== 0\) return;/);
@@ -413,31 +462,33 @@ test('bounded HTTPS owner is dormant and keeps TLS material and binding in one f
     "if (!increment('connectionStarts'))",
     rawCallback,
   );
-  const rawConcurrencyReservation = source.indexOf(
-    'setAdd(acceptedConnections, socket);',
+  const handshakeAccountingPublication = source.indexOf(
+    'outstandingAcceptedHandshakes += 1;',
     rawLifetimeReservation,
   );
-  const rawTrackedReservation = source.indexOf(
-    'setAdd(trackedSockets, socket);',
-    rawConcurrencyReservation,
-  );
-  const rawTrack = source.indexOf('const capability = trackSocket(socket);');
-  const rawFinalGate = source.indexOf('|| mapHas(connectionAdmissions, socket)', rawTrack);
-  const rawAcceptance = source.indexOf("increment('connectionsAccepted')", rawFinalGate);
-  const rawAdmissionPublication = source.indexOf(
-    'mapSet(connectionAdmissions, socket, connectionAdmission);',
-    rawAcceptance,
+  const rawAcceptance = source.indexOf(
+    "increment('connectionsAccepted')",
+    handshakeAccountingPublication,
   );
   assert.equal(rawCallback >= 0 && rawCallback < rawLifetimeReservation, true);
-  assert.equal(rawLifetimeReservation < rawConcurrencyReservation, true);
-  assert.equal(rawConcurrencyReservation < rawTrackedReservation, true);
-  assert.equal(rawTrackedReservation < rawTrack, true);
-  assert.equal(rawTrack < rawFinalGate, true);
-  assert.equal(rawFinalGate < rawAcceptance, true);
-  assert.equal(rawAcceptance < rawAdmissionPublication, true);
+  assert.equal(rawLifetimeReservation < handshakeAccountingPublication, true);
+  assert.equal(handshakeAccountingPublication < rawAcceptance, true);
+  const rawCallbackEnd = source.indexOf(
+    'function applicableServernameValid(value)',
+    rawCallback,
+  );
+  const rawCallbackSource = source.slice(rawCallback, rawCallbackEnd);
+  assert.doesNotMatch(
+    rawCallbackSource,
+    /trackSocket|captureSocketCapability|connectionReservations|socketReservations|socketCapabilities|trackedSockets|\.once|\.on|remoteAddress|remotePort/,
+  );
+  assert.match(
+    rawCallbackSource,
+    /counters\.connectionStarts >= limits\.maxConnectionStarts[\s\S]*?destroyUntrackedSocket\(socket\)[\s\S]*?outstandingAcceptedHandshakes \+= 1;[\s\S]*?if \(!increment\('connectionsAccepted'\)\) \{\s*outstandingAcceptedHandshakes -= 1;/,
+  );
   const trackSocketSourceStart = source.indexOf('function trackSocket(socket)');
   const trackSocketSourceEnd = source.indexOf(
-    'function markFirstSecureSocketAppearance(socket)',
+    'function markFirstTlsOutcomeSocket(socket)',
     trackSocketSourceStart,
   );
   const trackSocketSource = source.slice(trackSocketSourceStart, trackSocketSourceEnd);
@@ -454,9 +505,13 @@ test('bounded HTTPS owner is dormant and keeps TLS material and binding in one f
     'const capability = captureSocketCapability(socket);',
     'weakMapGet(socketCapabilities, socket) !== capability',
     'const emitter = capability.emitter;',
+    'const abandonTracking = () => {',
+    'removeSocketSetupListenersBestEffort(socket, emitter, onClose, onError);',
+    'capability.tracked = false;',
+    'setDelete(trackedSockets, socket);',
     "REFLECT_APPLY(emitter.once, socket, ['close', onClose]);",
     'if (!socketSetupOwned(socket, capability)) {',
-    'removeSocketSetupListenersBestEffort(',
+    'abandonTracking();',
     "REFLECT_APPLY(emitter.once, socket, ['error', onError]);",
     'if (!socketSetupOwned(socket, capability)) {',
     'capability.listenersInstalled = true;',
@@ -467,7 +522,7 @@ test('bounded HTTPS owner is dormant and keeps TLS material and binding in one f
   }
   assert.match(
     trackSocketSource,
-    /catch \{[\s\S]*?if \(capability\.closed\) \{\s*capability\.tracked = false;\s*setDelete\(trackedSockets, socket\);/,
+    /catch \{\s*abandonTracking\(\);\s*return null;/,
   );
   assert.match(
     trackSocketSource,
@@ -481,24 +536,66 @@ test('bounded HTTPS owner is dormant and keeps TLS material and binding in one f
     source,
     /function removeSocketSetupListenersBestEffort\([\s\S]*?REFLECT_APPLY\(emitter\.removeListener, socket, \[name, callback\]\);[\s\S]*?Setup cleanup cannot revise an already fixed terminal result/,
   );
-  assert.equal((source.match(/setDelete\(acceptedConnections, socket\)/g) ?? []).length, 2);
+  assert.equal(source.includes('acceptedConnections'), false);
+  assert.equal(
+    (source.match(/setDelete\(connectionReservations, reservation\)/g) ?? []).length,
+    2,
+  );
+  assert.match(
+    source,
+    /function revokeConnectionReservation\(reservation, candidateSocket = null\)[\s\S]*?reservation\.state = CONNECTION_STATE\.TERMINATING;[\s\S]*?reservation\.requestEligible = false;[\s\S]*?detachSecureStateForTerminal\(reservation\);[\s\S]*?const secureSocket = reservation\.secureSocket;[\s\S]*?destroySocket\(secureSocket\);/,
+  );
+  assert.match(
+    source,
+    /function onSocketClose\(socket\)[\s\S]*?reservation\.secureSocket === socket\) reservation\.secureLive = false;[\s\S]*?reservation\.requestEligible = false;[\s\S]*?revokeConnectionReservation\(reservation\)/,
+  );
+  assert.match(
+    source,
+    /function maybeReleaseConnectionReservation\(reservation\)[\s\S]*?reservation\.secureLive[\s\S]*?reservation\.requestEligible[\s\S]*?reservation\.requestState !== null[\s\S]*?setDelete\(connectionReservations, reservation\)/,
+  );
+  assert.match(
+    source,
+    /function cleanupRequest\(requestState\)[\s\S]*?connectionReservation\.requestState = null;\s*maybeReleaseConnectionReservation\(connectionReservation\);/,
+  );
   assert.doesNotMatch(source, /counters\.(?:connectionStarts|requestStarts)\s*(?:-=|--)/);
-  const secureLifetimeMarker = source.indexOf('if (!markFirstSecureSocketAppearance(socket))');
-  const pendingAdmissionSelection = source.indexOf(
-    'const connectionAdmission = firstSetValue(pendingSecureAdmissions);',
+  const secureLifetimeMarker = source.indexOf(
+    'const outcome = markFirstTlsOutcomeSocket(socket);',
+  );
+  const handshakeConsumption = source.indexOf(
+    'if (!consumeAcceptedHandshakeOutcome())',
     secureLifetimeMarker,
   );
   assert.equal(
-    secureLifetimeMarker >= 0 && secureLifetimeMarker < pendingAdmissionSelection,
+    secureLifetimeMarker >= 0 && secureLifetimeMarker < handshakeConsumption,
     true,
+  );
+  const secureCapacityGate = source.indexOf(
+    'setSize(connectionReservations) >= limits.maxConcurrentSockets',
+    handshakeConsumption,
+  );
+  const secureReservationCreation = source.indexOf(
+    'const connectionReservation = {',
+    secureCapacityGate,
+  );
+  const secureReservationSetPublication = source.indexOf(
+    'setAdd(connectionReservations, connectionReservation);',
+    secureReservationCreation,
+  );
+  const secureReservationMapPublication = source.indexOf(
+    'weakMapSet(socketReservations, socket, connectionReservation);',
+    secureReservationSetPublication,
   );
   const secureStatePublication = source.indexOf(
     'mapSet(secureSockets, socket, secureState);',
-    pendingAdmissionSelection,
+    secureReservationMapPublication,
+  );
+  const secureTracking = source.indexOf(
+    'const secureCapability = trackSocket(socket);',
+    secureReservationMapPublication,
   );
   const tlsPolicyCapture = source.indexOf(
     'const tlsPolicySnapshot = captureTlsPolicySnapshot(socket);',
-    pendingAdmissionSelection,
+    secureTracking,
   );
   const headerDeadlineSchedule = source.indexOf(
     "'headerDeadline',\n      limits.headerDeadlineMs,",
@@ -518,6 +615,13 @@ test('bounded HTTPS owner is dormant and keeps TLS material and binding in one f
   );
   assert.equal(
     tlsPolicyCapture >= 0
+      && secureTracking >= 0
+      && handshakeConsumption < secureCapacityGate
+      && secureCapacityGate < secureReservationCreation
+      && secureReservationCreation < secureReservationSetPublication
+      && secureReservationSetPublication < secureReservationMapPublication
+      && secureReservationMapPublication < secureTracking
+      && secureTracking < tlsPolicyCapture
       && tlsPolicyCapture < secureStatePublication
       && secureStatePublication < headerDeadlineSchedule
       && headerDeadlineSchedule < headerSetupGate
@@ -531,7 +635,31 @@ test('bounded HTTPS owner is dormant and keeps TLS material and binding in one f
   );
   assert.match(
     source,
+    /secureCapability === null[\s\S]*?!secureCapability\.listenersInstalled[\s\S]*?connectionReservationIsOwned\(connectionReservation\)[\s\S]*?revokeConnectionReservation\(connectionReservation\);/,
+  );
+  assert.match(
+    source,
+    /function destroyTlsOutcomeSocket\(socket\)[\s\S]*?reservation\.secureSocket === socket[\s\S]*?return revokeConnectionReservation\(reservation\);[\s\S]*?return destroyUntrackedSocket\(socket\);/,
+  );
+  assert.match(
+    source,
+    /tlsClientError: OBJECT_FREEZE\(function activeBoundedHttpsTlsClientError[\s\S]*?const outcome = markFirstTlsOutcomeSocket\(socket\);[\s\S]*?outcome === 'FIRST'\) consumeAcceptedHandshakeOutcome\(\);[\s\S]*?destroyTlsOutcomeSocket\(socket\);/,
+  );
+  assert.match(
+    source,
+    /function onListenerClose\(\) \{\s*outstandingAcceptedHandshakes = 0;/,
+  );
+  assert.doesNotMatch(
+    source,
+    /\._parent\b|\._handle\b|remoteAddress|remotePort|localAddress|localPort|firstSetValue|sole pending|FIFO/iu,
+  );
+  assert.match(
+    source,
     /function secureHeaderSetupOwned\(socket, capability, secureState\)[\s\S]*?timerRuntimeOperationsInFlight === 0[\s\S]*?secureState\.tlsPolicySnapshot !== null[\s\S]*?ticket\.active === true[\s\S]*?ticket\.handleReady === true[\s\S]*?setHas\(ownedTimers, ticket\)/,
+  );
+  assert.match(
+    source,
+    /secureState\.setupState = SECURE_SETUP\.REQUEST_ELIGIBLE;\s*connectionReservation\.state = CONNECTION_STATE\.REQUEST_ELIGIBLE;\s*connectionReservation\.requestEligible = true;/,
   );
   const requestCallback = source.indexOf('function onRequest(request, response');
   const requestCapture = source.indexOf(
@@ -595,8 +723,12 @@ test('bounded HTTPS owner is dormant and keeps TLS material and binding in one f
     'status = inspectRequestAdmission(requestState, true);',
     downstreamOwnership,
   );
+  const handlerCompletionPublication = source.indexOf(
+    'requestState.handlerCompletionCell = handlerCompletionCell;',
+    requestFinalGate,
+  );
   const downstreamCall = source.indexOf(
-    'operation = REFLECT_APPLY(downstreamHandle, undefined, [',
+    'returnedValue = REFLECT_APPLY(downstreamHandle, undefined, [',
     requestFinalGate,
   );
   assert.equal(requestCallback >= 0 && requestCallback < requestCapture, true);
@@ -616,20 +748,16 @@ test('bounded HTTPS owner is dormant and keeps TLS material and binding in one f
   assert.equal(responseHeaderCall < postHeaderStableGate, true);
   assert.equal(postHeaderStableGate < downstreamOwnership, true);
   assert.equal(downstreamOwnership < requestFinalGate, true);
+  assert.equal(requestFinalGate < handlerCompletionPublication, true);
+  assert.equal(handlerCompletionPublication < downstreamCall, true);
   assert.equal(requestFinalGate < downstreamCall, true);
   assert.match(
     source,
     /trackedSockets: setSize\(trackedSockets\),\s*trackedRequests: setSize\(activeRequests\),\s*trackedHandlers: setSize\(activeHandlers\),\s*ownedTimers: setSize\(ownedTimers\),/,
   );
-  assert.equal(
-    source.slice(requestFinalGate, downstreamCall),
-    "status = inspectRequestAdmission(requestState, true);\n"
-      + "    if (status !== 'READY') {\n"
-      + '      handleRequestAdmissionFailure(requestState, status);\n'
-      + '      return;\n'
-      + '    }\n'
-      + '    try {\n'
-      + '      ',
+  assert.match(
+    source.slice(requestFinalGate, source.indexOf('function onRawSocketEvent', downstreamCall)),
+    /createOperationCompletion\(OBJECT_FREEZE\(\{[\s\S]*?handlerCompletionCell\.capability,[\s\S]*?finishOperationCall\(handlerCompletionCell, returnedNormally, returnedValue\);/,
   );
   assert.match(
     source,
@@ -714,11 +842,10 @@ test('bounded HTTPS owner is dormant and keeps TLS material and binding in one f
     "detachTerminalTicket(requestState, 'deadline', cancellationHandles);",
     "detachTerminalTicket(secureState, 'headerDeadline', cancellationHandles);",
     'mapDelete(secureSockets, secureState.socket);',
-    'setDelete(pendingSecureAdmissions, admission);',
-    'mapDelete(connectionAdmissions, admission.socket);',
     'setDelete(trackedSockets, socket);',
-    'setDelete(acceptedConnections, socket);',
+    'weakMapDelete(socketReservations, socket);',
     'weakMapDelete(socketCapabilities, socket);',
+    'setDelete(connectionReservations, reservation);',
     "detachTerminalTicket(timerState, 'start', cancellationHandles);",
     "detachTerminalTicket(timerState, 'close', cancellationHandles);",
     'setDelete(ownedTimers, ticket);',
@@ -727,7 +854,7 @@ test('bounded HTTPS owner is dormant and keeps TLS material and binding in one f
     'abortCapabilityCell.context = null;',
     'requestState.socket = null;',
     'secureState.socket = null;',
-    'admissions[index].socket = null;',
+    'outstandingAcceptedHandshakes = 0;',
   ]);
   assert.doesNotMatch(
     terminalDetachmentSource,
@@ -783,9 +910,13 @@ test('bounded HTTPS owner is dormant and keeps TLS material and binding in one f
     'function destroySocket(socket) {',
   );
   assertSourceOrder(maybeFinishCloseSource, [
+    'if (timerRuntimeOperationsInFlight !== 0) return;',
+    'if (rawConnectionOperationsInFlight !== 0) return;',
+    'if (serverShutdownOperationsInFlight !== 0) return;',
+    'if (socketLifecycleOperationsInFlight !== 0) return;',
+    'if (closeSetupOperationsInFlight !== 0) return;',
     'if (permanentUncertainty) {',
     'finishCloseUncertain();',
-    'if (timerRuntimeOperationsInFlight !== 0) return;',
     "const cancellationClean = cancelTicket(timerState, 'close');",
     'if (closeTerminal) return;',
     "if (!increment('closeClean')) {",
@@ -1247,7 +1378,11 @@ test('bounded HTTPS owner is dormant and keeps TLS material and binding in one f
   );
   assert.equal(
     (requestDownstreamCloseSource.match(/if \(closeTerminal\) return;/g) ?? []).length,
-    2,
+    1,
+  );
+  assert.match(
+    requestDownstreamCloseSource,
+    /if \(closeTerminal \|\| downstreamCloseSettled\) return;[\s\S]*?downstreamCloseCompletionCell = createOperationCompletion/,
   );
   const localServerDisposalSource = sourceSection(
     'function disposeLocalServerCapabilityBestEffort(capability) {',
@@ -1255,10 +1390,12 @@ test('bounded HTTPS owner is dormant and keeps TLS material and binding in one f
   );
   assertSourceOrder(localServerDisposalSource, [
     'for (const operation of [capability.close, capability.closeAllConnections])',
-    'result = REFLECT_APPLY(operation, undefined, []);',
-    'if (isGenuinePromise(result)) containDiscardedPromiseRejection(result);',
+    'REFLECT_APPLY(operation, undefined, []);',
   ]);
-  assert.doesNotMatch(localServerDisposalSource, /capability\.listen|markPermanentUncertainty/);
+  assert.doesNotMatch(
+    localServerDisposalSource,
+    /capability\.listen|markPermanentUncertainty/,
+  );
   const startSource = sourceSection(
     'const start = OBJECT_FREEZE(function startServiceCreditBoundedHttpsIngressOwner',
     'const close = OBJECT_FREEZE(function closeServiceCreditBoundedHttpsIngressOwner',
@@ -1268,8 +1405,7 @@ test('bounded HTTPS owner is dormant and keeps TLS material and binding in one f
     'const attemptStartPromise = startPromise;',
     'const attemptStartTicket = timerState.start;',
     'returned = REFLECT_APPLY(trustedFactory, undefined, [serverOptions, callbacks]);',
-    'let returnedCapability = null;',
-    'returnedCapability = captureServerCapability(returned);',
+    'let returnedCapability = captureServerCapability(returned);',
     'returned = null;',
     'if (returnedCapability === null) {',
     'closeTerminal',
@@ -1295,7 +1431,52 @@ test('bounded HTTPS owner is dormant and keeps TLS material and binding in one f
     compositionTest,
     /server\.on\('secureConnection', socket => \{[\s\S]*?Object\.getOwnPropertyDescriptor\(socket, property\)[\s\S]*?Object\.hasOwn\(descriptor, 'value'\)/,
   );
+  assert.match(
+    compositionTest,
+    /const settleTrustedOperation = \(operation, completion, onFailure\) => \{[\s\S]*?operation\.then\([\s\S]*?completion\.success\(\)[\s\S]*?completion\.failure\(\)/,
+  );
+  assert.match(
+    compositionTest,
+    /const handleRequest = Object\.freeze\(\(\s*request,\s*response,\s*transportContext,\s*completion,\s*\) => \{/,
+  );
+  assert.match(
+    compositionTest,
+    /const closeRouter = Object\.freeze\(completion => \{[\s\S]*?settleTrustedOperation\(operation, completion, null\);\s*\}\);/,
+  );
+  assert.match(
+    compositionTest,
+    /for \(const \[name, rawRequest\] of rawOuterIngressCases\)[\s\S]*?const responseBytes = await rawPinnedTlsExchange\(route, cert, rawRequest\);[\s\S]*?Number\.isSafeInteger\(responseBytes\) && responseBytes >= 0[\s\S]*?pilot\.handlerAdmissionCount\(\), admissionsBefore/,
+  );
+  assert.match(
+    compositionTest,
+    /const wrongCertificate = syntheticWrongPinnedCertificate\(\);[\s\S]*?await assert\.rejects\([\s\S]*?httpsHandoffExchange\(route, wrongCertificate,[\s\S]*?wrongCertificate\.fill\(0\);[\s\S]*?const rawOuterIngressCases = \[/,
+  );
+  assert.match(
+    compositionTest,
+    /function syntheticWrongPinnedCertificate\(\) \{[\s\S]*?tlsRootCertificates\[0\][\s\S]*?new X509Certificate\(pinned\);/,
+  );
+  assert.match(
+    compositionTest,
+    /'-newkey', 'ec', '-pkeyopt',[\s\S]*?'ec_paramgen_curve:prime256v1'/,
+  );
+  assert.match(compositionTest, /parsed\.checkIP\('127\.0\.0\.1'\)/);
+  assert.doesNotMatch(
+    compositionTest,
+    /name === 'equal duplicate content length'[\s\S]*?SYNTHETIC_HTTPS_FAILURE\.request/,
+  );
+  assert.match(
+    compositionTest,
+    /async closeWithUnresolvedPreHandshake\(\)[\s\S]*?waitForHandoffEvent\('raw-connection-accounted'\)[\s\S]*?connectNet\([\s\S]*?await accounted;[\s\S]*?await ingressOwner\.close\(\);[\s\S]*?await clientClosed;/,
+  );
   assert.equal((compositionTest.match(/server\.listen\(/g) ?? []).length, 1);
+  assert.match(
+    compositionTest,
+    /server\.maxConnections = serverOptions\.maxConnections;/,
+  );
+  assert.match(
+    compositionTest,
+    /createHttpsServer\(\{[\s\S]*?\.\.\.serverOptions,[\s\S]*?\}, callbacks\.request\)/,
+  );
   assert.equal(compositionTest.includes('const ownedSockets = new Set()'), false);
   assert.equal(compositionTest.includes('server.closeAllConnections();'), true);
   assert.match(
@@ -1312,19 +1493,75 @@ test('bounded HTTPS owner is dormant and keeps TLS material and binding in one f
   );
   assert.match(
     readme,
-    /cardinality and one-use capability enforcement only; it creates no retained raw-to-TLS mapping and proves no object identity or physical association/,
+    /Node's documented TLS-server `connection` event is a pre-handshake stream, while `secureConnection` and `tlsClientError` expose the TLS wrapper, and Node supplies no stable public raw-to-TLS mapping/,
   );
   assert.match(
     security,
-    /cardinality and one-use capability enforcement, not raw-to-TLS identity or physical-association proof/,
+    /Node's documented TLS-server `connection` event exposes a pre-handshake stream that is not the later TLS wrapper, and Node provides no stable public mapping between them/,
   );
   assert.match(
     implementationPlan,
-    /coupling enforces cardinality and a one-use capability only; it neither proves object identity or physical association nor leaves a raw-to-TLS mapping after consumption/,
+    /No stable public raw-to-TLS mapping exists/,
   );
   assert.match(
     readme,
-    /destroys that secure socket without consuming another pending raw admission/,
+    /The raw callback therefore performs lifetime bookkeeping only: it consumes one bounded connection start and increments a scalar count of outstanding accepted handshakes, but it does not inspect or retain the raw wrapper, install listeners on it, create concurrent owner capacity, or attempt later association/,
+  );
+  assert.match(
+    security,
+    /An accepted raw callback consumes a lifetime start and increments only a scalar count of outstanding accepted handshakes\. It does not read or retain that wrapper, install terminal listeners, reserve concurrent owner capacity, or later attempt association/,
+  );
+  assert.match(
+    implementationPlan,
+    /The raw callback therefore performs lifetime bookkeeping only: it consumes one bounded connection start and increments a scalar count of outstanding accepted handshakes\. It does not inspect or retain the raw wrapper, install listeners, create concurrent owner capacity, or attempt later correlation/,
+  );
+  assert.match(
+    readme,
+    /Multiple handshakes may be outstanding and their secure\/error outcomes may arrive in any order\. That scalar is count accounting supplied by the trusted factory, not socket identity, peer identity, FIFO correlation, or request authority/,
+  );
+  assert.match(
+    security,
+    /The scalar tolerates multiple concurrent handshakes and out-of-order outcomes; it proves only that the trusted factory has supplied no more first TLS terminal outcomes than accepted starts/,
+  );
+  assert.match(
+    implementationPlan,
+    /Multiple handshakes may be outstanding, and failure\/success outcomes may arrive in any order\. This scalar is trusted-factory event accounting only; it is not raw\/TLS identity, physical association, FIFO order, peer identity, or request authority/,
+  );
+  assert.match(
+    readme,
+    /A first `secureConnection` outcome must consume one outstanding unit\. It then reserves post-handshake concurrent capacity for that exact secure wrapper and publishes the reservation before any observable socket capability access or listener registration/,
+  );
+  assert.match(
+    security,
+    /`secureConnection` is the authoritative post-handshake boundary\. A first exact TLS-wrapper outcome consumes one outstanding unit, then creates one concurrent reservation for that exact secure socket before any observable socket access or listener registration/,
+  );
+  assert.match(
+    implementationPlan,
+    /`secureConnection` is the post-handshake ownership boundary\. A first exact TLS-wrapper outcome consumes one outstanding unit, then creates and publishes one concurrent reservation for that exact secure socket before any observable socket capability access or listener registration/,
+  );
+  assert.match(
+    readme,
+    /A first `tlsClientError` outcome consumes one outstanding unit when available, increments TLS rejection accounting, and destroys only the exact TLS candidate it receives; it never selects, revokes, or destroys another secure reservation/,
+  );
+  assert.match(
+    security,
+    /`tlsClientError` consumes one outstanding unit when available, increments rejection accounting, and destroys only the exact TLS socket it receives\. It never chooses or revokes another reservation/,
+  );
+  assert.match(
+    implementationPlan,
+    /A first `tlsClientError` outcome consumes one outstanding unit when available, increments `tlsRejected`, and destroys only the exact candidate wrapper it receives; it never selects or revokes another reservation/,
+  );
+  assert.match(
+    readme,
+    /Import performs no I\/O, timer, socket, bind, network-listener, Promise-hook, or other process-global observer operation\. Construction is inert/,
+  );
+  assert.match(
+    security,
+    /Module import installs no Promise hook or other process-global observer and performs no I\/O, timer, socket, bind, or network-listener operation; the owner remains absent from active production import roots/,
+  );
+  assert.match(
+    implementationPlan,
+    /Import performs no I\/O, timer, socket, bind, network-listener, Promise-hook, or other process-global observer operation\. Construction is inert/,
   );
   assert.match(
     security,
@@ -1348,15 +1585,15 @@ test('bounded HTTPS owner is dormant and keeps TLS material and binding in one f
   );
   assert.match(
     readme,
-    /generation-lifetime weak marker is set before pending-admission selection/,
-  );
-  assert.match(
-    readme,
-    /Before any observable socket capability access or listener registration, the owner consumes the lifetime start and publishes both its concurrent admission reservation and tracked-socket reservation/,
+    /Listener `close` is the trusted server's terminal evidence for any still-outstanding pre-handshake accounting; without it, close cannot report clean and remains bounded by the close grace/,
   );
   assert.match(
     security,
-    /ambiguous capability or listener setup retains the reservation and permanently quarantines the generation, and the consumed lifetime start is never restored/,
+    /A requested listener `close` is sufficient terminal evidence to clear unresolved scalar accounting; without that evidence, clean close remains forbidden and the close deadline produces uncertainty/,
+  );
+  assert.match(
+    implementationPlan,
+    /Listener `close` is the trusted server's terminal evidence for unresolved pre-handshake accounting; without it, clean close is forbidden and the close grace bounds uncertainty/,
   );
   assert.match(
     implementationPlan,
@@ -1375,8 +1612,16 @@ test('bounded HTTPS owner is dormant and keeps TLS material and binding in one f
     /synchronous reentry cannot displace it or become a second authoritative request/,
   );
   assert.match(
+    readme,
+    /`handle` receives an exact frozen `\{ success, failure \}` completion as its final argument, `close` receives one as its sole argument, and both calls must return exactly `undefined`/,
+  );
+  assert.match(
     security,
-    /rejection containment only when they are genuine non-Proxy Promises whose bounded prototype chain reaches the captured same-realm Promise prototype/,
+    /No returned Promise, thenable, object, or other producer value can authorize success or clean close/,
+  );
+  assert.match(
+    implementationPlan,
+    /These owner-created capabilities, rather than caller returns, are the only downstream lifecycle authority/,
   );
   assert.match(
     implementationPlan,
@@ -1396,15 +1641,47 @@ test('bounded HTTPS owner is dormant and keeps TLS material and binding in one f
   );
   assert.match(
     readme,
-    /consumed secure admission is published to the cleanup-visible map in an explicit request-ineligible setup state/,
+    /Secure state remains explicitly request-ineligible during capability capture, terminal-listener registration, and header-deadline installation/,
   );
   assert.match(
     security,
-    /secure state is cleanup-visible but explicitly request-ineligible while its header deadline is being installed/,
+    /Secure tracking and both terminal listeners must succeed while every lifecycle and collection gate remains current; until then the reservation is explicitly request-ineligible/,
   );
   assert.match(
     implementationPlan,
-    /Secure state is first published only for bounded cleanup and remains explicitly request-ineligible during header-deadline installation/,
+    /Only after secure tracking and both terminal listeners succeed is secure state cleanup-visible, and it remains request-ineligible during header-deadline installation/,
+  );
+  assert.match(
+    readme,
+    /If a request reenters before secure state is published, the owner recognizes only the exact pre-eligibility reservation for that request socket, seals it terminal,[\s\S]*?Interrupted setup cannot resume to eligibility, and no unrelated secure reservation is selected or revoked/,
+  );
+  assert.match(
+    readme,
+    /Every published `close` and `closeAllConnections` invocation is covered by an owner-held server-shutdown in-flight reservation[\s\S]*?throw or non-`undefined` return latches uncertainty before release/,
+  );
+  assert.match(
+    security,
+    /Each published server `close` or `closeAllConnections` call, the encompassing close setup, and every observable socket capability\/setup\/destruction operation has explicit in-flight accounting/,
+  );
+  assert.match(
+    implementationPlan,
+    /Each published server `close` and `closeAllConnections` invocation and each observable socket capability\/setup\/destruction operation also holds a dedicated in-flight reservation before invocation through return or throw validation/,
+  );
+  assert.match(
+    readme,
+    /For each active handler it detaches the owner-created completion cell, issues the captured abort, and records one failed handler settlement in `handlersSettled` and `handlerFailures`; it does not await, inspect, or react to a returned or native Promise/,
+  );
+  assert.match(
+    security,
+    /Owner close detaches an active handler's completion cell, issues abort, and records failed settlement by incrementing `handlersSettled` and `handlerFailures` before removing that handler from owner accounting/,
+  );
+  assert.match(
+    implementationPlan,
+    /Before removing an active handler from owner accounting, close detaches its completion cell, issues abort, and increments both `handlersSettled` and `handlerFailures`/,
+  );
+  assert.doesNotMatch(
+    `${readme}\n${security}\n${implementationPlan}`,
+    /serialized distinct-wrapper promotion|raw-terminal revocation|forged returned-Promise rejection|safely installed native-Promise reaction|Unknown handlers are detached without being counted as settled|without treating detached unknown handlers as settled/,
   );
   assert.match(
     readme,
