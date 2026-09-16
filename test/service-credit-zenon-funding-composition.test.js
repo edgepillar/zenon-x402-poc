@@ -18,8 +18,8 @@ import {
   unlinkSync,
   writeFileSync,
 } from 'node:fs';
-import { createServer as createHttpsServer, request as httpsRequest } from 'node:https';
-import { connect as connectNet } from 'node:net';
+import { request as httpsRequest } from 'node:https';
+import { connect as connectNet, createServer as createNetServer } from 'node:net';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
@@ -80,6 +80,9 @@ import {
 import {
   createServiceCreditBoundedHttpsIngressOwner,
 } from '../src/service-credit-bounded-https-ingress-owner.js';
+import {
+  createServiceCreditBoundedNodeHttpsServerFactory,
+} from '../src/service-credit-bounded-node-https-server-factory.js';
 import {
   createServiceCreditZenonDurableHttpsRouter,
 } from '../src/service-credit-zenon-durable-https-router.js';
@@ -866,6 +869,42 @@ function syntheticWrongPinnedCertificate() {
   }
 }
 
+async function reserveSyntheticHttpsLoopbackPort() {
+  const reservation = createNetServer();
+  return new Promise((resolve, reject) => {
+    let settled = false;
+    const fail = () => {
+      if (settled) return;
+      settled = true;
+      try { reservation.close(); } catch {}
+      reject(syntheticHttpsFailure(SYNTHETIC_HTTPS_FAILURE.listen));
+    };
+    reservation.once('error', fail);
+    try {
+      reservation.listen({ host: '127.0.0.1', port: 0, exclusive: true }, () => {
+        let address;
+        try { address = reservation.address(); }
+        catch { fail(); return; }
+        if (
+          address === null
+          || typeof address !== 'object'
+          || !Number.isSafeInteger(address.port)
+          || address.port < 1
+        ) {
+          fail();
+          return;
+        }
+        reservation.close(error => {
+          if (settled) return;
+          if (error !== undefined) { fail(); return; }
+          settled = true;
+          resolve(address.port);
+        });
+      });
+    } catch { fail(); }
+  });
+}
+
 function pinnedHttpsExchange({
   route,
   cert,
@@ -1153,6 +1192,15 @@ async function redeemExternalHolderDescriptor(route, cert, redemption) {
 
 async function offlineHttpsPilot(t) {
   const tls = syntheticHttpsMaterial();
+  // The fixed-port adapter contract requires this test-only release-before-use
+  // reservation. Another local process could win the resulting allocation race.
+  let bindPort;
+  try { bindPort = await reserveSyntheticHttpsLoopbackPort(); }
+  catch (error) {
+    try { tls.cleanup(); }
+    catch { throw syntheticHttpsFailure(SYNTHETIC_HTTPS_FAILURE.cleanup); }
+    throw error;
+  }
   const holderSelection = Object.freeze({ ...selection() });
   let context = null;
   let activeOwner = null;
@@ -1162,8 +1210,6 @@ async function offlineHttpsPilot(t) {
   let phase = 'UNAVAILABLE';
   let handlerAdmissions = 0;
   let ownerReads = 0;
-  let server = null;
-  let boundAddress = null;
   let ingressOwner = null;
   let factoryEntered = false;
   let factoryCompleted = false;
@@ -1288,56 +1334,42 @@ async function offlineHttpsPilot(t) {
         close: Object.freeze(() => closeHandoff()),
       }),
     }));
+    const nativeHttpsServerFactory = createServiceCreditBoundedNodeHttpsServerFactory(
+      Object.freeze({
+        bind: Object.freeze({ host: '127.0.0.1', port: bindPort, exclusive: true }),
+        tlsMaterial: Object.freeze({ key: tls.key, cert: tls.cert }),
+      }),
+    );
     const trustedHttpsServerFactory = Object.freeze((serverOptions, callbacks) => {
       factoryEntered = true;
-      if (server !== null) throw syntheticHttpsFailure(SYNTHETIC_HTTPS_FAILURE.fixture);
-      server = createHttpsServer({
-        key: tls.key,
-        cert: tls.cert,
-        ...serverOptions,
-      }, callbacks.request);
-      server.maxHeadersCount = serverOptions.maxHeadersCount;
-      server.maxConnections = serverOptions.maxConnections;
-      server.maxRequestsPerSocket = serverOptions.maxRequestsPerSocket;
-      server.headersTimeout = serverOptions.headersTimeout;
-      server.requestTimeout = serverOptions.requestTimeout;
-      server.keepAliveTimeout = serverOptions.keepAliveTimeout;
-      server.setTimeout(serverOptions.timeout, callbacks.timeout);
-      server.on('secureConnection', socket => {
-        for (const property of ['alpnProtocol', 'servername']) {
-          const descriptor = Object.getOwnPropertyDescriptor(socket, property);
-          assert.notEqual(descriptor, undefined);
-          assert.equal(Object.hasOwn(descriptor, 'value'), true);
-        }
-      });
-      server.on('connection', socket => {
-        callbacks.connection(socket);
-        handoffEvents.emit('raw-connection-accounted');
-      });
-      for (const eventName of [
-        'secureConnection',
-        'checkContinue',
-        'checkExpectation',
-        'upgrade',
-        'connect',
-        'clientError',
-        'tlsClientError',
-        'dropRequest',
-        'drop',
-        'error',
-      ]) server.on(eventName, callbacks[eventName]);
-      server.once('listening', () => {
-        boundAddress = server.address();
-        callbacks.listening();
-      });
-      server.once('close', callbacks.close);
-      const capability = Object.freeze({
-        listen: Object.freeze(() => {
-          server.listen({ host: '127.0.0.1', port: 0, exclusive: true });
+      const observedCallbacks = Object.freeze({
+        connection: Object.freeze(socket => {
+          callbacks.connection(socket);
+          handoffEvents.emit('raw-connection-accounted');
         }),
-        close: Object.freeze(() => { server.close(); }),
-        closeAllConnections: Object.freeze(() => { server.closeAllConnections(); }),
+        secureConnection: Object.freeze(socket => {
+          for (const property of ['alpnProtocol', 'servername']) {
+            const descriptor = Object.getOwnPropertyDescriptor(socket, property);
+            assert.notEqual(descriptor, undefined);
+            assert.equal(Object.hasOwn(descriptor, 'value'), true);
+          }
+          callbacks.secureConnection(socket);
+        }),
+        request: callbacks.request,
+        checkContinue: callbacks.checkContinue,
+        checkExpectation: callbacks.checkExpectation,
+        upgrade: callbacks.upgrade,
+        connect: callbacks.connect,
+        clientError: callbacks.clientError,
+        tlsClientError: callbacks.tlsClientError,
+        dropRequest: callbacks.dropRequest,
+        drop: callbacks.drop,
+        timeout: callbacks.timeout,
+        listening: callbacks.listening,
+        close: callbacks.close,
+        error: callbacks.error,
       });
+      const capability = nativeHttpsServerFactory(serverOptions, observedCallbacks);
       factoryCompleted = true;
       return capability;
     });
@@ -1383,15 +1415,11 @@ async function offlineHttpsPilot(t) {
       }
       throw syntheticHttpsFailure(setupFailureCode);
     }
-    const address = boundAddress;
-    assert.equal(address.address, '127.0.0.1');
-    assert.equal(address.family, 'IPv4');
-    assert.equal(Number.isSafeInteger(address.port) && address.port > 0, true);
     const route = {
       origin: 'https://127.0.0.1',
       authority: '127.0.0.1',
       path: SERVICE_CREDIT_HTTP_PATH,
-      port: address.port,
+      port: bindPort,
     };
     setupFailureCode = SYNTHETIC_HTTPS_FAILURE.fixture;
     context = fixture(t, {

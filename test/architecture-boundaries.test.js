@@ -37,6 +37,15 @@ const PROFILE = Object.freeze({
   genesisMomentumHash: 'ab'.repeat(32),
 });
 
+const assertSourceOrder = (section, markers) => {
+  let offset = 0;
+  for (const marker of markers) {
+    const index = section.indexOf(marker, offset);
+    assert.notEqual(index, -1, `missing ordered source marker: ${marker}`);
+    offset = index + marker.length;
+  }
+};
+
 test('ChainProfile is an immutable internal wrapper with a plain wire representation', () => {
   const profile = ChainProfile.fromWire(PROFILE);
   const wire = profile.toWire();
@@ -189,6 +198,7 @@ test('Zenon funding, signing, and external-holder handoff sources remain inactiv
     'service-credit-zenon-provider-signing-child-protocol.js',
     'service-credit-zenon-provider-signing-operation.js',
     'service-credit-bounded-https-ingress-owner.js',
+    'service-credit-bounded-node-https-server-factory.js',
     'service-credit-zenon-funding-intake-sqlite-store.js',
     'service-credit-zenon-funding-intake.js',
     'service-credit-zenon-funding-intake-http.js',
@@ -384,6 +394,202 @@ test('durable HTTPS router is inert, observer-free, and imported only by explici
         ) {
           importers.push(candidate.href);
         }
+      }
+    }
+  }
+  importers.sort();
+  assert.deepEqual(importers, [compositionTestUrl.href, focusedTestUrl.href].sort());
+});
+
+test('bounded Node HTTPS factory is inert, constructor-fixed, and test-imported only', () => {
+  const sourceUrl = new URL(
+    '../src/service-credit-bounded-node-https-server-factory.js',
+    import.meta.url,
+  );
+  const focusedTestUrl = new URL(
+    '../test/service-credit-bounded-node-https-server-factory.test.js',
+    import.meta.url,
+  );
+  const compositionTestUrl = new URL(
+    '../test/service-credit-zenon-funding-composition.test.js',
+    import.meta.url,
+  );
+  const source = readFileSync(sourceUrl, 'utf8');
+  const focusedTest = readFileSync(focusedTestUrl, 'utf8');
+  const compositionTest = readFileSync(compositionTestUrl, 'utf8');
+  const packageText = readFileSync(new URL('../package.json', import.meta.url), 'utf8');
+  const readme = readFileSync(new URL('../README.md', import.meta.url), 'utf8');
+  const security = readFileSync(new URL('../SECURITY.md', import.meta.url), 'utf8');
+  const implementationPlan = readFileSync(
+    new URL('../docs/IMPLEMENTATION_PLAN.md', import.meta.url),
+    'utf8',
+  );
+
+  const importedModules = [...source.matchAll(/from '([^']+)';/g)]
+    .map(match => match[1]);
+  assert.deepEqual(importedModules, ['node:events', 'node:https', 'node:util']);
+  assert.doesNotMatch(
+    source,
+    /node:(?:async_hooks|v8|fs|child_process)|['"]async_hooks['"]|promiseHooks|createHook|AsyncLocalStorage/,
+  );
+  assert.doesNotMatch(
+    source,
+    /\bprocess\s*\.\s*(?:on|once|addListener|prependListener|prependOnceListener)\s*\(/,
+  );
+  assert.doesNotMatch(
+    source,
+    /unhandledRejection|rejectionHandled|multipleResolves|uncaughtExceptionMonitor/,
+  );
+  assert.doesNotMatch(
+    source,
+    /process\.env|readFile|createSecureContext|SNICallback|keylog|pfx|passphrase|engine|\.then\s*\(/,
+  );
+  assert.match(
+    source,
+    /export function createServiceCreditBoundedNodeHttpsServerFactory\(\.\.\.args\)/,
+  );
+  assert.match(source, /const CONFIGURATION_KEYS = OBJECT_FREEZE\(\['bind', 'tlsMaterial'\]\)/);
+  assert.match(source, /const BIND_KEYS = OBJECT_FREEZE\(\['host', 'port', 'exclusive'\]\)/);
+  assert.match(source, /const TLS_MATERIAL_KEYS = OBJECT_FREEZE\(\['key', 'cert'\]\)/);
+  assert.match(source, /boundedInteger\(captured\.port, 1, 65_535\)/);
+  assert.match(source, /captured\.exclusive !== true/);
+  assert.match(source, /MAX_TLS_MATERIAL_BYTES = 1024 \* 1024/);
+  assert.match(source, /REFLECT_APPLY\(BUFFER_FILL, value, \[0\]\)/);
+  const ordinaryBufferSource = source.slice(
+    source.indexOf('function ordinaryBoundedBuffer'),
+    source.indexOf('function copyBuffer'),
+  );
+  assertSourceOrder(ordinaryBufferSource, [
+    'REFLECT_APPLY(IS_PROXY, undefined, [value])',
+    'REFLECT_APPLY(BUFFER_IS_BUFFER, NATIVE_BUFFER, [value])',
+    'REFLECT_APPLY(TYPED_ARRAY_BUFFER_GETTER, value, [])',
+    'REFLECT_APPLY(TYPED_ARRAY_BYTE_LENGTH_GETTER, value, [])',
+    'REFLECT_APPLY(TYPED_ARRAY_LENGTH_GETTER, value, [])',
+  ]);
+  const copyBufferSource = source.slice(
+    source.indexOf('function copyBuffer'),
+    source.indexOf('function clearBuffer'),
+  );
+  assert.match(copyBufferSource, /REFLECT_APPLY\(TYPED_ARRAY_SET, copy, \[value, 0\]\)/);
+  assert.doesNotMatch(source, /BUFFER_COPY|BUFFER_PROTOTYPE\.copy/);
+  assert.match(source, /if \(state !== 'READY'\) throw failure\(CODE\.alreadyUsed\)/);
+  assert.equal((source.match(/createNativeHttpsServer/g) ?? []).length, 2);
+  assertSourceOrder(source, [
+    'const CREATE_NATIVE_HTTPS_SERVER = createNativeHttpsServer;',
+    'return OBJECT_FREEZE(function serviceCreditBoundedNodeHttpsServerFactory',
+    'server = REFLECT_APPLY(CREATE_NATIVE_HTTPS_SERVER, undefined, [',
+    "register('close', forwarders.close, true);",
+    "register('error', forwarders.error, false);",
+    'const capability = OBJECT_FREEZE({ listen, close, closeAllConnections });',
+    'return capability;',
+  ]);
+  for (const eventName of [
+    'connection', 'secureConnection', 'request', 'checkContinue',
+    'checkExpectation', 'upgrade', 'connect', 'clientError', 'tlsClientError',
+    'dropRequest', 'drop', 'timeout', 'listening', 'close', 'error',
+  ]) assert.match(source, new RegExp(`\\b${eventName}: OBJECT_FREEZE`));
+  for (const property of [
+    'maxHeadersCount', 'maxConnections', 'maxRequestsPerSocket',
+    'headersTimeout', 'requestTimeout', 'keepAliveTimeout',
+  ]) assert.equal(
+    source.includes(`applyNativeProperty('${property}', capturedOptions.${property});`),
+    true,
+  );
+  assert.match(
+    source,
+    /REFLECT_APPLY\(SERVER_SET_TIMEOUT, server, \[capturedOptions\.timeout\]\)/,
+  );
+  assert.match(source, /cleanupPartialSetup\(\)[\s\S]*?SERVER_CLOSE_ALL_CONNECTIONS[\s\S]*?SERVER_CLOSE/);
+  const listenSource = source.slice(
+    source.indexOf('const listen = OBJECT_FREEZE'),
+    source.indexOf('const close = OBJECT_FREEZE'),
+  );
+  assert.match(listenSource, /\|\| closeRequested/);
+  const forwardSource = source.slice(
+    source.indexOf('function forward(name, forwardedArgs)'),
+    source.indexOf('function detachTerminal()'),
+  );
+  assert.match(forwardSource, /if \(callbacks === null\) return;/);
+  assert.doesNotMatch(forwardSource, /closeRequested/);
+  const closeSource = source.slice(
+    source.indexOf('const close = OBJECT_FREEZE'),
+    source.indexOf('const closeAllConnections = OBJECT_FREEZE'),
+  );
+  assertSourceOrder(closeSource, [
+    'if (dispatchCell.terminal || closeRequested) return;',
+    'closeRequested = true;',
+    'REFLECT_APPLY(SERVER_CLOSE, activeServer, [])',
+  ]);
+  const closeForwarderSource = source.slice(
+    source.indexOf('close: OBJECT_FREEZE(function boundedNodeHttpsClose'),
+    source.indexOf('error: OBJECT_FREEZE(function boundedNodeHttpsError'),
+  );
+  assertSourceOrder(closeForwarderSource, [
+    'const callbacks = detachTerminal();',
+    'REFLECT_APPLY(callbacks.close, undefined, [])',
+  ]);
+  assert.match(source, /const capability = OBJECT_FREEZE\(\{ listen, close, closeAllConnections \}\)/);
+  assert.equal(packageText.includes('service-credit-bounded-node-https-server-factory.js'), false);
+
+  const importNeedle =
+    "from '../src/service-credit-bounded-node-https-server-factory.js'";
+  assert.equal(focusedTest.includes(importNeedle), true);
+  assert.equal(compositionTest.includes(importNeedle), true);
+  assert.equal(compositionTest.includes('createHttpsServer'), false);
+  assert.equal(
+    (compositionTest.match(/createServiceCreditBoundedNodeHttpsServerFactory\(/g) ?? []).length,
+    1,
+  );
+  assert.match(
+    compositionTest,
+    /reserveSyntheticHttpsLoopbackPort\(\)[\s\S]*?host: '127\.0\.0\.1', port: 0, exclusive: true/,
+  );
+  assert.match(
+    compositionTest,
+    /bind: Object\.freeze\(\{ host: '127\.0\.0\.1', port: bindPort, exclusive: true \}\)/,
+  );
+  assert.match(
+    compositionTest,
+    /const observedCallbacks = Object\.freeze\(\{[\s\S]*?handoffEvents\.emit\('raw-connection-accounted'\)[\s\S]*?Object\.getOwnPropertyDescriptor\(socket, property\)/,
+  );
+  assert.doesNotMatch(compositionTest, /server\.address\(\)/);
+
+  for (const documentation of [readme, security, implementationPlan]) {
+    assert.equal(
+      documentation.includes('src/service-credit-bounded-node-https-server-factory.js'),
+      true,
+    );
+  }
+  assert.match(
+    readme,
+    /The adapter owns only bounded private copies of constructor-supplied key and certificate bytes and one fixed nonzero exclusive bind/,
+  );
+  assert.match(
+    security,
+    /Clearing adapter-owned byte copies is best-effort reference hygiene, not cryptographic zeroization or proof that Node or native TLS retained no copy/,
+  );
+  assert.match(
+    implementationPlan,
+    /The native adapter is invoked once only by the bounded ingress owner's later `start`; import and construction create no server or listener/,
+  );
+
+  const pending = [
+    new URL('../src/', import.meta.url),
+    new URL('../test/', import.meta.url),
+  ];
+  const importers = [];
+  while (pending.length > 0) {
+    const directory = pending.pop();
+    for (const entry of readdirSync(directory, { withFileTypes: true })) {
+      const candidate = new URL(entry.name, directory);
+      if (entry.isDirectory()) {
+        pending.push(new URL(`${entry.name}/`, directory));
+      } else if (entry.isFile() && candidate.pathname.endsWith('.js')) {
+        const candidateSource = readFileSync(candidate, 'utf8');
+        if (
+          candidate.href !== import.meta.url
+          && candidateSource.includes('service-credit-bounded-node-https-server-factory.js')
+        ) importers.push(candidate.href);
       }
     }
   }
@@ -897,15 +1103,6 @@ test('bounded HTTPS owner is dormant and keeps TLS material and binding in one f
     assert.equal(end > start, true, `missing source marker: ${endMarker}`);
     return source.slice(start, end);
   };
-  const assertSourceOrder = (section, markers) => {
-    let offset = 0;
-    for (const marker of markers) {
-      const index = section.indexOf(marker, offset);
-      assert.notEqual(index, -1, `missing ordered source marker: ${marker}`);
-      offset = index + marker.length;
-    }
-  };
-
   assert.match(source, /let trustedFactory = configuration\.httpsServerFactory;/);
   assert.match(source, /let downstreamHandle = downstream\.handle;/);
   assert.match(source, /let downstreamClose = downstream\.close;/);
@@ -1549,10 +1746,16 @@ test('bounded HTTPS owner is dormant and keeps TLS material and binding in one f
     ),
     true,
   );
-  assert.equal((compositionTest.match(/createHttpsServer\(/g) ?? []).length, 1);
+  assert.equal(compositionTest.includes('createHttpsServer'), false);
+  assert.equal(
+    compositionTest.includes(
+      "from '../src/service-credit-bounded-node-https-server-factory.js'",
+    ),
+    true,
+  );
   assert.match(
     compositionTest,
-    /server\.on\('secureConnection', socket => \{[\s\S]*?Object\.getOwnPropertyDescriptor\(socket, property\)[\s\S]*?Object\.hasOwn\(descriptor, 'value'\)/,
+    /secureConnection: Object\.freeze\(socket => \{[\s\S]*?Object\.getOwnPropertyDescriptor\(socket, property\)[\s\S]*?Object\.hasOwn\(descriptor, 'value'\)[\s\S]*?callbacks\.secureConnection\(socket\)/,
   );
   assert.match(
     compositionTest,
@@ -1585,17 +1788,17 @@ test('bounded HTTPS owner is dormant and keeps TLS material and binding in one f
     compositionTest,
     /async closeWithUnresolvedPreHandshake\(\)[\s\S]*?waitForHandoffEvent\('raw-connection-accounted'\)[\s\S]*?connectNet\([\s\S]*?await accounted;[\s\S]*?await ingressOwner\.close\(\);[\s\S]*?await clientClosed;/,
   );
-  assert.equal((compositionTest.match(/server\.listen\(/g) ?? []).length, 1);
+  assert.equal((compositionTest.match(/server\.listen\(/g) ?? []).length, 0);
   assert.match(
     compositionTest,
-    /server\.maxConnections = serverOptions\.maxConnections;/,
+    /createServiceCreditBoundedNodeHttpsServerFactory\([\s\S]*?bind: Object\.freeze\(\{ host: '127\.0\.0\.1', port: bindPort, exclusive: true \}\)[\s\S]*?tlsMaterial: Object\.freeze\(\{ key: tls\.key, cert: tls\.cert \}\)/,
   );
   assert.match(
     compositionTest,
-    /createHttpsServer\(\{[\s\S]*?\.\.\.serverOptions,[\s\S]*?\}, callbacks\.request\)/,
+    /const capability = nativeHttpsServerFactory\(serverOptions, observedCallbacks\);/,
   );
   assert.equal(compositionTest.includes('const ownedSockets = new Set()'), false);
-  assert.equal(compositionTest.includes('server.closeAllConnections();'), true);
+  assert.equal(compositionTest.includes('server.closeAllConnections();'), false);
   assert.match(
     readme,
     /configured origin and HTTP authority are only SNI\/Host admission policy; `LISTENING` does not observe or attest the factory's actual bind origin/,
