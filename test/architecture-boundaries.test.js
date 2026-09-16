@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import {
   X402PaymentMechanism,
   assertX402PaymentMechanism,
@@ -185,6 +185,7 @@ test('Zenon funding, signing, and external-holder handoff sources remain inactiv
   const compositionNames = [
     'service-credit-zenon-funding-composition.js',
     'service-credit-zenon-durable-http-composition.js',
+    'service-credit-zenon-durable-https-router.js',
     'service-credit-zenon-provider-signing-child-protocol.js',
     'service-credit-zenon-provider-signing-operation.js',
     'service-credit-bounded-https-ingress-owner.js',
@@ -247,7 +248,7 @@ test('bounded HTTPS owner import is process-global-observer-free', () => {
     new URL('../src/service-credit-bounded-https-ingress-owner.js', import.meta.url),
     'utf8',
   );
-  const importedModules = [...source.matchAll(/^import .* from '([^']+)';$/gm)]
+  const importedModules = [...source.matchAll(/from '([^']+)';/g)]
     .map(match => match[1]);
   assert.deepEqual(importedModules, ['node:events', 'node:http', 'node:net', 'node:util']);
   assert.doesNotMatch(
@@ -266,6 +267,128 @@ test('bounded HTTPS owner import is process-global-observer-free', () => {
     source,
     /unhandledRejection|rejectionHandled|multipleResolves|uncaughtExceptionMonitor/,
   );
+});
+
+test('durable HTTPS router is inert, observer-free, and imported only by explicit tests', () => {
+  const sourceUrl = new URL(
+    '../src/service-credit-zenon-durable-https-router.js',
+    import.meta.url,
+  );
+  const focusedTestUrl = new URL(
+    '../test/service-credit-zenon-durable-https-router.test.js',
+    import.meta.url,
+  );
+  const compositionTestUrl = new URL(
+    '../test/service-credit-zenon-funding-composition.test.js',
+    import.meta.url,
+  );
+  const source = readFileSync(sourceUrl, 'utf8');
+  const focusedTest = readFileSync(focusedTestUrl, 'utf8');
+  const compositionTest = readFileSync(compositionTestUrl, 'utf8');
+  const packageText = readFileSync(new URL('../package.json', import.meta.url), 'utf8');
+  const readme = readFileSync(new URL('../README.md', import.meta.url), 'utf8');
+  const security = readFileSync(new URL('../SECURITY.md', import.meta.url), 'utf8');
+  const implementationPlan = readFileSync(
+    new URL('../docs/IMPLEMENTATION_PLAN.md', import.meta.url),
+    'utf8',
+  );
+  const importedModules = [...source.matchAll(/from '([^']+)';/g)]
+    .map(match => match[1]);
+  assert.deepEqual(importedModules, ['node:util', './x402-wire.js']);
+  assert.doesNotMatch(
+    source,
+    /node:(?:async_hooks|v8|https|http|http2|net|tls|fs)|['"]async_hooks['"]|\bpromiseHooks\b|\bcreateHook\b|\bAsyncLocalStorage\b/,
+  );
+  assert.doesNotMatch(
+    source,
+    /\bprocess\s*\.\s*(?:on|once|addListener|prependListener|prependOnceListener)\s*\(/,
+  );
+  assert.doesNotMatch(
+    source,
+    /\bprocess\s*\[\s*['"](?:on|once|addListener|prependListener|prependOnceListener)['"]\s*\]\s*\(/,
+  );
+  assert.doesNotMatch(
+    source,
+    /unhandledRejection|rejectionHandled|multipleResolves|uncaughtExceptionMonitor/,
+  );
+  assert.doesNotMatch(
+    source,
+    /\b(?:setTimeout|setInterval|setImmediate|queueMicrotask|fetch|WebSocket|createServer)\s*\(/,
+  );
+  assert.doesNotMatch(source, /process\.env|\.listen\s*\(|\.then\s*\(/);
+  assert.match(source, /const PROMISE_THEN = PROMISE_THEN_DESCRIPTOR\.value;/);
+  assert.match(source, /const IS_PROMISE = utilTypes\.isPromise;/);
+  assert.match(source, /const IS_PROXY = utilTypes\.isProxy;/);
+  assert.match(
+    source,
+    /function observeNativePromise\(promise, fulfilled, rejected\)[\s\S]*?REFLECT_APPLY\(PROMISE_THEN, promise, \[onFulfilled, onRejected\]\)/,
+  );
+  assert.match(
+    source,
+    /function serviceCreditZenonDurableHttpsRouterHandle\([\s\S]*?request,[\s\S]*?response,[\s\S]*?transportContext,[\s\S]*?completionValue/,
+  );
+  assert.match(
+    source,
+    /function closeServiceCreditZenonDurableHttpsRouter\([\s\S]*?completionValue/,
+  );
+  assert.match(source, /return OBJECT_FREEZE\(\{ handle, close \}\);/);
+  assert.equal(packageText.includes('service-credit-zenon-durable-https-router.js'), false);
+
+  const importNeedle = "from '../src/service-credit-zenon-durable-https-router.js'";
+  assert.equal(focusedTest.includes(importNeedle), true);
+  assert.equal(compositionTest.includes(importNeedle), true);
+  assert.equal((focusedTest.match(/createServiceCreditZenonDurableHttpsRouter\(/g) ?? []).length > 1, true);
+  assert.equal(
+    (compositionTest.match(/createServiceCreditZenonDurableHttpsRouter\(/g) ?? []).length,
+    1,
+  );
+  assert.equal(compositionTest.includes('settleTrustedOperation'), false);
+  assert.equal(compositionTest.includes('sendHandoffFailure'), false);
+  assert.equal(compositionTest.includes('const closeRouter'), false);
+  assert.equal(compositionTest.includes('const handleRequest'), false);
+  for (const documentation of [readme, security, implementationPlan]) {
+    assert.equal(
+      documentation.includes('src/service-credit-zenon-durable-https-router.js'),
+      true,
+    );
+  }
+  assert.match(
+    readme,
+    /The router does not close the durable composition, stores, TLS, listener, or sockets/,
+  );
+  assert.match(
+    security,
+    /A returned value must be a genuine non-Proxy Promise with the exact captured same-realm native prototype/,
+  );
+  assert.match(
+    implementationPlan,
+    /`close` gates handles first, invokes the captured handoff close once, then waits for all safely observed request operations and that close/,
+  );
+
+  const pending = [
+    new URL('../src/', import.meta.url),
+    new URL('../test/', import.meta.url),
+  ];
+  const importers = [];
+  while (pending.length > 0) {
+    const directory = pending.pop();
+    for (const entry of readdirSync(directory, { withFileTypes: true })) {
+      const candidate = new URL(entry.name, directory);
+      if (entry.isDirectory()) {
+        pending.push(new URL(`${entry.name}/`, directory));
+      } else if (entry.isFile() && candidate.pathname.endsWith('.js')) {
+        const candidateSource = readFileSync(candidate, 'utf8');
+        if (
+          candidate.href !== import.meta.url
+          && candidateSource.includes('service-credit-zenon-durable-https-router.js')
+        ) {
+          importers.push(candidate.href);
+        }
+      }
+    }
+  }
+  importers.sort();
+  assert.deepEqual(importers, [compositionTestUrl.href, focusedTestUrl.href].sort());
 });
 
 test('bounded HTTPS owner is dormant and keeps TLS material and binding in one factory seam', () => {
@@ -1433,16 +1556,10 @@ test('bounded HTTPS owner is dormant and keeps TLS material and binding in one f
   );
   assert.match(
     compositionTest,
-    /const settleTrustedOperation = \(operation, completion, onFailure\) => \{[\s\S]*?operation\.then\([\s\S]*?completion\.success\(\)[\s\S]*?completion\.failure\(\)/,
+    /const downstream = createServiceCreditZenonDurableHttpsRouter\(Object\.freeze\(\{/,
   );
-  assert.match(
-    compositionTest,
-    /const handleRequest = Object\.freeze\(\(\s*request,\s*response,\s*transportContext,\s*completion,\s*\) => \{/,
-  );
-  assert.match(
-    compositionTest,
-    /const closeRouter = Object\.freeze\(completion => \{[\s\S]*?settleTrustedOperation\(operation, completion, null\);\s*\}\);/,
-  );
+  assert.equal(compositionTest.includes('settleTrustedOperation'), false);
+  assert.equal(compositionTest.includes('sendHandoffFailure'), false);
   assert.match(
     compositionTest,
     /for \(const \[name, rawRequest\] of rawOuterIngressCases\)[\s\S]*?const responseBytes = await rawPinnedTlsExchange\(route, cert, rawRequest\);[\s\S]*?Number\.isSafeInteger\(responseBytes\) && responseBytes >= 0[\s\S]*?pilot\.handlerAdmissionCount\(\), admissionsBefore/,
