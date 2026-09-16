@@ -81,6 +81,9 @@ import {
   createServiceCreditBoundedHttpsIngressOwner,
 } from '../src/service-credit-bounded-https-ingress-owner.js';
 import {
+  createServiceCreditZenonDurableHttpsRouter,
+} from '../src/service-credit-zenon-durable-https-router.js';
+import {
   SERVICE_CREDIT_HTTP_PATH,
   SERVICE_CREDIT_HTTP_ROUTE_ID,
 } from '../src/service-credit-http.js';
@@ -90,7 +93,6 @@ import {
 import { ServiceCreditSqliteStore } from '../src/service-credit-sqlite-store.js';
 import {
   decodeB64Json,
-  encodeB64Json,
   HEADERS,
   MAX_X402_HEADER_ENCODED_BYTES,
 } from '../src/x402-wire.js';
@@ -1158,7 +1160,6 @@ async function offlineHttpsPilot(t) {
   let handoffControllerClose = Promise.resolve();
   let handoffNow = NOW;
   let phase = 'UNAVAILABLE';
-  let routerFailures = 0;
   let handlerAdmissions = 0;
   let ownerReads = 0;
   let server = null;
@@ -1253,105 +1254,40 @@ async function offlineHttpsPilot(t) {
   });
   let setupFailureCode = SYNTHETIC_HTTPS_FAILURE.listen;
   try {
-    const sendHandoffFailure = response => {
-      try {
-        if (response.headersSent || response.writableEnded) {
-          if (!response.writableEnded) response.destroy();
-          return;
-        }
-        const body = Buffer.from(EXTERNAL_HOLDER_HANDOFF_FAILURE_BODY, 'utf8');
-        response.writeHead(503, {
-          'Content-Type': 'application/json',
-          'Cache-Control': 'private, no-store, max-age=0',
-          'X-Content-Type-Options': 'nosniff',
-          'Content-Length': String(body.length),
-          Connection: 'close',
-        });
-        response.end(body);
-      } catch { try { response.destroy(); } catch {} }
-    };
-    const settleTrustedOperation = (operation, completion, onFailure) => {
-      try {
-        operation.then(
-          () => { completion.success(); },
-          () => {
-            if (onFailure !== null) onFailure();
-            completion.failure();
-          },
-        );
-      } catch {
-        if (onFailure !== null) onFailure();
-        completion.failure();
-      }
-    };
-    const handleRequest = Object.freeze((
-      request,
-      response,
-      transportContext,
-      completion,
-    ) => {
-      if (
-        request.url === EXTERNAL_HOLDER_HANDOFF_CHALLENGE_PATH
-        || request.url === EXTERNAL_HOLDER_HANDOFF_REDEEM_PATH
-      ) {
-        const mountedController = handoffController;
-        if (mountedController === null) {
-          sendHandoffFailure(response);
-          completion.success();
-          return;
-        }
-        let operation;
-        try {
-          operation = mountedController.handle(request, response, transportContext);
-        } catch {
-          sendHandoffFailure(response);
-          completion.failure();
-          return;
-        }
-        settleTrustedOperation(operation, completion, () => sendHandoffFailure(response));
-        return;
-      }
-      const unavailable = () => {
-        routerFailures += 1;
-        try {
-          if (!response.writableEnded) {
-            response.writeHead(503);
-            response.end();
-          }
-        } catch { try { response.destroy(); } catch {} }
-      };
-      if (phase === 'CHALLENGE') {
-        try {
-          const challenge = context.composition.createFundingResource({
-            selection: selection(),
-            resourceUrl: context.resourceUrl,
-          });
-          response.writeHead(402, {
-            'Content-Type': 'application/json',
-            'Cache-Control': 'private, no-store',
-            [HEADERS.PAYMENT_REQUIRED]: encodeB64Json(
-              challenge.paymentRequired,
-              { maxEncodedBytes: MAX_X402_HEADER_ENCODED_BYTES },
-            ),
-          });
-          response.end('{"error":"payment_required"}');
-        } catch { unavailable(); }
-        completion.success();
-      } else if (phase === 'ACTIVE') {
-        let operation;
-        try { operation = activeOwner.handle(request, response); }
-        catch { unavailable(); completion.success(); return; }
-        settleTrustedOperation(operation, completion, unavailable);
-      } else {
-        try { response.writeHead(503); response.end(); } catch { unavailable(); }
-        completion.success();
-      }
-    });
-    const closeRouter = Object.freeze(completion => {
-      const operation = closeHandoff();
-      settleTrustedOperation(operation, completion, null);
-    });
-    const downstream = Object.freeze({ handle: handleRequest, close: closeRouter });
+    const routerResourceUrl = `https://127.0.0.1${SERVICE_CREDIT_HTTP_PATH}`;
+    const downstream = createServiceCreditZenonDurableHttpsRouter(Object.freeze({
+      requestTargets: Object.freeze({
+        serviceCredit: SERVICE_CREDIT_HTTP_PATH,
+        handoffChallenge: EXTERNAL_HOLDER_HANDOFF_CHALLENGE_PATH,
+        handoffRedemption: EXTERNAL_HOLDER_HANDOFF_REDEEM_PATH,
+      }),
+      getPhase: Object.freeze(() => phase),
+      fundingComposition: Object.freeze({
+        createFundingResource: Object.freeze(resource =>
+          context.composition.createFundingResource(resource)),
+      }),
+      fundingResource: Object.freeze({
+        selection: Object.freeze(selection()),
+        resourceUrl: routerResourceUrl,
+      }),
+      durableComposition: Object.freeze({
+        handle: Object.freeze((request, response) => {
+          if (activeOwner === null) throw syntheticHttpsFailure(
+            SYNTHETIC_HTTPS_FAILURE.fixture,
+          );
+          return activeOwner.handle(request, response);
+        }),
+      }),
+      handoffController: Object.freeze({
+        handle: Object.freeze((request, response, transportContext) => {
+          if (handoffController === null) throw syntheticHttpsFailure(
+            SYNTHETIC_HTTPS_FAILURE.fixture,
+          );
+          return handoffController.handle(request, response, transportContext);
+        }),
+        close: Object.freeze(() => closeHandoff()),
+      }),
+    }));
     const trustedHttpsServerFactory = Object.freeze((serverOptions, callbacks) => {
       factoryEntered = true;
       if (server !== null) throw syntheticHttpsFailure(SYNTHETIC_HTTPS_FAILURE.fixture);
@@ -1460,7 +1396,7 @@ async function offlineHttpsPilot(t) {
     setupFailureCode = SYNTHETIC_HTTPS_FAILURE.fixture;
     context = fixture(t, {
       stage: 'PREPARED',
-      resourceUrl: `${route.origin}${route.path}`,
+      resourceUrl: routerResourceUrl,
     });
     phase = 'CHALLENGE';
     return {
@@ -1539,7 +1475,7 @@ async function offlineHttpsPilot(t) {
       pendingLatchCount: () =>
         latchTimers.size + outerDeadlineHandles.size + controllerDeadlineHandles.size,
       handlerFailureCount: () =>
-        routerFailures + ingressOwner.snapshotMetrics().handlerFailures,
+        ingressOwner.snapshotMetrics().handlerFailures,
     };
   } catch { throw syntheticHttpsFailure(setupFailureCode); }
 }
