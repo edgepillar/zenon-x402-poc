@@ -195,6 +195,7 @@ test('Zenon funding, signing, and external-holder handoff sources remain inactiv
     'service-credit-zenon-funding-composition.js',
     'service-credit-zenon-durable-http-composition.js',
     'service-credit-zenon-durable-https-router.js',
+    'service-credit-zenon-https-operator-pilot.js',
     'service-credit-zenon-provider-signing-child-protocol.js',
     'service-credit-zenon-provider-signing-operation.js',
     'service-credit-bounded-https-ingress-owner.js',
@@ -279,7 +280,7 @@ test('bounded HTTPS owner import is process-global-observer-free', () => {
   );
 });
 
-test('durable HTTPS router is inert, observer-free, and imported only by explicit tests', () => {
+test('durable HTTPS router is inert and imported only by its test and default-off pilot', () => {
   const sourceUrl = new URL(
     '../src/service-credit-zenon-durable-https-router.js',
     import.meta.url,
@@ -288,13 +289,13 @@ test('durable HTTPS router is inert, observer-free, and imported only by explici
     '../test/service-credit-zenon-durable-https-router.test.js',
     import.meta.url,
   );
-  const compositionTestUrl = new URL(
-    '../test/service-credit-zenon-funding-composition.test.js',
+  const pilotSourceUrl = new URL(
+    '../src/service-credit-zenon-https-operator-pilot.js',
     import.meta.url,
   );
   const source = readFileSync(sourceUrl, 'utf8');
   const focusedTest = readFileSync(focusedTestUrl, 'utf8');
-  const compositionTest = readFileSync(compositionTestUrl, 'utf8');
+  const pilotSource = readFileSync(pilotSourceUrl, 'utf8');
   const packageText = readFileSync(new URL('../package.json', import.meta.url), 'utf8');
   const readme = readFileSync(new URL('../README.md', import.meta.url), 'utf8');
   const security = readFileSync(new URL('../SECURITY.md', import.meta.url), 'utf8');
@@ -346,16 +347,19 @@ test('durable HTTPS router is inert, observer-free, and imported only by explici
 
   const importNeedle = "from '../src/service-credit-zenon-durable-https-router.js'";
   assert.equal(focusedTest.includes(importNeedle), true);
-  assert.equal(compositionTest.includes(importNeedle), true);
+  assert.equal(
+    pilotSource.includes("from './service-credit-zenon-durable-https-router.js'"),
+    true,
+  );
   assert.equal((focusedTest.match(/createServiceCreditZenonDurableHttpsRouter\(/g) ?? []).length > 1, true);
   assert.equal(
-    (compositionTest.match(/createServiceCreditZenonDurableHttpsRouter\(/g) ?? []).length,
-    1,
+    (pilotSource.match(/createServiceCreditZenonDurableHttpsRouter/g) ?? []).length,
+    2,
   );
-  assert.equal(compositionTest.includes('settleTrustedOperation'), false);
-  assert.equal(compositionTest.includes('sendHandoffFailure'), false);
-  assert.equal(compositionTest.includes('const closeRouter'), false);
-  assert.equal(compositionTest.includes('const handleRequest'), false);
+  assert.equal(pilotSource.includes('settleTrustedOperation'), false);
+  assert.equal(pilotSource.includes('sendHandoffFailure'), false);
+  assert.equal(pilotSource.includes('const closeRouter'), false);
+  assert.equal(pilotSource.includes('const handleRequest'), false);
   for (const documentation of [readme, security, implementationPlan]) {
     assert.equal(
       documentation.includes('src/service-credit-zenon-durable-https-router.js'),
@@ -398,7 +402,7 @@ test('durable HTTPS router is inert, observer-free, and imported only by explici
     }
   }
   importers.sort();
-  assert.deepEqual(importers, [compositionTestUrl.href, focusedTestUrl.href].sort());
+  assert.deepEqual(importers, [focusedTestUrl.href, pilotSourceUrl.href].sort());
 });
 
 test('bounded Node HTTPS factory is inert, constructor-fixed, and test-imported only', () => {
@@ -414,9 +418,14 @@ test('bounded Node HTTPS factory is inert, constructor-fixed, and test-imported 
     '../test/service-credit-zenon-funding-composition.test.js',
     import.meta.url,
   );
+  const pilotSourceUrl = new URL(
+    '../src/service-credit-zenon-https-operator-pilot.js',
+    import.meta.url,
+  );
   const source = readFileSync(sourceUrl, 'utf8');
   const focusedTest = readFileSync(focusedTestUrl, 'utf8');
   const compositionTest = readFileSync(compositionTestUrl, 'utf8');
+  const pilotSource = readFileSync(pilotSourceUrl, 'utf8');
   const packageText = readFileSync(new URL('../package.json', import.meta.url), 'utf8');
   const readme = readFileSync(new URL('../README.md', import.meta.url), 'utf8');
   const security = readFileSync(new URL('../SECURITY.md', import.meta.url), 'utf8');
@@ -534,11 +543,15 @@ test('bounded Node HTTPS factory is inert, constructor-fixed, and test-imported 
   const importNeedle =
     "from '../src/service-credit-bounded-node-https-server-factory.js'";
   assert.equal(focusedTest.includes(importNeedle), true);
-  assert.equal(compositionTest.includes(importNeedle), true);
+  assert.equal(compositionTest.includes(importNeedle), false);
+  assert.equal(
+    pilotSource.includes("from './service-credit-bounded-node-https-server-factory.js'"),
+    true,
+  );
   assert.equal(compositionTest.includes('createHttpsServer'), false);
   assert.equal(
     (compositionTest.match(/createServiceCreditBoundedNodeHttpsServerFactory\(/g) ?? []).length,
-    1,
+    0,
   );
   assert.match(
     compositionTest,
@@ -548,9 +561,10 @@ test('bounded Node HTTPS factory is inert, constructor-fixed, and test-imported 
     compositionTest,
     /bind: Object\.freeze\(\{ host: '127\.0\.0\.1', port: bindPort, exclusive: true \}\)/,
   );
+  assert.doesNotMatch(compositionTest, /observedCallbacks|raw-connection-accounted/);
   assert.match(
     compositionTest,
-    /const observedCallbacks = Object\.freeze\(\{[\s\S]*?handoffEvents\.emit\('raw-connection-accounted'\)[\s\S]*?Object\.getOwnPropertyDescriptor\(socket, property\)/,
+    /createServiceCreditZenonHttpsOperatorPilot\(Object\.freeze\(\{[\s\S]*?bind: Object\.freeze\(\{ host: '127\.0\.0\.1', port: bindPort, exclusive: true \}\)/,
   );
   assert.doesNotMatch(compositionTest, /server\.address\(\)/);
 
@@ -594,7 +608,167 @@ test('bounded Node HTTPS factory is inert, constructor-fixed, and test-imported 
     }
   }
   importers.sort();
-  assert.deepEqual(importers, [compositionTestUrl.href, focusedTestUrl.href].sort());
+  assert.deepEqual(importers, [focusedTestUrl.href, pilotSourceUrl.href].sort());
+});
+
+test('Zenon HTTPS operator pilot is inert, single-use, default-off, and test-imported only', () => {
+  const sourceUrl = new URL(
+    '../src/service-credit-zenon-https-operator-pilot.js',
+    import.meta.url,
+  );
+  const focusedTestUrl = new URL(
+    '../test/service-credit-zenon-https-operator-pilot.test.js',
+    import.meta.url,
+  );
+  const compositionTestUrl = new URL(
+    '../test/service-credit-zenon-funding-composition.test.js',
+    import.meta.url,
+  );
+  const dormantBoundaryTestUrl = new URL(
+    '../test/service-credit-external-holder-grant-descriptor-handoff-http-ingress.test.js',
+    import.meta.url,
+  );
+  const source = readFileSync(sourceUrl, 'utf8');
+  const focusedTest = readFileSync(focusedTestUrl, 'utf8');
+  const compositionTest = readFileSync(compositionTestUrl, 'utf8');
+  const dormantBoundaryTest = readFileSync(dormantBoundaryTestUrl, 'utf8');
+  const packageText = readFileSync(new URL('../package.json', import.meta.url), 'utf8');
+  const readme = readFileSync(new URL('../README.md', import.meta.url), 'utf8');
+  const security = readFileSync(new URL('../SECURITY.md', import.meta.url), 'utf8');
+  const implementationPlan = readFileSync(
+    new URL('../docs/IMPLEMENTATION_PLAN.md', import.meta.url),
+    'utf8',
+  );
+
+  const importedModules = [...source.matchAll(/from '([^']+)';/g)]
+    .map(match => match[1]);
+  assert.deepEqual(importedModules, [
+    'node:util',
+    './service-credit-bounded-https-ingress-owner.js',
+    './service-credit-bounded-node-https-server-factory.js',
+    './service-credit-external-holder-grant-descriptor-handoff-http-ingress.js',
+    './service-credit-zenon-durable-http-composition.js',
+    './service-credit-zenon-durable-https-router.js',
+    './service-credit-zenon-funding-composition.js',
+  ]);
+  assert.doesNotMatch(
+    source,
+    /node:(?:async_hooks|v8|fs|child_process|net|tls|http|https)|['"]async_hooks['"]|promiseHooks|createHook|AsyncLocalStorage/,
+  );
+  assert.doesNotMatch(
+    source,
+    /\bprocess\s*\.\s*(?:on|once|addListener|prependListener|prependOnceListener)\s*\(/,
+  );
+  assert.doesNotMatch(
+    source,
+    /unhandledRejection|rejectionHandled|multipleResolves|uncaughtExceptionMonitor|process\.env|\.listen\s*\(/,
+  );
+  assert.match(
+    source,
+    /export function createServiceCreditZenonHttpsOperatorPilot\(options\)/,
+  );
+  assert.match(
+    source,
+    /return OBJECT_FREEZE\(\{ start, activateCommittedReady, close, snapshot \}\);/,
+  );
+  assert.match(
+    source,
+    /const CONFIGURATION_KEYS = OBJECT_FREEZE\(\[[\s\S]*?'transport',[\s\S]*?'routes',[\s\S]*?'funding',[\s\S]*?'durable',[\s\S]*?'handoff'/,
+  );
+  const shutdownSource = source.slice(
+    source.indexOf('function beginShutdown(code = null)'),
+    source.indexOf('function failStart(code)'),
+  );
+  assertSourceOrder(shutdownSource, [
+    'shutdownStarted = true;',
+    'phase = PHASE.CLOSING;',
+    'returned = REFLECT_APPLY(ingressClose, undefined, []);',
+  ]);
+  assertSourceOrder(source, [
+    'function closeDurableAfterTransport()',
+    'if (!transportClosed || closeSettled) return;',
+    'returned = REFLECT_APPLY(durableClose, undefined, []);',
+  ]);
+  const activePublication = source.slice(
+    source.indexOf('function publishActive(owner)'),
+    source.indexOf('function onDurableStartFailure(error)'),
+  );
+  assertSourceOrder(activePublication, [
+    'CREATE_EXTERNAL_HOLDER_HANDOFF_INGRESS',
+    'handoffController = nextController;',
+    'handoffHandle = captured.handle;',
+    'handoffClose = captured.close;',
+    'phase = PHASE.ACTIVE;',
+    'resolveActivation();',
+  ]);
+  assert.equal(packageText.includes('service-credit-zenon-https-operator-pilot.js'), false);
+  assert.equal(
+    focusedTest.includes("from '../src/service-credit-zenon-https-operator-pilot.js'"),
+    true,
+  );
+  assert.equal(
+    compositionTest.includes("from '../src/service-credit-zenon-https-operator-pilot.js'"),
+    true,
+  );
+  assert.equal(
+    dormantBoundaryTest.includes(
+      "test('the dormant ingress has no package export or active import reachability', () => {",
+    ),
+    true,
+  );
+  assert.equal(
+    dormantBoundaryTest.includes("from '../src/service-credit-zenon-https-operator-pilot.js'"),
+    false,
+  );
+  for (const boundaryAssertion of [
+    'assert.equal(packageText.includes(pilotName), false);',
+    'assert.equal(packageJson.exports, undefined);',
+    'assert.equal(packageJson.bin, undefined);',
+    'assert.equal(script.includes(pilotName), false);',
+    'assert.deepEqual(ingressImporters.sort(), [pilotName]);',
+    'assert.deepEqual(pilotImporters, []);',
+    "pilotSource.includes(`from './${ingressName}'`),",
+    'assert.equal(pilotSource.split(ingressName).length - 1, 1);',
+  ]) assert.equal(dormantBoundaryTest.includes(boundaryAssertion), true);
+  for (const legacyTransportConstructor of [
+    'createServiceCreditBoundedHttpsIngressOwner',
+    'createServiceCreditBoundedNodeHttpsServerFactory',
+    'createServiceCreditZenonDurableHttpsRouter',
+    'createServiceCreditExternalHolderGrantDescriptorHandoffHttpIngress',
+  ]) assert.equal(compositionTest.includes(legacyTransportConstructor), false);
+  for (const documentation of [readme, security, implementationPlan]) {
+    assert.equal(
+      documentation.includes('src/service-credit-zenon-https-operator-pilot.js'),
+      true,
+    );
+  }
+
+  const pending = [
+    new URL('../src/', import.meta.url),
+    new URL('../test/', import.meta.url),
+  ];
+  const importers = [];
+  while (pending.length > 0) {
+    const directory = pending.pop();
+    for (const entry of readdirSync(directory, { withFileTypes: true })) {
+      const candidate = new URL(entry.name, directory);
+      if (entry.isDirectory()) {
+        pending.push(new URL(`${entry.name}/`, directory));
+      } else if (entry.isFile() && candidate.pathname.endsWith('.js')) {
+        const candidateSource = readFileSync(candidate, 'utf8');
+        if (
+          candidate.href !== import.meta.url
+          && candidateSource.includes('service-credit-zenon-https-operator-pilot.js')
+        ) importers.push(candidate.href);
+      }
+    }
+  }
+  importers.sort();
+  assert.deepEqual(importers, [
+    compositionTestUrl.href,
+    dormantBoundaryTestUrl.href,
+    focusedTestUrl.href,
+  ].sort());
 });
 
 test('bounded HTTPS owner is dormant and keeps TLS material and binding in one factory seam', () => {
@@ -604,6 +778,10 @@ test('bounded HTTPS owner is dormant and keeps TLS material and binding in one f
   );
   const compositionTest = readFileSync(
     new URL('../test/service-credit-zenon-funding-composition.test.js', import.meta.url),
+    'utf8',
+  );
+  const pilotSource = readFileSync(
+    new URL('../src/service-credit-zenon-https-operator-pilot.js', import.meta.url),
     'utf8',
   );
   const readme = readFileSync(new URL('../README.md', import.meta.url), 'utf8');
@@ -1744,6 +1922,10 @@ test('bounded HTTPS owner is dormant and keeps TLS material and binding in one f
     compositionTest.includes(
       "from '../src/service-credit-bounded-https-ingress-owner.js'",
     ),
+    false,
+  );
+  assert.equal(
+    pilotSource.includes("from './service-credit-bounded-https-ingress-owner.js'"),
     true,
   );
   assert.equal(compositionTest.includes('createHttpsServer'), false);
@@ -1751,16 +1933,13 @@ test('bounded HTTPS owner is dormant and keeps TLS material and binding in one f
     compositionTest.includes(
       "from '../src/service-credit-bounded-node-https-server-factory.js'",
     ),
+    false,
+  );
+  assert.equal(
+    pilotSource.includes("from './service-credit-bounded-node-https-server-factory.js'"),
     true,
   );
-  assert.match(
-    compositionTest,
-    /secureConnection: Object\.freeze\(socket => \{[\s\S]*?Object\.getOwnPropertyDescriptor\(socket, property\)[\s\S]*?Object\.hasOwn\(descriptor, 'value'\)[\s\S]*?callbacks\.secureConnection\(socket\)/,
-  );
-  assert.match(
-    compositionTest,
-    /const downstream = createServiceCreditZenonDurableHttpsRouter\(Object\.freeze\(\{/,
-  );
+  assert.match(compositionTest, /createServiceCreditZenonHttpsOperatorPilot\(Object\.freeze\(\{/);
   assert.equal(compositionTest.includes('settleTrustedOperation'), false);
   assert.equal(compositionTest.includes('sendHandoffFailure'), false);
   assert.match(
@@ -1784,18 +1963,137 @@ test('bounded HTTPS owner is dormant and keeps TLS material and binding in one f
     compositionTest,
     /name === 'equal duplicate content length'[\s\S]*?SYNTHETIC_HTTPS_FAILURE\.request/,
   );
-  assert.match(
-    compositionTest,
-    /async closeWithUnresolvedPreHandshake\(\)[\s\S]*?waitForHandoffEvent\('raw-connection-accounted'\)[\s\S]*?connectNet\([\s\S]*?await accounted;[\s\S]*?await ingressOwner\.close\(\);[\s\S]*?await clientClosed;/,
+  const unresolvedCloseStart = compositionTest.indexOf(
+    'async closeWithUnresolvedPreHandshake() {',
   );
+  const unresolvedCloseEnd = compositionTest.indexOf(
+    'expireHandoffChallenge(publicChallenge)',
+    unresolvedCloseStart,
+  );
+  assert.equal(
+    unresolvedCloseStart >= 0 && unresolvedCloseEnd > unresolvedCloseStart,
+    true,
+  );
+  const unresolvedCloseSource = compositionTest.slice(
+    unresolvedCloseStart,
+    unresolvedCloseEnd,
+  );
+  assert.equal((unresolvedCloseSource.match(/connectNet\(/g) ?? []).length, 1);
+  assert.equal((unresolvedCloseSource.match(/socket\.resume\(\);/g) ?? []).length, 1);
+  assertSourceOrder(unresolvedCloseSource, [
+    'const before = operator.snapshot().connectionStarts;',
+    "const socket = connectNet({ host: '127.0.0.1', port: route.port });",
+    'const clientConnected = new Promise(resolve => { resolveConnected = resolve; });',
+    'const clientClosed = new Promise(resolve => { resolveClosed = resolve; });',
+    'const clientDeadline = new Promise(resolve => { resolveDeadline = resolve; });',
+    "socket.once('connect', () => {",
+    "socket.once('close', () => {",
+    'socket.resume();',
+    'const deadlineHandle = setTimeout(() => {',
+    '}, 10_000);',
+    'const connectionEvidence = await Promise.race([clientConnected, clientDeadline]);',
+    'if (operator.snapshot().connectionStarts > before) {',
+    'const ownerClose = operator.close().then(result => Object.freeze({ result }));',
+    'const ownerCloseEvidence = await Promise.race([ownerClose, clientDeadline]);',
+    'const closeEvidence = await Promise.race([clientClosed, clientDeadline]);',
+    'return Object.freeze({ result, metrics: operator.snapshot() });',
+    '} finally {',
+    'clearTimeout(deadlineHandle);',
+    'if (!closed) {',
+    'socket.destroy();',
+  ]);
+  assert.doesNotMatch(unresolvedCloseSource, /await operator\.close\(\);|await clientClosed;/);
+
+  const ordinaryReplayStart = compositionTest.indexOf(
+    'const first = await httpsExchange(route, cert, authorizationA);',
+  );
+  const adversarialCloseStart = compositionTest.indexOf(
+    'const raceChallenge = await obtainExternalHolderChallenge(route, cert);',
+    ordinaryReplayStart,
+  );
+  assert.equal(
+    ordinaryReplayStart >= 0 && adversarialCloseStart > ordinaryReplayStart,
+    true,
+  );
+  const ordinaryReplaySource = compositionTest.slice(
+    ordinaryReplayStart,
+    adversarialCloseStart,
+  );
+  assertSourceOrder(ordinaryReplaySource, [
+    'const first = await httpsExchange(route, cert, authorizationA);',
+    'const afterFirst = context.serviceStore.load();',
+    'const replay = await httpsExchange(route, cert, authorizationA);',
+    'assert.deepEqual(replay.body, first.body);',
+    'assert.deepEqual(context.serviceStore.load(), afterFirst);',
+    'assert.equal(executionState.count, 1);',
+    "assert.deepEqual(await pilot.close(), { status: 'CLOSED' });",
+    'context.serviceStore = ServiceCreditSqliteStore.openExisting(',
+    'context.observerStore = openZenonFundingObserverSqliteStore({',
+    'pilot = await offlineHttpsPilot(t, context, executionState);',
+    "assert.deepEqual(await pilot.activate(), { status: 'ACTIVE' });",
+    'const reopenedReplay = await httpsExchange(route, cert, authorizationA);',
+    'assert.deepEqual(reopenedReplay.body, first.body);',
+    'assert.equal(context.serviceStore.load().state.grants.length, 1);',
+    'assert.equal(context.serviceStore.load().state.grants[0].consumedUnits, 2);',
+    'assert.equal(executionState.count, 1);',
+    'const requestB = requestDescription(',
+    '(await httpsExchange(route, cert, authorization(requestB, grantDescriptor))).statusCode,',
+    'assert.equal(context.serviceStore.load().state.grants[0].consumedUnits, 4);',
+    'assert.equal(executionState.count, 2);',
+    'assert.equal(pilot.ownerReadCount(), 0);',
+  ]);
+
+  const adversarialCloseEnd = compositionTest.indexOf(
+    "test('offline HTTPS harness denies credit for non-READY synthetic child outcomes'",
+    adversarialCloseStart,
+  );
+  assert.equal(adversarialCloseEnd > adversarialCloseStart, true);
+  const adversarialCloseSource = compositionTest.slice(
+    adversarialCloseStart,
+    adversarialCloseEnd,
+  );
+  assert.match(
+    adversarialCloseSource,
+    /const pilotCloseObserver = pilotClose\.then\(\s*\(\) => \{[\s\S]*?pilotCloseOutcome = 'FULFILLED';[\s\S]*?\},\s*error => \{[\s\S]*?pilotCloseOutcome = 'UNKNOWN';[\s\S]*?Object\.getOwnPropertyDescriptor\(error, 'code'\)[\s\S]*?\},\s*\);/,
+  );
+  assertSourceOrder(adversarialCloseSource, [
+    'const pausedRedemption = beginPausedHandoffRedemption(route, cert, raceProof);',
+    'await pausedRedemption.firstWrite;',
+    'await pilot.waitForHandoffAdmission(admissionsBeforeRace);',
+    'const ownerReadsBeforeQuiesce = pilot.ownerReadCount();',
+    'const admissionsAtQuiescence = pilot.handlerAdmissionCount();',
+    'const durableStateAtQuiescence = context.serviceStore.load();',
+    'const observerStateAtQuiescence = context.observerStore.load();',
+    'const executionsAtQuiescence = executionState.count;',
+    'const signingDispatchesAtQuiescence = observed.dispatches;',
+    "'SERVICE_CREDIT_ZENON_HTTPS_OPERATOR_PILOT_CLOSE_UNCERTAIN';",
+    'const pilotClose = pilot.closeWithUnresolvedPreHandshake();',
+    'const pilotCloseObserver = pilotClose.then(',
+    'await Promise.resolve();',
+    'assert.equal(pilotCloseSettled, false);',
+    'await pausedRedemption.response.then(',
+    'await pilotCloseObserver;',
+    'assert.equal(pilotCloseOutcome, expectedCloseCode);',
+    'await assert.rejects(pilotClose, error => {',
+    'await pilot.waitForSocketDrain();',
+    'const terminal = pilot.snapshot();',
+    'assert.equal(pilot.ownerReadCount(), ownerReadsBeforeQuiesce);',
+    'assert.equal(pilot.handlerAdmissionCount(), admissionsAtQuiescence);',
+    "assert.equal(terminal.phase, 'TRANSPORT_UNCERTAIN');",
+    'assert.equal(terminal.transportCloseClean, 0);',
+    'assert.equal(terminal.transportCloseUncertain, 1);',
+    'assert.deepEqual(context.serviceStore.load(), durableStateAtQuiescence);',
+    'assert.deepEqual(context.observerStore.load(), observerStateAtQuiescence);',
+    'assert.equal(context.serviceStore.load().state.grants.length, 1);',
+    'assert.equal(context.serviceStore.load().state.grants[0].consumedUnits, 4);',
+    'assert.equal(executionState.count, executionsAtQuiescence);',
+    'assert.equal(observed.dispatches, signingDispatchesAtQuiescence);',
+    'pilot.allowExpectedAdversarialCloseForTestCleanup();',
+  ]);
   assert.equal((compositionTest.match(/server\.listen\(/g) ?? []).length, 0);
   assert.match(
     compositionTest,
-    /createServiceCreditBoundedNodeHttpsServerFactory\([\s\S]*?bind: Object\.freeze\(\{ host: '127\.0\.0\.1', port: bindPort, exclusive: true \}\)[\s\S]*?tlsMaterial: Object\.freeze\(\{ key: tls\.key, cert: tls\.cert \}\)/,
-  );
-  assert.match(
-    compositionTest,
-    /const capability = nativeHttpsServerFactory\(serverOptions, observedCallbacks\);/,
+    /createServiceCreditZenonHttpsOperatorPilot\(Object\.freeze\(\{[\s\S]*?bind: Object\.freeze\(\{ host: '127\.0\.0\.1', port: bindPort, exclusive: true \}\)[\s\S]*?tlsMaterial: Object\.freeze\(\{ key: tls\.key, cert: tls\.cert \}\)/,
   );
   assert.equal(compositionTest.includes('const ownedSockets = new Set()'), false);
   assert.equal(compositionTest.includes('server.closeAllConnections();'), false);
