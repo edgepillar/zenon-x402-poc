@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import { createHash, generateKeyPairSync, sign } from 'node:crypto';
+import { EventEmitter } from 'node:events';
 import {
   chmodSync,
   copyFileSync,
@@ -641,10 +642,94 @@ function startSnapshotWriter(configuration, recordKey, iterations) {
     ['--input-type=module', '--eval', SNAPSHOT_WRITER_CHILD_SOURCE],
     { cwd: process.cwd(), stdio: ['ignore', 'ignore', 'ignore', 'ipc'] },
   );
+  return observeSnapshotWriter(child, configuration, recordKey, iterations);
+}
+
+const SNAPSHOT_FAILURE_CODES = new Set([
+  'ZENON_FUNDING_OBSERVER_STORE_ALREADY_EXISTS',
+  'ZENON_FUNDING_OBSERVER_STORE_ATTESTATION_REJECTED',
+  'ZENON_FUNDING_OBSERVER_STORE_ATTESTATION_UNAVAILABLE',
+  'ZENON_FUNDING_OBSERVER_STORE_AUTHORITY_MISMATCH',
+  'ZENON_FUNDING_OBSERVER_STORE_CAPACITY_EXCEEDED',
+  'ZENON_FUNDING_OBSERVER_STORE_CLOSED',
+  'ZENON_FUNDING_OBSERVER_STORE_CLOSE_FAILED',
+  'ZENON_FUNDING_OBSERVER_STORE_COMMIT_OUTCOME_UNKNOWN',
+  'ZENON_FUNDING_OBSERVER_STORE_CONCURRENT_CONFLICT',
+  'ZENON_FUNDING_OBSERVER_STORE_CONFIGURATION_FAILED',
+  'ZENON_FUNDING_OBSERVER_STORE_CONTEXT_MISMATCH',
+  'ZENON_FUNDING_OBSERVER_STORE_CORRUPT',
+  'ZENON_FUNDING_OBSERVER_STORE_CREATE_FAILED',
+  'ZENON_FUNDING_OBSERVER_STORE_INVALID_CONFIGURATION',
+  'ZENON_FUNDING_OBSERVER_STORE_INVALID_INPUT',
+  'ZENON_FUNDING_OBSERVER_STORE_INVARIANT_VIOLATION',
+  'ZENON_FUNDING_OBSERVER_STORE_MISSING',
+  'ZENON_FUNDING_OBSERVER_STORE_OPEN_FAILED',
+  'ZENON_FUNDING_OBSERVER_STORE_PATH_OUTSIDE_ALLOWED_ROOT',
+  'ZENON_FUNDING_OBSERVER_STORE_QUARANTINED',
+  'ZENON_FUNDING_OBSERVER_STORE_READ_FAILED',
+  'ZENON_FUNDING_OBSERVER_STORE_RECORD_KEY_MISMATCH',
+  'ZENON_FUNDING_OBSERVER_STORE_REENTRANT_OPERATION',
+  'ZENON_FUNDING_OBSERVER_STORE_ROLLBACK_FAILED',
+  'ZENON_FUNDING_OBSERVER_STORE_SCHEMA_UNSUPPORTED',
+  'ZENON_FUNDING_OBSERVER_STORE_STALE_REVISION',
+  'ZENON_FUNDING_OBSERVER_STORE_TARGET_MISMATCH',
+  'ZENON_FUNDING_OBSERVER_STORE_TEST_HOOK_FAILED',
+  'ZENON_FUNDING_OBSERVER_STORE_TRANSACTION_FAILED',
+  'ZENON_FUNDING_OBSERVER_STORE_UNEXPECTED_SIDECAR',
+  'ZENON_FUNDING_OBSERVER_STORE_UNSAFE_DIRECTORY',
+  'ZENON_FUNDING_OBSERVER_STORE_UNSAFE_FILE',
+  'ERR_ASSERTION',
+  'SNAPSHOT_WRITER_TIMEOUT',
+  'SNAPSHOT_WRITER_FAILED',
+  'SNAPSHOT_WRITER_ERROR',
+  'SNAPSHOT_WRITER_EXITED',
+  'SNAPSHOT_WRITER_ABORTED',
+  'SNAPSHOT_WRITER_SEND_FAILED',
+  'SNAPSHOT_WRITER_CLEANUP_FAILED',
+]);
+
+function snapshotFailureCode(error) {
+  let code;
+  try { code = error && Object.getOwnPropertyDescriptor(error, 'code')?.value; } catch {}
+  return SNAPSHOT_FAILURE_CODES.has(code) ? code : 'UNKNOWN';
+}
+
+function snapshotWriterFailure(message, code) {
+  return Object.assign(new Error(message), { code });
+}
+
+const SNAPSHOT_FAILURE_STAGES = new Set([
+  'READER_CREATE', 'INITIAL_LOAD', 'WRITER_CREATE', 'WRITER_READY', 'WRITER_GO',
+  'READER_LOAD', 'READER_SNAPSHOT_ASSERTIONS', 'READER_PROJECT', 'PROJECT_ASSERTION',
+  'ADDITIONAL_OPEN', 'ADDITIONAL_LOAD', 'ADDITIONAL_SNAPSHOT_ASSERTIONS',
+  'ADDITIONAL_CLOSE', 'WRITER_DONE', 'FINAL_LOAD', 'FINAL_REVISION_ASSERTION',
+  'READER_CLOSE', 'WRITER_CLEANUP', 'ADDITIONAL_CLEANUP', 'READER_CLEANUP',
+]);
+
+function snapshotFailureDiagnostic(stage, error) {
+  const fixedStage = SNAPSHOT_FAILURE_STAGES.has(stage) ? stage : 'UNKNOWN';
+  return `STAGE=${fixedStage};CODE=${snapshotFailureCode(error)}`;
+}
+
+async function disposeSnapshotWriter(writer, primaryFailed, reportFailure) {
+  try {
+    await writer.dispose();
+  } catch (error) {
+    reportFailure(error);
+    if (!primaryFailed) throw error;
+  }
+}
+
+function observeSnapshotWriter(
+  child, configuration, recordKey, iterations,
+  deadlines = { set: setTimeout, clear: clearTimeout },
+) {
   let readyResolve;
   let readyReject;
   let doneResolve;
   let doneReject;
+  let closedResolve;
+  let closedReject;
   const ready = new Promise((resolve, reject) => {
     readyResolve = resolve;
     readyReject = reject;
@@ -653,33 +738,145 @@ function startSnapshotWriter(configuration, recordKey, iterations) {
     doneResolve = resolve;
     doneReject = reject;
   });
-  const timer = setTimeout(() => {
-    child.kill('SIGKILL');
-    const error = new Error('snapshot-writer-timeout');
+  const terminated = new Promise((resolve, reject) => {
+    closedResolve = resolve;
+    closedReject = reject;
+  });
+  // Observe without replacing the original promises or their rejection to awaiters.
+  ready.catch(() => {});
+  done.catch(() => {});
+  terminated.catch(() => {});
+  let spawned = false;
+  let exited = false;
+  let closed = false;
+  let stopping = false;
+  let signalAttempted = false;
+  let cleanupFailure;
+  let disposal;
+  let timer;
+  let cleanupTimer;
+
+  function clearWorkDeadline() {
+    if (timer !== undefined) {
+      deadlines.clear(timer);
+      timer = undefined;
+    }
+  }
+  function clearCleanupDeadline() {
+    if (cleanupTimer !== undefined) {
+      deadlines.clear(cleanupTimer);
+      cleanupTimer = undefined;
+    }
+  }
+  function fail(error) {
+    clearWorkDeadline();
     readyReject(error);
     doneReject(error);
-  }, 20_000);
-  child.once('error', error => {
-    clearTimeout(timer);
-    readyReject(error);
-    doneReject(error);
+  }
+  function stopExactChild() {
+    stopping = true;
+    if (
+      !spawned || exited || closed || signalAttempted
+      || child.exitCode !== null || child.signalCode !== null
+    ) return;
+    signalAttempted = true;
+    try {
+      if (child.kill('SIGKILL') === true) return;
+    } catch {}
+    cleanupFailure = snapshotWriterFailure(
+      'snapshot-writer-cleanup-failed', 'SNAPSHOT_WRITER_CLEANUP_FAILED',
+    );
+  }
+  function send(message) {
+    if (stopping || exited || closed) {
+      throw snapshotWriterFailure('snapshot-writer-aborted', 'SNAPSHOT_WRITER_ABORTED');
+    }
+    try {
+      child.send(message, error => {
+        if (error) fail(snapshotWriterFailure(
+          'snapshot-writer-send-failed', 'SNAPSHOT_WRITER_SEND_FAILED',
+        ));
+      });
+    } catch {
+      const error = snapshotWriterFailure(
+        'snapshot-writer-send-failed', 'SNAPSHOT_WRITER_SEND_FAILED',
+      );
+      fail(error);
+      throw error;
+    }
+  }
+  function dispose() {
+    if (disposal) return disposal;
+    disposal = (async () => {
+      fail(snapshotWriterFailure('snapshot-writer-aborted', 'SNAPSHOT_WRITER_ABORTED'));
+      if (!closed) {
+        // Cleanup has its own bounded terminal-evidence wait; the work budget is unchanged.
+        cleanupTimer = deadlines.set(() => {
+          cleanupTimer = undefined;
+          closedReject(snapshotWriterFailure(
+            'snapshot-writer-cleanup-failed', 'SNAPSHOT_WRITER_CLEANUP_FAILED',
+          ));
+        }, 20_000);
+        stopExactChild();
+      }
+      try {
+        await terminated;
+        if (cleanupFailure) throw cleanupFailure;
+      } finally {
+        clearCleanupDeadline();
+      }
+    })();
+    disposal.catch(() => {});
+    return disposal;
+  }
+
+  child.once('spawn', () => {
+    spawned = true;
+    if (stopping) stopExactChild();
+  });
+  child.once('error', () => fail(snapshotWriterFailure(
+    'snapshot-writer-error', 'SNAPSHOT_WRITER_ERROR',
+  )));
+  child.once('exit', () => {
+    exited = true;
+    fail(snapshotWriterFailure('snapshot-writer-exited', 'SNAPSHOT_WRITER_EXITED'));
+  });
+  child.once('close', () => {
+    exited = true;
+    closed = true;
+    fail(snapshotWriterFailure('snapshot-writer-exited', 'SNAPSHOT_WRITER_EXITED'));
+    clearCleanupDeadline();
+    closedResolve();
   });
   child.on('message', message => {
+    if (stopping || exited || closed) return;
     if (message?.type === 'ready') readyResolve();
     if (message?.type === 'done') {
-      clearTimeout(timer);
+      clearWorkDeadline();
       if (message.ok) doneResolve();
-      else doneReject(new Error('snapshot-writer-failed'));
+      else fail(snapshotWriterFailure(
+        'snapshot-writer-failed',
+        snapshotFailureCode(message) === 'UNKNOWN'
+          ? 'SNAPSHOT_WRITER_FAILED' : snapshotFailureCode(message),
+      ));
     }
   });
-  child.send({
-    databasePath: configuration.databasePath,
-    allowedRoot: configuration.allowedRoot,
-    recordKey,
-    authorityRecord: configuration.authorityRecord,
-    iterations,
-  });
-  return { child, ready, done };
+  timer = deadlines.set(() => {
+    fail(snapshotWriterFailure('snapshot-writer-timeout', 'SNAPSHOT_WRITER_TIMEOUT'));
+    stopExactChild();
+  }, 20_000);
+  try {
+    send({
+      databasePath: configuration.databasePath,
+      allowedRoot: configuration.allowedRoot,
+      recordKey,
+      authorityRecord: configuration.authorityRecord,
+      iterations,
+    });
+  } catch {
+    // The fixed failure is retained by ready/done; return ownership for exact cleanup.
+  }
+  return { ready, done, go: () => send({ type: 'go' }), dispose };
 }
 
 test('import is inert and dependency closure remains offline and default-inactive', () => {
@@ -2307,37 +2504,169 @@ test('two independent processes produce one winner and one stale result', async 
   reopened.close();
 });
 
+test('early snapshot reader rejection preserves its primary error and drains the owned writer', async () => {
+  // The child and deadlines are inert test-owned counters, not a process or a database.
+  for (const [readyFirst, killAccepted] of [[true, true], [false, true], [true, false]]) {
+    const child = new EventEmitter();
+    Object.assign(child, { pid: 1, exitCode: null, signalCode: null, connected: true });
+    let closed = false;
+    let signals = 0;
+    const pendingDeadlines = new Set();
+    const deadlines = {
+      set(callback, milliseconds) {
+        assert.equal(milliseconds, 20_000);
+        const deadline = { callback };
+        pendingDeadlines.add(deadline);
+        return deadline;
+      },
+      clear(deadline) { pendingDeadlines.delete(deadline); },
+    };
+    function finishChild() {
+      closed = true;
+      child.connected = false;
+      child.signalCode = 'SIGKILL';
+      child.emit('exit', null, 'SIGKILL');
+      child.emit('close', null, 'SIGKILL');
+    }
+    child.send = () => queueMicrotask(() => {
+      child.emit('spawn');
+      if (readyFirst) child.emit('message', { type: 'ready' });
+    });
+    child.kill = signal => {
+      assert.equal(signal, 'SIGKILL');
+      assert.equal(closed, false);
+      signals += 1;
+      queueMicrotask(finishChild);
+      return killAccepted;
+    };
+    const writer = observeSnapshotWriter(child, {}, 'unused', 32, deadlines);
+    const primary = Object.assign(new Error('synthetic-reader-refusal'), {
+      code: 'ZENON_FUNDING_OBSERVER_STORE_UNSAFE_FILE',
+    });
+    let observed;
+    let stage;
+    const cleanupFailures = [];
+    try {
+      try {
+        if (readyFirst) await writer.ready;
+        stage = 'READER_LOAD';
+        throw primary;
+      } catch (error) {
+        observed = error;
+      } finally {
+        await disposeSnapshotWriter(writer, true, error => {
+          cleanupFailures.push(snapshotFailureDiagnostic('WRITER_CLEANUP', error));
+        });
+      }
+      assert.strictEqual(observed, primary);
+      assert.equal(stage, 'READER_LOAD');
+      assert.equal(snapshotFailureDiagnostic(stage, observed),
+        'STAGE=READER_LOAD;CODE=ZENON_FUNDING_OBSERVER_STORE_UNSAFE_FILE');
+      assert.deepEqual(cleanupFailures, killAccepted ? [] : [
+        'STAGE=WRITER_CLEANUP;CODE=SNAPSHOT_WRITER_CLEANUP_FAILED',
+      ]);
+      assert.equal(pendingDeadlines.size, 0, 'SNAPSHOT_WRITER_EARLY_READER_DEADLINE_LEAK');
+      assert.equal(closed, true, 'SNAPSHOT_WRITER_EARLY_READER_CHILD_LEAK');
+      assert.equal(signals, 1);
+      await new Promise(resolve => setImmediate(resolve));
+      if (!readyFirst) await assert.rejects(writer.ready);
+      await assert.rejects(writer.done);
+      if (killAccepted) await writer.dispose();
+      else await assert.rejects(writer.dispose(), error => (
+        error.code === 'SNAPSHOT_WRITER_CLEANUP_FAILED'
+      ));
+      assert.equal(signals, 1);
+    } finally {
+      if (!closed) finishChild();
+      pendingDeadlines.clear();
+    }
+  }
+});
+
 test('concurrent committed readers and writer observe only complete old-or-new snapshots', async t => {
   const directory = privateDirectoryFor(t);
   const configuration = createOptions(directory);
-  const reader = createZenonFundingObserverSqliteStore(configuration);
-  const recordKey = reader.load().recordKey;
-  const writer = startSnapshotWriter(configuration, recordKey, 32);
-  t.after(() => {
-    if (writer.child.exitCode === null && writer.child.connected) writer.child.kill('SIGKILL');
-  });
-  await writer.ready;
-  writer.child.send({ type: 'go' });
-  let previousRevision = 0;
-  for (let index = 0; index < 96; index += 1) {
-    const loaded = reader.load();
-    assert.equal(loaded.recordKey, recordKey);
-    assert.equal(loaded.state.revision >= previousRevision, true);
-    previousRevision = loaded.state.revision;
-    assert.equal(reader.projectCommittedCandidate(), null);
-    if (index % 8 === 0) {
-      const additional = openZenonFundingObserverSqliteStore(
-        openOptions(configuration, recordKey, { busyTimeoutMs: 10_000 }),
-      );
-      const snapshot = additional.load();
-      assert.equal(snapshot.recordKey, recordKey);
-      assert.equal(snapshot.state.status, ZENON_FUNDING_OBSERVER_STATUS.AWAITING_INCLUSION);
-      additional.close();
+  let reader;
+  let writer;
+  let additional;
+  let primaryFailed = false;
+  let stage = 'READER_CREATE';
+  try {
+    reader = createZenonFundingObserverSqliteStore(configuration);
+    stage = 'INITIAL_LOAD';
+    const recordKey = reader.load().recordKey;
+    stage = 'WRITER_CREATE';
+    writer = startSnapshotWriter(configuration, recordKey, 32);
+    stage = 'WRITER_READY';
+    await writer.ready;
+    stage = 'WRITER_GO';
+    writer.go();
+    let previousRevision = 0;
+    for (let index = 0; index < 96; index += 1) {
+      stage = 'READER_LOAD';
+      const loaded = reader.load();
+      stage = 'READER_SNAPSHOT_ASSERTIONS';
+      assert.equal(loaded.recordKey, recordKey);
+      assert.equal(loaded.state.revision >= previousRevision, true);
+      previousRevision = loaded.state.revision;
+      stage = 'READER_PROJECT';
+      const candidate = reader.projectCommittedCandidate();
+      stage = 'PROJECT_ASSERTION';
+      assert.equal(candidate, null);
+      if (index % 8 === 0) {
+        stage = 'ADDITIONAL_OPEN';
+        additional = openZenonFundingObserverSqliteStore(
+          openOptions(configuration, recordKey, { busyTimeoutMs: 10_000 }),
+        );
+        stage = 'ADDITIONAL_LOAD';
+        const snapshot = additional.load();
+        stage = 'ADDITIONAL_SNAPSHOT_ASSERTIONS';
+        assert.equal(snapshot.recordKey, recordKey);
+        assert.equal(snapshot.state.status, ZENON_FUNDING_OBSERVER_STATUS.AWAITING_INCLUSION);
+        stage = 'ADDITIONAL_CLOSE';
+        additional.close();
+        additional = undefined;
+      }
     }
+    stage = 'WRITER_DONE';
+    await writer.done;
+    stage = 'FINAL_LOAD';
+    const final = reader.load();
+    stage = 'FINAL_REVISION_ASSERTION';
+    assert.equal(final.state.revision, 32);
+    stage = 'READER_CLOSE';
+    reader.close();
+    reader = undefined;
+  } catch (error) {
+    primaryFailed = true;
+    t.diagnostic(`SNAPSHOT_PRIMARY_${snapshotFailureDiagnostic(stage, error)}`);
+    throw error;
+  } finally {
+    let cleanupError;
+    let cleanupFailed = false;
+    if (writer) {
+      try {
+        await disposeSnapshotWriter(writer, primaryFailed, error => {
+          t.diagnostic(`SNAPSHOT_CLEANUP_${snapshotFailureDiagnostic('WRITER_CLEANUP', error)}`);
+        });
+      } catch (error) {
+        cleanupFailed = true;
+        cleanupError = error;
+      }
+    }
+    for (const [store, cleanupStage] of [
+      [additional, 'ADDITIONAL_CLEANUP'], [reader, 'READER_CLEANUP'],
+    ]) {
+      try {
+        store?.close();
+      } catch (error) {
+        t.diagnostic(`SNAPSHOT_CLEANUP_${snapshotFailureDiagnostic(cleanupStage, error)}`);
+        if (!cleanupFailed) cleanupError = error;
+        cleanupFailed = true;
+      }
+    }
+    if (!primaryFailed && cleanupFailed) throw cleanupError;
   }
-  await writer.done;
-  assert.equal(reader.load().state.revision, 32);
-  reader.close();
 });
 
 test('definite pre-commit failure rolls back while commit ambiguity latches closed', async t => {
