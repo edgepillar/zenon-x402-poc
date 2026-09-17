@@ -19,7 +19,7 @@ import {
   writeFileSync,
 } from 'node:fs';
 import { request as httpsRequest } from 'node:https';
-import { createServer as createNetServer } from 'node:net';
+import { connect as connectNet, createServer as createNetServer } from 'node:net';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -1025,6 +1025,178 @@ test('close reentry preserves a later genuine post-commit recovery outcome', asy
   const durable = context.serviceStore.load().state;
   assert.equal(durable.grants.length, 1);
   assert.equal(durable.grants[0].consumedUnits, 0);
+});
+
+test('transport uncertainty waits for genuine post-commit recovery classification', async t => {
+  let pilot = null;
+  let closePromise = null;
+  let closeObservation = null;
+  let phaseAtPostCommit = null;
+  let uncertaintyBeforeClassification = null;
+  let closeDeadlineFires = 0;
+  let postCommitFailures = 0;
+  let executionCalls = 0;
+  let armed = false;
+  const transport = controlledDeadlineRuntime();
+  const handoff = deadlineRuntime();
+  const context = createStoreContext(t, {
+    hooks: {
+      afterCommit({ operation, changed }) {
+        if (
+          armed
+          && changed
+          && operation === 'activateGrantFromTrustedRecord'
+        ) {
+          postCommitFailures += 1;
+          phaseAtPostCommit = pilot.snapshot().phase;
+          if (closePromise === null) {
+            closePromise = pilot.close();
+            closeObservation = closePromise.then(
+              () => Object.freeze({ status: 'FULFILLED', code: null }),
+              error => Object.freeze({
+                status: 'REJECTED',
+                code: errorCode(error),
+              }),
+            );
+            closeDeadlineFires += transport.fire(6_000);
+            uncertaintyBeforeClassification =
+              pilot.snapshot().transportCloseUncertain;
+          }
+          throw new Error('synthetic post-commit ambiguity');
+        }
+      },
+    },
+  });
+  const started = await createStartedPilot(t, context, () => {
+    executionCalls += 1;
+    return { resultCode: 'unused' };
+  }, { transport, handoff });
+  pilot = started.pilot;
+
+  let peerConnected = false;
+  let peerClosed = false;
+  let connectionSettled = false;
+  let resolvePeerConnection;
+  let resolvePeerClose;
+  const peerConnection = new Promise(resolve => { resolvePeerConnection = resolve; });
+  const peerClose = new Promise(resolve => { resolvePeerClose = resolve; });
+  const peer = connectNet({ host: '127.0.0.1', port: started.port });
+  peer.once('connect', () => {
+    peerConnected = true;
+    connectionSettled = true;
+    resolvePeerConnection(true);
+  });
+  peer.on('error', () => {
+    if (connectionSettled) return;
+    connectionSettled = true;
+    resolvePeerConnection(false);
+  });
+  peer.once('close', () => {
+    peerClosed = true;
+    if (!connectionSettled) {
+      connectionSettled = true;
+      resolvePeerConnection(false);
+    }
+    resolvePeerClose();
+  });
+  peer.resume();
+
+  try {
+    let connectionDeadline = null;
+    const connectedWithinBound = await Promise.race([
+      peerConnection,
+      new Promise(resolve => {
+        connectionDeadline = setTimeout(() => resolve(false), 5_000);
+      }),
+    ]);
+    if (connectionDeadline !== null) clearTimeout(connectionDeadline);
+    assert.equal(connectedWithinBound, true);
+    assert.equal(peerConnected, true);
+    for (
+      let attempt = 0;
+      attempt < 128 && pilot.snapshot().connectionStarts !== 1;
+      attempt += 1
+    ) await new Promise(resolve => setImmediate(resolve));
+    assert.equal(pilot.snapshot().connectionStarts, 1);
+
+    commitReady(context.observerStore);
+    armed = true;
+    const activationPromise = pilot.activateCommittedReady(activationInput(context));
+    const activationObservation = activationPromise.then(
+      () => Object.freeze({ status: 'FULFILLED', code: null }),
+      error => Object.freeze({
+        status: 'REJECTED',
+        code: errorCode(error),
+      }),
+    );
+    const activationOutcome = await activationObservation;
+    assert.notEqual(closePromise, null);
+    assert.notEqual(closeObservation, null);
+    const closeOutcome = await closeObservation;
+
+    assert.deepEqual(activationOutcome, Object.freeze({
+      status: 'REJECTED',
+      code: 'SERVICE_CREDIT_ZENON_HTTPS_OPERATOR_PILOT_ACTIVATED_UNAVAILABLE',
+    }));
+    assert.equal(phaseAtPostCommit, 'ACTIVATING');
+    assert.equal(closeDeadlineFires, 1);
+    assert.equal(uncertaintyBeforeClassification, 1);
+    assert.equal(closeOutcome.status, 'REJECTED');
+    assert.equal(
+      closeOutcome.code,
+      'SERVICE_CREDIT_ZENON_HTTPS_OPERATOR_PILOT_RECOVERY_REQUIRED',
+      'CLOSE_CLASSIFICATION_WEAKER_THAN_RECOVERY',
+    );
+    assert.equal(postCommitFailures, 1);
+    assert.equal(executionCalls, 0);
+
+    const terminal = pilot.snapshot();
+    assert.equal(terminal.phase, 'RECOVERY_REQUIRED');
+    assert.equal(terminal.activationAttempts, 1);
+    assert.equal(terminal.startAttempts, 1);
+    assert.equal(terminal.connectionStarts, 1);
+    assert.equal(terminal.transportCloseClean, 0);
+    assert.equal(terminal.transportCloseUncertain, 1);
+    assert.notEqual(terminal.phase, 'ACTIVE');
+    assert.throws(
+      () => context.serviceStore.load(),
+      error => errorCode(error) === 'SERVICE_CREDIT_STORE_CLOSED',
+    );
+    assert.equal(typeof context.observerStore.load(), 'object');
+    const independentServiceReader = ServiceCreditSqliteStore.openExisting(
+      context.serviceOpenConfiguration,
+    );
+    try {
+      const retainedServiceState = independentServiceReader.load().state;
+      assert.equal(retainedServiceState.grants.length, 1);
+      assert.equal(retainedServiceState.grants[0].consumedUnits, 0);
+    } finally {
+      independentServiceReader.close();
+    }
+
+    if (!peerClosed) peer.destroy();
+    let peerCloseDeadline = null;
+    const peerCloseObserved = await Promise.race([
+      peerClose.then(() => true),
+      new Promise(resolve => {
+        peerCloseDeadline = setTimeout(() => resolve(false), 5_000);
+      }),
+    ]);
+    if (peerCloseDeadline !== null) clearTimeout(peerCloseDeadline);
+    assert.equal(peerCloseObserved, true);
+  } finally {
+    if (!peerClosed) {
+      peer.destroy();
+      let cleanupDeadline = null;
+      await Promise.race([
+        peerClose,
+        new Promise(resolve => {
+          cleanupDeadline = setTimeout(resolve, 5_000);
+        }),
+      ]);
+      if (cleanupDeadline !== null) clearTimeout(cleanupDeadline);
+    }
+  }
 });
 
 test('terminal activation replay returns recovery without re-entering the durable owner', async t => {

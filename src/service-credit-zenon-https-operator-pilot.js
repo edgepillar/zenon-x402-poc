@@ -757,6 +757,8 @@ export function createServiceCreditZenonHttpsOperatorPilot(options) {
   let transportClosed = false;
   let durableCustody = false;
   let activationCallActive = false;
+  let durableStartClassificationPending = false;
+  let closeSettlementDeferred = false;
   let activationReentered = false;
   let activationSettled = false;
   let durableOwner = null;
@@ -999,6 +1001,11 @@ export function createServiceCreditZenonHttpsOperatorPilot(options) {
 
   function settleClose() {
     if (closeSettled || closeCapability === null) return;
+    if (durableStartClassificationPending) {
+      closeSettlementDeferred = true;
+      return;
+    }
+    closeSettlementDeferred = false;
     closeSettled = true;
     const capability = closeCapability;
     closeCapability = null;
@@ -1023,6 +1030,14 @@ export function createServiceCreditZenonHttpsOperatorPilot(options) {
     ingressSnapshotMetrics = null;
     fixed = null;
     capability.resolve(CLOSED_RESULT);
+  }
+
+  function finishDurableStartClassification() {
+    if (!durableStartClassificationPending) return;
+    durableStartClassificationPending = false;
+    if (!closeSettlementDeferred) return;
+    closeSettlementDeferred = false;
+    settleClose();
   }
 
   function onDurableCloseFailure(error) {
@@ -1230,6 +1245,7 @@ export function createServiceCreditZenonHttpsOperatorPilot(options) {
     setTerminal(code);
     rejectActivation(code);
     beginShutdown(code);
+    finishDurableStartClassification();
   }
 
   function onDurableStartSuccess() {
@@ -1238,9 +1254,11 @@ export function createServiceCreditZenonHttpsOperatorPilot(options) {
       setTerminal(CODE.activatedUnavailable);
       rejectActivation(CODE.activatedUnavailable);
       beginShutdown(CODE.activatedUnavailable);
+      finishDurableStartClassification();
       return;
     }
     publishActive(durableOwner);
+    finishDurableStartClassification();
   }
 
   function repeatActivation(input) {
@@ -1321,6 +1339,7 @@ export function createServiceCreditZenonHttpsOperatorPilot(options) {
       candidate = null;
 
       let returned;
+      durableStartClassificationPending = true;
       try {
         returned = REFLECT_APPLY(durableStart, undefined, [input]);
       } catch (error) {
@@ -1338,6 +1357,7 @@ export function createServiceCreditZenonHttpsOperatorPilot(options) {
         setTerminal(CODE.activatedUnavailable);
         rejectActivation(CODE.activatedUnavailable);
         beginShutdown(CODE.activatedUnavailable);
+        finishDurableStartClassification();
       }
       return activationPromise;
     },
