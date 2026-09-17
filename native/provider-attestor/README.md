@@ -170,11 +170,96 @@ prints only a fixed PASS/FAIL status. It does not create a token, stage a root,
 show a GUI, accept a PIN, launch bootstrap, generate configuration or pin
 headers, or authorize child activation. Synthetic offline tests use fictitious
 authority values and inert image files; they are not live funding evidence.
-No real public authority plan or final installed-child digest has been
-operator approved, so provisioning and activation remain blocked. A later
-provisioner must repeat image checks immediately before launch, preserve any
-partial bootstrap state for manual reconciliation, and account for same-user
-replacement races; this preflight alone cannot eliminate them.
+The separately opt-in `development-testnet-provision` target now builds one
+development-only prerequisite connector from
+`tests/development_testnet_provision_main.m`. It is absent from `all`, release,
+and package paths; building does not provision, show a dialog, or start a child.
+Its independently reviewed `DEV_PROVISION_PINS_HEADER` must bind the exact raw
+canonical plan SHA-256 and a separately reviewed verifier image path/digest via
+`PA_DEV_PROVISION_PLAN_SHA256`, `PA_DEV_PROVISION_VERIFIER_PATH`, and
+`PA_DEV_PROVISION_VERIFIER_SHA256`. The latter fills the existing configuration
+schema's verifier slot; this connector never executes that image, and the
+development signer still uses its same-module self-check. Required dormant
+Keychain selectors are fixed to an unused development marker and create or
+access no Keychain item. No plan, authority, image digest, or actual key is
+selected by the build target.
+
+Future invocation requires separate operator authorization. The zero-argument
+connector accepts only the pinned canonical public plan over a bounded inherited
+FD3 pipe or connected unnamed local stream channel followed by EOF. Local streams
+must be non-listening AF_UNIX SOCK_STREAM descriptors with unnamed local and peer
+addresses; named sockets, network sockets, terminals, and regular files are
+rejected. No input endpoint is opened or discovered. It derives only the
+effective-user fixed development base and requires that base to pre-exist
+privately, with both the exact attestor
+root and staging target absent. Canonical ancestry, owner/mode/extended-ACL,
+plan, executable, module, and verifier-image checks precede a Cancel-default
+bounded AppKit review of the full public plan and local 16-digit private PIN.
+This is provisioning consent, not approval of an attestation. There is no PIN
+argument, environment selector, shell, PATH search, or runtime root override.
+
+The ancestry exception is provisioner-local and constructor-fixed. Only the
+three source-derived home, Library, and Application Support ancestors strictly
+outside the private base may contain extended entries, and every entry must be
+`ACL_EXTENDED_DENY` with exactly `ACL_DELETE` and zero flags. Inspection uses the
+native permission mask, rebuilds an ACL from all visited entries with flags
+cleared, and requires bounded exact native exports to compare equal. Missing or
+malformed enumeration, unknown permissions or flags, conversion/comparison or
+release uncertainty, and any allow entry refuse admission. This is not a
+generic deny-only relaxation or permission repair. Canonical spelling, ownership,
+mode, no-symlink, and descriptor identity gates remain enforced.
+
+The private base, attestor root, configuration, token and generation objects,
+and all image leaves still require empty extended ACLs. Image ancestors outside
+the exact fixed support ancestry also remain strict. The shared private-ACL
+helper, existing development child/runtime, and release deny are unchanged.
+No real account or filesystem permissions are modified by these source checks.
+
+After consent and repeated checks, exclusive creation of the exact development
+root is the durable no-retry latch. The connector uses that final root directly,
+not a guessed staging promotion. It retains the exact plan, rechecks images
+immediately before one bootstrap spawn and before sending PIN bytes, uses an
+empty child environment and dedicated FD4/FD5 metadata/PIN pipes, and suppresses
+native/child standard diagnostics. Only exact 64-byte metadata plus EOF and a
+successful reaped exit can produce artifacts. The actual bootstrap public key,
+object identifier and token serial, exact token-configuration bytes, and public
+authority template determine the canonical configuration and development-child
+pin header. Private generation directories are prepared, but no journal request,
+approval, signature, or READY record is created. The runtime creates and checks
+its own operation journal only upon later genuine request execution.
+
+`DEVELOPMENT_PROVISION=PREPARED` means prerequisites only: private metadata,
+`configuration.json`, `development-testnet-pins.h`, and a canonical
+`provision-manifest.json` have been synced and read back consistently. It is not
+an installation or usable-attestor claim. Building the existing separately pinned
+`development-testnet-child`, independently reviewing its final image/dependency
+identity, and authorizing any child invocation remain separate gates. Cancel
+leaves targets absent; any uncertainty after the first root-creation attempt
+reports fixed `UNKNOWN`, preserves every artifact, and refuses another attempt.
+Timeout handling signals only a proven still-unreaped exact owned child, never
+an already reaped or uncertain PID. No failure removes custody to enable retry.
+
+The distinct `development-testnet-provision-test` build compiles out AppKit and
+account-root lookup. A 16-hex compiled tag selects only an exclusively owned
+temporary container with a pre-existing nested synthetic home/support/base
+layout, never the fixed real development root. Its FD6 fake UI and
+inert bootstrap/module fixtures exercise cancellation, pin and shape failures,
+descriptor/EOF framing, one-shot partial-state preservation, reaping, and public
+artifact consistency without creating any key/token, giving real consent, or
+signing. ACL fixtures modify only exact owned synthetic objects. Test-owned
+translation units exercise inspection faults without a production hook; drift
+after creation preserves `UNKNOWN` and prevents retry. Disposal of exact
+task-owned inert test state is not production recovery.
+No TLS generation, signer invocation, attestation envelope, wallet, source/RPC,
+payment, listener, publication, or service activation belongs to this connector.
+
+No real public authority plan or final installed-child digest is approved by
+this source. Software-token files remain copyable development custody. On-disk
+identity/ACL and pre/post-spawn checks do not eliminate same-effective-user
+replacement races or prove mapped-image provenance; GUI delivery and framework
+PIN/string/pipe memory erasure remain unqualified. The release-loader deny is
+unchanged. Provisioning, qualification, real independent immutable-attestation
+approval, and any later network or payment operation need separate authority.
 
 There is no approved release pin set, separately operator-approved installed
 executable digest manifest, root-owned release deployment, or qualified dynamic

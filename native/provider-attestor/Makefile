@@ -12,9 +12,11 @@ DEV_TESTNET_PIN_FLAGS := $(if $(DEV_TESTNET_PINS_HEADER),-include "$(DEV_TESTNET
 CHILD_TEST_PIN_FLAGS := $(if $(CHILD_TEST_PINS_HEADER),-include "$(CHILD_TEST_PINS_HEADER)",)
 RELEASE_PIN_FLAGS := $(if $(RELEASE_PINS_HEADER),-include "$(RELEASE_PINS_HEADER)",)
 BOOTSTRAP_GUI_PIN_FLAGS := $(if $(BOOTSTRAP_GUI_PINS_HEADER),-include "$(BOOTSTRAP_GUI_PINS_HEADER)",)
+DEV_PROVISION_PIN_FLAGS := $(if $(DEV_PROVISION_PINS_HEADER),-include "$(DEV_PROVISION_PINS_HEADER)",)
 
 .PHONY: all conformance conformance-only conformance-test-child runtime-test disposable-token-bootstrap-test disposable-token-bootstrap-synthetic-gui disposable-token-bootstrap-synthetic-gui-fake-ui-test runtime-disposable-token-test development-testnet-child development-testnet-child-test development-testnet-synthetic-manual-gui development-testnet-synthetic-manual-gui-no-dialog-test signer-profile-test trusted-loader-test macos-approval-test manual-operator-acceptance manual-device-owner-only-app manual-operator-acceptance-syntax-check release-syntax-check release-candidate release-artifact-check clean
 .PHONY: pinned-build-force release-pins-required
+.PHONY: development-testnet-provision development-testnet-provision-test
 
 # A pin-header path can change to an older file while BUILD_DIR is reused.
 # Rebuild every pinned target instead of trusting the previous artifact's mtime.
@@ -56,6 +58,13 @@ development-testnet-child: $(BUILD_DIR)/provider-attestor-development-testnet-ch
 
 # Fake-UI, compiled-temporary-root counterpart for offline tests only.
 development-testnet-child-test: $(BUILD_DIR)/provider-attestor-development-testnet-child-test
+
+# Separate one-shot prerequisite preparer. Building never provisions or approves.
+# Real invocation requires independently reviewed plan/verifier pins and consent.
+development-testnet-provision: $(BUILD_DIR)/provider-attestor-development-testnet-provision
+
+# Inert fake-UI peer variant: its compiled tag cannot select the real root.
+development-testnet-provision-test: $(BUILD_DIR)/provider-attestor-development-testnet-provision-test
 
 # Opt-in synthetic/offline manual AppKit child with a compiled private test root.
 # The no-dialog variant is for automated malformed/replay checks only.
@@ -149,6 +158,12 @@ $(BUILD_DIR)/provider-attestor-development-testnet-child: src/provider_attestor_
 
 $(BUILD_DIR)/provider-attestor-development-testnet-child-test: src/provider_attestor_protocol.m src/provider_attestor_runtime.m src/provider_attestor_signer.m tests/test_grant_adapter.m tests/disposable_token_signer.m tests/development_testnet_test_ui.m tests/development_testnet_child_main.m tests/disposable_token_signer.h tests/disposable_token_module_integrity.h tests/development_testnet_ui.h tests/test_grant_adapter.h include/provider_attestor_runtime.h include/provider_attestor_private.h include/provider_attestor_private_acl.h include/pkcs11_minimal.h $(DEV_TESTNET_PINS_HEADER) pinned-build-force | $(BUILD_DIR)
 	$(CLANG) $(COMMON_FLAGS) -Itests -DPA_TESTING=1 -DPA_DEVELOPMENT_TESTNET_CHILD=1 -DPA_DEVELOPMENT_TESTNET_TESTING=1 -DPA_DISPOSABLE_TOKEN_SIGNING_TEST=1 -DPA_SIGNER_PROFILE_TESTING=1 $(DEV_TESTNET_PIN_FLAGS) src/provider_attestor_protocol.m src/provider_attestor_runtime.m src/provider_attestor_signer.m tests/test_grant_adapter.m tests/disposable_token_signer.m tests/development_testnet_test_ui.m tests/development_testnet_child_main.m $(RUNTIME_LIBRARIES) -o "$@"
+
+$(BUILD_DIR)/provider-attestor-development-testnet-provision: src/provider_attestor_protocol.m tests/development_testnet_provision_main.m tests/disposable_token_module_integrity.h include/provider_attestor.h include/provider_attestor_private_acl.h $(DEV_PROVISION_PINS_HEADER) pinned-build-force | $(BUILD_DIR)
+	$(CLANG) $(COMMON_FLAGS) -Itests -DPA_TESTING=1 -DPA_DISPOSABLE_TOKEN_SIGNING_TEST=1 -DPA_DEVELOPMENT_TESTNET_PROVISION=1 $(DEV_PROVISION_PIN_FLAGS) src/provider_attestor_protocol.m tests/development_testnet_provision_main.m $(FOUNDATION) -framework AppKit -o "$@"
+
+$(BUILD_DIR)/provider-attestor-development-testnet-provision-test: src/provider_attestor_protocol.m tests/development_testnet_provision_main.m tests/disposable_token_module_integrity.h include/provider_attestor.h include/provider_attestor_private_acl.h $(DEV_PROVISION_PINS_HEADER) pinned-build-force | $(BUILD_DIR)
+	$(CLANG) $(COMMON_FLAGS) -Itests -DPA_TESTING=1 -DPA_DISPOSABLE_TOKEN_SIGNING_TEST=1 -DPA_DEVELOPMENT_TESTNET_PROVISION=1 -DPA_DEV_PROVISION_FAKE_UI=1 -DPA_DEV_PROVISION_OFFLINE_TEST=1 $(DEV_PROVISION_PIN_FLAGS) src/provider_attestor_protocol.m tests/development_testnet_provision_main.m $(FOUNDATION) -o "$@"
 
 $(BUILD_DIR)/provider-attestor-development-testnet-synthetic-manual-gui: src/provider_attestor_protocol.m src/provider_attestor_runtime.m src/provider_attestor_signer.m tests/disposable_token_signer.m tests/development_testnet_ui.m tests/development_testnet_child_main.m tests/disposable_token_signer.h tests/disposable_token_module_integrity.h tests/development_testnet_ui.h include/provider_attestor_runtime.h include/provider_attestor_private.h include/provider_attestor_private_acl.h include/pkcs11_minimal.h $(DEV_TESTNET_PINS_HEADER) pinned-build-force | $(BUILD_DIR)
 	$(CLANG) $(COMMON_FLAGS) -Itests -DPA_TESTING=1 -DPA_DEVELOPMENT_TESTNET_CHILD=1 -DPA_SYNTHETIC_MANUAL_GUI_TESTING=1 -DPA_DISPOSABLE_TOKEN_SIGNING_TEST=1 -DPA_SIGNER_PROFILE_TESTING=1 $(DEV_TESTNET_PIN_FLAGS) src/provider_attestor_protocol.m src/provider_attestor_runtime.m src/provider_attestor_signer.m tests/disposable_token_signer.m tests/development_testnet_ui.m tests/development_testnet_child_main.m $(RUNTIME_LIBRARIES) -framework AppKit -o "$@"
