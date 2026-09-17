@@ -32,7 +32,12 @@ import {
 } from '../src/service-credit-zenon-funding-composition.js';
 import {
   createZenonFundingEvidenceActivation,
+  deriveZenonFundingObserverTarget,
+  prepareZenonFundingResource,
+  ServiceCreditZenonFundingEvidenceError,
 } from '../src/service-credit-zenon-funding-evidence.js';
+import { paidFetch } from '../src/buyer.js';
+import { paymentIntentDigest, sha256Hex } from '../src/canonical.js';
 import {
   createZenonFundingObserverState,
   ZENON_FUNDING_OBSERVER_STATUS,
@@ -86,9 +91,14 @@ import {
 } from '../src/service-credit-model.js';
 import { ServiceCreditSqliteStore } from '../src/service-credit-sqlite-store.js';
 import {
+  createPaymentCapabilities,
   decodeB64Json,
+  encodeB64Json,
   HEADERS,
   MAX_X402_HEADER_ENCODED_BYTES,
+  validateActiveUpfrontRequirement,
+  validatePaymentRequired,
+  validatePaymentRequiredForOfferSelection,
 } from '../src/x402-wire.js';
 
 const NOW = 2_000_000_000_000;
@@ -1493,6 +1503,222 @@ function exchange(handle, auth) {
     body,
   }));
 }
+
+test('funding challenge wire-intent compatibility preserves the genuine challenge through inert buyer handoff', async () => {
+  const { challenge } = prepareZenonFundingResource({
+    offer: offer(),
+    selection: selection(),
+    resourceUrl: RESOURCE_URL,
+    deriveFundingTerms: fundingTerms,
+    authorityProfile: AUTHORITY.authorityProfile,
+    now: () => NOW,
+  });
+  const required = challenge.paymentRequired;
+  assert.doesNotThrow(() => validatePaymentRequired(required));
+  assert.doesNotThrow(() => validatePaymentRequiredForOfferSelection(required));
+  assert.doesNotThrow(() => validateActiveUpfrontRequirement(required.accepts[0]));
+  const encoded = encodeB64Json(required, {
+    maxEncodedBytes: MAX_X402_HEADER_ENCODED_BYTES,
+  });
+  assert.deepEqual(decodeB64Json(encoded, {
+    maxDecodedBytes: MAX_X402_HEADER_ENCODED_BYTES,
+    maxEncodedBytes: MAX_X402_HEADER_ENCODED_BYTES,
+  }), required);
+  assert.deepEqual(required.resource.tags, [
+    'x402-service-credit-funding-v1',
+    challenge.fundingCommitment.slice(7, 39),
+    challenge.fundingCommitment.slice(39),
+  ]);
+
+  let fetches = 0;
+  let handoffs = 0;
+  let selectedRequired = null;
+  let selectedRequirement = null;
+  const sentinel = Object.freeze({ code: 'FUNDING_CHALLENGE_HANDOFF_STOP' });
+  const paymentClient = Object.freeze(Object.defineProperty({
+    createPaymentPayload(paymentRequired, accepted) {
+      handoffs += 1;
+      selectedRequired = paymentRequired;
+      selectedRequirement = accepted;
+      // Stop before any payload, block, submission, or publication is created.
+      throw sentinel;
+    },
+  }, 'paymentCapabilities', {
+    value: createPaymentCapabilities([{
+      scheme: 'exact',
+      network: 'zenon:testnet',
+      paymentFlows: ['upfront'],
+    }]),
+  }));
+  const inertFetch = async (url, options) => {
+    fetches += 1;
+    assert.equal(fetches, 1);
+    assert.equal(url, RESOURCE_URL);
+    assert.equal(options, undefined);
+    return Object.freeze({
+      status: 402,
+      url: RESOURCE_URL,
+      headers: Object.freeze({
+        get(name) {
+          assert.equal(name, HEADERS.PAYMENT_REQUIRED);
+          return encoded;
+        },
+      }),
+    });
+  };
+  await assert.rejects(
+    paidFetch(RESOURCE_URL, paymentClient, inertFetch),
+    error => error === sentinel,
+  );
+  assert.equal(fetches, 1);
+  assert.equal(handoffs, 1);
+  assert.deepEqual(selectedRequired, required);
+  assert.deepEqual(selectedRequirement, required.accepts[0]);
+  assert.deepEqual(selectedRequired.resource.tags, required.resource.tags);
+  assert.equal(selectedRequirement, selectedRequired.accepts[0]);
+  assert.notEqual(selectedRequired.resource, required.resource);
+  assert.notEqual(selectedRequirement, required.accepts[0]);
+});
+
+test('funding challenge wire-intent compatibility matches the canonical observer intent without SDK preparation', () => {
+  const fundingOffer = offer();
+  const { challenge } = prepareZenonFundingResource({
+    offer: fundingOffer,
+    selection: selection(),
+    resourceUrl: RESOURCE_URL,
+    deriveFundingTerms: fundingTerms,
+    authorityProfile: AUTHORITY.authorityProfile,
+    now: () => NOW,
+  });
+  const retainedChallenge = {
+    ...challenge,
+    paymentRequired: decodeB64Json(encodeB64Json(challenge.paymentRequired, {
+      maxEncodedBytes: MAX_X402_HEADER_ENCODED_BYTES,
+    }), {
+      maxDecodedBytes: MAX_X402_HEADER_ENCODED_BYTES,
+      maxEncodedBytes: MAX_X402_HEADER_ENCODED_BYTES,
+    }),
+  };
+  const required = retainedChallenge.paymentRequired;
+  const accepted = required.accepts[0];
+  const target = deriveZenonFundingObserverTarget({
+    offer: fundingOffer,
+    challenge: retainedChallenge,
+    authorityProfile: AUTHORITY.authorityProfile,
+    transactionHash: TRANSACTION_HASH,
+    payer: retainedChallenge.activationIntent.holderId,
+    resourceUrl: RESOURCE_URL,
+  });
+  assert.deepEqual(required.resource, challenge.paymentRequired.resource);
+  assert.equal(target.grantFundingCommitment, challenge.fundingCommitment);
+  assert.equal(`sha256:${required.resource.tags[1]}${required.resource.tags[2]}`,
+    challenge.fundingCommitment);
+  assert.equal(target.paymentIntentDigest, `sha256:${paymentIntentDigest(required, accepted)}`);
+  assert.equal(target.resourceBinding, fundingOffer.resourceBinding);
+  assert.equal(target.paymentResourceDigest,
+    domainCommitment(RESOURCE_DIGEST_DOMAIN, required.resource));
+  assert.equal(target.paymentRequirementDigest,
+    domainCommitment(REQUIREMENT_DIGEST_DOMAIN, accepted));
+  // Funding commitments are domain-separated, unlike the client journal's digest.
+  assert.notEqual(target.paymentResourceDigest, `sha256:${sha256Hex(required.resource)}`);
+  assert.equal(target.transactionId, `zenontx:${TRANSACTION_HASH}`);
+  // This checks wire/intent binding only, not AccountBlock Data or a signed block.
+});
+
+test('funding challenge wire-intent compatibility refuses binding drift and distinguishes valid transaction targets', () => {
+  const fundingOffer = offer();
+  const { challenge } = prepareZenonFundingResource({
+    offer: fundingOffer,
+    selection: selection(),
+    resourceUrl: RESOURCE_URL,
+    deriveFundingTerms: fundingTerms,
+    authorityProfile: AUTHORITY.authorityProfile,
+    now: () => NOW,
+  });
+  const retained = {
+    offer: fundingOffer,
+    challenge,
+    authorityProfile: AUTHORITY.authorityProfile,
+    transactionHash: TRANSACTION_HASH,
+    payer: challenge.activationIntent.holderId,
+    resourceUrl: RESOURCE_URL,
+  };
+  const mutations = [
+    ['changed funding tag', input => {
+      input.challenge.paymentRequired.resource.tags[0] = 'x402-service-credit-funding-v2';
+    }, true],
+    ['changed funding commitment tag', input => {
+      const tags = input.challenge.paymentRequired.resource.tags;
+      tags[1] = `${tags[1][0] === '0' ? '1' : '0'}${tags[1].slice(1)}`;
+    }, true],
+    ['stripped funding tags', input => {
+      delete input.challenge.paymentRequired.resource.tags;
+    }, true],
+    ['incomplete funding tags', input => {
+      input.challenge.paymentRequired.resource.tags.pop();
+    }, true],
+    ['changed resource URL', input => {
+      const url = new URL(input.resourceUrl);
+      url.pathname += '/different';
+      input.resourceUrl = url.href;
+      input.challenge.paymentRequired.resource.url = url.href;
+    }, true],
+    ['changed amount', input => {
+      input.challenge.paymentRequired.accepts[0].amount = '8';
+    }, true],
+    ['changed payee', input => {
+      input.challenge.paymentRequired.accepts[0].payTo = 'z1otherpayee';
+    }, true],
+    ['changed chain binding', input => {
+      input.challenge.paymentRequired.accepts[0].extra.zenonChain.chainIdentifier = '12346';
+    }, true],
+    ['wrong payer', input => { input.payer = 'z1otherpayer'; }, true],
+    ['malformed transaction hash', input => { input.transactionHash = 'not-a-hash'; }, true],
+    ['short transaction hash', input => {
+      input.transactionHash = TRANSACTION_HASH.slice(1);
+    }, true],
+    ['prefixed transaction identity', input => {
+      input.transactionHash = `zenontx:${TRANSACTION_HASH}`;
+    }, true],
+    ['non-string transaction identity', input => { input.transactionHash = 1; }, true],
+    ['noncanonical amount', input => {
+      input.challenge.paymentRequired.accepts[0].amount = '07';
+    }, false],
+    ['invalid chain binding', input => {
+      input.challenge.paymentRequired.accepts[0].extra.zenonChain.chainIdentifier = '0';
+    }, false],
+  ];
+  for (const [name, mutate, wireValid] of mutations) {
+    const input = structuredClone(retained);
+    mutate(input);
+    const validateWire = () => {
+      validatePaymentRequired(input.challenge.paymentRequired);
+      validateActiveUpfrontRequirement(input.challenge.paymentRequired.accepts[0]);
+    };
+    if (wireValid) assert.doesNotThrow(validateWire, name);
+    else assert.throws(validateWire, undefined, name);
+    assert.throws(() => deriveZenonFundingObserverTarget(input), error => (
+      error instanceof ServiceCreditZenonFundingEvidenceError
+      && error.code === 'SERVICE_CREDIT_ZENON_FUNDING_EVIDENCE_REJECTED'
+    ), name);
+  }
+  const originalTarget = deriveZenonFundingObserverTarget(retained);
+  const otherHash = createHash('sha256')
+    .update('wire-intent-different-synthetic-transaction').digest('hex');
+  assert.notEqual(otherHash, TRANSACTION_HASH);
+  const otherTarget = deriveZenonFundingObserverTarget({
+    ...retained,
+    transactionHash: otherHash,
+  });
+  assert.equal(otherTarget.transactionId, `zenontx:${otherHash}`);
+  assert.notEqual(otherTarget.transactionId, originalTarget.transactionId);
+  const { transactionId: originalId, ...originalBinding } = originalTarget;
+  const { transactionId: otherId, ...otherBinding } = otherTarget;
+  assert.notEqual(originalId, otherId);
+  assert.deepEqual(otherBinding, originalBinding);
+  // Derivation binds a supplied previously verified transaction; it is not an
+  // on-chain or signed-block verifier and accepts another valid hash as distinct.
+});
 
 test('composition import is inert and the owner exports only two operations', () => {
   const source = readFileSync(
