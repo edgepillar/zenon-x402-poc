@@ -203,6 +203,8 @@ test('Zenon funding, signing, and external-holder handoff sources remain inactiv
     'service-credit-zenon-funding-intake-sqlite-store.js',
     'service-credit-zenon-funding-intake.js',
     'service-credit-zenon-funding-intake-http.js',
+    'service-credit-zenon-funding-intake-http-post-v1.js',
+    'service-credit-zenon-funding-intake-https-owner-v1.js',
     'service-credit-zenon-funding-publication-bridge.js',
     'service-credit-external-holder-grant-descriptor-handoff-http-ingress.js',
     'service-credit-external-holder-grant-descriptor-handoff-http.js',
@@ -405,6 +407,88 @@ test('durable HTTPS router is inert and imported only by its test and default-of
   assert.deepEqual(importers, [focusedTestUrl.href, pilotSourceUrl.href].sort());
 });
 
+test('fixed-POST Zenon funding HTTPS intake remains unmounted and BOUND-only', () => {
+  const postName = 'service-credit-zenon-funding-intake-http-post-v1.js';
+  const ownerName = 'service-credit-zenon-funding-intake-https-owner-v1.js';
+  const postSource = readFileSync(new URL(`../src/${postName}`, import.meta.url), 'utf8');
+  const ownerSource = readFileSync(new URL(`../src/${ownerName}`, import.meta.url), 'utf8');
+  const packageText = readFileSync(new URL('../package.json', import.meta.url), 'utf8');
+  const packageJson = JSON.parse(packageText);
+  assert.equal(packageText.includes(postName), false);
+  assert.equal(packageText.includes(ownerName), false);
+  assert.equal(packageJson.exports, undefined);
+  assert.equal(packageJson.bin, undefined);
+  for (const script of Object.values(packageJson.scripts)) {
+    assert.equal(script.includes(postName), false);
+    assert.equal(script.includes(ownerName), false);
+  }
+  assert.doesNotMatch(postSource, /service-credit-zenon-funding-intake-http\.js/);
+  assert.match(
+    ownerSource,
+    /from '\.\/service-credit-zenon-funding-intake-http-post-v1\.js'/,
+  );
+  assert.match(
+    ownerSource,
+    /from '\.\/service-credit-bounded-https-ingress-owner\.js'/,
+  );
+  assert.match(
+    ownerSource,
+    /from '\.\/service-credit-bounded-node-https-server-factory\.js'/,
+  );
+  assert.deepEqual(
+    [...ownerSource.matchAll(/from '([^']+)';/g)].map(match => match[1]),
+    [
+      'node:util',
+      './service-credit-bounded-https-ingress-owner.js',
+      './service-credit-bounded-node-https-server-factory.js',
+      './service-credit-zenon-funding-intake-http-post-v1.js',
+    ],
+  );
+  for (const forbidden of [
+    'service-credit-zenon-funding-publication-bridge.js',
+    'service-credit-zenon-funding-raw-observation-producer.js',
+    'service-credit-zenon-funding-evidence.js',
+    'service-credit-activation.js',
+    'dynamic-plasma',
+  ]) assert.equal(ownerSource.includes(forbidden), false);
+
+  const postImporters = [];
+  const ownerImporters = [];
+  const pending = [
+    new URL('../src/', import.meta.url),
+    new URL('../test/', import.meta.url),
+  ];
+  while (pending.length > 0) {
+    const directory = pending.pop();
+    for (const entry of readdirSync(directory, { withFileTypes: true })) {
+      const candidate = new URL(entry.name, directory);
+      if (entry.isDirectory()) {
+        pending.push(new URL(`${entry.name}/`, directory));
+        continue;
+      }
+      if (!entry.isFile() || !candidate.pathname.endsWith('.js')) continue;
+      const relative = candidate.href.startsWith(new URL('../src/', import.meta.url).href)
+        ? `src/${candidate.href.slice(new URL('../src/', import.meta.url).href.length)}`
+        : `test/${candidate.href.slice(new URL('../test/', import.meta.url).href.length)}`;
+      if (relative === 'test/architecture-boundaries.test.js') continue;
+      const source = readFileSync(candidate, 'utf8');
+      if (!relative.endsWith(`/${postName}`) && source.includes(postName)) {
+        postImporters.push(relative);
+      }
+      if (!relative.endsWith(`/${ownerName}`) && source.includes(ownerName)) {
+        ownerImporters.push(relative);
+      }
+    }
+  }
+  assert.deepEqual(postImporters.sort(), [
+    `src/${ownerName}`,
+    'test/service-credit-zenon-funding-intake-http-post-v1.test.js',
+  ].sort());
+  assert.deepEqual(ownerImporters.sort(), [
+    'test/service-credit-zenon-funding-intake-https-owner-v1.test.js',
+  ]);
+});
+
 test('bounded Node HTTPS factory is inert, constructor-fixed, and test-imported only', () => {
   const sourceUrl = new URL(
     '../src/service-credit-bounded-node-https-server-factory.js',
@@ -420,6 +504,10 @@ test('bounded Node HTTPS factory is inert, constructor-fixed, and test-imported 
   );
   const pilotSourceUrl = new URL(
     '../src/service-credit-zenon-https-operator-pilot.js',
+    import.meta.url,
+  );
+  const fundingHttpsOwnerSourceUrl = new URL(
+    '../src/service-credit-zenon-funding-intake-https-owner-v1.js',
     import.meta.url,
   );
   const source = readFileSync(sourceUrl, 'utf8');
@@ -608,7 +696,11 @@ test('bounded Node HTTPS factory is inert, constructor-fixed, and test-imported 
     }
   }
   importers.sort();
-  assert.deepEqual(importers, [focusedTestUrl.href, pilotSourceUrl.href].sort());
+  assert.deepEqual(importers, [
+    focusedTestUrl.href,
+    fundingHttpsOwnerSourceUrl.href,
+    pilotSourceUrl.href,
+  ].sort());
 });
 
 test('Zenon HTTPS operator pilot is inert, single-use, default-off, and test-imported only', () => {
