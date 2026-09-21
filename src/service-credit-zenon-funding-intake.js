@@ -28,6 +28,38 @@ import { MAX_X402_HEADER_ENCODED_BYTES } from './x402-wire.js';
 const HASH = /^[0-9a-f]{64}$/;
 const FUNDING_TAG = 'x402-service-credit-funding-v1';
 const BODY = 'Payment Required';
+const CREATE_OBJECT = Object.create;
+const DEFINE_PROPERTY = Object.defineProperty;
+const OBJECT_FREEZE = Object.freeze;
+const REFLECT_APPLY = Reflect.apply;
+
+function immutableEnumerableDataDescriptor(value) {
+  const descriptor = REFLECT_APPLY(CREATE_OBJECT, undefined, [null]);
+  descriptor.value = value;
+  descriptor.enumerable = true;
+  descriptor.writable = false;
+  descriptor.configurable = false;
+  return descriptor;
+}
+
+function boundResult(transactionHash, observerRecordKey, observerFileName) {
+  const result = REFLECT_APPLY(CREATE_OBJECT, undefined, [null]);
+  const entries = [
+    ['status', 'BOUND'],
+    ['transactionHash', transactionHash],
+    ['observerRecordKey', observerRecordKey],
+    ['observerFileName', observerFileName],
+  ];
+  for (let index = 0; index < entries.length; index += 1) {
+    const entry = entries[index];
+    REFLECT_APPLY(DEFINE_PROPERTY, undefined, [
+      result,
+      entry[0],
+      immutableEnumerableDataDescriptor(entry[1]),
+    ]);
+  }
+  return REFLECT_APPLY(OBJECT_FREEZE, undefined, [result]);
+}
 
 export class ZenonFundingIntakeError extends Error {
   constructor(code) {
@@ -320,7 +352,6 @@ export function createZenonFundingIntake(options) {
     if (!binding || row.status !== 'BOUND') fail('ZENON_FUNDING_INTAKE_REJECTED');
     const databasePath = join(observerRoot, binding.observerFileName);
     let observer;
-    let result;
     try {
       try {
         observer = openZenonFundingObserverSqliteStore({
@@ -357,12 +388,6 @@ export function createZenonFundingIntake(options) {
         || canonicalJson(loaded.state.chainProfile) !== canonicalJson(binding.observerInitialState.chainProfile)
         || canonicalJson(loaded.state.confirmationPolicy) !== canonicalJson(binding.observerInitialState.confirmationPolicy)
       ) fail('ZENON_FUNDING_INTAKE_OBSERVER_UNCERTAIN');
-      result = Object.freeze({
-        status: 'BOUND',
-        transactionHash: binding.transactionHash,
-        observerRecordKey: binding.observerRecordKey,
-        observerFileName: binding.observerFileName,
-      });
     } catch {
       latched = true;
       fail('ZENON_FUNDING_INTAKE_OBSERVER_UNCERTAIN');
@@ -372,7 +397,11 @@ export function createZenonFundingIntake(options) {
       }
     }
     if (latched) fail('ZENON_FUNDING_INTAKE_OBSERVER_UNCERTAIN');
-    return result;
+    return boundResult(
+      binding.transactionHash,
+      binding.observerRecordKey,
+      binding.observerFileName,
+    );
   }
 
   async function bind(paymentPayload) {

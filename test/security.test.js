@@ -1,10 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { setTimeout as delay } from 'node:timers/promises';
+import { types as utilTypes } from 'node:util';
 import { sha512 } from '@noble/hashes/sha2';
 import * as ed from '@noble/ed25519';
 import * as sdk from 'znn-typescript-sdk';
-import { paymentIntentDigest, sha256Hex } from '../src/canonical.js';
+import { canonicalJson, paymentIntentDigest, sha256Hex } from '../src/canonical.js';
 import { MockExactZenonClient, MockExactZenonFacilitator } from '../src/mock-payment.js';
 import { paidFetch } from '../src/buyer.js';
 import { createResourceServer } from '../src/resource-server.js';
@@ -39,6 +40,37 @@ ed.etc.sha512Sync = (...m) => sha512(ed.etc.concatBytes(...m));
 
 const LEGACY_FLOW_OPTION = 'allowLegacyMissingPaymentFlowForCharacterization';
 const X402_HEADER_ENCODED_BYTES = 8 * 1024;
+const DEPENDENCY_RESULT_KEYS = Object.freeze(['sdk', 'ed']);
+const PREFLIGHT_RESULT_KEYS = Object.freeze([
+  'authorizationKey',
+  'transactionHash',
+  'chainProfile',
+  'intentDigest',
+  'resourceIdentity',
+  'resourceDigest',
+  'payer',
+  'signedAccountBlock',
+  'block',
+  'tokenStandard',
+  'requirements',
+]);
+
+function assertExactFrozenNullPrototypeRecord(value, keys) {
+  assert.equal(Object.getPrototypeOf(value), null);
+  assert.equal(Object.isFrozen(value), true);
+  assert.deepEqual(Reflect.ownKeys(value), keys);
+  for (const key of keys) {
+    const descriptor = Object.getOwnPropertyDescriptor(value, key);
+    assert.deepEqual(
+      {
+        configurable: descriptor?.configurable,
+        enumerable: descriptor?.enumerable,
+        writable: descriptor?.writable,
+      },
+      { configurable: false, enumerable: true, writable: false },
+    );
+  }
+}
 
 function encodedJsonAtByteLength(value, decodedBytes) {
   const json = JSON.stringify(value);
@@ -2956,6 +2988,156 @@ async function preparedZenonFixture({ recipient } = {}) {
     sdk.Zenon.setChainID(originalChainId);
   }
 }
+
+test('Zenon dependency and preflight fulfillment records resist inherited assimilation', async () => {
+  const fixture = await preparedZenonFixture();
+  const makePayload = () => ({
+    x402Version: 2,
+    resource: structuredClone(fixture.required.resource),
+    accepted: structuredClone(fixture.accepted),
+    payload: {
+      transaction: structuredClone(fixture.json),
+      intentDigest: fixture.intentDigest,
+    },
+  });
+  const isolated = await import(
+    `../src/zenon-payment.js?result-assimilation-${Date.now()}-${Math.random()}`
+  );
+  const inheritedKeys = ['then', 'get', 'set', 'sdk', 'ed', 'authorizationKey'];
+  const safeGetPrototypeOf = Reflect.getPrototypeOf;
+  const safeGetOwnPropertyDescriptor = Reflect.getOwnPropertyDescriptor;
+  const safeOwnKeys = Reflect.ownKeys;
+  const safeHasOwn = Object.hasOwn;
+  const safeIsProxy = utilTypes.isProxy;
+  const ordinaryPrototype = Object.prototype;
+  const hasExactOldFulfillmentShape = (value, expectedKeys) => {
+    try {
+      if (value === null || typeof value !== 'object'
+        || safeIsProxy(value)
+        || safeGetPrototypeOf(value) !== ordinaryPrototype) return false;
+      const keys = safeOwnKeys(value);
+      if (keys.length !== expectedKeys.length) return false;
+      for (let index = 0; index < expectedKeys.length; index += 1) {
+        if (keys[index] !== expectedKeys[index]) return false;
+        const descriptor = safeGetOwnPropertyDescriptor(value, keys[index]);
+        if (descriptor?.enumerable !== true || !safeHasOwn(descriptor, 'value')) return false;
+      }
+      return true;
+    } catch {
+      return false;
+    }
+  };
+  let proxyTrapCalls = 0;
+  const hostileProxy = new Proxy({ sdk: null, ed: null }, {
+    get() { proxyTrapCalls += 1; throw new Error('proxy_get_trap'); },
+    getOwnPropertyDescriptor() {
+      proxyTrapCalls += 1;
+      throw new Error('proxy_descriptor_trap');
+    },
+    getPrototypeOf() { proxyTrapCalls += 1; throw new Error('proxy_prototype_trap'); },
+    ownKeys() { proxyTrapCalls += 1; throw new Error('proxy_keys_trap'); },
+  });
+  assert.equal(hasExactOldFulfillmentShape(hostileProxy, DEPENDENCY_RESULT_KEYS), false);
+  assert.equal(proxyTrapCalls, 0);
+  const originals = new Map(inheritedKeys.map(key => [
+    key,
+    Object.getOwnPropertyDescriptor(Object.prototype, key),
+  ]));
+  let matchingThenGetterCalls = 0;
+  let unrelatedThenGetterCalls = 0;
+  let otherGetterCalls = 0;
+  let setterCalls = 0;
+  const unhandled = [];
+  const onUnhandled = value => unhandled.push(value);
+  const settleWithOwnedWatchdog = async operation => {
+    let cancelDeadline;
+    let timer;
+    const deadline = new Promise((resolve, reject) => {
+      cancelDeadline = resolve;
+      timer = setTimeout(() => reject(new Error('result_assimilation_timeout')), 2_000);
+    });
+    const handledDeadline = deadline.catch(() => undefined);
+    try {
+      return await Promise.race([operation(), deadline]);
+    } finally {
+      clearTimeout(timer);
+      cancelDeadline();
+      await handledDeadline;
+    }
+  };
+  process.on('unhandledRejection', onUnhandled);
+  let cold;
+  let warm;
+  try {
+    for (const key of inheritedKeys) {
+      Object.defineProperty(Object.prototype, key, {
+        configurable: true,
+        get() {
+          if (key === 'then') {
+            if (hasExactOldFulfillmentShape(this, DEPENDENCY_RESULT_KEYS)
+              || hasExactOldFulfillmentShape(this, PREFLIGHT_RESULT_KEYS)) {
+              matchingThenGetterCalls += 1;
+            } else {
+              unrelatedThenGetterCalls += 1;
+            }
+          } else {
+            otherGetterCalls += 1;
+          }
+          return undefined;
+        },
+        set() { setterCalls += 1; },
+      });
+    }
+    cold = await settleWithOwnedWatchdog(() => isolated.preflightZenonPayment(
+      makePayload(),
+      fixture.accepted,
+      fixture.required,
+    ));
+    warm = await settleWithOwnedWatchdog(() => isolated.preflightZenonPayment(
+      makePayload(),
+      fixture.accepted,
+      fixture.required,
+    ));
+    await new Promise(resolve => setImmediate(resolve));
+    assert.deepEqual(unhandled, []);
+  } finally {
+    for (const [key, original] of originals) {
+      if (original === undefined) delete Object.prototype[key];
+      else Object.defineProperty(Object.prototype, key, original);
+    }
+    process.off('unhandledRejection', onUnhandled);
+  }
+
+  assert.equal(matchingThenGetterCalls, 0);
+  assert.equal(otherGetterCalls, 0);
+  assert.equal(setterCalls, 0);
+  assert.equal(Number.isSafeInteger(unrelatedThenGetterCalls), true);
+  for (const result of [cold, warm]) {
+    assertExactFrozenNullPrototypeRecord(result, PREFLIGHT_RESULT_KEYS);
+    assert.equal(result.transactionHash, fixture.json.hash);
+    assert.equal(Object.isFrozen(result.block), false);
+    assert.equal(Object.isFrozen(result.chainProfile), false);
+    assert.equal(Object.isFrozen(result.resourceIdentity), false);
+    assert.equal(Object.isFrozen(result.signedAccountBlock), false);
+    assert.equal(Object.isFrozen(result.requirements), false);
+    const spread = { ...result };
+    assert.deepEqual(Reflect.ownKeys(spread), PREFLIGHT_RESULT_KEYS);
+    for (const key of PREFLIGHT_RESULT_KEYS) assert.strictEqual(spread[key], result[key]);
+    const projection = {
+      authorizationKey: result.authorizationKey,
+      transactionHash: result.transactionHash,
+      chainProfile: result.chainProfile,
+      intentDigest: result.intentDigest,
+      resourceIdentity: result.resourceIdentity,
+      resourceDigest: result.resourceDigest,
+      payer: result.payer,
+      signedAccountBlock: result.signedAccountBlock,
+      requirements: result.requirements,
+    };
+    assert.equal(JSON.stringify(projection), JSON.stringify({ ...projection }));
+    assert.equal(canonicalJson(projection), canonicalJson({ ...projection }));
+  }
+});
 
 test('offline preflight rejects signed-block semantic and cryptographic tampering', async () => {
   const fixture = await preparedZenonFixture();

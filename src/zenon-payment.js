@@ -101,13 +101,38 @@ const FACILITATOR_RUNTIME_ENVIRONMENTS = new WeakMap();
 const CLIENT_LIFECYCLE_OBSERVATIONS = new WeakMap();
 const FACILITATOR_LIFECYCLE_OBSERVATIONS = new WeakMap();
 
+function immutableEnumerableDataDescriptor(value) {
+  const descriptor = REFLECT_APPLY(CREATE_OBJECT, undefined, [null]);
+  descriptor.value = value;
+  descriptor.enumerable = true;
+  descriptor.writable = false;
+  descriptor.configurable = false;
+  return descriptor;
+}
+
+function exactFrozenNullPrototypeRecord(entries) {
+  const record = REFLECT_APPLY(CREATE_OBJECT, undefined, [null]);
+  for (let index = 0; index < entries.length; index += 1) {
+    const entry = entries[index];
+    REFLECT_APPLY(DEFINE_PROPERTY, undefined, [
+      record,
+      entry[0],
+      immutableEnumerableDataDescriptor(entry[1]),
+    ]);
+  }
+  return REFLECT_APPLY(OBJECT_FREEZE, undefined, [record]);
+}
+
 async function loadZenonDeps() {
   if (cachedDeps) return cachedDeps;
   const sdk = await import('znn-typescript-sdk');
   const ed = await import('@noble/ed25519');
   const { sha512 } = await import('@noble/hashes/sha2');
   ed.etc.sha512Sync = (...messages) => sha512(ed.etc.concatBytes(...messages));
-  cachedDeps = { sdk, ed };
+  cachedDeps = exactFrozenNullPrototypeRecord([
+    ['sdk', sdk],
+    ['ed', ed],
+  ]);
   return cachedDeps;
 }
 
@@ -1327,19 +1352,19 @@ export async function preflightZenonPayment(paymentPayload, requirements, paymen
     resourceDigest,
     transactionHash: computedHash.toString(),
   });
-  return {
-    authorizationKey,
-    transactionHash: computedHash.toString(),
-    chainProfile: cloneChainProfile(chainProfile),
-    intentDigest: expectedIntent,
-    resourceIdentity,
-    resourceDigest,
-    payer: block.address.toString(),
-    signedAccountBlock: txJson,
-    block,
-    tokenStandard: block.tokenStandard,
-    requirements,
-  };
+  return exactFrozenNullPrototypeRecord([
+    ['authorizationKey', authorizationKey],
+    ['transactionHash', computedHash.toString()],
+    ['chainProfile', cloneChainProfile(chainProfile)],
+    ['intentDigest', expectedIntent],
+    ['resourceIdentity', resourceIdentity],
+    ['resourceDigest', resourceDigest],
+    ['payer', block.address.toString()],
+    ['signedAccountBlock', txJson],
+    ['block', block],
+    ['tokenStandard', block.tokenStandard],
+    ['requirements', requirements],
+  ]);
 }
 
 export class ExactZenonClient {

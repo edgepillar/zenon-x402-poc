@@ -555,12 +555,36 @@ function paymentMatchesFrame(payment, paymentRequired) {
 }
 
 function validBound(value) {
-  const result = exactDataObject(value, BOUND_KEYS, true);
-  return result !== null
-    && result.status === 'BOUND'
-    && typeof result.transactionHash === 'string'
-    && typeof result.observerRecordKey === 'string'
-    && typeof result.observerFileName === 'string';
+  try {
+    if (
+      value === null
+      || typeof value !== 'object'
+      || IS_PROXY(value)
+      || REFLECT_GET_PROTOTYPE_OF(value) !== null
+      || !OBJECT_IS_FROZEN(value)
+    ) return false;
+    const keys = REFLECT_OWN_KEYS(value);
+    if (keys.length !== BOUND_KEYS.length) return false;
+    const result = OBJECT_CREATE(null);
+    for (let index = 0; index < BOUND_KEYS.length; index += 1) {
+      const key = keys[index];
+      if (key !== BOUND_KEYS[index]) return false;
+      const descriptor = REFLECT_GET_OWN_PROPERTY_DESCRIPTOR(value, key);
+      if (
+        descriptor?.enumerable !== true
+        || descriptor.configurable !== false
+        || descriptor.writable !== false
+        || !OBJECT_HAS_OWN(descriptor, 'value')
+      ) return false;
+      result[key] = descriptor.value;
+    }
+    return result.status === 'BOUND'
+      && typeof result.transactionHash === 'string'
+      && typeof result.observerRecordKey === 'string'
+      && typeof result.observerFileName === 'string';
+  } catch {
+    return false;
+  }
 }
 
 function terminalIntakeFailure(code) {
