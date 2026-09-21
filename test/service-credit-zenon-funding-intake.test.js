@@ -5,6 +5,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import nodeTest from 'node:test';
+import { types as utilTypes } from 'node:util';
 import * as sdk from 'znn-typescript-sdk';
 import { canonicalJson, paymentIntentDigest } from '../src/canonical.js';
 import { deriveServiceCreditResourceBinding } from '../src/service-credit-activation.js';
@@ -26,6 +27,24 @@ import { decodeB64Json } from '../src/x402-wire.js';
 
 const NOW = 2_000_000_000_000;
 const RESOURCE_URL = 'https://service.example/credits/zenon-fund';
+const BOUND_RESULT_KEYS = Object.freeze([
+  'status',
+  'transactionHash',
+  'observerRecordKey',
+  'observerFileName',
+]);
+
+function assertExactBoundResult(value) {
+  assertSafeEqual(Object.getPrototypeOf(value), null);
+  assertSafeEqual(Object.isFrozen(value), true);
+  assert.deepEqual(Reflect.ownKeys(value), BOUND_RESULT_KEYS);
+  for (const key of BOUND_RESULT_KEYS) {
+    const descriptor = Object.getOwnPropertyDescriptor(value, key);
+    assertSafeEqual(descriptor?.configurable, false);
+    assertSafeEqual(descriptor?.enumerable, true);
+    assertSafeEqual(descriptor?.writable, false);
+  }
+}
 
 function fixedTestFailure(code) {
   const error = new Error(code);
@@ -359,6 +378,170 @@ test('one synthetic signed payment binds once and creates one exact observer', a
   const recovered = context.owner().recoverBound();
   assertSafeSame(recovered, [first]);
   assertSafeSame(await context.owner().bind(payment), first);
+});
+
+test('BOUND fulfillment records resist inherited assimilation across bind replay and recovery', async t => {
+  const context = fixture(t);
+  const owner = context.owner();
+  const challenge = decodeB64Json(owner.issue({
+    selection: selectedHolder(),
+    resourceUrl: RESOURCE_URL,
+  }).paymentRequiredHeader);
+  const payment = await syntheticSignedPayload(challenge);
+  const inheritedKeys = ['then', 'get', 'set'];
+  const safeGetPrototypeOf = Reflect.getPrototypeOf;
+  const safeGetOwnPropertyDescriptor = Reflect.getOwnPropertyDescriptor;
+  const safeOwnKeys = Reflect.ownKeys;
+  const safeHasOwn = Object.hasOwn;
+  const safeIsProxy = utilTypes.isProxy;
+  const ordinaryPrototype = Object.prototype;
+  const hasExactOldBoundShape = value => {
+    try {
+      if (value === null || typeof value !== 'object'
+        || safeIsProxy(value)
+        || safeGetPrototypeOf(value) !== ordinaryPrototype) return false;
+      const keys = safeOwnKeys(value);
+      if (keys.length !== BOUND_RESULT_KEYS.length) return false;
+      for (let index = 0; index < BOUND_RESULT_KEYS.length; index += 1) {
+        if (keys[index] !== BOUND_RESULT_KEYS[index]) return false;
+        const descriptor = safeGetOwnPropertyDescriptor(value, keys[index]);
+        if (descriptor?.enumerable !== true || !safeHasOwn(descriptor, 'value')) return false;
+      }
+      return true;
+    } catch {
+      return false;
+    }
+  };
+  let proxyTrapCalls = 0;
+  const hostileProxy = new Proxy({
+    status: 'BOUND',
+    transactionHash: '',
+    observerRecordKey: '',
+    observerFileName: '',
+  }, {
+    get() { proxyTrapCalls += 1; throw new Error('proxy_get_trap'); },
+    getOwnPropertyDescriptor() {
+      proxyTrapCalls += 1;
+      throw new Error('proxy_descriptor_trap');
+    },
+    getPrototypeOf() { proxyTrapCalls += 1; throw new Error('proxy_prototype_trap'); },
+    ownKeys() { proxyTrapCalls += 1; throw new Error('proxy_keys_trap'); },
+  });
+  assertSafeEqual(hasExactOldBoundShape(hostileProxy), false);
+  assertSafeEqual(proxyTrapCalls, 0);
+  const originals = new Map(inheritedKeys.map(key => [
+    key,
+    Object.getOwnPropertyDescriptor(Object.prototype, key),
+  ]));
+  let matchingThenGetterCalls = 0;
+  let unrelatedThenGetterCalls = 0;
+  let descriptorGetterCalls = 0;
+  let descriptorSetterCalls = 0;
+  const unhandled = [];
+  const onUnhandled = value => unhandled.push(value);
+  process.on('unhandledRejection', onUnhandled);
+  const originalObserverClose = ZenonFundingObserverSqliteStore.prototype.close;
+  let armDescriptorPoison = false;
+  const mockedObserverClose = t.mock.method(
+    ZenonFundingObserverSqliteStore.prototype,
+    'close',
+    function closeAndArmDescriptorPoison() {
+      originalObserverClose.call(this);
+      if (!armDescriptorPoison) return;
+      for (const key of ['get', 'set']) {
+        Object.defineProperty(Object.prototype, key, {
+          configurable: true,
+          get() { descriptorGetterCalls += 1; return undefined; },
+          set() { descriptorSetterCalls += 1; },
+        });
+      }
+    },
+  );
+  const restoreDescriptorPoison = () => {
+    for (const key of ['get', 'set']) {
+      const original = originals.get(key);
+      if (original === undefined) delete Object.prototype[key];
+      else Object.defineProperty(Object.prototype, key, original);
+    }
+  };
+  const withLateDescriptorPoison = async operation => {
+    armDescriptorPoison = true;
+    let cancelDeadline;
+    let timer;
+    const deadline = new Promise((resolve, reject) => {
+      cancelDeadline = resolve;
+      timer = setTimeout(() => {
+        reject(fixedTestFailure('ZENON_FUNDING_INTAKE_TEST_TIMEOUT'));
+      }, 2_000);
+    });
+    const handledDeadline = deadline.catch(() => undefined);
+    try {
+      return await Promise.race([operation(), deadline]);
+    }
+    finally {
+      clearTimeout(timer);
+      cancelDeadline();
+      await handledDeadline;
+      armDescriptorPoison = false;
+      restoreDescriptorPoison();
+    }
+  };
+  const withLateDescriptorPoisonSync = operation => {
+    armDescriptorPoison = true;
+    try { return operation(); }
+    finally {
+      armDescriptorPoison = false;
+      restoreDescriptorPoison();
+    }
+  };
+  let first;
+  let replay;
+  let recovered;
+  let recoveredReplay;
+  try {
+    Object.defineProperty(Object.prototype, 'then', {
+      configurable: true,
+      get() {
+        if (hasExactOldBoundShape(this)) matchingThenGetterCalls += 1;
+        else unrelatedThenGetterCalls += 1;
+        return undefined;
+      },
+      set() { descriptorSetterCalls += 1; },
+    });
+    first = await withLateDescriptorPoison(() => owner.bind(payment));
+    replay = await withLateDescriptorPoison(() => owner.bind(payment));
+    owner.close();
+    context.reopen();
+    const reopened = context.owner();
+    recovered = withLateDescriptorPoisonSync(() => reopened.recoverBound());
+    recoveredReplay = await withLateDescriptorPoison(() => reopened.bind(payment));
+    reopened.close();
+    await new Promise(resolve => setImmediate(resolve));
+    assert.deepEqual(unhandled, []);
+  } finally {
+    for (const [key, original] of originals) {
+      if (original === undefined) delete Object.prototype[key];
+      else Object.defineProperty(Object.prototype, key, original);
+    }
+    process.off('unhandledRejection', onUnhandled);
+    mockedObserverClose.mock.restore();
+  }
+
+  assertSafeEqual(matchingThenGetterCalls, 0);
+  assertSafeEqual(descriptorGetterCalls, 0);
+  assertSafeEqual(descriptorSetterCalls, 0);
+  assertSafeEqual(Number.isSafeInteger(unrelatedThenGetterCalls), true);
+  assertSafeEqual(context.intakeStore.loadBound().length, 1);
+  assertSafeEqual(recovered.length, 1);
+  for (const value of [first, replay, recovered[0], recoveredReplay]) {
+    assertExactBoundResult(value);
+    assertSafeEqual(value.transactionHash, payment.payload.transaction.hash);
+    const spread = { ...value };
+    assert.deepEqual(Reflect.ownKeys(spread), BOUND_RESULT_KEYS);
+    assertSafeSame(spread, value);
+    assertSafeEqual(JSON.stringify(value), JSON.stringify(spread));
+    assertSafeEqual(canonicalJson(value), canonicalJson(spread));
+  }
 });
 
 test('untrusted nested getters are rejected before invocation or binding', async t => {
