@@ -486,6 +486,7 @@ test('fixed-POST Zenon funding HTTPS intake remains unmounted and BOUND-only', (
   ].sort());
   assert.deepEqual(ownerImporters.sort(), [
     'test/service-credit-zenon-funding-intake-https-owner-v1.test.js',
+    'test/service-credit-zenon-https-funding-to-service-offline.test.js',
   ]);
 });
 
@@ -720,6 +721,10 @@ test('Zenon HTTPS operator pilot is inert, single-use, default-off, and test-imp
     '../test/service-credit-external-holder-grant-descriptor-handoff-http-ingress.test.js',
     import.meta.url,
   );
+  const fundingToServiceAcceptanceTestUrl = new URL(
+    '../test/service-credit-zenon-https-funding-to-service-offline.test.js',
+    import.meta.url,
+  );
   const source = readFileSync(sourceUrl, 'utf8');
   const focusedTest = readFileSync(focusedTestUrl, 'utf8');
   const compositionTest = readFileSync(compositionTestUrl, 'utf8');
@@ -860,6 +865,7 @@ test('Zenon HTTPS operator pilot is inert, single-use, default-off, and test-imp
     compositionTestUrl.href,
     dormantBoundaryTestUrl.href,
     focusedTestUrl.href,
+    fundingToServiceAcceptanceTestUrl.href,
   ].sort());
 });
 
