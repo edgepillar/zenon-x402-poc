@@ -508,7 +508,8 @@ test('fixed-POST Zenon funding HTTPS intake remains unmounted and BOUND-only', (
   ].sort());
   assert.deepEqual(clientImporters.sort(), [
     'test/service-credit-zenon-funding-post-v1-client.test.js',
-  ]);
+    'test/service-credit-zenon-https-funding-to-service-offline.test.js',
+  ].sort());
 });
 
 test('bounded Node HTTPS factory is inert, constructor-fixed, and test-imported only', () => {

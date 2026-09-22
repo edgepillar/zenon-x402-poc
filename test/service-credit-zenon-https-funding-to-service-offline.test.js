@@ -51,6 +51,10 @@ import {
   createServiceCreditZenonFundingIntakeHttpsOwnerV1,
 } from '../src/service-credit-zenon-funding-intake-https-owner-v1.js';
 import {
+  createServiceCreditZenonFundingPostV1Client,
+  ZENON_FUNDING_POST_V1_CLIENT_CODES,
+} from '../src/service-credit-zenon-funding-post-v1-client.js';
+import {
   createZenonFundingComposition,
 } from '../src/service-credit-zenon-funding-composition.js';
 import {
@@ -438,6 +442,18 @@ function assertFrozenStatus(value, status) {
   assert.equal(Object.isFrozen(value), true);
 }
 
+function assertFrozenNullStatus(value, status) {
+  assert.equal(Object.getPrototypeOf(value), null);
+  assert.deepEqual(Reflect.ownKeys(value), ['status']);
+  assert.deepEqual(Object.getOwnPropertyDescriptor(value, 'status'), {
+    value: status,
+    writable: false,
+    enumerable: true,
+    configurable: false,
+  });
+  assert.equal(Object.isFrozen(value), true);
+}
+
 function durableCustodyReleaseProof() {
   const proof = Object.create(null);
   Object.defineProperty(proof, 'status', {
@@ -757,6 +773,131 @@ function httpsExchange({ port, cert, resources }, {
   });
 }
 
+function fundingClientTransport({ port, cert, resources, calls, captureSocket }) {
+  return (url, options) => new Promise((resolve, reject) => {
+    let parsed;
+    try { parsed = new URL(url); }
+    catch { reject(fixedFailure('FUNDING_CLIENT_TRANSPORT')); return; }
+    if (
+      url !== RESOURCE_URL
+      || parsed.protocol !== 'https:'
+      || parsed.hostname !== '127.0.0.1'
+      || parsed.port !== ''
+      || parsed.pathname !== SERVICE_CREDIT_HTTP_PATH
+      || parsed.search !== ''
+      || parsed.hash !== ''
+      || options?.method !== 'POST'
+      || options?.redirect !== 'manual'
+      || options?.cache !== 'no-store'
+      || options?.credentials !== 'omit'
+    ) {
+      reject(fixedFailure('FUNDING_CLIENT_TRANSPORT'));
+      return;
+    }
+
+    let headers;
+    try { headers = Object.fromEntries(Object.entries(options.headers)); }
+    catch { reject(fixedFailure('FUNDING_CLIENT_TRANSPORT')); return; }
+    const paymentSignature = headers['PAYMENT-SIGNATURE'];
+    if (
+      headers['Content-Length'] !== '0'
+      || (
+        paymentSignature !== undefined
+        && (typeof paymentSignature !== 'string' || paymentSignature.length === 0)
+      )
+    ) {
+      reject(fixedFailure('FUNDING_CLIENT_TRANSPORT'));
+      return;
+    }
+    calls.push(Object.freeze({
+      logicalOriginPinned: true,
+      mappedToEphemeralLoopback: Number.isSafeInteger(port) && port > 0,
+      zeroBodyPost: true,
+      paymentAttached: paymentSignature !== undefined,
+      redirectManual: true,
+      cacheDisabled: true,
+      credentialsOmitted: true,
+    }));
+    headers.Host = parsed.host;
+    headers.Connection = 'close';
+
+    let request;
+    let requestClosed = false;
+    let socketObserved = false;
+    let socketClosed = false;
+    let terminalError = null;
+    let responseValue = null;
+    let settled = false;
+    const finish = () => {
+      if (
+        settled
+        || !requestClosed
+        || (socketObserved && !socketClosed)
+        || (terminalError === null && responseValue === null)
+      ) return;
+      settled = true;
+      if (terminalError !== null) reject(terminalError);
+      else resolve(responseValue);
+    };
+    const fail = () => {
+      if (terminalError === null) terminalError = fixedFailure('FUNDING_CLIENT_TRANSPORT');
+      finish();
+    };
+
+    try {
+      request = httpsRequest({
+        hostname: '127.0.0.1',
+        port,
+        path: parsed.pathname,
+        method: options.method,
+        ca: cert,
+        rejectUnauthorized: true,
+        agent: false,
+        ALPNProtocols: ['http/1.1'],
+        headers,
+        signal: options.signal,
+      }, response => {
+        resources.retainResponse(response);
+        const chunks = [];
+        response.on('data', chunk => chunks.push(chunk));
+        response.once('error', fail);
+        response.once('aborted', fail);
+        response.once('end', () => {
+          const bytes = Buffer.concat(chunks);
+          responseValue = Object.freeze({
+            status: response.statusCode,
+            url,
+            redirected: false,
+            headers: new Headers(response.headers),
+            body: new Response(bytes).body,
+          });
+          finish();
+        });
+      });
+    } catch {
+      reject(fixedFailure('FUNDING_CLIENT_TRANSPORT'));
+      return;
+    }
+    resources.retainClient(request);
+    request.once('socket', socket => {
+      socketObserved = true;
+      resources.retainClient(socket);
+      captureSocket(socket);
+      socket.once('close', () => {
+        socketClosed = true;
+        finish();
+      });
+    });
+    request.once('error', fail);
+    request.once('close', () => {
+      requestClosed = true;
+      if (!socketObserved) socketClosed = true;
+      finish();
+    });
+    request.end();
+  });
+}
+
 function rawTlsWriteUntilClose({ port, cert, resources }, requestText, capture) {
   return new Promise(resolve => {
     const socket = connectTls({
@@ -866,6 +1007,7 @@ function fundingOwnerConfiguration(context, port, deadlines) {
 
 async function createBoundContext(t, {
   loseFirstResponse,
+  usePublicFundingClient = false,
   stopAfterFirstStart = false,
   stage = () => undefined,
 }) {
@@ -961,31 +1103,78 @@ async function createBoundContext(t, {
   assertFrozenStatus(await firstOwner.start(), 'LISTENING');
   if (stopAfterFirstStart) return context;
   const initialRoute = Object.freeze({ port: firstPort, cert: tls.cert, resources });
+  const fundingClientCalls = [];
+  let fundingClient = null;
+  let retainedChallenge = null;
+  let retainedChallengeBytes = null;
+  let retainedPaymentHeaderBytes = null;
   stage('FUNDING_CHALLENGE');
-  const challengeResponse = await httpsExchange(initialRoute);
-  assert.equal(challengeResponse.statusCode, 402);
-  assert.equal(challengeResponse.body.toString('utf8'), 'Payment Required');
-  const paymentRequired = decodeB64Json(
-    challengeResponse.headers[HEADERS.PAYMENT_REQUIRED],
-    { maxEncodedBytes: 8192 },
-  );
+  let paymentRequired;
+  if (usePublicFundingClient) {
+    fundingClient = createServiceCreditZenonFundingPostV1Client(Object.freeze({
+      resourceUrl: RESOURCE_URL,
+      deadlineMs: 5_000,
+      fetchImpl: fundingClientTransport({
+        port: firstPort,
+        cert: tls.cert,
+        resources,
+        calls: fundingClientCalls,
+        captureSocket(socket) { clientSocket = socket; },
+      }),
+    }));
+    retainedChallenge = await fundingClient.requestChallenge();
+    assert.equal(Object.getPrototypeOf(retainedChallenge), null);
+    assert.equal(Object.isFrozen(retainedChallenge), true);
+    assert.equal(retainedChallenge.status, 'PAYMENT_REQUIRED');
+    assert.equal(retainedChallenge.resourceUrl, RESOURCE_URL);
+    assert.equal(Object.isFrozen(retainedChallenge.paymentRequired), true);
+    paymentRequired = retainedChallenge.paymentRequired;
+  } else {
+    const challengeResponse = await httpsExchange(initialRoute);
+    assert.equal(challengeResponse.statusCode, 402);
+    assert.equal(challengeResponse.body.toString('utf8'), 'Payment Required');
+    paymentRequired = decodeB64Json(
+      challengeResponse.headers[HEADERS.PAYMENT_REQUIRED],
+      { maxEncodedBytes: 8192 },
+    );
+  }
   assert.deepEqual(context.row().issue.challenge.paymentRequired, paymentRequired);
   const initialSignatureCount = paymentSignatureCount;
   const payment = syntheticSignedPayment(paymentRequired);
   const encodedPayment = paymentHeader(payment);
+  if (usePublicFundingClient) {
+    retainedChallengeBytes = resources.retainBuffer(
+      Buffer.from(JSON.stringify(retainedChallenge), 'utf8'),
+    );
+    retainedPaymentHeaderBytes = resources.retainBuffer(Buffer.from(encodedPayment, 'ascii'));
+    assert.equal(retainedChallengeBytes.toString('utf8'), JSON.stringify(retainedChallenge));
+    assert.equal(retainedPaymentHeaderBytes.toString('ascii'), encodedPayment);
+  }
 
   stage('FUNDING_BIND');
   if (loseFirstResponse) {
     armed = true;
-    await rawTlsWriteUntilClose(
-      initialRoute,
-      `POST ${SERVICE_CREDIT_HTTP_PATH} HTTP/1.1\r\n`
-        + 'Host: 127.0.0.1\r\n'
-        + 'Content-Length: 0\r\n'
-        + `PAYMENT-SIGNATURE: ${encodedPayment}\r\n`
-        + 'Connection: close\r\n\r\n',
-      socket => { clientSocket = socket; },
-    );
+    if (usePublicFundingClient) {
+      await assert.rejects(
+        fundingClient.submitAuthorizedPayment(Object.freeze({
+          challenge: retainedChallenge,
+          paymentSignatureHeader: retainedPaymentHeaderBytes.toString('ascii'),
+        })),
+        codeIs(ZENON_FUNDING_POST_V1_CLIENT_CODES.outcomeUnknown),
+      );
+      assert.equal(retainedChallengeBytes.toString('utf8'), JSON.stringify(retainedChallenge));
+      assert.equal(retainedPaymentHeaderBytes.toString('ascii'), encodedPayment);
+    } else {
+      await rawTlsWriteUntilClose(
+        initialRoute,
+        `POST ${SERVICE_CREDIT_HTTP_PATH} HTTP/1.1\r\n`
+          + 'Host: 127.0.0.1\r\n'
+          + 'Content-Length: 0\r\n'
+          + `PAYMENT-SIGNATURE: ${encodedPayment}\r\n`
+          + 'Connection: close\r\n\r\n',
+        socket => { clientSocket = socket; },
+      );
+    }
     assert.equal(commitCallbacks, 1);
     assert.notEqual(firstClose, null);
     await assert.rejects(
@@ -1002,11 +1191,18 @@ async function createBoundContext(t, {
     });
     assert.equal(resources.snapshot().ownerOutcomes[0], 'REJECTED');
   } else {
-    const response = await httpsExchange(initialRoute, {
-      headers: { 'PAYMENT-SIGNATURE': encodedPayment },
-    });
-    assert.equal(response.statusCode, 202);
-    assert.equal(response.body.toString('utf8'), 'BOUND');
+    if (usePublicFundingClient) {
+      assertFrozenNullStatus(await fundingClient.submitAuthorizedPayment(Object.freeze({
+        challenge: retainedChallenge,
+        paymentSignatureHeader: retainedPaymentHeaderBytes.toString('ascii'),
+      })), 'BOUND');
+    } else {
+      const response = await httpsExchange(initialRoute, {
+        headers: { 'PAYMENT-SIGNATURE': encodedPayment },
+      });
+      assert.equal(response.statusCode, 202);
+      assert.equal(response.body.toString('utf8'), 'BOUND');
+    }
     assertFrozenStatus(await resources.closeOwner(firstOwner), 'CLOSED');
   }
   assert.equal(firstDeadlines.empty(), true);
@@ -1045,19 +1241,55 @@ async function createBoundContext(t, {
   stage('FUNDING_REPLAY_START');
   assertFrozenStatus(await replayOwner.start(), 'LISTENING');
   stage('FUNDING_REPLAY');
-  const replayResponse = await httpsExchange({
-    port: replayPort,
-    cert: tls.cert,
-    resources,
-  }, {
-    headers: { 'PAYMENT-SIGNATURE': encodedPayment },
-  });
-  assert.equal(replayResponse.statusCode, 202);
-  assert.equal(replayResponse.body.toString('utf8'), 'BOUND');
+  if (usePublicFundingClient) {
+    const recoveredClient = createServiceCreditZenonFundingPostV1Client(Object.freeze({
+      resourceUrl: RESOURCE_URL,
+      deadlineMs: 5_000,
+      fetchImpl: fundingClientTransport({
+        port: replayPort,
+        cert: tls.cert,
+        resources,
+        calls: fundingClientCalls,
+        captureSocket() {},
+      }),
+    }));
+    const reconstructedChallenge = JSON.parse(retainedChallengeBytes.toString('utf8'));
+    const reconstructedPaymentHeader = retainedPaymentHeaderBytes.toString('ascii');
+    assert.equal(JSON.stringify(reconstructedChallenge), retainedChallengeBytes.toString('utf8'));
+    assert.equal(reconstructedPaymentHeader, encodedPayment);
+    assertFrozenNullStatus(await recoveredClient.submitAuthorizedPayment(Object.freeze({
+      challenge: reconstructedChallenge,
+      paymentSignatureHeader: reconstructedPaymentHeader,
+    })), 'BOUND');
+  } else {
+    const replayResponse = await httpsExchange({
+      port: replayPort,
+      cert: tls.cert,
+      resources,
+    }, {
+      headers: { 'PAYMENT-SIGNATURE': encodedPayment },
+    });
+    assert.equal(replayResponse.statusCode, 202);
+    assert.equal(replayResponse.body.toString('utf8'), 'BOUND');
+  }
   assert.deepEqual(context.row(), originalRow);
   assert.equal(context.intakeStore.loadBound().length, 1);
   assert.equal(policyCalls, 1);
   assert.equal(paymentSignatureCount - initialSignatureCount, 1);
+  if (usePublicFundingClient) {
+    assert.deepEqual(
+      fundingClientCalls.map(call => call.paymentAttached),
+      [false, true, true],
+    );
+    assert.equal(fundingClientCalls.every(call => (
+      call.logicalOriginPinned
+      && call.mappedToEphemeralLoopback
+      && call.zeroBodyPost
+      && call.redirectManual
+      && call.cacheDisabled
+      && call.credentialsOmitted
+    )), true);
+  }
   assertFrozenStatus(await resources.closeOwner(replayOwner), 'CLOSED');
   assert.equal(replayDeadlines.empty(), true);
   await provePortReleased(replayPort, resources);
@@ -1784,7 +2016,11 @@ test('rejected close withholds durable teardown until custody release and native
 
 test('real loopback funding converges through retained publication, provider READY, and authenticated service replay', async (t, stage) => {
   const caseSigningBaseline = paymentSignatureCount;
-  const context = await createBoundContext(t, { loseFirstResponse: true, stage });
+  const context = await createBoundContext(t, {
+    loseFirstResponse: true,
+    usePublicFundingClient: true,
+    stage,
+  });
   const retainedSigningCount = caseSigningBaseline + 1;
   assert.equal(paymentSignatureCount, retainedSigningCount);
   try {
