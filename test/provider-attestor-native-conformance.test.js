@@ -10,6 +10,7 @@ import {
   readFileSync,
   realpathSync,
   renameSync,
+  rmdirSync,
   rmSync,
   statSync,
   chmodSync,
@@ -527,6 +528,151 @@ function exchangeWithProtocolChild(executable, frame) {
           settled = true;
           resolve(result);
         } catch { fail(); }
+      });
+      child.stdio[3].end(frame);
+    } catch { fail(); }
+  });
+}
+
+function createOwnedBarrierDirectory(parent, label) {
+  const canonicalParent = realpathSync(parent);
+  const parentIdentity = lstatSync(canonicalParent, { bigint: true });
+  const sharedParent = canonicalParent === '/private/tmp';
+  if (canonicalParent !== parent || !parentIdentity.isDirectory()
+      || parentIdentity.isSymbolicLink()
+      || (sharedParent
+        ? parentIdentity.uid !== 0n || (parentIdentity.mode & 0o7777n) !== 0o1777n
+        : parentIdentity.uid !== BigInt(process.geteuid())
+          || (parentIdentity.mode & 0o7777n) !== 0o700n)) {
+    throw sanitizedNativeFailure('native barrier fixture parent invalid');
+  }
+  const name = `${label}-${randomBytes(8).toString('hex')}`;
+  const path = join(canonicalParent, name);
+  let owned = null;
+  try {
+    mkdirSync(path, { mode: 0o700 });
+    const identity = lstatSync(path, { bigint: true });
+    owned = Object.freeze({
+      path,
+      name,
+      parent: canonicalParent,
+      identity: Object.freeze({
+        dev: identity.dev,
+        ino: identity.ino,
+        uid: identity.uid,
+        gid: identity.gid,
+        mode: identity.mode,
+      }),
+    });
+    const acl = spawnSync('/bin/ls', ['-lde', path], { encoding: 'utf8', env: {} });
+    if (!identity.isDirectory() || identity.isSymbolicLink()
+        || identity.uid !== BigInt(process.geteuid())
+        || (identity.mode & 0o7777n) !== 0o700n
+        || acl.status !== 0 || acl.stderr.length !== 0
+        || /^\s*\d+:/m.test(acl.stdout) || readdirSync(path).length !== 0) {
+      throw sanitizedNativeFailure('native barrier fixture creation failed');
+    }
+    return owned;
+  } catch {
+    if (owned !== null) removeOwnedBarrierDirectory(owned);
+    throw sanitizedNativeFailure('native barrier fixture creation failed');
+  }
+}
+
+function removeOwnedBarrierDirectory(owned) {
+  if (owned === null) return;
+  if (dirname(owned.path) !== owned.parent || basename(owned.path) !== owned.name
+      || !/^(?:ProviderAttestorParentBarrier|pa-private-leaf-barrier)-[0-9a-f]{16}$/
+        .test(owned.name)) {
+    throw sanitizedNativeFailure('native barrier fixture cleanup refused');
+  }
+  const current = lstatSync(owned.path, { bigint: true });
+  const acl = spawnSync('/bin/ls', ['-lde', owned.path], { encoding: 'utf8', env: {} });
+  for (const key of ['dev', 'ino', 'uid', 'gid', 'mode']) {
+    if (current[key] !== owned.identity[key]) {
+      throw sanitizedNativeFailure('native barrier fixture cleanup refused');
+    }
+  }
+  if (!current.isDirectory() || current.isSymbolicLink()
+      || acl.status !== 0 || acl.stderr.length !== 0
+      || /^\s*\d+:/m.test(acl.stdout) || readdirSync(owned.path).length !== 0) {
+    throw sanitizedNativeFailure('native barrier fixture cleanup refused');
+  }
+  rmdirSync(owned.path);
+  if (existsSync(owned.path)) {
+    throw sanitizedNativeFailure('native barrier fixture cleanup failed');
+  }
+}
+
+function exchangeWithStatBarrierChild(executable, frame, onBarrier, watchdog) {
+  return new Promise((resolve, reject) => {
+    let child;
+    let failed = false;
+    let markers = '';
+    let stdoutSeen = false;
+    let stderrSeen = false;
+    const response = [];
+    let responseLength = 0;
+    const fail = () => {
+      failed = true;
+      try { child?.kill('SIGKILL'); } catch {}
+    };
+    try {
+      child = spawn(executable, [], {
+        env: {}, stdio: ['ignore', 'pipe', 'pipe', 'pipe', 'pipe', 'pipe', 'pipe'],
+      });
+      watchdog.activeChild = child;
+    } catch {
+      reject(sanitizedNativeFailure('native stat-barrier child failed'));
+      return;
+    }
+    try {
+      child.on('error', fail);
+      child.stdout.on('error', fail);
+      child.stderr.on('error', fail);
+      for (const descriptor of [3, 4, 5, 6]) child.stdio[descriptor].on('error', fail);
+      child.stdout.on('data', () => { stdoutSeen = true; });
+      child.stderr.on('data', () => { stderrSeen = true; });
+      child.stdio[4].on('data', chunk => {
+        responseLength += chunk.length;
+        if (responseLength
+            > ZENON_FUNDING_PROVIDER_SIGNING_CHILD_REQUEST_MAXIMUM_PAYLOAD_BYTES + 4) {
+          fail();
+          return;
+        }
+        response.push(chunk);
+      });
+      child.stdio[5].on('data', chunk => {
+        if (!Buffer.isBuffer(chunk) || chunk.length !== 1
+            || (markers.length === 0 && !chunk.equals(Buffer.from('P')))
+            || (markers.length === 1 && !chunk.equals(Buffer.from('L')))
+            || markers.length > 1) {
+          fail();
+          return;
+        }
+        const marker = chunk.toString('ascii');
+        markers += marker;
+        try {
+          onBarrier(marker);
+          if (marker === 'L') child.stdio[6].end(Buffer.from('R'));
+          else child.stdio[6].write(Buffer.from('R'));
+        } catch { fail(); }
+      });
+      child.on('close', (code, signal) => {
+        if (!child.stdio[6].writableEnded) child.stdio[6].end();
+        if (watchdog.activeChild === child) watchdog.activeChild = null;
+        if (failed || watchdog.expired || markers.length === 0) {
+          reject(sanitizedNativeFailure('native stat-barrier child failed'));
+          return;
+        }
+        resolve(Object.freeze({
+          code,
+          signal,
+          markers,
+          stdoutEmpty: !stdoutSeen,
+          stderrEmpty: !stderrSeen,
+          response: Buffer.concat(response),
+        }));
       });
       child.stdio[3].end(frame);
     } catch { fail(); }
@@ -1094,6 +1240,101 @@ nativeConformanceTest('native journal runner proves ordering and replay only wit
   assert.equal(manualReplay.response.equals(manualStoredFrame), true);
   assert.equal(manualReplay.stdout.length, 0);
   assert.equal(manualReplay.stderr.length, 0);
+
+  const barrierPinsPath = join(temporary, 'synthetic-manual-stat-barrier-pins.h');
+  writeFileSync(barrierPinsPath, [
+    readFileSync(manualPinsPath, 'utf8').trimEnd(),
+    '#define PA_SYNTHETIC_MANUAL_STAT_BARRIER_TESTING 1',
+    '',
+  ].join('\n'), { mode: 0o600 });
+  const barrierBuild = join(temporary, 'synthetic-manual-stat-barrier-build');
+  const barrierCompiled = spawnSync('/usr/bin/make', [
+    '-C', nativeDirectory, 'development-testnet-synthetic-manual-gui-no-dialog-test',
+    `BUILD_DIR=${barrierBuild}`, `DEV_TESTNET_PINS_HEADER=${barrierPinsPath}`,
+  ], { encoding: 'utf8' });
+  assert.equal(barrierCompiled.status, 0, 'synthetic stat-barrier child build failed');
+  const barrierExecutable = join(barrierBuild,
+    'provider-attestor-development-testnet-synthetic-manual-gui-no-dialog-test');
+  const barrierWatchdog = { activeChild: null, expired: false };
+  const barrierTimer = setTimeout(() => {
+    barrierWatchdog.expired = true;
+    try { barrierWatchdog.activeChild?.kill('SIGKILL'); } catch {}
+  }, 15_000);
+  let sharedSibling = null;
+  let leafSibling = null;
+  try {
+    const unchanged = await exchangeWithStatBarrierChild(
+      barrierExecutable, vector.frame, () => {}, barrierWatchdog,
+    );
+    assert.equal(unchanged.code, 0);
+    assert.equal(unchanged.signal, null);
+    assert.equal(unchanged.markers, 'PL');
+    assert.equal(unchanged.response.equals(manualStoredFrame), true);
+    assert.equal(unchanged.stdoutEmpty, true);
+    assert.equal(unchanged.stderrEmpty, true);
+
+    const intervened = await exchangeWithStatBarrierChild(
+      barrierExecutable,
+      vector.frame,
+      marker => {
+        if (marker === 'P') {
+          sharedSibling = createOwnedBarrierDirectory(
+            '/private/tmp', 'ProviderAttestorParentBarrier',
+          );
+        }
+      },
+      barrierWatchdog,
+    );
+    assert.equal(intervened.code, 0);
+    assert.equal(intervened.signal, null);
+    assert.equal(intervened.markers, 'PL');
+    assert.equal(intervened.response.equals(manualStoredFrame), true);
+    assert.equal(intervened.stdoutEmpty, true);
+    assert.equal(intervened.stderrEmpty, true);
+    assert.equal(readJournal(manualFixture).row.checksum === journalBeforeManual.row.checksum,
+      true, 'shared-parent mutation changed the committed journal');
+    removeOwnedBarrierDirectory(sharedSibling);
+    sharedSibling = null;
+
+    const restored = await exchangeWithStatBarrierChild(
+      barrierExecutable, vector.frame, () => {}, barrierWatchdog,
+    );
+    assert.equal(restored.code, 0);
+    assert.equal(restored.signal, null);
+    assert.equal(restored.markers, 'PL');
+    assert.equal(restored.response.equals(manualStoredFrame), true);
+    assert.equal(restored.stdoutEmpty, true);
+    assert.equal(restored.stderrEmpty, true);
+
+    const privateLeafMutation = await exchangeWithStatBarrierChild(
+      barrierExecutable,
+      vector.frame,
+      marker => {
+        if (marker === 'L') {
+          leafSibling = createOwnedBarrierDirectory(manualRoot, 'pa-private-leaf-barrier');
+        }
+      },
+      barrierWatchdog,
+    );
+    assert.notEqual(privateLeafMutation.code, 0);
+    assert.equal(privateLeafMutation.signal, null);
+    assert.equal(privateLeafMutation.markers, 'PL');
+    assert.equal(privateLeafMutation.response.length, 0);
+    assert.equal(privateLeafMutation.stdoutEmpty, true);
+    assert.equal(privateLeafMutation.stderrEmpty, true);
+    assert.equal(readJournal(manualFixture).row.checksum === journalBeforeManual.row.checksum,
+      true, 'private-leaf mutation changed the committed journal');
+    removeOwnedBarrierDirectory(leafSibling);
+    leafSibling = null;
+  } finally {
+    clearTimeout(barrierTimer);
+    try { barrierWatchdog.activeChild?.kill('SIGKILL'); } catch {}
+    if (sharedSibling !== null) removeOwnedBarrierDirectory(sharedSibling);
+    if (leafSibling !== null) removeOwnedBarrierDirectory(leafSibling);
+  }
+  assert.equal(barrierWatchdog.expired, false, 'stat-barrier cleanup watchdog expired');
+  assert.equal(barrierWatchdog.activeChild, null, 'stat-barrier child was not reaped');
+
   writeFileSync(manualFixture.configurationPath,
     canonicalJson({ ...config, validitySeconds: 121 }));
   try {

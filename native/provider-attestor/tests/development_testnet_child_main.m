@@ -33,6 +33,11 @@
   && !defined(PA_SYNTHETIC_MANUAL_GUI_TESTING)
 #error No-dialog guard is only for the synthetic manual-GUI test variant
 #endif
+#if defined(PA_SYNTHETIC_MANUAL_STAT_BARRIER_TESTING) \
+  && (!defined(PA_SYNTHETIC_MANUAL_GUI_TESTING) \
+    || !defined(PA_SYNTHETIC_MANUAL_NO_DIALOG_TESTING))
+#error Stat barrier is only for the synthetic no-dialog test variant
+#endif
 #if defined(PA_DEV_TEST_ROOT) && !defined(PA_DEVELOPMENT_TESTNET_TESTING)
 #error A development child cannot accept a test-root override
 #endif
@@ -82,20 +87,76 @@ static BOOL PADevSamePrivateObject(const struct stat *left, const struct stat *r
 }
 
 #if defined(PA_SYNTHETIC_MANUAL_GUI_TESTING)
+static BOOL PADevSameStableSharedAncestor(const struct stat *left,
+                                          const struct stat *right) {
+  return S_ISDIR(left->st_mode) && S_ISDIR(right->st_mode)
+    && left->st_dev == right->st_dev && left->st_ino == right->st_ino
+    && left->st_mode == right->st_mode && left->st_uid == right->st_uid
+    && left->st_gid == right->st_gid && left->st_nlink > 0
+    && right->st_nlink > 0;
+}
+
+#if defined(PA_SYNTHETIC_MANUAL_STAT_BARRIER_TESTING)
+static BOOL PADevSharedAncestorComparatorControls(const struct stat *sample) {
+  if (!PADevSameStableSharedAncestor(sample, sample)) return NO;
+  struct stat changed = *sample;
+  changed.st_dev = sample->st_dev == 0 ? 1 : 0;
+  if (PADevSameStableSharedAncestor(sample, &changed)) return NO;
+  changed = *sample;
+  changed.st_ino = sample->st_ino == 0 ? 1 : 0;
+  if (PADevSameStableSharedAncestor(sample, &changed)) return NO;
+  changed = *sample;
+  changed.st_mode = S_IFREG | (sample->st_mode & 07777U);
+  if (PADevSameStableSharedAncestor(sample, &changed)) return NO;
+  changed = *sample;
+  changed.st_uid = sample->st_uid == 0 ? 1 : 0;
+  if (PADevSameStableSharedAncestor(sample, &changed)) return NO;
+  changed = *sample;
+  changed.st_gid = sample->st_gid == 0 ? 1 : 0;
+  if (PADevSameStableSharedAncestor(sample, &changed)) return NO;
+  changed = *sample;
+  changed.st_mode ^= 0100U;
+  if (PADevSameStableSharedAncestor(sample, &changed)) return NO;
+  changed = *sample;
+  changed.st_nlink = 0;
+  return !PADevSameStableSharedAncestor(sample, &changed);
+}
+
+static BOOL PADevStatBarrier(uint8_t marker) {
+  ssize_t written;
+  do { written = write(5, &marker, 1U); } while (written < 0 && errno == EINTR);
+  uint8_t release = 0U;
+  ssize_t received = -1;
+  if (written == 1) {
+    do { received = read(6, &release, 1U); } while (received < 0 && errno == EINTR);
+  }
+  return written == 1 && received == 1 && release == 'R';
+}
+#endif
+
 static BOOL PADevDirectoryHasNoACL(const char *path, uid_t owner, mode_t mode) {
   struct stat before;
   if (lstat(path, &before) != 0 || !S_ISDIR(before.st_mode)
       || before.st_uid != owner || before.st_nlink < 1
       || (before.st_mode & 07777U) != mode) return NO;
+  BOOL sharedAncestor = owner == 0 && mode == 01777U
+    && strcmp(path, "/private/tmp") == 0;
+#if defined(PA_SYNTHETIC_MANUAL_STAT_BARRIER_TESTING)
+  if (sharedAncestor && !PADevSharedAncestorComparatorControls(&before)) return NO;
+  uint8_t marker = sharedAncestor ? 'P' : 'L';
+  if (!PADevStatBarrier(marker)) return NO;
+#endif
   int descriptor = open(path, O_RDONLY | O_DIRECTORY | O_CLOEXEC | O_NOFOLLOW);
   if (descriptor < 0) return NO;
   struct stat opened;
   struct stat after;
   BOOL valid = fstat(descriptor, &opened) == 0
-    && PADevSamePrivateObject(&before, &opened)
+    && (sharedAncestor ? PADevSameStableSharedAncestor(&before, &opened)
+                       : PADevSamePrivateObject(&before, &opened))
     && PAHasNoExtendedACL(descriptor)
     && lstat(path, &after) == 0
-    && PADevSamePrivateObject(&opened, &after);
+    && (sharedAncestor ? PADevSameStableSharedAncestor(&opened, &after)
+                       : PADevSamePrivateObject(&opened, &after));
   if (close(descriptor) != 0) valid = NO;
   return valid;
 }
@@ -266,6 +327,11 @@ int main(int argc, const char *argv[]) {
     NSData *frame = PAReadOneFrame(3);
     close(3);
     NSString *root = PADevelopmentRoot();
+#if defined(PA_SYNTHETIC_MANUAL_STAT_BARRIER_TESTING)
+    int readyClosed = close(5);
+    int releaseClosed = close(6);
+    if (readyClosed != 0 || releaseClosed != 0) root = nil;
+#endif
     NSData *objectIdentifier = PADevBase64URL(
       PADevPinnedString(PA_DEV_OBJECT_ID_BASE64URL), 16U);
     NSData *publicKey = PADevBase64URL(PADevPinnedString(PA_TEST_PUBLIC_KEY), 32U);

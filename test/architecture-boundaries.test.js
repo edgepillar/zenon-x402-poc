@@ -205,6 +205,7 @@ test('Zenon funding, signing, and external-holder handoff sources remain inactiv
     'service-credit-zenon-funding-intake-http.js',
     'service-credit-zenon-funding-intake-http-post-v1.js',
     'service-credit-zenon-funding-intake-https-owner-v1.js',
+    'service-credit-zenon-funding-post-v1-client.js',
     'service-credit-zenon-funding-publication-bridge.js',
     'service-credit-external-holder-grant-descriptor-handoff-http-ingress.js',
     'service-credit-external-holder-grant-descriptor-handoff-http.js',
@@ -410,17 +411,21 @@ test('durable HTTPS router is inert and imported only by its test and default-of
 test('fixed-POST Zenon funding HTTPS intake remains unmounted and BOUND-only', () => {
   const postName = 'service-credit-zenon-funding-intake-http-post-v1.js';
   const ownerName = 'service-credit-zenon-funding-intake-https-owner-v1.js';
+  const clientName = 'service-credit-zenon-funding-post-v1-client.js';
   const postSource = readFileSync(new URL(`../src/${postName}`, import.meta.url), 'utf8');
   const ownerSource = readFileSync(new URL(`../src/${ownerName}`, import.meta.url), 'utf8');
+  const clientSource = readFileSync(new URL(`../src/${clientName}`, import.meta.url), 'utf8');
   const packageText = readFileSync(new URL('../package.json', import.meta.url), 'utf8');
   const packageJson = JSON.parse(packageText);
   assert.equal(packageText.includes(postName), false);
   assert.equal(packageText.includes(ownerName), false);
+  assert.equal(packageText.includes(clientName), false);
   assert.equal(packageJson.exports, undefined);
   assert.equal(packageJson.bin, undefined);
   for (const script of Object.values(packageJson.scripts)) {
     assert.equal(script.includes(postName), false);
     assert.equal(script.includes(ownerName), false);
+    assert.equal(script.includes(clientName), false);
   }
   assert.doesNotMatch(postSource, /service-credit-zenon-funding-intake-http\.js/);
   assert.match(
@@ -451,9 +456,18 @@ test('fixed-POST Zenon funding HTTPS intake remains unmounted and BOUND-only', (
     'service-credit-activation.js',
     'dynamic-plasma',
   ]) assert.equal(ownerSource.includes(forbidden), false);
+  assert.deepEqual(
+    [...clientSource.matchAll(/from '([^']+)';/g)].map(match => match[1]),
+    ['node:util', './zenon-payment.js', './x402-wire.js'],
+  );
+  assert.doesNotMatch(clientSource, /node:(?:fs|https|http|net|tls)|\.listen\s*\(|createServer/);
+  assert.match(clientSource, /redirect: 'manual'/);
+  assert.match(clientSource, /credentials: 'omit'/);
+  assert.match(clientSource, /cache: 'no-store'/);
 
   const postImporters = [];
   const ownerImporters = [];
+  const clientImporters = [];
   const pending = [
     new URL('../src/', import.meta.url),
     new URL('../test/', import.meta.url),
@@ -478,6 +492,9 @@ test('fixed-POST Zenon funding HTTPS intake remains unmounted and BOUND-only', (
       if (!relative.endsWith(`/${ownerName}`) && source.includes(ownerName)) {
         ownerImporters.push(relative);
       }
+      if (!relative.endsWith(`/${clientName}`) && source.includes(clientName)) {
+        clientImporters.push(relative);
+      }
     }
   }
   assert.deepEqual(postImporters.sort(), [
@@ -486,8 +503,13 @@ test('fixed-POST Zenon funding HTTPS intake remains unmounted and BOUND-only', (
   ].sort());
   assert.deepEqual(ownerImporters.sort(), [
     'test/service-credit-zenon-funding-intake-https-owner-v1.test.js',
+    'test/service-credit-zenon-funding-post-v1-client.test.js',
     'test/service-credit-zenon-https-funding-to-service-offline.test.js',
-  ]);
+  ].sort());
+  assert.deepEqual(clientImporters.sort(), [
+    'test/service-credit-zenon-funding-post-v1-client.test.js',
+    'test/service-credit-zenon-https-funding-to-service-offline.test.js',
+  ].sort());
 });
 
 test('bounded Node HTTPS factory is inert, constructor-fixed, and test-imported only', () => {
