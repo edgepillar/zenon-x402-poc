@@ -191,7 +191,9 @@ function dynamicPlasmaBundle(reply, versionAtHeight = () => 2) {
   for (const item of momentumReplies(reply)) {
     const version = versionAtHeight(item.height);
     item.version = version;
-    item.data = null;
+    // The reviewed ledger RPC path normalizes the worker's nil []byte to an
+    // empty slice before JSON serialization, so that pinned code path emits "".
+    item.data = '';
     item.nextFusionPrice = version === 1 ? 0 : 1_000 + item.height;
     item.nextWorkPrice = version === 1 ? 0 : 2_000 + item.height;
   }
@@ -255,7 +257,7 @@ test('native content is fully bounded but projection retains only the proven tar
 });
 
 test('exact Dynamic Plasma v1 and v2 Momentum DTOs preserve forward version lineage', async t => {
-  await t.test('DP-capable v1 requires and accepts both zero price fields', t => {
+  await t.test('RPC-normalized DP-capable v1 accepts empty data and both zero price fields', t => {
     const context = fixture(t);
     const result = context.producer.apply(input(context, dynamicPlasmaBundle(
       batch(context),
@@ -265,7 +267,7 @@ test('exact Dynamic Plasma v1 and v2 Momentum DTOs preserve forward version line
     assert.equal(context.store.load().state.checkpoint.height, 22);
   });
 
-  await t.test('v2 accepts both bounded nonnegative price fields', t => {
+  await t.test('RPC-normalized v2 accepts empty data and bounded nonnegative price fields', t => {
     const context = fixture(t);
     const result = context.producer.apply(input(context, dynamicPlasmaBundle(batch(context))));
     assert.equal(result.status, 'APPLIED');
@@ -367,9 +369,13 @@ test('invalid Dynamic Plasma Momentum contracts never mutate observer state', as
       dynamicPlasmaBundle(reply);
       reply.frontier.data = 'AA==';
     }],
-    ['non-native DP empty-string data', 'INVALID_INPUT', reply => {
+    ['null DP-capable v1 data', 'INVALID_INPUT', reply => {
+      dynamicPlasmaBundle(reply, () => 1);
+      reply.frontier.data = null;
+    }],
+    ['null DP-capable v2 data', 'INVALID_INPUT', reply => {
       dynamicPlasmaBundle(reply);
-      reply.frontier.data = '';
+      reply.frontier.data = null;
     }],
   ];
   for (const [name, suffix, mutate] of cases) {

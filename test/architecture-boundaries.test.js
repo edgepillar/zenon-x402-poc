@@ -276,7 +276,7 @@ test('funding observation producer keeps Dynamic Plasma DTO parsing offline and 
   assert.doesNotMatch(source, /node:(?:https?|http2|net|tls|dns)|\.listen\s*\(|\bfetch\s*\(|WebSocket|process\.env/);
   assert.doesNotMatch(source, /dynamic-plasma-(?:json-rpc|https|observation-collector)/);
   assert.match(source, /\['nextFusionPrice', 'nextWorkPrice'\]/);
-  assert.match(source, /if \(result\.data !== null\) fail\('INVALID_INPUT'\)/);
+  assert.match(source, /if \(result\.data !== ''\) fail\('INVALID_INPUT'\)/);
   assert.match(source, /function admitMomentumVersionLineage\(items\)/);
 });
 

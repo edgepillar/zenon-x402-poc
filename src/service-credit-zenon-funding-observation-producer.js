@@ -168,11 +168,13 @@ function headers(value, maximum) {
 // SDK 1.0.5 Momentum.fromJson uses hex data and AccountHeader JSON records.
 // Momentum.toJson is deliberately not used: its content is not raw header JSON.
 // The pinned go-zenon testnet worker leaves Momentum.Data at its nil []byte
-// zero value, which is JSON null; nonempty []byte would be base64 JSON text.
+// zero value. The pinned ledgerMomentumToRpc projection replaces nil with an
+// empty []byte before JSON serialization, so the exact RPC value is "";
+// nonempty []byte would be base64 JSON text.
 // Its v2 price fields participate in the native hash, but this parser only
 // admits the exact DTO grammar; it does not recompute hashes or prove spork
-// activation. See pillar/worker_momentum.go and chain/nom/momentum.go at the
-// immutable source pin recorded in the project documentation.
+// activation. See pillar/worker_momentum.go, chain/nom/momentum.go and
+// rpc/api/ledger_types.go at the immutable source pin in the documentation.
 function momentum(value, chainIdentifier, maximumHeaders) {
   const result = exact(value, [
     'version', 'chainIdentifier', 'hash', 'previousHash', 'height', 'timestamp',
@@ -194,7 +196,7 @@ function momentum(value, chainIdentifier, maximumHeaders) {
     if (result.version === 1 && (result.nextFusionPrice !== 0 || result.nextWorkPrice !== 0)) {
       fail('SOURCE_CONTEXT_CONFLICT');
     }
-    if (result.data !== null) fail('INVALID_INPUT');
+    if (result.data !== '') fail('INVALID_INPUT');
   }
   for (const key of ['hash', 'previousHash', 'changesHash']) text(result[key], HASH, 64);
   integer(result.height, 1);
