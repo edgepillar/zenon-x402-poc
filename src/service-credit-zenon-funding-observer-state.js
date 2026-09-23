@@ -33,7 +33,7 @@ const HASH_PROTOTYPE = REFLECT_APPLY(REFLECT_GET_PROTOTYPE_OF, Reflect, [createH
 const HASH_UPDATE = HASH_PROTOTYPE.update;
 const HASH_DIGEST = HASH_PROTOTYPE.digest;
 
-export const ZENON_FUNDING_OBSERVER_STATE_SCHEMA_VERSION = 1;
+export const ZENON_FUNDING_OBSERVER_STATE_SCHEMA_VERSION = 2;
 export const ZENON_FUNDING_OBSERVATION_CANDIDATE_TYPE =
   'zenon-funding-observation-candidate';
 export const ZENON_FUNDING_OBSERVER_TRUST_CLASSIFICATION =
@@ -45,7 +45,7 @@ export const ZENON_FUNDING_OBSERVER_STATUS = OBJECT_FREEZE({
   QUARANTINED: 'QUARANTINED',
 });
 
-const OBSERVER_RECORD_DOMAIN = 'zenon-x402-funding-observer-record-v1';
+const OBSERVER_RECORD_DOMAIN = 'zenon-x402-funding-observer-record-v2';
 const TARGET_BINDING_DOMAIN = 'zenon-x402-funding-observer-target-v1';
 const PLAN_DOMAIN = 'zenon-x402-funding-observer-backfill-plan-v1';
 const PAGE_DOMAIN = 'zenon-x402-funding-observer-page-v1';
@@ -75,6 +75,7 @@ const QUARANTINE_REASONS = OBJECT_FREEZE(new NATIVE_SET([
   'INCLUSION_DISAPPEARED',
   'INCLUSION_TUPLE_DRIFT',
   'MEMBERSHIP_NOT_LINKED',
+  'MOMENTUM_VERSION_CONFLICT',
   'PAGE_GAP',
   'PAGE_HEIGHT_CONFLICT',
   'PAGE_MEMBER_CONFLICT',
@@ -361,6 +362,28 @@ function assertPositiveInteger(value, onFailure = failInput) {
 
 function assertNonnegativeInteger(value, onFailure = failInput) {
   if (!REFLECT_APPLY(NUMBER_IS_SAFE_INTEGER, Number, [value]) || value < 0) onFailure();
+}
+
+function normalizeMomentumVersionHeight(value, onFailure) {
+  if (value === null) return null;
+  assertPositiveInteger(value, onFailure);
+  return value;
+}
+
+function normalizeMomentumVersionBounds(maxV1Height, minV2Height, onFailure) {
+  const normalizedMaxV1Height = normalizeMomentumVersionHeight(maxV1Height, onFailure);
+  const normalizedMinV2Height = normalizeMomentumVersionHeight(minV2Height, onFailure);
+  if (
+    normalizedMaxV1Height !== null
+    && normalizedMinV2Height !== null
+    && normalizedMaxV1Height >= normalizedMinV2Height
+  ) {
+    onFailure();
+  }
+  return deepFreeze({
+    maxV1Height: normalizedMaxV1Height,
+    minV2Height: normalizedMinV2Height,
+  });
 }
 
 function normalizeObserverPolicy(input, onFailure = failInput) {
@@ -810,6 +833,8 @@ function normalizeStateSnapshot(input) {
     'targetBindingDigest',
     'checkpoint',
     'catchUp',
+    'maxV1Height',
+    'minV2Height',
     'status',
     'inclusion',
     'firstThreshold',
@@ -841,6 +866,11 @@ function normalizeStateSnapshot(input) {
   }
   const checkpoint = normalizeCheckpoint(value.checkpoint, failState);
   const catchUp = normalizeCatchUpState(value.catchUp, failState);
+  const versionBounds = normalizeMomentumVersionBounds(
+    value.maxV1Height,
+    value.minV2Height,
+    failState,
+  );
   const receipt = catchUp.lastAppliedPage;
   if (
     receipt !== null
@@ -1002,6 +1032,8 @@ function normalizeStateSnapshot(input) {
     targetBindingDigest: value.targetBindingDigest,
     checkpoint,
     catchUp,
+    maxV1Height: versionBounds.maxV1Height,
+    minV2Height: versionBounds.minV2Height,
     status: value.status,
     inclusion,
     firstThreshold,
@@ -1278,12 +1310,59 @@ export function createZenonFundingObserverState(input) {
     targetBindingDigest: commitment(TARGET_BINDING_DOMAIN, normalizedTarget),
     checkpoint,
     catchUp: { ...catchUpConfiguration, lastAppliedPage: null },
+    maxV1Height: null,
+    minV2Height: null,
     status: ZENON_FUNDING_OBSERVER_STATUS.AWAITING_INCLUSION,
     inclusion: null,
     firstThreshold: null,
     trustClassification: ZENON_FUNDING_OBSERVER_TRUST_CLASSIFICATION,
     quarantine: null,
   });
+}
+
+export function applyZenonFundingMomentumVersionLineage(input) {
+  const value = exactObject(snapshotJson(input), [
+    'state',
+    'expectedRevision',
+    'maxV1Height',
+    'minV2Height',
+  ]);
+  const state = normalizeStateSnapshot(value.state);
+  assertExpectedRevision(state, value.expectedRevision);
+  if (state.status === ZENON_FUNDING_OBSERVER_STATUS.QUARANTINED) {
+    return result(state, 'QUARANTINED');
+  }
+  const observed = normalizeMomentumVersionBounds(
+    value.maxV1Height,
+    value.minV2Height,
+    failInput,
+  );
+  if (observed.maxV1Height === null && observed.minV2Height === null) failInput();
+  const maxV1Height = state.maxV1Height === null
+    ? observed.maxV1Height
+    : observed.maxV1Height === null
+      ? state.maxV1Height
+      : Math.max(state.maxV1Height, observed.maxV1Height);
+  const minV2Height = state.minV2Height === null
+    ? observed.minV2Height
+    : observed.minV2Height === null
+      ? state.minV2Height
+      : Math.min(state.minV2Height, observed.minV2Height);
+  if (
+    maxV1Height !== null
+    && minV2Height !== null
+    && maxV1Height >= minV2Height
+  ) {
+    return result(quarantineState(state, 'MOMENTUM_VERSION_CONFLICT'), 'QUARANTINED');
+  }
+  if (maxV1Height === state.maxV1Height && minV2Height === state.minV2Height) {
+    return result(state, 'UNCHANGED');
+  }
+  return result(cloneState(state, {
+    revision: state.revision + 1,
+    maxV1Height,
+    minV2Height,
+  }), 'APPLIED');
 }
 
 export function planZenonFundingObserverBackfill(input) {

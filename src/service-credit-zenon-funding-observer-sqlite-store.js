@@ -14,6 +14,7 @@ import { dirname, isAbsolute, relative, resolve, sep } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import { types as utilTypes } from 'node:util';
 import {
+  applyZenonFundingMomentumVersionLineage,
   applyZenonFundingInclusionObservation,
   applyZenonFundingObserverPage,
   createZenonFundingObserverState,
@@ -34,7 +35,7 @@ import {
   ZenonFundingProviderAttestationError,
 } from './service-credit-zenon-funding-provider-attestation.js';
 
-export const ZENON_FUNDING_OBSERVER_SQLITE_STORE_SCHEMA_VERSION = 2;
+export const ZENON_FUNDING_OBSERVER_SQLITE_STORE_SCHEMA_VERSION = 3;
 export const ZENON_FUNDING_OBSERVER_ATTESTATION_OUTBOX_VERSION = 1;
 export const ZENON_FUNDING_OBSERVER_ATTESTATION_OUTBOX_STATUS = Object.freeze({
   NONE: 'NONE',
@@ -49,15 +50,15 @@ const TABLE_NAME = 'zenon_funding_observer_state';
 const INDEX_NAME = 'zenon_funding_observer_state_record_key';
 const TABLE_SQL = 'CREATE TABLE zenon_funding_observer_state(singleton INTEGER PRIMARY KEY CHECK(singleton = 1), record_key TEXT NOT NULL, envelope TEXT NOT NULL) STRICT';
 const INDEX_SQL = 'CREATE UNIQUE INDEX zenon_funding_observer_state_record_key ON zenon_funding_observer_state(record_key)';
-const RECORD_KEY_DOMAIN = 'zenon-x402:funding-observer-sqlite-record-v2';
-const ENVELOPE_DOMAIN = 'zenon-x402:funding-observer-sqlite-envelope-v2';
+const RECORD_KEY_DOMAIN = 'zenon-x402:funding-observer-sqlite-record-v3';
+const ENVELOPE_DOMAIN = 'zenon-x402:funding-observer-sqlite-envelope-v3';
 const READY_ARTIFACT_DOMAIN = 'zenon-x402:funding-observer-ready-artifact-v1';
 const ATTESTATION_AUDIENCE_DOMAIN = 'zenon-x402:funding-provider-attestation-audience-v1';
 const ATTESTATION_CANDIDATE_DOMAIN = 'zenon-x402:funding-provider-attestation-candidate-v1';
 const ATTESTATION_EVIDENCE_DOMAIN = 'zenon-x402:funding-provider-attestation-evidence-v1';
 const ATTESTATION_ID_DOMAIN = 'zenon-x402:funding-provider-attestation-id-v1';
 const ATTESTATION_REQUEST_TYPE = 'zenon-funding-provider-attestation-request';
-const ENVELOPE_VERSION = 2;
+const ENVELOPE_VERSION = 3;
 const DEFAULT_BUSY_TIMEOUT_MS = 5_000;
 const MAX_BUSY_TIMEOUT_MS = 60_000;
 const DEFAULT_MAX_STATE_BYTES = 512 * 1024;
@@ -1410,6 +1411,29 @@ export class ZenonFundingObserverSqliteStore {
     return this.#runPublic(() => {
       const loaded = this.#safeRead();
       return publicRecord(loaded.recordKey, this.#authority, loaded.state, loaded.outbox);
+    });
+  }
+
+  admitMomentumVersionLineage(input) {
+    const captured = exactDataObject(input, [
+      'expectedRevision',
+      'maxV1Height',
+      'minV2Height',
+    ], [], 'ZENON_FUNDING_OBSERVER_STORE_INVALID_INPUT');
+    const expectedRevision = captureExpectedRevision(captured.expectedRevision);
+    const maxV1Height = snapshotJson(captured.maxV1Height);
+    const minV2Height = snapshotJson(captured.minV2Height);
+    return this.#mutate('admitMomentumVersionLineage', expectedRevision, loaded => {
+      try {
+        return applyZenonFundingMomentumVersionLineage({
+          state: cloneTrusted(loaded.state),
+          expectedRevision,
+          maxV1Height,
+          minV2Height,
+        });
+      } catch (error) {
+        mapObserverFailure(error, false);
+      }
     });
   }
 
