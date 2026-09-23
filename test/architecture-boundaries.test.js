@@ -208,6 +208,7 @@ test('Zenon funding, signing, and external-holder handoff sources remain inactiv
     'service-credit-zenon-funding-post-v1-client.js',
     'service-credit-zenon-funding-post-v1-payer-recovery-sqlite-store.js',
     'service-credit-zenon-funding-post-v1-payer-recovery-owner.js',
+    'service-credit-zenon-funding-observation-producer.js',
     'service-credit-zenon-funding-publication-bridge.js',
     'service-credit-external-holder-grant-descriptor-handoff-http-ingress.js',
     'service-credit-external-holder-grant-descriptor-handoff-http.js',
@@ -257,6 +258,26 @@ test('Zenon funding, signing, and external-holder handoff sources remain inactiv
       if (dependency.pathname.endsWith('.js')) pending.push(dependency.href);
     }
   }
+});
+
+test('funding observation producer keeps Dynamic Plasma DTO parsing offline and non-authorizing', () => {
+  const producerName = 'service-credit-zenon-funding-observation-producer.js';
+  const source = readFileSync(new URL(`../src/${producerName}`, import.meta.url), 'utf8');
+  const packageText = readFileSync(new URL('../package.json', import.meta.url), 'utf8');
+  assert.deepEqual(
+    [...source.matchAll(/from '([^']+)';/g)].map(match => match[1]),
+    [
+      'node:util',
+      './service-credit-zenon-funding-observer-sqlite-store.js',
+      './service-credit-zenon-funding-provider-attestation.js',
+    ],
+  );
+  assert.equal(packageText.includes(producerName), false);
+  assert.doesNotMatch(source, /node:(?:https?|http2|net|tls|dns)|\.listen\s*\(|\bfetch\s*\(|WebSocket|process\.env/);
+  assert.doesNotMatch(source, /dynamic-plasma-(?:json-rpc|https|observation-collector)/);
+  assert.match(source, /\['nextFusionPrice', 'nextWorkPrice'\]/);
+  assert.match(source, /if \(result\.data !== null\) fail\('INVALID_INPUT'\)/);
+  assert.match(source, /function admitMomentumVersionLineage\(items\)/);
 });
 
 test('bounded HTTPS owner import is process-global-observer-free', () => {

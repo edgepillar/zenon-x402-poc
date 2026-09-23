@@ -167,21 +167,61 @@ function headers(value, maximum) {
 
 // SDK 1.0.5 Momentum.fromJson uses hex data and AccountHeader JSON records.
 // Momentum.toJson is deliberately not used: its content is not raw header JSON.
+// The pinned go-zenon testnet worker leaves Momentum.Data at its nil []byte
+// zero value, which is JSON null; nonempty []byte would be base64 JSON text.
+// Its v2 price fields participate in the native hash, but this parser only
+// admits the exact DTO grammar; it does not recompute hashes or prove spork
+// activation. See pillar/worker_momentum.go and chain/nom/momentum.go at the
+// immutable source pin recorded in the project documentation.
 function momentum(value, chainIdentifier, maximumHeaders) {
   const result = exact(value, [
     'version', 'chainIdentifier', 'hash', 'previousHash', 'height', 'timestamp',
     'data', 'content', 'changesHash', 'publicKey', 'signature', 'producer',
-  ]);
+  ], ['nextFusionPrice', 'nextWorkPrice']);
+  const hasFusionPrice = HAS_OWN(result, 'nextFusionPrice');
+  const hasWorkPrice = HAS_OWN(result, 'nextWorkPrice');
+  if (hasFusionPrice !== hasWorkPrice) fail('INVALID_INPUT');
   integer(result.version, 1);
   integer(result.chainIdentifier, 1);
-  if (result.version !== 1 || result.chainIdentifier !== chainIdentifier) fail('SOURCE_CONTEXT_CONFLICT');
+  if (result.chainIdentifier !== chainIdentifier) fail('SOURCE_CONTEXT_CONFLICT');
+  if (!hasFusionPrice) {
+    if (result.version !== 1) fail('SOURCE_CONTEXT_CONFLICT');
+    text(result.data, HEX, 8192);
+  } else {
+    if (result.version !== 1 && result.version !== 2) fail('SOURCE_CONTEXT_CONFLICT');
+    integer(result.nextFusionPrice);
+    integer(result.nextWorkPrice);
+    if (result.version === 1 && (result.nextFusionPrice !== 0 || result.nextWorkPrice !== 0)) {
+      fail('SOURCE_CONTEXT_CONFLICT');
+    }
+    if (result.data !== null) fail('INVALID_INPUT');
+  }
   for (const key of ['hash', 'previousHash', 'changesHash']) text(result[key], HASH, 64);
   integer(result.height, 1);
   integer(result.timestamp);
-  text(result.data, HEX, 8192);
   for (const key of ['publicKey', 'signature']) text(result[key], /^[\x20-\x7e]*$/, 256);
   text(result.producer, IDENTIFIER);
   return { ...result, content: headers(result.content, maximumHeaders) };
+}
+
+function admitMomentumVersionLineage(items) {
+  for (let leftIndex = 0; leftIndex < items.length; leftIndex += 1) {
+    const left = items[leftIndex];
+    for (let rightIndex = leftIndex + 1; rightIndex < items.length; rightIndex += 1) {
+      const right = items[rightIndex];
+      if (left.height === right.height) {
+        // Preserve the legacy-only store/quarantine classification. Once either
+        // claim uses the new Go DTO grammar, require the complete admitted DTO
+        // to match because this producer does not recompute native hashes.
+        if ((HAS_OWN(left, 'nextFusionPrice') || HAS_OWN(right, 'nextFusionPrice'))
+            && !same(left, right)) fail('SOURCE_CONTEXT_CONFLICT');
+        continue;
+      }
+      const earlier = left.height < right.height ? left : right;
+      const later = earlier === left ? right : left;
+      if (earlier.version > later.version) fail('SOURCE_CONTEXT_CONFLICT');
+    }
+  }
 }
 
 function bytes(value, maximum) {
@@ -375,6 +415,10 @@ export function createZenonFundingObservationProducer(options) {
       const list = listReply.list.map(item => momentum(item, chainIdentifier, limits.maximumContentHeaders));
       const block = accountBlock(raw.accountBlock, record.state.target, chainIdentifier);
       const inclusion = raw.inclusionMomentum === null ? null : momentum(raw.inclusionMomentum, chainIdentifier, limits.maximumContentHeaders);
+      admitMomentumVersionLineage([
+        ...(checkpointReply === null ? [] : [checkpointReply]), frontier, ...list,
+        ...(inclusion === null ? [] : [inclusion]),
+      ]);
       if (block?.confirmation) {
         if (inclusion === null || inclusion.height !== block.confirmation.momentumHeight
             || inclusion.hash !== block.confirmation.momentumHash || inclusion.timestamp !== block.confirmation.momentumTimestamp

@@ -179,6 +179,24 @@ function batch(context, { frontier = 24, targetHeight = 21 } = {}) {
     inclusionMomentum: nativeMomentum(targetHeight, [header]),
   };
 }
+function momentumReplies(reply) {
+  return [
+    reply.checkpoint,
+    reply.frontier,
+    ...reply.momentums.list,
+    reply.inclusionMomentum,
+  ].filter(value => value !== null);
+}
+function dynamicPlasmaBundle(reply, versionAtHeight = () => 2) {
+  for (const item of momentumReplies(reply)) {
+    const version = versionAtHeight(item.height);
+    item.version = version;
+    item.data = null;
+    item.nextFusionPrice = version === 1 ? 0 : 1_000 + item.height;
+    item.nextWorkPrice = version === 1 ? 0 : 2_000 + item.height;
+  }
+  return reply;
+}
 function input(context, reply = batch(context), overrides = {}) {
   return Object.freeze({
     expectedRevision: context.store.load().state.revision, sourceBinding: BINDING,
@@ -234,6 +252,136 @@ test('native content is fully bounded but projection retains only the proven tar
   assert.equal(JSON.stringify(receipt).includes(hash('unrelated')), false);
   assert.equal(context.store.load().state.inclusion.currentConfirmations, 2);
   assert.equal(context.store.load().outbox.status, 'NONE');
+});
+
+test('exact Dynamic Plasma v1 and v2 Momentum DTOs preserve forward version lineage', async t => {
+  await t.test('DP-capable v1 requires and accepts both zero price fields', t => {
+    const context = fixture(t);
+    const result = context.producer.apply(input(context, dynamicPlasmaBundle(
+      batch(context),
+      () => 1,
+    )));
+    assert.equal(result.status, 'APPLIED');
+    assert.equal(context.store.load().state.checkpoint.height, 22);
+  });
+
+  await t.test('v2 accepts both bounded nonnegative price fields', t => {
+    const context = fixture(t);
+    const result = context.producer.apply(input(context, dynamicPlasmaBundle(batch(context))));
+    assert.equal(result.status, 'APPLIED');
+    assert.equal(context.store.load().state.checkpoint.height, 22);
+  });
+
+  await t.test('one forward v1 to v2 transition retains an older v1 inclusion', t => {
+    const context = fixture(t);
+    const first = dynamicPlasmaBundle(batch(context), height => height < 22 ? 1 : 2);
+    assert.equal(context.producer.apply(input(context, first)).observerStatus, 'INCLUDED_BELOW_THRESHOLD');
+    assert.equal(context.store.load().state.checkpoint.height, 22);
+
+    const second = dynamicPlasmaBundle(batch(context), height => height < 22 ? 1 : 2);
+    const result = context.producer.apply(input(context, second));
+    assert.equal(result.observerStatus, 'THRESHOLD_OBSERVED');
+    assert.equal(result.outboxStatus, 'PREPARED');
+    assert.equal(context.store.load().state.inclusion.momentumHeight, 21);
+  });
+});
+
+test('invalid Dynamic Plasma Momentum contracts never mutate observer state', async t => {
+  const cases = [
+    ['partial v1 fields', 'INVALID_INPUT', reply => {
+      dynamicPlasmaBundle(reply, () => 1);
+      delete reply.frontier.nextWorkPrice;
+    }],
+    ['nonzero v1 price', 'SOURCE_CONTEXT_CONFLICT', reply => {
+      dynamicPlasmaBundle(reply, () => 1);
+      reply.frontier.nextFusionPrice = 1;
+    }],
+    ['v2 without price fields', 'SOURCE_CONTEXT_CONFLICT', reply => {
+      reply.frontier.version = 2;
+    }],
+    ['partial v2 fields', 'INVALID_INPUT', reply => {
+      dynamicPlasmaBundle(reply);
+      delete reply.frontier.nextWorkPrice;
+    }],
+    ['unsupported version', 'SOURCE_CONTEXT_CONFLICT', reply => {
+      dynamicPlasmaBundle(reply);
+      reply.frontier.version = 3;
+    }],
+    ['unsafe price', 'INVALID_INPUT', reply => {
+      dynamicPlasmaBundle(reply);
+      reply.frontier.nextFusionPrice = Number.MAX_SAFE_INTEGER + 1;
+    }],
+    ['negative price', 'INVALID_INPUT', reply => {
+      dynamicPlasmaBundle(reply);
+      reply.frontier.nextFusionPrice = -1;
+    }],
+    ['fractional price', 'INVALID_INPUT', reply => {
+      dynamicPlasmaBundle(reply);
+      reply.frontier.nextFusionPrice = 1.5;
+    }],
+    ['unknown field', 'INVALID_INPUT', reply => {
+      dynamicPlasmaBundle(reply);
+      reply.frontier.futureConsensusField = 1;
+    }],
+    ['forward version downgrade', 'SOURCE_CONTEXT_CONFLICT', reply => {
+      dynamicPlasmaBundle(reply);
+      reply.frontier.version = 1;
+      reply.frontier.nextFusionPrice = 0;
+      reply.frontier.nextWorkPrice = 0;
+    }],
+    ['same-height version conflict', 'SOURCE_CONTEXT_CONFLICT', reply => {
+      dynamicPlasmaBundle(reply, height => height < 22 ? 1 : 2);
+      reply.inclusionMomentum.version = 2;
+      reply.inclusionMomentum.nextFusionPrice = 1_021;
+      reply.inclusionMomentum.nextWorkPrice = 2_021;
+    }],
+    ['same-height hash conflict', 'SOURCE_CONTEXT_CONFLICT', reply => {
+      dynamicPlasmaBundle(reply);
+      reply.inclusionMomentum.hash = hash('conflicting-momentum.21');
+    }],
+    ['same-height parent conflict', 'SOURCE_CONTEXT_CONFLICT', reply => {
+      dynamicPlasmaBundle(reply);
+      reply.inclusionMomentum.previousHash = hash('conflicting-parent.21');
+    }],
+    ['same-height content conflict', 'SOURCE_CONTEXT_CONFLICT', reply => {
+      dynamicPlasmaBundle(reply);
+      reply.inclusionMomentum.content.push({
+        address: `z1${'q'.repeat(38)}`, hash: hash('conflicting-content.21'), height: 9,
+      });
+    }],
+    ['same-height timestamp conflict', 'SOURCE_CONTEXT_CONFLICT', reply => {
+      dynamicPlasmaBundle(reply);
+      reply.inclusionMomentum.timestamp += 1;
+    }],
+    ['same-height v1 grammar conflict', 'SOURCE_CONTEXT_CONFLICT', reply => {
+      dynamicPlasmaBundle(reply, () => 1);
+      delete reply.inclusionMomentum.nextFusionPrice;
+      delete reply.inclusionMomentum.nextWorkPrice;
+      reply.inclusionMomentum.data = '';
+    }],
+    ['same-height v2 price conflict', 'SOURCE_CONTEXT_CONFLICT', reply => {
+      dynamicPlasmaBundle(reply);
+      reply.inclusionMomentum.nextWorkPrice += 1;
+    }],
+    ['nonempty DP-capable data', 'INVALID_INPUT', reply => {
+      dynamicPlasmaBundle(reply);
+      reply.frontier.data = 'AA==';
+    }],
+    ['non-native DP empty-string data', 'INVALID_INPUT', reply => {
+      dynamicPlasmaBundle(reply);
+      reply.frontier.data = '';
+    }],
+  ];
+  for (const [name, suffix, mutate] of cases) {
+    await t.test(name, t => {
+      const context = fixture(t);
+      const before = context.store.load();
+      const reply = batch(context);
+      mutate(reply);
+      assert.throws(() => context.producer.apply(input(context, reply)), codeIs(suffix));
+      assert.deepEqual(context.store.load(), before);
+    });
+  }
 });
 
 test('exact last-step replay retrieves its fixed result only while committed state is unchanged', t => {
