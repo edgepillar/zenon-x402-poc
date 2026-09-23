@@ -209,6 +209,7 @@ test('Zenon funding, signing, and external-holder handoff sources remain inactiv
     'service-credit-zenon-funding-post-v1-payer-recovery-sqlite-store.js',
     'service-credit-zenon-funding-post-v1-payer-recovery-owner.js',
     'service-credit-zenon-funding-observation-producer.js',
+    'service-credit-zenon-funding-observation-source-owner.js',
     'service-credit-zenon-funding-publication-bridge.js',
     'service-credit-external-holder-grant-descriptor-handoff-http-ingress.js',
     'service-credit-external-holder-grant-descriptor-handoff-http.js',
@@ -278,6 +279,37 @@ test('funding observation producer keeps Dynamic Plasma DTO parsing offline and 
   assert.match(source, /\['nextFusionPrice', 'nextWorkPrice'\]/);
   assert.match(source, /if \(result\.data !== ''\) fail\('INVALID_INPUT'\)/);
   assert.match(source, /function admitMomentumVersionLineage\(items\)/);
+});
+
+test('funding observation source owner is an exact default-off injected read boundary', () => {
+  const ownerName = 'service-credit-zenon-funding-observation-source-owner.js';
+  const source = readFileSync(new URL(`../src/${ownerName}`, import.meta.url), 'utf8');
+  const packageText = readFileSync(new URL('../package.json', import.meta.url), 'utf8');
+  assert.deepEqual(
+    [...source.matchAll(/from '([^']+)';/g)].map(match => match[1]),
+    [
+      'node:util',
+      './service-credit-zenon-funding-observation-producer.js',
+      './service-credit-zenon-funding-observer-sqlite-store.js',
+    ],
+  );
+  assert.equal(packageText.includes(ownerName), false);
+  assert.doesNotMatch(source, /node:(?:https?|http2|net|tls|dns)|\.listen\s*\(|\bfetch\s*\(|WebSocket|process\.env/);
+  assert.doesNotMatch(source, /dynamic-plasma-(?:json-rpc|https|observation-collector)/);
+  assert.doesNotMatch(source, /from '[^']*(?:wallet|signing|publication|grant|service-credit-store)[^']*'/);
+  assert.doesNotMatch(source, /\b(?:sign|publish|settle|activateGrant)\s*\(/);
+  assert.equal((source.match(/'ledger\.getFrontierMomentum'/g) ?? []).length, 3);
+  assert.equal((source.match(/'ledger\.getMomentumByHash'/g) ?? []).length, 2);
+  assert.equal((source.match(/'ledger\.getMomentumsByHeight'/g) ?? []).length, 1);
+  assert.equal((source.match(/'ledger\.getAccountBlockByHash'/g) ?? []).length, 1);
+  assert.match(source, /const MAX_PAGE_ENTRIES = 64/);
+  assert.match(source, /snapshotRecord\(store, candidate\.expectedRevision\)/);
+  assertSourceOrder(source, [
+    'if (finishing || !closeSettled)',
+    'if (!closeClean || !invariant())',
+    'snapshotRecord(store, candidate.expectedRevision)',
+    'producer.apply',
+  ]);
 });
 
 test('bounded HTTPS owner import is process-global-observer-free', () => {
