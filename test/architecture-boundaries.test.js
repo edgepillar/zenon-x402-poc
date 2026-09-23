@@ -373,6 +373,59 @@ test('funding and Dynamic Plasma JSON-RPC adapters share only a bounded method-n
   ]);
 });
 
+test('Dynamic Plasma HTTPS wrapper is the sole importer of one bounded socket core', () => {
+  const coreName = 'bounded-json-rpc-https-exchange-owner.js';
+  const wrapperName = 'dynamic-plasma-https-read-transport-owner.js';
+  const core = readFileSync(new URL(`../src/zenon/${coreName}`, import.meta.url), 'utf8');
+  const wrapper = readFileSync(new URL(`../src/zenon/${wrapperName}`, import.meta.url), 'utf8');
+  const packageText = readFileSync(new URL('../package.json', import.meta.url), 'utf8');
+  assert.equal(packageText.includes(coreName), false);
+  assert.equal(packageText.includes(wrapperName), false);
+  assert.deepEqual([...core.matchAll(/from '([^']+)';/g)].map(match => match[1]), [
+    'node:https',
+    'node:http',
+    'node:net',
+    'node:tls',
+    'node:events',
+    'node:stream',
+    'node:buffer',
+    'node:util',
+    'node:perf_hooks',
+    'node:timers',
+  ]);
+  assert.deepEqual([...wrapper.matchAll(/from '([^']+)';/g)].map(match => match[1]), [
+    'node:util',
+    './bounded-json-rpc-https-exchange-owner.js',
+    './dynamic-plasma-json-rpc-read-transport.js',
+  ]);
+  assert.doesNotMatch(core, /ledger\.|embedded\.|service-credit|dynamic-plasma-json-rpc-read-transport/);
+  assert.doesNotMatch(core, /node:(?:fs|dns|child_process|worker_threads)|process\.env|globalThis|\bfetch\s*\(|WebSocket|\.listen\s*\(/);
+  assert.doesNotMatch(wrapper, /node:(?:https?|http2|net|tls|dns)|httpsRequest|new HttpsAgent/);
+  assert.match(core, /const MAX_BODY = 1052672/);
+  assert.match(core, /const MAX_REQUEST_BYTES = 1024/);
+  assert.match(core, /const MAX_ATTEMPTS = 13/);
+  assert.match(core, /const MAX_HEADER_BYTES = 16384/);
+  assert.match(core, /const MAX_HEADER_PAIRS = 64/);
+  assert.match(wrapper, /return freeze\(\{ transport, close: exchangeOwner\.close \}\)/);
+  const pending = [new URL('../src/', import.meta.url)];
+  const importers = [];
+  while (pending.length > 0) {
+    const directory = pending.pop();
+    for (const entry of readdirSync(directory, { withFileTypes: true })) {
+      const candidate = new URL(entry.name, directory);
+      if (entry.isDirectory()) pending.push(new URL(`${entry.name}/`, directory));
+      else if (entry.isFile() && candidate.pathname.endsWith('.js')) {
+        const candidateSource = readFileSync(candidate, 'utf8');
+        if (!candidate.pathname.endsWith(`/${coreName}`)
+            && candidateSource.includes(coreName)) {
+          importers.push(candidate.pathname.slice(candidate.pathname.lastIndexOf('/src/') + 5));
+        }
+      }
+    }
+  }
+  assert.deepEqual(importers, [`zenon/${wrapperName}`]);
+});
+
 test('bounded HTTPS owner import is process-global-observer-free', () => {
   const source = readFileSync(
     new URL('../src/service-credit-bounded-https-ingress-owner.js', import.meta.url),
