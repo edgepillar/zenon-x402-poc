@@ -84,7 +84,7 @@ const OBSERVER_LOAD = OBSERVER_PROTOTYPE.load;
 const OBSERVER_PEEK = OBSERVER_PROTOTYPE.peekPreparedAttestation;
 const OBSERVER_COMMIT = OBSERVER_PROTOTYPE.commitAuthenticatedEnvelope;
 
-const RECORD_KEY_DOMAIN = 'zenon-x402:funding-observer-sqlite-record-v2';
+const RECORD_KEY_DOMAIN = 'zenon-x402:funding-observer-sqlite-record-v3';
 const DIGEST = /^sha256:[0-9a-f]{64}$/;
 const MAX_PATH_BYTES = 4_096;
 const MAX_EXECUTABLE_BYTES = 64 * 1024 * 1024;

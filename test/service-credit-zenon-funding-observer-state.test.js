@@ -4,6 +4,7 @@ import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 
 import {
+  applyZenonFundingMomentumVersionLineage,
   applyZenonFundingInclusionObservation,
   applyZenonFundingObserverPage,
   createZenonFundingObserverState,
@@ -256,13 +257,15 @@ test('observer import is inert and its dependency closure stays pure and inactiv
   assert.equal(typeof imported.createZenonFundingObserverState, 'function');
 });
 
-test('state v1 is exact, canonical, detached, deeply frozen, and byte-stable', () => {
+test('state v2 is exact, canonical, detached, deeply frozen, and byte-stable', () => {
   const input = configuration();
   const state = createZenonFundingObserverState(input);
   input.target.amount = '999';
   assert.equal(state.target.amount, '7');
-  assert.equal(state.schemaVersion, 1);
+  assert.equal(state.schemaVersion, 2);
   assert.equal(state.revision, 0);
+  assert.equal(state.maxV1Height, null);
+  assert.equal(state.minV2Height, null);
   assert.equal(state.status, ZENON_FUNDING_OBSERVER_STATUS.AWAITING_INCLUSION);
   assert.equal(state.trustClassification, ZENON_FUNDING_OBSERVER_TRUST_CLASSIFICATION);
   assert.equal(state.inclusion, null);
@@ -274,6 +277,110 @@ test('state v1 is exact, canonical, detached, deeply frozen, and byte-stable', (
   assert.equal(serializeZenonFundingObserverState(reparsed), serialized);
   assert.deepEqual(reparsed, state);
   assertDeepFrozen(reparsed);
+});
+
+test('durable Momentum version bounds merge monotonically and crossing observations quarantine', () => {
+  const initial = createZenonFundingObserverState(configuration());
+  const bootstrapped = applyZenonFundingMomentumVersionLineage({
+    state: initial,
+    expectedRevision: initial.revision,
+    maxV1Height: INITIAL_HEIGHT + 1,
+    minV2Height: INITIAL_HEIGHT + 4,
+  });
+  assert.equal(bootstrapped.disposition, 'APPLIED');
+  assert.equal(bootstrapped.state.revision, initial.revision + 1);
+  assert.equal(bootstrapped.state.maxV1Height, INITIAL_HEIGHT + 1);
+  assert.equal(bootstrapped.state.minV2Height, INITIAL_HEIGHT + 4);
+
+  const extended = applyZenonFundingMomentumVersionLineage({
+    state: bootstrapped.state,
+    expectedRevision: bootstrapped.state.revision,
+    maxV1Height: INITIAL_HEIGHT + 3,
+    minV2Height: INITIAL_HEIGHT + 5,
+  });
+  assert.equal(extended.disposition, 'APPLIED');
+  assert.equal(extended.state.maxV1Height, INITIAL_HEIGHT + 3);
+  assert.equal(extended.state.minV2Height, INITIAL_HEIGHT + 4);
+
+  const compatibleReplay = applyZenonFundingMomentumVersionLineage({
+    state: extended.state,
+    expectedRevision: extended.state.revision,
+    maxV1Height: INITIAL_HEIGHT + 2,
+    minV2Height: INITIAL_HEIGHT + 5,
+  });
+  assert.equal(compatibleReplay.disposition, 'UNCHANGED');
+  assert.deepEqual(compatibleReplay.state, extended.state);
+
+  const v1Conflict = applyZenonFundingMomentumVersionLineage({
+    state: extended.state,
+    expectedRevision: extended.state.revision,
+    maxV1Height: extended.state.minV2Height,
+    minV2Height: null,
+  });
+  assert.equal(v1Conflict.disposition, 'QUARANTINED');
+  assert.equal(v1Conflict.state.revision, extended.state.revision + 1);
+  assert.equal(v1Conflict.state.maxV1Height, extended.state.maxV1Height);
+  assert.equal(v1Conflict.state.minV2Height, extended.state.minV2Height);
+  assert.deepEqual(v1Conflict.state.quarantine, { reason: 'MOMENTUM_VERSION_CONFLICT' });
+  assert.deepEqual(
+    parseZenonFundingObserverState(serializeZenonFundingObserverState(v1Conflict.state)),
+    v1Conflict.state,
+  );
+
+  const v1Only = applyZenonFundingMomentumVersionLineage({
+    state: initial,
+    expectedRevision: initial.revision,
+    maxV1Height: INITIAL_HEIGHT + 3,
+    minV2Height: null,
+  }).state;
+  const v2Conflict = applyZenonFundingMomentumVersionLineage({
+    state: v1Only,
+    expectedRevision: v1Only.revision,
+    maxV1Height: null,
+    minV2Height: v1Only.maxV1Height,
+  });
+  assert.equal(v2Conflict.disposition, 'QUARANTINED');
+  assert.deepEqual(v2Conflict.state.quarantine, { reason: 'MOMENTUM_VERSION_CONFLICT' });
+});
+
+test('Momentum version-bound hydration and transition input require the exact strict invariant', async t => {
+  const initial = createZenonFundingObserverState(configuration());
+  expectCode(
+    () => parseZenonFundingObserverState(canonicalForTest({
+      ...structuredClone(initial),
+      schemaVersion: 1,
+    })),
+    'ZENON_FUNDING_OBSERVER_INVALID_STATE',
+  );
+  for (const [name, maxV1Height, minV2Height] of [
+    ['equal bounds', INITIAL_HEIGHT + 2, INITIAL_HEIGHT + 2],
+    ['crossed bounds', INITIAL_HEIGHT + 3, INITIAL_HEIGHT + 2],
+  ]) {
+    await t.test(name, () => expectCode(
+      () => parseZenonFundingObserverState(canonicalForTest({
+        ...structuredClone(initial),
+        maxV1Height,
+        minV2Height,
+      })),
+      'ZENON_FUNDING_OBSERVER_INVALID_STATE',
+    ));
+  }
+  for (const [name, maxV1Height, minV2Height] of [
+    ['empty knowledge', null, null],
+    ['zero v1 height', 0, null],
+    ['unsafe v2 height', null, Number.MAX_SAFE_INTEGER + 1],
+    ['same-bundle crossing', INITIAL_HEIGHT + 2, INITIAL_HEIGHT + 2],
+  ]) {
+    await t.test(name, () => expectCode(
+      () => applyZenonFundingMomentumVersionLineage({
+        state: initial,
+        expectedRevision: initial.revision,
+        maxV1Height,
+        minV2Height,
+      }),
+      'ZENON_FUNDING_OBSERVER_INVALID_INPUT',
+    ));
+  }
 });
 
 test('hostile, expanded, cyclic, accessor-backed, proxy, and oversized inputs reject', async t => {

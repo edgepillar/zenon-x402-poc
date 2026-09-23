@@ -291,12 +291,72 @@ test('exact Dynamic Plasma v1 and v2 Momentum DTOs preserve forward version line
     const first = dynamicPlasmaBundle(batch(context), height => height < 22 ? 1 : 2);
     assert.equal(context.producer.apply(input(context, first)).observerStatus, 'INCLUDED_BELOW_THRESHOLD');
     assert.equal(context.store.load().state.checkpoint.height, 22);
+    assert.equal(context.store.load().state.maxV1Height, 21);
+    assert.equal(context.store.load().state.minV2Height, 22);
 
     const second = dynamicPlasmaBundle(batch(context), height => height < 22 ? 1 : 2);
     const result = context.producer.apply(input(context, second));
     assert.equal(result.observerStatus, 'THRESHOLD_OBSERVED');
     assert.equal(result.outboxStatus, 'PREPARED');
     assert.equal(context.store.load().state.inclusion.momentumHeight, 21);
+  });
+});
+
+test('cross-observation Momentum version conflicts quarantine durably in both directions', async t => {
+  await t.test('a later current v1 bundle cannot cross a retained v2 boundary after reopen', t => {
+    const context = fixture(t);
+    context.producer.apply(input(context, dynamicPlasmaBundle(batch(context))));
+    const learned = context.store.load();
+    assert.equal(learned.state.maxV1Height, null);
+    assert.equal(learned.state.minV2Height, 20);
+    context.store.close();
+
+    const reopened = openZenonFundingObserverSqliteStore({
+      databasePath: context.configuration.databasePath,
+      allowedRoot: context.configuration.allowedRoot,
+      expectedRecordKey: context.recordKey,
+      authorityRecord: AUTHORITY_TEXT,
+    });
+    t.after(() => reopened.close());
+    const recovered = {
+      ...context,
+      store: reopened,
+      producer: createProducer(Object.freeze({
+        ...context.options,
+        fundingObserverStore: reopened,
+      })),
+    };
+    const downgraded = dynamicPlasmaBundle(batch(recovered), () => 1);
+    const result = recovered.producer.apply(input(recovered, downgraded));
+    assert.equal(result.status, 'QUARANTINED');
+    assert.equal(result.outboxStatus, 'NONE');
+    assert.deepEqual(reopened.load().state.quarantine, {
+      reason: 'MOMENTUM_VERSION_CONFLICT',
+    });
+    reopened.close();
+
+    const verified = openZenonFundingObserverSqliteStore({
+      databasePath: context.configuration.databasePath,
+      allowedRoot: context.configuration.allowedRoot,
+      expectedRecordKey: context.recordKey,
+      authorityRecord: AUTHORITY_TEXT,
+    });
+    t.after(() => verified.close());
+    assert.equal(verified.load().state.status, 'QUARANTINED');
+  });
+
+  await t.test('a later v2 bundle cannot move at or below a retained v1 boundary', t => {
+    const context = fixture(t);
+    context.producer.apply(input(context, dynamicPlasmaBundle(batch(context), () => 1)));
+    const learned = context.store.load();
+    assert.equal(learned.state.maxV1Height, 24);
+    assert.equal(learned.state.minV2Height, null);
+    const upgraded = dynamicPlasmaBundle(batch(context));
+    const result = context.producer.apply(input(context, upgraded));
+    assert.equal(result.status, 'QUARANTINED');
+    assert.deepEqual(context.store.load().state.quarantine, {
+      reason: 'MOMENTUM_VERSION_CONFLICT',
+    });
   });
 });
 
@@ -443,7 +503,7 @@ test('exact last-step replay retrieves its fixed result only while committed sta
 
 test('missing or behind source does not debit, authorize, erase or replace committed progress', t => {
   const context = fixture(t);
-  context.producer.apply(input(context));
+  context.producer.apply(input(context, dynamicPlasmaBundle(batch(context))));
   const before = context.store.load();
   assert.equal(context.producer.apply(input(context, null)).status, 'SOURCE_UNAVAILABLE');
   const behind = batch(context, { frontier: 21 });
@@ -716,4 +776,48 @@ test('source loss and replay preserve a real READY while definite disappearance 
   assert.equal(result.observerStatus, 'QUARANTINED');
   assert.equal(result.outboxStatus, 'INVALIDATED');
   assert.equal(context.store.projectCommittedFundingEvidence(), null);
+});
+
+test('a current version downgrade invalidates READY atomically and remains terminal after reopen', t => {
+  const context = fixture(t);
+  context.producer.apply(input(context, dynamicPlasmaBundle(batch(context))));
+  context.producer.apply(input(context, dynamicPlasmaBundle(batch(context))));
+  const request = context.store.peekPreparedAttestation();
+  const envelope = {
+    envelopeVersion: 1, attestationId: request.attestationId, keyId: AUTHORITY.keyId,
+    issuedAt: NOW / 1000, validUntil: NOW / 1000 + 30,
+  };
+  envelope.signature = sign(null, createZenonFundingProviderAttestationSigningBytes({
+    request, issuedAt: envelope.issuedAt, validUntil: envelope.validUntil,
+  }), PAIR.privateKey).toString('base64url');
+  const current = context.store.load();
+  context.store.commitAuthenticatedEnvelope({
+    expectedObserverRevision: current.state.revision,
+    expectedOutboxRevision: current.outbox.revision,
+    attestationId: request.attestationId,
+    envelope,
+    nowEpochSeconds: NOW / 1000,
+  });
+  assert.equal(context.store.load().outbox.status, 'READY');
+
+  const downgraded = dynamicPlasmaBundle(batch(context), () => 1);
+  const result = context.producer.apply(input(context, downgraded));
+  assert.equal(result.observerStatus, 'QUARANTINED');
+  assert.equal(result.outboxStatus, 'INVALIDATED');
+  assert.deepEqual(context.store.load().state.quarantine, {
+    reason: 'MOMENTUM_VERSION_CONFLICT',
+  });
+  assert.equal(context.store.projectCommittedFundingEvidence(), null);
+  context.store.close();
+
+  const reopened = openZenonFundingObserverSqliteStore({
+    databasePath: context.configuration.databasePath,
+    allowedRoot: context.configuration.allowedRoot,
+    expectedRecordKey: context.recordKey,
+    authorityRecord: AUTHORITY_TEXT,
+  });
+  t.after(() => reopened.close());
+  assert.equal(reopened.load().state.status, 'QUARANTINED');
+  assert.equal(reopened.load().outbox.status, 'INVALIDATED');
+  assert.equal(reopened.projectCommittedFundingEvidence(), null);
 });

@@ -55,7 +55,7 @@ const INITIAL_HASH = 'a'.repeat(64);
 const TRANSACTION_HASH = 'c'.repeat(64);
 const APPLICATION_ID = 0x5a464f53;
 const TABLE_NAME = 'zenon_funding_observer_state';
-const ENVELOPE_DOMAIN = 'zenon-x402:funding-observer-sqlite-envelope-v2';
+const ENVELOPE_DOMAIN = 'zenon-x402:funding-observer-sqlite-envelope-v3';
 const ATTESTATION_ID_DOMAIN = 'zenon-x402:funding-provider-attestation-id-v1';
 const ATTESTATION_EVIDENCE_DOMAIN = 'zenon-x402:funding-provider-attestation-evidence-v1';
 const RESOURCE_DIGEST_DOMAIN = 'zenon-x402-service-credit-payment-resource-v1';
@@ -520,6 +520,23 @@ function reachThreshold(store) {
   return applied;
 }
 
+function reachReadyFromThreshold(store, threshold) {
+  const request = store.peekPreparedAttestation();
+  const committed = store.commitAuthenticatedEnvelope({
+    expectedObserverRevision: threshold.state.revision,
+    expectedOutboxRevision: 1,
+    attestationId: request.attestationId,
+    envelope: signedAttestationEnvelope(request),
+    nowEpochSeconds: ATTESTATION_NOW,
+  });
+  assert.equal(committed.disposition, 'READY');
+  return { threshold, request, committed };
+}
+
+function reachReady(store) {
+  return reachReadyFromThreshold(store, reachThreshold(store));
+}
+
 const RACE_CHILD_SOURCE = String.raw`
   import { openZenonFundingObserverSqliteStore } from './src/service-credit-zenon-funding-observer-sqlite-store.js';
   let store;
@@ -948,7 +965,7 @@ function observeSnapshotWriter(
 }
 
 test('import is inert and dependency closure remains offline and default-inactive', () => {
-  assert.equal(ZENON_FUNDING_OBSERVER_SQLITE_STORE_SCHEMA_VERSION, 2);
+  assert.equal(ZENON_FUNDING_OBSERVER_SQLITE_STORE_SCHEMA_VERSION, 3);
   assert.equal(typeof ZenonFundingObserverSqliteStore.create, 'function');
   assert.equal(typeof deriveZenonFundingObserverSqliteRecordKey, 'function');
   const source = readFileSync(
@@ -982,7 +999,7 @@ test('exclusive create and explicit open preserve exact frozen state and stable 
   const configuration = createOptions(directory, state);
   const store = createZenonFundingObserverSqliteStore(configuration);
   const created = store.load();
-  assert.equal(created.storeSchemaVersion, 2);
+  assert.equal(created.storeSchemaVersion, 3);
   assert.deepEqual(created.state, state);
   assertDeepFrozen(created);
   const recordKey = created.recordKey;
@@ -1008,6 +1025,24 @@ test('record key derivation is pure, strict, and identical to exclusive create',
   const state = initialState();
   const recordKey = deriveZenonFundingObserverSqliteRecordKey(state, AUTHORITY_RECORD_TEXT);
   assert.match(recordKey, /^sha256:[0-9a-f]{64}$/);
+  assert.equal(recordKey, domainCommitment(
+    'zenon-x402:funding-observer-sqlite-record-v3',
+    {
+      storeSchemaVersion: 3,
+      observerRecordId: state.observerRecordId,
+      targetBindingDigest: state.targetBindingDigest,
+      authorityRecordDigest: AUTHORITY.authorityRecordDigest,
+    },
+  ));
+  assert.notEqual(recordKey, domainCommitment(
+    'zenon-x402:funding-observer-sqlite-record-v2',
+    {
+      storeSchemaVersion: 2,
+      observerRecordId: state.observerRecordId,
+      targetBindingDigest: state.targetBindingDigest,
+      authorityRecordDigest: AUTHORITY.authorityRecordDigest,
+    },
+  ));
   assert.equal(
     deriveZenonFundingObserverSqliteRecordKey(
       structuredClone(state),
@@ -1453,7 +1488,7 @@ test('SQLite application, schema, row, envelope, checksum, and size grammar is e
     store.close();
     const persisted = readEnvelope(configuration);
     assert.equal(persisted.metadata.applicationId, APPLICATION_ID);
-    assert.equal(persisted.metadata.userVersion, 2);
+    assert.equal(persisted.metadata.userVersion, 3);
     assert.equal(persisted.row.record_key, recordKey);
     assert.equal(persisted.envelope.checksum, envelopeChecksum(persisted.envelope));
     assert.equal(persisted.envelope.stateBytes, serializeZenonFundingObserverState(initialState()));
@@ -1479,7 +1514,7 @@ test('SQLite application, schema, row, envelope, checksum, and size grammar is e
     const recordKey = store.load().recordKey;
     store.close();
     const database = new DatabaseSync(configuration.databasePath);
-    database.exec('PRAGMA user_version = 3');
+    database.exec('PRAGMA user_version = 4');
     database.close();
     expectCode(
       () => openZenonFundingObserverSqliteStore(openOptions(configuration, recordKey)),
@@ -1563,8 +1598,8 @@ test('SQLite application, schema, row, envelope, checksum, and size grammar is e
     store.close();
     writeEnvelope(configuration, envelope => {
       const state = JSON.parse(envelope.stateBytes);
-      state.schemaVersion = 2;
-      envelope.observerStateSchemaVersion = 2;
+      state.schemaVersion += 1;
+      envelope.observerStateSchemaVersion += 1;
       envelope.stateBytes = canonicalJson(state);
     });
     expectCode(
@@ -1731,6 +1766,166 @@ test('threshold, prepared request, and authenticated READY artifact commit atomi
   assert.deepEqual(store.projectCommittedFundingEvidence(), committed.fundingEvidence);
   assert.deepEqual(store.matchReadyFundingEvidence(committed.fundingEvidence), verified);
   store.close();
+});
+
+test('Momentum version bounds persist, compatible replay is write-free, and reopen is exact', t => {
+  const directory = privateDirectoryFor(t);
+  const configuration = createOptions(directory);
+  let store = createZenonFundingObserverSqliteStore(configuration);
+  const initial = store.load();
+  assert.equal(initial.state.maxV1Height, null);
+  assert.equal(initial.state.minV2Height, null);
+  store.close();
+
+  const writes = [];
+  store = openZenonFundingObserverSqliteStore(openOptions(configuration, initial.recordKey, {
+    testHooks: {
+      beforeWrite({ operation }) { writes.push(operation); },
+    },
+  }));
+  const applied = store.admitMomentumVersionLineage({
+    expectedRevision: initial.state.revision,
+    maxV1Height: INITIAL_HEIGHT + 1,
+    minV2Height: INITIAL_HEIGHT + 4,
+  });
+  assert.equal(applied.disposition, 'APPLIED');
+  assert.equal(applied.state.revision, initial.state.revision + 1);
+  assert.equal(applied.state.maxV1Height, INITIAL_HEIGHT + 1);
+  assert.equal(applied.state.minV2Height, INITIAL_HEIGHT + 4);
+  const persisted = readEnvelope(configuration).envelopeText;
+
+  const replay = store.admitMomentumVersionLineage({
+    expectedRevision: applied.state.revision,
+    maxV1Height: INITIAL_HEIGHT + 1,
+    minV2Height: INITIAL_HEIGHT + 5,
+  });
+  assert.equal(replay.disposition, 'UNCHANGED');
+  assert.equal(replay.state.revision, applied.state.revision);
+  assert.equal(readEnvelope(configuration).envelopeText, persisted);
+  assert.deepEqual(writes, ['admitMomentumVersionLineage']);
+  store.close();
+
+  const reopened = openZenonFundingObserverSqliteStore(
+    openOptions(configuration, initial.recordKey),
+  );
+  assert.deepEqual(reopened.load().state, applied.state);
+  reopened.close();
+});
+
+test('version conflict atomically quarantines and invalidates PREPARED or READY across reopen', async t => {
+  for (const priorStatus of ['PREPARED', 'READY']) {
+    await t.test(priorStatus, t => {
+      const directory = privateDirectoryFor(t);
+      const configuration = createOptions(directory);
+      const store = createZenonFundingObserverSqliteStore(configuration);
+      const initial = store.load();
+      const learned = store.admitMomentumVersionLineage({
+        expectedRevision: initial.state.revision,
+        maxV1Height: null,
+        minV2Height: INITIAL_HEIGHT + 4,
+      });
+      const threshold = reachThreshold(store);
+      if (priorStatus === 'READY') reachReadyFromThreshold(store, threshold);
+      const before = store.load();
+      assert.equal(before.outbox.status, priorStatus);
+
+      const conflict = store.admitMomentumVersionLineage({
+        expectedRevision: before.state.revision,
+        maxV1Height: learned.state.minV2Height,
+        minV2Height: null,
+      });
+      assert.equal(conflict.disposition, 'QUARANTINED');
+      assert.equal(conflict.state.revision, before.state.revision + 1);
+      assert.equal(conflict.state.maxV1Height, learned.state.maxV1Height);
+      assert.equal(conflict.state.minV2Height, learned.state.minV2Height);
+      assert.deepEqual(conflict.state.quarantine, { reason: 'MOMENTUM_VERSION_CONFLICT' });
+      assert.equal(conflict.outbox.status, 'INVALIDATED');
+      assert.equal(conflict.outbox.revision, before.outbox.revision + 1);
+      assert.equal(store.projectCommittedCandidate(), null);
+      assert.equal(store.projectCommittedFundingEvidence(), null);
+      store.close();
+
+      const reopened = openZenonFundingObserverSqliteStore(
+        openOptions(configuration, initial.recordKey),
+      );
+      assert.deepEqual(reopened.load().state, conflict.state);
+      assert.deepEqual(reopened.load().outbox, conflict.outbox);
+      reopened.close();
+    });
+  }
+});
+
+test('version-conflict precommit failure is old and commit ambiguity reopens to one atomic tuple', async t => {
+  function tuple(record) {
+    return {
+      revision: record.state.revision,
+      maxV1Height: record.state.maxV1Height,
+      minV2Height: record.state.minV2Height,
+      status: record.state.status,
+      quarantine: record.state.quarantine,
+      outbox: record.outbox,
+    };
+  }
+  for (const [phase, expectedCode, forced] of [
+    ['beforeCommit', 'ZENON_FUNDING_OBSERVER_STORE_TEST_HOOK_FAILED', 'old'],
+    ['commitAttempt', 'ZENON_FUNDING_OBSERVER_STORE_COMMIT_OUTCOME_UNKNOWN', null],
+    ['afterCommit', 'ZENON_FUNDING_OBSERVER_STORE_COMMIT_OUTCOME_UNKNOWN', 'new'],
+  ]) {
+    await t.test(phase, t => {
+      const directory = privateDirectoryFor(t);
+      const configuration = createOptions(directory);
+      let store = createZenonFundingObserverSqliteStore(configuration);
+      const initial = store.load();
+      store.admitMomentumVersionLineage({
+        expectedRevision: initial.state.revision,
+        maxV1Height: null,
+        minV2Height: INITIAL_HEIGHT + 4,
+      });
+      reachReady(store);
+      const before = store.load();
+      const oldTuple = tuple(before);
+      const newTuple = {
+        ...oldTuple,
+        revision: oldTuple.revision + 1,
+        status: ZENON_FUNDING_OBSERVER_STATUS.QUARANTINED,
+        quarantine: { reason: 'MOMENTUM_VERSION_CONFLICT' },
+        outbox: {
+          ...oldTuple.outbox,
+          revision: oldTuple.outbox.revision + 1,
+          status: 'INVALIDATED',
+        },
+      };
+      store.close();
+      store = openZenonFundingObserverSqliteStore(openOptions(configuration, initial.recordKey, {
+        testHooks: {
+          [phase]: ({ operation }) => {
+            if (operation === 'admitMomentumVersionLineage') throw new Error('synthetic');
+          },
+        },
+      }));
+      expectCode(
+        () => store.admitMomentumVersionLineage({
+          expectedRevision: before.state.revision,
+          maxV1Height: before.state.minV2Height,
+          minV2Height: null,
+        }),
+        expectedCode,
+      );
+      if (phase === 'beforeCommit') store.close();
+      else expectCode(() => store.load(), 'ZENON_FUNDING_OBSERVER_STORE_CLOSED');
+
+      const reopened = openZenonFundingObserverSqliteStore(
+        openOptions(configuration, initial.recordKey),
+      );
+      const observed = tuple(reopened.load());
+      const isOld = canonicalJson(observed) === canonicalJson(oldTuple);
+      const isNew = canonicalJson(observed) === canonicalJson(newTuple);
+      assert.equal(isOld || isNew, true);
+      if (forced === 'old') assert.equal(isOld, true);
+      if (forced === 'new') assert.equal(isNew, true);
+      reopened.close();
+    });
+  }
 });
 
 test('PREPARED request remains byte-stable across reopen and confirmation growth', t => {
@@ -2095,7 +2290,7 @@ test('create and record-key derivation reject every valid non-pristine bootstrap
   }
 });
 
-test('disconnected initial state, authority substitution, and v1 rollback fail read-only', async t => {
+test('disconnected initial state, authority substitution, and old schema rollback fail read-only', async t => {
   await t.test('disconnected initial state is rejected before database creation', t => {
     const directory = privateDirectoryFor(t);
     const disconnected = initialState({
@@ -2128,14 +2323,14 @@ test('disconnected initial state, authority substitution, and v1 rollback fail r
     );
   });
 
-  await t.test('a v1 user version is rejected without modifying bytes', t => {
+  await t.test('an old schema-v2 user version is rejected without modifying bytes', t => {
     const directory = privateDirectoryFor(t);
     const configuration = createOptions(directory);
     const store = createZenonFundingObserverSqliteStore(configuration);
     const recordKey = store.load().recordKey;
     store.close();
     const database = new DatabaseSync(configuration.databasePath);
-    database.exec('PRAGMA user_version = 1');
+    database.exec('PRAGMA user_version = 2');
     database.close();
     const before = readFileSync(configuration.databasePath);
     expectCode(
@@ -2757,7 +2952,7 @@ test('wrong record, target, authority, chain, and state schema fail before mutat
 });
 
 test('every entrypoint remains pinned to the handle record key after a valid row swap', async t => {
-  for (const name of ['load', 'plan', 'applyPage', 'applyInclusion', 'project']) {
+  for (const name of ['load', 'admitVersion', 'plan', 'applyPage', 'applyInclusion', 'project']) {
     await t.test(name, t => {
       const directory = privateDirectoryFor(t);
       const configuration = createOptions(directory);
@@ -2778,6 +2973,11 @@ test('every entrypoint remains pinned to the handle record key after a valid row
 
       const operations = {
         load: () => store.load(),
+        admitVersion: () => store.admitMomentumVersionLineage({
+          expectedRevision: initial.state.revision,
+          maxV1Height: INITIAL_HEIGHT,
+          minV2Height: null,
+        }),
         plan: () => store.planBackfill({
           expectedRevision: initial.state.revision,
           frontier: { height: INITIAL_HEIGHT + 1, hash: momentumHash(INITIAL_HEIGHT + 1) },
