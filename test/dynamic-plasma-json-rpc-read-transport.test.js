@@ -24,18 +24,33 @@ const DATA = Buffer.alloc(32, 7).toString('base64');
 // during deliberately poisoned-intrinsic admission probes. The exhaustion
 // probe changes exactly one asserted private initializer, never the API/limit.
 function evaluateAdapter(nearExhaustion = false) {
+  let core = readFileSync(new URL('../src/zenon/bounded-json-rpc-read-core.js', import.meta.url), 'utf8');
   let source = readFileSync(new URL('../src/zenon/dynamic-plasma-json-rpc-read-transport.js', import.meta.url), 'utf8');
-  const importLine = "import { types as utilTypes } from 'node:util';";
+  const utilImport = "import { types as utilTypes } from 'node:util';";
+  const coreImport = "import { createBoundedJsonRpcReadTransportCore } from './bounded-json-rpc-read-core.js';";
+  const coreExport = 'export function createBoundedJsonRpcReadTransportCore';
   const exportLine = 'export function createDynamicPlasmaJsonRpcReadTransport';
-  assert.equal(source.split(importLine).length, 2);
+  assert.equal(core.split(utilImport).length, 2);
+  assert.equal(core.split(coreExport).length, 2);
+  assert.equal(source.split(utilImport).length, 2);
+  assert.equal(source.split(coreImport).length, 2);
   assert.equal(source.split(exportLine).length, 2);
-  source = source.replace(importLine, '').replace(exportLine, 'function createDynamicPlasmaJsonRpcReadTransport');
+  core = core.replace(utilImport, '').replace(coreExport, 'function createBoundedJsonRpcReadTransportCore');
+  source = source.replace(utilImport, '').replace(coreImport, '')
+    .replace(exportLine, 'function createDynamicPlasmaJsonRpcReadTransport');
   if (nearExhaustion) {
     const initializer = 'let nextId = 1;';
-    assert.equal(source.split(initializer).length, 2);
-    source = source.replace(initializer, 'let nextId = MAX_REQUEST_ID - 1;');
+    assert.equal(core.split(initializer).length, 2);
+    core = core.replace(initializer, 'let nextId = maximumRequests - 1;');
   }
-  return runInThisContext(`(function(utilTypes) { ${source}\nreturn createDynamicPlasmaJsonRpcReadTransport; })`)(utilTypes);
+  return runInThisContext(`(function(utilTypes) {
+    const createBoundedJsonRpcReadTransportCore = (function(utilTypes) {
+      ${core}
+      return createBoundedJsonRpcReadTransportCore;
+    })(utilTypes);
+    ${source}
+    return createDynamicPlasmaJsonRpcReadTransport;
+  })`)(utilTypes);
 }
 
 function restoreDescriptor(object, key, descriptor) {
@@ -1100,14 +1115,20 @@ test('protocol failure remains endpoint A null and B never replaces its evidence
 
 test('source remains a default-off pure adapter with explicit boundary and bounded ID guard', () => {
   const source = readFileSync(new URL('../src/zenon/dynamic-plasma-json-rpc-read-transport.js', import.meta.url), 'utf8');
-  assert.deepEqual([...source.matchAll(/from ['"]([^'"]+)['"]/g)].map(match => match[1]), ['node:util']);
+  const core = readFileSync(new URL('../src/zenon/bounded-json-rpc-read-core.js', import.meta.url), 'utf8');
+  assert.deepEqual([...source.matchAll(/from ['"]([^'"]+)['"]/g)].map(match => match[1]), [
+    'node:util',
+    './bounded-json-rpc-read-core.js',
+  ]);
+  assert.deepEqual([...core.matchAll(/from ['"]([^'"]+)['"]/g)].map(match => match[1]), ['node:util']);
   assert.doesNotMatch(source, /\b(?:fetch|WebSocket|XMLHttpRequest|URL|setTimeout|setInterval|AbortSignal)\b/);
-  assert.doesNotMatch(source, /\b(?:process|console)\s*\.|Math\.random|node:(?:http|https|net|tls|fs|crypto)/);
-  assert.doesNotMatch(source, /JSON\.(?:parse|stringify)\s*\(|Promise\.resolve\s*\(/);
+  assert.doesNotMatch(source + core, /\b(?:process|console)\s*\.|Math\.random|node:(?:http|https|net|tls|fs|crypto)/);
+  assert.doesNotMatch(source + core, /JSON\.(?:parse|stringify)\s*\(|Promise\.resolve\s*\(/);
   assert.doesNotMatch(source, /\b(?:publishRawTransaction|prepareBlock|computePoW|signTransaction)\s*\(/);
   assert.match(source, /UNSIGNED/);
   assert.match(source, /TRANSPORT_MUST_PREHANDLE_REJECTION/);
   assert.match(source, /MAX_REQUEST_ID\s*=\s*4294967295/);
-  assert.match(source, /nextId\s*>\s*MAX_REQUEST_ID/);
-  assert.ok(source.indexOf('nextId += 1') < source.indexOf('apply(exchange, undefined,'));
+  assert.match(source, /snapshotRequest,\s*MAX_REQUEST_ID,\s*'dynamic_plasma'/s);
+  assert.match(core, /nextId\s*>\s*maximumRequests/);
+  assert.ok(core.indexOf('nextId += 1') < core.indexOf('apply(exchange, undefined,'));
 });
