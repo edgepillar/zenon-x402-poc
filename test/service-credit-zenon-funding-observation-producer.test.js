@@ -205,6 +205,18 @@ function input(context, reply = batch(context), overrides = {}) {
     reply: reply === null ? null : JSON.stringify(reply), ...overrides,
   });
 }
+function inputWithRawPrice(context, reply, field, rawPrice) {
+  const marker = `__raw_${field}_price__`;
+  reply.frontier[field] = marker;
+  const encoded = JSON.stringify(reply);
+  const token = JSON.stringify(marker);
+  assert.equal(encoded.indexOf(token), encoded.lastIndexOf(token));
+  return Object.freeze({
+    expectedRevision: context.store.load().state.revision,
+    sourceBinding: BINDING,
+    reply: encoded.replace(token, rawPrice),
+  });
+}
 const codeIs = suffix => error => error?.code === `ZENON_FUNDING_OBSERVATION_PRODUCER_${suffix}`;
 
 test('observation producer is inert, frozen, default-off and owns no downstream effects', t => {
@@ -286,6 +298,35 @@ test('exact Dynamic Plasma v1 and v2 Momentum DTOs preserve forward version line
     assert.equal(result.outboxStatus, 'PREPARED');
     assert.equal(context.store.load().state.inclusion.momentumHeight, 21);
   });
+});
+
+test('Dynamic Plasma price fields reject JSON negative zero and accept canonical zero', async t => {
+  for (const version of [1, 2]) {
+    for (const field of ['nextFusionPrice', 'nextWorkPrice']) {
+      await t.test(`v${version} ${field} rejects raw -0`, t => {
+        const context = fixture(t);
+        const before = context.store.load();
+        const reply = dynamicPlasmaBundle(batch(context), () => version);
+        assert.throws(
+          () => context.producer.apply(inputWithRawPrice(context, reply, field, '-0')),
+          codeIs('INVALID_INPUT'),
+        );
+        assert.deepEqual(context.store.load(), before);
+      });
+    }
+
+    await t.test(`v${version} accepts canonical zero for both price fields`, t => {
+      const context = fixture(t);
+      const reply = dynamicPlasmaBundle(batch(context), () => version);
+      for (const item of momentumReplies(reply)) {
+        item.nextFusionPrice = 0;
+        item.nextWorkPrice = 0;
+      }
+      const result = context.producer.apply(input(context, reply));
+      assert.equal(result.status, 'APPLIED');
+      assert.equal(context.store.load().state.checkpoint.height, 22);
+    });
+  }
 });
 
 test('invalid Dynamic Plasma Momentum contracts never mutate observer state', async t => {

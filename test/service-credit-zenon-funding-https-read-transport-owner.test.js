@@ -669,6 +669,22 @@ function observationBundle(context, {
   };
 }
 
+function dynamicPlasmaV2Bundle(reply) {
+  const momentums = [
+    reply.checkpoint,
+    reply.frontier,
+    ...reply.momentums.list,
+    reply.inclusionMomentum,
+  ].filter(value => value !== null);
+  for (const momentum of momentums) {
+    momentum.version = 2;
+    momentum.data = '';
+    momentum.nextFusionPrice = 1_000 + momentum.height;
+    momentum.nextWorkPrice = 2_000 + momentum.height;
+  }
+  return reply;
+}
+
 function observationTranscript(reply, { behind = false } = {}) {
   if (behind) return [reply.frontier, reply.frontier];
   return [
@@ -744,7 +760,7 @@ function installTranscriptResponder(h, replies, {
   return { calls };
 }
 
-function createFundingHttpsAcceptanceFixture(t) {
+function createFundingHttpsAcceptanceFixture(t, { transformBundle = value => value } = {}) {
   const https = harness();
   const genuineOwner = https.create();
   let context;
@@ -760,7 +776,7 @@ function createFundingHttpsAcceptanceFixture(t) {
   });
   context = createObservationFixture(t, observed.owner);
   const before = context.store.load();
-  const replies = observationTranscript(observationBundle(context));
+  const replies = observationTranscript(transformBundle(observationBundle(context)));
   const responder = installTranscriptResponder(https, replies);
   return {
     async observeSuccess() {
@@ -1049,9 +1065,19 @@ test('funding HTTPS wrapper owns no activation, credential, wallet or generic me
 });
 
 test('genuine funding HTTPS stack applies one exact offline observation transcript', async t => {
-  const acceptance = createFundingHttpsAcceptanceFixture(t);
-  const result = await acceptance.observeSuccess();
-  assert.equal(result.status, 'APPLIED');
+  await t.test('legacy v1 Momentum DTOs remain admitted', async t => {
+    const acceptance = createFundingHttpsAcceptanceFixture(t);
+    const result = await acceptance.observeSuccess();
+    assert.equal(result.status, 'APPLIED');
+  });
+
+  await t.test('native-shaped v2 Momentum DTOs include normalized data and both prices', async t => {
+    const acceptance = createFundingHttpsAcceptanceFixture(t, {
+      transformBundle: dynamicPlasmaV2Bundle,
+    });
+    const result = await acceptance.observeSuccess();
+    assert.equal(result.status, 'APPLIED');
+  });
 });
 
 test('genuine funding HTTPS stack fails closed across transport and revision boundaries', async t => {

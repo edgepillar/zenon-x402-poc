@@ -14,6 +14,7 @@ const OBJECT_PROTOTYPE = Object.prototype;
 const ARRAY_PROTOTYPE = Array.prototype;
 const IS_ARRAY = Array.isArray;
 const IS_PROXY = utilTypes.isProxy;
+const IS = Object.is;
 const SAFE_INTEGER = Number.isSafeInteger;
 const PARSE = JSON.parse;
 const STRINGIFY = JSON.stringify;
@@ -193,6 +194,7 @@ function momentum(value, chainIdentifier, maximumHeaders) {
     if (result.version !== 1 && result.version !== 2) fail('SOURCE_CONTEXT_CONFLICT');
     integer(result.nextFusionPrice);
     integer(result.nextWorkPrice);
+    if (IS(result.nextFusionPrice, -0) || IS(result.nextWorkPrice, -0)) fail('INVALID_INPUT');
     if (result.version === 1 && (result.nextFusionPrice !== 0 || result.nextWorkPrice !== 0)) {
       fail('SOURCE_CONTEXT_CONFLICT');
     }
