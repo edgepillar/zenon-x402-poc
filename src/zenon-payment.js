@@ -24,6 +24,8 @@ import {
 } from './settlement-journal.js';
 import { invokeLegacySdk105SignedComposite } from './zenon/internal/legacy-sdk-1-0-5-signed-composite.js';
 import {
+  PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_WSS_ENDPOINT,
+  isPublicTestnetDynamicPlasmaEpochPolicy,
   isOperatorTrustedTestnetPolicy,
 } from './zenon/operator-trusted-testnet-profile.js';
 import {
@@ -956,6 +958,14 @@ function configuredLocalBoundRpcUrl(value) {
 
 function configuredOperatorTrustedRpcUrl(policy, value) {
   const localPolicy = isOperatorTrustedLocalDevnetPolicy(policy);
+  const dynamicPlasmaEpochPolicy = isPublicTestnetDynamicPlasmaEpochPolicy(policy);
+  if (dynamicPlasmaEpochPolicy) {
+    if (typeof value !== 'string' ||
+        value !== PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_WSS_ENDPOINT) {
+      safetyError('operator_trusted_dynamic_plasma_epoch_rpc_policy_mismatch');
+    }
+    return value;
+  }
   if (value === undefined) {
     if (localPolicy) safetyError('operator_trusted_local_devnet_rpc_policy_mismatch');
     return undefined;
@@ -1026,9 +1036,13 @@ async function withOwnedZenonSession({
       );
       const { sdk, ed } = await loadZenonDeps();
       const networkId = configuredTestnetNetworkId(environment);
-      const rpcUrl = boundRpcUrl === undefined
+      const operatorBoundRpcUrl = configuredOperatorTrustedRpcUrl(
+        operatorTrustedChainPolicy,
+        boundRpcUrl,
+      );
+      const rpcUrl = operatorBoundRpcUrl === undefined
         ? parseRpcUrl(environment)
-        : configuredLocalBoundRpcUrl(boundRpcUrl);
+        : operatorBoundRpcUrl;
       sdk.Zenon.setNetworkID(networkId);
       zenon = sdk.Zenon.getInstance();
       if (zenon.client) {

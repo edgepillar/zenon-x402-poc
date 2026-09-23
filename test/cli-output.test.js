@@ -13,8 +13,18 @@ import {
   OPERATOR_TRUSTED_PUBLIC_TESTNET_CHAIN_PROFILE,
   OPERATOR_TRUSTED_PUBLIC_TESTNET_PROFILE_NAME,
   OPERATOR_TRUSTED_PUBLIC_TESTNET_WARNING,
+  PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_CHAIN_PROFILE,
+  PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_EVENT_ID,
+  PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_OPERATOR_TRUST_ACKNOWLEDGEMENT,
+  PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_PROFILE_NAME,
+  PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_WARNING,
+  PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_WSS_ACKNOWLEDGEMENT,
+  PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_WSS_ENDPOINT,
   TESTNET_LIVE_ACKNOWLEDGEMENT,
 } from '../src/zenon/operator-trusted-testnet-profile.js';
+import {
+  selectOperatorTrustedExecutionPolicy,
+} from '../src/zenon/operator-trusted-execution-policy-selector.js';
 
 const BUYER_CLI = fileURLToPath(new URL('../src/buyer-cli.js', import.meta.url));
 const SERVER_CLI = fileURLToPath(new URL('../src/server-cli.js', import.meta.url));
@@ -118,6 +128,22 @@ function liveEnv(overrides = {}) {
     ZENON_CHAIN_PROFILE_NAME: OPERATOR_TRUSTED_PUBLIC_TESTNET_PROFILE_NAME,
     ZENON_OPERATOR_TRUST_ACK: OPERATOR_TRUST_ACKNOWLEDGEMENT,
     ZENON_LIVE_ACK: TESTNET_LIVE_ACKNOWLEDGEMENT,
+    ...overrides,
+  };
+}
+
+function dynamicPlasmaEnv(overrides = {}) {
+  return {
+    PAYMENT_MODE: 'zenon',
+    ZENON_CHAIN_PROFILE_NAME: PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_PROFILE_NAME,
+    ZENON_DYNAMIC_PLASMA_EPOCH_EVENT_ID:
+      PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_EVENT_ID,
+    ZENON_DYNAMIC_PLASMA_WSS_ACK:
+      PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_WSS_ACKNOWLEDGEMENT,
+    ZENON_LIVE_ACK: TESTNET_LIVE_ACKNOWLEDGEMENT,
+    ZENON_OPERATOR_TRUST_ACK:
+      PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_OPERATOR_TRUST_ACKNOWLEDGEMENT,
+    ZENON_RPC_URL: PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_WSS_ENDPOINT,
     ...overrides,
   };
 }
@@ -230,12 +256,122 @@ test('live CLI preparation captures one shared historical policy before runtime 
   assert.deepEqual(captured.resourceServerOptions.requirement, { marker: 'requirement' });
 });
 
+test('Dynamic Plasma epoch selection is explicit, side-effect-free, and fail-closed', () => {
+  const selected = selectOperatorTrustedExecutionPolicy(dynamicPlasmaEnv());
+  assert.equal(Object.isFrozen(selected), true);
+  assert.equal(selected.profileName, PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_PROFILE_NAME);
+  assert.equal(selected.epochEventId, PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_EVENT_ID);
+  assert.equal(selected.rpcUrl, PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_WSS_ENDPOINT);
+  assert.equal(selected.warning, PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_WARNING);
+  assert.equal(selected.trustMode, 'operator-trusted-public-testnet-dynamic-plasma-epoch');
+  assert.deepEqual(selected.chainProfile, PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_CHAIN_PROFILE);
+  assert.equal(Object.isFrozen(selected.chainProfile), true);
+
+  for (const env of [
+    dynamicPlasmaEnv({ ZENON_CHAIN_PROFILE_NAME: 'testnet' }),
+    dynamicPlasmaEnv({ ZENON_DYNAMIC_PLASMA_EPOCH_EVENT_ID: undefined }),
+    dynamicPlasmaEnv({
+      ZENON_DYNAMIC_PLASMA_EPOCH_EVENT_ID: '2026-09-23T00:00:00.000Z',
+    }),
+    dynamicPlasmaEnv({ ZENON_OPERATOR_TRUST_ACK: OPERATOR_TRUST_ACKNOWLEDGEMENT }),
+    dynamicPlasmaEnv({ ZENON_RPC_URL: undefined }),
+    dynamicPlasmaEnv({ ZENON_RPC_URL: 'ws://rpc.testnet.zenon.info/' }),
+    dynamicPlasmaEnv({
+      ZENON_RPC_URL: `${PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_WSS_ENDPOINT}?fallback=1`,
+    }),
+    dynamicPlasmaEnv({ ZENON_DYNAMIC_PLASMA_WSS_ACK: undefined }),
+  ]) {
+    assert.throws(() => selectOperatorTrustedExecutionPolicy(env));
+  }
+
+  let getterCalls = 0;
+  const accessorEnvironment = dynamicPlasmaEnv();
+  Object.defineProperty(accessorEnvironment, 'ZENON_DYNAMIC_PLASMA_EPOCH_EVENT_ID', {
+    enumerable: true,
+    get() {
+      getterCalls += 1;
+      return PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_EVENT_ID;
+    },
+  });
+  assert.throws(() => selectOperatorTrustedExecutionPolicy(accessorEnvironment));
+  assert.equal(getterCalls, 0);
+
+  let proxyTrapCalls = 0;
+  const proxiedEnvironment = new Proxy(dynamicPlasmaEnv(), {
+    getOwnPropertyDescriptor() {
+      proxyTrapCalls += 1;
+      throw new Error('environment trap must not execute');
+    },
+  });
+  assert.throws(() => selectOperatorTrustedExecutionPolicy(proxiedEnvironment));
+  assert.equal(proxyTrapCalls, 0);
+});
+
+test('Dynamic Plasma epoch CLI preparation binds the exact WSS endpoint before runtime construction', async () => {
+  const captured = {};
+  class ServerFacilitator {
+    constructor(options) {
+      captured.serverOptions = options;
+    }
+  }
+  class BuyerClient {
+    constructor(options) {
+      captured.buyerOptions = options;
+    }
+  }
+  const serverEnvironment = dynamicPlasmaEnv();
+  const buyerEnvironment = dynamicPlasmaEnv();
+  const server = await prepareServerCli({
+    env: serverEnvironment,
+    async loadRuntime() {
+      return {
+        Facilitator: ServerFacilitator,
+        async buildRequirement(_mode, options) {
+          captured.requirementOptions = options;
+          return { marker: 'requirement' };
+        },
+        createResourceServer() {
+          return { marker: 'server' };
+        },
+        envInt() {
+          return 8402;
+        },
+      };
+    },
+  });
+  const buyer = await prepareBuyerCli({
+    env: buyerEnvironment,
+    async loadRuntime() {
+      return { Client: BuyerClient, paidFetch: async () => {} };
+    },
+  });
+
+  assert.equal(server.policy, buyer.policy);
+  assert.deepEqual(
+    captured.requirementOptions,
+    { zenonChain: PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_CHAIN_PROFILE },
+  );
+  assert.equal(captured.serverOptions.operatorTrustedChainPolicy, server.policy);
+  assert.equal(captured.buyerOptions.operatorTrustedChainPolicy, buyer.policy);
+  assert.equal(
+    captured.serverOptions.rpcUrl,
+    PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_WSS_ENDPOINT,
+  );
+  assert.equal(
+    captured.buyerOptions.rpcUrl,
+    PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_WSS_ENDPOINT,
+  );
+});
+
 test('invalid live opt-ins stop both CLIs before runtime effects while mock mode remains unchanged', async () => {
   const invalidEnvironments = [
     liveEnv({ ZENON_CHAIN_PROFILE_NAME: '' }),
     liveEnv({ ZENON_CHAIN_PROFILE_NAME: 'testnet' }),
     liveEnv({ ZENON_OPERATOR_TRUST_ACK: '' }),
     liveEnv({ ZENON_LIVE_ACK: '' }),
+    dynamicPlasmaEnv({ ZENON_CHAIN_PROFILE_NAME: 'dynamic-plasma' }),
+    dynamicPlasmaEnv({ ZENON_DYNAMIC_PLASMA_EPOCH_EVENT_ID: '' }),
+    dynamicPlasmaEnv({ ZENON_RPC_URL: 'ws://rpc.testnet.zenon.info/' }),
   ];
   for (const prepare of [prepareServerCli, prepareBuyerCli]) {
     for (const env of invalidEnvironments) {

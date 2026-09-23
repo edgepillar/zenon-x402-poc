@@ -15,6 +15,10 @@ import {
   parseOperatorTrustedLocalDevnetProfileArtifact,
 } from './operator-trusted-local-devnet-profile.js';
 import {
+  PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_EVENT_ID,
+  PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_PROFILE_NAME,
+  PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_WSS_ACKNOWLEDGEMENT,
+  selectPublicTestnetDynamicPlasmaEpochPolicy,
   selectOperatorTrustedTestnetPolicy,
 } from './operator-trusted-testnet-profile.js';
 
@@ -38,6 +42,10 @@ const IS_PROXY = utilTypes.isProxy;
 export const OPERATOR_TRUSTED_LOCAL_DEVNET_ARTIFACT_FILE_ENV =
   'ZENON_LOCAL_DEVNET_ARTIFACT_FILE';
 export const OPERATOR_TRUSTED_LOCAL_DEVNET_ACK_ENV = 'ZENON_LOCAL_DEVNET_ACK';
+export const PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_EVENT_ID_ENV =
+  'ZENON_DYNAMIC_PLASMA_EPOCH_EVENT_ID';
+export const PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_WSS_ACK_ENV =
+  'ZENON_DYNAMIC_PLASMA_WSS_ACK';
 
 class OperatorTrustedLocalDevnetExecutionError extends Error {
   constructor() {
@@ -167,7 +175,11 @@ function readArtifactFile(fileName) {
   return text;
 }
 
-function publicTestnetSelection(selector, operatorTrustAcknowledgement, liveAcknowledgement) {
+function historicalPublicTestnetSelection(
+  selector,
+  operatorTrustAcknowledgement,
+  liveAcknowledgement,
+) {
   const policy = selectOperatorTrustedTestnetPolicy(
     selector,
     operatorTrustAcknowledgement,
@@ -182,9 +194,43 @@ function publicTestnetSelection(selector, operatorTrustAcknowledgement, liveAckn
   });
 }
 
+function dynamicPlasmaPublicTestnetSelection(env, selector) {
+  rejectPresentFamilyInputs(env, [
+    OPERATOR_TRUSTED_LOCAL_DEVNET_ACK_ENV,
+    OPERATOR_TRUSTED_LOCAL_DEVNET_ARTIFACT_FILE_ENV,
+  ]);
+  const policy = selectPublicTestnetDynamicPlasmaEpochPolicy({
+    eventId: ownDataEnvironmentValue(
+      env,
+      PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_EVENT_ID_ENV,
+    ),
+    liveAcknowledgement: ownDataEnvironmentValue(env, 'ZENON_LIVE_ACK'),
+    operatorTrustAcknowledgement:
+      ownDataEnvironmentValue(env, 'ZENON_OPERATOR_TRUST_ACK'),
+    profileName: selector,
+    rpcEndpoint: ownDataEnvironmentValue(env, 'ZENON_RPC_URL'),
+    wssAcknowledgement:
+      ownDataEnvironmentValue(env, PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_WSS_ACK_ENV),
+  });
+  return Object.freeze({
+    chainProfile: Object.freeze(policy.chainProfile()),
+    epochEventId: policy.epochEventId,
+    policy,
+    profileName: policy.profileName,
+    rpcUrl: policy.rpcEndpoint,
+    trustMode: policy.trustMode,
+    warning: policy.warning,
+  });
+}
+
 function localDevnetSelection(env, selector) {
   if (selector !== OPERATOR_TRUSTED_LOCAL_FOUR_NODE_DEVNET_LANE) fail();
-  rejectPresentFamilyInputs(env, ['ZENON_OPERATOR_TRUST_ACK', 'ZENON_LIVE_ACK']);
+  rejectPresentFamilyInputs(env, [
+    'ZENON_OPERATOR_TRUST_ACK',
+    'ZENON_LIVE_ACK',
+    PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_EVENT_ID_ENV,
+    PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_WSS_ACK_ENV,
+  ]);
   if (ownDataEnvironmentValue(env, 'ZENON_LOCAL_DEVNET_ACK') !==
       OPERATOR_TRUSTED_LOCAL_FOUR_NODE_DEVNET_ACKNOWLEDGEMENT) fail();
   const rpcUrl = validateLoopbackRpcUrl(ownDataEnvironmentValue(env, 'ZENON_RPC_URL'));
@@ -211,26 +257,43 @@ function selectOperatorTrustedExecutionPolicyFromEnvironment(env) {
   } catch {
     fail();
   }
-  if (selector !== OPERATOR_TRUSTED_LOCAL_FOUR_NODE_DEVNET_LANE) {
+  if (selector === OPERATOR_TRUSTED_LOCAL_FOUR_NODE_DEVNET_LANE) {
+    try {
+      return localDevnetSelection(env, selector);
+    } catch {
+      fail();
+    }
+  }
+  if (selector === PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_PROFILE_NAME) {
+    try {
+      return dynamicPlasmaPublicTestnetSelection(env, selector);
+    } catch {
+      fail();
+    }
+  }
+  if (selector === undefined || typeof selector !== 'string') fail();
+  if (selector !== PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_PROFILE_NAME) {
     let operatorTrustAcknowledgement;
     let liveAcknowledgement;
     try {
       rejectPresentFamilyInputs(env, [
         OPERATOR_TRUSTED_LOCAL_DEVNET_ACK_ENV,
         OPERATOR_TRUSTED_LOCAL_DEVNET_ARTIFACT_FILE_ENV,
+        PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_EVENT_ID_ENV,
+        PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_WSS_ACK_ENV,
       ]);
       operatorTrustAcknowledgement = ownDefinedEnvironmentValue(env, 'ZENON_OPERATOR_TRUST_ACK');
       liveAcknowledgement = ownDefinedEnvironmentValue(env, 'ZENON_LIVE_ACK');
     } catch {
       fail();
     }
-    return publicTestnetSelection(selector, operatorTrustAcknowledgement, liveAcknowledgement);
+    return historicalPublicTestnetSelection(
+      selector,
+      operatorTrustAcknowledgement,
+      liveAcknowledgement,
+    );
   }
-  try {
-    return localDevnetSelection(env, selector);
-  } catch {
-    fail();
-  }
+  fail();
 }
 
 export function selectOperatorTrustedExecutionPolicy(env) {
