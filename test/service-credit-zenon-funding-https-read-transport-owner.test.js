@@ -1,6 +1,15 @@
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { createHash, generateKeyPairSync } from 'node:crypto';
+import {
+  chmodSync,
+  mkdtempSync,
+  readFileSync,
+  realpathSync,
+  rmSync,
+} from 'node:fs';
 import { EventEmitter } from 'node:events';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { checkServerIdentity } from 'node:tls';
 import { Readable } from 'node:stream';
 import { Buffer } from 'node:buffer';
@@ -14,6 +23,25 @@ import {
 import {
   createZenonFundingJsonRpcReadTransport,
 } from '../src/service-credit-zenon-funding-json-rpc-read-transport.js';
+import {
+  prepareZenonFundingResource,
+  deriveZenonFundingObserverTarget,
+} from '../src/service-credit-zenon-funding-evidence.js';
+import {
+  createZenonFundingObserverState,
+} from '../src/service-credit-zenon-funding-observer-state.js';
+import {
+  createZenonFundingObserverSqliteStore,
+} from '../src/service-credit-zenon-funding-observer-sqlite-store.js';
+import {
+  createZenonFundingObservationProducer,
+} from '../src/service-credit-zenon-funding-observation-producer.js';
+import {
+  createZenonFundingObservationSourceOwner,
+} from '../src/service-credit-zenon-funding-observation-source-owner.js';
+import {
+  parseZenonFundingProviderAttestationAuthorityRecord,
+} from '../src/service-credit-zenon-funding-provider-attestation.js';
 
 const CORE_URL = new URL('../src/zenon/bounded-json-rpc-https-exchange-owner.js', import.meta.url);
 const OWNER_URL = new URL('../src/service-credit-zenon-funding-https-read-transport-owner.js', import.meta.url);
@@ -27,6 +55,65 @@ const HEIGHT = 'ledger.getMomentumsByHeight';
 const BLOCK = 'ledger.getAccountBlockByHash';
 const HASH_A = 'ab'.repeat(32);
 const HASH_B = '22'.repeat(32);
+const SOURCE_PREFIX = 'ZENON_FUNDING_OBSERVATION_SOURCE_OWNER_';
+const NOW = 2_100_000_000_000;
+const AUTHORITY_PAIR = generateKeyPairSync('ed25519');
+
+function canonical(value) {
+  if (value === null || typeof value !== 'object') return JSON.stringify(value);
+  if (Array.isArray(value)) return `[${value.map(canonical).join(',')}]`;
+  return `{${Object.keys(value).sort().map(
+    key => `${JSON.stringify(key)}:${canonical(value[key])}`,
+  ).join(',')}}`;
+}
+const fixtureHash = label => createHash('sha256')
+  .update(`funding-https-acceptance:${label}`).digest('hex');
+const commitment = label => `sha256:${fixtureHash(label)}`;
+const sourceError = suffix => error => error?.code === `${SOURCE_PREFIX}${suffix}`;
+
+const AUTHORITY_TEXT = canonical({
+  authorityRecordVersion: 1,
+  authorityProfileId: 'zenon.provider-attestation',
+  authorityProfileVersion: 1,
+  verifierVersion: 1,
+  providerAuthorityId: 'provider.funding-https.fixture',
+  generationId: 'generation.funding-https.fixture',
+  generationVersion: 1,
+  keyId: 'key.funding-https.fixture',
+  algorithm: 'Ed25519',
+  publicKey: AUTHORITY_PAIR.publicKey.export({ type: 'spki', format: 'der' })
+    .subarray(-32).toString('base64url'),
+  network: 'zenon:testnet',
+  chainProfile: {
+    version: 1,
+    chainIdentifier: '12345',
+    genesisMomentumHash: fixtureHash('genesis'),
+  },
+  observerPolicy: {
+    policyId: 'zenon.injected-observer',
+    policyVersion: 1,
+    verifierVersion: 1,
+  },
+  confirmationPolicy: {
+    policyId: 'zenon.authenticated-momentum-inclusion',
+    policyVersion: 1,
+    minimumConfirmations: 3,
+  },
+  bootstrapCheckpoint: { height: 20, hash: fixtureHash('momentum.20') },
+  sourcePolicyCommitment: commitment('source-policy'),
+  maximumAttestationBytes: 4096,
+  maximumCanonicalBytes: 524288,
+  maximumInitialAgeSeconds: 300,
+  maximumFutureSkewSeconds: 5,
+  maximumValiditySeconds: 300,
+});
+const AUTHORITY = parseZenonFundingProviderAttestationAuthorityRecord(AUTHORITY_TEXT);
+const SOURCE_BINDING = frozen({
+  sourcePolicyCommitment: AUTHORITY.sourcePolicyCommitment,
+  authorityGeneration: structuredClone(AUTHORITY.authorityGeneration),
+  chainProfile: structuredClone(AUTHORITY.chainProfile),
+  bootstrapCheckpoint: structuredClone(AUTHORITY.bootstrapCheckpoint),
+});
 
 const CORE_IMPORTS = [
   "import { Agent as HttpsAgent, request as httpsRequest } from 'node:https';",
@@ -349,6 +436,309 @@ function harness() {
   return h;
 }
 
+function createObservationFixture(t, readTransportOwner, {
+  maximumPageEntries = 2,
+  maximumBackfillSpan = 8,
+} = {}) {
+  const directory = realpathSync(mkdtempSync(join(tmpdir(), 'funding-https-acceptance-')));
+  chmodSync(directory, 0o700);
+  let store;
+  let sourceOwner;
+  t.after(async () => {
+    try { await sourceOwner?.close(); } catch { /* synthetic failure cleanup */ }
+    try { store?.close(); } catch { /* test cleanup only */ }
+    rmSync(directory, { recursive: true, force: true });
+  });
+  const selection = {
+    offerId: 'offer.funding-https.fixture',
+    offerVersion: 1,
+    holderId: `z1${'q'.repeat(38)}`,
+    capabilityCommitment: commitment('capability'),
+  };
+  const resourceUrl = 'https://localhost/funding-https-acceptance';
+  const prepared = prepareZenonFundingResource({
+    offer: {
+      modelVersion: 1,
+      providerId: 'provider.fixture',
+      serviceId: 'service.fixture',
+      resourceId: 'resource.fixture',
+      resourceBinding: `sha256:${createHash('sha256')
+        .update('zenon-x402-service-credit-resource-binding-v1').update('\0')
+        .update(canonical({ resourceId: 'resource.fixture', resourceUrl })).digest('hex')}`,
+      offerId: selection.offerId,
+      offerVersion: selection.offerVersion,
+      costPolicyId: 'cost.fixture',
+      fundingPolicyId: 'funding.fixture',
+      fundingPolicyVersion: 1,
+    },
+    selection,
+    resourceUrl,
+    authorityProfile: AUTHORITY.authorityProfile,
+    now: () => NOW,
+    deriveFundingTerms: () => ({
+      fundingPolicyId: 'funding.fixture',
+      fundingPolicyVersion: 1,
+      totalUnits: 4,
+      expiresAt: NOW + 60_000,
+      requirement: {
+        scheme: 'exact',
+        network: 'zenon:testnet',
+        asset: `zts1${'q'.repeat(10)}`,
+        amount: '7',
+        payTo: `z1${'p'.repeat(38)}`,
+        maxTimeoutSeconds: 30,
+        extra: {
+          poc: true,
+          paymentFlow: 'upfront',
+          settlement: 'account-block',
+          zenonChain: structuredClone(AUTHORITY.chainProfile),
+          minimumMomentumConfirmations: 3,
+        },
+      },
+    }),
+  });
+  const target = deriveZenonFundingObserverTarget({
+    offer: prepared.offer,
+    challenge: prepared.challenge,
+    authorityProfile: AUTHORITY.authorityProfile,
+    transactionHash: fixtureHash('transaction'),
+    payer: selection.holderId,
+    resourceUrl: prepared.challenge.paymentRequired.resource.url,
+  });
+  store = createZenonFundingObserverSqliteStore({
+    databasePath: join(directory, 'observer.sqlite'),
+    allowedRoot: directory,
+    authorityRecord: AUTHORITY_TEXT,
+    initialState: createZenonFundingObserverState({
+      observerPolicy: AUTHORITY.observerPolicy,
+      authorityGeneration: AUTHORITY.authorityGeneration,
+      chainProfile: AUTHORITY.chainProfile,
+      confirmationPolicy: AUTHORITY.confirmationPolicy,
+      target,
+      checkpoint: AUTHORITY.bootstrapCheckpoint,
+      catchUp: {
+        maximumPageEntries,
+        maximumBackfillSpan,
+        maximumMembersPerMomentum: 2,
+      },
+    }),
+  });
+  const producerOptions = Object.freeze({
+    fundingObserverStore: store,
+    authorityRecord: AUTHORITY_TEXT,
+    sourceBinding: SOURCE_BINDING,
+    limits: frozen({ maximumReplyBytes: 65536, maximumContentHeaders: 4 }),
+  });
+  sourceOwner = createZenonFundingObservationSourceOwner(Object.freeze({
+    ...producerOptions,
+    readTransportOwner,
+  }));
+  return {
+    sourceOwner,
+    store,
+    target,
+    producer: createZenonFundingObservationProducer(producerOptions),
+  };
+}
+
+function nativeMomentum(height, content = []) {
+  return {
+    version: 1,
+    chainIdentifier: 12345,
+    hash: fixtureHash(`momentum.${height}`),
+    previousHash: fixtureHash(`momentum.${height - 1}`),
+    height,
+    timestamp: height,
+    data: '',
+    content,
+    changesHash: fixtureHash('changes'),
+    publicKey: '',
+    signature: '',
+    producer: `z1${'r'.repeat(38)}`,
+  };
+}
+
+function nativeBlock(target, overrides = {}) {
+  return {
+    version: 1,
+    chainIdentifier: 12345,
+    blockType: 2,
+    hash: target.transactionId.slice(8),
+    previousHash: fixtureHash('account-parent'),
+    height: 4,
+    momentumAcknowledged: { height: 20, hash: fixtureHash('momentum.20') },
+    address: target.payer,
+    toAddress: target.payee,
+    amount: target.amount,
+    tokenStandard: target.asset,
+    fromBlockHash: '0'.repeat(64),
+    data: Buffer.from(target.paymentIntentDigest.slice(7), 'hex').toString('base64'),
+    fusedPlasma: 0,
+    difficulty: 0,
+    nonce: '',
+    publicKey: '',
+    signature: '',
+    confirmationDetail: {
+      numConfirmations: 9999,
+      momentumHeight: 21,
+      momentumHash: fixtureHash('momentum.21'),
+      momentumTimestamp: 21,
+    },
+    ...overrides,
+  };
+}
+
+function observationBundle(context, {
+  frontier = 24,
+  targetHeight = 21,
+  accountBlock,
+} = {}) {
+  const state = context.store.load().state;
+  const block = accountBlock === undefined ? nativeBlock(context.target, {
+    confirmationDetail: {
+      numConfirmations: 9999,
+      momentumHeight: targetHeight,
+      momentumHash: fixtureHash(`momentum.${targetHeight}`),
+      momentumTimestamp: targetHeight,
+    },
+  }) : accountBlock;
+  const header = block === null ? null : {
+    address: block.address,
+    hash: block.hash,
+    height: block.height,
+  };
+  const through = Math.min(
+    frontier,
+    state.checkpoint.height + state.catchUp.maximumPageEntries,
+  );
+  const list = [];
+  for (let height = state.checkpoint.height + 1; height <= through; height += 1) {
+    list.push(nativeMomentum(
+      height,
+      header !== null && height === targetHeight ? [header] : [],
+    ));
+  }
+  return {
+    checkpoint: nativeMomentum(state.checkpoint.height),
+    frontier: nativeMomentum(frontier),
+    momentums: { count: frontier, list },
+    accountBlock: block,
+    inclusionMomentum: block?.confirmationDetail === null || block === null
+      ? null : nativeMomentum(targetHeight, [header]),
+  };
+}
+
+function observationTranscript(reply, { behind = false } = {}) {
+  if (behind) return [reply.frontier, reply.frontier];
+  return [
+    reply.frontier,
+    reply.checkpoint,
+    reply.momentums,
+    reply.accountBlock,
+    reply.inclusionMomentum,
+    reply.frontier,
+  ];
+}
+
+function observeInput(context, revision = context.store.load().state.revision) {
+  return Object.freeze({ expectedRevision: revision });
+}
+
+function observedOwnerClose(owner, { onInvoke, onFulfilled } = {}) {
+  let closeCalls = 0;
+  let closeFulfillments = 0;
+  const close = Object.freeze(function close() {
+    closeCalls += 1;
+    onInvoke?.();
+    const result = owner.close();
+    result.then(() => {
+      closeFulfillments += 1;
+      onFulfilled?.();
+    }, () => {});
+    return result;
+  });
+  return {
+    owner: Object.freeze({ transport: owner.transport, close }),
+    get closeCalls() { return closeCalls; },
+    get closeFulfillments() { return closeFulfillments; },
+  };
+}
+
+function installTranscriptResponder(h, replies, {
+  malformedAt = -1,
+  tlsRouteFailureAt = -1,
+  closeUncertainAt = -1,
+  onRequest,
+} = {}) {
+  const calls = [];
+  let replyIndex = 0;
+  h.hooks.end = (req, bytes) => {
+    const index = replyIndex;
+    replyIndex += 1;
+    const rpc = JSON.parse(Buffer.from(bytes).toString());
+    calls.push({ method: rpc.method, params: structuredClone(rpc.params) });
+    onRequest?.({ index, rpc });
+    const requestIndex = h.requests.indexOf(req);
+    queueMicrotask(() => {
+      if (index === tlsRouteFailureAt) {
+        h.secure(requestIndex, { nativeAddress: '1.1.1.1' });
+        h.closeEvents(requestIndex);
+        return;
+      }
+      assert.notEqual(replies[index], undefined);
+      const text = index === malformedAt
+        ? `{"jsonrpc":"2.0","id":${rpc.id},"error":{"code":-1}}`
+        : response(rpc.id, JSON.stringify(replies[index]));
+      h.secure(requestIndex);
+      h.headers(text, {}, requestIndex);
+      h.end(text, requestIndex);
+      if (index === closeUncertainAt) h.advance(20);
+      else h.closeEvents(requestIndex);
+    });
+  };
+  return { calls };
+}
+
+function createFundingHttpsAcceptanceFixture(t) {
+  const https = harness();
+  const genuineOwner = https.create();
+  let context;
+  let closeInvocationSnapshot;
+  let closeFulfillmentSnapshot;
+  const observed = observedOwnerClose(genuineOwner, {
+    onInvoke() {
+      closeInvocationSnapshot = context.store.load();
+    },
+    onFulfilled() {
+      closeFulfillmentSnapshot = context.store.load();
+    },
+  });
+  context = createObservationFixture(t, observed.owner);
+  const before = context.store.load();
+  const replies = observationTranscript(observationBundle(context));
+  const responder = installTranscriptResponder(https, replies);
+  return {
+    async observeSuccess() {
+      const result = await context.sourceOwner.observe(observeInput(context));
+      assert.deepEqual(closeInvocationSnapshot, before);
+      assert.deepEqual(closeFulfillmentSnapshot, before);
+      assert.notDeepEqual(context.store.load(), before);
+      assert.equal(observed.closeCalls, 1);
+      assert.equal(observed.closeFulfillments, 1);
+      assert.equal(https.requests.length, 6);
+      assert.deepEqual(responder.calls, [
+        { method: FRONTIER, params: [] },
+        { method: MOMENTUM, params: [fixtureHash('momentum.20')] },
+        { method: HEIGHT, params: [21, 2] },
+        { method: BLOCK, params: [context.target.transactionId.slice(8)] },
+        { method: MOMENTUM, params: [fixtureHash('momentum.21')] },
+        { method: FRONTIER, params: [] },
+      ]);
+      return result;
+    },
+  };
+}
+
 test('funding HTTPS owner constructs inertly with one exact frozen interface', async () => {
   const h = harness();
   const owner = h.create();
@@ -543,4 +933,138 @@ test('funding HTTPS wrapper owns no activation, credential, wallet or generic me
     /\b(?:wallet|keystore|mnemonic|sign|publish|settle|activateGrant|credit)\s*\(/i,
   );
   assert.doesNotMatch(source, /ledger\.|embedded\./);
+});
+
+test('genuine funding HTTPS stack applies one exact offline observation transcript', async t => {
+  const acceptance = createFundingHttpsAcceptanceFixture(t);
+  const result = await acceptance.observeSuccess();
+  assert.equal(result.status, 'APPLIED');
+});
+
+test('genuine funding HTTPS stack fails closed across transport and revision boundaries', async t => {
+  await t.test('malformed JSON-RPC envelope', async t => {
+    const https = harness();
+    const context = createObservationFixture(t, https.create());
+    const before = context.store.load();
+    const replies = observationTranscript(observationBundle(context));
+    const responder = installTranscriptResponder(https, replies, { malformedAt: 0 });
+    await assert.rejects(
+      context.sourceOwner.observe(observeInput(context)),
+      sourceError('SOURCE_UNAVAILABLE'),
+    );
+    assert.deepEqual(context.store.load(), before);
+    assert.equal(responder.calls.length, 1);
+  });
+
+  await t.test('TLS pinned-route mismatch', async t => {
+    const https = harness();
+    const context = createObservationFixture(t, https.create());
+    const before = context.store.load();
+    const replies = observationTranscript(observationBundle(context));
+    const responder = installTranscriptResponder(
+      https,
+      replies,
+      { tlsRouteFailureAt: 0 },
+    );
+    await assert.rejects(
+      context.sourceOwner.observe(observeInput(context)),
+      sourceError('SOURCE_UNAVAILABLE'),
+    );
+    assert.deepEqual(context.store.load(), before);
+    assert.equal(responder.calls.length, 1);
+  });
+
+  await t.test('unproven HTTPS closure', async t => {
+    const https = harness();
+    const context = createObservationFixture(t, https.create());
+    const before = context.store.load();
+    const replies = observationTranscript(observationBundle(context));
+    const responder = installTranscriptResponder(
+      https,
+      replies,
+      { closeUncertainAt: 0 },
+    );
+    await assert.rejects(
+      context.sourceOwner.observe(observeInput(context)),
+      sourceError('CLOSE_UNCERTAIN'),
+    );
+    await assert.rejects(context.sourceOwner.close(), sourceError('CLOSE_UNCERTAIN'));
+    assert.deepEqual(context.store.load(), before);
+    assert.equal(responder.calls.length, 1);
+  });
+
+  await t.test('revision drift', async t => {
+    const https = harness();
+    const genuineOwner = https.create();
+    let context;
+    let externalRecord;
+    const observed = observedOwnerClose(genuineOwner, {
+      onInvoke() {
+        assert.deepEqual(context.store.load(), externalRecord);
+      },
+    });
+    context = createObservationFixture(t, observed.owner);
+    const revision = context.store.load().state.revision;
+    const replies = observationTranscript(observationBundle(context));
+    const responder = installTranscriptResponder(https, replies, {
+      onRequest: ({ index }) => {
+        if (index !== 0) return;
+        context.producer.apply(Object.freeze({
+          expectedRevision: revision,
+          sourceBinding: SOURCE_BINDING,
+          reply: JSON.stringify(observationBundle(context)),
+        }));
+        externalRecord = context.store.load();
+      },
+    });
+    await assert.rejects(
+      context.sourceOwner.observe(observeInput(context, revision)),
+      sourceError('STALE_REVISION'),
+    );
+    assert.deepEqual(context.store.load(), externalRecord);
+    assert.equal(responder.calls.length, 6);
+    assert.equal(observed.closeCalls, 1);
+  });
+});
+
+test('explicit source close blocks a late fake HTTPS response from applying', async t => {
+  const https = harness();
+  const context = createObservationFixture(t, https.create());
+  const before = context.store.load();
+  const observing = context.sourceOwner.observe(observeInput(context));
+  for (let turn = 0; turn < 20 && https.requests.length === 0; turn += 1) {
+    await new Promise(resolve => setImmediate(resolve));
+  }
+  assert.equal(https.requests.length, 1);
+  https.attach(0);
+  const closing = context.sourceOwner.close();
+  https.closeEvents(0);
+  await assert.rejects(observing, sourceError('CLOSED'));
+  await closing;
+  const late = response(1, JSON.stringify(nativeMomentum(24)));
+  https.headers(late, {}, 0);
+  https.end(late, 0);
+  https.closeEvents(0);
+  await new Promise(resolve => setImmediate(resolve));
+  assert.deepEqual(context.store.load(), before);
+  assert.equal(https.requests.length, 1);
+});
+
+test('a genuine HTTPS source behind checkpoint avoids every target read', async t => {
+  const https = harness();
+  const context = createObservationFixture(t, https.create());
+  const before = context.store.load();
+  const reply = observationBundle(context, { frontier: 19, accountBlock: null });
+  const responder = installTranscriptResponder(
+    https,
+    observationTranscript(reply, { behind: true }),
+  );
+  const result = await context.sourceOwner.observe(observeInput(context));
+  assert.equal(result.status, 'SOURCE_BEHIND');
+  assert.deepEqual(context.store.load(), before);
+  assert.deepEqual(responder.calls, [
+    { method: FRONTIER, params: [] },
+    { method: FRONTIER, params: [] },
+  ]);
+  assert.equal(https.requests.length, 2);
 });
