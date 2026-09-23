@@ -5,6 +5,7 @@ import {
 } from '../src/zenon/bounded-json-rpc-https-exchange-owner.js';
 
 const OWNER_PREFIX = 'dynamic_plasma_https_read_transport_owner_';
+const FUNDING_PREFIX = 'zenon_funding_https_read_transport_owner_';
 
 function internalConfiguration(routeOverrides = {}, configurationOverrides = {}) {
   const route = Object.freeze(Object.assign(Object.create(null), {
@@ -75,6 +76,22 @@ test('shared core consumes one trusted snapshot and preserves cause-free close f
   await assert.rejects(
     owner.close('unexpected'),
     error => error?.code === `${OWNER_PREFIX}configuration_rejected`
+      && Object.hasOwn(error, 'cause') === false,
+  );
+  await owner.close();
+});
+
+test('shared core selects a distinct cause-free funding error profile', async () => {
+  const owner = createBoundedJsonRpcHttpsExchangeOwner(
+    internalConfiguration(),
+    1,
+    value => value,
+    'zenon_funding',
+  );
+  await assert.rejects(
+    owner.close('unexpected'),
+    error => error?.code === `${FUNDING_PREFIX}configuration_rejected`
+      && error?.message === 'Zenon funding HTTPS read transport owner configuration rejected'
       && Object.hasOwn(error, 'cause') === false,
   );
   await owner.close();

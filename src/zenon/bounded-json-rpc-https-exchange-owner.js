@@ -94,6 +94,7 @@ const MAX_HEADER_PAIRS = 64;
 const CONFIGURATION_FIELDS = freeze(['route', 'timeoutMs', 'closeGraceMs']);
 const ROUTE_FIELDS = freeze(['hostname', 'path', 'ipv4Address']);
 const DYNAMIC_PLASMA = 'dynamic_plasma';
+const ZENON_FUNDING = 'zenon_funding';
 
 // Shared, stateless tombstone only. It never retains an owner or generation.
 function discard() {}
@@ -181,6 +182,12 @@ function profile(value) {
     return freeze(record({
       label: 'Dynamic Plasma HTTPS read transport owner',
       prefix: 'dynamic_plasma_https_read_transport_owner_',
+    }));
+  }
+  if (value === ZENON_FUNDING) {
+    return freeze(record({
+      label: 'Zenon funding HTTPS read transport owner',
+      prefix: 'zenon_funding_https_read_transport_owner_',
     }));
   }
   invalid();

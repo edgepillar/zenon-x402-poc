@@ -211,6 +211,7 @@ test('Zenon funding, signing, and external-holder handoff sources remain inactiv
     'service-credit-zenon-funding-observation-producer.js',
     'service-credit-zenon-funding-observation-source-owner.js',
     'service-credit-zenon-funding-json-rpc-read-transport.js',
+    'service-credit-zenon-funding-https-read-transport-owner.js',
     'service-credit-zenon-funding-publication-bridge.js',
     'service-credit-external-holder-grant-descriptor-handoff-http-ingress.js',
     'service-credit-external-holder-grant-descriptor-handoff-http.js',
@@ -373,14 +374,20 @@ test('funding and Dynamic Plasma JSON-RPC adapters share only a bounded method-n
   ]);
 });
 
-test('Dynamic Plasma HTTPS wrapper is the sole importer of one bounded socket core', () => {
+test('closed Dynamic Plasma and funding HTTPS wrappers share one bounded socket core', () => {
   const coreName = 'bounded-json-rpc-https-exchange-owner.js';
   const wrapperName = 'dynamic-plasma-https-read-transport-owner.js';
+  const fundingWrapperName = 'service-credit-zenon-funding-https-read-transport-owner.js';
   const core = readFileSync(new URL(`../src/zenon/${coreName}`, import.meta.url), 'utf8');
   const wrapper = readFileSync(new URL(`../src/zenon/${wrapperName}`, import.meta.url), 'utf8');
+  const fundingWrapper = readFileSync(
+    new URL(`../src/${fundingWrapperName}`, import.meta.url),
+    'utf8',
+  );
   const packageText = readFileSync(new URL('../package.json', import.meta.url), 'utf8');
   assert.equal(packageText.includes(coreName), false);
   assert.equal(packageText.includes(wrapperName), false);
+  assert.equal(packageText.includes(fundingWrapperName), false);
   assert.deepEqual([...core.matchAll(/from '([^']+)';/g)].map(match => match[1]), [
     'node:https',
     'node:http',
@@ -398,15 +405,23 @@ test('Dynamic Plasma HTTPS wrapper is the sole importer of one bounded socket co
     './bounded-json-rpc-https-exchange-owner.js',
     './dynamic-plasma-json-rpc-read-transport.js',
   ]);
+  assert.deepEqual([...fundingWrapper.matchAll(/from '([^']+)';/g)].map(match => match[1]), [
+    'node:util',
+    './zenon/bounded-json-rpc-https-exchange-owner.js',
+    './service-credit-zenon-funding-json-rpc-read-transport.js',
+  ]);
   assert.doesNotMatch(core, /ledger\.|embedded\.|service-credit|dynamic-plasma-json-rpc-read-transport/);
   assert.doesNotMatch(core, /node:(?:fs|dns|child_process|worker_threads)|process\.env|globalThis|\bfetch\s*\(|WebSocket|\.listen\s*\(/);
-  assert.doesNotMatch(wrapper, /node:(?:https?|http2|net|tls|dns)|httpsRequest|new HttpsAgent/);
+  for (const closedWrapper of [wrapper, fundingWrapper]) {
+    assert.doesNotMatch(closedWrapper, /node:(?:https?|http2|net|tls|dns)|httpsRequest|new HttpsAgent/);
+    assert.match(closedWrapper, /return freeze\(\{ transport, close: exchangeOwner\.close \}\)/);
+  }
+  assert.doesNotMatch(fundingWrapper, /funding-observation-source-owner|funding-observation-producer/);
   assert.match(core, /const MAX_BODY = 1052672/);
   assert.match(core, /const MAX_REQUEST_BYTES = 1024/);
   assert.match(core, /const MAX_ATTEMPTS = 13/);
   assert.match(core, /const MAX_HEADER_BYTES = 16384/);
   assert.match(core, /const MAX_HEADER_PAIRS = 64/);
-  assert.match(wrapper, /return freeze\(\{ transport, close: exchangeOwner\.close \}\)/);
   const pending = [new URL('../src/', import.meta.url)];
   const importers = [];
   while (pending.length > 0) {
@@ -423,7 +438,10 @@ test('Dynamic Plasma HTTPS wrapper is the sole importer of one bounded socket co
       }
     }
   }
-  assert.deepEqual(importers, [`zenon/${wrapperName}`]);
+  assert.deepEqual(importers.sort(), [
+    fundingWrapperName,
+    `zenon/${wrapperName}`,
+  ]);
 });
 
 test('bounded HTTPS owner import is process-global-observer-free', () => {
