@@ -56,6 +56,7 @@ const BLOCK = 'ledger.getAccountBlockByHash';
 const HASH_A = 'ab'.repeat(32);
 const HASH_B = '22'.repeat(32);
 const SOURCE_PREFIX = 'ZENON_FUNDING_OBSERVATION_SOURCE_OWNER_';
+const SOURCE_POLICY_DOMAIN = 'zenon-x402-funding-https-source-policy-v1';
 const NOW = 2_100_000_000_000;
 const AUTHORITY_PAIR = generateKeyPairSync('ed25519');
 
@@ -65,6 +66,45 @@ function canonical(value) {
   return `{${Object.keys(value).sort().map(
     key => `${JSON.stringify(key)}:${canonical(value[key])}`,
   ).join(',')}}`;
+}
+function sourcePolicyDescriptor({
+  hostname = HOST,
+  path = '/rpc',
+  pinnedIpv4Address = ADDRESS,
+  timeoutMs = 100,
+  closeGraceMs = 20,
+} = {}) {
+  return {
+    connection: {
+      keepAlive: false,
+      mode: 'fresh-socket-per-request',
+      socketReuse: false,
+      tlsSessionReuse: false,
+    },
+    endpoint: { hostname, path, pinnedIpv4Address, port: 443 },
+    lookup: { autoSelectFamily: false, family: 4, mode: 'pinned-ipv4' },
+    request: {
+      fallbackMode: 'none', method: 'POST', redirectMode: 'none', retryMode: 'none',
+    },
+    timing: { closeGraceMs, timeoutMs },
+    tls: {
+      alpnProtocol: 'http/1.1',
+      exactCaTrustAnchorsPinned: false,
+      hostnameVerification: 'node.checkServerIdentity',
+      maximumVersion: 'TLSv1.3',
+      minimumVersion: 'TLSv1.3',
+      sniHostname: hostname,
+      trustMode: 'runtime-default-pki',
+      zenonChainIdentityAuthenticated: false,
+    },
+    version: 1,
+  };
+}
+function expectedSourcePolicyCommitment(policy = sourcePolicyDescriptor()) {
+  return `sha256:${createHash('sha256')
+    .update(`${SOURCE_POLICY_DOMAIN}\0`, 'ascii')
+    .update(canonical(policy), 'utf8')
+    .digest('hex')}`;
 }
 const fixtureHash = label => createHash('sha256')
   .update(`funding-https-acceptance:${label}`).digest('hex');
@@ -100,7 +140,7 @@ const AUTHORITY_TEXT = canonical({
     minimumConfirmations: 3,
   },
   bootstrapCheckpoint: { height: 20, hash: fixtureHash('momentum.20') },
-  sourcePolicyCommitment: commitment('source-policy'),
+  sourcePolicyCommitment: expectedSourcePolicyCommitment(),
   maximumAttestationBytes: 4096,
   maximumCanonicalBytes: 524288,
   maximumInitialAgeSeconds: 300,
@@ -128,6 +168,7 @@ const CORE_IMPORTS = [
   "import { setTimeout, clearTimeout } from 'node:timers';",
 ];
 const OWNER_IMPORTS = [
+  "import { createHash } from 'node:crypto';",
   "import { types as utilTypes } from 'node:util';",
   "import {",
   "  createBoundedJsonRpcHttpsExchangeOwner,",
@@ -142,7 +183,7 @@ const CORE_BINDINGS = [
   'TextDecoder', 'utilTypes', 'performance', 'setTimeout', 'clearTimeout',
 ];
 const OWNER_BINDINGS = [
-  'utilTypes', 'createBoundedJsonRpcHttpsExchangeOwner',
+  'createHash', 'utilTypes', 'createBoundedJsonRpcHttpsExchangeOwner',
   'createZenonFundingJsonRpcReadTransport',
 ];
 
@@ -224,7 +265,7 @@ function evaluate(bindings) {
     'export function ' + ownerName,
     'function ' + ownerName,
     OWNER_BINDINGS,
-    [bindings[11], core, bindings[CORE_BINDINGS.length]],
+    [createHash, bindings[11], core, bindings[CORE_BINDINGS.length]],
   );
 }
 
@@ -658,7 +699,11 @@ function observedOwnerClose(owner, { onInvoke, onFulfilled } = {}) {
     return result;
   });
   return {
-    owner: Object.freeze({ transport: owner.transport, close }),
+    owner: Object.freeze({
+      transport: owner.transport,
+      close,
+      sourcePolicyCommitment: owner.sourcePolicyCommitment,
+    }),
     get closeCalls() { return closeCalls; },
     get closeFulfillments() { return closeFulfillments; },
   };
@@ -741,16 +786,83 @@ function createFundingHttpsAcceptanceFixture(t) {
 
 test('funding HTTPS owner constructs inertly with one exact frozen interface', async () => {
   const h = harness();
-  const owner = h.create();
-  assert.deepEqual(Object.keys(owner), ['transport', 'close']);
+  const supplied = configuration();
+  const before = structuredClone(supplied);
+  const owner = h.create(supplied);
+  assert.deepEqual(Object.keys(owner), ['transport', 'close', 'sourcePolicyCommitment']);
   assert.deepEqual(Object.keys(owner.transport), ['callRead']);
   for (const value of [owner, owner.transport, owner.transport.callRead, owner.close]) {
     assert.equal(Object.isFrozen(value), true);
   }
+  assert.equal(owner.sourcePolicyCommitment, expectedSourcePolicyCommitment());
+  assert.deepEqual(supplied, before);
+  assert.equal(Object.isFrozen(supplied), true);
+  assert.equal(Object.isFrozen(supplied.route), true);
+  assert.throws(() => { supplied.route.path = '/changed'; }, TypeError);
+  assert.equal(owner.sourcePolicyCommitment, expectedSourcePolicyCommitment());
   assert.equal(h.requests.length + h.agents.length + h.timers.length, 0);
   const actual = await import(OWNER_URL.href);
   assert.deepEqual(Object.keys(actual), ['createZenonFundingHttpsReadTransportOwner']);
   await owner.close();
+});
+
+test('funding source-policy commitment binds every variable route and timing component', async () => {
+  const h = harness();
+  const cases = [
+    [configuration(), sourcePolicyDescriptor()],
+    [
+      configuration({}, { hostname: 'rpc2.synthetic-public.org' }),
+      sourcePolicyDescriptor({ hostname: 'rpc2.synthetic-public.org' }),
+    ],
+    [configuration({}, { path: '/rpc-v2' }), sourcePolicyDescriptor({ path: '/rpc-v2' })],
+    [
+      configuration({}, { ipv4Address: '8.8.4.4' }),
+      sourcePolicyDescriptor({ pinnedIpv4Address: '8.8.4.4' }),
+    ],
+    [configuration({ timeoutMs: 101 }), sourcePolicyDescriptor({ timeoutMs: 101 })],
+    [configuration({ closeGraceMs: 21 }), sourcePolicyDescriptor({ closeGraceMs: 21 })],
+  ];
+  const owners = cases.map(([config]) => h.create(config));
+  assert.equal(new Set(owners.map(owner => owner.sourcePolicyCommitment)).size, cases.length);
+  for (let index = 0; index < cases.length; index += 1) {
+    assert.equal(
+      owners[index].sourcePolicyCommitment,
+      expectedSourcePolicyCommitment(cases[index][1]),
+    );
+  }
+  assert.equal(h.requests.length + h.agents.length + h.timers.length, 0);
+  for (const owner of owners) await owner.close();
+});
+
+test('funding source-policy commitment rejects every attempted fixed security-policy override', () => {
+  const h = harness();
+  const attempts = [
+    ['port', 444],
+    ['method', 'GET'],
+    ['tlsMinimumVersion', 'TLSv1.2'],
+    ['tlsMaximumVersion', 'TLSv1.2'],
+    ['alpnProtocol', 'h2'],
+    ['sniHostname', 'different.synthetic-public.org'],
+    ['hostnameVerification', false],
+    ['lookupMode', 'dns'],
+    ['connectionMode', 'shared-socket'],
+    ['keepAlive', true],
+    ['socketReuse', true],
+    ['tlsSessionReuse', true],
+    ['redirectMode', 'follow'],
+    ['retryMode', 'once'],
+    ['fallbackMode', 'dns'],
+    ['trustMode', 'custom-ca'],
+    ['exactCaTrustAnchorsPinned', true],
+    ['zenonChainIdentityAuthenticated', true],
+  ];
+  for (const [field, value] of attempts) {
+    assert.throws(
+      () => h.factory(configuration({ [field]: value })),
+      error => ownerError(error, 'configuration_rejected'),
+    );
+  }
+  assert.equal(h.requests.length + h.agents.length + h.timers.length, 0);
 });
 
 test('public funding configuration rejects hostile and noncanonical route input inertly', async () => {
@@ -920,6 +1032,7 @@ test('unproven request closure makes funding close permanently uncertain', async
 test('funding HTTPS wrapper owns no activation, credential, wallet or generic method authority', () => {
   const source = readSource(OWNER_URL);
   assert.deepEqual([...source.matchAll(/from '([^']+)';/g)].map(match => match[1]), [
+    'node:crypto',
     'node:util',
     './zenon/bounded-json-rpc-https-exchange-owner.js',
     './service-credit-zenon-funding-json-rpc-read-transport.js',

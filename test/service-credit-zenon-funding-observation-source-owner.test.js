@@ -125,7 +125,11 @@ function transportScenario({
     return closeCapability.promise;
   });
   return {
-    owner: Object.freeze({ transport: Object.freeze({ callRead }), close }),
+    owner: Object.freeze({
+      transport: Object.freeze({ callRead }),
+      close,
+      sourcePolicyCommitment: BINDING.sourcePolicyCommitment,
+    }),
     calls,
     outstanding,
     closeCapability,
@@ -302,6 +306,33 @@ test('source owner is inert, deeply frozen, exact and default-off', t => {
   );
 });
 
+test('source owner requires an exact matching transport policy before reads or mutation', t => {
+  const transport = transportScenario();
+  const context = createFixture(t, transport.owner);
+  const before = context.store.load();
+  const missing = Object.freeze({
+    transport: transport.owner.transport,
+    close: transport.owner.close,
+  });
+  const mismatch = Object.freeze({
+    transport: transport.owner.transport,
+    close: transport.owner.close,
+    sourcePolicyCommitment: commitment('different-source-policy'),
+  });
+  for (const readTransportOwner of [missing, mismatch]) {
+    assert.throws(
+      () => createSourceOwner(Object.freeze({
+        ...context.producerOptions,
+        readTransportOwner,
+      })),
+      codeIs('INVALID_CONFIGURATION'),
+    );
+    assert.equal(transport.calls.length, 0);
+    assert.equal(transport.closeCalls, 0);
+    assert.deepEqual(context.store.load(), before);
+  }
+});
+
 test('the read source explicitly requires a concrete nonzero Momentum checkpoint', t => {
   const holderTransport = transportScenario();
   const holder = createFixture(t, holderTransport.owner);
@@ -350,6 +381,7 @@ test('one exact transcript closes transport before the producer can mutate the s
   let closeSnapshot;
   const replies = [];
   let context;
+  const bindingBefore = structuredClone(BINDING);
   const transport = transportScenario({ replies, onClose: () => { closeSnapshot = context.store.load(); } });
   context = createFixture(t, transport.owner);
   const before = context.store.load();
@@ -368,6 +400,11 @@ test('one exact transcript closes transport before the producer can mutate the s
   ]);
   assert.equal(transport.closeCalls, 1);
   assert.deepEqual(Object.keys(result), ['status', 'observerStatus', 'outboxStatus', 'revision']);
+  assert.deepEqual(BINDING, bindingBefore);
+  assert.throws(
+    () => { BINDING.sourcePolicyCommitment = commitment('mutated-policy'); },
+    TypeError,
+  );
 });
 
 test('the source-owned page request is capped at the exact 64-entry slice maximum', async t => {

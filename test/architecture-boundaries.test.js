@@ -406,6 +406,7 @@ test('closed Dynamic Plasma and funding HTTPS wrappers share one bounded socket 
     './dynamic-plasma-json-rpc-read-transport.js',
   ]);
   assert.deepEqual([...fundingWrapper.matchAll(/from '([^']+)';/g)].map(match => match[1]), [
+    'node:crypto',
     'node:util',
     './zenon/bounded-json-rpc-https-exchange-owner.js',
     './service-credit-zenon-funding-json-rpc-read-transport.js',
@@ -414,8 +415,9 @@ test('closed Dynamic Plasma and funding HTTPS wrappers share one bounded socket 
   assert.doesNotMatch(core, /node:(?:fs|dns|child_process|worker_threads)|process\.env|globalThis|\bfetch\s*\(|WebSocket|\.listen\s*\(/);
   for (const closedWrapper of [wrapper, fundingWrapper]) {
     assert.doesNotMatch(closedWrapper, /node:(?:https?|http2|net|tls|dns)|httpsRequest|new HttpsAgent/);
-    assert.match(closedWrapper, /return freeze\(\{ transport, close: exchangeOwner\.close \}\)/);
   }
+  assert.match(wrapper, /return freeze\(\{ transport, close: exchangeOwner\.close \}\)/);
+  assert.match(fundingWrapper, /sourcePolicyCommitment: sourcePolicyCommitment\(sourcePolicyDescriptor\)/);
   assert.doesNotMatch(fundingWrapper, /funding-observation-source-owner|funding-observation-producer/);
   assert.match(core, /const MAX_BODY = 1052672/);
   assert.match(core, /const MAX_REQUEST_BYTES = 1024/);

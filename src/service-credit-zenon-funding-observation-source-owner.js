@@ -37,6 +37,7 @@ const INITIAL_OBJECT_THEN_DESCRIPTOR = DESCRIPTOR(OBJECT_PROTOTYPE, 'then');
 const STORE_PROTOTYPE = ZenonFundingObserverSqliteStore.prototype;
 const LOAD = STORE_PROTOTYPE.load;
 const HASH = /^[0-9a-f]{64}$/;
+const COMMITMENT = /^sha256:[0-9a-f]{64}$/;
 const TRANSACTION = /^zenontx:[0-9a-f]{64}$/;
 const PREFIX = 'ZENON_FUNDING_OBSERVATION_SOURCE_OWNER_';
 const MAX_PAGE_ENTRIES = 64;
@@ -245,7 +246,7 @@ function snapshotRecord(store, expectedRevision = null) {
  * configuration is { fundingObserverStore, authorityRecord, sourceBinding,
  * limits, readTransportOwner }. All configuration and owner records are deeply
  * frozen. The transport owner contract is exactly
- * { transport: { callRead }, close }; callRead accepts one frozen
+ * { transport: { callRead }, close, sourcePolicyCommitment }; callRead accepts one frozen
  * { method, params } and returns a prehandled native Promise for JSON result
  * text. close returns a prehandled native Promise and resolves only after its
  * admitted call and physical resources are quiescent. This module cannot
@@ -270,17 +271,19 @@ export function createZenonFundingObservationSourceOwner(options) {
     configuration = exact(options, [
       'fundingObserverStore', 'authorityRecord', 'sourceBinding', 'limits', 'readTransportOwner',
     ], true);
-    producer = createZenonFundingObservationProducer(FREEZE({
-      fundingObserverStore: configuration.fundingObserverStore,
-      authorityRecord: configuration.authorityRecord,
-      sourceBinding: configuration.sourceBinding,
-      limits: configuration.limits,
-    }));
+    if (!IS_FROZEN(configuration.sourceBinding)) throw INVALID;
     for (const field of ['authorityGeneration', 'chainProfile', 'bootstrapCheckpoint']) {
       if (!IS_FROZEN(data(configuration.sourceBinding, field))) throw INVALID;
     }
-    initial = snapshotRecord(configuration.fundingObserverStore);
-    const owner = exact(configuration.readTransportOwner, ['transport', 'close'], true);
+    const bindingCommitment = data(configuration.sourceBinding, 'sourcePolicyCommitment');
+    if (typeof bindingCommitment !== 'string'
+        || !APPLY(TEST, COMMITMENT, [bindingCommitment])) throw INVALID;
+    const owner = exact(
+      configuration.readTransportOwner,
+      ['transport', 'close', 'sourcePolicyCommitment'],
+      true,
+    );
+    if (owner.sourcePolicyCommitment !== bindingCommitment) throw INVALID;
     const transport = exact(owner.transport, ['callRead'], true);
     callRead = transport.callRead;
     closeTransport = owner.close;
@@ -288,6 +291,13 @@ export function createZenonFundingObservationSourceOwner(options) {
       if (typeof capability !== 'function' || IS_PROXY(capability)
           || PROTOTYPE(capability) !== FUNCTION_PROTOTYPE || !IS_FROZEN(capability)) throw INVALID;
     }
+    producer = createZenonFundingObservationProducer(FREEZE({
+      fundingObserverStore: configuration.fundingObserverStore,
+      authorityRecord: configuration.authorityRecord,
+      sourceBinding: configuration.sourceBinding,
+      limits: configuration.limits,
+    }));
+    initial = snapshotRecord(configuration.fundingObserverStore);
     if (initial.maximumPageEntries > MAX_PAGE_ENTRIES) throw INVALID;
   } catch {
     throw fixedError('INVALID_CONFIGURATION', true);

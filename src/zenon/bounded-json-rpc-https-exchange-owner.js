@@ -385,23 +385,81 @@ export function createBoundedJsonRpcHttpsExchangeOwner(
   publicArgumentCount,
   snapshotConfiguration,
   profileName,
+  receiveSourcePolicyDescriptor,
 ) {
   let route;
   let timeoutMs;
   let closeGraceMs;
+  let sourcePolicyDescriptor;
   let selected;
   try {
     selected = profile(profileName);
     assertInvariant();
-    if (arguments.length !== 4 || publicArgumentCount !== 1
+    const receivesSourcePolicy = arguments.length === 5;
+    if ((arguments.length !== 4 && !receivesSourcePolicy) || publicArgumentCount !== 1
         || typeof snapshotConfiguration !== 'function' || isProxy(snapshotConfiguration)
-        || prototype(snapshotConfiguration) !== functionPrototype) invalid();
+        || prototype(snapshotConfiguration) !== functionPrototype
+        || (receivesSourcePolicy && (profileName !== ZENON_FUNDING
+          || typeof receiveSourcePolicyDescriptor !== 'function'
+          || isProxy(receiveSourcePolicyDescriptor)
+          || prototype(receiveSourcePolicyDescriptor) !== functionPrototype
+          || !isFrozen(receiveSourcePolicyDescriptor)))) invalid();
     const normalized = apply(snapshotConfiguration, undefined, [adapterOptions]);
     const configuration = exact(normalized, CONFIGURATION_FIELDS, null);
     const input = exact(configuration.route, ROUTE_FIELDS, null);
     route = freeze(record({ hostname: hostname(input.hostname), path: path(input.path), ipv4Address: ipv4(input.ipv4Address) }));
     timeoutMs = milliseconds(configuration.timeoutMs);
     closeGraceMs = milliseconds(configuration.closeGraceMs);
+    // This is the single canonical snapshot of the security-relevant HTTPS
+    // policy enforced below. The funding wrapper commits to this exact frozen
+    // value; it does not independently normalize the route a second time.
+    // Runtime-default PKI deliberately means that no exact CA trust-anchor set
+    // is pinned here. TLS authenticates the configured hostname, not Zenon
+    // chain identity, canonicality or finality.
+    sourcePolicyDescriptor = freeze(record({
+      connection: freeze(record({
+        keepAlive: false,
+        mode: 'fresh-socket-per-request',
+        socketReuse: false,
+        tlsSessionReuse: false,
+      })),
+      endpoint: freeze(record({
+        hostname: route.hostname,
+        path: route.path,
+        pinnedIpv4Address: route.ipv4Address,
+        port: 443,
+      })),
+      lookup: freeze(record({
+        autoSelectFamily: false,
+        family: 4,
+        mode: 'pinned-ipv4',
+      })),
+      request: freeze(record({
+        fallbackMode: 'none',
+        method: 'POST',
+        redirectMode: 'none',
+        retryMode: 'none',
+      })),
+      timing: freeze(record({
+        closeGraceMs,
+        timeoutMs,
+      })),
+      tls: freeze(record({
+        alpnProtocol: 'http/1.1',
+        exactCaTrustAnchorsPinned: false,
+        hostnameVerification: 'node.checkServerIdentity',
+        maximumVersion: 'TLSv1.3',
+        minimumVersion: 'TLSv1.3',
+        sniHostname: route.hostname,
+        trustMode: 'runtime-default-pki',
+        zenonChainIdentityAuthenticated: false,
+      })),
+      version: 1,
+    }));
+    if (receivesSourcePolicy) {
+      apply(receiveSourcePolicyDescriptor, undefined, [sourcePolicyDescriptor]);
+      assertInvariant();
+    }
   } catch { throw fixedError(selected ?? internalProfile(), 'configuration_rejected'); }
 
   const unavailable = rejected(selected, 'unavailable');
@@ -577,8 +635,13 @@ export function createBoundedJsonRpcHttpsExchangeOwner(
     if (!gen.cleanupStarted) {
       gen.cleanupStarted = true;
       try {
-        gen.cleanupDeadline = clock() + closeGraceMs;
-        schedule(gen, 'graceTimer', () => graceExpired(gen), closeGraceMs);
+        gen.cleanupDeadline = clock() + sourcePolicyDescriptor.timing.closeGraceMs;
+        schedule(
+          gen,
+          'graceTimer',
+          () => graceExpired(gen),
+          sourcePolicyDescriptor.timing.closeGraceMs,
+        );
       } catch { gen.uncertain = true; }
     }
     destroy(gen, 'request', 'requestDestroyed', requestDestroy);
@@ -624,9 +687,12 @@ export function createBoundedJsonRpcHttpsExchangeOwner(
       listen(gen, value, 'secureConnect', guarded(gen, () => {
         if (gen.secure || gen.failed || closing || terminal
             || field(value, 'authorized') !== true || field(value, 'encrypted') !== true
-            || field(value, 'servername') !== route.hostname || field(value, 'alpnProtocol') !== 'http/1.1'
-            || apply(remoteAddress, value, []) !== route.ipv4Address || apply(remoteFamily, value, []) !== 'IPv4'
-            || apply(remotePort, value, []) !== 443 || apply(tlsProtocol, value, []) !== 'TLSv1.3'
+            || field(value, 'servername') !== sourcePolicyDescriptor.tls.sniHostname
+            || field(value, 'alpnProtocol') !== sourcePolicyDescriptor.tls.alpnProtocol
+            || apply(remoteAddress, value, []) !== sourcePolicyDescriptor.endpoint.pinnedIpv4Address
+            || apply(remoteFamily, value, []) !== 'IPv4'
+            || apply(remotePort, value, []) !== sourcePolicyDescriptor.endpoint.port
+            || apply(tlsProtocol, value, []) !== sourcePolicyDescriptor.tls.minimumVersion
             || apply(tlsReused, value, []) !== false || field(gen.request, 'reusedSocket') !== false) invalid();
         gen.secure = true;
       }));
@@ -708,12 +774,12 @@ export function createBoundedJsonRpcHttpsExchangeOwner(
     active = gen;
     attempts += 1;
     try {
-      gen.deadline = clock() + timeoutMs;
+      gen.deadline = clock() + sourcePolicyDescriptor.timing.timeoutMs;
       assertInvariant();
       if (terminal || closing || gen.failed) invalid();
-      schedule(gen, 'deadlineTimer', () => deadlineExpired(gen), timeoutMs);
+      schedule(gen, 'deadlineTimer', () => deadlineExpired(gen), sourcePolicyDescriptor.timing.timeoutMs);
       if (terminal || closing || gen.failed) invalid();
-      gen.agent = nativeObject(new HttpsAgent({ keepAlive: false, maxSockets: 1, maxTotalSockets: 1, maxFreeSockets: 0, maxCachedSessions: 0 }), HttpsAgent.prototype);
+      gen.agent = nativeObject(new HttpsAgent({ keepAlive: sourcePolicyDescriptor.connection.keepAlive, maxSockets: 1, maxTotalSockets: 1, maxFreeSockets: 0, maxCachedSessions: 0 }), HttpsAgent.prototype);
       assertInvariant();
       if (terminal || closing || gen.failed) invalid();
       gen.requestBody = apply(bufferFrom, Buffer, [body, 'ascii']);
@@ -721,7 +787,7 @@ export function createBoundedJsonRpcHttpsExchangeOwner(
         let called = false;
         try {
           assertInvariant();
-          if (gen.retired || terminal || closing || host !== route.hostname || typeof callback !== 'function' || isProxy(callback)) invalid();
+          if (gen.retired || terminal || closing || host !== sourcePolicyDescriptor.endpoint.hostname || typeof callback !== 'function' || isProxy(callback)) invalid();
           let all = false;
           if (isProxy(options)) invalid();
           if (options !== null && typeof options === 'object') {
@@ -729,8 +795,8 @@ export function createBoundedJsonRpcHttpsExchangeOwner(
             if (selected !== undefined) { if (!hasOwn(selected, 'value') || typeof selected.value !== 'boolean') invalid(); all = selected.value; }
           }
           called = true;
-          if (all) apply(callback, undefined, [null, freeze([freeze({ address: route.ipv4Address, family: 4 })])]);
-          else apply(callback, undefined, [null, route.ipv4Address, 4]);
+          if (all) apply(callback, undefined, [null, freeze([freeze({ address: sourcePolicyDescriptor.endpoint.pinnedIpv4Address, family: sourcePolicyDescriptor.lookup.family })])]);
+          else apply(callback, undefined, [null, sourcePolicyDescriptor.endpoint.pinnedIpv4Address, sourcePolicyDescriptor.lookup.family]);
           assertInvariant();
         } catch {
           fail(gen);
@@ -739,12 +805,18 @@ export function createBoundedJsonRpcHttpsExchangeOwner(
           }
         }
       });
-      const headers = freeze({ Host: route.hostname, 'Content-Type': 'application/json', Accept: 'application/json', 'Content-Length': string(body.length), Connection: 'close' });
+      const headers = freeze({ Host: sourcePolicyDescriptor.endpoint.hostname, 'Content-Type': 'application/json', Accept: 'application/json', 'Content-Length': string(body.length), Connection: 'close' });
       const nativeOptions = freeze({
-        protocol: 'https:', hostname: route.hostname, port: 443, path: route.path, method: 'POST',
-        family: 4, autoSelectFamily: false, lookup, servername: route.hostname,
-        rejectUnauthorized: true, checkServerIdentity, minVersion: 'TLSv1.3', maxVersion: 'TLSv1.3',
-        ALPNProtocols: freeze(['http/1.1']), agent: gen.agent, headers,
+        protocol: 'https:', hostname: sourcePolicyDescriptor.endpoint.hostname,
+        port: sourcePolicyDescriptor.endpoint.port, path: sourcePolicyDescriptor.endpoint.path,
+        method: sourcePolicyDescriptor.request.method,
+        family: sourcePolicyDescriptor.lookup.family,
+        autoSelectFamily: sourcePolicyDescriptor.lookup.autoSelectFamily,
+        lookup, servername: sourcePolicyDescriptor.tls.sniHostname,
+        rejectUnauthorized: true, checkServerIdentity,
+        minVersion: sourcePolicyDescriptor.tls.minimumVersion,
+        maxVersion: sourcePolicyDescriptor.tls.maximumVersion,
+        ALPNProtocols: freeze([sourcePolicyDescriptor.tls.alpnProtocol]), agent: gen.agent, headers,
         setHost: false, maxHeaderSize: MAX_HEADER_BYTES, insecureHTTPParser: false, joinDuplicateHeaders: false,
       });
       assertInvariant();
