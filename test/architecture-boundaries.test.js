@@ -280,7 +280,8 @@ test('funding observation producer keeps Dynamic Plasma DTO parsing offline and 
   assert.doesNotMatch(source, /dynamic-plasma-(?:json-rpc|https|observation-collector)/);
   assert.match(source, /\['nextFusionPrice', 'nextWorkPrice'\]/);
   assert.match(source, /if \(result\.data !== ''\) fail\('INVALID_INPUT'\)/);
-  assert.match(source, /function admitMomentumVersionLineage\(items\)/);
+  assert.match(source, /function validateMomentumVersionLineage\(items\)/);
+  assert.match(source, /const VERSION_LINEAGE = STORE_PROTOTYPE\.admitMomentumVersionLineage/);
 });
 
 test('funding observation source owner is an exact default-off injected read boundary', () => {

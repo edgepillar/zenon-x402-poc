@@ -25,6 +25,7 @@ const SLICE = String.prototype.slice;
 const TEST = RegExp.prototype.test;
 const STORE_PROTOTYPE = ZenonFundingObserverSqliteStore.prototype;
 const LOAD = STORE_PROTOTYPE.load;
+const VERSION_LINEAGE = STORE_PROTOTYPE.admitMomentumVersionLineage;
 const PLAN = STORE_PROTOTYPE.planBackfill;
 const PAGE = STORE_PROTOTYPE.applyPage;
 const INCLUSION = STORE_PROTOTYPE.applyInclusion;
@@ -117,7 +118,13 @@ function binding(value, code) {
 function genuineStore(store) {
   if (store === null || typeof store !== 'object' || IS_PROXY(store)
       || PROTOTYPE(store) !== STORE_PROTOTYPE || KEYS(store).length !== 0) return false;
-  for (const [name, method] of [['load', LOAD], ['planBackfill', PLAN], ['applyPage', PAGE], ['applyInclusion', INCLUSION]]) {
+  for (const [name, method] of [
+    ['load', LOAD],
+    ['admitMomentumVersionLineage', VERSION_LINEAGE],
+    ['planBackfill', PLAN],
+    ['applyPage', PAGE],
+    ['applyInclusion', INCLUSION],
+  ]) {
     const descriptor = DESCRIPTOR(STORE_PROTOTYPE, name);
     if (!descriptor || !HAS_OWN(descriptor, 'value') || descriptor.value !== method) return false;
   }
@@ -208,7 +215,7 @@ function momentum(value, chainIdentifier, maximumHeaders) {
   return { ...result, content: headers(result.content, maximumHeaders) };
 }
 
-function admitMomentumVersionLineage(items) {
+function validateMomentumVersionLineage(items) {
   for (let leftIndex = 0; leftIndex < items.length; leftIndex += 1) {
     const left = items[leftIndex];
     for (let rightIndex = leftIndex + 1; rightIndex < items.length; rightIndex += 1) {
@@ -226,6 +233,22 @@ function admitMomentumVersionLineage(items) {
       if (earlier.version > later.version) fail('SOURCE_CONTEXT_CONFLICT');
     }
   }
+}
+
+function momentumVersionBounds(items) {
+  // Deliberately retain only the two monotonic height bounds. Same-bundle DTO
+  // consistency is checked above; no same-version DTO identity is inferred
+  // across separately supplied bundles.
+  let maxV1Height = null;
+  let minV2Height = null;
+  for (const item of items) {
+    if (item.version === 1) {
+      maxV1Height = maxV1Height === null ? item.height : Math.max(maxV1Height, item.height);
+    } else {
+      minV2Height = minV2Height === null ? item.height : Math.min(minV2Height, item.height);
+    }
+  }
+  return FREEZE({ maxV1Height, minV2Height });
 }
 
 function bytes(value, maximum) {
@@ -339,7 +362,9 @@ function immutable(record) {
  * No canonicality, finality, receipt, cancellation or external termination is
  * proved. Stores are borrowed and are never closed. There is no repin/fallback.
  * One step can perform separate existing store transactions, not an atomic
- * batch. Store failure latches recovery; reconstruct from committed state.
+ * batch. Version-bound learning or conflict quarantine and any outbox
+ * invalidation share one transaction before page or inclusion mutation.
+ * Store failure latches recovery; reconstruct from committed state.
  * Exact last-step replay retrieves its fixed result only if the full committed
  * record is unchanged. This is a cooperating-process, not sandbox, contract.
  */
@@ -419,10 +444,12 @@ export function createZenonFundingObservationProducer(options) {
       const list = listReply.list.map(item => momentum(item, chainIdentifier, limits.maximumContentHeaders));
       const block = accountBlock(raw.accountBlock, record.state.target, chainIdentifier);
       const inclusion = raw.inclusionMomentum === null ? null : momentum(raw.inclusionMomentum, chainIdentifier, limits.maximumContentHeaders);
-      admitMomentumVersionLineage([
+      const momentumItems = [
         ...(checkpointReply === null ? [] : [checkpointReply]), frontier, ...list,
         ...(inclusion === null ? [] : [inclusion]),
-      ]);
+      ];
+      validateMomentumVersionLineage(momentumItems);
+      const versionBounds = momentumVersionBounds(momentumItems);
       if (block?.confirmation) {
         if (inclusion === null || inclusion.height !== block.confirmation.momentumHeight
             || inclusion.hash !== block.confirmation.momentumHash || inclusion.timestamp !== block.confirmation.momentumTimestamp
@@ -451,15 +478,29 @@ export function createZenonFundingObservationProducer(options) {
       if (cursorConflict && (projected.length === 0 || projected[0].previousHash !== checkpointReply.hash)) {
         terminal = 'SOURCE_CONTEXT_CONFLICT'; fail(terminal);
       }
-      let changed = false;
       // A retained target receipt must be classified before another page can
       // replace it. This also resumes the genuine applyPage commit window.
-      if (record.state.inclusion === null && record.state.catchUp.lastAppliedPage !== null
-          && record.state.catchUp.lastAppliedPage.targetMembership !== null) {
+      const hasPendingTargetReceipt = record.state.inclusion === null
+        && record.state.catchUp.lastAppliedPage !== null
+        && record.state.catchUp.lastAppliedPage.targetMembership !== null;
+      if (hasPendingTargetReceipt) {
         // Validate all available lineage before this separate transaction can
         // commit positive eligibility. Refusal leaves the pending receipt intact;
         // no invented page or quarantine observation crosses the store boundary.
         admitPendingReceiptLineage(record.state, checkpointReply, frontier, projected);
+      }
+      // This is the bootstrap point for a fresh state-schema-v2 observer: all
+      // local bundle checks above passed, and behind/unavailable returned before
+      // reaching this durable transaction. Prior version history is unknown.
+      const versionOutcome = mutate(VERSION_LINEAGE, {
+        expectedRevision: record.state.revision,
+        maxV1Height: versionBounds.maxV1Height,
+        minV2Height: versionBounds.minV2Height,
+      });
+      let changed = versionOutcome.disposition === 'APPLIED';
+      record = load();
+      if (record.state.status === 'QUARANTINED') return aggregate(record, 'QUARANTINED');
+      if (hasPendingTargetReceipt) {
         const receipt = record.state.catchUp.lastAppliedPage;
         mutate(INCLUSION, {
           expectedRevision: record.state.revision, target: record.state.target,
