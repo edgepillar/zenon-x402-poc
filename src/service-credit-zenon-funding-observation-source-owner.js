@@ -40,6 +40,9 @@ const HASH = /^[0-9a-f]{64}$/;
 const COMMITMENT = /^sha256:[0-9a-f]{64}$/;
 const TRANSACTION = /^zenontx:[0-9a-f]{64}$/;
 const PREFIX = 'ZENON_FUNDING_OBSERVATION_SOURCE_OWNER_';
+const PRODUCER_PREFIX = 'ZENON_FUNDING_OBSERVATION_PRODUCER_';
+const PRODUCER_STORE_RECOVERY_REQUIRED = `${PRODUCER_PREFIX}STORE_RECOVERY_REQUIRED`;
+const PRODUCER_SOURCE_CONTEXT_CONFLICT = `${PRODUCER_PREFIX}SOURCE_CONTEXT_CONFLICT`;
 const MAX_PAGE_ENTRIES = 64;
 
 const INVALID = Symbol('invalid');
@@ -240,6 +243,22 @@ function snapshotRecord(store, expectedRevision = null) {
   });
 }
 
+function producerFailure(error) {
+  if (error === null || (typeof error !== 'object' && typeof error !== 'function')
+      || IS_PROXY(error)) return 'recovery';
+  let code;
+  try {
+    const descriptor = DESCRIPTOR(error, 'code');
+    if (descriptor === undefined || !HAS_OWN(descriptor, 'value')) return 'recovery';
+    code = descriptor.value;
+  } catch {
+    return 'recovery';
+  }
+  if (code === PRODUCER_SOURCE_CONTEXT_CONFLICT) return 'conflict';
+  if (code === PRODUCER_STORE_RECOVERY_REQUIRED) return 'recovery';
+  return 'recovery';
+}
+
 /**
  * Creates one inert, one-shot owner around an injected cooperating JSON-RPC
  * result transport and the existing funding observation producer. The exact
@@ -310,6 +329,8 @@ export function createZenonFundingObservationSourceOwner(options) {
     unavailable: fixedError('SOURCE_UNAVAILABLE'),
     closeUncertain: fixedError('CLOSE_UNCERTAIN'),
     stale: fixedError('STALE_REVISION'),
+    recovery: fixedError('STORE_RECOVERY_REQUIRED'),
+    conflict: fixedError('SOURCE_CONTEXT_CONFLICT'),
     invalidClose: fixedError('INVALID_CONFIGURATION', true),
   });
   const invalidObserve = rejectedError(errors.invalidInput);
@@ -359,15 +380,18 @@ export function createZenonFundingObservationSourceOwner(options) {
     }
     let result = null;
     if (observationStarted && !explicitClose && observationFailure === null && candidate !== null) {
+      let producerInvoked = false;
       try {
         snapshotRecord(store, candidate.expectedRevision);
+        producerInvoked = true;
         result = APPLY(producer.apply, undefined, [FREEZE({
           expectedRevision: candidate.expectedRevision,
           sourceBinding,
           reply: candidate.reply,
         })]);
       } catch (error) {
-        observationFailure = error === STALE ? 'stale' : 'unavailable';
+        if (error === STALE) observationFailure = 'stale';
+        else observationFailure = producerInvoked ? producerFailure(error) : 'recovery';
       }
     }
     state = CLOSED;
@@ -376,6 +400,8 @@ export function createZenonFundingObservationSourceOwner(options) {
     if (explicitClose) observationCapability.reject(errors.closed);
     else if (observationFailure === 'input') observationCapability.reject(errors.invalidInput);
     else if (observationFailure === 'stale') observationCapability.reject(errors.stale);
+    else if (observationFailure === 'recovery') observationCapability.reject(errors.recovery);
+    else if (observationFailure === 'conflict') observationCapability.reject(errors.conflict);
     else if (observationFailure !== null || result === null) observationCapability.reject(errors.unavailable);
     else observationCapability.resolve(result);
     candidate = null;
@@ -517,7 +543,7 @@ export function createZenonFundingObservationSourceOwner(options) {
     }
     try { snapshot = snapshotRecord(store, expectedRevision); }
     catch (error) {
-      observationFailure = error === STALE ? 'stale' : 'unavailable';
+      observationFailure = error === STALE ? 'stale' : 'recovery';
       attemptDone = true;
       startClosing();
       return observationCapability.promise;

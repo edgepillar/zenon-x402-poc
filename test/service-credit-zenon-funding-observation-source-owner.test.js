@@ -10,7 +10,10 @@ import {
   deriveZenonFundingObserverTarget,
 } from '../src/service-credit-zenon-funding-evidence.js';
 import { createZenonFundingObserverState } from '../src/service-credit-zenon-funding-observer-state.js';
-import { createZenonFundingObserverSqliteStore } from '../src/service-credit-zenon-funding-observer-sqlite-store.js';
+import {
+  createZenonFundingObserverSqliteStore,
+  openZenonFundingObserverSqliteStore,
+} from '../src/service-credit-zenon-funding-observer-sqlite-store.js';
 import { createZenonFundingObservationProducer } from '../src/service-credit-zenon-funding-observation-producer.js';
 import { parseZenonFundingProviderAttestationAuthorityRecord } from '../src/service-credit-zenon-funding-provider-attestation.js';
 
@@ -141,6 +144,7 @@ function createFixture(t, readTransportOwner, {
   maximumPageEntries = 2,
   maximumBackfillSpan = 8,
   limits = frozen({ maximumReplyBytes: 65536, maximumContentHeaders: 4 }),
+  testHooks,
 } = {}) {
   assert.equal(typeof createSourceOwner, 'function', 'FUNDING_OBSERVATION_SOURCE_OWNER_MISSING');
   const directory = realpathSync(mkdtempSync(join(tmpdir(), 'funding-source-owner-')));
@@ -186,7 +190,7 @@ function createFixture(t, readTransportOwner, {
     transactionHash: hash('transaction'), payer: chosen.holderId,
     resourceUrl: prepared.challenge.paymentRequired.resource.url,
   });
-  store = createZenonFundingObserverSqliteStore({
+  const configuration = {
     databasePath: join(directory, 'observer.sqlite'), allowedRoot: directory,
     authorityRecord: AUTHORITY_TEXT,
     initialState: createZenonFundingObserverState({
@@ -195,7 +199,10 @@ function createFixture(t, readTransportOwner, {
       target, checkpoint: AUTHORITY.bootstrapCheckpoint,
       catchUp: { maximumPageEntries, maximumBackfillSpan, maximumMembersPerMomentum: 2 },
     }),
-  });
+    ...(testHooks === undefined ? {} : { testHooks }),
+  };
+  store = createZenonFundingObserverSqliteStore(configuration);
+  const recordKey = store.load().recordKey;
   const producerOptions = Object.freeze({
     fundingObserverStore: store,
     authorityRecord: AUTHORITY_TEXT,
@@ -204,9 +211,29 @@ function createFixture(t, readTransportOwner, {
   });
   sourceOwner = createSourceOwner(Object.freeze({ ...producerOptions, readTransportOwner }));
   return {
-    sourceOwner, store, target, producerOptions,
+    sourceOwner, store, target, producerOptions, configuration, recordKey,
     producer: createZenonFundingObservationProducer(producerOptions),
   };
+}
+
+function reopenStore(t, context) {
+  const store = openZenonFundingObserverSqliteStore({
+    databasePath: context.configuration.databasePath,
+    allowedRoot: context.configuration.allowedRoot,
+    expectedRecordKey: context.recordKey,
+    authorityRecord: AUTHORITY_TEXT,
+  });
+  t.after(() => { try { store.close(); } catch { /* test cleanup only */ } });
+  return store;
+}
+
+function assertSanitizedFailure(error, suffix) {
+  const code = `${PREFIX}${suffix}`;
+  assert.equal(error?.code, code);
+  assert.equal(error?.stack, `Error: ${code}`);
+  assert.equal(Object.hasOwn(error, 'cause'), false);
+  assert.equal(Object.isFrozen(error), true);
+  assert.deepEqual(Object.keys(error), ['code']);
 }
 
 function nativeMomentum(height, content = []) {
@@ -543,6 +570,174 @@ test('bounded result bytes and a failed read never retry or leak a transport rea
     assert.equal(transport.calls.length, 1);
     assert.equal(transport.closeCalls, 1);
     assert.doesNotMatch(error.stack, /private transport failure/);
+  });
+});
+
+test('a possible page commit is recovery-required and remains available after reopen', async t => {
+  let hookCalls = 0;
+  let codeGetterReads = 0;
+  const hostileFailure = Object.freeze(Object.defineProperty({}, 'code', {
+    enumerable: true,
+    get() { codeGetterReads += 1; return 'UNTRUSTED'; },
+  }));
+  const replies = [];
+  const transport = transportScenario({ replies });
+  const context = createFixture(t, transport.owner, {
+    testHooks: {
+      afterCommit({ operation, changed }) {
+        if (operation === 'applyPage' && changed && hookCalls === 0) {
+          hookCalls += 1;
+          throw hostileFailure;
+        }
+      },
+    },
+  });
+  const before = context.store.load();
+  replies.push(...transcript(bundle(context)));
+
+  const refusal = await context.sourceOwner.observe(observeInput(context)).catch(error => error);
+  assertSanitizedFailure(refusal, 'STORE_RECOVERY_REQUIRED');
+  assert.equal(hookCalls, 1);
+  assert.equal(codeGetterReads, 0);
+  assert.equal(transport.closeCalls, 1);
+  const callCount = transport.calls.length;
+  await assert.rejects(
+    context.sourceOwner.observe(Object.freeze({ expectedRevision: before.state.revision })),
+    codeIs('CLOSED'),
+  );
+  assert.equal(transport.calls.length, callCount);
+
+  const reopened = reopenStore(t, context);
+  const committed = reopened.load();
+  assert.notDeepEqual(committed, before);
+  assert.equal(committed.state.checkpoint.height, 22);
+  assert.notEqual(committed.state.catchUp.lastAppliedPage, null);
+  assert.equal(committed.state.inclusion, null);
+  assert.equal(committed.outbox.status, 'NONE');
+});
+
+test('an uncertain inclusion commit with possible PREPARED state requires recovery', async t => {
+  let hookCalls = 0;
+  const replies = [];
+  const transport = transportScenario({ replies });
+  const context = createFixture(t, transport.owner, {
+    maximumPageEntries: 4,
+    testHooks: {
+      afterCommit({ operation, changed }) {
+        if (operation === 'applyInclusion' && changed && hookCalls === 0) {
+          hookCalls += 1;
+          throw new Error('synthetic acknowledgement loss');
+        }
+      },
+    },
+  });
+  replies.push(...transcript(bundle(context)));
+
+  const refusal = await context.sourceOwner.observe(observeInput(context)).catch(error => error);
+  assertSanitizedFailure(refusal, 'STORE_RECOVERY_REQUIRED');
+  assert.equal(hookCalls, 1);
+  assert.equal(transport.closeCalls, 1);
+
+  const reopened = reopenStore(t, context);
+  const committed = reopened.load();
+  assert.equal(committed.state.status, 'THRESHOLD_OBSERVED');
+  assert.notEqual(committed.state.firstThreshold, null);
+  assert.notEqual(committed.state.inclusion, null);
+  assert.equal(committed.outbox.status, 'PREPARED');
+  assert.notEqual(reopened.peekPreparedAttestation(), null);
+});
+
+test('a producer source-context conflict is preserved without store mutation', async t => {
+  const replies = [];
+  const transport = transportScenario({ replies });
+  const context = createFixture(t, transport.owner);
+  const reply = bundle(context);
+  reply.frontier.chainIdentifier = 54321;
+  replies.push(...transcript(reply));
+  const before = context.store.load();
+
+  const refusal = await context.sourceOwner.observe(observeInput(context)).catch(error => error);
+  assertSanitizedFailure(refusal, 'SOURCE_CONTEXT_CONFLICT');
+  assert.deepEqual(context.store.load(), before);
+  assert.equal(transport.closeCalls, 1);
+});
+
+test('an unclassified producer failure defaults to recovery without store mutation', async t => {
+  const replies = [];
+  const transport = transportScenario({ replies });
+  const context = createFixture(t, transport.owner);
+  const reply = bundle(context);
+  reply.frontier.data = 'invalid';
+  replies.push(...transcript(reply));
+  const before = context.store.load();
+
+  const refusal = await context.sourceOwner.observe(observeInput(context)).catch(error => error);
+  assertSanitizedFailure(refusal, 'STORE_RECOVERY_REQUIRED');
+  assert.deepEqual(context.store.load(), before);
+  assert.equal(transport.closeCalls, 1);
+});
+
+test('pre-producer snapshot failure requires recovery while exact revision drift stays stale', async t => {
+  await t.test('initial store load failure', async t => {
+    const transport = transportScenario();
+    const context = createFixture(t, transport.owner);
+    const before = context.store.load();
+    context.store.close();
+
+    const refusal = await context.sourceOwner.observe(Object.freeze({
+      expectedRevision: before.state.revision,
+    })).catch(error => error);
+    assertSanitizedFailure(refusal, 'STORE_RECOVERY_REQUIRED');
+    assert.equal(transport.calls.length, 0);
+    assert.equal(transport.closeCalls, 1);
+    const reopened = reopenStore(t, context);
+    assert.deepEqual(reopened.load(), before);
+  });
+
+  await t.test('final store load failure before producer invocation', async t => {
+    const replies = [];
+    let context;
+    const transport = transportScenario({
+      replies,
+      onClose: () => context.store.close(),
+    });
+    context = createFixture(t, transport.owner);
+    const before = context.store.load();
+    replies.push(...transcript(bundle(context)));
+
+    const refusal = await context.sourceOwner.observe(observeInput(context)).catch(error => error);
+    assertSanitizedFailure(refusal, 'STORE_RECOVERY_REQUIRED');
+    assert.equal(transport.closeCalls, 1);
+    const reopened = reopenStore(t, context);
+    assert.deepEqual(reopened.load(), before);
+  });
+
+  await t.test('exact stale revision sentinel', async t => {
+    const replies = [];
+    let context;
+    let externallyCommitted;
+    const transport = transportScenario({
+      replies,
+      onClose: () => {
+        const externalReply = bundle(context);
+        context.producer.apply(Object.freeze({
+          expectedRevision: context.store.load().state.revision,
+          sourceBinding: BINDING,
+          reply: JSON.stringify(externalReply),
+        }));
+        externallyCommitted = context.store.load();
+      },
+    });
+    context = createFixture(t, transport.owner);
+    const revision = context.store.load().state.revision;
+    replies.push(...transcript(bundle(context)));
+
+    const refusal = await context.sourceOwner.observe(
+      Object.freeze({ expectedRevision: revision }),
+    ).catch(error => error);
+    assertSanitizedFailure(refusal, 'STALE_REVISION');
+    assert.deepEqual(context.store.load(), externallyCommitted);
+    assert.equal(transport.closeCalls, 1);
   });
 });
 
