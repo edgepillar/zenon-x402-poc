@@ -810,7 +810,19 @@ function inspectSidecars(configuration, uid, creating = false) {
       if (creating || entry !== `${basename}-journal`) {
         fail('ZENON_FUNDING_OBSERVER_STORE_UNEXPECTED_SIDECAR');
       }
-      const stat = lstatSync(resolve(parent, entry), { bigint: true });
+      let stat;
+      try {
+        stat = lstatSync(resolve(parent, entry), { bigint: true });
+      } catch (error) {
+        let vanished = false;
+        try {
+          const descriptor = REFLECT_GET_OWN_PROPERTY_DESCRIPTOR(error, 'code');
+          vanished = descriptor && OBJECT_HAS_OWN(descriptor, 'value')
+            && descriptor.value === 'ENOENT';
+        } catch {}
+        if (vanished) continue;
+        throw error;
+      }
       if (!safeDatabaseFile(stat, uid)) {
         fail('ZENON_FUNDING_OBSERVER_STORE_UNSAFE_FILE');
       }
@@ -933,7 +945,7 @@ function configureConnection(database, configuration, creating) {
 function openDatabase(configuration, before, creating, boundary) {
   let database;
   try {
-    const hotJournal = inspectSidecars(configuration, boundary.uid, creating);
+    inspectSidecars(configuration, boundary.uid, creating);
     database = new DatabaseSync(configuration.databasePath, {
       allowExtension: false,
       enableDoubleQuotedStringLiterals: false,
@@ -943,8 +955,9 @@ function openDatabase(configuration, before, creating, boundary) {
     });
     const after = lstatSync(configuration.databasePath, { bigint: true });
     if (
-      !safeDatabaseFile(after, boundary.uid)
-      || (hotJournal ? !sameIdentity(before, after) : !sameGeneration(before, after))
+      !safeDatabaseFile(before, boundary.uid)
+      || !safeDatabaseFile(after, boundary.uid)
+      || (creating ? !sameGeneration(before, after) : !sameIdentity(before, after))
     ) {
       fail('ZENON_FUNDING_OBSERVER_STORE_UNSAFE_FILE');
     }

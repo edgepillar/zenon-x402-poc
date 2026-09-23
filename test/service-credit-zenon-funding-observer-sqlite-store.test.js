@@ -328,6 +328,74 @@ function openOptions(configuration, recordKey, overrides = {}) {
   };
 }
 
+let instrumentedStoreSequence = 0;
+
+async function importInstrumentedStore(t, hooks) {
+  instrumentedStoreSequence += 1;
+  const hookKey = `__zenonObserverSqliteStoreHooks${instrumentedStoreSequence}`;
+  Object.defineProperty(globalThis, hookKey, {
+    configurable: true,
+    value: hooks,
+  });
+  t.after(() => { delete globalThis[hookKey]; });
+
+  const dataUrl = source => `data:text/javascript;base64,${Buffer.from(source).toString('base64')}`;
+  const fsShimUrl = dataUrl(`
+    import * as fs from 'node:fs';
+    const hooks = globalThis[${JSON.stringify(hookKey)}];
+    export const closeSync = fs.closeSync;
+    export const constants = fs.constants;
+    export const fchmodSync = fs.fchmodSync;
+    export const fstatSync = fs.fstatSync;
+    export const fsyncSync = fs.fsyncSync;
+    export const openSync = fs.openSync;
+    export const realpathSync = fs.realpathSync;
+    export function lstatSync(...args) {
+      hooks.beforeLstat?.(...args);
+      const stat = fs.lstatSync(...args);
+      return hooks.afterLstat?.(stat, ...args) ?? stat;
+    }
+    export function readdirSync(...args) {
+      const entries = fs.readdirSync(...args);
+      hooks.afterReaddir?.(args[0], entries);
+      return entries;
+    }
+  `);
+  const sqliteShimUrl = dataUrl(`
+    import { DatabaseSync as NativeDatabaseSync } from 'node:sqlite';
+    const hooks = globalThis[${JSON.stringify(hookKey)}];
+    export function DatabaseSync(...args) {
+      const database = new NativeDatabaseSync(...args);
+      hooks.afterDatabaseOpen?.(database, ...args);
+      return database;
+    }
+  `);
+  const sourceUrl = new URL(
+    '../src/service-credit-zenon-funding-observer-sqlite-store.js',
+    import.meta.url,
+  );
+  const stateUrl = new URL(
+    '../src/service-credit-zenon-funding-observer-state.js',
+    import.meta.url,
+  );
+  const attestationUrl = new URL(
+    '../src/service-credit-zenon-funding-provider-attestation.js',
+    import.meta.url,
+  );
+  const source = readFileSync(sourceUrl, 'utf8')
+    .replace("from 'node:fs';", `from ${JSON.stringify(fsShimUrl)};`)
+    .replace("from 'node:sqlite';", `from ${JSON.stringify(sqliteShimUrl)};`)
+    .replace(
+      "from './service-credit-zenon-funding-observer-state.js';",
+      `from ${JSON.stringify(stateUrl.href)};`,
+    )
+    .replace(
+      "from './service-credit-zenon-funding-provider-attestation.js';",
+      `from ${JSON.stringify(attestationUrl.href)};`,
+    );
+  return import(dataUrl(source));
+}
+
 function momentumsFor(planned, state, { memberHeight = null, mutate = undefined } = {}) {
   let previousHash = planned.plan.startCheckpoint.hash;
   const momentums = [];
@@ -1013,6 +1081,293 @@ test('open never creates a missing database and close is bounded and idempotent'
   store.close();
   store.close();
   expectCode(() => store.load(), 'ZENON_FUNDING_OBSERVER_STORE_CLOSED');
+});
+
+test('open tolerates an expected journal that vanishes after enumeration', async t => {
+  const directory = privateDirectoryFor(t);
+  const configuration = createOptions(directory);
+  const created = createZenonFundingObserverSqliteStore(configuration);
+  const recordKey = created.load().recordKey;
+  created.close();
+  const sidecar = `${configuration.databasePath}-journal`;
+  writeFileSync(sidecar, 'transient', { mode: 0o600 });
+  let enumerated = false;
+  let vanished = false;
+  const instrumented = await importInstrumentedStore(t, {
+    afterReaddir(parent, entries) {
+      if (parent === directory && entries.includes('observer.sqlite-journal')) {
+        enumerated = true;
+      }
+    },
+    beforeLstat(candidate) {
+      if (enumerated && !vanished && candidate === sidecar) {
+        rmSync(sidecar);
+        vanished = true;
+      }
+    },
+  });
+  const reopened = instrumented.openZenonFundingObserverSqliteStore(
+    openOptions(configuration, recordKey),
+  );
+  assert.equal(enumerated, true);
+  assert.equal(vanished, true);
+  assert.equal(reopened.load().recordKey, recordKey);
+  reopened.close();
+});
+
+test('existing open tolerates a committed same-inode mutation during DatabaseSync open', async t => {
+  const directory = privateDirectoryFor(t);
+  const configuration = createOptions(directory);
+  const created = createZenonFundingObserverSqliteStore(configuration);
+  const initial = created.load();
+  const planned = created.planBackfill({
+    expectedRevision: initial.state.revision,
+    frontier: { height: INITIAL_HEIGHT + 1, hash: momentumHash(INITIAL_HEIGHT + 1) },
+  });
+  const operation = {
+    expectedRevision: initial.state.revision,
+    plan: planned.plan,
+    momentums: momentumsFor(planned, initial.state),
+  };
+  created.close();
+  const before = lstatSync(configuration.databasePath, { bigint: true });
+  let committed = false;
+  const instrumented = await importInstrumentedStore(t, {
+    afterDatabaseOpen(_database, databasePath) {
+      if (databasePath !== configuration.databasePath || committed) return;
+      const writer = openZenonFundingObserverSqliteStore(
+        openOptions(configuration, initial.recordKey),
+      );
+      try {
+        committed = writer.applyPage(operation).state.revision === 1;
+      } finally {
+        writer.close();
+      }
+    },
+  });
+  const reopened = instrumented.openZenonFundingObserverSqliteStore(
+    openOptions(configuration, initial.recordKey),
+  );
+  const after = lstatSync(configuration.databasePath, { bigint: true });
+  assert.equal(committed, true);
+  assert.equal(after.dev, before.dev);
+  assert.equal(after.ino, before.ino);
+  assert.equal(reopened.load().state.revision, 1);
+  reopened.close();
+});
+
+test('expected journal disappearance handling remains fail closed for unsafe journals', async t => {
+  function closedStore(nestedTest) {
+    const directory = privateDirectoryFor(nestedTest);
+    const configuration = createOptions(directory);
+    const created = createZenonFundingObserverSqliteStore(configuration);
+    const recordKey = created.load().recordKey;
+    created.close();
+    return { configuration, directory, recordKey };
+  }
+
+  await t.test('unsafe mode', nestedTest => {
+    const { configuration, recordKey } = closedStore(nestedTest);
+    const sidecar = `${configuration.databasePath}-journal`;
+    writeFileSync(sidecar, 'persistent', { mode: 0o600 });
+    chmodSync(sidecar, 0o644);
+    expectCode(
+      () => openZenonFundingObserverSqliteStore(openOptions(configuration, recordKey)),
+      'ZENON_FUNDING_OBSERVER_STORE_UNSAFE_FILE',
+    );
+    assert.equal(existsSync(sidecar), true);
+  });
+
+  await t.test('hard link', nestedTest => {
+    const { configuration, directory, recordKey } = closedStore(nestedTest);
+    const sidecar = `${configuration.databasePath}-journal`;
+    writeFileSync(sidecar, 'persistent', { mode: 0o600 });
+    linkSync(sidecar, join(directory, 'journal-link'));
+    expectCode(
+      () => openZenonFundingObserverSqliteStore(openOptions(configuration, recordKey)),
+      'ZENON_FUNDING_OBSERVER_STORE_UNSAFE_FILE',
+    );
+    assert.equal(lstatSync(sidecar).nlink, 2);
+  });
+
+  await t.test('symbolic link', nestedTest => {
+    const { configuration, directory, recordKey } = closedStore(nestedTest);
+    const targetPath = join(directory, 'journal-target');
+    const sidecar = `${configuration.databasePath}-journal`;
+    writeFileSync(targetPath, 'persistent', { mode: 0o600 });
+    symlinkSync(targetPath, sidecar);
+    expectCode(
+      () => openZenonFundingObserverSqliteStore(openOptions(configuration, recordKey)),
+      'ZENON_FUNDING_OBSERVER_STORE_UNSAFE_FILE',
+    );
+    assert.equal(lstatSync(sidecar).isSymbolicLink(), true);
+  });
+
+  await t.test('wrong owner', async nestedTest => {
+    const { configuration, recordKey } = closedStore(nestedTest);
+    const sidecar = `${configuration.databasePath}-journal`;
+    writeFileSync(sidecar, 'persistent', { mode: 0o600 });
+    const instrumented = await importInstrumentedStore(nestedTest, {
+      afterLstat(stat, candidate) {
+        if (candidate !== sidecar) return stat;
+        return new Proxy(stat, {
+          get(targetStat, property) {
+            if (property === 'uid') return targetStat.uid + 1n;
+            const value = Reflect.get(targetStat, property, targetStat);
+            return typeof value === 'function' ? value.bind(targetStat) : value;
+          },
+        });
+      },
+    });
+    expectCode(
+      () => instrumented.openZenonFundingObserverSqliteStore(
+        openOptions(configuration, recordKey),
+      ),
+      'ZENON_FUNDING_OBSERVER_STORE_UNSAFE_FILE',
+    );
+    assert.equal(existsSync(sidecar), true);
+  });
+
+  await t.test('non-ENOENT lstat failure', async nestedTest => {
+    const { configuration, recordKey } = closedStore(nestedTest);
+    const sidecar = `${configuration.databasePath}-journal`;
+    writeFileSync(sidecar, 'persistent', { mode: 0o600 });
+    const instrumented = await importInstrumentedStore(nestedTest, {
+      beforeLstat(candidate) {
+        if (candidate !== sidecar) return;
+        const error = new Error('synthetic journal lstat failure');
+        Object.defineProperty(error, 'code', { value: 'EACCES' });
+        throw error;
+      },
+    });
+    expectCode(
+      () => instrumented.openZenonFundingObserverSqliteStore(
+        openOptions(configuration, recordKey),
+      ),
+      'ZENON_FUNDING_OBSERVER_STORE_UNSAFE_FILE',
+    );
+    assert.equal(existsSync(sidecar), true);
+  });
+});
+
+test('existing open rejects unexpected wal and shm sidecars', async t => {
+  for (const suffix of ['-wal', '-shm']) {
+    await t.test(suffix, nestedTest => {
+      const directory = privateDirectoryFor(nestedTest);
+      const configuration = createOptions(directory);
+      const created = createZenonFundingObserverSqliteStore(configuration);
+      const recordKey = created.load().recordKey;
+      created.close();
+      const sidecar = `${configuration.databasePath}${suffix}`;
+      writeFileSync(sidecar, 'unexpected', { mode: 0o600 });
+      expectCode(
+        () => openZenonFundingObserverSqliteStore(openOptions(configuration, recordKey)),
+        'ZENON_FUNDING_OBSERVER_STORE_UNEXPECTED_SIDECAR',
+      );
+      assert.equal(existsSync(sidecar), true);
+    });
+  }
+});
+
+test('existing open identity relaxation retains post-open file guards', async t => {
+  function closedStore(nestedTest) {
+    const directory = privateDirectoryFor(nestedTest);
+    const configuration = createOptions(directory);
+    const created = createZenonFundingObserverSqliteStore(configuration);
+    const recordKey = created.load().recordKey;
+    created.close();
+    return { configuration, directory, recordKey };
+  }
+
+  await t.test('database replacement', async nestedTest => {
+    const { configuration, directory, recordKey } = closedStore(nestedTest);
+    const replacement = join(directory, 'replacement.sqlite');
+    const original = join(directory, 'original.sqlite');
+    copyFileSync(configuration.databasePath, replacement);
+    chmodSync(replacement, 0o600);
+    let replaced = false;
+    const instrumented = await importInstrumentedStore(nestedTest, {
+      afterDatabaseOpen(_database, databasePath) {
+        if (databasePath !== configuration.databasePath || replaced) return;
+        renameSync(configuration.databasePath, original);
+        renameSync(replacement, configuration.databasePath);
+        replaced = true;
+      },
+    });
+    expectCode(
+      () => instrumented.openZenonFundingObserverSqliteStore(
+        openOptions(configuration, recordKey),
+      ),
+      'ZENON_FUNDING_OBSERVER_STORE_UNSAFE_FILE',
+    );
+    assert.equal(replaced, true);
+    assert.equal(existsSync(original), true);
+  });
+
+  await t.test('unsafe mode', async nestedTest => {
+    const { configuration, recordKey } = closedStore(nestedTest);
+    let changed = false;
+    const instrumented = await importInstrumentedStore(nestedTest, {
+      afterDatabaseOpen(_database, databasePath) {
+        if (databasePath !== configuration.databasePath || changed) return;
+        chmodSync(configuration.databasePath, 0o640);
+        changed = true;
+      },
+    });
+    expectCode(
+      () => instrumented.openZenonFundingObserverSqliteStore(
+        openOptions(configuration, recordKey),
+      ),
+      'ZENON_FUNDING_OBSERVER_STORE_UNSAFE_FILE',
+    );
+    assert.equal(changed, true);
+    assert.equal(lstatSync(configuration.databasePath).mode & 0o777, 0o640);
+  });
+
+  await t.test('unsafe link count', async nestedTest => {
+    const { configuration, directory, recordKey } = closedStore(nestedTest);
+    const linkPath = join(directory, 'database-link.sqlite');
+    let linked = false;
+    const instrumented = await importInstrumentedStore(nestedTest, {
+      afterDatabaseOpen(_database, databasePath) {
+        if (databasePath !== configuration.databasePath || linked) return;
+        linkSync(configuration.databasePath, linkPath);
+        linked = true;
+      },
+    });
+    expectCode(
+      () => instrumented.openZenonFundingObserverSqliteStore(
+        openOptions(configuration, recordKey),
+      ),
+      'ZENON_FUNDING_OBSERVER_STORE_UNSAFE_FILE',
+    );
+    assert.equal(linked, true);
+    assert.equal(lstatSync(configuration.databasePath).nlink, 2);
+  });
+
+  await t.test('invalid same-inode data', async nestedTest => {
+    const { configuration, recordKey } = closedStore(nestedTest);
+    let corrupted = false;
+    const instrumented = await importInstrumentedStore(nestedTest, {
+      afterDatabaseOpen(_database, databasePath) {
+        if (databasePath !== configuration.databasePath || corrupted) return;
+        const writer = new DatabaseSync(configuration.databasePath);
+        try {
+          writer.prepare(`UPDATE ${TABLE_NAME} SET envelope = ? WHERE singleton = 1`).run('{}');
+          corrupted = true;
+        } finally {
+          writer.close();
+        }
+      },
+    });
+    expectCode(
+      () => instrumented.openZenonFundingObserverSqliteStore(
+        openOptions(configuration, recordKey),
+      ),
+      'ZENON_FUNDING_OBSERVER_STORE_CORRUPT',
+    );
+    assert.equal(corrupted, true);
+  });
 });
 
 test('path, ownership, type, mode, symlink, and hard-link guards fail closed without repair', async t => {
