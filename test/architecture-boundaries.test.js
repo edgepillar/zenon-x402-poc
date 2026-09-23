@@ -208,6 +208,10 @@ test('Zenon funding, signing, and external-holder handoff sources remain inactiv
     'service-credit-zenon-funding-post-v1-client.js',
     'service-credit-zenon-funding-post-v1-payer-recovery-sqlite-store.js',
     'service-credit-zenon-funding-post-v1-payer-recovery-owner.js',
+    'service-credit-zenon-funding-observation-producer.js',
+    'service-credit-zenon-funding-observation-source-owner.js',
+    'service-credit-zenon-funding-json-rpc-read-transport.js',
+    'service-credit-zenon-funding-https-read-transport-owner.js',
     'service-credit-zenon-funding-publication-bridge.js',
     'service-credit-external-holder-grant-descriptor-handoff-http-ingress.js',
     'service-credit-external-holder-grant-descriptor-handoff-http.js',
@@ -257,6 +261,189 @@ test('Zenon funding, signing, and external-holder handoff sources remain inactiv
       if (dependency.pathname.endsWith('.js')) pending.push(dependency.href);
     }
   }
+});
+
+test('funding observation producer keeps Dynamic Plasma DTO parsing offline and non-authorizing', () => {
+  const producerName = 'service-credit-zenon-funding-observation-producer.js';
+  const source = readFileSync(new URL(`../src/${producerName}`, import.meta.url), 'utf8');
+  const packageText = readFileSync(new URL('../package.json', import.meta.url), 'utf8');
+  assert.deepEqual(
+    [...source.matchAll(/from '([^']+)';/g)].map(match => match[1]),
+    [
+      'node:util',
+      './service-credit-zenon-funding-observer-sqlite-store.js',
+      './service-credit-zenon-funding-provider-attestation.js',
+    ],
+  );
+  assert.equal(packageText.includes(producerName), false);
+  assert.doesNotMatch(source, /node:(?:https?|http2|net|tls|dns)|\.listen\s*\(|\bfetch\s*\(|WebSocket|process\.env/);
+  assert.doesNotMatch(source, /dynamic-plasma-(?:json-rpc|https|observation-collector)/);
+  assert.match(source, /\['nextFusionPrice', 'nextWorkPrice'\]/);
+  assert.match(source, /if \(result\.data !== ''\) fail\('INVALID_INPUT'\)/);
+  assert.match(source, /function admitMomentumVersionLineage\(items\)/);
+});
+
+test('funding observation source owner is an exact default-off injected read boundary', () => {
+  const ownerName = 'service-credit-zenon-funding-observation-source-owner.js';
+  const source = readFileSync(new URL(`../src/${ownerName}`, import.meta.url), 'utf8');
+  const packageText = readFileSync(new URL('../package.json', import.meta.url), 'utf8');
+  assert.deepEqual(
+    [...source.matchAll(/from '([^']+)';/g)].map(match => match[1]),
+    [
+      'node:util',
+      './service-credit-zenon-funding-observation-producer.js',
+      './service-credit-zenon-funding-observer-sqlite-store.js',
+    ],
+  );
+  assert.equal(packageText.includes(ownerName), false);
+  assert.doesNotMatch(source, /node:(?:https?|http2|net|tls|dns)|\.listen\s*\(|\bfetch\s*\(|WebSocket|process\.env/);
+  assert.doesNotMatch(source, /dynamic-plasma-(?:json-rpc|https|observation-collector)/);
+  assert.doesNotMatch(source, /from '[^']*(?:wallet|signing|publication|grant|service-credit-store)[^']*'/);
+  assert.doesNotMatch(source, /\b(?:sign|publish|settle|activateGrant)\s*\(/);
+  assert.equal((source.match(/'ledger\.getFrontierMomentum'/g) ?? []).length, 3);
+  assert.equal((source.match(/'ledger\.getMomentumByHash'/g) ?? []).length, 2);
+  assert.equal((source.match(/'ledger\.getMomentumsByHeight'/g) ?? []).length, 1);
+  assert.equal((source.match(/'ledger\.getAccountBlockByHash'/g) ?? []).length, 1);
+  assert.match(source, /const MAX_PAGE_ENTRIES = 64/);
+  assert.match(source, /snapshotRecord\(store, candidate\.expectedRevision\)/);
+  assertSourceOrder(source, [
+    'if (finishing || !closeSettled)',
+    'if (!closeClean || !invariant())',
+    'snapshotRecord(store, candidate.expectedRevision)',
+    'producer.apply',
+  ]);
+});
+
+test('funding and Dynamic Plasma JSON-RPC adapters share only a bounded method-neutral core', () => {
+  const coreName = 'bounded-json-rpc-read-core.js';
+  const fundingName = 'service-credit-zenon-funding-json-rpc-read-transport.js';
+  const core = readFileSync(new URL(`../src/zenon/${coreName}`, import.meta.url), 'utf8');
+  const dynamic = readFileSync(
+    new URL('../src/zenon/dynamic-plasma-json-rpc-read-transport.js', import.meta.url),
+    'utf8',
+  );
+  const funding = readFileSync(new URL(`../src/${fundingName}`, import.meta.url), 'utf8');
+  const packageText = readFileSync(new URL('../package.json', import.meta.url), 'utf8');
+  assert.equal(packageText.includes(coreName), false);
+  assert.equal(packageText.includes(fundingName), false);
+  assert.deepEqual([...core.matchAll(/from '([^']+)';/g)].map(match => match[1]), ['node:util']);
+  assert.deepEqual([...dynamic.matchAll(/from '([^']+)';/g)].map(match => match[1]), [
+    'node:util',
+    './bounded-json-rpc-read-core.js',
+  ]);
+  assert.deepEqual([...funding.matchAll(/from '([^']+)';/g)].map(match => match[1]), [
+    'node:util',
+    './zenon/bounded-json-rpc-read-core.js',
+  ]);
+  for (const source of [core, dynamic, funding]) {
+    assert.doesNotMatch(source, /node:(?:https?|http2|net|tls|dns|fs)|\.listen\s*\(|\bfetch\s*\(|WebSocket|process\.env/);
+    assert.doesNotMatch(source, /JSON\.(?:parse|stringify)\s*\(/);
+    assert.doesNotMatch(source, /\b(?:sign|publish|activateGrant)\s*\(/);
+  }
+  assert.doesNotMatch(core, /ledger\.|embedded\./);
+  assert.doesNotMatch(dynamic, /ledger\.getMomentumByHash|ledger\.getAccountBlockByHash/);
+  assert.doesNotMatch(dynamic, /'zenon_funding'/);
+  assert.doesNotMatch(funding, /embedded\.|'dynamic_plasma'/);
+  assert.equal((funding.match(/'ledger\.getFrontierMomentum'/g) ?? []).length, 1);
+  assert.equal((funding.match(/'ledger\.getMomentumByHash'/g) ?? []).length, 1);
+  assert.equal((funding.match(/'ledger\.getMomentumsByHeight'/g) ?? []).length, 1);
+  assert.equal((funding.match(/'ledger\.getAccountBlockByHash'/g) ?? []).length, 1);
+  assert.match(funding, /const MAX_REQUESTS = 6/);
+  assert.match(core, /const MAX_RESULT_BYTES = 1048576/);
+  assert.match(core, /const MAX_RESPONSE_BYTES = MAX_RESULT_BYTES \+ 4096/);
+  assert.match(core, /const MAX_DEPTH = 17/);
+  const pending = [new URL('../src/', import.meta.url)];
+  const importers = [];
+  while (pending.length > 0) {
+    const directory = pending.pop();
+    for (const entry of readdirSync(directory, { withFileTypes: true })) {
+      const candidate = new URL(entry.name, directory);
+      if (entry.isDirectory()) pending.push(new URL(`${entry.name}/`, directory));
+      else if (entry.isFile() && candidate.pathname.endsWith('.js')) {
+        const candidateSource = readFileSync(candidate, 'utf8');
+        if (!candidate.pathname.endsWith(`/${coreName}`)
+            && candidateSource.includes('bounded-json-rpc-read-core.js')) {
+          importers.push(candidate.pathname.slice(candidate.pathname.lastIndexOf('/src/') + 5));
+        }
+      }
+    }
+  }
+  assert.deepEqual(importers.sort(), [
+    fundingName,
+    'zenon/dynamic-plasma-json-rpc-read-transport.js',
+  ]);
+});
+
+test('closed Dynamic Plasma and funding HTTPS wrappers share one bounded socket core', () => {
+  const coreName = 'bounded-json-rpc-https-exchange-owner.js';
+  const wrapperName = 'dynamic-plasma-https-read-transport-owner.js';
+  const fundingWrapperName = 'service-credit-zenon-funding-https-read-transport-owner.js';
+  const core = readFileSync(new URL(`../src/zenon/${coreName}`, import.meta.url), 'utf8');
+  const wrapper = readFileSync(new URL(`../src/zenon/${wrapperName}`, import.meta.url), 'utf8');
+  const fundingWrapper = readFileSync(
+    new URL(`../src/${fundingWrapperName}`, import.meta.url),
+    'utf8',
+  );
+  const packageText = readFileSync(new URL('../package.json', import.meta.url), 'utf8');
+  assert.equal(packageText.includes(coreName), false);
+  assert.equal(packageText.includes(wrapperName), false);
+  assert.equal(packageText.includes(fundingWrapperName), false);
+  assert.deepEqual([...core.matchAll(/from '([^']+)';/g)].map(match => match[1]), [
+    'node:https',
+    'node:http',
+    'node:net',
+    'node:tls',
+    'node:events',
+    'node:stream',
+    'node:buffer',
+    'node:util',
+    'node:perf_hooks',
+    'node:timers',
+  ]);
+  assert.deepEqual([...wrapper.matchAll(/from '([^']+)';/g)].map(match => match[1]), [
+    'node:util',
+    './bounded-json-rpc-https-exchange-owner.js',
+    './dynamic-plasma-json-rpc-read-transport.js',
+  ]);
+  assert.deepEqual([...fundingWrapper.matchAll(/from '([^']+)';/g)].map(match => match[1]), [
+    'node:crypto',
+    'node:util',
+    './zenon/bounded-json-rpc-https-exchange-owner.js',
+    './service-credit-zenon-funding-json-rpc-read-transport.js',
+  ]);
+  assert.doesNotMatch(core, /ledger\.|embedded\.|service-credit|dynamic-plasma-json-rpc-read-transport/);
+  assert.doesNotMatch(core, /node:(?:fs|dns|child_process|worker_threads)|process\.env|globalThis|\bfetch\s*\(|WebSocket|\.listen\s*\(/);
+  for (const closedWrapper of [wrapper, fundingWrapper]) {
+    assert.doesNotMatch(closedWrapper, /node:(?:https?|http2|net|tls|dns)|httpsRequest|new HttpsAgent/);
+  }
+  assert.match(wrapper, /return freeze\(\{ transport, close: exchangeOwner\.close \}\)/);
+  assert.match(fundingWrapper, /sourcePolicyCommitment: sourcePolicyCommitment\(sourcePolicyDescriptor\)/);
+  assert.doesNotMatch(fundingWrapper, /funding-observation-source-owner|funding-observation-producer/);
+  assert.match(core, /const MAX_BODY = 1052672/);
+  assert.match(core, /const MAX_REQUEST_BYTES = 1024/);
+  assert.match(core, /const MAX_ATTEMPTS = 13/);
+  assert.match(core, /const MAX_HEADER_BYTES = 16384/);
+  assert.match(core, /const MAX_HEADER_PAIRS = 64/);
+  const pending = [new URL('../src/', import.meta.url)];
+  const importers = [];
+  while (pending.length > 0) {
+    const directory = pending.pop();
+    for (const entry of readdirSync(directory, { withFileTypes: true })) {
+      const candidate = new URL(entry.name, directory);
+      if (entry.isDirectory()) pending.push(new URL(`${entry.name}/`, directory));
+      else if (entry.isFile() && candidate.pathname.endsWith('.js')) {
+        const candidateSource = readFileSync(candidate, 'utf8');
+        if (!candidate.pathname.endsWith(`/${coreName}`)
+            && candidateSource.includes(coreName)) {
+          importers.push(candidate.pathname.slice(candidate.pathname.lastIndexOf('/src/') + 5));
+        }
+      }
+    }
+  }
+  assert.deepEqual(importers.sort(), [
+    fundingWrapperName,
+    `zenon/${wrapperName}`,
+  ]);
 });
 
 test('bounded HTTPS owner import is process-global-observer-free', () => {

@@ -12,6 +12,7 @@ import { createDynamicPlasmaObservationCollector } from '../src/zenon/dynamic-pl
 import { normalizeDynamicPlasmaObservation } from '../src/zenon/dynamic-plasma-observation-normalizer.js';
 
 const OWNER_URL = new URL('../src/zenon/dynamic-plasma-https-read-transport-owner.js', import.meta.url);
+const CORE_URL = new URL('../src/zenon/bounded-json-rpc-https-exchange-owner.js', import.meta.url);
 const OWNER_PREFIX = 'dynamic_plasma_https_read_transport_owner_';
 const ADAPTER_PREFIX = 'dynamic_plasma_json_rpc_read_transport_';
 const HOST = 'rpc.synthetic-public.org';
@@ -22,7 +23,7 @@ const SPORK = 'embedded.spork.getAll';
 const VARIABLES = 'embedded.plasma.getVariables';
 const QUOTE = 'embedded.plasma.getRequiredPoWForAccountBlock';
 const MAX_BODY = 1052672;
-const IMPORTS = [
+const CORE_IMPORTS = [
   "import { Agent as HttpsAgent, request as httpsRequest } from 'node:https';",
   "import { ClientRequest, IncomingMessage } from 'node:http';",
   "import { Socket } from 'node:net';",
@@ -33,12 +34,22 @@ const IMPORTS = [
   "import { TextDecoder, types as utilTypes } from 'node:util';",
   "import { performance } from 'node:perf_hooks';",
   "import { setTimeout, clearTimeout } from 'node:timers';",
+];
+const OWNER_IMPORTS = [
+  "import { types as utilTypes } from 'node:util';",
+  "import {",
+  "  createBoundedJsonRpcHttpsExchangeOwner,",
+  "} from './bounded-json-rpc-https-exchange-owner.js';",
   "import { createDynamicPlasmaJsonRpcReadTransport } from './dynamic-plasma-json-rpc-read-transport.js';",
 ];
-const BINDINGS = [
+const CORE_BINDINGS = [
   'HttpsAgent', 'httpsRequest', 'ClientRequest', 'IncomingMessage', 'Socket', 'TLSSocket',
   'checkServerIdentity', 'EventEmitter', 'Readable', 'Buffer', 'TextDecoder', 'utilTypes', 'performance',
-  'setTimeout', 'clearTimeout', 'createDynamicPlasmaJsonRpcReadTransport',
+  'setTimeout', 'clearTimeout',
+];
+const OWNER_BINDINGS = [
+  'utilTypes', 'createBoundedJsonRpcHttpsExchangeOwner',
+  'createDynamicPlasmaJsonRpcReadTransport',
 ];
 
 function fixedFailure(detail) {
@@ -59,6 +70,10 @@ function test(name, run) {
 }
 function sourceText() {
   try { return readFileSync(OWNER_URL, 'utf8'); }
+  catch { throw fixedFailure('MODULE_ABSENT'); }
+}
+function coreSourceText() {
+  try { return readFileSync(CORE_URL, 'utf8'); }
   catch { throw fixedFailure('MODULE_ABSENT'); }
 }
 function frozen(value) {
@@ -91,19 +106,41 @@ function ownerError(error, kind) {
 // No initializer, policy, counter, limit, branch, or lifecycle code is replaced.
 // Synchronous evaluation also permits initial-intrinsic poison probes without
 // entrusting an asynchronous module loader to the deliberately poisoned realm.
-function evaluate(bindings) {
-  const source = sourceText();
-  const importBlock = IMPORTS.join('\n') + '\n';
+function evaluateSource(source, imports, exported, replacement, bindingNames, bindings) {
+  const importBlock = imports.join('\n') + '\n';
   assert.equal(source.startsWith(importBlock), true);
-  for (const line of IMPORTS) assert.equal(source.split(line).length, 2);
-  const exported = 'export function createDynamicPlasmaHttpsReadTransportOwner';
+  for (const line of imports) {
+    if (line.includes(" from '")) assert.equal(source.split(line).length, 2);
+  }
   assert.equal(source.split(exported).length, 2);
   const policy = source.slice(importBlock.length);
   assert.doesNotMatch(policy, /^import\s/m);
   assert.equal((policy.match(/^export\s/gm) ?? []).length, 1);
-  const linked = policy.replace(exported, 'function createDynamicPlasmaHttpsReadTransportOwner');
-  assert.equal(linked.replace('function createDynamicPlasmaHttpsReadTransportOwner', exported), policy);
-  return runInThisContext(`(function(${BINDINGS.join(',')}) { 'use strict';\n${linked}\nreturn createDynamicPlasmaHttpsReadTransportOwner;\n})`)(...bindings);
+  const linked = policy.replace(exported, replacement);
+  assert.equal(linked.replace(replacement, exported), policy);
+  return runInThisContext(
+    `(function(${bindingNames.join(',')}) { 'use strict';\n${linked}\nreturn ${replacement.slice('function '.length)};\n})`,
+  )(...bindings);
+}
+function evaluate(bindings) {
+  const coreName = 'createBoundedJsonRpcHttpsExchangeOwner';
+  const coreFactory = evaluateSource(
+    coreSourceText(),
+    CORE_IMPORTS,
+    `export function ${coreName}`,
+    `function ${coreName}`,
+    CORE_BINDINGS,
+    bindings.slice(0, CORE_BINDINGS.length),
+  );
+  const ownerName = 'createDynamicPlasmaHttpsReadTransportOwner';
+  return evaluateSource(
+    sourceText(),
+    OWNER_IMPORTS,
+    `export function ${ownerName}`,
+    `function ${ownerName}`,
+    OWNER_BINDINGS,
+    [bindings[11], coreFactory, bindings[CORE_BINDINGS.length]],
+  );
 }
 
 function harness({ flowControlled = true, nativeResponse = false } = {}) {

@@ -1,14 +1,17 @@
+import { createHash } from 'node:crypto';
 import { types as utilTypes } from 'node:util';
 import {
   createBoundedJsonRpcHttpsExchangeOwner,
-} from './bounded-json-rpc-https-exchange-owner.js';
-import { createDynamicPlasmaJsonRpcReadTransport } from './dynamic-plasma-json-rpc-read-transport.js';
+} from './zenon/bounded-json-rpc-https-exchange-owner.js';
+import {
+  createZenonFundingJsonRpcReadTransport,
+} from './service-credit-zenon-funding-json-rpc-read-transport.js';
 
-// Default-off, pre-pinned Dynamic Plasma wrapper. The existing collector
-// enforces UNSIGNED before this adapter receives a request. This wrapper owns
-// the exact public configuration and route policy plus the closed DP JSON-RPC
+// Default-off, pre-pinned Zenon funding wrapper. It owns the exact public
+// configuration and route policy plus the closed four-method funding JSON-RPC
 // composition. The shared internal owner alone holds native HTTPS/socket
-// capabilities. Neither response is durable signing authorization. Owned byte
+// capabilities. Neither response is wallet, signing, publication, payment,
+// canonicality, finality, credit, grant or service authority. Owned byte
 // buffers are zeroed best-effort there; JavaScript strings are not erasable.
 
 const freeze = Object.freeze;
@@ -22,15 +25,32 @@ const isFrozen = Object.isFrozen;
 const isSafeInteger = Number.isSafeInteger;
 const same = Object.is;
 const string = String;
+const stringify = JSON.stringify;
 const objectPrototype = Object.prototype;
 const isProxy = utilTypes.isProxy;
 const charAt = String.prototype.charCodeAt;
 const sliceString = String.prototype.slice;
 const apply = Reflect.apply;
 const fromCharCode = String.fromCharCode;
-const INVALID = Symbol('rejected Dynamic Plasma HTTPS configuration');
+const hashUpdate = createHash('sha256').update;
+const hashDigest = createHash('sha256').digest;
+const INVALID = Symbol('rejected Zenon funding HTTPS configuration');
 const CONFIGURATION_FIELDS = freeze(['route', 'timeoutMs', 'closeGraceMs']);
 const ROUTE_FIELDS = freeze(['hostname', 'path', 'ipv4Address']);
+const POLICY_FIELDS = freeze([
+  'connection', 'endpoint', 'lookup', 'request', 'timing', 'tls', 'version',
+]);
+const CONNECTION_FIELDS = freeze(['keepAlive', 'mode', 'socketReuse', 'tlsSessionReuse']);
+const ENDPOINT_FIELDS = freeze(['hostname', 'path', 'pinnedIpv4Address', 'port']);
+const LOOKUP_FIELDS = freeze(['autoSelectFamily', 'family', 'mode']);
+const REQUEST_FIELDS = freeze(['fallbackMode', 'method', 'redirectMode', 'retryMode']);
+const TIMING_FIELDS = freeze(['closeGraceMs', 'timeoutMs']);
+const TLS_FIELDS = freeze([
+  'alpnProtocol', 'exactCaTrustAnchorsPinned', 'hostnameVerification',
+  'maximumVersion', 'minimumVersion', 'sniHostname', 'trustMode',
+  'zenonChainIdentityAuthenticated',
+]);
+const SOURCE_POLICY_DOMAIN = 'zenon-x402-funding-https-source-policy-v1';
 
 function invalid() { throw INVALID; }
 function put(target, key, value, writable = false) {
@@ -71,6 +91,17 @@ function exact(value, fields) {
     put(snapshot, key, item.value);
   }
   return freeze(snapshot);
+}
+function exactPolicy(value, fields) {
+  if (value === null || typeof value !== 'object' || isProxy(value)
+      || prototype(value) !== null || !isFrozen(value)
+      || keys(value).length !== fields.length) invalid();
+  for (let index = 0; index < fields.length; index += 1) {
+    const item = descriptor(value, fields[index]);
+    if (item === undefined || !hasOwn(item, 'value') || item.enumerable !== true
+        || item.writable !== false || item.configurable !== false) invalid();
+  }
+  return value;
 }
 function milliseconds(value) {
   if (!isSafeInteger(value) || same(value, -0) || value < 1 || value > 60000) invalid();
@@ -180,15 +211,74 @@ function snapshotConfiguration(options) {
   }));
 }
 
-export function createDynamicPlasmaHttpsReadTransportOwner(options) {
+function canonicalSourcePolicy(value) {
+  const policy = exactPolicy(value, POLICY_FIELDS);
+  const connection = exactPolicy(policy.connection, CONNECTION_FIELDS);
+  const endpoint = exactPolicy(policy.endpoint, ENDPOINT_FIELDS);
+  const lookup = exactPolicy(policy.lookup, LOOKUP_FIELDS);
+  const request = exactPolicy(policy.request, REQUEST_FIELDS);
+  const timing = exactPolicy(policy.timing, TIMING_FIELDS);
+  const tls = exactPolicy(policy.tls, TLS_FIELDS);
+  if (policy.version !== 1
+      || connection.keepAlive !== false
+      || connection.mode !== 'fresh-socket-per-request'
+      || connection.socketReuse !== false
+      || connection.tlsSessionReuse !== false
+      || typeof endpoint.hostname !== 'string'
+      || typeof endpoint.path !== 'string'
+      || typeof endpoint.pinnedIpv4Address !== 'string'
+      || endpoint.port !== 443
+      || lookup.autoSelectFamily !== false
+      || lookup.family !== 4
+      || lookup.mode !== 'pinned-ipv4'
+      || request.fallbackMode !== 'none'
+      || request.method !== 'POST'
+      || request.redirectMode !== 'none'
+      || request.retryMode !== 'none'
+      || !isSafeInteger(timing.closeGraceMs) || same(timing.closeGraceMs, -0)
+      || timing.closeGraceMs < 1 || timing.closeGraceMs > 60000
+      || !isSafeInteger(timing.timeoutMs) || same(timing.timeoutMs, -0)
+      || timing.timeoutMs < 1 || timing.timeoutMs > 60000
+      || tls.alpnProtocol !== 'http/1.1'
+      || tls.exactCaTrustAnchorsPinned !== false
+      || tls.hostnameVerification !== 'node.checkServerIdentity'
+      || tls.maximumVersion !== 'TLSv1.3'
+      || tls.minimumVersion !== 'TLSv1.3'
+      || tls.sniHostname !== endpoint.hostname
+      || tls.trustMode !== 'runtime-default-pki'
+      || tls.zenonChainIdentityAuthenticated !== false) invalid();
+  // The exact field order below is the version-1 canonical encoding. Route
+  // values are serialized, not normalized again.
+  return `{"connection":{"keepAlive":false,"mode":"fresh-socket-per-request","socketReuse":false,"tlsSessionReuse":false},"endpoint":{"hostname":${apply(stringify, undefined, [endpoint.hostname])},"path":${apply(stringify, undefined, [endpoint.path])},"pinnedIpv4Address":${apply(stringify, undefined, [endpoint.pinnedIpv4Address])},"port":443},"lookup":{"autoSelectFamily":false,"family":4,"mode":"pinned-ipv4"},"request":{"fallbackMode":"none","method":"POST","redirectMode":"none","retryMode":"none"},"timing":{"closeGraceMs":${string(timing.closeGraceMs)},"timeoutMs":${string(timing.timeoutMs)}},"tls":{"alpnProtocol":"http/1.1","exactCaTrustAnchorsPinned":false,"hostnameVerification":"node.checkServerIdentity","maximumVersion":"TLSv1.3","minimumVersion":"TLSv1.3","sniHostname":${apply(stringify, undefined, [tls.sniHostname])},"trustMode":"runtime-default-pki","zenonChainIdentityAuthenticated":false},"version":1}`;
+}
+
+function sourcePolicyCommitment(policy) {
+  const hash = createHash('sha256');
+  apply(hashUpdate, hash, [`${SOURCE_POLICY_DOMAIN}\0`, 'ascii']);
+  apply(hashUpdate, hash, [canonicalSourcePolicy(policy), 'utf8']);
+  return `sha256:${apply(hashDigest, hash, ['hex'])}`;
+}
+
+export function createZenonFundingHttpsReadTransportOwner(options) {
+  let sourcePolicyDescriptor = null;
+  const receiveSourcePolicyDescriptor = freeze(function receiveSourcePolicyDescriptor(value) {
+    if (arguments.length !== 1 || sourcePolicyDescriptor !== null) invalid();
+    sourcePolicyDescriptor = value;
+  });
   const exchangeOwner = createBoundedJsonRpcHttpsExchangeOwner(
     options,
     arguments.length,
     snapshotConfiguration,
-    'dynamic_plasma',
+    'zenon_funding',
+    receiveSourcePolicyDescriptor,
   );
-  const transport = createDynamicPlasmaJsonRpcReadTransport(
+  if (sourcePolicyDescriptor === null) invalid();
+  const transport = createZenonFundingJsonRpcReadTransport(
     freeze({ exchange: exchangeOwner.exchange }),
   );
-  return freeze({ transport, close: exchangeOwner.close });
+  return freeze({
+    transport,
+    close: exchangeOwner.close,
+    sourcePolicyCommitment: sourcePolicyCommitment(sourcePolicyDescriptor),
+  });
 }
