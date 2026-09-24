@@ -19,6 +19,10 @@ import {
   submitGateBOperatorCoordinatorRun,
   waitGateBOperatorCoordinatorClosed,
 } from './gate-b-operator-coordinator-launcher.js';
+import {
+  GATE_B_RESET_EPOCH_OPERATOR_V3_ARGUMENT,
+  runGateBResetEpochOperatorV3Cli,
+} from './gate-b-reset-epoch-operator-v3-cli.js';
 
 const ERROR_CODE = 'gate_b_operator_front_end_failed';
 const PHASE_1_REQUIRED = 'GATE_B_OPERATOR_PHASE_1_INPUT_REQUIRED\n';
@@ -467,10 +471,39 @@ export async function runGateBOperatorFrontEnd(options = undefined) {
   }
 }
 
+export async function runGateBOperatorEntry(options = undefined) {
+  try {
+    const supplied = options === undefined ? {} : exactPartialOptions(options, [
+      'argv', 'runLegacy', 'runResetEpochV3',
+    ]);
+    const argv = supplied.argv ?? process.argv.slice(2);
+    const runLegacy = supplied.runLegacy ?? runGateBOperatorFrontEnd;
+    const runResetEpochV3 = supplied.runResetEpochV3 ?? runGateBResetEpochOperatorV3Cli;
+    if (!ARRAY_IS_ARRAY(argv) || IS_PROXY(argv) ||
+        GET_PROTOTYPE_OF(argv) !== Array.prototype ||
+        REFLECT_OWN_KEYS(argv).length !== argv.length + 1 ||
+        typeof runLegacy !== 'function' || IS_PROXY(runLegacy) ||
+        typeof runResetEpochV3 !== 'function' || IS_PROXY(runResetEpochV3)) fail();
+    if (argv.length === 0) {
+      return await callAsync(runLegacy, undefined, []);
+    }
+    const argument = argv.length >= 1
+      ? GET_OWN_PROPERTY_DESCRIPTOR(argv, '0')
+      : undefined;
+    if (argument && HAS_OWN(argument, 'value') && argument.enumerable === true &&
+        argument.value === GATE_B_RESET_EPOCH_OPERATOR_V3_ARGUMENT) {
+      return await callAsync(runResetEpochV3, undefined, [{ argv }]);
+    }
+    return false;
+  } catch {
+    return false;
+  }
+}
+
 async function launchDirect() {
   if (typeof process.argv[1] !== 'string' ||
       pathToFileURL(process.argv[1]).href !== import.meta.url) return;
-  process.exitCode = await runGateBOperatorFrontEnd() ? 0 : 1;
+  process.exitCode = await runGateBOperatorEntry() ? 0 : 1;
 }
 
 void launchDirect().catch(() => { process.exitCode = 1; });
