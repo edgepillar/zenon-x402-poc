@@ -111,6 +111,77 @@ export const OPERATOR_TRUSTED_PUBLIC_TESTNET_NON_CLAIMS = FREEZE({
   productionReadiness: false,
 });
 
+export const PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_PROFILE_NAME =
+  'public-testnet-dynamic-plasma-epoch-2026-09-23t12-35-56-816z-v1';
+
+export const PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_EVENT_ID =
+  '2026-09-23T12:35:56.816Z';
+
+export const PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_WSS_ENDPOINT =
+  'wss://rpc.testnet.zenon.info/';
+
+export const PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_HTTPS_JSON_RPC_ENDPOINT =
+  'https://rpc.testnet.zenon.info/';
+
+export const PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_SDK_NETWORK_ID = '3';
+
+export const PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_OPERATOR_TRUST_ACKNOWLEDGEMENT =
+  'I_UNDERSTAND_THIS_DYNAMIC_PLASMA_TESTNET_EPOCH_IS_OPERATOR_TRUSTED_AND_NOT_CANONICAL_OR_FINAL';
+
+export const PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_WSS_ACKNOWLEDGEMENT =
+  'I_UNDERSTAND_THIS_EPOCH_PROFILE_REQUIRES_THE_EXACT_PINNED_WSS_ENDPOINT_WITH_NO_PLAINTEXT_FALLBACK';
+
+export const PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_WARNING =
+  'Warning: this Dynamic Plasma public-testnet epoch profile is operator trusted; TLS does not authenticate canonical chain identity or finality.';
+
+export const PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_CHAIN_PROFILE = FREEZE({
+  version: 1,
+  chainIdentifier: '73404',
+  genesisMomentumHash: 'ec4e98634ecba550dead817daa8ddca99247708e584c8178bf5ab5c71c9b6204',
+});
+
+export const PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_PROVENANCE = FREEZE({
+  nodePlanUrl: 'https://testnet.zenon.info/node-plan.json',
+  genesisUrl: 'https://testnet.zenon.info/genesis.json',
+  endpointAdvertisementUrl: 'https://testnet.zenon.info/llms.txt',
+  nodePlanSchemaVersion: 1,
+  nodePlanEventId: PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_EVENT_ID,
+  nodePlanPublishedAt: '2026-09-23T12:35:56.816Z',
+  nodePlanFinalizedAt: '2026-09-23T12:35:51.778Z',
+  nodePlanGenesisStartAt: '2026-09-23T12:40:00.000Z',
+  nodePlanApplyAt: '2026-09-23T12:35:24.000Z',
+  nodePlanWipeData: true,
+  nodePlanGoZenonRepository: 'https://github.com/zenon-network/go-zenon.git',
+  nodePlanGoZenonRef: 'dev',
+  nodePlanGoZenonCommit: '32b96d9241a53966c31c310bd637e57562300255',
+  nodePlanDeploymentRepository: 'https://github.com/hypercore-one/deployment.git',
+  nodePlanDeploymentRef: 'main',
+  nodePlanDeploymentCommit: '0cf7877212412fe7a714ed964bd6e55fc28c7887',
+  genesisTimestampSec: 1790167200,
+  dynamicPlasmaActivated: true,
+  dynamicPlasmaEnforcementHeight: 10,
+  rpcObservationEndpoint: PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_HTTPS_JSON_RPC_ENDPOINT,
+  wssEndpoint: PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_WSS_ENDPOINT,
+  observationHeight: 2,
+  observationHash: '98b75ee5d45744bcfb6c55e3c514060fabad50a25d27a411d3d060f7f6806c94',
+  derivation: 'height-1 hash with height-2 previousHash linkage',
+  genesisMomentumHashBasis:
+    'locally recomputed from published genesis using pinned go-zenon source; matched bounded TLS height-1 read',
+  planStableAcrossBoundedReads: true,
+  heightTwoPreviousHashMatchedHeightOne: true,
+});
+
+export const PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_NON_CLAIMS = FREEZE({
+  authoritativeCurrentNetworkRelease: false,
+  signedTrustArtifact: false,
+  authenticatedRpcChainIdentity: false,
+  canonicalRemoteChainIdentity: false,
+  consensusFinality: false,
+  binaryAttestation: false,
+  verifiedFrontierLineage: false,
+  productionReadiness: false,
+});
+
 function fail(code) {
   throw new Error(code);
 }
@@ -127,6 +198,10 @@ const MOMENTUM_SDK_KEYS = FREEZE([
 const MOMENTUM_LIST_KEYS = FREEZE(['count', 'list']);
 const HASH_KEYS = FREEZE(['core']);
 const SINGLE_ITEM_ARRAY_KEYS = FREEZE(['0', 'length']);
+const DYNAMIC_PLASMA_EPOCH_SELECTION_KEYS = FREEZE([
+  'eventId', 'liveAcknowledgement', 'operatorTrustAcknowledgement',
+  'profileName', 'rpcEndpoint', 'wssAcknowledgement',
+]);
 
 function apply(fn, receiver, args) {
   return APPLY(fn, receiver, args);
@@ -489,6 +564,17 @@ const GATE_B_CURRENT_SPECIFICATION = FREEZE({
   warning: GATE_B_CURRENT_TESTNET_WARNING,
 });
 
+const DYNAMIC_PLASMA_EPOCH_SPECIFICATION = FREEZE({
+  profileName: PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_PROFILE_NAME,
+  chainProfile: PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_CHAIN_PROFILE,
+  provenance: PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_PROVENANCE,
+  observationHash: PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_PROVENANCE.observationHash,
+  operatorTrustAcknowledgement:
+    PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_OPERATOR_TRUST_ACKNOWLEDGEMENT,
+  trustMode: 'operator-trusted-public-testnet-dynamic-plasma-epoch',
+  warning: PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_WARNING,
+});
+
 async function checkPinnedHeightTwo(specification, context) {
   let expectedChainProfile;
   let zenon;
@@ -566,6 +652,7 @@ async function checkPinnedHeightTwo(specification, context) {
 const OPERATOR_TRUST_POLICIES = new WEAK_SET_CONSTRUCTOR();
 const OPERATOR_TRUST_EVIDENCE = new WEAK_SET_CONSTRUCTOR();
 const GATE_B_CURRENT_POLICIES = new WEAK_SET_CONSTRUCTOR();
+const DYNAMIC_PLASMA_EPOCH_POLICIES = new WEAK_SET_CONSTRUCTOR();
 const POLICY_SPECIFICATIONS = new WEAK_MAP_CONSTRUCTOR();
 const POLICY = FREEZE({
   profileName: OPERATOR_TRUSTED_PUBLIC_TESTNET_PROFILE_NAME,
@@ -583,11 +670,28 @@ const GATE_B_CURRENT_POLICY = FREEZE({
   chainProfile: () => cloneChainProfile(GATE_B_CURRENT_SPECIFICATION),
   observeChainTrust: context => checkPinnedHeightTwo(GATE_B_CURRENT_SPECIFICATION, context),
 });
+const DYNAMIC_PLASMA_EPOCH_POLICY = FREEZE({
+  profileName: PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_PROFILE_NAME,
+  epochEventId: PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_EVENT_ID,
+  rpcEndpoint: PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_WSS_ENDPOINT,
+  trustMode: DYNAMIC_PLASMA_EPOCH_SPECIFICATION.trustMode,
+  remoteChainAuthenticated: false,
+  warning: PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_WARNING,
+  chainProfile: () => FREEZE(cloneChainProfile(DYNAMIC_PLASMA_EPOCH_SPECIFICATION)),
+  observeChainTrust:
+    context => checkPinnedHeightTwo(DYNAMIC_PLASMA_EPOCH_SPECIFICATION, context),
+});
 weakSetAdd(OPERATOR_TRUST_POLICIES, POLICY);
 weakSetAdd(OPERATOR_TRUST_POLICIES, GATE_B_CURRENT_POLICY);
+weakSetAdd(OPERATOR_TRUST_POLICIES, DYNAMIC_PLASMA_EPOCH_POLICY);
 weakSetAdd(GATE_B_CURRENT_POLICIES, GATE_B_CURRENT_POLICY);
+weakSetAdd(DYNAMIC_PLASMA_EPOCH_POLICIES, DYNAMIC_PLASMA_EPOCH_POLICY);
 apply(WEAK_MAP_SET, POLICY_SPECIFICATIONS, [POLICY, HISTORICAL_SPECIFICATION]);
 apply(WEAK_MAP_SET, POLICY_SPECIFICATIONS, [GATE_B_CURRENT_POLICY, GATE_B_CURRENT_SPECIFICATION]);
+apply(WEAK_MAP_SET, POLICY_SPECIFICATIONS, [
+  DYNAMIC_PLASMA_EPOCH_POLICY,
+  DYNAMIC_PLASMA_EPOCH_SPECIFICATION,
+]);
 
 export function isOperatorTrustedTestnetPolicy(value) {
   return (typeof value === 'object' || typeof value === 'function') && value !== null &&
@@ -602,6 +706,11 @@ export function isOperatorTrustedTestnetEvidence(value) {
 export function isGateBCurrentTestnetPolicy(value) {
   return (typeof value === 'object' || typeof value === 'function') && value !== null &&
     !isProxy(value) && weakSetHas(GATE_B_CURRENT_POLICIES, value);
+}
+
+export function isPublicTestnetDynamicPlasmaEpochPolicy(value) {
+  return (typeof value === 'object' || typeof value === 'function') && value !== null &&
+    !isProxy(value) && weakSetHas(DYNAMIC_PLASMA_EPOCH_POLICIES, value);
 }
 
 export async function observeOperatorTrustedTestnetPolicy(policy, context) {
@@ -654,4 +763,27 @@ export function selectGateBCurrentTestnetPolicy(
     fail('testnet_live_acknowledgement_invalid');
   }
   return GATE_B_CURRENT_POLICY;
+}
+
+export function selectPublicTestnetDynamicPlasmaEpochPolicy(selection) {
+  let snapshot;
+  try {
+    snapshot = snapshotKnownObject(selection, [{
+      keys: DYNAMIC_PLASMA_EPOCH_SELECTION_KEYS,
+      prototype: 'plain',
+    }]);
+  } catch {
+    fail('public_testnet_dynamic_plasma_epoch_selection_invalid');
+  }
+  if (snapshot.profileName !== PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_PROFILE_NAME ||
+      snapshot.eventId !== PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_EVENT_ID ||
+      snapshot.rpcEndpoint !== PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_WSS_ENDPOINT ||
+      snapshot.operatorTrustAcknowledgement !==
+        PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_OPERATOR_TRUST_ACKNOWLEDGEMENT ||
+      snapshot.liveAcknowledgement !== TESTNET_LIVE_ACKNOWLEDGEMENT ||
+      snapshot.wssAcknowledgement !==
+        PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_WSS_ACKNOWLEDGEMENT) {
+    fail('public_testnet_dynamic_plasma_epoch_selection_invalid');
+  }
+  return DYNAMIC_PLASMA_EPOCH_POLICY;
 }

@@ -15,9 +15,21 @@ import {
   OPERATOR_TRUSTED_PUBLIC_TESTNET_PROFILE_NAME,
   OPERATOR_TRUSTED_PUBLIC_TESTNET_PROVENANCE,
   OPERATOR_TRUSTED_PUBLIC_TESTNET_WARNING,
+  PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_CHAIN_PROFILE,
+  PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_EVENT_ID,
+  PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_NON_CLAIMS,
+  PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_OPERATOR_TRUST_ACKNOWLEDGEMENT,
+  PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_PROFILE_NAME,
+  PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_PROVENANCE,
+  PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_SDK_NETWORK_ID,
+  PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_WARNING,
+  PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_WSS_ACKNOWLEDGEMENT,
+  PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_WSS_ENDPOINT,
   TESTNET_LIVE_ACKNOWLEDGEMENT,
   isOperatorTrustedTestnetEvidence,
   isOperatorTrustedTestnetPolicy,
+  isPublicTestnetDynamicPlasmaEpochPolicy,
+  selectPublicTestnetDynamicPlasmaEpochPolicy,
   selectOperatorTrustedTestnetPolicy,
 } from '../src/zenon/operator-trusted-testnet-profile.js';
 
@@ -63,6 +75,63 @@ function matchingContext(overrides = {}, observationCount = 10) {
         height: 10,
       },
       ...overrides,
+    },
+  };
+}
+
+function dynamicPlasmaEpochSelection(overrides = {}) {
+  return {
+    eventId: PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_EVENT_ID,
+    liveAcknowledgement: TESTNET_LIVE_ACKNOWLEDGEMENT,
+    operatorTrustAcknowledgement:
+      PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_OPERATOR_TRUST_ACKNOWLEDGEMENT,
+    profileName: PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_PROFILE_NAME,
+    rpcEndpoint: PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_WSS_ENDPOINT,
+    wssAcknowledgement:
+      PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_WSS_ACKNOWLEDGEMENT,
+    ...overrides,
+  };
+}
+
+function dynamicPlasmaEpochContext({
+  expectedChainProfile = {
+    ...PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_CHAIN_PROFILE,
+  },
+  heightTwoHash = PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_PROVENANCE.observationHash,
+  heightTwoPreviousHash =
+    PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_CHAIN_PROFILE.genesisMomentumHash,
+} = {}) {
+  const calls = [];
+  return {
+    calls,
+    context: {
+      expectedChainProfile,
+      frontierMomentum: {
+        chainIdentifier: Number(
+          PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_CHAIN_PROFILE.chainIdentifier,
+        ),
+        hash: 'f'.repeat(64),
+        height: 10,
+      },
+      zenon: {
+        ledger: {
+          getMomentumsByHeight(...args) {
+            calls.push(args);
+            return {
+              count: 10,
+              list: [{
+                version: 1,
+                chainIdentifier: Number(
+                  PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_CHAIN_PROFILE.chainIdentifier,
+                ),
+                hash: heightTwoHash,
+                previousHash: heightTwoPreviousHash,
+                height: 2,
+              }],
+            };
+          },
+        },
+      },
     },
   };
 }
@@ -235,6 +304,194 @@ test('operator-trusted profile selection is exact and has no default, alias, coe
       EXPECTED_ACKNOWLEDGEMENT,
       liveAcknowledgement,
     ));
+  }
+});
+
+test('Dynamic Plasma epoch profile is distinct, immutable, and preserves the historical profile', () => {
+  const historicalPolicy = selectOperatorTrustedTestnetPolicy(
+    EXPECTED_PROFILE_NAME,
+    EXPECTED_ACKNOWLEDGEMENT,
+    EXPECTED_LIVE_ACKNOWLEDGEMENT,
+  );
+  const policy = selectPublicTestnetDynamicPlasmaEpochPolicy(
+    dynamicPlasmaEpochSelection(),
+  );
+
+  assert.equal(historicalPolicy.profileName, EXPECTED_PROFILE_NAME);
+  assert.deepEqual(historicalPolicy.chainProfile(), EXPECTED_CHAIN_PROFILE);
+  assert.notEqual(policy, historicalPolicy);
+  assert.equal(Object.isFrozen(policy), true);
+  assert.equal(isOperatorTrustedTestnetPolicy(policy), true);
+  assert.equal(isPublicTestnetDynamicPlasmaEpochPolicy(policy), true);
+  assert.equal(policy.profileName, PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_PROFILE_NAME);
+  assert.equal(policy.epochEventId, PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_EVENT_ID);
+  assert.equal(policy.rpcEndpoint, PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_WSS_ENDPOINT);
+  assert.equal(policy.trustMode, 'operator-trusted-public-testnet-dynamic-plasma-epoch');
+  assert.equal(policy.remoteChainAuthenticated, false);
+  assert.equal(policy.warning, PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_WARNING);
+  assert.equal(PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_SDK_NETWORK_ID, '3');
+
+  const first = policy.chainProfile();
+  const second = policy.chainProfile();
+  assert.deepEqual(first, PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_CHAIN_PROFILE);
+  assert.deepEqual(second, PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_CHAIN_PROFILE);
+  assert.notEqual(first, second);
+  assert.equal(Object.isFrozen(first), true);
+  assert.throws(() => {
+    first.chainIdentifier = '3';
+  }, TypeError);
+
+  assert.equal(PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_PROVENANCE.nodePlanSchemaVersion, 1);
+  assert.equal(
+    PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_PROVENANCE.nodePlanEventId,
+    PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_EVENT_ID,
+  );
+  assert.equal(PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_PROVENANCE.dynamicPlasmaActivated, true);
+  assert.equal(PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_PROVENANCE.dynamicPlasmaEnforcementHeight, 10);
+  assert.equal(PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_PROVENANCE.observationHeight, 2);
+  assert.equal(PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_PROVENANCE.planStableAcrossBoundedReads, true);
+  assert.equal(
+    PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_PROVENANCE.heightTwoPreviousHashMatchedHeightOne,
+    true,
+  );
+  assert.match(
+    PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_CHAIN_PROFILE.genesisMomentumHash,
+    /^[0-9a-f]{64}$/,
+  );
+  assert.match(
+    PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_PROVENANCE.observationHash,
+    /^[0-9a-f]{64}$/,
+  );
+  assert.deepEqual(PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_NON_CLAIMS, {
+    authoritativeCurrentNetworkRelease: false,
+    signedTrustArtifact: false,
+    authenticatedRpcChainIdentity: false,
+    canonicalRemoteChainIdentity: false,
+    consensusFinality: false,
+    binaryAttestation: false,
+    verifiedFrontierLineage: false,
+    productionReadiness: false,
+  });
+  for (const value of [
+    PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_CHAIN_PROFILE,
+    PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_PROVENANCE,
+    PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_NON_CLAIMS,
+  ]) {
+    assert.equal(Object.isFrozen(value), true);
+  }
+});
+
+test('Dynamic Plasma epoch selection has no default, alias, wrong epoch, WS, or hostile-input fallback', () => {
+  for (const overrides of [
+    { profileName: undefined },
+    { profileName: 'testnet' },
+    { profileName: `${PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_PROFILE_NAME} ` },
+    { eventId: undefined },
+    { eventId: '2026-09-23T00:00:00.000Z' },
+    { operatorTrustAcknowledgement: OPERATOR_TRUST_ACKNOWLEDGEMENT },
+    { liveAcknowledgement: undefined },
+    { rpcEndpoint: undefined },
+    { rpcEndpoint: 'ws://rpc.testnet.zenon.info/' },
+    { rpcEndpoint: `${PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_WSS_ENDPOINT}?fallback=1` },
+    { rpcEndpoint: `${PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_WSS_ENDPOINT}#fallback` },
+    { rpcEndpoint: 'wss://user@rpc.testnet.zenon.info/' },
+    { wssAcknowledgement: undefined },
+    { wssAcknowledgement: TESTNET_LIVE_ACKNOWLEDGEMENT },
+  ]) {
+    assert.throws(() => selectPublicTestnetDynamicPlasmaEpochPolicy(
+      dynamicPlasmaEpochSelection(overrides),
+    ));
+  }
+  assert.throws(() => selectPublicTestnetDynamicPlasmaEpochPolicy(undefined));
+  assert.throws(() => selectPublicTestnetDynamicPlasmaEpochPolicy({
+    ...dynamicPlasmaEpochSelection(),
+    extra: true,
+  }));
+
+  let proxyTrapCalls = 0;
+  const proxied = new Proxy(dynamicPlasmaEpochSelection(), {
+    get() {
+      proxyTrapCalls += 1;
+      throw new Error('proxy get trap must not execute');
+    },
+    ownKeys() {
+      proxyTrapCalls += 1;
+      throw new Error('proxy ownKeys trap must not execute');
+    },
+  });
+  assert.throws(() => selectPublicTestnetDynamicPlasmaEpochPolicy(proxied));
+  assert.equal(proxyTrapCalls, 0);
+
+  let getterCalls = 0;
+  const accessor = dynamicPlasmaEpochSelection();
+  Object.defineProperty(accessor, 'eventId', {
+    enumerable: true,
+    get() {
+      getterCalls += 1;
+      return PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_EVENT_ID;
+    },
+  });
+  assert.throws(() => selectPublicTestnetDynamicPlasmaEpochPolicy(accessor));
+  assert.equal(getterCalls, 0);
+});
+
+test('Dynamic Plasma epoch observation rejects the wrong genesis or height-two identity', async () => {
+  const policy = selectPublicTestnetDynamicPlasmaEpochPolicy(
+    dynamicPlasmaEpochSelection(),
+  );
+  const matching = dynamicPlasmaEpochContext();
+  const evidence = await policy.observeChainTrust(matching.context);
+  assert.deepEqual(matching.calls, [[2, 1]]);
+  assert.equal(isOperatorTrustedTestnetEvidence(evidence), true);
+  assert.deepEqual(evidence.chainProfile, PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_CHAIN_PROFILE);
+  assert.equal(evidence.remoteChainAuthenticated, false);
+
+  const wrongGenesis = dynamicPlasmaEpochContext({
+    expectedChainProfile: {
+      ...PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_CHAIN_PROFILE,
+      genesisMomentumHash: '0'.repeat(64),
+    },
+  });
+  await assert.rejects(policy.observeChainTrust(wrongGenesis.context));
+  assert.deepEqual(wrongGenesis.calls, []);
+
+  const wrongHeightTwo = dynamicPlasmaEpochContext({
+    heightTwoHash: '0'.repeat(64),
+  });
+  await assert.rejects(policy.observeChainTrust(wrongHeightTwo.context));
+  assert.deepEqual(wrongHeightTwo.calls, [[2, 1]]);
+
+  const wrongHeightOneLink = dynamicPlasmaEpochContext({
+    heightTwoPreviousHash: '0'.repeat(64),
+  });
+  await assert.rejects(policy.observeChainTrust(wrongHeightOneLink.context));
+  assert.deepEqual(wrongHeightOneLink.calls, [[2, 1]]);
+});
+
+test('Dynamic Plasma epoch clients and facilitators require the exact explicit WSS endpoint', () => {
+  const policy = selectPublicTestnetDynamicPlasmaEpochPolicy(
+    dynamicPlasmaEpochSelection(),
+  );
+  for (const Runtime of [ExactZenonClient, ExactZenonFacilitator]) {
+    for (const rpcUrl of [
+      undefined,
+      'ws://rpc.testnet.zenon.info/',
+      'wss://rpc.testnet.zenon.info',
+      `${PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_WSS_ENDPOINT}?fallback=1`,
+      `${PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_WSS_ENDPOINT}#fallback`,
+      'wss://user@rpc.testnet.zenon.info/',
+    ]) {
+      assert.throws(
+        () => new Runtime({ operatorTrustedChainPolicy: policy, rpcUrl }),
+        { code: 'operator_trusted_dynamic_plasma_epoch_rpc_policy_mismatch' },
+      );
+    }
+    const runtime = new Runtime({
+      operatorTrustedChainPolicy: policy,
+      rpcUrl: PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_WSS_ENDPOINT,
+    });
+    assert.equal(runtime.rpcUrl, PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_WSS_ENDPOINT);
+    assert.equal(runtime.operatorTrustedChainPolicy, policy);
   }
 });
 

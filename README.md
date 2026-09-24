@@ -45,7 +45,7 @@ Resource server / facilitator
     | journal lookup and retry reconciliation
     | per-payer settlement ordering
     | globally owned SDK session
-    | explicit operator-trusted historical observation (non-authenticating)
+    | explicit operator-trusted pinned observation (non-authenticating)
     | sync, asset, frontier and unconfirmed checks
     | publishRawTransaction()
     | RPC reconciliation until Momentum inclusion is observed
@@ -117,6 +117,7 @@ This pure slice itself has no durable store, RPC, TLS, SDK session, timer, envir
 The separately imported `src/service-credit-zenon-funding-observation-producer.js` accepts bounded node-shaped Momentum DTOs in three closed forms: legacy v1 without Dynamic Plasma prices, Dynamic-Plasma-capable v1 with both prices equal to canonical numeric zero, and v2 with both prices present as safe nonnegative integers. The DP-capable forms require the RPC-normalized empty `data` string produced by the reviewed nil-`[]byte` projection; JSON `null`, nonempty base64 data, partial price fields, unsupported versions, and JSON negative zero in either new price field are rejected before observer-store mutation. The previously pinned worker, Momentum DTO, and ledger RPC projection are reviewed source expectations, not live-node evidence.
 
 Within one supplied bundle, increasing heights may move from v1 to v2 but not back, a historical v1 inclusion below the transition remains admissible, and same-height DP-capable claims must match completely. After the bounded DTO, target, and coverage checks establish a complete non-behind admission, the producer summarizes every admitted Momentum into `maxV1Height` and `minV2Height` and invokes the durable guard before any page or inclusion mutation. The first such bundle under state schema v2 bootstraps protection; no claim is made about version history before that point. Compatible bounds merge monotonically and exact compatible replay performs no envelope update. A crossing version claim atomically increments the observer revision, enters terminal `MOMENTUM_VERSION_CONFLICT` quarantine, and invalidates a PREPARED or READY outbox. Source-unavailable, missing-checkpoint, and behind results do not learn bounds or invalidate the outbox. The guard retains no DTO hash, prices, producer, signature, or other same-version identity across bundles, so it does not claim arbitrary cross-bundle DTO equality. Live Dynamic Plasma activation remains `NO-GO` pending independent qualification of the exact binary, genesis, spork, and profile; authenticated live source and chain identity; and post-enforcement v2/nonzero-price evidence.
+The operator-trusted 2026-09-23 profile does not satisfy those independent qualification, authentication, or post-enforcement evidence gates.
 
 `src/service-credit-zenon-funding-observation-source-owner.js` is the one-shot, default-off composition boundary. It now requires the exact frozen owner surface `{ transport: { callRead }, close, sourcePolicyCommitment }`, and the commitment must exactly equal the immutable authority/source binding. A missing field, an old two-field injected owner, or a mismatched commitment is rejected during construction before any transport read, close call, or observer-store mutation. This intentional incompatibility prevents the previously injectable transport shape from silently acquiring the new policy meaning.
 
@@ -424,13 +425,25 @@ npm run server
 npm run buyer -- http://127.0.0.1:8402/paid
 ```
 
-## Operator-trusted historical testnet mode
+## Operator-trusted testnet profiles
 
-The command-line entry points expose one exact, opt-in historical testnet profile. It is derived from the height-2 example in `zenon-network/znn-wiki` at the immutable 2021-12-17 source revision recorded in `src/zenon/operator-trusted-testnet-profile.js`. The profile name, the existing testnet-only acknowledgement, and a separate operator-trust acknowledgement must all match exactly before the server constructs a requirement or listens and before the buyer makes its initial request. There is no default, `current`, `latest`, or generic `testnet` alias. Chain-profile fields and trust-artifact URLs cannot be supplied through environment variables.
+### Preserved historical profile
+
+The command-line entry points preserve the exact, opt-in historical testnet profile. It is derived from the height-2 example in `zenon-network/znn-wiki` at the immutable 2021-12-17 source revision recorded in `src/zenon/operator-trusted-testnet-profile.js`. The profile name, the existing testnet-only acknowledgement, and a separate operator-trust acknowledgement must all match exactly before the server constructs a requirement or listens and before the buyer makes its initial request. There is no default, `current`, `latest`, or generic `testnet` alias. Chain-profile fields and trust-artifact URLs cannot be supplied through environment variables.
 
 Inside the owned SDK session, the policy requires one exact height-2 identity tuple: version, height, chain identifier, Momentum hash, and predecessor must match the pinned source, and the later height query cannot report a total below the previously observed frontier height. Missing or malformed evidence, and honest mismatches or resets that alter that tuple, fail before signing or publication. A matching tuple is still an unsigned node self-report under operator trust. Forks after height 2 and disconnected or malicious RPC views are not detected. The result is not an authoritative current-network release, RPC authentication, canonical remote-chain identity, or verified linkage from the historical observation to the frontier. The policy uses the distinct `operatorTrustedChainPolicy` constructor field, produces explicit non-authenticating evidence, and never produces an `authenticatedProfile` result.
 
 No live payment or real-node evidence is claimed by this offline profile integration itself. The later observed Gate-B run described below was a separate operator action and does not retroactively make this integration a live-evidence claim.
+
+### Distinct 2026-09-23 Dynamic Plasma epoch profile
+
+The separate immutable profile `public-testnet-dynamic-plasma-epoch-2026-09-23t12-35-56-816z-v1` pins the published 2026-09-23 testnet epoch without replacing or reinterpreting the historical profile. Its provenance records the exact published node-plan event and immutable source commits, the matching published genesis timestamp and chain identifier, the activated Dynamic Plasma genesis entry with enforcement height 10, the height-1 Momentum identity used as the chain profile's genesis identity, and the linked exact height-2 Momentum identity. The advertised public HTTPS endpoint was used only for a bounded read-only pinning check after the node plan and genesis were checked for consistency. A separately verified pinned-source genesis calculation matched that height-1 identity.
+
+Selection is closed and has no default or alias. `ZENON_CHAIN_PROFILE_NAME`, `ZENON_DYNAMIC_PLASMA_EPOCH_EVENT_ID`, `ZENON_OPERATOR_TRUST_ACK`, `ZENON_LIVE_ACK`, `ZENON_DYNAMIC_PLASMA_WSS_ACK`, and `ZENON_RPC_URL` must all be present as own data properties with the profile's exact values. The RPC value is exactly `wss://rpc.testnet.zenon.info/`; plaintext `ws`, omission, alternate hosts or spellings, credentials, queries, fragments, extra paths, and implicit fallback are rejected. The operator-trust and WSS acknowledgements are distinct from the preserved historical acknowledgement family. Hostile proxies, accessors, unknown profile names, and mixed local-devnet inputs fail before runtime loading.
+
+Import, profile construction, and selection perform no network, wallet, signing, payment, publication, or evidence action. The ordinary client and facilitator constructors require the same explicit exact WSS value whenever this policy is supplied, so direct construction cannot fall back to a plaintext or environment-selected endpoint. This addition does not register or activate a Gate-B runner, live-evidence path, faucet, service-credit path, package script, or default mode.
+
+At runtime, the common operator-trusted observer still makes only the injected exact height-2 read and requires its hash and height-1 predecessor to match the pinned tuple. TLS endpoint validation and a matching node self-report do not authenticate Zenon chain identity, canonicality, finality, binary provenance, post-enforcement Dynamic Plasma behavior, recipient receipt, spendability, or production readiness. The profile is construction and selection policy, not Gate-B live-run evidence.
 
 ### Offline local four-node devnet profile artifact
 
@@ -704,7 +717,7 @@ The resource server independently requires `upfront` before settlement or delive
 
 The complete selected requirement, including this profile, is committed by the payment-intent digest in the signed account block. The signed block's `chainIdentifier` must equal the profile value.
 
-`network: "zenon:testnet"` is only an experimental descriptive label. It is not a CAIP-2 claim and does not authenticate a chain. Exact chain identity would require both the chain identifier and the genesis identity to be authenticated and linked to the observed frontier. The operator-trusted historical policy, configured SDK network ID, and node self-reports do not supply that evidence.
+`network: "zenon:testnet"` is only an experimental descriptive label. It is not a CAIP-2 claim and does not authenticate a chain. Exact chain identity would require both the chain identifier and the genesis identity to be authenticated and linked to the observed frontier. The operator-trusted profiles, configured SDK network ID, and node self-reports do not supply that evidence.
 
 Mock mode uses `network: "zenon:mock"` and an explicitly reserved synthetic profile. That profile is rejected for live requirements.
 
@@ -785,7 +798,7 @@ const reconciled = await reconcilePayment(recoverableResult);
 
 ### Node-dependent checks
 
-For the current operator-trusted policy, the facilitator requires `SyncState.SyncDone`, the exact historical height-2 identity tuple, and agreement between the frontier Momentum chain identifier, requirement profile, and signed block. It then validates non-native token metadata, checks the payer frontier, and inspects all unconfirmed pages implied by the node's `Count` value. Inspection is bounded to 200 blocks and fails closed for malformed, inconsistent, excessive or unavailable results. A page-zero recheck detects some concurrent changes, but it is not an atomic snapshot. A future authenticated implementation belongs in the separate authenticated-policy path; operator-trusted evidence cannot be promoted into it.
+For a selected operator-trusted public-testnet policy, the facilitator requires `SyncState.SyncDone`, that policy's exact height-2 identity tuple, and agreement between the frontier Momentum chain identifier, requirement profile, and signed block. It then validates non-native token metadata, checks the payer frontier, and inspects all unconfirmed pages implied by the node's `Count` value. Inspection is bounded to 200 blocks and fails closed for malformed, inconsistent, excessive or unavailable results. A page-zero recheck detects some concurrent changes, but it is not an atomic snapshot. A future authenticated implementation belongs in the separate authenticated-policy path; operator-trusted evidence cannot be promoted into it.
 
 RPC polling remains authoritative for inclusion observation. Subscriptions are wake-up hints only and are cleaned up by closing the owned connection.
 
@@ -829,7 +842,7 @@ A request that starts while activation is pending keeps the previous snapshot. O
 - Hardware-wallet support is not implemented.
 - The planner, wallet, Plasma, payment-mechanism, chain-profile, and settlement-repository boundaries are not wired into the active live Zenon transaction path.
 - No supported public unsigned-preparation or canonical-account-block-hash SDK API is consumed.
-- The only shipped live profile is an operator-trusted historical observation; no authenticated live chain profile ships.
+- The shipped public-testnet profiles are operator-trusted pinned observations; no authenticated live chain profile ships.
 - The RPC node remains a trust boundary; no SPV or checkpoint verification is implemented.
 - The active live-settlement journal and payer queues coordinate one process on one host only. The separate offline service-credit SQLite store serializes local writers across processes on one reliable local filesystem, but it is not integrated into that live path and supplies no distributed coordination.
 - Other facilitators, buyer-side concurrent preparation and external publishers can still advance the same payer frontier.
@@ -929,7 +942,7 @@ src/
                               closed readiness-only family dispatcher
     operator-trusted-local-devnet-profile.js
                               offline local-devnet artifact boundary
-    operator-trusted-testnet-profile.js  historical CLI trust policy
+    operator-trusted-testnet-profile.js  immutable public-testnet trust policies
     wallet-adapter.js         additive wallet boundary
     transaction-planner.js    additive planner boundary
     plasma-strategy.js        additive Plasma boundary
