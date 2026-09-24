@@ -23,7 +23,9 @@ import {
   SettlementJournal,
 } from './settlement-journal.js';
 import { invokeLegacySdk105SignedComposite } from './zenon/internal/legacy-sdk-1-0-5-signed-composite.js';
+import { classifyDynamicPlasmaCompatibility } from './zenon/dynamic-plasma-compatibility.js';
 import {
+  PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_PROVENANCE,
   PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_WSS_ENDPOINT,
   isPublicTestnetDynamicPlasmaEpochPolicy,
   isOperatorTrustedTestnetPolicy,
@@ -1201,6 +1203,193 @@ export async function assertAssetExists(zenon, sdk, tokenStandard, callRead = (_
   if (!token || token.tokenStandard?.toString() !== tokenStandard.toString()) safetyError('asset_not_found');
 }
 
+function dynamicPlasmaGuardFailed() {
+  safetyError('dynamic_plasma_compatibility_guard_failed');
+}
+
+function ownEnumerableDataDescriptor(value, field, required = true) {
+  let descriptor;
+  try {
+    descriptor = REFLECT_APPLY(GET_OWN_PROPERTY_DESCRIPTOR, undefined, [value, field]);
+  } catch {
+    dynamicPlasmaGuardFailed();
+  }
+  if (descriptor === undefined) {
+    if (required) dynamicPlasmaGuardFailed();
+    return undefined;
+  }
+  if (descriptor.enumerable !== true ||
+      !REFLECT_APPLY(HAS_OWN, undefined, [descriptor, 'value'])) {
+    dynamicPlasmaGuardFailed();
+  }
+  return descriptor;
+}
+
+function observedMomentumVersionDescriptor(frontierMomentum) {
+  if (frontierMomentum === null || typeof frontierMomentum !== 'object' ||
+      REFLECT_APPLY(IS_PROXY, undefined, [frontierMomentum])) {
+    dynamicPlasmaGuardFailed();
+  }
+  return ownEnumerableDataDescriptor(frontierMomentum, 'version');
+}
+
+function snapshotRawDynamicPlasmaFrontier(value, expectedChainIdentifier) {
+  if (value === null || typeof value !== 'object' ||
+      REFLECT_APPLY(ARRAY_IS_ARRAY, undefined, [value]) ||
+      REFLECT_APPLY(IS_PROXY, undefined, [value])) {
+    dynamicPlasmaGuardFailed();
+  }
+  const chainIdentifier = ownEnumerableDataDescriptor(value, 'chainIdentifier').value;
+  const version = ownEnumerableDataDescriptor(value, 'version').value;
+  const fusionPrice = ownEnumerableDataDescriptor(value, 'nextFusionPrice', false);
+  const workPrice = ownEnumerableDataDescriptor(value, 'nextWorkPrice', false);
+  if (chainIdentifier !== expectedChainIdentifier ||
+      (fusionPrice === undefined) !== (workPrice === undefined) ||
+      (version !== 1 && (fusionPrice === undefined || workPrice === undefined))) {
+    dynamicPlasmaGuardFailed();
+  }
+  return {
+    height: ownEnumerableDataDescriptor(value, 'height').value,
+    hash: ownEnumerableDataDescriptor(value, 'hash').value,
+    version,
+    nextFusionPrice: fusionPrice === undefined ? 0 : fusionPrice.value,
+    nextWorkPrice: workPrice === undefined ? 0 : workPrice.value,
+  };
+}
+
+function snapshotDynamicPlasmaRpcObservation(value) {
+  if (value === null || typeof value !== 'object' ||
+      REFLECT_APPLY(ARRAY_IS_ARRAY, undefined, [value]) ||
+      REFLECT_APPLY(IS_PROXY, undefined, [value])) {
+    dynamicPlasmaGuardFailed();
+  }
+  return {
+    availablePlasma: ownEnumerableDataDescriptor(value, 'availablePlasma').value,
+    basePlasma: ownEnumerableDataDescriptor(value, 'basePlasma').value,
+    requiredDifficulty: ownEnumerableDataDescriptor(value, 'requiredDifficulty').value,
+  };
+}
+
+async function dynamicPlasmaGuardRead(callRead, operation, execute) {
+  try {
+    return await callRead(operation, execute);
+  } catch (error) {
+    const runtimeCode = readRuntimeFailureCode(error);
+    if (runtimeCode === LIVE_RUNTIME_ERROR_CODES.READ_TIMEOUT ||
+        runtimeCode === LIVE_RUNTIME_ERROR_CODES.POISONED) throw error;
+    dynamicPlasmaGuardFailed();
+  }
+}
+
+async function readRawDynamicPlasmaFrontier(zenon, callRead, operation) {
+  let client;
+  let sendRequest;
+  try {
+    client = zenon.client;
+    if (client === null || (typeof client !== 'object' && typeof client !== 'function') ||
+        REFLECT_APPLY(IS_PROXY, undefined, [client])) {
+      dynamicPlasmaGuardFailed();
+    }
+    sendRequest = client.sendRequest;
+  } catch {
+    dynamicPlasmaGuardFailed();
+  }
+  if (typeof sendRequest !== 'function') dynamicPlasmaGuardFailed();
+  return dynamicPlasmaGuardRead(
+    callRead,
+    operation,
+    () => REFLECT_APPLY(sendRequest, client, ['ledger.getFrontierMomentum', []]),
+  );
+}
+
+async function assertLegacyPreparedBlockDynamicPlasmaCompatible({
+  zenon,
+  sdk,
+  prepared,
+  readinessFrontier,
+  operatorTrustedChainPolicy,
+  callRead,
+}) {
+  const readinessVersion = observedMomentumVersionDescriptor(readinessFrontier);
+  if (readinessVersion.value === 1) {
+    if (isPublicTestnetDynamicPlasmaEpochPolicy(operatorTrustedChainPolicy)) {
+      let readinessHeight;
+      try {
+        readinessHeight = ownEnumerableDataDescriptor(readinessFrontier, 'height').value;
+      } catch {
+        dynamicPlasmaGuardFailed();
+      }
+      if (readinessHeight >=
+          PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_PROVENANCE.dynamicPlasmaEnforcementHeight) {
+        dynamicPlasmaGuardFailed();
+      }
+    }
+    return;
+  }
+  if (readinessVersion.value !== 2) dynamicPlasmaGuardFailed();
+
+  const beforeRaw = await readRawDynamicPlasmaFrontier(
+    zenon,
+    callRead,
+    'dynamicPlasma.ledger.getFrontierMomentum.before',
+  );
+  let powParam;
+  try {
+    powParam = new sdk.GetRequiredPowParam(
+      prepared.address,
+      prepared.blockType,
+      prepared.toAddress,
+      prepared.data,
+    );
+  } catch {
+    dynamicPlasmaGuardFailed();
+  }
+  const rpcRaw = await dynamicPlasmaGuardRead(
+    callRead,
+    'dynamicPlasma.embedded.plasma.getRequiredPoWForAccountBlock',
+    () => zenon.embedded.plasma.getRequiredPoWForAccountBlock(powParam),
+  );
+  const afterRaw = await readRawDynamicPlasmaFrontier(
+    zenon,
+    callRead,
+    'dynamicPlasma.ledger.getFrontierMomentum.after',
+  );
+
+  let compatibility;
+  try {
+    compatibility = classifyDynamicPlasmaCompatibility({
+      chainProfileMatch: { classification: 'MATCH' },
+      beforeFrontier: snapshotRawDynamicPlasmaFrontier(
+        beforeRaw,
+        prepared.chainIdentifier,
+      ),
+      rpcObservation: snapshotDynamicPlasmaRpcObservation(rpcRaw),
+      afterFrontier: snapshotRawDynamicPlasmaFrontier(
+        afterRaw,
+        prepared.chainIdentifier,
+      ),
+    });
+  } catch {
+    dynamicPlasmaGuardFailed();
+  }
+
+  const quote = compatibility.quote;
+  let acknowledgedHash;
+  try {
+    acknowledgedHash = prepared.momentumAcknowledged.hash.toString();
+  } catch {
+    dynamicPlasmaGuardFailed();
+  }
+  if (compatibility.classification !== 'DP_ACTIVE' || quote === null ||
+      quote.sdk105BasePlasmaUnderpricingDetected === true ||
+      acknowledgedHash !== quote.frontier.hash ||
+      prepared.momentumAcknowledged.height !== quote.frontier.height ||
+      prepared.fusedPlasma !== quote.selectedFusedPlasma ||
+      prepared.difficulty !== quote.requiredDifficulty) {
+    dynamicPlasmaGuardFailed();
+  }
+}
+
 /** Complete the node's paginated unconfirmed-block snapshot or fail closed. */
 export async function assertNoConflictingUnconfirmedBlocks({
   ledger,
@@ -1541,7 +1730,7 @@ export class ExactZenonClient {
       lifecycleObserver: this.lifecycleObserver,
       lifecycleRole: 'buyer',
       lifecycleObservations: CLIENT_LIFECYCLE_OBSERVATIONS.get(this),
-      work: async ({ sdk, zenon, chainId, finishReadiness }, scope) => {
+      work: async ({ sdk, zenon, chainId, frontierMomentum, finishReadiness }, scope) => {
         let keyPair;
         try {
           const tokenStandard = offlineTokenStandard;
@@ -1580,6 +1769,14 @@ export class ExactZenonClient {
             'buyer',
             'prepare_block_finished',
           );
+          await assertLegacyPreparedBlockDynamicPlasmaCompatible({
+            zenon,
+            sdk,
+            prepared,
+            readinessFrontier: frontierMomentum,
+            operatorTrustedChainPolicy: this.operatorTrustedChainPolicy,
+            callRead,
+          });
           if (prepared.chainIdentifier !== chainId ||
               String(prepared.chainIdentifier) !== accepted.extra.zenonChain.chainIdentifier) {
             safetyError('prepared_chain_mismatch');
