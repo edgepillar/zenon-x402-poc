@@ -383,10 +383,15 @@ export async function preflightGateBResetEpochArtifactsV3(binding, injected = un
           !sameGeneration(records[index].stat, pathStat) ||
           !sameGeneration(records[index].stat, descriptorStat)) fail();
     }
-    return Object.freeze({
+    const result = Object.freeze({
       schemaVersion: 3,
       status: GATE_B_RESET_EPOCH_STATUS_V3.PREFLIGHT_VALID,
     });
+    if (!await closeRecords(records)) fail();
+    records = [];
+    await workspace.handle.close();
+    workspace = undefined;
+    return result;
   } catch {
     fail();
   } finally {
