@@ -9,6 +9,11 @@ import {
   assertZenonNodeReady,
 } from '../src/zenon-payment.js';
 import {
+  assertOperatorTrustedChainEvidence,
+  assertOperatorTrustedChainPolicy,
+  observeOperatorTrustedChainPolicy,
+} from '../src/zenon/operator-trusted-chain-policy.js';
+import {
   OPERATOR_TRUST_ACKNOWLEDGEMENT,
   OPERATOR_TRUSTED_PUBLIC_TESTNET_CHAIN_PROFILE,
   OPERATOR_TRUSTED_PUBLIC_TESTNET_NON_CLAIMS,
@@ -649,7 +654,7 @@ test('Dynamic Plasma reset epoch is a distinct immutable offline profile and pre
     previousEpochPolicy.chainProfile().genesisMomentumHash,
   );
   assert.equal(Object.isFrozen(resetEpochPolicy), true);
-  assert.equal(isOperatorTrustedTestnetPolicy(resetEpochPolicy), true);
+  assert.equal(isOperatorTrustedTestnetPolicy(resetEpochPolicy), false);
   assert.equal(
     isPublicTestnetDynamicPlasmaResetEpochPolicy(resetEpochPolicy),
     true,
@@ -664,6 +669,7 @@ test('Dynamic Plasma reset epoch is a distinct immutable offline profile and pre
   );
   assert.equal(resetEpochPolicy.offlineOnly, true);
   assert.equal(Object.hasOwn(resetEpochPolicy, 'rpcEndpoint'), false);
+  assert.equal(Object.hasOwn(resetEpochPolicy, 'observeChainTrust'), false);
   assert.equal(
     resetEpochPolicy.evidenceWssEndpoint,
     PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_WSS_ENDPOINT,
@@ -773,63 +779,47 @@ test('Dynamic Plasma reset epoch selection has no default, alias, fallback, or h
   assert.equal(getterCalls, 0);
 });
 
-test('Dynamic Plasma reset epoch accepts height-two v1 linkage and rejects profile drift offline', async () => {
+test('Dynamic Plasma reset epoch is rejected by generic policy, observation, evidence, and payment families', async () => {
   const policy = selectPublicTestnetDynamicPlasmaResetEpochPolicy(
     dynamicPlasmaResetEpochSelection(),
   );
   const matching = dynamicPlasmaResetEpochContext();
-  const evidence = await policy.observeChainTrust(matching.context);
 
-  assert.deepEqual(matching.calls, [[2, 1]]);
+  assert.equal(isPublicTestnetDynamicPlasmaResetEpochPolicy(policy), true);
+  assert.equal(isOperatorTrustedTestnetPolicy(policy), false);
+  assert.equal(Object.hasOwn(policy, 'observeChainTrust'), false);
   assert.equal(
     PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_PROVENANCE.heightTwoVersion,
     1,
   );
-  assert.equal(isOperatorTrustedTestnetEvidence(evidence), true);
-  assert.equal(evidence.remoteChainAuthenticated, false);
-  assert.equal(
-    evidence.trustMode,
-    'operator-trusted-public-testnet-dynamic-plasma-reset-epoch',
+  assert.throws(
+    () => assertOperatorTrustedChainPolicy(policy, policy.chainProfile()),
+    { code: 'operator_trusted_chain_policy_invalid' },
   );
-  assert.deepEqual(
-    evidence.chainProfile,
-    PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_CHAIN_PROFILE,
+  await assert.rejects(
+    observeOperatorTrustedChainPolicy(policy, matching.context),
+    { code: 'operator_trusted_chain_policy_invalid' },
+  );
+  assert.deepEqual(matching.calls, []);
+
+  const fabricatedEvidence = Object.freeze({
+    trustMode: policy.trustMode,
+    remoteChainAuthenticated: false,
+    chainProfile: policy.chainProfile(),
+    observationHeight: 2,
+  });
+  assert.equal(isOperatorTrustedTestnetEvidence(fabricatedEvidence), false);
+  assert.throws(
+    () => assertOperatorTrustedChainEvidence(policy, fabricatedEvidence),
+    { code: 'operator_trusted_chain_policy_invalid' },
   );
 
-  const previousEpoch = dynamicPlasmaResetEpochContext({
-    expectedChainProfile: {
-      ...PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_CHAIN_PROFILE,
-    },
-  });
-  await assert.rejects(policy.observeChainTrust(previousEpoch.context));
-  assert.deepEqual(previousEpoch.calls, []);
-
-  const wrongGenesis = dynamicPlasmaResetEpochContext({
-    expectedChainProfile: {
-      ...PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_CHAIN_PROFILE,
-      genesisMomentumHash: '0'.repeat(64),
-    },
-  });
-  await assert.rejects(policy.observeChainTrust(wrongGenesis.context));
-  assert.deepEqual(wrongGenesis.calls, []);
-
-  const wrongHeightTwo = dynamicPlasmaResetEpochContext({
-    heightTwoHash: '0'.repeat(64),
-  });
-  await assert.rejects(policy.observeChainTrust(wrongHeightTwo.context));
-  assert.deepEqual(wrongHeightTwo.calls, [[2, 1]]);
-
-  const wrongHeightOneLink = dynamicPlasmaResetEpochContext({
-    heightTwoPreviousHash: '0'.repeat(64),
-  });
-  await assert.rejects(policy.observeChainTrust(wrongHeightOneLink.context));
-  assert.deepEqual(wrongHeightOneLink.calls, [[2, 1]]);
-
-  const wrongHeightTwoVersion = dynamicPlasmaResetEpochContext({
-    heightTwoVersion: 2,
-  });
-  await assert.rejects(policy.observeChainTrust(wrongHeightTwoVersion.context));
-  assert.deepEqual(wrongHeightTwoVersion.calls, [[2, 1]]);
+  for (const Runtime of [ExactZenonClient, ExactZenonFacilitator]) {
+    assert.throws(
+      () => new Runtime({ operatorTrustedChainPolicy: policy }),
+      { code: 'operator_trusted_chain_policy_invalid' },
+    );
+  }
 });
 
 
