@@ -23,6 +23,8 @@ const { parseGateBResetEpochPolicyPreflight } = preflightModule;
 const ERROR_CODE = 'gate_b_reset_epoch_policy_preflight_invalid';
 const MODULE_NAME = 'gate-b-reset-epoch-policy-preflight.js';
 const CLI_MODULE_NAME = 'gate-b-reset-epoch-policy-preflight-cli.js';
+const ENTRY_MODULE_NAME = 'gate-b-reset-epoch-pre-wallet-entry-v3.js';
+const OPERATOR_V3_CLI_MODULE_NAME = 'gate-b-reset-epoch-operator-v3-cli.js';
 const CLI_SCRIPT_NAME = 'preflight:gate-b-reset-epoch-policy';
 const CLI_SUCCESS =
   'GATE_B_RESET_EPOCH_POLICY_PREFLIGHT_VALID_RUN_NOT_AUTHORIZED\n';
@@ -416,7 +418,7 @@ test('CLI fails closed when fixed output cannot be written', async () => {
   assert.equal(shortWrite, false);
 });
 
-test('only the new CLI imports the parser and existing active entrypoints cannot reach either', () => {
+test('only reset boundaries import the parser and ordinary runtime roots cannot reach them', () => {
   const moduleUrl = new URL(`../src/${MODULE_NAME}`, import.meta.url);
   const source = readFileSync(moduleUrl, 'utf8');
   const selectorSource = readFileSync(
@@ -444,7 +446,12 @@ test('only the new CLI imports the parser and existing active entrypoints cannot
     .filter(name => imports(readFileSync(new URL(name, sourceDirectory), 'utf8'))
       .includes(`./${MODULE_NAME}`))
     .sort();
-  assert.deepEqual(directImporters, [CLI_MODULE_NAME]);
+  assert.deepEqual(directImporters, [CLI_MODULE_NAME, ENTRY_MODULE_NAME]);
+  assert.equal(
+    readFileSync(new URL('../src/gate-b-operator-front-end.js', import.meta.url), 'utf8')
+      .includes(OPERATOR_V3_CLI_MODULE_NAME),
+    true,
+  );
 
   const roots = new Set([
     '../src/buyer.js',
@@ -467,6 +474,7 @@ test('only the new CLI imports the parser and existing active entrypoints cannot
     visited.add(href);
     assert.equal(href.endsWith(`/${MODULE_NAME}`), false);
     assert.equal(href.endsWith(`/${CLI_MODULE_NAME}`), false);
+    assert.equal(href.endsWith(`/${ENTRY_MODULE_NAME}`), false);
     const url = new URL(href);
     if (!existsSync(url)) continue;
     const activeSource = readFileSync(url, 'utf8');
