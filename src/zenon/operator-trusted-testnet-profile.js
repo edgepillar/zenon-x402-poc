@@ -182,6 +182,85 @@ export const PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_NON_CLAIMS = FREEZE({
   productionReadiness: false,
 });
 
+export const PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_PROFILE_NAME =
+  "public-testnet-dynamic-plasma-reset-epoch-2026-09-24t11-14-13-445z-v1";
+
+export const PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_EVENT_ID =
+  "2026-09-24T11:14:13.445Z";
+
+export const PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_WSS_ENDPOINT =
+  "wss://rpc.testnet.zenon.info";
+
+export const PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_SDK_NETWORK_ID = '3';
+
+export const PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_OPERATOR_TRUST_ACKNOWLEDGEMENT =
+  'I_UNDERSTAND_THIS_DYNAMIC_PLASMA_RESET_TESTNET_EPOCH_IS_OPERATOR_TRUSTED_AND_NOT_CANONICAL_OR_FINAL';
+
+export const PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_WSS_ACKNOWLEDGEMENT =
+  'I_UNDERSTAND_THIS_RESET_EPOCH_PROFILE_PINS_THE_EXACT_ADVERTISED_WSS_EVIDENCE_ENDPOINT_WITH_NO_FALLBACK';
+
+export const PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_WARNING =
+  'Warning: this offline Dynamic Plasma reset-epoch profile is operator trusted; TLS does not authenticate canonical chain identity or finality.';
+
+export const PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_CHAIN_PROFILE = FREEZE({
+  version: 1,
+  chainIdentifier: "73404",
+  genesisMomentumHash: "d0585e9dc3890b47941719a40e39b2e71172f468a41e206f31541344cb9f4683",
+});
+
+export const PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_PROVENANCE = FREEZE({
+  nodePlanUrl: "https://testnet.zenon.info/node-plan.json",
+  genesisUrl: "https://testnet.zenon.info/genesis.json",
+  endpointAdvertisementUrl: "https://testnet.zenon.info/llms.txt",
+  nodePlanSchemaVersion: 1,
+  nodePlanEventId: PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_EVENT_ID,
+  nodePlanPublishedAt: "2026-09-24T11:14:13.445Z",
+  nodePlanFinalizedAt: "2026-09-24T11:14:09.756Z",
+  nodePlanGenesisStartAt: "2026-09-24T11:15:00.000Z",
+  nodePlanApplyAt: "2026-09-24T11:13:23.000Z",
+  nodePlanWipeData: true,
+  nodePlanGoZenonRepository: "https://github.com/zenon-network/go-zenon.git",
+  nodePlanGoZenonRef: "dev",
+  nodePlanGoZenonCommit: "32b96d9241a53966c31c310bd637e57562300255",
+  nodePlanDeploymentRepository: "https://github.com/hypercore-one/deployment.git",
+  nodePlanDeploymentRef: "main",
+  nodePlanDeploymentCommit: "0cf7877212412fe7a714ed964bd6e55fc28c7887",
+  genesisTimestampSec: 1790248500,
+  dynamicPlasmaActivated: true,
+  dynamicPlasmaEnforcementHeight: 10,
+  evidenceWssEndpoint: PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_WSS_ENDPOINT,
+  observationHeight: 2,
+  observationHash: "25b012e4771551a55ce64971fad3907d5950bcb6b4719340db87fbeb7f6e9e27",
+  heightTwoVersion: 1,
+  derivation: 'height-1 hash with height-2 previousHash linkage',
+  genesisMomentumHashBasis:
+    'independently recomputed from published genesis using the exact node-plan-pinned go-zenon source and an official checksum-verified temporary Go toolchain; matched a bounded TLS WSS height-1 read',
+  genesisMomentumHashRecomputedFromPinnedSource: true,
+  temporaryGoToolchainChecksumVerified: true,
+  planStableAcrossBoundedReads: true,
+  publicInputsStableBeforeEdit: true,
+  advertisedWssEndpointMatched: true,
+  heightTwoPreviousHashMatchedHeightOne: true,
+  previousEpochProfileMismatch: true,
+  postEnforcementFrontierObserved: true,
+  frontierAtOrAboveEnforcementHeight: true,
+  postEnforcementFrontierVersion: 2,
+  nextFusionPricePositive: true,
+  nextWorkPricePositive: true,
+});
+
+export const PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_NON_CLAIMS = FREEZE({
+  authoritativeCurrentNetworkRelease: false,
+  signedTrustArtifact: false,
+  authenticatedRpcChainIdentity: false,
+  canonicalRemoteChainIdentity: false,
+  consensusFinality: false,
+  binaryAttestation: false,
+  verifiedFrontierLineage: false,
+  liveActivationAuthorized: false,
+  productionReadiness: false,
+});
+
 function fail(code) {
   throw new Error(code);
 }
@@ -201,6 +280,10 @@ const SINGLE_ITEM_ARRAY_KEYS = FREEZE(['0', 'length']);
 const DYNAMIC_PLASMA_EPOCH_SELECTION_KEYS = FREEZE([
   'eventId', 'liveAcknowledgement', 'operatorTrustAcknowledgement',
   'profileName', 'rpcEndpoint', 'wssAcknowledgement',
+]);
+const DYNAMIC_PLASMA_RESET_EPOCH_SELECTION_KEYS = FREEZE([
+  'eventId', 'evidenceWssEndpoint', 'liveAcknowledgement',
+  'operatorTrustAcknowledgement', 'profileName', 'wssAcknowledgement',
 ]);
 
 function apply(fn, receiver, args) {
@@ -575,6 +658,18 @@ const DYNAMIC_PLASMA_EPOCH_SPECIFICATION = FREEZE({
   warning: PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_WARNING,
 });
 
+const DYNAMIC_PLASMA_RESET_EPOCH_SPECIFICATION = FREEZE({
+  profileName: PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_PROFILE_NAME,
+  chainProfile: PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_CHAIN_PROFILE,
+  provenance: PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_PROVENANCE,
+  observationHash:
+    PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_PROVENANCE.observationHash,
+  operatorTrustAcknowledgement:
+    PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_OPERATOR_TRUST_ACKNOWLEDGEMENT,
+  trustMode: 'operator-trusted-public-testnet-dynamic-plasma-reset-epoch',
+  warning: PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_WARNING,
+});
+
 async function checkPinnedHeightTwo(specification, context) {
   let expectedChainProfile;
   let zenon;
@@ -653,6 +748,7 @@ const OPERATOR_TRUST_POLICIES = new WEAK_SET_CONSTRUCTOR();
 const OPERATOR_TRUST_EVIDENCE = new WEAK_SET_CONSTRUCTOR();
 const GATE_B_CURRENT_POLICIES = new WEAK_SET_CONSTRUCTOR();
 const DYNAMIC_PLASMA_EPOCH_POLICIES = new WEAK_SET_CONSTRUCTOR();
+const DYNAMIC_PLASMA_RESET_EPOCH_POLICIES = new WEAK_SET_CONSTRUCTOR();
 const POLICY_SPECIFICATIONS = new WEAK_MAP_CONSTRUCTOR();
 const POLICY = FREEZE({
   profileName: OPERATOR_TRUSTED_PUBLIC_TESTNET_PROFILE_NAME,
@@ -681,11 +777,26 @@ const DYNAMIC_PLASMA_EPOCH_POLICY = FREEZE({
   observeChainTrust:
     context => checkPinnedHeightTwo(DYNAMIC_PLASMA_EPOCH_SPECIFICATION, context),
 });
+const DYNAMIC_PLASMA_RESET_EPOCH_POLICY = FREEZE({
+  profileName: PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_PROFILE_NAME,
+  epochEventId: PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_EVENT_ID,
+  evidenceWssEndpoint: PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_WSS_ENDPOINT,
+  offlineOnly: true,
+  trustMode: DYNAMIC_PLASMA_RESET_EPOCH_SPECIFICATION.trustMode,
+  remoteChainAuthenticated: false,
+  warning: PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_WARNING,
+  chainProfile:
+    () => FREEZE(cloneChainProfile(DYNAMIC_PLASMA_RESET_EPOCH_SPECIFICATION)),
+});
 weakSetAdd(OPERATOR_TRUST_POLICIES, POLICY);
 weakSetAdd(OPERATOR_TRUST_POLICIES, GATE_B_CURRENT_POLICY);
 weakSetAdd(OPERATOR_TRUST_POLICIES, DYNAMIC_PLASMA_EPOCH_POLICY);
 weakSetAdd(GATE_B_CURRENT_POLICIES, GATE_B_CURRENT_POLICY);
 weakSetAdd(DYNAMIC_PLASMA_EPOCH_POLICIES, DYNAMIC_PLASMA_EPOCH_POLICY);
+weakSetAdd(
+  DYNAMIC_PLASMA_RESET_EPOCH_POLICIES,
+  DYNAMIC_PLASMA_RESET_EPOCH_POLICY,
+);
 apply(WEAK_MAP_SET, POLICY_SPECIFICATIONS, [POLICY, HISTORICAL_SPECIFICATION]);
 apply(WEAK_MAP_SET, POLICY_SPECIFICATIONS, [GATE_B_CURRENT_POLICY, GATE_B_CURRENT_SPECIFICATION]);
 apply(WEAK_MAP_SET, POLICY_SPECIFICATIONS, [
@@ -711,6 +822,11 @@ export function isGateBCurrentTestnetPolicy(value) {
 export function isPublicTestnetDynamicPlasmaEpochPolicy(value) {
   return (typeof value === 'object' || typeof value === 'function') && value !== null &&
     !isProxy(value) && weakSetHas(DYNAMIC_PLASMA_EPOCH_POLICIES, value);
+}
+
+export function isPublicTestnetDynamicPlasmaResetEpochPolicy(value) {
+  return (typeof value === 'object' || typeof value === 'function') && value !== null &&
+    !isProxy(value) && weakSetHas(DYNAMIC_PLASMA_RESET_EPOCH_POLICIES, value);
 }
 
 export async function observeOperatorTrustedTestnetPolicy(policy, context) {
@@ -786,4 +902,29 @@ export function selectPublicTestnetDynamicPlasmaEpochPolicy(selection) {
     fail('public_testnet_dynamic_plasma_epoch_selection_invalid');
   }
   return DYNAMIC_PLASMA_EPOCH_POLICY;
+}
+
+export function selectPublicTestnetDynamicPlasmaResetEpochPolicy(selection) {
+  let snapshot;
+  try {
+    snapshot = snapshotKnownObject(selection, [{
+      keys: DYNAMIC_PLASMA_RESET_EPOCH_SELECTION_KEYS,
+      prototype: 'plain',
+    }]);
+  } catch {
+    fail('public_testnet_dynamic_plasma_reset_epoch_selection_invalid');
+  }
+  if (snapshot.profileName !==
+        PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_PROFILE_NAME ||
+      snapshot.eventId !== PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_EVENT_ID ||
+      snapshot.evidenceWssEndpoint !==
+        PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_WSS_ENDPOINT ||
+      snapshot.operatorTrustAcknowledgement !==
+        PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_OPERATOR_TRUST_ACKNOWLEDGEMENT ||
+      snapshot.liveAcknowledgement !== TESTNET_LIVE_ACKNOWLEDGEMENT ||
+      snapshot.wssAcknowledgement !==
+        PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_WSS_ACKNOWLEDGEMENT) {
+    fail('public_testnet_dynamic_plasma_reset_epoch_selection_invalid');
+  }
+  return DYNAMIC_PLASMA_RESET_EPOCH_POLICY;
 }
