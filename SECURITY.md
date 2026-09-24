@@ -84,7 +84,7 @@ An unexpected SDK connection-cleanup failure is handled the same way for future-
 
 Publication results are classified by evidence:
 
-- `VALIDATED` — offline validation succeeded; after node-dependent checks, the exact signed block and authorization identity are journaled before any publication attempt;
+- `VALIDATED` — offline validation succeeded; the exact signed block and authorization identity are journaled before any publication attempt, although a reset-epoch facilitator quote recheck can still fail after this durable state is written;
 - `SUBMISSION_ACKNOWLEDGED` — publication returned or the exact block was observed without Momentum inclusion details;
 - `SUBMISSION_OUTCOME_UNKNOWN` — publication returned its asynchronous request promise, that promise rejected, and reconciliation did not observe the exact block; every such rejection remains uncertain, not only a timeout or transport failure;
 - `MOMENTUM_INCLUDED` — the queried node returned the exact block with `confirmationDetail`;
@@ -94,6 +94,8 @@ Publication results are classified by evidence:
 The implementation does not use `FINAL`. `MOMENTUM_INCLUDED` does not prove irreversible finality, independent canonicality, or the recipient's receive block. Merchant receipt remains separate.
 
 An uncertain publication produces a distinct HTTP `409` recovery result. Clients must reuse and reconcile the same signed payment and must not automatically create a replacement payment. The resource is not released while the payment outcome is uncertain.
+
+The reset-epoch execution policy has the same conservative boundary when the facilitator's final coherent quote no longer matches an already signed block. On a first attempt, the facilitator durably retains that exact block as `VALIDATED`, publishes nothing, releases no resource, and returns `retrySamePayment: true`. This requires manual reconciliation of the retained payment. Zenon supplies no enforced block expiry or cancellation here, and the signed block could be broadcast outside this facilitator, so the mismatch is not evidence that the block is harmless, cancelled, or safe to replace. The retry classification describes recovery of that exact journaled payment; it does not establish the safety of another payment.
 
 ### Observed-confirmation delivery threshold
 

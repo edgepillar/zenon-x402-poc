@@ -1,7 +1,19 @@
 import assert from 'node:assert/strict';
+import { mkdtemp, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import test from 'node:test';
 import * as sdk from 'znn-typescript-sdk';
-import { ExactZenonClient } from '../src/zenon-payment.js';
+import {
+  ExactZenonClient,
+  ExactZenonFacilitator,
+  preflightZenonPayment,
+} from '../src/zenon-payment.js';
+import {
+  DELIVERY_STATES,
+  EVIDENCE_STATES,
+  SettlementJournal,
+} from '../src/settlement-journal.js';
 import {
   PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_CHAIN_PROFILE,
   PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_EVENT_ID,
@@ -10,7 +22,16 @@ import {
   PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_PROVENANCE,
   PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_WSS_ACKNOWLEDGEMENT,
   PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_WSS_ENDPOINT,
+  PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_CHAIN_PROFILE,
+  PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_EVENT_ID,
+  PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_OPERATOR_TRUST_ACKNOWLEDGEMENT,
+  PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_PROFILE_NAME,
+  PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_PROVENANCE,
+  PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_WSS_ACKNOWLEDGEMENT,
+  PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_WSS_ENDPOINT,
   selectPublicTestnetDynamicPlasmaEpochPolicy,
+  selectPublicTestnetDynamicPlasmaResetEpochExecutionPolicy,
+  selectPublicTestnetDynamicPlasmaResetEpochPolicy,
 } from '../src/zenon/operator-trusted-testnet-profile.js';
 
 const PROFILE = Object.freeze({
@@ -84,12 +105,87 @@ function momentum(label, {
   };
 }
 
+function accountInfo(address) {
+  const token = new sdk.Token(
+    'Synthetic',
+    'SYN',
+    '',
+    1n,
+    8,
+    address,
+    sdk.ZNN_ZTS,
+    1n,
+    false,
+    false,
+    false,
+  );
+  return new sdk.AccountInfo(address, 0, {
+    [sdk.ZNN_ZTS.toString()]: new sdk.BalanceInfoListItem(token, 1n),
+  });
+}
+
+function observedPaymentBlock(transaction, {
+  included = false,
+  numConfirmations = 1,
+  momentumHeight = transaction.momentumAcknowledged.height + 1,
+  momentumHash = sdk.Hash.digest(Buffer.from('synthetic-reset-recovery-inclusion')),
+  momentumTimestamp = 1,
+} = {}) {
+  const block = sdk.AccountBlockTemplate.fromJson(transaction);
+  block.publicKey = Buffer.from(transaction.publicKey, 'base64');
+  block.signature = Buffer.from(transaction.signature, 'base64');
+  if (included) {
+    block.confirmationDetail = {
+      numConfirmations,
+      momentumHeight,
+      momentumHash,
+      momentumTimestamp,
+    };
+  }
+  return block;
+}
+
+async function settlementJournal(t) {
+  const root = await mkdtemp(join(tmpdir(), 'dynamic-plasma-reset-recovery-'));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  return new SettlementJournal({
+    directory: join(root, 'journal'),
+    allowedRoot: root,
+  });
+}
+
+async function persistPayment(journal, payload, accepted, required, evidenceState) {
+  const preflight = await preflightZenonPayment(payload, accepted, required);
+  await journal.putValidated({
+    authorizationKey: preflight.authorizationKey,
+    transactionHash: preflight.transactionHash,
+    chainProfile: preflight.chainProfile,
+    intentDigest: preflight.intentDigest,
+    resourceIdentity: preflight.resourceIdentity,
+    resourceDigest: preflight.resourceDigest,
+    payer: preflight.payer,
+    signedAccountBlock: preflight.signedAccountBlock,
+  });
+  if (evidenceState !== EVIDENCE_STATES.VALIDATED) {
+    await journal.updateEvidence(
+      preflight.authorizationKey,
+      preflight.transactionHash,
+      evidenceState,
+    );
+  }
+  return preflight;
+}
+
 function installSyntheticRpc(t) {
   const zenon = sdk.Zenon.getInstance();
   const original = {
     initialize: zenon.initialize,
     prepareBlock: zenon.prepareBlock,
     getFrontierMomentum: zenon.ledger.getFrontierMomentum,
+    getAccountBlockByHash: zenon.ledger.getAccountBlockByHash,
+    getAccountInfoByAddress: zenon.ledger.getAccountInfoByAddress,
+    getUnconfirmedBlocksByAddress: zenon.ledger.getUnconfirmedBlocksByAddress,
+    subscribe: zenon.subscribe,
     clearConnection: zenon.clearConnection,
     fromMnemonic: sdk.KeyStore.fromMnemonic,
     sign: sdk.KeyPair.prototype.sign,
@@ -113,11 +209,16 @@ function installSyntheticRpc(t) {
     state.counters = {
       frontier: 0,
       heightTwo: 0,
+      wallet: 0,
       plasma: 0,
       prepare: 0,
       sign: 0,
       pow: 0,
       publish: 0,
+      lookup: 0,
+      balance: 0,
+      unconfirmed: 0,
+      subscribe: 0,
     };
     state.prepared = null;
     state.rpcOperations = [];
@@ -183,6 +284,32 @@ function installSyntheticRpc(t) {
     }
     return frontier;
   };
+  zenon.ledger.getAccountBlockByHash = async requestedHash => {
+    state.counters.lookup += 1;
+    state.rpcOperations.push('ledger.getAccountBlockByHash');
+    const observed = typeof state.scenario.observed === 'function'
+      ? state.scenario.observed(state.counters.lookup, requestedHash)
+      : state.scenario.observed;
+    return observed ?? null;
+  };
+  zenon.ledger.getAccountInfoByAddress = async address => {
+    state.counters.balance += 1;
+    state.rpcOperations.push('ledger.getAccountInfoByAddress');
+    return state.scenario.accountInfo?.(address, state.counters.balance) ??
+      accountInfo(address);
+  };
+  zenon.ledger.getUnconfirmedBlocksByAddress = async () => {
+    state.counters.unconfirmed += 1;
+    state.rpcOperations.push('ledger.getUnconfirmedBlocksByAddress');
+    return { count: 0, list: [] };
+  };
+  zenon.subscribe = {
+    toAccountBlocksByAddress: async () => {
+      state.counters.subscribe += 1;
+      state.rpcOperations.push('subscribe.toAccountBlocksByAddress');
+      return { onNotification() {} };
+    },
+  };
   zenon.prepareBlock = async function observedPrepare(block, keyPair) {
     state.counters.prepare += 1;
     const prepared = await original.prepareBlock.call(this, block, keyPair);
@@ -194,6 +321,7 @@ function installSyntheticRpc(t) {
   };
   sdk.KeyStore.fromMnemonic = () => ({
     getKeyPair() {
+      state.counters.wallet += 1;
       state.keyByte += 1;
       return sdk.KeyPair.fromPrivateKey(Buffer.alloc(32, state.keyByte));
     },
@@ -211,6 +339,10 @@ function installSyntheticRpc(t) {
     zenon.initialize = original.initialize;
     zenon.prepareBlock = original.prepareBlock;
     zenon.ledger.getFrontierMomentum = original.getFrontierMomentum;
+    zenon.ledger.getAccountBlockByHash = original.getAccountBlockByHash;
+    zenon.ledger.getAccountInfoByAddress = original.getAccountInfoByAddress;
+    zenon.ledger.getUnconfirmedBlocksByAddress = original.getUnconfirmedBlocksByAddress;
+    zenon.subscribe = original.subscribe;
     zenon.clearConnection = original.clearConnection;
     sdk.KeyStore.fromMnemonic = original.fromMnemonic;
     sdk.KeyPair.prototype.sign = original.sign;
@@ -233,8 +365,12 @@ async function createPayment({
   profile = PROFILE,
   operatorTrustedChainPolicy,
   rpcUrl,
+  minimumMomentumConfirmations,
 } = {}) {
   const accepted = requirement(profile);
+  if (minimumMomentumConfirmations !== undefined) {
+    accepted.extra.minimumMomentumConfirmations = minimumMomentumConfirmations;
+  }
   const required = challenge(accepted);
   const options = {
     mnemonic: 'synthetic-offline-placeholder',
@@ -276,6 +412,33 @@ function dynamicPlasmaEpochPolicy() {
       PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_OPERATOR_TRUST_ACKNOWLEDGEMENT,
     liveAcknowledgement: ENVIRONMENT.ZENON_LIVE_ACK,
     wssAcknowledgement: PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_WSS_ACKNOWLEDGEMENT,
+  });
+}
+
+function dynamicPlasmaResetEpochExecutionPolicy() {
+  return selectPublicTestnetDynamicPlasmaResetEpochExecutionPolicy({
+    profileName: PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_PROFILE_NAME,
+    eventId: PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_EVENT_ID,
+    rpcEndpoint: PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_WSS_ENDPOINT,
+    operatorTrustAcknowledgement:
+      PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_OPERATOR_TRUST_ACKNOWLEDGEMENT,
+    liveAcknowledgement: ENVIRONMENT.ZENON_LIVE_ACK,
+    wssAcknowledgement:
+      PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_WSS_ACKNOWLEDGEMENT,
+  });
+}
+
+function dynamicPlasmaResetEpochOfflinePolicy() {
+  return selectPublicTestnetDynamicPlasmaResetEpochPolicy({
+    profileName: PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_PROFILE_NAME,
+    eventId: PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_EVENT_ID,
+    evidenceWssEndpoint:
+      PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_WSS_ENDPOINT,
+    operatorTrustAcknowledgement:
+      PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_OPERATOR_TRUST_ACKNOWLEDGEMENT,
+    liveAcknowledgement: ENVIRONMENT.ZENON_LIVE_ACK,
+    wssAcknowledgement:
+      PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_WSS_ACKNOWLEDGEMENT,
   });
 }
 
@@ -843,5 +1006,680 @@ test('active buyer fails closed around SDK 1.0.5 Dynamic Plasma pricing', async 
     assert.equal(fixture.state.counters.prepare, 1);
     assert.equal(fixture.state.counters.sign, 1);
     assert.equal(fixture.state.counters.publish, 0);
+  });
+});
+
+test('reset epoch execution policy guards new execution and permits exact recovery', async t => {
+  const fixture = installSyntheticRpc(t);
+  const profile = PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_CHAIN_PROFILE;
+  const policy = dynamicPlasmaResetEpochExecutionPolicy();
+  const chainIdentifier = Number(profile.chainIdentifier);
+  const enforcementHeight =
+    PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_PROVENANCE
+      .dynamicPlasmaEnforcementHeight;
+  const validHeight = enforcementHeight + 1;
+  const validHeightTwo = {
+    ...momentum('reset-execution-height-two', {
+      height: 2,
+      version: 1,
+      chainIdentifier,
+      nextFusionPrice: 0,
+      nextWorkPrice: 0,
+    }),
+    hash:
+      PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_PROVENANCE.observationHash,
+    previousHash: profile.genesisMomentumHash,
+  };
+  const stable = momentum('reset-execution-stable', {
+    height: validHeight,
+    version: 2,
+    chainIdentifier,
+    nextFusionPrice: 1000,
+    nextWorkPrice: 1000,
+  });
+  const reset = ({
+    frontier = () => stable,
+    heightTwo = validHeightTwo,
+    plasma = {
+      availablePlasma: 21000,
+      basePlasma: 21000,
+      requiredDifficulty: 0,
+    },
+    syncCurrentHeight = validHeight,
+    observed = null,
+    account = undefined,
+  } = {}) => fixture.reset({
+    frontier,
+    heightTwo,
+    momentumCount: syncCurrentHeight,
+    plasma,
+    observed,
+    accountInfo: account,
+    syncInfo: {
+      state: sdk.SyncState.SyncDone,
+      currentHeight: syncCurrentHeight,
+      targetHeight: syncCurrentHeight,
+    },
+  });
+  const pay = options => createPayment({
+    profile,
+    operatorTrustedChainPolicy: policy,
+    rpcUrl: PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_WSS_ENDPOINT,
+    ...options,
+  });
+  const rejectedWithoutPayload = async (run = pay) => {
+    let payloadReturned = false;
+    const outcome = await run().then(
+      () => {
+        payloadReturned = true;
+        return { status: 'fulfilled' };
+      },
+      error => ({ status: 'rejected', code: error?.code }),
+    );
+    assert.equal(outcome.status, 'rejected');
+    assert.equal(payloadReturned, false);
+    return outcome.code;
+  };
+
+  await t.test('a matching tuple and stable post-enforcement v2 prices return one payload', async () => {
+    reset();
+
+    const payload = await pay();
+
+    assert.equal(
+      payload.payload.transaction.momentumAcknowledged.height,
+      validHeight,
+    );
+    assert.equal(fixture.state.counters.heightTwo, 1);
+    assert.equal(fixture.state.counters.wallet, 1);
+    assert.equal(fixture.state.counters.sign, 1);
+    assert.equal(fixture.state.counters.publish, 0);
+  });
+
+  await t.test('facilitator verify enforces the reset execution policy without publication', async t => {
+    reset();
+    const payload = await pay();
+    const accepted = payload.accepted;
+    const required = challenge(accepted);
+    const preflight = await preflightZenonPayment(
+      payload,
+      accepted,
+      required,
+    );
+    const journal = await settlementJournal(t);
+    const facilitator = new ExactZenonFacilitator({
+      journal,
+      environment: ENVIRONMENT,
+      operatorTrustedChainPolicy: policy,
+      rpcUrl: PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_WSS_ENDPOINT,
+      rpcTimeoutMs: 100,
+    });
+    const verify = async options => {
+      reset(options);
+      const result = await facilitator.verify(payload, accepted, required);
+      assert.equal(fixture.state.counters.wallet, 0);
+      assert.equal(fixture.state.counters.sign, 0);
+      assert.equal(fixture.state.counters.publish, 0);
+      return result;
+    };
+
+    await t.test('the exact tuple, version, prices, and quote are valid', async () => {
+      const result = await verify();
+
+      assert.deepEqual({
+        isValid: result.isValid,
+        payer: result.payer,
+      }, {
+        isValid: true,
+        payer: preflight.payer,
+      });
+    });
+
+    const invalidCases = [
+      {
+        name: 'a wrong height-two tuple is invalid',
+        options: {
+          heightTwo: { ...validHeightTwo, hash: '0'.repeat(64) },
+        },
+        invalidReason: 'operator_trusted_chain_observation_unavailable',
+      },
+      {
+        name: 'post-enforcement v1 is invalid',
+        options: {
+          frontier: () => momentum('reset-verify-v1', {
+            height: validHeight,
+            version: 1,
+            chainIdentifier,
+            nextFusionPrice: 0,
+            nextWorkPrice: 0,
+          }),
+        },
+        invalidReason: 'dynamic_plasma_compatibility_guard_failed',
+      },
+      {
+        name: 'zero v2 prices are invalid',
+        options: {
+          frontier: () => momentum('reset-verify-zero-price', {
+            height: validHeight,
+            version: 2,
+            chainIdentifier,
+            nextFusionPrice: 0,
+            nextWorkPrice: 0,
+          }),
+        },
+        invalidReason: 'dynamic_plasma_compatibility_guard_failed',
+      },
+      {
+        name: 'a changed coherent quote is invalid',
+        options: {
+          plasma: {
+            availablePlasma: 20000,
+            basePlasma: 21000,
+            requiredDifficulty: 1500000,
+          },
+        },
+        invalidReason: 'dynamic_plasma_compatibility_guard_failed',
+      },
+    ];
+    for (const entry of invalidCases) {
+      await t.test(entry.name, async () => {
+        const result = await verify(entry.options);
+
+        assert.deepEqual({
+          isValid: result.isValid,
+          invalidReason: result.invalidReason,
+          payer: result.payer,
+        }, {
+          isValid: false,
+          invalidReason: entry.invalidReason,
+          payer: '',
+        });
+      });
+    }
+
+    assert.deepEqual((await journal.load()).records, []);
+    assert.throws(
+      () => new ExactZenonFacilitator({
+        journal,
+        environment: ENVIRONMENT,
+        operatorTrustedChainPolicy: dynamicPlasmaResetEpochOfflinePolicy(),
+        rpcUrl: PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_WSS_ENDPOINT,
+        rpcTimeoutMs: 100,
+      }),
+      { code: 'operator_trusted_chain_policy_invalid' },
+    );
+    assert.equal(fixture.state.counters.publish, 0);
+  });
+
+  await t.test('wrong and mixed-epoch height-two tuples fail before wallet or signing activity', async t => {
+    const cases = [
+      {
+        name: 'wrong height-two hash',
+        heightTwo: { ...validHeightTwo, hash: '0'.repeat(64) },
+      },
+      {
+        name: 'wrong height-one predecessor',
+        heightTwo: { ...validHeightTwo, previousHash: '0'.repeat(64) },
+      },
+      {
+        name: 'previous epoch tuple',
+        heightTwo: {
+          ...validHeightTwo,
+          hash: PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_PROVENANCE.observationHash,
+          previousHash:
+            PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_CHAIN_PROFILE
+              .genesisMomentumHash,
+        },
+      },
+    ];
+    for (const entry of cases) {
+      await t.test(entry.name, async () => {
+        reset({ heightTwo: entry.heightTwo });
+
+        await rejectedWithoutPayload();
+
+        assert.equal(fixture.state.counters.heightTwo, 1);
+        assert.equal(fixture.state.counters.wallet, 0);
+        assert.equal(fixture.state.counters.prepare, 0);
+        assert.equal(fixture.state.counters.sign, 0);
+        assert.equal(fixture.state.counters.publish, 0);
+      });
+    }
+  });
+
+  await t.test('v1 after enforcement fails before wallet or signing activity', async () => {
+    const legacy = momentum('reset-execution-v1', {
+      height: validHeight,
+      version: 1,
+      chainIdentifier,
+      nextFusionPrice: 0,
+      nextWorkPrice: 0,
+    });
+    reset({ frontier: () => legacy });
+
+    const code = await rejectedWithoutPayload();
+
+    assert.equal(code, 'dynamic_plasma_compatibility_guard_failed');
+    assert.equal(fixture.state.counters.wallet, 0);
+    assert.equal(fixture.state.counters.prepare, 0);
+    assert.equal(fixture.state.counters.sign, 0);
+    assert.equal(fixture.state.counters.publish, 0);
+  });
+
+  await t.test('zero v2 prices fail before wallet or signing activity', async () => {
+    const zeroPriced = momentum('reset-execution-zero-price', {
+      height: validHeight,
+      version: 2,
+      chainIdentifier,
+      nextFusionPrice: 0,
+      nextWorkPrice: 0,
+    });
+    reset({ frontier: () => zeroPriced });
+
+    const code = await rejectedWithoutPayload();
+
+    assert.equal(code, 'dynamic_plasma_compatibility_guard_failed');
+    assert.equal(fixture.state.counters.wallet, 0);
+    assert.equal(fixture.state.counters.prepare, 0);
+    assert.equal(fixture.state.counters.sign, 0);
+    assert.equal(fixture.state.counters.publish, 0);
+  });
+
+  await t.test('frontier drift after signing returns no payload', async () => {
+    const drifted = momentum('reset-execution-drifted', {
+      height: validHeight + 1,
+      version: 2,
+      chainIdentifier,
+      nextFusionPrice: 1000,
+      nextWorkPrice: 1000,
+    });
+    reset({ frontier: call => call < 4 ? stable : drifted });
+
+    const code = await rejectedWithoutPayload();
+
+    assert.equal(code, 'dynamic_plasma_compatibility_guard_failed');
+    assert.equal(fixture.state.counters.wallet, 1);
+    assert.equal(fixture.state.counters.sign, 1);
+    assert.equal(fixture.state.counters.publish, 0);
+  });
+
+  await t.test('a changed coherent quote after signing returns no payload', async () => {
+    reset({
+      plasma: call => call === 1
+        ? { availablePlasma: 21000, basePlasma: 21000, requiredDifficulty: 0 }
+        : {
+          availablePlasma: 20000,
+          basePlasma: 21000,
+          requiredDifficulty: 1500000,
+        },
+    });
+
+    const code = await rejectedWithoutPayload();
+
+    assert.equal(code, 'dynamic_plasma_compatibility_guard_failed');
+    assert.equal(fixture.state.counters.wallet, 1);
+    assert.equal(fixture.state.counters.sign, 1);
+    assert.equal(fixture.state.counters.publish, 0);
+  });
+
+  await t.test('a first-attempt quote mismatch retains the payment for same-payment reconciliation', async t => {
+    reset();
+    const payload = await pay();
+    const accepted = payload.accepted;
+    const required = challenge(accepted);
+    const preflight = await preflightZenonPayment(
+      payload,
+      accepted,
+      required,
+    );
+    const changedQuote = {
+      availablePlasma: 20000,
+      basePlasma: 21000,
+      requiredDifficulty: 1500000,
+    };
+
+    reset({ plasma: changedQuote });
+    const journal = await settlementJournal(t);
+    const facilitator = new ExactZenonFacilitator({
+      journal,
+      environment: ENVIRONMENT,
+      operatorTrustedChainPolicy: policy,
+      rpcUrl: PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_WSS_ENDPOINT,
+      rpcTimeoutMs: 100,
+    });
+
+    const result = await facilitator.settle(payload, accepted, required);
+
+    assert.equal(result.success, false);
+    assert.equal(
+      result.errorReason,
+      'dynamic_plasma_compatibility_guard_failed',
+    );
+    assert.equal(result.state, EVIDENCE_STATES.VALIDATED);
+    assert.equal(result.authorizationKey, preflight.authorizationKey);
+    assert.equal(result.transaction, preflight.transactionHash);
+    assert.equal(result.payer, preflight.payer);
+    assert.equal(result.retrySamePayment, true);
+    assert.equal(result.deliveryState, DELIVERY_STATES.NONE);
+    assert.equal(fixture.state.counters.wallet, 0);
+    assert.equal(fixture.state.counters.sign, 0);
+    assert.equal(fixture.state.counters.publish, 0);
+
+    const durable = await journal.get(
+      preflight.authorizationKey,
+      preflight.transactionHash,
+    );
+    assert.deepEqual(Object.keys(durable).sort(), [
+      'authorizationKey',
+      'cachedResponse',
+      'chainProfile',
+      'createdAt',
+      'deliveryState',
+      'evidenceState',
+      'intentDigest',
+      'momentumEvidence',
+      'payer',
+      'resourceDigest',
+      'resourceIdentity',
+      'signedAccountBlock',
+      'transactionHash',
+      'updatedAt',
+    ].sort());
+    assert.deepEqual({
+      authorizationKey: durable.authorizationKey,
+      transactionHash: durable.transactionHash,
+      chainProfile: durable.chainProfile,
+      intentDigest: durable.intentDigest,
+      resourceIdentity: durable.resourceIdentity,
+      resourceDigest: durable.resourceDigest,
+      payer: durable.payer,
+      signedAccountBlock: durable.signedAccountBlock,
+      evidenceState: durable.evidenceState,
+      momentumEvidence: durable.momentumEvidence,
+      deliveryState: durable.deliveryState,
+      cachedResponse: durable.cachedResponse,
+    }, {
+      authorizationKey: preflight.authorizationKey,
+      transactionHash: preflight.transactionHash,
+      chainProfile: preflight.chainProfile,
+      intentDigest: preflight.intentDigest,
+      resourceIdentity: preflight.resourceIdentity,
+      resourceDigest: preflight.resourceDigest,
+      payer: preflight.payer,
+      signedAccountBlock: payload.payload.transaction,
+      evidenceState: EVIDENCE_STATES.VALIDATED,
+      momentumEvidence: null,
+      deliveryState: DELIVERY_STATES.NONE,
+      cachedResponse: null,
+    });
+    assert.equal(durable.createdAt, durable.updatedAt);
+    const snapshot = await journal.load();
+    assert.deepEqual(snapshot, {
+      schemaVersion: 1,
+      revision: 1,
+      records: [durable],
+    });
+  });
+
+  await t.test('acknowledged and unknown exact payments remain reconciliation-only after frontier advance', async t => {
+    for (const evidenceState of [
+      EVIDENCE_STATES.SUBMISSION_ACKNOWLEDGED,
+      EVIDENCE_STATES.SUBMISSION_OUTCOME_UNKNOWN,
+    ]) {
+      await t.test(evidenceState, async t => {
+        reset();
+        const payload = await pay({ minimumMomentumConfirmations: 2 });
+        const accepted = payload.accepted;
+        const required = challenge(accepted);
+        const journal = await settlementJournal(t);
+        const preflight = await persistPayment(
+          journal,
+          payload,
+          accepted,
+          required,
+          evidenceState,
+        );
+        const advanced = momentum('reset-recovery-submitted-advanced', {
+          height: validHeight + 1,
+          version: 2,
+          chainIdentifier,
+          nextFusionPrice: 2000,
+          nextWorkPrice: 2000,
+        });
+        reset({
+          frontier: () => advanced,
+          syncCurrentHeight: advanced.height,
+          observed: (_call, requestedHash) => {
+            assert.equal(requestedHash.toString(), preflight.transactionHash);
+            return null;
+          },
+        });
+        const facilitator = new ExactZenonFacilitator({
+          journal,
+          environment: ENVIRONMENT,
+          operatorTrustedChainPolicy: policy,
+          rpcUrl: PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_WSS_ENDPOINT,
+          rpcTimeoutMs: 100,
+        });
+
+        const result = await facilitator.settle(payload, accepted, required);
+
+        assert.equal(result.success, false);
+        assert.equal(result.errorReason, 'momentum_inclusion_timeout');
+        assert.equal(result.state, evidenceState);
+        assert.equal(result.transaction, preflight.transactionHash);
+        assert.equal(result.retrySamePayment, true);
+        assert.equal(fixture.state.counters.lookup, 1);
+        assert.equal(fixture.state.counters.plasma, 0);
+        assert.equal(fixture.state.counters.publish, 0);
+        assert.equal(fixture.state.counters.balance, 0);
+        assert.equal(fixture.state.counters.unconfirmed, 0);
+        assert.equal(fixture.state.counters.subscribe, 0);
+        const retained = await journal.get(
+          preflight.authorizationKey,
+          preflight.transactionHash,
+        );
+        assert.equal(retained.evidenceState, evidenceState);
+        assert.equal(retained.transactionHash, preflight.transactionHash);
+        assert.equal(retained.resourceDigest, preflight.resourceDigest);
+      });
+    }
+  });
+
+  await t.test('submitted exact payments recover inclusion after frontier advance without publication', async t => {
+    for (const evidenceState of [
+      EVIDENCE_STATES.SUBMISSION_ACKNOWLEDGED,
+      EVIDENCE_STATES.SUBMISSION_OUTCOME_UNKNOWN,
+    ]) {
+      await t.test(evidenceState, async t => {
+        reset();
+        const payload = await pay();
+        const accepted = payload.accepted;
+        const required = challenge(accepted);
+        const journal = await settlementJournal(t);
+        const preflight = await persistPayment(
+          journal,
+          payload,
+          accepted,
+          required,
+          evidenceState,
+        );
+        const advanced = momentum('reset-recovery-included-advanced', {
+          height: validHeight + 1,
+          version: 2,
+          chainIdentifier,
+          nextFusionPrice: 2000,
+          nextWorkPrice: 2000,
+        });
+        const included = observedPaymentBlock(payload.payload.transaction, {
+          included: true,
+        });
+        reset({
+          frontier: () => advanced,
+          syncCurrentHeight: advanced.height,
+          observed: (_call, requestedHash) => {
+            assert.equal(requestedHash.toString(), preflight.transactionHash);
+            return included;
+          },
+        });
+        const facilitator = new ExactZenonFacilitator({
+          journal,
+          environment: ENVIRONMENT,
+          operatorTrustedChainPolicy: policy,
+          rpcUrl: PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_WSS_ENDPOINT,
+          rpcTimeoutMs: 100,
+        });
+
+        const result = await facilitator.settle(payload, accepted, required);
+
+        assert.equal(result.success, true);
+        assert.equal(result.state, EVIDENCE_STATES.MOMENTUM_INCLUDED);
+        assert.equal(result.transaction, preflight.transactionHash);
+        assert.equal(fixture.state.counters.lookup, 1);
+        assert.equal(fixture.state.counters.plasma, 0);
+        assert.equal(fixture.state.counters.publish, 0);
+        const retained = await journal.get(
+          preflight.authorizationKey,
+          preflight.transactionHash,
+        );
+        assert.equal(retained.evidenceState, EVIDENCE_STATES.MOMENTUM_INCLUDED);
+        assert.equal(retained.transactionHash, preflight.transactionHash);
+        assert.equal(retained.resourceDigest, preflight.resourceDigest);
+      });
+    }
+  });
+
+  await t.test('a retained subthreshold inclusion reaches its threshold after frontier advance', async t => {
+    reset();
+    const payload = await pay({ minimumMomentumConfirmations: 2 });
+    const accepted = payload.accepted;
+    const required = challenge(accepted);
+    const journal = await settlementJournal(t);
+    const preflight = await persistPayment(
+      journal,
+      payload,
+      accepted,
+      required,
+      EVIDENCE_STATES.VALIDATED,
+    );
+    const inclusionMomentumHash = sdk.Hash.digest(
+      Buffer.from('synthetic-reset-recovery-retained-inclusion'),
+    );
+    const momentumHeight = validHeight + 1;
+    await journal.updateEvidence(
+      preflight.authorizationKey,
+      preflight.transactionHash,
+      EVIDENCE_STATES.MOMENTUM_INCLUDED,
+      {
+        observedAt: '2026-01-01T00:00:00.000Z',
+        confirmationDetail: {
+          numConfirmations: 1,
+          momentumHeight,
+          momentumHash: inclusionMomentumHash.toString(),
+          momentumTimestamp: 1,
+        },
+      },
+    );
+    const advanced = momentum('reset-recovery-retained-advanced', {
+      height: validHeight + 1,
+      version: 2,
+      chainIdentifier,
+      nextFusionPrice: 2000,
+      nextWorkPrice: 2000,
+    });
+    const included = observedPaymentBlock(payload.payload.transaction, {
+      included: true,
+      numConfirmations: 2,
+      momentumHeight,
+      momentumHash: inclusionMomentumHash,
+    });
+    reset({
+      frontier: () => advanced,
+      syncCurrentHeight: advanced.height,
+      observed: (_call, requestedHash) => {
+        assert.equal(requestedHash.toString(), preflight.transactionHash);
+        return included;
+      },
+    });
+    const facilitator = new ExactZenonFacilitator({
+      journal,
+      environment: ENVIRONMENT,
+      operatorTrustedChainPolicy: policy,
+      rpcUrl: PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_WSS_ENDPOINT,
+      rpcTimeoutMs: 100,
+    });
+
+    const result = await facilitator.settle(payload, accepted, required);
+
+    assert.equal(result.success, true);
+    assert.equal(result.state, EVIDENCE_STATES.MOMENTUM_INCLUDED);
+    assert.equal(result.transaction, preflight.transactionHash);
+    assert.equal(fixture.state.counters.lookup, 1);
+    assert.equal(fixture.state.counters.plasma, 0);
+    assert.equal(fixture.state.counters.publish, 0);
+    assert.equal(fixture.state.counters.balance, 0);
+    assert.equal(fixture.state.counters.unconfirmed, 0);
+    assert.equal(fixture.state.counters.subscribe, 0);
+    const retained = await journal.get(
+      preflight.authorizationKey,
+      preflight.transactionHash,
+    );
+    assert.equal(retained.evidenceState, EVIDENCE_STATES.MOMENTUM_INCLUDED);
+    assert.equal(retained.momentumEvidence.confirmationDetail.numConfirmations, 2);
+    assert.equal(retained.transactionHash, preflight.transactionHash);
+    assert.equal(retained.resourceDigest, preflight.resourceDigest);
+  });
+
+  await t.test('a chain-observed exact inclusion with no journal record recovers after frontier advance', async t => {
+    reset();
+    const payload = await pay();
+    const accepted = payload.accepted;
+    const required = challenge(accepted);
+    const preflight = await preflightZenonPayment(payload, accepted, required);
+    const journal = await settlementJournal(t);
+    const advanced = momentum('reset-recovery-unrecorded-advanced', {
+      height: validHeight + 1,
+      version: 2,
+      chainIdentifier,
+      nextFusionPrice: 2000,
+      nextWorkPrice: 2000,
+    });
+    const included = observedPaymentBlock(payload.payload.transaction, {
+      included: true,
+    });
+    reset({
+      frontier: () => advanced,
+      syncCurrentHeight: advanced.height,
+      observed: (_call, requestedHash) => {
+        assert.equal(requestedHash.toString(), preflight.transactionHash);
+        return included;
+      },
+    });
+    const facilitator = new ExactZenonFacilitator({
+      journal,
+      environment: ENVIRONMENT,
+      operatorTrustedChainPolicy: policy,
+      rpcUrl: PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_WSS_ENDPOINT,
+      rpcTimeoutMs: 100,
+    });
+
+    const result = await facilitator.settle(payload, accepted, required);
+
+    assert.equal(result.success, true);
+    assert.equal(result.state, EVIDENCE_STATES.MOMENTUM_INCLUDED);
+    assert.equal(result.transaction, preflight.transactionHash);
+    assert.equal(fixture.state.counters.lookup, 1);
+    assert.equal(fixture.state.counters.plasma, 0);
+    assert.equal(fixture.state.counters.publish, 0);
+    assert.equal(fixture.state.counters.balance, 0);
+    assert.equal(fixture.state.counters.unconfirmed, 0);
+    assert.equal(fixture.state.counters.subscribe, 0);
+    const retained = await journal.get(
+      preflight.authorizationKey,
+      preflight.transactionHash,
+    );
+    assert.equal(retained.evidenceState, EVIDENCE_STATES.MOMENTUM_INCLUDED);
+    assert.equal(retained.transactionHash, preflight.transactionHash);
+    assert.equal(retained.resourceDigest, preflight.resourceDigest);
   });
 });
