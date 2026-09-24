@@ -22,6 +22,7 @@
     "server": "node src/server-cli.js",
     "buyer": "node src/buyer-cli.js",
     "verify:operator-trusted-observation": "node src/operator-trusted-observation-cli.js",
+    "preflight:gate-b-reset-epoch-policy": "node src/gate-b-reset-epoch-policy-preflight-cli.js",
     "test": "node --test"
   },
   "dependencies": {
