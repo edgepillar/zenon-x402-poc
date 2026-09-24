@@ -44,8 +44,10 @@ import {
   isOperatorTrustedTestnetEvidence,
   isOperatorTrustedTestnetPolicy,
   isPublicTestnetDynamicPlasmaEpochPolicy,
+  isPublicTestnetDynamicPlasmaResetEpochExecutionPolicy,
   isPublicTestnetDynamicPlasmaResetEpochPolicy,
   selectPublicTestnetDynamicPlasmaEpochPolicy,
+  selectPublicTestnetDynamicPlasmaResetEpochExecutionPolicy,
   selectPublicTestnetDynamicPlasmaResetEpochPolicy,
   selectOperatorTrustedTestnetPolicy,
 } from '../src/zenon/operator-trusted-testnet-profile.js';
@@ -162,6 +164,20 @@ function dynamicPlasmaResetEpochSelection(overrides = {}) {
     operatorTrustAcknowledgement:
       PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_OPERATOR_TRUST_ACKNOWLEDGEMENT,
     profileName: PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_PROFILE_NAME,
+    wssAcknowledgement:
+      PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_WSS_ACKNOWLEDGEMENT,
+    ...overrides,
+  };
+}
+
+function dynamicPlasmaResetEpochExecutionSelection(overrides = {}) {
+  return {
+    eventId: PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_EVENT_ID,
+    liveAcknowledgement: TESTNET_LIVE_ACKNOWLEDGEMENT,
+    operatorTrustAcknowledgement:
+      PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_OPERATOR_TRUST_ACKNOWLEDGEMENT,
+    profileName: PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_PROFILE_NAME,
+    rpcEndpoint: PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_WSS_ENDPOINT,
     wssAcknowledgement:
       PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_WSS_ACKNOWLEDGEMENT,
     ...overrides,
@@ -819,6 +835,214 @@ test('Dynamic Plasma reset epoch is rejected by generic policy, observation, evi
       () => new Runtime({ operatorTrustedChainPolicy: policy }),
       { code: 'operator_trusted_chain_policy_invalid' },
     );
+  }
+});
+
+test('Dynamic Plasma reset epoch execution policy is distinct, explicit, and generically observable', async () => {
+  const offlinePolicy = selectPublicTestnetDynamicPlasmaResetEpochPolicy(
+    dynamicPlasmaResetEpochSelection(),
+  );
+  const previousEpochPolicy = selectPublicTestnetDynamicPlasmaEpochPolicy(
+    dynamicPlasmaEpochSelection(),
+  );
+  const executionPolicy =
+    selectPublicTestnetDynamicPlasmaResetEpochExecutionPolicy(
+      dynamicPlasmaResetEpochExecutionSelection(),
+    );
+
+  assert.notEqual(executionPolicy, offlinePolicy);
+  assert.notEqual(executionPolicy, previousEpochPolicy);
+  assert.equal(offlinePolicy.offlineOnly, true);
+  assert.equal(isOperatorTrustedTestnetPolicy(offlinePolicy), false);
+  assert.equal(isPublicTestnetDynamicPlasmaResetEpochPolicy(offlinePolicy), true);
+  assert.equal(
+    isPublicTestnetDynamicPlasmaResetEpochExecutionPolicy(offlinePolicy),
+    false,
+  );
+  assert.equal(Object.isFrozen(executionPolicy), true);
+  assert.equal(isOperatorTrustedTestnetPolicy(executionPolicy), true);
+  assert.equal(
+    isPublicTestnetDynamicPlasmaResetEpochExecutionPolicy(executionPolicy),
+    true,
+  );
+  assert.equal(
+    isPublicTestnetDynamicPlasmaResetEpochPolicy(executionPolicy),
+    false,
+  );
+  assert.equal(isPublicTestnetDynamicPlasmaEpochPolicy(executionPolicy), false);
+  assert.equal(executionPolicy.profileName,
+    PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_PROFILE_NAME);
+  assert.equal(executionPolicy.epochEventId,
+    PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_EVENT_ID);
+  assert.equal(executionPolicy.rpcEndpoint,
+    PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_WSS_ENDPOINT);
+  assert.equal(
+    executionPolicy.trustMode,
+    'operator-trusted-public-testnet-dynamic-plasma-reset-epoch-execution',
+  );
+  assert.equal(executionPolicy.remoteChainAuthenticated, false);
+  assert.equal(Object.hasOwn(executionPolicy, 'offlineOnly'), false);
+  assert.equal(Object.hasOwn(executionPolicy, 'evidenceWssEndpoint'), false);
+  assert.deepEqual(
+    executionPolicy.chainProfile(),
+    PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_CHAIN_PROFILE,
+  );
+  assert.equal(
+    assertOperatorTrustedChainPolicy(
+      executionPolicy,
+      PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_CHAIN_PROFILE,
+    ),
+    executionPolicy,
+  );
+
+  const matching = dynamicPlasmaResetEpochContext();
+  const evidence = await observeOperatorTrustedChainPolicy(
+    executionPolicy,
+    matching.context,
+  );
+  assert.deepEqual(matching.calls, [[2, 1]]);
+  assert.equal(isOperatorTrustedTestnetEvidence(evidence), true);
+  assert.equal(
+    assertOperatorTrustedChainEvidence(executionPolicy, evidence),
+    evidence,
+  );
+  assert.deepEqual(
+    evidence.chainProfile,
+    PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_CHAIN_PROFILE,
+  );
+  assert.equal(evidence.remoteChainAuthenticated, false);
+
+  const wrongTuple = dynamicPlasmaResetEpochContext({
+    heightTwoHash: '0'.repeat(64),
+  });
+  await assert.rejects(
+    observeOperatorTrustedChainPolicy(executionPolicy, wrongTuple.context),
+    { code: 'operator_trusted_chain_policy_invalid' },
+  );
+  assert.deepEqual(wrongTuple.calls, [[2, 1]]);
+});
+
+test('Dynamic Plasma reset epoch execution selection rejects defaults, aliases, mixed epochs, and endpoint substitution', () => {
+  for (const overrides of [
+    { profileName: undefined },
+    { profileName: 'testnet' },
+    { profileName: PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_PROFILE_NAME },
+    {
+      profileName:
+        `${PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_PROFILE_NAME} `,
+    },
+    { eventId: undefined },
+    { eventId: PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_EVENT_ID },
+    { rpcEndpoint: undefined },
+    { rpcEndpoint: PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_WSS_ENDPOINT },
+    { rpcEndpoint: 'ws://rpc.testnet.zenon.info' },
+    {
+      rpcEndpoint:
+        `${PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_WSS_ENDPOINT}/`,
+    },
+    {
+      rpcEndpoint:
+        `${PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_WSS_ENDPOINT}?fallback=1`,
+    },
+    {
+      rpcEndpoint:
+        `${PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_WSS_ENDPOINT}#fallback`,
+    },
+    { operatorTrustAcknowledgement: OPERATOR_TRUST_ACKNOWLEDGEMENT },
+    { liveAcknowledgement: undefined },
+    { wssAcknowledgement: undefined },
+    { wssAcknowledgement: TESTNET_LIVE_ACKNOWLEDGEMENT },
+  ]) {
+    assert.throws(
+      () => selectPublicTestnetDynamicPlasmaResetEpochExecutionPolicy(
+        dynamicPlasmaResetEpochExecutionSelection(overrides),
+      ),
+    );
+  }
+
+  assert.throws(
+    () => selectPublicTestnetDynamicPlasmaResetEpochExecutionPolicy(undefined),
+  );
+  assert.throws(
+    () => selectPublicTestnetDynamicPlasmaResetEpochExecutionPolicy({
+      ...dynamicPlasmaResetEpochExecutionSelection(),
+      evidenceWssEndpoint:
+        PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_WSS_ENDPOINT,
+    }),
+  );
+  assert.throws(
+    () => selectPublicTestnetDynamicPlasmaResetEpochExecutionPolicy(
+      dynamicPlasmaResetEpochSelection(),
+    ),
+  );
+  assert.throws(
+    () => selectPublicTestnetDynamicPlasmaResetEpochPolicy(
+      dynamicPlasmaResetEpochExecutionSelection(),
+    ),
+  );
+
+  let proxyTrapCalls = 0;
+  const proxied = new Proxy(dynamicPlasmaResetEpochExecutionSelection(), {
+    get() {
+      proxyTrapCalls += 1;
+      throw new Error('proxy get trap must not execute');
+    },
+    ownKeys() {
+      proxyTrapCalls += 1;
+      throw new Error('proxy ownKeys trap must not execute');
+    },
+  });
+  assert.throws(
+    () => selectPublicTestnetDynamicPlasmaResetEpochExecutionPolicy(proxied),
+  );
+  assert.equal(proxyTrapCalls, 0);
+
+  let getterCalls = 0;
+  const accessor = dynamicPlasmaResetEpochExecutionSelection();
+  Object.defineProperty(accessor, 'eventId', {
+    enumerable: true,
+    get() {
+      getterCalls += 1;
+      return PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_EVENT_ID;
+    },
+  });
+  assert.throws(
+    () => selectPublicTestnetDynamicPlasmaResetEpochExecutionPolicy(accessor),
+  );
+  assert.equal(getterCalls, 0);
+});
+
+test('reset epoch execution clients and facilitators require the exact explicit WSS endpoint', () => {
+  const policy = selectPublicTestnetDynamicPlasmaResetEpochExecutionPolicy(
+    dynamicPlasmaResetEpochExecutionSelection(),
+  );
+  for (const Runtime of [ExactZenonClient, ExactZenonFacilitator]) {
+    for (const rpcUrl of [
+      undefined,
+      'ws://rpc.testnet.zenon.info',
+      PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_WSS_ENDPOINT,
+      `${PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_WSS_ENDPOINT}/`,
+      `${PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_WSS_ENDPOINT}?fallback=1`,
+      `${PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_WSS_ENDPOINT}#fallback`,
+      'wss://user@rpc.testnet.zenon.info',
+    ]) {
+      assert.throws(
+        () => new Runtime({ operatorTrustedChainPolicy: policy, rpcUrl }),
+        {
+          code:
+            'operator_trusted_dynamic_plasma_reset_epoch_rpc_policy_mismatch',
+        },
+      );
+    }
+    const runtime = new Runtime({
+      operatorTrustedChainPolicy: policy,
+      rpcUrl: PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_WSS_ENDPOINT,
+    });
+    assert.equal(
+      runtime.rpcUrl,
+      PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_WSS_ENDPOINT,
+    );
+    assert.equal(runtime.operatorTrustedChainPolicy, policy);
   }
 });
 

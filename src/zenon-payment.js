@@ -27,7 +27,10 @@ import { classifyDynamicPlasmaCompatibility } from './zenon/dynamic-plasma-compa
 import {
   PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_PROVENANCE,
   PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_WSS_ENDPOINT,
+  PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_PROVENANCE,
+  PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_WSS_ENDPOINT,
   isPublicTestnetDynamicPlasmaEpochPolicy,
+  isPublicTestnetDynamicPlasmaResetEpochExecutionPolicy,
   isOperatorTrustedTestnetPolicy,
 } from './zenon/operator-trusted-testnet-profile.js';
 import {
@@ -962,6 +965,17 @@ function configuredLocalBoundRpcUrl(value) {
 function configuredOperatorTrustedRpcUrl(policy, value) {
   const localPolicy = isOperatorTrustedLocalDevnetPolicy(policy);
   const dynamicPlasmaEpochPolicy = isPublicTestnetDynamicPlasmaEpochPolicy(policy);
+  const dynamicPlasmaResetEpochExecutionPolicy =
+    isPublicTestnetDynamicPlasmaResetEpochExecutionPolicy(policy);
+  if (dynamicPlasmaResetEpochExecutionPolicy) {
+    if (typeof value !== 'string' ||
+        value !== PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_WSS_ENDPOINT) {
+      safetyError(
+        'operator_trusted_dynamic_plasma_reset_epoch_rpc_policy_mismatch',
+      );
+    }
+    return value;
+  }
   if (dynamicPlasmaEpochPolicy) {
     if (typeof value !== 'string' ||
         value !== PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_WSS_ENDPOINT) {
@@ -1337,6 +1351,7 @@ function assertRawDynamicPlasmaFrontierBound({
   readinessFrontier,
   syncCurrentHeight,
   publicEpochEnforcementHeight,
+  requirePostEnforcementDynamicPlasma,
 }) {
   if (frontier.chainIdentifier !== readinessFrontier.chainIdentifier ||
       frontier.height !== readinessFrontier.height ||
@@ -1348,6 +1363,13 @@ function assertRawDynamicPlasmaFrontierBound({
   if (publicEpochEnforcementHeight !== null) {
     const expectedVersion = frontier.height > publicEpochEnforcementHeight ? 2 : 1;
     if (frontier.version !== expectedVersion) dynamicPlasmaGuardFailed();
+  }
+  if (requirePostEnforcementDynamicPlasma &&
+      (publicEpochEnforcementHeight === null ||
+       frontier.height <= publicEpochEnforcementHeight ||
+       frontier.version !== 2 || frontier.nextFusionPrice <= 0 ||
+       frontier.nextWorkPrice <= 0)) {
+    dynamicPlasmaGuardFailed();
   }
 }
 
@@ -1409,10 +1431,18 @@ async function captureLegacySignedCompositeDynamicPlasmaFrontier({
     expectedChainIdentifier,
   );
   const syncCurrentHeight = snapshotReadinessSyncHeight(readinessSyncInfo);
+  const requirePostEnforcementDynamicPlasma =
+    isPublicTestnetDynamicPlasmaResetEpochExecutionPolicy(
+      operatorTrustedChainPolicy,
+    );
   const publicEpochEnforcementHeight =
-    isPublicTestnetDynamicPlasmaEpochPolicy(operatorTrustedChainPolicy)
-      ? PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_PROVENANCE.dynamicPlasmaEnforcementHeight
-      : null;
+    requirePostEnforcementDynamicPlasma
+      ? PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_PROVENANCE
+        .dynamicPlasmaEnforcementHeight
+      : isPublicTestnetDynamicPlasmaEpochPolicy(operatorTrustedChainPolicy)
+        ? PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_PROVENANCE
+          .dynamicPlasmaEnforcementHeight
+        : null;
   const beforeFrontier = snapshotRawDynamicPlasmaFrontier(
     await readRawDynamicPlasmaFrontier(
       zenon,
@@ -1426,11 +1456,13 @@ async function captureLegacySignedCompositeDynamicPlasmaFrontier({
     readinessFrontier: readinessSnapshot,
     syncCurrentHeight,
     publicEpochEnforcementHeight,
+    requirePostEnforcementDynamicPlasma,
   });
   return OBJECT_FREEZE({
     readinessFrontier: readinessSnapshot,
     syncCurrentHeight,
     publicEpochEnforcementHeight,
+    requirePostEnforcementDynamicPlasma,
     beforeFrontier,
   });
 }
@@ -1463,6 +1495,9 @@ async function assertLegacyPreparedBlockDynamicPlasmaCompatible({
 }) {
   if (frontierGuard === null) {
     if (isPublicTestnetDynamicPlasmaEpochPolicy(operatorTrustedChainPolicy) ||
+        isPublicTestnetDynamicPlasmaResetEpochExecutionPolicy(
+          operatorTrustedChainPolicy,
+        ) ||
         observedMomentumVersionDescriptor(readinessFrontier).value !== 1) {
       dynamicPlasmaGuardFailed();
     }
@@ -1501,6 +1536,8 @@ async function assertLegacyPreparedBlockDynamicPlasmaCompatible({
     readinessFrontier: frontierGuard.readinessFrontier,
     syncCurrentHeight: frontierGuard.syncCurrentHeight,
     publicEpochEnforcementHeight: frontierGuard.publicEpochEnforcementHeight,
+    requirePostEnforcementDynamicPlasma:
+      frontierGuard.requirePostEnforcementDynamicPlasma,
   });
   if (!sameRawDynamicPlasmaFrontier(beforeFrontier, afterFrontier)) {
     dynamicPlasmaGuardFailed();
@@ -1878,7 +1915,10 @@ export class ExactZenonClient {
           const readinessVersion = observedMomentumVersionDescriptor(frontierMomentum).value;
           if (readinessVersion !== 1 && readinessVersion !== 2) dynamicPlasmaGuardFailed();
           const frontierGuard = readinessVersion === 2 ||
-              isPublicTestnetDynamicPlasmaEpochPolicy(this.operatorTrustedChainPolicy)
+              isPublicTestnetDynamicPlasmaEpochPolicy(this.operatorTrustedChainPolicy) ||
+              isPublicTestnetDynamicPlasmaResetEpochExecutionPolicy(
+                this.operatorTrustedChainPolicy,
+              )
             ? await captureLegacySignedCompositeDynamicPlasmaFrontier({
               zenon,
               readinessFrontier: frontierMomentum,
@@ -2471,6 +2511,11 @@ export class ExactZenonFacilitator {
     const { zenon } = connection;
     const callRead = (operation, execute) => runRead(scope, zenon, this.rpcTimeoutMs, operation, execute);
     await this.#verifyChainAndAsset(preflight, connection, callRead);
+    await this.#verifyResetEpochExecutionCompatibility(
+      preflight,
+      connection,
+      callRead,
+    );
     if (checkFrontier) await this.#verifyFrontierState(preflight, connection, callRead);
   }
 
@@ -2479,6 +2524,40 @@ export class ExactZenonFacilitator {
     if (preflight.block.chainIdentifier !== chainId ||
         String(chainId) !== preflight.chainProfile.chainIdentifier) safetyError('wrong_chain_identifier');
     await assertAssetExists(zenon, sdk, preflight.tokenStandard, callRead);
+  }
+
+  async #verifyResetEpochExecutionCompatibility(
+    preflight,
+    connection,
+    callRead,
+  ) {
+    if (!isPublicTestnetDynamicPlasmaResetEpochExecutionPolicy(
+      this.operatorTrustedChainPolicy,
+    )) return;
+    const {
+      sdk,
+      zenon,
+      chainId,
+      syncInfo,
+      frontierMomentum,
+    } = connection;
+    const frontierGuard = await captureLegacySignedCompositeDynamicPlasmaFrontier({
+      zenon,
+      readinessFrontier: frontierMomentum,
+      readinessSyncInfo: syncInfo,
+      expectedChainIdentifier: chainId,
+      operatorTrustedChainPolicy: this.operatorTrustedChainPolicy,
+      callRead,
+    });
+    await assertLegacyPreparedBlockDynamicPlasmaCompatible({
+      zenon,
+      sdk,
+      prepared: preflight.block,
+      frontierGuard,
+      readinessFrontier: frontierMomentum,
+      operatorTrustedChainPolicy: this.operatorTrustedChainPolicy,
+      callRead,
+    });
   }
 
   async #verifyFrontierState(preflight, connection, callRead) {
@@ -2818,6 +2897,11 @@ export class ExactZenonFacilitator {
         // represent a crash immediately before or after submission, so only the
         // exact same signed block may be retried idempotently.
         if (initialRecord.evidenceState === EVIDENCE_STATES.VALIDATED) {
+          await this.#verifyResetEpochExecutionCompatibility(
+            preflight,
+            connection,
+            callRead,
+          );
           const publication = await ensurePublished({
             lookup,
             publish: () => runPublication(
