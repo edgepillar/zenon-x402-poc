@@ -104,6 +104,7 @@ function installSyntheticRpc(t) {
     keyByte: 40,
     counters: null,
     prepared: null,
+    rpcOperations: [],
     sdkFrontierCalls: 0,
   };
 
@@ -119,11 +120,13 @@ function installSyntheticRpc(t) {
       publish: 0,
     };
     state.prepared = null;
+    state.rpcOperations = [];
     state.sdkFrontierCalls = 0;
   };
 
   const client = Object.freeze({
     async sendRequest(method) {
+      state.rpcOperations.push(method);
       if (method === 'stats.networkInfo') {
         return {
           numPeers: 1,
@@ -132,7 +135,11 @@ function installSyntheticRpc(t) {
         };
       }
       if (method === 'stats.syncInfo') {
-        return { state: sdk.SyncState.SyncDone, currentHeight: 50, targetHeight: 50 };
+        return state.scenario.syncInfo ?? {
+          state: sdk.SyncState.SyncDone,
+          currentHeight: 50,
+          targetHeight: 50,
+        };
       }
       if (method === 'ledger.getFrontierMomentum') {
         state.counters.frontier += 1;
@@ -274,6 +281,41 @@ function dynamicPlasmaEpochPolicy() {
 
 test('active buyer fails closed around SDK 1.0.5 Dynamic Plasma pricing', async t => {
   const fixture = installSyntheticRpc(t);
+  const epochProfile = PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_CHAIN_PROFILE;
+  const epochPolicy = dynamicPlasmaEpochPolicy();
+  const epochChainIdentifier = Number(epochProfile.chainIdentifier);
+  const epochEnforcementHeight =
+    PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_PROVENANCE.dynamicPlasmaEnforcementHeight;
+  const epochHeightTwo = {
+    ...momentum('guarded-v1-epoch-height-two', {
+      height: 2,
+      version: 1,
+      chainIdentifier: epochChainIdentifier,
+    }),
+    hash: PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_PROVENANCE.observationHash,
+    previousHash: epochProfile.genesisMomentumHash,
+  };
+  const payAtEpoch = () => createPayment({
+    profile: epochProfile,
+    operatorTrustedChainPolicy: epochPolicy,
+    rpcUrl: PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_WSS_ENDPOINT,
+  });
+  const resetEpochGuard = ({
+    frontier,
+    height = epochEnforcementHeight,
+    syncCurrentHeight = height,
+    plasma = { availablePlasma: 21000, basePlasma: 21000, requiredDifficulty: 0 },
+  }) => fixture.reset({
+    frontier,
+    plasma,
+    heightTwo: epochHeightTwo,
+    momentumCount: height,
+    syncInfo: {
+      state: sdk.SyncState.SyncDone,
+      currentHeight: syncCurrentHeight,
+      targetHeight: syncCurrentHeight,
+    },
+  });
 
   await t.test('current base prices preserve the legacy signed-composite result', async () => {
     const stable = momentum('base-price');
@@ -412,10 +454,10 @@ test('active buyer fails closed around SDK 1.0.5 Dynamic Plasma pricing', async 
 
         await guardRejection();
 
-        assert.equal(fixture.state.counters.frontier, 2);
-        assert.equal(fixture.state.counters.plasma, 1);
-        assert.equal(fixture.state.counters.prepare, 1);
-        assert.equal(fixture.state.counters.sign, 1);
+        assert.equal(fixture.state.counters.frontier, 1);
+        assert.equal(fixture.state.counters.plasma, 0);
+        assert.equal(fixture.state.counters.prepare, 0);
+        assert.equal(fixture.state.counters.sign, 0);
         assert.equal(fixture.state.counters.publish, 0);
       });
     }
@@ -455,16 +497,16 @@ test('active buyer fails closed around SDK 1.0.5 Dynamic Plasma pricing', async 
         const guardFrontier = { ...stable };
         entry.raw?.(guardFrontier);
         fixture.reset({
-          frontier: call => call <= 2 ? stable : guardFrontier,
+          frontier: call => call === 1 ? stable : guardFrontier,
           plasma: call => call === 1 ? validQuote : (entry.quote ?? validQuote),
         });
 
         await guardRejection();
 
-        assert.equal(fixture.state.counters.frontier, 4);
-        assert.equal(fixture.state.counters.plasma, 2);
-        assert.equal(fixture.state.counters.prepare, 1);
-        assert.equal(fixture.state.counters.sign, 1);
+        assert.equal(fixture.state.counters.frontier, entry.raw ? 2 : 4);
+        assert.equal(fixture.state.counters.plasma, entry.raw ? 0 : 2);
+        assert.equal(fixture.state.counters.prepare, entry.raw ? 0 : 1);
+        assert.equal(fixture.state.counters.sign, entry.raw ? 0 : 1);
         assert.equal(fixture.state.counters.publish, 0);
       });
     }
@@ -483,10 +525,10 @@ test('active buyer fails closed around SDK 1.0.5 Dynamic Plasma pricing', async 
 
     await guardRejection();
 
-    assert.equal(fixture.state.counters.frontier, 2);
-    assert.equal(fixture.state.counters.plasma, 1);
-    assert.equal(fixture.state.counters.prepare, 1);
-    assert.equal(fixture.state.counters.sign, 1);
+    assert.equal(fixture.state.counters.frontier, 1);
+    assert.equal(fixture.state.counters.plasma, 0);
+    assert.equal(fixture.state.counters.prepare, 0);
+    assert.equal(fixture.state.counters.sign, 0);
     assert.equal(fixture.state.counters.publish, 0);
   });
 
@@ -519,7 +561,145 @@ test('active buyer fails closed around SDK 1.0.5 Dynamic Plasma pricing', async 
     assert.equal(fixture.state.counters.publish, 0);
   });
 
-  await t.test('the public DP epoch rejects v1 at and after its enforcement height', async t => {
+  await t.test('v1 raw prices must be absent together or present as paired zeroes', async t => {
+    const cases = [
+      {
+        name: 'paired zero prices remain compatible',
+        compatible: true,
+      },
+      {
+        name: 'paired absent prices remain compatible',
+        compatible: true,
+        mutate(frontier) {
+          delete frontier.nextFusionPrice;
+          delete frontier.nextWorkPrice;
+        },
+      },
+      {
+        name: 'an unpaired absent price fails closed',
+        mutate(frontier) {
+          delete frontier.nextFusionPrice;
+        },
+      },
+      {
+        name: 'a nonzero v1 price fails closed',
+        mutate(frontier) {
+          frontier.nextFusionPrice = 1;
+        },
+      },
+      {
+        name: 'a malformed v1 price fails closed',
+        mutate(frontier) {
+          frontier.nextWorkPrice = '0';
+        },
+      },
+    ];
+
+    for (const entry of cases) {
+      await t.test(entry.name, async () => {
+        const legacy = momentum(`v1-prices-${entry.name}`, {
+          height: epochEnforcementHeight,
+          version: 1,
+          chainIdentifier: epochChainIdentifier,
+          nextFusionPrice: 0,
+          nextWorkPrice: 0,
+        });
+        entry.mutate?.(legacy);
+        resetEpochGuard({
+          frontier: () => legacy,
+        });
+
+        if (entry.compatible) {
+          const payload = await payAtEpoch();
+          assert.equal(payload.payload.transaction.momentumAcknowledged.height, legacy.height);
+          assert.equal(fixture.state.counters.frontier, 4);
+          assert.equal(fixture.state.counters.heightTwo, 1);
+          assert.equal(fixture.state.counters.plasma, 1);
+          assert.equal(fixture.state.counters.prepare, 1);
+          assert.equal(fixture.state.counters.sign, 1);
+        } else {
+          await guardRejection(payAtEpoch);
+          assert.equal(fixture.state.counters.frontier, 2);
+          assert.equal(fixture.state.counters.heightTwo, 1);
+          assert.equal(fixture.state.counters.plasma, 0);
+          assert.equal(fixture.state.counters.prepare, 0);
+          assert.equal(fixture.state.counters.sign, 0);
+        }
+        assert.equal(fixture.state.counters.publish, 0);
+      });
+    }
+  });
+
+  await t.test('v1 readiness cannot transition to v2 during preparation', async () => {
+    const legacy = momentum('v1-readiness', {
+      height: epochEnforcementHeight,
+      version: 1,
+      chainIdentifier: epochChainIdentifier,
+      nextFusionPrice: 0,
+      nextWorkPrice: 0,
+    });
+    const active = momentum('v2-preparation', {
+      version: 2,
+      height: epochEnforcementHeight + 1,
+      chainIdentifier: epochChainIdentifier,
+    });
+    resetEpochGuard({
+      frontier: call => call <= 2 ? legacy : active,
+    });
+
+    await guardRejection(payAtEpoch);
+
+    assert.equal(fixture.state.counters.frontier, 4);
+    assert.equal(fixture.state.counters.heightTwo, 1);
+    assert.equal(fixture.state.counters.plasma, 1);
+    assert.equal(fixture.state.counters.prepare, 1);
+    assert.equal(fixture.state.counters.sign, 1);
+    assert.equal(fixture.state.counters.publish, 0);
+  });
+
+  await t.test('frontiers below captured sync progress fail closed for both versions', async t => {
+    for (const version of [1, 2]) {
+      await t.test(`v${version}`, async () => {
+        const stale = momentum(`stale-v${version}`, {
+          height: version === 1 ? epochEnforcementHeight : 50,
+          version,
+          chainIdentifier: version === 1
+            ? epochChainIdentifier
+            : Number(PROFILE.chainIdentifier),
+          nextFusionPrice: version === 1 ? 0 : 1000,
+          nextWorkPrice: version === 1 ? 0 : 1000,
+        });
+        if (version === 1) {
+          resetEpochGuard({
+            frontier: () => stale,
+            height: stale.height,
+            syncCurrentHeight: stale.height + 1,
+          });
+        } else {
+          fixture.reset({
+            frontier: () => stale,
+            plasma: { availablePlasma: 21000, basePlasma: 21000, requiredDifficulty: 0 },
+            syncInfo: {
+              state: sdk.SyncState.SyncDone,
+              currentHeight: stale.height + 1,
+              targetHeight: stale.height + 1,
+            },
+          });
+        }
+
+        await guardRejection(version === 1 ? payAtEpoch : undefined);
+
+        assert.equal(fixture.state.counters.frontier, 2);
+        assert.equal(fixture.state.counters.heightTwo, version === 1 ? 1 : 0);
+        assert.equal(fixture.state.counters.plasma, 0);
+        assert.equal(fixture.state.counters.prepare, 0);
+        assert.equal(fixture.state.counters.sign, 0);
+        assert.equal(fixture.state.counters.publish, 0);
+      });
+    }
+  });
+
+  await t.test('the pinned public DP epoch preserves v1 through enforcement and requires v2 above it', async t => {
     const policy = dynamicPlasmaEpochPolicy();
     const profile = PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_CHAIN_PROFILE;
     const chainIdentifier = Number(profile.chainIdentifier);
@@ -530,19 +710,24 @@ test('active buyer fails closed around SDK 1.0.5 Dynamic Plasma pricing', async 
       hash: PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_PROVENANCE.observationHash,
       previousHash: profile.genesisMomentumHash,
     };
-    const resetEpoch = height => {
-      const legacy = momentum(`epoch-v1-${height}`, {
+    const resetEpoch = (height, version) => {
+      const frontier = momentum(`epoch-v${version}-${height}`, {
         height,
-        version: 1,
+        version,
         chainIdentifier,
-        nextFusionPrice: 0,
-        nextWorkPrice: 0,
+        nextFusionPrice: version === 1 ? 0 : 1000,
+        nextWorkPrice: version === 1 ? 0 : 1000,
       });
       fixture.reset({
-        frontier: () => legacy,
+        frontier: () => frontier,
         plasma: { availablePlasma: 21000, basePlasma: 21000, requiredDifficulty: 0 },
         heightTwo,
         momentumCount: height,
+        syncInfo: {
+          state: sdk.SyncState.SyncDone,
+          currentHeight: height,
+          targetHeight: height,
+        },
       });
     };
     const pay = () => createPayment({
@@ -552,7 +737,7 @@ test('active buyer fails closed around SDK 1.0.5 Dynamic Plasma pricing', async 
     });
 
     await t.test('the immediately preceding v1 Momentum remains compatible', async () => {
-      resetEpoch(enforcementHeight - 1);
+      resetEpoch(enforcementHeight - 1, 1);
       const payload = await pay();
 
       assert.equal(
@@ -564,12 +749,15 @@ test('active buyer fails closed around SDK 1.0.5 Dynamic Plasma pricing', async 
       assert.equal(fixture.state.counters.publish, 0);
     });
 
-    await t.test('v1 at the enforcement height fails closed', async () => {
-      resetEpoch(enforcementHeight);
+    await t.test('v1 at the enforcement height remains compatible', async () => {
+      resetEpoch(enforcementHeight, 1);
+      const payload = await pay();
 
-      await guardRejection(pay);
-
-      assert.equal(fixture.state.counters.frontier, 2);
+      assert.equal(
+        payload.payload.transaction.momentumAcknowledged.height,
+        enforcementHeight,
+      );
+      assert.equal(fixture.state.counters.frontier, 4);
       assert.equal(fixture.state.counters.heightTwo, 1);
       assert.equal(fixture.state.counters.plasma, 1);
       assert.equal(fixture.state.counters.prepare, 1);
@@ -578,16 +766,82 @@ test('active buyer fails closed around SDK 1.0.5 Dynamic Plasma pricing', async 
     });
 
     await t.test('v1 above the enforcement height fails closed', async () => {
-      resetEpoch(enforcementHeight + 1);
+      resetEpoch(enforcementHeight + 1, 1);
 
       await guardRejection(pay);
 
       assert.equal(fixture.state.counters.frontier, 2);
       assert.equal(fixture.state.counters.heightTwo, 1);
-      assert.equal(fixture.state.counters.plasma, 1);
+      assert.equal(fixture.state.counters.plasma, 0);
+      assert.equal(fixture.state.counters.prepare, 0);
+      assert.equal(fixture.state.counters.sign, 0);
+      assert.equal(fixture.state.counters.publish, 0);
+    });
+
+    await t.test('v2 at the enforcement height fails closed', async () => {
+      resetEpoch(enforcementHeight, 2);
+
+      await guardRejection(pay);
+
+      assert.equal(fixture.state.counters.frontier, 2);
+      assert.equal(fixture.state.counters.heightTwo, 1);
+      assert.equal(fixture.state.counters.plasma, 0);
+      assert.equal(fixture.state.counters.prepare, 0);
+      assert.equal(fixture.state.counters.sign, 0);
+      assert.equal(fixture.state.counters.publish, 0);
+    });
+
+    await t.test('v2 immediately above the enforcement height remains compatible', async () => {
+      resetEpoch(enforcementHeight + 1, 2);
+      const payload = await pay();
+
+      assert.equal(
+        payload.payload.transaction.momentumAcknowledged.height,
+        enforcementHeight + 1,
+      );
+      assert.equal(fixture.state.counters.frontier, 4);
+      assert.equal(fixture.state.counters.heightTwo, 1);
+      assert.equal(fixture.state.counters.plasma, 2);
       assert.equal(fixture.state.counters.prepare, 1);
       assert.equal(fixture.state.counters.sign, 1);
       assert.equal(fixture.state.counters.publish, 0);
     });
+  });
+
+  await t.test('well-formed non-epoch v1 preserves the legacy RPC ordering', async () => {
+    const height =
+      PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_PROVENANCE.dynamicPlasmaEnforcementHeight + 1;
+    const legacy = momentum('unrelated-policy-v1', {
+      height,
+      version: 1,
+      nextFusionPrice: 0,
+      nextWorkPrice: 0,
+    });
+    fixture.reset({
+      frontier: () => legacy,
+      plasma: { availablePlasma: 21000, basePlasma: 21000, requiredDifficulty: 0 },
+      syncInfo: {
+        state: sdk.SyncState.SyncDone,
+        currentHeight: height,
+        targetHeight: height,
+      },
+    });
+
+    const payload = await createPayment();
+
+    assert.equal(payload.payload.transaction.momentumAcknowledged.height, height);
+    assert.deepEqual(fixture.state.rpcOperations, [
+      'stats.networkInfo',
+      'stats.syncInfo',
+      'ledger.getFrontierMomentum',
+      'ledger.getFrontierAccountBlock',
+      'ledger.getFrontierMomentum',
+      'embedded.plasma.getRequiredPoWForAccountBlock',
+    ]);
+    assert.equal(fixture.state.counters.frontier, 2);
+    assert.equal(fixture.state.counters.plasma, 1);
+    assert.equal(fixture.state.counters.prepare, 1);
+    assert.equal(fixture.state.counters.sign, 1);
+    assert.equal(fixture.state.counters.publish, 0);
   });
 });
