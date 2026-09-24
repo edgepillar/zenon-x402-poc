@@ -25,11 +25,23 @@ import {
   PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_WARNING,
   PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_WSS_ACKNOWLEDGEMENT,
   PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_WSS_ENDPOINT,
+  PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_CHAIN_PROFILE,
+  PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_EVENT_ID,
+  PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_NON_CLAIMS,
+  PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_OPERATOR_TRUST_ACKNOWLEDGEMENT,
+  PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_PROFILE_NAME,
+  PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_PROVENANCE,
+  PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_SDK_NETWORK_ID,
+  PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_WARNING,
+  PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_WSS_ACKNOWLEDGEMENT,
+  PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_WSS_ENDPOINT,
   TESTNET_LIVE_ACKNOWLEDGEMENT,
   isOperatorTrustedTestnetEvidence,
   isOperatorTrustedTestnetPolicy,
   isPublicTestnetDynamicPlasmaEpochPolicy,
+  isPublicTestnetDynamicPlasmaResetEpochPolicy,
   selectPublicTestnetDynamicPlasmaEpochPolicy,
+  selectPublicTestnetDynamicPlasmaResetEpochPolicy,
   selectOperatorTrustedTestnetPolicy,
 } from '../src/zenon/operator-trusted-testnet-profile.js';
 
@@ -135,6 +147,70 @@ function dynamicPlasmaEpochContext({
     },
   };
 }
+
+function dynamicPlasmaResetEpochSelection(overrides = {}) {
+  return {
+    eventId: PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_EVENT_ID,
+    evidenceWssEndpoint:
+      PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_WSS_ENDPOINT,
+    liveAcknowledgement: TESTNET_LIVE_ACKNOWLEDGEMENT,
+    operatorTrustAcknowledgement:
+      PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_OPERATOR_TRUST_ACKNOWLEDGEMENT,
+    profileName: PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_PROFILE_NAME,
+    wssAcknowledgement:
+      PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_WSS_ACKNOWLEDGEMENT,
+    ...overrides,
+  };
+}
+
+function dynamicPlasmaResetEpochContext({
+  expectedChainProfile = {
+    ...PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_CHAIN_PROFILE,
+  },
+  heightTwoHash =
+    PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_PROVENANCE.observationHash,
+  heightTwoPreviousHash =
+    PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_CHAIN_PROFILE.genesisMomentumHash,
+  heightTwoVersion = 1,
+} = {}) {
+  const calls = [];
+  const chainIdentifier = Number(
+    PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_CHAIN_PROFILE.chainIdentifier,
+  );
+  return {
+    calls,
+    context: {
+      expectedChainProfile,
+      frontierMomentum: {
+        chainIdentifier,
+        hash: 'f'.repeat(64),
+        height: Math.max(
+          10,
+          PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_PROVENANCE
+            .dynamicPlasmaEnforcementHeight,
+        ),
+      },
+      zenon: {
+        ledger: {
+          getMomentumsByHeight(...args) {
+            calls.push(args);
+            return {
+              count: 10,
+              list: [{
+                version: heightTwoVersion,
+                chainIdentifier,
+                hash: heightTwoHash,
+                previousHash: heightTwoPreviousHash,
+                height: 2,
+              }],
+            };
+          },
+        },
+      },
+    },
+  };
+}
+
 
 async function settledMatchingContext() {
   const candidate = matchingContext();
@@ -467,6 +543,295 @@ test('Dynamic Plasma epoch observation rejects the wrong genesis or height-two i
   await assert.rejects(policy.observeChainTrust(wrongHeightOneLink.context));
   assert.deepEqual(wrongHeightOneLink.calls, [[2, 1]]);
 });
+
+test('Dynamic Plasma reset epoch is a distinct immutable offline profile and preserves prior profiles', () => {
+  const historicalPolicy = selectOperatorTrustedTestnetPolicy(
+    EXPECTED_PROFILE_NAME,
+    EXPECTED_ACKNOWLEDGEMENT,
+    EXPECTED_LIVE_ACKNOWLEDGEMENT,
+  );
+  const previousEpochPolicy = selectPublicTestnetDynamicPlasmaEpochPolicy(
+    dynamicPlasmaEpochSelection(),
+  );
+  const resetEpochPolicy =
+    selectPublicTestnetDynamicPlasmaResetEpochPolicy(
+      dynamicPlasmaResetEpochSelection(),
+    );
+
+  assert.equal(
+    PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_PROFILE_NAME,
+    "public-testnet-dynamic-plasma-reset-epoch-2026-09-24t11-14-13-445z-v1",
+  );
+  assert.equal(
+    PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_EVENT_ID,
+    "2026-09-24T11:14:13.445Z",
+  );
+  assert.equal(
+    PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_WSS_ENDPOINT,
+    "wss://rpc.testnet.zenon.info",
+  );
+  assert.equal(PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_SDK_NETWORK_ID, '3');
+  assert.deepEqual(PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_CHAIN_PROFILE, {
+    version: 1,
+    chainIdentifier: "73404",
+    genesisMomentumHash: "d0585e9dc3890b47941719a40e39b2e71172f468a41e206f31541344cb9f4683",
+  });
+  assert.deepEqual(
+    PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_PROVENANCE,
+    {
+    nodePlanUrl: "https://testnet.zenon.info/node-plan.json",
+    genesisUrl: "https://testnet.zenon.info/genesis.json",
+    endpointAdvertisementUrl: "https://testnet.zenon.info/llms.txt",
+    nodePlanSchemaVersion: 1,
+    nodePlanEventId: PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_EVENT_ID,
+    nodePlanPublishedAt: "2026-09-24T11:14:13.445Z",
+    nodePlanFinalizedAt: "2026-09-24T11:14:09.756Z",
+    nodePlanGenesisStartAt: "2026-09-24T11:15:00.000Z",
+    nodePlanApplyAt: "2026-09-24T11:13:23.000Z",
+    nodePlanWipeData: true,
+    nodePlanGoZenonRepository: "https://github.com/zenon-network/go-zenon.git",
+    nodePlanGoZenonRef: "dev",
+    nodePlanGoZenonCommit: "32b96d9241a53966c31c310bd637e57562300255",
+    nodePlanDeploymentRepository: "https://github.com/hypercore-one/deployment.git",
+    nodePlanDeploymentRef: "main",
+    nodePlanDeploymentCommit: "0cf7877212412fe7a714ed964bd6e55fc28c7887",
+    genesisTimestampSec: 1790248500,
+    dynamicPlasmaActivated: true,
+    dynamicPlasmaEnforcementHeight: 10,
+    evidenceWssEndpoint:
+      PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_WSS_ENDPOINT,
+    observationHeight: 2,
+    observationHash: "25b012e4771551a55ce64971fad3907d5950bcb6b4719340db87fbeb7f6e9e27",
+    heightTwoVersion: 1,
+    derivation: 'height-1 hash with height-2 previousHash linkage',
+    genesisMomentumHashBasis:
+      'independently recomputed from published genesis using the exact node-plan-pinned go-zenon source and an official checksum-verified temporary Go toolchain; matched a bounded TLS WSS height-1 read',
+    genesisMomentumHashRecomputedFromPinnedSource: true,
+    temporaryGoToolchainChecksumVerified: true,
+    planStableAcrossBoundedReads: true,
+    publicInputsStableBeforeEdit: true,
+    advertisedWssEndpointMatched: true,
+    heightTwoPreviousHashMatchedHeightOne: true,
+    previousEpochProfileMismatch: true,
+    postEnforcementFrontierObserved: true,
+    frontierAtOrAboveEnforcementHeight: true,
+    postEnforcementFrontierVersion: 2,
+    nextFusionPricePositive: true,
+    nextWorkPricePositive: true,
+  },
+  );
+  assert.deepEqual(PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_NON_CLAIMS, {
+    authoritativeCurrentNetworkRelease: false,
+    signedTrustArtifact: false,
+    authenticatedRpcChainIdentity: false,
+    canonicalRemoteChainIdentity: false,
+    consensusFinality: false,
+    binaryAttestation: false,
+    verifiedFrontierLineage: false,
+    liveActivationAuthorized: false,
+    productionReadiness: false,
+  });
+
+  assert.equal(historicalPolicy.profileName, EXPECTED_PROFILE_NAME);
+  assert.deepEqual(historicalPolicy.chainProfile(), EXPECTED_CHAIN_PROFILE);
+  assert.equal(
+    previousEpochPolicy.profileName,
+    PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_PROFILE_NAME,
+  );
+  assert.deepEqual(
+    previousEpochPolicy.chainProfile(),
+    PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_CHAIN_PROFILE,
+  );
+  assert.notEqual(resetEpochPolicy, historicalPolicy);
+  assert.notEqual(resetEpochPolicy, previousEpochPolicy);
+  assert.notEqual(
+    resetEpochPolicy.chainProfile().genesisMomentumHash,
+    previousEpochPolicy.chainProfile().genesisMomentumHash,
+  );
+  assert.equal(Object.isFrozen(resetEpochPolicy), true);
+  assert.equal(isOperatorTrustedTestnetPolicy(resetEpochPolicy), true);
+  assert.equal(
+    isPublicTestnetDynamicPlasmaResetEpochPolicy(resetEpochPolicy),
+    true,
+  );
+  assert.equal(
+    isPublicTestnetDynamicPlasmaEpochPolicy(resetEpochPolicy),
+    false,
+  );
+  assert.equal(
+    isPublicTestnetDynamicPlasmaResetEpochPolicy(previousEpochPolicy),
+    false,
+  );
+  assert.equal(resetEpochPolicy.offlineOnly, true);
+  assert.equal(Object.hasOwn(resetEpochPolicy, 'rpcEndpoint'), false);
+  assert.equal(
+    resetEpochPolicy.evidenceWssEndpoint,
+    PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_WSS_ENDPOINT,
+  );
+  assert.equal(
+    resetEpochPolicy.trustMode,
+    'operator-trusted-public-testnet-dynamic-plasma-reset-epoch',
+  );
+  assert.equal(resetEpochPolicy.remoteChainAuthenticated, false);
+  assert.equal(
+    resetEpochPolicy.warning,
+    PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_WARNING,
+  );
+
+  const first = resetEpochPolicy.chainProfile();
+  const second = resetEpochPolicy.chainProfile();
+  assert.deepEqual(first, PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_CHAIN_PROFILE);
+  assert.deepEqual(second, PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_CHAIN_PROFILE);
+  assert.notEqual(first, second);
+  assert.equal(Object.isFrozen(first), true);
+  assert.throws(() => {
+    first.chainIdentifier = '3';
+  }, TypeError);
+
+  for (const value of [
+    PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_CHAIN_PROFILE,
+    PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_PROVENANCE,
+    PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_NON_CLAIMS,
+  ]) {
+    assert.equal(Object.isFrozen(value), true);
+  }
+});
+
+test('Dynamic Plasma reset epoch selection has no default, alias, fallback, or hostile-input path', () => {
+  for (const overrides of [
+    { profileName: undefined },
+    { profileName: 'testnet' },
+    { profileName: PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_PROFILE_NAME },
+    {
+      profileName:
+        `${PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_PROFILE_NAME} `,
+    },
+    { eventId: undefined },
+    { eventId: PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_EVENT_ID },
+    { evidenceWssEndpoint: undefined },
+    { evidenceWssEndpoint: PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_WSS_ENDPOINT },
+    {
+      evidenceWssEndpoint:
+        `${PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_WSS_ENDPOINT}?fallback=1`,
+    },
+    {
+      evidenceWssEndpoint:
+        `${PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_WSS_ENDPOINT}#fallback`,
+    },
+    { operatorTrustAcknowledgement: OPERATOR_TRUST_ACKNOWLEDGEMENT },
+    { liveAcknowledgement: undefined },
+    { wssAcknowledgement: undefined },
+    { wssAcknowledgement: TESTNET_LIVE_ACKNOWLEDGEMENT },
+  ]) {
+    assert.throws(() => selectPublicTestnetDynamicPlasmaResetEpochPolicy(
+      dynamicPlasmaResetEpochSelection(overrides),
+    ));
+  }
+
+  assert.throws(
+    () => selectPublicTestnetDynamicPlasmaResetEpochPolicy(undefined),
+  );
+  assert.throws(() => selectPublicTestnetDynamicPlasmaResetEpochPolicy({
+    ...dynamicPlasmaResetEpochSelection(),
+    rpcEndpoint: PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_WSS_ENDPOINT,
+  }));
+  assert.throws(() => selectPublicTestnetDynamicPlasmaResetEpochPolicy(
+    dynamicPlasmaEpochSelection(),
+  ));
+  assert.throws(() => selectPublicTestnetDynamicPlasmaEpochPolicy(
+    dynamicPlasmaResetEpochSelection(),
+  ));
+
+  let proxyTrapCalls = 0;
+  const proxied = new Proxy(dynamicPlasmaResetEpochSelection(), {
+    get() {
+      proxyTrapCalls += 1;
+      throw new Error('proxy get trap must not execute');
+    },
+    ownKeys() {
+      proxyTrapCalls += 1;
+      throw new Error('proxy ownKeys trap must not execute');
+    },
+  });
+  assert.throws(
+    () => selectPublicTestnetDynamicPlasmaResetEpochPolicy(proxied),
+  );
+  assert.equal(proxyTrapCalls, 0);
+
+  let getterCalls = 0;
+  const accessor = dynamicPlasmaResetEpochSelection();
+  Object.defineProperty(accessor, 'eventId', {
+    enumerable: true,
+    get() {
+      getterCalls += 1;
+      return PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_EVENT_ID;
+    },
+  });
+  assert.throws(
+    () => selectPublicTestnetDynamicPlasmaResetEpochPolicy(accessor),
+  );
+  assert.equal(getterCalls, 0);
+});
+
+test('Dynamic Plasma reset epoch accepts height-two v1 linkage and rejects profile drift offline', async () => {
+  const policy = selectPublicTestnetDynamicPlasmaResetEpochPolicy(
+    dynamicPlasmaResetEpochSelection(),
+  );
+  const matching = dynamicPlasmaResetEpochContext();
+  const evidence = await policy.observeChainTrust(matching.context);
+
+  assert.deepEqual(matching.calls, [[2, 1]]);
+  assert.equal(
+    PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_PROVENANCE.heightTwoVersion,
+    1,
+  );
+  assert.equal(isOperatorTrustedTestnetEvidence(evidence), true);
+  assert.equal(evidence.remoteChainAuthenticated, false);
+  assert.equal(
+    evidence.trustMode,
+    'operator-trusted-public-testnet-dynamic-plasma-reset-epoch',
+  );
+  assert.deepEqual(
+    evidence.chainProfile,
+    PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_CHAIN_PROFILE,
+  );
+
+  const previousEpoch = dynamicPlasmaResetEpochContext({
+    expectedChainProfile: {
+      ...PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_CHAIN_PROFILE,
+    },
+  });
+  await assert.rejects(policy.observeChainTrust(previousEpoch.context));
+  assert.deepEqual(previousEpoch.calls, []);
+
+  const wrongGenesis = dynamicPlasmaResetEpochContext({
+    expectedChainProfile: {
+      ...PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_CHAIN_PROFILE,
+      genesisMomentumHash: '0'.repeat(64),
+    },
+  });
+  await assert.rejects(policy.observeChainTrust(wrongGenesis.context));
+  assert.deepEqual(wrongGenesis.calls, []);
+
+  const wrongHeightTwo = dynamicPlasmaResetEpochContext({
+    heightTwoHash: '0'.repeat(64),
+  });
+  await assert.rejects(policy.observeChainTrust(wrongHeightTwo.context));
+  assert.deepEqual(wrongHeightTwo.calls, [[2, 1]]);
+
+  const wrongHeightOneLink = dynamicPlasmaResetEpochContext({
+    heightTwoPreviousHash: '0'.repeat(64),
+  });
+  await assert.rejects(policy.observeChainTrust(wrongHeightOneLink.context));
+  assert.deepEqual(wrongHeightOneLink.calls, [[2, 1]]);
+
+  const wrongHeightTwoVersion = dynamicPlasmaResetEpochContext({
+    heightTwoVersion: 2,
+  });
+  await assert.rejects(policy.observeChainTrust(wrongHeightTwoVersion.context));
+  assert.deepEqual(wrongHeightTwoVersion.calls, [[2, 1]]);
+});
+
 
 test('Dynamic Plasma epoch clients and facilitators require the exact explicit WSS endpoint', () => {
   const policy = selectPublicTestnetDynamicPlasmaEpochPolicy(
