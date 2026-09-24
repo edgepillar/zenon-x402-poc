@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
-import { existsSync, readFileSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import test from 'node:test';
+import { fileURLToPath } from 'node:url';
 
 import * as preflightModule from '../src/gate-b-reset-epoch-policy-preflight.js';
 import {
@@ -20,6 +22,13 @@ import {
 const { parseGateBResetEpochPolicyPreflight } = preflightModule;
 const ERROR_CODE = 'gate_b_reset_epoch_policy_preflight_invalid';
 const MODULE_NAME = 'gate-b-reset-epoch-policy-preflight.js';
+const CLI_MODULE_NAME = 'gate-b-reset-epoch-policy-preflight-cli.js';
+const CLI_SCRIPT_NAME = 'preflight:gate-b-reset-epoch-policy';
+const CLI_SUCCESS =
+  'GATE_B_RESET_EPOCH_POLICY_PREFLIGHT_VALID_RUN_NOT_AUTHORIZED\n';
+const CLI_FAILURE =
+  'GATE_B_RESET_EPOCH_POLICY_PREFLIGHT_INVALID_RUN_NOT_AUTHORIZED\n';
+const CLI_URL = new URL(`../src/${CLI_MODULE_NAME}`, import.meta.url);
 
 function canonicalJson(value) {
   if (value === null || typeof value !== 'object') return JSON.stringify(value);
@@ -73,6 +82,24 @@ function containsFunction(value) {
   if (typeof value === 'function') return true;
   if (value === null || typeof value !== 'object') return false;
   return Object.values(value).some(containsFunction);
+}
+
+function runCli(input, args = []) {
+  return spawnSync(process.execPath, [fileURLToPath(CLI_URL), ...args], {
+    encoding: null,
+    input,
+    maxBuffer: 16 * 1024,
+    timeout: 5_000,
+  });
+}
+
+function assertCliFailure(input, args = []) {
+  const result = runCli(input, args);
+  assert.equal(result.signal, null);
+  assert.notEqual(result.status, 0);
+  assert.deepEqual(result.stdout, Buffer.alloc(0));
+  assert.deepEqual(result.stderr, Buffer.from(CLI_FAILURE));
+  assert.equal(result.error, undefined);
 }
 
 test('canonical v1 input returns only a deeply frozen inert RUN_NOT_AUTHORIZED descriptor', () => {
@@ -241,7 +268,155 @@ test('malformed types, missing fields, wrong versions, and oversized text use on
   }
 });
 
-test('module import is selector-only, effect-free, default-off, and unreachable from active entrypoints', () => {
+test('package exposes only the exact bounded reset-epoch preflight script mapping', () => {
+  const packageJson = JSON.parse(
+    readFileSync(new URL('../package.json', import.meta.url), 'utf8'),
+  );
+  const expected = `node src/${CLI_MODULE_NAME}`;
+
+  assert.equal(packageJson.scripts[CLI_SCRIPT_NAME], expected);
+  assert.deepEqual(
+    Object.entries(packageJson.scripts).filter(([, command]) =>
+      command.includes(CLI_MODULE_NAME)),
+    [[CLI_SCRIPT_NAME, expected]],
+  );
+});
+
+test('CLI import is inert and its only local dependency is the pure parser', () => {
+  const imported = spawnSync(
+    process.execPath,
+    [
+      '--input-type=module',
+      '--eval',
+      `await import(${JSON.stringify(CLI_URL.href)})`,
+    ],
+    { encoding: null, maxBuffer: 16 * 1024, timeout: 5_000 },
+  );
+  assert.equal(imported.status, 0);
+  assert.equal(imported.signal, null);
+  assert.deepEqual(imported.stdout, Buffer.alloc(0));
+  assert.deepEqual(imported.stderr, Buffer.alloc(0));
+  assert.equal(imported.error, undefined);
+
+  const source = readFileSync(CLI_URL, 'utf8');
+  const imports = [
+    ...source.matchAll(/from\s+['"]([^'"]+)['"]/g),
+  ].map(match => match[1]);
+  assert.deepEqual(imports, [
+    'node:buffer',
+    'node:fs',
+    'node:url',
+    'node:util',
+    `./${MODULE_NAME}`,
+  ]);
+  assert.doesNotMatch(
+    source,
+    /process\.env|node:(?:https?|http2|net|tls|dns|child_process|worker_threads)|\bfetch\s*\(|\bWebSocket\b|\.listen\s*\(|\.connect\s*\(|\b(?:spawn|execFile|fork)\s*\(|Docker|znn-typescript-sdk|wallet|signer|signing|payment|publication|controller|RUN handoff/i,
+  );
+});
+
+test('CLI accepts one canonical document through short reads and emits one fixed success line', async () => {
+  const input = Buffer.from(preflightText());
+  async function* shortReads() {
+    for (let index = 0; index < input.length; index += 1) {
+      yield input.subarray(index, index + 1);
+    }
+  }
+  const stdout = [];
+  const stderr = [];
+  const { runGateBResetEpochPolicyPreflightCli } = await import(CLI_URL);
+  const success = await runGateBResetEpochPolicyPreflightCli({
+    argv: [],
+    stdin: shortReads(),
+    stdout: line => {
+      stdout.push(line);
+      return Buffer.byteLength(line);
+    },
+    stderr: line => {
+      stderr.push(line);
+      return Buffer.byteLength(line);
+    },
+  });
+
+  assert.equal(success, true);
+  assert.deepEqual(stdout, [CLI_SUCCESS]);
+  assert.deepEqual(stderr, []);
+
+  const direct = runCli(input);
+  assert.equal(direct.status, 0);
+  assert.equal(direct.signal, null);
+  assert.deepEqual(direct.stdout, Buffer.from(CLI_SUCCESS));
+  assert.deepEqual(direct.stderr, Buffer.alloc(0));
+  assert.equal(direct.error, undefined);
+});
+
+test('CLI rejects malformed, oversized, noncanonical, prior, mixed, and non-UTF-8 input', async t => {
+  const priorEpoch = {
+    eventId: PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_EVENT_ID,
+    liveAcknowledgement: TESTNET_LIVE_ACKNOWLEDGEMENT,
+    operatorTrustAcknowledgement:
+      PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_OPERATOR_TRUST_ACKNOWLEDGEMENT,
+    profileName: PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_PROFILE_NAME,
+    rpcEndpoint: PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_WSS_ENDPOINT,
+    wssAcknowledgement:
+      PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_WSS_ACKNOWLEDGEMENT,
+  };
+  const valid = Buffer.from(preflightText());
+  const cases = [
+    ['malformed JSON', Buffer.from('{"policySelection":')],
+    ['oversized stream', Buffer.alloc(2049, 0x20)],
+    ['noncanonical trailing newline', Buffer.concat([valid, Buffer.from('\n')])],
+    ['UTF-8 BOM', Buffer.concat([Buffer.from([0xef, 0xbb, 0xbf]), valid])],
+    ['malformed UTF-8', Buffer.from([0x7b, 0x22, 0xc3, 0x28])],
+    ['prior epoch', Buffer.from(preflightText({ policySelection: priorEpoch }))],
+    ['mixed epoch', Buffer.from(preflightText({
+      policySelection: resetEpochSelection({
+        eventId: PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_EVENT_ID,
+      }),
+    }))],
+    ['parser-invalid extra field', Buffer.from(canonicalJson({
+      policySelection: resetEpochSelection(),
+      preflightVersion: 1,
+      runAuthorized: false,
+    }))],
+  ];
+
+  for (const [name, input] of cases) {
+    await t.test(name, () => assertCliFailure(input));
+  }
+  await t.test('extra argument', () => assertCliFailure(valid, ['unexpected']));
+});
+
+test('CLI fails closed when fixed output cannot be written', async () => {
+  const { runGateBResetEpochPolicyPreflightCli } = await import(CLI_URL);
+  const stderr = [];
+  const success = await runGateBResetEpochPolicyPreflightCli({
+    argv: [],
+    stdin: [Buffer.from(preflightText())],
+    stdout: () => {
+      throw new Error('unreported stdout failure');
+    },
+    stderr: line => {
+      stderr.push(line);
+      return Buffer.byteLength(line);
+    },
+  });
+
+  assert.equal(success, false);
+  assert.deepEqual(stderr, [CLI_FAILURE]);
+
+  const shortWrite = await runGateBResetEpochPolicyPreflightCli({
+    argv: [],
+    stdin: [Buffer.from(preflightText())],
+    stdout: () => 0,
+    stderr: () => {
+      throw new Error('unreported stderr failure');
+    },
+  });
+  assert.equal(shortWrite, false);
+});
+
+test('only the new CLI imports the parser and existing active entrypoints cannot reach either', () => {
   const moduleUrl = new URL(`../src/${MODULE_NAME}`, import.meta.url);
   const source = readFileSync(moduleUrl, 'utf8');
   const selectorSource = readFileSync(
@@ -263,17 +438,24 @@ test('module import is selector-only, effect-free, default-off, and unreachable 
 
   const packageText = readFileSync(new URL('../package.json', import.meta.url), 'utf8');
   const packageJson = JSON.parse(packageText);
-  assert.equal(packageText.includes(MODULE_NAME), false);
+  const sourceDirectory = new URL('../src/', import.meta.url);
+  const directImporters = readdirSync(sourceDirectory)
+    .filter(name => name.endsWith('.js'))
+    .filter(name => imports(readFileSync(new URL(name, sourceDirectory), 'utf8'))
+      .includes(`./${MODULE_NAME}`))
+    .sort();
+  assert.deepEqual(directImporters, [CLI_MODULE_NAME]);
 
   const roots = new Set([
     '../src/buyer.js',
     '../src/resource-server.js',
     '../src/zenon-payment.js',
   ].map(path => new URL(path, import.meta.url).href));
-  for (const script of Object.values(packageJson.scripts)) {
+  for (const [name, script] of Object.entries(packageJson.scripts)) {
     if (script === 'node --test') continue;
     const match = /^node (src\/[A-Za-z0-9._/-]+\.js)$/.exec(script);
     assert.ok(match);
+    if (name === CLI_SCRIPT_NAME) continue;
     roots.add(new URL(`../${match[1]}`, import.meta.url).href);
   }
 
@@ -284,10 +466,12 @@ test('module import is selector-only, effect-free, default-off, and unreachable 
     if (visited.has(href)) continue;
     visited.add(href);
     assert.equal(href.endsWith(`/${MODULE_NAME}`), false);
+    assert.equal(href.endsWith(`/${CLI_MODULE_NAME}`), false);
     const url = new URL(href);
     if (!existsSync(url)) continue;
     const activeSource = readFileSync(url, 'utf8');
     assert.equal(activeSource.includes(MODULE_NAME), false);
+    assert.equal(activeSource.includes(CLI_MODULE_NAME), false);
     for (const match of activeSource.matchAll(
       /(?:from\s+|import\s*(?:\(\s*)?)['"](\.[^'"]+)['"]/g,
     )) {
