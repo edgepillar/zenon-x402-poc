@@ -77,11 +77,13 @@ export async function buildPhase2AInputs() {
             hash: deterministicHash(sdk, `scenario-${spec.id}-account-frontier`),
           };
       const frontierMomentum = {
+        version: 1,
         chainIdentifier: Number(PHASE2A_CHAIN_PROFILE.chainIdentifier),
         height: spec.momentumHeight,
         hash: deterministicHash(sdk, `scenario-${spec.id}-momentum-frontier`),
       };
       const readinessMomentum = {
+        version: 1,
         chainIdentifier: Number(PHASE2A_CHAIN_PROFILE.chainIdentifier),
         height: spec.readinessMomentumHeight,
         hash: deterministicHash(sdk, `scenario-${spec.id}-readiness-momentum`),

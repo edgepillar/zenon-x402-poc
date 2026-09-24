@@ -675,6 +675,7 @@ function installSyntheticNode(t, behavior = {}) {
   };
   zenon.ledger = {
     getFrontierMomentum: async () => ({
+      version: 1,
       chainIdentifier: Number(PROFILE.chainIdentifier),
       height: 10,
       hash: sdk.Hash.digest(Buffer.from('synthetic frontier momentum')),

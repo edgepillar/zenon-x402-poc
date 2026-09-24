@@ -23,7 +23,9 @@ import {
   SettlementJournal,
 } from './settlement-journal.js';
 import { invokeLegacySdk105SignedComposite } from './zenon/internal/legacy-sdk-1-0-5-signed-composite.js';
+import { classifyDynamicPlasmaCompatibility } from './zenon/dynamic-plasma-compatibility.js';
 import {
+  PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_PROVENANCE,
   PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_WSS_ENDPOINT,
   isPublicTestnetDynamicPlasmaEpochPolicy,
   isOperatorTrustedTestnetPolicy,
@@ -72,6 +74,7 @@ const BUFFER_EQUALS = Buffer.prototype.equals;
 const OBJECT_PROTOTYPE = Object.prototype;
 const BUFFER_PROTOTYPE = Buffer.prototype;
 const OBJECT_FREEZE = Object.freeze;
+const OBJECT_IS = Object.is;
 const IS_PROMISE = utilTypes.isPromise;
 const IS_PROXY = utilTypes.isProxy;
 const PROMISE_CONSTRUCTOR = Promise;
@@ -1201,6 +1204,331 @@ export async function assertAssetExists(zenon, sdk, tokenStandard, callRead = (_
   if (!token || token.tokenStandard?.toString() !== tokenStandard.toString()) safetyError('asset_not_found');
 }
 
+function dynamicPlasmaGuardFailed() {
+  safetyError('dynamic_plasma_compatibility_guard_failed');
+}
+
+function ownEnumerableDataDescriptor(value, field, required = true) {
+  let descriptor;
+  try {
+    descriptor = REFLECT_APPLY(GET_OWN_PROPERTY_DESCRIPTOR, undefined, [value, field]);
+  } catch {
+    dynamicPlasmaGuardFailed();
+  }
+  if (descriptor === undefined) {
+    if (required) dynamicPlasmaGuardFailed();
+    return undefined;
+  }
+  if (descriptor.enumerable !== true ||
+      !REFLECT_APPLY(HAS_OWN, undefined, [descriptor, 'value'])) {
+    dynamicPlasmaGuardFailed();
+  }
+  return descriptor;
+}
+
+function observedMomentumVersionDescriptor(frontierMomentum) {
+  if (frontierMomentum === null || typeof frontierMomentum !== 'object' ||
+      REFLECT_APPLY(ARRAY_IS_ARRAY, undefined, [frontierMomentum]) ||
+      REFLECT_APPLY(IS_PROXY, undefined, [frontierMomentum])) {
+    dynamicPlasmaGuardFailed();
+  }
+  return ownEnumerableDataDescriptor(frontierMomentum, 'version');
+}
+
+function snapshotReadinessDynamicPlasmaFrontier(value, expectedChainIdentifier) {
+  const version = observedMomentumVersionDescriptor(value).value;
+  const chainIdentifier = ownEnumerableDataDescriptor(value, 'chainIdentifier').value;
+  const height = ownEnumerableDataDescriptor(value, 'height').value;
+  const observedHash = ownEnumerableDataDescriptor(value, 'hash').value;
+  let hash;
+  try {
+    hash = typeof observedHash === 'string' ? observedHash : observedHash?.toString();
+  } catch {
+    dynamicPlasmaGuardFailed();
+  }
+  if (chainIdentifier !== expectedChainIdentifier ||
+      !validSafeInteger(chainIdentifier, { min: 1 }) ||
+      !validSafeInteger(height, { min: 1 }) ||
+      typeof hash !== 'string' || !HASH_HEX.test(hash) ||
+      (version !== 1 && version !== 2)) {
+    dynamicPlasmaGuardFailed();
+  }
+  return OBJECT_FREEZE({ chainIdentifier, height, hash, version });
+}
+
+function snapshotReadinessSyncHeight(value) {
+  if (value === null || typeof value !== 'object' ||
+      REFLECT_APPLY(ARRAY_IS_ARRAY, undefined, [value]) ||
+      REFLECT_APPLY(IS_PROXY, undefined, [value])) {
+    dynamicPlasmaGuardFailed();
+  }
+  const currentHeight = ownEnumerableDataDescriptor(value, 'currentHeight').value;
+  if (!validSafeInteger(currentHeight, { min: 1 })) dynamicPlasmaGuardFailed();
+  return currentHeight;
+}
+
+function snapshotRawDynamicPlasmaFrontier(value, expectedChainIdentifier) {
+  if (value === null || typeof value !== 'object' ||
+      REFLECT_APPLY(ARRAY_IS_ARRAY, undefined, [value]) ||
+      REFLECT_APPLY(IS_PROXY, undefined, [value])) {
+    dynamicPlasmaGuardFailed();
+  }
+  const chainIdentifier = ownEnumerableDataDescriptor(value, 'chainIdentifier').value;
+  const height = ownEnumerableDataDescriptor(value, 'height').value;
+  const hash = ownEnumerableDataDescriptor(value, 'hash').value;
+  const version = ownEnumerableDataDescriptor(value, 'version').value;
+  const fusionPrice = ownEnumerableDataDescriptor(value, 'nextFusionPrice', false);
+  const workPrice = ownEnumerableDataDescriptor(value, 'nextWorkPrice', false);
+  const pricesPresent = fusionPrice !== undefined && workPrice !== undefined;
+  if (chainIdentifier !== expectedChainIdentifier ||
+      !validSafeInteger(chainIdentifier, { min: 1 }) ||
+      !validSafeInteger(height, { min: 1 }) ||
+      typeof hash !== 'string' || !HASH_HEX.test(hash) ||
+      (version !== 1 && version !== 2) ||
+      (fusionPrice === undefined) !== (workPrice === undefined)) {
+    dynamicPlasmaGuardFailed();
+  }
+  if (version === 1) {
+    if (pricesPresent &&
+        (fusionPrice.value !== 0 || workPrice.value !== 0 ||
+         REFLECT_APPLY(OBJECT_IS, undefined, [fusionPrice.value, -0]) ||
+         REFLECT_APPLY(OBJECT_IS, undefined, [workPrice.value, -0]))) {
+      dynamicPlasmaGuardFailed();
+    }
+  } else if (!pricesPresent ||
+      !validSafeInteger(fusionPrice.value) ||
+      !validSafeInteger(workPrice.value) ||
+      REFLECT_APPLY(OBJECT_IS, undefined, [fusionPrice.value, -0]) ||
+      REFLECT_APPLY(OBJECT_IS, undefined, [workPrice.value, -0])) {
+    dynamicPlasmaGuardFailed();
+  }
+  return OBJECT_FREEZE({
+    chainIdentifier,
+    height,
+    hash,
+    version,
+    nextFusionPrice: fusionPrice === undefined ? 0 : fusionPrice.value,
+    nextWorkPrice: workPrice === undefined ? 0 : workPrice.value,
+    pricesPresent,
+  });
+}
+
+function dynamicPlasmaCompatibilityFrontier(frontier) {
+  return {
+    height: frontier.height,
+    hash: frontier.hash,
+    version: frontier.version,
+    nextFusionPrice: frontier.nextFusionPrice,
+    nextWorkPrice: frontier.nextWorkPrice,
+  };
+}
+
+function sameRawDynamicPlasmaFrontier(left, right) {
+  return left.chainIdentifier === right.chainIdentifier &&
+    left.height === right.height && left.hash === right.hash &&
+    left.version === right.version &&
+    left.nextFusionPrice === right.nextFusionPrice &&
+    left.nextWorkPrice === right.nextWorkPrice &&
+    left.pricesPresent === right.pricesPresent;
+}
+
+function assertRawDynamicPlasmaFrontierBound({
+  frontier,
+  readinessFrontier,
+  syncCurrentHeight,
+  publicEpochEnforcementHeight,
+}) {
+  if (frontier.chainIdentifier !== readinessFrontier.chainIdentifier ||
+      frontier.height !== readinessFrontier.height ||
+      frontier.hash !== readinessFrontier.hash ||
+      frontier.version !== readinessFrontier.version ||
+      frontier.height < syncCurrentHeight) {
+    dynamicPlasmaGuardFailed();
+  }
+  if (publicEpochEnforcementHeight !== null) {
+    const expectedVersion = frontier.height > publicEpochEnforcementHeight ? 2 : 1;
+    if (frontier.version !== expectedVersion) dynamicPlasmaGuardFailed();
+  }
+}
+
+function snapshotDynamicPlasmaRpcObservation(value) {
+  if (value === null || typeof value !== 'object' ||
+      REFLECT_APPLY(ARRAY_IS_ARRAY, undefined, [value]) ||
+      REFLECT_APPLY(IS_PROXY, undefined, [value])) {
+    dynamicPlasmaGuardFailed();
+  }
+  return {
+    availablePlasma: ownEnumerableDataDescriptor(value, 'availablePlasma').value,
+    basePlasma: ownEnumerableDataDescriptor(value, 'basePlasma').value,
+    requiredDifficulty: ownEnumerableDataDescriptor(value, 'requiredDifficulty').value,
+  };
+}
+
+async function dynamicPlasmaGuardRead(callRead, operation, execute) {
+  try {
+    return await callRead(operation, execute);
+  } catch (error) {
+    const runtimeCode = readRuntimeFailureCode(error);
+    if (runtimeCode === LIVE_RUNTIME_ERROR_CODES.READ_TIMEOUT ||
+        runtimeCode === LIVE_RUNTIME_ERROR_CODES.POISONED) throw error;
+    dynamicPlasmaGuardFailed();
+  }
+}
+
+async function readRawDynamicPlasmaFrontier(zenon, callRead, operation) {
+  let client;
+  let sendRequest;
+  try {
+    client = zenon.client;
+    if (client === null || (typeof client !== 'object' && typeof client !== 'function') ||
+        REFLECT_APPLY(IS_PROXY, undefined, [client])) {
+      dynamicPlasmaGuardFailed();
+    }
+    sendRequest = client.sendRequest;
+  } catch {
+    dynamicPlasmaGuardFailed();
+  }
+  if (typeof sendRequest !== 'function') dynamicPlasmaGuardFailed();
+  return dynamicPlasmaGuardRead(
+    callRead,
+    operation,
+    () => REFLECT_APPLY(sendRequest, client, ['ledger.getFrontierMomentum', []]),
+  );
+}
+
+async function captureLegacySignedCompositeDynamicPlasmaFrontier({
+  zenon,
+  readinessFrontier,
+  readinessSyncInfo,
+  expectedChainIdentifier,
+  operatorTrustedChainPolicy,
+  callRead,
+}) {
+  const readinessSnapshot = snapshotReadinessDynamicPlasmaFrontier(
+    readinessFrontier,
+    expectedChainIdentifier,
+  );
+  const syncCurrentHeight = snapshotReadinessSyncHeight(readinessSyncInfo);
+  const publicEpochEnforcementHeight =
+    isPublicTestnetDynamicPlasmaEpochPolicy(operatorTrustedChainPolicy)
+      ? PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_PROVENANCE.dynamicPlasmaEnforcementHeight
+      : null;
+  const beforeFrontier = snapshotRawDynamicPlasmaFrontier(
+    await readRawDynamicPlasmaFrontier(
+      zenon,
+      callRead,
+      'dynamicPlasma.ledger.getFrontierMomentum.before',
+    ),
+    expectedChainIdentifier,
+  );
+  assertRawDynamicPlasmaFrontierBound({
+    frontier: beforeFrontier,
+    readinessFrontier: readinessSnapshot,
+    syncCurrentHeight,
+    publicEpochEnforcementHeight,
+  });
+  return OBJECT_FREEZE({
+    readinessFrontier: readinessSnapshot,
+    syncCurrentHeight,
+    publicEpochEnforcementHeight,
+    beforeFrontier,
+  });
+}
+
+function assertPreparedMomentumAcknowledgementBound(prepared, frontier) {
+  let acknowledgedHash;
+  let acknowledgedHeight;
+  let preparedChainIdentifier;
+  try {
+    acknowledgedHash = prepared.momentumAcknowledged.hash.toString();
+    acknowledgedHeight = prepared.momentumAcknowledged.height;
+    preparedChainIdentifier = prepared.chainIdentifier;
+  } catch {
+    dynamicPlasmaGuardFailed();
+  }
+  if (preparedChainIdentifier !== frontier.chainIdentifier ||
+      acknowledgedHash !== frontier.hash || acknowledgedHeight !== frontier.height) {
+    dynamicPlasmaGuardFailed();
+  }
+}
+
+async function assertLegacyPreparedBlockDynamicPlasmaCompatible({
+  zenon,
+  sdk,
+  prepared,
+  frontierGuard,
+  readinessFrontier,
+  operatorTrustedChainPolicy,
+  callRead,
+}) {
+  if (frontierGuard === null) {
+    if (isPublicTestnetDynamicPlasmaEpochPolicy(operatorTrustedChainPolicy) ||
+        observedMomentumVersionDescriptor(readinessFrontier).value !== 1) {
+      dynamicPlasmaGuardFailed();
+    }
+    return;
+  }
+  const beforeFrontier = frontierGuard.beforeFrontier;
+  let rpcRaw;
+  if (beforeFrontier.version === 2) {
+    let powParam;
+    try {
+      powParam = new sdk.GetRequiredPowParam(
+        prepared.address,
+        prepared.blockType,
+        prepared.toAddress,
+        prepared.data,
+      );
+    } catch {
+      dynamicPlasmaGuardFailed();
+    }
+    rpcRaw = await dynamicPlasmaGuardRead(
+      callRead,
+      'dynamicPlasma.embedded.plasma.getRequiredPoWForAccountBlock',
+      () => zenon.embedded.plasma.getRequiredPoWForAccountBlock(powParam),
+    );
+  }
+  const afterFrontier = snapshotRawDynamicPlasmaFrontier(
+    await readRawDynamicPlasmaFrontier(
+      zenon,
+      callRead,
+      'dynamicPlasma.ledger.getFrontierMomentum.after',
+    ),
+    beforeFrontier.chainIdentifier,
+  );
+  assertRawDynamicPlasmaFrontierBound({
+    frontier: afterFrontier,
+    readinessFrontier: frontierGuard.readinessFrontier,
+    syncCurrentHeight: frontierGuard.syncCurrentHeight,
+    publicEpochEnforcementHeight: frontierGuard.publicEpochEnforcementHeight,
+  });
+  if (!sameRawDynamicPlasmaFrontier(beforeFrontier, afterFrontier)) {
+    dynamicPlasmaGuardFailed();
+  }
+  assertPreparedMomentumAcknowledgementBound(prepared, beforeFrontier);
+  if (beforeFrontier.version === 1) return;
+
+  let compatibility;
+  try {
+    compatibility = classifyDynamicPlasmaCompatibility({
+      chainProfileMatch: { classification: 'MATCH' },
+      beforeFrontier: dynamicPlasmaCompatibilityFrontier(beforeFrontier),
+      rpcObservation: snapshotDynamicPlasmaRpcObservation(rpcRaw),
+      afterFrontier: dynamicPlasmaCompatibilityFrontier(afterFrontier),
+    });
+  } catch {
+    dynamicPlasmaGuardFailed();
+  }
+
+  const quote = compatibility.quote;
+  if (compatibility.classification !== 'DP_ACTIVE' || quote === null ||
+      quote.sdk105BasePlasmaUnderpricingDetected === true ||
+      prepared.fusedPlasma !== quote.selectedFusedPlasma ||
+      prepared.difficulty !== quote.requiredDifficulty) {
+    dynamicPlasmaGuardFailed();
+  }
+}
+
 /** Complete the node's paginated unconfirmed-block snapshot or fail closed. */
 export async function assertNoConflictingUnconfirmedBlocks({
   ledger,
@@ -1541,12 +1869,25 @@ export class ExactZenonClient {
       lifecycleObserver: this.lifecycleObserver,
       lifecycleRole: 'buyer',
       lifecycleObservations: CLIENT_LIFECYCLE_OBSERVATIONS.get(this),
-      work: async ({ sdk, zenon, chainId, finishReadiness }, scope) => {
+      work: async ({ sdk, zenon, chainId, syncInfo, frontierMomentum, finishReadiness }, scope) => {
         let keyPair;
         try {
           const tokenStandard = offlineTokenStandard;
           const callRead = (operation, execute) => runRead(scope, zenon, this.rpcTimeoutMs, operation, execute);
           await assertAssetExists(zenon, sdk, tokenStandard, callRead);
+          const readinessVersion = observedMomentumVersionDescriptor(frontierMomentum).value;
+          if (readinessVersion !== 1 && readinessVersion !== 2) dynamicPlasmaGuardFailed();
+          const frontierGuard = readinessVersion === 2 ||
+              isPublicTestnetDynamicPlasmaEpochPolicy(this.operatorTrustedChainPolicy)
+            ? await captureLegacySignedCompositeDynamicPlasmaFrontier({
+              zenon,
+              readinessFrontier: frontierMomentum,
+              readinessSyncInfo: syncInfo,
+              expectedChainIdentifier: chainId,
+              operatorTrustedChainPolicy: this.operatorTrustedChainPolicy,
+              callRead,
+            })
+            : null;
           finishReadiness();
           let wallet;
           try {
@@ -1580,6 +1921,15 @@ export class ExactZenonClient {
             'buyer',
             'prepare_block_finished',
           );
+          await assertLegacyPreparedBlockDynamicPlasmaCompatible({
+            zenon,
+            sdk,
+            prepared,
+            frontierGuard,
+            readinessFrontier: frontierMomentum,
+            operatorTrustedChainPolicy: this.operatorTrustedChainPolicy,
+            callRead,
+          });
           if (prepared.chainIdentifier !== chainId ||
               String(prepared.chainIdentifier) !== accepted.extra.zenonChain.chainIdentifier) {
             safetyError('prepared_chain_mismatch');
