@@ -1,11 +1,15 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
+import { mkdtemp, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import test from 'node:test';
 
 import { paymentIntentDigest, sha256Hex } from '../src/canonical.js';
 import {
   DELIVERY_STATES,
   EVIDENCE_STATES,
+  SettlementJournal,
 } from '../src/settlement-journal.js';
 import * as recoveryPlanModule from '../src/service-credit-zenon-exact-hash-recovery-plan.js';
 
@@ -260,6 +264,79 @@ test('exact included blocks plan required Momentum evidence from either allowed 
     assert.equal(plan.update.confirmationDetail.numConfirmations, 2);
     assert.equal(plan.identity.transactionHash, '1'.repeat(64));
     assertDeeplyFrozen(plan);
+  }
+});
+
+test('persisted journal snapshots remain planner-compatible without journal mutation', async () => {
+  const root = await mkdtemp(join(tmpdir(), `zenon-exact-hash-plan-${process.pid}-`));
+  try {
+    for (const evidenceState of [
+      EVIDENCE_STATES.SUBMISSION_OUTCOME_UNKNOWN,
+      EVIDENCE_STATES.SUBMISSION_ACKNOWLEDGED,
+    ]) {
+      const directory = join(root, evidenceState);
+      const originalAttempt = attempt();
+      const originalAttemptBeforePersistence = structuredClone(originalAttempt);
+      const journal = new SettlementJournal({
+        directory,
+        allowedRoot: root,
+        clock: () => '2026-01-01T00:00:00.000Z',
+      });
+      await journal.putValidated(originalAttempt);
+      await journal.updateEvidence(
+        originalAttempt.authorizationKey,
+        originalAttempt.transactionHash,
+        evidenceState,
+      );
+      assert.deepEqual(originalAttempt, originalAttemptBeforePersistence);
+
+      const reopened = new SettlementJournal({ directory, allowedRoot: root });
+      const snapshot = await reopened.getEntrySnapshot(
+        originalAttempt.authorizationKey,
+        originalAttempt.transactionHash,
+      );
+      assert.equal(snapshot.kind, 'record');
+      assert.equal(snapshot.entry.evidenceState, evidenceState);
+      for (const [field, value] of Object.entries(originalAttempt)) {
+        assert.deepEqual(snapshot.entry[field], value);
+      }
+
+      const snapshotBeforePlanning = structuredClone(snapshot);
+      const observation = exactObservation(snapshot);
+      const observationBeforePlanning = structuredClone(observation);
+      const journalBeforePlanning = await reopened.load();
+      const plan = planZenonExactHashRecovery(snapshot, observation);
+
+      assert.deepEqual(plan, expectedPlan(snapshotBeforePlanning, evidenceState ===
+        EVIDENCE_STATES.SUBMISSION_OUTCOME_UNKNOWN
+        ? {
+            disposition: 'EVIDENCE_UPDATE',
+            reason: 'EXACT_HASH_OBSERVED',
+            update: {
+              evidenceState: EVIDENCE_STATES.SUBMISSION_ACKNOWLEDGED,
+              confirmationDetail: null,
+            },
+          }
+        : {
+            disposition: 'NO_MUTATION',
+            reason: 'ALREADY_ACKNOWLEDGED',
+            update: null,
+          }));
+      assert.deepEqual(snapshot, snapshotBeforePlanning);
+      assert.deepEqual(observation, observationBeforePlanning);
+
+      const reopenedAfterPlanning = new SettlementJournal({ directory, allowedRoot: root });
+      assert.deepEqual(
+        await reopenedAfterPlanning.getEntrySnapshot(
+          originalAttempt.authorizationKey,
+          originalAttempt.transactionHash,
+        ),
+        snapshotBeforePlanning,
+      );
+      assert.deepEqual(await reopenedAfterPlanning.load(), journalBeforePlanning);
+    }
+  } finally {
+    await rm(root, { recursive: true, force: true });
   }
 });
 
