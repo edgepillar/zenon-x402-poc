@@ -46,6 +46,7 @@ import {
   EVIDENCE_STATES,
   SettlementJournal,
 } from './settlement-journal.js';
+import { planZenonExactHashRecovery } from './service-credit-zenon-exact-hash-recovery-plan.js';
 import {
   createPaymentCapabilities,
   decodeB64Json,
@@ -96,6 +97,16 @@ const PUBLIC_WS_ONCE_EXECUTION_MODE = 'public-ws-once-v1';
 const CURRENT_TESTNET_WSS_ONCE_EXECUTION_MODE = 'current-testnet-wss-once-v1';
 const HISTORICAL_WSS_EXECUTION_MODE = 'historical-wss-v1';
 const PUBLIC_WS_ONCE_MARKER_NAME = 'PUBLIC_WS_ONCE_CONSUMED';
+const SOURCE_ONLY_EXACT_HASH_RECOVERY_MODE = 'SOURCE_ONLY_EXACT_HASH';
+const SOURCE_ONLY_EXACT_HASH_JOURNAL_MAX_BYTES = 256 * 1024;
+const SOURCE_ONLY_EXACT_HASH_CONSUMED_MARKER = 'PUBLIC_WS_ONCE_CONSUMED\n';
+const SOURCE_ONLY_EXACT_HASH_SUBMISSION_MARKER = 'SUBMISSION_ARMED\n';
+const SOURCE_ONLY_EXACT_HASH_RUN_ENTRIES = Object.freeze([
+  'SUBMISSION_ARMED', 'journal',
+]);
+const SOURCE_ONLY_EXACT_HASH_JOURNAL_ENTRIES = Object.freeze([
+  '.settlement-journal.initialized', 'settlement-journal.json',
+]);
 const PUBLIC_WS_ONCE_TRANSPORT_EXCEPTION =
   'I_EXPLICITLY_ACCEPT_PUBLIC_WS_FOR_EXACTLY_ONE_GATE_B_TESTNET_PAYMENT';
 const PUBLIC_WS_ONCE_PAYMENT_ACKNOWLEDGEMENT =
@@ -2016,6 +2027,221 @@ export function parseIndependentPublicWsOnceSupervisorBootstrap(jsonText) {
 
 function publicWsOnceConsumedMarker(workspaceRoot) {
   return join(workspaceRoot, PUBLIC_WS_ONCE_MARKER_NAME);
+}
+
+function exactSourceOnlyExactHashRecoveryOptions(options) {
+  exactObject(options, ['workspaceRoot', 'runName', 'recoveryMode']);
+  stringValue(options.workspaceRoot, 4096);
+  if (!isAbsolute(options.workspaceRoot) || resolve(options.workspaceRoot) !== options.workspaceRoot ||
+      typeof options.runName !== 'string' || !RUN_NAME.test(options.runName) ||
+      options.recoveryMode !== SOURCE_ONLY_EXACT_HASH_RECOVERY_MODE) fail();
+  const snapshot = {};
+  ownData(snapshot, 'workspaceRoot', options.workspaceRoot);
+  ownData(snapshot, 'runName', options.runName);
+  ownData(snapshot, 'recoveryMode', options.recoveryMode);
+  return FREEZE(snapshot);
+}
+
+function assertSourceOnlyExactHashUniqueIdentities(state) {
+  try {
+    const identities = new Set();
+    for (const directoryState of [
+      state.workspaceState, state.runState, state.journalState,
+    ]) {
+      const identity = `${directoryState.identity.dev}:${directoryState.identity.ino}`;
+      if (identities.has(identity)) fail();
+      identities.add(identity);
+    }
+    for (let index = 0; index < state.inputs.length; index += 1) {
+      const generation = state.inputs[index].generation;
+      const identity = `${generation.dev}:${generation.ino}`;
+      if (identities.has(identity)) fail();
+      identities.add(identity);
+    }
+  } catch {
+    fail();
+  }
+}
+
+async function assertSourceOnlyExactHashRetainedLayout(state) {
+  try {
+    await assertPrivateDirectoryState(state.workspaceState);
+    await assertPrivateDirectoryState(state.runState);
+    await assertPrivateDirectoryState(state.journalState);
+    const runEntries = (await readdir(state.runState.path)).sort();
+    const journalEntries = (await readdir(state.journalState.path)).sort();
+    if (JSON_STRINGIFY(runEntries) !== JSON_STRINGIFY(SOURCE_ONLY_EXACT_HASH_RUN_ENTRIES) ||
+        JSON_STRINGIFY(journalEntries) !==
+          JSON_STRINGIFY(SOURCE_ONLY_EXACT_HASH_JOURNAL_ENTRIES)) fail();
+  } catch {
+    fail();
+  }
+}
+
+async function assertSourceOnlyExactHashPinnedState(state, compareBytes) {
+  try {
+    if (typeof compareBytes !== 'boolean') fail();
+    await assertSourceOnlyExactHashRetainedLayout(state);
+    assertSourceOnlyExactHashUniqueIdentities(state);
+    for (let index = 0; index < state.inputs.length; index += 1) {
+      const input = state.inputs[index];
+      await assertOpenInputPath(input, input.generation);
+      if (compareBytes) await assertIndependentPinnedInputBytes(input);
+    }
+  } catch {
+    fail();
+  }
+}
+
+function exactSourceOnlyExactHashProtectedJournal(bytes) {
+  try {
+    if (!Buffer.isBuffer(bytes)) fail();
+    const document = parseStrictJson(
+      bytes.toString('utf8'),
+      SOURCE_ONLY_EXACT_HASH_JOURNAL_MAX_BYTES,
+    );
+    exactObject(document, ['schemaVersion', 'revision', 'records', 'checksum']);
+    if (document.schemaVersion !== 1 || !Number.isSafeInteger(document.revision) ||
+        document.revision < 0 || typeof document.checksum !== 'string' ||
+        !LOWERCASE_HASH_64.test(document.checksum) || !document.records ||
+        typeof document.records !== 'object' || ARRAY_IS_ARRAY(document.records) ||
+        GET_PROTOTYPE_OF(document.records) !== OBJECT_PROTOTYPE) fail();
+    const recordKeys = REFLECT_OWN_KEYS(document.records);
+    if (recordKeys.length !== 1 || typeof recordKeys[0] !== 'string') fail();
+    exactObject(document.records, [recordKeys[0]]);
+    const record = document.records[recordKeys[0]];
+    exactObject(record, PUBLIC_WS_ONCE_RECORD_FIELDS);
+    return FREEZE({
+      schemaVersion: document.schemaVersion,
+      revision: document.revision,
+      record,
+    });
+  } catch {
+    fail();
+  }
+}
+
+function exactSourceOnlyExactHashSnapshot(durableJournal, protectedJournal) {
+  try {
+    if (!durableJournal || durableJournal.schemaVersion !== 1 ||
+        durableJournal.schemaVersion !== protectedJournal.schemaVersion ||
+        durableJournal.revision !== protectedJournal.revision ||
+        !ARRAY_IS_ARRAY(durableJournal.records) || durableJournal.records.length !== 1 ||
+        canonicalJson(durableJournal.records[0]) !== canonicalJson(protectedJournal.record)) fail();
+    const entry = durableJournal.records[0];
+    const eligible =
+      (entry.evidenceState === EVIDENCE_STATES.SUBMISSION_OUTCOME_UNKNOWN &&
+        durableJournal.revision === 2) ||
+      (entry.evidenceState === EVIDENCE_STATES.SUBMISSION_ACKNOWLEDGED &&
+        (durableJournal.revision === 2 || durableJournal.revision === 3));
+    if (!eligible || entry.momentumEvidence !== null ||
+        entry.deliveryState !== DELIVERY_STATES.NONE || entry.cachedResponse !== null) fail();
+    return deepFreeze({
+      revision: durableJournal.revision,
+      kind: 'record',
+      entry,
+    });
+  } catch {
+    fail();
+  }
+}
+
+/**
+ * Read one exact retained source-only recovery record. This opt-in reader owns
+ * no mutation, publication, retry, signing, wallet, authorization, or RPC path.
+ */
+export async function readZenonExactHashRecoveryRetainedSnapshot(options) {
+  const inputs = [];
+  let journalState;
+  let runState;
+  let workspaceState;
+  try {
+    if (arguments.length !== 1) fail();
+    if (typeof process.getuid !== 'function' ||
+        !Number.isSafeInteger(fsConstants.O_NOFOLLOW) || fsConstants.O_NOFOLLOW <= 0 ||
+        !Number.isSafeInteger(fsConstants.O_DIRECTORY) || fsConstants.O_DIRECTORY <= 0) fail();
+    options = exactSourceOnlyExactHashRecoveryOptions(options);
+    await secureWorkspaceRoot(options.workspaceRoot);
+    workspaceState = await capturePrivateDirectoryState(options.workspaceRoot, true);
+    const runDirectory = join(workspaceState.path, options.runName);
+    runState = await capturePrivateDirectoryState(runDirectory, false);
+    const journalDirectory = join(runState.path, 'journal');
+    journalState = await capturePrivateDirectoryState(journalDirectory, false);
+    const state = { workspaceState, runState, journalState, inputs };
+    await assertSourceOnlyExactHashRetainedLayout(state);
+
+    append(inputs, await openVerifiedProtectedInput(
+      workspaceState.path,
+      publicWsOnceConsumedMarker(workspaceState.path),
+      BUFFER_BYTE_LENGTH(SOURCE_ONLY_EXACT_HASH_CONSUMED_MARKER, 'utf8'),
+    ));
+    append(inputs, await openVerifiedProtectedInput(
+      workspaceState.path,
+      join(runState.path, 'SUBMISSION_ARMED'),
+      BUFFER_BYTE_LENGTH(SOURCE_ONLY_EXACT_HASH_SUBMISSION_MARKER, 'utf8'),
+    ));
+    append(inputs, await openVerifiedProtectedInput(
+      workspaceState.path,
+      join(journalState.path, '.settlement-journal.initialized'),
+      1,
+      true,
+    ));
+    append(inputs, await openVerifiedProtectedInput(
+      workspaceState.path,
+      join(journalState.path, 'settlement-journal.json'),
+      SOURCE_ONLY_EXACT_HASH_JOURNAL_MAX_BYTES,
+    ));
+    await assertSourceOnlyExactHashPinnedState(state, false);
+
+    const consumedMarkerBytes = await readVerifiedOpenInput(
+      inputs[0],
+      BUFFER_BYTE_LENGTH(SOURCE_ONLY_EXACT_HASH_CONSUMED_MARKER, 'utf8'),
+    );
+    const submissionMarkerBytes = await readVerifiedOpenInput(
+      inputs[1],
+      BUFFER_BYTE_LENGTH(SOURCE_ONLY_EXACT_HASH_SUBMISSION_MARKER, 'utf8'),
+    );
+    const journalMarkerBytes = await readVerifiedOpenInput(inputs[2], 1);
+    const journalBytes = await readVerifiedOpenInput(
+      inputs[3],
+      SOURCE_ONLY_EXACT_HASH_JOURNAL_MAX_BYTES,
+    );
+    if (consumedMarkerBytes.toString('utf8') !== SOURCE_ONLY_EXACT_HASH_CONSUMED_MARKER ||
+        submissionMarkerBytes.toString('utf8') !== SOURCE_ONLY_EXACT_HASH_SUBMISSION_MARKER ||
+        journalMarkerBytes.length !== 0) fail();
+    const protectedJournal = exactSourceOnlyExactHashProtectedJournal(journalBytes);
+
+    // Establish fixed protected bytes and layout before the journal parser is used.
+    await assertSourceOnlyExactHashPinnedState(state, true);
+    const durableJournal = await new SettlementJournal({
+      directory: journalState.path,
+      allowedRoot: runState.path,
+      existingOnly: true,
+      maxRecords: 1,
+      maxFileBytes: SOURCE_ONLY_EXACT_HASH_JOURNAL_MAX_BYTES,
+    }).load();
+    const snapshot = exactSourceOnlyExactHashSnapshot(durableJournal, protectedJournal);
+    const plan = planZenonExactHashRecovery(snapshot, FREEZE({
+      observationVersion: 1,
+      status: 'UNAVAILABLE',
+    }));
+    if (!plan || plan.planVersion !== 1 || plan.scope !== SOURCE_ONLY_EXACT_HASH_RECOVERY_MODE ||
+        plan.disposition !== 'NO_MUTATION' || plan.reason !== 'OBSERVATION_UNAVAILABLE' ||
+        plan.update !== null || plan.sideEffects !== 'NONE') fail();
+
+    // Detect retained-path replacement or byte drift after the independent parse.
+    await assertSourceOnlyExactHashPinnedState(state, true);
+    return snapshot;
+  } catch {
+    fail();
+  } finally {
+    for (let index = inputs.length - 1; index >= 0; index -= 1) {
+      await disposeVerifiedInput(inputs[index]);
+    }
+    await disposePrivateDirectoryState(journalState);
+    await disposePrivateDirectoryState(runState);
+    await disposePrivateDirectoryState(workspaceState);
+  }
 }
 
 async function assertUnusedPublicWsOnceMarker(workspaceRoot) {

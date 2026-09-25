@@ -22,7 +22,7 @@ import { PassThrough } from 'node:stream';
 import { dirname, join } from 'node:path';
 import { tmpdir } from 'node:os';
 import * as sdk from 'znn-typescript-sdk';
-import { paymentIntentDigest } from '../src/canonical.js';
+import { paymentIntentDigest, sha256Hex } from '../src/canonical.js';
 import {
   parseLiveEvidenceBundle,
   parseLiveEvidenceFragment,
@@ -50,6 +50,7 @@ import {
   parseLiveEvidenceRunConfig,
   parseLiveRoleInput,
   preflightLiveEvidenceRun,
+  readZenonExactHashRecoveryRetainedSnapshot,
   readLiveRoleInputFile,
 } from '../src/live-evidence-runner.js';
 import { runLiveEvidenceRunnerCli } from '../src/live-evidence-runner-cli.js';
@@ -395,6 +396,568 @@ function journalInputFromRecord(record) {
 function assertFixedRunFailure(error) {
   return error?.code === 'live_evidence_run_invalid' && error?.cause === undefined;
 }
+
+const EXACT_HASH_RECOVERY_MODE = 'SOURCE_ONLY_EXACT_HASH';
+const RETAINED_CONSUMED_MARKER = 'PUBLIC_WS_ONCE_CONSUMED\n';
+const RETAINED_SUBMISSION_MARKER = 'SUBMISSION_ARMED\n';
+
+async function retainedRecoveryReaderFixture(
+  t,
+  {
+    evidenceState = EVIDENCE_STATES.SUBMISSION_ACKNOWLEDGED,
+    acknowledgedRevision = 2,
+    includeUnrelatedPrivateLeaves = false,
+  } = {},
+) {
+  const createdRoot = await mkdtemp(join(tmpdir(), 'retained-recovery-reader-'));
+  t.after(() => rm(createdRoot, { recursive: true, force: true }));
+  const root = await realpath(createdRoot);
+  await chmod(root, 0o700);
+  const workspaceRoot = join(root, 'workspace');
+  const runName = 'retained-source-only';
+  const runDirectory = join(workspaceRoot, runName);
+  const journalDirectory = join(runDirectory, 'journal');
+  const consumedMarkerPath = join(workspaceRoot, 'PUBLIC_WS_ONCE_CONSUMED');
+  const submissionMarkerPath = join(runDirectory, 'SUBMISSION_ARMED');
+  const journalMarkerPath = join(journalDirectory, '.settlement-journal.initialized');
+  const journalPath = join(journalDirectory, 'settlement-journal.json');
+  await mkdir(workspaceRoot, { mode: 0o700 });
+  await writeFile(consumedMarkerPath, RETAINED_CONSUMED_MARKER, { mode: 0o600 });
+  await mkdir(runDirectory, { mode: 0o700 });
+  await writeFile(submissionMarkerPath, RETAINED_SUBMISSION_MARKER, { mode: 0o600 });
+
+  if (includeUnrelatedPrivateLeaves) {
+    for (const name of [
+      'run.json', 'buyer-wallet.json', 'buyer-rpc.json', 'facilitator-rpc.json',
+    ]) {
+      const directory = join(workspaceRoot, name);
+      await mkdir(directory, { mode: 0o700 });
+      await writeFile(join(directory, 'MUST_NOT_BE_OPENED'), 'synthetic sentinel\n', {
+        mode: 0o600,
+      });
+    }
+  }
+
+  let journalNow = SYNTHETIC_UTC;
+  const journal = new SettlementJournal({
+    directory: journalDirectory,
+    allowedRoot: runDirectory,
+    clock: () => journalNow,
+  });
+  const candidate = await validRunnerCandidate();
+  const sourceRecord = candidate.context.journalSnapshot.records[0];
+  const input = journalInputFromRecord(sourceRecord);
+  await journal.putValidated(input);
+  if (evidenceState === EVIDENCE_STATES.SUBMISSION_OUTCOME_UNKNOWN) {
+    await journal.updateEvidence(
+      input.authorizationKey,
+      input.transactionHash,
+      EVIDENCE_STATES.SUBMISSION_OUTCOME_UNKNOWN,
+    );
+  } else if (evidenceState === EVIDENCE_STATES.SUBMISSION_ACKNOWLEDGED) {
+    if (acknowledgedRevision === 2) {
+      await journal.updateEvidence(
+        input.authorizationKey,
+        input.transactionHash,
+        EVIDENCE_STATES.SUBMISSION_ACKNOWLEDGED,
+      );
+    } else if (acknowledgedRevision === 3) {
+      await journal.updateEvidence(
+        input.authorizationKey,
+        input.transactionHash,
+        EVIDENCE_STATES.SUBMISSION_OUTCOME_UNKNOWN,
+      );
+      const snapshot = await journal.getEntrySnapshot(
+        input.authorizationKey,
+        input.transactionHash,
+      );
+      await journal.compareAndUpdateEvidence({
+        expectedRevision: snapshot.revision,
+        expectedRecord: snapshot.entry,
+        evidenceState: EVIDENCE_STATES.SUBMISSION_ACKNOWLEDGED,
+        confirmationDetail: null,
+      });
+    } else {
+      throw new Error('invalid retained recovery test revision');
+    }
+  } else if (evidenceState === EVIDENCE_STATES.MOMENTUM_INCLUDED) {
+    await journal.updateEvidence(
+      input.authorizationKey,
+      input.transactionHash,
+      EVIDENCE_STATES.MOMENTUM_INCLUDED,
+      structuredClone(sourceRecord.momentumEvidence),
+    );
+  } else if (evidenceState !== EVIDENCE_STATES.VALIDATED) {
+    throw new Error('invalid retained recovery test state');
+  }
+
+  return {
+    workspaceRoot,
+    runName,
+    runDirectory,
+    journalDirectory,
+    consumedMarkerPath,
+    submissionMarkerPath,
+    journalMarkerPath,
+    journalPath,
+    journal,
+    input,
+    setJournalNow(value) {
+      journalNow = value;
+    },
+  };
+}
+
+function retainedRecoveryReaderOptions(fixture) {
+  return Object.freeze({
+    workspaceRoot: fixture.workspaceRoot,
+    runName: fixture.runName,
+    recoveryMode: EXACT_HASH_RECOVERY_MODE,
+  });
+}
+
+async function rewriteRetainedJournal(fixture, mutate, repairChecksum = true) {
+  const document = JSON.parse(await readFile(fixture.journalPath, 'utf8'));
+  mutate(document);
+  if (repairChecksum) {
+    const content = {
+      schemaVersion: document.schemaVersion,
+      revision: document.revision,
+      records: document.records,
+    };
+    if (document.schemaVersion === 2) content.tombstones = document.tombstones;
+    document.checksum = sha256Hex(content);
+  }
+  await writeFile(fixture.journalPath, `${JSON.stringify(document, null, 2)}\n`, {
+    mode: 0o600,
+  });
+}
+
+function assertDeeplyFrozen(value, seen = new Set()) {
+  if (value === null || typeof value !== 'object' || seen.has(value)) return;
+  seen.add(value);
+  assert.equal(Object.isFrozen(value), true);
+  for (const key of Reflect.ownKeys(value)) {
+    const descriptor = Object.getOwnPropertyDescriptor(value, key);
+    assert.equal(Object.hasOwn(descriptor, 'value'), true);
+    assertDeeplyFrozen(descriptor.value, seen);
+  }
+}
+
+async function assertRetainedReaderRejects(fixture, options = retainedRecoveryReaderOptions(fixture)) {
+  await assert.rejects(
+    readZenonExactHashRecoveryRetainedSnapshot(options),
+    assertFixedRunFailure,
+  );
+}
+
+test('retained-state reader is explicit, read-only, deeply frozen, and load-only', async t => {
+  const fixture = await retainedRecoveryReaderFixture(t, {
+    acknowledgedRevision: 3,
+    includeUnrelatedPrivateLeaves: true,
+  });
+  const journalBefore = await readFile(fixture.journalPath);
+  const journalGenerationBefore = generationFromStat(
+    await lstat(fixture.journalPath, { bigint: true }),
+  );
+  const runEntriesBefore = (await readdir(fixture.runDirectory)).sort();
+  const journalEntriesBefore = (await readdir(fixture.journalDirectory)).sort();
+  const prototype = SettlementJournal.prototype;
+  const loadDescriptor = Object.getOwnPropertyDescriptor(prototype, 'load');
+  const forbiddenNames = [
+    'putValidated',
+    'get',
+    'findByTransactionHash',
+    'getTombstone',
+    'findTombstoneByTransactionHash',
+    'listReconciliationCandidates',
+    'getEntrySnapshot',
+    'compareAndUpdateEvidence',
+    'replaceRecordWithTombstone',
+    'recordLateMomentumEvidence',
+    'updateEvidence',
+    'markDeliveryPending',
+    'markDelivered',
+    'list',
+  ];
+  const forbiddenDescriptors = forbiddenNames.map(name => [
+    name,
+    Object.getOwnPropertyDescriptor(prototype, name),
+  ]);
+  let loadConfigurationAccepted = false;
+  let mutationCalls = 0;
+  let signingCalls = 0;
+  const signDescriptor = Object.getOwnPropertyDescriptor(sdk.KeyPair.prototype, 'sign');
+  Object.defineProperty(prototype, 'load', {
+    ...loadDescriptor,
+    value: async function (...args) {
+      loadConfigurationAccepted = this.existingOnly === true &&
+        this.directory === fixture.journalDirectory &&
+        this.allowedRoot === fixture.runDirectory &&
+        this.maxRecords === 1 && this.maxFileBytes === 256 * 1024;
+      return Reflect.apply(loadDescriptor.value, this, args);
+    },
+  });
+  for (const [name, descriptor] of forbiddenDescriptors) {
+    Object.defineProperty(prototype, name, {
+      ...descriptor,
+      value() {
+        mutationCalls += 1;
+        throw new Error('unexpected journal mutation');
+      },
+    });
+  }
+  Object.defineProperty(sdk.KeyPair.prototype, 'sign', {
+    ...signDescriptor,
+    value() {
+      signingCalls += 1;
+      throw new Error('unexpected signing');
+    },
+  });
+  let snapshot;
+  try {
+    snapshot = await readZenonExactHashRecoveryRetainedSnapshot(
+      retainedRecoveryReaderOptions(fixture),
+    );
+  } finally {
+    Object.defineProperty(prototype, 'load', loadDescriptor);
+    for (const [name, descriptor] of forbiddenDescriptors) {
+      Object.defineProperty(prototype, name, descriptor);
+    }
+    Object.defineProperty(sdk.KeyPair.prototype, 'sign', signDescriptor);
+  }
+
+  assert.equal(loadConfigurationAccepted, true);
+  assert.equal(mutationCalls, 0);
+  assert.equal(signingCalls, 0);
+  assert.deepEqual(Object.keys(snapshot).sort(), ['entry', 'kind', 'revision']);
+  assert.equal(snapshot.revision, 3);
+  assert.equal(snapshot.kind, 'record');
+  assert.equal(snapshot.entry.evidenceState, EVIDENCE_STATES.SUBMISSION_ACKNOWLEDGED);
+  assert.equal(snapshot.entry.momentumEvidence, null);
+  assert.equal(snapshot.entry.deliveryState, 'NONE');
+  assert.equal(snapshot.entry.cachedResponse, null);
+  assertDeeplyFrozen(snapshot);
+  assert.throws(() => {
+    snapshot.entry.evidenceState = EVIDENCE_STATES.VALIDATED;
+  }, TypeError);
+  assert.equal(Buffer.compare(journalBefore, await readFile(fixture.journalPath)), 0);
+  assert.deepEqual(
+    generationFromStat(await lstat(fixture.journalPath, { bigint: true })),
+    journalGenerationBefore,
+  );
+  assert.deepEqual((await readdir(fixture.runDirectory)).sort(), runEntriesBefore);
+  assert.deepEqual((await readdir(fixture.journalDirectory)).sort(), journalEntriesBefore);
+});
+
+test('retained-state reader requires exact one-object opt-in options', async t => {
+  const fixture = await retainedRecoveryReaderFixture(t);
+  const valid = retainedRecoveryReaderOptions(fixture);
+  const journalBefore = await readFile(fixture.journalPath);
+  const attempts = [
+    () => readZenonExactHashRecoveryRetainedSnapshot(),
+    () => readZenonExactHashRecoveryRetainedSnapshot(undefined),
+    () => readZenonExactHashRecoveryRetainedSnapshot(null),
+    () => readZenonExactHashRecoveryRetainedSnapshot({}, {}),
+    () => readZenonExactHashRecoveryRetainedSnapshot({
+      workspaceRoot: fixture.workspaceRoot,
+      runName: fixture.runName,
+    }),
+    () => readZenonExactHashRecoveryRetainedSnapshot({
+      ...valid,
+      recoveryMode: 'DEFAULT',
+    }),
+    () => readZenonExactHashRecoveryRetainedSnapshot({ ...valid, extra: true }),
+    () => readZenonExactHashRecoveryRetainedSnapshot({
+      ...valid,
+      workspaceRoot: 'relative',
+    }),
+    () => readZenonExactHashRecoveryRetainedSnapshot({ ...valid, runName: '../escape' }),
+    () => readZenonExactHashRecoveryRetainedSnapshot(Object.assign(
+      Object.create(null),
+      valid,
+    )),
+    () => readZenonExactHashRecoveryRetainedSnapshot(new Proxy({ ...valid }, {})),
+  ];
+  for (const attempt of attempts) {
+    await assert.rejects(attempt(), assertFixedRunFailure);
+  }
+  let getterCalls = 0;
+  const accessorOptions = {
+    workspaceRoot: fixture.workspaceRoot,
+    runName: fixture.runName,
+  };
+  Object.defineProperty(accessorOptions, 'recoveryMode', {
+    enumerable: true,
+    get() {
+      getterCalls += 1;
+      return EXACT_HASH_RECOVERY_MODE;
+    },
+  });
+  await assert.rejects(
+    readZenonExactHashRecoveryRetainedSnapshot(accessorOptions),
+    assertFixedRunFailure,
+  );
+  assert.equal(getterCalls, 0);
+  assert.equal(Buffer.compare(journalBefore, await readFile(fixture.journalPath)), 0);
+});
+
+test('retained-state reader accepts only the exact eligible state and revision matrix', async t => {
+  for (const expected of [
+    { state: EVIDENCE_STATES.SUBMISSION_OUTCOME_UNKNOWN, revision: 2 },
+    { state: EVIDENCE_STATES.SUBMISSION_ACKNOWLEDGED, revision: 2 },
+    { state: EVIDENCE_STATES.SUBMISSION_ACKNOWLEDGED, revision: 3 },
+  ]) {
+    await t.test(`${expected.state} revision ${expected.revision}`, async t => {
+      const fixture = await retainedRecoveryReaderFixture(t, {
+        evidenceState: expected.state,
+        acknowledgedRevision: expected.revision,
+      });
+      const snapshot = await readZenonExactHashRecoveryRetainedSnapshot(
+        retainedRecoveryReaderOptions(fixture),
+      );
+      assert.equal(snapshot.revision, expected.revision);
+      assert.equal(snapshot.kind, 'record');
+      assert.equal(snapshot.entry.evidenceState, expected.state);
+      assertDeeplyFrozen(snapshot);
+    });
+  }
+
+  for (const rejected of [
+    { state: EVIDENCE_STATES.VALIDATED, revision: 1 },
+    { state: EVIDENCE_STATES.MOMENTUM_INCLUDED, revision: 2 },
+    { state: EVIDENCE_STATES.SUBMISSION_OUTCOME_UNKNOWN, revision: 1 },
+    { state: EVIDENCE_STATES.SUBMISSION_OUTCOME_UNKNOWN, revision: 3 },
+    { state: EVIDENCE_STATES.SUBMISSION_ACKNOWLEDGED, revision: 1 },
+    { state: EVIDENCE_STATES.SUBMISSION_ACKNOWLEDGED, revision: 4 },
+  ]) {
+    await t.test(`rejects ${rejected.state} revision ${rejected.revision}`, async t => {
+      const fixture = await retainedRecoveryReaderFixture(t, {
+        evidenceState: rejected.state,
+      });
+      await rewriteRetainedJournal(fixture, document => {
+        document.revision = rejected.revision;
+      });
+      await assertRetainedReaderRejects(fixture);
+    });
+  }
+});
+
+test('retained-state reader rejects schema-v2, tombstones, and multiple active records', async t => {
+  await t.test('schema-v2', async t => {
+    const fixture = await retainedRecoveryReaderFixture(t);
+    await rewriteRetainedJournal(fixture, document => {
+      document.schemaVersion = 2;
+      document.tombstones = {};
+    });
+    const before = await readFile(fixture.journalPath);
+    await assertRetainedReaderRejects(fixture);
+    assert.equal(Buffer.compare(before, await readFile(fixture.journalPath)), 0);
+  });
+
+  await t.test('tombstone', async t => {
+    const fixture = await retainedRecoveryReaderFixture(t);
+    const secondCandidate = await validRunnerCandidate();
+    const secondInput = journalInputFromRecord(
+      secondCandidate.context.journalSnapshot.records[0],
+    );
+    await fixture.journal.putValidated(secondInput);
+    const secondSnapshot = await fixture.journal.getEntrySnapshot(
+      secondInput.authorizationKey,
+      secondInput.transactionHash,
+    );
+    fixture.setJournalNow('2026-01-01T02:00:00.000Z');
+    await fixture.journal.replaceRecordWithTombstone({
+      expectedRevision: secondSnapshot.revision,
+      expectedRecord: secondSnapshot.entry,
+      retentionMs: 3_600_000,
+    });
+    const before = await readFile(fixture.journalPath);
+    await assertRetainedReaderRejects(fixture);
+    assert.equal(Buffer.compare(before, await readFile(fixture.journalPath)), 0);
+  });
+
+  await t.test('multiple active records', async t => {
+    const fixture = await retainedRecoveryReaderFixture(t);
+    const secondCandidate = await validRunnerCandidate();
+    await fixture.journal.putValidated(journalInputFromRecord(
+      secondCandidate.context.journalSnapshot.records[0],
+    ));
+    const before = await readFile(fixture.journalPath);
+    await assertRetainedReaderRejects(fixture);
+    assert.equal(Buffer.compare(before, await readFile(fixture.journalPath)), 0);
+  });
+});
+
+test('retained-state reader never creates or repairs missing and corrupt retained state', async t => {
+  for (const scenario of [
+    {
+      name: 'missing workspace marker',
+      mutate: fixture => rm(fixture.consumedMarkerPath),
+      missing: fixture => fixture.consumedMarkerPath,
+    },
+    {
+      name: 'corrupt workspace marker',
+      mutate: fixture => writeFile(fixture.consumedMarkerPath, 'CORRUPT\n', { mode: 0o600 }),
+      unchanged: fixture => fixture.consumedMarkerPath,
+    },
+    {
+      name: 'missing submission marker',
+      mutate: fixture => rm(fixture.submissionMarkerPath),
+      missing: fixture => fixture.submissionMarkerPath,
+    },
+    {
+      name: 'corrupt submission marker',
+      mutate: fixture => writeFile(fixture.submissionMarkerPath, 'CORRUPT\n', { mode: 0o600 }),
+      unchanged: fixture => fixture.submissionMarkerPath,
+    },
+    {
+      name: 'missing journal initialization marker',
+      mutate: fixture => rm(fixture.journalMarkerPath),
+      missing: fixture => fixture.journalMarkerPath,
+    },
+    {
+      name: 'corrupt journal initialization marker',
+      mutate: fixture => writeFile(fixture.journalMarkerPath, 'x', { mode: 0o600 }),
+      unchanged: fixture => fixture.journalMarkerPath,
+    },
+    {
+      name: 'missing journal data',
+      mutate: fixture => rm(fixture.journalPath),
+      missing: fixture => fixture.journalPath,
+    },
+    {
+      name: 'corrupt journal data',
+      mutate: fixture => writeFile(fixture.journalPath, '{', { mode: 0o600 }),
+      unchanged: fixture => fixture.journalPath,
+    },
+    {
+      name: 'oversized journal data',
+      mutate: fixture => writeFile(
+        fixture.journalPath,
+        Buffer.alloc((256 * 1024) + 1, 0x20),
+        { mode: 0o600 },
+      ),
+      unchanged: fixture => fixture.journalPath,
+    },
+    {
+      name: 'corrupt journal schema',
+      mutate: fixture => rewriteRetainedJournal(fixture, document => {
+        document.schemaVersion = 7;
+      }),
+      unchanged: fixture => fixture.journalPath,
+    },
+    {
+      name: 'corrupt journal checksum',
+      mutate: fixture => rewriteRetainedJournal(fixture, document => {
+        document.checksum = 'f'.repeat(64);
+      }, false),
+      unchanged: fixture => fixture.journalPath,
+    },
+  ]) {
+    await t.test(scenario.name, async t => {
+      const fixture = await retainedRecoveryReaderFixture(t);
+      await scenario.mutate(fixture);
+      const journalBefore = scenario.missing?.(fixture) === fixture.journalPath
+        ? null
+        : await readFile(fixture.journalPath);
+      const retainedPath = scenario.unchanged?.(fixture);
+      const retainedBefore = retainedPath === undefined ? null : await readFile(retainedPath);
+      await assertRetainedReaderRejects(fixture);
+      if (scenario.missing) {
+        await assert.rejects(
+          lstat(scenario.missing(fixture)),
+          error => error?.code === 'ENOENT',
+        );
+      }
+      if (retainedPath !== undefined) {
+        assert.equal(Buffer.compare(retainedBefore, await readFile(retainedPath)), 0);
+      }
+      if (journalBefore !== null) {
+        assert.equal(Buffer.compare(journalBefore, await readFile(fixture.journalPath)), 0);
+      }
+    });
+  }
+});
+
+test('retained-state reader rejects unsafe layout and deterministic replacement without writes', async t => {
+  for (const scenario of [
+    {
+      name: 'wrong file mode',
+      mutate: fixture => chmod(fixture.submissionMarkerPath, 0o640),
+    },
+    {
+      name: 'wrong directory mode',
+      mutate: fixture => chmod(fixture.journalDirectory, 0o750),
+    },
+    {
+      name: 'symlinked journal',
+      mutate: async fixture => {
+        const replacement = join(fixture.workspaceRoot, 'journal-symlink-target');
+        await rename(fixture.journalPath, replacement);
+        await symlink(replacement, fixture.journalPath);
+      },
+    },
+    {
+      name: 'hard-linked retained file',
+      mutate: fixture => link(
+        fixture.journalPath,
+        join(fixture.workspaceRoot, 'journal-hardlink'),
+      ),
+    },
+    {
+      name: 'unexpected run entry',
+      mutate: fixture => writeFile(join(fixture.runDirectory, 'UNEXPECTED'), 'x', {
+        mode: 0o600,
+      }),
+    },
+    {
+      name: 'unexpected journal entry',
+      mutate: fixture => writeFile(join(fixture.journalDirectory, 'UNEXPECTED'), 'x', {
+        mode: 0o600,
+      }),
+    },
+  ]) {
+    await t.test(scenario.name, async t => {
+      const fixture = await retainedRecoveryReaderFixture(t);
+      await scenario.mutate(fixture);
+      const journalBefore = scenario.name === 'symlinked journal'
+        ? null
+        : await readFile(fixture.journalPath);
+      await assertRetainedReaderRejects(fixture);
+      if (journalBefore !== null) {
+        assert.equal(Buffer.compare(journalBefore, await readFile(fixture.journalPath)), 0);
+      }
+    });
+  }
+
+  await t.test('deterministic journal replacement', async t => {
+    const fixture = await retainedRecoveryReaderFixture(t);
+    const prototype = SettlementJournal.prototype;
+    const loadDescriptor = Object.getOwnPropertyDescriptor(prototype, 'load');
+    const backupPath = join(fixture.workspaceRoot, 'pinned-journal-original');
+    let replacementPerformed = false;
+    Object.defineProperty(prototype, 'load', {
+      ...loadDescriptor,
+      value: async function (...args) {
+        const bytes = await readFile(this.filePath);
+        await rename(this.filePath, backupPath);
+        await writeFile(this.filePath, bytes, { mode: 0o600 });
+        bytes.fill(0);
+        replacementPerformed = true;
+        return Reflect.apply(loadDescriptor.value, this, args);
+      },
+    });
+    try {
+      await assertRetainedReaderRejects(fixture);
+    } finally {
+      Object.defineProperty(prototype, 'load', loadDescriptor);
+      await rm(fixture.journalPath, { force: true });
+      await rename(backupPath, fixture.journalPath);
+    }
+    assert.equal(replacementPerformed, true);
+  });
+});
 
 test('observer is synchronous, branded, descriptor-safe, bounded, and finalizes exact phases', () => {
   const collector = createLifecycleCollector();
