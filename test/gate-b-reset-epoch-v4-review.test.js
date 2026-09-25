@@ -8,6 +8,9 @@ import {
   GATE_B_QUICK_TUNNEL_TELEMETRY_POLICIES,
 } from '../src/gate-b-quick-tunnel-artifact.js';
 import {
+  HISTORICAL_PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_CHAIN_PROFILE,
+  HISTORICAL_PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_EVENT_ID,
+  HISTORICAL_PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_PROFILE_NAME,
   PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_CHAIN_PROFILE,
   PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_EVENT_ID,
   PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_OPERATOR_TRUST_ACKNOWLEDGEMENT,
@@ -237,6 +240,22 @@ test('valid canonical reset-epoch v4 input produces one bounded frozen review pr
     ),
   );
   assertDeeplyFrozen(preview);
+});
+
+test('historical reset-epoch v4 input is rejected without silent migration', () => {
+  const configuration = runConfig({
+    eventId:
+      HISTORICAL_PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_EVENT_ID,
+    profileName:
+      HISTORICAL_PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_PROFILE_NAME,
+  });
+  configuration.expectedPaymentRequired.accepts[0].extra.zenonChain = {
+    ...HISTORICAL_PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_CHAIN_PROFILE,
+  };
+  assert.throws(() => prepareGateBResetEpochV4Review(
+    canonicalJsonText(configuration),
+    RUN_NAME,
+  ));
 });
 
 test('binding rejects a reviewed config digest that does not match the preview', () => {

@@ -45,6 +45,8 @@ import {
 import { runGateBOperatorEntry } from '../src/gate-b-operator-front-end.js';
 import { GATE_B_PUBLIC_WS_INPUT_LEAVES } from '../src/gate-b-public-ws-inputs-schema.js';
 import {
+  HISTORICAL_PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_EVENT_ID,
+  HISTORICAL_PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_PROFILE_NAME,
   PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_EVENT_ID,
   PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_OPERATOR_TRUST_ACKNOWLEDGEMENT,
   PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_PROFILE_NAME,
@@ -84,6 +86,16 @@ function priorEpochSelection() {
     rpcEndpoint: PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_WSS_ENDPOINT,
     wssAcknowledgement: PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_WSS_ACKNOWLEDGEMENT,
   };
+}
+
+function historicalResetEpochSelection(overrides = {}) {
+  return resetEpochSelection({
+    eventId:
+      HISTORICAL_PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_EVENT_ID,
+    profileName:
+      HISTORICAL_PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_PROFILE_NAME,
+    ...overrides,
+  });
 }
 
 function policyPreflight(selection = resetEpochSelection()) {
@@ -156,10 +168,11 @@ test('invalid, stale, mixed, and hostile v3 selection rejects before any depende
   };
   const reset = resetEpochSelection();
   const prior = priorEpochSelection();
-  const mixed = Object.entries(prior)
+  const historical = historicalResetEpochSelection();
+  const mixed = [prior, historical].flatMap(stale => Object.entries(stale)
     .filter(([field, value]) => reset[field] !== value)
-    .map(([field, value]) => resetEpochSelection({ [field]: value }));
-  for (const selection of [prior, ...mixed]) {
+    .map(([field, value]) => resetEpochSelection({ [field]: value })));
+  for (const selection of [prior, historical, ...mixed]) {
     await assertSanitizedOperatorFailure(
       executeGateBResetEpochOperatorV3(entry(selection), dependency),
     );
