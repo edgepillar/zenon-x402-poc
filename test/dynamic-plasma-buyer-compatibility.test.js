@@ -8,6 +8,7 @@ import {
   ExactZenonClient,
   ExactZenonFacilitator,
   preflightZenonPayment,
+  probeResetEpochPaymentReadiness,
 } from '../src/zenon-payment.js';
 import {
   DELIVERY_STATES,
@@ -122,6 +123,15 @@ function accountInfo(address) {
   return new sdk.AccountInfo(address, 0, {
     [sdk.ZNN_ZTS.toString()]: new sdk.BalanceInfoListItem(token, 1n),
   });
+}
+
+function syntheticPayer(privateKeyByte) {
+  const keyPair = sdk.KeyPair.fromPrivateKey(Buffer.alloc(32, privateKeyByte));
+  try {
+    return keyPair.getAddress().toString();
+  } finally {
+    keyPair.clear();
+  }
 }
 
 function observedPaymentBlock(transaction, {
@@ -263,6 +273,9 @@ function installSyntheticRpc(t) {
       }
       if (method === 'ledger.publishRawTransaction') {
         state.counters.publish += 1;
+        if (typeof state.scenario.publish === 'function') {
+          return state.scenario.publish(state.counters.publish);
+        }
         return null;
       }
       throw new Error('Unexpected synthetic RPC method');
@@ -366,6 +379,7 @@ async function createPayment({
   operatorTrustedChainPolicy,
   rpcUrl,
   minimumMomentumConfirmations,
+  expectedPayer,
 } = {}) {
   const accepted = requirement(profile);
   if (minimumMomentumConfirmations !== undefined) {
@@ -383,6 +397,7 @@ async function createPayment({
     options.operatorTrustedChainPolicy = operatorTrustedChainPolicy;
     options.rpcUrl = rpcUrl;
   }
+  if (expectedPayer !== undefined) options.expectedPayer = expectedPayer;
   const client = new ExactZenonClient(options);
   return client.createPaymentPayload(required, accepted);
 }
@@ -1048,6 +1063,7 @@ test('reset epoch execution policy guards new execution and permits exact recove
     syncCurrentHeight = validHeight,
     observed = null,
     account = undefined,
+    publish = undefined,
   } = {}) => fixture.reset({
     frontier,
     heightTwo,
@@ -1055,6 +1071,7 @@ test('reset epoch execution policy guards new execution and permits exact recove
     plasma,
     observed,
     accountInfo: account,
+    publish,
     syncInfo: {
       state: sdk.SyncState.SyncDone,
       currentHeight: syncCurrentHeight,
@@ -1093,6 +1110,150 @@ test('reset epoch execution policy guards new execution and permits exact recove
     assert.equal(fixture.state.counters.heightTwo, 1);
     assert.equal(fixture.state.counters.wallet, 1);
     assert.equal(fixture.state.counters.sign, 1);
+    assert.equal(fixture.state.counters.publish, 0);
+  });
+
+  await t.test('real constructors retain one positive-work signed block after ambiguous publication',
+    async t => {
+      reset({
+        publish() {
+          throw new Error('synthetic ambiguous publication');
+        },
+      });
+      const payload = await pay({ minimumMomentumConfirmations: 2 });
+      const accepted = payload.accepted;
+      const required = challenge(accepted);
+      const preflight = await preflightZenonPayment(payload, accepted, required);
+      const signedAccountBlock = structuredClone(payload.payload.transaction);
+      const journal = await settlementJournal(t);
+      const facilitator = new ExactZenonFacilitator({
+        journal,
+        environment: ENVIRONMENT,
+        operatorTrustedChainPolicy: policy,
+        rpcUrl: PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_WSS_ENDPOINT,
+        rpcTimeoutMs: 100,
+      });
+
+      assert.deepEqual(fixture.state.prepared, { fusedPlasma: 21000, difficulty: 0 });
+      assert.equal(payload.payload.transaction.fusedPlasma > 0, true);
+      const first = await facilitator.settle(payload, accepted, required);
+      assert.equal(first.success, false);
+      assert.equal(first.state, EVIDENCE_STATES.SUBMISSION_OUTCOME_UNKNOWN);
+      assert.equal(first.retrySamePayment, true);
+      assert.equal(first.transaction, preflight.transactionHash);
+      assert.deepEqual({
+        wallet: fixture.state.counters.wallet,
+        prepare: fixture.state.counters.prepare,
+        sign: fixture.state.counters.sign,
+        publish: fixture.state.counters.publish,
+      }, {
+        wallet: 1,
+        prepare: 1,
+        sign: 1,
+        publish: 1,
+      });
+      const durable = await journal.get(
+        preflight.authorizationKey,
+        preflight.transactionHash,
+      );
+      assert.equal(durable.evidenceState, EVIDENCE_STATES.SUBMISSION_OUTCOME_UNKNOWN);
+      assert.deepEqual(durable.signedAccountBlock, signedAccountBlock);
+      assert.deepEqual(await journal.load(), {
+        schemaVersion: 1,
+        revision: 2,
+        records: [durable],
+      });
+
+      const second = await facilitator.settle(payload, accepted, required);
+      assert.equal(second.success, false);
+      assert.equal(second.state, EVIDENCE_STATES.SUBMISSION_OUTCOME_UNKNOWN);
+      assert.equal(second.retrySamePayment, true);
+      assert.equal(second.transaction, preflight.transactionHash);
+      assert.deepEqual({
+        wallet: fixture.state.counters.wallet,
+        prepare: fixture.state.counters.prepare,
+        sign: fixture.state.counters.sign,
+        publish: fixture.state.counters.publish,
+      }, {
+        wallet: 1,
+        prepare: 1,
+        sign: 1,
+        publish: 1,
+      });
+      const retained = await journal.get(
+        preflight.authorizationKey,
+        preflight.transactionHash,
+      );
+      assert.equal(retained.transactionHash, durable.transactionHash);
+      assert.deepEqual(retained.signedAccountBlock, signedAccountBlock);
+      assert.equal((await journal.load()).revision, 2);
+    });
+
+  await t.test('the pre-wallet readiness quote is exact and performs no wallet activity', async () => {
+    const paymentRequired = challenge(requirement(profile));
+    const payer = syntheticPayer(90);
+    const environment = {
+      ...ENVIRONMENT,
+      ZENON_RPC_URL: PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_WSS_ENDPOINT,
+    };
+    reset();
+
+    assert.deepEqual(await probeResetEpochPaymentReadiness({
+      role: 'buyer',
+      paymentRequired,
+      payer,
+      operatorTrustedChainPolicy: policy,
+      environment,
+      rpcTimeoutMs: 100,
+    }), {
+      ready: true,
+      role: 'buyer',
+      remoteChainAuthenticated: false,
+    });
+    assert.equal(fixture.state.counters.heightTwo, 1);
+    assert.equal(fixture.state.counters.plasma, 1);
+    assert.equal(fixture.state.counters.wallet, 0);
+    assert.equal(fixture.state.counters.prepare, 0);
+    assert.equal(fixture.state.counters.sign, 0);
+    assert.equal(fixture.state.counters.publish, 0);
+
+    reset({
+      frontier: () => momentum('reset-pre-wallet-zero-price', {
+        height: validHeight,
+        version: 2,
+        chainIdentifier,
+        nextFusionPrice: 0,
+        nextWorkPrice: 0,
+      }),
+    });
+    await assert.rejects(probeResetEpochPaymentReadiness({
+      role: 'buyer',
+      paymentRequired,
+      payer,
+      operatorTrustedChainPolicy: policy,
+      environment,
+      rpcTimeoutMs: 100,
+    }), { code: 'dynamic_plasma_compatibility_guard_failed' });
+    assert.equal(fixture.state.counters.wallet, 0);
+    assert.equal(fixture.state.counters.prepare, 0);
+    assert.equal(fixture.state.counters.sign, 0);
+    assert.equal(fixture.state.counters.publish, 0);
+  });
+
+  await t.test('the approved payer must match the derived wallet before preparation', async () => {
+    reset();
+    const expectedPayer = syntheticPayer(fixture.state.keyByte + 1);
+    const payload = await pay({ expectedPayer });
+    assert.equal(payload.payload.transaction.address, expectedPayer);
+    assert.equal(fixture.state.counters.sign, 1);
+
+    reset();
+    const wrongPayer = syntheticPayer(fixture.state.keyByte + 2);
+    const code = await rejectedWithoutPayload(() => pay({ expectedPayer: wrongPayer }));
+    assert.equal(code, 'reset_epoch_wallet_payer_mismatch');
+    assert.equal(fixture.state.counters.wallet, 1);
+    assert.equal(fixture.state.counters.prepare, 0);
+    assert.equal(fixture.state.counters.sign, 0);
     assert.equal(fixture.state.counters.publish, 0);
   });
 
@@ -1210,6 +1371,44 @@ test('reset epoch execution policy guards new execution and permits exact recove
     );
     assert.equal(fixture.state.counters.publish, 0);
   });
+
+  await t.test('facilitator rejects a valid signed block from any unapproved payer before RPC',
+    async t => {
+      reset();
+      const payload = await pay();
+      const accepted = payload.accepted;
+      const required = challenge(accepted);
+      const actual = await preflightZenonPayment(payload, accepted, required);
+      const journal = await settlementJournal(t);
+      const expectedPayer = syntheticPayer(fixture.state.keyByte + 1);
+      assert.notEqual(expectedPayer, actual.payer);
+      const facilitator = new ExactZenonFacilitator({
+        journal,
+        environment: ENVIRONMENT,
+        operatorTrustedChainPolicy: policy,
+        rpcUrl: PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_WSS_ENDPOINT,
+        rpcTimeoutMs: 100,
+        expectedPayer,
+      });
+      reset();
+
+      const verified = await facilitator.verify(payload, accepted, required);
+      const settled = await facilitator.settle(payload, accepted, required);
+
+      assert.deepEqual({
+        isValid: verified.isValid,
+        invalidReason: verified.invalidReason,
+      }, {
+        isValid: false,
+        invalidReason: 'reset_epoch_payment_payer_mismatch',
+      });
+      assert.equal(settled.success, false);
+      assert.equal(settled.errorReason, 'reset_epoch_payment_payer_mismatch');
+      assert.equal(fixture.state.counters.heightTwo, 0);
+      assert.equal(fixture.state.counters.frontier, 0);
+      assert.equal(fixture.state.counters.publish, 0);
+      assert.deepEqual((await journal.load()).records, []);
+    });
 
   await t.test('wrong and mixed-epoch height-two tuples fail before wallet or signing activity', async t => {
     const cases = [

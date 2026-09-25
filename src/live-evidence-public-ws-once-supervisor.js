@@ -22,11 +22,16 @@ const CURRENT_TESTNET_WSS_OPTION_FIELDS = Object.freeze([
   'configPath', 'buyerRpcPath', 'buyerWalletPath', 'facilitatorRpcPath',
   'authorizationPath', 'workspaceRoot', 'runName', 'executionMode',
 ]);
+const RESET_EPOCH_WSS_OPTION_FIELDS = Object.freeze([
+  'configPath', 'buyerRpcPath', 'buyerWalletPath', 'facilitatorRpcPath',
+  'approvalPath', 'workspaceRoot', 'runName', 'executionMode',
+]);
 const INDEPENDENT_FINALIZER_OPTION_FIELDS = Object.freeze([
   'endpointConfigPath', 'operatorReviewPath', 'workspaceRoot', 'runName',
   'attemptId',
 ]);
 const CURRENT_TESTNET_WSS_EXECUTION_MODE = 'current-testnet-wss-once-v1';
+const RESET_EPOCH_WSS_EXECUTION_MODE = 'reset-epoch-wss-once-v1';
 const ARRAY_IS_ARRAY = Array.isArray;
 const GET_OWN_PROPERTY_DESCRIPTOR = Object.getOwnPropertyDescriptor;
 const GET_PROTOTYPE_OF = Object.getPrototypeOf;
@@ -160,14 +165,27 @@ export async function supervisePublicWsOnceChild(command, options, injected) {
         command !== 'run-public-ws-once') fail();
     if (!options || typeof options !== 'object' || IS_PROXY(options) ||
         ARRAY_IS_ARRAY(options) || GET_PROTOTYPE_OF(options) !== OBJECT_PROTOTYPE) fail();
+    const executionModeDescriptor = independentFinalizer
+      ? undefined
+      : GET_OWN_PROPERTY_DESCRIPTOR(options, 'executionMode');
+    if (executionModeDescriptor !== undefined &&
+        (!HAS_OWN(executionModeDescriptor, 'value') ||
+         executionModeDescriptor.enumerable !== true ||
+         typeof executionModeDescriptor.value !== 'string')) fail();
     const fields = independentFinalizer
       ? INDEPENDENT_FINALIZER_OPTION_FIELDS
-      : GET_OWN_PROPERTY_DESCRIPTOR(options, 'executionMode') !== undefined
-        ? CURRENT_TESTNET_WSS_OPTION_FIELDS
-        : PUBLIC_WS_OPTION_FIELDS;
+      : executionModeDescriptor === undefined
+        ? PUBLIC_WS_OPTION_FIELDS
+        : executionModeDescriptor.value === CURRENT_TESTNET_WSS_EXECUTION_MODE
+          ? CURRENT_TESTNET_WSS_OPTION_FIELDS
+          : executionModeDescriptor.value === RESET_EPOCH_WSS_EXECUTION_MODE
+            ? RESET_EPOCH_WSS_OPTION_FIELDS
+            : fail();
     const snapshot = exactPlainDataObject(options, fields);
     if (fields === CURRENT_TESTNET_WSS_OPTION_FIELDS &&
         snapshot.executionMode !== CURRENT_TESTNET_WSS_EXECUTION_MODE) fail();
+    if (fields === RESET_EPOCH_WSS_OPTION_FIELDS &&
+        snapshot.executionMode !== RESET_EPOCH_WSS_EXECUTION_MODE) fail();
     const dependencies = captureInjections(injected);
     const bootstrap = independentFinalizer
       ? {
