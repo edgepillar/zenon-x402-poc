@@ -172,6 +172,44 @@ test('the mechanism contract can facade the current validation functions without
   assert.equal(assertX402PaymentMechanism(mechanism), mechanism);
 });
 
+test('retained-transition inspector stays source-only and test-imported', () => {
+  const inspectorName = 'inspectZenonExactHashRecoveryRetainedTransition';
+  const runnerUrl = new URL('../src/live-evidence-runner.js', import.meta.url);
+  const focusedTest =
+    'test/live-evidence-reset-epoch-exact-hash-transition-inspector.test.js';
+  const packageText = readFileSync(new URL('../package.json', import.meta.url), 'utf8');
+  const packageJson = JSON.parse(packageText);
+  assert.equal(packageJson.exports, undefined);
+  assert.equal(packageJson.bin, undefined);
+  assert.equal(packageText.includes(inspectorName), false);
+
+  const rootUrls = [
+    ['src/', new URL('../src/', import.meta.url)],
+    ['test/', new URL('../test/', import.meta.url)],
+  ];
+  const users = [];
+  for (const [prefix, rootUrl] of rootUrls) {
+    const pending = [rootUrl];
+    while (pending.length > 0) {
+      const directory = pending.pop();
+      for (const entry of readdirSync(directory, { withFileTypes: true })) {
+        const candidate = new URL(entry.name, directory);
+        if (entry.isDirectory()) {
+          pending.push(new URL(`${entry.name}/`, directory));
+          continue;
+        }
+        if (!entry.isFile() || !candidate.pathname.endsWith('.js') ||
+            candidate.href === import.meta.url || candidate.href === runnerUrl.href) continue;
+        const source = readFileSync(candidate, 'utf8');
+        if (source.includes(inspectorName)) {
+          users.push(`${prefix}${candidate.href.slice(rootUrl.href.length)}`);
+        }
+      }
+    }
+  }
+  assert.deepEqual(users, [focusedTest]);
+});
+
 test('delivery claims carry the authenticated accepted requirement across every concrete boundary', () => {
   assert.equal(
     SettlementRepository.prototype.markDeliveryPending.length,

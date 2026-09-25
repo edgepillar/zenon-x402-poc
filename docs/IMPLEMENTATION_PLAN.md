@@ -12,6 +12,10 @@ The current prototype explores:
 
 No go-zenon consensus change or hypothetical sequence-independent authorization primitive is assumed.
 
+The reset-epoch exact-hash retained-transition tranche is confined to `src/live-evidence-runner.js`, `test/live-evidence-reset-epoch-exact-hash-transition-inspector.test.js`, the source-only guard in `test/architecture-boundaries.test.js`, and narrow updates to `README.md`, `SECURITY.md`, and this plan. `inspectZenonExactHashRecoveryRetainedTransition` is exported for explicit source import only. It has no CLI, supervisor, coordinator, package script, dependency, workflow, schema, planner, CAS-owner, SQLite, or live-run wiring. The existing retained snapshot reader remains behaviorally restricted to its prior eligible matrix and continues to reject terminal included state.
+
+The inspector accepts the unchanged retained-layout options and one deeply frozen exact expectation. Version 1 binds the complete prior record through a domain-separated digest plus its revision, evidence state, `NONE` delivery, authorization key, exact transaction hash, and update time. It names exactly one permitted successor and `NONE` delivery: unknown to acknowledged with null confirmation detail, or unknown/acknowledged to included with exact confirmation detail. Protected retained inputs are opened read-only with the prior ownership, mode, link, no-follow, layout, identity, generation and byte checks; a strict independent parse is cross-checked against one schema-1 record loaded by `SettlementJournal` in `existingOnly` mode. The only outputs are fixed material-free local-journal classifications. No classification establishes chain inclusion, human approval, payment success, resource delivery, publication eligibility, finality, retry, replacement, or authority. There is no owned/authenticated observation producer, so no coordinator or recovery action is added and reset-epoch live-run readiness remains no-go. The already fulfilled Issue #45 live-test gate is separate; the distinct SQLite availability race is unchanged.
+
 ## Current v0.2 payload and requirement
 
 The mechanism payload is:
