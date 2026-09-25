@@ -1,8 +1,18 @@
 import test, { mock } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
+import { unlinkSync } from 'node:fs';
 import * as fsPromises from 'node:fs/promises';
-import { mkdir, mkdtemp, readFile, rm, unlink, writeFile } from 'node:fs/promises';
+import {
+  lstat,
+  mkdir,
+  mkdtemp,
+  readFile,
+  readdir,
+  rm,
+  unlink,
+  writeFile,
+} from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { createHash } from 'node:crypto';
@@ -2334,6 +2344,187 @@ test('initialized journal fails closed when its state file disappears', async t 
 
   const reloaded = new SettlementJournal({ directory, allowedRoot: root });
   await assert.rejects(reloaded.load(), error => error?.code === 'journal_state_missing');
+});
+
+test('existing-only snapshots reject missing state without filesystem residue', async t => {
+  const missingDirectory = await fixture(t, { existingOnly: true });
+  const missingDirectoryAttempt = validatedAttempt();
+  await assert.rejects(
+    missingDirectory.journal.getEntrySnapshot(
+      missingDirectoryAttempt.authorizationKey,
+      missingDirectoryAttempt.transactionHash,
+    ),
+    error => error?.code === 'journal_state_missing',
+  );
+  await assert.rejects(
+    missingDirectory.journal.compareAndUpdateEvidence({
+      expectedRevision: 0,
+      expectedRecord: fullRecord(missingDirectoryAttempt),
+      evidenceState: EVIDENCE_STATES.SUBMISSION_ACKNOWLEDGED,
+      confirmationDetail: null,
+    }),
+    error => error?.code === 'journal_state_missing',
+  );
+  await assert.rejects(
+    lstat(missingDirectory.directory),
+    error => error?.code === 'ENOENT',
+  );
+
+  const missingFile = await fixture(t, { existingOnly: true });
+  await mkdir(missingFile.directory);
+  await writeFile(
+    join(missingFile.directory, '.settlement-journal.initialized'),
+    '',
+    'utf8',
+  );
+  const missingFileAttempt = validatedAttempt({ transactionHash: '2'.repeat(64) });
+  await assert.rejects(
+    missingFile.journal.getEntrySnapshot(
+      missingFileAttempt.authorizationKey,
+      missingFileAttempt.transactionHash,
+    ),
+    error => error?.code === 'journal_state_missing',
+  );
+  assert.deepEqual(
+    await readdir(missingFile.directory),
+    ['.settlement-journal.initialized'],
+  );
+
+  const missingMarker = await fixture(t);
+  const missingMarkerAttempt = validatedAttempt({ transactionHash: '3'.repeat(64) });
+  await missingMarker.journal.putValidated(missingMarkerAttempt);
+  const journalPath = join(missingMarker.directory, 'settlement-journal.json');
+  const journalBefore = await readFile(journalPath, 'utf8');
+  await unlink(join(missingMarker.directory, '.settlement-journal.initialized'));
+  const existingOnly = new SettlementJournal({
+    directory: missingMarker.directory,
+    allowedRoot: missingMarker.root,
+    existingOnly: true,
+  });
+  await assert.rejects(
+    existingOnly.getEntrySnapshot(
+      missingMarkerAttempt.authorizationKey,
+      missingMarkerAttempt.transactionHash,
+    ),
+    error => error?.code === 'journal_state_missing',
+  );
+  assert.equal(await readFile(journalPath, 'utf8'), journalBefore);
+  await assert.rejects(
+    lstat(join(missingMarker.directory, '.settlement-journal.initialized')),
+    error => error?.code === 'ENOENT',
+  );
+});
+
+test('default mode still bootstraps while existing-only snapshot and CAS use existing state', async t => {
+  const { root, directory, journal } = await fixture(t);
+  assert.deepEqual(await journal.load(), {
+    schemaVersion: 1,
+    revision: 0,
+    records: [],
+  });
+  await lstat(join(directory, 'settlement-journal.json'));
+  await lstat(join(directory, '.settlement-journal.initialized'));
+
+  const attempt = validatedAttempt();
+  await journal.putValidated(attempt);
+  const existingOnly = new SettlementJournal({
+    directory,
+    allowedRoot: root,
+    existingOnly: true,
+  });
+  const snapshot = await existingOnly.getEntrySnapshot(
+    attempt.authorizationKey,
+    attempt.transactionHash,
+  );
+  assert.equal(snapshot.kind, 'record');
+  const result = await existingOnly.compareAndUpdateEvidence({
+    expectedRevision: snapshot.revision,
+    expectedRecord: snapshot.entry,
+    evidenceState: EVIDENCE_STATES.SUBMISSION_ACKNOWLEDGED,
+    confirmationDetail: null,
+  });
+  assert.equal(result.changed, true);
+  assert.equal(
+    result.record.evidenceState,
+    EVIDENCE_STATES.SUBMISSION_ACKNOWLEDGED,
+  );
+});
+
+test('existing-only CAS rejects state removed after its read without recreating it', async t => {
+  const { root, directory, journal } = await fixture(t);
+  const attempt = validatedAttempt();
+  await journal.putValidated(attempt);
+  const snapshot = await journal.getEntrySnapshot(
+    attempt.authorizationKey,
+    attempt.transactionHash,
+  );
+  const journalPath = join(directory, 'settlement-journal.json');
+  const markerPath = join(directory, '.settlement-journal.initialized');
+  let clockCalls = 0;
+  const existingOnly = new SettlementJournal({
+    directory,
+    allowedRoot: root,
+    existingOnly: true,
+    clock: () => {
+      clockCalls += 1;
+      unlinkSync(journalPath);
+      return '2026-01-01T00:01:00.000Z';
+    },
+  });
+
+  await assert.rejects(
+    existingOnly.compareAndUpdateEvidence({
+      expectedRevision: snapshot.revision,
+      expectedRecord: snapshot.entry,
+      evidenceState: EVIDENCE_STATES.SUBMISSION_ACKNOWLEDGED,
+      confirmationDetail: null,
+    }),
+    error => error?.code === 'journal_state_missing' && error?.cause === undefined &&
+      error?.stack === 'SettlementJournalError: journal_state_missing',
+  );
+  assert.equal(clockCalls, 1);
+  await assert.rejects(lstat(journalPath), error => error?.code === 'ENOENT');
+  assert.deepEqual(await readdir(directory), ['.settlement-journal.initialized']);
+  await lstat(markerPath);
+});
+
+test('existing-only CAS rejects a marker removed after its read without recreating it', async t => {
+  const { root, directory, journal } = await fixture(t);
+  const attempt = validatedAttempt();
+  await journal.putValidated(attempt);
+  const snapshot = await journal.getEntrySnapshot(
+    attempt.authorizationKey,
+    attempt.transactionHash,
+  );
+  const journalPath = join(directory, 'settlement-journal.json');
+  const markerPath = join(directory, '.settlement-journal.initialized');
+  const journalBefore = await readFile(journalPath);
+  let clockCalls = 0;
+  const existingOnly = new SettlementJournal({
+    directory,
+    allowedRoot: root,
+    existingOnly: true,
+    clock: () => {
+      clockCalls += 1;
+      unlinkSync(markerPath);
+      return '2026-01-01T00:01:00.000Z';
+    },
+  });
+
+  await assert.rejects(
+    existingOnly.compareAndUpdateEvidence({
+      expectedRevision: snapshot.revision,
+      expectedRecord: snapshot.entry,
+      evidenceState: EVIDENCE_STATES.SUBMISSION_ACKNOWLEDGED,
+      confirmationDetail: null,
+    }),
+    error => error?.code === 'journal_state_missing' && error?.cause === undefined &&
+      error?.stack === 'SettlementJournalError: journal_state_missing',
+  );
+  assert.equal(clockCalls, 1);
+  assert.equal((await readFile(journalPath)).equals(journalBefore), true);
+  await assert.rejects(lstat(markerPath), error => error?.code === 'ENOENT');
+  assert.deepEqual(await readdir(directory), ['settlement-journal.json']);
 });
 
 test('a valid pre-marker journal is adopted without discarding its state', async t => {
