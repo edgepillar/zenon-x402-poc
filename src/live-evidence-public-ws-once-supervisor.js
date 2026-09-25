@@ -11,6 +11,8 @@ const FINALIZER_COMMAND = 'finalize-independent-public-ws-once';
 const BOOTSTRAP_MAX_BYTES = 64 * 1024;
 const DEFAULT_TIMEOUT_MS = 15 * 60 * 1000;
 const MAX_TIMEOUT_MS = 30 * 60 * 1000;
+const REAP_FORCE_MS = 250;
+const REAP_ABANDON_MS = 1250;
 const CHILD_MODULE = fileURLToPath(
   new URL('./live-evidence-public-ws-once-run-child.js', import.meta.url),
 );
@@ -136,21 +138,87 @@ function captureInjections(injected) {
   return output;
 }
 
+function destroyBootstrap(child) {
+  try {
+    const stream = child?.stdio?.[4];
+    if (stream && typeof stream.destroy === 'function' && stream.destroyed !== true) {
+      stream.destroy();
+    }
+  } catch {}
+}
+
+function removeOwnedListener(emitter, event, listener) {
+  try {
+    if (emitter && typeof emitter.removeListener === 'function') {
+      emitter.removeListener(event, listener);
+    }
+  } catch {}
+}
+
+function releaseAbandonedChildHandles(child) {
+  let channel;
+  let disconnected = false;
+  try { channel = child?.channel; } catch {}
+  try {
+    if (child?.connected === true && typeof child.disconnect === 'function') {
+      child.disconnect();
+      disconnected = true;
+    }
+  } catch {}
+  if (!disconnected) {
+    try {
+      if (channel && typeof channel.close === 'function') channel.close();
+    } catch {}
+  }
+  try {
+    if (channel && typeof channel.unref === 'function') channel.unref();
+  } catch {}
+  try {
+    if (typeof child?.unref === 'function') child.unref();
+  } catch {}
+}
+
 async function reap(child, alreadyClosed) {
-  if (alreadyClosed || !child || typeof child.once !== 'function') return;
-  await new Promise(resolve => {
+  if (alreadyClosed || !child) return;
+  if (typeof child.on !== 'function' || typeof child.once !== 'function' ||
+      typeof child.kill !== 'function') {
+    releaseAbandonedChildHandles(child);
+    return;
+  }
+  await new Promise(resolveReap => {
     let finished = false;
+    let closeListenerAttached = false;
+    let errorListenerAttached = false;
     let forceTimer;
-    const done = () => {
+    let abandonTimer;
+    const onClose = () => done(false);
+    const onError = () => {};
+    const done = abandoned => {
       if (finished) return;
       finished = true;
       clearTimeout(forceTimer);
-      resolve();
+      clearTimeout(abandonTimer);
+      forceTimer = undefined;
+      abandonTimer = undefined;
+      if (abandoned) releaseAbandonedChildHandles(child);
+      if (closeListenerAttached) removeOwnedListener(child, 'close', onClose);
+      if (errorListenerAttached) removeOwnedListener(child, 'error', onError);
+      resolveReap();
     };
-    child.once('close', done);
+    try {
+      errorListenerAttached = true;
+      child.on('error', onError);
+      closeListenerAttached = true;
+      child.once('close', onClose);
+    } catch {
+      done(true);
+      return;
+    }
+    if (finished) return;
     forceTimer = setTimeout(() => {
       try { child.kill('SIGKILL'); } catch {}
-    }, 1000);
+    }, REAP_FORCE_MS);
+    abandonTimer = setTimeout(() => done(true), REAP_ABANDON_MS);
     try { child.kill('SIGTERM'); } catch {}
   });
 }
@@ -159,6 +227,7 @@ export async function supervisePublicWsOnceChild(command, options, injected) {
   let child;
   let childClosed = false;
   let bootstrapBytes;
+  let clearTerminalListeners = () => {};
   try {
     const independentFinalizer = command === FINALIZER_COMMAND;
     if (!independentFinalizer && command !== 'preflight-public-ws-once' &&
@@ -211,9 +280,13 @@ export async function supervisePublicWsOnceChild(command, options, injected) {
         execArgv: [],
       },
     ]);
-    if (!child || typeof child.on !== 'function' || typeof child.send !== 'function' ||
+    if (!child || typeof child.on !== 'function' || typeof child.once !== 'function' ||
+        typeof child.send !== 'function' || typeof child.kill !== 'function' ||
         !ARRAY_IS_ARRAY(child.stdio) || !child.stdio[4] ||
-        typeof child.stdio[4].end !== 'function') fail();
+        typeof child.stdio[4].once !== 'function' ||
+        typeof child.stdio[4].end !== 'function' ||
+        typeof child.stdio[4].destroy !== 'function') fail();
+    const bootstrapStream = child.stdio[4];
 
     const expectedTerminal = independentFinalizer
       ? 'FINALIZED'
@@ -234,31 +307,32 @@ export async function supervisePublicWsOnceChild(command, options, injected) {
       let closed = false;
       let closeCode;
       let closeSignal;
+      let acceptingEvents = true;
       let settled = false;
-      const timer = setTimeout(() => finish(false), dependencies.timeoutMs);
-      const finish = success => {
-        if (settled) return;
-        settled = true;
-        clearTimeout(timer);
-        if (success) resolveTerminal(terminalType);
-        else rejectTerminal(new Error('live_evidence_public_ws_once_supervisor_failed'));
+      let timer;
+      const onError = () => {
+        if (acceptingEvents) finish(false);
       };
-      child.on('error', () => finish(false));
-      child.on('disconnect', () => {
-        if (phase !== 'close') finish(false);
-      });
-      child.on('message', message => {
+      const onDisconnect = () => {
+        if (acceptingEvents && phase !== 'close') finish(false);
+      };
+      const onMessage = message => {
+        if (!acceptingEvents) return;
         try {
           if (phase === 'ready') {
             exactMessage(message, readyType, requestId, ipcVersion);
+            if (!acceptingEvents) return;
             phase = 'terminal';
-            const accepted = child.send({
+            const sendMessage = child.send;
+            if (typeof sendMessage !== 'function') return finish(false);
+            const accepted = Reflect.apply(sendMessage, child, [{
               ipcVersion,
               requestId,
               type: requestType,
             }, error => {
-              if (error) finish(false);
-            });
+              if (acceptingEvents && error) finish(false);
+            }]);
+            if (!acceptingEvents) return;
             if (accepted === false && child.connected === false) finish(false);
             return;
           }
@@ -272,23 +346,30 @@ export async function supervisePublicWsOnceChild(command, options, injected) {
                 [],
               ));
               void released.then(value => {
-                if (settled || phase !== 'terminal' || value !== true) return finish(false);
+                if (!acceptingEvents) return;
+                if (phase !== 'terminal' || value !== true) return finish(false);
                 try {
-                  const accepted = child.send({
+                  const sendMessage = child.send;
+                  if (typeof sendMessage !== 'function') return finish(false);
+                  const accepted = Reflect.apply(sendMessage, child, [{
                     ipcVersion: IPC_VERSION,
                     requestId: 2,
                     type: 'ORIGIN_RELEASED',
                   }, error => {
-                    if (error || settled) return finish(false);
+                    if (!acceptingEvents) return;
+                    if (error) return finish(false);
                     originReleaseAcknowledged = true;
                     if (terminalType === expectedTerminal) {
                       phase = 'close';
                       if (closed && closeCode === 0 && closeSignal === null) finish(true);
                     }
-                  });
+                  }]);
+                  if (!acceptingEvents) return;
                   if (accepted === false && child.connected === false) finish(false);
                 } catch { finish(false); }
-              }, () => finish(false));
+              }, () => {
+                if (acceptingEvents) finish(false);
+              });
               return;
             }
             if (terminalType !== undefined) fail();
@@ -302,11 +383,13 @@ export async function supervisePublicWsOnceChild(command, options, injected) {
         } catch {
           finish(false);
         }
-      });
-      child.on('exit', (code, signal) => {
+      };
+      const onExit = (code, signal) => {
+        if (!acceptingEvents) return;
         if (code !== 0 || signal !== null) finish(false);
-      });
-      child.on('close', (code, signal) => {
+      };
+      const onClose = (code, signal) => {
+        if (!acceptingEvents) return;
         childClosed = true;
         if (closed) return finish(false);
         closed = true;
@@ -319,15 +402,48 @@ export async function supervisePublicWsOnceChild(command, options, injected) {
             !originReleaseAcknowledged) return;
         if (phase !== 'close') return finish(false);
         finish(true);
-      });
-      child.stdio[4].once('error', () => finish(false));
-      child.stdio[4].end(bootstrapBytes, error => {
-        bootstrapBytes.fill(0);
-        bootstrapBytes = undefined;
-        if (error) finish(false);
-      });
+      };
+      const onBootstrapError = () => {
+        if (acceptingEvents) finish(false);
+      };
+      clearTerminalListeners = () => {
+        removeOwnedListener(child, 'error', onError);
+        removeOwnedListener(child, 'disconnect', onDisconnect);
+        removeOwnedListener(child, 'message', onMessage);
+        removeOwnedListener(child, 'exit', onExit);
+        removeOwnedListener(child, 'close', onClose);
+        removeOwnedListener(bootstrapStream, 'error', onBootstrapError);
+      };
+      const finish = success => {
+        if (settled || !acceptingEvents) return;
+        acceptingEvents = false;
+        settled = true;
+        clearTimeout(timer);
+        timer = undefined;
+        clearTerminalListeners();
+        if (success) resolveTerminal(terminalType);
+        else rejectTerminal(new Error('live_evidence_public_ws_once_supervisor_failed'));
+      };
+      try {
+        timer = setTimeout(() => finish(false), dependencies.timeoutMs);
+        child.on('error', onError);
+        child.on('disconnect', onDisconnect);
+        child.on('message', onMessage);
+        child.on('exit', onExit);
+        child.on('close', onClose);
+        bootstrapStream.once('error', onBootstrapError);
+        bootstrapStream.end(bootstrapBytes, error => {
+          if (Buffer.isBuffer(bootstrapBytes)) bootstrapBytes.fill(0);
+          bootstrapBytes = undefined;
+          if (acceptingEvents && error) finish(false);
+        });
+      } catch {
+        finish(false);
+      }
     });
     if (terminal !== expectedTerminal) fail();
+    clearTerminalListeners();
+    destroyBootstrap(child);
     return Object.freeze({
       status: terminal === 'PREFLIGHT_VALID'
         ? 'preflight-valid'
@@ -337,7 +453,9 @@ export async function supervisePublicWsOnceChild(command, options, injected) {
     });
   } catch {
     if (Buffer.isBuffer(bootstrapBytes)) bootstrapBytes.fill(0);
+    destroyBootstrap(child);
     await reap(child, childClosed);
+    clearTerminalListeners();
     fail();
   }
 }

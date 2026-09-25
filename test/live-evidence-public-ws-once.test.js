@@ -4130,6 +4130,104 @@ function syntheticSupervisorChild(mode) {
   return child;
 }
 
+function syntheticLinkedProcess() {
+  const child = new EventEmitter();
+  const channel = new EventEmitter();
+  const parentToChild = [];
+  const childToParent = [];
+  const signals = [];
+  let closed = false;
+  let disconnected = false;
+  let resolveClosed;
+  const closedPromise = new Promise(resolve => { resolveClosed = resolve; });
+  child.connected = true;
+  child.exitCode = null;
+  child.signalCode = null;
+  child.stdout = new PassThrough();
+  child.stderr = new PassThrough();
+  child.stdio = [null, null, null, null, new PassThrough()];
+  channel.connected = true;
+
+  const send = (source, target, frames, message, callback) => {
+    if (source.connected === false) {
+      queueMicrotask(() => callback?.(new Error('synthetic_ipc_closed')));
+      return false;
+    }
+    const snapshot = structuredClone(message);
+    frames.push(snapshot.type);
+    queueMicrotask(() => {
+      if (source.connected === false || target.connected === false) {
+        callback?.(new Error('synthetic_ipc_closed'));
+        return;
+      }
+      callback?.();
+      target.emit('message', snapshot);
+    });
+    return true;
+  };
+  child.send = (message, callback) => send(
+    child,
+    channel,
+    parentToChild,
+    message,
+    callback,
+  );
+  channel.send = (message, callback) => send(
+    channel,
+    child,
+    childToParent,
+    message,
+    callback,
+  );
+
+  const disconnect = () => {
+    if (disconnected) return;
+    disconnected = true;
+    child.connected = false;
+    channel.connected = false;
+    queueMicrotask(() => {
+      child.emit('disconnect');
+      channel.emit('disconnect');
+    });
+  };
+  const close = (code, signal = null) => {
+    if (closed) return;
+    closed = true;
+    const emitDisconnect = !disconnected;
+    disconnected = true;
+    child.connected = false;
+    channel.connected = false;
+    child.exitCode = code;
+    child.signalCode = signal;
+    queueMicrotask(() => {
+      child.emit('close', code, signal);
+      if (emitDisconnect) {
+        child.emit('disconnect');
+        channel.emit('disconnect');
+      }
+      resolveClosed({ code, signal });
+    });
+  };
+  child.disconnect = disconnect;
+  channel.disconnect = disconnect;
+  child.channel = { close: disconnect, unref() {} };
+  child.unref = () => {};
+  child.kill = signal => {
+    signals.push(signal);
+    close(null, signal);
+    return true;
+  };
+  return {
+    channel,
+    child,
+    childToParent,
+    close,
+    closedPromise,
+    parentToChild,
+    signals,
+  };
+}
+
 test('supervisor rejects malformed, duplicate, stale, disconnected, and unclean children', async t => {
   const options = await fixture(t);
   for (const mode of [
@@ -4148,6 +4246,275 @@ test('supervisor rejects malformed, duplicate, stale, disconnected, and unclean 
     ));
   }
 });
+
+test('supervisor bounds no-close reaping and releases only owned child handles', async t => {
+  const options = await fixture(t, { resetEpochWss: true });
+  const child = new EventEmitter();
+  const signals = [];
+  const cleanup = { channelUnref: 0, childUnref: 0, disconnect: 0 };
+  let protocolSends = 0;
+  child.connected = true;
+  child.stdio = [null, null, null, null, new PassThrough()];
+  child.channel = {
+    unref() { cleanup.channelUnref += 1; },
+  };
+  child.disconnect = function disconnect() {
+    cleanup.disconnect += 1;
+    this.connected = false;
+    queueMicrotask(() => this.emit('disconnect'));
+  };
+  child.unref = () => { cleanup.childUnref += 1; };
+  child.send = () => {
+    protocolSends += 1;
+    return true;
+  };
+  child.kill = signal => {
+    signals.push(signal);
+    if (signal === 'SIGTERM') {
+      queueMicrotask(() => child.emit('message', {
+        ipcVersion: 1,
+        requestId: 1,
+        type: 'READY',
+      }));
+    }
+    return true;
+  };
+
+  const started = Date.now();
+  let boundTimer;
+  const result = await Promise.race([
+    supervisePublicWsOnceChild('run-public-ws-once', options, {
+      forkProcess: () => child,
+      timeoutMs: 5,
+    }).then(
+      value => ({ status: 'fulfilled', value }),
+      error => ({ status: 'rejected', error }),
+    ),
+    new Promise(resolve => {
+      boundTimer = setTimeout(() => resolve({ status: 'outside-bound' }), 3000);
+    }),
+  ]);
+  clearTimeout(boundTimer);
+
+  assert.equal(result.status, 'rejected');
+  assert.equal(result.error?.message, 'live_evidence_public_ws_once_supervisor_failed');
+  assert.equal(result.error?.cause, undefined);
+  assert.equal(Date.now() - started < 3000, true);
+  assert.deepEqual(signals, ['SIGTERM', 'SIGKILL']);
+  assert.deepEqual(cleanup, { channelUnref: 1, childUnref: 1, disconnect: 1 });
+  assert.equal(protocolSends, 0);
+  assert.equal(child.stdio[4].destroyed, true);
+  assert.equal(child.stdio[4].listenerCount('error'), 0);
+  for (const event of ['error', 'disconnect', 'message', 'exit', 'close']) {
+    assert.equal(child.listenerCount(event), 0);
+  }
+});
+
+test('reset-epoch real process boundaries gate origin release and facilitator readiness',
+  async t => {
+    for (const scenario of [
+      { name: 'origin release refused', release: false },
+      { name: 'facilitator readiness fails after origin release', release: true },
+    ]) {
+      await t.test(scenario.name, async subtest => {
+        const options = await fixture(subtest, {
+          resetEpochWss: true,
+          walletText: 'invalid-wallet-input-that-must-not-be-read\n',
+        });
+        const facilitatorRpcStat = await lstat(options.facilitatorRpcPath, { bigint: true });
+        const facilitatorRpcHandle = await open(options.facilitatorRpcPath, 'r');
+        subtest.after(() => facilitatorRpcHandle.close());
+        const runProcess = syntheticLinkedProcess();
+        const workerProcess = syntheticLinkedProcess();
+        const effects = {
+          buyerReadiness: 0,
+          facilitatorCreate: 0,
+          facilitatorReadiness: 0,
+          healthHttp: 0,
+          httpPayment: 0,
+          originRelease: 0,
+          publication: 0,
+          signing: 0,
+          walletReads: 0,
+          workerFork: 0,
+        };
+        let workerLaunched = false;
+
+        workerProcess.child.kill = signal => {
+          workerProcess.signals.push(signal);
+          if (signal === 'SIGKILL') workerProcess.close(null, signal);
+          return true;
+        };
+        const forkFacilitator = (_modulePath, args, forkOptions) => {
+          effects.workerFork += 1;
+          assert.deepEqual(args, []);
+          assert.deepEqual(forkOptions.env, {});
+          assert.deepEqual(forkOptions.execArgv, []);
+          assert.equal(forkOptions.stdio[4], facilitatorRpcHandle.fd);
+          assert.equal(workerLaunched, false);
+          workerLaunched = true;
+          queueMicrotask(() => {
+            void runLiveEvidenceFacilitatorWorker({
+              channel: workerProcess.channel,
+              start: async message => {
+                effects.facilitatorReadiness += 1;
+                assert.equal(scenario.release, true);
+                assert.equal(effects.originRelease, 1);
+                assert.equal(message.type, 'START_RESET_EPOCH_WSS_ONCE');
+                assert.equal(
+                  message.executionMode,
+                  RESET_EPOCH_WSS_ONCE_POLICY.executionMode,
+                );
+                throw new Error('synthetic_facilitator_readiness_failed');
+              },
+              shutdownTimeoutMs: 1000,
+              forceExit: code => workerProcess.close(code, null),
+            }).catch(() => workerProcess.close(1, null));
+          });
+          return workerProcess.child;
+        };
+
+        const operations = {
+          async probeBuyerReadiness({ config: configuration }) {
+            effects.buyerReadiness += 1;
+            assert.equal(
+              configuration.executionMode,
+              RESET_EPOCH_WSS_ONCE_POLICY.executionMode,
+            );
+          },
+          async startFacilitator({ config: configuration, recovery }) {
+            effects.facilitatorCreate += 1;
+            assert.equal(recovery, false);
+            const [workspaceStat, runDirectoryStat] = await Promise.all([
+              lstat(options.workspaceRoot, { bigint: true }),
+              lstat(join(options.workspaceRoot, options.runName), { bigint: true }),
+            ]);
+            return startLiveEvidenceFacilitatorWorker({
+              config: configuration,
+              facilitatorRpcFd: facilitatorRpcHandle.fd,
+              facilitatorRpcGeneration: generationFromBigIntStat(facilitatorRpcStat),
+              workspaceRoot: options.workspaceRoot,
+              journalDirectory: join(options.workspaceRoot, options.runName, 'journal'),
+              recovery: false,
+              executionMode: RESET_EPOCH_WSS_ONCE_POLICY.executionMode,
+              workspaceIdentity: directoryIdentityFromBigIntStat(workspaceStat),
+              runDirectoryIdentity: directoryIdentityFromBigIntStat(runDirectoryStat),
+              forkProcess: forkFacilitator,
+            });
+          },
+          async probePublicEndpoint() {
+            effects.healthHttp += 1;
+            assert.fail('public HTTP readiness must not run');
+          },
+          async readBuyerWallet() {
+            effects.walletReads += 1;
+            assert.fail('wallet input must not be read');
+          },
+          async paidFetch() {
+            effects.signing += 1;
+            effects.httpPayment += 1;
+            effects.publication += 1;
+            assert.fail('payment and publication must not run');
+          },
+        };
+
+        runProcess.child.stdio[4].once('finish', () => {
+          void runPublicWsOnceExecutionChild({
+            channel: runProcess.channel,
+            readBootstrap: async () => structuredClone(options),
+            preflight: async () => assert.fail('RUN must not dispatch preflight'),
+            execute: async (bootstrap, childDependencies) => {
+              assert.deepEqual(bootstrap, options);
+              assert.deepEqual(Object.keys(childDependencies), ['beforeOriginBind']);
+              return executeResetEpochWssOnceRun(bootstrap, {
+                sourceTreeAttestor: async () => true,
+                repositoryModuleLoader: async () => ({
+                  assertLiveEvidenceFacilitatorController,
+                  startLiveEvidenceFacilitatorWorker,
+                }),
+                beforeOriginBind: childDependencies.beforeOriginBind,
+                operations,
+              });
+            },
+            forceExit: code => runProcess.close(code, null),
+          }).catch(() => runProcess.close(1, null));
+        });
+
+        const started = Date.now();
+        let boundTimer;
+        const completion = (async () => {
+          const supervisorOutcome = await supervisePublicWsOnceChild(
+            'run-public-ws-once',
+            options,
+            {
+              forkProcess: () => runProcess.child,
+              beforeOriginBind: async () => {
+                effects.originRelease += 1;
+                return scenario.release;
+              },
+              timeoutMs: 4000,
+            },
+          ).then(
+            value => ({ status: 'fulfilled', value }),
+            error => ({ status: 'rejected', error }),
+          );
+          await workerProcess.closedPromise;
+          return supervisorOutcome;
+        })();
+        const outcome = await Promise.race([
+          completion,
+          new Promise(resolve => {
+            boundTimer = setTimeout(() => resolve({ status: 'outside-bound' }), 7000);
+          }),
+        ]);
+        clearTimeout(boundTimer);
+
+        assert.equal(outcome.status, 'rejected');
+        assert.equal(outcome.error?.message, 'live_evidence_public_ws_once_supervisor_failed');
+        assert.equal(outcome.error?.cause, undefined);
+        assert.equal(Date.now() - started < 7000, true);
+        assert.deepEqual(runProcess.childToParent, ['READY', 'ORIGIN_RELEASE']);
+        assert.deepEqual(
+          runProcess.parentToChild,
+          scenario.release ? ['RUN', 'ORIGIN_RELEASED'] : ['RUN'],
+        );
+        assert.deepEqual(
+          workerProcess.parentToChild,
+          scenario.release ? ['PRELOAD', 'START_RESET_EPOCH_WSS_ONCE'] : ['PRELOAD'],
+        );
+        assert.deepEqual(
+          workerProcess.childToParent,
+          scenario.release ? ['PRELOADED', 'FAILED'] : ['PRELOADED'],
+        );
+        assert.deepEqual(workerProcess.signals, ['SIGTERM', 'SIGKILL']);
+        assert.deepEqual(runProcess.signals, scenario.release ? [] : ['SIGTERM']);
+        assert.deepEqual(effects, {
+          buyerReadiness: 1,
+          facilitatorCreate: 1,
+          facilitatorReadiness: scenario.release ? 1 : 0,
+          healthHttp: 0,
+          httpPayment: 0,
+          originRelease: 1,
+          publication: 0,
+          signing: 0,
+          walletReads: 0,
+          workerFork: 1,
+        });
+        assert.equal(workerProcess.child.stdout.destroyed, true);
+        assert.equal(workerProcess.child.stderr.destroyed, true);
+        assert.equal(runProcess.child.stdio[4].destroyed, true);
+        assert.equal((await lstat(join(
+          options.workspaceRoot,
+          'PUBLIC_WS_ONCE_CONSUMED',
+        ))).isFile(), true);
+        await assert.rejects(lstat(join(
+          options.workspaceRoot,
+          options.runName,
+          'pending-independent-verification',
+        )), error => error?.code === 'ENOENT');
+      });
+    }
+  });
 
 test('CLI maps supervised child failure to one fixed line', async t => {
   const options = await fixture(t);
