@@ -63,6 +63,7 @@ export const GATE_B_PUBLIC_WS_INPUT_LEAVES = Object.freeze({
   hostnameSource: 'quick-tunnel-hostname-source.json',
   payeeAddress: 'payee-address.json',
   runConfig: 'run.json',
+  resetLiveApproval: 'reset-live-approval.json',
   buyerRpc: 'buyer-rpc.json',
   facilitatorRpc: 'facilitator-rpc.json',
   authorization: 'authorization.json',
