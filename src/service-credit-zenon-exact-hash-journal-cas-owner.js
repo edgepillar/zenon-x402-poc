@@ -49,6 +49,7 @@ const COMPARE_AND_UPDATE_EVIDENCE = SettlementJournal.prototype.compareAndUpdate
 const OBJECT_FREEZE = Object.freeze;
 const OBJECT_GET_OWN_PROPERTY_DESCRIPTOR = Object.getOwnPropertyDescriptor;
 const OBJECT_GET_PROTOTYPE_OF = Object.getPrototypeOf;
+const OBJECT_HAS_OWN = Object.hasOwn;
 const OBJECT_PROTOTYPE = Object.prototype;
 const REFLECT_APPLY = Reflect.apply;
 const REFLECT_OWN_KEYS = Reflect.ownKeys;
@@ -130,6 +131,19 @@ function validateJournal(journal) {
   if (journal === null || typeof journal !== 'object' || isProxy(journal) ||
       REFLECT_APPLY(OBJECT_GET_PROTOTYPE_OF, Object, [journal]) !==
         SettlementJournal.prototype) {
+    reject();
+  }
+  const existingOnlyDescriptor = REFLECT_APPLY(
+    OBJECT_GET_OWN_PROPERTY_DESCRIPTOR,
+    Object,
+    [journal, 'existingOnly'],
+  );
+  if (!existingOnlyDescriptor ||
+      !REFLECT_APPLY(OBJECT_HAS_OWN, Object, [existingOnlyDescriptor, 'value']) ||
+      existingOnlyDescriptor.value !== true ||
+      existingOnlyDescriptor.configurable !== false ||
+      existingOnlyDescriptor.enumerable !== false ||
+      existingOnlyDescriptor.writable !== false) {
     reject();
   }
   for (let index = 0; index < OWNER_METHODS.length; index += 1) {

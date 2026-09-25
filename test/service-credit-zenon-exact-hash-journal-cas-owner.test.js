@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { mkdtemp, rm } from 'node:fs/promises';
+import { lstat, mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
@@ -232,22 +232,29 @@ async function journalFixture(t, {
     `zenon-exact-hash-journal-cas-${process.pid}-`,
   ));
   t.after(() => rm(root, { recursive: true, force: true }));
-  const journal = new SettlementJournal({
-    directory: join(root, 'journal'),
+  const directory = join(root, 'journal');
+  const defaultJournal = new SettlementJournal({
+    directory,
     allowedRoot: root,
     clock,
   });
   const value = attempt(transactionMarker);
-  await journal.putValidated(value);
+  await defaultJournal.putValidated(value);
   if (evidenceState !== EVIDENCE_STATES.VALIDATED) {
-    await journal.updateEvidence(
+    await defaultJournal.updateEvidence(
       value.authorizationKey,
       value.transactionHash,
       evidenceState,
     );
   }
+  const journal = new SettlementJournal({
+    directory,
+    allowedRoot: root,
+    clock,
+    existingOnly: true,
+  });
   callsByJournal.set(journal, { reads: 0, cas: 0 });
-  return { journal, value };
+  return { defaultJournal, journal, value };
 }
 
 function assertOwnerRejected(error) {
@@ -305,6 +312,49 @@ test('the source-only owner is default-off and has no forbidden operation path',
     /\b(?:fetch|WebSocket|wallet|sign|publish|listener|RPC|CLI|putValidated|updateEvidence|replaceRecordWithTombstone|recordLateMomentumEvidence)\b/i,
   );
   assert.doesNotMatch(source, /process\.(?:env|argv)|import\.meta\.main/);
+});
+
+test('the owner rejects a default-mode journal before any read', async t => {
+  const { defaultJournal, value } = await journalFixture(t);
+  await assert.rejects(
+    applyZenonExactHashRecoveryJournalCas(
+      defaultJournal,
+      identityFor(value),
+      absentObservation(),
+    ),
+    assertOwnerRejected,
+  );
+  assertCounters(defaultJournal, 0, 0);
+});
+
+test('an existing-only owner rejects missing state without creating it', async t => {
+  const root = await mkdtemp(join(
+    tmpdir(),
+    `zenon-exact-hash-journal-cas-missing-${process.pid}-`,
+  ));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  const runDirectory = join(root, 'run');
+  const journal = new SettlementJournal({
+    directory: join(runDirectory, 'journal'),
+    allowedRoot: root,
+    existingOnly: true,
+  });
+  const value = attempt();
+  callsByJournal.set(journal, { reads: 0, cas: 0 });
+
+  await assert.rejects(
+    applyZenonExactHashRecoveryJournalCas(
+      journal,
+      identityFor(value),
+      absentObservation(),
+    ),
+    assertOwnerRejected,
+  );
+  assertCounters(journal, 1, 0);
+  await assert.rejects(
+    lstat(runDirectory),
+    error => error?.code === 'ENOENT',
+  );
 });
 
 test('ABSENT and UNAVAILABLE preserve ambiguity with one read and no CAS', async t => {
@@ -659,7 +709,7 @@ test('post-CAS failures report outcome unknown once without retry', async t => {
   }
 });
 
-test('a persisted CAS followed by a bad result reports outcome unknown', async t => {
+test('a persisted CAS followed by a bad result reports outcome unknown without retry', async t => {
   const { journal, value } = await journalFixture(t, { transactionMarker: 'f' });
   faultsByJournal.set(journal, { cas: 'persist-then-invalid' });
 
