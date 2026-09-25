@@ -119,6 +119,41 @@ const SOURCE_ONLY_EXACT_HASH_RUN_ENTRIES = Object.freeze([
 const SOURCE_ONLY_EXACT_HASH_JOURNAL_ENTRIES = Object.freeze([
   '.settlement-journal.initialized', 'settlement-journal.json',
 ]);
+const SOURCE_ONLY_EXACT_HASH_TRANSITION_PRIOR_DIGEST_DOMAIN =
+  'zenon-x402-source-only-exact-hash-prior-record-v1';
+const SOURCE_ONLY_EXACT_HASH_TRANSITION_EXPECTATION_FIELDS = Object.freeze([
+  'expectationVersion', 'prior', 'successor',
+]);
+const SOURCE_ONLY_EXACT_HASH_TRANSITION_PRIOR_FIELDS = Object.freeze([
+  'revision', 'evidenceState', 'deliveryState', 'authorizationKey',
+  'transactionHash', 'updatedAt', 'recordDigest',
+]);
+const SOURCE_ONLY_EXACT_HASH_TRANSITION_SUCCESSOR_FIELDS = Object.freeze([
+  'evidenceState', 'deliveryState', 'confirmationDetail',
+]);
+const SOURCE_ONLY_EXACT_HASH_TRANSITION_CONFIRMATION_FIELDS = Object.freeze([
+  'numConfirmations', 'momentumHeight', 'momentumHash', 'momentumTimestamp',
+]);
+const SOURCE_ONLY_EXACT_HASH_TRANSITION_INSPECTIONS = Object.freeze({
+  PRIOR_STATE_PRESENT: Object.freeze({
+    inspectorVersion: 1,
+    classification: 'PRIOR_STATE_PRESENT',
+    scope: 'LOCAL_DURABLE_JOURNAL_ONLY',
+    sideEffects: 'NONE',
+  }),
+  EXACT_EXPECTED_SUCCESSOR_PRESENT: Object.freeze({
+    inspectorVersion: 1,
+    classification: 'EXACT_EXPECTED_SUCCESSOR_PRESENT',
+    scope: 'LOCAL_DURABLE_JOURNAL_ONLY',
+    sideEffects: 'NONE',
+  }),
+  OUTCOME_UNKNOWN: Object.freeze({
+    inspectorVersion: 1,
+    classification: 'OUTCOME_UNKNOWN',
+    scope: 'LOCAL_DURABLE_JOURNAL_ONLY',
+    sideEffects: 'NONE',
+  }),
+});
 const PUBLIC_WS_ONCE_TRANSPORT_EXCEPTION =
   'I_EXPLICITLY_ACCEPT_PUBLIC_WS_FOR_EXACTLY_ONE_GATE_B_TESTNET_PAYMENT';
 const PUBLIC_WS_ONCE_PAYMENT_ACKNOWLEDGEMENT =
@@ -228,6 +263,7 @@ const GET_OWN_PROPERTY_DESCRIPTOR = Object.getOwnPropertyDescriptor;
 const GET_OWN_PROPERTY_DESCRIPTORS = Object.getOwnPropertyDescriptors;
 const GET_PROTOTYPE_OF = Object.getPrototypeOf;
 const HAS_OWN = Object.hasOwn;
+const IS_FROZEN = Object.isFrozen;
 const IS_PROXY = utilTypes.isProxy;
 const IS_PROMISE = utilTypes.isPromise;
 const PROMISE_PROTOTYPE = Promise.prototype;
@@ -2485,6 +2521,295 @@ export async function readZenonExactHashRecoveryRetainedSnapshot(options) {
     // Detect retained-path replacement or byte drift after the independent parse.
     await assertSourceOnlyExactHashPinnedState(state, true);
     return snapshot;
+  } catch {
+    fail();
+  } finally {
+    for (let index = inputs.length - 1; index >= 0; index -= 1) {
+      await disposeVerifiedInput(inputs[index]);
+    }
+    await disposePrivateDirectoryState(journalState);
+    await disposePrivateDirectoryState(runState);
+    await disposePrivateDirectoryState(workspaceState);
+  }
+}
+
+function exactFrozenSourceOnlyExactHashTransitionObject(value, fields) {
+  exactObject(value, fields);
+  if (!IS_FROZEN(value)) fail();
+  return value;
+}
+
+function exactSourceOnlyExactHashTransitionConfirmation(value) {
+  const detail = exactFrozenSourceOnlyExactHashTransitionObject(
+    value,
+    SOURCE_ONLY_EXACT_HASH_TRANSITION_CONFIRMATION_FIELDS,
+  );
+  if (!Number.isSafeInteger(detail.numConfirmations) || detail.numConfirmations < 1 ||
+      !Number.isSafeInteger(detail.momentumHeight) || detail.momentumHeight < 1 ||
+      typeof detail.momentumHash !== 'string' ||
+      !LOWERCASE_HASH_64.test(detail.momentumHash) ||
+      !Number.isSafeInteger(detail.momentumTimestamp) ||
+      detail.momentumTimestamp < 0) fail();
+  return FREEZE({
+    numConfirmations: detail.numConfirmations,
+    momentumHeight: detail.momentumHeight,
+    momentumHash: detail.momentumHash,
+    momentumTimestamp: detail.momentumTimestamp,
+  });
+}
+
+function exactSourceOnlyExactHashTransitionExpectation(value) {
+  try {
+    const expectation = exactFrozenSourceOnlyExactHashTransitionObject(
+      value,
+      SOURCE_ONLY_EXACT_HASH_TRANSITION_EXPECTATION_FIELDS,
+    );
+    if (expectation.expectationVersion !== 1) fail();
+    const prior = exactFrozenSourceOnlyExactHashTransitionObject(
+      expectation.prior,
+      SOURCE_ONLY_EXACT_HASH_TRANSITION_PRIOR_FIELDS,
+    );
+    const successor = exactFrozenSourceOnlyExactHashTransitionObject(
+      expectation.successor,
+      SOURCE_ONLY_EXACT_HASH_TRANSITION_SUCCESSOR_FIELDS,
+    );
+    const eligiblePrior =
+      (prior.evidenceState === EVIDENCE_STATES.SUBMISSION_OUTCOME_UNKNOWN &&
+        prior.revision === 2) ||
+      (prior.evidenceState === EVIDENCE_STATES.SUBMISSION_ACKNOWLEDGED &&
+        (prior.revision === 2 || prior.revision === 3));
+    if (!eligiblePrior || prior.deliveryState !== DELIVERY_STATES.NONE ||
+        typeof prior.authorizationKey !== 'string' ||
+        !LOWERCASE_HASH_64.test(prior.authorizationKey) ||
+        typeof prior.transactionHash !== 'string' ||
+        !LOWERCASE_HASH_64.test(prior.transactionHash) ||
+        typeof prior.recordDigest !== 'string' ||
+        !LOWERCASE_HASH_64.test(prior.recordDigest) ||
+        !canonicalUtc(prior.updatedAt) ||
+        successor.deliveryState !== DELIVERY_STATES.NONE) fail();
+
+    let confirmationDetail = null;
+    if (successor.evidenceState === EVIDENCE_STATES.SUBMISSION_ACKNOWLEDGED) {
+      if (prior.evidenceState !== EVIDENCE_STATES.SUBMISSION_OUTCOME_UNKNOWN ||
+          successor.confirmationDetail !== null) fail();
+    } else if (successor.evidenceState === EVIDENCE_STATES.MOMENTUM_INCLUDED) {
+      confirmationDetail = exactSourceOnlyExactHashTransitionConfirmation(
+        successor.confirmationDetail,
+      );
+    } else {
+      fail();
+    }
+    return deepFreeze({
+      expectationVersion: 1,
+      prior: {
+        revision: prior.revision,
+        evidenceState: prior.evidenceState,
+        deliveryState: prior.deliveryState,
+        authorizationKey: prior.authorizationKey,
+        transactionHash: prior.transactionHash,
+        updatedAt: prior.updatedAt,
+        recordDigest: prior.recordDigest,
+      },
+      successor: {
+        evidenceState: successor.evidenceState,
+        deliveryState: successor.deliveryState,
+        confirmationDetail,
+      },
+    });
+  } catch {
+    fail();
+  }
+}
+
+function exactSourceOnlyExactHashTransitionJournal(
+  durableJournal,
+  protectedJournal,
+) {
+  try {
+    if (!durableJournal || durableJournal.schemaVersion !== 1 ||
+        durableJournal.schemaVersion !== protectedJournal.schemaVersion ||
+        durableJournal.revision !== protectedJournal.revision ||
+        !ARRAY_IS_ARRAY(durableJournal.records) || durableJournal.records.length !== 1 ||
+        canonicalJson(durableJournal.records[0]) !==
+          canonicalJson(protectedJournal.record)) fail();
+    return FREEZE({
+      revision: durableJournal.revision,
+      record: durableJournal.records[0],
+    });
+  } catch {
+    fail();
+  }
+}
+
+function sourceOnlyExactHashTransitionPriorRecordDigest(record) {
+  return sha256Hex({
+    domain: SOURCE_ONLY_EXACT_HASH_TRANSITION_PRIOR_DIGEST_DOMAIN,
+    record,
+  });
+}
+
+function sourceOnlyExactHashTransitionPriorRecord(record, expectation) {
+  const priorRecord = {};
+  for (let index = 0; index < PUBLIC_WS_ONCE_RECORD_FIELDS.length; index += 1) {
+    const field = PUBLIC_WS_ONCE_RECORD_FIELDS[index];
+    ownData(priorRecord, field, record[field]);
+  }
+  priorRecord.evidenceState = expectation.prior.evidenceState;
+  priorRecord.momentumEvidence = null;
+  priorRecord.deliveryState = DELIVERY_STATES.NONE;
+  priorRecord.cachedResponse = null;
+  priorRecord.updatedAt = expectation.prior.updatedAt;
+  return priorRecord;
+}
+
+function sourceOnlyExactHashTransitionMatchesPrior(state, expectation) {
+  const record = state.record;
+  return state.revision === expectation.prior.revision &&
+    record.authorizationKey === expectation.prior.authorizationKey &&
+    record.transactionHash === expectation.prior.transactionHash &&
+    record.evidenceState === expectation.prior.evidenceState &&
+    record.momentumEvidence === null &&
+    record.deliveryState === DELIVERY_STATES.NONE &&
+    record.cachedResponse === null &&
+    record.updatedAt === expectation.prior.updatedAt &&
+    sourceOnlyExactHashTransitionPriorRecordDigest(record) ===
+      expectation.prior.recordDigest;
+}
+
+function sourceOnlyExactHashTransitionMatchesSuccessor(state, expectation) {
+  const record = state.record;
+  if (state.revision !== expectation.prior.revision + 1 ||
+      record.authorizationKey !== expectation.prior.authorizationKey ||
+      record.transactionHash !== expectation.prior.transactionHash ||
+      record.evidenceState !== expectation.successor.evidenceState ||
+      record.deliveryState !== DELIVERY_STATES.NONE || record.cachedResponse !== null ||
+      !canonicalUtc(record.updatedAt) ||
+      record.updatedAt < expectation.prior.updatedAt) return false;
+  const priorRecord = sourceOnlyExactHashTransitionPriorRecord(
+    record,
+    expectation,
+  );
+  if (sourceOnlyExactHashTransitionPriorRecordDigest(priorRecord) !==
+      expectation.prior.recordDigest) return false;
+  if (expectation.successor.evidenceState ===
+      EVIDENCE_STATES.SUBMISSION_ACKNOWLEDGED) {
+    return record.momentumEvidence === null;
+  }
+  exactObject(record.momentumEvidence, ['observedAt', 'confirmationDetail']);
+  exactObject(
+    record.momentumEvidence.confirmationDetail,
+    SOURCE_ONLY_EXACT_HASH_TRANSITION_CONFIRMATION_FIELDS,
+  );
+  return record.momentumEvidence.observedAt === record.updatedAt &&
+    canonicalJson(record.momentumEvidence.confirmationDetail) ===
+      canonicalJson(expectation.successor.confirmationDetail);
+}
+
+function classifySourceOnlyExactHashTransition(state, expectation) {
+  try {
+    if (sourceOnlyExactHashTransitionMatchesPrior(state, expectation)) {
+      return SOURCE_ONLY_EXACT_HASH_TRANSITION_INSPECTIONS.PRIOR_STATE_PRESENT;
+    }
+    if (sourceOnlyExactHashTransitionMatchesSuccessor(state, expectation)) {
+      return SOURCE_ONLY_EXACT_HASH_TRANSITION_INSPECTIONS
+        .EXACT_EXPECTED_SUCCESSOR_PRESENT;
+    }
+    return SOURCE_ONLY_EXACT_HASH_TRANSITION_INSPECTIONS.OUTCOME_UNKNOWN;
+  } catch {
+    fail();
+  }
+}
+
+/**
+ * Inspect one exact retained source-only journal transition. This function owns
+ * no CAS, mutation, publication, retry, signing, wallet, authorization, or RPC
+ * path, and its fixed classifications describe local durable state only.
+ */
+export async function inspectZenonExactHashRecoveryRetainedTransition(
+  options,
+  expectation,
+) {
+  const inputs = [];
+  let journalState;
+  let runState;
+  let workspaceState;
+  try {
+    if (arguments.length !== 2) fail();
+    if (typeof process.getuid !== 'function' ||
+        !Number.isSafeInteger(fsConstants.O_NOFOLLOW) || fsConstants.O_NOFOLLOW <= 0 ||
+        !Number.isSafeInteger(fsConstants.O_DIRECTORY) || fsConstants.O_DIRECTORY <= 0) fail();
+    options = exactSourceOnlyExactHashRecoveryOptions(options);
+    expectation = exactSourceOnlyExactHashTransitionExpectation(expectation);
+    await secureWorkspaceRoot(options.workspaceRoot);
+    workspaceState = await capturePrivateDirectoryState(options.workspaceRoot, true);
+    const runDirectory = join(workspaceState.path, options.runName);
+    runState = await capturePrivateDirectoryState(runDirectory, false);
+    const journalDirectory = join(runState.path, 'journal');
+    journalState = await capturePrivateDirectoryState(journalDirectory, false);
+    const retainedState = { workspaceState, runState, journalState, inputs };
+    await assertSourceOnlyExactHashRetainedLayout(retainedState);
+
+    append(inputs, await openVerifiedProtectedInput(
+      workspaceState.path,
+      publicWsOnceConsumedMarker(workspaceState.path),
+      BUFFER_BYTE_LENGTH(SOURCE_ONLY_EXACT_HASH_CONSUMED_MARKER, 'utf8'),
+    ));
+    append(inputs, await openVerifiedProtectedInput(
+      workspaceState.path,
+      join(runState.path, 'SUBMISSION_ARMED'),
+      BUFFER_BYTE_LENGTH(SOURCE_ONLY_EXACT_HASH_SUBMISSION_MARKER, 'utf8'),
+    ));
+    append(inputs, await openVerifiedProtectedInput(
+      workspaceState.path,
+      join(journalState.path, '.settlement-journal.initialized'),
+      1,
+      true,
+    ));
+    append(inputs, await openVerifiedProtectedInput(
+      workspaceState.path,
+      join(journalState.path, 'settlement-journal.json'),
+      SOURCE_ONLY_EXACT_HASH_JOURNAL_MAX_BYTES,
+    ));
+    await assertSourceOnlyExactHashPinnedState(retainedState, false);
+
+    const consumedMarkerBytes = await readVerifiedOpenInput(
+      inputs[0],
+      BUFFER_BYTE_LENGTH(SOURCE_ONLY_EXACT_HASH_CONSUMED_MARKER, 'utf8'),
+    );
+    const submissionMarkerBytes = await readVerifiedOpenInput(
+      inputs[1],
+      BUFFER_BYTE_LENGTH(SOURCE_ONLY_EXACT_HASH_SUBMISSION_MARKER, 'utf8'),
+    );
+    const journalMarkerBytes = await readVerifiedOpenInput(inputs[2], 1);
+    const journalBytes = await readVerifiedOpenInput(
+      inputs[3],
+      SOURCE_ONLY_EXACT_HASH_JOURNAL_MAX_BYTES,
+    );
+    if (consumedMarkerBytes.toString('utf8') !== SOURCE_ONLY_EXACT_HASH_CONSUMED_MARKER ||
+        submissionMarkerBytes.toString('utf8') !==
+          SOURCE_ONLY_EXACT_HASH_SUBMISSION_MARKER ||
+        journalMarkerBytes.length !== 0) fail();
+    const protectedJournal = exactSourceOnlyExactHashProtectedJournal(journalBytes);
+
+    await assertSourceOnlyExactHashPinnedState(retainedState, true);
+    const durableJournal = await new SettlementJournal({
+      directory: journalState.path,
+      allowedRoot: runState.path,
+      existingOnly: true,
+      maxRecords: 1,
+      maxFileBytes: SOURCE_ONLY_EXACT_HASH_JOURNAL_MAX_BYTES,
+    }).load();
+    const transitionState = exactSourceOnlyExactHashTransitionJournal(
+      durableJournal,
+      protectedJournal,
+    );
+    const inspection = classifySourceOnlyExactHashTransition(
+      transitionState,
+      expectation,
+    );
+
+    await assertSourceOnlyExactHashPinnedState(retainedState, true);
+    return inspection;
   } catch {
     fail();
   } finally {
