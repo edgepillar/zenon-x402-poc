@@ -128,6 +128,7 @@ function realFailingSupervisorScript() {
   ).href;
   return String.raw`
 import { spawn } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import { createReadStream, writeSync } from 'node:fs';
 import { superviseGateBQuickTunnel } from ${JSON.stringify(supervisorUrl)};
 
@@ -154,6 +155,25 @@ const snapshot = body => ({
   rawTrailers: [],
   statusCode: 200,
 });
+const hostnameSourceGeneration = () => {
+  if (!Buffer.isBuffer(sourceBytes) || sourceBytes.length < 1) {
+    throw new Error('fixture');
+  }
+  const digest = createHash('sha256').update(sourceBytes).digest();
+  const stamp = digest.readBigUInt64BE(0);
+  digest.fill(0);
+  return {
+    ctimeNs: stamp,
+    dev: 11n,
+    gid: 12n,
+    ino: 13n,
+    mode: 0o100600n,
+    mtimeNs: stamp,
+    nlink: 1n,
+    size: BigInt(sourceBytes.length),
+    uid: 14n,
+  };
+};
 const workspace = Object.freeze({
   async close() { return true; },
   async read(candidate) {
@@ -196,6 +216,7 @@ try {
       return snapshot(body);
     },
     ipc: process,
+    async lstatHostnameSourcePath() { return hostnameSourceGeneration(); },
     observationGapMs: 1,
     async openWorkspace() { return workspace; },
     platform: 'darwin',

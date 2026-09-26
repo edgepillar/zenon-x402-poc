@@ -22,6 +22,10 @@ import {
   OPERATOR_TRUSTED_PUBLIC_TESTNET_NON_CLAIMS,
   OPERATOR_TRUSTED_PUBLIC_TESTNET_PROFILE_NAME,
   OPERATOR_TRUSTED_PUBLIC_TESTNET_PROVENANCE,
+  PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_CHAIN_PROFILE,
+  PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_NON_CLAIMS,
+  PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_PROFILE_NAME,
+  PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_PROVENANCE,
 } from './zenon/operator-trusted-testnet-profile.js';
 
 export const LIVE_EVIDENCE_VERSION = 1;
@@ -31,6 +35,7 @@ const REPOSITORY = 'edgepillar/zenon-x402-poc';
 const PACKAGE_VERSION = '0.2.0';
 const HISTORICAL_TRUST_MODE = 'operator-trusted-historical-observation';
 const CURRENT_GATE_B_TRUST_MODE = 'operator-trusted-current-testnet-observation';
+const RESET_EPOCH_TRUST_MODE = 'operator-trusted-reset-epoch-testnet-observation';
 const INTEGRITY_ALGORITHM = 'sha256';
 const FINAL_MAX_BYTES = 512 * 1024;
 const FRAGMENT_LIMITS = Object.freeze({
@@ -92,6 +97,12 @@ const NON_CLAIM_FIELDS = Object.freeze([
 const GATE_B_EXTRA_NON_CLAIM_FIELDS = Object.freeze([
   'publicGenesisIndependentlyVerified',
   'reproducibleNodeBinary',
+]);
+const RESET_EPOCH_EXTRA_NON_CLAIM_FIELDS = Object.freeze([
+  'authenticatedRpcChainIdentity',
+  'consensusFinality',
+  'binaryAttestation',
+  'liveActivationAuthorized',
 ]);
 const EVENT_PHASES = Object.freeze({
   runner: Object.freeze([
@@ -622,6 +633,7 @@ function validateChainProfileShape(profile) {
 }
 
 function validateProvenanceShape(provenance) {
+  if (sameJson(provenance, PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_PROVENANCE)) return;
   const keys = REFLECT_OWN_KEYS(provenance);
   if (keys.length === 7 && HAS_OWN(provenance, 'repository')) {
     exactObject(provenance, [
@@ -869,7 +881,9 @@ function validateNonClaimsShape(nonClaims) {
   const keys = REFLECT_OWN_KEYS(nonClaims);
   const fields = keys.length === NON_CLAIM_FIELDS.length
     ? NON_CLAIM_FIELDS
-    : [...NON_CLAIM_FIELDS, ...GATE_B_EXTRA_NON_CLAIM_FIELDS];
+    : keys.length === NON_CLAIM_FIELDS.length + GATE_B_EXTRA_NON_CLAIM_FIELDS.length
+      ? [...NON_CLAIM_FIELDS, ...GATE_B_EXTRA_NON_CLAIM_FIELDS]
+      : [...NON_CLAIM_FIELDS, ...RESET_EPOCH_EXTRA_NON_CLAIM_FIELDS];
   exactObject(nonClaims, fields);
   for (let index = 0; index < fields.length; index += 1) {
     if (nonClaims[fields[index]] !== false) fail();
@@ -970,6 +984,19 @@ function assertPinnedSourceAndTrust(source, trust, nonClaims) {
     expectedClaims = GATE_B_CURRENT_TESTNET_NON_CLAIMS;
     if (REFLECT_OWN_KEYS(nonClaims).length !==
         NON_CLAIM_FIELDS.length + GATE_B_EXTRA_NON_CLAIM_FIELDS.length) fail();
+  } else if (trust.profileName === PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_PROFILE_NAME) {
+    if (trust.mode !== RESET_EPOCH_TRUST_MODE ||
+        trust.chainIdentifier !==
+          PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_CHAIN_PROFILE.chainIdentifier ||
+        trust.genesisMomentumHash !==
+          PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_CHAIN_PROFILE.genesisMomentumHash ||
+        !sameJson(
+          trust.provenance,
+          PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_PROVENANCE,
+        )) fail();
+    expectedClaims = PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_NON_CLAIMS;
+    if (REFLECT_OWN_KEYS(nonClaims).length !==
+        NON_CLAIM_FIELDS.length + RESET_EPOCH_EXTRA_NON_CLAIM_FIELDS.length) fail();
   } else {
     fail();
   }
@@ -1084,7 +1111,9 @@ async function validateContentSemantics(content) {
   assertPinnedSourceAndTrust(content.source, content.trust, content.nonClaims);
   const expectedChainProfile = content.trust.profileName === GATE_B_CURRENT_TESTNET_PROFILE_NAME
     ? GATE_B_CURRENT_TESTNET_CHAIN_PROFILE
-    : OPERATOR_TRUSTED_PUBLIC_TESTNET_CHAIN_PROFILE;
+    : content.trust.profileName === PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_PROFILE_NAME
+      ? PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_CHAIN_PROFILE
+      : OPERATOR_TRUSTED_PUBLIC_TESTNET_CHAIN_PROFILE;
   const paymentRequired = content.payment.paymentRequired;
   const requirements = paymentRequired.accepts[0];
   validatePublicResource(paymentRequired.resource);

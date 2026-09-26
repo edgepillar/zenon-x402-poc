@@ -1197,6 +1197,130 @@ export async function probeZenonRoleReadiness({
   });
 }
 
+/**
+ * Check the exact reset-epoch payment quote without reading or deriving a
+ * wallet. The caller supplies the already-approved payer address, and the
+ * signed path independently repeats the same frontier/quote checks later.
+ */
+export async function probeResetEpochPaymentReadiness({
+  role,
+  paymentRequired,
+  payer,
+  operatorTrustedChainPolicy,
+  environment = process.env,
+  rpcTimeoutMs,
+} = {}) {
+  if (role !== 'buyer' && role !== 'facilitator') safetyError('invalid_readiness_role');
+  if (!isPublicTestnetDynamicPlasmaResetEpochExecutionPolicy(
+    operatorTrustedChainPolicy,
+  )) safetyError('operator_trusted_chain_policy_invalid');
+  let required;
+  try {
+    paymentRequired = structuredClone(paymentRequired);
+    validatePaymentRequired(paymentRequired);
+    if (!Array.isArray(paymentRequired.accepts) || paymentRequired.accepts.length !== 1) {
+      safetyError('malformed_requirements');
+    }
+    required = paymentRequired.accepts[0];
+    validateRequirement(required);
+  } catch (error) {
+    safetyError('malformed_requirements', error);
+  }
+  if (required.scheme !== 'exact' || required.network !== EXPERIMENTAL_LIVE_NETWORK ||
+      required.extra?.paymentFlow !== 'upfront' ||
+      !chainProfilesEqual(required.extra?.zenonChain, operatorTrustedChainPolicy.chainProfile())) {
+    safetyError('operator_trusted_profile_mismatch');
+  }
+
+  const selectedEnvironment = runtimeEnvironment(environment);
+  requireLiveAck(selectedEnvironment);
+  configuredTestnetNetworkId(selectedEnvironment);
+  const configuredTimeout = configuredRpcTimeout(
+    rpcTimeoutMs ?? selectedEnvironment.ZENON_RPC_TIMEOUT_MS ?? DEFAULT_RPC_TIMEOUT_MS,
+  );
+  const { sdk: offlineSdk } = await loadZenonDeps();
+  let payerAddress;
+  let payTo;
+  let tokenStandard;
+  try {
+    payerAddress = offlineSdk.Address.parse(payer);
+    payTo = offlineSdk.Address.parse(required.payTo);
+    tokenStandard = offlineSdk.TokenStandard.parse(required.asset);
+  } catch {
+    safetyError('malformed_requirements');
+  }
+  if (payerAddress.toString() !== payer || payerAddress.toString() ===
+        offlineSdk.EMPTY_ADDRESS.toString() || payerAddress.getBytes()[0] !==
+        offlineSdk.Address.userByte || payTo.toString() !== required.payTo ||
+      payTo.toString() === offlineSdk.EMPTY_ADDRESS.toString() ||
+      payTo.getBytes()[0] !== offlineSdk.Address.userByte ||
+      tokenStandard.toString() !== required.asset) {
+    safetyError('malformed_requirements');
+  }
+  const intentDigest = paymentIntentDigest(paymentRequired, required);
+  return withOwnedZenonSession({
+    owner: `${role}.reset-epoch-readiness-probe`,
+    expectedChainProfile: required.extra.zenonChain,
+    operatorTrustedChainPolicy,
+    environment: selectedEnvironment,
+    rpcUrl: selectedEnvironment.ZENON_RPC_URL,
+    runtime: liveSdkRuntime,
+    rpcTimeoutMs: configuredTimeout,
+    readinessWork: async ({ sdk, zenon, chainId, syncInfo, frontierMomentum }, scope) => {
+      const callRead = (operation, execute) => runRead(
+        scope,
+        zenon,
+        configuredTimeout,
+        operation,
+        execute,
+      );
+      await assertAssetExists(zenon, sdk, tokenStandard, callRead);
+      const frontierGuard = await captureLegacySignedCompositeDynamicPlasmaFrontier({
+        zenon,
+        readinessFrontier: frontierMomentum,
+        readinessSyncInfo: syncInfo,
+        expectedChainIdentifier: chainId,
+        operatorTrustedChainPolicy,
+        callRead,
+      });
+      let prepared;
+      try {
+        prepared = {
+          address: sdk.Address.parse(payer),
+          blockType: 2,
+          toAddress: sdk.Address.parse(required.payTo),
+          data: Buffer.from(intentDigest, 'hex'),
+          chainIdentifier: chainId,
+          momentumAcknowledged: new sdk.HashHeight(
+            sdk.Hash.parse(frontierGuard.beforeFrontier.hash),
+            frontierGuard.beforeFrontier.height,
+          ),
+        };
+      } catch {
+        dynamicPlasmaGuardFailed();
+      }
+      const quote = await captureLegacyPreparedBlockDynamicPlasmaQuote({
+        zenon,
+        sdk,
+        prepared,
+        frontierGuard,
+        readinessFrontier: frontierMomentum,
+        operatorTrustedChainPolicy,
+        callRead,
+      });
+      if (quote === null || quote.sdk105BasePlasmaUnderpricingDetected === true ||
+          (quote.selectedFusedPlasma <= 0 && quote.requiredDifficulty <= 0)) {
+        dynamicPlasmaGuardFailed();
+      }
+    },
+    work: async () => Object.freeze({
+      ready: true,
+      role,
+      remoteChainAuthenticated: false,
+    }),
+  });
+}
+
 export async function resolveZenonAsset(assetConfig = process.env.ZENON_ASSET ?? 'ZNN') {
   const { sdk } = await loadZenonDeps();
   if (assetConfig.toUpperCase() === 'ZNN') return sdk.ZNN_ZTS.toString();
@@ -1484,7 +1608,7 @@ function assertPreparedMomentumAcknowledgementBound(prepared, frontier) {
   }
 }
 
-async function assertLegacyPreparedBlockDynamicPlasmaCompatible({
+async function captureLegacyPreparedBlockDynamicPlasmaQuote({
   zenon,
   sdk,
   prepared,
@@ -1501,7 +1625,7 @@ async function assertLegacyPreparedBlockDynamicPlasmaCompatible({
         observedMomentumVersionDescriptor(readinessFrontier).value !== 1) {
       dynamicPlasmaGuardFailed();
     }
-    return;
+    return null;
   }
   const beforeFrontier = frontierGuard.beforeFrontier;
   let rpcRaw;
@@ -1543,7 +1667,7 @@ async function assertLegacyPreparedBlockDynamicPlasmaCompatible({
     dynamicPlasmaGuardFailed();
   }
   assertPreparedMomentumAcknowledgementBound(prepared, beforeFrontier);
-  if (beforeFrontier.version === 1) return;
+  if (beforeFrontier.version === 1) return null;
 
   let compatibility;
   try {
@@ -1557,11 +1681,18 @@ async function assertLegacyPreparedBlockDynamicPlasmaCompatible({
     dynamicPlasmaGuardFailed();
   }
 
-  const quote = compatibility.quote;
-  if (compatibility.classification !== 'DP_ACTIVE' || quote === null ||
-      quote.sdk105BasePlasmaUnderpricingDetected === true ||
-      prepared.fusedPlasma !== quote.selectedFusedPlasma ||
-      prepared.difficulty !== quote.requiredDifficulty) {
+  if (compatibility.classification !== 'DP_ACTIVE' || compatibility.quote === null) {
+    dynamicPlasmaGuardFailed();
+  }
+  return compatibility.quote;
+}
+
+async function assertLegacyPreparedBlockDynamicPlasmaCompatible(options) {
+  const quote = await captureLegacyPreparedBlockDynamicPlasmaQuote(options);
+  if (quote === null) return;
+  if (quote.sdk105BasePlasmaUnderpricingDetected === true ||
+      options.prepared.fusedPlasma !== quote.selectedFusedPlasma ||
+      options.prepared.difficulty !== quote.requiredDifficulty) {
     dynamicPlasmaGuardFailed();
   }
 }
@@ -1757,6 +1888,7 @@ export class ExactZenonClient {
     rpcUrl,
     rpcTimeoutMs,
     lifecycleObserver,
+    expectedPayer,
   } = {}) {
     const selectedEnvironment = runtimeEnvironment(environment);
     const chainAuthenticator = authenticateChainProfile ?? authenticateNodeNetwork;
@@ -1775,6 +1907,12 @@ export class ExactZenonClient {
       rpcTimeoutMs ?? selectedEnvironment.ZENON_RPC_TIMEOUT_MS ?? DEFAULT_RPC_TIMEOUT_MS,
     );
     const configuredObserver = configuredLifecycleObserver(lifecycleObserver);
+    if (expectedPayer !== undefined &&
+        (!isPublicTestnetDynamicPlasmaResetEpochExecutionPolicy(
+          operatorTrustedChainPolicy,
+        ) || typeof expectedPayer !== 'string')) {
+      safetyError('reset_epoch_expected_payer_invalid');
+    }
     Object.defineProperties(this, {
       mnemonic: {
         value: configuredMnemonic,
@@ -1826,6 +1964,12 @@ export class ExactZenonClient {
       },
       lifecycleObserver: {
         value: configuredObserver,
+        writable: false,
+        configurable: false,
+        enumerable: false,
+      },
+      expectedPayer: {
+        value: expectedPayer,
         writable: false,
         configurable: false,
         enumerable: false,
@@ -1882,9 +2026,13 @@ export class ExactZenonClient {
     const { sdk: offlineSdk } = await loadZenonDeps();
     let offlineTokenStandard;
     let offlinePayTo;
+    let offlineExpectedPayer;
     try {
       offlineTokenStandard = offlineSdk.TokenStandard.parse(accepted.asset);
       offlinePayTo = offlineSdk.Address.parse(accepted.payTo);
+      if (this.expectedPayer !== undefined) {
+        offlineExpectedPayer = offlineSdk.Address.parse(this.expectedPayer);
+      }
     } catch (error) {
       safetyError('malformed_requirements', error);
     }
@@ -1892,6 +2040,12 @@ export class ExactZenonClient {
         offlinePayTo.toString() === offlineSdk.EMPTY_ADDRESS.toString() ||
         offlinePayTo.getBytes()[0] !== offlineSdk.Address.userByte) {
       safetyError('unsupported_recipient_or_asset');
+    }
+    if (offlineExpectedPayer &&
+        (offlineExpectedPayer.toString() !== this.expectedPayer ||
+         offlineExpectedPayer.toString() === offlineSdk.EMPTY_ADDRESS.toString() ||
+         offlineExpectedPayer.getBytes()[0] !== offlineSdk.Address.userByte)) {
+      safetyError('reset_epoch_expected_payer_invalid');
     }
 
     return withOwnedZenonSession({
@@ -1937,6 +2091,10 @@ export class ExactZenonClient {
             // Do not retain or expose SDK parser/derivation text derived from
             // mnemonic input in the public error chain.
             safetyError('mnemonic_invalid');
+          }
+          if (offlineExpectedPayer &&
+              keyPair.getAddress().toString() !== offlineExpectedPayer.toString()) {
+            safetyError('reset_epoch_wallet_payer_mismatch');
           }
           const intentDigest = paymentIntentDigest(paymentRequired, accepted);
           const payTo = offlinePayTo;
@@ -2239,6 +2397,7 @@ export class ExactZenonFacilitator {
     rpcTimeoutMs,
     reconciliationRetentionMs = null,
     lifecycleObserver,
+    expectedPayer,
   } = {}) {
     const selectedEnvironment = runtimeEnvironment(environment);
     const chainAuthenticator = authenticateChainProfile ?? authenticateNodeNetwork;
@@ -2255,6 +2414,12 @@ export class ExactZenonFacilitator {
     );
     const configuredRetention = configuredReconciliationRetention(reconciliationRetentionMs);
     const configuredObserver = configuredLifecycleObserver(lifecycleObserver);
+    if (expectedPayer !== undefined &&
+        (!isPublicTestnetDynamicPlasmaResetEpochExecutionPolicy(
+          operatorTrustedChainPolicy,
+        ) || typeof expectedPayer !== 'string')) {
+      safetyError('reset_epoch_expected_payer_invalid');
+    }
     const payerQueue = new PerPayerQueue();
     this.#reconciliationMaintenance = { running: false, worklist: null };
     Object.defineProperties(this, {
@@ -2308,6 +2473,12 @@ export class ExactZenonFacilitator {
       },
       lifecycleObserver: {
         value: configuredObserver,
+        writable: false,
+        configurable: false,
+        enumerable: false,
+      },
+      expectedPayer: {
+        value: expectedPayer,
         writable: false,
         configurable: false,
         enumerable: false,
@@ -2488,6 +2659,9 @@ export class ExactZenonFacilitator {
       requireLiveAck(environment);
       configuredTestnetNetworkId(environment);
       const preflight = await preflightZenonPayment(paymentPayload, requirements, paymentRequired);
+      if (this.expectedPayer !== undefined && preflight.payer !== this.expectedPayer) {
+        safetyError('reset_epoch_payment_payer_mismatch');
+      }
       return await withOwnedZenonSession({
         owner: 'facilitator.verify',
         expectedChainProfile: preflight.chainProfile,
@@ -2604,6 +2778,9 @@ export class ExactZenonFacilitator {
       requireLiveAck(environment);
       configuredTestnetNetworkId(environment);
       preflight = await preflightZenonPayment(paymentPayload, requirements, paymentRequired);
+      if (this.expectedPayer !== undefined && preflight.payer !== this.expectedPayer) {
+        safetyError('reset_epoch_payment_payer_mismatch');
+      }
     } catch (error) {
       return failed(requirements, '', '', errorCode(error), 'VALIDATION_FAILED');
     }

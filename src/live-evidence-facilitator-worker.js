@@ -11,12 +11,15 @@ import {
 } from './live-observation.js';
 import {
   CURRENT_TESTNET_WSS_ONCE_POLICY,
+  RESET_EPOCH_WSS_ONCE_POLICY,
   parseLiveRoleInput,
   parseLiveEvidenceRunConfig,
   parseCurrentTestnetWssOnceRoleInput,
   parseCurrentTestnetWssOnceRunConfig,
   parsePublicWsOnceRoleInput,
   parsePublicWsOnceRunConfig,
+  parseResetEpochWssOnceRoleInput,
+  parseResetEpochWssOnceRunConfig,
   PUBLIC_WS_ONCE_POLICY,
 } from './live-evidence-runner.js';
 import { liveSdkRuntime } from './live-runtime.js';
@@ -26,11 +29,17 @@ import {
   EVIDENCE_STATES,
   SettlementJournal,
 } from './settlement-journal.js';
-import { ExactZenonFacilitator, probeZenonRoleReadiness } from './zenon-payment.js';
+import {
+  ExactZenonFacilitator,
+  probeResetEpochPaymentReadiness,
+  probeZenonRoleReadiness,
+} from './zenon-payment.js';
 import {
   GATE_B_CURRENT_TESTNET_SDK_NETWORK_ID,
+  PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_SDK_NETWORK_ID,
   selectGateBCurrentTestnetPolicy,
   selectOperatorTrustedTestnetPolicy,
+  selectPublicTestnetDynamicPlasmaResetEpochExecutionPolicy,
 } from './zenon/operator-trusted-testnet-profile.js';
 
 const WORKER_ERROR = 'live_evidence_worker_failed';
@@ -269,9 +278,11 @@ export function createObservedFacilitatorAdapter(facilitator, observer) {
 }
 
 function explicitEnvironment(config, rpcEndpoint, executionMode = HISTORICAL_WSS_EXECUTION_MODE) {
-  const sdkNetworkId = executionMode === PUBLIC_WS_ONCE_POLICY.executionMode ||
-      executionMode === CURRENT_TESTNET_WSS_ONCE_POLICY.executionMode
-    ? GATE_B_CURRENT_TESTNET_SDK_NETWORK_ID
+  const sdkNetworkId = executionMode === RESET_EPOCH_WSS_ONCE_POLICY.executionMode
+    ? PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_SDK_NETWORK_ID
+    : executionMode === PUBLIC_WS_ONCE_POLICY.executionMode ||
+        executionMode === CURRENT_TESTNET_WSS_ONCE_POLICY.executionMode
+      ? GATE_B_CURRENT_TESTNET_SDK_NETWORK_ID
     : executionMode === HISTORICAL_WSS_EXECUTION_MODE
       ? '3'
       : fail();
@@ -349,7 +360,8 @@ export async function readInheritedLiveRoleInput(
   try {
     if (!Number.isSafeInteger(fd) || fd < 0 ||
         (role !== 'facilitator-rpc' && role !== 'facilitator-public-ws-once-rpc' &&
-          role !== 'facilitator-current-testnet-wss-once-rpc')) fail();
+          role !== 'facilitator-current-testnet-wss-once-rpc' &&
+          role !== 'facilitator-reset-epoch-wss-once-rpc')) fail();
     const generation = exactFileGeneration(expectedGeneration);
     const before = fstatSync(fd, { bigint: true });
     assertInheritedFileStat(before);
@@ -370,6 +382,12 @@ export async function readInheritedLiveRoleInput(
     }
     if (role === 'facilitator-current-testnet-wss-once-rpc') {
       return parseCurrentTestnetWssOnceRoleInput(
+        bytes.toString('utf8'),
+        'facilitator-rpc',
+      );
+    }
+    if (role === 'facilitator-reset-epoch-wss-once-rpc') {
+      return parseResetEpochWssOnceRoleInput(
         bytes.toString('utf8'),
         'facilitator-rpc',
       );
@@ -485,16 +503,29 @@ function validFinalJournal(snapshot, recovery) {
     : snapshot.revision === 5;
 }
 
+const LEGACY_START_DEPENDENCY_FIELDS = FREEZE([
+  'probeRoleReadiness', 'createFacilitator', 'createServer', 'runtimePoisoned',
+]);
+const RESET_EPOCH_START_DEPENDENCY_FIELDS = FREEZE([
+  'probeResetEpochPaymentReadiness', 'createFacilitator', 'createServer',
+  'runtimePoisoned',
+]);
 const DEFAULT_START_DEPENDENCIES = FREEZE({
   probeRoleReadiness: probeZenonRoleReadiness,
+  probeResetEpochPaymentReadiness,
   createFacilitator: options => new ExactZenonFacilitator(options),
   createServer: options => createResourceServer(options),
   runtimePoisoned: () => liveSdkRuntime.poisoned,
 });
 
-function exactStartDependencies(value) {
+function exactStartDependencies(value, resetEpochWss) {
+  if (typeof resetEpochWss !== 'boolean') fail();
   if (value === undefined) return DEFAULT_START_DEPENDENCIES;
-  const fields = ['probeRoleReadiness', 'createFacilitator', 'createServer', 'runtimePoisoned'];
+  if (!value || typeof value !== 'object' || IS_PROXY(value) || Array.isArray(value) ||
+      GET_PROTOTYPE_OF(value) !== OBJECT_PROTOTYPE) fail();
+  const fields = resetEpochWss
+    ? RESET_EPOCH_START_DEPENDENCY_FIELDS
+    : LEGACY_START_DEPENDENCY_FIELDS;
   const descriptors = exactPlainObject(value, fields);
   const captured = {};
   for (let index = 0; index < fields.length; index += 1) {
@@ -509,15 +540,17 @@ export async function startDefaultLiveEvidenceFacilitatorRuntime(
   message,
   dependencies = undefined,
 ) {
-  const runtimeDependencies = exactStartDependencies(dependencies);
   const executionMode = message.executionMode === undefined
     ? HISTORICAL_WSS_EXECUTION_MODE
     : message.executionMode;
   if (executionMode !== HISTORICAL_WSS_EXECUTION_MODE &&
       executionMode !== PUBLIC_WS_ONCE_POLICY.executionMode &&
-      executionMode !== CURRENT_TESTNET_WSS_ONCE_POLICY.executionMode) fail();
+      executionMode !== CURRENT_TESTNET_WSS_ONCE_POLICY.executionMode &&
+      executionMode !== RESET_EPOCH_WSS_ONCE_POLICY.executionMode) fail();
+  const resetEpochWss = executionMode === RESET_EPOCH_WSS_ONCE_POLICY.executionMode;
+  const runtimeDependencies = exactStartDependencies(dependencies, resetEpochWss);
   const currentTestnetOnce = executionMode === PUBLIC_WS_ONCE_POLICY.executionMode ||
-    executionMode === CURRENT_TESTNET_WSS_ONCE_POLICY.executionMode;
+    executionMode === CURRENT_TESTNET_WSS_ONCE_POLICY.executionMode || resetEpochWss;
   if (currentTestnetOnce && message.recovery !== false) fail();
   const assertBoundary = currentTestnetOnce
     ? async () => {
@@ -532,28 +565,41 @@ export async function startDefaultLiveEvidenceFacilitatorRuntime(
     ? parsePublicWsOnceRunConfig(`${JSON.stringify(message.config)}\n`)
     : executionMode === CURRENT_TESTNET_WSS_ONCE_POLICY.executionMode
       ? parseCurrentTestnetWssOnceRunConfig(`${JSON.stringify(message.config)}\n`)
-      : parseLiveEvidenceRunConfig(`${JSON.stringify(message.config)}\n`);
+      : resetEpochWss
+        ? parseResetEpochWssOnceRunConfig(`${JSON.stringify(message.config)}\n`)
+        : parseLiveEvidenceRunConfig(`${JSON.stringify(message.config)}\n`);
   const role = executionMode === PUBLIC_WS_ONCE_POLICY.executionMode
     ? 'facilitator-public-ws-once-rpc'
     : executionMode === CURRENT_TESTNET_WSS_ONCE_POLICY.executionMode
       ? 'facilitator-current-testnet-wss-once-rpc'
-      : 'facilitator-rpc';
+      : resetEpochWss
+        ? 'facilitator-reset-epoch-wss-once-rpc'
+        : 'facilitator-rpc';
   const secret = await readInheritedLiveRoleInput(
     INHERITED_FACILITATOR_RPC_FD,
     message.facilitatorRpcGeneration,
     role,
   );
-  const policy = currentTestnetOnce
-    ? selectGateBCurrentTestnetPolicy(
+  const policy = resetEpochWss
+    ? selectPublicTestnetDynamicPlasmaResetEpochExecutionPolicy({
+      eventId: config.eventId,
+      liveAcknowledgement: config.acknowledgements.live,
+      operatorTrustAcknowledgement: config.acknowledgements.operatorTrust,
+      profileName: config.profileName,
+      rpcEndpoint: config.rpcEndpoint,
+      wssAcknowledgement: config.acknowledgements.wss,
+    })
+    : currentTestnetOnce
+      ? selectGateBCurrentTestnetPolicy(
       config.profileName,
       config.acknowledgements.operatorTrust,
       config.acknowledgements.live,
-    )
-    : selectOperatorTrustedTestnetPolicy(
-      config.profileName,
-      config.acknowledgements.operatorTrust,
-      config.acknowledgements.live,
-    );
+      )
+      : selectOperatorTrustedTestnetPolicy(
+        config.profileName,
+        config.acknowledgements.operatorTrust,
+        config.acknowledgements.live,
+      );
   const environment = explicitEnvironment(config, secret.rpcEndpoint, executionMode);
   await assertBoundary();
   assertJournalDescendant(message.workspaceRoot, message.journalDirectory);
@@ -574,23 +620,48 @@ export async function startDefaultLiveEvidenceFacilitatorRuntime(
   } else if (initial.schemaVersion !== 1 || initial.revision !== 0 ||
       !Array.isArray(initial.records) || initial.records.length !== 0) fail();
   await assertBoundary();
-  await Reflect.apply(runtimeDependencies.probeRoleReadiness, undefined, [{
-    role: 'facilitator',
-    asset: config.expectedPaymentRequired.accepts[0].asset,
-    operatorTrustedChainPolicy: policy,
-    environment,
-    rpcTimeoutMs: config.runtime.rpcTimeoutMs,
-  }]);
+  const readinessOptions = resetEpochWss
+    ? {
+        role: 'facilitator',
+        paymentRequired: config.expectedPaymentRequired,
+        payer: config.payer,
+        operatorTrustedChainPolicy: policy,
+        environment,
+        rpcTimeoutMs: config.runtime.rpcTimeoutMs,
+      }
+    : {
+        role: 'facilitator',
+        asset: config.expectedPaymentRequired.accepts[0].asset,
+        operatorTrustedChainPolicy: policy,
+        environment,
+        rpcTimeoutMs: config.runtime.rpcTimeoutMs,
+      };
+  await Reflect.apply(
+    resetEpochWss
+      ? runtimeDependencies.probeResetEpochPaymentReadiness
+      : runtimeDependencies.probeRoleReadiness,
+    undefined,
+    [readinessOptions],
+  );
   await assertBoundary();
   const observer = createLiveEvidenceObserver();
-  const facilitator = Reflect.apply(runtimeDependencies.createFacilitator, undefined, [{
+  const facilitatorOptions = {
     environment,
     operatorTrustedChainPolicy: policy,
     journal,
     rpcTimeoutMs: config.runtime.rpcTimeoutMs,
     reconciliationRetentionMs: null,
     lifecycleObserver: observer,
-  }]);
+  };
+  if (resetEpochWss) {
+    ownData(facilitatorOptions, 'rpcUrl', secret.rpcEndpoint);
+    ownData(facilitatorOptions, 'expectedPayer', config.payer);
+  }
+  const facilitator = Reflect.apply(
+    runtimeDependencies.createFacilitator,
+    undefined,
+    [facilitatorOptions],
+  );
   const adapter = createObservedFacilitatorAdapter(facilitator, observer);
   const resourceUrl = config.expectedPaymentRequired.resource.url;
   const advertisedBaseUrl = resourceUrl.slice(0, -'/paid'.length);
@@ -854,14 +925,18 @@ export async function runLiveEvidenceFacilitatorWorker(options = {}) {
         return;
       }
       if (messageType === 'START' || messageType === 'START_PUBLIC_WS_ONCE' ||
-          messageType === 'START_CURRENT_TESTNET_WSS_ONCE') {
+          messageType === 'START_CURRENT_TESTNET_WSS_ONCE' ||
+          messageType === 'START_RESET_EPOCH_WSS_ONCE') {
         const currentTestnetOnce = messageType === 'START_PUBLIC_WS_ONCE' ||
-          messageType === 'START_CURRENT_TESTNET_WSS_ONCE';
+          messageType === 'START_CURRENT_TESTNET_WSS_ONCE' ||
+          messageType === 'START_RESET_EPOCH_WSS_ONCE';
         const expectedExecutionMode = messageType === 'START_PUBLIC_WS_ONCE'
           ? PUBLIC_WS_ONCE_POLICY.executionMode
           : messageType === 'START_CURRENT_TESTNET_WSS_ONCE'
             ? CURRENT_TESTNET_WSS_ONCE_POLICY.executionMode
-            : HISTORICAL_WSS_EXECUTION_MODE;
+            : messageType === 'START_RESET_EPOCH_WSS_ONCE'
+              ? RESET_EPOCH_WSS_ONCE_POLICY.executionMode
+              : HISTORICAL_WSS_EXECUTION_MODE;
         const message = exactRequest(rawMessage, messageType, currentTestnetOnce
           ? [
             'config', 'facilitatorRpcGeneration', 'workspaceRoot',
@@ -1100,9 +1175,11 @@ function captureControllerOptions(options) {
   const executionMode = descriptors.executionMode.value;
   if (executionMode !== HISTORICAL_WSS_EXECUTION_MODE &&
       executionMode !== PUBLIC_WS_ONCE_POLICY.executionMode &&
-      executionMode !== CURRENT_TESTNET_WSS_ONCE_POLICY.executionMode) fail();
+      executionMode !== CURRENT_TESTNET_WSS_ONCE_POLICY.executionMode &&
+      executionMode !== RESET_EPOCH_WSS_ONCE_POLICY.executionMode) fail();
   const currentTestnetOnce = executionMode === PUBLIC_WS_ONCE_POLICY.executionMode ||
-    executionMode === CURRENT_TESTNET_WSS_ONCE_POLICY.executionMode;
+    executionMode === CURRENT_TESTNET_WSS_ONCE_POLICY.executionMode ||
+    executionMode === RESET_EPOCH_WSS_ONCE_POLICY.executionMode;
   if (currentTestnetOnce &&
       descriptors.recovery.value !== false) fail();
   if (currentTestnetOnce) {
@@ -1173,7 +1250,9 @@ export async function startLiveEvidenceFacilitatorWorker(options = {}) {
         ? 'START_PUBLIC_WS_ONCE'
         : captured.executionMode === CURRENT_TESTNET_WSS_ONCE_POLICY.executionMode
           ? 'START_CURRENT_TESTNET_WSS_ONCE'
-          : 'START',
+          : captured.executionMode === RESET_EPOCH_WSS_ONCE_POLICY.executionMode
+            ? 'START_RESET_EPOCH_WSS_ONCE'
+            : 'START',
       config: captured.config,
       facilitatorRpcGeneration: captured.facilitatorRpcGeneration,
       workspaceRoot: captured.workspaceRoot,
@@ -1181,7 +1260,8 @@ export async function startLiveEvidenceFacilitatorWorker(options = {}) {
       recovery: captured.recovery,
     };
     const currentTestnetOnce = captured.executionMode === PUBLIC_WS_ONCE_POLICY.executionMode ||
-      captured.executionMode === CURRENT_TESTNET_WSS_ONCE_POLICY.executionMode;
+      captured.executionMode === CURRENT_TESTNET_WSS_ONCE_POLICY.executionMode ||
+      captured.executionMode === RESET_EPOCH_WSS_ONCE_POLICY.executionMode;
     if (currentTestnetOnce) {
       ownData(startSnapshot, 'executionMode', captured.executionMode);
       ownData(startSnapshot, 'workspaceIdentity', captured.workspaceIdentity);

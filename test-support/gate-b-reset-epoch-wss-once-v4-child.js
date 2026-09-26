@@ -102,6 +102,10 @@ try {
     await crashAfter('armPreparation');
   } else if (mode === 'crash-after-payment') {
     await crashAfter('recordPreparedPayment');
+  } else if (mode === 'crash-after-facilitator-arm') {
+    await crashAfter('armFacilitatorValidation');
+  } else if (mode === 'crash-after-facilitator-validation') {
+    await crashAfter('recordFacilitatorValidation');
   } else if (mode === 'probe-open') {
     probeOpen();
   } else {

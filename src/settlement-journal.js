@@ -487,7 +487,7 @@ async function syncDirectory(directory, failureCode = 'journal_directory_sync_fa
   }
 }
 
-async function assertSafeDirectory(directory, allowedRoot) {
+async function assertSafeDirectory(directory, allowedRoot, existingOnly = false) {
   const rootPath = resolve(allowedRoot);
   const directoryPath = resolve(directory);
   if (!within(rootPath, directoryPath)) journalError('journal_path_outside_allowed_root');
@@ -511,6 +511,7 @@ async function assertSafeDirectory(directory, allowedRoot) {
       if (stat.isSymbolicLink() || !stat.isDirectory()) journalError('journal_unsafe_directory');
     } catch (error) {
       if (error?.code === 'ENOENT') {
+        if (existingOnly) journalError('journal_state_missing');
         directoryCreated = true;
         break;
       }
@@ -520,7 +521,9 @@ async function assertSafeDirectory(directory, allowedRoot) {
   }
 
   try {
-    await mkdir(directoryPath, { recursive: true, mode: 0o700 });
+    if (!existingOnly) {
+      await mkdir(directoryPath, { recursive: true, mode: 0o700 });
+    }
     const [realRoot, realDirectory] = await Promise.all([realpath(rootPath), realpath(directoryPath)]);
     if (!within(realRoot, realDirectory)) journalError('journal_unsafe_directory');
     if (directoryCreated) {
@@ -921,16 +924,29 @@ function enqueue(filePath, operation) {
 }
 
 export class SettlementJournal {
+  #existingOnly;
+
   constructor({
     directory = DEFAULT_JOURNAL_DIRECTORY,
     allowedRoot = REPOSITORY_ROOT,
     maxRecords = DEFAULT_MAX_RECORDS,
     maxFileBytes = DEFAULT_MAX_FILE_BYTES,
     clock = () => new Date(),
+    existingOnly = false,
   } = {}) {
     if (!Number.isSafeInteger(maxRecords) || maxRecords < 1 || maxRecords > 10_000 ||
-        !Number.isSafeInteger(maxFileBytes) || maxFileBytes < 1024 || typeof clock !== 'function') {
+        !Number.isSafeInteger(maxFileBytes) || maxFileBytes < 1024 || typeof clock !== 'function' ||
+        typeof existingOnly !== 'boolean') {
       journalError('journal_configuration_invalid');
+    }
+    this.#existingOnly = existingOnly;
+    if (existingOnly) {
+      DEFINE_PROPERTY(this, 'existingOnly', {
+        configurable: false,
+        enumerable: false,
+        value: true,
+        writable: false,
+      });
     }
     this.directory = resolve(directory);
     this.allowedRoot = resolve(allowedRoot);
@@ -943,7 +959,11 @@ export class SettlementJournal {
 
   async #withWriter(operation) {
     return enqueue(this.filePath, async () => {
-      await assertSafeDirectory(this.directory, this.allowedRoot);
+      await assertSafeDirectory(
+        this.directory,
+        this.allowedRoot,
+        this.#existingOnly,
+      );
       return operation();
     });
   }
@@ -952,12 +972,13 @@ export class SettlementJournal {
     let handle;
     try {
       const initialized = await this.#hasInitializationMarker();
+      if (this.#existingOnly && !initialized) journalError('journal_state_missing');
       try {
         const stat = await lstat(this.filePath);
         if (stat.isSymbolicLink() || !stat.isFile()) journalError('journal_unsafe_file');
       } catch (error) {
         if (error?.code === 'ENOENT') {
-          if (initialized) journalError('journal_state_missing');
+          if (initialized || this.#existingOnly) journalError('journal_state_missing');
           const data = emptyJournal();
           await this.#write(data);
           return data;
@@ -1032,11 +1053,24 @@ export class SettlementJournal {
     let failure = null;
     let cleanupFailed = false;
     try {
+      if (this.#existingOnly && !await this.#hasInitializationMarker()) {
+        journalError('journal_state_missing');
+      }
       validateJournalStructure(data, this.maxRecords);
       defineOwnData(data, 'checksum', checksumFor(data, this.maxFileBytes));
       validateJournal(data, this.maxRecords, this.maxFileBytes);
       const serialized = `${stringifyJsonWithoutHooks(data, 2, false, this.maxFileBytes)}\n`;
       if (Buffer.byteLength(serialized) > this.maxFileBytes) journalError('journal_capacity_exceeded');
+      if (this.#existingOnly) {
+        let stat;
+        try {
+          stat = await lstat(this.filePath);
+        } catch (error) {
+          if (error?.code === 'ENOENT') journalError('journal_state_missing');
+          journalError('journal_unsafe_file');
+        }
+        if (stat.isSymbolicLink() || !stat.isFile()) journalError('journal_unsafe_file');
+      }
       temporaryPath = join(
         this.directory,
         `.${JOURNAL_FILE_NAME}.${process.pid}.${randomBytes(8).toString('hex')}.tmp`,
@@ -1050,7 +1084,11 @@ export class SettlementJournal {
       await rename(temporaryPath, this.filePath);
       renamed = true;
       await syncDirectory(this.directory);
-      await this.#ensureInitializationMarker();
+      if (this.#existingOnly) {
+        if (!await this.#hasInitializationMarker()) journalError('journal_state_missing');
+      } else {
+        await this.#ensureInitializationMarker();
+      }
     } catch (error) {
       const fixedCode = fixedJournalErrorCode(error);
       const code = error === JSON_SNAPSHOT_TOO_LARGE

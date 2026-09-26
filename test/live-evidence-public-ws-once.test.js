@@ -9,6 +9,7 @@ import {
   lstat,
   mkdir,
   mkdtemp,
+  open,
   readFile,
   readdir,
   realpath,
@@ -34,17 +35,22 @@ import {
   GATE_B_CURRENT_TESTNET_WSS_ENDPOINT,
   serializeGateBQuickTunnelHostnameSource,
 } from '../src/gate-b-public-ws-inputs-schema.js';
+import {
+  GATE_B_RESET_EPOCH_ARTIFACT_LEAVES_V3,
+} from '../src/gate-b-reset-epoch-artifacts-v3.js';
 import { runPublicWsOnceRunnerCli } from '../src/live-evidence-public-ws-once-cli.js';
 import { runPublicWsOnceExecutionChild } from '../src/live-evidence-public-ws-once-run-child.js';
 import { supervisePublicWsOnceChild } from '../src/live-evidence-public-ws-once-supervisor.js';
 import {
   assertLiveEvidenceFacilitatorController,
   runLiveEvidenceFacilitatorWorker,
+  startDefaultLiveEvidenceFacilitatorRuntime,
   startLiveEvidenceFacilitatorWorker,
 } from '../src/live-evidence-facilitator-worker.js';
 import {
   executeCurrentTestnetWssOnceRun,
   executePublicWsOnceRun,
+  executeResetEpochWssOnceRun,
   exerciseIndependentPublicWsOnceFinalizerTestOnly,
   finalizeIndependentPublicWsOnce,
   independentPublicWsOnceCandidateBundleDigest,
@@ -65,11 +71,17 @@ import {
   parsePublicWsOnceRoleInput,
   parsePublicWsOnceRunConfig,
   parsePublicWsOnceSupervisorBootstrap,
+  parseResetEpochWssOnceApproval,
+  parseResetEpochWssOnceRoleInput,
+  parseResetEpochWssOnceRunConfig,
   persistPublicWsOnceConsumedMarker,
   preflightPublicWsOnceRun,
   preflightCurrentTestnetWssOnceRun,
+  preflightResetEpochWssOnceRun,
   publicWsOnceConfigDigest,
   PUBLIC_WS_ONCE_POLICY,
+  resetEpochWssOnceConfigDigest,
+  RESET_EPOCH_WSS_ONCE_POLICY,
 } from '../src/live-evidence-runner.js';
 import {
   assembleLiveEvidenceBundle,
@@ -82,7 +94,7 @@ import {
   createLiveEvidenceObserver,
   recordLiveEvidencePhase,
 } from '../src/live-observation.js';
-import { validatePaymentRequired } from '../src/x402-wire.js';
+import { encodeB64Json, HEADERS, validatePaymentRequired } from '../src/x402-wire.js';
 import { EVIDENCE_STATES, SettlementJournal } from '../src/settlement-journal.js';
 import {
   assertOperatorTrustedChainPolicy,
@@ -97,12 +109,24 @@ import {
   OPERATOR_TRUSTED_PUBLIC_TESTNET_CHAIN_PROFILE,
   OPERATOR_TRUSTED_PUBLIC_TESTNET_PROFILE_NAME,
   OPERATOR_TRUST_ACKNOWLEDGEMENT,
+  PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_EVENT_ID,
+  PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_PROFILE_NAME,
+  PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_CHAIN_PROFILE,
+  PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_EVENT_ID,
+  PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_OPERATOR_TRUST_ACKNOWLEDGEMENT,
+  PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_PROFILE_NAME,
+  PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_WSS_ACKNOWLEDGEMENT,
+  PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_WSS_ENDPOINT,
   TESTNET_LIVE_ACKNOWLEDGEMENT,
   isGateBCurrentTestnetPolicy,
   selectGateBCurrentTestnetPolicy,
   selectOperatorTrustedTestnetPolicy,
 } from '../src/zenon/operator-trusted-testnet-profile.js';
-import { computeBlockHash, preflightZenonPayment } from '../src/zenon-payment.js';
+import {
+  computeBlockHash,
+  ExactZenonClient,
+  preflightZenonPayment,
+} from '../src/zenon-payment.js';
 
 const ENDPOINT = 'ws://8.8.8.8:35998/';
 const HOSTNAME = 'evidence.trycloudflare.com';
@@ -117,6 +141,13 @@ const SYNTHETIC_GENERATION = Object.freeze({
   ctimeNs: '5',
 });
 const SYNTHETIC_DIRECTORY_IDENTITY = Object.freeze({ dev: '1', ino: '2' });
+const RESET_EPOCH_STALE_WORKSPACE_LEAVES = Object.freeze([
+  GATE_B_PUBLIC_WS_INPUT_LEAVES.buyerAddress,
+  GATE_B_PUBLIC_WS_INPUT_LEAVES.endpointSource,
+  GATE_B_PUBLIC_WS_INPUT_LEAVES.payeeAddress,
+  GATE_B_PUBLIC_WS_INPUT_LEAVES.authorization,
+  ...Object.values(GATE_B_RESET_EPOCH_ARTIFACT_LEAVES_V3),
+]);
 const PHASES = Object.freeze({
   buyer: Object.freeze([
     'buyer_owner_wait_started',
@@ -163,6 +194,20 @@ function canonicalQuickTunnelBinding(changes = {}) {
   };
 }
 
+function generationFromBigIntStat(stat) {
+  return {
+    dev: stat.dev.toString(),
+    ino: stat.ino.toString(),
+    size: stat.size.toString(),
+    mtimeNs: stat.mtimeNs.toString(),
+    ctimeNs: stat.ctimeNs.toString(),
+  };
+}
+
+function directoryIdentityFromBigIntStat(stat) {
+  return { dev: stat.dev.toString(), ino: stat.ino.toString() };
+}
+
 function quickTunnelBindingMutations() {
   return [
     ['artifact-architecture', value => { value.artifact.architecture = 'x64'; }],
@@ -190,7 +235,7 @@ function quickTunnelBindingMutations() {
   ];
 }
 
-function paymentRequired() {
+function paymentRequired(chainProfile = GATE_B_CURRENT_TESTNET_CHAIN_PROFILE) {
   return {
     x402Version: 2,
     resource: {
@@ -209,7 +254,7 @@ function paymentRequired() {
         paymentFlow: 'upfront',
         poc: true,
         settlement: 'account-block',
-        zenonChain: { ...GATE_B_CURRENT_TESTNET_CHAIN_PROFILE },
+        zenonChain: { ...chainProfile },
       },
     }],
   };
@@ -266,19 +311,27 @@ async function fixture(t, changes = {}) {
   const workspaceRoot = join(root, 'workspace');
   await mkdir(workspaceRoot, { mode: 0o700 });
   const currentTestnetWss = changes.currentTestnetWss === true;
-  const configuration = changes.config ?? (currentTestnetWss
-    ? currentTestnetWssConfig()
-    : config());
-  const defaultRpcEndpoint = currentTestnetWss
-    ? GATE_B_CURRENT_TESTNET_WSS_ENDPOINT
-    : ENDPOINT;
-  const rpcSecretVersion = currentTestnetWss ? 3 : 2;
+  const resetEpochWss = changes.resetEpochWss === true;
+  assert.equal(currentTestnetWss && resetEpochWss, false);
+  const configuration = changes.config ?? (resetEpochWss
+    ? resetEpochWssConfig()
+    : currentTestnetWss
+      ? currentTestnetWssConfig()
+      : config());
+  const defaultRpcEndpoint = resetEpochWss
+    ? PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_WSS_ENDPOINT
+    : currentTestnetWss
+      ? GATE_B_CURRENT_TESTNET_WSS_ENDPOINT
+      : ENDPOINT;
+  const rpcSecretVersion = resetEpochWss ? 4 : currentTestnetWss ? 3 : 2;
   const paths = {
     configPath: join(workspaceRoot, 'run.json'),
     buyerRpcPath: join(workspaceRoot, 'buyer-rpc.json'),
     buyerWalletPath: join(workspaceRoot, 'buyer-wallet.json'),
     facilitatorRpcPath: join(workspaceRoot, 'facilitator-rpc.json'),
-    authorizationPath: join(workspaceRoot, 'authorization.json'),
+    ...(resetEpochWss
+      ? { approvalPath: join(workspaceRoot, 'reset-live-approval.json') }
+      : { authorizationPath: join(workspaceRoot, 'authorization.json') }),
   };
   await writeFile(paths.configPath, `${JSON.stringify(configuration)}\n`, { mode: 0o600 });
   await writeFile(
@@ -302,12 +355,14 @@ async function fixture(t, changes = {}) {
     })}\n`,
     { mode: 0o600 },
   );
-  const authorizationValue = changes.authorization ?? (currentTestnetWss
-    ? currentTestnetWssAuthorization(configuration)
-    : authorization(configuration));
+  const authorizationValue = changes.authorization ?? (resetEpochWss
+    ? resetEpochWssApproval(configuration)
+    : currentTestnetWss
+      ? currentTestnetWssAuthorization(configuration)
+      : authorization(configuration));
   await writeFile(
-    paths.authorizationPath,
-    `${JSON.stringify(authorizationValue)}\n`,
+    resetEpochWss ? paths.approvalPath : paths.authorizationPath,
+    changes.approvalText ?? `${JSON.stringify(authorizationValue)}\n`,
     { mode: 0o600 },
   );
   await writeFile(
@@ -321,12 +376,16 @@ async function fixture(t, changes = {}) {
   const options = {
     ...paths,
     workspaceRoot,
-    runName: currentTestnetWss
-      ? 'single-current-testnet-wss-run'
-      : 'single-public-ws-run',
-    ...(currentTestnetWss
-      ? { executionMode: CURRENT_TESTNET_WSS_ONCE_POLICY.executionMode }
-      : { transportException: PUBLIC_WS_ONCE_POLICY.transportException }),
+    runName: resetEpochWss
+      ? 'single-reset-epoch-wss-run'
+      : currentTestnetWss
+        ? 'single-current-testnet-wss-run'
+        : 'single-public-ws-run',
+    ...(resetEpochWss
+      ? { executionMode: RESET_EPOCH_WSS_ONCE_POLICY.executionMode }
+      : currentTestnetWss
+        ? { executionMode: CURRENT_TESTNET_WSS_ONCE_POLICY.executionMode }
+        : { transportException: PUBLIC_WS_ONCE_POLICY.transportException }),
   };
   FIXTURE_CONFIGURATIONS.set(options, configuration);
   return options;
@@ -355,7 +414,13 @@ function observations(role) {
 }
 
 async function validOutcome(configuration) {
-  const keyPair = sdk.KeyPair.fromPrivateKey(randomBytes(32));
+  const resetEpoch = configuration.profileName ===
+    PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_PROFILE_NAME;
+  const keyPair = resetEpoch
+    ? sdk.KeyPair.fromPrivateKey(
+      sdk.Hash.digest(Buffer.from('synthetic reset-epoch runner payer')).getBytes(),
+    )
+    : sdk.KeyPair.fromPrivateKey(randomBytes(32));
   try {
     const required = structuredClone(configuration.expectedPaymentRequired);
     const accepted = required.accepts[0];
@@ -365,7 +430,7 @@ async function validOutcome(configuration) {
       sdk.TokenStandard.parse(accepted.asset),
       BigInt(accepted.amount),
     );
-    block.chainIdentifier = Number(GATE_B_CURRENT_TESTNET_CHAIN_PROFILE.chainIdentifier);
+    block.chainIdentifier = Number(accepted.extra.zenonChain.chainIdentifier);
     block.address = keyPair.getAddress();
     block.height = 1;
     block.momentumAcknowledged = new sdk.HashHeight(
@@ -373,7 +438,7 @@ async function validOutcome(configuration) {
       1,
     );
     block.data = Buffer.from(intentDigest, 'hex');
-    block.fusedPlasma = 0;
+    block.fusedPlasma = resetEpoch ? 21000 : 0;
     block.difficulty = 0;
     block.nonce = '0'.repeat(16);
     block.publicKey = keyPair.getPublicKey();
@@ -4065,6 +4130,104 @@ function syntheticSupervisorChild(mode) {
   return child;
 }
 
+function syntheticLinkedProcess() {
+  const child = new EventEmitter();
+  const channel = new EventEmitter();
+  const parentToChild = [];
+  const childToParent = [];
+  const signals = [];
+  let closed = false;
+  let disconnected = false;
+  let resolveClosed;
+  const closedPromise = new Promise(resolve => { resolveClosed = resolve; });
+  child.connected = true;
+  child.exitCode = null;
+  child.signalCode = null;
+  child.stdout = new PassThrough();
+  child.stderr = new PassThrough();
+  child.stdio = [null, null, null, null, new PassThrough()];
+  channel.connected = true;
+
+  const send = (source, target, frames, message, callback) => {
+    if (source.connected === false) {
+      queueMicrotask(() => callback?.(new Error('synthetic_ipc_closed')));
+      return false;
+    }
+    const snapshot = structuredClone(message);
+    frames.push(snapshot.type);
+    queueMicrotask(() => {
+      if (source.connected === false || target.connected === false) {
+        callback?.(new Error('synthetic_ipc_closed'));
+        return;
+      }
+      callback?.();
+      target.emit('message', snapshot);
+    });
+    return true;
+  };
+  child.send = (message, callback) => send(
+    child,
+    channel,
+    parentToChild,
+    message,
+    callback,
+  );
+  channel.send = (message, callback) => send(
+    channel,
+    child,
+    childToParent,
+    message,
+    callback,
+  );
+
+  const disconnect = () => {
+    if (disconnected) return;
+    disconnected = true;
+    child.connected = false;
+    channel.connected = false;
+    queueMicrotask(() => {
+      child.emit('disconnect');
+      channel.emit('disconnect');
+    });
+  };
+  const close = (code, signal = null) => {
+    if (closed) return;
+    closed = true;
+    const emitDisconnect = !disconnected;
+    disconnected = true;
+    child.connected = false;
+    channel.connected = false;
+    child.exitCode = code;
+    child.signalCode = signal;
+    queueMicrotask(() => {
+      child.emit('close', code, signal);
+      if (emitDisconnect) {
+        child.emit('disconnect');
+        channel.emit('disconnect');
+      }
+      resolveClosed({ code, signal });
+    });
+  };
+  child.disconnect = disconnect;
+  channel.disconnect = disconnect;
+  child.channel = { close: disconnect, unref() {} };
+  child.unref = () => {};
+  child.kill = signal => {
+    signals.push(signal);
+    close(null, signal);
+    return true;
+  };
+  return {
+    channel,
+    child,
+    childToParent,
+    close,
+    closedPromise,
+    parentToChild,
+    signals,
+  };
+}
+
 test('supervisor rejects malformed, duplicate, stale, disconnected, and unclean children', async t => {
   const options = await fixture(t);
   for (const mode of [
@@ -4083,6 +4246,275 @@ test('supervisor rejects malformed, duplicate, stale, disconnected, and unclean 
     ));
   }
 });
+
+test('supervisor bounds no-close reaping and releases only owned child handles', async t => {
+  const options = await fixture(t, { resetEpochWss: true });
+  const child = new EventEmitter();
+  const signals = [];
+  const cleanup = { channelUnref: 0, childUnref: 0, disconnect: 0 };
+  let protocolSends = 0;
+  child.connected = true;
+  child.stdio = [null, null, null, null, new PassThrough()];
+  child.channel = {
+    unref() { cleanup.channelUnref += 1; },
+  };
+  child.disconnect = function disconnect() {
+    cleanup.disconnect += 1;
+    this.connected = false;
+    queueMicrotask(() => this.emit('disconnect'));
+  };
+  child.unref = () => { cleanup.childUnref += 1; };
+  child.send = () => {
+    protocolSends += 1;
+    return true;
+  };
+  child.kill = signal => {
+    signals.push(signal);
+    if (signal === 'SIGTERM') {
+      queueMicrotask(() => child.emit('message', {
+        ipcVersion: 1,
+        requestId: 1,
+        type: 'READY',
+      }));
+    }
+    return true;
+  };
+
+  const started = Date.now();
+  let boundTimer;
+  const result = await Promise.race([
+    supervisePublicWsOnceChild('run-public-ws-once', options, {
+      forkProcess: () => child,
+      timeoutMs: 5,
+    }).then(
+      value => ({ status: 'fulfilled', value }),
+      error => ({ status: 'rejected', error }),
+    ),
+    new Promise(resolve => {
+      boundTimer = setTimeout(() => resolve({ status: 'outside-bound' }), 3000);
+    }),
+  ]);
+  clearTimeout(boundTimer);
+
+  assert.equal(result.status, 'rejected');
+  assert.equal(result.error?.message, 'live_evidence_public_ws_once_supervisor_failed');
+  assert.equal(result.error?.cause, undefined);
+  assert.equal(Date.now() - started < 3000, true);
+  assert.deepEqual(signals, ['SIGTERM', 'SIGKILL']);
+  assert.deepEqual(cleanup, { channelUnref: 1, childUnref: 1, disconnect: 1 });
+  assert.equal(protocolSends, 0);
+  assert.equal(child.stdio[4].destroyed, true);
+  assert.equal(child.stdio[4].listenerCount('error'), 0);
+  for (const event of ['error', 'disconnect', 'message', 'exit', 'close']) {
+    assert.equal(child.listenerCount(event), 0);
+  }
+});
+
+test('reset-epoch real process boundaries gate origin release and facilitator readiness',
+  async t => {
+    for (const scenario of [
+      { name: 'origin release refused', release: false },
+      { name: 'facilitator readiness fails after origin release', release: true },
+    ]) {
+      await t.test(scenario.name, async subtest => {
+        const options = await fixture(subtest, {
+          resetEpochWss: true,
+          walletText: 'invalid-wallet-input-that-must-not-be-read\n',
+        });
+        const facilitatorRpcStat = await lstat(options.facilitatorRpcPath, { bigint: true });
+        const facilitatorRpcHandle = await open(options.facilitatorRpcPath, 'r');
+        subtest.after(() => facilitatorRpcHandle.close());
+        const runProcess = syntheticLinkedProcess();
+        const workerProcess = syntheticLinkedProcess();
+        const effects = {
+          buyerReadiness: 0,
+          facilitatorCreate: 0,
+          facilitatorReadiness: 0,
+          healthHttp: 0,
+          httpPayment: 0,
+          originRelease: 0,
+          publication: 0,
+          signing: 0,
+          walletReads: 0,
+          workerFork: 0,
+        };
+        let workerLaunched = false;
+
+        workerProcess.child.kill = signal => {
+          workerProcess.signals.push(signal);
+          if (signal === 'SIGKILL') workerProcess.close(null, signal);
+          return true;
+        };
+        const forkFacilitator = (_modulePath, args, forkOptions) => {
+          effects.workerFork += 1;
+          assert.deepEqual(args, []);
+          assert.deepEqual(forkOptions.env, {});
+          assert.deepEqual(forkOptions.execArgv, []);
+          assert.equal(forkOptions.stdio[4], facilitatorRpcHandle.fd);
+          assert.equal(workerLaunched, false);
+          workerLaunched = true;
+          queueMicrotask(() => {
+            void runLiveEvidenceFacilitatorWorker({
+              channel: workerProcess.channel,
+              start: async message => {
+                effects.facilitatorReadiness += 1;
+                assert.equal(scenario.release, true);
+                assert.equal(effects.originRelease, 1);
+                assert.equal(message.type, 'START_RESET_EPOCH_WSS_ONCE');
+                assert.equal(
+                  message.executionMode,
+                  RESET_EPOCH_WSS_ONCE_POLICY.executionMode,
+                );
+                throw new Error('synthetic_facilitator_readiness_failed');
+              },
+              shutdownTimeoutMs: 1000,
+              forceExit: code => workerProcess.close(code, null),
+            }).catch(() => workerProcess.close(1, null));
+          });
+          return workerProcess.child;
+        };
+
+        const operations = {
+          async probeBuyerReadiness({ config: configuration }) {
+            effects.buyerReadiness += 1;
+            assert.equal(
+              configuration.executionMode,
+              RESET_EPOCH_WSS_ONCE_POLICY.executionMode,
+            );
+          },
+          async startFacilitator({ config: configuration, recovery }) {
+            effects.facilitatorCreate += 1;
+            assert.equal(recovery, false);
+            const [workspaceStat, runDirectoryStat] = await Promise.all([
+              lstat(options.workspaceRoot, { bigint: true }),
+              lstat(join(options.workspaceRoot, options.runName), { bigint: true }),
+            ]);
+            return startLiveEvidenceFacilitatorWorker({
+              config: configuration,
+              facilitatorRpcFd: facilitatorRpcHandle.fd,
+              facilitatorRpcGeneration: generationFromBigIntStat(facilitatorRpcStat),
+              workspaceRoot: options.workspaceRoot,
+              journalDirectory: join(options.workspaceRoot, options.runName, 'journal'),
+              recovery: false,
+              executionMode: RESET_EPOCH_WSS_ONCE_POLICY.executionMode,
+              workspaceIdentity: directoryIdentityFromBigIntStat(workspaceStat),
+              runDirectoryIdentity: directoryIdentityFromBigIntStat(runDirectoryStat),
+              forkProcess: forkFacilitator,
+            });
+          },
+          async probePublicEndpoint() {
+            effects.healthHttp += 1;
+            assert.fail('public HTTP readiness must not run');
+          },
+          async readBuyerWallet() {
+            effects.walletReads += 1;
+            assert.fail('wallet input must not be read');
+          },
+          async paidFetch() {
+            effects.signing += 1;
+            effects.httpPayment += 1;
+            effects.publication += 1;
+            assert.fail('payment and publication must not run');
+          },
+        };
+
+        runProcess.child.stdio[4].once('finish', () => {
+          void runPublicWsOnceExecutionChild({
+            channel: runProcess.channel,
+            readBootstrap: async () => structuredClone(options),
+            preflight: async () => assert.fail('RUN must not dispatch preflight'),
+            execute: async (bootstrap, childDependencies) => {
+              assert.deepEqual(bootstrap, options);
+              assert.deepEqual(Object.keys(childDependencies), ['beforeOriginBind']);
+              return executeResetEpochWssOnceRun(bootstrap, {
+                sourceTreeAttestor: async () => true,
+                repositoryModuleLoader: async () => ({
+                  assertLiveEvidenceFacilitatorController,
+                  startLiveEvidenceFacilitatorWorker,
+                }),
+                beforeOriginBind: childDependencies.beforeOriginBind,
+                operations,
+              });
+            },
+            forceExit: code => runProcess.close(code, null),
+          }).catch(() => runProcess.close(1, null));
+        });
+
+        const started = Date.now();
+        let boundTimer;
+        const completion = (async () => {
+          const supervisorOutcome = await supervisePublicWsOnceChild(
+            'run-public-ws-once',
+            options,
+            {
+              forkProcess: () => runProcess.child,
+              beforeOriginBind: async () => {
+                effects.originRelease += 1;
+                return scenario.release;
+              },
+              timeoutMs: 4000,
+            },
+          ).then(
+            value => ({ status: 'fulfilled', value }),
+            error => ({ status: 'rejected', error }),
+          );
+          await workerProcess.closedPromise;
+          return supervisorOutcome;
+        })();
+        const outcome = await Promise.race([
+          completion,
+          new Promise(resolve => {
+            boundTimer = setTimeout(() => resolve({ status: 'outside-bound' }), 7000);
+          }),
+        ]);
+        clearTimeout(boundTimer);
+
+        assert.equal(outcome.status, 'rejected');
+        assert.equal(outcome.error?.message, 'live_evidence_public_ws_once_supervisor_failed');
+        assert.equal(outcome.error?.cause, undefined);
+        assert.equal(Date.now() - started < 7000, true);
+        assert.deepEqual(runProcess.childToParent, ['READY', 'ORIGIN_RELEASE']);
+        assert.deepEqual(
+          runProcess.parentToChild,
+          scenario.release ? ['RUN', 'ORIGIN_RELEASED'] : ['RUN'],
+        );
+        assert.deepEqual(
+          workerProcess.parentToChild,
+          scenario.release ? ['PRELOAD', 'START_RESET_EPOCH_WSS_ONCE'] : ['PRELOAD'],
+        );
+        assert.deepEqual(
+          workerProcess.childToParent,
+          scenario.release ? ['PRELOADED', 'FAILED'] : ['PRELOADED'],
+        );
+        assert.deepEqual(workerProcess.signals, ['SIGTERM', 'SIGKILL']);
+        assert.deepEqual(runProcess.signals, scenario.release ? [] : ['SIGTERM']);
+        assert.deepEqual(effects, {
+          buyerReadiness: 1,
+          facilitatorCreate: 1,
+          facilitatorReadiness: scenario.release ? 1 : 0,
+          healthHttp: 0,
+          httpPayment: 0,
+          originRelease: 1,
+          publication: 0,
+          signing: 0,
+          walletReads: 0,
+          workerFork: 1,
+        });
+        assert.equal(workerProcess.child.stdout.destroyed, true);
+        assert.equal(workerProcess.child.stderr.destroyed, true);
+        assert.equal(runProcess.child.stdio[4].destroyed, true);
+        assert.equal((await lstat(join(
+          options.workspaceRoot,
+          'PUBLIC_WS_ONCE_CONSUMED',
+        ))).isFile(), true);
+        await assert.rejects(lstat(join(
+          options.workspaceRoot,
+          options.runName,
+          'pending-independent-verification',
+        )), error => error?.code === 'ENOENT');
+      });
+    }
+  });
 
 test('CLI maps supervised child failure to one fixed line', async t => {
   const options = await fixture(t);
@@ -4229,6 +4661,73 @@ function currentTestnetWssAuthorization(configuration, changes = {}) {
   };
 }
 
+function resetEpochTestPayer() {
+  const keyPair = sdk.KeyPair.fromPrivateKey(
+    sdk.Hash.digest(Buffer.from('synthetic reset-epoch runner payer')).getBytes(),
+  );
+  try {
+    return keyPair.getAddress().toString();
+  } finally {
+    keyPair.clear();
+  }
+}
+
+function resetEpochWssConfig(changes = {}) {
+  return {
+    runnerVersion: 4,
+    executionMode: RESET_EPOCH_WSS_ONCE_POLICY.executionMode,
+    eventId: PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_EVENT_ID,
+    rpcEndpoint: PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_WSS_ENDPOINT,
+    sourceRevision: 'd'.repeat(40),
+    profileName: PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_PROFILE_NAME,
+    payer: resetEpochTestPayer(),
+    acknowledgements: {
+      live: TESTNET_LIVE_ACKNOWLEDGEMENT,
+      operatorTrust:
+        PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_OPERATOR_TRUST_ACKNOWLEDGEMENT,
+      wss: PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_WSS_ACKNOWLEDGEMENT,
+    },
+    quickTunnel: canonicalQuickTunnelBinding(),
+    expectedPaymentRequired: paymentRequired(
+      PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_CHAIN_PROFILE,
+    ),
+    runtime: {
+      listenPort: 41000,
+      rpcTimeoutMs: 1000,
+      maxRecoveryAttempts: 0,
+      recoveryDelayMs: 0,
+      maxRecoveryElapsedMs: 1000,
+    },
+    ...changes,
+  };
+}
+
+function resetEpochWssApproval(configuration, changes = {}) {
+  return {
+    approvalVersion: 1,
+    approvalType: RESET_EPOCH_WSS_ONCE_POLICY.approvalType,
+    executionMode: RESET_EPOCH_WSS_ONCE_POLICY.executionMode,
+    eventId: PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_EVENT_ID,
+    runName: 'single-reset-epoch-wss-run',
+    sourceRevision: configuration.sourceRevision,
+    profileName: configuration.profileName,
+    payer: configuration.payer,
+    configDigest: resetEpochWssOnceConfigDigest(configuration),
+    paymentIntentDigest: paymentIntentDigest(
+      configuration.expectedPaymentRequired,
+      configuration.expectedPaymentRequired.accepts[0],
+    ),
+    rpcEndpoint: PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_WSS_ENDPOINT,
+    quickTunnel: configuration.quickTunnel,
+    acknowledgements: {
+      oneUseResetLive: RESET_EPOCH_WSS_ONCE_POLICY.oneUseApproval,
+      payment: RESET_EPOCH_WSS_ONCE_POLICY.paymentAcknowledgement,
+      publication: RESET_EPOCH_WSS_ONCE_POLICY.publicationAcknowledgement,
+    },
+    ...changes,
+  };
+}
+
 test('current-testnet WSS parsers are exact, version-disjoint, and digest-bound', () => {
   const configuration = currentTestnetWssConfig();
   const encodedConfig = `${JSON.stringify(configuration)}\n`;
@@ -4250,7 +4749,7 @@ test('current-testnet WSS parsers are exact, version-disjoint, and digest-bound'
 
   for (const rpcEndpoint of [
     'wss://rpc.testnet.zenon.info',
-    'ws://rpc.testnet.zenon.info/',
+    'ws://negative-parser-ws.example/',
     'https://rpc.testnet.zenon.info/',
     'wss://rpc.testnet.zenon.info:443/',
     'wss://user:pass@rpc.testnet.zenon.info/',
@@ -4566,6 +5065,874 @@ test('supervisor preserves the closed WSS bootstrap without command or IPC expan
     ));
     assert.equal(accessorReads, 0);
   });
+
+test('reset-epoch WSS parsers form an exact version-disjoint closed family', () => {
+  const configuration = resetEpochWssConfig();
+  const encodedConfig = `${JSON.stringify(configuration)}\n`;
+  assert.deepEqual(parseResetEpochWssOnceRunConfig(encodedConfig), configuration);
+  assert.throws(() => parseCurrentTestnetWssOnceRunConfig(encodedConfig));
+  assert.throws(() => parsePublicWsOnceRunConfig(encodedConfig));
+  assert.throws(() => parseResetEpochWssOnceRunConfig(
+    `${JSON.stringify(currentTestnetWssConfig())}\n`,
+  ));
+
+  const exactRpc = `${JSON.stringify({
+    secretVersion: 4,
+    rpcEndpoint: PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_WSS_ENDPOINT,
+  })}\n`;
+  assert.equal(parseResetEpochWssOnceRoleInput(exactRpc, 'buyer-rpc').secretVersion, 4);
+  assert.throws(() => parseCurrentTestnetWssOnceRoleInput(exactRpc, 'buyer-rpc'));
+  for (const rpcEndpoint of [
+    GATE_B_CURRENT_TESTNET_WSS_ENDPOINT,
+    'ws://negative-parser-wss.example/',
+    'wss://negative-parser-wss.example/',
+    `${PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_WSS_ENDPOINT}/`,
+  ]) {
+    assert.throws(() => parseResetEpochWssOnceRoleInput(`${JSON.stringify({
+      secretVersion: 4,
+      rpcEndpoint,
+    })}\n`, 'buyer-rpc'));
+  }
+  for (const wallet of [
+    { secretVersion: 3, mnemonic: 'offline-placeholder-only', accountIndex: 0 },
+    { secretVersion: 1, mnemonic: '', accountIndex: 0 },
+    { secretVersion: 1, mnemonic: 'offline-placeholder-only', accountIndex: -1 },
+  ]) {
+    assert.throws(() => parseResetEpochWssOnceRoleInput(
+      `${JSON.stringify(wallet)}\n`,
+      'buyer-wallet',
+    ));
+  }
+
+  const approval = resetEpochWssApproval(configuration);
+  assert.deepEqual(
+    parseResetEpochWssOnceApproval(`${JSON.stringify(approval)}\n`),
+    approval,
+  );
+  assert.throws(() => parseResetEpochWssOnceApproval(
+    `${JSON.stringify(currentTestnetWssAuthorization(currentTestnetWssConfig()))}\n`,
+  ));
+
+  for (const mutate of [
+    value => { value.profileName = PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_PROFILE_NAME; },
+    value => { value.eventId = PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_EVENT_ID; },
+    value => { value.rpcEndpoint = GATE_B_CURRENT_TESTNET_WSS_ENDPOINT; },
+    value => { value.expectedPaymentRequired.accepts[0].extra.zenonChain.genesisMomentumHash = '0'.repeat(64); },
+    value => { value.expectedPaymentRequired.accepts[0].amount = '2'; },
+    value => { value.expectedPaymentRequired.accepts[0].maxTimeoutSeconds = 61; },
+    value => { value.acknowledgements.wss = 'wrong'; },
+  ]) {
+    const changed = structuredClone(configuration);
+    mutate(changed);
+    assert.throws(() => parseResetEpochWssOnceRunConfig(
+      `${JSON.stringify(changed)}\n`,
+    ));
+  }
+
+  const baseline = resetEpochWssOnceConfigDigest(configuration);
+  for (const mutate of [
+    value => { value.payer = paymentRequired().accepts[0].payTo; },
+    value => { value.expectedPaymentRequired.accepts[0].asset = sdk.QSR_ZTS.toString(); },
+    value => { value.expectedPaymentRequired.accepts[0].payTo = resetEpochTestPayer(); },
+    value => { value.expectedPaymentRequired.resource.description = 'different'; },
+  ]) {
+    const changed = structuredClone(configuration);
+    mutate(changed);
+    assert.notEqual(resetEpochWssOnceConfigDigest(changed), baseline);
+  }
+  assert.notEqual(
+    baseline,
+    currentTestnetWssOnceConfigDigest(currentTestnetWssConfig()),
+  );
+});
+
+test('reset-epoch preflight rejects missing, duplicated, mixed, and stale approval before effects',
+  async t => {
+    const cases = [
+      {
+        name: 'missing approval member',
+        approval(configuration) {
+          const value = resetEpochWssApproval(configuration);
+          delete value.acknowledgements;
+          return `${JSON.stringify(value)}\n`;
+        },
+      },
+      {
+        name: 'duplicated approval member',
+        approval(configuration) {
+          return `${JSON.stringify(resetEpochWssApproval(configuration))}\n`.replace(
+            '"approvalVersion":1',
+            '"approvalVersion":1,"approvalVersion":1',
+          );
+        },
+      },
+      {
+        name: 'old current-testnet authorization',
+        approval() {
+          return `${JSON.stringify(
+            currentTestnetWssAuthorization(currentTestnetWssConfig()),
+          )}\n`;
+        },
+      },
+      {
+        name: 'mixed prior-epoch event',
+        approval(configuration) {
+          return `${JSON.stringify(resetEpochWssApproval(configuration, {
+            eventId: PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_EVENT_ID,
+          }))}\n`;
+        },
+      },
+    ];
+    for (const entry of cases) {
+      await t.test(entry.name, async () => {
+        const configuration = resetEpochWssConfig();
+        const options = await fixture(t, {
+          resetEpochWss: true,
+          config: configuration,
+          approvalText: entry.approval(configuration),
+        });
+        await assert.rejects(preflightResetEpochWssOnceRun(options), fixedFailure);
+        await assert.rejects(
+          lstat(join(options.workspaceRoot, 'PUBLIC_WS_ONCE_CONSUMED')),
+          error => error?.code === 'ENOENT',
+        );
+        await assert.rejects(
+          lstat(join(options.workspaceRoot, options.runName)),
+          error => error?.code === 'ENOENT',
+        );
+      });
+    }
+
+    const missingApproval = await fixture(t, { resetEpochWss: true });
+    await rm(missingApproval.approvalPath);
+    await assert.rejects(
+      preflightResetEpochWssOnceRun(missingApproval),
+      fixedFailure,
+    );
+    await assert.rejects(
+      lstat(join(missingApproval.workspaceRoot, 'PUBLIC_WS_ONCE_CONSUMED')),
+      error => error?.code === 'ENOENT',
+    );
+
+    const unexpectedEndpoint = await fixture(t, {
+      resetEpochWss: true,
+      buyerEndpoint: GATE_B_CURRENT_TESTNET_WSS_ENDPOINT,
+    });
+    await assert.rejects(
+      preflightResetEpochWssOnceRun(unexpectedEndpoint),
+      fixedFailure,
+    );
+    await assert.rejects(
+      lstat(join(unexpectedEndpoint.workspaceRoot, 'PUBLIC_WS_ONCE_CONSUMED')),
+      error => error?.code === 'ENOENT',
+    );
+  });
+
+test('reset-epoch preflight rejects every stale or extra workspace leaf without mutation',
+  async t => {
+    const cases = [
+      ...RESET_EPOCH_STALE_WORKSPACE_LEAVES.map(leaf => ({ leaf, kind: 'stale' })),
+      { leaf: 'unexpected-reset-epoch-input.bin', kind: 'unexpected' },
+    ];
+    for (const { leaf, kind } of cases) {
+      await t.test(`${kind} leaf ${leaf}`, async subtest => {
+        const options = await fixture(subtest, { resetEpochWss: true });
+        const path = join(options.workspaceRoot, leaf);
+        const original = Buffer.from(`preserve-${kind}-${leaf}\n`);
+        await writeFile(path, original, { mode: 0o600 });
+
+        await assert.rejects(preflightResetEpochWssOnceRun(options), fixedFailure);
+
+        assert.deepEqual(await readFile(path), original);
+        await assert.rejects(
+          lstat(join(options.workspaceRoot, 'PUBLIC_WS_ONCE_CONSUMED')),
+          error => error?.code === 'ENOENT',
+        );
+      });
+    }
+  });
+
+test('reset-epoch execution rechecks workspace leaves and input generations before its marker',
+  async t => {
+    const cases = [
+      {
+        name: 'last-moment extra leaf',
+        async mutate(options) {
+          const path = join(options.workspaceRoot, 'late-unexpected-reset-input');
+          const bytes = Buffer.from('preserve-late-extra\n');
+          await writeFile(path, bytes, { mode: 0o600 });
+          return { path, bytes };
+        },
+      },
+      {
+        name: 'same-name input generation drift',
+        async mutate(options) {
+          const bytes = await readFile(options.configPath);
+          await writeFile(options.configPath, bytes, { mode: 0o600 });
+          return { path: options.configPath, bytes };
+        },
+      },
+    ];
+    for (const entry of cases) {
+      await t.test(entry.name, async subtest => {
+        const options = await fixture(subtest, { resetEpochWss: true });
+        let retained;
+        let operationCalls = 0;
+        const controller = {
+          async preload() { operationCalls += 1; },
+          async start() { operationCalls += 1; },
+          async snapshotObservations() { operationCalls += 1; },
+          async closeAndSnapshot() { operationCalls += 1; },
+          async terminate() { operationCalls += 1; },
+        };
+        const operations = {
+          async probeBuyerReadiness() { operationCalls += 1; },
+          async probePublicEndpoint() { operationCalls += 1; },
+          async startFacilitator() { operationCalls += 1; return controller; },
+          async readBuyerWallet() { operationCalls += 1; },
+          async paidFetch() { operationCalls += 1; },
+        };
+        let mutated = false;
+
+        await assert.rejects(executeResetEpochWssOnceRun(options, {
+          sourceTreeAttestor: async () => true,
+          repositoryModuleLoader: async () => ({
+            startLiveEvidenceFacilitatorWorker() {},
+            assertLiveEvidenceFacilitatorController(value) { return value; },
+          }),
+          operations,
+          workspaceBoundaryObserver: async phase => {
+            if (phase !== 'before-consumed-marker' || mutated) return;
+            mutated = true;
+            retained = await entry.mutate(options);
+          },
+        }), fixedFailure);
+
+        assert.equal(mutated, true);
+        assert.equal(operationCalls, 0);
+        assert.deepEqual(await readFile(retained.path), retained.bytes);
+        await assert.rejects(
+          lstat(join(options.workspaceRoot, 'PUBLIC_WS_ONCE_CONSUMED')),
+          error => error?.code === 'ENOENT',
+        );
+        await assert.rejects(
+          lstat(join(options.workspaceRoot, options.runName)),
+          error => error?.code === 'ENOENT',
+        );
+      });
+    }
+  });
+
+test('reset-epoch execution stays one-shot, private, and publication-ineligible', async t => {
+  const options = await fixture(t, {
+    resetEpochWss: true,
+    walletText: '{"secretVersion":1,"mnemonic":"offline-placeholder-only","accountIndex":0}\n',
+  });
+  assert.deepEqual(await preflightResetEpochWssOnceRun(options), { valid: true });
+  const configuration = fixtureConfiguration(options);
+  const candidate = await validOutcome(configuration);
+  assert.deepEqual(
+    await executeResetEpochWssOnceRun(
+      options,
+      successfulPublicWsExecution(options, candidate),
+    ),
+    { status: 'pending-independent-verification', evidenceEligible: false },
+  );
+
+  const pending = join(
+    options.workspaceRoot,
+    options.runName,
+    'pending-independent-verification',
+  );
+  const metadataText = await readFile(join(pending, 'metadata.json'), 'utf8');
+  const metadata = JSON.parse(metadataText);
+  assert.equal(metadata.candidateVersion, 3);
+  assert.equal(metadata.publicationEligible, false);
+  assert.equal(metadata.transport.chainIdentityAuthenticated, false);
+  assert.deepEqual(metadata.operatorTrustedObservation, {
+    authenticatesChainIdentity: false,
+    establishesFinality: false,
+    establishesRecipientReceiveOrSpendability: false,
+    makesPublicationEligible: false,
+  });
+  assert.equal(
+    metadataText.includes(PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_WSS_ENDPOINT),
+    false,
+  );
+
+  const manifest = parseLiveEvidenceFragment(
+    await readFile(join(pending, 'capture', 'manifest.json'), 'utf8'),
+    'manifest',
+  );
+  assert.equal(
+    manifest.trust.profileName,
+    PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_PROFILE_NAME,
+  );
+  assert.equal(manifest.trust.remoteChainAuthenticated, false);
+  assert.equal(Object.values(manifest.nonClaims).every(value => value === false), true);
+
+  await assert.rejects(
+    executeResetEpochWssOnceRun(
+      options,
+      successfulPublicWsExecution(options, candidate),
+    ),
+    fixedFailure,
+  );
+  await assert.rejects(executeCurrentTestnetWssOnceRun(
+    options,
+    successfulPublicWsExecution(options, candidate),
+  ), fixedFailure);
+});
+
+test('reset-epoch invalid signed payment fails closed without a replacement attempt', async t => {
+  const options = await fixture(t, { resetEpochWss: true });
+  const candidate = await validOutcome(fixtureConfiguration(options));
+  candidate.outcome.paymentPayload.payload.transaction.signature = 'AA==';
+  let paymentAttempts = 0;
+  const injected = successfulPublicWsExecution(options, candidate);
+  const originalPaidFetch = injected.operations.paidFetch;
+  injected.operations.paidFetch = async input => {
+    paymentAttempts += 1;
+    return originalPaidFetch(input);
+  };
+
+  await assert.rejects(executeResetEpochWssOnceRun(options, injected), fixedFailure);
+  assert.equal(paymentAttempts, 1);
+  await assert.rejects(executeResetEpochWssOnceRun(options, injected), fixedFailure);
+  assert.equal(paymentAttempts, 1);
+  assert.equal((await lstat(join(
+    options.workspaceRoot,
+    'PUBLIC_WS_ONCE_CONSUMED',
+  ))).isFile(), true);
+});
+
+test('reset-epoch crash after the armed prepared attempt preserves the one-use stop', async t => {
+  const options = await fixture(t, { resetEpochWss: true });
+  const candidate = await validOutcome(fixtureConfiguration(options));
+  const injected = successfulPublicWsExecution(options, candidate);
+  const originalPaidFetch = injected.operations.paidFetch;
+  let paymentAttempts = 0;
+  injected.operations.paidFetch = async input => {
+    paymentAttempts += 1;
+    return originalPaidFetch(input);
+  };
+  injected.workspaceBoundaryObserver = async phase => {
+    if (phase === 'after-paid-fetch') throw new Error('synthetic contained crash');
+  };
+
+  await assert.rejects(executeResetEpochWssOnceRun(options, injected), fixedFailure);
+  const runDirectory = join(options.workspaceRoot, options.runName);
+  assert.equal((await lstat(join(runDirectory, 'SUBMISSION_ARMED'))).isFile(), true);
+  assert.equal((await lstat(join(
+    options.workspaceRoot,
+    'PUBLIC_WS_ONCE_CONSUMED',
+  ))).isFile(), true);
+  assert.equal(paymentAttempts, 1);
+  await assert.rejects(executeResetEpochWssOnceRun(options, injected), fixedFailure);
+  assert.equal(paymentAttempts, 1);
+});
+
+test('reset-epoch UNKNOWN state is retained for exact same-block reconciliation only', async t => {
+  const options = await fixture(t, { resetEpochWss: true });
+  const configuration = fixtureConfiguration(options);
+  const candidate = await validOutcome(configuration);
+  let journal;
+  let paymentAttempts = 0;
+  let reconciliations = 0;
+  const controller = {
+    async preload() {},
+    async start() {},
+    async snapshotObservations() { assert.fail('UNKNOWN must not become evidence'); },
+    async closeAndSnapshot() { assert.fail('UNKNOWN must not close as success'); },
+    async terminate() {},
+  };
+  const injected = {
+    sourceTreeAttestor: async () => true,
+    operations: {
+      async probeBuyerReadiness() {},
+      async probePublicEndpoint() {},
+      async startFacilitator() {
+        const runDirectory = join(options.workspaceRoot, options.runName);
+        await writeFile(join(runDirectory, 'SUBMISSION_ARMED'), 'SUBMISSION_ARMED\n', {
+          mode: 0o600,
+        });
+        journal = new SettlementJournal({
+          directory: join(runDirectory, 'journal'),
+          allowedRoot: runDirectory,
+          clock: () => new Date(UTC),
+        });
+        await journal.putValidated(journalInputFromRecord(candidate.record));
+        await journal.updateEvidence(
+          candidate.record.authorizationKey,
+          candidate.record.transactionHash,
+          EVIDENCE_STATES.SUBMISSION_OUTCOME_UNKNOWN,
+        );
+        return controller;
+      },
+      async readBuyerWallet() {
+        return { mnemonic: 'offline-placeholder-only', accountIndex: 0 };
+      },
+      async paidFetch({ openWallet, onChallenge }) {
+        paymentAttempts += 1;
+        await onChallenge(configuration.expectedPaymentRequired);
+        await openWallet();
+        return { kind: 'recovery', owner: {}, buyerObservations: [] };
+      },
+      async reconcilePayment() { reconciliations += 1; },
+    },
+  };
+
+  await assert.rejects(executeResetEpochWssOnceRun(options, injected), fixedFailure);
+  const retained = await journal.get(
+    candidate.record.authorizationKey,
+    candidate.record.transactionHash,
+  );
+  assert.equal(retained.evidenceState, EVIDENCE_STATES.SUBMISSION_OUTCOME_UNKNOWN);
+  assert.equal(retained.transactionHash, candidate.record.transactionHash);
+  assert.deepEqual(retained.signedAccountBlock, candidate.record.signedAccountBlock);
+  assert.equal(paymentAttempts, 1);
+  assert.equal(reconciliations, 0);
+  await assert.rejects(executeResetEpochWssOnceRun(options, injected), fixedFailure);
+  assert.equal(paymentAttempts, 1);
+  assert.equal(reconciliations, 0);
+});
+
+test('facilitator start dependencies are mode-disjoint and preserve exact defaults', async () => {
+  const common = {
+    createFacilitator() {},
+    createServer() {},
+    runtimePoisoned() { return false; },
+  };
+  const legacyDependencies = {
+    async probeRoleReadiness() {},
+    ...common,
+  };
+  const resetDependencies = {
+    async probeResetEpochPaymentReadiness() {},
+    ...common,
+  };
+  const legacyWithResetHook = {
+    ...legacyDependencies,
+    async probeResetEpochPaymentReadiness() {},
+  };
+  const attempt = async (executionMode, dependencies) => {
+    let configReads = 0;
+    const message = { executionMode, recovery: false };
+    Object.defineProperty(message, 'config', {
+      enumerable: true,
+      get() {
+        configReads += 1;
+        return null;
+      },
+    });
+    await assert.rejects(
+      startDefaultLiveEvidenceFacilitatorRuntime(message, dependencies),
+    );
+    return configReads;
+  };
+
+  assert.equal(await attempt(
+    RESET_EPOCH_WSS_ONCE_POLICY.executionMode,
+    legacyDependencies,
+  ), 0);
+  for (const executionMode of [
+    PUBLIC_WS_ONCE_POLICY.executionMode,
+    CURRENT_TESTNET_WSS_ONCE_POLICY.executionMode,
+  ]) {
+    assert.equal(await attempt(executionMode, legacyWithResetHook), 0);
+    assert.equal(await attempt(executionMode, legacyDependencies), 1);
+    assert.equal(await attempt(executionMode, undefined), 1);
+  }
+  assert.equal(await attempt(
+    RESET_EPOCH_WSS_ONCE_POLICY.executionMode,
+    resetDependencies,
+  ), 1);
+  assert.equal(await attempt(
+    RESET_EPOCH_WSS_ONCE_POLICY.executionMode,
+    undefined,
+  ), 1);
+});
+
+test('one-shot dependency injections fail closed by mode while omission keeps defaults',
+  async t => {
+    const assertUnconsumed = async options => {
+      await assert.rejects(
+        lstat(join(options.workspaceRoot, 'PUBLIC_WS_ONCE_CONSUMED')),
+        error => error?.code === 'ENOENT',
+      );
+    };
+    const resetLegacy = await fixture(t, { resetEpochWss: true });
+    await assert.rejects(executeResetEpochWssOnceRun(resetLegacy, {
+      dependencies: {
+        async probeZenonRoleReadiness() {},
+      },
+    }), fixedFailure);
+    await assertUnconsumed(resetLegacy);
+
+    const resetFallback = await fixture(t, { resetEpochWss: true });
+    await assert.rejects(executeResetEpochWssOnceRun(resetFallback, {
+      dependencies: {
+        createZenonClient() {},
+      },
+    }), fixedFailure);
+    await assertUnconsumed(resetFallback);
+
+    for (const [name, changes, execute] of [
+      ['public WS', {}, executePublicWsOnceRun],
+      ['current-testnet WSS', { currentTestnetWss: true }, executeCurrentTestnetWssOnceRun],
+    ]) {
+      await t.test(`${name} rejects the reset-only hook before preflight`, async t => {
+        const options = await fixture(t, changes);
+        await assert.rejects(execute(options, {
+          dependencies: {
+            async probeResetEpochPaymentReadiness() {},
+          },
+        }), fixedFailure);
+        await assertUnconsumed(options);
+      });
+    }
+
+    const facilitatorModule = {
+      async startLiveEvidenceFacilitatorWorker() {},
+      assertLiveEvidenceFacilitatorController(value) { return value; },
+    };
+    const reachesOperations = async (options, execute, dependencies) => {
+      let startCalls = 0;
+      const injected = {
+        sourceTreeAttestor: async () => true,
+        repositoryModuleLoader: async () => facilitatorModule,
+        operations: {
+          async probeBuyerReadiness() {},
+          async probePublicEndpoint() {},
+          async startFacilitator() {
+            startCalls += 1;
+            throw new Error('synthetic stop before listener creation');
+          },
+          async readBuyerWallet() {},
+          async paidFetch() {},
+        },
+      };
+      if (dependencies !== undefined) injected.dependencies = dependencies;
+      await assert.rejects(execute(options, injected), fixedFailure);
+      assert.equal(startCalls, 1);
+    };
+
+    for (const [name, changes, execute] of [
+      ['public WS', {}, executePublicWsOnceRun],
+      ['current-testnet WSS', { currentTestnetWss: true }, executeCurrentTestnetWssOnceRun],
+    ]) {
+      await t.test(`${name} preserves valid legacy custom injection`, async t => {
+        const options = await fixture(t, changes);
+        await reachesOperations(options, execute, {
+          async probeZenonRoleReadiness() {},
+        });
+      });
+    }
+
+    const resetDefault = await fixture(t, { resetEpochWss: true });
+    await reachesOperations(resetDefault, executeResetEpochWssOnceRun, undefined);
+  });
+
+test('reset-epoch default readiness fails before wallet, signing, listener, or HTTP effects',
+  async t => {
+    const options = await fixture(t, {
+      resetEpochWss: true,
+      walletText: 'invalid-wallet-input-that-must-not-be-read\n',
+    });
+    const calls = {
+      resetReadiness: 0,
+      facilitatorStart: 0,
+      wallet: 0,
+      http: 0,
+    };
+    const controller = {
+      async preload() {},
+      async start() { calls.facilitatorStart += 1; },
+      async snapshotObservations() { assert.fail('must not snapshot'); },
+      async closeAndSnapshot() { assert.fail('must not close'); },
+      async terminate() {},
+    };
+    const facilitatorModule = {
+      async startLiveEvidenceFacilitatorWorker() { return controller; },
+      assertLiveEvidenceFacilitatorController(value) { return value; },
+    };
+    await assert.rejects(executeResetEpochWssOnceRun(options, {
+      sourceTreeAttestor: async () => true,
+      repositoryModuleLoader: async () => facilitatorModule,
+      dependencies: {
+        async probeResetEpochPaymentReadiness(input) {
+          calls.resetReadiness += 1;
+          assert.equal(input.role, 'buyer');
+          assert.equal(input.payer, fixtureConfiguration(options).payer);
+          assert.equal(
+            input.paymentRequired.accepts[0].amount,
+            fixtureConfiguration(options).expectedPaymentRequired.accepts[0].amount,
+          );
+          throw new Error('sanitized synthetic readiness rejection');
+        },
+        createZenonClient() {
+          calls.wallet += 1;
+          assert.fail('client creation must not run');
+        },
+        resolveAddresses() {
+          calls.http += 1;
+          assert.fail('HTTP resolution must not run');
+        },
+        requestHttps() {
+          calls.http += 1;
+          assert.fail('HTTP request must not run');
+        },
+      },
+    }), fixedFailure);
+    assert.deepEqual(calls, {
+      resetReadiness: 1,
+      facilitatorStart: 0,
+      wallet: 0,
+      http: 0,
+    });
+    assert.equal((await lstat(join(
+      options.workspaceRoot,
+      'PUBLIC_WS_ONCE_CONSUMED',
+    ))).isFile(), true);
+  });
+
+test('reset-epoch default buyer composition binds the parsed endpoint into the real constructor',
+  async t => {
+    const options = await fixture(t, {
+      resetEpochWss: true,
+      walletText: '{"secretVersion":1,"mnemonic":"offline-placeholder-only","accountIndex":0}\n',
+    });
+    const configuration = fixtureConfiguration(options);
+    let constructorCalls = 0;
+    let boundEndpoint;
+    const requestHttps = (url, _requestOptions, callback) => {
+      const request = new EventEmitter();
+      request.destroy = () => {};
+      request.end = () => {
+        const response = new EventEmitter();
+        if (url.pathname === '/health') {
+          response.statusCode = 200;
+          response.headers = { 'content-type': 'application/json; charset=utf-8' };
+          callback(response);
+          response.emit('data', Buffer.from(JSON.stringify({ ok: true }, null, 2)));
+        } else {
+          response.statusCode = 402;
+          response.headers = {
+            [HEADERS.PAYMENT_REQUIRED]: encodeB64Json(configuration.expectedPaymentRequired),
+          };
+          callback(response);
+        }
+        response.emit('end');
+      };
+      return request;
+    };
+    const controller = {
+      async preload() {},
+      async start() {},
+      async snapshotObservations() { assert.fail('constructor stop must precede snapshot'); },
+      async closeAndSnapshot() { assert.fail('constructor stop must precede close'); },
+      async terminate() {},
+    };
+
+    await assert.rejects(executeResetEpochWssOnceRun(options, {
+      sourceTreeAttestor: async () => true,
+      repositoryModuleLoader: async () => ({
+        async startLiveEvidenceFacilitatorWorker() { return controller; },
+        assertLiveEvidenceFacilitatorController(value) { return value; },
+      }),
+      beforeOriginBind: async () => true,
+      dependencies: {
+        async probeResetEpochPaymentReadiness() {},
+        async resolveAddresses() {
+          return [{ address: '93.184.216.34', family: 4 }];
+        },
+        requestHttps,
+        createZenonClient(clientOptions) {
+          constructorCalls += 1;
+          const client = new ExactZenonClient(clientOptions);
+          boundEndpoint = client.rpcUrl;
+          throw new Error('synthetic stop after real buyer construction');
+        },
+      },
+    }), fixedFailure);
+
+    assert.equal(constructorCalls, 1);
+    assert.equal(boundEndpoint, PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_WSS_ENDPOINT);
+  });
+
+test('reset-epoch default facilitator composition binds the parsed endpoint into the real constructor',
+  async t => {
+    const options = await fixture(t, { resetEpochWss: true });
+    const runDirectory = join(options.workspaceRoot, 'facilitator-constructor-binding');
+    await mkdir(runDirectory, { mode: 0o700 });
+    const [workspaceStat, runStat, rpcStat] = await Promise.all([
+      lstat(options.workspaceRoot, { bigint: true }),
+      lstat(runDirectory, { bigint: true }),
+      lstat(options.facilitatorRpcPath, { bigint: true }),
+    ]);
+    const rpcHandle = await open(options.facilitatorRpcPath, 'r');
+    const child = forkProcess(
+      fileURLToPath(new URL(
+        './fixtures/reset-epoch-facilitator-constructor-binding-child.js',
+        import.meta.url,
+      )),
+      [],
+      { stdio: ['ignore', 'ignore', 'ignore', 'ipc', rpcHandle.fd] },
+    );
+    await rpcHandle.close();
+    t.after(() => {
+      if (child.exitCode === null && child.signalCode === null) child.kill();
+    });
+    const result = await new Promise(resolve => {
+      let settled = false;
+      const finish = value => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        resolve(value);
+      };
+      const timer = setTimeout(() => finish({ type: 'TIMEOUT' }), 2000);
+      child.once('message', finish);
+      child.once('error', () => finish({ type: 'FAILED' }));
+      child.once('exit', () => finish({ type: 'FAILED' }));
+      child.send({
+        config: fixtureConfiguration(options),
+        facilitatorRpcGeneration: generationFromBigIntStat(rpcStat),
+        workspaceRoot: options.workspaceRoot,
+        journalDirectory: join(runDirectory, 'journal'),
+        recovery: false,
+        executionMode: RESET_EPOCH_WSS_ONCE_POLICY.executionMode,
+        workspaceIdentity: directoryIdentityFromBigIntStat(workspaceStat),
+        runDirectoryIdentity: directoryIdentityFromBigIntStat(runStat),
+      });
+    });
+
+    assert.deepEqual(result, { type: 'BOUND' });
+  });
+
+test('reset-epoch supervisor accepts only the distinct approval-path bootstrap', async t => {
+  const options = await fixture(t, { resetEpochWss: true });
+  const bootstrapChunks = [];
+  const child = new EventEmitter();
+  child.connected = true;
+  child.stdio = [null, null, null, null, new PassThrough()];
+  child.stdio[4].on('data', chunk => bootstrapChunks.push(Buffer.from(chunk)));
+  child.stdio[4].once('finish', () => setImmediate(() => child.emit('message', {
+    ipcVersion: 1,
+    requestId: 1,
+    type: 'READY',
+  })));
+  child.send = (message, callback) => {
+    callback?.();
+    if (message.type === 'PREFLIGHT') setImmediate(() => {
+      child.emit('message', { ipcVersion: 1, requestId: 1, type: 'PREFLIGHT_VALID' });
+      child.connected = false;
+      child.emit('exit', 0, null);
+      child.emit('close', 0, null);
+    });
+    return true;
+  };
+  child.kill = () => true;
+  assert.deepEqual(await supervisePublicWsOnceChild(
+    'preflight-public-ws-once',
+    options,
+    { forkProcess: () => child, timeoutMs: 1000 },
+  ), { status: 'preflight-valid' });
+  assert.deepEqual(JSON.parse(Buffer.concat(bootstrapChunks).toString('utf8')), options);
+  await assert.rejects(supervisePublicWsOnceChild(
+    'preflight-public-ws-once',
+    {
+      ...options,
+      authorizationPath: options.approvalPath,
+    },
+    { forkProcess: () => { assert.fail('must reject before fork'); } },
+  ));
+});
+
+test('reset-epoch facilitator worker uses a version-disjoint one-shot start frame', async () => {
+  const sent = [];
+  const child = new EventEmitter();
+  child.connected = true;
+  child.stdout = new PassThrough();
+  child.stderr = new PassThrough();
+  child.send = (message, callback) => {
+    sent.push(structuredClone(message));
+    callback?.();
+    setImmediate(() => {
+      if (message.type === 'PRELOAD') {
+        child.emit('message', {
+          ipcVersion: 1,
+          requestId: message.requestId,
+          type: 'PRELOADED',
+        });
+      } else if (message.type === 'START_RESET_EPOCH_WSS_ONCE') {
+        child.emit('message', {
+          ipcVersion: 1,
+          requestId: message.requestId,
+          type: 'READY',
+        });
+      } else if (message.type === 'STOP') {
+        child.emit('message', {
+          ipcVersion: 1,
+          requestId: message.requestId,
+          type: 'STOPPED',
+          snapshot: null,
+        });
+        child.connected = false;
+        child.emit('disconnect');
+        child.emit('exit', 0, null);
+        child.emit('close', 0, null);
+      }
+    });
+    return true;
+  };
+  child.disconnect = () => { child.connected = false; };
+  child.kill = () => true;
+  const controller = await startLiveEvidenceFacilitatorWorker({
+    config: resetEpochWssConfig(),
+    facilitatorRpcFd: 0,
+    facilitatorRpcGeneration: SYNTHETIC_GENERATION,
+    workspaceRoot: 'protected',
+    journalDirectory: 'protected/journal',
+    recovery: false,
+    executionMode: RESET_EPOCH_WSS_ONCE_POLICY.executionMode,
+    workspaceIdentity: SYNTHETIC_DIRECTORY_IDENTITY,
+    runDirectoryIdentity: SYNTHETIC_DIRECTORY_IDENTITY,
+    forkProcess: () => child,
+  });
+  await controller.preload();
+  await controller.start();
+  assert.equal(sent[1].type, 'START_RESET_EPOCH_WSS_ONCE');
+  assert.equal(sent[1].executionMode, RESET_EPOCH_WSS_ONCE_POLICY.executionMode);
+  assert.equal(sent[1].recovery, false);
+  assert.equal(Object.hasOwn(sent[1], 'authorizationPath'), false);
+  assert.equal(Object.hasOwn(sent[1], 'approvalPath'), false);
+  await controller.exit();
+});
+
+test('reset-epoch Path-A documentation retains the source-only live no-go boundary', async () => {
+  const documents = await Promise.all([
+    readFile(new URL('../README.md', import.meta.url), 'utf8'),
+    readFile(new URL('../SECURITY.md', import.meta.url), 'utf8'),
+    readFile(new URL('../docs/IMPLEMENTATION_PLAN.md', import.meta.url), 'utf8'),
+  ]);
+  for (const document of documents) {
+    assert.match(document, /Path-A reset-epoch WSS one-shot slice is source-only/);
+    assert.match(document, /not wired to any CLI/);
+    assert.match(document, /operator-trusted and non-authenticating/);
+    assert.match(document, /approval\/config generator is absent/);
+    assert.match(document, /same-name legacy inputs/i);
+    assert.match(document, /live RUN remains a no-go/);
+    assert.match(document, /Path-A has no authorized post-ambiguity recovery entry yet/);
+    assert.match(document, /retained signed block alone does not provide operational recovery/);
+    assert.match(document, /private and publication-ineligible/);
+    assert.match(document, /does not prove finality, recipient receive, spendability, or production readiness/);
+    assert.match(
+      document,
+      /fake-only SQLite one-shot persistence model is not a live dependency/,
+    );
+  }
+});
 
 test('documentation and the operator-trusted record preserve the quarantined live boundary without weakening evidence v1',
   async () => {

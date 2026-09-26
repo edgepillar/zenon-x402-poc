@@ -4,14 +4,18 @@ import { types as utilTypes } from 'node:util';
 
 import {
   CURRENT_TESTNET_WSS_ONCE_POLICY,
+  RESET_EPOCH_WSS_ONCE_POLICY,
   executeCurrentTestnetWssOnceRun,
   executePublicWsOnceRun,
+  executeResetEpochWssOnceRun,
   finalizeIndependentPublicWsOnce,
   parseIndependentPublicWsOnceSupervisorBootstrap,
   parseCurrentTestnetWssOnceSupervisorBootstrap,
   parsePublicWsOnceSupervisorBootstrap,
+  parseResetEpochWssOnceSupervisorBootstrap,
   preflightCurrentTestnetWssOnceRun,
   preflightPublicWsOnceRun,
+  preflightResetEpochWssOnceRun,
 } from './live-evidence-runner.js';
 
 const IPC_VERSION = 1;
@@ -113,7 +117,11 @@ async function readBootstrapFd() {
       try {
         return parsePublicWsOnceSupervisorBootstrap(text);
       } catch {
-        return parseCurrentTestnetWssOnceSupervisorBootstrap(text);
+        try {
+          return parseCurrentTestnetWssOnceSupervisorBootstrap(text);
+        } catch {
+          return parseResetEpochWssOnceSupervisorBootstrap(text);
+        }
       }
     } finally {
       bytes.fill(0);
@@ -177,12 +185,18 @@ export async function runPublicWsOnceExecutionChild(options = {}) {
     const independentFinalizer = bootstrap.command === FINALIZER_COMMAND;
     const currentTestnetWss = !independentFinalizer && bootstrap.executionMode ===
       CURRENT_TESTNET_WSS_ONCE_POLICY.executionMode;
-    const preflight = dependencies.preflight ?? (currentTestnetWss
-      ? preflightCurrentTestnetWssOnceRun
-      : preflightPublicWsOnceRun);
-    const execute = dependencies.execute ?? (currentTestnetWss
-      ? executeCurrentTestnetWssOnceRun
-      : executePublicWsOnceRun);
+    const resetEpochWss = !independentFinalizer && bootstrap.executionMode ===
+      RESET_EPOCH_WSS_ONCE_POLICY.executionMode;
+    const preflight = dependencies.preflight ?? (resetEpochWss
+      ? preflightResetEpochWssOnceRun
+      : currentTestnetWss
+        ? preflightCurrentTestnetWssOnceRun
+        : preflightPublicWsOnceRun);
+    const execute = dependencies.execute ?? (resetEpochWss
+      ? executeResetEpochWssOnceRun
+      : currentTestnetWss
+        ? executeCurrentTestnetWssOnceRun
+        : executePublicWsOnceRun);
     dependencies.channel.once('disconnect', () => terminate(1));
     dependencies.channel.on('message', async message => {
       if (finished) return;

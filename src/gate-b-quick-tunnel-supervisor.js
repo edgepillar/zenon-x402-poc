@@ -27,6 +27,7 @@ import {
   validateGateBQuickTunnelStableBinding,
 } from './gate-b-quick-tunnel-artifact.js';
 import {
+  GATE_B_PUBLIC_WS_INPUT_LIMITS,
   GATE_B_PUBLIC_WS_INPUT_LEAVES,
   parseGateBQuickTunnelHostnameSource,
   serializeGateBQuickTunnelHostnameSource,
@@ -129,6 +130,33 @@ function sameGeneration(left, right) {
   return sameInode(left, right) && left.size === right.size &&
     left.mode === right.mode && left.nlink === right.nlink &&
     left.mtimeNs === right.mtimeNs && left.ctimeNs === right.ctimeNs;
+}
+
+function exactHostnameSourceGeneration(value) {
+  for (const field of [
+    'ctimeNs', 'dev', 'gid', 'ino', 'mode', 'mtimeNs', 'nlink', 'size', 'uid',
+  ]) {
+    if (typeof value?.[field] !== 'bigint' || value[field] < 0n) fail();
+  }
+  if ((value.mode & 0o170000n) !== 0o100000n ||
+      (value.mode & 0o777n) !== 0o600n || value.nlink !== 1n ||
+      value.size < 1n ||
+      value.size > BigInt(GATE_B_PUBLIC_WS_INPUT_LIMITS.sourceBytes)) fail();
+  return Object.freeze({
+    ctimeNs: value.ctimeNs,
+    dev: value.dev,
+    gid: value.gid,
+    ino: value.ino,
+    mode: value.mode,
+    mtimeNs: value.mtimeNs,
+    nlink: value.nlink,
+    size: value.size,
+    uid: value.uid,
+  });
+}
+
+function sameHostnameSourceGeneration(left, right) {
+  return sameGeneration(left, right) && left.gid === right.gid && left.uid === right.uid;
 }
 
 function exactExecutableIdentity(value, sourcePin) {
@@ -1142,6 +1170,7 @@ function exactInjections(value) {
     inspectExecutable,
     inspectExecutableAcl: inspectDarwinAcl,
     lstatExecutablePath: lstat,
+    lstatHostnameSourcePath: lstat,
     monotonicNow: () => performance.now(),
     openExecutablePath: open,
     readExecutableHash: readExactFileHash,
@@ -1173,6 +1202,7 @@ function exactInjections(value) {
   for (const name of [
     'readBootstrapFrame', 'openWorkspace', 'inspectExecutable', 'assertDevNull',
     'inspectExecutableAcl', 'lstatExecutablePath', 'openExecutablePath',
+    'lstatHostnameSourcePath',
     'monotonicNow', 'readExecutableHash', 'realpathExecutablePath',
     'createRuntimeDirectory', 'runtimeDirectoryPath', 'removeRuntimeDirectory',
     'spawnProcess', 'spawnSyncProcess', 'scheduleTimer', 'cancelTimer',
@@ -1289,14 +1319,14 @@ async function observe(state, signal, startup = false) {
   }
 }
 
-function sendIpc(state, type, requestId, signal) {
+function sendIpc(state, type, requestId, signal, fixedTimeoutMs) {
   return new Promise((resolveSend, rejectSend) => {
     let settled = false;
-    const timeoutMs = state.mode === 'STOPPING'
+    const timeoutMs = fixedTimeoutMs ?? (state.mode === 'STOPPING'
       ? state.dependencies.shutdownTimeoutMs
       : state.mode === 'CHECKING'
         ? state.dependencies.checkTimeoutMs
-        : state.dependencies.startupTimeoutMs;
+        : state.dependencies.startupTimeoutMs);
     const finish = (failed = false) => {
       if (settled) return;
       settled = true;
@@ -1481,6 +1511,11 @@ async function cleanup(state) {
       } catch { failed = true; }
     }
     try { await state.workspace?.close(); } catch { failed = true; }
+    if (Buffer.isBuffer(state.hostnameSourceBytes)) state.hostnameSourceBytes.fill(0);
+    state.hostnameSourceBytes = undefined;
+    state.hostnameSourceGeneration = undefined;
+    state.hostnameSourcePath = undefined;
+    state.hostnameRecord = undefined;
     if (failed) fail();
     return true;
   })();
@@ -1609,19 +1644,30 @@ async function initialReadiness(state, quickTunnel) {
       consecutiveReady !== STARTUP_READY_OBSERVATIONS) fail();
   let source = serializeGateBQuickTunnelHostnameSource(stableReady.hostname, quickTunnel);
   try {
+    state.hostnameSourceBytes = Buffer.from(source);
     await state.workspace.write(state.hostnameRecord, source);
     await state.workspace.syncDirectories();
+    if (await verifyHostnameRecord(state, source.length) !== true) fail();
   } finally {
     source.fill(0);
   }
   const reread = await state.workspace.read(state.hostnameRecord);
   try {
     const parsed = parseGateBQuickTunnelHostnameSource(reread);
-    if (parsed.hostname !== stableReady.hostname ||
+    if (!reread.equals(state.hostnameSourceBytes) ||
+        parsed.hostname !== stableReady.hostname ||
         validateGateBQuickTunnelStableBinding(parsed.quickTunnel) !== true) fail();
   } finally {
     reread.fill(0);
   }
+  if (await verifyHostnameRecord(state, state.hostnameSourceBytes.length) !== true) fail();
+  const hostnameSourceGeneration = await captureHostnameSourceGeneration(state);
+  if (await verifyHostnameRecord(state, state.hostnameSourceBytes.length) !== true ||
+      !sameHostnameSourceGeneration(
+        hostnameSourceGeneration,
+        await captureHostnameSourceGeneration(state),
+      )) fail();
+  state.hostnameSourceGeneration = hostnameSourceGeneration;
   assertStartupActivation(state, budget, stableReady);
   if (completeAttestationSourceWrite(
     state.attestationLaunch,
@@ -1632,9 +1678,65 @@ async function initialReadiness(state, quickTunnel) {
   return budget;
 }
 
+async function verifyHostnameRecord(state, expectedSize) {
+  const verify = state.workspace?.verify;
+  if (typeof verify !== 'function') {
+    if (state.dependencies.openWorkspace === openGateBPublicWsPrivateWorkspace) fail();
+    return true;
+  }
+  if (await Reflect.apply(verify, state.workspace, [
+    state.hostnameRecord,
+    expectedSize,
+  ]) !== true) fail();
+  return true;
+}
+
+async function captureHostnameSourceGeneration(state) {
+  if (typeof state.hostnameSourcePath !== 'string') fail();
+  return exactHostnameSourceGeneration(await Reflect.apply(
+    state.dependencies.lstatHostnameSourcePath,
+    undefined,
+    [state.hostnameSourcePath, { bigint: true }],
+  ));
+}
+
+async function verifyHostnameSourceGeneration(state) {
+  if (!state.hostnameSourceGeneration ||
+      !sameHostnameSourceGeneration(
+        state.hostnameSourceGeneration,
+        await captureHostnameSourceGeneration(state),
+      )) fail();
+  return true;
+}
+
+async function verifyRetainedHostnameSource(state) {
+  let reread;
+  try {
+    if (!Buffer.isBuffer(state.hostnameSourceBytes) ||
+        state.hostnameSourceBytes.length < 1 || !state.hostnameRecord || !state.pinned) fail();
+    if (await verifyHostnameSourceGeneration(state) !== true) fail();
+    if (await verifyHostnameRecord(state, state.hostnameSourceBytes.length) !== true) fail();
+    reread = await state.workspace.read(state.hostnameRecord);
+    if (!Buffer.isBuffer(reread) || !reread.equals(state.hostnameSourceBytes)) fail();
+    const parsed = parseGateBQuickTunnelHostnameSource(reread);
+    if (parsed.hostname !== state.pinned.hostname ||
+        validateGateBQuickTunnelStableBinding(parsed.quickTunnel) !== true) fail();
+    if (await verifyHostnameRecord(state, state.hostnameSourceBytes.length) !== true) fail();
+    if (await verifyHostnameSourceGeneration(state) !== true) fail();
+    return true;
+  } catch {
+    fail();
+  } finally {
+    if (Buffer.isBuffer(reread)) reread.fill(0);
+  }
+}
+
 async function freshCheck(state, requestId, controller) {
   const timer = setTimeout(() => controller.abort(), state.dependencies.checkTimeoutMs);
   try {
+    if (!Buffer.isBuffer(state.hostnameSourceBytes) ||
+        await verifyHostnameSourceGeneration(state) !== true ||
+        await verifyHostnameRecord(state, state.hostnameSourceBytes.length) !== true) fail();
     const budget = createCheckPollBudget(state, requestId, controller);
     let current;
     for (let attempt = 0; attempt < budget.maximumAttempts; attempt += 1) {
@@ -1671,17 +1773,19 @@ async function freshCheck(state, requestId, controller) {
       state.dependencies.architecture,
       state.dependencies,
     ) !== true) fail();
+    if (await verifyRetainedHostnameSource(state) !== true) fail();
+    if (state.mode !== 'CHECKING' || state.pendingCheckId !== requestId ||
+        controller.signal.aborted) fail();
+    state.pendingCheckId = undefined;
+    state.checkController = undefined;
+    state.mode = 'ACTIVE_IDLE';
     await sendIpc(
       state,
       GATE_B_QUICK_TUNNEL_IPC_TYPES.CHECKED,
       requestId,
       controller.signal,
+      state.dependencies.checkTimeoutMs,
     );
-    if (state.mode !== 'CHECKING' || state.pendingCheckId !== requestId ||
-        controller.signal.aborted) return;
-    state.pendingCheckId = undefined;
-    state.checkController = undefined;
-    state.mode = 'ACTIVE_IDLE';
   } catch {
     if (state.mode === 'STOPPING' && controller.signal.aborted) return;
     state.failController();
@@ -1830,6 +1934,9 @@ export async function superviseGateBQuickTunnel(injected) {
     startupAbort: new AbortController(),
     workspace: undefined,
     hostnameRecord: undefined,
+    hostnameSourceBytes: undefined,
+    hostnameSourceGeneration: undefined,
+    hostnameSourcePath: undefined,
     runtimeDirectory: undefined,
     attestationLaunch: undefined,
     attestation: undefined,
@@ -1928,6 +2035,10 @@ export async function superviseGateBQuickTunnel(injected) {
     bootstrap = parseGateBQuickTunnelBootstrapFrame(frame);
     frame.fill(0);
     frame = undefined;
+    state.hostnameSourcePath = join(
+      bootstrap.workspaceRoot,
+      GATE_B_PUBLIC_WS_INPUT_LEAVES.hostnameSource,
+    );
     state.workspace = await Reflect.apply(dependencies.openWorkspace, undefined, [
       bootstrap.workspaceRoot,
     ]);

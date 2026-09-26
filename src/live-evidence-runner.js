@@ -46,6 +46,7 @@ import {
   EVIDENCE_STATES,
   SettlementJournal,
 } from './settlement-journal.js';
+import { planZenonExactHashRecovery } from './service-credit-zenon-exact-hash-recovery-plan.js';
 import {
   createPaymentCapabilities,
   decodeB64Json,
@@ -62,6 +63,7 @@ import {
 import {
   ExactZenonClient,
   preflightZenonPayment,
+  probeResetEpochPaymentReadiness,
   probeZenonRoleReadiness,
   validateAccountBlockJson,
 } from './zenon-payment.js';
@@ -77,9 +79,19 @@ import {
   OPERATOR_TRUSTED_PUBLIC_TESTNET_NON_CLAIMS,
   OPERATOR_TRUSTED_PUBLIC_TESTNET_PROFILE_NAME,
   OPERATOR_TRUSTED_PUBLIC_TESTNET_PROVENANCE,
+  PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_CHAIN_PROFILE,
+  PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_EVENT_ID,
+  PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_NON_CLAIMS,
+  PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_OPERATOR_TRUST_ACKNOWLEDGEMENT,
+  PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_PROFILE_NAME,
+  PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_PROVENANCE,
+  PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_SDK_NETWORK_ID,
+  PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_WSS_ACKNOWLEDGEMENT,
+  PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_WSS_ENDPOINT,
   observeOperatorTrustedTestnetPolicy,
   selectGateBCurrentTestnetPolicy,
   selectOperatorTrustedTestnetPolicy,
+  selectPublicTestnetDynamicPlasmaResetEpochExecutionPolicy,
   TESTNET_LIVE_ACKNOWLEDGEMENT,
 } from './zenon/operator-trusted-testnet-profile.js';
 
@@ -94,8 +106,54 @@ const PRIVATE_FILE_MODE = 0o600;
 const PRIVATE_DIRECTORY_MODE = 0o700;
 const PUBLIC_WS_ONCE_EXECUTION_MODE = 'public-ws-once-v1';
 const CURRENT_TESTNET_WSS_ONCE_EXECUTION_MODE = 'current-testnet-wss-once-v1';
+const RESET_EPOCH_WSS_ONCE_EXECUTION_MODE = 'reset-epoch-wss-once-v1';
 const HISTORICAL_WSS_EXECUTION_MODE = 'historical-wss-v1';
 const PUBLIC_WS_ONCE_MARKER_NAME = 'PUBLIC_WS_ONCE_CONSUMED';
+const SOURCE_ONLY_EXACT_HASH_RECOVERY_MODE = 'SOURCE_ONLY_EXACT_HASH';
+const SOURCE_ONLY_EXACT_HASH_JOURNAL_MAX_BYTES = 256 * 1024;
+const SOURCE_ONLY_EXACT_HASH_CONSUMED_MARKER = 'PUBLIC_WS_ONCE_CONSUMED\n';
+const SOURCE_ONLY_EXACT_HASH_SUBMISSION_MARKER = 'SUBMISSION_ARMED\n';
+const SOURCE_ONLY_EXACT_HASH_RUN_ENTRIES = Object.freeze([
+  'SUBMISSION_ARMED', 'journal',
+]);
+const SOURCE_ONLY_EXACT_HASH_JOURNAL_ENTRIES = Object.freeze([
+  '.settlement-journal.initialized', 'settlement-journal.json',
+]);
+const SOURCE_ONLY_EXACT_HASH_TRANSITION_PRIOR_DIGEST_DOMAIN =
+  'zenon-x402-source-only-exact-hash-prior-record-v1';
+const SOURCE_ONLY_EXACT_HASH_TRANSITION_EXPECTATION_FIELDS = Object.freeze([
+  'expectationVersion', 'prior', 'successor',
+]);
+const SOURCE_ONLY_EXACT_HASH_TRANSITION_PRIOR_FIELDS = Object.freeze([
+  'revision', 'evidenceState', 'deliveryState', 'authorizationKey',
+  'transactionHash', 'updatedAt', 'recordDigest',
+]);
+const SOURCE_ONLY_EXACT_HASH_TRANSITION_SUCCESSOR_FIELDS = Object.freeze([
+  'evidenceState', 'deliveryState', 'confirmationDetail',
+]);
+const SOURCE_ONLY_EXACT_HASH_TRANSITION_CONFIRMATION_FIELDS = Object.freeze([
+  'numConfirmations', 'momentumHeight', 'momentumHash', 'momentumTimestamp',
+]);
+const SOURCE_ONLY_EXACT_HASH_TRANSITION_INSPECTIONS = Object.freeze({
+  PRIOR_STATE_PRESENT: Object.freeze({
+    inspectorVersion: 1,
+    classification: 'PRIOR_STATE_PRESENT',
+    scope: 'LOCAL_DURABLE_JOURNAL_ONLY',
+    sideEffects: 'NONE',
+  }),
+  EXACT_EXPECTED_SUCCESSOR_PRESENT: Object.freeze({
+    inspectorVersion: 1,
+    classification: 'EXACT_EXPECTED_SUCCESSOR_PRESENT',
+    scope: 'LOCAL_DURABLE_JOURNAL_ONLY',
+    sideEffects: 'NONE',
+  }),
+  OUTCOME_UNKNOWN: Object.freeze({
+    inspectorVersion: 1,
+    classification: 'OUTCOME_UNKNOWN',
+    scope: 'LOCAL_DURABLE_JOURNAL_ONLY',
+    sideEffects: 'NONE',
+  }),
+});
 const PUBLIC_WS_ONCE_TRANSPORT_EXCEPTION =
   'I_EXPLICITLY_ACCEPT_PUBLIC_WS_FOR_EXACTLY_ONE_GATE_B_TESTNET_PAYMENT';
 const PUBLIC_WS_ONCE_PAYMENT_ACKNOWLEDGEMENT =
@@ -107,6 +165,24 @@ const CURRENT_TESTNET_WSS_ONCE_PAYMENT_ACKNOWLEDGEMENT =
   'I_ACCEPT_ONE_DISPOSABLE_MINIMALLY_FUNDED_TESTNET_PAYMENT_OVER_OPERATOR_TRUSTED_WSS_RPC';
 const CURRENT_TESTNET_WSS_ONCE_CONFIG_DIGEST_DOMAIN =
   'zenon-x402-current-testnet-wss-once-config-v1';
+const RESET_EPOCH_WSS_ONCE_APPROVAL_TYPE = 'reset-epoch-wss-once-live-approval-v1';
+const RESET_EPOCH_WSS_ONCE_APPROVAL =
+  'I_APPROVE_EXACTLY_ONE_RESET_EPOCH_TESTNET_PAYMENT_IN_THIS_ISOLATED_PRIVATE_WORKSPACE';
+const RESET_EPOCH_WSS_ONCE_PAYMENT_ACKNOWLEDGEMENT =
+  'I_ACCEPT_ONE_MINIMAL_RESET_EPOCH_TESTNET_PAYMENT_OVER_THE_EXACT_OPERATOR_TRUSTED_WSS_ENDPOINT';
+const RESET_EPOCH_WSS_ONCE_CONFIG_DIGEST_DOMAIN =
+  'zenon-x402-reset-epoch-wss-once-config-v1';
+const RESET_EPOCH_WSS_ONCE_MAX_TIMEOUT_SECONDS = 60;
+const RESET_EPOCH_WSS_ONCE_AMOUNT = '1';
+const RESET_EPOCH_WSS_ONCE_APPROVAL_LEAF = 'reset-live-approval.json';
+const RESET_EPOCH_WSS_ONCE_WORKSPACE_LEAVES = Object.freeze([
+  GATE_B_PUBLIC_WS_INPUT_LEAVES.buyerWallet,
+  GATE_B_PUBLIC_WS_INPUT_LEAVES.hostnameSource,
+  GATE_B_PUBLIC_WS_INPUT_LEAVES.runConfig,
+  GATE_B_PUBLIC_WS_INPUT_LEAVES.buyerRpc,
+  GATE_B_PUBLIC_WS_INPUT_LEAVES.facilitatorRpc,
+  RESET_EPOCH_WSS_ONCE_APPROVAL_LEAF,
+].sort());
 const INDEPENDENT_FINALIZER_COMMAND = 'finalize-independent-public-ws-once';
 const INDEPENDENT_FINALIZER_TRANSPORT = 'https-json-rpc-v1';
 const INDEPENDENT_FINALIZER_OUTPUT_NAME = 'independent-evidence-v1';
@@ -175,6 +251,10 @@ const LOWERCASE_HASH_64 = /^[0-9a-f]{64}$/;
 const DECIMAL = /^(?:0|[1-9]\d*)$/;
 const CONTROL = /[\u0000-\u001f\u007f]/;
 const UTC_TIMESTAMP = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/;
+const ZENON_BECH32 = 'qpzry9x8gf2tvdw0s3jn54khce6mua7l';
+const ZENON_BECH32_GENERATORS = Object.freeze([
+  0x3b6a57b2, 0x26508e6d, 0x1ea119fa, 0x3d4233dd, 0x2a1462b3,
+]);
 const ARRAY_IS_ARRAY = Array.isArray;
 const BUFFER_BYTE_LENGTH = Buffer.byteLength;
 const DEFINE_PROPERTY = Object.defineProperty;
@@ -183,6 +263,7 @@ const GET_OWN_PROPERTY_DESCRIPTOR = Object.getOwnPropertyDescriptor;
 const GET_OWN_PROPERTY_DESCRIPTORS = Object.getOwnPropertyDescriptors;
 const GET_PROTOTYPE_OF = Object.getPrototypeOf;
 const HAS_OWN = Object.hasOwn;
+const IS_FROZEN = Object.isFrozen;
 const IS_PROXY = utilTypes.isProxy;
 const IS_PROMISE = utilTypes.isPromise;
 const PROMISE_PROTOTYPE = Promise.prototype;
@@ -489,6 +570,66 @@ function stringValue(value, maximumBytes = 4096) {
 
 function integer(value, minimum, maximum) {
   if (!Number.isSafeInteger(value) || value < minimum || value > maximum) fail();
+  return value;
+}
+
+function zenonBech32Step(checksum, word) {
+  const top = checksum >>> 25;
+  let result = ((checksum & 0x1ffffff) << 5) ^ word;
+  for (let index = 0; index < ZENON_BECH32_GENERATORS.length; index += 1) {
+    if ((top >>> index) & 1) result ^= ZENON_BECH32_GENERATORS[index];
+  }
+  return result >>> 0;
+}
+
+function exactZenonUserAddress(value) {
+  if (typeof value !== 'string' || value.length !== 40 ||
+      value[0] !== 'z' || value[1] !== '1') fail();
+  let checksum = zenonBech32Step(zenonBech32Step(zenonBech32Step(1, 3), 0), 26);
+  const words = [];
+  for (let index = 2; index < value.length; index += 1) {
+    const word = ZENON_BECH32.indexOf(value[index]);
+    if (word < 0) fail();
+    append(words, word);
+    checksum = zenonBech32Step(checksum, word);
+  }
+  if (checksum !== 1) fail();
+  let accumulator = 0;
+  let bits = 0;
+  const bytes = [];
+  let nonzero = false;
+  for (let index = 0; index < 32; index += 1) {
+    accumulator = (accumulator << 5) | words[index];
+    bits += 5;
+    if (bits >= 8) {
+      bits -= 8;
+      const byte = (accumulator >>> bits) & 255;
+      append(bytes, byte);
+      if (byte !== 0) nonzero = true;
+    }
+  }
+  if (bytes.length !== 20 || bits !== 0 || !nonzero || bytes[0] !== 0) fail();
+  let encoded = 'z1';
+  accumulator = 0;
+  bits = 0;
+  checksum = zenonBech32Step(zenonBech32Step(zenonBech32Step(1, 3), 0), 26);
+  for (let index = 0; index < bytes.length; index += 1) {
+    accumulator = (accumulator << 8) | bytes[index];
+    bits += 8;
+    while (bits >= 5) {
+      bits -= 5;
+      const word = (accumulator >>> bits) & 31;
+      encoded += ZENON_BECH32[word];
+      checksum = zenonBech32Step(checksum, word);
+    }
+  }
+  if (bits !== 0) fail();
+  for (let index = 0; index < 6; index += 1) checksum = zenonBech32Step(checksum, 0);
+  checksum = (checksum ^ 1) >>> 0;
+  for (let index = 5; index >= 0; index -= 1) {
+    encoded += ZENON_BECH32[(checksum >>> (5 * index)) & 31];
+  }
+  if (encoded !== value) fail();
   return value;
 }
 
@@ -1040,6 +1181,73 @@ export function currentTestnetWssOnceConfigDigest(parsedConfig) {
   }
 }
 
+function resetEpochExecutionPolicy(config) {
+  try {
+    return selectPublicTestnetDynamicPlasmaResetEpochExecutionPolicy({
+      eventId: config.eventId,
+      liveAcknowledgement: config.acknowledgements.live,
+      operatorTrustAcknowledgement: config.acknowledgements.operatorTrust,
+      profileName: config.profileName,
+      rpcEndpoint: config.rpcEndpoint,
+      wssAcknowledgement: config.acknowledgements.wss,
+    });
+  } catch {
+    fail();
+  }
+}
+
+export function parseResetEpochWssOnceRunConfig(jsonText) {
+  try {
+    const value = parseStrictJson(jsonText, CONFIG_MAX_BYTES);
+    exactObject(value, [
+      'runnerVersion', 'executionMode', 'eventId', 'rpcEndpoint',
+      'sourceRevision', 'profileName', 'payer', 'acknowledgements',
+      'expectedPaymentRequired', 'quickTunnel', 'runtime',
+    ]);
+    if (value.runnerVersion !== 4 ||
+        value.executionMode !== RESET_EPOCH_WSS_ONCE_EXECUTION_MODE ||
+        value.eventId !== PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_EVENT_ID ||
+        value.rpcEndpoint !== PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_WSS_ENDPOINT ||
+        typeof value.sourceRevision !== 'string' || !REVISION.test(value.sourceRevision) ||
+        value.profileName !== PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_PROFILE_NAME) fail();
+    exactZenonUserAddress(value.payer);
+    exactObject(value.acknowledgements, ['live', 'operatorTrust', 'wss']);
+    resetEpochExecutionPolicy(value);
+    if (validateGateBQuickTunnelStableBinding(value.quickTunnel) !== true) fail();
+    validateExpectedPaymentRequired(
+      value.expectedPaymentRequired,
+      PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_CHAIN_PROFILE,
+    );
+    const accepted = value.expectedPaymentRequired.accepts[0];
+    if (accepted.amount !== RESET_EPOCH_WSS_ONCE_AMOUNT ||
+        accepted.maxTimeoutSeconds > RESET_EPOCH_WSS_ONCE_MAX_TIMEOUT_SECONDS) fail();
+    exactObject(value.runtime, [
+      'listenPort', 'rpcTimeoutMs', 'maxRecoveryAttempts', 'recoveryDelayMs',
+      'maxRecoveryElapsedMs',
+    ]);
+    integer(value.runtime.listenPort, 1, 65_535);
+    integer(value.runtime.rpcTimeoutMs, 1, MAX_RPC_TIMEOUT_MS);
+    if (value.runtime.maxRecoveryAttempts !== 0 || value.runtime.recoveryDelayMs !== 0) fail();
+    integer(value.runtime.maxRecoveryElapsedMs, 1, MAX_RECOVERY_ELAPSED_MS);
+    return deepFreeze(value);
+  } catch {
+    fail();
+  }
+}
+
+export function resetEpochWssOnceConfigDigest(parsedConfig) {
+  try {
+    const validated = parseResetEpochWssOnceRunConfig(
+      `${JSON_STRINGIFY(parsedConfig)}\n`,
+    );
+    return sha256Hex(
+      `${RESET_EPOCH_WSS_ONCE_CONFIG_DIGEST_DOMAIN}\n${canonicalJson(validated)}`,
+    );
+  } catch {
+    fail();
+  }
+}
+
 function parseRpcSecret(value) {
   exactObject(value, ['secretVersion', 'rpcEndpoint']);
   if (value.secretVersion !== 1) fail();
@@ -1092,6 +1300,13 @@ function parseCurrentTestnetWssOnceRpcSecret(value) {
   return value;
 }
 
+function parseResetEpochWssOnceRpcSecret(value) {
+  exactObject(value, ['secretVersion', 'rpcEndpoint']);
+  if (value.secretVersion !== 4 ||
+      value.rpcEndpoint !== PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_WSS_ENDPOINT) fail();
+  return value;
+}
+
 export function parseLiveRoleInput(jsonText, role) {
   try {
     const value = parseStrictJson(jsonText, ROLE_INPUT_MAX_BYTES);
@@ -1135,6 +1350,25 @@ export function parseCurrentTestnetWssOnceRoleInput(jsonText, role) {
     const value = parseStrictJson(jsonText, ROLE_INPUT_MAX_BYTES);
     if (role === 'buyer-rpc' || role === 'facilitator-rpc') {
       parseCurrentTestnetWssOnceRpcSecret(value);
+    } else if (role === 'buyer-wallet') {
+      exactObject(value, ['secretVersion', 'mnemonic', 'accountIndex']);
+      if (value.secretVersion !== 1) fail();
+      stringValue(value.mnemonic, 4096);
+      integer(value.accountIndex, 0, Number.MAX_SAFE_INTEGER);
+    } else {
+      fail();
+    }
+    return deepFreeze(value);
+  } catch {
+    fail();
+  }
+}
+
+export function parseResetEpochWssOnceRoleInput(jsonText, role) {
+  try {
+    const value = parseStrictJson(jsonText, ROLE_INPUT_MAX_BYTES);
+    if (role === 'buyer-rpc' || role === 'facilitator-rpc') {
+      parseResetEpochWssOnceRpcSecret(value);
     } else if (role === 'buyer-wallet') {
       exactObject(value, ['secretVersion', 'mnemonic', 'accountIndex']);
       if (value.secretVersion !== 1) fail();
@@ -1546,6 +1780,29 @@ function exactCurrentTestnetWssOnceOptions(options) {
   return FREEZE(snapshot);
 }
 
+function exactResetEpochWssOnceOptions(options) {
+  exactObject(options, [
+    'configPath', 'buyerRpcPath', 'buyerWalletPath', 'facilitatorRpcPath',
+    'approvalPath', 'workspaceRoot', 'runName', 'executionMode',
+  ]);
+  const names = [
+    'configPath', 'buyerRpcPath', 'buyerWalletPath', 'facilitatorRpcPath',
+    'approvalPath', 'workspaceRoot',
+  ];
+  for (let index = 0; index < names.length; index += 1) {
+    stringValue(options[names[index]], 4096);
+  }
+  if (typeof options.runName !== 'string' || !RUN_NAME.test(options.runName) ||
+      options.executionMode !== RESET_EPOCH_WSS_ONCE_EXECUTION_MODE) fail();
+  const snapshot = {};
+  for (let index = 0; index < names.length; index += 1) {
+    ownData(snapshot, names[index], options[names[index]]);
+  }
+  ownData(snapshot, 'runName', options.runName);
+  ownData(snapshot, 'executionMode', options.executionMode);
+  return FREEZE(snapshot);
+}
+
 export function parsePublicWsOnceAuthorization(jsonText) {
   try {
     const value = parseStrictJson(jsonText, ROLE_INPUT_MAX_BYTES);
@@ -1604,6 +1861,41 @@ export function parseCurrentTestnetWssOnceAuthorization(jsonText) {
   }
 }
 
+export function parseResetEpochWssOnceApproval(jsonText) {
+  try {
+    const value = parseStrictJson(jsonText, ROLE_INPUT_MAX_BYTES);
+    exactObject(value, [
+      'approvalVersion', 'approvalType', 'executionMode', 'eventId', 'runName',
+      'sourceRevision', 'profileName', 'payer', 'configDigest',
+      'paymentIntentDigest', 'rpcEndpoint', 'quickTunnel', 'acknowledgements',
+    ]);
+    if (value.approvalVersion !== 1 ||
+        value.approvalType !== RESET_EPOCH_WSS_ONCE_APPROVAL_TYPE ||
+        value.executionMode !== RESET_EPOCH_WSS_ONCE_EXECUTION_MODE ||
+        value.eventId !== PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_EVENT_ID ||
+        typeof value.runName !== 'string' || !RUN_NAME.test(value.runName) ||
+        typeof value.sourceRevision !== 'string' || !REVISION.test(value.sourceRevision) ||
+        value.profileName !== PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_PROFILE_NAME ||
+        typeof value.configDigest !== 'string' || !LOWERCASE_HASH_64.test(value.configDigest) ||
+        typeof value.paymentIntentDigest !== 'string' ||
+        !LOWERCASE_HASH_64.test(value.paymentIntentDigest) ||
+        value.rpcEndpoint !== PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_WSS_ENDPOINT) fail();
+    exactZenonUserAddress(value.payer);
+    if (validateGateBQuickTunnelStableBinding(value.quickTunnel) !== true) fail();
+    exactObject(value.acknowledgements, [
+      'oneUseResetLive', 'payment', 'publication',
+    ]);
+    if (value.acknowledgements.oneUseResetLive !== RESET_EPOCH_WSS_ONCE_APPROVAL ||
+        value.acknowledgements.payment !==
+          RESET_EPOCH_WSS_ONCE_PAYMENT_ACKNOWLEDGEMENT ||
+        value.acknowledgements.publication !==
+          PUBLIC_WS_ONCE_PUBLICATION_ACKNOWLEDGEMENT) fail();
+    return deepFreeze(value);
+  } catch {
+    fail();
+  }
+}
+
 export function parsePublicWsOnceSupervisorBootstrap(jsonText) {
   try {
     return exactPublicWsOnceOptions(parseStrictJson(jsonText, ROLE_INPUT_MAX_BYTES));
@@ -1615,6 +1907,14 @@ export function parsePublicWsOnceSupervisorBootstrap(jsonText) {
 export function parseCurrentTestnetWssOnceSupervisorBootstrap(jsonText) {
   try {
     return exactCurrentTestnetWssOnceOptions(parseStrictJson(jsonText, ROLE_INPUT_MAX_BYTES));
+  } catch {
+    fail();
+  }
+}
+
+export function parseResetEpochWssOnceSupervisorBootstrap(jsonText) {
+  try {
+    return exactResetEpochWssOnceOptions(parseStrictJson(jsonText, ROLE_INPUT_MAX_BYTES));
   } catch {
     fail();
   }
@@ -2018,6 +2318,510 @@ function publicWsOnceConsumedMarker(workspaceRoot) {
   return join(workspaceRoot, PUBLIC_WS_ONCE_MARKER_NAME);
 }
 
+function exactSourceOnlyExactHashRecoveryOptions(options) {
+  exactObject(options, ['workspaceRoot', 'runName', 'recoveryMode']);
+  stringValue(options.workspaceRoot, 4096);
+  if (!isAbsolute(options.workspaceRoot) || resolve(options.workspaceRoot) !== options.workspaceRoot ||
+      typeof options.runName !== 'string' || !RUN_NAME.test(options.runName) ||
+      options.recoveryMode !== SOURCE_ONLY_EXACT_HASH_RECOVERY_MODE) fail();
+  const snapshot = {};
+  ownData(snapshot, 'workspaceRoot', options.workspaceRoot);
+  ownData(snapshot, 'runName', options.runName);
+  ownData(snapshot, 'recoveryMode', options.recoveryMode);
+  return FREEZE(snapshot);
+}
+
+function assertSourceOnlyExactHashUniqueIdentities(state) {
+  try {
+    const identities = new Set();
+    for (const directoryState of [
+      state.workspaceState, state.runState, state.journalState,
+    ]) {
+      const identity = `${directoryState.identity.dev}:${directoryState.identity.ino}`;
+      if (identities.has(identity)) fail();
+      identities.add(identity);
+    }
+    for (let index = 0; index < state.inputs.length; index += 1) {
+      const generation = state.inputs[index].generation;
+      const identity = `${generation.dev}:${generation.ino}`;
+      if (identities.has(identity)) fail();
+      identities.add(identity);
+    }
+  } catch {
+    fail();
+  }
+}
+
+async function assertSourceOnlyExactHashRetainedLayout(state) {
+  try {
+    await assertPrivateDirectoryState(state.workspaceState);
+    await assertPrivateDirectoryState(state.runState);
+    await assertPrivateDirectoryState(state.journalState);
+    const runEntries = (await readdir(state.runState.path)).sort();
+    const journalEntries = (await readdir(state.journalState.path)).sort();
+    if (JSON_STRINGIFY(runEntries) !== JSON_STRINGIFY(SOURCE_ONLY_EXACT_HASH_RUN_ENTRIES) ||
+        JSON_STRINGIFY(journalEntries) !==
+          JSON_STRINGIFY(SOURCE_ONLY_EXACT_HASH_JOURNAL_ENTRIES)) fail();
+  } catch {
+    fail();
+  }
+}
+
+async function assertSourceOnlyExactHashPinnedState(state, compareBytes) {
+  try {
+    if (typeof compareBytes !== 'boolean') fail();
+    await assertSourceOnlyExactHashRetainedLayout(state);
+    assertSourceOnlyExactHashUniqueIdentities(state);
+    for (let index = 0; index < state.inputs.length; index += 1) {
+      const input = state.inputs[index];
+      await assertOpenInputPath(input, input.generation);
+      if (compareBytes) await assertIndependentPinnedInputBytes(input);
+    }
+  } catch {
+    fail();
+  }
+}
+
+function exactSourceOnlyExactHashProtectedJournal(bytes) {
+  try {
+    if (!Buffer.isBuffer(bytes)) fail();
+    const document = parseStrictJson(
+      bytes.toString('utf8'),
+      SOURCE_ONLY_EXACT_HASH_JOURNAL_MAX_BYTES,
+    );
+    exactObject(document, ['schemaVersion', 'revision', 'records', 'checksum']);
+    if (document.schemaVersion !== 1 || !Number.isSafeInteger(document.revision) ||
+        document.revision < 0 || typeof document.checksum !== 'string' ||
+        !LOWERCASE_HASH_64.test(document.checksum) || !document.records ||
+        typeof document.records !== 'object' || ARRAY_IS_ARRAY(document.records) ||
+        GET_PROTOTYPE_OF(document.records) !== OBJECT_PROTOTYPE) fail();
+    const recordKeys = REFLECT_OWN_KEYS(document.records);
+    if (recordKeys.length !== 1 || typeof recordKeys[0] !== 'string') fail();
+    exactObject(document.records, [recordKeys[0]]);
+    const record = document.records[recordKeys[0]];
+    exactObject(record, PUBLIC_WS_ONCE_RECORD_FIELDS);
+    return FREEZE({
+      schemaVersion: document.schemaVersion,
+      revision: document.revision,
+      record,
+    });
+  } catch {
+    fail();
+  }
+}
+
+function exactSourceOnlyExactHashSnapshot(durableJournal, protectedJournal) {
+  try {
+    if (!durableJournal || durableJournal.schemaVersion !== 1 ||
+        durableJournal.schemaVersion !== protectedJournal.schemaVersion ||
+        durableJournal.revision !== protectedJournal.revision ||
+        !ARRAY_IS_ARRAY(durableJournal.records) || durableJournal.records.length !== 1 ||
+        canonicalJson(durableJournal.records[0]) !== canonicalJson(protectedJournal.record)) fail();
+    const entry = durableJournal.records[0];
+    const eligible =
+      (entry.evidenceState === EVIDENCE_STATES.SUBMISSION_OUTCOME_UNKNOWN &&
+        durableJournal.revision === 2) ||
+      (entry.evidenceState === EVIDENCE_STATES.SUBMISSION_ACKNOWLEDGED &&
+        (durableJournal.revision === 2 || durableJournal.revision === 3));
+    if (!eligible || entry.momentumEvidence !== null ||
+        entry.deliveryState !== DELIVERY_STATES.NONE || entry.cachedResponse !== null) fail();
+    return deepFreeze({
+      revision: durableJournal.revision,
+      kind: 'record',
+      entry,
+    });
+  } catch {
+    fail();
+  }
+}
+
+/**
+ * Read one exact retained source-only recovery record. This opt-in reader owns
+ * no mutation, publication, retry, signing, wallet, authorization, or RPC path.
+ */
+export async function readZenonExactHashRecoveryRetainedSnapshot(options) {
+  const inputs = [];
+  let journalState;
+  let runState;
+  let workspaceState;
+  try {
+    if (arguments.length !== 1) fail();
+    if (typeof process.getuid !== 'function' ||
+        !Number.isSafeInteger(fsConstants.O_NOFOLLOW) || fsConstants.O_NOFOLLOW <= 0 ||
+        !Number.isSafeInteger(fsConstants.O_DIRECTORY) || fsConstants.O_DIRECTORY <= 0) fail();
+    options = exactSourceOnlyExactHashRecoveryOptions(options);
+    await secureWorkspaceRoot(options.workspaceRoot);
+    workspaceState = await capturePrivateDirectoryState(options.workspaceRoot, true);
+    const runDirectory = join(workspaceState.path, options.runName);
+    runState = await capturePrivateDirectoryState(runDirectory, false);
+    const journalDirectory = join(runState.path, 'journal');
+    journalState = await capturePrivateDirectoryState(journalDirectory, false);
+    const state = { workspaceState, runState, journalState, inputs };
+    await assertSourceOnlyExactHashRetainedLayout(state);
+
+    append(inputs, await openVerifiedProtectedInput(
+      workspaceState.path,
+      publicWsOnceConsumedMarker(workspaceState.path),
+      BUFFER_BYTE_LENGTH(SOURCE_ONLY_EXACT_HASH_CONSUMED_MARKER, 'utf8'),
+    ));
+    append(inputs, await openVerifiedProtectedInput(
+      workspaceState.path,
+      join(runState.path, 'SUBMISSION_ARMED'),
+      BUFFER_BYTE_LENGTH(SOURCE_ONLY_EXACT_HASH_SUBMISSION_MARKER, 'utf8'),
+    ));
+    append(inputs, await openVerifiedProtectedInput(
+      workspaceState.path,
+      join(journalState.path, '.settlement-journal.initialized'),
+      1,
+      true,
+    ));
+    append(inputs, await openVerifiedProtectedInput(
+      workspaceState.path,
+      join(journalState.path, 'settlement-journal.json'),
+      SOURCE_ONLY_EXACT_HASH_JOURNAL_MAX_BYTES,
+    ));
+    await assertSourceOnlyExactHashPinnedState(state, false);
+
+    const consumedMarkerBytes = await readVerifiedOpenInput(
+      inputs[0],
+      BUFFER_BYTE_LENGTH(SOURCE_ONLY_EXACT_HASH_CONSUMED_MARKER, 'utf8'),
+    );
+    const submissionMarkerBytes = await readVerifiedOpenInput(
+      inputs[1],
+      BUFFER_BYTE_LENGTH(SOURCE_ONLY_EXACT_HASH_SUBMISSION_MARKER, 'utf8'),
+    );
+    const journalMarkerBytes = await readVerifiedOpenInput(inputs[2], 1);
+    const journalBytes = await readVerifiedOpenInput(
+      inputs[3],
+      SOURCE_ONLY_EXACT_HASH_JOURNAL_MAX_BYTES,
+    );
+    if (consumedMarkerBytes.toString('utf8') !== SOURCE_ONLY_EXACT_HASH_CONSUMED_MARKER ||
+        submissionMarkerBytes.toString('utf8') !== SOURCE_ONLY_EXACT_HASH_SUBMISSION_MARKER ||
+        journalMarkerBytes.length !== 0) fail();
+    const protectedJournal = exactSourceOnlyExactHashProtectedJournal(journalBytes);
+
+    // Establish fixed protected bytes and layout before the journal parser is used.
+    await assertSourceOnlyExactHashPinnedState(state, true);
+    const durableJournal = await new SettlementJournal({
+      directory: journalState.path,
+      allowedRoot: runState.path,
+      existingOnly: true,
+      maxRecords: 1,
+      maxFileBytes: SOURCE_ONLY_EXACT_HASH_JOURNAL_MAX_BYTES,
+    }).load();
+    const snapshot = exactSourceOnlyExactHashSnapshot(durableJournal, protectedJournal);
+    const plan = planZenonExactHashRecovery(snapshot, FREEZE({
+      observationVersion: 1,
+      status: 'UNAVAILABLE',
+    }));
+    if (!plan || plan.planVersion !== 1 || plan.scope !== SOURCE_ONLY_EXACT_HASH_RECOVERY_MODE ||
+        plan.disposition !== 'NO_MUTATION' || plan.reason !== 'OBSERVATION_UNAVAILABLE' ||
+        plan.update !== null || plan.sideEffects !== 'NONE') fail();
+
+    // Detect retained-path replacement or byte drift after the independent parse.
+    await assertSourceOnlyExactHashPinnedState(state, true);
+    return snapshot;
+  } catch {
+    fail();
+  } finally {
+    for (let index = inputs.length - 1; index >= 0; index -= 1) {
+      await disposeVerifiedInput(inputs[index]);
+    }
+    await disposePrivateDirectoryState(journalState);
+    await disposePrivateDirectoryState(runState);
+    await disposePrivateDirectoryState(workspaceState);
+  }
+}
+
+function exactFrozenSourceOnlyExactHashTransitionObject(value, fields) {
+  exactObject(value, fields);
+  if (!IS_FROZEN(value)) fail();
+  return value;
+}
+
+function exactSourceOnlyExactHashTransitionConfirmation(value) {
+  const detail = exactFrozenSourceOnlyExactHashTransitionObject(
+    value,
+    SOURCE_ONLY_EXACT_HASH_TRANSITION_CONFIRMATION_FIELDS,
+  );
+  if (!Number.isSafeInteger(detail.numConfirmations) || detail.numConfirmations < 1 ||
+      !Number.isSafeInteger(detail.momentumHeight) || detail.momentumHeight < 1 ||
+      typeof detail.momentumHash !== 'string' ||
+      !LOWERCASE_HASH_64.test(detail.momentumHash) ||
+      !Number.isSafeInteger(detail.momentumTimestamp) ||
+      detail.momentumTimestamp < 0) fail();
+  return FREEZE({
+    numConfirmations: detail.numConfirmations,
+    momentumHeight: detail.momentumHeight,
+    momentumHash: detail.momentumHash,
+    momentumTimestamp: detail.momentumTimestamp,
+  });
+}
+
+function exactSourceOnlyExactHashTransitionExpectation(value) {
+  try {
+    const expectation = exactFrozenSourceOnlyExactHashTransitionObject(
+      value,
+      SOURCE_ONLY_EXACT_HASH_TRANSITION_EXPECTATION_FIELDS,
+    );
+    if (expectation.expectationVersion !== 1) fail();
+    const prior = exactFrozenSourceOnlyExactHashTransitionObject(
+      expectation.prior,
+      SOURCE_ONLY_EXACT_HASH_TRANSITION_PRIOR_FIELDS,
+    );
+    const successor = exactFrozenSourceOnlyExactHashTransitionObject(
+      expectation.successor,
+      SOURCE_ONLY_EXACT_HASH_TRANSITION_SUCCESSOR_FIELDS,
+    );
+    const eligiblePrior =
+      (prior.evidenceState === EVIDENCE_STATES.SUBMISSION_OUTCOME_UNKNOWN &&
+        prior.revision === 2) ||
+      (prior.evidenceState === EVIDENCE_STATES.SUBMISSION_ACKNOWLEDGED &&
+        (prior.revision === 2 || prior.revision === 3));
+    if (!eligiblePrior || prior.deliveryState !== DELIVERY_STATES.NONE ||
+        typeof prior.authorizationKey !== 'string' ||
+        !LOWERCASE_HASH_64.test(prior.authorizationKey) ||
+        typeof prior.transactionHash !== 'string' ||
+        !LOWERCASE_HASH_64.test(prior.transactionHash) ||
+        typeof prior.recordDigest !== 'string' ||
+        !LOWERCASE_HASH_64.test(prior.recordDigest) ||
+        !canonicalUtc(prior.updatedAt) ||
+        successor.deliveryState !== DELIVERY_STATES.NONE) fail();
+
+    let confirmationDetail = null;
+    if (successor.evidenceState === EVIDENCE_STATES.SUBMISSION_ACKNOWLEDGED) {
+      if (prior.evidenceState !== EVIDENCE_STATES.SUBMISSION_OUTCOME_UNKNOWN ||
+          successor.confirmationDetail !== null) fail();
+    } else if (successor.evidenceState === EVIDENCE_STATES.MOMENTUM_INCLUDED) {
+      confirmationDetail = exactSourceOnlyExactHashTransitionConfirmation(
+        successor.confirmationDetail,
+      );
+    } else {
+      fail();
+    }
+    return deepFreeze({
+      expectationVersion: 1,
+      prior: {
+        revision: prior.revision,
+        evidenceState: prior.evidenceState,
+        deliveryState: prior.deliveryState,
+        authorizationKey: prior.authorizationKey,
+        transactionHash: prior.transactionHash,
+        updatedAt: prior.updatedAt,
+        recordDigest: prior.recordDigest,
+      },
+      successor: {
+        evidenceState: successor.evidenceState,
+        deliveryState: successor.deliveryState,
+        confirmationDetail,
+      },
+    });
+  } catch {
+    fail();
+  }
+}
+
+function exactSourceOnlyExactHashTransitionJournal(
+  durableJournal,
+  protectedJournal,
+) {
+  try {
+    if (!durableJournal || durableJournal.schemaVersion !== 1 ||
+        durableJournal.schemaVersion !== protectedJournal.schemaVersion ||
+        durableJournal.revision !== protectedJournal.revision ||
+        !ARRAY_IS_ARRAY(durableJournal.records) || durableJournal.records.length !== 1 ||
+        canonicalJson(durableJournal.records[0]) !==
+          canonicalJson(protectedJournal.record)) fail();
+    return FREEZE({
+      revision: durableJournal.revision,
+      record: durableJournal.records[0],
+    });
+  } catch {
+    fail();
+  }
+}
+
+function sourceOnlyExactHashTransitionPriorRecordDigest(record) {
+  return sha256Hex({
+    domain: SOURCE_ONLY_EXACT_HASH_TRANSITION_PRIOR_DIGEST_DOMAIN,
+    record,
+  });
+}
+
+function sourceOnlyExactHashTransitionPriorRecord(record, expectation) {
+  const priorRecord = {};
+  for (let index = 0; index < PUBLIC_WS_ONCE_RECORD_FIELDS.length; index += 1) {
+    const field = PUBLIC_WS_ONCE_RECORD_FIELDS[index];
+    ownData(priorRecord, field, record[field]);
+  }
+  priorRecord.evidenceState = expectation.prior.evidenceState;
+  priorRecord.momentumEvidence = null;
+  priorRecord.deliveryState = DELIVERY_STATES.NONE;
+  priorRecord.cachedResponse = null;
+  priorRecord.updatedAt = expectation.prior.updatedAt;
+  return priorRecord;
+}
+
+function sourceOnlyExactHashTransitionMatchesPrior(state, expectation) {
+  const record = state.record;
+  return state.revision === expectation.prior.revision &&
+    record.authorizationKey === expectation.prior.authorizationKey &&
+    record.transactionHash === expectation.prior.transactionHash &&
+    record.evidenceState === expectation.prior.evidenceState &&
+    record.momentumEvidence === null &&
+    record.deliveryState === DELIVERY_STATES.NONE &&
+    record.cachedResponse === null &&
+    record.updatedAt === expectation.prior.updatedAt &&
+    sourceOnlyExactHashTransitionPriorRecordDigest(record) ===
+      expectation.prior.recordDigest;
+}
+
+function sourceOnlyExactHashTransitionMatchesSuccessor(state, expectation) {
+  const record = state.record;
+  if (state.revision !== expectation.prior.revision + 1 ||
+      record.authorizationKey !== expectation.prior.authorizationKey ||
+      record.transactionHash !== expectation.prior.transactionHash ||
+      record.evidenceState !== expectation.successor.evidenceState ||
+      record.deliveryState !== DELIVERY_STATES.NONE || record.cachedResponse !== null ||
+      !canonicalUtc(record.updatedAt) ||
+      record.updatedAt < expectation.prior.updatedAt) return false;
+  const priorRecord = sourceOnlyExactHashTransitionPriorRecord(
+    record,
+    expectation,
+  );
+  if (sourceOnlyExactHashTransitionPriorRecordDigest(priorRecord) !==
+      expectation.prior.recordDigest) return false;
+  if (expectation.successor.evidenceState ===
+      EVIDENCE_STATES.SUBMISSION_ACKNOWLEDGED) {
+    return record.momentumEvidence === null;
+  }
+  exactObject(record.momentumEvidence, ['observedAt', 'confirmationDetail']);
+  exactObject(
+    record.momentumEvidence.confirmationDetail,
+    SOURCE_ONLY_EXACT_HASH_TRANSITION_CONFIRMATION_FIELDS,
+  );
+  return record.momentumEvidence.observedAt === record.updatedAt &&
+    canonicalJson(record.momentumEvidence.confirmationDetail) ===
+      canonicalJson(expectation.successor.confirmationDetail);
+}
+
+function classifySourceOnlyExactHashTransition(state, expectation) {
+  try {
+    if (sourceOnlyExactHashTransitionMatchesPrior(state, expectation)) {
+      return SOURCE_ONLY_EXACT_HASH_TRANSITION_INSPECTIONS.PRIOR_STATE_PRESENT;
+    }
+    if (sourceOnlyExactHashTransitionMatchesSuccessor(state, expectation)) {
+      return SOURCE_ONLY_EXACT_HASH_TRANSITION_INSPECTIONS
+        .EXACT_EXPECTED_SUCCESSOR_PRESENT;
+    }
+    return SOURCE_ONLY_EXACT_HASH_TRANSITION_INSPECTIONS.OUTCOME_UNKNOWN;
+  } catch {
+    fail();
+  }
+}
+
+/**
+ * Inspect one exact retained source-only journal transition. This function owns
+ * no CAS, mutation, publication, retry, signing, wallet, authorization, or RPC
+ * path, and its fixed classifications describe local durable state only.
+ */
+export async function inspectZenonExactHashRecoveryRetainedTransition(
+  options,
+  expectation,
+) {
+  const inputs = [];
+  let journalState;
+  let runState;
+  let workspaceState;
+  try {
+    if (arguments.length !== 2) fail();
+    if (typeof process.getuid !== 'function' ||
+        !Number.isSafeInteger(fsConstants.O_NOFOLLOW) || fsConstants.O_NOFOLLOW <= 0 ||
+        !Number.isSafeInteger(fsConstants.O_DIRECTORY) || fsConstants.O_DIRECTORY <= 0) fail();
+    options = exactSourceOnlyExactHashRecoveryOptions(options);
+    expectation = exactSourceOnlyExactHashTransitionExpectation(expectation);
+    await secureWorkspaceRoot(options.workspaceRoot);
+    workspaceState = await capturePrivateDirectoryState(options.workspaceRoot, true);
+    const runDirectory = join(workspaceState.path, options.runName);
+    runState = await capturePrivateDirectoryState(runDirectory, false);
+    const journalDirectory = join(runState.path, 'journal');
+    journalState = await capturePrivateDirectoryState(journalDirectory, false);
+    const retainedState = { workspaceState, runState, journalState, inputs };
+    await assertSourceOnlyExactHashRetainedLayout(retainedState);
+
+    append(inputs, await openVerifiedProtectedInput(
+      workspaceState.path,
+      publicWsOnceConsumedMarker(workspaceState.path),
+      BUFFER_BYTE_LENGTH(SOURCE_ONLY_EXACT_HASH_CONSUMED_MARKER, 'utf8'),
+    ));
+    append(inputs, await openVerifiedProtectedInput(
+      workspaceState.path,
+      join(runState.path, 'SUBMISSION_ARMED'),
+      BUFFER_BYTE_LENGTH(SOURCE_ONLY_EXACT_HASH_SUBMISSION_MARKER, 'utf8'),
+    ));
+    append(inputs, await openVerifiedProtectedInput(
+      workspaceState.path,
+      join(journalState.path, '.settlement-journal.initialized'),
+      1,
+      true,
+    ));
+    append(inputs, await openVerifiedProtectedInput(
+      workspaceState.path,
+      join(journalState.path, 'settlement-journal.json'),
+      SOURCE_ONLY_EXACT_HASH_JOURNAL_MAX_BYTES,
+    ));
+    await assertSourceOnlyExactHashPinnedState(retainedState, false);
+
+    const consumedMarkerBytes = await readVerifiedOpenInput(
+      inputs[0],
+      BUFFER_BYTE_LENGTH(SOURCE_ONLY_EXACT_HASH_CONSUMED_MARKER, 'utf8'),
+    );
+    const submissionMarkerBytes = await readVerifiedOpenInput(
+      inputs[1],
+      BUFFER_BYTE_LENGTH(SOURCE_ONLY_EXACT_HASH_SUBMISSION_MARKER, 'utf8'),
+    );
+    const journalMarkerBytes = await readVerifiedOpenInput(inputs[2], 1);
+    const journalBytes = await readVerifiedOpenInput(
+      inputs[3],
+      SOURCE_ONLY_EXACT_HASH_JOURNAL_MAX_BYTES,
+    );
+    if (consumedMarkerBytes.toString('utf8') !== SOURCE_ONLY_EXACT_HASH_CONSUMED_MARKER ||
+        submissionMarkerBytes.toString('utf8') !==
+          SOURCE_ONLY_EXACT_HASH_SUBMISSION_MARKER ||
+        journalMarkerBytes.length !== 0) fail();
+    const protectedJournal = exactSourceOnlyExactHashProtectedJournal(journalBytes);
+
+    await assertSourceOnlyExactHashPinnedState(retainedState, true);
+    const durableJournal = await new SettlementJournal({
+      directory: journalState.path,
+      allowedRoot: runState.path,
+      existingOnly: true,
+      maxRecords: 1,
+      maxFileBytes: SOURCE_ONLY_EXACT_HASH_JOURNAL_MAX_BYTES,
+    }).load();
+    const transitionState = exactSourceOnlyExactHashTransitionJournal(
+      durableJournal,
+      protectedJournal,
+    );
+    const inspection = classifySourceOnlyExactHashTransition(
+      transitionState,
+      expectation,
+    );
+
+    await assertSourceOnlyExactHashPinnedState(retainedState, true);
+    return inspection;
+  } catch {
+    fail();
+  } finally {
+    for (let index = inputs.length - 1; index >= 0; index -= 1) {
+      await disposeVerifiedInput(inputs[index]);
+    }
+    await disposePrivateDirectoryState(journalState);
+    await disposePrivateDirectoryState(runState);
+    await disposePrivateDirectoryState(workspaceState);
+  }
+}
+
 async function assertUnusedPublicWsOnceMarker(workspaceRoot) {
   try {
     await lstat(publicWsOnceConsumedMarker(workspaceRoot));
@@ -2076,14 +2880,42 @@ async function persistPublicWsOnceConsumedMarkerInState(workspaceState) {
   }
 }
 
+async function assertResetEpochWssOnceWorkspaceIsolation(preflightState) {
+  const root = preflightState.workspaceRoot;
+  const bindings = [
+    [preflightState.configInput, GATE_B_PUBLIC_WS_INPUT_LEAVES.runConfig],
+    [preflightState.buyerRpcInput, GATE_B_PUBLIC_WS_INPUT_LEAVES.buyerRpc],
+    [preflightState.buyerWalletInput, GATE_B_PUBLIC_WS_INPUT_LEAVES.buyerWallet],
+    [preflightState.facilitatorRpcInput, GATE_B_PUBLIC_WS_INPUT_LEAVES.facilitatorRpc],
+    [preflightState.authorizationInput, RESET_EPOCH_WSS_ONCE_APPROVAL_LEAF],
+    [preflightState.hostnameSourceInput, GATE_B_PUBLIC_WS_INPUT_LEAVES.hostnameSource],
+  ];
+  for (let index = 0; index < bindings.length; index += 1) {
+    if (bindings[index][0]?.path !== join(root, bindings[index][1])) fail();
+  }
+  const assertLeaves = async () => {
+    await assertPrivateDirectoryState(preflightState.workspaceState);
+    const leaves = (await readdir(root)).sort();
+    if (JSON_STRINGIFY(leaves) !== JSON_STRINGIFY(RESET_EPOCH_WSS_ONCE_WORKSPACE_LEAVES)) {
+      fail();
+    }
+  };
+  await assertLeaves();
+  await assertPublicWsOnceInputGenerations(preflightState);
+  await assertLeaves();
+}
+
 async function performPublicWsOncePreflight(options, retainInputs, currentTestnetWss = false) {
   const opened = [];
   let workspaceState;
   try {
-    if (typeof currentTestnetWss !== 'boolean') fail();
-    options = currentTestnetWss
-      ? exactCurrentTestnetWssOnceOptions(options)
-      : exactPublicWsOnceOptions(options);
+    const resetEpochWss = currentTestnetWss === RESET_EPOCH_WSS_ONCE_EXECUTION_MODE;
+    if (typeof currentTestnetWss !== 'boolean' && !resetEpochWss) fail();
+    options = resetEpochWss
+      ? exactResetEpochWssOnceOptions(options)
+      : currentTestnetWss
+        ? exactCurrentTestnetWssOnceOptions(options)
+        : exactPublicWsOnceOptions(options);
     workspaceState = await capturePrivateDirectoryState(options.workspaceRoot, true);
     const workspaceRoot = workspaceState.path;
     const paths = [
@@ -2091,7 +2923,7 @@ async function performPublicWsOncePreflight(options, retainInputs, currentTestne
       options.buyerRpcPath,
       options.buyerWalletPath,
       options.facilitatorRpcPath,
-      options.authorizationPath,
+      resetEpochWss ? options.approvalPath : options.authorizationPath,
       join(workspaceRoot, GATE_B_PUBLIC_WS_INPUT_LEAVES.hostnameSource),
     ];
     const maximums = [
@@ -2132,18 +2964,26 @@ async function performPublicWsOncePreflight(options, retainInputs, currentTestne
       opened[5],
       GATE_B_PUBLIC_WS_INPUT_LIMITS.sourceBytes,
     );
-    const parseConfig = currentTestnetWss
-      ? parseCurrentTestnetWssOnceRunConfig
-      : parsePublicWsOnceRunConfig;
-    const parseRole = currentTestnetWss
-      ? parseCurrentTestnetWssOnceRoleInput
-      : parsePublicWsOnceRoleInput;
-    const parseAuthorization = currentTestnetWss
-      ? parseCurrentTestnetWssOnceAuthorization
-      : parsePublicWsOnceAuthorization;
-    const digestConfiguration = currentTestnetWss
-      ? currentTestnetWssOnceConfigDigest
-      : publicWsOnceConfigDigest;
+    const parseConfig = resetEpochWss
+      ? parseResetEpochWssOnceRunConfig
+      : currentTestnetWss
+        ? parseCurrentTestnetWssOnceRunConfig
+        : parsePublicWsOnceRunConfig;
+    const parseRole = resetEpochWss
+      ? parseResetEpochWssOnceRoleInput
+      : currentTestnetWss
+        ? parseCurrentTestnetWssOnceRoleInput
+        : parsePublicWsOnceRoleInput;
+    const parseAuthorization = resetEpochWss
+      ? parseResetEpochWssOnceApproval
+      : currentTestnetWss
+        ? parseCurrentTestnetWssOnceAuthorization
+        : parsePublicWsOnceAuthorization;
+    const digestConfiguration = resetEpochWss
+      ? resetEpochWssOnceConfigDigest
+      : currentTestnetWss
+        ? currentTestnetWssOnceConfigDigest
+        : publicWsOnceConfigDigest;
     const config = parseConfig(configBytes.toString('utf8'));
     const buyerRpc = parseRole(
       buyerRpcBytes.toString('utf8'),
@@ -2169,11 +3009,17 @@ async function performPublicWsOncePreflight(options, retainInputs, currentTestne
         authorization.profileName !== config.profileName ||
         authorization.configDigest !== configDigest ||
         authorization.paymentIntentDigest !== intentDigest ||
-        (currentTestnetWss
+        (resetEpochWss
           ? authorization.executionMode !== options.executionMode ||
             config.executionMode !== options.executionMode ||
+            authorization.eventId !== config.eventId ||
+            authorization.payer !== config.payer ||
             config.rpcEndpoint !== buyerRpc.rpcEndpoint
-          : authorization.transportException !== options.transportException) ||
+          : currentTestnetWss
+            ? authorization.executionMode !== options.executionMode ||
+            config.executionMode !== options.executionMode ||
+            config.rpcEndpoint !== buyerRpc.rpcEndpoint
+            : authorization.transportException !== options.transportException) ||
         config.expectedPaymentRequired.resource.url !==
           `https://${hostnameSource.hostname}/paid` ||
         canonicalJson(hostnameSource.quickTunnel) !== canonicalJson(config.quickTunnel) ||
@@ -2196,6 +3042,7 @@ async function performPublicWsOncePreflight(options, retainInputs, currentTestne
       hostnameSourceInput: opened[5],
       workspaceState,
     };
+    if (resetEpochWss) await assertResetEpochWssOnceWorkspaceIsolation(state);
     if (!retainInputs) {
       for (let index = 0; index < opened.length; index += 1) {
         await disposeVerifiedInput(opened[index]);
@@ -2219,6 +3066,14 @@ export async function preflightPublicWsOnceRun(options) {
 
 export async function preflightCurrentTestnetWssOnceRun(options) {
   return (await performPublicWsOncePreflight(options, false, true)).result;
+}
+
+export async function preflightResetEpochWssOnceRun(options) {
+  return (await performPublicWsOncePreflight(
+    options,
+    false,
+    RESET_EPOCH_WSS_ONCE_EXECUTION_MODE,
+  )).result;
 }
 
 async function performLiveEvidencePreflight(options, retainInputs) {
@@ -2517,7 +3372,44 @@ function publicWsOncePendingMetadata(
   executionMode = PUBLIC_WS_ONCE_EXECUTION_MODE,
 ) {
   if (executionMode !== PUBLIC_WS_ONCE_EXECUTION_MODE &&
-      executionMode !== CURRENT_TESTNET_WSS_ONCE_EXECUTION_MODE) fail();
+      executionMode !== CURRENT_TESTNET_WSS_ONCE_EXECUTION_MODE &&
+      executionMode !== RESET_EPOCH_WSS_ONCE_EXECUTION_MODE) fail();
+  if (executionMode === RESET_EPOCH_WSS_ONCE_EXECUTION_MODE) {
+    return {
+      candidateVersion: 3,
+      status: 'PENDING_INDEPENDENT_VERIFICATION',
+      publicationEligible: false,
+      transport: {
+        scheme: 'wss',
+        confidentialityInTransit: true,
+        tlsServerNameAuthenticated: true,
+        chainIdentityAuthenticated: false,
+        operatorTrustRequired: true,
+        endpointDisclosed: false,
+      },
+      operatorTrustedObservation: {
+        authenticatesChainIdentity: false,
+        establishesFinality: false,
+        establishesRecipientReceiveOrSpendability: false,
+        makesPublicationEligible: false,
+      },
+      independentVerification: {
+        required: true,
+        completed: false,
+        sameEndpointOrOperatorRouteSufficient: false,
+        exactBlockRequired: true,
+        paymentIntentBindingRequired: true,
+        momentumInclusionRequired: true,
+      },
+      privateCapture: {
+        complete: true,
+        independentlyVerified: false,
+        publicBundleProduced: false,
+        fragmentCount: 5,
+      },
+      nonClaims: resetEpochFalseNonClaims(),
+    };
+  }
   if (executionMode === CURRENT_TESTNET_WSS_ONCE_EXECUTION_MODE) {
     return {
       candidateVersion: 2,
@@ -2725,10 +3617,13 @@ async function publishPublicWsOncePendingSet(
 function environmentForRpc(config, rpcEndpoint, executionMode = HISTORICAL_WSS_EXECUTION_MODE) {
   if (executionMode !== HISTORICAL_WSS_EXECUTION_MODE &&
       executionMode !== PUBLIC_WS_ONCE_EXECUTION_MODE &&
-      executionMode !== CURRENT_TESTNET_WSS_ONCE_EXECUTION_MODE) fail();
-  const sdkNetworkId = executionMode === PUBLIC_WS_ONCE_EXECUTION_MODE ||
-      executionMode === CURRENT_TESTNET_WSS_ONCE_EXECUTION_MODE
-    ? GATE_B_CURRENT_TESTNET_SDK_NETWORK_ID
+      executionMode !== CURRENT_TESTNET_WSS_ONCE_EXECUTION_MODE &&
+      executionMode !== RESET_EPOCH_WSS_ONCE_EXECUTION_MODE) fail();
+  const sdkNetworkId = executionMode === RESET_EPOCH_WSS_ONCE_EXECUTION_MODE
+    ? PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_SDK_NETWORK_ID
+    : executionMode === PUBLIC_WS_ONCE_EXECUTION_MODE ||
+        executionMode === CURRENT_TESTNET_WSS_ONCE_EXECUTION_MODE
+      ? GATE_B_CURRENT_TESTNET_SDK_NETWORK_ID
     : '3';
   return FREEZE({
     ZENON_LIVE_ACK: config.acknowledgements.live,
@@ -2787,35 +3682,43 @@ async function defaultOperations(
 ) {
   if (executionMode !== HISTORICAL_WSS_EXECUTION_MODE &&
       executionMode !== PUBLIC_WS_ONCE_EXECUTION_MODE &&
-      executionMode !== CURRENT_TESTNET_WSS_ONCE_EXECUTION_MODE) fail();
+      executionMode !== CURRENT_TESTNET_WSS_ONCE_EXECUTION_MODE &&
+      executionMode !== RESET_EPOCH_WSS_ONCE_EXECUTION_MODE) fail();
+  const resetEpochWss = executionMode === RESET_EPOCH_WSS_ONCE_EXECUTION_MODE;
   const currentTestnetOnce = executionMode === PUBLIC_WS_ONCE_EXECUTION_MODE ||
-    executionMode === CURRENT_TESTNET_WSS_ONCE_EXECUTION_MODE;
+    executionMode === CURRENT_TESTNET_WSS_ONCE_EXECUTION_MODE || resetEpochWss;
   const roleParser = executionMode === PUBLIC_WS_ONCE_EXECUTION_MODE
     ? parsePublicWsOnceRoleInput
     : executionMode === CURRENT_TESTNET_WSS_ONCE_EXECUTION_MODE
       ? parseCurrentTestnetWssOnceRoleInput
-      : parseLiveRoleInput;
+      : resetEpochWss
+        ? parseResetEpochWssOnceRoleInput
+        : parseLiveRoleInput;
   const buyerRpc = roleParser(
     preflightState.buyerRpcInput.buffer.toString('utf8'),
     'buyer-rpc',
   );
   await disposeVerifiedInput(preflightState.buyerRpcInput);
-  const readinessProbe = dependencies.probeZenonRoleReadiness ?? probeZenonRoleReadiness;
+  const readinessProbe = resetEpochWss
+    ? dependencies.probeResetEpochPaymentReadiness ?? probeResetEpochPaymentReadiness
+    : dependencies.probeZenonRoleReadiness ?? probeZenonRoleReadiness;
   const resolveAddresses = dependencies.resolveAddresses ?? lookupDns;
   const httpsRequester = dependencies.requestHttps ?? requestHttps;
   const zenonClientFactory = dependencies.createZenonClient ??
     (clientOptions => new ExactZenonClient(clientOptions));
-  const policy = currentTestnetOnce
-    ? selectGateBCurrentTestnetPolicy(
+  const policy = resetEpochWss
+    ? resetEpochExecutionPolicy(config)
+    : currentTestnetOnce
+      ? selectGateBCurrentTestnetPolicy(
       config.profileName,
       config.acknowledgements.operatorTrust,
       config.acknowledgements.live,
-    )
-    : selectOperatorTrustedTestnetPolicy(
-      config.profileName,
-      config.acknowledgements.operatorTrust,
-      config.acknowledgements.live,
-    );
+      )
+      : selectOperatorTrustedTestnetPolicy(
+        config.profileName,
+        config.acknowledgements.operatorTrust,
+        config.acknowledgements.live,
+      );
   const environment = environmentForRpc(config, buyerRpc.rpcEndpoint, executionMode);
   let challengeEvent;
   let fetchCalls = 0;
@@ -2838,13 +3741,23 @@ async function defaultOperations(
   const operations = {
     async probeBuyerReadiness() {
       await boundary();
-      await Reflect.apply(readinessProbe, undefined, [{
-        role: 'buyer',
-        asset: config.expectedPaymentRequired.accepts[0].asset,
-        operatorTrustedChainPolicy: policy,
-        environment,
-        rpcTimeoutMs: config.runtime.rpcTimeoutMs,
-      }]);
+      const readinessOptions = resetEpochWss
+        ? {
+            role: 'buyer',
+            paymentRequired: config.expectedPaymentRequired,
+            payer: config.payer,
+            operatorTrustedChainPolicy: policy,
+            environment,
+            rpcTimeoutMs: config.runtime.rpcTimeoutMs,
+          }
+        : {
+            role: 'buyer',
+            asset: config.expectedPaymentRequired.accepts[0].asset,
+            operatorTrustedChainPolicy: policy,
+            environment,
+            rpcTimeoutMs: config.runtime.rpcTimeoutMs,
+          };
+      await Reflect.apply(readinessProbe, undefined, [readinessOptions]);
       await boundary();
     },
     async probePublicEndpoint() {
@@ -2899,7 +3812,9 @@ async function defaultOperations(
           preflightState.buyerWalletInput,
           ROLE_INPUT_MAX_BYTES,
         );
-        const wallet = parseLiveRoleInput(bytes.toString('utf8'), 'buyer-wallet');
+        const wallet = resetEpochWss
+          ? parseResetEpochWssOnceRoleInput(bytes.toString('utf8'), 'buyer-wallet')
+          : parseLiveRoleInput(bytes.toString('utf8'), 'buyer-wallet');
         await boundary();
         return wallet;
       } finally {
@@ -2921,14 +3836,19 @@ async function defaultOperations(
         await boundary();
         const wallet = await openWallet();
         await boundary();
-        client = Reflect.apply(zenonClientFactory, undefined, [{
+        const clientOptions = {
           mnemonic: wallet.mnemonic,
           accountIndex: wallet.accountIndex,
           environment,
           operatorTrustedChainPolicy: policy,
           rpcTimeoutMs: config.runtime.rpcTimeoutMs,
           lifecycleObserver,
-        }]);
+        };
+        if (resetEpochWss) {
+          ownData(clientOptions, 'rpcUrl', buyerRpc.rpcEndpoint);
+          ownData(clientOptions, 'expectedPayer', config.payer);
+        }
+        client = Reflect.apply(zenonClientFactory, undefined, [clientOptions]);
         if (!client || typeof client.createPaymentPayload !== 'function' ||
             typeof client.snapshotLiveEvidenceObservations !== 'function') fail();
         await boundary();
@@ -3070,6 +3990,16 @@ function publicWsOnceFalseNonClaims() {
   return value;
 }
 
+function resetEpochFalseNonClaims() {
+  const value = falseNonClaims();
+  const resetKeys = OBJECT_KEYS(PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_NON_CLAIMS);
+  for (let index = 0; index < resetKeys.length; index += 1) {
+    if (!HAS_OWN(value, resetKeys[index])) ownData(value, resetKeys[index], false);
+    if (value[resetKeys[index]] !== false) fail();
+  }
+  return value;
+}
+
 function exactJournalSnapshot(snapshot) {
   if (!snapshot || snapshot.quiescent !== true || snapshot.schemaVersion !== 1 ||
       snapshot.revision !== 5 ||
@@ -3105,6 +4035,8 @@ async function validatePublicWsOncePendingState(config, outcome, journalSnapshot
         outcome.settlement.transaction !== preflight.transactionHash ||
         outcome.settlement.payer !== preflight.payer ||
         outcome.settlement.state !== 'MOMENTUM_INCLUDED') fail();
+    if (config.executionMode === RESET_EPOCH_WSS_ONCE_EXECUTION_MODE &&
+        preflight.payer !== config.payer) fail();
 
     if (record.authorizationKey !== preflight.authorizationKey ||
         record.transactionHash !== preflight.transactionHash ||
@@ -3175,6 +4107,15 @@ async function validatePublicWsOncePendingState(config, outcome, journalSnapshot
 }
 
 function candidateTrust(config) {
+  if (config.profileName === PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_PROFILE_NAME) {
+    return {
+      mode: 'operator-trusted-reset-epoch-testnet-observation',
+      profileName: PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_PROFILE_NAME,
+      chainProfile: PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_CHAIN_PROFILE,
+      provenance: PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_PROVENANCE,
+      nonClaims: resetEpochFalseNonClaims(),
+    };
+  }
   if (config.profileName === GATE_B_CURRENT_TESTNET_PROFILE_NAME) {
     return {
       mode: 'operator-trusted-current-testnet-observation',
@@ -3356,8 +4297,13 @@ function capturePublicWsOnceFacilitatorModule(value) {
   }
 }
 
-function captureExecutionInjections(injected, publicWsOnce = false) {
-  if (typeof publicWsOnce !== 'boolean') fail();
+function captureExecutionInjections(
+  injected,
+  publicWsOnce = false,
+  resetEpochWss = false,
+) {
+  if (typeof publicWsOnce !== 'boolean' || typeof resetEpochWss !== 'boolean' ||
+      (resetEpochWss && !publicWsOnce)) fail();
   if (injected === undefined) return FREEZE({});
   if (!injected || typeof injected !== 'object' || IS_PROXY(injected) ||
       ARRAY_IS_ARRAY(injected) || GET_PROTOTYPE_OF(injected) !== OBJECT_PROTOTYPE) fail();
@@ -3389,8 +4335,8 @@ function captureExecutionInjections(injected, publicWsOnce = false) {
       if (!dependencies || typeof dependencies !== 'object' || IS_PROXY(dependencies) ||
           ARRAY_IS_ARRAY(dependencies) || GET_PROTOTYPE_OF(dependencies) !== OBJECT_PROTOTYPE) fail();
       const dependencyFields = [
-        'probeZenonRoleReadiness', 'resolveAddresses', 'requestHttps',
-        'createZenonClient', 'forkProcess',
+        resetEpochWss ? 'probeResetEpochPaymentReadiness' : 'probeZenonRoleReadiness',
+        'resolveAddresses', 'requestHttps', 'createZenonClient', 'forkProcess',
       ];
       let dependencyKeys;
       try { dependencyKeys = REFLECT_OWN_KEYS(dependencies); } catch { fail(); }
@@ -3407,6 +4353,8 @@ function captureExecutionInjections(injected, publicWsOnce = false) {
             typeof dependencyDescriptor.value !== 'function') fail();
         ownData(dependencySnapshot, dependencyKey, dependencyDescriptor.value);
       }
+      if (resetEpochWss &&
+          !HAS_OWN(dependencySnapshot, 'probeResetEpochPaymentReadiness')) fail();
       ownData(captured, key, FREEZE(dependencySnapshot));
     } else {
       if ((key === 'workspaceBoundaryObserver' || key === 'sourceTreeAttestor' ||
@@ -3675,14 +4623,19 @@ async function executeCurrentTestnetOneShotRun(
   let preflightState;
   let boundControllerCleanup = operation => boundedPromise(operation, MAX_RPC_TIMEOUT_MS);
   try {
-    if (typeof currentTestnetWss !== 'boolean') fail();
-    injected = captureExecutionInjections(injected, true);
-    const executionMode = currentTestnetWss
-      ? CURRENT_TESTNET_WSS_ONCE_EXECUTION_MODE
-      : PUBLIC_WS_ONCE_EXECUTION_MODE;
-    const runOptions = currentTestnetWss
-      ? exactCurrentTestnetWssOnceOptions(options)
-      : exactPublicWsOnceOptions(options);
+    const resetEpochWss = currentTestnetWss === RESET_EPOCH_WSS_ONCE_EXECUTION_MODE;
+    if (typeof currentTestnetWss !== 'boolean' && !resetEpochWss) fail();
+    const executionMode = resetEpochWss
+      ? RESET_EPOCH_WSS_ONCE_EXECUTION_MODE
+      : currentTestnetWss
+        ? CURRENT_TESTNET_WSS_ONCE_EXECUTION_MODE
+        : PUBLIC_WS_ONCE_EXECUTION_MODE;
+    injected = captureExecutionInjections(injected, true, resetEpochWss);
+    const runOptions = resetEpochWss
+      ? exactResetEpochWssOnceOptions(options)
+      : currentTestnetWss
+        ? exactCurrentTestnetWssOnceOptions(options)
+        : exactPublicWsOnceOptions(options);
     const preflight = await performPublicWsOncePreflight(
       runOptions,
       true,
@@ -3691,9 +4644,11 @@ async function executeCurrentTestnetOneShotRun(
     preflightState = preflight.state;
     const config = preflightState.config;
     boundControllerCleanup = operation => boundedPromise(operation, config.runtime.rpcTimeoutMs);
-    (currentTestnetWss
-      ? parseCurrentTestnetWssOnceRunConfig
-      : parsePublicWsOnceRunConfig)(`${JSON_STRINGIFY(config)}\n`);
+    (resetEpochWss
+      ? parseResetEpochWssOnceRunConfig
+      : currentTestnetWss
+        ? parseCurrentTestnetWssOnceRunConfig
+        : parsePublicWsOnceRunConfig)(`${JSON_STRINGIFY(config)}\n`);
     const sourceTreeAttestor = injected.sourceTreeAttestor ?? attestPublicWsOnceSourceTree;
     if (await Reflect.apply(sourceTreeAttestor, undefined, [config.sourceRevision]) !== true) {
       fail();
@@ -3724,6 +4679,7 @@ async function executeCurrentTestnetOneShotRun(
     if (await Reflect.apply(sourceTreeAttestor, undefined, [config.sourceRevision]) !== true) {
       fail();
     }
+    if (resetEpochWss) await assertResetEpochWssOnceWorkspaceIsolation(preflightState);
     await persistPublicWsOnceConsumedMarkerInState(preflightState.workspaceState);
     await boundaryPoint('after-consumed-marker');
     runDirectory = await createRunDirectory(preflightState.workspaceRoot, runOptions.runName);
@@ -3900,6 +4856,14 @@ export async function executePublicWsOnceRun(options, injected = {}) {
 
 export async function executeCurrentTestnetWssOnceRun(options, injected = {}) {
   return executeCurrentTestnetOneShotRun(options, injected, true);
+}
+
+export async function executeResetEpochWssOnceRun(options, injected = {}) {
+  return executeCurrentTestnetOneShotRun(
+    options,
+    injected,
+    RESET_EPOCH_WSS_ONCE_EXECUTION_MODE,
+  );
 }
 
 function independentFragmentSetDigest(fragmentTexts) {
@@ -5328,6 +6292,17 @@ export const CURRENT_TESTNET_WSS_ONCE_POLICY = FREEZE({
   rpcEndpoint: GATE_B_CURRENT_TESTNET_WSS_ENDPOINT,
   paymentAcknowledgement: CURRENT_TESTNET_WSS_ONCE_PAYMENT_ACKNOWLEDGEMENT,
   publicationAcknowledgement: PUBLIC_WS_ONCE_PUBLICATION_ACKNOWLEDGEMENT,
+});
+
+export const RESET_EPOCH_WSS_ONCE_POLICY = FREEZE({
+  executionMode: RESET_EPOCH_WSS_ONCE_EXECUTION_MODE,
+  approvalType: RESET_EPOCH_WSS_ONCE_APPROVAL_TYPE,
+  oneUseApproval: RESET_EPOCH_WSS_ONCE_APPROVAL,
+  rpcEndpoint: PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_WSS_ENDPOINT,
+  paymentAcknowledgement: RESET_EPOCH_WSS_ONCE_PAYMENT_ACKNOWLEDGEMENT,
+  publicationAcknowledgement: PUBLIC_WS_ONCE_PUBLICATION_ACKNOWLEDGEMENT,
+  maximumAmount: RESET_EPOCH_WSS_ONCE_AMOUNT,
+  maximumTimeoutSeconds: RESET_EPOCH_WSS_ONCE_MAX_TIMEOUT_SECONDS,
 });
 
 export const INDEPENDENT_PUBLIC_WS_ONCE_FINALIZER_POLICY = FREEZE({

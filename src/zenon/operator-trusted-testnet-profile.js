@@ -182,14 +182,87 @@ export const PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_NON_CLAIMS = FREEZE({
   productionReadiness: false,
 });
 
+export const HISTORICAL_PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_PROFILE_NAME =
+  'public-testnet-dynamic-plasma-reset-epoch-2026-09-24t11-14-13-445z-v1';
+
+export const HISTORICAL_PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_EVENT_ID =
+  '2026-09-24T11:14:13.445Z';
+
+export const HISTORICAL_PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_CHAIN_PROFILE =
+  FREEZE({
+    version: 1,
+    chainIdentifier: '73404',
+    genesisMomentumHash:
+      'd0585e9dc3890b47941719a40e39b2e71172f468a41e206f31541344cb9f4683',
+  });
+
+export const HISTORICAL_PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_PROVENANCE =
+  FREEZE({
+    nodePlanUrl: 'https://testnet.zenon.info/node-plan.json',
+    genesisUrl: 'https://testnet.zenon.info/genesis.json',
+    endpointAdvertisementUrl: 'https://testnet.zenon.info/llms.txt',
+    nodePlanSchemaVersion: 1,
+    nodePlanEventId:
+      HISTORICAL_PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_EVENT_ID,
+    nodePlanPublishedAt: '2026-09-24T11:14:13.445Z',
+    nodePlanFinalizedAt: '2026-09-24T11:14:09.756Z',
+    nodePlanGenesisStartAt: '2026-09-24T11:15:00.000Z',
+    nodePlanApplyAt: '2026-09-24T11:13:23.000Z',
+    nodePlanWipeData: true,
+    nodePlanGoZenonRepository:
+      'https://github.com/zenon-network/go-zenon.git',
+    nodePlanGoZenonRef: 'dev',
+    nodePlanGoZenonCommit: '32b96d9241a53966c31c310bd637e57562300255',
+    nodePlanDeploymentRepository:
+      'https://github.com/hypercore-one/deployment.git',
+    nodePlanDeploymentRef: 'main',
+    nodePlanDeploymentCommit: '0cf7877212412fe7a714ed964bd6e55fc28c7887',
+    genesisTimestampSec: 1790248500,
+    dynamicPlasmaActivated: true,
+    dynamicPlasmaEnforcementHeight: 10,
+    evidenceWssEndpoint: 'wss://rpc.testnet.zenon.info',
+    observationHeight: 2,
+    observationHash:
+      '25b012e4771551a55ce64971fad3907d5950bcb6b4719340db87fbeb7f6e9e27',
+    heightTwoVersion: 1,
+    derivation: 'height-1 hash with height-2 previousHash linkage',
+    genesisMomentumHashBasis:
+      'independently recomputed from published genesis using the exact node-plan-pinned go-zenon source and an official checksum-verified temporary Go toolchain; matched a bounded TLS WSS height-1 read',
+    genesisMomentumHashRecomputedFromPinnedSource: true,
+    temporaryGoToolchainChecksumVerified: true,
+    planStableAcrossBoundedReads: true,
+    publicInputsStableBeforeEdit: true,
+    advertisedWssEndpointMatched: true,
+    heightTwoPreviousHashMatchedHeightOne: true,
+    previousEpochProfileMismatch: true,
+    postEnforcementFrontierObserved: true,
+    frontierAtOrAboveEnforcementHeight: true,
+    postEnforcementFrontierVersion: 2,
+    nextFusionPricePositive: true,
+    nextWorkPricePositive: true,
+  });
+
+export const HISTORICAL_PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_NON_CLAIMS =
+  FREEZE({
+    authoritativeCurrentNetworkRelease: false,
+    signedTrustArtifact: false,
+    authenticatedRpcChainIdentity: false,
+    canonicalRemoteChainIdentity: false,
+    consensusFinality: false,
+    binaryAttestation: false,
+    verifiedFrontierLineage: false,
+    liveActivationAuthorized: false,
+    productionReadiness: false,
+  });
+
 export const PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_PROFILE_NAME =
-  "public-testnet-dynamic-plasma-reset-epoch-2026-09-24t11-14-13-445z-v1";
+  'public-testnet-dynamic-plasma-reset-epoch-2026-09-24t19-26-19-155z-v1';
 
 export const PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_EVENT_ID =
-  "2026-09-24T11:14:13.445Z";
+  '2026-09-24T19:26:19.155Z';
 
 export const PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_WSS_ENDPOINT =
-  "wss://rpc.testnet.zenon.info";
+  'wss://rpc.testnet.zenon.info';
 
 export const PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_SDK_NETWORK_ID = '3';
 
@@ -204,38 +277,41 @@ export const PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_WARNING =
 
 export const PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_CHAIN_PROFILE = FREEZE({
   version: 1,
-  chainIdentifier: "73404",
-  genesisMomentumHash: "d0585e9dc3890b47941719a40e39b2e71172f468a41e206f31541344cb9f4683",
+  chainIdentifier: '73404',
+  genesisMomentumHash: '6ea609aedc6d9547c0d9e29bc1ee2542ccb8bb5c8ab7c744180dcb2785f8ad91',
 });
 
 export const PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_PROVENANCE = FREEZE({
-  nodePlanUrl: "https://testnet.zenon.info/node-plan.json",
-  genesisUrl: "https://testnet.zenon.info/genesis.json",
-  endpointAdvertisementUrl: "https://testnet.zenon.info/llms.txt",
+  nodePlanUrl: 'https://testnet.zenon.info/node-plan.json',
+  genesisUrl: 'https://testnet.zenon.info/genesis.json',
+  endpointAdvertisementUrl: 'https://testnet.zenon.info/llms.txt',
   nodePlanSchemaVersion: 1,
   nodePlanEventId: PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_EVENT_ID,
-  nodePlanPublishedAt: "2026-09-24T11:14:13.445Z",
-  nodePlanFinalizedAt: "2026-09-24T11:14:09.756Z",
-  nodePlanGenesisStartAt: "2026-09-24T11:15:00.000Z",
-  nodePlanApplyAt: "2026-09-24T11:13:23.000Z",
+  nodePlanPublishedAt: '2026-09-24T19:26:19.155Z',
+  nodePlanFinalizedAt: '2026-09-24T19:26:13.047Z',
+  nodePlanGenesisStartAt: '2026-09-24T19:27:00.000Z',
+  nodePlanApplyAt: '2026-09-24T19:25:51.000Z',
   nodePlanWipeData: true,
-  nodePlanGoZenonRepository: "https://github.com/zenon-network/go-zenon.git",
-  nodePlanGoZenonRef: "dev",
-  nodePlanGoZenonCommit: "32b96d9241a53966c31c310bd637e57562300255",
-  nodePlanDeploymentRepository: "https://github.com/hypercore-one/deployment.git",
-  nodePlanDeploymentRef: "main",
-  nodePlanDeploymentCommit: "0cf7877212412fe7a714ed964bd6e55fc28c7887",
-  genesisTimestampSec: 1790248500,
+  nodePlanGoZenonRepository: 'https://github.com/zenon-network/go-zenon.git',
+  nodePlanGoZenonRef: 'dev',
+  nodePlanGoZenonCommit: '3a4131e63881058b6ce2ee81d3a41d0033fafc99',
+  nodePlanDeploymentRepository: 'https://github.com/hypercore-one/deployment.git',
+  nodePlanDeploymentRef: 'main',
+  nodePlanDeploymentCommit: '0cf7877212412fe7a714ed964bd6e55fc28c7887',
+  genesisTimestampSec: 1790278020,
   dynamicPlasmaActivated: true,
   dynamicPlasmaEnforcementHeight: 10,
   evidenceWssEndpoint: PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_WSS_ENDPOINT,
   observationHeight: 2,
-  observationHash: "25b012e4771551a55ce64971fad3907d5950bcb6b4719340db87fbeb7f6e9e27",
+  observationHash: '9508041a766014ac86978a5bb6dc3f07fa7fca8ddb74257437d72edd5f4c800e',
   heightTwoVersion: 1,
   derivation: 'height-1 hash with height-2 previousHash linkage',
   genesisMomentumHashBasis:
     'independently recomputed from published genesis using the exact node-plan-pinned go-zenon source and an official checksum-verified temporary Go toolchain; matched a bounded TLS WSS height-1 read',
+  genesisMomentumChangesHash: '4d9b99bf1641ddf7c8c3890ad49ad2e0f031439dff8bb455c0a53680248a01dd',
   genesisMomentumHashRecomputedFromPinnedSource: true,
+  genesisMomentumChangesHashMatchedObservedChain: true,
+  fullHeightOneHashMatchedObservedChain: true,
   temporaryGoToolchainChecksumVerified: true,
   planStableAcrossBoundedReads: true,
   publicInputsStableBeforeEdit: true,
