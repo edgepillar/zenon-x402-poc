@@ -2,6 +2,14 @@ import { BlockList, isIP } from 'node:net';
 import { TextDecoder, types as utilTypes } from 'node:util';
 
 import { canonicalJson } from './canonical.js';
+import {
+  PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_EVENT_ID,
+  PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_OPERATOR_TRUST_ACKNOWLEDGEMENT,
+  PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_PROFILE_NAME,
+  PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_WSS_ACKNOWLEDGEMENT,
+  PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_WSS_ENDPOINT,
+  TESTNET_LIVE_ACKNOWLEDGEMENT,
+} from './zenon/operator-trusted-testnet-profile.js';
 
 const ERROR_CODE = 'gate_b_testnet_faucet_receive_schema_invalid';
 const BOOTSTRAP_MAX_BYTES = 4096;
@@ -17,6 +25,14 @@ const OBJECT_PROTOTYPE = Object.prototype;
 const REFLECT_OWN_KEYS = Reflect.ownKeys;
 const UTF8_DECODER = new TextDecoder('utf-8', { fatal: true, ignoreBOM: true });
 const PUBLIC_ADDRESS_BLOCKLIST = new BlockList();
+const HASH = /^[0-9a-f]{64}$/u;
+const ADDRESS = /^z1[0-9a-z]{38}$/u;
+const TOKEN = /^zts1[0-9a-z]{22}$/u;
+const POSITIVE_DECIMAL = /^[1-9][0-9]*$/u;
+const AUTHORIZED_SOURCE_FIELDS = Object.freeze([
+  'address', 'amount', 'asset', 'blockType', 'confirmationMomentumHash',
+  'confirmationMomentumHeight', 'confirmationMomentumTimestamp', 'hash',
+]);
 
 for (const [network, prefix, family] of [
   ['0.0.0.0', 8, 'ipv4'], ['10.0.0.0', 8, 'ipv4'], ['100.64.0.0', 10, 'ipv4'],
@@ -34,6 +50,11 @@ for (const [network, prefix, family] of [
 
 export const GATE_B_TESTNET_FAUCET_RECEIVE_ACKNOWLEDGEMENT =
   'I_CONFIRM_THE_TWO_PENDING_NATIVE_TESTNET_SENDS_ARE_THE_INTENDED_FAUCET_FUNDING_AND_AUTHORIZE_ONE_POW_RECEIVE_FOR_EACH';
+
+export const GATE_B_TESTNET_FAUCET_RECEIVE_SCHEMA_VERSIONS = Object.freeze({
+  LEGACY_PLAINTEXT_WS: 1,
+  RESET_EPOCH_PINNED_WSS: 3,
+});
 
 export const GATE_B_TESTNET_FAUCET_RECEIVE_WORKSPACE_OPTION = '--workspace';
 
@@ -85,6 +106,44 @@ function exactPlainObject(value, fields) {
   return value;
 }
 
+function validateMomentumIdentityByHeight(sources) {
+  const identities = new Map();
+  for (let index = 0; index < sources.length; index += 1) {
+    const source = sources[index];
+    const existing = identities.get(source.confirmationMomentumHeight);
+    if (existing &&
+        (existing.hash !== source.confirmationMomentumHash ||
+          existing.timestamp !== source.confirmationMomentumTimestamp)) fail();
+    identities.set(source.confirmationMomentumHeight, {
+      hash: source.confirmationMomentumHash,
+      timestamp: source.confirmationMomentumTimestamp,
+    });
+  }
+  return sources;
+}
+
+function validateAuthorizedSources(value) {
+  if (!ARRAY_IS_ARRAY(value) || IS_PROXY(value) ||
+      GET_PROTOTYPE_OF(value) !== Array.prototype || value.length !== 2 ||
+      REFLECT_OWN_KEYS(value).length !== 3) fail();
+  for (let index = 0; index < value.length; index += 1) {
+    const item = GET_OWN_PROPERTY_DESCRIPTOR(value, String(index));
+    if (!item || !HAS_OWN(item, 'value') || item.enumerable !== true) fail();
+    const source = exactPlainObject(item.value, AUTHORIZED_SOURCE_FIELDS);
+    if (!ADDRESS.test(source.address) || !POSITIVE_DECIMAL.test(source.amount) ||
+        !TOKEN.test(source.asset) || (source.blockType !== 2 && source.blockType !== 4) ||
+        !HASH.test(source.hash) || !HASH.test(source.confirmationMomentumHash) ||
+        !Number.isSafeInteger(source.confirmationMomentumHeight) ||
+        source.confirmationMomentumHeight < 1 ||
+        !Number.isSafeInteger(source.confirmationMomentumTimestamp) ||
+        source.confirmationMomentumTimestamp < 0) fail();
+  }
+  validateMomentumIdentityByHeight(value);
+  if (value[0].address !== value[1].address || value[0].asset === value[1].asset ||
+      value[0].hash === value[1].hash) fail();
+  return value;
+}
+
 function exactPublicWsEndpoint(value) {
   if (typeof value !== 'string' || value.length < 1 || value.length > 512 ||
       BUFFER_BYTE_LENGTH(value, 'utf8') !== value.length || /[\u0000-\u0020\u007f]/u.test(value) ||
@@ -111,10 +170,39 @@ function exactPublicWsEndpoint(value) {
 }
 
 function validateBootstrap(value) {
-  exactPlainObject(value, ['acknowledgement', 'rpcEndpoint', 'schemaVersion']);
-  if (value.schemaVersion !== 1 ||
-      value.acknowledgement !== GATE_B_TESTNET_FAUCET_RECEIVE_ACKNOWLEDGEMENT) fail();
-  exactPublicWsEndpoint(value.rpcEndpoint);
+  if (value === null || typeof value !== 'object' || IS_PROXY(value) ||
+      ARRAY_IS_ARRAY(value) || GET_PROTOTYPE_OF(value) !== OBJECT_PROTOTYPE) fail();
+  const schema = GET_OWN_PROPERTY_DESCRIPTOR(value, 'schemaVersion');
+  if (!schema || !HAS_OWN(schema, 'value') || schema.enumerable !== true) fail();
+  if (schema.value === GATE_B_TESTNET_FAUCET_RECEIVE_SCHEMA_VERSIONS.LEGACY_PLAINTEXT_WS) {
+    exactPlainObject(value, ['acknowledgement', 'rpcEndpoint', 'schemaVersion']);
+    if (value.acknowledgement !== GATE_B_TESTNET_FAUCET_RECEIVE_ACKNOWLEDGEMENT) fail();
+    exactPublicWsEndpoint(value.rpcEndpoint);
+    return value;
+  }
+  if (schema.value !==
+      GATE_B_TESTNET_FAUCET_RECEIVE_SCHEMA_VERSIONS.RESET_EPOCH_PINNED_WSS) fail();
+  exactPlainObject(value, [
+    'acknowledgement',
+    'authorizedSources',
+    'eventId',
+    'liveAcknowledgement',
+    'operatorTrustAcknowledgement',
+    'profileName',
+    'rpcEndpoint',
+    'schemaVersion',
+    'wssAcknowledgement',
+  ]);
+  if (value.acknowledgement !== GATE_B_TESTNET_FAUCET_RECEIVE_ACKNOWLEDGEMENT ||
+      value.profileName !== PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_PROFILE_NAME ||
+      value.eventId !== PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_EVENT_ID ||
+      value.rpcEndpoint !== PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_WSS_ENDPOINT ||
+      value.operatorTrustAcknowledgement !==
+        PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_OPERATOR_TRUST_ACKNOWLEDGEMENT ||
+      value.liveAcknowledgement !== TESTNET_LIVE_ACKNOWLEDGEMENT ||
+      value.wssAcknowledgement !==
+        PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_WSS_ACKNOWLEDGEMENT) fail();
+  validateAuthorizedSources(value.authorizedSources);
   return value;
 }
 
@@ -158,10 +246,30 @@ export function parseGateBTestnetFaucetReceiveFrame(frame) {
     const value = JSON.parse(text);
     validateBootstrap(value);
     if (canonicalJson(value) !== text) fail();
+    if (value.schemaVersion ===
+        GATE_B_TESTNET_FAUCET_RECEIVE_SCHEMA_VERSIONS.LEGACY_PLAINTEXT_WS) {
+      return Object.freeze({
+        acknowledgement: value.acknowledgement,
+        rpcEndpoint: value.rpcEndpoint,
+        schemaVersion:
+          GATE_B_TESTNET_FAUCET_RECEIVE_SCHEMA_VERSIONS.LEGACY_PLAINTEXT_WS,
+      });
+    }
+    const authorizedSources = [];
+    for (let index = 0; index < value.authorizedSources.length; index += 1) {
+      authorizedSources.push(Object.freeze({ ...value.authorizedSources[index] }));
+    }
     return Object.freeze({
       acknowledgement: value.acknowledgement,
+      authorizedSources: Object.freeze(authorizedSources),
+      eventId: value.eventId,
+      liveAcknowledgement: value.liveAcknowledgement,
+      operatorTrustAcknowledgement: value.operatorTrustAcknowledgement,
+      profileName: value.profileName,
       rpcEndpoint: value.rpcEndpoint,
-      schemaVersion: 1,
+      schemaVersion:
+        GATE_B_TESTNET_FAUCET_RECEIVE_SCHEMA_VERSIONS.RESET_EPOCH_PINNED_WSS,
+      wssAcknowledgement: value.wssAcknowledgement,
     });
   } catch {
     fail();
