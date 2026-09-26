@@ -449,7 +449,9 @@ function normalizeConfirmedNativeSource(block, sdk, expectedAddress, expectedCha
       normalized.momentumHeight < 1) fail();
   return Object.freeze({
     ...source,
+    confirmationMomentumHash: normalized.momentumHash,
     confirmationMomentumHeight: normalized.momentumHeight,
+    confirmationMomentumTimestamp: normalized.momentumTimestamp,
   });
 }
 
@@ -459,9 +461,33 @@ function sourceIdentity(source) {
     amount: source.amount,
     asset: source.asset,
     blockType: source.blockType,
+    confirmationMomentumHash: source.confirmationMomentumHash,
     confirmationMomentumHeight: source.confirmationMomentumHeight,
+    confirmationMomentumTimestamp: source.confirmationMomentumTimestamp,
     hash: source.hash,
   });
+}
+
+function exactMomentumIdentityByHeight(sources) {
+  if (!ARRAY_IS_ARRAY(sources)) fail();
+  const identities = new Map();
+  for (let index = 0; index < sources.length; index += 1) {
+    const source = sources[index];
+    if (!Number.isSafeInteger(source.confirmationMomentumHeight) ||
+        source.confirmationMomentumHeight < 1 ||
+        !HASH.test(source.confirmationMomentumHash) ||
+        !Number.isSafeInteger(source.confirmationMomentumTimestamp) ||
+        source.confirmationMomentumTimestamp < 0) fail();
+    const existing = identities.get(source.confirmationMomentumHeight);
+    if (existing &&
+        (existing.hash !== source.confirmationMomentumHash ||
+          existing.timestamp !== source.confirmationMomentumTimestamp)) fail();
+    identities.set(source.confirmationMomentumHeight, {
+      hash: source.confirmationMomentumHash,
+      timestamp: source.confirmationMomentumTimestamp,
+    });
+  }
+  return sources;
 }
 
 function pendingSourceIdentity(source) {
@@ -487,9 +513,11 @@ function secondReceiveAttempt(record, source) {
     schemaVersion: record.schemaVersion,
     secondSource: pendingSourceIdentity(source),
   };
-  if (record.schemaVersion === 2) {
+  if (record.schemaVersion ===
+      GATE_B_TESTNET_FAUCET_RECEIVE_SCHEMA_VERSIONS.RESET_EPOCH_PINNED_WSS) {
     attempt.profileCommitment = Object.freeze({ ...record.profileCommitment });
-  } else if (record.schemaVersion !== 1) {
+  } else if (record.schemaVersion !==
+      GATE_B_TESTNET_FAUCET_RECEIVE_SCHEMA_VERSIONS.LEGACY_PLAINTEXT_WS) {
     fail();
   }
   return Object.freeze(attempt);
@@ -519,7 +547,9 @@ function normalizeHistoricalNativeSource(
       normalized.momentumHeight > maximumMomentumHeight) fail();
   return Object.freeze({
     ...source,
+    confirmationMomentumHash: normalized.momentumHash,
     confirmationMomentumHeight: normalized.momentumHeight,
+    confirmationMomentumTimestamp: normalized.momentumTimestamp,
   });
 }
 
@@ -564,6 +594,7 @@ function normalizePendingList(
   }
   if (expectedCount === GATE_B_TESTNET_FAUCET_RECEIVE_LIMITS.expectedTransfers) {
     exactComplementaryNativeSources(output[0], output[1], sdk);
+    if (confirmedChainId !== undefined) exactMomentumIdentityByHeight(output);
   }
   return Object.freeze(output);
 }
@@ -577,13 +608,70 @@ function stablePendingSnapshot(first, second) {
       blockType: block.blockType,
       hash: block.hash,
     };
-    if (HAS_OWN(block, 'confirmationMomentumHeight')) {
+    const confirmationFields = [
+      'confirmationMomentumHash',
+      'confirmationMomentumHeight',
+      'confirmationMomentumTimestamp',
+    ];
+    const present = confirmationFields.filter(field => HAS_OWN(block, field));
+    if (present.length !== 0 && present.length !== confirmationFields.length) fail();
+    if (present.length === confirmationFields.length) {
+      snapshot.confirmationMomentumHash = block.confirmationMomentumHash;
       snapshot.confirmationMomentumHeight = block.confirmationMomentumHeight;
+      snapshot.confirmationMomentumTimestamp = block.confirmationMomentumTimestamp;
     }
     return snapshot;
   });
   if (canonicalJson(normalize(first)) !== canonicalJson(normalize(second))) fail();
   return first;
+}
+
+function exactSourceAuthorization(authorizedSources, sources) {
+  if (!ARRAY_IS_ARRAY(authorizedSources) || authorizedSources.length !== 2 ||
+      !ARRAY_IS_ARRAY(sources) || sources.length !== 2) fail();
+  exactMomentumIdentityByHeight(authorizedSources);
+  exactMomentumIdentityByHeight(sources);
+  const observed = sources.map(sourceIdentity);
+  if (canonicalJson(authorizedSources) !== canonicalJson(observed)) fail();
+  return observed;
+}
+
+function exactAuthorizedAcknowledgement(source, momentumHash, momentumHeight) {
+  if (!Number.isSafeInteger(source.confirmationMomentumHeight) ||
+      source.confirmationMomentumHeight < 1 ||
+      !HASH.test(source.confirmationMomentumHash) ||
+      !Number.isSafeInteger(momentumHeight) || momentumHeight < 0 ||
+      !HASH.test(momentumHash) ||
+      momentumHeight < source.confirmationMomentumHeight ||
+      (momentumHeight === source.confirmationMomentumHeight &&
+        momentumHash !== source.confirmationMomentumHash)) fail();
+  return true;
+}
+
+function momentumGuardedKeyPair(keyPair, prepared, source, sdk) {
+  const getAddress = method(keyPair, 'getAddress');
+  const getPublicKey = method(keyPair, 'getPublicKey');
+  const sign = method(keyPair, 'sign');
+  return Object.freeze({
+    getAddress() {
+      return REFLECT_APPLY(getAddress, keyPair, []);
+    },
+    getPublicKey() {
+      return REFLECT_APPLY(getPublicKey, keyPair, []);
+    },
+    sign(message) {
+      const acknowledged = exactSdkValue(
+        ownData(prepared, 'momentumAcknowledged'),
+        sdk.HashHeight.prototype,
+      );
+      exactAuthorizedAcknowledgement(
+        source,
+        sdkHashString(ownData(acknowledged, 'hash'), sdk),
+        ownData(acknowledged, 'height'),
+      );
+      return REFLECT_APPLY(sign, keyPair, [message]);
+    },
+  });
 }
 
 function exactZeroUnconfirmed(result, sdk) {
@@ -760,18 +848,20 @@ async function lookupIncluded({ scope, zenon, sdk, preparedJson, dependencies, w
 async function recoverExisting(record, context) {
   if (!['PREPARED', 'PUBLISHING', 'UNKNOWN', 'INCLUDED', 'COMPLETE', 'RECOVERED']
     .includes(record.state) || record.blocks.length < 1 || record.blocks.length > 2) fail();
-  let historicalChainId;
-  if (record.schemaVersion ===
-      GATE_B_TESTNET_FAUCET_RECEIVE_SCHEMA_VERSIONS.RESET_EPOCH_PINNED_WSS) {
-    historicalChainId = context.expectedChainId;
-  } else if (record.schemaVersion !==
-      GATE_B_TESTNET_FAUCET_RECEIVE_SCHEMA_VERSIONS.LEGACY_PLAINTEXT_WS) {
-    fail();
-  }
   const outcomeUnknown = () => {
     try { context.scope.poison(new GateBTestnetFaucetReceiveChildError()); } catch {}
     return 'outcome-unknown';
   };
+  let historicalChainId;
+  if (record.schemaVersion ===
+      GATE_B_TESTNET_FAUCET_RECEIVE_SCHEMA_VERSIONS.RESET_EPOCH_PINNED_WSS) {
+    historicalChainId = context.expectedChainId;
+    if (canonicalJson(record.sourceAuthorization) !==
+        canonicalJson(context.authorizedSources)) return outcomeUnknown();
+  } else if (record.schemaVersion !==
+      GATE_B_TESTNET_FAUCET_RECEIVE_SCHEMA_VERSIONS.LEGACY_PLAINTEXT_WS) {
+    fail();
+  }
   let secondAttempt;
   try {
     secondAttempt = await context.state.loadSecondReceiveAttempt();
@@ -907,9 +997,18 @@ async function recoverExisting(record, context) {
       maximumMomentumHeight,
       historicalChainId,
     );
+    if (record.schemaVersion ===
+        GATE_B_TESTNET_FAUCET_RECEIVE_SCHEMA_VERSIONS.RESET_EPOCH_PINNED_WSS) {
+      exactSourceAuthorization(record.sourceAuthorization, [firstSource, remainingSource]);
+    }
     if (canonicalJson(pendingSourceIdentity(remainingSource)) !==
         canonicalJson(pendingSourceIdentity(pending[0]))) fail();
     exactComplementaryNativeSources(firstSource, remainingSource, context.sdk);
+    exactAuthorizedAcknowledgement(
+      remainingSource,
+      firstSigned.momentumAcknowledged.hash,
+      maximumMomentumHeight,
+    );
     const attempt = secondReceiveAttempt(record, remainingSource);
     const expectedHistoricalSource = sourceIdentity(remainingSource);
     const committed = await context.state.commitSecondReceiveAttempt(attempt);
@@ -927,6 +1026,11 @@ async function recoverExisting(record, context) {
       remainingSource.hash,
       maximumMomentumHeight,
       historicalChainId,
+    );
+    exactAuthorizedAcknowledgement(
+      remainingRecheck,
+      firstSigned.momentumAcknowledged.hash,
+      maximumMomentumHeight,
     );
     if (canonicalJson(sourceIdentity(remainingRecheck)) !==
         canonicalJson(expectedHistoricalSource) ||
@@ -956,6 +1060,10 @@ async function readWorkspaceInput(workspace, name) {
   const bytes = await workspace.read(records[0]);
   await workspace.verify(records[0], bytes.length);
   return bytes;
+}
+
+async function assertReceiveFamilySelected(state) {
+  if (await REFLECT_APPLY(method(state, 'assertFamilySelected'), state, []) !== true) fail();
 }
 
 function exactPolicy(policy, bootstrap) {
@@ -1093,7 +1201,15 @@ export async function executeGateBTestnetFaucetReceive(bootstrap, injected) {
                 ]) !== true) fail();
             const recovery = await recoverExisting(
               existing,
-              { dependencies, expectedChainId, scope, sdk, state, zenon },
+              {
+                authorizedSources: bootstrap.authorizedSources,
+                dependencies,
+                expectedChainId,
+                scope,
+                sdk,
+                state,
+                zenon,
+              },
             );
             if (typeof recovery === 'string') return recovery;
             if (await REFLECT_APPLY(dependencies.onExecutionMode, undefined, [
@@ -1108,6 +1224,7 @@ export async function executeGateBTestnetFaucetReceive(bootstrap, injected) {
             if (await REFLECT_APPLY(dependencies.onExecutionMode, undefined, [
               GATE_B_TESTNET_FAUCET_RECEIVE_EXECUTION_MODES.FRESH,
             ]) !== true) fail();
+            await assertReceiveFamilySelected(state);
             workspace = await REFLECT_APPLY(dependencies.openWalletWorkspace, undefined, [
               workspaceRoot,
               dependencies.walletWorkspaceInjections,
@@ -1156,7 +1273,12 @@ export async function executeGateBTestnetFaucetReceive(bootstrap, injected) {
                 ),
               ), sdk);
             }
-            record = await state.arm();
+            if (requireConfirmedPending) {
+              exactSourceAuthorization(bootstrap.authorizedSources, pending);
+            }
+            record = await state.arm(
+              requireConfirmedPending ? bootstrap.authorizedSources : undefined,
+            );
             workItems = Object.freeze(pending.map((source, index) => Object.freeze({
               index,
               source,
@@ -1164,6 +1286,7 @@ export async function executeGateBTestnetFaucetReceive(bootstrap, injected) {
           }
 
           if (!workspace) {
+            await assertReceiveFamilySelected(state);
             workspace = await REFLECT_APPLY(dependencies.openWalletWorkspace, undefined, [
               workspaceRoot,
               dependencies.walletWorkspaceInjections,
@@ -1204,6 +1327,10 @@ export async function executeGateBTestnetFaucetReceive(bootstrap, injected) {
               }
             }
             const template = sdk.AccountBlockTemplate.receive(source.hashObject);
+            const compositeKeyPair = requireConfirmedPending
+              ? momentumGuardedKeyPair(keyPair, template, source, sdk)
+              : keyPair;
+            await assertReceiveFamilySelected(state);
             const prepared = await scope.runRpcWithDeadline({
               category: 'read',
               operation: `prepare.receive.${index}`,
@@ -1211,7 +1338,7 @@ export async function executeGateBTestnetFaucetReceive(bootstrap, injected) {
               execute: () => REFLECT_APPLY(
                 dependencies.invokeComposite,
                 undefined,
-                [zenon, template, keyPair],
+                [zenon, template, compositeKeyPair],
               ),
               teardown: clearConnection,
             });
@@ -1227,11 +1354,13 @@ export async function executeGateBTestnetFaucetReceive(bootstrap, injected) {
               ed,
               prepared,
             );
-            if (requireConfirmedPending &&
-                (!Number.isSafeInteger(source.confirmationMomentumHeight) ||
-                  source.confirmationMomentumHeight < 1 ||
-                  preparedJson.momentumAcknowledged.height <
-                    source.confirmationMomentumHeight)) fail();
+            if (requireConfirmedPending) {
+              exactAuthorizedAcknowledgement(
+                source,
+                preparedJson.momentumAcknowledged.hash,
+                preparedJson.momentumAcknowledged.height,
+              );
+            }
             if (requiredSuccessor &&
                 (preparedJson.height !== requiredSuccessor.height ||
                   preparedJson.previousHash !== requiredSuccessor.previousHash)) fail();
@@ -1242,6 +1371,7 @@ export async function executeGateBTestnetFaucetReceive(bootstrap, injected) {
               preparedJson,
             ));
             record = await state.update(advanceRecord(record, 'PUBLISHING'));
+            await assertReceiveFamilySelected(state);
             if (await REFLECT_APPLY(dependencies.onPublicationStart, undefined, [index]) !== true) {
               record = await state.update(advanceRecord(record, 'UNKNOWN'));
               scope.poison(new GateBTestnetFaucetReceiveChildError());
