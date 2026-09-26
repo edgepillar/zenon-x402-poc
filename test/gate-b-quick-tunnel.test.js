@@ -1426,37 +1426,76 @@ test('captured defaults bind omitted versus explicit launch arguments without pu
         assert.equal(await closure, true);
       };
 
-      await finish(await activate(() =>
-        isolatedLauncher.launchGateBQuickTunnel(bootstrap())));
-      await finish(await activate(() =>
-        isolatedLauncher.launchGateBQuickTunnel(bootstrap(), undefined)));
-      await finish(await activate(() =>
-        isolatedLauncher.launchGateBQuickTunnel(bootstrap(), {})));
-      await finish(await activate(() =>
-        isolatedLauncher.launchGateBQuickTunnelInInheritedProcessGroup(
-          bootstrap(),
-        )));
-
-      assert.equal(postImportForkCalls, 0);
-      assert.equal(postImportKillCalls, 0);
-      assert.equal(forkCalls.length, 4);
-      assert.deepEqual(
-        observedProvenance.map(value => value.dependencySelection.mode),
-        [
+      let expectedDependencySelectionModes;
+      let expectedProcessGroupSelectionModes;
+      if (process.platform === 'darwin') {
+        await finish(await activate(() =>
+          isolatedLauncher.launchGateBQuickTunnel(bootstrap())));
+        await finish(await activate(() =>
+          isolatedLauncher.launchGateBQuickTunnel(bootstrap(), undefined)));
+        await finish(await activate(() =>
+          isolatedLauncher.launchGateBQuickTunnel(bootstrap(), {})));
+        await finish(await activate(() =>
+          isolatedLauncher.launchGateBQuickTunnelInInheritedProcessGroup(
+            bootstrap(),
+          )));
+        expectedDependencySelectionModes = [
           'captured-default-dependencies',
           'injected-test-only-dependencies',
           'injected-test-only-dependencies',
           'captured-default-dependencies',
-        ],
-      );
-      assert.deepEqual(
-        observedProvenance.map(value => value.processGroupSelection.mode),
-        [
+        ];
+        expectedProcessGroupSelectionModes = [
           'authoritative-detached-process-group',
           'authoritative-detached-process-group',
           'authoritative-detached-process-group',
           'inherited-process-group-outer-ownership-unproven',
-        ],
+        ];
+      } else {
+        await assert.rejects(
+          isolatedLauncher.launchGateBQuickTunnel(bootstrap()),
+          LAUNCH_ERROR,
+        );
+        assert.equal(forkCalls.length, 0);
+        assert.deepEqual(observedProvenance, []);
+        await assert.rejects(
+          isolatedLauncher.launchGateBQuickTunnelInInheritedProcessGroup(
+            bootstrap(),
+          ),
+          LAUNCH_ERROR,
+        );
+        assert.equal(forkCalls.length, 0);
+        assert.deepEqual(observedProvenance, []);
+
+        await finish(await activate(() =>
+          isolatedLauncher.launchGateBQuickTunnel(bootstrap(), {
+            platform: 'darwin',
+          })));
+        await finish(await activate(() =>
+          isolatedLauncher.launchGateBQuickTunnelInInheritedProcessGroup(
+            bootstrap(),
+            { platform: 'darwin' },
+          )));
+        expectedDependencySelectionModes = [
+          'injected-test-only-dependencies',
+          'injected-test-only-dependencies',
+        ];
+        expectedProcessGroupSelectionModes = [
+          'authoritative-detached-process-group',
+          'inherited-process-group-outer-ownership-unproven',
+        ];
+      }
+
+      assert.equal(postImportForkCalls, 0);
+      assert.equal(postImportKillCalls, 0);
+      assert.equal(forkCalls.length, process.platform === 'darwin' ? 4 : 2);
+      assert.deepEqual(
+        observedProvenance.map(value => value.dependencySelection.mode),
+        expectedDependencySelectionModes,
+      );
+      assert.deepEqual(
+        observedProvenance.map(value => value.processGroupSelection.mode),
+        expectedProcessGroupSelectionModes,
       );
       for (const provenance of observedProvenance) {
         assert.equal(Object.isFrozen(provenance), true);
