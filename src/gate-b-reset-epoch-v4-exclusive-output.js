@@ -1,9 +1,11 @@
 import { lstat, readdir } from 'node:fs/promises';
 import { join } from 'node:path';
+import { types as utilTypes } from 'node:util';
 
 import { canonicalJson } from './canonical.js';
 import {
   GATE_B_PUBLIC_WS_INPUT_LEAVES,
+  GATE_B_RESET_EPOCH_V4_HANDOFF_PENDING_MARKER,
   parseGateBQuickTunnelHostnameSource,
 } from './gate-b-public-ws-inputs-schema.js';
 import { openGateBPublicWsPrivateWorkspace } from
@@ -20,9 +22,15 @@ const OUTPUT_MAX_BYTES = 64 * 1024;
 const ARRAY_IS_ARRAY = Array.isArray;
 const BUFFER_BYTE_LENGTH = Buffer.byteLength;
 const BUFFER_FROM = Buffer.from;
+const GET_OWN_PROPERTY_DESCRIPTOR = Object.getOwnPropertyDescriptor;
+const GET_PROTOTYPE_OF = Object.getPrototypeOf;
+const HAS_OWN = Object.hasOwn;
+const IS_PROXY = utilTypes.isProxy;
 const JSON_STRINGIFY = JSON.stringify;
 const OBJECT_FREEZE = Object.freeze;
+const OBJECT_PROTOTYPE = Object.prototype;
 const PROCESS_CWD = process.cwd.bind(process);
+const REFLECT_OWN_KEYS = Reflect.ownKeys;
 
 const INPUT_LEAVES = OBJECT_FREEZE([
   GATE_B_PUBLIC_WS_INPUT_LEAVES.buyerWallet,
@@ -35,6 +43,14 @@ const OUTPUT_LEAVES = OBJECT_FREEZE([
   GATE_B_PUBLIC_WS_INPUT_LEAVES.resetLiveApproval,
 ]);
 const ALL_LEAVES = OBJECT_FREEZE([...INPUT_LEAVES, ...OUTPUT_LEAVES]);
+const HANDOFF_INPUT_LEAVES = OBJECT_FREEZE([
+  ...INPUT_LEAVES,
+  GATE_B_RESET_EPOCH_V4_HANDOFF_PENDING_MARKER.leaf,
+]);
+const HANDOFF_ALL_LEAVES = OBJECT_FREEZE([
+  ...ALL_LEAVES,
+  GATE_B_RESET_EPOCH_V4_HANDOFF_PENDING_MARKER.leaf,
+]);
 const NON_WALLET_INPUT_INDEXES = OBJECT_FREEZE([1, 2, 3]);
 const SUCCESS = OBJECT_FREEZE({
   status: 'source_only_outputs_written_non_authorizing',
@@ -51,6 +67,18 @@ export class GateBResetEpochV4ExclusiveOutputError extends Error {
 
 function fail() {
   throw new GateBResetEpochV4ExclusiveOutputError();
+}
+
+function handoffPendingMarkerEnabled(value) {
+  if (value === undefined) return false;
+  if (!value || typeof value !== 'object' || IS_PROXY(value) || ARRAY_IS_ARRAY(value) ||
+      GET_PROTOTYPE_OF(value) !== OBJECT_PROTOTYPE) fail();
+  const keys = REFLECT_OWN_KEYS(value);
+  const descriptor = GET_OWN_PROPERTY_DESCRIPTOR(value, 'handoffPendingMarkerVersion');
+  if (keys.length !== 1 || keys[0] !== 'handoffPendingMarkerVersion' || !descriptor ||
+      !HAS_OWN(descriptor, 'value') || descriptor.enumerable !== true ||
+      descriptor.value !== GATE_B_RESET_EPOCH_V4_HANDOFF_PENDING_MARKER.version) fail();
+  return true;
 }
 
 function configFromReview(review) {
@@ -202,6 +230,26 @@ async function readNonWalletInputs(workspace, records) {
   }
 }
 
+async function assertPendingMarkerBytes(workspace, record) {
+  const expected = BUFFER_FROM(
+    GATE_B_RESET_EPOCH_V4_HANDOFF_PENDING_MARKER.bytes,
+    'utf8',
+  );
+  let actual;
+  try {
+    await workspace.verify(record, expected.length);
+    actual = await workspace.read(record);
+    if (!actual.equals(expected)) fail();
+    await workspace.verify(record, expected.length);
+    return true;
+  } catch {
+    fail();
+  } finally {
+    if (Buffer.isBuffer(actual)) actual.fill(0);
+    expected.fill(0);
+  }
+}
+
 function assertSameBuffers(left, right) {
   if (left.length !== right.length) fail();
   for (let index = 0; index < left.length; index += 1) {
@@ -229,6 +277,7 @@ export async function generateGateBResetEpochV4ExclusiveOutputs(
   runName,
   workspaceRoot = PROCESS_CWD(),
   injected,
+  options,
 ) {
   let workspace;
   let initialInputRead;
@@ -237,6 +286,9 @@ export async function generateGateBResetEpochV4ExclusiveOutputs(
   const outputBuffers = [];
   const freshBuffers = [];
   try {
+    const handoffPendingMarker = handoffPendingMarkerEnabled(options);
+    const inputLeaves = handoffPendingMarker ? HANDOFF_INPUT_LEAVES : INPUT_LEAVES;
+    const allLeaves = handoffPendingMarker ? HANDOFF_ALL_LEAVES : ALL_LEAVES;
     const bound = prepareBoundedOutputs(
       runConfigJson,
       approvalJson,
@@ -249,12 +301,15 @@ export async function generateGateBResetEpochV4ExclusiveOutputs(
     );
 
     workspace = await openGateBPublicWsPrivateWorkspace(workspaceRoot, injected);
-    await assertExactLeaves(workspaceRoot, INPUT_LEAVES);
-    const initialGenerations = await captureGenerations(workspaceRoot, INPUT_LEAVES);
-    const inputs = await workspace.openInputs(INPUT_LEAVES);
-    await verifyRecords(workspace, inputs, INPUT_LEAVES, initialGenerations);
-    await assertGenerations(workspaceRoot, initialGenerations, INPUT_LEAVES);
-    await assertExactLeaves(workspaceRoot, INPUT_LEAVES);
+    await assertExactLeaves(workspaceRoot, inputLeaves);
+    const initialGenerations = await captureGenerations(workspaceRoot, inputLeaves);
+    const inputs = await workspace.openInputs(inputLeaves);
+    await verifyRecords(workspace, inputs, inputLeaves, initialGenerations);
+    await assertGenerations(workspaceRoot, initialGenerations, inputLeaves);
+    await assertExactLeaves(workspaceRoot, inputLeaves);
+    if (handoffPendingMarker) {
+      await assertPendingMarkerBytes(workspace, inputs[INPUT_LEAVES.length]);
+    }
 
     initialInputRead = await readNonWalletInputs(workspace, inputs);
     assertCrossBinding(
@@ -263,28 +318,34 @@ export async function generateGateBResetEpochV4ExclusiveOutputs(
       initialInputRead.facilitatorRpc,
       initialInputRead.hostnameSource,
     );
-    await verifyRecords(workspace, inputs, INPUT_LEAVES, initialGenerations);
-    await assertGenerations(workspaceRoot, initialGenerations, INPUT_LEAVES);
-    await assertExactLeaves(workspaceRoot, INPUT_LEAVES);
+    await verifyRecords(workspace, inputs, inputLeaves, initialGenerations);
+    await assertGenerations(workspaceRoot, initialGenerations, inputLeaves);
+    await assertExactLeaves(workspaceRoot, inputLeaves);
+    if (handoffPendingMarker) {
+      await assertPendingMarkerBytes(workspace, inputs[INPUT_LEAVES.length]);
+    }
 
     const outputs = await workspace.reserveOutputs(OUTPUT_LEAVES);
     workspace.assertDistinct([...inputs, ...outputs]);
-    await verifyRecords(workspace, inputs, INPUT_LEAVES, initialGenerations);
+    await verifyRecords(workspace, inputs, inputLeaves, initialGenerations);
     for (let index = 0; index < outputs.length; index += 1) {
       await workspace.verify(outputs[index], 0);
     }
-    await assertGenerations(workspaceRoot, initialGenerations, INPUT_LEAVES);
-    await assertExactLeaves(workspaceRoot, ALL_LEAVES);
+    await assertGenerations(workspaceRoot, initialGenerations, inputLeaves);
+    await assertExactLeaves(workspaceRoot, allLeaves);
 
     await workspace.write(outputs[0], outputBuffers[0]);
     await workspace.write(outputs[1], outputBuffers[1]);
     await workspace.syncDirectories();
-    await verifyRecords(workspace, inputs, INPUT_LEAVES, initialGenerations);
+    await verifyRecords(workspace, inputs, inputLeaves, initialGenerations);
     await workspace.verify(outputs[0], outputBuffers[0].length);
     await workspace.verify(outputs[1], outputBuffers[1].length);
     workspace.assertDistinct([...inputs, ...outputs]);
-    await assertGenerations(workspaceRoot, initialGenerations, INPUT_LEAVES);
-    await assertExactLeaves(workspaceRoot, ALL_LEAVES);
+    await assertGenerations(workspaceRoot, initialGenerations, inputLeaves);
+    await assertExactLeaves(workspaceRoot, allLeaves);
+    if (handoffPendingMarker) {
+      await assertPendingMarkerBytes(workspace, inputs[INPUT_LEAVES.length]);
+    }
 
     postWriteInputRead = await readNonWalletInputs(workspace, inputs);
     assertSameBuffers(initialInputRead.buffers, postWriteInputRead.buffers);
@@ -294,19 +355,25 @@ export async function generateGateBResetEpochV4ExclusiveOutputs(
       postWriteInputRead.facilitatorRpc,
       postWriteInputRead.hostnameSource,
     );
-    await verifyRecords(workspace, inputs, INPUT_LEAVES, initialGenerations);
-    await assertGenerations(workspaceRoot, initialGenerations, INPUT_LEAVES);
-    await assertExactLeaves(workspaceRoot, ALL_LEAVES);
-    const completedGenerations = await captureGenerations(workspaceRoot, ALL_LEAVES);
+    await verifyRecords(workspace, inputs, inputLeaves, initialGenerations);
+    await assertGenerations(workspaceRoot, initialGenerations, inputLeaves);
+    await assertExactLeaves(workspaceRoot, allLeaves);
+    if (handoffPendingMarker) {
+      await assertPendingMarkerBytes(workspace, inputs[INPUT_LEAVES.length]);
+    }
+    const completedGenerations = await captureGenerations(workspaceRoot, allLeaves);
 
     await workspace.close();
     workspace = undefined;
 
     workspace = await openGateBPublicWsPrivateWorkspace(workspaceRoot, injected);
-    await assertExactLeaves(workspaceRoot, ALL_LEAVES);
-    const reopened = await workspace.openInputs(ALL_LEAVES);
-    await verifyRecords(workspace, reopened, ALL_LEAVES, completedGenerations);
-    await assertGenerations(workspaceRoot, completedGenerations, ALL_LEAVES);
+    await assertExactLeaves(workspaceRoot, allLeaves);
+    const reopened = await workspace.openInputs(allLeaves);
+    await verifyRecords(workspace, reopened, allLeaves, completedGenerations);
+    await assertGenerations(workspaceRoot, completedGenerations, allLeaves);
+    if (handoffPendingMarker) {
+      await assertPendingMarkerBytes(workspace, reopened[ALL_LEAVES.length]);
+    }
 
     freshBuffers.push(await workspace.read(reopened[1]));
     freshBuffers.push(await workspace.read(reopened[2]));
@@ -345,9 +412,12 @@ export async function generateGateBResetEpochV4ExclusiveOutputs(
       freshRead.facilitatorRpc,
       freshRead.hostnameSource,
     );
-    await verifyRecords(workspace, reopened, ALL_LEAVES, completedGenerations);
-    await assertGenerations(workspaceRoot, completedGenerations, ALL_LEAVES);
-    await assertExactLeaves(workspaceRoot, ALL_LEAVES);
+    await verifyRecords(workspace, reopened, allLeaves, completedGenerations);
+    await assertGenerations(workspaceRoot, completedGenerations, allLeaves);
+    await assertExactLeaves(workspaceRoot, allLeaves);
+    if (handoffPendingMarker) {
+      await assertPendingMarkerBytes(workspace, reopened[ALL_LEAVES.length]);
+    }
     await workspace.close();
     workspace = undefined;
     return SUCCESS;
