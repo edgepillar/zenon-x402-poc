@@ -4,7 +4,11 @@ import { lstat, open, realpath } from 'node:fs/promises';
 import { dirname, isAbsolute, join, resolve } from 'node:path';
 import { types as utilTypes } from 'node:util';
 
-import { GATE_B_PUBLIC_WS_INPUT_LEAVES } from './gate-b-public-ws-inputs-schema.js';
+import {
+  GATE_B_PUBLIC_WS_INPUT_LEAVES,
+  GATE_B_RESET_EPOCH_V4_HANDOFF_COMPLETION_MANIFEST,
+  GATE_B_RESET_EPOCH_V4_HANDOFF_PENDING_MARKER,
+} from './gate-b-public-ws-inputs-schema.js';
 
 const ERROR_CODE = 'gate_b_public_ws_private_workspace_invalid';
 const PRIVATE_DIRECTORY_MODE = 0o700;
@@ -18,10 +22,16 @@ const HAS_OWN = Object.hasOwn;
 const IS_PROXY = utilTypes.isProxy;
 const OBJECT_PROTOTYPE = Object.prototype;
 const REFLECT_OWN_KEYS = Reflect.ownKeys;
-const ALLOWED_LEAVES = new Set(Object.values(GATE_B_PUBLIC_WS_INPUT_LEAVES));
+const ALLOWED_LEAVES = new Set([
+  ...Object.values(GATE_B_PUBLIC_WS_INPUT_LEAVES),
+  GATE_B_RESET_EPOCH_V4_HANDOFF_COMPLETION_MANIFEST.leaf,
+  GATE_B_RESET_EPOCH_V4_HANDOFF_PENDING_MARKER.leaf,
+]);
 const ACL_TARGETS = new Set([
   '.',
   ...Object.values(GATE_B_PUBLIC_WS_INPUT_LEAVES).map(name => `./${name}`),
+  `./${GATE_B_RESET_EPOCH_V4_HANDOFF_COMPLETION_MANIFEST.leaf}`,
+  `./${GATE_B_RESET_EPOCH_V4_HANDOFF_PENDING_MARKER.leaf}`,
 ]);
 const CAPABILITY_STATES = new WeakMap();
 const RECORD_STATES = new WeakMap();
@@ -448,6 +458,10 @@ function createCapability(state) {
     async reserveOutputs(names) {
       const current = capabilityState(capability);
       names = exactLeafNames(names);
+      const permanentExclusionReservation = names.length === 1 && (
+        names[0] === GATE_B_RESET_EPOCH_V4_HANDOFF_PENDING_MARKER.leaf ||
+        names[0] === GATE_B_RESET_EPOCH_V4_HANDOFF_COMPLETION_MANIFEST.leaf
+      );
       const records = [];
       let reservationAttempted = false;
       try {
@@ -462,7 +476,7 @@ function createCapability(state) {
         }
         return Object.freeze(records);
       } catch {
-        if (reservationAttempted) {
+        if (reservationAttempted && !permanentExclusionReservation) {
           try { await attemptRetainedDirectorySyncs(current); } catch {}
         }
         fail();

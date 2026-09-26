@@ -69,6 +69,18 @@ export const GATE_B_PUBLIC_WS_INPUT_LEAVES = Object.freeze({
   authorization: 'authorization.json',
 });
 
+export const GATE_B_RESET_EPOCH_V4_HANDOFF_PENDING_MARKER = Object.freeze({
+  bytes: 'GATE_B_RESET_EPOCH_V4_HANDOFF_PENDING_V1\n',
+  leaf: '.reset-epoch-v4-handoff-pending',
+  version: 1,
+});
+
+export const GATE_B_RESET_EPOCH_V4_HANDOFF_COMPLETION_MANIFEST = Object.freeze({
+  kind: 'gate-b-reset-epoch-v4-handoff-completion',
+  leaf: '.reset-epoch-v4-handoff-complete.json',
+  version: 1,
+});
+
 const GATE_B_PUBLIC_WS_SOURCE_KINDS = Object.freeze({
   endpoint: 'gate-b-protected-endpoint-source',
   currentTestnetWssEndpoint: 'gate-b-current-testnet-wss-endpoint-source',

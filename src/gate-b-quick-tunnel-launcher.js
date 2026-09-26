@@ -490,7 +490,7 @@ function failRecord(record) {
   });
 }
 
-function sendMessage(record, message) {
+function sendMessage(record, message, onConfirmed) {
   if (record.state === 'FAILING' || record.state === 'CLOSED_FAILED' ||
       record.state === 'QUARANTINED' || record.state === 'STOPPED' ||
       record.state === 'REAPING') return false;
@@ -500,6 +500,7 @@ function sendMessage(record, message) {
           record.state === 'QUARANTINED' || record.state === 'STOPPED' ||
           record.state === 'REAPING') return;
       if (sendError) failRecord(record);
+      else if (onConfirmed) onConfirmed();
     }]);
     if (accepted === false && record.connected === false) {
       failRecord(record);
@@ -510,6 +511,15 @@ function sendMessage(record, message) {
     failRecord(record);
     return false;
   }
+}
+
+function maybeSettlePendingCheck(record, pending) {
+  if (record.state !== 'CHECKING' || record.pendingCheck !== pending ||
+      !pending.checkedReceived || !pending.sendConfirmed || !pending.sendReturned) return;
+  if (!cancelPendingCheckTimer(record, pending)) return failRecord(record);
+  record.pendingCheck = null;
+  record.state = 'ACTIVE_IDLE';
+  pending.resolve(true);
 }
 
 function maybeSendStart(record) {
@@ -591,10 +601,9 @@ function onMessage(record, candidate) {
         message.type !== GATE_B_QUICK_TUNNEL_IPC_TYPES.CHECKED ||
         message.requestId !== record.pendingCheck.requestId) return failRecord(record);
     const pending = record.pendingCheck;
-    if (!cancelPendingCheckTimer(record, pending)) return failRecord(record);
-    record.pendingCheck = null;
-    record.state = 'ACTIVE_IDLE';
-    pending.resolve(true);
+    if (pending.checkedReceived) return failRecord(record);
+    pending.checkedReceived = true;
+    maybeSettlePendingCheck(record, pending);
     return;
   }
   if (record.state === 'STOPPING') {
@@ -727,9 +736,11 @@ async function launchGateBQuickTunnelInternal(bootstrap, injected, authoritative
       startupTimer: undefined,
       shutdownTimer: undefined,
       hardLifetimeTimer: undefined,
+      hostnameSourceHandoffClaimed: false,
       reapPromise: undefined,
       ownedListeners: [],
       ownedChildReleased: false,
+      workspaceRoot,
     };
     LEASE_RECORDS.set(lease, record);
     attachLifecycle(record);
@@ -795,10 +806,13 @@ export function assertGateBQuickTunnelReady(lease) {
     });
     void promise.catch(() => {});
     record.pendingCheck = {
+      checkedReceived: false,
       requestId,
       promise,
       resolve: resolveCheck,
       reject: rejectCheck,
+      sendConfirmed: false,
+      sendReturned: false,
       timer: undefined,
     };
     const pending = record.pendingCheck;
@@ -823,13 +837,51 @@ export function assertGateBQuickTunnelReady(lease) {
       return promise;
     }
     pending.timer = timer;
-    sendMessage(record, createGateBQuickTunnelIpcMessage(
-      GATE_B_QUICK_TUNNEL_IPC_TYPES.CHECK,
-      requestId,
-    ));
+    const sent = sendMessage(
+      record,
+      createGateBQuickTunnelIpcMessage(
+        GATE_B_QUICK_TUNNEL_IPC_TYPES.CHECK,
+        requestId,
+      ),
+      () => {
+        if (record.state !== 'CHECKING' || record.pendingCheck !== pending) return;
+        pending.sendConfirmed = true;
+        maybeSettlePendingCheck(record, pending);
+      },
+    );
+    if (sent && record.state === 'CHECKING' && record.pendingCheck === pending) {
+      pending.sendReturned = true;
+      maybeSettlePendingCheck(record, pending);
+    }
     return promise;
   } catch {
     return Promise.reject(error());
+  }
+}
+
+export function claimGateBQuickTunnelHostnameSourceHandoff(lease, workspaceRoot) {
+  let record;
+  try {
+    record = leaseRecord(lease);
+    if (record.hostnameSourceHandoffClaimed) fail();
+    record.hostnameSourceHandoffClaimed = true;
+    if (record.state !== 'ACTIVE_IDLE' || record.pendingCheck ||
+        typeof workspaceRoot !== 'string' || workspaceRoot !== record.workspaceRoot) fail();
+    const handoff = {
+      __proto__: null,
+      assertCurrent() {
+        try {
+          if (record.lease !== lease || record.workspaceRoot !== workspaceRoot ||
+              record.hostnameSourceHandoffClaimed !== true) fail();
+          return assertGateBQuickTunnelReady(lease);
+        } catch {
+          return Promise.reject(error());
+        }
+      },
+    };
+    return Object.freeze(handoff);
+  } catch {
+    throw error();
   }
 }
 

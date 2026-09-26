@@ -25,6 +25,7 @@ import {
 } from '../src/gate-b-quick-tunnel-artifact.js';
 import {
   GATE_B_PUBLIC_WS_INPUT_LEAVES,
+  GATE_B_RESET_EPOCH_V4_HANDOFF_PENDING_MARKER,
   serializeGateBQuickTunnelHostnameSource,
 } from '../src/gate-b-public-ws-inputs-schema.js';
 import {
@@ -57,6 +58,12 @@ const HOSTNAME = 'synthetic-exclusive-output.trycloudflare.com';
 const RUN_NAME = 'synthetic-reset-epoch-v4-exclusive-output';
 const ERROR_CODE = 'gate_b_reset_epoch_v4_exclusive_output_invalid';
 const WALLET_SENTINEL = 'SYNTHETIC_WALLET_MUST_NOT_BE_READ\n';
+const PENDING_MARKER_LEAF = '.reset-epoch-v4-handoff-pending';
+const PENDING_MARKER_BYTES = Buffer.from(
+  'GATE_B_RESET_EPOCH_V4_HANDOFF_PENDING_V1\n',
+  'utf8',
+);
+const HANDOFF_OUTPUT_OPTIONS = Object.freeze({ handoffPendingMarkerVersion: 1 });
 
 function bech32Polymod(values) {
   let checksum = 1;
@@ -412,6 +419,69 @@ test('writes and freshly revalidates exactly two non-authorizing outputs', async
   assert.equal(source.includes('znn-typescript-sdk'), false);
   assert.equal(/node:(?:http|https|net|tls)|\bfetch\b/.test(source), false);
 });
+
+test('marker-aware opt-in validates the pending marker while legacy mode still rejects it',
+  async t => {
+    assert.deepEqual(GATE_B_RESET_EPOCH_V4_HANDOFF_PENDING_MARKER, {
+      bytes: PENDING_MARKER_BYTES.toString('utf8'),
+      leaf: PENDING_MARKER_LEAF,
+      version: 1,
+    });
+    assert.equal(Object.isFrozen(GATE_B_RESET_EPOCH_V4_HANDOFF_PENDING_MARKER), true);
+    assert.equal(
+      Object.values(GATE_B_PUBLIC_WS_INPUT_LEAVES).includes(PENDING_MARKER_LEAF),
+      false,
+    );
+    await t.test('handoff marker-aware path', async t => {
+      const context = await fixture(t);
+      const markerPath = await privateWrite(
+        context.root,
+        PENDING_MARKER_LEAF,
+        PENDING_MARKER_BYTES,
+      );
+      const markerBefore = await lstat(markerPath, { bigint: true });
+      const counts = counters();
+      const result = await generateGateBResetEpochV4ExclusiveOutputs(
+        ...generatorArguments(context, {
+          injected: workspaceInjections(context.root, counts),
+        }),
+        HANDOFF_OUTPUT_OPTIONS,
+      );
+
+      assert.deepEqual(result, { status: 'source_only_outputs_written_non_authorizing' });
+      assert.deepEqual((await readdir(context.root)).sort(), [
+        PENDING_MARKER_LEAF,
+        GATE_B_PUBLIC_WS_INPUT_LEAVES.buyerRpc,
+        GATE_B_PUBLIC_WS_INPUT_LEAVES.buyerWallet,
+        GATE_B_PUBLIC_WS_INPUT_LEAVES.facilitatorRpc,
+        GATE_B_PUBLIC_WS_INPUT_LEAVES.hostnameSource,
+        GATE_B_PUBLIC_WS_INPUT_LEAVES.resetLiveApproval,
+        GATE_B_PUBLIC_WS_INPUT_LEAVES.runConfig,
+      ].sort());
+      assert.deepEqual(await readFile(markerPath), PENDING_MARKER_BYTES);
+      const markerAfter = await lstat(markerPath, { bigint: true });
+      for (const field of [
+        'dev', 'ino', 'size', 'mtimeNs', 'ctimeNs', 'mode', 'nlink',
+      ]) {
+        assert.equal(markerAfter[field], markerBefore[field]);
+      }
+      assert.equal(counts.walletReads, 0);
+      assert.equal((counts.reads.get(PENDING_MARKER_LEAF) ?? 0) > 0, true);
+    });
+
+    await t.test('legacy default path', async t => {
+      const context = await fixture(t);
+      await privateWrite(context.root, PENDING_MARKER_LEAF, PENDING_MARKER_BYTES);
+      const counts = counters();
+      await expectFailure(generateGateBResetEpochV4ExclusiveOutputs(
+        ...generatorArguments(context, {
+          injected: workspaceInjections(context.root, counts),
+        }),
+      ));
+      await assertMissing(join(context.root, GATE_B_PUBLIC_WS_INPUT_LEAVES.runConfig));
+      assert.equal(counts.walletReads, 0);
+    });
+  });
 
 test('preserves a stale-output collision without overwrite, deletion, or retry', async t => {
   const context = await fixture(t);

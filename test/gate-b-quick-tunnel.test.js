@@ -20,6 +20,7 @@ import {
 import * as quickTunnelLauncher from '../src/gate-b-quick-tunnel-launcher.js';
 import {
   assertGateBQuickTunnelReady,
+  claimGateBQuickTunnelHostnameSourceHandoff,
   launchGateBQuickTunnel,
   launchGateBQuickTunnelInInheritedProcessGroup,
   stopGateBQuickTunnel,
@@ -264,6 +265,8 @@ class SyntheticChild extends EventEmitter {
     this.unrefCalls = 0;
     this.channelCloseCalls = 0;
     this.channelUnrefCalls = 0;
+    this.deferredSendType = undefined;
+    this.deferredSendCallbacks = [];
     this.channel = {
       close: () => { this.channelCloseCalls += 1; },
       unref: () => { this.channelUnrefCalls += 1; },
@@ -272,6 +275,10 @@ class SyntheticChild extends EventEmitter {
 
   send(message, callback) {
     this.sent.push(message);
+    if (message.type === this.deferredSendType) {
+      this.deferredSendCallbacks.push(callback);
+      return true;
+    }
     if (typeof callback === 'function') queueMicrotask(() => callback(null));
     return true;
   }
@@ -799,6 +806,7 @@ test('launcher exports only the reviewed public lifecycle surface', () => {
   assert.deepEqual(Object.keys(quickTunnelLauncher).sort(), [
     'GateBQuickTunnelLaunchError',
     'assertGateBQuickTunnelReady',
+    'claimGateBQuickTunnelHostnameSourceHandoff',
     'launchGateBQuickTunnel',
     'launchGateBQuickTunnelInInheritedProcessGroup',
     'stopGateBQuickTunnel',
@@ -903,9 +911,67 @@ test('launcher uses the workspace cwd and exact detached private-FD contract', a
 
   const forged = Object.freeze(Object.create(null));
   await assert.rejects(assertGateBQuickTunnelReady(forged), LAUNCH_ERROR);
+  assert.throws(
+    () => claimGateBQuickTunnelHostnameSourceHandoff(forged, WORKSPACE_ROOT),
+    LAUNCH_ERROR,
+  );
   await assert.rejects(stopGateBQuickTunnel(forged), LAUNCH_ERROR);
   await assert.rejects(waitGateBQuickTunnelClosed(forged), LAUNCH_ERROR);
 });
+
+test('launcher exposes one opaque one-use hostname handoff bound to lease workspace',
+  async t => {
+    await t.test('same workspace', async () => {
+      const harness = launcherHarness();
+      const { lease } = await activateLauncher(harness);
+      const handoff = claimGateBQuickTunnelHostnameSourceHandoff(
+        lease,
+        WORKSPACE_ROOT,
+      );
+      assert.equal(Object.getPrototypeOf(handoff), null);
+      assert.deepEqual(Reflect.ownKeys(handoff), ['assertCurrent']);
+      assert.equal(Object.isFrozen(handoff), true);
+      assert.throws(
+        () => claimGateBQuickTunnelHostnameSourceHandoff(lease, WORKSPACE_ROOT),
+        LAUNCH_ERROR,
+      );
+
+      const current = handoff.assertCurrent();
+      assert.deepEqual(harness.child.sent.at(-1), createGateBQuickTunnelIpcMessage(
+        GATE_B_QUICK_TUNNEL_IPC_TYPES.CHECK,
+        2,
+      ));
+      harness.child.emit('message', createGateBQuickTunnelIpcMessage(
+        GATE_B_QUICK_TUNNEL_IPC_TYPES.CHECKED,
+        2,
+      ));
+      assert.equal(await current, true);
+
+      const closure = stopGateBQuickTunnel(lease);
+      emitSuccessfulClosure(harness.child, 3);
+      assert.equal(await closure, true);
+      await assert.rejects(handoff.assertCurrent(), LAUNCH_ERROR);
+    });
+
+    await t.test('wrong workspace burns the handoff claim', async () => {
+      const harness = launcherHarness();
+      const { lease } = await activateLauncher(harness);
+      assert.throws(
+        () => claimGateBQuickTunnelHostnameSourceHandoff(
+          lease,
+          '/private/tmp/other-quick-tunnel-workspace',
+        ),
+        LAUNCH_ERROR,
+      );
+      assert.throws(
+        () => claimGateBQuickTunnelHostnameSourceHandoff(lease, WORKSPACE_ROOT),
+        LAUNCH_ERROR,
+      );
+      const closure = stopGateBQuickTunnel(lease);
+      emitSuccessfulClosure(harness.child, 2);
+      assert.equal(await closure, true);
+    });
+  });
 
 test('launcher rejects ACTIVE before the READY and START join completes', async () => {
   const harness = launcherHarness();
@@ -956,6 +1022,70 @@ test('sequential readiness checks use fresh IDs and a concurrent check consumes 
   emitSuccessfulClosure(harness.child, 4);
   assert.equal(await closure, true);
 });
+
+test('CHECKED delivery waits for the matching CHECK send callback before success',
+  async () => {
+    const harness = launcherHarness();
+    const { lease } = await activateLauncher(harness);
+    const closure = waitGateBQuickTunnelClosed(lease);
+    harness.child.deferredSendType = GATE_B_QUICK_TUNNEL_IPC_TYPES.CHECK;
+
+    const check = assertGateBQuickTunnelReady(lease);
+    let settled = false;
+    void check.finally(() => { settled = true; }).catch(() => {});
+    harness.child.emit('message', createGateBQuickTunnelIpcMessage(
+      GATE_B_QUICK_TUNNEL_IPC_TYPES.CHECKED,
+      2,
+    ));
+    await tick();
+    assert.equal(settled, false);
+
+    const overlapping = assertGateBQuickTunnelReady(lease);
+    const overlapRejection = assert.rejects(overlapping, LAUNCH_ERROR);
+    harness.child.deferredSendCallbacks[0](null);
+    for (let index = 1; index < harness.child.deferredSendCallbacks.length; index += 1) {
+      harness.child.deferredSendCallbacks[index](
+        new Error('synthetic late CHECK send failure'),
+      );
+    }
+    assert.equal(await check, true);
+    await overlapRejection;
+
+    if (harness.child.deferredSendCallbacks.length === 1) {
+      harness.child.deferredSendType = undefined;
+      const stopped = stopGateBQuickTunnel(lease);
+      emitSuccessfulClosure(harness.child, 3);
+      assert.equal(await stopped, true);
+    } else {
+      await assert.rejects(closure, LAUNCH_ERROR);
+      await closeFailedChild(harness.child);
+    }
+    assert.equal(harness.child.deferredSendCallbacks.length, 1);
+    assert.equal(harness.child.sent.filter(message =>
+      message.type === GATE_B_QUICK_TUNNEL_IPC_TYPES.CHECK).length, 1);
+  });
+
+test('late CHECK send callback failure cannot follow an observable false success',
+  async () => {
+    const harness = launcherHarness();
+    const { lease } = await activateLauncher(harness);
+    const closure = waitGateBQuickTunnelClosed(lease);
+    harness.child.deferredSendType = GATE_B_QUICK_TUNNEL_IPC_TYPES.CHECK;
+
+    const check = assertGateBQuickTunnelReady(lease);
+    harness.child.emit('message', createGateBQuickTunnelIpcMessage(
+      GATE_B_QUICK_TUNNEL_IPC_TYPES.CHECKED,
+      2,
+    ));
+    harness.child.deferredSendCallbacks[0](
+      new Error('synthetic late CHECK send failure'),
+    );
+    await assert.rejects(check, LAUNCH_ERROR);
+    await assert.rejects(closure, LAUNCH_ERROR);
+    await closeFailedChild(harness.child);
+    assert.equal(harness.child.sent.filter(message =>
+      message.type === GATE_B_QUICK_TUNNEL_IPC_TYPES.CHECK).length, 1);
+  });
 
 test('launcher CHECK deadline has one deterministic success-or-timeout winner', async t => {
   await t.test('CHECKED wins and cancels the deadline', async () => {
@@ -1507,11 +1637,13 @@ class SupervisorIpc extends EventEmitter {
     };
     this.stallType = undefined;
     this.stalledCallbacks = [];
+    this.onSend = undefined;
   }
 
   send(message, callback) {
     this.sent.push(message);
     this.order.push(`ipc:${message.type}:${message.requestId}`);
+    this.onSend?.(message);
     if (message.type === this.stallType) {
       this.stalledCallbacks.push(callback);
       return true;
@@ -1621,7 +1753,20 @@ function supervisorHarness(changes = {}) {
     reserveCalls: 0,
     sourceWrites: 0,
     sourceReads: 0,
+    sourceVerifications: 0,
+    sourceGenerationReads: 0,
     sourceBytes: undefined,
+    sourceGeneration: {
+      ctimeNs: 1n,
+      dev: 2n,
+      gid: 3n,
+      ino: 4n,
+      mode: 0o100600n,
+      mtimeNs: 1n,
+      nlink: 1n,
+      size: 0n,
+      uid: 3n,
+    },
     syncCalls: 0,
     lsofCalls: 0,
     httpCalls: [],
@@ -1650,6 +1795,12 @@ function supervisorHarness(changes = {}) {
       state.sourceWrites += 1;
       order.push('workspace:write');
       state.sourceBytes = Buffer.from(bytes);
+      state.sourceGeneration = {
+        ...state.sourceGeneration,
+        ctimeNs: state.sourceGeneration.ctimeNs + 1n,
+        mtimeNs: state.sourceGeneration.mtimeNs + 1n,
+        size: BigInt(bytes.length),
+      };
       return true;
     },
     async read(record) {
@@ -1657,6 +1808,13 @@ function supervisorHarness(changes = {}) {
       state.sourceReads += 1;
       order.push('workspace:read');
       return Buffer.from(state.sourceBytes);
+    },
+    async verify(record, expectedSize) {
+      assert.equal(record, workspaceRecord);
+      assert.equal(expectedSize, state.sourceBytes.length);
+      state.sourceVerifications += 1;
+      order.push('workspace:verify');
+      return true;
     },
     async syncDirectories() {
       state.syncCalls += 1;
@@ -1717,6 +1875,13 @@ function supervisorHarness(changes = {}) {
       return snapshot(body, { statusCode: state.readyStatus });
     },
     ipc,
+    async lstatHostnameSourcePath(path, options) {
+      assert.equal(path, `${WORKSPACE_ROOT}/quick-tunnel-hostname-source.json`);
+      assert.deepEqual(options, { bigint: true });
+      state.sourceGenerationReads += 1;
+      order.push('workspace:generation');
+      return { ...state.sourceGeneration };
+    },
     observationGapMs: 1,
     async openWorkspace(root) {
       assert.equal(root, WORKSPACE_ROOT);
@@ -2473,7 +2638,8 @@ test('each supervisor CHECK performs a fresh complete pinned observation', async
   assert.equal(harness.state.lsofCalls - lsofBefore, 2);
   assert.equal(harness.state.httpCalls.length - httpBefore, 2);
   assert.equal(harness.state.sourceWrites, 1);
-  assert.equal(harness.state.sourceReads, 1);
+  assert.equal(harness.state.sourceReads, 2);
+  assert.equal(harness.state.sourceVerifications >= 3, true);
 
   harness.state.ipc.emit('message', createGateBQuickTunnelIpcMessage(
     GATE_B_QUICK_TUNNEL_IPC_TYPES.CHECK,
@@ -2484,9 +2650,86 @@ test('each supervisor CHECK performs a fresh complete pinned observation', async
   assert.equal(harness.state.lsofCalls - lsofBefore, 4);
   assert.equal(harness.state.httpCalls.length - httpBefore, 4);
   assert.equal(harness.state.sourceWrites, 1);
+  assert.equal(harness.state.sourceReads, 3);
+  assert.equal(harness.state.sourceVerifications >= 5, true);
   await stopSupervisor(harness, 4);
   assert.equal(await supervision, true);
 });
+
+test('supervisor commits the next non-overlapping check state before CHECKED is visible',
+  async () => {
+    const harness = supervisorHarness();
+    let chained = false;
+    harness.state.ipc.onSend = message => {
+      if (chained || message.type !== GATE_B_QUICK_TUNNEL_IPC_TYPES.CHECKED ||
+          message.requestId !== 2) return;
+      chained = true;
+      harness.state.ipc.emit('message', createGateBQuickTunnelIpcMessage(
+        GATE_B_QUICK_TUNNEL_IPC_TYPES.CHECK,
+        3,
+      ));
+    };
+    const { promise: supervision } = await startSupervisor(harness);
+    harness.state.ipc.emit('message', createGateBQuickTunnelIpcMessage(
+      GATE_B_QUICK_TUNNEL_IPC_TYPES.CHECK,
+      2,
+    ));
+    await eventually(() => harness.state.ipc.sent.some(message =>
+      message.type === GATE_B_QUICK_TUNNEL_IPC_TYPES.CHECKED &&
+      message.requestId === 3));
+    assert.equal(chained, true);
+    await stopSupervisor(harness, 4);
+    assert.equal(await supervision, true);
+  });
+
+test('fresh CHECK fails closed when the retained hostname source bytes drift', async () => {
+  const harness = supervisorHarness();
+  const { promise: supervision } = await startSupervisor(harness);
+  harness.state.sourceBytes[0] ^= 1;
+  harness.state.ipc.emit('message', createGateBQuickTunnelIpcMessage(
+    GATE_B_QUICK_TUNNEL_IPC_TYPES.CHECK,
+    2,
+  ));
+  await assert.rejects(supervision);
+  assert.equal(harness.state.ipc.sent.some(message =>
+    message.type === GATE_B_QUICK_TUNNEL_IPC_TYPES.CHECKED), false);
+  assert.equal(harness.state.sourceReads, 2);
+});
+
+test('fresh CHECK rejects unchanged hostname bytes after post-activation generation drift',
+  async t => {
+    for (const mutation of ['exact-byte rewrite', 'mode restoration']) {
+      await t.test(mutation, async () => {
+        const harness = supervisorHarness();
+        const { promise: supervision } = await startSupervisor(harness);
+        if (mutation === 'exact-byte rewrite') {
+          harness.state.sourceBytes = Buffer.from(harness.state.sourceBytes);
+          harness.state.sourceGeneration = {
+            ...harness.state.sourceGeneration,
+            ctimeNs: harness.state.sourceGeneration.ctimeNs + 1n,
+            mtimeNs: harness.state.sourceGeneration.mtimeNs + 1n,
+          };
+        } else {
+          harness.state.sourceGeneration = {
+            ...harness.state.sourceGeneration,
+            mode: 0o100644n,
+          };
+          harness.state.sourceGeneration = {
+            ...harness.state.sourceGeneration,
+            ctimeNs: harness.state.sourceGeneration.ctimeNs + 2n,
+            mode: 0o100600n,
+          };
+        }
+        harness.state.ipc.emit('message', createGateBQuickTunnelIpcMessage(
+          GATE_B_QUICK_TUNNEL_IPC_TYPES.CHECK,
+          2,
+        ));
+        await assert.rejects(supervision);
+        assert.equal(harness.state.ipc.sent.some(message =>
+          message.type === GATE_B_QUICK_TUNNEL_IPC_TYPES.CHECKED), false);
+      });
+    }
+  });
 
 test('a fresh CHECK tolerates one exact listener absence before pinned recovery', async () => {
   const harness = supervisorHarness();
@@ -3438,6 +3681,7 @@ test('reservation and source-write failures preserve one-shot behavior without r
             async reserveOutputs() { reserveCalls += 1; throw new Error('synthetic'); },
             async write() { throw new Error('unreachable'); },
             async read() { throw new Error('unreachable'); },
+            async verify() { throw new Error('unreachable'); },
             async syncDirectories() { throw new Error('unreachable'); },
             async close() { return true; },
           });
