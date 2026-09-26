@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import childProcess from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { EventEmitter } from 'node:events';
 import {
@@ -17,6 +18,7 @@ import {
 } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { syncBuiltinESMExports } from 'node:module';
 import { PassThrough } from 'node:stream';
 import test from 'node:test';
 
@@ -40,6 +42,7 @@ import {
 } from '../src/gate-b-reset-epoch-v4-fresh-input-owner.js';
 import {
   launchGateBQuickTunnel,
+  launchGateBQuickTunnelInInheritedProcessGroup,
   stopGateBQuickTunnel,
 } from '../src/gate-b-quick-tunnel-launcher.js';
 import {
@@ -480,7 +483,10 @@ async function eventually(predicate, attempts = 100) {
 async function retainedQuickTunnelLease(t, context, onCheck, options = {}) {
   const child = new SyntheticQuickTunnelChild(onCheck);
   const manifest = GATE_B_QUICK_TUNNEL_ARTIFACT_MANIFEST;
-  const launch = launchGateBQuickTunnel({
+  const launchQuickTunnel = options.inheritedProcessGroup === true
+    ? launchGateBQuickTunnelInInheritedProcessGroup
+    : launchGateBQuickTunnel;
+  const launch = launchQuickTunnel({
     cloudflaredExecutable: '/private/tmp/cloudflared-fixture',
     operation: GATE_B_QUICK_TUNNEL_OPERATIONS.START,
     schemaVersion: 1,
@@ -939,6 +945,60 @@ test('completion capability is synchronously claimed once before reentry or call
     assert.equal(Object.isFrozen(result), true);
     expectSynchronousFailure(() =>
       validateGateBResetEpochV4CompletionCapability(capability, injected));
+  });
+
+test('completion rejects stop after its final CHECKED and retains the completed artifacts',
+  async t => {
+    const context = await fixture(t);
+    const retained = await retainedQuickTunnelLease(t, context);
+    let checked = 0;
+    let closure;
+    const stopAfterFinalCompletionCheck = message => {
+      if (!message || message.type !== GATE_B_QUICK_TUNNEL_IPC_TYPES.CHECKED) return;
+      checked += 1;
+      if (checked === 13) closure = stopGateBQuickTunnel(retained.lease);
+    };
+    retained.child.on('message', stopAfterFinalCompletionCheck);
+    t.after(() => retained.child.removeListener(
+      'message',
+      stopAfterFinalCompletionCheck,
+    ));
+
+    await expectFailure(completeGateBResetEpochV4FreshInputsFromQuickTunnelLease(
+      ...handoffArguments(context, retained.lease, {
+        injected: workspaceInjections(context.root, counters()),
+      }),
+    ));
+    assert.equal(checked, 13);
+    assert.ok(closure);
+    assert.equal(await closure, true);
+    assert.deepEqual(
+      (await readdir(context.root)).sort(),
+      [...COMPLETE_ALL_LEAVES].sort(),
+    );
+    await assertCompletionManifestMatchesWorkspace(context);
+    await assertLegacyRejectedBeforeEffects(context);
+  });
+
+test('validation rejects stop after final CHECKED and before its await continuation',
+  async t => {
+    const context = await fixture(t);
+    const retained = await completedHandoff(t, context);
+    const injected = workspaceInjections(context.root, counters());
+    let checked = 0;
+    let closure;
+    const stopAfterChecked = message => {
+      if (!message || message.type !== GATE_B_QUICK_TUNNEL_IPC_TYPES.CHECKED) return;
+      checked += 1;
+      if (checked === 2) closure = stopGateBQuickTunnel(retained.lease);
+    };
+    retained.child.on('message', stopAfterChecked);
+    t.after(() => retained.child.removeListener('message', stopAfterChecked));
+
+    await expectValidationFailure(retained.capability, injected);
+    assert.equal(checked, 2);
+    assert.ok(closure);
+    assert.equal(await closure, true);
   });
 
 test('captured capability intrinsics reject a covert key minted after module import',
@@ -1450,6 +1510,176 @@ test('last lease snapshot rejects invalidation from the final record read or clo
     }
   });
 
+test('hidden validation provenance retains actual injected and inherited launch modes',
+  { concurrency: false }, async t => {
+    const weakMapSetDescriptor = Object.getOwnPropertyDescriptor(WeakMap.prototype, 'set');
+    const nativeWeakMapSet = weakMapSetDescriptor.value;
+    const observedCompletionStates = [];
+    const observedValidationStates = [];
+    let isolatedOwner;
+    try {
+      Object.defineProperty(WeakMap.prototype, 'set', {
+        ...weakMapSetDescriptor,
+        value(key, value) {
+          if (value && typeof value === 'object' && Object.hasOwn(value, 'handoff') &&
+              Object.hasOwn(value, 'manifestGeneration') &&
+              Object.hasOwn(value, 'markerGeneration')) {
+            observedCompletionStates.push({ key, value });
+          }
+          if (value && typeof value === 'object' &&
+              Object.hasOwn(value, 'completionState') &&
+              Object.hasOwn(value, 'futureLiveConsumerEligible')) {
+            observedValidationStates.push({ key, value });
+          }
+          return Reflect.apply(nativeWeakMapSet, this, [key, value]);
+        },
+      });
+      isolatedOwner = await import(
+        '../src/gate-b-reset-epoch-v4-fresh-input-owner.js?hidden-launch-modes=1'
+      );
+    } finally {
+      Object.defineProperty(WeakMap.prototype, 'set', weakMapSetDescriptor);
+    }
+
+    const detachedContext = await fixture(t);
+    const detached = await retainedQuickTunnelLease(t, detachedContext);
+    const spawnSyncDescriptor = Object.getOwnPropertyDescriptor(childProcess, 'spawnSync');
+    const platformDescriptor = Object.getOwnPropertyDescriptor(process, 'platform');
+    const originalCwd = process.cwd();
+    let detachedCapability;
+    let detachedValidation;
+    try {
+      Object.defineProperty(childProcess, 'spawnSync', {
+        ...spawnSyncDescriptor,
+        value(command, args) {
+          assert.equal(typeof command, 'string');
+          const directory = args[1] === '.';
+          return {
+            error: undefined,
+            signal: null,
+            status: 0,
+            stderr: Buffer.alloc(0),
+            stdout: Buffer.from(`${directory ? 'drwx------' : '-rw-------'} fixture\n`),
+          };
+        },
+      });
+      syncBuiltinESMExports();
+      Object.defineProperty(process, 'platform', {
+        ...platformDescriptor,
+        value: 'darwin',
+      });
+      process.chdir(detachedContext.root);
+      const completionArguments = handoffArguments(detachedContext, detached.lease);
+      completionArguments.pop();
+      detachedCapability = await isolatedOwner
+        .completeGateBResetEpochV4FreshInputsFromQuickTunnelLease(
+          ...completionArguments,
+        );
+      detachedValidation = await isolatedOwner
+        .validateGateBResetEpochV4CompletionCapability(detachedCapability);
+    } finally {
+      process.chdir(originalCwd);
+      Object.defineProperty(process, 'platform', platformDescriptor);
+      Object.defineProperty(childProcess, 'spawnSync', spawnSyncDescriptor);
+      syncBuiltinESMExports();
+    }
+
+    const detachedCompletionState = observedCompletionStates
+      .find(entry => entry.key === detachedCapability)?.value;
+    const detachedValidationState = observedValidationStates
+      .find(entry => entry.key === detachedValidation)?.value;
+    assert.ok(detachedCompletionState);
+    assert.ok(detachedValidationState);
+    assert.equal(detachedCompletionState.injectedDependenciesUsed, false);
+    assert.equal(Object.getPrototypeOf(
+      detachedCompletionState.quickTunnelLaunchProvenance,
+    ), null);
+    assert.deepEqual(
+      Reflect.ownKeys(detachedCompletionState.quickTunnelLaunchProvenance),
+      ['dependencySelection', 'processGroupSelection'],
+    );
+    assert.equal(
+      Object.isFrozen(detachedCompletionState.quickTunnelLaunchProvenance),
+      true,
+    );
+    assert.equal(
+      'lease' in detachedCompletionState.quickTunnelLaunchProvenance,
+      false,
+    );
+    assert.equal(
+      'handoff' in detachedCompletionState.quickTunnelLaunchProvenance,
+      false,
+    );
+    assert.equal(
+      detachedCompletionState.quickTunnelDependencySelection.mode,
+      'injected-test-only-dependencies',
+    );
+    assert.equal(
+      detachedCompletionState.quickTunnelProcessGroupSelection.mode,
+      'authoritative-detached-process-group',
+    );
+    assert.equal(
+      detachedCompletionState.quickTunnelProcessGroupSelection.authoritativeGroup,
+      true,
+    );
+    assert.equal(
+      detachedValidationState.quickTunnelDependencySelection,
+      detachedCompletionState.quickTunnelDependencySelection,
+    );
+    assert.equal(
+      detachedValidationState.quickTunnelProcessGroupSelection,
+      detachedCompletionState.quickTunnelProcessGroupSelection,
+    );
+    assert.equal(
+      detachedValidationState.quickTunnelLaunchProvenance,
+      detachedCompletionState.quickTunnelLaunchProvenance,
+    );
+    assert.equal(detachedValidationState.testOnly, true);
+    assert.equal(detachedValidationState.futureLiveConsumerEligible, false);
+
+    const inheritedContext = await fixture(t);
+    const inherited = await retainedQuickTunnelLease(
+      t,
+      inheritedContext,
+      undefined,
+      { inheritedProcessGroup: true },
+    );
+    const inheritedCapability = await isolatedOwner
+      .completeGateBResetEpochV4FreshInputsFromQuickTunnelLease(
+        ...handoffArguments(inheritedContext, inherited.lease, {
+          injected: workspaceInjections(inheritedContext.root, counters()),
+        }),
+      );
+    const inheritedValidation = await isolatedOwner
+      .validateGateBResetEpochV4CompletionCapability(
+        inheritedCapability,
+        workspaceInjections(inheritedContext.root, counters()),
+      );
+    const inheritedCompletionState = observedCompletionStates
+      .find(entry => entry.key === inheritedCapability)?.value;
+    const inheritedValidationState = observedValidationStates
+      .find(entry => entry.key === inheritedValidation)?.value;
+    assert.ok(inheritedCompletionState);
+    assert.ok(inheritedValidationState);
+    assert.equal(
+      'lease' in inheritedCompletionState.quickTunnelLaunchProvenance,
+      false,
+    );
+    assert.equal(
+      inheritedCompletionState.quickTunnelProcessGroupSelection.mode,
+      'inherited-process-group-outer-ownership-unproven',
+    );
+    assert.equal(
+      inheritedCompletionState.quickTunnelProcessGroupSelection.authoritativeGroup,
+      false,
+    );
+    assert.equal(
+      inheritedValidationState.quickTunnelProcessGroupSelection,
+      inheritedCompletionState.quickTunnelProcessGroupSelection,
+    );
+    assert.equal(inheritedValidationState.futureLiveConsumerEligible, false);
+  });
+
 test('validation-token source boundary is universally future-live-ineligible', async () => {
   const ownerSource = await readFile(
     new URL('../src/gate-b-reset-epoch-v4-fresh-input-owner.js', import.meta.url),
@@ -1461,9 +1691,43 @@ test('validation-token source boundary is universally future-live-ineligible', a
   assert.notEqual(end, -1);
   const capabilitySource = ownerSource.slice(start, end);
 
-  // No validation-token consumer is exported, so a runtime assertion would require
-  // exposing the private state this boundary protects. The universal literal also
-  // covers an injected launcher followed by non-injected completion and validation.
+  const completionStart = ownerSource.indexOf('function createCompletionCapability(');
+  const completionEnd = ownerSource.indexOf(
+    '\nfunction exactJsonObjectValues(',
+    completionStart,
+  );
+  assert.notEqual(completionStart, -1);
+  assert.notEqual(completionEnd, -1);
+  const completionSource = ownerSource.slice(completionStart, completionEnd);
+
+  assert.match(
+    completionSource,
+    /quickTunnelDependencySelection:\s*\n\s*quickTunnelLaunchProvenance\.dependencySelection,/u,
+  );
+  assert.match(
+    completionSource,
+    /quickTunnelLaunchProvenance,/u,
+  );
+  assert.match(
+    completionSource,
+    /quickTunnelProcessGroupSelection:\s*\n\s*quickTunnelLaunchProvenance\.processGroupSelection,/u,
+  );
+  assert.match(
+    capabilitySource,
+    /quickTunnelLaunchProvenance:\s*completionState\.quickTunnelLaunchProvenance,/u,
+  );
+  assert.doesNotMatch(
+    ownerSource,
+    /quickTunnelLaunchProvenance\.(?:handoff|lease)/u,
+  );
+  assert.match(
+    ownerSource,
+    /await workspace\.close\(\);\s*workspace = undefined;\s*currentQuickTunnelLaunchProvenance\(\s*handoff,\s*quickTunnelLaunchProvenance,\s*\);\s*return createCompletionCapability\(/u,
+  );
+  assert.match(
+    ownerSource,
+    /if \(await completionState\.handoff\.assertCurrent\(\) !== true\) fail\(\);\s*currentQuickTunnelLaunchProvenance\([\s\S]*?return createValidationCapability\(completionState, injectedDependenciesUsed\);/u,
+  );
   assert.equal(
     (capabilitySource.match(/futureLiveConsumerEligible:/gu) ?? []).length,
     1,
@@ -1504,9 +1768,19 @@ test('v4 handoff and validator have no marker deletion or live-run authority', a
   assert.match(security,
     /cleanup work completes before the last same-lease readiness assertion/u);
   assert.match(security,
-    /hidden entry preserves the original completion state, including the original handoff and lease binding/u);
+    /call rejects without a capability even when the manifest has already been written/u);
   assert.match(security,
-    /upstream quick-tunnel lease dependency provenance is not attested/u);
+    /all eight leaves remain permanent non-authorizing residue/u);
+  assert.match(security,
+    /hidden entry preserves the original completion state, including the exact handoff and the exact attenuated dependency-selection\/process-group identity, but no lease/u);
+  assert.match(security,
+    /exposes neither the lease nor stop\/wait or equivalent authority/u);
+  assert.match(security,
+    /dependency-selection provenance under operator trust/u);
+  assert.match(security,
+    /captured-default-dependencies/u);
+  assert.match(security,
+    /inherited process-group mode[^.]*does not prove outer process-group ownership/u);
   assert.match(security,
     /Every validation token issued by this source-only, unmounted, non-authorizing slice is expressly future-live-ineligible/u);
   assert.match(security,
@@ -1518,7 +1792,7 @@ test('v4 handoff and validator have no marker deletion or live-run authority', a
   assert.match(security,
     /Validation performs no explicit workspace mutation and does not relax the legacy exact-six boundary/u);
   assert.match(security,
-    /Success records only the last-checked local filesystem and retained-tunnel readiness snapshot/u);
+    /Success records only the synchronously revalidated post-`CHECKED` local filesystem and retained-tunnel snapshot/u);
   assert.match(security,
     /not a time-continuous freshness guarantee, an authenticated chain observation/u);
 });

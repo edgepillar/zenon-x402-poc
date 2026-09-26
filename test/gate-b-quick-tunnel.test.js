@@ -1,7 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import childProcess from 'node:child_process';
 import { EventEmitter } from 'node:events';
 import { readFile } from 'node:fs/promises';
+import { syncBuiltinESMExports } from 'node:module';
 import { PassThrough } from 'node:stream';
 
 import {
@@ -23,6 +25,7 @@ import {
   claimGateBQuickTunnelHostnameSourceHandoff,
   launchGateBQuickTunnel,
   launchGateBQuickTunnelInInheritedProcessGroup,
+  readGateBQuickTunnelHostnameSourceHandoffProvenance,
   stopGateBQuickTunnel,
   waitGateBQuickTunnelClosed,
 } from '../src/gate-b-quick-tunnel-launcher.js';
@@ -225,6 +228,9 @@ const LAUNCH_ERROR = {
   message: 'gate_b_quick_tunnel_launch_failed',
   name: 'GateBQuickTunnelLaunchError',
 };
+const NATIVE_PROMISE = Promise;
+const NATIVE_PROMISE_RESOLVE = Promise.resolve;
+const NATIVE_PROMISE_THEN = Promise.prototype.then;
 
 class ControlledPrivateFd extends PassThrough {
   constructor() {
@@ -357,7 +363,54 @@ function launcherDeadlineTimers() {
 }
 
 function tick() {
-  return new Promise(resolve => setImmediate(resolve));
+  return new NATIVE_PROMISE(resolve => setImmediate(resolve));
+}
+
+function inheritedPromiseConstructorAttacks() {
+  return [
+    {
+      name: 'throwing inherited constructor',
+      install() {
+        const descriptor = Object.getOwnPropertyDescriptor(
+          NATIVE_PROMISE.prototype,
+          'constructor',
+        );
+        Object.defineProperty(NATIVE_PROMISE.prototype, 'constructor', {
+          configurable: true,
+          get() { throw new Error('synthetic constructor access'); },
+        });
+        return () => Object.defineProperty(
+          NATIVE_PROMISE.prototype,
+          'constructor',
+          descriptor,
+        );
+      },
+    },
+    {
+      name: 'throwing inherited Symbol.species',
+      install() {
+        const descriptor = Object.getOwnPropertyDescriptor(
+          NATIVE_PROMISE.prototype,
+          'constructor',
+        );
+        function SyntheticPromiseConstructor() {}
+        Object.defineProperty(SyntheticPromiseConstructor, Symbol.species, {
+          configurable: true,
+          get() { throw new Error('synthetic species access'); },
+        });
+        Object.defineProperty(NATIVE_PROMISE.prototype, 'constructor', {
+          configurable: true,
+          value: SyntheticPromiseConstructor,
+          writable: true,
+        });
+        return () => Object.defineProperty(
+          NATIVE_PROMISE.prototype,
+          'constructor',
+          descriptor,
+        );
+      },
+    },
+  ];
 }
 
 async function eventually(predicate, attempts = 100) {
@@ -802,17 +855,660 @@ test('synthetic Date is not part of normalized semantic headers', () => {
   })));
 });
 
-test('launcher exports only the reviewed public lifecycle surface', () => {
+test('launcher exports only the reviewed lifecycle and protected-provenance surface', () => {
   assert.deepEqual(Object.keys(quickTunnelLauncher).sort(), [
     'GateBQuickTunnelLaunchError',
     'assertGateBQuickTunnelReady',
     'claimGateBQuickTunnelHostnameSourceHandoff',
     'launchGateBQuickTunnel',
     'launchGateBQuickTunnelInInheritedProcessGroup',
+    'readGateBQuickTunnelHostnameSourceHandoffProvenance',
     'stopGateBQuickTunnel',
     'waitGateBQuickTunnelClosed',
   ]);
 });
+
+test('launcher privately selects immutable launch provenance before caller work',
+  async () => {
+    const source = await readFile(
+      new URL('../src/gate-b-quick-tunnel-launcher.js', import.meta.url),
+      'utf8',
+    );
+    assert.match(source, /const HANDOFF_LAUNCH_PROVENANCE = new WeakMap\(\);/u);
+    assert.match(source, /mode: 'captured-default-dependencies'/u);
+    assert.match(source, /mode: 'injected-test-only-dependencies'/u);
+    assert.match(source, /mode: 'authoritative-detached-process-group'/u);
+    assert.match(
+      source,
+      /mode: 'inherited-process-group-outer-ownership-unproven'/u,
+    );
+    assert.match(
+      source,
+      /const dependencySelection = arguments\.length < 2\s*\? CAPTURED_DEFAULT_DEPENDENCY_SELECTION\s*:\s*INJECTED_TEST_ONLY_DEPENDENCY_SELECTION;/u,
+    );
+    assert.match(
+      source,
+      /OBJECT_FREEZE\(\{\s*attenuated,\s*dependencySelection,\s*handoff,\s*lease,\s*processGroupSelection,\s*\}\)/u,
+    );
+    assert.match(source, /const attenuated = OBJECT_CREATE\(null\);/u);
+    assert.match(source, /return provenance\.attenuated;/u);
+    assert.match(source, /if \(this !== handoff\) fail\(\);/u);
+    assert.match(
+      source,
+      /function readGateBQuickTunnelHostnameSourceHandoffProvenance\(handoff\)/u,
+    );
+    assert.doesNotMatch(
+      source,
+      /export (?:const|function) .*?DependencySelection/u,
+    );
+    assert.match(source, /const NATIVE_PROMISE = Promise;/u);
+    assert.match(source, /const NATIVE_PROMISE_CONSTRUCTOR_DESCRIPTOR/u);
+    assert.match(source, /function pinNativePromiseConstructor\(promise\)/u);
+    assert.match(source, /const value = await promise;/u);
+    assert.match(source, /function raceNativePromises\(promises\)/u);
+    assert.doesNotMatch(source, /\bPromise\.(?:resolve|reject|race)\b/u);
+    assert.doesNotMatch(source, /Promise\.prototype\.then/u);
+    assert.doesNotMatch(source, /\bnew Promise\b/u);
+    assert.doesNotMatch(source, /\.then\(|\.catch\(/u);
+  });
+
+test('post-import Promise replacement cannot authorize launch, readiness, or failed checks',
+  { concurrency: false }, async () => {
+    const promiseDescriptor = Object.getOwnPropertyDescriptor(globalThis, 'Promise');
+    let fakeConstructs = 0;
+    let fakeRejects = 0;
+    let fakeRaces = 0;
+    let launchSettledBeforeActive = false;
+    let readinessSettledBeforeChecked = false;
+    let forgedCheckSucceeded = false;
+    let retiredHandoffSucceeded = false;
+
+    function ReplacementPromise(executor) {
+      fakeConstructs += 1;
+      if (typeof executor === 'function') executor(() => {}, () => {});
+      return Reflect.apply(NATIVE_PROMISE_RESOLVE, NATIVE_PROMISE, [true]);
+    }
+    ReplacementPromise.reject = () => {
+      fakeRejects += 1;
+      return Reflect.apply(NATIVE_PROMISE_RESOLVE, NATIVE_PROMISE, [true]);
+    };
+    ReplacementPromise.race = () => {
+      fakeRaces += 1;
+      return Reflect.apply(NATIVE_PROMISE_RESOLVE, NATIVE_PROMISE, [true]);
+    };
+    const installReplacement = () => Object.defineProperty(globalThis, 'Promise', {
+      ...promiseDescriptor,
+      value: ReplacementPromise,
+    });
+    const restorePromise = () => Object.defineProperty(
+      globalThis,
+      'Promise',
+      promiseDescriptor,
+    );
+
+    const launchHarness = launcherHarness();
+    let launch;
+    try {
+      installReplacement();
+      launch = launchGateBQuickTunnel(bootstrap(), launchHarness.injected);
+    } finally {
+      restorePromise();
+    }
+    let launchSettled = false;
+    Reflect.apply(NATIVE_PROMISE_THEN, launch, [
+      () => { launchSettled = true; },
+      () => { launchSettled = true; },
+    ]);
+    await tick();
+    launchSettledBeforeActive = launchSettled;
+
+    if (launchHarness.child.privateFd.pending) launchHarness.child.privateFd.release();
+    launchHarness.child.emit('message', createGateBQuickTunnelIpcMessage(
+      GATE_B_QUICK_TUNNEL_IPC_TYPES.READY,
+      1,
+    ));
+    await eventually(() => launchHarness.child.sent.length === 1);
+    launchHarness.child.emit('message', createGateBQuickTunnelIpcMessage(
+      GATE_B_QUICK_TUNNEL_IPC_TYPES.ACTIVE,
+      1,
+    ));
+    const launchResult = await launch;
+    if (launchResult && typeof launchResult === 'object') {
+      const closure = stopGateBQuickTunnel(launchResult);
+      emitSuccessfulClosure(launchHarness.child, 2);
+      assert.equal(await closure, true);
+    } else if (launchHarness.child.listenerCount('error') > 0) {
+      launchHarness.child.emit('error', new Error('synthetic cleanup'));
+      await tick();
+    }
+
+    const readinessHarness = launcherHarness();
+    const { lease } = await activateLauncher(readinessHarness);
+    let readiness;
+    try {
+      installReplacement();
+      readiness = assertGateBQuickTunnelReady(lease);
+    } finally {
+      restorePromise();
+    }
+    let readinessSettled = false;
+    Reflect.apply(NATIVE_PROMISE_THEN, readiness, [
+      () => { readinessSettled = true; },
+      () => { readinessSettled = true; },
+    ]);
+    await tick();
+    readinessSettledBeforeChecked = readinessSettled;
+    readinessHarness.child.emit('message', createGateBQuickTunnelIpcMessage(
+      GATE_B_QUICK_TUNNEL_IPC_TYPES.CHECKED,
+      2,
+    ));
+    assert.equal(await readiness, true);
+
+    const handoff = claimGateBQuickTunnelHostnameSourceHandoff(
+      lease,
+      WORKSPACE_ROOT,
+    );
+    const closure = stopGateBQuickTunnel(lease);
+    let retiredCheck;
+    let forgedCheck;
+    try {
+      installReplacement();
+      retiredCheck = handoff.assertCurrent();
+      forgedCheck = assertGateBQuickTunnelReady(Object.freeze(Object.create(null)));
+    } finally {
+      restorePromise();
+    }
+    try {
+      await retiredCheck;
+      retiredHandoffSucceeded = true;
+    } catch {}
+    try {
+      await forgedCheck;
+      forgedCheckSucceeded = true;
+    } catch {}
+    emitSuccessfulClosure(readinessHarness.child, 3);
+    assert.equal(await closure, true);
+
+    const directSignals = [];
+    const retainedWithoutGroupIdentity = {
+      channel: { close() {}, unref() {} },
+      connected: false,
+      kill(signal) {
+        directSignals.push(signal);
+        return true;
+      },
+      unref() {},
+    };
+    const cleanupHarness = launcherHarness({
+      forkProcess: () => retainedWithoutGroupIdentity,
+      reapAbandonMs: 150,
+      reapForceMs: 100,
+    });
+    let cleanup;
+    try {
+      installReplacement();
+      cleanup = launchGateBQuickTunnel(bootstrap(), cleanupHarness.injected);
+    } finally {
+      restorePromise();
+    }
+    await Reflect.apply(NATIVE_PROMISE_RESOLVE, NATIVE_PROMISE, [undefined]);
+    const cleanupForcedBeforeDeadline = directSignals.includes('SIGKILL');
+    await assert.rejects(cleanup, LAUNCH_ERROR);
+    assert.deepEqual(directSignals, ['SIGTERM', 'SIGKILL']);
+
+    assert.equal(launchSettledBeforeActive, false);
+    assert.equal(readinessSettledBeforeChecked, false);
+    assert.equal(forgedCheckSucceeded, false);
+    assert.equal(retiredHandoffSucceeded, false);
+    assert.equal(cleanupForcedBeforeDeadline, false);
+    assert.equal(fakeConstructs, 0);
+    assert.equal(fakeRejects, 0);
+    assert.equal(fakeRaces, 0);
+  });
+
+test('post-import Promise.resolve mutation cannot advance unvalidated-child cleanup races',
+  { concurrency: false }, async () => {
+    const resolveDescriptor = Object.getOwnPropertyDescriptor(
+      NATIVE_PROMISE,
+      'resolve',
+    );
+    const directSignals = [];
+    let channelCloseCalls = 0;
+    let channelUnrefCalls = 0;
+    let unrefCalls = 0;
+    const retainedWithoutGroupIdentity = {
+      channel: {
+        close() { channelCloseCalls += 1; },
+        unref() { channelUnrefCalls += 1; },
+      },
+      connected: false,
+      kill(signal) {
+        directSignals.push(signal);
+        return true;
+      },
+      unref() { unrefCalls += 1; },
+    };
+    const harness = launcherHarness({
+      forkProcess: () => retainedWithoutGroupIdentity,
+      reapAbandonMs: 150,
+      reapForceMs: 100,
+    });
+    let cleanup;
+    try {
+      Object.defineProperty(NATIVE_PROMISE, 'resolve', {
+        ...resolveDescriptor,
+        value() {
+          return Reflect.apply(NATIVE_PROMISE_RESOLVE, NATIVE_PROMISE, [true]);
+        },
+      });
+      cleanup = launchGateBQuickTunnel(bootstrap(), harness.injected);
+    } finally {
+      Object.defineProperty(NATIVE_PROMISE, 'resolve', resolveDescriptor);
+    }
+
+    await tick();
+    assert.deepEqual(directSignals, ['SIGTERM']);
+    await assert.rejects(cleanup, LAUNCH_ERROR);
+    assert.deepEqual(directSignals, ['SIGTERM', 'SIGKILL']);
+    assert.equal(channelCloseCalls, 1);
+    assert.equal(channelUnrefCalls, 1);
+    assert.equal(unrefCalls, 1);
+  });
+
+test('post-import Promise constructor and species attacks cannot detach cleanup observation',
+  { concurrency: false }, async t => {
+    const attacks = [
+      {
+        name: 'prototype constructor',
+        install() {
+          const descriptor = Object.getOwnPropertyDescriptor(
+            NATIVE_PROMISE.prototype,
+            'constructor',
+          );
+          Object.defineProperty(NATIVE_PROMISE.prototype, 'constructor', {
+            configurable: true,
+            get() { throw new Error('synthetic constructor access'); },
+          });
+          return () => Object.defineProperty(
+            NATIVE_PROMISE.prototype,
+            'constructor',
+            descriptor,
+          );
+        },
+      },
+      {
+        name: 'constructor species',
+        install() {
+          const descriptor = Object.getOwnPropertyDescriptor(
+            NATIVE_PROMISE,
+            Symbol.species,
+          );
+          Object.defineProperty(NATIVE_PROMISE, Symbol.species, {
+            configurable: true,
+            get() { throw new Error('synthetic species access'); },
+          });
+          return () => Object.defineProperty(
+            NATIVE_PROMISE,
+            Symbol.species,
+            descriptor,
+          );
+        },
+      },
+    ];
+
+    for (const attack of attacks) {
+      await t.test(attack.name, async () => {
+        const harness = launcherHarness({ reapForceMs: 5, reapAbandonMs: 30 });
+        const { lease } = await activateLauncher(harness);
+        let restore = attack.install();
+        let readiness;
+        let readinessThrown;
+        try {
+          readiness = assertGateBQuickTunnelReady(lease);
+        } catch (candidate) {
+          readinessThrown = candidate;
+        } finally {
+          restore();
+        }
+        assert.equal(readinessThrown, undefined);
+        assert.deepEqual(harness.child.sent.at(-1), createGateBQuickTunnelIpcMessage(
+          GATE_B_QUICK_TUNNEL_IPC_TYPES.CHECK,
+          2,
+        ));
+        harness.child.emit('message', createGateBQuickTunnelIpcMessage(
+          GATE_B_QUICK_TUNNEL_IPC_TYPES.CHECKED,
+          2,
+        ));
+        assert.equal(await readiness, true);
+
+        const closure = waitGateBQuickTunnelClosed(lease);
+        restore = attack.install();
+        let thrown;
+        try {
+          harness.child.emit('message', {});
+        } catch (candidate) {
+          thrown = candidate;
+        } finally {
+          restore();
+        }
+        assert.equal(thrown, undefined);
+        await assert.rejects(closure, LAUNCH_ERROR);
+        await eventually(() => harness.groupKills.length === 2);
+        assert.deepEqual(harness.groupKills, [
+          [harness.child.pid, 'SIGTERM'],
+          [harness.child.pid, 'SIGKILL'],
+        ]);
+        assert.equal(harness.child.privateFd.destroyed, true);
+      });
+    }
+  });
+
+test('public launch awaits retain exact lease delivery across inherited constructor attacks',
+  { concurrency: false }, async t => {
+    const launchers = [
+      ['detached', launchGateBQuickTunnel],
+      ['inherited', launchGateBQuickTunnelInInheritedProcessGroup],
+    ];
+    for (const [groupMode, launch] of launchers) {
+      for (const attack of inheritedPromiseConstructorAttacks()) {
+        await t.test(`${groupMode}: ${attack.name}`, async () => {
+          const harness = launcherHarness();
+          let returnedLaunch;
+          let consumer;
+          const restore = attack.install();
+          try {
+            consumer = (async () => {
+              try {
+                returnedLaunch = launch(bootstrap(), harness.injected);
+                return { fulfilled: true, lease: await returnedLaunch };
+              } catch {
+                return { fulfilled: false };
+              }
+            })();
+          } finally {
+            restore();
+          }
+
+          await eventually(() => harness.forkCalls.length === 1);
+          harness.child.privateFd.release();
+          harness.child.emit('message', createGateBQuickTunnelIpcMessage(
+            GATE_B_QUICK_TUNNEL_IPC_TYPES.READY,
+            1,
+          ));
+          await eventually(() => harness.child.sent.length === 1);
+          harness.child.emit('message', createGateBQuickTunnelIpcMessage(
+            GATE_B_QUICK_TUNNEL_IPC_TYPES.ACTIVE,
+            1,
+          ));
+
+          const directLease = await returnedLaunch;
+          const outcome = await consumer;
+          const closure = stopGateBQuickTunnel(directLease);
+          emitSuccessfulClosure(harness.child, 2);
+          assert.equal(await closure, true);
+          assert.equal(outcome.fulfilled, true);
+          assert.equal(outcome.lease, directLease);
+        });
+      }
+    }
+  });
+
+test('malformed-child launch rejection follows complete reap under inherited constructor attacks',
+  { concurrency: false }, async t => {
+    for (const attack of inheritedPromiseConstructorAttacks()) {
+      await t.test(attack.name, async () => {
+        const directSignals = [];
+        let channelCloseCalls = 0;
+        let channelUnrefCalls = 0;
+        let unrefCalls = 0;
+        let resolveCleanupDone;
+        const cleanupDone = new NATIVE_PROMISE(resolve => {
+          resolveCleanupDone = resolve;
+        });
+        const malformedChild = {
+          channel: {
+            close() { channelCloseCalls += 1; },
+            unref() { channelUnrefCalls += 1; },
+          },
+          connected: false,
+          kill(signal) {
+            directSignals.push(signal);
+            return true;
+          },
+          unref() {
+            unrefCalls += 1;
+            resolveCleanupDone();
+          },
+        };
+        const harness = launcherHarness({
+          forkProcess: () => malformedChild,
+          reapAbandonMs: 15,
+          reapForceMs: 5,
+        });
+        let launch;
+        const restore = attack.install();
+        try {
+          launch = launchGateBQuickTunnel(bootstrap(), harness.injected);
+        } finally {
+          restore();
+        }
+
+        let rejectionObservation;
+        void Reflect.apply(NATIVE_PROMISE_THEN, launch, [
+          () => {
+            rejectionObservation = { fulfilled: true };
+          },
+          candidate => {
+            rejectionObservation = {
+              canonical:
+                candidate instanceof quickTunnelLauncher.GateBQuickTunnelLaunchError,
+              channelCloseCalls,
+              channelUnrefCalls,
+              fulfilled: false,
+              signals: [...directSignals],
+              unrefCalls,
+            };
+          },
+        ]);
+        try { await launch; } catch {}
+        await cleanupDone;
+
+        assert.deepEqual(rejectionObservation, {
+          canonical: true,
+          channelCloseCalls: 1,
+          channelUnrefCalls: 1,
+          fulfilled: false,
+          signals: ['SIGTERM', 'SIGKILL'],
+          unrefCalls: 1,
+        });
+      });
+    }
+  });
+
+test('captured defaults bind omitted versus explicit launch arguments without public metadata',
+  { concurrency: false }, async () => {
+    const forkDescriptor = Object.getOwnPropertyDescriptor(childProcess, 'fork');
+    const killDescriptor = Object.getOwnPropertyDescriptor(process, 'kill');
+    const weakMapSetDescriptor = Object.getOwnPropertyDescriptor(
+      WeakMap.prototype,
+      'set',
+    );
+    const nativeWeakMapSet = weakMapSetDescriptor.value;
+    const children = [];
+    const forkCalls = [];
+    const observedProvenance = [];
+    let postImportForkCalls = 0;
+    let postImportKillCalls = 0;
+
+    const syntheticFork = (...args) => {
+      const child = new SyntheticChild(45_000 + children.length);
+      children.push(child);
+      forkCalls.push(args);
+      return child;
+    };
+    const syntheticKill = (pid, signal) => {
+      const child = children.find(candidate => candidate.pid === Math.abs(pid));
+      if (!child || child.groupAlive !== true) {
+        const absent = new Error('synthetic absent process group');
+        absent.code = 'ESRCH';
+        throw absent;
+      }
+      if (signal === 'SIGTERM' || signal === 'SIGKILL') child.groupAlive = false;
+    };
+
+    let isolatedLauncher;
+    try {
+      Object.defineProperty(childProcess, 'fork', {
+        ...forkDescriptor,
+        value: syntheticFork,
+      });
+      Object.defineProperty(process, 'kill', {
+        ...killDescriptor,
+        value: syntheticKill,
+      });
+      Object.defineProperty(WeakMap.prototype, 'set', {
+        ...weakMapSetDescriptor,
+        value(key, value) {
+          if (value && typeof value === 'object' &&
+              value.dependencySelection && value.handoff === key &&
+              value.lease && value.processGroupSelection) {
+            observedProvenance.push(value);
+          }
+          return Reflect.apply(nativeWeakMapSet, this, [key, value]);
+        },
+      });
+      syncBuiltinESMExports();
+      isolatedLauncher = await import(
+        '../src/gate-b-quick-tunnel-launcher.js?launch-provenance-defaults=1'
+      );
+
+      Object.defineProperty(childProcess, 'fork', {
+        ...forkDescriptor,
+        value(...args) {
+          postImportForkCalls += 1;
+          return syntheticFork(...args);
+        },
+      });
+      Object.defineProperty(process, 'kill', {
+        ...killDescriptor,
+        value(...args) {
+          postImportKillCalls += 1;
+          return syntheticKill(...args);
+        },
+      });
+      Object.defineProperty(WeakMap.prototype, 'set', weakMapSetDescriptor);
+      syncBuiltinESMExports();
+
+      const activate = async invoke => {
+        const childIndex = children.length;
+        const launch = invoke();
+        await eventually(() => children.length === childIndex + 1);
+        const child = children[childIndex];
+        child.privateFd.release();
+        child.emit('message', createGateBQuickTunnelIpcMessage(
+          GATE_B_QUICK_TUNNEL_IPC_TYPES.READY,
+          1,
+        ));
+        await eventually(() => child.sent.length === 1);
+        child.emit('message', createGateBQuickTunnelIpcMessage(
+          GATE_B_QUICK_TUNNEL_IPC_TYPES.ACTIVE,
+          1,
+        ));
+        return { child, lease: await launch };
+      };
+      const finish = async ({ child, lease }) => {
+        const handoff = isolatedLauncher
+          .claimGateBQuickTunnelHostnameSourceHandoff(lease, WORKSPACE_ROOT);
+        assert.equal(Object.getPrototypeOf(handoff), null);
+        assert.deepEqual(Reflect.ownKeys(handoff), ['assertCurrent']);
+        const closure = isolatedLauncher.stopGateBQuickTunnel(lease);
+        emitSuccessfulClosure(child, 2);
+        assert.equal(await closure, true);
+      };
+
+      let expectedDependencySelectionModes;
+      let expectedProcessGroupSelectionModes;
+      if (process.platform === 'darwin') {
+        await finish(await activate(() =>
+          isolatedLauncher.launchGateBQuickTunnel(bootstrap())));
+        await finish(await activate(() =>
+          isolatedLauncher.launchGateBQuickTunnel(bootstrap(), undefined)));
+        await finish(await activate(() =>
+          isolatedLauncher.launchGateBQuickTunnel(bootstrap(), {})));
+        await finish(await activate(() =>
+          isolatedLauncher.launchGateBQuickTunnelInInheritedProcessGroup(
+            bootstrap(),
+          )));
+        expectedDependencySelectionModes = [
+          'captured-default-dependencies',
+          'injected-test-only-dependencies',
+          'injected-test-only-dependencies',
+          'captured-default-dependencies',
+        ];
+        expectedProcessGroupSelectionModes = [
+          'authoritative-detached-process-group',
+          'authoritative-detached-process-group',
+          'authoritative-detached-process-group',
+          'inherited-process-group-outer-ownership-unproven',
+        ];
+      } else {
+        await assert.rejects(
+          isolatedLauncher.launchGateBQuickTunnel(bootstrap()),
+          LAUNCH_ERROR,
+        );
+        assert.equal(forkCalls.length, 0);
+        assert.deepEqual(observedProvenance, []);
+        await assert.rejects(
+          isolatedLauncher.launchGateBQuickTunnelInInheritedProcessGroup(
+            bootstrap(),
+          ),
+          LAUNCH_ERROR,
+        );
+        assert.equal(forkCalls.length, 0);
+        assert.deepEqual(observedProvenance, []);
+
+        await finish(await activate(() =>
+          isolatedLauncher.launchGateBQuickTunnel(bootstrap(), {
+            platform: 'darwin',
+          })));
+        await finish(await activate(() =>
+          isolatedLauncher.launchGateBQuickTunnelInInheritedProcessGroup(
+            bootstrap(),
+            { platform: 'darwin' },
+          )));
+        expectedDependencySelectionModes = [
+          'injected-test-only-dependencies',
+          'injected-test-only-dependencies',
+        ];
+        expectedProcessGroupSelectionModes = [
+          'authoritative-detached-process-group',
+          'inherited-process-group-outer-ownership-unproven',
+        ];
+      }
+
+      assert.equal(postImportForkCalls, 0);
+      assert.equal(postImportKillCalls, 0);
+      assert.equal(forkCalls.length, process.platform === 'darwin' ? 4 : 2);
+      assert.deepEqual(
+        observedProvenance.map(value => value.dependencySelection.mode),
+        expectedDependencySelectionModes,
+      );
+      assert.deepEqual(
+        observedProvenance.map(value => value.processGroupSelection.mode),
+        expectedProcessGroupSelectionModes,
+      );
+      for (const provenance of observedProvenance) {
+        assert.equal(Object.isFrozen(provenance), true);
+        assert.equal(Object.isFrozen(provenance.dependencySelection), true);
+        assert.equal(Object.isFrozen(provenance.processGroupSelection), true);
+      }
+    } finally {
+      Object.defineProperty(childProcess, 'fork', forkDescriptor);
+      Object.defineProperty(process, 'kill', killDescriptor);
+      Object.defineProperty(WeakMap.prototype, 'set', weakMapSetDescriptor);
+      syncBuiltinESMExports();
+    }
+  });
 
 test('coordinator-only inherited launcher is non-detached and never signals or probes a group',
   async t => {
@@ -931,6 +1627,59 @@ test('launcher exposes one opaque one-use hostname handoff bound to lease worksp
       assert.equal(Object.getPrototypeOf(handoff), null);
       assert.deepEqual(Reflect.ownKeys(handoff), ['assertCurrent']);
       assert.equal(Object.isFrozen(handoff), true);
+      const copied = Object.freeze(Object.assign(Object.create(null), handoff));
+      await assert.rejects(copied.assertCurrent(), LAUNCH_ERROR);
+      const provenance = readGateBQuickTunnelHostnameSourceHandoffProvenance(handoff);
+      assert.equal(Object.getPrototypeOf(provenance), null);
+      assert.deepEqual(Reflect.ownKeys(provenance), [
+        'dependencySelection',
+        'processGroupSelection',
+      ]);
+      assert.equal(Object.isFrozen(provenance), true);
+      assert.equal('handoff' in provenance, false);
+      assert.equal('lease' in provenance, false);
+      assert.deepEqual(
+        Reflect.ownKeys(provenance.dependencySelection),
+        ['mode'],
+      );
+      assert.deepEqual(
+        Reflect.ownKeys(provenance.processGroupSelection),
+        ['authoritativeGroup', 'mode'],
+      );
+      assert.equal(Object.isFrozen(provenance.dependencySelection), true);
+      assert.equal(Object.isFrozen(provenance.processGroupSelection), true);
+      assert.equal(
+        Reflect.ownKeys(provenance).some(key =>
+          typeof provenance[key] === 'function'),
+        false,
+      );
+      assert.equal(provenance.dependencySelection.mode, 'injected-test-only-dependencies');
+      assert.equal(
+        provenance.processGroupSelection.mode,
+        'authoritative-detached-process-group',
+      );
+      const delegatedHolder = Object.freeze({ handoff });
+      const delegatedProvenance =
+        readGateBQuickTunnelHostnameSourceHandoffProvenance(
+          delegatedHolder.handoff,
+        );
+      assert.equal(delegatedProvenance, provenance);
+      await assert.rejects(
+        assertGateBQuickTunnelReady(delegatedProvenance.lease),
+        LAUNCH_ERROR,
+      );
+      await assert.rejects(
+        waitGateBQuickTunnelClosed(delegatedProvenance.lease),
+        LAUNCH_ERROR,
+      );
+      await assert.rejects(
+        stopGateBQuickTunnel(delegatedProvenance.lease),
+        LAUNCH_ERROR,
+      );
+      assert.throws(
+        () => readGateBQuickTunnelHostnameSourceHandoffProvenance(copied),
+        LAUNCH_ERROR,
+      );
       assert.throws(
         () => claimGateBQuickTunnelHostnameSourceHandoff(lease, WORKSPACE_ROOT),
         LAUNCH_ERROR,
@@ -950,6 +1699,44 @@ test('launcher exposes one opaque one-use hostname handoff bound to lease worksp
       const closure = stopGateBQuickTunnel(lease);
       emitSuccessfulClosure(harness.child, 3);
       assert.equal(await closure, true);
+      await assert.rejects(handoff.assertCurrent(), LAUNCH_ERROR);
+      assert.throws(
+        () => readGateBQuickTunnelHostnameSourceHandoffProvenance(handoff),
+        LAUNCH_ERROR,
+      );
+    });
+
+    await t.test('module restart cannot adopt the lease or its handoff provenance',
+      async () => {
+        const harness = launcherHarness();
+        const { lease } = await activateLauncher(harness);
+        const restarted = await import(
+          '../src/gate-b-quick-tunnel-launcher.js?handoff-provenance-restart=1'
+        );
+        assert.throws(
+          () => restarted.claimGateBQuickTunnelHostnameSourceHandoff(
+            lease,
+            WORKSPACE_ROOT,
+          ),
+          restarted.GateBQuickTunnelLaunchError,
+        );
+        const closure = stopGateBQuickTunnel(lease);
+        emitSuccessfulClosure(harness.child, 2);
+        assert.equal(await closure, true);
+      });
+
+    await t.test('lease failure retires the exact handoff provenance', async () => {
+      const harness = launcherHarness();
+      const { lease } = await activateLauncher(harness);
+      const handoff = claimGateBQuickTunnelHostnameSourceHandoff(
+        lease,
+        WORKSPACE_ROOT,
+      );
+      const closure = waitGateBQuickTunnelClosed(lease);
+      harness.child.emit('message', {});
+      await eventually(() => harness.groupKills.length === 1);
+      await closeFailedChild(harness.child);
+      await assert.rejects(closure, LAUNCH_ERROR);
       await assert.rejects(handoff.assertCurrent(), LAUNCH_ERROR);
     });
 
@@ -1598,6 +2385,40 @@ test('launcher rejects non-Darwin before any fork or process cleanup effect', as
   assert.deepEqual(harness.groupKills, []);
   assert.deepEqual(harness.child.killSignals, []);
 });
+
+test('omitted dependencies reject captured non-Darwin before framing or fork',
+  { concurrency: false }, async () => {
+    const platformDescriptor = Object.getOwnPropertyDescriptor(process, 'platform');
+    const forkDescriptor = Object.getOwnPropertyDescriptor(childProcess, 'fork');
+    let forkCalls = 0;
+    let isolatedLauncher;
+    try {
+      Object.defineProperty(childProcess, 'fork', {
+        ...forkDescriptor,
+        value() {
+          forkCalls += 1;
+          throw new Error('synthetic forbidden fork');
+        },
+      });
+      syncBuiltinESMExports();
+      Object.defineProperty(process, 'platform', {
+        ...platformDescriptor,
+        value: 'linux',
+      });
+      isolatedLauncher = await import(
+        '../src/gate-b-quick-tunnel-launcher.js?omitted-non-darwin=1'
+      );
+      await assert.rejects(
+        isolatedLauncher.launchGateBQuickTunnel(bootstrap()),
+        LAUNCH_ERROR,
+      );
+    } finally {
+      Object.defineProperty(process, 'platform', platformDescriptor);
+      Object.defineProperty(childProcess, 'fork', forkDescriptor);
+      syncBuiltinESMExports();
+    }
+    assert.equal(forkCalls, 0);
+  });
 
 test('launcher rejects proxy, accessor, symbol, extra, and inherited injections', async () => {
   const accessor = {};

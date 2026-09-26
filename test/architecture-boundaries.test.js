@@ -210,6 +210,109 @@ test('retained-transition inspector stays source-only and test-imported', () => 
   assert.deepEqual(users, [focusedTest]);
 });
 
+test('v4 quick-tunnel launch provenance stays private and source-only', () => {
+  const launcher = readFileSync(
+    new URL('../src/gate-b-quick-tunnel-launcher.js', import.meta.url),
+    'utf8',
+  );
+  const owner = readFileSync(
+    new URL('../src/gate-b-reset-epoch-v4-fresh-input-owner.js', import.meta.url),
+    'utf8',
+  );
+  const documentation = [
+    readFileSync(new URL('../README.md', import.meta.url), 'utf8'),
+    readFileSync(new URL('../SECURITY.md', import.meta.url), 'utf8'),
+    readFileSync(new URL('../docs/IMPLEMENTATION_PLAN.md', import.meta.url), 'utf8'),
+  ];
+  const packageText = readFileSync(new URL('../package.json', import.meta.url), 'utf8');
+  assert.match(launcher, /const HANDOFF_LAUNCH_PROVENANCE = new WeakMap\(\);/u);
+  assert.match(launcher, /captured-default-dependencies/u);
+  assert.match(launcher, /injected-test-only-dependencies/u);
+  assert.match(
+    launcher,
+    /export function readGateBQuickTunnelHostnameSourceHandoffProvenance\(handoff\)/u,
+  );
+  assert.match(launcher, /const attenuated = OBJECT_CREATE\(null\);/u);
+  assert.match(launcher, /return provenance\.attenuated;/u);
+  assert.match(launcher, /const NATIVE_PROMISE_CONSTRUCTOR_DESCRIPTOR/u);
+  assert.match(launcher, /const value = await promise;/u);
+  assert.deepEqual(
+    [...launcher.matchAll(/async function ([A-Za-z0-9]+)\(/gu)]
+      .map(match => match[1])
+      .sort(),
+    [
+      'launchGateBQuickTunnelInternalSettlement',
+      'observeNativePromiseSettlement',
+      'reapUnvalidatedChildSettlement',
+    ],
+  );
+  assert.match(
+    launcher,
+    /function observeNativePromise\(promise, fulfilled, rejected\) \{\s*return pinNativePromiseConstructor\(\s*observeNativePromiseSettlement\(promise, fulfilled, rejected\),\s*\);\s*\}/u,
+  );
+  assert.match(
+    launcher,
+    /function reapUnvalidatedChild\(snapshot, dependencies, authoritativeGroup\) \{\s*return pinNativePromiseConstructor\(reapUnvalidatedChildSettlement\(/u,
+  );
+  assert.match(
+    launcher,
+    /function launchGateBQuickTunnelInternal\([\s\S]*?return pinNativePromiseConstructor\(launchGateBQuickTunnelInternalSettlement\(/u,
+  );
+  assert.doesNotMatch(launcher, /\bPromise\.(?:resolve|reject|race)\b/u);
+  assert.doesNotMatch(launcher, /Promise\.prototype\.then/u);
+  assert.match(owner, /quickTunnelLaunchProvenance,/u);
+  assert.match(
+    owner,
+    /quickTunnelDependencySelection:\s*\n\s*quickTunnelLaunchProvenance\.dependencySelection,/u,
+  );
+  assert.match(
+    owner,
+    /quickTunnelProcessGroupSelection:\s*\n\s*quickTunnelLaunchProvenance\.processGroupSelection,/u,
+  );
+  assert.match(
+    owner,
+    /quickTunnelLaunchProvenance:\s*completionState\.quickTunnelLaunchProvenance,/u,
+  );
+  assert.doesNotMatch(owner, /quickTunnelLaunchProvenance\.(?:handoff|lease)/u);
+  assert.match(
+    owner,
+    /await workspace\.close\(\);\s*workspace = undefined;\s*currentQuickTunnelLaunchProvenance\(\s*handoff,\s*quickTunnelLaunchProvenance,\s*\);\s*return createCompletionCapability\(/u,
+  );
+  assert.doesNotMatch(packageText, /launch-provenance|completion-capability/u);
+  assert.doesNotMatch(
+    launcher,
+    /export (?:const|function) .*?DependencySelection/u,
+  );
+  for (const text of documentation) {
+    assert.match(text, /dependency-selection provenance under operator trust/u);
+    assert.match(text, /future-live-ineligible/u);
+  }
+
+  const validationName = 'validateGateBResetEpochV4CompletionCapability';
+  const ownerUrl = new URL(
+    '../src/gate-b-reset-epoch-v4-fresh-input-owner.js',
+    import.meta.url,
+  );
+  const users = [];
+  const pending = [new URL('../src/', import.meta.url)];
+  while (pending.length > 0) {
+    const directory = pending.pop();
+    for (const entry of readdirSync(directory, { withFileTypes: true })) {
+      const candidate = new URL(entry.name, directory);
+      if (entry.isDirectory()) {
+        pending.push(new URL(`${entry.name}/`, directory));
+        continue;
+      }
+      if (!entry.isFile() || !candidate.pathname.endsWith('.js') ||
+          candidate.href === ownerUrl.href) continue;
+      if (readFileSync(candidate, 'utf8').includes(validationName)) {
+        users.push(candidate.href);
+      }
+    }
+  }
+  assert.deepEqual(users, []);
+});
+
 test('delivery claims carry the authenticated accepted requirement across every concrete boundary', () => {
   assert.equal(
     SettlementRepository.prototype.markDeliveryPending.length,
