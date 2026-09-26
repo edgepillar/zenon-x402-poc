@@ -22,13 +22,33 @@ const HARD_LIFETIME_MS = 10 * 60_000;
 const REAP_FORCE_MS = 500;
 const REAP_ABANDON_MS = 2_000;
 const ARRAY_IS_ARRAY = Array.isArray;
+const CANCEL_INTERVAL = clearInterval;
+const CANCEL_TIMER = clearTimeout;
+const DEFINE_PROPERTY = Object.defineProperty;
 const GET_OWN_PROPERTY_DESCRIPTOR = Object.getOwnPropertyDescriptor;
 const GET_PROTOTYPE_OF = Object.getPrototypeOf;
 const HAS_OWN = Object.hasOwn;
 const IS_PROXY = utilTypes.isProxy;
+const NATIVE_PROMISE = Promise;
+const OBJECT_CREATE = Object.create;
+const OBJECT_FREEZE = Object.freeze;
 const OBJECT_PROTOTYPE = Object.prototype;
+const PROCESS_KILL = process.kill;
+const REFLECT_APPLY = Reflect.apply;
 const REFLECT_OWN_KEYS = Reflect.ownKeys;
+const SCHEDULE_INTERVAL = setInterval;
+const SCHEDULE_TIMER = setTimeout;
+const WEAK_MAP_DELETE = WeakMap.prototype.delete;
+const WEAK_MAP_GET = WeakMap.prototype.get;
+const WEAK_MAP_SET = WeakMap.prototype.set;
 const LEASE_RECORDS = new WeakMap();
+const HANDOFF_LAUNCH_PROVENANCE = new WeakMap();
+const NATIVE_PROMISE_CONSTRUCTOR_DESCRIPTOR = OBJECT_FREEZE({
+  configurable: false,
+  enumerable: false,
+  value: NATIVE_PROMISE,
+  writable: false,
+});
 
 export class GateBQuickTunnelLaunchError extends Error {
   constructor() {
@@ -47,13 +67,59 @@ function fail() {
   throw error();
 }
 
+function pinNativePromiseConstructor(promise) {
+  REFLECT_APPLY(DEFINE_PROPERTY, Object, [
+    promise,
+    'constructor',
+    NATIVE_PROMISE_CONSTRUCTOR_DESCRIPTOR,
+  ]);
+  return promise;
+}
+
+function createNativePromise(executor) {
+  return pinNativePromiseConstructor(new NATIVE_PROMISE(executor));
+}
+
+function rejectNativePromise(reason) {
+  return createNativePromise((resolve, reject) => reject(reason));
+}
+
+async function observeNativePromiseSettlement(promise, fulfilled, rejected) {
+  try {
+    const value = await promise;
+    return fulfilled === undefined ? value : fulfilled(value);
+  } catch (reason) {
+    if (rejected === undefined) throw reason;
+    return rejected(reason);
+  }
+}
+
+function observeNativePromise(promise, fulfilled, rejected) {
+  return pinNativePromiseConstructor(
+    observeNativePromiseSettlement(promise, fulfilled, rejected),
+  );
+}
+
+function suppressNativePromiseRejection(promise) {
+  void observeNativePromise(promise, undefined, () => {});
+}
+
+function raceNativePromises(promises) {
+  return createNativePromise((resolve, reject) => {
+    for (let index = 0; index < promises.length; index += 1) {
+      const observer = observeNativePromise(promises[index], resolve, reject);
+      suppressNativePromiseRejection(observer);
+    }
+  });
+}
+
 function killProcessGroup(pid, signal) {
-  process.kill(-pid, signal);
+  REFLECT_APPLY(PROCESS_KILL, process, [-pid, signal]);
 }
 
 function probeProcessGroup(pid) {
   try {
-    process.kill(-pid, 0);
+    REFLECT_APPLY(PROCESS_KILL, process, [-pid, 0]);
     return true;
   } catch (candidate) {
     if (candidate && candidate.code === 'ESRCH') return false;
@@ -61,24 +127,45 @@ function probeProcessGroup(pid) {
   }
 }
 
-function exactInjections(value) {
-  const output = {
-    platform: process.platform,
-    forkProcess: fork,
-    scheduleTimer: setTimeout,
-    cancelTimer: clearTimeout,
-    executable: process.execPath,
-    supervisorModule: SUPERVISOR_MODULE,
-    killProcessGroup,
-    probeProcessGroup,
-    startupTimeoutMs: STARTUP_TIMEOUT_MS,
-    checkTimeoutMs: CHECK_TIMEOUT_MS,
-    shutdownTimeoutMs: SHUTDOWN_TIMEOUT_MS,
-    hardLifetimeMs: HARD_LIFETIME_MS,
-    reapForceMs: REAP_FORCE_MS,
-    reapAbandonMs: REAP_ABANDON_MS,
-    maxRequestId: Number.MAX_SAFE_INTEGER,
-  };
+const CAPTURED_DEFAULT_DEPENDENCY_SELECTION = OBJECT_FREEZE({
+  mode: 'captured-default-dependencies',
+});
+const INJECTED_TEST_ONLY_DEPENDENCY_SELECTION = OBJECT_FREEZE({
+  mode: 'injected-test-only-dependencies',
+});
+const AUTHORITATIVE_DETACHED_PROCESS_GROUP = OBJECT_FREEZE({
+  authoritativeGroup: true,
+  mode: 'authoritative-detached-process-group',
+});
+const INHERITED_PROCESS_GROUP = OBJECT_FREEZE({
+  authoritativeGroup: false,
+  mode: 'inherited-process-group-outer-ownership-unproven',
+});
+const CAPTURED_DEFAULT_DEPENDENCIES = OBJECT_FREEZE({
+  platform: process.platform,
+  forkProcess: fork,
+  scheduleTimer: SCHEDULE_TIMER,
+  cancelTimer: CANCEL_TIMER,
+  executable: process.execPath,
+  supervisorModule: SUPERVISOR_MODULE,
+  killProcessGroup,
+  probeProcessGroup,
+  startupTimeoutMs: STARTUP_TIMEOUT_MS,
+  checkTimeoutMs: CHECK_TIMEOUT_MS,
+  shutdownTimeoutMs: SHUTDOWN_TIMEOUT_MS,
+  hardLifetimeMs: HARD_LIFETIME_MS,
+  reapForceMs: REAP_FORCE_MS,
+  reapAbandonMs: REAP_ABANDON_MS,
+  maxRequestId: Number.MAX_SAFE_INTEGER,
+});
+
+function exactInjections(value, dependencySelection) {
+  if (dependencySelection === CAPTURED_DEFAULT_DEPENDENCY_SELECTION) {
+    if (value !== undefined || CAPTURED_DEFAULT_DEPENDENCIES.platform !== 'darwin') fail();
+    return CAPTURED_DEFAULT_DEPENDENCIES;
+  }
+  if (dependencySelection !== INJECTED_TEST_ONLY_DEPENDENCY_SELECTION) fail();
+  const output = { ...CAPTURED_DEFAULT_DEPENDENCIES };
   if (value !== undefined) {
     if (!value || typeof value !== 'object' || IS_PROXY(value) || ARRAY_IS_ARRAY(value) ||
         GET_PROTOTYPE_OF(value) !== OBJECT_PROTOTYPE) fail();
@@ -117,7 +204,7 @@ function exactInjections(value) {
       output.reapForceMs >= output.reapAbandonMs ||
       output.maxRequestId < 2 || output.maxRequestId > Number.MAX_SAFE_INTEGER) fail();
   if (output.platform !== 'darwin') fail();
-  return output;
+  return OBJECT_FREEZE(output);
 }
 
 function retainedDetachedGroupId(child) {
@@ -157,7 +244,7 @@ function snapshotChild(child) {
     ? ownDataProperty(stdio, '3')
     : undefined;
   const channel = ownDataProperty(child, 'channel');
-  return Object.freeze({
+  return OBJECT_FREEZE({
     channel,
     channelClose: dataProperty(channel, 'close'),
     channelUnref: dataProperty(channel, 'unref'),
@@ -191,18 +278,42 @@ function exactChild(snapshot) {
 }
 
 function leaseRecord(lease) {
-  const record = LEASE_RECORDS.get(lease);
+  const record = REFLECT_APPLY(WEAK_MAP_GET, LEASE_RECORDS, [lease]);
   if (!record) fail();
   return record;
 }
 
+function handoffLaunchProvenance(record, lease, handoff) {
+  const provenance = REFLECT_APPLY(
+    WEAK_MAP_GET,
+    HANDOFF_LAUNCH_PROVENANCE,
+    [handoff],
+  );
+  if (!provenance || provenance.dependencySelection !== record.dependencySelection ||
+      provenance.handoff !== handoff || provenance.lease !== lease ||
+      provenance.processGroupSelection !== record.processGroupSelection ||
+      !provenance.attenuated ||
+      provenance.attenuated.dependencySelection !== record.dependencySelection ||
+      provenance.attenuated.processGroupSelection !==
+        record.processGroupSelection) fail();
+  return provenance;
+}
+
+function retireHandoffLaunchProvenance(record) {
+  const handoff = record.hostnameSourceHandoff;
+  record.hostnameSourceHandoff = undefined;
+  if (handoff !== undefined) {
+    REFLECT_APPLY(WEAK_MAP_DELETE, HANDOFF_LAUNCH_PROVENANCE, [handoff]);
+  }
+}
+
 function clearTimer(timer) {
-  if (timer !== undefined) clearTimeout(timer);
+  if (timer !== undefined) CANCEL_TIMER(timer);
 }
 
 function destroyOwnedHandle(handle, destroy) {
   try {
-    if (handle && typeof destroy === 'function') Reflect.apply(destroy, handle, []);
+    if (handle && typeof destroy === 'function') REFLECT_APPLY(destroy, handle, []);
   } catch {}
 }
 
@@ -212,7 +323,7 @@ function releaseOwnedChild(record) {
   if (ARRAY_IS_ARRAY(record.ownedListeners)) {
     for (let index = 0; index < record.ownedListeners.length; index += 1) {
       const [emitter, removeListener, event, handler] = record.ownedListeners[index];
-      try { Reflect.apply(removeListener, emitter, [event, handler]); } catch {}
+      try { REFLECT_APPLY(removeListener, emitter, [event, handler]); } catch {}
     }
     record.ownedListeners.length = 0;
   }
@@ -220,22 +331,22 @@ function releaseOwnedChild(record) {
   destroyOwnedHandle(snapshot.privateFd, snapshot.privateDestroy);
   try {
     if (record.connected === true && typeof snapshot.disconnect === 'function') {
-      Reflect.apply(snapshot.disconnect, snapshot.child, []);
+      REFLECT_APPLY(snapshot.disconnect, snapshot.child, []);
       record.connected = false;
     }
   } catch {}
   try {
     if (typeof snapshot.channelClose === 'function') {
-      Reflect.apply(snapshot.channelClose, snapshot.channel, []);
+      REFLECT_APPLY(snapshot.channelClose, snapshot.channel, []);
     }
   } catch {}
   try {
     if (typeof snapshot.channelUnref === 'function') {
-      Reflect.apply(snapshot.channelUnref, snapshot.channel, []);
+      REFLECT_APPLY(snapshot.channelUnref, snapshot.channel, []);
     }
   } catch {}
   try {
-    if (typeof snapshot.unref === 'function') Reflect.apply(snapshot.unref, snapshot.child, []);
+    if (typeof snapshot.unref === 'function') REFLECT_APPLY(snapshot.unref, snapshot.child, []);
   } catch {}
 }
 
@@ -244,7 +355,7 @@ function cancelPendingCheckTimer(record, pending) {
   const timer = pending.timer;
   pending.timer = undefined;
   try {
-    Reflect.apply(record.dependencies.cancelTimer, undefined, [timer]);
+    REFLECT_APPLY(record.dependencies.cancelTimer, undefined, [timer]);
     return true;
   } catch {
     return false;
@@ -267,7 +378,7 @@ function settleClosureFailure(record) {
 
 function beginGroupReap(record) {
   if (record.reapPromise) return record.reapPromise;
-  record.reapPromise = new Promise((resolve, reject) => {
+  record.reapPromise = createNativePromise((resolve, reject) => {
     let finished = false;
     let probeTimer;
     let forceTimer;
@@ -275,7 +386,7 @@ function beginGroupReap(record) {
     const finish = succeeded => {
       if (finished) return;
       finished = true;
-      clearInterval(probeTimer);
+      CANCEL_INTERVAL(probeTimer);
       clearTimer(forceTimer);
       clearTimer(abandonTimer);
       if (succeeded) resolve(true);
@@ -284,7 +395,7 @@ function beginGroupReap(record) {
 
     const probe = () => {
       try {
-        const alive = Reflect.apply(
+        const alive = REFLECT_APPLY(
           record.dependencies.probeProcessGroup,
           undefined,
           [record.groupId],
@@ -304,7 +415,7 @@ function beginGroupReap(record) {
 
     const signal = name => {
       try {
-        Reflect.apply(record.dependencies.killProcessGroup, undefined, [
+        REFLECT_APPLY(record.dependencies.killProcessGroup, undefined, [
           record.groupId,
           name,
         ]);
@@ -319,18 +430,22 @@ function beginGroupReap(record) {
     signal('SIGTERM');
     if (finished) return;
     const intervalMs = Math.max(1, Math.min(10, record.dependencies.reapForceMs));
-    probeTimer = setInterval(probe, intervalMs);
-    forceTimer = setTimeout(() => {
+    probeTimer = SCHEDULE_INTERVAL(probe, intervalMs);
+    forceTimer = SCHEDULE_TIMER(() => {
       if (probe() === true) signal('SIGKILL');
     }, record.dependencies.reapForceMs);
-    abandonTimer = setTimeout(() => {
+    abandonTimer = SCHEDULE_TIMER(() => {
       if (probe() === true) finish(false);
     }, record.dependencies.reapAbandonMs);
   });
   return record.reapPromise;
 }
 
-async function reapUnvalidatedChild(snapshot, dependencies, authoritativeGroup) {
+async function reapUnvalidatedChildSettlement(
+  snapshot,
+  dependencies,
+  authoritativeGroup,
+) {
   if (!snapshot) return false;
   let onClose;
   try {
@@ -351,30 +466,30 @@ async function reapUnvalidatedChild(snapshot, dependencies, authoritativeGroup) 
     }
     let closed = false;
     let resolveClosed;
-    const closedPromise = new Promise(resolve => { resolveClosed = resolve; });
+    const closedPromise = createNativePromise(resolve => { resolveClosed = resolve; });
     if (typeof snapshot.once === 'function') {
       onClose = () => {
         closed = true;
         resolveClosed(true);
       };
-      Reflect.apply(snapshot.once, snapshot.child, ['close', onClose]);
+      REFLECT_APPLY(snapshot.once, snapshot.child, ['close', onClose]);
     }
     const directKill = signal => {
       try {
         if (typeof snapshot.kill === 'function') {
-          Reflect.apply(snapshot.kill, snapshot.child, [signal]);
+          REFLECT_APPLY(snapshot.kill, snapshot.child, [signal]);
         }
       } catch {}
     };
     directKill('SIGTERM');
-    await Promise.race([
+    await raceNativePromises([
       closedPromise,
-      new Promise(resolve => setTimeout(resolve, dependencies.reapForceMs)),
+      createNativePromise(resolve => SCHEDULE_TIMER(resolve, dependencies.reapForceMs)),
     ]);
     if (!closed) directKill('SIGKILL');
-    await Promise.race([
+    await raceNativePromises([
       closedPromise,
-      new Promise(resolve => setTimeout(resolve, dependencies.reapAbandonMs)),
+      createNativePromise(resolve => SCHEDULE_TIMER(resolve, dependencies.reapAbandonMs)),
     ]);
     return false;
   } catch {
@@ -382,36 +497,44 @@ async function reapUnvalidatedChild(snapshot, dependencies, authoritativeGroup) 
   } finally {
     if (onClose && typeof snapshot.removeListener === 'function') {
       try {
-        Reflect.apply(snapshot.removeListener, snapshot.child, ['close', onClose]);
+        REFLECT_APPLY(snapshot.removeListener, snapshot.child, ['close', onClose]);
       } catch {}
     }
     destroyOwnedHandle(snapshot.privateFd, snapshot.privateDestroy);
     try {
       if (snapshot.connected === true && typeof snapshot.disconnect === 'function') {
-        Reflect.apply(snapshot.disconnect, snapshot.child, []);
+        REFLECT_APPLY(snapshot.disconnect, snapshot.child, []);
       }
     } catch {}
     try {
       if (typeof snapshot.channelClose === 'function') {
-        Reflect.apply(snapshot.channelClose, snapshot.channel, []);
+        REFLECT_APPLY(snapshot.channelClose, snapshot.channel, []);
       }
     } catch {}
     try {
       if (typeof snapshot.channelUnref === 'function') {
-        Reflect.apply(snapshot.channelUnref, snapshot.channel, []);
+        REFLECT_APPLY(snapshot.channelUnref, snapshot.channel, []);
       }
     } catch {}
     try {
       if (typeof snapshot.unref === 'function') {
-        Reflect.apply(snapshot.unref, snapshot.child, []);
+        REFLECT_APPLY(snapshot.unref, snapshot.child, []);
       }
     } catch {}
   }
 }
 
+function reapUnvalidatedChild(snapshot, dependencies, authoritativeGroup) {
+  return pinNativePromiseConstructor(reapUnvalidatedChildSettlement(
+    snapshot,
+    dependencies,
+    authoritativeGroup,
+  ));
+}
+
 function beginInheritedChildCleanup(record) {
   if (record.reapPromise) return record.reapPromise;
-  record.reapPromise = new Promise(resolve => {
+  record.reapPromise = createNativePromise(resolve => {
     let finished = false;
     let closed = record.closeObserved;
     let forceTimer;
@@ -427,27 +550,30 @@ function beginInheritedChildCleanup(record) {
       clearTimer(forceTimer);
       clearTimer(abandonTimer);
       try {
-        Reflect.apply(snapshot.removeListener, snapshot.child, ['close', onClose]);
+        REFLECT_APPLY(snapshot.removeListener, snapshot.child, ['close', onClose]);
       } catch {}
       releaseOwnedChild(record);
       resolve(observed === true && closed === true);
     };
     const directKill = signal => {
-      try { Reflect.apply(snapshot.kill, snapshot.child, [signal]); } catch {}
+      try { REFLECT_APPLY(snapshot.kill, snapshot.child, [signal]); } catch {}
     };
     if (closed) {
       finish(true);
       return;
     }
-    try { Reflect.apply(snapshot.once, snapshot.child, ['close', onClose]); } catch {
+    try { REFLECT_APPLY(snapshot.once, snapshot.child, ['close', onClose]); } catch {
       finish(false);
       return;
     }
     directKill('SIGTERM');
-    forceTimer = setTimeout(() => {
+    forceTimer = SCHEDULE_TIMER(() => {
       if (!closed) directKill('SIGKILL');
     }, record.dependencies.reapForceMs);
-    abandonTimer = setTimeout(() => finish(false), record.dependencies.reapAbandonMs);
+    abandonTimer = SCHEDULE_TIMER(
+      () => finish(false),
+      record.dependencies.reapAbandonMs,
+    );
   });
   return record.reapPromise;
 }
@@ -456,20 +582,34 @@ function failRecord(record) {
   if (record.state === 'FAILING' || record.state === 'CLOSED_FAILED' ||
       record.state === 'QUARANTINED' || record.state === 'STOPPED') return;
   record.state = 'FAILING';
+  retireHandoffLaunchProvenance(record);
   clearTimer(record.startupTimer);
   clearTimer(record.shutdownTimer);
   clearTimer(record.hardLifetimeTimer);
   rejectPendingCheck(record);
   if (!record.authoritativeGroup) {
-    void beginInheritedChildCleanup(record).then(closed => {
-      if (record.state === 'STOPPED') return;
-      record.state = closed ? 'CLOSED_FAILED' : 'QUARANTINED';
-      if (!record.launchSettled) {
-        record.launchSettled = true;
-        record.rejectLaunch(error());
-      }
-      settleClosureFailure(record);
-    });
+    const cleanup = observeNativePromise(
+      beginInheritedChildCleanup(record),
+      closed => {
+        if (record.state === 'STOPPED') return;
+        record.state = closed ? 'CLOSED_FAILED' : 'QUARANTINED';
+        if (!record.launchSettled) {
+          record.launchSettled = true;
+          record.rejectLaunch(error());
+        }
+        settleClosureFailure(record);
+      },
+      () => {
+        if (record.state === 'STOPPED') return;
+        record.state = 'QUARANTINED';
+        if (!record.launchSettled) {
+          record.launchSettled = true;
+          record.rejectLaunch(error());
+        }
+        settleClosureFailure(record);
+      },
+    );
+    suppressNativePromiseRejection(cleanup);
     return;
   }
   releaseOwnedChild(record);
@@ -477,17 +617,22 @@ function failRecord(record) {
     record.launchSettled = true;
     record.rejectLaunch(error());
   }
-  void beginGroupReap(record).then(() => {
-    if (record.state !== 'STOPPED') {
-      record.state = 'CLOSED_FAILED';
-      settleClosureFailure(record);
-    }
-  }).catch(() => {
-    if (record.state !== 'STOPPED') {
-      record.state = 'QUARANTINED';
-      settleClosureFailure(record);
-    }
-  });
+  const cleanup = observeNativePromise(
+    beginGroupReap(record),
+    () => {
+      if (record.state !== 'STOPPED') {
+        record.state = 'CLOSED_FAILED';
+        settleClosureFailure(record);
+      }
+    },
+    () => {
+      if (record.state !== 'STOPPED') {
+        record.state = 'QUARANTINED';
+        settleClosureFailure(record);
+      }
+    },
+  );
+  suppressNativePromiseRejection(cleanup);
 }
 
 function sendMessage(record, message, onConfirmed) {
@@ -495,7 +640,7 @@ function sendMessage(record, message, onConfirmed) {
       record.state === 'QUARANTINED' || record.state === 'STOPPED' ||
       record.state === 'REAPING') return false;
   try {
-    const accepted = Reflect.apply(record.childSnapshot.send, record.child, [message, sendError => {
+    const accepted = REFLECT_APPLY(record.childSnapshot.send, record.child, [message, sendError => {
       if (record.state === 'FAILING' || record.state === 'CLOSED_FAILED' ||
           record.state === 'QUARANTINED' || record.state === 'STOPPED' ||
           record.state === 'REAPING') return;
@@ -551,14 +696,22 @@ function maybeSettleClosed(record) {
     }
     record.state = 'REAPING';
     releaseOwnedChild(record);
-    void beginGroupReap(record).then(() => {
-      if (record.state !== 'REAPING' || !record.groupExhausted) return failRecord(record);
-      record.state = 'STOPPED';
-      if (!record.closureSettled) {
-        record.closureSettled = true;
-        record.resolveClosure(true);
-      }
-    }).catch(() => failRecord(record));
+    const cleanup = observeNativePromise(
+      beginGroupReap(record),
+      () => {
+        if (record.state !== 'REAPING' || !record.groupExhausted) {
+          failRecord(record);
+          return;
+        }
+        record.state = 'STOPPED';
+        if (!record.closureSettled) {
+          record.closureSettled = true;
+          record.resolveClosure(true);
+        }
+      },
+      () => failRecord(record),
+    );
+    suppressNativePromiseRejection(cleanup);
     return;
   }
   failRecord(record);
@@ -587,7 +740,7 @@ function onMessage(record, candidate) {
         message.requestId !== 1) return failRecord(record);
     clearTimer(record.startupTimer);
     record.state = 'ACTIVE_IDLE';
-    record.hardLifetimeTimer = setTimeout(
+    record.hardLifetimeTimer = SCHEDULE_TIMER(
       () => failRecord(record),
       record.dependencies.hardLifetimeMs,
     );
@@ -647,7 +800,7 @@ function attachLifecycle(record) {
     ['exit', onExit],
     ['close', onClose],
   ]) {
-    Reflect.apply(record.childSnapshot.on, record.child, [event, handler]);
+    REFLECT_APPLY(record.childSnapshot.on, record.child, [event, handler]);
     record.ownedListeners.push([
       record.child,
       record.childSnapshot.removeListener,
@@ -657,17 +810,30 @@ function attachLifecycle(record) {
   }
 }
 
-async function launchGateBQuickTunnelInternal(bootstrap, injected, authoritativeGroup) {
+async function launchGateBQuickTunnelInternalSettlement(
+  dependencySelection,
+  processGroupSelection,
+  bootstrap,
+  injected,
+) {
+  let authoritativeGroup;
   let frame;
   let record;
   let dependencies;
   let retainedChild;
   let retainedSnapshot;
   try {
-    dependencies = exactInjections(injected);
+    if (processGroupSelection === AUTHORITATIVE_DETACHED_PROCESS_GROUP) {
+      authoritativeGroup = true;
+    } else if (processGroupSelection === INHERITED_PROCESS_GROUP) {
+      authoritativeGroup = false;
+    } else {
+      fail();
+    }
+    dependencies = exactInjections(injected, dependencySelection);
     frame = frameGateBQuickTunnelBootstrap(bootstrap);
     const workspaceRoot = bootstrap.workspaceRoot;
-    retainedChild = Reflect.apply(dependencies.forkProcess, undefined, [
+    retainedChild = REFLECT_APPLY(dependencies.forkProcess, undefined, [
       dependencies.supervisorModule,
       [],
       {
@@ -690,26 +856,28 @@ async function launchGateBQuickTunnelInternal(bootstrap, injected, authoritative
 
     let resolveLaunch;
     let rejectLaunch;
-    const launchPromise = new Promise((resolve, reject) => {
+    const launchPromise = createNativePromise((resolve, reject) => {
       resolveLaunch = resolve;
       rejectLaunch = reject;
     });
     let resolveClosure;
     let rejectClosure;
-    const closurePromise = new Promise((resolve, reject) => {
+    const closurePromise = createNativePromise((resolve, reject) => {
       resolveClosure = resolve;
       rejectClosure = reject;
     });
-    void closurePromise.catch(() => {});
-    const lease = Object.freeze(Object.create(null));
+    suppressNativePromiseRejection(closurePromise);
+    const lease = OBJECT_FREEZE(OBJECT_CREATE(null));
     record = {
       child,
       childSnapshot,
       connected: childSnapshot.connected,
       authoritativeGroup,
+      dependencySelection,
       groupId,
       dependencies,
       lease,
+      processGroupSelection,
       closurePromise,
       resolveClosure,
       rejectClosure,
@@ -737,19 +905,20 @@ async function launchGateBQuickTunnelInternal(bootstrap, injected, authoritative
       shutdownTimer: undefined,
       hardLifetimeTimer: undefined,
       hostnameSourceHandoffClaimed: false,
+      hostnameSourceHandoff: undefined,
       reapPromise: undefined,
       ownedListeners: [],
       ownedChildReleased: false,
       workspaceRoot,
     };
-    LEASE_RECORDS.set(lease, record);
+    REFLECT_APPLY(WEAK_MAP_SET, LEASE_RECORDS, [lease, record]);
     attachLifecycle(record);
-    record.startupTimer = setTimeout(
+    record.startupTimer = SCHEDULE_TIMER(
       () => failRecord(record),
       dependencies.startupTimeoutMs,
     );
     const onPrivateError = () => failRecord(record);
-    Reflect.apply(childSnapshot.privateOnce, childSnapshot.privateFd, [
+    REFLECT_APPLY(childSnapshot.privateOnce, childSnapshot.privateFd, [
       'error',
       onPrivateError,
     ]);
@@ -759,7 +928,7 @@ async function launchGateBQuickTunnelInternal(bootstrap, injected, authoritative
       'error',
       onPrivateError,
     ]);
-    Reflect.apply(childSnapshot.privateEnd, childSnapshot.privateFd, [frame, frameError => {
+    REFLECT_APPLY(childSnapshot.privateEnd, childSnapshot.privateFd, [frame, frameError => {
       if (record.state === 'FAILING' || record.state === 'CLOSED_FAILED' ||
           record.state === 'QUARANTINED' || record.state === 'STOPPED' ||
           record.state === 'REAPING') return;
@@ -783,12 +952,42 @@ async function launchGateBQuickTunnelInternal(bootstrap, injected, authoritative
   }
 }
 
+function launchGateBQuickTunnelInternal(
+  dependencySelection,
+  processGroupSelection,
+  bootstrap,
+  injected,
+) {
+  return pinNativePromiseConstructor(launchGateBQuickTunnelInternalSettlement(
+    dependencySelection,
+    processGroupSelection,
+    bootstrap,
+    injected,
+  ));
+}
+
 export function launchGateBQuickTunnel(bootstrap, injected) {
-  return launchGateBQuickTunnelInternal(bootstrap, injected, true);
+  const dependencySelection = arguments.length < 2
+    ? CAPTURED_DEFAULT_DEPENDENCY_SELECTION
+    : INJECTED_TEST_ONLY_DEPENDENCY_SELECTION;
+  return launchGateBQuickTunnelInternal(
+    dependencySelection,
+    AUTHORITATIVE_DETACHED_PROCESS_GROUP,
+    bootstrap,
+    injected,
+  );
 }
 
 export function launchGateBQuickTunnelInInheritedProcessGroup(bootstrap, injected) {
-  return launchGateBQuickTunnelInternal(bootstrap, injected, false);
+  const dependencySelection = arguments.length < 2
+    ? CAPTURED_DEFAULT_DEPENDENCY_SELECTION
+    : INJECTED_TEST_ONLY_DEPENDENCY_SELECTION;
+  return launchGateBQuickTunnelInternal(
+    dependencySelection,
+    INHERITED_PROCESS_GROUP,
+    bootstrap,
+    injected,
+  );
 }
 
 export function assertGateBQuickTunnelReady(lease) {
@@ -800,11 +999,11 @@ export function assertGateBQuickTunnelReady(lease) {
     const requestId = record.lastIssuedRequestId + 1;
     let resolveCheck;
     let rejectCheck;
-    const promise = new Promise((resolve, reject) => {
+    const promise = createNativePromise((resolve, reject) => {
       resolveCheck = resolve;
       rejectCheck = reject;
     });
-    void promise.catch(() => {});
+    suppressNativePromiseRejection(promise);
     record.pendingCheck = {
       checkedReceived: false,
       requestId,
@@ -820,7 +1019,7 @@ export function assertGateBQuickTunnelReady(lease) {
     record.state = 'CHECKING';
     let timer;
     try {
-      timer = Reflect.apply(record.dependencies.scheduleTimer, undefined, [
+      timer = REFLECT_APPLY(record.dependencies.scheduleTimer, undefined, [
         () => {
           if (record.state === 'CHECKING' && record.pendingCheck === pending) {
             failRecord(record);
@@ -833,7 +1032,7 @@ export function assertGateBQuickTunnelReady(lease) {
       return promise;
     }
     if (record.state !== 'CHECKING' || record.pendingCheck !== pending) {
-      try { Reflect.apply(record.dependencies.cancelTimer, undefined, [timer]); } catch {}
+      try { REFLECT_APPLY(record.dependencies.cancelTimer, undefined, [timer]); } catch {}
       return promise;
     }
     pending.timer = timer;
@@ -855,7 +1054,7 @@ export function assertGateBQuickTunnelReady(lease) {
     }
     return promise;
   } catch {
-    return Promise.reject(error());
+    return rejectNativePromise(error());
   }
 }
 
@@ -867,19 +1066,58 @@ export function claimGateBQuickTunnelHostnameSourceHandoff(lease, workspaceRoot)
     record.hostnameSourceHandoffClaimed = true;
     if (record.state !== 'ACTIVE_IDLE' || record.pendingCheck ||
         typeof workspaceRoot !== 'string' || workspaceRoot !== record.workspaceRoot) fail();
-    const handoff = {
+    let handoff;
+    handoff = {
       __proto__: null,
       assertCurrent() {
         try {
+          if (this !== handoff) fail();
+          handoffLaunchProvenance(record, lease, handoff);
           if (record.lease !== lease || record.workspaceRoot !== workspaceRoot ||
+              record.hostnameSourceHandoff !== handoff ||
               record.hostnameSourceHandoffClaimed !== true) fail();
           return assertGateBQuickTunnelReady(lease);
         } catch {
-          return Promise.reject(error());
+          return rejectNativePromise(error());
         }
       },
     };
-    return Object.freeze(handoff);
+    handoff = OBJECT_FREEZE(handoff);
+    const dependencySelection = record.dependencySelection;
+    const processGroupSelection = record.processGroupSelection;
+    const attenuated = OBJECT_CREATE(null);
+    attenuated.dependencySelection = dependencySelection;
+    attenuated.processGroupSelection = processGroupSelection;
+    OBJECT_FREEZE(attenuated);
+    const provenance = OBJECT_FREEZE({
+      attenuated,
+      dependencySelection,
+      handoff,
+      lease,
+      processGroupSelection,
+    });
+    REFLECT_APPLY(WEAK_MAP_SET, HANDOFF_LAUNCH_PROVENANCE, [handoff, provenance]);
+    record.hostnameSourceHandoff = handoff;
+    return handoff;
+  } catch {
+    throw error();
+  }
+}
+
+export function readGateBQuickTunnelHostnameSourceHandoffProvenance(handoff) {
+  try {
+    const provenance = REFLECT_APPLY(
+      WEAK_MAP_GET,
+      HANDOFF_LAUNCH_PROVENANCE,
+      [handoff],
+    );
+    if (!provenance || provenance.handoff !== handoff) fail();
+    const record = leaseRecord(provenance.lease);
+    if (handoffLaunchProvenance(record, provenance.lease, handoff) !== provenance ||
+        record.state !== 'ACTIVE_IDLE' || record.pendingCheck !== null ||
+        record.hostnameSourceHandoff !== handoff ||
+        record.hostnameSourceHandoffClaimed !== true) fail();
+    return provenance.attenuated;
   } catch {
     throw error();
   }
@@ -900,8 +1138,9 @@ export function stopGateBQuickTunnel(lease) {
     record.lastIssuedRequestId = record.stopRequestId;
     record.stopSent = true;
     record.state = 'STOPPING';
+    retireHandoffLaunchProvenance(record);
     clearTimer(record.hardLifetimeTimer);
-    record.shutdownTimer = setTimeout(
+    record.shutdownTimer = SCHEDULE_TIMER(
       () => failRecord(record),
       record.dependencies.shutdownTimeoutMs,
     );
@@ -912,7 +1151,7 @@ export function stopGateBQuickTunnel(lease) {
     return record.closurePromise;
   } catch {
     if (record) failRecord(record);
-    return Promise.reject(error());
+    return rejectNativePromise(error());
   }
 }
 
@@ -920,6 +1159,6 @@ export function waitGateBQuickTunnelClosed(lease) {
   try {
     return leaseRecord(lease).closurePromise;
   } catch {
-    return Promise.reject(error());
+    return rejectNativePromise(error());
   }
 }

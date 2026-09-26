@@ -12,7 +12,10 @@ import {
 } from './gate-b-public-ws-inputs-schema.js';
 import { openGateBPublicWsPrivateWorkspace } from
   './gate-b-public-ws-private-workspace.js';
-import { claimGateBQuickTunnelHostnameSourceHandoff } from
+import {
+  claimGateBQuickTunnelHostnameSourceHandoff,
+  readGateBQuickTunnelHostnameSourceHandoffProvenance,
+} from
   './gate-b-quick-tunnel-launcher.js';
 import { generateGateBResetEpochV4ExclusiveOutputs } from
   './gate-b-reset-epoch-v4-exclusive-output.js';
@@ -107,6 +110,12 @@ const HANDOFF_EXCLUSIVE_OUTPUT_OPTIONS = OBJECT_FREEZE({
 });
 const NON_AUTHORIZING_VALIDATION_STATUS =
   'source_only_completion_validated_non_authorizing';
+const CAPTURED_DEFAULT_DEPENDENCY_MODE = 'captured-default-dependencies';
+const INJECTED_TEST_ONLY_DEPENDENCY_MODE = 'injected-test-only-dependencies';
+const AUTHORITATIVE_DETACHED_PROCESS_GROUP_MODE =
+  'authoritative-detached-process-group';
+const INHERITED_PROCESS_GROUP_MODE =
+  'inherited-process-group-outer-ownership-unproven';
 const SUCCESS = OBJECT_FREEZE({
   status: 'source_only_fresh_inputs_and_outputs_written_non_authorizing',
 });
@@ -122,6 +131,37 @@ export class GateBResetEpochV4FreshInputOwnerError extends Error {
 
 function fail() {
   throw new GateBResetEpochV4FreshInputOwnerError();
+}
+
+function currentQuickTunnelLaunchProvenance(
+  handoff,
+  expectedProvenance,
+) {
+  let provenance;
+  try {
+    provenance = readGateBQuickTunnelHostnameSourceHandoffProvenance(handoff);
+  } catch {
+    fail();
+  }
+  if (!provenance || OBJECT_GET_PROTOTYPE_OF(provenance) !== null ||
+      (expectedProvenance !== undefined && provenance !== expectedProvenance)) fail();
+  const provenanceKeys = REFLECT_OWN_KEYS(provenance);
+  if (provenanceKeys.length !== 2 ||
+      provenanceKeys[0] !== 'dependencySelection' ||
+      provenanceKeys[1] !== 'processGroupSelection') fail();
+  const dependencySelection = provenance.dependencySelection;
+  const processGroupSelection = provenance.processGroupSelection;
+  if (!dependencySelection ||
+      (dependencySelection.mode !== CAPTURED_DEFAULT_DEPENDENCY_MODE &&
+        dependencySelection.mode !== INJECTED_TEST_ONLY_DEPENDENCY_MODE)) fail();
+  if (!processGroupSelection ||
+      (processGroupSelection.mode === AUTHORITATIVE_DETACHED_PROCESS_GROUP_MODE &&
+        processGroupSelection.authoritativeGroup !== true) ||
+      (processGroupSelection.mode === INHERITED_PROCESS_GROUP_MODE &&
+        processGroupSelection.authoritativeGroup !== false) ||
+      (processGroupSelection.mode !== AUTHORITATIVE_DETACHED_PROCESS_GROUP_MODE &&
+        processGroupSelection.mode !== INHERITED_PROCESS_GROUP_MODE)) fail();
+  return provenance;
 }
 
 function wipeBuffer(value) {
@@ -332,6 +372,7 @@ function completionManifestBytes(
 
 function createCompletionCapability(
   handoff,
+  quickTunnelLaunchProvenance,
   workspaceRoot,
   markerGeneration,
   manifestGenerationValue,
@@ -348,6 +389,11 @@ function createCompletionCapability(
       injectedDependenciesUsed: injectedDependenciesUsed === true,
       manifestGeneration: manifestGenerationValue,
       markerGeneration,
+      quickTunnelDependencySelection:
+        quickTunnelLaunchProvenance.dependencySelection,
+      quickTunnelLaunchProvenance,
+      quickTunnelProcessGroupSelection:
+        quickTunnelLaunchProvenance.processGroupSelection,
       reviewedConfigDigest,
       runName,
       workspaceRoot,
@@ -465,14 +511,21 @@ function claimCompletionCapability(completionCapability) {
 function createValidationCapability(completionState, injectedDependenciesUsed) {
   const capability = OBJECT_FREEZE(OBJECT_CREATE(null));
   const testOnly = completionState.injectedDependenciesUsed === true ||
+    completionState.quickTunnelDependencySelection.mode ===
+      INJECTED_TEST_ONLY_DEPENDENCY_MODE ||
     injectedDependenciesUsed === true;
   REFLECT_APPLY(
     WEAK_MAP_SET,
     VALIDATION_CAPABILITY_STATES,
     [capability, OBJECT_FREEZE({
       completionState,
-      // This slice cannot attest how the retained quick-tunnel lease was launched.
       futureLiveConsumerEligible: false,
+      quickTunnelDependencySelection:
+        completionState.quickTunnelDependencySelection,
+      quickTunnelLaunchProvenance:
+        completionState.quickTunnelLaunchProvenance,
+      quickTunnelProcessGroupSelection:
+        completionState.quickTunnelProcessGroupSelection,
       status: NON_AUTHORIZING_VALIDATION_STATUS,
       testOnly,
     })],
@@ -722,6 +775,10 @@ export async function completeGateBResetEpochV4FreshInputsFromQuickTunnelLease(
     const handoff = claimGateBQuickTunnelHostnameSourceHandoff(
       quickTunnelLease,
       workspaceRoot,
+    );
+    const quickTunnelLaunchProvenance = currentQuickTunnelLaunchProvenance(
+      handoff,
+      undefined,
     );
     if (await handoff.assertCurrent() !== true) fail();
 
@@ -988,8 +1045,13 @@ export async function completeGateBResetEpochV4FreshInputsFromQuickTunnelLease(
     await assertExactLeaves(workspaceRoot, HANDOFF_COMPLETE_LEAVES);
     await workspace.close();
     workspace = undefined;
+    currentQuickTunnelLaunchProvenance(
+      handoff,
+      quickTunnelLaunchProvenance,
+    );
     return createCompletionCapability(
       handoff,
+      quickTunnelLaunchProvenance,
       workspaceRoot,
       markerGeneration,
       manifestGenerationValue,
@@ -1015,8 +1077,18 @@ async function validateClaimedGateBResetEpochV4Completion(
 ) {
   const buffers = [];
   const injectedDependenciesUsed = injected !== undefined;
+  const quickTunnelLaunchProvenance = completionState.quickTunnelLaunchProvenance;
   let workspace;
   try {
+    if (!quickTunnelLaunchProvenance ||
+        completionState.quickTunnelDependencySelection !==
+          quickTunnelLaunchProvenance.dependencySelection ||
+        completionState.quickTunnelProcessGroupSelection !==
+          quickTunnelLaunchProvenance.processGroupSelection) fail();
+    currentQuickTunnelLaunchProvenance(
+      completionState.handoff,
+      quickTunnelLaunchProvenance,
+    );
     if (await completionState.handoff.assertCurrent() !== true) fail();
 
     workspace = await openGateBPublicWsPrivateWorkspace(
@@ -1095,10 +1167,14 @@ async function validateClaimedGateBResetEpochV4Completion(
 
   try {
     if (await completionState.handoff.assertCurrent() !== true) fail();
+    currentQuickTunnelLaunchProvenance(
+      completionState.handoff,
+      quickTunnelLaunchProvenance,
+    );
+    return createValidationCapability(completionState, injectedDependenciesUsed);
   } catch {
     fail();
   }
-  return createValidationCapability(completionState, injectedDependenciesUsed);
 }
 
 export function validateGateBResetEpochV4CompletionCapability(
