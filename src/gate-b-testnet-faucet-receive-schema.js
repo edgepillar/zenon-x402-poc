@@ -2,6 +2,14 @@ import { BlockList, isIP } from 'node:net';
 import { TextDecoder, types as utilTypes } from 'node:util';
 
 import { canonicalJson } from './canonical.js';
+import {
+  PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_EVENT_ID,
+  PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_OPERATOR_TRUST_ACKNOWLEDGEMENT,
+  PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_PROFILE_NAME,
+  PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_WSS_ACKNOWLEDGEMENT,
+  PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_WSS_ENDPOINT,
+  TESTNET_LIVE_ACKNOWLEDGEMENT,
+} from './zenon/operator-trusted-testnet-profile.js';
 
 const ERROR_CODE = 'gate_b_testnet_faucet_receive_schema_invalid';
 const BOOTSTRAP_MAX_BYTES = 4096;
@@ -34,6 +42,11 @@ for (const [network, prefix, family] of [
 
 export const GATE_B_TESTNET_FAUCET_RECEIVE_ACKNOWLEDGEMENT =
   'I_CONFIRM_THE_TWO_PENDING_NATIVE_TESTNET_SENDS_ARE_THE_INTENDED_FAUCET_FUNDING_AND_AUTHORIZE_ONE_POW_RECEIVE_FOR_EACH';
+
+export const GATE_B_TESTNET_FAUCET_RECEIVE_SCHEMA_VERSIONS = Object.freeze({
+  LEGACY_PLAINTEXT_WS: 1,
+  RESET_EPOCH_PINNED_WSS: 2,
+});
 
 export const GATE_B_TESTNET_FAUCET_RECEIVE_WORKSPACE_OPTION = '--workspace';
 
@@ -111,10 +124,37 @@ function exactPublicWsEndpoint(value) {
 }
 
 function validateBootstrap(value) {
-  exactPlainObject(value, ['acknowledgement', 'rpcEndpoint', 'schemaVersion']);
-  if (value.schemaVersion !== 1 ||
-      value.acknowledgement !== GATE_B_TESTNET_FAUCET_RECEIVE_ACKNOWLEDGEMENT) fail();
-  exactPublicWsEndpoint(value.rpcEndpoint);
+  if (value === null || typeof value !== 'object' || IS_PROXY(value) ||
+      ARRAY_IS_ARRAY(value) || GET_PROTOTYPE_OF(value) !== OBJECT_PROTOTYPE) fail();
+  const schema = GET_OWN_PROPERTY_DESCRIPTOR(value, 'schemaVersion');
+  if (!schema || !HAS_OWN(schema, 'value') || schema.enumerable !== true) fail();
+  if (schema.value === GATE_B_TESTNET_FAUCET_RECEIVE_SCHEMA_VERSIONS.LEGACY_PLAINTEXT_WS) {
+    exactPlainObject(value, ['acknowledgement', 'rpcEndpoint', 'schemaVersion']);
+    if (value.acknowledgement !== GATE_B_TESTNET_FAUCET_RECEIVE_ACKNOWLEDGEMENT) fail();
+    exactPublicWsEndpoint(value.rpcEndpoint);
+    return value;
+  }
+  if (schema.value !==
+      GATE_B_TESTNET_FAUCET_RECEIVE_SCHEMA_VERSIONS.RESET_EPOCH_PINNED_WSS) fail();
+  exactPlainObject(value, [
+    'acknowledgement',
+    'eventId',
+    'liveAcknowledgement',
+    'operatorTrustAcknowledgement',
+    'profileName',
+    'rpcEndpoint',
+    'schemaVersion',
+    'wssAcknowledgement',
+  ]);
+  if (value.acknowledgement !== GATE_B_TESTNET_FAUCET_RECEIVE_ACKNOWLEDGEMENT ||
+      value.profileName !== PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_PROFILE_NAME ||
+      value.eventId !== PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_EVENT_ID ||
+      value.rpcEndpoint !== PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_WSS_ENDPOINT ||
+      value.operatorTrustAcknowledgement !==
+        PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_OPERATOR_TRUST_ACKNOWLEDGEMENT ||
+      value.liveAcknowledgement !== TESTNET_LIVE_ACKNOWLEDGEMENT ||
+      value.wssAcknowledgement !==
+        PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_WSS_ACKNOWLEDGEMENT) fail();
   return value;
 }
 
@@ -158,10 +198,25 @@ export function parseGateBTestnetFaucetReceiveFrame(frame) {
     const value = JSON.parse(text);
     validateBootstrap(value);
     if (canonicalJson(value) !== text) fail();
+    if (value.schemaVersion ===
+        GATE_B_TESTNET_FAUCET_RECEIVE_SCHEMA_VERSIONS.LEGACY_PLAINTEXT_WS) {
+      return Object.freeze({
+        acknowledgement: value.acknowledgement,
+        rpcEndpoint: value.rpcEndpoint,
+        schemaVersion:
+          GATE_B_TESTNET_FAUCET_RECEIVE_SCHEMA_VERSIONS.LEGACY_PLAINTEXT_WS,
+      });
+    }
     return Object.freeze({
       acknowledgement: value.acknowledgement,
+      eventId: value.eventId,
+      liveAcknowledgement: value.liveAcknowledgement,
+      operatorTrustAcknowledgement: value.operatorTrustAcknowledgement,
+      profileName: value.profileName,
       rpcEndpoint: value.rpcEndpoint,
-      schemaVersion: 1,
+      schemaVersion:
+        GATE_B_TESTNET_FAUCET_RECEIVE_SCHEMA_VERSIONS.RESET_EPOCH_PINNED_WSS,
+      wssAcknowledgement: value.wssAcknowledgement,
     });
   } catch {
     fail();

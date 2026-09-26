@@ -11,6 +11,7 @@ import * as sdk from 'znn-typescript-sdk';
 import {
   GATE_B_TESTNET_FAUCET_RECEIVE_ACKNOWLEDGEMENT,
   GATE_B_TESTNET_FAUCET_RECEIVE_EXECUTION_MODES,
+  GATE_B_TESTNET_FAUCET_RECEIVE_SCHEMA_VERSIONS,
   GATE_B_TESTNET_FAUCET_RECEIVE_STATUS_LINES,
   GATE_B_TESTNET_FAUCET_RECEIVE_WORKSPACE_OPTION,
   frameGateBTestnetFaucetReceiveBootstrap,
@@ -23,6 +24,8 @@ import {
   runGateBTestnetFaucetReceiveChild,
 } from '../src/gate-b-testnet-faucet-receive-child.js';
 import {
+  GATE_B_TESTNET_FAUCET_RECEIVE_RESET_EPOCH_PROFILE_COMMITMENT,
+  GATE_B_TESTNET_FAUCET_RECEIVE_RESET_EPOCH_STATE_NAME,
   GATE_B_TESTNET_FAUCET_RECEIVE_STATES,
   openGateBTestnetFaucetReceiveState,
 } from '../src/gate-b-testnet-faucet-receive-state.js';
@@ -40,8 +43,15 @@ import {
   GATE_B_CURRENT_TESTNET_CHAIN_PROFILE,
   GATE_B_CURRENT_TESTNET_OPERATOR_TRUST_ACKNOWLEDGEMENT,
   GATE_B_CURRENT_TESTNET_PROFILE_NAME,
+  HISTORICAL_PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_PROFILE_NAME,
+  PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_EVENT_ID,
+  PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_OPERATOR_TRUST_ACKNOWLEDGEMENT,
+  PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_PROFILE_NAME,
+  PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_WSS_ACKNOWLEDGEMENT,
+  PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_WSS_ENDPOINT,
   TESTNET_LIVE_ACKNOWLEDGEMENT,
   selectGateBCurrentTestnetPolicy,
+  selectPublicTestnetDynamicPlasmaResetEpochExecutionPolicy,
 } from '../src/zenon/operator-trusted-testnet-profile.js';
 
 const SYNTHETIC_PUBLIC_WS = `ws://${[8, 8, 4, 4].join('.')}:35998/`;
@@ -54,6 +64,22 @@ function bootstrap() {
     acknowledgement: GATE_B_TESTNET_FAUCET_RECEIVE_ACKNOWLEDGEMENT,
     rpcEndpoint: SYNTHETIC_PUBLIC_WS,
     schemaVersion: 1,
+  };
+}
+
+function resetEpochBootstrap() {
+  return {
+    acknowledgement: GATE_B_TESTNET_FAUCET_RECEIVE_ACKNOWLEDGEMENT,
+    eventId: PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_EVENT_ID,
+    liveAcknowledgement: TESTNET_LIVE_ACKNOWLEDGEMENT,
+    operatorTrustAcknowledgement:
+      PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_OPERATOR_TRUST_ACKNOWLEDGEMENT,
+    profileName: PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_PROFILE_NAME,
+    rpcEndpoint: PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_WSS_ENDPOINT,
+    schemaVersion:
+      GATE_B_TESTNET_FAUCET_RECEIVE_SCHEMA_VERSIONS.RESET_EPOCH_PINNED_WSS,
+    wssAcknowledgement:
+      PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_WSS_ACKNOWLEDGEMENT,
   };
 }
 
@@ -82,6 +108,18 @@ function policy() {
     GATE_B_CURRENT_TESTNET_OPERATOR_TRUST_ACKNOWLEDGEMENT,
     TESTNET_LIVE_ACKNOWLEDGEMENT,
   );
+}
+
+function resetEpochPolicy() {
+  const selected = resetEpochBootstrap();
+  return selectPublicTestnetDynamicPlasmaResetEpochExecutionPolicy({
+    eventId: selected.eventId,
+    liveAcknowledgement: selected.liveAcknowledgement,
+    operatorTrustAcknowledgement: selected.operatorTrustAcknowledgement,
+    profileName: selected.profileName,
+    rpcEndpoint: selected.rpcEndpoint,
+    wssAcknowledgement: selected.wssAcknowledgement,
+  });
 }
 
 function signedReceiveJson(changes = {}, label = 'default') {
@@ -131,19 +169,23 @@ function stateInjections(changes = {}) {
   };
 }
 
-function persistedRecoverySource(index) {
+function persistedRecoverySource(index, chainIdentifier = EXPECTED_CHAIN_ID) {
   const address = sdk.Address.fromPublicKey(Buffer.alloc(32, 1));
   return sourceBlock(
     address,
     index === 0 ? sdk.ZNN_ZTS : sdk.QSR_ZTS,
     `recovery-source-${index}`,
+    chainIdentifier,
   );
 }
 
-function persistedRecoveryRecord(state, blockCount = 2) {
+function persistedRecoveryRecord(state, blockCount = 2, {
+  schemaVersion = 1,
+  sourceChainIdentifier = EXPECTED_CHAIN_ID,
+} = {}) {
   const blocks = [];
   for (let index = 0; index < blockCount; index += 1) {
-    const source = persistedRecoverySource(index);
+    const source = persistedRecoverySource(index, sourceChainIdentifier);
     const serialized = signedReceiveJson({}, `recovery-${index}`);
     serialized.fromBlockHash = source.hash.toString();
     if (index === 0) serialized.previousHash = sdk.EMPTY_HASH.toString();
@@ -163,13 +205,19 @@ function persistedRecoveryRecord(state, blockCount = 2) {
         : 'INCLUDED',
     });
   }
-  return {
+  const record = {
     activeIndex: ['COMPLETE', 'RECOVERED'].includes(state) ? null : blockCount - 1,
     blocks,
     revision: 8,
-    schemaVersion: 1,
+    schemaVersion,
     state,
   };
+  if (schemaVersion === 2) {
+    record.profileCommitment = structuredClone(
+      GATE_B_TESTNET_FAUCET_RECEIVE_RESET_EPOCH_PROFILE_COMMITMENT,
+    );
+  }
+  return record;
 }
 
 function memoryState(
@@ -181,7 +229,30 @@ function memoryState(
 ) {
   let record = initial === null ? null : structuredClone(initial);
   let secondAttempt = initialAttempt === null ? null : structuredClone(initialAttempt);
+  let profileSelected = false;
+  let selectedProfile;
   return {
+    selectProfile(profileName) {
+      if (profileName !== undefined &&
+          profileName !== PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_PROFILE_NAME) {
+        throw new Error('synthetic');
+      }
+      if (profileSelected && selectedProfile !== profileName) {
+        throw new Error('synthetic');
+      }
+      profileSelected = true;
+      selectedProfile = profileName;
+      if (record && ((profileName === undefined && record.schemaVersion !== 1) ||
+          (profileName !== undefined && record.schemaVersion !== 2))) {
+        throw new Error('synthetic');
+      }
+      if (record && profileName !== undefined) {
+        assert.deepEqual(
+          record.profileCommitment,
+          GATE_B_TESTNET_FAUCET_RECEIVE_RESET_EPOCH_PROFILE_COMMITMENT,
+        );
+      }
+    },
     async load() { events.push('state.load'); return record && structuredClone(record); },
     async loadSecondReceiveAttempt() {
       events.push('state.second-attempt.load');
@@ -195,7 +266,18 @@ function memoryState(
     },
     async arm() {
       events.push('state.arm');
-      record = { activeIndex: null, blocks: [], revision: 0, schemaVersion: 1, state: 'ARMED' };
+      record = {
+        activeIndex: null,
+        blocks: [],
+        revision: 0,
+        schemaVersion: selectedProfile === undefined ? 1 : 2,
+        state: 'ARMED',
+      };
+      if (selectedProfile !== undefined) {
+        record.profileCommitment = structuredClone(
+          GATE_B_TESTNET_FAUCET_RECEIVE_RESET_EPOCH_PROFILE_COMMITMENT,
+        );
+      }
       return structuredClone(record);
     },
     async update(next) {
@@ -213,11 +295,11 @@ function memoryState(
   };
 }
 
-function sourceBlock(address, tokenStandard, label) {
+function sourceBlock(address, tokenStandard, label, chainIdentifier = EXPECTED_CHAIN_ID) {
   const block = new sdk.AccountBlock({
     address: sdk.Address.fromPublicKey(Buffer.alloc(32, 3)),
     blockType: sdk.BlockTypeEnum.ContractSend,
-    chainIdentifier: EXPECTED_CHAIN_ID,
+    chainIdentifier,
     data: Buffer.alloc(0),
     difficulty: 0,
     fromBlockHash: sdk.EMPTY_HASH,
@@ -257,7 +339,7 @@ function secondSourceSnapshot(block) {
 }
 
 function secondReceiveAttemptFor(record) {
-  return {
+  const attempt = {
     firstReceive: {
       hash: record.blocks[0].signedAccountBlock.hash,
       height: record.blocks[0].signedAccountBlock.height,
@@ -265,9 +347,13 @@ function secondReceiveAttemptFor(record) {
         record.blocks[0].signedAccountBlock.momentumAcknowledged.height,
       sourceHash: record.blocks[0].sourceHash,
     },
-    schemaVersion: 1,
+    schemaVersion: record.schemaVersion,
     secondSource: secondSourceSnapshot(persistedRecoverySource(1)),
   };
+  if (record.schemaVersion === 2) {
+    attempt.profileCommitment = structuredClone(record.profileCommitment);
+  }
+  return attempt;
 }
 
 function executionHarness({ failPublicationAt = -1, pendingMutation = false,
@@ -284,8 +370,10 @@ function executionHarness({ failPublicationAt = -1, pendingMutation = false,
   secondAttempt = null,
   secondCommitAttemptError = false,
   failSecondPreparedOnce = false,
+  historicalChainIdentifier = EXPECTED_CHAIN_ID,
   partialSuccessorMutation = value => value,
-  readinessChainId = EXPECTED_CHAIN_ID } = {}) {
+  readinessChainId = EXPECTED_CHAIN_ID,
+  policyFactory = policy } = {}) {
   const events = [];
   const publicKey = Buffer.alloc(32, 1);
   const expectedAddressObject = sdk.Address.fromPublicKey(publicKey);
@@ -303,14 +391,14 @@ function executionHarness({ failPublicationAt = -1, pendingMutation = false,
       preparedByHash.set(existing.blocks[index].signedAccountBlock.hash, index);
     }
     if (existing.blocks.length === 1) {
-      recoverySource = persistedRecoverySource(0);
+      recoverySource = persistedRecoverySource(0, historicalChainIdentifier);
       recoverySource = recoverySourceMutation(recoverySource, {
         expectedAddressObject,
         remainingSource: sources[1],
         sdk,
       });
       recoveryRemainingSource = recoveryRemainingSourceMutation(
-        persistedRecoverySource(1),
+        persistedRecoverySource(1, historicalChainIdentifier),
         { expectedAddressObject, recoverySource, sdk },
       );
     }
@@ -336,11 +424,15 @@ function executionHarness({ failPublicationAt = -1, pendingMutation = false,
   let publicationCalls = 0;
   let poisonCalls = 0;
   let clearCalls = 0;
+  let initializedEndpoint;
   let keyClearCalls = 0;
   let remainingSourceReads = 0;
   const zenon = {
     client: undefined,
-    async initialize() { events.push('initialize'); },
+    async initialize(endpoint) {
+      initializedEndpoint = endpoint;
+      events.push('initialize');
+    },
     clearConnection() { clearCalls += 1; events.push('connection.clear'); },
     ledger: {
       async getUnreceivedBlocksByAddress() {
@@ -477,9 +569,9 @@ function executionHarness({ failPublicationAt = -1, pendingMutation = false,
       events.push('readiness');
       return { chainId: readinessChainId };
     },
-    createPolicy: () => {
+    createPolicy: selectedBootstrap => {
       events.push('policy');
-      const selected = policy();
+      const selected = policyFactory(selectedBootstrap);
       events.push('policy.done');
       return selected;
     },
@@ -525,7 +617,10 @@ function executionHarness({ failPublicationAt = -1, pendingMutation = false,
     now: (() => { let current = 0; return () => { current += 120_001; return current; }; })(),
     onExecutionMode: async mode => { events.push(`mode.${mode}`); return true; },
     onPublicationStart: async index => { events.push(`publishing.${index}`); return true; },
-    openReceiveState: async () => state,
+    openReceiveState: async (_root, _stateInjections, profileName) => {
+      state.selectProfile(profileName);
+      return state;
+    },
     openWalletWorkspace: async () => workspace,
     runtime,
     wait: async () => {},
@@ -534,6 +629,7 @@ function executionHarness({ failPublicationAt = -1, pendingMutation = false,
     clearCalls: () => clearCalls,
     events,
     injections,
+    initializedEndpoint: () => initializedEndpoint,
     keyClearCalls: () => keyClearCalls,
     poisonCalls: () => poisonCalls,
     publicationCalls: () => publicationCalls,
@@ -563,6 +659,30 @@ test('faucet receiver bootstrap is exact, private-channel framed, and acknowledg
     rpcEndpoint: SYNTHETIC_PUBLIC_WS.replace('ws://', 'ws://user:secret@'),
     schemaVersion: 1,
   }));
+});
+
+test('reset-epoch receiver bootstrap is exact, current-profile bound, and WSS only', () => {
+  const selected = resetEpochBootstrap();
+  const frame = frameGateBTestnetFaucetReceiveBootstrap(selected);
+  assert.deepEqual(parseGateBTestnetFaucetReceiveFrame(frame), selected);
+
+  for (const changes of [
+    { profileName: GATE_B_CURRENT_TESTNET_PROFILE_NAME },
+    { profileName: HISTORICAL_PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_PROFILE_NAME },
+    { eventId: `${PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_EVENT_ID}-stale` },
+    { rpcEndpoint: PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_WSS_ENDPOINT.replace('wss:', 'ws:') },
+    { rpcEndpoint: `${PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_WSS_ENDPOINT}/` },
+    { schemaVersion: GATE_B_TESTNET_FAUCET_RECEIVE_SCHEMA_VERSIONS.LEGACY_PLAINTEXT_WS },
+    { wssAcknowledgement: 'wrong' },
+  ]) {
+    assert.throws(() => frameGateBTestnetFaucetReceiveBootstrap({
+      ...selected,
+      ...changes,
+    }));
+  }
+  const missingProfile = { ...selected };
+  delete missingProfile.profileName;
+  assert.throws(() => frameGateBTestnetFaucetReceiveBootstrap(missingProfile));
 });
 
 test('faucet receiver CLI emits only fixed complete and unknown records', async () => {
@@ -760,6 +880,93 @@ test('faucet receiver state creates a durable one-shot marker and exact private 
   assert.equal((await lstat(join(stateRoot, '.faucet-receive-once'))).mode & 0o777, 0o600);
   assert.equal((await lstat(join(stateRoot, 'faucet-receive-recovery.json'))).mode & 0o777, 0o600);
   await second.close();
+});
+
+test('reset-epoch state has a durable profile namespace and quarantines legacy state', async t => {
+  const resetFixture = await stateFixture(t);
+  const reset = await openGateBTestnetFaucetReceiveState(
+    resetFixture.walletRoot,
+    stateInjections(),
+    PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_PROFILE_NAME,
+  );
+  const armed = await reset.arm();
+  assert.equal(armed.schemaVersion, 2);
+  assert.deepEqual(
+    armed.profileCommitment,
+    GATE_B_TESTNET_FAUCET_RECEIVE_RESET_EPOCH_PROFILE_COMMITMENT,
+  );
+  const block = signedReceiveJson({}, 'reset-commitment-tamper');
+  await assert.rejects(() => reset.update({
+    activeIndex: 0,
+    blocks: [{
+      index: 0,
+      signedAccountBlock: block,
+      sourceHash: block.fromBlockHash,
+      state: 'PREPARED',
+    }],
+    profileCommitment: {
+      ...armed.profileCommitment,
+      eventId: `${armed.profileCommitment.eventId}-stale`,
+    },
+    revision: 1,
+    schemaVersion: 2,
+    state: 'PREPARED',
+  }));
+  assert.deepEqual(await reset.load(), armed);
+  const prepared = await reset.update({
+    activeIndex: 0,
+    blocks: [{
+      index: 0,
+      signedAccountBlock: block,
+      sourceHash: block.fromBlockHash,
+      state: 'PREPARED',
+    }],
+    profileCommitment: structuredClone(armed.profileCommitment),
+    revision: 1,
+    schemaVersion: 2,
+    state: 'PREPARED',
+  });
+  const included = structuredClone(prepared);
+  included.revision += 1;
+  included.state = 'INCLUDED';
+  included.blocks[0].state = 'INCLUDED';
+  const persisted = await reset.update(included);
+  const secondAttempt = secondReceiveAttemptFor(persisted);
+  assert.deepEqual(
+    await reset.commitSecondReceiveAttempt(secondAttempt),
+    secondAttempt,
+  );
+  await reset.close();
+  const reopened = await openGateBTestnetFaucetReceiveState(
+    resetFixture.walletRoot,
+    stateInjections(),
+    PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_PROFILE_NAME,
+  );
+  assert.deepEqual(await reopened.load(), persisted);
+  assert.deepEqual(await reopened.loadSecondReceiveAttempt(), secondAttempt);
+  await assert.rejects(() => reopened.arm());
+  await reopened.close();
+  assert.equal((await lstat(join(
+    resetFixture.supportRoot,
+    GATE_B_TESTNET_FAUCET_RECEIVE_RESET_EPOCH_STATE_NAME,
+  ))).isDirectory(), true);
+  await assert.rejects(() => openGateBTestnetFaucetReceiveState(
+    resetFixture.walletRoot,
+    stateInjections(),
+  ));
+
+  const legacyFixture = await stateFixture(t);
+  const legacy = await openGateBTestnetFaucetReceiveState(
+    legacyFixture.walletRoot,
+    stateInjections(),
+  );
+  await legacy.arm();
+  await legacy.close();
+  await assert.rejects(() => openGateBTestnetFaucetReceiveState(
+    legacyFixture.walletRoot,
+    stateInjections(),
+    PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_PROFILE_NAME,
+  ));
 });
 
 test('generated faucet state is token-isolated and rejects malformed generations pre-effect',
@@ -1211,6 +1418,175 @@ test('faucet receiver validates readiness before wallet access and completes two
   assert.equal(harness.state.snapshot().state, 'COMPLETE');
 });
 
+test('reset-epoch receiver binds current policy, pinned WSS, two confirmed native sends, and zero unconfirmed',
+  async () => {
+    const harness = executionHarness({
+      policyFactory(selected) {
+        assert.deepEqual(selected, resetEpochBootstrap());
+        return resetEpochPolicy();
+      },
+    });
+    const openedProfiles = [];
+    const openReceiveState = harness.injections.openReceiveState;
+    harness.injections.openReceiveState = async (root, injections, profileName) => {
+      openedProfiles.push(profileName);
+      return openReceiveState(root, injections, profileName);
+    };
+
+    assert.equal(
+      await executeGateBTestnetFaucetReceive(
+        resetEpochBootstrap(),
+        harness.injections,
+      ),
+      'complete',
+    );
+    assert.equal(
+      harness.initializedEndpoint(),
+      PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_WSS_ENDPOINT,
+    );
+    assert.deepEqual(openedProfiles, [
+      PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_PROFILE_NAME,
+    ]);
+    assert.equal(harness.events.filter(value => value.startsWith('pending.')).length, 2);
+    assert.equal(harness.events.filter(value => value === 'unconfirmed').length, 2);
+    assert.deepEqual(new Set(harness.sources.map(source => source.tokenStandard.toString())),
+      new Set([sdk.ZNN_ZTS.toString(), sdk.QSR_ZTS.toString()]));
+    assert.equal(harness.publicationCalls(), 2);
+    assert.equal(harness.state.snapshot().state, 'COMPLETE');
+    for (const block of harness.state.snapshot().blocks) {
+      assert.equal(block.signedAccountBlock.fusedPlasma, 0);
+      assert.equal(block.signedAccountBlock.difficulty > 0, true);
+      assert.notEqual(block.signedAccountBlock.nonce, '0000000000000000');
+    }
+  });
+
+test('reset-epoch receiver rejects old policy and unconfirmed or content-mismatched sends before signing',
+  async () => {
+    const oldPolicy = executionHarness({ policyFactory: policy });
+    await assert.rejects(() => executeGateBTestnetFaucetReceive(
+      resetEpochBootstrap(),
+      oldPolicy.injections,
+    ));
+    assert.equal(oldPolicy.events.includes('initialize'), false);
+    assert.equal(oldPolicy.events.some(value => value.startsWith('workspace.')), false);
+    assert.equal(oldPolicy.publicationCalls(), 0);
+
+    for (const mutateSources of [
+      sources => { sources[0].confirmationDetail = null; return sources; },
+      sources => { sources[1].amount += 1n; return sources; },
+    ]) {
+      const harness = executionHarness({
+        mutateSources,
+        policyFactory: resetEpochPolicy,
+      });
+      await assert.rejects(() => executeGateBTestnetFaucetReceive(
+        resetEpochBootstrap(),
+        harness.injections,
+      ));
+      assert.equal(harness.events.includes('state.arm'), false);
+      assert.equal(harness.events.includes('workspace.open.buyer-wallet.json'), false);
+      assert.equal(harness.events.some(value => value.startsWith('prepare.')), false);
+      assert.equal(harness.publicationCalls(), 0);
+    }
+  });
+
+test('reset-epoch receiver rejects a receive anchored before its confirmed source', async () => {
+  const harness = executionHarness({
+    partialSuccessorMutation(template, context) {
+      if (context.index === 0) {
+        template.momentumAcknowledged = new sdk.HashHeight(
+          template.momentumAcknowledged.hash,
+          0,
+        );
+      }
+    },
+    policyFactory: resetEpochPolicy,
+  });
+  await assert.rejects(() => executeGateBTestnetFaucetReceive(
+    resetEpochBootstrap(),
+    harness.injections,
+  ));
+  assert.equal(harness.events.includes('prepare.0'), true);
+  assert.equal(harness.events.includes('state.PREPARED.0'), false);
+  assert.equal(harness.publicationCalls(), 0);
+  assert.equal(harness.state.snapshot().state, 'ARMED');
+  assert.equal(harness.state.snapshot().blocks.length, 0);
+});
+
+test('reset-epoch receiver accepts a deterministic consensus PoW target before PREPARED',
+  async () => {
+    const harness = executionHarness({
+      partialSuccessorMutation(template, context) {
+        if (context.index === 0) {
+          const nonce = Buffer.alloc(8);
+          nonce[0] = 3;
+          template.difficulty = 2;
+          template.nonce = nonce.toString('hex');
+        }
+      },
+      policyFactory: resetEpochPolicy,
+    });
+    assert.equal(await executeGateBTestnetFaucetReceive(
+      resetEpochBootstrap(),
+      harness.injections,
+    ), 'complete');
+    assert.equal(harness.events.includes('state.PREPARED.0'), true);
+    assert.equal(harness.state.snapshot().blocks[0].signedAccountBlock.difficulty, 2);
+    assert.equal(harness.publicationCalls(), 2);
+  });
+
+test('reset-epoch receiver rejects a deterministic sub-target PoW before PREPARED',
+  async () => {
+    const harness = executionHarness({
+      partialSuccessorMutation(template, context) {
+        if (context.index === 0) {
+          const nonce = Buffer.alloc(8);
+          nonce[0] = 1;
+          template.difficulty = 2;
+          template.nonce = nonce.toString('hex');
+        }
+      },
+      policyFactory: resetEpochPolicy,
+    });
+    await assert.rejects(() => executeGateBTestnetFaucetReceive(
+      resetEpochBootstrap(),
+      harness.injections,
+    ));
+    assert.equal(harness.events.includes('state.PREPARED.0'), false);
+    assert.equal(harness.state.snapshot().state, 'ARMED');
+    assert.equal(harness.state.snapshot().blocks.length, 0);
+    assert.equal(harness.publicationCalls(), 0);
+  });
+
+test('reset-epoch ambiguity remains observation-only and never re-signs or replaces', async () => {
+  const harness = executionHarness({
+    failPublicationAt: 0,
+    policyFactory: resetEpochPolicy,
+  });
+  assert.equal(await executeGateBTestnetFaucetReceive(
+    resetEpochBootstrap(),
+    harness.injections,
+  ), 'outcome-unknown');
+  assert.equal(harness.state.snapshot().state, 'UNKNOWN');
+  const preparations = harness.events.filter(value => value === 'prepare.0').length;
+  const publications = harness.publicationCalls();
+  const walletReads = harness.events.filter(
+    value => value === 'workspace.read.buyer-wallet.json',
+  ).length;
+
+  assert.equal(await executeGateBTestnetFaucetReceive(
+    resetEpochBootstrap(),
+    harness.injections,
+  ), 'outcome-unknown');
+  assert.equal(harness.events.filter(value => value === 'prepare.0').length, preparations);
+  assert.equal(harness.publicationCalls(), publications);
+  assert.equal(harness.events.filter(
+    value => value === 'workspace.read.buyer-wallet.json',
+  ).length, walletReads);
+  assert.equal(harness.events.includes('prepare.1'), false);
+  assert.equal(harness.state.snapshot().state, 'UNKNOWN');
+});
+
 test('fresh execution losing the shared second-attempt race stops before index-one preparation',
   async () => {
     const harness = executionHarness({ secondCommitAttemptError: true });
@@ -1256,7 +1632,7 @@ test('post-sign pre-persistence failure permanently blocks index-one re-signing'
   assert.equal(harness.state.snapshot().blocks.length, 1);
 });
 
-test('production receive validator accepts the actual pinned SDK composite with deterministic PoW',
+test('reset-epoch receiver accepts the current SDK Dynamic Plasma PoW branch with mocked reads',
   async () => {
     const zenon = sdk.Zenon.getInstance();
     const prior = {
@@ -1287,6 +1663,7 @@ test('production receive validator accepts the actual pinned SDK composite with 
       let frontier = null;
       let publications = 0;
       let powCalls = 0;
+      let quoteCalls = 0;
       zenon.client = undefined;
       zenon.initialize = async () => {};
       zenon.clearConnection = () => { zenon.client = undefined; };
@@ -1296,7 +1673,13 @@ test('production receive validator accepts the actual pinned SDK composite with 
         },
         async getFrontierAccountBlock() { return frontier; },
         async getFrontierMomentum() {
-          return { hash: sdk.Hash.digest(Buffer.from('actual-sdk-momentum')), height: 9 };
+          return {
+            hash: sdk.Hash.digest(Buffer.from('actual-sdk-momentum')),
+            height: 12,
+            nextFusionPrice: 1000,
+            nextWorkPrice: 1000,
+            version: 2,
+          };
         },
         async getUnconfirmedBlocksByAddress() {
           return new sdk.AccountBlockList(0, [], false);
@@ -1322,7 +1705,12 @@ test('production receive validator accepts the actual pinned SDK composite with 
       zenon.embedded = {
         plasma: {
           async getRequiredPoWForAccountBlock() {
-            return { availablePlasma: 0, basePlasma: 0, requiredDifficulty: 1 };
+            quoteCalls += 1;
+            return {
+              availablePlasma: 0,
+              basePlasma: 21_000,
+              requiredDifficulty: 1,
+            };
           },
         },
       };
@@ -1350,7 +1738,7 @@ test('production receive validator accepts the actual pinned SDK composite with 
       const ed = await import('@noble/ed25519');
       const { sha512 } = await import('@noble/hashes/sha2');
       ed.etc.sha512Sync = (...messages) => sha512(ed.etc.concatBytes(...messages));
-      const result = await executeGateBTestnetFaucetReceive(bootstrap(), {
+      const result = await executeGateBTestnetFaucetReceive(resetEpochBootstrap(), {
         actualCwdPath: () => join(
           process.cwd(),
           'synthetic-actual-sdk',
@@ -1362,7 +1750,7 @@ test('production receive validator accepts the actual pinned SDK composite with 
           WALLET_WORKSPACE_NAME,
         )),
         assertNodeReady: async () => ({ chainId: EXPECTED_CHAIN_ID }),
-        createPolicy: policy,
+        createPolicy: resetEpochPolicy,
         async invokeComposite(instance, template, keyPair) {
           sdk.Zenon.setPowProvider(async (_hash, difficulty) => {
             assert.equal(difficulty, 1);
@@ -1378,7 +1766,10 @@ test('production receive validator accepts the actual pinned SDK composite with 
         loadDependencies: async () => ({ ed, sdk }),
         now: (() => { let value = 0; return () => { value += 120_001; return value; }; })(),
         onPublicationStart: async () => true,
-        openReceiveState: async () => state,
+        openReceiveState: async (_root, _injections, profileName) => {
+          state.selectProfile(profileName);
+          return state;
+        },
         openWalletWorkspace: async () => workspace,
         runtime: {
           async withOwner(_owner, work) {
@@ -1392,8 +1783,24 @@ test('production receive validator accepts the actual pinned SDK composite with 
       });
       assert.equal(result, 'complete');
       assert.equal(powCalls, 2);
+      assert.equal(quoteCalls, 2);
       assert.equal(publications, 2);
-      assert.equal(state.snapshot().state, 'COMPLETE');
+      const stateSnapshot = state.snapshot();
+      assert.equal(stateSnapshot.schemaVersion, 2);
+      assert.deepEqual(
+        stateSnapshot.profileCommitment,
+        GATE_B_TESTNET_FAUCET_RECEIVE_RESET_EPOCH_PROFILE_COMMITMENT,
+      );
+      assert.equal(stateSnapshot.state, 'COMPLETE');
+      assert.equal(state.attemptSnapshot().schemaVersion, 2);
+      assert.deepEqual(
+        state.attemptSnapshot().profileCommitment,
+        GATE_B_TESTNET_FAUCET_RECEIVE_RESET_EPOCH_PROFILE_COMMITMENT,
+      );
+      for (const block of stateSnapshot.blocks) {
+        assert.equal(block.signedAccountBlock.fusedPlasma, 0);
+        assert.equal(block.signedAccountBlock.difficulty, 1);
+      }
     } finally {
       mnemonic = '';
       try { fixtureKeyPair?.clear(); } catch {}
@@ -1686,6 +2093,54 @@ test('one-record UNKNOWN continues only the complementary index-one receive afte
       harness.state.snapshot().blocks[1].signedAccountBlock.previousHash,
       harness.state.snapshot().blocks[0].signedAccountBlock.hash,
     );
+  });
+
+test('reset-epoch one-record recovery preserves the v2 profile and exact-chain success',
+  async () => {
+    const existing = persistedRecoveryRecord('UNKNOWN', 1, { schemaVersion: 2 });
+    const harness = executionHarness({
+      existing,
+      policyFactory: resetEpochPolicy,
+      recoveredIndexes: [0],
+    });
+    assert.equal(await executeGateBTestnetFaucetReceive(
+      resetEpochBootstrap(),
+      harness.injections,
+    ), 'partial-complete');
+    assert.equal(harness.publicationCalls(), 1);
+    assert.equal(harness.state.snapshot().schemaVersion, 2);
+    assert.deepEqual(
+      harness.state.snapshot().profileCommitment,
+      GATE_B_TESTNET_FAUCET_RECEIVE_RESET_EPOCH_PROFILE_COMMITMENT,
+    );
+    assert.equal(harness.state.attemptSnapshot().schemaVersion, 2);
+    assert.deepEqual(
+      harness.state.attemptSnapshot().profileCommitment,
+      GATE_B_TESTNET_FAUCET_RECEIVE_RESET_EPOCH_PROFILE_COMMITMENT,
+    );
+  });
+
+test('reset-epoch one-record recovery rejects a self-consistent wrong-chain source pre-wallet',
+  async () => {
+    const wrongChainIdentifier = EXPECTED_CHAIN_ID + 1;
+    const existing = persistedRecoveryRecord('UNKNOWN', 1, {
+      schemaVersion: 2,
+      sourceChainIdentifier: wrongChainIdentifier,
+    });
+    const harness = executionHarness({
+      existing,
+      historicalChainIdentifier: wrongChainIdentifier,
+      policyFactory: resetEpochPolicy,
+      recoveredIndexes: [0],
+    });
+    assert.equal(await executeGateBTestnetFaucetReceive(
+      resetEpochBootstrap(),
+      harness.injections,
+    ), 'outcome-unknown');
+    assert.equal(harness.events.some(value => value.startsWith('workspace.')), false);
+    assert.equal(harness.events.some(value => value.startsWith('prepare.')), false);
+    assert.equal(harness.events.includes('state.second-attempt.commit'), false);
+    assert.equal(harness.publicationCalls(), 0);
   });
 
 test('one-record recovery rejects a non-successor index-one preparation before publication',
@@ -2158,8 +2613,10 @@ test('isolated child emits mode-matched partial and read-only terminal protocols
   }
 });
 
-test('supervisor ignores child output and accepts exactly two publication boundaries', async t => {
+test('supervisor preserves the reset-epoch v2 frame and accepts two publication boundaries',
+  async t => {
   const fixture = await stateFixture(t);
+  const selectedBootstrap = resetEpochBootstrap();
   assert.equal(superviseGateBTestnetFaucetReceive.length, 1);
   assert.equal(superviseGateBTestnetFaucetReceiveForWorkspace.length, 2);
   let spawnOptions;
@@ -2200,16 +2657,29 @@ test('supervisor ignores child output and accepts exactly two publication bounda
       return child;
     },
     platform: 'darwin',
-    readBootstrapFrame: async () => frameGateBTestnetFaucetReceiveBootstrap(bootstrap()),
+    readBootstrapFrame: async () =>
+      frameGateBTestnetFaucetReceiveBootstrap(selectedBootstrap),
     timeoutMs: 1000,
   }), 'complete');
   assert.deepEqual(spawnArgs, []);
   assert.equal(spawnOptions.cwd, fixture.walletRoot);
   assert.deepEqual(spawnOptions.stdio.slice(0, 3), ['ignore', 'ignore', 'ignore']);
   assert.deepEqual(spawnOptions.env, {});
-  assert.deepEqual(
-    parseGateBTestnetFaucetReceiveFrame(Buffer.concat(bootstrapChunks)),
-    bootstrap(),
+  const forwardedBootstrap = parseGateBTestnetFaucetReceiveFrame(
+    Buffer.concat(bootstrapChunks),
+  );
+  assert.deepEqual(forwardedBootstrap, selectedBootstrap);
+  assert.equal(
+    forwardedBootstrap.schemaVersion,
+    GATE_B_TESTNET_FAUCET_RECEIVE_SCHEMA_VERSIONS.RESET_EPOCH_PINNED_WSS,
+  );
+  assert.equal(
+    forwardedBootstrap.profileName,
+    PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_PROFILE_NAME,
+  );
+  assert.equal(
+    forwardedBootstrap.eventId,
+    PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_EVENT_ID,
   );
 });
 

@@ -10,7 +10,12 @@ import {
   selectGateBBuyerWalletWorkspace,
 } from './gate-b-buyer-wallet-selector.js';
 import { canonicalJson } from './canonical.js';
-import { GATE_B_CURRENT_TESTNET_CHAIN_PROFILE } from
+import {
+  GATE_B_CURRENT_TESTNET_CHAIN_PROFILE,
+  PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_CHAIN_PROFILE,
+  PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_EVENT_ID,
+  PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_PROFILE_NAME,
+} from
   './zenon/operator-trusted-testnet-profile.js';
 
 const ERROR_CODE = 'gate_b_testnet_faucet_receive_state_invalid';
@@ -37,6 +42,8 @@ const TOKEN = /^zts1[0-9a-z]{22}$/u;
 const NONCE = /^[0-9a-f]{16}$/u;
 const POSITIVE_DECIMAL = /^[1-9][0-9]*$/u;
 const EXPECTED_CHAIN_ID = Number(GATE_B_CURRENT_TESTNET_CHAIN_PROFILE.chainIdentifier);
+export const GATE_B_TESTNET_FAUCET_RECEIVE_RESET_EPOCH_STATE_NAME =
+  `${GATE_B_TESTNET_FAUCET_RECEIVE_LEGACY_STATE_NAME}-${PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_PROFILE_NAME}`;
 const RECOVERABLE_STATES = new Set([
   'PREPARED', 'PUBLISHING', 'UNKNOWN', 'INCLUDED',
 ]);
@@ -63,6 +70,26 @@ const FIRST_RECEIVE_FIELDS = Object.freeze([
 const SECOND_ATTEMPT_FIELDS = Object.freeze([
   'firstReceive', 'schemaVersion', 'secondSource',
 ]);
+const RESET_EPOCH_RECORD_FIELDS = Object.freeze([
+  'activeIndex', 'blocks', 'profileCommitment', 'revision', 'schemaVersion', 'state',
+]);
+const RESET_EPOCH_SECOND_ATTEMPT_FIELDS = Object.freeze([
+  'firstReceive', 'profileCommitment', 'schemaVersion', 'secondSource',
+]);
+const PROFILE_COMMITMENT_FIELDS = Object.freeze([
+  'chainIdentifier', 'eventId', 'genesisMomentumHash', 'profileName', 'version',
+]);
+
+export const GATE_B_TESTNET_FAUCET_RECEIVE_RESET_EPOCH_PROFILE_COMMITMENT =
+  Object.freeze({
+    chainIdentifier:
+      PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_CHAIN_PROFILE.chainIdentifier,
+    eventId: PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_EVENT_ID,
+    genesisMomentumHash:
+      PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_CHAIN_PROFILE.genesisMomentumHash,
+    profileName: PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_PROFILE_NAME,
+    version: PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_CHAIN_PROFILE.version,
+  });
 
 export const GATE_B_TESTNET_FAUCET_RECEIVE_STATES = Object.freeze({
   ARMED: 'ARMED',
@@ -132,14 +159,30 @@ function validateBlockRecord(value, expectedIndex) {
   return value;
 }
 
+function validateProfileCommitment(value, expected) {
+  exactObject(value, PROFILE_COMMITMENT_FIELDS);
+  if (!expected || value.version !== expected.version ||
+      value.chainIdentifier !== expected.chainIdentifier ||
+      value.genesisMomentumHash !== expected.genesisMomentumHash ||
+      value.profileName !== expected.profileName || value.eventId !== expected.eventId) fail();
+  return value;
+}
+
 function terminalRecord(value) {
   return value.activeIndex === null && value.blocks.length === 2 &&
     value.blocks.every(block => block.state === 'INCLUDED');
 }
 
-function validateRecord(value) {
-  exactObject(value, ['activeIndex', 'blocks', 'revision', 'schemaVersion', 'state']);
-  if (value.schemaVersion !== 1 || !safeInteger(value.revision) ||
+function validateRecord(value, expectedCommitment) {
+  if (expectedCommitment === undefined) {
+    exactObject(value, ['activeIndex', 'blocks', 'revision', 'schemaVersion', 'state']);
+    if (value.schemaVersion !== 1) fail();
+  } else {
+    exactObject(value, RESET_EPOCH_RECORD_FIELDS);
+    if (value.schemaVersion !== 2) fail();
+    validateProfileCommitment(value.profileCommitment, expectedCommitment);
+  }
+  if (!safeInteger(value.revision) ||
       !Object.values(GATE_B_TESTNET_FAUCET_RECEIVE_STATES).includes(value.state) ||
       !ARRAY_IS_ARRAY(value.blocks) || IS_PROXY(value.blocks) ||
       GET_PROTOTYPE_OF(value.blocks) !== Array.prototype || value.blocks.length > 2) fail();
@@ -169,8 +212,17 @@ function validateSecondSource(value, expectedAddress) {
 }
 
 function validateSecondAttempt(value, record) {
-  exactObject(value, SECOND_ATTEMPT_FIELDS);
-  if (value.schemaVersion !== 1 || !record || record.blocks.length < 1) fail();
+  if (!record || record.blocks.length < 1) fail();
+  if (record.schemaVersion === 1) {
+    exactObject(value, SECOND_ATTEMPT_FIELDS);
+    if (value.schemaVersion !== 1) fail();
+  } else if (record.schemaVersion === 2) {
+    exactObject(value, RESET_EPOCH_SECOND_ATTEMPT_FIELDS);
+    if (value.schemaVersion !== 2) fail();
+    validateProfileCommitment(value.profileCommitment, record.profileCommitment);
+  } else {
+    fail();
+  }
   const firstBlock = record.blocks[0];
   const firstSigned = firstBlock.signedAccountBlock;
   exactObject(value.firstReceive, FIRST_RECEIVE_FIELDS);
@@ -204,15 +256,26 @@ function missing(error) {
   }
 }
 
+async function assertPathAbsent(dependencies, path) {
+  try {
+    await REFLECT_APPLY(dependencies.lstatPath, undefined, [path, { bigint: true }]);
+  } catch (error) {
+    if (missing(error)) return;
+    fail();
+  }
+  fail();
+}
+
 function validAclTarget(target) {
   if (typeof target !== 'string' || !isAbsolute(target) || resolve(target) !== target) return false;
   const leaf = basename(target);
-  const generatedState = leaf.startsWith(
-    `${GATE_B_TESTNET_FAUCET_RECEIVE_LEGACY_STATE_NAME}-`,
-  ) && /^[0-9a-f]{32}$/u.test(leaf.slice(
-    GATE_B_TESTNET_FAUCET_RECEIVE_LEGACY_STATE_NAME.length + 1,
-  ));
-  return leaf === GATE_B_TESTNET_FAUCET_RECEIVE_LEGACY_STATE_NAME || generatedState ||
+  const stateNames = [
+    GATE_B_TESTNET_FAUCET_RECEIVE_LEGACY_STATE_NAME,
+    GATE_B_TESTNET_FAUCET_RECEIVE_RESET_EPOCH_STATE_NAME,
+  ];
+  const generatedState = stateNames.some(name => leaf.startsWith(`${name}-`) &&
+    /^[0-9a-f]{32}$/u.test(leaf.slice(name.length + 1)));
+  return stateNames.includes(leaf) || generatedState ||
     leaf === MARKER_NAME || leaf === RECORD_NAME ||
     leaf === SECOND_ATTEMPT_NAME ||
     (leaf.startsWith(`.${RECORD_NAME}.`) && leaf.endsWith('.tmp'));
@@ -317,6 +380,7 @@ function sameGeneration(left, right) {
 
 async function assertRootStable(state) {
   const dependencies = state.dependencies;
+  await assertPathAbsent(dependencies, state.forbiddenRoot);
   const canonical = await REFLECT_APPLY(dependencies.realpathPath, undefined, [state.root]);
   if (canonical !== state.root) fail();
   const [pathBefore, handleBefore] = await Promise.all([
@@ -338,6 +402,7 @@ async function assertRootStable(state) {
   ]);
   if (canonicalAfter !== state.root || !sameGeneration(pathBefore, pathAfter) ||
       !sameGeneration(handleBefore, handleAfter) || !sameGeneration(pathAfter, handleAfter)) fail();
+  await assertPathAbsent(dependencies, state.forbiddenRoot);
 }
 
 async function assertFileStable(state, record, expectedBytes) {
@@ -499,7 +564,7 @@ async function readExactFile(state, path, maximumBytes) {
 }
 
 async function writeRecord(state, recordPath, record) {
-  validateRecord(record);
+  validateRecord(record, state.profileCommitment);
   const bytes = Buffer.from(`${canonicalJson(record)}\n`, 'utf8');
   if (bytes.length < 2 || bytes.length > MAX_RECORD_BYTES) fail();
   const suffix = REFLECT_APPLY(state.dependencies.randomBytes, undefined, [8]).toString('hex');
@@ -531,7 +596,7 @@ async function readRecord(state, recordPath) {
     if (bytes.length < 2 || bytes[bytes.length - 1] !== 0x0a) fail();
     const text = bytes.subarray(0, bytes.length - 1).toString('utf8');
     const value = JSON_PARSE(text);
-    validateRecord(value);
+    validateRecord(value, state.profileCommitment);
     if (`${canonicalJson(value)}\n` !== bytes.toString('utf8')) fail();
     return cloneRecord(value);
   } catch {
@@ -571,7 +636,10 @@ function immutableBlocks(previous, next) {
 }
 
 function validTransition(previous, next) {
-  if (next.revision !== previous.revision + 1 || next.schemaVersion !== 1 ||
+  if (next.revision !== previous.revision + 1 ||
+      next.schemaVersion !== previous.schemaVersion ||
+      (next.schemaVersion === 2 && canonicalJson(next.profileCommitment) !==
+        canonicalJson(previous.profileCommitment)) ||
       !REFLECT_APPLY(SET_HAS, ALLOWED_TRANSITIONS, [`${previous.state}:${next.state}`])) {
     return false;
   }
@@ -609,7 +677,11 @@ function validTransition(previous, next) {
   return true;
 }
 
-export async function openGateBTestnetFaucetReceiveState(walletWorkspaceRoot, injected) {
+export async function openGateBTestnetFaucetReceiveState(
+  walletWorkspaceRoot,
+  injected,
+  profileName,
+) {
   const dependencies = exactInjections(injected);
   let rawHandle;
   let handle;
@@ -621,15 +693,29 @@ export async function openGateBTestnetFaucetReceiveState(walletWorkspaceRoot, in
     const uid = REFLECT_APPLY(dependencies.getuid, undefined, []);
     if (!safeInteger(uid)) fail();
     const parent = dirname(walletWorkspaceRoot);
+    let forbiddenRoot;
     let root;
     try {
-      root = selectGateBBuyerWalletWorkspace(
+      const selection = selectGateBBuyerWalletWorkspace(
         walletWorkspaceRoot,
         parent,
-      ).stateWorkspaceRoot;
+      );
+      const resetLeaf = selection.generationToken === null
+        ? GATE_B_TESTNET_FAUCET_RECEIVE_RESET_EPOCH_STATE_NAME
+        : `${GATE_B_TESTNET_FAUCET_RECEIVE_RESET_EPOCH_STATE_NAME}-${selection.generationToken}`;
+      const resetRoot = join(parent, resetLeaf);
+      if (profileName === undefined) {
+        root = selection.stateWorkspaceRoot;
+        forbiddenRoot = resetRoot;
+      } else {
+        if (profileName !== PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_PROFILE_NAME) fail();
+        root = resetRoot;
+        forbiddenRoot = selection.stateWorkspaceRoot;
+      }
     } catch {
       fail();
     }
+    await assertPathAbsent(dependencies, forbiddenRoot);
     try {
       await REFLECT_APPLY(dependencies.mkdirPath, undefined, [root, { mode: 0o700 }]);
     } catch (error) {
@@ -655,7 +741,18 @@ export async function openGateBTestnetFaucetReceiveState(walletWorkspaceRoot, in
         typeof handle.close !== 'function') fail();
     const opened = await handle.stat({ bigint: true });
     if (!directoryValid(opened, uid) || !sameGeneration(pathStat, opened)) fail();
-    const state = { dependencies, handle, identity: opened, root, uid };
+    const profileCommitment = profileName === undefined
+      ? undefined
+      : GATE_B_TESTNET_FAUCET_RECEIVE_RESET_EPOCH_PROFILE_COMMITMENT;
+    const state = {
+      dependencies,
+      forbiddenRoot,
+      handle,
+      identity: opened,
+      profileCommitment,
+      root,
+      uid,
+    };
     await assertRootStable(state);
     const markerPath = join(root, MARKER_NAME);
     const recordPath = join(root, RECORD_NAME);
@@ -726,15 +823,18 @@ export async function openGateBTestnetFaucetReceiveState(walletWorkspaceRoot, in
           activeIndex: null,
           blocks: [],
           revision: 0,
-          schemaVersion: 1,
+          schemaVersion: profileCommitment === undefined ? 1 : 2,
           state: GATE_B_TESTNET_FAUCET_RECEIVE_STATES.ARMED,
         };
+        if (profileCommitment !== undefined) {
+          record.profileCommitment = cloneRecord(profileCommitment);
+        }
         await writeRecord(state, recordPath, record);
         return cloneRecord(record);
       },
       async update(next) {
         assertOpen();
-        validateRecord(next);
+        validateRecord(next, state.profileCommitment);
         const previous = await readRecord(state, recordPath);
         if (!validTransition(previous, next)) fail();
         await writeRecord(state, recordPath, next);

@@ -12,6 +12,7 @@ import { openGateBPublicWsPrivateWorkspace } from './gate-b-public-ws-private-wo
 import {
   GATE_B_TESTNET_FAUCET_RECEIVE_EXECUTION_MODES,
   GATE_B_TESTNET_FAUCET_RECEIVE_LIMITS,
+  GATE_B_TESTNET_FAUCET_RECEIVE_SCHEMA_VERSIONS,
   frameGateBTestnetFaucetReceiveBootstrap,
   parseGateBTestnetFaucetReceiveFrame,
 } from './gate-b-testnet-faucet-receive-schema.js';
@@ -32,8 +33,13 @@ import {
   GATE_B_CURRENT_TESTNET_OPERATOR_TRUST_ACKNOWLEDGEMENT,
   GATE_B_CURRENT_TESTNET_PROFILE_NAME,
   GATE_B_CURRENT_TESTNET_SDK_NETWORK_ID,
+  PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_CHAIN_PROFILE,
+  PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_SDK_NETWORK_ID,
   TESTNET_LIVE_ACKNOWLEDGEMENT,
+  isGateBCurrentTestnetPolicy,
+  isPublicTestnetDynamicPlasmaResetEpochExecutionPolicy,
   selectGateBCurrentTestnetPolicy,
+  selectPublicTestnetDynamicPlasmaResetEpochExecutionPolicy,
 } from './zenon/operator-trusted-testnet-profile.js';
 
 const ERROR_CODE = 'gate_b_testnet_faucet_receive_child_failed';
@@ -47,13 +53,14 @@ const HASH = /^[0-9a-f]{64}$/u;
 const ADDRESS = /^z1[0-9a-z]{38}$/u;
 const BASE64 = /^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/u;
 const NONCE = /^[0-9a-f]{16}$/u;
-const EXPECTED_CHAIN_ID = Number(GATE_B_CURRENT_TESTNET_CHAIN_PROFILE.chainIdentifier);
 const ARRAY_IS_ARRAY = Array.isArray;
 const ARRAY_PROTOTYPE = Array.prototype;
 const BIGINT_TO_STRING = BigInt.prototype.toString;
+const BUFFER_CONCAT = Buffer.concat;
 const BUFFER_EQUALS = Buffer.prototype.equals;
 const BUFFER_FROM = Buffer.from;
 const BUFFER_IS_BUFFER = Buffer.isBuffer;
+const BUFFER_READ_BIG_UINT64_LE = Buffer.prototype.readBigUInt64LE;
 const BUFFER_TO_STRING = Buffer.prototype.toString;
 const DEFINE_PROPERTY = Object.defineProperty;
 const GET_OWN_PROPERTY_DESCRIPTOR = Object.getOwnPropertyDescriptor;
@@ -63,6 +70,7 @@ const IS_PROXY = utilTypes.isProxy;
 const OBJECT_PROTOTYPE = Object.prototype;
 const REFLECT_APPLY = Reflect.apply;
 const REFLECT_OWN_KEYS = Reflect.ownKeys;
+const POW_RANGE = 1n << 64n;
 const SIGNED_FIELDS = Object.freeze([
   'address', 'amount', 'blockType', 'chainIdentifier', 'data', 'difficulty',
   'fromBlockHash', 'fusedPlasma', 'hash', 'height', 'momentumAcknowledged',
@@ -140,12 +148,25 @@ async function defaultLoadDependencies() {
   return Object.freeze({ ed, sdk });
 }
 
-function defaultPolicy() {
-  return selectGateBCurrentTestnetPolicy(
-    GATE_B_CURRENT_TESTNET_PROFILE_NAME,
-    GATE_B_CURRENT_TESTNET_OPERATOR_TRUST_ACKNOWLEDGEMENT,
-    TESTNET_LIVE_ACKNOWLEDGEMENT,
-  );
+function defaultPolicy(bootstrap) {
+  if (bootstrap.schemaVersion ===
+      GATE_B_TESTNET_FAUCET_RECEIVE_SCHEMA_VERSIONS.LEGACY_PLAINTEXT_WS) {
+    return selectGateBCurrentTestnetPolicy(
+      GATE_B_CURRENT_TESTNET_PROFILE_NAME,
+      GATE_B_CURRENT_TESTNET_OPERATOR_TRUST_ACKNOWLEDGEMENT,
+      TESTNET_LIVE_ACKNOWLEDGEMENT,
+    );
+  }
+  if (bootstrap.schemaVersion !==
+      GATE_B_TESTNET_FAUCET_RECEIVE_SCHEMA_VERSIONS.RESET_EPOCH_PINNED_WSS) fail();
+  return selectPublicTestnetDynamicPlasmaResetEpochExecutionPolicy({
+    eventId: bootstrap.eventId,
+    liveAcknowledgement: bootstrap.liveAcknowledgement,
+    operatorTrustAcknowledgement: bootstrap.operatorTrustAcknowledgement,
+    profileName: bootstrap.profileName,
+    rpcEndpoint: bootstrap.rpcEndpoint,
+    wssAcknowledgement: bootstrap.wssAcknowledgement,
+  });
 }
 
 function defaultWait(milliseconds) {
@@ -414,6 +435,24 @@ function normalizeNativeSource(block, sdk, expectedAddress) {
   });
 }
 
+function normalizeConfirmedNativeSource(block, sdk, expectedAddress, expectedChainId) {
+  const source = normalizeNativeSource(block, sdk, expectedAddress);
+  if (!Number.isSafeInteger(expectedChainId) || expectedChainId < 1 ||
+      ownData(block, 'chainIdentifier') !== expectedChainId ||
+      sdkHashString(computeBlockHash(block, sdk), sdk) !== source.hash) fail();
+  const confirmation = ownData(block, 'confirmationDetail');
+  if (confirmation === undefined || confirmation === null) fail();
+  const normalized = normalizeConfirmationDetail(confirmation);
+  if (!Number.isSafeInteger(normalized.numConfirmations) ||
+      normalized.numConfirmations < 1 ||
+      !Number.isSafeInteger(normalized.momentumHeight) ||
+      normalized.momentumHeight < 1) fail();
+  return Object.freeze({
+    ...source,
+    confirmationMomentumHeight: normalized.momentumHeight,
+  });
+}
+
 function sourceIdentity(source) {
   return Object.freeze({
     address: source.address,
@@ -438,16 +477,22 @@ function pendingSourceIdentity(source) {
 function secondReceiveAttempt(record, source) {
   const first = record.blocks[0];
   const signed = first.signedAccountBlock;
-  return Object.freeze({
+  const attempt = {
     firstReceive: Object.freeze({
       hash: signed.hash,
       height: signed.height,
       momentumAcknowledgedHeight: signed.momentumAcknowledged.height,
       sourceHash: first.sourceHash,
     }),
-    schemaVersion: 1,
+    schemaVersion: record.schemaVersion,
     secondSource: pendingSourceIdentity(source),
-  });
+  };
+  if (record.schemaVersion === 2) {
+    attempt.profileCommitment = Object.freeze({ ...record.profileCommitment });
+  } else if (record.schemaVersion !== 1) {
+    fail();
+  }
+  return Object.freeze(attempt);
 }
 
 function normalizeHistoricalNativeSource(
@@ -456,9 +501,13 @@ function normalizeHistoricalNativeSource(
   expectedAddress,
   expectedHash,
   maximumMomentumHeight,
+  expectedChainId,
 ) {
   const source = normalizeNativeSource(block, sdk, expectedAddress);
-  if (source.hash !== expectedHash ||
+  if ((expectedChainId !== undefined &&
+      (!Number.isSafeInteger(expectedChainId) || expectedChainId < 1 ||
+        ownData(block, 'chainIdentifier') !== expectedChainId)) ||
+      source.hash !== expectedHash ||
       sdkHashString(computeBlockHash(block, sdk), sdk) !== expectedHash) fail();
   const confirmation = ownData(block, 'confirmationDetail');
   if (confirmation === undefined || confirmation === null) fail();
@@ -482,7 +531,13 @@ function exactComplementaryNativeSources(first, second, sdk) {
         (first.asset === qsr && second.asset === znn))) fail();
 }
 
-function normalizePendingList(result, sdk, expectedAddress, expectedCount = 2) {
+function normalizePendingList(
+  result,
+  sdk,
+  expectedAddress,
+  expectedCount = 2,
+  confirmedChainId,
+) {
   exactSdkValue(result, sdk.AccountBlockList.prototype);
   const count = ownData(result, 'count');
   const list = ownData(result, 'list');
@@ -495,7 +550,14 @@ function normalizePendingList(result, sdk, expectedAddress, expectedCount = 2) {
   const output = [];
   const seen = new Set();
   for (let index = 0; index < list.length; index += 1) {
-    const source = normalizeNativeSource(list[index], sdk, expectedAddress);
+    const source = confirmedChainId === undefined
+      ? normalizeNativeSource(list[index], sdk, expectedAddress)
+      : normalizeConfirmedNativeSource(
+          list[index],
+          sdk,
+          expectedAddress,
+          confirmedChainId,
+        );
     if (seen.has(source.hash)) fail();
     seen.add(source.hash);
     output.push(source);
@@ -507,13 +569,19 @@ function normalizePendingList(result, sdk, expectedAddress, expectedCount = 2) {
 }
 
 function stablePendingSnapshot(first, second) {
-  const normalize = blocks => blocks.map(block => ({
-    address: block.address,
-    amount: block.amount,
-    asset: block.asset,
-    blockType: block.blockType,
-    hash: block.hash,
-  }));
+  const normalize = blocks => blocks.map(block => {
+    const snapshot = {
+      address: block.address,
+      amount: block.amount,
+      asset: block.asset,
+      blockType: block.blockType,
+      hash: block.hash,
+    };
+    if (HAS_OWN(block, 'confirmationMomentumHeight')) {
+      snapshot.confirmationMomentumHeight = block.confirmationMomentumHeight;
+    }
+    return snapshot;
+  });
   if (canonicalJson(normalize(first)) !== canonicalJson(normalize(second))) fail();
   return first;
 }
@@ -533,9 +601,58 @@ function exactBase64(value, bytes) {
   return decoded;
 }
 
-function exactSignedJson(value, source, expectedAddress, sdk, ed, prepared) {
+function exactConsensusPoW(value, prepared, sdk) {
+  let nonce;
+  let powDataInput;
+  let workInput;
+  try {
+    nonce = REFLECT_APPLY(BUFFER_FROM, Buffer, [value.nonce, 'hex']);
+    exactBuffer(nonce, 8);
+    const address = sdkCore(ownData(prepared, 'address'), sdk.Address.prototype, 20);
+    const previousHash = sdkCore(
+      ownData(prepared, 'previousHash'),
+      sdk.Hash.prototype,
+      32,
+    );
+    const digest = method(sdk.Hash, 'digest');
+    powDataInput = REFLECT_APPLY(BUFFER_CONCAT, Buffer, [[address, previousHash]]);
+    const powData = exactSdkValue(
+      REFLECT_APPLY(digest, sdk.Hash, [powDataInput]),
+      sdk.Hash.prototype,
+    );
+    workInput = REFLECT_APPLY(BUFFER_CONCAT, Buffer, [[
+      nonce,
+      sdkCore(powData, sdk.Hash.prototype, 32),
+    ]]);
+    const work = sdkCore(
+      exactSdkValue(
+        REFLECT_APPLY(digest, sdk.Hash, [workInput]),
+        sdk.Hash.prototype,
+      ),
+      sdk.Hash.prototype,
+      32,
+    );
+    const threshold = POW_RANGE - (POW_RANGE / BigInt(value.difficulty));
+    const observed = REFLECT_APPLY(BUFFER_READ_BIG_UINT64_LE, work, [0]);
+    if (observed < threshold) fail();
+  } finally {
+    try { nonce?.fill(0); } catch {}
+    try { powDataInput?.fill(0); } catch {}
+    try { workInput?.fill(0); } catch {}
+  }
+}
+
+function exactSignedJson(
+  value,
+  source,
+  expectedAddress,
+  expectedChainId,
+  sdk,
+  ed,
+  prepared,
+) {
   exactObject(value, SIGNED_FIELDS);
-  if (value.version !== 1 || value.chainIdentifier !== EXPECTED_CHAIN_ID ||
+  if (value.version !== 1 || value.chainIdentifier !== expectedChainId ||
       value.blockType !== sdk.BlockTypeEnum.UserReceive || !HASH.test(value.hash) ||
       !HASH.test(value.previousHash) || !Number.isSafeInteger(value.height) || value.height < 1 ||
       value.address !== expectedAddress || value.toAddress !== sdk.EMPTY_ADDRESS.toString() ||
@@ -554,6 +671,7 @@ function exactSignedJson(value, source, expectedAddress, sdk, ed, prepared) {
   const computed = computeBlockHash(prepared, sdk);
   if (computed.toString() !== value.hash ||
       ed.verify(signature, computed.getBytes(), publicKey, { zip215: false }) !== true) fail();
+  exactConsensusPoW(value, prepared, sdk);
   return Object.freeze(JSON.parse(JSON.stringify(value)));
 }
 
@@ -642,6 +760,14 @@ async function lookupIncluded({ scope, zenon, sdk, preparedJson, dependencies, w
 async function recoverExisting(record, context) {
   if (!['PREPARED', 'PUBLISHING', 'UNKNOWN', 'INCLUDED', 'COMPLETE', 'RECOVERED']
     .includes(record.state) || record.blocks.length < 1 || record.blocks.length > 2) fail();
+  let historicalChainId;
+  if (record.schemaVersion ===
+      GATE_B_TESTNET_FAUCET_RECEIVE_SCHEMA_VERSIONS.RESET_EPOCH_PINNED_WSS) {
+    historicalChainId = context.expectedChainId;
+  } else if (record.schemaVersion !==
+      GATE_B_TESTNET_FAUCET_RECEIVE_SCHEMA_VERSIONS.LEGACY_PLAINTEXT_WS) {
+    fail();
+  }
   const outcomeUnknown = () => {
     try { context.scope.poison(new GateBTestnetFaucetReceiveChildError()); } catch {}
     return 'outcome-unknown';
@@ -736,6 +862,7 @@ async function recoverExisting(record, context) {
       expectedAddress,
       firstRecord.sourceHash,
       maximumMomentumHeight,
+      historicalChainId,
     );
     const firstPending = normalizePendingList(await runRead(
       context.scope,
@@ -778,6 +905,7 @@ async function recoverExisting(record, context) {
       expectedAddress,
       pending[0].hash,
       maximumMomentumHeight,
+      historicalChainId,
     );
     if (canonicalJson(pendingSourceIdentity(remainingSource)) !==
         canonicalJson(pendingSourceIdentity(pending[0]))) fail();
@@ -798,6 +926,7 @@ async function recoverExisting(record, context) {
       expectedAddress,
       remainingSource.hash,
       maximumMomentumHeight,
+      historicalChainId,
     );
     if (canonicalJson(sourceIdentity(remainingRecheck)) !==
         canonicalJson(expectedHistoricalSource) ||
@@ -829,11 +958,48 @@ async function readWorkspaceInput(workspace, name) {
   return bytes;
 }
 
-function exactPolicy(policy) {
+function exactPolicy(policy, bootstrap) {
   if (!policy || typeof policy !== 'object' || typeof policy.chainProfile !== 'function') fail();
+  let expectedProfile;
+  let networkId;
+  let requireConfirmedPending;
+  let stateProfileName;
+  if (bootstrap.schemaVersion ===
+      GATE_B_TESTNET_FAUCET_RECEIVE_SCHEMA_VERSIONS.LEGACY_PLAINTEXT_WS) {
+    if (!isGateBCurrentTestnetPolicy(policy)) fail();
+    expectedProfile = GATE_B_CURRENT_TESTNET_CHAIN_PROFILE;
+    networkId = GATE_B_CURRENT_TESTNET_SDK_NETWORK_ID;
+    requireConfirmedPending = false;
+    stateProfileName = undefined;
+  } else if (bootstrap.schemaVersion ===
+      GATE_B_TESTNET_FAUCET_RECEIVE_SCHEMA_VERSIONS.RESET_EPOCH_PINNED_WSS) {
+    if (!isPublicTestnetDynamicPlasmaResetEpochExecutionPolicy(policy) ||
+        policy.profileName !== bootstrap.profileName ||
+        policy.epochEventId !== bootstrap.eventId ||
+        policy.rpcEndpoint !== bootstrap.rpcEndpoint) fail();
+    expectedProfile = PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_CHAIN_PROFILE;
+    networkId = PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_SDK_NETWORK_ID;
+    requireConfirmedPending = true;
+    stateProfileName = bootstrap.profileName;
+  } else {
+    fail();
+  }
   const profile = policy.chainProfile();
-  if (!profile || profile.chainIdentifier !== GATE_B_CURRENT_TESTNET_CHAIN_PROFILE.chainIdentifier) fail();
-  return { policy, profile };
+  if (!profile || profile.version !== expectedProfile.version ||
+      profile.chainIdentifier !== expectedProfile.chainIdentifier ||
+      profile.genesisMomentumHash !== expectedProfile.genesisMomentumHash) fail();
+  const expectedChainId = Number(expectedProfile.chainIdentifier);
+  const sdkNetworkId = Number(networkId);
+  if (!Number.isSafeInteger(expectedChainId) || expectedChainId < 1 ||
+      !Number.isSafeInteger(sdkNetworkId) || sdkNetworkId !== 3) fail();
+  return {
+    expectedChainId,
+    policy,
+    profile,
+    requireConfirmedPending,
+    sdkNetworkId,
+    stateProfileName,
+  };
 }
 
 export async function executeGateBTestnetFaucetReceive(bootstrap, injected) {
@@ -863,14 +1029,20 @@ export async function executeGateBTestnetFaucetReceive(bootstrap, injected) {
     const loaded = await REFLECT_APPLY(dependencies.loadDependencies, undefined, []);
     if (!loaded || typeof loaded !== 'object' || !loaded.sdk || !loaded.ed) fail();
     const { sdk, ed } = loaded;
-    const { policy, profile } = exactPolicy(
-      REFLECT_APPLY(dependencies.createPolicy, undefined, []),
+    const {
+      expectedChainId,
+      policy,
+      profile,
+      requireConfirmedPending,
+      sdkNetworkId,
+      stateProfileName,
+    } = exactPolicy(
+      REFLECT_APPLY(dependencies.createPolicy, undefined, [bootstrap]),
+      bootstrap,
     );
-    if (Number(GATE_B_CURRENT_TESTNET_SDK_NETWORK_ID) !== 3 ||
-        !Number.isSafeInteger(EXPECTED_CHAIN_ID) || EXPECTED_CHAIN_ID < 1 ||
-        Number(profile.chainIdentifier) !== EXPECTED_CHAIN_ID ||
+    if (Number(profile.chainIdentifier) !== expectedChainId ||
         sdk.Zenon.getPowProvider() !== undefined) fail();
-    sdk.Zenon.setNetworkID(Number(GATE_B_CURRENT_TESTNET_SDK_NETWORK_ID));
+    sdk.Zenon.setNetworkID(sdkNetworkId);
     zenon = sdk.Zenon.getInstance();
     if (zenon.client !== undefined) fail();
     return await dependencies.runtime.withOwner(
@@ -899,12 +1071,13 @@ export async function executeGateBTestnetFaucetReceive(bootstrap, injected) {
               operatorTrustedChainPolicy: policy,
             },
           ]);
-          if (!readiness || readiness.chainId !== EXPECTED_CHAIN_ID) fail();
-          sdk.Zenon.setChainID(EXPECTED_CHAIN_ID);
+          if (!readiness || readiness.chainId !== expectedChainId) fail();
+          sdk.Zenon.setChainID(expectedChainId);
 
           state = await REFLECT_APPLY(dependencies.openReceiveState, undefined, [
             workspaceRoot,
             dependencies.receiveStateInjections,
+            stateProfileName,
           ]);
           const existing = await state.load();
           let expectedAddress;
@@ -920,7 +1093,7 @@ export async function executeGateBTestnetFaucetReceive(bootstrap, injected) {
                 ]) !== true) fail();
             const recovery = await recoverExisting(
               existing,
-              { dependencies, scope, sdk, state, zenon },
+              { dependencies, expectedChainId, scope, sdk, state, zenon },
             );
             if (typeof recovery === 'string') return recovery;
             if (await REFLECT_APPLY(dependencies.onExecutionMode, undefined, [
@@ -957,7 +1130,9 @@ export async function executeGateBTestnetFaucetReceive(bootstrap, injected) {
                 0,
                 GATE_B_TESTNET_FAUCET_RECEIVE_LIMITS.pageSize,
               ),
-            ), sdk, expectedAddress);
+            ), sdk, expectedAddress,
+            GATE_B_TESTNET_FAUCET_RECEIVE_LIMITS.expectedTransfers,
+            requireConfirmedPending ? expectedChainId : undefined);
             const secondPending = normalizePendingList(await runRead(
               scope,
               'ledger.getUnreceivedBlocksByAddress.second',
@@ -966,7 +1141,9 @@ export async function executeGateBTestnetFaucetReceive(bootstrap, injected) {
                 0,
                 GATE_B_TESTNET_FAUCET_RECEIVE_LIMITS.pageSize,
               ),
-            ), sdk, expectedAddress);
+            ), sdk, expectedAddress,
+            GATE_B_TESTNET_FAUCET_RECEIVE_LIMITS.expectedTransfers,
+            requireConfirmedPending ? expectedChainId : undefined);
             const pending = stablePendingSnapshot(firstPending, secondPending);
             for (const label of ['first', 'second']) {
               exactZeroUnconfirmed(await runRead(
@@ -1045,10 +1222,16 @@ export async function executeGateBTestnetFaucetReceive(bootstrap, injected) {
               signedBlockSnapshot(prepared, sdk.AccountBlockTemplate.prototype, sdk),
               source,
               expectedAddress,
+              expectedChainId,
               sdk,
               ed,
               prepared,
             );
+            if (requireConfirmedPending &&
+                (!Number.isSafeInteger(source.confirmationMomentumHeight) ||
+                  source.confirmationMomentumHeight < 1 ||
+                  preparedJson.momentumAcknowledged.height <
+                    source.confirmationMomentumHeight)) fail();
             if (requiredSuccessor &&
                 (preparedJson.height !== requiredSuccessor.height ||
                   preparedJson.previousHash !== requiredSuccessor.previousHash)) fail();

@@ -13,6 +13,7 @@ import {
 import {
   GATE_B_TESTNET_FAUCET_RECEIVE_EXECUTION_MODES,
   GATE_B_TESTNET_FAUCET_RECEIVE_LIMITS,
+  GATE_B_TESTNET_FAUCET_RECEIVE_SCHEMA_VERSIONS,
   parseGateBTestnetFaucetReceiveFrame,
 } from './gate-b-testnet-faucet-receive-schema.js';
 
@@ -385,7 +386,10 @@ async function superviseSelectedGateBTestnetFaucetReceive(
     dependencies = exactInjections(injected);
     frame = await REFLECT_APPLY(dependencies.readBootstrapFrame, undefined, []);
     const bootstrap = parseGateBTestnetFaucetReceiveFrame(frame);
-    if (!bootstrap || bootstrap.schemaVersion !== 1) fail();
+    if (!bootstrap || (bootstrap.schemaVersion !==
+        GATE_B_TESTNET_FAUCET_RECEIVE_SCHEMA_VERSIONS.LEGACY_PLAINTEXT_WS &&
+        bootstrap.schemaVersion !==
+          GATE_B_TESTNET_FAUCET_RECEIVE_SCHEMA_VERSIONS.RESET_EPOCH_PINNED_WSS)) fail();
     workspaceRoot = await canonicalWalletWorkspace(
       workspaceRoot,
       requireGenerated,
