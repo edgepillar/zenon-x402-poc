@@ -36,6 +36,7 @@ import {
   completeGateBResetEpochV4FreshInputsFromQuickTunnelLease,
   generateGateBResetEpochV4FreshInputs,
   GateBResetEpochV4FreshInputOwnerError,
+  validateGateBResetEpochV4CompletionCapability,
 } from '../src/gate-b-reset-epoch-v4-fresh-input-owner.js';
 import {
   launchGateBQuickTunnel,
@@ -278,6 +279,7 @@ async function fixture(t) {
 
 function counters() {
   return {
+    aclInspections: 0,
     directorySyncs: 0,
     fileSyncs: new Map(),
     openCounts: new Map(),
@@ -301,11 +303,15 @@ function decorateDirectoryHandle(counts, syncHook) {
 
 function decorateFileHandle(counts, hooks = {}) {
   return (handle, name) => ({
-    stat: (...args) => handle.stat(...args),
+    stat: (...args) => hooks.stat
+      ? hooks.stat({ args, handle, name })
+      : handle.stat(...args),
     chmod: (...args) => hooks.chmod
       ? hooks.chmod({ args, handle, name })
       : handle.chmod(...args),
-    read: (...args) => handle.read(...args),
+    read: (...args) => hooks.read
+      ? hooks.read({ args, handle, name })
+      : handle.read(...args),
     async write(...args) {
       counts.writeCounts.set(name, (counts.writeCounts.get(name) ?? 0) + 1);
       counts.writeBuffers.push(args[0]);
@@ -317,7 +323,9 @@ function decorateFileHandle(counts, hooks = {}) {
       if (hooks.sync) return hooks.sync({ args, handle, name });
       return handle.sync(...args);
     },
-    close: (...args) => handle.close(...args),
+    close: (...args) => hooks.close
+      ? hooks.close({ args, handle, name })
+      : handle.close(...args),
   });
 }
 
@@ -328,7 +336,10 @@ function workspaceInjections(root, counts, overrides = {}) {
     lstatActualCwd: () => lstat(root, { bigint: true }),
     openActualCwd: flags => open(root, flags),
     realpathActualCwd: () => realpath(root),
-    aclInspector: async () => true,
+    aclInspector: async () => {
+      counts.aclInspections += 1;
+      return true;
+    },
     decorateDirectoryHandle: decorateDirectoryHandle(counts),
     decorateFileHandle: decorateFileHandle(counts),
     ...overrides,
@@ -532,15 +543,48 @@ async function writeHostnameSource(context, { exclusive = false } = {}) {
   return path;
 }
 
+function assertOwnerError(error, ErrorType = GateBResetEpochV4FreshInputOwnerError) {
+  assert.equal(error instanceof ErrorType, true);
+  assert.equal(error.code, ERROR_CODE);
+  assert.equal(error.message, ERROR_CODE);
+  assert.equal(error.cause, undefined);
+  assert.equal(error.stack, `GateBResetEpochV4FreshInputOwnerError: ${ERROR_CODE}`);
+  return true;
+}
+
 async function expectFailure(promise) {
-  await assert.rejects(promise, error => {
-    assert.equal(error instanceof GateBResetEpochV4FreshInputOwnerError, true);
-    assert.equal(error.code, ERROR_CODE);
-    assert.equal(error.message, ERROR_CODE);
-    assert.equal(error.cause, undefined);
-    assert.equal(error.stack, `GateBResetEpochV4FreshInputOwnerError: ${ERROR_CODE}`);
-    return true;
-  });
+  await assert.rejects(promise, error => assertOwnerError(error));
+}
+
+function expectSynchronousFailure(invoke, ErrorType) {
+  assert.throws(invoke, error => assertOwnerError(error, ErrorType));
+}
+
+async function completedHandoff(t, context, options = {}) {
+  const retained = await retainedQuickTunnelLease(
+    t,
+    context,
+    options.onCheck,
+    options.leaseOptions,
+  );
+  const counts = counters();
+  const capability = await completeGateBResetEpochV4FreshInputsFromQuickTunnelLease(
+    ...handoffArguments(context, retained.lease, {
+      injected: workspaceInjections(context.root, counts),
+    }),
+  );
+  return { ...retained, capability, counts };
+}
+
+async function expectValidationFailure(capability, injected) {
+  await expectFailure(validateGateBResetEpochV4CompletionCapability(
+    capability,
+    injected,
+  ));
+  expectSynchronousFailure(() => validateGateBResetEpochV4CompletionCapability(
+    capability,
+    injected,
+  ));
 }
 
 async function assertMissing(path) {
@@ -738,6 +782,10 @@ test('preserves the original empty-workspace API and fixed non-authorizing resul
     true,
   );
   assert.equal(counts.directorySyncs >= 8, true);
+  assert.deepEqual(
+    await preflightResetEpochWssOnceRun(resetEpochRunOptions(context)),
+    { valid: true },
+  );
 
   const source = await readFile(
     new URL('../src/gate-b-reset-epoch-v4-fresh-input-owner.js', import.meta.url),
@@ -841,7 +889,594 @@ test('completion manifest binds retained bytes and generations against later sim
     manifestBefore.fill(0);
   });
 
-test('v4 handoff has no marker deletion capability or post-deletion status', async () => {
+test('completion capability is synchronously claimed once before reentry or caller input access',
+  async t => {
+    const context = await fixture(t);
+    let capability;
+    let consumerStarted = false;
+    let reentryAttempted = false;
+    const retained = await retainedQuickTunnelLease(t, context, async () => {
+      if (!consumerStarted || reentryAttempted) return;
+      reentryAttempted = true;
+      expectSynchronousFailure(() =>
+        validateGateBResetEpochV4CompletionCapability(capability));
+    });
+    capability = await completeGateBResetEpochV4FreshInputsFromQuickTunnelLease(
+      ...handoffArguments(context, retained.lease, {
+        injected: workspaceInjections(context.root, counters()),
+      }),
+    );
+    const injected = workspaceInjections(context.root, counters());
+
+    const forged = Object.freeze(Object.create(null));
+    const copied = Object.freeze(Object.assign(Object.create(null), capability));
+    expectSynchronousFailure(() =>
+      validateGateBResetEpochV4CompletionCapability(forged, injected));
+    expectSynchronousFailure(() =>
+      validateGateBResetEpochV4CompletionCapability(copied, injected));
+
+    const restartedModule = await import(
+      `${new URL('../src/gate-b-reset-epoch-v4-fresh-input-owner.js', import.meta.url).href}` +
+      '?restart-isolation=1'
+    );
+    expectSynchronousFailure(
+      () => restartedModule.validateGateBResetEpochV4CompletionCapability(
+        capability,
+        injected,
+      ),
+      restartedModule.GateBResetEpochV4FreshInputOwnerError,
+    );
+
+    consumerStarted = true;
+    const first = validateGateBResetEpochV4CompletionCapability(capability, injected);
+    expectSynchronousFailure(() =>
+      validateGateBResetEpochV4CompletionCapability(capability, injected));
+    const result = await first;
+    assert.equal(reentryAttempted, true);
+    assert.notEqual(result, capability);
+    assert.equal(Object.getPrototypeOf(result), null);
+    assert.deepEqual(Reflect.ownKeys(result), []);
+    assert.equal(Object.isFrozen(result), true);
+    expectSynchronousFailure(() =>
+      validateGateBResetEpochV4CompletionCapability(capability, injected));
+  });
+
+test('captured capability intrinsics reject a covert key minted after module import',
+  { concurrency: false }, async t => {
+    const context = await fixture(t);
+    const { lease } = await retainedQuickTunnelLease(t, context);
+    const counts = counters();
+    const priorObjectCreate = Object.getOwnPropertyDescriptor(Object, 'create');
+    const priorWeakMapSet = Object.getOwnPropertyDescriptor(WeakMap.prototype, 'set');
+    const nativeApply = Reflect.apply;
+    const nativeGetPrototypeOf = Object.getPrototypeOf;
+    const nativeHasOwn = Object.hasOwn;
+    const nativeOwnKeys = Reflect.ownKeys;
+    const covertKey = Object.freeze(nativeApply(
+      priorObjectCreate.value,
+      Object,
+      [null],
+    ));
+    const liveObjectCreateResults = new WeakSet();
+    let installed = false;
+    let targetedWeakMapSetCalls = 0;
+
+    function installPoison() {
+      if (installed) return;
+      installed = true;
+      Object.defineProperty(Object, 'create', {
+        ...priorObjectCreate,
+        value(...args) {
+          const created = nativeApply(priorObjectCreate.value, Object, args);
+          liveObjectCreateResults.add(created);
+          return created;
+        },
+      });
+      Object.defineProperty(WeakMap.prototype, 'set', {
+        ...priorWeakMapSet,
+        value(key, value) {
+          const isCompletionState = value && typeof value === 'object' &&
+            nativeHasOwn(value, 'handoff') &&
+            nativeHasOwn(value, 'manifestGeneration') &&
+            nativeHasOwn(value, 'markerGeneration') &&
+            nativeHasOwn(value, 'workspaceRoot');
+          const isValidationState = value && typeof value === 'object' &&
+            nativeHasOwn(value, 'completionState') &&
+            nativeHasOwn(value, 'futureLiveConsumerEligible') &&
+            nativeHasOwn(value, 'status') && nativeHasOwn(value, 'testOnly');
+          if ((isCompletionState || isValidationState) &&
+              nativeGetPrototypeOf(key) === null &&
+              nativeOwnKeys(key).length === 0) {
+            targetedWeakMapSetCalls += 1;
+            nativeApply(priorWeakMapSet.value, this, [covertKey, value]);
+          }
+          return nativeApply(priorWeakMapSet.value, this, [key, value]);
+        },
+      });
+    }
+
+    let capability;
+    let result;
+    try {
+      capability = await completeGateBResetEpochV4FreshInputsFromQuickTunnelLease(
+        ...handoffArguments(context, lease, {
+          injected: workspaceInjections(context.root, counts, {
+            decorateFileHandle: decorateFileHandle(counts, {
+              async close({ args, handle }) {
+                const result = await handle.close(...args);
+                installPoison();
+                return result;
+              },
+            }),
+          }),
+        }),
+      );
+      assert.equal(installed, true);
+      assert.equal(liveObjectCreateResults.has(capability), false);
+      assert.equal(targetedWeakMapSetCalls, 0);
+
+      const injected = workspaceInjections(context.root, counters());
+      expectSynchronousFailure(() =>
+        validateGateBResetEpochV4CompletionCapability(covertKey, injected));
+      result = await validateGateBResetEpochV4CompletionCapability(
+        capability,
+        injected,
+      );
+      assert.equal(liveObjectCreateResults.has(result), false);
+      assert.equal(targetedWeakMapSetCalls, 0);
+    } finally {
+      if (installed) {
+        Object.defineProperty(Object, 'create', priorObjectCreate);
+        Object.defineProperty(WeakMap.prototype, 'set', priorWeakMapSet);
+      }
+    }
+
+    assert.equal(installed, true);
+    assert.deepEqual(Object.getOwnPropertyDescriptor(Object, 'create'), priorObjectCreate);
+    assert.deepEqual(
+      Object.getOwnPropertyDescriptor(WeakMap.prototype, 'set'),
+      priorWeakMapSet,
+    );
+    assert.equal(Object.getPrototypeOf(result), null);
+    assert.deepEqual(Reflect.ownKeys(result), []);
+    assert.equal(Object.isFrozen(result), true);
+  });
+
+test('validates an unmounted source snapshot without live-run actions or explicit writes',
+  async t => {
+    const context = await fixture(t);
+    let validationStarted = false;
+    let validationChecks = 0;
+    let recordCloseCalls = 0;
+    const walletReads = [];
+    const retained = await completedHandoff(t, context, {
+      async onCheck() {
+        if (!validationStarted) return;
+        validationChecks += 1;
+        if (validationChecks !== 2) return;
+        assert.equal(recordCloseCalls, COMPLETE_ALL_LEAVES.length);
+        assert.equal(walletReads.length > 0, true);
+        assert.equal(walletReads.every(bytes => bytes.every(byte => byte === 0)), true);
+      },
+    });
+    const { capability, child, lease } = retained;
+    const beforeBytes = await Promise.all(COMPLETE_ALL_LEAVES.map(leaf =>
+      readFile(join(context.root, leaf))));
+    const beforeGenerations = await Promise.all(COMPLETE_ALL_LEAVES.map(async leaf =>
+      generation(await lstat(join(context.root, leaf), { bigint: true }))));
+    const counts = counters();
+    const injected = workspaceInjections(context.root, counts, {
+      decorateFileHandle: decorateFileHandle(counts, {
+        read({ args, handle, name }) {
+          if (name === GATE_B_PUBLIC_WS_INPUT_LEAVES.buyerWallet &&
+              args[3] === 0 && args[0].length > 1) walletReads.push(args[0]);
+          return handle.read(...args);
+        },
+        write() {
+          throw new Error('validation must not write');
+        },
+        async close({ args, handle }) {
+          const result = await handle.close(...args);
+          recordCloseCalls += 1;
+          return result;
+        },
+      }),
+    });
+    let networkCalls = 0;
+    const fetchDescriptor = Object.getOwnPropertyDescriptor(globalThis, 'fetch');
+    Object.defineProperty(globalThis, 'fetch', {
+      configurable: true,
+      value() {
+        networkCalls += 1;
+        throw new Error('network sentinel');
+      },
+      writable: true,
+    });
+
+    let result;
+    const checksBeforeValidation = child.checks;
+    validationStarted = true;
+    try {
+      result = await validateGateBResetEpochV4CompletionCapability(
+        capability,
+        injected,
+      );
+    } finally {
+      if (fetchDescriptor) Object.defineProperty(globalThis, 'fetch', fetchDescriptor);
+      else delete globalThis.fetch;
+    }
+
+    assert.equal(Object.getPrototypeOf(result), null);
+    assert.deepEqual(Reflect.ownKeys(result), []);
+    assert.equal(Object.isFrozen(result), true);
+    assert.equal(networkCalls, 0);
+    assert.equal(validationChecks, 2);
+    assert.equal(child.checks, checksBeforeValidation + 2);
+    assert.equal(counts.aclInspections > 0, true);
+    assert.equal(walletReads.length > 0, true);
+    assert.equal(walletReads.every(bytes => bytes.every(byte => byte === 0)), true);
+    assert.equal(counts.writeBuffers.length, 0);
+    assert.deepEqual((await readdir(context.root)).sort(), [...COMPLETE_ALL_LEAVES].sort());
+    assert.deepEqual(
+      await Promise.all(COMPLETE_ALL_LEAVES.map(async leaf =>
+        generation(await lstat(join(context.root, leaf), { bigint: true })))),
+      beforeGenerations,
+    );
+    for (let index = 0; index < COMPLETE_ALL_LEAVES.length; index += 1) {
+      assert.deepEqual(
+        await readFile(join(context.root, COMPLETE_ALL_LEAVES[index])),
+        beforeBytes[index],
+      );
+      beforeBytes[index].fill(0);
+    }
+    assert.equal(lease !== undefined, true);
+    await assertLegacyRejectedBeforeEffects(context);
+  });
+
+test('rejects namespace, directory, byte, generation, mode, owner, and alias drift',
+  async t => {
+    await t.test('unknown ninth leaf', async t => {
+      const context = await fixture(t);
+      const { capability } = await completedHandoff(t, context);
+      const extraPath = join(context.root, 'unexpected-synthetic');
+      await writeFile(extraPath, 'SYNTHETIC_EXTRA\n', { mode: 0o600 });
+      await chmod(extraPath, 0o600);
+      await expectValidationFailure(
+        capability,
+        workspaceInjections(context.root, counters()),
+      );
+    });
+
+    await t.test('directory identity drift', async t => {
+      const context = await fixture(t);
+      const { capability } = await completedHandoff(t, context);
+      let rootStats = 0;
+      const injected = workspaceInjections(context.root, counters(), {
+        async lstatPath(path, options) {
+          const stat = await lstat(path, options);
+          if (path !== context.root || ++rootStats < 2) return stat;
+          return Object.assign(
+            Object.create(Object.getPrototypeOf(stat)),
+            stat,
+            { ino: stat.ino + 1n },
+          );
+        },
+      });
+      await expectValidationFailure(capability, injected);
+      assert.equal(rootStats >= 2, true);
+    });
+
+    for (const leaf of COMPLETE_ALL_LEAVES) {
+      await t.test(`byte drift: ${leaf}`, async t => {
+        const context = await fixture(t);
+        const { capability } = await completedHandoff(t, context);
+        const path = join(context.root, leaf);
+        const bytes = await readFile(path);
+        bytes[0] ^= 0x01;
+        await writeFile(path, bytes, { flag: 'r+' });
+        bytes.fill(0);
+        await expectValidationFailure(
+          capability,
+          workspaceInjections(context.root, counters()),
+        );
+      });
+
+      await t.test(`same-byte generation drift: ${leaf}`, async t => {
+        const context = await fixture(t);
+        const { capability } = await completedHandoff(t, context);
+        const path = join(context.root, leaf);
+        const bytes = await readFile(path);
+        await writeFile(path, bytes, { flag: 'r+' });
+        bytes.fill(0);
+        await expectValidationFailure(
+          capability,
+          workspaceInjections(context.root, counters()),
+        );
+      });
+
+      await t.test(`unsafe mode drift: ${leaf}`, async t => {
+        const context = await fixture(t);
+        const { capability } = await completedHandoff(t, context);
+        await chmod(join(context.root, leaf), 0o640);
+        await expectValidationFailure(
+          capability,
+          workspaceInjections(context.root, counters()),
+        );
+      });
+
+      await t.test(`owner drift: ${leaf}`, async t => {
+        const context = await fixture(t);
+        const { capability } = await completedHandoff(t, context);
+        const target = join(context.root, leaf);
+        const injected = workspaceInjections(context.root, counters(), {
+          async lstatPath(path, options) {
+            const stat = await lstat(path, options);
+            if (path !== target) return stat;
+            return Object.assign(
+              Object.create(Object.getPrototypeOf(stat)),
+              stat,
+              { uid: stat.uid + 1n },
+            );
+          },
+        });
+        await expectValidationFailure(capability, injected);
+      });
+
+      await t.test(`symlink alias: ${leaf}`, async t => {
+        const context = await fixture(t);
+        const { capability } = await completedHandoff(t, context);
+        const target = join(context.root, leaf);
+        const source = COMPLETE_ALL_LEAVES[
+          (COMPLETE_ALL_LEAVES.indexOf(leaf) + 1) % COMPLETE_ALL_LEAVES.length
+        ];
+        await unlink(target);
+        await symlink(source, target);
+        await expectValidationFailure(
+          capability,
+          workspaceInjections(context.root, counters()),
+        );
+      });
+
+      await t.test(`hardlink alias: ${leaf}`, async t => {
+        const context = await fixture(t);
+        const { capability } = await completedHandoff(t, context);
+        const target = join(context.root, leaf);
+        const source = COMPLETE_ALL_LEAVES[
+          (COMPLETE_ALL_LEAVES.indexOf(leaf) + 1) % COMPLETE_ALL_LEAVES.length
+        ];
+        await unlink(target);
+        await link(join(context.root, source), target);
+        await expectValidationFailure(
+          capability,
+          workspaceInjections(context.root, counters()),
+        );
+      });
+    }
+  });
+
+test('rejects malformed or non-exact manifest content and pending-marker tamper', async t => {
+  const manifestCases = [
+    {
+      name: 'malformed',
+      bytes() { return Buffer.from('{\n', 'utf8'); },
+    },
+    {
+      name: 'extra field',
+      bytes(manifest) { return Buffer.from(canonicalText({ ...manifest, extra: true })); },
+    },
+    {
+      name: 'missing field',
+      bytes(manifest) {
+        const copy = { ...manifest };
+        delete copy.runName;
+        return Buffer.from(canonicalText(copy));
+      },
+    },
+    {
+      name: 'reordered fields',
+      bytes(manifest) {
+        return Buffer.from(`${JSON.stringify({
+          runName: manifest.runName,
+          reviewedConfigDigest: manifest.reviewedConfigDigest,
+          protectedRecords: manifest.protectedRecords,
+          markerGeneration: manifest.markerGeneration,
+          kind: manifest.kind,
+          completionManifestVersion: manifest.completionManifestVersion,
+        })}\n`, 'utf8');
+      },
+    },
+    {
+      name: 'reordered protected records',
+      bytes(manifest) {
+        return Buffer.from(canonicalText({
+          ...manifest,
+          protectedRecords: [...manifest.protectedRecords].reverse(),
+        }));
+      },
+    },
+    {
+      name: 'byte digest mismatch',
+      bytes(manifest) {
+        const records = structuredClone(manifest.protectedRecords);
+        const digest = records[0].bytesSha256;
+        records[0].bytesSha256 = `${digest[0] === '0' ? '1' : '0'}${digest.slice(1)}`;
+        return Buffer.from(canonicalText({ ...manifest, protectedRecords: records }));
+      },
+    },
+    {
+      name: 'marker generation mismatch',
+      bytes(manifest) {
+        return Buffer.from(canonicalText({
+          ...manifest,
+          markerGeneration: {
+            ...manifest.markerGeneration,
+            size: `${BigInt(manifest.markerGeneration.size) + 1n}`,
+          },
+        }));
+      },
+    },
+    {
+      name: 'run and review binding mismatch',
+      bytes(manifest) {
+        return Buffer.from(canonicalText({
+          ...manifest,
+          reviewedConfigDigest: '0'.repeat(64),
+          runName: `${manifest.runName}-other`,
+        }));
+      },
+    },
+  ];
+
+  for (const entry of manifestCases) {
+    await t.test(entry.name, async t => {
+      const context = await fixture(t);
+      const { capability } = await completedHandoff(t, context);
+      const path = join(context.root, COMPLETION_MANIFEST_LEAF);
+      const manifest = JSON.parse(await readFile(path, 'utf8'));
+      const bytes = entry.bytes(manifest);
+      await writeFile(path, bytes, { mode: 0o600 });
+      await chmod(path, 0o600);
+      bytes.fill(0);
+      await expectValidationFailure(
+        capability,
+        workspaceInjections(context.root, counters()),
+      );
+    });
+  }
+
+  await t.test('pending marker exact-byte tamper', async t => {
+    const context = await fixture(t);
+    const { capability } = await completedHandoff(t, context);
+    const path = join(context.root, PENDING_MARKER_LEAF);
+    const bytes = await readFile(path);
+    bytes[0] ^= 0x01;
+    await writeFile(path, bytes, { flag: 'r+' });
+    bytes.fill(0);
+    await expectValidationFailure(
+      capability,
+      workspaceInjections(context.root, counters()),
+    );
+  });
+});
+
+test('rejects original quick-tunnel lease replacement or expiration before and during validation',
+  async t => {
+    await t.test('replacement before validation', async t => {
+      const context = await fixture(t);
+      const retained = await completedHandoff(t, context);
+      await stopGateBQuickTunnel(retained.lease);
+      await retainedQuickTunnelLease(t, context, undefined, { writeHostname: false });
+      await expectValidationFailure(
+        retained.capability,
+        workspaceInjections(context.root, counters()),
+      );
+    });
+
+    for (const failAtConsumerCheck of [1, 2]) {
+      await t.test(
+        failAtConsumerCheck === 1 ? 'expiration during initial await' :
+          'expiration during final await',
+        async t => {
+          const context = await fixture(t);
+          let child;
+          let consumerStarted = false;
+          let consumerChecks = 0;
+          const retained = await completedHandoff(t, context, {
+            async onCheck() {
+              if (!consumerStarted) return;
+              consumerChecks += 1;
+              if (consumerChecks !== failAtConsumerCheck) return;
+              child.connected = false;
+              child.emit('disconnect');
+            },
+          });
+          child = retained.child;
+          consumerStarted = true;
+          await expectValidationFailure(
+            retained.capability,
+            workspaceInjections(context.root, counters()),
+          );
+          assert.equal(consumerChecks, failAtConsumerCheck);
+        },
+      );
+    }
+  });
+
+test('last lease snapshot rejects invalidation from the final record read or close',
+  async t => {
+    for (const triggerName of ['final read', 'close']) {
+      await t.test(triggerName, async t => {
+        const context = await fixture(t);
+        const retained = await completedHandoff(t, context);
+        const counts = counters();
+        let manifestContentReads = 0;
+        let recordCloseCalls = 0;
+        let invalidated = false;
+        const invalidateLease = () => {
+          if (invalidated) return;
+          invalidated = true;
+          retained.child.connected = false;
+          retained.child.emit('disconnect');
+        };
+        const injected = workspaceInjections(context.root, counts, {
+          decorateFileHandle: decorateFileHandle(counts, {
+            async read({ args, handle, name }) {
+              const result = await handle.read(...args);
+              if (name === COMPLETION_MANIFEST_LEAF && args[3] === 0 &&
+                  args[0].length > 1) {
+                manifestContentReads += 1;
+                if (triggerName === 'final read' && manifestContentReads === 3) {
+                  invalidateLease();
+                }
+              }
+              return result;
+            },
+            async close({ args, handle }) {
+              const result = await handle.close(...args);
+              recordCloseCalls += 1;
+              if (triggerName === 'close' && recordCloseCalls === 1) {
+                invalidateLease();
+              }
+              return result;
+            },
+          }),
+        });
+
+        await expectValidationFailure(retained.capability, injected);
+        assert.equal(invalidated, true);
+        assert.equal(manifestContentReads, 3);
+        assert.equal(recordCloseCalls, COMPLETE_ALL_LEAVES.length);
+      });
+    }
+  });
+
+test('validation-token source boundary is universally future-live-ineligible', async () => {
+  const ownerSource = await readFile(
+    new URL('../src/gate-b-reset-epoch-v4-fresh-input-owner.js', import.meta.url),
+    'utf8',
+  );
+  const start = ownerSource.indexOf('function createValidationCapability(');
+  const end = ownerSource.indexOf('\nasync function captureGeneration(', start);
+  assert.notEqual(start, -1);
+  assert.notEqual(end, -1);
+  const capabilitySource = ownerSource.slice(start, end);
+
+  // No validation-token consumer is exported, so a runtime assertion would require
+  // exposing the private state this boundary protects. The universal literal also
+  // covers an injected launcher followed by non-injected completion and validation.
+  assert.equal(
+    (capabilitySource.match(/futureLiveConsumerEligible:/gu) ?? []).length,
+    1,
+  );
+  assert.match(capabilitySource, /futureLiveConsumerEligible:\s*false,/u);
+  assert.equal(/futureLiveConsumerEligible:\s*testOnly/u.test(capabilitySource), false);
+  assert.equal(
+    (ownerSource.match(/VALIDATION_CAPABILITY_STATES/gu) ?? []).length,
+    2,
+  );
+});
+
+test('v4 handoff and validator have no marker deletion or live-run authority', async () => {
   const [workspaceSource, ownerSource, security] = await Promise.all([
     readFile(
       new URL('../src/gate-b-public-ws-private-workspace.js', import.meta.url),
@@ -861,8 +1496,31 @@ test('v4 handoff has no marker deletion capability or post-deletion status', asy
     .test(workspaceSource), false);
   assert.match(security, /marker is permanent and is never unlinked or renamed/u);
   assert.match(security, /legacy exact-six preflight and runner reject both the seven-leaf pending workspace and the eight-leaf completed workspace/u);
-  assert.match(security, /No live v4 consumer or post-completion validator exists in this patch/u);
-  assert.match(security, /require the successfully returned process-local capability/u);
+  assert.match(security,
+    /source-only, unmounted prerequisite, not an offline or effect-free operation/u);
+  assert.match(security, /synchronously claims and deletes the exact process-local completion capability/u);
+  assert.match(security,
+    /filesystem content, metadata, descriptor, and ACL observation plus active readiness checks/u);
+  assert.match(security,
+    /cleanup work completes before the last same-lease readiness assertion/u);
+  assert.match(security,
+    /hidden entry preserves the original completion state, including the original handoff and lease binding/u);
+  assert.match(security,
+    /upstream quick-tunnel lease dependency provenance is not attested/u);
+  assert.match(security,
+    /Every validation token issued by this source-only, unmounted, non-authorizing slice is expressly future-live-ineligible/u);
+  assert.match(security,
+    /absence does not imply eligibility/u);
+  assert.match(security,
+    /separately reviewed provenance and consumer design/u);
+  assert.match(security, /No claim or consumer for the validation token is exported/u);
+  assert.match(security, /No operation in this slice accepts the validation token/u);
+  assert.match(security,
+    /Validation performs no explicit workspace mutation and does not relax the legacy exact-six boundary/u);
+  assert.match(security,
+    /Success records only the last-checked local filesystem and retained-tunnel readiness snapshot/u);
+  assert.match(security,
+    /not a time-continuous freshness guarantee, an authenticated chain observation/u);
 });
 
 test('rejects a correctly shaped preseeded hostname without same-workspace lease provenance',

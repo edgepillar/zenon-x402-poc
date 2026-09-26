@@ -27,16 +27,29 @@ const FILE_MAX_BYTES = 64 * 1024;
 const PRIVATE_FILE_MODE = 0o600n;
 const LOWERCASE_HASH_64 = /^[0-9a-f]{64}$/;
 const ARRAY_IS_ARRAY = Array.isArray;
+const ARRAY_PROTOTYPE = Array.prototype;
 const BUFFER_FILL = Buffer.prototype.fill;
 const BUFFER_FROM = Buffer.from;
 const BUFFER_IS_BUFFER = Buffer.isBuffer;
+const BUFFER_EQUALS = Buffer.prototype.equals;
 const BUFFER_TO_STRING = Buffer.prototype.toString;
+const BIGINT_TO_STRING = BigInt.prototype.toString;
+const GET_OWN_PROPERTY_DESCRIPTOR = Object.getOwnPropertyDescriptor;
+const HAS_OWN = Object.hasOwn;
 const IS_PROXY = utilTypes.isProxy;
+const JSON_PARSE = JSON.parse;
 const JSON_STRINGIFY = JSON.stringify;
+const OBJECT_CREATE = Object.create;
 const OBJECT_FREEZE = Object.freeze;
 const OBJECT_GET_PROTOTYPE_OF = Object.getPrototypeOf;
+const OBJECT_PROTOTYPE = Object.prototype;
 const REFLECT_APPLY = Reflect.apply;
+const REFLECT_OWN_KEYS = Reflect.ownKeys;
+const WEAK_MAP_DELETE = WeakMap.prototype.delete;
+const WEAK_MAP_GET = WeakMap.prototype.get;
+const WEAK_MAP_SET = WeakMap.prototype.set;
 const COMPLETION_CAPABILITY_STATES = new WeakMap();
+const VALIDATION_CAPABILITY_STATES = new WeakMap();
 
 const INPUT_LEAVES = OBJECT_FREEZE([
   GATE_B_PUBLIC_WS_INPUT_LEAVES.buyerWallet,
@@ -65,9 +78,35 @@ const HANDOFF_COMPLETE_LEAVES = OBJECT_FREEZE([
   ...HANDOFF_ALL_LEAVES,
   GATE_B_RESET_EPOCH_V4_HANDOFF_COMPLETION_MANIFEST.leaf,
 ]);
+const COMPLETION_MANIFEST_KEYS = OBJECT_FREEZE([
+  'completionManifestVersion',
+  'kind',
+  'markerGeneration',
+  'protectedRecords',
+  'reviewedConfigDigest',
+  'runName',
+]);
+const GENERATION_KEYS = OBJECT_FREEZE([
+  'ctimeNs',
+  'dev',
+  'gid',
+  'ino',
+  'mode',
+  'mtimeNs',
+  'nlink',
+  'size',
+  'uid',
+]);
+const PROTECTED_RECORD_KEYS = OBJECT_FREEZE([
+  'bytesSha256',
+  'generation',
+  'leaf',
+]);
 const HANDOFF_EXCLUSIVE_OUTPUT_OPTIONS = OBJECT_FREEZE({
   handoffPendingMarkerVersion: GATE_B_RESET_EPOCH_V4_HANDOFF_PENDING_MARKER.version,
 });
+const NON_AUTHORIZING_VALIDATION_STATUS =
+  'source_only_completion_validated_non_authorizing';
 const SUCCESS = OBJECT_FREEZE({
   status: 'source_only_fresh_inputs_and_outputs_written_non_authorizing',
 });
@@ -238,14 +277,11 @@ function sameGeneration(left, right) {
 }
 
 function manifestGeneration(value) {
-  const fields = [
-    'ctimeNs', 'dev', 'gid', 'ino', 'mode', 'mtimeNs', 'nlink', 'size', 'uid',
-  ];
   const output = {};
-  for (let index = 0; index < fields.length; index += 1) {
-    const field = fields[index];
+  for (let index = 0; index < GENERATION_KEYS.length; index += 1) {
+    const field = GENERATION_KEYS[index];
     if (typeof value?.[field] !== 'bigint' || value[field] < 0n) fail();
-    output[field] = value[field].toString(10);
+    output[field] = REFLECT_APPLY(BIGINT_TO_STRING, value[field], [10]);
   }
   return OBJECT_FREEZE(output);
 }
@@ -301,16 +337,146 @@ function createCompletionCapability(
   manifestGenerationValue,
   runName,
   reviewedConfigDigest,
+  injectedDependenciesUsed,
 ) {
-  const capability = OBJECT_FREEZE(Object.create(null));
-  COMPLETION_CAPABILITY_STATES.set(capability, OBJECT_FREEZE({
-    handoff,
-    manifestGeneration: manifestGenerationValue,
-    markerGeneration,
+  const capability = OBJECT_FREEZE(OBJECT_CREATE(null));
+  REFLECT_APPLY(
+    WEAK_MAP_SET,
+    COMPLETION_CAPABILITY_STATES,
+    [capability, OBJECT_FREEZE({
+      handoff,
+      injectedDependenciesUsed: injectedDependenciesUsed === true,
+      manifestGeneration: manifestGenerationValue,
+      markerGeneration,
+      reviewedConfigDigest,
+      runName,
+      workspaceRoot,
+    })],
+  );
+  return capability;
+}
+
+function exactJsonObjectValues(value, expectedKeys) {
+  if (!value || typeof value !== 'object' || ARRAY_IS_ARRAY(value) ||
+      IS_PROXY(value) || OBJECT_GET_PROTOTYPE_OF(value) !== OBJECT_PROTOTYPE) fail();
+  const actualKeys = REFLECT_OWN_KEYS(value);
+  if (actualKeys.length !== expectedKeys.length) fail();
+  const values = [];
+  for (let index = 0; index < expectedKeys.length; index += 1) {
+    const key = expectedKeys[index];
+    if (actualKeys[index] !== key) fail();
+    const descriptor = GET_OWN_PROPERTY_DESCRIPTOR(value, key);
+    if (!descriptor || !HAS_OWN(descriptor, 'value') ||
+        descriptor.enumerable !== true) fail();
+    values.push(descriptor.value);
+  }
+  return values;
+}
+
+function exactJsonArrayValues(value, expectedLength) {
+  if (!ARRAY_IS_ARRAY(value) || IS_PROXY(value) ||
+      OBJECT_GET_PROTOTYPE_OF(value) !== ARRAY_PROTOTYPE ||
+      value.length !== expectedLength) fail();
+  const keys = REFLECT_OWN_KEYS(value);
+  if (keys.length !== expectedLength + 1 || keys[keys.length - 1] !== 'length') fail();
+  const values = [];
+  for (let index = 0; index < expectedLength; index += 1) {
+    const key = String(index);
+    if (keys[index] !== key) fail();
+    const descriptor = GET_OWN_PROPERTY_DESCRIPTOR(value, key);
+    if (!descriptor || !HAS_OWN(descriptor, 'value') ||
+        descriptor.enumerable !== true) fail();
+    values.push(descriptor.value);
+  }
+  return values;
+}
+
+function assertManifestGeneration(value, expected) {
+  const values = exactJsonObjectValues(value, GENERATION_KEYS);
+  for (let index = 0; index < GENERATION_KEYS.length; index += 1) {
+    const field = GENERATION_KEYS[index];
+    const expectedText = REFLECT_APPLY(BIGINT_TO_STRING, expected[field], [10]);
+    if (typeof values[index] !== 'string' || values[index] !== expectedText) fail();
+  }
+}
+
+function parseCompletionManifest(bytes) {
+  if (!BUFFER_IS_BUFFER(bytes) || bytes.length < 2 || bytes.length > FILE_MAX_BYTES) fail();
+  const text = bufferText(bytes);
+  assertBoundedText(text);
+  const value = JSON_PARSE(text);
+  assertCanonicalText(text, value);
+  return value;
+}
+
+function assertCompletionManifest(
+  manifest,
+  buffers,
+  generations,
+  completionState,
+) {
+  if (!ARRAY_IS_ARRAY(buffers) || buffers.length !== HANDOFF_COMPLETE_LEAVES.length ||
+      !ARRAY_IS_ARRAY(generations) ||
+      generations.length !== HANDOFF_COMPLETE_LEAVES.length) fail();
+  const [
+    version,
+    kind,
+    markerGenerationValue,
+    protectedRecordsValue,
     reviewedConfigDigest,
     runName,
-    workspaceRoot,
-  }));
+  ] = exactJsonObjectValues(manifest, COMPLETION_MANIFEST_KEYS);
+  if (version !== GATE_B_RESET_EPOCH_V4_HANDOFF_COMPLETION_MANIFEST.version ||
+      kind !== GATE_B_RESET_EPOCH_V4_HANDOFF_COMPLETION_MANIFEST.kind ||
+      reviewedConfigDigest !== completionState.reviewedConfigDigest ||
+      runName !== completionState.runName) fail();
+  assertManifestGeneration(markerGenerationValue, generations[0]);
+  const protectedRecords = exactJsonArrayValues(
+    protectedRecordsValue,
+    ALL_LEAVES.length,
+  );
+  for (let index = 0; index < ALL_LEAVES.length; index += 1) {
+    const [bytesDigest, generationValue, leaf] = exactJsonObjectValues(
+      protectedRecords[index],
+      PROTECTED_RECORD_KEYS,
+    );
+    if (leaf !== ALL_LEAVES[index] || typeof bytesDigest !== 'string' ||
+        !LOWERCASE_HASH_64.test(bytesDigest) ||
+        bytesDigest !== sha256Hex(buffers[index + 1])) fail();
+    assertManifestGeneration(generationValue, generations[index + 1]);
+  }
+}
+
+function claimCompletionCapability(completionCapability) {
+  const state = REFLECT_APPLY(
+    WEAK_MAP_GET,
+    COMPLETION_CAPABILITY_STATES,
+    [completionCapability],
+  );
+  const deleted = REFLECT_APPLY(
+    WEAK_MAP_DELETE,
+    COMPLETION_CAPABILITY_STATES,
+    [completionCapability],
+  );
+  if (state === undefined || deleted !== true) fail();
+  return state;
+}
+
+function createValidationCapability(completionState, injectedDependenciesUsed) {
+  const capability = OBJECT_FREEZE(OBJECT_CREATE(null));
+  const testOnly = completionState.injectedDependenciesUsed === true ||
+    injectedDependenciesUsed === true;
+  REFLECT_APPLY(
+    WEAK_MAP_SET,
+    VALIDATION_CAPABILITY_STATES,
+    [capability, OBJECT_FREEZE({
+      completionState,
+      // This slice cannot attest how the retained quick-tunnel lease was launched.
+      futureLiveConsumerEligible: false,
+      status: NON_AUTHORIZING_VALIDATION_STATUS,
+      testOnly,
+    })],
+  );
   return capability;
 }
 
@@ -356,11 +522,37 @@ async function assertRecordBytes(workspace, records, expected) {
   try {
     for (let index = 0; index < records.length; index += 1) {
       reads.push(await workspace.read(records[index]));
-      if (!reads[index].equals(expected[index])) fail();
+      if (!REFLECT_APPLY(BUFFER_EQUALS, reads[index], [expected[index]])) fail();
     }
   } finally {
     wipeBuffers(reads);
   }
+}
+
+async function assertRetainedCompletionRecords(
+  workspace,
+  records,
+  buffers,
+  generations,
+  workspaceRoot,
+) {
+  await assertExactLeaves(workspaceRoot, HANDOFF_COMPLETE_LEAVES);
+  workspace.assertDistinct(records);
+  await verifyRecords(workspace, records, buffers);
+  await assertGenerations(
+    workspaceRoot,
+    HANDOFF_COMPLETE_LEAVES,
+    generations,
+  );
+  await assertRecordBytes(workspace, records, buffers);
+  await verifyRecords(workspace, records, buffers);
+  await assertGenerations(
+    workspaceRoot,
+    HANDOFF_COMPLETE_LEAVES,
+    generations,
+  );
+  workspace.assertDistinct(records);
+  await assertExactLeaves(workspaceRoot, HANDOFF_COMPLETE_LEAVES);
 }
 
 async function assertRetainedHostnameSource(
@@ -803,6 +995,7 @@ export async function completeGateBResetEpochV4FreshInputsFromQuickTunnelLease(
       manifestGenerationValue,
       runName,
       reviewedConfigDigest,
+      injected !== undefined,
     );
   } catch {
     fail();
@@ -814,4 +1007,104 @@ export async function completeGateBResetEpochV4FreshInputsFromQuickTunnelLease(
     wipeBuffer(markerBytes);
     wipeBuffer(manifestBytes);
   }
+}
+
+async function validateClaimedGateBResetEpochV4Completion(
+  completionState,
+  injected,
+) {
+  const buffers = [];
+  const injectedDependenciesUsed = injected !== undefined;
+  let workspace;
+  try {
+    if (await completionState.handoff.assertCurrent() !== true) fail();
+
+    workspace = await openGateBPublicWsPrivateWorkspace(
+      completionState.workspaceRoot,
+      injected,
+    );
+    await assertExactLeaves(
+      completionState.workspaceRoot,
+      HANDOFF_COMPLETE_LEAVES,
+    );
+    const records = await workspace.openInputs(HANDOFF_COMPLETE_LEAVES);
+    if (!ARRAY_IS_ARRAY(records) ||
+        records.length !== HANDOFF_COMPLETE_LEAVES.length) fail();
+    workspace.assertDistinct(records);
+    for (let index = 0; index < records.length; index += 1) {
+      await workspace.verify(records[index]);
+    }
+    await assertExactLeaves(
+      completionState.workspaceRoot,
+      HANDOFF_COMPLETE_LEAVES,
+    );
+    const generations = await captureGenerations(
+      completionState.workspaceRoot,
+      HANDOFF_COMPLETE_LEAVES,
+    );
+    for (let index = 0; index < records.length; index += 1) {
+      buffers.push(await workspace.read(records[index]));
+    }
+    await assertRetainedCompletionRecords(
+      workspace,
+      records,
+      buffers,
+      generations,
+      completionState.workspaceRoot,
+    );
+
+    if (bufferText(buffers[0]) !==
+        GATE_B_RESET_EPOCH_V4_HANDOFF_PENDING_MARKER.bytes) fail();
+    const manifest = parseCompletionManifest(
+      buffers[buffers.length - 1],
+    );
+    assertCompletionManifest(
+      manifest,
+      buffers,
+      generations,
+      completionState,
+    );
+    if (!sameGeneration(completionState.markerGeneration, generations[0]) ||
+        !sameGeneration(
+          completionState.manifestGeneration,
+          generations[generations.length - 1],
+        )) fail();
+
+    validateBeforeMutation(
+      [buffers[1], buffers[2], buffers[3], buffers[4]],
+      bufferText(buffers[5]),
+      bufferText(buffers[6]),
+      completionState.reviewedConfigDigest,
+      completionState.runName,
+    );
+    await assertRetainedCompletionRecords(
+      workspace,
+      records,
+      buffers,
+      generations,
+      completionState.workspaceRoot,
+    );
+    await workspace.close();
+    workspace = undefined;
+    wipeBuffers(buffers);
+  } catch {
+    await closeWorkspace(workspace);
+    wipeBuffers(buffers);
+    fail();
+  }
+
+  try {
+    if (await completionState.handoff.assertCurrent() !== true) fail();
+  } catch {
+    fail();
+  }
+  return createValidationCapability(completionState, injectedDependenciesUsed);
+}
+
+export function validateGateBResetEpochV4CompletionCapability(
+  completionCapability,
+  injected,
+) {
+  const completionState = claimCompletionCapability(completionCapability);
+  return validateClaimedGateBResetEpochV4Completion(completionState, injected);
 }
