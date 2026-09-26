@@ -5927,7 +5927,10 @@ test('reset-epoch Path-A documentation retains the source-only live no-go bounda
     assert.match(document, /retained signed block alone does not provide operational recovery/);
     assert.match(document, /private and publication-ineligible/);
     assert.match(document, /does not prove finality, recipient receive, spendability, or production readiness/);
-    assert.match(document, /fake-only Draft PR #158 is not a live dependency/);
+    assert.match(
+      document,
+      /fake-only SQLite one-shot persistence model is not a live dependency/,
+    );
   }
 });
 
