@@ -52,6 +52,10 @@ import {
   createGateBResetEpochWssOnceRunnerV4,
 } from '../src/gate-b-reset-epoch-wss-once-runner-v4.js';
 import {
+  HISTORICAL_PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_CHAIN_PROFILE,
+  HISTORICAL_PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_EVENT_ID,
+  HISTORICAL_PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_PROFILE_NAME,
+  HISTORICAL_PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_PROVENANCE,
   PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_EVENT_ID,
   PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_OPERATOR_TRUST_ACKNOWLEDGEMENT,
   PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_PROFILE_NAME,
@@ -1353,6 +1357,51 @@ test('parser accepts the active epoch and directly rejects historical or mixed e
     parseGateBResetEpochWssOnceConfigurationV4(fixture.configurationBytes),
     fixture.configuration,
   );
+
+  const historicalReset = resetEpochSelection({
+    eventId: HISTORICAL_PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_EVENT_ID,
+    profileName: HISTORICAL_PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_PROFILE_NAME,
+    rpcEndpoint:
+      HISTORICAL_PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_PROVENANCE
+        .evidenceWssEndpoint,
+  });
+  const historicalParsed = JSON.parse(
+    fixture.configurationBytes.toString('utf8'),
+  );
+  historicalParsed.policySelection = historicalReset;
+  historicalParsed.executionBinding = {
+    ...historicalParsed.executionBinding,
+    chainProfile: {
+      ...HISTORICAL_PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_CHAIN_PROFILE,
+    },
+    dynamicPlasma: {
+      ...historicalParsed.executionBinding.dynamicPlasma,
+      enforcementHeight:
+        HISTORICAL_PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_PROVENANCE
+          .dynamicPlasmaEnforcementHeight,
+      frontier: {
+        ...historicalParsed.executionBinding.dynamicPlasma.frontier,
+        chainIdentifier:
+          HISTORICAL_PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_CHAIN_PROFILE
+            .chainIdentifier,
+        height:
+          HISTORICAL_PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_PROVENANCE
+            .dynamicPlasmaEnforcementHeight + 1,
+      },
+    },
+    policySelection: historicalReset,
+  };
+  const historicalBytes = Buffer.from(
+    `${canonicalJson(historicalParsed)}\n`,
+    'utf8',
+  );
+  assert.deepEqual(
+    JSON.parse(historicalBytes.toString('utf8')),
+    historicalParsed,
+  );
+  assert.throws(() =>
+    parseGateBResetEpochWssOnceConfigurationV4(historicalBytes));
+
   const reset = resetEpochSelection();
   const prior = priorEpochSelection();
   const selections = [
