@@ -80,6 +80,16 @@ An unexpected SDK connection-cleanup failure is handled the same way for future-
 
 `prepareBlock()` is composite and may perform several RPC calls and PoW. It is intentionally not wrapped in `Promise.race`; ownership remains held until it settles.
 
+### Offline payer-to-worker admission pilot seam
+
+`src/zenon/payer-worker-admission.js` is a default-off, unconnected, synchronous in-memory admission contract for a controlled pilot. It permanently binds each admitted payer to one worker for the registry generation, permits one active ticket per bound payer and worker, retains successful operation identifiers, and has no queue, lease, timeout, retry, reassignment, persistence, or recovery API. Releasing a reserved ticket is allowed only after the caller independently proves that no worker effect began. Its worker capacity is not chain capacity, and Dynamic Plasma quotes, frontier or price data, and Momentum evidence remain fresh per-worker execution checks outside this module. The contract neither activates nor accelerates live payments; it is not cross-process exclusion, a throughput result, or evidence of production safety.
+
+After a ticket is dispatched, worker exit or disconnect, response timeout, IPC schema or correlation failure, SDK timeout, cleanup uncertainty, or coordinator uncertainty must permanently quarantine that worker and its bound payer for the generation. A lease timeout cannot cancel an SDK continuation or retract an accepted publication. A fresh process may reconcile the exact payment only after confirmed old-process exit and a separately designed durable journal and fencing protocol. Parent loss makes this in-memory generation unrecoverable.
+
+The caller must supply prevalidated, non-secret opaque payer and operation identifiers and worker IDs. Printable ASCII syntax does not prove that a value is non-secret. Never pass wallet keys, credentials, wallet storage paths, payment payloads, or private endpoint strings.
+
+Future buyer secrets must be provisioned directly to the bound buyer worker. They must never be placed in an admission ticket or exposed to the coordinator, a facilitator, logs, or a journal.
+
 ## Publication and recovery evidence
 
 Publication results are classified by evidence:
