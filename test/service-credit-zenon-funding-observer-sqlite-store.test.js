@@ -344,17 +344,36 @@ async function importInstrumentedStore(t, hooks) {
   const fsShimUrl = dataUrl(`
     import * as fs from 'node:fs';
     const hooks = globalThis[${JSON.stringify(hookKey)}];
+    function observe(name, ...args) {
+      try { hooks[name]?.(...args); } catch {}
+    }
     export const closeSync = fs.closeSync;
     export const constants = fs.constants;
     export const fchmodSync = fs.fchmodSync;
     export const fstatSync = fs.fstatSync;
     export const fsyncSync = fs.fsyncSync;
     export const openSync = fs.openSync;
-    export const realpathSync = fs.realpathSync;
+    export function realpathSync(...args) {
+      try {
+        const result = fs.realpathSync(...args);
+        observe('observeRealpathResult', result, ...args);
+        return result;
+      } catch (error) {
+        observe('observeRealpathError', error, ...args);
+        throw error;
+      }
+    }
     export function lstatSync(...args) {
-      hooks.beforeLstat?.(...args);
-      const stat = fs.lstatSync(...args);
-      return hooks.afterLstat?.(stat, ...args) ?? stat;
+      try {
+        hooks.beforeLstat?.(...args);
+        const stat = fs.lstatSync(...args);
+        const result = hooks.afterLstat?.(stat, ...args) ?? stat;
+        observe('observeLstatResult', result, ...args);
+        return result;
+      } catch (error) {
+        observe('observeLstatError', error, ...args);
+        throw error;
+      }
     }
     export function readdirSync(...args) {
       const entries = fs.readdirSync(...args);
@@ -383,7 +402,7 @@ async function importInstrumentedStore(t, hooks) {
     '../src/service-credit-zenon-funding-provider-attestation.js',
     import.meta.url,
   );
-  const source = readFileSync(sourceUrl, 'utf8')
+  let source = readFileSync(sourceUrl, 'utf8')
     .replace("from 'node:fs';", `from ${JSON.stringify(fsShimUrl)};`)
     .replace("from 'node:sqlite';", `from ${JSON.stringify(sqliteShimUrl)};`)
     .replace(
@@ -394,6 +413,31 @@ async function importInstrumentedStore(t, hooks) {
       "from './service-credit-zenon-funding-provider-attestation.js';",
       `from ${JSON.stringify(attestationUrl.href)};`,
     );
+  const replaceExactlyOnce = (input, target, replacement) => {
+    const fragments = input.split(target);
+    assert.equal(fragments.length, 2, 'INSTRUMENTED_STORE_SOURCE_DRIFT');
+    return fragments.join(replacement);
+  };
+  const markGuard = phase => `try { globalThis[${JSON.stringify(hookKey)}]`
+    + `.observeReadGuard?.('${phase}'); } catch {}`;
+  source = replaceExactlyOnce(source, `  #readSnapshot(body) {
+    this.#assertUsable();
+    this.#assertFileIdentity();
+    let started = false;`, `  #readSnapshot(body) {
+    this.#assertUsable();
+    ${markGuard('PRE_BEGIN')}
+    this.#assertFileIdentity();
+    ${markGuard('UNKNOWN')}
+    let started = false;`);
+  source = replaceExactlyOnce(source, `      this.#database.exec('COMMIT');
+      started = false;
+      this.#assertFileIdentity();
+      return value;`, `      this.#database.exec('COMMIT');
+      started = false;
+      ${markGuard('POST_COMMIT')}
+      this.#assertFileIdentity();
+      ${markGuard('UNKNOWN')}
+      return value;`);
   return import(dataUrl(source));
 }
 
@@ -797,6 +841,91 @@ function snapshotFailureDiagnostic(stage, error) {
   return `STAGE=${fixedStage};CODE=${snapshotFailureCode(error)}`;
 }
 
+function createSnapshotUnsafeFileDiagnostic(databasePath) {
+  const journalPath = `${databasePath}-journal`;
+  const blank = () => ({
+    guard: 'UNKNOWN', type: 'UNKNOWN', owner: 'UNKNOWN', nlink: 'UNKNOWN',
+    permission: 'UNKNOWN', specialBits: 'UNKNOWN', lstat: 'UNKNOWN',
+    dbIdentity: 'UNKNOWN', dbRealpath: 'UNKNOWN',
+  });
+  const predicate = operation => {
+    try { return operation() ? 'PASS' : 'FAIL'; } catch { return 'UNKNOWN'; }
+  };
+  let phase = 'UNKNOWN', observation = blank(), identity;
+  const guardFor = candidate => candidate === databasePath
+    ? 'MAIN_DB' : candidate === journalPath ? 'EXPECTED_JOURNAL' : null;
+  const observeDatabaseRealpath = (candidate, status) => {
+    if (candidate === databasePath) {
+      observation = { ...observation, guard: 'MAIN_DB', dbRealpath: status };
+    }
+  };
+  const hooks = {
+    observeReadGuard(candidate) {
+      phase = candidate === 'PRE_BEGIN' || candidate === 'POST_COMMIT'
+        ? candidate : 'UNKNOWN';
+      observation = blank();
+    },
+    observeLstatResult(stat, candidate) {
+      const guard = guardFor(candidate);
+      if (guard === null) return;
+      let currentIdentity;
+      if (guard === 'MAIN_DB') {
+        try { currentIdentity = [stat.dev, stat.ino]; } catch {}
+        identity ??= currentIdentity;
+      }
+      observation = {
+        guard,
+        type: predicate(() => stat.isFile() && !stat.isSymbolicLink()),
+        owner: predicate(() => typeof process.getuid === 'function'
+          && stat.uid === BigInt(process.getuid())),
+        nlink: predicate(() => stat.nlink === 1n),
+        permission: predicate(() => (stat.mode & 0o777n) === 0o600n),
+        specialBits: predicate(() => (stat.mode & 0o7000n) === 0n),
+        lstat: 'OK',
+        dbIdentity: guard === 'MAIN_DB' && identity !== undefined
+          && currentIdentity !== undefined
+          ? predicate(() => identity[0] === currentIdentity[0]
+            && identity[1] === currentIdentity[1]) : 'UNKNOWN',
+        dbRealpath: 'UNKNOWN',
+      };
+    },
+    observeLstatError(error, candidate) {
+      const guard = guardFor(candidate);
+      if (guard === null) return;
+      let enoent = false;
+      try { enoent = Object.getOwnPropertyDescriptor(error, 'code')?.value === 'ENOENT'; } catch {}
+      if (guard === 'EXPECTED_JOURNAL' && enoent) {
+        observation = blank(); return;
+      }
+      observation = { ...blank(), guard, lstat: enoent ? 'ENOENT' : 'NON_ENOENT' };
+    },
+    observeRealpathResult(result, candidate) {
+      observeDatabaseRealpath(candidate, result === databasePath ? 'PASS' : 'FAIL');
+    },
+    observeRealpathError(_error, candidate) {
+      observeDatabaseRealpath(candidate, 'FAIL');
+    },
+  };
+  return {
+    hooks,
+    phase: () => phase,
+    labels() {
+      const known = Object.values(observation).includes('FAIL')
+        || observation.lstat === 'ENOENT' || observation.lstat === 'NON_ENOENT';
+      return `PHASE=${phase};GUARD=${known ? observation.guard : 'UNKNOWN'}`
+        + `;TYPE=${observation.type};OWNER=${observation.owner};NLINK=${observation.nlink}`
+        + `;PERMISSION=${observation.permission};SPECIAL_BITS=${observation.specialBits}`
+        + `;LSTAT=${observation.lstat};DB_IDENTITY=${observation.dbIdentity}`
+        + `;DB_REALPATH=${observation.dbRealpath}`;
+    },
+  };
+}
+
+function snapshotUnsafeFileDiagnostic(error, diagnostic) {
+  return snapshotFailureCode(error) === 'ZENON_FUNDING_OBSERVER_STORE_UNSAFE_FILE'
+    ? `;${diagnostic.labels()}` : '';
+}
+
 async function disposeSnapshotWriter(writer, primaryFailed, reportFailure) {
   try {
     await writer.dispose();
@@ -1150,7 +1279,9 @@ test('read tolerates a DELETE journal unlinked after enumeration by a committed 
   let enumerated = false;
   let committed = false;
   let unlinked = false;
+  const diagnostic = createSnapshotUnsafeFileDiagnostic(configuration.databasePath);
   const instrumented = await importInstrumentedStore(t, {
+    ...diagnostic.hooks,
     afterReaddir(parent, entries) {
       if (
         !armed || committed || parent !== directory
@@ -1231,6 +1362,59 @@ test('existing open tolerates a committed same-inode mutation during DatabaseSyn
   assert.equal(after.ino, before.ino);
   assert.equal(reopened.load().state.revision, 1);
   reopened.close();
+});
+
+test('snapshot unsafe-file diagnostic reports only fixed guard predicates', async t => {
+  function closedStore(nestedTest) {
+    const directory = privateDirectoryFor(nestedTest);
+    const configuration = createOptions(directory);
+    const created = createZenonFundingObserverSqliteStore(configuration);
+    const recordKey = created.load().recordKey;
+    created.close();
+    return { configuration, recordKey };
+  }
+  const cases = [{
+    name: 'expected journal wrong type before begin', phase: 'PRE_BEGIN', suffix: '-journal',
+    property: 'isFile', replacement: () => () => false,
+    prepare: path => writeFileSync(path, 'diagnostic', { mode: 0o600 }),
+    labels: 'PHASE=PRE_BEGIN;GUARD=EXPECTED_JOURNAL;TYPE=FAIL;OWNER=PASS;NLINK=PASS'
+      + ';PERMISSION=PASS;SPECIAL_BITS=PASS;LSTAT=OK;DB_IDENTITY=UNKNOWN'
+      + ';DB_REALPATH=UNKNOWN',
+  }, {
+    name: 'main database identity mismatch after commit', phase: 'POST_COMMIT', suffix: '',
+    property: 'dev', replacement: stat => stat.dev + 1n, prepare: () => {},
+    labels: 'PHASE=POST_COMMIT;GUARD=MAIN_DB;TYPE=PASS;OWNER=PASS;NLINK=PASS'
+      + ';PERMISSION=PASS;SPECIAL_BITS=PASS;LSTAT=OK;DB_IDENTITY=FAIL'
+      + ';DB_REALPATH=UNKNOWN',
+  }];
+  for (const scenario of cases) await t.test(scenario.name, async nestedTest => {
+    const { configuration, recordKey } = closedStore(nestedTest);
+    const diagnostic = createSnapshotUnsafeFileDiagnostic(configuration.databasePath);
+    const targetPath = `${configuration.databasePath}${scenario.suffix}`;
+    let armed = false;
+    const instrumented = await importInstrumentedStore(nestedTest, {
+      ...diagnostic.hooks,
+      afterLstat(stat, candidate) {
+        if (!armed || diagnostic.phase() !== scenario.phase || candidate !== targetPath) return stat;
+        return new Proxy(stat, { get(targetStat, property) {
+          const value = property === scenario.property
+            ? scenario.replacement(targetStat) : Reflect.get(targetStat, property, targetStat);
+          return typeof value === 'function' && property !== scenario.property
+            ? value.bind(targetStat) : value;
+        } });
+      },
+    });
+    const reader = instrumented.openZenonFundingObserverSqliteStore(
+      openOptions(configuration, recordKey),
+    );
+    nestedTest.after(() => { try { reader.close(); } catch {} });
+    scenario.prepare(targetPath);
+    armed = true;
+    let observed;
+    try { reader.load(); } catch (error) { observed = error; }
+    assert.equal(snapshotFailureCode(observed), 'ZENON_FUNDING_OBSERVER_STORE_UNSAFE_FILE');
+    assert.equal(diagnostic.labels(), scenario.labels);
+  });
 });
 
 test('expected journal disappearance handling remains fail closed for unsafe journals', async t => {
@@ -3196,13 +3380,15 @@ test('early snapshot reader rejection preserves its primary error and drains the
 test('concurrent committed readers and writer observe only complete old-or-new snapshots', async t => {
   const directory = privateDirectoryFor(t);
   const configuration = createOptions(directory);
+  const unsafeFileDiagnostic = createSnapshotUnsafeFileDiagnostic(configuration.databasePath);
+  const instrumented = await importInstrumentedStore(t, unsafeFileDiagnostic.hooks);
   let reader;
   let writer;
   let additional;
   let primaryFailed = false;
   let stage = 'READER_CREATE';
   try {
-    reader = createZenonFundingObserverSqliteStore(configuration);
+    reader = instrumented.createZenonFundingObserverSqliteStore(configuration);
     stage = 'INITIAL_LOAD';
     const recordKey = reader.load().recordKey;
     stage = 'WRITER_CREATE';
@@ -3249,7 +3435,8 @@ test('concurrent committed readers and writer observe only complete old-or-new s
     reader = undefined;
   } catch (error) {
     primaryFailed = true;
-    t.diagnostic(`SNAPSHOT_PRIMARY_${snapshotFailureDiagnostic(stage, error)}`);
+    t.diagnostic(`SNAPSHOT_PRIMARY_${snapshotFailureDiagnostic(stage, error)}`
+      + snapshotUnsafeFileDiagnostic(error, unsafeFileDiagnostic));
     throw error;
   } finally {
     let cleanupError;
