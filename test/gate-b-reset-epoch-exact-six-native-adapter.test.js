@@ -936,6 +936,101 @@ test('Phase 2 rejects a post-read wallet-buffer mutation; on-disk mutation is un
     )));
   });
 
+test('Phase 2 quarantines a separate-handle in-place wallet overwrite', async t => {
+  const unchanged = await prepare(t);
+  const unchangedReviewed = await crossCheckBundle(unchanged);
+  assert.equal(
+    await validateGateBResetEpochExactSixNativeOfflineCrossCheck(
+      unchanged.capability,
+      unchangedReviewed.operator,
+      unchangedReviewed.crossCheck,
+    ),
+    OFFLINE_RECEIPT_VALID,
+  );
+  assert.equal(unchanged.counters.signCalls, 0);
+  assert.equal(await stopGateBResetEpochExactSixNative(unchanged.capability), CLOSED);
+  assert.equal(
+    await waitGateBResetEpochExactSixNativeClosed(unchanged.capability),
+    CLOSED,
+  );
+
+  const context = await prepare(t);
+  const reviewed = await crossCheckBundle(context);
+  const walletPath = join(
+    context.root,
+    GATE_B_PUBLIC_WS_INPUT_LEAVES.buyerWallet,
+  );
+  const before = await lstat(walletPath, { bigint: true });
+  let originalBytes;
+  let overwrittenBytes;
+  let observedBytes;
+  try {
+    originalBytes = await readFile(walletPath);
+    overwrittenBytes = Buffer.from(originalBytes);
+    assert.equal(overwrittenBytes.length > 0, true);
+    overwrittenBytes[0] ^= 1;
+    assert.equal(overwrittenBytes.equals(originalBytes), false);
+
+    const overwriteHandle = await open(walletPath, 'r+');
+    try {
+      const opened = await overwriteHandle.stat({ bigint: true });
+      assert.equal(opened.dev, before.dev);
+      assert.equal(opened.ino, before.ino);
+      assert.equal(opened.size, before.size);
+      let offset = 0;
+      while (offset < overwrittenBytes.length) {
+        const result = await overwriteHandle.write(
+          overwrittenBytes,
+          offset,
+          overwrittenBytes.length - offset,
+          offset,
+        );
+        assert.equal(
+          Number.isSafeInteger(result.bytesWritten) && result.bytesWritten > 0,
+          true,
+        );
+        offset += result.bytesWritten;
+      }
+      await overwriteHandle.sync();
+    } finally {
+      await overwriteHandle.close();
+    }
+
+    const after = await lstat(walletPath, { bigint: true });
+    assert.equal(after.dev, before.dev);
+    assert.equal(after.ino, before.ino);
+    assert.equal(after.size, before.size);
+    observedBytes = await readFile(walletPath);
+    assert.equal(observedBytes.length, originalBytes.length);
+    assert.equal(observedBytes.equals(originalBytes), false);
+    assert.equal(observedBytes.equals(overwrittenBytes), true);
+  } finally {
+    originalBytes?.fill(0);
+    overwrittenBytes?.fill(0);
+    observedBytes?.fill(0);
+  }
+
+  await assert.rejects(
+    validateGateBResetEpochExactSixNativeOfflineCrossCheck(
+      context.capability,
+      reviewed.operator,
+      reviewed.crossCheck,
+    ),
+    assertAdapterError,
+  );
+  assert.equal(
+    getGateBResetEpochExactSixNativeStatus(context.capability),
+    QUARANTINED,
+  );
+  await assertExactPrivateLeaves(context.root, EXACT_SIX.slice(0, 5));
+  assert.equal(context.counters.signCalls, 0);
+  assert.equal(await stopGateBResetEpochExactSixNative(context.capability), QUARANTINED);
+  assert.equal(
+    await waitGateBResetEpochExactSixNativeClosed(context.capability),
+    QUARANTINED,
+  );
+});
+
 test('Phase 2 rejects wallet rederivation to a mismatched payer', async t => {
   const context = await prepare(t, { phase2Payer: OTHER_PAYER });
   const reviewed = await crossCheckBundle(context);
