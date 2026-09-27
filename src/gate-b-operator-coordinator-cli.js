@@ -30,6 +30,13 @@ import {
   parseGateBOperatorReviewChildIpcMessage,
   parseGateBOperatorReviewResultFrame,
 } from './gate-b-operator-coordinator-schema.js';
+import {
+  getGateBResetEpochExactSixNativeStatus,
+  prepareGateBResetEpochExactSixNativeForReview,
+  stopGateBResetEpochExactSixNative,
+  validateGateBResetEpochExactSixNativeOfflineCrossCheck,
+  waitGateBResetEpochExactSixNativeClosed,
+} from './gate-b-reset-epoch-exact-six-native-adapter.js';
 
 const ERROR_CODE = 'gate_b_operator_coordinator_cli_failed';
 const INPUT_FD = 3;
@@ -37,10 +44,15 @@ const REVIEW_RESULT_FD = 4;
 const REVIEW_CHILD_MODULE = fileURLToPath(
   new URL('./gate-b-operator-config-review-child.js', import.meta.url),
 );
+const RESET_OFFLINE_CROSS_CHECK_CHILD_MODULE = fileURLToPath(
+  new URL('./gate-b-reset-epoch-offline-review-child.js', import.meta.url),
+);
 const CONTROLLER_REVIEW_REQUIRED =
   'GATE_B_CONTROLLER_REVIEW_REQUIRED_RUN_NOT_AUTHORIZED';
 const CONTROLLER_PREFLIGHT_VALID =
   'GATE_B_CONTROLLER_PREFLIGHT_VALID_RUN_NOT_AUTHORIZED';
+const CONTROLLER_RESET_OFFLINE_PREFLIGHT_VALID =
+  'GATE_B_CONTROLLER_OFFLINE_PREFLIGHT_RECEIPT_VALID_RUN_NOT_AUTHORIZED';
 const CONTROLLER_PENDING = 'GATE_B_CONTROLLER_PENDING_INDEPENDENT_VERIFICATION';
 const CONTROLLER_CLOSED = 'GATE_B_CONTROLLER_CLOSED_RUN_NOT_EXECUTED';
 const CONTROLLER_CLOSED_PENDING =
@@ -48,13 +60,21 @@ const CONTROLLER_CLOSED_PENDING =
 const CONTROLLER_QUARANTINED = 'GATE_B_CONTROLLER_FAILED_WORKSPACE_QUARANTINED';
 const REVIEW_FORCE_MS = 500;
 const ARRAY_IS_ARRAY = Array.isArray;
+const DEFINE_PROPERTY = Object.defineProperty;
 const GET_OWN_PROPERTY_DESCRIPTOR = Object.getOwnPropertyDescriptor;
 const GET_PROTOTYPE_OF = Object.getPrototypeOf;
 const HAS_OWN = Object.hasOwn;
 const IS_PROMISE = utilTypes.isPromise;
 const IS_PROXY = utilTypes.isProxy;
+const NATIVE_PROMISE = Promise;
 const OBJECT_PROTOTYPE = Object.prototype;
 const REFLECT_OWN_KEYS = Reflect.ownKeys;
+const NATIVE_PROMISE_CONSTRUCTOR_DESCRIPTOR = Object.freeze({
+  configurable: false,
+  enumerable: false,
+  value: NATIVE_PROMISE,
+  writable: false,
+});
 
 export class GateBOperatorCoordinatorCliError extends Error {
   constructor() {
@@ -114,8 +134,9 @@ function snapshotAbortSignal(signal) {
 
 function exactNativePromise(value) {
   if (!IS_PROMISE(value) || IS_PROXY(value) ||
-      GET_PROTOTYPE_OF(value) !== Promise.prototype ||
+      GET_PROTOTYPE_OF(value) !== NATIVE_PROMISE.prototype ||
       GET_OWN_PROPERTY_DESCRIPTOR(value, 'then') !== undefined) fail();
+  DEFINE_PROPERTY(value, 'constructor', NATIVE_PROMISE_CONSTRUCTOR_DESCRIPTOR);
   return value;
 }
 
@@ -572,11 +593,28 @@ export function launchGateBOperatorConfigReview(workspaceRoot, injected = undefi
   });
 }
 
+export function launchGateBResetEpochOfflineCrossCheck(
+  workspaceRoot,
+  injected = undefined,
+) {
+  const supplied = injected === undefined ? {} : exactPartialOptions(injected, [
+    'childModule', 'forkProcess', 'signal', 'timeoutMs',
+  ]);
+  return launchGateBOperatorConfigReview(workspaceRoot, {
+    ...supplied,
+    childModule: supplied.childModule ?? RESET_OFFLINE_CROSS_CHECK_CHILD_MODULE,
+  });
+}
+
 function captureCliDependencies(options) {
   const supplied = options === undefined ? {} : exactPartialOptions(options, [
-    'argv', 'authorizeController', 'channel', 'createFrameReader', 'getControllerStatus',
-    'inputStream', 'lifetimeMs', 'prepareController', 'reviewConfiguration', 'runController',
-    'stderr', 'stdout', 'stopController', 'waitControllerClosed',
+    'argv', 'authorizeController', 'channel',
+    'createFrameReader', 'getControllerStatus', 'getResetControllerStatus',
+    'inputStream', 'lifetimeMs', 'prepareController', 'prepareResetController',
+    'crossCheckResetConfiguration', 'reviewConfiguration', 'runController',
+    'stderr', 'stdout',
+    'stopController', 'stopResetController', 'validateResetController',
+    'waitControllerClosed', 'waitResetControllerClosed',
   ]);
   const output = {
     argv: supplied.argv ?? process.argv.slice(2),
@@ -587,6 +625,8 @@ function captureCliDependencies(options) {
       createGateBOperatorCoordinatorFrameReader,
     getControllerStatus: supplied.getControllerStatus ??
       getGateBPublicWsInputsControllerStatus,
+    getResetControllerStatus: supplied.getResetControllerStatus ??
+      getGateBResetEpochExactSixNativeStatus,
     inputStream: supplied.inputStream ?? createReadStream(null, {
       fd: INPUT_FD,
       autoClose: true,
@@ -595,7 +635,11 @@ function captureCliDependencies(options) {
     lifetimeMs: supplied.lifetimeMs ?? GATE_B_OPERATOR_COORDINATOR_LIMITS.lifetimeMs,
     prepareController: supplied.prepareController ??
       prepareGateBPublicWsInputsForReviewInInheritedProcessGroup,
+    prepareResetController: supplied.prepareResetController ??
+      prepareGateBResetEpochExactSixNativeForReview,
     reviewConfiguration: supplied.reviewConfiguration ?? launchGateBOperatorConfigReview,
+    crossCheckResetConfiguration: supplied.crossCheckResetConfiguration ??
+      launchGateBResetEpochOfflineCrossCheck,
     runController: supplied.runController ?? executeGateBPublicWsInputsOnce,
     stderr: supplied.stderr ?? (async line => {
       process.stderr.write(line);
@@ -606,16 +650,24 @@ function captureCliDependencies(options) {
       return true;
     }),
     stopController: supplied.stopController ?? stopGateBPublicWsInputsController,
+    stopResetController: supplied.stopResetController ??
+      stopGateBResetEpochExactSixNative,
+    validateResetController: supplied.validateResetController ??
+      validateGateBResetEpochExactSixNativeOfflineCrossCheck,
     waitControllerClosed: supplied.waitControllerClosed ??
       waitGateBPublicWsInputsControllerClosed,
+    waitResetControllerClosed: supplied.waitResetControllerClosed ??
+      waitGateBResetEpochExactSixNativeClosed,
   };
   if (!ARRAY_IS_ARRAY(output.argv) || IS_PROXY(output.argv) || output.argv.length !== 0 ||
       REFLECT_OWN_KEYS(output.argv).length !== 1) fail();
   exactTimeout(output.lifetimeMs, GATE_B_OPERATOR_COORDINATOR_LIMITS.lifetimeMs);
   for (const key of [
-    'authorizeController', 'createFrameReader', 'getControllerStatus', 'prepareController',
-    'reviewConfiguration', 'runController', 'stderr', 'stdout', 'stopController',
-    'waitControllerClosed',
+    'authorizeController', 'createFrameReader',
+    'getControllerStatus', 'getResetControllerStatus', 'prepareController',
+    'prepareResetController', 'crossCheckResetConfiguration', 'reviewConfiguration',
+    'runController', 'stderr', 'stdout', 'stopController', 'stopResetController',
+    'validateResetController', 'waitControllerClosed', 'waitResetControllerClosed',
   ]) if (typeof output[key] !== 'function') fail();
   const channelOn = dataProperty(output.channel, 'on');
   const channelRemoveListener = dataProperty(output.channel, 'removeListener');
@@ -635,6 +687,7 @@ export async function runGateBOperatorCoordinatorCli(options = undefined) {
   let reader;
   let readerMethods;
   let capability;
+  let controllerFunctions;
   let controllerStopPromise;
   let controllerWaitPromise;
   let stopping = false;
@@ -654,11 +707,11 @@ export async function runGateBOperatorCoordinatorCli(options = undefined) {
   let resolveStop;
   const stopRequested = new Promise(resolve => { resolveStop = resolve; });
   const beginControllerStop = () => {
-    if (!capability || controllerStopPromise) return;
+    if (!capability || !controllerFunctions || controllerStopPromise) return;
     try {
-      controllerStopPromise = callAsync(dependencies.stopController, undefined, [capability]);
+      controllerStopPromise = callAsync(controllerFunctions.stop, undefined, [capability]);
       controllerWaitPromise = callAsync(
-        dependencies.waitControllerClosed,
+        controllerFunctions.waitClosed,
         undefined,
         [capability],
       );
@@ -886,10 +939,24 @@ export async function runGateBOperatorCoordinatorCli(options = undefined) {
     try { bootstrap = parseGateBOperatorCoordinatorBootstrapFrame(initialFrame); } finally {
       try { if (Buffer.isBuffer(initialFrame)) initialFrame.fill(0); } catch {}
     }
+    const resetFamily = bootstrap.schemaVersion === 5;
+    controllerFunctions = Object.freeze(resetFamily ? {
+      getStatus: dependencies.getResetControllerStatus,
+      prepare: dependencies.prepareResetController,
+      stop: dependencies.stopResetController,
+      validate: dependencies.validateResetController,
+      waitClosed: dependencies.waitResetControllerClosed,
+    } : {
+      getStatus: dependencies.getControllerStatus,
+      prepare: dependencies.prepareController,
+      stop: dependencies.stopController,
+      validate: dependencies.authorizeController,
+      waitClosed: dependencies.waitControllerClosed,
+    });
     if (stopping) return await finalize();
-    capability = await callAsync(dependencies.prepareController, undefined, [bootstrap]);
+    capability = await callAsync(controllerFunctions.prepare, undefined, [bootstrap]);
     if (stopping) return await finalize();
-    if (Reflect.apply(dependencies.getControllerStatus, undefined, [capability]) !==
+    if (Reflect.apply(controllerFunctions.getStatus, undefined, [capability]) !==
         CONTROLLER_REVIEW_REQUIRED) {
       quarantine = true;
       return await finalize();
@@ -909,40 +976,74 @@ export async function runGateBOperatorCoordinatorCli(options = undefined) {
     }
     if (review.schemaVersion !== bootstrap.schemaVersion) fail();
     if (stopping) return await finalize();
-    const reviewedCandidate = await callAsync(dependencies.reviewConfiguration, undefined, [
-      bootstrap.workspaceRoot,
-      { signal: reviewAbort.signal },
-    ]);
-    let reviewedFrame;
-    let reviewed;
-    try {
-      reviewedFrame = frameGateBOperatorReviewResult(reviewedCandidate);
-      reviewed = parseGateBOperatorReviewResultFrame(reviewedFrame);
-    } finally {
-      if (Buffer.isBuffer(reviewedFrame)) reviewedFrame.fill(0);
+    let authorization;
+    if (resetFamily) {
+      const crossCheckCandidate = await callAsync(
+        dependencies.crossCheckResetConfiguration,
+        undefined,
+        [bootstrap.workspaceRoot, { signal: reviewAbort.signal }],
+      );
+      let crossCheckFrame;
+      let crossCheck;
+      try {
+        crossCheckFrame = frameGateBOperatorReviewResult(crossCheckCandidate);
+        crossCheck = parseGateBOperatorReviewResultFrame(crossCheckFrame);
+      } finally {
+        if (Buffer.isBuffer(crossCheckFrame)) crossCheckFrame.fill(0);
+      }
+      if (crossCheck.resultVersion !== 5) fail();
+      if (stopping) return await finalize();
+      authorization = await callAsync(controllerFunctions.validate, undefined, [
+        capability,
+        review,
+        crossCheck,
+      ]);
+    } else {
+      const reviewedCandidate = await callAsync(
+        dependencies.reviewConfiguration,
+        undefined,
+        [bootstrap.workspaceRoot, { signal: reviewAbort.signal }],
+      );
+      let reviewedFrame;
+      let reviewed;
+      try {
+        reviewedFrame = frameGateBOperatorReviewResult(reviewedCandidate);
+        reviewed = parseGateBOperatorReviewResultFrame(reviewedFrame);
+      } finally {
+        if (Buffer.isBuffer(reviewedFrame)) reviewedFrame.fill(0);
+      }
+      if (reviewed.resultVersion !== bootstrap.schemaVersion) fail();
+      if (stopping) return await finalize();
+      authorization = await callAsync(controllerFunctions.validate, undefined, [
+        capability,
+        {
+          acknowledgements: review.acknowledgements,
+          reviewedConfigDigest: reviewed.configDigest,
+          schemaVersion: bootstrap.schemaVersion,
+        },
+      ]);
     }
-    if (reviewed.resultVersion !== bootstrap.schemaVersion) fail();
     if (stopping) return await finalize();
-    const authorization = await callAsync(dependencies.authorizeController, undefined, [
-      capability,
-      {
-        acknowledgements: review.acknowledgements,
-        reviewedConfigDigest: reviewed.configDigest,
-        schemaVersion: bootstrap.schemaVersion,
-      },
-    ]);
-    if (stopping) return await finalize();
-    if (authorization !== CONTROLLER_PREFLIGHT_VALID ||
-        Reflect.apply(dependencies.getControllerStatus, undefined, [capability]) !==
-          CONTROLLER_PREFLIGHT_VALID) {
+    const expectedPreflight = resetFamily
+      ? CONTROLLER_RESET_OFFLINE_PREFLIGHT_VALID
+      : CONTROLLER_PREFLIGHT_VALID;
+    if (authorization !== expectedPreflight ||
+        Reflect.apply(controllerFunctions.getStatus, undefined, [capability]) !==
+          expectedPreflight) {
       quarantine = true;
       return await finalize();
     }
     await emitLine(
       dependencies.stdout,
-      GATE_B_OPERATOR_COORDINATOR_STATUS_LINES.PREFLIGHT_VALID,
+      resetFamily
+        ? GATE_B_OPERATOR_COORDINATOR_STATUS_LINES.RESET_OFFLINE_PREFLIGHT_VALID
+        : GATE_B_OPERATOR_COORDINATOR_STATUS_LINES.PREFLIGHT_VALID,
     );
     await sendLifecycle(GATE_B_OPERATOR_COORDINATOR_IPC_TYPES.PREFLIGHT_VALID);
+    if (resetFamily) {
+      await stopRequested;
+      return await finalize();
+    }
     runOpenState = 'WAITING';
     await Promise.race([runOpened, stopRequested]);
     if (stopping) return await finalize();
@@ -961,7 +1062,7 @@ export async function runGateBOperatorCoordinatorCli(options = undefined) {
     runAuthorization = undefined;
     if (stopping || runResult !== CONTROLLER_PENDING || !originReleaseRequested ||
         originReleasePending ||
-        Reflect.apply(dependencies.getControllerStatus, undefined, [capability]) !==
+        Reflect.apply(controllerFunctions.getStatus, undefined, [capability]) !==
           CONTROLLER_PENDING) {
       quarantine = true;
       return await finalize();

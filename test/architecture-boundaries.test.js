@@ -313,6 +313,71 @@ test('v4 quick-tunnel launch provenance stays private and source-only', () => {
   assert.deepEqual(users, []);
 });
 
+test('exact-six native reset admission stays offline-only and cannot import live authority',
+  () => {
+    const adapter = readFileSync(
+      new URL('../src/gate-b-reset-epoch-exact-six-native-adapter.js', import.meta.url),
+      'utf8',
+    );
+    const offlinePreflight = readFileSync(
+      new URL('../src/gate-b-reset-epoch-offline-preflight.js', import.meta.url),
+      'utf8',
+    );
+    const offlineReviewChild = readFileSync(
+      new URL('../src/gate-b-reset-epoch-offline-review-child.js', import.meta.url),
+      'utf8',
+    );
+    const schema = readFileSync(
+      new URL('../src/gate-b-operator-coordinator-schema.js', import.meta.url),
+      'utf8',
+    );
+    const coordinator = readFileSync(
+      new URL('../src/gate-b-operator-coordinator-cli.js', import.meta.url),
+      'utf8',
+    );
+    const frontEnd = readFileSync(
+      new URL('../src/gate-b-operator-front-end.js', import.meta.url),
+      'utf8',
+    );
+    const watchdog = readFileSync(
+      new URL('../src/gate-b-operator-watchdog.js', import.meta.url),
+      'utf8',
+    );
+    assert.match(adapter, /const CAPABILITY_STATES = new WeakMap\(\);/u);
+    assert.match(adapter, /OBJECT_FREEZE\(OBJECT_CREATE\(null\)\)/u);
+    assert.match(adapter, /claimGateBQuickTunnelHostnameSourceHandoff/u);
+    assert.match(adapter, /readGateBQuickTunnelHostnameSourceHandoffProvenance/u);
+    assert.match(adapter, /RUN_NOT_AUTHORIZED/u);
+    assert.match(adapter, /futureLiveConsumerEligible:\s*false/u);
+    assert.match(adapter, /resetEpochOfflinePreflightReceipt/u);
+    assert.doesNotMatch(adapter, /parseResetEpochWssOnceApproval/u);
+    assert.doesNotMatch(adapter, /preflightResetEpochWssOnceRun/u);
+    assert.doesNotMatch(adapter, /resetLiveApproval/u);
+    assert.doesNotMatch(adapter, /live-evidence-runner/u);
+    assert.doesNotMatch(adapter, /executeResetEpochWssOnceRun/u);
+    assert.doesNotMatch(adapter, /gate-b-public-ws-inputs-controller/u);
+    assert.doesNotMatch(adapter, /gate-b-reset-epoch-(?:v4|operator-v3|filesystem-preflight-v3)/u);
+    assert.doesNotMatch(adapter, /live-evidence-public-ws-once-(?:supervisor|run-child)/u);
+    assert.doesNotMatch(adapter,
+      /RELEASE_ORIGIN|ORIGIN_RELEASED|paidFetch|publishRawTransaction|signAndSend/u);
+    for (const source of [adapter, offlinePreflight, offlineReviewChild]) {
+      assert.doesNotMatch(source, /parseResetEpochWssOnceApproval/u);
+      assert.doesNotMatch(source, /preflightResetEpochWssOnceRun/u);
+      assert.doesNotMatch(source, /executeResetEpochWssOnceRun/u);
+      assert.doesNotMatch(source, /live-evidence-runner/u);
+      assert.doesNotMatch(source,
+        /live-evidence-public-ws-once-(?:supervisor|run-child)/u);
+      assert.doesNotMatch(source, /gate-b-public-ws-inputs-controller/u);
+    }
+    assert.match(schema, /schemaVersion === 5/u);
+    assert.match(coordinator, /bootstrap\.schemaVersion === 5/u);
+    assert.match(frontEnd, /bootstrap\.schemaVersion === 5/u);
+    assert.match(watchdog, /bootstrap\.schemaVersion === 5/u);
+    assert.match(watchdog, /controlPhase = 'WAIT_STOP'/u);
+    assert.equal((frontEnd.match(/function createTtyInput\(/gu) ?? []).length, 1);
+    assert.doesNotMatch(frontEnd, /createReset.*Tty|reset.*createTtyInput/iu);
+  });
+
 test('delivery claims carry the authenticated accepted requirement across every concrete boundary', () => {
   assert.equal(
     SettlementRepository.prototype.markDeliveryPending.length,

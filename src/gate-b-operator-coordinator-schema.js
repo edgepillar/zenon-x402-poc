@@ -2,6 +2,8 @@ import { isAbsolute, resolve } from 'node:path';
 import { types as utilTypes } from 'node:util';
 
 import { canonicalJson } from './canonical.js';
+import { parseGateBResetEpochPolicyPreflight } from
+  './gate-b-reset-epoch-policy-preflight.js';
 import {
   GATE_B_CURRENT_TESTNET_WSS_ENDPOINT,
   GATE_B_CURRENT_TESTNET_WSS_INPUT_ACKNOWLEDGEMENTS,
@@ -11,6 +13,10 @@ import {
   GATE_B_QUICK_TUNNEL_TELEMETRY_ACKNOWLEDGEMENTS,
   GATE_B_QUICK_TUNNEL_TELEMETRY_MODES,
 } from './gate-b-quick-tunnel-schema.js';
+import {
+  GATE_B_RESET_EPOCH_OFFLINE_PREFLIGHT,
+  assertCanonicalZenonUserAddress,
+} from './gate-b-reset-epoch-offline-preflight.js';
 
 const ERROR_CODE = 'gate_b_operator_coordinator_schema_invalid';
 const FRAME_HEADER_BYTES = 4;
@@ -21,6 +27,7 @@ const RESULT_MAX_BYTES = 1024;
 const ORIGIN_RELEASE_REQUEST_ID = 1;
 const RUN_ACKNOWLEDGEMENT =
   'I_AUTHORIZE_EXACTLY_ONE_PUBLIC_TESTNET_GATE_B_PAYMENT_NOW_WITH_NO_RECOVERY_OR_PUBLICATION';
+const RESET_EPOCH_EXACT_SIX_NATIVE_MODE = 'reset-epoch-exact-six-native-v1';
 const RUN_NAME = /^[a-z0-9](?:[a-z0-9-]{0,62}[a-z0-9])?$/;
 const LOWERCASE_HASH_64 = /^[0-9a-f]{64}$/;
 const ARRAY_IS_ARRAY = Array.isArray;
@@ -38,6 +45,12 @@ export const GATE_B_OPERATOR_COORDINATOR_ACKNOWLEDGEMENTS = Object.freeze({
   payment: GATE_B_PUBLIC_WS_INPUT_ACKNOWLEDGEMENTS.payment,
   currentTestnetWssPayment: GATE_B_CURRENT_TESTNET_WSS_INPUT_ACKNOWLEDGEMENTS.payment,
   publication: GATE_B_PUBLIC_WS_INPUT_ACKNOWLEDGEMENTS.publication,
+  resetOfflineReceipt:
+    GATE_B_RESET_EPOCH_OFFLINE_PREFLIGHT.acknowledgements.offlineReceipt,
+  resetOperatorAssertion:
+    GATE_B_RESET_EPOCH_OFFLINE_PREFLIGHT.acknowledgements.operatorAssertion,
+  resetPayeeOwnership:
+    GATE_B_RESET_EPOCH_OFFLINE_PREFLIGHT.acknowledgements.payeeOwnership,
   run: RUN_ACKNOWLEDGEMENT,
   transportException: GATE_B_PUBLIC_WS_INPUT_ACKNOWLEDGEMENTS.transportException,
 });
@@ -63,6 +76,8 @@ export const GATE_B_OPERATOR_COORDINATOR_LIMITS = Object.freeze({
 export const GATE_B_OPERATOR_COORDINATOR_STATUS_LINES = Object.freeze({
   REVIEW_REQUIRED: 'GATE_B_CONTROLLER_REVIEW_REQUIRED_RUN_NOT_AUTHORIZED\n',
   PREFLIGHT_VALID: 'GATE_B_CONTROLLER_PREFLIGHT_VALID_RUN_NOT_AUTHORIZED\n',
+  RESET_OFFLINE_PREFLIGHT_VALID:
+    'GATE_B_CONTROLLER_OFFLINE_PREFLIGHT_RECEIPT_VALID_RUN_NOT_AUTHORIZED\n',
   PENDING: 'GATE_B_CONTROLLER_PENDING_INDEPENDENT_VERIFICATION\n',
   CLOSED: 'GATE_B_CONTROLLER_CLOSED_RUN_NOT_EXECUTED\n',
   CLOSED_PENDING: 'GATE_B_CONTROLLER_CLOSED_PENDING_INDEPENDENT_VERIFICATION\n',
@@ -135,7 +150,60 @@ function exactAbsolutePath(value) {
   return value;
 }
 
+function freezeQuickTunnel(value) {
+  const quickTunnel = exactPlainObject(value, [
+    'cloudflaredExecutable', 'sourcePin', 'telemetryAcknowledgement', 'telemetryMode',
+  ]);
+  exactAbsolutePath(quickTunnel.cloudflaredExecutable);
+  if (typeof quickTunnel.sourcePin !== 'string' ||
+      !LOWERCASE_HASH_64.test(quickTunnel.sourcePin) ||
+      !Object.values(GATE_B_QUICK_TUNNEL_TELEMETRY_MODES)
+        .includes(quickTunnel.telemetryMode) ||
+      !Object.values(GATE_B_QUICK_TUNNEL_TELEMETRY_ACKNOWLEDGEMENTS)
+        .includes(quickTunnel.telemetryAcknowledgement)) fail();
+  const expectedTelemetryAcknowledgement = quickTunnel.telemetryMode ===
+    GATE_B_QUICK_TUNNEL_TELEMETRY_MODES.EXTERNAL_SENTRY_EGRESS_CONTROL_ATTESTED
+    ? GATE_B_QUICK_TUNNEL_TELEMETRY_ACKNOWLEDGEMENTS
+      .EXTERNAL_SENTRY_EGRESS_CONTROL_ATTESTED
+    : GATE_B_QUICK_TUNNEL_TELEMETRY_ACKNOWLEDGEMENTS
+      .ACCEPT_POSSIBLE_ERROR_TELEMETRY;
+  if (quickTunnel.telemetryAcknowledgement !== expectedTelemetryAcknowledgement) fail();
+  return Object.freeze({
+    cloudflaredExecutable: quickTunnel.cloudflaredExecutable,
+    sourcePin: quickTunnel.sourcePin,
+    telemetryAcknowledgement: quickTunnel.telemetryAcknowledgement,
+    telemetryMode: quickTunnel.telemetryMode,
+  });
+}
+
 function freezeBootstrap(value) {
+  if (!value || typeof value !== 'object' || IS_PROXY(value) || ARRAY_IS_ARRAY(value) ||
+      GET_PROTOTYPE_OF(value) !== OBJECT_PROTOTYPE) fail();
+  const schemaDescriptor = GET_OWN_PROPERTY_DESCRIPTOR(value, 'schemaVersion');
+  if (!schemaDescriptor || !HAS_OWN(schemaDescriptor, 'value') ||
+      schemaDescriptor.enumerable !== true) fail();
+  const schemaVersion = schemaDescriptor.value;
+  if (schemaVersion === 5) {
+    const root = exactPlainObject(value, [
+      'mode', 'payeeAddress', 'policyPreflight', 'quickTunnel', 'runName',
+      'schemaVersion', 'workspaceRoot',
+    ]);
+    if (root.mode !== RESET_EPOCH_EXACT_SIX_NATIVE_MODE ||
+        typeof root.runName !== 'string' || !RUN_NAME.test(root.runName)) fail();
+    exactAbsolutePath(root.workspaceRoot);
+    assertCanonicalZenonUserAddress(root.payeeAddress);
+    exactString(root.policyPreflight, 2048);
+    parseGateBResetEpochPolicyPreflight(root.policyPreflight);
+    return Object.freeze({
+      mode: RESET_EPOCH_EXACT_SIX_NATIVE_MODE,
+      payeeAddress: root.payeeAddress,
+      policyPreflight: root.policyPreflight,
+      quickTunnel: freezeQuickTunnel(root.quickTunnel),
+      runName: root.runName,
+      schemaVersion: 5,
+      workspaceRoot: root.workspaceRoot,
+    });
+  }
   const root = exactPlainObject(value, [
     'acknowledgements', 'quickTunnel', 'rpcEndpoint', 'runName',
     'schemaVersion', 'workspaceRoot',
@@ -154,34 +222,12 @@ function freezeBootstrap(value) {
   if (acknowledgements.live !== GATE_B_OPERATOR_COORDINATOR_ACKNOWLEDGEMENTS.live ||
       acknowledgements.operatorTrust !==
         GATE_B_OPERATOR_COORDINATOR_ACKNOWLEDGEMENTS.operatorTrust) fail();
-  const quickTunnel = exactPlainObject(root.quickTunnel, [
-    'cloudflaredExecutable', 'sourcePin', 'telemetryAcknowledgement', 'telemetryMode',
-  ]);
-  exactAbsolutePath(quickTunnel.cloudflaredExecutable);
-  if (typeof quickTunnel.sourcePin !== 'string' ||
-      !LOWERCASE_HASH_64.test(quickTunnel.sourcePin) ||
-      !Object.values(GATE_B_QUICK_TUNNEL_TELEMETRY_MODES)
-        .includes(quickTunnel.telemetryMode) ||
-      !Object.values(GATE_B_QUICK_TUNNEL_TELEMETRY_ACKNOWLEDGEMENTS)
-        .includes(quickTunnel.telemetryAcknowledgement)) fail();
-  const expectedTelemetryAcknowledgement = quickTunnel.telemetryMode ===
-    GATE_B_QUICK_TUNNEL_TELEMETRY_MODES.EXTERNAL_SENTRY_EGRESS_CONTROL_ATTESTED
-    ? GATE_B_QUICK_TUNNEL_TELEMETRY_ACKNOWLEDGEMENTS
-      .EXTERNAL_SENTRY_EGRESS_CONTROL_ATTESTED
-    : GATE_B_QUICK_TUNNEL_TELEMETRY_ACKNOWLEDGEMENTS
-      .ACCEPT_POSSIBLE_ERROR_TELEMETRY;
-  if (quickTunnel.telemetryAcknowledgement !== expectedTelemetryAcknowledgement) fail();
   return Object.freeze({
     acknowledgements: Object.freeze({
       live: acknowledgements.live,
       operatorTrust: acknowledgements.operatorTrust,
     }),
-    quickTunnel: Object.freeze({
-      cloudflaredExecutable: quickTunnel.cloudflaredExecutable,
-      sourcePin: quickTunnel.sourcePin,
-      telemetryAcknowledgement: quickTunnel.telemetryAcknowledgement,
-      telemetryMode: quickTunnel.telemetryMode,
-    }),
+    quickTunnel: freezeQuickTunnel(root.quickTunnel),
     rpcEndpoint: root.rpcEndpoint,
     runName: root.runName,
     schemaVersion: root.schemaVersion,
@@ -190,6 +236,45 @@ function freezeBootstrap(value) {
 }
 
 function freezeReview(value) {
+  if (!value || typeof value !== 'object' || IS_PROXY(value) || ARRAY_IS_ARRAY(value) ||
+      GET_PROTOTYPE_OF(value) !== OBJECT_PROTOTYPE) fail();
+  const schemaDescriptor = GET_OWN_PROPERTY_DESCRIPTOR(value, 'schemaVersion');
+  if (!schemaDescriptor || !HAS_OWN(schemaDescriptor, 'value') ||
+      schemaDescriptor.enumerable !== true) fail();
+  if (schemaDescriptor.value === 5) {
+    const root = exactPlainObject(value, [
+      'acknowledgements', 'reviewedConfigDigest', 'reviewedPayee', 'reviewedPayer',
+      'reviewedPaymentIntentDigest', 'schemaVersion',
+    ]);
+    const acknowledgements = exactPlainObject(root.acknowledgements, [
+      'offlineReceipt', 'operatorAssertion', 'payeeOwnership',
+    ]);
+    if (acknowledgements.offlineReceipt !==
+          GATE_B_OPERATOR_COORDINATOR_ACKNOWLEDGEMENTS.resetOfflineReceipt ||
+        acknowledgements.operatorAssertion !==
+          GATE_B_OPERATOR_COORDINATOR_ACKNOWLEDGEMENTS.resetOperatorAssertion ||
+        acknowledgements.payeeOwnership !==
+          GATE_B_OPERATOR_COORDINATOR_ACKNOWLEDGEMENTS.resetPayeeOwnership ||
+        typeof root.reviewedConfigDigest !== 'string' ||
+        !LOWERCASE_HASH_64.test(root.reviewedConfigDigest) ||
+        typeof root.reviewedPaymentIntentDigest !== 'string' ||
+        !LOWERCASE_HASH_64.test(root.reviewedPaymentIntentDigest)) fail();
+    assertCanonicalZenonUserAddress(root.reviewedPayer);
+    assertCanonicalZenonUserAddress(root.reviewedPayee);
+    if (root.reviewedPayer === root.reviewedPayee) fail();
+    return Object.freeze({
+      acknowledgements: Object.freeze({
+        offlineReceipt: acknowledgements.offlineReceipt,
+        operatorAssertion: acknowledgements.operatorAssertion,
+        payeeOwnership: acknowledgements.payeeOwnership,
+      }),
+      reviewedConfigDigest: root.reviewedConfigDigest,
+      reviewedPayee: root.reviewedPayee,
+      reviewedPayer: root.reviewedPayer,
+      reviewedPaymentIntentDigest: root.reviewedPaymentIntentDigest,
+      schemaVersion: 5,
+    });
+  }
   const root = exactPlainObject(value, ['acknowledgements', 'schemaVersion']);
   if (root.schemaVersion !== 1 && root.schemaVersion !== 2) fail();
   const fields = root.schemaVersion === 1
@@ -228,6 +313,43 @@ function freezeRun(value) {
 }
 
 function freezeReviewResult(value) {
+  if (!value || typeof value !== 'object' || IS_PROXY(value) || ARRAY_IS_ARRAY(value) ||
+      GET_PROTOTYPE_OF(value) !== OBJECT_PROTOTYPE) fail();
+  const versionDescriptor = GET_OWN_PROPERTY_DESCRIPTOR(value, 'resultVersion');
+  if (!versionDescriptor || !HAS_OWN(versionDescriptor, 'value') ||
+      versionDescriptor.enumerable !== true) fail();
+  if (versionDescriptor.value === 5) {
+    const root = exactPlainObject(value, [
+      'configDigest', 'hostname', 'independentReview', 'payee', 'payer',
+      'paymentIntentDigest', 'resultVersion', 'sourceRevision', 'type',
+    ]);
+    if (root.type !==
+          GATE_B_RESET_EPOCH_OFFLINE_PREFLIGHT.crossCheckClassification ||
+        root.independentReview !==
+          GATE_B_RESET_EPOCH_OFFLINE_PREFLIGHT.independentReview ||
+        typeof root.configDigest !== 'string' ||
+        !LOWERCASE_HASH_64.test(root.configDigest) ||
+        typeof root.paymentIntentDigest !== 'string' ||
+        !LOWERCASE_HASH_64.test(root.paymentIntentDigest) ||
+        typeof root.sourceRevision !== 'string' ||
+        !/^(?:[0-9a-f]{40}|[0-9a-f]{64})$/u.test(root.sourceRevision) ||
+        typeof root.hostname !== 'string' || root.hostname.length < 1 ||
+        root.hostname.length > 253) fail();
+    assertCanonicalZenonUserAddress(root.payer);
+    assertCanonicalZenonUserAddress(root.payee);
+    if (root.payer === root.payee) fail();
+    return Object.freeze({
+      configDigest: root.configDigest,
+      hostname: root.hostname,
+      independentReview: GATE_B_RESET_EPOCH_OFFLINE_PREFLIGHT.independentReview,
+      payee: root.payee,
+      payer: root.payer,
+      paymentIntentDigest: root.paymentIntentDigest,
+      resultVersion: 5,
+      sourceRevision: root.sourceRevision,
+      type: GATE_B_RESET_EPOCH_OFFLINE_PREFLIGHT.crossCheckClassification,
+    });
+  }
   const root = exactPlainObject(value, ['configDigest', 'resultVersion', 'type']);
   if ((root.resultVersion !== 1 && root.resultVersion !== 2) ||
       root.type !== 'REVIEW_VALID' ||
