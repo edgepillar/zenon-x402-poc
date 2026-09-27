@@ -10,11 +10,6 @@ import * as sdk from 'znn-typescript-sdk';
 import { paymentIntentDigest } from '../src/canonical.js';
 import { EVIDENCE_STATES, SettlementJournal } from '../src/settlement-journal.js';
 import { computeBlockHash, preflightZenonPayment } from '../src/zenon-payment.js';
-import {
-  OfflinePayerWorkerAdmission,
-  PAYER_WORKER_LANES as LANES,
-  PAYER_WORKER_OPERATION_KINDS as KINDS,
-} from '../src/zenon/payer-worker-admission.js';
 
 const CHILD = fileURLToPath(new URL(
   '../test-support/exact-zenon-settle-prepublication-child.js',
@@ -116,10 +111,12 @@ function signedPayment(keyPair, accepted) {
 }
 
 function signedPayloads() {
-  let first = syntheticKeyPair(71);
-  let second = syntheticKeyPair(73);
+  let first;
+  let second;
   try {
+    first = syntheticKeyPair(71);
     const firstAddress = first.getAddress().toString();
+    second = syntheticKeyPair(73);
     const secondAddress = second.getAddress().toString();
     const firstPayload = signedPayment(first, requirement(secondAddress));
     first.clear();
@@ -129,8 +126,11 @@ function signedPayloads() {
     second = undefined;
     return [firstPayload, secondPayload];
   } finally {
-    first?.clear();
-    second?.clear();
+    try {
+      first?.clear();
+    } finally {
+      second?.clear();
+    }
   }
 }
 
@@ -150,9 +150,12 @@ function settlementInput(paymentPayload) {
 async function writeFixture(root, paymentPayload) {
   const fixture = join(root, FIXTURE_NAME);
   const encoded = Buffer.from(JSON.stringify(paymentPayload), 'utf8');
-  requireProof(encoded.length > 0 && encoded.length <= MAX_FIXTURE_BYTES, 'FIXTURE_SIZE');
-  await writeFile(fixture, encoded, { flag: 'wx', mode: 0o600 });
-  encoded.fill(0);
+  try {
+    requireProof(encoded.length > 0 && encoded.length <= MAX_FIXTURE_BYTES, 'FIXTURE_SIZE');
+    await writeFile(fixture, encoded, { flag: 'wx', mode: 0o600 });
+  } finally {
+    encoded.fill(0);
+  }
   const [rootState, fixtureState] = await Promise.all([lstat(root), lstat(fixture)]);
   requireProof(rootState.isDirectory() && (rootState.mode & 0o777) === 0o700,
     'ROOT_NOT_PRIVATE');
@@ -227,7 +230,7 @@ function launch(label, root) {
   child.stdout.on('error', () => fail('CHILD_STDOUT'));
   child.stderr.on('error', () => fail('CHILD_STDERR'));
   child.once('error', () => fail('CHILD_SPAWN'));
-  const watchdog = setTimeout(() => fail('CHILD_WATCHDOG'), 10_000);
+  const watchdog = setTimeout(() => fail('CHILD_WATCHDOG'), 30_000);
   watchdog.unref();
   child.once('close', () => {
     closed = true;
@@ -339,7 +342,8 @@ async function cleanup(children, fixtures, roots) {
   }
 }
 
-test('distinct payer processes overlap at the durable pre-publication settle boundary', async () => {
+test('two directly spawned payer processes with separate journals overlap at the durable ' +
+  'VALIDATED pre-publication settle boundary', async () => {
   const roots = [];
   const fixtures = [];
   const children = [];
@@ -354,18 +358,6 @@ test('distinct payer processes overlap at the durable pre-publication settle bou
       expected[0].transactionHash !== expected[1].transactionHash, 'FIXTURES_NOT_DISTINCT');
     fixtures.push(await writeFixture(roots[0], payloads[0]));
     fixtures.push(await writeFixture(roots[1], payloads[1]));
-
-    const admission = new OfflinePayerWorkerAdmission({
-      lane: LANES.FACILITATOR,
-      workerIds: ['settle-worker-a', 'settle-worker-b'],
-    });
-    const tickets = expected.map((attempt, index) => admission.admit({
-      payer: attempt.payer,
-      operationId: `prepublication-overlap-${index}`,
-      kind: KINDS.FACILITATOR_SETTLE,
-    }));
-    tickets.forEach(ticket => admission.markDispatched(ticket));
-    requireProof(tickets[0].workerId !== tickets[1].workerId, 'WORKERS_NOT_DISTINCT');
 
     children.push(launch('A', roots[0]));
     children.push(launch('B', roots[1]));

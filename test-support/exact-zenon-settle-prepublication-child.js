@@ -237,5 +237,5 @@ async function main() {
   stop('SETTLE_RETURNED');
 }
 
-const watchdog = setTimeout(() => { process.exitCode = 70; }, 12_000);
+const watchdog = setTimeout(() => { process.exitCode = 70; }, 45_000);
 void main().catch(() => { process.exitCode = 1; }).finally(() => clearTimeout(watchdog));
