@@ -15,6 +15,7 @@ import {
   EVIDENCE_STATES,
   SettlementJournal,
 } from '../src/settlement-journal.js';
+import { createLiveEvidenceObserver } from '../src/live-observation.js';
 import {
   PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_CHAIN_PROFILE,
   PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_EVENT_ID,
@@ -134,6 +135,12 @@ function syntheticPayer(privateKeyByte) {
   }
 }
 
+function deferred() {
+  let resolve;
+  const promise = new Promise(complete => { resolve = complete; });
+  return { promise, resolve };
+}
+
 function observedPaymentBlock(transaction, {
   included = false,
   numConfirmations = 1,
@@ -212,6 +219,7 @@ function installSyntheticRpc(t) {
     prepared: null,
     rpcOperations: [],
     sdkFrontierCalls: 0,
+    walletAddresses: [],
   };
 
   const reset = scenario => {
@@ -233,6 +241,7 @@ function installSyntheticRpc(t) {
     state.prepared = null;
     state.rpcOperations = [];
     state.sdkFrontierCalls = 0;
+    state.walletAddresses = [];
   };
 
   const client = Object.freeze({
@@ -336,7 +345,9 @@ function installSyntheticRpc(t) {
     getKeyPair() {
       state.counters.wallet += 1;
       state.keyByte += 1;
-      return sdk.KeyPair.fromPrivateKey(Buffer.alloc(32, state.keyByte));
+      const keyPair = sdk.KeyPair.fromPrivateKey(Buffer.alloc(32, state.keyByte));
+      state.walletAddresses.push(keyPair.getAddress().toString());
+      return keyPair;
     },
   });
   sdk.KeyPair.prototype.sign = function observedSign(...args) {
@@ -1022,6 +1033,191 @@ test('active buyer fails closed around SDK 1.0.5 Dynamic Plasma pricing', async 
     assert.equal(fixture.state.counters.sign, 1);
     assert.equal(fixture.state.counters.publish, 0);
   });
+});
+
+test('overlapping distinct buyers serialize and queued buyer reads fresh v2 state after a guarded failure', { timeout: 5_000 }, async t => {
+  const heldFrontierRead = deferred();
+  const releaseFrontierRead = deferred();
+  const secondWaitStarted = deferred();
+  const buyerRuns = [];
+  t.after(async () => {
+    releaseFrontierRead.resolve();
+    await Promise.allSettled(buyerRuns);
+  });
+  const fixture = installSyntheticRpc(t);
+  const initialFrontier = momentum('serialized-first', { height: 50 });
+  const freshFrontier = momentum('serialized-second', {
+    height: 51,
+    nextFusionPrice: 1200,
+    nextWorkPrice: 1100,
+  });
+  let activeFrontier = initialFrontier;
+  let activeQuote = {
+    availablePlasma: 21000,
+    basePlasma: 21000,
+    requiredDifficulty: 0,
+  };
+  const scenario = {
+    syncInfo: {
+      state: sdk.SyncState.SyncDone,
+      currentHeight: initialFrontier.height,
+      targetHeight: initialFrontier.height,
+    },
+    frontier(call) {
+      if (call === 4) {
+        heldFrontierRead.resolve();
+        return releaseFrontierRead.promise.then(() => activeFrontier);
+      }
+      return activeFrontier;
+    },
+    plasma: () => activeQuote,
+  };
+  fixture.reset(scenario);
+
+  const observer = onFirstEvent => {
+    let monotonic = 0;
+    return createLiveEvidenceObserver({
+      utcNow: () => '2026-01-01T00:00:00.000Z',
+      monotonicNow: () => {
+        monotonic += 1;
+        if (monotonic === 1) onFirstEvent?.();
+        return monotonic;
+      },
+    });
+  };
+  const accepted = requirement();
+  const required = challenge(accepted);
+  const client = lifecycleObserver => new ExactZenonClient({
+    mnemonic: 'synthetic-offline-placeholder',
+    environment: ENVIRONMENT,
+    rpcTimeoutMs: 1_000,
+    authenticateChainProfile: async () => ({ ...PROFILE }),
+    lifecycleObserver,
+  });
+  const firstClient = client(observer());
+  const secondClient = client(observer(() => secondWaitStarted.resolve()));
+
+  let firstPayloadReturned = false;
+  const firstRun = firstClient.createPaymentPayload(required, accepted).then(
+    () => {
+      firstPayloadReturned = true;
+      return { status: 'fulfilled' };
+    },
+    error => ({ status: 'rejected', code: error?.code }),
+  );
+  buyerRuns.push(firstRun);
+  const firstReachedGuard = await Promise.race([
+    heldFrontierRead.promise.then(() => true),
+    firstRun.then(() => false),
+  ]);
+  assert.equal(firstReachedGuard, true);
+
+  const firstHeldPhases = firstClient.snapshotLiveEvidenceObservations()
+    .map(event => event.phase);
+  const countersWhileFirstHeld = structuredClone(fixture.state.counters);
+  let secondPayload;
+  const secondRun = secondClient.createPaymentPayload(required, accepted).then(
+    payload => {
+      secondPayload = payload;
+      return { status: 'fulfilled' };
+    },
+    error => ({ status: 'rejected', code: error?.code }),
+  );
+  buyerRuns.push(secondRun);
+  const secondReachedWait = await Promise.race([
+    secondWaitStarted.promise.then(() => true),
+    secondRun.then(() => false),
+  ]);
+  const secondWaitingPhases = secondClient.snapshotLiveEvidenceObservations()
+    .map(event => event.phase);
+  const countersWhileSecondWaited = structuredClone(fixture.state.counters);
+
+  activeFrontier = freshFrontier;
+  activeQuote = {
+    availablePlasma: 10000,
+    basePlasma: 21000,
+    requiredDifficulty: 20901000,
+  };
+  scenario.syncInfo = {
+    state: sdk.SyncState.SyncDone,
+    currentHeight: freshFrontier.height,
+    targetHeight: freshFrontier.height,
+  };
+
+  const originalLog = console.log;
+  console.log = () => {};
+  let firstOutcome;
+  let secondOutcome;
+  try {
+    releaseFrontierRead.resolve();
+    [firstOutcome, secondOutcome] = await Promise.all([firstRun, secondRun]);
+  } finally {
+    releaseFrontierRead.resolve();
+    console.log = originalLog;
+  }
+
+  assert.deepEqual(firstHeldPhases, [
+    'buyer_owner_wait_started',
+    'buyer_owner_acquired',
+    'buyer_readiness_started',
+    'buyer_readiness_finished',
+    'prepare_block_started',
+    'prepare_block_finished',
+  ]);
+  assert.deepEqual(countersWhileFirstHeld, {
+    frontier: 4,
+    heightTwo: 0,
+    wallet: 1,
+    plasma: 2,
+    prepare: 1,
+    sign: 1,
+    pow: 0,
+    publish: 0,
+    lookup: 0,
+    balance: 0,
+    unconfirmed: 0,
+    subscribe: 0,
+  });
+  assert.equal(secondReachedWait, true);
+  assert.deepEqual(secondWaitingPhases, ['buyer_owner_wait_started']);
+  assert.deepEqual(countersWhileSecondWaited, countersWhileFirstHeld);
+  assert.deepEqual(firstOutcome, {
+    status: 'rejected',
+    code: 'dynamic_plasma_compatibility_guard_failed',
+  });
+  assert.equal(firstPayloadReturned, false);
+  assert.deepEqual(secondOutcome, { status: 'fulfilled' });
+  assert.deepEqual(fixture.state.walletAddresses, [
+    syntheticPayer(41),
+    syntheticPayer(42),
+  ]);
+  assert.equal(secondPayload.payload.transaction.address, syntheticPayer(42));
+  assert.equal(
+    secondPayload.payload.transaction.momentumAcknowledged.height,
+    freshFrontier.height,
+  );
+  assert.equal(secondPayload.payload.transaction.fusedPlasma, 10000);
+  assert.equal(secondPayload.payload.transaction.difficulty, 20901000);
+  assert.deepEqual(firstClient.snapshotLiveEvidenceObservations().map(event => event.phase), [
+    ...firstHeldPhases,
+    'buyer_owner_released',
+  ]);
+  assert.deepEqual(secondClient.snapshotLiveEvidenceObservations().map(event => event.phase), [
+    'buyer_owner_wait_started',
+    'buyer_owner_acquired',
+    'buyer_readiness_started',
+    'buyer_readiness_finished',
+    'prepare_block_started',
+    'prepare_block_finished',
+    'buyer_owner_released',
+  ]);
+  assert.equal(fixture.state.counters.frontier, 8);
+  assert.equal(fixture.state.counters.plasma, 4);
+  assert.equal(fixture.state.counters.wallet, 2);
+  assert.equal(fixture.state.counters.prepare, 2);
+  assert.equal(fixture.state.counters.sign, 2);
+  assert.equal(fixture.state.counters.pow, 1);
+  assert.equal(fixture.state.counters.publish, 0);
 });
 
 test('reset epoch execution policy guards new execution and permits exact recovery', async t => {
