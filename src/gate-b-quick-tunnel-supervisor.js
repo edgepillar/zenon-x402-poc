@@ -1912,6 +1912,14 @@ async function startTunnel(state, bootstrap) {
   bootstrap = undefined;
   const startupBudget = await initialReadiness(state, quickTunnel);
   assertStartupActivation(state, startupBudget, state.pinned);
+  await sendIpc(
+    state,
+    GATE_B_QUICK_TUNNEL_IPC_TYPES.HOSTNAME_SOURCE_WRITTEN,
+    1,
+    state.startupAbort.signal,
+    startupRemaining(state, startupBudget),
+  );
+  assertStartupActivation(state, startupBudget, state.pinned);
   clearTimeout(state.startupTimer);
   state.mode = 'ACTIVE_IDLE';
   state.hardLifetimeTimer = setTimeout(
