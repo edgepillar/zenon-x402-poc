@@ -23,6 +23,9 @@ const { parseGateBResetEpochPolicyPreflight } = preflightModule;
 const ERROR_CODE = 'gate_b_reset_epoch_policy_preflight_invalid';
 const MODULE_NAME = 'gate-b-reset-epoch-policy-preflight.js';
 const CLI_MODULE_NAME = 'gate-b-reset-epoch-policy-preflight-cli.js';
+const COORDINATOR_SCHEMA_MODULE_NAME = 'gate-b-operator-coordinator-schema.js';
+const EXACT_SIX_NATIVE_ADAPTER_MODULE_NAME =
+  'gate-b-reset-epoch-exact-six-native-adapter.js';
 const ENTRY_MODULE_NAME = 'gate-b-reset-epoch-pre-wallet-entry-v3.js';
 const OPERATOR_V3_CLI_MODULE_NAME = 'gate-b-reset-epoch-operator-v3-cli.js';
 const CLI_SCRIPT_NAME = 'preflight:gate-b-reset-epoch-policy';
@@ -446,7 +449,12 @@ test('only reset boundaries import the parser and ordinary runtime roots cannot 
     .filter(name => imports(readFileSync(new URL(name, sourceDirectory), 'utf8'))
       .includes(`./${MODULE_NAME}`))
     .sort();
-  assert.deepEqual(directImporters, [CLI_MODULE_NAME, ENTRY_MODULE_NAME]);
+  assert.deepEqual(directImporters, [
+    COORDINATOR_SCHEMA_MODULE_NAME,
+    EXACT_SIX_NATIVE_ADAPTER_MODULE_NAME,
+    CLI_MODULE_NAME,
+    ENTRY_MODULE_NAME,
+  ]);
   assert.equal(
     readFileSync(new URL('../src/gate-b-operator-front-end.js', import.meta.url), 'utf8')
       .includes(OPERATOR_V3_CLI_MODULE_NAME),

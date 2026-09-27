@@ -87,6 +87,9 @@ import {
   publicWsOnceConfigDigest,
 } from '../src/live-evidence-runner.js';
 import {
+  GATE_B_RESET_EPOCH_OFFLINE_PREFLIGHT,
+} from '../src/gate-b-reset-epoch-offline-preflight.js';
+import {
   GATE_B_QUICK_TUNNEL_TELEMETRY_ACKNOWLEDGEMENTS,
   GATE_B_QUICK_TUNNEL_TELEMETRY_MODES,
 } from '../src/gate-b-quick-tunnel-schema.js';
@@ -94,6 +97,12 @@ import {
   GATE_B_CURRENT_TESTNET_CHAIN_PROFILE,
   GATE_B_CURRENT_TESTNET_OPERATOR_TRUST_ACKNOWLEDGEMENT,
   GATE_B_CURRENT_TESTNET_PROFILE_NAME,
+  HISTORICAL_PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_EVENT_ID,
+  PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_EVENT_ID,
+  PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_OPERATOR_TRUST_ACKNOWLEDGEMENT,
+  PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_PROFILE_NAME,
+  PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_WSS_ACKNOWLEDGEMENT,
+  PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_WSS_ENDPOINT,
   TESTNET_LIVE_ACKNOWLEDGEMENT,
 } from '../src/zenon/operator-trusted-testnet-profile.js';
 
@@ -341,6 +350,117 @@ function runAuthorization(changes = {}) {
   return {
     acknowledgement: GATE_B_OPERATOR_COORDINATOR_ACKNOWLEDGEMENTS.run,
     schemaVersion: 1,
+    ...changes,
+  };
+}
+
+function resetPolicyPreflight(changes = {}) {
+  return canonicalJson({
+    policySelection: {
+      eventId: PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_EVENT_ID,
+      liveAcknowledgement: TESTNET_LIVE_ACKNOWLEDGEMENT,
+      operatorTrustAcknowledgement:
+        PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_OPERATOR_TRUST_ACKNOWLEDGEMENT,
+      profileName: PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_PROFILE_NAME,
+      rpcEndpoint: PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_WSS_ENDPOINT,
+      wssAcknowledgement:
+        PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_WSS_ACKNOWLEDGEMENT,
+      ...changes,
+    },
+    preflightVersion: 1,
+  });
+}
+
+function resetSyntheticAddress(seed) {
+  const charset = 'qpzry9x8gf2tvdw0s3jn54khce6mua7l';
+  const generators = [
+    0x3b6a57b2, 0x26508e6d, 0x1ea119fa, 0x3d4233dd, 0x2a1462b3,
+  ];
+  const step = (checksum, word) => {
+    const high = checksum >>> 25;
+    let result = ((checksum & 0x1ffffff) << 5) ^ word;
+    for (let bit = 0; bit < generators.length; bit += 1) {
+      if ((high >>> bit) & 1) result ^= generators[bit];
+    }
+    return result >>> 0;
+  };
+  const bytes = Uint8Array.from({ length: 20 }, (_, index) =>
+    index === 0 ? 0 : (seed + index * 17) & 0xff);
+  const words = [];
+  let accumulator = 0;
+  let bits = 0;
+  for (const byte of bytes) {
+    accumulator = (accumulator << 8) | byte;
+    bits += 8;
+    while (bits >= 5) {
+      bits -= 5;
+      words.push((accumulator >>> bits) & 31);
+    }
+  }
+  let checksum = step(step(step(1, 3), 0), 26);
+  for (const word of words) checksum = step(checksum, word);
+  for (let index = 0; index < 6; index += 1) checksum = step(checksum, 0);
+  checksum = (checksum ^ 1) >>> 0;
+  for (let index = 5; index >= 0; index -= 1) {
+    words.push((checksum >>> (5 * index)) & 31);
+  }
+  return `z1${words.map(word => charset[word]).join('')}`;
+}
+
+const RESET_PAYER = resetSyntheticAddress(41);
+const RESET_PAYEE = resetSyntheticAddress(109);
+
+function resetBootstrap(changes = {}) {
+  return {
+    mode: 'reset-epoch-exact-six-native-v1',
+    payeeAddress: RESET_PAYEE,
+    policyPreflight: resetPolicyPreflight(),
+    quickTunnel: {
+      cloudflaredExecutable: '/usr/local/bin/gate-b-tunnel-fixture',
+      sourcePin: GATE_B_QUICK_TUNNEL_ARTIFACT_MANIFEST.executableSha256,
+      telemetryAcknowledgement:
+        GATE_B_QUICK_TUNNEL_TELEMETRY_ACKNOWLEDGEMENTS
+          .ACCEPT_POSSIBLE_ERROR_TELEMETRY,
+      telemetryMode:
+        GATE_B_QUICK_TUNNEL_TELEMETRY_MODES.ACCEPT_POSSIBLE_ERROR_TELEMETRY,
+    },
+    runName: 'gate-b-reset-epoch-exact-six-native-fixture',
+    schemaVersion: 5,
+    workspaceRoot: WORKSPACE_ROOT,
+    ...changes,
+  };
+}
+
+function resetReview(changes = {}) {
+  return {
+    acknowledgements: {
+      offlineReceipt:
+        GATE_B_RESET_EPOCH_OFFLINE_PREFLIGHT.acknowledgements.offlineReceipt,
+      operatorAssertion:
+        GATE_B_RESET_EPOCH_OFFLINE_PREFLIGHT.acknowledgements.operatorAssertion,
+      payeeOwnership:
+        GATE_B_RESET_EPOCH_OFFLINE_PREFLIGHT.acknowledgements.payeeOwnership,
+    },
+    reviewedConfigDigest: 'a'.repeat(64),
+    reviewedPayee: RESET_PAYEE,
+    reviewedPayer: RESET_PAYER,
+    reviewedPaymentIntentDigest: 'b'.repeat(64),
+    schemaVersion: 5,
+    ...changes,
+  };
+}
+
+function resetCrossCheck(changes = {}) {
+  return {
+    configDigest: resetReview().reviewedConfigDigest,
+    hostname: 'fixture.trycloudflare.com',
+    independentReview: 'NOT_PROVEN',
+    payee: RESET_PAYEE,
+    payer: RESET_PAYER,
+    paymentIntentDigest: resetReview().reviewedPaymentIntentDigest,
+    resultVersion: 5,
+    sourceRevision: 'a'.repeat(40),
+    type: 'OPERATOR_TRUSTED_NONAUTHORITATIVE_CROSS_CHECK',
     ...changes,
   };
 }
@@ -664,11 +784,56 @@ test('status lines remain byte exact and distinguish one pending run', () => {
   assert.deepEqual(GATE_B_OPERATOR_COORDINATOR_STATUS_LINES, {
     REVIEW_REQUIRED: 'GATE_B_CONTROLLER_REVIEW_REQUIRED_RUN_NOT_AUTHORIZED\n',
     PREFLIGHT_VALID: 'GATE_B_CONTROLLER_PREFLIGHT_VALID_RUN_NOT_AUTHORIZED\n',
+    RESET_OFFLINE_PREFLIGHT_VALID:
+      'GATE_B_CONTROLLER_OFFLINE_PREFLIGHT_RECEIPT_VALID_RUN_NOT_AUTHORIZED\n',
     PENDING: 'GATE_B_CONTROLLER_PENDING_INDEPENDENT_VERIFICATION\n',
     CLOSED: 'GATE_B_CONTROLLER_CLOSED_RUN_NOT_EXECUTED\n',
     CLOSED_PENDING: 'GATE_B_CONTROLLER_CLOSED_PENDING_INDEPENDENT_VERIFICATION\n',
     QUARANTINED: 'GATE_B_CONTROLLER_FAILED_WORKSPACE_QUARANTINED\n',
   });
+});
+
+test('schema 5 adds only exact reset bootstrap and review frames with no RUN frame', () => {
+  const initial = frameGateBOperatorCoordinatorBootstrap(resetBootstrap());
+  const parsedInitial = parseGateBOperatorCoordinatorBootstrapFrame(initial);
+  assert.deepEqual(parsedInitial, resetBootstrap());
+  assert.equal(Object.isFrozen(parsedInitial), true);
+  assert.equal(Object.isFrozen(parsedInitial.quickTunnel), true);
+
+  const second = frameGateBOperatorCoordinatorReview(resetReview());
+  const parsedSecond = parseGateBOperatorCoordinatorReviewFrame(second);
+  assert.deepEqual(parsedSecond, resetReview());
+  assert.equal(Object.isFrozen(parsedSecond), true);
+  assert.equal(Object.isFrozen(parsedSecond.acknowledgements), true);
+
+  const crossCheckFrame = frameGateBOperatorReviewResult(resetCrossCheck());
+  assert.deepEqual(parseGateBOperatorReviewResultFrame(crossCheckFrame),
+    resetCrossCheck());
+  assert.throws(() => frameGateBOperatorReviewResult(resetCrossCheck({
+    independentReview: 'PROVEN',
+  })));
+  assert.throws(() => frameGateBOperatorReviewResult(resetCrossCheck({
+    type: 'OFFLINE_PREFLIGHT_REVIEW_VALID',
+  })));
+
+  assert.throws(() => frameGateBOperatorCoordinatorRun({
+    acknowledgement: GATE_B_OPERATOR_COORDINATOR_ACKNOWLEDGEMENTS.run,
+    schemaVersion: 5,
+  }));
+  assert.throws(() => frameGateBOperatorCoordinatorBootstrap(resetBootstrap({
+    policyPreflight: resetPolicyPreflight({
+      eventId: HISTORICAL_PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_EVENT_ID,
+    }),
+  })));
+  assert.throws(() => frameGateBOperatorCoordinatorBootstrap(resetBootstrap({
+    rpcEndpoint: PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_WSS_ENDPOINT,
+  })));
+  assert.throws(() => frameGateBOperatorCoordinatorReview(resetReview({
+    acknowledgements: {
+      ...resetReview().acknowledgements,
+      operatorAssertion: 'NOT_ACCEPTED',
+    },
+  })));
 });
 
 test('framing rejects truncation, oversize, invalid UTF-8, duplicates, and early Phase 3', async t => {
@@ -1129,6 +1294,129 @@ function cliHarness(changes = {}) {
   };
 }
 
+function resetCliHarness() {
+  const channel = new FakeChannel();
+  const events = [];
+  const send = channel.send;
+  channel.send = function sendWithOriginReleasePoison(message, callback) {
+    if (message?.type === 'RELEASE_ORIGIN') {
+      events.push('poison:origin-release');
+      throw new Error('poison');
+    }
+    return Reflect.apply(send, this, [message, callback]);
+  };
+  const lines = [];
+  const capability = Object.freeze(Object.create(null));
+  let status = 'GATE_B_CONTROLLER_REVIEW_REQUIRED_RUN_NOT_AUTHORIZED';
+  let stopCalls = 0;
+  let waitCalls = 0;
+  const poison = name => async () => {
+    events.push(`poison:${name}`);
+    throw new Error('poison');
+  };
+  const reader = Object.freeze({
+    close() { events.push('reader:close'); return true; },
+    openReviewPhase() { events.push('reader:review-open'); return true; },
+    openRunPhase() { events.push('poison:reader:run-open'); return true; },
+    readInitial() {
+      events.push('reader:initial');
+      return Promise.resolve(frameGateBOperatorCoordinatorBootstrap(resetBootstrap()));
+    },
+    readReview() {
+      events.push('reader:review');
+      return Promise.resolve(frameGateBOperatorCoordinatorReview(resetReview()));
+    },
+    readRun() {
+      events.push('poison:reader:run');
+      return Promise.resolve(frameGateBOperatorCoordinatorRun(runAuthorization()));
+    },
+  });
+  const options = {
+    argv: [],
+    authorizeController: poison('legacy:authorize'),
+    validateResetController: async (candidate, supplied, crossChecked) => {
+      assert.equal(candidate, capability);
+      assert.deepEqual(supplied, resetReview());
+      assert.deepEqual(crossChecked, {
+        configDigest: resetReview().reviewedConfigDigest,
+        hostname: 'fixture.trycloudflare.com',
+        independentReview: 'NOT_PROVEN',
+        payee: RESET_PAYEE,
+        payer: RESET_PAYER,
+        paymentIntentDigest: resetReview().reviewedPaymentIntentDigest,
+        resultVersion: 5,
+        sourceRevision: 'a'.repeat(40),
+        type: 'OPERATOR_TRUSTED_NONAUTHORITATIVE_CROSS_CHECK',
+      });
+      events.push('reset:validate');
+      status = 'GATE_B_CONTROLLER_OFFLINE_PREFLIGHT_RECEIPT_VALID_RUN_NOT_AUTHORIZED';
+      return status;
+    },
+    channel,
+    createFrameReader() { return reader; },
+    getControllerStatus() {
+      events.push('poison:legacy:status');
+      throw new Error('poison');
+    },
+    getResetControllerStatus(candidate) {
+      assert.equal(candidate, capability);
+      return status;
+    },
+    inputStream: Object.freeze({}),
+    lifetimeMs: 1000,
+    prepareController: poison('legacy:prepare'),
+    prepareResetController: async supplied => {
+      assert.deepEqual(supplied, resetBootstrap());
+      events.push('reset:prepare');
+      return capability;
+    },
+    reviewConfiguration: poison('review-child'),
+    crossCheckResetConfiguration: async (_root, supplied) => {
+      assert.equal(supplied.signal instanceof AbortSignal, true);
+      events.push('reset:cross-check-child');
+      return Object.freeze({
+        configDigest: resetReview().reviewedConfigDigest,
+        hostname: 'fixture.trycloudflare.com',
+        independentReview: 'NOT_PROVEN',
+        payee: RESET_PAYEE,
+        payer: RESET_PAYER,
+        paymentIntentDigest: resetReview().reviewedPaymentIntentDigest,
+        resultVersion: 5,
+        sourceRevision: 'a'.repeat(40),
+        type: 'OPERATOR_TRUSTED_NONAUTHORITATIVE_CROSS_CHECK',
+      });
+    },
+    runController: poison('runner-rpc-payment'),
+    stderr: async line => { lines.push(['stderr', line]); return true; },
+    stdout: async line => { lines.push(['stdout', line]); return true; },
+    stopController: poison('legacy:stop'),
+    stopResetController: candidate => {
+      assert.equal(candidate, capability);
+      stopCalls += 1;
+      events.push('reset:stop');
+      status = 'GATE_B_CONTROLLER_CLOSED_RUN_NOT_EXECUTED';
+      return Promise.resolve(status);
+    },
+    waitControllerClosed: poison('legacy:wait'),
+    waitResetControllerClosed: candidate => {
+      assert.equal(candidate, capability);
+      waitCalls += 1;
+      events.push('reset:wait');
+      return Promise.resolve('GATE_B_CONTROLLER_CLOSED_RUN_NOT_EXECUTED');
+    },
+  };
+  return {
+    channel,
+    events,
+    lines,
+    options,
+    state: {
+      get stopCalls() { return stopCalls; },
+      get waitCalls() { return waitCalls; },
+    },
+  };
+}
+
 async function waitFor(check, timeoutMs = 250) {
   const deadline = performance.now() + timeoutMs;
   while (performance.now() <= deadline) {
@@ -1200,6 +1488,53 @@ test('coordinator CLI retains one process across review, preflight, STOP, and ex
   ]);
   assert.deepEqual(context.channel.sent.map(message => message.type), [
     'REVIEW_REQUIRED', 'REVIEW_OPENED', 'PREFLIGHT_VALID', 'STOPPED',
+  ]);
+});
+
+test('schema-5 coordinator uses only the reset adapter and stops after two phases', async () => {
+  const context = resetCliHarness();
+  const pending = runGateBOperatorCoordinatorCli(context.options);
+  await waitFor(() => context.channel.sent.some(message =>
+    message.type === 'PREFLIGHT_VALID'));
+  assert.deepEqual(context.events.filter(event => !event.startsWith('reader:close')), [
+    'reader:initial',
+    'reset:prepare',
+    'reader:review-open',
+    'reader:review',
+    'reset:cross-check-child',
+    'reset:validate',
+  ]);
+  assert.equal(context.channel.sent.some(message => message.type === 'RELEASE_ORIGIN'), false);
+  context.channel.emit('message', createGateBOperatorCoordinatorIpcMessage('STOP'));
+  assert.equal(await pending, true);
+  assert.equal(context.state.stopCalls, 1);
+  assert.equal(context.state.waitCalls, 1);
+  assert.equal(context.events.some(event => event.startsWith('poison:')), false);
+  assert.deepEqual(context.lines, [
+    ['stdout', GATE_B_OPERATOR_COORDINATOR_STATUS_LINES.REVIEW_REQUIRED],
+    ['stdout', GATE_B_OPERATOR_COORDINATOR_STATUS_LINES.RESET_OFFLINE_PREFLIGHT_VALID],
+    ['stdout', GATE_B_OPERATOR_COORDINATOR_STATUS_LINES.CLOSED],
+  ]);
+  assert.deepEqual(context.channel.sent.map(message => message.type), [
+    'REVIEW_REQUIRED', 'REVIEW_OPENED', 'PREFLIGHT_VALID', 'STOPPED',
+  ]);
+});
+
+test('schema-5 RUN_OPEN quarantines without origin release or a runner call', async () => {
+  const context = resetCliHarness();
+  const pending = runGateBOperatorCoordinatorCli(context.options);
+  await waitFor(() => context.channel.sent.some(message =>
+    message.type === 'PREFLIGHT_VALID'));
+  context.channel.emit('message', { type: 'RUN_OPEN' });
+  assert.equal(await pending, false);
+  assert.equal(context.channel.sent.some(message => message.type === 'RELEASE_ORIGIN'), false);
+  assert.equal(context.events.includes('poison:runner-rpc-payment'), false);
+  assert.equal(context.events.includes('poison:origin-release'), false);
+  assert.equal(context.events.includes('poison:reader:run'), false);
+  assert.equal(context.state.stopCalls, 1);
+  assert.equal(context.state.waitCalls, 1);
+  assert.deepEqual(context.lines.at(-1), [
+    'stderr', GATE_B_OPERATOR_COORDINATOR_STATUS_LINES.QUARANTINED,
   ]);
 });
 
@@ -2249,6 +2584,30 @@ test('launcher owns one detached group and exposes a phase-separated opaque life
   assert.deepEqual(spawnCalls[0].options.env, {});
   assert.deepEqual(spawnCalls[0].options.stdio,
     ['ignore', 'pipe', 'pipe', 'pipe', 'ipc', 'pipe']);
+});
+
+test('schema-5 launcher supplies canonical workspace cwd to its injected fixture child', async () => {
+  const child = fakeCoordinatorProcess();
+  const spawnCalls = [];
+  const candidate = resetBootstrap();
+  const capability = await launchGateBOperatorCoordinator(candidate, {
+    cliModule: '/private/tmp/gate-b-operator-coordinator-cli-fixture.js',
+    executable: process.execPath,
+    killProcessGroup() { assert.fail('clean closure must not signal'); },
+    lifetimeMs: 1000,
+    platform: 'darwin',
+    probeProcessGroup: () => false,
+    reapAbandonMs: 1000,
+    reapForceMs: 100,
+    spawnProcess(executable, args, options) {
+      spawnCalls.push({ executable, args, options });
+      return child;
+    },
+  });
+  assert.equal(spawnCalls.length, 1);
+  assert.equal(spawnCalls[0].options.cwd, candidate.workspaceRoot);
+  assert.equal(await stopGateBOperatorCoordinator(capability), 'CLOSED');
+  assert.equal(await waitGateBOperatorCoordinatorClosed(capability), 'CLOSED');
 });
 
 function ordinaryRunLauncherOptions(child, changes = {}) {
@@ -4614,6 +4973,67 @@ test('operator front-end accepts three canonical no-echo phases and restores the
   assert.equal(errorOutput.readableLength, 0);
 });
 
+test('operator front-end accepts exactly two schema-5 phases and emits no Phase-3 prompt',
+  async () => {
+    const input = fakeOperatorTty();
+    const channel = new EventEmitter();
+    const output = new PassThrough();
+    const errorOutput = new PassThrough();
+    const lines = [];
+    output.on('data', chunk => lines.push(chunk.toString('utf8')));
+    const capability = Object.freeze(Object.create(null));
+    let stops = 0;
+    let runSubmissions = 0;
+    const pending = runGateBOperatorFrontEnd({
+      argv: [], channel, errorOutput, input, output,
+      outputTimeoutMs: 100, phase1TimeoutMs: 1000, phase2TimeoutMs: 1000,
+      phase3TimeoutMs: 1000,
+      launchSetup: async candidate => {
+        assert.deepEqual(candidate, resetBootstrap());
+        return capability;
+      },
+      submitBootstrap: async (candidate, value) => {
+        assert.equal(candidate, capability);
+        assert.deepEqual(value, resetBootstrap());
+        return capability;
+      },
+      submitReview: async (candidate, value) => {
+        assert.equal(candidate, capability);
+        assert.deepEqual(value, resetReview());
+        return 'PREFLIGHT_VALID';
+      },
+      submitRun: async () => {
+        runSubmissions += 1;
+        throw new Error('schema-5 RUN poison');
+      },
+      stopCoordinator: async candidate => {
+        assert.equal(candidate, capability);
+        stops += 1;
+        return 'CLOSED';
+      },
+      waitClosed: async candidate => candidate === capability ? 'CLOSED' : 'FAILED',
+    });
+    await waitFor(() => lines.includes(GATE_B_OPERATOR_FRONT_END_PHASE_1_REQUIRED) &&
+      input.isRaw);
+    input.write(Buffer.from(`${canonicalJson(resetBootstrap())}\r`, 'utf8'));
+    await waitFor(() =>
+      lines.includes(GATE_B_OPERATOR_COORDINATOR_STATUS_LINES.REVIEW_REQUIRED) &&
+      input.isRaw);
+    input.write(Buffer.from(`${canonicalJson(resetReview())}\r`, 'utf8'));
+    assert.equal(await pending, true);
+    assert.equal(input.isRaw, false);
+    assert.equal(stops, 1);
+    assert.equal(runSubmissions, 0);
+    assert.deepEqual(lines, [
+      GATE_B_OPERATOR_FRONT_END_PHASE_1_REQUIRED,
+      GATE_B_OPERATOR_COORDINATOR_STATUS_LINES.REVIEW_REQUIRED,
+      GATE_B_OPERATOR_COORDINATOR_STATUS_LINES.RESET_OFFLINE_PREFLIGHT_VALID,
+      GATE_B_OPERATOR_COORDINATOR_STATUS_LINES.CLOSED,
+    ]);
+    assert.equal(lines.includes(GATE_B_OPERATOR_FRONT_END_PHASE_3_REQUIRED), false);
+    assert.equal(errorOutput.readableLength, 0);
+  });
+
 test('held prompt callbacks cannot start phase clocks before near-boundary input', async () => {
   const input = fakeOperatorTty();
   const channel = new EventEmitter();
@@ -4701,6 +5121,36 @@ test('operator front-end rejects non-TTY input before coordinator effects', asyn
   assert.equal(launches, 0);
 });
 
+test('invalid schema-5 Phase 1 has zero setup, bind, watchdog, guard, or reaper effects',
+  async () => {
+    const input = fakeOperatorTty();
+    const output = new PassThrough();
+    const errorOutput = new PassThrough();
+    let setups = 0;
+    let submissions = 0;
+    const pending = runGateBOperatorFrontEnd({
+      argv: [], channel: new EventEmitter(), errorOutput, input, output,
+      launchSetup: async () => {
+        setups += 1;
+        return Object.freeze(Object.create(null));
+      },
+      outputTimeoutMs: 100, phase1TimeoutMs: 1000, phase2TimeoutMs: 1000,
+      stopCoordinator: async () => 'CLOSED',
+      submitBootstrap: async () => {
+        submissions += 1;
+        return Object.freeze(Object.create(null));
+      },
+      submitReview: async () => 'PREFLIGHT_VALID',
+      waitClosed: async () => 'CLOSED',
+    });
+    await waitFor(() => input.isRaw === true);
+    input.write(Buffer.from('{"schemaVersion":5}\r', 'utf8'));
+    assert.equal(await pending, false);
+    assert.equal(setups, 0);
+    assert.equal(submissions, 0);
+    assert.equal(input.isRaw, false);
+  });
+
 test('operator front-end rejects phase-two bytes delivered while bootstrap submission is pending',
   async () => {
   const input = fakeOperatorTty();
@@ -4758,7 +5208,7 @@ test('operator front-end quarantines when exact TTY restoration cannot be proved
   await waitFor(() => input.isRaw === true);
   input.write(Buffer.from(`${canonicalJson(bootstrap())}\r`, 'utf8'));
   assert.equal(await pending, false);
-  assert.equal(setups, 1);
+  assert.equal(setups, 0);
   assert.equal(submissions, 0);
   assert.equal(errorOutput.read().toString('utf8'),
     GATE_B_OPERATOR_COORDINATOR_STATUS_LINES.QUARANTINED);
@@ -4789,7 +5239,7 @@ test('operator front-end raw Ctrl-C and repeated controls restore state and pres
     channel.emit('SIGTERM');
     assert.equal(await pending, false);
     assert.equal(input.isRaw, false);
-    assert.equal(setups, 1);
+    assert.equal(setups, 0);
     assert.deepEqual(channel.listeners('SIGTERM'), [caller]);
   });
 

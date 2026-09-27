@@ -422,17 +422,31 @@ async function writeRecordState(state, record, bytes) {
   await assertRecordState(state, record, bytes.length);
 }
 
-async function closeState(state) {
-  if (state.closed) return;
-  state.closed = true;
+async function settleCloseState(state) {
+  let failed = false;
   for (let index = state.records.length - 1; index >= 0; index -= 1) {
     const record = RECORD_STATES.get(state.records[index]);
     if (!record || record.closed) continue;
     record.closed = true;
-    try { await record.handle.close(); } catch {}
+    try { await record.handle.close(); } catch { failed = true; }
   }
-  try { await state.handle.close(); } catch {}
-  try { await state.cwdHandle.close(); } catch {}
+  try { await state.handle.close(); } catch { failed = true; }
+  try { await state.cwdHandle.close(); } catch { failed = true; }
+  if (failed) fail();
+  return true;
+}
+
+function closeState(state) {
+  if (state.closePromise) return state.closePromise;
+  let resolveClose;
+  let rejectClose;
+  state.closePromise = new Promise((resolve, reject) => {
+    resolveClose = resolve;
+    rejectClose = reject;
+  });
+  state.closed = true;
+  void settleCloseState(state).then(resolveClose, rejectClose);
+  return state.closePromise;
 }
 
 function createCapability(state) {
@@ -522,9 +536,9 @@ function createCapability(state) {
       await syncDirectoryState(capabilityState(capability));
       return true;
     },
-    async close() {
+    close() {
       const current = CAPABILITY_STATES.get(capability);
-      if (current) await closeState(current);
+      return current ? closeState(current) : Promise.resolve(true);
     },
   });
   CAPABILITY_STATES.set(capability, state);
@@ -587,6 +601,7 @@ export async function openGateBPublicWsPrivateWorkspace(workspaceRoot, injected)
       dependencies,
       records: [],
       closed: false,
+      closePromise: undefined,
     };
     await assertWorkspaceStableState(state);
     return createCapability(state);

@@ -13,6 +13,7 @@ import {
   frameGateBOperatorCoordinatorBootstrap,
   frameGateBOperatorCoordinatorReview,
   frameGateBOperatorCoordinatorRun,
+  parseGateBOperatorCoordinatorBootstrapFrame,
   parseGateBOperatorCoordinatorIpcMessage,
   parseGateBOperatorOriginReleaseIpcMessage,
 } from './gate-b-operator-coordinator-schema.js';
@@ -42,15 +43,23 @@ const WATCHDOG_START_MAGIC = 0x47425354;
 const REAPER_TARGET_MAGIC = 0x47425250;
 const OUTPUT_MAX_BYTES = 512;
 const ARRAY_IS_ARRAY = Array.isArray;
+const DEFINE_PROPERTY = Object.defineProperty;
 const GET_OWN_PROPERTY_DESCRIPTOR = Object.getOwnPropertyDescriptor;
 const GET_PROTOTYPE_OF = Object.getPrototypeOf;
 const HAS_OWN = Object.hasOwn;
 const IS_PROMISE = utilTypes.isPromise;
 const IS_PROXY = utilTypes.isProxy;
+const NATIVE_PROMISE = Promise;
 const OBJECT_PROTOTYPE = Object.prototype;
 const REFLECT_OWN_KEYS = Reflect.ownKeys;
 const RECORDS = new WeakMap();
 const WATCHDOG_RECORDS = new WeakMap();
+const NATIVE_PROMISE_CONSTRUCTOR_DESCRIPTOR = Object.freeze({
+  configurable: false,
+  enumerable: false,
+  value: NATIVE_PROMISE,
+  writable: false,
+});
 
 export class GateBOperatorCoordinatorLaunchError extends Error {
   constructor() {
@@ -87,8 +96,9 @@ function ownDataProperty(value, name) {
 
 function exactNativePromise(value) {
   if (!IS_PROMISE(value) || IS_PROXY(value) ||
-      GET_PROTOTYPE_OF(value) !== Promise.prototype ||
+      GET_PROTOTYPE_OF(value) !== NATIVE_PROMISE.prototype ||
       GET_OWN_PROPERTY_DESCRIPTOR(value, 'then') !== undefined) fail();
+  DEFINE_PROPERTY(value, 'constructor', NATIVE_PROMISE_CONSTRUCTOR_DESCRIPTOR);
   return value;
 }
 
@@ -402,6 +412,12 @@ function quarantineAndReap(record) {
   return record.terminalWork;
 }
 
+function preflightStatusLine(record) {
+  return record.resetFamily
+    ? GATE_B_OPERATOR_COORDINATOR_STATUS_LINES.RESET_OFFLINE_PREFLIGHT_VALID
+    : GATE_B_OPERATOR_COORDINATOR_STATUS_LINES.PREFLIGHT_VALID;
+}
+
 function checkMilestones(record) {
   if (!record.acceptingProtocol || record.terminalSettled) return;
   if (record.state === 'LAUNCHING' && record.bootstrapWritten && record.reviewIpc &&
@@ -419,7 +435,7 @@ function checkMilestones(record) {
       exactLineCount(
         record,
         'stdoutState',
-        GATE_B_OPERATOR_COORDINATOR_STATUS_LINES.PREFLIGHT_VALID,
+        preflightStatusLine(record),
         2,
       ) && record.stderrState.lines.length === 0 && record.stderrState.chunks.length === 0) {
     record.state = 'PREFLIGHT_VALID';
@@ -593,13 +609,11 @@ function installHandlers(record) {
       (record.stdoutState.lines.length === 2 &&
         record.stdoutState.lines[0] ===
           GATE_B_OPERATOR_COORDINATOR_STATUS_LINES.REVIEW_REQUIRED &&
-        record.stdoutState.lines[1] ===
-          GATE_B_OPERATOR_COORDINATOR_STATUS_LINES.PREFLIGHT_VALID)
+        record.stdoutState.lines[1] === preflightStatusLine(record))
       || (record.stdoutState.lines.length === 3 &&
         record.stdoutState.lines[0] ===
           GATE_B_OPERATOR_COORDINATOR_STATUS_LINES.REVIEW_REQUIRED &&
-        record.stdoutState.lines[1] ===
-          GATE_B_OPERATOR_COORDINATOR_STATUS_LINES.PREFLIGHT_VALID &&
+        record.stdoutState.lines[1] === preflightStatusLine(record) &&
         record.stdoutState.lines[2] === GATE_B_OPERATOR_COORDINATOR_STATUS_LINES.PENDING)
     );
     const candidateQuarantine = record.finalIpc ===
@@ -682,12 +696,16 @@ function launchGateBOperatorProcess(
   let dependencies;
   try {
     frame = frameGateBOperatorCoordinatorBootstrap(bootstrap);
+    const canonicalBootstrap = parseGateBOperatorCoordinatorBootstrapFrame(frame);
     dependencies = captureDependencies(injected, defaultModule);
+    const childCwd = canonicalBootstrap.schemaVersion === 5
+      ? canonicalBootstrap.workspaceRoot
+      : dirname(dependencies.cliModule);
     child = Reflect.apply(dependencies.spawnProcess, undefined, [
       dependencies.executable,
       [dependencies.cliModule],
       {
-        cwd: dirname(dependencies.cliModule),
+        cwd: childCwd,
         detached: authoritativeGroup,
         env: {},
         shell: false,
@@ -741,6 +759,7 @@ function launchGateBOperatorProcess(
       rejectLaunch,
       rejectReview,
       rejectRun,
+      resetFamily: canonicalBootstrap.schemaVersion === 5,
       released: false,
       resolveClosed,
       resolveLaunch,
@@ -1388,7 +1407,7 @@ function checkSiblingMilestones(record) {
       record.preflightIpc && exactLineCount(
         record,
         'stdoutState',
-        GATE_B_OPERATOR_COORDINATOR_STATUS_LINES.PREFLIGHT_VALID,
+        preflightStatusLine(record),
         2,
       ) && record.stderrState.lines.length === 0 && record.stderrState.chunks.length === 0) {
     record.state = 'PREFLIGHT_VALID';
@@ -1820,7 +1839,14 @@ function writeHolderTarget(record, snapshot, magic, callbackKey, frameKey, writt
   }
 }
 
-function createWatchdogRecord(dependencies, watchdog, reaper, guard, originGuard) {
+function createWatchdogRecord(
+  dependencies,
+  watchdog,
+  reaper,
+  guard,
+  originGuard,
+  preparsedBootstrap,
+) {
   const setupDeferred = createDeferred();
   const closedDeferred = createDeferred();
   const record = {
@@ -1857,6 +1883,7 @@ function createWatchdogRecord(dependencies, watchdog, reaper, guard, originGuard
     outerGuardClosed: false,
     preflightIpc: false,
     pendingIpc: false,
+    preparsedBootstrap,
     protocolFault: false,
     protocolEnded: false,
     reaper,
@@ -1872,6 +1899,7 @@ function createWatchdogRecord(dependencies, watchdog, reaper, guard, originGuard
     reaperHandleTransferred: false,
     reaperLost: false,
     reaperReady: false,
+    resetFamily: preparsedBootstrap?.schemaVersion === 5,
     released: false,
     reviewCallbackSeen: false,
     reviewDeferred: undefined,
@@ -1975,15 +2003,33 @@ export function launchGateBOperatorCoordinator(bootstrap, injected = undefined) 
   return launchGateBOperatorProcess(bootstrap, injected, CLI_MODULE);
 }
 
-export async function launchGateBOperatorWatchdogSetup(injected = undefined) {
+export async function launchGateBOperatorWatchdogSetup(
+  bootstrapOrInjected = undefined,
+  injected = undefined,
+) {
   let dependencies;
+  let preparsedBootstrap;
+  let bootstrapFrame;
   let originGuard;
   let watchdogGroupId;
   let guardGroupId;
   let reaperGroupId;
   let record;
   try {
-    dependencies = captureWatchdogDependencies(injected);
+    const schemaVersion = ownDataProperty(bootstrapOrInjected, 'schemaVersion');
+    let dependencyInput;
+    if (schemaVersion === 5) {
+      bootstrapFrame = frameGateBOperatorCoordinatorBootstrap(bootstrapOrInjected);
+      preparsedBootstrap = parseGateBOperatorCoordinatorBootstrapFrame(bootstrapFrame);
+      bootstrapFrame.fill(0);
+      bootstrapFrame = undefined;
+      if (preparsedBootstrap.schemaVersion !== 5) fail();
+      dependencyInput = injected;
+    } else {
+      if (injected !== undefined) fail();
+      dependencyInput = bootstrapOrInjected;
+    }
+    dependencies = captureWatchdogDependencies(dependencyInput);
     const originPromise = Reflect.apply(dependencies.createOriginGuard, undefined, []);
     originGuard = exactNativePromise(originPromise);
     originGuard = await originGuard;
@@ -2033,9 +2079,17 @@ export async function launchGateBOperatorWatchdogSetup(injected = undefined) {
     if (reaperGroupId === watchdogGroupId || reaperGroupId === guardGroupId) fail();
     const reaper = snapshotSiblingChild(reaperChild, reaperGroupId, 'reaper');
     Reflect.apply(guard.thirdDestroy, guard.thirdPipe, []);
-    record = createWatchdogRecord(dependencies, watchdog, reaper, guard, originGuard);
+    record = createWatchdogRecord(
+      dependencies,
+      watchdog,
+      reaper,
+      guard,
+      originGuard,
+      preparsedBootstrap,
+    );
     return await record.setupDeferred.promise;
   } catch {
+    if (Buffer.isBuffer(bootstrapFrame)) bootstrapFrame.fill(0);
     if (record) {
       try { await beginSiblingCleanup(record); } catch {}
       try { await record.closedDeferred.promise; } catch {}
@@ -2075,8 +2129,18 @@ export function submitGateBOperatorBootstrap(capability, bootstrap) {
     return Promise.reject(new GateBOperatorCoordinatorLaunchError());
   }
   let frame;
+  let expectedFrame;
   try {
     frame = frameGateBOperatorCoordinatorBootstrap(bootstrap);
+    const canonicalBootstrap = parseGateBOperatorCoordinatorBootstrapFrame(frame);
+    if (canonicalBootstrap.schemaVersion === 5) {
+      if (!record.preparsedBootstrap) fail();
+      expectedFrame = frameGateBOperatorCoordinatorBootstrap(record.preparsedBootstrap);
+      if (!frame.equals(expectedFrame)) fail();
+    } else if (record.preparsedBootstrap !== undefined) fail();
+    if (Buffer.isBuffer(expectedFrame)) expectedFrame.fill(0);
+    expectedFrame = undefined;
+    record.resetFamily = canonicalBootstrap.schemaVersion === 5;
     record.bootstrapDeferred = createDeferred(true);
     record.state = 'BOOTSTRAP_OPENING';
     record.lifetimeTimer = setTimeout(() => sendSiblingStop(record),
@@ -2120,6 +2184,7 @@ export function submitGateBOperatorBootstrap(capability, bootstrap) {
     return record.bootstrapDeferred.promise;
   } catch {
     if (Buffer.isBuffer(frame)) frame.fill(0);
+    if (Buffer.isBuffer(expectedFrame)) expectedFrame.fill(0);
     void beginSiblingCleanup(record);
     return Promise.reject(new GateBOperatorCoordinatorLaunchError());
   }

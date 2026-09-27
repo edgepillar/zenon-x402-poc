@@ -29,13 +29,21 @@ const PHASE_1_REQUIRED = 'GATE_B_OPERATOR_PHASE_1_INPUT_REQUIRED\n';
 const PHASE_3_REQUIRED = 'GATE_B_OPERATOR_PHASE_3_INPUT_REQUIRED\n';
 const OUTPUT_TIMEOUT_MS = 1_000;
 const ARRAY_IS_ARRAY = Array.isArray;
+const DEFINE_PROPERTY = Object.defineProperty;
 const GET_OWN_PROPERTY_DESCRIPTOR = Object.getOwnPropertyDescriptor;
 const GET_PROTOTYPE_OF = Object.getPrototypeOf;
 const HAS_OWN = Object.hasOwn;
 const IS_PROMISE = utilTypes.isPromise;
 const IS_PROXY = utilTypes.isProxy;
+const NATIVE_PROMISE = Promise;
 const OBJECT_PROTOTYPE = Object.prototype;
 const REFLECT_OWN_KEYS = Reflect.ownKeys;
+const NATIVE_PROMISE_CONSTRUCTOR_DESCRIPTOR = Object.freeze({
+  configurable: false,
+  enumerable: false,
+  value: NATIVE_PROMISE,
+  writable: false,
+});
 
 export class GateBOperatorFrontEndError extends Error {
   constructor() {
@@ -78,8 +86,9 @@ function exactPartialOptions(value, allowed) {
 
 function exactNativePromise(value) {
   if (!IS_PROMISE(value) || IS_PROXY(value) ||
-      GET_PROTOTYPE_OF(value) !== Promise.prototype ||
+      GET_PROTOTYPE_OF(value) !== NATIVE_PROMISE.prototype ||
       GET_OWN_PROPERTY_DESCRIPTOR(value, 'then') !== undefined) fail();
+  DEFINE_PROPERTY(value, 'constructor', NATIVE_PROMISE_CONSTRUCTOR_DESCRIPTOR);
   return value;
 }
 
@@ -358,9 +367,6 @@ export async function runGateBOperatorFrontEnd(options = undefined) {
     for (const event of ['SIGINT', 'SIGTERM', 'disconnect']) {
       Reflect.apply(dependencies.channelOn, dependencies.channel, [event, onControl]);
     }
-    launchWork = callAsync(dependencies.launchSetup, undefined, []);
-    capability = await launchWork;
-    if (cancelled) fail();
     tty = createTtyInput(dependencies, requestCancel);
     await writeFixed(dependencies, PHASE_1_REQUIRED);
     if (cancelled) fail();
@@ -377,6 +383,14 @@ export async function runGateBOperatorFrontEnd(options = undefined) {
         GATE_B_OPERATOR_COORDINATOR_LIMITS.bootstrapBytes,
       );
     } finally { phase1.fill(0); }
+    if (cancelled) fail();
+    const resetFamily = bootstrap.schemaVersion === 5;
+    launchWork = callAsync(
+      dependencies.launchSetup,
+      undefined,
+      resetFamily ? [bootstrap] : [],
+    );
+    capability = await launchWork;
     if (cancelled) fail();
     const submittedCapability = await callAsync(
       dependencies.submitBootstrap,
@@ -410,8 +424,17 @@ export async function runGateBOperatorFrontEnd(options = undefined) {
     review = undefined;
     if (preflight !== 'PREFLIGHT_VALID') fail();
     if (cancelled) fail();
-    await writeFixed(dependencies, GATE_B_OPERATOR_COORDINATOR_STATUS_LINES.PREFLIGHT_VALID);
+    await writeFixed(dependencies, resetFamily
+      ? GATE_B_OPERATOR_COORDINATOR_STATUS_LINES.RESET_OFFLINE_PREFLIGHT_VALID
+      : GATE_B_OPERATOR_COORDINATOR_STATUS_LINES.PREFLIGHT_VALID);
     if (cancelled) fail();
+    if (resetFamily) {
+      if (await cleanup() !== true || tty.close() !== true || cancelled) fail();
+      await writeFixed(dependencies, GATE_B_OPERATOR_COORDINATOR_STATUS_LINES.CLOSED);
+      if (cancelled) fail();
+      terminalLineWritten = true;
+      return true;
+    }
     await writeFixed(dependencies, PHASE_3_REQUIRED);
     if (cancelled) fail();
     const phase3 = await tty.read(

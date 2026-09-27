@@ -299,6 +299,7 @@ export async function runGateBOperatorWatchdog() {
     try { bootstrap = parseGateBOperatorCoordinatorBootstrapFrame(first); }
     finally { first.fill(0); }
     if (stopping) throw new Error('watchdog_failed');
+    const resetFamily = bootstrap.schemaVersion === 5;
     capability = await launchGateBOperatorCoordinatorInInheritedProcessGroup(bootstrap);
     bootstrap = undefined;
     if (stopping) throw new Error('watchdog_failed');
@@ -321,35 +322,41 @@ export async function runGateBOperatorWatchdog() {
       throw new Error('watchdog_failed');
     }
     review = undefined;
-    await fixedWrite(process.stdout, GATE_B_OPERATOR_COORDINATOR_STATUS_LINES.PREFLIGHT_VALID);
+    await fixedWrite(process.stdout, resetFamily
+      ? GATE_B_OPERATOR_COORDINATOR_STATUS_LINES.RESET_OFFLINE_PREFLIGHT_VALID
+      : GATE_B_OPERATOR_COORDINATOR_STATUS_LINES.PREFLIGHT_VALID);
     await fixedSend(GATE_B_OPERATOR_COORDINATOR_IPC_TYPES.PREFLIGHT_VALID);
-    controlPhase = 'WAIT_RUN_OPEN';
-    await Promise.race([
-      runOpened,
-      stopped.then(() => { throw new Error('watchdog_failed'); }),
-    ]);
-    const third = await Promise.race([
-      reader.readRun(),
-      stopped.then(() => { throw new Error('watchdog_failed'); }),
-    ]);
-    let runAuthorization;
-    try { runAuthorization = parseGateBOperatorCoordinatorRunFrame(third); }
-    finally { third.fill(0); }
-    if (stopping) throw new Error('watchdog_failed');
-    const runWork = submitGateBOperatorCoordinatorRun(capability, runAuthorization);
-    runAuthorization = undefined;
-    if (await waitGateBOperatorCoordinatorOriginReleaseRequest(capability) !== true) {
-      throw new Error('watchdog_failed');
+    if (resetFamily) {
+      controlPhase = 'WAIT_STOP';
+    } else {
+      controlPhase = 'WAIT_RUN_OPEN';
+      await Promise.race([
+        runOpened,
+        stopped.then(() => { throw new Error('watchdog_failed'); }),
+      ]);
+      const third = await Promise.race([
+        reader.readRun(),
+        stopped.then(() => { throw new Error('watchdog_failed'); }),
+      ]);
+      let runAuthorization;
+      try { runAuthorization = parseGateBOperatorCoordinatorRunFrame(third); }
+      finally { third.fill(0); }
+      if (stopping) throw new Error('watchdog_failed');
+      const runWork = submitGateBOperatorCoordinatorRun(capability, runAuthorization);
+      runAuthorization = undefined;
+      if (await waitGateBOperatorCoordinatorOriginReleaseRequest(capability) !== true) {
+        throw new Error('watchdog_failed');
+      }
+      if (await requestOriginRelease() !== true) throw new Error('watchdog_failed');
+      if (await confirmGateBOperatorCoordinatorOriginReleased(capability) !== true) {
+        throw new Error('watchdog_failed');
+      }
+      if (await runWork !== 'PENDING') throw new Error('watchdog_failed');
+      if (!originReleaseRequested || originReleasePending) throw new Error('watchdog_failed');
+      runSucceeded = true;
+      await fixedWrite(process.stdout, GATE_B_OPERATOR_COORDINATOR_STATUS_LINES.PENDING);
+      await fixedSend(GATE_B_OPERATOR_COORDINATOR_IPC_TYPES.PENDING);
     }
-    if (await requestOriginRelease() !== true) throw new Error('watchdog_failed');
-    if (await confirmGateBOperatorCoordinatorOriginReleased(capability) !== true) {
-      throw new Error('watchdog_failed');
-    }
-    if (await runWork !== 'PENDING') throw new Error('watchdog_failed');
-    if (!originReleaseRequested || originReleasePending) throw new Error('watchdog_failed');
-    runSucceeded = true;
-    await fixedWrite(process.stdout, GATE_B_OPERATOR_COORDINATOR_STATUS_LINES.PENDING);
-    await fixedSend(GATE_B_OPERATOR_COORDINATOR_IPC_TYPES.PENDING);
     await stopped;
     if (await cleanup() !== true || quarantine) throw new Error('watchdog_failed');
     await fixedWrite(process.stdout, runSucceeded
