@@ -18,6 +18,7 @@ import {
   SettlementJournal,
 } from '../src/settlement-journal.js';
 import { createLiveEvidenceObserver } from '../src/live-observation.js';
+import { classifyDynamicPlasmaCompatibility } from '../src/zenon/dynamic-plasma-compatibility.js';
 import {
   PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_CHAIN_PROFILE,
   PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_EVENT_ID,
@@ -1496,6 +1497,230 @@ test('reset epoch execution policy guards new execution and permits exact recove
       });
 
       assert.deepEqual((await journal.load()).records, []);
+    });
+
+  await t.test('externally signed elevated fusion-only payments recover without replacement activity',
+    async t => {
+      const elevated = momentum('reset-external-recovery-elevated', {
+        height: validHeight,
+        version: 2,
+        chainIdentifier,
+        nextFusionPrice: 1200,
+        nextWorkPrice: 1000,
+      });
+      const elevatedFrontier = {
+        height: elevated.height,
+        hash: elevated.hash,
+        version: elevated.version,
+        nextFusionPrice: elevated.nextFusionPrice,
+        nextWorkPrice: elevated.nextWorkPrice,
+      };
+      const elevatedQuote = {
+        availablePlasma: 25200,
+        basePlasma: 21000,
+        requiredDifficulty: 0,
+      };
+      const elevatedCompatibility = classifyDynamicPlasmaCompatibility({
+        chainProfileMatch: { classification: 'MATCH' },
+        beforeFrontier: elevatedFrontier,
+        rpcObservation: elevatedQuote,
+        afterFrontier: { ...elevatedFrontier },
+      });
+      assert.equal(elevatedCompatibility.classification, 'DP_ACTIVE');
+      assert.equal(elevatedCompatibility.quote.pricingMode, 'FUSION_ONLY');
+      assert.equal(
+        elevatedCompatibility.quote.selectedFusedPlasma,
+        elevatedQuote.availablePlasma,
+      );
+      assert.notEqual(
+        elevatedCompatibility.quote.selectedFusedPlasma,
+        elevatedQuote.basePlasma,
+      );
+      assert.equal(
+        elevatedCompatibility.quote.sdk105BasePlasmaUnderpricingDetected,
+        true,
+      );
+
+      const advanced = momentum('reset-external-recovery-advanced', {
+        height: validHeight + 1,
+        version: 2,
+        chainIdentifier,
+        nextFusionPrice: 2000,
+        nextWorkPrice: 2000,
+      });
+      const advancedFrontier = {
+        height: advanced.height,
+        hash: advanced.hash,
+        version: advanced.version,
+        nextFusionPrice: advanced.nextFusionPrice,
+        nextWorkPrice: advanced.nextWorkPrice,
+      };
+      const advancedQuote = {
+        availablePlasma: 42000,
+        basePlasma: 21000,
+        requiredDifficulty: 0,
+      };
+      const advancedCompatibility = classifyDynamicPlasmaCompatibility({
+        chainProfileMatch: { classification: 'MATCH' },
+        beforeFrontier: advancedFrontier,
+        rpcObservation: advancedQuote,
+        afterFrontier: { ...advancedFrontier },
+      });
+      assert.equal(advancedCompatibility.classification, 'DP_ACTIVE');
+      assert.equal(advancedCompatibility.quote.pricingMode, 'FUSION_ONLY');
+      assert.equal(
+        advancedCompatibility.quote.selectedFusedPlasma,
+        advancedQuote.availablePlasma,
+      );
+
+      for (const scenario of [
+        {
+          name: 'acknowledged publication',
+          evidenceState: EVIDENCE_STATES.SUBMISSION_ACKNOWLEDGED,
+          privateKeyByte: 95,
+          publish: () => null,
+        },
+        {
+          name: 'unknown publication outcome',
+          evidenceState: EVIDENCE_STATES.SUBMISSION_OUTCOME_UNKNOWN,
+          privateKeyByte: 96,
+          publish() {
+            throw new Error('synthetic ambiguous external publication');
+          },
+        },
+      ]) {
+        await t.test(scenario.name, async t => {
+          reset({
+            frontier: () => elevated,
+            plasma: elevatedQuote,
+            publish(call) {
+              assert.equal(call, 1);
+              return scenario.publish();
+            },
+          });
+          const accepted = requirement(profile);
+          const required = challenge(accepted);
+          const payment = externallySignedPayment({
+            accepted,
+            required,
+            frontier: elevated,
+            privateKeyByte: scenario.privateKeyByte,
+            fusedPlasma: elevatedCompatibility.quote.selectedFusedPlasma,
+            difficulty: elevatedCompatibility.quote.requiredDifficulty,
+          });
+          const signedPayment = structuredClone(payment);
+          const signedAccountBlock = structuredClone(payment.payload.transaction);
+          const preflight = await preflightZenonPayment(payment, accepted, required);
+          assert.equal(preflight.transactionHash, payment.payload.transaction.hash);
+          assert.equal(preflight.block.hash.toString(), preflight.transactionHash);
+          assert.equal(
+            preflight.block.fusedPlasma,
+            elevatedCompatibility.quote.selectedFusedPlasma,
+          );
+          assert.notEqual(preflight.block.fusedPlasma, elevatedQuote.basePlasma);
+          assert.equal(
+            preflight.block.difficulty,
+            elevatedCompatibility.quote.requiredDifficulty,
+          );
+          assert.equal(preflight.block.signature.length, 64);
+
+          const journal = await settlementJournal(t);
+          const facilitator = new ExactZenonFacilitator({
+            journal,
+            environment: ENVIRONMENT,
+            operatorTrustedChainPolicy: policy,
+            rpcUrl: PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_WSS_ENDPOINT,
+            rpcTimeoutMs: 100,
+          });
+          const first = await facilitator.settle(payment, accepted, required);
+
+          assert.equal(first.success, false);
+          assert.equal(first.state, scenario.evidenceState);
+          assert.equal(first.authorizationKey, preflight.authorizationKey);
+          assert.equal(first.transaction, preflight.transactionHash);
+          assert.equal(first.retrySamePayment, true);
+          assert.deepEqual(payment, signedPayment);
+          assert.deepEqual({
+            wallet: fixture.state.counters.wallet,
+            prepare: fixture.state.counters.prepare,
+            sign: fixture.state.counters.sign,
+            publish: fixture.state.counters.publish,
+          }, {
+            wallet: 0,
+            prepare: 0,
+            sign: 1,
+            publish: 1,
+          });
+          const firstCounters = structuredClone(fixture.state.counters);
+          const firstActivity = {
+            wallet: firstCounters.wallet,
+            prepare: firstCounters.prepare,
+            sign: firstCounters.sign,
+            publish: firstCounters.publish,
+          };
+          const durable = await journal.get(
+            preflight.authorizationKey,
+            preflight.transactionHash,
+          );
+          assert.equal(durable.evidenceState, scenario.evidenceState);
+          assert.equal(durable.transactionHash, preflight.transactionHash);
+          assert.deepEqual(durable.signedAccountBlock, signedAccountBlock);
+
+          fixture.state.scenario.frontier = () => advanced;
+          fixture.state.scenario.plasma = advancedQuote;
+          fixture.state.scenario.momentumCount = advanced.height;
+          fixture.state.scenario.syncInfo = {
+            state: sdk.SyncState.SyncDone,
+            currentHeight: advanced.height,
+            targetHeight: advanced.height,
+          };
+          fixture.state.scenario.observed = (_call, requestedHash) => {
+            assert.equal(requestedHash.toString(), preflight.transactionHash);
+            return null;
+          };
+          fixture.state.scenario.publish = () => {
+            assert.fail('submitted payment must not be published again');
+          };
+
+          let priorLookupCount = firstCounters.lookup;
+          let priorFrontierCount = firstCounters.frontier;
+          let priorSubscribeCount = firstCounters.subscribe;
+          for (let recoveryAttempt = 1; recoveryAttempt <= 2; recoveryAttempt += 1) {
+            const recovered = await facilitator.settle(payment, accepted, required);
+
+            assert.equal(recovered.success, false);
+            assert.equal(recovered.errorReason, 'momentum_inclusion_timeout');
+            assert.equal(recovered.state, scenario.evidenceState);
+            assert.equal(recovered.authorizationKey, preflight.authorizationKey);
+            assert.equal(recovered.transaction, preflight.transactionHash);
+            assert.equal(recovered.retrySamePayment, true);
+            assert.deepEqual(payment, signedPayment);
+            assert.deepEqual({
+              wallet: fixture.state.counters.wallet,
+              prepare: fixture.state.counters.prepare,
+              sign: fixture.state.counters.sign,
+              publish: fixture.state.counters.publish,
+            }, firstActivity);
+            assert.equal(fixture.state.counters.lookup > priorLookupCount, true);
+            priorLookupCount = fixture.state.counters.lookup;
+            assert.equal(fixture.state.counters.frontier > priorFrontierCount, true);
+            priorFrontierCount = fixture.state.counters.frontier;
+            assert.equal(fixture.state.counters.plasma, firstCounters.plasma);
+            assert.equal(fixture.state.counters.balance, firstCounters.balance);
+            assert.equal(fixture.state.counters.unconfirmed, firstCounters.unconfirmed);
+            assert.equal(fixture.state.counters.subscribe > priorSubscribeCount, true);
+            priorSubscribeCount = fixture.state.counters.subscribe;
+            const retained = await journal.get(
+              preflight.authorizationKey,
+              preflight.transactionHash,
+            );
+            assert.equal(retained.evidenceState, scenario.evidenceState);
+            assert.equal(retained.transactionHash, preflight.transactionHash);
+            assert.equal(retained.resourceDigest, preflight.resourceDigest);
+            assert.deepEqual(retained.signedAccountBlock, signedAccountBlock);
+          }
+        });
+      }
     });
 
   await t.test('real constructors retain one positive-work signed block after ambiguous publication',
