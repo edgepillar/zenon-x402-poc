@@ -571,6 +571,7 @@ export async function runFixedPayerSettlementOfflineFixture(options) {
     let activeFacilitator = null;
     let activeSettleOperation = null;
     let publicationInterception = null;
+    let runtimeLegacyStdoutEmitted = false;
     const observedOperationTokens = new WeakSet();
     const accountObservationTokens = new WeakSet();
     const frontierObservationTokens = new WeakSet();
@@ -724,6 +725,7 @@ export async function runFixedPayerSettlementOfflineFixture(options) {
           if (activeSettleOperation !== operation) stop('PUBLICATION_OPERATION');
           if (startupMode !== 'OWNER_FACADE_SUCCESS' &&
               startupMode !== 'OWNER_FACADE_DUAL_PAYMENT' &&
+              startupMode !== 'RUNTIME_LEGACY_STDOUT' &&
               startupMode !== 'OWNER_MISMATCHED_PUBLICATION_OBSERVATION') {
             await waitForRelease();
           }
@@ -804,6 +806,11 @@ export async function runFixedPayerSettlementOfflineFixture(options) {
                 !observedOperationTokens.has(operation.token))) {
             stop('EVOLVING_FRONTIER');
           }
+          if (startupMode === 'RUNTIME_LEGACY_STDOUT') {
+            if (runtimeLegacyStdoutEmitted) stop('RUNTIME_STDOUT_REPEATED');
+            runtimeLegacyStdoutEmitted = true;
+            await writeStartupOutput(PUBLICATION_MARKER);
+          }
           return result;
         } finally {
           if (activeSettleOperation === operation) activeSettleOperation = null;
@@ -879,9 +886,6 @@ export async function runFixedPayerSettlementOfflineFixture(options) {
     if (shutdownRequested) shutdownOwnedRuntime(process.exitCode);
     if (!shutdownRequested) {
       await sendStartupFrame(committedFrame(descriptor), 'STARTUP_COMMITTED_FAILED');
-    }
-    if (!shutdownRequested && startupMode === 'RUNTIME_LEGACY_STDOUT') {
-      await writeStartupOutput(PUBLICATION_MARKER);
     }
     if (!shutdownRequested && startupMode === 'DUPLICATE_STARTUP_ACK') {
       await sendStartupFrame(committedFrame(descriptor), 'DUPLICATE_STARTUP_ACK_FAILED');
