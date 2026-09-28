@@ -2,7 +2,7 @@ import { Buffer } from 'node:buffer';
 import { types as utilTypes } from 'node:util';
 import { paymentIntentDigest, sha256Hex } from '../canonical.js';
 
-const IPC_VERSION = 1;
+const IPC_VERSION = 2;
 const MAX_FRAME_BYTES = 64 * 1024;
 const MAX_STRING_BYTES = 16 * 1024;
 const MAX_DEPTH = 20;
@@ -23,6 +23,10 @@ const REQUEST_FIELDS = Object.freeze([
   'ipcVersion', 'type', 'correlationId', 'shardId', 'payer', 'generation',
   'sequence', 'transaction', 'authorizationKey', 'network', 'body',
 ]);
+const PUBLICATION_OBSERVED_FIELDS = Object.freeze([
+  'ipcVersion', 'type', 'correlationId', 'shardId', 'payer', 'generation',
+  'sequence', 'operation', 'transaction', 'authorizationKey', 'network',
+]);
 const SETTLE_BODY_FIELDS = Object.freeze([
   'paymentPayload', 'requirements', 'paymentRequired',
 ]);
@@ -38,7 +42,7 @@ const RECOVERY_STATES = new Set([
   'MOMENTUM_INCLUDED',
 ]);
 const PROTOCOL_ERROR_FRAME =
-  '{"ipcVersion":1,"type":"PROTOCOL_ERROR","code":"INVALID_REQUEST"}';
+  '{"ipcVersion":2,"type":"PROTOCOL_ERROR","code":"INVALID_REQUEST"}';
 const RESERVED_CHANNELS = new WeakSet();
 const INVALID = Symbol('invalid');
 const UNRESOLVED_PAYMENT = Symbol('unresolved-payment');
@@ -507,6 +511,28 @@ function responseFrame(request, ok, value) {
   return frame;
 }
 
+function publicationObservedFrame(request) {
+  const observation = {
+    ipcVersion: IPC_VERSION,
+    type: 'PUBLICATION_OBSERVED',
+    correlationId: request.correlationId,
+    shardId: request.shardId,
+    payer: request.payer,
+    generation: request.generation,
+    sequence: request.sequence,
+    operation: REQUEST_TYPES.SETTLE,
+    transaction: request.transaction,
+    authorizationKey: request.authorizationKey,
+    network: request.network,
+  };
+  const frame = JSON.stringify(observation);
+  if (utf8SizeAtMost(frame, MAX_FRAME_BYTES) < 1 ||
+      !PUBLICATION_OBSERVED_FIELDS.every(
+        (field, index) => Object.keys(observation)[index] === field,
+      )) throw INVALID;
+  return frame;
+}
+
 function captureConfiguration(options) {
   let captured;
   try { captured = exactRecord(options, CONFIGURATION_FIELDS, 1); } catch { throw dependencyError(); }
@@ -552,6 +578,8 @@ export function runFixedPayerSettlementChild(options) {
   let queuedFramePresent = false;
   let completed = false;
   let unresolvedPayment = null;
+  let activeSettleToken = null;
+  const pendingObservations = new Set();
   const listenerRegistrations = [];
   let resolveDone;
   const done = new Promise(resolve => { resolveDone = resolve; });
@@ -569,13 +597,24 @@ export function runFixedPayerSettlementChild(options) {
   const removeListeners = () => {
     for (const registration of listenerRegistrations) removeRegistration(registration);
   };
+  const settleObservation = (observation, succeeded) => {
+    if (observation.settled) return;
+    observation.settled = true;
+    pendingObservations.delete(observation);
+    if (succeeded) observation.resolve();
+    else observation.reject(INVALID);
+  };
   const finish = code => {
     if (completed) return;
     completed = true;
     phase = 'TERMINAL';
+    activeSettleToken = null;
     queuedFrame = null;
     queuedFramePresent = false;
     removeListeners();
+    for (const observation of [...pendingObservations]) {
+      settleObservation(observation, false);
+    }
     resolveDone(code);
   };
   const close = function close() {
@@ -679,6 +718,82 @@ export function runFixedPayerSettlementChild(options) {
     }
     sendTerminal(frame, code);
   };
+  const sendObservation = observation => {
+    let callbackCount = 0;
+    let callbackOk = false;
+    let sendReturned = false;
+    let accepted = false;
+    const failObservation = () => {
+      settleObservation(observation, false);
+      finish('SEND_FAILED');
+    };
+    const afterSend = () => {
+      if (completed || !sendReturned || callbackCount !== 1) return;
+      if (!accepted || !callbackOk) {
+        failObservation();
+        return;
+      }
+      settleObservation(observation, true);
+    };
+    const callback = error => {
+      callbackCount += 1;
+      if (completed) return;
+      callbackOk = callbackCount === 1 && error == null;
+      if (callbackCount !== 1 || !callbackOk) {
+        failObservation();
+        return;
+      }
+      afterSend();
+    };
+    try {
+      accepted = APPLY(configured.send, configured.channel, [observation.frame, callback]) === true;
+    } catch {
+      sendReturned = true;
+      failObservation();
+      return;
+    }
+    sendReturned = true;
+    if (!accepted || callbackCount > 1 || (callbackCount === 1 && !callbackOk)) {
+      failObservation();
+      return;
+    }
+    afterSend();
+  };
+  const createPublicationCapability = parsed => {
+    const token = Object.freeze({});
+    let resolveObservation;
+    let rejectObservation;
+    const observation = {
+      token,
+      identity: parsed.identity,
+      frame: publicationObservedFrame(parsed.request),
+      reserved: false,
+      settled: false,
+      promise: null,
+      resolve: null,
+      reject: null,
+    };
+    observation.promise = new Promise((resolvePromise, rejectPromise) => {
+      resolveObservation = resolvePromise;
+      rejectObservation = rejectPromise;
+    });
+    void observation.promise.catch(() => {});
+    observation.resolve = resolveObservation;
+    observation.reject = rejectObservation;
+    const observePublication = function observePublication() {
+      if (arguments.length !== 0 || completed || phase !== 'RUNNING' ||
+          activeSettleToken !== token || observation.reserved) {
+        finish('PROTOCOL_FAULT');
+        throw INVALID;
+      }
+      observation.reserved = true;
+      pendingObservations.add(observation);
+      sendObservation(observation);
+      return observation.promise;
+    };
+    Object.freeze(observePublication);
+    return { token, observation, observePublication };
+  };
   const bindSettlement = (
     identity,
     paymentCommitment,
@@ -727,22 +842,31 @@ export function runFixedPayerSettlementChild(options) {
     const prior = bindingsByTransaction.get(parsed.identity.transaction);
     if (prior && (!sameIdentity(prior.identity, parsed.identity) ||
         prior.paymentCommitment !== parsed.paymentCommitment)) throw INVALID;
-    const value = await APPLY(configured.settle, configured.facilitator, [
-      parsed.body.paymentPayload,
-      parsed.body.requirements,
-      parsed.body.paymentRequired,
-    ]);
-    const normalized = normalizeSettleResult(value, parsed.identity);
-    if (normalized.bound) {
-      bindSettlement(
-        parsed.identity,
-        parsed.paymentCommitment,
-        parsed.requirementCommitment,
-        normalized.deliveryEligible,
-      );
+    const operation = createPublicationCapability(parsed);
+    activeSettleToken = operation.token;
+    try {
+      const value = await APPLY(configured.settle, configured.facilitator, [
+        parsed.body.paymentPayload,
+        parsed.body.requirements,
+        parsed.body.paymentRequired,
+        operation.observePublication,
+      ]);
+      if (operation.observation.reserved) await operation.observation.promise;
+      if (completed || activeSettleToken !== operation.token) throw INVALID;
+      const normalized = normalizeSettleResult(value, parsed.identity);
+      if (normalized.bound) {
+        bindSettlement(
+          parsed.identity,
+          parsed.paymentCommitment,
+          parsed.requirementCommitment,
+          normalized.deliveryEligible,
+        );
+      }
+      updateUnresolvedPayment(parsed, normalized);
+      return normalized.result;
+    } finally {
+      if (activeSettleToken === operation.token) activeSettleToken = null;
     }
-    updateUnresolvedPayment(parsed, normalized);
-    return normalized.result;
   };
   const processPending = async parsed => {
     const binding = bindingsByTransaction.get(parsed.identity.transaction);

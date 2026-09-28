@@ -37,9 +37,13 @@ const STARTUP_MODES = new Set([
   'EARLY_STRING',
   'EARLY_MARKER',
   'PARTIAL_STDOUT',
+  'RETIRED_V1_STDOUT_BOUNDARY',
+  'RETIRED_V1_STDERR_BOUNDARY',
   'DELAY_STDERR_BOUNDARY',
   'DUPLICATE_STARTUP_ACK',
   'MISMATCHED_STARTUP_ACK',
+  'RUNTIME_LEGACY_STDOUT',
+  'OWNER_MISMATCHED_PUBLICATION_OBSERVATION',
   'HOLD_BEFORE_READY',
   'EXIT_AFTER_READY',
 ]);
@@ -50,6 +54,12 @@ const PROFILE = Object.freeze({
 });
 const RELEASE = 'RELEASE\n';
 const PUBLICATION_MARKER = 'PUBLICATION_BOUNDARY\n';
+const RETIRED_V1_STDOUT_BOUNDARY = 'FIXED_PAYER_STARTUP_STDOUT_BOUNDARY_V1\n';
+const RETIRED_V1_STDERR_BOUNDARY = 'FIXED_PAYER_STARTUP_STDERR_BOUNDARY_V1\n';
+const PUBLICATION_OBSERVATION_FIELDS = Object.freeze([
+  'ipcVersion', 'type', 'correlationId', 'shardId', 'payer', 'generation',
+  'sequence', 'operation', 'transaction', 'authorizationKey', 'network',
+]);
 let ownedController = null;
 let ownedZenon = null;
 let ownedBootstrap = null;
@@ -254,7 +264,7 @@ function exactStartupCommit(message, descriptor) {
       return false;
     }
   }
-  return message.ipcVersion === 1 && message.type === 'STARTUP_COMMIT' &&
+  return message.ipcVersion === 2 && message.type === 'STARTUP_COMMIT' &&
     message.correlationId === `${descriptor.generation}:${descriptor.shardId}:startup-commit` &&
     message.shardId === descriptor.shardId && message.payer === descriptor.payer &&
     message.generation === descriptor.generation;
@@ -305,7 +315,7 @@ function beginStartupBootstrap(descriptor) {
 
 function committedFrame(descriptor) {
   return Object.freeze({
-    ipcVersion: 1,
+    ipcVersion: 2,
     type: 'STARTUP_COMMITTED',
     correlationId: `${descriptor.generation}:${descriptor.shardId}:startup-commit`,
     shardId: descriptor.shardId,
@@ -321,12 +331,18 @@ function mismatchedCommittedFrame(descriptor) {
   });
 }
 
-function writeStartupBoundaries(delayStderr) {
+function writeStartupBoundaries(delayStderr, startupMode) {
+  const stdoutBoundary = startupMode === 'RETIRED_V1_STDOUT_BOUNDARY'
+    ? RETIRED_V1_STDOUT_BOUNDARY
+    : STARTUP_STDOUT_BOUNDARY;
+  const stderrBoundary = startupMode === 'RETIRED_V1_STDERR_BOUNDARY'
+    ? RETIRED_V1_STDERR_BOUNDARY
+    : STARTUP_STDERR_BOUNDARY;
   if (delayStderr) process.stderr.cork();
-  process.stdout.write(STARTUP_STDOUT_BOUNDARY, error => {
+  process.stdout.write(stdoutBoundary, error => {
     if (error != null && !shutdownRequested) shutdownOwnedRuntime(72);
   });
-  process.stderr.write(STARTUP_STDERR_BOUNDARY, error => {
+  process.stderr.write(stderrBoundary, error => {
     if (error != null && !shutdownRequested) shutdownOwnedRuntime(72);
   });
 }
@@ -460,12 +476,14 @@ export async function runFixedPayerSettlementOfflineFixture(options) {
     const journal = startup.journal;
     let zenon = null;
     let activeFacilitator = null;
+    let activeSettleOperation = null;
+    let publicationInterception = null;
+    const observedOperationTokens = new WeakSet();
     const initializeFacilitator = () => {
       if (activeFacilitator !== null) return activeFacilitator;
       zenon = sdk.Zenon.getInstance();
       ownedZenon = zenon;
       let published = false;
-      let publicationCalls = 0;
 
       zenon.initialize = async rpcUrl => {
         if (rpcUrl !== 'ws://rpc.invalid') stop();
@@ -515,26 +533,51 @@ export async function runFixedPayerSettlementOfflineFixture(options) {
           return { count: 0, list: [] };
         },
         publishRawTransaction: async block => {
-          publicationCalls += 1;
+          const operation = activeSettleOperation;
           const durable = await new SettlementJournal({
             directory,
             allowedRoot: root,
             existingOnly: true,
           }).list({ includeTombstones: true });
           const record = durable.records[0];
-          if (publicationCalls !== 1 || durable.records.length !== 1 ||
+          if (operation === null || observedOperationTokens.has(operation.token) ||
+              durable.records.length !== 1 ||
               durable.tombstones.length !== 0 || record.evidenceState !== 'VALIDATED' ||
               record.transactionHash !== transaction.hash ||
               record.payer !== transaction.address ||
               !isDeepStrictEqual(record.signedAccountBlock, transaction) ||
               !isDeepStrictEqual(block.toJson(), transaction)) stop('DURABILITY');
-          await new Promise((resolvePromise, rejectPromise) => {
-            process.stdout.write(PUBLICATION_MARKER, error => {
-              if (error) rejectPromise(new Error('STDOUT'));
-              else resolvePromise();
-            });
-          });
-          if (startupMode !== 'OWNER_FACADE_SUCCESS') await waitForRelease();
+          observedOperationTokens.add(operation.token);
+          if (startupMode === 'OWNER_MISMATCHED_PUBLICATION_OBSERVATION') {
+            if (publicationInterception !== null) stop('PUBLICATION_INTERCEPTION');
+            publicationInterception = {
+              consumed: false,
+              correlationId: `${generation}:${shardId}:1`,
+              shardId,
+              payer: transaction.address,
+              generation,
+              mismatchedGeneration: label === 'A'
+                ? 'fixture-generation-b'
+                : 'fixture-generation-a',
+              sequence: 1,
+              transaction: transaction.hash,
+              authorizationKey: record.authorizationKey,
+              network: paymentPayload.accepted.network,
+            };
+          }
+          try {
+            await operation.observePublication();
+          } finally {
+            if (startupMode === 'OWNER_MISMATCHED_PUBLICATION_OBSERVATION') {
+              if (publicationInterception?.consumed !== true) stop('PUBLICATION_INTERCEPTION');
+              publicationInterception = null;
+            }
+          }
+          if (activeSettleOperation !== operation) stop('PUBLICATION_OPERATION');
+          if (startupMode !== 'OWNER_FACADE_SUCCESS' &&
+              startupMode !== 'OWNER_MISMATCHED_PUBLICATION_OBSERVATION') {
+            await waitForRelease();
+          }
           published = true;
         },
       }, { get: (target, name) => Reflect.has(target, name) ? target[name] : stop });
@@ -569,7 +612,25 @@ export async function runFixedPayerSettlementOfflineFixture(options) {
       return Reflect.apply(facilitator[name], facilitator, args);
     };
     const facilitator = Object.freeze({
-      settle(...args) { return invokeFacilitator('settle', args); },
+      async settle(paymentPayload, requirements, paymentRequired, observePublication) {
+        if (arguments.length !== 4 || typeof observePublication !== 'function' ||
+            !Object.isFrozen(observePublication) || observePublication.length !== 0 ||
+            activeSettleOperation !== null) stop('PUBLICATION_CAPABILITY');
+        const operation = Object.freeze({
+          token: Object.freeze({}),
+          observePublication,
+        });
+        activeSettleOperation = operation;
+        try {
+          return await invokeFacilitator('settle', [
+            paymentPayload,
+            requirements,
+            paymentRequired,
+          ]);
+        } finally {
+          if (activeSettleOperation === operation) activeSettleOperation = null;
+        }
+      },
       markDeliveryPending(...args) { return invokeFacilitator('markDeliveryPending', args); },
       markDelivered(...args) { return invokeFacilitator('markDelivered', args); },
     });
@@ -581,21 +642,68 @@ export async function runFixedPayerSettlementOfflineFixture(options) {
     const delayedStderr = startupMode === 'DELAY_STDERR_BOUNDARY' ||
       startupMode === 'DUPLICATE_STARTUP_ACK' ||
       startupMode === 'MISMATCHED_STARTUP_ACK';
-    writeStartupBoundaries(delayedStderr);
-    const controller = runFixedPayerSettlementChild({
-      channel: process,
-      facilitator,
-      shardId,
-      payer: transaction.address,
-      generation,
-      maxOperations: 16,
-    });
+    writeStartupBoundaries(delayedStderr, startupMode);
+    const sendDescriptor = Object.getOwnPropertyDescriptor(process, 'send');
+    if (!sendDescriptor || typeof sendDescriptor.value !== 'function') stop('IPC_CHANNEL');
+    const originalSend = sendDescriptor.value;
+    const fixtureSend = function fixtureSend(...args) {
+      if (this !== process || publicationInterception === null) {
+        return Reflect.apply(originalSend, this, args);
+      }
+      const [frame] = args;
+      let parsed;
+      try {
+        parsed = JSON.parse(frame);
+      } catch {
+        stop('PUBLICATION_INTERCEPTION');
+      }
+      const expected = publicationInterception;
+      if (expected.consumed || JSON.stringify(parsed) !== frame ||
+          !isDeepStrictEqual(Object.keys(parsed), PUBLICATION_OBSERVATION_FIELDS) ||
+          parsed.ipcVersion !== 2 || parsed.type !== 'PUBLICATION_OBSERVED' ||
+          parsed.correlationId !== expected.correlationId ||
+          parsed.shardId !== expected.shardId || parsed.payer !== expected.payer ||
+          parsed.generation !== expected.generation || parsed.sequence !== expected.sequence ||
+          parsed.operation !== 'SETTLE' || parsed.transaction !== expected.transaction ||
+          parsed.authorizationKey !== expected.authorizationKey ||
+          parsed.network !== expected.network ||
+          expected.mismatchedGeneration === expected.generation) {
+        stop('PUBLICATION_INTERCEPTION');
+      }
+      expected.consumed = true;
+      args[0] = JSON.stringify({
+        ...parsed,
+        generation: expected.mismatchedGeneration,
+      });
+      return Reflect.apply(originalSend, this, args);
+    };
+    let controller;
+    if (startupMode === 'OWNER_MISMATCHED_PUBLICATION_OBSERVATION') {
+      Object.defineProperty(process, 'send', { ...sendDescriptor, value: fixtureSend });
+    }
+    try {
+      controller = runFixedPayerSettlementChild({
+        channel: process,
+        facilitator,
+        shardId,
+        payer: transaction.address,
+        generation,
+        maxOperations: 16,
+      });
+    } finally {
+      if (startupMode === 'OWNER_MISMATCHED_PUBLICATION_OBSERVATION') {
+        Object.defineProperty(process, 'send', sendDescriptor);
+      }
+    }
     ownedController = controller;
     bootstrap.handoff();
     if (ownedBootstrap === bootstrap) ownedBootstrap = null;
     if (shutdownRequested) shutdownOwnedRuntime(process.exitCode);
     if (!shutdownRequested) {
       await sendStartupFrame(committedFrame(descriptor), 'STARTUP_COMMITTED_FAILED');
+    }
+    if (!shutdownRequested && startupMode === 'RUNTIME_LEGACY_STDOUT') {
+      await writeStartupOutput(PUBLICATION_MARKER);
     }
     if (!shutdownRequested && startupMode === 'DUPLICATE_STARTUP_ACK') {
       await sendStartupFrame(committedFrame(descriptor), 'DUPLICATE_STARTUP_ACK_FAILED');

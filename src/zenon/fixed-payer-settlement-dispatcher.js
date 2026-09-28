@@ -8,7 +8,7 @@ import {
   PAYER_WORKER_OPERATION_KINDS,
 } from './payer-worker-admission.js';
 
-const IPC_VERSION = 1;
+const IPC_VERSION = 2;
 const MAX_FRAME_BYTES = 64 * 1024;
 const MAX_STRING_BYTES = 16 * 1024;
 const MAX_DEPTH = 20;
@@ -40,6 +40,10 @@ const RESPONSE_SUCCESS_FIELDS = Object.freeze([
 const RESPONSE_FAILURE_FIELDS = Object.freeze([
   'ipcVersion', 'type', 'correlationId', 'shardId', 'payer', 'generation',
   'sequence', 'operation', 'ok', 'code',
+]);
+const PUBLICATION_OBSERVED_FIELDS = Object.freeze([
+  'ipcVersion', 'type', 'correlationId', 'shardId', 'payer', 'generation',
+  'sequence', 'operation', 'transaction', 'authorizationKey', 'network',
 ]);
 const SETTLE_RESULT_KEYS = new Set([
   'success', 'network', 'transaction', 'payer', 'errorReason', 'state',
@@ -467,7 +471,7 @@ function validateTransitionResult(type, result, identity) {
   return result;
 }
 
-function parseResponse(frame, pending) {
+function parseChildFrame(frame, pending) {
   if (utf8SizeAtMost(frame, MAX_FRAME_BYTES) < 1) throw INVALID;
   let parsed;
   try {
@@ -477,6 +481,23 @@ function parseResponse(frame, pending) {
   } catch {
     throw INVALID;
   }
+  if (parsed?.type === 'PUBLICATION_OBSERVED') {
+    if (!exactKeys(parsed, PUBLICATION_OBSERVED_FIELDS) ||
+        !PUBLICATION_OBSERVED_FIELDS.every(
+          (field, index) => Object.keys(parsed)[index] === field,
+        ) || parsed.ipcVersion !== IPC_VERSION ||
+        parsed.correlationId !== pending.correlationId ||
+        parsed.shardId !== pending.shard.shardId ||
+        parsed.payer !== pending.identity.payer ||
+        parsed.generation !== pending.shard.generation ||
+        parsed.sequence !== pending.sequence ||
+        parsed.operation !== REQUEST_TYPES.SETTLE ||
+        pending.type !== REQUEST_TYPES.SETTLE ||
+        parsed.transaction !== pending.identity.transaction ||
+        parsed.authorizationKey !== pending.identity.authorizationKey ||
+        parsed.network !== pending.identity.network) throw INVALID;
+    return { type: 'PUBLICATION_OBSERVED' };
+  }
   const fields = parsed?.ok === true ? RESPONSE_SUCCESS_FIELDS : RESPONSE_FAILURE_FIELDS;
   if (!exactKeys(parsed, fields) || parsed.ipcVersion !== IPC_VERSION ||
       parsed.type !== 'RESULT' || parsed.correlationId !== pending.correlationId ||
@@ -485,13 +506,16 @@ function parseResponse(frame, pending) {
       parsed.operation !== pending.type) throw INVALID;
   if (parsed.ok !== true) {
     if (parsed.ok !== false || utf8SizeAtMost(parsed.code, 64) < 1) throw INVALID;
-    return { ok: false };
+    return { type: 'RESULT', response: { ok: false } };
   }
   return {
-    ok: true,
-    result: pending.type === REQUEST_TYPES.SETTLE
-      ? validateSettleResult(parsed.result, pending.identity)
-      : validateTransitionResult(pending.type, parsed.result, pending.identity),
+    type: 'RESULT',
+    response: {
+      ok: true,
+      result: pending.type === REQUEST_TYPES.SETTLE
+        ? validateSettleResult(parsed.result, pending.identity)
+        : validateTransitionResult(pending.type, parsed.result, pending.identity),
+    },
   };
 }
 
@@ -646,6 +670,7 @@ function dispatchOperation(
       callbackOk: false,
       callbackCount: 0,
       sendReturned: false,
+      publicationObserved: false,
       response: null,
       settled: false,
       timer: undefined,
@@ -827,12 +852,22 @@ export function createFixedPayerSettlementDispatcher(options) {
           quarantineShard(dispatcherState, shard);
           return;
         }
+        let parsed;
         try {
-          pending.response = parseResponse(frame, pending);
+          parsed = parseChildFrame(frame, pending);
         } catch {
           quarantineShard(dispatcherState, shard, pending.identity);
           return;
         }
+        if (parsed.type === 'PUBLICATION_OBSERVED') {
+          if (pending.publicationObserved) {
+            quarantineShard(dispatcherState, shard, pending.identity);
+            return;
+          }
+          pending.publicationObserved = true;
+          return;
+        }
+        pending.response = parsed.response;
         completeIfReady(dispatcherState, pending);
       };
       shard.onDisconnect = () => quarantineShard(dispatcherState, shard);

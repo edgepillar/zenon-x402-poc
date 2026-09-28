@@ -16,7 +16,8 @@ const CHILD_ENTRYPOINT = fileURLToPath(new URL(
   import.meta.url,
 ));
 const EXECUTABLE = process.execPath;
-const OFFLINE_TEST_MODE = '--fixed-payer-offline-test-v1';
+const IPC_VERSION = 2;
+const OFFLINE_TEST_MODE = '--fixed-payer-offline-test-v2';
 const LABELS = Object.freeze(['A', 'B']);
 const SHARD_IDS = Object.freeze(['payer-shard-a', 'payer-shard-b']);
 const GENERATIONS = Object.freeze(['fixture-generation-a', 'fixture-generation-b']);
@@ -131,7 +132,7 @@ function exactReady(message, descriptor) {
     const property = GET_DESCRIPTOR(message, field);
     if (!property || !HAS_OWN(property, 'value') || property.enumerable !== true) return false;
   }
-  return message.ipcVersion === 1 && message.type === 'READY' &&
+  return message.ipcVersion === IPC_VERSION && message.type === 'READY' &&
     message.correlationId === `${descriptor.generation}:${descriptor.shardId}:startup` &&
     message.shardId === descriptor.shardId && message.payer === descriptor.payer &&
     message.generation === descriptor.generation && message.journalSchemaVersion === 1 &&
@@ -147,7 +148,7 @@ function exactCommitted(message, descriptor) {
     const property = GET_DESCRIPTOR(message, field);
     if (!property || !HAS_OWN(property, 'value') || property.enumerable !== true) return false;
   }
-  return message.ipcVersion === 1 && message.type === 'STARTUP_COMMITTED' &&
+  return message.ipcVersion === IPC_VERSION && message.type === 'STARTUP_COMMITTED' &&
     message.correlationId === `${descriptor.generation}:${descriptor.shardId}:startup-commit` &&
     message.shardId === descriptor.shardId && message.payer === descriptor.payer &&
     message.generation === descriptor.generation;
@@ -155,7 +156,7 @@ function exactCommitted(message, descriptor) {
 
 function startupCommitFrame(descriptor) {
   return Object.freeze({
-    ipcVersion: 1,
+    ipcVersion: IPC_VERSION,
     type: 'STARTUP_COMMIT',
     correlationId: `${descriptor.generation}:${descriptor.shardId}:startup-commit`,
     shardId: descriptor.shardId,
@@ -424,15 +425,8 @@ function attachOwnedChild(state, child, descriptor) {
       return;
     }
     record.stdoutBuffer += text;
-    for (let newline; (newline = record.stdoutBuffer.indexOf('\n')) !== -1;) {
-      const line = record.stdoutBuffer.slice(0, newline);
-      record.stdoutBuffer = record.stdoutBuffer.slice(newline + 1);
-      if (line !== PUBLICATION_MARKER || record.publicationSeen) {
-        unexpectedOwnedChild(state);
-        return;
-      }
-      record.publicationSeen = true;
-    }
+    if (record.stdoutBuffer.includes(PUBLICATION_MARKER)) record.publicationSeen = true;
+    if (chunk.length > 0) unexpectedOwnedChild(state);
   };
   record.onMessage = message => {
     if (!record.ready) {

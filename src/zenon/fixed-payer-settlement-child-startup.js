@@ -7,8 +7,8 @@ import { types as utilTypes } from 'node:util';
 
 import { SettlementJournal } from '../settlement-journal.js';
 
-const IPC_VERSION = 1;
-const OFFLINE_TEST_MODE = '--fixed-payer-offline-test-v1';
+const IPC_VERSION = 2;
+const OFFLINE_TEST_MODE = '--fixed-payer-offline-test-v2';
 const OFFLINE_TEST_FIXTURE = new URL(
   '../../test-support/fixed-payer-settlement-child.js',
   import.meta.url,
@@ -30,9 +30,9 @@ const OWN_KEYS = Reflect.ownKeys;
 export const FIXED_PAYER_SETTLEMENT_STARTUP_MARKER_FILE =
   '.fixed-payer-settlement.one-use-v1';
 export const FIXED_PAYER_SETTLEMENT_STARTUP_STDOUT_BOUNDARY =
-  'FIXED_PAYER_STARTUP_STDOUT_BOUNDARY_V1\n';
+  'FIXED_PAYER_STARTUP_STDOUT_BOUNDARY_V2\n';
 export const FIXED_PAYER_SETTLEMENT_STARTUP_STDERR_BOUNDARY =
-  'FIXED_PAYER_STARTUP_STDERR_BOUNDARY_V1\n';
+  'FIXED_PAYER_STARTUP_STDERR_BOUNDARY_V2\n';
 
 export const FIXED_PAYER_SETTLEMENT_CHILD_STARTUP_ERROR_CODES = Object.freeze({
   INVALID_CONFIGURATION: 'FIXED_PAYER_CHILD_STARTUP_INVALID_CONFIGURATION',
