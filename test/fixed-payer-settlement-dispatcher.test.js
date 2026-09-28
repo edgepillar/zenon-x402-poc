@@ -73,6 +73,11 @@ const OFFLINE_TEST_MODE = '--fixed-payer-offline-test-v1';
 const PUBLICATION_MARKER = 'PUBLICATION_BOUNDARY';
 const STARTUP_STDOUT_BOUNDARY = FIXED_PAYER_SETTLEMENT_STARTUP_STDOUT_BOUNDARY.trimEnd();
 const STARTUP_STDERR_BOUNDARY = FIXED_PAYER_SETTLEMENT_STARTUP_STDERR_BOUNDARY.trimEnd();
+const STARTUP_CLAIM = Object.freeze({
+  REQUIRED: 'REQUIRED',
+  RETAINED: 'RETAINED',
+  NOT_PROVEN_CLAIMED: 'NOT_PROVEN_CLAIMED',
+});
 const CONFIGURATION = Object.freeze({
   schemaVersion: 1,
   kind: 'zenon-fixed-payer-shard-routing',
@@ -670,6 +675,31 @@ function retainedAttempt(input) {
   };
 }
 
+async function assertRetainedStartupClaim(root, requirement) {
+  requireProof(
+    requirement === STARTUP_CLAIM.REQUIRED ||
+      requirement === STARTUP_CLAIM.NOT_PROVEN_CLAIMED,
+    'STARTUP_CLAIM_REQUIREMENT',
+  );
+  let marker;
+  try {
+    marker = await lstat(join(root, FIXED_PAYER_SETTLEMENT_STARTUP_MARKER_FILE));
+  } catch (error) {
+    if (error?.code === 'ENOENT') {
+      if (requirement === STARTUP_CLAIM.NOT_PROVEN_CLAIMED) return requirement;
+      throw fixedFailure('STARTUP_CLAIM_REQUIRED');
+    }
+    throw fixedFailure('STARTUP_CLAIM_INSPECTION_FAILED');
+  }
+  requireProof(
+    marker.isFile() && !marker.isSymbolicLink() && marker.nlink === 1 && marker.size === 0 &&
+      (marker.mode & 0o777) === 0o600 &&
+      (typeof process.getuid !== 'function' || marker.uid === process.getuid()),
+    'STARTUP_CLAIM_UNSAFE',
+  );
+  return STARTUP_CLAIM.RETAINED;
+}
+
 function ownedDescriptors(payloads, roots) {
   return payloads.map((payload, index) => ({
     shardId: CONFIGURATION.shardIds[index],
@@ -1168,6 +1198,43 @@ function paymentRequiredFailure(response) {
     return null;
   }
 }
+
+test('retained startup claim proof distinguishes required from explicitly unclaimed roots',
+  async t => {
+    const roots = await Promise.all([
+      createPrivateRoot('fixed-payer-claim-proof-absent-'),
+      createPrivateRoot('fixed-payer-claim-proof-retained-'),
+    ]);
+    t.after(async () => removeVerifiedSyntheticRoots(roots));
+    const [absent, retained] = roots;
+    assert.equal(
+      await assertRetainedStartupClaim(absent, STARTUP_CLAIM.NOT_PROVEN_CLAIMED),
+      STARTUP_CLAIM.NOT_PROVEN_CLAIMED,
+    );
+    await assert.rejects(
+      assertRetainedStartupClaim(absent, STARTUP_CLAIM.REQUIRED),
+      error => error?.name === 'FixedPayerSettlementTestError' &&
+        error?.message === 'STARTUP_CLAIM_REQUIRED',
+    );
+
+    const marker = join(retained, FIXED_PAYER_SETTLEMENT_STARTUP_MARKER_FILE);
+    await writeFile(marker, '', { flag: 'wx', mode: 0o600 });
+    assert.equal(
+      await assertRetainedStartupClaim(retained, STARTUP_CLAIM.REQUIRED),
+      STARTUP_CLAIM.RETAINED,
+    );
+    await chmod(marker, 0o644);
+    await assert.rejects(
+      assertRetainedStartupClaim(retained, STARTUP_CLAIM.NOT_PROVEN_CLAIMED),
+      error => error?.name === 'FixedPayerSettlementTestError' &&
+        error?.message === 'STARTUP_CLAIM_UNSAFE',
+    );
+    await assert.rejects(
+      assertRetainedStartupClaim(marker, STARTUP_CLAIM.NOT_PROVEN_CLAIMED),
+      error => error?.name === 'FixedPayerSettlementTestError' &&
+        error?.message === 'STARTUP_CLAIM_INSPECTION_FAILED',
+    );
+  });
 
 test('dispatcher, child, owner and child-startup imports are inert and explicitly opt in', () => {
   assert.equal(typeof createFixedPayerSettlementDispatcher, 'function');
@@ -1894,10 +1961,11 @@ test('owned startup failure, timeout and child loss quarantine one generation wi
       requirements: payloads[1].accepted,
       paymentRequired: paymentRequired(payloads[1].accepted),
     };
-    await new SettlementJournal({
+    const retainedJournal = new SettlementJournal({
       directory: join(roots[1], 'journal'),
       allowedRoot: roots[1],
-    }).putValidated(retainedAttempt(retainedInput));
+    });
+    const retainedRecord = await retainedJournal.putValidated(retainedAttempt(retainedInput));
     const { owner } = createOfflineOwner(routing, payloads, roots);
     nested.after(async () => {
       try { await owner.shutdown(); } catch {}
@@ -1915,10 +1983,25 @@ test('owned startup failure, timeout and child loss quarantine one generation wi
     assert.equal(status.dispatcherExposed, false);
     assert.equal(status.cleanupUncertain, false);
     assert.equal(status.children.every(child => child.exitObserved && child.closeObserved), true);
-    for (const root of roots) {
-      const marker = await lstat(join(root, FIXED_PAYER_SETTLEMENT_STARTUP_MARKER_FILE));
-      assert.equal(marker.isFile(), true);
-    }
+    await assertRetainedStartupClaim(roots[0], STARTUP_CLAIM.NOT_PROVEN_CLAIMED);
+    assert.equal(
+      await assertRetainedStartupClaim(roots[1], STARTUP_CLAIM.REQUIRED),
+      STARTUP_CLAIM.RETAINED,
+    );
+    const retainedJournalAfter = new SettlementJournal({
+      directory: join(roots[1], 'journal'),
+      allowedRoot: roots[1],
+      existingOnly: true,
+    });
+    requireProof(isDeepStrictEqual(await retainedJournalAfter.load(), {
+      schemaVersion: 1,
+      revision: 1,
+      records: [retainedRecord],
+    }), 'RETAINED_JOURNAL_CHANGED');
+    requireProof(isDeepStrictEqual(
+      await retainedJournalAfter.list({ includeTombstones: true }),
+      { records: [retainedRecord], tombstones: [] },
+    ), 'RETAINED_JOURNAL_CHANGED');
   });
 
   await t.test('a payer-mismatched READY frame cannot satisfy the owner barrier', async nested => {
