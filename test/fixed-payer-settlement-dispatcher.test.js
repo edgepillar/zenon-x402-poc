@@ -2499,6 +2499,555 @@ test('owner-returned facade settles both fixed payers, delivers, and replays cac
   if (workFailure) throw workFailure;
 });
 
+test('owner-returned facade overlaps physical /paid delivery and replays both cached responses', {
+  timeout: 40_000,
+}, async t => {
+  const operation = createOperationDeadline(18_000);
+  const ownedRoots = [];
+  const childRoots = [];
+  const handlerCalls = [0, 0];
+  const handlerArrivals = [false, false];
+  const responseStates = ['PENDING', 'PENDING'];
+  let resolveAllHandlers;
+  const allHandlers = new Promise(resolvePromise => { resolveAllHandlers = resolvePromise; });
+  let resolveHandlerBarrier;
+  const handlerBarrier = new Promise(resolvePromise => { resolveHandlerBarrier = resolvePromise; });
+  let handlerFailure;
+  let handlerBarrierReleased = false;
+  let handlerBarrierReleaseCount = 0;
+  let identities = [];
+  let expectedBodies = [];
+  let owner;
+  let facade;
+  let startingPromise;
+  let resourceServer;
+  let resourceServerClosePromise;
+  let serverCleanupPromise;
+  let serverClosureComplete = false;
+  let retirementPromise;
+  let shutdownPromise;
+  let ownerClosurePromise;
+  let ownerFallbackPromise;
+  let exactReaping = false;
+  let removalPromise;
+  let removalComplete = false;
+  let deadlineFailure;
+  let deadlineAdjudicated = false;
+
+  const releaseHandlerBarrier = () => {
+    requireProof(!handlerBarrierReleased, 'OWNER_HTTP_BARRIER_RELEASE_DUPLICATE');
+    handlerBarrierReleased = true;
+    handlerBarrierReleaseCount += 1;
+    resolveHandlerBarrier();
+  };
+  const isDeadlineFailure = error =>
+    error?.name === 'FixedPayerSettlementTestError' &&
+    error?.message === 'WHOLE_OPERATION_TIMEOUT';
+  const rememberDeadlineFailure = error => {
+    if (!isDeadlineFailure(error)) return false;
+    deadlineFailure ??= error;
+    return true;
+  };
+  const exactlyReaped = () => {
+    if (owner === undefined) return true;
+    try {
+      const status = owner.status();
+      return status.cleanupUncertain === false &&
+        status.children.length === status.startedChildren &&
+        status.children.every(child => child.exitObserved && child.closeObserved);
+    } catch {
+      return false;
+    }
+  };
+  const beginServerClosure = () => {
+    if (resourceServer === undefined) return undefined;
+    if (resourceServerClosePromise === undefined) {
+      try {
+        resourceServerClosePromise = resourceServer.close();
+      } catch {
+        resourceServerClosePromise = Promise.reject(fixedFailure('OWNER_HTTP_SERVER_CLOSE'));
+      }
+      void resourceServerClosePromise.catch(() => {});
+    }
+    if (serverCleanupPromise === undefined) {
+      serverCleanupPromise = closeOwnedServer(resourceServer, {
+        firstClosePromise: resourceServerClosePromise,
+      });
+      void serverCleanupPromise.catch(() => {});
+    }
+    return serverCleanupPromise;
+  };
+  const beginOwnerClosure = () => {
+    if (owner === undefined) return undefined;
+    if (facade !== undefined && retirementPromise === undefined) {
+      try {
+        retirementPromise = facade.retire();
+      } catch {
+        retirementPromise = Promise.reject(fixedFailure('OWNER_HTTP_RETIREMENT'));
+      }
+      void retirementPromise.catch(() => {});
+    }
+    if (shutdownPromise === undefined) {
+      try {
+        shutdownPromise = owner.shutdown();
+      } catch {
+        shutdownPromise = Promise.reject(fixedFailure('OWNER_HTTP_SHUTDOWN'));
+      }
+      void shutdownPromise.catch(() => {});
+    }
+    if (ownerClosurePromise === undefined) {
+      const operations = [
+        ...(retirementPromise === undefined ? [] : [retirementPromise]),
+        shutdownPromise,
+      ];
+      ownerClosurePromise = Promise.all(operations);
+      void ownerClosurePromise.catch(() => {});
+      ownerFallbackPromise = Promise.allSettled(operations);
+    }
+    return ownerClosurePromise;
+  };
+  const beginRootRemoval = () => {
+    requireProof(owner === undefined || exactReaping, 'OWNER_HTTP_ROOT_REMOVAL_BEFORE_REAP');
+    if (removalPromise !== undefined) return removalPromise;
+    const targets = [...ownedRoots];
+    removalPromise = (async () => {
+      const disposition = await removeOwnedRoots(targets);
+      if (disposition !== 'REMOVED') return disposition;
+      const absent = await Promise.all(targets.map(async root => {
+        try {
+          await lstat(root);
+          return false;
+        } catch (error) {
+          return error?.code === 'ENOENT';
+        }
+      }));
+      return absent.every(Boolean) ? 'REMOVED_VERIFIED' : 'UNVERIFIED';
+    })();
+    void removalPromise.catch(() => {});
+    return removalPromise;
+  };
+  const finishAfterDeadline = async (promise, milliseconds, code) => {
+    try {
+      return await operation.wait(promise);
+    } catch (error) {
+      if (!rememberDeadlineFailure(error)) throw fixedFailure(code);
+      if (!await bounded(promise, milliseconds)) throw fixedFailure(code);
+      try {
+        return await promise;
+      } catch {
+        throw fixedFailure(code);
+      }
+    }
+  };
+  const captureResponse = async response => {
+    const bodyBytes = Buffer.from(await response.arrayBuffer());
+    return {
+      status: response.status,
+      bodyBytes,
+      bodyText: bodyBytes.toString('utf8'),
+      headers: {
+        contentType: response.headers.get('content-type'),
+        cacheControl: response.headers.get('cache-control'),
+        vary: response.headers.get('vary'),
+        paymentRequired: response.headers.get(HEADERS.PAYMENT_REQUIRED),
+        paymentResponse: response.headers.get(HEADERS.PAYMENT_RESPONSE),
+      },
+    };
+  };
+  const verifyCapturedResponse = (captured, index) => {
+    requireProof(captured.status === 200, 'OWNER_HTTP_STATUS');
+    requireProof(captured.headers.contentType === 'application/json; charset=utf-8',
+      'OWNER_HTTP_CONTENT_TYPE');
+    requireProof(captured.headers.cacheControl === 'private, no-store, max-age=0',
+      'OWNER_HTTP_CACHE_CONTROL');
+    requireProof(captured.headers.vary === 'PAYMENT-SIGNATURE', 'OWNER_HTTP_VARY');
+    requireProof(captured.headers.paymentRequired === null, 'OWNER_HTTP_REQUIRED_HEADER');
+    requireProof(typeof captured.headers.paymentResponse === 'string',
+      'OWNER_HTTP_RESPONSE_HEADER');
+    let settlement;
+    try {
+      settlement = decodeB64Json(captured.headers.paymentResponse);
+    } catch {
+      throw fixedFailure('OWNER_HTTP_RESPONSE_HEADER');
+    }
+    requireProof(isDeepStrictEqual(settlement, {
+      success: true,
+      network: 'zenon:testnet',
+      transaction: identities[index].transaction,
+      payer: identities[index].payer,
+      state: 'MOMENTUM_INCLUDED',
+    }), 'OWNER_HTTP_RESPONSE_BINDING');
+    const expectedText = JSON.stringify(expectedBodies[index], null, 2);
+    const expectedBytes = Buffer.from(expectedText, 'utf8');
+    try {
+      requireProof(captured.bodyText === expectedText &&
+        captured.bodyBytes.equals(expectedBytes), 'OWNER_HTTP_BODY_BINDING');
+    } finally {
+      expectedBytes.fill(0);
+    }
+  };
+
+  t.after(async () => {
+    let afterFailure;
+    if (!handlerBarrierReleased) {
+      try { releaseHandlerBarrier(); } catch { afterFailure = fixedFailure('OWNER_HTTP_BARRIER'); }
+    }
+    if (serverCleanupPromise !== undefined && !serverClosureComplete) {
+      if (await bounded(serverCleanupPromise, 3_500)) {
+        try {
+          serverClosureComplete = await serverCleanupPromise === true;
+        } catch {
+          afterFailure ??= fixedFailure('OWNER_HTTP_SERVER_RESIDUE_RETAINED');
+        }
+      }
+      if (!serverClosureComplete) {
+        afterFailure ??= fixedFailure('OWNER_HTTP_SERVER_RESIDUE_RETAINED');
+      }
+    }
+    if (ownerFallbackPromise !== undefined && !exactReaping) {
+      if (await bounded(ownerFallbackPromise, 3_500)) {
+        await ownerFallbackPromise;
+        exactReaping = exactlyReaped();
+      }
+      if (!exactReaping) {
+        afterFailure ??= fixedFailure('OWNER_HTTP_REAPING_RESIDUE_RETAINED');
+      }
+    }
+    if (removalPromise !== undefined && !removalComplete) {
+      if (await bounded(removalPromise, 2_500)) {
+        try {
+          removalComplete = await removalPromise === 'REMOVED_VERIFIED';
+        } catch {
+          afterFailure ??= fixedFailure('OWNER_HTTP_ROOT_RESIDUE_RETAINED');
+        }
+      }
+      if (!removalComplete) {
+        afterFailure ??= fixedFailure('OWNER_HTTP_ROOT_RESIDUE_RETAINED');
+      }
+    }
+    if (afterFailure && deadlineFailure === undefined) throw afterFailure;
+  });
+
+  let workFailure;
+  let cleanupFailure;
+  try {
+    const routingFixtureValue = await operation.wait(
+      createRoutingRoot('fixed-payer-owner-http-routing-', ownedRoots),
+    );
+    const firstRoot = await operation.wait(
+      createPrivateRoot('fixed-payer-owner-http-a-', ownedRoots),
+    );
+    childRoots.push(firstRoot);
+    const secondRoot = await operation.wait(
+      createPrivateRoot('fixed-payer-owner-http-b-', ownedRoots),
+    );
+    childRoots.push(secondRoot);
+
+    let payee;
+    let accepted;
+    let payloads;
+    try {
+      payee = syntheticKeyPair(248);
+      accepted = requirement(payee.getAddress().toString());
+      payloads = signedPayloadsByShard(routingFixtureValue.routing, accepted);
+    } finally {
+      payee?.clear();
+    }
+    const inputs = payloads.map(paymentPayload => ({
+      paymentPayload,
+      requirements: structuredClone(accepted),
+      paymentRequired: paymentRequired(accepted),
+    }));
+    identities = inputs.map(inputIdentity);
+    const tickets = identities.map(identity => routingFixtureValue.routing.route(identity.payer));
+    requireProof(tickets.length === 2 && tickets.every((ticket, index) =>
+      Object.isFrozen(ticket) && ticket.version === 1 &&
+      ticket.shardId === CONFIGURATION.shardIds[index]), 'OWNER_HTTP_ROUTING_TICKETS');
+    requireProof(identities[0].payer !== identities[1].payer &&
+      identities[0].transaction !== identities[1].transaction &&
+      identities[0].authorizationKey !== identities[1].authorizationKey,
+    'OWNER_HTTP_IDENTITIES_NOT_DISTINCT');
+    try {
+      await operation.wait(Promise.all(inputs.map(input => preflightZenonPayment(
+        input.paymentPayload,
+        input.requirements,
+        input.paymentRequired,
+      ))));
+    } catch (error) {
+      if (rememberDeadlineFailure(error)) throw error;
+      throw fixedFailure('OWNER_HTTP_FIXTURE_PREFLIGHT');
+    }
+    await operation.wait(Promise.all([
+      writeSignedFixture(childRoots[0], payloads[0]),
+      writeStartupFixture(childRoots[0], 'OWNER_FACADE_SUCCESS'),
+      writeSignedFixture(childRoots[1], payloads[1]),
+      writeStartupFixture(childRoots[1], 'OWNER_FACADE_SUCCESS'),
+    ]));
+
+    ({ owner } = createOfflineOwner(
+      routingFixtureValue.routing,
+      payloads,
+      childRoots,
+      { requestTimeoutMs: 5_000 },
+    ));
+    startingPromise = owner.start();
+    requireProof(owner.start() === startingPromise, 'OWNER_HTTP_START_NOT_MEMOIZED');
+    facade = await operation.wait(startingPromise);
+    requireProof(owner.start() === startingPromise &&
+      await operation.wait(owner.start()) === facade, 'OWNER_HTTP_FACADE_NOT_MEMOIZED');
+    const started = owner.status();
+    requireProof(started.phase === 'READY' && started.startedChildren === 2 &&
+      started.dispatcherExposed === true && started.cleanupUncertain === false &&
+      started.children.every(child => child.ready && child.committed &&
+        child.stdoutBoundary && child.stderrBoundary &&
+        !child.exitObserved && !child.closeObserved), 'OWNER_HTTP_STARTUP');
+
+    expectedBodies = identities.map((identity, index) => ({
+      ok: true,
+      proof: 'owner-returned-facade-physical-http',
+      index,
+      payer: identity.payer,
+      transaction: identity.transaction,
+    }));
+    resourceServer = createResourceServer({
+      facilitator: facade,
+      requirement: accepted,
+      advertisedBaseUrl: 'https://127.0.0.1',
+      resourceHandler: async ({ settlement }) => {
+        try {
+          const index = identities.findIndex(identity =>
+            settlement.payer === identity.payer &&
+            settlement.transaction === identity.transaction);
+          requireProof(index !== -1, 'OWNER_HTTP_HANDLER_IDENTITY');
+          requireProof(isDeepStrictEqual(settlement, {
+            success: true,
+            network: 'zenon:testnet',
+            transaction: identities[index].transaction,
+            payer: identities[index].payer,
+            state: 'MOMENTUM_INCLUDED',
+          }), 'OWNER_HTTP_HANDLER_BINDING');
+          handlerCalls[index] += 1;
+          requireProof(handlerCalls[index] === 1 && !handlerArrivals[index],
+            'OWNER_HTTP_HANDLER_REPLAY');
+          handlerArrivals[index] = true;
+          if (handlerArrivals.every(Boolean)) resolveAllHandlers();
+          await handlerBarrier;
+          return structuredClone(expectedBodies[index]);
+        } catch (error) {
+          handlerFailure ??= error?.name === 'FixedPayerSettlementTestError'
+            ? error
+            : fixedFailure('OWNER_HTTP_HANDLER');
+          resolveAllHandlers();
+          throw handlerFailure;
+        }
+      },
+    });
+    const listening = await operation.wait(resourceServer.listen());
+    const responsePromises = inputs.map((input, index) => {
+      const response = submit(listening.url, input.paymentPayload, operation.signal);
+      void response.then(
+        () => { responseStates[index] = 'FULFILLED'; },
+        () => { responseStates[index] = 'REJECTED'; },
+      );
+      return response;
+    });
+    await operation.wait(allHandlers);
+    if (handlerFailure) throw handlerFailure;
+    requireProof(handlerArrivals.every(Boolean) &&
+      isDeepStrictEqual(handlerCalls, [1, 1]), 'OWNER_HTTP_HANDLER_BARRIER');
+    await operation.wait(new Promise(resolvePromise => setTimeout(resolvePromise, 25)));
+    requireProof(responseStates.every(state => state === 'PENDING'),
+      'OWNER_HTTP_RESPONSE_NOT_PENDING');
+
+    const pendingRecords = await operation.wait(Promise.all(childRoots.map(async (root, index) => {
+      const snapshot = await new SettlementJournal({
+        directory: join(root, 'journal'),
+        allowedRoot: root,
+        existingOnly: true,
+      }).list({ includeTombstones: true });
+      requireProof(snapshot.records.length === 1 && snapshot.tombstones.length === 0,
+        'OWNER_HTTP_PENDING_JOURNAL_CARDINALITY');
+      const record = snapshot.records[0];
+      const exactPayment = retainedAttempt(inputs[index]);
+      requireProof(Object.entries(exactPayment).every(([field, value]) =>
+        isDeepStrictEqual(record[field], value)) &&
+        record.evidenceState === 'MOMENTUM_INCLUDED' &&
+        record.deliveryState === 'DELIVERY_PENDING' &&
+        record.cachedResponse === null, 'OWNER_HTTP_PENDING_JOURNAL_BINDING');
+      return record;
+    })));
+    requireProof(pendingRecords[0].payer !== pendingRecords[1].payer &&
+      pendingRecords[0].transactionHash !== pendingRecords[1].transactionHash,
+    'OWNER_HTTP_PENDING_JOURNAL_ISOLATION');
+
+    releaseHandlerBarrier();
+    requireProof(handlerBarrierReleaseCount === 1, 'OWNER_HTTP_BARRIER_RELEASE_COUNT');
+    const initialResponses = await operation.wait(Promise.all(responsePromises));
+    const initialCaptures = await operation.wait(Promise.all(initialResponses.map(captureResponse)));
+    initialCaptures.forEach(verifyCapturedResponse);
+
+    const replayInputs = structuredClone(inputs);
+    replayInputs.forEach((input, index) => {
+      requireProof(input !== inputs[index] &&
+        isDeepStrictEqual(input, inputs[index]) &&
+        isDeepStrictEqual(inputIdentity(input), identities[index]),
+      'OWNER_HTTP_REPLAY_CLONE');
+    });
+    const handlerCallsBeforeReplay = [...handlerCalls];
+    const replayResponses = await operation.wait(Promise.all(replayInputs.map(input =>
+      submit(listening.url, input.paymentPayload, operation.signal))));
+    const replayCaptures = await operation.wait(Promise.all(replayResponses.map(captureResponse)));
+    replayCaptures.forEach((captured, index) => {
+      verifyCapturedResponse(captured, index);
+      requireProof(captured.bodyText === initialCaptures[index].bodyText &&
+        captured.bodyBytes.equals(initialCaptures[index].bodyBytes) &&
+        isDeepStrictEqual(captured.headers, initialCaptures[index].headers),
+      'OWNER_HTTP_REPLAY_NOT_BYTE_STABLE');
+    });
+    requireProof(isDeepStrictEqual(handlerCalls, handlerCallsBeforeReplay) &&
+      isDeepStrictEqual(handlerCalls, [1, 1]), 'OWNER_HTTP_REPLAY_HANDLER_CALL');
+    const replayed = owner.status();
+    requireProof(owner.start() === startingPromise &&
+      replayed.phase === 'READY' && replayed.startedChildren === 2 &&
+      replayed.dispatcherExposed === true && replayed.cleanupUncertain === false &&
+      replayed.children.every(child => !child.exitObserved && !child.closeObserved),
+    'OWNER_HTTP_REPLAY_OWNER_HEALTH');
+
+    beginServerClosure();
+    serverClosureComplete = await operation.wait(serverCleanupPromise) === true;
+    requireProof(serverClosureComplete, 'OWNER_HTTP_SERVER_CLOSE');
+
+    retirementPromise = facade.retire();
+    requireProof(facade.retire() === retirementPromise, 'OWNER_HTTP_RETIRE_NOT_MEMOIZED');
+    shutdownPromise = owner.shutdown();
+    requireProof(owner.shutdown() === shutdownPromise, 'OWNER_HTTP_SHUTDOWN_NOT_MEMOIZED');
+    beginOwnerClosure();
+    const [retired, shutdown] = await operation.wait(ownerClosurePromise);
+    requireProof(isDeepStrictEqual(retired, { retired: true }) &&
+      isDeepStrictEqual(shutdown, {
+        closed: true,
+        exactReaping: true,
+        quarantined: false,
+        markerDisposition: 'NOT_REMOVED',
+        rootDisposition: 'NOT_REMOVED',
+      }), 'OWNER_HTTP_RETIREMENT_RESULT');
+    const closed = owner.status();
+    requireProof(closed.phase === 'CLOSED' && closed.startedChildren === 2 &&
+      closed.dispatcherExposed === true && closed.cleanupUncertain === false &&
+      closed.children.length === 2 &&
+      closed.children.every(child => child.exitObserved && child.closeObserved),
+    'OWNER_HTTP_CLOSED');
+    exactReaping = true;
+
+    const expectedCachedResponses = expectedBodies.map(body => ({
+      status: 200,
+      headers: { 'content-type': 'application/json; charset=utf-8' },
+      body,
+    }));
+    const deliveredRecords = await operation.wait(Promise.all(childRoots.map(async (root, index) => {
+      const marker = await lstat(join(root, FIXED_PAYER_SETTLEMENT_STARTUP_MARKER_FILE));
+      requireProof(marker.isFile() && !marker.isSymbolicLink() && marker.nlink === 1 &&
+        marker.size === 0 && (marker.mode & 0o777) === 0o600,
+      'OWNER_HTTP_MARKER_RETAINED');
+      const snapshot = await new SettlementJournal({
+        directory: join(root, 'journal'),
+        allowedRoot: root,
+        existingOnly: true,
+      }).list({ includeTombstones: true });
+      requireProof(snapshot.records.length === 1 && snapshot.tombstones.length === 0,
+        'OWNER_HTTP_FINAL_JOURNAL_CARDINALITY');
+      const record = snapshot.records[0];
+      const exactPayment = retainedAttempt(inputs[index]);
+      requireProof(Object.entries(exactPayment).every(([field, value]) =>
+        isDeepStrictEqual(record[field], value)) &&
+        record.evidenceState === 'MOMENTUM_INCLUDED' &&
+        record.deliveryState === 'DELIVERED' &&
+        isDeepStrictEqual(record.cachedResponse, expectedCachedResponses[index]),
+      'OWNER_HTTP_FINAL_JOURNAL_BINDING');
+      return record;
+    })));
+    requireProof(deliveredRecords[0].payer !== deliveredRecords[1].payer &&
+      deliveredRecords[0].transactionHash !== deliveredRecords[1].transactionHash,
+    'OWNER_HTTP_FINAL_JOURNAL_ISOLATION');
+
+    const removalResult = await operation.wait(beginRootRemoval());
+    requireProof(removalResult === 'REMOVED_VERIFIED', removalResult === 'TIMEOUT'
+      ? 'OWNER_HTTP_ROOT_CLEANUP_TIMEOUT_RESIDUE_RETAINED'
+      : 'OWNER_HTTP_ROOT_CLEANUP_FAILED_RESIDUE_RETAINED');
+    removalComplete = true;
+  } catch (error) {
+    rememberDeadlineFailure(error);
+    workFailure = error?.name === 'FixedPayerSettlementTestError'
+      ? error
+      : fixedFailure('OWNER_HTTP_PHYSICAL_PROOF');
+  } finally {
+    if (!handlerBarrierReleased) {
+      try { releaseHandlerBarrier(); } catch {
+        cleanupFailure ??= fixedFailure('OWNER_HTTP_BARRIER');
+      }
+    }
+    if (resourceServer !== undefined && !serverClosureComplete) {
+      try {
+        beginServerClosure();
+        serverClosureComplete = await finishAfterDeadline(
+          serverCleanupPromise,
+          3_500,
+          'OWNER_HTTP_SERVER_RESIDUE_RETAINED',
+        ) === true;
+        if (!serverClosureComplete) throw fixedFailure('OWNER_HTTP_SERVER_RESIDUE_RETAINED');
+      } catch (error) {
+        cleanupFailure ??= error?.name === 'FixedPayerSettlementTestError'
+          ? error
+          : fixedFailure('OWNER_HTTP_SERVER_RESIDUE_RETAINED');
+      }
+    }
+    if (owner !== undefined && !exactReaping) {
+      try {
+        beginOwnerClosure();
+        await finishAfterDeadline(
+          ownerFallbackPromise,
+          3_500,
+          'OWNER_HTTP_REAPING_RESIDUE_RETAINED',
+        );
+        exactReaping = exactlyReaped();
+        if (!exactReaping) throw fixedFailure('OWNER_HTTP_REAPING_RESIDUE_RETAINED');
+      } catch (error) {
+        cleanupFailure ??= error?.name === 'FixedPayerSettlementTestError'
+          ? error
+          : fixedFailure('OWNER_HTTP_REAPING_RESIDUE_RETAINED');
+      }
+    }
+    if ((owner === undefined || exactReaping) && ownedRoots.length > 0 && !removalComplete) {
+      try {
+        const disposition = await finishAfterDeadline(
+          beginRootRemoval(),
+          2_500,
+          'OWNER_HTTP_ROOT_RESIDUE_RETAINED',
+        );
+        removalComplete = disposition === 'REMOVED_VERIFIED';
+        if (!removalComplete) throw fixedFailure('OWNER_HTTP_ROOT_RESIDUE_RETAINED');
+      } catch (error) {
+        cleanupFailure ??= error?.name === 'FixedPayerSettlementTestError'
+          ? error
+          : fixedFailure('OWNER_HTTP_ROOT_RESIDUE_RETAINED');
+      }
+    }
+    if (!deadlineAdjudicated) {
+      deadlineAdjudicated = true;
+      try {
+        operation.close();
+      } catch (error) {
+        if (!rememberDeadlineFailure(error)) {
+          cleanupFailure ??= fixedFailure('OWNER_HTTP_DEADLINE_ADJUDICATION');
+        }
+      }
+    }
+  }
+  if (deadlineFailure) throw deadlineFailure;
+  if (cleanupFailure) throw cleanupFailure;
+  if (workFailure) throw workFailure;
+});
+
 test('real startup children preserve direct two-shard settlement and delivery without loopback', {
   timeout: 20_000,
 }, async t => {
