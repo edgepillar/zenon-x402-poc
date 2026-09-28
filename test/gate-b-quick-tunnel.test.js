@@ -26,6 +26,7 @@ import {
   launchGateBQuickTunnel,
   launchGateBQuickTunnelInInheritedProcessGroup,
   readGateBQuickTunnelHostnameSourceHandoffProvenance,
+  readGateBQuickTunnelLaunchFailureStage,
   stopGateBQuickTunnel,
   waitGateBQuickTunnelClosed,
 } from '../src/gate-b-quick-tunnel-launcher.js';
@@ -35,6 +36,7 @@ import * as supervisorModule from '../src/gate-b-quick-tunnel-supervisor.js';
 import {
   createGateBQuickTunnelIpcMessage,
   frameGateBQuickTunnelBootstrap,
+  GATE_B_QUICK_TUNNEL_FAILURE_STAGES,
   GATE_B_QUICK_TUNNEL_IPC_TYPES,
   GATE_B_QUICK_TUNNEL_LIMITS,
   GATE_B_QUICK_TUNNEL_OPERATIONS,
@@ -444,6 +446,10 @@ async function activateLauncher(harness, readyBeforeFrame = false) {
     1,
   ));
   harness.child.emit('message', createGateBQuickTunnelIpcMessage(
+    GATE_B_QUICK_TUNNEL_IPC_TYPES.HOSTNAME_SOURCE_WRITTEN,
+    1,
+  ));
+  harness.child.emit('message', createGateBQuickTunnelIpcMessage(
     GATE_B_QUICK_TUNNEL_IPC_TYPES.ACTIVE,
     1,
   ));
@@ -462,6 +468,10 @@ async function activateInheritedLauncher(harness) {
     1,
   ));
   await eventually(() => harness.child.sent.length === 1);
+  harness.child.emit('message', createGateBQuickTunnelIpcMessage(
+    GATE_B_QUICK_TUNNEL_IPC_TYPES.HOSTNAME_SOURCE_WRITTEN,
+    1,
+  ));
   harness.child.emit('message', createGateBQuickTunnelIpcMessage(
     GATE_B_QUICK_TUNNEL_IPC_TYPES.ACTIVE,
     1,
@@ -860,9 +870,12 @@ test('launcher exports only the reviewed lifecycle and protected-provenance surf
     'GateBQuickTunnelLaunchError',
     'assertGateBQuickTunnelReady',
     'claimGateBQuickTunnelHostnameSourceHandoff',
+    'isGateBQuickTunnelLaunchFailure',
     'launchGateBQuickTunnel',
     'launchGateBQuickTunnelInInheritedProcessGroup',
+    'readGateBQuickTunnelHostnameSourceHandoffDiagnosticStage',
     'readGateBQuickTunnelHostnameSourceHandoffProvenance',
+    'readGateBQuickTunnelLaunchFailureStage',
     'stopGateBQuickTunnel',
     'waitGateBQuickTunnelClosed',
   ]);
@@ -968,6 +981,10 @@ test('post-import Promise replacement cannot authorize launch, readiness, or fai
       1,
     ));
     await eventually(() => launchHarness.child.sent.length === 1);
+    launchHarness.child.emit('message', createGateBQuickTunnelIpcMessage(
+      GATE_B_QUICK_TUNNEL_IPC_TYPES.HOSTNAME_SOURCE_WRITTEN,
+      1,
+    ));
     launchHarness.child.emit('message', createGateBQuickTunnelIpcMessage(
       GATE_B_QUICK_TUNNEL_IPC_TYPES.ACTIVE,
       1,
@@ -1237,6 +1254,10 @@ test('public launch awaits retain exact lease delivery across inherited construc
           ));
           await eventually(() => harness.child.sent.length === 1);
           harness.child.emit('message', createGateBQuickTunnelIpcMessage(
+            GATE_B_QUICK_TUNNEL_IPC_TYPES.HOSTNAME_SOURCE_WRITTEN,
+            1,
+          ));
+          harness.child.emit('message', createGateBQuickTunnelIpcMessage(
             GATE_B_QUICK_TUNNEL_IPC_TYPES.ACTIVE,
             1,
           ));
@@ -1411,6 +1432,10 @@ test('captured defaults bind omitted versus explicit launch arguments without pu
         ));
         await eventually(() => child.sent.length === 1);
         child.emit('message', createGateBQuickTunnelIpcMessage(
+          GATE_B_QUICK_TUNNEL_IPC_TYPES.HOSTNAME_SOURCE_WRITTEN,
+          1,
+        ));
+        child.emit('message', createGateBQuickTunnelIpcMessage(
           GATE_B_QUICK_TUNNEL_IPC_TYPES.ACTIVE,
           1,
         ));
@@ -1577,6 +1602,10 @@ test('launcher uses the workspace cwd and exact detached private-FD contract', a
     1,
   ));
   harness.child.emit('message', createGateBQuickTunnelIpcMessage(
+    GATE_B_QUICK_TUNNEL_IPC_TYPES.HOSTNAME_SOURCE_WRITTEN,
+    1,
+  ));
+  harness.child.emit('message', createGateBQuickTunnelIpcMessage(
     GATE_B_QUICK_TUNNEL_IPC_TYPES.ACTIVE,
     1,
   ));
@@ -1627,6 +1656,10 @@ test('launcher exposes one opaque one-use hostname handoff bound to lease worksp
       assert.equal(Object.getPrototypeOf(handoff), null);
       assert.deepEqual(Reflect.ownKeys(handoff), ['assertCurrent']);
       assert.equal(Object.isFrozen(handoff), true);
+      assert.equal(
+        quickTunnelLauncher.readGateBQuickTunnelHostnameSourceHandoffDiagnosticStage(handoff),
+        GATE_B_QUICK_TUNNEL_FAILURE_STAGES.HOSTNAME_SOURCE_WRITTEN,
+      );
       const copied = Object.freeze(Object.assign(Object.create(null), handoff));
       await assert.rejects(copied.assertCurrent(), LAUNCH_ERROR);
       const provenance = readGateBQuickTunnelHostnameSourceHandoffProvenance(handoff);
@@ -1758,6 +1791,111 @@ test('launcher exposes one opaque one-use hostname handoff bound to lease worksp
       emitSuccessfulClosure(harness.child, 2);
       assert.equal(await closure, true);
     });
+  });
+
+test('launcher failure diagnostics are branded, fixed, one-shot, and order-sensitive',
+  async t => {
+    const begin = async harness => {
+      const launch = launchGateBQuickTunnel(bootstrap(), harness.injected);
+      await eventually(() => harness.forkCalls.length === 1);
+      harness.child.privateFd.release();
+      harness.child.emit('message', createGateBQuickTunnelIpcMessage(
+        GATE_B_QUICK_TUNNEL_IPC_TYPES.READY,
+        1,
+      ));
+      await eventually(() => harness.child.sent.length === 1);
+      return { launch };
+    };
+
+    await t.test('retains the completed source-write boundary', async () => {
+      const harness = launcherHarness();
+      const { launch } = await begin(harness);
+      harness.child.emit('message', createGateBQuickTunnelIpcMessage(
+        GATE_B_QUICK_TUNNEL_IPC_TYPES.HOSTNAME_SOURCE_WRITTEN,
+        1,
+      ));
+      harness.child.emit('error', new Error('synthetic'));
+      let observed;
+      await assert.rejects(launch, candidate => {
+        observed = candidate;
+        return true;
+      });
+      assert.equal(
+        readGateBQuickTunnelLaunchFailureStage(observed),
+        GATE_B_QUICK_TUNNEL_FAILURE_STAGES.HOSTNAME_SOURCE_WRITTEN,
+      );
+      assert.equal('stage' in observed, false);
+      assert.equal(quickTunnelLauncher.isGateBQuickTunnelLaunchFailure(observed), true);
+      assert.equal(
+        readGateBQuickTunnelLaunchFailureStage(
+          new quickTunnelLauncher.GateBQuickTunnelLaunchError(),
+        ),
+        GATE_B_QUICK_TUNNEL_FAILURE_STAGES.UNKNOWN,
+      );
+      assert.equal(
+        quickTunnelLauncher.isGateBQuickTunnelLaunchFailure(
+          new quickTunnelLauncher.GateBQuickTunnelLaunchError(),
+        ),
+        false,
+      );
+    });
+
+    await t.test('duplicate stage evidence resolves to UNKNOWN', async () => {
+      const harness = launcherHarness();
+      const { launch } = await begin(harness);
+      const message = createGateBQuickTunnelIpcMessage(
+        GATE_B_QUICK_TUNNEL_IPC_TYPES.HOSTNAME_SOURCE_WRITTEN,
+        1,
+      );
+      harness.child.emit('message', message);
+      harness.child.emit('message', message);
+      let observed;
+      await assert.rejects(launch, candidate => {
+        observed = candidate;
+        return true;
+      });
+      assert.equal(
+        readGateBQuickTunnelLaunchFailureStage(observed),
+        GATE_B_QUICK_TUNNEL_FAILURE_STAGES.UNKNOWN,
+      );
+    });
+
+    await t.test('missing stage evidence resolves to UNKNOWN', async () => {
+      const harness = launcherHarness();
+      const { launch } = await begin(harness);
+      harness.child.emit('error', new Error('synthetic'));
+      let observed;
+      await assert.rejects(launch, candidate => {
+        observed = candidate;
+        return true;
+      });
+      assert.equal(
+        readGateBQuickTunnelLaunchFailureStage(observed),
+        GATE_B_QUICK_TUNNEL_FAILURE_STAGES.UNKNOWN,
+      );
+    });
+
+    await t.test('a legacy ACTIVE handoff exposes UNKNOWN without inventing evidence',
+      async () => {
+        const harness = launcherHarness();
+        const { launch } = await begin(harness);
+        harness.child.emit('message', createGateBQuickTunnelIpcMessage(
+          GATE_B_QUICK_TUNNEL_IPC_TYPES.ACTIVE,
+          1,
+        ));
+        const lease = await launch;
+        const handoff = claimGateBQuickTunnelHostnameSourceHandoff(lease, WORKSPACE_ROOT);
+        assert.equal(
+          quickTunnelLauncher
+            .readGateBQuickTunnelHostnameSourceHandoffDiagnosticStage(handoff),
+          GATE_B_QUICK_TUNNEL_FAILURE_STAGES.UNKNOWN,
+        );
+        const stopped = stopGateBQuickTunnel(lease);
+        await eventually(() => harness.child.sent.some(message =>
+          message.type === GATE_B_QUICK_TUNNEL_IPC_TYPES.STOP));
+        emitSuccessfulClosure(harness.child, 2);
+        assert.equal(await stopped, true);
+      });
   });
 
 test('launcher rejects ACTIVE before the READY and START join completes', async () => {
@@ -2912,7 +3050,10 @@ test('supervisor reserves durably before fixed version/child policies and observ
     assert.ok(state.order.indexOf('version') < state.order.indexOf('spawn'));
     assert.ok(state.order.lastIndexOf('version') > state.order.indexOf('spawn'));
     assert.ok(state.order.indexOf('workspace:write') < state.order.indexOf('workspace:read'));
-    assert.ok(state.order.indexOf('workspace:read') < state.order.indexOf('ipc:ACTIVE:1'));
+    assert.ok(state.order.indexOf('workspace:read') <
+      state.order.indexOf('ipc:HOSTNAME_SOURCE_WRITTEN:1'));
+    assert.ok(state.order.indexOf('ipc:HOSTNAME_SOURCE_WRITTEN:1') <
+      state.order.indexOf('ipc:ACTIVE:1'));
 
     assert.equal(state.spawnCalls.length, 1);
     const [executable, argv, options] = state.spawnCalls[0];
@@ -3000,6 +3141,29 @@ test('supervisor reserves durably before fixed version/child policies and observ
     assert.equal(state.ipc.channelUnrefCalls, 1);
     assert.equal(state.ipc.listenerCount('message'), 0);
     assert.equal(state.ipc.listenerCount('disconnect'), 0);
+  });
+
+test('supervisor confirms the fixed source-write stage before ACTIVE becomes observable',
+  async () => {
+    const harness = supervisorHarness();
+    harness.state.ipc.stallType =
+      GATE_B_QUICK_TUNNEL_IPC_TYPES.HOSTNAME_SOURCE_WRITTEN;
+    const supervision = superviseGateBQuickTunnel(harness.injections);
+    await eventually(() => harness.state.ipc.sent.some(message =>
+      message.type === GATE_B_QUICK_TUNNEL_IPC_TYPES.READY));
+    harness.state.ipc.emit('message', createGateBQuickTunnelIpcMessage(
+      GATE_B_QUICK_TUNNEL_IPC_TYPES.START,
+      1,
+    ));
+    await eventually(() => harness.state.ipc.stalledCallbacks.length === 1);
+    assert.equal(harness.state.sourceWrites, 1);
+    assert.equal(harness.state.ipc.sent.some(message =>
+      message.type === GATE_B_QUICK_TUNNEL_IPC_TYPES.ACTIVE), false);
+    harness.state.ipc.releaseStalled();
+    await eventually(() => harness.state.ipc.sent.some(message =>
+      message.type === GATE_B_QUICK_TUNNEL_IPC_TYPES.ACTIVE));
+    await stopSupervisor(harness, 2);
+    assert.equal(await supervision, true);
   });
 
 test('supervisor emits no ACTIVE while the first readiness observation is blocked', async () => {

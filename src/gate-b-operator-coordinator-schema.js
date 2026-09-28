@@ -93,6 +93,23 @@ export const GATE_B_OPERATOR_COORDINATOR_IPC_TYPES = Object.freeze({
   QUARANTINED: 'QUARANTINED',
 });
 
+export const GATE_B_RESET_EPOCH_NATIVE_DIAGNOSTIC_STAGES = Object.freeze({
+  UNKNOWN: 'UNKNOWN',
+  HOSTNAME_SOURCE_WRITTEN: 'HOSTNAME_SOURCE_WRITTEN',
+  QUICK_TUNNEL_ACTIVE_CONFIRMED: 'QUICK_TUNNEL_ACTIVE_CONFIRMED',
+  HOSTNAME_HANDOFF_VERIFIED: 'HOSTNAME_HANDOFF_VERIFIED',
+  HOSTNAME_SOURCE_VERIFIED: 'HOSTNAME_SOURCE_VERIFIED',
+  WALLET_MATERIAL_DERIVED: 'WALLET_MATERIAL_DERIVED',
+  WALLET_LEAF_RESERVED: 'WALLET_LEAF_RESERVED',
+  PRE_REVIEW_OUTPUTS_RESERVED: 'PRE_REVIEW_OUTPUTS_RESERVED',
+  PRE_REVIEW_OUTPUTS_COMMITTED: 'PRE_REVIEW_OUTPUTS_COMMITTED',
+  OFFLINE_RECEIPT_RESERVED: 'OFFLINE_RECEIPT_RESERVED',
+  OFFLINE_RECEIPT_COMMITTED: 'OFFLINE_RECEIPT_COMMITTED',
+});
+
+export const GATE_B_RESET_EPOCH_NATIVE_DIAGNOSTIC_IPC_TYPE =
+  'RESET_EPOCH_NATIVE_STAGE';
+
 export const GATE_B_OPERATOR_ORIGIN_RELEASE_IPC_TYPES = Object.freeze({
   RELEASE_ORIGIN: 'RELEASE_ORIGIN',
   ORIGIN_RELEASED: 'ORIGIN_RELEASED',
@@ -451,6 +468,29 @@ export function parseGateBOperatorCoordinatorIpcMessage(value) {
   if (message.ipcVersion !== 1 ||
       !Object.values(GATE_B_OPERATOR_COORDINATOR_IPC_TYPES).includes(message.type)) fail();
   return Object.freeze({ ipcVersion: 1, type: message.type });
+}
+
+export function createGateBResetEpochNativeDiagnosticIpcMessage(stage) {
+  if (stage === GATE_B_RESET_EPOCH_NATIVE_DIAGNOSTIC_STAGES.UNKNOWN ||
+      !Object.values(GATE_B_RESET_EPOCH_NATIVE_DIAGNOSTIC_STAGES).includes(stage)) fail();
+  return Object.freeze({
+    ipcVersion: 1,
+    stage,
+    type: GATE_B_RESET_EPOCH_NATIVE_DIAGNOSTIC_IPC_TYPE,
+  });
+}
+
+export function parseGateBResetEpochNativeDiagnosticIpcMessage(value) {
+  const message = exactPlainObject(value, ['ipcVersion', 'stage', 'type']);
+  if (message.ipcVersion !== 1 ||
+      message.type !== GATE_B_RESET_EPOCH_NATIVE_DIAGNOSTIC_IPC_TYPE ||
+      message.stage === GATE_B_RESET_EPOCH_NATIVE_DIAGNOSTIC_STAGES.UNKNOWN ||
+      !Object.values(GATE_B_RESET_EPOCH_NATIVE_DIAGNOSTIC_STAGES).includes(message.stage)) fail();
+  return Object.freeze({
+    ipcVersion: 1,
+    stage: message.stage,
+    type: GATE_B_RESET_EPOCH_NATIVE_DIAGNOSTIC_IPC_TYPE,
+  });
 }
 
 export function createGateBOperatorOriginReleaseIpcMessage(type) {

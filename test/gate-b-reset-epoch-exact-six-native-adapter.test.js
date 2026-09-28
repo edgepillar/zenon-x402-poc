@@ -32,6 +32,7 @@ import {
   GateBResetEpochExactSixNativeAdapterError,
   getGateBResetEpochExactSixNativeStatus,
   prepareGateBResetEpochExactSixNativeForReview,
+  readGateBResetEpochExactSixNativeFailureStage,
   stopGateBResetEpochExactSixNative,
   validateGateBResetEpochExactSixNativeOfflineCrossCheck,
   waitGateBResetEpochExactSixNativeClosed,
@@ -42,6 +43,15 @@ import {
   GATE_B_QUICK_TUNNEL_TELEMETRY_ACKNOWLEDGEMENTS,
   GATE_B_QUICK_TUNNEL_TELEMETRY_MODES,
 } from '../src/gate-b-quick-tunnel-schema.js';
+import {
+  GATE_B_OPERATOR_COORDINATOR_STATUS_LINES,
+  GATE_B_RESET_EPOCH_NATIVE_DIAGNOSTIC_IPC_TYPE,
+  GATE_B_RESET_EPOCH_NATIVE_DIAGNOSTIC_STAGES,
+  frameGateBOperatorCoordinatorBootstrap,
+  frameGateBOperatorCoordinatorReview,
+} from '../src/gate-b-operator-coordinator-schema.js';
+import { runGateBOperatorCoordinatorCli } from
+  '../src/gate-b-operator-coordinator-cli.js';
 import {
   GATE_B_RESET_EPOCH_OFFLINE_PREFLIGHT,
   GATE_B_RESET_EPOCH_OFFLINE_PROVENANCE,
@@ -273,7 +283,7 @@ class SyntheticPrivateFd extends PassThrough {
 }
 
 class SyntheticQuickTunnelChild extends EventEmitter {
-  constructor(root, counters) {
+  constructor(root, counters, options = {}) {
     super();
     this.pid = 43120;
     this.connected = true;
@@ -281,6 +291,10 @@ class SyntheticQuickTunnelChild extends EventEmitter {
     this.groupAlive = true;
     this.root = root;
     this.counters = counters;
+    this.failAfterSourceWrite = options.failAfterSourceWrite === true;
+    this.invalidHostnameSource = options.invalidHostnameSource === true;
+    this.omitSourceStage = options.omitSourceStage === true;
+    this.duplicateSourceStage = options.duplicateSourceStage === true;
     this.privateFd = new SyntheticPrivateFd(() => {
       this.emit('message', createGateBQuickTunnelIpcMessage(
         GATE_B_QUICK_TUNNEL_IPC_TYPES.READY,
@@ -295,10 +309,9 @@ class SyntheticQuickTunnelChild extends EventEmitter {
     queueMicrotask(() => callback?.(null));
     if (message.type === GATE_B_QUICK_TUNNEL_IPC_TYPES.START) {
       queueMicrotask(async () => {
-        const bytes = serializeGateBQuickTunnelHostnameSource(
-          HOSTNAME,
-          quickTunnelBinding(),
-        );
+        const bytes = this.invalidHostnameSource
+          ? Buffer.from('{}\n')
+          : serializeGateBQuickTunnelHostnameSource(HOSTNAME, quickTunnelBinding());
         try {
           await writeFile(
             join(this.root, GATE_B_PUBLIC_WS_INPUT_LEAVES.hostnameSource),
@@ -309,6 +322,18 @@ class SyntheticQuickTunnelChild extends EventEmitter {
             join(this.root, GATE_B_PUBLIC_WS_INPUT_LEAVES.hostnameSource),
             0o600,
           );
+          if (!this.omitSourceStage) {
+            const sourceStage = createGateBQuickTunnelIpcMessage(
+              GATE_B_QUICK_TUNNEL_IPC_TYPES.HOSTNAME_SOURCE_WRITTEN,
+              message.requestId,
+            );
+            this.emit('message', sourceStage);
+            if (this.duplicateSourceStage) this.emit('message', sourceStage);
+          }
+          if (this.failAfterSourceWrite) {
+            this.emit('error', new Error('synthetic'));
+            return;
+          }
           this.emit('message', createGateBQuickTunnelIpcMessage(
             GATE_B_QUICK_TUNNEL_IPC_TYPES.ACTIVE,
             message.requestId,
@@ -417,7 +442,7 @@ function decorateDirectoryHandle(counters, closeFailure) {
   };
 }
 
-function decorateFileHandle(counters, closeFailure, mutateWalletReadBuffer) {
+function decorateFileHandle(counters, closeFailure, mutateWalletReadBuffer, writeFailure) {
   return (handle, name) => {
     counters.rawHandles.push(handle);
     return {
@@ -436,7 +461,10 @@ function decorateFileHandle(counters, closeFailure, mutateWalletReadBuffer) {
         }
         return result;
       },
-      write: (...args) => handle.write(...args),
+      write: (...args) => {
+        if (writeFailure === name) throw new Error('write poison');
+        return handle.write(...args);
+      },
       sync: (...args) => handle.sync(...args),
       async close(...args) {
         const label = `file:${name}`;
@@ -452,8 +480,14 @@ function decorateFileHandle(counters, closeFailure, mutateWalletReadBuffer) {
 async function fixture(t, changes = {}) {
   const {
     closeFailure,
+    failAfterSourceWrite = false,
+    duplicateSourceStage = false,
+    invalidHostnameSource = false,
     mutateWalletReadBuffer = false,
     phase2Payer = PAYER,
+    omitSourceStage = false,
+    reservationFault,
+    writeFailure,
     ...dependencyChanges
   } = changes;
   const temporary = await mkdtemp(join(tmpdir(), 'gate-b-reset-native-'));
@@ -475,11 +509,17 @@ async function fixture(t, changes = {}) {
     underlyingCloseAttempts: [],
     walletReads: 0,
     walletMutations: 0,
+    exclusiveLeafAttempts: [],
   };
   t.after(async () => {
     await Promise.allSettled(counters.rawHandles.map(handle => handle.close()));
   });
-  const child = new SyntheticQuickTunnelChild(root, counters);
+  const child = new SyntheticQuickTunnelChild(root, counters, {
+    failAfterSourceWrite,
+    duplicateSourceStage,
+    invalidHostnameSource,
+    omitSourceStage,
+  });
   const workspaceInjections = {
     aclInspector: async () => true,
     actualCwdPath: () => root,
@@ -488,9 +528,22 @@ async function fixture(t, changes = {}) {
       counters,
       closeFailure,
       mutateWalletReadBuffer,
+      writeFailure,
     ),
     lstatActualCwd: () => lstat(root, { bigint: true }),
     openActualCwd: flags => open(root, flags),
+    openPath: async (path, ...args) => {
+      const leaf = Object.values(GATE_B_PUBLIC_WS_INPUT_LEAVES)
+        .find(candidate => path === join(root, candidate));
+      if (leaf !== undefined) counters.exclusiveLeafAttempts.push(leaf);
+      if ((reservationFault === 'BEFORE_WALLET' &&
+            leaf === GATE_B_PUBLIC_WS_INPUT_LEAVES.buyerWallet) ||
+          (reservationFault === 'AFTER_WALLET' &&
+            leaf === GATE_B_PUBLIC_WS_INPUT_LEAVES.buyerRpc)) {
+        throw new Error('reservation poison');
+      }
+      return open(path, ...args);
+    },
     platform: 'darwin',
     realpathActualCwd: () => realpath(root),
   };
@@ -578,6 +631,330 @@ async function assertExactPrivateLeaves(root, expected) {
   assert.equal(stats.every(stat => (stat.mode & 0o777n) === 0o600n), true);
   assert.equal(new Set(stats.map(stat => `${stat.dev}:${stat.ino}`)).size, leaves.length);
 }
+
+async function capturePreparationFailure(t, changes) {
+  const context = await fixture(t, changes);
+  let observed;
+  await assert.rejects(
+    prepareGateBResetEpochExactSixNativeForReview(
+      bootstrap(context.root),
+      context.injected,
+    ),
+    candidate => {
+      observed = candidate;
+      return assertAdapterError(candidate);
+    },
+  );
+  return { context, observed };
+}
+
+test('missing native diagnostic send callback cannot delay quarantine cleanup',
+  { timeout: 4_000 }, async t => {
+    const { context, observed } = await capturePreparationFailure(t, {
+      failAfterSourceWrite: true,
+    });
+    assert.equal(
+      readGateBResetEpochExactSixNativeFailureStage(observed),
+      GATE_B_RESET_EPOCH_NATIVE_DIAGNOSTIC_STAGES.HOSTNAME_SOURCE_WRITTEN,
+    );
+
+    const channel = new EventEmitter();
+    const sent = [];
+    const lines = [];
+    const forbiddenCalls = [];
+    const capability = Object.freeze(Object.create(null));
+    let status = REVIEW_REQUIRED;
+    let stopCalls = 0;
+    let stopCallsAtDiagnosticSend;
+    let validateCalls = 0;
+    let waitCalls = 0;
+    channel.send = (message, callback) => {
+      sent.push(structuredClone(message));
+      if (message.type === GATE_B_RESET_EPOCH_NATIVE_DIAGNOSTIC_IPC_TYPE) {
+        stopCallsAtDiagnosticSend = stopCalls;
+        return true;
+      }
+      queueMicrotask(() => callback?.(null));
+      if (message.type === 'REVIEW_REQUIRED') {
+        setImmediate(() => channel.emit('message', { type: 'REVIEW_OPEN' }));
+      }
+      return true;
+    };
+    const unused = name => async () => {
+      forbiddenCalls.push(name);
+      throw new Error('unexpected test dependency');
+    };
+    const reviewInput = {
+      acknowledgements: {
+        offlineReceipt:
+          GATE_B_RESET_EPOCH_OFFLINE_PREFLIGHT.acknowledgements.offlineReceipt,
+        operatorAssertion:
+          GATE_B_RESET_EPOCH_OFFLINE_PREFLIGHT.acknowledgements.operatorAssertion,
+        payeeOwnership:
+          GATE_B_RESET_EPOCH_OFFLINE_PREFLIGHT.acknowledgements.payeeOwnership,
+      },
+      reviewedConfigDigest: 'a'.repeat(64),
+      reviewedPayee: PAYEE,
+      reviewedPayer: PAYER,
+      reviewedPaymentIntentDigest: 'b'.repeat(64),
+      schemaVersion: 5,
+    };
+    const reader = Object.freeze({
+      close() { return true; },
+      openReviewPhase() { return true; },
+      openRunPhase() { forbiddenCalls.push('open-run'); return true; },
+      readInitial() {
+        return Promise.resolve(frameGateBOperatorCoordinatorBootstrap(
+          bootstrap(context.root),
+        ));
+      },
+      readReview() {
+        return Promise.resolve(frameGateBOperatorCoordinatorReview(reviewInput));
+      },
+      readRun() {
+        forbiddenCalls.push('read-run');
+        return Promise.reject(new Error('unexpected run read'));
+      },
+    });
+    const pending = runGateBOperatorCoordinatorCli({
+      argv: [],
+      authorizeController: unused('legacy-authorize'),
+      channel,
+      createFrameReader: () => reader,
+      crossCheckResetConfiguration: async () => { throw observed; },
+      getControllerStatus: unused('legacy-status'),
+      getResetControllerStatus: candidate => {
+        assert.equal(candidate, capability);
+        return status;
+      },
+      inputStream: Object.freeze({}),
+      lifetimeMs: 1_000,
+      prepareController: unused('legacy-prepare'),
+      prepareResetController: async () => capability,
+      reviewConfiguration: unused('legacy-review'),
+      runController: unused('run-controller'),
+      stderr: async line => { lines.push(['stderr', line]); return true; },
+      stdout: async line => { lines.push(['stdout', line]); return true; },
+      stopController: unused('legacy-stop'),
+      stopResetController: candidate => {
+        assert.equal(candidate, capability);
+        stopCalls += 1;
+        status = CLOSED;
+        return Promise.resolve(CLOSED);
+      },
+      validateResetController: async () => {
+        validateCalls += 1;
+        return OFFLINE_RECEIPT_VALID;
+      },
+      waitControllerClosed: unused('legacy-wait'),
+      waitResetControllerClosed: candidate => {
+        assert.equal(candidate, capability);
+        waitCalls += 1;
+        return Promise.resolve(CLOSED);
+      },
+    });
+    const deadline = Symbol('deadline');
+    let deadlineTimer;
+    const outcome = await Promise.race([
+      pending,
+      new Promise(resolve => {
+        deadlineTimer = setTimeout(
+          () => resolve(deadline),
+          1_000,
+        );
+      }),
+    ]);
+    clearTimeout(deadlineTimer);
+
+    assert.notEqual(outcome, deadline);
+    assert.equal(outcome, false);
+    assert.equal(stopCallsAtDiagnosticSend, 1);
+    assert.equal(stopCalls, 1);
+    assert.equal(waitCalls, 1);
+    assert.equal(validateCalls, 0);
+    assert.deepEqual(forbiddenCalls, []);
+    assert.deepEqual(lines, [
+      ['stdout', GATE_B_OPERATOR_COORDINATOR_STATUS_LINES.REVIEW_REQUIRED],
+      ['stderr', GATE_B_OPERATOR_COORDINATOR_STATUS_LINES.QUARANTINED],
+    ]);
+    assert.deepEqual(sent.map(message => message.type), [
+      'REVIEW_REQUIRED',
+      'REVIEW_OPENED',
+      GATE_B_RESET_EPOCH_NATIVE_DIAGNOSTIC_IPC_TYPE,
+      'QUARANTINED',
+    ]);
+  });
+
+test('fixed failure stages distinguish the post-hostname wallet reservation windows',
+  async t => {
+    for (const [name, changes] of [
+      ['missing source stage', { omitSourceStage: true }],
+      ['duplicate source stage', { duplicateSourceStage: true }],
+    ]) {
+      await t.test(`${name} resolves to UNKNOWN`, async subtest => {
+        const { context, observed } = await capturePreparationFailure(subtest, changes);
+        assert.equal(
+          readGateBResetEpochExactSixNativeFailureStage(observed),
+          GATE_B_RESET_EPOCH_NATIVE_DIAGNOSTIC_STAGES.UNKNOWN,
+        );
+        await assertExactPrivateLeaves(context.root, [
+          GATE_B_PUBLIC_WS_INPUT_LEAVES.hostnameSource,
+        ]);
+        assert.equal(context.counters.entropyConversions, 0);
+        assert.equal(context.counters.signCalls, 0);
+      });
+    }
+
+    await t.test('source write confirmed before ACTIVE remains a lower bound', async subtest => {
+      const { context, observed } = await capturePreparationFailure(subtest, {
+        failAfterSourceWrite: true,
+      });
+      assert.equal(
+        readGateBResetEpochExactSixNativeFailureStage(observed),
+        GATE_B_RESET_EPOCH_NATIVE_DIAGNOSTIC_STAGES.HOSTNAME_SOURCE_WRITTEN,
+      );
+      await assertExactPrivateLeaves(context.root, [
+        GATE_B_PUBLIC_WS_INPUT_LEAVES.hostnameSource,
+      ]);
+      assert.equal(context.counters.entropyConversions, 0);
+      assert.equal(context.counters.signCalls, 0);
+    });
+
+    await t.test('ACTIVE and handoff precede hostname parsing', async subtest => {
+      const { context, observed } = await capturePreparationFailure(subtest, {
+        invalidHostnameSource: true,
+      });
+      assert.equal(
+        readGateBResetEpochExactSixNativeFailureStage(observed),
+        GATE_B_RESET_EPOCH_NATIVE_DIAGNOSTIC_STAGES.HOSTNAME_HANDOFF_VERIFIED,
+      );
+      await assertExactPrivateLeaves(context.root, [
+        GATE_B_PUBLIC_WS_INPUT_LEAVES.hostnameSource,
+      ]);
+      assert.equal(context.counters.entropyConversions, 0);
+      assert.equal(context.counters.stopMessages, 1);
+    });
+
+    await t.test('verified hostname precedes entropy conversion', async subtest => {
+      const { context, observed } = await capturePreparationFailure(subtest, {
+        entropySource() { throw new Error('entropy poison'); },
+      });
+      assert.equal(
+        readGateBResetEpochExactSixNativeFailureStage(observed),
+        GATE_B_RESET_EPOCH_NATIVE_DIAGNOSTIC_STAGES.HOSTNAME_SOURCE_VERIFIED,
+      );
+      await assertExactPrivateLeaves(context.root, [
+        GATE_B_PUBLIC_WS_INPUT_LEAVES.hostnameSource,
+      ]);
+      assert.equal(context.counters.signCalls, 0);
+    });
+
+    await t.test('fault before the wallet reservation leaves no wallet leaf', async subtest => {
+      const { context, observed } = await capturePreparationFailure(subtest, {
+        reservationFault: 'BEFORE_WALLET',
+      });
+      assert.equal(
+        readGateBResetEpochExactSixNativeFailureStage(observed),
+        GATE_B_RESET_EPOCH_NATIVE_DIAGNOSTIC_STAGES.WALLET_MATERIAL_DERIVED,
+      );
+      await assertExactPrivateLeaves(context.root, [
+        GATE_B_PUBLIC_WS_INPUT_LEAVES.hostnameSource,
+      ]);
+      assert.equal(context.counters.exclusiveLeafAttempts.filter(
+        leaf => leaf === GATE_B_PUBLIC_WS_INPUT_LEAVES.buyerWallet).length, 1);
+      assert.equal(context.counters.signCalls, 0);
+    });
+
+    await t.test('fault after the first exclusive reservation retains one empty wallet leaf',
+      async subtest => {
+        const { context, observed } = await capturePreparationFailure(subtest, {
+          reservationFault: 'AFTER_WALLET',
+        });
+        assert.equal(
+          readGateBResetEpochExactSixNativeFailureStage(observed),
+          GATE_B_RESET_EPOCH_NATIVE_DIAGNOSTIC_STAGES.WALLET_LEAF_RESERVED,
+        );
+        await assertExactPrivateLeaves(context.root, [
+          GATE_B_PUBLIC_WS_INPUT_LEAVES.buyerWallet,
+          GATE_B_PUBLIC_WS_INPUT_LEAVES.hostnameSource,
+        ]);
+        assert.equal((await readFile(join(
+          context.root,
+          GATE_B_PUBLIC_WS_INPUT_LEAVES.buyerWallet,
+        ))).length, 0);
+        assert.equal(context.counters.exclusiveLeafAttempts.filter(
+          leaf => leaf === GATE_B_PUBLIC_WS_INPUT_LEAVES.buyerWallet).length, 1);
+        assert.equal(context.counters.exclusiveLeafAttempts.filter(
+          leaf => leaf === GATE_B_PUBLIC_WS_INPUT_LEAVES.buyerRpc).length, 1);
+        assert.equal(context.counters.signCalls, 0);
+      });
+  });
+
+test('failure stages are private branded evidence and never caller-forgeable', async t => {
+  const { observed } = await capturePreparationFailure(t, {
+    entropySource() { throw new Error('entropy poison'); },
+  });
+  assert.equal('stage' in observed, false);
+  assert.equal(JSON.stringify(observed).includes('HOSTNAME'), false);
+  assert.equal(
+    readGateBResetEpochExactSixNativeFailureStage(
+      new GateBResetEpochExactSixNativeAdapterError(),
+    ),
+    GATE_B_RESET_EPOCH_NATIVE_DIAGNOSTIC_STAGES.UNKNOWN,
+  );
+  assert.equal(
+    readGateBResetEpochExactSixNativeFailureStage(Object.freeze({
+      stage: GATE_B_RESET_EPOCH_NATIVE_DIAGNOSTIC_STAGES.OFFLINE_RECEIPT_COMMITTED,
+    })),
+    GATE_B_RESET_EPOCH_NATIVE_DIAGNOSTIC_STAGES.UNKNOWN,
+  );
+});
+
+test('receipt reservation failure stays nonauthorizing, one-shot, and privacy-safe',
+  async t => {
+    const context = await prepare(t, {
+      writeFailure: GATE_B_PUBLIC_WS_INPUT_LEAVES.resetEpochOfflinePreflightReceipt,
+    });
+    const reviewed = await crossCheckBundle(context);
+    let observed;
+    await assert.rejects(
+      validateGateBResetEpochExactSixNativeOfflineCrossCheck(
+        context.capability,
+        reviewed.operator,
+        reviewed.crossCheck,
+      ),
+      candidate => {
+        observed = candidate;
+        return assertAdapterError(candidate);
+      },
+    );
+    assert.equal(
+      readGateBResetEpochExactSixNativeFailureStage(observed),
+      GATE_B_RESET_EPOCH_NATIVE_DIAGNOSTIC_STAGES.OFFLINE_RECEIPT_RESERVED,
+    );
+    assert.equal(await waitGateBResetEpochExactSixNativeClosed(context.capability), QUARANTINED);
+    await assertExactPrivateLeaves(context.root, EXACT_SIX);
+    assert.equal((await readFile(join(
+      context.root,
+      GATE_B_PUBLIC_WS_INPUT_LEAVES.resetEpochOfflinePreflightReceipt,
+    ))).length, 0);
+    assert.equal(context.counters.exclusiveLeafAttempts.filter(
+      leaf => leaf ===
+        GATE_B_PUBLIC_WS_INPUT_LEAVES.resetEpochOfflinePreflightReceipt).length, 1);
+    assert.equal(context.counters.signCalls, 0);
+  });
+
+test('real SDK accepts deterministic synthetic entropy without signing or network use', async t => {
+  const context = await prepare(t, {
+    sdkLoader: () => import('znn-typescript-sdk'),
+  });
+  assert.equal(
+    getGateBResetEpochExactSixNativeStatus(context.capability),
+    REVIEW_REQUIRED,
+  );
+  assert.equal(context.counters.signCalls, 0);
+  assert.equal(await stopGateBResetEpochExactSixNative(context.capability), CLOSED);
+});
 
 test('creates one opaque same-process adapter capability and pauses at review', async t => {
   const context = await prepare(t);
@@ -1251,6 +1628,7 @@ test('module exposes no RUN, origin-release, runner-child, payment, or publicati
       'GateBResetEpochExactSixNativeAdapterError',
       'getGateBResetEpochExactSixNativeStatus',
       'prepareGateBResetEpochExactSixNativeForReview',
+      'readGateBResetEpochExactSixNativeFailureStage',
       'stopGateBResetEpochExactSixNative',
       'validateGateBResetEpochExactSixNativeOfflineCrossCheck',
       'waitGateBResetEpochExactSixNativeClosed',
