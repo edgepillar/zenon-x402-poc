@@ -845,11 +845,16 @@ function createSnapshotUnsafeFileDiagnostic(databasePath) {
   const journalPath = `${databasePath}-journal`;
   const blank = () => ({
     guard: 'UNKNOWN', type: 'UNKNOWN', owner: 'UNKNOWN', nlink: 'UNKNOWN',
-    permission: 'UNKNOWN', specialBits: 'UNKNOWN', lstat: 'UNKNOWN',
+    nlinkClass: 'UNKNOWN', permission: 'UNKNOWN', specialBits: 'UNKNOWN', lstat: 'UNKNOWN',
     dbIdentity: 'UNKNOWN', dbRealpath: 'UNKNOWN',
   });
   const predicate = operation => {
     try { return operation() ? 'PASS' : 'FAIL'; } catch { return 'UNKNOWN'; }
+  };
+  const classifyNlink = value => {
+    if (typeof value !== 'bigint' || value < 0n) return 'UNKNOWN';
+    if (value === 0n) return 'ZERO';
+    return value === 1n ? 'ONE' : 'MULTIPLE';
   };
   let phase = 'UNKNOWN', observation = blank(), identity;
   const guardFor = candidate => candidate === databasePath
@@ -873,12 +878,18 @@ function createSnapshotUnsafeFileDiagnostic(databasePath) {
         try { currentIdentity = [stat.dev, stat.ino]; } catch {}
         identity ??= currentIdentity;
       }
+      let nlinkClass = 'UNKNOWN';
       observation = {
         guard,
         type: predicate(() => stat.isFile() && !stat.isSymbolicLink()),
         owner: predicate(() => typeof process.getuid === 'function'
           && stat.uid === BigInt(process.getuid())),
-        nlink: predicate(() => stat.nlink === 1n),
+        nlink: predicate(() => {
+          const value = stat.nlink;
+          nlinkClass = classifyNlink(value);
+          return value === 1n;
+        }),
+        nlinkClass,
         permission: predicate(() => (stat.mode & 0o777n) === 0o600n),
         specialBits: predicate(() => (stat.mode & 0o7000n) === 0n),
         lstat: 'OK',
@@ -914,6 +925,7 @@ function createSnapshotUnsafeFileDiagnostic(databasePath) {
         || observation.lstat === 'ENOENT' || observation.lstat === 'NON_ENOENT';
       return `PHASE=${phase};GUARD=${known ? observation.guard : 'UNKNOWN'}`
         + `;TYPE=${observation.type};OWNER=${observation.owner};NLINK=${observation.nlink}`
+        + `;NLINK_CLASS=${observation.nlinkClass}`
         + `;PERMISSION=${observation.permission};SPECIAL_BITS=${observation.specialBits}`
         + `;LSTAT=${observation.lstat};DB_IDENTITY=${observation.dbIdentity}`
         + `;DB_REALPATH=${observation.dbRealpath}`;
@@ -1378,13 +1390,13 @@ test('snapshot unsafe-file diagnostic reports only fixed guard predicates', asyn
     property: 'isFile', replacement: () => () => false,
     prepare: path => writeFileSync(path, 'diagnostic', { mode: 0o600 }),
     labels: 'PHASE=PRE_BEGIN;GUARD=EXPECTED_JOURNAL;TYPE=FAIL;OWNER=PASS;NLINK=PASS'
-      + ';PERMISSION=PASS;SPECIAL_BITS=PASS;LSTAT=OK;DB_IDENTITY=UNKNOWN'
+      + ';NLINK_CLASS=ONE;PERMISSION=PASS;SPECIAL_BITS=PASS;LSTAT=OK;DB_IDENTITY=UNKNOWN'
       + ';DB_REALPATH=UNKNOWN',
   }, {
     name: 'main database identity mismatch after commit', phase: 'POST_COMMIT', suffix: '',
     property: 'dev', replacement: stat => stat.dev + 1n, prepare: () => {},
     labels: 'PHASE=POST_COMMIT;GUARD=MAIN_DB;TYPE=PASS;OWNER=PASS;NLINK=PASS'
-      + ';PERMISSION=PASS;SPECIAL_BITS=PASS;LSTAT=OK;DB_IDENTITY=FAIL'
+      + ';NLINK_CLASS=ONE;PERMISSION=PASS;SPECIAL_BITS=PASS;LSTAT=OK;DB_IDENTITY=FAIL'
       + ';DB_REALPATH=UNKNOWN',
   }];
   for (const scenario of cases) await t.test(scenario.name, async nestedTest => {
@@ -1414,6 +1426,45 @@ test('snapshot unsafe-file diagnostic reports only fixed guard predicates', asyn
     try { reader.load(); } catch (error) { observed = error; }
     assert.equal(snapshotFailureCode(observed), 'ZENON_FUNDING_OBSERVER_STORE_UNSAFE_FILE');
     assert.equal(diagnostic.labels(), scenario.labels);
+  });
+});
+
+test('snapshot unsafe-file diagnostic classifies nlink observations', async t => {
+  const cases = [{
+    name: 'zero', value: 0n, expected: 'ZERO',
+  }, {
+    name: 'one', value: 1n, expected: 'ONE',
+  }, {
+    name: 'multiple', value: 2n, expected: 'MULTIPLE',
+  }, {
+    name: 'absent', expected: 'UNKNOWN',
+  }, {
+    name: 'non-bigint', value: 1, expected: 'UNKNOWN',
+  }, {
+    name: 'negative', value: -1n, expected: 'UNKNOWN',
+  }, {
+    name: 'throwing', throws: true, expected: 'UNKNOWN',
+  }];
+  for (const scenario of cases) await t.test(scenario.name, () => {
+    const databasePath = 'diagnostic.sqlite';
+    const diagnostic = createSnapshotUnsafeFileDiagnostic(databasePath);
+    const stat = {
+      isFile: () => true,
+      isSymbolicLink: () => false,
+      get uid() { throw new Error('synthetic owner observation'); },
+      mode: 0o600n,
+    };
+    if (scenario.throws) {
+      Object.defineProperty(stat, 'nlink', {
+        get() { throw new Error('synthetic nlink observation'); },
+      });
+    } else if (Object.hasOwn(scenario, 'value')) {
+      stat.nlink = scenario.value;
+    }
+    diagnostic.hooks.observeReadGuard('PRE_BEGIN');
+    diagnostic.hooks.observeLstatResult(stat, `${databasePath}-journal`);
+    const labels = new Map(diagnostic.labels().split(';').map(label => label.split('=')));
+    assert.equal(labels.get('NLINK_CLASS'), scenario.expected);
   });
 });
 
