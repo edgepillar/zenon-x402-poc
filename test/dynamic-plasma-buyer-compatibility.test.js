@@ -4,7 +4,9 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
 import * as sdk from 'znn-typescript-sdk';
+import { paymentIntentDigest } from '../src/canonical.js';
 import {
+  computeBlockHash,
   ExactZenonClient,
   ExactZenonFacilitator,
   preflightZenonPayment,
@@ -411,6 +413,55 @@ async function createPayment({
   if (expectedPayer !== undefined) options.expectedPayer = expectedPayer;
   const client = new ExactZenonClient(options);
   return client.createPaymentPayload(required, accepted);
+}
+
+function externallySignedPayment({
+  accepted,
+  required,
+  frontier,
+  privateKeyByte,
+  fusedPlasma,
+  difficulty,
+}) {
+  const privateKey = Buffer.alloc(32, privateKeyByte);
+  let keyPair;
+  try {
+    keyPair = sdk.KeyPair.fromPrivateKey(privateKey);
+    const intentDigest = paymentIntentDigest(required, accepted);
+    const block = sdk.AccountBlockTemplate.send(
+      sdk.Address.parse(accepted.payTo),
+      sdk.TokenStandard.parse(accepted.asset),
+      BigInt(accepted.amount),
+    );
+    block.version = 1;
+    block.chainIdentifier = Number(accepted.extra.zenonChain.chainIdentifier);
+    block.address = keyPair.getAddress();
+    block.previousHash = sdk.EMPTY_HASH;
+    block.height = 1;
+    block.momentumAcknowledged = new sdk.HashHeight(
+      sdk.Hash.parse(frontier.hash),
+      frontier.height,
+    );
+    block.data = Buffer.from(intentDigest, 'hex');
+    block.fusedPlasma = fusedPlasma;
+    block.difficulty = difficulty;
+    block.nonce = '0000000000000000';
+    block.publicKey = keyPair.getPublicKey();
+    block.hash = computeBlockHash(block, sdk);
+    block.signature = keyPair.sign(block.hash.getBytes());
+    return {
+      x402Version: required.x402Version,
+      resource: structuredClone(required.resource),
+      accepted: structuredClone(accepted),
+      payload: {
+        transaction: block.toJson(),
+        intentDigest,
+      },
+    };
+  } finally {
+    keyPair?.clear();
+    privateKey.fill(0);
+  }
 }
 
 async function guardRejection(run = () => createPayment()) {
@@ -1308,6 +1359,144 @@ test('reset epoch execution policy guards new execution and permits exact recove
     assert.equal(fixture.state.counters.sign, 1);
     assert.equal(fixture.state.counters.publish, 0);
   });
+
+  await t.test('externally signed price-scaled blocks use exact quote fields without SDK preparation',
+    async t => {
+      const elevated = momentum('reset-external-elevated-fusion', {
+        height: validHeight,
+        version: 2,
+        chainIdentifier,
+        nextFusionPrice: 1200,
+        nextWorkPrice: 1000,
+      });
+      const elevatedQuote = {
+        availablePlasma: 25200,
+        basePlasma: 21000,
+        requiredDifficulty: 0,
+      };
+      const accepted = requirement(profile);
+      const required = challenge(accepted);
+      const journal = await settlementJournal(t);
+      const facilitator = new ExactZenonFacilitator({
+        journal,
+        environment: ENVIRONMENT,
+        operatorTrustedChainPolicy: policy,
+        rpcUrl: PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_WSS_ENDPOINT,
+        rpcTimeoutMs: 100,
+      });
+      const verifyFixture = async ({ privateKeyByte, fusedPlasma, difficulty }) => {
+        reset({
+          frontier: () => elevated,
+          plasma: elevatedQuote,
+        });
+        const payment = externallySignedPayment({
+          accepted,
+          required,
+          frontier: elevated,
+          privateKeyByte,
+          fusedPlasma,
+          difficulty,
+        });
+        assert.equal(fixture.state.counters.sign, 1);
+
+        const validated = await preflightZenonPayment(payment, accepted, required);
+        assert.deepEqual(payment.accepted, accepted);
+        assert.deepEqual(payment.resource, required.resource);
+        assert.equal(validated.intentDigest, payment.payload.intentDigest);
+        assert.equal(
+          validated.block.chainIdentifier,
+          Number(profile.chainIdentifier),
+        );
+        assert.equal(validated.block.momentumAcknowledged.hash.toString(), elevated.hash);
+        assert.equal(validated.block.momentumAcknowledged.height, elevated.height);
+        assert.equal(validated.block.height, 1);
+        assert.equal(validated.block.previousHash.toString(), sdk.EMPTY_HASH.toString());
+        assert.equal(validated.payer, payment.payload.transaction.address);
+        assert.equal(
+          sdk.Address.fromPublicKey(validated.block.publicKey).toString(),
+          validated.payer,
+        );
+        assert.equal(validated.transactionHash, payment.payload.transaction.hash);
+        assert.equal(validated.block.fusedPlasma, fusedPlasma);
+        assert.equal(validated.block.difficulty, difficulty);
+        assert.equal(validated.block.publicKey.length, 32);
+        assert.equal(validated.block.signature.length, 64);
+
+        const result = await facilitator.verify(payment, accepted, required);
+        assert.equal(fixture.state.counters.wallet, 0);
+        assert.equal(fixture.state.counters.prepare, 0);
+        assert.equal(fixture.state.counters.sign, 1);
+        assert.equal(fixture.state.counters.pow, 0);
+        assert.equal(fixture.state.counters.publish, 0);
+        return { result, validated };
+      };
+
+      await t.test('accepts a correctly priced external signature', async () => {
+        const { result, validated } = await verifyFixture({
+          privateKeyByte: 92,
+          fusedPlasma: 25200,
+          difficulty: 0,
+        });
+
+        assert.equal(validated.block.fusedPlasma, elevatedQuote.availablePlasma);
+        assert.equal(validated.block.difficulty, elevatedQuote.requiredDifficulty);
+        if (!result.isValid) {
+          assert.deepEqual({
+            invalidReason: result.invalidReason,
+            payer: result.payer,
+          }, {
+            invalidReason: 'dynamic_plasma_compatibility_guard_failed',
+            payer: '',
+          });
+        }
+        assert.deepEqual({ isValid: result.isValid, payer: result.payer }, {
+          isValid: true,
+          payer: validated.payer,
+        });
+      });
+
+      await t.test('rejects a freshly signed wrong fused-plasma value', async () => {
+        const { result, validated } = await verifyFixture({
+          privateKeyByte: 93,
+          fusedPlasma: 25199,
+          difficulty: 0,
+        });
+
+        assert.notEqual(validated.block.fusedPlasma, elevatedQuote.availablePlasma);
+        assert.equal(validated.block.difficulty, elevatedQuote.requiredDifficulty);
+        assert.deepEqual({
+          isValid: result.isValid,
+          invalidReason: result.invalidReason,
+          payer: result.payer,
+        }, {
+          isValid: false,
+          invalidReason: 'dynamic_plasma_compatibility_guard_failed',
+          payer: '',
+        });
+      });
+
+      await t.test('rejects a freshly signed wrong difficulty value', async () => {
+        const { result, validated } = await verifyFixture({
+          privateKeyByte: 94,
+          fusedPlasma: 25200,
+          difficulty: 1,
+        });
+
+        assert.equal(validated.block.fusedPlasma, elevatedQuote.availablePlasma);
+        assert.notEqual(validated.block.difficulty, elevatedQuote.requiredDifficulty);
+        assert.deepEqual({
+          isValid: result.isValid,
+          invalidReason: result.invalidReason,
+          payer: result.payer,
+        }, {
+          isValid: false,
+          invalidReason: 'dynamic_plasma_compatibility_guard_failed',
+          payer: '',
+        });
+      });
+
+      assert.deepEqual((await journal.load()).records, []);
+    });
 
   await t.test('real constructors retain one positive-work signed block after ambiguous publication',
     async t => {
