@@ -5,6 +5,7 @@ import { EventEmitter } from 'node:events';
 import {
   chmod,
   lstat,
+  mkdir,
   mkdtemp,
   realpath,
   rm,
@@ -15,6 +16,7 @@ import { join } from 'node:path';
 import { performance } from 'node:perf_hooks';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
+import { isDeepStrictEqual } from 'node:util';
 import * as sdk from 'znn-typescript-sdk';
 import { paymentIntentDigest, sha256Hex } from '../src/canonical.js';
 import { createResourceServer } from '../src/resource-server.js';
@@ -33,21 +35,44 @@ const parentListenersBeforeImport = Object.freeze({
 });
 const dispatcherImport = import('../src/zenon/fixed-payer-settlement-dispatcher.js');
 const childImport = import('../src/zenon/fixed-payer-settlement-child.js');
-const [dispatcherModule, childModule] = await Promise.all([dispatcherImport, childImport]);
+const ownerImport = import('../src/zenon/fixed-payer-settlement-owner.js');
+const childStartupImport = import('../src/zenon/fixed-payer-settlement-child-startup.js');
+const [dispatcherModule, childModule, ownerModule, childStartupModule] = await Promise.all([
+  dispatcherImport,
+  childImport,
+  ownerImport,
+  childStartupImport,
+]);
 const {
   FIXED_PAYER_SETTLEMENT_DISPATCHER_ERROR_CODES: DISPATCH_CODES,
   FixedPayerSettlementDispatcherError,
   createFixedPayerSettlementDispatcher,
 } = dispatcherModule;
 const { runFixedPayerSettlementChild } = childModule;
+const {
+  FIXED_PAYER_SETTLEMENT_OWNER_ERROR_CODES: OWNER_CODES,
+  FixedPayerSettlementOwnerError,
+  createFixedPayerSettlementOfflineTestAuthority,
+  createFixedPayerSettlementOwner,
+} = ownerModule;
+const {
+  FIXED_PAYER_SETTLEMENT_STARTUP_MARKER_FILE,
+  FIXED_PAYER_SETTLEMENT_STARTUP_STDERR_BOUNDARY,
+  FIXED_PAYER_SETTLEMENT_STARTUP_STDOUT_BOUNDARY,
+  prepareFreshFixedPayerSettlementChild,
+} = childStartupModule;
 
 const CHILD_ENTRYPOINT = fileURLToPath(new URL(
-  '../test-support/fixed-payer-settlement-child.js',
+  '../src/zenon/fixed-payer-settlement-child-startup.js',
   import.meta.url,
 ));
 const EXECUTABLE = process.execPath;
 const FIXTURE_NAME = 'signed-payment.json';
+const STARTUP_FIXTURE_NAME = 'fixed-payer-startup.json';
+const OFFLINE_TEST_MODE = '--fixed-payer-offline-test-v1';
 const PUBLICATION_MARKER = 'PUBLICATION_BOUNDARY';
+const STARTUP_STDOUT_BOUNDARY = FIXED_PAYER_SETTLEMENT_STARTUP_STDOUT_BOUNDARY.trimEnd();
+const STARTUP_STDERR_BOUNDARY = FIXED_PAYER_SETTLEMENT_STARTUP_STDERR_BOUNDARY.trimEnd();
 const CONFIGURATION = Object.freeze({
   schemaVersion: 1,
   kind: 'zenon-fixed-payer-shard-routing',
@@ -86,6 +111,75 @@ function rejectsWith(code) {
     assert.equal(Object.hasOwn(error, 'cause'), false);
     return true;
   };
+}
+
+function ownerRejectsWith(code) {
+  return error => {
+    assert.equal(error instanceof FixedPayerSettlementOwnerError, true);
+    assert.equal(error.code, code);
+    assert.equal(error.message, code);
+    assert.equal(Object.hasOwn(error, 'cause'), false);
+    return true;
+  };
+}
+
+function startupCommitFrame(descriptor) {
+  return {
+    ipcVersion: 1,
+    type: 'STARTUP_COMMIT',
+    correlationId: `${descriptor.generation}:${descriptor.shardId}:startup-commit`,
+    shardId: descriptor.shardId,
+    payer: descriptor.payer,
+    generation: descriptor.generation,
+  };
+}
+
+function startupCommittedFrame(descriptor) {
+  return {
+    ipcVersion: 1,
+    type: 'STARTUP_COMMITTED',
+    correlationId: `${descriptor.generation}:${descriptor.shardId}:startup-commit`,
+    shardId: descriptor.shardId,
+    payer: descriptor.payer,
+    generation: descriptor.generation,
+  };
+}
+
+function sendStartupCommit(child, descriptor) {
+  return new Promise((resolvePromise, rejectPromise) => {
+    let returned = false;
+    let accepted = false;
+    let callbacks = 0;
+    let callbackOk = false;
+    const fail = () => rejectPromise(fixedFailure('STARTUP_COMMIT_SEND'));
+    const finish = () => {
+      if (!returned || callbacks !== 1) return;
+      if (accepted && callbackOk) resolvePromise();
+      else fail();
+    };
+    const callback = error => {
+      callbacks += 1;
+      callbackOk = callbacks === 1 && error == null;
+      if (callbacks > 1) {
+        fail();
+        return;
+      }
+      finish();
+    };
+    try {
+      accepted = child.send(startupCommitFrame(descriptor), callback) === true;
+    } catch {
+      returned = true;
+      fail();
+      return;
+    }
+    returned = true;
+    if (!accepted) {
+      fail();
+      return;
+    }
+    finish();
+  });
 }
 
 function manifestText() {
@@ -441,6 +535,16 @@ function signedPayloadsByShard(routing, accepted, createKeyPair = syntheticKeyPa
   }
 }
 
+function signedStartupPayloads(routing) {
+  let payee;
+  try {
+    payee = syntheticKeyPair(252);
+    return signedPayloadsByShard(routing, requirement(payee.getAddress().toString()));
+  } finally {
+    payee?.clear();
+  }
+}
+
 function signedPayloadPairsByShard(routing, accepted) {
   const selected = new Map();
   const owned = [];
@@ -536,6 +640,209 @@ async function writeSignedFixture(root, paymentPayload) {
     (fixtureState.mode & 0o777) === 0o600, 'FIXTURE_MODE');
 }
 
+async function writeStartupFixture(root, mode) {
+  const encoded = Buffer.from(JSON.stringify({ schemaVersion: 1, mode }), 'utf8');
+  try {
+    await writeFile(join(root, STARTUP_FIXTURE_NAME), encoded, {
+      flag: 'wx',
+      mode: 0o600,
+    });
+  } finally {
+    encoded.fill(0);
+  }
+  const state = await lstat(join(root, STARTUP_FIXTURE_NAME));
+  requireProof(state.isFile() && state.nlink === 1 && (state.mode & 0o777) === 0o600,
+    'STARTUP_FIXTURE_MODE');
+}
+
+function retainedAttempt(input) {
+  const transaction = input.paymentPayload.payload.transaction;
+  const identity = inputIdentity(input);
+  return {
+    authorizationKey: identity.authorizationKey,
+    transactionHash: identity.transaction,
+    chainProfile: structuredClone(input.requirements.extra.zenonChain),
+    intentDigest: input.paymentPayload.payload.intentDigest,
+    resourceIdentity: structuredClone(input.paymentRequired.resource),
+    resourceDigest: sha256Hex(input.paymentRequired.resource),
+    payer: identity.payer,
+    signedAccountBlock: structuredClone(transaction),
+  };
+}
+
+function ownedDescriptors(payloads, roots) {
+  return payloads.map((payload, index) => ({
+    shardId: CONFIGURATION.shardIds[index],
+    payer: payload.payload.transaction.address,
+    generation: index === 0 ? 'fixture-generation-a' : 'fixture-generation-b',
+    privateRoot: roots[index],
+  }));
+}
+
+function createOfflineOwner(routing, payloads, roots, overrides = {}) {
+  const authority = createFixedPayerSettlementOfflineTestAuthority({
+    shards: ownedDescriptors(payloads, roots),
+    startupTimeoutMs: overrides.startupTimeoutMs ?? 2_000,
+    terminateGraceMs: overrides.terminateGraceMs ?? 500,
+    terminateForceMs: overrides.terminateForceMs ?? 1_000,
+  });
+  const owner = createFixedPayerSettlementOwner({
+    authority,
+    routing,
+    requestTimeoutMs: overrides.requestTimeoutMs ?? 1_000,
+    maxOperationsPerShard: 16,
+  });
+  return { authority, owner };
+}
+
+async function waitForOwnerPhase(owner, phases, milliseconds = 2_000) {
+  const accepted = new Set(phases);
+  const started = performance.now();
+  while (performance.now() - started < milliseconds) {
+    const status = owner.status();
+    if (accepted.has(status.phase)) return status;
+    await new Promise(resolvePromise => setTimeout(resolvePromise, 5));
+  }
+  throw fixedFailure('OWNER_PHASE_TIMEOUT');
+}
+
+function launchStartupProbe(label, root, descriptor) {
+  const child = spawn(EXECUTABLE, [CHILD_ENTRYPOINT, OFFLINE_TEST_MODE, label, root], {
+    env: Object.create(null),
+    shell: false,
+    stdio: ['pipe', 'pipe', 'pipe', 'ipc'],
+  });
+  let readyFrameSeen = false;
+  let committedSeen = false;
+  let commitSendComplete = false;
+  let stdoutBoundarySeen = false;
+  let stderrBoundarySeen = false;
+  let startupComplete = false;
+  let exited = false;
+  let closed = false;
+  let outputBytes = 0;
+  let stdout = '';
+  let stderr = '';
+  let diagnostics = false;
+  let resolveReady;
+  let rejectReady;
+  let resolveClosed;
+  let resolveExited;
+  const ready = new Promise((resolvePromise, rejectPromise) => {
+    resolveReady = resolvePromise;
+    rejectReady = rejectPromise;
+  });
+  const closedPromise = new Promise(resolvePromise => { resolveClosed = resolvePromise; });
+  const exitedPromise = new Promise(resolvePromise => { resolveExited = resolvePromise; });
+  void ready.catch(() => {});
+  const maybeReady = () => {
+    if (startupComplete || !readyFrameSeen || !committedSeen || !commitSendComplete ||
+        !stdoutBoundarySeen || !stderrBoundarySeen) return;
+    startupComplete = true;
+    resolveReady();
+  };
+  const fail = code => {
+    diagnostics = true;
+    if (!startupComplete) rejectReady(fixedFailure(code));
+  };
+  const recordBoundary = (stream, chunk) => {
+    outputBytes += chunk.length;
+    const text = chunk.toString('utf8');
+    if (outputBytes > 256 || /[^\x0a\x20-\x7e]/u.test(text)) {
+      fail('STARTUP_PROBE_OUTPUT');
+      return;
+    }
+    if (stream === 'stdout') stdout += text;
+    else stderr += text;
+    const expected = stream === 'stdout' ? STARTUP_STDOUT_BOUNDARY : STARTUP_STDERR_BOUNDARY;
+    let buffer = stream === 'stdout' ? stdout : stderr;
+    for (let newline; (newline = buffer.indexOf('\n')) !== -1;) {
+      const line = buffer.slice(0, newline);
+      buffer = buffer.slice(newline + 1);
+      const alreadySeen = stream === 'stdout' ? stdoutBoundarySeen : stderrBoundarySeen;
+      if (line !== expected || alreadySeen) {
+        fail('STARTUP_PROBE_OUTPUT');
+        return;
+      }
+      if (stream === 'stdout') stdoutBoundarySeen = true;
+      else stderrBoundarySeen = true;
+    }
+    if (stream === 'stdout') stdout = buffer;
+    else stderr = buffer;
+    maybeReady();
+  };
+  child.stdout.on('data', chunk => recordBoundary('stdout', chunk));
+  child.stderr.on('data', chunk => recordBoundary('stderr', chunk));
+  child.stdout.on('error', () => fail('STARTUP_PROBE_STDOUT'));
+  child.stderr.on('error', () => fail('STARTUP_PROBE_STDERR'));
+  child.once('error', () => {
+    fail('STARTUP_PROBE_SPAWN');
+  });
+  child.on('message', message => {
+    if (committedSeen) {
+      if (typeof message !== 'string') diagnostics = true;
+      return;
+    }
+    try {
+      if (!readyFrameSeen) {
+        assert.deepEqual(message, {
+          ipcVersion: 1,
+          type: 'READY',
+          correlationId: `${descriptor.generation}:${descriptor.shardId}:startup`,
+          shardId: descriptor.shardId,
+          payer: descriptor.payer,
+          generation: descriptor.generation,
+          journalSchemaVersion: 1,
+          journalRevision: 0,
+        });
+        readyFrameSeen = true;
+        void sendStartupCommit(child, descriptor).then(() => {
+          commitSendComplete = true;
+          maybeReady();
+        }, () => fail('STARTUP_PROBE_COMMIT'));
+        return;
+      }
+      assert.deepEqual(message, startupCommittedFrame(descriptor));
+      committedSeen = true;
+      maybeReady();
+    } catch {
+      fail('STARTUP_PROBE_PROTOCOL');
+    }
+  });
+  child.once('exit', () => {
+    exited = true;
+    resolveExited();
+  });
+  child.once('close', (code, signal) => {
+    closed = true;
+    if (!startupComplete) rejectReady(fixedFailure('STARTUP_PROBE_REFUSED'));
+    resolveClosed({ code, signal });
+  });
+  return {
+    child,
+    ready,
+    closed: closedPromise,
+    requestClose() {
+      if (!closed && !exited && child.kill('SIGTERM') !== true) {
+        throw fixedFailure('STARTUP_PROBE_CLOSE_REQUEST');
+      }
+    },
+    async reap() {
+      if (!await bounded(Promise.all([exitedPromise, closedPromise]), 1_000)) {
+        if (!exited) {
+          try { child.kill('SIGKILL'); } catch {}
+        }
+      }
+      if (!await bounded(Promise.all([exitedPromise, closedPromise]), 1_000)) {
+        throw fixedFailure('STARTUP_PROBE_REAP');
+      }
+      return { exited, closed, diagnostics };
+    },
+    get reaped() { return exited && closed; },
+    get diagnostics() { return diagnostics; },
+  };
+}
+
 function bounded(promise, milliseconds) {
   return new Promise(resolvePromise => {
     const timer = setTimeout(() => resolvePromise(false), milliseconds);
@@ -621,15 +928,30 @@ async function removeOwnedRoots(roots, {
   return results.every(result => result.status === 'fulfilled') ? 'REMOVED' : 'REJECTED';
 }
 
-function launchChild(label, root) {
-  const child = spawn(EXECUTABLE, [CHILD_ENTRYPOINT, label, root], {
+async function removeVerifiedSyntheticRoots(roots) {
+  const result = await removeOwnedRoots(roots);
+  requireProof(result === 'REMOVED', result === 'TIMEOUT'
+    ? 'SYNTHETIC_ROOT_CLEANUP_TIMEOUT_RESIDUE_RETAINED'
+    : 'SYNTHETIC_ROOT_CLEANUP_REJECTED_RESIDUE_RETAINED');
+}
+
+function launchChild(label, root, descriptor) {
+  const child = spawn(EXECUTABLE, [CHILD_ENTRYPOINT, OFFLINE_TEST_MODE, label, root], {
     env: Object.create(null),
     shell: false,
     stdio: ['pipe', 'pipe', 'pipe', 'ipc'],
   });
   let stdout = '';
+  let stderr = '';
   let stdoutBytes = 0;
   let stderrBytes = 0;
+  let readyFrameSeen = false;
+  let commitRequested = false;
+  let committedSeen = false;
+  let commitSendComplete = false;
+  let stdoutBoundarySeen = false;
+  let stderrBoundarySeen = false;
+  let readySeen = false;
   let markerSeen = false;
   let expectedClose = false;
   let exited = false;
@@ -638,22 +960,75 @@ function launchChild(label, root) {
   let failure = null;
   let resolveMarker;
   let rejectMarker;
+  let resolveReady;
+  let rejectReady;
+  let resolveReadyFrame;
+  let rejectReadyFrame;
   let resolveClosed;
   let resolveExited;
+  const readyWatchdog = setTimeout(() => fail('CHILD_READY_TIMEOUT'), 5_000);
+  readyWatchdog.unref();
   const publicationWatchdog = setTimeout(() => fail('CHILD_PUBLICATION_TIMEOUT'), 10_000);
   publicationWatchdog.unref();
+  const ready = new Promise((resolvePromise, rejectPromise) => {
+    resolveReady = resolvePromise;
+    rejectReady = rejectPromise;
+  });
+  const readyFrame = new Promise((resolvePromise, rejectPromise) => {
+    resolveReadyFrame = resolvePromise;
+    rejectReadyFrame = rejectPromise;
+  });
   const publication = new Promise((resolvePromise, rejectPromise) => {
     resolveMarker = resolvePromise;
     rejectMarker = rejectPromise;
   });
   const closedPromise = new Promise(resolvePromise => { resolveClosed = resolvePromise; });
   const exitedPromise = new Promise(resolvePromise => { resolveExited = resolvePromise; });
+  void ready.catch(() => {});
+  void readyFrame.catch(() => {});
   void publication.catch(() => {});
   const fail = code => {
     if (failure !== null) return;
     failure = fixedFailure(code);
+    if (!readyFrameSeen) rejectReadyFrame(failure);
+    if (!readySeen) rejectReady(failure);
     if (!markerSeen) rejectMarker(failure);
   };
+  const maybeReady = () => {
+    if (readySeen || !readyFrameSeen || !committedSeen || !commitSendComplete ||
+        !stdoutBoundarySeen || !stderrBoundarySeen) return;
+    readySeen = true;
+    clearTimeout(readyWatchdog);
+    resolveReady();
+  };
+  child.on('message', message => {
+    if (committedSeen) {
+      if (typeof message !== 'string') fail('CHILD_PROTOCOL');
+      return;
+    }
+    try {
+      if (!readyFrameSeen) {
+        assert.deepEqual(message, {
+          ipcVersion: 1,
+          type: 'READY',
+          correlationId: `${descriptor.generation}:${descriptor.shardId}:startup`,
+          shardId: descriptor.shardId,
+          payer: descriptor.payer,
+          generation: descriptor.generation,
+          journalSchemaVersion: 1,
+          journalRevision: 0,
+        });
+        readyFrameSeen = true;
+        resolveReadyFrame();
+        return;
+      }
+      assert.deepEqual(message, startupCommittedFrame(descriptor));
+      committedSeen = true;
+      maybeReady();
+    } catch {
+      fail('CHILD_PROTOCOL');
+    }
+  });
   child.stdout.on('data', chunk => {
     stdoutBytes += chunk.length;
     const text = chunk.toString('utf8');
@@ -665,6 +1040,15 @@ function launchChild(label, root) {
     for (let newline; (newline = stdout.indexOf('\n')) !== -1;) {
       const line = stdout.slice(0, newline);
       stdout = stdout.slice(newline + 1);
+      if (!stdoutBoundarySeen) {
+        if (line !== STARTUP_STDOUT_BOUNDARY) {
+          fail('CHILD_PROTOCOL');
+          return;
+        }
+        stdoutBoundarySeen = true;
+        maybeReady();
+        continue;
+      }
       if (line !== PUBLICATION_MARKER || markerSeen) {
         fail('CHILD_PROTOCOL');
         return;
@@ -676,7 +1060,22 @@ function launchChild(label, root) {
   });
   child.stderr.on('data', chunk => {
     stderrBytes += chunk.length;
-    fail(stderrBytes > 128 ? 'CHILD_STDERR_LIMIT' : 'CHILD_STDERR');
+    const text = chunk.toString('utf8');
+    if (stderrBytes > 128 || /[^\x0a\x20-\x7e]/u.test(text)) {
+      fail('CHILD_STDERR_LIMIT');
+      return;
+    }
+    stderr += text;
+    for (let newline; (newline = stderr.indexOf('\n')) !== -1;) {
+      const line = stderr.slice(0, newline);
+      stderr = stderr.slice(newline + 1);
+      if (line !== STARTUP_STDERR_BOUNDARY || stderrBoundarySeen) {
+        fail('CHILD_STDERR');
+        return;
+      }
+      stderrBoundarySeen = true;
+      maybeReady();
+    }
   });
   child.stdout.on('error', () => fail('CHILD_STDOUT'));
   child.stderr.on('error', () => fail('CHILD_STDERR'));
@@ -686,18 +1085,33 @@ function launchChild(label, root) {
     resolveExited();
   });
   child.once('close', (code, signal) => {
+    clearTimeout(readyWatchdog);
     clearTimeout(publicationWatchdog);
     closed = true;
-    closeClean = expectedClose && code === 0 && signal === null && failure === null &&
-      markerSeen && stdout.length === 0;
+    closeClean = expectedClose && code === 0 && signal === null && failure === null && readySeen &&
+      markerSeen && stdout.length === 0 && stderr.length === 0;
     if (!expectedClose || !closeClean) fail('CHILD_CLOSE');
+    if (!readyFrameSeen) rejectReadyFrame(failure ?? fixedFailure('CHILD_INCOMPLETE'));
+    if (!readySeen) rejectReady(failure ?? fixedFailure('CHILD_INCOMPLETE'));
     if (!markerSeen) rejectMarker(failure ?? fixedFailure('CHILD_INCOMPLETE'));
     resolveClosed();
   });
   return {
     child,
+    readyFrame,
+    ready,
     publication,
     journalIdentity: Object.freeze({}),
+    commit() {
+      if (failure !== null || !readyFrameSeen || commitRequested || closed) {
+        throw failure ?? fixedFailure('CHILD_COMMIT_STATE');
+      }
+      commitRequested = true;
+      void sendStartupCommit(child, descriptor).then(() => {
+        commitSendComplete = true;
+        maybeReady();
+      }, () => fail('CHILD_COMMIT'));
+    },
     release() {
       if (failure !== null || !markerSeen || closed) throw failure ?? fixedFailure('CHILD_STATE');
       child.stdin.end('RELEASE\n');
@@ -755,14 +1169,1123 @@ function paymentRequiredFailure(response) {
   }
 }
 
-test('dispatcher and child imports are inert and explicitly opt in', () => {
+test('dispatcher, child, owner and child-startup imports are inert and explicitly opt in', () => {
   assert.equal(typeof createFixedPayerSettlementDispatcher, 'function');
   assert.equal(typeof runFixedPayerSettlementChild, 'function');
+  assert.equal(typeof createFixedPayerSettlementOfflineTestAuthority, 'function');
+  assert.equal(typeof createFixedPayerSettlementOwner, 'function');
+  assert.equal(typeof prepareFreshFixedPayerSettlementChild, 'function');
+  assert.equal(typeof FIXED_PAYER_SETTLEMENT_STARTUP_MARKER_FILE, 'string');
+  assert.equal(typeof FIXED_PAYER_SETTLEMENT_STARTUP_STDOUT_BOUNDARY, 'string');
+  assert.equal(typeof FIXED_PAYER_SETTLEMENT_STARTUP_STDERR_BOUNDARY, 'string');
+  assert.equal(typeof OWNER_CODES, 'object');
+  assert.equal(typeof FixedPayerSettlementOwnerError, 'function');
   assert.deepEqual({
     message: process.listenerCount('message'),
     disconnect: process.listenerCount('disconnect'),
     exit: process.listenerCount('exit'),
   }, parentListenersBeforeImport);
+});
+
+test('READY-shaped values and unbranded callbacks cannot create owned startup authority', async t => {
+  const { routing } = await routingFixture(t);
+  const listeners = {
+    message: process.listenerCount('message'),
+    disconnect: process.listenerCount('disconnect'),
+    exit: process.listenerCount('exit'),
+  };
+  for (const authority of [
+    Object.freeze({ type: 'READY' }),
+    Object.freeze({ markerPresent: true, journalIdentity: Object.freeze({}) }),
+    Object.freeze({ activate: () => true }),
+  ]) {
+    assert.throws(() => createFixedPayerSettlementOwner({
+      authority,
+      routing,
+      requestTimeoutMs: 100,
+      maxOperationsPerShard: 8,
+    }), ownerRejectsWith(OWNER_CODES.AUTHORITY_REQUIRED));
+  }
+  assert.deepEqual({
+    message: process.listenerCount('message'),
+    disconnect: process.listenerCount('disconnect'),
+    exit: process.listenerCount('exit'),
+  }, listeners);
+
+  const denied = spawn(EXECUTABLE, [CHILD_ENTRYPOINT], {
+    env: Object.create(null),
+    shell: false,
+    stdio: ['ignore', 'pipe', 'pipe', 'ipc'],
+  });
+  let outputBytes = 0;
+  denied.stdout.on('data', chunk => { outputBytes += chunk.length; });
+  denied.stderr.on('data', chunk => { outputBytes += chunk.length; });
+  let exitObserved = false;
+  let closeObserved = false;
+  const exit = new Promise(resolvePromise => denied.once('exit', (code, signal) => {
+    exitObserved = true;
+    resolvePromise({ code, signal });
+  }));
+  const close = new Promise(resolvePromise => denied.once('close', (code, signal) => {
+    closeObserved = true;
+    resolvePromise({ code, signal });
+  }));
+  const [exitState, closeState] = await Promise.all([exit, close]);
+  assert.notEqual(exitState.code, 0);
+  assert.equal(exitState.signal, null);
+  assert.deepEqual(closeState, exitState);
+  assert.equal(exitObserved && closeObserved, true);
+  assert.equal(outputBytes, 0);
+});
+
+test('owned startup waits for exact commit ACKs and both FIFO pipe boundaries', {
+  timeout: 15_000,
+}, async t => {
+  const { routing } = await routingFixture(t);
+  const roots = await Promise.all([
+    createPrivateRoot('fixed-payer-commit-boundary-a-'),
+    createPrivateRoot('fixed-payer-commit-boundary-b-'),
+  ]);
+  const payloads = signedStartupPayloads(routing);
+  await Promise.all(roots.map((root, index) => writeSignedFixture(root, payloads[index])));
+  await writeStartupFixture(roots[0], 'DELAY_STDERR_BOUNDARY');
+  const { owner } = createOfflineOwner(routing, payloads, roots);
+  t.after(async () => {
+    try { await owner.shutdown(); } catch {}
+    const status = owner.status();
+    if (status.children.every(child => child.exitObserved && child.closeObserved)) {
+      await removeVerifiedSyntheticRoots(roots);
+    }
+  });
+
+  const starting = owner.start();
+  void starting.catch(() => {});
+  let gap;
+  const deadline = performance.now() + 3_000;
+  while (performance.now() < deadline) {
+    const status = owner.status();
+    const delayed = status.children.find(child => child.label === 'A');
+    if (delayed?.ready && delayed.committed && delayed.stdoutBoundary &&
+        !delayed.stderrBoundary) {
+      gap = status;
+      break;
+    }
+    if (status.phase !== 'IDLE' && status.phase !== 'STARTING') break;
+    await new Promise(resolvePromise => setTimeout(resolvePromise, 5));
+  }
+  assert.notEqual(gap, undefined);
+  assert.equal(gap.phase, 'STARTING');
+  assert.equal(gap.dispatcherExposed, false);
+
+  const facade = await starting;
+  assert.equal(typeof facade.settle, 'function');
+  const ready = owner.status();
+  assert.equal(ready.phase, 'READY');
+  assert.equal(ready.dispatcherExposed, true);
+  assert.equal(ready.children.every(child => child.ready && child.committed &&
+    child.stdoutBoundary && child.stderrBoundary), true);
+  const verdict = await owner.shutdown();
+  assert.equal(verdict.quarantined, false);
+  assert.equal(owner.status().children.every(child =>
+    child.exitObserved && child.closeObserved), true);
+});
+
+test('owned startup rejects extra commit ACKs observed during the global startup join', {
+  timeout: 20_000,
+}, async t => {
+  const scenarios = [
+    { name: 'duplicate acknowledgement', mode: 'DUPLICATE_STARTUP_ACK' },
+    { name: 'mismatched acknowledgement', mode: 'MISMATCHED_STARTUP_ACK' },
+  ];
+  for (const scenario of scenarios) {
+    await t.test(scenario.name, async nested => {
+      let routingRoot;
+      const roots = [];
+      let owner;
+      nested.after(async () => {
+        try { await owner?.shutdown(); } catch {}
+        const reaped = owner === undefined ||
+          owner.status().children.every(child => child.exitObserved && child.closeObserved);
+        if (reaped) {
+          await removeVerifiedSyntheticRoots([
+            ...(routingRoot === undefined ? [] : [routingRoot]),
+            ...roots,
+          ]);
+        }
+      });
+
+      const routingFixtureValue = await createRoutingRoot(
+        `fixed-payer-startup-${scenario.mode.toLowerCase()}-routing-`,
+      );
+      routingRoot = routingFixtureValue.root;
+      roots.push(await createPrivateRoot(
+        `fixed-payer-startup-${scenario.mode.toLowerCase()}-a-`,
+      ));
+      roots.push(await createPrivateRoot(
+        `fixed-payer-startup-${scenario.mode.toLowerCase()}-b-`,
+      ));
+      const payloads = signedStartupPayloads(routingFixtureValue.routing);
+      await Promise.all(roots.map((root, index) => writeSignedFixture(root, payloads[index])));
+      await writeStartupFixture(roots[0], scenario.mode);
+      ({ owner } = createOfflineOwner(routingFixtureValue.routing, payloads, roots));
+
+      const starting = owner.start();
+      assert.equal(owner.start(), starting);
+      let returnedFacade;
+      let startupError;
+      try {
+        returnedFacade = await starting;
+      } catch (error) {
+        startupError = error;
+      }
+      if (returnedFacade !== undefined) {
+        assert.equal(typeof returnedFacade.settle, 'function');
+        const quarantined = await waitForOwnerPhase(owner, ['QUARANTINED']);
+        assert.equal(quarantined.dispatcherExposed, true);
+      }
+      assert.equal(returnedFacade, undefined);
+      assert.equal(ownerRejectsWith(OWNER_CODES.STARTUP_FAILED)(startupError), true);
+
+      const failed = owner.status();
+      assert.equal(failed.phase, 'FAILED');
+      assert.equal(failed.startedChildren, 2);
+      assert.equal(failed.dispatcherExposed, false);
+      assert.equal(failed.cleanupUncertain, false);
+      assert.equal(failed.children.every(child => child.ready && child.committed), true);
+      assert.equal(failed.children.every(child =>
+        child.exitObserved && child.closeObserved), true);
+      assert.equal(owner.start(), starting);
+      assert.equal(Object.hasOwn(owner, 'restart'), false);
+      await new Promise(resolvePromise => setTimeout(resolvePromise, 25));
+      assert.equal(owner.status().startedChildren, 2);
+
+      for (const root of roots) {
+        const marker = await lstat(join(root, FIXED_PAYER_SETTLEMENT_STARTUP_MARKER_FILE));
+        assert.equal(marker.isFile(), true);
+        assert.equal(marker.nlink, 1);
+        assert.equal(marker.mode & 0o777, 0o600);
+        const journal = new SettlementJournal({
+          directory: join(root, 'journal'),
+          allowedRoot: root,
+          existingOnly: true,
+        });
+        assert.deepEqual(await journal.load(), {
+          schemaVersion: 1,
+          revision: 0,
+          records: [],
+        });
+        assert.deepEqual(await journal.list({ includeTombstones: true }), {
+          records: [],
+          tombstones: [],
+        });
+      }
+    });
+  }
+});
+
+test('owned facade normal retirement preserves raw result and closes without quarantine', {
+  timeout: 15_000,
+}, async t => {
+  const { routing } = await routingFixture(t);
+  const roots = await Promise.all([
+    createPrivateRoot('fixed-payer-normal-retire-a-'),
+    createPrivateRoot('fixed-payer-normal-retire-b-'),
+  ]);
+  const payloads = signedStartupPayloads(routing);
+  await Promise.all(roots.map((root, index) => writeSignedFixture(root, payloads[index])));
+  const { owner } = createOfflineOwner(routing, payloads, roots);
+  t.after(async () => {
+    try { await owner.shutdown(); } catch {}
+    const status = owner.status();
+    if (status.children.every(child => child.exitObserved && child.closeObserved)) {
+      await removeVerifiedSyntheticRoots(roots);
+    }
+  });
+
+  const facade = await owner.start();
+  assert.throws(
+    () => facade.retire('invalid'),
+    rejectsWith(DISPATCH_CODES.INVALID_REQUEST),
+  );
+  const healthy = owner.status();
+  assert.equal(healthy.phase, 'READY');
+  assert.equal(healthy.children.every(child =>
+    !child.exitObserved && !child.closeObserved), true);
+
+  const retirement = facade.retire();
+  assert.equal(facade.retire(), retirement);
+  const shutdown = owner.shutdown();
+  assert.equal(owner.shutdown(), shutdown);
+  const [retired, verdict] = await Promise.all([retirement, shutdown]);
+  assert.deepEqual(retired, { retired: true });
+  assert.deepEqual(verdict, {
+    closed: true,
+    exactReaping: true,
+    quarantined: false,
+    markerDisposition: 'NOT_REMOVED',
+    rootDisposition: 'NOT_REMOVED',
+  });
+  const closed = owner.status();
+  assert.equal(closed.phase, 'CLOSED');
+  assert.equal(closed.cleanupUncertain, false);
+  assert.equal(closed.children.every(child => child.exitObserved && child.closeObserved), true);
+});
+
+test('owned startup exposes no dispatcher before two correlated READY barriers and reaps once', {
+  timeout: 15_000,
+}, async t => {
+  const { routing } = await routingFixture(t);
+  const roots = await Promise.all([
+    createPrivateRoot('fixed-payer-owner-a-'),
+    createPrivateRoot('fixed-payer-owner-b-'),
+  ]);
+  const payloads = signedStartupPayloads(routing);
+  await Promise.all(roots.map((root, index) => writeSignedFixture(root, payloads[index])));
+  await writeStartupFixture(roots[1], 'DELAY_READY');
+  const { authority, owner } = createOfflineOwner(routing, payloads, roots);
+  let cleanupComplete = false;
+  t.after(async () => {
+    try { await owner.shutdown(); } catch {}
+    const status = owner.status();
+    if (status.children.every(child => child.exitObserved && child.closeObserved)) {
+      await removeVerifiedSyntheticRoots(roots);
+      cleanupComplete = true;
+    }
+  });
+
+  assert.deepEqual(owner.status(), {
+    phase: 'IDLE',
+    startedChildren: 0,
+    dispatcherExposed: false,
+    cleanupUncertain: false,
+    markerDisposition: 'NOT_REMOVED',
+    rootDisposition: 'NOT_REMOVED',
+    children: [],
+  });
+  const starting = owner.start();
+  assert.equal(owner.start(), starting);
+  assert.equal(await bounded(starting, 25), false);
+  const during = owner.status();
+  assert.equal(during.phase, 'STARTING');
+  assert.equal(during.startedChildren, 2);
+  assert.equal(during.dispatcherExposed, false);
+
+  const dispatcher = await starting;
+  assert.deepEqual(Reflect.ownKeys(dispatcher), [
+    'settle',
+    'markDeliveryPending',
+    'markDelivered',
+    'retire',
+    'retirementStatus',
+  ]);
+  assert.equal(Object.isFrozen(dispatcher), true);
+  assert.equal(Reflect.ownKeys(dispatcher).every(name =>
+    typeof dispatcher[name] === 'function' && Object.isFrozen(dispatcher[name])), true);
+  const ready = owner.status();
+  assert.equal(ready.phase, 'READY');
+  assert.equal(ready.startedChildren, 2);
+  assert.equal(ready.dispatcherExposed, true);
+  assert.deepEqual(ready.children.map(child => ({
+    label: child.label,
+    ready: child.ready,
+    exitObserved: child.exitObserved,
+    closeObserved: child.closeObserved,
+  })), [
+    { label: 'A', ready: true, exitObserved: false, closeObserved: false },
+    { label: 'B', ready: true, exitObserved: false, closeObserved: false },
+  ]);
+  assert.throws(() => createFixedPayerSettlementOwner({
+    authority,
+    routing,
+    requestTimeoutMs: 1_000,
+    maxOperationsPerShard: 16,
+  }), ownerRejectsWith(OWNER_CODES.AUTHORITY_CONSUMED));
+
+  const shutdown = owner.shutdown();
+  assert.equal(owner.shutdown(), shutdown);
+  const firstInput = {
+    paymentPayload: payloads[0],
+    requirements: payloads[0].accepted,
+    paymentRequired: paymentRequired(payloads[0].accepted),
+  };
+  await assert.rejects(
+    dispatcher.settle(
+      firstInput.paymentPayload,
+      firstInput.requirements,
+      firstInput.paymentRequired,
+    ),
+    rejectsWith(DISPATCH_CODES.RETIREMENT_STARTED),
+  );
+  const shutdownResult = await shutdown;
+  assert.deepEqual(shutdownResult, {
+    closed: true,
+    exactReaping: true,
+    quarantined: false,
+    markerDisposition: 'NOT_REMOVED',
+    rootDisposition: 'NOT_REMOVED',
+  });
+  const closed = owner.status();
+  assert.equal(closed.phase, 'CLOSED');
+  assert.equal(closed.children.every(child => child.exitObserved && child.closeObserved), true);
+  assert.equal(Object.hasOwn(owner, 'restart'), false);
+  assert.equal(Object.hasOwn(owner, 'replace'), false);
+  assert.equal(Object.hasOwn(owner, 'recover'), false);
+  for (const root of roots) {
+    const marker = await lstat(join(root, FIXED_PAYER_SETTLEMENT_STARTUP_MARKER_FILE));
+    assert.equal(marker.isFile(), true);
+    assert.equal(marker.nlink, 1);
+    assert.equal(marker.mode & 0o777, 0o600);
+  }
+  assert.equal(cleanupComplete, false);
+});
+
+test('owned startup rejects premature frames and every observed pre-barrier stdout form', {
+  timeout: 20_000,
+}, async t => {
+  const scenarios = [
+    { name: 'early string', mode: 'EARLY_STRING', delayPeer: true },
+    { name: 'early publication marker', mode: 'EARLY_MARKER', delayPeer: false },
+    { name: 'printable partial stdout', mode: 'PARTIAL_STDOUT', delayPeer: false },
+  ];
+  for (const scenario of scenarios) {
+    await t.test(scenario.name, async nested => {
+      let routingRoot;
+      const roots = [];
+      let owner;
+      nested.after(async () => {
+        try { await owner?.shutdown(); } catch {}
+        const reaped = owner === undefined ||
+          owner.status().children.every(child => child.exitObserved && child.closeObserved);
+        if (reaped) {
+          await removeVerifiedSyntheticRoots([
+            ...(routingRoot === undefined ? [] : [routingRoot]),
+            ...roots,
+          ]);
+        }
+      });
+      const routingFixtureValue = await createRoutingRoot(
+        `fixed-payer-startup-${scenario.mode.toLowerCase()}-routing-`,
+      );
+      routingRoot = routingFixtureValue.root;
+      roots.push(await createPrivateRoot(
+        `fixed-payer-startup-${scenario.mode.toLowerCase()}-a-`,
+      ));
+      roots.push(await createPrivateRoot(
+        `fixed-payer-startup-${scenario.mode.toLowerCase()}-b-`,
+      ));
+      const payloads = signedStartupPayloads(routingFixtureValue.routing);
+      await Promise.all(roots.map((root, index) => writeSignedFixture(root, payloads[index])));
+      await writeStartupFixture(roots[0], scenario.mode);
+      if (scenario.delayPeer) await writeStartupFixture(roots[1], 'DELAY_READY');
+      ({ owner } = createOfflineOwner(routingFixtureValue.routing, payloads, roots));
+
+      await assert.rejects(owner.start(), ownerRejectsWith(OWNER_CODES.STARTUP_FAILED));
+      const status = owner.status();
+      assert.equal(status.phase, 'FAILED');
+      assert.equal(status.dispatcherExposed, false);
+      assert.equal(status.children.every(child => child.exitObserved && child.closeObserved), true);
+    });
+  }
+});
+
+test('the durable one-use claim rejects concurrent and repeated same-root startup', {
+  timeout: 10_000,
+}, async t => {
+  const { routing } = await routingFixture(t);
+  const root = await createPrivateRoot('fixed-payer-claim-race-');
+  const payload = signedStartupPayloads(routing)[0];
+  await writeSignedFixture(root, payload);
+  const descriptor = {
+    shardId: CONFIGURATION.shardIds[0],
+    payer: payload.payload.transaction.address,
+    generation: 'fixture-generation-a',
+  };
+  const probes = [
+    launchStartupProbe('A', root, descriptor),
+    launchStartupProbe('A', root, descriptor),
+  ];
+  t.after(async () => {
+    for (const probe of probes) {
+      if (!probe.reaped) {
+        try { probe.requestClose(); } catch {}
+        try { await probe.reap(); } catch {}
+      }
+    }
+    if (probes.every(probe => probe.reaped)) await removeVerifiedSyntheticRoots([root]);
+  });
+  const outcomes = await Promise.all(probes.map(probe => Promise.race([
+    probe.ready.then(() => 'READY', () => 'REFUSED'),
+    probe.closed.then(() => 'REFUSED'),
+  ])));
+  assert.equal(outcomes.filter(outcome => outcome === 'READY').length, 1);
+  const winner = probes[outcomes.indexOf('READY')];
+  winner.requestClose();
+  const reaped = await Promise.all(probes.map(probe => probe.reap()));
+  assert.equal(reaped.every(result => result.exited && result.closed && !result.diagnostics), true);
+
+  const repeated = launchStartupProbe('A', root, descriptor);
+  probes.push(repeated);
+  await assert.rejects(repeated.ready, error =>
+    error?.name === 'FixedPayerSettlementTestError' &&
+    error?.message === 'STARTUP_PROBE_REFUSED');
+  const repeatedClose = await repeated.closed;
+  assert.notEqual(repeatedClose.code, 0);
+  assert.equal(repeatedClose.signal, null);
+  const repeatedReap = await repeated.reap();
+  assert.deepEqual(repeatedReap, { exited: true, closed: true, diagnostics: false });
+  const marker = await lstat(join(root, FIXED_PAYER_SETTLEMENT_STARTUP_MARKER_FILE));
+  assert.equal(marker.isFile(), true);
+  assert.equal(marker.nlink, 1);
+  assert.equal(marker.mode & 0o777, 0o600);
+});
+
+test('child startup accepts only a fresh initial journal and retains its claim on every refusal', {
+  timeout: 20_000,
+}, async t => {
+  const { routing } = await routingFixture(t);
+  const payload = signedStartupPayloads(routing)[0];
+  const input = {
+    paymentPayload: payload,
+    requirements: payload.accepted,
+    paymentRequired: paymentRequired(payload.accepted),
+  };
+  const descriptor = {
+    shardId: CONFIGURATION.shardIds[0],
+    payer: payload.payload.transaction.address,
+    generation: 'fixture-generation-a',
+  };
+  const roots = [];
+  const probes = [];
+  t.after(async () => {
+    for (const probe of probes) {
+      if (!probe.reaped) {
+        try { probe.requestClose(); } catch {}
+        try { await probe.reap(); } catch {}
+      }
+    }
+    for (const root of roots) {
+      try { await chmod(join(root, 'journal'), 0o700); } catch {}
+    }
+    if (probes.every(probe => probe.reaped)) await removeVerifiedSyntheticRoots(roots);
+  });
+
+  const newRoot = async prefix => {
+    const root = await createPrivateRoot(prefix);
+    roots.push(root);
+    await writeSignedFixture(root, payload);
+    return root;
+  };
+  const runAccepted = async root => {
+    const probe = launchStartupProbe('A', root, descriptor);
+    probes.push(probe);
+    await probe.ready;
+    probe.requestClose();
+    const result = await probe.reap();
+    assert.deepEqual(result, { exited: true, closed: true, diagnostics: false });
+    const journal = new SettlementJournal({
+      directory: join(root, 'journal'),
+      allowedRoot: root,
+      existingOnly: true,
+    });
+    assert.deepEqual(await journal.load(), {
+      schemaVersion: 1,
+      revision: 0,
+      records: [],
+    });
+    assert.deepEqual(await journal.list({ includeTombstones: true }), {
+      records: [],
+      tombstones: [],
+    });
+  };
+  const runRefused = async root => {
+    const probe = launchStartupProbe('A', root, descriptor);
+    probes.push(probe);
+    await assert.rejects(probe.ready, error =>
+      error?.name === 'FixedPayerSettlementTestError' &&
+      error?.message === 'STARTUP_PROBE_REFUSED');
+    const close = await probe.closed;
+    assert.notEqual(close.code, 0);
+    assert.equal(close.signal, null);
+    const result = await probe.reap();
+    assert.deepEqual(result, { exited: true, closed: true, diagnostics: false });
+    const marker = await lstat(join(root, FIXED_PAYER_SETTLEMENT_STARTUP_MARKER_FILE));
+    assert.equal(marker.isFile(), true);
+    assert.equal(marker.nlink, 1);
+    assert.equal(marker.mode & 0o777, 0o600);
+  };
+
+  await runAccepted(await newRoot('fixed-payer-fresh-created-'));
+
+  const provisioned = await newRoot('fixed-payer-fresh-provisioned-');
+  assert.deepEqual(await new SettlementJournal({
+    directory: join(provisioned, 'journal'),
+    allowedRoot: provisioned,
+  }).load(), { schemaVersion: 1, revision: 0, records: [] });
+  await runAccepted(provisioned);
+
+  const retainedRecord = await newRoot('fixed-payer-retained-record-');
+  await new SettlementJournal({
+    directory: join(retainedRecord, 'journal'),
+    allowedRoot: retainedRecord,
+  }).putValidated(retainedAttempt(input));
+  await runRefused(retainedRecord);
+
+  const retainedRevision = await newRoot('fixed-payer-retained-revision-');
+  await mkdir(join(retainedRevision, 'journal'), { mode: 0o700 });
+  await writeFile(join(retainedRevision, 'journal', '.settlement-journal.initialized'), '', {
+    flag: 'wx',
+    mode: 0o600,
+  });
+  const revisionState = { schemaVersion: 1, revision: 1, records: {} };
+  await writeFile(
+    join(retainedRevision, 'journal', 'settlement-journal.json'),
+    `${JSON.stringify({ ...revisionState, checksum: sha256Hex(revisionState) }, null, 2)}\n`,
+    { flag: 'wx', mode: 0o600 },
+  );
+  await runRefused(retainedRevision);
+
+  const noninitialSchema = await newRoot('fixed-payer-retained-schema-');
+  await mkdir(join(noninitialSchema, 'journal'), { mode: 0o700 });
+  await writeFile(join(noninitialSchema, 'journal', '.settlement-journal.initialized'), '', {
+    flag: 'wx',
+    mode: 0o600,
+  });
+  const schemaState = { schemaVersion: 2, revision: 0, records: {}, tombstones: {} };
+  await writeFile(
+    join(noninitialSchema, 'journal', 'settlement-journal.json'),
+    `${JSON.stringify({ ...schemaState, checksum: sha256Hex(schemaState) }, null, 2)}\n`,
+    { flag: 'wx', mode: 0o600 },
+  );
+  await runRefused(noninitialSchema);
+
+  const retainedTombstone = await newRoot('fixed-payer-retained-tombstone-');
+  let journalTime = Date.parse('2026-01-01T00:00:00.000Z');
+  const tombstoneJournal = new SettlementJournal({
+    directory: join(retainedTombstone, 'journal'),
+    allowedRoot: retainedTombstone,
+    clock: () => new Date(journalTime),
+  });
+  const record = await tombstoneJournal.putValidated(retainedAttempt(input));
+  const snapshot = await tombstoneJournal.getEntrySnapshot(
+    record.authorizationKey,
+    record.transactionHash,
+  );
+  journalTime += 3_600_000;
+  await tombstoneJournal.replaceRecordWithTombstone({
+    expectedRevision: snapshot.revision,
+    expectedRecord: snapshot.entry,
+    retentionMs: 3_600_000,
+  });
+  await runRefused(retainedTombstone);
+
+  const partial = await newRoot('fixed-payer-retained-partial-');
+  await mkdir(join(partial, 'journal'), { mode: 0o700 });
+  await runRefused(partial);
+
+  const corrupt = await newRoot('fixed-payer-retained-corrupt-');
+  await mkdir(join(corrupt, 'journal'), { mode: 0o700 });
+  await writeFile(join(corrupt, 'journal', '.settlement-journal.initialized'), '', {
+    flag: 'wx',
+    mode: 0o600,
+  });
+  await writeFile(join(corrupt, 'journal', 'settlement-journal.json'), '{', {
+    flag: 'wx',
+    mode: 0o600,
+  });
+  await runRefused(corrupt);
+
+  const inaccessible = await newRoot('fixed-payer-retained-inaccessible-');
+  await mkdir(join(inaccessible, 'journal'), { mode: 0o700 });
+  await chmod(join(inaccessible, 'journal'), 0o000);
+  await runRefused(inaccessible);
+  await chmod(join(inaccessible, 'journal'), 0o700);
+
+  const uncertainMarker = await newRoot('fixed-payer-retained-marker-');
+  await writeFile(join(uncertainMarker, FIXED_PAYER_SETTLEMENT_STARTUP_MARKER_FILE), '', {
+    flag: 'wx',
+    mode: 0o600,
+  });
+  await runRefused(uncertainMarker);
+});
+
+test('child startup refuses foreign and stale temporary journal entries', {
+  timeout: 15_000,
+}, async t => {
+  const scenarios = [
+    { name: 'foreign file', entry: 'foreign-entry' },
+    {
+      name: 'stale temporary journal',
+      entry: '.settlement-journal.json.1.0000000000000000.tmp',
+    },
+  ];
+  for (const scenario of scenarios) {
+    await t.test(scenario.name, async nested => {
+      let routingRoot;
+      let root;
+      let probe;
+      nested.after(async () => {
+        if (probe !== undefined && !probe.reaped) {
+          try { probe.requestClose(); } catch {}
+          try { await probe.reap(); } catch {}
+        }
+        if (probe === undefined || probe.reaped) {
+          await removeVerifiedSyntheticRoots([
+            ...(routingRoot === undefined ? [] : [routingRoot]),
+            ...(root === undefined ? [] : [root]),
+          ]);
+        }
+      });
+      const routingFixtureValue = await createRoutingRoot(
+        `fixed-payer-journal-${scenario.name.replaceAll(' ', '-')}-routing-`,
+      );
+      routingRoot = routingFixtureValue.root;
+      root = await createPrivateRoot(
+        `fixed-payer-journal-${scenario.name.replaceAll(' ', '-')}-`,
+      );
+      const payload = signedStartupPayloads(routingFixtureValue.routing)[0];
+      await writeSignedFixture(root, payload);
+      await new SettlementJournal({
+        directory: join(root, 'journal'),
+        allowedRoot: root,
+      }).load();
+      await writeFile(join(root, 'journal', scenario.entry), '', {
+        flag: 'wx',
+        mode: 0o600,
+      });
+      const descriptor = {
+        shardId: CONFIGURATION.shardIds[0],
+        payer: payload.payload.transaction.address,
+        generation: 'fixture-generation-a',
+      };
+      probe = launchStartupProbe('A', root, descriptor);
+
+      await assert.rejects(probe.ready, error =>
+        error?.name === 'FixedPayerSettlementTestError' &&
+        error?.message === 'STARTUP_PROBE_REFUSED');
+      const close = await probe.closed;
+      assert.notEqual(close.code, 0);
+      assert.equal(close.signal, null);
+      assert.deepEqual(await probe.reap(), {
+        exited: true,
+        closed: true,
+        diagnostics: false,
+      });
+      const marker = await lstat(join(root, FIXED_PAYER_SETTLEMENT_STARTUP_MARKER_FILE));
+      assert.equal(marker.isFile(), true);
+      assert.equal(marker.nlink, 1);
+      assert.equal(marker.mode & 0o777, 0o600);
+    });
+  }
+});
+
+test('owned startup failure, timeout and child loss quarantine one generation without respawn', {
+  timeout: 25_000,
+}, async t => {
+  await t.test('partial startup reaps both actually started children', async nested => {
+    const { routing } = await routingFixture(nested);
+    const roots = await Promise.all([
+      createPrivateRoot('fixed-payer-partial-a-'),
+      createPrivateRoot('fixed-payer-partial-b-'),
+    ]);
+    const payloads = signedStartupPayloads(routing);
+    await Promise.all(roots.map((root, index) => writeSignedFixture(root, payloads[index])));
+    const retainedInput = {
+      paymentPayload: payloads[1],
+      requirements: payloads[1].accepted,
+      paymentRequired: paymentRequired(payloads[1].accepted),
+    };
+    await new SettlementJournal({
+      directory: join(roots[1], 'journal'),
+      allowedRoot: roots[1],
+    }).putValidated(retainedAttempt(retainedInput));
+    const { owner } = createOfflineOwner(routing, payloads, roots);
+    nested.after(async () => {
+      try { await owner.shutdown(); } catch {}
+      const status = owner.status();
+      if (status.children.every(child => child.exitObserved && child.closeObserved)) {
+        await removeVerifiedSyntheticRoots(roots);
+      }
+    });
+    const startup = owner.start();
+    assert.equal(owner.start(), startup);
+    await assert.rejects(startup, ownerRejectsWith(OWNER_CODES.STARTUP_FAILED));
+    const status = owner.status();
+    assert.equal(status.phase, 'FAILED');
+    assert.equal(status.startedChildren, 2);
+    assert.equal(status.dispatcherExposed, false);
+    assert.equal(status.cleanupUncertain, false);
+    assert.equal(status.children.every(child => child.exitObserved && child.closeObserved), true);
+    for (const root of roots) {
+      const marker = await lstat(join(root, FIXED_PAYER_SETTLEMENT_STARTUP_MARKER_FILE));
+      assert.equal(marker.isFile(), true);
+    }
+  });
+
+  await t.test('a payer-mismatched READY frame cannot satisfy the owner barrier', async nested => {
+    const { routing } = await routingFixture(nested);
+    const roots = await Promise.all([
+      createPrivateRoot('fixed-payer-ready-mismatch-a-'),
+      createPrivateRoot('fixed-payer-ready-mismatch-b-'),
+    ]);
+    const payloads = signedStartupPayloads(routing);
+    await Promise.all(roots.map((root, index) => writeSignedFixture(root, payloads[index])));
+    const shards = ownedDescriptors(payloads, roots);
+    shards[0].payer = canonicalPayer(249);
+    requireProof(shards[0].payer !== shards[1].payer, 'READY_MISMATCH_FIXTURE');
+    const authority = createFixedPayerSettlementOfflineTestAuthority({
+      shards,
+      startupTimeoutMs: 2_000,
+      terminateGraceMs: 500,
+      terminateForceMs: 1_000,
+    });
+    const owner = createFixedPayerSettlementOwner({
+      authority,
+      routing,
+      requestTimeoutMs: 1_000,
+      maxOperationsPerShard: 16,
+    });
+    nested.after(async () => {
+      try { await owner.shutdown(); } catch {}
+      const status = owner.status();
+      if (status.children.every(child => child.exitObserved && child.closeObserved)) {
+        await removeVerifiedSyntheticRoots(roots);
+      }
+    });
+    await assert.rejects(owner.start(), ownerRejectsWith(OWNER_CODES.STARTUP_FAILED));
+    const status = owner.status();
+    assert.equal(status.phase, 'FAILED');
+    assert.equal(status.startedChildren, 2);
+    assert.equal(status.dispatcherExposed, false);
+    assert.equal(status.children.every(child => child.exitObserved && child.closeObserved), true);
+  });
+
+  await t.test('startup timeout has a separate bounded exact teardown', async nested => {
+    const { routing } = await routingFixture(nested);
+    const roots = await Promise.all([
+      createPrivateRoot('fixed-payer-timeout-a-'),
+      createPrivateRoot('fixed-payer-timeout-b-'),
+    ]);
+    const payloads = signedStartupPayloads(routing);
+    await Promise.all(roots.map((root, index) => writeSignedFixture(root, payloads[index])));
+    await writeStartupFixture(roots[0], 'HOLD_BEFORE_READY');
+    const { owner } = createOfflineOwner(routing, payloads, roots, {
+      startupTimeoutMs: 75,
+      terminateGraceMs: 250,
+      terminateForceMs: 750,
+    });
+    nested.after(async () => {
+      try { await owner.shutdown(); } catch {}
+      const status = owner.status();
+      if (status.children.every(child => child.exitObserved && child.closeObserved)) {
+        await removeVerifiedSyntheticRoots(roots);
+      }
+    });
+    await assert.rejects(owner.start(), ownerRejectsWith(OWNER_CODES.STARTUP_TIMEOUT));
+    const status = owner.status();
+    assert.equal(status.phase, 'FAILED');
+    assert.equal(status.startedChildren, 2);
+    assert.equal(status.dispatcherExposed, false);
+    assert.equal(status.cleanupUncertain, false);
+    assert.equal(status.children.every(child => child.exitObserved && child.closeObserved), true);
+  });
+
+  await t.test('post-READY child loss retires both routes and never respawns', async nested => {
+    const { routing } = await routingFixture(nested);
+    const roots = await Promise.all([
+      createPrivateRoot('fixed-payer-loss-a-'),
+      createPrivateRoot('fixed-payer-loss-b-'),
+    ]);
+    const payloads = signedStartupPayloads(routing);
+    await Promise.all(roots.map((root, index) => writeSignedFixture(root, payloads[index])));
+    await writeStartupFixture(roots[0], 'EXIT_AFTER_READY');
+    const { owner } = createOfflineOwner(routing, payloads, roots);
+    nested.after(async () => {
+      try { await owner.shutdown(); } catch {}
+      const status = owner.status();
+      if (status.children.every(child => child.exitObserved && child.closeObserved)) {
+        await removeVerifiedSyntheticRoots(roots);
+      }
+    });
+    const dispatcher = await owner.start();
+    const quarantined = await waitForOwnerPhase(owner, ['QUARANTINED']);
+    assert.equal(quarantined.startedChildren, 2);
+    assert.equal(quarantined.dispatcherExposed, true);
+    for (const payload of payloads) {
+      await assert.rejects(
+        dispatcher.settle(payload, payload.accepted, paymentRequired(payload.accepted)),
+        rejectsWith(DISPATCH_CODES.RETIREMENT_STARTED),
+      );
+    }
+    const closed = await owner.shutdown();
+    assert.deepEqual(closed, {
+      closed: true,
+      exactReaping: true,
+      quarantined: true,
+      markerDisposition: 'NOT_REMOVED',
+      rootDisposition: 'NOT_REMOVED',
+    });
+    const finalStatus = owner.status();
+    assert.equal(finalStatus.phase, 'QUARANTINED');
+    assert.equal(finalStatus.startedChildren, 2);
+    assert.equal(finalStatus.children.every(child => child.exitObserved && child.closeObserved), true);
+  });
+});
+
+test('owned facade timeout retires and exactly reaps the whole READY generation', {
+  timeout: 15_000,
+}, async t => {
+  let routingRoot;
+  const roots = [];
+  let owner;
+  t.after(async () => {
+    try { await owner?.shutdown(); } catch {}
+    const reaped = owner === undefined ||
+      owner.status().children.every(child => child.exitObserved && child.closeObserved);
+    if (reaped) {
+      await removeVerifiedSyntheticRoots([
+        ...(routingRoot === undefined ? [] : [routingRoot]),
+        ...roots,
+      ]);
+    }
+  });
+  const routingFixtureValue = await createRoutingRoot('fixed-payer-owner-timeout-routing-');
+  routingRoot = routingFixtureValue.root;
+  roots.push(await createPrivateRoot('fixed-payer-owner-timeout-a-'));
+  roots.push(await createPrivateRoot('fixed-payer-owner-timeout-b-'));
+  const payloads = signedStartupPayloads(routingFixtureValue.routing);
+  await Promise.all(roots.map((root, index) => writeSignedFixture(root, payloads[index])));
+  ({ owner } = createOfflineOwner(routingFixtureValue.routing, payloads, roots, {
+    requestTimeoutMs: 75,
+    terminateGraceMs: 500,
+    terminateForceMs: 1_000,
+  }));
+  const facade = await owner.start();
+  const result = await facade.settle(
+    payloads[0],
+    payloads[0].accepted,
+    paymentRequired(payloads[0].accepted),
+  );
+  assert.equal(result.success, false);
+  assert.equal(result.state, 'SUBMISSION_OUTCOME_UNKNOWN');
+  assert.equal(result.retrySamePayment, true);
+
+  const quarantined = await waitForOwnerPhase(owner, ['QUARANTINED']);
+  assert.equal(quarantined.startedChildren, 2);
+  const shutdown = await owner.shutdown();
+  assert.equal(shutdown.quarantined, true);
+  const finalStatus = owner.status();
+  assert.equal(finalStatus.phase, 'QUARANTINED');
+  assert.equal(finalStatus.children.every(child => child.exitObserved && child.closeObserved), true);
+});
+
+test('real startup children preserve direct two-shard settlement and delivery without loopback', {
+  timeout: 20_000,
+}, async t => {
+  const operation = createOperationDeadline(12_000);
+  let routingRoot;
+  const roots = [];
+  const children = [];
+  let dispatcher;
+  let closeRequested = false;
+  let shutdownComplete = false;
+  let primaryShutdownPromise;
+  let removalAttempted = false;
+  let removalComplete = false;
+  let primaryRemovalPromise;
+  let operationClosed = false;
+  t.after(async () => {
+    let fallbackFailure;
+    if (!shutdownComplete) {
+      if (primaryShutdownPromise === undefined && dispatcher !== undefined) {
+        try {
+          const retirement = dispatcher.retire();
+          let requestFailed = false;
+          if (!closeRequested) {
+            closeRequested = true;
+            for (const child of children) {
+              try { child.requestClose(); } catch { requestFailed = true; }
+            }
+          }
+          if (requestFailed) fallbackFailure ??= fixedFailure('DIRECT_CHILD_CLOSE_REQUEST');
+          primaryShutdownPromise = Promise.all([
+            retirement,
+            ...children.map(child => child.awaitClose()),
+          ]);
+          void primaryShutdownPromise.catch(() => {});
+        } catch {
+          fallbackFailure ??= fixedFailure('DIRECT_RETIREMENT');
+        }
+      }
+      if (primaryShutdownPromise !== undefined &&
+          await bounded(primaryShutdownPromise, 2_000)) {
+        try {
+          await primaryShutdownPromise;
+          shutdownComplete = children.every(child => child.reaped);
+        } catch {
+          fallbackFailure ??= fixedFailure('DIRECT_CHILD_REAP');
+        }
+      }
+      if (!shutdownComplete) {
+        for (const child of children) {
+          if (!child.reaped) await child.forceClose();
+        }
+        shutdownComplete = children.every(child => child.reaped);
+      }
+      if (!shutdownComplete) fallbackFailure ??= fixedFailure('DIRECT_CHILD_REAP');
+    }
+    if (removalAttempted && !removalComplete && primaryRemovalPromise !== undefined) {
+      if (await bounded(primaryRemovalPromise, 2_500)) {
+        const disposition = await primaryRemovalPromise;
+        removalComplete = disposition === 'REMOVED';
+      }
+      if (!removalComplete) {
+        fallbackFailure ??= fixedFailure('DIRECT_ROOT_RESIDUE_RETAINED');
+      }
+    } else if (!removalAttempted) {
+      const removableRoots = [];
+      if (routingRoot !== undefined) removableRoots.push(routingRoot);
+      for (let index = 0; index < roots.length; index += 1) {
+        if (children[index] === undefined || children[index].reaped) {
+          removableRoots.push(roots[index]);
+        }
+      }
+      if (removableRoots.length > 0) {
+        removalAttempted = true;
+        primaryRemovalPromise = removeOwnedRoots(removableRoots);
+        const disposition = await primaryRemovalPromise;
+        removalComplete = disposition === 'REMOVED';
+        if (!removalComplete) {
+          fallbackFailure ??= fixedFailure('DIRECT_ROOT_RESIDUE_RETAINED');
+        }
+      }
+    }
+    if (!operationClosed) {
+      try {
+        operation.close();
+        operationClosed = true;
+      } catch (error) {
+        fallbackFailure ??= error;
+      }
+    }
+    if (fallbackFailure) throw fallbackFailure;
+  });
+
+  routingRoot = await operation.wait(createPrivateRoot('fixed-payer-direct-routing-'));
+  const manifest = manifestText();
+  await operation.wait(writeFile(join(routingRoot, FIXED_PAYER_SHARD_MANIFEST_FILE), manifest, {
+    flag: 'wx',
+    mode: 0o600,
+  }));
+  const routing = createFixedPayerShardRouting({
+    privateRoot: routingRoot,
+    expectedManifestFingerprint: manifestFingerprint(manifest),
+    expectedConfiguration: CONFIGURATION,
+  });
+  roots.push(await operation.wait(createPrivateRoot('fixed-payer-direct-a-')));
+  roots.push(await operation.wait(createPrivateRoot('fixed-payer-direct-b-')));
+  let payee;
+  let accepted;
+  let payloads;
+  try {
+    payee = syntheticKeyPair(250);
+    accepted = requirement(payee.getAddress().toString());
+    payloads = signedPayloadsByShard(routing, accepted);
+  } finally {
+    payee?.clear();
+  }
+  await operation.wait(Promise.all(payloads.map(payload => preflightZenonPayment(
+    payload,
+    accepted,
+    paymentRequired(accepted),
+  ))));
+  await operation.wait(Promise.all(
+    roots.map((root, index) => writeSignedFixture(root, payloads[index])),
+  ));
+  const descriptors = ownedDescriptors(payloads, roots);
+  children.push(launchChild('A', roots[0], descriptors[0]));
+  children.push(launchChild('B', roots[1], descriptors[1]));
+  await operation.wait(Promise.all(children.map(child => child.readyFrame)));
+  children.forEach(child => child.commit());
+  await operation.wait(Promise.all(children.map(child => child.ready)));
+  dispatcher = createFixedPayerSettlementDispatcher({
+    routing,
+    shards: descriptors.map((descriptor, index) => ({
+      shardId: descriptor.shardId,
+      payer: descriptor.payer,
+      generation: descriptor.generation,
+      owner: children[index].child,
+      channel: children[index].child,
+      journalIdentity: children[index].journalIdentity,
+    })),
+    requestTimeoutMs: 10_000,
+    maxOperationsPerShard: 16,
+  });
+  const settlements = Promise.all(payloads.map(payload => dispatcher.settle(
+    payload,
+    accepted,
+    paymentRequired(accepted),
+  )));
+  await operation.wait(Promise.all(children.map(child => child.publication)));
+  requireProof(!await bounded(settlements, 25), 'DIRECT_SETTLEMENT_NOT_HELD');
+  children.forEach(child => child.release());
+  const included = await operation.wait(settlements);
+  requireProof(included.every(result => result.success === true &&
+    result.state === 'MOMENTUM_INCLUDED'), 'DIRECT_SETTLEMENT');
+  const cachedResponses = included.map(result => ({
+    status: 200,
+    headers: { 'content-type': 'application/json; charset=utf-8' },
+    body: { ok: true, payer: result.payer },
+  }));
+  const pending = await operation.wait(Promise.all(included.map((result, index) =>
+    dispatcher.markDeliveryPending(result, payloads[index].accepted))));
+  requireProof(pending.every(result => result.deliveryClaimed === true &&
+    result.deliveryState === 'DELIVERY_PENDING'), 'DIRECT_PENDING');
+  const delivered = await operation.wait(Promise.all(included.map((result, index) =>
+    dispatcher.markDelivered(result, cachedResponses[index]))));
+  requireProof(delivered.every((result, index) => result.deliveryState === 'DELIVERED' &&
+    isDeepStrictEqual(result.cachedResponse, cachedResponses[index])), 'DIRECT_DELIVERED');
+
+  const retirement = dispatcher.retire();
+  closeRequested = true;
+  children.forEach(child => child.requestClose());
+  primaryShutdownPromise = Promise.all([
+    retirement,
+    ...children.map(child => child.awaitClose()),
+  ]);
+  void primaryShutdownPromise.catch(() => {});
+  await operation.wait(primaryShutdownPromise);
+  requireProof(children.every(child => child.reaped), 'DIRECT_CHILD_NOT_REAPED');
+  shutdownComplete = true;
+  const records = await operation.wait(Promise.all(roots.map(async (root, index) => {
+    const snapshot = await new SettlementJournal({
+      directory: join(root, 'journal'),
+      allowedRoot: root,
+      existingOnly: true,
+    }).list({ includeTombstones: true });
+    requireProof(snapshot.records.length === 1 && snapshot.tombstones.length === 0,
+      'DIRECT_JOURNAL_CARDINALITY');
+    const record = snapshot.records[0];
+    requireProof(record.payer === payloads[index].payload.transaction.address &&
+      record.transactionHash === payloads[index].payload.transaction.hash &&
+      record.evidenceState === 'MOMENTUM_INCLUDED' &&
+      record.deliveryState === 'DELIVERED' &&
+      isDeepStrictEqual(record.cachedResponse, cachedResponses[index]),
+    'DIRECT_JOURNAL_DELIVERY');
+    return record;
+  })));
+  requireProof(records[0].payer !== records[1].payer &&
+    records[0].transactionHash !== records[1].transactionHash,
+  'DIRECT_JOURNAL_ISOLATION');
+
+  removalAttempted = true;
+  primaryRemovalPromise = removeOwnedRoots([routingRoot, ...roots]);
+  const removalDisposition = await operation.wait(primaryRemovalPromise);
+  requireProof(removalDisposition === 'REMOVED', removalDisposition === 'TIMEOUT'
+    ? 'DIRECT_ROOT_CLEANUP_TIMEOUT_RESIDUE_RETAINED'
+    : 'DIRECT_ROOT_CLEANUP_REJECTED_RESIDUE_RETAINED');
+  removalComplete = true;
+  operation.close();
+  operationClosed = true;
 });
 
 test('configuration requires two canonical fixed payers on distinct immutable routes and unique owners', async t => {
@@ -1001,8 +2524,12 @@ test('real /paid requests overlap at two child publication boundaries and finish
       childRoots.map((root, index) => writeSignedFixture(root, payloads[index])),
     ));
 
-    children.push(launchChild('A', childRoots[0]));
-    children.push(launchChild('B', childRoots[1]));
+    const processDescriptors = ownedDescriptors(payloads, childRoots);
+    children.push(launchChild('A', childRoots[0], processDescriptors[0]));
+    children.push(launchChild('B', childRoots[1], processDescriptors[1]));
+    await operation.wait(Promise.all(children.map(child => child.readyFrame)));
+    children.forEach(child => child.commit());
+    await operation.wait(Promise.all(children.map(child => child.ready)));
     dispatcher = createFixedPayerSettlementDispatcher({
       routing: routingFixtureValue.routing,
       shards: payloads.map((payload, index) => ({
