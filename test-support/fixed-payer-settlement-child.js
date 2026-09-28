@@ -23,7 +23,7 @@ import {
   FIXED_PAYER_SETTLEMENT_STARTUP_STDOUT_BOUNDARY as STARTUP_STDOUT_BOUNDARY,
   prepareFreshFixedPayerSettlementChild,
 } from '../src/zenon/fixed-payer-settlement-child-startup.js';
-import { ExactZenonFacilitator } from '../src/zenon-payment.js';
+import { ExactZenonFacilitator, preflightZenonPayment } from '../src/zenon-payment.js';
 import { runFixedPayerSettlementChild } from '../src/zenon/fixed-payer-settlement-child.js';
 
 const FIXTURE_NAME = 'signed-payment.json';
@@ -33,6 +33,7 @@ const MAX_STARTUP_FIXTURE_BYTES = 1024;
 const STARTUP_MODES = new Set([
   'NORMAL',
   'OWNER_FACADE_SUCCESS',
+  'OWNER_FACADE_DUAL_PAYMENT',
   'DELAY_READY',
   'EARLY_STRING',
   'EARLY_MARKER',
@@ -121,7 +122,19 @@ function installTripwires() {
   }
 }
 
-function readSignedPayment(root) {
+function exactFixtureFields(value, fields) {
+  if (!value || typeof value !== 'object' || Array.isArray(value) ||
+      Object.getPrototypeOf(value) !== Object.prototype) return false;
+  const keys = Reflect.ownKeys(value);
+  if (keys.length !== fields.length || keys.some((key, index) =>
+    key !== fields[index])) return false;
+  return fields.every(field => {
+    const descriptor = Object.getOwnPropertyDescriptor(value, field);
+    return descriptor && Object.hasOwn(descriptor, 'value') && descriptor.enumerable === true;
+  });
+}
+
+function readSignedPaymentFixture(root) {
   let descriptor;
   let encoded;
   try {
@@ -138,13 +151,31 @@ function readSignedPayment(root) {
     encoded = readFileSync(descriptor);
     if (encoded.length !== state.size) stop('FIXTURE');
     const json = encoded.toString('utf8');
-    const paymentPayload = JSON.parse(json);
-    if (JSON.stringify(paymentPayload) !== json ||
-        paymentPayload?.accepted?.extra?.paymentFlow !== 'upfront' ||
-        !isDeepStrictEqual(paymentPayload.accepted.extra.zenonChain, PROFILE)) {
+    const parsed = JSON.parse(json);
+    if (JSON.stringify(parsed) !== json) stop('FIXTURE');
+    const wrapperCandidate = Object.hasOwn(parsed, 'schemaVersion') ||
+      Object.hasOwn(parsed, 'payments');
+    let kind = 'SINGLE';
+    let payments;
+    if (wrapperCandidate) {
+      if (!exactFixtureFields(parsed, ['schemaVersion', 'payments']) ||
+          parsed.schemaVersion !== 1 || !Array.isArray(parsed.payments) ||
+          Object.getPrototypeOf(parsed.payments) !== Array.prototype ||
+          parsed.payments.length !== 2 ||
+          !isDeepStrictEqual(Reflect.ownKeys(parsed.payments), ['0', '1', 'length'])) {
+        stop('FIXTURE');
+      }
+      kind = 'DUAL';
+      payments = parsed.payments;
+    } else {
+      payments = [parsed];
+    }
+    if (payments.some(paymentPayload =>
+      paymentPayload?.accepted?.extra?.paymentFlow !== 'upfront' ||
+      !isDeepStrictEqual(paymentPayload.accepted.extra.zenonChain, PROFILE))) {
       stop('FIXTURE');
     }
-    return paymentPayload;
+    return Object.freeze({ kind, payments: Object.freeze(payments) });
   } catch {
     stop('FIXTURE');
   } finally {
@@ -153,6 +184,61 @@ function readSignedPayment(root) {
       try { closeSync(descriptor); } catch { stop('FIXTURE'); }
     }
   }
+}
+
+function fixturePaymentRequired(paymentPayload) {
+  return {
+    x402Version: paymentPayload.x402Version,
+    resource: structuredClone(paymentPayload.resource),
+    accepts: [structuredClone(paymentPayload.accepted)],
+  };
+}
+
+async function validateFixturePayments(fixture, startupMode) {
+  const dualMode = startupMode === 'OWNER_FACADE_DUAL_PAYMENT';
+  if ((fixture.kind === 'DUAL') !== dualMode ||
+      fixture.payments.length !== (dualMode ? 2 : 1)) stop('FIXTURE');
+  let entries;
+  try {
+    entries = await Promise.all(fixture.payments.map(async (paymentPayload, index) => {
+      const paymentRequired = fixturePaymentRequired(paymentPayload);
+      const preflight = await preflightZenonPayment(
+        paymentPayload,
+        paymentPayload.accepted,
+        paymentRequired,
+      );
+      return Object.freeze({
+        index,
+        paymentPayload,
+        paymentRequired,
+        transaction: paymentPayload.payload.transaction,
+        authorizationKey: preflight.authorizationKey,
+        transactionHash: preflight.transactionHash,
+        payer: preflight.payer,
+        network: paymentPayload.accepted.network,
+        intentDigest: preflight.intentDigest,
+      });
+    }));
+  } catch {
+    stop('FIXTURE');
+  }
+  const first = entries[0];
+  if (entries.some(entry => entry.payer !== first.payer ||
+      entry.network !== first.network || entry.network !== 'zenon:testnet')) stop('FIXTURE');
+  if (dualMode) {
+    const second = entries[1];
+    if (!isDeepStrictEqual(first.paymentPayload.accepted, second.paymentPayload.accepted) ||
+        isDeepStrictEqual(first.paymentPayload.resource, second.paymentPayload.resource) ||
+        first.transaction.height !== 1 ||
+        first.transaction.previousHash !== sdk.EMPTY_HASH.toString() ||
+        second.transaction.height !== 2 ||
+        (second.transaction.previousHash !== first.transactionHash &&
+          second.transaction.previousHash !== sdk.EMPTY_HASH.toString()) ||
+        first.transactionHash === second.transactionHash ||
+        first.authorizationKey === second.authorizationKey ||
+        first.intentDigest === second.intentDigest) stop('FIXTURE');
+  }
+  return Object.freeze(entries);
 }
 
 function readStartupMode(root) {
@@ -369,15 +455,19 @@ function writeStartupOutput(text) {
   });
 }
 
-function accountInfo(transaction) {
+function accountInfo(
+  transaction,
+  blockCount = transaction.height - 1,
+  balance = BigInt(transaction.amount),
+  tokenSupply = balance,
+) {
   const address = sdk.Address.parse(transaction.address);
   const tokenStandard = sdk.TokenStandard.parse(transaction.tokenStandard);
-  const balance = BigInt(transaction.amount);
   const token = new sdk.Token(
-    'Synthetic', 'SYN', '', balance, 8, address, tokenStandard, balance,
+    'Synthetic', 'SYN', '', tokenSupply, 8, address, tokenStandard, tokenSupply,
     false, false, false,
   );
-  return new sdk.AccountInfo(address, transaction.height - 1, {
+  return new sdk.AccountInfo(address, blockCount, {
     [transaction.tokenStandard]: new sdk.BalanceInfoListItem(token, balance),
   });
 }
@@ -446,8 +536,8 @@ export async function runFixedPayerSettlementOfflineFixture(options) {
     if (Reflect.ownKeys(process.env).length !== 0 || process.argv.length !== 5) stop('ARGUMENTS');
     installTripwires();
 
-    const paymentPayload = readSignedPayment(root);
-    const transaction = paymentPayload.payload.transaction;
+    const fixture = readSignedPaymentFixture(root);
+    const transaction = fixture.payments[0].payload.transaction;
     const shardId = label === 'A' ? 'payer-shard-a' : 'payer-shard-b';
     const generation = label === 'A' ? 'fixture-generation-a' : 'fixture-generation-b';
     const directory = join(root, 'journal');
@@ -458,6 +548,9 @@ export async function runFixedPayerSettlementOfflineFixture(options) {
       generation,
     });
     const startupMode = readStartupMode(root);
+    const fixtureEntries = await validateFixturePayments(fixture, startupMode);
+    const paymentPayload = fixtureEntries[0].paymentPayload;
+    const transactions = fixtureEntries.map(entry => entry.transaction);
     if (startupMode === 'HOLD_BEFORE_READY') {
       await waitForStartupHold();
       return;
@@ -479,11 +572,27 @@ export async function runFixedPayerSettlementOfflineFixture(options) {
     let activeSettleOperation = null;
     let publicationInterception = null;
     const observedOperationTokens = new WeakSet();
+    const accountObservationTokens = new WeakSet();
+    const frontierObservationTokens = new WeakSet();
+    const initialBalance = transactions.reduce(
+      (total, candidate) => total + BigInt(candidate.amount),
+      0n,
+    );
+    const requireActiveOperation = () => {
+      if (activeSettleOperation === null) stop('SDK_OPERATION');
+      return activeSettleOperation;
+    };
+    const recordMatchesEntry = (record, entry) => record !== undefined &&
+      record.authorizationKey === entry.authorizationKey &&
+      record.transactionHash === entry.transactionHash &&
+      record.payer === entry.payer &&
+      record.intentDigest === entry.intentDigest &&
+      isDeepStrictEqual(record.signedAccountBlock, entry.transaction);
     const initializeFacilitator = () => {
       if (activeFacilitator !== null) return activeFacilitator;
       zenon = sdk.Zenon.getInstance();
       ownedZenon = zenon;
-      let published = false;
+      let publishedCount = 0;
 
       zenon.initialize = async rpcUrl => {
         if (rpcUrl !== 'ws://rpc.invalid') stop();
@@ -505,7 +614,11 @@ export async function runFixedPayerSettlementOfflineFixture(options) {
         }),
       }, { get: (target, name) => Reflect.has(target, name) ? target[name] : stop });
       zenon.embedded = new Proxy({ token: new Proxy({
-        getByZts: async tokenStandard => ({ tokenStandard }),
+        getByZts: async tokenStandard => {
+          const operation = requireActiveOperation();
+          if (tokenStandard.toString() !== operation.entry.transaction.tokenStandard) stop();
+          return { tokenStandard };
+        },
       }, { get: (target, name) => Reflect.has(target, name) ? target[name] : stop }) }, {
         get: (target, name) => Reflect.has(target, name) ? target[name] : stop,
       });
@@ -517,52 +630,87 @@ export async function runFixedPayerSettlementOfflineFixture(options) {
           hash: sdk.Hash.digest(Buffer.from('synthetic frontier momentum')),
         }),
         getAccountBlockByHash: async hash => {
-          if (hash.toString() !== transaction.hash) stop();
-          return published ? observedBlock(transaction) : null;
+          const operation = requireActiveOperation();
+          if (hash.toString() !== operation.entry.transactionHash) stop();
+          return operation.entry.index < publishedCount
+            ? observedBlock(operation.entry.transaction)
+            : null;
         },
         getAccountInfoByAddress: async address => {
-          if (address.toString() !== transaction.address) stop();
-          return accountInfo(transaction);
+          const operation = requireActiveOperation();
+          if (address.toString() !== operation.entry.payer) stop();
+          accountObservationTokens.add(operation.token);
+          const spent = transactions.slice(0, publishedCount).reduce(
+            (total, candidate) => total + BigInt(candidate.amount),
+            0n,
+          );
+          const balance = initialBalance - spent;
+          if (balance < 0n) stop('ACCOUNT_STATE');
+          return accountInfo(transactions[0], publishedCount, balance, initialBalance);
         },
         getFrontierAccountBlock: async address => {
-          if (address.toString() !== transaction.address) stop();
-          return null;
+          const operation = requireActiveOperation();
+          if (address.toString() !== operation.entry.payer) stop();
+          frontierObservationTokens.add(operation.token);
+          return publishedCount === 0 ? null : observedBlock(transactions[publishedCount - 1]);
         },
         getUnconfirmedBlocksByAddress: async (address, page, pageSize) => {
-          if (address.toString() !== transaction.address || page !== 0 || pageSize !== 50) stop();
+          const operation = requireActiveOperation();
+          if (address.toString() !== operation.entry.payer || page !== 0 || pageSize !== 50) {
+            stop();
+          }
           return { count: 0, list: [] };
         },
         publishRawTransaction: async block => {
           const operation = activeSettleOperation;
+          if (operation === null || observedOperationTokens.has(operation.token) ||
+              operation.entry.index !== publishedCount ||
+              !isDeepStrictEqual(block.toJson(), operation.entry.transaction)) {
+            stop('PUBLICATION_OPERATION');
+          }
+          observedOperationTokens.add(operation.token);
           const durable = await new SettlementJournal({
             directory,
             allowedRoot: root,
             existingOnly: true,
           }).list({ includeTombstones: true });
-          const record = durable.records[0];
-          if (operation === null || observedOperationTokens.has(operation.token) ||
-              durable.records.length !== 1 ||
-              durable.tombstones.length !== 0 || record.evidenceState !== 'VALIDATED' ||
-              record.transactionHash !== transaction.hash ||
-              record.payer !== transaction.address ||
-              !isDeepStrictEqual(record.signedAccountBlock, transaction) ||
-              !isDeepStrictEqual(block.toJson(), transaction)) stop('DURABILITY');
-          observedOperationTokens.add(operation.token);
+          const expectedEntries = fixtureEntries.slice(0, operation.entry.index + 1);
+          const record = durable.records.find(candidate =>
+            candidate.authorizationKey === operation.entry.authorizationKey &&
+            candidate.transactionHash === operation.entry.transactionHash);
+          if (durable.records.length !== expectedEntries.length ||
+              durable.tombstones.length !== 0 ||
+              expectedEntries.some(entry => !durable.records.some(candidate =>
+                recordMatchesEntry(candidate, entry))) ||
+              !recordMatchesEntry(record, operation.entry) ||
+              record.evidenceState !== 'VALIDATED' ||
+              operation.entry.network !== paymentPayload.accepted.network) stop('DURABILITY');
+          const previous = operation.entry.index === 0
+            ? null
+            : fixtureEntries[operation.entry.index - 1];
+          if ((previous === null &&
+                (operation.entry.transaction.height !== 1 ||
+                  operation.entry.transaction.previousHash !== sdk.EMPTY_HASH.toString())) ||
+              (previous !== null &&
+                (operation.entry.transaction.height !== previous.transaction.height + 1 ||
+                  operation.entry.transaction.previousHash !== previous.transactionHash))) {
+            stop('PUBLICATION_FRONTIER');
+          }
           if (startupMode === 'OWNER_MISMATCHED_PUBLICATION_OBSERVATION') {
             if (publicationInterception !== null) stop('PUBLICATION_INTERCEPTION');
             publicationInterception = {
               consumed: false,
               correlationId: `${generation}:${shardId}:1`,
               shardId,
-              payer: transaction.address,
+              payer: operation.entry.payer,
               generation,
               mismatchedGeneration: label === 'A'
                 ? 'fixture-generation-b'
                 : 'fixture-generation-a',
               sequence: 1,
-              transaction: transaction.hash,
-              authorizationKey: record.authorizationKey,
-              network: paymentPayload.accepted.network,
+              transaction: operation.entry.transactionHash,
+              authorizationKey: operation.entry.authorizationKey,
+              network: operation.entry.network,
             };
           }
           try {
@@ -575,15 +723,20 @@ export async function runFixedPayerSettlementOfflineFixture(options) {
           }
           if (activeSettleOperation !== operation) stop('PUBLICATION_OPERATION');
           if (startupMode !== 'OWNER_FACADE_SUCCESS' &&
+              startupMode !== 'OWNER_FACADE_DUAL_PAYMENT' &&
               startupMode !== 'OWNER_MISMATCHED_PUBLICATION_OBSERVATION') {
             await waitForRelease();
           }
-          published = true;
+          if (activeSettleOperation !== operation || publishedCount !== operation.entry.index) {
+            stop('PUBLICATION_OPERATION');
+          }
+          publishedCount += 1;
         },
       }, { get: (target, name) => Reflect.has(target, name) ? target[name] : stop });
       zenon.subscribe = new Proxy({
         toAccountBlocksByAddress: async address => {
-          if (address.toString() !== transaction.address) stop();
+          const operation = requireActiveOperation();
+          if (address.toString() !== operation.entry.payer) stop();
           return { onNotification(callback) { if (typeof callback !== 'function') stop(); } };
         },
       }, { get: (target, name) => Reflect.has(target, name) ? target[name] : stop });
@@ -616,17 +769,42 @@ export async function runFixedPayerSettlementOfflineFixture(options) {
         if (arguments.length !== 4 || typeof observePublication !== 'function' ||
             !Object.isFrozen(observePublication) || observePublication.length !== 0 ||
             activeSettleOperation !== null) stop('PUBLICATION_CAPABILITY');
+        const entry = fixtureEntries.find(candidate =>
+          isDeepStrictEqual(paymentPayload, candidate.paymentPayload) &&
+          isDeepStrictEqual(requirements, candidate.paymentPayload.accepted) &&
+          isDeepStrictEqual(paymentRequired, candidate.paymentRequired));
+        if (entry === undefined) stop('PAYMENT_FIXTURE');
         const operation = Object.freeze({
           token: Object.freeze({}),
           observePublication,
+          entry,
         });
         activeSettleOperation = operation;
         try {
-          return await invokeFacilitator('settle', [
+          const result = await invokeFacilitator('settle', [
             paymentPayload,
             requirements,
             paymentRequired,
           ]);
+          const staleSuccessor = entry.index === 1 &&
+            entry.transaction.previousHash === sdk.EMPTY_HASH.toString();
+          if (staleSuccessor) {
+            if (!accountObservationTokens.has(operation.token) ||
+                !frontierObservationTokens.has(operation.token) ||
+                observedOperationTokens.has(operation.token) || result.success !== false ||
+                result.errorReason !== 'stale_frontier' || result.state !== 'VALIDATED' ||
+                result.authorizationKey !== entry.authorizationKey ||
+                result.transaction !== entry.transactionHash || result.payer !== entry.payer ||
+                result.network !== entry.network || result.retrySamePayment !== false ||
+                result.deliveryState !== 'NONE') stop('STALE_FRONTIER_FENCE');
+          } else if (startupMode === 'OWNER_FACADE_DUAL_PAYMENT' &&
+              result.success === true && result.deliveryState === 'NONE' &&
+              (!accountObservationTokens.has(operation.token) ||
+                !frontierObservationTokens.has(operation.token) ||
+                !observedOperationTokens.has(operation.token))) {
+            stop('EVOLVING_FRONTIER');
+          }
+          return result;
         } finally {
           if (activeSettleOperation === operation) activeSettleOperation = null;
         }
