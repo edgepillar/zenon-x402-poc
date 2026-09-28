@@ -70,6 +70,7 @@ const EXECUTABLE = process.execPath;
 const FIXTURE_NAME = 'signed-payment.json';
 const STARTUP_FIXTURE_NAME = 'fixed-payer-startup.json';
 const OFFLINE_TEST_MODE = '--fixed-payer-offline-test-v2';
+const DUAL_PAYMENT_STARTUP_MODE = 'OWNER_FACADE_DUAL_PAYMENT';
 const PUBLICATION_MARKER = 'PUBLICATION_BOUNDARY';
 const STARTUP_STDOUT_BOUNDARY = FIXED_PAYER_SETTLEMENT_STARTUP_STDOUT_BOUNDARY.trimEnd();
 const STARTUP_STDERR_BOUNDARY = FIXED_PAYER_SETTLEMENT_STARTUP_STDERR_BOUNDARY.trimEnd();
@@ -475,8 +476,12 @@ function facilitatorDouble(overrides = {}) {
   };
 }
 
-function signedPayment(keyPair, accepted, nonce) {
-  const required = paymentRequired(accepted);
+function signedPayment(keyPair, accepted, nonce, {
+  resource = RESOURCE,
+  height = 1,
+  previousHash = sdk.EMPTY_HASH.toString(),
+} = {}) {
+  const required = paymentRequired(accepted, resource);
   const block = sdk.AccountBlockTemplate.send(
     sdk.Address.parse(accepted.payTo),
     sdk.TokenStandard.parse(accepted.asset),
@@ -484,7 +489,8 @@ function signedPayment(keyPair, accepted, nonce) {
   );
   block.chainIdentifier = Number(accepted.extra.zenonChain.chainIdentifier);
   block.address = keyPair.getAddress();
-  block.height = 1;
+  block.height = height;
+  block.previousHash = sdk.Hash.parse(previousHash);
   block.momentumAcknowledged = new sdk.HashHeight(
     sdk.Hash.digest(Buffer.from('synthetic acknowledged momentum')),
     1,
@@ -573,6 +579,70 @@ function signedPayloadPairsByShard(routing, accepted) {
   } finally {
     clearSyntheticKeyPairs(owned);
   }
+}
+
+function dualPurchaseResource(shardId, ordinal) {
+  return {
+    url: `https://127.0.0.1/${shardId}/synthetic-purchase-${ordinal}`,
+    description: `Synthetic fixed-payer purchase ${ordinal}`,
+    mimeType: 'application/json',
+  };
+}
+
+function signedDualPayloadsByShard(routing, accepted, { staleSecond = false } = {}) {
+  const selected = new Map();
+  const owned = [];
+  try {
+    for (let fill = 1; fill < 256 && selected.size < 2; fill += 1) {
+      const keyPair = syntheticKeyPair(fill);
+      owned.push(keyPair);
+      const payer = keyPair.getAddress().toString();
+      const shardId = routing.route(payer).shardId;
+      if (!selected.has(shardId)) selected.set(shardId, keyPair);
+    }
+    requireProof(selected.size === 2, 'DUAL_SIGNED_PAYER_SELECTION');
+    return CONFIGURATION.shardIds.map((shardId, index) => {
+      const keyPair = selected.get(shardId);
+      const first = signedPayment(
+        keyPair,
+        accepted,
+        String((index * 2) + 1).padStart(16, '0'),
+        { resource: dualPurchaseResource(shardId, 1) },
+      );
+      const second = signedPayment(
+        keyPair,
+        accepted,
+        String((index * 2) + 2).padStart(16, '0'),
+        {
+          resource: dualPurchaseResource(shardId, 2),
+          height: 2,
+          previousHash: staleSecond
+            ? sdk.EMPTY_HASH.toString()
+            : first.payload.transaction.hash,
+        },
+      );
+      return [first, second];
+    });
+  } finally {
+    clearSyntheticKeyPairs(owned);
+  }
+}
+
+function dualPaymentFixture(payloads) {
+  requireProof(Array.isArray(payloads) && payloads.length === 2,
+    'DUAL_FIXTURE_CARDINALITY');
+  return {
+    schemaVersion: 1,
+    payments: structuredClone(payloads),
+  };
+}
+
+function fixtureInput(paymentPayload) {
+  return {
+    paymentPayload,
+    requirements: structuredClone(paymentPayload.accepted),
+    paymentRequired: paymentRequired(paymentPayload.accepted, paymentPayload.resource),
+  };
 }
 
 async function signedReplacementFixture(routing) {
@@ -3076,6 +3146,542 @@ test('owner-returned facade settles both fixed payers, delivers, and replays cac
   }
   if (cleanupFailure) throw cleanupFailure;
   if (workFailure) throw workFailure;
+});
+
+async function runOwnedDualPaymentProof(t, { staleSecond }) {
+  const proof = staleSecond ? 'OWNER_STALE_SUCCESSOR' : 'OWNER_DUAL_PAYMENT';
+  const operation = createOperationDeadline(18_000);
+  const ownedRoots = [];
+  const childRoots = [];
+  let owner;
+  let facade;
+  let originalStart;
+  let originalRetire;
+  let originalShutdown;
+  let startingPromise;
+  let retirementPromise;
+  let shutdownPromise;
+  let ownerClosurePromise;
+  let ownerFallbackPromise;
+  let exactReaping = false;
+  let removalPromise;
+  let removalComplete = false;
+  let deadlineFailure;
+  let deadlineAdjudicated = false;
+
+  const isDeadlineFailure = error =>
+    error?.name === 'FixedPayerSettlementTestError' &&
+    error?.message === 'WHOLE_OPERATION_TIMEOUT';
+  const rememberDeadlineFailure = error => {
+    if (!isDeadlineFailure(error)) return false;
+    deadlineFailure ??= error;
+    return true;
+  };
+  const exactlyReaped = () => {
+    if (owner === undefined) return true;
+    try {
+      const status = owner.status();
+      return status.cleanupUncertain === false && status.startedChildren === 2 &&
+        status.children.length === 2 &&
+        status.children.every(child => child.exitObserved && child.closeObserved);
+    } catch {
+      return false;
+    }
+  };
+  const beginOwnerClosure = () => {
+    if (owner === undefined) return undefined;
+    if (facade !== undefined && retirementPromise === undefined) {
+      try {
+        retirementPromise = originalRetire();
+      } catch {
+        retirementPromise = Promise.reject(fixedFailure(`${proof}_RETIREMENT`));
+      }
+      void retirementPromise.catch(() => {});
+    }
+    if (shutdownPromise === undefined) {
+      try {
+        shutdownPromise = originalShutdown();
+      } catch {
+        shutdownPromise = Promise.reject(fixedFailure(`${proof}_SHUTDOWN`));
+      }
+      void shutdownPromise.catch(() => {});
+    }
+    if (ownerClosurePromise === undefined) {
+      const captured = [
+        ...(retirementPromise === undefined ? [] : [retirementPromise]),
+        shutdownPromise,
+      ];
+      ownerClosurePromise = Promise.all(captured);
+      void ownerClosurePromise.catch(() => {});
+      ownerFallbackPromise = Promise.allSettled(captured);
+    }
+    return ownerClosurePromise;
+  };
+  const beginRootRemoval = () => {
+    requireProof(owner === undefined || exactReaping, `${proof}_REMOVAL_BEFORE_REAP`);
+    if (removalPromise !== undefined) return removalPromise;
+    const targets = Object.freeze([...ownedRoots]);
+    removalPromise = (async () => {
+      const disposition = await removeOwnedRoots(targets);
+      if (disposition !== 'REMOVED') return disposition;
+      const absent = await Promise.all(targets.map(async root => {
+        try {
+          await lstat(root);
+          return false;
+        } catch (error) {
+          return error?.code === 'ENOENT';
+        }
+      }));
+      return absent.every(Boolean) ? 'REMOVED_VERIFIED' : 'UNVERIFIED';
+    })();
+    void removalPromise.catch(() => {});
+    return removalPromise;
+  };
+  const finishAfterDeadline = async (promise, milliseconds, code) => {
+    try {
+      return await operation.wait(promise);
+    } catch (error) {
+      if (!rememberDeadlineFailure(error)) throw fixedFailure(code);
+      if (!await bounded(promise, milliseconds)) throw fixedFailure(code);
+      try {
+        return await promise;
+      } catch {
+        throw fixedFailure(code);
+      }
+    }
+  };
+
+  t.after(async () => {
+    let afterFailure;
+    if (ownerFallbackPromise !== undefined && !exactReaping) {
+      if (await bounded(ownerFallbackPromise, 3_500)) {
+        await ownerFallbackPromise;
+        exactReaping = exactlyReaped();
+      }
+      if (!exactReaping) afterFailure ??= fixedFailure(`${proof}_REAP_RESIDUE_RETAINED`);
+    }
+    if (removalPromise !== undefined && !removalComplete) {
+      if (await bounded(removalPromise, 2_500)) {
+        try {
+          removalComplete = await removalPromise === 'REMOVED_VERIFIED';
+        } catch {
+          afterFailure ??= fixedFailure(`${proof}_ROOT_RESIDUE_RETAINED`);
+        }
+      }
+      if (!removalComplete) afterFailure ??= fixedFailure(`${proof}_ROOT_RESIDUE_RETAINED`);
+    }
+    if (afterFailure && deadlineFailure === undefined) throw afterFailure;
+  });
+
+  let workFailure;
+  let cleanupFailure;
+  try {
+    const routingFixtureValue = await operation.wait(createRoutingRoot(
+      staleSecond
+        ? 'fixed-payer-stale-successor-routing-'
+        : 'fixed-payer-dual-payment-routing-',
+      ownedRoots,
+    ));
+    const firstRoot = await operation.wait(createPrivateRoot(
+      staleSecond ? 'fixed-payer-stale-successor-a-' : 'fixed-payer-dual-payment-a-',
+      ownedRoots,
+    ));
+    childRoots.push(firstRoot);
+    const secondRoot = await operation.wait(createPrivateRoot(
+      staleSecond ? 'fixed-payer-stale-successor-b-' : 'fixed-payer-dual-payment-b-',
+      ownedRoots,
+    ));
+    childRoots.push(secondRoot);
+
+    let payee;
+    let accepted;
+    let payloadPairs;
+    try {
+      payee = syntheticKeyPair(staleSecond ? 245 : 246);
+      accepted = requirement(payee.getAddress().toString());
+      payloadPairs = signedDualPayloadsByShard(
+        routingFixtureValue.routing,
+        accepted,
+        { staleSecond },
+      );
+    } finally {
+      payee?.clear();
+    }
+    const inputs = payloadPairs.map(pair => pair.map(fixtureInput));
+    const identities = inputs.map(pair => pair.map(inputIdentity));
+    const flatIdentities = identities.flat();
+    const emptyHash = sdk.EMPTY_HASH.toString();
+    payloadPairs.forEach((pair, payerIndex) => {
+      const first = pair[0].payload.transaction;
+      const second = pair[1].payload.transaction;
+      requireProof(first.address === second.address && first.height === 1 &&
+        first.previousHash === emptyHash && second.height === 2 &&
+        second.previousHash === (staleSecond ? emptyHash : first.hash) &&
+        pair[0].accepted.network === pair[1].accepted.network &&
+        pair[0].payload.intentDigest !== pair[1].payload.intentDigest &&
+        identities[payerIndex][0].transaction !== identities[payerIndex][1].transaction &&
+        identities[payerIndex][0].authorizationKey !==
+          identities[payerIndex][1].authorizationKey,
+      `${proof}_SEQUENCE_BINDING`);
+      const ticket = routingFixtureValue.routing.route(first.address);
+      requireProof(Object.isFrozen(ticket) && ticket.version === 1 &&
+        ticket.shardId === CONFIGURATION.shardIds[payerIndex], `${proof}_ROUTE`);
+    });
+    requireProof(new Set(payloadPairs.map(pair => pair[0].payload.transaction.address)).size === 2 &&
+      new Set(flatIdentities.map(identity => identity.transaction)).size === 4 &&
+      new Set(flatIdentities.map(identity => identity.authorizationKey)).size === 4 &&
+      flatIdentities.every(identity => identity.payer.length > 0), `${proof}_IDENTITIES`);
+    try {
+      await operation.wait(Promise.all(inputs.flat().map(input => preflightZenonPayment(
+        input.paymentPayload,
+        input.requirements,
+        input.paymentRequired,
+      ))));
+    } catch (error) {
+      if (rememberDeadlineFailure(error)) throw error;
+      throw fixedFailure(`${proof}_PREFLIGHT`);
+    }
+    await operation.wait(Promise.all(childRoots.flatMap((root, index) => [
+      writeSignedFixture(root, dualPaymentFixture(payloadPairs[index])),
+      writeStartupFixture(root, DUAL_PAYMENT_STARTUP_MODE),
+    ])));
+
+    ({ owner } = createOfflineOwner(
+      routingFixtureValue.routing,
+      payloadPairs.map(pair => pair[0]),
+      childRoots,
+      { requestTimeoutMs: 5_000 },
+    ));
+    originalStart = owner.start;
+    originalShutdown = owner.shutdown;
+    startingPromise = originalStart();
+    requireProof(originalStart() === startingPromise, `${proof}_START_NOT_MEMOIZED`);
+    facade = await operation.wait(startingPromise);
+    originalRetire = facade.retire;
+    requireProof(originalStart() === startingPromise &&
+      await operation.wait(originalStart()) === facade, `${proof}_FACADE_NOT_MEMOIZED`);
+    const started = owner.status();
+    requireProof(started.phase === 'READY' && started.startedChildren === 2 &&
+      started.dispatcherExposed === true && started.cleanupUncertain === false &&
+      started.children.length === 2 && started.children.every(child =>
+        child.ready && child.committed && child.stdoutBoundary && child.stderrBoundary &&
+        !child.exitObserved && !child.closeObserved), `${proof}_STARTUP`);
+
+    const readSnapshots = async expectedCount => Promise.all(childRoots.map(async root => {
+      const journal = new SettlementJournal({
+        directory: join(root, 'journal'),
+        allowedRoot: root,
+        existingOnly: true,
+      });
+      const listed = await journal.list({ includeTombstones: true });
+      const loaded = await journal.load();
+      requireProof(listed.records.length === expectedCount && listed.tombstones.length === 0 &&
+        loaded.records.length === expectedCount &&
+        isDeepStrictEqual(loaded.records, listed.records), `${proof}_JOURNAL_CARDINALITY`);
+      return { revision: loaded.revision, records: listed.records };
+    }));
+    const requireExactRecord = (records, payerIndex, ordinal, cachedResponse) => {
+      const identity = identities[payerIndex][ordinal];
+      const record = records.find(candidate =>
+        candidate.authorizationKey === identity.authorizationKey &&
+        candidate.transactionHash === identity.transaction);
+      requireProof(record !== undefined, `${proof}_JOURNAL_IDENTITY`);
+      const expected = retainedAttempt(inputs[payerIndex][ordinal]);
+      requireProof(Object.entries(expected).every(([field, value]) =>
+        isDeepStrictEqual(record[field], value)) &&
+        record.evidenceState === 'MOMENTUM_INCLUDED' &&
+        record.deliveryState === 'DELIVERED' &&
+        isDeepStrictEqual(record.cachedResponse, cachedResponse), `${proof}_JOURNAL_BINDING`);
+      return record;
+    };
+    const cachedByOrdinal = [[], []];
+    const settleAndDeliver = async ordinal => {
+      const included = await operation.wait(Promise.all(inputs.map(pair => facade.settle(
+        pair[ordinal].paymentPayload,
+        pair[ordinal].requirements,
+        pair[ordinal].paymentRequired,
+      ))));
+      included.forEach((result, payerIndex) => {
+        const identity = identities[payerIndex][ordinal];
+        requireProof(isDeepStrictEqual({ ...result }, {
+          success: true,
+          network: inputs[payerIndex][ordinal].requirements.network,
+          transaction: identity.transaction,
+          payer: identity.payer,
+          state: 'MOMENTUM_INCLUDED',
+          authorizationKey: identity.authorizationKey,
+          deliveryState: 'NONE',
+        }), `${proof}_INCLUDED`);
+      });
+      const pending = await operation.wait(Promise.all(included.map((result, payerIndex) =>
+        facade.markDeliveryPending(result, inputs[payerIndex][ordinal].requirements))));
+      pending.forEach((result, payerIndex) => {
+        const identity = identities[payerIndex][ordinal];
+        requireProof(isDeepStrictEqual(result, {
+          authorizationKey: identity.authorizationKey,
+          payer: identity.payer,
+          transactionHash: identity.transaction,
+          deliveryState: 'DELIVERY_PENDING',
+          deliveryClaimed: true,
+        }), `${proof}_DELIVERY_PENDING`);
+      });
+      const cachedResponses = included.map((result, payerIndex) => ({
+        status: 200,
+        headers: { 'content-type': 'application/json; charset=utf-8' },
+        body: {
+          ok: true,
+          proof: 'owner-dual-synthetic-payment',
+          ordinal: ordinal + 1,
+          payer: result.payer,
+          transaction: result.transaction,
+          authorizationKey: identities[payerIndex][ordinal].authorizationKey,
+        },
+      }));
+      cachedByOrdinal[ordinal] = cachedResponses;
+      const delivered = await operation.wait(Promise.all(included.map((result, payerIndex) =>
+        facade.markDelivered(result, cachedResponses[payerIndex]))));
+      delivered.forEach((result, payerIndex) => {
+        const identity = identities[payerIndex][ordinal];
+        requireProof(isDeepStrictEqual(result, {
+          authorizationKey: identity.authorizationKey,
+          payer: identity.payer,
+          transactionHash: identity.transaction,
+          deliveryState: 'DELIVERED',
+          cachedResponse: cachedResponses[payerIndex],
+        }), `${proof}_DELIVERED`);
+        const expectedBytes = Buffer.from(JSON.stringify(cachedResponses[payerIndex]), 'utf8');
+        const actualBytes = Buffer.from(JSON.stringify(result.cachedResponse), 'utf8');
+        try {
+          requireProof(actualBytes.equals(expectedBytes), `${proof}_CACHE_BYTES`);
+        } finally {
+          expectedBytes.fill(0);
+          actualBytes.fill(0);
+        }
+      });
+      return included;
+    };
+
+    await settleAndDeliver(0);
+    const firstSnapshots = await operation.wait(readSnapshots(1));
+    firstSnapshots.forEach((snapshot, payerIndex) => {
+      requireExactRecord(snapshot.records, payerIndex, 0, cachedByOrdinal[0][payerIndex]);
+    });
+
+    let expectedFinalRecordCount;
+    let finalSnapshotsBeforeReplay;
+    if (!staleSecond) {
+      await settleAndDeliver(1);
+      expectedFinalRecordCount = 2;
+      finalSnapshotsBeforeReplay = await operation.wait(readSnapshots(2));
+      finalSnapshotsBeforeReplay.forEach((snapshot, payerIndex) => {
+        requireExactRecord(snapshot.records, payerIndex, 0, cachedByOrdinal[0][payerIndex]);
+        const secondRecord = requireExactRecord(
+          snapshot.records,
+          payerIndex,
+          1,
+          cachedByOrdinal[1][payerIndex],
+        );
+        requireProof(secondRecord.signedAccountBlock.height === 2 &&
+          secondRecord.signedAccountBlock.previousHash ===
+            identities[payerIndex][0].transaction, `${proof}_DURABLE_SEQUENCE`);
+      });
+      for (let ordinal = 0; ordinal < 2; ordinal += 1) {
+        const replayed = await operation.wait(Promise.all(inputs.map(pair => facade.settle(
+          structuredClone(pair[ordinal].paymentPayload),
+          structuredClone(pair[ordinal].requirements),
+          structuredClone(pair[ordinal].paymentRequired),
+        ))));
+        replayed.forEach((result, payerIndex) => {
+          const identity = identities[payerIndex][ordinal];
+          requireProof(isDeepStrictEqual({ ...result }, {
+            success: true,
+            network: inputs[payerIndex][ordinal].requirements.network,
+            transaction: identity.transaction,
+            payer: identity.payer,
+            state: 'MOMENTUM_INCLUDED',
+            authorizationKey: identity.authorizationKey,
+            deliveryState: 'DELIVERED',
+            cachedResponse: cachedByOrdinal[ordinal][payerIndex],
+          }), `${proof}_REPLAY_BINDING`);
+          const expectedBytes = Buffer.from(
+            JSON.stringify(cachedByOrdinal[ordinal][payerIndex]),
+            'utf8',
+          );
+          const actualBytes = Buffer.from(JSON.stringify(result.cachedResponse), 'utf8');
+          try {
+            requireProof(actualBytes.equals(expectedBytes), `${proof}_REPLAY_BYTES`);
+          } finally {
+            expectedBytes.fill(0);
+            actualBytes.fill(0);
+          }
+        });
+      }
+    } else {
+      expectedFinalRecordCount = 1;
+      const refused = await operation.wait(facade.settle(
+        inputs[0][1].paymentPayload,
+        inputs[0][1].requirements,
+        inputs[0][1].paymentRequired,
+      ));
+      const refusedIdentity = identities[0][1];
+      const expectedRefusal = {
+        success: false,
+        network: inputs[0][1].requirements.network,
+        transaction: refusedIdentity.transaction,
+        payer: refusedIdentity.payer,
+        errorReason: 'payment_settlement_failed',
+        state: 'VALIDATED',
+        authorizationKey: refusedIdentity.authorizationKey,
+        retrySamePayment: false,
+        deliveryState: 'NONE',
+      };
+      requireProof(isDeepStrictEqual({ ...refused }, expectedRefusal),
+        `${proof}_TYPED_REFUSAL`);
+      const repeated = await operation.wait(facade.settle(
+        structuredClone(inputs[0][1].paymentPayload),
+        structuredClone(inputs[0][1].requirements),
+        structuredClone(inputs[0][1].paymentRequired),
+      ));
+      requireProof(isDeepStrictEqual({ ...repeated }, expectedRefusal),
+        `${proof}_EXACT_RETRY_REFUSAL`);
+      await operation.wait(assert.rejects(
+        facade.settle(
+          inputs[0][0].paymentPayload,
+          inputs[0][0].requirements,
+          inputs[0][0].paymentRequired,
+        ),
+        rejectsWith(DISPATCH_CODES.INVALID_REQUEST),
+      ));
+      const peerReplay = await operation.wait(facade.settle(
+        structuredClone(inputs[1][0].paymentPayload),
+        structuredClone(inputs[1][0].requirements),
+        structuredClone(inputs[1][0].paymentRequired),
+      ));
+      requireProof(isDeepStrictEqual(peerReplay.cachedResponse, cachedByOrdinal[0][1]) &&
+        peerReplay.deliveryState === 'DELIVERED', `${proof}_PEER_CACHE_REPLAY`);
+      finalSnapshotsBeforeReplay = await operation.wait(readSnapshots(1));
+      finalSnapshotsBeforeReplay.forEach((snapshot, payerIndex) => {
+        requireExactRecord(snapshot.records, payerIndex, 0, cachedByOrdinal[0][payerIndex]);
+        requireProof(snapshot.records.every(record =>
+          record.transactionHash !== identities[payerIndex][1].transaction &&
+          record.authorizationKey !== identities[payerIndex][1].authorizationKey &&
+          record.cachedResponse !== null), `${proof}_NO_SECOND_RECORD`);
+      });
+    }
+
+    const journalSnapshotsAfterReplay = await operation.wait(
+      readSnapshots(expectedFinalRecordCount),
+    );
+    requireProof(isDeepStrictEqual(journalSnapshotsAfterReplay, finalSnapshotsBeforeReplay),
+      `${proof}_REPLAY_MUTATED_JOURNAL`);
+    const healthy = owner.status();
+    requireProof(healthy.phase === 'READY' && healthy.startedChildren === 2 &&
+      healthy.cleanupUncertain === false && healthy.children.every(child =>
+        !child.exitObserved && !child.closeObserved) &&
+      facade.retirementStatus().every(route => route.quarantined === false),
+    `${proof}_TRANSPORT_HEALTH`);
+    requireProof(originalStart() === startingPromise &&
+      await operation.wait(originalStart()) === facade &&
+      !Object.hasOwn(owner, 'restart'), `${proof}_SAME_GENERATION`);
+
+    retirementPromise = originalRetire();
+    requireProof(originalRetire() === retirementPromise, `${proof}_RETIRE_NOT_MEMOIZED`);
+    shutdownPromise = originalShutdown();
+    requireProof(originalShutdown() === shutdownPromise, `${proof}_SHUTDOWN_NOT_MEMOIZED`);
+    beginOwnerClosure();
+    const [retired, shutdown] = await operation.wait(ownerClosurePromise);
+    requireProof(isDeepStrictEqual(retired, { retired: true }) &&
+      isDeepStrictEqual(shutdown, {
+        closed: true,
+        exactReaping: true,
+        quarantined: false,
+        markerDisposition: 'NOT_REMOVED',
+        rootDisposition: 'NOT_REMOVED',
+      }), `${proof}_RETIREMENT_RESULT`);
+    const closed = owner.status();
+    requireProof(closed.phase === 'CLOSED' && closed.startedChildren === 2 &&
+      closed.dispatcherExposed === true && closed.cleanupUncertain === false &&
+      closed.children.length === 2 && closed.children.every(child =>
+        child.exitObserved && child.closeObserved), `${proof}_EXACT_REAPING`);
+    exactReaping = true;
+
+    for (const root of childRoots) {
+      requireProof(await assertRetainedStartupClaim(root, STARTUP_CLAIM.REQUIRED) ===
+        STARTUP_CLAIM.RETAINED, `${proof}_MARKER_RETAINED`);
+    }
+    const finalSnapshots = await operation.wait(readSnapshots(expectedFinalRecordCount));
+    requireProof(isDeepStrictEqual(finalSnapshots, journalSnapshotsAfterReplay),
+      `${proof}_FINAL_JOURNAL_CHANGED`);
+
+    const removalResult = await operation.wait(beginRootRemoval());
+    requireProof(removalResult === 'REMOVED_VERIFIED', removalResult === 'TIMEOUT'
+      ? `${proof}_ROOT_CLEANUP_TIMEOUT_RESIDUE_RETAINED`
+      : `${proof}_ROOT_CLEANUP_FAILED_RESIDUE_RETAINED`);
+    removalComplete = true;
+  } catch (error) {
+    rememberDeadlineFailure(error);
+    workFailure = error?.name === 'FixedPayerSettlementTestError'
+      ? error
+      : fixedFailure(`${proof}_PROOF`);
+  } finally {
+    if (owner !== undefined && !exactReaping) {
+      try {
+        beginOwnerClosure();
+        await finishAfterDeadline(
+          ownerFallbackPromise,
+          3_500,
+          `${proof}_REAP_RESIDUE_RETAINED`,
+        );
+        exactReaping = exactlyReaped();
+        if (!exactReaping) throw fixedFailure(`${proof}_REAP_RESIDUE_RETAINED`);
+      } catch (error) {
+        cleanupFailure ??= error?.name === 'FixedPayerSettlementTestError'
+          ? error
+          : fixedFailure(`${proof}_REAP_RESIDUE_RETAINED`);
+      }
+    }
+    if (deadlineFailure === undefined && (owner === undefined || exactReaping) &&
+        ownedRoots.length > 0 && !removalComplete) {
+      try {
+        const disposition = await finishAfterDeadline(
+          beginRootRemoval(),
+          2_500,
+          `${proof}_ROOT_RESIDUE_RETAINED`,
+        );
+        removalComplete = disposition === 'REMOVED_VERIFIED';
+        if (!removalComplete) throw fixedFailure(`${proof}_ROOT_RESIDUE_RETAINED`);
+      } catch (error) {
+        cleanupFailure ??= error?.name === 'FixedPayerSettlementTestError'
+          ? error
+          : fixedFailure(`${proof}_ROOT_RESIDUE_RETAINED`);
+      }
+    }
+    if (!deadlineAdjudicated) {
+      deadlineAdjudicated = true;
+      try {
+        operation.close();
+      } catch (error) {
+        if (!rememberDeadlineFailure(error)) {
+          cleanupFailure ??= fixedFailure(`${proof}_DEADLINE_ADJUDICATION`);
+        }
+      }
+    }
+  }
+  if (deadlineFailure) throw deadlineFailure;
+  if (cleanupFailure) throw cleanupFailure;
+  if (workFailure) throw workFailure;
+}
+
+test('one owned generation publishes two linked synthetic payments per fixed payer', {
+  timeout: 30_000,
+}, async t => {
+  await runOwnedDualPaymentProof(t, { staleSecond: false });
+});
+
+test('the evolving frontier rejects a stale synthetic successor before publication', {
+  timeout: 30_000,
+}, async t => {
+  await runOwnedDualPaymentProof(t, { staleSecond: true });
 });
 
 test('owner-returned facade overlaps physical /paid delivery and replays both cached responses', {
