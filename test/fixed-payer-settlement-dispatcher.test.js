@@ -69,7 +69,7 @@ const CHILD_ENTRYPOINT = fileURLToPath(new URL(
 const EXECUTABLE = process.execPath;
 const FIXTURE_NAME = 'signed-payment.json';
 const STARTUP_FIXTURE_NAME = 'fixed-payer-startup.json';
-const OFFLINE_TEST_MODE = '--fixed-payer-offline-test-v1';
+const OFFLINE_TEST_MODE = '--fixed-payer-offline-test-v2';
 const PUBLICATION_MARKER = 'PUBLICATION_BOUNDARY';
 const STARTUP_STDOUT_BOUNDARY = FIXED_PAYER_SETTLEMENT_STARTUP_STDOUT_BOUNDARY.trimEnd();
 const STARTUP_STDERR_BOUNDARY = FIXED_PAYER_SETTLEMENT_STARTUP_STDERR_BOUNDARY.trimEnd();
@@ -130,7 +130,7 @@ function ownerRejectsWith(code) {
 
 function startupCommitFrame(descriptor) {
   return {
-    ipcVersion: 1,
+    ipcVersion: 2,
     type: 'STARTUP_COMMIT',
     correlationId: `${descriptor.generation}:${descriptor.shardId}:startup-commit`,
     shardId: descriptor.shardId,
@@ -141,7 +141,7 @@ function startupCommitFrame(descriptor) {
 
 function startupCommittedFrame(descriptor) {
   return {
-    ipcVersion: 1,
+    ipcVersion: 2,
     type: 'STARTUP_COMMITTED',
     correlationId: `${descriptor.generation}:${descriptor.shardId}:startup-commit`,
     shardId: descriptor.shardId,
@@ -616,7 +616,7 @@ async function signedReplacementFixture(routing) {
 function settleRequestFrame(descriptor, input, sequence) {
   const identity = inputIdentity(input);
   return JSON.stringify({
-    ipcVersion: 1,
+    ipcVersion: 2,
     type: 'SETTLE',
     correlationId: `${descriptor.generation}:${descriptor.shardId}:${sequence}`,
     shardId: descriptor.shardId,
@@ -628,6 +628,41 @@ function settleRequestFrame(descriptor, input, sequence) {
     network: input.requirements.network,
     body: structuredClone(input),
   });
+}
+
+function publicationObservationForRequest(request) {
+  return {
+    ipcVersion: 2,
+    type: 'PUBLICATION_OBSERVED',
+    correlationId: request.correlationId,
+    shardId: request.shardId,
+    payer: request.payer,
+    generation: request.generation,
+    sequence: request.sequence,
+    operation: 'SETTLE',
+    transaction: request.transaction,
+    authorizationKey: request.authorizationKey,
+    network: request.network,
+  };
+}
+
+function successfulResultForRequest(request, result) {
+  return {
+    ipcVersion: 2,
+    type: 'RESULT',
+    correlationId: request.correlationId,
+    shardId: request.shardId,
+    payer: request.payer,
+    generation: request.generation,
+    sequence: request.sequence,
+    operation: request.type,
+    ok: true,
+    result,
+  };
+}
+
+function settleResultForRequest(request, input) {
+  return successfulResultForRequest(request, includedResult(input));
 }
 
 async function writeSignedFixture(root, paymentPayload) {
@@ -817,7 +852,7 @@ function launchStartupProbe(label, root, descriptor) {
     try {
       if (!readyFrameSeen) {
         assert.deepEqual(message, {
-          ipcVersion: 1,
+          ipcVersion: 2,
           type: 'READY',
           correlationId: `${descriptor.generation}:${descriptor.shardId}:startup`,
           shardId: descriptor.shardId,
@@ -966,7 +1001,13 @@ async function removeVerifiedSyntheticRoots(roots) {
     : 'SYNTHETIC_ROOT_CLEANUP_REJECTED_RESIDUE_RETAINED');
 }
 
-function launchChild(label, root, descriptor) {
+function launchChild(label, root, descriptor, paymentPayload) {
+  const expectedInput = {
+    paymentPayload,
+    requirements: paymentPayload.accepted,
+    paymentRequired: paymentRequired(paymentPayload.accepted),
+  };
+  const expectedIdentity = inputIdentity(expectedInput);
   const child = spawn(EXECUTABLE, [CHILD_ENTRYPOINT, OFFLINE_TEST_MODE, label, root], {
     env: Object.create(null),
     shell: false,
@@ -1034,13 +1075,44 @@ function launchChild(label, root, descriptor) {
   };
   child.on('message', message => {
     if (committedSeen) {
-      if (typeof message !== 'string') fail('CHILD_PROTOCOL');
+      if (typeof message !== 'string') {
+        fail('CHILD_PROTOCOL');
+        return;
+      }
+      let parsed;
+      try {
+        parsed = JSON.parse(message);
+        if (JSON.stringify(parsed) !== message) throw fixedFailure('CHILD_PROTOCOL');
+      } catch {
+        fail('CHILD_PROTOCOL');
+        return;
+      }
+      if (parsed.type !== 'PUBLICATION_OBSERVED') return;
+      const fields = [
+        'ipcVersion', 'type', 'correlationId', 'shardId', 'payer', 'generation',
+        'sequence', 'operation', 'transaction', 'authorizationKey', 'network',
+      ];
+      if (markerSeen || !isDeepStrictEqual(Object.keys(parsed), fields) ||
+          parsed.ipcVersion !== 2 ||
+          parsed.correlationId !== `${descriptor.generation}:${descriptor.shardId}:1` ||
+          parsed.shardId !== descriptor.shardId || parsed.payer !== descriptor.payer ||
+          parsed.generation !== descriptor.generation || parsed.sequence !== 1 ||
+          parsed.operation !== 'SETTLE' ||
+          parsed.transaction !== expectedIdentity.transaction ||
+          parsed.authorizationKey !== expectedIdentity.authorizationKey ||
+          parsed.network !== expectedInput.requirements.network) {
+        fail('CHILD_PROTOCOL');
+        return;
+      }
+      markerSeen = true;
+      clearTimeout(publicationWatchdog);
+      resolveMarker();
       return;
     }
     try {
       if (!readyFrameSeen) {
         assert.deepEqual(message, {
-          ipcVersion: 1,
+          ipcVersion: 2,
           type: 'READY',
           correlationId: `${descriptor.generation}:${descriptor.shardId}:startup`,
           shardId: descriptor.shardId,
@@ -1080,14 +1152,10 @@ function launchChild(label, root, descriptor) {
         maybeReady();
         continue;
       }
-      if (line !== PUBLICATION_MARKER || markerSeen) {
-        fail('CHILD_PROTOCOL');
-        return;
-      }
-      markerSeen = true;
-      clearTimeout(publicationWatchdog);
-      resolveMarker();
+      fail('CHILD_PROTOCOL');
+      return;
     }
+    if (stdoutBoundarySeen && stdout.length > 0) fail('CHILD_PROTOCOL');
   });
   child.stderr.on('data', chunk => {
     stderrBytes += chunk.length;
@@ -1306,6 +1374,38 @@ test('READY-shaped values and unbranded callbacks cannot create owned startup au
   assert.equal(outputBytes, 0);
 });
 
+test('the retired v1 offline invocation is refused before a root claim', async t => {
+  const { routing } = await routingFixture(t);
+  const root = await createPrivateRoot('fixed-payer-v1-invocation-');
+  t.after(() => rm(root, { recursive: true, force: true }));
+  const payload = signedStartupPayloads(routing)[0];
+  await writeSignedFixture(root, payload);
+  const child = spawn(
+    EXECUTABLE,
+    [CHILD_ENTRYPOINT, '--fixed-payer-offline-test-v1', 'A', root],
+    { env: Object.create(null), shell: false, stdio: ['ignore', 'pipe', 'pipe', 'ipc'] },
+  );
+  let outputBytes = 0;
+  child.stdout.on('data', chunk => { outputBytes += chunk.length; });
+  child.stderr.on('data', chunk => { outputBytes += chunk.length; });
+  const exited = new Promise(resolvePromise => child.once('exit', (code, signal) => {
+    resolvePromise({ code, signal });
+  }));
+  const closed = new Promise(resolvePromise => child.once('close', (code, signal) => {
+    resolvePromise({ code, signal });
+  }));
+  const [exitState, closeState] = await Promise.all([exited, closed]);
+  assert.notEqual(exitState.code, 0);
+  assert.equal(exitState.signal, null);
+  assert.deepEqual(closeState, exitState);
+  assert.equal(outputBytes, 0);
+  await assert.rejects(
+    lstat(join(root, FIXED_PAYER_SETTLEMENT_STARTUP_MARKER_FILE)),
+    error => error?.code === 'ENOENT',
+  );
+  await assert.rejects(lstat(join(root, 'journal')), error => error?.code === 'ENOENT');
+});
+
 test('owned startup waits for exact commit ACKs and both FIFO pipe boundaries', {
   timeout: 15_000,
 }, async t => {
@@ -1356,6 +1456,87 @@ test('owned startup waits for exact commit ACKs and both FIFO pipe boundaries', 
   assert.equal(verdict.quarantined, false);
   assert.equal(owner.status().children.every(child =>
     child.exitObserved && child.closeObserved), true);
+});
+
+test('owned startup rejects retired v1 stdout and stderr sentinels without fallback', {
+  timeout: 20_000,
+}, async t => {
+  const scenarios = [
+    { name: 'stdout sentinel', mode: 'RETIRED_V1_STDOUT_BOUNDARY' },
+    { name: 'stderr sentinel', mode: 'RETIRED_V1_STDERR_BOUNDARY' },
+  ];
+  for (const scenario of scenarios) {
+    await t.test(scenario.name, async nested => {
+      let routingRoot;
+      const roots = [];
+      let owner;
+      nested.after(async () => {
+        try { await owner?.shutdown(); } catch {}
+        const reaped = owner === undefined ||
+          owner.status().children.every(child => child.exitObserved && child.closeObserved);
+        if (reaped) {
+          await removeVerifiedSyntheticRoots([
+            ...(routingRoot === undefined ? [] : [routingRoot]),
+            ...roots,
+          ]);
+        }
+      });
+
+      const routingFixtureValue = await createRoutingRoot(
+        `fixed-payer-retired-${scenario.mode.toLowerCase()}-routing-`,
+      );
+      routingRoot = routingFixtureValue.root;
+      roots.push(await createPrivateRoot(
+        `fixed-payer-retired-${scenario.mode.toLowerCase()}-a-`,
+      ));
+      roots.push(await createPrivateRoot(
+        `fixed-payer-retired-${scenario.mode.toLowerCase()}-b-`,
+      ));
+      const payloads = signedStartupPayloads(routingFixtureValue.routing);
+      await Promise.all(roots.map((root, index) => writeSignedFixture(root, payloads[index])));
+      await writeStartupFixture(roots[0], scenario.mode);
+      ({ owner } = createOfflineOwner(routingFixtureValue.routing, payloads, roots));
+
+      const starting = owner.start();
+      assert.equal(owner.start(), starting);
+      await assert.rejects(starting, ownerRejectsWith(OWNER_CODES.STARTUP_FAILED));
+      const failed = owner.status();
+      assert.equal(failed.phase, 'FAILED');
+      assert.equal(failed.startedChildren, 2);
+      assert.equal(failed.dispatcherExposed, false);
+      assert.equal(failed.cleanupUncertain, false);
+      assert.equal(failed.children.length, 2);
+      assert.equal(failed.children.every(child =>
+        child.exitObserved && child.closeObserved), true);
+      assert.equal(owner.start(), starting);
+      assert.equal(Object.hasOwn(owner, 'restart'), false);
+      assert.equal(Object.hasOwn(owner, 'replace'), false);
+      assert.equal(Object.hasOwn(owner, 'recover'), false);
+      await new Promise(resolvePromise => setTimeout(resolvePromise, 25));
+      assert.equal(owner.status().startedChildren, 2);
+
+      for (const root of roots) {
+        assert.equal(
+          await assertRetainedStartupClaim(root, STARTUP_CLAIM.REQUIRED),
+          STARTUP_CLAIM.RETAINED,
+        );
+        const journal = new SettlementJournal({
+          directory: join(root, 'journal'),
+          allowedRoot: root,
+          existingOnly: true,
+        });
+        assert.deepEqual(await journal.load(), {
+          schemaVersion: 1,
+          revision: 0,
+          records: [],
+        });
+        assert.deepEqual(await journal.list({ includeTombstones: true }), {
+          records: [],
+          tombstones: [],
+        });
+      }
+    });
+  }
 });
 
 test('owned startup rejects extra commit ACKs observed during the global startup join', {
@@ -1654,6 +1835,36 @@ test('owned startup rejects premature frames and every observed pre-barrier stdo
       assert.equal(status.children.every(child => child.exitObserved && child.closeObserved), true);
     });
   }
+});
+
+test('post-sentinel legacy publication stdout quarantines and reaps the owned generation', {
+  timeout: 15_000,
+}, async t => {
+  const { routing } = await routingFixture(t);
+  const roots = await Promise.all([
+    createPrivateRoot('fixed-payer-runtime-stdout-a-'),
+    createPrivateRoot('fixed-payer-runtime-stdout-b-'),
+  ]);
+  const payloads = signedStartupPayloads(routing);
+  await Promise.all(roots.map((root, index) => writeSignedFixture(root, payloads[index])));
+  await writeStartupFixture(roots[0], 'RUNTIME_LEGACY_STDOUT');
+  const { owner } = createOfflineOwner(routing, payloads, roots);
+  t.after(async () => {
+    try { await owner.shutdown(); } catch {}
+    if (owner.status().children.every(child => child.exitObserved && child.closeObserved)) {
+      await removeVerifiedSyntheticRoots(roots);
+    }
+  });
+
+  const facade = await owner.start();
+  assert.equal(typeof facade.settle, 'function');
+  const quarantined = await waitForOwnerPhase(owner, ['QUARANTINED']);
+  assert.equal(quarantined.dispatcherExposed, true);
+  const shutdown = await owner.shutdown();
+  assert.equal(shutdown.quarantined, true);
+  assert.equal(shutdown.exactReaping, true);
+  assert.equal(owner.status().children.every(child =>
+    child.exitObserved && child.closeObserved), true);
 });
 
 test('the durable one-use claim rejects concurrent and repeated same-root startup', {
@@ -2160,6 +2371,374 @@ test('owned facade timeout retires and exactly reaps the whole READY generation'
   const finalStatus = owner.status();
   assert.equal(finalStatus.phase, 'QUARANTINED');
   assert.equal(finalStatus.children.every(child => child.exitObserved && child.closeObserved), true);
+});
+
+test('owner-returned facade quarantines on a mismatched publication observation', {
+  timeout: 20_000,
+}, async t => {
+  const operation = createOperationDeadline(12_000);
+  const ownedRoots = [];
+  const childRoots = [];
+  let owner;
+  let facade;
+  let originalStart;
+  let originalRetire;
+  let originalShutdown;
+  let startingPromise;
+  let retirementPromise;
+  let shutdownPromise;
+  let ownerClosurePromise;
+  let ownerFallbackPromise;
+  let exactReaping = false;
+  let removalPromise;
+  let removalComplete = false;
+  let deadlineFailure;
+  let deadlineAdjudicated = false;
+
+  const isDeadlineFailure = error =>
+    error?.name === 'FixedPayerSettlementTestError' &&
+    error?.message === 'WHOLE_OPERATION_TIMEOUT';
+  const rememberDeadlineFailure = error => {
+    if (!isDeadlineFailure(error)) return false;
+    deadlineFailure ??= error;
+    return true;
+  };
+  const exactlyReaped = () => {
+    if (owner === undefined) return true;
+    try {
+      const status = owner.status();
+      return status.cleanupUncertain === false && status.startedChildren === 2 &&
+        status.children.length === 2 &&
+        status.children.every(child => child.exitObserved && child.closeObserved);
+    } catch {
+      return false;
+    }
+  };
+  const beginOwnerClosure = () => {
+    if (owner === undefined) return undefined;
+    if (facade !== undefined && retirementPromise === undefined) {
+      try {
+        retirementPromise = originalRetire();
+      } catch {
+        retirementPromise = Promise.reject(fixedFailure('OWNER_MISMATCH_RETIREMENT'));
+      }
+      void retirementPromise.catch(() => {});
+    }
+    if (shutdownPromise === undefined) {
+      try {
+        shutdownPromise = originalShutdown();
+      } catch {
+        shutdownPromise = Promise.reject(fixedFailure('OWNER_MISMATCH_SHUTDOWN'));
+      }
+      void shutdownPromise.catch(() => {});
+    }
+    if (ownerClosurePromise === undefined) {
+      const operations = [
+        ...(retirementPromise === undefined ? [] : [retirementPromise]),
+        shutdownPromise,
+      ];
+      ownerClosurePromise = Promise.all(operations);
+      void ownerClosurePromise.catch(() => {});
+      ownerFallbackPromise = Promise.allSettled(operations);
+    }
+    return ownerClosurePromise;
+  };
+  const beginRootRemoval = () => {
+    requireProof(owner === undefined || exactReaping,
+      'OWNER_MISMATCH_ROOT_REMOVAL_BEFORE_REAP');
+    if (removalPromise !== undefined) return removalPromise;
+    const targets = Object.freeze([...ownedRoots]);
+    removalPromise = (async () => {
+      const disposition = await removeOwnedRoots(targets);
+      if (disposition !== 'REMOVED') return disposition;
+      const absent = await Promise.all(targets.map(async root => {
+        try {
+          await lstat(root);
+          return false;
+        } catch (error) {
+          return error?.code === 'ENOENT';
+        }
+      }));
+      return absent.every(Boolean) ? 'REMOVED_VERIFIED' : 'UNVERIFIED';
+    })();
+    void removalPromise.catch(() => {});
+    return removalPromise;
+  };
+  const finishAfterDeadline = async (promise, milliseconds, code) => {
+    try {
+      return await operation.wait(promise);
+    } catch (error) {
+      if (!rememberDeadlineFailure(error)) throw fixedFailure(code);
+      if (!await bounded(promise, milliseconds)) throw fixedFailure(code);
+      try {
+        return await promise;
+      } catch {
+        throw fixedFailure(code);
+      }
+    }
+  };
+
+  t.after(async () => {
+    let afterFailure;
+    if (ownerFallbackPromise !== undefined && !exactReaping) {
+      if (await bounded(ownerFallbackPromise, 3_500)) {
+        await ownerFallbackPromise;
+        exactReaping = exactlyReaped();
+      }
+      if (!exactReaping) {
+        afterFailure ??= fixedFailure('OWNER_MISMATCH_REAPING_RESIDUE_RETAINED');
+      }
+    }
+    if (removalPromise !== undefined && !removalComplete) {
+      if (await bounded(removalPromise, 2_500)) {
+        try {
+          removalComplete = await removalPromise === 'REMOVED_VERIFIED';
+        } catch {
+          afterFailure ??= fixedFailure('OWNER_MISMATCH_ROOT_RESIDUE_RETAINED');
+        }
+      }
+      if (!removalComplete) {
+        afterFailure ??= fixedFailure('OWNER_MISMATCH_ROOT_RESIDUE_RETAINED');
+      }
+    }
+    if (afterFailure && deadlineFailure === undefined) throw afterFailure;
+  });
+
+  let workFailure;
+  let cleanupFailure;
+  try {
+    const routingFixtureValue = await operation.wait(
+      createRoutingRoot('fixed-payer-owner-mismatch-routing-', ownedRoots),
+    );
+    const firstRoot = await operation.wait(
+      createPrivateRoot('fixed-payer-owner-mismatch-a-', ownedRoots),
+    );
+    childRoots.push(firstRoot);
+    const secondRoot = await operation.wait(
+      createPrivateRoot('fixed-payer-owner-mismatch-b-', ownedRoots),
+    );
+    childRoots.push(secondRoot);
+
+    let payee;
+    let accepted;
+    let payloads;
+    try {
+      payee = syntheticKeyPair(247);
+      accepted = requirement(payee.getAddress().toString());
+      payloads = signedPayloadsByShard(routingFixtureValue.routing, accepted);
+    } finally {
+      payee?.clear();
+    }
+    const inputs = payloads.map(paymentPayload => ({
+      paymentPayload,
+      requirements: structuredClone(accepted),
+      paymentRequired: paymentRequired(accepted),
+    }));
+    const identities = inputs.map(inputIdentity);
+    const tickets = identities.map(identity => routingFixtureValue.routing.route(identity.payer));
+    requireProof(tickets.length === 2 && tickets.every((ticket, index) =>
+      Object.isFrozen(ticket) && ticket.version === 1 &&
+      ticket.shardId === CONFIGURATION.shardIds[index]), 'OWNER_MISMATCH_ROUTES');
+    requireProof(identities[0].payer !== identities[1].payer &&
+      identities[0].transaction !== identities[1].transaction &&
+      identities[0].authorizationKey !== identities[1].authorizationKey,
+    'OWNER_MISMATCH_IDENTITIES');
+    try {
+      await operation.wait(Promise.all(inputs.map(input => preflightZenonPayment(
+        input.paymentPayload,
+        input.requirements,
+        input.paymentRequired,
+      ))));
+    } catch (error) {
+      if (rememberDeadlineFailure(error)) throw error;
+      throw fixedFailure('OWNER_MISMATCH_FIXTURE_PREFLIGHT');
+    }
+    await operation.wait(Promise.all([
+      writeSignedFixture(childRoots[0], payloads[0]),
+      writeStartupFixture(childRoots[0], 'OWNER_MISMATCHED_PUBLICATION_OBSERVATION'),
+      writeSignedFixture(childRoots[1], payloads[1]),
+    ]));
+
+    ({ owner } = createOfflineOwner(
+      routingFixtureValue.routing,
+      payloads,
+      childRoots,
+      { requestTimeoutMs: 5_000 },
+    ));
+    originalStart = owner.start;
+    originalShutdown = owner.shutdown;
+    startingPromise = originalStart();
+    requireProof(originalStart() === startingPromise, 'OWNER_MISMATCH_START_NOT_MEMOIZED');
+    facade = await operation.wait(startingPromise);
+    originalRetire = facade.retire;
+    requireProof(originalStart() === startingPromise &&
+      await operation.wait(originalStart()) === facade,
+    'OWNER_MISMATCH_FACADE_NOT_MEMOIZED');
+    const started = owner.status();
+    requireProof(started.phase === 'READY' && started.startedChildren === 2 &&
+      started.dispatcherExposed === true && started.cleanupUncertain === false &&
+      started.children.length === 2 && started.children.every(child =>
+        child.ready && child.committed && child.stdoutBoundary && child.stderrBoundary &&
+        !child.exitObserved && !child.closeObserved), 'OWNER_MISMATCH_STARTUP');
+
+    const settlement = await operation.wait(facade.settle(
+      inputs[0].paymentPayload,
+      inputs[0].requirements,
+      inputs[0].paymentRequired,
+    ));
+    requireProof(isDeepStrictEqual({ ...settlement }, unknownResult(inputs[0])),
+      'OWNER_MISMATCH_SETTLEMENT');
+    const quarantined = owner.status();
+    requireProof(quarantined.phase === 'QUARANTINED' &&
+      quarantined.startedChildren === 2 && quarantined.dispatcherExposed === true &&
+      quarantined.cleanupUncertain === false && quarantined.children.length === 2,
+    'OWNER_MISMATCH_QUARANTINE');
+    const quarantinedRoutes = facade.retirementStatus();
+    requireProof(isDeepStrictEqual(quarantinedRoutes.map(route => ({
+      shardId: route.shardId,
+      generation: route.generation,
+      quarantined: route.quarantined,
+    })), CONFIGURATION.shardIds.map((shardId, index) => ({
+      shardId,
+      generation: index === 0 ? 'fixture-generation-a' : 'fixture-generation-b',
+      quarantined: true,
+    }))), 'OWNER_MISMATCH_DISPATCHER_QUARANTINE');
+    requireProof(originalStart() === startingPromise &&
+      await operation.wait(originalStart()) === facade &&
+      owner.status().startedChildren === 2 && !Object.hasOwn(owner, 'restart'),
+    'OWNER_MISMATCH_NO_RESPAWN');
+
+    await operation.wait(assert.rejects(
+      facade.settle(
+        inputs[1].paymentPayload,
+        inputs[1].requirements,
+        inputs[1].paymentRequired,
+      ),
+      rejectsWith(DISPATCH_CODES.RETIREMENT_STARTED),
+    ));
+    await operation.wait(assert.rejects(
+      facade.markDeliveryPending(settlement, inputs[0].requirements),
+      rejectsWith(DISPATCH_CODES.RETIREMENT_STARTED),
+    ));
+
+    retirementPromise = originalRetire();
+    requireProof(originalRetire() === retirementPromise,
+      'OWNER_MISMATCH_RETIRE_NOT_MEMOIZED');
+    shutdownPromise = originalShutdown();
+    requireProof(originalShutdown() === shutdownPromise,
+      'OWNER_MISMATCH_SHUTDOWN_NOT_MEMOIZED');
+    beginOwnerClosure();
+    const [retired, shutdown] = await operation.wait(ownerClosurePromise);
+    requireProof(isDeepStrictEqual(retired, { retired: true }) &&
+      isDeepStrictEqual(shutdown, {
+        closed: true,
+        exactReaping: true,
+        quarantined: true,
+        markerDisposition: 'NOT_REMOVED',
+        rootDisposition: 'NOT_REMOVED',
+      }), 'OWNER_MISMATCH_RETIREMENT_RESULT');
+    const reaped = owner.status();
+    const finalRoutes = facade.retirementStatus();
+    requireProof(reaped.phase === 'QUARANTINED' && reaped.startedChildren === 2 &&
+      reaped.dispatcherExposed === true && reaped.cleanupUncertain === false &&
+      reaped.children.length === 2 &&
+      reaped.children.every(child => child.exitObserved && child.closeObserved) &&
+      finalRoutes.length === 2 && finalRoutes.every(route =>
+        route.quarantined && route.exitObserved && route.closeObserved),
+    'OWNER_MISMATCH_EXACT_REAPING');
+    exactReaping = true;
+
+    for (const root of childRoots) {
+      requireProof(
+        await assertRetainedStartupClaim(root, STARTUP_CLAIM.REQUIRED) ===
+          STARTUP_CLAIM.RETAINED,
+        'OWNER_MISMATCH_MARKER_RETAINED',
+      );
+    }
+    const snapshots = await operation.wait(Promise.all(childRoots.map(root =>
+      new SettlementJournal({
+        directory: join(root, 'journal'),
+        allowedRoot: root,
+        existingOnly: true,
+      }).list({ includeTombstones: true }))));
+    requireProof(snapshots[0].records.length === 1 && snapshots[0].tombstones.length === 0 &&
+      snapshots[1].records.length === 0 && snapshots[1].tombstones.length === 0,
+    'OWNER_MISMATCH_JOURNAL_CARDINALITY');
+    const record = snapshots[0].records[0];
+    const exactPayment = retainedAttempt(inputs[0]);
+    const permittedEvidenceStates = new Set([
+      'VALIDATED',
+      'SUBMISSION_ACKNOWLEDGED',
+      'SUBMISSION_OUTCOME_UNKNOWN',
+      'MOMENTUM_INCLUDED',
+    ]);
+    requireProof(Object.entries(exactPayment).every(([field, value]) =>
+      isDeepStrictEqual(record[field], value)) &&
+      permittedEvidenceStates.has(record.evidenceState) &&
+      record.deliveryState === 'NONE' && record.cachedResponse === null &&
+      snapshots.every(snapshot => snapshot.records.every(candidate =>
+        candidate.deliveryState !== 'DELIVERED' && candidate.cachedResponse === null)) &&
+      record.payer === identities[0].payer && record.payer !== identities[1].payer,
+    'OWNER_MISMATCH_JOURNAL_BINDING');
+
+    const removalResult = await operation.wait(beginRootRemoval());
+    requireProof(removalResult === 'REMOVED_VERIFIED', removalResult === 'TIMEOUT'
+      ? 'OWNER_MISMATCH_ROOT_CLEANUP_TIMEOUT_RESIDUE_RETAINED'
+      : 'OWNER_MISMATCH_ROOT_CLEANUP_FAILED_RESIDUE_RETAINED');
+    removalComplete = true;
+  } catch (error) {
+    rememberDeadlineFailure(error);
+    workFailure = error?.name === 'FixedPayerSettlementTestError'
+      ? error
+      : fixedFailure('OWNER_MISMATCH_PROOF');
+  } finally {
+    if (owner !== undefined && !exactReaping) {
+      try {
+        beginOwnerClosure();
+        await finishAfterDeadline(
+          ownerFallbackPromise,
+          3_500,
+          'OWNER_MISMATCH_REAPING_RESIDUE_RETAINED',
+        );
+        exactReaping = exactlyReaped();
+        if (!exactReaping) {
+          throw fixedFailure('OWNER_MISMATCH_REAPING_RESIDUE_RETAINED');
+        }
+      } catch (error) {
+        cleanupFailure ??= error?.name === 'FixedPayerSettlementTestError'
+          ? error
+          : fixedFailure('OWNER_MISMATCH_REAPING_RESIDUE_RETAINED');
+      }
+    }
+    if ((owner === undefined || exactReaping) && ownedRoots.length > 0 && !removalComplete) {
+      try {
+        const disposition = await finishAfterDeadline(
+          beginRootRemoval(),
+          2_500,
+          'OWNER_MISMATCH_ROOT_RESIDUE_RETAINED',
+        );
+        removalComplete = disposition === 'REMOVED_VERIFIED';
+        if (!removalComplete) throw fixedFailure('OWNER_MISMATCH_ROOT_RESIDUE_RETAINED');
+      } catch (error) {
+        cleanupFailure ??= error?.name === 'FixedPayerSettlementTestError'
+          ? error
+          : fixedFailure('OWNER_MISMATCH_ROOT_RESIDUE_RETAINED');
+      }
+    }
+    if (!deadlineAdjudicated) {
+      deadlineAdjudicated = true;
+      try {
+        operation.close();
+      } catch (error) {
+        if (!rememberDeadlineFailure(error)) {
+          cleanupFailure ??= fixedFailure('OWNER_MISMATCH_DEADLINE_ADJUDICATION');
+        }
+      }
+    }
+  }
+  if (deadlineFailure) throw deadlineFailure;
+  if (cleanupFailure) throw cleanupFailure;
+  if (workFailure) throw workFailure;
 });
 
 test('owner-returned facade settles both fixed payers, delivers, and replays cached responses', {
@@ -3172,8 +3751,8 @@ test('real startup children preserve direct two-shard settlement and delivery wi
     roots.map((root, index) => writeSignedFixture(root, payloads[index])),
   ));
   const descriptors = ownedDescriptors(payloads, roots);
-  children.push(launchChild('A', roots[0], descriptors[0]));
-  children.push(launchChild('B', roots[1], descriptors[1]));
+  children.push(launchChild('A', roots[0], descriptors[0], payloads[0]));
+  children.push(launchChild('B', roots[1], descriptors[1], payloads[1]));
   await operation.wait(Promise.all(children.map(child => child.readyFrame)));
   children.forEach(child => child.commit());
   await operation.wait(Promise.all(children.map(child => child.ready)));
@@ -3495,8 +4074,12 @@ test('real /paid requests overlap at two child publication boundaries and finish
     ));
 
     const processDescriptors = ownedDescriptors(payloads, childRoots);
-    children.push(launchChild('A', childRoots[0], processDescriptors[0]));
-    children.push(launchChild('B', childRoots[1], processDescriptors[1]));
+    children.push(launchChild(
+      'A', childRoots[0], processDescriptors[0], payloads[0],
+    ));
+    children.push(launchChild(
+      'B', childRoots[1], processDescriptors[1], payloads[1],
+    ));
     await operation.wait(Promise.all(children.map(child => child.readyFrame)));
     children.forEach(child => child.commit());
     await operation.wait(Promise.all(children.map(child => child.ready)));
@@ -3710,6 +4293,622 @@ test('same-payer overlap is rejected before dispatch and never fans out to anoth
   assert.deepEqual(harness.pairs.map(pair => pair.counts.parentSend), [1, 0]);
 });
 
+test('each validated SETTLE receives a fresh operation-scoped publication capability', async t => {
+  const { routing } = await routingFixture(t);
+  const descriptor = payerDescriptors(routing)[0];
+  const inputs = [
+    syntheticInput(descriptor.payer, '0'.repeat(64)),
+    syntheticInput(descriptor.payer, '1'.repeat(64)),
+    syntheticInput(descriptor.payer, '2'.repeat(64)),
+  ];
+  const channel = new EventEmitter();
+  const sent = [];
+  channel.send = (frame, callback) => {
+    sent.push(JSON.parse(frame));
+    callback();
+    return true;
+  };
+  const capabilities = [];
+  const controller = runFixedPayerSettlementChild({
+    channel,
+    facilitator: facilitatorDouble({
+      async settle(paymentPayload, requirements, required, observePublication) {
+        capabilities.push(observePublication);
+        assert.equal(typeof observePublication, 'function');
+        assert.equal(Object.isFrozen(observePublication), true);
+        assert.equal(observePublication.length, 0);
+        if (capabilities.length <= 2) await observePublication();
+        return includedResult({ paymentPayload, requirements, paymentRequired: required });
+      },
+    }),
+    shardId: descriptor.shardId,
+    payer: descriptor.payer,
+    generation: descriptor.generation,
+    maxOperations: 8,
+  });
+  t.after(async () => {
+    channel.emit('disconnect');
+    await controller.done;
+  });
+
+  for (let index = 0; index < inputs.length; index += 1) {
+    channel.emit('message', settleRequestFrame(descriptor, inputs[index], index + 1));
+    await new Promise(resolvePromise => setImmediate(resolvePromise));
+  }
+  assert.equal(capabilities.length, 3);
+  assert.equal(new Set(capabilities).size, 3);
+  assert.deepEqual(sent.map(frame => frame.type), [
+    'PUBLICATION_OBSERVED', 'RESULT',
+    'PUBLICATION_OBSERVED', 'RESULT',
+    'RESULT',
+  ]);
+  assert.equal(sent.filter(frame => frame.type === 'RESULT').every(frame => frame.ok), true);
+});
+
+test('dispatcher accepts only one exact current SETTLE publication observation', async t => {
+  const { routing } = await routingFixture(t);
+  const descriptors = payerDescriptors(routing);
+  const createRawDispatcher = (nested, onSend, maxOperationsPerShard = 8) => {
+    const pairs = descriptors.map(() => endpointPair());
+    const owners = descriptors.map(() => new EventEmitter());
+    const journals = descriptors.map(() => Object.freeze({}));
+    pairs[0].parent.send = (frame, callback) => {
+      pairs[0].counts.parentSend += 1;
+      return onSend({
+        request: JSON.parse(frame),
+        channel: pairs[0].parent,
+        callback,
+      });
+    };
+    const dispatcher = createFixedPayerSettlementDispatcher({
+      routing,
+      shards: shardOptions(descriptors, pairs, owners, journals),
+      requestTimeoutMs: 100,
+      maxOperationsPerShard,
+    });
+    nested.after(async () => {
+      const retirement = dispatcher.retire();
+      owners.forEach(owner => {
+        owner.emit('exit', 0, null);
+        owner.emit('close', 0, null);
+      });
+      await retirement;
+    });
+    return { dispatcher, pairs };
+  };
+  const invoke = (dispatcher, input) => dispatcher.settle(
+    input.paymentPayload,
+    input.requirements,
+    input.paymentRequired,
+  );
+
+  await t.test('two sequential observations and a zero-observation result remain healthy',
+    async nested => {
+      const inputs = [
+        syntheticInput(descriptors[0].payer, '3'.repeat(64)),
+        syntheticInput(descriptors[0].payer, '4'.repeat(64)),
+        syntheticInput(descriptors[0].payer, '5'.repeat(64)),
+      ];
+      const { dispatcher, pairs } = createRawDispatcher(nested, ({ request, channel, callback }) => {
+        const input = inputs[request.sequence - 1];
+        if (request.sequence <= 2) {
+          channel.emit('message', JSON.stringify(publicationObservationForRequest(request)));
+        }
+        channel.emit('message', JSON.stringify(settleResultForRequest(request, input)));
+        callback();
+        return true;
+      });
+      const results = [];
+      for (const input of inputs) results.push(await invoke(dispatcher, input));
+      assert.equal(results.every(result => result.success), true);
+      assert.equal(pairs[0].counts.parentSend, 3);
+      assert.equal(dispatcher.retirementStatus()[0].quarantined, false);
+    });
+
+  const mutations = [
+    ['version', frame => { frame.ipcVersion = 1; }],
+    ['type', frame => { frame.type = 'PUBLICATION'; }],
+    ['correlation', frame => { frame.correlationId += ':wrong'; }],
+    ['shard', frame => { frame.shardId = descriptors[1].shardId; }],
+    ['payer', frame => { frame.payer = descriptors[1].payer; }],
+    ['generation', frame => { frame.generation = descriptors[1].generation; }],
+    ['future sequence', frame => { frame.sequence += 1; }],
+    ['operation', frame => { frame.operation = 'MARK_DELIVERY_PENDING'; }],
+    ['transaction', frame => { frame.transaction = '6'.repeat(64); }],
+    ['authorization', frame => { frame.authorizationKey = '7'.repeat(64); }],
+    ['network', frame => { frame.network = 'zenon:other'; }],
+    ['extra field', frame => { frame.extra = true; }],
+    ['missing field', frame => { delete frame.network; }],
+    ['field order', frame => {
+      const reordered = { type: frame.type, ipcVersion: frame.ipcVersion };
+      for (const [key, value] of Object.entries(frame)) {
+        if (key !== 'type' && key !== 'ipcVersion') reordered[key] = value;
+      }
+      return reordered;
+    }],
+  ];
+  for (const [name, mutate] of mutations) await t.test(name, async nested => {
+    const input = syntheticInput(descriptors[0].payer, '8'.repeat(64));
+    const { dispatcher } = createRawDispatcher(nested, ({ request, channel, callback }) => {
+      const observation = publicationObservationForRequest(request);
+      const replacement = mutate(observation) ?? observation;
+      channel.emit('message', JSON.stringify(replacement));
+      channel.emit('message', JSON.stringify(settleResultForRequest(request, input)));
+      callback();
+      return true;
+    });
+    const result = await invoke(dispatcher, input);
+    assert.equal(result.state, 'SUBMISSION_OUTCOME_UNKNOWN');
+    assert.equal(dispatcher.retirementStatus()[0].quarantined, true);
+  });
+
+  for (const mode of ['duplicate', 'post-result']) await t.test(mode, async nested => {
+    const input = syntheticInput(descriptors[0].payer, '9'.repeat(64));
+    const { dispatcher } = createRawDispatcher(nested, ({ request, channel, callback }) => {
+      const observation = JSON.stringify(publicationObservationForRequest(request));
+      if (mode === 'duplicate') {
+        channel.emit('message', observation);
+        channel.emit('message', observation);
+        channel.emit('message', JSON.stringify(settleResultForRequest(request, input)));
+      } else {
+        channel.emit('message', JSON.stringify(settleResultForRequest(request, input)));
+        channel.emit('message', observation);
+      }
+      callback();
+      return true;
+    });
+    const result = await invoke(dispatcher, input);
+    assert.equal(result.state, 'SUBMISSION_OUTCOME_UNKNOWN');
+    assert.equal(dispatcher.retirementStatus()[0].quarantined, true);
+  });
+
+  await t.test('idle and late observations quarantine without reopening admission',
+    async nested => {
+      const input = syntheticInput(descriptors[0].payer, 'a'.repeat(64));
+      const { dispatcher, pairs } = createRawDispatcher(
+        nested,
+        ({ request, channel, callback }) => {
+          channel.emit('message', JSON.stringify(settleResultForRequest(request, input)));
+          callback();
+          return true;
+        },
+      );
+      const request = JSON.parse(settleRequestFrame(descriptors[0], input, 1));
+      pairs[0].parent.emit(
+        'message',
+        JSON.stringify(publicationObservationForRequest(request)),
+      );
+      await assert.rejects(invoke(dispatcher, input), rejectsWith(DISPATCH_CODES.SHARD_QUARANTINED));
+    });
+
+  await t.test('a late post-completion observation seals the shard', async nested => {
+    const input = syntheticInput(descriptors[0].payer, 'b'.repeat(64));
+    let completedRequest;
+    const { dispatcher, pairs } = createRawDispatcher(
+      nested,
+      ({ request, channel, callback }) => {
+        completedRequest = request;
+        channel.emit('message', JSON.stringify(settleResultForRequest(request, input)));
+        callback();
+        return true;
+      },
+    );
+    assert.equal((await invoke(dispatcher, input)).success, true);
+    pairs[0].parent.emit(
+      'message',
+      JSON.stringify(publicationObservationForRequest(completedRequest)),
+    );
+    await assert.rejects(invoke(dispatcher, input), rejectsWith(DISPATCH_CODES.SHARD_QUARANTINED));
+  });
+
+  await t.test('an old sequence during a newer SETTLE is rejected', async nested => {
+    const inputs = [
+      syntheticInput(descriptors[0].payer, 'c'.repeat(64)),
+      syntheticInput(descriptors[0].payer, 'd'.repeat(64)),
+    ];
+    const { dispatcher } = createRawDispatcher(nested, ({ request, channel, callback }) => {
+      if (request.sequence === 1) {
+        channel.emit('message', JSON.stringify(settleResultForRequest(request, inputs[0])));
+      } else {
+        const observation = publicationObservationForRequest(request);
+        observation.sequence = 1;
+        channel.emit('message', JSON.stringify(observation));
+        channel.emit('message', JSON.stringify(settleResultForRequest(request, inputs[1])));
+      }
+      callback();
+      return true;
+    });
+    assert.equal((await invoke(dispatcher, inputs[0])).success, true);
+    assert.equal((await invoke(dispatcher, inputs[1])).state, 'SUBMISSION_OUTCOME_UNKNOWN');
+    assert.equal(dispatcher.retirementStatus()[0].quarantined, true);
+  });
+
+  for (const operation of ['MARK_DELIVERY_PENDING', 'MARK_DELIVERED']) {
+    await t.test(`${operation} cannot carry a publication observation`, async nested => {
+      const input = syntheticInput(descriptors[0].payer, 'e'.repeat(64));
+      const cachedResponse = { status: 200, body: { ok: true } };
+      const { dispatcher } = createRawDispatcher(nested, ({ request, channel, callback }) => {
+        if (request.type === 'SETTLE') {
+          channel.emit('message', JSON.stringify(settleResultForRequest(request, input)));
+        } else {
+          const observation = publicationObservationForRequest(request);
+          observation.operation = request.type;
+          channel.emit('message', JSON.stringify(observation));
+          const result = request.type === 'MARK_DELIVERY_PENDING'
+            ? {
+                authorizationKey: request.authorizationKey,
+                payer: request.payer,
+                transactionHash: request.transaction,
+                deliveryState: 'DELIVERY_PENDING',
+                deliveryClaimed: true,
+              }
+            : {
+                authorizationKey: request.authorizationKey,
+                payer: request.payer,
+                transactionHash: request.transaction,
+                deliveryState: 'DELIVERED',
+                cachedResponse,
+              };
+          channel.emit('message', JSON.stringify(successfulResultForRequest(request, result)));
+        }
+        callback();
+        return true;
+      });
+      const settlement = await invoke(dispatcher, input);
+      const transition = operation === 'MARK_DELIVERY_PENDING'
+        ? dispatcher.markDeliveryPending(settlement, input.requirements)
+        : dispatcher.markDelivered(settlement, cachedResponse);
+      await assert.rejects(transition, rejectsWith(DISPATCH_CODES.SHARD_QUARANTINED));
+      assert.equal(dispatcher.retirementStatus()[0].quarantined, true);
+    });
+  }
+});
+
+test('publication capabilities are active-operation-only and observation send is terminally strict',
+  async t => {
+    const { routing } = await routingFixture(t);
+    const descriptor = payerDescriptors(routing)[0];
+    const createDirectChild = (nested, facilitator, send) => {
+      const channel = new EventEmitter();
+      const sent = [];
+      channel.send = (frame, callback) => {
+        const parsed = JSON.parse(frame);
+        sent.push(parsed);
+        return send({ frame: parsed, callback });
+      };
+      const controller = runFixedPayerSettlementChild({
+        channel,
+        facilitator,
+        shardId: descriptor.shardId,
+        payer: descriptor.payer,
+        generation: descriptor.generation,
+        maxOperations: 16,
+      });
+      nested.after(async () => {
+        channel.emit('disconnect');
+        await controller.done;
+      });
+      return { channel, controller, sent };
+    };
+    const normalSend = ({ callback }) => {
+      callback();
+      return true;
+    };
+
+    for (const mode of ['wrong arity', 'duplicate call', 'after result']) {
+      await t.test(mode, async nested => {
+        const input = syntheticInput(descriptor.payer, 'f'.repeat(64));
+        let retained;
+        const child = createDirectChild(nested, facilitatorDouble({
+          async settle(paymentPayload, requirements, required, observePublication) {
+            retained = observePublication;
+            if (mode === 'wrong arity') observePublication('invalid');
+            if (mode === 'duplicate call') {
+              await observePublication();
+              observePublication();
+            }
+            return includedResult({ paymentPayload, requirements, paymentRequired: required });
+          },
+        }), normalSend);
+        child.channel.emit('message', settleRequestFrame(descriptor, input, 1));
+        if (mode === 'after result') {
+          await new Promise(resolvePromise => setImmediate(resolvePromise));
+          assert.deepEqual(child.sent.map(frame => frame.type), ['RESULT']);
+          assert.throws(() => retained());
+        }
+        assert.equal(await child.controller.done, 'PROTOCOL_FAULT');
+        assert.deepEqual(child.sent.map(frame => frame.type), mode === 'duplicate call'
+          ? ['PUBLICATION_OBSERVED']
+          : mode === 'after result' ? ['RESULT'] : []);
+      });
+    }
+
+    await t.test('a prior capability faults while a newer SETTLE is active', async nested => {
+      const inputs = [
+        syntheticInput(descriptor.payer, '0'.repeat(64)),
+        syntheticInput(descriptor.payer, '1'.repeat(64)),
+      ];
+      const capabilities = [];
+      let resolveSecond;
+      const second = new Promise(resolvePromise => { resolveSecond = resolvePromise; });
+      const child = createDirectChild(nested, facilitatorDouble({
+        async settle(paymentPayload, requirements, required, observePublication) {
+          capabilities.push(observePublication);
+          if (capabilities.length === 2) await second;
+          return includedResult({ paymentPayload, requirements, paymentRequired: required });
+        },
+      }), normalSend);
+      child.channel.emit('message', settleRequestFrame(descriptor, inputs[0], 1));
+      await new Promise(resolvePromise => setImmediate(resolvePromise));
+      child.channel.emit('message', settleRequestFrame(descriptor, inputs[1], 2));
+      await new Promise(resolvePromise => setImmediate(resolvePromise));
+      assert.equal(capabilities.length, 2);
+      assert.notEqual(capabilities[0], capabilities[1]);
+      assert.throws(() => capabilities[0]());
+      assert.equal(await child.controller.done, 'PROTOCOL_FAULT');
+      resolveSecond();
+    });
+
+    await t.test('a synchronously queued initial request has its capability before dependency entry',
+      async nested => {
+        const input = syntheticInput(descriptor.payer, '2'.repeat(64));
+        const channel = new EventEmitter();
+        const inheritedOn = EventEmitter.prototype.on;
+        const sent = [];
+        let reentered = false;
+        channel.on = function reentrantInitialRequest(event, listener) {
+          Reflect.apply(inheritedOn, this, [event, listener]);
+          if (!reentered && event === 'message') {
+            reentered = true;
+            listener(settleRequestFrame(descriptor, input, 1));
+          }
+          return this;
+        };
+        channel.send = (frame, callback) => {
+          sent.push(JSON.parse(frame));
+          callback();
+          return true;
+        };
+        let capabilityValid = false;
+        const controller = runFixedPayerSettlementChild({
+          channel,
+          facilitator: facilitatorDouble({
+            async settle(paymentPayload, requirements, required, observePublication) {
+              capabilityValid = typeof observePublication === 'function' &&
+                Object.isFrozen(observePublication) && observePublication.length === 0;
+              await observePublication();
+              return includedResult({ paymentPayload, requirements, paymentRequired: required });
+            },
+          }),
+          shardId: descriptor.shardId,
+          payer: descriptor.payer,
+          generation: descriptor.generation,
+          maxOperations: 16,
+        });
+        nested.after(async () => {
+          channel.emit('disconnect');
+          await controller.done;
+        });
+        await new Promise(resolvePromise => setImmediate(resolvePromise));
+        assert.equal(capabilityValid, true);
+        assert.deepEqual(sent.map(frame => frame.type), ['PUBLICATION_OBSERVED', 'RESULT']);
+      });
+
+    const sendFailures = [
+      ['throw', () => { throw fixedFailure('OBSERVATION_SEND'); }],
+      ['false return', ({ callback }) => { callback(); return false; }],
+      ['callback failure', ({ callback }) => { callback(fixedFailure('OBSERVATION_SEND')); return true; }],
+      ['duplicate callback', ({ callback }) => { callback(); callback(); return true; }],
+    ];
+    for (const [name, observationSend] of sendFailures) await t.test(name, async nested => {
+      const input = syntheticInput(descriptor.payer, '3'.repeat(64));
+      const child = createDirectChild(nested, facilitatorDouble({
+        async settle(paymentPayload, requirements, required, observePublication) {
+          void observePublication();
+          return includedResult({ paymentPayload, requirements, paymentRequired: required });
+        },
+      }), context => context.frame.type === 'PUBLICATION_OBSERVED'
+        ? observationSend(context)
+        : normalSend(context));
+      child.channel.emit('message', settleRequestFrame(descriptor, input, 1));
+      assert.equal(await child.controller.done, 'SEND_FAILED');
+      assert.deepEqual(child.sent.map(frame => frame.type), ['PUBLICATION_OBSERVED']);
+    });
+
+    await t.test('missing callback blocks the result and a disconnect settles the capability',
+      async nested => {
+        const input = syntheticInput(descriptor.payer, '4'.repeat(64));
+        let lateCallback;
+        const child = createDirectChild(nested, facilitatorDouble({
+          async settle(paymentPayload, requirements, required, observePublication) {
+            void observePublication();
+            return includedResult({ paymentPayload, requirements, paymentRequired: required });
+          },
+        }), context => {
+          if (context.frame.type === 'PUBLICATION_OBSERVED') {
+            lateCallback = context.callback;
+            return true;
+          }
+          return normalSend(context);
+        });
+        child.channel.emit('message', settleRequestFrame(descriptor, input, 1));
+        await new Promise(resolvePromise => setImmediate(resolvePromise));
+        assert.deepEqual(child.sent.map(frame => frame.type), ['PUBLICATION_OBSERVED']);
+        assert.equal(await bounded(child.controller.done, 10), false);
+        child.channel.emit('disconnect');
+        assert.equal(await child.controller.done, 'DISCONNECTED');
+        lateCallback();
+        assert.deepEqual(child.sent.map(frame => frame.type), ['PUBLICATION_OBSERVED']);
+      });
+
+    await t.test('a duplicate observation callback after result is terminal', async nested => {
+      const input = syntheticInput(descriptor.payer, '5'.repeat(64));
+      let observationCallback;
+      const child = createDirectChild(nested, facilitatorDouble({
+        async settle(paymentPayload, requirements, required, observePublication) {
+          void observePublication();
+          return includedResult({ paymentPayload, requirements, paymentRequired: required });
+        },
+      }), context => {
+        if (context.frame.type === 'PUBLICATION_OBSERVED') {
+          observationCallback = context.callback;
+          context.callback();
+          return true;
+        }
+        return normalSend(context);
+      });
+      child.channel.emit('message', settleRequestFrame(descriptor, input, 1));
+      await new Promise(resolvePromise => setImmediate(resolvePromise));
+      assert.deepEqual(child.sent.map(frame => frame.type), [
+        'PUBLICATION_OBSERVED', 'RESULT',
+      ]);
+      observationCallback();
+      assert.equal(await child.controller.done, 'SEND_FAILED');
+    });
+  });
+
+test('publication observation neither advances admission nor consumes logical capacity', async t => {
+  const { routing } = await routingFixture(t);
+  const descriptors = payerDescriptors(routing);
+  const createObservedHarness = (nested, {
+    observationSend,
+    requestTimeoutMs = 100,
+    maxOperationsPerShard = 8,
+  }) => {
+    const pairs = descriptors.map(() => endpointPair());
+    const owners = descriptors.map(() => new EventEmitter());
+    const journals = descriptors.map(() => Object.freeze({}));
+    const childFrames = [];
+    pairs[0].child.send = (frame, callback) => {
+      const parsed = JSON.parse(frame);
+      childFrames.push(parsed);
+      if (parsed.type === 'PUBLICATION_OBSERVED') {
+        pairs[0].parent.emit('message', frame);
+        return observationSend({ callback, frame: parsed });
+      }
+      pairs[0].parent.emit('message', frame);
+      callback();
+      return true;
+    };
+    const controllers = descriptors.map((descriptor, index) =>
+      runFixedPayerSettlementChild({
+        channel: pairs[index].child,
+        facilitator: index === 0 ? facilitatorDouble({
+          async settle(paymentPayload, requirements, required, observePublication) {
+            void observePublication();
+            return includedResult({ paymentPayload, requirements, paymentRequired: required });
+          },
+        }) : facilitatorDouble(),
+        shardId: descriptor.shardId,
+        payer: descriptor.payer,
+        generation: descriptor.generation,
+        maxOperations: 16,
+      }));
+    const dispatcher = createFixedPayerSettlementDispatcher({
+      routing,
+      shards: shardOptions(descriptors, pairs, owners, journals),
+      requestTimeoutMs,
+      maxOperationsPerShard,
+    });
+    nested.after(async () => {
+      const retirement = dispatcher.retire();
+      pairs.forEach(pair => {
+        pair.parent.emit('disconnect');
+        pair.child.emit('disconnect');
+      });
+      owners.forEach(owner => {
+        owner.emit('exit', 0, null);
+        owner.emit('close', 0, null);
+      });
+      await Promise.all([retirement, ...controllers.map(controller => controller.done)]);
+    });
+    return { dispatcher, pairs, controllers, childFrames };
+  };
+
+  await t.test('a pending observation callback holds result and same-payer admission',
+    async nested => {
+      let observationCallback;
+      const harness = createObservedHarness(nested, {
+        observationSend({ callback }) {
+          observationCallback = callback;
+          return true;
+        },
+      });
+      const input = syntheticInput(descriptors[0].payer, '5'.repeat(64));
+      const settlement = harness.dispatcher.settle(
+        input.paymentPayload,
+        input.requirements,
+        input.paymentRequired,
+      );
+      await new Promise(resolvePromise => setImmediate(resolvePromise));
+      assert.deepEqual(harness.childFrames.map(frame => frame.type), ['PUBLICATION_OBSERVED']);
+      await assert.rejects(
+        harness.dispatcher.settle(
+          input.paymentPayload,
+          input.requirements,
+          input.paymentRequired,
+        ),
+        rejectsWith(DISPATCH_CODES.PAYER_BUSY),
+      );
+      assert.equal(harness.pairs[0].counts.parentSend, 1);
+      observationCallback();
+      assert.equal((await settlement).success, true);
+      assert.deepEqual(harness.childFrames.map(frame => frame.type), [
+        'PUBLICATION_OBSERVED', 'RESULT',
+      ]);
+    });
+
+  await t.test('the inherited request timeout seals a missing observation callback',
+    async nested => {
+      const harness = createObservedHarness(nested, {
+        observationSend() { return true; },
+        requestTimeoutMs: 15,
+      });
+      const input = syntheticInput(descriptors[0].payer, '6'.repeat(64));
+      const result = await harness.dispatcher.settle(
+        input.paymentPayload,
+        input.requirements,
+        input.paymentRequired,
+      );
+      assert.equal(result.state, 'SUBMISSION_OUTCOME_UNKNOWN');
+      assert.deepEqual(harness.childFrames.map(frame => frame.type), ['PUBLICATION_OBSERVED']);
+      assert.equal(harness.dispatcher.retirementStatus()[0].quarantined, true);
+    });
+
+  await t.test('two observed SETTLEs consume exactly two admissions', async nested => {
+    const harness = createObservedHarness(nested, {
+      observationSend({ callback }) { callback(); return true; },
+      maxOperationsPerShard: 2,
+    });
+    const inputs = [
+      syntheticInput(descriptors[0].payer, '7'.repeat(64)),
+      syntheticInput(descriptors[0].payer, '8'.repeat(64)),
+      syntheticInput(descriptors[0].payer, '9'.repeat(64)),
+    ];
+    for (const input of inputs.slice(0, 2)) {
+      const result = await harness.dispatcher.settle(
+        input.paymentPayload,
+        input.requirements,
+        input.paymentRequired,
+      );
+      assert.equal(result.success, true);
+    }
+    await assert.rejects(
+      harness.dispatcher.settle(
+        inputs[2].paymentPayload,
+        inputs[2].requirements,
+        inputs[2].paymentRequired,
+      ),
+      rejectsWith(DISPATCH_CODES.CAPACITY_EXHAUSTED),
+    );
+    assert.equal(harness.pairs[0].counts.parentSend, 2);
+    assert.deepEqual(harness.childFrames.map(frame => frame.type), [
+      'PUBLICATION_OBSERVED', 'RESULT',
+      'PUBLICATION_OBSERVED', 'RESULT',
+    ]);
+  });
+});
+
 test('an explicit UNKNOWN retries the identical payment on the same child and then delivers there', async t => {
   const { routing } = await routingFixture(t);
   let settleCalls = 0;
@@ -3717,11 +4916,12 @@ test('an explicit UNKNOWN retries the identical payment on the same child and th
   let pendingCalls = 0;
   let deliveredCalls = 0;
   const recovering = facilitatorDouble({
-    async settle(paymentPayload, requirements, required) {
+    async settle(paymentPayload, requirements, required, observePublication) {
       settleCalls += 1;
       const input = { paymentPayload, requirements, paymentRequired: required };
       if (settleCalls === 1) {
         publicationCalls += 1;
+        await observePublication();
         return unknownResult(input);
       }
       return includedResult(input);
@@ -3789,6 +4989,101 @@ test('an explicit UNKNOWN retries the identical payment on the same child and th
     deliveredCalls: 1,
   });
   assert.deepEqual(harness.pairs.map(pair => pair.counts.parentSend), [4, 0]);
+  assert.deepEqual(harness.pairs.map(pair => pair.counts.childSend), [5, 0]);
+});
+
+test('reconciliation publication policy remains state-specific and exact-payment-bound', async t => {
+  const { routing } = await routingFixture(t);
+  for (const state of ['SUBMISSION_ACKNOWLEDGED', 'SUBMISSION_OUTCOME_UNKNOWN']) {
+    await t.test(`${state} exact reconciliation adds no observation`, async nested => {
+      const { descriptors, original, replacement } = await signedReplacementFixture(routing);
+      let calls = 0;
+      const harness = await localHarness(
+        nested,
+        routing,
+        [facilitatorDouble({
+          async settle(paymentPayload, requirements, required, observePublication) {
+            calls += 1;
+            const input = { paymentPayload, requirements, paymentRequired: required };
+            if (calls === 1) {
+              await observePublication();
+              return state === 'SUBMISSION_OUTCOME_UNKNOWN'
+                ? unknownResult(input)
+                : terminalResult(input, state);
+            }
+            return includedResult(input);
+          },
+        }), facilitatorDouble()],
+        { descriptors },
+      );
+      const first = await harness.dispatcher.settle(
+        original.paymentPayload,
+        original.requirements,
+        original.paymentRequired,
+      );
+      assert.equal(first.state, state);
+      await assert.rejects(
+        harness.dispatcher.settle(
+          replacement.paymentPayload,
+          replacement.requirements,
+          replacement.paymentRequired,
+        ),
+        rejectsWith(DISPATCH_CODES.INVALID_REQUEST),
+      );
+      const recovered = await harness.dispatcher.settle(
+        structuredClone(original.paymentPayload),
+        structuredClone(original.requirements),
+        structuredClone(original.paymentRequired),
+      );
+      assert.equal(recovered.success, true);
+      assert.equal(calls, 2);
+      assert.deepEqual(harness.pairs.map(pair => pair.counts.parentSend), [2, 0]);
+      assert.deepEqual(harness.pairs.map(pair => pair.counts.childSend), [3, 0]);
+    });
+  }
+
+  await t.test('a later exact VALIDATED operation may observe one idempotent publication',
+    async nested => {
+      const { descriptors, original, replacement } = await signedReplacementFixture(routing);
+      let calls = 0;
+      const harness = await localHarness(
+        nested,
+        routing,
+        [facilitatorDouble({
+          async settle(paymentPayload, requirements, required, observePublication) {
+            calls += 1;
+            const input = { paymentPayload, requirements, paymentRequired: required };
+            if (calls === 1) return terminalResult(input, 'VALIDATED');
+            await observePublication();
+            return includedResult(input);
+          },
+        }), facilitatorDouble()],
+        { descriptors },
+      );
+      const first = await harness.dispatcher.settle(
+        original.paymentPayload,
+        original.requirements,
+        original.paymentRequired,
+      );
+      assert.equal(first.state, 'VALIDATED');
+      await assert.rejects(
+        harness.dispatcher.settle(
+          replacement.paymentPayload,
+          replacement.requirements,
+          replacement.paymentRequired,
+        ),
+        rejectsWith(DISPATCH_CODES.INVALID_REQUEST),
+      );
+      const recovered = await harness.dispatcher.settle(
+        structuredClone(original.paymentPayload),
+        structuredClone(original.requirements),
+        structuredClone(original.paymentRequired),
+      );
+      assert.equal(recovered.success, true);
+      assert.equal(calls, 2);
+      assert.deepEqual(harness.pairs.map(pair => pair.counts.parentSend), [2, 0]);
+      assert.deepEqual(harness.pairs.map(pair => pair.counts.childSend), [3, 0]);
+    });
 });
 
 test('an explicit UNKNOWN rejects a distinct signed payment before child dispatch and preserves exact recovery', async t => {
@@ -4311,8 +5606,8 @@ test('malformed inputs, frames, results and synchronous send(false) cannot succe
     });
   });
 
-  await t.test('correlation mismatch and object frames seal the selected shard', async t => {
-    for (const mode of ['correlation', 'object']) await t.test(mode, async () => {
+  await t.test('legacy, correlation-mismatched and object frames seal the selected shard', async t => {
+    for (const mode of ['legacy-v1', 'correlation', 'object']) await t.test(mode, async () => {
       const descriptors = payerDescriptors(routing);
       const pairs = descriptors.map(() => endpointPair());
       const owners = descriptors.map(() => new EventEmitter());
@@ -4330,9 +5625,11 @@ test('malformed inputs, frames, results and synchronous send(false) cannot succe
           pairs[0].parent.emit('message', hostile);
         } else {
           pairs[0].parent.emit('message', JSON.stringify({
-            ipcVersion: 1,
+            ipcVersion: mode === 'legacy-v1' ? 1 : 2,
             type: 'RESULT',
-            correlationId: 'wrong-correlation',
+            correlationId: mode === 'correlation'
+              ? 'wrong-correlation'
+              : request.correlationId,
             shardId: request.shardId,
             payer: request.payer,
             generation: request.generation,
@@ -4662,7 +5959,7 @@ test('child listener construction is transactional under synchronous terminal re
 test('the child rejects malformed request frames before any dependency call', async t => {
   const { routing } = await routingFixture(t);
   const payer = payerDescriptors(routing)[0].payer;
-  const cases = ['extra-key', 'accessor-frame'];
+  const cases = ['legacy-v1', 'extra-key', 'accessor-frame'];
   for (const name of cases) await t.test(name, async () => {
     const channel = new EventEmitter();
     const sent = [];
@@ -4683,9 +5980,21 @@ test('the child rejects malformed request frames before any dependency call', as
       generation: 'fixture-generation-a',
       maxOperations: 8,
     });
-    if (name === 'extra-key') {
+    if (name === 'legacy-v1') {
+      const legacy = JSON.parse(settleRequestFrame(
+        {
+          shardId: CONFIGURATION.shardIds[0],
+          payer,
+          generation: 'fixture-generation-a',
+        },
+        syntheticInput(payer, '9'.repeat(64)),
+        1,
+      ));
+      legacy.ipcVersion = 1;
+      channel.emit('message', JSON.stringify(legacy));
+    } else if (name === 'extra-key') {
       channel.emit('message', JSON.stringify({
-        ipcVersion: 1,
+        ipcVersion: 2,
         type: 'SETTLE',
         correlationId: 'fixture-generation-a:payer-shard-a:1',
         shardId: CONFIGURATION.shardIds[0],
@@ -4711,7 +6020,7 @@ test('the child rejects malformed request frames before any dependency call', as
     assert.equal(getterCalls, 0);
     assert.equal(sent.length, 1);
     assert.deepEqual(JSON.parse(sent[0]), {
-      ipcVersion: 1,
+      ipcVersion: 2,
       type: 'PROTOCOL_ERROR',
       code: 'INVALID_REQUEST',
     });
