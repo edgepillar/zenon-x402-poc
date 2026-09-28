@@ -1916,25 +1916,124 @@ test('post-sentinel legacy publication stdout quarantines and reaps the owned ge
     createPrivateRoot('fixed-payer-runtime-stdout-b-'),
   ]);
   const payloads = signedStartupPayloads(routing);
+  const inputs = payloads.map(paymentPayload => ({
+    paymentPayload,
+    requirements: paymentPayload.accepted,
+    paymentRequired: paymentRequired(paymentPayload.accepted),
+  }));
   await Promise.all(roots.map((root, index) => writeSignedFixture(root, payloads[index])));
-  await writeStartupFixture(roots[0], 'RUNTIME_LEGACY_STDOUT');
+  await Promise.all([
+    writeStartupFixture(roots[0], 'RUNTIME_LEGACY_STDOUT'),
+    writeStartupFixture(roots[1], 'DELAY_STDERR_BOUNDARY'),
+  ]);
   const { owner } = createOfflineOwner(routing, payloads, roots);
+  const originalStart = owner.start;
+  const originalShutdown = owner.shutdown;
+  let facade;
+  let originalRetire;
   t.after(async () => {
-    try { await owner.shutdown(); } catch {}
-    if (owner.status().children.every(child => child.exitObserved && child.closeObserved)) {
+    try { await originalShutdown(); } catch {}
+    const status = owner.status();
+    if (!status.cleanupUncertain &&
+        status.children.every(child => child.exitObserved && child.closeObserved)) {
       await removeVerifiedSyntheticRoots(roots);
     }
   });
 
-  const facade = await owner.start();
-  assert.equal(typeof facade.settle, 'function');
+  const starting = originalStart();
+  assert.equal(originalStart(), starting);
+  let startupRefusal;
+  try {
+    facade = await starting;
+  } catch (error) {
+    startupRefusal = error;
+  }
+  if (startupRefusal !== undefined) {
+    assert.equal(ownerRejectsWith(OWNER_CODES.STARTUP_FAILED)(startupRefusal), true);
+    throw fixedFailure('RUNTIME_STDOUT_PRE_BARRIER_REFUSAL');
+  }
+  originalRetire = facade.retire;
+  assert.equal(await originalStart(), facade);
+  const ready = owner.status();
+  requireProof(ready.phase === 'READY' && ready.startedChildren === 2 &&
+    ready.dispatcherExposed === true && ready.cleanupUncertain === false &&
+    ready.children.length === 2 && ready.children.every(child =>
+      child.ready && child.committed && child.stdoutBoundary && child.stderrBoundary &&
+      !child.exitObserved && !child.closeObserved), 'RUNTIME_STDOUT_READY_BARRIER');
+  requireProof(facade.retirementStatus().every(route =>
+    !route.quarantined && !route.exitObserved && !route.closeObserved),
+  'RUNTIME_STDOUT_PRE_TRIGGER_ROUTES');
+
+  const settlement = await facade.settle(
+    inputs[0].paymentPayload,
+    inputs[0].requirements,
+    inputs[0].paymentRequired,
+  );
+  requireProof(
+    isDeepStrictEqual({ ...settlement }, includedResult(inputs[0])) ||
+      isDeepStrictEqual({ ...settlement }, unknownResult(inputs[0])),
+    'RUNTIME_STDOUT_IDENTITY_RESULT',
+  );
   const quarantined = await waitForOwnerPhase(owner, ['QUARANTINED']);
-  assert.equal(quarantined.dispatcherExposed, true);
-  const shutdown = await owner.shutdown();
-  assert.equal(shutdown.quarantined, true);
-  assert.equal(shutdown.exactReaping, true);
-  assert.equal(owner.status().children.every(child =>
-    child.exitObserved && child.closeObserved), true);
+  requireProof(quarantined.startedChildren === 2 && quarantined.dispatcherExposed === true &&
+    quarantined.cleanupUncertain === false && quarantined.children.length === 2,
+  'RUNTIME_STDOUT_QUARANTINE');
+  requireProof(facade.retirementStatus().every(route => route.quarantined),
+    'RUNTIME_STDOUT_WHOLE_GENERATION_QUARANTINE');
+  assert.equal(originalStart(), starting);
+  assert.equal(await originalStart(), facade);
+  await assert.rejects(
+    facade.settle(
+      inputs[1].paymentPayload,
+      inputs[1].requirements,
+      inputs[1].paymentRequired,
+    ),
+    rejectsWith(DISPATCH_CODES.RETIREMENT_STARTED),
+  );
+
+  const retirement = originalRetire();
+  assert.equal(originalRetire(), retirement);
+  const shutdownPromise = originalShutdown();
+  assert.equal(originalShutdown(), shutdownPromise);
+  const [retired, shutdown] = await Promise.all([retirement, shutdownPromise]);
+  assert.deepEqual(retired, { retired: true });
+  assert.deepEqual(shutdown, {
+    closed: true,
+    exactReaping: true,
+    quarantined: true,
+    markerDisposition: 'NOT_REMOVED',
+    rootDisposition: 'NOT_REMOVED',
+  });
+  const reaped = owner.status();
+  const finalRoutes = facade.retirementStatus();
+  requireProof(reaped.phase === 'QUARANTINED' && reaped.startedChildren === 2 &&
+    reaped.dispatcherExposed === true && reaped.cleanupUncertain === false &&
+    reaped.children.length === 2 &&
+    reaped.children.every(child => child.exitObserved && child.closeObserved) &&
+    finalRoutes.length === 2 && finalRoutes.every(route =>
+      route.quarantined && route.exitObserved && route.closeObserved),
+  'RUNTIME_STDOUT_EXACT_REAPING');
+
+  for (const root of roots) {
+    assert.equal(
+      await assertRetainedStartupClaim(root, STARTUP_CLAIM.REQUIRED),
+      STARTUP_CLAIM.RETAINED,
+    );
+  }
+  const snapshots = await Promise.all(roots.map(root => new SettlementJournal({
+    directory: join(root, 'journal'),
+    allowedRoot: root,
+    existingOnly: true,
+  }).list({ includeTombstones: true })));
+  requireProof(snapshots[0].records.length === 1 && snapshots[0].tombstones.length === 0 &&
+    snapshots[1].records.length === 0 && snapshots[1].tombstones.length === 0,
+  'RUNTIME_STDOUT_JOURNAL_CARDINALITY');
+  const record = snapshots[0].records[0];
+  const exactPayment = retainedAttempt(inputs[0]);
+  requireProof(Object.entries(exactPayment).every(([field, value]) =>
+    isDeepStrictEqual(record[field], value)) &&
+    record.evidenceState === 'MOMENTUM_INCLUDED' && record.deliveryState === 'NONE' &&
+    record.cachedResponse === null, 'RUNTIME_STDOUT_JOURNAL_BINDING');
 });
 
 test('the durable one-use claim rejects concurrent and repeated same-root startup', {
