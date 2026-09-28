@@ -32,6 +32,7 @@ const MAX_FIXTURE_BYTES = 16_384;
 const MAX_STARTUP_FIXTURE_BYTES = 1024;
 const STARTUP_MODES = new Set([
   'NORMAL',
+  'OWNER_FACADE_SUCCESS',
   'DELAY_READY',
   'EARLY_STRING',
   'EARLY_MARKER',
@@ -533,7 +534,7 @@ export async function runFixedPayerSettlementOfflineFixture(options) {
               else resolvePromise();
             });
           });
-          await waitForRelease();
+          if (startupMode !== 'OWNER_FACADE_SUCCESS') await waitForRelease();
           published = true;
         },
       }, { get: (target, name) => Reflect.has(target, name) ? target[name] : stop });
