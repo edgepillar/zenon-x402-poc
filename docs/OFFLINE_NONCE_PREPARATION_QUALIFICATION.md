@@ -53,9 +53,25 @@ The owner and fixed
 frames. Successful output is READY, JavaScript-wrapper invoked, then terminal
 success; rejected or partial output need not complete this sequence. Success
 requires zero exit plus process/private-stream closure. The three-second
-startup/work deadline requests termination, not guaranteed settlement.
-Unresolved termination/closure preserves ownership and uncertainty and
-forbids replacement.
+startup/work deadline requests termination. A captured, non-sliding 500 ms
+cleanup grace fixes caller settlement at no later than 3.5 seconds after the
+attempt starts. Child `close` alone does not cancel that bound while either
+private pipe remains unresolved. Closure completed inside the bound preserves
+the existing success or fail-closed result.
+
+If the bound expires first, the owner atomically puts the exact child, private
+streams, and required listeners in a module-private strong reaper registry
+before rejecting with `OFFLINE_ZENON_NONCE_PRODUCER_OUTCOME_UNKNOWN`. The
+frozen lifecycle reports `ownerDisposition` as
+`RETAINED_UNTIL_ACTUAL_CLOSURE` and reports only exit, process-close, and
+stdio-close events observed by caller settlement. The reaper continues to
+observe those original resources, keeps stream error listeners and a persistent
+child error listener through closure, handles repeated late child errors,
+ignores late protocol data, and retires the entry only after actual process and
+required private-stream closure. It does not retry, spawn a replacement,
+search by PID, detach, or `unref` the unresolved owner. This registry provides
+process-lifetime ownership only; it is not durable operating-system containment
+across a crash or process restart.
 
 `JS_WRAPPER_INVOKED` describes the JavaScript wrapper only.
 `nativeOrWasmEntry` remains `NOT_ESTABLISHED`, because no native/WASM entry
@@ -108,12 +124,52 @@ Node >=24 and the existing workflow selects Node 24; this local result is not
 a hosted workflow result. Linux, hosted CI, live RPC/payment behavior, and real
 throughput remain unverified.
 
-A separate standalone offline qualification branch excludes the seven buyer
-tests from the combined checkout. Its single local Node 24.19.0 macOS full
-suite reported 5,488 tests: 5,487 passed, none failed or cancelled, one
+The initial standalone offline qualification checkpoint excludes the seven
+buyer tests from the combined checkout. Its single local Node 24.19.0 macOS
+full suite reported 5,488 tests: 5,487 passed, none failed or cancelled, one
 existing skip, and no todos. All 59 captured offline-specific parent tests
-passed. This separate local result is likewise not hosted CI, live-chain, or
-throughput evidence.
+passed. This initial standalone result is likewise not hosted CI, live-chain,
+or throughput evidence.
+
+The bounded-owner lifecycle change was developed red-first. Before the source
+change, the focused owner file reported 17 tests: 15 passed and the two new
+bounded-settlement cases failed. The final focused Node 24 run reported all 17
+passing, with no failures, skips, cancellations, or todos. Those cases cover a
+failed `SIGKILL` with no process close, both request- and response-pipe close
+withholding after observed process exit/close, late exact-owner closure,
+frozen historical evidence, single settlement, and peer/decoy isolation.
+
+The first full run after implementation exposed an unintended lifecycle-shape
+change and reported 5,488 tests: 5,473 passed, 14 failed, one skipped, and none
+cancelled or marked todo. Normal closed outcomes were restored to their prior
+shape; only a retained unresolved owner now receives `ownerDisposition`. A
+post-fix run in the isolated symlink layout reported 5,488 tests: 5,478 passed,
+nine failed, one skipped, and none cancelled or marked todo. Targeted diagnosis
+isolated those remaining failures to genuine children exiting before READY:
+Node 24 required lexical-path access through the worktree's `node_modules`
+symlink, while the reviewed fixed guard permits only canonical child, manifest,
+and individual dependency paths.
+
+The symlink was then retained recoverably outside the checkout and replaced
+locally by a byte-matched, mode-preserving physical copy of the same installed
+dependency source. No package manager, download, runtime change, child change,
+or lexical permission exception was used. The initial post-lifecycle Node 24
+full suite in that physical layout reported 5,490 tests: 5,489 passed, none
+failed or cancelled, one existing skip, and no todos. Runner exit and output
+closure were observed. Postchecks preserved source/test bytes, the fixed
+permission guard, SDK 1.0.5 bytes, the dependency source, runtime bytes, index,
+Git refs, and the original source checkout. The historical combined counts,
+initial standalone checkpoint, and post-lifecycle result are separate
+local observations.
+
+A narrow reviewer correction then kept the owned child's error listener active
+until the same actual-closure cleanup that removes its other listeners. The
+new repeated-late-error assertion made the focused owner file fail 1 of 17
+before that correction and pass all 17 afterward. The latest complete local
+Node 24 suite in the physical dependency layout reported 5,490 tests: 5,489
+passed, none failed or cancelled, one existing skip, and no todos. Runner exit
+and output closure were observed. This latest result remains separate from the
+initial standalone 5,488-test checkpoint and the combined 5,495-test result.
 
 ## Explicit limits and next gates
 

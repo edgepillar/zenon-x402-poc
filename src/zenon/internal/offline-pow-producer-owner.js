@@ -76,6 +76,8 @@ const FRAME_WRAPPER_INVOKED = 2;
 const FRAME_SUCCESS = 3;
 const FRAME_REJECTION = 4;
 const CHILD_DEADLINE_MS = 3_000;
+const CLEANUP_GRACE_MS = 500;
+const CALLER_SETTLEMENT_BOUND_MS = CHILD_DEADLINE_MS + CLEANUP_GRACE_MS;
 const FIXED_ERROR_MESSAGE = 'Offline Zenon nonce production rejected';
 const INPUT_REJECTED = 'OFFLINE_ZENON_NONCE_PRODUCER_INPUT_REJECTED';
 const OUTCOME_UNKNOWN = 'OFFLINE_ZENON_NONCE_PRODUCER_OUTCOME_UNKNOWN';
@@ -97,6 +99,9 @@ const DEPENDENCY_NAMES = OBJECT_FREEZE([
   'ws',
   'znn-typescript-sdk',
 ]);
+const QUARANTINED_ATTEMPTS = new Set();
+const SET_ADD = Set.prototype.add;
+const SET_DELETE = Set.prototype.delete;
 
 function configurationRejected() {
   const error = new Error(FIXED_ERROR_MESSAGE);
@@ -385,7 +390,7 @@ function processExitLabel(state) {
 }
 
 function lifecycle(status, state, protocol) {
-  return OBJECT_FREEZE({
+  const evidence = {
     status,
     attemptCount: 1,
     ready: protocol?.ready === true ? 'OBSERVED' : 'NOT_OBSERVED_OR_UNKNOWN',
@@ -405,7 +410,11 @@ function lifecycle(status, state, protocol) {
     networkBoundary: protocol?.ready === true
       ? NETWORK_BOUNDARY
       : 'NOT_OBSERVED_OR_UNKNOWN',
-  });
+  };
+  if (state.ownerDisposition === 'RETAINED_UNTIL_ACTUAL_CLOSURE') {
+    evidence.ownerDisposition = state.ownerDisposition;
+  }
+  return OBJECT_FREEZE(evidence);
 }
 
 function successResult(scope, nonce, completedLifecycle) {
@@ -444,6 +453,7 @@ function produceAttempt(scope, payerCore) {
       inputError: false,
       outputEnded: false,
       outputError: false,
+      ownerDisposition: 'NO_CHILD_ACQUIRED',
       overflow: false,
       requestClosed: false,
       requestFinished: false,
@@ -457,11 +467,8 @@ function produceAttempt(scope, payerCore) {
     let child;
     let request;
     let output;
-    let requestClosePromise = NATIVE_PROMISE.resolve();
-    let responseClosePromise = NATIVE_PROMISE.resolve();
-    let resolveRequestClose;
-    let resolveResponseClose;
     let outboundCleared = false;
+    let quarantineEntry;
 
     function clearOutbound() {
       if (outboundCleared) return;
@@ -486,6 +493,10 @@ function produceAttempt(scope, payerCore) {
     }
 
     const deadline = setTimeout(onDeadline, CHILD_DEADLINE_MS);
+    const settlementBound = setTimeout(
+      onSettlementBound,
+      CALLER_SETTLEMENT_BOUND_MS,
+    );
 
     try {
       child = REFLECT_APPLY(SPAWN, childProcess, [
@@ -500,8 +511,10 @@ function produceAttempt(scope, payerCore) {
           windowsHide: true,
         },
       ]);
+      state.ownerDisposition = 'OWNED_PENDING_CLOSURE';
     } catch {
       clearTimeout(deadline);
+      clearTimeout(settlementBound);
       clearOutbound();
       response.fill(0);
       reject(sanitizedError(OUTCOME_UNKNOWN, lifecycle('OUTCOME_UNKNOWN', state)));
@@ -518,22 +531,9 @@ function produceAttempt(scope, payerCore) {
 
     if (request instanceof Writable) {
       state.requestPresent = true;
-      requestClosePromise = new NATIVE_PROMISE(resolveClose => {
-        resolveRequestClose = resolveClose;
-      });
-      request.once('finish', () => {
-        state.requestFinished = true;
-        clearOutbound();
-      });
-      request.once('close', () => {
-        state.requestClosed = true;
-        clearOutbound();
-        resolveRequestClose();
-      });
-      request.on('error', () => {
-        state.inputError = true;
-        terminateOwnedChild();
-      });
+      request.once('finish', onRequestFinish);
+      request.once('close', onRequestClose);
+      request.on('error', onRequestError);
     } else {
       state.inputError = true;
       state.requestClosed = true;
@@ -542,63 +542,18 @@ function produceAttempt(scope, payerCore) {
 
     if (output instanceof Readable) {
       state.responsePresent = true;
-      responseClosePromise = new NATIVE_PROMISE(resolveClose => {
-        resolveResponseClose = resolveClose;
-      });
-      output.on('data', chunk => {
-        if (!REFLECT_APPLY(BUFFER_IS_BUFFER, Buffer, [chunk])) {
-          state.outputError = true;
-          terminateOwnedChild();
-          return;
-        }
-        const available = response.length - state.storedBytes;
-        const copied = Math.min(available, chunk.length);
-        if (copied > 0) chunk.copy(response, state.storedBytes, 0, copied);
-        state.storedBytes += copied;
-        if (copied !== chunk.length || state.storedBytes > RESPONSE_MAXIMUM_BYTES) {
-          state.overflow = true;
-          terminateOwnedChild();
-        }
-      });
-      output.once('end', () => {
-        state.outputEnded = true;
-      });
-      output.once('close', () => {
-        state.responseClosed = true;
-        resolveResponseClose();
-      });
-      output.on('error', () => {
-        state.outputError = true;
-        terminateOwnedChild();
-      });
+      output.on('data', onOutputData);
+      output.once('end', onOutputEnd);
+      output.once('close', onOutputClose);
+      output.on('error', onOutputError);
     } else {
       state.outputError = true;
       state.responseClosed = true;
     }
 
-    child.once('error', () => {
-      state.childError = true;
-      terminateOwnedChild();
-    });
-    child.once('exit', (code, signal) => {
-      state.exitObserved = true;
-      state.exitCode = code;
-      state.exitSignal = signal;
-    });
-    child.once('close', (code, signal) => {
-      state.closeObserved = true;
-      state.closeCode = code;
-      state.closeSignal = signal;
-      clearTimeout(deadline);
-      if (request instanceof Writable && !state.requestClosed) {
-        try { request.destroy(); } catch { state.inputError = true; }
-      }
-      if (output instanceof Readable && !state.responseClosed) {
-        try { output.destroy(); } catch { state.outputError = true; }
-      }
-      void NATIVE_PROMISE.all([requestClosePromise, responseClosePromise])
-        .then(() => complete());
-    });
+    child.on('error', onChildError);
+    child.once('exit', onChildExit);
+    child.once('close', onChildClose);
 
     if (!(request instanceof Writable) || !(output instanceof Readable)) {
       terminateOwnedChild();
@@ -612,9 +567,161 @@ function produceAttempt(scope, payerCore) {
       }
     }
 
-    function complete() {
+    function requiredClosureObserved() {
+      return state.closeObserved && state.requestClosed && state.responseClosed;
+    }
+
+    function removeOwnerListeners() {
+      if (request instanceof Writable) {
+        request.removeListener('finish', onRequestFinish);
+        request.removeListener('close', onRequestClose);
+        request.removeListener('error', onRequestError);
+      }
+      if (output instanceof Readable) {
+        output.removeListener('data', onOutputData);
+        output.removeListener('end', onOutputEnd);
+        output.removeListener('close', onOutputClose);
+        output.removeListener('error', onOutputError);
+      }
+      child.removeListener('error', onChildError);
+      child.removeListener('exit', onChildExit);
+      child.removeListener('close', onChildClose);
+    }
+
+    function releaseQuarantinedOwner() {
+      if (quarantineEntry === undefined || !requiredClosureObserved()) return;
+      state.ownerDisposition = 'RELEASED_AFTER_ACTUAL_CLOSURE';
+      removeOwnerListeners();
+      REFLECT_APPLY(SET_DELETE, QUARANTINED_ATTEMPTS, [quarantineEntry]);
+      quarantineEntry = undefined;
+    }
+
+    function closureProgressed() {
+      if (!requiredClosureObserved()) return;
+      if (quarantineEntry !== undefined) {
+        releaseQuarantinedOwner();
+        return;
+      }
+      complete();
+    }
+
+    function onRequestFinish() {
+      state.requestFinished = true;
+      clearOutbound();
+    }
+
+    function onRequestClose() {
+      state.requestClosed = true;
+      clearOutbound();
+      closureProgressed();
+    }
+
+    function onRequestError() {
+      state.inputError = true;
+      terminateOwnedChild();
+    }
+
+    function onOutputData(chunk) {
       if (state.settled) return;
+      if (!REFLECT_APPLY(BUFFER_IS_BUFFER, Buffer, [chunk])) {
+        state.outputError = true;
+        terminateOwnedChild();
+        return;
+      }
+      const available = response.length - state.storedBytes;
+      const copied = Math.min(available, chunk.length);
+      if (copied > 0) chunk.copy(response, state.storedBytes, 0, copied);
+      state.storedBytes += copied;
+      if (copied !== chunk.length || state.storedBytes > RESPONSE_MAXIMUM_BYTES) {
+        state.overflow = true;
+        terminateOwnedChild();
+      }
+    }
+
+    function onOutputEnd() {
+      state.outputEnded = true;
+    }
+
+    function onOutputClose() {
+      state.responseClosed = true;
+      closureProgressed();
+    }
+
+    function onOutputError() {
+      state.outputError = true;
+      terminateOwnedChild();
+    }
+
+    function onChildError() {
+      state.childError = true;
+      terminateOwnedChild();
+    }
+
+    function onChildExit(code, signal) {
+      state.exitObserved = true;
+      state.exitCode = code;
+      state.exitSignal = signal;
+    }
+
+    function onChildClose(code, signal) {
+      state.closeObserved = true;
+      state.closeCode = code;
+      state.closeSignal = signal;
+      if (request instanceof Writable && !state.requestClosed) {
+        try { request.destroy(); } catch { state.inputError = true; }
+      }
+      if (output instanceof Readable && !state.responseClosed) {
+        try { output.destroy(); } catch { state.outputError = true; }
+      }
+      closureProgressed();
+    }
+
+    function onSettlementBound() {
+      if (state.settled) return;
+      if (requiredClosureObserved()) {
+        complete();
+        return;
+      }
       state.settled = true;
+      state.ownerDisposition = 'RETAINED_UNTIL_ACTUAL_CLOSURE';
+      clearTimeout(deadline);
+      clearTimeout(settlementBound);
+      clearOutbound();
+      const protocol = inspectProtocol(response, state.storedBytes, state.overflow);
+      protocol.nonce?.fill(0);
+      response.fill(0);
+      quarantineEntry = OBJECT_FREEZE({
+        child,
+        listeners: OBJECT_FREEZE({
+          onChildClose,
+          onChildError,
+          onChildExit,
+          onOutputClose,
+          onOutputData,
+          onOutputEnd,
+          onOutputError,
+          onRequestClose,
+          onRequestError,
+          onRequestFinish,
+        }),
+        output,
+        request,
+        state,
+      });
+      REFLECT_APPLY(SET_ADD, QUARANTINED_ATTEMPTS, [quarantineEntry]);
+      reject(sanitizedError(
+        OUTCOME_UNKNOWN,
+        lifecycle('OUTCOME_UNKNOWN', state, protocol),
+      ));
+    }
+
+    function complete() {
+      if (state.settled || !requiredClosureObserved()) return;
+      state.settled = true;
+      state.ownerDisposition = 'RELEASED_AFTER_ACTUAL_CLOSURE';
+      clearTimeout(deadline);
+      clearTimeout(settlementBound);
+      removeOwnerListeners();
       clearOutbound();
       const protocol = inspectProtocol(response, state.storedBytes, state.overflow);
       const nonceBytes = protocol.nonce;

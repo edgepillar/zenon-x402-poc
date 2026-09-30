@@ -16,6 +16,9 @@ const FRAME_WRAPPER_INVOKED = 2;
 const FRAME_SUCCESS = 3;
 const FRAME_REJECTION = 4;
 const CHILD_DEADLINE_MS = 3_000;
+const CLEANUP_GRACE_MS = 500;
+const CALLER_SETTLEMENT_BOUND_MS = CHILD_DEADLINE_MS + CLEANUP_GRACE_MS;
+const SETTLEMENT_TIMEOUT = Symbol('SETTLEMENT_TIMEOUT');
 const FIXED_ERROR_MESSAGE = 'Offline Zenon nonce production rejected';
 const OUTCOME_UNKNOWN = 'OFFLINE_ZENON_NONCE_PRODUCER_OUTCOME_UNKNOWN';
 const INVALID_CANDIDATE = 'OFFLINE_ZENON_NONCE_PRODUCER_INVALID_CANDIDATE';
@@ -178,6 +181,9 @@ function streamClose(stream) {
 function fakeChild(onRequest, {
   inputWriteError = false,
   autoCloseOnKill = true,
+  holdRequestClose = false,
+  holdResponseClose = false,
+  killReturnsFalse = false,
   killThrows = false,
 } = {}) {
   const child = new EventEmitter();
@@ -206,15 +212,44 @@ function fakeChild(onRequest, {
       });
     },
   });
+  const destroyRequest = request.destroy.bind(request);
+  const destroyResponse = response.destroy.bind(response);
+  if (holdRequestClose) {
+    request.destroy = function holdDestroy() {
+      return request;
+    };
+  }
+  if (holdResponseClose) {
+    response.destroy = function holdDestroy() {
+      return response;
+    };
+  }
 
   child.exitCode = null;
   child.signalCode = null;
   child.killed = false;
   child.killSignals = [];
   child.stdio = [null, null, null, request, response];
+  child.listenerBaselines = Object.freeze({
+    childError: child.listenerCount('error'),
+    requestError: request.listenerCount('error'),
+    responseData: response.listenerCount('data'),
+    responseError: response.listenerCount('error'),
+  });
+
+  child.releaseHeldStreamCloses = function releaseHeldStreamCloses() {
+    if (holdRequestClose && !request.closed) destroyRequest();
+    if (holdResponseClose && !response.closed) destroyResponse();
+  };
 
   child.emitProcessClose = async function emitProcessClose() {
     await Promise.all([streamClose(request), streamClose(response)]);
+    if (processClosed) return;
+    processClosed = true;
+    child.emit('close', closeCode, closeSignal);
+  };
+
+  child.emitProcessCloseWithoutStreams = function emitProcessCloseWithoutStreams() {
     if (processClosed) return;
     processClosed = true;
     child.emit('close', closeCode, closeSignal);
@@ -239,6 +274,7 @@ function fakeChild(onRequest, {
     child.killed = true;
     child.killSignals.push(signal);
     if (killThrows) throw new Error('private kill failure detail');
+    if (killReturnsFalse) return false;
     if (autoCloseOnKill) child.finishProcess(null, signal);
     return true;
   };
@@ -277,6 +313,54 @@ async function fixedRejection(promise, code) {
   assert.equal(observed?.code, code);
   assert.equal(observed?.stack, undefined);
   return observed;
+}
+
+function trackedSettlement(promise) {
+  const tracked = { count: 0, promise: undefined };
+  tracked.promise = promise.then(
+    value => {
+      tracked.count += 1;
+      return { kind: 'FULFILLED', value };
+    },
+    error => {
+      tracked.count += 1;
+      return { error, kind: 'REJECTED' };
+    },
+  );
+  return tracked;
+}
+
+async function settlementWithin(promise, milliseconds) {
+  let timeout;
+  try {
+    return await Promise.race([
+      promise,
+      new Promise(resolve => {
+        timeout = setTimeout(() => resolve(SETTLEMENT_TIMEOUT), milliseconds);
+      }),
+    ]);
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+function assertOwnerListenersReleased(child) {
+  assert.equal(
+    child.listenerCount('error'),
+    child.listenerBaselines.childError,
+  );
+  assert.equal(
+    child.stdio[3].listenerCount('error'),
+    child.listenerBaselines.requestError,
+  );
+  assert.equal(
+    child.stdio[4].listenerCount('data'),
+    child.listenerBaselines.responseData,
+  );
+  assert.equal(
+    child.stdio[4].listenerCount('error'),
+    child.listenerBaselines.responseError,
+  );
 }
 
 function assertDeepFrozen(value, seen = new Set()) {
@@ -700,6 +784,154 @@ serialTest('termination failure is sanitized and remains unknown after eventual 
   const error = await fixedRejection(produced, OUTCOME_UNKNOWN);
   assert.equal(error.lifecycle.termination, 'FAILED');
   assert.equal(error.lifecycle.processClose, 'OBSERVED');
+});
+
+serialTest('the fixed caller bound retains an exact child when SIGKILL returns false', async () => {
+  const capture = configuredAttempt(() => {}, {
+    autoCloseOnKill: false,
+    killReturnsFalse: true,
+  });
+  const started = Date.now();
+  const tracked = trackedSettlement(produceOfflineZenonNonce(scope(1)));
+  const observed = await settlementWithin(
+    tracked.promise,
+    CALLER_SETTLEMENT_BOUND_MS + 1_250,
+  );
+  const elapsed = Date.now() - started;
+  let frozenLifecycle;
+  let repeatedLateErrorThrew = false;
+  let errorListenerRetained = false;
+  const processClose = new Promise(resolve => capture.child.once('close', resolve));
+  try {
+    if (observed !== SETTLEMENT_TIMEOUT && observed.kind === 'REJECTED') {
+      frozenLifecycle = { ...observed.error.lifecycle };
+      try {
+        capture.child.emit('error', new Error('private late child error detail'));
+        capture.child.emit('error', new Error('private repeated child error detail'));
+      } catch {
+        repeatedLateErrorThrew = true;
+      }
+      errorListenerRetained = capture.child.listenerCount('error') ===
+        capture.child.listenerBaselines.childError + 1;
+      writeFrames(capture.child, successfulFrames());
+    }
+  } finally {
+    capture.child.finishProcess(null, 'SIGKILL');
+    await processClose;
+    await new Promise(resolve => setImmediate(resolve));
+  }
+
+  assert.notEqual(observed, SETTLEMENT_TIMEOUT);
+  assert.equal(observed.kind, 'REJECTED');
+  assert.equal(observed.error.message, FIXED_ERROR_MESSAGE);
+  assert.equal(observed.error.code, OUTCOME_UNKNOWN);
+  assert.equal(observed.error.stack, undefined);
+  assert.equal(elapsed >= CALLER_SETTLEMENT_BOUND_MS - 75, true);
+  assert.equal(elapsed < CALLER_SETTLEMENT_BOUND_MS + 1_250, true);
+  assert.equal(capture.calls.length, 1);
+  assert.deepEqual(capture.child.killSignals, ['SIGKILL']);
+  assert.equal(repeatedLateErrorThrew, false);
+  assert.equal(errorListenerRetained, true);
+  assert.equal(observed.error.lifecycle.processExit, 'NOT_OBSERVED');
+  assert.equal(observed.error.lifecycle.processClose, 'NOT_OBSERVED');
+  assert.equal(observed.error.lifecycle.stdioClose, 'NOT_OBSERVED');
+  assert.equal(observed.error.lifecycle.termination, 'FAILED');
+  assert.equal(observed.error.lifecycle.retry, 'NOT_PERFORMED');
+  assert.equal(
+    observed.error.lifecycle.ownerDisposition,
+    'RETAINED_UNTIL_ACTUAL_CLOSURE',
+  );
+  assert.deepEqual(observed.error.lifecycle, frozenLifecycle);
+  assertDeepFrozen(observed.error.lifecycle);
+  assert.equal(tracked.count, 1);
+  assertOwnerListenersReleased(capture.child);
+});
+
+serialTest('process close cannot slide the bound past either pipe and peers stay isolated', async () => {
+  const spawned = [];
+  spawnImplementation = function spawnScenario(...args) {
+    const index = spawned.length;
+    let child;
+    if (index === 0 || index === 1) {
+      child = fakeChild((ownedChild) => {
+        ownedChild.finishProcess(0, null, { emitClose: false });
+        ownedChild.emitProcessCloseWithoutStreams();
+      }, index === 0 ? { holdRequestClose: true } : { holdResponseClose: true });
+    } else if (index === 2) {
+      child = fakeChild((ownedChild) => {
+        writeFrames(ownedChild, successfulFrames());
+        ownedChild.finishProcess();
+      });
+    } else {
+      throw new Error('unexpected extra spawn');
+    }
+    spawned.push({ args, child });
+    return child;
+  };
+  const decoy = fakeChild(() => {}, { autoCloseOnKill: false });
+  const started = Date.now();
+  const requestHeld = trackedSettlement(produceOfflineZenonNonce(scope(1)));
+  const responseHeld = trackedSettlement(produceOfflineZenonNonce(scope(1)));
+  const peer = trackedSettlement(produceOfflineZenonNonce(scope(1)));
+  const peerObserved = await settlementWithin(peer.promise, 1_000);
+  const heldObserved = await Promise.all([
+    settlementWithin(requestHeld.promise, CALLER_SETTLEMENT_BOUND_MS + 1_250),
+    settlementWithin(responseHeld.promise, CALLER_SETTLEMENT_BOUND_MS + 1_250),
+  ]);
+  const elapsed = Date.now() - started;
+  const lifecycleSnapshots = heldObserved.map(observed => (
+    observed !== SETTLEMENT_TIMEOUT && observed.kind === 'REJECTED'
+      ? { ...observed.error.lifecycle }
+      : undefined
+  ));
+
+  const heldChildren = spawned.slice(0, 2).map(entry => entry.child);
+  const heldStreamCloses = heldChildren.flatMap(child => [
+    streamClose(child.stdio[3]),
+    streamClose(child.stdio[4]),
+  ]);
+  for (const child of heldChildren) child.releaseHeldStreamCloses();
+  await Promise.all(heldStreamCloses);
+  await new Promise(resolve => setImmediate(resolve));
+
+  const decoyStreamCloses = [
+    streamClose(decoy.stdio[3]),
+    streamClose(decoy.stdio[4]),
+  ];
+  decoy.finishProcess(0, null, { emitClose: false, endOutput: false });
+  decoy.stdio[3].destroy();
+  decoy.stdio[4].destroy();
+  await Promise.all(decoyStreamCloses);
+  await decoy.emitProcessClose();
+
+  assert.notEqual(peerObserved, SETTLEMENT_TIMEOUT);
+  assert.equal(peerObserved.kind, 'FULFILLED');
+  assert.equal(peerObserved.value.status, 'VALID');
+  assert.equal(peer.count, 1);
+  assert.equal(spawned.length, 3);
+  assert.equal(spawned[2].child.killSignals.length, 0);
+  assert.deepEqual(decoy.killSignals, []);
+  assert.equal(elapsed >= CALLER_SETTLEMENT_BOUND_MS - 75, true);
+  assert.equal(elapsed < CALLER_SETTLEMENT_BOUND_MS + 1_250, true);
+
+  for (let index = 0; index < heldObserved.length; index += 1) {
+    const observed = heldObserved[index];
+    assert.notEqual(observed, SETTLEMENT_TIMEOUT);
+    assert.equal(observed.kind, 'REJECTED');
+    assert.equal(observed.error.code, OUTCOME_UNKNOWN);
+    assert.equal(observed.error.lifecycle.processExit, 'ZERO');
+    assert.equal(observed.error.lifecycle.processClose, 'OBSERVED');
+    assert.equal(observed.error.lifecycle.stdioClose, 'NOT_OBSERVED');
+    assert.equal(
+      observed.error.lifecycle.ownerDisposition,
+      'RETAINED_UNTIL_ACTUAL_CLOSURE',
+    );
+    assert.deepEqual(observed.error.lifecycle, lifecycleSnapshots[index]);
+    assert.equal(heldChildren[index].killSignals.length, 0);
+    assertOwnerListenersReleased(heldChildren[index]);
+  }
+  assert.equal(requestHeld.count, 1);
+  assert.equal(responseHeld.count, 1);
 });
 
 serialTest('the single deadline covers a child that never becomes ready', async () => {
