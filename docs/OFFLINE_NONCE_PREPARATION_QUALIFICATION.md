@@ -91,12 +91,13 @@ connector in memory. They failed at the intended boundaries with zero actual
 delegates, produced sanitized post-production failures where applicable, and
 preserved owner uncertainty. These controls are not published CI evidence.
 
-The initial normal local regression reported 5,495 tests: 5,494 passed, none
-failed or cancelled, one existing skip, and no todos, using Node 26.5 on macOS
-with installed SDK 1.0.5.
+The initial normal local regression on the combined qualification checkout
+reported 5,495 tests: 5,494 passed, none failed or cancelled, one existing
+skip, and no todos, using Node 26.5 on macOS with installed SDK 1.0.5.
 
-A subsequent single full-suite invocation reused an existing Node 24.19.0
-runtime on macOS and reported the same counts. The combined real
+A subsequent single full-suite invocation of that combined checkout reused an
+existing Node 24.19.0 runtime on macOS and reported the same counts. The
+combined real
 PRE_DP/recorded DP_ACTIVE preparation parent, five modeled connector cases,
 and existing isolated producer/composition parents passed. The owned runner,
 process group, stdout, and stderr closed naturally, without timeout, signals,
@@ -106,6 +107,13 @@ No runtime was installed and no dependency changed. The package declares
 Node >=24 and the existing workflow selects Node 24; this local result is not
 a hosted workflow result. Linux, hosted CI, live RPC/payment behavior, and real
 throughput remain unverified.
+
+A separate standalone offline qualification branch excludes the seven buyer
+tests from the combined checkout. Its single local Node 24.19.0 macOS full
+suite reported 5,488 tests: 5,487 passed, none failed or cancelled, one
+existing skip, and no todos. All 59 captured offline-specific parent tests
+passed. This separate local result is likewise not hosted CI, live-chain, or
+throughput evidence.
 
 ## Explicit limits and next gates
 
