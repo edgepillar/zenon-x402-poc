@@ -52,17 +52,23 @@ The owner and fixed
 [`child`](../src/zenon/internal/offline-pow-producer-child.js) use private FD3/FD4
 frames. Successful output is READY, JavaScript-wrapper invoked, then terminal
 success; rejected or partial output need not complete this sequence. Success
-requires zero exit plus process/private-stream closure. The three-second
-startup/work deadline requests termination. A captured, non-sliding 500 ms
-cleanup grace fixes caller settlement at no later than 3.5 seconds after the
-attempt starts. Child `close` alone does not cancel that bound while either
-private pipe remains unresolved. Closure completed inside the bound preserves
-the existing success or fail-closed result.
+requires zero exit plus process/private-stream closure. One JavaScript timer
+requests termination after the configured three-second startup/work deadline;
+a second timer, scheduled from the same attempt start, supplies the
+non-sliding 500 ms cleanup budget and configured 3.5-second settlement
+boundary. These are timer callbacks, and the owner does not independently
+compare a monotonic elapsed clock before successful completion. The configured
+3.5-second boundary therefore is not a hard wall-clock guarantee during
+event-loop suspension or starvation. Child `close` alone does not satisfy
+required closure while either private pipe remains unresolved. When the timer
+callbacks run normally, closure completed before settlement preserves the
+existing success or fail-closed result.
 
-If the bound expires first, the owner atomically puts the exact child, private
-streams, and required listeners in a module-private strong reaper registry
-before rejecting with `OFFLINE_ZENON_NONCE_PRODUCER_OUTCOME_UNKNOWN`. The
-frozen lifecycle reports `ownerDisposition` as
+If the settlement-bound callback runs before required closure is observed, the
+owner atomically puts the exact child, private streams, and required listeners
+in a module-private strong reaper registry before rejecting with
+`OFFLINE_ZENON_NONCE_PRODUCER_OUTCOME_UNKNOWN`. The frozen lifecycle reports
+`ownerDisposition` as
 `RETAINED_UNTIL_ACTUAL_CLOSURE` and reports only exit, process-close, and
 stdio-close events observed by caller settlement. The reaper continues to
 observe those original resources, keeps stream error listeners and a persistent
@@ -121,8 +127,11 @@ capture overflow, or a retry. Independent postchecks preserved all reviewed
 file bytes, SDK 1.0.5, runtime bytes, Git refs, and the original source checkout.
 No runtime was installed and no dependency changed. The package declares
 Node >=24 and the existing workflow selects Node 24; this local result is not
-a hosted workflow result. Linux, hosted CI, live RPC/payment behavior, and real
-throughput remain unverified.
+a hosted workflow result. At that historical local-only checkpoint, Linux and
+hosted CI had not yet been observed. The later distinct hosted observation
+below does not retroactively make this local result hosted evidence. Live
+RPC/payment behavior and real throughput were unverified then and remain
+unverified.
 
 The initial standalone offline qualification checkpoint excludes the seven
 buyer tests from the combined checkout. Its single local Node 24.19.0 macOS
@@ -139,16 +148,19 @@ failed `SIGKILL` with no process close, both request- and response-pipe close
 withholding after observed process exit/close, late exact-owner closure,
 frozen historical evidence, single settlement, and peer/decoy isolation.
 
-The first full run after implementation exposed an unintended lifecycle-shape
-change and reported 5,488 tests: 5,473 passed, 14 failed, one skipped, and none
-cancelled or marked todo. Normal closed outcomes were restored to their prior
-shape; only a retained unresolved owner now receives `ownerDisposition`. A
-post-fix run in the isolated symlink layout reported 5,488 tests: 5,478 passed,
-nine failed, one skipped, and none cancelled or marked todo. Targeted diagnosis
-isolated those remaining failures to genuine children exiting before READY:
-Node 24 required lexical-path access through the worktree's `node_modules`
-symlink, while the reviewed fixed guard permits only canonical child, manifest,
-and individual dependency paths.
+An earlier task-owned report states that the first full run after
+implementation exposed an unintended lifecycle-shape change and reported
+5,488 tests: 5,473 passed, 14 failed, one skipped, and none cancelled or marked
+todo. It then records that normal closed outcomes were restored to their prior
+shape, so only a retained unresolved owner receives `ownerDisposition`. The
+same report records a later isolated-symlink-layout run with 5,488 tests:
+5,478 passed, nine failed, one skipped, and none cancelled or marked todo. Its
+targeted diagnosis attributed those remaining failures to genuine children
+exiting before READY: Node 24 required lexical-path access through the
+worktree's `node_modules` symlink, while the reviewed fixed guard permits only
+canonical child, manifest, and individual dependency paths. This handoff
+update preserves that bounded historical report; it does not newly reproduce
+or independently re-establish its triage.
 
 The symlink was then retained recoverably outside the checkout and replaced
 locally by a byte-matched, mode-preserving physical copy of the same installed
@@ -159,8 +171,8 @@ failed or cancelled, one existing skip, and no todos. Runner exit and output
 closure were observed. Postchecks preserved source/test bytes, the fixed
 permission guard, SDK 1.0.5 bytes, the dependency source, runtime bytes, index,
 Git refs, and the original source checkout. The historical combined counts,
-initial standalone checkpoint, and post-lifecycle result are separate
-local observations.
+initial standalone checkpoint, and post-lifecycle result are separate local
+observations.
 
 A narrow reviewer correction then kept the owned child's error listener active
 until the same actual-closure cleanup that removes its other listeners. The
@@ -170,6 +182,25 @@ Node 24 suite in the physical dependency layout reported 5,490 tests: 5,489
 passed, none failed or cancelled, one existing skip, and no todos. Runner exit
 and output closure were observed. This latest result remains separate from the
 initial standalone 5,488-test checkpoint and the combined 5,495-test result.
+
+A separate full-suite invocation, distinct from the 14-failure and
+nine-failure observations above, recorded two failures. The PR validation
+record reports that a targeted follow-up and a default full rerun passed. No
+identifiable task-owned primary trace containing those two individual test
+identities or their causes was available for this handoff, so both remain
+unavailable. No aggregate total is asserted for that invocation, and later
+green runs do not establish its cause.
+
+A distinct
+[hosted Ubuntu/Node 24 Test workflow observation](https://github.com/edgepillar/zenon-x402-poc/actions/runs/36791671788)
+at the exact reviewed PR head reported 5,490 tests: 5,432 passed, none failed,
+58 skipped, none cancelled, and no todos. The 58 skips comprised 57 existing
+macOS-specific tests and one existing PTY test; none was a new offline nonce
+qualification test. All 61 top-level tests added by this PR were present as
+successful, non-skipped output, including the genuine two-child
+PRE_DP/recorded-DP_ACTIVE preparation test. This is bounded hosted offline
+qualification only. It is not evidence of a live chain, signing, payment,
+finality, authenticated identity, or throughput.
 
 ## Explicit limits and next gates
 
@@ -187,8 +218,11 @@ delivery, or signing authority. Unsigned intent/context is a separate contract.
 Two isolated owners started without serial waiting do not establish shared SDK
 session parallelism, same-payer safety, admission control, latency improvement,
 live L1 concurrency, TPS, or sustainable capacity. This qualification made no
-testnet/mainnet transfer. Next gates are cross-platform and hosted CI
-qualification, followed by separately reviewed frontier/quote freshness,
+testnet/mainnet transfer. Bounded hosted Ubuntu offline qualification is now
+observed. That workflow does not qualify its skipped native/macOS features or
+any unsupported platform; the separate local macOS observations remain
+bounded as stated above. Every live-chain gate remains unverified. The
+remaining gates include separately reviewed frontier/quote freshness,
 per-payer sequencing and admission, and durable uncertainty recovery. Only
 after those gates should a separately authorized current-epoch, multi-payer
 measurement be considered. Trust anchors, signing, activation, and publication
