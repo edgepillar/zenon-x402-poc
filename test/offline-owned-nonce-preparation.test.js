@@ -47,6 +47,12 @@ const EXPECTED_SUCCESS_LIFECYCLE = Object.freeze({
   retry: 'NOT_PERFORMED',
   networkBoundary: 'TRUSTED_ARTIFACT_JS_DENIAL_FACADE_NOT_OS_SANDBOX',
 });
+const OBJECT_DEFINE_PROPERTY = Object.defineProperty;
+const GET_OWN_PROPERTY_DESCRIPTOR = Object.getOwnPropertyDescriptor;
+const OBJECT_PROTOTYPE = Object.prototype;
+const PROMISE_THEN = Promise.prototype.then;
+const REFLECT_APPLY = Reflect.apply;
+const REFLECT_DELETE_PROPERTY = Reflect.deleteProperty;
 
 const allFakeChildren = new Set();
 const candidateBuffers = new Set();
@@ -82,6 +88,18 @@ const { produceOfflineUnsignedPreparation } = connectorModule;
 
 function serialTest(name, body) {
   test(name, { concurrency: false }, body);
+}
+
+function restoreObjectPrototypeThen(descriptor) {
+  if (descriptor === undefined) {
+    REFLECT_APPLY(REFLECT_DELETE_PROPERTY, Reflect, [OBJECT_PROTOTYPE, 'then']);
+    return;
+  }
+  REFLECT_APPLY(OBJECT_DEFINE_PROPERTY, Object, [
+    OBJECT_PROTOTYPE,
+    'then',
+    descriptor,
+  ]);
 }
 
 function sha3(value) {
@@ -572,6 +590,59 @@ serialTest('fully fused PRE_DP and DP_ACTIVE traces remain pure zero-work compos
     }
     assert.equal(spawnCalls, 0, 'zero-work composition starts no owner attempt');
   });
+
+serialTest('rejects inherited callable then before the zero-work async return', async () => {
+  const priorThen = REFLECT_APPLY(
+    GET_OWN_PROPERTY_DESCRIPTOR,
+    Object,
+    [OBJECT_PROTOTYPE, 'then'],
+  );
+  let callableCalls = 0;
+  let spawnCalls = 0;
+  let outcome;
+  spawnImplementation = () => {
+    spawnCalls += 1;
+    throw new Error('zero work must not delegate');
+  };
+
+  try {
+    REFLECT_APPLY(OBJECT_DEFINE_PROPERTY, Object, [
+      OBJECT_PROTOTYPE,
+      'then',
+      {
+        configurable: true,
+        value(resolve) {
+          callableCalls += 1;
+          resolve('SUBSTITUTED');
+        },
+        writable: true,
+      },
+    ]);
+    const operation = produceOfflineUnsignedPreparation(
+      traceFixture({ mode: 'PRE_DP', work: false, label: 'then-zero' }).trace,
+    );
+    const settlement = REFLECT_APPLY(PROMISE_THEN, operation, [
+      value => {
+        outcome = { kind: 'FULFILLED', value };
+        return 'FULFILLED';
+      },
+      error => {
+        outcome = { error, kind: 'REJECTED' };
+        return 'REJECTED';
+      },
+    ]);
+    await settlement;
+  } finally {
+    restoreObjectPrototypeThen(priorThen);
+  }
+
+  assert.equal(callableCalls, 0, 'the inherited callable is never invoked');
+  assert.equal(outcome.kind, 'REJECTED');
+  assert.equal(outcome.error.message, CONNECTOR_MESSAGE);
+  assert.equal(outcome.error.code, INPUT_REJECTED);
+  assert.equal(outcome.error.stack, undefined);
+  assert.equal(spawnCalls, 0, 'zero-work rejection starts no owner attempt');
+});
 
 serialTest('modeled owner success binds one PRE_DP and one higher-priced DP_ACTIVE scope',
   async () => {

@@ -88,6 +88,12 @@ const EXPECTED_SUCCESS_LIFECYCLE = Object.freeze({
   retry: 'NOT_PERFORMED',
   networkBoundary: 'TRUSTED_ARTIFACT_JS_DENIAL_FACADE_NOT_OS_SANDBOX',
 });
+const OBJECT_DEFINE_PROPERTY = Object.defineProperty;
+const GET_OWN_PROPERTY_DESCRIPTOR = Object.getOwnPropertyDescriptor;
+const OBJECT_PROTOTYPE = Object.prototype;
+const PROMISE_THEN = Promise.prototype.then;
+const REFLECT_APPLY = Reflect.apply;
+const REFLECT_DELETE_PROPERTY = Reflect.deleteProperty;
 
 let spawnImplementation = () => {
   throw new Error('unexpected unconfigured spawn');
@@ -105,6 +111,18 @@ after(() => {
 
 function serialTest(name, body) {
   test(name, { concurrency: false }, body);
+}
+
+function restoreObjectPrototypeThen(descriptor) {
+  if (descriptor === undefined) {
+    REFLECT_APPLY(REFLECT_DELETE_PROPERTY, Reflect, [OBJECT_PROTOTYPE, 'then']);
+    return;
+  }
+  REFLECT_APPLY(OBJECT_DEFINE_PROPERTY, Object, [
+    OBJECT_PROTOTYPE,
+    'then',
+    descriptor,
+  ]);
 }
 
 function polymod(values) {
@@ -579,6 +597,65 @@ serialTest('returns only the detached deeply frozen qualification DTO', async ()
   ]) assert.equal(field in result, false);
   assertDeepFrozen(result);
   assert.throws(() => { result.status = 'INVALID'; }, TypeError);
+});
+
+serialTest('rejects inherited then access before positive-work owner fulfillment', async () => {
+  const priorThen = REFLECT_APPLY(
+    GET_OWN_PROPERTY_DESCRIPTOR,
+    Object,
+    [OBJECT_PROTOTYPE, 'then'],
+  );
+  let accessorCalls = 0;
+  let callableCalls = 0;
+  let outcome;
+  const capture = configuredAttempt((child) => {
+    writeFrames(child, successfulFrames());
+    child.finishProcess(0, null, { emitClose: false });
+  });
+  const produced = produceOfflineZenonNonce(scope(1));
+  const settlement = REFLECT_APPLY(PROMISE_THEN, produced, [
+    value => {
+      outcome = { kind: 'FULFILLED', value };
+      return 'FULFILLED';
+    },
+    error => {
+      outcome = { error, kind: 'REJECTED' };
+      return 'REJECTED';
+    },
+  ]);
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(capture.child.stdio[3].closed, true);
+  assert.equal(capture.child.stdio[4].closed, true);
+
+  try {
+    REFLECT_APPLY(OBJECT_DEFINE_PROPERTY, Object, [
+      OBJECT_PROTOTYPE,
+      'then',
+      {
+        configurable: true,
+        get() {
+          accessorCalls += 1;
+          return function substitute(resolve) {
+            callableCalls += 1;
+            resolve('SUBSTITUTED');
+          };
+        },
+      },
+    ]);
+    capture.child.emitProcessCloseWithoutStreams();
+    await settlement;
+  } finally {
+    restoreObjectPrototypeThen(priorThen);
+  }
+
+  assert.equal(accessorCalls, 0, 'the inherited accessor is never invoked');
+  assert.equal(callableCalls, 0, 'the inherited callable is never invoked');
+  assert.equal(outcome.kind, 'REJECTED');
+  assert.equal(outcome.error.message, FIXED_ERROR_MESSAGE);
+  assert.equal(outcome.error.code, OUTCOME_UNKNOWN);
+  assert.equal(outcome.error.stack, undefined);
+  assert.equal(outcome.error.lifecycle.status, 'OUTCOME_UNKNOWN');
+  assert.equal(capture.calls.length, 1, 'the owner never retries');
 });
 
 serialTest('binds verification to the original copied scope despite caller mutation', async () => {

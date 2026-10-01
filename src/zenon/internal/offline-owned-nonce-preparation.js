@@ -73,6 +73,11 @@ const getPrototypeOf = Object.getPrototypeOf;
 const hasOwn = Object.hasOwn;
 const isFrozen = Object.isFrozen;
 const ownKeys = Reflect.ownKeys;
+const objectPrototype = Object.prototype;
+const objectPrototypeThenAtImport = getOwnPropertyDescriptor(
+  objectPrototype,
+  'then',
+);
 
 export async function produceOfflineUnsignedPreparation(trace) {
   if (arguments.length !== 1) rejectInput();
@@ -112,7 +117,9 @@ export async function produceOfflineUnsignedPreparation(trace) {
         'NOT_REQUIRED',
         initialPreparation.block.nonce,
       )) rejectInput();
-      return wrapper(composition, null);
+      const result = wrapper(composition, null);
+      if (!asyncResultBoundaryIsSafe()) rejectInput();
+      return result;
     } catch {
       rejectInput();
     }
@@ -144,9 +151,20 @@ export async function produceOfflineUnsignedPreparation(trace) {
       'VALID',
       producerEvidence.nonce,
     )) rejectPostProduction();
-    return wrapper(composition, producerEvidence);
+    const result = wrapper(composition, producerEvidence);
+    if (!asyncResultBoundaryIsSafe()) rejectPostProduction();
+    return result;
   } catch {
     rejectPostProduction();
+  }
+}
+
+function asyncResultBoundaryIsSafe() {
+  if (objectPrototypeThenAtImport !== undefined) return false;
+  try {
+    return getOwnPropertyDescriptor(objectPrototype, 'then') === undefined;
+  } catch {
+    return false;
   }
 }
 

@@ -41,6 +41,11 @@ const OBJECT_PROTOTYPE = Object.prototype;
 const REFLECT_APPLY = Reflect.apply;
 const REFLECT_OWN_KEYS = Reflect.ownKeys;
 const NUMBER_IS_SAFE_INTEGER = Number.isSafeInteger;
+const OBJECT_PROTOTYPE_THEN_AT_IMPORT = REFLECT_APPLY(
+  GET_OWN_PROPERTY_DESCRIPTOR,
+  Object,
+  [OBJECT_PROTOTYPE, 'then'],
+);
 
 const INPUT_FIELDS = OBJECT_FREEZE([
   'payer',
@@ -417,6 +422,19 @@ function lifecycle(status, state, protocol) {
   return OBJECT_FREEZE(evidence);
 }
 
+function asyncResultBoundaryIsSafe() {
+  if (OBJECT_PROTOTYPE_THEN_AT_IMPORT !== undefined) return false;
+  try {
+    return REFLECT_APPLY(
+      GET_OWN_PROPERTY_DESCRIPTOR,
+      Object,
+      [OBJECT_PROTOTYPE, 'then'],
+    ) === undefined;
+  } catch {
+    return false;
+  }
+}
+
 function successResult(scope, nonce, completedLifecycle) {
   return OBJECT_FREEZE({
     qualification: 'OFFLINE_NONCE_PRODUCER_ONLY',
@@ -782,6 +800,13 @@ function produceAttempt(scope, payerCore) {
         reject(sanitizedError(
           INVALID_CANDIDATE,
           lifecycle('REJECTED', state, protocol),
+        ));
+        return;
+      }
+      if (!asyncResultBoundaryIsSafe()) {
+        reject(sanitizedError(
+          OUTCOME_UNKNOWN,
+          lifecycle('OUTCOME_UNKNOWN', state, protocol),
         ));
         return;
       }
