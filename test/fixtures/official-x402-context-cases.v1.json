@@ -1,0 +1,54 @@
+{
+  "schemaVersion": 1,
+  "scope": "INERT_X402_CHARACTERIZATION_V1",
+  "versions": ["2.23.0", "2.28.0"],
+  "limits": {
+    "templates": 16,
+    "versionSpecificSlots": 28,
+    "modeledAuthoritySubcases": 6,
+    "syntheticControlSlots": 4,
+    "totalRecords": 38,
+    "acceptedSettleCallsPerScenario": 2,
+    "representationUtf8Bytes": 4096,
+    "encodedHeaderBytes": 8192,
+    "catalogUtf8Bytes": 16384
+  },
+  "templates": [
+    {
+      "id": "CONTEXT_AUTHORITY_MATRIX",
+      "kind": "CONTEXT",
+      "sdkSubcases": ["EXTENSION_CONTEXT_ONLY"],
+      "modeledSubcases": [
+        "ORIGINAL_SERVER_CONTEXT",
+        "MISSING_CONTEXT",
+        "EXTENSION_CONTEXT_SUBSTITUTED",
+        "PAYLOAD_DERIVED_EQUAL_COPY",
+        "MUTATED_SELECTED_REQUIREMENT",
+        "CROSS_RESOURCE"
+      ]
+    },
+    {
+      "id": "UPFRONT_FLOW_POLICY",
+      "kind": "CONTEXT",
+      "sdkSubcases": [
+        "EXPLICIT_UPFRONT",
+        "OMITTED_FLOW",
+        "UNSUPPORTED_FLOW"
+      ]
+    },
+    {"id": "PENDING_RESULT", "kind": "PENDING"},
+    {"id": "PENDING_TYPED_ERROR", "kind": "PENDING"},
+    {"id": "PENDING_TWICE", "kind": "PENDING"},
+    {"id": "PENDING_WITHOUT_TRANSACTION", "kind": "PENDING"},
+    {"id": "FIRST_CALL_SUCCESS", "kind": "PENDING"},
+    {"id": "NONPENDING_FAILED_RESULT", "kind": "PENDING"},
+    {"id": "GENERIC_THROWN_ERROR", "kind": "PENDING"},
+    {"id": "UNKNOWN_IS_NOT_ACKNOWLEDGED", "kind": "PENDING"},
+    {"id": "TRUTHY_INVALID_TRANSACTION", "kind": "PENDING"},
+    {"id": "CONSUMED_CONTEXT_GAP", "kind": "PREDICTED_GAP"},
+    {"id": "CONTROL_MUTATION", "kind": "SYNTHETIC_ASSERTION_CONTROL"},
+    {"id": "CONTROL_REPLACEMENT", "kind": "SYNTHETIC_ASSERTION_CONTROL"},
+    {"id": "CONTROL_TRANSACTION_DRIFT", "kind": "SYNTHETIC_ASSERTION_CONTROL"},
+    {"id": "CONTROL_PENDING_AUTHORIZATION", "kind": "SYNTHETIC_ASSERTION_CONTROL"}
+  ]
+}
