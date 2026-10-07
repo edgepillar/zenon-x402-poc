@@ -794,12 +794,13 @@ export function createZenonDurableHttpComposition(options) {
     }
   }
 
-  function buildSession() {
+  function buildSession(activeGrantBinding) {
     assertBoundStores();
     let session;
     try {
       session = REFLECT_APPLY(CREATE_DURABLE_SESSION, undefined, [{
         store: serviceStore,
+        admittedGrantId: activeGrantBinding.grantId,
         execute: guardedExecute,
         deadlineRuntime,
         selectedDurationMs: durableExecution.selectedDurationMs,
@@ -886,7 +887,7 @@ export function createZenonDurableHttpComposition(options) {
             activationResult,
             captured.intent,
           );
-          buildSession();
+          buildSession(activeGrantBinding);
           state.startupPending = false;
           if (state.phase === PHASE.CLOSING) {
             capability.reject(failure(CODE.closed));

@@ -15,6 +15,7 @@ import { join } from 'node:path';
 import {
   SERVICE_CREDIT_HTTP_PATH,
   SERVICE_CREDIT_HTTP_ROUTE_ID,
+  createServiceCreditHttpAdmission,
   createServiceCreditHttpHandler,
 } from '../src/service-credit-http.js';
 import {
@@ -419,6 +420,112 @@ test('unknown grants and malformed proof details are indistinguishable', async t
   assert.equal(first.statusCode, 401);
   assert.equal(second.statusCode, 401);
   assert.deepEqual(first.body, second.body);
+});
+
+test('admission rejects present invalid scope without unscoped fallback', t => {
+  const { store, activeGrant } = createLedger(t);
+  const before = store.load();
+  const grantId = activeGrant.grantId;
+  const absentGrantId = `${grantId.slice(0, -1)}${grantId.endsWith('a') ? 'b' : 'a'}`;
+  assert.equal(before.state.grants.some(grant => grant.grantId === absentGrantId), false);
+
+  for (const admittedGrantId of [undefined, null, '', false, 0, {}, [], absentGrantId]) {
+    assert.throws(
+      () => createServiceCreditHttpAdmission({ store, admittedGrantId }),
+      /SERVICE_CREDIT_HTTP_INVALID_CONFIGURATION/,
+    );
+    assert.deepEqual(store.load(), before);
+  }
+
+  for (const options of [{ store }, { store, admittedGrantId: grantId }]) {
+    assert.doesNotThrow(() => createServiceCreditHttpAdmission(options));
+    assert.deepEqual(store.load(), before);
+  }
+});
+
+test('scoped admission validates the unselected grant before narrowing', t => {
+  const { store, activeGrant } = createLedger(t);
+  const otherKeys = keyMaterial();
+  const other = store.activateGrantFromTrustedRecord({
+    ...grant(otherKeys, NOW + 10_000, 10),
+    sourceSettlementId: 'settlement.http.other',
+    transactionId: `mocktx:${'f'.repeat(64)}`,
+  });
+  const snapshot = store.load();
+  assert.equal(snapshot.state.grants.length, 2);
+  assert.notEqual(other.grantId, activeGrant.grantId);
+  const selected = snapshot.state.grants.find(grant => grant.grantId === activeGrant.grantId);
+  assert.ok(selected);
+  const state = structuredClone(snapshot.state);
+  const targets = state.grants.filter(grant => grant.grantId === other.grantId);
+  assert.equal(targets.length, 1);
+  targets[0].capabilityCommitment = 'not-a-commitment';
+  assert.deepEqual(
+    state.grants.find(grant => grant.grantId === activeGrant.grantId),
+    selected,
+  );
+  const hostile = {
+    ...snapshot,
+    state,
+    checksum: `sha256:${createHash('sha256').update(canonicalJson({
+      revision: snapshot.revision,
+      schemaVersion: snapshot.schemaVersion,
+      state,
+    })).digest('hex')}`,
+  };
+  const validFacade = storeFacade(store, { load: () => snapshot });
+  const hostileFacade = storeFacade(store, { load: () => hostile });
+  const invalidConfiguration = /SERVICE_CREDIT_HTTP_INVALID_CONFIGURATION/;
+  let executeCalls = 0;
+  const execute = () => {
+    executeCalls += 1;
+    return { resultCode: 'unexpected' };
+  };
+
+  assert.doesNotThrow(() => createServiceCreditHttpHandler({ store: validFacade, execute }));
+  assert.equal(executeCalls, 0);
+  assert.deepEqual(store.load(), snapshot);
+  assert.throws(
+    () => createServiceCreditHttpHandler({ store: hostileFacade, execute }),
+    invalidConfiguration,
+  );
+  assert.equal(executeCalls, 0);
+  assert.deepEqual(store.load(), snapshot);
+
+  for (const scope of [{}, { admittedGrantId: activeGrant.grantId }]) {
+    assert.doesNotThrow(() => createServiceCreditHttpAdmission({
+      store: validFacade,
+      ...scope,
+    }));
+    assert.equal(executeCalls, 0);
+    assert.deepEqual(store.load(), snapshot);
+    assert.throws(
+      () => createServiceCreditHttpAdmission({ store: hostileFacade, ...scope }),
+      invalidConfiguration,
+    );
+    assert.equal(executeCalls, 0);
+    assert.deepEqual(store.load(), snapshot);
+  }
+});
+
+test('one-grant admission retains unscoped compatibility', t => {
+  const { store, activeGrant, keys } = createLedger(t);
+  const otherKeys = keyMaterial();
+  const other = store.activateGrantFromTrustedRecord({
+    ...grant(otherKeys, NOW + 10_000, 10), sourceSettlementId: 'settlement.http.other',
+    transactionId: `mocktx:${'f'.repeat(64)}`,
+  });
+  const input = (key, id) => ({
+    url: SERVICE_CREDIT_HTTP_PATH, method: 'POST',
+    rawHeaders: ['Authorization', authorization(key, requestDescription(id)), 'Content-Length', '0'],
+  });
+  const before = store.load();
+  const foreign = input(otherKeys, other.grantId);
+  const scoped = createServiceCreditHttpAdmission({ store, admittedGrantId: activeGrant.grantId });
+  assert.equal(createServiceCreditHttpAdmission({ store }).admit(foreign).status, 'AUTHORIZED');
+  assert.equal(scoped.admit(foreign).status, 'UNAUTHORIZED');
+  assert.equal(scoped.admit(input(keys, activeGrant.grantId)).status, 'AUTHORIZED');
+  assert.deepEqual(store.load(), before);
 });
 
 test('one bounded startup admission snapshot prevents pre-authenticated store work', async t => {

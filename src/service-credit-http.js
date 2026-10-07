@@ -869,14 +869,31 @@ function responseForAuthorizationDecision(status) {
  * reservation, execution, outcome mapping, response write, or retry.
  */
 export function createServiceCreditHttpAdmission(options) {
-  if (arguments.length !== 1 || !exactKeys(options, ['store'])) {
+  if (
+    arguments.length !== 1
+    || (!exactKeys(options, ['store'])
+      && !exactKeys(options, ['store', 'admittedGrantId']))
+  ) {
     throw new TYPE_ERROR('SERVICE_CREDIT_HTTP_INVALID_CONFIGURATION');
   }
   const store = ownValue(options, 'store');
   if (store === null || (typeof store !== 'object' && typeof store !== 'function')) {
     throw new TYPE_ERROR('SERVICE_CREDIT_HTTP_INVALID_CONFIGURATION');
   }
-  const admittedGrants = buildGrantAdmissionIndex(store);
+  const hasScope = OBJECT_HAS_OWN(options, 'admittedGrantId');
+  const admittedGrantId = hasScope ? ownValue(options, 'admittedGrantId') : undefined;
+  if (hasScope && !validIdentifier(admittedGrantId)) {
+    throw new TYPE_ERROR('SERVICE_CREDIT_HTTP_INVALID_CONFIGURATION');
+  }
+  const allGrants = buildGrantAdmissionIndex(store);
+  const admittedGrants = hasScope ? new MAP_CONSTRUCTOR() : allGrants;
+  if (hasScope) {
+    const grant = REFLECT_APPLY(MAP_GET, allGrants, [admittedGrantId]);
+    if (!grant) {
+      throw new TYPE_ERROR('SERVICE_CREDIT_HTTP_INVALID_CONFIGURATION');
+    }
+    REFLECT_APPLY(MAP_SET, admittedGrants, [admittedGrantId, grant]);
+  }
   const admitRequestStart = createRequestStartAdmission();
   const admit = OBJECT_FREEZE((request, ...extra) => {
     if (extra.length !== 0) return authorizationDecision('UNAVAILABLE');

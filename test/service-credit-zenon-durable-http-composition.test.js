@@ -38,6 +38,7 @@ import {
 } from '../src/service-credit-capability.js';
 import { SERVICE_CREDIT_HTTP_PATH, SERVICE_CREDIT_HTTP_ROUTE_ID } from '../src/service-credit-http.js';
 import { SERVICE_CREDIT_MODEL_VERSION } from '../src/service-credit-model.js';
+import { createServiceCreditHttpAdmission } from '../src/service-credit-http.js';
 import { ServiceCreditSqliteStore } from '../src/service-credit-sqlite-store.js';
 
 const NOW = 2_000_000_000_000;
@@ -728,6 +729,59 @@ test('NONE, PREPARED, INVALIDATED, and EQUIVOCATED reject before ledger mutation
       assert.deepEqual(context.serviceStore.load(), before);
     });
   }
+});
+
+test('one-grant composition rejects a second snapshot grant and retains replay', async t => {
+  let calls = 0;
+  const execute = () => { calls += 1; return { resultCode: 'scoped' }; };
+  const c = fixture(t, { execute });
+  await c.owner.start(activationInput(c));
+  const original = c.serviceStore.load().state.grants.find(g =>
+    g.capabilityCommitment === deriveServiceCreditCapabilityCommitment({
+      publicKey: CAPABILITY_KEYS.publicKey,
+    }));
+  assert.ok(original);
+  const otherKeys = keys();
+  const record = structuredClone(original.activation);
+  record.sourceSettlementId = 'settlement.runtime.other';
+  assert.match(record.transactionId, /[0-9a-f]{64}$/);
+  record.transactionId = record.transactionId.replace(/[0-9a-f]{64}$/, 'f'.repeat(64));
+  assert.notEqual(record.transactionId, original.activation.transactionId);
+  record.capabilityCommitment = deriveServiceCreditCapabilityCommitment({
+    publicKey: otherKeys.publicKey,
+  });
+  const other = c.serviceStore.activateGrantFromTrustedRecord(record);
+  await c.owner.close();
+  c.owner = null;
+  reopen(c, { execute });
+  await c.owner.start(activationInput(c));
+  const store = c.serviceStore;
+  const before = store.load();
+  assert.equal(before.state.grants.length, 2);
+  const request = requestDescription(other.grantId, 'request.foreign');
+  const proof = {
+    proofVersion: 1, grantId: other.grantId, requestId: request.requestId,
+    publicKey: otherKeys.publicKey, maxCostUnits: request.maxCostUnits,
+    signature: sign(null, createServiceCreditCapabilitySigningBytes(request), otherKeys.privateKey)
+      .toString('base64url'),
+  };
+  const foreign = `ServiceCredit ${Buffer.from(canonicalJson(proof)).toString('base64url')}`;
+  assert.equal(createServiceCreditHttpAdmission({ store }).admit({
+    url: SERVICE_CREDIT_HTTP_PATH, method: 'POST',
+    rawHeaders: ['Authorization', foreign, 'Content-Length', '0'],
+  }).status, 'AUTHORIZED');
+  assert.equal((await exchange(c.owner.handle, foreign)).statusCode, 401);
+  assert.equal(calls, 0);
+  assert.deepEqual(store.load(), before);
+  const auth = authorization(requestDescription(original.grantId, 'request.original'));
+  const first = await exchange(c.owner.handle, auth);
+  const after = store.load();
+  const replay = await exchange(c.owner.handle, auth);
+  assert.deepEqual([first.statusCode, replay.statusCode], [200, 200]);
+  assert.deepEqual(JSON.parse(first.body.toString('utf8')), { ok: true, resultCode: 'scoped' });
+  assert.deepEqual(replay.body, first.body);
+  assert.deepEqual(store.load(), after);
+  assert.equal(calls, 1);
 });
 
 test('READY startup drives listener-free HTTP replay and restart without duplicate debit', async t => {

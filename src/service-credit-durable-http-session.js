@@ -34,6 +34,13 @@ const SESSION_KEYS = OBJECT_FREEZE([
   'deadlineRuntime',
   'selectedDurationMs',
 ]);
+const SCOPED_SESSION_KEYS = OBJECT_FREEZE([
+  'store',
+  'execute',
+  'deadlineRuntime',
+  'selectedDurationMs',
+  'admittedGrantId',
+]);
 const SNAPSHOT_KEYS = OBJECT_FREEZE(['revision', 'executionState']);
 const EXECUTION_STATE_KEYS = OBJECT_FREEZE([
   'contractVersion',
@@ -327,7 +334,8 @@ function send(response, descriptor) {
  */
 export function createDurableServiceCreditHttpSession(options) {
   if (arguments.length !== 1) throw failure(INVALID_CONFIGURATION);
-  const configuration = exactDataObject(options, SESSION_KEYS);
+  const configuration = exactDataObject(options, SESSION_KEYS)
+    ?? exactDataObject(options, SCOPED_SESSION_KEYS);
   if (
     configuration === null
     || !NUMBER_IS_SAFE_INTEGER(configuration.selectedDurationMs)
@@ -341,8 +349,11 @@ export function createDurableServiceCreditHttpSession(options) {
   let admission;
   let owner;
   try {
+    const admissionOptions = OBJECT_HAS_OWN(configuration, 'admittedGrantId')
+      ? { store: configuration.store, admittedGrantId: configuration.admittedGrantId }
+      : { store: configuration.store };
     admission = captureCallableSurface(
-      createServiceCreditHttpAdmission({ store: configuration.store }),
+      createServiceCreditHttpAdmission(admissionOptions),
       ADMISSION_KEYS,
     );
     owner = captureCallableSurface(createDurableServiceCreditExecutionOwner({

@@ -257,6 +257,164 @@ function createSession(store, execute, overrides = {}) {
   });
 }
 
+test('session rejects present invalid scope before execute or ledger change', async t => {
+  const { store, activeGrant } = createLedger(t);
+  const before = store.load();
+  const grantId = activeGrant.grantId;
+  const absentGrantId = `${grantId.slice(0, -1)}${grantId.endsWith('a') ? 'b' : 'a'}`;
+  assert.equal(before.state.grants.some(grant => grant.grantId === absentGrantId), false);
+  let calls = 0;
+  const execute = () => {
+    calls += 1;
+    return { resultCode: 'unexpected' };
+  };
+
+  for (const admittedGrantId of [undefined, null, '', false, 0, {}, [], absentGrantId]) {
+    assert.throws(() => createSession(store, execute, { admittedGrantId }));
+    assert.equal(calls, 0);
+    assert.deepEqual(store.load(), before);
+  }
+
+  for (const overrides of [{}, { admittedGrantId: grantId }]) {
+    const session = createSession(store, execute, overrides);
+    await session.close();
+    assert.equal(calls, 0);
+    assert.deepEqual(store.load(), before);
+  }
+});
+
+test('scoped reconstruction replays cached bytes after a synthetic response write failure', async t => {
+  const { store, activeGrant, keys } = createLedger(t);
+  const auth = authorization(keys, requestDescription(activeGrant.grantId));
+  const scope = { admittedGrantId: activeGrant.grantId };
+  let firstCalls = 0;
+  let reconstructedCalls = 0;
+  const firstSession = createSession(store, () => {
+    firstCalls += 1;
+    return { resultCode: 'scoped' };
+  }, scope);
+  const headers = Object.create(null);
+  let attemptedBody;
+  const response = {
+    destroyed: false,
+    writableEnded: false,
+    statusCode: 0,
+    setHeader(name, value) {
+      headers[String(name).toLowerCase()] = String(value);
+    },
+    end(value) {
+      if (attemptedBody === undefined) attemptedBody = Buffer.from(value);
+      throw new Error('synthetic response write failure');
+    },
+    destroy() { this.destroyed = true; },
+  };
+
+  await firstSession.handle(requestEnvelope(auth), response);
+  assert.equal(response.destroyed, true);
+  assert.equal(Buffer.isBuffer(attemptedBody), true);
+  assert.deepEqual(parsed({ body: attemptedBody }), { ok: true, resultCode: 'scoped' });
+  assert.deepEqual([firstCalls, reconstructedCalls], [1, 0]);
+  const successEnvelope = store.load();
+  await firstSession.close();
+  assert.deepEqual(store.load(), successEnvelope);
+  assert.deepEqual([firstCalls, reconstructedCalls], [1, 0]);
+
+  const reconstructed = createSession(store, () => {
+    reconstructedCalls += 1;
+    return { resultCode: 'unexpected' };
+  }, scope);
+  assert.deepEqual(store.load(), successEnvelope);
+  assert.deepEqual([firstCalls, reconstructedCalls], [1, 0]);
+  const replay = await exchange(reconstructed.handle, auth);
+  assert.equal(replay.statusCode, 200);
+  assert.deepEqual(replay.body, attemptedBody);
+  assert.deepEqual([firstCalls, reconstructedCalls], [1, 0]);
+  assert.deepEqual(store.load(), successEnvelope);
+  await reconstructed.close();
+  assert.deepEqual(store.load(), successEnvelope);
+  assert.deepEqual([firstCalls, reconstructedCalls], [1, 0]);
+});
+
+test('scoped session reconstruction preserves the original cached result', async t => {
+  const { store, activeGrant, keys } = createLedger(t);
+  const otherKeys = keyMaterial();
+  const other = store.activateGrantFromTrustedRecord({
+    ...grant(otherKeys), sourceSettlementId: 'settlement.session.other',
+    transactionId: `mocktx:${'f'.repeat(64)}`,
+  });
+  const auth = authorization(keys, requestDescription(activeGrant.grantId));
+  const foreign = authorization(otherKeys, requestDescription(other.grantId));
+  const scope = { admittedGrantId: activeGrant.grantId };
+  let firstCalls = 0;
+  let reconstructedCalls = 0;
+  const firstSession = createSession(store, () => {
+    firstCalls += 1;
+    return { resultCode: 'scoped' };
+  }, scope);
+
+  const first = await exchange(firstSession.handle, auth);
+  assert.equal(first.statusCode, 200);
+  assert.deepEqual(parsed(first), { ok: true, resultCode: 'scoped' });
+  assert.deepEqual([firstCalls, reconstructedCalls], [1, 0]);
+  const successEnvelope = store.load();
+  await firstSession.close();
+  assert.deepEqual(store.load(), successEnvelope);
+  assert.deepEqual([firstCalls, reconstructedCalls], [1, 0]);
+
+  const reconstructed = createSession(store, () => {
+    reconstructedCalls += 1;
+    return { resultCode: 'unexpected' };
+  }, scope);
+  assert.deepEqual(store.load(), successEnvelope);
+  assert.deepEqual([firstCalls, reconstructedCalls], [1, 0]);
+  assert.equal(serviceCreditHttp.createServiceCreditHttpAdmission({ store })
+    .admit(requestEnvelope(foreign)).status, 'AUTHORIZED');
+
+  const denied = await exchange(reconstructed.handle, foreign);
+  assert.equal(denied.statusCode, 401);
+  assert.deepEqual([firstCalls, reconstructedCalls], [1, 0]);
+  assert.deepEqual(store.load(), successEnvelope);
+
+  const replay = await exchange(reconstructed.handle, auth);
+  assert.equal(replay.statusCode, 200);
+  assert.deepEqual(replay.body, first.body);
+  assert.deepEqual([firstCalls, reconstructedCalls], [1, 0]);
+  assert.deepEqual(store.load(), successEnvelope);
+  await reconstructed.close();
+  assert.deepEqual(store.load(), successEnvelope);
+  assert.deepEqual([firstCalls, reconstructedCalls], [1, 0]);
+});
+
+test('one-grant session rejects foreign proof and retains original result replay', async t => {
+  const { store, activeGrant, keys } = createLedger(t);
+  const otherKeys = keyMaterial();
+  const other = store.activateGrantFromTrustedRecord({
+    ...grant(otherKeys), sourceSettlementId: 'settlement.session.other',
+    transactionId: `mocktx:${'f'.repeat(64)}`,
+  });
+  const foreign = authorization(otherKeys, requestDescription(other.grantId));
+  assert.equal(serviceCreditHttp.createServiceCreditHttpAdmission({ store })
+    .admit(requestEnvelope(foreign)).status, 'AUTHORIZED');
+  let calls = 0;
+  const session = createSession(store, () => {
+    calls += 1; return { resultCode: 'scoped' };
+  }, { admittedGrantId: activeGrant.grantId });
+  const before = store.load();
+  assert.equal((await exchange(session.handle, foreign)).statusCode, 401);
+  assert.equal(calls, 0);
+  assert.deepEqual(store.load(), before);
+  const auth = authorization(keys, requestDescription(activeGrant.grantId));
+  const first = await exchange(session.handle, auth);
+  const after = store.load();
+  const replay = await exchange(session.handle, auth);
+  assert.deepEqual([first.statusCode, replay.statusCode], [200, 200]);
+  assert.deepEqual(parsed(first), { ok: true, resultCode: 'scoped' });
+  assert.deepEqual(replay.body, first.body);
+  assert.deepEqual(store.load(), after);
+  assert.equal(calls, 1);
+  await session.close();
+});
+
 test('the durable HTTP session succeeds and exact replay is byte-identical without another debit', async t => {
   const ledger = createLedger(t);
   const request = requestDescription(ledger.activeGrant.grantId);
