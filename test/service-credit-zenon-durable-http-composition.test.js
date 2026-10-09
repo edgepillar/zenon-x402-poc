@@ -1505,6 +1505,80 @@ test('callback reentrant close is fixed-error and later external close succeeds'
   await owner.close();
 });
 
+for(const externalFirst of [false,true])test(`async close after await: external=${externalFirst}`,{timeout:5000},async t=>{
+  let enter,allow,attempt,release,owner,origin,observed,shared,response;
+  let closeState='pending',calls=0;
+  const entered=new Promise(r=>{enter=r;});
+  const permission=new Promise(r=>{allow=r;});
+  const attempted=new Promise(r=>{attempt=r;});
+  const application=new Promise(r=>{release=r;});
+  const original={resultCode:'runtime.resource.delivered'};
+  const context=fixture(t,{execute:async()=>{
+    calls++;enter(true);await permission;
+    try{
+      origin=owner.close();
+      origin.then(()=>{observed={ok:true};},error=>{observed={code:error?.code};});
+    }catch(error){observed={threw:error};}
+    attempt(true);await application;return original;
+  }});
+  owner=context.owner;
+  await owner.start(activationInput(context));
+  const grantId=context.serviceStore.load().state.grants[0].grantId;
+  try{
+    response=exchange(owner.handle,authorization(requestDescription(grantId,'request.async-origin')))
+      .then(value=>({value}),error=>({error}))
+      .then(out=>{enter(false);attempt(false);return out;});
+    assert.equal(await entered,true);
+    if(externalFirst){
+      shared=owner.close();
+      shared.then(()=>{closeState='fulfilled';},()=>{closeState='rejected';});
+    }
+    allow();assert.equal(await attempted,true);
+    await new Promise(r=>setImmediate(r));
+    assert.deepEqual(observed,{code:'SERVICE_CREDIT_ZENON_DURABLE_HTTP_COMPOSITION_CLOSE_FAILED'});
+    assert.equal((await exchange(owner.handle,authorization(requestDescription(grantId,'request.denied')))).statusCode,503);
+    assert.equal(calls,1);
+    if(externalFirst){
+      assert.notEqual(origin,shared);
+      assert.equal(closeState,'pending');
+    }
+  }finally{allow();release();}
+  const out=await response;
+  assert.equal(out.error,undefined);
+  assert.equal(out.value.statusCode,200);
+  assert.deepEqual(JSON.parse(out.value.body.toString('utf8')),{ok:true,resultCode:'runtime.resource.delivered'});
+  assert.equal(calls,1);
+  await (shared??owner.close());
+});
+
+test('settled callback descendant may close',{timeout:5000},async t=>{
+  let release,owner,observed,calls=0;
+  const descendant=new Promise(r=>{release=r;});
+  const original={resultCode:'runtime.resource.delivered'};
+  const context=fixture(t,{execute:async()=>{
+    calls++;
+    observed=(async()=>{
+      if(!(await descendant))return {skipped:true};
+      return owner.close().then(()=>({ok:true}),error=>({code:error?.code}));
+    })().then(value=>value,error=>({threw:error}));
+    return original;
+  }});
+  owner=context.owner;
+  await owner.start(activationInput(context));
+  const grantId=context.serviceStore.load().state.grants[0].grantId;
+  try{
+    const out=await exchange(owner.handle,authorization(requestDescription(grantId,'request.descendant')))
+      .then(value=>({value}),error=>({error}));
+    assert.equal(out.error,undefined);
+    assert.equal(out.value.statusCode,200);
+    assert.deepEqual(JSON.parse(out.value.body.toString('utf8')),{ok:true,resultCode:'runtime.resource.delivered'});
+    assert.equal(calls,1);
+    release(true);assert.deepEqual(await observed,{ok:true});
+    assert.equal((await exchange(owner.handle,authorization(requestDescription(grantId,'request.after-descendant')))).statusCode,503);
+    assert.equal(calls,1);
+  }finally{release(false);}
+});
+
 test('prototype fakes, proxies, facades, hostile values, and method replacement fail closed', async t => {
   const context = fixture(t);
   for (const override of [

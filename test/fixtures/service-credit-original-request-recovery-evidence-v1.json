@@ -1,0 +1,8 @@
+{
+"schema":"CREDIT_PROCESS_RESTART_INTENTS","version":1,
+"scope":"SYNTHETIC_DECLARED_DATA","qualification":"NOT_RUN","authority":"NONE",
+"original":{"grantId":null,"ledgerId":null,"requestId":null,"requestDigest":null,"executionId":null,"reservationId":null,"cost":null,"maxCost":null,"chargedCost":null,"resultCommitment":null},
+"intents":["COMMITTED_SUCCESS","MAY_HAVE_STARTED/UNKNOWN"],
+"UNQUALIFIED":["independentCurrentContext","originalFunding","providerREADY","payerProviderPolicyAuthority","nativeDurableOriginalState","atomicWinners","captureCompleteness","realOSProcessBoundary"],
+"evidence":{"process":null,"custody":null,"commit":null,"cache":null,"effects":null,"counters":null}
+}

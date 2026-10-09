@@ -1,4 +1,5 @@
 import { types as utilTypes } from 'node:util';
+import { AsyncLocalStorage } from 'node:async_hooks';
 
 import {
   createDurableServiceCreditHttpSession,
@@ -20,6 +21,10 @@ import {
 const NATIVE_PROMISE = Promise;
 const PROMISE_PROTOTYPE = NATIVE_PROMISE.prototype;
 const PROMISE_THEN = PROMISE_PROTOTYPE.then;
+const ASYNC_LOCAL_STORAGE = AsyncLocalStorage;
+const ASYNC_LOCAL_RUN = ASYNC_LOCAL_STORAGE.prototype.run;
+const ASYNC_LOCAL_GET_STORE = ASYNC_LOCAL_STORAGE.prototype.getStore;
+const ASYNC_LOCAL_DISABLE = ASYNC_LOCAL_STORAGE.prototype.disable;
 const ARRAY_IS_ARRAY = Array.isArray;
 const ARRAY_PROTOTYPE = Array.prototype;
 const ARRAY_JOIN = ARRAY_PROTOTYPE.join;
@@ -668,6 +673,9 @@ export function createZenonDurableHttpComposition(options) {
   }
 
   const execute = configuration.execute;
+  const callbackScope = new ASYNC_LOCAL_STORAGE();
+  let scopeDisableAttempted = false;
+  let scopeDisableReturned = false;
   const state = {
     phase: PHASE.NEW,
     startFingerprint: null,
@@ -755,12 +763,31 @@ export function createZenonDurableHttpComposition(options) {
     if (state.phase !== PHASE.ACTIVE && state.phase !== PHASE.CLOSING) {
       throw failure(CODE.activatedUnavailable);
     }
+    const marker = { active: true };
+    let result;
     state.callbackActive = true;
     try {
-      return REFLECT_APPLY(execute, undefined, [identity]);
+      result = REFLECT_APPLY(ASYNC_LOCAL_RUN, callbackScope, [
+        marker,
+        () => REFLECT_APPLY(execute, undefined, [identity]),
+      ]);
+    } catch (error) {
+      marker.active = false;
+      throw error;
     } finally {
       state.callbackActive = false;
     }
+    try {
+      if (isNativePromise(result)) {
+        const settled = () => { marker.active = false; };
+        REFLECT_APPLY(PROMISE_THEN, result, [settled, settled]);
+      } else {
+        marker.active = false;
+      }
+    } catch {
+      // Preserve the result; unobserved settlement keeps origin-close blocked.
+    }
+    return result;
   });
 
   function initializeOrValidateDurableExecution() {
@@ -879,40 +906,46 @@ export function createZenonDurableHttpComposition(options) {
       return capability.promise;
     }
 
-    REFLECT_APPLY(PROMISE_THEN, activationPromise, [
-      activationResult => {
-        state.activationCompleted = true;
-        try {
-          const activeGrantBinding = captureActiveGrantBinding(
-            activationResult,
-            captured.intent,
-          );
-          buildSession(activeGrantBinding);
-          state.startupPending = false;
-          if (state.phase === PHASE.CLOSING) {
-            capability.reject(failure(CODE.closed));
-            finishClose();
-            return;
+    try {
+      REFLECT_APPLY(PROMISE_THEN, activationPromise, [
+        activationResult => {
+          state.activationCompleted = true;
+          try {
+            const activeGrantBinding = captureActiveGrantBinding(
+              activationResult,
+              captured.intent,
+            );
+            buildSession(activeGrantBinding);
+            state.startupPending = false;
+            if (state.phase === PHASE.CLOSING) {
+              capability.reject(failure(CODE.closed));
+              finishClose();
+              return;
+            }
+            state.activeGrantBinding = activeGrantBinding;
+            state.phase = PHASE.ACTIVE;
+            capability.resolve(ACTIVE_RESULT);
+          } catch (error) {
+            const code = errorCode(error) === CODE.recoveryRequired
+              ? CODE.recoveryRequired
+              : CODE.activatedUnavailable;
+            settleStartupFailure(code);
+            capability.reject(failure(code));
+            if (state.closeCapability !== null) finishClose();
           }
-          state.activeGrantBinding = activeGrantBinding;
-          state.phase = PHASE.ACTIVE;
-          capability.resolve(ACTIVE_RESULT);
-        } catch (error) {
-          const code = errorCode(error) === CODE.recoveryRequired
-            ? CODE.recoveryRequired
-            : CODE.activatedUnavailable;
+        },
+        error => {
+          const code = mapPreActivationFailure(error);
           settleStartupFailure(code);
           capability.reject(failure(code));
           if (state.closeCapability !== null) finishClose();
-        }
-      },
-      error => {
-        const code = mapPreActivationFailure(error);
-        settleStartupFailure(code);
-        capability.reject(failure(code));
-        if (state.closeCapability !== null) finishClose();
-      },
-    ]);
+        },
+      ]);
+    } catch {
+      settleStartupFailure(CODE.recoveryRequired);
+      capability.reject(failure(CODE.recoveryRequired));
+      if (state.closeCapability !== null) finishClose();
+    }
     return capability.promise;
   }
 
@@ -970,8 +1003,24 @@ export function createZenonDurableHttpComposition(options) {
   function closeStores() {
     try {
       assertBoundStores(CODE.closeFailed);
-      REFLECT_APPLY(OBSERVER_CLOSE, observerStore, []);
-      REFLECT_APPLY(SERVICE_CLOSE, serviceStore, []);
+      let storeCloseFailed = false;
+      try {
+        REFLECT_APPLY(OBSERVER_CLOSE, observerStore, []);
+      } catch {
+        storeCloseFailed = true;
+      }
+      try {
+        REFLECT_APPLY(SERVICE_CLOSE, serviceStore, []);
+      } catch {
+        storeCloseFailed = true;
+      }
+      if (storeCloseFailed) throw failure(CODE.closeFailed);
+      if (!scopeDisableAttempted) {
+        scopeDisableAttempted = true;
+        REFLECT_APPLY(ASYNC_LOCAL_DISABLE, callbackScope, []);
+        scopeDisableReturned = true;
+      }
+      if (!scopeDisableReturned) throw failure(CODE.closeFailed);
       const capability = state.closeCapability;
       state.closeCapability = null;
       if (
@@ -1012,30 +1061,48 @@ export function createZenonDurableHttpComposition(options) {
       const capability = state.closeCapability;
       state.closeCapability = null;
       state.closePromise = null;
-      state.phase = PHASE.ACTIVATED_UNAVAILABLE;
+      state.phase = state.terminalCode === null
+        ? PHASE.ACTIVATED_UNAVAILABLE
+        : terminalPhase(state.terminalCode);
       capability.reject(failure(CODE.closeFailed));
       return;
     }
-    REFLECT_APPLY(PROMISE_THEN, sessionClose, [
-      () => closeStores(),
-      () => {
-        const capability = state.closeCapability;
-        state.closeCapability = null;
-        state.closePromise = null;
-        if (state.terminalCode === null) {
-          state.terminalCode = state.activationCompleted
-            ? CODE.activatedUnavailable
-            : CODE.preActivationUnavailable;
-        }
-        state.phase = terminalPhase(state.terminalCode);
-        capability.reject(failure(CODE.closeFailed));
-      },
-    ]);
+    try {
+      REFLECT_APPLY(PROMISE_THEN, sessionClose, [
+        () => closeStores(),
+        () => {
+          const capability = state.closeCapability;
+          state.closeCapability = null;
+          state.closePromise = null;
+          if (state.terminalCode === null) {
+            state.terminalCode = state.activationCompleted
+              ? CODE.activatedUnavailable
+              : CODE.preActivationUnavailable;
+          }
+          state.phase = terminalPhase(state.terminalCode);
+          capability.reject(failure(CODE.closeFailed));
+        },
+      ]);
+    } catch {
+      const capability = state.closeCapability;
+      state.closeCapability = null;
+      state.closePromise = null;
+      if (state.terminalCode === null) {
+        state.terminalCode = state.activationCompleted
+          ? CODE.activatedUnavailable
+          : CODE.preActivationUnavailable;
+      }
+      state.phase = terminalPhase(state.terminalCode);
+      capability.reject(failure(CODE.closeFailed));
+    }
   }
 
   function close(...args) {
     if (args.length !== 0) return nativeRejected(failure(CODE.invalidInput));
-    if (state.callbackActive) {
+    if (
+      state.callbackActive
+      || REFLECT_APPLY(ASYNC_LOCAL_GET_STORE, callbackScope, [])?.active === true
+    ) {
       state.phase = PHASE.CLOSING;
       state.activeGrantBinding = null;
       return nativeRejected(failure(CODE.closeFailed));

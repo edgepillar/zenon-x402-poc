@@ -35,6 +35,7 @@ import {
   PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_WARNING,
   PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_WSS_ACKNOWLEDGEMENT,
   PUBLIC_TESTNET_DYNAMIC_PLASMA_EPOCH_WSS_ENDPOINT,
+  PUBLIC_TESTNET_DYNAMIC_PLASMA_OCT03_EPOCH_CANDIDATE_V1,
   PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_CHAIN_PROFILE,
   PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_EVENT_ID,
   PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_NON_CLAIMS,
@@ -664,6 +665,67 @@ test('historical Dynamic Plasma reset epoch data remains immutable and inactive'
         HISTORICAL_PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_PROFILE_NAME,
     }),
   ));
+});
+
+test('October 3 candidate is immutable and separate', () => {
+  const candidate = PUBLIC_TESTNET_DYNAMIC_PLASMA_OCT03_EPOCH_CANDIDATE_V1;
+  assert.deepEqual(candidate, {
+    candidateName: 'public-testnet-dynamic-plasma-epoch-candidate-2026-10-03-v1',
+    candidateVersion: 1,
+    status: 'UNQUALIFIED_NOT_SELECTABLE',
+    suppliedMetadata: {
+      epochDate: '2026-10-03',
+      nodeSourceCommit: 'e58d8e80eabd9fd5630ed62e0707424d96b5303c',
+      genesisTimestampSec: 1791025200,
+      chainIdentifier: '73404',
+    },
+    unresolvedAcceptance: {
+      nodePlanEventId: null,
+      genesisMomentumHash: null,
+      deployedBinaryIdentity: null,
+      activeSporkState: null,
+      enforcementEvidence: null,
+      pricingEvidence: null,
+      sdkArtifactIdentity: null,
+      sdkRuntimeCustody: null,
+    },
+  });
+  for (const value of [candidate, candidate.suppliedMetadata,
+    candidate.unresolvedAcceptance]) {
+    assert.equal(Object.isFrozen(value), true);
+  }
+  assert.notEqual(candidate.candidateName,
+    PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_PROFILE_NAME);
+});
+
+test('October 3 candidate has no existing selection path', () => {
+  const candidate = PUBLIC_TESTNET_DYNAMIC_PLASMA_OCT03_EPOCH_CANDIDATE_V1;
+  const rejected = /public_testnet_dynamic_plasma_reset_epoch(?:_execution)?_selection_invalid/;
+  for (const [select, endpointKey] of [
+    [selectPublicTestnetDynamicPlasmaResetEpochPolicy, 'evidenceWssEndpoint'],
+    [selectPublicTestnetDynamicPlasmaResetEpochExecutionPolicy, 'rpcEndpoint'],
+  ]) {
+    const oldSelection = {
+      profileName: PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_PROFILE_NAME,
+      eventId: PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_EVENT_ID,
+      [endpointKey]: PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_WSS_ENDPOINT,
+      liveAcknowledgement: TESTNET_LIVE_ACKNOWLEDGEMENT,
+      operatorTrustAcknowledgement:
+        PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_OPERATOR_TRUST_ACKNOWLEDGEMENT,
+      wssAcknowledgement: PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_WSS_ACKNOWLEDGEMENT,
+    };
+    assert.ok(select(oldSelection));
+    assert.throws(() => select(candidate), rejected);
+    for (const overrides of [
+      { profileName: candidate.candidateName },
+      { eventId: null },
+      { profileName: candidate.candidateName, eventId: null },
+      // A date is an invalid probe, not a fabricated node-plan event ID.
+      { eventId: candidate.suppliedMetadata.epochDate },
+    ]) {
+      assert.throws(() => select({ ...oldSelection, ...overrides }), rejected);
+    }
+  }
 });
 
 test('current Dynamic Plasma reset epoch is a distinct immutable offline profile and preserves prior profiles', () => {

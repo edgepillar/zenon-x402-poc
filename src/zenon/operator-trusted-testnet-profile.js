@@ -337,6 +337,29 @@ export const PUBLIC_TESTNET_DYNAMIC_PLASMA_RESET_EPOCH_NON_CLAIMS = FREEZE({
   productionReadiness: false,
 });
 
+// Inactive candidate data; not a policy or deployment receipt.
+export const PUBLIC_TESTNET_DYNAMIC_PLASMA_OCT03_EPOCH_CANDIDATE_V1 = FREEZE({
+  candidateName: 'public-testnet-dynamic-plasma-epoch-candidate-2026-10-03-v1',
+  candidateVersion: 1,
+  status: 'UNQUALIFIED_NOT_SELECTABLE',
+  suppliedMetadata: FREEZE({
+    epochDate: '2026-10-03',
+    nodeSourceCommit: 'e58d8e80eabd9fd5630ed62e0707424d96b5303c',
+    genesisTimestampSec: 1791025200,
+    chainIdentifier: '73404',
+  }),
+  unresolvedAcceptance: FREEZE({
+    nodePlanEventId: null,
+    genesisMomentumHash: null,
+    deployedBinaryIdentity: null,
+    activeSporkState: null,
+    enforcementEvidence: null,
+    pricingEvidence: null,
+    sdkArtifactIdentity: null,
+    sdkRuntimeCustody: null,
+  }),
+});
+
 function fail(code) {
   throw new Error(code);
 }

@@ -1,0 +1,155 @@
+{
+  "schemaVersion": 1,
+  "artifactKind": "DP_PREPARATION_QUALIFICATION_PLAN",
+  "status": "NOT_RUN",
+  "evidenceLevel": "STATIC_DRAFT_ONLY",
+  "candidate": {
+    "exportName": "PUBLIC_TESTNET_DYNAMIC_PLASMA_OCT03_EPOCH_CANDIDATE_V1",
+    "candidateName": "public-testnet-dynamic-plasma-epoch-candidate-2026-10-03-v1",
+    "candidateVersion": 1,
+    "suppliedMetadata": {
+      "epochDate": "2026-10-03",
+      "nodeSourceCommit": "e58d8e80eabd9fd5630ed62e0707424d96b5303c",
+      "genesisTimestampSec": 1791025200,
+      "chainIdentifier": "73404"
+    },
+    "authoritativeEpoch": false
+  },
+  "canonicalSuite": {
+    "repository": "https://github.com/0x3639/zenon-sdk-spec",
+    "sourceCommit": "69f2ecf955bafa4037c73f4b858619ef834e738b",
+    "relationship": "EXTEND_EXISTING_SUITE_NOT_REIMPLEMENT_SDK",
+    "sourceAndRuntimeQualifiedByThisPacket": false
+  },
+  "preparationPath": {
+    "proposedSdkFamily": "znn-typescript-sdk@1.0.5 composite prepareBlock",
+    "installedArtifactIdentity": null,
+    "runtimeCallsiteCustody": null,
+    "stagedApiAssumed": false,
+    "phaseInjectionOrObservationAvailability": "UNQUALIFIED_REQUIRES_SEPARATE_ADMISSION"
+  },
+  "requiredEvidence": {
+    "independentlyOwnedContext": null,
+    "deployedBinarySourceAndDigestBinding": null,
+    "actualGenesisMomentumHash": null,
+    "activeSporkState": null,
+    "enforcementTimePricing": null,
+    "sdkArtifactAndRuntimeBinding": null,
+    "originalRequestAndPaymentCustody": null,
+    "payerPolicyAndRecoveryAuthority": null,
+    "crashRestartAndUncertaintyPolicy": null
+  },
+  "identityPolicy": {
+    "preserveOriginalPaymentBytes": true,
+    "preserveOriginalSignedHash": true,
+    "preserveOriginalPayloadRequirementsContext": true,
+    "replacePayment": false,
+    "resignPayment": false,
+    "mintReplacementChallenge": false,
+    "resetConsumedAuthority": false,
+    "exceptionBoundary": "PR193_VALIDATED_EXACT_SAME_SIGNED_BLOCK_RESEND_IS_SEPARATE_NOT_QUALIFIED_HERE",
+    "publicationStatesRemainDistinct": [
+      "UNKNOWN",
+      "ACKNOWLEDGED"
+    ]
+  },
+  "scenarios": [
+    {
+      "id": "frontier-quote-movement",
+      "observationBoundary": "BEFORE_PREPARATION",
+      "requiredEvidence": [
+        "original_request_context",
+        "original_frontier_and_quote",
+        "changed_frontier_and_quote",
+        "prepared_parent_and_cost_binding"
+      ],
+      "requiredAssertions": [
+        "bind_the_selected_frontier_and_quote_to_the_original_request",
+        "detect_frontier_or_quote_movement_without_borrowing_an_old_quote",
+        "apply_only_an_independently_admitted_cost_policy"
+      ],
+      "result": {
+        "status": "NOT_RUN",
+        "evidenceReceipt": null,
+        "observedCounters": null
+      }
+    },
+    {
+      "id": "work-preparation-price-movement",
+      "observationBoundary": "DURING_WORK_PREPARATION",
+      "requiredEvidence": [
+        "original_quote",
+        "qualified_work_phase_observation_boundary",
+        "post_work_quote",
+        "actual_execution_price"
+      ],
+      "requiredAssertions": [
+        "do_not_assume_a_shipped_staged_sdk_api",
+        "detect_price_movement_at_an_admitted_phase_boundary",
+        "a_last_check_or_buffer_is_not_an_inclusion_guarantee",
+        "do_not_replace_or_resign_the_original_payment"
+      ],
+      "result": {
+        "status": "NOT_RUN",
+        "evidenceReceipt": null,
+        "observedCounters": null
+      }
+    },
+    {
+      "id": "signing-to-inclusion-price-movement",
+      "observationBoundary": "AFTER_SIGNING_BEFORE_INCLUSION",
+      "requiredEvidence": [
+        "retained_original_signed_bytes_and_hash",
+        "signing_quote_and_context",
+        "inclusion_or_rejection_evidence",
+        "enforcement_time_price"
+      ],
+      "requiredAssertions": [
+        "retain_the_original_signed_identity",
+        "distinguish_inclusion_rejection_and_unknown_outcomes",
+        "quote_ttl_and_headroom_are_not_inclusion_guarantees",
+        "a_failure_label_does_not_authorize_a_new_signature_or_charge"
+      ],
+      "result": {
+        "status": "NOT_RUN",
+        "evidenceReceipt": null,
+        "observedCounters": null
+      }
+    },
+    {
+      "id": "lost-publication-response-original-payment-recovery",
+      "observationBoundary": "AFTER_UNACKNOWLEDGED_PUBLICATION",
+      "requiredEvidence": [
+        "durable_original_signed_bytes_and_hash",
+        "original_payload_requirements_and_context",
+        "unknown_not_acknowledged_publication_record",
+        "same_original_hash_reconciliation_evidence"
+      ],
+      "requiredAssertions": [
+        "reconcile_the_same_original_payment",
+        "pending_or_unknown_does_not_authorize_resource_delivery",
+        "no_consumed_context_reset_or_replacement_challenge",
+        "delivery_requires_independent_settlement_and_receive_policy_acceptance"
+      ],
+      "requiredLimits": {
+        "newPublicationAttemptsAfterAmbiguity": 0,
+        "newSignaturesAfterAmbiguity": 0,
+        "replacementCharges": 0,
+        "maxResourceDeliveries": 1
+      },
+      "result": {
+        "status": "NOT_RUN",
+        "evidenceReceipt": null,
+        "observedCounters": null
+      }
+    }
+  ],
+  "limitations": [
+    "This file is a qualification plan, not a run receipt, SDK conformance vector result or accepted deployed epoch.",
+    "The contract tests check plan metadata only; they do not exercise prepareBlock, a signing stage, bridge recovery, publication or a process restart.",
+    "Phase observation or injection support is unresolved; no Planner, WalletAdapter or PlasmaStrategy API is assumed shipped.",
+    "Same chain identifier, supplied source commit, timestamp, TLS or a genesis-file digest does not authenticate a deployed epoch.",
+    "The zero-publication recovery limit belongs to the unacknowledged-response scenario, not a blanket change to PR193's separate VALIDATED same-block resend boundary.",
+    "This DP-route plan does not gate unrelated direct-payment or service-credit lanes and does not establish provider READY, durable credits, pilot readiness or chain TPS."
+  ]
+}

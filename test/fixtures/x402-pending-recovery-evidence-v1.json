@@ -1,0 +1,97 @@
+{
+  "schemaVersion": 1,
+  "artifactKind": "X402_PENDING_RECOVERY_EVIDENCE_REQUIREMENTS",
+  "status": "NOT_RUN",
+  "evidenceLevel": "STATIC_DRAFT_ONLY",
+  "sourceBaseline": {
+    "repository": "x402-foundation/x402",
+    "commit": "7f2b2f1f77fa5317615735e3378a6fad41cccb4e",
+    "manifestPath": "typescript/packages/core/package.json",
+    "sourceManifestName": "@x402/core",
+    "sourceManifestVersion": "2.28.0",
+    "manifestOnlyReviewed": true,
+    "retryImplementationReviewed": false,
+    "installedArtifactDigest": null,
+    "canonicalPublisher": null,
+    "runtimeCallsiteCustody": null
+  },
+  "contractScope": {
+    "scenarioBasis": "ROADMAP_PROPOSAL_NOT_EXECUTED_SDK_BEHAVIOR",
+    "syntheticChecker": "TEST_ONLY_NOT_A_BRIDGE_OR_RECOVERY_API",
+    "boundary": "AFTER_UNACKNOWLEDGED_ORIGINAL_PUBLICATION_RESPONSE",
+    "proposedSettlementCallCount": 2,
+    "originalIdentityFields": [
+      "signedPaymentBytes",
+      "signedPaymentHash",
+      "payloadBytes",
+      "requirementsBytes",
+      "contextBinding"
+    ],
+    "requiredZeroAdditionalCounters": [
+      "publicationAttempts",
+      "signatures",
+      "replacementCharges",
+      "replacementChallenges",
+      "contextResets"
+    ],
+    "maxResourceDeliveries": 1,
+    "pr193ValidatedSameBlockResendBoundary": "SEPARATE_PR193_VALIDATED_BOUNDARY_NOT_QUALIFIED_HERE",
+    "unknownIsNotAcknowledged": true
+  },
+  "requiredIndependentEvidence": {
+    "originalBytesAndRequestCustody": null,
+    "sdkArtifactAndActualCallsite": null,
+    "bridgeContextAndRecoveryAuthority": null,
+    "independentlyOwnedNetworkAndEpoch": null,
+    "payerAndPolicyAuthority": null,
+    "publicationResponseAndReconciliationReceipts": null,
+    "captureCompletenessAndEffectCounters": null,
+    "resourceDeliverySinkAndClientReceipt": null,
+    "commitUncertaintyAndDurableHistory": null
+  },
+  "scenarios": [
+    {
+      "id": "pending-original-success",
+      "requiredResults": [
+        "settlement_pending",
+        "success"
+      ],
+      "requiredMaxDeliveries": 1,
+      "status": "NOT_RUN",
+      "actualReceipt": null,
+      "observedCounters": null
+    },
+    {
+      "id": "pending-still-pending",
+      "requiredResults": [
+        "settlement_pending",
+        "settlement_pending"
+      ],
+      "requiredMaxDeliveries": 0,
+      "status": "NOT_RUN",
+      "actualReceipt": null,
+      "observedCounters": null
+    }
+  ],
+  "negativeContractExamples": [
+    "same-hash-different-signed-bytes",
+    "changed-payload-or-requirements",
+    "changed-context-binding",
+    "extra-effect-after-unacknowledged-response",
+    "delivery-while-still-pending",
+    "delivery-before-success",
+    "duplicate-delivery",
+    "missing-or-contradictory-counter",
+    "incomplete-call-sequence",
+    "synthetic-example-promoted-to-observed-evidence"
+  ],
+  "limitations": [
+    "This unexecuted packet defines synthetic metadata checks, not payment, SDK, bridge recovery or service execution.",
+    "Synthetic consistency examples are not captured integration evidence.",
+    "Declared bytes, hashes, context labels and counters do not authenticate their provenance or completeness.",
+    "At most one declared delivery does not establish actual effect absence, transport receipt or spendability.",
+    "The zero-additional-publication bound is scoped to unacknowledged response loss, not all PR193 recovery.",
+    "No reset, replacement payment, new challenge, re-signing, refund or additional charge is authorized.",
+    "Process restart, antirollback, native durability, real provider READY and live pilot acceptance remain unqualified."
+  ]
+}
