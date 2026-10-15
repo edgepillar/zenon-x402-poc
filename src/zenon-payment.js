@@ -1690,8 +1690,7 @@ async function captureLegacyPreparedBlockDynamicPlasmaQuote({
 async function assertLegacyPreparedBlockDynamicPlasmaCompatible(options) {
   const quote = await captureLegacyPreparedBlockDynamicPlasmaQuote(options);
   if (quote === null) return;
-  if (quote.sdk105BasePlasmaUnderpricingDetected === true ||
-      options.prepared.fusedPlasma !== quote.selectedFusedPlasma ||
+  if (options.prepared.fusedPlasma !== quote.selectedFusedPlasma ||
       options.prepared.difficulty !== quote.requiredDifficulty) {
     dynamicPlasmaGuardFailed();
   }
