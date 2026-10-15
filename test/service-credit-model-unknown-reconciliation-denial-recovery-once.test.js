@@ -22,8 +22,8 @@ assert.equal(process.versions.node, '24.19.0');
 const pins = [
   [
     '../src/service-credit-model.js',
-    53422,
-    'f9a935ba0c3d72bcd547b13c3769e76fe0282245de1d8688dae2ebc361a39ac6',
+    55461,
+    '7ff7e3d88ab8c3b38a0073541533fbdb7a0d9f2be42f337ac35f6a3b05615c3a',
   ],
   [
     '../package.json',
