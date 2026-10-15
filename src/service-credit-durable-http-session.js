@@ -7,6 +7,9 @@ import {
   createServiceCreditHttpAdmission,
 } from './service-credit-http.js';
 import { ServiceCreditSqliteStore } from './service-credit-sqlite-store.js';
+import {
+  createServiceCreditDurableSessionClose,
+} from './service-credit-durable-session-close.js';
 
 const REFLECT_APPLY = Reflect.apply;
 const GET_OWN_PROPERTY_DESCRIPTOR = Reflect.getOwnPropertyDescriptor;
@@ -27,6 +30,7 @@ const NATIVE_PROMISE = Promise;
 const PROMISE_THEN = Promise.prototype.then;
 const JSON_STRINGIFY = JSON.stringify;
 const BUFFER_FROM = Buffer.from;
+const CREATE_DURABLE_SESSION_CLOSE = createServiceCreditDurableSessionClose;
 
 const SESSION_KEYS = OBJECT_FREEZE([
   'store',
@@ -369,28 +373,6 @@ export function createDurableServiceCreditHttpSession(options) {
   const ownerRun = owner.run;
   const ownerClose = owner.close;
   let admissionClosed = false;
-  let pendingCloses = null;
-  let completedClose = null;
-  let completedOwnerClose = null;
-
-  function findPendingClose(ownerCloseResult) {
-    let current = pendingCloses;
-    while (current !== null) {
-      if (current.ownerCloseResult === ownerCloseResult) return current;
-      current = current.next;
-    }
-    return null;
-  }
-
-  function removePendingClose(record) {
-    if (pendingCloses === record) {
-      pendingCloses = record.next;
-      return;
-    }
-    let current = pendingCloses;
-    while (current !== null && current.next !== record) current = current.next;
-    if (current !== null) current.next = record.next;
-  }
 
   const handle = OBJECT_FREEZE(async function durableServiceCreditHttpHandler(
     request,
@@ -421,43 +403,21 @@ export function createDurableServiceCreditHttpSession(options) {
     send(response, descriptor);
   });
 
-  const close = OBJECT_FREEZE((...args) => {
-    if (args.length !== 0) return nativeRejected(failure(INVALID_INPUT));
-    let ownerCloseResult;
-    try {
-      ownerCloseResult = REFLECT_APPLY(ownerClose, undefined, []);
-    } catch {
-      return nativeRejected(failure(CLOSE_FAILED));
-    }
-    if (completedClose !== null && ownerCloseResult === completedOwnerClose) {
-      return completedClose;
-    }
-    const existing = findPendingClose(ownerCloseResult);
-    if (existing !== null) return existing.capability.promise;
-
-    const capability = nativePromiseCapability();
-    const record = { ownerCloseResult, capability, next: pendingCloses };
-    pendingCloses = record;
-    try {
-      REFLECT_APPLY(PROMISE_THEN, ownerCloseResult, [
-        () => {
-          admissionClosed = true;
-          completedOwnerClose = ownerCloseResult;
-          completedClose = capability.promise;
-          removePendingClose(record);
-          capability.resolve(undefined);
-        },
-        () => {
-          removePendingClose(record);
-          capability.reject(failure(CLOSE_FAILED));
-        },
-      ]);
-    } catch {
-      removePendingClose(record);
-      capability.reject(failure(CLOSE_FAILED));
-    }
-    return capability.promise;
-  });
+  const close = OBJECT_FREEZE(REFLECT_APPLY(
+    CREATE_DURABLE_SESSION_CLOSE,
+    undefined,
+    [{
+      ownerClose,
+      REFLECT_APPLY,
+      PROMISE_THEN,
+      nativePromiseCapability,
+      nativeRejected,
+      failure,
+      INVALID_INPUT,
+      CLOSE_FAILED,
+      closeAdmission: () => { admissionClosed = true; },
+    }],
+  ));
 
   return OBJECT_FREEZE({ handle, close });
 }
