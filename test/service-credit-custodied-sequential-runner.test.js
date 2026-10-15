@@ -36,8 +36,8 @@ const pins = [
   ],
   [
     '../src/service-credit-custodied-request-owner.js',
-    22239,
-    'fa8d8dbb34363140a4f087c2200cdcfd850d9be09ffcf939e576c08228e19e96',
+    22785,
+    'ab064ecc113730f7cd2676360b03000016677dd3e736987b9744124718ba9e9b',
   ],
   [
     '../src/service-credit-original-request-custody-contract.js',

@@ -163,7 +163,9 @@ export function createServiceCreditCustodiedRequestOwner(configuration) {
   function callStore(name, args, counter) {
     bump(counter);
     try {
-      return APPLY(methods[name], store, args);
+      const returned = APPLY(methods[name], store, args);
+      observeStorePromise(returned);
+      return returned;
     } catch {
       holdCustody();
       throw failure('CUSTODY_OUTCOME_UNKNOWN');
@@ -581,6 +583,18 @@ function safePromise(value) {
       && species.set === NATIVE_SPECIES.set;
   } catch {
     return false;
+  }
+}
+
+function observeStorePromise(value) {
+  if (!safePromise(value)) return;
+  try {
+    // Only observe supported native Promises; preserve the identical raw value
+    // for synchronous validation. Neither reaction forwards values or reasons.
+    APPLY(THEN, value, [() => undefined, () => undefined]);
+  } catch {
+    // Native/global observation faults remain unqualified. No async store
+    // acceptance, successful outcome, resumption, cleanup or retry is inferred.
   }
 }
 
