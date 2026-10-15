@@ -409,6 +409,8 @@ export function createDurableServiceCreditHttpSession(options) {
     [{
       ownerClose,
       REFLECT_APPLY,
+      GET_OWN_PROPERTY_DESCRIPTOR,
+      IS_PROXY,
       PROMISE_THEN,
       nativePromiseCapability,
       nativeRejected,

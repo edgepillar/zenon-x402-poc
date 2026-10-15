@@ -6,17 +6,18 @@ import {
 import { Buffer } from 'node:buffer';
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
+import { types as utilTypes } from 'node:util';
 
 const selector = process.argv[2] ?? 'all';
 if (process.argv.length > 3
-  || !['all','1','2','3','4','5','6'].includes(selector)
+  || !['all','1','2','3','4','5','6','7'].includes(selector)
 ) throw new Error('INVALID_SCENARIO_SELECTOR');
 
 const specs = [
   [new URL('../src/service-credit-durable-session-close.js', import.meta.url),
-    2076, '55b5c756dd6f21c93abeeadec458843f87424ac62b062fad0eb9eed892fa7c3f'],
+    2470, '5aae36a7da39ce5b7b9a8da8e9fbda88465cb1e4853dc791520a1df0ab87ede7'],
   [new URL('../src/service-credit-durable-http-session.js', import.meta.url),
-    13927, 'eaa7f74d51fce4302ce7acda3c63df818e654bf656f7c5225a170a36626ddc09'],
+    13978, 'a0d6d1436cdb697f125fee2f4dc723a5ddcfd2ee7063b55d56fa006bb8ba69bf'],
 ];
 const pins = Object.freeze(specs.map(([url, bytes, sha]) => {
   const raw = readFileSync(url);
@@ -41,6 +42,8 @@ const wiring = `  const close = OBJECT_FREEZE(REFLECT_APPLY(
     [{
       ownerClose,
       REFLECT_APPLY,
+      GET_OWN_PROPERTY_DESCRIPTOR,
+      IS_PROXY,
       PROMISE_THEN,
       nativePromiseCapability,
       nativeRejected,
@@ -68,6 +71,8 @@ q(/^\s*import\b/m.test(pins[0].text), false);
 const NATIVE_PROMISE = Promise;
 const PROMISE_THEN = NATIVE_PROMISE.prototype.then;
 const REFLECT_APPLY = Reflect.apply;
+const GET_OWN_PROPERTY_DESCRIPTOR = Reflect.getOwnPropertyDescriptor;
+const IS_PROXY = utilTypes.isProxy;
 const TYPE_ERROR = TypeError;
 const OBJECT_FREEZE = Object.freeze;
 const INVALID_INPUT = 'SERVICE_CREDIT_DURABLE_HTTP_SESSION_INVALID_INPUT';
@@ -129,6 +134,8 @@ function fixture(t) {
   const rawClose = createServiceCreditDurableSessionClose({
     ownerClose,
     REFLECT_APPLY,
+    GET_OWN_PROPERTY_DESCRIPTOR,
+    IS_PROXY,
     PROMISE_THEN,
     nativePromiseCapability,
     nativeRejected,
@@ -459,9 +466,160 @@ const scenarios = [
     q(f.state.wrappers, 7);
     q(f.state.assignments, 4);
   }],
+  ['fresh attachment rejects own constructors while identity reuse stays unchanged', async t => {
+    for (const kind of ['getter-native', 'data-native', 'data-undefined']) {
+      const f = fixture(t), owner = f.cap();
+      owner.resolve(undefined);
+      await owner.promise;
+      let constructorTouches = 0, thenTouches = 0;
+      Object.defineProperty(owner.promise, 'constructor', kind === 'getter-native' ? {
+        get() { constructorTouches++; return NATIVE_PROMISE; },
+        configurable: true,
+      } : {
+        value: kind === 'data-native' ? NATIVE_PROMISE : undefined,
+        enumerable: true, writable: true, configurable: true,
+      });
+      Object.defineProperty(owner.promise, 'then', {
+        get() { thenTouches++; throw new Error('UNREACHED_OWN_THEN'); },
+      });
+      const descriptor = REFLECT_APPLY(
+        GET_OWN_PROPERTY_DESCRIPTOR, undefined, [owner.promise, 'constructor'],
+      );
+      f.setOwner(() => owner.promise);
+      const first = f.close();
+      // Old code reaches SpeciesConstructor here. The returning native
+      // constructor getter must produce an authored zero-touch assertion red.
+      q(constructorTouches, 0, 'own constructor getter must not be evaluated');
+      q(thenTouches, 0);
+      await rejects(first, isFailure(CLOSE_FAILED));
+      q(f.state.closed, false);
+      q(f.state.assignments, 0);
+      same(REFLECT_APPLY(
+        GET_OWN_PROPERTY_DESCRIPTOR, undefined, [owner.promise, 'constructor'],
+      ), descriptor);
+      const retry = f.close();
+      ne(retry, first);
+      await rejects(retry, isFailure(CLOSE_FAILED));
+      q(f.state.calls, 2);
+      q(f.state.wrappers, 2);
+      q(f.state.assignments, 0);
+      q(f.state.closed, false);
+      q(constructorTouches, 0);
+      q(thenTouches, 0);
+
+      // Restore only this owned fixture property. Rejected fresh records must
+      // have been removed; this is not a production reset or mutation helper.
+      q(delete owner.promise.constructor, true);
+      const fresh = f.close();
+      ne(fresh, first);
+      ne(fresh, retry);
+      q(f.state.closed, false);
+      q(await fresh, undefined);
+      q(f.state.closed, true);
+      q(f.state.assignments, 1);
+      q(f.close(), fresh);
+      q(f.state.calls, 4);
+      q(f.state.wrappers, 3);
+      q(f.state.assignments, 1);
+      // The remaining own then getter is bypassed on ordinary native success.
+      q(constructorTouches, 0);
+      q(thenTouches, 0);
+    }
+
+    const pending = fixture(t), owner = pending.cap();
+    owner.resolve(undefined);
+    await owner.promise;
+    pending.setOwner(() => owner.promise);
+    const attached = pending.close();
+    q(pending.state.closed, false);
+    let reuseConstructorTouches = 0, reuseThenTouches = 0;
+    Object.defineProperty(owner.promise, 'constructor', {
+      get() { reuseConstructorTouches++; return NATIVE_PROMISE; },
+    });
+    Object.defineProperty(owner.promise, 'then', {
+      get() { reuseThenTouches++; throw new Error('UNREACHED_REUSE_THEN'); },
+    });
+    // Owner is already observed/resolved, but its attached record is pending
+    // until the queued fulfillment callback runs. No poisoned owner is awaited.
+    q(pending.close(), attached);
+    q(pending.state.calls, 2);
+    q(pending.state.wrappers, 1);
+    q(pending.state.assignments, 0);
+    q(reuseConstructorTouches, 0);
+    q(reuseThenTouches, 0);
+    q(await attached, undefined);
+    q(pending.state.closed, true);
+    q(pending.state.assignments, 1);
+    const completed = pending.close();
+    q(completed, attached);
+    q(await completed, undefined);
+    q(pending.state.calls, 3);
+    q(pending.state.wrappers, 1);
+    q(pending.state.assignments, 1);
+    q(reuseConstructorTouches, 0);
+    q(reuseThenTouches, 0);
+
+    const closed = fixture(t), good = closed.cap();
+    good.resolve(undefined);
+    await good.promise;
+    closed.setOwner(() => good.promise);
+    const success = closed.close();
+    q(await success, undefined);
+    let goodTouches = 0;
+    Object.defineProperty(good.promise, 'constructor', {
+      get() { goodTouches++; return NATIVE_PROMISE; },
+    });
+    const forbidden = closed.cap();
+    forbidden.resolve(undefined);
+    await forbidden.promise;
+    let forbiddenThenTouches = 0;
+    Object.defineProperty(forbidden.promise, 'constructor', {
+      value: NATIVE_PROMISE,
+    });
+    Object.defineProperty(forbidden.promise, 'then', {
+      get() { forbiddenThenTouches++; throw new Error('UNREACHED_FORBIDDEN_THEN'); },
+    });
+    closed.setOwner(() => forbidden.promise);
+    const invalid = closed.close();
+    ne(invalid, success);
+    await rejects(invalid, isFailure(CLOSE_FAILED));
+    q(closed.state.closed, true);
+    q(closed.state.assignments, 1);
+    const invalidAgain = closed.close();
+    ne(invalidAgain, invalid);
+    await rejects(invalidAgain, isFailure(CLOSE_FAILED));
+    q(closed.state.closed, true);
+    q(closed.state.assignments, 1);
+    closed.setOwner(() => good.promise);
+    q(closed.close(), success);
+    q(closed.state.calls, 4);
+    q(closed.state.wrappers, 3);
+    q(closed.state.assignments, 1);
+    q(goodTouches, 0);
+    q(forbiddenThenTouches, 0);
+
+    const proxied = fixture(t), target = proxied.cap();
+    target.resolve(undefined);
+    await target.promise;
+    let proxyTouches = 0;
+    const trap = () => { proxyTouches++; throw new Error('UNREACHED_PROXY_HOOK'); };
+    const proxy = new Proxy(target.promise, {
+      get: trap, getPrototypeOf: trap, getOwnPropertyDescriptor: trap,
+    });
+    proxied.setOwner(() => proxy);
+    const first = proxied.close(), second = proxied.close();
+    ne(first, second);
+    await rejects(first, isFailure(CLOSE_FAILED));
+    await rejects(second, isFailure(CLOSE_FAILED));
+    q(proxyTouches, 0);
+    q(proxied.state.calls, 2);
+    q(proxied.state.wrappers, 2);
+    q(proxied.state.assignments, 0);
+    q(proxied.state.closed, false);
+  }],
 ];
 
-q(scenarios.length, 6);
+q(scenarios.length, 7);
 for (let index = 0; index < scenarios.length; index++) {
   if (selector === 'all' || selector === String(index + 1)) {
     const [name, run] = scenarios[index];

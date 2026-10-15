@@ -1,6 +1,8 @@
 export function createServiceCreditDurableSessionClose({
   ownerClose,
   REFLECT_APPLY,
+  GET_OWN_PROPERTY_DESCRIPTOR,
+  IS_PROXY,
   PROMISE_THEN,
   nativePromiseCapability,
   nativeRejected,
@@ -50,6 +52,16 @@ export function createServiceCreditDurableSessionClose({
     const record = { ownerCloseResult, capability, next: pendingCloses };
     pendingCloses = record;
     try {
+      if (
+        ownerCloseResult === null
+        || typeof ownerCloseResult !== 'object'
+        || REFLECT_APPLY(IS_PROXY, undefined, [ownerCloseResult])
+        || REFLECT_APPLY(
+          GET_OWN_PROPERTY_DESCRIPTOR,
+          undefined,
+          [ownerCloseResult, 'constructor'],
+        ) !== undefined
+      ) throw failure(CLOSE_FAILED);
       REFLECT_APPLY(PROMISE_THEN, ownerCloseResult, [
         () => {
           closeAdmission();
