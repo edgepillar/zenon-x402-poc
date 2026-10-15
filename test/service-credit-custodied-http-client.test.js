@@ -24,8 +24,8 @@ const pins = [
   ],
   [
     '../src/service-credit-custodied-request-owner.js',
-    22785,
-    'ab064ecc113730f7cd2676360b03000016677dd3e736987b9744124718ba9e9b',
+    22965,
+    '4dabb9c49179e9d6533f5c3066faf730fa6d7deb3c4407d132841c1de4183f85',
   ],
   [
     '../src/service-credit-http-execute-dispatch.js',

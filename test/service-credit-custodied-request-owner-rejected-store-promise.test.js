@@ -13,9 +13,9 @@ if (mode !== undefined && mode !== '1') throw new Error('INVALID_PARENT_CONTROL'
 const parent = mode === '1';
 const specs = [
   ['../src/service-credit-custodied-request-owner.js',
-    parent ? 22239 : 22785,
+    parent ? 22239 : 22965,
     parent ? 'fa8d8dbb34363140a4f087c2200cdcfd850d9be09ffcf939e576c08228e19e96'
-      : 'ab064ecc113730f7cd2676360b03000016677dd3e736987b9744124718ba9e9b'],
+      : '4dabb9c49179e9d6533f5c3066faf730fa6d7deb3c4407d132841c1de4183f85'],
   ['../src/service-credit-original-request-custody-contract.js', 9810,
     '8f4d40d017a89e9a064c411c8e076cb21a45b9fb787fda7a664246b7bd744083'],
   ['../package.json', 1413,

@@ -18,8 +18,8 @@ const selector = process.argv[2] ?? 'all';
 const specs = [
   ['../src/service-credit-http-execute-dispatch.js',
     27034, '254ba8eef5ea5efb3a1b901be09e9cb33afbc3cfcf63789ca4a23316b6180d1b'],
-  ['../src/service-credit-custodied-request-owner.js', 22785,
-    'ab064ecc113730f7cd2676360b03000016677dd3e736987b9744124718ba9e9b'],
+  ['../src/service-credit-custodied-request-owner.js', 22965,
+    '4dabb9c49179e9d6533f5c3066faf730fa6d7deb3c4407d132841c1de4183f85'],
   ['../src/service-credit-original-request-custody-contract.js', 9810,
     '8f4d40d017a89e9a064c411c8e076cb21a45b9fb787fda7a664246b7bd744083'],
   ['../package.json', 1413,

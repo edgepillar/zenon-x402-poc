@@ -427,7 +427,10 @@ export function createServiceCreditCustodiedRequestOwner(configuration) {
       const current = currentFunding();
       if (closed) throw failure('CLOSED');
       const raw = callStore('getOriginalRequest', [key], 'recordReads');
-      if (raw === null) return null;
+      if (raw === null) {
+        if (closed) throw failure('CLOSED');
+        return null;
+      }
       if (raw === undefined) {
         holdCustody();
         throw failure('CUSTODY_OUTCOME_UNKNOWN');
@@ -438,6 +441,8 @@ export function createServiceCreditCustodiedRequestOwner(configuration) {
         holdCustody();
         throw failure('CUSTODY_OUTCOME_UNKNOWN');
       }
+      // Reentrant close fences output after complete custody validation.
+      if (closed) throw failure('CLOSED');
       return record;
     } catch (error) {
       const code = known(error);
