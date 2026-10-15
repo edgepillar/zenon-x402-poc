@@ -46,8 +46,8 @@ const pins = [
   ],
   [
     '../src/service-credit-http-execute-dispatch.js',
-    25281,
-    '044a7bd97a1344c1f95854a71dfb85eeb197c39fef2cd1b3c2b83b766a768008',
+    27034,
+    '254ba8eef5ea5efb3a1b901be09e9cb33afbc3cfcf63789ca4a23316b6180d1b',
   ],
   [
     '../src/x402-wire.js',

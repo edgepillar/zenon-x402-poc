@@ -20,8 +20,13 @@ const ARRAY_IS_ARRAY = Array.isArray;
 const ARRAY_PROTOTYPE = Array.prototype;
 const OBJECT_PROTOTYPE = Object.prototype;
 const IS_PROXY = utilTypes.isProxy;
+const IS_PROMISE = utilTypes.isPromise;
 const TYPE_ERROR = TypeError;
 const NativePromise = Promise;
+const PROMISE_PROTOTYPE = NativePromise.prototype;
+const THEN = PROMISE_PROTOTYPE.then;
+const SPECIES = Symbol.species;
+const NATIVE_SPECIES = DESCRIPTOR(NativePromise, SPECIES);
 const JSON_PARSE = JSON.parse;
 const JSON_STRINGIFY = JSON.stringify;
 const URLConstructor = URL;
@@ -436,6 +441,7 @@ export function createServiceCreditHttpExecuteDispatch(options) {
       });
       counts.requestCalls++;
       const returned = APPLY(requestImpl, undefined, [resourceUrl, requestOptions, onResponse]);
+      observeRequestPromise(returned);
       implReturned = true;
       request = handleState(returned, true);
       if (!request.observable) markUnknown(true);
@@ -701,6 +707,41 @@ function responseHeaders(raw) {
     throw failure('INVALID_DATA');
   }
   return length;
+}
+
+function safelyObservableRequestPromise(value) {
+  try {
+    if (typeof value !== 'object' || value === null || IS_PROXY(value)
+        || !IS_PROMISE(value) || PROTOTYPE(value) !== PROMISE_PROTOTYPE) return false;
+    const ownConstructor = DESCRIPTOR(value, 'constructor');
+    if (ownConstructor !== undefined
+        && (!HAS_OWN(ownConstructor, 'value')
+          || ownConstructor.value !== NativePromise)) return false;
+    const constructor = DESCRIPTOR(PROMISE_PROTOTYPE, 'constructor');
+    if (!constructor || !HAS_OWN(constructor, 'value')
+        || constructor.value !== NativePromise) return false;
+    const species = DESCRIPTOR(NativePromise, SPECIES);
+    if (!species || !NATIVE_SPECIES) return false;
+    if (HAS_OWN(NATIVE_SPECIES, 'value')) {
+      return HAS_OWN(species, 'value') && species.value === NATIVE_SPECIES.value;
+    }
+    return !HAS_OWN(species, 'value') && species.get === NATIVE_SPECIES.get
+      && species.set === NATIVE_SPECIES.set;
+  } catch {
+    return false;
+  }
+}
+
+function observeRequestPromise(value) {
+  if (!safelyObservableRequestPromise(value)) return;
+  try {
+    // Discard both fulfillment values and rejection reasons. The derived
+    // native Promise receives only undefined, never a callback-owned object.
+    APPLY(THEN, value, [() => undefined, () => undefined]);
+  } catch {
+    // Native/global observation faults remain unqualified. Observation never
+    // authorizes an asynchronous request, resumption, cleanup or retry.
+  }
 }
 
 function capability() {

@@ -17,7 +17,7 @@ if (process.argv.length > 3
 const selector = process.argv[2] ?? 'all';
 const specs = [
   ['../src/service-credit-http-execute-dispatch.js',
-    25281, '044a7bd97a1344c1f95854a71dfb85eeb197c39fef2cd1b3c2b83b766a768008'],
+    27034, '254ba8eef5ea5efb3a1b901be09e9cb33afbc3cfcf63789ca4a23316b6180d1b'],
   ['../src/service-credit-custodied-request-owner.js', 22239,
     'fa8d8dbb34363140a4f087c2200cdcfd850d9be09ffcf939e576c08228e19e96'],
   ['../src/service-credit-original-request-custody-contract.js', 9810,
