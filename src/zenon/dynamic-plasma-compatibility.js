@@ -1,4 +1,7 @@
 import { types as utilTypes } from 'node:util';
+import {
+  calculateDynamicPlasmaPriceAmounts,
+} from './dynamic-plasma-price-policy.js';
 
 const PRICE_SCALE = 1000;
 const DIFFICULTY_PER_PLASMA = 1500;
@@ -38,6 +41,7 @@ const isProxy = utilTypes.isProxy;
 const toBigInt = BigInt;
 const toNumber = Number;
 const testRegExp = Function.call.bind(RegExp.prototype.test);
+const CALCULATE_PRICE_AMOUNTS = calculateDynamicPlasmaPriceAmounts;
 
 export const DYNAMIC_PLASMA_COMPATIBILITY = freeze({
   momentumVersion: DYNAMIC_PLASMA_MOMENTUM_VERSION,
@@ -93,26 +97,19 @@ function checkedQuote(frontier, rpcObservation) {
   const availablePlasma = toBigInt(rpcObservation.availablePlasma);
   const fusionPrice = toBigInt(frontier.nextFusionPrice);
   const workPrice = toBigInt(frontier.nextWorkPrice);
-  const requiredFusedPlasma = ceilDivide(basePlasma * fusionPrice, scale);
-  requireSafeResult(requiredFusedPlasma);
-
-  let selectedFusedPlasma;
-  let expectedDifficulty;
-  let pricingMode;
-  if (availablePlasma >= requiredFusedPlasma) {
-    selectedFusedPlasma = requiredFusedPlasma;
-    expectedDifficulty = 0n;
-    pricingMode = 'FUSION_ONLY';
-  } else {
-    const effectiveFusedBase = (availablePlasma * scale) / fusionPrice;
-    const remainingBase = basePlasma - effectiveFusedBase;
-    const pricedWork = ceilDivide(remainingBase * workPrice, scale);
-    expectedDifficulty = pricedWork * toBigInt(DIFFICULTY_PER_PLASMA);
-    selectedFusedPlasma = availablePlasma;
-    pricingMode = 'FUSION_AND_POW';
-  }
-  requireSafeResult(expectedDifficulty);
-  requireSafeResult(selectedFusedPlasma);
+  const {
+    selectedFusedPlasma,
+    expectedDifficulty,
+    pricingMode,
+  } = CALCULATE_PRICE_AMOUNTS(
+    basePlasma,
+    availablePlasma,
+    fusionPrice,
+    workPrice,
+    scale,
+    toBigInt(DIFFICULTY_PER_PLASMA),
+    requireSafeResult,
+  );
 
   const requiredDifficulty = toNumber(expectedDifficulty);
   if (requiredDifficulty !== rpcObservation.requiredDifficulty) return null;
