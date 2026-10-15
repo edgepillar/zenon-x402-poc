@@ -1,5 +1,8 @@
 import { types as utilTypes } from 'node:util';
 import { AsyncLocalStorage } from 'node:async_hooks';
+import {
+  createServiceCreditCompositionClose,
+} from './service-credit-composition-close.js';
 
 import {
   createDurableServiceCreditHttpSession,
@@ -67,6 +70,7 @@ const OBSERVER_CLOSE = OBSERVER_STORE_PROTOTYPE.close;
 const CREATE_FUNDING_COMPOSITION = createZenonFundingComposition;
 const CREATE_DURABLE_SESSION = createDurableServiceCreditHttpSession;
 const CREATE_EXECUTION_CONTRACT = createServiceCreditExecutionContract;
+const CREATE_COMPOSITION_CLOSE = createServiceCreditCompositionClose;
 
 const MAX_DEPTH = 24;
 const MAX_ARRAY_LENGTH = 4_096;
@@ -674,8 +678,6 @@ export function createZenonDurableHttpComposition(options) {
 
   const execute = configuration.execute;
   const callbackScope = new ASYNC_LOCAL_STORAGE();
-  let scopeDisableAttempted = false;
-  let scopeDisableReturned = false;
   const state = {
     phase: PHASE.NEW,
     startFingerprint: null,
@@ -1000,131 +1002,32 @@ export function createZenonDurableHttpComposition(options) {
     },
   );
 
-  function closeStores() {
-    try {
-      assertBoundStores(CODE.closeFailed);
-      let storeCloseFailed = false;
-      try {
-        REFLECT_APPLY(OBSERVER_CLOSE, observerStore, []);
-      } catch {
-        storeCloseFailed = true;
-      }
-      try {
-        REFLECT_APPLY(SERVICE_CLOSE, serviceStore, []);
-      } catch {
-        storeCloseFailed = true;
-      }
-      if (storeCloseFailed) throw failure(CODE.closeFailed);
-      if (!scopeDisableAttempted) {
-        scopeDisableAttempted = true;
-        REFLECT_APPLY(ASYNC_LOCAL_DISABLE, callbackScope, []);
-        scopeDisableReturned = true;
-      }
-      if (!scopeDisableReturned) throw failure(CODE.closeFailed);
-      const capability = state.closeCapability;
-      state.closeCapability = null;
-      if (
-        state.terminalCode === CODE.recoveryRequired
-        || state.terminalCode === CODE.activatedUnavailable
-      ) {
-        state.phase = terminalPhase(state.terminalCode);
-        capability.reject(failure(state.terminalCode));
-      } else {
-        state.phase = PHASE.CLOSED;
-        capability.resolve(undefined);
-      }
-    } catch {
-      if (state.terminalCode === null) {
-        state.terminalCode = state.activationCompleted
-          ? CODE.activatedUnavailable
-          : CODE.preActivationUnavailable;
-      }
-      state.phase = terminalPhase(state.terminalCode);
-      const capability = state.closeCapability;
-      state.closeCapability = null;
-      state.closePromise = null;
-      capability.reject(failure(CODE.closeFailed));
-    }
-  }
-
-  function finishClose() {
-    if (state.closeCapability === null || state.startupPending) return;
-    if (state.session === null) {
-      closeStores();
-      return;
-    }
-    let sessionClose;
-    try {
-      sessionClose = REFLECT_APPLY(state.session.close, undefined, []);
-      if (!isNativePromise(sessionClose)) fail(CODE.closeFailed);
-    } catch {
-      const capability = state.closeCapability;
-      state.closeCapability = null;
-      state.closePromise = null;
-      state.phase = state.terminalCode === null
-        ? PHASE.ACTIVATED_UNAVAILABLE
-        : terminalPhase(state.terminalCode);
-      capability.reject(failure(CODE.closeFailed));
-      return;
-    }
-    try {
-      REFLECT_APPLY(PROMISE_THEN, sessionClose, [
-        () => closeStores(),
-        () => {
-          const capability = state.closeCapability;
-          state.closeCapability = null;
-          state.closePromise = null;
-          if (state.terminalCode === null) {
-            state.terminalCode = state.activationCompleted
-              ? CODE.activatedUnavailable
-              : CODE.preActivationUnavailable;
-          }
-          state.phase = terminalPhase(state.terminalCode);
-          capability.reject(failure(CODE.closeFailed));
-        },
-      ]);
-    } catch {
-      const capability = state.closeCapability;
-      state.closeCapability = null;
-      state.closePromise = null;
-      if (state.terminalCode === null) {
-        state.terminalCode = state.activationCompleted
-          ? CODE.activatedUnavailable
-          : CODE.preActivationUnavailable;
-      }
-      state.phase = terminalPhase(state.terminalCode);
-      capability.reject(failure(CODE.closeFailed));
-    }
-  }
-
-  function close(...args) {
-    if (args.length !== 0) return nativeRejected(failure(CODE.invalidInput));
-    if (
-      state.callbackActive
-      || REFLECT_APPLY(ASYNC_LOCAL_GET_STORE, callbackScope, [])?.active === true
-    ) {
-      state.phase = PHASE.CLOSING;
-      state.activeGrantBinding = null;
-      return nativeRejected(failure(CODE.closeFailed));
-    }
-    if (state.phase === PHASE.CLOSED) return state.closePromise ?? nativeResolved(undefined);
-    if (state.closePromise !== null) return state.closePromise;
-    if (
-      state.phase === PHASE.RECOVERY_REQUIRED
-      || state.phase === PHASE.ACTIVATED_UNAVAILABLE
-    ) {
-      state.terminalCode = state.phase === PHASE.RECOVERY_REQUIRED
-        ? CODE.recoveryRequired
-        : CODE.activatedUnavailable;
-    }
-    const capability = nativePromiseCapability();
-    state.closeCapability = capability;
-    state.closePromise = capability.promise;
-    state.phase = PHASE.CLOSING;
-    state.activeGrantBinding = null;
-    finishClose();
-    return capability.promise;
-  }
+  const { close, finishClose } = REFLECT_APPLY(
+    CREATE_COMPOSITION_CLOSE,
+    undefined,
+    [{
+      state,
+      PHASE,
+      CODE,
+      failure,
+      terminalPhase,
+      nativePromiseCapability,
+      nativeRejected,
+      nativeResolved,
+      isNativePromise,
+      REFLECT_APPLY,
+      PROMISE_THEN,
+      originActive: () => REFLECT_APPLY(
+        ASYNC_LOCAL_GET_STORE,
+        callbackScope,
+        [],
+      )?.active === true,
+      assertBoundStores,
+      observerClose: () => REFLECT_APPLY(OBSERVER_CLOSE, observerStore, []),
+      serviceClose: () => REFLECT_APPLY(SERVICE_CLOSE, serviceStore, []),
+      scopeDisable: () => REFLECT_APPLY(ASYNC_LOCAL_DISABLE, callbackScope, []),
+    }],
+  );
 
   return OBJECT_FREEZE({
     start: OBJECT_FREEZE(start),
