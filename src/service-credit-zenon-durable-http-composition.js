@@ -1016,6 +1016,7 @@ export function createZenonDurableHttpComposition(options) {
       nativeResolved,
       isNativePromise,
       REFLECT_APPLY,
+      REFLECT_GET_OWN_PROPERTY_DESCRIPTOR,
       PROMISE_THEN,
       originActive: () => REFLECT_APPLY(
         ASYNC_LOCAL_GET_STORE,

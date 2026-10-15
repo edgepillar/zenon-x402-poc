@@ -13,6 +13,7 @@ export function createServiceCreditCompositionClose(dependencies) {
     nativeResolved,
     isNativePromise,
     REFLECT_APPLY,
+    REFLECT_GET_OWN_PROPERTY_DESCRIPTOR,
     PROMISE_THEN,
     originActive,
     assertBoundStores,
@@ -65,7 +66,6 @@ export function createServiceCreditCompositionClose(dependencies) {
       state.phase = terminalPhase(state.terminalCode);
       const capability = state.closeCapability;
       state.closeCapability = null;
-      state.closePromise = null;
       capability.reject(failure(CODE.closeFailed));
     }
   }
@@ -80,10 +80,14 @@ export function createServiceCreditCompositionClose(dependencies) {
     try {
       sessionClose = REFLECT_APPLY(state.session.close, undefined, []);
       if (!isNativePromise(sessionClose)) throw failure(CODE.closeFailed);
+      if (REFLECT_APPLY(
+        REFLECT_GET_OWN_PROPERTY_DESCRIPTOR,
+        undefined,
+        [sessionClose, 'constructor'],
+      ) !== undefined) throw failure(CODE.closeFailed);
     } catch {
       const capability = state.closeCapability;
       state.closeCapability = null;
-      state.closePromise = null;
       state.phase = state.terminalCode === null
         ? PHASE.ACTIVATED_UNAVAILABLE
         : terminalPhase(state.terminalCode);
@@ -96,7 +100,6 @@ export function createServiceCreditCompositionClose(dependencies) {
         () => {
           const capability = state.closeCapability;
           state.closeCapability = null;
-          state.closePromise = null;
           if (state.terminalCode === null) {
             state.terminalCode = state.activationCompleted
               ? CODE.activatedUnavailable
@@ -109,7 +112,6 @@ export function createServiceCreditCompositionClose(dependencies) {
     } catch {
       const capability = state.closeCapability;
       state.closeCapability = null;
-      state.closePromise = null;
       if (state.terminalCode === null) {
         state.terminalCode = state.activationCompleted
           ? CODE.activatedUnavailable

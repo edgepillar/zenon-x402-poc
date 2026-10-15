@@ -9,14 +9,14 @@ import { AsyncLocalStorage } from 'node:async_hooks';
 const { equal: eq, deepEqual: de, notEqual: ne, rejects: rej, ok } = assert;
 const selector = process.argv[2] ?? 'all';
 if (process.argv.length > 3
-  || !['all', '1', '2', '3', '4', '5', '6', '7', '8'].includes(selector)
+  || !['all', '1', '2', '3', '4', '5', '6', '7', '8', '9'].includes(selector)
 ) throw new Error('INVALID_SCENARIO_SELECTOR');
 
 const specs = [
   [new URL('../src/service-credit-composition-close.js', import.meta.url),
-    4812, 'a29551764663834f5b043ec1dc81b8f6c858849136b059a0474736eb618afe80'],
+    4901, 'c2041ab37eee8de1897c11640c41818e690063e8cd2329bfb8318534485a741a'],
   [new URL('../src/service-credit-zenon-durable-http-composition.js', import.meta.url),
-    36239, 'f33a4d7dd2f366e718688261daf265180c1da0e47c06b9b7c38f4cc0ac157c98'],
+    36282, '8d15135baa4a767bcfac395d6ad5fa70da0924dc62599e7f52cb78a4247796e9'],
 ];
 const pins = Object.freeze(specs.map(([url, bytes, sha]) => {
   const text = readFileSync(url, 'utf8');
@@ -41,6 +41,9 @@ for (const removed of [
   '  function close(...args) {',
 ]) eq(parent.includes(removed), false);
 eq(parent.split('    close: OBJECT_FREEZE(close),\n').length, 2);
+eq(parent.split(
+  '      isNativePromise,\n      REFLECT_APPLY,\n      REFLECT_GET_OWN_PROPERTY_DESCRIPTOR,\n      PROMISE_THEN,\n',
+).length, 2);
 eq(/^\s*import\b/m.test(pins[0].text), false);
 
 // Parent composition is DATA ONLY; never import its excluded SQL graph.
@@ -50,6 +53,7 @@ const NATIVE_PROMISE = Promise;
 const PROMISE_PROTOTYPE = NATIVE_PROMISE.prototype;
 const PROMISE_THEN = PROMISE_PROTOTYPE.then;
 const REFLECT_APPLY = Reflect.apply;
+const REFLECT_GET_OWN_PROPERTY_DESCRIPTOR = Reflect.getOwnPropertyDescriptor;
 const GET_PROTOTYPE_OF = Reflect.getPrototypeOf;
 const IS_PROXY = utilTypes.isProxy;
 const ALS_RUN = AsyncLocalStorage.prototype.run;
@@ -144,7 +148,7 @@ function fixture(t, initial = {}) {
   const component = createServiceCreditCompositionClose({
     state, PHASE, CODE, failure, terminalPhase,
     nativePromiseCapability, nativeRejected, nativeResolved, isNativePromise,
-    REFLECT_APPLY, PROMISE_THEN,
+    REFLECT_APPLY, REFLECT_GET_OWN_PROPERTY_DESCRIPTOR, PROMISE_THEN,
     originActive() {
       count.origin++;
       return REFLECT_APPLY(ALS_GET, scope, [])?.active === true;
@@ -192,6 +196,13 @@ function fixture(t, initial = {}) {
   return {
     s: state, c: component, scope, log, n: count, x: faults, session,
     cap: nativePromiseCapability, nr: nativeRejected,
+  };
+}
+
+function disposalCounts(f) {
+  return {
+    bound: f.n.bound, observer: f.n.observer, service: f.n.service,
+    disable: f.n.disable, session: f.n.session,
   };
 }
 
@@ -352,14 +363,15 @@ const scenarios = [
           if (kind === 'fake-shape') return fake;
           return f.nr(new Error('DECLARED_SESSION_REJECTION'));
         });
-        await rej(f.c.close(), hasCode(CODE.closeFailed));
+        const promise = f.c.close();
+        await rej(promise, hasCode(CODE.closeFailed));
         de(f.log, ['session']);
         eq(f.n.bound, 0);
         eq(f.n.observer, 0);
         eq(f.n.service, 0);
         eq(f.n.disable, 0);
         eq(touches, 0);
-        eq(f.s.closePromise, null);
+        eq(f.s.closePromise, promise);
         eq(f.s.closeCapability, null);
         if (kind === 'throw' || kind === 'nonpromise') {
           eq(f.s.terminalCode, null);
@@ -370,6 +382,28 @@ const scenarios = [
           eq(f.s.terminalCode, code);
           eq(f.s.phase, terminalPhase(code));
         }
+        const phase = f.s.phase, terminalCode = f.s.terminalCode;
+        const before = disposalCounts(f);
+        const cleared = f.cap();
+        cleared.resolve(undefined);
+        f.session(() => cleared.promise);
+        const repeated = f.c.close();
+        const repeatedOutcome = await REFLECT_APPLY(PROMISE_THEN, repeated, [
+          () => 'FULFILLED', () => 'REJECTED',
+        ]);
+        de(disposalCounts(f), before, 'failed session close must not drain again');
+        eq(repeated, promise);
+        eq(f.s.closePromise, promise);
+        eq(repeatedOutcome, 'REJECTED');
+        await rej(repeated, hasCode(CODE.closeFailed));
+        eq(f.c.close(), promise);
+        f.c.finishClose();
+        de(disposalCounts(f), before);
+        de(f.log, ['session']);
+        eq(f.s.phase, phase);
+        eq(f.s.terminalCode, terminalCode);
+        eq(f.s.closeCapability, null);
+        eq(touches, 0);
       }
     }
   }],
@@ -381,33 +415,65 @@ const scenarios = [
         f.x.observer = fault;
         f.x.service = fault;
       } else f.x[kind] = fault;
-      await rej(f.c.close(), hasCode(CODE.closeFailed));
+      const promise = f.c.close();
+      await rej(promise, hasCode(CODE.closeFailed));
       de(f.log, kind === 'bound' ? ['bound'] : ['bound', 'observer', 'service']);
       eq(f.n.disable, 0);
       eq(f.s.closeCapability, null);
-      eq(f.s.closePromise, null);
       eq(f.s.terminalCode, CODE.preActivationUnavailable);
       eq(f.s.phase, PHASE.PRE_ACTIVATION_UNAVAILABLE);
+      const before = disposalCounts(f), log = f.log.slice();
+      f.x.bound = null;
+      f.x.observer = null;
+      f.x.service = null;
+      f.x.disable = null;
+      // The old helper retries these owned callbacks after the fault is gone.
+      // Observe either old result before asserting, so expected red is safe.
+      const repeated = f.c.close();
+      const repeatedOutcome = await REFLECT_APPLY(PROMISE_THEN, repeated, [
+        () => 'FULFILLED', () => 'REJECTED',
+      ]);
+      de(disposalCounts(f), before, 'cached failure must not repeat disposal');
+      eq(repeated, promise);
+      eq(f.s.closePromise, promise);
+      eq(repeatedOutcome, 'REJECTED');
+      await rej(repeated, hasCode(CODE.closeFailed));
+      eq(f.c.close(), promise);
+      f.c.finishClose();
+      de(disposalCounts(f), before);
+      de(f.log, log);
+      eq(f.s.phase, PHASE.PRE_ACTIVATION_UNAVAILABLE);
+      eq(f.s.terminalCode, CODE.preActivationUnavailable);
+      eq(f.s.closeCapability, null);
     }
 
     const f = fixture(t);
     f.x.disable = new Error('DECLARED_DISABLE_FAILURE');
-    await rej(f.c.close(), hasCode(CODE.closeFailed));
+    const promise = f.c.close();
+    await rej(promise, hasCode(CODE.closeFailed));
     de(f.log, ['bound', 'observer', 'service', 'disable']);
     eq(f.n.disable, 1);
-    eq(f.s.closePromise, null);
+    const before = disposalCounts(f), log = f.log.slice();
     f.x.disable = null;
-    // Retry controlled callbacks only; never a real-store retry.
-    await rej(f.c.close(), hasCode(CODE.closeFailed));
-    de(f.log, [
-      'bound', 'observer', 'service', 'disable', 'bound', 'observer', 'service',
+    const repeated = f.c.close();
+    const repeatedOutcome = await REFLECT_APPLY(PROMISE_THEN, repeated, [
+      () => 'FULFILLED', () => 'REJECTED',
     ]);
+    de(disposalCounts(f), before, 'failed scope close must not repeat disposal');
+    eq(repeated, promise);
+    eq(f.s.closePromise, promise);
+    eq(repeatedOutcome, 'REJECTED');
+    await rej(repeated, hasCode(CODE.closeFailed));
+    eq(f.c.close(), promise);
+    f.c.finishClose();
+    de(disposalCounts(f), before);
+    de(f.log, log);
     eq(f.n.disable, 1);
-    eq(f.n.observer, 2);
-    eq(f.n.service, 2);
+    eq(f.n.observer, 1);
+    eq(f.n.service, 1);
     eq(f.s.phase, PHASE.PRE_ACTIVATION_UNAVAILABLE);
     eq(f.s.terminalCode, CODE.preActivationUnavailable);
-    eq(f.s.closePromise, null);
+    eq(f.s.closeCapability, null);
   }],
   ['successful disposal preserves recovery and activated-unavailable terminal outcomes', async t => {
     for (const [phase, code] of [
@@ -434,9 +500,98 @@ const scenarios = [
       eq(f.n.disable, 1);
     }
   }],
+  ['unsafe native promise constructor surfaces fail without hooks or disposal', async t => {
+    const ordinary = fixture(t, { phase: PHASE.ACTIVE, activationCompleted: true });
+    const ready = ordinary.cap();
+    ready.resolve(undefined);
+    await ready.promise;
+    let ownThenTouches = 0;
+    Object.defineProperty(ready.promise, 'then', {
+      get() { ownThenTouches++; throw new Error('UNREACHED_NATIVE_THEN'); },
+    });
+    ordinary.session(() => ready.promise);
+    const success = ordinary.c.close();
+    await success;
+    eq(ownThenTouches, 0);
+    eq(ordinary.s.phase, PHASE.CLOSED);
+    eq(ordinary.c.close(), success);
+    de(ordinary.log, ['session', 'bound', 'observer', 'service', 'disable']);
+
+    for (const kind of ['getter-native', 'data-native', 'data-undefined']) {
+      const f = fixture(t, { phase: PHASE.ACTIVE, activationCompleted: true });
+      const resolved = f.cap();
+      resolved.resolve(undefined);
+      // Observe and fulfill before installing constructor surfaces. Cleanup
+      // awaits only existing unpoisoned sinks, never this modified promise.
+      await resolved.promise;
+      let constructorTouches = 0, thenTouches = 0;
+      const descriptor = kind === 'getter-native' ? {
+        get() { constructorTouches++; return NATIVE_PROMISE; },
+        configurable: true,
+      } : {
+        value: kind === 'data-native' ? NATIVE_PROMISE : undefined,
+        enumerable: true,
+        writable: true,
+        configurable: true,
+      };
+      Object.defineProperty(resolved.promise, 'constructor', descriptor);
+      Object.defineProperty(resolved.promise, 'then', {
+        get() { thenTouches++; throw new Error('UNREACHED_OWN_THEN'); },
+      });
+      const before = REFLECT_APPLY(
+        REFLECT_GET_OWN_PROPERTY_DESCRIPTOR, undefined,
+        [resolved.promise, 'constructor'],
+      );
+      f.session(() => resolved.promise);
+      const promise = f.c.close();
+      // With old pins, getter-native reaches SpeciesConstructor and touches
+      // the returning getter. This assertion is the intended red control.
+      eq(constructorTouches, 0, 'own constructor getter must not be evaluated');
+      eq(thenTouches, 0);
+      await rej(promise, hasCode(CODE.closeFailed));
+      de(f.log, ['session']);
+      de(disposalCounts(f), {
+        bound: 0, observer: 0, service: 0, disable: 0, session: 1,
+      });
+      de(REFLECT_APPLY(
+        REFLECT_GET_OWN_PROPERTY_DESCRIPTOR, undefined,
+        [resolved.promise, 'constructor'],
+      ), before);
+      eq(f.s.closePromise, promise);
+      eq(f.s.closeCapability, null);
+      eq(f.s.phase, PHASE.ACTIVATED_UNAVAILABLE);
+      eq(f.s.terminalCode, null);
+      eq(f.c.close(), promise);
+      await rej(promise, hasCode(CODE.closeFailed));
+      eq(f.n.session, 1);
+      eq(constructorTouches, 0);
+      eq(thenTouches, 0);
+    }
+
+    const f = fixture(t, { phase: PHASE.ACTIVE, activationCompleted: true });
+    const resolved = f.cap();
+    resolved.resolve(undefined);
+    await resolved.promise;
+    let proxyTouches = 0;
+    const trap = () => { proxyTouches++; throw new Error('UNREACHED_PROXY_HOOK'); };
+    const proxy = new Proxy(resolved.promise, {
+      get: trap, getPrototypeOf: trap, getOwnPropertyDescriptor: trap,
+    });
+    f.session(() => proxy);
+    const promise = f.c.close();
+    await rej(promise, hasCode(CODE.closeFailed));
+    eq(proxyTouches, 0);
+    de(f.log, ['session']);
+    de(disposalCounts(f), {
+      bound: 0, observer: 0, service: 0, disable: 0, session: 1,
+    });
+    eq(f.s.closePromise, promise);
+    eq(f.c.close(), promise);
+    eq(proxyTouches, 0);
+  }],
 ];
 
-eq(scenarios.length, 8);
+eq(scenarios.length, 9);
 for (let index = 0; index < scenarios.length; index++) {
   if (selector === 'all' || selector === String(index + 1)) {
     const [name, run] = scenarios[index];
