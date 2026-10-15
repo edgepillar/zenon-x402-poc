@@ -1,6 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { isDeepStrictEqual } from 'node:util';
+import { types as selectedContextTypes } from 'node:util';
+import { Buffer } from 'node:buffer';
+import {
+  createSelectedSettlementContextOwner,
+  normalizeSelectedSettlementCallbackResult,
+} from '../src/x402-selected-settlement-context.js';
 
 import {
   DEFAULT_MAX_AMOUNT_PER_PAYMENT,
@@ -368,13 +374,173 @@ function createOfficialClient(bridge, requirement) {
     .register(requirement.network, bridge.adapter);
 }
 
-function createServerBridge({ requirement, localFacilitator }) {
+function createServerBridge({
+  requirement,
+  localFacilitator,
+  reconcilePendingSettlement = null,
+  maxPendingReconciliations = 0,
+}) {
   const pending = new WeakMap();
   const consumed = new WeakSet();
+  const settlementOwners = new WeakMap();
   let captureCount = 0;
   let verifyCalls = 0;
   let settleCalls = 0;
   let lastSettleResponse;
+
+  const APPLY = Reflect.apply;
+  const OWN_KEYS = Reflect.ownKeys;
+  const DESCRIPTOR = Object.getOwnPropertyDescriptor;
+  const PROTOTYPE = Object.getPrototypeOf;
+  const HAS_OWN = Object.hasOwn;
+  const FREEZE = Object.freeze;
+  const CREATE = Object.create;
+  const IS_PROXY = selectedContextTypes.isProxy;
+  const IS_PROMISE = selectedContextTypes.isPromise;
+  const IS_SAFE = Number.isSafeInteger;
+  const IS = Object.is;
+  const PARSE = JSON.parse;
+  const STRINGIFY = JSON.stringify;
+  const BYTE_LENGTH = Buffer.byteLength;
+  const TEST = RegExp.prototype.test;
+  const PROMISE_PROTOTYPE = Promise.prototype;
+  const THEN = PROMISE_PROTOTYPE.then;
+  const OWNER = createSelectedSettlementContextOwner;
+  const NORMALIZE_RESULT = normalizeSelectedSettlementCallbackResult;
+  const OBSERVE = reconcilePendingSettlement;
+  const BUDGET = maxPendingReconciliations;
+  if (!IS_SAFE(BUDGET) || BUDGET < 0 || BUDGET > 16 || IS(BUDGET, -0)
+      || (OBSERVE !== null && (typeof OBSERVE !== 'function' || IS_PROXY(OBSERVE)))) {
+    throw new TypeError('Invalid selected settlement observer configuration');
+  }
+  const FIRST_SETTLE = captureSettle(localFacilitator);
+  if (OBSERVE === FIRST_SETTLE) {
+    throw new TypeError('Settlement observer must be a separate reviewed callback');
+  }
+
+  function captureSettle(receiver) {
+    let current = receiver;
+    for (let depth = 0; depth < 8 && current !== null; depth += 1) {
+      if ((typeof current !== 'object' && typeof current !== 'function')
+          || IS_PROXY(current)) break;
+      const descriptor = DESCRIPTOR(current, 'settle');
+      if (descriptor !== undefined) {
+        if (!HAS_OWN(descriptor, 'value') || typeof descriptor.value !== 'function'
+            || IS_PROXY(descriptor.value)) break;
+        return descriptor.value;
+      }
+      current = PROTOTYPE(current);
+    }
+    throw new TypeError('Invalid first settlement callback');
+  }
+
+  // Validate a bounded ordinary JSON tree before serializing it. These are
+  // bridge serializations, not original wire or signed-block custody proof.
+  function serialize(value) {
+    let nodes = 0, units = 0, bytes = 0;
+    function text(value) {
+      if (value.length > 131072) throw new TypeError('Context string exceeds bound');
+      units += value.length;
+      bytes += APPLY(BYTE_LENGTH, Buffer, [value, 'utf8']);
+      if (units > 131072 || bytes > 131072) {
+        throw new TypeError('Context text exceeds bound');
+      }
+    }
+    function visit(value, depth) {
+      nodes += 1;
+      if (nodes > 4096 || depth > 16) throw new TypeError('Context tree exceeds bound');
+      if (value === null || typeof value === 'boolean') return value;
+      if (typeof value === 'string') { text(value); return value; }
+      if (typeof value === 'number') {
+        if (!IS_SAFE(value) || IS(value, -0)) throw new TypeError('Unsafe context number');
+        return value;
+      }
+      if (typeof value !== 'object' || IS_PROXY(value)) {
+        throw new TypeError('Invalid context value');
+      }
+      const keys = OWN_KEYS(value);
+      if (Array.isArray(value)) {
+        const length = DESCRIPTOR(value, 'length')?.value;
+        if (!IS_SAFE(length) || length < 0 || length > 1024
+            || keys.length !== length + 1) throw new TypeError('Invalid context array');
+        const result = [];
+        for (let index = 0; index < length; index += 1) {
+          const descriptor = DESCRIPTOR(value, `${index}`);
+          if (!descriptor?.enumerable || !HAS_OWN(descriptor, 'value')) {
+            throw new TypeError('Invalid context array field');
+          }
+          result.push(visit(descriptor.value, depth + 1));
+        }
+        return result;
+      }
+      if (PROTOTYPE(value) !== Object.prototype || keys.length > 256) {
+        throw new TypeError('Invalid context record');
+      }
+      const result = CREATE(null);
+      for (const key of keys) {
+        if (typeof key !== 'string' || key === 'toJSON') {
+          throw new TypeError('Invalid context key');
+        }
+        text(key);
+        const descriptor = DESCRIPTOR(value, key);
+        if (!descriptor?.enumerable || !HAS_OWN(descriptor, 'value')) {
+          throw new TypeError('Invalid context field');
+        }
+        result[key] = visit(descriptor.value, depth + 1);
+      }
+      return result;
+    }
+    const result = STRINGIFY(visit(value, 0));
+    if (typeof result !== 'string' || result.length === 0 || result.length > 131072
+        || APPLY(BYTE_LENGTH, Buffer, [result, 'utf8']) > 131072) {
+      throw new TypeError('Serialized context exceeds bound');
+    }
+    return result;
+  }
+
+  function bindingFor(payload, selected, entry) {
+    const payloadJson = serialize(payload);
+    const requirementsJson = serialize(selected);
+    const challengeJson = serialize(entry.snapshot);
+    const detachedPayload = PARSE(payloadJson);
+    const detachedRequirement = PARSE(requirementsJson);
+    const detachedChallenge = PARSE(challengeJson);
+    validateSelectedRequirement(detachedRequirement);
+    validateCompleteChallenge(detachedChallenge);
+    validateZenonPaymentPayloadEnvelope(detachedPayload);
+    const chosen = detachedChallenge.accepts[entry.selectedIndex];
+    if (!sameRequirements(detachedRequirement, chosen)
+        || !sameRequirements(detachedPayload.accepted, detachedRequirement)
+        || !sameResource(detachedPayload.resource, detachedChallenge.resource)
+        || (Object.hasOwn(detachedPayload, 'extensions')
+          && !isEmptyExtensionContainer(detachedPayload.extensions))) {
+      throw new Error('Payment context does not match retained challenge');
+    }
+    return FREEZE({
+      payloadJson,
+      requirementsJson,
+      challengeJson,
+      paymentHash: detachedPayload.payload.transaction.hash,
+      network: detachedRequirement.network,
+    });
+  }
+
+  function invokeOriginal(callback, receiver, binding) {
+    const value = APPLY(callback, receiver, [
+      PARSE(binding.payloadJson),
+      PARSE(binding.requirementsJson),
+      PARSE(binding.challengeJson),
+    ]);
+    if (IS_PROXY(value)) throw new TypeError('Invalid settlement callback result');
+    if (IS_PROMISE(value)) {
+      if (PROTOTYPE(value) !== PROMISE_PROTOTYPE
+          || DESCRIPTOR(value, 'constructor') !== undefined) {
+        throw new TypeError('Unsupported settlement promise');
+      }
+      return APPLY(THEN, value, [result => NORMALIZE_RESULT(result, binding)]);
+    }
+    return NORMALIZE_RESULT(value, binding);
+  }
 
   function validateSelectedRequirement(selectedRequirement) {
     validateZenonRequirement(selectedRequirement);
@@ -566,6 +732,17 @@ function createServerBridge({ requirement, localFacilitator }) {
     async settle(paymentPayload, selectedRequirement) {
       settleCalls += 1;
       try {
+        // Reject unsafe trees before existing validators or serialization.
+        serialize(paymentPayload);
+        serialize(selectedRequirement);
+        const existing = settlementOwners.get(selectedRequirement);
+        if (existing) {
+          const responseJson = await existing.owner.attempt(
+            bindingFor(paymentPayload, selectedRequirement, existing.entry),
+          );
+          lastSettleResponse = PARSE(responseJson);
+          return lastSettleResponse;
+        }
         const entry = requireContext(paymentPayload, selectedRequirement);
         if (entry.state !== 'captured' && entry.state !== 'verified') {
           throw new Error('selected requirement context is not settleable');
@@ -574,31 +751,25 @@ function createServerBridge({ requirement, localFacilitator }) {
         const detachedPayload = structuredClone(paymentPayload);
         const detachedRequirement = structuredClone(selectedRequirement);
         const detachedChallenge = structuredClone(entry.snapshot);
+        const original = bindingFor(detachedPayload, detachedRequirement, {
+          selectedIndex: entry.selectedIndex,
+          snapshot: detachedChallenge,
+        });
+        // OBSERVE is an explicit reviewed read-only embedding premise.
+        // Default null/0 admits no pending callback or protocol allowance.
+        const owner = OWNER({
+          original,
+          settleFirst: binding => invokeOriginal(FIRST_SETTLE, localFacilitator, binding),
+          reconcilePending: OBSERVE === null ? null
+            : binding => invokeOriginal(OBSERVE, undefined, binding),
+          maxPendingReconciliations: BUDGET,
+        });
+        settlementOwners.set(selectedRequirement, { owner, entry });
         entry.state = 'consumed';
         consumed.add(selectedRequirement);
         pending.delete(selectedRequirement);
-        const result = await localFacilitator.settle(
-          detachedPayload,
-          detachedRequirement,
-          detachedChallenge,
-        );
-        if (!result.success) {
-          const errorReason = result.errorReason ?? 'settlement_failed';
-          lastSettleResponse = {
-            success: false,
-            transaction: result.transaction ?? '',
-            network: result.network ?? detachedRequirement.network,
-            errorReason,
-            errorMessage: errorReason,
-          };
-          return lastSettleResponse;
-        }
-        lastSettleResponse = {
-          success: true,
-          payer: result.payer,
-          transaction: result.transaction,
-          network: result.network,
-        };
+        const responseJson = await owner.attempt(original);
+        lastSettleResponse = PARSE(responseJson);
         return lastSettleResponse;
       } catch (error) {
         consumed.add(selectedRequirement);
@@ -626,7 +797,9 @@ function createServerBridge({ requirement, localFacilitator }) {
       return lastSettleResponse;
     },
     hasPending(selectedRequirement) {
-      return pending.has(selectedRequirement);
+      const state = settlementOwners.get(selectedRequirement)?.owner.getSnapshot().state;
+      return pending.has(selectedRequirement)
+        || state === 'PENDING' || state === 'RECONCILING';
     },
   };
 }
