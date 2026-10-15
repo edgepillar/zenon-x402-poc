@@ -21,8 +21,13 @@ assert.ok(Number.parseInt(process.versions.node.split('.')[0], 10) >= 24);
 const pins = [
   [
     '../src/service-credit-custodied-sequential-runner.js',
-    16366,
-    'fb15c7222f251425d314958573379795978e06fcb9b223f1f5104b969f596cdc',
+    3487,
+    'ab38aae9afadc37a1aa53adc691b7e3fcef61e996b168802d8692bf0b9796977',
+  ],
+  [
+    '../src/service-credit-custodied-sequential-runner-core.js',
+    15208,
+    '07b73745c1a85e049ea374f1fd054b75dba9c0cd46d64adf4cfe4d266c4bc5f1',
   ],
   [
     '../src/service-credit-custodied-http-client.js',
