@@ -8,13 +8,15 @@ import {
   clearTimeout as nativeClearTimeout,
 } from 'node:timers';
 
-// One required selector; fail before any repository import. Package JSON and
-// the installed runtime fingerprint are separately guarded by the primary's
-// reviewed inline launcher. No directory discovery or old-unit import occurs.
-if (process.argv.length !== 3 || !/^[1-8]$/.test(process.argv[2])) {
-  throw new Error('EXACT_NUMERIC_GROUP_REQUIRED');
+// Standard node --test entry registers all eight authored groups. An optional
+// exact numeric selector keeps bounded local runs available. Invalid/extra
+// selectors fail before any repository import. Package/runtime guards remain
+// the primary's separately reviewed inline launch responsibility.
+if (process.argv.length > 3
+    || (process.argv.length === 3 && !/^[1-8]$/.test(process.argv[2]))) {
+  throw new Error('INVALID_NUMERIC_GROUP_SELECTOR');
 }
-const selector = process.argv[2];
+const selector = process.argv[2] ?? 'all';
 assert.ok(Number.parseInt(process.versions.node.split('.')[0], 10) >= 24);
 const pins = [
   [
@@ -1208,7 +1210,12 @@ const groups = [
 ];
 
 assert.equal(groups.length, 8);
-const [name, callback] = groups[Number(selector) - 1];
-// Exactly one registration; no skipped groups, discovery or name filters.
+// No skipped registrations or name filters: absent selector runs every group,
+// while one numeric selector registers exactly its authored group.
 // Timeouts/watchdogs do not prove hard cancellation or OS-resource cleanup.
-test(name, { timeout: 5000 }, callback);
+for (let index = 0; index < groups.length; index++) {
+  if (selector === 'all' || selector === String(index + 1)) {
+    const [name, callback] = groups[index];
+    test(name, { timeout: 5000 }, callback);
+  }
+}
