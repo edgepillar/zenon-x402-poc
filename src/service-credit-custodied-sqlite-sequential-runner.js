@@ -7,7 +7,11 @@ import {
 import {
   snapshotOriginalServiceRequestCustodyPolicy,
   snapshotOriginalServiceRequestCustodyKey,
+  serializeOriginalServiceRequestCustody,
 } from './service-credit-original-request-custody-contract.js';
+import {
+  createServiceCreditPilotClientPlan,
+} from './service-credit-pilot-client-plan.js';
 import {
   createServiceCreditCustodiedSequentialRunnerCore,
   exact,
@@ -29,6 +33,9 @@ const OPEN_OWNED = openServiceCreditCustodiedSqliteHttpClient;
 const CREATE_CORE = createServiceCreditCustodiedSequentialRunnerCore;
 const POLICY = snapshotOriginalServiceRequestCustodyPolicy;
 const KEY = snapshotOriginalServiceRequestCustodyKey;
+const SERIALIZE = serializeOriginalServiceRequestCustody;
+const STRINGIFY = JSON.stringify;
+const CREATE_PLAN = createServiceCreditPilotClientPlan;
 const CONFIG_FIELDS = FREEZE([
   'databasePath', 'allowedRoot', 'fundingResourceUrl', 'custodyPolicy',
   'selectedGrantId', 'requestImpl', 'deadlineMs',
@@ -53,6 +60,18 @@ const CONFIG_FIELDS = FREEZE([
  * readOriginal is the actual owned root's frozen synchronous recovery DATA
  * function. It neither dispatches/replays nor establishes current authority.
  * Reopening a new runner here is same-process reuse, not process restart.
+ *
+ * createOriginalRecoveryPlan is an opt-in diagnostic connection to that same
+ * captured read. It binds the complete validated canonical custody envelope
+ * (at most 16384 bytes/units) and derives only paymentHash/requestId identity.
+ * Each live observe/getSnapshot rechecks that envelope through the actual root
+ * before delegating; root read failures propagate without retry or wrapping.
+ * Observations remain explicit DECLARED data under the existing pure planner.
+ * No BOUND/read/checksum/callback/close outcome supplies funding or authority.
+ * Local plan close calls only the diagnostic planner, clears its read/key/full
+ * envelope references and leaves root close ownership and Promise unchanged.
+ * Closed plan snapshots are detached historical diagnostics, never authority.
+ * This new connection and its separate fixture remain DRAFT / NOT_RUN.
  *
  * Acquisition errors propagate unchanged. If composition fails after a root
  * was returned, no caller has received a submit-capable facade. Cleanup calls
@@ -133,6 +152,73 @@ export async function openServiceCreditCustodiedSqliteSequentialRunner(
     });
     const RUNNER_SNAPSHOT = runner.snapshot;
 
+    function createOriginalRecoveryPlan(key, initialObservationJson) {
+      if (arguments.length !== 2) throw failure('INVALID_INPUT');
+      let boundKey, envelopeJson, declared, original;
+      let readActual = ROOT_READ;
+      try {
+        boundKey = KEY(key);
+        original = readActual(boundKey);
+        if (original === null) throw failure('ORIGINAL_NOT_FOUND');
+        // The actual root returns a validated custody record. This serializer
+        // binds the complete canonical envelope, including exact request bytes.
+        envelopeJson = SERIALIZE(original);
+        declared = CREATE_PLAN(STRINGIFY({
+          viewVersion: 1,
+          paymentHash: original.paymentHash,
+          requestId: original.requestId,
+        }), initialObservationJson);
+      } finally {
+        key = null;
+        initialObservationJson = null;
+        original = null;
+      }
+
+      const PLAN_OBSERVE = declared.observe;
+      const PLAN_GET = declared.getSnapshot;
+      const PLAN_CLOSE = declared.close;
+      declared = null;
+      let locallyClosed = false;
+
+      function requireOriginal() {
+        let current;
+        try {
+          current = readActual(boundKey);
+          if (current === null || SERIALIZE(current) !== envelopeJson) {
+            throw failure('ORIGINAL_BINDING_CHANGED');
+          }
+        } finally {
+          current = null;
+        }
+      }
+
+      function observe(...args) {
+        // Preserve the declared planner's arity/closed errors without a read.
+        if (args.length === 1 && !locallyClosed) requireOriginal();
+        return APPLY(PLAN_OBSERVE, undefined, args);
+      }
+
+      function getSnapshot(...args) {
+        if (args.length === 0 && !locallyClosed) requireOriginal();
+        return APPLY(PLAN_GET, undefined, args);
+      }
+
+      function close(...args) {
+        const snapshot = APPLY(PLAN_CLOSE, undefined, args);
+        locallyClosed = true;
+        readActual = null;
+        boundKey = null;
+        envelopeJson = null;
+        return snapshot;
+      }
+
+      return FREEZE({
+        observe: FREEZE(observe),
+        getSnapshot: FREEZE(getSnapshot),
+        close: FREEZE(close),
+      });
+    }
+
     function snapshot(...args) {
       if (args.length !== 0) throw failure('INVALID_INPUT');
       const owned = ROOT_SNAPSHOT();
@@ -162,6 +248,7 @@ export async function openServiceCreditCustodiedSqliteSequentialRunner(
     return FREEZE({
       runOriginals: runner.runOriginals,
       readOriginal: ROOT_READ,
+      createOriginalRecoveryPlan: FREEZE(createOriginalRecoveryPlan),
       close: runner.close,
       snapshot: FREEZE(snapshot),
     });
