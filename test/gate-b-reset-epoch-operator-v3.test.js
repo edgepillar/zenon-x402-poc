@@ -316,6 +316,90 @@ test('v3 artifacts are one-use, tamper evident, and reject legacy workspace mixi
   });
 });
 
+test('v3 preflight fails closed when an artifact descriptor does not close cleanly', async t =>
+  withPrivateWorkspace(t, async root => {
+    const dependencies = filesystemDependencies(root);
+    await executeGateBResetEpochOperatorV3(entry(), {
+      currentWorkspaceRoot: () => root,
+      prepareAndPreflight: binding =>
+        prepareAndPreflightGateBResetEpochArtifactsV3(binding, dependencies),
+    });
+
+    const configurationPath = join(
+      root,
+      GATE_B_RESET_EPOCH_ARTIFACT_LEAVES_V3.configuration,
+    );
+    let closeAttempts = 0;
+    const closeFailureDependencies = {
+      ...dependencies,
+      async openPath(path, flags, mode) {
+        const handle = await open(path, flags, mode);
+        if (path !== configurationPath) return handle;
+        return {
+          close: async () => {
+            closeAttempts += 1;
+            await handle.close();
+            throw new Error('close acknowledgement unavailable');
+          },
+          read: handle.read.bind(handle),
+          stat: handle.stat.bind(handle),
+        };
+      },
+    };
+
+    await assert.rejects(
+      preflightGateBResetEpochArtifactsV3(
+        boundEntry(root),
+        closeFailureDependencies,
+      ),
+      error => error?.code === 'gate_b_reset_epoch_filesystem_preflight_v3_invalid',
+    );
+    assert.equal(closeAttempts, 2);
+  }));
+
+test('v3 preflight fails closed when the workspace descriptor does not close cleanly and retains artifacts', async t =>
+  withPrivateWorkspace(t, async root => {
+    const dependencies = filesystemDependencies(root);
+    await executeGateBResetEpochOperatorV3(entry(), {
+      currentWorkspaceRoot: () => root,
+      prepareAndPreflight: binding =>
+        prepareAndPreflightGateBResetEpochArtifactsV3(binding, dependencies),
+    });
+
+    let workspaceCloseAttempts = 0;
+    const workspaceCloseFailureDependencies = {
+      ...dependencies,
+      async openPath(path, flags, mode) {
+        const handle = await open(path, flags, mode);
+        if (path !== root) return handle;
+        return {
+          close: async () => {
+            workspaceCloseAttempts += 1;
+            await handle.close();
+            throw new Error('workspace close acknowledgement unavailable');
+          },
+          read: handle.read.bind(handle),
+          stat: handle.stat.bind(handle),
+          sync: handle.sync.bind(handle),
+        };
+      },
+    };
+
+    await assert.rejects(
+      preflightGateBResetEpochArtifactsV3(
+        boundEntry(root),
+        workspaceCloseFailureDependencies,
+      ),
+      error => error?.code === 'gate_b_reset_epoch_filesystem_preflight_v3_invalid',
+    );
+    assert.equal(workspaceCloseAttempts, 2);
+    for (const leaf of Object.values(GATE_B_RESET_EPOCH_ARTIFACT_LEAVES_V3)) {
+      const stat = await lstat(join(root, leaf), { bigint: true });
+      assert.ok(stat.isFile());
+      assert.ok(stat.size > 0n);
+    }
+  }));
+
 test('every v3 artifact parser rejects family or version downgrade', async t =>
   withPrivateWorkspace(t, async root => {
     const dependencies = filesystemDependencies(root);
