@@ -50,6 +50,10 @@ const CONFIG_FIELDS = FREEZE([
  * through the unchanged at-most-once core path, without an async wrapper.
  * Manual close therefore fences admission and queued-next synchronously.
  *
+ * readOriginal is the actual owned root's frozen synchronous recovery DATA
+ * function. It neither dispatches/replays nor establishes current authority.
+ * Reopening a new runner here is same-process reuse, not process restart.
+ *
  * Acquisition errors propagate unchanged. If composition fails after a root
  * was returned, no caller has received a submit-capable facade. Cleanup calls
  * that original root close once and observes its original Promise. Rejection
@@ -119,6 +123,7 @@ export async function openServiceCreditCustodiedSqliteSequentialRunner(
     ROOT_CLOSE = root.close;
     ROOT_SNAPSHOT = root.snapshot;
     const ROOT_SUBMIT = root.submitOriginal;
+    const ROOT_READ = root.readOriginal;
     const runner = CREATE_CORE({
       submitOriginal: ROOT_SUBMIT,
       snapshot: () => ROOT_SNAPSHOT().client,
@@ -156,6 +161,7 @@ export async function openServiceCreditCustodiedSqliteSequentialRunner(
 
     return FREEZE({
       runOriginals: runner.runOriginals,
+      readOriginal: ROOT_READ,
       close: runner.close,
       snapshot: FREEZE(snapshot),
     });
