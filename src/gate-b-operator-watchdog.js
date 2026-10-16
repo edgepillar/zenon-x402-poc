@@ -4,6 +4,7 @@ import { pathToFileURL } from 'node:url';
 import { createGateBOperatorCoordinatorFrameReader } from './gate-b-operator-coordinator-cli.js';
 import {
   launchGateBOperatorCoordinatorInInheritedProcessGroup,
+  readGateBOperatorCoordinatorLaunchFailureStage,
   stopGateBOperatorCoordinator,
   submitGateBOperatorCoordinatorReview,
   submitGateBOperatorCoordinatorRun,
@@ -16,8 +17,10 @@ import {
   GATE_B_OPERATOR_COORDINATOR_LIMITS,
   GATE_B_OPERATOR_COORDINATOR_STATUS_LINES,
   GATE_B_OPERATOR_ORIGIN_RELEASE_IPC_TYPES,
+  GATE_B_RESET_EPOCH_NATIVE_DIAGNOSTIC_STAGES,
   createGateBOperatorCoordinatorIpcMessage,
   createGateBOperatorOriginReleaseIpcMessage,
+  createGateBResetEpochNativeDiagnosticIpcMessage,
   parseGateBOperatorCoordinatorBootstrapFrame,
   parseGateBOperatorCoordinatorIpcMessage,
   parseGateBOperatorCoordinatorReviewFrame,
@@ -364,10 +367,16 @@ export async function runGateBOperatorWatchdog() {
       : GATE_B_OPERATOR_COORDINATOR_STATUS_LINES.CLOSED);
     await fixedSend(GATE_B_OPERATOR_COORDINATOR_IPC_TYPES.STOPPED);
     return true;
-  } catch {
+  } catch (reason) {
     quarantine = true;
     await cleanup();
     if (started) {
+      const stage = readGateBOperatorCoordinatorLaunchFailureStage(reason);
+      if (stage !== GATE_B_RESET_EPOCH_NATIVE_DIAGNOSTIC_STAGES.UNKNOWN) {
+        try {
+          await fixedSendMessage(createGateBResetEpochNativeDiagnosticIpcMessage(stage));
+        } catch {}
+      }
       try {
         await fixedWrite(process.stderr, GATE_B_OPERATOR_COORDINATOR_STATUS_LINES.QUARANTINED);
       } catch {}
