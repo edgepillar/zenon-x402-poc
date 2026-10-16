@@ -870,13 +870,10 @@ function openDatabase(config, identity, creating) {
 function captureHooks(value) {
   if (value === undefined) return undefined;
   const code = 'ZENON_FUNDING_PAYER_RECOVERY_STORE_INVALID_CONFIGURATION';
-  const keys = Reflect.ownKeys(value ?? {});
-  if (
-    value === null
-    || typeof value !== 'object'
-    || utilTypes.isProxy(value)
-    || keys.some(key => key !== 'beforeCommit' && key !== 'afterCommit')
-  ) fail(code);
+  if (value === null || typeof value !== 'object'
+      || utilTypes.isProxy(value)) fail(code);
+  const keys = Reflect.ownKeys(value);
+  if (keys.some(key => key !== 'beforeCommit' && key !== 'afterCommit')) fail(code);
   const hooks = Object.create(null);
   for (const key of keys) {
     const descriptor = Object.getOwnPropertyDescriptor(value, key);
