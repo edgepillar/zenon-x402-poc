@@ -387,6 +387,9 @@ export async function preflightGateBResetEpochArtifactsV3(binding, injected = un
       schemaVersion: 3,
       status: GATE_B_RESET_EPOCH_STATUS_V3.PREFLIGHT_VALID,
     });
+    for (let index = 0; index < buffers.length; index += 1) {
+      try { buffers[index].fill(0); } catch {}
+    }
     if (!await closeRecords(records)) fail();
     records = [];
     await workspace.handle.close();
@@ -480,6 +483,9 @@ export async function prepareAndPreflightGateBResetEpochArtifactsV3(
     );
     await workspace.handle.sync();
     await assertWorkspaceStable(workspace, dependencies);
+    for (let index = 0; index < buffers.length; index += 1) {
+      try { buffers[index].fill(0); } catch {}
+    }
     if (!await closeRecords(records)) fail();
     records = [];
     await workspace.handle.close();
