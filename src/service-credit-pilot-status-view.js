@@ -1,6 +1,6 @@
 /**
  * Stateless display data, not a backend lifecycle or authorization decision.
- * Both arguments are canonical JSON strings (max 1024 UTF-16 code units).
+ * Exactly two canonical JSON string arguments are required (max 1024 UTF-16 code units each).
  * Ordered identity keys: viewVersion, paymentHash, requestId; observation
  * appends fundingStatus and serviceStatus. Labels and original identity are
  * caller declarations, not authenticated funding, context, READY or delivery.
@@ -11,6 +11,7 @@
  */
 export function getServiceCreditPilotStatusView(originalIdentityJson, observationJson) {
   const bad = new Error('INVALID_STATUS_VIEW_INPUT');
+  if (arguments.length !== 2) throw bad;
   const values = [];
   for (let i = 0; i < 2; i += 1) {
     const text = i === 0 ? originalIdentityJson : observationJson;
