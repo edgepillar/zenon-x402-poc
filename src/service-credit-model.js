@@ -1,4 +1,53 @@
 import crypto from 'node:crypto';
+import { types as utilTypes } from 'node:util';
+
+const APPLY = Reflect.apply;
+const DESCRIPTOR = Object.getOwnPropertyDescriptor;
+const PROTOTYPE = Object.getPrototypeOf;
+const HAS_OWN = Object.hasOwn;
+const IS_PROXY = utilTypes.isProxy;
+const IS_PROMISE = utilTypes.isPromise;
+const NativePromise = Promise;
+const PROMISE_PROTOTYPE = NativePromise.prototype;
+const THEN = PROMISE_PROTOTYPE.then;
+const SPECIES = Symbol.species;
+const NATIVE_SPECIES = DESCRIPTOR(NativePromise, SPECIES);
+
+function safelyObservableCallbackPromise(value) {
+  try {
+    if (typeof value !== 'object' || value === null || IS_PROXY(value)
+        || !IS_PROMISE(value) || PROTOTYPE(value) !== PROMISE_PROTOTYPE) return false;
+    const ownConstructor = DESCRIPTOR(value, 'constructor');
+    if (ownConstructor !== undefined
+        && (!HAS_OWN(ownConstructor, 'value')
+          || ownConstructor.value !== NativePromise)) return false;
+    const constructor = DESCRIPTOR(PROMISE_PROTOTYPE, 'constructor');
+    if (!constructor || !HAS_OWN(constructor, 'value')
+        || constructor.value !== NativePromise) return false;
+    const species = DESCRIPTOR(NativePromise, SPECIES);
+    if (!species || !NATIVE_SPECIES) return false;
+    if (HAS_OWN(NATIVE_SPECIES, 'value')) {
+      return HAS_OWN(species, 'value') && species.value === NATIVE_SPECIES.value;
+    }
+    return !HAS_OWN(species, 'value') && species.get === NATIVE_SPECIES.get
+      && species.set === NATIVE_SPECIES.set;
+  } catch {
+    return false;
+  }
+}
+
+function observeCallbackPromise(value) {
+  if (!safelyObservableCallbackPromise(value)) return;
+  try {
+    // Both handlers discard values/reasons and return a primitive. The derived
+    // Promise cannot assimilate a callback's fulfilled object through a handler.
+    APPLY(THEN, value, [() => undefined, () => undefined]);
+  } catch {
+    // Native/global observation faults remain a premise; numeric validation
+    // below still rejects this callback result with its fixed synchronous code.
+  }
+}
+
 
 export const GRANT_LIFECYCLE = Object.freeze({
   ACTIVE: 'ACTIVE',
@@ -1389,6 +1438,7 @@ export class InMemoryServiceCreditModel {
     const reentryAttempted = this.#callbackReentryAttempted;
     this.#callbackActive = false;
     this.#callbackReentryAttempted = false;
+    observeCallbackPromise(value);
     if (callbackFailed || reentryAttempted) fail(invalidCode);
     return value;
   }
