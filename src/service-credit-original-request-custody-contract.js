@@ -270,3 +270,87 @@ function reject() {
   });
   throw freeze(error);
 }
+
+/**
+ * V3 dispatch-intent metadata only. A committed intent means possibly attempted,
+ * including the case where no service callback ever ran. No authority follows.
+ * Canonical checksums detect corruption, not valid same-user database rewriting.
+ */
+const INTENT_FIELDS = freeze([
+  'intentVersion', 'profile', 'state', 'grantId', 'requestId',
+  'originalChecksum', 'originalEnvelopeDigest', 'fundingResourceUrl',
+  'paymentHash', 'network', 'fundingRevision', 'challengeDigest',
+  'paymentDigest', 'custodyPolicyDigest', 'checksum',
+]);
+const INTENT_BINDING_FIELDS = freeze([
+  'fundingRevision', 'challengeDigest', 'paymentDigest', 'custodyPolicy',
+]);
+const INTENT_DIGEST = /^sha256:[0-9a-f]{64}$/;
+const INTENT_DOMAIN = 'zenon-x402:original-dispatch-intent-v1';
+function intentCanonical(value) {
+  if (value === null || typeof value !== 'object') return stringify(value);
+  return '{' + Object.keys(value).sort().map(key =>
+    stringify(key) + ':' + intentCanonical(value[key])).join(',') + '}';
+}
+function intentDigest(domain, value) {
+  return 'sha256:' + CREATE_HASH('sha256').update(domain).update('\0')
+    .update(typeof value === 'string' ? value : intentCanonical(value), 'utf8').digest('hex');
+}
+function requireIntentDigest(value) {
+  bounded(value, 71);
+  if (!test(INTENT_DIGEST, value)) rejectIntent();
+}
+function validateIntent(input) {
+  const r = record(input, INTENT_FIELDS);
+  if (r.intentVersion !== 1 || r.profile !== PROFILE || r.state !== 'INTENT_RECORDED') rejectIntent();
+  identifier(r.grantId); identifier(r.requestId);
+  canonicalUrl(r.fundingResourceUrl, false);
+  bounded(r.paymentHash, 64); bounded(r.network, 256); positive(r.fundingRevision);
+  if (!test(HASH, r.paymentHash)) rejectIntent();
+  for (const key of ['originalChecksum','originalEnvelopeDigest','challengeDigest',
+    'paymentDigest','custodyPolicyDigest','checksum']) requireIntentDigest(r[key]);
+  const core = {};
+  for (const key of INTENT_FIELDS) if (key !== 'checksum') core[key] = r[key];
+  if (r.checksum !== intentDigest(INTENT_DOMAIN, core)) rejectIntent();
+  const result = { ...core, checksum: r.checksum };
+  bounded(intentCanonical(result), 16384);
+  return freeze(result);
+}
+export function captureOriginalServiceDispatchIntent(original, binding) {
+  if (arguments.length !== 2) rejectIntent();
+  const o = validateRecord(original), b = record(binding, INTENT_BINDING_FIELDS);
+  positive(b.fundingRevision); requireIntentDigest(b.challengeDigest); requireIntentDigest(b.paymentDigest);
+  const policy = snapshotOriginalServiceRequestCustodyPolicy(b.custodyPolicy, o.fundingResourceUrl);
+  if (policy.serviceResourceUrl !== o.serviceResourceUrl) rejectIntent();
+  const core = {
+    intentVersion: 1, profile: PROFILE, state: 'INTENT_RECORDED',
+    grantId: o.grantId, requestId: o.requestId, originalChecksum: o.checksum,
+    originalEnvelopeDigest: 'sha256:' + CREATE_HASH('sha256').update(stringify(o), 'utf8').digest('hex'),
+    fundingResourceUrl: o.fundingResourceUrl, paymentHash: o.paymentHash, network: o.network,
+    fundingRevision: b.fundingRevision, challengeDigest: b.challengeDigest, paymentDigest: b.paymentDigest,
+    custodyPolicyDigest: intentDigest('zenon-x402:dispatch-intent-policy-v1', policy),
+  };
+  return validateIntent({ ...core, checksum: intentDigest(INTENT_DOMAIN, core) });
+}
+export function serializeOriginalServiceDispatchIntent(input) {
+  if (arguments.length !== 1) rejectIntent();
+  return intentCanonical(validateIntent(input));
+}
+export function parseOriginalServiceDispatchIntent(text) {
+  if (arguments.length !== 1) rejectIntent();
+  bounded(text, 16384);
+  let decoded;
+  try { decoded = parse(text); } catch { rejectIntent(); }
+  const result = validateIntent(decoded);
+  if (intentCanonical(result) !== text) rejectIntent();
+  return result;
+}
+function rejectIntent() {
+  const error = new TypeErrorConstructor('Service credit original dispatch intent rejected');
+  defineProperty(error, 'code', { value: 'service_credit_original_dispatch_intent_rejected', enumerable: true });
+  defineProperty(error, 'stack', {
+    value: 'TypeError: Service credit original dispatch intent rejected',
+    enumerable: false, writable: false, configurable: false,
+  });
+  throw freeze(error);
+}

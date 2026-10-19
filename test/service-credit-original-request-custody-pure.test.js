@@ -15,7 +15,7 @@ if (process.argv.length > 3
 
 const specs = [
   ['../src/service-credit-original-request-custody-contract.js',
-    9810, '8f4d40d017a89e9a064c411c8e076cb21a45b9fb787fda7a664246b7bd744083'],
+    14051, 'fd349de553a17abcc2e0567ba6640e6e3d5d26cfa79ee1e355928dc9fa8d3915'],
 ];
 const pins = Object.freeze(specs.map(([path, bytes, sha]) => {
   const url = new URL(path, import.meta.url);
@@ -401,8 +401,11 @@ const scenarios = [
   ['declared identity grants no credential dispatch or durability authority', () => {
     const original = capture(input(), BINDING);
     same(Object.keys(contract).sort(), [
+      'captureOriginalServiceDispatchIntent',
       'captureOriginalServiceRequestCustody',
+      'parseOriginalServiceDispatchIntent',
       'parseOriginalServiceRequestCustody',
+      'serializeOriginalServiceDispatchIntent',
       'serializeOriginalServiceRequestCustody',
       'snapshotOriginalServiceRequestCustodyKey',
       'snapshotOriginalServiceRequestCustodyPolicy',

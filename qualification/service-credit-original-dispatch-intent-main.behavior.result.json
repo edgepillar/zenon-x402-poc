@@ -1,0 +1,328 @@
+{
+  "schemaVersion": 1,
+  "scope": "OCT19_P2_MAIN_PURE_DISPATCH_INTENT_CONTRACT_V1",
+  "dateUTC": "2026-10-19",
+  "status": "LOCAL_PURE_COMPONENT_QUALIFICATION_COMPLETE_PUBLICATION_TRACKED_BY_GIT_HISTORY",
+  "mainBaseCommit": "157ef8d6a5b3b521731d5ca8e85513fba3cbafdd",
+  "mainBaseTree": "5fecca2930f90e48ed9bc2d29a3e23da50190fc5",
+  "batchBoundary": "Pure dispatch-intent metadata API, its pure regressions, new intent unit and sanitized records only; no held P2 SQL/owner/runner transplant.",
+  "productionSource": {
+    "path": "src/service-credit-original-request-custody-contract.js",
+    "bytes": 14051,
+    "LF": 356,
+    "sha256": "fd349de553a17abcc2e0567ba6640e6e3d5d26cfa79ee1e355928dc9fa8d3915",
+    "gitBlob": "f911d42d01b69e6577f9bcd66f4ed59aab8ab882",
+    "oldMainPrefix": {
+      "bytes": 9810,
+      "sha256": "8f4d40d017a89e9a064c411c8e076cb21a45b9fb787fda7a664246b7bd744083",
+      "gitBlob": "437285afd66e879bd8f0242de0059e5a94552b9c",
+      "completePrefixByteExact": true
+    },
+    "additiveBytes": 4241,
+    "existingSixExportBodiesAndImportsUnchanged": true,
+    "localProductionFileEditsInThisSourcePhase": 0,
+    "alreadyAvailableAsExactReviewedFeatureBlob": true,
+    "addedExports": [
+      "captureOriginalServiceDispatchIntent",
+      "serializeOriginalServiceDispatchIntent",
+      "parseOriginalServiceDispatchIntent"
+    ],
+    "contract": "Fixed empty-body original linkage and canonical declared dispatch-intent commitments only. A committed intent can mean possibly attempted; this pure API does not persist, dispatch, sign, authenticate or establish delivery.",
+    "selfConsistentMetadataRewriteCanParseWithoutExternalLinkAuthentication": true
+  },
+  "tests": [
+    {
+      "path": "test/service-credit-original-request-custody-pure.test.js",
+      "bytes": 20772,
+      "LF": 438,
+      "sha256": "ff11d366ab117992a2e7e9f0e6b7a9be4657448f77048b0d77f2a2fc97493853",
+      "gitBlob": "10f15d9690ceadf0a1df74436b10791840748d52",
+      "preimageBytes": 20633,
+      "preimageSHA256": "8e92b8852a004b2a3c55c3a8badcbd96640343b4f76721af2034e8f6ec5a4108",
+      "preimageGitBlob": "cec5f2cfdff35cb33035edaca25efb74efe09ba5",
+      "exactSplices": 2,
+      "wholeInverseVerified": true,
+      "changesOnly": "Contract byte/SHA pin and the exact namespace's three intended exports; ten other scenario/helper/registration bodies preserved."
+    },
+    {
+      "path": "test/service-credit-original-dispatch-intent-contract.test.js",
+      "bytes": 15966,
+      "LF": 300,
+      "sha256": "4b06eb1b7d2729589e86b5d7876e3d5326ade4606937bd3208b12e8ec7fc8eb8",
+      "gitBlob": "d7adc58b06dba13f025b3ae308bb76cead9a7f2f",
+      "newAuthoredGroups": 8,
+      "entireSourceReadUnabridged": true,
+      "sourceDraftNotRunHeaderIsHistoricalAuthorshipOnly": true
+    }
+  ],
+  "independentSourceReview": {
+    "completeFirstOriginalHandoffBytes": 19902,
+    "completeFirstOriginalHandoffSHA256": "7c0c280168025f6820dd9c714bee5603f992cddfac408e6aeb6135e65db3de43",
+    "originalPublicOutputBytes": 20525,
+    "originalPublicOutputSHA256": "92946d42a2a67e9924c37d4a349aa049a987f89141c152af4310a68d7e308712",
+    "emissions": 1,
+    "retransmissions": 0,
+    "allNewSourceBytesAndExactSplicesReviewed": true,
+    "fullFDContentPhysicalAndGitBlobChecksMatched": true,
+    "workerModel": "gpt-6.1-sol",
+    "workerReasoning": "max",
+    "freshMainAndActualWorkerPublicProfilesMatched": true,
+    "protectedFileCountBeforePublicRecords": 77,
+    "allProtectedPostRunPinsAndLocalHEADBranchUnchanged": true
+  },
+  "pinnedExecutableUnion": {
+    "files": [
+      {
+        "path": "test/service-credit-original-request-custody-pure.test.js",
+        "bytes": 20772,
+        "sha256": "ff11d366ab117992a2e7e9f0e6b7a9be4657448f77048b0d77f2a2fc97493853"
+      },
+      {
+        "path": "test/service-credit-original-dispatch-intent-contract.test.js",
+        "bytes": 15966,
+        "sha256": "4b06eb1b7d2729589e86b5d7876e3d5326ade4606937bd3208b12e8ec7fc8eb8"
+      },
+      {
+        "path": "src/service-credit-original-request-custody-contract.js",
+        "bytes": 14051,
+        "sha256": "fd349de553a17abcc2e0567ba6640e6e3d5d26cfa79ee1e355928dc9fa8d3915"
+      },
+      {
+        "path": "package.json",
+        "bytes": 1413,
+        "sha256": "8c9a25504fbf6f87c31cdf245a6f4eec5a88cc89c8352151dc66a577c5771ef5"
+      }
+    ],
+    "count": 4,
+    "totalBytes": 52202,
+    "soleProductionImport": "src/service-credit-original-request-custody-contract.js",
+    "moduleBuiltinImports": [
+      "node:buffer",
+      "node:crypto",
+      "node:util"
+    ],
+    "notAnOSReadSandboxClaim": true
+  },
+  "runtime": {
+    "node": "24.19.0",
+    "nodeBinarySHA256": "852d6074f741d18223b24967d8384e8920856a7fcd4348682a4ec524b5fc2ff4",
+    "platform": "darwin",
+    "architecture": "arm64",
+    "freshProcesses": 2,
+    "oneExplicitTestFilePerProcess": true,
+    "selectors": [
+      "all",
+      "all"
+    ],
+    "concurrentParentLaunches": true,
+    "sourceTreeCopies": 0,
+    "NodePermissionModel": true,
+    "exactFSReadFileGrants": 4,
+    "FSWriteChildWorkerAddonGrants": false,
+    "noAddons": true,
+    "stringCodeGenerationDisabled": true,
+    "OSSandbox": false,
+    "NetworkSandbox": false,
+    "applicationEnvironmentCleared": true,
+    "exactApplicationEnvironmentKeys": [
+      "PATH",
+      "LC_ALL",
+      "SPV_TASK_SCRATCH",
+      "NODE_TEST_WORKER_ID",
+      "__CF_USER_TEXT_ENCODING"
+    ],
+    "testAPIMode": "CommonJS inline run API, isolation none, concurrency false, forceExit false, watch false",
+    "testTimeoutMs": 5000,
+    "runnerTimeoutMs": 15000,
+    "managerSeconds": 20,
+    "timeLimitsAreNotHardLifetimeCancellationNativeCleanupOrSandboxGuarantees": true,
+    "nativeLoaderRunnerStreamsOSPristineIntrinsicsAndSourceToImportRacesRemainPremises": true,
+    "callerBytes": 5458,
+    "callerSHA256": "1e5f2d697cfb54785a3015b4189f5a926e14a56a4c7be65ed90c5ac9f1356b14",
+    "commandDigests": [
+      {
+        "file": "test/service-credit-original-request-custody-pure.test.js",
+        "bytes": 6996,
+        "sha256": "e323dd9f9bafcedeeba1e4dfc6bbdbd39cfa1f71209ad945a2fd778087ee1bf1"
+      },
+      {
+        "file": "test/service-credit-original-dispatch-intent-contract.test.js",
+        "bytes": 7003,
+        "sha256": "fbe9c1224c4003993da921f9341d3cc9c50bec5d14b084b74b65ac5bc3e65284"
+      }
+    ]
+  },
+  "outcomes": [
+    {
+      "file": "test/service-credit-original-request-custody-pure.test.js",
+      "authoredNames": [
+        "fixed empty-body capture retains exact request and declared funding metadata",
+        "whole envelopes roundtrip with fresh frozen complete revalidation",
+        "deterministic records separate declared metadata without claiming SQL idempotency",
+        "wrong profiles bodies costs and credential fields are rejected",
+        "canonical same-origin URLs refuse path query userinfo and redirect-like changes",
+        "custody policy is explicit finite and versioned without default capacity",
+        "corrupt extra missing and mixed envelopes never pass whole-record validation",
+        "hostile records and coercible fields execute no input traps",
+        "arity byte character and safe-number limits preserve the zero-body boundary",
+        "declared identity grants no credential dispatch or durability authority"
+      ],
+      "parentCLIExit": 0,
+      "childExit": 0,
+      "outputComplete": true,
+      "tests": 10,
+      "pass": 10,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "stdout": {
+        "bytes": 2257,
+        "sha256": "a3612c159fb47fc2c55bb8e0ef5eddec1674749d15c1f8603838092b04e8a636"
+      },
+      "stderr": {
+        "bytes": 1176,
+        "sha256": "6eca03732dda3cd7a885280d84ff0728bfc983f4f765c5c39c32a81e1df29e06"
+      },
+      "completeCLIToCASCreatorTaskCommandAndPrivateRuntimeBindingMatched": true,
+      "taskState": "CLOSED",
+      "taskOutcome": "SUCCESS",
+      "cleanupDecision": "CLEANED",
+      "registeredScratchBytesRemoved": 0,
+      "originalProcessGroupObservedAbsent": true
+    },
+    {
+      "file": "test/service-credit-original-dispatch-intent-contract.test.js",
+      "authoredNames": [
+        "complete intent capture matches independent canonical commitments and fresh roundtrips",
+        "original identities and funding commitments remain fully separated",
+        "canonical schema parsing refuses missing duplicate corrupt and fixed-state metadata",
+        "binding revision digest origin and policy errors keep exact rejection kinds",
+        "hostile records and nested policies never invoke traps getters or coercion",
+        "arity UTF8 safe-number and empty-body boundaries retain credential refusal",
+        "self-consistent declared rewrites parse without external linkage or authority",
+        "exact exports source imports and frozen rejection descriptors stay redacted"
+      ],
+      "parentCLIExit": 0,
+      "childExit": 0,
+      "outputComplete": true,
+      "tests": 8,
+      "pass": 8,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "stdout": {
+        "bytes": 1906,
+        "sha256": "1ca6fb2b906c660c711682da16035e3587d8ff06cb2a55ab4d6e9d1336c0da01"
+      },
+      "stderr": {
+        "bytes": 1180,
+        "sha256": "c45d6c8bc22bbe175eefc7aa2a1c9499000affc90cdb9ed6b4efe5f432e6ef22"
+      },
+      "completeCLIToCASCreatorTaskCommandAndPrivateRuntimeBindingMatched": true,
+      "taskState": "CLOSED",
+      "taskOutcome": "SUCCESS",
+      "cleanupDecision": "CLEANED",
+      "registeredScratchBytesRemoved": 0,
+      "originalProcessGroupObservedAbsent": true
+    }
+  ],
+  "totals": {
+    "authoredTests": 18,
+    "pass": 18,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0,
+    "nativeAttempts": 2,
+    "nativeRetries": 0,
+    "combinedEighteenTestTAPRun": false,
+    "retainedCASStreams": 4,
+    "retainedCASBytes": 6519,
+    "newSQLiteDBs": 0,
+    "downloadsOrInstallsOrSourceClones": 0,
+    "savedOperationalHelpers": 0,
+    "historicalCleanupOrMaterialDeletion": 0
+  },
+  "independentDeclaredDataVector": {
+    "method": "Primary independent ASCII SHA-256 and canonical flat-object calculation; runtime test compares complete values with its authored independent declared-data oracle, not a separate emitted native hash measurement.",
+    "fundingRevision": 7,
+    "challengeDigest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "paymentDigest": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "originalChecksum": "sha256:955baea7368d2fd41c81b082f58089806324292b3f00592b2a1440740d1f3a9b",
+    "originalEnvelopeDigest": "sha256:66ef3a32674571710e448d1229726b14b5aea3042fa473149c652bccf359544e",
+    "custodyPolicyDigest": "sha256:670bed00feed24ca4181a0a199d5f5177506916684fd6c6c8b23e1be0c0a27de",
+    "intentChecksum": "sha256:e423eb1bc4a96d610f76349766d7a8b83fc92be776f8ce4b6d199a6d360db304",
+    "serializedBytes": 877,
+    "serializedSHA256": "872dccd3f3123a6a6147bd68c3570d46867f62c369fb9b2c1fe9bcd17b8aa7c5"
+  },
+  "attemptAccounting": {
+    "sourceWorkerReportedExecs": 3,
+    "sourceWorkerReportedExitCodes": [
+      0,
+      0,
+      0
+    ],
+    "sourceApplyPatchCalls": 1,
+    "sourceRAMTitleExtractionCorrected": true,
+    "unwrittenOversizedRAMDraftBytes": [
+      17151,
+      16031
+    ],
+    "finalSourceUnder16000ByteCap": true,
+    "sourcePreEmissionGuardFailuresReported": 0,
+    "nativeTestOrLoaderFailures": 0,
+    "selectionMetadataOptionalDeclarationAbsent": true,
+    "allEarlierFailuresStoppedScopesAndOriginalGraphsRetained": true,
+    "parentMetadataCommandRAMReferenceTypoBeforeToolCall": true
+  },
+  "CIAndPublicationBoundary": {
+    "selectedMainProtected": false,
+    "selectedMainActiveRules": [],
+    "exactSelectedMainCheckRuns": 0,
+    "exactSelectedMainCommitStatuses": 0,
+    "combinedStatus": "pending",
+    "noGreenCIClaim": true,
+    "workflowPath": ".github/workflows/test.yml",
+    "workflowBlob": "d25b4b8c52a1cca66abb160ce961bae01d953925",
+    "workflowEvents": [
+      "push",
+      "pull_request"
+    ],
+    "workflowInvokesDependencyInstallAndWholeSuite": true,
+    "broadCIInstallOrSuiteNotAdmitted": true,
+    "commitInstruction": "[skip ci]",
+    "officialSkipDocumentation": "https://docs.github.com/en/actions/how-tos/manage-workflow-runs/skip-workflow-runs",
+    "skipDoesNotSatisfyRequiredChecks": true,
+    "requiredChecksWouldBeHonoredWithoutBypass": true,
+    "publicationMode": "Exactly five selected blobs; normal non-force fast-forward only after fresh main, tree, rules, diff and outcome checks.",
+    "notAHostedCIQualification": true
+  },
+  "limits": {
+    "scope": "Local pure data-contract component execution only.",
+    "SQLStoreOrCustodyDurability": false,
+    "backendOwnerRunnerOrCompositionQualification": false,
+    "actualPendingPaymentRecovery": false,
+    "processRestartCrashPowerLossOrHostRecovery": false,
+    "SDKOrOfficialX402Compatibility": false,
+    "realProviderREADY": false,
+    "networkOrServiceDelivery": false,
+    "liveDPPreparationPoWSigningInclusion": false,
+    "authenticatedIdentityOrTamperResistance": false,
+    "pilotOrProductionAcceptance": false,
+    "wholeP2OrWholeRoadmapComplete": false,
+    "signer": "DISABLED",
+    "protectedCHAIN": {
+      "consumedAdmissions": 2,
+      "actualPREPARE": 1,
+      "bundles": 0,
+      "nativeChainProviderQualificationRuns": 0
+    },
+    "originalRealPaymentRequestBytesHashPayloadRequirementsContextAndConsumedAuthorityUnchanged": true,
+    "no165OwnershipRetry": true,
+    "PR193ValidatedSameSignedBlockVersusUnknownAcknowledgedBoundaryUnchanged": true,
+    "unrelatedWorktreeIndexBranchAndHeldDraftsNotPartOfMainBatch": true,
+    "automationOrMemoryMutations": 0
+  }
+}
