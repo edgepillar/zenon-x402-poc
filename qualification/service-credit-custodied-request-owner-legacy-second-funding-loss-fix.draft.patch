@@ -1,0 +1,14 @@
+*** Begin Patch
+*** Update File: src/service-credit-custodied-request-owner.js
+@@
+       const record = recordForCurrent(raw, key, current).record;
+-      const latest = currentFunding();
++      let latest;
++      try {
++        latest = currentFunding();
++      } catch {
++        holdCustody();
++        throw failure('CUSTODY_OUTCOME_UNKNOWN');
++      }
+       if (!sameFunding(current, latest)) {
+*** End Patch

@@ -1,0 +1,414 @@
+{
+  "scope": "OCT19_CURRENT_CUSTODIED_OWNER_LIBRARY_COMPATIBILITY_V3_LOCAL_COMPONENT_RESULT_V1",
+  "recordedAtUtc": "2026-10-19T16:49:06Z",
+  "disposition": "PASS_SELECTED_CURRENT_OWNER_COMPONENT_CASES",
+  "evidenceClass": "ACTUAL_LOCAL_NODE_BORROWED_OWNER_COMPONENT_EXECUTION",
+  "qualification": "SELECTED_SYNTHETIC_STORE_CASES_ONLY",
+  "sourceManifest": {
+    "path": "qualification/service-credit-custodied-request-owner-current-library.source.json",
+    "bytes": 25738,
+    "LF": 1,
+    "sha256": "fc44ae0b16e464cae5a0ff86c6ce44565c60f667820b53d74c9edab28f48ded7",
+    "gitBlob": "9bd66c096eb33cddb47cb56320daaf06f3c54c84",
+    "note": "Immutable source-stage plan. Its UNMEASURED wording is retained; actual outcomes are recorded here, not backfilled into the plan."
+  },
+  "implementationInputs": [
+    {
+      "path": "src/service-credit-custodied-request-owner.js",
+      "bytes": 35073,
+      "LF": 938,
+      "sha256": "6e7493a4859d48530820e68a4a19a513aad014ffc1048b42965a3ad36ae7c5f7",
+      "gitBlob": "2dee22fd780db9de662fe1243075e74cef0bf296"
+    },
+    {
+      "path": "src/service-credit-original-request-custody-contract.js",
+      "bytes": 14051,
+      "LF": 356,
+      "sha256": "fd349de553a17abcc2e0567ba6640e6e3d5d26cfa79ee1e355928dc9fa8d3915",
+      "gitBlob": "f911d42d01b69e6577f9bcd66f4ed59aab8ab882"
+    },
+    {
+      "path": "package.json",
+      "bytes": 1413,
+      "LF": 40,
+      "sha256": "8c9a25504fbf6f87c31cdf245a6f4eec5a88cc89c8352151dc66a577c5771ef5",
+      "gitBlob": "ec7193f6fd76f34778515079dc777594175c4c34"
+    }
+  ],
+  "executedEntries": [
+    {
+      "path": "test/service-credit-custodied-request-owner-current-compatibility.test.js",
+      "bytes": 30465,
+      "LF": 706,
+      "sha256": "1d9bbd1d309e70035f97ebc2ca208bdeaefe7603faef727e44e0eddcc0ac1a49",
+      "gitBlob": "578c2f8057a3e2fb9877af1584f299c6c5c56952"
+    },
+    {
+      "path": "test/service-credit-custodied-request-owner-current-rejected-store-promise.test.js",
+      "bytes": 22757,
+      "LF": 573,
+      "sha256": "e90c561af58caa944399cb6b51940532277ba9e3fb25cb8ba3e8cd880d693413",
+      "gitBlob": "853e6c130f84cb284c0e0155abcf7f8fc62b7ffd"
+    },
+    {
+      "path": "test/service-credit-custodied-request-owner-current-read-close-reentry.test.js",
+      "bytes": 22304,
+      "LF": 563,
+      "sha256": "11089936014251c0b135ebd24ad693cf1874a7a5948fed99c35969e52b06e007",
+      "gitBlob": "85229e991c77b8e365c6bb508486ed54e562df58"
+    },
+    {
+      "path": "test/service-credit-custodied-request-owner-current-v3.test.js",
+      "bytes": 12528,
+      "LF": 237,
+      "sha256": "562659f21074fb5317c4f28e1c32bc65e2183181ecd527f7ce784da101398733",
+      "gitBlob": "d96bb6ade558356283841f6ccfc5158592043115"
+    }
+  ],
+  "result": {
+    "invocationCount": 4,
+    "authoredExecutions": 33,
+    "distinctAuthoredCasesPassed": 33,
+    "aggregateCounts": {
+      "tests": 33,
+      "passed": 33,
+      "failed": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "suites": 0
+    },
+    "allJoinedExitZero": true,
+    "exactAuthoredNamesMatchedBothTAPAndRunnerSummary": true,
+    "oneCombinedRunClaim": false,
+    "priorTwoCaseLegacyFixUnitRerun": false,
+    "priorTwoCaseLegacyResult": "Separate previously completed baseline/fixed pair; not counted as a fresh 35-test run."
+  },
+  "invocations": [
+    {
+      "entry": "test/service-credit-custodied-request-owner-current-compatibility.test.js",
+      "attempt": 1,
+      "processMode": "FRESH_SINGLE_FILE_DIRECT_PROCESS",
+      "joined": true,
+      "exitCode": 0,
+      "counts": {
+        "tests": 8,
+        "failed": 0,
+        "passed": 8,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0,
+        "topLevel": 8,
+        "suites": 0
+      },
+      "passedNames": [
+        "retention readback and current binding fence one explicit callback",
+        "existing originals require recovery and changed bindings refuse dispatch",
+        "retention and readback uncertainty hold without dispatch",
+        "observable promises preserve busy guards and close drain identity",
+        "dispatch failures remain submission unknown without retry",
+        "hostile inputs and unobservable promise handles execute no getters",
+        "one-grant composite bookkeeping enforces explicit capacity",
+        "recovery reads and closure never establish delivery authority"
+      ],
+      "path": "test/service-credit-custodied-request-owner-current-compatibility.test.js",
+      "combinedToolTranscript": {
+        "bytes": 2458,
+        "sha256": "d7833ed6d1c49cd0498db17018170b9f8d69d76f4bfea1b5c2299b7b5eb67184"
+      },
+      "exactPrivateInlineCallsite": {
+        "bytes": 3008,
+        "sha256": "4ebd03cce5e2542bb3738de3cdf374791b9748058acfe0908d3537d978737352"
+      },
+      "evidenceDigestMeaning": "Exact complete returned combined tool-output transcript, not a separately captured stdout/stderr descriptor or CAS receipt.",
+      "toolWallTimeSecondsVerbatim": 0.298209417,
+      "timingLimit": "Raw tool timing metadata only; not process-start latency, a benchmark or a hard lifetime guarantee.",
+      "tapReporterBytesObserved": 1684,
+      "reporterByteCap": 131072
+    },
+    {
+      "entry": "test/service-credit-custodied-request-owner-current-rejected-store-promise.test.js",
+      "attempt": 1,
+      "processMode": "FRESH_SINGLE_FILE_DIRECT_PROCESS",
+      "joined": true,
+      "exitCode": 0,
+      "counts": {
+        "tests": 16,
+        "failed": 0,
+        "passed": 16,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0,
+        "topLevel": 16,
+        "suites": 0
+      },
+      "passedNames": [
+        "immediate rejected native store Promise: submit initial load",
+        "immediate rejected native store Promise: submit original get",
+        "immediate rejected native store Promise: submit retain result after declared write",
+        "immediate rejected native store Promise: submit readback get",
+        "immediate rejected native store Promise: submit final load",
+        "immediate rejected native store Promise: read initial load with preseeded row",
+        "immediate rejected native store Promise: read original get with preseeded row",
+        "immediate rejected native store Promise: read final load with preseeded row",
+        "deferred rejected native store Promise: submit initial load",
+        "deferred rejected native store Promise: submit original get",
+        "deferred rejected native store Promise: submit retain result after declared write",
+        "deferred rejected native store Promise: submit readback get",
+        "deferred rejected native store Promise: submit final load",
+        "deferred rejected native store Promise: read initial load with preseeded row",
+        "deferred rejected native store Promise: read original get with preseeded row",
+        "deferred rejected native store Promise: read final load with preseeded row"
+      ],
+      "path": "test/service-credit-custodied-request-owner-current-rejected-store-promise.test.js",
+      "combinedToolTranscript": {
+        "bytes": 4830,
+        "sha256": "0777e98811b00d0534cc616708a1f4b31964338ed06908c4ace4d5f2e144d30a"
+      },
+      "exactPrivateInlineCallsite": {
+        "bytes": 3630,
+        "sha256": "bb23a6e9c5ede2e043507f29ce4b1067f96bfa0e6e62dd269e2dc948e2b4fae8"
+      },
+      "evidenceDigestMeaning": "Exact complete returned combined tool-output transcript, not a separately captured stdout/stderr descriptor or CAS receipt.",
+      "toolWallTimeSecondsVerbatim": 0.000011708,
+      "timingLimit": "Raw tool timing metadata only; not process-start latency, a benchmark or a hard lifetime guarantee.",
+      "tapReporterBytesObserved": 3440,
+      "reporterByteCap": 131072
+    },
+    {
+      "entry": "test/service-credit-custodied-request-owner-current-read-close-reentry.test.js",
+      "attempt": 1,
+      "processMode": "FRESH_SINGLE_FILE_DIRECT_PROCESS",
+      "joined": true,
+      "exitCode": 0,
+      "counts": {
+        "tests": 6,
+        "failed": 0,
+        "passed": 6,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0,
+        "topLevel": 6,
+        "suites": 0
+      },
+      "passedNames": [
+        "first funding load close reentry refuses recovery output and drains",
+        "null get close reentry refuses recovery output and drains",
+        "present get close reentry validates final funding before CLOSED",
+        "final funding load close reentry refuses recovery output and drains",
+        "undefined get close reentry preserves custody uncertainty precedence",
+        "changed final funding close reentry preserves custody uncertainty precedence"
+      ],
+      "path": "test/service-credit-custodied-request-owner-current-read-close-reentry.test.js",
+      "combinedToolTranscript": {
+        "bytes": 2002,
+        "sha256": "3cdb26003b2d9d3e2f2e16a987e2cdc69db7e75679b53846e738f7ddb6b9f555"
+      },
+      "exactPrivateInlineCallsite": {
+        "bytes": 2904,
+        "sha256": "465cabeabf4a03d2396535198febc22cd4dfddc90e9573b1fc0c8dac44297268"
+      },
+      "evidenceDigestMeaning": "Exact complete returned combined tool-output transcript, not a separately captured stdout/stderr descriptor or CAS receipt.",
+      "toolWallTimeSecondsVerbatim": 0.000008,
+      "timingLimit": "Raw tool timing metadata only; not process-start latency, a benchmark or a hard lifetime guarantee.",
+      "tapReporterBytesObserved": 1337,
+      "reporterByteCap": 131072
+    },
+    {
+      "entry": "test/service-credit-custodied-request-owner-current-v3.test.js",
+      "attempt": 1,
+      "processMode": "FRESH_SINGLE_FILE_DIRECT_PROCESS",
+      "joined": true,
+      "exitCode": 0,
+      "counts": {
+        "tests": 3,
+        "failed": 0,
+        "passed": 3,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0,
+        "topLevel": 3,
+        "suites": 0
+      },
+      "passedNames": [
+        "current V3 commits exact original-bound intent before callback and refuses replay",
+        "current V3 recovery state preserves exact binding ambiguity and no authority",
+        "current V3 validates the full catalog before filtering and preserves funding fences"
+      ],
+      "path": "test/service-credit-custodied-request-owner-current-v3.test.js",
+      "combinedToolTranscript": {
+        "bytes": 1307,
+        "sha256": "0f775247d4a93ee626f40706c3e77213f02337b7a4d5c76949579807800ca6b5"
+      },
+      "exactPrivateInlineCallsite": {
+        "bytes": 2721,
+        "sha256": "f96c4056098e45570946caa9d1f4c15d257d07a780af29126e70f4572084aed9"
+      },
+      "evidenceDigestMeaning": "Exact complete returned combined tool-output transcript, not a separately captured stdout/stderr descriptor or CAS receipt.",
+      "toolWallTimeSecondsVerbatim": 0.000007167,
+      "timingLimit": "Raw tool timing metadata only; not process-start latency, a benchmark or a hard lifetime guarantee.",
+      "tapReporterBytesObserved": 810,
+      "reporterByteCap": 131072
+    }
+  ],
+  "runtime": {
+    "nodeVersion": "24.19.0",
+    "versionEvidence": "Exact version and argv guards passed before repository import in all four entries.",
+    "hostPlatform": "Darwin arm64",
+    "hostPlatformEvidence": "Separate read-only uname output.",
+    "nodeExecutableBytes": 121304480,
+    "nodeExecutableSHA256": "613be50c90e83aa8da58dd9ed393d0b39914a3b8ef4123fe817b46c2679cebe2",
+    "binaryEvidence": "A complete stable FD SHA was selected for this slice; its physical tuple matched immediately before save/launch and after all four joined outcomes. No binary copy/download or redundant whole-binary hash."
+  },
+  "launch": {
+    "fixedUnsavedInlineBuiltinCallsite": true,
+    "clearedEnvironment": true,
+    "environment": {
+      "PATH": "ONLY_FIXED_SYSTEM_BINARIES",
+      "LC_ALL": "C",
+      "TZ": "UTC"
+    },
+    "flags": [
+      "--permission",
+      "--disallow-code-generation-from-strings"
+    ],
+    "fileReadGrantCountPerInvocation": 4,
+    "readGrants": "Only the exact positional test entry, owner, pure contract and package file; no directory, wildcard or historical test read grant.",
+    "noFSWriteChildWorkerAddonWASIInspectorGrant": true,
+    "builtinImports": [
+      "node:assert/strict",
+      "node:test",
+      "node:test/reporters",
+      "node:stream"
+    ],
+    "runnerOptions": {
+      "files": "ONE_EXACT_FILE",
+      "isolation": "none",
+      "concurrency": 1,
+      "timeout": 5000,
+      "forceExit": false
+    },
+    "finalSummaryAndExactPassOrderRequired": true,
+    "failedOrIncompleteRunWouldExitNonzero": true,
+    "limits": [
+      "Permission Model is a trusted-code restriction, not a malicious-code security boundary or OS/network sandbox.",
+      "Native loader/runner/stream/OS behavior remains a premise; preexisting descriptors and unselected native interfaces are not globally sandbox-certified.",
+      "The 5000ms test timeout and reporter cap do not guarantee hard lifetime, cancellation, native cleanup or external durability.",
+      "No process.exit or forceExit was used to manufacture successful cleanup."
+    ]
+  },
+  "coverage": {
+    "legacyV2": "Eight preserved lifecycle scenarios, sixteen immediate/deferred rejected-native-store-Promise cases and six read/close reentry cases against the current actual owner/contract.",
+    "versionedAPI": "Exactly one four-to-five-method golden per NEW derived suite. All other historical suffix bytes, assertions, helpers and registration names preserved with whole inverse; all three historical source files untouched.",
+    "primaryCorrection": "Only one stale bootstrap comment per new derived suite was corrected before saving. Worker original plan/handoff and old predictions remain retained; assertion/scenario content was not changed by primary.",
+    "v3": [
+      "Exact six-method frozen facade; original retention/readback and original-bound intent fence/readback plus funding fence before a declared callback; no replay and borrowed cached close.",
+      "Exact original/intent binding; no-intent control; current versus historical funding ambiguity; valid-checksummed other-original intent refusal; retained unknown and no authority.",
+      "Full frozen global catalog validation before foreign filtering; malformed foreign key, order, duplicate, nonfrozen array and overcapacity refusals; first absence/recovery, second loss, drift, close and unavailable capability."
+    ],
+    "uncoveredImportant": [
+      "Direct pure-contract validate export and exhaustive arity/hostile inputs are not newly qualified.",
+      "V3 submit optional-catalog capacity/preexisting-key branches, intent write/readback mismatch or native-Promise faults and funding drift after intent are not comprehensively covered.",
+      "V3 recovery-state absent-original null funding fence and close reentry, optional catalog accessor/proxy/deep-prototype/holey/cross-realm adversaries are not exhaustively covered; legacy tests cannot qualify these additions.",
+      "Native/global constructor/species mutation, counter saturation, restart/crash, SQLite transaction durability, SDK/backend/provider/signing and every possible adversarial condition remain outside this slice."
+    ],
+    "unmeasuredAcceptance": [
+      "SQL/SQLite/backend or store integration",
+      "HTTP/client/Root/controller runtime",
+      "SDK/native chain-provider behavior",
+      "capability or wallet signatures",
+      "service delivery or live readiness",
+      "durability, crash/restart/recovery",
+      "all P2 or whole-library adversarial coverage"
+    ]
+  },
+  "verification": {
+    "postRunTwelveInputArtifactHashesAndPhysicalTuplesMatched": true,
+    "twelvePaths": [
+      "src/service-credit-custodied-request-owner.js",
+      "src/service-credit-original-request-custody-contract.js",
+      "package.json",
+      "test/service-credit-custodied-request-owner-lifecycle.test.js",
+      "test/service-credit-custodied-request-owner-rejected-store-promise.test.js",
+      "test/service-credit-custodied-request-owner-read-close-reentry.test.js",
+      "test/service-credit-custodied-request-owner-legacy-second-funding-loss.test.js",
+      "test/service-credit-custodied-request-owner-current-compatibility.test.js",
+      "test/service-credit-custodied-request-owner-current-rejected-store-promise.test.js",
+      "test/service-credit-custodied-request-owner-current-read-close-reentry.test.js",
+      "test/service-credit-custodied-request-owner-current-v3.test.js",
+      "qualification/service-credit-custodied-request-owner-current-library.source.json"
+    ],
+    "runtimePhysicalTupleUnchanged": true,
+    "checkoutHeadAndBranchUnchanged": true,
+    "preexistingCheckoutStatusRecordsUnchanged": true,
+    "onlyFiveNewSourceFilesBeforeThisResult": true,
+    "noProductionEditThisSlice": true,
+    "noStageCommitPushPublicationOrCIDispatchThisSlice": true
+  },
+  "efficiency": {
+    "newSavedSourceFiles": 5,
+    "newSavedSourceBytes": 113792,
+    "savedOperationalHelpers": 0,
+    "qualificationScratchBytes": 0,
+    "downloads": 0,
+    "clones": 0,
+    "ZIPs": 0,
+    "newTaskStorageTasks": 0,
+    "newCASObjects": 0,
+    "managerRestoreOrFallback": 0,
+    "mechanism": "Pure in-memory declared stores and exact read-only component imports required no qualification scratch. Normal private Codex tool/session evidence retains the complete outputs; no manager task, cleanup receipt or CAS evidence is invented.",
+    "oldTestsAndPriorCompletedRunsNotRerun": true,
+    "noDuplicateFullSourceBaselineArchive": true
+  },
+  "retainedSourceHistory": {
+    "workerArtifact": {
+      "bytes": 46423,
+      "sha256": "7974c22ea21ca34c842e23cde84f526b5923fc72d452392b77f490330226af51"
+    },
+    "workerFirstOriginal": {
+      "bytes": 16301,
+      "sha256": "48aa5c48c2fe379ce6bb55ec0e0ed71f91b2a31b1c2c4b9fdbc794b72cd23cb2"
+    },
+    "completePrimaryIndependentRead": true,
+    "originalEmissions": 1,
+    "artifactEmissions": 1,
+    "workerSourceUpper": 773266,
+    "workerSourceCap": 900000,
+    "earlier400000CapRefusalRetained": true,
+    "allRAMCapRefusalsAndSupersededDraftsRetained": true,
+    "distinction": "Source drafting/budget refusals are preserved separately. They are not Native test failures, nor erased by these four clean current executions. Earlier Node loader failures and legacy expected-red/fixed outcomes remain in their original separate evidence."
+  },
+  "mainLane": {
+    "inspectedMain": "94c2730e462178bacab9687181cd5c0114ff1c59",
+    "tree": "b93b3eb0a95a40a1d87dbcc12120a8d27a761a53",
+    "mainOwner": {
+      "bytes": 22965,
+      "sha256": "4dabb9c49179e9d6533f5c3066faf730fa6d7deb3c4407d132841c1de4183f85",
+      "gitBlob": "54a140fe909751254067c08e60dd8c794bd0c328"
+    },
+    "completeMainToCandidateOwnerDiffRead": true,
+    "contractAndPackageAlreadyMatchInspectedMain": true,
+    "selectedDirectClient": {
+      "path": "src/service-credit-custodied-http-client.js",
+      "gitBlob": "91faea6a6512162f99791403d940c12e4275d06a",
+      "review": "Complete source only; captures the four V2 named methods, does not enumerate owner facade or opt into V3. Not runtime-qualified here."
+    },
+    "entireReverseDependencyAndApplicationReview": false,
+    "hostedCI": "NOT_RUN_OR_CLAIMED",
+    "currentMainTransfer": "NOT_PERFORMED_AT_RESULT_AUTHORING",
+    "nextGate": "New V3 submit-catalog and intent/funding uncertainty cases remain a distinct qualified local slice before considering the whole owner upgrade for a small main transfer. Fresh main/diff/PR/rules/check review is still required."
+  },
+  "protected": {
+    "signer": "DISABLED",
+    "realConsumedAdmissions": 2,
+    "realPREPARE": 1,
+    "realBundles": 0,
+    "nativeChainProviderQualificationRuns": 0,
+    "localNodeComponentInvocationsThisSlice": 4,
+    "originalRealPaymentAndRequestBytesHashesPayloadRequirementsContextPreserved": true,
+    "noOwnershipMetadataRetryResetReplaceResignOrPaymentResend": true,
+    "pr193": "Possible VALIDATED exact-same-signed-block resend remains distinct from UNKNOWN and ACKNOWLEDGED.",
+    "livePilotAcceptance": "NOT_ESTABLISHED",
+    "productionAcceptance": "NOT_ESTABLISHED"
+  }
+}

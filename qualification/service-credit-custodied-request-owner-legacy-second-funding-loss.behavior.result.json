@@ -1,0 +1,444 @@
+{
+  "resultVersion": 1,
+  "scope": "OCT19_P2_LEGACY_ORIGINAL_RECOVERY_SECOND_FUNDING_LOSS_BASELINE_FIXED_LOCAL_V1",
+  "status": "ACTUAL_EXPECTED_RED_BASELINE_AND_TWO_FIXED_COMPONENT_CASES_PASSED",
+  "qualification": "DECLARED_BORROWED_OWNER_COMPONENT_ONLY",
+  "purpose": "Latch custody uncertainty when legacy readOriginal loses its second funding observation after validating a retained original. Preserve the original bytes and zero send authority.",
+  "positiveSelection": {
+    "retainedCompletedScope": "OCT17_P2_RECOVERY_SECOND_FUNDING_DISAPPEARANCE_V1",
+    "retainedBoundary": "That completed change covered readOriginalRecoveryState and readOriginalRecoveryKeys, explicitly leaving direct legacy readOriginal unchanged.",
+    "currentPositiveSourcePath": "currentFunding -> retained-original validation -> second currentFunding returning null; the old known-error catch returned FUNDING_REQUIRED without a custody hold.",
+    "alreadyHeldControls": "A thrown store load and nonnull funding drift already latched uncertainty; these are controls, not separately discovered bugs.",
+    "missingCoverageNotUsedAsNoveltyEvidence": true,
+    "earlierV3OrSQLiteCasesNotRerunOrRelabeled": true
+  },
+  "change": {
+    "productionFilesModified": 1,
+    "onlyTarget": "src/service-credit-custodied-request-owner.js",
+    "oneSpliceOldByteOffset": 20089,
+    "oldSpliceBytes": 39,
+    "newSpliceBytes": 162,
+    "byteDelta": 123,
+    "LFDelta": 6,
+    "oldOwner": {
+      "path": "src/service-credit-custodied-request-owner.js",
+      "bytes": 34950,
+      "LF": 932,
+      "sha256": "35386cc84c281aee4636141171076b84aa139ae20c66e4366788927cef43f3ca",
+      "gitBlob": "ac90509a07ef237c60b67c20b64236d0d04936b3"
+    },
+    "fixedOwner": {
+      "path": "src/service-credit-custodied-request-owner.js",
+      "bytes": 35073,
+      "LF": 938,
+      "sha256": "6e7493a4859d48530820e68a4a19a513aad014ffc1048b42965a3ad36ae7c5f7",
+      "gitBlob": "2dee22fd780db9de662fe1243075e74cef0bf296"
+    },
+    "wholeSourceForwardAndInverseComparedIndependently": true,
+    "patchApplicationGatedOnGenuineExpectedRedAndExactOriginalPins": true,
+    "unchanged": [
+      "initial null FUNDING_REQUIRED without hold",
+      "missing-original early null",
+      "non-null funding drift guard",
+      "arity, scope, closed and active precedence",
+      "shared currentFunding",
+      "newer recovery read sites",
+      "submission logic and public API",
+      "store/SQL/schema/Root/SDK",
+      "cached logical close Promise and borrowed-store non-ownership"
+    ],
+    "archivedOriginalExactlyOnce": true,
+    "sourceArtifacts": [
+      {
+        "path": "test/service-credit-custodied-request-owner-legacy-second-funding-loss.test.js",
+        "bytes": 6134,
+        "LF": 110,
+        "sha256": "ee89236773b7971b5b449112a79a689b1779a958050c08a818c2a7f1bf0c720f",
+        "gitBlob": "f206dec5f93a2afc6401fe001325fcafaa885ef9"
+      },
+      {
+        "path": "qualification/service-credit-custodied-request-owner-legacy-second-funding-loss-baseline.source.json",
+        "bytes": 36247,
+        "LF": 1,
+        "sha256": "ca4237668138edd09796a75fd62600f34b1dc88a96e3b5834f6ffbc7a5036aca",
+        "gitBlob": "8b935bf51e2ae02557286403ec6453e277a361e7"
+      },
+      {
+        "path": "qualification/service-credit-custodied-request-owner-legacy-second-funding-loss-fix.draft.patch",
+        "bytes": 415,
+        "LF": 14,
+        "sha256": "9f87aed55d5996d543b4c32c08dc24461d1c619f6d5990ec07d720397b4c5227",
+        "gitBlob": "182e13b0e9d0cf7c4dcff3f65a17c8b0e50579e9"
+      }
+    ],
+    "draftPatchIsImmutableSourcePhaseDATAActualApplicationRecordedSeparately": true
+  },
+  "authoredTests": {
+    "names": [
+      "legacy original second funding loss latches custody and preserves borrowed ownership",
+      "legacy original recovery preserves initial absence drift and admission precedence"
+    ],
+    "actualConstructor": "createServiceCreditCustodiedRequestOwnerV3",
+    "actualMethod": "legacy readOriginal",
+    "inputs": "Explicitly declared synthetic synchronous borrowed-store inputs; no actual SQLite/store pipeline.",
+    "controls": [
+      "second-null funding loss",
+      "already-held second-throw",
+      "initial null followed by valid metadata",
+      "stable retained original",
+      "missing original",
+      "nonnull revision drift",
+      "BUSY and CLOSED before arity/foreign-key validation",
+      "invalid close arity without changing closed state",
+      "exact frozen sanitized TypeError",
+      "cached close Promise identity",
+      "held UNKNOWN rejection versus unheld DRAINED fulfillment"
+    ],
+    "laterSuccessfulMetadataReadDoesNotClearHold": true,
+    "submissionBeforeInputValidationRemainsBlockedAndSendRetainIntentCountersStayZero": true,
+    "borrowedStoreCloseCalls": 0,
+    "cleanupDoesNotMaskBaselineAssertion": true,
+    "twoAuthoredTestsNotAClaimAboutInternalVectorCount": true
+  },
+  "independentSourceReview": {
+    "fullFirstOriginalRead": true,
+    "firstOriginalBytes": 6014,
+    "firstOriginalSHA256": "45d15b6d92dd9830f2f221811966c54c030fd01a793ec4c119d55f9465f8ff13",
+    "firstOriginalFinalLF": true,
+    "sourceFirstOriginalEmissions": 1,
+    "retransmissions": 0,
+    "fullOriginalOwnerAndCompleteNewTestAndPatchIndependentlyRead": true,
+    "sourceSnapshotComparedExactlyToPreviouslyReadCompleteOriginal": true,
+    "actualMainAndWorkerModel": "gpt-6.1-sol",
+    "reasoningEffort": "max",
+    "actualPublicProfilesVerifiedNotInferredFromDispatch": true,
+    "SourcePythonCommands": 3,
+    "SourcePythonExitCodes": [
+      0,
+      0,
+      0
+    ],
+    "SourceADDOperations": 1,
+    "SourceNewFiles": 3,
+    "SourceProductionEdits": 0,
+    "SourceTargetExecutions": 0,
+    "SourceOriginalInputBytes": 70090,
+    "SourceActualDataIncludingCandidateHandoffAndReserveBytes": 200865,
+    "SourceInitialAggregateCapBytes": 200000,
+    "SourceExplicitReviewedAggregateCapBytes": 240000,
+    "accountingClarificationOnlyNotNewFileDependencyOrRuntimeAuthority": true,
+    "originalReadCapBytes": 80000,
+    "sourceFileHardCapsBytes": [
+      10240,
+      43008,
+      4096
+    ],
+    "newOutputHardSumBytes": 57344,
+    "newSourceArtifactActualBytes": 42796,
+    "newTestSoftTargetBytes": 6144,
+    "newTestActualBytes": 6134,
+    "allHardFileCapsMet": true
+  },
+  "runtime": {
+    "version": "v24.19.0",
+    "platform": "darwin",
+    "arch": "arm64",
+    "binaryBytes": 121304480,
+    "binarySHA256": "613be50c90e83aa8da58dd9ed393d0b39914a3b8ef4123fe817b46c2679cebe2",
+    "unchangedPhysicalIdentityReusedPriorIndependentBinaryHash": true,
+    "binaryNotRehashedOrCopiedForThisSlice": true,
+    "exactlyTwoManagerInvocationsAndTwoNodeProcesses": true,
+    "noNativeRetries": true,
+    "runtimeAuthoredPackageFiles": 4,
+    "baselineGraphBytes": 56548,
+    "fixedGraphBytes": 56671,
+    "perFileReadCapBytes": 40000,
+    "aggregateReadCapBytes": 65536,
+    "snapshotOldFixtureAndPatchAreDATAOnlyNotImports": true,
+    "fixedUnsavedCommonJSRunAPICallers": true,
+    "callerWholeInverseExceptExactPhaseAndOwnerTableVerified": true,
+    "explicitPositionalFileSelection": true,
+    "isolation": "none",
+    "concurrency": false,
+    "watch": false,
+    "forceExit": false,
+    "clearedEnvironmentKeys": [
+      "LC_ALL",
+      "NODE_TEST_WORKER_ID",
+      "PATH",
+      "SPV_TASK_SCRATCH",
+      "TMPDIR",
+      "__CF_USER_TEXT_ENCODING"
+    ],
+    "noAddons": true,
+    "stringCodeGenerationDisabled": true,
+    "NodePermissionModel": false,
+    "OSOrNetworkSandbox": false,
+    "cooperativeRunAPITimeoutMs": 10000,
+    "cooperativeManagerCommandTimeoutMs": 20000,
+    "passiveManagerMetadataWaitSeconds": 60,
+    "hardLifetimeCancellationNativeFinalizationOrCleanupGuarantee": false,
+    "metadataTaskSpanAndTAPDurationsAreNotServiceLatencyCapacityOrHardTimeoutProof": true
+  },
+  "baseline": {
+    "actualOuterAndChildExit": 1,
+    "commandState": "COMPLETE",
+    "outputComplete": true,
+    "reason": null,
+    "scratchScanRetries": 0,
+    "tests": 2,
+    "pass": 1,
+    "fail": 1,
+    "skipped": 0,
+    "cancelled": 0,
+    "todo": 0,
+    "taskState": "CLOSED",
+    "taskOutcome": "FAILURE",
+    "taskMetadataSpanSeconds": 2.6661059856414795,
+    "runtimeGraph": [
+      {
+        "relative": "src/service-credit-custodied-request-owner.js",
+        "bytes": 34950,
+        "sha256": "35386cc84c281aee4636141171076b84aa139ae20c66e4366788927cef43f3ca"
+      },
+      {
+        "relative": "src/service-credit-original-request-custody-contract.js",
+        "bytes": 14051,
+        "sha256": "fd349de553a17abcc2e0567ba6640e6e3d5d26cfa79ee1e355928dc9fa8d3915"
+      },
+      {
+        "relative": "package.json",
+        "bytes": 1413,
+        "sha256": "8c9a25504fbf6f87c31cdf245a6f4eec5a88cc89c8352151dc66a577c5771ef5"
+      },
+      {
+        "relative": "test/service-credit-custodied-request-owner-legacy-second-funding-loss.test.js",
+        "bytes": 6134,
+        "sha256": "ee89236773b7971b5b449112a79a689b1779a958050c08a818c2a7f1bf0c720f"
+      }
+    ],
+    "selectedFiles": [
+      "test/service-credit-custodied-request-owner-legacy-second-funding-loss.test.js"
+    ],
+    "caller": {
+      "callerBytes": 6616,
+      "callerSHA256": "a885a093f4d2ab9c6934c7f012bb4bd15a719ff0b34a7057a978777b4fce766d",
+      "commandBytes": 7374,
+      "commandSHA256": "f8d26db4a2008cb6db8313770737893fb83e14362001556d4eef35cbc6bf694f"
+    },
+    "captures": {
+      "stdout": {
+        "bytes": 1733,
+        "sha256": "19d943b11a49831e133d649a5765366278ff6dc38d859f7fdf2ed031628ac145",
+        "ownerRecordSHA256": "926bf2775f351eb82e560e4f2b96d771a1bb51b9b1286831c26213a4f276a264"
+      },
+      "stderr": {
+        "bytes": 1360,
+        "sha256": "cc9a60cacad93d48cf171bc0c3db10e7bc49c44303371eb258da3ac3e942f141",
+        "ownerRecordSHA256": "92517c49fd883d5290dddcc8e73360d333af23fdbcddcf69eb7a2d6ffabb9c5c"
+      }
+    },
+    "receiptPins": {
+      "task": {
+        "bytes": 802,
+        "sha256": "437de13877f6160bd4319e3dd3a684e7a6abc5fc718caa1711ae3438ae969b9b"
+      },
+      "command": {
+        "bytes": 437,
+        "sha256": "bf31838c72c8d84123e016d8eded23e6f49421ae291170b9196edc77ae4ad99d"
+      },
+      "outcome": {
+        "bytes": 62,
+        "sha256": "1901189166daa715b36c10eb26dd2c630738560621ce5a65bd61ff7e81412a44"
+      },
+      "cleanup": {
+        "bytes": 174,
+        "sha256": "5554299f9edd9ecba6a189e2e615342df47636c3f913a24cccad51650b7f08da"
+      }
+    },
+    "completeCapturesAndCreatorLedgersAndReceiptsIndependentlyRead": true,
+    "cleanup": "CLEANED_REGISTERED_EMPTY_SCRATCH",
+    "cleanupReportedBytes": 0,
+    "tapDurationMs": 17.767125,
+    "genuineFailedName": "legacy original second funding loss latches custody and preserves borrowed ownership",
+    "passedControlName": "legacy original recovery preserves initial absence drift and admission precedence",
+    "assertion": {
+      "name": "AssertionError",
+      "code": "ERR_ASSERTION",
+      "operator": "strictEqual",
+      "label": "LEGACY_ORIGINAL_SECOND_FUNDING_LOSS_CUSTODY_HOLD",
+      "actual": "SERVICE_CREDIT_CUSTODIED_REQUEST_OWNER_FUNDING_REQUIRED",
+      "expected": "SERVICE_CREDIT_CUSTODIED_REQUEST_OWNER_CUSTODY_OUTCOME_UNKNOWN"
+    },
+    "loaderSetupHookOrTimeoutFailure": false,
+    "baselineFailurePreservedNeverCountedAsPassed": true,
+    "failedFirstCaseDoesNotEstablishAllOfItsLaterInternalControlsRan": true
+  },
+  "fixed": {
+    "actualOuterAndChildExit": 0,
+    "commandState": "COMPLETE",
+    "outputComplete": true,
+    "reason": null,
+    "scratchScanRetries": 0,
+    "tests": 2,
+    "pass": 2,
+    "fail": 0,
+    "skipped": 0,
+    "cancelled": 0,
+    "todo": 0,
+    "taskState": "CLOSED",
+    "taskOutcome": "SUCCESS",
+    "taskMetadataSpanSeconds": 39.97150206565857,
+    "runtimeGraph": [
+      {
+        "relative": "src/service-credit-custodied-request-owner.js",
+        "bytes": 35073,
+        "sha256": "6e7493a4859d48530820e68a4a19a513aad014ffc1048b42965a3ad36ae7c5f7"
+      },
+      {
+        "relative": "src/service-credit-original-request-custody-contract.js",
+        "bytes": 14051,
+        "sha256": "fd349de553a17abcc2e0567ba6640e6e3d5d26cfa79ee1e355928dc9fa8d3915"
+      },
+      {
+        "relative": "package.json",
+        "bytes": 1413,
+        "sha256": "8c9a25504fbf6f87c31cdf245a6f4eec5a88cc89c8352151dc66a577c5771ef5"
+      },
+      {
+        "relative": "test/service-credit-custodied-request-owner-legacy-second-funding-loss.test.js",
+        "bytes": 6134,
+        "sha256": "ee89236773b7971b5b449112a79a689b1779a958050c08a818c2a7f1bf0c720f"
+      }
+    ],
+    "selectedFiles": [
+      "test/service-credit-custodied-request-owner-legacy-second-funding-loss.test.js"
+    ],
+    "caller": {
+      "callerBytes": 6613,
+      "callerSHA256": "f650eee1b1d0f6c5d510d6034c2f56e5c38c10a74bfda81daff36a4b12e4f283",
+      "commandBytes": 7365,
+      "commandSHA256": "5c615fa891f0a6b54c3d044070f0a95666894a663f962751ac5f67b7075bf2a9"
+    },
+    "captures": {
+      "stdout": {
+        "bytes": 590,
+        "sha256": "deb4b6b1132fa4083b6fcf8c3e676d6d82fbc19d031096a7b50882ddc10c7913",
+        "ownerRecordSHA256": "3c4fe864cb3e217bafc1a91f39926a17facb0d1f949371e4908482ff5e961436"
+      },
+      "stderr": {
+        "bytes": 1357,
+        "sha256": "90bbd8bd52a5930395b7358cf7499261aeaf8fec10efeca5d02e0d1431d017a8",
+        "ownerRecordSHA256": "72d5c852dd72f0e17f89d9d30b5ccce533eff18daaa26b4c29654b3d48f7e8e6"
+      }
+    },
+    "receiptPins": {
+      "task": {
+        "bytes": 775,
+        "sha256": "2850299ccf0c84bdad643c4872b63109a1c18ad67214274def7c8e7e1378ad91"
+      },
+      "command": {
+        "bytes": 437,
+        "sha256": "36aebf13d7d893b2d375621d00d7672365b7047129bc3a40aba5512abf1467f0"
+      },
+      "outcome": {
+        "bytes": 61,
+        "sha256": "d5e5c991ad7378071a0521fc904db0bea72113816c31a3f5e10b5fddd8b2f364"
+      },
+      "cleanup": {
+        "bytes": 174,
+        "sha256": "f72195d34004916c9bfa2f698d9c12b33e4cfa80ada04bbb640b7d1bb550a443"
+      }
+    },
+    "completeCapturesAndCreatorLedgersAndReceiptsIndependentlyRead": true,
+    "cleanup": "CLEANED_REGISTERED_EMPTY_SCRATCH",
+    "cleanupReportedBytes": 0,
+    "tapDurationMs": 16.896125,
+    "allActualPASSNamesComparedWithExactAuthoredRegistrations": true
+  },
+  "crossAttemptAccounting": {
+    "actualAuthoredCaseExecutions": 4,
+    "actualPass": 3,
+    "actualFail": 1,
+    "fixedDistinctAuthoredCasesPassed": 2,
+    "notFourOfFour": true,
+    "oldCheckpointDPMetadataAndSQLiteResultsNotMixed": true
+  },
+  "resourceAndPreservation": {
+    "newSQLiteFiles": 0,
+    "downloads": 0,
+    "installs": 0,
+    "builds": 0,
+    "sourceClones": 0,
+    "ZIPCopies": 0,
+    "savedOperationalHelpers": 0,
+    "keyGeneration": 0,
+    "signatures": 0,
+    "uniqueCaptureCASPayloads": 4,
+    "uniqueCapturePayloadBytes": 5040,
+    "payloadBytesExcludeManagerMetadataAndRepositoryArtifacts": true,
+    "expectedBytesPerTask": 33554432,
+    "quotaBytesPerTask": 67108864,
+    "productionFreeFloorBytes": 10737418240,
+    "unchangedSafetyMarginBytes": 1073741824,
+    "otherTaskReservationsIndependentlyChecked": true,
+    "cooperativeQuotasNotOSEnforcedAggregateLimits": true,
+    "unchangedApprovedManagerAndStoragePolicy": true,
+    "automaticOwnEmptyScratchCleanupOnly": true,
+    "noExtraCollectHistoricalDeletionAdoptionOrForeignTaskInterruption": true,
+    "postFixedExactMetadataPins": 13,
+    "includesSixPreviouslyPublishedCheckpointFiles": true,
+    "otherSixSelectedOriginalSourceDataPinsUnchanged": true,
+    "oldResultsKeepOldOwnerIdentitiesNotTransferredToChangedGraph": true,
+    "sameHostPrimaryReviewNotIndependentMachineOrAuthentication": true
+  },
+  "retainedAttemptHistory": [
+    "The initial worker-self-profile visibility precondition stopped before Source reads, writes or target execution. Primary removed that extra condition only after independently verifying actual matched public profiles; no model was substituted.",
+    "Source retained old RAM data projections 203187, 201031 and 200175 above the former aggregate cap; a 6276-byte RAM test hit a local soft guard, and an unemitted 5690-byte handoff exceeded the old 4800-byte reservation. The explicit primary 200000-to-240000 accounting clarification did not expand file, dependency or Native scope.",
+    "One Source RAM output was clipped in the model view; Source was not replayed. Primary recovered the exact complete 6014-byte original from its actual public tool-output container, not from a retransmission or UI diff.",
+    "An early primary read-only report selector compared stat data including access time and refused. The corrected same-cap full-eight FD reader succeeded; this was not a demonstrated ownership or source-content fault.",
+    "An early primary RAM splice uniqueness guard mishandled indexOf absence -1 and refused before any write or execution. Its corrected complete inverse check matched the independently predicted one-site patch.",
+    "The genuine baseline assertion failure remains a complete CLOSED/FAILURE task. The fixed session produced two empty observation polls; primary inspected only its own task metadata, then joined the SAME session with actual exit 0. No process was restarted and state metadata alone was not treated as terminal process proof."
+  ],
+  "publication": {
+    "currentSlice": "LOCAL_ONLY_NO_COMMIT_PUSH_OR_CI",
+    "previouslyPublishedCheckpointCommit": "94c2730e462178bacab9687181cd5c0114ff1c59",
+    "immutableMainSnapshotOwner": {
+      "bytes": 22965,
+      "gitBlob": "54a140fe909751254067c08e60dd8c794bd0c328"
+    },
+    "reasonForNoAutomaticMainTransfer": "That immutable main snapshot contains a different owner body. This narrow local result does not qualify all pre-existing local owner changes or the full backend graph.",
+    "mainCISeparateNotAGlobalLocalDevelopmentBlocker": true,
+    "noGreenCIOrAllP2Claim": true,
+    "privatePathsPIDsRawDiagnosticsAndWalletDataOmitted": true
+  },
+  "acceptance": {
+    "recoveryAuthority": "NONE",
+    "serviceOutcome": "NOT_ESTABLISHED",
+    "signer": "DISABLED",
+    "protectedChainTotals": {
+      "consumedAdmissions": 2,
+      "actualPREPARE": 1,
+      "bundles": 0,
+      "nativeChainProviderQualificationRuns": 0
+    },
+    "localSyntheticNodeRunsReportedSeparately": true,
+    "originalRealPaymentRequestBytesHashPayloadRequirementsContextAndConsumedAuthorityUntouched": true,
+    "failed165OwnershipMetadataNotRetried": true,
+    "PR193": "Possible VALIDATED exact-same-signed-block resend remains separate from UNKNOWN and ACKNOWLEDGED; no resend, replacement or re-signing.",
+    "notEstablished": [
+      "actual SQLite funding disappearance or owned backend lifecycle",
+      "current independent context/funding/payer/provider/policy authority",
+      "real provider READY",
+      "actual pending-payment recovery or shipped SDK",
+      "process restart, crash, power-loss or durability",
+      "delivery or live pilot/production acceptance"
+    ],
+    "premises": [
+      "native loader, runner, streams and OS behavior",
+      "pristine intrinsics and declared trusted synchronous store inputs",
+      "binary/source-to-import race freedom",
+      "cooperative observation limits, not an OS/network sandbox"
+    ]
+  }
+}

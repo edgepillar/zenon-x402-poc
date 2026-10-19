@@ -6,6 +6,9 @@ import {
   captureOriginalServiceRequestCustody,
   parseOriginalServiceRequestCustody,
   serializeOriginalServiceRequestCustody,
+  captureOriginalServiceDispatchIntent,
+  parseOriginalServiceDispatchIntent,
+  serializeOriginalServiceDispatchIntent,
 } from './service-credit-original-request-custody-contract.js';
 
 const FREEZE = Object.freeze;
@@ -22,6 +25,10 @@ const IS_SAFE = Number.isSafeInteger;
 const BYTE_LENGTH = Buffer.byteLength;
 const REGEXP_TEST = RegExp.prototype.test;
 const OBJECT_PROTOTYPE = Object.prototype;
+const ARRAY_PROTOTYPE = Array.prototype;
+const ARRAY_IS_ARRAY = Array.isArray;
+const IS_FROZEN = Object.isFrozen;
+const STRING = String;
 const TYPE_ERROR = TypeError;
 const NativePromise = Promise;
 const PROMISE_PROTOTYPE = NativePromise.prototype;
@@ -36,6 +43,9 @@ const KEY = snapshotOriginalServiceRequestCustodyKey;
 const CAPTURE = captureOriginalServiceRequestCustody;
 const PARSE = parseOriginalServiceRequestCustody;
 const SERIALIZE = serializeOriginalServiceRequestCustody;
+const CAPTURE_INTENT = captureOriginalServiceDispatchIntent;
+const PARSE_INTENT = parseOriginalServiceDispatchIntent;
+const SERIALIZE_INTENT = serializeOriginalServiceDispatchIntent;
 const PREFIX = 'SERVICE_CREDIT_CUSTODIED_REQUEST_OWNER_';
 const HASH = /^[0-9a-f]{64}$/;
 const CONFIG_FIELDS = FREEZE([
@@ -97,12 +107,20 @@ const STATUSES = FREEZE([
  */
 export function createServiceCreditCustodiedRequestOwner(configuration) {
   if (arguments.length !== 1) throw failure('INVALID_CONFIGURATION');
+  return createOwner(configuration, false);
+}
+/** V3 opts into a committed original-bound fence before the actual callback. */
+export function createServiceCreditCustodiedRequestOwnerV3(configuration) {
+  if (arguments.length !== 1) throw failure('INVALID_CONFIGURATION');
+  return createOwner(configuration, true);
+}
+function createOwner(configuration, dispatchIntentEnabled) {
   let config, policy, methods, selectedKey;
   try {
     config = exact(configuration, CONFIG_FIELDS);
     policy = POLICY(config.custodyPolicy, config.fundingResourceUrl);
     selectedKey = KEY({ grantId: config.selectedGrantId, requestId: 'scope' });
-    methods = captureMethods(config.store);
+    methods = captureMethods(config.store, dispatchIntentEnabled);
   } catch {
     throw failure('INVALID_CONFIGURATION');
   }
@@ -118,6 +136,11 @@ export function createServiceCreditCustodiedRequestOwner(configuration) {
     dispatchCalls: 0,
     callbackCompletions: 0,
   };
+  if (dispatchIntentEnabled) {
+    counts.intentWrites = 0;
+    counts.intentReads = 0;
+    counts.intentReadbackConfirmations = 0;
+  }
   let active = false;
   let closed = false;
   let phase = 'IDLE';
@@ -243,6 +266,27 @@ export function createServiceCreditCustodiedRequestOwner(configuration) {
     }
   }
 
+  function intentForCurrent(raw, key, current, original) {
+    try {
+      const text = SERIALIZE_INTENT(raw), intent = PARSE_INTENT(text);
+      const expected = CAPTURE_INTENT(original, {
+        fundingRevision: current.revision,
+        challengeDigest: intent.challengeDigest,
+        paymentDigest: intent.paymentDigest,
+        custodyPolicy: policy,
+      });
+      if (current.status !== 'BOUND' || intent.grantId !== key.grantId
+          || intent.requestId !== key.requestId
+          || intent.fundingResourceUrl !== current.fundingResourceUrl
+          || intent.paymentHash !== current.paymentHash || intent.network !== current.network
+          || SERIALIZE_INTENT(expected) !== text) throw failure('INVALID_DATA');
+      return { record: intent, text };
+    } catch {
+      holdCustody();
+      throw failure('CUSTODY_OUTCOME_UNKNOWN');
+    }
+  }
+
   function find(key) {
     for (let index = 0; index < entries.length; index++) {
       if (entries[index].grantId === key.grantId
@@ -345,6 +389,30 @@ export function createServiceCreditCustodiedRequestOwner(configuration) {
         throw failure('CUSTODY_OUTCOME_UNKNOWN');
       }
       if (entries.length >= policy.maxRequests) throw failure('CAPACITY');
+      if (dispatchIntentEnabled && methods.listOriginalRequestKeys !== null) {
+        // The complete global catalog can refuse before retention starts.
+        // It reserves no capacity; the later store write stays authoritative.
+        const keys = captureRecoveryKeys(callStore('listOriginalRequestKeys', [], 'recordReads'));
+        let afterCatalog;
+        try {
+          afterCatalog = currentFunding();
+        } catch (error) {
+          if (known(error) === 'FUNDING_REQUIRED') holdCustody();
+          throw error;
+        }
+        if (!sameFunding(current, afterCatalog)) {
+          holdCustody();
+          throw failure('CUSTODY_OUTCOME_UNKNOWN');
+        }
+        if (closed) throw failure('CLOSED');
+        for (let index = 0; index < keys.length; index++) {
+          if (keys[index].grantId === key.grantId && keys[index].requestId === key.requestId) {
+            holdCustody();
+            throw failure('CUSTODY_OUTCOME_UNKNOWN');
+          }
+        }
+        if (keys.length === policy.maxRequests) throw failure('CAPACITY');
+      }
       entries[entries.length] = FREEZE({
         grantId: key.grantId, requestId: key.requestId,
       });
@@ -375,6 +443,24 @@ export function createServiceCreditCustodiedRequestOwner(configuration) {
       }
       counts.readbackConfirmations++;
       if (closed) throw failure('RECOVERY_REQUIRED');
+      if (dispatchIntentEnabled) {
+        phase = 'FENCING_DISPATCH_INTENT';
+        const fenced = intentForCurrent(callStore('fenceOriginalDispatchIntent', [key],
+          'intentWrites'), key, current, readback.record);
+        const confirmed = intentForCurrent(callStore('getOriginalDispatchIntent', [key],
+          'intentReads'), key, current, readback.record);
+        if (confirmed.text !== fenced.text) {
+          holdCustody();
+          throw failure('CUSTODY_OUTCOME_UNKNOWN');
+        }
+        const afterIntent = currentFunding();
+        if (!sameFunding(current, afterIntent)) {
+          holdCustody();
+          throw failure('CUSTODY_OUTCOME_UNKNOWN');
+        }
+        counts.intentReadbackConfirmations++;
+        if (closed) throw failure('RECOVERY_REQUIRED');
+      }
 
       handedOff = true;
       counts.dispatchCalls++;
@@ -436,7 +522,13 @@ export function createServiceCreditCustodiedRequestOwner(configuration) {
         throw failure('CUSTODY_OUTCOME_UNKNOWN');
       }
       const record = recordForCurrent(raw, key, current).record;
-      const latest = currentFunding();
+      let latest;
+      try {
+        latest = currentFunding();
+      } catch {
+        holdCustody();
+        throw failure('CUSTODY_OUTCOME_UNKNOWN');
+      }
       if (!sameFunding(current, latest)) {
         holdCustody();
         throw failure('CUSTODY_OUTCOME_UNKNOWN');
@@ -444,6 +536,194 @@ export function createServiceCreditCustodiedRequestOwner(configuration) {
       // Reentrant close fences output after complete custody validation.
       if (closed) throw failure('CLOSED');
       return record;
+    } catch (error) {
+      const code = known(error);
+      if (code === undefined) holdCustody();
+      throw failure(code ?? 'CUSTODY_OUTCOME_UNKNOWN');
+    } finally {
+      active = false;
+      settleClose();
+    }
+  }
+
+  /**
+   * Frozen redacted DATA: { original, funding, uncertainty, evidence,
+   * qualification, authority, serviceOutcome }. Funding is the existing
+   * validated local-store projection, including its exact raw status. It is
+   * not independently authenticated funding/inclusion or permission to send.
+   * The complete funding fence also applies when no original is retained.
+   */
+  function readOriginalRecoveryState(keyValue) {
+    if (closed) throw failure('CLOSED');
+    if (active) throw failure('BUSY');
+    let key;
+    try {
+      if (arguments.length !== 1) throw failure('INVALID_INPUT');
+      key = KEY(keyValue);
+      requireScope(key);
+    } catch (error) {
+      throw failure(known(error) ?? 'INVALID_INPUT');
+    }
+    active = true;
+    try {
+      const current = currentFunding();
+      if (closed) throw failure('CLOSED');
+      const raw = callStore('getOriginalRequest', [key], 'recordReads');
+      if (raw === undefined) {
+        holdCustody();
+        throw failure('CUSTODY_OUTCOME_UNKNOWN');
+      }
+      const original = raw === null
+        ? null : recordForCurrent(raw, key, current).record;
+      let dispatchIntent = null;
+      if (dispatchIntentEnabled && original !== null) {
+        const intentRaw = callStore('getOriginalDispatchIntent', [key], 'intentReads');
+        if (intentRaw !== null) dispatchIntent = intentForCurrent(intentRaw, key, current, original).record;
+      }
+      let latest;
+      try {
+        latest = currentFunding();
+      } catch {
+        holdCustody();
+        throw failure('CUSTODY_OUTCOME_UNKNOWN');
+      }
+      if (!sameFunding(current, latest)) {
+        holdCustody();
+        throw failure('CUSTODY_OUTCOME_UNKNOWN');
+      }
+      if (closed) throw failure('CLOSED');
+      if (original === null) return null;
+      return FREEZE({
+        original,
+        funding: latest,
+        uncertainty: FREEZE({
+          custody: custodyUncertainty,
+          submission: submissionUncertainty,
+          undrained: unknownUndrained,
+          declaredFundingAmbiguitySeen: fundingAmbiguityObserved,
+        }),
+        evidence: 'LOCAL_STORE_DECLARED_RECOVERY_STATE',
+        qualification: 'UNQUALIFIED',
+        authority: 'NONE',
+        serviceOutcome: 'NOT_ESTABLISHED',
+        ...(dispatchIntentEnabled ? {
+          dispatchIntent,
+          dispatchStatus: dispatchIntent === null ? 'NO_INTENT_RECORDED' : 'POSSIBLY_ATTEMPTED',
+        } : {}),
+      });
+    } catch (error) {
+      const code = known(error);
+      if (code === undefined) holdCustody();
+      throw failure(code ?? 'CUSTODY_OUTCOME_UNKNOWN');
+    } finally {
+      active = false;
+      settleClose();
+    }
+  }
+
+  function captureRecoveryKeys(raw) {
+    const captured = [];
+    try {
+      if (typeof raw !== 'object' || raw === null || IS_PROXY(raw) || IS_PROMISE(raw)
+          || !ARRAY_IS_ARRAY(raw) || PROTOTYPE(raw) !== ARRAY_PROTOTYPE || !IS_FROZEN(raw)) {
+        throw failure('INVALID_DATA');
+      }
+      const length = DESCRIPTOR(raw, 'length');
+      if (!length || !HAS_OWN(length, 'value') || length.enumerable || length.writable
+          || length.configurable || !IS_SAFE(length.value) || length.value < 0
+          || IS(length.value, -0) || length.value > policy.maxRequests) {
+        throw failure('INVALID_DATA');
+      }
+      const names = OWN_KEYS(raw);
+      if (names.length !== length.value + 1 || names[length.value] !== 'length') {
+        throw failure('INVALID_DATA');
+      }
+      let prior = null;
+      for (let index = 0; index < length.value; index++) {
+        if (names[index] !== STRING(index)) throw failure('INVALID_DATA');
+        const element = DESCRIPTOR(raw, names[index]);
+        if (!element || !HAS_OWN(element, 'value') || !element.enumerable
+            || element.writable || element.configurable) throw failure('INVALID_DATA');
+        const value = element.value;
+        if (typeof value !== 'object' || value === null || IS_PROXY(value) || IS_PROMISE(value)
+            || PROTOTYPE(value) !== OBJECT_PROTOTYPE || !IS_FROZEN(value)) {
+          throw failure('INVALID_DATA');
+        }
+        const fields = OWN_KEYS(value);
+        if (fields.length !== 2 || fields[0] !== 'grantId' || fields[1] !== 'requestId') {
+          throw failure('INVALID_DATA');
+        }
+        for (let field = 0; field < fields.length; field++) {
+          const descriptor = DESCRIPTOR(value, fields[field]);
+          if (!descriptor || !HAS_OWN(descriptor, 'value') || !descriptor.enumerable
+              || descriptor.writable || descriptor.configurable) throw failure('INVALID_DATA');
+        }
+        const key = KEY(value);
+        if (prior !== null && (prior.grantId > key.grantId
+            || (prior.grantId === key.grantId && prior.requestId >= key.requestId))) {
+          throw failure('INVALID_DATA');
+        }
+        captured[captured.length] = key;
+        prior = key;
+      }
+    } catch {
+      holdCustody();
+      throw failure('CUSTODY_OUTCOME_UNKNOWN');
+    }
+    return captured;
+  }
+
+  /**
+   * V3-only scoped local snapshot, never journal completeness or send authority.
+   * One logical recordReads increment denotes one full store catalog call,
+   * including an empty result; existing action/intent counters are unchanged.
+   * The optional capability is not required of older injected V3 stores.
+   */
+  function readOriginalRecoveryKeys() {
+    if (closed) throw failure('CLOSED');
+    if (active) throw failure('BUSY');
+    if (arguments.length !== 0) throw failure('INVALID_INPUT');
+    if (methods.listOriginalRequestKeys === null) throw failure('RECOVERY_KEYS_UNAVAILABLE');
+    active = true;
+    try {
+      const current = currentFunding();
+      if (closed) throw failure('CLOSED');
+      const captured = captureRecoveryKeys(callStore('listOriginalRequestKeys', [], 'recordReads'));
+      let latest;
+      try {
+        latest = currentFunding();
+      } catch {
+        holdCustody();
+        throw failure('CUSTODY_OUTCOME_UNKNOWN');
+      }
+      if (!sameFunding(current, latest)) {
+        holdCustody();
+        throw failure('CUSTODY_OUTCOME_UNKNOWN');
+      }
+      if (closed) throw failure('CLOSED');
+      const keys = [];
+      for (let index = 0; index < captured.length; index++) {
+        if (captured[index].grantId === selectedGrantId) keys[keys.length] = captured[index];
+      }
+      return FREEZE({
+        grantId: selectedGrantId,
+        keys: FREEZE(keys),
+        funding: latest,
+        uncertainty: FREEZE({
+          custody: custodyUncertainty,
+          submission: submissionUncertainty,
+          undrained: unknownUndrained,
+          declaredFundingAmbiguitySeen: fundingAmbiguityObserved,
+        }),
+        evidence: 'LOCAL_STORE_DECLARED_RECOVERY_KEYS',
+        qualification: 'UNQUALIFIED',
+        authority: 'NONE',
+        serviceOutcome: 'NOT_ESTABLISHED',
+        mayStartPayment: false,
+        maySignPayment: false,
+        mayDispatchService: false,
+        deliveryConfirmed: false,
+      });
     } catch (error) {
       const code = known(error);
       if (code === undefined) holdCustody();
@@ -492,6 +772,8 @@ export function createServiceCreditCustodiedRequestOwner(configuration) {
   return FREEZE({
     submitOriginal: FREEZE(submitOriginal),
     readOriginal: FREEZE(readOriginal),
+    readOriginalRecoveryState: FREEZE(readOriginalRecoveryState),
+    ...(dispatchIntentEnabled ? { readOriginalRecoveryKeys: FREEZE(readOriginalRecoveryKeys) } : {}),
     snapshot: FREEZE(snapshot),
     close: FREEZE(close),
   });
@@ -534,29 +816,50 @@ function exact(value, fields) {
   return project(value, fields, [], fields);
 }
 
-function captureMethods(store) {
+function captureMethods(store, dispatchIntentEnabled) {
   if (typeof store !== 'object' || store === null || IS_PROXY(store)) {
     throw failure('INVALID_CONFIGURATION');
   }
   const found = { load: null, getOriginalRequest: null, retainOriginalRequest: null };
+  const names = dispatchIntentEnabled
+    ? [...STORE_METHODS, 'fenceOriginalDispatchIntent', 'getOriginalDispatchIntent',
+      'listOriginalRequestKeys'] : STORE_METHODS;
+  if (dispatchIntentEnabled) {
+    found.fenceOriginalDispatchIntent = null;
+    found.getOriginalDispatchIntent = null;
+    found.listOriginalRequestKeys = null;
+  }
   let current = store;
   let depth = 0;
   while (current !== null && depth < 8) {
     if (IS_PROXY(current)) throw failure('INVALID_CONFIGURATION');
-    for (let index = 0; index < STORE_METHODS.length; index++) {
-      const name = STORE_METHODS[index];
+    for (let index = 0; index < names.length; index++) {
+      const name = names[index];
       if (found[name] !== null) continue;
       const descriptor = DESCRIPTOR(current, name);
       if (descriptor === undefined) continue;
       if (!HAS_OWN(descriptor, 'value') || typeof descriptor.value !== 'function'
-          || IS_PROXY(descriptor.value)) throw failure('INVALID_CONFIGURATION');
+          || IS_PROXY(descriptor.value)) {
+        if (name === 'listOriginalRequestKeys') {
+          // An unusable optional descriptor is not a callable DATA capability.
+          // Block prototype fallback without invoking a getter/proxy/function.
+          found[name] = false;
+          continue;
+        }
+        throw failure('INVALID_CONFIGURATION');
+      }
       found[name] = descriptor.value;
     }
     current = PROTOTYPE(current);
     depth++;
   }
   if (current !== null || found.load === null || found.getOriginalRequest === null
-      || found.retainOriginalRequest === null) throw failure('INVALID_CONFIGURATION');
+      || found.retainOriginalRequest === null
+      || (dispatchIntentEnabled && (found.fenceOriginalDispatchIntent === null
+        || found.getOriginalDispatchIntent === null))) throw failure('INVALID_CONFIGURATION');
+  if (dispatchIntentEnabled && found.listOriginalRequestKeys === false) {
+    found.listOriginalRequestKeys = null;
+  }
   return FREEZE(found);
 }
 

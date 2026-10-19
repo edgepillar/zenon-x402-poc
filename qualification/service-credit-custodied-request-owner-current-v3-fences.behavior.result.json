@@ -1,0 +1,297 @@
+{
+  "scope": "OCT19_CURRENT_CUSTODIED_OWNER_V3_REFUSAL_FENCES_LOCAL_COMPONENT_RESULT_V1",
+  "recordedAtUtc": "2026-10-19T17:12:16Z",
+  "disposition": "PASS_SELECTED_CURRENT_BORROWED_OWNER_REFUSAL_CASES",
+  "qualification": "ACTUAL_LOCAL_NODE_COMPONENT_EXECUTION_OVER_DECLARED_SYNCHRONOUS_BORROWED_DATA",
+  "source": {
+    "path": "test/service-credit-custodied-request-owner-current-v3-fences.test.js",
+    "bytes": 21865,
+    "LF": 442,
+    "sha256": "c7a9b22c92ac9be0ff6394de76f9b5fe06d85dba84314deb733de4248f339be3",
+    "gitBlob": "735b22ca4963cc8e56e9ed561b185d18a32b0ea4",
+    "ASCII": true,
+    "finalLF": true,
+    "literalTopLevelTests": 4,
+    "independentlyReadFullSource": true,
+    "allSourceGuardsPrecedeRepositoryImports": true
+  },
+  "implementationInputs": [
+    {
+      "path": "src/service-credit-custodied-request-owner.js",
+      "bytes": 35073,
+      "LF": 938,
+      "sha256": "6e7493a4859d48530820e68a4a19a513aad014ffc1048b42965a3ad36ae7c5f7",
+      "gitBlob": "2dee22fd780db9de662fe1243075e74cef0bf296"
+    },
+    {
+      "path": "src/service-credit-original-request-custody-contract.js",
+      "bytes": 14051,
+      "LF": 356,
+      "sha256": "fd349de553a17abcc2e0567ba6640e6e3d5d26cfa79ee1e355928dc9fa8d3915",
+      "gitBlob": "f911d42d01b69e6577f9bcd66f4ed59aab8ab882"
+    },
+    {
+      "path": "package.json",
+      "bytes": 1413,
+      "LF": 40,
+      "sha256": "8c9a25504fbf6f87c31cdf245a6f4eec5a88cc89c8352151dc66a577c5771ef5",
+      "gitBlob": "ec7193f6fd76f34778515079dc777594175c4c34"
+    }
+  ],
+  "execution": {
+    "invocations": 1,
+    "attempt": 1,
+    "joined": true,
+    "exitCode": 0,
+    "authoredTAPTests": 4,
+    "distinctAuthoredPassed": 4,
+    "counts": {
+      "tests": 4,
+      "failed": 0,
+      "passed": 4,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "topLevel": 4,
+      "suites": 0
+    },
+    "passedNames": [
+      "V3 submission validates the complete catalog before retention and dispatch",
+      "V3 intent and post-intent funding faults hold retained originals without callback",
+      "V3 recovery state fences absent originals and close reentry",
+      "V3 optional catalog descriptors and hostile catalogs refuse without traps"
+    ],
+    "exactNamesMatchedAuthoredSourceTAPAndRunnerSummary": true,
+    "declaredFixturesWithinAuthoredTests": 27,
+    "declaredFixtureDistribution": [
+      6,
+      7,
+      7,
+      7
+    ],
+    "fixtureCountIsNotIndependentTAPRegistrations": true,
+    "prior33CaseAndTwoCaseUnitsRerun": false,
+    "evidence": {
+      "combinedToolTranscript": {
+        "bytes": 1522,
+        "sha256": "fa0b592734c79cc3e97320ac4067791e6a7d31be81b5cef4cce5a1a104b1f32f"
+      },
+      "exactPrivateInlineCallsite": {
+        "bytes": 2778,
+        "sha256": "ee2a80823a8d36062504defe164da0e4f089caa6ffa61d0feac8bac8d35687c2"
+      }
+    },
+    "evidenceMeaning": "Complete returned combined tool-output transcript and exact private unsaved inline callsite. No separate stdout/stderr-descriptor capture or CAS receipt is claimed.",
+    "toolWallTimeSecondsVerbatim": 0.239804208,
+    "timingLimit": "Raw tool metadata is not a benchmark, process-start latency or hard cancellation/cleanup guarantee."
+  },
+  "runtime": {
+    "nodeVersion": "24.19.0",
+    "versionAndArgvGuardsPassedBeforeImports": true,
+    "nodeExecutableBytes": 121304480,
+    "nodeExecutableSHA256": "613be50c90e83aa8da58dd9ed393d0b39914a3b8ef4123fe817b46c2679cebe2",
+    "completeStableBinarySHAAlreadySelectedAndTupleUnchangedBeforeAndAfter": true,
+    "flags": [
+      "--permission",
+      "--disallow-code-generation-from-strings"
+    ],
+    "clearedEnvironment": true,
+    "environment": {
+      "PATH": "ONLY_FIXED_SYSTEM_BINARIES",
+      "LC_ALL": "C",
+      "TZ": "UTC"
+    },
+    "exactFileReadGrants": [
+      "test/service-credit-custodied-request-owner-current-v3-fences.test.js",
+      "src/service-credit-custodied-request-owner.js",
+      "src/service-credit-original-request-custody-contract.js",
+      "package.json"
+    ],
+    "noFSWriteChildWorkerAddonWASIInspectorGrant": true,
+    "builtinCallsiteImports": [
+      "node:assert/strict",
+      "node:test",
+      "node:test/reporters",
+      "node:stream"
+    ],
+    "runOptions": {
+      "files": "ONE_EXACT_FILE",
+      "isolation": "none",
+      "concurrency": 1,
+      "timeout": 5000,
+      "forceExit": false
+    },
+    "reporterByteCap": 131072,
+    "reporterBytesObserved": 975,
+    "noSavedOperationalHelper": true,
+    "qualificationScratchBytes": 0,
+    "limits": [
+      "Permission Model is a restriction for trusted reviewed Source, not a malicious-code security boundary or OS/network sandbox.",
+      "Native loader/runner/stream/OS behavior remains a premise; existing descriptors are expected.",
+      "The 5000ms test timeout and output cap do not prove hard lifetime, cancellation, external cleanup or durability."
+    ]
+  },
+  "measuredCoverage": [
+    {
+      "test": 1,
+      "fixtures": 6,
+      "conditions": [
+        "valid empty global catalog",
+        "full foreign-key capacity",
+        "matching catalog key with null original lookup",
+        "malformed foreign key",
+        "catalog final-funding null",
+        "catalog final-funding revision drift"
+      ],
+      "assertions": "Exact callback-entry order/counters; catalog/funding gates precede retention/intent/dispatch; refusals perform zero retain/intent/send. CAPACITY remains known/unheld; uncertain catalog/binding outcomes hold. Exact original survives the successful path."
+    },
+    {
+      "test": 2,
+      "fixtures": 7,
+      "conditions": [
+        "fence throw after declared intent write",
+        "native rejected-Promise fence return",
+        "valid intent bound to another original",
+        "different valid intent on readback",
+        "native rejected-Promise intent read",
+        "post-intent funding null",
+        "post-intent funding revision drift"
+      ],
+      "assertions": "Exact retained original/intent state and traces/counters; no callback or retry; CUSTODY_OUTCOME_UNKNOWN and cached CLOSE_FAILED/UNKNOWN; raw store Promises have no test sink before four real setImmediate turns and zero owned-unhandled events. Existing process listeners preserved."
+    },
+    {
+      "test": 3,
+      "fixtures": 7,
+      "conditions": [
+        "stable absent-original null",
+        "first funding absence",
+        "second funding absence",
+        "second funding drift",
+        "close during null read with stable funding",
+        "close plus second funding absence",
+        "close plus second funding drift"
+      ],
+      "assertions": "Absent-original output is fully funding-fenced; first absence known/unheld, second loss held; CLOSED versus uncertainty precedence and cached close are exact. No action/intent/dispatch. Closed subsequent read adds no calls."
+    },
+    {
+      "test": 4,
+      "fixtures": 7,
+      "conditions": [
+        "unusable own accessor capability",
+        "unusable own proxy-function capability",
+        "frozen holey array",
+        "frozen index accessor",
+        "frozen plain-key accessor in exact field order",
+        "proxy key",
+        "proxy array"
+      ],
+      "assertions": "Invalid own capability blocks prototype fallback and returns RECOVERY_KEYS_UNAVAILABLE with zero calls; hostile full catalogs hold before filtering. All getter/proxy/function/fallback counters remain zero. Borrowed store.close stays zero."
+    }
+  ],
+  "priorEvidence": {
+    "currentLibrary33CaseResult": {
+      "path": "qualification/service-credit-custodied-request-owner-current-library.behavior.result.json",
+      "bytes": 20088,
+      "LF": 414,
+      "sha256": "f815b080654f3a1d7982928fd47644a7f65c93efb10ece525faa830dc3619c9f",
+      "gitBlob": "e86d2e0d949e0daa4db3ee30bbf70e3f68af989a"
+    },
+    "distinctCurrentAuthoredCasesFromTheseTwoResults": 37,
+    "invocationDistribution": [
+      8,
+      16,
+      6,
+      3,
+      4
+    ],
+    "oneCombined37TestRunClaim": false,
+    "legacyFixedTwoCases": "Separate prior completed fixed invocation with the same current implementation bytes; not rerun. Its baseline genuine assertion failure and all original physical/run evidence remain in its original result and baseline archive.",
+    "earlierNodeLoaderFailures": "Retained in original separate metadata evidence; neither hidden nor counted as authored passes here."
+  },
+  "independentReview": {
+    "completeSourceDataEnvelope": {
+      "bytes": 22368,
+      "sha256": "cdafacba7c8895245c64a49cebf1aa95a2cae702b18c6a1de813fd65778af633"
+    },
+    "completeFirstOriginal": {
+      "bytes": 12249,
+      "sha256": "668e21e690f4a1a88c777d242f4d59f32888b2c25e5f95d310201d55804bd2e3"
+    },
+    "fullPrimaryReadOfBoth": true,
+    "exactSavedSourceByteEquality": true,
+    "workerWrites": 0,
+    "workerRuntimeExecutions": 0,
+    "workerOriginalSourceRereads": 0,
+    "workerSourceAccountingUpper": 236991,
+    "workerSourceCap": 400000,
+    "retainedRAMSourceBytes": 63065,
+    "unusedInputAllowanceReserved": 100000,
+    "candidateDerivations": [
+      21364,
+      21865
+    ],
+    "staticCorrection": "Exact frozen-key field order reaches the intended accessor-descriptor refusal; selected catalog funding-null/drift cases also added before final hash. No test assertion was weakened and no Native baseline was run for those drafts.",
+    "unemittedHandoffCapRefusals": [
+      {
+        "bytes": 13227,
+        "cap": 12288,
+        "over": 939
+      },
+      {
+        "bytes": 12612,
+        "cap": 12288,
+        "over": 324
+      }
+    ],
+    "sourceEmissions": 1,
+    "firstOriginalEmissions": 1,
+    "sourceDraftHistoryNotReclassifiedAsNativeOutcomes": true
+  },
+  "postExecution": {
+    "sourceAndEvidenceFilesHashAndTupleMatched": 17,
+    "allSourceHashesAndTuplesMatched": true,
+    "nodeBinaryTupleUnchanged": true,
+    "checkoutHeadAndBranchUnchanged": true,
+    "preexistingCheckoutRecordsUnchanged": true,
+    "onlyNewTestAndPreviouslySaved33CaseResultAddedSincePriorStatusSnapshot": true,
+    "productionEditsThisSlice": 0,
+    "downloads": 0,
+    "clones": 0,
+    "ZIPs": 0,
+    "installs": 0,
+    "builds": 0,
+    "newStorageTasks": 0,
+    "newCASObjects": 0,
+    "managerRestorationsOrFallbacks": 0
+  },
+  "unresolved": [
+    "Deferred native intent rejection and intent-close reentry are not newly qualified.",
+    "Arbitrary thenables, cross-realm/global constructor/species mutation, saturation and exhaustive catalog adversaries remain outside this selection.",
+    "No actual SQLite/backend/client/Root/SDK/transport/store-brand, funding authenticity, durability, restart/crash, service delivery, real provider readiness or whole-P2/pilot/production acceptance follows."
+  ],
+  "mainLane": {
+    "inspectedMain": "94c2730e462178bacab9687181cd5c0114ff1c59",
+    "contractAndPackageAlreadyMatch": true,
+    "completeOwnerDiffAndSelectedDirectClientSourceReviewed": true,
+    "wholeApplicationRuntimeOrExhaustiveReverseDependencyQualification": false,
+    "selectedComponentPublicationDisposition": "Eligible for a bounded opt-in library packet after fresh main/diff/PR/rule/check checks; not whole-app or live qualification.",
+    "publicationAtResultAuthoring": "NOT_YET_PERFORMED",
+    "hostedCI": "NOT_RUN_OR_CLAIMED",
+    "priorMainHasNoChecksStatusesOrActionsAtRead": true,
+    "priorMainCombinedState": "pending",
+    "noBranchProtectionBypassOrForcePush": true
+  },
+  "protected": {
+    "signer": "DISABLED",
+    "realConsumedAdmissions": 2,
+    "realPREPARE": 1,
+    "realBundles": 0,
+    "nativeChainProviderQualificationRuns": 0,
+    "localNodeComponentInvocationsThisSlice": 1,
+    "originalRealPaymentAndRequestBytesHashesPayloadRequirementsContextPreserved": true,
+    "noOwnership165RetryResetNewReplaceResignOrPaymentResend": true,
+    "pr193": "Possible VALIDATED exact-same-signed-block resend remains separate UNKNOWN/ACKNOWLEDGED.",
+    "livePilot": "NOT_ESTABLISHED",
+    "production": "NOT_ESTABLISHED"
+  }
+}
