@@ -365,7 +365,10 @@ function checkSelection(input, fields, validate) {
   if (now.rpcObservation.basePlasma !== origin.rpcObservation.basePlasma
       || now.rpcObservation.availablePlasma < quote.selected.fusedPlasma
       || age < 0n || age > toBigInt(policy.maxMomentumAdvances)
-      || (age === 0n && now.frontier.hash !== origin.frontier.hash)
+      || (age === 0n && (now.frontier.hash !== origin.frontier.hash
+        || now.frontier.nextFusionPrice !== origin.frontier.nextFusionPrice
+        || now.frontier.nextWorkPrice !== origin.frontier.nextWorkPrice))
+      || (age > 0n && now.frontier.hash === origin.frontier.hash)
       || now.frontier.nextFusionPrice > quote.boundPrices.fusionPrice
       || now.frontier.nextWorkPrice > quote.boundPrices.workPrice) reject();
 

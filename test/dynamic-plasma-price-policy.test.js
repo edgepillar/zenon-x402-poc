@@ -14,7 +14,7 @@ if (process.argv.length > 3
 
 const specs = [
   ['../src/zenon/dynamic-plasma-price-policy.js',
-    14741, '7980039b45d4b8a69f22c8bf16ecbf5c7f685e8ac3f967154fc85782485345fb'],
+    14957, '41e2e2044597cfa69c5adca292bcd762a189076be1cd939bec10798d7e35c52b'],
   ['../src/zenon/bounded-dynamic-plasma-strategy.js',
     3432, 'e110d336a1998a57bc0c071f6ac25e7971ce29631fa5384c9bfc4eb63dd1a9eb'],
   ['../src/zenon/dynamic-plasma-compatibility.js',

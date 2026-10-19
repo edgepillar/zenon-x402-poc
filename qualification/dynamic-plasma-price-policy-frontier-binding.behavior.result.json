@@ -1,0 +1,236 @@
+{
+  "schema": "x402-dp-price-policy-frontier-identity-local-result/v1",
+  "scope": "OCT19_P1_DP_PRICE_POLICY_FRONTIER_IDENTITY_V1",
+  "status": "PASSED_LOCAL_SYNTHETIC_COMPONENT_CHECKS",
+  "completedAt": "2026-10-19T03:27:46.332Z",
+  "sourceReference": {
+    "HEAD": "e1a5bafeadda9a679dc2261b1abea164820fb8a5",
+    "contentHashesAreAuthoritativeForLocalUncommittedFiles": true
+  },
+  "implemented": {
+    "productionFile": "src/zenon/dynamic-plasma-price-policy.js",
+    "behavior": [
+      "At zero height advance, require the original frontier hash and both original resource prices.",
+      "At positive height advance, refuse reuse of the original frontier hash.",
+      "Continue accepting coherent distinct-hash advances within the existing height, price and resource bounds.",
+      "Keep exact originally selected fusedPlasma and difficulty, quote/policy versions, arithmetic, errors and no-authority labels unchanged."
+    ],
+    "originalCounterexampleEvidence": "POSITIVE_STATIC_SOURCE_PATH_ONLY_OLD_CODE_NOT_EXECUTED",
+    "noNewAPIOrOperationalHelper": true,
+    "oldTestChange": "ONLY_THE_FIRST_SOURCE_BYTE_AND_SHA256_PIN",
+    "oldTenAuthoredScenarioBodiesLiteralUnchanged": true,
+    "originalPolicyAndTestFullyRecoveredByExactInverse": true
+  },
+  "changedArtifacts": [
+    {
+      "path": "src/zenon/dynamic-plasma-price-policy.js",
+      "old": {
+        "bytes": 14741,
+        "sha256": "7980039b45d4b8a69f22c8bf16ecbf5c7f685e8ac3f967154fc85782485345fb"
+      },
+      "new": {
+        "bytes": 14957,
+        "sha256": "41e2e2044597cfa69c5adca292bcd762a189076be1cd939bec10798d7e35c52b",
+        "LF": 418,
+        "gitBlob": "ed505153487adb5284d895c922641b6de5d9caf8"
+      }
+    },
+    {
+      "path": "test/dynamic-plasma-price-policy.test.js",
+      "old": {
+        "bytes": 28826,
+        "sha256": "e4d9d9db7298d4141d38dd6f148cbc55149c9c223b3ffc49c178aa5b460f8ce9"
+      },
+      "new": {
+        "bytes": 28826,
+        "sha256": "fca8760ff5835ed09010df25f1b7d6c371c8c82d60217c8ae4e6dbec4a3d7008",
+        "LF": 639,
+        "gitBlob": "6687e3812e8b8b4c83bef84b35932474a8a2c883"
+      }
+    },
+    {
+      "path": "qualification/dynamic-plasma-price-policy-frontier-binding.behavior.draft.mjs",
+      "old": null,
+      "new": {
+        "bytes": 8745,
+        "sha256": "d7f672ee4464bd002e893e231dec5acc85785db2407f7df25fa601d74f972409",
+        "LF": 212,
+        "gitBlob": "ad7bccd414b6317885f7d8a7c90c57e53bb40279"
+      }
+    }
+  ],
+  "exactExecutedGraph": [
+    {
+      "path": "src/zenon/dynamic-plasma-price-policy.js",
+      "bytes": 14957,
+      "sha256": "41e2e2044597cfa69c5adca292bcd762a189076be1cd939bec10798d7e35c52b",
+      "gitBlob": "ed505153487adb5284d895c922641b6de5d9caf8"
+    },
+    {
+      "path": "test/dynamic-plasma-price-policy.test.js",
+      "bytes": 28826,
+      "sha256": "fca8760ff5835ed09010df25f1b7d6c371c8c82d60217c8ae4e6dbec4a3d7008",
+      "gitBlob": "6687e3812e8b8b4c83bef84b35932474a8a2c883"
+    },
+    {
+      "path": "qualification/dynamic-plasma-price-policy-frontier-binding.behavior.draft.mjs",
+      "bytes": 8745,
+      "sha256": "d7f672ee4464bd002e893e231dec5acc85785db2407f7df25fa601d74f972409",
+      "gitBlob": "ad7bccd414b6317885f7d8a7c90c57e53bb40279"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-compatibility.js",
+      "bytes": 7732,
+      "sha256": "b3989ce15e5f2e9d07b0ed035fe96bcce9f22cac93f5e497fdca5c37bf7618dd",
+      "gitBlob": "3811b748b3f905e454c8a4af4650bb7f89eb1cf2"
+    },
+    {
+      "path": "src/zenon/bounded-dynamic-plasma-strategy.js",
+      "bytes": 3432,
+      "sha256": "e110d336a1998a57bc0c071f6ac25e7971ce29631fa5384c9bfc4eb63dd1a9eb",
+      "gitBlob": "6bde242157ee4f74893ce5f096688110c9323e0b"
+    },
+    {
+      "path": "src/zenon/plasma-strategy.js",
+      "bytes": 974,
+      "sha256": "1c597d4e169ba8a5e6d2b7852c4ffa3a8ec9b854332fe354b9b013c36ebae093",
+      "gitBlob": "5cddc2d270aaf043e6e43145e95ffe0be3dde475"
+    },
+    {
+      "path": "package.json",
+      "bytes": 1413,
+      "sha256": "8c9a25504fbf6f87c31cdf245a6f4eec5a88cc89c8352151dc66a577c5771ef5",
+      "gitBlob": "ec7193f6fd76f34778515079dc777594175c4c34"
+    }
+  ],
+  "independentReview": {
+    "completeFirstOriginalWorkerHandoff": true,
+    "handoffBytes": 13193,
+    "handoffSHA256": "07755d7982b08c2325a74c2c571a192df9cd2b740354b34f8628c4efdbf00c61",
+    "completePatchBytes": 10826,
+    "completePatchSHA256": "9ef9d642363c9a32f7ccac9c2f19bb9dfc139b2176f956a8a01be3ee8e7c8bdd",
+    "allFourNewAuthoredTestsAndEntireDependencyGraphReviewed": true,
+    "exactFinalFileDescriptorHashesAndStampsMatchedBeforeAndAfterRun": true,
+    "actualImplementationWorkerModel": "gpt-6.1-sol",
+    "actualImplementationWorkerReasoningEffort": "max",
+    "freshMainProfileMatchedAtDispatch": true
+  },
+  "execution": {
+    "actualNodeInvocations": 1,
+    "retries": 0,
+    "selectedFiles": [
+      "test/dynamic-plasma-price-policy.test.js",
+      "qualification/dynamic-plasma-price-policy-frontier-binding.behavior.draft.mjs"
+    ],
+    "existingAuthoredScenariosOnChangedPolicy": 10,
+    "newAuthoredRegressionScenarios": 4,
+    "actualTests": 14,
+    "pass": 14,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0,
+    "suites": 0,
+    "completeActualPassNamesMatchedExactAuthoredRegistrations": true,
+    "actualExit": 0,
+    "state": "COMPLETE",
+    "outputComplete": true,
+    "runtime": {
+      "node": "v24.19.0",
+      "platform": "darwin",
+      "arch": "arm64"
+    },
+    "environment": "CLEARED_EXPLICIT_PATH_AND_LC_ALL",
+    "launcher": "FIXED_INLINE_COMMONJS_EXPLICIT_TWO_FILE_NODE_TEST_RUN_API",
+    "callerBytes": 6359,
+    "callerSHA256": "f464d10deff396544b14e45460e57a813e4fef3eac973433d8e9bf95c47bf419",
+    "commandBytes": 8101,
+    "commandSHA256": "0caf15108612e4971cdc3bbfeb8dd570a5aff998d73109cb0d76d211476673a2",
+    "isolation": "none",
+    "concurrency": false,
+    "forceExit": false,
+    "watch": false,
+    "restrictions": {
+      "nodePermissionModel": true,
+      "exactFilesystemReadFiles": 7,
+      "filesystemWriteGrant": false,
+      "childGrant": false,
+      "workerGrant": false,
+      "noAddons": true,
+      "stringCodeGenerationDisabled": true
+    },
+    "authoredTestTimeoutMs": 5000,
+    "runnerTimeoutMs": 10000,
+    "managedChildTimeoutSeconds": 20,
+    "TAPReportedDurationMs": 25.238417,
+    "timeoutsAreNotHardLifetimeCancellationCleanupOrOSSandboxGuarantees": true
+  },
+  "newRegressionCoverage": [
+    "Identical frontier tuples remain accepted with sufficient changed pools for fusion-only and hybrid plans.",
+    "Same-height same-hash observations with increased or decreased fusion/work prices are refused through select, validate and Bounded.apply.",
+    "Ages one and two cannot reuse the origin hash through any of those three entry points.",
+    "Coherent distinct-hash advances preserve the original selected fields, unchanged inputs and declared no-authority labels."
+  ],
+  "retainedOutput": {
+    "stdout": {
+      "bytes": 2900,
+      "sha256": "c11e8735be6d800db8d101692740ff5f1fcc5678f1d7605bb5fb712d14e22d60",
+      "rawTAP": "TAP version 13\n# Subtest: shared instant math keeps legacy classifier and RPC boundaries\nok 1 - shared instant math keeps legacy classifier and RPC boundaries\n  ---\n  duration_ms: 1.615792\n  type: 'test'\n  ...\n# Subtest: integer frontier bounds use explicit rate and advance count\nok 2 - integer frontier bounds use explicit rate and advance count\n  ---\n  duration_ms: 2.233375\n  type: 'test'\n  ...\n# Subtest: bounded allocations obey fusion and difficulty budgets\nok 3 - bounded allocations obey fusion and difficulty budgets\n  ---\n  duration_ms: 0.255292\n  type: 'test'\n  ...\n# Subtest: receipts are fresh frozen serializable declared bindings\nok 4 - receipts are fresh frozen serializable declared bindings\n  ---\n  duration_ms: 0.612\n  type: 'test'\n  ...\n# Subtest: concrete unsigned strategy uses the real policy and base\nok 5 - concrete unsigned strategy uses the real policy and base\n  ---\n  duration_ms: 0.539833\n  type: 'test'\n  ...\n# Subtest: current context rejects stale regressing and mismatched plans\nok 6 - current context rejects stale regressing and mismatched plans\n  ---\n  duration_ms: 0.52325\n  type: 'test'\n  ...\n# Subtest: validation requires the exact original selected fields\nok 7 - validation requires the exact original selected fields\n  ---\n  duration_ms: 0.734583\n  type: 'test'\n  ...\n# Subtest: hostile records fail without traps getters or coercion\nok 8 - hostile records fail without traps getters or coercion\n  ---\n  duration_ms: 0.739834\n  type: 'test'\n  ...\n# Subtest: public numbers and bounded arithmetic reject unsafe values\nok 9 - public numbers and bounded arithmetic reject unsafe values\n  ---\n  duration_ms: 1.192083\n  type: 'test'\n  ...\n# Subtest: unavailable data and non-unsigned phases grant no authority\nok 10 - unavailable data and non-unsigned phases grant no authority\n  ---\n  duration_ms: 0.937333\n  type: 'test'\n  ...\n# Subtest: identical origin frontier accepts sufficient pools for fusion-only and hybrid plans\nok 11 - identical origin frontier accepts sufficient pools for fusion-only and hybrid plans\n  ---\n  duration_ms: 0.974458\n  type: 'test'\n  ...\n# Subtest: same height and hash refuse changed fusion or work prices through all entry points\nok 12 - same height and hash refuse changed fusion or work prices through all entry points\n  ---\n  duration_ms: 1.542583\n  type: 'test'\n  ...\n# Subtest: age one and two refuse reuse of the origin hash through all entry points\nok 13 - age one and two refuse reuse of the origin hash through all entry points\n  ---\n  duration_ms: 0.827166\n  type: 'test'\n  ...\n# Subtest: distinct hashes at age one and two preserve planned fields and no-authority labels\nok 14 - distinct hashes at age one and two preserve planned fields and no-authority labels\n  ---\n  duration_ms: 1.154375\n  type: 'test'\n  ...\n1..14\n# tests 14\n# suites 0\n# pass 14\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 25.238417\n"
+    },
+    "stderr": {
+      "bytes": 1123,
+      "sha256": "0614d63ca9cc6a233b2d1b4cf7067116e229fed13df235270b34d4f895260495",
+      "content": "PRIVATE_CALLER_BINDING_ONLY_NO_ERROR_OR_REPORTER_DIAGNOSTIC",
+      "rawNotPublished": true
+    },
+    "exactCLICommandReceiptMatched": true,
+    "completeCapturesAndCreatorLedgersIndependentlyRead": true
+  },
+  "storage": {
+    "approvedExistingTaskStorageManager": true,
+    "freshMountRootConfigAndCapacityChecked": true,
+    "rootPolicyUnchanged": true,
+    "uniqueNewProjectChecked": true,
+    "expectedBytes": 33554432,
+    "quotaBytes": 67108864,
+    "reservationAndQuotaAreNotPreallocationOrHardNativeResourceLimits": true,
+    "rawCaptureBytes": 4023,
+    "rawCaptureCASObjects": 2,
+    "oneCASObjectPerDigest": true,
+    "noZIPOrDuplicateSourceCopies": true,
+    "taskState": "CLOSED",
+    "taskOutcome": "SUCCESS",
+    "cleanupDecision": "CLEANED",
+    "cleanupRecordedScratchBytes": 0,
+    "noHistoricalTaskOrObjectCleanup": true,
+    "noManualDeletionOrAdoption": true,
+    "ownProcessGroupAndScratchObservedAbsentAfterClose": true,
+    "observedAbsenceIsNotHardNativeCleanupAssurance": true
+  },
+  "retainedNonTestObservations": [
+    "Initial worker instruction-file name inventory returned no matches; its exit 1 is retained, not a test failure.",
+    "A primary handoff API request exceeded its output-parameter limit; the bounded corrected request succeeded without re-running a source experiment.",
+    "The initial preservation guard presentation was clipped; the actual successful guard outcome remains retained and the complete post-run checks used a compact presentation.",
+    "A roadmap filename inventory returned no matches; this was not used to establish novelty."
+  ],
+  "preservation": {
+    "all62EarlierProtectedArtifactsAndGitReferencesMatchedAfterRun": true,
+    "noEarlierFailedStoppedOrCompletedOutcomeRewritten": true,
+    "originalPaymentRequestBytesHashPayloadRequirementsContextAndConsumedAuthorityUnchanged": true,
+    "signer": "DISABLED",
+    "PR193ValidatedSameSignedBlockPossibilityRemainsSeparateFromUnknownAndAcknowledged": true,
+    "consumedChainAdmissions": 2,
+    "actualChainPrepare": 1,
+    "bundles": 0,
+    "nativeChainProviderQualificationRuns": 0
+  },
+  "limits": [
+    "This is declared-data price-context component evidence, not authenticated chain state, ancestry, runtime governance, current pricing authority or inclusion evidence.",
+    "The active buyer, SDK, planner implementation, real signing, publication, PoW/preparation and live validator routes were not activated or qualified.",
+    "Current context, funding and payer/provider/policy authority, provider READY, service delivery, durability and restart/recovery remain separate gates.",
+    "The Node loader, native runtime, streams, test framework, OS, pristine intrinsics and source-to-import race remain premises.",
+    "No SQL, network, provider, wallet, payment, real signature or official x402 compatibility qualification occurred.",
+    "Main/CI/publication remain separate. No stage, commit, push, CI or publication occurred."
+  ],
+  "overallRoadmapComplete": false
+}
