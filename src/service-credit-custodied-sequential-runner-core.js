@@ -41,7 +41,7 @@ const INPUT_FIELDS = FREEZE([
  * Internal sequential state machine for captured private child operations.
  *
  * Construction accepts no component factory and invokes no child operation.
- * The two ownership labels describe an existing binding; they confer no
+ * The explicit ownership labels describe an existing binding; they confer no
  * authority and do not acquire, release or qualify any resource.
  *
  * The shared queue, admission, observation and close paths retain the borrowed
@@ -59,7 +59,8 @@ export function createServiceCreditCustodiedSequentialRunnerCore(configuration) 
         || typeof config.snapshot !== 'function' || IS_PROXY(config.snapshot)
         || typeof config.close !== 'function' || IS_PROXY(config.close)
         || (config.storeOwnership !== 'BORROWED'
-          && config.storeOwnership !== 'OWNED_EXISTING_V2')) {
+          && config.storeOwnership !== 'OWNED_EXISTING_V2'
+          && config.storeOwnership !== 'OWNED_EXISTING_V3_DISPATCH_INTENT')) {
       throw failure('INVALID_CONFIGURATION');
     }
     selected = KEY({ grantId: config.selectedGrantId, requestId: 'scope' });
