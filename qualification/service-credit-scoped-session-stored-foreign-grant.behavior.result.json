@@ -1,0 +1,351 @@
+{
+  "schema": "service-credit-local-qualification/v1",
+  "selection": "OCT20_P0A_ACTUAL_SCOPED_SESSION_STORED_FOREIGN_GRANT_V1",
+  "status": "PASSED_LOCAL_SYNTHETIC_ACTUAL_SESSION_ONLY",
+  "execution": {
+    "nodeCommands": 1,
+    "registeredCases": 1,
+    "tests": 1,
+    "pass": 1,
+    "fail": 0,
+    "skipped": 0,
+    "cancelled": 0,
+    "todo": 0,
+    "caseName": "P0-A actual scoped session refuses a valid stored foreign grant and executes the target grant once",
+    "nodeVersion": "24.19.0",
+    "platform": "darwin-arm64",
+    "nodeSHA256": "613be50c90e83aa8da58dd9ed393d0b39914a3b8ef4123fe817b46c2679cebe2",
+    "nodeIdentity": "RETAINED_DIGEST_WITH_MATCHED_FULL_IDENTITY_BEFORE_LAUNCH; VERSION_AND_PLATFORM_ASSERTED_IN_CALLER_AND_FIXTURE",
+    "completedAtUnixSeconds": 1792453032.643169,
+    "joinedExitCode": 0,
+    "outputComplete": true,
+    "stopReason": null,
+    "scratchScanRetries": 0,
+    "tapBytes": 1336,
+    "tapComplete": true,
+    "stdout": {
+      "bytes": 2094,
+      "sha256": "ff2f244475198e645116286dcdb2b457920145f37a82596d78a09cba0c4d525a"
+    },
+    "stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "caseDurationMs": 447.165209,
+    "tapDurationMs": 459.951292
+  },
+  "sourceBinding": {
+    "productionBaseCommit": "2a6dd2cd2c00942d8904d0e3bf3704e9e9668bc9",
+    "productionBaseTree": "cb04200d608bd20eaeb7b6dd257678e224f5ad4b",
+    "sourcePins": [
+      {
+        "path": "src/service-credit-durable-http-session.js",
+        "bytes": 13978,
+        "LF": 425,
+        "sha256": "a0d6d1436cdb697f125fee2f4dc723a5ddcfd2ee7063b55d56fa006bb8ba69bf",
+        "gitBlob": "307b72b8a1d114463ad8e18935312b18ccb23199"
+      },
+      {
+        "path": "src/service-credit-durable-session-close.js",
+        "bytes": 2470,
+        "LF": 84,
+        "sha256": "5aae36a7da39ce5b7b9a8da8e9fbda88465cb1e4853dc791520a1df0ab87ede7",
+        "gitBlob": "f744b55595e2238dc088cf71ca8849e480cda1bc"
+      },
+      {
+        "path": "src/service-credit-durable-execution-owner.js",
+        "bytes": 40833,
+        "LF": 1301,
+        "sha256": "a63a795dda77489f7da0682d83a0683cf07240f83b803f449668cb687a956863",
+        "gitBlob": "f0fd445a17466dd1ab83c785c44aa5e6fdf1e765"
+      },
+      {
+        "path": "src/service-credit-http.js",
+        "bytes": 32432,
+        "LF": 958,
+        "sha256": "c76a7f1864bdfcd0c26916bf28fba615c8aecf899d53e69467e3ebe7d3353d0d",
+        "gitBlob": "040da1547c2fa6cc4a4044c47619b253f16d19a1"
+      },
+      {
+        "path": "src/service-credit-sqlite-store.js",
+        "bytes": 82141,
+        "LF": 2333,
+        "sha256": "bda45bd553c8580a7bd66573bb2fb7c3bf12d79bab49a91fe3ac6dc1ebad8422",
+        "gitBlob": "6a7364fbc59c43edffb7a73f550210644e78daff"
+      },
+      {
+        "path": "src/service-credit-model.js",
+        "bytes": 55461,
+        "LF": 1580,
+        "sha256": "7ff7e3d88ab8c3b38a0073541533fbdb7a0d9f2be42f337ac35f6a3b05615c3a",
+        "gitBlob": "e6ac17254874584d1a01f70e7abc6f771bd35d73"
+      },
+      {
+        "path": "src/service-credit-execution-contract.js",
+        "bytes": 30258,
+        "LF": 956,
+        "sha256": "298f8e74885e1c507953c0fcf7874832f815296746e6bacbdac97a425f1a6c73",
+        "gitBlob": "acfbb5c5e943b9e09958a7831b3dbe159463dcf9"
+      },
+      {
+        "path": "src/service-credit-capability.js",
+        "bytes": 8284,
+        "LF": 256,
+        "sha256": "cb2b96d9a2e56c132dd1b4aca8f1c065b244ecd0e7e92f41ea3f4a8c969d17c3",
+        "gitBlob": "2e19d42c1b9311a75897c84669849f56ae40f785"
+      },
+      {
+        "path": "package.json",
+        "bytes": 1413,
+        "LF": 40,
+        "sha256": "8c9a25504fbf6f87c31cdf245a6f4eec5a88cc89c8352151dc66a577c5771ef5",
+        "gitBlob": "ec7193f6fd76f34778515079dc777594175c4c34"
+      },
+      {
+        "path": "qualification/service-credit-scoped-session-stored-foreign-grant.draft.mjs",
+        "bytes": 31057,
+        "LF": 535,
+        "sha256": "cd1a5c0499ededb39d7223f1f059a538609a4579780181690df595bc505f67f1",
+        "gitBlob": "55fca0a5c7624def75ceab373fcabaddf5f11fc6"
+      }
+    ],
+    "preAndPostIdentitiesMatched": true,
+    "exactSourceGuards": 10,
+    "workerOriginalSourceFrame": {
+      "bytes": 39198,
+      "LF": 564,
+      "sha256": "614bedce8990ef888b5625d5a26175445ba965988edd76a24b90f1f60f16ba8b"
+    },
+    "workerOriginalRecipe": {
+      "bytes": 30885,
+      "LF": 531,
+      "sha256": "c829afd9ba623f896f9630e4a68296634574fa211004b7be9af8213be5910f27",
+      "gitBlob": "009fbde35492067a2c3fd8b57f24593dad443b1d"
+    },
+    "completeSourceAndFirstOriginalIndependentlyReviewed": true,
+    "parentAmendment": {
+      "addedBytes": 172,
+      "addedLines": 4,
+      "description": "After the known session-close Promise fulfills, require zero remaining declared timer handles and equal schedule/cancel counts. Otherwise HOLD before borrowed-store reads or fixture-store close.",
+      "adverseBranchExecuted": false
+    },
+    "sourceHeaderNotRunLabel": "PRESERVED_SOURCE_STAGE_PROVENANCE; THIS_OUTCOME_BINDS_ONLY_THE_APPLIED_FIXTURE_DIGEST",
+    "sourceRecipeBytes": 31057,
+    "sourceRecipeHardCap": 32768,
+    "sourceRecipeSoftTarget": 24576,
+    "softTargetExceeded": true
+  },
+  "launch": {
+    "fixedUnsavedCommonJSRunAPI": true,
+    "savedOperationalHelperCreated": false,
+    "explicitPositionalFiles": 1,
+    "isolation": "none",
+    "concurrency": 1,
+    "forceExit": false,
+    "watch": false,
+    "inputTypeFlag": false,
+    "addons": false,
+    "stringCodeGeneration": false,
+    "clearedEnvironmentKeyCount": 9,
+    "callerTemplateSHA256": "8fec3d5d7e768bced556f4e62a946277b6224159008595d6328c7c588e0bf491",
+    "fixedManagerDriverSHA256": "7c353b046ed09ebbb7bcdb34b940b9b0c95dbf2bbc64ac46ca1275b21d0fe592",
+    "actualCaller": {
+      "bytes": 5987,
+      "sha256": "261ee31d26f05e00c207ee7db09d5d0f0b0bd7ecbc20382464c33b738a798f6f",
+      "argvBytes": 8315,
+      "canonicalArgvSHA256": "ab51a82cb1f66f20cf99e5d812806065ba679d01cc5db276a4b2ecc270fd7366"
+    },
+    "testTimeoutMs": 12000,
+    "foregroundTimeoutSeconds": 20,
+    "tapCapBytes": 65536,
+    "stdoutCapBytes": 131072,
+    "stderrCapBytes": 1048576,
+    "metadataLockTimeoutSeconds": 60,
+    "notAnOSOrNetworkSandbox": true,
+    "hardLifetimeCancellationAndNativeCleanupNotGuaranteed": true
+  },
+  "declaredScenario": {
+    "network": "zenon:mock",
+    "chainIdentifier": "Number.MAX_SAFE_INTEGER represented as a decimal string",
+    "offers": 1,
+    "grants": 2,
+    "newSyntheticDatabases": 1,
+    "admittedGrant": "A",
+    "storedForeignGrant": "B",
+    "initialAUnits": 7,
+    "initialBUnits": 11,
+    "deriveCostUnits": 2,
+    "oneActualReturnedSession": true,
+    "boundedDeclaredResponse": true,
+    "declaredMonotonicClockNs": "0",
+    "noHTTPListenerOrRealTransport": true
+  },
+  "assertions": {
+    "foreignProof": {
+      "actualCapabilityVerifier": true,
+      "exactStoredGrantProjection": true,
+      "exactFrozenSuccessfulFiveFieldResult": true,
+      "sameProofSentThroughActualSession": true,
+      "directAdmissionOracle": false
+    },
+    "foreignRefusal": {
+      "statusCode": 401,
+      "body": "{\"error\":\"unauthorized\"}",
+      "wwwAuthenticate": "ServiceCredit",
+      "cacheControl": "private, no-store, max-age=0",
+      "vary": "Authorization",
+      "contentType": "application/json",
+      "contentLength": 24,
+      "xContentTypeOptions": "nosniff",
+      "executeCalls": 0,
+      "requestsCreated": 0,
+      "executionsCreated": 0,
+      "entireLedgerDurableMetadataRevisionAndBalancesUnchanged": true
+    },
+    "targetPositiveControl": {
+      "sameSession": true,
+      "onlyAfterEveryForeignAssertion": true,
+      "statusCode": 200,
+      "resultCode": "service.scoped.session",
+      "exactStoredCachedResult": true,
+      "executeCalls": 1,
+      "originalImmediateNativeExecutePromise": true,
+      "requestsCreated": 1,
+      "executionsCreated": 1,
+      "consumedUnits": 2,
+      "availableAUnits": 5,
+      "consumedAUnits": 2,
+      "completeBGrantUnchanged": true,
+      "revisionDelta": 3,
+      "terminalClassification": "SUCCEEDED",
+      "fencePhase": "MAY_HAVE_STARTED",
+      "noForeignRequestOrExecution": true
+    },
+    "close": {
+      "knownOriginalWorkSettled": true,
+      "originalSessionClosePromiseFulfilled": true,
+      "sessionCloseCalls": 1,
+      "borrowedStoreReadableAndUnchanged": true,
+      "fixtureStoreCloseCalls": 1,
+      "fixtureStoreCloseReturned": true,
+      "nativeDatabaseClosureIndependentlyEstablished": false,
+      "unknownConstructionObservationDrainCloseTimerOrBorrowedStateMustHold": true
+    }
+  },
+  "fixtureControlDiagnostic": {
+    "status": "PASS",
+    "stage": "KNOWN_OWNERS_CLOSED",
+    "failureStage": "NONE",
+    "hold": "NONE",
+    "retainedErrors": 0,
+    "sourceGuards": 10,
+    "storeCreates": 1,
+    "sessionCreates": 1,
+    "capabilityPairAttempts": 2,
+    "capabilityPairs": 2,
+    "capabilitySignatureAttempts": 2,
+    "capabilitySignatures": 2,
+    "foreignVerificationControls": 1,
+    "foreignProofValid": true,
+    "foreign401": true,
+    "foreignStateUnchanged": true,
+    "sessionDispatches": 2,
+    "executeCalls": 1,
+    "targetExecutedOnce": true,
+    "foreignGrantUntouched": true,
+    "declaredSchedules": 1,
+    "declaredCancels": 1,
+    "declaredHandles": 0,
+    "originalPromises": 4,
+    "pendingOriginals": 0,
+    "sessionCloseCalls": 1,
+    "sessionCloseReturned": true,
+    "borrowedStoreReadable": true,
+    "fixtureStoreCloseCalls": 1,
+    "fixtureStoreCloseReturned": true,
+    "counters": "FIXTURE_CONTROL_NOT_INDEPENDENT_NATIVE_INSTRUMENTATION",
+    "qualification": "LOCAL_SYNTHETIC_ACTUAL_SCOPED_SESSION_ONLY",
+    "authority": "NONE",
+    "responseBoundary": "DECLARED_RESPONSE_ONLY_NO_DELIVERY_PROOF",
+    "nativeCleanup": "NOT_ESTABLISHED"
+  },
+  "syntheticCrypto": {
+    "keyPairAttempts": 2,
+    "keyPairs": 2,
+    "signatureAttempts": 2,
+    "signatures": 2,
+    "inMemoryOnly": true,
+    "privateKeysExportedOrLogged": false,
+    "countersAreNotIndependentNativeInstrumentation": true,
+    "noWalletProviderOrPaymentSigning": true
+  },
+  "retainedCoverage": {
+    "recordedBeforeSelection": true,
+    "newGlobalSearchOrNoveltyClaim": false,
+    "priorActualSessionCloseCases": 2,
+    "priorSessionCasesUsedOneGrant": true,
+    "priorDirectHTTPAdmissionCases": 4,
+    "priorComposedCloseCasesWereHelperOnly": true,
+    "priorSourceOnlyRecordRemainsNotRun": true,
+    "priorCasesRerun": 0,
+    "notOneCombinedMultiCaseRun": true,
+    "historicalSessionNodeSHA256": "852d6074f741d18223b24967d8384e8920856a7fcd4348682a4ec524b5fc2ff4",
+    "sameVersionDoesNotEstablishSameBinary": true
+  },
+  "retention": {
+    "manager": "APPROVED_OWNED_TASK_STORAGE",
+    "newPrivateTask": true,
+    "taskState": "CLOSED",
+    "taskOutcome": "SUCCESS",
+    "cleanupDisposition": "HOLD_UNREGISTERED_SYNTHETIC_CHILD",
+    "cleanupSuccessNotEstablished": true,
+    "syntheticDatabasePreserved": true,
+    "syntheticDatabaseRawFile": {
+      "bytes": 16384,
+      "sha256": "a214e7faabd6898558110de6bd0fae1d7ed1e2c5c07b60d0f9823e517835f371"
+    },
+    "SQLDecodedOrReopenedAfterExit": false,
+    "processAndGroupAbsentAtOnePostJoinObservation": true,
+    "processObservationNotNativeCleanupProof": true,
+    "databaseAdoptedDeletedOrRepaired": false,
+    "originalStreamsAndOwnershipRecordsIndependentlyReviewed": true,
+    "sharedEmptyCASObjectProvenanceChecked": true,
+    "expectedBytes": 33554432,
+    "taskQuotaBytes": 67108864,
+    "productionFreeSpaceFloorBytes": 10737418240,
+    "safetyMarginBytes": 1073741824,
+    "productionPolicyUnchanged": true,
+    "noDownloadInstallBuildArchiveOrBinaryCopy": true,
+    "largeNodeBinaryNotRehashed": true
+  },
+  "notEstablished": [
+    "Unscoped legacy session behavior",
+    "Invalid session configuration refusal before any store read",
+    "Real network response delivery",
+    "Real deadline behavior",
+    "Fault injection for every HOLD branch",
+    "Same-request HTTP replay",
+    "Process restart, SQL reopen or crash recovery",
+    "Native database close, durability, cancellation or OS cleanup",
+    "Broad application, SDK, controller or native-chain qualification",
+    "Live provider READY, current funding, payer/provider/policy authority or pilot acceptance",
+    "Dynamic Plasma preparation/work/signing/inclusion",
+    "Official x402 compatibility"
+  ],
+  "protectedRealAuthority": {
+    "signer": "DISABLED_UNCHANGED",
+    "consumedAdmissions": 2,
+    "actualChainPrepare": 1,
+    "bundles": 0,
+    "nativeChainProviderQualificationRuns": 0,
+    "originalPaymentRequestBytesHashPayloadRequirementsAndContext": "PRESERVED",
+    "consumedAuthorityNotReset": true,
+    "ownershipMetadataRefusalNotRetried": true,
+    "validatedExactSameSignedBlockResendVsUnknownAcknowledgedBoundary": "UNCHANGED"
+  },
+  "publication": {
+    "localOutcomeRecordOnly": true,
+    "hostedCIExecutedByThisSelection": false,
+    "CIOrProductionReadinessClaim": false
+  }
+}
