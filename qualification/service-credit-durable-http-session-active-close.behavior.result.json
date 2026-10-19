@@ -1,0 +1,285 @@
+{
+  "schemaVersion": 1,
+  "scope": "OCT19_P0A_REAL_SESSION_ACTIVE_CLOSE_LOCAL_V1",
+  "status": "TWO_LOCAL_SYNTHETIC_CASES_PASSED_PRIOR_BUSY_REFUSALS_RETAINED",
+  "purpose": "Qualify two active-original close paths using the actual durable session, owner, HTTP component and fresh private synthetic SQLite stores; no HTTP server or live pilot is started.",
+  "selectedCheckoutHead": "e1a5bafeadda9a679dc2261b1abea164820fb8a5",
+  "sourceBinding": "Exact local file hashes, not checkout HEAD alone, bind this uncommitted component graph.",
+  "historicalSourceStage": {
+    "path": "qualification/service-credit-durable-http-session-active-close.source-only.result.json",
+    "sha256": "d0ba42ca9c5eed12b894d0f90f42d7266030d62069b86c3dc449f63f64a00676",
+    "bytes": 10012,
+    "unchanged": true,
+    "notRewrittenAsExecuted": true
+  },
+  "sources": [
+    {
+      "path": "qualification/service-credit-durable-http-session-active-close.draft.mjs",
+      "bytes": 19286,
+      "sha256": "009ea6f43a9abdae89b03f5a7ef5c541ceb79b827f545a72305171cdf7e8ff52"
+    },
+    {
+      "path": "src/service-credit-durable-http-session.js",
+      "bytes": 13978,
+      "sha256": "a0d6d1436cdb697f125fee2f4dc723a5ddcfd2ee7063b55d56fa006bb8ba69bf"
+    },
+    {
+      "path": "src/service-credit-durable-session-close.js",
+      "bytes": 2470,
+      "sha256": "5aae36a7da39ce5b7b9a8da8e9fbda88465cb1e4853dc791520a1df0ab87ede7"
+    },
+    {
+      "path": "src/service-credit-durable-execution-owner.js",
+      "bytes": 40833,
+      "sha256": "a63a795dda77489f7da0682d83a0683cf07240f83b803f449668cb687a956863"
+    },
+    {
+      "path": "src/service-credit-http.js",
+      "bytes": 32432,
+      "sha256": "c76a7f1864bdfcd0c26916bf28fba615c8aecf899d53e69467e3ebe7d3353d0d"
+    },
+    {
+      "path": "src/service-credit-sqlite-store.js",
+      "bytes": 82141,
+      "sha256": "bda45bd553c8580a7bd66573bb2fb7c3bf12d79bab49a91fe3ac6dc1ebad8422"
+    },
+    {
+      "path": "src/service-credit-model.js",
+      "bytes": 55461,
+      "sha256": "7ff7e3d88ab8c3b38a0073541533fbdb7a0d9f2be42f337ac35f6a3b05615c3a"
+    },
+    {
+      "path": "src/service-credit-execution-contract.js",
+      "bytes": 30258,
+      "sha256": "298f8e74885e1c507953c0fcf7874832f815296746e6bacbdac97a425f1a6c73"
+    },
+    {
+      "path": "src/service-credit-capability.js",
+      "bytes": 8284,
+      "sha256": "cb2b96d9a2e56c132dd1b4aca8f1c065b244ecd0e7e92f41ea3f4a8c969d17c3"
+    },
+    {
+      "path": "package.json",
+      "bytes": 1413,
+      "sha256": "8c9a25504fbf6f87c31cdf245a6f4eec5a88cc89c8352151dc66a577c5771ef5"
+    }
+  ],
+  "sourceBytes": 286556,
+  "runtime": {
+    "name": "Node.js",
+    "version": "v24.19.0",
+    "platform": "darwin",
+    "arch": "arm64",
+    "binaryBytes": 121304480,
+    "binarySHA256": "852d6074f741d18223b24967d8384e8920856a7fcd4348682a4ec524b5fc2ff4",
+    "noAddons": true,
+    "stringCodeGenerationDisabled": true,
+    "OSOrNetworkSandbox": false,
+    "cooperativeTestTimeoutMs": 15000,
+    "cooperativeManagerTimeoutSeconds": 20,
+    "hardLifetimeCancellationOrNativeCleanupGuarantee": false,
+    "premises": "Native loader, runner, streams, SQLite where selected, OS behavior, pristine intrinsics and source-to-import race freedom remain premises.",
+    "NodePermissionModel": false,
+    "applicationEnvironmentKeys": 9,
+    "syntheticCapabilityKeyPairsPerCase": 1,
+    "actualGrantOrPaymentAuthority": "NONE"
+  },
+  "callsite": {
+    "kind": "Fixed unsaved CommonJS run-API caller; trusted existing task-storage manager",
+    "callerBytes": 9079,
+    "callerSHA256": "42c1c72c2b971d2d01a69a3144bb60fded97ce23c676502d197775f10c7c5ee8",
+    "commandSHA256": [
+      "588614554bcd8fa8982fbf9117c83564026a77cdad89ae3fde8e51b9356706b6",
+      "ffa50f5c25b76456de16928e4ba04ba22ec17e1d1e73596e1924a9b9e4d03f1e"
+    ],
+    "positionalSelections": [
+      "1",
+      "2"
+    ],
+    "sources": 10,
+    "managerExpectedBytesPerTask": 33554432,
+    "managerQuotaBytesPerTask": 67108864,
+    "newSavedOperationalHelpers": 0,
+    "sourceClones": 0,
+    "dependencyInstalls": 0,
+    "applicationReadExpansion": false
+  },
+  "attempts": {
+    "earlierTerminalManagerBusyRefusals": 2,
+    "earlierTasksCreated": 0,
+    "earlierNodeProcesses": 0,
+    "changedCondition": "A later exact-mount direct nonblocking probe found the shared store lease available. No lease was broken or foreign task interrupted.",
+    "newManagerInvocations": 2,
+    "newNodeProcesses": 2,
+    "passedAuthoredTests": 2,
+    "failedAuthoredTests": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0,
+    "preDispatchRepresentationRefusal": "A primary in-RAM comparison initially compared the source-file count10 with a table. Both read-only preflight and FD audit had passed. The exact table in the unchanged caller was then independently matched; no source, preflight or native run was repeated for that correction."
+  },
+  "cases": [
+    {
+      "selection": "1",
+      "name": "S1 real durable session external close drains one active original",
+      "status": "PASS",
+      "receipt": {
+        "actualExit": 0,
+        "complete": true,
+        "completedAtUTC": "2026-10-19T07:30:48.094Z",
+        "taskState": "CLOSED",
+        "taskOutcome": "SUCCESS",
+        "commandReceiptSHA256": "509a9dbe18f227e0f1b74e78aef0c77beaf4554e04f6ec2aef19ab74b0fe2954",
+        "taskRecordSHA256": "72259860153c3a2c46d34aeeb017c29de8f190064139542083e716a25f9a6e83",
+        "outcomeReceiptSHA256": "eac56249c0fd31a2fd3353a555e3b8a7717172d5f1a5fcbe6474dc6fee228453",
+        "cleanupDecision": "HOLD",
+        "completeOriginalStreamsAndCASCreatorBindingsIndependentlyRead": true,
+        "captures": {
+          "stdout": {
+            "bytes": 868,
+            "sha256": "a68bcbdf50a1bcb0213f2d408a313941c6e094b264ef5118c14388cd187f58df"
+          },
+          "stderr": {
+            "bytes": 2096,
+            "sha256": "f202f5df9a3b671610265e3a3621ca1c9816fbfed8813808e5e5a32cb4580abc"
+          }
+        }
+      },
+      "completeTAP": "TAP version 13\n# Subtest: S1 real durable session external close drains one active original\nok 1 - S1 real durable session external close drains one active original\n  ---\n  duration_ms: 309.086625\n  type: 'test'\n  ...\n# {\"case\":\"1\",\"status\":\"PASS\",\"stage\":\"ASSERTIONS_COMPLETE\",\"sources\":\"MATCHED\",\"retainedErrors\":0,\"hold\":\"NONE\",\"holderKeyPairs\":1,\"calls\":1,\"originalReleases\":1,\"closeCalls\":3,\"innerCalls\":0,\"innerRejected\":false,\"closing503\":1,\"closed503\":2,\"schedules\":1,\"cancels\":1,\"borrowedStoreReadable\":true,\"fixtureStoreCloseCalls\":1,\"fixtureStoreCloseReturned\":true,\"sendOrder\":\"RESPONSE_BEFORE_CLOSE\",\"closeBoundary\":\"OWNER_COMPLETION_ONLY\",\"replayBoundary\":\"CLOSED_HANDLE_503_CACHE_RETAINED\",\"qualification\":\"LOCAL_SYNTHETIC_ONLY\",\"authority\":\"NONE\"}\n1..1\n# tests 1\n# suites 0\n# pass 1\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 316.811959\n",
+      "assertedDiagnostic": {
+        "case": "1",
+        "status": "PASS",
+        "stage": "ASSERTIONS_COMPLETE",
+        "sources": "MATCHED",
+        "retainedErrors": 0,
+        "hold": "NONE",
+        "holderKeyPairs": 1,
+        "calls": 1,
+        "originalReleases": 1,
+        "closeCalls": 3,
+        "innerCalls": 0,
+        "innerRejected": false,
+        "closing503": 1,
+        "closed503": 2,
+        "schedules": 1,
+        "cancels": 1,
+        "borrowedStoreReadable": true,
+        "fixtureStoreCloseCalls": 1,
+        "fixtureStoreCloseReturned": true,
+        "sendOrder": "RESPONSE_BEFORE_CLOSE",
+        "closeBoundary": "OWNER_COMPLETION_ONLY",
+        "replayBoundary": "CLOSED_HANDLE_503_CACHE_RETAINED",
+        "qualification": "LOCAL_SYNTHETIC_ONLY",
+        "authority": "NONE"
+      }
+    },
+    {
+      "selection": "2",
+      "name": "S2 original callback close rejects after external close without poisoning it",
+      "status": "PASS",
+      "receipt": {
+        "actualExit": 0,
+        "complete": true,
+        "completedAtUTC": "2026-10-19T07:31:01.703Z",
+        "taskState": "CLOSED",
+        "taskOutcome": "SUCCESS",
+        "commandReceiptSHA256": "563c6dc9b91bdd0240a89151c2412a2ef00e947cbd6b3ced655ab5b4d5348564",
+        "taskRecordSHA256": "ade6178bf158062df58c152b9306bc51b4fe6159f3abca319b8faa34c7ecc7c7",
+        "outcomeReceiptSHA256": "049f82cea43d498e9eb4851fa415ceaab78194f2604c1fce0acd135d2c42d44f",
+        "cleanupDecision": "HOLD",
+        "completeOriginalStreamsAndCASCreatorBindingsIndependentlyRead": true,
+        "captures": {
+          "stdout": {
+            "bytes": 889,
+            "sha256": "9e2ce07a0a6d73ee917c6dfe0aa3d2bc821f269ea65f45d950c5c606dce06522"
+          },
+          "stderr": {
+            "bytes": 2096,
+            "sha256": "fad0f10dc6337f0a02daf07a9a3fe341cda89a170783a98587cb60ab0cac0134"
+          }
+        }
+      },
+      "completeTAP": "TAP version 13\n# Subtest: S2 original callback close rejects after external close without poisoning it\nok 1 - S2 original callback close rejects after external close without poisoning it\n  ---\n  duration_ms: 266.024916\n  type: 'test'\n  ...\n# {\"case\":\"2\",\"status\":\"PASS\",\"stage\":\"ASSERTIONS_COMPLETE\",\"sources\":\"MATCHED\",\"retainedErrors\":0,\"hold\":\"NONE\",\"holderKeyPairs\":1,\"calls\":1,\"originalReleases\":1,\"closeCalls\":4,\"innerCalls\":1,\"innerRejected\":true,\"closing503\":1,\"closed503\":2,\"schedules\":1,\"cancels\":1,\"borrowedStoreReadable\":true,\"fixtureStoreCloseCalls\":1,\"fixtureStoreCloseReturned\":true,\"sendOrder\":\"RESPONSE_BEFORE_CLOSE\",\"closeBoundary\":\"OWNER_COMPLETION_ONLY\",\"replayBoundary\":\"CLOSED_HANDLE_503_CACHE_RETAINED\",\"qualification\":\"LOCAL_SYNTHETIC_ONLY\",\"authority\":\"NONE\"}\n1..1\n# tests 1\n# suites 0\n# pass 1\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 272.245625\n",
+      "assertedDiagnostic": {
+        "case": "2",
+        "status": "PASS",
+        "stage": "ASSERTIONS_COMPLETE",
+        "sources": "MATCHED",
+        "retainedErrors": 0,
+        "hold": "NONE",
+        "holderKeyPairs": 1,
+        "calls": 1,
+        "originalReleases": 1,
+        "closeCalls": 4,
+        "innerCalls": 1,
+        "innerRejected": true,
+        "closing503": 1,
+        "closed503": 2,
+        "schedules": 1,
+        "cancels": 1,
+        "borrowedStoreReadable": true,
+        "fixtureStoreCloseCalls": 1,
+        "fixtureStoreCloseReturned": true,
+        "sendOrder": "RESPONSE_BEFORE_CLOSE",
+        "closeBoundary": "OWNER_COMPLETION_ONLY",
+        "replayBoundary": "CLOSED_HANDLE_503_CACHE_RETAINED",
+        "qualification": "LOCAL_SYNTHETIC_ONLY",
+        "authority": "NONE"
+      }
+    }
+  ],
+  "storage": {
+    "policy": "Verified existing private root, exact mounted volume identity, 10 GiB floor plus 1 GiB safety, existing reservations and expected allocations; manager quotas remained in force.",
+    "allOwnedTasksClosed": true,
+    "taskOutcomes": [
+      "SUCCESS",
+      "SUCCESS"
+    ],
+    "managerCleanupDecisions": [
+      "HOLD",
+      "HOLD"
+    ],
+    "holdReason": "Unregistered synthetic fixture files or directories were preserved, not deleted or adopted.",
+    "fixtureDiagnosticHoldNoneIsNotManagerCleanup": true,
+    "borrowedStoreReadableAfterSessionClose": true,
+    "ownedFixtureStoreCloseReturned": true,
+    "returnedCloseIsNotNativeDurabilityOrOSCleanupProof": true,
+    "referencedStreamBytes": 5949,
+    "archiveOrDuplicateStdoutPackaging": false
+  },
+  "interpretation": {
+    "qualified": "Only the two named local component scenarios on the exact graph. Closing rejects new/closed-handle work without another execution; the callback close rejection does not poison the external close.",
+    "sendOrder": "The sampled RESPONSE_BEFORE_CLOSE result is an observation only. The public close boundary remains OWNER_COMPLETION_ONLY, not response delivery or send-order assurance.",
+    "replay": "CLOSED_HANDLE_503_CACHE_RETAINED is not qualification of every ordinary open-handle replay path.",
+    "notEstablished": [
+      "Whole P0-A completion",
+      "HTTP socket/HTTPS lifecycle",
+      "Host or process restart",
+      "Crash recovery or durability",
+      "SDK/store broad qualification",
+      "Real provider READY",
+      "Live-chain inclusion or receive",
+      "Live service delivery",
+      "Pilot acceptance"
+    ],
+    "production": "NO_GO"
+  },
+  "postRunPreservation": {
+    "guardedFiles": 89,
+    "status": "ALL_EXACT_SOURCE_BYTES_FULL_IDENTITIES_AND_CHECKOUT_REFS_MATCHED",
+    "historicalSourceStageUnchanged": true
+  },
+  "preservation": {
+    "signer": "DISABLED",
+    "consumedChainAdmissions": 2,
+    "actualChainPrepare": 1,
+    "bundles": 0,
+    "nativeChainProviderQualificationRuns": 0,
+    "originalRealPaymentRequestBytesHashPayloadRequirementsContextAndConsumedAuthority": "UNCHANGED",
+    "PR193ValidatedSameSignedBlockPossibilitySeparateFromUnknownAcknowledged": true,
+    "failedOwnershipMetadataNotRetried": true,
+    "stoppedSelectionsFailuresAndHistoricalEvidence": "PRESERVED",
+    "stagingCommitPushHostedCIOrMainPublication": 0
+  },
+  "next": "Preserve these exact completed outcomes; do not rerun them on unchanged inputs. Continue distinct uncompleted roadmap coverage. Main/CI remains a separate reviewed transfer gate."
+}
