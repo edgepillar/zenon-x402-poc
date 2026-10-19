@@ -1,0 +1,223 @@
+{
+  "schemaVersion": 1,
+  "scope": "OCT19_P2_MAIN_PLANNER_STATUS_FOUNDATION_V1",
+  "status": "NINETEEN_LOCAL_DECLARED_DATA_TESTS_PASSED",
+  "purpose": "A dependency-complete declared-data planner/status foundation for a small main batch. It is not the SQLite-backed client/runner or a replacement for its separate qualification.",
+  "sourceContext": {
+    "checkoutHead": "e1a5bafeadda9a679dc2261b1abea164820fb8a5",
+    "binding": "Exact local file bytes, not checkout HEAD alone, bind the graph. The unchanged package dependency matches the selected main base.",
+    "selectedMainBase": "d0d6f3d74bb7d16319ce615ff87c1ff610564dfd",
+    "sourceFileCount": 6,
+    "sourceBytes": 28938,
+    "files": [
+      {
+        "path": "test/service-credit-pilot-status-view.test.js",
+        "bytes": 4610,
+        "LF": 113,
+        "sha256": "c7e8e5536601e9df2ee96e231bf374e8e911a00c9c5e4a9accbef332e0abe8b9",
+        "gitBlob": "7fb7ce67788cf5728999b8dce8ed9d80151c52d3",
+        "role": "COMPLETE_SELECTED_UNIT_SUITE"
+      },
+      {
+        "path": "test/service-credit-pilot-client-plan.test.js",
+        "bytes": 3766,
+        "LF": 78,
+        "sha256": "127d6237784427379194ee7ad7a9b89144cad6724eb0e0f80f52a977e37c29c3",
+        "gitBlob": "0f2df7c1357262bb389d1f7881acec66063c7635",
+        "role": "COMPLETE_SELECTED_UNIT_SUITE"
+      },
+      {
+        "path": "test/service-credit-pilot-client-model-snapshot-plan.test.js",
+        "bytes": 8464,
+        "LF": 238,
+        "sha256": "731381c68b1a1933f9e530c8e31d290f6b0c46a5b37bdbace0c51ef30202dbdb",
+        "gitBlob": "30d2a772fec07b30cd9d8cab11e7c8fa98e63ec9",
+        "role": "COMPLETE_SELECTED_UNIT_SUITE"
+      },
+      {
+        "path": "src/service-credit-pilot-status-view.js",
+        "bytes": 3202,
+        "LF": 60,
+        "sha256": "cf3822d8b9ec4eb4772452ed1888b96d398fd87c1ead44cd155a5acc1a6b66ed",
+        "gitBlob": "0890db504e44b704d0434dc309e711743570e652",
+        "role": "DECLARED_DATA_PRODUCTION_MODULE"
+      },
+      {
+        "path": "src/service-credit-pilot-client-plan.js",
+        "bytes": 7483,
+        "LF": 181,
+        "sha256": "73ee3d739de85150039e733234cd0761c228d68de040d1e126902e808a259ac6",
+        "gitBlob": "14334c82b5b7c80fb8f7f6a392a1a0f3c3adcbf1",
+        "role": "DECLARED_DATA_PRODUCTION_MODULE"
+      },
+      {
+        "path": "package.json",
+        "bytes": 1413,
+        "LF": 40,
+        "sha256": "8c9a25504fbf6f87c31cdf245a6f4eec5a88cc89c8352151dc66a577c5771ef5",
+        "gitBlob": "ec7193f6fd76f34778515079dc777594175c4c34",
+        "role": "UNCHANGED_MAIN_MODULE_METADATA"
+      }
+    ]
+  },
+  "publicAPIs": [
+    "getServiceCreditPilotStatusView",
+    "createServiceCreditPilotClientPlan",
+    "createServiceCreditPilotClientModelSnapshotPlan"
+  ],
+  "sourceReview": {
+    "completeTwoModulesAndThreeUnitFilesIndependentlyFDRead": true,
+    "completeAuthoredRegistrations": 19,
+    "importClosure": "Status module imports nothing. Planner imports only status. The three selected unit files import only node:test, node:assert/strict and the paired modules.",
+    "dataOnly": true,
+    "sourceWrites": 0,
+    "keysSignatureSQLSDKNetworkTransportOrFSWrites": false,
+    "coverage": "Canonical bounded JSON, exact identity/schema/label/cost/cache binding, non-authorizing immutable projections, uncertainty precedence/latches, terminal and cache monotonicity, atomic rejections, strict arities and idempotent local close/no reset.",
+    "limits": "Declared model DTO subset and coherent labels do not authenticate hashes, original bytes, backend state, custody or effects. Pristine JSON/Object/string intrinsics remain premises."
+  },
+  "runtime": {
+    "name": "Node.js",
+    "version": "v24.19.0",
+    "platform": "darwin",
+    "arch": "arm64",
+    "binaryBytes": 121304480,
+    "binarySHA256": "852d6074f741d18223b24967d8384e8920856a7fcd4348682a4ec524b5fc2ff4",
+    "NodePermissionModel": true,
+    "exactFSReadFiles": 6,
+    "FSWriteChildWorkerAddonGrants": false,
+    "noAddons": true,
+    "stringCodeGenerationDisabled": true,
+    "OSOrNetworkSandbox": false,
+    "clearedApplicationEnvironmentKeys": 5,
+    "cooperativeTestTimeoutMs": 15000,
+    "cooperativeManagerTimeoutSeconds": 20,
+    "hardLifetimeCancellationOrNativeCleanupGuarantee": false,
+    "premises": "Native loader, runner, streams, OS behavior, pristine intrinsics and source-to-import race freedom remain premises."
+  },
+  "callsite": {
+    "kind": "Fixed unsaved CommonJS explicit run-API caller with three positional test files in one process; reviewed existing task-storage manager",
+    "callerBytes": 6177,
+    "callerSHA256": "7559ee13c96c615b76f1f3a45508be05946a83b1acb7cdfc6de7570c714538cf",
+    "commandSHA256": "921969a7cabf7280431cdf6e12d79a3bdb3b91b9279b9677850e3b1898c91f43",
+    "selectedFiles": [
+      "test/service-credit-pilot-status-view.test.js",
+      "test/service-credit-pilot-client-plan.test.js",
+      "test/service-credit-pilot-client-model-snapshot-plan.test.js"
+    ],
+    "wholeCallerInverseExact": true,
+    "managerExpectedBytes": 33554432,
+    "managerQuotaBytes": 67108864,
+    "newSavedOperationalHelpers": 0,
+    "dependencyInstallsBuildsOrHostedCI": 0,
+    "sourceClones": 0
+  },
+  "attempts": {
+    "managerCLIInvocations": 1,
+    "nodeProcesses": 1,
+    "successfulNodeProcesses": 1,
+    "failedNodeProcesses": 0,
+    "passedAuthoredTests": 19,
+    "failedAuthoredTests": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0,
+    "executionRetries": 0,
+    "sharedRootWait": "Busy kernel probes occurred before any CLI/Node. The one initial invocation used the existing manager's bounded passive metadata-lease admission; no lock was broken, work interrupted, alternate root provisioned or direct Node fallback used.",
+    "capacityReaderRefusals": "A new current task accounting record exceeded the existing 64 KiB read cap. After an exact stable FD/schema/owner review of that one 103257-byte record, its declared read cap became 131072 for current accounting only. The original refusal and size diagnostic remain retained.",
+    "capacityBoundary": "The old four immutable large-record pins, the other current-record cap262144, aggregate metadata8MiB, mounted root/config/policy, production floor/reservations and native quota were unchanged. No foreign task/evidence adoption, recovery, cleanup or consumed-authority reset occurred.",
+    "historicalQualification": "No prior Root, collection, P0-A, DP or old41 scenario was rerun or relabeled as standalone main evidence."
+  },
+  "outcome": {
+    "actualExit": 0,
+    "state": "COMPLETE",
+    "outputComplete": true,
+    "completedAtUTC": "2026-10-19T08:57:01.402Z",
+    "commandReceiptSHA256": "8e02d5e3f7360fe6dbf4f5d1495251d43c58f7b636c8643fbffdb7840a3a923e",
+    "taskRecordSHA256": "d9cd8fd9edea6e8aa49afdb23c5fee9e26907c30b31d7edc39ba2741f7793268",
+    "outcomeReceiptSHA256": "9d3f00aa3c75b44cbab03fc5f81ff1a4cc18dbb46d218aa559cdc5c37c679cc4",
+    "captures": {
+      "stdout": {
+        "bytes": 3086,
+        "sha256": "7b3845ba06e8465ff63eb58b544dcff2a5a97d331aa7ad67975f98ea2d1eb542"
+      },
+      "stderr": {
+        "bytes": 1538,
+        "sha256": "dd6736e6797188c64b32b928b7f049a7969dfbd6ee9b0b39f7c8c93f9dcfe7a4"
+      }
+    },
+    "completeOriginalStreamsAndCASCreatorRuntimeTaskBindingsIndependentlyRead": true,
+    "authoredNames": [
+      "every phase stays non-authorizing",
+      "uncertainty and funding precedence",
+      "identity binding and null rules",
+      "strict transport, schema and error privacy",
+      "invalid versions, IDs and labels",
+      "fresh, frozen and stateless",
+      "bound immutable identity",
+      "success never enables actions",
+      "reject retargeting atomically",
+      "uncertainty stays latched",
+      "terminal replay and regression",
+      "input and arity are atomic",
+      "idempotent close, no reset",
+      "five declared request states project without granting authority",
+      "all identity fields remain bound and foreign success cannot replace cache",
+      "malformed canonical records, invalid caches and changing cost are refused atomically",
+      "declared success cannot clear funding or service uncertainty",
+      "observed states advance monotonically and terminal caches cannot change",
+      "strict primitive arities and local close preserve accepted evidence"
+    ],
+    "completeTAP": "TAP version 13\n# Subtest: every phase stays non-authorizing\nok 1 - every phase stays non-authorizing\n  ---\n  duration_ms: 1.366292\n  type: 'test'\n  ...\n# Subtest: uncertainty and funding precedence\nok 2 - uncertainty and funding precedence\n  ---\n  duration_ms: 0.111291\n  type: 'test'\n  ...\n# Subtest: identity binding and null rules\nok 3 - identity binding and null rules\n  ---\n  duration_ms: 0.2565\n  type: 'test'\n  ...\n# Subtest: strict transport, schema and error privacy\nok 4 - strict transport, schema and error privacy\n  ---\n  duration_ms: 0.241791\n  type: 'test'\n  ...\n# Subtest: invalid versions, IDs and labels\nok 5 - invalid versions, IDs and labels\n  ---\n  duration_ms: 0.307292\n  type: 'test'\n  ...\n# Subtest: fresh, frozen and stateless\nok 6 - fresh, frozen and stateless\n  ---\n  duration_ms: 0.1215\n  type: 'test'\n  ...\n# Subtest: bound immutable identity\nok 7 - bound immutable identity\n  ---\n  duration_ms: 0.161334\n  type: 'test'\n  ...\n# Subtest: success never enables actions\nok 8 - success never enables actions\n  ---\n  duration_ms: 0.120333\n  type: 'test'\n  ...\n# Subtest: reject retargeting atomically\nok 9 - reject retargeting atomically\n  ---\n  duration_ms: 0.131209\n  type: 'test'\n  ...\n# Subtest: uncertainty stays latched\nok 10 - uncertainty stays latched\n  ---\n  duration_ms: 0.197458\n  type: 'test'\n  ...\n# Subtest: terminal replay and regression\nok 11 - terminal replay and regression\n  ---\n  duration_ms: 0.2045\n  type: 'test'\n  ...\n# Subtest: input and arity are atomic\nok 12 - input and arity are atomic\n  ---\n  duration_ms: 0.170916\n  type: 'test'\n  ...\n# Subtest: idempotent close, no reset\nok 13 - idempotent close, no reset\n  ---\n  duration_ms: 0.104792\n  type: 'test'\n  ...\n# Subtest: five declared request states project without granting authority\nok 14 - five declared request states project without granting authority\n  ---\n  duration_ms: 0.519459\n  type: 'test'\n  ...\n# Subtest: all identity fields remain bound and foreign success cannot replace cache\nok 15 - all identity fields remain bound and foreign success cannot replace cache\n  ---\n  duration_ms: 0.474416\n  type: 'test'\n  ...\n# Subtest: malformed canonical records, invalid caches and changing cost are refused atomically\nok 16 - malformed canonical records, invalid caches and changing cost are refused atomically\n  ---\n  duration_ms: 1.190333\n  type: 'test'\n  ...\n# Subtest: declared success cannot clear funding or service uncertainty\nok 17 - declared success cannot clear funding or service uncertainty\n  ---\n  duration_ms: 0.088208\n  type: 'test'\n  ...\n# Subtest: observed states advance monotonically and terminal caches cannot change\nok 18 - observed states advance monotonically and terminal caches cannot change\n  ---\n  duration_ms: 0.337125\n  type: 'test'\n  ...\n# Subtest: strict primitive arities and local close preserve accepted evidence\nok 19 - strict primitive arities and local close preserve accepted evidence\n  ---\n  duration_ms: 0.251125\n  type: 'test'\n  ...\n1..19\n# tests 19\n# suites 0\n# pass 19\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 13.383125\n"
+  },
+  "storage": {
+    "verifiedExistingMountedPrivateRoot": true,
+    "productionFloorGiB": 10,
+    "safetyMarginGiB": 1,
+    "existingReservationsAndAllocationAccounted": true,
+    "taskState": "CLOSED",
+    "taskOutcome": "SUCCESS",
+    "managerCleanupDecision": "CLEANED",
+    "registeredScratchBytesRemoved": 0,
+    "completeCaptureCASObjects": 2,
+    "retainedStreamBytes": 4624,
+    "archiveOrDuplicateStdoutPackaging": false,
+    "OSCleanupOrDurabilityProven": false
+  },
+  "postRunPreservation": {
+    "protectedFiles": 96,
+    "allExactBytesHashesFullIdentitiesAndCheckoutRefsMatched": true,
+    "productionOrTestSourceRewritten": 0,
+    "oldReportsFailuresAndStoppedSelectionsRewritten": 0
+  },
+  "acceptance": {
+    "qualified": "Only these three complete authored unit suites for the exact isolated planner/status declared-data pair and unchanged package metadata.",
+    "notEstablished": [
+      "Backend integration or activation",
+      "Original-request or signed-payment custody",
+      "Authenticated model equivalence",
+      "Current context/funding/payer/provider/policy authority",
+      "Real provider READY",
+      "Official x402/SDK interoperability",
+      "Persistence or process restart",
+      "Crash/durability",
+      "Service delivery",
+      "Live pilot acceptance",
+      "Production suitability"
+    ],
+    "livePilot": "NOT_ESTABLISHED",
+    "production": "NO_GO",
+    "hostedCI": "NOT_RUN",
+    "mainTransfer": "A separate fresh rules/PR/ref/diff and dependency-complete payload review is required; this result is not itself a publication receipt."
+  },
+  "preservation": {
+    "signer": "DISABLED",
+    "consumedChainAdmissions": 2,
+    "actualChainPrepare": 1,
+    "bundles": 0,
+    "nativeChainProviderQualificationRuns": 0,
+    "originalRealPaymentRequestBytesHashPayloadRequirementsContextAndConsumedAuthority": "UNCHANGED",
+    "PR193ValidatedSameSignedBlockPossibilitySeparateFromUnknownAcknowledged": true,
+    "failedOwnershipMetadataNotRetried": true,
+    "automationOrMemoryChanged": false
+  }
+}
