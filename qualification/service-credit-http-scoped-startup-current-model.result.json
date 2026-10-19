@@ -1,0 +1,134 @@
+{
+  "schema_version": 1,
+  "scope": "P0_A_HTTP_SCOPED_STARTUP_CURRENT_MODEL_LOCAL_COMPONENT",
+  "status": "PASS_LOCAL_COMPONENT_ONLY",
+  "description": "Recontext qualification of five retained constructor/startup scenarios against the actual current HTTP admission constructor and model hydration/export path. This is not a new production feature or full P0-A qualification.",
+  "source_graph": [
+    {
+      "path": "src/service-credit-http.js",
+      "bytes": 32432,
+      "sha256": "c76a7f1864bdfcd0c26916bf28fba615c8aecf899d53e69467e3ebe7d3353d0d",
+      "git_blob": "040da1547c2fa6cc4a4044c47619b253f16d19a1"
+    },
+    {
+      "path": "src/service-credit-model.js",
+      "bytes": 55461,
+      "sha256": "7ff7e3d88ab8c3b38a0073541533fbdb7a0d9f2be42f337ac35f6a3b05615c3a",
+      "git_blob": "e6ac17254874584d1a01f70e7abc6f771bd35d73"
+    },
+    {
+      "path": "src/service-credit-capability.js",
+      "bytes": 8284,
+      "sha256": "cb2b96d9a2e56c132dd1b4aca8f1c065b244ecd0e7e92f41ea3f4a8c969d17c3",
+      "git_blob": "2e19d42c1b9311a75897c84669849f56ae40f785"
+    },
+    {
+      "path": "package.json",
+      "bytes": 1413,
+      "sha256": "8c9a25504fbf6f87c31cdf245a6f4eec5a88cc89c8352151dc66a577c5771ef5",
+      "git_blob": "ec7193f6fd76f34778515079dc777594175c4c34"
+    },
+    {
+      "path": "qualification/service-credit-http-scoped-startup-current-model.draft.mjs",
+      "bytes": 12704,
+      "sha256": "b9accd1446e68a62b65d0974768fd8ac12b8d9f3c0cbe042a59a7b0bcdaf3c6c",
+      "git_blob": "184f4ae8aec8a76b3a96d416cecf9721432b45fc"
+    }
+  ],
+  "retained_original": {
+    "path": "test/service-credit-http-scoped-admission-startup.test.js",
+    "bytes": 12459,
+    "sha256": "515d330f53db7d5c15b87b0110d43aa10da8e99a16c3463cc93450afa3e347d0",
+    "disposition": "Preserved locally unchanged; not executed on the changed graph and not included in this publication batch."
+  },
+  "recontext": {
+    "old_model": {
+      "bytes": 53422,
+      "sha256": "f9a935ba0c3d72bcd547b13c3769e76fe0282245de1d8688dae2ebc361a39ac6"
+    },
+    "current_model": {
+      "bytes": 55461,
+      "sha256": "7ff7e3d88ab8c3b38a0073541533fbdb7a0d9f2be42f337ac35f6a3b05615c3a"
+    },
+    "direct_source_bytes_before": 94138,
+    "direct_source_bytes_after": 96177,
+    "edits": "Only a 245-byte explanatory prefix and three source-pin DATA replacements. Complete inverse recovers the original file. All helper, scenario and registration bodies are unchanged.",
+    "model_provenance": {
+      "main_commit": "157ef8d6a5b3b521731d5ca8e85513fba3cbafdd",
+      "git_blob": "e6ac17254874584d1a01f70e7abc6f771bd35d73",
+      "purpose": "Include the already-published exact model blob so this review branch contains the qualified dependency graph. No new model authorship or whole-application qualification is claimed."
+    }
+  },
+  "execution": {
+    "node_version": "v24.19.0",
+    "node_binary_sha256": "3c9448363b9976bf3d9e8f4d320397975800131b42c7b1be342dadc05871dd25",
+    "invocations": 1,
+    "explicit_test_files": 1,
+    "authored_test_groups": 5,
+    "exit_code": 0,
+    "observed_join_wall_seconds": 0.275126291,
+    "totals": {
+      "tests": 5,
+      "suites": 0,
+      "pass": 5,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "pass_names": [
+      "startup rejects invalid present scopes and hostile options before load",
+      "startup accepts canonical two-grant snapshots scoped and unscoped without mutations",
+      "scoped startup rejects corruption in the unselected grant with valid checksums",
+      "startup rejects checksum-only mismatch without scope fallback or repair",
+      "startup rejects missing scope noncanonical grant order and extra envelope fields"
+    ],
+    "capture": {
+      "kind": "Combined tool stdout/stderr descriptor stream",
+      "bytes": 1234,
+      "sha256": "f2dd65ed5c7b5bdfbae1dfe9cbc0bd45b8e3dbdb878d072b64b9f328ce970072",
+      "complete_TAP": true,
+      "separate_stderr_capture": false,
+      "observation": "Full TAP header, all five authored names, plan and final totals were observed without truncation or an unexpected diagnostic.",
+      "text": "TAP version 13\n# Subtest: startup rejects invalid present scopes and hostile options before load\nok 1 - startup rejects invalid present scopes and hostile options before load\n  ---\n  duration_ms: 3.524\n  type: 'test'\n  ...\n# Subtest: startup accepts canonical two-grant snapshots scoped and unscoped without mutations\nok 2 - startup accepts canonical two-grant snapshots scoped and unscoped without mutations\n  ---\n  duration_ms: 5.524541\n  type: 'test'\n  ...\n# Subtest: scoped startup rejects corruption in the unselected grant with valid checksums\nok 3 - scoped startup rejects corruption in the unselected grant with valid checksums\n  ---\n  duration_ms: 3.317958\n  type: 'test'\n  ...\n# Subtest: startup rejects checksum-only mismatch without scope fallback or repair\nok 4 - startup rejects checksum-only mismatch without scope fallback or repair\n  ---\n  duration_ms: 2.280042\n  type: 'test'\n  ...\n# Subtest: startup rejects missing scope noncanonical grant order and extra envelope fields\nok 5 - startup rejects missing scope noncanonical grant order and extra envelope fields\n  ---\n  duration_ms: 3.993542\n  type: 'test'\n  ...\n1..5\n# tests 5\n# suites 0\n# pass 5\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 51.539834\n"
+    }
+  },
+  "launch": {
+    "caller_kind": "Unsaved inline CommonJS built-in node:test run API with isolation:none, explicit one-file selection and concurrency:1",
+    "caller_bytes": 3784,
+    "caller_sha256": "687adc564cd597edb059ce96ba9fd762f9319376d4557e6285fa6e54ddd6c7ee",
+    "cleared_environment": true,
+    "read_grants": 5,
+    "source_package_entry_bytes": 110294,
+    "pre_import_exact_hash_guards": true,
+    "string_code_generation_restricted": true,
+    "filesystem_write_grant": false,
+    "child_worker_addon_grants": false,
+    "saved_operational_helper": false,
+    "staging_or_scratch_allocation": false
+  },
+  "preservation": {
+    "post_run_pin_checks": 7,
+    "all_before_after_pins_matched": true,
+    "original_fixture_unchanged": true,
+    "production_package_and_runtime_bytes_unchanged_by_qualification": true,
+    "source_handoff_sha256": "15a2bb041afe4b0de122aa307c6aef6cb9bf62c95b09ba878cb1ae3acfed6c15",
+    "source_only_DATA_diagnostic": "A missing-LF receipt reconstruction assumption was rejected and corrected using explicit encoding and nested key order. The source-only diagnostic was retained, not counted as a test invocation or passing assertion.",
+    "completed_tests_repeated_for_publication": false
+  },
+  "not_qualified": [
+    "No admit() call or foreign-proof authorization decision.",
+    "No cached replay, request execution or asynchronous close behavior.",
+    "No proof signing, verification or key-generation operation.",
+    "No SQLite persistence, native process restart, SDK, socket/server or network behavior.",
+    "No real payment, provider READY, service delivery, live pilot or production acceptance.",
+    "No whole-model or full P0-A claim. Pristine intrinsics and native loader, runner, streams, clock and hashing remain premises.",
+    "Node permissions are not an OS/network sandbox; the retained 5000ms test timeout is not a hard lifetime, cancellation or native-cleanup guarantee."
+  ],
+  "publication": {
+    "intended_scope": "Separate review branch only; main/CI remains a distinct lane.",
+    "hosted_CI": "NOT_RUN_NOT_ASSERTED_GREEN",
+    "real_payment_signer": "DISABLED_UNCHANGED",
+    "original_payment_and_consumed_authority": "UNCHANGED"
+  }
+}
