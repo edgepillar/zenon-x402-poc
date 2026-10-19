@@ -1,0 +1,412 @@
+{
+  "schemaVersion": 1,
+  "scope": "OCT20_P2_OPT_IN_OWNED_SQLITE_RECOVERY_READER_V1",
+  "status": "LOCAL_SYNTHETIC_API_CHECKS_COMPLETED_WITH_RETAINED_FAILED_REVISION",
+  "qualification": "UNQUALIFIED",
+  "authority": "NONE",
+  "serviceOutcome": "NOT_ESTABLISHED",
+  "module": {
+    "path": "src/service-credit-custodied-sqlite-recovery-reader.js",
+    "bytes": 2286,
+    "LF": 57,
+    "sha256": "72fd5da6aafd1500255f6170d2a2291155c4f4f5b1126c6b13dce9909decb0f3",
+    "gitBlob": "51c59fd254a124626b979a2798d3a960b60e2922",
+    "export": "openServiceCreditCustodiedSqliteRecoveryReaderV3",
+    "optIn": true,
+    "defaultWiringChanged": false,
+    "configurationFields": [
+      "databasePath",
+      "allowedRoot",
+      "fundingResourceUrl",
+      "custodyPolicy",
+      "selectedGrantId",
+      "deadlineMs"
+    ],
+    "returnedMethods": [
+      "readOriginal",
+      "readOriginalRecoveryState",
+      "readOriginalRecoveryKeys",
+      "createOriginalRecoveryPlan",
+      "createOriginalRecoveryStatePlan",
+      "createOriginalRecoveryCollection",
+      "createOriginalRecoveryObservationCollection",
+      "close",
+      "snapshot"
+    ],
+    "sourceContract": [
+      "Nine existing Root function references are forwarded; runOriginals and caller transport/factory are not exposed.",
+      "Both V3 plan entry points preserve persisted dispatch-intent metadata and return coupled recovery-state plans.",
+      "The private forbidden-dispatch sentinel is a source boundary, not an instrumented runtime counter.",
+      "Normal owned SQLite acquisition can advance owner_epoch; this is not SQLite readOnly mode, authentication or an OS sandbox."
+    ]
+  },
+  "retainedCoverage": {
+    "preexistingFourteenProductionPackageFilesUnchanged": true,
+    "olderCompletedChecksNotRerun": true,
+    "newSelection": "Opt-in recovery-only API attenuation over the current V3 owned runner; not a vulnerability or global novelty claim inferred from missing coverage.",
+    "completeWorkerSourceAndHandoffIndependentlyRead": true,
+    "workerExecutedCode": false
+  },
+  "runtime": {
+    "node": "24.19.0",
+    "platform": "darwin",
+    "architecture": "arm64",
+    "knownVerifiedBinarySHA256": "613be50c90e83aa8da58dd9ed393d0b39914a3b8ef4123fe817b46c2679cebe2",
+    "unchangedFullIdentityChecked": true,
+    "binaryRehashedOrCopied": false,
+    "libraryDependenciesInstalled": false,
+    "entrypoint": "Explicit CommonJS inline node:test run API; one literal fixture per process; isolation none, concurrency 1, forceExit false.",
+    "nodeFlags": [
+      "--no-addons",
+      "--disallow-code-generation-from-strings",
+      "-e"
+    ],
+    "environment": "env -i with exactly nine declared task/fixture/source-binding keys before Node startup.",
+    "savedOperationalHelpersCreated": 0,
+    "NodePermissionModel": false,
+    "OSOrNetworkSandbox": false,
+    "premises": [
+      "Pristine runtime, intrinsics, current private frozen components and native loader/runner/stream behavior.",
+      "Source and filesystem identity checks do not eliminate source-to-import or OS races.",
+      "Local timeout and process observations are not hard cancellation, C++ cleanup or durability guarantees."
+    ]
+  },
+  "executionAccounting": {
+    "localNodeCommands": 2,
+    "newSyntheticDatabases": 2,
+    "totalAuthoredCaseExecutions": 3,
+    "passExecutions": 2,
+    "failExecutions": 1,
+    "distinctAuthoredCasesPassed": 2,
+    "passedCaseNames": [
+      "V3 recovery reader refuses malformed configuration and transport options before acquisition",
+      "V3 owned SQLite recovery reader exposes nine original recovery methods and one cached close lifecycle"
+    ],
+    "cleanTwoTestSingleRun": false,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0,
+    "loaderFailures": 0,
+    "interpretation": "The configuration case passed in the original overall failed run. Only the remaining lifecycle case ran in the corrected continuation. The already-passed configuration case was not rerun."
+  },
+  "runs": [
+    {
+      "kind": "ORIGINAL_FAILED_TEST_ORACLE_REVISION",
+      "source": {
+        "path": "qualification/service-credit-custodied-sqlite-recovery-reader-v3.draft.mjs",
+        "bytes": 36303,
+        "LF": 624,
+        "sha256": "78c180c69666e76727ca10240ab28e19ff9a846dca8b6955a60b4cae40f483b2",
+        "gitBlob": "dbe86226e9f28d744dce38fcfd89d7423a25ff4a"
+      },
+      "actualExit": 1,
+      "outputComplete": true,
+      "commandReceiptState": "COMPLETE",
+      "taskState": "CLOSED",
+      "taskOutcome": "FAILURE",
+      "authoredTests": 2,
+      "pass": 1,
+      "fail": 1,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "refusedConfigurationsPassed": 15,
+      "testRunnerDurationMs": 506.492542,
+      "callerTemplateSHA256": "c6aeb5b43b743d2f3a05ef65260113969062ea1c6e2c18a8262ea447fdfa9c66",
+      "actualCaller": {
+        "bytes": 16917,
+        "sha256": "3cdee54cba9a2bdbdcb9b770db73fc31efe170c24673cc4d6cf3f16f51502897"
+      },
+      "inlineSupervisorSHA256": "8ee8135e348e1ef50752c78673fba131c8129ab33621457b24413493ffb9d457",
+      "stdout": {
+        "bytes": 2371,
+        "sha256": "8b0a89368448ed6534d805603c4a51a18d5a86ae248b6746a002f3930e80a0b8"
+      },
+      "stderr": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "failure": "A primary-authored test-oracle revision incorrectly applied the non-V3 declared-plan projection and authorization field to the V3 coupled-state plan.",
+      "originalNestedFailureTrace": "NOT_RETAINED_BY_STOCK_TAP_AGGREGATE_ERROR; source-confirmed oracle defect is not a complete original failure-path reconstruction.",
+      "sourceAndDatabaseBytesPreserved": true
+    },
+    {
+      "kind": "ONLY_REMAINING_LIFECYCLE_CASE",
+      "source": {
+        "path": "qualification/service-credit-custodied-sqlite-recovery-reader-v3-lifecycle.draft.mjs",
+        "bytes": 34645,
+        "LF": 601,
+        "sha256": "2369719b80cdd2096b1cb984d7f32d0a47e027fde0882040800e6e58ac7382d4",
+        "gitBlob": "7017609acf3ac49e4b940f08bebc3ee4f2d00d98"
+      },
+      "actualExit": 0,
+      "outputComplete": true,
+      "commandReceiptState": "COMPLETE",
+      "taskState": "CLOSED",
+      "taskOutcome": "SUCCESS",
+      "authoredTests": 1,
+      "pass": 1,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "testRunnerDurationMs": 498.335667,
+      "callerTemplateSHA256": "4d92b648fc12361b1446bdc148eb1d951578645706d3faefe63057c9e8dd990f",
+      "actualCaller": {
+        "bytes": 20232,
+        "sha256": "a039f2170e8da13c21f4bc07e1f9c1e5ed43c5320af19c08cb7433b570dc8cb4"
+      },
+      "inlineSupervisorSHA256": "0e20c97defded810cfc76a2913dd7c52147d3e9be9eb47a1ea7774f6b2926ad4",
+      "stdout": {
+        "bytes": 2419,
+        "sha256": "15d998ccc94f989d58ccbd6a4ef7fb526b4d8b623f3c7a85348801b4da46b1bb"
+      },
+      "stderr": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "retainedGuardProof": "The exact 2371-byte original stdout, 5296-byte source-binding record and 435-byte completed-command record were read-only checked by SHA-256 and file identity before importing this fixture. All fifteen production/package source pins and the known runtime binding matched.",
+      "configurationCaseRerun": false,
+      "productionModuleChanged": false
+    }
+  ],
+  "reviewCorrection": {
+    "workerFixtureBeforePrimaryOracleChange": {
+      "bytes": 36024,
+      "LF": 622,
+      "sha256": "efe23fdc45446a093f11bce5ccde28821abb5bd268ae023567152383a356bcaa",
+      "applied": false
+    },
+    "workerOracleForV3WasCorrect": true,
+    "primaryInitialReviewFindingSuperseded": true,
+    "correctiveAction": "Restore coupled-state comparisons and authority for both V3 plan methods in a new remaining-case fixture. Preserve the first executed fixture and failure; add bounded nested-error diagnostics only to the new fixture.",
+    "staticBranchReference": "openServiceCreditCustodiedSqliteSequentialRunnerV3 selects dispatchIntentEnabled=true; createOriginalRecoveryPlan delegates to createOriginalRecoveryStatePlan in that mode.",
+    "parentDataAudit": "An initial key-order-sensitive JSON comparison was corrected by semantic canonicalization without changing any file or executing another test."
+  },
+  "verifiedLocalBehavior": {
+    "malformedConfigurationControls": 15,
+    "getterCalls": 0,
+    "proxyTraps": 0,
+    "configurationFileObservation": "FIXTURE_ROOT_REMAINS_EMPTY",
+    "nativeConstructorsForRefusals": "NOT_MEASURED",
+    "frozenMethodSurface": 9,
+    "callerTransportAccepted": false,
+    "runClaimed": false,
+    "retainedOriginals": 2,
+    "retainedDispatchIntents": 1,
+    "declaredFundingRevision": 5,
+    "declaredFundingStatus": "BOUND",
+    "historicalAmbiguityLatched": true,
+    "declaredSuccessEstablishesAuthority": false,
+    "diagnosticDetachLeavesRootUsable": true,
+    "closeFunctionStable": true,
+    "closePromiseIdentityCachedBeforeAndAfterSettlement": true,
+    "rootCloseCalls": 1,
+    "storeCloseAttempts": 1,
+    "storeCloseOutcome": "RETURNED",
+    "rootCloseOutcome": "DRAINED",
+    "closedReadsRefused": true,
+    "rowsSchemaFundingPolicyOriginalsAndIntentsUnchangedExceptOwnerEpoch": true,
+    "ownerEpochBefore": 1,
+    "ownerEpochAfter": 2,
+    "trackedReturnedEntries": 4,
+    "seedEntries": 1,
+    "ownedEntries": 1,
+    "readonlyEntries": 2,
+    "ownedStoreCallCounts": {
+      "loadReads": 94,
+      "recordReads": 47,
+      "retainCalls": 0,
+      "readbackConfirmations": 0,
+      "dispatchCalls": 0,
+      "callbackCompletions": 0,
+      "intentWrites": 0,
+      "intentReads": 28,
+      "intentReadbackConfirmations": 0
+    },
+    "storeCallCountsAreSQLQueryOrCxxMeasurements": false,
+    "externalFixtureTransportCalls": 0,
+    "privateSentinelInstrumented": false,
+    "seedDatabaseSHA256": "f98c34d48768a5703c7a0117020839184fce27fae348e40c8b1692fc7e80a997",
+    "finalDatabaseSHA256": "ac50914442c47bd76d17b83d4ac1f9be0630625843eec07983d69218da77e16b"
+  },
+  "postRun": {
+    "allSeventeenRepositoryPackageSourceFilesUnchanged": true,
+    "reviewedManagerAndRootPolicyUnchanged": true,
+    "firstFailedDatabaseUnchanged": true,
+    "databasesHaveDistinctFileIdentitiesAndSingleLinks": true,
+    "databaseLogicalBytesEach": 32768,
+    "totalDatabaseLogicalBytes": 65536,
+    "physicalAPFSAllocationOrReclaim": "NOT_MEASURED",
+    "bothKnownNodeProcessesAndGroupsObservedAbsent": true,
+    "noNativeSessionPending": true,
+    "nativeCleanup": "NOT_ESTABLISHED",
+    "oldClosedTasksAndEvidenceUnmodified": true,
+    "cleanupAdoptionOrRecoveryRequested": false,
+    "supervisorAndRawPrivateEvidence": "Retained locally; public metadata is not independent host attestation."
+  },
+  "resourceLimits": {
+    "perTaskExpectedBytes": 33554432,
+    "perTaskQuotaBytes": 67108864,
+    "productionFreeSpaceFloorBytes": 10737418240,
+    "policyLowered": false,
+    "foregroundSeconds": 20,
+    "authoredTestSeconds": 12,
+    "advisoryWaitSeconds": 2,
+    "passiveMetadataLockWaitSeconds": 60,
+    "stdoutCapBytes": 131072,
+    "stderrCapBytes": 1048576,
+    "TAPCapBytes": 65536,
+    "stdoutPayloadBytesRetainedAcrossBothRuns": 4790,
+    "downloads": 0,
+    "dependencyInstallations": 0,
+    "binaryCopies": 0,
+    "scope": "Two small fresh synthetic database fixtures; no service-capacity benchmark."
+  },
+  "protectedRealTotals": {
+    "consumedAdmissions": 2,
+    "actualChainPREPARE": 1,
+    "bundles": 0,
+    "nativeChainProviderQualificationRuns": 0
+  },
+  "unchangedBoundaries": {
+    "signer": "DISABLED",
+    "originalRealRequestPaymentBytesAndHashPreserved": true,
+    "consumedAuthorityReset": false,
+    "replacementOrResigning": false,
+    "failed165OwnershipMetadataRetried": false,
+    "pr193": "VALIDATED exact-same-signed-block resend remains distinct from UNKNOWN and ACKNOWLEDGED; no resend performed.",
+    "SDKBuildCIProviderProvisioningPaymentOrLiveChainActions": 0
+  },
+  "remainingAcceptanceGates": [
+    "Independent current context, funding, payer/provider/policy authority and real provider READY.",
+    "Native durability, crash/restart recovery, commit/uncertainty reconciliation, service delivery and supervised pilot acceptance.",
+    "Separate Dynamic Plasma and official x402 compatibility lanes."
+  ],
+  "publicEvidenceLimits": [
+    "These actual local SQLite checks do not establish the full P2 milestone, production readiness or live pilot acceptance.",
+    "Source fixtures retain draft/unqualified labels; execution outcomes are recorded here instead of relabeling every fixture scenario as real funding or delivery.",
+    "Do not repeat completed checks or the failed fixture unchanged; select distinct unfinished coverage."
+  ],
+  "sourcePins": [
+    {
+      "path": "src/service-credit-custodied-sqlite-http-client.js",
+      "bytes": 18540,
+      "LF": 511,
+      "sha256": "ea16d6ac5ce72d6434c06e98c52c324daf918dd570f15997cdc21e501f677f4e",
+      "gitBlob": "9572dfcca76b83b53bdd5bd132ffaf110720dc3a"
+    },
+    {
+      "path": "src/service-credit-custodied-sqlite-sequential-runner.js",
+      "bytes": 21467,
+      "LF": 510,
+      "sha256": "9378a09dfd23c6ad5e093971d16c5aad62c19b5f3cce353bb199f037df64d7e0",
+      "gitBlob": "105b22e1463ab8302b141510e2bb991b746169ad"
+    },
+    {
+      "path": "src/service-credit-custodied-recovery-observation-collection-core.js",
+      "bytes": 8579,
+      "LF": 213,
+      "sha256": "36b7cece2d436cbfcac5f4299dd6bd30e5eede6ebb2ebe769ae7bf3a6f1a72b4",
+      "gitBlob": "4dc8765be0aa4b0e927fface960e366a3a6ccd1e"
+    },
+    {
+      "path": "src/service-credit-zenon-funding-post-v1-payer-recovery-sqlite-store.js",
+      "bytes": 57459,
+      "LF": 1536,
+      "sha256": "9c925f241effbfec0bf014ff284e834c4d5679c4ea7224f83a6354cde6cffdaf",
+      "gitBlob": "260c2f43306b029ca694aa06b8c60d1be037c614"
+    },
+    {
+      "path": "src/service-credit-http-execute-dispatch.js",
+      "bytes": 27034,
+      "LF": 770,
+      "sha256": "254ba8eef5ea5efb3a1b901be09e9cb33afbc3cfcf63789ca4a23316b6180d1b",
+      "gitBlob": "280dd20dc669e2856d263eba62ccd0fe9af72f21"
+    },
+    {
+      "path": "src/service-credit-original-request-custody-contract.js",
+      "bytes": 14051,
+      "LF": 356,
+      "sha256": "fd349de553a17abcc2e0567ba6640e6e3d5d26cfa79ee1e355928dc9fa8d3915",
+      "gitBlob": "f911d42d01b69e6577f9bcd66f4ed59aab8ab882"
+    },
+    {
+      "path": "src/service-credit-custodied-request-owner.js",
+      "bytes": 35073,
+      "LF": 938,
+      "sha256": "6e7493a4859d48530820e68a4a19a513aad014ffc1048b42965a3ad36ae7c5f7",
+      "gitBlob": "2dee22fd780db9de662fe1243075e74cef0bf296"
+    },
+    {
+      "path": "src/service-credit-custodied-http-client.js",
+      "bytes": 10755,
+      "LF": 292,
+      "sha256": "ddbc54faf4a14d95e6274bc9df27b7b49db251bab67c11b871cfb2f9e78b4f15",
+      "gitBlob": "90fd4c8a2cc8fb552f8eb0cb45607bfa44c61108"
+    },
+    {
+      "path": "src/service-credit-custodied-sequential-runner-core.js",
+      "bytes": 15288,
+      "LF": 479,
+      "sha256": "36c99342bf9e47559e39535aefcde78acbbdd7fb210d42a77dbbb93c2fd9f8ff",
+      "gitBlob": "c9005ab245f045648d6bf508b9afef6c2d26c583"
+    },
+    {
+      "path": "src/x402-wire.js",
+      "bytes": 39886,
+      "LF": 934,
+      "sha256": "5fba91af5a352f62d1a335c7176a45a604e2af5d92b1c4b0e53825c1f20d4e56",
+      "gitBlob": "fb060d4e349b1c31a1219a0cc137af250a8a2291"
+    },
+    {
+      "path": "src/service-credit-pilot-client-plan.js",
+      "bytes": 7483,
+      "LF": 181,
+      "sha256": "73ee3d739de85150039e733234cd0761c228d68de040d1e126902e808a259ac6",
+      "gitBlob": "14334c82b5b7c80fb8f7f6a392a1a0f3c3adcbf1"
+    },
+    {
+      "path": "src/service-credit-pilot-status-view.js",
+      "bytes": 3202,
+      "LF": 60,
+      "sha256": "cf3822d8b9ec4eb4772452ed1888b96d398fd87c1ead44cd155a5acc1a6b66ed",
+      "gitBlob": "0890db504e44b704d0434dc309e711743570e652"
+    },
+    {
+      "path": "src/service-credit-custodied-recovery-collection-core.js",
+      "bytes": 13794,
+      "LF": 306,
+      "sha256": "51d06da70ecccd0cf8b38d650367d1ae903ea86010a5ebeadb682af98e4b890b",
+      "gitBlob": "5275832eebbf87e0cd37f3c2e3b82147ab625a72"
+    },
+    {
+      "path": "package.json",
+      "bytes": 1413,
+      "LF": 40,
+      "sha256": "8c9a25504fbf6f87c31cdf245a6f4eec5a88cc89c8352151dc66a577c5771ef5",
+      "gitBlob": "ec7193f6fd76f34778515079dc777594175c4c34"
+    },
+    {
+      "path": "src/service-credit-custodied-sqlite-recovery-reader.js",
+      "bytes": 2286,
+      "LF": 57,
+      "sha256": "72fd5da6aafd1500255f6170d2a2291155c4f4f5b1126c6b13dce9909decb0f3",
+      "gitBlob": "51c59fd254a124626b979a2798d3a960b60e2922"
+    },
+    {
+      "path": "qualification/service-credit-custodied-sqlite-recovery-reader-v3.draft.mjs",
+      "bytes": 36303,
+      "LF": 624,
+      "sha256": "78c180c69666e76727ca10240ab28e19ff9a846dca8b6955a60b4cae40f483b2",
+      "gitBlob": "dbe86226e9f28d744dce38fcfd89d7423a25ff4a"
+    },
+    {
+      "path": "qualification/service-credit-custodied-sqlite-recovery-reader-v3-lifecycle.draft.mjs",
+      "bytes": 34645,
+      "LF": 601,
+      "sha256": "2369719b80cdd2096b1cb984d7f32d0a47e027fde0882040800e6e58ac7382d4",
+      "gitBlob": "7017609acf3ac49e4b940f08bebc3ee4f2d00d98"
+    }
+  ]
+}
