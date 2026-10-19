@@ -1,0 +1,450 @@
+{
+  "resultVersion": 1,
+  "scope": "OCT19_P2_EMPTY_ORIGINAL_BODY_CHECKPOINT_BASELINE_FIXED_LOCAL_V1",
+  "status": "SOURCE_BOUND_BASELINE_EXPECTED_RED_AND_FIXED_EIGHT_CASES_PASSED",
+  "qualification": "LOCAL_SYNTHETIC_CHECKPOINT_HELPER_ONLY",
+  "purpose": "Preserve the exact valid zero-byte original request body without inventing replacement bytes. Keep every other checkpoint field nonempty and all authority checks unchanged.",
+  "positiveContractAssociation": {
+    "custodyContract": {
+      "path": "src/service-credit-original-request-custody-contract.js",
+      "bytes": 14051,
+      "LF": 356,
+      "sha256": "fd349de553a17abcc2e0567ba6640e6e3d5d26cfa79ee1e355928dc9fa8d3915",
+      "gitBlob": "f911d42d01b69e6577f9bcd66f4ed59aab8ab882"
+    },
+    "actualEmptyBodyCustodyFixture": {
+      "path": "qualification/service-credit-custodied-sqlite-recovery-observation-funding-unknown.draft.mjs",
+      "bytes": 30617,
+      "LF": 507,
+      "sha256": "2014e977f41dde167ab9265ce11275eda585f9a57fa5dbfddff00e8ffa841399",
+      "gitBlob": "0385436c7ef0e84882d6fe703b7037df01ad1f2b"
+    },
+    "actualEmptyBodyCustodyResult": {
+      "path": "qualification/service-credit-custodied-sqlite-recovery-observation-funding-unknown.behavior.result.json",
+      "bytes": 19831,
+      "LF": 467,
+      "sha256": "086f2f54cacb52746928bb15b352a16045b1a1fb0e0dbd540a5ad7ee86387325",
+      "gitBlob": "0dc4f4c06b97419e7827554747f0cebdff000518"
+    },
+    "explanation": "The retained actual V3 custody case stores originalBodyBase64 as the empty string. The previous checkpoint helper rejected that same zero-byte body. The baseline below reproduces this local helper mismatch, not a vulnerability demonstrated in main.",
+    "missingCoverageNotUsedAsNoveltyEvidence": true,
+    "earlierRejectedObservationHistoryWorkRecognizedAsCompletedAndNotRerun": true
+  },
+  "codeChange": {
+    "existingWorkingTreeFilesModified": 3,
+    "helperChangedLines": 5,
+    "existingTestLoopChangedLines": 1,
+    "typeCommentAddedLines": 1,
+    "publicSignaturesVersionAndCanonicalFormatUnchanged": true,
+    "onlyExplicitRequestBodyAllowsCanonicalEmptyBase64": true,
+    "emptyBodyRetainedAs": "",
+    "emptyBodySHA256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "paymentPayloadPaymentRequirementsAndContextRemainNonempty": true,
+    "missingKeysRemainInvalid": true,
+    "noCoercionDefaultingOmissionOrNormalization": true,
+    "shapeTypeSizeBase64JSONBindingOriginDigestExternalPinFreezeAndNONEChecksRetained": true,
+    "captureAndCheckedEncodeRestoreUseSameValidatedPrivateFieldKey": true,
+    "noExportedEmptyFieldBypass": true,
+    "oldSixTestNamesOrderAndUnrelatedAssertionsUnchanged": true,
+    "oldInputLimitsChangedOnlyForSupportedEmptyRequestBody": true,
+    "noRootBackendStoreSDKOrSavedCheckpointRewrite": true,
+    "originalSourceArchive": {
+      "path": "qualification/service-credit-pilot-original-payment-checkpoint-empty-body-baseline.source.json",
+      "bytes": 12234,
+      "LF": 1,
+      "sha256": "bb9889a74ea52c6c416236a92098732768929ee9eac901e905925e3d30759b79",
+      "gitBlob": "d1c37fb9e3e55141ad70f800d19499906db44530"
+    },
+    "archiveContainsExactThreeOriginalBodiesWithRelativeMetadataOnly": true,
+    "draftPatch": {
+      "path": "qualification/service-credit-pilot-original-payment-checkpoint-empty-body-fix.draft.patch",
+      "bytes": 1525,
+      "LF": 27,
+      "sha256": "bc274e719b5f1d4183b059fa6ee9adaa3d4304af25560a988d25e059cffe4f96",
+      "gitBlob": "41745414fe98556afb00a7b5db32cdb534766d81"
+    },
+    "draftPatchRemainsImmutableSourcePhaseDATAActualApplicationRecordedHere": true,
+    "wholeSourceInverseVerifiedAgainstArchivedOriginals": true,
+    "applicationWasGatedOnCompleteExpectedRedAndExactOriginalPhysicalPins": true,
+    "before": [
+      {
+        "path": "src/service-credit-pilot-original-payment-checkpoint.js",
+        "bytes": 3932,
+        "LF": 89,
+        "sha256": "ee3dd6f188c62991f32acc4cdfc0529299b4d92b1ed45ce8ab91e6c0919484ab",
+        "gitBlob": "7668c83c2272d46f6a12f7a2c85339f122ca6b9b"
+      },
+      {
+        "path": "test/service-credit-pilot-original-payment-checkpoint.test.js",
+        "bytes": 6355,
+        "LF": 125,
+        "sha256": "bb925ecfe009d132559050a4821f5fab7d692567ff693972dbd9014a1d59aafe",
+        "gitBlob": "b46dcee81cf299f8af0c3cd3063843d3e644f703"
+      },
+      {
+        "path": "src/service-credit-pilot-original-payment-checkpoint.d.ts",
+        "bytes": 856,
+        "LF": 8,
+        "sha256": "a0db4a8b359b74be1426e32a7fa0e1dc0eae5c410b6d24c9d19f6c860008d6b8",
+        "gitBlob": "f369faf813cb29cd42037a0d818a907830381e4a"
+      }
+    ],
+    "after": [
+      {
+        "path": "src/service-credit-pilot-original-payment-checkpoint.js",
+        "bytes": 4003,
+        "LF": 89,
+        "sha256": "930905f31824a6cadc16dfb84572cd4dc38a81e2fce4569b73b6bef29dec97d1",
+        "gitBlob": "51c6391bc22f561ebff0005ced31e538aa83f4fa"
+      },
+      {
+        "path": "test/service-credit-pilot-original-payment-checkpoint.test.js",
+        "bytes": 6408,
+        "LF": 125,
+        "sha256": "952c4dd5a1e5ffb32e3764686c6d1fbc9fce4bc174d81fdee8f160e0f92190ed",
+        "gitBlob": "64f23a3baa0a783b0ebc98e7e2aac3cdf0db05b3"
+      },
+      {
+        "path": "src/service-credit-pilot-original-payment-checkpoint.d.ts",
+        "bytes": 948,
+        "LF": 9,
+        "sha256": "1eaf6c209b62a1729d5e7a53b5aea16ab58b24b43d2fae1300d42bad8e9d1345",
+        "gitBlob": "174927f61673ca9fa3abe00eaa4bb0f6ce335d17"
+      }
+    ]
+  },
+  "sourceHandoffReview": {
+    "matchedFreshActualMainAndWorkerModel": "gpt-6.1-sol",
+    "reasoningEffort": "max",
+    "fullFirstOriginalIndependentlyRead": true,
+    "firstOriginalBytes": 6940,
+    "firstOriginalSHA256": "ea4b93049885475e96e329b2d6c31f4a5c5279e33a46be5542b049cd51bac4ed",
+    "firstOriginalFinalLF": false,
+    "firstOriginalEmissions": 1,
+    "retransmissions": 0,
+    "completeNewTestsAndFullPatchIndependentlyReviewed": true,
+    "archiveOriginalBodiesIndependentlyComparedWithAlreadyReadExactOriginals": true,
+    "SourcePythonCommands": 3,
+    "SourcePythonExitCodes": [
+      0,
+      0,
+      0
+    ],
+    "SourceTargetExecution": false,
+    "SourceExistingFileEdits": 0,
+    "SourceNewArtifacts": 3,
+    "originalInputBytes": 77055,
+    "SourceDataIncludingReserveBytes": 141653,
+    "SourceDataCapBytes": 150000,
+    "newTestSoftTargetBytes": 4096,
+    "newTestActualBytes": 4185,
+    "newTestHardCapBytes": 8192,
+    "SourceTestSoftTargetMet": false,
+    "SourceAllHardCapsMet": true,
+    "handoffPreEmissionSoftTrimBytes": [
+      7531,
+      6940
+    ],
+    "assertionsWeakenedOrFilesTrimmed": false,
+    "SourcePhaseUnmeasuredStatementsPreservedNotRewrittenAsExecutionEvidence": true
+  },
+  "runtime": {
+    "version": "v24.19.0",
+    "platform": "darwin",
+    "arch": "arm64",
+    "binaryBytes": 121304480,
+    "binarySHA256": "613be50c90e83aa8da58dd9ed393d0b39914a3b8ef4123fe817b46c2679cebe2",
+    "previousBinarySHA256": "852d6074f741d18223b24967d8384e8920856a7fcd4348682a4ec524b5fc2ff4",
+    "replacementBinarySeparatelySelectedOldEvidenceNotRebound": true,
+    "binaryIdentityMatchedBeforeBothRunsAndAfterFixedRun": true,
+    "exactlyTwoManagerInvocationsAndTwoNodeProcesses": true,
+    "noNativeRetries": true,
+    "noSQLiteOrSDKOrWholeSuiteExecution": true,
+    "callerKind": "FIXED_UNSAVED_COMMONJS_NODE_TEST_RUN_API",
+    "isolation": "none",
+    "concurrency": false,
+    "watch": false,
+    "forceExit": false,
+    "clearedEnvironment": true,
+    "applicationEnvironmentKeys": [
+      "LC_ALL",
+      "NODE_TEST_WORKER_ID",
+      "PATH",
+      "SPV_TASK_SCRATCH",
+      "TMPDIR",
+      "__CF_USER_TEXT_ENCODING"
+    ],
+    "noAddons": true,
+    "stringCodeGenerationDisabled": true,
+    "NodePermissionModel": false,
+    "OSOrNetworkSandbox": false,
+    "cooperativeRunAPITimeoutMs": 10000,
+    "cooperativeManagerCommandTimeoutMs": 20000,
+    "existingManagerPassiveMetadataWaitSeconds": 60,
+    "hardCancellationLifetimeOrOSCleanupGuarantee": false
+  },
+  "baseline": {
+    "actualOuterAndChildExit": 1,
+    "commandState": "COMPLETE",
+    "outputComplete": true,
+    "tests": 2,
+    "pass": 1,
+    "fail": 1,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0,
+    "genuineFailedCase": "empty original request body roundtrips without replacement or authority",
+    "passedControlCase": "nonempty checkpoint controls retain field binding and authority rejection",
+    "assertion": {
+      "name": "AssertionError",
+      "code": "ERR_ASSERTION",
+      "operator": "doesNotThrow",
+      "label": "EMPTY_ORIGINAL_REQUEST_BODY_CAPTURE_AND_ROUNDTRIP",
+      "underlyingType": "TypeError",
+      "underlyingMessage": "Invalid original-payment checkpoint",
+      "sourceBranch": "original private fingerprint rejects an empty requestBody"
+    },
+    "setupLoaderHookCaptureOrTimeoutFailure": false,
+    "expectedRedIsAnActualFailureNotPassingTestOrCleanTaskSuccess": true,
+    "taskState": "CLOSED",
+    "taskOutcome": "FAILURE",
+    "commandFailed": true,
+    "cleanup": "CLEANED_REGISTERED_EMPTY_SCRATCH",
+    "cleanupReportedBytes": 0,
+    "tapDurationMs": 12.440292,
+    "runtimeGraphFiles": 3,
+    "runtimeGraphBytes": 9530,
+    "selectedFiles": [
+      "test/service-credit-pilot-original-payment-checkpoint-empty-body.test.js"
+    ],
+    "sourceGraph": [
+      {
+        "relative": "src/service-credit-pilot-original-payment-checkpoint.js",
+        "bytes": 3932,
+        "sha256": "ee3dd6f188c62991f32acc4cdfc0529299b4d92b1ed45ce8ab91e6c0919484ab"
+      },
+      {
+        "relative": "package.json",
+        "bytes": 1413,
+        "sha256": "8c9a25504fbf6f87c31cdf245a6f4eec5a88cc89c8352151dc66a577c5771ef5"
+      },
+      {
+        "relative": "test/service-credit-pilot-original-payment-checkpoint-empty-body.test.js",
+        "bytes": 4185,
+        "sha256": "3e82395c16200a9433b80a5548d964f0b06c6274ae61b934e8d8519041535d6f"
+      }
+    ],
+    "caller": {
+      "bytes": 5760,
+      "sha256": "0b2be29f578979f1d0895c7b01ebc159d25bfb525559c0bf409450d64c4f8ff9"
+    },
+    "command": {
+      "bytes": 6500,
+      "sha256": "72df7aad56a4cdff9260dcb05cfb2bd5e2f1ab5607de94940c767e5c187b5784"
+    },
+    "captures": {
+      "stdout": {
+        "bytes": 2718,
+        "sha256": "1ae12914448b8f47edae8cf7b1948cdad0d215351d92c60afcfae77b0ef5dea4",
+        "ownerRecordSHA256": "3d7ec77f991fde4014ceec47dd5970288e3648232d9b913c7a23f7256e0a2d5d"
+      },
+      "stderr": {
+        "bytes": 1168,
+        "sha256": "1824365ba4c99be7b5bb8b3c4129dbc0c920a3c4fae874e00c3caafa1dfa05bd",
+        "ownerRecordSHA256": "d735b07d98274546d8ae305bb06ced67d9ee437d4a383165cdd9b533cfd108af"
+      }
+    },
+    "privateReceiptPins": {
+      "task": {
+        "bytes": 791,
+        "sha256": "e7e08dd3806e204c65f7ba029fc5b5d307964b8ef2d995ad69684a8d85ea4e5a"
+      },
+      "command": {
+        "bytes": 437,
+        "sha256": "550a789c22fc724c356af9e1131bef625aacf7b560a5d8bfc2ec7532512c196d"
+      },
+      "outcome": {
+        "bytes": 61,
+        "sha256": "f0adc70abe1c605040685a82b288257b6b13d8ef9fc9f97180b882317c4820f5"
+      },
+      "cleanup": {
+        "bytes": 174,
+        "sha256": "394907cc6f0e2957210029016b57a60d5c6402d169870dd46ad3cc6917260a77"
+      }
+    },
+    "baselineFailureAndOriginalSourcePreserved": true
+  },
+  "fixed": {
+    "actualOuterAndChildExit": 0,
+    "commandState": "COMPLETE",
+    "outputComplete": true,
+    "tests": 8,
+    "pass": 8,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0,
+    "actualPASSNamesComparedWithAllAuthoredRegistrations": [
+      "opaque roundtrip",
+      "separate pins and binding identity",
+      "stale and self-consistent mutations",
+      "input limits",
+      "strict wrapper shape",
+      "immutable copies",
+      "empty original request body roundtrips without replacement or authority",
+      "nonempty checkpoint controls retain field binding and authority rejection"
+    ],
+    "taskState": "CLOSED",
+    "taskOutcome": "SUCCESS",
+    "cleanup": "CLEANED_REGISTERED_EMPTY_SCRATCH",
+    "cleanupReportedBytes": 0,
+    "tapDurationMs": 21.656875,
+    "runtimeGraphFiles": 4,
+    "runtimeGraphBytes": 16009,
+    "selectedFiles": [
+      "test/service-credit-pilot-original-payment-checkpoint.test.js",
+      "test/service-credit-pilot-original-payment-checkpoint-empty-body.test.js"
+    ],
+    "sourceGraph": [
+      {
+        "relative": "src/service-credit-pilot-original-payment-checkpoint.js",
+        "bytes": 4003,
+        "sha256": "930905f31824a6cadc16dfb84572cd4dc38a81e2fce4569b73b6bef29dec97d1"
+      },
+      {
+        "relative": "test/service-credit-pilot-original-payment-checkpoint.test.js",
+        "bytes": 6408,
+        "sha256": "952c4dd5a1e5ffb32e3764686c6d1fbc9fce4bc174d81fdee8f160e0f92190ed"
+      },
+      {
+        "relative": "package.json",
+        "bytes": 1413,
+        "sha256": "8c9a25504fbf6f87c31cdf245a6f4eec5a88cc89c8352151dc66a577c5771ef5"
+      },
+      {
+        "relative": "test/service-credit-pilot-original-payment-checkpoint-empty-body.test.js",
+        "bytes": 4185,
+        "sha256": "3e82395c16200a9433b80a5548d964f0b06c6274ae61b934e8d8519041535d6f"
+      }
+    ],
+    "caller": {
+      "bytes": 6345,
+      "sha256": "7ec7cea7b151f542ea4c219b6dc7a456c2ea4c15848b1d255009c3ad62c953e8"
+    },
+    "command": {
+      "bytes": 7079,
+      "sha256": "a567602ab78c43aa92fcc114851b9248e289d12b6fea8785cd994f3be2c79436"
+    },
+    "callerOutsideExactPhaseFilesAndSourceTableIdenticalToBaseline": true,
+    "captures": {
+      "stdout": {
+        "bytes": 1236,
+        "sha256": "d038c732f20464054ecbc94fca49ccc9e61c764d801d369d827123b2385dbbad",
+        "ownerRecordSHA256": "b6c1f46945decc7e0f2eb25d2d0629e32b6c914a94bad4ab07ab493577826d29"
+      },
+      "stderr": {
+        "bytes": 1395,
+        "sha256": "c4da1e6af7146ad3106f5209f6473c87208da5d80bb06bf731aedd5cc2c6843b",
+        "ownerRecordSHA256": "c1570502b9b3e74b4c9538d93bdf8236e640542bef5398659c5bf9437629a421"
+      }
+    },
+    "privateReceiptPins": {
+      "task": {
+        "bytes": 761,
+        "sha256": "c7fe05aa92737371692aec89b5d586f53db48f20ce89a6e89517c451cb799a16"
+      },
+      "command": {
+        "bytes": 437,
+        "sha256": "a800c24467989cd0bd515aaef6cec77ed4de918f89fd83dcf2cbcaac799481a3"
+      },
+      "outcome": {
+        "bytes": 62,
+        "sha256": "4bb6d2e92a0d250db7bc812beb00b3ffd241125828f2d5dfa5196cb01b009e70"
+      },
+      "cleanup": {
+        "bytes": 174,
+        "sha256": "f49903cc1671d3c264494dabc2e85efa1fc9abd968156162dd62eb8669967330"
+      }
+    },
+    "changedModuleAndOneLoopMakeThisDistinctFromUnchangedCompletedTests": true
+  },
+  "crossAttemptAccounting": {
+    "actualAuthoredCaseExecutions": 10,
+    "actualPass": 9,
+    "actualFail": 1,
+    "fixedDistinctAuthoredCasesPassed": 8,
+    "notTenOfTen": true,
+    "baselineAssertionFailureNeverCountedAsPassed": true,
+    "oldDPMetadataAndSQLiteFactoryResultsNotMixedIntoTheseCounts": true
+  },
+  "resourceAndPreservation": {
+    "downloads": 0,
+    "installs": 0,
+    "builds": 0,
+    "SQLiteFilesCreated": 0,
+    "clones": 0,
+    "ZIPCopies": 0,
+    "savedOperationalHelpers": 0,
+    "uniqueCaptureCASObjects": 4,
+    "uniqueCapturePayloadBytes": 6517,
+    "capturePayloadCountExcludesMetadataAndRepositorySourceFiles": true,
+    "expectedBytesPerTask": 33554432,
+    "quotaBytesPerTask": 67108864,
+    "productionFreeFloorSafetyAndOtherTaskReservationsChecked": true,
+    "sampledManagerQuotaNotAnOSEnforcedAggregateLimit": true,
+    "metadataRootPolicyNotChanged": true,
+    "foreignTasksOrLeasesNotInterrupted": true,
+    "noExtraCollectAdoptionOrHistoricalDeletion": true,
+    "earlierTwentySelectedSourceDataArtifactsUnchanged": true,
+    "allTenCurrentSourceArchiveAndPatchPinsMatchedAfterFixedRun": true,
+    "currentTenReferenceBytes": 95215,
+    "currentTypesSnapshotPatchAndContractEvidenceAreDataOnlyNeverRuntimeImports": true,
+    "baselineAndFixedTaskAndCaptureOwnerLedgersReadIndependently": true,
+    "payloadIdentityCreatorDigestAndStoreOwnerVerified": true,
+    "sameHostIndependentPrimaryReviewNotExternalMachineOrIndependentAuthentication": true
+  },
+  "retainedNonTargetFailures": [
+    "The first filename-only inventory had no matches because of the outer path glob; a corrected exact-directory filename inventory selected sources, not novelty from absence.",
+    "Two read-only worker-profile observers assumed a JSON-list/prefix shape and failed; a bounded public turn_context and function-output-container diagnostic verified the actual matched model/effort and single incoming scope. No target execution occurred.",
+    "The first baseline preflight refused a current per-record metadata byte bound. The same-cap diagnostic later passed with no read expansion or policy change; the exact transient cause was not established.",
+    "The genuine baseline assertion failure remains CLOSED/FAILURE with complete captures and is not erased by the later fixed success."
+  ],
+  "postRun": {
+    "localHEAD": "e1a5bafeadda9a679dc2261b1abea164820fb8a5",
+    "localBranch": "x402/p0a-http-startup-local-qualification",
+    "fixedThreeSourcesMatchIndependentPredictions": true,
+    "newRegressionSnapshotAndPatchDataUnchanged": true,
+    "earlierTwentySourceDataMetadataPinsUnchanged": true,
+    "currentRuntimeIdentityUnchanged": true,
+    "noClaimAllHistorical101PinsStillMatch": true
+  },
+  "acceptanceBoundaries": {
+    "authorization": "NONE",
+    "signer": "DISABLED",
+    "protectedChainTotals": {
+      "consumedAdmissions": 2,
+      "actualPREPARE": 1,
+      "bundles": 0,
+      "nativeChainProviderQualificationRuns": 0
+    },
+    "localSyntheticNodeRunsReportedSeparately": true,
+    "realOriginalPaymentRequestBytesHashPayloadRequirementsContextAndConsumedAuthorityUntouched": true,
+    "failed165OwnershipMetadataNotRetried": true,
+    "PR193": "Possible VALIDATED exact-same-signed-block resend remains separate from UNKNOWN and ACKNOWLEDGED; no resend, replacement or re-signing occurred.",
+    "realPendingPaymentRecoveryCurrentAuthorityRealREADYSDKRestartDurabilityDeliveryOrPilot": "NOT_ESTABLISHED",
+    "observationTimingsAreNotFundingServiceLatencyOrCapacityBenchmarks": true,
+    "premises": [
+      "Native loader, runner, stream and OS behavior",
+      "Pristine intrinsics and trusted plain synthetic inputs",
+      "Binary and source/import race freedom",
+      "Cooperative time bounds, no OS/network sandbox"
+    ]
+  },
+  "publication": {
+    "recordIsSourceScopedLocalEvidenceNotHostedCI": true,
+    "publishedMainMustMatchExactSelectedSourceAndPackagePinsBeforeApplyingThisEvidence": true,
+    "currentMainDiffPRRulesWorkflowAndRiskAppropriateResultsRequireSeparateFinalReview": true,
+    "noMainOrGreenCISuccessClaimInThisPrepublicationRecord": true,
+    "privatePathsPIDsRawDiagnosticsWalletAndPersonalDataOmitted": true
+  }
+}
