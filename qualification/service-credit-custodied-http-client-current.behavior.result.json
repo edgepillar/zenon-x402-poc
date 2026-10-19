@@ -1,0 +1,400 @@
+{
+  "schemaVersion": 1,
+  "scope": "OCT19_CURRENT_CUSTODIED_HTTP_CLIENT_V3_COMPATIBILITY_LOCAL_V1",
+  "status": "SELECTED_LOCAL_FAKE_INTERFACE_COMPONENT_TESTS_PASSED",
+  "productionQualification": "NOT_ESTABLISHED",
+  "sourceSelection": {
+    "basis": "Positive client API/delegation change and exact historical test guards; missing coverage is not evidence of novelty.",
+    "observedMainBeforeSelection": {
+      "commit": "04f9aaa5b94e898409f839bb8b69a35a311a1c51",
+      "clientBytes": 9815,
+      "clientGitBlob": "91faea6a6512162f99791403d940c12e4275d06a"
+    },
+    "localClientBytes": 10755,
+    "selectedMainConsumersSourceOnly": [
+      "src/service-credit-custodied-sequential-runner.js",
+      "src/service-credit-custodied-sequential-runner-core.js"
+    ],
+    "selectedConsumerObservation": "V2 is explicitly constructed; only submitOriginal/snapshot/close are forwarded by name to the core's separate five-field input. No implicit V3 opt-in.",
+    "exhaustiveReverseDependencyOrConsumerRuntimeQualification": false
+  },
+  "inputs": [
+    {
+      "path": "src/service-credit-custodied-http-client.js",
+      "bytes": 10755,
+      "LF": 292,
+      "sha256": "ddbc54faf4a14d95e6274bc9df27b7b49db251bab67c11b871cfb2f9e78b4f15",
+      "gitBlob": "90fd4c8a2cc8fb552f8eb0cb45607bfa44c61108",
+      "ASCII": true,
+      "finalLF": true
+    },
+    {
+      "path": "src/service-credit-http-execute-dispatch.js",
+      "bytes": 27034,
+      "LF": 770,
+      "sha256": "254ba8eef5ea5efb3a1b901be09e9cb33afbc3cfcf63789ca4a23316b6180d1b",
+      "gitBlob": "280dd20dc669e2856d263eba62ccd0fe9af72f21",
+      "ASCII": true,
+      "finalLF": true
+    },
+    {
+      "path": "test/service-credit-custodied-http-client.test.js",
+      "bytes": 45929,
+      "LF": 1321,
+      "sha256": "85e53e049cc6ea624a232b4bb0d9864c286ce20aa039386c841b41c78544c9af",
+      "gitBlob": "7ed9d64b08a8cce96fdebe9fd7bedc7b0fe57f99",
+      "ASCII": true,
+      "finalLF": true
+    },
+    {
+      "path": "src/service-credit-custodied-request-owner.js",
+      "bytes": 35073,
+      "LF": 938,
+      "sha256": "6e7493a4859d48530820e68a4a19a513aad014ffc1048b42965a3ad36ae7c5f7",
+      "gitBlob": "2dee22fd780db9de662fe1243075e74cef0bf296",
+      "ASCII": true,
+      "finalLF": true
+    },
+    {
+      "path": "src/service-credit-original-request-custody-contract.js",
+      "bytes": 14051,
+      "LF": 356,
+      "sha256": "fd349de553a17abcc2e0567ba6640e6e3d5d26cfa79ee1e355928dc9fa8d3915",
+      "gitBlob": "f911d42d01b69e6577f9bcd66f4ed59aab8ab882",
+      "ASCII": true,
+      "finalLF": true
+    },
+    {
+      "path": "package.json",
+      "bytes": 1413,
+      "LF": 40,
+      "sha256": "8c9a25504fbf6f87c31cdf245a6f4eec5a88cc89c8352151dc66a577c5771ef5",
+      "gitBlob": "ec7193f6fd76f34778515079dc777594175c4c34",
+      "ASCII": true,
+      "finalLF": true
+    },
+    {
+      "path": "test/service-credit-custodied-http-client-current-compatibility.test.js",
+      "bytes": 45706,
+      "LF": 1285,
+      "sha256": "3b84d54e1cfc5dce22434948687d35d1d38a2c61e31b2bbc923d20857f61b448",
+      "gitBlob": "d68e28404e7bae0305ba4554447695f5d4d6e59e",
+      "ASCII": true,
+      "finalLF": true
+    },
+    {
+      "path": "test/service-credit-custodied-http-client-current-v3.test.js",
+      "bytes": 25524,
+      "LF": 518,
+      "sha256": "4fec1b29e7f15ff55bf169586b614ebbe71cfa5e4222b8ee6ce4db36e7fe38c4",
+      "gitBlob": "d8e09035ac5c99e147194d929a28cb2eed485ed0",
+      "ASCII": true,
+      "finalLF": true
+    }
+  ],
+  "compatibilityDerivation": {
+    "originalTest": {
+      "path": "test/service-credit-custodied-http-client.test.js",
+      "bytes": 45929,
+      "LF": 1321,
+      "sha256": "85e53e049cc6ea624a232b4bb0d9864c286ce20aa039386c841b41c78544c9af",
+      "gitBlob": "7ed9d64b08a8cce96fdebe9fd7bedc7b0fe57f99",
+      "ASCII": true,
+      "finalLF": true
+    },
+    "anchor": "const CP = 'SERVICE_CREDIT_CUSTODIED_HTTP_CLIENT_';",
+    "oldAnchorOffset": 2519,
+    "newBootstrap": {
+      "bytes": 2215,
+      "LF": 33,
+      "sha256": "81bf61b004d5e91f0f23d69cbdcdad999579dbe31e355fcfdbdb8f97d05dc7d0",
+      "gitBlob": "41490d23b98f576ce34cf7be943d286e7e0c70d5"
+    },
+    "originalSuffix": {
+      "bytes": 43410,
+      "LF": 1251,
+      "sha256": "f18102b81bd79014cf3f0d7882b12d3e7f8a1baec77067e2b605fe80698521a5",
+      "gitBlob": "c6fc2dcc294f5fed16b75630701fc3778a4673a3"
+    },
+    "adaptedSuffix": {
+      "bytes": 43491,
+      "LF": 1252,
+      "sha256": "67ed82aee273bc7277a9692fdf964530b2e705a93210f7e4a1f6a93195962a9d",
+      "gitBlob": "04827166abae9dff9e1801bcf0ac3ed91947feb5"
+    },
+    "authorizedGoldenChanges": [
+      {
+        "oldFileOffset": 40767,
+        "oldSuffixOffset": 38248,
+        "newSuffixOffset": 38248,
+        "newCompleteOffset": 40463,
+        "oldText": "        'createServiceCreditCustodiedHttpClient',\n",
+        "newText": "        'createServiceCreditCustodiedHttpClient',\n        'createServiceCreditCustodiedHttpClientV3',\n",
+        "deltaBytes": 52,
+        "matchCount": 1
+      },
+      {
+        "oldFileOffset": 41022,
+        "oldSuffixOffset": 38503,
+        "newSuffixOffset": 38555,
+        "newCompleteOffset": 40770,
+        "oldText": "        'submitOriginal', 'readOriginal', 'snapshot', 'close',\n",
+        "newText": "        'submitOriginal', 'readOriginal', 'readOriginalRecoveryState', 'snapshot', 'close',\n",
+        "deltaBytes": 29,
+        "matchCount": 1
+      }
+    ],
+    "otherSuffixBytesUnchanged": true,
+    "independentlyVerifiedWholeSuffixInverse": true,
+    "independentlyVerifiedWholeOriginalFileInverse": true,
+    "selection": "Fixed null selector: all eight unchanged named scenarios; historical optional-selector suffix bytes retained.",
+    "interpretation": "Two explicit versioned module/V2 facade key-list goldens change. This is intentional enumerable API expansion, not strict key-shape backward compatibility. No production hiding, removal, non-enumerability or assertion weakening.",
+    "originalFileNotModifiedOrExecuted": true
+  },
+  "v3Coverage": {
+    "authoredTests": 4,
+    "ownedFakeFixtures": 10,
+    "fixtureDistribution": [
+      1,
+      3,
+      4,
+      2
+    ],
+    "branches": [
+      "Actual V3 six frozen methods; original retention/readback plus intent/funding fences before fake requestImpl; exact original and Authorization forwarding; no-argument bodyless end; reply/end insufficient until both declared closes; repeat recovery refusal; shared borrowed-store close.",
+      "Recovery-state and raw recovery-key delegation, frozen/scoped metadata and NONE/UNQUALIFIED authority, foreign/malformed foreign catalog refusal and optional capability. State wrapper uses client arity errors; raw keys retain owner arity/closed precedence. Intent reads are expected; writes/retention/requests remain zero.",
+      "Original-readback mismatch, intent-fence throw after write, post-intent null/drift funding. Original/intent evidence survives while transport stays uncalled/lastTransport null; hold does not acquire retry authority; cached close is UNKNOWN.",
+      "Busy/reentrant close and uncertain declared fake response. Shared close waits for declared handles; uncertainty propagates without retries, and recovery retains original/possibly-attempted intent and redacted snapshots."
+    ],
+    "exhaustiveOwnerDispatcherHostileFaultMatrix": false
+  },
+  "execution": {
+    "runtime": {
+      "name": "Node.js",
+      "version": "24.19.0",
+      "bytes": 121304480,
+      "sha256": "613be50c90e83aa8da58dd9ed393d0b39914a3b8ef4123fe817b46c2679cebe2",
+      "platform": "darwin",
+      "architecture": "arm64",
+      "priorCompleteStableFDSHAReused": true,
+      "currentPhysicalIdentityMatchedBeforeAndAfter": true,
+      "olderPhysicalResultsNotRebound": true
+    },
+    "launcher": {
+      "savedOperationalHelper": false,
+      "unsavedFixedCommonJSRunApi": true,
+      "builtins": [
+        "node:assert/strict",
+        "node:test",
+        "node:test/reporters",
+        "node:stream"
+      ],
+      "exactActualSourceRetainedInPrivateToolTranscript": true,
+      "substitutionsOnly": [
+        "one absolute exact file",
+        "complete expected authored-name list"
+      ],
+      "argv": [
+        "-e",
+        "fixed inline caller",
+        "one explicit exact test file"
+      ],
+      "noInputTypeFlag": true,
+      "noDiscoveryOrGlobs": true
+    },
+    "flags": [
+      "--permission",
+      "--disallow-code-generation-from-strings",
+      "six exact file-only --allow-fs-read grants"
+    ],
+    "environment": {
+      "cleared": true,
+      "PATH": "/usr/bin:/bin",
+      "LC_ALL": "C",
+      "TZ": "UTC"
+    },
+    "readGraphPerProcess": [
+      "selected new test file",
+      "src/service-credit-custodied-http-client.js",
+      "src/service-credit-custodied-request-owner.js",
+      "src/service-credit-http-execute-dispatch.js",
+      "src/service-credit-original-request-custody-contract.js",
+      "package.json"
+    ],
+    "readGrantCountPerProcess": 6,
+    "grantsNotGiven": [
+      "fs-write",
+      "child",
+      "worker",
+      "addon",
+      "WASI",
+      "inspector"
+    ],
+    "runner": {
+      "isolation": "none",
+      "concurrency": 1,
+      "timeoutMs": 5000,
+      "forceExit": false,
+      "reportCapBytes": 131072
+    },
+    "actualAttempts": [
+      {
+        "testPath": "test/service-credit-custodied-http-client-current-compatibility.test.js",
+        "attempt": 1,
+        "joined": true,
+        "exitCode": 0,
+        "toolChunkId": "427c28",
+        "toolWallTimeSeconds": 0.042907375,
+        "TAPReport": "TAP version 13\n# Subtest: bodyless client fences custody before transport and waits for closes\nok 1 - bodyless client fences custody before transport and waits for closes\n  ---\n  duration_ms: 6.420083\n  type: 'test'\n  ...\n# Subtest: preflight rejects hostile or mismatched input before store access\nok 2 - preflight rejects hostile or mismatched input before store access\n  ---\n  duration_ms: 2.434916\n  type: 'test'\n  ...\n# Subtest: distinct requests share one client without replay or capacity bypass\nok 3 - distinct requests share one client without replay or capacity bypass\n  ---\n  duration_ms: 1.926958\n  type: 'test'\n  ...\n# Subtest: fresh clients recover metadata without acquiring replay authority\nok 4 - fresh clients recover metadata without acquiring replay authority\n  ---\n  duration_ms: 1.398791\n  type: 'test'\n  ...\n# Subtest: custody failures remain held and never close the borrowed store\nok 5 - custody failures remain held and never close the borrowed store\n  ---\n  duration_ms: 2.301542\n  type: 'test'\n  ...\n# Subtest: deadline and response failure drain captured handles before unknown close\nok 6 - deadline and response failure drain captured handles before unknown close\n  ---\n  duration_ms: 13.60925\n  type: 'test'\n  ...\n# Subtest: reentrant close preserves busy gates and one shared promise\nok 7 - reentrant close preserves busy gates and one shared promise\n  ---\n  duration_ms: 0.659958\n  type: 'test'\n  ...\n# Subtest: frozen redacted APIs preserve captured structural store receivers\nok 8 - frozen redacted APIs preserve captured structural store receivers\n  ---\n  duration_ms: 1.149667\n  type: 'test'\n  ...\n1..8\n# tests 8\n# suites 0\n# pass 8\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 63.825833\n",
+        "runnerSummary": {
+          "complete": true,
+          "passedNames": [
+            "bodyless client fences custody before transport and waits for closes",
+            "preflight rejects hostile or mismatched input before store access",
+            "distinct requests share one client without replay or capacity bypass",
+            "fresh clients recover metadata without acquiring replay authority",
+            "custody failures remain held and never close the borrowed store",
+            "deadline and response failure drain captured handles before unknown close",
+            "reentrant close preserves busy gates and one shared promise",
+            "frozen redacted APIs preserve captured structural store receivers"
+          ],
+          "counts": {
+            "tests": 8,
+            "failed": 0,
+            "passed": 8,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 0,
+            "topLevel": 8,
+            "suites": 0
+          },
+          "summarySuccess": true,
+          "reportBytes": 1738,
+          "hardLifetimeOrCleanupGuaranteed": false
+        },
+        "exactAuthoredNamesMatchTAPAndRunner": true,
+        "toolStreamCompleteness": "Complete joined tool output retained; TAP/stdout and completion-marker/stderr are expected."
+      },
+      {
+        "testPath": "test/service-credit-custodied-http-client-current-v3.test.js",
+        "attempt": 1,
+        "joined": true,
+        "exitCode": 0,
+        "toolChunkId": "88e822",
+        "toolWallTimeSeconds": 0.026999875,
+        "TAPReport": "TAP version 13\n# Subtest: V3 client fences exact original and intent before bodyless fake transport and both closes\nok 1 - V3 client fences exact original and intent before bodyless fake transport and both closes\n  ---\n  duration_ms: 7.870542\n  type: 'test'\n  ...\n# Subtest: V3 client recovery delegates scoped metadata and preserves owner versus client arity errors\nok 2 - V3 client recovery delegates scoped metadata and preserves owner versus client arity errors\n  ---\n  duration_ms: 1.773167\n  type: 'test'\n  ...\n# Subtest: V3 client custody intent and final funding refusals never invoke fake transport\nok 3 - V3 client custody intent and final funding refusals never invoke fake transport\n  ---\n  duration_ms: 3.644709\n  type: 'test'\n  ...\n# Subtest: V3 client busy reentrant close and uncertain fake outcomes retain drain and recovery boundaries\nok 4 - V3 client busy reentrant close and uncertain fake outcomes retain drain and recovery boundaries\n  ---\n  duration_ms: 2.187708\n  type: 'test'\n  ...\n1..4\n# tests 4\n# suites 0\n# pass 4\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 49.743083\n",
+        "runnerSummary": {
+          "complete": true,
+          "passedNames": [
+            "V3 client fences exact original and intent before bodyless fake transport and both closes",
+            "V3 client recovery delegates scoped metadata and preserves owner versus client arity errors",
+            "V3 client custody intent and final funding refusals never invoke fake transport",
+            "V3 client busy reentrant close and uncertain fake outcomes retain drain and recovery boundaries"
+          ],
+          "counts": {
+            "tests": 4,
+            "failed": 0,
+            "passed": 4,
+            "cancelled": 0,
+            "skipped": 0,
+            "todo": 0,
+            "topLevel": 4,
+            "suites": 0
+          },
+          "summarySuccess": true,
+          "reportBytes": 1110,
+          "hardLifetimeOrCleanupGuaranteed": false
+        },
+        "exactAuthoredNamesMatchTAPAndRunner": true,
+        "toolStreamCompleteness": "Complete joined tool output retained; TAP/stdout and completion-marker/stderr are expected."
+      }
+    ],
+    "totals": {
+      "freshProcesses": 2,
+      "distinctAuthoredTests": 12,
+      "passed": 12,
+      "failed": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "suites": 0,
+      "testReruns": 0
+    },
+    "previouslyCompletedOwner37AndLegacyFixed2NotRerun": true,
+    "originalOlderLoaderFailuresAndGenuineLegacyBaselineFailure": "Remain retained in their separate original evidence; not erased, rebound or included as passing assertions here.",
+    "beforeAfterVerification": "All six original files, both saved test files and selected runtime retained exact hashes/physical identities across execution.",
+    "qualificationScratchBytes": 0,
+    "savedOperationalHelpers": 0,
+    "taskStorageAllocationOrCleanupClaimed": false,
+    "dependencyInstallationsBuildsOrCIDispatches": 0
+  },
+  "sourceHandoff": {
+    "stageAtEmission": "RAM_ONLY_SOURCE_UNPARSED_UNEXECUTED",
+    "primaryReadCompleteSourceAndFirstOriginal": true,
+    "primaryIndependentlyVerifiedSourceHashesAndWholeInverse": true,
+    "sourceData": {
+      "bytes": 31213,
+      "sha256": "f51cac12e37dda4856a139b0a34e9d1285e576c2b456fad0b9530e5f04d07569"
+    },
+    "firstOriginal": {
+      "bytes": 12120,
+      "sha256": "c8971c619bcc11f547e4de307eedb428060d1cab4fb12e0308e2990bf84e50bd"
+    },
+    "workerModel": "gpt-6.1-sol",
+    "workerReasoningEffort": "max",
+    "explicitMatchToFreshParentPublicTurnConfirmedBeforeDispatch": true,
+    "workerFileWritesAndRuntimeExecutions": 0,
+    "selectedInputBytes": 134255,
+    "newlyReadOriginalBytes": 83718,
+    "retainedOriginalBytes": 50537,
+    "sourceAccountUpperBytes": 440194,
+    "sourceAccountCapBytes": 600000,
+    "v3SourceDraftBytes": [
+      25102,
+      25524
+    ],
+    "retainedUnemittedHandoffOverCapAttemptsBytes": [
+      13496,
+      12874,
+      12503
+    ],
+    "firstOriginalHardCapBytes": 12288,
+    "firstOriginalSoftCapNonblocking": true,
+    "separateNewManifestOrBaselineArchive": false
+  },
+  "limits": {
+    "evidence": "Real production component functions composed with owned synthetic in-memory store and declared request/response event objects only.",
+    "actualTransport": false,
+    "actualSQLStore": false,
+    "SDK": false,
+    "keysOrCryptographicSigningOrVerification": false,
+    "declaredAuthorizationSyntaxNotAuthority": true,
+    "originalOrDispatchIntentRecordsNotPaymentOrServiceAuthority": true,
+    "serviceDeliveryCurrentAuthorityRealReadyDurabilityRestartOrPilot": "NOT_ESTABLISHED",
+    "testTimeoutIsHardLifetimeOrCancellationGuarantee": false,
+    "fakeForcedCloseIsRealSocketOrOSCleanupProof": false,
+    "permissionModelIsOSNetworkSandboxOrMaliciousCodeGuarantee": false,
+    "runtimeLoaderRunnerStreamAndOSBehaviorRemainPremises": true,
+    "hostedCIAndFullConsumerOrAppQualification": "NOT_ESTABLISHED",
+    "sourceOrLocalTestPassDoesNotEstablishLiveProductionAcceptance": true
+  },
+  "retainedSafety": {
+    "signer": "DISABLED",
+    "realTotals": {
+      "consumedAdmissions": 2,
+      "actualPREPARE": 1,
+      "bundles": 0,
+      "nativeChainOrProviderQualificationRuns": 0
+    },
+    "realOriginalRequestAndPaymentBytesHashPayloadRequirementsAndContextPreserved": true,
+    "consumedAuthorityNotReset": true,
+    "ownershipMetadata165NotRetried": true,
+    "PR193": "Possible VALIDATED exact-same-signed-block resend stays distinct from UNKNOWN/ACKNOWLEDGED; no resend performed.",
+    "realFundingPayerProviderPolicyAuthorityRealREADYDurabilityCommitUncertaintyAndRestartRecoveryRemainSeparateGates": true,
+    "actualLocalNodeComponentRunsReportedSeparately": true,
+    "priorCompletedStoppedAndPublishedSlicesUnchanged": true,
+    "automationsUnchanged": true
+  },
+  "publicationAtRecording": "LOCAL_NEW_RESULT_ONLY; no new publication claim in this result.",
+  "remainingAcceptance": "Real HTTPS/backend/SDK/store/lifecycle/inclusion/receive/same-payment process recovery and independent pilot acceptance are not replaced by this finite component result."
+}

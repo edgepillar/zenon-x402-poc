@@ -5,6 +5,7 @@ import {
 } from './service-credit-original-request-custody-contract.js';
 import {
   createServiceCreditCustodiedRequestOwner,
+  createServiceCreditCustodiedRequestOwnerV3,
 } from './service-credit-custodied-request-owner.js';
 import {
   createServiceCreditHttpExecuteDispatch,
@@ -27,6 +28,7 @@ const JSON_PARSE = JSON.parse;
 const POLICY = snapshotOriginalServiceRequestCustodyPolicy;
 const KEY = snapshotOriginalServiceRequestCustodyKey;
 const CREATE_OWNER = createServiceCreditCustodiedRequestOwner;
+const CREATE_OWNER_V3 = createServiceCreditCustodiedRequestOwnerV3;
 const CREATE_DISPATCH = createServiceCreditHttpExecuteDispatch;
 const PREFIX = 'SERVICE_CREDIT_CUSTODIED_HTTP_CLIENT_';
 
@@ -71,6 +73,13 @@ const INPUT_FIELDS = FREEZE([
  */
 export function createServiceCreditCustodiedHttpClient(configuration) {
   if (arguments.length !== 1) throw failure('INVALID_CONFIGURATION');
+  return createClient(configuration, false);
+}
+export function createServiceCreditCustodiedHttpClientV3(configuration) {
+  if (arguments.length !== 1) throw failure('INVALID_CONFIGURATION');
+  return createClient(configuration, true);
+}
+function createClient(configuration, dispatchIntentEnabled) {
 
   let config, policy, selectedKey, owner;
   try {
@@ -85,7 +94,7 @@ export function createServiceCreditCustodiedHttpClient(configuration) {
       grantId: config.selectedGrantId,
       requestId: 'scope',
     });
-    owner = CREATE_OWNER({
+    owner = (dispatchIntentEnabled ? CREATE_OWNER_V3 : CREATE_OWNER)({
       store: config.store,
       fundingResourceUrl: config.fundingResourceUrl,
       custodyPolicy: policy,
@@ -101,6 +110,8 @@ export function createServiceCreditCustodiedHttpClient(configuration) {
   const serviceResourceUrl = policy.serviceResourceUrl;
   const OWNER_SUBMIT = owner.submitOriginal;
   const OWNER_READ = owner.readOriginal;
+  const OWNER_READ_RECOVERY_STATE = owner.readOriginalRecoveryState;
+  const OWNER_READ_RECOVERY_KEYS = dispatchIntentEnabled ? owner.readOriginalRecoveryKeys : null;
   const OWNER_SNAPSHOT = owner.snapshot;
   const OWNER_CLOSE = owner.close;
   let lastTransport = null;
@@ -207,6 +218,11 @@ export function createServiceCreditCustodiedHttpClient(configuration) {
     return OWNER_READ(args[0]);
   }
 
+  function readOriginalRecoveryState(key) {
+    if (arguments.length !== 1) throw failure('INVALID_INPUT');
+    return OWNER_READ_RECOVERY_STATE(key);
+  }
+
   function snapshot(...args) {
     if (args.length !== 0) throw failure('INVALID_INPUT');
     return FREEZE({
@@ -233,6 +249,8 @@ export function createServiceCreditCustodiedHttpClient(configuration) {
   return FREEZE({
     submitOriginal: FREEZE(submitOriginal),
     readOriginal: FREEZE(readOriginal),
+    readOriginalRecoveryState: FREEZE(readOriginalRecoveryState),
+    ...(dispatchIntentEnabled ? { readOriginalRecoveryKeys: OWNER_READ_RECOVERY_KEYS } : {}),
     snapshot: FREEZE(snapshot),
     close: FREEZE(close),
   });
