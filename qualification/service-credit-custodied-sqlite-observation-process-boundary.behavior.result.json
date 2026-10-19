@@ -1,0 +1,539 @@
+{
+  "schema": "zenon-x402-sqlite-public-observation-process-boundary/v1",
+  "scope": "OCT19_P2_PUBLIC_OBSERVATION_COLLECTION_GRACEFUL_PROCESS_BOUNDARY_V1",
+  "status": "BOTH_AUTHORED_TESTS_PASS_FULL_TASK_QUALIFICATION_HOLD",
+  "fullScopeQualified": false,
+  "summary": "Two fresh Node processes ran the writer and reader tests once over the exact same new private synthetic SQLite file. Both authored tests passed with exit0 and complete captures. The stock API retained the reader's pre-promotion capture record but raised Busy before returning a COMPLETE receipt. The outer driver exited1; its owned task closed FAILURE and cleanup HOLD. This is not a clean successful end-to-end manager run.",
+  "selection": {
+    "positiveRetainedMapping": "Earlier exact state-plan and catalogue APIs had separate fresh-process cases; current public observation collection had same-process and owned-close cases with process restart explicitly excluded. This slice covers the current public observation facade across one graceful fresh-process boundary, not a globally novel product defect or crash/durability qualification.",
+    "previousCurrentObservationResult": {
+      "path": "qualification/service-credit-custodied-sqlite-recovery-observation-collection-current.behavior.result.json",
+      "sha256": "b5a04a57d201695b5579c3dd830e31b6ec49953eeb50940494f95eaf3006ba53"
+    },
+    "fixture": {
+      "path": "qualification/service-credit-custodied-sqlite-observation-process-boundary.draft.mjs",
+      "bytes": 40251,
+      "LF": 674,
+      "sha256": "2e7163702c551caea1c23d268258932c659c19348600a4e26f5ddba00c11ab61",
+      "gitBlob": "fd5141c34559f646eb4d8f7bce76f91028185c60"
+    },
+    "authoringHeader": "DRAFT/NOT_RUN is the preserved source-authoring label. This result records the later actual outcomes without rewriting that source.",
+    "productionSourceEdits": 0,
+    "historicalOutcomesRerun": 0,
+    "missingCoverageEstablishesNovelty": false
+  },
+  "sourcePins": [
+    {
+      "path": "src/service-credit-custodied-sqlite-http-client.js",
+      "bytes": 18540,
+      "LF": 511,
+      "sha256": "ea16d6ac5ce72d6434c06e98c52c324daf918dd570f15997cdc21e501f677f4e",
+      "gitBlob": "9572dfcca76b83b53bdd5bd132ffaf110720dc3a"
+    },
+    {
+      "path": "src/service-credit-custodied-sqlite-sequential-runner.js",
+      "bytes": 21467,
+      "LF": 510,
+      "sha256": "9378a09dfd23c6ad5e093971d16c5aad62c19b5f3cce353bb199f037df64d7e0",
+      "gitBlob": "105b22e1463ab8302b141510e2bb991b746169ad"
+    },
+    {
+      "path": "src/service-credit-custodied-recovery-observation-collection-core.js",
+      "bytes": 8579,
+      "LF": 213,
+      "sha256": "36b7cece2d436cbfcac5f4299dd6bd30e5eede6ebb2ebe769ae7bf3a6f1a72b4",
+      "gitBlob": "4dc8765be0aa4b0e927fface960e366a3a6ccd1e"
+    },
+    {
+      "path": "src/service-credit-zenon-funding-post-v1-payer-recovery-sqlite-store.js",
+      "bytes": 57459,
+      "LF": 1536,
+      "sha256": "9c925f241effbfec0bf014ff284e834c4d5679c4ea7224f83a6354cde6cffdaf",
+      "gitBlob": "260c2f43306b029ca694aa06b8c60d1be037c614"
+    },
+    {
+      "path": "src/x402-wire.js",
+      "bytes": 39886,
+      "LF": 934,
+      "sha256": "5fba91af5a352f62d1a335c7176a45a604e2af5d92b1c4b0e53825c1f20d4e56",
+      "gitBlob": "fb060d4e349b1c31a1219a0cc137af250a8a2291"
+    },
+    {
+      "path": "src/service-credit-pilot-client-plan.js",
+      "bytes": 7483,
+      "LF": 181,
+      "sha256": "73ee3d739de85150039e733234cd0761c228d68de040d1e126902e808a259ac6",
+      "gitBlob": "14334c82b5b7c80fb8f7f6a392a1a0f3c3adcbf1"
+    },
+    {
+      "path": "src/service-credit-pilot-status-view.js",
+      "bytes": 3202,
+      "LF": 60,
+      "sha256": "cf3822d8b9ec4eb4772452ed1888b96d398fd87c1ead44cd155a5acc1a6b66ed",
+      "gitBlob": "0890db504e44b704d0434dc309e711743570e652"
+    },
+    {
+      "path": "src/service-credit-custodied-recovery-collection-core.js",
+      "bytes": 13794,
+      "LF": 306,
+      "sha256": "51d06da70ecccd0cf8b38d650367d1ae903ea86010a5ebeadb682af98e4b890b",
+      "gitBlob": "5275832eebbf87e0cd37f3c2e3b82147ab625a72"
+    },
+    {
+      "path": "src/service-credit-http-execute-dispatch.js",
+      "bytes": 27034,
+      "LF": 770,
+      "sha256": "254ba8eef5ea5efb3a1b901be09e9cb33afbc3cfcf63789ca4a23316b6180d1b",
+      "gitBlob": "280dd20dc669e2856d263eba62ccd0fe9af72f21"
+    },
+    {
+      "path": "src/service-credit-original-request-custody-contract.js",
+      "bytes": 14051,
+      "LF": 356,
+      "sha256": "fd349de553a17abcc2e0567ba6640e6e3d5d26cfa79ee1e355928dc9fa8d3915",
+      "gitBlob": "f911d42d01b69e6577f9bcd66f4ed59aab8ab882"
+    },
+    {
+      "path": "src/service-credit-custodied-request-owner.js",
+      "bytes": 35073,
+      "LF": 938,
+      "sha256": "6e7493a4859d48530820e68a4a19a513aad014ffc1048b42965a3ad36ae7c5f7",
+      "gitBlob": "2dee22fd780db9de662fe1243075e74cef0bf296"
+    },
+    {
+      "path": "src/service-credit-custodied-http-client.js",
+      "bytes": 10755,
+      "LF": 292,
+      "sha256": "ddbc54faf4a14d95e6274bc9df27b7b49db251bab67c11b871cfb2f9e78b4f15",
+      "gitBlob": "90fd4c8a2cc8fb552f8eb0cb45607bfa44c61108"
+    },
+    {
+      "path": "src/service-credit-custodied-sequential-runner-core.js",
+      "bytes": 15288,
+      "LF": 479,
+      "sha256": "36c99342bf9e47559e39535aefcde78acbbdd7fb210d42a77dbbb93c2fd9f8ff",
+      "gitBlob": "c9005ab245f045648d6bf508b9afef6c2d26c583"
+    },
+    {
+      "path": "package.json",
+      "bytes": 1413,
+      "LF": 40,
+      "sha256": "8c9a25504fbf6f87c31cdf245a6f4eec5a88cc89c8352151dc66a577c5771ef5",
+      "gitBlob": "ec7193f6fd76f34778515079dc777594175c4c34"
+    },
+    {
+      "path": "qualification/service-credit-custodied-sqlite-observation-process-boundary.draft.mjs",
+      "bytes": 40251,
+      "LF": 674,
+      "sha256": "2e7163702c551caea1c23d268258932c659c19348600a4e26f5ddba00c11ab61",
+      "gitBlob": "fd5141c34559f646eb4d8f7bce76f91028185c60"
+    }
+  ],
+  "runtime": {
+    "name": "Node.js",
+    "version": "24.19.0",
+    "platform": "darwin",
+    "arch": "arm64",
+    "bytes": 121304480,
+    "sha256": "613be50c90e83aa8da58dd9ed393d0b39914a3b8ef4123fe817b46c2679cebe2",
+    "digestProvenance": "Previously fully verified binary digest; exact full-eight identity tuple unchanged before both launches and checked by the fixed caller. No binary rehash or copy."
+  },
+  "driver": {
+    "status": "EXIT1_BUSY_AFTER_READER_CAPTURE",
+    "fixedUnsavedPython": {
+      "bytes": 20107,
+      "LF": 251,
+      "sha256": "5dc190bf84a8af2bfcb19466e27460dbe4f1f4c4481a4e5b2001ba09c4365a13"
+    },
+    "actualBoundPython": {
+      "bytes": 26934,
+      "sha256": "d8e075da33591b5bb0978f3594153bb7ad4997857b5e1d0e5b33433ce8abe7f9"
+    },
+    "unchangedCJS": {
+      "bytes": 11686,
+      "LF": 110,
+      "sha256": "bfa66da0b6598293efd5a833e5b81a5dfeb809feb9d6509877076ac5293dd92b"
+    },
+    "sourceReview": {
+      "completeDriverAndHandoffRead": true,
+      "workerOriginalTemplate": {
+        "bytes": 19990,
+        "sha256": "5a39e17f9210db02308e5054c59153e4fd23b617a07d6fba7c78eb12240dd6e3"
+      },
+      "sourceData": {
+        "bytes": 28389,
+        "sha256": "ca2aaf975e41339569641d9cc08c6e70a28b85871a453b89b9c384f36446efd9"
+      },
+      "firstOriginal": {
+        "bytes": 3502,
+        "sha256": "e53bacca189dc28b74d9271f03deeda7d8b6416729f7352697b242df3818b3c2"
+      },
+      "workerAccountUpper": 396185,
+      "workerHardCeiling": 400000,
+      "target250000Met": false,
+      "priorAccountsRetained": [
+        943394,
+        883726
+      ],
+      "primaryCorrection": "Before any run, one incompatible tools-prefix guard was replaced by the exact existing five-file manager source set, including AGENTS.md. Unique span and full inverse verified. No additional manager/source file, helper, native diagnostic run or control removal."
+    },
+    "execution": "One stock owned task; exactly two conditional sequential Task.run calls. Cleared explicit env-i Node arguments; writer9/reader11 environment keys. Fixed Node --no-addons --disallow-code-generation-from-strings -e caller - phase. Python3.9.6 -I -S -B -X pycache_prefix=/dev/null with cleared environment. No stdin adapter or saved operational helper.",
+    "nodePermissionModel": false,
+    "osOrNetworkSandbox": false,
+    "limits": {
+      "expectedTaskBytes": 33554432,
+      "taskQuotaBytes": 67108864,
+      "metadataLockSeconds": 20,
+      "foregroundSecondsPerCommand": 20,
+      "authoredTestTimeoutMs": 12000,
+      "cooperativeWaitMs": 2000,
+      "maxBoundCJSBytes": 16000,
+      "maxArgvBytes": 32768,
+      "maxArgvCount": 256,
+      "TAPBytes": 65536,
+      "stdoutBytes": 131072,
+      "stderrBytes": 1048576,
+      "perDBOrJournalBytes": 2097152,
+      "productionFreeSpaceFloorGiB": 10
+    },
+    "limitCaveat": "These cooperative/test/foreground observations and sampled budgets are not hard lifetime, cancellation, native cleanup or OS/network-sandbox guarantees. Loader, runner, SQLite, stream, OS, pristine-intrinsic and source-to-import-race premises remain.",
+    "stageAtException": "READER_RUN_ENTERED",
+    "errorType": "Busy",
+    "secondaryFailureRecordErrorType": "Busy",
+    "actualReaderLaunch": "Confirmed by exact command capture record and reader diagnostic; not inferred absent from the thrown API call.",
+    "managerSource": {
+      "commit": "d9ebafd537849379b8caa092a8e102fdf5b2edaa",
+      "files": [
+        {
+          "path": "AGENTS.md",
+          "bytes": 2333,
+          "LF": 13,
+          "sha256": "72ead174379ab86800ce406afe2b856e412ca4d6a9238abea6dcdf7d70e869c8",
+          "gitBlob": "1f6bedbdc130e1e5a6dff30d3015d76385086b10"
+        },
+        {
+          "path": "tools/task-storage/README.md",
+          "bytes": 16630,
+          "LF": 288,
+          "sha256": "ecb23fa66c3f172d650dfc65715c0d6d69ef4c890adc4efe70c6c3ff7790359d",
+          "gitBlob": "0e19204ea452ada8cc3683fdad0841dfead73831"
+        },
+        {
+          "path": "tools/task-storage/cli.py",
+          "bytes": 3329,
+          "LF": 67,
+          "sha256": "0bf13cdc1f25a6b31ab14cfb124908808ca7ddc89073ecbcd0263bef4d52238c",
+          "gitBlob": "71a7c5dadde451c09acb16e2a0e28eea5429fcbc"
+        },
+        {
+          "path": "tools/task-storage/storage.py",
+          "bytes": 53508,
+          "LF": 1063,
+          "sha256": "a4d82a72214c9698fda7ae363c38b2470c08da5e2e04c63ee9284e43f638f081",
+          "gitBlob": "57aae4d21ee55fd6d3cb9e25d781a81626e3fdfb"
+        },
+        {
+          "path": "tools/task-storage/policy.json",
+          "bytes": 403,
+          "LF": 14,
+          "sha256": "47f6ce252a991ce350b1760b22ade23b7590968c9146abf4ab50722f0d0b23b1",
+          "gitBlob": "7ca692768e5013b3612eebb3f91aa52450ff32ce"
+        }
+      ],
+      "review": "Existing trusted stock manager source reviewed completely; no tool implementation or helper was altered."
+    }
+  },
+  "phases": [
+    {
+      "phase": "writer",
+      "name": "observation collection writer detaches declared success and closes the exact persisted originals",
+      "tests": 1,
+      "pass": 1,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "nodeExit": 0,
+      "outputComplete": true,
+      "reason": null,
+      "managerRecordState": "COMPLETE",
+      "captureState": "COMPLETE_RECEIPT",
+      "apiCompleteReceiptReturned": true,
+      "caller": {
+        "bytes": 14670,
+        "sha256": "0d9ce54ba033541a9e1ab9d46e48926f1364bae93216fd4c6b976e055143a452",
+        "registration": {
+          "enqueue": 1,
+          "start": 1,
+          "pass": 1,
+          "fail": 0,
+          "plan": 1,
+          "diagnostic": 1
+        },
+        "eventCount": 13,
+        "TAPBytes": 1859,
+        "TAPComplete": true,
+        "faults": []
+      },
+      "stdout": {
+        "bytes": 2566,
+        "sha256": "c663987da8b268b2a062923c5f1584c5d84b2ab4beebce721dc1510412eb97a2"
+      },
+      "stderr": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "ownerEpoch": 2,
+      "newRoots": 1,
+      "continuityChecksBeforeOpen": 0,
+      "declaredHistory": "LOCAL_SUCCESS_DETACHED_NOT_PERSISTED",
+      "stableSqlSHA256": "8aa654fd2b7959c0d6e5b7518a2b9532a00e9cedf1976ab5c11a2e5f3c1e8ef5",
+      "rows": {
+        "originals": 2,
+        "intents": 1,
+        "funding": 1,
+        "policy": 1,
+        "schema": 5
+      },
+      "ownedStoreCallCounts": {
+        "loadReads": 56,
+        "recordReads": 28,
+        "retainCalls": 0,
+        "readbackConfirmations": 0,
+        "dispatchCalls": 0,
+        "callbackCompletions": 0,
+        "intentWrites": 0,
+        "intentReads": 16,
+        "intentReadbackConfirmations": 0
+      },
+      "counterMeaning": "Application store-call counts, not measured SQL/C++ query counts.",
+      "requestCalls": 0,
+      "rootCloseCalls": 1,
+      "storeCloseAttempts": 1,
+      "rootCloseOutcome": "DRAINED",
+      "storeCloseOutcome": "RETURNED",
+      "knownNativeEntriesReturned": 4,
+      "qualification": "UNQUALIFIED",
+      "authority": "NONE",
+      "serviceOutcome": "NOT_ESTABLISHED",
+      "nativeEntryMeaning": "Recorded known API acquisitions/close returns; not an independent C++ handle inventory."
+    },
+    {
+      "phase": "reader",
+      "name": "fresh observation collection reader rebuilds conservative history from the exact writer SQLite file",
+      "tests": 1,
+      "pass": 1,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "nodeExit": 0,
+      "outputComplete": true,
+      "reason": null,
+      "managerRecordState": "RUNNING",
+      "captureState": "STREAMS_CAPTURED_PENDING_PROMOTION",
+      "apiCompleteReceiptReturned": false,
+      "caller": {
+        "bytes": 14955,
+        "sha256": "bfe5e60ae97cf440050c7c3df8e8a79b379b7a03e2de3acd25889c33e86d187e",
+        "registration": {
+          "enqueue": 1,
+          "start": 1,
+          "pass": 1,
+          "fail": 0,
+          "plan": 1,
+          "diagnostic": 1
+        },
+        "eventCount": 13,
+        "TAPBytes": 2282,
+        "TAPComplete": true,
+        "faults": []
+      },
+      "stdout": {
+        "bytes": 2989,
+        "sha256": "0b39d7073a3b74d8d09990556ea7f37808da44ef0b7bd9f9e8a09fe5fe8c2612"
+      },
+      "stderr": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "ownerEpoch": 3,
+      "newRoots": 0,
+      "continuityChecksBeforeOpen": 2,
+      "declaredHistory": "FRESH_UNKNOWN_TERMINAL_NULL",
+      "stableSqlSHA256": "8aa654fd2b7959c0d6e5b7518a2b9532a00e9cedf1976ab5c11a2e5f3c1e8ef5",
+      "rows": {
+        "originals": 2,
+        "intents": 1,
+        "funding": 1,
+        "policy": 1,
+        "schema": 5
+      },
+      "ownedStoreCallCounts": {
+        "loadReads": 38,
+        "recordReads": 19,
+        "retainCalls": 0,
+        "readbackConfirmations": 0,
+        "dispatchCalls": 0,
+        "callbackCompletions": 0,
+        "intentWrites": 0,
+        "intentReads": 11,
+        "intentReadbackConfirmations": 0
+      },
+      "counterMeaning": "Application store-call counts, not measured SQL/C++ query counts.",
+      "requestCalls": 0,
+      "rootCloseCalls": 1,
+      "storeCloseAttempts": 1,
+      "rootCloseOutcome": "DRAINED",
+      "storeCloseOutcome": "RETURNED",
+      "knownNativeEntriesReturned": 2,
+      "qualification": "UNQUALIFIED",
+      "authority": "NONE",
+      "serviceOutcome": "NOT_ESTABLISHED",
+      "nativeEntryMeaning": "Recorded known API acquisitions/close returns; not an independent C++ handle inventory."
+    }
+  ],
+  "continuity": {
+    "freshDistinctProcessIds": true,
+    "sameDriverParentIdentityMatched": true,
+    "writerPIDAndGroupObservedAbsentBeforeReader": true,
+    "writerPIDAndExactClosedFileStampOnlyTransferred": true,
+    "writerRecoveryPlanRowsOrHistoryDTOTransferred": false,
+    "sameFixtureAndChildNamespace": true,
+    "sameDatabaseDeviceAndInode": true,
+    "privateMode": "0600",
+    "singleLink": true,
+    "readerPreImportAndPreConstructorStampsMatchExactWriterClosedStamp": true,
+    "writerClosedDatabase": {
+      "bytes": 32768,
+      "sha256": "ac50914442c47bd76d17b83d4ac1f9be0630625843eec07983d69218da77e16b"
+    },
+    "readerClosedDatabase": {
+      "bytes": 32768,
+      "sha256": "db277bf8e65202eaf0e84a985bc14d6fbf9f2b4724b9bda9314fbebbd0d9abcc"
+    },
+    "stableSqlProjection": {
+      "domain": "zenon-x402:sqlite-public-observation-process-stable-sql-v1",
+      "sha256": "8aa654fd2b7959c0d6e5b7518a2b9532a00e9cedf1976ab5c11a2e5f3c1e8ef5",
+      "excludedOnly": "payer_recovery_meta.owner_epoch",
+      "writerEpoch": 2,
+      "readerEpoch": 3,
+      "allOtherRowsAndSchemaChecked": true
+    },
+    "historyBoundary": "Writer local declared SUCCEEDED is detached RAM history only. Fresh reader rebuilds its own UNKNOWN/terminal-null declared history and exact persisted originals/intent; every payment/sign/dispatch/delivery authority flag stays false.",
+    "postRunInspection": "Bounded safe-FD hash matched the reader's entire final DB stamp; no SQLite reopen. Writer, reader and driver PID absence observed; both Node groups also ESRCH. These are instantaneous absence and API-return observations, not general hard cleanup/durability proof."
+  },
+  "supervisionAndRetention": {
+    "outerDriverExit": 1,
+    "taskState": "CLOSED",
+    "taskOutcome": "FAILURE",
+    "cleanupDecision": "HOLD",
+    "readerCommandStatePreserved": "RUNNING with STREAMS_CAPTURED_PENDING_PROMOTION, actual_exit0, output_completetrue, reasonnull. Original metadata was not changed to COMPLETE.",
+    "readerRawCaptureRetention": "Registered private stdout/stderr remain RETAIN_ON_FAILURE. Their actual identities/byte counts/SHA256 match the durable pre-promotion record. No CAS promotion retry, adoption, packaging or copy.",
+    "writerCaptureRetention": "Stock COMPLETE receipt and one stdout CAS object plus shared empty stderr object retained.",
+    "storageFailureCauseLimit": "Busy was reported after complete reader capture and before API completion, plus a Busy while attempting a driver-failure record. The exact lock owner or full fault cause was not established. No root/helper/lease mutation or interruption was used.",
+    "nativeOrPromotionRetries": 0,
+    "sourceTreeOrBinaryCopies": 0,
+    "manualDeletion": 0,
+    "sqliteImportsByDriverOrPostRunAudit": 0,
+    "workerPending": false,
+    "nativeSessionPending": false
+  },
+  "privateEvidence": [
+    {
+      "label": "task",
+      "bytes": 1397,
+      "sha256": "b275b2bf157c023256372b4fe1ac0a653ff9bb7c5989694480d713ce0ae455cb"
+    },
+    {
+      "label": "writer-selection",
+      "bytes": 1054,
+      "sha256": "4ff9feeee778f0bd4ba3e4d3eb8c4b5c920eecda8b01644837646f24dde08108"
+    },
+    {
+      "label": "writer-joined",
+      "bytes": 575,
+      "sha256": "f4a852519479707b21b9de0824b9c2dad1a3d43eb18ddd9a333aea598fd9156d"
+    },
+    {
+      "label": "writer-stream-validation",
+      "bytes": 3478,
+      "sha256": "415040f9a70a560cca689a62b405fc28e4ed577c40823171c6a00fecc9a95307"
+    },
+    {
+      "label": "writer-absence",
+      "bytes": 103,
+      "sha256": "0fd371c18cb26a8fe5fe2eae2a73d288bd230b10c336c9638a17cf7c949db318"
+    },
+    {
+      "label": "writer-file-gate",
+      "bytes": 951,
+      "sha256": "a21fbf0c52f37be3f9fa0edcb70e90929bab83f1c1a6924f63bfc20885603afb"
+    },
+    {
+      "label": "reader-pre-a",
+      "bytes": 562,
+      "sha256": "457c937bc625b37b503fe1bd1a14bb8a8cb0c268be1f2c9b4ae882ab11f6d238"
+    },
+    {
+      "label": "reader-selection",
+      "bytes": 1057,
+      "sha256": "160d23577fe6a12f3c9b706ea8cec51dea607c64827e99868374ce2b59c9da7a"
+    },
+    {
+      "label": "writer-command",
+      "bytes": 432,
+      "sha256": "28c7795fa5e065050e2c604b004f6950cdff5817dd2abf45af6b2c53e1d89127"
+    },
+    {
+      "label": "reader-prepromotion-command",
+      "bytes": 687,
+      "sha256": "c00636fbf5885f40f752b51db9e4d805f0ddaf56f67ce6abfb6be07eda459aa3"
+    },
+    {
+      "label": "outcome",
+      "bytes": 61,
+      "sha256": "d6add448b2963aadb455f9f5918bafb8f407701bf244d745528e893c1ac8bc94"
+    },
+    {
+      "label": "cleanup",
+      "bytes": 232,
+      "sha256": "16bcd4e432607f10cdd115451c5693a66ab6928c99536656fac1df853ecb8964"
+    }
+  ],
+  "postRun": {
+    "source15Full8AndHashes": "UNCHANGED",
+    "manager5Full8AndHashes": "UNCHANGED",
+    "storageConfigFull8AndHash": "UNCHANGED",
+    "rawDBFinalHashAndNamespace": "MATCH_READER_DIAGNOSTIC",
+    "taskAndCommandMetadata": "Preserved with their actual FAILURE/pending-promotion statuses."
+  },
+  "retainedAuthoringFailures": [
+    "Several original worker driver drafts and framing copies remain counted; the final19990-byte template met the clarified22528 ceiling.",
+    "Primary identified and corrected the original exact-manager-set contradiction before launch.",
+    "An unfinished primary RAM JSON-validator guard rejected before storing an audit result; corrected pure-data audit matched both existing captures without rerunning tests."
+  ],
+  "notEstablished": [
+    "Full clean stock-manager two-phase success or completed reader CAS promotion",
+    "Abrupt process crash, power loss, host restart, fsync/durability or native C++ finalization",
+    "Broad app/controller/store/SDK qualification",
+    "Real pending-payment recovery, current context/funding/payer/provider/policy authority, provider READY, delivery, chain acceptance or pilot readiness",
+    "Hosted CI success or publication in this execution scope"
+  ],
+  "protectedState": {
+    "realConsumedAdmissions": 2,
+    "actualChainPREPARE": 1,
+    "bundles": 0,
+    "nativeChainProviderQualificationRuns": 0,
+    "realSigner": "DISABLED",
+    "originalRealPaymentRequestBytesHashPayloadRequirementsContextAndConsumedAuthority": "UNCHANGED",
+    "pr193Boundary": "Possible VALIDATED exact-same-signed-block resend remains distinct from UNKNOWN and ACKNOWLEDGED."
+  },
+  "publication": {
+    "executionScope": "LOCAL",
+    "productionBehaviorQualified": false,
+    "ciDispatched": false,
+    "mainMutationInThisExecutionScope": false,
+    "unrelatedEditsPreserved": true
+  }
+}
