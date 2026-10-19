@@ -1,0 +1,232 @@
+{
+  "schema_version": 1,
+  "scope": "OCT20_P0A_SQLITE_LITERAL_SYSTEM_PREFIX_SCHEMA_REFUSAL_V1",
+  "status": "PASS_LOCAL_SYNTHETIC_SCHEMA_REFUSAL_ONLY",
+  "description": "One real current-store/SQLite schema-visibility and refusal case against a new private synthetic database. This qualifies existing selected behavior, not a newly established vulnerability or complete store/P0-A/P2 acceptance.",
+  "fixture": {
+    "path": "qualification/service-credit-sqlite-literal-system-prefix.draft.mjs",
+    "bytes": 22401,
+    "LF": 443,
+    "sha256": "1e6910c706fb8ebbdbc6be92bb1790a23c1084443c8730148eb1429c3ae3072f",
+    "git_blob": "b5c5d106f3f4c2b32d55a60fa53c99e9cca97063",
+    "source_header": "The authored SOURCE DRAFT / NOT_RUN provenance header is preserved unchanged. Actual execution status is recorded here."
+  },
+  "source_graph": [
+    {
+      "path": "src/service-credit-sqlite-store.js",
+      "bytes": 82141,
+      "LF": 2333,
+      "sha256": "bda45bd553c8580a7bd66573bb2fb7c3bf12d79bab49a91fe3ac6dc1ebad8422",
+      "git_blob": "6a7364fbc59c43edffb7a73f550210644e78daff"
+    },
+    {
+      "path": "src/service-credit-model.js",
+      "bytes": 55461,
+      "LF": 1580,
+      "sha256": "7ff7e3d88ab8c3b38a0073541533fbdb7a0d9f2be42f337ac35f6a3b05615c3a",
+      "git_blob": "e6ac17254874584d1a01f70e7abc6f771bd35d73"
+    },
+    {
+      "path": "src/service-credit-execution-contract.js",
+      "bytes": 30258,
+      "LF": 956,
+      "sha256": "298f8e74885e1c507953c0fcf7874832f815296746e6bacbdac97a425f1a6c73",
+      "git_blob": "acfbb5c5e943b9e09958a7831b3dbe159463dcf9"
+    },
+    {
+      "path": "package.json",
+      "bytes": 1413,
+      "LF": 40,
+      "sha256": "8c9a25504fbf6f87c31cdf245a6f4eec5a88cc89c8352151dc66a577c5771ef5",
+      "git_blob": "ec7193f6fd76f34778515079dc777594175c4c34"
+    }
+  ],
+  "source_review": {
+    "complete_worker_frame_sha256": "b5f20a24340d9838defb8f434270073563ecb4576f4cfb7191811e9bc46efa42",
+    "complete_first_original_sha256": "e7e6eb80a1fc7371c9f25b7f2f86ef359c188e750e25fcbe7cd4613923785cc2",
+    "parent_complete_source_and_handoff_review": true,
+    "oracle_correction": {
+      "original_source_only_request": "SERVICE_CREDIT_STORE_SCHEMA_UNSUPPORTED",
+      "current_source_and_actual_case": "SERVICE_CREDIT_STORE_CORRUPT",
+      "reason": "Current #validateDatabase classifies extra schema objects as CORRUPT. SCHEMA_UNSUPPORTED applies to application-id/user-version mismatch and is not the acceptance established by this run.",
+      "corrected_before_native_launch": true,
+      "generic_exceptions_cannot_pass": true
+    }
+  },
+  "execution": {
+    "node_version": "v24.19.0",
+    "platform": "darwin",
+    "architecture": "arm64",
+    "node_binary_sha256": "613be50c90e83aa8da58dd9ed393d0b39914a3b8ef4123fe817b46c2679cebe2",
+    "invocations": 1,
+    "explicit_test_files": 1,
+    "actual_exit": 0,
+    "tests": 1,
+    "pass": 1,
+    "fail": 0,
+    "skipped": 0,
+    "cancelled": 0,
+    "todo": 0,
+    "pass_names": [
+      "P0-A actual SQLite literal sqlite_ prefix preserves schema visibility and refuses an extra table"
+    ],
+    "test_duration_ms": 111.870375,
+    "runner_duration_ms": 121.676583,
+    "diagnostic": {
+      "status": "PASS",
+      "stage": "EXPECTED_REFUSAL_COMPLETE",
+      "hold": "NONE",
+      "retainedErrors": 0,
+      "sourceGuards": 5,
+      "createCalls": 1,
+      "createState": "RETURNED",
+      "originalStoreCloseCalls": 1,
+      "originalStoreCloseState": "RETURNED",
+      "rawCalls": 1,
+      "rawState": "RETURNED",
+      "rawCloseCalls": 1,
+      "rawCloseState": "RETURNED",
+      "shadowCreates": 1,
+      "schemaBefore": 1,
+      "schemaAfter": 2,
+      "oldPredicateVisible": 1,
+      "literalPredicateVisible": 2,
+      "ledgerUnchanged": true,
+      "pragmasUnchanged": true,
+      "costCalls": 0,
+      "clockCalls": 0,
+      "finalOpenCalls": 1,
+      "finalOpenState": "EXPECTED_REFUSAL",
+      "expectedCode": "SERVICE_CREDIT_STORE_CORRUPT",
+      "observedCode": "SERVICE_CREDIT_STORE_CORRUPT",
+      "finalConstructorInternalClose": "UNINSTRUMENTED_NOT_ESTABLISHED",
+      "qualification": "LOCAL_SYNTHETIC_SCHEMA_REFUSAL_ONLY",
+      "authority": "NONE"
+    },
+    "assertion_boundary": "Exact current ServiceCreditSqliteStoreError class, code, name, message and redacted stack are checked by the authored case. Initial create and raw close must each return once; the final thrown constructor supplies no returned owner."
+  },
+  "capture": {
+    "separate_streams": true,
+    "output_complete": true,
+    "stdout": {
+      "bytes": 1898,
+      "sha256": "a5d3cf62ebac1f2f4f2e4af419d50cb3d2882508b035233b861b4f347169b1a7",
+      "text": "TAP version 13\n# Subtest: P0-A actual SQLite literal sqlite_ prefix preserves schema visibility and refuses an extra table\nok 1 - P0-A actual SQLite literal sqlite_ prefix preserves schema visibility and refuses an extra table\n  ---\n  duration_ms: 111.870375\n  type: 'test'\n  ...\n# {\"status\":\"PASS\",\"stage\":\"EXPECTED_REFUSAL_COMPLETE\",\"hold\":\"NONE\",\"retainedErrors\":0,\"sourceGuards\":5,\"createCalls\":1,\"createState\":\"RETURNED\",\"originalStoreCloseCalls\":1,\"originalStoreCloseState\":\"RETURNED\",\"rawCalls\":1,\"rawState\":\"RETURNED\",\"rawCloseCalls\":1,\"rawCloseState\":\"RETURNED\",\"shadowCreates\":1,\"schemaBefore\":1,\"schemaAfter\":2,\"oldPredicateVisible\":1,\"literalPredicateVisible\":2,\"ledgerUnchanged\":true,\"pragmasUnchanged\":true,\"costCalls\":0,\"clockCalls\":0,\"finalOpenCalls\":1,\"finalOpenState\":\"EXPECTED_REFUSAL\",\"expectedCode\":\"SERVICE_CREDIT_STORE_CORRUPT\",\"observedCode\":\"SERVICE_CREDIT_STORE_CORRUPT\",\"finalConstructorInternalClose\":\"UNINSTRUMENTED_NOT_ESTABLISHED\",\"qualification\":\"LOCAL_SYNTHETIC_SCHEMA_REFUSAL_ONLY\",\"authority\":\"NONE\"}\n1..1\n# tests 1\n# suites 0\n# pass 1\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 121.676583\n# LITERAL_CALLER {\"status\":\"PASS_AWAITING_JOINED_PROCESS_AND_STREAMS\",\"registration\":{\"enqueue\":[\"P0-A actual SQLite literal sqlite_ prefix preserves schema visibility and refuses an extra table\"],\"start\":[\"P0-A actual SQLite literal sqlite_ prefix preserves schema visibility and refuses an extra table\"],\"pass\":[\"P0-A actual SQLite literal sqlite_ prefix preserves schema visibility and refuses an extra table\"],\"fail\":[],\"plans\":[1]},\"tapBytes\":1140,\"retainedTapBytes\":1140,\"tapComplete\":true,\"callerSHA256\":\"3cdbb425944c78b0da9a5ce41a49615368c9f778cd08a6f356898eff09ee559f\",\"faults\":[],\"schemaRefusalOnly\":true,\"finalConstructorInternalClose\":\"UNINSTRUMENTED_NOT_ESTABLISHED\",\"hardLifetimeOrNativeCleanup\":false,\"nativeChainProviderQualification\":false}\n"
+    },
+    "stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "tap_bytes": 1140,
+    "caller_registration": {
+      "enqueue": [
+        "P0-A actual SQLite literal sqlite_ prefix preserves schema visibility and refuses an extra table"
+      ],
+      "start": [
+        "P0-A actual SQLite literal sqlite_ prefix preserves schema visibility and refuses an extra table"
+      ],
+      "pass": [
+        "P0-A actual SQLite literal sqlite_ prefix preserves schema visibility and refuses an extra table"
+      ],
+      "fail": [],
+      "plans": [
+        1
+      ]
+    },
+    "caller_faults": [],
+    "scratch_scan_retries": 0
+  },
+  "managed_launch": {
+    "existing_approved_manager_only": true,
+    "one_new_task": true,
+    "fresh_project_absence_checked": true,
+    "old_project_recovery": false,
+    "one_persistent_new_synthetic_database": true,
+    "expected_allocation_bytes": 33554432,
+    "task_quota_bytes": 67108864,
+    "minimum_free_space_bytes": 10737418240,
+    "other_reservations_additional": true,
+    "production_policy_unchanged": true,
+    "volume_root_and_config_identity_checked": true,
+    "metadata_lock_wait_seconds": 60,
+    "foreground_timeout_seconds": 20,
+    "test_timeout_ms": 12000,
+    "TAP_cap_bytes": 65536,
+    "stdout_cap_bytes": 131072,
+    "stderr_cap_bytes": 1048576,
+    "cleared_environment_keys": 9,
+    "Node_flags": [
+      "--no-addons",
+      "--disallow-code-generation-from-strings"
+    ],
+    "caller_template_sha256": "d6a1a0b1ba962ee3c4ba4b7aa03857cbe33a07ceb8f3cbd26a8cf019b734a4c3",
+    "actual_caller": {
+      "bytes": 5310,
+      "sha256": "3cdbb425944c78b0da9a5ce41a49615368c9f778cd08a6f356898eff09ee559f",
+      "argvBytes": 6962,
+      "canonicalArgvSHA256": "2f7f3773ae714f575268cc795c42c5846eb4562a5752989008f91fa9ebb8d5bc"
+    },
+    "driver_sha256": "f65d0199cbde27fbc476b400824fb17d089a6261185410af3fee1fb033dfed6e",
+    "unsaved_inline_callsite": true,
+    "saved_new_helper_or_host": false,
+    "dependencies_installed": false,
+    "source_or_runtime_copies": false
+  },
+  "storage_and_preservation": {
+    "task_state": "CLOSED",
+    "task_outcome": "SUCCESS",
+    "cleanup_disposition": "HOLD",
+    "cleanup_reason": "New child-created database/directory entries are unregistered; they are preserved, not adopted or deleted.",
+    "database_bytes": 12288,
+    "database_sha256": "fdd103fa420d658b3a54264478da13da2ecf711dc1c83ef0b3586ed46a1b2853",
+    "database_single_link_private_file": true,
+    "persistent_unit_entries": [
+      "ledger.sqlite"
+    ],
+    "database_hash_method": "Parent raw-FD hash only after original process/PID group absence observations; no SQLite decoding or reopen.",
+    "process_and_group": "ABSENT_OBSERVED_AFTER_JOIN",
+    "final_failed_constructor_internal_close": "UNINSTRUMENTED_NOT_ESTABLISHED",
+    "five_source_package_fixture_pins_unchanged": true,
+    "five_manager_file_pins_unchanged": true,
+    "root_configuration_identity_and_hash_unchanged": true,
+    "node_full_identity_matches_retained_verified_digest": true,
+    "large_runtime_binary_read_or_copied": false,
+    "original_fixtures_payments_and_prior_evidence_unchanged": true,
+    "completed_cases_repeated": false
+  },
+  "retained_pre_execution_diagnostics": {
+    "worker_Source_only": [
+      "Failed source-root lookups and locator returns.",
+      "Bare-substring inverse guard refusal before hashing.",
+      "Transport accounting guard refusal at 600117 before hashing or emission."
+    ],
+    "parent_DATA_only": [
+      "Root-policy field-name KeyError occurred before any task/Node launch; corrected to the actual unchanged store_quota_bytes field."
+    ],
+    "failed_native_or_test_invocations_in_this_slice": 0,
+    "no_loader_or_DATA_failure_counted_as_a_pass": true
+  },
+  "not_qualified": [
+    "Only the named sqliteX_shadow comparison and exact current-store refusal are exercised; this is not complete schema/migration/store coverage.",
+    "No qualification of the separate rollback-attempt-once fault branch, failed rollback native cleanup, full durable session/composition or controller behavior.",
+    "The final constructor's native close is uninstrumented. Process absence and readback hashes do not establish application close, OS scheduling, crash/power-loss durability or restart/recovery.",
+    "One returned original-store close and one returned raw close are fixture-level observations, not independent instrumentation of every native SQLite call.",
+    "No grants, capability keys, funding, execution/debit, SDK, network, provider READY, service delivery, real signing/payment or live pilot acceptance.",
+    "Native SQLite, filesystem, loader, runner, stream and OS behavior remain premises; guards do not close loader TOCTOU. Limits are not an OS/network sandbox, aggregate OS quota, hard lifetime or cancellation guarantee."
+  ],
+  "publication": {
+    "status": "LOCAL_ONLY_NOT_PUBLISHED",
+    "main_CI_lane": "SEPARATE_NOT_DISPATCHED",
+    "reason": "The exact current SQL source also includes a separate rollback-attempt guard. This one schema case is not approval or claimed runtime coverage for that branch or a whole-store main transfer."
+  },
+  "real_operation_boundary": {
+    "real_payment_signer": "DISABLED_UNCHANGED",
+    "consumed_admissions": 2,
+    "actual_chain_PREPARE": 1,
+    "bundles": 0,
+    "native_chain_provider_qualification_runs": 0,
+    "new_local_Node_SQLite_invocations": 1,
+    "original_payment_request_bytes_hash_payload_requirements_context_and_consumed_authority": "UNCHANGED",
+    "PR193": "VALIDATED exact-same-signed-block resend remains distinct from UNKNOWN versus ACKNOWLEDGED; no real resend."
+  }
+}

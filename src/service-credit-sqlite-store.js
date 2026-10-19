@@ -2116,7 +2116,7 @@ export class ServiceCreditSqliteStore {
         failStore('SERVICE_CREDIT_STORE_SCHEMA_UNSUPPORTED');
       }
       const schema = this.#database.prepare(
-        "SELECT type, name, tbl_name, sql FROM sqlite_schema WHERE name NOT LIKE 'sqlite_%' ORDER BY type, name",
+        "SELECT type, name, tbl_name, sql FROM sqlite_schema WHERE name NOT LIKE 'sqlite!_%' ESCAPE '!' ORDER BY type, name",
       ).all();
       if (
         schema.length !== 1
@@ -2163,6 +2163,7 @@ export class ServiceCreditSqliteStore {
     this.#assertUsable();
     this.#assertFileIdentity();
     let transactionStarted = false;
+    let rollbackAttempted = false;
     let commitAttempted = false;
     let committed = false;
     try {
@@ -2183,6 +2184,7 @@ export class ServiceCreditSqliteStore {
     } catch (error) {
       if (transactionStarted && this.#database?.isTransaction) {
         try {
+          rollbackAttempted = true;
           this.#database.exec('ROLLBACK');
           transactionStarted = false;
         } catch {
@@ -2208,8 +2210,9 @@ export class ServiceCreditSqliteStore {
           transactionStillActive = false;
         }
       }
-      if (transactionStillActive) {
+      if (transactionStillActive && !rollbackAttempted) {
         try {
+          rollbackAttempted = true;
           this.#database.exec('ROLLBACK');
         } catch {
           this.#quarantine();
