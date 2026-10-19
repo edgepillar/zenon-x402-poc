@@ -7,12 +7,23 @@ import {
   fsyncSync,
   lstatSync,
   openSync,
+  readSync,
   readdirSync,
   realpathSync,
 } from 'node:fs';
 import { basename, dirname, isAbsolute, join, resolve } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import { types as utilTypes } from 'node:util';
+import {
+  snapshotOriginalServiceRequestCustodyPolicy,
+  snapshotOriginalServiceRequestCustodyKey,
+  captureOriginalServiceRequestCustody,
+  parseOriginalServiceRequestCustody,
+  serializeOriginalServiceRequestCustody,
+  captureOriginalServiceDispatchIntent,
+  parseOriginalServiceDispatchIntent,
+  serializeOriginalServiceDispatchIntent,
+} from './service-credit-original-request-custody-contract.js';
 
 import {
   decodeB64Json,
@@ -27,6 +38,8 @@ import {
 } from './x402-wire.js';
 
 export const ZENON_FUNDING_PAYER_RECOVERY_SQLITE_SCHEMA_VERSION = 1;
+export const ZENON_FUNDING_PAYER_RECOVERY_CUSTODY_SQLITE_SCHEMA_VERSION = 2;
+export const ZENON_FUNDING_PAYER_RECOVERY_DISPATCH_INTENT_SQLITE_SCHEMA_VERSION = 3;
 export const ZENON_FUNDING_PAYER_RECOVERY_STATUS = Object.freeze({
   PREPARED: 'PREPARED',
   ATTEMPT_FENCED: 'ATTEMPT_FENCED',
@@ -57,13 +70,204 @@ const OPEN_DATABASE_PATHS = new Set();
 const TABLE_META = 'CREATE TABLE payer_recovery_meta(singleton INTEGER PRIMARY KEY CHECK(singleton = 1), resource_url TEXT NOT NULL, owner_epoch INTEGER NOT NULL CHECK(owner_epoch >= 0)) STRICT';
 const TABLE_STATE = 'CREATE TABLE payer_recovery_state(singleton INTEGER PRIMARY KEY CHECK(singleton = 1), revision INTEGER NOT NULL CHECK(revision >= 1), status TEXT NOT NULL CHECK(status IN (\'PREPARED\',\'ATTEMPT_FENCED\',\'OUTCOME_UNKNOWN\',\'BOUND\',\'PAYMENT_REJECTED\',\'PAYMENT_CONFLICT\')), ambiguity_latched INTEGER NOT NULL CHECK(ambiguity_latched IN (0,1)), challenge_digest TEXT NOT NULL, payment_digest TEXT NOT NULL, envelope TEXT NOT NULL) STRICT';
 const STORE_CLOSE_FAILED = 'ZENON_FUNDING_PAYER_RECOVERY_STORE_CLOSE_FAILED';
+const CUSTODY_DATABASE_USER_VERSION = 2;
+const CUSTODY_POLICY = snapshotOriginalServiceRequestCustodyPolicy;
+const CUSTODY_KEY = snapshotOriginalServiceRequestCustodyKey;
+const CUSTODY_CAPTURE = captureOriginalServiceRequestCustody;
+const CUSTODY_PARSE = parseOriginalServiceRequestCustody;
+const CUSTODY_SERIALIZE = serializeOriginalServiceRequestCustody;
+const TABLE_CUSTODY_POLICY = 'CREATE TABLE original_request_custody_policy(singleton INTEGER PRIMARY KEY CHECK(singleton = 1), policy_version INTEGER NOT NULL CHECK(policy_version = 1), max_requests INTEGER NOT NULL CHECK(max_requests >= 1 AND max_requests <= 1024), service_resource_url TEXT NOT NULL) STRICT';
+const TABLE_ORIGINAL_REQUESTS = 'CREATE TABLE original_service_requests(grant_id TEXT NOT NULL, request_id TEXT NOT NULL, funding_singleton INTEGER NOT NULL CHECK(funding_singleton = 1) REFERENCES payer_recovery_state(singleton), payment_hash TEXT NOT NULL, network TEXT NOT NULL, service_resource_url TEXT NOT NULL, envelope TEXT NOT NULL, PRIMARY KEY(grant_id,request_id)) STRICT';
+
+function custodyEnabled(config) {
+  return Object.hasOwn(config, 'custodyPolicy');
+}
+
+const TABLE_DISPATCH_INTENTS = 'CREATE TABLE original_dispatch_intents(grant_id TEXT NOT NULL, request_id TEXT NOT NULL, envelope TEXT NOT NULL, PRIMARY KEY(grant_id,request_id), FOREIGN KEY(grant_id,request_id) REFERENCES original_service_requests(grant_id,request_id)) STRICT';
+const INTENT_CAPTURE = captureOriginalServiceDispatchIntent;
+const INTENT_PARSE = parseOriginalServiceDispatchIntent;
+const INTENT_SERIALIZE = serializeOriginalServiceDispatchIntent;
+function dispatchIntentEnabled(config) {
+  return config.dispatchIntentVersion === 3;
+}
+function databaseVersion(config) {
+  if (dispatchIntentEnabled(config)) return 3;
+  return custodyEnabled(config) ? CUSTODY_DATABASE_USER_VERSION : DATABASE_USER_VERSION;
+}
+
+// Read the fixed SQLite header without opening a writable SQLite connection.
+// This does not migrate, recover or rewrite a wrong-version existing file.
+function assertVersionHeader(config, identity) {
+  let descriptor;
+  let problem;
+  try {
+    const noFollow = fsConstants.O_NOFOLLOW ?? 0;
+    if (noFollow === 0) fail('ZENON_FUNDING_PAYER_RECOVERY_STORE_UNSAFE_FILE');
+    descriptor = openSync(
+      config.databasePath,
+      fsConstants.O_RDONLY | noFollow | (fsConstants.O_CLOEXEC ?? 0),
+    );
+    const stat = fstatSync(descriptor, { bigint: true });
+    if (!safeFile(stat) || !sameFile(stat, identity)) {
+      fail('ZENON_FUNDING_PAYER_RECOVERY_STORE_UNSAFE_FILE');
+    }
+    const header = Buffer.alloc(100);
+    if (readSync(descriptor, header, 0, 100, 0) !== 100
+        || header.subarray(0, 16).toString('ascii') !== 'SQLite format 3\0'
+        || header.readUInt32BE(60) !== databaseVersion(config)
+        || header.readUInt32BE(68) !== APPLICATION_ID) {
+      fail('ZENON_FUNDING_PAYER_RECOVERY_STORE_SCHEMA_UNSUPPORTED');
+    }
+    inspectFile(config, identity);
+  } catch (error) {
+    problem = failure(
+      knownCode(error) ?? 'ZENON_FUNDING_PAYER_RECOVERY_STORE_SCHEMA_UNSUPPORTED',
+    );
+  } finally {
+    if (descriptor !== undefined) {
+      try { closeSync(descriptor); }
+      catch { problem = failure(STORE_CLOSE_FAILED); }
+    }
+  }
+  if (problem) throw problem;
+}
+
+function custodyBinding(current) {
+  return {
+    fundingResourceUrl: current.resourceUrl,
+    paymentHash: current.paymentPayload.payload.transaction.hash,
+    network: current.requirement.network,
+  };
+}
+
+function validateCustodyPolicy(database, config) {
+  const code = 'ZENON_FUNDING_PAYER_RECOVERY_STORE_SCHEMA_UNSUPPORTED';
+  try {
+    const rows = database.prepare(
+      'SELECT singleton,policy_version,max_requests,service_resource_url FROM original_request_custody_policy'
+        + (dispatchIntentEnabled(config) ? ' LIMIT 2' : ''),
+    ).all();
+    if (rows.length !== 1 || rows[0].singleton !== 1) fail(code);
+    const actual = CUSTODY_POLICY({
+      policyVersion: rows[0].policy_version,
+      maxRequests: rows[0].max_requests,
+      serviceResourceUrl: rows[0].service_resource_url,
+    }, config.resourceUrl);
+    if (actual.policyVersion !== config.custodyPolicy.policyVersion
+        || actual.maxRequests !== config.custodyPolicy.maxRequests
+        || actual.serviceResourceUrl !== config.custodyPolicy.serviceResourceUrl) fail(code);
+    return actual;
+  } catch {
+    fail(code);
+  }
+}
+
+function custodyRecordFromRow(row, current, config) {
+  const code = 'ZENON_FUNDING_PAYER_RECOVERY_STORE_CORRUPT';
+  try {
+    if (current === null || row === null || typeof row !== 'object') fail(code);
+    const stored = CUSTODY_PARSE(row.envelope);
+    const rebound = CUSTODY_CAPTURE({
+      originalRequestJson: stored.originalRequestJson,
+      originalBodyBase64: stored.originalBodyBase64,
+      serviceResourceUrl: stored.serviceResourceUrl,
+    }, custodyBinding(current));
+    if (row.funding_singleton !== 1
+        || row.grant_id !== rebound.grantId || row.request_id !== rebound.requestId
+        || row.payment_hash !== rebound.paymentHash || row.network !== rebound.network
+        || row.service_resource_url !== rebound.serviceResourceUrl
+        || rebound.serviceResourceUrl !== config.custodyPolicy.serviceResourceUrl
+        || CUSTODY_SERIALIZE(rebound) !== row.envelope) fail(code);
+    return rebound;
+  } catch {
+    fail(code);
+  }
+}
+
+function validateCustodyRows(database, config, current) {
+  const policy = validateCustodyPolicy(database, config);
+  const count = database.prepare(
+    'SELECT COUNT(*) AS count FROM original_service_requests',
+  ).get()?.count;
+  if (!Number.isSafeInteger(count) || count < 0 || count > policy.maxRequests
+      || (current === null && count !== 0)) {
+    fail('ZENON_FUNDING_PAYER_RECOVERY_STORE_CORRUPT');
+  }
+  const rows = database.prepare(
+    'SELECT * FROM original_service_requests ORDER BY grant_id,request_id LIMIT ?',
+  ).all(policy.maxRequests + 1);
+  if (rows.length !== count) fail('ZENON_FUNDING_PAYER_RECOVERY_STORE_CORRUPT');
+  for (const row of rows) custodyRecordFromRow(row, current, config);
+  if (dispatchIntentEnabled(config)) validateDispatchIntentRows(database, config, current, policy);
+  return count;
+}
+
+
+function dispatchIntentForRow(row, database, config, current) {
+  const code = 'ZENON_FUNDING_PAYER_RECOVERY_STORE_CORRUPT';
+  try {
+    if (current === null || current.status !== 'BOUND' || row === undefined) fail(code);
+    const stored = INTENT_PARSE(row.envelope);
+    const originalRow = database.prepare(
+      'SELECT * FROM original_service_requests WHERE grant_id=? AND request_id=?',
+    ).get(row.grant_id, row.request_id);
+    const original = custodyRecordFromRow(originalRow, current, config);
+    const expected = INTENT_CAPTURE(original, {
+      fundingRevision: current.revision,
+      challengeDigest: digest('zenon-x402:payer-recovery-challenge-v1', current.challengeHeader),
+      paymentDigest: digest('zenon-x402:payer-recovery-payment-v1', current.paymentHeader),
+      custodyPolicy: config.custodyPolicy,
+    });
+    if (stored.grantId !== row.grant_id || stored.requestId !== row.request_id
+        || INTENT_SERIALIZE(expected) !== row.envelope) fail(code);
+    return expected;
+  } catch { fail(code); }
+}
+function validateDispatchIntentRows(database, config, current, policy) {
+  const code = 'ZENON_FUNDING_PAYER_RECOVERY_STORE_CORRUPT';
+  const count = database.prepare('SELECT COUNT(*) AS count FROM original_dispatch_intents').get()?.count;
+  if (!Number.isSafeInteger(count) || count < 0 || count > policy.maxRequests
+      || (current === null && count !== 0)) fail(code);
+  const rows = database.prepare(
+    'SELECT * FROM original_dispatch_intents ORDER BY grant_id,request_id LIMIT ?',
+  ).all(policy.maxRequests + 1);
+  if (rows.length !== count) fail(code);
+  for (const row of rows) dispatchIntentForRow(row, database, config, current);
+  return count;
+}
+
+function custodyRetainInput(input) {
+  const code = 'ZENON_FUNDING_PAYER_RECOVERY_STORE_INVALID_INPUT';
+  if (input === null || typeof input !== 'object' || utilTypes.isProxy(input)
+      || Object.getPrototypeOf(input) !== Object.prototype) fail(code);
+  const values = exactDataObject(input, [
+    'grantId', 'requestId', 'originalRequestJson', 'originalBodyBase64',
+    'serviceResourceUrl',
+  ], code);
+  let key;
+  try { key = CUSTODY_KEY({ grantId: values.grantId, requestId: values.requestId }); }
+  catch { fail(code); }
+  return {
+    key,
+    original: {
+      originalRequestJson: values.originalRequestJson,
+      originalBodyBase64: values.originalBodyBase64,
+      serviceResourceUrl: values.serviceResourceUrl,
+    },
+  };
+}
 
 export class ZenonFundingPayerRecoverySqliteStoreError extends Error {
   constructor(code) {
     super(code);
     this.name = 'ZenonFundingPayerRecoverySqliteStoreError';
     this.code = code;
-    this.stack = `ZenonFundingPayerRecoverySqliteStoreError: ${code}`;
+    Object.defineProperty(this, 'stack', {
+      value: `ZenonFundingPayerRecoverySqliteStoreError: ${code}`,
+      writable: true,
+      enumerable: false,
+      configurable: true,
+    });
   }
 }
 
@@ -534,10 +738,34 @@ function configuration(options) {
   });
 }
 
-function validateDefinitions(database) {
+function validateDefinitions(database, config) {
+  const schemaCode = dispatchIntentEnabled(config)
+    ? 'ZENON_FUNDING_PAYER_RECOVERY_STORE_CORRUPT'
+    : 'ZENON_FUNDING_PAYER_RECOVERY_STORE_SCHEMA_UNSUPPORTED';
   const definitions = database
-    .prepare("SELECT type,name,sql FROM sqlite_master WHERE name NOT LIKE 'sqlite_%' ORDER BY name")
+    .prepare("SELECT type,name,sql FROM sqlite_master WHERE name NOT LIKE 'sqlite_%' ORDER BY name"
+      + (dispatchIntentEnabled(config) ? " LIMIT 6" : ""))
     .all();
+  if (custodyEnabled(config)) {
+    const expected = [
+      ['original_request_custody_policy', TABLE_CUSTODY_POLICY],
+      ['original_service_requests', TABLE_ORIGINAL_REQUESTS],
+      ['payer_recovery_meta', TABLE_META],
+      ['payer_recovery_state', TABLE_STATE],
+    ];
+    if (dispatchIntentEnabled(config)) expected.unshift(['original_dispatch_intents', TABLE_DISPATCH_INTENTS]);
+    if (definitions.length !== expected.length) {
+      fail(schemaCode);
+    }
+    for (let index = 0; index < expected.length; index += 1) {
+      if (definitions[index].type !== 'table'
+          || definitions[index].name !== expected[index][0]
+          || definitions[index].sql !== expected[index][1]) {
+        fail(schemaCode);
+      }
+    }
+    return;
+  }
   if (
     definitions.length !== 2
     || definitions[0].type !== 'table'
@@ -546,18 +774,19 @@ function validateDefinitions(database) {
     || definitions[1].type !== 'table'
     || definitions[1].name !== 'payer_recovery_state'
     || definitions[1].sql !== TABLE_STATE
-  ) fail('ZENON_FUNDING_PAYER_RECOVERY_STORE_SCHEMA_UNSUPPORTED');
+  ) fail(schemaCode);
 }
 
 function validateDatabase(database, config) {
   if (
     pragmaValue(database, 'PRAGMA application_id', 'application_id') !== APPLICATION_ID
-    || pragmaValue(database, 'PRAGMA user_version', 'user_version') !== DATABASE_USER_VERSION
+    || pragmaValue(database, 'PRAGMA user_version', 'user_version') !== databaseVersion(config)
     || pragmaValue(database, 'PRAGMA integrity_check', 'integrity_check') !== 'ok'
   ) fail('ZENON_FUNDING_PAYER_RECOVERY_STORE_SCHEMA_UNSUPPORTED');
-  validateDefinitions(database);
+  validateDefinitions(database, config);
   const meta = database
-    .prepare('SELECT singleton,resource_url,owner_epoch FROM payer_recovery_meta')
+    .prepare('SELECT singleton,resource_url,owner_epoch FROM payer_recovery_meta'
+      + (dispatchIntentEnabled(config) ? ' LIMIT 2' : ''))
     .all();
   if (
     meta.length !== 1
@@ -566,9 +795,14 @@ function validateDatabase(database, config) {
     || !Number.isSafeInteger(meta[0].owner_epoch)
     || meta[0].owner_epoch < 0
   ) fail('ZENON_FUNDING_PAYER_RECOVERY_STORE_SCHEMA_UNSUPPORTED');
-  const rows = database.prepare('SELECT * FROM payer_recovery_state').all();
+  const rows = database.prepare('SELECT * FROM payer_recovery_state'
+    + (dispatchIntentEnabled(config) ? ' LIMIT 2' : '')).all();
   if (rows.length > 1) fail('ZENON_FUNDING_PAYER_RECOVERY_STORE_CORRUPT');
   if (rows.length === 1) parseRow(rows[0], config.resourceUrl);
+  if (custodyEnabled(config)) {
+    const current = rows.length === 1 ? parseRow(rows[0], config.resourceUrl) : null;
+    validateCustodyRows(database, config, current);
+  }
 }
 
 function configureConnection(database, creating) {
@@ -618,6 +852,7 @@ function validateConnection(database) {
 }
 
 function openDatabase(config, identity, creating) {
+  if (!creating) assertVersionHeader(config, identity);
   let database;
   let transaction = false;
   let lockAttempted = false;
@@ -637,12 +872,24 @@ function openDatabase(config, identity, creating) {
     validateConnection(database);
     if (creating) {
       database.exec(`PRAGMA application_id = ${APPLICATION_ID}`);
-      database.exec(`PRAGMA user_version = ${DATABASE_USER_VERSION}`);
+      database.exec(`PRAGMA user_version = ${databaseVersion(config)}`);
       database.exec(TABLE_META);
       database.exec(TABLE_STATE);
       database.prepare(
         'INSERT INTO payer_recovery_meta(singleton,resource_url,owner_epoch) VALUES(1,?,0)',
       ).run(config.resourceUrl);
+      if (custodyEnabled(config)) {
+        database.exec(TABLE_CUSTODY_POLICY);
+        database.exec(TABLE_ORIGINAL_REQUESTS);
+        if (dispatchIntentEnabled(config)) database.exec(TABLE_DISPATCH_INTENTS);
+        database.prepare(
+          'INSERT INTO original_request_custody_policy(singleton,policy_version,max_requests,service_resource_url) VALUES(1,?,?,?)',
+        ).run(
+          config.custodyPolicy.policyVersion,
+          config.custodyPolicy.maxRequests,
+          config.custodyPolicy.serviceResourceUrl,
+        );
+      }
     } else {
       validateDatabase(database, config);
     }
@@ -679,13 +926,10 @@ function openDatabase(config, identity, creating) {
 function captureHooks(value) {
   if (value === undefined) return undefined;
   const code = 'ZENON_FUNDING_PAYER_RECOVERY_STORE_INVALID_CONFIGURATION';
-  const keys = Reflect.ownKeys(value ?? {});
-  if (
-    value === null
-    || typeof value !== 'object'
-    || utilTypes.isProxy(value)
-    || keys.some(key => key !== 'beforeCommit' && key !== 'afterCommit')
-  ) fail(code);
+  if (value === null || typeof value !== 'object'
+      || utilTypes.isProxy(value)) fail(code);
+  const keys = Reflect.ownKeys(value);
+  if (keys.some(key => key !== 'beforeCommit' && key !== 'afterCommit')) fail(code);
   const hooks = Object.create(null);
   for (const key of keys) {
     const descriptor = Object.getOwnPropertyDescriptor(value, key);
@@ -750,9 +994,11 @@ export class ZenonFundingPayerRecoverySqliteStore {
     return this.#run(() => {
       let begun = false;
       let commitAttempted = false;
+      let rollbackAttempted = false;
       try {
         this.#database.exec('BEGIN IMMEDIATE');
         begun = true;
+        if (dispatchIntentEnabled(this.#configuration)) this.#validateDispatchProfile();
         const result = operation();
         if (this.#hooks?.beforeCommit) this.#hooks.beforeCommit(name);
         commitAttempted = true;
@@ -764,6 +1010,7 @@ export class ZenonFundingPayerRecoverySqliteStore {
       } catch (error) {
         if (begun && !commitAttempted) {
           try {
+            rollbackAttempted = true;
             this.#database.exec('ROLLBACK');
             begun = false;
           } catch {
@@ -779,7 +1026,7 @@ export class ZenonFundingPayerRecoverySqliteStore {
           knownCode(error) ?? 'ZENON_FUNDING_PAYER_RECOVERY_STORE_TRANSACTION_FAILED',
         );
       } finally {
-        if (begun) {
+        if (begun && !rollbackAttempted) {
           try { this.#database.exec('ROLLBACK'); }
           catch { this.#quarantined = true; }
         }
@@ -789,8 +1036,249 @@ export class ZenonFundingPayerRecoverySqliteStore {
 
   load() {
     return this.#run(() => {
-      try { return this.#read(); }
+      try {
+        if (dispatchIntentEnabled(this.#configuration)) this.#validateDispatchProfile();
+        return this.#read();
+      }
       catch {
+        this.#quarantined = true;
+        fail('ZENON_FUNDING_PAYER_RECOVERY_STORE_CORRUPT');
+      }
+    });
+  }
+
+  #requireCustody() {
+    if (!custodyEnabled(this.#configuration)) {
+      fail('ZENON_FUNDING_PAYER_RECOVERY_STORE_CUSTODY_NOT_ENABLED');
+    }
+  }
+
+  #custodyState() {
+    try {
+      const current = this.#read();
+      const count = validateCustodyRows(this.#database, this.#configuration, current);
+      return { current, count };
+    } catch (error) {
+      this.#quarantined = true;
+      throw failure(
+        knownCode(error) ?? 'ZENON_FUNDING_PAYER_RECOVERY_STORE_CORRUPT',
+      );
+    }
+  }
+
+  #checkedCustodyRow(row, current) {
+    try { return custodyRecordFromRow(row, current, this.#configuration); }
+    catch {
+      this.#quarantined = true;
+      fail('ZENON_FUNDING_PAYER_RECOVERY_STORE_CORRUPT');
+    }
+  }
+
+  /**
+   * V2/V3 custody. Exact input: grantId, requestId, originalRequestJson,
+   * originalBodyBase64 and serviceResourceUrl. The explicit key must match
+   * the canonical request JSON. No funding binding or credential is accepted.
+   */
+  retainOriginalRequest(input) {
+    this.#requireCustody();
+    if (arguments.length !== 1) fail('ZENON_FUNDING_PAYER_RECOVERY_STORE_INVALID_INPUT');
+    const captured = custodyRetainInput(input);
+    return this.#write('retainOriginalRequest', () => {
+      const { current, count } = this.#custodyState();
+      if (current === null) fail('ZENON_FUNDING_PAYER_RECOVERY_STORE_INVALID_TRANSITION');
+      const row = this.#database.prepare(
+        'SELECT * FROM original_service_requests WHERE grant_id=? AND request_id=?',
+      ).get(captured.key.grantId, captured.key.requestId);
+      let candidate;
+      let serialized;
+      try {
+        candidate = CUSTODY_CAPTURE(captured.original, custodyBinding(current));
+        if (candidate.grantId !== captured.key.grantId
+            || candidate.requestId !== captured.key.requestId
+            || candidate.serviceResourceUrl
+              !== this.#configuration.custodyPolicy.serviceResourceUrl) {
+          fail('ZENON_FUNDING_PAYER_RECOVERY_STORE_INVALID_INPUT');
+        }
+        serialized = CUSTODY_SERIALIZE(candidate);
+      } catch {
+        fail(row === undefined
+          ? 'ZENON_FUNDING_PAYER_RECOVERY_STORE_INVALID_INPUT'
+          : 'ZENON_FUNDING_PAYER_RECOVERY_STORE_CONFLICT');
+      }
+      if (row !== undefined) {
+        const existing = this.#checkedCustodyRow(row, current);
+        if (row.envelope !== serialized) {
+          fail('ZENON_FUNDING_PAYER_RECOVERY_STORE_CONFLICT');
+        }
+        return existing;
+      }
+      if (count >= this.#configuration.custodyPolicy.maxRequests) {
+        fail('ZENON_FUNDING_PAYER_RECOVERY_STORE_CUSTODY_CAPACITY');
+      }
+      const inserted = this.#database.prepare(
+        'INSERT INTO original_service_requests(grant_id,request_id,funding_singleton,payment_hash,network,service_resource_url,envelope) VALUES(?,?,1,?,?,?,?)',
+      ).run(
+        candidate.grantId,
+        candidate.requestId,
+        candidate.paymentHash,
+        candidate.network,
+        candidate.serviceResourceUrl,
+        serialized,
+      );
+      if (inserted.changes !== 1) {
+        fail('ZENON_FUNDING_PAYER_RECOVERY_STORE_TRANSACTION_FAILED');
+      }
+      const stored = this.#database.prepare(
+        'SELECT * FROM original_service_requests WHERE grant_id=? AND request_id=?',
+      ).get(candidate.grantId, candidate.requestId);
+      if (stored?.envelope !== serialized) {
+        this.#quarantined = true;
+        fail('ZENON_FUNDING_PAYER_RECOVERY_STORE_CORRUPT');
+      }
+      return this.#checkedCustodyRow(stored, current);
+    });
+  }
+
+  getOriginalRequest(input) {
+    this.#requireCustody();
+    if (arguments.length !== 1) fail('ZENON_FUNDING_PAYER_RECOVERY_STORE_INVALID_INPUT');
+    let key;
+    try { key = CUSTODY_KEY(input); }
+    catch { fail('ZENON_FUNDING_PAYER_RECOVERY_STORE_INVALID_INPUT'); }
+    return this.#run(() => {
+      try {
+        const { current } = this.#custodyState();
+        const row = this.#database.prepare(
+          'SELECT * FROM original_service_requests WHERE grant_id=? AND request_id=?',
+        ).get(key.grantId, key.requestId);
+        if (row === undefined) return null;
+        return this.#checkedCustodyRow(row, current);
+      } catch (error) {
+        this.#quarantined = true;
+        throw failure(
+          knownCode(error) ?? 'ZENON_FUNDING_PAYER_RECOVERY_STORE_CORRUPT',
+        );
+      }
+    });
+  }
+
+
+  #requireDispatchIntent() {
+    if (!dispatchIntentEnabled(this.#configuration)) {
+      fail('ZENON_FUNDING_PAYER_RECOVERY_STORE_DISPATCH_INTENT_NOT_ENABLED');
+    }
+  }
+
+  #validateDispatchProfile() {
+    try { validateDatabase(this.#database, this.#configuration); }
+    catch {
+      this.#quarantined = true;
+      fail('ZENON_FUNDING_PAYER_RECOVERY_STORE_CORRUPT');
+    }
+  }
+
+  /**
+   * V3 insert-only metadata fence. This is not an attempt receipt or send grant.
+   * The original, BOUND funding and policy are derived from this actual store.
+   * A repeated call is refused even when the canonical intent is identical.
+   */
+  fenceOriginalDispatchIntent(input) {
+    this.#requireDispatchIntent();
+    if (arguments.length !== 1) fail('ZENON_FUNDING_PAYER_RECOVERY_STORE_INVALID_INPUT');
+    let key;
+    try { key = CUSTODY_KEY(input); }
+    catch { fail('ZENON_FUNDING_PAYER_RECOVERY_STORE_INVALID_INPUT'); }
+    return this.#write('fenceOriginalDispatchIntent', () => {
+      const { current } = this.#custodyState();
+      if (current === null || current.status !== 'BOUND') {
+        fail('ZENON_FUNDING_PAYER_RECOVERY_STORE_INVALID_TRANSITION');
+      }
+      const originalRow = this.#database.prepare(
+        'SELECT * FROM original_service_requests WHERE grant_id=? AND request_id=?',
+      ).get(key.grantId, key.requestId);
+      if (originalRow === undefined) fail('ZENON_FUNDING_PAYER_RECOVERY_STORE_INVALID_TRANSITION');
+      const original = this.#checkedCustodyRow(originalRow, current);
+      const prior = this.#database.prepare(
+        'SELECT * FROM original_dispatch_intents WHERE grant_id=? AND request_id=?',
+      ).get(key.grantId, key.requestId);
+      if (prior !== undefined) {
+        dispatchIntentForRow(prior, this.#database, this.#configuration, current);
+        fail('ZENON_FUNDING_PAYER_RECOVERY_STORE_DISPATCH_INTENT_EXISTS');
+      }
+      const intent = INTENT_CAPTURE(original, {
+        fundingRevision: current.revision,
+        challengeDigest: digest('zenon-x402:payer-recovery-challenge-v1', current.challengeHeader),
+        paymentDigest: digest('zenon-x402:payer-recovery-payment-v1', current.paymentHeader),
+        custodyPolicy: this.#configuration.custodyPolicy,
+      });
+      const text = INTENT_SERIALIZE(intent);
+      const inserted = this.#database.prepare(
+        'INSERT INTO original_dispatch_intents(grant_id,request_id,envelope) VALUES(?,?,?)',
+      ).run(key.grantId, key.requestId, text);
+      if (inserted.changes !== 1) fail('ZENON_FUNDING_PAYER_RECOVERY_STORE_TRANSACTION_FAILED');
+      const stored = this.#database.prepare(
+        'SELECT * FROM original_dispatch_intents WHERE grant_id=? AND request_id=?',
+      ).get(key.grantId, key.requestId);
+      if (stored?.envelope !== text) {
+        this.#quarantined = true;
+        fail('ZENON_FUNDING_PAYER_RECOVERY_STORE_DISPATCH_INTENT_CONFLICT');
+      }
+      return dispatchIntentForRow(stored, this.#database, this.#configuration, current);
+    });
+  }
+
+  /**
+   * V3-only bounded local key snapshot. Validate the complete store, including
+   * every foreign-grant original and intent, before reducing records to keys.
+   * This is neither an atomic/global catalog nor recovery or dispatch authority.
+   */
+  listOriginalRequestKeys() {
+    this.#requireDispatchIntent();
+    if (arguments.length !== 0) fail('ZENON_FUNDING_PAYER_RECOVERY_STORE_INVALID_INPUT');
+    return this.#run(() => {
+      this.#validateDispatchProfile();
+      try {
+        const { current, count } = this.#custodyState();
+        const rows = this.#database.prepare(
+          'SELECT * FROM original_service_requests ORDER BY grant_id,request_id LIMIT ?',
+        ).all(this.#configuration.custodyPolicy.maxRequests + 1);
+        if (rows.length !== count) fail('ZENON_FUNDING_PAYER_RECOVERY_STORE_CORRUPT');
+        const keys = [];
+        let prior = null;
+        for (const row of rows) {
+          const original = this.#checkedCustodyRow(row, current);
+          const key = CUSTODY_KEY({ grantId: original.grantId, requestId: original.requestId });
+          if (prior !== null && (prior.grantId > key.grantId
+              || (prior.grantId === key.grantId && prior.requestId >= key.requestId))) {
+            fail('ZENON_FUNDING_PAYER_RECOVERY_STORE_CORRUPT');
+          }
+          keys.push(key);
+          prior = key;
+        }
+        return Object.freeze(keys);
+      } catch {
+        this.#quarantined = true;
+        fail('ZENON_FUNDING_PAYER_RECOVERY_STORE_CORRUPT');
+      }
+    });
+  }
+
+  getOriginalDispatchIntent(input) {
+    this.#requireDispatchIntent();
+    if (arguments.length !== 1) fail('ZENON_FUNDING_PAYER_RECOVERY_STORE_INVALID_INPUT');
+    let key;
+    try { key = CUSTODY_KEY(input); }
+    catch { fail('ZENON_FUNDING_PAYER_RECOVERY_STORE_INVALID_INPUT'); }
+    return this.#run(() => {
+      this.#validateDispatchProfile();
+      try {
+        const { current } = this.#custodyState();
+        const row = this.#database.prepare(
+          'SELECT * FROM original_dispatch_intents WHERE grant_id=? AND request_id=?',
+        ).get(key.grantId, key.requestId);
+        return row === undefined ? null
+          : dispatchIntentForRow(row, this.#database, this.#configuration, current);
+      } catch {
         this.#quarantined = true;
         fail('ZENON_FUNDING_PAYER_RECOVERY_STORE_CORRUPT');
       }
@@ -947,7 +1435,7 @@ export class ZenonFundingPayerRecoverySqliteStore {
   }
 }
 
-function openStore(options, creating) {
+function openStore(options, creating, custody = false, dispatchIntent = false) {
   const code = 'ZENON_FUNDING_PAYER_RECOVERY_STORE_INVALID_CONFIGURATION';
   if (
     options === null
@@ -958,11 +1446,11 @@ function openStore(options, creating) {
   ) fail(code);
   const keys = Reflect.ownKeys(options);
   if (
-    keys.length < 3
-    || keys.length > 4
+    keys.length < (custody ? 4 : 3)
+    || keys.length > (custody ? 5 : 4)
     || keys.some(key => ![
       'databasePath', 'allowedRoot', 'resourceUrl', 'testHooks',
-    ].includes(key))
+    ].includes(key) && (!custody || key !== 'custodyPolicy'))
   ) fail(code);
   const base = Object.create(null);
   for (const key of ['databasePath', 'allowedRoot', 'resourceUrl']) {
@@ -975,7 +1463,16 @@ function openStore(options, creating) {
     fail(code);
   }
   const hooks = captureHooks(hookDescriptor?.value);
-  const config = configuration(base);
+  let config = configuration(base);
+  if (custody) {
+    const descriptor = Object.getOwnPropertyDescriptor(options, 'custodyPolicy');
+    if (!descriptor?.enumerable || !Object.hasOwn(descriptor, 'value')) fail(code);
+    let policy;
+    try { policy = CUSTODY_POLICY(descriptor.value, config.resourceUrl); }
+    catch { fail(code); }
+    config = Object.freeze({ ...config, custodyPolicy: policy });
+  }
+  if (dispatchIntent) config = Object.freeze({ ...config, dispatchIntentVersion: 3 });
   if (OPEN_DATABASE_PATHS.has(config.databasePath)) {
     fail('ZENON_FUNDING_PAYER_RECOVERY_STORE_OWNER_BUSY');
   }
@@ -1012,4 +1509,28 @@ export function createZenonFundingPayerRecoverySqliteStore(options) {
 
 export function openZenonFundingPayerRecoverySqliteStore(options) {
   return openStore(options, false);
+}
+
+export function createZenonFundingPayerRecoveryCustodySqliteStoreV2(options) {
+  if (arguments.length !== 1) {
+    fail('ZENON_FUNDING_PAYER_RECOVERY_STORE_INVALID_CONFIGURATION');
+  }
+  return openStore(options, true, true);
+}
+
+export function openZenonFundingPayerRecoveryCustodySqliteStoreV2(options) {
+  if (arguments.length !== 1) {
+    fail('ZENON_FUNDING_PAYER_RECOVERY_STORE_INVALID_CONFIGURATION');
+  }
+  return openStore(options, false, true);
+}
+
+/** Explicit V3 profile; no V1/V2 adoption or migration. */
+export function createZenonFundingPayerRecoveryDispatchIntentSqliteStoreV3(options) {
+  if (arguments.length !== 1) fail('ZENON_FUNDING_PAYER_RECOVERY_STORE_INVALID_CONFIGURATION');
+  return openStore(options, true, true, true);
+}
+export function openZenonFundingPayerRecoveryDispatchIntentSqliteStoreV3(options) {
+  if (arguments.length !== 1) fail('ZENON_FUNDING_PAYER_RECOVERY_STORE_INVALID_CONFIGURATION');
+  return openStore(options, false, true, true);
 }

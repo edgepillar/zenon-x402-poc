@@ -1,0 +1,484 @@
+{
+  "schema": "zenon-x402-payer-sqlite-local-behavior/v1",
+  "scope": "OCT19_PAYER_SQLITE_LEGACY_V1_V2_CURRENT_RUNTIME_V1",
+  "status": "THREE_RETAINED_LEGACY_CASES_PASS_ON_EXACT_CURRENT_GRAPH",
+  "localQualificationOnly": true,
+  "selection": {
+    "reason": "The retained V1/V2 cases had passed against a 57362-byte backend and a different Node binary. The publication candidate uses the current 57459-byte backend. These are changed-input recontext checks, not new scenarios or a bug claim.",
+    "oldFixture": {
+      "path": "qualification/service-credit-sqlite-v1-v2-current-backend.draft.mjs",
+      "bytes": 18212,
+      "sha256": "8a751cbbd4adb236a33f8daac1c78326c683c739b9de482384d28b577c729e59",
+      "gitBlob": "4e4e0a068ca2d8c21b5708c835e7894fa4990c1b"
+    },
+    "oldResult": {
+      "path": "qualification/service-credit-sqlite-v1-v2-current-backend.result.json",
+      "bytes": 12599,
+      "sha256": "ab449663d99e269e439ef0afa2a059af8c17b61a11178f92bdd5d365c885b768"
+    },
+    "oldBackend": {
+      "bytes": 57362,
+      "sha256": "eafb5b71f082fd571a35fdf6d5a9b0c39b22c2559d39af49a824d53057e07614"
+    },
+    "oldRuntimeSHA256": "3c9448363b9976bf3d9e8f4d320397975800131b42c7b1be342dadc05871dd25",
+    "transformation": "A new four-line preamble and one exact backend-pin row replacement; inverse comparison reconstructs all 18212 original fixture bytes. Scenario bodies and registrations are unchanged. Historical NOT_RUN comments remain authoring context, not this result's execution status.",
+    "historicalPassesRebound": false,
+    "productionEdits": 0
+  },
+  "sourcePins": [
+    {
+      "path": "src/service-credit-zenon-funding-post-v1-payer-recovery-sqlite-store.js",
+      "bytes": 57459,
+      "sha256": "9c925f241effbfec0bf014ff284e834c4d5679c4ea7224f83a6354cde6cffdaf",
+      "gitBlob": "260c2f43306b029ca694aa06b8c60d1be037c614"
+    },
+    {
+      "path": "src/service-credit-original-request-custody-contract.js",
+      "bytes": 14051,
+      "sha256": "fd349de553a17abcc2e0567ba6640e6e3d5d26cfa79ee1e355928dc9fa8d3915",
+      "gitBlob": "f911d42d01b69e6577f9bcd66f4ed59aab8ab882"
+    },
+    {
+      "path": "src/x402-wire.js",
+      "bytes": 39886,
+      "sha256": "5fba91af5a352f62d1a335c7176a45a604e2af5d92b1c4b0e53825c1f20d4e56",
+      "gitBlob": "fb060d4e349b1c31a1219a0cc137af250a8a2291"
+    },
+    {
+      "path": "package.json",
+      "bytes": 1413,
+      "sha256": "8c9a25504fbf6f87c31cdf245a6f4eec5a88cc89c8352151dc66a577c5771ef5",
+      "gitBlob": "ec7193f6fd76f34778515079dc777594175c4c34"
+    },
+    {
+      "path": "qualification/service-credit-payer-sqlite-legacy-v1-v2-current-runtime.draft.mjs",
+      "bytes": 18504,
+      "sha256": "31d1330006f0cf63abfecc9bfcca00db10931353d1237bf137a261a54d6dd234",
+      "gitBlob": "8b716a21203c04599b5cc390146e0b965b2bf63a"
+    }
+  ],
+  "runtime": {
+    "name": "Node.js",
+    "version": "24.19.0",
+    "platform": "darwin",
+    "architecture": "arm64",
+    "bytes": 121304480,
+    "sha256": "613be50c90e83aa8da58dd9ed393d0b39914a3b8ef4123fe817b46c2679cebe2",
+    "binaryDigest": "Full digest retained from the prior verified runtime observation; its complete file identity tuple was unchanged before and after each selected launch. No binary copy or second digest pass was needed."
+  },
+  "launch": {
+    "caller": "Unsaved, fixed CommonJS node:test run-API callsite using builtins only, exact positional fixture and one literal selector per process.",
+    "callerTemplate": {
+      "bytes": 10198,
+      "sha256": "42cd0ce4cd61ae1a02879c51056f329e1abadbb8c072860f42102302b46436f3"
+    },
+    "nativeProcesses": 3,
+    "selectors": [
+      "1",
+      "2",
+      "3"
+    ],
+    "environment": "Cleared Python environment; isolated/no-site/no-bytecode stock manager API. Child Node receives exactly nine explicit environment keys; no ambient NODE_OPTIONS or stdin adapter.",
+    "nodeFlags": [
+      "--no-addons",
+      "--disallow-code-generation-from-strings",
+      "-e"
+    ],
+    "nodePermissionModel": false,
+    "osOrNetworkSandbox": false,
+    "manager": {
+      "sourceCommit": "d9ebafd537849379b8caa092a8e102fdf5b2edaa",
+      "sourcePins": [
+        {
+          "path": "tools/task-storage/README.md",
+          "bytes": 16630,
+          "sha256": "ecb23fa66c3f172d650dfc65715c0d6d69ef4c890adc4efe70c6c3ff7790359d",
+          "gitBlob": "0e19204ea452ada8cc3683fdad0841dfead73831"
+        },
+        {
+          "path": "tools/task-storage/cli.py",
+          "bytes": 3329,
+          "sha256": "0bf13cdc1f25a6b31ab14cfb124908808ca7ddc89073ecbcd0263bef4d52238c",
+          "gitBlob": "71a7c5dadde451c09acb16e2a0e28eea5429fcbc"
+        },
+        {
+          "path": "tools/task-storage/storage.py",
+          "bytes": 53508,
+          "sha256": "a4d82a72214c9698fda7ae363c38b2470c08da5e2e04c63ee9284e43f638f081",
+          "gitBlob": "57aae4d21ee55fd6d3cb9e25d781a81626e3fdfb"
+        },
+        {
+          "path": "tools/task-storage/policy.json",
+          "bytes": 403,
+          "sha256": "47f6ce252a991ce350b1760b22ade23b7590968c9146abf4ab50722f0d0b23b1",
+          "gitBlob": "7ca692768e5013b3612eebb3f91aa52450ff32ce"
+        }
+      ],
+      "freshPrivateProjectPerCase": true
+    },
+    "limits": {
+      "expectedBytes": 50331648,
+      "taskQuotaBytes": 67108864,
+      "rootLimitPerCase": 8,
+      "perDatabaseOrJournalBytes": 2097152,
+      "maximumRowsPerDatabase": 4,
+      "stdoutBytes": 131072,
+      "stderrBytes": 1048576,
+      "tapBytes": 65536,
+      "metadataLockSeconds": 20,
+      "managerForegroundSeconds": 20,
+      "authoredTestTimeoutMilliseconds": 5000,
+      "productionFreeSpaceFloorGiB": 10
+    },
+    "lifetimeLimit": "The cooperative test timeout, foreground timeout and sampled quota checks are not hard lifetime, cancellation, native-cleanup or OS/network-sandbox guarantees. Native loader, test runner, SQLite, stream and OS behavior remain premises."
+  },
+  "cases": [
+    {
+      "selector": "1",
+      "name": "legacy V1 two-table schema and explicit V2 four-table policy",
+      "status": "PASS",
+      "tests": 1,
+      "pass": 1,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "driverExit": 0,
+      "nodeExit": 0,
+      "outputComplete": true,
+      "reason": null,
+      "scratchScanRetries": 0,
+      "caller": {
+        "bytes": 11696,
+        "sha256": "62ba67458a4e95e4d6aef4263da7bcb72b87d31afd239c61b65af01afd61c33d",
+        "registration": {
+          "enqueue": 1,
+          "start": 1,
+          "pass": 1,
+          "fail": 0,
+          "plan": 1,
+          "diagnostic": 0
+        },
+        "tapBytes": 312,
+        "retainedTapBytes": 312,
+        "faults": [],
+        "authoredStructuredDiagnosticCount": 0
+      },
+      "stdout": {
+        "bytes": 997,
+        "sha256": "2c26065d14cf1b09a7b1822d323d8a19a4176216a704e080e01849c795a153cc"
+      },
+      "stderr": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "privateRetainedReceipts": [
+        {
+          "role": "task",
+          "bytes": 881,
+          "sha256": "76ee70c54d41dad3e21eb768417f8c1c0fff2d95ab8d665874eea916c3eaa1dc"
+        },
+        {
+          "role": "source-selection",
+          "bytes": 1964,
+          "sha256": "20e888bdf79f04adb6b7cc6fd4266475b4c162026866683fda18dba28bf5630c"
+        },
+        {
+          "role": "command-binding",
+          "bytes": 661,
+          "sha256": "7a16a70eac429d8e69f7c860bf6195f5e281dfcde368dd7887d3dd367c08b9b8"
+        },
+        {
+          "role": "outcome",
+          "bytes": 62,
+          "sha256": "0d00eabee9064b5eec9b4d86577e07c26185cacc1b937ba54e9c3f4c7bc74b4c"
+        },
+        {
+          "role": "cleanup",
+          "bytes": 232,
+          "sha256": "836bf0172ef8a52d7da8446d3bf9162a18d6ef0bb9957564841a0a4d991c358a"
+        }
+      ],
+      "storage": {
+        "taskState": "CLOSED",
+        "outcome": "SUCCESS",
+        "cleanupDecision": "HOLD",
+        "reason": "Native-created synthetic database entries remain unregistered; no adoption, deletion or automatic cleanup was performed.",
+        "newIndependentDatabaseFiles": 2,
+        "files": [
+          {
+            "label": "case-1-database-1",
+            "bytes": 12288,
+            "sha256": "ce8ccc7294cd83f0f34f9584d462e7b6e60e4c39671b0cd03327d9d2f7134fa6"
+          },
+          {
+            "label": "case-1-database-2",
+            "bytes": 24576,
+            "sha256": "54a58b63fa14d868560887d61b9ac98567631bc1c1ee301e4f9af87cef524fd6"
+          }
+        ],
+        "fileMode": "0600",
+        "independentInodesAndNoHardLinks": true,
+        "postRunInspection": "Bounded read-only file-descriptor hash; no SQLite import or reopen."
+      }
+    },
+    {
+      "selector": "2",
+      "name": "V1 declared journal bound and unknown states survive same-process reopen",
+      "status": "PASS",
+      "tests": 1,
+      "pass": 1,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "driverExit": 0,
+      "nodeExit": 0,
+      "outputComplete": true,
+      "reason": null,
+      "scratchScanRetries": 0,
+      "caller": {
+        "bytes": 11708,
+        "sha256": "a51c67a0be1ddffe4e678a30bde7028665a72fa9de25c06e1b5ed327d462df96",
+        "registration": {
+          "enqueue": 1,
+          "start": 1,
+          "pass": 1,
+          "fail": 0,
+          "plan": 1,
+          "diagnostic": 0
+        },
+        "tapBytes": 334,
+        "retainedTapBytes": 334,
+        "faults": [],
+        "authoredStructuredDiagnosticCount": 0
+      },
+      "stdout": {
+        "bytes": 1019,
+        "sha256": "e112f23f0c119cc5ae9fff523540348999c92d761891bdd5762d0f516db0fc4c"
+      },
+      "stderr": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "privateRetainedReceipts": [
+        {
+          "role": "task",
+          "bytes": 882,
+          "sha256": "982c009616fef739ba7c0fd50909712dcf76f9e1f249e3af1324c047121ad013"
+        },
+        {
+          "role": "source-selection",
+          "bytes": 1976,
+          "sha256": "4657e716383edb7cbcf19057af701399de00d267833af2506516e70f0ae62de2"
+        },
+        {
+          "role": "command-binding",
+          "bytes": 662,
+          "sha256": "58a9ba369ff74c6ae33a2eadbb963bdef80d11ecf3341687dd95d7eed4ebc5f5"
+        },
+        {
+          "role": "outcome",
+          "bytes": 61,
+          "sha256": "509160fc5b36ad61253e8ca8bb3df5a2afad193713b8080c3a9986269e64505b"
+        },
+        {
+          "role": "cleanup",
+          "bytes": 232,
+          "sha256": "f12df1bf6feaedcc73fc397dfeb03eac740a4664e6ae0aeda2b8635d10750879"
+        }
+      ],
+      "storage": {
+        "taskState": "CLOSED",
+        "outcome": "SUCCESS",
+        "cleanupDecision": "HOLD",
+        "reason": "Native-created synthetic database entries remain unregistered; no adoption, deletion or automatic cleanup was performed.",
+        "newIndependentDatabaseFiles": 2,
+        "files": [
+          {
+            "label": "case-2-database-1",
+            "bytes": 12288,
+            "sha256": "6ab160abab2cd73bdc3793ba867a96d2c310e007b2260cb93e0f58e553d0c631"
+          },
+          {
+            "label": "case-2-database-2",
+            "bytes": 12288,
+            "sha256": "b62d0733c204ad5e91a0fb6f17a2a8fd09c665f46b1694838b76a977615ee565"
+          }
+        ],
+        "fileMode": "0600",
+        "independentInodesAndNoHardLinks": true,
+        "postRunInspection": "Bounded read-only file-descriptor hash; no SQLite import or reopen."
+      }
+    },
+    {
+      "selector": "3",
+      "name": "direct cross-version policy and header refusals preserve bytes identity epoch",
+      "status": "PASS",
+      "tests": 1,
+      "pass": 1,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "driverExit": 0,
+      "nodeExit": 0,
+      "outputComplete": true,
+      "reason": null,
+      "scratchScanRetries": 0,
+      "caller": {
+        "bytes": 11713,
+        "sha256": "a11649e73906a16d460bb1e936757f05cd7d5a163b210bf00adbfcc338b89f37",
+        "registration": {
+          "enqueue": 1,
+          "start": 1,
+          "pass": 1,
+          "fail": 0,
+          "plan": 1,
+          "diagnostic": 0
+        },
+        "tapBytes": 346,
+        "retainedTapBytes": 346,
+        "faults": [],
+        "authoredStructuredDiagnosticCount": 0
+      },
+      "stdout": {
+        "bytes": 1031,
+        "sha256": "ce359aee2e523fe10e517c65645a356b641d1f581f52a2486214717b2905b0c5"
+      },
+      "stderr": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "privateRetainedReceipts": [
+        {
+          "role": "task",
+          "bytes": 881,
+          "sha256": "ee09179b87a508368f53bc6433c79a3a9011670d777152d49c73045abdf2d4d2"
+        },
+        {
+          "role": "source-selection",
+          "bytes": 1981,
+          "sha256": "7a3e1806807dcdae7134417ee9ec49cc4148e2d3534eb9ec9384b24c40518718"
+        },
+        {
+          "role": "command-binding",
+          "bytes": 662,
+          "sha256": "e941ae254c70845d22cbb4eb85869a28e843428fa7aa55d696a4fbe85ab289f1"
+        },
+        {
+          "role": "outcome",
+          "bytes": 61,
+          "sha256": "79f0142b44c54153722f19d0ddb0f26cf034153991778b4c3cb5af5ba977eb17"
+        },
+        {
+          "role": "cleanup",
+          "bytes": 232,
+          "sha256": "fceeefbb963fc982e6fa6a833d9306bc6d74f2ad32b0c96db9f23ec173edec1e"
+        }
+      ],
+      "storage": {
+        "taskState": "CLOSED",
+        "outcome": "SUCCESS",
+        "cleanupDecision": "HOLD",
+        "reason": "Native-created synthetic database entries remain unregistered; no adoption, deletion or automatic cleanup was performed.",
+        "newIndependentDatabaseFiles": 7,
+        "files": [
+          {
+            "label": "case-3-database-1",
+            "bytes": 12288,
+            "sha256": "1c46239932a93524eb5bf2fba3ae1c260f79d5d2bbc9b246cead430c4941b38c"
+          },
+          {
+            "label": "case-3-database-2",
+            "bytes": 24576,
+            "sha256": "e04a1703071d3dad36288cb9e091c981fc736aeb63da75684892f3add26578bd"
+          },
+          {
+            "label": "case-3-database-3",
+            "bytes": 12288,
+            "sha256": "72413cdae5446ba55823963904fbafa0958dfb9926fae43d871c17fd5f6bb4d8"
+          },
+          {
+            "label": "case-3-database-4",
+            "bytes": 12288,
+            "sha256": "6b84364ff4f3366e6f626e5262e1129f189c01eec03f59d5211dd7edf363dd32"
+          },
+          {
+            "label": "case-3-database-5",
+            "bytes": 24576,
+            "sha256": "e1d8400053e570b22ef1440e9adae79621d287156fc4209ccf9f6faae80ee609"
+          },
+          {
+            "label": "case-3-database-6",
+            "bytes": 24576,
+            "sha256": "beda55bac58482a2957e9996eaaf6159fb7bd2a3af8027745f374860dd496bac"
+          },
+          {
+            "label": "case-3-database-7",
+            "bytes": 24576,
+            "sha256": "beda55bac58482a2957e9996eaaf6159fb7bd2a3af8027745f374860dd496bac"
+          }
+        ],
+        "fileMode": "0600",
+        "independentInodesAndNoHardLinks": true,
+        "postRunInspection": "Bounded read-only file-descriptor hash; no SQLite import or reopen."
+      }
+    }
+  ],
+  "totals": {
+    "tests": 3,
+    "pass": 3,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0,
+    "newSyntheticDatabaseFiles": 11,
+    "retainedDatabaseBytes": 196608,
+    "managedTasksClosed": 3,
+    "nativeRetries": 0,
+    "cleanupDeletions": 0,
+    "sqliteImportsDuringPostRunInspection": 0
+  },
+  "coverage": [
+    "V1 uses its two-table schema and rejects custody methods; explicit V2 uses its four-table schema and declared policy.",
+    "Exact V1 BOUND and OUTCOME_UNKNOWN journal records survive known same-process close/openExisting with expected owner epoch change.",
+    "Cross-version/profile-policy and application/header-version refusals preserve the selected database bytes, identity and epoch.",
+    "Reviewed authored close/refusal/HOLD checks run inside each selected case; complete TAP, exact authored names, current source and caller-code bindings were independently reconciled with joined stock-manager receipts."
+  ],
+  "postRun": {
+    "selectedFiveInputsAndRetainedOriginalFixture": "Full file identity, byte count, SHA-256 and Git blob unchanged.",
+    "stockManagerSourcesAndPolicy": "Full identities and hashes unchanged.",
+    "storageRootAndConfig": "Verified mounted volume, owner, store identity and config unchanged; existing production floor preserved.",
+    "runtime": "Complete retained file identity unchanged.",
+    "noSourceOrBinaryCopies": true
+  },
+  "retainedFailure": {
+    "stage": "PRIMARY_RAM_RECEIPT_COMPARISON",
+    "description": "The first comparison rejected object-key ordering differences introduced by JSON serialization. Every receipt value was then compared with recursively canonicalized objects; arrays remained order-sensitive. No native launch, source edit, write, retry or failed test resulted."
+  },
+  "notEstablished": [
+    "Successful V2/V3 custody or intent recovery beyond these exact retained cases",
+    "Fresh-process or host/process-crash recovery",
+    "Native C++ handle cleanup or OS durability",
+    "SDK, broad application/store/controller or live-provider qualification",
+    "Payment signing, delivery, chain inclusion, provider READY, funding/payer/policy authority or pilot acceptance",
+    "Hosted CI success or main publication"
+  ],
+  "protectedState": {
+    "realConsumedAdmissions": 2,
+    "actualChainPREPARE": 1,
+    "bundles": 0,
+    "nativeChainProviderQualificationRuns": 0,
+    "realSigner": "DISABLED",
+    "originalPaymentRequestBytesAndAuthority": "UNCHANGED",
+    "sameSignedBlockResendBoundary": "PR193 VALIDATED exact-same-block remains separate from UNKNOWN and ACKNOWLEDGED"
+  },
+  "publication": {
+    "state": "LOCAL_ONLY",
+    "mainTransferInThisScope": false,
+    "ciRun": false,
+    "commitOrPush": false,
+    "unrelatedEditsPreserved": true
+  }
+}

@@ -1,0 +1,536 @@
+{
+ "schemaVersion": 1,
+ "scope": "OCT19_ACTUAL_SQLITE_OBSERVATION_COLLECTION_CURRENT_GRAPH_LOCAL_V1",
+ "status": "TWO_LOCAL_CURRENT_GRAPH_SYNTHETIC_SQLITE_API_CASES_PASSED",
+ "purpose": "Current-version regression of the two retained actual-SQLite observation API scenarios. Same scenarios, changed owner source and exact Node binary; not novel scenario coverage or live acceptance.",
+ "sourceContext": {
+  "localHEAD": "e1a5bafeadda9a679dc2261b1abea164820fb8a5",
+  "branch": "x402/p0a-http-startup-local-qualification",
+  "mainAtSelection": "eaed3df3c6e5e981a552bd3ae2d18df74d7422ba",
+  "runtimeFileCount": 15,
+  "runtimeSourceBytes": 305569,
+  "pinFormat": "relative path, bytes, SHA256, GitBlob",
+  "pins": [
+   [
+    "src/service-credit-custodied-sqlite-http-client.js",
+    18540,
+    "ea16d6ac5ce72d6434c06e98c52c324daf918dd570f15997cdc21e501f677f4e",
+    "9572dfcca76b83b53bdd5bd132ffaf110720dc3a"
+   ],
+   [
+    "src/service-credit-custodied-sqlite-sequential-runner.js",
+    21467,
+    "9378a09dfd23c6ad5e093971d16c5aad62c19b5f3cce353bb199f037df64d7e0",
+    "105b22e1463ab8302b141510e2bb991b746169ad"
+   ],
+   [
+    "src/service-credit-custodied-recovery-observation-collection-core.js",
+    8579,
+    "36b7cece2d436cbfcac5f4299dd6bd30e5eede6ebb2ebe769ae7bf3a6f1a72b4",
+    "4dc8765be0aa4b0e927fface960e366a3a6ccd1e"
+   ],
+   [
+    "src/service-credit-zenon-funding-post-v1-payer-recovery-sqlite-store.js",
+    57459,
+    "9c925f241effbfec0bf014ff284e834c4d5679c4ea7224f83a6354cde6cffdaf",
+    "260c2f43306b029ca694aa06b8c60d1be037c614"
+   ],
+   [
+    "src/service-credit-http-execute-dispatch.js",
+    27034,
+    "254ba8eef5ea5efb3a1b901be09e9cb33afbc3cfcf63789ca4a23316b6180d1b",
+    "280dd20dc669e2856d263eba62ccd0fe9af72f21"
+   ],
+   [
+    "src/service-credit-original-request-custody-contract.js",
+    14051,
+    "fd349de553a17abcc2e0567ba6640e6e3d5d26cfa79ee1e355928dc9fa8d3915",
+    "f911d42d01b69e6577f9bcd66f4ed59aab8ab882"
+   ],
+   [
+    "src/service-credit-custodied-request-owner.js",
+    35073,
+    "6e7493a4859d48530820e68a4a19a513aad014ffc1048b42965a3ad36ae7c5f7",
+    "2dee22fd780db9de662fe1243075e74cef0bf296"
+   ],
+   [
+    "src/service-credit-custodied-http-client.js",
+    10755,
+    "ddbc54faf4a14d95e6274bc9df27b7b49db251bab67c11b871cfb2f9e78b4f15",
+    "90fd4c8a2cc8fb552f8eb0cb45607bfa44c61108"
+   ],
+   [
+    "src/service-credit-custodied-sequential-runner-core.js",
+    15288,
+    "36c99342bf9e47559e39535aefcde78acbbdd7fb210d42a77dbbb93c2fd9f8ff",
+    "c9005ab245f045648d6bf508b9afef6c2d26c583"
+   ],
+   [
+    "src/x402-wire.js",
+    39886,
+    "5fba91af5a352f62d1a335c7176a45a604e2af5d92b1c4b0e53825c1f20d4e56",
+    "fb060d4e349b1c31a1219a0cc137af250a8a2291"
+   ],
+   [
+    "src/service-credit-pilot-client-plan.js",
+    7483,
+    "73ee3d739de85150039e733234cd0761c228d68de040d1e126902e808a259ac6",
+    "14334c82b5b7c80fb8f7f6a392a1a0f3c3adcbf1"
+   ],
+   [
+    "src/service-credit-pilot-status-view.js",
+    3202,
+    "cf3822d8b9ec4eb4772452ed1888b96d398fd87c1ead44cd155a5acc1a6b66ed",
+    "0890db504e44b704d0434dc309e711743570e652"
+   ],
+   [
+    "src/service-credit-custodied-recovery-collection-core.js",
+    13794,
+    "51d06da70ecccd0cf8b38d650367d1ae903ea86010a5ebeadb682af98e4b890b",
+    "5275832eebbf87e0cd37f3c2e3b82147ab625a72"
+   ],
+   [
+    "package.json",
+    1413,
+    "8c9a25504fbf6f87c31cdf245a6f4eec5a88cc89c8352151dc66a577c5771ef5",
+    "ec7193f6fd76f34778515079dc777594175c4c34"
+   ],
+   [
+    "qualification/service-credit-custodied-sqlite-recovery-observation-collection-current.draft.mjs",
+    31545,
+    "17171483f0b99a4ea9eaa41cad293a47b057014f1f410c72246f8088d20812a0",
+    "27bbc62a647440a7336dc738be95e85ae7240132"
+   ]
+  ],
+  "closure": "Thirteen production modules, guarded package metadata and this fixture, plus Node builtins. No package scripts, SDK, app/controller, http/https/net/tls imports.",
+  "sourceDraftHeader": "Historical SOURCE DRAFT / NOT_RUN header preserved. This separate result records subsequent execution."
+ },
+ "historicalBoundary": {
+  "fixture": [
+   "qualification/service-credit-custodied-sqlite-recovery-observation-collection.draft.mjs",
+   31537,
+   550,
+   "00ed1c5094d7aa850ee406a8ba07e2355bc01c6593de079f303911287c09f659"
+  ],
+  "result": [
+   "qualification/service-credit-custodied-sqlite-recovery-observation-collection.behavior.result.json",
+   20704,
+   "a20239240a058cd5480358be6b809e7aa3262a2951fc9a73d8f228dcb28a6965"
+  ],
+  "priorActualCaseCount": 2,
+  "historicalResultsAndHeldDatabases": "Preserved; not rewritten, reopened or rerun on unchanged inputs.",
+  "changedOwner": {
+   "old": [
+    34950,
+    932,
+    "35386cc84c281aee4636141171076b84aa139ae20c66e4366788927cef43f3ca"
+   ],
+   "current": [
+    35073,
+    938,
+    "6e7493a4859d48530820e68a4a19a513aad014ffc1048b42965a3ad36ae7c5f7"
+   ],
+   "meaning": "Previously reviewed legacy readOriginal second-funding-loss fix; not reimplemented here."
+  },
+  "oldNodeSHA256": "852d6074f741d18223b24967d8384e8920856a7fcd4348682a4ec524b5fc2ff4",
+  "otherThirteenProductionAndPackagePins": "Equal to historical fixture table.",
+  "coverage": "Two distinct scenario names, once each on the current graph/runtime. Historical and current executions are not four distinct scenarios."
+ },
+ "sourcePreparation": {
+  "fixture": {
+   "path": "qualification/service-credit-custodied-sqlite-recovery-observation-collection-current.draft.mjs",
+   "bytes": 31545,
+   "LF": 550,
+   "sha256": "17171483f0b99a4ea9eaa41cad293a47b057014f1f410c72246f8088d20812a0",
+   "gitBlob": "27bbc62a647440a7336dc738be95e85ae7240132"
+  },
+  "edits": "Only selfRelative and owner bytes/LF/SHA row. Original/current offsets4498/4498 and6377/6385; each match1; complete inverse equals all31537 original bytes.",
+  "workerSourceData": {
+   "bytes": 18980,
+   "LF": 228,
+   "sha256": "a505bb3484b9054171eea5946383f647eed6c9fdc89cdfa2831be473ddc4756e",
+   "gitBlob": "1ad6948d4755768a22e24739a5b25afb25b08753"
+  },
+  "originalCaller": {
+   "bytes": 11742,
+   "LF": 194,
+   "sha256": "2215e8091a60882cf7cdd7482e5b52383f2cd0fe1c89edabddb4a0cae8af4f70",
+   "gitBlob": "40d2c0db9010802f5ec85389fa7c07c7b24bcdce"
+  },
+  "correctedCaller": {
+   "bytes": 12117,
+   "LF": 200,
+   "sha256": "b5efdd4197b71071bdd09d29c73aec039f6408a7fa5f9496840d8511a4f2646d",
+   "gitBlob": "71d7124911a1444fbfd274d0e228058429571fc5"
+  },
+  "correctiveRecipe": {
+   "bytes": 4741,
+   "LF": 1,
+   "sha256": "67315eb4cf50977050b57425d7514e30a4c71f2cc60c640048401ca1891ec06f",
+   "gitBlob": "d2c72819d6e60035a9f941b09c2a0b30060ff67f"
+  },
+  "completeOriginalHandoffs": [
+   {
+    "bytes": 4971,
+    "sha256": "f9166bb00ac644bca4841305cbef616a3c210c66c38eeac63e81483b306e0dfe"
+   },
+   {
+    "bytes": 3278,
+    "sha256": "260e94e740dcf7031b5a84b9069bfbeda70b4e70845b7e751c1520e307e13463"
+   }
+  ],
+  "primaryReview": "Complete Source/callers, both complete handoffs, dependencies, environment, existing manager and fixed API callsite reviewed. Exact edits, whole inverses and final identities independently calculated; worker plans were not runtime evidence.",
+  "correctedStockAPIContract": "Unsaved fixed -e CJS launch, no --input-type/stdin adapter. Actual bound source independently hashed by parent and child. Scratch dev/ino/uid/mode remain exact while stock command-directory changes to nlink/size/mtime/ctime are allowed. Fixture-root, all15 source-file and Node full8 remain exact.",
+  "retainedPreparationFailures": [
+   "Initial source batch exit1 lost137582 buffered bytes after five guarded reads because of an expected wire mtime transcription; metadata-only match established no source drift. Bounded recovery stored each file separately.",
+   "Corrective RAM account initially refused an over-reserved121638 upper before Python; exact length accounting retained the refusal within the unchanged120000 cap."
+  ],
+  "workerSourceAccount": {
+   "initialUpper": 769013,
+   "initialCap": 800000,
+   "correctiveUpper": 114713,
+   "correctiveCap": 120000,
+   "cumulativeUpper": 883726,
+   "cumulativeCap": 920000,
+   "failedReadBytesRetained": 137582,
+   "scope": "Worker Source preparation only; actual execution/retained storage are separately accounted."
+  }
+ },
+ "runtime": {
+  "Node": {
+   "version": "24.19.0",
+   "platform": "darwin",
+   "arch": "arm64",
+   "bytes": 121304480,
+   "sha256": "613be50c90e83aa8da58dd9ed393d0b39914a3b8ef4123fe817b46c2679cebe2",
+   "fullDigestPreviouslyVerified": true,
+   "unchangedFull8Rechecked": true,
+   "newBinaryHashOrCopy": false
+  },
+  "flags": [
+   "--no-addons",
+   "--disallow-code-generation-from-strings"
+  ],
+  "caller": "Fixed unsaved CommonJS -e run API",
+  "run": {
+   "isolation": "none",
+   "concurrency": 1,
+   "forceExit": false
+  },
+  "NodePermissionModel": false,
+  "OSOrNetworkSandbox": false,
+  "NodeEnvironmentKeysAtProcessCreation": 9,
+  "managerPython": {
+   "version": "3.9.6",
+   "flags": [
+    "-I",
+    "-S",
+    "-B",
+    "-X pycache_prefix=/dev/null"
+   ],
+   "builtinProbeExit": 0,
+   "environment": "Apple launcher-added build/path keys were observed in env-i probe; fixed callsite cleared its own environment to PATH/LC_ALL before storage import. Node independently received exactly9 explicit keys."
+  },
+  "cooperativeOwnedPromiseTimeoutMs": 2000,
+  "cooperativeTestTimeoutMs": 12000,
+  "managerForegroundTimeoutSeconds": 20,
+  "hardLifetimeCancellationOrNativeCleanupGuarantee": false,
+  "premises": "Native loader/runner/stream/SQLite/OS behavior, pristine runtime/intrinsics and source-to-import race freedom remain premises."
+ },
+ "storage": {
+  "tool": "Existing unmodified approved tools/task-storage Store API",
+  "trustedLocalSPVCommit": "d9ebafd537849379b8caa092a8e102fdf5b2edaa",
+  "toolPublicationState": "NOT_CHECKED_BY_THIS_SLICE",
+  "toolPins": [
+   [
+    "AGENTS.md",
+    2333,
+    "72ead174379ab86800ce406afe2b856e412ca4d6a9238abea6dcdf7d70e869c8",
+    "1f6bedbdc130e1e5a6dff30d3015d76385086b10"
+   ],
+   [
+    "tools/task-storage/README.md",
+    16630,
+    "ecb23fa66c3f172d650dfc65715c0d6d69ef4c890adc4efe70c6c3ff7790359d",
+    "0e19204ea452ada8cc3683fdad0841dfead73831"
+   ],
+   [
+    "tools/task-storage/cli.py",
+    3329,
+    "0bf13cdc1f25a6b31ab14cfb124908808ca7ddc89073ecbcd0263bef4d52238c",
+    "71a7c5dadde451c09acb16e2a0e28eea5429fcbc"
+   ],
+   [
+    "tools/task-storage/storage.py",
+    53508,
+    "a4d82a72214c9698fda7ae363c38b2470c08da5e2e04c63ee9284e43f638f081",
+    "57aae4d21ee55fd6d3cb9e25d781a81626e3fdfb"
+   ],
+   [
+    "tools/task-storage/policy.json",
+    403,
+    "47f6ce252a991ce350b1760b22ade23b7590968c9146abf4ab50722f0d0b23b1",
+    "7ca692768e5013b3612eebb3f91aa52450ff32ce"
+   ]
+  ],
+  "completeREADMEAndCoreReviewed": true,
+  "approvedMountedVolumeUUIDVerified": true,
+  "existingPrivateRootIdSchemaAndPolicyMatched": true,
+  "productionMinFreeBytes": 10737418240,
+  "expectedBytesPerTask": 33554432,
+  "quotaBytesPerTask": 67108864,
+  "stdoutCap": 131072,
+  "stderrCap": 1048576,
+  "TAPCap": 65536,
+  "newTasks": 2,
+  "closedSuccessTasks": 2,
+  "newIndependentSQLiteFiles": 2,
+  "heldFixtureScratch": 2,
+  "databaseBytesRetained": 65536,
+  "fixtureRootPreparation": "Task.write created an empty registered disposable marker; Task.preserve consumed it by exact empty digest, leaving the registered fixture directory empty. Native-created fixture entries were not adopted for cleanup.",
+  "isolation": "Fresh case-specific projects; startup recovery could not recover older tasks. Both contexts closed only their own new tasks.",
+  "CAS": "Exact stdout/stderr digests retained once. Empty stderr/marker digest shared by references. No stdout-to-ZIP/archive copy, source clone, runtime download or binary copy.",
+  "cleanup": "Both CLOSED/SUCCESS tasks retain HOLD fixture scratch for unregistered native-created entries. Databases/receipts preserved. HOLD is not cleanup/durability qualification."
+ },
+ "attempts": {
+  "managerCallsiteInvocations": 3,
+  "preNodeRefusal": {
+   "selection": "2",
+   "actualWrapperExit": 1,
+   "errorType": "Busy",
+   "metadataWaitSeconds": 5,
+   "enteredTaskId": null,
+   "NodeReceipt": null,
+   "NodeStarted": false,
+   "testsStarted": 0,
+   "retained": true,
+   "reconciliation": "Read-only namespace audit found no new case2 project/task. Five records exceeding64KiB read cap were stat-checked as older oversized records without body expansion. A live metadata-lock holder was observed and not interrupted. Exact acquisition site was not isolated among pre-Node stock metadata requests."
+  },
+  "laterAdmission": "After reconciliation, only stock metadata wait and its recorded value changed5s->20s; whole inverse checked. No lock, quota, owner or source guard bypass; no Native experiment repeated.",
+  "actualFreshNodeProcesses": 2,
+  "actualAuthoredTests": 2,
+  "passed": 2,
+  "failed": 0,
+  "skipped": 0,
+  "cancelled": 0,
+  "todo": 0,
+  "suites": 0,
+  "NativeExperimentRetries": 0,
+  "loaderOrAssertionFailures": 0,
+  "fixedAPICallsiteSHA256": [
+   "58a02a518deea337536df3d55be1065d357f988d1a09ec066e538c4683e75aee",
+   "ec1b87a687fc13df094714c7f8030416232a1f069a7af614f0339d906bd9f95d",
+   "d03df699b07eca8a60c6937bfdb0d461e121dc951a9c8c3a7fdc11475668140f"
+  ],
+  "resultDraftFailure": {
+   "guard": "PUBLIC_RESULT_PRIVACY_OR_SIZE_REFUSED",
+   "writes": 0,
+   "originalCombinedCause": "NOT_ISOLATED",
+   "NativeReruns": 0
+  }
+ },
+ "cases": [
+  {
+   "selection": "1",
+   "name": "actual SQLite observation collection updates one member and detaches without closing its owner",
+   "tests": 1,
+   "passed": 1,
+   "failed": 0,
+   "skipped": 0,
+   "cancelled": 0,
+   "todo": 0,
+   "actualExit": 0,
+   "completeStreams": true,
+   "completedAtUTC": "2026-10-19T19:26:16.842Z",
+   "actualBoundCallerBytes": 15123,
+   "actualBoundCallerSHA256": "89d46e904ae292580c123e34a57ba0574700669a7bbd1935bb3dd92609bd3b8f",
+   "parentAndNodeCodeHashMatched": true,
+   "registration": {
+    "enqueue": 1,
+    "start": 1,
+    "pass": 1,
+    "fail": 0,
+    "plan": 1,
+    "diagnostic": 1
+   },
+   "TAPBytes": 1219,
+   "stdout": {
+    "sha256": "c58e2e70ba59e4878302c9d643065609fc0ef237fdbf2e0a5b1884d23c61815d",
+    "bytes": 1906
+   },
+   "stderr": {
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "bytes": 0
+   },
+   "commandReceiptSHA256": "7af1773a0a03a6d980f7d3c7e8fc9528289d3498135f645bfb0dc74b9ccbd3c3",
+   "taskRecordSHA256": "1f8bef6e965d7bfd16309e1c9d4e6fc07a170ae48264a60bc3401d1c2d887660",
+   "selectionReceiptSHA256": "df47e76d326e2a1ae9f1f5ee901d1063bca0d4582517d51de9f72ab08d434e35",
+   "commandBindingReceiptSHA256": "edb0a7594eba37bd6a13480519ab70dd21e1e4bd2a4ac9a76820b0464b554b0f",
+   "outcomeReceiptSHA256": "d35bafb32a98df49ae617487b1b804b1f84d70f7dfab8dc2d99cb49800128efc",
+   "cleanupReceiptSHA256": "1c736a7a3235ec128ea3f26dede6c81e7bac97b09e5a1cabcfdd13c16522d40d",
+   "diagnostic": {
+    "selection": "1",
+    "authoredAssertionsPassed": true,
+    "newRoots": 1,
+    "requestCalls": 0,
+    "actualOwnedSQLite": true,
+    "collectionChildCloseAttempts": 2,
+    "ownedReads": {
+     "loadReads": 56,
+     "recordReads": 28,
+     "retainCalls": 0,
+     "readbackConfirmations": 0,
+     "dispatchCalls": 0,
+     "callbackCompletions": 0,
+     "intentWrites": 0,
+     "intentReads": 16,
+     "intentReadbackConfirmations": 0
+    },
+    "rootCloseCalls": 1,
+    "storeCloseAttempts": 1,
+    "storeCloseOutcome": "RETURNED",
+    "rootCloseOutcome": "DRAINED",
+    "nativeEntriesReturned": 4,
+    "persistedFundingOriginalsIntentsAndPolicyUnchanged": true,
+    "seedDatabaseSHA256": "f98c34d48768a5703c7a0117020839184fce27fae348e40c8b1692fc7e80a997",
+    "finalDatabaseSHA256": "ac50914442c47bd76d17b83d4ac1f9be0630625843eec07983d69218da77e16b",
+    "evidence": "OWNED_LOCAL_SQLITE_OBSERVATION_COLLECTION",
+    "qualification": "UNQUALIFIED",
+    "authority": "NONE",
+    "serviceOutcome": "NOT_ESTABLISHED"
+   },
+   "task": "CLOSED_SUCCESS",
+   "cleanup": "HOLD_NATIVE_CREATED_FIXTURE_ENTRIES_PRESERVED",
+   "metadataLockTimeoutSeconds": 5,
+   "databaseFDPostCheck": {
+    "bytes": 32768,
+    "sha256": "ac50914442c47bd76d17b83d4ac1f9be0630625843eec07983d69218da77e16b",
+    "independentNewInode": true,
+    "singleLinkPrivate0600": true,
+    "SQLiteReopenedByPostCheck": false
+   }
+  },
+  {
+   "selection": "2",
+   "name": "actual SQLite observation collection preserves complete history after its owner closes",
+   "tests": 1,
+   "passed": 1,
+   "failed": 0,
+   "skipped": 0,
+   "cancelled": 0,
+   "todo": 0,
+   "actualExit": 0,
+   "completeStreams": true,
+   "completedAtUTC": "2026-10-19T19:31:30.629Z",
+   "actualBoundCallerBytes": 15115,
+   "actualBoundCallerSHA256": "51832d766ccecd30d2683c17aa75eb4f16cf31ca323ea8121d5e868fea5b8418",
+   "parentAndNodeCodeHashMatched": true,
+   "registration": {
+    "enqueue": 1,
+    "start": 1,
+    "pass": 1,
+    "fail": 0,
+    "plan": 1,
+    "diagnostic": 1
+   },
+   "TAPBytes": 1202,
+   "stdout": {
+    "sha256": "3e4efe42b32927d62cc4834091682a813cd476494b1eaf8a05ff3e3a9f51d0be",
+    "bytes": 1889
+   },
+   "stderr": {
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "bytes": 0
+   },
+   "commandReceiptSHA256": "785b58af71d094bd456879a41a672f86b7fa175ae8d1a8db27356718896823cc",
+   "taskRecordSHA256": "2e9f3033ae8f3f351b5d5581785671e346e4745d33ccbfba6e0337d31c9fed86",
+   "selectionReceiptSHA256": "05c828e8211b19ae12875346743af995b6e6e2f44aa605a33175d1c93b0084fb",
+   "commandBindingReceiptSHA256": "bd061fd9d9cd5896c8c272840ca567a2efc60e9b354f7fbc8e918207e63b5cd4",
+   "outcomeReceiptSHA256": "db43a4e7777245ea019cd4c34a1fcfe2f8f091060ba5dfa89caffc3c658d615d",
+   "cleanupReceiptSHA256": "01d63e1c3d49349b31d6ccf2065a2df9df1e5dfaf8d973f36222556e37fd424b",
+   "diagnostic": {
+    "selection": "2",
+    "authoredAssertionsPassed": true,
+    "newRoots": 1,
+    "requestCalls": 0,
+    "actualOwnedSQLite": true,
+    "collectionChildCloseAttempts": 2,
+    "ownedReads": {
+     "loadReads": 28,
+     "recordReads": 14,
+     "retainCalls": 0,
+     "readbackConfirmations": 0,
+     "dispatchCalls": 0,
+     "callbackCompletions": 0,
+     "intentWrites": 0,
+     "intentReads": 8,
+     "intentReadbackConfirmations": 0
+    },
+    "rootCloseCalls": 1,
+    "storeCloseAttempts": 1,
+    "storeCloseOutcome": "RETURNED",
+    "rootCloseOutcome": "DRAINED",
+    "nativeEntriesReturned": 4,
+    "persistedFundingOriginalsIntentsAndPolicyUnchanged": true,
+    "seedDatabaseSHA256": "f98c34d48768a5703c7a0117020839184fce27fae348e40c8b1692fc7e80a997",
+    "finalDatabaseSHA256": "ac50914442c47bd76d17b83d4ac1f9be0630625843eec07983d69218da77e16b",
+    "evidence": "OWNED_LOCAL_SQLITE_OBSERVATION_COLLECTION",
+    "qualification": "UNQUALIFIED",
+    "authority": "NONE",
+    "serviceOutcome": "NOT_ESTABLISHED"
+   },
+   "task": "CLOSED_SUCCESS",
+   "cleanup": "HOLD_NATIVE_CREATED_FIXTURE_ENTRIES_PRESERVED",
+   "metadataLockTimeoutSeconds": 20,
+   "databaseFDPostCheck": {
+    "bytes": 32768,
+    "sha256": "ac50914442c47bd76d17b83d4ac1f9be0630625843eec07983d69218da77e16b",
+    "independentNewInode": true,
+    "singleLinkPrivate0600": true,
+    "SQLiteReopenedByPostCheck": false
+   }
+  }
+ ],
+ "postRun": {
+  "allSixteenSelectedSourcePinsAndFull8Unchanged": true,
+  "allFiveManagerPinsAndFull8Unchanged": true,
+  "eachNewDBReadOnlyFDHashedWithoutSQLiteReopen": true,
+  "independentDBInodesSingleLinksPrivateModeVerified": true,
+  "priorDirtyWorktreePreserved": true,
+  "newRepositoryArtifacts": 2,
+  "existingArtifactRewrites": 0,
+  "stagingCommitsPushes": 0,
+  "mainOrGitHubMutation": false,
+  "SDKInstallsBuildsCIDispatches": 0,
+  "newSavedOperationalHelpers": 0,
+  "automationOrMemoryWrites": 0
+ },
+ "acceptance": {
+  "specifiedCurrentGraphLocalSQLiteAPICases": "PASSED",
+  "sameDBFreshProcessRestart": "NOT_ESTABLISHED",
+  "legacyV1V2Profiles": "NOT_REQUALIFIED_BY_THIS_SLICE",
+  "crashFsyncPowerLossDurability": "NOT_ESTABLISHED",
+  "currentContextFundingPayerProviderPolicyAuthority": "NOT_ESTABLISHED",
+  "realProviderREADY": "NOT_ESTABLISHED",
+  "DPFrontierWorkSigningInclusion": "NOT_ESTABLISHED",
+  "shippedSDKOfficialPendingBridge": "NOT_ESTABLISHED",
+  "recipientReceiveSpendability": "NOT_ESTABLISHED",
+  "serviceDelivery": "NOT_ESTABLISHED",
+  "livePilot": "NOT_ACCEPTED",
+  "production": "NO_GO",
+  "mainTransfer": "NOT_ATTEMPTED_SEPARATE_LANE"
+ },
+ "preservation": {
+  "realSigner": "DISABLED",
+  "realConsumedAdmissions": 2,
+  "realActualPREPARE": 1,
+  "realBundles": 0,
+  "realNativeChainProviderQualificationRuns": 0,
+  "localSQLIsNotChainPREPARE": true,
+  "originalRealPaymentRequestBytesHashPayloadRequirementsContext": "UNTOUCHED",
+  "consumedAuthority": "NOT_RESET",
+  "failed165OwnershipMetadata": "NOT_RETRIED",
+  "PR193": "Possible VALIDATED exact-same-signed-block resend remains distinct from UNKNOWN/ACKNOWLEDGED; no real resend performed."
+ },
+ "next": "Preserve completed current-version cases without unchanged reruns. Select a distinct uncompleted qualified roadmap slice from exact retained coverage. Keep actual same-DB fresh-process recovery and all live authority/delivery gates separate; publish only a separately reviewed dependency-complete batch."
+}
