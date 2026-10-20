@@ -1,0 +1,316 @@
+{
+  "schemaVersion": 1,
+  "slice": "OCT21_P1_DECLARED_NONCE_THRESHOLD_BINDING_V1",
+  "status": "SELECTED_LOCAL_DECLARED_NONCE_CHECKS_PASSED",
+  "baseline": {
+    "repository": "edgepillar/zenon-x402-poc",
+    "commit": "e9704899f6865de84adcc54d1332469f7d2d16df",
+    "tree": "f88f143729b849a4106ea6c7908c2f073dc9039a"
+  },
+  "roadmapLane": "P1-A: exact supplied unsigned block, hash, original price/resource selection, and fixed-cost declared nonce predicate",
+  "implementation": {
+    "module": "src/zenon/dynamic-plasma-user-send-work-binding.js",
+    "exports": [
+      "validateZenonUnsignedUserSendWork",
+      "bindZenonUnsignedUserSendWork"
+    ],
+    "predicate": "For positive declared safe-integer difficulty d: SHA3-256(addressCore20 || previousHash32), then SHA3-256(nonce8 || dataHash32); interpret the first eight digest bytes as unsigned LE64 and require value >= 2^64 - floor(2^64/d).",
+    "zeroDifficulty": "Follow the pinned node verifier's skip branch without claiming sufficient Plasma, and do not invent a zero-nonce restriction.",
+    "reuse": "The standalone path first validates the existing exact unsigned block hash. The combined path captures and reuses the existing intent/hash/price consumer, then checks that same returned detached block's supplied nonce.",
+    "resourceBound": "Two additional fixed-size SHA3 inputs (52 and 40 bytes) and one eight-iteration LE64 assembly, no nonce search, generation, increment or native work producer.",
+    "boundaries": "Separate opt-in direct import only. No existing source, default buyer/preparer, package, workflow, signing, publication, durable state or authority is changed.",
+    "receipt": "Detached frozen DATA with explicit scope/version and no authority. Nested hash-only receipt keeps its original NOT_PERFORMED work label; the separate work record states only its own declared predicate result.",
+    "narrowerThanNode": "The shared unsigned snapshot accepts safe-integer difficulty only, not the entire uint64 range."
+  },
+  "normativeSource": {
+    "repository": "zenon-network/go-zenon",
+    "commit": "e58d8e80eabd9fd5630ed62e0707424d96b5303c",
+    "files": [
+      {
+        "path": "pow/pow.go",
+        "bytes": 2730,
+        "LF": 110,
+        "sha256": "2f8f84a91d0281ad84f787bdb4c4a972f21f2c89206231d0e9e054180bb82249",
+        "gitBlob": "b13cc0eceb1a9841a9fb9cd6f3448f04b7fcde61"
+      },
+      {
+        "path": "common/crypto/hash.go",
+        "bytes": 471,
+        "LF": 32,
+        "sha256": "7b94f17b28e88591846753ddc54a206fd3f2e267d628108c04a0b815fba967ed",
+        "gitBlob": "d7b538496f0cf3dd6499e0e4ea76dd4ebb1f290b"
+      },
+      {
+        "path": "common/types/hash.go",
+        "bytes": 1679,
+        "LF": 93,
+        "sha256": "6fcf015180e1fe10dc97a8d4b7fbf4deb2c8edbbcf9e895410ac613a7f25c12d",
+        "gitBlob": "b9f52e57fdbd8f59d31650e7581225f374bcc49c"
+      },
+      {
+        "path": "chain/nom/account_block.go",
+        "bytes": 13686,
+        "LF": 447,
+        "sha256": "ac3fa4c6c159a8e5f79a184a4fbde9585e36055ee5ef88ad691af4cdd81a8817",
+        "gitBlob": "996e0a3faa19ea45554893a31cf869fba7679db7"
+      },
+      {
+        "path": "verifier/account_block.go",
+        "bytes": 13161,
+        "LF": 495,
+        "sha256": "1e25042eb00afbd71f43981c4a94ce9341bf45bd80bd14f994952c0d513c70f3",
+        "gitBlob": "c5c7ac5f791142d07b083ecd6d8a913e79a0bd07"
+      }
+    ],
+    "references": [
+      "https://github.com/zenon-network/go-zenon/blob/e58d8e80eabd9fd5630ed62e0707424d96b5303c/pow/pow.go",
+      "https://github.com/zenon-network/go-zenon/blob/e58d8e80eabd9fd5630ed62e0707424d96b5303c/verifier/account_block.go"
+    ],
+    "evidence": "Pinned source read only; no Go compilation/execution or deployed-binary conformance claim."
+  },
+  "qualification": {
+    "completedAt": "2026-10-20T23:25:34.812Z",
+    "runtime": {
+      "name": "Node.js",
+      "version": "24.19.0",
+      "platform": "darwin",
+      "arch": "arm64",
+      "sha256": "ab982ffe2d922fd0625872f3474c4264ad09b04ab0a375eb3e77dac92f64508a"
+    },
+    "counts": {
+      "tests": 12,
+      "suites": 0,
+      "pass": 12,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "passNames": [
+      "declared work validates the supplied hash and fixed nonce against the pinned LE64 predicate",
+      "declared work uses exact fixed nonce bytes and unsigned threshold arithmetic without searching",
+      "declared work rejects hash-correct arbitrary high-difficulty nonces that the hash-only path accepts",
+      "declared work requires the actual block hash and never repairs stale or changed supplied bytes",
+      "declared zero difficulty skips the nonce predicate without claiming sufficient Plasma or work",
+      "work binding reuses the real intent hash and original price selection for the same detached block",
+      "work binding rejects invalid hybrid work even when actual fields and original price selection match",
+      "work consistency alone cannot replace independently bound payment selected fields or current price limits",
+      "work binding uses the captured implementation without virtual preparer signer or work callbacks",
+      "work APIs reject hostile descriptors proxies unsafe difficulty and arity without invoking hooks",
+      "work binding retains the pre-await checked bytes and returns detached serializable data without authority",
+      "work module stays opt-in fixed-cost and separate from generators owners SDK signing and publication"
+    ],
+    "selection": "Twelve distinct new authored registrations; no previously completed 82-test hash lane or 10-test collection lane rerun.",
+    "graph": {
+      "files": 16,
+      "bytes": 211725,
+      "pins": [
+        {
+          "path": "src/zenon/transaction-planner.js",
+          "bytes": 16004,
+          "LF": 337,
+          "sha256": "54c7cc2c4ac4dbae890a4f1b1b2dcb9a3f2fdacb9998ea318b8c9beb40922825",
+          "gitBlob": "74c06c920acfc44f5ac31942612230ba3117ef2e"
+        },
+        {
+          "path": "src/zenon/bounded-dynamic-plasma-strategy.js",
+          "bytes": 15729,
+          "LF": 353,
+          "sha256": "7b82560bdeb25e573912090a2fe8de7b45912500a7a7c4434fe06dcf94e06d62",
+          "gitBlob": "ee85b7a4da8bf4190ae099e6bc5074059fccebbc"
+        },
+        {
+          "path": "src/canonical.js",
+          "bytes": 967,
+          "LF": 26,
+          "sha256": "0d55ddf1727cafb0dcd46df2922305568615552a4d2ae34a5c30e90b9d8d998c",
+          "gitBlob": "5367f9c72ee13017a61630e1f0cffdced21d52c4"
+        },
+        {
+          "path": "src/x402-wire.js",
+          "bytes": 39886,
+          "LF": 934,
+          "sha256": "5fba91af5a352f62d1a335c7176a45a604e2af5d92b1c4b0e53825c1f20d4e56",
+          "gitBlob": "fb060d4e349b1c31a1219a0cc137af250a8a2291"
+        },
+        {
+          "path": "src/zenon/dynamic-plasma-required-fused-policy-adapter.js",
+          "bytes": 12024,
+          "LF": 272,
+          "sha256": "e2b693d4df9065d44ba590f4d0c8dffeb8e55187668eedfa396b4026c9905c3e",
+          "gitBlob": "b592aafd4c41461318376ea9acc1373f99317455"
+        },
+        {
+          "path": "src/zenon/dynamic-plasma-observation-normalizer.js",
+          "bytes": 28398,
+          "LF": 698,
+          "sha256": "2c3f7d42ded21a5513ff26c23a00a35a53aa334f053d10930f1571a020286897",
+          "gitBlob": "c406db8471aa6c8afd812c222c673c809491cf00"
+        },
+        {
+          "path": "src/zenon/dynamic-plasma-json-rpc-read-transport.js",
+          "bytes": 10832,
+          "LF": 283,
+          "sha256": "fd03b2ad87d16660aa61d3961c163d724d5f89cd6d4bb9c4391d739566d5e5ca",
+          "gitBlob": "0475b7ab42889f67fb030fa7344d73d8bd6957d7"
+        },
+        {
+          "path": "src/zenon/bounded-json-rpc-read-core.js",
+          "bytes": 20906,
+          "LF": 563,
+          "sha256": "5572d24175455c6b3a9924688d601d31585454ce62dac9eb27151d2a65c83fcd",
+          "gitBlob": "c0266d1367f842d502f48e6c230611b85320cb0f"
+        },
+        {
+          "path": "src/zenon/dynamic-plasma-price-policy.js",
+          "bytes": 14957,
+          "LF": 418,
+          "sha256": "41e2e2044597cfa69c5adca292bcd762a189076be1cd939bec10798d7e35c52b",
+          "gitBlob": "ed505153487adb5284d895c922641b6de5d9caf8"
+        },
+        {
+          "path": "src/zenon/dynamic-plasma-compatibility.js",
+          "bytes": 7732,
+          "LF": 225,
+          "sha256": "b3989ce15e5f2e9d07b0ed035fe96bcce9f22cac93f5e497fdca5c37bf7618dd",
+          "gitBlob": "3811b748b3f905e454c8a4af4650bb7f89eb1cf2"
+        },
+        {
+          "path": "src/zenon/dynamic-plasma-required-fused-quote.js",
+          "bytes": 5416,
+          "LF": 133,
+          "sha256": "f5e10ff2dbfff3b6b63d87f0abadd0bb52b5d6b8fe0ead6a55fc5ea14207b730",
+          "gitBlob": "e820fd31ffde4ef77a2efa6e1fd3ed1775778726"
+        },
+        {
+          "path": "src/zenon/plasma-strategy.js",
+          "bytes": 974,
+          "LF": 32,
+          "sha256": "1c597d4e169ba8a5e6d2b7852c4ffa3a8ec9b854332fe354b9b013c36ebae093",
+          "gitBlob": "5cddc2d270aaf043e6e43145e95ffe0be3dde475"
+        },
+        {
+          "path": "package.json",
+          "bytes": 1413,
+          "LF": 40,
+          "sha256": "8c9a25504fbf6f87c31cdf245a6f4eec5a88cc89c8352151dc66a577c5771ef5",
+          "gitBlob": "ec7193f6fd76f34778515079dc777594175c4c34"
+        },
+        {
+          "path": "test-support/phase2a-account-block-preimage.js",
+          "bytes": 7724,
+          "LF": 210,
+          "sha256": "dde02531faaf3c45c5ab9760beba84fe56664f923c1d61fa64b077682d97dc0e",
+          "gitBlob": "a6a48b0ea2f105a3bcc82c76fe02531eea18f8e0"
+        },
+        {
+          "path": "src/zenon/dynamic-plasma-user-send-work-binding.js",
+          "bytes": 4732,
+          "LF": 103,
+          "sha256": "2ecc56698c906795982b19641ad104fb9e1586e4a0fe4d643def9d870a72bd47",
+          "gitBlob": "49b8334221c57b5c4788e3f763cd1333e5709297"
+        },
+        {
+          "path": "qualification/dynamic-plasma-user-send-work.behavior.draft.mjs",
+          "bytes": 24031,
+          "LF": 421,
+          "sha256": "201cb5ee6fdc1b2cdc420796c94fc8dc608fc3bc6b6e4895787f087dce8bcad9",
+          "gitBlob": "9eb6aab55a8109d937d28fec97dc8e53acbc50d5"
+        }
+      ]
+    },
+    "vectors": "Only predeclared fixed nonce literals. The independent oracle uses a fixed core encoder and native LE64 read rather than the production address decoder/eight-step assembly. Both SHA3 implementations rely on Node's native hash primitive.",
+    "positiveScope": "Standalone low declared difficulty and the zero-difficulty combined fusion path; no generated valid hybrid nonce or real preparation/inclusion matrix is claimed.",
+    "negativeScope": "Hash-correct high-difficulty nonce rejection; invalid hybrid nonce despite matching original price fields; stale hash, misbound payment, wrong selected allocation, expired price window, hostile descriptors/proxies, unsafe difficulty, arity, phase and mutation checks.",
+    "launch": {
+      "entry": "qualification/dynamic-plasma-user-send-work.behavior.draft.mjs",
+      "emptyInheritedEnvironment": true,
+      "environment": [
+        "TZ=UTC",
+        "LANG=C",
+        "LC_ALL=C"
+      ],
+      "flags": [
+        "--permission",
+        "--disallow-code-generation-from-strings",
+        "--no-addons",
+        "--no-warnings",
+        "--eval"
+      ],
+      "exactReadFilesOnly": true,
+      "fsReadDirectoryGrant": false,
+      "fsWriteGrant": false,
+      "childWorkerAddonGrant": false,
+      "noCollectorOrHttpsOwnerReadOrImport": true,
+      "inlineCommonJsCaller": "process.exitCode = 125;\nconst { run } = require('node:test');\nconst { tap } = require('node:test/reporters');\nconst { Writable, pipeline, finished } = require('node:stream');\nconst selections = {\n  \"qualification/dynamic-plasma-user-send-work.behavior.draft.mjs\": [\n    \"declared work validates the supplied hash and fixed nonce against the pinned LE64 predicate\",\n    \"declared work uses exact fixed nonce bytes and unsigned threshold arithmetic without searching\",\n    \"declared work rejects hash-correct arbitrary high-difficulty nonces that the hash-only path accepts\",\n    \"declared work requires the actual block hash and never repairs stale or changed supplied bytes\",\n    \"declared zero difficulty skips the nonce predicate without claiming sufficient Plasma or work\",\n    \"work binding reuses the real intent hash and original price selection for the same detached block\",\n    \"work binding rejects invalid hybrid work even when actual fields and original price selection match\",\n    \"work consistency alone cannot replace independently bound payment selected fields or current price limits\",\n    \"work binding uses the captured implementation without virtual preparer signer or work callbacks\",\n    \"work APIs reject hostile descriptors proxies unsafe difficulty and arity without invoking hooks\",\n    \"work binding retains the pre-await checked bytes and returns detached serializable data without authority\",\n    \"work module stays opt-in fixed-cost and separate from generators owners SDK signing and publication\"\n  ]\n};\nlet selected = 'unselected';\n(async () => {\n  if (process.versions.node !== '24.19.0' || process.argv.length !== 2\n      || process.platform !== 'darwin' || process.arch !== 'arm64') throw Error('RUNTIME_OR_ARGUMENTS');\n  selected = Object.keys(selections).find(p => process.argv[1] === process.cwd() + '/' + p);\n  if (!selected) { selected = 'unselected'; throw Error('SELECTION'); }\n  const expected = selections[selected], seen = new Set(), reported = new Set();\n  const counts = new Map(), plans = [];\n  let bad = false, ended = false, reporterDone = false, versions = 0, bytes = 0, pending = '';\n  const known = name => expected.includes(name);\n  process.stdout.write('# entry ' + selected + '\\n# Node ' + process.versions.node\n    + ' platform=' + process.platform + ' arch=' + process.arch + '\\n');\n  function safeLine(line) {\n    let match;\n    if (line === 'TAP version 13') { versions++; return line; }\n    if ((match = /^# Subtest: (.+)$/.exec(line))) {\n      if (known(match[1])) return line;\n      bad = true;\n    } else if ((match = /^(ok|not ok) \\d+ - (.+)$/.exec(line))) {\n      if (!known(match[2]) || reported.has(match[2]) || match[1] !== 'ok') bad = true;\n      if (known(match[2])) { reported.add(match[2]); return line; }\n    } else if ((match = /^1\\.\\.(\\d+)$/.exec(line))) {\n      plans.push(Number(match[1])); return line;\n    } else if ((match = /^# (tests|suites|pass|fail|cancelled|skipped|todo) (\\d+)$/.exec(line))) {\n      if (counts.has(match[1])) bad = true;\n      counts.set(match[1], Number(match[2])); return line;\n    } else if (/^Bail out!/.test(line)) bad = true;\n    return null; // Do not publish physical locations, stacks or arbitrary diagnostics.\n  }\n  const source = run({\n    files: [process.argv[1]], isolation: 'none', concurrency: false,\n    timeout: 5000, forceExit: false, watch: false,\n  });\n  source.on('test:pass', data => {\n    if (!known(data.name) || seen.has(data.name) || data.nesting !== 0\n        || (data.skip !== undefined && data.skip !== false)\n        || (data.todo !== undefined && data.todo !== false)) bad = true;\n    seen.add(data.name);\n  });\n  source.on('test:fail', () => { bad = true; });\n  source.on('error', () => { bad = true; });\n  source.once('end', () => { ended = true; });\n  const sourceDone = new Promise(resolve => {\n    finished(source, { writable: false }, error => { if (error) bad = true; resolve(); });\n  });\n  const sink = new Writable({\n    write(chunk, encoding, callback) {\n      try {\n        bytes += Buffer.byteLength(chunk);\n        if (bytes > 65536) throw Error('REPORTER_CAP');\n        pending += String(chunk);\n        const lines = pending.split('\\n'); pending = lines.pop();\n        const safe = lines.map(safeLine).filter(line => line !== null);\n        if (safe.length) process.stdout.write(safe.join('\\n') + '\\n', callback);\n        else callback();\n      } catch { callback(Error('REPORTER_FAILED')); }\n    },\n    final(callback) { if (pending !== '') bad = true; callback(); },\n  });\n  const reporter = source.compose(tap);\n  const reportDone = new Promise(resolve => {\n    pipeline(reporter, sink, error => { reporterDone = !error; if (error) bad = true; resolve(); });\n  });\n  await Promise.all([sourceDone, reportDone]);\n  const zero = ['suites', 'fail', 'cancelled', 'skipped', 'todo'];\n  if (bad || !ended || !reporterDone || versions !== 1 || plans.length !== 1\n      || plans[0] !== expected.length || seen.size !== expected.length\n      || reported.size !== expected.length || !expected.every(name => seen.has(name) && reported.has(name))\n      || counts.get('tests') !== expected.length || counts.get('pass') !== expected.length\n      || !zero.every(key => counts.get(key) === 0)\n      || process.exitCode !== 125) throw Error('INCOMPLETE_OR_UNEXPECTED_RESULTS');\n  process.exitCode = 0;\n  process.stdout.write('# qualification PASS ' + selected + '\\n');\n})().catch(() => {\n  if ([undefined, 0, 125].includes(process.exitCode)) process.exitCode = 1;\n  process.stderr.write('qualification caller failed\\n');\n  process.stdout.write('# qualification FAIL ' + selected + '\\n');\n});",
+      "joinedSourceAndReporter": true,
+      "nodeTestTimeoutMs": 5000,
+      "actualPassNamesMatchExactAuthoredRegistrations": true
+    },
+    "actual": {
+      "nativeNodeCommands": 1,
+      "taskState": "CLOSED",
+      "taskOutcome": "SUCCESS",
+      "captureState": "COMPLETE",
+      "actualExit": 0,
+      "outputComplete": true,
+      "reason": null
+    },
+    "streams": {
+      "stdout": {
+        "bytes": 2869,
+        "sha256": "22cc5f3af53c9d35c260139d416266b68c1ea2389e45c2c0c05fda786be3dd89",
+        "content": "# entry qualification/dynamic-plasma-user-send-work.behavior.draft.mjs\n# Node 24.19.0 platform=darwin arch=arm64\nTAP version 13\n# Subtest: declared work validates the supplied hash and fixed nonce against the pinned LE64 predicate\nok 1 - declared work validates the supplied hash and fixed nonce against the pinned LE64 predicate\n# Subtest: declared work uses exact fixed nonce bytes and unsigned threshold arithmetic without searching\nok 2 - declared work uses exact fixed nonce bytes and unsigned threshold arithmetic without searching\n# Subtest: declared work rejects hash-correct arbitrary high-difficulty nonces that the hash-only path accepts\nok 3 - declared work rejects hash-correct arbitrary high-difficulty nonces that the hash-only path accepts\n# Subtest: declared work requires the actual block hash and never repairs stale or changed supplied bytes\nok 4 - declared work requires the actual block hash and never repairs stale or changed supplied bytes\n# Subtest: declared zero difficulty skips the nonce predicate without claiming sufficient Plasma or work\nok 5 - declared zero difficulty skips the nonce predicate without claiming sufficient Plasma or work\n# Subtest: work binding reuses the real intent hash and original price selection for the same detached block\nok 6 - work binding reuses the real intent hash and original price selection for the same detached block\n# Subtest: work binding rejects invalid hybrid work even when actual fields and original price selection match\nok 7 - work binding rejects invalid hybrid work even when actual fields and original price selection match\n# Subtest: work consistency alone cannot replace independently bound payment selected fields or current price limits\nok 8 - work consistency alone cannot replace independently bound payment selected fields or current price limits\n# Subtest: work binding uses the captured implementation without virtual preparer signer or work callbacks\nok 9 - work binding uses the captured implementation without virtual preparer signer or work callbacks\n# Subtest: work APIs reject hostile descriptors proxies unsafe difficulty and arity without invoking hooks\nok 10 - work APIs reject hostile descriptors proxies unsafe difficulty and arity without invoking hooks\n# Subtest: work binding retains the pre-await checked bytes and returns detached serializable data without authority\nok 11 - work binding retains the pre-await checked bytes and returns detached serializable data without authority\n# Subtest: work module stays opt-in fixed-cost and separate from generators owners SDK signing and publication\nok 12 - work module stays opt-in fixed-cost and separate from generators owners SDK signing and publication\n1..12\n# tests 12\n# suites 0\n# pass 12\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# qualification PASS qualification/dynamic-plasma-user-send-work.behavior.draft.mjs\n"
+      },
+      "stderr": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "content": ""
+      }
+    },
+    "independentlyVerified": {
+      "allRetainedReceiptsAndCasBytes": true,
+      "metadataReadBytes": 45171,
+      "sourceAndRuntimeBeforeAfterAndIndependentCurrentStable": true,
+      "onlyOwnedEmptyRegisteredScratchClosed": true,
+      "removedScratchBytes": 0,
+      "processGroupObservedEmptyAfterJoin": true
+    },
+    "limits": {
+      "expectedBytes": 4194304,
+      "quotaBytes": 8388608,
+      "stdoutCap": 65536,
+      "stderrCapAtMost": 1048576,
+      "minFreeBytes": 10737418240
+    },
+    "caveat": "Node loader/runner/stream/native/OS behavior remains a premise. Test timeout, permission flags, sampled quota and a later empty process group are not hard OS/network sandbox, lifetime/cancellation or native-cleanup proof."
+  },
+  "remainingGates": [
+    "Actual SDK unsigned preparation and PoW generation",
+    "Key/address/signature and independent payer/provider/policy authority",
+    "Authenticated current context, runtime p, funding and real provider READY",
+    "Full preparation/signing/inclusion price-movement and recovery matrix",
+    "Actual HTTPS owner lifecycle/native transport qualification",
+    "Durability, commit uncertainty and restart/recovery",
+    "Live-chain, service delivery and pilot acceptance"
+  ],
+  "publicationBoundary": {
+    "candidate": "Exactly this new module, its new selected fixture and this result; existing main entries unchanged.",
+    "excluded": "Unexecuted local collection/HTTPS owner changes and their fixture/result are not included.",
+    "CI": "NOT_RUN; no workflow/dispatch/install/build or old CI claim.",
+    "activation": "DEFAULT_OFF; not production or live qualification"
+  },
+  "protectedTotals": {
+    "consumedAdmissions": 2,
+    "actualPrepare": 1,
+    "bundles": 0,
+    "nativeChainProviderQualificationRuns": 0
+  },
+  "preserved": {
+    "realSigner": "DISABLED",
+    "originalPaymentAndRequestBytesHashPayloadRequirementsContext": "UNCHANGED",
+    "consumedAuthority": "NOT_RESET",
+    "pr193": "VALIDATED exact-same-signed-block resend remains distinct from UNKNOWN and ACKNOWLEDGED",
+    "automationModelAndExternalWorker": "UNTOUCHED"
+  }
+}
