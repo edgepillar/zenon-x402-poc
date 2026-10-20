@@ -77,13 +77,7 @@ jobs:
               "Sequential core ownership labels are frozen DATA without constructor hooks or SQL authority"
             ]
           };
-          let ready = false, selected = 'unselected';
-          process.once('beforeExit', () => {
-            const success = ready && process.exitCode === 125;
-            if (success) process.exitCode = 0;
-            else if ([undefined, 0, 125].includes(process.exitCode)) process.exitCode = 1;
-            process.stdout.write('# qualification ' + (success ? 'PASS ' : 'FAIL ') + selected + '\n');
-          });
+          let selected = 'unselected';
           (async () => {
             if (process.versions.node !== '24.19.0' || process.argv.length !== 2
                 || process.platform !== 'linux') throw Error('RUNTIME_OR_ARGUMENTS');
@@ -152,9 +146,15 @@ jobs:
                 || plans[0] !== expected.length || seen.size !== expected.length
                 || reported.size !== expected.length || !expected.every(name => seen.has(name) && reported.has(name))
                 || counts.get('tests') !== expected.length || counts.get('pass') !== expected.length
-                || !zero.every(key => counts.get(key) === 0)) throw Error('INCOMPLETE_OR_UNEXPECTED_RESULTS');
-            ready = true;
-          })().catch(() => { process.stderr.write('qualification caller failed\n'); });
+                || !zero.every(key => counts.get(key) === 0)
+                || process.exitCode !== 125) throw Error('INCOMPLETE_OR_UNEXPECTED_RESULTS');
+            process.exitCode = 0;
+            process.stdout.write('# qualification PASS ' + selected + '\n');
+          })().catch(() => {
+            if ([undefined, 0, 125].includes(process.exitCode)) process.exitCode = 1;
+            process.stderr.write('qualification caller failed\n');
+            process.stdout.write('# qualification FAIL ' + selected + '\n');
+          });
           NODE
           )"
           run_one() {
