@@ -9,25 +9,25 @@ import { Buffer } from 'node:buffer';
 assert.equal(process.versions.node, '24.19.0');
 assert.equal(process.argv.length, 2);
 const pins = [
-  ["../src/zenon/transaction-planner.js", 13096, "41b4fbabc4a7d5fa873c09d6dbf9779452713aa95394a526a5344857422bbf15"],
-  ["../src/zenon/bounded-dynamic-plasma-strategy.js", 14445, "791721f06f651636e1943b163dffea2d9a4518f4f0a635e2f73c0a2b7ce7cb5a"],
+  ["../src/zenon/transaction-planner.js", 16004, "54c7cc2c4ac4dbae890a4f1b1b2dcb9a3f2fdacb9998ea318b8c9beb40922825"],
+  ["../src/zenon/bounded-dynamic-plasma-strategy.js", 15729, "7b82560bdeb25e573912090a2fe8de7b45912500a7a7c4434fe06dcf94e06d62"],
   ["../src/canonical.js", 967, "0d55ddf1727cafb0dcd46df2922305568615552a4d2ae34a5c30e90b9d8d998c"],
   ["../src/x402-wire.js", 39886, "5fba91af5a352f62d1a335c7176a45a604e2af5d92b1c4b0e53825c1f20d4e56"],
   ["../src/zenon/dynamic-plasma-required-fused-policy-adapter.js", 12024, "e2b693d4df9065d44ba590f4d0c8dffeb8e55187668eedfa396b4026c9905c3e"],
   ["../src/zenon/dynamic-plasma-observation-collector.js", 33780, "dd298d4cb2ec1c5e2afb7d0fcc51f94f37c3b3793be3e70dc1ce113f2f0f413e"],
   ["../src/zenon/dynamic-plasma-observation-normalizer.js", 28398, "2c3f7d42ded21a5513ff26c23a00a35a53aa334f053d10930f1571a020286897"],
-  ["../src/zenon/dynamic-plasma-json-rpc-read-transport.js", 9063, "f89d9b40b2b0d3ec009365be8a7682bc5f0c4821a258ab5993c5782951f2bc6c"],
+  ["../src/zenon/dynamic-plasma-json-rpc-read-transport.js", 10832, "fd03b2ad87d16660aa61d3961c163d724d5f89cd6d4bb9c4391d739566d5e5ca"],
   ["../src/zenon/bounded-json-rpc-read-core.js", 20906, "5572d24175455c6b3a9924688d601d31585454ce62dac9eb27151d2a65c83fcd"],
   ["../src/zenon/dynamic-plasma-price-policy.js", 14957, "41e2e2044597cfa69c5adca292bcd762a189076be1cd939bec10798d7e35c52b"],
   ["../src/zenon/dynamic-plasma-compatibility.js", 7732, "b3989ce15e5f2e9d07b0ed035fe96bcce9f22cac93f5e497fdca5c37bf7618dd"],
   ["../src/zenon/dynamic-plasma-required-fused-quote.js", 5416, "f5e10ff2dbfff3b6b63d87f0abadd0bb52b5d6b8fe0ead6a55fc5ea14207b730"],
   ["../src/zenon/plasma-strategy.js", 974, "1c597d4e169ba8a5e6d2b7852c4ffa3a8ec9b854332fe354b9b013c36ebae093"],
   ["../package.json", 1413, "8c9a25504fbf6f87c31cdf245a6f4eec5a88cc89c8352151dc66a577c5771ef5"],
-  ["../test/dynamic-plasma-price-policy.test.js", 28827, "ef0a10a700d4c8eff4baec05bf2ba058cd76e61a8b5e6675ed3ba6ade1cf9229"],
+  ["../test/dynamic-plasma-price-policy.test.js", 28827, "ab6591d268744f611bd5f04f3c199ee53dcf45d871e0b89ac49c57f4981039b5"],
   ["./dynamic-plasma-price-policy-frontier-binding.behavior.draft.mjs", 8745, "d7f672ee4464bd002e893e231dec5acc85785db2407f7df25fa601d74f972409"],
   ["./dynamic-plasma-required-fused-policy-adapter.behavior.draft.mjs", 17942, "8f641945d9f699579a2440a7c6f90e16c4d1712e0e042e9135f0468a8db514f1"],
-  ["./dynamic-plasma-four-field-strategy.behavior.draft.mjs", 13760, "eb983d201c81fc160708aa52d0a6a908828d313d96778a7fe873c0e77e72faee"],
-  ["./dynamic-plasma-request-bound-policy.behavior.draft.mjs", 26304, "914a4ce847afa3fe516c6ed751b26d94d7a50197dd3fde07b1f46ce195e02115"],
+  ["./dynamic-plasma-four-field-strategy.behavior.draft.mjs", 13760, "7d8e8a975aab82f54889d1a9544a25f2a73ce958cd369d4ee76c5c6021787621"],
+  ["./dynamic-plasma-request-bound-policy.behavior.draft.mjs", 26305, "0a1e7ad8860504b7ba07b8f38d212915bff189f7f3bbea2ad822cd3b077348dd"],
 ];
 for (const [path, bytes, sha256] of pins) {
   const raw = readFileSync(new URL(path, import.meta.url));

@@ -37,6 +37,7 @@ const BECH32 = 'qpzry9x8gf2tvdw0s3jn54khce6mua7l';
 const BECH32_GENERATORS = freeze([0x3b6a57b2, 0x26508e6d, 0x1ea119fa, 0x3d4233dd, 0x2a1462b3]);
 const REQUEST_FIELDS = freeze(['method', 'params']);
 const QUOTE_FIELDS = freeze(['address', 'blockType', 'toAddress', 'data']);
+const HASH_CORE_FIELDS = freeze(['address', 'toAddress', 'tokenStandard']);
 const FRONTIER = 'ledger.getFrontierMomentum';
 const HEIGHT = 'ledger.getMomentumsByHeight';
 const SPORK = 'embedded.spork.getAll';
@@ -60,6 +61,24 @@ export function snapshotDynamicPlasmaQuoteRequest(input) {
     return encodeQuoteRequest(input, false);
   } catch {
     const code = 'dynamic_plasma_quote_request_input_rejected';
+    const error = new TypeErrorConstructor(code);
+    defineProperty(error, 'code', { value: code, enumerable: true });
+    defineProperty(error, 'stack', { value: 'TypeError: ' + code, enumerable: false });
+    throw freeze(error);
+  }
+}
+
+/** Pure UserSend hash-encoding cores; no transport, SDK or chain lookup. */
+export function decodeZenonUserSendHashCores(input) {
+  try {
+    if (arguments.length !== 1) invalid();
+    const fields = exactObject(input, HASH_CORE_FIELDS, false);
+    return freeze({
+      address: address(fields.address), toAddress: address(fields.toAddress),
+      tokenStandard: tokenStandardCore(fields.tokenStandard),
+    });
+  } catch {
+    const code = 'zenon_user_send_hash_core_input_rejected';
     const error = new TypeErrorConstructor(code);
     defineProperty(error, 'code', { value: code, enumerable: true });
     defineProperty(error, 'stack', { value: 'TypeError: ' + code, enumerable: false });
@@ -233,6 +252,30 @@ function address(value) {
     encoded += BECH32[(checksum >>> (5 * index)) & 31];
   }
   if (encoded !== value) invalid();
+  return freeze(bytes);
+}
+
+function tokenStandardCore(value) {
+  if (typeof value !== 'string' || value.length !== 26
+      || value[0] !== 'z' || value[1] !== 't' || value[2] !== 's' || value[3] !== '1') invalid();
+  let checksum = 1;
+  for (const word of [3, 3, 3, 0, 26, 20, 19]) checksum = polymodStep(checksum, word);
+  let accumulator = 0, bits = 0;
+  const bytes = [];
+  for (let index = 4; index < 26; index += 1) {
+    const word = indexOf(BECH32, value[index]);
+    if (word < 0) invalid();
+    checksum = polymodStep(checksum, word);
+    if (index < 20) {
+      accumulator = (accumulator << 5) | word;
+      bits += 5;
+      if (bits >= 8) { bits -= 8; append(bytes, (accumulator >>> bits) & 255); }
+    }
+  }
+  if (checksum !== 1 || bytes.length !== 10 || bits !== 0) invalid();
+  //16 five-bit words are exactly80 bits: no padding/alias representation.
+  // A checksum-valid ZTS does not establish asset existence or ownership.
+  return freeze(bytes);
 }
 
 function invalid() {

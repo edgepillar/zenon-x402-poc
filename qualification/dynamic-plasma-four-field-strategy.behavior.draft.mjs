@@ -8,8 +8,8 @@ import { Buffer } from 'node:buffer';
 // authenticate observations, sign, publish, or qualify a chain/provider pilot.
 assert.equal(process.argv.length, 2);
 const pins = [
-  ['../src/zenon/bounded-dynamic-plasma-strategy.js', 14445,
-    '791721f06f651636e1943b163dffea2d9a4518f4f0a635e2f73c0a2b7ce7cb5a'],
+  ['../src/zenon/bounded-dynamic-plasma-strategy.js', 15729,
+    '7b82560bdeb25e573912090a2fe8de7b45912500a7a7c4434fe06dcf94e06d62'],
   ['../src/zenon/plasma-strategy.js', 974,
     '1c597d4e169ba8a5e6d2b7852c4ffa3a8ec9b854332fe354b9b013c36ebae093'],
   ['../src/zenon/dynamic-plasma-required-fused-policy-adapter.js', 12024,

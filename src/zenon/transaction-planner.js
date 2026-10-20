@@ -1,5 +1,6 @@
 import { types as utilTypes } from 'node:util';
 import { Buffer } from 'node:buffer';
+import { createHash } from 'node:crypto';
 import { paymentIntentDigest, sha256Hex } from '../canonical.js';
 import {
   EXPERIMENTAL_LIVE_NETWORK,
@@ -8,7 +9,10 @@ import {
   validatePaymentRequired,
   validateCanonicalZenonAmount,
 } from '../x402-wire.js';
-import { snapshotDynamicPlasmaQuoteRequest } from './dynamic-plasma-json-rpc-read-transport.js';
+import {
+  snapshotDynamicPlasmaQuoteRequest,
+  decodeZenonUserSendHashCores,
+} from './dynamic-plasma-json-rpc-read-transport.js';
 
 const freeze = Object.freeze;
 const create = Object.create;
@@ -32,6 +36,8 @@ const VALIDATE_CHALLENGE = validatePaymentRequired;
 const VALIDATE_AMOUNT = validateCanonicalZenonAmount;
 const INTENT_DIGEST = paymentIntentDigest;
 const SUBJECT_DIGEST = sha256Hex;
+const HASH_CORES = decodeZenonUserSendHashCores;
+const CREATE_HASH = createHash;
 const HASH = /^[0-9a-f]{64}$/;
 const NONCE = /^[0-9a-f]{16}$/;
 const PUBLIC_KEY = /^[A-Za-z0-9+/]{43}=$/;
@@ -176,6 +182,59 @@ export function snapshotZenonUnsignedUserSendFields(input) {
       fieldDigest: 'sha256:' + SUBJECT_DIGEST(['zenon-x402-unsigned-user-send-fields/v1', accountBlock]),
     });
   } catch { rejectBinding(); }
+}
+
+/**
+ * Check one declared unsigned UserSend's hash using the existing SDK1.0.5
+ * 306-byte encoding contract, without importing/evaluating the SDK. Reuse the
+ * closed raw-field snapshot and address codec; ZTS cores require checksum.
+ * This is NOT preparation, PoW/nonce validity, key/address binding, signing,
+ * authenticated account/chain state, SDK qualification or signing authority.
+ * Public key/signature are not part of this hash preimage; signature stays
+ * empty through the unsigned-field snapshot. The original input is unchanged.
+ */
+export function validateZenonUnsignedUserSendHash(input) {
+  try {
+    if (arguments.length !== 1) rejectBinding();
+    const fields = snapshotZenonUnsignedUserSendFields(input);
+    const block = fields.accountBlock;
+    const cores = HASH_CORES({
+      address: block.address, toAddress: block.toAddress, tokenStandard: block.tokenStandard,
+    });
+    const sha3 = value => CREATE_HASH('sha3-256').update(value).digest();
+    const preimage = Buffer.concat([
+      unsignedBE(block.version, 8), unsignedBE(block.chainIdentifier, 8), unsignedBE(block.blockType, 8),
+      Buffer.from(block.previousHash, 'hex'), unsignedBE(block.height, 8),
+      Buffer.from(block.momentumAcknowledged.hash, 'hex'), unsignedBE(block.momentumAcknowledged.height, 8),
+      Buffer.from(cores.address), Buffer.from(cores.toAddress), unsignedBE(block.amount, 32),
+      Buffer.from(cores.tokenStandard), Buffer.from(block.fromBlockHash, 'hex'),
+      sha3(Buffer.alloc(0)), sha3(Buffer.from(block.data, 'base64')),
+      unsignedBE(block.fusedPlasma, 8), unsignedBE(block.difficulty, 8), Buffer.from(block.nonce, 'hex'),
+    ]);
+    if (preimage.length !== 306) rejectBinding();
+    const computedHash = sha3(preimage).toString('hex');
+    if (block.hash !== computedHash) rejectBinding();
+    return freeze({
+      unsignedHashValidationVersion: 1, scope: 'DECLARED_UNSIGNED_USER_SEND_HASH_CONSISTENCY',
+      encoding: 'SDK105_ACCOUNT_BLOCK_V1_USER_SEND_306_BYTES', preimageBytes: 306,
+      algorithm: 'sha3-256', computedHash, accountBlock: fields.accountBlock,
+      subjectDigest: fields.subjectDigest, fieldDigest: fields.fieldDigest,
+      hashValidation: 'MATCHES_SUPPLIED_FIELDS', workValidation: 'NOT_PERFORMED',
+      keyAddressBinding: 'NOT_PERFORMED', chainAuthentication: 'NOT_ESTABLISHED',
+      authority: 'NONE', afterSigningAction: 'NONE',
+    });
+  } catch { rejectBinding(); }
+}
+
+function unsignedBE(value, width) {
+  let integer = BigInt(value);
+  if (integer < 0n) rejectBinding();
+  const bytes = Buffer.alloc(width);
+  for (let index = width - 1; index >= 0; index -= 1) {
+    bytes[index] = Number(integer & 255n); integer >>= 8n;
+  }
+  if (integer !== 0n) rejectBinding();
+  return bytes;
 }
 
 function snapshotSubject(value) {

@@ -3,6 +3,7 @@ import { PlasmaStrategy } from './plasma-strategy.js';
 import {
   snapshotZenonUserSendPolicyBinding,
   snapshotZenonUnsignedUserSendFields,
+  validateZenonUnsignedUserSendHash,
 } from './transaction-planner.js';
 import {
   classifyDynamicPlasmaCompatibility,
@@ -25,6 +26,7 @@ const SELECT_FOUR_FIELD = selectDynamicPlasmaRequiredFusedPolicyFields;
 const VALIDATE_FOUR_FIELD = validateDynamicPlasmaRequiredFusedPolicySelection;
 const SNAPSHOT_USER_SEND = snapshotZenonUserSendPolicyBinding;
 const SNAPSHOT_UNSIGNED_FIELDS = snapshotZenonUnsignedUserSendFields;
+const VALIDATE_UNSIGNED_HASH = validateZenonUnsignedUserSendHash;
 const ownKeys = Reflect.ownKeys;
 const getDescriptor = Object.getOwnPropertyDescriptor;
 const getPrototypeOf = Object.getPrototypeOf;
@@ -195,6 +197,27 @@ export class BoundedDynamicPlasmaStrategy extends PlasmaStrategy {
       const sourceQuote = userSendQuote(quote, value.binding);
       requireSubjectAcknowledgement(value.binding, sourceQuote);
       return bindPreparedFields(value, sourceQuote, accountBlock);
+    } catch { reject(); }
+  }
+
+  /** Explicit hash-and-price consistency, NOT SDK preparation or work proof. */
+  async bindHashedUserSend(context, quote, accountBlock) {
+    try {
+      if (arguments.length !== 3) reject();
+      const value = userSendContext(context);
+      const sourceQuote = userSendQuote(quote, value.binding);
+      requireSubjectAcknowledgement(value.binding, sourceQuote);
+      const hashed = VALIDATE_UNSIGNED_HASH(accountBlock);
+      const bound = bindPreparedFields(value, sourceQuote, hashed.accountBlock);
+      return freeze({
+        unsignedHashBindingVersion: 1, scope: 'DECLARED_UNSIGNED_USER_SEND_HASH_AND_PRICE_BINDING',
+        accountBlock: bound.accountBlock, selection: bound.selection,
+        subjectDigest: bound.subjectDigest, intentDigest: bound.intentDigest, fieldDigest: bound.fieldDigest,
+        computedHash: hashed.computedHash, encoding: hashed.encoding, preimageBytes: hashed.preimageBytes,
+        hashValidation: 'MATCHES_SUPPLIED_FIELDS', workValidation: 'NOT_PERFORMED',
+        keyAddressBinding: 'NOT_PERFORMED', chainAuthentication: 'NOT_ESTABLISHED',
+        authority: 'NONE', afterSigningAction: 'NONE',
+      });
     } catch { reject(); }
   }
 }
