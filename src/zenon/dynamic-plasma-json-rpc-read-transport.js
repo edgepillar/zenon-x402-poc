@@ -27,6 +27,7 @@ const toString = String;
 const objectPrototype = Object.prototype;
 const arrayPrototype = Array.prototype;
 const isProxy = utilTypes.isProxy;
+const TypeErrorConstructor = TypeError;
 const indexOf = Function.call.bind(String.prototype.indexOf);
 
 const INVALID = Symbol('invalid Dynamic Plasma read request');
@@ -52,6 +53,20 @@ export function createDynamicPlasmaJsonRpcReadTransport(options) {
   );
 }
 
+/** Pure request DATA snapshot; does not construct or invoke a transport. */
+export function snapshotDynamicPlasmaQuoteRequest(input) {
+  try {
+    if (arguments.length !== 1) invalid();
+    return encodeQuoteRequest(input, false);
+  } catch {
+    const code = 'dynamic_plasma_quote_request_input_rejected';
+    const error = new TypeErrorConstructor(code);
+    defineProperty(error, 'code', { value: code, enumerable: true });
+    defineProperty(error, 'stack', { value: 'TypeError: ' + code, enumerable: false });
+    throw freeze(error);
+  }
+}
+
 function snapshotRequest(request) {
   const fields = exactObject(request, REQUEST_FIELDS);
   const method = fields.method;
@@ -70,17 +85,27 @@ function snapshotRequest(request) {
     params = `[${toString(items[0])},128]`;
   } else if (method === QUOTE) {
     const items = exactArray(fields.params, 1);
-    const quote = exactObject(items[0], QUOTE_FIELDS);
-    address(quote.address);
-    address(quote.toAddress);
-    if (quote.blockType !== 2) invalid();
-    base64Data(quote.data);
-    params = `[{"address":"${quote.address}","blockType":2,"toAddress":"${quote.toAddress}","data":"${quote.data}"}]`;
+    params = encodeQuoteRequest(items[0], true).canonicalParams;
   } else invalid();
   const result = create(null);
   put(result, 'method', method);
   put(result, 'params', params);
   return freeze(result);
+}
+
+function encodeQuoteRequest(input, requireFrozen) {
+  const quote = exactObject(input, QUOTE_FIELDS, requireFrozen);
+  address(quote.address);
+  address(quote.toAddress);
+  if (quote.blockType !== 2) invalid();
+  base64Data(quote.data);
+  return freeze({
+    requestSnapshotVersion: 1,
+    quoteRequest: freeze({
+      address: quote.address, blockType: 2, toAddress: quote.toAddress, data: quote.data,
+    }),
+    canonicalParams: `[{"address":"${quote.address}","blockType":2,"toAddress":"${quote.toAddress}","data":"${quote.data}"}]`,
+  });
 }
 
 function exactObject(value, fields, requireFrozen = true) {

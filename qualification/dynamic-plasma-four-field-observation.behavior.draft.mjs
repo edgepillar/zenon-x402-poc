@@ -8,10 +8,10 @@ import { Buffer } from 'node:buffer';
 // No HTTP transport, SDK, wallet, signature generation or live RPC is used.
 assert.equal(process.argv.length, 2);
 const pins = [
-  ['../src/zenon/dynamic-plasma-observation-collector.js', 32190,
-    'efffca482782d9c1e8d324e9d8e0db1d2ea45327bb33ad846b34cf0917feabed'],
-  ['../src/zenon/dynamic-plasma-observation-normalizer.js', 23771,
-    'a6a04dc52a52df0b583b64343946a59eb91b2e42101a6eb386e209f0e8d68e1e'],
+  ['../src/zenon/dynamic-plasma-observation-collector.js', 33780,
+    'dd298d4cb2ec1c5e2afb7d0fcc51f94f37c3b3793be3e70dc1ce113f2f0f413e'],
+  ['../src/zenon/dynamic-plasma-observation-normalizer.js', 28398,
+    '2c3f7d42ded21a5513ff26c23a00a35a53aa334f053d10930f1571a020286897'],
   ['../src/zenon/bounded-dynamic-plasma-strategy.js', 5024,
     '8e9fb69300e15994b244e94e58070e47faffab6516a3c83e6096b15bfe0ea8f1'],
   ['../src/zenon/plasma-strategy.js', 974,

@@ -1,4 +1,5 @@
 import { types as utilTypes } from 'node:util';
+import { snapshotDynamicPlasmaQuoteRequestContext } from './dynamic-plasma-observation-normalizer.js';
 
 // This dependent observation producer deliberately has no execution authority.
 // Its output matches the detached schema-v1 normalizer input, which does not
@@ -8,6 +9,9 @@ import { types as utilTypes } from 'node:util';
 // An own enumerable DATA requiredFusedObservationVersion: 1 opts into the
 // separate schema-v2 four-field result. This retains the fused-only TOTAL;
 // it does not persist the request commitment or add execution authority.
+// An additional own DATA quoteRequestContextVersion: 1 separately selects
+// schema-v3 request-context retention. It is not durable custody or signing
+// authorization; the four-field selector remains version 1.
 //
 // Raw fields follow the reviewed go-zenon source: chain/nom/momentum.go,
 // rpc/api/{ledger,ledger_types}.go, rpc/api/embedded/{spork,plasma}.go, and
@@ -74,6 +78,7 @@ const OPTION_FIELDS = freeze(['transports']);
 const TRANSPORT_FIELDS = freeze(['callRead']);
 const INPUT_FIELDS = freeze(['phase', 'expectedChainProfile', 'compiledSporkIds', 'quoteRequest']);
 const FOUR_FIELD_INPUT_FIELDS = freeze([...INPUT_FIELDS, 'requiredFusedObservationVersion']);
+const REQUEST_BOUND_INPUT_FIELDS = freeze([...FOUR_FIELD_INPUT_FIELDS, 'quoteRequestContextVersion']);
 const PROFILE_FIELDS = freeze(['version', 'chainIdentifier', 'genesisMomentumHash']);
 const COMPILED_FIELDS = freeze(['dynamicPlasmaId', 'libp2pId']);
 const QUOTE_REQUEST_FIELDS = freeze(['address', 'blockType', 'toAddress', 'data']);
@@ -135,6 +140,14 @@ export const DYNAMIC_PLASMA_REQUIRED_FUSED_OBSERVATION_COLLECTOR_CONTRACT = free
   requiredRpcFields: FOUR_FIELD_QUOTE_FIELDS,
 });
 
+export const DYNAMIC_PLASMA_REQUEST_BOUND_OBSERVATION_COLLECTOR_CONTRACT = freeze({
+  ...DYNAMIC_PLASMA_REQUIRED_FUSED_OBSERVATION_COLLECTOR_CONTRACT,
+  schemaVersion: 3,
+  quoteRequestContextVersion: 1,
+  requestContextVersion: 1,
+  quoteRequestCommitment: 'RETAINED_DETACHED_DATA_NOT_AUTHENTICATED_OR_DURABLE',
+});
+
 export function createDynamicPlasmaObservationCollector(options) {
   let firstCallRead;
   let secondCallRead;
@@ -184,6 +197,10 @@ export function createDynamicPlasmaObservationCollector(options) {
         endpointObservations: freeze([first.endpoint, second.endpoint]),
       };
       if (snapshot.fourField) put(output, 'requiredFusedObservationVersion', 1);
+      if (snapshot.observationVersion === 2) {
+        put(output, 'quoteRequestContextVersion', 1);
+        put(output, 'quoteRequestContext', snapshot.quoteRequestContext);
+      }
       freeze(output);
       // No intervening await or user callback is permitted between this check
       // and the sole ordinary-object async return in this module.
@@ -200,8 +217,11 @@ function snapshotInput(input) {
   if (typeof input !== 'object' || input === null || isProxy(input) ||
       getPrototypeOf(input) !== objectPrototype) invalid();
   const fourField = getOwnPropertyDescriptor(input, 'requiredFusedObservationVersion') !== undefined;
-  const top = exactObject(input, fourField ? FOUR_FIELD_INPUT_FIELDS : INPUT_FIELDS, objectPrototype);
+  const requestBound = getOwnPropertyDescriptor(input, 'quoteRequestContextVersion') !== undefined;
+  const top = exactObject(input, requestBound ? REQUEST_BOUND_INPUT_FIELDS
+    : fourField ? FOUR_FIELD_INPUT_FIELDS : INPUT_FIELDS, objectPrototype);
   if (fourField && top.requiredFusedObservationVersion !== 1) invalid();
+  if (requestBound && (top.requiredFusedObservationVersion !== 1 || top.quoteRequestContextVersion !== 1)) invalid();
   if (top.phase !== 'UNSIGNED') invalid();
   const profile = exactObject(top.expectedChainProfile, PROFILE_FIELDS, objectPrototype);
   if (profile.version !== 1 || typeof profile.chainIdentifier !== 'string' ||
@@ -217,8 +237,9 @@ function snapshotInput(input) {
   address(quote.toAddress, true);
   if (quote.blockType !== 2) invalid();
   base64Bytes(quote.data, 32);
-  return freeze({
+  const snapshot = {
     fourField,
+    observationVersion: requestBound ? 2 : fourField ? 1 : 0,
     expectedChainProfile: freeze({
       version: 1,
       chainIdentifier: profile.chainIdentifier,
@@ -234,7 +255,14 @@ function snapshotInput(input) {
       toAddress: quote.toAddress,
       data: quote.data,
     }),
-  });
+  };
+  if (snapshot.observationVersion === 2) {
+    put(snapshot, 'quoteRequestContext', snapshotDynamicPlasmaQuoteRequestContext({
+      requestContextVersion: 1, expectedChainProfile: snapshot.expectedChainProfile,
+      compiledSporkIds: snapshot.compiledSporkIds, quoteRequest: snapshot.quoteRequest,
+    }));
+  }
+  return freeze(snapshot);
 }
 
 async function collectEndpoint(callRead, quoteRequest, fourField) {

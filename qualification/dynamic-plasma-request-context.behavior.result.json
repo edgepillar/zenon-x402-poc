@@ -1,0 +1,335 @@
+{
+  "schema": "x402-dp-request-context-local-result/v1",
+  "scope": "OCT21_P1_QUOTE_REQUEST_CONTEXT_RETENTION_V1",
+  "status": "PASSED_SELECTED_LOCAL_DECLARED_REQUEST_CONTEXT_WITH_REGRESSIONS",
+  "completedAt": "2026-10-20T21:30:09.254Z",
+  "sourceReference": {
+    "basePublicMain": "ac698cbab767517e5729141e51afd29990af6ba2",
+    "priorSourcePins": [
+      {
+        "path": "src/zenon/dynamic-plasma-observation-collector.js",
+        "bytes": 32190,
+        "LF": 830,
+        "sha256": "efffca482782d9c1e8d324e9d8e0db1d2ea45327bb33ad846b34cf0917feabed",
+        "gitBlob": "aac96c04b59a8b19de0b1ed11b175f1d0dec2a65"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-observation-normalizer.js",
+        "bytes": 23771,
+        "LF": 613,
+        "sha256": "a6a04dc52a52df0b583b64343946a59eb91b2e42101a6eb386e209f0e8d68e1e",
+        "gitBlob": "17322126ffdf506b0fdbac9990ed065b7c13478c"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-json-rpc-read-transport.js",
+        "bytes": 8165,
+        "LF": 215,
+        "sha256": "8d0a8faa7339cee209b8ae4726aa0d7d0a4e4f6827007721d04ad5d591da74c2",
+        "gitBlob": "b30065406431eb75189a4a3b855b93f0dde83182"
+      }
+    ],
+    "contentPinsAuthoritativeForChangedLocalFiles": true,
+    "hostedQualification": "NOT_RUN"
+  },
+  "implemented": {
+    "productionFiles": [
+      "src/zenon/dynamic-plasma-observation-collector.js",
+      "src/zenon/dynamic-plasma-observation-normalizer.js",
+      "src/zenon/dynamic-plasma-json-rpc-read-transport.js"
+    ],
+    "pureExports": [
+      "snapshotDynamicPlasmaQuoteRequest(input)",
+      "snapshotDynamicPlasmaQuoteRequestContext(input)"
+    ],
+    "existingFunctionsExtended": [
+      "createDynamicPlasmaObservationCollector(options).collect(input)",
+      "normalizeDynamicPlasmaObservation(input, expectedDigest)"
+    ],
+    "namespace": "requiredFusedObservationVersion: 1 PLUS an additional enumerable own DATA quoteRequestContextVersion: 1 selects schema3. Earlier selectors remain unchanged.",
+    "hash": {
+      "algorithm": "SHA-256",
+      "domain": "zenon-x402-dp-quote-request-context/v1",
+      "preimage": "JSON array [domain, profile.version, profile.chainIdentifier, profile.genesisMomentumHash, compiled.dynamicPlasmaId, compiled.libp2pId, canonicalQuoteParams].",
+      "requestContextVersion": 1,
+      "boundFields": [
+        "address",
+        "blockType",
+        "toAddress",
+        "data",
+        "expected chain profile",
+        "compiled spork IDs"
+      ],
+      "excludes": "Not a full unsigned AccountBlock/payment-intent digest; does not bind amount/token/nonce, authenticated RPC origin, actual runtime p, an endpoint identity or signing authority."
+    },
+    "behavior": [
+      "Reuse the existing closed RPC quote parameter grammar for pure detached request snapshots; the existing transport still requires frozen read requests and frozen quote parameters.",
+      "Capture a detached request-context snapshot/digest synchronously before the first injected read. Retain it in the collector result, including an unavailable result.",
+      "Rebuild the supplied context using the declared profile and compiled IDs during normalization; reject changed request fields, hashes or independently supplied expected digest.",
+      "With a matching expectedDigest, label MATCHES_DECLARED_EXPECTED_REQUEST_CONTEXT. Without expectedDigest, label only SELF_CONSISTENT_DECLARED_REQUEST_ONLY.",
+      "Require the new schema for an explicit expectedDigest argument; old schemas cannot silently ignore a request to verify an expected context. Ordinary one-argument schema1/schema2 paths retain their prior behavior.",
+      "Continue all existing endpoint, frontier, profile, spork, variable and V2 total/difficulty checks. Failed results retain NOT_ESTABLISHED request binding.",
+      "Retain existing unsigned/busy gates and powerless chainAuthentication/canonicality/finality/afterSigningAction labels."
+    ],
+    "selfConsistencyIsNotAuthentication": "The fixture deliberately constructs another coherent context. It is admitted only as SELF_CONSISTENT when no expected digest is supplied and is refused against the original expected digest. Even a match proves only equality to caller-declared expected DATA.",
+    "retentionIsNotDurabilityOrCustody": true,
+    "noNewOperationalHelperFileHostOrIndependentStrategy": true,
+    "existingHttpsOwner": {
+      "sourceBlob": "a091fe8a2e404f7e98f53c0581b15753bff9dc34",
+      "finding": "Already forwards observe input to collector.collect and normalizes the result without filtering the input tag. No owner Source edit was needed.",
+      "evidenceLimit": "Source routing only. Native HTTPS success, physical closure and independent expected-digest enforcement at that owner were NOT executed or qualified. Its one-argument normalizer call would produce only SELF_CONSISTENT context DATA."
+    },
+    "activeBuyerSdkSignerTransportDefaultsOrPaymentPathChanged": false
+  },
+  "preservedSource": {
+    "collectorNativePromiseDrainAndInvariantRegionByteIdentical": true,
+    "collectorLosslessParserAndErrorFooterByteIdentical": true,
+    "boundedJsonRpcCoreUnmodified": true,
+    "oldObservationFixture": {
+      "priorSHA256": "de98d5a1b1ddfb4e0be0ba31ab94f3ce71fe7e701604b6d6d8ffb9a672bdb5c0",
+      "onlyEdits": "Two size/SHA source-guard literal pairs for the changed collector/normalizer.",
+      "inverseSHA256": "de98d5a1b1ddfb4e0be0ba31ab94f3ce71fe7e701604b6d6d8ffb9a672bdb5c0",
+      "allTenScenarioBodiesByteIdentical": true,
+      "historicalResultRewritten": false,
+      "changedGraphIsWhyTheseTenCasesWereRequalified": true
+    },
+    "previousStrategyTwentyAndUnchangedQuoteAdapterCasesRerun": false,
+    "existingFullVmAndNativeOwnerSuitesRun": false
+  },
+  "exactExecutedReadClosure": [
+    {
+      "path": "src/zenon/dynamic-plasma-observation-collector.js",
+      "bytes": 33780,
+      "LF": 858,
+      "sha256": "dd298d4cb2ec1c5e2afb7d0fcc51f94f37c3b3793be3e70dc1ce113f2f0f413e",
+      "gitBlob": "ba27dedaf91b5f3fd0547b17641bfd0fcf620e7f"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-observation-normalizer.js",
+      "bytes": 28398,
+      "LF": 698,
+      "sha256": "2c3f7d42ded21a5513ff26c23a00a35a53aa334f053d10930f1571a020286897",
+      "gitBlob": "c406db8471aa6c8afd812c222c673c809491cf00"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-json-rpc-read-transport.js",
+      "bytes": 9063,
+      "LF": 240,
+      "sha256": "f89d9b40b2b0d3ec009365be8a7682bc5f0c4821a258ab5993c5782951f2bc6c",
+      "gitBlob": "cc954865cad6ddf79938a42ab2fb5bdd46f57492"
+    },
+    {
+      "path": "src/zenon/bounded-json-rpc-read-core.js",
+      "bytes": 20906,
+      "LF": 563,
+      "sha256": "5572d24175455c6b3a9924688d601d31585454ce62dac9eb27151d2a65c83fcd",
+      "gitBlob": "c0266d1367f842d502f48e6c230611b85320cb0f"
+    },
+    {
+      "path": "src/zenon/bounded-dynamic-plasma-strategy.js",
+      "bytes": 5024,
+      "LF": 135,
+      "sha256": "8e9fb69300e15994b244e94e58070e47faffab6516a3c83e6096b15bfe0ea8f1",
+      "gitBlob": "fdca613e2a9af7e73c8ebab813893a068216495d"
+    },
+    {
+      "path": "src/zenon/plasma-strategy.js",
+      "bytes": 974,
+      "LF": 32,
+      "sha256": "1c597d4e169ba8a5e6d2b7852c4ffa3a8ec9b854332fe354b9b013c36ebae093",
+      "gitBlob": "5cddc2d270aaf043e6e43145e95ffe0be3dde475"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-required-fused-policy-adapter.js",
+      "bytes": 8050,
+      "LF": 205,
+      "sha256": "6be7cdd599adb153cda29272bc503d185014718398886b35546756383b4e18ac",
+      "gitBlob": "406c02ca8d266b7da182fc195f9759fc3526f822"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-required-fused-quote.js",
+      "bytes": 5416,
+      "LF": 133,
+      "sha256": "f5e10ff2dbfff3b6b63d87f0abadd0bb52b5d6b8fe0ead6a55fc5ea14207b730",
+      "gitBlob": "e820fd31ffde4ef77a2efa6e1fd3ed1775778726"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-compatibility.js",
+      "bytes": 7732,
+      "LF": 225,
+      "sha256": "b3989ce15e5f2e9d07b0ed035fe96bcce9f22cac93f5e497fdca5c37bf7618dd",
+      "gitBlob": "3811b748b3f905e454c8a4af4650bb7f89eb1cf2"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-price-policy.js",
+      "bytes": 14957,
+      "LF": 418,
+      "sha256": "41e2e2044597cfa69c5adca292bcd762a189076be1cd939bec10798d7e35c52b",
+      "gitBlob": "ed505153487adb5284d895c922641b6de5d9caf8"
+    },
+    {
+      "path": "package.json",
+      "bytes": 1413,
+      "LF": 40,
+      "sha256": "8c9a25504fbf6f87c31cdf245a6f4eec5a88cc89c8352151dc66a577c5771ef5",
+      "gitBlob": "ec7193f6fd76f34778515079dc777594175c4c34"
+    },
+    {
+      "path": "qualification/dynamic-plasma-four-field-observation.behavior.draft.mjs",
+      "bytes": 21482,
+      "LF": 406,
+      "sha256": "758e20b0dcf8b974eb7f16d8422e5303ca6eb9e79c3e1bf8c804b707af814cae",
+      "gitBlob": "9558948124a862dd2d38ba8b4c3161e205e9b98a"
+    },
+    {
+      "path": "qualification/dynamic-plasma-request-context.behavior.draft.mjs",
+      "bytes": 21324,
+      "LF": 382,
+      "sha256": "676eb94a7936634b3abc9aa27b0cc6b068fbab0e8975b1b95ebaef7136547965",
+      "gitBlob": "b5810356d863f8241d1dda9bd0f0bd0e14b07388"
+    }
+  ],
+  "execution": {
+    "class": "SELECTED_LOCAL_DECLARED_REQUEST_CONTEXT_WITH_CHANGED_GRAPH_REGRESSIONS",
+    "nativeNodeCommands": 1,
+    "entry": "qualification/dynamic-plasma-request-context.behavior.draft.mjs",
+    "registrationComposition": "Entry explicitly imports the refreshed preceding10-case fixture, then registers12 new cases. No default discovery.",
+    "node": {
+      "version": "24.19.0",
+      "platform": "darwin",
+      "arch": "arm64",
+      "sha256": "ab982ffe2d922fd0625872f3474c4264ad09b04ab0a375eb3e77dac92f64508a"
+    },
+    "controllerRuntime": {
+      "pythonSHA256": "037855106cd54d93abad568c82f87e6419d41df05d116b2a183e57be76ee06d9"
+    },
+    "counts": {
+      "tests": 22,
+      "suites": 0,
+      "pass": 22,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "previousCases": 10,
+    "newCases": 12,
+    "actualPassNames": [
+      "observation pipeline retains the untagged three-field schema and legacy contracts",
+      "four-field raw observations flow through normalization and existing bounded strategy",
+      "four-field observation keeps fused-only total separate from hybrid recommended fields",
+      "four-field normalization refuses incoherent totals and cross-endpoint disagreement",
+      "observation version selection never auto-detects or downgrades RPC fields",
+      "four-field collector rejects unsafe or malformed total integer tokens without rounding",
+      "four-field observations preserve frontier profile spork and unavailable read guards",
+      "four-field pre-DP observations retain base total without claiming active admission",
+      "four-field observation tags and total descriptors refuse hostile hooks before use",
+      "four-field outputs are detached frozen DATA and do not acquire request or signing authority",
+      "quote request snapshot shares the unchanged closed RPC parameter grammar",
+      "quote context digest binds the exact canonical request profile and compiled identities",
+      "collector retains the request snapshot and normalizer matches a separately supplied digest",
+      "collector captures request context before the first asynchronous read can mutate input",
+      "request context normalization refuses mixed requests changed hashes and wrong expected bindings",
+      "self-consistent request DATA is explicitly weaker than a matched expected request",
+      "request context namespace never silently upgrades old observations or ignores expected input",
+      "request context matching does not bypass unavailable frontier profile or quote arithmetic guards",
+      "closed request snapshots refuse malformed addresses data block types extras and unsafe hooks",
+      "context DATA and expected digest guards reject hostile descriptors without coercion",
+      "request context and wire snapshots are detached frozen and stable across DATA roundtrips",
+      "request context admission preserves unsigned and one-attempt busy boundaries"
+    ],
+    "actualPassNamesExactlyMatchAllTwentyTwoAuthoredRegistrations": true,
+    "nativeActualExit": 0,
+    "controllerActualExit": 0,
+    "joined": true,
+    "outputComplete": true,
+    "captureState": "COMPLETE",
+    "taskState": "CLOSED",
+    "taskOutcome": "SUCCESS",
+    "exactPrivateCallsiteContextBeforeAfterAndCurrentSourceRuntimeAndCASOwnershipIndependentlyMatched": true,
+    "completeCommandContextSourceAfterOutcomeCloseCleanupAndCreatorLedgersIndependentlyRead": true,
+    "independentReceiptReadBytes": 43653,
+    "stdout": {
+      "bytes": 4479,
+      "sha256": "ec61628a46650ff21de4cd911b51dbe299b5df4b7ddc2aa15713ad604c26bec6",
+      "content": "# entry qualification/dynamic-plasma-request-context.behavior.draft.mjs\n# Node 24.19.0 platform=darwin arch=arm64\nTAP version 13\n# Subtest: observation pipeline retains the untagged three-field schema and legacy contracts\nok 1 - observation pipeline retains the untagged three-field schema and legacy contracts\n# Subtest: four-field raw observations flow through normalization and existing bounded strategy\nok 2 - four-field raw observations flow through normalization and existing bounded strategy\n# Subtest: four-field observation keeps fused-only total separate from hybrid recommended fields\nok 3 - four-field observation keeps fused-only total separate from hybrid recommended fields\n# Subtest: four-field normalization refuses incoherent totals and cross-endpoint disagreement\nok 4 - four-field normalization refuses incoherent totals and cross-endpoint disagreement\n# Subtest: observation version selection never auto-detects or downgrades RPC fields\nok 5 - observation version selection never auto-detects or downgrades RPC fields\n# Subtest: four-field collector rejects unsafe or malformed total integer tokens without rounding\nok 6 - four-field collector rejects unsafe or malformed total integer tokens without rounding\n# Subtest: four-field observations preserve frontier profile spork and unavailable read guards\nok 7 - four-field observations preserve frontier profile spork and unavailable read guards\n# Subtest: four-field pre-DP observations retain base total without claiming active admission\nok 8 - four-field pre-DP observations retain base total without claiming active admission\n# Subtest: four-field observation tags and total descriptors refuse hostile hooks before use\nok 9 - four-field observation tags and total descriptors refuse hostile hooks before use\n# Subtest: four-field outputs are detached frozen DATA and do not acquire request or signing authority\nok 10 - four-field outputs are detached frozen DATA and do not acquire request or signing authority\n# Subtest: quote request snapshot shares the unchanged closed RPC parameter grammar\nok 11 - quote request snapshot shares the unchanged closed RPC parameter grammar\n# Subtest: quote context digest binds the exact canonical request profile and compiled identities\nok 12 - quote context digest binds the exact canonical request profile and compiled identities\n# Subtest: collector retains the request snapshot and normalizer matches a separately supplied digest\nok 13 - collector retains the request snapshot and normalizer matches a separately supplied digest\n# Subtest: collector captures request context before the first asynchronous read can mutate input\nok 14 - collector captures request context before the first asynchronous read can mutate input\n# Subtest: request context normalization refuses mixed requests changed hashes and wrong expected bindings\nok 15 - request context normalization refuses mixed requests changed hashes and wrong expected bindings\n# Subtest: self-consistent request DATA is explicitly weaker than a matched expected request\nok 16 - self-consistent request DATA is explicitly weaker than a matched expected request\n# Subtest: request context namespace never silently upgrades old observations or ignores expected input\nok 17 - request context namespace never silently upgrades old observations or ignores expected input\n# Subtest: request context matching does not bypass unavailable frontier profile or quote arithmetic guards\nok 18 - request context matching does not bypass unavailable frontier profile or quote arithmetic guards\n# Subtest: closed request snapshots refuse malformed addresses data block types extras and unsafe hooks\nok 19 - closed request snapshots refuse malformed addresses data block types extras and unsafe hooks\n# Subtest: context DATA and expected digest guards reject hostile descriptors without coercion\nok 20 - context DATA and expected digest guards reject hostile descriptors without coercion\n# Subtest: request context and wire snapshots are detached frozen and stable across DATA roundtrips\nok 21 - request context and wire snapshots are detached frozen and stable across DATA roundtrips\n# Subtest: request context admission preserves unsigned and one-attempt busy boundaries\nok 22 - request context admission preserves unsigned and one-attempt busy boundaries\n1..22\n# tests 22\n# suites 0\n# pass 22\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# qualification PASS qualification/dynamic-plasma-request-context.behavior.draft.mjs\n"
+    },
+    "stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "nodeTestTimeoutMs": 5000,
+    "managerTimeoutSeconds": 30,
+    "limitations": [
+      "The codec case invokes the existing JSON-RPC transport/core only with a reviewed in-memory exchange returning declared strings; its rejected publication-method name never reaches that exchange.",
+      "The remaining cases use reviewed in-memory transports and DATA. No real HTTP request, socket, SDK, wallet, generated signature, PoW, SQL, payment or native chain/provider qualification occurred.",
+      "Pristine intrinsics, native loader/builtins/reporting/streams/OS behavior and source-to-import races remain premises.",
+      "Timeouts, exact Node read grants and empty post-join process-group observation do not establish hard lifetime/cancellation/native-cleanup or an OS/network sandbox.",
+      "These 22 top-level cases are a finite selected component result, not full suite, production readiness, authenticated quote origin or live pilot acceptance."
+    ]
+  },
+  "preExecutionReadOnlyDiagnostic": {
+    "retained": true,
+    "status": "INVERSE_PATTERN_FORMATTING_REFUSAL",
+    "description": "A read-only file-hash collector initially refused because an inverse-pin pattern encoded a literal backslash-n. The pattern was corrected to four unique token replacements; the exact prior SHA-256 then matched. No test or repository-module import ran in either read-only collector. The refusal is not counted as an executed or passed assertion."
+  },
+  "launch": {
+    "caller": "Reviewed inline CommonJS explicit node:test run API with joined source/report streams, sentinel exit and exact PASS-name/counter checks.",
+    "entrySelection": "ONE_EXPLICIT_POSITIONAL_FILE with reviewed transitive prior fixture import; no default test discovery.",
+    "environment": "env -i TZ=UTC LANG=C LC_ALL=C",
+    "filesystemReads": "Only the 13 exact files in exactExecutedReadClosure; no directory expansion.",
+    "permissions": "--permission; no filesystem-write, child-process, worker or addon grant.",
+    "restrictions": [
+      "--no-addons",
+      "--disallow-code-generation-from-strings"
+    ],
+    "inputTypeOverride": false,
+    "expectedDescriptorOutput": "TAP/stdout/stderr",
+    "noSDKSQLNetworkPoWSigningPaymentBuildInstallOrHostedCIExecution": true
+  },
+  "storage": {
+    "approvedExistingTaskStorageManager": true,
+    "implementationSHA256": "a4d82a72214c9698fda7ae363c38b2470c08da5e2e04c63ee9284e43f638f081",
+    "exactMountedVolumeAndExistingPrivateRootVerified": true,
+    "productionPolicyUnchanged": true,
+    "minimumFreeBytes": 10737418240,
+    "freshUniqueProjectAndOwnedTask": true,
+    "expectedBytes": 4194304,
+    "quotaBytes": 8388608,
+    "reservationsAreNotPreallocationOrHardNativeQuotas": true,
+    "rawStreamBytes": 4479,
+    "oneCASObjectPerDigest": true,
+    "stdoutCreatorAndExistingEmptyStderrCreatorLedgerVerified": true,
+    "sourceCopiesDownloadsArchivesOrPortableExports": 0,
+    "singleCommandAvoidedSecondTaskAdmissionAndCaptureOverhead": true,
+    "taskClosedWithSuccess": true,
+    "cleanupOnlyOwnRegisteredEmptyScratch": true,
+    "cleanupRecordedScratchBytes": 0,
+    "noHistoricalTaskObjectOrLegacyCleanup": true,
+    "noOwnershipResetOrRebinding": true,
+    "runtimeDigestReuse": "Previously verified binary digests reused only after exact nine-field identity matches. Before/after/independent-current source and runtime bindings matched."
+  },
+  "preservation": {
+    "unrelatedEditsAndUncertainWorkerCandidateTargetsUntouched": true,
+    "originalPaymentRequestBytesHashPayloadRequirementsContextAndConsumedAuthorityUnchanged": true,
+    "realSigner": "DISABLED",
+    "PR193Boundaries": "VALIDATED exact-same-signed-block resend remains separate from UNKNOWN/ACKNOWLEDGED; no replacement/re-signing, #165 ownership retry or consumed-authority reset.",
+    "protectedChainTotals": {
+      "consumedAdmissions": 2,
+      "actualPrepare": 1,
+      "bundles": 0,
+      "nativeChainProviderQualificationRuns": 0
+    },
+    "localNodeComponentExecutionReportedSeparately": true,
+    "noAutomationOrWorkerSettingChange": true
+  },
+  "remainingAcceptanceGates": {
+    "expectedContextAuthorityAndBindingToActualUnsignedBlockIntent": "NOT_ESTABLISHED",
+    "realHttpsOwnerExpectedContextEnforcementAndPhysicalLifecycle": "NOT_QUALIFIED",
+    "RPCOriginCanonicalityFinalityRuntimePAndSubjectOwnership": "NOT_ESTABLISHED",
+    "activeSDKUnsignedPreparationPoWSigningInclusionAndPriceMovementRecovery": "NOT_RUN",
+    "fundingPayerProviderPolicyAuthorityAndRealProviderREADY": "SEPARATE_GATES",
+    "durableSamePaymentPendingRecoveryServiceDeliveryAndProcessRestart": "NOT_QUALIFIED",
+    "productionReadiness": "NOT_ESTABLISHED"
+  },
+  "overallRoadmapComplete": false
+}

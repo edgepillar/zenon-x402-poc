@@ -1,6 +1,8 @@
 import { TextEncoder, types as utilTypes } from 'node:util';
+import { createHash } from 'node:crypto';
 import { classifyDynamicPlasmaCompatibility } from './dynamic-plasma-compatibility.js';
 import { validateDynamicPlasmaRequiredFusedQuote } from './dynamic-plasma-required-fused-quote.js';
+import { snapshotDynamicPlasmaQuoteRequest } from './dynamic-plasma-json-rpc-read-transport.js';
 
 const SCHEMA_VERSION = 1;
 const ENDPOINT_COUNT = 2;
@@ -33,6 +35,15 @@ const TOP_LEVEL_FIELDS = Object.freeze([
 const FOUR_FIELD_TOP_LEVEL_FIELDS = Object.freeze([
   ...TOP_LEVEL_FIELDS, 'requiredFusedObservationVersion',
 ]);
+const REQUEST_BOUND_TOP_LEVEL_FIELDS = Object.freeze([
+  ...FOUR_FIELD_TOP_LEVEL_FIELDS, 'quoteRequestContextVersion', 'quoteRequestContext',
+]);
+const REQUEST_CONTEXT_INPUT_FIELDS = Object.freeze([
+  'requestContextVersion', 'expectedChainProfile', 'compiledSporkIds', 'quoteRequest',
+]);
+const REQUEST_CONTEXT_FIELDS = Object.freeze(['requestContextVersion', 'quoteRequest', 'digest']);
+const REQUEST_CONTEXT_DOMAIN = 'zenon-x402-dp-quote-request-context/v1';
+const SHA256_DIGEST = /^sha256:[0-9a-f]{64}$/;
 const EXPECTED_PROFILE_FIELDS = Object.freeze([
   'version',
   'chainIdentifier',
@@ -103,6 +114,8 @@ const testRegExp = Function.call.bind(RegExp.prototype.test);
 const TypeErrorConstructor = TypeError;
 const typeErrorPrototype = TypeErrorConstructor.prototype;
 const utf8Encoder = new TextEncoder();
+const hashRequest = createHash;
+const stringify = JSON.stringify;
 
 export const DYNAMIC_PLASMA_OBSERVATION_CONTRACT = freeze({
   schemaVersion: SCHEMA_VERSION,
@@ -136,6 +149,41 @@ export const DYNAMIC_PLASMA_REQUIRED_FUSED_OBSERVATION_CONTRACT = freeze({
   preDpValidation: 'TOTAL_EQUALS_BASE_ONLY_NOT_LEGACY_POW_VALIDATION',
 });
 
+export const DYNAMIC_PLASMA_REQUEST_BOUND_OBSERVATION_CONTRACT = freeze({
+  ...DYNAMIC_PLASMA_REQUIRED_FUSED_OBSERVATION_CONTRACT,
+  schemaVersion: 3,
+  quoteRequestContextVersion: 1,
+  requestContextVersion: 1,
+  requestContextDomain: REQUEST_CONTEXT_DOMAIN,
+  quoteRequestCommitment: 'RETAINED_DETACHED_DATA_NOT_AUTHENTICATED_OR_DURABLE',
+});
+
+/**
+ * Capture the exact closed RPC quote-request grammar plus declared profile
+ * and compiled spork IDs. This hash is not a full block/intent digest, proof
+ * of RPC origin, signer state, issuance or authority. No I/O is performed.
+ */
+export function snapshotDynamicPlasmaQuoteRequestContext(input) {
+  if (arguments.length !== 1) reject();
+  const top = exactDataObject(input, REQUEST_CONTEXT_INPUT_FIELDS);
+  if (top.requestContextVersion !== 1) reject();
+  const profile = snapshotExpectedProfile(top.expectedChainProfile);
+  const compiled = snapshotCompiledSporks(top.compiledSporkIds);
+  let request;
+  try { request = snapshotDynamicPlasmaQuoteRequest(top.quoteRequest); }
+  catch { reject(); }
+  const preimage = stringify([
+    REQUEST_CONTEXT_DOMAIN, profile.version, profile.chainIdentifier,
+    profile.genesisMomentumHash, compiled.dynamicPlasmaId, compiled.libp2pId,
+    request.canonicalParams,
+  ]);
+  return freeze({
+    requestContextVersion: 1,
+    quoteRequest: request.quoteRequest,
+    digest: 'sha256:' + hashRequest('sha256').update(preimage, 'utf8').digest('hex'),
+  });
+}
+
 /**
  * Untagged input/output remains the three-field schema-v1 contract. An own
  * enumerable DATA requiredFusedObservationVersion: 1 selects schema v2 and
@@ -145,51 +193,80 @@ export const DYNAMIC_PLASMA_REQUIRED_FUSED_OBSERVATION_CONTRACT = freeze({
  * For PRE_DP, upstream b5f93c20 sets TOTAL=base; this check does not validate
  * legacy PoW arithmetic. Neither mode persists a quote-request commitment or
  * authenticates RPC origin, runtime p, signer state, ancestry or execution.
+ * Additional own DATA quoteRequestContextVersion: 1 selects schema v3 with
+ * the existing four-field selector still 1. A retained request context is
+ * rebuilt against the declared profile/IDs. Optional expectedDigest must match
+ * that rebuilt context. Without it, the result explicitly says SELF_CONSISTENT
+ * only; neither mode authenticates that expected value or grants authority.
  */
-export function normalizeDynamicPlasmaObservation(input) {
+export function normalizeDynamicPlasmaObservation(input, expectedDigest = undefined) {
   if (typeof input !== 'object' || input === null || isProxy(input) ||
       getPrototypeOf(input) !== Object.prototype) reject();
   const fourField = getOwnPropertyDescriptor(input, 'requiredFusedObservationVersion') !== undefined;
-  const top = exactDataObject(input, fourField ? FOUR_FIELD_TOP_LEVEL_FIELDS : TOP_LEVEL_FIELDS);
+  const requestBound = getOwnPropertyDescriptor(input, 'quoteRequestContextVersion') !== undefined;
+  const observationVersion = requestBound ? 2 : fourField ? 1 : 0;
+  const top = exactDataObject(input, observationVersion === 2 ? REQUEST_BOUND_TOP_LEVEL_FIELDS
+    : fourField ? FOUR_FIELD_TOP_LEVEL_FIELDS : TOP_LEVEL_FIELDS);
   if (fourField && top.requiredFusedObservationVersion !== 1) reject();
+  if (requestBound && (top.requiredFusedObservationVersion !== 1 || top.quoteRequestContextVersion !== 1)) reject();
+  if (arguments.length > 2 || (arguments.length > 1 && observationVersion !== 2)) reject();
+  if (expectedDigest !== undefined && (typeof expectedDigest !== 'string'
+      || expectedDigest.length !== 71 || !testRegExp(SHA256_DIGEST, expectedDigest))) reject();
   const expectedProfile = snapshotExpectedProfile(top.expectedChainProfile);
   const compiledSporks = snapshotCompiledSporks(top.compiledSporkIds);
+  let requestContext = null;
+  let requestBinding = 'NOT_ESTABLISHED';
+  if (observationVersion === 2) {
+    const supplied = exactDataObject(top.quoteRequestContext, REQUEST_CONTEXT_FIELDS);
+    if (supplied.requestContextVersion !== 1) reject();
+    requestContext = snapshotDynamicPlasmaQuoteRequestContext({
+      requestContextVersion: 1,
+      expectedChainProfile: expectedProfile, compiledSporkIds: compiledSporks,
+      quoteRequest: supplied.quoteRequest,
+    });
+    if (supplied.digest !== requestContext.digest ||
+        (expectedDigest !== undefined && expectedDigest !== requestContext.digest)) {
+      return evidenceFailure('MISBOUND_OR_INCOHERENT', 'QUOTE_REQUEST_CONTEXT_MISMATCH', 2);
+    }
+    requestBinding = expectedDigest === undefined ? 'SELF_CONSISTENT_DECLARED_REQUEST_ONLY'
+      : 'MATCHES_DECLARED_EXPECTED_REQUEST_CONTEXT';
+  }
   const endpoints = snapshotEndpointArray(top.endpointObservations, fourField);
 
   if (endpoints[0] === null || endpoints[1] === null) {
-    return evidenceFailure('UNAVAILABLE', 'ENDPOINT_DATA_UNAVAILABLE', fourField);
+    return evidenceFailure('UNAVAILABLE', 'ENDPOINT_DATA_UNAVAILABLE', observationVersion);
   }
 
   for (const endpoint of endpoints) {
     if (!equalFrontier(endpoint.beforeFrontier, endpoint.afterFrontier)) {
-      return evidenceFailure('MISBOUND_OR_INCOHERENT', 'FRONTIER_BINDING_MISMATCH', fourField);
+      return evidenceFailure('MISBOUND_OR_INCOHERENT', 'FRONTIER_BINDING_MISMATCH', observationVersion);
     }
     if (endpoint.sporks.list === null ||
         endpoint.sporks.count !== endpoint.sporks.list.length) {
-      return evidenceFailure('UNAVAILABLE', 'SPORK_SNAPSHOT_INCOMPLETE', fourField);
+      return evidenceFailure('UNAVAILABLE', 'SPORK_SNAPSHOT_INCOMPLETE', observationVersion);
     }
   }
 
   if (!equalEndpoint(endpoints[0], endpoints[1], fourField)) {
-    return evidenceFailure('MISBOUND_OR_INCOHERENT', 'ENDPOINT_OBSERVATION_MISMATCH', fourField);
+    return evidenceFailure('MISBOUND_OR_INCOHERENT', 'ENDPOINT_OBSERVATION_MISMATCH', observationVersion);
   }
 
   const observation = endpoints[0];
   if (!profileMatches(expectedProfile, observation)) {
-    return evidenceFailure('MISBOUND_OR_INCOHERENT', 'PROFILE_GENESIS_MISMATCH', fourField);
+    return evidenceFailure('MISBOUND_OR_INCOHERENT', 'PROFILE_GENESIS_MISMATCH', observationVersion);
   }
 
   const dynamicSpork = boundDynamicSpork(observation.sporks.list, compiledSporks);
   if (dynamicSpork === null) {
-    return evidenceFailure('MISBOUND_OR_INCOHERENT', 'SPORK_BINDING_MISMATCH', fourField);
+    return evidenceFailure('MISBOUND_OR_INCOHERENT', 'SPORK_BINDING_MISMATCH', observationVersion);
   }
 
   if (!coherentPlasmaVariables(observation.plasmaVariables)) {
-    return evidenceFailure('MISBOUND_OR_INCOHERENT', 'PLASMA_VARIABLES_INCOHERENT', fourField);
+    return evidenceFailure('MISBOUND_OR_INCOHERENT', 'PLASMA_VARIABLES_INCOHERENT', observationVersion);
   }
 
   if (!coherentFrontierState(observation.beforeFrontier, dynamicSpork)) {
-    return evidenceFailure('MISBOUND_OR_INCOHERENT', 'FRONTIER_SPORK_STATE_INCOHERENT', fourField);
+    return evidenceFailure('MISBOUND_OR_INCOHERENT', 'FRONTIER_SPORK_STATE_INCOHERENT', observationVersion);
   }
 
   if (fourField) {
@@ -202,10 +279,10 @@ export function normalizeDynamicPlasmaObservation(input) {
         });
       } catch (error) {
         if (!knownRequiredFusedInputError(error)) throw error;
-        return evidenceFailure('MISBOUND_OR_INCOHERENT', 'RPC_QUOTE_INCOHERENT', true);
+        return evidenceFailure('MISBOUND_OR_INCOHERENT', 'RPC_QUOTE_INCOHERENT', observationVersion);
       }
     } else if (observation.rpcObservation.requiredFusedPlasma !== observation.rpcObservation.basePlasma) {
-      return evidenceFailure('MISBOUND_OR_INCOHERENT', 'RPC_QUOTE_INCOHERENT', true);
+      return evidenceFailure('MISBOUND_OR_INCOHERENT', 'RPC_QUOTE_INCOHERENT', observationVersion);
     }
   }
 
@@ -225,7 +302,7 @@ export function normalizeDynamicPlasmaObservation(input) {
     if (knownCompatibilityInputError(error)) reject();
     throw error;
   }
-  const normalizedObservation = freeze({
+  const normalizedObservation = {
     expectedChainProfile: expectedProfile,
     compiledSporkIds: compiledSporks,
     beforeFrontier: observation.beforeFrontier,
@@ -234,7 +311,11 @@ export function normalizeDynamicPlasmaObservation(input) {
     plasmaVariables: observation.plasmaVariables,
     rpcObservation: observation.rpcObservation,
     afterFrontier: observation.afterFrontier,
-  });
+  };
+  if (requestContext !== null) {
+    defineProperty(normalizedObservation, 'quoteRequestContext', { value: requestContext, enumerable: true });
+  }
+  freeze(normalizedObservation);
 
   return versionedResult({
     schemaVersion: SCHEMA_VERSION,
@@ -247,7 +328,7 @@ export function normalizeDynamicPlasmaObservation(input) {
     afterSigningAction: 'NONE',
     observation: normalizedObservation,
     compatibility,
-  }, fourField);
+  }, observationVersion, requestBinding);
 }
 
 function snapshotExpectedProfile(value) {
@@ -532,7 +613,7 @@ function equalRpcObservation(left, right, fourField) {
     (!fourField || left.requiredFusedPlasma === right.requiredFusedPlasma);
 }
 
-function evidenceFailure(classification, reason, fourField) {
+function evidenceFailure(classification, reason, observationVersion) {
   return versionedResult({
     schemaVersion: SCHEMA_VERSION,
     classification,
@@ -544,11 +625,15 @@ function evidenceFailure(classification, reason, fourField) {
     afterSigningAction: 'NONE',
     observation: null,
     compatibility: null,
-  }, fourField);
+  }, observationVersion);
 }
 
-function versionedResult(result, fourField) {
-  return fourField ? freeze({ ...result, schemaVersion: 2, requiredFusedObservationVersion: 1 }) : freeze(result);
+function versionedResult(result, observationVersion, requestBinding = 'NOT_ESTABLISHED') {
+  if (observationVersion === 2) {
+    return freeze({ ...result, schemaVersion: 3, requiredFusedObservationVersion: 1, quoteRequestContextVersion: 1,
+      requestContextBinding: requestBinding });
+  }
+  return observationVersion === 1 ? freeze({ ...result, schemaVersion: 2, requiredFusedObservationVersion: 1 }) : freeze(result);
 }
 
 function knownRequiredFusedInputError(error) {
