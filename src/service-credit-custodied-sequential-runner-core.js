@@ -267,6 +267,9 @@ export function createServiceCreditCustodiedSequentialRunnerCore(configuration) 
   function runOriginals(...args) {
     if (args.length !== 1) return rejected('INVALID_INPUT');
     const supplied = args[0];
+    if (APPLY(WEAK_HAS, acceptedArray, [supplied])) {
+      return runCapability.promise;
+    }
     if (!ordinaryArray(supplied)) return rejected('INVALID_INPUT');
     if (runCapability !== null) {
       return APPLY(WEAK_HAS, acceptedArray, [supplied])

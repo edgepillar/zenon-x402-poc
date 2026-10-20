@@ -1,0 +1,259 @@
+{
+  "schemaVersion": 1,
+  "workId": "OCT20_P2_RECEIPT_FIXED_CORE_BORROWED_V2_V3_COMPATIBILITY_V1",
+  "recordedDateUTC": "2026-10-20",
+  "result": "PASSED_SELECTED_DECLARED_INTERFACE_COMPONENT_TESTS",
+  "purpose": "Qualify the accepted-run receipt prototype fix against the preserved borrowed-client V2 and V3 test bodies on the changed exact source graph.",
+  "sourceBase": {
+    "repository": "https://github.com/edgepillar/zenon-x402-poc",
+    "mainCommit": "800556ee2640ae69eec6d6c84bca7c6014afac31",
+    "mainCoreBlob": "c9005ab245f045648d6bf508b9afef6c2d26c583",
+    "candidateCoreBlob": "83122ec62d7701dc1b210438b8be0a9792781433",
+    "otherSixSubjectBlobsMatchPinnedMain": true
+  },
+  "productionChange": {
+    "path": "src/service-credit-custodied-sequential-runner-core.js",
+    "addedLines": 3,
+    "removedLines": 0,
+    "behavior": "Return the existing run Promise for the identical privately accepted array before inspecting its mutable prototype. Foreign arrays retain the existing admission behavior.",
+    "separateRedGreenUnitRecord": "qualification/service-credit-custodied-sequential-runner-accepted-receipt-prototype.behavior.result.json",
+    "separateRecordSHA256": "9e6d1a403d3b7e81b29fcc7f2b197962331b993f994bc88dc47c47cbd5e078e5",
+    "separateUnitWasNotRerunOrCountedHere": true
+  },
+  "preservedEntries": [
+    {
+      "path": "test/service-credit-custodied-sequential-runner-current-compatibility.test.js",
+      "bytes": 44140,
+      "sha256": "a89c0d4119058eceee973fe0c0860521ec37ec36b23ba35ca8e7b61c42be5184",
+      "newEntry": "qualification/service-credit-custodied-runner-receipt-core-v2-compatibility.mjs",
+      "newEntryBytes": 45005,
+      "newEntrySHA256": "c5b26177b33461d08390bee71c89ea3ed8a2b39e1cb60ad5cd06afadb410bb8b",
+      "newEntryGitBlob": "d548606e16a28aa74f7108d89ef8a0b382bc772a",
+      "authoredRegistrations": 8,
+      "derivation": "Add an English provenance comment header and replace exactly one core sourceSpecs tuple. Removing the header and inversing that tuple recovers every original byte; all guards, helpers, assertions and registrations remain unchanged."
+    },
+    {
+      "path": "test/service-credit-custodied-sequential-runner-current-v3.test.js",
+      "bytes": 27809,
+      "sha256": "2788ee1eea7448f412db0451fe9bb18b05a33d8b0b4af6fdf1aba6eff3f71d04",
+      "newEntry": "qualification/service-credit-custodied-runner-receipt-core-v3-compatibility.mjs",
+      "newEntryBytes": 28663,
+      "newEntrySHA256": "c7aacb2ea9ba16dc7505095712ff3a588278ffb74452500622f3fbc68c5aa146",
+      "newEntryGitBlob": "e69088df54fd2c3bae37d6dcae3ef2b137b1748e",
+      "authoredRegistrations": 5,
+      "derivation": "Add an English provenance comment header and replace exactly one core sourceSpecs tuple. Removing the header and inversing that tuple recovers every original byte; all guards, helpers, assertions and registrations remain unchanged."
+    }
+  ],
+  "sourcePinChange": {
+    "from": [
+      "../src/service-credit-custodied-sequential-runner-core.js",
+      15288,
+      479,
+      "36c99342bf9e47559e39535aefcde78acbbdd7fb210d42a77dbbb93c2fd9f8ff"
+    ],
+    "to": [
+      "../src/service-credit-custodied-sequential-runner-core.js",
+      15384,
+      482,
+      "cb2e3fd23a4fdc318902ae95f6f03b3073507ff5ced279626e15151fca171ab2"
+    ]
+  },
+  "subjectGraph": [
+    {
+      "path": "src/service-credit-custodied-sequential-runner.js",
+      "bytes": 4184,
+      "LF": 93,
+      "sha256": "793c2d383e6b96f75ed676fe98a274b8777e293b9bef56eed028f0825df31326",
+      "gitBlob": "1a1dc1069e639b717084916cbefbc4f99e2cc597"
+    },
+    {
+      "path": "src/service-credit-custodied-sequential-runner-core.js",
+      "bytes": 15384,
+      "LF": 482,
+      "sha256": "cb2e3fd23a4fdc318902ae95f6f03b3073507ff5ced279626e15151fca171ab2",
+      "gitBlob": "83122ec62d7701dc1b210438b8be0a9792781433"
+    },
+    {
+      "path": "src/service-credit-custodied-http-client.js",
+      "bytes": 10755,
+      "LF": 292,
+      "sha256": "ddbc54faf4a14d95e6274bc9df27b7b49db251bab67c11b871cfb2f9e78b4f15",
+      "gitBlob": "90fd4c8a2cc8fb552f8eb0cb45607bfa44c61108"
+    },
+    {
+      "path": "src/service-credit-custodied-request-owner.js",
+      "bytes": 35073,
+      "LF": 938,
+      "sha256": "6e7493a4859d48530820e68a4a19a513aad014ffc1048b42965a3ad36ae7c5f7",
+      "gitBlob": "2dee22fd780db9de662fe1243075e74cef0bf296"
+    },
+    {
+      "path": "src/service-credit-http-execute-dispatch.js",
+      "bytes": 27034,
+      "LF": 770,
+      "sha256": "254ba8eef5ea5efb3a1b901be09e9cb33afbc3cfcf63789ca4a23316b6180d1b",
+      "gitBlob": "280dd20dc669e2856d263eba62ccd0fe9af72f21"
+    },
+    {
+      "path": "src/service-credit-original-request-custody-contract.js",
+      "bytes": 14051,
+      "LF": 356,
+      "sha256": "fd349de553a17abcc2e0567ba6640e6e3d5d26cfa79ee1e355928dc9fa8d3915",
+      "gitBlob": "f911d42d01b69e6577f9bcd66f4ed59aab8ab882"
+    },
+    {
+      "path": "package.json",
+      "bytes": 1413,
+      "LF": 40,
+      "sha256": "8c9a25504fbf6f87c31cdf245a6f4eec5a88cc89c8352151dc66a577c5771ef5",
+      "gitBlob": "ec7193f6fd76f34778515079dc777594175c4c34"
+    }
+  ],
+  "runs": [
+    {
+      "selection": "V2",
+      "entry": "qualification/service-credit-custodied-runner-receipt-core-v2-compatibility.mjs",
+      "nodeExit": 0,
+      "parentExit": 0,
+      "joined": true,
+      "parentTimedOut": false,
+      "parentElapsedSeconds": 0.387632,
+      "tests": 8,
+      "pass": 8,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "expectedAuthoredNames": [
+        "two originals use one client and wait for ordered bodyless completion",
+        "structural admission rejects hooks and isolates copied batch strings",
+        "later semantic rejection preserves honest partial completion",
+        "first transport uncertainty stops the queue and preserves failed close",
+        "reentrant run identity cannot admit a replacement list",
+        "manual close fences admission and queued work with one close promise",
+        "actual owner recovery conflict and binding fences prevent transport",
+        "undrained failure and maximum batch keep frozen redacted bounds"
+      ],
+      "actualPASSNamesIndependentlyMatched": true,
+      "sourceBeforeAndAfterIdentical": true,
+      "runtimeIdentityBeforeAndAfterIdentical": true,
+      "stdoutBytes": 1725,
+      "stdoutSHA256": "16c3dfa9ac821ff5604e06b25b0094345f4638dd67f4965c3fe2ef7b6e32cc92",
+      "stderrBytes": 0,
+      "stdoutPostCapExceeded": false,
+      "stderrPostCapExceeded": false,
+      "completeTapStdout": "TAP version 13\n# Subtest: two originals use one client and wait for ordered bodyless completion\nok 1 - two originals use one client and wait for ordered bodyless completion\n  ---\n  duration_ms: 6.635833\n  type: 'test'\n  ...\n# Subtest: structural admission rejects hooks and isolates copied batch strings\nok 2 - structural admission rejects hooks and isolates copied batch strings\n  ---\n  duration_ms: 4.608333\n  type: 'test'\n  ...\n# Subtest: later semantic rejection preserves honest partial completion\nok 3 - later semantic rejection preserves honest partial completion\n  ---\n  duration_ms: 1.401708\n  type: 'test'\n  ...\n# Subtest: first transport uncertainty stops the queue and preserves failed close\nok 4 - first transport uncertainty stops the queue and preserves failed close\n  ---\n  duration_ms: 13.634042\n  type: 'test'\n  ...\n# Subtest: reentrant run identity cannot admit a replacement list\nok 5 - reentrant run identity cannot admit a replacement list\n  ---\n  duration_ms: 1.032334\n  type: 'test'\n  ...\n# Subtest: manual close fences admission and queued work with one close promise\nok 6 - manual close fences admission and queued work with one close promise\n  ---\n  duration_ms: 0.764125\n  type: 'test'\n  ...\n# Subtest: actual owner recovery conflict and binding fences prevent transport\nok 7 - actual owner recovery conflict and binding fences prevent transport\n  ---\n  duration_ms: 1.366958\n  type: 'test'\n  ...\n# Subtest: undrained failure and maximum batch keep frozen redacted bounds\nok 8 - undrained failure and maximum batch keep frozen redacted bounds\n  ---\n  duration_ms: 2.658416\n  type: 'test'\n  ...\n1..8\n# tests 8\n# suites 0\n# pass 8\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 66.701375\n",
+      "completeStderr": ""
+    },
+    {
+      "selection": "V3",
+      "entry": "qualification/service-credit-custodied-runner-receipt-core-v3-compatibility.mjs",
+      "nodeExit": 0,
+      "parentExit": 0,
+      "joined": true,
+      "parentTimedOut": false,
+      "parentElapsedSeconds": 0.070788,
+      "tests": 5,
+      "pass": 5,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "expectedAuthoredNames": [
+        "V3 sequential opt-in fences two originals and preserves the one-shot receipt and borrowed close",
+        "V3 sequential mid-batch refusals preserve partial completion and never dispatch queued originals",
+        "V3 sequential manual close stops queued work while draining the active declared interface",
+        "V3 sequential uncertain first transport drains fake handles and preserves failed close and intent",
+        "Sequential core ownership labels are frozen DATA without constructor hooks or SQL authority"
+      ],
+      "actualPASSNamesIndependentlyMatched": true,
+      "sourceBeforeAndAfterIdentical": true,
+      "runtimeIdentityBeforeAndAfterIdentical": true,
+      "stdoutBytes": 1408,
+      "stdoutSHA256": "ed28412cfd7586cc077137af539cab10a08fef467793f33253781effdd05212c",
+      "stderrBytes": 0,
+      "stdoutPostCapExceeded": false,
+      "stderrPostCapExceeded": false,
+      "completeTapStdout": "TAP version 13\n# Subtest: V3 sequential opt-in fences two originals and preserves the one-shot receipt and borrowed close\nok 1 - V3 sequential opt-in fences two originals and preserves the one-shot receipt and borrowed close\n  ---\n  duration_ms: 7.737334\n  type: 'test'\n  ...\n# Subtest: V3 sequential mid-batch refusals preserve partial completion and never dispatch queued originals\nok 2 - V3 sequential mid-batch refusals preserve partial completion and never dispatch queued originals\n  ---\n  duration_ms: 4.786166\n  type: 'test'\n  ...\n# Subtest: V3 sequential manual close stops queued work while draining the active declared interface\nok 3 - V3 sequential manual close stops queued work while draining the active declared interface\n  ---\n  duration_ms: 1.369083\n  type: 'test'\n  ...\n# Subtest: V3 sequential uncertain first transport drains fake handles and preserves failed close and intent\nok 4 - V3 sequential uncertain first transport drains fake handles and preserves failed close and intent\n  ---\n  duration_ms: 0.98225\n  type: 'test'\n  ...\n# Subtest: Sequential core ownership labels are frozen DATA without constructor hooks or SQL authority\nok 5 - Sequential core ownership labels are frozen DATA without constructor hooks or SQL authority\n  ---\n  duration_ms: 0.338167\n  type: 'test'\n  ...\n1..5\n# tests 5\n# suites 0\n# pass 5\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 30.416167\n",
+      "completeStderr": ""
+    }
+  ],
+  "combined": {
+    "freshNodeProcesses": 2,
+    "distinctAuthoredTests": 13,
+    "pass": 13,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0,
+    "notAFullSuite": true
+  },
+  "launch": {
+    "nodeVersion": "24.19.0",
+    "platform": "darwin-arm64",
+    "nodeBinarySHA256": "ab982ffe2d922fd0625872f3474c4264ad09b04ab0a375eb3e77dac92f64508a",
+    "runtimeDigestReuse": "Both Node and Python nine-field file identities matched the previously verified runtimes before and after each launch; the runtime binaries were not copied or rehashed.",
+    "inlineParentControllerSHA256": "b2e55eb2a3ecc2400f7f923766f1c5bbfb356f2d033aff266939cdc63d82be57",
+    "inlineV2LauncherSHA256": "cd4094b1c3bbc8aa67460f3baaebb656b4db60f6bd9c1275bf5d8c6b7d514ea1",
+    "inlineV3LauncherSHA256": "f3810ff3c28de9e880c53073ddf6c9cf62e59c24f880ea9c87f57fd83cc8f040",
+    "format": "Fixed unsaved CommonJS explicit node:test run API; exactly one positional entry file and no extra selector argument.",
+    "runOptions": {
+      "isolation": "none",
+      "concurrency": false,
+      "timeout": 5000,
+      "forceExit": false
+    },
+    "environmentKeys": [
+      "PATH",
+      "LC_ALL",
+      "__CF_USER_TEXT_ENCODING"
+    ],
+    "clearedEnvironment": true,
+    "permissionModel": true,
+    "stringCodeGenerationDisabled": true,
+    "readGrants": "Exactly the seven pinned subject files plus the selected single entry; no directory grants.",
+    "fsWriteChildWorkerAddonGrants": [],
+    "parentObservationTimeoutSeconds": 10,
+    "stdoutPostCapBytes": 65536,
+    "stderrPostCapBytes": 16384,
+    "savedOperationalHelpers": 0,
+    "downloads": 0,
+    "newQualificationScratch": 0
+  },
+  "preservation": {
+    "originalEntriesAndHistoricalResultUntouched": true,
+    "postRunKnownProtectedFileHashesMatched": 22,
+    "postRunKnownProtectedBytesRead": 393239,
+    "preExisting415StatusRecordsPreserved": true,
+    "onlyTwoVersionedEntriesAddedBeforeThisResult": true
+  },
+  "retainedAdverseEvidence": {
+    "countPlanningCorrection": "Before execution, complete registration review corrected an unsupported planning count of thirteen V2 cases to eight. Five V3 cases remained. Only eight plus five are counted here.",
+    "earlierUnitBaselineFailure": "The separate authored unit failed on the old core and passed on the fixed core. Its actual failure remains in the separate record and is not a failure or a pass in these new runs.",
+    "earlierSourceAccountingHold": "The prior worker authoring SOURCE_HOLD and its unresolved accounting remain retained. A later separate cached-body delivery did not reset or refund that earlier boundary."
+  },
+  "evidenceBoundary": [
+    "Actual runner, client, owner, custody contract and dispatcher modules were imported only after exact source guards passed.",
+    "All injected store and request/response interfaces are declared in-memory synthetic fixtures. No SQLite database, real HTTP/socket, SDK, key generation, cryptographic signing, real provider or payment operation was used.",
+    "V3 dispatch-intent fence and readback assertions cover the declared synchronous store interface, not native SQL durability or process restart.",
+    "Passing assertions do not establish current context, funding, payer/provider/policy authority, real provider READY, service delivery, commit/uncertainty resolution, recovery or pilot acceptance.",
+    "Native loader, runner, timers, streams and OS behavior remain premises. Test and parent observation timeouts are not hard lifetime, cancellation, native-resource-cleanup or OS/network-sandbox guarantees.",
+    "These outcomes are not whole-P2 qualification, default-suite success, hosted CI, an exact merge-tree run, deployed DP/x402 runtime acceptance or production readiness.",
+    "Original payment/request bytes, hash, payload, requirements, context and consumed authority remain unchanged. No replacement, re-signing, reset or retry authority is introduced."
+  ],
+  "separateGates": {
+    "defaultSuite": "NOT_ESTABLISHED",
+    "hostedCI": "NOT_RUN_FOR_THIS_CHANGE",
+    "mainTransfer": "NOT_PERFORMED_BY_THIS_QUALIFICATION",
+    "providerReady": "NOT_ESTABLISHED",
+    "restartAndNativeDurability": "NOT_ESTABLISHED",
+    "livePilotAcceptance": "NOT_ESTABLISHED"
+  },
+  "protectedTotals": {
+    "consumedAdmissions": 2,
+    "actualPREPARE": 1,
+    "bundles": 0,
+    "nativeChainProviderQualificationRuns": 0,
+    "realPaymentSigner": "DISABLED"
+  }
+}
