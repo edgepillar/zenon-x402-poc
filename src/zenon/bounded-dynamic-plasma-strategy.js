@@ -1,6 +1,9 @@
 import { types as utilTypes } from 'node:util';
 import { PlasmaStrategy } from './plasma-strategy.js';
-import { snapshotZenonUserSendPolicyBinding } from './transaction-planner.js';
+import {
+  snapshotZenonUserSendPolicyBinding,
+  snapshotZenonUnsignedUserSendFields,
+} from './transaction-planner.js';
 import {
   classifyDynamicPlasmaCompatibility,
 } from './dynamic-plasma-compatibility.js';
@@ -21,6 +24,7 @@ const CREATE_FOUR_FIELD = createDynamicPlasmaRequiredFusedPolicyQuote;
 const SELECT_FOUR_FIELD = selectDynamicPlasmaRequiredFusedPolicyFields;
 const VALIDATE_FOUR_FIELD = validateDynamicPlasmaRequiredFusedPolicySelection;
 const SNAPSHOT_USER_SEND = snapshotZenonUserSendPolicyBinding;
+const SNAPSHOT_UNSIGNED_FIELDS = snapshotZenonUnsignedUserSendFields;
 const ownKeys = Reflect.ownKeys;
 const getDescriptor = Object.getOwnPropertyDescriptor;
 const getPrototypeOf = Object.getPrototypeOf;
@@ -135,6 +139,35 @@ export class BoundedDynamicPlasmaStrategy extends PlasmaStrategy {
       const sourceQuote = userSendQuote(quote, value.binding);
       requireSubjectAcknowledgement(value.binding, sourceQuote);
       return VALIDATE_FOUR_FIELD({ ...value.adapterInput, quote: sourceQuote, selection });
+    } catch { reject(); }
+  }
+
+  /**
+   * Bind one exact declared unsigned JSON record to the independent expected
+   * UserSend intent and the original quote's selected fields. This consumes
+   * the actual reported fields, but does NOT run SDK preparation, verify the
+   * block hash/work/public key or establish account state or signer authority.
+   * The detached DTO is DATA, not a signing capability or an active cutover.
+   */
+  async bindPreparedUserSend(context, quote, accountBlock) {
+    try {
+      if (arguments.length !== 3) reject();
+      const value = userSendContext(context);
+      const sourceQuote = userSendQuote(quote, value.binding);
+      requireSubjectAcknowledgement(value.binding, sourceQuote);
+      const prepared = SNAPSHOT_UNSIGNED_FIELDS(accountBlock);
+      if (prepared.subjectDigest !== value.binding.subjectDigest) reject();
+      const selection = VALIDATE_FOUR_FIELD({
+        ...value.adapterInput, quote: sourceQuote, selection: prepared.selection,
+      });
+      return freeze({
+        preparedFieldBindingVersion: 1, scope: 'DECLARED_UNSIGNED_USER_SEND_FIELD_BINDING',
+        accountBlock: prepared.accountBlock, selection,
+        subjectDigest: prepared.subjectDigest, intentDigest: value.binding.intentDigest,
+        fieldDigest: prepared.fieldDigest, chainAuthentication: 'NOT_ESTABLISHED',
+        hashAndWorkValidation: 'NOT_PERFORMED', keyAddressBinding: 'NOT_PERFORMED',
+        authority: 'NONE', afterSigningAction: 'NONE',
+      });
     } catch { reject(); }
   }
 }

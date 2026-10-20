@@ -1,0 +1,402 @@
+{
+  "schemaVersion": 1,
+  "scope": "OCT21_P1_UNSIGNED_PREPARED_FIELD_BINDING_V1",
+  "status": "SELECTED_LOCAL_COMPONENT_CASES_PASSED_NOT_RUNTIME_OR_PILOT_QUALIFICATION",
+  "sourceParent": {
+    "repository": "edgepillar/zenon-x402-poc",
+    "commit": "3a6621bf4113ac633c92a76cc3e982cb4cc94dfb",
+    "tree": "041fdff813021fe4495c630cfd6edd5ce58b1d28"
+  },
+  "ownership": "Primary self-implementation in two existing planner/strategy modules; no worker transport dependency or overlap with the retained external worker paths. No new production module or host.",
+  "change": {
+    "planner": "snapshotZenonUnsignedUserSendFields() reads exactly18 own enumerable DATA AccountBlock fields, reuses the existing UserSend subject validator, detaches and freezes the actual block and its Plasma pair, and commits the whole record under a separate field-digest domain.",
+    "strategy": "bindPreparedUserSend(context, quote, accountBlock) derives the independent selected-payment binding, requires the original quoted Momentum acknowledgement, matches the subject extracted from the supplied block, and passes that same block's actual fusedPlasma/difficulty to the existing shared validator.",
+    "retainedBehavior": "Existing generic and UserSend quote/apply/validate paths, original abstract planner and earlier54 scenario bodies are byte-identical after reversing only the declared additions and four source-pin guard refreshes.",
+    "scope": "DECLARED_UNSIGNED_USER_SEND_FIELD_BINDING",
+    "unsignedOnly": "Signature must be empty; publicKey may be empty or canonical32B Base64 DATA. Hash and nonce receive exact syntax checks only; zero nonce and zero hash are not presented as work/hash proof.",
+    "output": "Detached frozen AccountBlock, original validated selection, subjectDigest, intentDigest, fieldDigest and explicit no-authentication/no-authority labels.",
+    "fieldCommitment": "sha256(canonicalJson(['zenon-x402-unsigned-user-send-fields/v1', exact18FieldSnapshot])); this is NOT the Zenon block hash.",
+    "nonclaims": [
+      "No SDK or actual prepareUnsigned implementation",
+      "No block-hash/nonce-work/public-key/address verification",
+      "No authenticated RPC, account/frontier, token checksum or chain evidence",
+      "No signing capability, issuance, retry/reset/replacement authority or active-buyer cutover"
+    ]
+  },
+  "qualification": {
+    "counts": {
+      "tests": 62,
+      "suites": 0,
+      "pass": 62,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "changedGraphCases": 54,
+    "newCases": 8,
+    "nativeNodeCommands": 1,
+    "entry": "qualification/dynamic-plasma-prepared-user-send-fields.behavior.draft.mjs",
+    "sourceClosure": {
+      "files": 21,
+      "bytes": 347327,
+      "hardCapBytes": 524288
+    },
+    "sourcePins": [
+      {
+        "path": "src/zenon/transaction-planner.js",
+        "bytes": 13096,
+        "LF": 278,
+        "sha256": "41b4fbabc4a7d5fa873c09d6dbf9779452713aa95394a526a5344857422bbf15",
+        "gitBlob": "048f28b037c3e2c7f97621963f70da11e55edd46"
+      },
+      {
+        "path": "src/zenon/bounded-dynamic-plasma-strategy.js",
+        "bytes": 12046,
+        "LF": 287,
+        "sha256": "596359b3d71ad072f4692d0f57b4ddb726469379faf78ac0f558c93122dead99",
+        "gitBlob": "59e48b53d0f7623eac7078908cb263cce59271d5"
+      },
+      {
+        "path": "src/canonical.js",
+        "bytes": 967,
+        "LF": 26,
+        "sha256": "0d55ddf1727cafb0dcd46df2922305568615552a4d2ae34a5c30e90b9d8d998c",
+        "gitBlob": "5367f9c72ee13017a61630e1f0cffdced21d52c4"
+      },
+      {
+        "path": "src/x402-wire.js",
+        "bytes": 39886,
+        "LF": 934,
+        "sha256": "5fba91af5a352f62d1a335c7176a45a604e2af5d92b1c4b0e53825c1f20d4e56",
+        "gitBlob": "fb060d4e349b1c31a1219a0cc137af250a8a2291"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-required-fused-policy-adapter.js",
+        "bytes": 12024,
+        "LF": 272,
+        "sha256": "e2b693d4df9065d44ba590f4d0c8dffeb8e55187668eedfa396b4026c9905c3e",
+        "gitBlob": "b592aafd4c41461318376ea9acc1373f99317455"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-observation-collector.js",
+        "bytes": 33780,
+        "LF": 858,
+        "sha256": "dd298d4cb2ec1c5e2afb7d0fcc51f94f37c3b3793be3e70dc1ce113f2f0f413e",
+        "gitBlob": "ba27dedaf91b5f3fd0547b17641bfd0fcf620e7f"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-observation-normalizer.js",
+        "bytes": 28398,
+        "LF": 698,
+        "sha256": "2c3f7d42ded21a5513ff26c23a00a35a53aa334f053d10930f1571a020286897",
+        "gitBlob": "c406db8471aa6c8afd812c222c673c809491cf00"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-json-rpc-read-transport.js",
+        "bytes": 9063,
+        "LF": 240,
+        "sha256": "f89d9b40b2b0d3ec009365be8a7682bc5f0c4821a258ab5993c5782951f2bc6c",
+        "gitBlob": "cc954865cad6ddf79938a42ab2fb5bdd46f57492"
+      },
+      {
+        "path": "src/zenon/bounded-json-rpc-read-core.js",
+        "bytes": 20906,
+        "LF": 563,
+        "sha256": "5572d24175455c6b3a9924688d601d31585454ce62dac9eb27151d2a65c83fcd",
+        "gitBlob": "c0266d1367f842d502f48e6c230611b85320cb0f"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-price-policy.js",
+        "bytes": 14957,
+        "LF": 418,
+        "sha256": "41e2e2044597cfa69c5adca292bcd762a189076be1cd939bec10798d7e35c52b",
+        "gitBlob": "ed505153487adb5284d895c922641b6de5d9caf8"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-compatibility.js",
+        "bytes": 7732,
+        "LF": 225,
+        "sha256": "b3989ce15e5f2e9d07b0ed035fe96bcce9f22cac93f5e497fdca5c37bf7618dd",
+        "gitBlob": "3811b748b3f905e454c8a4af4650bb7f89eb1cf2"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-required-fused-quote.js",
+        "bytes": 5416,
+        "LF": 133,
+        "sha256": "f5e10ff2dbfff3b6b63d87f0abadd0bb52b5d6b8fe0ead6a55fc5ea14207b730",
+        "gitBlob": "e820fd31ffde4ef77a2efa6e1fd3ed1775778726"
+      },
+      {
+        "path": "src/zenon/plasma-strategy.js",
+        "bytes": 974,
+        "LF": 32,
+        "sha256": "1c597d4e169ba8a5e6d2b7852c4ffa3a8ec9b854332fe354b9b013c36ebae093",
+        "gitBlob": "5cddc2d270aaf043e6e43145e95ffe0be3dde475"
+      },
+      {
+        "path": "package.json",
+        "bytes": 1413,
+        "LF": 40,
+        "sha256": "8c9a25504fbf6f87c31cdf245a6f4eec5a88cc89c8352151dc66a577c5771ef5",
+        "gitBlob": "ec7193f6fd76f34778515079dc777594175c4c34"
+      },
+      {
+        "path": "test/dynamic-plasma-price-policy.test.js",
+        "bytes": 28827,
+        "LF": 639,
+        "sha256": "d871b2effec34dbdba2095c7f40d2c0b3fdaaaa1fc1ceebe80f3f58ad5009863",
+        "gitBlob": "64b505f10f96de63b4aae35921ae413fe438af06"
+      },
+      {
+        "path": "qualification/dynamic-plasma-price-policy-frontier-binding.behavior.draft.mjs",
+        "bytes": 8745,
+        "LF": 212,
+        "sha256": "d7f672ee4464bd002e893e231dec5acc85785db2407f7df25fa601d74f972409",
+        "gitBlob": "ad7bccd414b6317885f7d8a7c90c57e53bb40279"
+      },
+      {
+        "path": "qualification/dynamic-plasma-required-fused-policy-adapter.behavior.draft.mjs",
+        "bytes": 17942,
+        "LF": 375,
+        "sha256": "8f641945d9f699579a2440a7c6f90e16c4d1712e0e042e9135f0468a8db514f1",
+        "gitBlob": "65cd274dd9d2dd1a7b6223ad009154cc89377d27"
+      },
+      {
+        "path": "qualification/dynamic-plasma-four-field-strategy.behavior.draft.mjs",
+        "bytes": 13760,
+        "LF": 281,
+        "sha256": "56b1d9629cb616da4493da5037fd9b0b2a8c0b4f28163cbb9a8e696f88965513",
+        "gitBlob": "cbecf9fb10abd5a84b8b9b496a20a03f9bce26a6"
+      },
+      {
+        "path": "qualification/dynamic-plasma-request-bound-policy.behavior.draft.mjs",
+        "bytes": 26304,
+        "LF": 485,
+        "sha256": "a5e45e8f7cbee698b27b5f545ee4677d3ae59cf2e486571e42029359f579c07d",
+        "gitBlob": "042a0bc57c9b4b5ee7f4f3e277a9d52adfa86304"
+      },
+      {
+        "path": "qualification/dynamic-plasma-user-send-policy.behavior.draft.mjs",
+        "bytes": 27616,
+        "LF": 466,
+        "sha256": "afc5eb9dc751f7b10efa3a9d2dfdabdcddbee970878792986ec6a6629776f42f",
+        "gitBlob": "5f656d4986a0a9f7d898beef7a9f1dd01b89c500"
+      },
+      {
+        "path": "qualification/dynamic-plasma-prepared-user-send-fields.behavior.draft.mjs",
+        "bytes": 23475,
+        "LF": 377,
+        "sha256": "e7b0083aef221c6ff37cd2de4eb94cba0417f8239a5ea2d32b02c999a3e52a7c",
+        "gitBlob": "bfdef3457c49659a9c54d127b4d479453ee4eff0"
+      }
+    ],
+    "actualPassNames": [
+      "shared instant math keeps legacy classifier and RPC boundaries",
+      "integer frontier bounds use explicit rate and advance count",
+      "bounded allocations obey fusion and difficulty budgets",
+      "receipts are fresh frozen serializable declared bindings",
+      "concrete unsigned strategy uses the real policy and base",
+      "current context rejects stale regressing and mismatched plans",
+      "validation requires the exact original selected fields",
+      "hostile records fail without traps getters or coercion",
+      "public numbers and bounded arithmetic reject unsafe values",
+      "unavailable data and non-unsigned phases grant no authority",
+      "identical origin frontier accepts sufficient pools for fusion-only and hybrid plans",
+      "same height and hash refuse changed fusion or work prices through all entry points",
+      "age one and two refuse reuse of the origin hash through all entry points",
+      "distinct hashes at age one and two preserve planned fields and no-authority labels",
+      "four-field policy adapter shares exact fusion-only planner and validator fields",
+      "four-field policy headroom stays distinct from observed total across two advances",
+      "four-field policy hybrid plan never attaches fused-only total alongside PoW",
+      "four-field policy refuses missing or inconsistent current and original totals",
+      "four-field policy binds stable observed frontier and refuses unsupported admission",
+      "four-field policy rebuild refuses changed bindings and nested receipt tampering",
+      "four-field policy delegates stale resource and price bounds without refreshing authority",
+      "four-field policy validator requires the original selected pair not a fresh recommendation",
+      "four-field policy hostile records and unsafe primitives refuse without invoking hooks",
+      "four-field policy detached DATA roundtrips preserve explicit version and no-action labels",
+      "four-field strategy explicitly dispatches real SPI quote and apply to the shared adapter",
+      "four-field strategy preserves original headroom and hybrid pairs across declared advances",
+      "four-field strategy refuses inconsistent totals and never downgrades missing fields",
+      "four-field strategy isolates legacy receipts and rechecks current declared bindings",
+      "four-field strategy requires exact unsigned version and arity without payment authority",
+      "four-field strategy rejects hostile context descriptors without invoking hooks",
+      "request-bound consumer connects the real collector normalizer SPI and shared validator",
+      "request-bound consumer rejects coherent foreign request snapshots through all entry points",
+      "request-bound consumer independently binds declared profile genesis and compiled spork identities",
+      "request-bound consumer prevents cross-request receipt reuse without treating coherent DATA as authority",
+      "request-bound consumer matches policy p to declared variables and refuses changed pricing context",
+      "request-bound consumer preserves original budgeted fields through the declared advance window",
+      "request-bound consumer keeps hybrid fields distinct from the fusion-only total target",
+      "request-bound consumer rejects altered context receipt and nested policy DATA",
+      "request-bound consumer detaches snapshots and preserves JSON receipts without refreshing authority",
+      "request-bound consumer requires explicit selectors raw schema unsigned SPI and isolated receipt versions",
+      "request-bound consumer rejects unavailable incoherent and pre-DP endpoint evidence before policy use",
+      "request-bound consumer rejects hostile expected observed and receipt records without invoking hooks",
+      "UserSend pricing derives the exact subject and intent before the existing shared policy",
+      "UserSend pricing refuses payer recipient amount asset chain and intent mismatches",
+      "UserSend pricing binds account sequence fields even when the RPC request is unchanged",
+      "UserSend pricing binds the selected resource and complete accepted intent without replacement authority",
+      "UserSend pricing requires the subject acknowledgement at the original quoted Momentum",
+      "UserSend pricing preserves original fields and rejects stale resources prices runtime or policy",
+      "UserSend pricing keeps hybrid selected fields separate from the fusion-only total",
+      "UserSend pricing accepts only the existing selected single-offer upfront view",
+      "UserSend pricing isolates receipt versions and refuses outer or inner tampering",
+      "UserSend binding snapshots and JSON receipts remain detached and do not reset authority",
+      "UserSend binding rejects hostile records descriptors arrays and coercion without invoking hooks",
+      "UserSend binding keeps typed bounds unsigned phases arity and unfinished preparation gates explicit",
+      "Prepared UserSend binds the actual detached unsigned fields to intent and original price selection",
+      "Prepared UserSend refuses changed payment and account fields despite a separately valid pair",
+      "Prepared UserSend validates actual Plasma fields and never substitutes a fusion-only total for hybrid",
+      "Prepared UserSend enforces unsigned exact JSON syntax without claiming work or public-key verification",
+      "Prepared UserSend retains original acknowledgement while rechecking current price resource and age bounds",
+      "Prepared UserSend commits all reported fields and detaches snapshots without authenticating preparation",
+      "Prepared UserSend refuses hostile descriptors proxies and coercion before invoking any hook",
+      "Prepared UserSend keeps phase arity receipt and no-authority boundaries with preparation still unimplemented"
+    ],
+    "actualNamesExactlyMatchAllAuthoredRegistrations": true,
+    "newCaseNames": [
+      "Prepared UserSend binds the actual detached unsigned fields to intent and original price selection",
+      "Prepared UserSend refuses changed payment and account fields despite a separately valid pair",
+      "Prepared UserSend validates actual Plasma fields and never substitutes a fusion-only total for hybrid",
+      "Prepared UserSend enforces unsigned exact JSON syntax without claiming work or public-key verification",
+      "Prepared UserSend retains original acknowledgement while rechecking current price resource and age bounds",
+      "Prepared UserSend commits all reported fields and detaches snapshots without authenticating preparation",
+      "Prepared UserSend refuses hostile descriptors proxies and coercion before invoking any hook",
+      "Prepared UserSend keeps phase arity receipt and no-authority boundaries with preparation still unimplemented"
+    ],
+    "changedGraphReason": "Two existing production modules changed. Their earlier54 authored registrations are requalified against this changed graph, not counted from old outcomes. Four prior fixtures received only exact source/fixture size/SHA guard refreshes; scenario bodies were not changed. Historical result files remain unchanged.",
+    "guardOnlyRefreshes": [
+      {
+        "path": "test/dynamic-plasma-price-policy.test.js",
+        "previousSHA256": "95f66502714a37664efe59fa32413e377156e26a5754c392abdc55c6f6fe05c7",
+        "currentSHA256": "d871b2effec34dbdba2095c7f40d2c0b3fdaaaa1fc1ceebe80f3f58ad5009863"
+      },
+      {
+        "path": "qualification/dynamic-plasma-four-field-strategy.behavior.draft.mjs",
+        "previousSHA256": "b18d745b8ad7ec976d255e475c9f3446f4bb902b46a32759329e8921104b2d21",
+        "currentSHA256": "56b1d9629cb616da4493da5037fd9b0b2a8c0b4f28163cbb9a8e696f88965513"
+      },
+      {
+        "path": "qualification/dynamic-plasma-request-bound-policy.behavior.draft.mjs",
+        "previousSHA256": "913d9314fa88e467d664aa69b373487c4c79e1b3cc80731e32aa289a54e9a74a",
+        "currentSHA256": "a5e45e8f7cbee698b27b5f545ee4677d3ae59cf2e486571e42029359f579c07d"
+      },
+      {
+        "path": "qualification/dynamic-plasma-user-send-policy.behavior.draft.mjs",
+        "previousSHA256": "089b8443bfcd0101b68bcdd33233d05cd1b06b57413f8201bf3f8dabd4e5a03f",
+        "currentSHA256": "afc5eb9dc751f7b10efa3a9d2dfdabdcddbee970878792986ec6a6629776f42f"
+      }
+    ],
+    "inverseLiteralComparisonsAndOld54ScenarioBodiesByteIdentical": true,
+    "originalAbstractPlannerBodyByteIdentical": true,
+    "keyObservedDifferential": "For nine separately changed syntactically valid subjects (recipient, payer address, amount, asset, chain, account height, previous hash, acknowledgement and data), the earlier validateUserSend() accepted its separate correct Plasma pair while bindPreparedUserSend() refused the actual changed block. The existing pair-only method remains unchanged.",
+    "otherObservedBoundaries": "Hybrid selected50/108000 stays distinct from the fusion-only total121; original25410/0 fields and acknowledgement100 remain unchanged over admitted current Momentum101/102 advances. Stale prices/resources/age, signed blocks, unsafe numeric fields and hostile descriptors/proxies refuse. Hook counters remain zero.",
+    "independentCommitmentOracle": "A separately authored fixed sorted-key canonical preimage matches fieldDigest. Hash, nonce and public-key DATA changes alter fieldDigest without changing subjectDigest/selection. Such coherent snapshots are explicitly NOT proof of preparation, cryptography or new authority.",
+    "abstractMethodExercise": "Both retained and new abstract prepareUnsigned() refusal checks remain NOT_IMPLEMENTED checks only. No SDK preparer or real chain preparation ran.",
+    "preExecutionOrchestrationNote": "An in-memory inverse-diff review assertion initially retained one separator newline and refused. It was corrected without repository edits, imports or native test execution. It is retained separately and is not a passed assertion. One actual Node command passed all62 cases.",
+    "dataClass": "Synthetic in-memory declared unsigned block/payment/resource/raw-observation DATA; retained collector case uses existing in-memory transports. No socket, SDK, SQL, real key, signature, work producer or payment.",
+    "actualRun": {
+      "completedAt": "2026-10-20T22:37:18.478Z",
+      "node": {
+        "version": "24.19.0",
+        "platform": "darwin",
+        "arch": "arm64",
+        "sha256": "ab982ffe2d922fd0625872f3474c4264ad09b04ab0a375eb3e77dac92f64508a"
+      },
+      "actualExit": 0,
+      "captureState": "COMPLETE",
+      "outputComplete": true,
+      "reason": null,
+      "sourceAndReporterBothJoined": true,
+      "allSourceRuntimeBeforeAfterAndIndependentCurrentBindingsStable": true,
+      "stdout": {
+        "bytes": 12025,
+        "sha256": "584bb230edfbd42e14750036ef8de0c73b217a971255f7f838898db1970752ba"
+      },
+      "stderr": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "independentRetainedCASPayloadCreatorLedgerAndTaskReferenceChecks": true,
+      "taskState": "CLOSED",
+      "taskOutcome": "SUCCESS",
+      "ownedEmptyScratchClosed": true,
+      "processGroupObservedEmptyAfterJoin": true,
+      "noPrimaryNativeSessionPending": true
+    },
+    "launch": {
+      "caller": "Fixed reviewed inline CommonJS node:test run API, node:test/reporters and node:stream; no saved or installed operational helper.",
+      "environment": "env -i TZ=UTC LANG=C LC_ALL=C",
+      "explicitReadGrants": "Only21 exact source/package/fixture paths in sourcePins; no directory-read expansion.",
+      "flags": [
+        "--permission",
+        "--no-addons",
+        "--disallow-code-generation-from-strings"
+      ],
+      "fsWriteGrant": false,
+      "childProcessGrant": false,
+      "workerGrant": false,
+      "addonGrant": false,
+      "runOptions": {
+        "isolation": "none",
+        "concurrency": false,
+        "timeoutMilliseconds": 5000,
+        "forceExit": false,
+        "watch": false
+      },
+      "successCondition": "Non-success sentinel cleared only after all62 exact top-level event and TAP PASS names, a single62-case plan, all seven counters and both joined streams agree; unknown/duplicate names, nesting, fail/skip/todo/cancellation or incomplete streams refuse success.",
+      "premise": "Node native loader/test/reporter/stream/hash/URL behavior, captured/pristine intrinsics and OS behavior remain premises. Timeout, permissions, cooperative quotas and an empty process-group observation are not hard native cancellation/lifetime/cleanup guarantees or an OS/network sandbox."
+    },
+    "storage": {
+      "approvedManagerSourceSHA256": "a4d82a72214c9698fda7ae363c38b2470c08da5e2e04c63ee9284e43f638f081",
+      "mountedVolumeIdentityVerified": true,
+      "productionFreeSpaceFloorBytes": 10737418240,
+      "expectedAllocationBytes": 4194304,
+      "taskQuotaBytes": 8388608,
+      "stdoutCapBytes": 65536,
+      "stderrCapAtMostBytes": 1048576,
+      "newStdoutCASPayloadBytes": 12025,
+      "emptyStderrReusesExistingVerifiedObject": true,
+      "metadataBytesIndependentlyRead": 66807,
+      "cleanup": "Only registered empty scratch of this exact owned task; no object collection, historical/legacy cleanup or adoption, mount fallback, identity rebinding or authority reset.",
+      "accounting": "One CAS object per digest; bounded source/output accounting, no downloads/packages/ZIP duplicates or physical-reclaim claim."
+    },
+    "noRunClaims": [
+      "No default discovery or full app/SDK/store/controller suite",
+      "No SDK prepareBlock or SDK imports/evaluation",
+      "No HTTP/TLS/endpoints",
+      "No SQL/reopen/process restart",
+      "No native work, signature generation, wallet, payment or broadcast",
+      "No hosted CI or live pilot qualification"
+    ],
+    "hostedCI": {
+      "status": "NOT_RUN_FOR_THIS_SLICE",
+      "notGreenEvidence": true,
+      "noNewWorkflowOrDispatch": true
+    },
+    "productionReadiness": "NOT_ESTABLISHED"
+  },
+  "preservation": {
+    "realSigner": "DISABLED",
+    "protectedTotals": {
+      "consumedAdmissions": 2,
+      "actualPrepare": 1,
+      "bundles": 0,
+      "nativeChainProviderQualificationRuns": 0
+    },
+    "originalPayment": "Original request/payment bytes, hash, payload, requirements, context and consumed authority are preserved. No real signer/payment/SDK is invoked.",
+    "PR193": "Possible VALIDATED exact-same-signed-block resend remains distinct from UNKNOWN/ACKNOWLEDGED. A matching declared DTO, expiry or mismatch grants no re-signing, replacement payment, authority reset or automatic retry.",
+    "remainingAcceptanceGates": [
+      "Actual SDK prepared-block integration and independent review",
+      "Block hash/work, payer-key/address binding and authenticated account/frontier/token/chain validity",
+      "Actual runtime p/stability and price movement during work/signing/inclusion",
+      "Current funding and payer/provider/policy authority",
+      "Real provider READY and durability",
+      "Commit/uncertainty and same-original-payment restart/recovery",
+      "Separate official x402 compatibility"
+    ],
+    "workerAndUserState": "No worker/app message, new agent/thread/worktree/host, dependency installation, broad run, automation/model change or unrelated edit."
+  }
+}

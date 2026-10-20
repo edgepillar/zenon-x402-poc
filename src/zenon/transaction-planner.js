@@ -33,6 +33,8 @@ const VALIDATE_AMOUNT = validateCanonicalZenonAmount;
 const INTENT_DIGEST = paymentIntentDigest;
 const SUBJECT_DIGEST = sha256Hex;
 const HASH = /^[0-9a-f]{64}$/;
+const NONCE = /^[0-9a-f]{16}$/;
+const PUBLIC_KEY = /^[A-Za-z0-9+/]{43}=$/;
 const TOKEN = /^[\x21-\x7e]{10,128}$/;
 const ZERO_HASH = '0'.repeat(64);
 const BINDING_FIELDS = freeze([
@@ -45,6 +47,11 @@ const SUBJECT_FIELDS = freeze([
 ]);
 const ACK_FIELDS = freeze(['hash', 'height']);
 const COMPILED_FIELDS = freeze(['dynamicPlasmaId', 'libp2pId']);
+const UNSIGNED_FIELDS = freeze([
+  'version', 'chainIdentifier', 'blockType', 'hash', 'previousHash', 'height',
+  'momentumAcknowledged', 'address', 'toAddress', 'amount', 'tokenStandard',
+  'fromBlockHash', 'data', 'fusedPlasma', 'difficulty', 'nonce', 'publicKey', 'signature',
+]);
 
 /**
  * Central Zenon payment-planning boundary.
@@ -119,6 +126,54 @@ export function snapshotZenonUserSendPolicyBinding(input) {
         requestContextVersion: 1, expectedChainProfile: accepted.extra.zenonChain,
         compiledSporkIds, quoteRequest: request.quoteRequest,
       }),
+    });
+  } catch { rejectBinding(); }
+}
+
+/**
+ * Detached declared unsigned AccountBlock JSON, not an SDK preparation result
+ * or permission to sign. Extract the actual subject and Plasma pair from this
+ * same record; do not validate a separate caller-supplied selection instead.
+ * Hash/nonce/public-key checks are syntax only. fieldDigest commits these JSON
+ * fields under its own domain: it is NOT the Zenon block hash, work proof,
+ * payer-key authentication or a prepared-runtime capability. Empty signature
+ * refuses already signed blocks; an empty public key is allowed pre-signing.
+ */
+export function snapshotZenonUnsignedUserSendFields(input) {
+  try {
+    if (arguments.length !== 1) rejectBinding();
+    const block = bindingRecord(input, UNSIGNED_FIELDS);
+    const subjectInput = { subjectVersion: 1 };
+    for (const field of SUBJECT_FIELDS) {
+      if (field !== 'subjectVersion') subjectInput[field] = block[field];
+    }
+    const subject = snapshotSubject(subjectInput);
+    requireHash(block.hash);
+    if (typeof block.nonce !== 'string' || block.nonce.length !== 16
+        || !testRegExp(NONCE, block.nonce) || block.signature !== '') rejectBinding();
+    if (typeof block.publicKey !== 'string') rejectBinding();
+    if (block.publicKey !== '') {
+      if (block.publicKey.length !== 44 || !testRegExp(PUBLIC_KEY, block.publicKey)) rejectBinding();
+      const key = Buffer.from(block.publicKey, 'base64');
+      if (key.length !== 32 || key.toString('base64') !== block.publicKey) rejectBinding();
+    }
+    for (const field of ['fusedPlasma', 'difficulty']) {
+      if (!isSafeInteger(block[field]) || block[field] < 0 || same(block[field], -0)) rejectBinding();
+    }
+    const accountBlock = freeze({
+      version: subject.version, chainIdentifier: subject.chainIdentifier, blockType: subject.blockType,
+      hash: block.hash, previousHash: subject.previousHash, height: subject.height,
+      momentumAcknowledged: subject.momentumAcknowledged, address: subject.address,
+      toAddress: subject.toAddress, amount: subject.amount, tokenStandard: subject.tokenStandard,
+      fromBlockHash: subject.fromBlockHash, data: subject.data,
+      fusedPlasma: block.fusedPlasma, difficulty: block.difficulty, nonce: block.nonce,
+      publicKey: block.publicKey, signature: '',
+    });
+    return freeze({
+      accountBlock, subject,
+      subjectDigest: 'sha256:' + SUBJECT_DIGEST(['zenon-x402-user-send-subject/v1', subject]),
+      selection: freeze({ fusedPlasma: block.fusedPlasma, difficulty: block.difficulty }),
+      fieldDigest: 'sha256:' + SUBJECT_DIGEST(['zenon-x402-unsigned-user-send-fields/v1', accountBlock]),
     });
   } catch { rejectBinding(); }
 }
