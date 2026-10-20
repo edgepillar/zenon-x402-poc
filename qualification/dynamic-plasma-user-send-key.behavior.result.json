@@ -1,0 +1,294 @@
+{
+  "schemaVersion": 1,
+  "slice": "OCT21_P1_UNSIGNED_PUBLIC_KEY_ADDRESS_BINDING_V1",
+  "status": "SELECTED_LOCAL_PUBLIC_BYTE_ADDRESS_CHECKS_PASSED",
+  "baseline": {
+    "repository": "edgepillar/zenon-x402-poc",
+    "commit": "f1acde1ac1495603bfb1c301ddfbfec71644a0bd",
+    "tree": "2bf578a159697f2c704c607a4e436bb5bab1bc47"
+  },
+  "roadmapLane": "P1-A: same supplied unsigned block, intent/hash/nonce/original-price checks and declared public-byte/payer-address mapping",
+  "implementation": {
+    "module": "src/zenon/dynamic-plasma-user-send-key-binding.js",
+    "exports": [
+      "validateZenonUnsignedUserSendKeyBinding",
+      "bindZenonUnsignedUserSendKeyBinding"
+    ],
+    "mapping": "Require a present canonical Base64 32-byte publicKey through the existing unsigned-field grammar; compare 0x00 || first19(SHA3-256(publicKeyBytes)) with the existing decoded actual payer address core.",
+    "reuse": "Reuse the complete existing unsigned hash/nonce path, or the original intent/hash/nonce/price binding, then check the same returned detached block's supplied public-key bytes. No mutable caller field is reread after await.",
+    "why": "publicKey is not included in the account-block hash preimage. A hash-correct and nonce-consistent record can still supply an empty or unrelated key; the new stage refuses that mismatch without changing the earlier APIs.",
+    "resourceBound": "One additional SHA3-256 over exactly 32 supplied bytes plus a 20-byte comparison. No key generation, curve operation, signature check, nonce search, SDK or native work provider.",
+    "unchanged": "Every existing source/API/default/active buyer, SDK comparator, package, workflow and local HTTPS owner candidate remains byte-identical.",
+    "labels": "Only MATCHES_SUPPLIED_PUBLIC_KEY_BYTES. Key possession and chain authentication are NOT_ESTABLISHED; signature validation is NOT_PERFORMED; authority and after-signing action remain NONE.",
+    "nestedReceipts": "Earlier hash/work receipt labels retain their original narrower scope and are not rewritten to claim the additional key check. New scope/version is separate."
+  },
+  "normativeSource": {
+    "repository": "zenon-network/go-zenon",
+    "commit": "e58d8e80eabd9fd5630ed62e0707424d96b5303c",
+    "files": [
+      {
+        "path": "common/types/address.go",
+        "bytes": 5063,
+        "LF": 174,
+        "sha256": "7c70fea045b2c722001bff57c79c3b23afa7739bfb93964d5012c8afbf87df09",
+        "gitBlob": "9a30226a187b94c06b99a362c4c3b2e39dca41c5"
+      }
+    ],
+    "references": [
+      "https://github.com/zenon-network/go-zenon/blob/e58d8e80eabd9fd5630ed62e0707424d96b5303c/common/types/address.go"
+    ],
+    "evidence": "Pinned source read only; no Go/native node or deployed-runtime qualification."
+  },
+  "qualification": {
+    "completedAt": "2026-10-20T23:35:34.939Z",
+    "runtime": {
+      "name": "Node.js",
+      "version": "24.19.0",
+      "platform": "darwin",
+      "arch": "arm64",
+      "sha256": "ab982ffe2d922fd0625872f3474c4264ad09b04ab0a375eb3e77dac92f64508a"
+    },
+    "counts": {
+      "tests": 12,
+      "suites": 0,
+      "pass": 12,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "passNames": [
+      "public-key binding matches the exact supplied bytes to the actual UserSend payer address",
+      "public-key binding rejects missing or substituted keys still accepted by hash and nonce checks",
+      "public-key binding requires the actual payer address rather than an independently valid key",
+      "public-key binding preserves canonical key syntax empty-signature and exact-field requirements",
+      "public-key byte mapping does not establish curve validity key possession or signing authority",
+      "key and price binding consumes the same original hash nonce intent and selected Plasma fields",
+      "matching public bytes cannot replace the independently selected payment or original allocation",
+      "matching public bytes do not bypass nonce validation or original quote price-window guards",
+      "public-key APIs reject hostile key address context descriptors proxies and providers without callbacks",
+      "public-key APIs enforce exact arity phases and receipt separation without resetting authority",
+      "key and price binding retains detached pre-await public bytes without rereading mutated caller input",
+      "public-key module remains a fixed-size opt-in hash mapping without key signature or runtime machinery"
+    ],
+    "selection": "Twelve distinct new authored registrations. No prior nonce12, hash82 or collection10 tests imported or rerun.",
+    "graph": {
+      "files": 17,
+      "bytes": 216960,
+      "pins": [
+        {
+          "path": "src/zenon/transaction-planner.js",
+          "bytes": 16004,
+          "LF": 337,
+          "sha256": "54c7cc2c4ac4dbae890a4f1b1b2dcb9a3f2fdacb9998ea318b8c9beb40922825",
+          "gitBlob": "74c06c920acfc44f5ac31942612230ba3117ef2e"
+        },
+        {
+          "path": "src/zenon/bounded-dynamic-plasma-strategy.js",
+          "bytes": 15729,
+          "LF": 353,
+          "sha256": "7b82560bdeb25e573912090a2fe8de7b45912500a7a7c4434fe06dcf94e06d62",
+          "gitBlob": "ee85b7a4da8bf4190ae099e6bc5074059fccebbc"
+        },
+        {
+          "path": "src/canonical.js",
+          "bytes": 967,
+          "LF": 26,
+          "sha256": "0d55ddf1727cafb0dcd46df2922305568615552a4d2ae34a5c30e90b9d8d998c",
+          "gitBlob": "5367f9c72ee13017a61630e1f0cffdced21d52c4"
+        },
+        {
+          "path": "src/x402-wire.js",
+          "bytes": 39886,
+          "LF": 934,
+          "sha256": "5fba91af5a352f62d1a335c7176a45a604e2af5d92b1c4b0e53825c1f20d4e56",
+          "gitBlob": "fb060d4e349b1c31a1219a0cc137af250a8a2291"
+        },
+        {
+          "path": "src/zenon/dynamic-plasma-required-fused-policy-adapter.js",
+          "bytes": 12024,
+          "LF": 272,
+          "sha256": "e2b693d4df9065d44ba590f4d0c8dffeb8e55187668eedfa396b4026c9905c3e",
+          "gitBlob": "b592aafd4c41461318376ea9acc1373f99317455"
+        },
+        {
+          "path": "src/zenon/dynamic-plasma-observation-normalizer.js",
+          "bytes": 28398,
+          "LF": 698,
+          "sha256": "2c3f7d42ded21a5513ff26c23a00a35a53aa334f053d10930f1571a020286897",
+          "gitBlob": "c406db8471aa6c8afd812c222c673c809491cf00"
+        },
+        {
+          "path": "src/zenon/dynamic-plasma-json-rpc-read-transport.js",
+          "bytes": 10832,
+          "LF": 283,
+          "sha256": "fd03b2ad87d16660aa61d3961c163d724d5f89cd6d4bb9c4391d739566d5e5ca",
+          "gitBlob": "0475b7ab42889f67fb030fa7344d73d8bd6957d7"
+        },
+        {
+          "path": "src/zenon/bounded-json-rpc-read-core.js",
+          "bytes": 20906,
+          "LF": 563,
+          "sha256": "5572d24175455c6b3a9924688d601d31585454ce62dac9eb27151d2a65c83fcd",
+          "gitBlob": "c0266d1367f842d502f48e6c230611b85320cb0f"
+        },
+        {
+          "path": "src/zenon/dynamic-plasma-price-policy.js",
+          "bytes": 14957,
+          "LF": 418,
+          "sha256": "41e2e2044597cfa69c5adca292bcd762a189076be1cd939bec10798d7e35c52b",
+          "gitBlob": "ed505153487adb5284d895c922641b6de5d9caf8"
+        },
+        {
+          "path": "src/zenon/dynamic-plasma-compatibility.js",
+          "bytes": 7732,
+          "LF": 225,
+          "sha256": "b3989ce15e5f2e9d07b0ed035fe96bcce9f22cac93f5e497fdca5c37bf7618dd",
+          "gitBlob": "3811b748b3f905e454c8a4af4650bb7f89eb1cf2"
+        },
+        {
+          "path": "src/zenon/dynamic-plasma-required-fused-quote.js",
+          "bytes": 5416,
+          "LF": 133,
+          "sha256": "f5e10ff2dbfff3b6b63d87f0abadd0bb52b5d6b8fe0ead6a55fc5ea14207b730",
+          "gitBlob": "e820fd31ffde4ef77a2efa6e1fd3ed1775778726"
+        },
+        {
+          "path": "src/zenon/plasma-strategy.js",
+          "bytes": 974,
+          "LF": 32,
+          "sha256": "1c597d4e169ba8a5e6d2b7852c4ffa3a8ec9b854332fe354b9b013c36ebae093",
+          "gitBlob": "5cddc2d270aaf043e6e43145e95ffe0be3dde475"
+        },
+        {
+          "path": "package.json",
+          "bytes": 1413,
+          "LF": 40,
+          "sha256": "8c9a25504fbf6f87c31cdf245a6f4eec5a88cc89c8352151dc66a577c5771ef5",
+          "gitBlob": "ec7193f6fd76f34778515079dc777594175c4c34"
+        },
+        {
+          "path": "test-support/phase2a-account-block-preimage.js",
+          "bytes": 7724,
+          "LF": 210,
+          "sha256": "dde02531faaf3c45c5ab9760beba84fe56664f923c1d61fa64b077682d97dc0e",
+          "gitBlob": "a6a48b0ea2f105a3bcc82c76fe02531eea18f8e0"
+        },
+        {
+          "path": "src/zenon/dynamic-plasma-user-send-work-binding.js",
+          "bytes": 4732,
+          "LF": 103,
+          "sha256": "2ecc56698c906795982b19641ad104fb9e1586e4a0fe4d643def9d870a72bd47",
+          "gitBlob": "49b8334221c57b5c4788e3f763cd1333e5709297"
+        },
+        {
+          "path": "src/zenon/dynamic-plasma-user-send-key-binding.js",
+          "bytes": 4237,
+          "LF": 91,
+          "sha256": "37ad7e74b038801297e4bffb0cb8ba92cbd79009ed32c4ae5b134fe2cb154be2",
+          "gitBlob": "c366f0fee4132604b40604547fe22f1bc1dba65d"
+        },
+        {
+          "path": "qualification/dynamic-plasma-user-send-key.behavior.draft.mjs",
+          "bytes": 25029,
+          "LF": 438,
+          "sha256": "b7f210c1169b69b716a86e48d052b305954ecc0d364f445a24eb19a56858a5d3",
+          "gitBlob": "08b3f043e0ea19860ccc06f6a1116b5581c62458"
+        }
+      ]
+    },
+    "vectors": "Fixed public-byte literals only, including zero bytes to explicitly distinguish byte mapping from valid-curve/key-possession claims. An independent synthetic Bech32 encoder checks the production decoder. Both mappings rely on Node's SHA3 primitive.",
+    "positiveScope": "Hash/nonce-consistent supplied records and same original intent/price fusion-only binding, with canonical matching public bytes. No actual key creation or signing; no generated valid hybrid work is claimed.",
+    "negativeScope": "Missing/substituted/noncanonical public bytes, changed payer address despite a recomputed hash, signatures/extras, misbound payment/allocation, invalid declared nonce, stale quote window, hostile descriptors/proxies/providers, arity/phase/receipt mixing and mutable caller input.",
+    "launch": {
+      "entry": "qualification/dynamic-plasma-user-send-key.behavior.draft.mjs",
+      "emptyInheritedEnvironment": true,
+      "environment": [
+        "TZ=UTC",
+        "LANG=C",
+        "LC_ALL=C"
+      ],
+      "flags": [
+        "--permission",
+        "--disallow-code-generation-from-strings",
+        "--no-addons",
+        "--no-warnings",
+        "--eval"
+      ],
+      "exactReadFilesOnly": true,
+      "fsReadDirectoryGrant": false,
+      "fsWriteGrant": false,
+      "childWorkerAddonGrant": false,
+      "noCollectorHttpsOwnerOrSDKReadOrImport": true,
+      "inlineCommonJsCaller": "process.exitCode = 125;\nconst { run } = require('node:test');\nconst { tap } = require('node:test/reporters');\nconst { Writable, pipeline, finished } = require('node:stream');\nconst selections = {\n  \"qualification/dynamic-plasma-user-send-key.behavior.draft.mjs\": [\n    \"public-key binding matches the exact supplied bytes to the actual UserSend payer address\",\n    \"public-key binding rejects missing or substituted keys still accepted by hash and nonce checks\",\n    \"public-key binding requires the actual payer address rather than an independently valid key\",\n    \"public-key binding preserves canonical key syntax empty-signature and exact-field requirements\",\n    \"public-key byte mapping does not establish curve validity key possession or signing authority\",\n    \"key and price binding consumes the same original hash nonce intent and selected Plasma fields\",\n    \"matching public bytes cannot replace the independently selected payment or original allocation\",\n    \"matching public bytes do not bypass nonce validation or original quote price-window guards\",\n    \"public-key APIs reject hostile key address context descriptors proxies and providers without callbacks\",\n    \"public-key APIs enforce exact arity phases and receipt separation without resetting authority\",\n    \"key and price binding retains detached pre-await public bytes without rereading mutated caller input\",\n    \"public-key module remains a fixed-size opt-in hash mapping without key signature or runtime machinery\"\n  ]\n};\nlet selected = 'unselected';\n(async () => {\n  if (process.versions.node !== '24.19.0' || process.argv.length !== 2\n      || process.platform !== 'darwin' || process.arch !== 'arm64') throw Error('RUNTIME_OR_ARGUMENTS');\n  selected = Object.keys(selections).find(p => process.argv[1] === process.cwd() + '/' + p);\n  if (!selected) { selected = 'unselected'; throw Error('SELECTION'); }\n  const expected = selections[selected], seen = new Set(), reported = new Set();\n  const counts = new Map(), plans = [];\n  let bad = false, ended = false, reporterDone = false, versions = 0, bytes = 0, pending = '';\n  const known = name => expected.includes(name);\n  process.stdout.write('# entry ' + selected + '\\n# Node ' + process.versions.node\n    + ' platform=' + process.platform + ' arch=' + process.arch + '\\n');\n  function safeLine(line) {\n    let match;\n    if (line === 'TAP version 13') { versions++; return line; }\n    if ((match = /^# Subtest: (.+)$/.exec(line))) {\n      if (known(match[1])) return line;\n      bad = true;\n    } else if ((match = /^(ok|not ok) \\d+ - (.+)$/.exec(line))) {\n      if (!known(match[2]) || reported.has(match[2]) || match[1] !== 'ok') bad = true;\n      if (known(match[2])) { reported.add(match[2]); return line; }\n    } else if ((match = /^1\\.\\.(\\d+)$/.exec(line))) {\n      plans.push(Number(match[1])); return line;\n    } else if ((match = /^# (tests|suites|pass|fail|cancelled|skipped|todo) (\\d+)$/.exec(line))) {\n      if (counts.has(match[1])) bad = true;\n      counts.set(match[1], Number(match[2])); return line;\n    } else if (/^Bail out!/.test(line)) bad = true;\n    return null; // Do not publish physical locations, stacks or arbitrary diagnostics.\n  }\n  const source = run({\n    files: [process.argv[1]], isolation: 'none', concurrency: false,\n    timeout: 5000, forceExit: false, watch: false,\n  });\n  source.on('test:pass', data => {\n    if (!known(data.name) || seen.has(data.name) || data.nesting !== 0\n        || (data.skip !== undefined && data.skip !== false)\n        || (data.todo !== undefined && data.todo !== false)) bad = true;\n    seen.add(data.name);\n  });\n  source.on('test:fail', () => { bad = true; });\n  source.on('error', () => { bad = true; });\n  source.once('end', () => { ended = true; });\n  const sourceDone = new Promise(resolve => {\n    finished(source, { writable: false }, error => { if (error) bad = true; resolve(); });\n  });\n  const sink = new Writable({\n    write(chunk, encoding, callback) {\n      try {\n        bytes += Buffer.byteLength(chunk);\n        if (bytes > 65536) throw Error('REPORTER_CAP');\n        pending += String(chunk);\n        const lines = pending.split('\\n'); pending = lines.pop();\n        const safe = lines.map(safeLine).filter(line => line !== null);\n        if (safe.length) process.stdout.write(safe.join('\\n') + '\\n', callback);\n        else callback();\n      } catch { callback(Error('REPORTER_FAILED')); }\n    },\n    final(callback) { if (pending !== '') bad = true; callback(); },\n  });\n  const reporter = source.compose(tap);\n  const reportDone = new Promise(resolve => {\n    pipeline(reporter, sink, error => { reporterDone = !error; if (error) bad = true; resolve(); });\n  });\n  await Promise.all([sourceDone, reportDone]);\n  const zero = ['suites', 'fail', 'cancelled', 'skipped', 'todo'];\n  if (bad || !ended || !reporterDone || versions !== 1 || plans.length !== 1\n      || plans[0] !== expected.length || seen.size !== expected.length\n      || reported.size !== expected.length || !expected.every(name => seen.has(name) && reported.has(name))\n      || counts.get('tests') !== expected.length || counts.get('pass') !== expected.length\n      || !zero.every(key => counts.get(key) === 0)\n      || process.exitCode !== 125) throw Error('INCOMPLETE_OR_UNEXPECTED_RESULTS');\n  process.exitCode = 0;\n  process.stdout.write('# qualification PASS ' + selected + '\\n');\n})().catch(() => {\n  if ([undefined, 0, 125].includes(process.exitCode)) process.exitCode = 1;\n  process.stderr.write('qualification caller failed\\n');\n  process.stdout.write('# qualification FAIL ' + selected + '\\n');\n});",
+      "joinedSourceAndReporter": true,
+      "nodeTestTimeoutMs": 5000,
+      "actualPassNamesMatchExactAuthoredRegistrations": true
+    },
+    "actual": {
+      "nativeNodeCommands": 1,
+      "taskState": "CLOSED",
+      "taskOutcome": "SUCCESS",
+      "captureState": "COMPLETE",
+      "actualExit": 0,
+      "outputComplete": true,
+      "reason": null
+    },
+    "streams": {
+      "stdout": {
+        "bytes": 2801,
+        "sha256": "2fbc275dd24cb6d07970f592c4ba51933e6fa49fb9eeb2bcb7fa37d4b2bb0f53",
+        "content": "# entry qualification/dynamic-plasma-user-send-key.behavior.draft.mjs\n# Node 24.19.0 platform=darwin arch=arm64\nTAP version 13\n# Subtest: public-key binding matches the exact supplied bytes to the actual UserSend payer address\nok 1 - public-key binding matches the exact supplied bytes to the actual UserSend payer address\n# Subtest: public-key binding rejects missing or substituted keys still accepted by hash and nonce checks\nok 2 - public-key binding rejects missing or substituted keys still accepted by hash and nonce checks\n# Subtest: public-key binding requires the actual payer address rather than an independently valid key\nok 3 - public-key binding requires the actual payer address rather than an independently valid key\n# Subtest: public-key binding preserves canonical key syntax empty-signature and exact-field requirements\nok 4 - public-key binding preserves canonical key syntax empty-signature and exact-field requirements\n# Subtest: public-key byte mapping does not establish curve validity key possession or signing authority\nok 5 - public-key byte mapping does not establish curve validity key possession or signing authority\n# Subtest: key and price binding consumes the same original hash nonce intent and selected Plasma fields\nok 6 - key and price binding consumes the same original hash nonce intent and selected Plasma fields\n# Subtest: matching public bytes cannot replace the independently selected payment or original allocation\nok 7 - matching public bytes cannot replace the independently selected payment or original allocation\n# Subtest: matching public bytes do not bypass nonce validation or original quote price-window guards\nok 8 - matching public bytes do not bypass nonce validation or original quote price-window guards\n# Subtest: public-key APIs reject hostile key address context descriptors proxies and providers without callbacks\nok 9 - public-key APIs reject hostile key address context descriptors proxies and providers without callbacks\n# Subtest: public-key APIs enforce exact arity phases and receipt separation without resetting authority\nok 10 - public-key APIs enforce exact arity phases and receipt separation without resetting authority\n# Subtest: key and price binding retains detached pre-await public bytes without rereading mutated caller input\nok 11 - key and price binding retains detached pre-await public bytes without rereading mutated caller input\n# Subtest: public-key module remains a fixed-size opt-in hash mapping without key signature or runtime machinery\nok 12 - public-key module remains a fixed-size opt-in hash mapping without key signature or runtime machinery\n1..12\n# tests 12\n# suites 0\n# pass 12\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# qualification PASS qualification/dynamic-plasma-user-send-key.behavior.draft.mjs\n"
+      },
+      "stderr": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "content": ""
+      }
+    },
+    "independentlyVerified": {
+      "allRetainedReceiptsAndCasBytes": true,
+      "metadataReadBytes": 46525,
+      "sourceAndRuntimeBeforeAfterAndIndependentCurrentStable": true,
+      "onlyOwnedEmptyRegisteredScratchClosed": true,
+      "removedScratchBytes": 0,
+      "processGroupObservedEmptyAfterJoin": true
+    },
+    "limits": {
+      "expectedBytes": 4194304,
+      "quotaBytes": 8388608,
+      "stdoutCap": 65536,
+      "stderrCapAtMost": 1048576,
+      "minFreeBytes": 10737418240
+    },
+    "caveat": "Node loader/runner/stream/native/OS behavior remains a premise. Test timeout, permission flags, sampled quota and a later empty process group are not hard OS/network sandbox, lifetime/cancellation or native-cleanup proof."
+  },
+  "remainingGates": [
+    "Valid curve point, key possession, signature and actual signer/approval authority",
+    "Actual SDK unsigned preparation and PoW generation",
+    "Authenticated current context, runtime p, funding and real provider READY",
+    "Full preparation/signing/inclusion price-movement and recovery matrix",
+    "Actual HTTPS owner lifecycle/native transport qualification",
+    "Durability, commit uncertainty and restart/recovery",
+    "Live-chain, service delivery and pilot acceptance"
+  ],
+  "publicationBoundary": {
+    "candidate": "Exactly this new module, its selected fixture and this result; all existing main entries unchanged.",
+    "excluded": "Unexecuted local collection/HTTPS owner source and qualification remain excluded.",
+    "CI": "NOT_RUN; no workflow/dispatch/install/build or prior green claim.",
+    "activation": "DEFAULT_OFF; not production or live qualification"
+  },
+  "protectedTotals": {
+    "consumedAdmissions": 2,
+    "actualPrepare": 1,
+    "bundles": 0,
+    "nativeChainProviderQualificationRuns": 0
+  },
+  "preserved": {
+    "realSigner": "DISABLED",
+    "originalPaymentAndRequestBytesHashPayloadRequirementsContext": "UNCHANGED",
+    "consumedAuthority": "NOT_RESET",
+    "pr193": "VALIDATED exact-same-signed-block resend remains distinct from UNKNOWN and ACKNOWLEDGED",
+    "automationModelAndExternalWorker": "UNTOUCHED"
+  }
+}
