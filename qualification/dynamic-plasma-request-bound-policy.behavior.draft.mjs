@@ -11,8 +11,8 @@ assert.equal(process.argv.length, 2);
 const pins = [
   ['../src/zenon/dynamic-plasma-required-fused-policy-adapter.js', 12024,
     'e2b693d4df9065d44ba590f4d0c8dffeb8e55187668eedfa396b4026c9905c3e'],
-  ['../src/zenon/bounded-dynamic-plasma-strategy.js', 12046,
-    '596359b3d71ad072f4692d0f57b4ddb726469379faf78ac0f558c93122dead99'],
+  ['../src/zenon/bounded-dynamic-plasma-strategy.js', 14445,
+    '791721f06f651636e1943b163dffea2d9a4518f4f0a635e2f73c0a2b7ce7cb5a'],
   ['../src/zenon/dynamic-plasma-observation-collector.js', 33780,
     'dd298d4cb2ec1c5e2afb7d0fcc51f94f37c3b3793be3e70dc1ce113f2f0f413e'],
   ['../src/zenon/dynamic-plasma-observation-normalizer.js', 28398,
@@ -32,13 +32,13 @@ const pins = [
   ['../package.json', 1413,
     '8c9a25504fbf6f87c31cdf245a6f4eec5a88cc89c8352151dc66a577c5771ef5'],
   ['../test/dynamic-plasma-price-policy.test.js', 28827,
-    'd871b2effec34dbdba2095c7f40d2c0b3fdaaaa1fc1ceebe80f3f58ad5009863'],
+    'ef0a10a700d4c8eff4baec05bf2ba058cd76e61a8b5e6675ed3ba6ade1cf9229'],
   ['./dynamic-plasma-price-policy-frontier-binding.behavior.draft.mjs', 8745,
     'd7f672ee4464bd002e893e231dec5acc85785db2407f7df25fa601d74f972409'],
   ['./dynamic-plasma-required-fused-policy-adapter.behavior.draft.mjs', 17942,
     '8f641945d9f699579a2440a7c6f90e16c4d1712e0e042e9135f0468a8db514f1'],
   ['./dynamic-plasma-four-field-strategy.behavior.draft.mjs', 13760,
-    '56b1d9629cb616da4493da5037fd9b0b2a8c0b4f28163cbb9a8e696f88965513'],
+    'eb983d201c81fc160708aa52d0a6a908828d313d96778a7fe873c0e77e72faee'],
 ];
 for (const [path, bytes, sha256] of pins) {
   const raw = readFileSync(new URL(path, import.meta.url));

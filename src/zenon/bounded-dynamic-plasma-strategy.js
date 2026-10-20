@@ -38,6 +38,8 @@ const regexpTest = RegExp.prototype.test;
 const objectPrototype = Object.prototype;
 const TypeErrorConstructor = TypeError;
 const DIGEST = /^sha256:[0-9a-f]{64}$/;
+const UNCOMPUTED_HASH = '0'.repeat(64);
+const UNCOMPUTED_NONCE = '0'.repeat(16);
 const CONTEXT_FIELDS = freeze([
   'phase', 'subjectDigest', 'runtimeContextDigest', 'observation', 'policy',
 ]);
@@ -143,6 +145,43 @@ export class BoundedDynamicPlasmaStrategy extends PlasmaStrategy {
   }
 
   /**
+   * Assemble raw unsigned UserSend DATA with the ORIGINAL quote's selected
+   * Plasma pair. No caller block is accepted or overwritten, and no quote is
+   * refreshed. This is the stage BEFORE work, hashing, key binding or signing,
+   * not prepareUnsigned(): hash/nonce are uncomputed zero placeholders and
+   * publicKey/signature are empty. Even a fusion-only draft is not prepared.
+   * The existing field consumer independently checks the assembled record.
+   * No SDK, work producer, wallet, callback, operation or authority is invoked.
+   */
+  async createUnsignedUserSendDraft(context, quote) {
+    try {
+      if (arguments.length !== 2) reject();
+      const value = userSendContext(context);
+      const sourceQuote = userSendQuote(quote, value.binding);
+      requireSubjectAcknowledgement(value.binding, sourceQuote);
+      const selected = SELECT_FOUR_FIELD({ ...value.adapterInput, quote: sourceQuote });
+      const subject = value.binding.subject;
+      const bound = bindPreparedFields(value, sourceQuote, {
+        version: subject.version, chainIdentifier: subject.chainIdentifier, blockType: subject.blockType,
+        hash: UNCOMPUTED_HASH, previousHash: subject.previousHash, height: subject.height,
+        momentumAcknowledged: subject.momentumAcknowledged, address: subject.address,
+        toAddress: subject.toAddress, amount: subject.amount, tokenStandard: subject.tokenStandard,
+        fromBlockHash: subject.fromBlockHash, data: subject.data,
+        fusedPlasma: selected.fusedPlasma, difficulty: selected.difficulty,
+        nonce: UNCOMPUTED_NONCE, publicKey: '', signature: '',
+      });
+      return freeze({
+        unsignedDraftVersion: 1, scope: 'DECLARED_UNSIGNED_USER_SEND_DRAFT',
+        stage: 'BEFORE_WORK_HASH_AND_SIGNING', preparation: 'NOT_PERFORMED',
+        accountBlock: bound.accountBlock, selection: bound.selection,
+        subjectDigest: bound.subjectDigest, intentDigest: bound.intentDigest, fieldDigest: bound.fieldDigest,
+        chainAuthentication: bound.chainAuthentication, hashAndWorkValidation: bound.hashAndWorkValidation,
+        keyAddressBinding: bound.keyAddressBinding, authority: 'NONE', afterSigningAction: 'NONE',
+      });
+    } catch { reject(); }
+  }
+
+  /**
    * Bind one exact declared unsigned JSON record to the independent expected
    * UserSend intent and the original quote's selected fields. This consumes
    * the actual reported fields, but does NOT run SDK preparation, verify the
@@ -155,21 +194,25 @@ export class BoundedDynamicPlasmaStrategy extends PlasmaStrategy {
       const value = userSendContext(context);
       const sourceQuote = userSendQuote(quote, value.binding);
       requireSubjectAcknowledgement(value.binding, sourceQuote);
-      const prepared = SNAPSHOT_UNSIGNED_FIELDS(accountBlock);
-      if (prepared.subjectDigest !== value.binding.subjectDigest) reject();
-      const selection = VALIDATE_FOUR_FIELD({
-        ...value.adapterInput, quote: sourceQuote, selection: prepared.selection,
-      });
-      return freeze({
-        preparedFieldBindingVersion: 1, scope: 'DECLARED_UNSIGNED_USER_SEND_FIELD_BINDING',
-        accountBlock: prepared.accountBlock, selection,
-        subjectDigest: prepared.subjectDigest, intentDigest: value.binding.intentDigest,
-        fieldDigest: prepared.fieldDigest, chainAuthentication: 'NOT_ESTABLISHED',
-        hashAndWorkValidation: 'NOT_PERFORMED', keyAddressBinding: 'NOT_PERFORMED',
-        authority: 'NONE', afterSigningAction: 'NONE',
-      });
+      return bindPreparedFields(value, sourceQuote, accountBlock);
     } catch { reject(); }
   }
+}
+
+function bindPreparedFields(value, sourceQuote, accountBlock) {
+  const prepared = SNAPSHOT_UNSIGNED_FIELDS(accountBlock);
+  if (prepared.subjectDigest !== value.binding.subjectDigest) reject();
+  const selection = VALIDATE_FOUR_FIELD({
+    ...value.adapterInput, quote: sourceQuote, selection: prepared.selection,
+  });
+  return freeze({
+    preparedFieldBindingVersion: 1, scope: 'DECLARED_UNSIGNED_USER_SEND_FIELD_BINDING',
+    accountBlock: prepared.accountBlock, selection,
+    subjectDigest: prepared.subjectDigest, intentDigest: value.binding.intentDigest,
+    fieldDigest: prepared.fieldDigest, chainAuthentication: 'NOT_ESTABLISHED',
+    hashAndWorkValidation: 'NOT_PERFORMED', keyAddressBinding: 'NOT_PERFORMED',
+    authority: 'NONE', afterSigningAction: 'NONE',
+  });
 }
 
 function userSendContext(value) {
