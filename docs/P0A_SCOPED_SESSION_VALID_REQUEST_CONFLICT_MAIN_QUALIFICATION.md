@@ -1,0 +1,43 @@
+# P0-A scoped-session valid request conflict: local qualification
+
+## Result and exact scope
+
+One authored case passed in one joined local Node.js command: the original signed request returned 200; a second, independently valid proof for the same key, grant and request ID with only maxCostUnits changed from 2 to 3 returned 409 with request_unavailable; the identical original signed envelope then returned the original cached 200. Total execution and debit counts remained one. This closes only the selected local synthetic request-identity conflict case. It does not establish live pilot, official x402 recovery or production readiness.
+
+The create-only recipe is `qualification/service-credit-scoped-session-valid-request-conflict.draft.mjs`, 32,749 bytes / 582 LF, SHA-256 `faba70cb266013809098a7d85ff60ef37418124559502285ca44f3760a492cb5`, Git blob `18ac513e3e9381e7a8a652771d8faf2705eb3d1c`. Its immutable SOURCE DRAFT / NOT_RUN authoring label remains unchanged; the adjacent behavior result records the separate execution outcome. No production source, package, default wiring or operational launcher is changed by this three-file qualification batch.
+
+The baseline for a possible transfer is main `5f47819bcb800a65094464facff6a9d6f79ea71e`, tree `8f4271611910e9ad7b885614cdfa9e1ffb20166e`. All nine executed production/package pins are listed in the result. They include the scoped session, durable owner, HTTP admission, SQLite store, model, execution contract, close helper and capability verifier; there is no SDK or network dependency in this selected application graph.
+
+## What was exercised
+
+The case creates exactly one new private synthetic SQLite store, one offer and one seven-unit mock grant. It uses the actual returned session with admittedGrantId set to that grant, a two-entry execution journal and a declared cost of two units. The context is zenon:mock with a synthetic maximum-safe-integer chain identifier, not an operational chain.
+
+At most one in-memory Ed25519 key-pair attempt and two capability-signature attempts are guarded before the operations. Both proofs must positively pass the actual verifier with its exact frozen five-field success result. The second request differs only in maxCostUnits, and both budgets cover the cost and remaining balance; an invalid proof or insufficient budget cannot satisfy this test. No private key is exported or logged. Releasing its reference is not an erasure claim.
+
+The first response must have exact success bytes and private headers. The ledger must contain one SUCCEEDED request, one MAY_HAVE_STARTED / SUCCEEDED execution, a revision increase of three, consumed units of two and available units of five. The test retains the complete coupled ledger, durable-execution and metadata snapshot.
+
+Only after all first-success assertions does it construct and send the distinct valid same-ID request. Only exact 409 is accepted, not 401, 403 or 503. After the rejection and again after the final original-envelope replay, the entire retained snapshot, cached request result, debit/execution counts and declared scheduling counters must remain unchanged. Original request/proof/header references and signing/authorization bytes remain captured and checked. The callback always returns its original immediately fulfilled native Promise, so an erroneous additional execution settles and fails the assertions rather than being hidden behind artificial pending work.
+
+The source contract maps a mismatched persisted reservation to REQUEST_ID_CONFLICT before cached execution reuse; the owner maps that failure to its conflict code and the session maps that code to 409/request_unavailable. The observed case exercises that path through the actual session, rather than a direct admission or owner oracle.
+
+## Joined execution and ownership evidence
+
+Node.js 24.19.0, darwin/arm64, used the retained verified binary SHA-256 `613be50c90e83aa8da58dd9ed393d0b39914a3b8ef4123fe817b46c2679cebe2`. Its exact full identity matched; the large binary was neither copied nor rehashed for this selection. One fixed unsaved CommonJS run-API callsite selected only this positional test file with isolation none, concurrency one and forceExit false. The cleared environment contained exactly nine declared keys. No additional Node parse/check invocation occurred.
+
+The original command joined exit 0 with complete streams: one test, one pass, zero failed, skipped, cancelled or todo. Case duration was 399.879 ms and TAP duration 407.594958 ms; neither is complete process lifetime or a throughput measurement. Stdout was 2,087 bytes, SHA-256 `28e463df5e92b8046fe69c20e607977bf50ed43f99065d623180195a2ff98e64`; stderr was empty with the standard empty SHA-256. The complete originals, exact authored case registration, diagnostic scalars, command/selection/callsite records, task outcome and CAS identity/creator bindings were independently reviewed.
+
+Original handle, execute and close Promises are retained and observed. The known session is closed once only after known work settles. An unconditional post-close zero-handle / balanced schedule-cancel HOLD gate runs even after ordinary body failure, before borrowed-store reads or fixture-store close. On success the borrowed store remains readable and unchanged, then the fixture close returns once. Declared schedules/cancels were 1/1, handles and pending originals zero. These are fixture controls, not independent native timer or database-close instrumentation.
+
+The owned storage task is CLOSED/SUCCESS; cleanup remains HOLD because the new synthetic child database is not registered for deletion. The 16,384-byte database is retained unchanged, not adopted, repaired, deleted, SQL-decoded or reopened after exit. A raw read-only hash was recorded after one observation found the PID and process group absent. This is not restart, physical durability, native cleanup or native database-close proof. Unknown ownership, launch, drain, close or timer state remains HOLD without forced cleanup or a new operational attempt.
+
+## Limits and retained boundaries
+
+The approved storage manager, mounted-volume identity and existing private-root policy were verified before use. Expected allocation was 32 MiB and task quota 64 MiB; the production floor remained 10 GiB plus the 1 GiB safety margin, allocations and reservations. The test timeout was 12 seconds, foreground timeout 20 seconds and metadata-lock budget 60 seconds. TAP/stdout/stderr caps were 65,536 / 131,072 / 1,048,576 bytes. These limits and Node restrictions do not establish a hard lifetime, cancellation/native-cleanup guarantee or an OS/network sandbox.
+
+Complete worker Source and FIRST ORIGINAL were independently read before application or execution. The Source frame was 39,780 bytes, SHA-256 `1738992cc4e1b63c94dd76449a2e72b2dab9838a3a9e86c12be58149107a5db1`; the handoff was 4,310 bytes, SHA-256 `5ec396f37a57ff5cab8284720887fcd6332b31199c95b0ad789ed33f09a818c5`. The reviewed Source byte upper was 275,011 against target 250,000 and unchanged hard cap 400,000; the prior 4,995,988 remains retained and the cumulative upper is 5,270,999. Unassembled 33,544/32,893-byte recipe plans and a 40,514-byte Source-frame plan remain charged refusals. This account is not measured OS memory, tokens, money or process time. Reusing unchanged reviewed graph/baseline references avoided repeat reads and copies; the readable recipe exceeds its soft target but meets its hard limit without dropping assertions.
+
+Completed identical-request replay, foreign-grant, active-close and earlier stopped slices were not rerun or republished. Three HTTP calls within this case are not three tests. Missing coverage is not proof of novelty or a defect.
+
+Real totals remain two consumed admissions, one actual chain PREPARE, zero bundles and zero native-chain/provider qualification runs. The real payment signer stays DISABLED. Original real request/payment bytes, hash, payload, requirements, context and consumed authority remain unchanged. Failed ownership metadata is not retried. PR193's possible VALIDATED exact-same-signed-block resend remains distinct from UNKNOWN and ACKNOWLEDGED.
+
+Dynamic Plasma preparation and official x402 compatibility remain separate lanes. Current context, funding, payer/provider/policy authority, actual provider READY, service delivery, durability, commit uncertainty and restart/recovery are separate acceptance gates. No real payment/signing/send/resend, SDK/build/install, CI dispatch, provider setup, broad controller qualification, historical cleanup or automation change was performed. The selected local result does not replace any of those gates.
