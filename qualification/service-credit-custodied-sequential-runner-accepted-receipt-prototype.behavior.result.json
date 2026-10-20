@@ -1,0 +1,142 @@
+{
+  "schemaVersion": 1,
+  "scope": "OCT20_P2_ACCEPTED_RUN_RECEIPT_PROTOTYPE_CONTINUITY_V1",
+  "status": "SELECTED_LOCAL_ACTUAL_CORE_UNIT_REGRESSION_PASSED",
+  "productionQualification": false,
+  "mainMerged": false,
+  "change": {
+    "path": "src/service-credit-custodied-sequential-runner-core.js",
+    "basePublishedRef": "800556ee2640ae69eec6d6c84bca7c6014afac31",
+    "base": {
+      "bytes": 15288,
+      "LF": 479,
+      "sha256": "36c99342bf9e47559e39535aefcde78acbbdd7fb210d42a77dbbb93c2fd9f8ff",
+      "gitBlob": "c9005ab245f045648d6bf508b9afef6c2d26c583"
+    },
+    "candidate": {
+      "bytes": 15384,
+      "LF": 482,
+      "sha256": "cb2e3fd23a4fdc318902ae95f6f03b3073507ff5ced279626e15151fca171ab2",
+      "gitBlob": "83122ec62d7701dc1b210438b8be0a9792781433"
+    },
+    "addedLines": 3,
+    "exactInverseVerified": true,
+    "behavior": "Consult the unforgeable accepted-array weak-identity receipt before revalidating mutable caller-owned array shape; return only the existing run Promise. All foreign/initial admission paths and child operations remain unchanged."
+  },
+  "test": {
+    "path": "test/service-credit-custodied-sequential-runner-accepted-receipt-prototype.test.js",
+    "bytes": 2817,
+    "LF": 73,
+    "sha256": "bbf99a61bac18b984c6d545200666388278646ef002ddac08ba3a3220e7eabad",
+    "name": "accepted run receipt survives caller array prototype mutation",
+    "authoredCases": 1,
+    "sameExactTestAcrossBothVersions": true,
+    "imports": "Only node:test, node:assert/strict and the actual core; the core imports the actual custody contract and Node buffer/util/crypto builtins."
+  },
+  "outcomes": {
+    "baseline": {
+      "nodeExit": 1,
+      "tests": 1,
+      "passed": 0,
+      "failed": 1,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "expectedAuthoredFailure": true,
+      "loaderFailure": false,
+      "assertion": "Pending replay must be reference-equal to the existing run Promise; old code returned a new rejected INVALID_INPUT Promise.",
+      "stderrBytes": 0,
+      "joined": true,
+      "elapsedSeconds": 0.374685
+    },
+    "fixed": {
+      "nodeExit": 0,
+      "tests": 1,
+      "passed": 1,
+      "failed": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "stderrBytes": 0,
+      "joined": true,
+      "elapsedSeconds": 0.055602
+    },
+    "timingLimit": "Observed local process durations only, not a performance comparison, latency guarantee or throughput measurement."
+  },
+  "coveredAssertions": [
+    "Pending and terminal replay of the exact admitted array after its caller-owned prototype changes to null returns the original run Promise.",
+    "The declared native-Promise child is submitted once and closed once; attempted/completed1 and queuedReferences0.",
+    "The original native close Promise is preserved and cached.",
+    "A different ordinary array remains ALREADY_RUN; a never-accepted null-prototype array remains INVALID_INPUT.",
+    "Potential replay rejections are observed immediately; finally resolves/drains the original submit, run, cached close and observed chains on the expected baseline assertion failure."
+  ],
+  "execution": {
+    "nodeVersion": "24.19.0",
+    "nodeSHA256": "ab982ffe2d922fd0625872f3474c4264ad09b04ab0a375eb3e77dac92f64508a",
+    "runtimeIdentity9RecheckedBeforeAndAfter": true,
+    "noRepeated121MBRuntimeCopyOrHash": true,
+    "explicitFileCount": 1,
+    "processIsolation": "none",
+    "concurrency": false,
+    "testTimeoutMs": 5000,
+    "parentCommunicateTimeoutSeconds": 10,
+    "launcher": "Fixed inline CommonJS explicit node:test run API, built-in TAP reporter, no saved helper.",
+    "sameLauncherAcrossBothVersions": true,
+    "environment": "Cleared except fixed PATH/LC_ALL and UID-derived CoreFoundation encoding; host-specific value not published.",
+    "permissionFileReadGrants": [
+      "src/service-credit-custodied-sequential-runner-core.js",
+      "src/service-credit-original-request-custody-contract.js",
+      "test/service-credit-custodied-sequential-runner-accepted-receipt-prototype.test.js",
+      "package.json"
+    ],
+    "fsWriteChildWorkerAddonGrants": [],
+    "applicationSourceHashesAndIdentitiesStableWithinEachRun": true,
+    "actualScratchDownloadsInstallations": 0,
+    "limits": "Permission grants cover four exact application/package files. Native loader, test-runner, builtin crypto initialization, stdio and OS behavior remain premises; these checks are not hard lifetime/cancellation/native-cleanup or OS/network-sandbox guarantees."
+  },
+  "preserved": {
+    "historicalCompatibilityCases": 13,
+    "historicalV3Cases": 5,
+    "historicalGuardsAndResultsRewritten": false,
+    "historicalCasesRerun": false,
+    "warning": "The prior source-bound tests/results remain associated with their original pins. This new one-case result does not qualify the old full selection against the modified source or qualify default npm test.",
+    "childCloseSelection": "Stopped and preserved: a replacement throwing child would not prove failure of the actual cached-native-close-Promise premise."
+  },
+  "resourceAccounting": {
+    "authoringWindowStatus": "SOURCE_HOLD_UNRECONCILED",
+    "authoringAccountedPayloadSubtotalBytes": 116780,
+    "authoringPlannedBytes": 98304,
+    "authoringHardBytes": 131072,
+    "authoringPlanExceeded": true,
+    "controlsClippedMetadataAndFinalEmissionNotFullyReconciled": true,
+    "priorHardLimitNotRaisedOrCertified": true,
+    "cachedBodiesDeliveredInSeparateWindow": {
+      "plannedBytes": 8192,
+      "hardBytes": 12288,
+      "bodyBytes": 3473,
+      "notAuthoringOrAuthorityReset": true
+    },
+    "primaryPrewriteInlineSyntaxRefusal": {
+      "beforeExecution": true,
+      "fileWrites": 0,
+      "testsRun": 0,
+      "retained": true
+    }
+  },
+  "safety": {
+    "sdkSqlNetworkKeysSigningProviderOperations": 0,
+    "newPaymentOrRequestAuthority": 0,
+    "realConsumedAdmissions": 2,
+    "actualRealPREPARE": 1,
+    "bundles": 0,
+    "nativeChainProviderQualificationRuns": 0,
+    "realSigner": "DISABLED",
+    "originalSignedInputsAndPR193Boundaries": "UNCHANGED"
+  },
+  "remainingAcceptance": [
+    "Actual public borrowed/SQLite client and transport integration for the new source; this case uses only ordinary declared child callbacks.",
+    "Separate source-bound compatibility/default-suite and hosted-CI acceptance before any main transfer; no workflow or merge was started.",
+    "Real original-request durability, process restart, provider READY, service delivery and full pilot qualification remain independent gates.",
+    "The distinct SDK-test and synthetic-provider-signing exception questions remain unanswered; this unit consumes neither authority."
+  ]
+}

@@ -1,0 +1,265 @@
+{
+  "schema": "service-credit-owned-sqlite-receipt-prototype-local-result/v1",
+  "workId": "OCT20_P2_PUBLISHED_RUNNER_OWNED_SQLITE_RECEIPT_PROTOTYPE_CONTINUITY_V1",
+  "result": "PASS_SELECTED_LOCAL_BEHAVIOR_ONLY",
+  "qualification": "UNQUALIFIED_FOR_PILOT_OR_PRODUCTION",
+  "subject": {
+    "candidateCommit": "5e4107cefcf2766883d512e85807837f58aedff9",
+    "candidateTree": "8a9f3c4086c27643403227d8f6621f675a322312",
+    "baseMainCommit": "800556ee2640ae69eec6d6c84bca7c6014afac31",
+    "binding": "The fourteen production/package subjects below matched the immutable candidate. The local checkout HEAD was not substituted for that reference."
+  },
+  "fixture": {
+    "path": "qualification/service-credit-custodied-sqlite-receipt-prototype.behavior.draft.mjs",
+    "bytes": 31788,
+    "LF": 911,
+    "sha256": "4b5388ed69ff018aaeaef3ce0aa5dc84a2853ebb20dc5868883d630faeb16547",
+    "gitBlob": "31e46732669c7a425942864a950cb4d8349b235a",
+    "authoringHeader": "SOURCE_DRAFT / NOT_RUN",
+    "headerMeaning": "The preserved header describes the source-authoring handoff. The single subsequent selected execution is recorded here; this is not default-suite or public-launch qualification."
+  },
+  "execution": {
+    "selectedFiles": [
+      "qualification/service-credit-custodied-sqlite-receipt-prototype.behavior.draft.mjs"
+    ],
+    "selection": "One explicit positional file through node:test run API; no glob, test-name filter, discovery, watch or forced exit.",
+    "runtime": {
+      "nodeVersionAsserted": "24.19.0",
+      "platformPin": "darwin/arm64",
+      "sha256": "ab982ffe2d922fd0625872f3474c4264ad09b04ab0a375eb3e77dac92f64508a",
+      "runtimeDigestReuse": "Previously reviewed binary digest reused only after exact nine-field file identity checks; no binary copy or new binary hashing pass."
+    },
+    "authoredRegistration": "published owned SQLite runner preserves accepted receipt after array prototype mutation",
+    "actualPassNames": [
+      "published owned SQLite runner preserves accepted receipt after array prototype mutation"
+    ],
+    "totals": {
+      "tests": 1,
+      "suites": 0,
+      "pass": 1,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "actualNodeExit": 0,
+    "managerControllerExit": 0,
+    "joined": true,
+    "outputComplete": true,
+    "tapCaseDurationMs": 222.411209,
+    "tapRunDurationMs": 269.085708,
+    "durationMeaning": "TAP durations only, not a benchmark or total manager lifetime.",
+    "stdout": {
+      "bytes": 366,
+      "sha256": "51159550da12d0ac63fe9bdda917653d77af8099965c2ed5a058d14246d078c5",
+      "text": "TAP version 13\n# Subtest: published owned SQLite runner preserves accepted receipt after array prototype mutation\nok 1 - published owned SQLite runner preserves accepted receipt after array prototype mutation\n  ---\n  duration_ms: 222.411209\n  type: 'test'\n  ...\n1..1\n# tests 1\n# suites 0\n# pass 1\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 269.085708\n"
+    },
+    "stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "completedHistoricalRunsRepeated": 0
+  },
+  "observedAssertions": {
+    "backend": "Actual default-V2 owned SQLite runner; one fresh synthetic database unit.",
+    "acquisitions": "One declared local metadata-seed store followed by one owned runner acquisition; no overlapping native database ownership was admitted.",
+    "acceptedArrayMutation": "Only the already accepted caller array prototype becomes null; entry descriptors are unchanged.",
+    "pendingAndTerminalRunReceipt": "Strict identity with the original run Promise while the transport is pending and after owned close.",
+    "counts": {
+      "attempted": 1,
+      "completed": 1,
+      "notAttempted": 0,
+      "queuedReferences": 0,
+      "closeCalls": 1,
+      "retainCalls": 1,
+      "readbackConfirmations": 1,
+      "dispatchCalls": 1,
+      "callbackCompletions": 1,
+      "requestCalls": 1,
+      "settlements": 1
+    },
+    "close": "Same cached close Promise; one owned-store close returned; slot released, admission closed and transport timer cleared.",
+    "transport": "One in-memory fake exchange with two explicitly closed fake handles. This is not HTTP delivery or provider proof.",
+    "fundingAndAuthorization": "Declared local metadata and opaque authorization text only; no capability signature was generated or verified."
+  },
+  "storage": {
+    "manager": "Existing reviewed task-storage v2 manager; no new saved operational helper.",
+    "freshTasks": 1,
+    "foregroundCommands": 1,
+    "freshDatabaseUnits": 1,
+    "expectedReservationBytes": 33554432,
+    "taskQuotaBytes": 67108864,
+    "productionMinFreeBytes": 10737418240,
+    "productionSafetyMarginBytes": 1073741824,
+    "policyChanged": false,
+    "logicalDatabaseFileBytes": 24576,
+    "logicalDatabaseFileCount": 1,
+    "allocationMeaning": "Post-run filesystem metadata only; not APFS physical allocation, durability or reclaimed-space measurement.",
+    "stdoutProducerCapBytes": 65536,
+    "stderrProducerCapBytes": 1048576,
+    "independentPerStreamReadCapBytes": 65536,
+    "sourceCopyBytes": 0,
+    "runtimeCopyBytes": 0,
+    "zipOrPackagingCopies": 0,
+    "cas": "Complete captured bytes are referenced by digest. The existing empty object is shared by the registration marker and empty stderr; no hard-linked evidence or second payload copy was created.",
+    "taskState": "CLOSED",
+    "taskOutcome": "SUCCESS",
+    "capturePromotion": "COMPLETE",
+    "cleanupDecision": "HOLD",
+    "cleanupReason": "The fixture-created database directory/files are not registered disposable manager payloads. They remain retained; no adoption, deletion, cleanup bypass or cleanup assurance follows.",
+    "processGroup": "Absent at the separate post-run observation; not a persistent operating-system cleanup guarantee."
+  },
+  "independentReview": {
+    "completeWorkerHandoffAndWholeFixtureRead": true,
+    "actualCommandVectorAndClearedEnvironmentCompared": true,
+    "orderedSourceAndSelfPinsCompared": true,
+    "sourceHashesAndNineFieldIdentitiesUnchangedForAll15Files": true,
+    "fullTapAndBothCaptureLedgersRead": true,
+    "casObjectOwnershipAndCreatorBinding": "Validated by the existing reviewed Store.object implementation and exact bounded reads of the sealed object ledgers.",
+    "postRunReadRefusal": "An initial read-only inspector demanded mode0600 for an object ledger that the unchanged manager seals to0400. The inspector was corrected after source review; permissions were not changed or weakened and the test was not rerun.",
+    "inMemoryComparisonCorrection": "Returned and saved JSON object key order differed. The exact-value comparison was corrected to sort object keys while preserving array order; no receipt or repository artifact was rewritten.",
+    "originalInspectionFailuresRetained": true
+  },
+  "launcherBoundary": {
+    "environment": "Cleared environment with explicit task fixture inputs; NODE_OPTIONS absent.",
+    "nativeRestrictions": [
+      "--no-addons",
+      "--disallow-code-generation-from-strings"
+    ],
+    "execArgvView": "The fixed inline caller checks the actual flags before clearing only the process.execArgv metadata view expected by the fixture. Native restrictions remain active.",
+    "scratchStamp": "After the manager creates its registered capture directory, the inline caller verifies stable scratch identity and refreshes directory metadata DATA. This is not ownership authentication or cleanup authority.",
+    "savedLauncherOrInstalledHelper": false,
+    "nodePermissionModel": false,
+    "osOrNetworkSandboxClaim": false,
+    "nodeTestTimeoutMs": 10000,
+    "fixtureWaitObservationMs": 1000,
+    "managerCommandTimeoutSeconds": 20,
+    "timeoutMeaning": "Observation and manager process-control limits are not hard whole-controller lifetime, cancellation, native cleanup or operating-system/network sandbox guarantees.",
+    "nativeLoaderRunnerStreamAndOsSemanticsRemainPremises": true
+  },
+  "sourceSubjects": [
+    {
+      "path": "src/service-credit-custodied-sqlite-sequential-runner.js",
+      "bytes": 21467,
+      "LF": 510,
+      "sha256": "9378a09dfd23c6ad5e093971d16c5aad62c19b5f3cce353bb199f037df64d7e0",
+      "gitBlob": "105b22e1463ab8302b141510e2bb991b746169ad"
+    },
+    {
+      "path": "src/service-credit-custodied-sqlite-http-client.js",
+      "bytes": 18540,
+      "LF": 511,
+      "sha256": "ea16d6ac5ce72d6434c06e98c52c324daf918dd570f15997cdc21e501f677f4e",
+      "gitBlob": "9572dfcca76b83b53bdd5bd132ffaf110720dc3a"
+    },
+    {
+      "path": "src/service-credit-custodied-sequential-runner-core.js",
+      "bytes": 15384,
+      "LF": 482,
+      "sha256": "cb2e3fd23a4fdc318902ae95f6f03b3073507ff5ced279626e15151fca171ab2",
+      "gitBlob": "83122ec62d7701dc1b210438b8be0a9792781433"
+    },
+    {
+      "path": "src/service-credit-custodied-http-client.js",
+      "bytes": 10755,
+      "LF": 292,
+      "sha256": "ddbc54faf4a14d95e6274bc9df27b7b49db251bab67c11b871cfb2f9e78b4f15",
+      "gitBlob": "90fd4c8a2cc8fb552f8eb0cb45607bfa44c61108"
+    },
+    {
+      "path": "src/service-credit-custodied-request-owner.js",
+      "bytes": 35073,
+      "LF": 938,
+      "sha256": "6e7493a4859d48530820e68a4a19a513aad014ffc1048b42965a3ad36ae7c5f7",
+      "gitBlob": "2dee22fd780db9de662fe1243075e74cef0bf296"
+    },
+    {
+      "path": "src/service-credit-http-execute-dispatch.js",
+      "bytes": 27034,
+      "LF": 770,
+      "sha256": "254ba8eef5ea5efb3a1b901be09e9cb33afbc3cfcf63789ca4a23316b6180d1b",
+      "gitBlob": "280dd20dc669e2856d263eba62ccd0fe9af72f21"
+    },
+    {
+      "path": "src/service-credit-original-request-custody-contract.js",
+      "bytes": 14051,
+      "LF": 356,
+      "sha256": "fd349de553a17abcc2e0567ba6640e6e3d5d26cfa79ee1e355928dc9fa8d3915",
+      "gitBlob": "f911d42d01b69e6577f9bcd66f4ed59aab8ab882"
+    },
+    {
+      "path": "src/service-credit-zenon-funding-post-v1-payer-recovery-sqlite-store.js",
+      "bytes": 57459,
+      "LF": 1536,
+      "sha256": "9c925f241effbfec0bf014ff284e834c4d5679c4ea7224f83a6354cde6cffdaf",
+      "gitBlob": "260c2f43306b029ca694aa06b8c60d1be037c614"
+    },
+    {
+      "path": "src/x402-wire.js",
+      "bytes": 39886,
+      "LF": 934,
+      "sha256": "5fba91af5a352f62d1a335c7176a45a604e2af5d92b1c4b0e53825c1f20d4e56",
+      "gitBlob": "fb060d4e349b1c31a1219a0cc137af250a8a2291"
+    },
+    {
+      "path": "src/service-credit-pilot-client-plan.js",
+      "bytes": 7483,
+      "LF": 181,
+      "sha256": "73ee3d739de85150039e733234cd0761c228d68de040d1e126902e808a259ac6",
+      "gitBlob": "14334c82b5b7c80fb8f7f6a392a1a0f3c3adcbf1"
+    },
+    {
+      "path": "src/service-credit-pilot-status-view.js",
+      "bytes": 3202,
+      "LF": 60,
+      "sha256": "cf3822d8b9ec4eb4772452ed1888b96d398fd87c1ead44cd155a5acc1a6b66ed",
+      "gitBlob": "0890db504e44b704d0434dc309e711743570e652"
+    },
+    {
+      "path": "src/service-credit-custodied-recovery-collection-core.js",
+      "bytes": 13794,
+      "LF": 306,
+      "sha256": "51d06da70ecccd0cf8b38d650367d1ae903ea86010a5ebeadb682af98e4b890b",
+      "gitBlob": "5275832eebbf87e0cd37f3c2e3b82147ab625a72"
+    },
+    {
+      "path": "src/service-credit-custodied-recovery-observation-collection-core.js",
+      "bytes": 8579,
+      "LF": 213,
+      "sha256": "36b7cece2d436cbfcac5f4299dd6bd30e5eede6ebb2ebe769ae7bf3a6f1a72b4",
+      "gitBlob": "4dc8765be0aa4b0e927fface960e366a3a6ccd1e"
+    },
+    {
+      "path": "package.json",
+      "bytes": 1413,
+      "LF": 40,
+      "sha256": "8c9a25504fbf6f87c31cdf245a6f4eec5a88cc89c8352151dc66a577c5771ef5",
+      "gitBlob": "ec7193f6fd76f34778515079dc777594175c4c34"
+    }
+  ],
+  "sourceAuthoringAccounting": {
+    "planBytes": 786432,
+    "workerReportedConservativeProjectionBytes": 1045261,
+    "hardBytes": 1048576,
+    "aggregateCapIndependentlyCertified": false,
+    "note": "The plan was exceeded. Oversized inert drafts and read/output/control reservations remain accounted by the worker report. Prior source-window accounting and consumed authority were not reset or refunded."
+  },
+  "excludedClaims": [
+    "No backend reopen or canonical persisted-row recovery inspection.",
+    "No fresh-process restart, native durability or crash/recovery qualification.",
+    "No SDK import, build, installation, hosted CI or broad test suite.",
+    "No actual-network transport qualification, key generation, signing, capability-proof verification, real provider READY or real service-delivery acceptance.",
+    "No real funding, signing, payment, replacement, resend or consumed-authority reset.",
+    "No Dynamic Plasma preparation/frontier/signing/inclusion or official x402 compatibility acceptance.",
+    "No main-branch activation, deployment, production or pilot acceptance."
+  ],
+  "protectedRealTotals": {
+    "consumedAdmissions": 2,
+    "actualChainPREPARE": 1,
+    "bundles": 0,
+    "nativeChainProviderQualificationRuns": 0,
+    "realSigner": "DISABLED",
+    "originalPaymentAndRequestBytesAndHash": "UNCHANGED",
+    "validatedSameSignedBlockResendBoundary": "UNCHANGED_AND_DISTINCT_FROM_UNKNOWN_OR_ACKNOWLEDGED"
+  }
+}
