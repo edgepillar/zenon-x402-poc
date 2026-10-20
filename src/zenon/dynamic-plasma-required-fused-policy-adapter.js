@@ -2,6 +2,10 @@ import { types as utilTypes } from 'node:util';
 import { validateDynamicPlasmaRequiredFusedQuote } from './dynamic-plasma-required-fused-quote.js';
 import { classifyDynamicPlasmaCompatibility } from './dynamic-plasma-compatibility.js';
 import {
+  normalizeDynamicPlasmaObservation,
+  snapshotDynamicPlasmaQuoteRequestContext,
+} from './dynamic-plasma-observation-normalizer.js';
+import {
   createDynamicPlasmaPricePolicyQuote,
   selectDynamicPlasmaPricePolicyFields,
   validateDynamicPlasmaPricePolicySelection,
@@ -12,6 +16,8 @@ const CLASSIFY = classifyDynamicPlasmaCompatibility;
 const CREATE_POLICY = createDynamicPlasmaPricePolicyQuote;
 const SELECT_POLICY = selectDynamicPlasmaPricePolicyFields;
 const VALIDATE_POLICY = validateDynamicPlasmaPricePolicySelection;
+const NORMALIZE_OBSERVATION = normalizeDynamicPlasmaObservation;
+const SNAPSHOT_REQUEST_CONTEXT = snapshotDynamicPlasmaQuoteRequestContext;
 const freeze = Object.freeze;
 const create = Object.create;
 const ownKeys = Reflect.ownKeys;
@@ -29,15 +35,22 @@ const CREATE = freeze([
 ]);
 const SELECT = freeze([...CREATE, 'quote']);
 const VALIDATE = freeze([...SELECT, 'selection']);
+const REQUEST_BOUND_FIELDS = freeze(['quoteRequestContextVersion', 'expectedQuoteRequestContext']);
+const POLICY_FIELDS = freeze([
+  'policyVersion', 'maxPriceChangePercent', 'maxMomentumAdvances',
+  'maxFusedPlasma', 'maxDifficulty',
+]);
 const OBSERVATION = freeze([
   'chainProfileMatch', 'beforeFrontier', 'rpcObservation', 'afterFrontier',
 ]);
 const PROFILE = freeze(['classification']);
 const FRONTIER = freeze(['height', 'hash', 'version', 'nextFusionPrice', 'nextWorkPrice']);
+const REQUEST_BOUND_OBSERVATION = freeze([...OBSERVATION, 'quoteRequestContext']);
 const RECEIPT = freeze([
   'requiredFusedPolicyQuoteVersion', 'scope', 'chainAuthentication', 'activation',
   'afterSigningAction', 'authority', 'sourceObservation', 'pricePolicyQuote',
 ]);
+const REQUEST_BOUND_RECEIPT = freeze([...RECEIPT, 'requestContextBinding']);
 
 /**
  * Opt-in shared planner/validator adapter for declared four-field V2 quotes.
@@ -58,6 +71,18 @@ const RECEIPT = freeze([
  * signer state, subject ownership, ancestry, runtime p/governance, activation,
  * preparation, work, inclusion or recovery. Expiry grants no replacement or
  * retry authority. No active buyer, SDK, signer or default is wired here.
+ *
+ * Additional quoteRequestContextVersion: 1 and expectedQuoteRequestContext
+ * explicitly select the request-bound consumer. observation then uses the
+ * collector's exact raw schema3 grammar, not the older four-field projection.
+ * Recompute the independent declared expectation with the existing snapshot
+ * function, then normalize both endpoints against its digest before policy
+ * creation or current selection/validation. A version2 receipt retains the
+ * detached request context and cannot be mixed with older receipts. Matching
+ * remains declared-DATA equality, not authenticated RPC, full block intent,
+ * signer state, issuance or authority. Policy p must equal the normalized
+ * declared plasma-variable value on every call; real runtime/governance p
+ * and its stability still require independent qualification.
  * Captured intrinsics, unchanged dependencies and their native behavior are
  * premises; this is not a hard resource, cancellation or sandbox boundary.
  */
@@ -65,7 +90,7 @@ export function createDynamicPlasmaRequiredFusedPolicyQuote(input) {
   try {
     if (arguments.length !== 1) reject();
     const top = context(input, CREATE);
-    return buildReceipt(normalizeObservation(top.observation), top);
+    return buildReceipt(normalizeCurrentObservation(top.observation, top), top);
   } catch { reject(); }
 }
 
@@ -84,13 +109,50 @@ export function validateDynamicPlasmaRequiredFusedPolicySelection(input) {
 }
 
 function context(value, fields) {
-  const top = record(value, fields);
+  if (typeof value !== 'object' || value === null || isProxy(value)
+      || prototype(value) !== objectPrototype) reject();
+  const requestBound = descriptor(value, 'quoteRequestContextVersion') !== undefined;
+  const top = record(value, requestBound ? [...fields, ...REQUEST_BOUND_FIELDS] : fields);
   if (top.requiredFusedPolicyVersion !== 1) reject();
+  if (requestBound) {
+    if (top.quoteRequestContextVersion !== 1) reject();
+    top.expectedQuoteRequestContext = SNAPSHOT_REQUEST_CONTEXT(top.expectedQuoteRequestContext);
+  }
   return top;
 }
 
-function normalizeObservation(value) {
-  const observation = record(value, OBSERVATION);
+function normalizeCurrentObservation(value, top) {
+  if (top.quoteRequestContextVersion !== 1) return normalizeObservation(value);
+  const expected = top.expectedQuoteRequestContext;
+  const normalized = NORMALIZE_OBSERVATION(value, expected.digest);
+  if (normalized.schemaVersion !== 3 || normalized.classification !== 'DP_ACTIVE'
+      || normalized.requestContextBinding !== 'MATCHES_DECLARED_EXPECTED_REQUEST_CONTEXT'
+      || normalized.observation === null) reject();
+  const current = normalized.observation;
+  if (record(top.policy, POLICY_FIELDS).maxPriceChangePercent
+      !== current.plasmaVariables.MaxPriceChangePercent) reject();
+  return normalizeObservation({
+    chainProfileMatch: { classification: 'MATCH' },
+    beforeFrontier: projectFrontier(current.beforeFrontier),
+    rpcObservation: current.rpcObservation,
+    afterFrontier: projectFrontier(current.afterFrontier),
+    quoteRequestContext: current.quoteRequestContext,
+  }, expected);
+}
+
+function projectFrontier(frontier) {
+  return {
+    height: frontier.height, hash: frontier.hash, version: frontier.version,
+    nextFusionPrice: frontier.nextFusionPrice, nextWorkPrice: frontier.nextWorkPrice,
+  };
+}
+
+function normalizeObservation(value, expectedRequestContext = null) {
+  const observation = record(value, expectedRequestContext === null
+    ? OBSERVATION : REQUEST_BOUND_OBSERVATION);
+  if (expectedRequestContext !== null) {
+    compareData(observation.quoteRequestContext, expectedRequestContext, 0, { remaining: 32 });
+  }
   const profile = record(observation.chainProfileMatch, PROFILE);
   if (profile.classification !== 'MATCH') reject();
   const checked = VALIDATE_QUOTE({
@@ -118,15 +180,14 @@ function normalizeObservation(value) {
   if (compatibility.classification !== 'DP_ACTIVE'
       || compatibility.chainProfileGuard !== 'MATCH'
       || compatibility.quote === null) reject();
-  return {
-    compatibility,
-    sourceObservation: freeze({
-      chainProfileMatch: freeze({ classification: 'MATCH' }),
-      beforeFrontier: checked.frontier,
-      rpcObservation: checked.rpcObservation,
-      afterFrontier,
-    }),
+  const sourceObservation = {
+    chainProfileMatch: freeze({ classification: 'MATCH' }),
+    beforeFrontier: checked.frontier,
+    rpcObservation: checked.rpcObservation,
+    afterFrontier,
   };
+  if (expectedRequestContext !== null) sourceObservation.quoteRequestContext = expectedRequestContext;
+  return { compatibility, sourceObservation: freeze(sourceObservation) };
 }
 
 function buildReceipt(normalized, top) {
@@ -136,22 +197,28 @@ function buildReceipt(normalized, top) {
     subjectDigest: top.subjectDigest,
     runtimeContextDigest: top.runtimeContextDigest,
   });
-  return freeze({
-    requiredFusedPolicyQuoteVersion: 1,
-    scope: 'DECLARED_V2_REQUIRED_FUSED_PRICE_POLICY',
+  const requestBound = top.quoteRequestContextVersion === 1;
+  const receipt = {
+    requiredFusedPolicyQuoteVersion: requestBound ? 2 : 1,
+    scope: requestBound ? 'DECLARED_V2_REQUEST_BOUND_REQUIRED_FUSED_PRICE_POLICY'
+      : 'DECLARED_V2_REQUIRED_FUSED_PRICE_POLICY',
     chainAuthentication: 'NOT_ESTABLISHED',
     activation: 'NOT_ESTABLISHED',
     afterSigningAction: 'NONE',
     authority: 'NONE',
     sourceObservation: normalized.sourceObservation,
     pricePolicyQuote,
-  });
+  };
+  if (requestBound) receipt.requestContextBinding = 'MATCHES_DECLARED_EXPECTED_REQUEST_CONTEXT';
+  return freeze(receipt);
 }
 
 function checkSelection(top, validate) {
-  const current = normalizeObservation(top.observation);
-  const supplied = record(top.quote, RECEIPT);
-  const origin = normalizeObservation(supplied.sourceObservation);
+  const requestBound = top.quoteRequestContextVersion === 1;
+  const current = normalizeCurrentObservation(top.observation, top);
+  const supplied = record(top.quote, requestBound ? REQUEST_BOUND_RECEIPT : RECEIPT);
+  const origin = normalizeObservation(supplied.sourceObservation,
+    requestBound ? top.expectedQuoteRequestContext : null);
   const expected = buildReceipt(origin, top);
   // Rebuild with the CURRENT supplied policy and digests. A changed binding,
   // inconsistent four-field origin, or tampered nested policy receipt refuses.

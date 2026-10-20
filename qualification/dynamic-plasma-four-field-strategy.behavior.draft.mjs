@@ -8,12 +8,12 @@ import { Buffer } from 'node:buffer';
 // authenticate observations, sign, publish, or qualify a chain/provider pilot.
 assert.equal(process.argv.length, 2);
 const pins = [
-  ['../src/zenon/bounded-dynamic-plasma-strategy.js', 5024,
-    '8e9fb69300e15994b244e94e58070e47faffab6516a3c83e6096b15bfe0ea8f1'],
+  ['../src/zenon/bounded-dynamic-plasma-strategy.js', 5780,
+    '59b8a19a7d70951e789634a8abd60ee25c4446af4a581e17e94e9c3abcd6dc20'],
   ['../src/zenon/plasma-strategy.js', 974,
     '1c597d4e169ba8a5e6d2b7852c4ffa3a8ec9b854332fe354b9b013c36ebae093'],
-  ['../src/zenon/dynamic-plasma-required-fused-policy-adapter.js', 8050,
-    '6be7cdd599adb153cda29272bc503d185014718398886b35546756383b4e18ac'],
+  ['../src/zenon/dynamic-plasma-required-fused-policy-adapter.js', 12024,
+    'e2b693d4df9065d44ba590f4d0c8dffeb8e55187668eedfa396b4026c9905c3e'],
   ['../src/zenon/dynamic-plasma-required-fused-quote.js', 5416,
     'f5e10ff2dbfff3b6b63d87f0abadd0bb52b5d6b8fe0ead6a55fc5ea14207b730'],
   ['../src/zenon/dynamic-plasma-compatibility.js', 7732,

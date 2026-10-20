@@ -36,6 +36,9 @@ const CONTEXT_FIELDS = freeze([
 const FOUR_FIELD_CONTEXT_FIELDS = freeze([
   ...CONTEXT_FIELDS, 'requiredFusedPolicyVersion',
 ]);
+const REQUEST_BOUND_CONTEXT_FIELDS = freeze([
+  ...FOUR_FIELD_CONTEXT_FIELDS, 'quoteRequestContextVersion', 'expectedQuoteRequestContext',
+]);
 
 /**
  * Opt-in declared-data policy only; active runtime selection is unchanged.
@@ -44,6 +47,10 @@ const FOUR_FIELD_CONTEXT_FIELDS = freeze([
  * An own enumerable DATA requiredFusedPolicyVersion: 1 explicitly selects the
  * four-field adapter; absent means the unchanged three-field policy contract.
  * Tagged and untagged contexts/receipts cannot be mixed or silently downgraded.
+ * Additional quoteRequestContextVersion: 1 forwards the raw schema3 collector
+ * observation plus an independent declared expectedQuoteRequestContext to the
+ * same adapter for quote/apply. That adapter rechecks the expectation before
+ * policy use; equality does not establish RPC origin or a full block intent.
  * This connects the existing SPI only, not an active buyer or SDK preparer.
  */
 export class BoundedDynamicPlasmaStrategy extends PlasmaStrategy {
@@ -51,13 +58,7 @@ export class BoundedDynamicPlasmaStrategy extends PlasmaStrategy {
     if (arguments.length !== 1) reject();
     const value = snapshotContext(context);
     if (value.requiredFusedPolicyVersion === 1) {
-      return CREATE_FOUR_FIELD({
-        requiredFusedPolicyVersion: 1,
-        observation: value.observation,
-        policy: value.policy,
-        subjectDigest: value.subjectDigest,
-        runtimeContextDigest: value.runtimeContextDigest,
-      });
+      return CREATE_FOUR_FIELD(adapterContext(value));
     }
     const compatibility = CLASSIFY(value.observation);
     return CREATE_QUOTE({
@@ -72,14 +73,7 @@ export class BoundedDynamicPlasmaStrategy extends PlasmaStrategy {
     if (arguments.length !== 2) reject();
     const value = snapshotContext(context);
     if (value.requiredFusedPolicyVersion === 1) {
-      return SELECT_FOUR_FIELD({
-        requiredFusedPolicyVersion: 1,
-        observation: value.observation,
-        policy: value.policy,
-        subjectDigest: value.subjectDigest,
-        runtimeContextDigest: value.runtimeContextDigest,
-        quote,
-      });
+      return SELECT_FOUR_FIELD({ ...adapterContext(value), quote });
     }
     const compatibility = CLASSIFY(value.observation);
     return SELECT_FIELDS({
@@ -92,11 +86,28 @@ export class BoundedDynamicPlasmaStrategy extends PlasmaStrategy {
   }
 }
 
+function adapterContext(value) {
+  const input = {
+    requiredFusedPolicyVersion: 1,
+    observation: value.observation,
+    policy: value.policy,
+    subjectDigest: value.subjectDigest,
+    runtimeContextDigest: value.runtimeContextDigest,
+  };
+  if (value.quoteRequestContextVersion === 1) {
+    input.quoteRequestContextVersion = 1;
+    input.expectedQuoteRequestContext = value.expectedQuoteRequestContext;
+  }
+  return input;
+}
+
 function snapshotContext(value) {
   if (typeof value !== 'object' || value === null || isProxy(value)
       || getPrototypeOf(value) !== objectPrototype) reject();
   const tagged = getDescriptor(value, 'requiredFusedPolicyVersion') !== undefined;
-  const fields = tagged ? FOUR_FIELD_CONTEXT_FIELDS : CONTEXT_FIELDS;
+  const requestBound = getDescriptor(value, 'quoteRequestContextVersion') !== undefined;
+  const fields = requestBound ? REQUEST_BOUND_CONTEXT_FIELDS
+    : tagged ? FOUR_FIELD_CONTEXT_FIELDS : CONTEXT_FIELDS;
   const keys = ownKeys(value);
   if (keys.length !== fields.length) reject();
   const result = create(null);
@@ -108,6 +119,8 @@ function snapshotContext(value) {
     result[field] = descriptor.value;
   }
   if (tagged && result.requiredFusedPolicyVersion !== 1) reject();
+  if (requestBound && (result.requiredFusedPolicyVersion !== 1
+      || result.quoteRequestContextVersion !== 1)) reject();
   if (result.phase !== 'UNSIGNED') reject();
   requireDigest(result.subjectDigest);
   requireDigest(result.runtimeContextDigest);

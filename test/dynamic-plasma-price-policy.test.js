@@ -16,7 +16,7 @@ const specs = [
   ['../src/zenon/dynamic-plasma-price-policy.js',
     14957, '41e2e2044597cfa69c5adca292bcd762a189076be1cd939bec10798d7e35c52b'],
   ['../src/zenon/bounded-dynamic-plasma-strategy.js',
-    5024, '8e9fb69300e15994b244e94e58070e47faffab6516a3c83e6096b15bfe0ea8f1'],
+    5780, '59b8a19a7d70951e789634a8abd60ee25c4446af4a581e17e94e9c3abcd6dc20'],
   ['../src/zenon/dynamic-plasma-compatibility.js',
     7732, 'b3989ce15e5f2e9d07b0ed035fe96bcce9f22cac93f5e497fdca5c37bf7618dd'],
   ['../src/zenon/plasma-strategy.js',

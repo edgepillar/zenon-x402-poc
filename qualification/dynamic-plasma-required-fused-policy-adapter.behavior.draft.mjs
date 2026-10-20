@@ -52,8 +52,8 @@ function guard(relative, bytes, LF, sha256) {
   }
 }
 const subjects = [
-  ['../src/zenon/dynamic-plasma-required-fused-policy-adapter.js', 8050, 205,
-    '6be7cdd599adb153cda29272bc503d185014718398886b35546756383b4e18ac'],
+  ['../src/zenon/dynamic-plasma-required-fused-policy-adapter.js', 12024, 272,
+    'e2b693d4df9065d44ba590f4d0c8dffeb8e55187668eedfa396b4026c9905c3e'],
   ['../src/zenon/dynamic-plasma-price-policy.js', 14957, 418,
     '41e2e2044597cfa69c5adca292bcd762a189076be1cd939bec10798d7e35c52b'],
   ['../src/zenon/dynamic-plasma-compatibility.js', 7732, 225,
