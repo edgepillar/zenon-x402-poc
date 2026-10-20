@@ -1,5 +1,6 @@
 import { TextEncoder, types as utilTypes } from 'node:util';
 import { classifyDynamicPlasmaCompatibility } from './dynamic-plasma-compatibility.js';
+import { validateDynamicPlasmaRequiredFusedQuote } from './dynamic-plasma-required-fused-quote.js';
 
 const SCHEMA_VERSION = 1;
 const ENDPOINT_COUNT = 2;
@@ -28,6 +29,9 @@ const TOP_LEVEL_FIELDS = Object.freeze([
   'expectedChainProfile',
   'compiledSporkIds',
   'endpointObservations',
+]);
+const FOUR_FIELD_TOP_LEVEL_FIELDS = Object.freeze([
+  ...TOP_LEVEL_FIELDS, 'requiredFusedObservationVersion',
 ]);
 const EXPECTED_PROFILE_FIELDS = Object.freeze([
   'version',
@@ -81,6 +85,9 @@ const RPC_OBSERVATION_FIELDS = Object.freeze([
   'basePlasma',
   'requiredDifficulty',
 ]);
+const FOUR_FIELD_RPC_OBSERVATION_FIELDS = Object.freeze([
+  ...RPC_OBSERVATION_FIELDS, 'requiredFusedPlasma',
+]);
 
 const ownKeys = Reflect.ownKeys;
 const getOwnPropertyDescriptor = Object.getOwnPropertyDescriptor;
@@ -121,46 +128,85 @@ export const DYNAMIC_PLASMA_OBSERVATION_CONTRACT = freeze({
   }),
 });
 
+export const DYNAMIC_PLASMA_REQUIRED_FUSED_OBSERVATION_CONTRACT = freeze({
+  ...DYNAMIC_PLASMA_OBSERVATION_CONTRACT,
+  schemaVersion: 2,
+  requiredFusedObservationVersion: 1,
+  requiredRpcFields: FOUR_FIELD_RPC_OBSERVATION_FIELDS,
+  preDpValidation: 'TOTAL_EQUALS_BASE_ONLY_NOT_LEGACY_POW_VALIDATION',
+});
+
+/**
+ * Untagged input/output remains the three-field schema-v1 contract. An own
+ * enumerable DATA requiredFusedObservationVersion: 1 selects schema v2 and
+ * retains all four RPC fields. Both endpoint totals must agree. For active
+ * V2 observations, validate the fused-only TOTAL and difficulty using the
+ * existing quote validator BEFORE projecting three fields to the classifier.
+ * For PRE_DP, upstream b5f93c20 sets TOTAL=base; this check does not validate
+ * legacy PoW arithmetic. Neither mode persists a quote-request commitment or
+ * authenticates RPC origin, runtime p, signer state, ancestry or execution.
+ */
 export function normalizeDynamicPlasmaObservation(input) {
-  const top = exactDataObject(input, TOP_LEVEL_FIELDS);
+  if (typeof input !== 'object' || input === null || isProxy(input) ||
+      getPrototypeOf(input) !== Object.prototype) reject();
+  const fourField = getOwnPropertyDescriptor(input, 'requiredFusedObservationVersion') !== undefined;
+  const top = exactDataObject(input, fourField ? FOUR_FIELD_TOP_LEVEL_FIELDS : TOP_LEVEL_FIELDS);
+  if (fourField && top.requiredFusedObservationVersion !== 1) reject();
   const expectedProfile = snapshotExpectedProfile(top.expectedChainProfile);
   const compiledSporks = snapshotCompiledSporks(top.compiledSporkIds);
-  const endpoints = snapshotEndpointArray(top.endpointObservations);
+  const endpoints = snapshotEndpointArray(top.endpointObservations, fourField);
 
   if (endpoints[0] === null || endpoints[1] === null) {
-    return evidenceFailure('UNAVAILABLE', 'ENDPOINT_DATA_UNAVAILABLE');
+    return evidenceFailure('UNAVAILABLE', 'ENDPOINT_DATA_UNAVAILABLE', fourField);
   }
 
   for (const endpoint of endpoints) {
     if (!equalFrontier(endpoint.beforeFrontier, endpoint.afterFrontier)) {
-      return evidenceFailure('MISBOUND_OR_INCOHERENT', 'FRONTIER_BINDING_MISMATCH');
+      return evidenceFailure('MISBOUND_OR_INCOHERENT', 'FRONTIER_BINDING_MISMATCH', fourField);
     }
     if (endpoint.sporks.list === null ||
         endpoint.sporks.count !== endpoint.sporks.list.length) {
-      return evidenceFailure('UNAVAILABLE', 'SPORK_SNAPSHOT_INCOMPLETE');
+      return evidenceFailure('UNAVAILABLE', 'SPORK_SNAPSHOT_INCOMPLETE', fourField);
     }
   }
 
-  if (!equalEndpoint(endpoints[0], endpoints[1])) {
-    return evidenceFailure('MISBOUND_OR_INCOHERENT', 'ENDPOINT_OBSERVATION_MISMATCH');
+  if (!equalEndpoint(endpoints[0], endpoints[1], fourField)) {
+    return evidenceFailure('MISBOUND_OR_INCOHERENT', 'ENDPOINT_OBSERVATION_MISMATCH', fourField);
   }
 
   const observation = endpoints[0];
   if (!profileMatches(expectedProfile, observation)) {
-    return evidenceFailure('MISBOUND_OR_INCOHERENT', 'PROFILE_GENESIS_MISMATCH');
+    return evidenceFailure('MISBOUND_OR_INCOHERENT', 'PROFILE_GENESIS_MISMATCH', fourField);
   }
 
   const dynamicSpork = boundDynamicSpork(observation.sporks.list, compiledSporks);
   if (dynamicSpork === null) {
-    return evidenceFailure('MISBOUND_OR_INCOHERENT', 'SPORK_BINDING_MISMATCH');
+    return evidenceFailure('MISBOUND_OR_INCOHERENT', 'SPORK_BINDING_MISMATCH', fourField);
   }
 
   if (!coherentPlasmaVariables(observation.plasmaVariables)) {
-    return evidenceFailure('MISBOUND_OR_INCOHERENT', 'PLASMA_VARIABLES_INCOHERENT');
+    return evidenceFailure('MISBOUND_OR_INCOHERENT', 'PLASMA_VARIABLES_INCOHERENT', fourField);
   }
 
   if (!coherentFrontierState(observation.beforeFrontier, dynamicSpork)) {
-    return evidenceFailure('MISBOUND_OR_INCOHERENT', 'FRONTIER_SPORK_STATE_INCOHERENT');
+    return evidenceFailure('MISBOUND_OR_INCOHERENT', 'FRONTIER_SPORK_STATE_INCOHERENT', fourField);
+  }
+
+  if (fourField) {
+    if (observation.beforeFrontier.version === 2) {
+      try {
+        validateDynamicPlasmaRequiredFusedQuote({
+          requiredFusedQuoteVersion: 1,
+          frontier: compatibilityFrontier(observation.beforeFrontier),
+          rpcObservation: observation.rpcObservation,
+        });
+      } catch (error) {
+        if (!knownRequiredFusedInputError(error)) throw error;
+        return evidenceFailure('MISBOUND_OR_INCOHERENT', 'RPC_QUOTE_INCOHERENT', true);
+      }
+    } else if (observation.rpcObservation.requiredFusedPlasma !== observation.rpcObservation.basePlasma) {
+      return evidenceFailure('MISBOUND_OR_INCOHERENT', 'RPC_QUOTE_INCOHERENT', true);
+    }
   }
 
   let compatibility;
@@ -168,7 +214,11 @@ export function normalizeDynamicPlasmaObservation(input) {
     compatibility = classifyDynamicPlasmaCompatibility({
       chainProfileMatch: { classification: 'MATCH' },
       beforeFrontier: compatibilityFrontier(observation.beforeFrontier),
-      rpcObservation: observation.rpcObservation,
+      rpcObservation: fourField ? {
+        availablePlasma: observation.rpcObservation.availablePlasma,
+        basePlasma: observation.rpcObservation.basePlasma,
+        requiredDifficulty: observation.rpcObservation.requiredDifficulty,
+      } : observation.rpcObservation,
       afterFrontier: compatibilityFrontier(observation.afterFrontier),
     });
   } catch (error) {
@@ -186,7 +236,7 @@ export function normalizeDynamicPlasmaObservation(input) {
     afterFrontier: observation.afterFrontier,
   });
 
-  return freeze({
+  return versionedResult({
     schemaVersion: SCHEMA_VERSION,
     classification: compatibility.classification,
     reason: compatibility.reason,
@@ -197,7 +247,7 @@ export function normalizeDynamicPlasmaObservation(input) {
     afterSigningAction: 'NONE',
     observation: normalizedObservation,
     compatibility,
-  });
+  }, fourField);
 }
 
 function snapshotExpectedProfile(value) {
@@ -224,19 +274,19 @@ function snapshotCompiledSporks(value) {
   });
 }
 
-function snapshotEndpointArray(value) {
+function snapshotEndpointArray(value, fourField) {
   const values = exactPlainArray(value, ENDPOINT_COUNT);
-  return freeze(values.map(endpoint => endpoint === null ? null : snapshotEndpoint(endpoint)));
+  return freeze(values.map(endpoint => endpoint === null ? null : snapshotEndpoint(endpoint, fourField)));
 }
 
-function snapshotEndpoint(value) {
+function snapshotEndpoint(value, fourField) {
   const fields = exactDataObject(value, ENDPOINT_FIELDS);
   return freeze({
     beforeFrontier: snapshotFrontier(fields.beforeFrontier),
     profileEvidence: snapshotProfileEvidence(fields.profileEvidence),
     sporks: snapshotSporks(fields.sporks),
     plasmaVariables: snapshotPlasmaVariables(fields.plasmaVariables),
-    rpcObservation: snapshotRpcObservation(fields.rpcObservation),
+    rpcObservation: snapshotRpcObservation(fields.rpcObservation, fourField),
     afterFrontier: snapshotFrontier(fields.afterFrontier),
   });
 }
@@ -319,16 +369,21 @@ function snapshotPlasmaVariables(value) {
   });
 }
 
-function snapshotRpcObservation(value) {
-  const fields = exactDataObject(value, RPC_OBSERVATION_FIELDS);
+function snapshotRpcObservation(value, fourField) {
+  const fields = exactDataObject(value, fourField ? FOUR_FIELD_RPC_OBSERVATION_FIELDS : RPC_OBSERVATION_FIELDS);
   nonnegativeSafeInteger(fields.availablePlasma);
   positiveSafeInteger(fields.basePlasma);
   nonnegativeSafeInteger(fields.requiredDifficulty);
-  return freeze({
+  const result = {
     availablePlasma: fields.availablePlasma,
     basePlasma: fields.basePlasma,
     requiredDifficulty: fields.requiredDifficulty,
-  });
+  };
+  if (fourField) {
+    nonnegativeSafeInteger(fields.requiredFusedPlasma);
+    defineProperty(result, 'requiredFusedPlasma', { value: fields.requiredFusedPlasma, enumerable: true });
+  }
+  return freeze(result);
 }
 
 function exactDataObject(value, expectedFields) {
@@ -428,12 +483,12 @@ function compatibilityFrontier(frontier) {
   };
 }
 
-function equalEndpoint(left, right) {
+function equalEndpoint(left, right, fourField) {
   return equalFrontier(left.beforeFrontier, right.beforeFrontier) &&
     equalProfileEvidence(left.profileEvidence, right.profileEvidence) &&
     equalSporks(left.sporks, right.sporks) &&
     equalPlasmaVariables(left.plasmaVariables, right.plasmaVariables) &&
-    equalRpcObservation(left.rpcObservation, right.rpcObservation) &&
+    equalRpcObservation(left.rpcObservation, right.rpcObservation, fourField) &&
     equalFrontier(left.afterFrontier, right.afterFrontier);
 }
 
@@ -470,14 +525,15 @@ function equalPlasmaVariables(left, right) {
     left.PriceChangeDenominator === right.PriceChangeDenominator;
 }
 
-function equalRpcObservation(left, right) {
+function equalRpcObservation(left, right, fourField) {
   return left.availablePlasma === right.availablePlasma &&
     left.basePlasma === right.basePlasma &&
-    left.requiredDifficulty === right.requiredDifficulty;
+    left.requiredDifficulty === right.requiredDifficulty &&
+    (!fourField || left.requiredFusedPlasma === right.requiredFusedPlasma);
 }
 
-function evidenceFailure(classification, reason) {
-  return freeze({
+function evidenceFailure(classification, reason, fourField) {
+  return versionedResult({
     schemaVersion: SCHEMA_VERSION,
     classification,
     reason,
@@ -488,7 +544,23 @@ function evidenceFailure(classification, reason) {
     afterSigningAction: 'NONE',
     observation: null,
     compatibility: null,
-  });
+  }, fourField);
+}
+
+function versionedResult(result, fourField) {
+  return fourField ? freeze({ ...result, schemaVersion: 2, requiredFusedObservationVersion: 1 }) : freeze(result);
+}
+
+function knownRequiredFusedInputError(error) {
+  if (typeof error !== 'object' || error === null || isProxy(error) ||
+      getPrototypeOf(error) !== typeErrorPrototype) return false;
+  const code = getOwnPropertyDescriptor(error, 'code');
+  const message = getOwnPropertyDescriptor(error, 'message');
+  return code !== undefined && hasOwn(code, 'value') &&
+    typeof code.value === 'string' && testRegExp(
+      /^dynamic_plasma_required_fused_quote_(invalid_data|unsupported_contract_version|unsupported_frontier_version|invalid_frontier|unsafe_integer|arithmetic_bound|inconsistent_total|inconsistent_difficulty)$/,
+      code.value,
+    ) && message !== undefined && hasOwn(message, 'value') && message.value === code.value;
 }
 
 function knownCompatibilityInputError(error) {

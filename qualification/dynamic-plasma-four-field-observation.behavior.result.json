@@ -1,0 +1,262 @@
+{
+  "schema": "x402-dp-four-field-observation-local-result/v1",
+  "scope": "OCT20_P1_FOUR_FIELD_OBSERVATION_PIPELINE_V1",
+  "status": "PASSED_SELECTED_LOCAL_DECLARED_DATA_COMPONENT_CHAIN",
+  "completedAt": "2026-10-20T21:03:27.019Z",
+  "sourceReference": {
+    "basePublicMain": "0ba6421b055b7fda41a27e3b0c3a93eaf28f3469",
+    "priorSourcePins": [
+      {
+        "path": "src/zenon/dynamic-plasma-observation-collector.js",
+        "bytes": 30808,
+        "LF": 803,
+        "sha256": "b48ca6f38ba0aea465d1ea2a4609bf03e4848f33ac58c0da8bbb26c89bd4c275",
+        "gitBlob": "785732829e9f0a46ba675c7359b74b1783f60ac6"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-observation-normalizer.js",
+        "bytes": 19758,
+        "LF": 541,
+        "sha256": "be12add6dd0910c8471d0747e4ad52543e0ac282a7e43f5470ee35b00dc842c7",
+        "gitBlob": "adda281add5efed84c2dd2e15dc4d0f720366c93"
+      }
+    ],
+    "normativeRPC": {
+      "repository": "zenon-network/go-zenon",
+      "commit": "b5f93c20c15b0622bc8ed1a175b613d6917be3b2",
+      "path": "rpc/api/embedded/plasma.go",
+      "blob": "a9a828feed35612a647dd3b6665a24f626931999",
+      "review": "Four uint64 JSON fields. Active DP total is the rounded fused-only target; the pre-DP target equals base. Source inspection only, not Go/runtime execution."
+    },
+    "contentPinsAuthoritativeForLocalChanges": true,
+    "hostedQualification": "NOT_RUN"
+  },
+  "implemented": {
+    "productionFiles": [
+      "src/zenon/dynamic-plasma-observation-collector.js",
+      "src/zenon/dynamic-plasma-observation-normalizer.js"
+    ],
+    "existingFunctions": [
+      "createDynamicPlasmaObservationCollector(options).collect(input)",
+      "normalizeDynamicPlasmaObservation(input)"
+    ],
+    "optInNamespace": "Enumerable own DATA requiredFusedObservationVersion: 1",
+    "output": "Collector retains the explicit tag and all four RPC fields in both endpoints. Normalizer returns schemaVersion: 2 with the same tag, on success and unavailable/incoherent results.",
+    "legacy": "Absent tag still requires exactly three RPC fields, preserves schema-v1 result/contract objects and never auto-detects four-field replies.",
+    "behavior": [
+      "Carry requiredFusedPlasma losslessly through the existing bounded integer-token parser and safe-integer projection; unsafe or malformed tokens make the endpoint unavailable rather than rounding.",
+      "Include requiredFusedPlasma in dual-endpoint equality and retain detached frozen four-field observations.",
+      "After existing frontier/profile/spork/variable checks, use the published V2 quote validator for active V2 total and difficulty BEFORE the explicit three-field classifier projection.",
+      "For pre-DP observations, check total equals base as defined by the pinned RPC. This is NOT validation of legacy PoW arithmetic and NOT active-DP policy admission.",
+      "Preserve existing unavailable, incoherent, profile, spork and frontier failure boundaries; version failure results explicitly as schema2 when opted in.",
+      "Expose additive versioned contract constants; do not create a new collector, independent strategy, transport, operational helper or host."
+    ],
+    "sourcePreservation": {
+      "nativePromiseDrainAndInvariantHandlingBytesUnchanged": true,
+      "losslessParserAndErrorFooterBytesUnchanged": true,
+      "completeChangesReviewedAgainstExactOriginalSources": true
+    },
+    "notImplemented": [
+      "No HTTP/HTTPS owner opt-in wiring or live RPC request was exercised.",
+      "No persisted quote-request commitment, cryptographic subject binding, runtime-p authority or chain authentication was added.",
+      "No actual SDK preparer, PoW, signer, inclusion or live recovery path was enabled.",
+      "The strategy-context projection in the fixture is declared test DATA, not an authenticated production assembler."
+    ]
+  },
+  "exactExecutedReadClosure": [
+    {
+      "path": "src/zenon/dynamic-plasma-observation-collector.js",
+      "bytes": 32190,
+      "LF": 830,
+      "sha256": "efffca482782d9c1e8d324e9d8e0db1d2ea45327bb33ad846b34cf0917feabed",
+      "gitBlob": "aac96c04b59a8b19de0b1ed11b175f1d0dec2a65"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-observation-normalizer.js",
+      "bytes": 23771,
+      "LF": 613,
+      "sha256": "a6a04dc52a52df0b583b64343946a59eb91b2e42101a6eb386e209f0e8d68e1e",
+      "gitBlob": "17322126ffdf506b0fdbac9990ed065b7c13478c"
+    },
+    {
+      "path": "src/zenon/bounded-dynamic-plasma-strategy.js",
+      "bytes": 5024,
+      "LF": 135,
+      "sha256": "8e9fb69300e15994b244e94e58070e47faffab6516a3c83e6096b15bfe0ea8f1",
+      "gitBlob": "fdca613e2a9af7e73c8ebab813893a068216495d"
+    },
+    {
+      "path": "src/zenon/plasma-strategy.js",
+      "bytes": 974,
+      "LF": 32,
+      "sha256": "1c597d4e169ba8a5e6d2b7852c4ffa3a8ec9b854332fe354b9b013c36ebae093",
+      "gitBlob": "5cddc2d270aaf043e6e43145e95ffe0be3dde475"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-required-fused-policy-adapter.js",
+      "bytes": 8050,
+      "LF": 205,
+      "sha256": "6be7cdd599adb153cda29272bc503d185014718398886b35546756383b4e18ac",
+      "gitBlob": "406c02ca8d266b7da182fc195f9759fc3526f822"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-required-fused-quote.js",
+      "bytes": 5416,
+      "LF": 133,
+      "sha256": "f5e10ff2dbfff3b6b63d87f0abadd0bb52b5d6b8fe0ead6a55fc5ea14207b730",
+      "gitBlob": "e820fd31ffde4ef77a2efa6e1fd3ed1775778726"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-compatibility.js",
+      "bytes": 7732,
+      "LF": 225,
+      "sha256": "b3989ce15e5f2e9d07b0ed035fe96bcce9f22cac93f5e497fdca5c37bf7618dd",
+      "gitBlob": "3811b748b3f905e454c8a4af4650bb7f89eb1cf2"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-price-policy.js",
+      "bytes": 14957,
+      "LF": 418,
+      "sha256": "41e2e2044597cfa69c5adca292bcd762a189076be1cd939bec10798d7e35c52b",
+      "gitBlob": "ed505153487adb5284d895c922641b6de5d9caf8"
+    },
+    {
+      "path": "package.json",
+      "bytes": 1413,
+      "LF": 40,
+      "sha256": "8c9a25504fbf6f87c31cdf245a6f4eec5a88cc89c8352151dc66a577c5771ef5",
+      "gitBlob": "ec7193f6fd76f34778515079dc777594175c4c34"
+    },
+    {
+      "path": "qualification/dynamic-plasma-four-field-observation.behavior.draft.mjs",
+      "bytes": 21482,
+      "LF": 406,
+      "sha256": "de98d5a1b1ddfb4e0be0ba31ab94f3ce71fe7e701604b6d6d8ffb9a672bdb5c0",
+      "gitBlob": "d2cf408a18aedf082ac012a2fd109fb192fea67d"
+    }
+  ],
+  "execution": {
+    "class": "SELECTED_LOCAL_DECLARED_FOUR_FIELD_OBSERVATION_PIPELINE",
+    "nativeNodeCommands": 1,
+    "entry": "qualification/dynamic-plasma-four-field-observation.behavior.draft.mjs",
+    "node": {
+      "version": "24.19.0",
+      "platform": "darwin",
+      "arch": "arm64",
+      "sha256": "ab982ffe2d922fd0625872f3474c4264ad09b04ab0a375eb3e77dac92f64508a"
+    },
+    "controllerRuntime": {
+      "pythonSHA256": "037855106cd54d93abad568c82f87e6419d41df05d116b2a183e57be76ee06d9"
+    },
+    "counts": {
+      "tests": 10,
+      "suites": 0,
+      "pass": 10,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "actualPassNames": [
+      "observation pipeline retains the untagged three-field schema and legacy contracts",
+      "four-field raw observations flow through normalization and existing bounded strategy",
+      "four-field observation keeps fused-only total separate from hybrid recommended fields",
+      "four-field normalization refuses incoherent totals and cross-endpoint disagreement",
+      "observation version selection never auto-detects or downgrades RPC fields",
+      "four-field collector rejects unsafe or malformed total integer tokens without rounding",
+      "four-field observations preserve frontier profile spork and unavailable read guards",
+      "four-field pre-DP observations retain base total without claiming active admission",
+      "four-field observation tags and total descriptors refuse hostile hooks before use",
+      "four-field outputs are detached frozen DATA and do not acquire request or signing authority"
+    ],
+    "actualPassNamesExactlyMatchAllTenAuthoredRegistrations": true,
+    "nativeActualExit": 0,
+    "controllerActualExit": 0,
+    "joined": true,
+    "outputComplete": true,
+    "captureState": "COMPLETE",
+    "taskState": "CLOSED",
+    "taskOutcome": "SUCCESS",
+    "exactPrivateCallsiteContextBeforeAfterCurrentSourceRuntimeAndCASOwnershipMatched": true,
+    "completeCommandContextSourceAfterOutcomeCloseCleanupAndCreatorLedgersIndependentlyRead": true,
+    "independentReceiptReadBytes": 35758,
+    "stdout": {
+      "bytes": 2167,
+      "sha256": "565d3fc5f6b7c008db2cbb29831db2f19dea488b7182ae7493d79f473ce31b0a",
+      "content": "# entry qualification/dynamic-plasma-four-field-observation.behavior.draft.mjs\n# Node 24.19.0 platform=darwin arch=arm64\nTAP version 13\n# Subtest: observation pipeline retains the untagged three-field schema and legacy contracts\nok 1 - observation pipeline retains the untagged three-field schema and legacy contracts\n# Subtest: four-field raw observations flow through normalization and existing bounded strategy\nok 2 - four-field raw observations flow through normalization and existing bounded strategy\n# Subtest: four-field observation keeps fused-only total separate from hybrid recommended fields\nok 3 - four-field observation keeps fused-only total separate from hybrid recommended fields\n# Subtest: four-field normalization refuses incoherent totals and cross-endpoint disagreement\nok 4 - four-field normalization refuses incoherent totals and cross-endpoint disagreement\n# Subtest: observation version selection never auto-detects or downgrades RPC fields\nok 5 - observation version selection never auto-detects or downgrades RPC fields\n# Subtest: four-field collector rejects unsafe or malformed total integer tokens without rounding\nok 6 - four-field collector rejects unsafe or malformed total integer tokens without rounding\n# Subtest: four-field observations preserve frontier profile spork and unavailable read guards\nok 7 - four-field observations preserve frontier profile spork and unavailable read guards\n# Subtest: four-field pre-DP observations retain base total without claiming active admission\nok 8 - four-field pre-DP observations retain base total without claiming active admission\n# Subtest: four-field observation tags and total descriptors refuse hostile hooks before use\nok 9 - four-field observation tags and total descriptors refuse hostile hooks before use\n# Subtest: four-field outputs are detached frozen DATA and do not acquire request or signing authority\nok 10 - four-field outputs are detached frozen DATA and do not acquire request or signing authority\n1..10\n# tests 10\n# suites 0\n# pass 10\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# qualification PASS qualification/dynamic-plasma-four-field-observation.behavior.draft.mjs\n"
+    },
+    "stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "nodeTestTimeoutMs": 5000,
+    "managerTimeoutSeconds": 30,
+    "limitations": [
+      "These cases execute the existing component functions using reviewed synthetic in-memory transports that return declared raw JSON-result strings. No real transport is imported or invoked.",
+      "Twenty earlier strategy cases and unchanged adapter/quote cases were not rerun; their graphs do not import the modified collector/normalizer.",
+      "Existing full collector/normalizer suites, including VM/native-Promise contexts, were NOT selected or claimed passed. The first case and additional version/failure/pre-DP cases are selected legacy-contract regressions, not complete legacy qualification.",
+      "Pristine captured intrinsics, native loader/runner/reporting/stream/OS behavior and source-to-import races remain premises.",
+      "Timeouts, Node permission grants and empty process-group observation do not establish hard native lifetime, cancellation, cleanup or an OS/network sandbox."
+    ]
+  },
+  "launch": {
+    "caller": "Reviewed inline CommonJS explicit node:test run API with joined source/report streams, sentinel exit code and strict exact-name/count checks.",
+    "selection": "ONE_EXPLICIT_POSITIONAL_FILE; no default discovery or unrelated test import.",
+    "environment": "env -i TZ=UTC LANG=C LC_ALL=C",
+    "filesystemReads": "Only the ten exact files in exactExecutedReadClosure; no directory read expansion.",
+    "permissions": "--permission; no filesystem-write, child-process, worker or addon grant.",
+    "restrictions": [
+      "--no-addons",
+      "--disallow-code-generation-from-strings"
+    ],
+    "inputTypeOverride": false,
+    "expectedDescriptorOutput": "TAP/stdout/stderr",
+    "noSDKSQLNetworkPoWSigningPaymentBuildInstallOrCIExecution": true
+  },
+  "storage": {
+    "approvedExistingManager": true,
+    "implementationSHA256": "a4d82a72214c9698fda7ae363c38b2470c08da5e2e04c63ee9284e43f638f081",
+    "exactMountedVolumeAndPrivateRootVerified": true,
+    "productionPolicyUnchanged": true,
+    "minimumFreeBytes": 10737418240,
+    "freshUniqueProjectAndOwnedTask": true,
+    "expectedBytes": 4194304,
+    "quotaBytes": 8388608,
+    "reservationsAreNotPreallocationOrHardNativeQuotas": true,
+    "rawStreamBytes": 2167,
+    "oneCASObjectPerDigest": true,
+    "stdoutCreatorAndExistingEmptyStderrCreatorLedgersVerified": true,
+    "sourceCopiesDownloadsArchivesOrPortableExports": 0,
+    "taskClosedWithSuccess": true,
+    "cleanupOnlyOwnRegisteredEmptyScratch": true,
+    "cleanupRecordedScratchBytes": 0,
+    "noHistoricalTaskObjectOrLegacyCleanup": true,
+    "noOwnershipResetOrRebinding": true,
+    "runtimeDigestStrategy": "Previously verified runtime digests reused only after exact nine-field identities matched. Before/after/independent-current source and runtime bindings were stable."
+  },
+  "preservation": {
+    "unrelatedEditsAndEarlierWorkerCandidatePathsUntouched": true,
+    "oldTestsAndHistoricalResultArtifactsNotRewritten": true,
+    "previousCompletedOrStoppedSelectionsNotReopened": true,
+    "originalPaymentRequestBytesHashPayloadRequirementsContextAndConsumedAuthorityUnchanged": true,
+    "realSigner": "DISABLED",
+    "PR193Boundaries": "VALIDATED exact-same-signed-block resend possibility remains separate from UNKNOWN/ACKNOWLEDGED; no replacement, re-signing, #165 ownership retry or consumed-authority reset.",
+    "protectedChainTotals": {
+      "consumedAdmissions": 2,
+      "actualPrepare": 1,
+      "bundles": 0,
+      "nativeChainProviderQualificationRuns": 0
+    },
+    "localNodeComponentExecutionReportedSeparately": true,
+    "noAutomationOrWorkerSettingChange": true
+  },
+  "remainingAcceptanceGates": {
+    "HTTPHTTPSOwnerAndRequestCommitmentBinding": "NOT_ADDED_OR_QUALIFIED_BY_THIS_SLICE",
+    "RPCOriginAncestryCanonicalityFinalityRuntimePAndSubjectOwnership": "NOT_ESTABLISHED",
+    "activeSDKUnsignedPreparationWorkSigningInclusionAndPriceMovementRecovery": "NOT_RUN",
+    "fundingPayerProviderPolicyAuthorityAndRealProviderREADY": "SEPARATE_GATES",
+    "samePaymentPendingRecoveryRealServiceDeliveryDurabilityAndRestartRecovery": "NOT_QUALIFIED",
+    "productionReadiness": "NOT_ESTABLISHED"
+  },
+  "overallRoadmapComplete": false
+}

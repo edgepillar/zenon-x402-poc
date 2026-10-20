@@ -5,6 +5,9 @@ import { types as utilTypes } from 'node:util';
 // persist a quote-request commitment. It is not signing authorization. A caller
 // must retain the UNSIGNED boundary; any later signing integration needs a
 // separately reviewed request-binding schema.
+// An own enumerable DATA requiredFusedObservationVersion: 1 opts into the
+// separate schema-v2 four-field result. This retains the fused-only TOTAL;
+// it does not persist the request commitment or add execution authority.
 //
 // Raw fields follow the reviewed go-zenon source: chain/nom/momentum.go,
 // rpc/api/{ledger,ledger_types}.go, rpc/api/embedded/{spork,plasma}.go, and
@@ -70,6 +73,7 @@ const BECH32_GENERATORS = freeze([0x3b6a57b2, 0x26508e6d, 0x1ea119fa, 0x3d4233dd
 const OPTION_FIELDS = freeze(['transports']);
 const TRANSPORT_FIELDS = freeze(['callRead']);
 const INPUT_FIELDS = freeze(['phase', 'expectedChainProfile', 'compiledSporkIds', 'quoteRequest']);
+const FOUR_FIELD_INPUT_FIELDS = freeze([...INPUT_FIELDS, 'requiredFusedObservationVersion']);
 const PROFILE_FIELDS = freeze(['version', 'chainIdentifier', 'genesisMomentumHash']);
 const COMPILED_FIELDS = freeze(['dynamicPlasmaId', 'libp2pId']);
 const QUOTE_REQUEST_FIELDS = freeze(['address', 'blockType', 'toAddress', 'data']);
@@ -86,6 +90,7 @@ const VARIABLE_FIELDS = freeze([
   'MaxPriceChangePercent', 'PriceChangeDenominator',
 ]);
 const QUOTE_FIELDS = freeze(['availablePlasma', 'basePlasma', 'requiredDifficulty']);
+const FOUR_FIELD_QUOTE_FIELDS = freeze([...QUOTE_FIELDS, 'requiredFusedPlasma']);
 const FRONTIER_METHOD = 'ledger.getFrontierMomentum';
 const HEIGHT_METHOD = 'ledger.getMomentumsByHeight';
 const SPORK_METHOD = 'embedded.spork.getAll';
@@ -123,6 +128,13 @@ export const DYNAMIC_PLASMA_OBSERVATION_COLLECTOR_CONTRACT = freeze({
   }),
 });
 
+export const DYNAMIC_PLASMA_REQUIRED_FUSED_OBSERVATION_COLLECTOR_CONTRACT = freeze({
+  ...DYNAMIC_PLASMA_OBSERVATION_COLLECTOR_CONTRACT,
+  schemaVersion: 2,
+  requiredFusedObservationVersion: 1,
+  requiredRpcFields: FOUR_FIELD_QUOTE_FIELDS,
+});
+
 export function createDynamicPlasmaObservationCollector(options) {
   let firstCallRead;
   let secondCallRead;
@@ -158,15 +170,21 @@ export function createDynamicPlasmaObservationCollector(options) {
       } catch {
         throw fixedError('input_rejected');
       }
-      const first = await shieldInternalPromise(collectEndpoint(firstCallRead, snapshot.quoteRequest));
+      const first = await shieldInternalPromise(collectEndpoint(
+        firstCallRead, snapshot.quoteRequest, snapshot.fourField,
+      ));
       if (first.configurationRejected || !thenInvariantHolds()) throw fixedError('configuration_rejected');
-      const second = await shieldInternalPromise(collectEndpoint(secondCallRead, snapshot.quoteRequest));
+      const second = await shieldInternalPromise(collectEndpoint(
+        secondCallRead, snapshot.quoteRequest, snapshot.fourField,
+      ));
       if (second.configurationRejected || !thenInvariantHolds()) throw fixedError('configuration_rejected');
-      const output = freeze({
+      const output = {
         expectedChainProfile: snapshot.expectedChainProfile,
         compiledSporkIds: snapshot.compiledSporkIds,
         endpointObservations: freeze([first.endpoint, second.endpoint]),
-      });
+      };
+      if (snapshot.fourField) put(output, 'requiredFusedObservationVersion', 1);
+      freeze(output);
       // No intervening await or user callback is permitted between this check
       // and the sole ordinary-object async return in this module.
       if (!thenInvariantHolds()) throw fixedError('configuration_rejected');
@@ -179,7 +197,11 @@ export function createDynamicPlasmaObservationCollector(options) {
 }
 
 function snapshotInput(input) {
-  const top = exactObject(input, INPUT_FIELDS, objectPrototype);
+  if (typeof input !== 'object' || input === null || isProxy(input) ||
+      getPrototypeOf(input) !== objectPrototype) invalid();
+  const fourField = getOwnPropertyDescriptor(input, 'requiredFusedObservationVersion') !== undefined;
+  const top = exactObject(input, fourField ? FOUR_FIELD_INPUT_FIELDS : INPUT_FIELDS, objectPrototype);
+  if (fourField && top.requiredFusedObservationVersion !== 1) invalid();
   if (top.phase !== 'UNSIGNED') invalid();
   const profile = exactObject(top.expectedChainProfile, PROFILE_FIELDS, objectPrototype);
   if (profile.version !== 1 || typeof profile.chainIdentifier !== 'string' ||
@@ -196,6 +218,7 @@ function snapshotInput(input) {
   if (quote.blockType !== 2) invalid();
   base64Bytes(quote.data, 32);
   return freeze({
+    fourField,
     expectedChainProfile: freeze({
       version: 1,
       chainIdentifier: profile.chainIdentifier,
@@ -214,7 +237,7 @@ function snapshotInput(input) {
   });
 }
 
-async function collectEndpoint(callRead, quoteRequest) {
+async function collectEndpoint(callRead, quoteRequest, fourField) {
   try {
     const beforeFrontier = projectMomentum(parseSettlement(await read(callRead, FRONTIER_METHOD, [])));
     const heightResult = exactObject(
@@ -248,7 +271,9 @@ async function collectEndpoint(callRead, quoteRequest) {
     if (list.length !== count) invalid();
     const sporks = freeze({ count, list: freeze(list) });
     const plasmaVariables = projectVariables(parseSettlement(await read(callRead, VARIABLES_METHOD, [])));
-    const rpcObservation = projectQuote(parseSettlement(await read(callRead, QUOTE_METHOD, [quoteRequest])));
+    const rpcObservation = projectQuote(
+      parseSettlement(await read(callRead, QUOTE_METHOD, [quoteRequest])), fourField,
+    );
     const afterFrontier = projectMomentum(parseSettlement(await read(callRead, FRONTIER_METHOD, [])));
     return endpointResult(freeze({ beforeFrontier, profileEvidence, sporks, plasmaVariables, rpcObservation, afterFrontier }));
   } catch (error) {
@@ -411,13 +436,15 @@ function projectVariables(raw) {
   });
 }
 
-function projectQuote(raw) {
-  const value = exactObject(raw, QUOTE_FIELDS, null);
-  return freeze({
+function projectQuote(raw, fourField) {
+  const value = exactObject(raw, fourField ? FOUR_FIELD_QUOTE_FIELDS : QUOTE_FIELDS, null);
+  const result = {
     availablePlasma: safeUint64Number(value.availablePlasma),
     basePlasma: safeUint64Number(value.basePlasma, 1n),
     requiredDifficulty: safeUint64Number(value.requiredDifficulty),
-  });
+  };
+  if (fourField) put(result, 'requiredFusedPlasma', safeUint64Number(value.requiredFusedPlasma));
+  return freeze(result);
 }
 
 function exactObject(value, fields, prototype) {
