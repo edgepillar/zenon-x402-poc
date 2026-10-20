@@ -1,0 +1,379 @@
+{
+  "schema": "service-credit-local-qualification/v1",
+  "selection": "OCT20_P0A_ACTUAL_SCOPED_SESSION_EXACT_REQUEST_CACHED_REPLAY_V1",
+  "status": "PASSED_LOCAL_SYNTHETIC_SAME_OPEN_SESSION_EXACT_REQUEST_REPLAY_ONLY",
+  "execution": {
+    "nodeCommands": 1,
+    "registeredCases": 1,
+    "tests": 1,
+    "pass": 1,
+    "fail": 0,
+    "skipped": 0,
+    "cancelled": 0,
+    "todo": 0,
+    "caseName": "P0-A actual open scoped session replays the identical signed request from cached success without another debit",
+    "nodeVersion": "24.19.0",
+    "platform": "darwin-arm64",
+    "nodeSHA256": "613be50c90e83aa8da58dd9ed393d0b39914a3b8ef4123fe817b46c2679cebe2",
+    "nodeIdentity": "RETAINED_DIGEST_WITH_MATCHED_FULL_IDENTITY_BEFORE_LAUNCH; VERSION_AND_PLATFORM_ASSERTED_IN_CALLER_AND_FIXTURE",
+    "completedAtUnixSeconds": 1792455022.832607,
+    "joinedExitCode": 0,
+    "outputComplete": true,
+    "stopReason": null,
+    "scratchScanRetries": 0,
+    "caseDurationMs": 345.901167,
+    "tapDurationMs": 358.786208,
+    "tapBytes": 1379,
+    "tapComplete": true,
+    "stdout": {
+      "bytes": 2187,
+      "sha256": "0ddb60950000c81d5a728975568b9016de8fc4c8d7a9793d1357230b6922091e"
+    },
+    "stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  },
+  "sourceBinding": {
+    "productionBaseCommit": "b3ac86119b5a5b6d9fc5b751f88dfe3dcf500cfe",
+    "productionBaseTree": "4bfa749435e72570bec1ab2c28ee5d7998154208",
+    "sourcePins": [
+      {
+        "path": "src/service-credit-durable-http-session.js",
+        "bytes": 13978,
+        "LF": 425,
+        "sha256": "a0d6d1436cdb697f125fee2f4dc723a5ddcfd2ee7063b55d56fa006bb8ba69bf",
+        "gitBlob": "307b72b8a1d114463ad8e18935312b18ccb23199"
+      },
+      {
+        "path": "src/service-credit-durable-session-close.js",
+        "bytes": 2470,
+        "LF": 84,
+        "sha256": "5aae36a7da39ce5b7b9a8da8e9fbda88465cb1e4853dc791520a1df0ab87ede7",
+        "gitBlob": "f744b55595e2238dc088cf71ca8849e480cda1bc"
+      },
+      {
+        "path": "src/service-credit-durable-execution-owner.js",
+        "bytes": 40833,
+        "LF": 1301,
+        "sha256": "a63a795dda77489f7da0682d83a0683cf07240f83b803f449668cb687a956863",
+        "gitBlob": "f0fd445a17466dd1ab83c785c44aa5e6fdf1e765"
+      },
+      {
+        "path": "src/service-credit-http.js",
+        "bytes": 32432,
+        "LF": 958,
+        "sha256": "c76a7f1864bdfcd0c26916bf28fba615c8aecf899d53e69467e3ebe7d3353d0d",
+        "gitBlob": "040da1547c2fa6cc4a4044c47619b253f16d19a1"
+      },
+      {
+        "path": "src/service-credit-sqlite-store.js",
+        "bytes": 82141,
+        "LF": 2333,
+        "sha256": "bda45bd553c8580a7bd66573bb2fb7c3bf12d79bab49a91fe3ac6dc1ebad8422",
+        "gitBlob": "6a7364fbc59c43edffb7a73f550210644e78daff"
+      },
+      {
+        "path": "src/service-credit-model.js",
+        "bytes": 55461,
+        "LF": 1580,
+        "sha256": "7ff7e3d88ab8c3b38a0073541533fbdb7a0d9f2be42f337ac35f6a3b05615c3a",
+        "gitBlob": "e6ac17254874584d1a01f70e7abc6f771bd35d73"
+      },
+      {
+        "path": "src/service-credit-execution-contract.js",
+        "bytes": 30258,
+        "LF": 956,
+        "sha256": "298f8e74885e1c507953c0fcf7874832f815296746e6bacbdac97a425f1a6c73",
+        "gitBlob": "acfbb5c5e943b9e09958a7831b3dbe159463dcf9"
+      },
+      {
+        "path": "src/service-credit-capability.js",
+        "bytes": 8284,
+        "LF": 256,
+        "sha256": "cb2b96d9a2e56c132dd1b4aca8f1c065b244ecd0e7e92f41ea3f4a8c969d17c3",
+        "gitBlob": "2e19d42c1b9311a75897c84669849f56ae40f785"
+      },
+      {
+        "path": "package.json",
+        "bytes": 1413,
+        "LF": 40,
+        "sha256": "8c9a25504fbf6f87c31cdf245a6f4eec5a88cc89c8352151dc66a577c5771ef5",
+        "gitBlob": "ec7193f6fd76f34778515079dc777594175c4c34"
+      },
+      {
+        "path": "qualification/service-credit-scoped-session-exact-request-replay.draft.mjs",
+        "bytes": 32738,
+        "LF": 574,
+        "sha256": "17b0ef4160b4b94da9fa8e89491065b5163002790adae49e52be6239dbd995a9",
+        "gitBlob": "3991b3c64d85213588a4fbc7911145e5a1e895fb"
+      }
+    ],
+    "preAndPostIdentitiesMatched": true,
+    "exactSourceGuards": 10,
+    "completeSourceAndFirstOriginalIndependentlyReviewed": true,
+    "sourceFrame": {
+      "bytes": 39895,
+      "LF": 603,
+      "sha256": "e556b188b2f8d69628305ccfa1d7592289dbab946656234b4e234c1aeebcf295",
+      "gitBlob": "d86013d1646c62a764533987e2a63d667b40c30f"
+    },
+    "recipe": {
+      "bytes": 32738,
+      "LF": 574,
+      "sha256": "17b0ef4160b4b94da9fa8e89491065b5163002790adae49e52be6239dbd995a9",
+      "gitBlob": "3991b3c64d85213588a4fbc7911145e5a1e895fb"
+    },
+    "recipeHardCap": 32768,
+    "sourceFrameHardCap": 40000,
+    "recipeSoftTarget": 24576,
+    "recipeSoftTargetExceeded": true,
+    "sourceHeaderNotRunLabel": "PRESERVED_SOURCE_STAGE_PROVENANCE; THIS_OUTCOME_BINDS_THE_EXACT_APPLIED_RECIPE_DIGEST"
+  },
+  "sourceStageAccounting": {
+    "type": "REVIEWED_WORKER_BYTE_ACCOUNT_NOT_OS_MEMORY_TOKEN_OR_FINANCIAL_MEASUREMENT",
+    "targetUpper": 250000,
+    "hardUpper": 400000,
+    "finalReportedUpper": 399651,
+    "priorCumulativeUnchanged": 4596337,
+    "cumulativeUpper": 4995988,
+    "noCapIncreaseOrConsumedChargeReset": true,
+    "retainedSourceOnlyRefusals": {
+      "recipeDraftBytes": [
+        33133,
+        32817
+      ],
+      "recipeHardCap": 32768,
+      "projectedPackageBound": 400251,
+      "beforeFinalHashAndEmission": true,
+      "actualNativeRuns": 0
+    },
+    "reviewedAdjustment": {
+      "genericUnconsumedHashReturnReserve": 1024,
+      "fixedSuccessfulHashReturnBytes": 329,
+      "marginBytes": 64,
+      "handoffTextDeltaBytes": 31,
+      "noSourceEmissionOnHashFailure": true,
+      "hashFailureBound": 375747
+    },
+    "reproducedAppliedBaselineSHA256": "cd1a5c0499ededb39d7223f1f059a538609a4579780181690df595bc505f67f1",
+    "wholeInverseRestoredBaseline": true,
+    "baselineDiskReads": 0,
+    "unchangedGraphNotReread": true,
+    "parentTimerCleanupHoldAmendmentPreserved": true
+  },
+  "launch": {
+    "fixedUnsavedCommonJSRunAPI": true,
+    "savedOperationalHelperCreated": false,
+    "explicitPositionalFiles": 1,
+    "isolation": "none",
+    "concurrency": 1,
+    "forceExit": false,
+    "watch": false,
+    "inputTypeFlag": false,
+    "addons": false,
+    "stringCodeGeneration": false,
+    "clearedEnvironmentKeyCount": 9,
+    "callerTemplateSHA256": "efda799b6af2b6d7488fb642e8b6201b64afbcfda52b3a991b02ce0813ecfba1",
+    "fixedManagerDriverSHA256": "3bfcc9cc2c05a2e9d2dae5744f98ddd0d13302e7d9cd4e080b5bf48a85c0cc78",
+    "actualCaller": {
+      "bytes": 6012,
+      "sha256": "c2fda6a89480eee2b98c8a7a68b896fcfe16952698207e7c28534c4f8a0709ae",
+      "argvBytes": 8337,
+      "canonicalArgvSHA256": "0d56ea0e12740dad299b5b91142ddc979872b7a5f78b914bf2f13c0a2357801a"
+    },
+    "testTimeoutMs": 12000,
+    "foregroundTimeoutSeconds": 20,
+    "tapCapBytes": 65536,
+    "stdoutCapBytes": 131072,
+    "stderrCapBytes": 1048576,
+    "metadataLockTimeoutSeconds": 60,
+    "notAnOSOrNetworkSandbox": true,
+    "hardLifetimeCancellationOrNativeCleanupNotGuaranteed": true
+  },
+  "declaredScenario": {
+    "network": "zenon:mock",
+    "chainIdentifier": "9007199254740991",
+    "offers": 1,
+    "grants": 1,
+    "newSyntheticDatabases": 1,
+    "actualReturnedScopedSessions": 1,
+    "admittedGrant": "A",
+    "initialUnits": 7,
+    "deriveCostUnits": 2,
+    "journalCapacity": 2,
+    "capacityEdgeNotTested": true,
+    "declaredMonotonicClockNs": "0",
+    "boundedDeclaredResponses": true,
+    "HTTPListenerOrRealTransport": false
+  },
+  "assertions": {
+    "capabilityPositiveControl": {
+      "actualVerifier": true,
+      "exactStoredGrantProjection": true,
+      "exactFrozenFiveFieldSuccess": true,
+      "keyPairAttempts": 1,
+      "signatureAttempts": 1
+    },
+    "firstRequest": {
+      "statusCode": 200,
+      "resultCode": "service.scoped.session",
+      "exactBytesHeadersAndCachedResult": true,
+      "executeCalls": 1,
+      "originalImmediateNativeExecutePromise": true,
+      "requests": 1,
+      "executions": 1,
+      "availableUnits": 5,
+      "heldUnits": 0,
+      "consumedUnits": 2,
+      "revisionDelta": 3,
+      "terminalClassification": "SUCCEEDED",
+      "fencePhase": "MAY_HAVE_STARTED"
+    },
+    "exactReplay": {
+      "sameSessionStillOpen": true,
+      "identicalCapturedFrozenEnvelopeRequestProofAndHeaderReferences": true,
+      "originalSigningMessageBufferRetained": true,
+      "originalAuthorizationAndSigningBytesCheckedBeforeAndAfter": true,
+      "envelopesBuilt": 1,
+      "keyPairs": 1,
+      "capabilitySignatures": 1,
+      "secondStatusCode": 200,
+      "responseBytesHeadersAndCachedResultEqualFirst": true,
+      "additionalExecuteCalls": 0,
+      "additionalDebitUnits": 0,
+      "additionalRequests": 0,
+      "additionalExecutions": 0,
+      "additionalSchedules": 0,
+      "additionalCancels": 0,
+      "entirePostFirstLedgerDurableMetadataChecksumRevisionBalanceAndTerminalSnapshotUnchanged": true,
+      "noDirectAdmissionOrFakeOwnerOracle": true
+    },
+    "close": {
+      "knownOriginalWorkSettled": true,
+      "originalSessionClosePromiseFulfilled": true,
+      "sessionCloseCalls": 1,
+      "unconditionalDeclaredTimerAccountingGate": true,
+      "borrowedStoreReadableAndUnchanged": true,
+      "fixtureStoreCloseCalls": 1,
+      "fixtureStoreCloseReturned": true,
+      "nativeDatabaseClosureIndependentlyEstablished": false,
+      "unknownConstructionObservationDrainCloseTimerOrBorrowedStateMustHold": true
+    }
+  },
+  "fixtureControlDiagnostic": {
+    "status": "PASS",
+    "stage": "KNOWN_OWNERS_CLOSED",
+    "failureStage": "NONE",
+    "hold": "NONE",
+    "retainedErrors": 0,
+    "sourceGuards": 10,
+    "storeCreates": 1,
+    "sessionCreates": 1,
+    "capabilityPairAttempts": 1,
+    "capabilityPairs": 1,
+    "capabilitySignatureAttempts": 1,
+    "capabilitySignatures": 1,
+    "envelopesBuilt": 1,
+    "verificationControls": 1,
+    "proofValid": true,
+    "first200": true,
+    "replay200": true,
+    "exactOriginalBytesPreserved": true,
+    "replaySnapshotUnchanged": true,
+    "sessionDispatches": 2,
+    "executeCalls": 1,
+    "declaredSchedules": 1,
+    "declaredCancels": 1,
+    "declaredHandles": 0,
+    "originalPromises": 4,
+    "pendingOriginals": 0,
+    "sessionCloseCalls": 1,
+    "sessionCloseReturned": true,
+    "borrowedStoreReadable": true,
+    "fixtureStoreCloseCalls": 1,
+    "fixtureStoreCloseReturned": true,
+    "counters": "FIXTURE_CONTROL_NOT_INDEPENDENT_NATIVE_INSTRUMENTATION",
+    "qualification": "LOCAL_SYNTHETIC_SAME_OPEN_SESSION_EXACT_REQUEST_REPLAY_ONLY",
+    "authority": "NONE",
+    "responseBoundary": "DECLARED_RESPONSE_ONLY_NO_DELIVERY_PROOF",
+    "nativeCleanup": "NOT_ESTABLISHED"
+  },
+  "syntheticCrypto": {
+    "keyPairAttempts": 1,
+    "keyPairs": 1,
+    "signatureAttempts": 1,
+    "signatures": 1,
+    "inMemoryOnly": true,
+    "privateKeysExportedOrLogged": false,
+    "countersNotIndependentNativeInstrumentation": true,
+    "realWalletProviderOrPaymentSigning": false,
+    "realPaymentOrSignedBlockResend": false
+  },
+  "retainedCoverage": {
+    "priorForeignGrantCase": 1,
+    "priorForeignGrantResultSHA256": "fa626f766041df82922a76537ce0ded873031e5ea9ff87152ba44a81384fb176",
+    "priorForeignCaseWasB401ThenA200WithoutReplay": true,
+    "earlierSessionCloseCasesUsedOneGrant": true,
+    "composedCloseOutcomesWereHelperOnly": true,
+    "directHTTPAdmissionCasesSeparate": true,
+    "priorCasesRerun": 0,
+    "sourceOnlyRecordsRemainNotRun": true,
+    "notOneCombinedMultiCaseRun": true,
+    "missingCoverageNotNoveltyOrBugProof": true
+  },
+  "retention": {
+    "manager": "APPROVED_OWNED_TASK_STORAGE",
+    "newPrivateTask": true,
+    "taskState": "CLOSED",
+    "taskOutcome": "SUCCESS",
+    "cleanupDisposition": "HOLD_UNREGISTERED_SYNTHETIC_CHILD",
+    "cleanupSuccessNotEstablished": true,
+    "syntheticDatabasePreserved": true,
+    "syntheticDatabaseRawFile": {
+      "bytes": 16384,
+      "sha256": "0f6f144d83621208d9c066624667512bc5ed44df9210f9bd77a7123a06b9fe49"
+    },
+    "SQLDecodedOrReopenedAfterExit": false,
+    "processAndGroupAbsentAtOnePostJoinObservation": true,
+    "processObservationNotNativeCleanupProof": true,
+    "databaseAdoptedDeletedOrRepaired": false,
+    "originalStreamsCommandOutcomeCleanupAndCASOwnershipIndependentlyReviewed": true,
+    "sharedEmptyCASObjectCreatorProvenanceChecked": true,
+    "expectedBytes": 33554432,
+    "taskQuotaBytes": 67108864,
+    "productionFreeSpaceFloorBytes": 10737418240,
+    "safetyMarginBytes": 1073741824,
+    "productionPolicyUnchanged": true,
+    "noDownloadInstallBuildArchiveOrBinaryCopy": true,
+    "largeNodeBinaryNotRehashed": true
+  },
+  "notEstablished": [
+    "Changed-request or conflicting-proof behavior",
+    "Concurrent or in-flight duplicate coalescing",
+    "Exhausted balance or full journal capacity",
+    "Closed session, replacement session, process restart or SQL reopen replay",
+    "All adverse HOLD branches or native close/durability/cancellation/cleanup",
+    "Real deadline behavior or network response delivery",
+    "Broad app, SDK, controller or native-chain qualification",
+    "Current funding, payer/provider/policy authority, live provider READY or pilot acceptance",
+    "Real payment/block resend or PR193 live recovery",
+    "Dynamic Plasma preparation/work/signing/inclusion or official x402 compatibility"
+  ],
+  "protectedRealAuthority": {
+    "signer": "DISABLED_UNCHANGED",
+    "consumedAdmissions": 2,
+    "actualChainPrepare": 1,
+    "bundles": 0,
+    "nativeChainProviderQualificationRuns": 0,
+    "originalPaymentRequestBytesHashPayloadRequirementsContextAndConsumedAuthority": "PRESERVED",
+    "ownershipMetadataRefusalNotRetried": true,
+    "noAuthorityResetReplacementOrResigning": true,
+    "validatedExactSameSignedBlockVersusUnknownAcknowledgedBoundary": "UNCHANGED"
+  },
+  "publication": {
+    "localOutcomeRecordOnly": true,
+    "hostedCIExecutedOrDispatchedBySelection": false,
+    "CIOrLiveReadinessClaim": false
+  }
+}
