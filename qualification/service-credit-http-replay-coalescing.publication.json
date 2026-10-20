@@ -1,0 +1,86 @@
+{
+  "schemaVersion": 1,
+  "scope": "P0_A_RETAINED_HTTP_REPLAY_RESULT_PUBLICATION_ONLY",
+  "publicationRecordedDateUTC": "2026-10-20",
+  "repository": "https://github.com/edgepillar/zenon-x402-poc",
+  "branch": "x402/p0a-http-startup-local-qualification",
+  "publicationParent": "e1a5bafeadda9a679dc2261b1abea164820fb8a5",
+  "observedMain": "800556ee2640ae69eec6d6c84bca7c6014afac31",
+  "historicalResult": {
+    "path": "qualification/service-credit-http-replay-coalescing.behavior.result.json",
+    "bytes": 11181,
+    "sha256": "db0b5a2ac664cc0a84482db63938fd5ffcae94176af496cee8272dd8d23b466b",
+    "gitBlob": "85347f1ba937cbcce588ea76c27aaad19a760469",
+    "recordingScope": "OCT17_P0A_HTTP_HANDLER_REPLAY_COALESCING_LOCAL_RUN_V1",
+    "byteIdenticalToRetainedOriginal": true,
+    "authoredCases": 3,
+    "pass": 3,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "originalNodeBinarySHA256": "d0c6c74401e6a544bb4d4b2a9ded9c43298d4e6dcd5ebac4dd010c4c81774105"
+  },
+  "interpretation": "Publish the existing historical local component outcome without rerunning it or representing it as a new/current-runtime qualification. LOCAL_ONLY, excluded-actions and runtime statements in the unchanged result describe its original recording, not this later publication.",
+  "privateFixture": {
+    "recordedPath": "qualification/service-credit-http-replay-coalescing.behavior.draft.mjs",
+    "bytes": 21133,
+    "sha256": "9417e2e1047777c0579446f35db28c591ef098a8c1bb0d76b704f5568765cc8c",
+    "gitBlob": "3ed3a849e4575be8dd98e03aa7833007247c20eb",
+    "disposition": "RETAINED_PRIVATELY_UNCHANGED_NOT_PUBLISHED",
+    "reason": "The original fixture contains machine-local filesystem identity guards. Public source reproducibility is not established by publishing this result; no portable fixture or replacement guard is claimed."
+  },
+  "sourceBindings": {
+    "alreadyPresentInPublicationParentAndObservedMain": true,
+    "files": [
+      {
+        "path": "src/service-credit-http.js",
+        "gitBlob": "040da1547c2fa6cc4a4044c47619b253f16d19a1",
+        "sha256": "c76a7f1864bdfcd0c26916bf28fba615c8aecf899d53e69467e3ebe7d3353d0d"
+      },
+      {
+        "path": "src/service-credit-model.js",
+        "gitBlob": "e6ac17254874584d1a01f70e7abc6f771bd35d73",
+        "sha256": "7ff7e3d88ab8c3b38a0073541533fbdb7a0d9f2be42f337ac35f6a3b05615c3a"
+      },
+      {
+        "path": "src/service-credit-capability.js",
+        "gitBlob": "2e19d42c1b9311a75897c84669849f56ae40f785",
+        "sha256": "cb2b96d9a2e56c132dd1b4aca8f1c065b244ecd0e7e92f41ea3f4a8c969d17c3"
+      },
+      {
+        "path": "package.json",
+        "gitBlob": "ec7193f6fd76f34778515079dc777594175c4c34",
+        "sha256": "8c9a25504fbf6f87c31cdf245a6f4eec5a88cc89c8352151dc66a577c5771ef5"
+      }
+    ]
+  },
+  "packetBoundary": {
+    "publishedFiles": 2,
+    "productionFilesChanged": 0,
+    "testsRunForPublication": 0,
+    "fixturesChanged": 0,
+    "newCodeOrCoverageClaim": false,
+    "privatePathsOrFilesystemIdentityValuesPublished": false,
+    "mainMerge": false,
+    "PRCreated": false,
+    "workflowChanged": false,
+    "CIStarted": false,
+    "downloadsScratchRuntimeCopiesInstallsBuilds": 0
+  },
+  "notEstablished": [
+    "A freshly executed result on the present runtime",
+    "A portable public test fixture or independently reproducible test run",
+    "Whole P0-A or composed one-grant lifecycle acceptance",
+    "Async close, native SQL durability, process restart or crash recovery",
+    "SDK or official x402 compatibility",
+    "Hosted CI, main integration, real provider READY, service delivery, live pilot or production readiness"
+  ],
+  "protectedRealOperations": {
+    "signer": "DISABLED",
+    "consumedAdmissions": 2,
+    "actualChainPREPARE": 1,
+    "bundles": 0,
+    "nativeChainProviderQualificationRuns": 0,
+    "originalPaymentRequestBytesHashPayloadRequirementsContextAndConsumedAuthority": "UNCHANGED"
+  }
+}

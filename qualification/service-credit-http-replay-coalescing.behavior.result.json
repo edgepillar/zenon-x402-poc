@@ -1,0 +1,163 @@
+{
+  "schemaVersion": 1,
+  "scope": "OCT17_P0A_HTTP_HANDLER_REPLAY_COALESCING_LOCAL_RUN_V1",
+  "status": "QUALIFIED_LOCAL_EXACT_HTTP_HANDLER_REPLAY_COALESCING_COMPONENT_ONLY",
+  "publicationAtRecording": "LOCAL_ONLY",
+  "binding": {
+    "head": "e1a5bafeadda9a679dc2261b1abea164820fb8a5",
+    "branch": "x402/p0a-http-startup-local-qualification",
+    "fixture": {
+      "path": "qualification/service-credit-http-replay-coalescing.behavior.draft.mjs",
+      "bytes": 21133,
+      "lf": 489,
+      "sha256": "9417e2e1047777c0579446f35db28c591ef098a8c1bb0d76b704f5568765cc8c",
+      "gitBlob": "3ed3a849e4575be8dd98e03aa7833007247c20eb"
+    },
+    "implementation": [
+      {
+        "path": "src/service-credit-http.js",
+        "sha256": "c76a7f1864bdfcd0c26916bf28fba615c8aecf899d53e69467e3ebe7d3353d0d"
+      },
+      {
+        "path": "src/service-credit-model.js",
+        "sha256": "7ff7e3d88ab8c3b38a0073541533fbdb7a0d9f2be42f337ac35f6a3b05615c3a"
+      },
+      {
+        "path": "src/service-credit-capability.js",
+        "sha256": "cb2b96d9a2e56c132dd1b4aca8f1c065b244ecd0e7e92f41ea3f4a8c969d17c3"
+      },
+      {
+        "path": "package.json",
+        "sha256": "8c9a25504fbf6f87c31cdf245a6f4eec5a88cc89c8352151dc66a577c5771ef5"
+      }
+    ],
+    "preservedReferences": [
+      {
+        "path": "test/service-credit-http.test.js",
+        "sha256": "5ca08e65cd4be6408e06885d2b54a29b88871b6469cb115029c8c8871b41bd12",
+        "disposition": "Current working source reviewed previously; hash-only in this run; not imported, executed or edited. Distinct from HEAD source. No ownership inference."
+      },
+      {
+        "path": "test/service-credit-capability.test.js",
+        "sha256": "71ac37a560c0ff82a461a1f55e6dd32534ad43fddcebced53026f78e7e1ed46c",
+        "disposition": "Hash-only in this run; not imported, executed or edited."
+      },
+      {
+        "path": "qualification/service-credit-scoped-capability-admission.behavior.draft.mjs",
+        "sha256": "d4df7f283ab8e0d063be35e3cfdc3085e8d75fac935b5b632737892aefa0602a",
+        "disposition": "Closed four-case admission profile preserved; not rerun."
+      },
+      {
+        "path": "qualification/service-credit-scoped-capability-admission.behavior.result.json",
+        "sha256": "2e17108da7ef8bd03254b275f9a6bb84c98fd674bfe6415960b8367e58e4e79e",
+        "disposition": "Closed admission result preserved unchanged; not evidence of this handler run."
+      }
+    ],
+    "preAndPost": "All ten exact full physical/content pins, including the runtime binary, matched before and after the single Node run; local HEAD/branch matched. Primary independently matched the ten whole-file pins.",
+    "runtime": {
+      "version": "v24.19.0",
+      "bytes": 121304480,
+      "sha256": "d0c6c74401e6a544bb4d4b2a9ded9c43298d4e6dcd5ebac4dd010c4c81774105",
+      "provenance": "Current binary independently read and matched before and after; prior primary cleared-environment version result retained, not rerun. Older different binary and its refusal remain historical."
+    }
+  },
+  "execution": {
+    "originalInvocations": 1,
+    "terminalExit": 0,
+    "terminalOnInitialReturn": true,
+    "yieldedSession": false,
+    "pendingNativeProcess": false,
+    "retriesRestartsKillsForceExit": 0,
+    "caller": "Explicit node:test run API with one positional fixture, isolation none, concurrency false, timeout 5000, forceExit false, watch false; CommonJS inline launcher without --input-type or discovery.",
+    "environment": "Cleared environment with PATH, LC_ALL and two reviewed fixed opt-in/self-SHA variables only.",
+    "filePermissions": "Five literal read-only file grants: fixture, package.json and the three implementation modules. No directory/glob, filesystem write, child, worker or addon grant.",
+    "restrictions": "Permission model and string-code-generation restriction enabled. No saved or installed launcher, package script, filter, coverage or snapshot operation.",
+    "output": {
+      "format": "TAP",
+      "completeCombinedCapture": true,
+      "asciiBytes": 743,
+      "chunks": 1,
+      "tokenCap": 12000,
+      "reportedOriginalTokens": 186,
+      "truncated": false,
+      "additionalDiagnostics": "NONE",
+      "fullTap": "TAP version 13\n# Subtest: H1_COALESCE_THEN_CACHE joins pending work and preserves the completed cache\nok 1 - H1_COALESCE_THEN_CACHE joins pending work and preserves the completed cache\n  ---\n  duration_ms: 7.4995\n  type: 'test'\n  ...\n# Subtest: H2_SIGNED_IDENTITY_CONFLICT preserves original identity and cache\nok 2 - H2_SIGNED_IDENTITY_CONFLICT preserves original identity and cache\n  ---\n  duration_ms: 3.758\n  type: 'test'\n  ...\n# Subtest: H3_UNKNOWN_RETAINS_HOLD prevents repeat execution and new reservation\nok 3 - H3_UNKNOWN_RETAINS_HOLD prevents repeat execution and new reservation\n  ---\n  duration_ms: 3.21275\n  type: 'test'\n  ...\n1..3\n# tests 3\n# suites 0\n# pass 3\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 34.544625\n"
+    },
+    "counts": {
+      "tests": 3,
+      "suites": 0,
+      "pass": 3,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "reportedTapDurationMs": 34.544625,
+    "timingLimit": "Reported TAP/tool timings are retained observations, not a benchmark or native/OS lifetime guarantee."
+  },
+  "achieved": [
+    {
+      "name": "H1_COALESCE_THEN_CACHE joins pending work and preserves the completed cache",
+      "result": "PASS",
+      "assertions": "After actual callback entry and before releasing its original application promise, an exact concurrent duplicate remains pending and joins the original. One load/reservation/execution/pricing/application call; actual EXECUTING balances 7 available, 3 held, 0 consumed. Original resolution yields two identical 200 responses and SUCCEEDED balances 7/0/3. A completed exact retry returns the same cache, adds only the checked reservation lookup, and leaves whole state, cost, identity and execution counters unchanged."
+    },
+    {
+      "name": "H2_SIGNED_IDENTITY_CONFLICT preserves original identity and cache",
+      "result": "PASS",
+      "assertions": "After original success, a correctly authenticated changed maxCost under the same grant/request identity returns 409, not 401, without replacing the original row/cache or balances. Reusing the original byte-identical proof without re-signing returns the original cached 200. Three reservation lookups, one execution/completion/pricing/application call; balances 7/0/3."
+    },
+    {
+      "name": "H3_UNKNOWN_RETAINS_HOLD prevents repeat execution and new reservation",
+      "result": "PASS",
+      "assertions": "Rejecting only the original declared application promise after actual entry produces handler 409 and actual OUTCOME_UNKNOWN balances 7/3/0. Exact original retry returns 409; a newly signed distinct request returns 503 without another row/reservation/execution. Three reservation lookups, one execution/unknown marker/pricing/application call, zero completion. No release, reconciliation, recovery or acknowledgment inferred."
+    }
+  ],
+  "evidenceScope": {
+    "implementation": "Actual unscoped createServiceCreditHttpHandler and actual fresh InMemoryServiceCreditModel. The facade counts and forwards actual model calls; it does not implement a replacement coalescer, cache or state machine.",
+    "transport": "Direct handler invocation with reviewed in-memory request/response interfaces and actual send/status/header/body/end assertions. No HTTP server or socket.",
+    "data": "Three isolated synthetic cases, fixed clock 1000/expiry 2000, total 10 and immutable policy cost 3. Seven means available units, not a changed price.",
+    "syntheticCrypto": "Approved ephemeral in-memory Ed25519 capability test exception used once for this reviewed run; public SPKI export only, no private key bytes exported, logged or persisted.",
+    "sourceBoundCounts": {
+      "cases": 3,
+      "keypairs": 3,
+      "totalSignatures": 5,
+      "syntheticHandlerCalls": 9,
+      "applicationCallsPerCase": 1,
+      "pricingCallsPerCase": 1
+    },
+    "countLimit": "Successful reviewed source paths and explicit caps/counters, not independent native/OpenSSL instrumentation or real pilot admissions.",
+    "ownership": "Original application/entry gates settle at most once; original handler observations are retained. Entry races original terminal outcome. Finally drains only known original work; incomplete/unknown drain remains a sticky failure and blocks later cases/key generation."
+  },
+  "retainedAttempts": {
+    "native": "One Node run, exit 0; read-only preflight/postcheck exit 0. No native/test failure, partial capture, skip or retry in this scope.",
+    "dataOnly": "First in-memory handoff summary exceeded its size cap. Only DATA packaging was shortened; no file rewrite, extra source read or test rerun. Original diagnostic retained.",
+    "historical": "All earlier loader, runtime-identity, source-only packaging and other actual attempts remain retained separately; they are not silently converted into successes or counted as this run."
+  },
+  "independentReview": {
+    "completeWorkerHandoffRead": true,
+    "originalNativeReturnMatched": true,
+    "exactAdmittedInputAndCanonicalHashMatched": true,
+    "authoredNamesMatchedToActualPasses": true,
+    "fullTenFilePhysicalContentPostcheck": true,
+    "inputCanonicalSha256": "906c0a8e2b248100d985c92b9fcdbbeb9176bf1495868a3c31fd83b2ebaa6ef2"
+  },
+  "limitations": [
+    "Local exact-source/current-runtime handler component qualification only. Separate prior scoped-admission passes do not establish a composed one-grant lifecycle.",
+    "Actual async-close ownership/order remains open; response.end, request completion or awaiting an application promise is not an async-close test.",
+    "No SQLite/store durability, process restart, crash/power-loss, distributed recovery, native cleanup, throughput or live HTTP qualification.",
+    "No SDK, DP frontier/work/signing/inclusion, official x402 bridge execution, provider READY, service delivery/acknowledgment, pilot acceptance, production or activation claim.",
+    "Node permission controls are a trusted-code seatbelt, not an OS/network/malicious-code sandbox. The cooperative 5000 ms test timeout is not hard cancellation, process lifetime or native-cleanup assurance.",
+    "Node/OpenSSL, loader, runner, reporter/stream and OS behavior remain premises. Main/hosted CI and publication remain separate."
+  ],
+  "protectedAuthority": {
+    "realSigner": "DISABLED",
+    "realConsumedAdmissions": 2,
+    "actualChainPrepare": 1,
+    "bundles": 0,
+    "nativeChainQualificationRuns": 0,
+    "originalPaymentAndRequest": "Bytes, hash, payload, requirements, context and consumed authority preserved; no replacement or re-signing.",
+    "resendBoundary": "PR193 possible VALIDATED exact-same-signed-block resend remains distinct from UNKNOWN and ACKNOWLEDGED.",
+    "excludedActions": "No real funding/payment/preparation, provider setup, network, SQL, task-storage root/mount/scratch changes, dependency install/build, Git mutation, CI, publication, automation or memory edit."
+  },
+  "goalComplete": false
+}
