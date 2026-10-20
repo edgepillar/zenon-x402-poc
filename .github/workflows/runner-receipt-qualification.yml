@@ -1,0 +1,197 @@
+# Source draft only: no hosted result is established by this file.
+# Manual qualification of packet cd7369771575224cfcd554f698d0f5fa4c71162a.
+# Main integration requires independent review of the exact hosted head and 14 PASS.
+name: Runner receipt qualification
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  selected:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: '24.19.0'
+          check-latest: false
+          package-manager-cache: false
+      - name: Run only the selected 1 plus 8 plus 5 cases
+        shell: bash
+        env:
+          EXPECTED_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          actual="$(git rev-parse HEAD)"
+          test "$actual" = "$EXPECTED_SHA"
+          status="$(git --no-optional-locks status --porcelain=v1 --untracked-files=all --ignored=matching)"
+          test -z "$status"
+          printf 'source-head=%s\nsource-tree=%s\n' "$actual" "$(git rev-parse 'HEAD^{tree}')"
+          sha256sum --check --strict <<'SOURCE'
+          793c2d383e6b96f75ed676fe98a274b8777e293b9bef56eed028f0825df31326  src/service-credit-custodied-sequential-runner.js
+          cb2e3fd23a4fdc318902ae95f6f03b3073507ff5ced279626e15151fca171ab2  src/service-credit-custodied-sequential-runner-core.js
+          ddbc54faf4a14d95e6274bc9df27b7b49db251bab67c11b871cfb2f9e78b4f15  src/service-credit-custodied-http-client.js
+          6e7493a4859d48530820e68a4a19a513aad014ffc1048b42965a3ad36ae7c5f7  src/service-credit-custodied-request-owner.js
+          254ba8eef5ea5efb3a1b901be09e9cb33afbc3cfcf63789ca4a23316b6180d1b  src/service-credit-http-execute-dispatch.js
+          fd349de553a17abcc2e0567ba6640e6e3d5d26cfa79ee1e355928dc9fa8d3915  src/service-credit-original-request-custody-contract.js
+          8c9a25504fbf6f87c31cdf245a6f4eec5a88cc89c8352151dc66a577c5771ef5  package.json
+          bbf99a61bac18b984c6d545200666388278646ef002ddac08ba3a3220e7eabad  test/service-credit-custodied-sequential-runner-accepted-receipt-prototype.test.js
+          c5b26177b33461d08390bee71c89ea3ed8a2b39e1cb60ad5cd06afadb410bb8b  qualification/service-credit-custodied-runner-receipt-core-v2-compatibility.mjs
+          c7aacb2ea9ba16dc7505095712ff3a588278ffb74452500622f3fbc68c5aa146  qualification/service-credit-custodied-runner-receipt-core-v3-compatibility.mjs
+          SOURCE
+          test "$(wc -c < test/service-credit-custodied-sequential-runner-accepted-receipt-prototype.test.js)" -eq 2817
+          test "$(wc -c < qualification/service-credit-custodied-runner-receipt-core-v2-compatibility.mjs)" -eq 45005
+          test "$(wc -c < qualification/service-credit-custodied-runner-receipt-core-v3-compatibility.mjs)" -eq 28663
+          NODE_BIN="$(readlink -f "$(command -v node)")"
+          test -x "$NODE_BIN"
+          [[ "$NODE_BIN" = /* ]]
+          CALLER="$(cat <<'NODE'
+          process.exitCode = 125;
+          const { run } = require('node:test');
+          const { tap } = require('node:test/reporters');
+          const { Writable, pipeline, finished } = require('node:stream');
+          const selections = {
+            "test/service-credit-custodied-sequential-runner-accepted-receipt-prototype.test.js": [
+              "accepted run receipt survives caller array prototype mutation"
+            ],
+            "qualification/service-credit-custodied-runner-receipt-core-v2-compatibility.mjs": [
+              "two originals use one client and wait for ordered bodyless completion",
+              "structural admission rejects hooks and isolates copied batch strings",
+              "later semantic rejection preserves honest partial completion",
+              "first transport uncertainty stops the queue and preserves failed close",
+              "reentrant run identity cannot admit a replacement list",
+              "manual close fences admission and queued work with one close promise",
+              "actual owner recovery conflict and binding fences prevent transport",
+              "undrained failure and maximum batch keep frozen redacted bounds"
+            ],
+            "qualification/service-credit-custodied-runner-receipt-core-v3-compatibility.mjs": [
+              "V3 sequential opt-in fences two originals and preserves the one-shot receipt and borrowed close",
+              "V3 sequential mid-batch refusals preserve partial completion and never dispatch queued originals",
+              "V3 sequential manual close stops queued work while draining the active declared interface",
+              "V3 sequential uncertain first transport drains fake handles and preserves failed close and intent",
+              "Sequential core ownership labels are frozen DATA without constructor hooks or SQL authority"
+            ]
+          };
+          let ready = false, selected = 'unselected';
+          process.once('beforeExit', () => {
+            const success = ready && process.exitCode === 125;
+            if (success) process.exitCode = 0;
+            else if ([undefined, 0, 125].includes(process.exitCode)) process.exitCode = 1;
+            process.stdout.write('# qualification ' + (success ? 'PASS ' : 'FAIL ') + selected + '\n');
+          });
+          (async () => {
+            if (process.versions.node !== '24.19.0' || process.argv.length !== 2
+                || process.platform !== 'linux') throw Error('RUNTIME_OR_ARGUMENTS');
+            selected = Object.keys(selections).find(p => process.argv[1] === process.cwd() + '/' + p);
+            if (!selected) { selected = 'unselected'; throw Error('SELECTION'); }
+            const expected = selections[selected], seen = new Set(), reported = new Set();
+            const counts = new Map(), plans = [];
+            let bad = false, ended = false, reporterDone = false, versions = 0, bytes = 0, pending = '';
+            const known = name => expected.includes(name);
+            process.stdout.write('# entry ' + selected + '\n# Node ' + process.versions.node
+              + ' platform=' + process.platform + ' arch=' + process.arch + '\n');
+            function safeLine(line) {
+              let match;
+              if (line === 'TAP version 13') { versions++; return line; }
+              if ((match = /^# Subtest: (.+)$/.exec(line))) {
+                if (known(match[1])) return line;
+                bad = true;
+              } else if ((match = /^(ok|not ok) \d+ - (.+)$/.exec(line))) {
+                if (!known(match[2]) || reported.has(match[2]) || match[1] !== 'ok') bad = true;
+                if (known(match[2])) { reported.add(match[2]); return line; }
+              } else if ((match = /^1\.\.(\d+)$/.exec(line))) {
+                plans.push(Number(match[1])); return line;
+              } else if ((match = /^# (tests|suites|pass|fail|cancelled|skipped|todo) (\d+)$/.exec(line))) {
+                if (counts.has(match[1])) bad = true;
+                counts.set(match[1], Number(match[2])); return line;
+              } else if (/^Bail out!/.test(line)) bad = true;
+              return null; // Do not publish physical locations, stacks or arbitrary diagnostics.
+            }
+            const source = run({
+              files: [process.argv[1]], isolation: 'none', concurrency: false,
+              timeout: 5000, forceExit: false, watch: false,
+            });
+            source.on('test:pass', data => {
+              if (!known(data.name) || seen.has(data.name) || data.nesting !== 0
+                  || (data.skip !== undefined && data.skip !== false)
+                  || (data.todo !== undefined && data.todo !== false)) bad = true;
+              seen.add(data.name);
+            });
+            source.on('test:fail', () => { bad = true; });
+            source.on('error', () => { bad = true; });
+            source.once('end', () => { ended = true; });
+            const sourceDone = new Promise(resolve => {
+              finished(source, { writable: false }, error => { if (error) bad = true; resolve(); });
+            });
+            const sink = new Writable({
+              write(chunk, encoding, callback) {
+                try {
+                  bytes += Buffer.byteLength(chunk);
+                  if (bytes > 65536) throw Error('REPORTER_CAP');
+                  pending += String(chunk);
+                  const lines = pending.split('\n'); pending = lines.pop();
+                  const safe = lines.map(safeLine).filter(line => line !== null);
+                  if (safe.length) process.stdout.write(safe.join('\n') + '\n', callback);
+                  else callback();
+                } catch { callback(Error('REPORTER_FAILED')); }
+              },
+              final(callback) { if (pending !== '') bad = true; callback(); },
+            });
+            const reporter = source.compose(tap);
+            const reportDone = new Promise(resolve => {
+              pipeline(reporter, sink, error => { reporterDone = !error; if (error) bad = true; resolve(); });
+            });
+            await Promise.all([sourceDone, reportDone]);
+            const zero = ['suites', 'fail', 'cancelled', 'skipped', 'todo'];
+            if (bad || !ended || !reporterDone || versions !== 1 || plans.length !== 1
+                || plans[0] !== expected.length || seen.size !== expected.length
+                || reported.size !== expected.length || !expected.every(name => seen.has(name) && reported.has(name))
+                || counts.get('tests') !== expected.length || counts.get('pass') !== expected.length
+                || !zero.every(key => counts.get(key) === 0)) throw Error('INCOMPLETE_OR_UNEXPECTED_RESULTS');
+            ready = true;
+          })().catch(() => { process.stderr.write('qualification caller failed\n'); });
+          NODE
+          )"
+          run_one() {
+            local entry="$1"
+            local flags=(
+              "--allow-fs-read=$PWD/package.json"
+              "--allow-fs-read=$PWD/src/service-credit-custodied-sequential-runner-core.js"
+              "--allow-fs-read=$PWD/src/service-credit-original-request-custody-contract.js"
+              "--allow-fs-read=$PWD/$entry"
+            )
+            case "$entry" in
+              test/service-credit-custodied-sequential-runner-accepted-receipt-prototype.test.js) ;;
+              qualification/service-credit-custodied-runner-receipt-core-v2-compatibility.mjs|qualification/service-credit-custodied-runner-receipt-core-v3-compatibility.mjs)
+                flags+=(
+                  "--allow-fs-read=$PWD/src/service-credit-custodied-sequential-runner.js"
+                  "--allow-fs-read=$PWD/src/service-credit-custodied-http-client.js"
+                  "--allow-fs-read=$PWD/src/service-credit-custodied-request-owner.js"
+                  "--allow-fs-read=$PWD/src/service-credit-http-execute-dispatch.js"
+                ) ;;
+              *) return 2 ;;
+            esac
+            env -i TZ=UTC LANG=C LC_ALL=C "$NODE_BIN" --permission "${flags[@]}" \
+              --no-addons --disallow-code-generation-from-strings -e "$CALLER" "$PWD/$entry"
+          }
+          failed=0
+          run_one test/service-credit-custodied-sequential-runner-accepted-receipt-prototype.test.js || failed=1
+          run_one qualification/service-credit-custodied-runner-receipt-core-v2-compatibility.mjs || failed=1
+          run_one qualification/service-credit-custodied-runner-receipt-core-v3-compatibility.mjs || failed=1
+          test "$failed" -eq 0
+      - name: Verify the checkout is unchanged
+        if: always()
+        shell: bash
+        env:
+          EXPECTED_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          actual="$(git rev-parse HEAD)"
+          test "$actual" = "$EXPECTED_SHA"
+          status="$(git --no-optional-locks status --porcelain=v1 --untracked-files=all --ignored=matching)"
+          test -z "$status"
