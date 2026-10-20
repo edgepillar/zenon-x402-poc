@@ -1,0 +1,377 @@
+{
+  "schema": "zenon-x402/scoped-session-rejected-callback-unknown-behavior-result/v1",
+  "scope": "OCT20_P0A_ACTUAL_SCOPED_SESSION_REJECTED_CALLBACK_OUTCOME_UNKNOWN_V1",
+  "status": "PASS_LOCAL_SYNTHETIC_ONLY",
+  "recordedDateUTC": "2026-10-20",
+  "recipe": {
+    "path": "qualification/service-credit-scoped-session-rejected-callback-unknown.draft.mjs",
+    "bytes": 32226,
+    "LF": 579,
+    "sha256": "2f9eb7e433e985b73a1dc4a7dd8b13c622e5110efb9eed94c9bcc2248078c729",
+    "gitBlob": "c298fc26f7927af3831768cac1f7b13adf811f87",
+    "authoredSourceStatus": "SOURCE_DRAFT_NOT_RUN_PRESERVED",
+    "executionRecordedSeparately": true
+  },
+  "sourcePins": [
+    {
+      "path": "src/service-credit-durable-http-session.js",
+      "bytes": 13978,
+      "LF": 425,
+      "sha256": "a0d6d1436cdb697f125fee2f4dc723a5ddcfd2ee7063b55d56fa006bb8ba69bf",
+      "gitBlob": "307b72b8a1d114463ad8e18935312b18ccb23199"
+    },
+    {
+      "path": "src/service-credit-durable-session-close.js",
+      "bytes": 2470,
+      "LF": 84,
+      "sha256": "5aae36a7da39ce5b7b9a8da8e9fbda88465cb1e4853dc791520a1df0ab87ede7",
+      "gitBlob": "f744b55595e2238dc088cf71ca8849e480cda1bc"
+    },
+    {
+      "path": "src/service-credit-durable-execution-owner.js",
+      "bytes": 40833,
+      "LF": 1301,
+      "sha256": "a63a795dda77489f7da0682d83a0683cf07240f83b803f449668cb687a956863",
+      "gitBlob": "f0fd445a17466dd1ab83c785c44aa5e6fdf1e765"
+    },
+    {
+      "path": "src/service-credit-http.js",
+      "bytes": 32432,
+      "LF": 958,
+      "sha256": "c76a7f1864bdfcd0c26916bf28fba615c8aecf899d53e69467e3ebe7d3353d0d",
+      "gitBlob": "040da1547c2fa6cc4a4044c47619b253f16d19a1"
+    },
+    {
+      "path": "src/service-credit-sqlite-store.js",
+      "bytes": 82141,
+      "LF": 2333,
+      "sha256": "bda45bd553c8580a7bd66573bb2fb7c3bf12d79bab49a91fe3ac6dc1ebad8422",
+      "gitBlob": "6a7364fbc59c43edffb7a73f550210644e78daff"
+    },
+    {
+      "path": "src/service-credit-model.js",
+      "bytes": 55461,
+      "LF": 1580,
+      "sha256": "7ff7e3d88ab8c3b38a0073541533fbdb7a0d9f2be42f337ac35f6a3b05615c3a",
+      "gitBlob": "e6ac17254874584d1a01f70e7abc6f771bd35d73"
+    },
+    {
+      "path": "src/service-credit-execution-contract.js",
+      "bytes": 30258,
+      "LF": 956,
+      "sha256": "298f8e74885e1c507953c0fcf7874832f815296746e6bacbdac97a425f1a6c73",
+      "gitBlob": "acfbb5c5e943b9e09958a7831b3dbe159463dcf9"
+    },
+    {
+      "path": "src/service-credit-capability.js",
+      "bytes": 8284,
+      "LF": 256,
+      "sha256": "cb2b96d9a2e56c132dd1b4aca8f1c065b244ecd0e7e92f41ea3f4a8c969d17c3",
+      "gitBlob": "2e19d42c1b9311a75897c84669849f56ae40f785"
+    },
+    {
+      "path": "package.json",
+      "bytes": 1413,
+      "LF": 40,
+      "sha256": "8c9a25504fbf6f87c31cdf245a6f4eec5a88cc89c8352151dc66a577c5771ef5",
+      "gitBlob": "ec7193f6fd76f34778515079dc777594175c4c34"
+    }
+  ],
+  "completeSourceReview": {
+    "sourceFrame": {
+      "bytes": 39897,
+      "LF": 612,
+      "sha256": "06867205ab6be14595b9047f2cd1b518be5d0a03e02c0b22f8b7f81b5db87a3c",
+      "gitBlob": "e39bd48ce631675ceef65d5b4e4b5b7624269005"
+    },
+    "firstOriginal": {
+      "bytes": 4774,
+      "sha256": "b0a864491907bee3b6502ce9516de9286a585576294e26a1684e1f517f3402b1"
+    },
+    "independentlyReadInFull": true,
+    "independentContentHashesMatched": true,
+    "sourceStageJavaScriptParseApplicationOrNativeExecution": false,
+    "byteAccount": {
+      "sliceUpper": 248180,
+      "target": 250000,
+      "targetMet": true,
+      "hard": 400000,
+      "priorWorkerUpper": 5270999,
+      "cumulativeWorkerUpper": 5519179,
+      "finalControlCommandReturnSum": 248175,
+      "retainedInitialTargetStatusWidthReserve": 5,
+      "consumedChargesReset": false,
+      "unassembledSourceFramePlanRefusals": [
+        40485,
+        40235,
+        40153
+      ],
+      "recipeSoft": 24576,
+      "recipeHard": 32768,
+      "sourceHard": 40000,
+      "handoffHard": 5000
+    },
+    "accountBoundary": "Reviewed Source byte upper; not measured OS memory, tokens, money or process time."
+  },
+  "execution": {
+    "runtime": {
+      "name": "Node.js",
+      "version": "24.19.0",
+      "platform": "darwin",
+      "architecture": "arm64",
+      "binarySHA256": "613be50c90e83aa8da58dd9ed393d0b39914a3b8ef4123fe817b46c2679cebe2",
+      "binaryIdentityMatchedRetainedVerifiedHash": true,
+      "binaryRecopiedOrRehashed": false
+    },
+    "freshSyntheticDatabaseCount": 1,
+    "nodeCommands": 1,
+    "operationalRetries": 0,
+    "selection": {
+      "file": "qualification/service-credit-scoped-session-rejected-callback-unknown.draft.mjs",
+      "exactCaseName": "P0-A actual scoped session persists held unknown outcome for an original rejected execute Promise",
+      "synchronousRegistrations": 1,
+      "topLevelAwait": false,
+      "isolation": "none",
+      "concurrency": 1,
+      "forceExit": false
+    },
+    "environment": {
+      "cleared": true,
+      "exactKeyCount": 9,
+      "privateScratchAndFixtureRoots": true,
+      "nodeOptions": [
+        "--no-addons",
+        "--disallow-code-generation-from-strings"
+      ],
+      "savedOperationalHelper": false
+    },
+    "limits": {
+      "testTimeoutMs": 12000,
+      "foregroundTimeoutSeconds": 20,
+      "metadataLockTimeoutSeconds": 60,
+      "TAPBytes": 65536,
+      "stdoutBytes": 131072,
+      "stderrBytes": 1048576,
+      "expectedStorageBytes": 33554432,
+      "taskQuotaBytes": 67108864,
+      "productionFreeSpaceFloorBytes": 10737418240,
+      "safetyMarginBytes": 1073741824
+    },
+    "joinedExit": 0,
+    "commandState": "COMPLETE",
+    "commandReason": null,
+    "streamsComplete": true,
+    "scratchScanRetries": 0,
+    "TAP": {
+      "tests": 1,
+      "pass": 1,
+      "fail": 0,
+      "skipped": 0,
+      "cancelled": 0,
+      "todo": 0
+    },
+    "caseDurationMs": 309.678,
+    "TAPDurationMs": 329.799542,
+    "durationBoundary": "TAP durations are not complete process lifetime, capacity or throughput measurements.",
+    "stdout": {
+      "sha256": "2cbcc2379f26f733d2bde9ffb2240cfcfa0823a60d399e781470c49cede16623",
+      "bytes": 2093
+    },
+    "stderr": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "caller": {
+      "bytes": 6044,
+      "sha256": "17187fc8e934252f14281a738d0cc1f4f644eb13d4a797e8d689cc871d76cd32",
+      "argvBytes": 8394,
+      "canonicalArgvSHA256": "a179b7695d8266cbd636b530671ea712701ab933871bcf18baa89e98db8d8239",
+      "TAPBytes": 1305,
+      "retainedTAPBytes": 1305,
+      "TAPComplete": true,
+      "faultCount": 0,
+      "exactCaseEnqueueStartPassCounts": [
+        1,
+        1,
+        1
+      ],
+      "failedEvents": 0,
+      "topLevelPlan": [
+        1
+      ]
+    }
+  },
+  "selectedBehavior": {
+    "actualSessionStoreAndCapabilityVerifier": true,
+    "admittedGrantCount": 1,
+    "mockGrant": {
+      "network": "zenon:mock",
+      "chainIdentifier": "9007199254740991",
+      "totalUnits": 7,
+      "costUnits": 2,
+      "finalAvailableUnits": 5,
+      "finalHeldUnits": 2,
+      "finalConsumedUnits": 0
+    },
+    "syntheticCapability": {
+      "keyPairAttempts": 1,
+      "keyPairs": 1,
+      "signatureAttempts": 1,
+      "signatures": 1,
+      "positiveActualVerifierControls": 1,
+      "privateKeyExportedOrLogged": false,
+      "referenceReleaseNotErasure": true
+    },
+    "originalSignedRequest": {
+      "maxCostUnits": 2,
+      "signedEnvelopes": 1,
+      "handleCalls": 2,
+      "identicalOriginalEnvelopeBothCalls": true,
+      "requestProofHeadersReferencesAndSigningAuthorizationBytesPreserved": true
+    },
+    "callback": {
+      "executeCalls": 1,
+      "originalImmediatelyRejectedNativePromiseObservedAndReturnedUnchanged": true,
+      "retainedFrozenRedactedExpectedErrorIdentityMatched": true,
+      "expectedOriginalRejectionObserved": true,
+      "fulfilledReplacement": false,
+      "unexpectedFixtureErrors": 0,
+      "wrongAdditionalExecuteWouldSettleAndFailCounters": true
+    },
+    "responses": [
+      {
+        "kind": "first_original",
+        "statusCode": 503,
+        "body": "{\"error\":\"service_unavailable\"}"
+      },
+      {
+        "kind": "same_open_session_identical_original",
+        "statusCode": 503,
+        "body": "{\"error\":\"service_unavailable\"}"
+      }
+    ],
+    "exactPrivateHeadersAndResponseBytesAsserted": true,
+    "originalHandlePromisesFulfilledWithUndefined": true,
+    "firstUnknown": {
+      "ledgerRevisionDelta": 3,
+      "requestRows": 1,
+      "requestState": "OUTCOME_UNKNOWN",
+      "cachedResult": null,
+      "executionRows": 1,
+      "fencePhase": "MAY_HAVE_STARTED",
+      "terminalClassification": "OUTCOME_UNKNOWN",
+      "uncertaintyReason": "LOST_CONTROL",
+      "resultCommitment": null,
+      "generation": {
+        "state": "SEALED",
+        "identityAndVersionPreserved": true,
+        "sequence": 1,
+        "sealExecutionIdAndLostControlReasonMatched": true
+      },
+      "successfulDebits": 0,
+      "heldUnitsReleased": 0
+    },
+    "secondCall": {
+      "stillOpenBeforeClose": true,
+      "fullCoupledLedgerDurableMetadataSnapshotUnchanged": true,
+      "noAdditionalExecuteReservationDebitReleaseRequestExecutionScheduleOrCancel": true,
+      "noSuccessCache": true,
+      "noReconciliationRecoveryOrAuthorityReset": true
+    },
+    "noDirectOwnerAdmissionFakeFacadeOrPatchedImplementation": true,
+    "earlierAssertionFailurePreventsLaterSigningOrDispatch": true,
+    "diagnostics": {
+      "stage": "KNOWN_OWNERS_CLOSED",
+      "failureStage": "NONE",
+      "hold": "NONE",
+      "sourceGuards": 10,
+      "storeCreates": 1,
+      "sessionCreates": 1,
+      "keyAttempts": 1,
+      "keyPairs": 1,
+      "signAttempts": 1,
+      "signatures": 1,
+      "envelopesBuilt": 1,
+      "verificationControls": 1,
+      "proofValid": true,
+      "firstUnknown": true,
+      "repeated503": true,
+      "expectedRejectionObserved": true,
+      "unknownSnapshotUnchanged": true,
+      "originalPreserved": true,
+      "dispatches": 2,
+      "executeCalls": 1,
+      "schedules": 1,
+      "cancels": 1,
+      "sessionCloseCalls": 1,
+      "sessionCloseReturned": true,
+      "borrowedReadable": true,
+      "storeCloseCalls": 1,
+      "storeCloseReturned": true,
+      "status": "PASS",
+      "retainedErrors": 0,
+      "declaredHandles": 0,
+      "pendingOriginals": 0,
+      "expectedExecuteRejections": 1,
+      "counters": "FIXTURE_CONTROL_NOT_INDEPENDENT_NATIVE_INSTRUMENTATION",
+      "qualification": "LOCAL_SYNTHETIC_ACTUAL_SESSION_REJECTED_EXECUTE_UNKNOWN_ONLY",
+      "authority": "NONE",
+      "responseBoundary": "DECLARED_RESPONSE_ONLY_NO_DELIVERY_PROOF",
+      "nativeCleanup": "NOT_ESTABLISHED"
+    }
+  },
+  "ownershipAndRetention": {
+    "originalNativePromisesObservedAndSettledIncludingExpectedRejection": true,
+    "originalSessionCloseCalls": 1,
+    "originalSessionCloseReturned": true,
+    "unconditionalPostCloseDeclaredTimerHoldGateBeforeBorrowedReadOrStoreClose": true,
+    "schedules": 1,
+    "cancels": 1,
+    "declaredHandles": 0,
+    "pendingOriginals": 0,
+    "borrowedStoreReadableWithFullUnknownSnapshotUnchangedBeforeFixtureClose": true,
+    "fixtureStoreCloseCalls": 1,
+    "fixtureStoreCloseReturned": true,
+    "taskState": "CLOSED",
+    "taskOutcome": "SUCCESS",
+    "cleanupDecision": "HOLD",
+    "cleanupReason": "New synthetic child database is unregistered for automatic deletion; retained without adoption, repair or deletion.",
+    "rawDatabase": {
+      "bytes": 16384,
+      "sha256": "12ce8140705f82bf27de0e7e6c13f2dfe843d2fce89986866e1146fbae6320f3",
+      "readOnlyRawHashAfterProcessAbsence": true,
+      "SQLDecodedOrReopened": false
+    },
+    "processObservation": "PID and process group absent at one post-join observation; not a native cleanup guarantee.",
+    "completeCommandSelectionCallsiteTaskOutcomeCleanupAndCASOriginalsIndependentlyReviewed": true,
+    "streamsPhysicalIdentityHashSizeModeAndCreatorBindingsVerified": true,
+    "sharedEmptyObjectCreatorBindingReusedOnlyAfterExactUnchangedIdentityAndContentComparison": true,
+    "allSelectedSourceAndPackagePinsUnchangedAfterRun": true,
+    "privatePathsPhysicalIdsProcessIdsTaskIdsKeysProofsAuthorizationAndRawErrorsOmitted": true
+  },
+  "retainedCoverage": {
+    "priorSuccessfulExecuteConflictReplayForeignGrantAndActiveCloseCasesNotRerun": true,
+    "callbackContextCloseRejectionNotMiscountedAsExecutePromiseRejection": true,
+    "completedSourceReviewsAndEarlierStoppedSelectionsNotRepeatedOrRewritten": true,
+    "missingCoverageNotGlobalNoveltyOrBugProof": true,
+    "countBoundary": "One authored test with two HTTP calls and one expected synthetic execute rejection; neither call count nor expected rejection is an additional/failed test."
+  },
+  "nonClaims": [
+    "No real payment, payer/provider signing, funding, PREPARE, send, resend, replacement or authority reset.",
+    "No official x402 pending recovery, Dynamic Plasma price/epoch/runtime acceptance, SDK qualification or broad app/controller qualification.",
+    "No process restart, crash recovery, corruption, physical durability, native database close or hard lifetime/cancellation/native cleanup/OS/network sandbox guarantee.",
+    "No actual provider READY, service delivery, HTTPS transport acceptance, capacity measurement or live/production pilot acceptance.",
+    "No dependency install, build, CI dispatch, saved operational helper, historical cache recovery or cleanup."
+  ],
+  "preservedRealAuthority": {
+    "signer": "DISABLED_UNCHANGED",
+    "consumedAdmissions": 2,
+    "actualChainPREPARE": 1,
+    "bundles": 0,
+    "nativeChainProviderQualificationRuns": 0,
+    "originalRealPaymentRequestBytesHashPayloadRequirementsContextAndConsumedAuthorityUnchangedByThisSlice": true,
+    "PR193ValidatedExactSameSignedBlockResendVersusUnknownAndAcknowledgedUnchanged": true,
+    "failedOwnershipMetadataNotRetried": true,
+    "automationSettingsUnchanged": true
+  }
+}
