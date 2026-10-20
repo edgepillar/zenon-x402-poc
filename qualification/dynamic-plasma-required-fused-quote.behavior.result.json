@@ -1,0 +1,209 @@
+{
+  "schema": "zenon-x402-selected-local-data-qualification/v1",
+  "workId": "OCT20_P1_DECLARED_REQUIRED_FUSED_TOTAL_QUOTE_SELECTED_LOCAL_DATA_TEST_V1",
+  "result": "SELECTED_LOCAL_DECLARED_V2_RPC_QUOTE_CONTRACT_PASSED",
+  "qualification": {
+    "scope": "One opt-in declared-data API and eight authored top-level cases",
+    "defaultWiringChanged": false,
+    "existingV1Changed": false,
+    "actualDPOrRPCExecution": false,
+    "sdkPreparationQualified": false,
+    "livePilotAcceptance": false,
+    "productionQualification": false
+  },
+  "subject": {
+    "basePublishedCommit": "007e6d4a7274ae1a089f82196c68e2d0c67d8539",
+    "api": "validateDynamicPlasmaRequiredFusedQuote",
+    "sourceFiles": [
+      {
+        "path": "src/zenon/dynamic-plasma-required-fused-quote.js",
+        "bytes": 5416,
+        "LF": 133,
+        "sha256": "f5e10ff2dbfff3b6b63d87f0abadd0bb52b5d6b8fe0ead6a55fc5ea14207b730",
+        "gitBlob": "e820fd31ffde4ef77a2efa6e1fd3ed1775778726"
+      },
+      {
+        "path": "qualification/dynamic-plasma-required-fused-quote.behavior.draft.mjs",
+        "bytes": 13910,
+        "LF": 283,
+        "sha256": "2d9dd2913666f74a2a0cec120028378aee53bd39d390857f07a41a461e11797d",
+        "gitBlob": "1002e927770d7c5ea524cff49d782b7574d12377"
+      }
+    ],
+    "unchangedDependency": {
+      "path": "src/zenon/dynamic-plasma-price-policy.js",
+      "bytes": 14957,
+      "sha256": "41e2e2044597cfa69c5adca292bcd762a189076be1cd939bec10798d7e35c52b",
+      "gitBlob": "ed505153487adb5284d895c922641b6de5d9caf8"
+    },
+    "package": {
+      "path": "package.json",
+      "bytes": 1413,
+      "sha256": "8c9a25504fbf6f87c31cdf245a6f4eec5a88cc89c8352151dc66a577c5771ef5",
+      "gitBlob": "ec7193f6fd76f34778515079dc777594175c4c34"
+    },
+    "sourceHeaderMeaning": "SOURCE_DRAFT / NOT_RUN is the preserved authorship header. This separate record describes the later exact-file selected execution; the executed fixture was not rewritten."
+  },
+  "normativeReference": {
+    "repository": "zenon-network/go-zenon",
+    "mergedPR": 170,
+    "commit": "b5f93c20c15b0622bc8ed1a175b613d6917be3b2",
+    "files": [
+      {
+        "path": "rpc/api/embedded/plasma.go",
+        "gitBlob": "a9a828feed35612a647dd3b6665a24f626931999"
+      },
+      {
+        "path": "rpc/api/embedded/plasma_test.go",
+        "gitBlob": "3823973ebd9c4fb2cfc095fc5e44eaeee39e83d6"
+      }
+    ],
+    "meaning": "requiredFusedPlasma is the total fused-only target, not a shortfall or fusion amount to combine with the recommended PoW.",
+    "upstreamTestsExecutedHere": false
+  },
+  "behavior": {
+    "namespace": "requiredFusedQuoteVersion: 1, declared frontier version 2 only",
+    "retainedRpcFields": [
+      "availablePlasma",
+      "basePlasma",
+      "requiredDifficulty",
+      "requiredFusedPlasma"
+    ],
+    "calculation": "Reuses the unchanged calculateDynamicPlasmaPriceAmounts kernel with fixed scale 1000 and difficulty-per-plasma 1500, checked BigInt inputs and a private safe-result guard.",
+    "validates": [
+      "Exact supplied total",
+      "Exact supplied difficulty",
+      "Safe-integer representation and result bounds",
+      "Exact ordinary enumerable own DATA schemas",
+      "Detached frozen output"
+    ],
+    "alternativeSeparation": "fusedOnlyTarget pairs the total with difficulty 0; declaredRecommendation retains the separately calculated fusion/PoW recommendation.",
+    "zeroMeaning": "Encoded zero is retained as declared RPC structure data; it does not prove an admissible zero-cost block.",
+    "notEstablished": [
+      "RPC origin",
+      "Unsigned-request/base-cost binding",
+      "Frontier truth or ancestry",
+      "Spork enforcement",
+      "Runtime activation",
+      "Any action, signing or payment authority"
+    ],
+    "unsupported": "Legacy/frontier versions other than 2 and non-safe JS numeric values fail closed. This is not a lossless uint64 JSON token parser."
+  },
+  "execution": {
+    "selectedFiles": [
+      "qualification/dynamic-plasma-required-fused-quote.behavior.draft.mjs"
+    ],
+    "selection": "Explicit single positional file; node:test run API with isolation none, concurrency false and no discovery",
+    "runtime": {
+      "node": "24.19.0",
+      "platform": "darwin/arm64",
+      "sha256": "ab982ffe2d922fd0625872f3474c4264ad09b04ab0a375eb3e77dac92f64508a"
+    },
+    "actualPassNames": [
+      "declared V2 vectors retain the exact four-field RPC quote",
+      "fused-only total stays separate from shortfall and recommended PoW",
+      "mismatched totals difficulty and declared frontier prices refuse",
+      "safe-integer and bounded-result refusals never coerce uint64 inputs",
+      "schemas reject extra missing inherited symbolic and nonordinary fields",
+      "hostile descriptors proxies and coercion hooks are never invoked",
+      "normalization detaches and freezes DATA without mutating caller input",
+      "legacy versions refuse and declared matches grant no action authority"
+    ],
+    "totals": {
+      "tests": 8,
+      "suites": 0,
+      "pass": 8,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "actualNodeExit": 0,
+    "controllerExit": 0,
+    "joined": true,
+    "outputComplete": true,
+    "captureState": "COMPLETE",
+    "taskClosedOutcome": "SUCCESS",
+    "stdout": {
+      "bytes": 1515,
+      "sha256": "4ebfaf778aa477a81a068627ec01ae8d4da3b42aa5dc1e8f2eece2dd35460eb7",
+      "completeFilteredTap": "# entry qualification/dynamic-plasma-required-fused-quote.behavior.draft.mjs\n# Node 24.19.0 platform=darwin arch=arm64\nTAP version 13\n# Subtest: declared V2 vectors retain the exact four-field RPC quote\nok 1 - declared V2 vectors retain the exact four-field RPC quote\n# Subtest: fused-only total stays separate from shortfall and recommended PoW\nok 2 - fused-only total stays separate from shortfall and recommended PoW\n# Subtest: mismatched totals difficulty and declared frontier prices refuse\nok 3 - mismatched totals difficulty and declared frontier prices refuse\n# Subtest: safe-integer and bounded-result refusals never coerce uint64 inputs\nok 4 - safe-integer and bounded-result refusals never coerce uint64 inputs\n# Subtest: schemas reject extra missing inherited symbolic and nonordinary fields\nok 5 - schemas reject extra missing inherited symbolic and nonordinary fields\n# Subtest: hostile descriptors proxies and coercion hooks are never invoked\nok 6 - hostile descriptors proxies and coercion hooks are never invoked\n# Subtest: normalization detaches and freezes DATA without mutating caller input\nok 7 - normalization detaches and freezes DATA without mutating caller input\n# Subtest: legacy versions refuse and declared matches grant no action authority\nok 8 - legacy versions refuse and declared matches grant no action authority\n1..8\n# tests 8\n# suites 0\n# pass 8\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# qualification PASS qualification/dynamic-plasma-required-fused-quote.behavior.draft.mjs\n"
+    },
+    "stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "elapsedTimingClaim": "No per-case benchmark or hard lifetime guarantee is inferred from this capture.",
+    "earlierCompletedRunsRepeated": false,
+    "hostedCIForThisModule": false,
+    "defaultSuiteExecuted": false
+  },
+  "launchBoundary": {
+    "environment": "Cleared environment with TZ=UTC, LANG=C and LC_ALL=C",
+    "nodeRestrictions": [
+      "--permission",
+      "Exactly four selected file-read grants",
+      "--no-addons",
+      "--disallow-code-generation-from-strings"
+    ],
+    "fileWriteChildWorkerAddonGrants": false,
+    "savedOperationalLauncherOrInstalledHelper": false,
+    "exactCaseNamesAndTapCountersCheckedBeforeExitZero": true,
+    "testAndReporterStreamsJoined": true,
+    "nodeTestTimeoutMs": 5000,
+    "managerWallTimeoutSeconds": 30,
+    "timeoutMeaning": "Timeout is not an OS/network sandbox, hard cancellation or native-cleanup guarantee.",
+    "nativeLoaderRunnerStreamControllerAndOsSemanticsRemainPremises": true
+  },
+  "storage": {
+    "approvedPrivateOwnedStore": true,
+    "expectedAllocationBytes": 4194304,
+    "taskQuotaBytes": 8388608,
+    "productionFreeSpaceFloorBytes": 10737418240,
+    "policyOverride": false,
+    "stdoutCapBytes": 65536,
+    "maximumManagerStderrCapBytes": 1048576,
+    "capturedPayloadBytes": 1515,
+    "uniqueNewStreamPayloadBytes": 1515,
+    "emptyStderrObjectReused": true,
+    "runtimeCopies": 0,
+    "sourceCheckoutCopies": 0,
+    "downloads": 0,
+    "dependencyInstalls": 0,
+    "builds": 0,
+    "archives": 0,
+    "closedTaskCleanup": "Only this task's registered empty scratch was removed; protected streams and receipts remain retained.",
+    "physicalAPFSReclaimClaim": false
+  },
+  "independentReview": {
+    "completeNewModuleFixtureDependencyAndWorkerHandoffRead": true,
+    "fourSourceContentAndIdentityPinsStableBeforeAfter": true,
+    "runtimeIdentityStable": true,
+    "actualArgvAndEnvironmentMatched": true,
+    "completeContextCommandOutcomeCleanupStreamsAndCreatorLedgersRead": true,
+    "priorHostedRunnerCIIsNotQualificationForThisModule": true,
+    "wholeRepositoryOrStorageAudit": false
+  },
+  "sourceAuthoringAccounting": {
+    "targetBytes": 98304,
+    "authorReportedConservativeProjectionBytes": 187702,
+    "authorReportedHardCapBytes": 196608,
+    "targetExceeded": true,
+    "aggregateAccountingCertification": "NOT_ESTABLISHED",
+    "earlierCostsAndHoldsRetained": true
+  },
+  "remainingAcceptance": [
+    "Explicit versioned integration into quote collection and preparation; existing V1 is intentionally unchanged.",
+    "Bind an actual quote origin, unsigned request and selected runtime/frontier context.",
+    "Review and qualify actual SDK delivery/preparation, real price changes, work/signing/inclusion and recovery under their separate authority gates.",
+    "Independent current context, funding, payer/provider/policy authority, real provider READY, durability and restart/recovery remain separate."
+  ],
+  "protectedRealTotals": {
+    "consumedAdmissions": 2,
+    "actualPrepare": 1,
+    "bundles": 0,
+    "nativeChainProviderQualificationRuns": 0,
+    "signer": "DISABLED",
+    "originalPaymentAndConsumedAuthority": "UNCHANGED"
+  }
+}
