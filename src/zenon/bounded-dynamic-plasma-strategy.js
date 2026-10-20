@@ -1,5 +1,6 @@
 import { types as utilTypes } from 'node:util';
 import { PlasmaStrategy } from './plasma-strategy.js';
+import { snapshotZenonUserSendPolicyBinding } from './transaction-planner.js';
 import {
   classifyDynamicPlasmaCompatibility,
 } from './dynamic-plasma-compatibility.js';
@@ -10,6 +11,7 @@ import {
 import {
   createDynamicPlasmaRequiredFusedPolicyQuote,
   selectDynamicPlasmaRequiredFusedPolicyFields,
+  validateDynamicPlasmaRequiredFusedPolicySelection,
 } from './dynamic-plasma-required-fused-policy-adapter.js';
 
 const CLASSIFY = classifyDynamicPlasmaCompatibility;
@@ -17,6 +19,8 @@ const CREATE_QUOTE = createDynamicPlasmaPricePolicyQuote;
 const SELECT_FIELDS = selectDynamicPlasmaPricePolicyFields;
 const CREATE_FOUR_FIELD = createDynamicPlasmaRequiredFusedPolicyQuote;
 const SELECT_FOUR_FIELD = selectDynamicPlasmaRequiredFusedPolicyFields;
+const VALIDATE_FOUR_FIELD = validateDynamicPlasmaRequiredFusedPolicySelection;
+const SNAPSHOT_USER_SEND = snapshotZenonUserSendPolicyBinding;
 const ownKeys = Reflect.ownKeys;
 const getDescriptor = Object.getOwnPropertyDescriptor;
 const getPrototypeOf = Object.getPrototypeOf;
@@ -38,6 +42,14 @@ const FOUR_FIELD_CONTEXT_FIELDS = freeze([
 ]);
 const REQUEST_BOUND_CONTEXT_FIELDS = freeze([
   ...FOUR_FIELD_CONTEXT_FIELDS, 'quoteRequestContextVersion', 'expectedQuoteRequestContext',
+]);
+const USER_SEND_CONTEXT_FIELDS = freeze([
+  'phase', 'subject', 'paymentRequired', 'accepted', 'payerAddress',
+  'compiledSporkIds', 'observation', 'policy', 'runtimeContextDigest',
+]);
+const USER_SEND_RECEIPT_FIELDS = freeze([
+  'userSendPolicyQuoteVersion', 'scope', 'subjectDigest', 'intentDigest',
+  'authority', 'afterSigningAction', 'sourceQuote',
 ]);
 
 /**
@@ -84,6 +96,100 @@ export class BoundedDynamicPlasmaStrategy extends PlasmaStrategy {
       runtimeContextDigest: value.runtimeContextDigest,
     });
   }
+
+  /**
+   * Explicit declared UserSend pricing stage. Derive the subject binding from
+   * actual supplied fields and the selected x402 intent rather than accepting
+   * an opaque subjectDigest. These methods do not prepare/sign/publish a block.
+   * The populated subject is not proof of account state, token validity, SDK
+   * preparation, hash/nonce/work, signer state or payer/provider authority.
+   */
+  async quoteUserSend(context) {
+    try {
+      if (arguments.length !== 1) reject();
+      const value = userSendContext(context);
+      const sourceQuote = CREATE_FOUR_FIELD(value.adapterInput);
+      requireSubjectAcknowledgement(value.binding, sourceQuote);
+      return freeze({
+        userSendPolicyQuoteVersion: 1, scope: 'DECLARED_USER_SEND_INTENT_PRICE_POLICY',
+        subjectDigest: value.binding.subjectDigest, intentDigest: value.binding.intentDigest,
+        authority: 'NONE', afterSigningAction: 'NONE', sourceQuote,
+      });
+    } catch { reject(); }
+  }
+
+  async applyUserSend(context, quote) {
+    try {
+      if (arguments.length !== 2) reject();
+      const value = userSendContext(context);
+      const sourceQuote = userSendQuote(quote, value.binding);
+      requireSubjectAcknowledgement(value.binding, sourceQuote);
+      return SELECT_FOUR_FIELD({ ...value.adapterInput, quote: sourceQuote });
+    } catch { reject(); }
+  }
+
+  async validateUserSend(context, quote, selection) {
+    try {
+      if (arguments.length !== 3) reject();
+      const value = userSendContext(context);
+      const sourceQuote = userSendQuote(quote, value.binding);
+      requireSubjectAcknowledgement(value.binding, sourceQuote);
+      return VALIDATE_FOUR_FIELD({ ...value.adapterInput, quote: sourceQuote, selection });
+    } catch { reject(); }
+  }
+}
+
+function userSendContext(value) {
+  const top = userSendRecord(value, USER_SEND_CONTEXT_FIELDS);
+  if (top.phase !== 'UNSIGNED') reject();
+  requireDigest(top.runtimeContextDigest);
+  const binding = SNAPSHOT_USER_SEND({
+    bindingVersion: 1, subject: top.subject,
+    paymentRequired: top.paymentRequired, accepted: top.accepted,
+    payerAddress: top.payerAddress, compiledSporkIds: top.compiledSporkIds,
+  });
+  return {
+    binding,
+    adapterInput: {
+      requiredFusedPolicyVersion: 1, quoteRequestContextVersion: 1,
+      subjectDigest: binding.subjectDigest, runtimeContextDigest: top.runtimeContextDigest,
+      expectedQuoteRequestContext: binding.expectedQuoteRequestContext,
+      observation: top.observation, policy: top.policy,
+    },
+  };
+}
+
+function userSendQuote(value, binding) {
+  const quote = userSendRecord(value, USER_SEND_RECEIPT_FIELDS);
+  if (quote.userSendPolicyQuoteVersion !== 1 || quote.scope !== 'DECLARED_USER_SEND_INTENT_PRICE_POLICY'
+      || quote.subjectDigest !== binding.subjectDigest || quote.intentDigest !== binding.intentDigest
+      || quote.authority !== 'NONE' || quote.afterSigningAction !== 'NONE') reject();
+  return quote.sourceQuote;
+}
+
+function requireSubjectAcknowledgement(binding, quote) {
+  // Descriptor reads remain guarded even when the outer receipt is hostile.
+  const source = userSendData(quote, 'sourceObservation');
+  const frontier = userSendData(source, 'beforeFrontier');
+  const ack = binding.subject.momentumAcknowledged;
+  if (userSendData(frontier, 'height') !== ack.height
+      || userSendData(frontier, 'hash') !== ack.hash) reject();
+}
+
+function userSendData(value, field) {
+  if (typeof value !== 'object' || value === null || isProxy(value)
+      || getPrototypeOf(value) !== objectPrototype) reject();
+  const d = getDescriptor(value, field);
+  if (d === undefined || d.enumerable !== true || !hasOwn(d, 'value')) reject();
+  return d.value;
+}
+
+function userSendRecord(value, fields) {
+  if (typeof value !== 'object' || value === null || isProxy(value)
+      || getPrototypeOf(value) !== objectPrototype || ownKeys(value).length !== fields.length) reject();
+  const result = create(null);
+  for (const field of fields) result[field] = userSendData(value, field);
+  return result;
 }
 
 function adapterContext(value) {
