@@ -1,0 +1,214 @@
+{
+  "schema": "x402-dp-required-fused-policy-adapter-local-result/v1",
+  "scope": "OCT20_P1_REQUIRED_FUSED_POLICY_PRIMARY_ADAPTER_V1",
+  "status": "PASSED_SELECTED_LOCAL_DECLARED_DATA_COMPONENT",
+  "completedAt": "2026-10-20T20:21:57.094Z",
+  "sourceReference": {
+    "basePublicMain": "427c5bb381a13036aeab991ba786c37ac752947b",
+    "contentPinsAreAuthoritativeForTheNewLocalFiles": true,
+    "hostedQualificationForThisAdapter": "NOT_RUN"
+  },
+  "implemented": {
+    "productionFile": "src/zenon/dynamic-plasma-required-fused-policy-adapter.js",
+    "exports": [
+      "createDynamicPlasmaRequiredFusedPolicyQuote",
+      "selectDynamicPlasmaRequiredFusedPolicyFields",
+      "validateDynamicPlasmaRequiredFusedPolicySelection"
+    ],
+    "inputNamespace": "requiredFusedPolicyVersion: 1",
+    "receiptNamespace": "requiredFusedPolicyQuoteVersion: 1",
+    "behavior": [
+      "Validate all four declared RPC fields before the explicit three-field compatibility projection.",
+      "Retain the exact detached frozen four-field source observation in the versioned receipt.",
+      "Reuse the unchanged compatibility classifier and shared create/select/validate price policy; do not duplicate arithmetic.",
+      "Rebuild the original receipt with the supplied current policy and subject/runtime digests, then require exact descriptor-based structural consistency.",
+      "Validate the current four-field quote before delegating original-field selection and validation to the same price policy.",
+      "Preserve requiredFusedPlasma as the fused-only total, separate from selected fusion and recommended PoW.",
+      "Reject malformed or hostile records, unsupported versions, inconsistent totals/difficulty, stale or misbound context, changed budgets/digests and altered selections.",
+      "Return only powerless DATA; do not wire the active buyer, SDK, signer, transport or defaults."
+    ],
+    "positiveAdmission": "Same positive height/base and DP_ACTIVE/MATCH prerequisites as the existing policy. Quote-only dummy zero-struct acceptance is not unsigned-block policy admission.",
+    "receiptAuthenticity": "Self-checking declared DATA only. A caller can construct a different coherent receipt; this adapter is not authenticated issuance or proof of ownership.",
+    "comparisonLimits": {
+      "maximumDepth": 8,
+      "maximumVisitedNodes": 256,
+      "notAHardNativeResourceBoundary": true
+    },
+    "existingV1AndDefaultFilesEdited": false,
+    "newOperationalHelperOrHost": false
+  },
+  "exactExecutedReadClosure": [
+    {
+      "path": "src/zenon/dynamic-plasma-required-fused-policy-adapter.js",
+      "bytes": 8050,
+      "LF": 205,
+      "sha256": "6be7cdd599adb153cda29272bc503d185014718398886b35546756383b4e18ac",
+      "gitBlob": "406c02ca8d266b7da182fc195f9759fc3526f822"
+    },
+    {
+      "path": "qualification/dynamic-plasma-required-fused-policy-adapter.behavior.draft.mjs",
+      "bytes": 17941,
+      "LF": 375,
+      "sha256": "0b1ed315ecd414417415ba15f19ae44f6f060624dbaa76dbc0a64cd2b1ac747f",
+      "gitBlob": "9d5fbeb2da9e7039b877e68f1651946fb2944551"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-price-policy.js",
+      "bytes": 14957,
+      "LF": 418,
+      "sha256": "41e2e2044597cfa69c5adca292bcd762a189076be1cd939bec10798d7e35c52b",
+      "gitBlob": "ed505153487adb5284d895c922641b6de5d9caf8"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-compatibility.js",
+      "bytes": 7732,
+      "LF": 225,
+      "sha256": "b3989ce15e5f2e9d07b0ed035fe96bcce9f22cac93f5e497fdca5c37bf7618dd",
+      "gitBlob": "3811b748b3f905e454c8a4af4650bb7f89eb1cf2"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-required-fused-quote.js",
+      "bytes": 5416,
+      "LF": 133,
+      "sha256": "f5e10ff2dbfff3b6b63d87f0abadd0bb52b5d6b8fe0ead6a55fc5ea14207b730",
+      "gitBlob": "e820fd31ffde4ef77a2efa6e1fd3ed1775778726"
+    },
+    {
+      "path": "package.json",
+      "bytes": 1413,
+      "LF": 40,
+      "sha256": "8c9a25504fbf6f87c31cdf245a6f4eec5a88cc89c8352151dc66a577c5771ef5",
+      "gitBlob": "ec7193f6fd76f34778515079dc777594175c4c34"
+    }
+  ],
+  "execution": {
+    "class": "SELECTED_LOCAL_DECLARED_FOUR_FIELD_SHARED_POLICY_ADAPTER",
+    "nativeNodeCommands": 1,
+    "node": {
+      "version": "24.19.0",
+      "platform": "darwin",
+      "arch": "arm64",
+      "sha256": "ab982ffe2d922fd0625872f3474c4264ad09b04ab0a375eb3e77dac92f64508a"
+    },
+    "controllerRuntime": {
+      "pythonSHA256": "037855106cd54d93abad568c82f87e6419d41df05d116b2a183e57be76ee06d9"
+    },
+    "entry": "qualification/dynamic-plasma-required-fused-policy-adapter.behavior.draft.mjs",
+    "entryAuthorshipHeader": "SOURCE_DRAFT / NOT_RUN is preserved; this separate record reports its later selected execution.",
+    "counts": {
+      "tests": 10,
+      "suites": 0,
+      "pass": 10,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "actualPassNames": [
+      "four-field policy adapter shares exact fusion-only planner and validator fields",
+      "four-field policy headroom stays distinct from observed total across two advances",
+      "four-field policy hybrid plan never attaches fused-only total alongside PoW",
+      "four-field policy refuses missing or inconsistent current and original totals",
+      "four-field policy binds stable observed frontier and refuses unsupported admission",
+      "four-field policy rebuild refuses changed bindings and nested receipt tampering",
+      "four-field policy delegates stale resource and price bounds without refreshing authority",
+      "four-field policy validator requires the original selected pair not a fresh recommendation",
+      "four-field policy hostile records and unsafe primitives refuse without invoking hooks",
+      "four-field policy detached DATA roundtrips preserve explicit version and no-action labels"
+    ],
+    "actualPassNamesExactlyMatchAllTenAuthoredTopLevelRegistrations": true,
+    "nativeActualExit": 0,
+    "controllerActualExit": 0,
+    "joined": true,
+    "outputComplete": true,
+    "captureState": "COMPLETE",
+    "taskState": "CLOSED",
+    "taskOutcome": "SUCCESS",
+    "exactPrivateCLIAndContextReceiptsIndependentlyMatched": true,
+    "completeCommandContextAfterSourceOutcomeCleanupAndCreatorLedgersIndependentlyRead": true,
+    "independentReceiptReadBytes": 30042,
+    "stdout": {
+      "bytes": 2175,
+      "sha256": "fb9eb6dd0dbcbc2ddf32e81f36a208c105af82add5a045920f9b0589b78ef5c5",
+      "content": "# entry qualification/dynamic-plasma-required-fused-policy-adapter.behavior.draft.mjs\n# Node 24.19.0 platform=darwin arch=arm64\nTAP version 13\n# Subtest: four-field policy adapter shares exact fusion-only planner and validator fields\nok 1 - four-field policy adapter shares exact fusion-only planner and validator fields\n# Subtest: four-field policy headroom stays distinct from observed total across two advances\nok 2 - four-field policy headroom stays distinct from observed total across two advances\n# Subtest: four-field policy hybrid plan never attaches fused-only total alongside PoW\nok 3 - four-field policy hybrid plan never attaches fused-only total alongside PoW\n# Subtest: four-field policy refuses missing or inconsistent current and original totals\nok 4 - four-field policy refuses missing or inconsistent current and original totals\n# Subtest: four-field policy binds stable observed frontier and refuses unsupported admission\nok 5 - four-field policy binds stable observed frontier and refuses unsupported admission\n# Subtest: four-field policy rebuild refuses changed bindings and nested receipt tampering\nok 6 - four-field policy rebuild refuses changed bindings and nested receipt tampering\n# Subtest: four-field policy delegates stale resource and price bounds without refreshing authority\nok 7 - four-field policy delegates stale resource and price bounds without refreshing authority\n# Subtest: four-field policy validator requires the original selected pair not a fresh recommendation\nok 8 - four-field policy validator requires the original selected pair not a fresh recommendation\n# Subtest: four-field policy hostile records and unsafe primitives refuse without invoking hooks\nok 9 - four-field policy hostile records and unsafe primitives refuse without invoking hooks\n# Subtest: four-field policy detached DATA roundtrips preserve explicit version and no-action labels\nok 10 - four-field policy detached DATA roundtrips preserve explicit version and no-action labels\n1..10\n# tests 10\n# suites 0\n# pass 10\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# qualification PASS qualification/dynamic-plasma-required-fused-policy-adapter.behavior.draft.mjs\n"
+    },
+    "stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "nodeTestTimeoutMs": 5000,
+    "managerTimeoutSeconds": 30,
+    "limitations": [
+      "Timeouts do not establish hard lifetime, cancellation, detached-descendant cleanup or an OS/network sandbox.",
+      "Native loader, builtins, test/reporting streams, OS behavior, pristine captured intrinsics and source-to-import races remain premises.",
+      "These ten top-level cases are a selected component run, not default discovery, a complete suite, real DP runtime or live pilot acceptance."
+    ]
+  },
+  "launch": {
+    "caller": "Reviewed inline CommonJS explicit node:test run API with joined source/report streams and strict exact-name/counter checks.",
+    "entrySelection": "ONE_EXPLICIT_POSITIONAL_FILE; no default discovery, old tests or subtest discovery.",
+    "environment": "env -i TZ=UTC LANG=C LC_ALL=C",
+    "filesystemReads": "The six exact files in exactExecutedReadClosure; no directory expansion.",
+    "permissions": "--permission; no filesystem-write, child-process, worker or addon grant.",
+    "restrictions": [
+      "--no-addons",
+      "--disallow-code-generation-from-strings"
+    ],
+    "inputTypeOverride": false,
+    "expectedDescriptorOutput": "TAP/stdout/stderr",
+    "noSDKSQLNetworkPoWSigningPaymentBuildInstallOrCIExecution": true
+  },
+  "storage": {
+    "approvedExistingTaskStorageManager": true,
+    "implementationSHA256": "a4d82a72214c9698fda7ae363c38b2470c08da5e2e04c63ee9284e43f638f081",
+    "managerLocationResolution": "The old private pointer was unavailable. The byte-identical approved implementation was found in an existing clean SPV checkout and reviewed before launch; no copy, install, edit or manager requalification occurred.",
+    "currentMountIdentityAndPrivateRootVerified": true,
+    "existingRootOnlyNoLegacyAdoption": true,
+    "productionPolicyUnchanged": true,
+    "minimumFreeBytes": 10737418240,
+    "freshUniqueProject": true,
+    "expectedBytes": 4194304,
+    "quotaBytes": 8388608,
+    "reservationsAreNotPreallocationOrHardNativeQuotas": true,
+    "rawStreamBytes": 2175,
+    "oneCASObjectPerDigest": true,
+    "stdoutCreatedByThisOwnedTask": true,
+    "emptyStderrReusesItsVerifiedExistingCreatorLedger": true,
+    "sourceCopiesDownloadsArchivesOrPortableExports": 0,
+    "cleanupDecision": "CLEANED",
+    "cleanupRecordedScratchBytes": 0,
+    "cleanupOnlyThisTasksRegisteredEmptyScratch": true,
+    "noHistoricalTaskObjectOrLegacyCleanup": true,
+    "noOwnershipLedgerResetOrRebinding": true,
+    "runtimeDigestStrategy": "Fresh streaming hashes verified both runtime binaries after their earlier identity tuples changed. Later snapshots reused those digests only with exact nine-field identities.",
+    "observedProcessGroupReadback": "No rows observed after join; this is not hard native-cleanup assurance."
+  },
+  "preservation": {
+    "exactSourceAndRuntimeBindingsStableBeforeAfterAndOnIndependentReadback": true,
+    "primaryUsesDisjointAdapterPathsWithoutEditingTheEarlierCandidateTargets": true,
+    "earlierPassedFailedStoppedAndUnexecutedArtifactsNotRewrittenOrRerun": true,
+    "originalPaymentRequestBytesHashPayloadRequirementsContextAndConsumedAuthorityUnchanged": true,
+    "realSigner": "DISABLED",
+    "PR193Boundaries": "VALIDATED exact-same-signed-block resend possibility remains separate from UNKNOWN and ACKNOWLEDGED; no re-signing, replacement or consumed-authority reset.",
+    "protectedChainTotals": {
+      "consumedAdmissions": 2,
+      "actualPrepare": 1,
+      "bundles": 0,
+      "nativeChainProviderQualificationRuns": 0
+    },
+    "nativeNodeComponentExecutionReportedSeparately": true,
+    "noAutomationOrLocalGitStageCommitCheckoutFetchPushChange": true
+  },
+  "remainingAcceptanceGates": {
+    "runtimePriceParameterAuthority": "NOT_ESTABLISHED",
+    "quoteRPCOriginAndFrontierAuthentication": "NOT_ESTABLISHED",
+    "subjectAndRuntimeDigests": "DECLARED_BINDINGS_ONLY",
+    "activeBuyerSDKIntegration": "NOT_ACTIVATED_OR_QUALIFIED",
+    "realQuoteWorkSigningInclusionAndPriceMovementRecoveryMatrix": "NOT_RUN",
+    "currentFundingPayerProviderPolicyAuthorityAndRealProviderREADY": "SEPARATE_GATES",
+    "realServiceDeliveryDurabilityCommitUncertaintyAndProcessRestartRecovery": "NOT_QUALIFIED",
+    "officialX402PendingRecovery": "NOT_RUN",
+    "productionReadiness": "NOT_ESTABLISHED"
+  },
+  "overallRoadmapComplete": false
+}
