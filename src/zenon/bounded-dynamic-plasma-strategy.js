@@ -7,16 +7,23 @@ import {
   createDynamicPlasmaPricePolicyQuote,
   selectDynamicPlasmaPricePolicyFields,
 } from './dynamic-plasma-price-policy.js';
+import {
+  createDynamicPlasmaRequiredFusedPolicyQuote,
+  selectDynamicPlasmaRequiredFusedPolicyFields,
+} from './dynamic-plasma-required-fused-policy-adapter.js';
 
 const CLASSIFY = classifyDynamicPlasmaCompatibility;
 const CREATE_QUOTE = createDynamicPlasmaPricePolicyQuote;
 const SELECT_FIELDS = selectDynamicPlasmaPricePolicyFields;
+const CREATE_FOUR_FIELD = createDynamicPlasmaRequiredFusedPolicyQuote;
+const SELECT_FOUR_FIELD = selectDynamicPlasmaRequiredFusedPolicyFields;
 const ownKeys = Reflect.ownKeys;
 const getDescriptor = Object.getOwnPropertyDescriptor;
 const getPrototypeOf = Object.getPrototypeOf;
 const hasOwn = Object.hasOwn;
 const defineProperty = Object.defineProperty;
 const freeze = Object.freeze;
+const create = Object.create;
 const isProxy = utilTypes.isProxy;
 const apply = Reflect.apply;
 const regexpTest = RegExp.prototype.test;
@@ -26,16 +33,32 @@ const DIGEST = /^sha256:[0-9a-f]{64}$/;
 const CONTEXT_FIELDS = freeze([
   'phase', 'subjectDigest', 'runtimeContextDigest', 'observation', 'policy',
 ]);
+const FOUR_FIELD_CONTEXT_FIELDS = freeze([
+  ...CONTEXT_FIELDS, 'requiredFusedPolicyVersion',
+]);
 
 /**
  * Opt-in declared-data policy only; active runtime selection is unchanged.
  * UNSIGNED is supplied metadata, not signer-state or consumed-authority proof.
  * apply() returns only unsigned Plasma fields, never a block or prepared bytes.
+ * An own enumerable DATA requiredFusedPolicyVersion: 1 explicitly selects the
+ * four-field adapter; absent means the unchanged three-field policy contract.
+ * Tagged and untagged contexts/receipts cannot be mixed or silently downgraded.
+ * This connects the existing SPI only, not an active buyer or SDK preparer.
  */
 export class BoundedDynamicPlasmaStrategy extends PlasmaStrategy {
   async quote(context) {
     if (arguments.length !== 1) reject();
     const value = snapshotContext(context);
+    if (value.requiredFusedPolicyVersion === 1) {
+      return CREATE_FOUR_FIELD({
+        requiredFusedPolicyVersion: 1,
+        observation: value.observation,
+        policy: value.policy,
+        subjectDigest: value.subjectDigest,
+        runtimeContextDigest: value.runtimeContextDigest,
+      });
+    }
     const compatibility = CLASSIFY(value.observation);
     return CREATE_QUOTE({
       compatibility,
@@ -48,6 +71,16 @@ export class BoundedDynamicPlasmaStrategy extends PlasmaStrategy {
   async apply(context, quote) {
     if (arguments.length !== 2) reject();
     const value = snapshotContext(context);
+    if (value.requiredFusedPolicyVersion === 1) {
+      return SELECT_FOUR_FIELD({
+        requiredFusedPolicyVersion: 1,
+        observation: value.observation,
+        policy: value.policy,
+        subjectDigest: value.subjectDigest,
+        runtimeContextDigest: value.runtimeContextDigest,
+        quote,
+      });
+    }
     const compatibility = CLASSIFY(value.observation);
     return SELECT_FIELDS({
       quote,
@@ -62,16 +95,19 @@ export class BoundedDynamicPlasmaStrategy extends PlasmaStrategy {
 function snapshotContext(value) {
   if (typeof value !== 'object' || value === null || isProxy(value)
       || getPrototypeOf(value) !== objectPrototype) reject();
+  const tagged = getDescriptor(value, 'requiredFusedPolicyVersion') !== undefined;
+  const fields = tagged ? FOUR_FIELD_CONTEXT_FIELDS : CONTEXT_FIELDS;
   const keys = ownKeys(value);
-  if (keys.length !== CONTEXT_FIELDS.length) reject();
-  const result = {};
-  for (let index = 0; index < CONTEXT_FIELDS.length; index++) {
-    const field = CONTEXT_FIELDS[index];
+  if (keys.length !== fields.length) reject();
+  const result = create(null);
+  for (let index = 0; index < fields.length; index++) {
+    const field = fields[index];
     const descriptor = getDescriptor(value, field);
     if (descriptor === undefined || descriptor.enumerable !== true
         || !hasOwn(descriptor, 'value')) reject();
     result[field] = descriptor.value;
   }
+  if (tagged && result.requiredFusedPolicyVersion !== 1) reject();
   if (result.phase !== 'UNSIGNED') reject();
   requireDigest(result.subjectDigest);
   requireDigest(result.runtimeContextDigest);
