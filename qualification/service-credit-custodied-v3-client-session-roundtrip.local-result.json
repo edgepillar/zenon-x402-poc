@@ -1,0 +1,400 @@
+{
+  "schema": "service-credit-custodied-v3-client-session-roundtrip-local-result/v1",
+  "status": "LOCAL_SYNTHETIC_CASE_PASSED_NOT_PILOT_QUALIFIED",
+  "evidenceKind": "OPERATOR_RECORDED_REAL_NODE_SQLITE_CAPABILITY_CASE_WITH_DECLARED_IN_PROCESS_TRANSPORT",
+  "sourceBinding": {
+    "qualifiedProductionBaseCommit": "494162ca6e1846b1a267592fe673fdaa9c5e6d8c",
+    "exactGuardedFiles": 25,
+    "qualificationFiles": [
+      {
+        "LF": 704,
+        "bytes": 37993,
+        "gitBlob": "56a8176af70ac873ec07d0c9e1e10432b5fcd9ed",
+        "path": "qualification/service-credit-custodied-v3-client-session-roundtrip-fixture.draft.mjs",
+        "sha256": "3eecb9373bdd66e1493608108eeafd1c1bdb78f2ea8a594ff3f0d3b33c9e7015"
+      },
+      {
+        "LF": 355,
+        "bytes": 24337,
+        "gitBlob": "2dbdc2f9c28fb271d818e4430cc1dc20db11fb59",
+        "path": "qualification/service-credit-custodied-v3-client-session-roundtrip.draft.mjs",
+        "sha256": "5b288dd0a66c6bfa2163abdefede95ebee5d6b96980f34da02fca98d60cd8b57"
+      }
+    ],
+    "productionAndPackageFiles": [
+      {
+        "LF": 511,
+        "bytes": 18540,
+        "gitBlob": "9572dfcca76b83b53bdd5bd132ffaf110720dc3a",
+        "path": "src/service-credit-custodied-sqlite-http-client.js",
+        "sha256": "ea16d6ac5ce72d6434c06e98c52c324daf918dd570f15997cdc21e501f677f4e"
+      },
+      {
+        "LF": 510,
+        "bytes": 21467,
+        "gitBlob": "105b22e1463ab8302b141510e2bb991b746169ad",
+        "path": "src/service-credit-custodied-sqlite-sequential-runner.js",
+        "sha256": "9378a09dfd23c6ad5e093971d16c5aad62c19b5f3cce353bb199f037df64d7e0"
+      },
+      {
+        "LF": 213,
+        "bytes": 8579,
+        "gitBlob": "4dc8765be0aa4b0e927fface960e366a3a6ccd1e",
+        "path": "src/service-credit-custodied-recovery-observation-collection-core.js",
+        "sha256": "36b7cece2d436cbfcac5f4299dd6bd30e5eede6ebb2ebe769ae7bf3a6f1a72b4"
+      },
+      {
+        "LF": 1536,
+        "bytes": 57459,
+        "gitBlob": "260c2f43306b029ca694aa06b8c60d1be037c614",
+        "path": "src/service-credit-zenon-funding-post-v1-payer-recovery-sqlite-store.js",
+        "sha256": "9c925f241effbfec0bf014ff284e834c4d5679c4ea7224f83a6354cde6cffdaf"
+      },
+      {
+        "LF": 770,
+        "bytes": 27034,
+        "gitBlob": "280dd20dc669e2856d263eba62ccd0fe9af72f21",
+        "path": "src/service-credit-http-execute-dispatch.js",
+        "sha256": "254ba8eef5ea5efb3a1b901be09e9cb33afbc3cfcf63789ca4a23316b6180d1b"
+      },
+      {
+        "LF": 356,
+        "bytes": 14051,
+        "gitBlob": "f911d42d01b69e6577f9bcd66f4ed59aab8ab882",
+        "path": "src/service-credit-original-request-custody-contract.js",
+        "sha256": "fd349de553a17abcc2e0567ba6640e6e3d5d26cfa79ee1e355928dc9fa8d3915"
+      },
+      {
+        "LF": 938,
+        "bytes": 35073,
+        "gitBlob": "2dee22fd780db9de662fe1243075e74cef0bf296",
+        "path": "src/service-credit-custodied-request-owner.js",
+        "sha256": "6e7493a4859d48530820e68a4a19a513aad014ffc1048b42965a3ad36ae7c5f7"
+      },
+      {
+        "LF": 292,
+        "bytes": 10755,
+        "gitBlob": "90fd4c8a2cc8fb552f8eb0cb45607bfa44c61108",
+        "path": "src/service-credit-custodied-http-client.js",
+        "sha256": "ddbc54faf4a14d95e6274bc9df27b7b49db251bab67c11b871cfb2f9e78b4f15"
+      },
+      {
+        "LF": 479,
+        "bytes": 15288,
+        "gitBlob": "c9005ab245f045648d6bf508b9afef6c2d26c583",
+        "path": "src/service-credit-custodied-sequential-runner-core.js",
+        "sha256": "36c99342bf9e47559e39535aefcde78acbbdd7fb210d42a77dbbb93c2fd9f8ff"
+      },
+      {
+        "LF": 934,
+        "bytes": 39886,
+        "gitBlob": "fb060d4e349b1c31a1219a0cc137af250a8a2291",
+        "path": "src/x402-wire.js",
+        "sha256": "5fba91af5a352f62d1a335c7176a45a604e2af5d92b1c4b0e53825c1f20d4e56"
+      },
+      {
+        "LF": 181,
+        "bytes": 7483,
+        "gitBlob": "14334c82b5b7c80fb8f7f6a392a1a0f3c3adcbf1",
+        "path": "src/service-credit-pilot-client-plan.js",
+        "sha256": "73ee3d739de85150039e733234cd0761c228d68de040d1e126902e808a259ac6"
+      },
+      {
+        "LF": 60,
+        "bytes": 3202,
+        "gitBlob": "0890db504e44b704d0434dc309e711743570e652",
+        "path": "src/service-credit-pilot-status-view.js",
+        "sha256": "cf3822d8b9ec4eb4772452ed1888b96d398fd87c1ead44cd155a5acc1a6b66ed"
+      },
+      {
+        "LF": 306,
+        "bytes": 13794,
+        "gitBlob": "5275832eebbf87e0cd37f3c2e3b82147ab625a72",
+        "path": "src/service-credit-custodied-recovery-collection-core.js",
+        "sha256": "51d06da70ecccd0cf8b38d650367d1ae903ea86010a5ebeadb682af98e4b890b"
+      },
+      {
+        "LF": 40,
+        "bytes": 1413,
+        "gitBlob": "ec7193f6fd76f34778515079dc777594175c4c34",
+        "path": "package.json",
+        "sha256": "8c9a25504fbf6f87c31cdf245a6f4eec5a88cc89c8352151dc66a577c5771ef5"
+      },
+      {
+        "LF": 57,
+        "bytes": 2286,
+        "gitBlob": "51c59fd254a124626b979a2798d3a960b60e2922",
+        "path": "src/service-credit-custodied-sqlite-recovery-reader.js",
+        "sha256": "72fd5da6aafd1500255f6170d2a2291155c4f4f5b1126c6b13dce9909decb0f3"
+      },
+      {
+        "LF": 425,
+        "bytes": 13978,
+        "gitBlob": "307b72b8a1d114463ad8e18935312b18ccb23199",
+        "path": "src/service-credit-durable-http-session.js",
+        "sha256": "a0d6d1436cdb697f125fee2f4dc723a5ddcfd2ee7063b55d56fa006bb8ba69bf"
+      },
+      {
+        "LF": 84,
+        "bytes": 2470,
+        "gitBlob": "f744b55595e2238dc088cf71ca8849e480cda1bc",
+        "path": "src/service-credit-durable-session-close.js",
+        "sha256": "5aae36a7da39ce5b7b9a8da8e9fbda88465cb1e4853dc791520a1df0ab87ede7"
+      },
+      {
+        "LF": 1301,
+        "bytes": 40833,
+        "gitBlob": "f0fd445a17466dd1ab83c785c44aa5e6fdf1e765",
+        "path": "src/service-credit-durable-execution-owner.js",
+        "sha256": "a63a795dda77489f7da0682d83a0683cf07240f83b803f449668cb687a956863"
+      },
+      {
+        "LF": 958,
+        "bytes": 32432,
+        "gitBlob": "040da1547c2fa6cc4a4044c47619b253f16d19a1",
+        "path": "src/service-credit-http.js",
+        "sha256": "c76a7f1864bdfcd0c26916bf28fba615c8aecf899d53e69467e3ebe7d3353d0d"
+      },
+      {
+        "LF": 2333,
+        "bytes": 82141,
+        "gitBlob": "6a7364fbc59c43edffb7a73f550210644e78daff",
+        "path": "src/service-credit-sqlite-store.js",
+        "sha256": "bda45bd553c8580a7bd66573bb2fb7c3bf12d79bab49a91fe3ac6dc1ebad8422"
+      },
+      {
+        "LF": 1580,
+        "bytes": 55461,
+        "gitBlob": "e6ac17254874584d1a01f70e7abc6f771bd35d73",
+        "path": "src/service-credit-model.js",
+        "sha256": "7ff7e3d88ab8c3b38a0073541533fbdb7a0d9f2be42f337ac35f6a3b05615c3a"
+      },
+      {
+        "LF": 956,
+        "bytes": 30258,
+        "gitBlob": "acfbb5c5e943b9e09958a7831b3dbe159463dcf9",
+        "path": "src/service-credit-execution-contract.js",
+        "sha256": "298f8e74885e1c507953c0fcf7874832f815296746e6bacbdac97a425f1a6c73"
+      },
+      {
+        "LF": 256,
+        "bytes": 8284,
+        "gitBlob": "2e19d42c1b9311a75897c84669849f56ae40f785",
+        "path": "src/service-credit-capability.js",
+        "sha256": "cb2b96d9a2e56c132dd1b4aca8f1c065b244ecd0e7e92f41ea3f4a8c969d17c3"
+      }
+    ],
+    "productionPackageAndDefaultWiringChanged": false
+  },
+  "runtime": {
+    "node": "24.19.0",
+    "platform": "darwin",
+    "architecture": "arm64",
+    "nodeBinarySHA256": "613be50c90e83aa8da58dd9ed393d0b39914a3b8ef4123fe817b46c2679cebe2",
+    "sqliteVersion": "NOT_RECORDED"
+  },
+  "execution": {
+    "testName": "P2 actual borrowed V3 client/session, duplicate fence and same-process owned recovery handoff",
+    "selectedEntry": "qualification/service-credit-custodied-v3-client-session-roundtrip.draft.mjs",
+    "method": "EXPLICIT_NODE_TEST_RUN_API_ONE_POSITIONAL_ENTRY",
+    "isolation": "none",
+    "concurrency": 1,
+    "forceExit": false,
+    "watch": false,
+    "environment": "CLEARED_EXPLICIT_NINE_KEY_ENVIRONMENT",
+    "addonsDisabled": true,
+    "stringCodeGenerationDisabled": true,
+    "newPrivateSyntheticDatabaseFiles": 2,
+    "syntheticCapabilityKeyPairs": 1,
+    "syntheticCapabilitySignatures": 1,
+    "testTimeoutMs": 15000,
+    "foregroundCommandTimeoutSeconds": 20,
+    "TAPByteCap": 65536,
+    "stdoutByteCap": 131072,
+    "stderrByteCap": 1048576,
+    "OSOrNetworkSandboxClaim": false,
+    "hardLifetimeCancellationOrNativeCleanupGuarantee": false,
+    "savedOperationalLauncherAdded": false
+  },
+  "observedOutcome": {
+    "joinedExit": 0,
+    "commandComplete": true,
+    "outputComplete": true,
+    "tests": 1,
+    "pass": 1,
+    "fail": 0,
+    "skipped": 0,
+    "cancelled": 0,
+    "todo": 0,
+    "reportedCaseDurationMs": 555.136208,
+    "reportedTAPDurationMs": 564.824542,
+    "completeTAPBytes": 1640,
+    "stdoutBytes": 2427,
+    "stderrBytes": 0,
+    "fixtureObservations": {
+      "stage": "KNOWN_OWNERS_CLOSED",
+      "failureStage": "NONE",
+      "hold": "NONE",
+      "sourceGuards": 25,
+      "storeCreates": 1,
+      "fundingCreates": 1,
+      "clientCreates": 1,
+      "sessionCreates": 1,
+      "keyAttempts": 1,
+      "keyPairs": 1,
+      "signAttempts": 1,
+      "signatures": 1,
+      "verificationControls": 1,
+      "proofValid": true,
+      "preDispatchFence": true,
+      "backendSucceeded": true,
+      "clientSucceeded": true,
+      "duplicateFenced": true,
+      "requestCalls": 1,
+      "endCalls": 1,
+      "backendCalls": 1,
+      "executeCalls": 1,
+      "bridgeDestroys": 0,
+      "bridgeErrors": 0,
+      "unexpectedBridgeCalls": 0,
+      "schedules": 1,
+      "cancels": 1,
+      "clientCloseCalls": 1,
+      "clientCloseReturned": true,
+      "borrowedFundingReadable": true,
+      "fundingCloseCalls": 1,
+      "fundingCloseReturned": true,
+      "readerOpenCalls": 1,
+      "readerRetainedPair": true,
+      "readerCloseCalls": 1,
+      "readerCloseReturned": true,
+      "sessionCloseCalls": 1,
+      "sessionCloseReturned": true,
+      "borrowedBackendReadable": true,
+      "storeCloseCalls": 1,
+      "storeCloseReturned": true,
+      "status": "PASS",
+      "retainedErrors": 0,
+      "declaredHandles": 0,
+      "pendingOriginals": 0,
+      "counters": "FIXTURE_CONTROL_NOT_INDEPENDENT_NATIVE_INSTRUMENTATION",
+      "qualification": "LOCAL_SYNTHETIC_CLIENT_SESSION_SAME_PROCESS_READER_ONLY",
+      "authority": "NONE",
+      "responseBoundary": "DECLARED_EVENT_FRAMING_NO_HTTPS_OR_DELIVERY_PROOF",
+      "restart": "NOT_ESTABLISHED",
+      "durability": "NOT_ESTABLISHED",
+      "nativeCleanup": "NOT_ESTABLISHED"
+    },
+    "durationBoundary": "REPORTED_TEST_AND_TAP_DURATIONS_NOT_COMPLETE_STORAGE_OR_PROCESS_LIFETIME",
+    "countersBoundary": "FIXTURE_CONTROL_NOT_INDEPENDENT_NATIVE_OS_INSTRUMENTATION",
+    "recordedCommandCompletionUTC": "2026-10-20T03:44:46.108Z"
+  },
+  "coveredBehavior": [
+    "The actual V3 funding store retains declared funding data; it does not create or sign a chain payment.",
+    "The actual borrowed V3 client persists and reads back the exact original request and dispatch intent before the declared request bridge calls the actual scoped backend session.",
+    "The actual backend succeeds once; the actual client observes the declared 200 response framing. One bridge, one backend handle and one execute callback are observed.",
+    "Submitting the same original again is recovery-fenced without another bridge, backend call or execute callback.",
+    "After known borrowed-client and funding-store closes, the existing owned recovery-only reader opens the same private synthetic funding database in the same process.",
+    "The reader returns the exact original and dispatch intent, POSSIBLY_ATTEMPTED, authority NONE and service outcome NOT_ESTABLISHED without dispatching.",
+    "The reader, backend session and fixture store report their expected close outcomes; declared handles and pending originals are zero, and one declared timer is cancelled."
+  ],
+  "journalOracle": {
+    "exactPermittedSidecar": "funding.sqlite-journal",
+    "permittedOnlyDuring": "KNOWN_LIVE_ORIGINAL_FUNDING_OWNER_OR_OWNED_RECOVERY_READER_EPOCH",
+    "productionConfiguration": "DELETE_JOURNAL_AND_EXCLUSIVE_LOCKING_UNCHANGED",
+    "guards": "PRIVATE_DIRECTORY_AND_DATABASE_IDENTITY_UID_DEVICE_SINGLE_LINK_MODE_REALPATH_SIZE_EXACT_ENTRY_SET",
+    "zeroSizedJournalAllowed": true,
+    "positiveMainDatabaseSizeRequired": true,
+    "sameLiveEpochReplacementOrDisappearance": "HOLD",
+    "readerEpochBoundary": "PRIOR_KNOWN_CLOSE_AND_POSITIVELY_OBSERVED_JOURNAL_ABSENCE",
+    "unexpectedEntriesWalShmLinksOrUnknownOwnership": "HOLD",
+    "productionFilesystemGuardsRelaxed": false,
+    "directSidecarCreationDeletionRepairOrAdoption": false,
+    "priorFailureExactSubpredicate": "NOT_ESTABLISHED",
+    "futureMarkerFailureDiagnostics": "BOUNDED_CONSTANT_ENUMS_WITHOUT_PATHS_OR_RAW_ERRORS",
+    "verificationBoundary": "SOURCE_REVIEW_AND_ONE_POSITIVE_REAL_CASE_NO_SEPARATE_ADVERSARIAL_FILESYSTEM_CASES"
+  },
+  "declaredContexts": {
+    "backendGrantNetwork": "zenon:mock",
+    "fundingMetadataNetwork": "zenon:testnet",
+    "binding": "SYNTHETIC_DECLARED_CONTEXTS_NOT_AUTHENTICATED_FUNDING_OR_CURRENT_CHAIN_AUTHORITY"
+  },
+  "preservedHistory": {
+    "originalSourceFiles": [
+      {
+        "LF": 658,
+        "bytes": 35498,
+        "gitBlob": "f947e0af4d1581b7c28aa6c1bfb24975420d79f2",
+        "path": "qualification/service-credit-custodied-v3-client-session-roundtrip-fixture.draft.mjs",
+        "sha256": "a832d83c29a85d861870519744e25838f9a1aa122c763c524473b8f94908c740"
+      },
+      {
+        "LF": 355,
+        "bytes": 24337,
+        "gitBlob": "239587fbc8a25e8f3c1d9e7da5fd449311e2c801",
+        "path": "qualification/service-credit-custodied-v3-client-session-roundtrip.draft.mjs",
+        "sha256": "0d68be15b118f8f6d472aba5f2aa5269da7b5ee83c3d01b31444b5a3911f032a"
+      }
+    ],
+    "originalCommand": {
+      "joinedExit": 1,
+      "tests": 1,
+      "pass": 0,
+      "fail": 1,
+      "skipped": 0,
+      "cancelled": 0,
+      "failureStage": "CREATE_AND_SEED_ACTUAL_V3_FUNDING_STORE",
+      "hold": "FIXTURE_DATABASE_MARKER_UNKNOWN",
+      "clientCreates": 0,
+      "sessionCreates": 0,
+      "requestCalls": 0,
+      "backendCalls": 0,
+      "executeCalls": 0
+    },
+    "originalFailureAndSourceBytes": "RETAINED_PRIVATELY_UNMODIFIED_NOT_RECLASSIFIED_AS_PASS",
+    "correction": "STRICT_JOURNAL_ORACLE_AND_POST_CLOSE_ABSENCE_CHECKS_WITH_PRECISE_FUTURE_MARKER_DIAGNOSTICS",
+    "correctedCommand": {
+      "joinedExit": 0,
+      "tests": 1,
+      "pass": 1,
+      "fail": 0,
+      "skipped": 0,
+      "cancelled": 0
+    },
+    "actualCommandsAcrossTheseTwoSourceVariants": 2,
+    "distinctAuthoredTestNames": 1,
+    "unchangedOriginalTestCommandRepeated": false,
+    "sourceOrigin": "INDEPENDENTLY_REVIEWED_ORIGINAL_WORKER_BASELINE_WITH_PRIMARY_AUTHORED_ROUTINE_LOCAL_CORRECTION",
+    "newExternalWorkerCorrectionReceiptClaim": false,
+    "nativeCommandAndStreamRecords": "RETAINED_PRIVATELY_PUBLIC_FIELDS_ARE_A_SANITIZED_SUMMARY"
+  },
+  "retention": {
+    "bothRunOutcomesAndBothSourceVersions": "RETAINED_BY_OWNED_PRIVATE_STORAGE_WITH_DIGEST_IDENTITY_AND_REFERENCE_CHECKS",
+    "cleanup": "HOLD_FOR_UNREGISTERED_SYNTHETIC_SQL_RETAINED_NOT_ADOPTED_OR_DELETED",
+    "currentSourceObjectBytes": 62330,
+    "correctedCaseRawDatabaseBytesAtPostExitObservation": 49152,
+    "storageBoundary": "LOGICAL_BYTE_COUNTS_NOT_APFS_PHYSICAL_RECLAIM_OR_DURABILITY_PROOF",
+    "rawPostExitHashes": "RAW_ONLY_NO_SQL_REOPEN_OR_DECODE",
+    "sourceDraftComments": "AUTHORED_NOT_RUN_PROVENANCE_IS_PRESERVED_SEPARATE_FROM_THIS_RECORDED_EXECUTION_OUTCOME"
+  },
+  "notEstablished": [
+    "HOSTED_CI_OR_WHOLE_APP_SDK_CONTROLLER_QUALIFICATION",
+    "ACTUAL_HTTPS_OR_SERVICE_DELIVERY",
+    "AUTHENTICATED_CURRENT_FUNDING_CONTEXT_OR_PAYER_PROVIDER_POLICY_AUTHORITY",
+    "REAL_PROVIDER_READY",
+    "PROCESS_RESTART_CRASH_OR_POWER_LOSS_RECOVERY",
+    "PHYSICAL_SQLITE_DURABILITY_OR_NATIVE_CLOSE_CLEANUP",
+    "DYNAMIC_PLASMA_FRONTIER_WORK_SIGNING_OR_INCLUSION",
+    "OFFICIAL_X402_COMPATIBILITY_ACCEPTANCE",
+    "REAL_PAYMENT_SIGNING_PREPARATION_SEND_OR_RESEND",
+    "LIVE_PILOT_OR_PRODUCTION_ACCEPTANCE"
+  ],
+  "unchangedRealPilotCounters": {
+    "consumedAdmissions": 2,
+    "actualChainPrepare": 1,
+    "bundles": 0,
+    "nativeChainProviderQualificationRuns": 0,
+    "realPaymentSigner": "DISABLED"
+  },
+  "privacy": "NO_PRIVATE_PATHS_TASK_PROCESS_OR_SESSION_IDENTITIES_KEYS_PROOFS_AUTHORIZATION_VALUES_OR_RAW_PRIVATE_DIAGNOSTICS_ARE_PUBLISHED"
+}
