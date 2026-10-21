@@ -14,7 +14,7 @@ const pins = [
   ["../src/canonical.js",967,"0d55ddf1727cafb0dcd46df2922305568615552a4d2ae34a5c30e90b9d8d998c"],
   ["../src/x402-wire.js",39886,"5fba91af5a352f62d1a335c7176a45a604e2af5d92b1c4b0e53825c1f20d4e56"],
   ["../src/zenon/dynamic-plasma-required-fused-policy-adapter.js",12024,"e2b693d4df9065d44ba590f4d0c8dffeb8e55187668eedfa396b4026c9905c3e"],
-  ["../src/zenon/dynamic-plasma-observation-collector.js",35157,"d614506b0054a87fe553cc79812b7e5355bea924bd3654902026ece58e796eb8"],
+  ["../src/zenon/dynamic-plasma-observation-collector.js",38492,"6bb665dd97e4b262941ed11fb7a9fb5c6d7a162004a39fcbfbfa8cd7b3f82d98"],
   ["../src/zenon/dynamic-plasma-observation-normalizer.js",28398,"2c3f7d42ded21a5513ff26c23a00a35a53aa334f053d10930f1571a020286897"],
   ["../src/zenon/dynamic-plasma-json-rpc-read-transport.js",10832,"fd03b2ad87d16660aa61d3961c163d724d5f89cd6d4bb9c4391d739566d5e5ca"],
   ["../src/zenon/bounded-json-rpc-read-core.js",21759,"10cc529bfb0676bb03dc4dad56059663f4a578b586c52f6404fc859d27d18f76"],

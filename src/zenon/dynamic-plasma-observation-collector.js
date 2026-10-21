@@ -883,3 +883,67 @@ function fixedError(kind) {
 function invalid() {
   throw INVALID;
 }
+
+/**
+ * Explicit schema3 producer/consumer composition over the existing collector.
+ * Capture the same request input and derive its independent expected digest
+ * BEFORE any injected read can run, then normalize the collected raw DATA
+ * against that digest. Do not accept an externally supplied digest, silently
+ * downgrade to legacy modes, retry a failed endpoint or promote a non-active
+ * classification. Return the original raw observation plus normalization so
+ * the existing UserSend quote/work/unsigned stages can consume that SAME DATA.
+ *
+ * Options keep the existing two distinct frozen callRead capabilities. Those
+ * injected capabilities are caller-owned, not sandboxed/read-only guarantees:
+ * endpoint authentication, deadlines/cancellation, rejection prehandling and
+ * terminal native cleanup remain the caller's responsibility. No endpoint,
+ * host, owner, timer, signer or operational helper is created here.
+ *
+ * Request equality and DP_ACTIVE are declared-DATA classifications, NOT chain
+ * authentication, current account/funds, runtime activation, key possession,
+ * signing permission, recovery or provider READY. Do not copy this result into
+ * a new quote after signing or use failure/expiry as replacement authority.
+ */
+import { normalizeDynamicPlasmaObservation as normalizeRequestBoundObservation }
+  from './dynamic-plasma-observation-normalizer.js';
+
+const NORMALIZE_REQUEST_BOUND_COLLECTION = normalizeRequestBoundObservation;
+const CAPTURE_REQUEST_BOUND_COLLECTION = snapshotDynamicPlasmaObservationCollectionInput;
+const CREATE_BASE_COLLECTION = createDynamicPlasmaObservationCollector;
+
+export function createRequestBoundDynamicPlasmaObservationCollector(options) {
+  if (arguments.length !== 1) throw fixedError('configuration_rejected');
+  const sourceCollect = CREATE_BASE_COLLECTION(options).collect;
+  let active = false;
+  const collect = freeze(async function collect(input) {
+    if (!thenInvariantHolds()) throw fixedError('configuration_rejected');
+    if (active) throw fixedError('busy'); // Before hostile reentrant input reads.
+    active = true;
+    try {
+      let captured;
+      try {
+        if (arguments.length !== 1) invalid();
+        captured = CAPTURE_REQUEST_BOUND_COLLECTION(input);
+        if (captured.expectedRequestContextDigest === null) invalid();
+      } catch { throw fixedError('input_rejected'); }
+      // This is our own captured collector's Promise, not an injected thenable.
+      // Reuse its existing internal shield before any await can read a mutated
+      // inherited Promise constructor. External promises remain its concern.
+      const observation = await shieldInternalPromise(sourceCollect(captured.collectionInput));
+      if (!thenInvariantHolds()) throw fixedError('configuration_rejected');
+      let normalization;
+      try {
+        normalization = NORMALIZE_REQUEST_BOUND_COLLECTION(
+          observation, captured.expectedRequestContextDigest,
+        );
+      } catch { throw fixedError('input_rejected'); }
+      const output = freeze({
+        observation, normalization,
+        expectedRequestContextDigest: captured.expectedRequestContextDigest,
+      });
+      if (!thenInvariantHolds()) throw fixedError('configuration_rejected');
+      return output;
+    } finally { active = false; }
+  });
+  return freeze({ collect });
+}
