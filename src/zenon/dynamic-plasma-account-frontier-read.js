@@ -123,3 +123,30 @@ function reject() {
   define(error, 'stack', { value: 'TypeError: ' + code, enumerable: false });
   throw freeze(error);
 }
+
+/**
+ * Explicit result-text seam for the existing bounded read core, which already
+ * checked the actual response envelope before stripping it. This function
+ * itself claims NO request correlation or RPC origin: direct caller text is
+ * still declared DATA. It accepts exactly5 fields, not the6-field framed API.
+ *
+ * The local id1 envelope below is ONLY syntax/projection reuse. It is not a
+ * network response, acknowledgement, original request ID or authority receipt.
+ * Reuse all original duplicate/numeric/shape/payer/chain/next-height checks,
+ * including the original total UTF8/frame bounds and sanitized error contract.
+ * No transport, exchange, Promise, endpoint or callback is invoked here.
+ */
+export function decodeZenonAccountFrontierReadResult(input) {
+  try {
+    if (arguments.length !== 1) reject();
+    const top = record(input, [
+      'frontierReadVersion', 'phase', 'expectedChainIdentifier', 'payerAddress', 'resultJson',
+    ]);
+    if (typeof top.resultJson !== 'string' || top.resultJson.length > 65536) reject();
+    return decodeZenonAccountFrontierRead({
+      frontierReadVersion: top.frontierReadVersion, phase: top.phase,
+      expectedChainIdentifier: top.expectedChainIdentifier, payerAddress: top.payerAddress,
+      requestId: 1, responseJson: '{"jsonrpc":"2.0","id":1,"result":' + top.resultJson + '}',
+    });
+  } catch { reject(); }
+}

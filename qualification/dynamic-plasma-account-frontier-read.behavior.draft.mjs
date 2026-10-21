@@ -9,7 +9,7 @@ import { Buffer } from 'node:buffer';
 assert.equal(process.argv.length, 2);
 const pins = [
   ['../src/zenon/bounded-json-rpc-read-core.js', 21759, '10cc529bfb0676bb03dc4dad56059663f4a578b586c52f6404fc859d27d18f76'],
-  ['../src/zenon/dynamic-plasma-account-frontier-read.js', 6038, '62d4dea4b5928c2643ec90bc1344b6a1d3be346bd5fd556f6f559e49a7aa239a'],
+  ['../src/zenon/dynamic-plasma-account-frontier-read.js', 7417, '283209685a41aed5647c87e33d046d1f81b3a6820ea6ea307c11d2f99b91020d'],
 ];
 const sources = new Map();
 for (const [path, bytes, sha256] of pins) {
@@ -210,5 +210,9 @@ test('raw frontier read leaves every earlier core byte unchanged and imports no 
   assert.match(decoder, /const PARSE = JSON.parse/);
   assert.match(decoder, /descriptor\(context, 'source'\)/);
   assert.doesNotMatch(decoder, /node:(?:fs|https?|tls|dns|child_process|worker_threads)|new Promise|fetch\s*\(|createBoundedJsonRpcReadTransportCore\s*\(|generateKeyPair|randomBytes|crypto\.sign|crypto\.verify|prepareBlock|publishRawTransaction/);
-  assert.equal((decoder.match(/^export /gm) ?? []).length, 1);
+  assert.equal((decoder.match(/^export /gm) ?? []).length, 2);
+  assert.match(decoder, /export function decodeZenonAccountFrontierReadResult\(input\)/);
 });
+
+// Reuse owned declared node-result DATA without copying the fixture builders.
+export { block as frontierReadBlockFixture, frame as frontierReadFrameFixture };
