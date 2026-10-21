@@ -561,3 +561,22 @@ function fixedError(profile, kind) {
 function invalid() {
   throw INVALID;
 }
+
+/**
+ * Pure synchronous reuse of this core's existing bounded JSON-RPC envelope
+ * scanner. Return the exact unconverted result text, not a parsed Number or
+ * authority receipt. No transport, request-ID allocator, Promise, callback,
+ * exchange, endpoint or native owner is created or invoked. This does not
+ * authenticate an envelope, RPC origin or current chain state. Original
+ * transport behavior and scanner bytes are unchanged.
+ */
+export function snapshotBoundedJsonRpcReadResultText(text, expectedRequestId) {
+  try {
+    if (arguments.length !== 2 || typeof text !== 'string'
+        || !isSafeInteger(expectedRequestId) || expectedRequestId < 1
+        || expectedRequestId > MAX_REQUEST_ID) invalid();
+    return resultSlice(text, toString(expectedRequestId));
+  } catch {
+    throw fixedError(internalProfile(), 'input_rejected');
+  }
+}

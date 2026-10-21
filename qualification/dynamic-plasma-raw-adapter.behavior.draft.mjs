@@ -17,7 +17,7 @@ const pins = [
   ["../src/zenon/dynamic-plasma-observation-collector.js",35157,"d614506b0054a87fe553cc79812b7e5355bea924bd3654902026ece58e796eb8"],
   ["../src/zenon/dynamic-plasma-observation-normalizer.js",28398,"2c3f7d42ded21a5513ff26c23a00a35a53aa334f053d10930f1571a020286897"],
   ["../src/zenon/dynamic-plasma-json-rpc-read-transport.js",10832,"fd03b2ad87d16660aa61d3961c163d724d5f89cd6d4bb9c4391d739566d5e5ca"],
-  ["../src/zenon/bounded-json-rpc-read-core.js",20906,"5572d24175455c6b3a9924688d601d31585454ce62dac9eb27151d2a65c83fcd"],
+  ["../src/zenon/bounded-json-rpc-read-core.js",21759,"10cc529bfb0676bb03dc4dad56059663f4a578b586c52f6404fc859d27d18f76"],
   ["../src/zenon/dynamic-plasma-price-policy.js",14957,"41e2e2044597cfa69c5adca292bcd762a189076be1cd939bec10798d7e35c52b"],
   ["../src/zenon/dynamic-plasma-compatibility.js",7732,"b3989ce15e5f2e9d07b0ed035fe96bcce9f22cac93f5e497fdca5c37bf7618dd"],
   ["../src/zenon/dynamic-plasma-required-fused-quote.js",5416,"f5e10ff2dbfff3b6b63d87f0abadd0bb52b5d6b8fe0ead6a55fc5ea14207b730"],
@@ -811,3 +811,6 @@ test('raw unsigned consumer remains detached default-off DATA without planner si
   assert.doesNotMatch(source, /node:(?:fs|https?|tls|dns|child_process|worker_threads)|generateKeyPair|randomBytes|crypto\.sign|crypto\.verify|prepareBlock|publishRawTransaction|mnemonic|keystore|fetch\s*\(/);
   checked(block, value);
 });
+
+// Reuse owned synthetic DATA fixtures without copying their definitions.
+export { view as rawAdapterViewFixture, material as rawAdapterMaterialFixture };
