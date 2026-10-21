@@ -113,6 +113,10 @@ function view(status, local = null, backend = null) {
  *
  * Backend success never clears client funding/custody uncertainty or establishes
  * current authority, real READY, service delivery, restart or pilot acceptance.
+ * A committed dispatch intent also requires client reconciliation, including
+ * after a normal reopen with fresh false in-memory uncertainty flags. Intent
+ * is not a durable response receipt. The exact backend assertion stays nested
+ * in backend; local funding, intent and uncertainty facts are not rewritten.
  * close fences combined reads synchronously, closes only the local backend
  * reader, and returns the actual client's cached native close Promise unchanged.
  */
@@ -349,7 +353,8 @@ function connectClientBackend(client, backend, selectedGrantId, storeOwnership, 
       }
       const uncertain = after.funding.status !== 'BOUND' || after.funding.ambiguityLatched
         || after.uncertainty.custody || after.uncertainty.submission || after.uncertainty.undrained
-        || after.uncertainty.declaredFundingAmbiguitySeen;
+        || after.uncertainty.declaredFundingAmbiguitySeen
+        || after.dispatchIntent !== null;
       if (observed.status === 'UNAVAILABLE' || observed.status === 'CLOSED') unavailable = true;
       return view(uncertain ? 'CLIENT_RECONCILIATION_REQUIRED' : observed.status, after, observed);
     } catch (error) {
