@@ -1,0 +1,353 @@
+{
+  "schemaVersion": 1,
+  "slice": "OCT21_P1_VERSIONED_DECLARED_RAW_DP_ADAPTER_V1",
+  "status": "SELECTED_LOCAL_NEW_RAW_ADAPTER_CONTRACTS_PASSED",
+  "baseline": {
+    "repository": "edgepillar/zenon-x402-poc",
+    "commit": "13b3a26644f081c44e28d7f4a6312db7a01cf4f7",
+    "tree": "af40de6d1022588ea41c960039f6a83c40a82983"
+  },
+  "roadmapLane": "P1-A: one versioned declared raw adapter over the existing subject, original-quote policy, work-input and unsigned assembly path.",
+  "implementation": {
+    "module": "src/zenon/declared-dynamic-plasma-user-send-adapter.js",
+    "export": "DeclaredDynamicPlasmaUserSendAdapter",
+    "viewVersion": "rawUserSendViewVersion:1; exact11 enumerable ordinary DATA fields",
+    "fields": [
+      "rawUserSendViewVersion",
+      "phase",
+      "paymentRequired",
+      "accepted",
+      "payerAddress",
+      "compiledSporkIds",
+      "accountFrontier",
+      "momentumAcknowledged",
+      "observation",
+      "policy",
+      "runtimeContextDigest"
+    ],
+    "stages": [
+      "quote(view)",
+      "createWorkRequest(view,originalQuote)",
+      "assemble(view,originalQuote,suppliedMaterial)"
+    ],
+    "subject": "Every stage derives the subject afresh from explicit declared frontier, acknowledgement and selected intent; a caller cannot supply or overwrite a subject or account block.",
+    "reuse": "Capture the existing subject producer, BoundedDynamicPlasmaStrategy quote implementation, work-request producer and unsigned assembler. Return their existing frozen result contracts unchanged, with no new authority or persisted/wire receipt format.",
+    "snapshot": "Each reviewed captured component validates/snapshots synchronously before its first await; after await only its detached result is returned. This is a source-bound component contract, not an OS/process attestation.",
+    "dependencies": "Constructor accepts no wallet/preparer/work-provider/callback or other operational dependency. The instance is frozen and stateless; implementation calls do not virtually dispatch through caller overrides.",
+    "noRefresh": "Retain the original quote and acknowledgement while rechecking the explicit declared view. Changed account height/hash, reset declaration, acknowledgement, intent, resource, budget or over-bound prices cannot use that quote. No automatic requote, retry, nonce search, signing, replacement or authority reset occurs.",
+    "noPreparation": "This adapter deliberately does not implement ZenonTransactionPlanner.prepareUnsigned(); actual current-state lookup, SDK/raw runtime preparation, nonce generation, signer and native owner/controller remain separate.",
+    "activation": "Separately imported/default-off. No active buyer, legacy signed composite, real signer, native owner/controller/store, package, dependency, workflow, CLI, script or persisted schema is changed."
+  },
+  "sourceReview": {
+    "exactPins": [
+      {
+        "path": "src/zenon/transaction-planner.js",
+        "bytes": 20374,
+        "LF": 419,
+        "sha256": "4ef2c72a44d5f0f5ce918172a6ff30b13b693fa173bc74cb56565f5402417c2c",
+        "gitBlob": "72f61734034a3f16cf49d0983ea0b14d1e3a7771"
+      },
+      {
+        "path": "src/zenon/bounded-dynamic-plasma-strategy.js",
+        "bytes": 15729,
+        "LF": 353,
+        "sha256": "7b82560bdeb25e573912090a2fe8de7b45912500a7a7c4434fe06dcf94e06d62",
+        "gitBlob": "ee85b7a4da8bf4190ae099e6bc5074059fccebbc"
+      },
+      {
+        "path": "src/canonical.js",
+        "bytes": 967,
+        "LF": 26,
+        "sha256": "0d55ddf1727cafb0dcd46df2922305568615552a4d2ae34a5c30e90b9d8d998c",
+        "gitBlob": "5367f9c72ee13017a61630e1f0cffdced21d52c4"
+      },
+      {
+        "path": "src/x402-wire.js",
+        "bytes": 39886,
+        "LF": 934,
+        "sha256": "5fba91af5a352f62d1a335c7176a45a604e2af5d92b1c4b0e53825c1f20d4e56",
+        "gitBlob": "fb060d4e349b1c31a1219a0cc137af250a8a2291"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-required-fused-policy-adapter.js",
+        "bytes": 12024,
+        "LF": 272,
+        "sha256": "e2b693d4df9065d44ba590f4d0c8dffeb8e55187668eedfa396b4026c9905c3e",
+        "gitBlob": "b592aafd4c41461318376ea9acc1373f99317455"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-observation-collector.js",
+        "bytes": 35157,
+        "LF": 885,
+        "sha256": "d614506b0054a87fe553cc79812b7e5355bea924bd3654902026ece58e796eb8",
+        "gitBlob": "faad8e8975dcd30c861c7f9970157d59c2c39fc6"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-observation-normalizer.js",
+        "bytes": 28398,
+        "LF": 698,
+        "sha256": "2c3f7d42ded21a5513ff26c23a00a35a53aa334f053d10930f1571a020286897",
+        "gitBlob": "c406db8471aa6c8afd812c222c673c809491cf00"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-json-rpc-read-transport.js",
+        "bytes": 10832,
+        "LF": 283,
+        "sha256": "fd03b2ad87d16660aa61d3961c163d724d5f89cd6d4bb9c4391d739566d5e5ca",
+        "gitBlob": "0475b7ab42889f67fb030fa7344d73d8bd6957d7"
+      },
+      {
+        "path": "src/zenon/bounded-json-rpc-read-core.js",
+        "bytes": 20906,
+        "LF": 563,
+        "sha256": "5572d24175455c6b3a9924688d601d31585454ce62dac9eb27151d2a65c83fcd",
+        "gitBlob": "c0266d1367f842d502f48e6c230611b85320cb0f"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-price-policy.js",
+        "bytes": 14957,
+        "LF": 418,
+        "sha256": "41e2e2044597cfa69c5adca292bcd762a189076be1cd939bec10798d7e35c52b",
+        "gitBlob": "ed505153487adb5284d895c922641b6de5d9caf8"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-compatibility.js",
+        "bytes": 7732,
+        "LF": 225,
+        "sha256": "b3989ce15e5f2e9d07b0ed035fe96bcce9f22cac93f5e497fdca5c37bf7618dd",
+        "gitBlob": "3811b748b3f905e454c8a4af4650bb7f89eb1cf2"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-required-fused-quote.js",
+        "bytes": 5416,
+        "LF": 133,
+        "sha256": "f5e10ff2dbfff3b6b63d87f0abadd0bb52b5d6b8fe0ead6a55fc5ea14207b730",
+        "gitBlob": "e820fd31ffde4ef77a2efa6e1fd3ed1775778726"
+      },
+      {
+        "path": "src/zenon/plasma-strategy.js",
+        "bytes": 974,
+        "LF": 32,
+        "sha256": "1c597d4e169ba8a5e6d2b7852c4ffa3a8ec9b854332fe354b9b013c36ebae093",
+        "gitBlob": "5cddc2d270aaf043e6e43145e95ffe0be3dde475"
+      },
+      {
+        "path": "package.json",
+        "bytes": 1413,
+        "LF": 40,
+        "sha256": "8c9a25504fbf6f87c31cdf245a6f4eec5a88cc89c8352151dc66a577c5771ef5",
+        "gitBlob": "ec7193f6fd76f34778515079dc777594175c4c34"
+      },
+      {
+        "path": "test-support/phase2a-account-block-preimage.js",
+        "bytes": 7724,
+        "LF": 210,
+        "sha256": "dde02531faaf3c45c5ab9760beba84fe56664f923c1d61fa64b077682d97dc0e",
+        "gitBlob": "a6a48b0ea2f105a3bcc82c76fe02531eea18f8e0"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-user-send-work-binding.js",
+        "bytes": 4522,
+        "LF": 98,
+        "sha256": "218b4391c97e4adde905415e20ec0e2015fca98643db85b6efd682aa3b5c5681",
+        "gitBlob": "1591c6fd60e90713fbec9b4249a69c1e5626405e"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-user-send-key-binding.js",
+        "bytes": 4237,
+        "LF": 91,
+        "sha256": "37ad7e74b038801297e4bffb0cb8ba92cbd79009ed32c4ae5b134fe2cb154be2",
+        "gitBlob": "c366f0fee4132604b40604547fe22f1bc1dba65d"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-user-send-assembly.js",
+        "bytes": 7772,
+        "LF": 162,
+        "sha256": "05012a2a983ceca018674c4d1f63823f3f7ed53b0970a4b4bd486c4278832b04",
+        "gitBlob": "a0537856f6692d278c9043ab9c1c734d1bde61ba"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-user-send-work-input.js",
+        "bytes": 2853,
+        "LF": 59,
+        "sha256": "2ff9c089e5903c059746d0a1c38688a2849f94d04d429279811fbbfbb40450a4",
+        "gitBlob": "dad4febf4ef6f09216640245c7e3805e01ad0127"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-user-send-work-request.js",
+        "bytes": 2564,
+        "LF": 50,
+        "sha256": "bc66c7d629eae230c46f62c88fa97960860d94b5d65d3c5611612ccae13fe9ce",
+        "gitBlob": "d4e9731b0af82a892226c2817e9d5a5273b39599"
+      },
+      {
+        "path": "src/zenon/declared-dynamic-plasma-user-send-adapter.js",
+        "bytes": 5050,
+        "LF": 111,
+        "sha256": "76977bcb857e9ac561daaf080c20cd2b4ec9d289023260815b5da371f1516b7e",
+        "gitBlob": "869f0b0949894f8a970f6e468d88725f0398ae6a"
+      },
+      {
+        "path": "qualification/dynamic-plasma-raw-adapter.behavior.draft.mjs",
+        "bytes": 28213,
+        "LF": 428,
+        "sha256": "b3afc819b9c4ef8fc8a90673ab98c8dd2ee200707194bae7cad2099327cc0f9a",
+        "gitBlob": "7ddd9ef9a7dff30d03b817303908da9c5da33120"
+      }
+    ],
+    "existingFilesModified": 0,
+    "retainedQualification": {
+      "passed": 142,
+      "commit": "13b3a26644f081c44e28d7f4a6312db7a01cf4f7",
+      "resultPath": "qualification/dynamic-plasma-user-send-subject.behavior.result.json",
+      "resultBlob": "64de0129bc25df8fa6583f796419af49666d3b0f",
+      "all34SourceFilesUnchanged": true,
+      "willNotReexecuteUnchanged142": true,
+      "resultBytes": 45694,
+      "resultSHA256": "02b359c98613fc3d68c0fa8a82f393c71daa3c9c5f83fa49d30b0be5a18f57a5",
+      "beforeAndAfter34ExactSourceHashesAndNineFieldIdentitiesMatch": true,
+      "qualificationNotRepeated": true
+    },
+    "reuseBoundary": "The retained142-assertion result remains historical source-bound evidence for unchanged inputs, not a newly executed suite or a current-head hosted result. Only12 new adapter assertions executed here; they are not reported as154 tests.",
+    "priorFixtureImports": "NONE. The new entry reuses owned synthetic DATA helper definitions, not old test modules.",
+    "authoringRefusal": "One orchestration parse error was refused before execution, repository writes or test imports; it was corrected before the single admitted Node run and is not counted as a passed assertion."
+  },
+  "qualification": {
+    "completedAt": 1792545421.913246,
+    "runtime": {
+      "node": "24.19.0",
+      "platform": "darwin",
+      "arch": "arm64",
+      "nodeSHA256": "ab982ffe2d922fd0625872f3474c4264ad09b04ab0a375eb3e77dac92f64508a"
+    },
+    "counts": {
+      "tests": 12,
+      "suites": 0,
+      "pass": 12,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "selection": {
+      "entry": "qualification/dynamic-plasma-raw-adapter.behavior.draft.mjs",
+      "newAssertions": 12,
+      "retained142Executed": false
+    },
+    "passNames": [
+      "raw adapter v1 carries one declared account intent through quote work request and unsigned assembly",
+      "raw adapter returns unchanged component contracts for the same independently derived subject",
+      "raw adapter produces original hybrid work input but never accepts invalid supplied work or searches",
+      "raw adapter refuses original quote reuse after advanced foreign or reset account frontiers",
+      "raw adapter preserves original acknowledgement and selected fields through the declared price window",
+      "raw adapter rejects coherent stale exhausted over-price and changed-intent views without repricing",
+      "raw adapter requires its exact versioned view and never accepts legacy contexts or operational dependencies",
+      "raw adapter stages retain their pre-await checked view quote and supplied material data",
+      "raw adapter rejects hostile view descriptors proxies and coercion without caller hooks",
+      "raw adapter captures source implementations instead of overridden preparer methods",
+      "raw adapter preserves exact arity original quote material and no replacement boundaries",
+      "raw adapter stays stateless default-off frozen DATA without planner SDK signer owner or runtime activation"
+    ],
+    "graph": {
+      "exactFiles": 22,
+      "uniqueSourceBytes": 277700,
+      "newNativeOrThirdPartyImports": false,
+      "historicalTestFileGrants": 0
+    },
+    "positiveScope": [
+      "One explicit declared view flows through subject derivation, original quote, work input and a fully hash/key/nonce/price-checked unsigned DATA block.",
+      "Existing component receipts remain exactly equal for the same manually derived context; explicit empty-frontier DATA is not inferred from unavailable input.",
+      "Declared hybrid request preserves the original selected pair and exact work digest; a fixed supplied invalid nonce is rejected, never searched or replaced.",
+      "Original acknowledgement and selected fields survive admitted coherent declared price movement.",
+      "Each stage retains its pre-await checked view/quote/material despite later caller mutation; returned DATA is detached, frozen and JSON serializable.",
+      "Post-load source-method overrides do not become preparer callbacks."
+    ],
+    "negativeScope": [
+      "Advanced, same-height foreign or reset frontier; changed acknowledgement/intent/resource/budget; stale, exhausted or over-price views refuse original-quote reuse.",
+      "Unsupported/missing view version, legacy contexts, wrong phase, malformed input, hostile descriptors/proxies/coercion and wrong arity refuse without caller hooks.",
+      "Caller subject/block/payment/retry/signer/work-provider/approval/consumed-authority fields or constructor dependencies refuse.",
+      "Wrong quote version/authority/internal receipt, substituted public key, malformed nonce and added signature/payment/retry material refuse."
+    ],
+    "noLiveEvidence": "A declared view is not current account, funding or chain proof. Matching public bytes is not key possession/signature proof. No actual hybrid nonce producer, SDK, real PREPARE, signing, inclusion, provider READY, service delivery, restart or live pilot executed.",
+    "launch": {
+      "form": "One explicit CommonJS node:test run API call selecting only this positional entry; isolation:none, concurrency:false, no discovery and no --input-type.",
+      "environment": "env -i TZ=UTC LANG=C LC_ALL=C",
+      "permissions": "--permission,22 exact file --allow-fs-read grants from sourceReview.exactPins, --disallow-code-generation-from-strings --no-addons --no-warnings. No directory, fs-write, child or worker grant.",
+      "builtinCaller": "node:test, node:test/reporters and node:stream in addition to the reviewed source/test imports.",
+      "inlineCallerReconstruction": {
+        "purpose": "Exact provenance recipe, not a saved/installed operational helper.",
+        "prefix": "process.exitCode = 125;\nconst { run } = require('node:test');\nconst { tap } = require('node:test/reporters');\nconst { Writable, pipeline, finished } = require('node:stream');\n",
+        "selectionConstruction": "'const selections = ' + JSON.stringify({[qualification.selection.entry]: qualification.passNames}, null, 2) + ';'",
+        "suffix": "\nlet selected = 'unselected';\n(async () => {\n  if (process.versions.node !== '24.19.0' || process.argv.length !== 2\n      || process.platform !== 'darwin' || process.arch !== 'arm64') throw Error('RUNTIME_OR_ARGUMENTS');\n  selected = Object.keys(selections).find(p => process.argv[1] === process.cwd() + '/' + p);\n  if (!selected) { selected = 'unselected'; throw Error('SELECTION'); }\n  const expected = selections[selected], seen = new Set(), reported = new Set();\n  const counts = new Map(), plans = [];\n  let bad = false, ended = false, reporterDone = false, versions = 0, bytes = 0, pending = '';\n  const known = name => expected.includes(name);\n  process.stdout.write('# entry ' + selected + '\\n# Node ' + process.versions.node\n    + ' platform=' + process.platform + ' arch=' + process.arch + '\\n');\n  function safeLine(line) {\n    let match;\n    if (line === 'TAP version 13') { versions++; return line; }\n    if ((match = /^# Subtest: (.+)$/.exec(line))) {\n      if (known(match[1])) return line;\n      bad = true;\n    } else if ((match = /^(ok|not ok) \\d+ - (.+)$/.exec(line))) {\n      if (!known(match[2]) || reported.has(match[2]) || match[1] !== 'ok') bad = true;\n      if (known(match[2])) { reported.add(match[2]); return line; }\n    } else if ((match = /^1\\.\\.(\\d+)$/.exec(line))) {\n      plans.push(Number(match[1])); return line;\n    } else if ((match = /^# (tests|suites|pass|fail|cancelled|skipped|todo) (\\d+)$/.exec(line))) {\n      if (counts.has(match[1])) bad = true;\n      counts.set(match[1], Number(match[2])); return line;\n    } else if (/^Bail out!/.test(line)) bad = true;\n    return null; // Do not publish physical locations, stacks or arbitrary diagnostics.\n  }\n  const source = run({\n    files: [process.argv[1]], isolation: 'none', concurrency: false,\n    timeout: 5000, forceExit: false, watch: false,\n  });\n  source.on('test:pass', data => {\n    if (!known(data.name) || seen.has(data.name) || data.nesting !== 0\n        || (data.skip !== undefined && data.skip !== false)\n        || (data.todo !== undefined && data.todo !== false)) bad = true;\n    seen.add(data.name);\n  });\n  source.on('test:fail', () => { bad = true; });\n  source.on('error', () => { bad = true; });\n  source.once('end', () => { ended = true; });\n  const sourceDone = new Promise(resolve => {\n    finished(source, { writable: false }, error => { if (error) bad = true; resolve(); });\n  });\n  const sink = new Writable({\n    write(chunk, encoding, callback) {\n      try {\n        bytes += Buffer.byteLength(chunk);\n        if (bytes > 65536) throw Error('REPORTER_CAP');\n        pending += String(chunk);\n        const lines = pending.split('\\n'); pending = lines.pop();\n        const safe = lines.map(safeLine).filter(line => line !== null);\n        if (safe.length) process.stdout.write(safe.join('\\n') + '\\n', callback);\n        else callback();\n      } catch { callback(Error('REPORTER_FAILED')); }\n    },\n    final(callback) { if (pending !== '') bad = true; callback(); },\n  });\n  const reporter = source.compose(tap);\n  const reportDone = new Promise(resolve => {\n    pipeline(reporter, sink, error => { reporterDone = !error; if (error) bad = true; resolve(); });\n  });\n  await Promise.all([sourceDone, reportDone]);\n  const zero = ['suites', 'fail', 'cancelled', 'skipped', 'todo'];\n  if (bad || !ended || !reporterDone || versions !== 1 || plans.length !== 1\n      || plans[0] !== expected.length || seen.size !== expected.length\n      || reported.size !== expected.length || !expected.every(name => seen.has(name) && reported.has(name))\n      || counts.get('tests') !== expected.length || counts.get('pass') !== expected.length\n      || !zero.every(key => counts.get(key) === 0)\n      || process.exitCode !== 125) throw Error('INCOMPLETE_OR_UNEXPECTED_RESULTS');\n  process.exitCode = 0;\n  process.stdout.write('# qualification PASS ' + selected + '\\n');\n})().catch(() => {\n  if ([undefined, 0, 125].includes(process.exitCode)) process.exitCode = 1;\n  process.stderr.write('qualification caller failed\\n');\n  process.stdout.write('# qualification FAIL ' + selected + '\\n');\n});",
+        "exactActualCallerEqualityVerified": true
+      },
+      "join": "Test-event source and TAP reporter must both end; every selected name must appear once as an actual pass and once in TAP, with one plan and all7 counters matching before exit0.",
+      "managerRecords": "Exact context, launch argv and selection are split into3 bounded records and checked for32768-byte JSON ceilings before opening the task."
+    },
+    "actual": {
+      "nativeNodeCommands": 1,
+      "state": "COMPLETE",
+      "actualExit": 0,
+      "outputComplete": true,
+      "reason": null
+    },
+    "streams": {
+      "stdout": {
+        "bytes": 2797,
+        "sha256": "8190f92b461ba82698c13b5547d7507489634f721295b2f93bcc1ddeef71c522"
+      },
+      "stderr": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    "retention": "Full streams remain protected private CAS references in the successful CLOSED task; no ZIP or duplicate full TAP output is stored in this result.",
+    "independentReview": "Primary read the complete task, command argv, context, launch, selection, source-after, outcome, close, cleanup, CAS creator/ownership records and full streams. All12 actual PASS names matched authored registrations; exact source/runtime/helper/store bindings stayed unchanged.",
+    "privateMetadataReadBytes": 53969,
+    "limits": {
+      "perSourceBytes": 65536,
+      "totalSourceBytesCap": 327680,
+      "stdoutBytesCap": 65536,
+      "expectedTaskBytes": 4194304,
+      "quotaBytes": 8388608,
+      "managerTimeoutSeconds": 30,
+      "nodeTestTimeoutMs": 5000,
+      "productionFreeSpaceFloorGiB": 10
+    },
+    "caveat": "Loader/test/stream/native behavior remains a premise. Permission flags, timeouts, sampled quotas and an empty process-group observation are not OS/network sandbox, hard cancellation or native-cleanup assurance. Managed close cleaned only this task's empty registered disposable scratch,0 bytes; historical data and objects were not cleaned."
+  },
+  "publicationBoundary": {
+    "modified": [],
+    "added": [
+      "src/zenon/declared-dynamic-plasma-user-send-adapter.js",
+      "qualification/dynamic-plasma-raw-adapter.behavior.draft.mjs",
+      "qualification/dynamic-plasma-raw-adapter.behavior.result.json"
+    ],
+    "removed": [],
+    "CI": "NOT_RUN; no hosted, broad suite, native owner or release claim",
+    "activation": "NONE"
+  },
+  "remainingGates": [
+    "Actual current account state, funds, sequence and acknowledgement must be established independently; an explicit DATA frontier is not current-state or empty-account proof.",
+    "Actual SDK/current-account-state preparation remains separately unimplemented/unqualified.",
+    "No actual work/nonce producer, payer key possession or signature validation/signing authority is established.",
+    "Independent current context/funding, payer/provider/policy authority and real provider READY remain separate.",
+    "Current binary/genesis/sporks/runtime p, authenticated chain evidence and actual DP preparation/work/signing/inclusion price movement remain unqualified.",
+    "Original signed bytes/hash custody, durable commit uncertainty, actual restart/recovery and same-payment pending composition remain separate gates.",
+    "Live credit/service acceptance and production readiness remain NOT_ESTABLISHED.",
+    "The unchanged local HTTPS-owner lifecycle candidate remains unexecuted and unpublished."
+  ],
+  "protectedTotals": {
+    "consumedAdmissions": 2,
+    "actualPrepare": 1,
+    "bundles": 0,
+    "nativeChainProviderQualificationRuns": 0
+  },
+  "preserved": {
+    "realSigner": "DISABLED",
+    "originalPaymentRequestBytesHashPayloadRequirementsContext": "UNCHANGED",
+    "consumedAuthority": "NOT_RESET",
+    "pr193": "VALIDATED exact-same-signed-block possible resend remains distinct from UNKNOWN and ACKNOWLEDGED; no replacement/re-signing",
+    "automationModelsExternalWorker": "UNCHANGED; primary self-implementation, no worker/agent dispatch"
+  }
+}
