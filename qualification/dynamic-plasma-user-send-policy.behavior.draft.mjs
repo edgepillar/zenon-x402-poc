@@ -9,12 +9,12 @@ import { Buffer } from 'node:buffer';
 assert.equal(process.versions.node, '24.19.0');
 assert.equal(process.argv.length, 2);
 const pins = [
-  ["../src/zenon/transaction-planner.js", 16004, "54c7cc2c4ac4dbae890a4f1b1b2dcb9a3f2fdacb9998ea318b8c9beb40922825"],
+  ["../src/zenon/transaction-planner.js", 16738, "bbf51fa2fc75df7f69973a89ae275ec709622942444eb30cea0cc9924afbf143"],
   ["../src/zenon/bounded-dynamic-plasma-strategy.js", 15729, "7b82560bdeb25e573912090a2fe8de7b45912500a7a7c4434fe06dcf94e06d62"],
   ["../src/canonical.js", 967, "0d55ddf1727cafb0dcd46df2922305568615552a4d2ae34a5c30e90b9d8d998c"],
   ["../src/x402-wire.js", 39886, "5fba91af5a352f62d1a335c7176a45a604e2af5d92b1c4b0e53825c1f20d4e56"],
   ["../src/zenon/dynamic-plasma-required-fused-policy-adapter.js", 12024, "e2b693d4df9065d44ba590f4d0c8dffeb8e55187668eedfa396b4026c9905c3e"],
-  ["../src/zenon/dynamic-plasma-observation-collector.js", 33780, "dd298d4cb2ec1c5e2afb7d0fcc51f94f37c3b3793be3e70dc1ce113f2f0f413e"],
+  ["../src/zenon/dynamic-plasma-observation-collector.js", 35157, "d614506b0054a87fe553cc79812b7e5355bea924bd3654902026ece58e796eb8"],
   ["../src/zenon/dynamic-plasma-observation-normalizer.js", 28398, "2c3f7d42ded21a5513ff26c23a00a35a53aa334f053d10930f1571a020286897"],
   ["../src/zenon/dynamic-plasma-json-rpc-read-transport.js", 10832, "fd03b2ad87d16660aa61d3961c163d724d5f89cd6d4bb9c4391d739566d5e5ca"],
   ["../src/zenon/bounded-json-rpc-read-core.js", 20906, "5572d24175455c6b3a9924688d601d31585454ce62dac9eb27151d2a65c83fcd"],
@@ -27,7 +27,7 @@ const pins = [
   ["./dynamic-plasma-price-policy-frontier-binding.behavior.draft.mjs", 8745, "d7f672ee4464bd002e893e231dec5acc85785db2407f7df25fa601d74f972409"],
   ["./dynamic-plasma-required-fused-policy-adapter.behavior.draft.mjs", 17942, "8f641945d9f699579a2440a7c6f90e16c4d1712e0e042e9135f0468a8db514f1"],
   ["./dynamic-plasma-four-field-strategy.behavior.draft.mjs", 13760, "7d8e8a975aab82f54889d1a9544a25f2a73ce958cd369d4ee76c5c6021787621"],
-  ["./dynamic-plasma-request-bound-policy.behavior.draft.mjs", 26305, "0a1e7ad8860504b7ba07b8f38d212915bff189f7f3bbea2ad822cd3b077348dd"],
+  ["./dynamic-plasma-request-bound-policy.behavior.draft.mjs", 26305, "84b6490bfb9a6c5c77bc783c11f08b95d26134b0c0939b2a5c064da8e51a3861"],
 ];
 for (const [path, bytes, sha256] of pins) {
   const raw = readFileSync(new URL(path, import.meta.url));

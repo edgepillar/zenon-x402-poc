@@ -148,6 +148,33 @@ export const DYNAMIC_PLASMA_REQUEST_BOUND_OBSERVATION_COLLECTOR_CONTRACT = freez
   quoteRequestCommitment: 'RETAINED_DETACHED_DATA_NOT_AUTHENTICATED_OR_DURABLE',
 });
 
+/**
+ * Capture the collector's exact input before any transport callback can run.
+ * Reuse its closed descriptor-safe grammar, not a second request validator.
+ * The detached input and schema3 expected digest describe the SAME request.
+ * Legacy modes return null: callers must keep the normalizer's one-argument
+ * legacy call rather than passing a second undefined/null argument. The
+ * digest is declared DATA, not authenticated RPC, custody or authority.
+ * This pure stage constructs no collector, owner, Promise, timer or transport.
+ */
+export function snapshotDynamicPlasmaObservationCollectionInput(input) {
+  try {
+    if (arguments.length !== 1 || !thenInvariantHolds()) invalid();
+    const snapshot = snapshotInput(input);
+    const collectionInput = {
+      phase: 'UNSIGNED', expectedChainProfile: snapshot.expectedChainProfile,
+      compiledSporkIds: snapshot.compiledSporkIds, quoteRequest: snapshot.quoteRequest,
+    };
+    if (snapshot.fourField) put(collectionInput, 'requiredFusedObservationVersion', 1);
+    if (snapshot.observationVersion === 2) put(collectionInput, 'quoteRequestContextVersion', 1);
+    return freeze({
+      collectionInput: freeze(collectionInput),
+      expectedRequestContextDigest: snapshot.observationVersion === 2
+        ? snapshot.quoteRequestContext.digest : null,
+    });
+  } catch { throw fixedError('input_rejected'); }
+}
+
 export function createDynamicPlasmaObservationCollector(options) {
   let firstCallRead;
   let secondCallRead;

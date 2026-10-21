@@ -198,21 +198,7 @@ export function validateZenonUnsignedUserSendHash(input) {
     if (arguments.length !== 1) rejectBinding();
     const fields = snapshotZenonUnsignedUserSendFields(input);
     const block = fields.accountBlock;
-    const cores = HASH_CORES({
-      address: block.address, toAddress: block.toAddress, tokenStandard: block.tokenStandard,
-    });
-    const sha3 = value => CREATE_HASH('sha3-256').update(value).digest();
-    const preimage = Buffer.concat([
-      unsignedBE(block.version, 8), unsignedBE(block.chainIdentifier, 8), unsignedBE(block.blockType, 8),
-      Buffer.from(block.previousHash, 'hex'), unsignedBE(block.height, 8),
-      Buffer.from(block.momentumAcknowledged.hash, 'hex'), unsignedBE(block.momentumAcknowledged.height, 8),
-      Buffer.from(cores.address), Buffer.from(cores.toAddress), unsignedBE(block.amount, 32),
-      Buffer.from(cores.tokenStandard), Buffer.from(block.fromBlockHash, 'hex'),
-      sha3(Buffer.alloc(0)), sha3(Buffer.from(block.data, 'base64')),
-      unsignedBE(block.fusedPlasma, 8), unsignedBE(block.difficulty, 8), Buffer.from(block.nonce, 'hex'),
-    ]);
-    if (preimage.length !== 306) rejectBinding();
-    const computedHash = sha3(preimage).toString('hex');
+    const computedHash = computeUnsignedHashFromSnapshot(block);
     if (block.hash !== computedHash) rejectBinding();
     return freeze({
       unsignedHashValidationVersion: 1, scope: 'DECLARED_UNSIGNED_USER_SEND_HASH_CONSISTENCY',
@@ -224,6 +210,39 @@ export function validateZenonUnsignedUserSendHash(input) {
       authority: 'NONE', afterSigningAction: 'NONE',
     });
   } catch { rejectBinding(); }
+}
+
+/**
+ * Pure hash computation for an exact declared UNSIGNED UserSend DTO.
+ * The hash field is still syntax-checked, but this function neither trusts
+ * that field nor rewrites it. Signature must remain empty. This is not SDK
+ * preparation, nonce generation, signing, publication or signing authority.
+ * The exact306-byte encoder is shared with the independent hash validator.
+ */
+export function computeZenonUnsignedUserSendHash(input) {
+  try {
+    if (arguments.length !== 1) rejectBinding();
+    const fields = snapshotZenonUnsignedUserSendFields(input);
+    return computeUnsignedHashFromSnapshot(fields.accountBlock);
+  } catch { rejectBinding(); }
+}
+
+function computeUnsignedHashFromSnapshot(block) {
+  const cores = HASH_CORES({
+    address: block.address, toAddress: block.toAddress, tokenStandard: block.tokenStandard,
+  });
+  const sha3 = value => CREATE_HASH('sha3-256').update(value).digest();
+  const preimage = Buffer.concat([
+    unsignedBE(block.version, 8), unsignedBE(block.chainIdentifier, 8), unsignedBE(block.blockType, 8),
+    Buffer.from(block.previousHash, 'hex'), unsignedBE(block.height, 8),
+    Buffer.from(block.momentumAcknowledged.hash, 'hex'), unsignedBE(block.momentumAcknowledged.height, 8),
+    Buffer.from(cores.address), Buffer.from(cores.toAddress), unsignedBE(block.amount, 32),
+    Buffer.from(cores.tokenStandard), Buffer.from(block.fromBlockHash, 'hex'),
+    sha3(Buffer.alloc(0)), sha3(Buffer.from(block.data, 'base64')),
+    unsignedBE(block.fusedPlasma, 8), unsignedBE(block.difficulty, 8), Buffer.from(block.nonce, 'hex'),
+  ]);
+  if (preimage.length !== 306) rejectBinding();
+  return sha3(preimage).toString('hex');
 }
 
 function unsignedBE(value, width) {
