@@ -3,6 +3,7 @@ import { createRequestBoundDynamicPlasmaObservationCollector } from './dynamic-p
 import { createZenonAccountFrontierReadTransport } from './dynamic-plasma-account-frontier-read-transport.js';
 import { decodeZenonAccountFrontierReadResult } from './dynamic-plasma-account-frontier-read.js';
 import { createZenonUserSendObservationInput, snapshotZenonUserSendPolicyBinding } from './transaction-planner.js';
+import { validateZenonUserSendBalanceRead } from './dynamic-plasma-user-send-balance-read.js';
 import { ObservedDynamicPlasmaUserSendAdapter } from './dynamic-plasma-observed-user-send-adapter.js';
 
 const COLLECTOR = createRequestBoundDynamicPlasmaObservationCollector;
@@ -10,6 +11,7 @@ const ACCOUNT_WIRE = createZenonAccountFrontierReadTransport;
 const FRONTIER = decodeZenonAccountFrontierReadResult;
 const REQUEST = createZenonUserSendObservationInput;
 const BINDING = snapshotZenonUserSendPolicyBinding;
+const BALANCE = validateZenonUserSendBalanceRead;
 const STAGES = Object.freeze({
   quote: ObservedDynamicPlasmaUserSendAdapter.prototype.quote,
   work: ObservedDynamicPlasmaUserSendAdapter.prototype.createWorkRequest,
@@ -47,6 +49,7 @@ const INPUT = freeze([
   'observedUserSendReadVersion', 'phase', 'paymentRequired', 'accepted',
   'payerAddress', 'compiledSporkIds', 'policy', 'runtimeContextDigest',
 ]);
+const BALANCE_INPUT = freeze([...INPUT, 'accountInfoResultJson']);
 const PLAN = freeze(['observedUserSendPlanVersion', 'subject', 'quote']);
 
 /**
@@ -58,6 +61,12 @@ const PLAN = freeze(['observedUserSendPlanVersion', 'subject', 'quote']);
  * Require the same projected payer/chain/hash/height around those reads, then
  * invoke the captured existing observed DATA adapter stage. Later stages keep
  * the ORIGINAL subject/quote/ack; a changed original account refuses before DP.
+ *
+ * Explicit input v2 adds supplied native accountInfoResultJson DATA. Check
+ * selected token/amount/payer and native accountHeight after the first account
+ * read, before DP. No balance RPC or allowlist expansion occurs. v1 remains
+ * unchanged and does NOT enforce a balance gate; v2 is not an authority or
+ * downgrade fence. The returned stage/plan contracts remain unchanged.
  *
  * Matching projections are NOT atomicity, ancestry, authentication, current
  * account/funds or full previous-block evidence; ABA/unobserved changes remain
@@ -107,8 +116,15 @@ export function createObservedDynamicPlasmaUserSendReadAdapter(options) {
       const expectedCount = kind === 'quote' ? 1 : kind === 'work' ? 2 : 3;
       if (count !== expectedCount) fail('input_rejected');
       const budget = { nodes: 32768, characters: 2097152 };
-      const stable = snapshotData(record(input, INPUT), 0, budget);
-      if (stable.observedUserSendReadVersion !== 1 || stable.phase !== 'UNSIGNED'
+      const captured = snapshotReadInput(input);
+      const balanceMode = captured.observedUserSendReadVersion === 2;
+      const balanceText = balanceMode ? captured.accountInfoResultJson : null;
+      if (balanceMode && (typeof balanceText !== 'string' || balanceText.length > 65536)) fail('input_rejected');
+      if (balanceMode) budget.characters -= balanceText.length;
+      const base = create(objectPrototype);
+      for (const key of INPUT) put(base, key, captured[key]);
+      const stable = snapshotData(base, 0, budget);
+      if ((stable.observedUserSendReadVersion !== 1 && stable.observedUserSendReadVersion !== 2) || stable.phase !== 'UNSIGNED'
           || typeof stable.runtimeContextDigest !== 'string'
           || stable.runtimeContextDigest.length !== 71 || !test(DIGEST, stable.runtimeContextDigest)) fail('input_rejected');
       const plan = kind === 'quote' ? null : snapshotData(originalPlan, 0, budget);
@@ -134,6 +150,11 @@ export function createObservedDynamicPlasmaUserSendReadAdapter(options) {
       if (!invariant()) fail('configuration_rejected');
       const before = decode(beforeText, stable, request);
       if (originalSubject !== null && !sameOriginal(before, originalSubject)) fail('input_rejected');
+      if (balanceMode) BALANCE({
+        balanceReadVersion: 1, phase: stable.phase, paymentRequired: stable.paymentRequired,
+        accepted: stable.accepted, payerAddress: stable.payerAddress, compiledSporkIds: stable.compiledSporkIds,
+        accountFrontier: before, resultJson: balanceText,
+      });
       const collected = await shield(apply(collect, undefined, [request]));
       if (!invariant() || collected.normalization.classification !== 'DP_ACTIVE'
           || collected.normalization.requestContextBinding !== 'MATCHES_DECLARED_EXPECTED_REQUEST_CONTEXT') fail('input_rejected');
@@ -190,6 +211,15 @@ export function createObservedDynamicPlasmaUserSendReadAdapter(options) {
       return dispatch('validate', arguments.length, input, plan, block);
     }),
   });
+}
+
+function snapshotReadInput(value) {
+  if (typeof value !== 'object' || value === null || isProxy(value)
+      || prototype(value) !== objectPrototype) fail('input_rejected');
+  const d = descriptor(value, 'observedUserSendReadVersion');
+  if (d === undefined || d.enumerable !== true || !hasOwn(d, 'value')
+      || (d.value !== 1 && d.value !== 2)) fail('input_rejected');
+  return record(value, d.value === 2 ? BALANCE_INPUT : INPUT);
 }
 
 function decode(text, input, request) {

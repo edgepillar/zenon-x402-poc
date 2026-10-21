@@ -8,9 +8,9 @@ import { createHash } from 'node:crypto';
 // strings/native Promises; no native endpoint, SDK, signer or real RPC runs.
 assert.equal(process.argv.length, 2);
 const bytes = readFileSync(new URL('../src/zenon/dynamic-plasma-observed-user-send-read-adapter.js', import.meta.url));
-assert.equal(bytes.length, 15171);
+assert.equal(bytes.length, 17026);
 assert.equal(createHash('sha256').update(bytes).digest('hex'),
-  '3bee330489f0deb338ac894cddf47131e1ca9947e099c462d1cbd96e2bc66d6e');
+  '883104f7733ae68d755da4898e776ed8b18eba0a9d271cbc169b218e7a6776d8');
 assert.equal(/[^\x00-\x7f]/.test(bytes.toString('utf8')) || bytes.includes(0), false);
 const source = bytes.toString('ascii');
 const { createObservedDynamicPlasmaUserSendReadAdapter: create }

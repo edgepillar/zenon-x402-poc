@@ -1,0 +1,522 @@
+{
+  "schemaVersion": 1,
+  "slice": "OCT21_P1_BALANCE_CHECKED_OBSERVED_READ_V2",
+  "status": "LOCAL_SYNTHETIC_DECLARED_DATA_AND_READ_V2_QUALIFIED",
+  "roadmapLane": "P1 DP raw-adapter preparation lane only; official x402, real runtime and provider acceptance remain separate.",
+  "baseline": {
+    "repository": "edgepillar/zenon-x402-poc",
+    "commit": "aada68f211ec5a7dd527ae211c7d35138a06be40",
+    "tree": "3782f48ceef50cefc3b96fbb1bf16570bd2bd2c4"
+  },
+  "implementation": {
+    "newBalanceModule": "src/zenon/dynamic-plasma-user-send-balance-read.js",
+    "modifiedReadAdapter": "src/zenon/dynamic-plasma-observed-user-send-read-adapter.js",
+    "newEntry": "qualification/dynamic-plasma-user-send-balance-read.behavior.draft.mjs",
+    "retainedEntry": "qualification/dynamic-plasma-observed-user-send-read-adapter.behavior.draft.mjs",
+    "finiteScope": "Five files only: two new qualification files, one new pure balance module, the existing read adapter and two source-pin literals in its retained qualification entry. No active buyer, planner implementation, SDK, endpoint allowlist or operational owner change.",
+    "balanceGate": {
+      "nativeSchema": "Native AccountInfo result JSON uses address, accountHeight and balanceInfoMap; not the SDK-converted blockCount.",
+      "selectedData": "Independently recheck selected upfront intent, profile/sporks, checksummed payer/receiver/token, a declared nonempty frontier and equal native accountHeight. Require an explicit selected balanceInfoMap entry with matching token.tokenStandard.",
+      "amount": "Canonical nonnegative decimal-string balance is compared as BigInt against the selected positive atomic amount. No Number rounding, token-decimal rescaling or arbitrary uint256 balance ceiling. Explicit zero cannot cover the selected positive amount.",
+      "unavailable": "Missing/null maps or selected entries are refused, never treated as zero/usable funds or replaced by unreceived/mailbox data. Native construction may omit an entry when token metadata is unavailable.",
+      "boundaries": "AccountInfo has no chain ID or frontier hash. Both it and the account frontier are caller-supplied DATA. Equal payer/height is NOT source authentication, exact-state binding, atomicity, freshness, canonical funds or spendability proof.",
+      "projectionOnly": "Other token metadata and unselected entries are bounded JSON, not fully token/account validated. A different declared nonzero frontier hash with the same projected fields intentionally produces the same balance DATA receipt and NOT_ESTABLISHED flags.",
+      "encoding": "Reuse the bounded duplicate/key/depth/UTF8 JSON scanner and captured native numeric-source parsing. accountHeight must be an exact canonical positive safe integer lexeme matching the declared frontier. Raw input is at most65536 JavaScript characters AND65536 UTF8 bytes; the local id1 wrapper is syntax reuse, not RPC correlation.",
+      "return": "Synchronous frozen DATA only: DECLARED_USER_SEND_SELECTED_BALANCE_CONSISTENCY, coversAmount:true, authority:NONE, afterSigningAction:NONE; chain/frontier-hash binding, origin, freshness and spendability explicitly NOT_ESTABLISHED."
+    },
+    "readV2": {
+      "fields": [
+        "observedUserSendReadVersion",
+        "phase",
+        "paymentRequired",
+        "accepted",
+        "payerAddress",
+        "compiledSporkIds",
+        "policy",
+        "runtimeContextDigest",
+        "accountInfoResultJson"
+      ],
+      "explicitOptIn": "Version2 requires exactly nine descriptor DATA fields; version1 still requires its original eight fields and does NOT enforce a balance gate. Explicit version1 remains admitted; this is NOT an authority or downgrade fence.",
+      "capture": "Capture primitive raw balance text and all original selected input, plan and stage DATA before accountExchange/callRead callbacks. Charge raw text to the shared2MiB character budget separately without widening the original8192-character per-string DATA grammar.",
+      "sequence": "account-before -> selected balance DATA gate -> existing request-bound dual DP reads -> account-after -> existing captured unsigned DATA stage. Underfunded/malformed/mismatched balance fails after one account handoff and before DP reads.",
+      "contracts": "quote/createWorkRequest/assemble/validateUnsigned retain existing result shapes and original subject/quote/acknowledgement. Later price-window validation retains the same original unsigned block; no balance endpoint, network handoff kind or owner option is added.",
+      "lifecycle": "Existing busy-before-hostile-input, per-instance post-read failure hold and no reset/retry/fallback remain. Account wire still has32 handoffs, at most16 complete two-read cycles. This local hold is not durable or consumed payment authority."
+    },
+    "noOperationalCutover": "No SDK import/evaluation/preparation, nonce search/producer, key generation/signing, payment/publication, native HTTPS owner, provider setup, durable owner or recovery activation."
+  },
+  "sourceReview": {
+    "exactPins": [
+      {
+        "path": "src/zenon/transaction-planner.js",
+        "bytes": 22611,
+        "LF": 464,
+        "sha256": "079fe8da938e08e33a20ca1076492a829afa6fce3ae7f9b9f68d3bf4bff94233",
+        "gitBlob": "17b49a3d53974c9b3846ec6f352d6e8974bad7d3"
+      },
+      {
+        "path": "src/zenon/bounded-dynamic-plasma-strategy.js",
+        "bytes": 15729,
+        "LF": 353,
+        "sha256": "7b82560bdeb25e573912090a2fe8de7b45912500a7a7c4434fe06dcf94e06d62",
+        "gitBlob": "ee85b7a4da8bf4190ae099e6bc5074059fccebbc"
+      },
+      {
+        "path": "src/canonical.js",
+        "bytes": 967,
+        "LF": 26,
+        "sha256": "0d55ddf1727cafb0dcd46df2922305568615552a4d2ae34a5c30e90b9d8d998c",
+        "gitBlob": "5367f9c72ee13017a61630e1f0cffdced21d52c4"
+      },
+      {
+        "path": "src/x402-wire.js",
+        "bytes": 39886,
+        "LF": 934,
+        "sha256": "5fba91af5a352f62d1a335c7176a45a604e2af5d92b1c4b0e53825c1f20d4e56",
+        "gitBlob": "fb060d4e349b1c31a1219a0cc137af250a8a2291"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-required-fused-policy-adapter.js",
+        "bytes": 12024,
+        "LF": 272,
+        "sha256": "e2b693d4df9065d44ba590f4d0c8dffeb8e55187668eedfa396b4026c9905c3e",
+        "gitBlob": "b592aafd4c41461318376ea9acc1373f99317455"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-observation-collector.js",
+        "bytes": 38492,
+        "LF": 949,
+        "sha256": "6bb665dd97e4b262941ed11fb7a9fb5c6d7a162004a39fcbfbfa8cd7b3f82d98",
+        "gitBlob": "171a49f29379866ed111031d15423634ac2d17b4"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-observation-normalizer.js",
+        "bytes": 28398,
+        "LF": 698,
+        "sha256": "2c3f7d42ded21a5513ff26c23a00a35a53aa334f053d10930f1571a020286897",
+        "gitBlob": "c406db8471aa6c8afd812c222c673c809491cf00"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-json-rpc-read-transport.js",
+        "bytes": 10832,
+        "LF": 283,
+        "sha256": "fd03b2ad87d16660aa61d3961c163d724d5f89cd6d4bb9c4391d739566d5e5ca",
+        "gitBlob": "0475b7ab42889f67fb030fa7344d73d8bd6957d7"
+      },
+      {
+        "path": "src/zenon/bounded-json-rpc-read-core.js",
+        "bytes": 21759,
+        "LF": 582,
+        "sha256": "10cc529bfb0676bb03dc4dad56059663f4a578b586c52f6404fc859d27d18f76",
+        "gitBlob": "3bd98a83413eb13e3bceb097d35fb874b4c030a2"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-price-policy.js",
+        "bytes": 14957,
+        "LF": 418,
+        "sha256": "41e2e2044597cfa69c5adca292bcd762a189076be1cd939bec10798d7e35c52b",
+        "gitBlob": "ed505153487adb5284d895c922641b6de5d9caf8"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-compatibility.js",
+        "bytes": 7732,
+        "LF": 225,
+        "sha256": "b3989ce15e5f2e9d07b0ed035fe96bcce9f22cac93f5e497fdca5c37bf7618dd",
+        "gitBlob": "3811b748b3f905e454c8a4af4650bb7f89eb1cf2"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-required-fused-quote.js",
+        "bytes": 5416,
+        "LF": 133,
+        "sha256": "f5e10ff2dbfff3b6b63d87f0abadd0bb52b5d6b8fe0ead6a55fc5ea14207b730",
+        "gitBlob": "e820fd31ffde4ef77a2efa6e1fd3ed1775778726"
+      },
+      {
+        "path": "src/zenon/plasma-strategy.js",
+        "bytes": 974,
+        "LF": 32,
+        "sha256": "1c597d4e169ba8a5e6d2b7852c4ffa3a8ec9b854332fe354b9b013c36ebae093",
+        "gitBlob": "5cddc2d270aaf043e6e43145e95ffe0be3dde475"
+      },
+      {
+        "path": "package.json",
+        "bytes": 1413,
+        "LF": 40,
+        "sha256": "8c9a25504fbf6f87c31cdf245a6f4eec5a88cc89c8352151dc66a577c5771ef5",
+        "gitBlob": "ec7193f6fd76f34778515079dc777594175c4c34"
+      },
+      {
+        "path": "test-support/phase2a-account-block-preimage.js",
+        "bytes": 7724,
+        "LF": 210,
+        "sha256": "dde02531faaf3c45c5ab9760beba84fe56664f923c1d61fa64b077682d97dc0e",
+        "gitBlob": "a6a48b0ea2f105a3bcc82c76fe02531eea18f8e0"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-user-send-work-binding.js",
+        "bytes": 4522,
+        "LF": 98,
+        "sha256": "218b4391c97e4adde905415e20ec0e2015fca98643db85b6efd682aa3b5c5681",
+        "gitBlob": "1591c6fd60e90713fbec9b4249a69c1e5626405e"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-user-send-key-binding.js",
+        "bytes": 4237,
+        "LF": 91,
+        "sha256": "37ad7e74b038801297e4bffb0cb8ba92cbd79009ed32c4ae5b134fe2cb154be2",
+        "gitBlob": "c366f0fee4132604b40604547fe22f1bc1dba65d"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-user-send-assembly.js",
+        "bytes": 7772,
+        "LF": 162,
+        "sha256": "05012a2a983ceca018674c4d1f63823f3f7ed53b0970a4b4bd486c4278832b04",
+        "gitBlob": "a0537856f6692d278c9043ab9c1c734d1bde61ba"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-user-send-work-input.js",
+        "bytes": 2853,
+        "LF": 59,
+        "sha256": "2ff9c089e5903c059746d0a1c38688a2849f94d04d429279811fbbfbb40450a4",
+        "gitBlob": "dad4febf4ef6f09216640245c7e3805e01ad0127"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-user-send-work-request.js",
+        "bytes": 2564,
+        "LF": 50,
+        "sha256": "bc66c7d629eae230c46f62c88fa97960860d94b5d65d3c5611612ccae13fe9ce",
+        "gitBlob": "d4e9731b0af82a892226c2817e9d5a5273b39599"
+      },
+      {
+        "path": "src/zenon/declared-dynamic-plasma-user-send-adapter.js",
+        "bytes": 7843,
+        "LF": 164,
+        "sha256": "c8dc5a7de2c0d726c574cb2e58868f16191a0b6b213d64e6cb24f440a9039c3c",
+        "gitBlob": "5f5891db61c9869009e1bf440c76da1e9a1a43e1"
+      },
+      {
+        "path": "qualification/dynamic-plasma-raw-adapter.behavior.draft.mjs",
+        "bytes": 54696,
+        "LF": 816,
+        "sha256": "63376fe82c15e3df53fc48a5d53858ee896ef203b715adbd9fa81b185168dcbf",
+        "gitBlob": "c39a8211af665d9ffafe0adba00baa51f2d83874"
+      },
+      {
+        "path": "qualification/dynamic-plasma-request-bound-collection.behavior.draft.mjs",
+        "bytes": 18324,
+        "LF": 290,
+        "sha256": "0fc875ac411e3e8315a467e1074983b66eb5e5e02a9cff5a026659c0851c4794",
+        "gitBlob": "c960f283ccb9bc782e0866deca08a71ed21de740"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-account-frontier-read.js",
+        "bytes": 7417,
+        "LF": 152,
+        "sha256": "283209685a41aed5647c87e33d046d1f81b3a6820ea6ea307c11d2f99b91020d",
+        "gitBlob": "6fbb894a4db5db15e4ded168fd663eeb24898bf8"
+      },
+      {
+        "path": "qualification/dynamic-plasma-account-frontier-read.behavior.draft.mjs",
+        "bytes": 13729,
+        "LF": 218,
+        "sha256": "b8fe7fdff1874862ac948883ad159911c38de12e371a6e5b4fa58c6e994e19cf",
+        "gitBlob": "da66e447a45bd84acc77cf28c081dacd342be5c5"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-observed-user-send-subject.js",
+        "bytes": 5105,
+        "LF": 104,
+        "sha256": "bbcc1d718bcb1353f46e0650723e35c218db94754328103d4bce1d5765e13cd8",
+        "gitBlob": "5e29c6d70c965a4d72c0902504e57dae852a6223"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-account-frontier-read-transport.js",
+        "bytes": 3690,
+        "LF": 77,
+        "sha256": "c5c99de7d6f843e996fa5de5a646ddc869e27cdc2acc29206b97f34555bdcaa7",
+        "gitBlob": "07b6f9f7fe2ed72981da3c20868b3e72954e8575"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-observed-user-send-adapter.js",
+        "bytes": 8149,
+        "LF": 180,
+        "sha256": "8526519aa6bf5006c572447127680d3cc871ee4eee1b9046b4ea09f9ad9e1653",
+        "gitBlob": "bbda0ebf5a6d4d21f159f31304165810ebd89a77"
+      },
+      {
+        "path": "qualification/dynamic-plasma-observed-user-send-adapter.behavior.draft.mjs",
+        "bytes": 22655,
+        "LF": 316,
+        "sha256": "1ffecb7e86c08b3992005f6750f1777c257886daba15cdc71f9e95d0c3f541ef",
+        "gitBlob": "afbc0caa97ef4a79bdd76e5415f4cad07f4cd6d1"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-observed-user-send-read-adapter.js",
+        "bytes": 17026,
+        "LF": 323,
+        "sha256": "883104f7733ae68d755da4898e776ed8b18eba0a9d271cbc169b218e7a6776d8",
+        "gitBlob": "f30d29f8c50648f5b0341b3e73d6cb1a4bbb2828"
+      },
+      {
+        "path": "qualification/dynamic-plasma-observed-user-send-read-adapter.behavior.draft.mjs",
+        "bytes": 25029,
+        "LF": 385,
+        "sha256": "2546b9f54d69126fd3caa07c561a7d0cf5185c668c9dcac0d2be3e7b7fc64986",
+        "gitBlob": "e5e6a58481d85ee38e82e846ab684d11786fa0c1"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-user-send-balance-read.js",
+        "bytes": 7542,
+        "LF": 144,
+        "sha256": "ae1f3e5d309be0dc196fb6b35324d4c8287345b50a108d5030c1058645d2ed39",
+        "gitBlob": "f629aca2410dfd194fd73d3a651e624baa633386"
+      },
+      {
+        "path": "qualification/dynamic-plasma-user-send-balance-read.behavior.draft.mjs",
+        "bytes": 20832,
+        "LF": 304,
+        "sha256": "58332b4d2151c4f0d2bdc1dbfbfee2f3e919a92821206778310c29d8b8316d05",
+        "gitBlob": "c46fd304a0f188f8c8d3bed9b792563c83013b30"
+      }
+    ],
+    "graph": "33 exact authored/package files totaling462899 bytes;524288-byte source-read cap and65536-byte per-file cap. Static literal imports close over those33 paths and Node builtins. Node receives no directory/read expansion, fs-write, child, worker or addon grant.",
+    "preExecution": "Exact new module, modified read adapter,12 authored cases, retained84 registrations, dependency/import closure, source/launch/environment, mounted-volume/store policy and actual runtime/helper identities were reviewed before one selected native test command.",
+    "ownership": "Primary self-implementation, no external worker/agent dispatch. Four retained open PR heads remained unchanged and their completed immutable file-inventory review has no target overlap; no unchanged PR review or idle-worker polling was repeated.",
+    "preservation": "36 exact preserved source/fixture/result files totaling963237 bytes, including27 historical DP result files, matched before/after and during independent read-only inspection. The earlier CLOSED/FAILURE namespace's10 exact files and original missing outcome paths remained unchanged. Separate read-only preservation does not enlarge the33-file Node grant.",
+    "retained84": {
+      "commit": "aada68f211ec5a7dd527ae211c7d35138a06be40",
+      "path": "qualification/dynamic-plasma-observed-user-send-read-adapter.behavior.result.json",
+      "bytes": 33851,
+      "sha256": "fe571b6b1be35ee098b05f987a1b9e2a79232898b520be25db664276f4fa0f3f",
+      "gitBlob": "692b87eea45b33a49c53d351d99d78ae5ae69e31",
+      "originalReadModuleSha256": "3bee330489f0deb338ac894cddf47131e1ca9947e099c462d1cbd96e2bc66d6e",
+      "originalEntrySha256": "e2812504f7d4b09cc2d91d03eaa86042e34662f86dc55ac2685d4adad0b9a3aa",
+      "reuse": "All84 prior assertion bodies/registrations are unchanged. Only two retained entry source-pin literals select the changed read module; reversing those two literals restores the exact original entry SHA-256. The old84 result remains immutable and bound to its old graph, not relabeled as this96 result."
+    },
+    "nativeReferences": [
+      {
+        "commit": "e58d8e80eabd9fd5630ed62e0707424d96b5303c",
+        "path": "rpc/api/ledger_types.go",
+        "url": "https://github.com/zenon-network/go-zenon/blob/e58d8e80eabd9fd5630ed62e0707424d96b5303c/rpc/api/ledger_types.go",
+        "scope": "AccountInfo/BalanceInfoMarshal/Token: native accountHeight and decimal-string big.Int balance; no chain ID/frontier hash."
+      },
+      {
+        "commit": "e58d8e80eabd9fd5630ed62e0707424d96b5303c",
+        "path": "rpc/api/ledger.go",
+        "url": "https://github.com/zenon-network/go-zenon/blob/e58d8e80eabd9fd5630ed62e0707424d96b5303c/rpc/api/ledger.go",
+        "scope": "GetAccountInfoByAddress builds height/balance map, may skip unknown token metadata; unreceived is a separate endpoint. Source review only, not node execution."
+      }
+    ],
+    "countBoundary": "Only96 actual authored assertions in this single selected outcome:12 new balance/read-v2 cases and84 retained changed-composition regressions. Not a cumulative distinct-test score or repository suite. The earlier66 native-pass/Busy managed failure is preserved, not repaired/relabelled or repeated."
+  },
+  "qualification": {
+    "completedAtUtc": "2026-10-21T09:02:51.797Z",
+    "selection": {
+      "entry": "qualification/dynamic-plasma-user-send-balance-read.behavior.draft.mjs",
+      "newAssertions": 12,
+      "retainedAssertions": 84,
+      "expectedActualAssertions": 96,
+      "discovery": "NONE",
+      "wholeRepositorySuite": "NOT_RUN",
+      "nativeOwnerOrChainQualification": "NOT_RUN",
+      "hostedCI": "NOT_RUN"
+    },
+    "runtime": {
+      "node": "24.19.0",
+      "platform": "darwin",
+      "arch": "arm64",
+      "nodeSha256": "dbedff294bab84a0a86c04e15fbcbeb1c97ca10bef1b32b0634cd24b36f62100",
+      "python": "3.12.14",
+      "pythonSha256": "811e2679c20fd2c7413f7c5ca28ce903065eea8dadb8660f1b9379a28959a480",
+      "bundledRuntimeVersion": "26.1020.11348",
+      "runtimeBinding": "Current configured bundled executables were rehashed after file identity/digest changes; historical executable digests were NOT reused. Separate read-only version probes imported no project tests.",
+      "storageManagerSha256": "a4d82a72214c9698fda7ae363c38b2470c08da5e2e04c63ee9284e43f638f081",
+      "storageManagerSourceCommit": "d9ebafd537849379b8caa092a8e102fdf5b2edaa",
+      "storageBinding": "The previously used checkout disappeared. The existing restored private snapshot has the same reviewed manager digest and clean exact source commit. Its current README and source/file identity were checked; no helper rewrite, new host or home-cache fallback."
+    },
+    "launch": {
+      "form": "One explicit CommonJS node:test run API call selecting only this positional entry; isolation:none, concurrency:false, no discovery and no --input-type.",
+      "environment": "env -i TZ=UTC LANG=C LC_ALL=C",
+      "permissions": "--permission with33 exact file --allow-fs-read grants listed by sourceReview.exactPins; --disallow-code-generation-from-strings --no-addons --no-warnings. No directory, fs-write, child or worker grant.",
+      "builtinCaller": "node:test, node:test/reporters and node:stream in addition to the reviewed source/test imports.",
+      "inlineCallerReconstruction": {
+        "referenceCommit": "c07c0110f2d3b322271336e64bde6f053d930253",
+        "referencePath": "qualification/dynamic-plasma-raw-adapter-consumer.behavior.result.json",
+        "referenceBlob": "062024e6b06cb7194245451d7678f2cdf63553c6",
+        "referenceLocation": "qualification.launch.inlineCallerReconstruction",
+        "recipe": "Use the immutable referenced prefix and suffix. Insert 'const selections = ' + JSON.stringify({[qualification.selection.entry]: qualification.passNames}, null, 2) + ';' between them.",
+        "exactActualCallerEqualityVerified": true,
+        "purpose": "Provenance DATA only; no saved/installed operational helper or duplicate launcher copy."
+      },
+      "join": "Test-event source and TAP reporter must both end; every selected name must appear once as an actual pass and once in TAP, with one plan and all7 counters matching before exit0.",
+      "managerRecords": "Reviewed inline foreground controller, not a saved/installed operational helper; approved existing manager. Context/launch/selection/preservation are separate bounded receipts, each at most32768 JSON bytes. New private task;4MiB expected allocation,8MiB quota,64KiB stdout, at most1MiB stderr;10GiB production floor plus reservations.30-second monitor and60-second passive metadata-lock wait. No persisted policy change."
+    },
+    "actual": {
+      "selectedNativeTestCommands": 1,
+      "nativeActualExit": 0,
+      "nativeOutputComplete": true,
+      "commandState": "COMPLETE",
+      "primaryControllerActualExit": 0,
+      "managedTaskState": "CLOSED",
+      "managedTaskOutcome": "SUCCESS",
+      "independentReadOnlyInspection": true,
+      "metadataReadBytes": 141183,
+      "fullScopeQualified": false,
+      "ownedProcessGroupObservedEmpty": true
+    },
+    "counts": {
+      "tests": 96,
+      "suites": 0,
+      "pass": 96,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "streams": {
+      "stdout": {
+        "bytes": 22023,
+        "sha256": "f3bf17e4913481f1ebc1bae4ee4ea364619f1fef875d5a23c6b80a3a26b7c9e9"
+      },
+      "stderr": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    "passNames": [
+      "raw adapter v1 carries one declared account intent through quote work request and unsigned assembly",
+      "raw adapter returns unchanged component contracts for the same independently derived subject",
+      "raw adapter produces original hybrid work input but never accepts invalid supplied work or searches",
+      "raw adapter refuses original quote reuse after advanced foreign or reset account frontiers",
+      "raw adapter preserves original acknowledgement and selected fields through the declared price window",
+      "raw adapter rejects coherent stale exhausted over-price and changed-intent views without repricing",
+      "raw adapter requires its exact versioned view and never accepts legacy contexts or operational dependencies",
+      "raw adapter stages retain their pre-await checked view quote and supplied material data",
+      "raw adapter rejects hostile view descriptors proxies and coercion without caller hooks",
+      "raw adapter captures source implementations instead of overridden preparer methods",
+      "raw adapter preserves exact arity original quote material and no replacement boundaries",
+      "raw adapter stays stateless default-off frozen DATA without planner SDK signer owner or runtime activation",
+      "raw unsigned consumer returns the complete existing independent key work hash and price contract",
+      "raw unsigned consumer rechecks a retained block through two declared price advances without repricing",
+      "raw unsigned consumer refuses coherent stale over-price depleted policy and runtime changes",
+      "raw unsigned consumer derives current account sequence and preserves the original acknowledgement binding",
+      "raw observation input derives the same schema3 request before observations and flows into all later stages",
+      "raw observation input follows coherent selected intent profile and compiled spork changes without caller requests",
+      "raw observation request digest does not masquerade as account sequence acknowledgement or full block binding",
+      "raw observation input requires the exact versioned unsigned view and rejects caller transport or request fields",
+      "raw observation input rejects hostile used fields and top-level descriptors without hooks",
+      "raw observation input does not traverse unused planning payloads or treat them as policy approval",
+      "raw observation input is synchronous detached frozen schema3 DATA despite later caller mutations",
+      "raw observation input captures the pure snapshot without virtual policy calls or runtime activation",
+      "raw unsigned consumer rejects hash-correct altered intent sequence acknowledgement and selected fields",
+      "raw unsigned consumer rejects damaged hash nonce public key and signed records without repair",
+      "raw unsigned consumer requires exact arity version phase original quote and actual block data",
+      "raw unsigned consumer refuses hostile view quote and block descriptors without caller hooks",
+      "raw unsigned consumer keeps pre-await view quote and exact block snapshots isolated",
+      "raw unsigned consumer does not dispatch overridden assembly quote or policy methods",
+      "raw unsigned consumer preserves declared zero-difficulty semantics without nonce generation or authority",
+      "raw unsigned consumer remains detached default-off DATA without planner signing or active buyer cutover",
+      "request-bound collection connects the raw-view request to dual closed transports and expected normalization",
+      "collected raw DATA feeds original unsigned stages and bounded price advances without repricing",
+      "request-bound collection captures mutable input before the first synthetic exchange can change it",
+      "request-bound collection refuses legacy modes phases external digests and extra arity before reads",
+      "request-bound collection and factory reject hostile descriptors proxies and aliased capabilities without hooks",
+      "request-bound collection stays busy through an owned pending read without inspecting reentrant input",
+      "explicit later collection gets a newly derived request digest while the original result stays bound",
+      "request-bound collection preserves unavailable endpoints after correlation text and exchange failures without retries",
+      "request-bound collection retains pre-DP and incoherent classifications without turning them into active evidence",
+      "request-bound composition captures transport references and preserves the original raw collector contract",
+      "request-bound composition reuses the internal Promise shield and inherited-then refusal without hook execution",
+      "request-bound composition preserves every original collector byte and adds no native owner or signing path",
+      "raw frontier read extracts only the expected four fields from the pinned full RPC result shape",
+      "raw frontier read connects the decoded sequence to existing DP request quote work assembly and consumer",
+      "raw frontier read never infers empty accounts from null zero missing or reduced results",
+      "raw frontier read requires numeric source lexemes and reserves a safe next account height",
+      "raw frontier read checks expected payer chain request correlation and supported wire version",
+      "raw frontier read reuses duplicate envelope key UTF8 depth and byte refusals before native parsing",
+      "raw frontier read requires exact descriptor DATA inputs without hooks operations or authority fields",
+      "raw result text export preserves untouched numeric source without transport allocation or coercion",
+      "raw frontier read captures native parsing and never claims full block signature genesis or current-state validation",
+      "raw frontier read leaves every earlier core byte unchanged and imports no operational provider",
+      "observed adapter derives initial read input without manual frontier acknowledgement or price capabilities",
+      "observed adapter initial plan retains the exact derived subject acknowledgement and existing quote",
+      "observed adapter composes both closed synthetic read paths through work assembly and same-block validation",
+      "observed adapter keeps the original acknowledgement across two price advances and rejects the third without refresh",
+      "observed adapter refuses changed unavailable foreign malformed and empty account sequences at every later stage",
+      "observed adapter independently binds selected intent and request context instead of trusting the original plan label",
+      "observed adapter preserves the original runtime price policy and selected pair rather than repricing a supplied plan",
+      "observed adapter refuses non-active legacy misbound and cached observations at initial quote and later consumption",
+      "observed adapter validates the same unsigned block and refuses signed modified key hash nonce and selection fields",
+      "observed adapter requires exact versions unsigned phase arity and descriptor-only view and plan grammars",
+      "observed adapter refuses hostile view plan subject quote and observation descriptors without invoking hooks",
+      "observed adapter snapshots every consumed input before awaiting and never mutates caller DATA",
+      "observed adapter plan remains reproducible DATA and account projection not authority or full block authentication",
+      "observed adapter captures existing implementations without native owners signing retry or virtual strategy dispatch",
+      "observed read adapter constructs only captured closed components and starts with zero exchange handoffs",
+      "observed read adapter brackets each existing unsigned stage with account reads around dual DP observations",
+      "observed read adapter preserves the original plan block and acknowledgement through two price advances then holds",
+      "observed read adapter rejects mismatched bracket projections and never treats agreement as full block authentication",
+      "observed read adapter refuses an advanced original account before any DP read at every later stage",
+      "observed read adapter holds on unavailable malformed miscorrelated and empty account results without retry",
+      "observed read adapter stops before the second account read when dual DP data is unavailable or incoherent",
+      "observed read adapter captures selected input original plan material and block before the first account callback",
+      "observed read adapter rejects exact input version phase arity and malformed original plans before reads",
+      "observed read adapter refuses hostile nested DATA proxies sparse arrays and foreign prototypes without hooks",
+      "observed read adapter remains busy during an owned pending account read and reentrant DP callback",
+      "observed read adapter validates configuration without invoking exchange capabilities or accepting aliased DP transports",
+      "observed read adapter drains safe failures and refuses decorated or unsafe exchange promises without hooks",
+      "observed read adapter retains exact unsigned bytes and holds after rejected signed damaged or replacement DATA",
+      "observed read adapter exhausts the same account wire budget without recreation reset fallback or extra handoffs",
+      "observed read adapter captures existing DATA stage methods without native owners SDK signing publication or active cutover",
+      "native balance read projects explicit selected atomic balance with no SDK blockCount or authority receipt",
+      "native balance read compares canonical big integer strings without Number rounding or decimal rescaling",
+      "native balance read binds payer height and selected token while refusing missing null and unreceived substitutions",
+      "native balance read reuses bounded raw scanning and captured numeric parsing without full token or frontier-hash proof",
+      "native balance read independently rechecks selected intent asset profile and compiled context",
+      "native balance read requires exact unsigned descriptor DATA without getters coercion proxies or operational fields",
+      "balance read v2 composes all existing unsigned stages without adding balance RPCs or changing result contracts",
+      "balance read v2 rejects insufficient malformed or mismatched DATA before DP and holds every later stage",
+      "balance read v2 retains the same plan quote acknowledgement and unsigned block across the original price window",
+      "balance read v2 captures raw balance text and all selected plan material and block DATA before callbacks",
+      "balance read v2 selection is explicit and version1 neither silently upgrades nor claims a balance gate",
+      "balance read v2 preserves busy held capture and no signer or active SDK authority boundaries"
+    ],
+    "positiveScope": "Synthetic declared AccountInfo/selected-balance consistency and explicit v2 read/stage behavior, including refusal/capture/hold and unchanged v1 behavior, using fixed test-owned exchanges and native Promises over this exact source/runtime graph.",
+    "retention": "Complete exact stdout/stderr remain in protected verified CAS with original creator/store ownership references. All task/context/launch/selection/after/preservation/outcome/cleanup/command records and actual stream bytes were read independently. Owned task CLOSED/SUCCESS,0-byte owned scratch cleanup, no object or historical evidence removal and no duplicate archive/payload copy.",
+    "limits": "5000ms test timeout,30-second command monitor,60-second passive metadata wait and observed-empty owned process group are NOT hard lifetime/cancellation/native-cleanup, OS/network-sandbox or crash/power-loss guarantees. Native loader/runner/stream/intrinsic/OS behavior remains a premise.",
+    "limitsOfPositiveEvidence": [
+      "Both account frontier and AccountInfo are supplied DATA; source authentication, balance chain/frontier hash binding, account/funds freshness, atomicity, ABA exclusion and spendability are NOT_ESTABLISHED.",
+      "Version1 is unchanged and unchecked for balance. Explicit v2 selection is not an authority/downgrade fence; returned plans/stages are portable DATA, not unforgeable capabilities or durable receipts.",
+      "Test-owned callRead/accountExchange are injected capabilities, not actual node connections. The existing capability owner's endpoint identity, deadlines/cancellation, rejection prehandling and terminal cleanup remain obligations.",
+      "Native loader/runner/streams/OS/intrinsics remain premises. Read grants, timeouts and an observed-empty process group are not an OS/network sandbox, hard lifetime guarantee or native cleanup/restart/power-loss qualification.",
+      "No real SDK, provider READY, payment/signature, work search, preparation, inclusion or official x402 same-payment integration was exercised."
+    ],
+    "caveat": "A positive source-bound local96 result does not establish native/runtime/live-pilot or production assurance. Hosted CI was not run or implied."
+  },
+  "protectedTotals": {
+    "consumedAdmissions": 2,
+    "actualPrepare": 1,
+    "bundles": 0,
+    "nativeQualificationRuns": 0
+  },
+  "preserved": {
+    "realSigner": "DISABLED",
+    "originalPaymentRequestBytesHashPayloadRequirementsContext": "NOT_CHANGED_BY_THIS_SLICE; NOT_READ_OR_REPLACED",
+    "consumedAuthority": "UNCHANGED; NOT_RESET",
+    "pr193": "VALIDATED exact-same-signed-block possible resend remains distinct from UNKNOWN/ACKNOWLEDGED; no replacement or re-signing",
+    "earlierResultsAndFailures": "UNCHANGED; original failures remain failures",
+    "automationModelsExternalWorker": "UNCHANGED; no worker dispatch or automation/model/settings change"
+  },
+  "publicationBoundary": {
+    "scope": "Five reviewed files only; no local dirty-checkout staging/commit/reset/checkout. Normal non-force main transfer only after current ref/tree/diff/protection/rules/permission/PR and candidate CI-state checks.",
+    "ci": "NOT_RUN; explicit [skip ci] prevents broad unapproved workflow qualification. No green CI claim.",
+    "notIncluded": "No app/SDK/store/native owner or controller qualification, build, dependency installation, operational helper/host, provisioning, signing, payment or live deployment."
+  },
+  "remainingGates": [
+    "Independent exact binary/genesis/spork/enforcement-height/runtime context and current DP observations.",
+    "Authorized real preparation/work/signing/inclusion and original same-signed-block recovery; fail-closed signer remains disabled.",
+    "Authentic/current funding, payer/provider/policy authority, real provider READY and service delivery.",
+    "Independent durable commit/uncertainty and restart/recovery acceptance.",
+    "Official x402 same-payment pending lane and supervised pilot acceptance remain separate.",
+    "Versioned adapter adoption/real owner qualification and any hosted CI require their own applicable source-bound acceptance, not inference from this local DATA result."
+  ]
+}
