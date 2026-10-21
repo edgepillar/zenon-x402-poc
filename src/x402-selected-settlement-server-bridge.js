@@ -258,6 +258,9 @@ function constructBridge(configuration, argumentCount, officialCore223) {
       });
       apply(mapSet, hashClaims, [original.paymentHash, entry]);
       entry.owner = owner; entry.phase = 'VERIFYING'; entry.verifyTicket = ticket;
+      if (officialCore223) {
+        entry.originalBinding = original; entry.originalPayloadReference = payload;
+      }
       await undefined;
       if (!invariant()) fail('operation_rejected');
       const valid = await shield(owner.verifyOriginal(original));
@@ -303,6 +306,151 @@ function constructBridge(configuration, argumentCount, officialCore223) {
     finally {
       if (entry !== null && entry.settleTicket === ticket) entry.settleTicket = null;
     }
+  }
+
+
+  /**
+   * An opt-in server-owner continuation for an ALREADY pending upfront entry.
+   * The caller supplies its captured SDK transport tuple and the captured
+   * processSettlement capability; neither possession nor equality authenticates
+   * a server, payer, provider, current request or permission to deliver.
+   *
+   * This adds no settlement owner, verification, first attempt, budget, HTTP
+   * request, automatic retry loop or restart. Each explicit resume delegates
+   * once to the same SDK operation in its before-handler phase, and requires
+   * exactly one reconciliation by the existing owner before accepting a reply.
+   * No after-handler no-op success or second positive reply is accepted.
+   *
+   * Only the pinned request DATA shape (primitive fields plus an opaque adapter)
+   * is admitted. Adapter internals and native/global behavior remain trusted
+   * premises, not authenticated context. Do not use this to reconstruct context
+   * after a process restart. Authorization and actual delivery have other owners.
+   */
+  function createPendingContinuation(configuration) {
+    if (arguments.length !== 1 || !invariant()) fail('input_rejected');
+    let c = record(configuration, freeze([
+      'paymentPayload', 'requirements', 'transportContext', 'processSettlement',
+    ]));
+    const entry = selected(c.requirements), original = entry.originalBinding;
+    if (!officialCore223 || original === undefined || c.paymentPayload !== entry.originalPayloadReference
+        || entry.owner === null
+        || entry.phase !== 'VERIFIED' || entry.verifyTicket !== null
+        || entry.settleTicket !== null || entry.continuationClaimed === true) fail('stage_rejected');
+    const initial = entry.owner.getSnapshot().settlement;
+    if (initial.state !== 'PENDING' || initial.inFlight
+        || !initial.firstAuthorityConsumed || initial.firstAttempts !== 1
+        || !initial.observerConfigured
+        || initial.pendingReconciliations >= initial.maxPendingReconciliations) fail('stage_rejected');
+    let payload = c.paymentPayload, view = c.requirements, context = c.transportContext;
+    let processSettlement = callable(c.processSettlement);
+    let sealedContext = sealUpfrontTransport(context);
+    let expectedReconciliations = initial.pendingReconciliations;
+    let phase = 'PENDING', active = false, calls = 0, positiveReplies = 0;
+    let referencesReleased = false;
+    function checkOriginal() {
+      const current = bindingFor(payload, view, entry);
+      if (current.payloadJson !== original.payloadJson
+          || current.requirementsJson !== original.requirementsJson
+          || current.challengeJson !== original.challengeJson) fail('continuation_binding_changed');
+      checkUpfrontTransport(context, sealedContext);
+    }
+    checkOriginal();
+    entry.continuationClaimed = true; // Permanent; no new session/reset after uncertainty.
+    entry.originalPayloadReference = null;
+    c = null; configuration = null;
+    function release() {
+      payload = null; view = null; context = null; processSettlement = null;
+      sealedContext = null; referencesReleased = true;
+    }
+    function currentOwner() {
+      if (entry.verifyTicket !== null || entry.settleTicket !== null) fail('busy');
+      const owner = entry.owner.getSnapshot().settlement;
+      if (entry.phase !== 'VERIFIED' || owner.inFlight || owner.state !== 'PENDING'
+          || owner.firstAttempts !== 1 || !owner.firstAuthorityConsumed
+          || owner.pendingReconciliations !== expectedReconciliations
+          || owner.pendingReconciliations >= owner.maxPendingReconciliations) {
+        phase = 'UNKNOWN'; release(); fail('stage_rejected');
+      }
+      return owner;
+    }
+    async function resumeRun(count, ticket) {
+      if (count !== 0 || !invariant()) fail('input_rejected');
+      if (active) fail('busy');
+      if (phase !== 'PENDING') fail('stage_rejected');
+      checkOriginal();
+      currentOwner();
+      active = true;
+      let invoked = false;
+      try {
+        await undefined; // Publish the receipt and fence reentry before any capability call.
+        if (!invariant()) fail('operation_rejected');
+        checkOriginal();
+        const before = currentOwner();
+        calls++; invoked = true;
+        const returned = apply(processSettlement, undefined, [
+          payload, view, undefined, context, undefined, undefined, 'before-handler',
+        ]);
+        if (!invariant() || returned === ticket.promise || typeof returned !== 'object'
+            || returned === null || isProxy(returned) || !isPromise(returned)
+            || !supportedPromise(returned)) fail('operation_rejected');
+        const accepted = apply(nativeThen, returned, [raw => {
+          if (!invariant()) fail('operation_rejected');
+          const normalized = NORMALIZE(raw, original);
+          const headers = record(ownData(raw, 'headers'), freeze(['PAYMENT-RESPONSE']));
+          const header = headers['PAYMENT-RESPONSE'];
+          if (typeof header !== 'string' || header.length === 0
+              || header.length > 131072) fail('operation_rejected');
+          return freeze({
+            settlement: deepFreeze(parse(normalized.responseJson)),
+            headers: deepFreeze(parse(serialize({ 'PAYMENT-RESPONSE': header }))),
+          });
+        }, () => { fail('operation_rejected'); }]);
+        const result = await shield(accepted);
+        if (!invariant()) fail('operation_rejected');
+        checkOriginal();
+        const after = entry.owner.getSnapshot().settlement;
+        if (entry.phase !== 'VERIFIED' || entry.verifyTicket !== null
+            || entry.settleTicket !== null || after.inFlight
+            || after.firstAttempts !== before.firstAttempts
+            || !after.firstAuthorityConsumed
+            || after.pendingReconciliations !== before.pendingReconciliations + 1
+            || (result.settlement.success ? after.state !== 'SUCCEEDED' : after.state !== 'PENDING')) {
+          fail('operation_rejected');
+        }
+        expectedReconciliations = after.pendingReconciliations;
+        if (result.settlement.success) { positiveReplies++; phase = 'SUCCEEDED'; }
+        else phase = expectedReconciliations < after.maxPendingReconciliations
+          ? 'PENDING' : 'PENDING_EXHAUSTED';
+        return result;
+      } catch {
+        if (invoked) phase = 'UNKNOWN';
+        fail('continuation_rejected');
+      } finally {
+        active = false;
+        if (phase !== 'PENDING') release();
+      }
+    }
+    return freeze({
+      resume: freeze(function resume() {
+        const ticket = create(null); ticket.promise = null;
+        const pending = shield(resumeRun(arguments.length, ticket));
+        ticket.promise = pending; return pending;
+      }),
+      getSnapshot: freeze(function getSnapshot() {
+        if (arguments.length !== 0 || !invariant()) fail('input_rejected');
+        const settlement = entry.owner.getSnapshot().settlement;
+        return freeze({
+          phase, active, sdkContinuationCalls: calls, positiveReplies, referencesReleased,
+          pendingReconciliations: settlement.pendingReconciliations,
+          maxPendingReconciliations: settlement.maxPendingReconciliations,
+          firstAuthorityConsumed: settlement.firstAuthorityConsumed,
+          publication: settlement.publication,
+          persistence: 'MEMORY_ONLY', recoveryAuthority: 'NONE',
+          qualification: 'PINNED_SDK_CONTINUATION_ONLY',
+          serviceDelivery: 'NOT_ESTABLISHED', currentAuthority: 'NOT_ESTABLISHED',
+        });
+      }),
+    });
   }
 
   function snapshot() {
@@ -368,11 +516,44 @@ function constructBridge(configuration, argumentCount, officialCore223) {
   });
   return freeze({
     schemeServer, facilitatorClient,
+    ...(officialCore223 ? { createPendingContinuation: freeze(createPendingContinuation) } : {}),
     getSnapshot: freeze(function getSnapshot() {
       if (arguments.length !== 0) fail('input_rejected');
       return snapshot();
     }),
   });
+}
+
+
+function sealUpfrontTransport(context) {
+  const request = record(context, freeze(['request'])).request;
+  const fields = record(request, freeze(['adapter', 'method', 'path', 'paymentHeader']), true);
+  if (typeof fields.adapter !== 'object' || fields.adapter === null || isProxy(fields.adapter)
+      || typeof fields.method !== 'string' || !test(/^[A-Z]{1,16}$/, fields.method)
+      || typeof fields.path !== 'string' || fields.path.length < 1 || fields.path.length > 4096
+      || typeof fields.paymentHeader !== 'string' || fields.paymentHeader.length < 1
+      || fields.paymentHeader.length > 131072) fail('input_rejected');
+  const rows = [], budget = { units: 131072, bytes: 131072 };
+  for (const key of ownKeys(request)) {
+    const value = ownData(request, key);
+    if (key !== 'adapter') {
+      if (typeof value === 'string') textBudget(value, budget);
+      else if (value !== null && typeof value !== 'boolean'
+          && (typeof value !== 'number' || !safe(value) || same(value, -0))) fail('input_rejected');
+    }
+    apply(push, rows, [freeze({ key, value })]);
+  }
+  return freeze({ request, rows: freeze(rows) });
+}
+function checkUpfrontTransport(context, sealed) {
+  const request = record(context, freeze(['request'])).request;
+  if (request !== sealed.request) fail('continuation_binding_changed');
+  const keys = ownKeys(request);
+  if (keys.length !== sealed.rows.length) fail('continuation_binding_changed');
+  for (let i = 0; i < keys.length; i++) {
+    if (keys[i] !== sealed.rows[i].key
+        || ownData(request, keys[i]) !== sealed.rows[i].value) fail('continuation_binding_changed');
+  }
 }
 
 function captureMethod(receiver, name) {

@@ -1,0 +1,483 @@
+{
+  "resultVersion": 1,
+  "status": "SELECTED_LOCAL_BEHAVIOR_PASS",
+  "date": "2026-10-21",
+  "scope": "OCT21_P1B_ACTUAL_OFFICIAL_CORE223_OWNED_PENDING_CONTINUATION",
+  "baseMain": "3ee336537f50750ee6c41b7ea7cf7e45358700a7",
+  "implementation": {
+    "path": "src/x402-selected-settlement-server-bridge.js",
+    "entry": "createSelectedSettlementServerBridgeForOfficialX402Core223",
+    "newMethod": "createPendingContinuation",
+    "changes": "Add an explicit library-owned same-process continuation to an ALREADY pending selected upfront entry. Reuse the existing verification/settlement owner, original hash claim and original observer budget. Do not create another first settlement, verification, request, payment or signer.",
+    "configurationFields": [
+      "paymentPayload",
+      "requirements",
+      "transportContext",
+      "processSettlement"
+    ],
+    "lifecycle": [
+      "Claim one continuation per existing pending entry after validation; never reset the claim.",
+      "Retain the exact captured payment/view/transport tuple. Explicit zero-argument resume checks original serialization and request DATA continuity before invoking the SDK.",
+      "Delegate one explicit before-handler processSettlement call. Require exactly one reconciliation by the same existing owner before accepting the SDK reply.",
+      "Reject concurrent resume and repeated positive/terminal/budget-exhausted calls before another SDK invocation.",
+      "Release the continuation's explicit SDK/transport references on terminal success, exhausted pending budget or invocation uncertainty. JavaScript erasure/GC is not promised."
+    ],
+    "defaultFactory": "Frozen-DATA default factory and active application defaults remain unchanged by source review. No active buyer/server/CLI path is enabled.",
+    "notAuthority": "Server ownership, the supplied processSettlement capability and opaque adapter behavior remain trusted premises. Possession or equality of a tuple is not server authentication, current payer/provider/policy authority, or delivery permission.",
+    "contextShape": "The pinned transport has exactly one request member. Request members are enumerable own DATA, bounded to 32 fields, primitive values plus one opaque adapter. Method/path/paymentHeader and descriptor/identity continuity are checked. Opaque adapter internals and later external/native mutation are not authenticated."
+  },
+  "admission": {
+    "lane": "P1-B actual pinned official x402 synthetic pending composition",
+    "referenceCoverage": "The preceding 3ee3365 result qualified fixture-owned manual continuation. These three new registrations exercise the newly authored library-owned continuation, not a replay of the unchanged previous entry.",
+    "existingCoreVersion": "2.23.0",
+    "existingZodVersion": "3.25.76",
+    "installations": 0,
+    "nativeCommands": 1,
+    "otherTestEntries": 0,
+    "sourceFiles": 28,
+    "sourceBytes": 450225,
+    "actualSdkEntryPoints": [
+      "@x402/core/dist/esm/client/index.mjs",
+      "@x402/core/dist/esm/server/index.mjs",
+      "@x402/core/dist/esm/http/index.mjs",
+      "@x402/core/dist/esm/schemas/index.mjs"
+    ],
+    "dependencyClosure": {
+      "files": 22,
+      "bytes": 318892,
+      "literalStaticEdges": 44,
+      "review": "Existing exact closure reviewed previously; identities and complete content hashes rechecked before and after this invocation. No dependency/module-resolution expansion."
+    },
+    "excluded": [
+      "Zenon SDK",
+      "nonce/material producer import or evaluation",
+      "dependency installation",
+      "network",
+      "wallet",
+      "actual payment",
+      "signing",
+      "SQLite",
+      "native HTTP host",
+      "new operational helper",
+      "full SDK/store/application qualification",
+      "live pilot"
+    ]
+  },
+  "sourcePins": [
+    {
+      "path": "src/x402-selected-settlement-server-bridge.js",
+      "bytes": 37245,
+      "LF": 702,
+      "sha256": "62a9cd2deed4799cc018a3ce0a0e6662c94d866472dd065018592989049d9859",
+      "gitBlob": "b47dbd5768c7a248a6b19a97ece6ff9d0d048d47"
+    },
+    {
+      "path": "src/x402-verification-bound-settlement-context.js",
+      "bytes": 11311,
+      "LF": 221,
+      "sha256": "b3ad2fd33dae7e77a77f069cbc1259bf77e18a2bf383aa30f41bcc19221656f5",
+      "gitBlob": "6734a4aa011239402c141b874612a3be0733b4bf"
+    },
+    {
+      "path": "src/x402-selected-settlement-context.js",
+      "bytes": 16818,
+      "LF": 456,
+      "sha256": "afb6e16603023dd58d6a71cff5790a802dcfa4b98bc9d380b51ccc3d58e10991",
+      "gitBlob": "321d2a03a45296907c0a35a50d1e038e82307a40"
+    },
+    {
+      "path": "src/x402-wire.js",
+      "bytes": 39886,
+      "LF": 934,
+      "sha256": "5fba91af5a352f62d1a335c7176a45a604e2af5d92b1c4b0e53825c1f20d4e56",
+      "gitBlob": "fb060d4e349b1c31a1219a0cc137af250a8a2291"
+    },
+    {
+      "path": "package.json",
+      "bytes": 1413,
+      "LF": 40,
+      "sha256": "8c9a25504fbf6f87c31cdf245a6f4eec5a88cc89c8352151dc66a577c5771ef5",
+      "gitBlob": "ec7193f6fd76f34778515079dc777594175c4c34"
+    },
+    {
+      "path": "@x402/core/package.json",
+      "bytes": 3853,
+      "LF": 138,
+      "sha256": "4130a95721f50c0997dcba3728d14d5584c4f99c12c8c3f9870b21f31da212fd",
+      "gitBlob": "7d72182a84f0a84d73e6260be70af1f520f33657"
+    },
+    {
+      "path": "zod/package.json",
+      "bytes": 3284,
+      "LF": 118,
+      "sha256": "70eedbe34fd52385a4ae2f3e5759b19682189f0118ea73a6e7c32c677f61668e",
+      "gitBlob": "eedcfb0f8e3343c8ac5ba32e5117a032352a986c"
+    },
+    {
+      "path": "@x402/core/dist/esm/client/index.mjs",
+      "bytes": 26707,
+      "LF": 676,
+      "sha256": "653613f25e2fa24615af7d1fe943679177774215a16600289175f61c4df5dda9",
+      "gitBlob": "3474afd63523463825633207d6fbfd782aeca5aa"
+    },
+    {
+      "path": "@x402/core/dist/esm/server/index.mjs",
+      "bytes": 1761,
+      "LF": 60,
+      "sha256": "fa62aa75d072a9a1e2bb00be93ef4980e15507e3617942f1d7ab05c69954a19e",
+      "gitBlob": "5a6d9914baad58a9edee7f897882abce6c011b57"
+    },
+    {
+      "path": "@x402/core/dist/esm/http/index.mjs",
+      "bytes": 1177,
+      "LF": 42,
+      "sha256": "f87cf0256b51820628469681ba1421de97f17d55c2eff64bbe9040ef4f5ea084",
+      "gitBlob": "0dda52c01e2437b16637aaf0b84353092c111861"
+    },
+    {
+      "path": "@x402/core/dist/esm/schemas/index.mjs",
+      "bytes": 1591,
+      "LF": 69,
+      "sha256": "b4c12db796c6654de17d8542d65cd78bbbe8cf4bbcc71d05912450d8adfcf0c9",
+      "gitBlob": "93af501678f80952035795321b6c30a015928679"
+    },
+    {
+      "path": "@x402/core/dist/esm/chunk-BA2VL4DT.mjs",
+      "bytes": 116817,
+      "LF": 3151,
+      "sha256": "f2ad975e24db34808470b081c9deedaf6aafa53ab95121d29661a1a8b1507f84",
+      "gitBlob": "307a10a04e0cb515418f38be50e422634acd305b"
+    },
+    {
+      "path": "@x402/core/dist/esm/chunk-N4QXZG2Z.mjs",
+      "bytes": 5040,
+      "LF": 160,
+      "sha256": "19c189f7417214b211ee4abdaada531a80e5adc8504d593c172fe1e2ce61c03e",
+      "gitBlob": "56010f0571a73a7c82d74f88d4feb01263d9d612"
+    },
+    {
+      "path": "@x402/core/dist/esm/chunk-VE37GDG2.mjs",
+      "bytes": 107,
+      "LF": 6,
+      "sha256": "56fb4db85f03d88dfa5d42c81be8527f72deae2bca4004dfaea6415f186dc086",
+      "gitBlob": "9229b6cbcb04f9a1a374588f9dc31b22c21499ba"
+    },
+    {
+      "path": "@x402/core/dist/esm/chunk-P3DFEIO7.mjs",
+      "bytes": 2602,
+      "LF": 82,
+      "sha256": "9c124f03f792fcef472452fcaf30d03bd7d6ea44170675d60ccc473d3b02f983",
+      "gitBlob": "ec0f7809277982b2d2b38747fc3a3c87a3bb9fd2"
+    },
+    {
+      "path": "@x402/core/dist/esm/chunk-UQQR4X3S.mjs",
+      "bytes": 5837,
+      "LF": 172,
+      "sha256": "a7756bf22635f58e52dce87753863e51f407a38f5c32382a1076c39bd6cb9a62",
+      "gitBlob": "46913a8401fabcdb431cfd504c1708d07f9b1c26"
+    },
+    {
+      "path": "@x402/core/dist/esm/chunk-BJTO5JO5.mjs",
+      "bytes": 433,
+      "LF": 10,
+      "sha256": "1c521b4fbee4089393c982b94b5f8a4f81b1043c2f8cd1848d0d6056430e761f",
+      "gitBlob": "8ea659a7b711a9e45bf435cb6a8300df1d92e8be"
+    },
+    {
+      "path": "zod/index.js",
+      "bytes": 105,
+      "LF": 4,
+      "sha256": "6419c4ac0e637ff08463083e31886d10354f74cbcc4e584400b2b837e39ac881",
+      "gitBlob": "bf6f1643ab4526b97b1eb1a6dcdea48262f70194"
+    },
+    {
+      "path": "zod/v3/external.js",
+      "bytes": 205,
+      "LF": 6,
+      "sha256": "5d26d2e47e2352def36f89a3e8bf8581da22b7f857e07ef3114cd52cf4813445",
+      "gitBlob": "f0a4be4c7aa63b363b654384b103396050a06e29"
+    },
+    {
+      "path": "zod/v3/errors.js",
+      "bytes": 243,
+      "LF": 9,
+      "sha256": "d40831f478288d76e82bbbcc3b7e95c8513b6e76471f2d49a37c979bc57d492d",
+      "gitBlob": "26fdf628a00ac2e0984c1f7d8e31652dcff1253d"
+    },
+    {
+      "path": "zod/v3/helpers/parseUtil.js",
+      "bytes": 3601,
+      "LF": 109,
+      "sha256": "b57484013bb360bac2e334d58fcd5f6cbfa63ffcc7d8ff3dbbb3380ca659b956",
+      "gitBlob": "91b2afb81b4358fb84d637bc963a868517c6a516"
+    },
+    {
+      "path": "zod/v3/helpers/typeAliases.js",
+      "bytes": 11,
+      "LF": 1,
+      "sha256": "8e609bb71c20b858c77f0e9f90bb1319db8477b13f9f965f1a1e18524bf50881",
+      "gitBlob": "cb0ff5c3b541f646105198ee23ac0fc3d805023e"
+    },
+    {
+      "path": "zod/v3/helpers/util.js",
+      "bytes": 4055,
+      "LF": 133,
+      "sha256": "906ef685e5853d496e293ee8f8a2bb8b1ed2d078a1bcdfedb2dfd61d75b6330c",
+      "gitBlob": "b9641f29b7dfd7b8d7d6a3e2361803a51078ea7f"
+    },
+    {
+      "path": "zod/v3/types.js",
+      "bytes": 131212,
+      "LF": 3693,
+      "sha256": "9763a2938f0e7f983363ef4bf6530e7583e3f2d54f8a4a6684efad58febc6e8e",
+      "gitBlob": "40b11c0f01b2af54e0ed48e198607bd8836d9a63"
+    },
+    {
+      "path": "zod/v3/ZodError.js",
+      "bytes": 4349,
+      "LF": 133,
+      "sha256": "f5ac9e86b92e201d41e294d7aa35986a2aa28829e1bcc8ac25f7c8dce0674b99",
+      "gitBlob": "fed6a959bdd005f6b75a71733d3f231417a5955d"
+    },
+    {
+      "path": "zod/v3/locales/en.js",
+      "bytes": 5602,
+      "LF": 109,
+      "sha256": "51a6dcc5d4bd52a64da127c012c6c963395c1d9a343ad75d4a8eca662fc8b205",
+      "gitBlob": "a67fc82a2272c022fa462931950af2a17a2f9b64"
+    },
+    {
+      "path": "zod/v3/helpers/errorUtil.js",
+      "bytes": 300,
+      "LF": 6,
+      "sha256": "68589c0cf44c8b4ad19b77418f53caad2cd1dbc8d714f526e1876ebdee4828c5",
+      "gitBlob": "e1640d1a4f696b5268518f3e15fa10ca5c8e61b8"
+    },
+    {
+      "path": "qualification/official-x402-owned-pending-continuation.behavior.draft.mjs",
+      "bytes": 24660,
+      "LF": 479,
+      "sha256": "1e2d60ab4639952bbeb2786229be02cfc89c4e9e6ce156bb853691cc424678ed",
+      "gitBlob": "d46cc1889c94d7ca1f30afd3b1cb8a589904b67a"
+    }
+  ],
+  "execution": {
+    "runtime": {
+      "node": "24.19.0",
+      "platform": "darwin",
+      "architecture": "arm64",
+      "nodeBinarySha256": "dbedff294bab84a0a86c04e15fbcbeb1c97ca10bef1b32b0634cd24b36f62100",
+      "python": "3.12.14",
+      "pythonBinarySha256": "811e2679c20fd2c7413f7c5ca28ce903065eea8dadb8660f1b9379a28959a480",
+      "priorBinaryDigestsReusedAfterExactNineFieldIdentityChecks": true
+    },
+    "environment": "env -i; TZ=UTC; LANG=C; LC_ALL=C; only explicit package roots, source-pin manifest and reviewed opt-in marker are added.",
+    "nodeRestrictions": [
+      "--permission",
+      "28 exact positional-file read grants; no directory or wildcard grant",
+      "--disallow-code-generation-from-strings",
+      "--no-addons",
+      "no fs-write/child/worker/addon permission grant"
+    ],
+    "entry": "qualification/official-x402-owned-pending-continuation.behavior.draft.mjs",
+    "names": [
+      "official owned pending continuation reaches one success without another SDK first settlement",
+      "official owned pending continuation exhausts pending budget without delivery or another SDK call",
+      "official owned pending continuation refuses changed or missing context before the SDK and retains the original payment"
+    ],
+    "counts": {
+      "tests": 3,
+      "suites": 0,
+      "pass": 3,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "actualExit": 0,
+    "complete": true,
+    "taskState": "CLOSED",
+    "taskOutcome": "SUCCESS",
+    "ownedProcessGroupObservedAbsent": true,
+    "stdout": {
+      "bytes": 3506,
+      "sha256": "ec7bcbc7add1ec155c73d7045de539d2543917da122992e7a9699b0c023a1f5e"
+    },
+    "stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "completeSanitizedTAP": "# entry qualification/official-x402-owned-pending-continuation.behavior.draft.mjs\n# Node 24.19.0 platform=darwin arch=arm64\nTAP version 13\n# native-diagnostic {\"kind\":\"OFFICIAL_X402_OWNED_CONTINUATION\",\"version\":1,\"scenario\":\"PENDING_SUCCESS\",\"coreVersion\":\"2.23.0\",\"zodVersion\":\"3.25.76\",\"clientPayloadCreations\":1,\"sdkHttpRequests\":2,\"sdkBeforeSettlementCalls\":2,\"localVerifyCalls\":1,\"localFirstCalls\":1,\"localObserverCalls\":1,\"modeledHandlerCalls\":1,\"positiveBridgeResponses\":1,\"originalHeaderStable\":true,\"originalCallbackTupleStable\":true,\"publicationUncertaintyRetained\":true,\"declaredAcknowledgement\":true,\"firstAuthorityConsumed\":true,\"networkCalls\":0,\"signatures\":0,\"replacements\":0,\"sameProcessOnly\":true,\"phaseExplicit\":true,\"automaticSdkRetry\":false,\"nativeHelperSynthesized\":false,\"providerReady\":false,\"serviceDelivery\":\"NOT_ESTABLISHED\",\"continuationCalls\":1,\"continuationPositiveReplies\":1,\"continuationPhase\":\"SUCCEEDED\",\"continuationReferencesReleased\":true}\n# native-diagnostic {\"kind\":\"OFFICIAL_X402_OWNED_CONTINUATION\",\"version\":1,\"scenario\":\"PENDING_PENDING\",\"coreVersion\":\"2.23.0\",\"zodVersion\":\"3.25.76\",\"clientPayloadCreations\":1,\"sdkHttpRequests\":2,\"sdkBeforeSettlementCalls\":2,\"localVerifyCalls\":1,\"localFirstCalls\":1,\"localObserverCalls\":1,\"modeledHandlerCalls\":0,\"positiveBridgeResponses\":0,\"originalHeaderStable\":true,\"originalCallbackTupleStable\":true,\"publicationUncertaintyRetained\":true,\"declaredAcknowledgement\":false,\"firstAuthorityConsumed\":true,\"networkCalls\":0,\"signatures\":0,\"replacements\":0,\"sameProcessOnly\":true,\"phaseExplicit\":true,\"automaticSdkRetry\":false,\"nativeHelperSynthesized\":false,\"providerReady\":false,\"serviceDelivery\":\"NOT_ESTABLISHED\",\"continuationCalls\":1,\"continuationPositiveReplies\":0,\"continuationPhase\":\"PENDING_EXHAUSTED\",\"continuationReferencesReleased\":true}\n# native-diagnostic {\"kind\":\"OFFICIAL_X402_OWNED_CONTINUATION\",\"version\":1,\"scenario\":\"CONTEXT_DRIFT\",\"coreVersion\":\"2.23.0\",\"zodVersion\":\"3.25.76\",\"clientPayloadCreations\":1,\"sdkHttpRequests\":2,\"sdkBeforeSettlementCalls\":2,\"localVerifyCalls\":1,\"localFirstCalls\":1,\"localObserverCalls\":1,\"modeledHandlerCalls\":1,\"positiveBridgeResponses\":1,\"originalHeaderStable\":true,\"originalCallbackTupleStable\":true,\"publicationUncertaintyRetained\":true,\"declaredAcknowledgement\":true,\"firstAuthorityConsumed\":true,\"networkCalls\":0,\"signatures\":0,\"replacements\":0,\"sameProcessOnly\":true,\"phaseExplicit\":true,\"automaticSdkRetry\":false,\"nativeHelperSynthesized\":false,\"providerReady\":false,\"serviceDelivery\":\"NOT_ESTABLISHED\",\"continuationCalls\":1,\"continuationPositiveReplies\":1,\"continuationPhase\":\"SUCCEEDED\",\"continuationReferencesReleased\":true}\n# Subtest: official owned pending continuation reaches one success without another SDK first settlement\nok 1 - official owned pending continuation reaches one success without another SDK first settlement\n# Subtest: official owned pending continuation exhausts pending budget without delivery or another SDK call\nok 2 - official owned pending continuation exhausts pending budget without delivery or another SDK call\n# Subtest: official owned pending continuation refuses changed or missing context before the SDK and retains the original payment\nok 3 - official owned pending continuation refuses changed or missing context before the SDK and retains the original payment\n1..3\n# tests 3\n# suites 0\n# pass 3\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# qualification PASS qualification/official-x402-owned-pending-continuation.behavior.draft.mjs\n",
+    "diagnostics": [
+      {
+        "kind": "OFFICIAL_X402_OWNED_CONTINUATION",
+        "version": 1,
+        "scenario": "PENDING_SUCCESS",
+        "coreVersion": "2.23.0",
+        "zodVersion": "3.25.76",
+        "clientPayloadCreations": 1,
+        "sdkHttpRequests": 2,
+        "sdkBeforeSettlementCalls": 2,
+        "localVerifyCalls": 1,
+        "localFirstCalls": 1,
+        "localObserverCalls": 1,
+        "modeledHandlerCalls": 1,
+        "positiveBridgeResponses": 1,
+        "originalHeaderStable": true,
+        "originalCallbackTupleStable": true,
+        "publicationUncertaintyRetained": true,
+        "declaredAcknowledgement": true,
+        "firstAuthorityConsumed": true,
+        "networkCalls": 0,
+        "signatures": 0,
+        "replacements": 0,
+        "sameProcessOnly": true,
+        "phaseExplicit": true,
+        "automaticSdkRetry": false,
+        "nativeHelperSynthesized": false,
+        "providerReady": false,
+        "serviceDelivery": "NOT_ESTABLISHED",
+        "continuationCalls": 1,
+        "continuationPositiveReplies": 1,
+        "continuationPhase": "SUCCEEDED",
+        "continuationReferencesReleased": true
+      },
+      {
+        "kind": "OFFICIAL_X402_OWNED_CONTINUATION",
+        "version": 1,
+        "scenario": "PENDING_PENDING",
+        "coreVersion": "2.23.0",
+        "zodVersion": "3.25.76",
+        "clientPayloadCreations": 1,
+        "sdkHttpRequests": 2,
+        "sdkBeforeSettlementCalls": 2,
+        "localVerifyCalls": 1,
+        "localFirstCalls": 1,
+        "localObserverCalls": 1,
+        "modeledHandlerCalls": 0,
+        "positiveBridgeResponses": 0,
+        "originalHeaderStable": true,
+        "originalCallbackTupleStable": true,
+        "publicationUncertaintyRetained": true,
+        "declaredAcknowledgement": false,
+        "firstAuthorityConsumed": true,
+        "networkCalls": 0,
+        "signatures": 0,
+        "replacements": 0,
+        "sameProcessOnly": true,
+        "phaseExplicit": true,
+        "automaticSdkRetry": false,
+        "nativeHelperSynthesized": false,
+        "providerReady": false,
+        "serviceDelivery": "NOT_ESTABLISHED",
+        "continuationCalls": 1,
+        "continuationPositiveReplies": 0,
+        "continuationPhase": "PENDING_EXHAUSTED",
+        "continuationReferencesReleased": true
+      },
+      {
+        "kind": "OFFICIAL_X402_OWNED_CONTINUATION",
+        "version": 1,
+        "scenario": "CONTEXT_DRIFT",
+        "coreVersion": "2.23.0",
+        "zodVersion": "3.25.76",
+        "clientPayloadCreations": 1,
+        "sdkHttpRequests": 2,
+        "sdkBeforeSettlementCalls": 2,
+        "localVerifyCalls": 1,
+        "localFirstCalls": 1,
+        "localObserverCalls": 1,
+        "modeledHandlerCalls": 1,
+        "positiveBridgeResponses": 1,
+        "originalHeaderStable": true,
+        "originalCallbackTupleStable": true,
+        "publicationUncertaintyRetained": true,
+        "declaredAcknowledgement": true,
+        "firstAuthorityConsumed": true,
+        "networkCalls": 0,
+        "signatures": 0,
+        "replacements": 0,
+        "sameProcessOnly": true,
+        "phaseExplicit": true,
+        "automaticSdkRetry": false,
+        "nativeHelperSynthesized": false,
+        "providerReady": false,
+        "serviceDelivery": "NOT_ESTABLISHED",
+        "continuationCalls": 1,
+        "continuationPositiveReplies": 1,
+        "continuationPhase": "SUCCEEDED",
+        "continuationReferencesReleased": true
+      }
+    ],
+    "callerRecipe": {
+      "kind": "INLINE_NODE_TEST_RUNNER_NOT_SAVED_OR_INSTALLED",
+      "source": "process.exitCode = 125;\nconst { run } = require('node:test');\nconst { types: nativeTypes } = require('node:util');\nconst { tap } = require('node:test/reporters');\nconst { Writable, pipeline, finished } = require('node:stream');\nconst selections = {\"qualification/official-x402-owned-pending-continuation.behavior.draft.mjs\":[\"official owned pending continuation reaches one success without another SDK first settlement\",\"official owned pending continuation exhausts pending budget without delivery or another SDK call\",\"official owned pending continuation refuses changed or missing context before the SDK and retains the original payment\"]};\nlet selected = 'unselected';\n(async () => {\n  if (process.versions.node !== '24.19.0' || process.argv.length !== 2\n      || process.platform !== 'darwin' || process.arch !== 'arm64') throw Error('RUNTIME_OR_ARGUMENTS');\n  selected = Object.keys(selections).find(p => process.argv[1] === process.cwd() + '/' + p);\n  if (!selected) { selected = 'unselected'; throw Error('SELECTION'); }\n  const expected = selections[selected], seen = new Set(), reported = new Set();\n  const counts = new Map(), plans = [];\n  let bad = false, ended = false, reporterDone = false, versions = 0, bytes = 0, pending = '';\n  const known = name => expected.includes(name);\n  process.stdout.write('# entry ' + selected + '\\n# Node ' + process.versions.node\n    + ' platform=' + process.platform + ' arch=' + process.arch + '\\n');\n  function safeLine(line) {\n    let match;\n    if (line === 'TAP version 13') { versions++; return line; }\n    if ((match = /^# Subtest: (.+)$/.exec(line))) {\n      if (known(match[1])) return line;\n      bad = true;\n    } else if ((match = /^(ok|not ok) \\d+ - (.+)$/.exec(line))) {\n      if (!known(match[2]) || reported.has(match[2]) || match[1] !== 'ok') bad = true;\n      if (known(match[2])) { reported.add(match[2]); return line; }\n    } else if ((match = /^1\\.\\.(\\d+)$/.exec(line))) {\n      plans.push(Number(match[1])); return line;\n    } else if ((match = /^# (tests|suites|pass|fail|cancelled|skipped|todo) (\\d+)$/.exec(line))) {\n      if (counts.has(match[1])) bad = true;\n      counts.set(match[1], Number(match[2])); return line;\n    } else if (/^Bail out!/.test(line)) bad = true;\n    return null; // Do not publish physical locations, stacks or arbitrary diagnostics.\n  }\n  const source = run({\n    files: [process.argv[1]], isolation: 'none', concurrency: false,\n    timeout: 5000, forceExit: false, watch: false,\n  });\n\n  let diagnosticCount = 0, eventLogBytes = 0;\n  const own = (x,k) => {\n    if (x === null || (typeof x !== 'object' && typeof x !== 'function') || nativeTypes.isProxy(x)) return undefined;\n    const d = Object.getOwnPropertyDescriptor(x,k);\n    return d && Object.hasOwn(d,'value') ? d.value : undefined;\n  };\n  function eventLog(label,value) {\n    const line = '# native-' + label + ' ' + JSON.stringify(value) + '\\n';\n    eventLogBytes += Buffer.byteLength(line);\n    if (eventLogBytes > 8192) { bad = true; return; }\n    process.stdout.write(line);\n  }\n  source.on('test:diagnostic', data => {\n    const message = own(data,'message');\n    if (typeof message !== 'string' || !message.startsWith('{\"kind\":\"OFFICIAL_X402_OWNED_CONTINUATION\"')) return;\n    try {\n      if (Buffer.byteLength(message) > 2048) throw Error('DIAGNOSTIC_CAP');\n      const value = JSON.parse(message);\n      const keys = ['kind','version','scenario','coreVersion','zodVersion','clientPayloadCreations',\n        'sdkHttpRequests','sdkBeforeSettlementCalls','localVerifyCalls','localFirstCalls','localObserverCalls',\n        'modeledHandlerCalls','positiveBridgeResponses','originalHeaderStable','originalCallbackTupleStable',\n        'publicationUncertaintyRetained','declaredAcknowledgement','firstAuthorityConsumed','networkCalls',\n        'signatures','replacements','sameProcessOnly','phaseExplicit','automaticSdkRetry',\n        'nativeHelperSynthesized','providerReady','serviceDelivery','continuationCalls',\n        'continuationPositiveReplies','continuationPhase','continuationReferencesReleased'];\n      if (Object.keys(value).length !== keys.length || keys.some(k=>!Object.hasOwn(value,k))\n        || value.kind !== 'OFFICIAL_X402_OWNED_CONTINUATION' || value.version !== 1\n        || !['PENDING_SUCCESS','PENDING_PENDING','CONTEXT_DRIFT'].includes(value.scenario)\n        || value.coreVersion !== '2.23.0' || value.zodVersion !== '3.25.76'\n        || value.originalHeaderStable !== true || value.originalCallbackTupleStable !== true\n        || value.publicationUncertaintyRetained !== true || typeof value.declaredAcknowledgement !== 'boolean'\n        || value.firstAuthorityConsumed !== true || value.sameProcessOnly !== true\n        || value.phaseExplicit !== true || value.automaticSdkRetry !== false || value.nativeHelperSynthesized !== false\n        || value.providerReady !== false || value.serviceDelivery !== 'NOT_ESTABLISHED'\n        || value.continuationCalls !== 1 || value.continuationReferencesReleased !== true\n        || value.continuationPositiveReplies !== (value.scenario === 'PENDING_PENDING' ? 0 : 1)\n        || value.continuationPhase !== (value.scenario === 'PENDING_PENDING' ? 'PENDING_EXHAUSTED' : 'SUCCEEDED')) throw Error('DIAGNOSTIC_SCHEMA');\n      for (const k of ['clientPayloadCreations','sdkHttpRequests','sdkBeforeSettlementCalls','localVerifyCalls',\n        'localFirstCalls','localObserverCalls','modeledHandlerCalls','positiveBridgeResponses','networkCalls','signatures','replacements'])\n        if (!Number.isSafeInteger(value[k]) || value[k] < 0 || value[k] > 64) throw Error('DIAGNOSTIC_COUNTER');\n      if (value.networkCalls !== 0 || value.signatures !== 0 || value.replacements !== 0) throw Error('EXCLUDED_OPERATION');\n      diagnosticCount++; eventLog('diagnostic', value);\n    } catch { bad = true; }\n  });\n\n  source.on('test:pass', data => {\n    if (!known(data.name) || seen.has(data.name) || data.nesting !== 0\n        || (data.skip !== undefined && data.skip !== false)\n        || (data.todo !== undefined && data.todo !== false)) bad = true;\n    seen.add(data.name);\n  });\n  source.on('test:fail', data => {\n    bad = true;\n    const wrapper = own(own(data,'details'),'error'), cause = own(wrapper,'cause') || wrapper;\n    const code = own(cause,'code'), message = own(cause,'message');\n    const item = {name: known(own(data,'name')) ? own(data,'name') : 'UNSELECTED_NATIVE_FAILURE',\n      code: typeof code === 'string' && /^[A-Z0-9_]{1,128}$/.test(code) ? code : 'UNAVAILABLE',\n      message: typeof message === 'string' && message.length <= 512 && !/[\\/\\\\]/.test(message) ? message : 'REDACTED'};\n    for (const k of ['actual','expected']) {\n      const value = own(cause,k);\n      if (value === null || typeof value === 'boolean' || Number.isSafeInteger(value)) item[k] = value;\n    }\n    eventLog('failure',item);\n  });\n  source.on('error', () => { bad = true; });\n  source.once('end', () => { ended = true; });\n  const sourceDone = new Promise(resolve => {\n    finished(source, { writable: false }, error => { if (error) bad = true; resolve(); });\n  });\n  const sink = new Writable({\n    write(chunk, encoding, callback) {\n      try {\n        bytes += Buffer.byteLength(chunk);\n        if (bytes > 65536) throw Error('REPORTER_CAP');\n        pending += String(chunk);\n        const lines = pending.split('\\n'); pending = lines.pop();\n        const safe = lines.map(safeLine).filter(line => line !== null);\n        if (safe.length) process.stdout.write(safe.join('\\n') + '\\n', callback);\n        else callback();\n      } catch { callback(Error('REPORTER_FAILED')); }\n    },\n    final(callback) { if (pending !== '') bad = true; callback(); },\n  });\n  const reporter = source.compose(tap);\n  const reportDone = new Promise(resolve => {\n    pipeline(reporter, sink, error => { reporterDone = !error; if (error) bad = true; resolve(); });\n  });\n  await Promise.all([sourceDone, reportDone]);\n  const zero = ['suites', 'fail', 'cancelled', 'skipped', 'todo'];\n  if (bad || diagnosticCount !== expected.length || !ended || !reporterDone || versions !== 1 || plans.length !== 1\n      || plans[0] !== expected.length || seen.size !== expected.length\n      || reported.size !== expected.length || !expected.every(name => seen.has(name) && reported.has(name))\n      || counts.get('tests') !== expected.length || counts.get('pass') !== expected.length\n      || !zero.every(key => counts.get(key) === 0)\n      || process.exitCode !== 125) throw Error('INCOMPLETE_OR_UNEXPECTED_RESULTS');\n  process.exitCode = 0;\n  process.stdout.write('# qualification PASS ' + selected + '\\n');\n})().catch(() => {\n  if ([undefined, 0, 125].includes(process.exitCode)) process.exitCode = 1;\n  process.stderr.write('qualification caller failed\\n');\n  process.stdout.write('# qualification FAIL ' + selected + '\\n');\n});",
+      "sourceBytes": 8818,
+      "argvBytes": 20722,
+      "launchRecordBytes": 22320,
+      "reconstruction": "Use exactly this caller with the single positional entry and the 28 exact source-file reads. Supply separately reviewed existing physical package roots and exact nine-field source pins. No arbitrary entry or package lookup is admitted."
+    },
+    "localLimits": {
+      "expectedBytes": 2097152,
+      "taskQuotaBytes": 4194304,
+      "sourceCapBytes": 524288,
+      "perFileCapBytes": 262144,
+      "stdoutCapBytes": 65536,
+      "stderrCapBytes": 1048576,
+      "nodeTestTimeoutMs": 5000,
+      "managerTimeoutSeconds": 30,
+      "metadataLockTimeoutSeconds": 180,
+      "minimumFreeSpaceBytes": 10737418240
+    },
+    "cleanup": "Only the owned EMPTY scratch was cleaned: zero bytes. No repository artifact or historical evidence was deleted.",
+    "limitations": "Timeouts, cooperative storage accounting, the Node permission model, a test-only fetch refusal and observed process-group absence are not a hard lifetime/cancellation/native-cleanup or OS/network-sandbox guarantee. Loader/runner/streams/native OS behavior remains a premise."
+  },
+  "preservation": {
+    "repositoryFiles": 117,
+    "repositoryBytes": 2758991,
+    "priorOutcomeMetadataFiles": 177,
+    "priorOutcomeMetadataBytes": 2268411,
+    "oldFailedNamespaceAndTwoAbsencesUnchanged": true,
+    "priorInitialSdkFailureUnchanged": true,
+    "oldSdkCompositionResultAndFixturesUnchanged": true,
+    "sourceAndPreservationStable": true,
+    "metadataReadBytes": 208953,
+    "localIndex": "EMPTY; unrelated dirty worktree preserved. Only the three explicitly reviewed public paths belong to this packet.",
+    "historicalResult": {
+      "commit": "3ee336537f50750ee6c41b7ea7cf7e45358700a7",
+      "path": "qualification/official-x402-upfront-pending.behavior.result.json",
+      "initialBaseline": "Retained actual read-only-extra failure: zero passed, one failed registration, actual exit 1. Not replayed or silently counted as passed.",
+      "previousComposition": "Retained three selected passes on the prior source. Not rerun or relabeled as current-source suite coverage."
+    }
+  },
+  "proved": [
+    "Actual installed core client, HTTP/resource-server, schemas and codecs compose with the opt-in bridge and new library-owned continuation on these three scenarios.",
+    "Every scenario creates exactly one declared client payload, performs one local verification, one first settlement and one observer reconciliation.",
+    "Each continuation invokes the SDK once with the exact retained tuple and explicit before-handler phase. A concurrent call, second successful call or exhausted-budget call invokes it zero additional times.",
+    "Missing/copied constructor inputs and changed payload/hash/resource/requirement/request/context DATA refuse before the continuation SDK call. Restoring the unchanged original permits its existing pending reconciliation; no authority is reset.",
+    "Pending-success yields one modeled handler count and one positive bridge reply; pending-pending yields zero. These are declared counters, not real resource delivery."
+  ],
+  "remainingGates": [
+    "Only three selected new scenarios passed. Multi-observer budgets, arbitrary hook/capability/Promise faults, every hostile descriptor path, other SDK versions and full application/SDK suites are not runtime-qualified by this result.",
+    "This API is opt-in and same-process only. No automatic HTTP retry, automatic loop, fresh request, durable recovery or process restart is implemented or established here.",
+    "The SDK/adapter capability's provenance, real current context, funding, payer/provider/policy authority and real provider READY need separate acceptance.",
+    "Original signed payment/request custody, exact-same-signed-block resend policy, durability, commit uncertainty, inclusion/finality and actual service delivery remain separate owners.",
+    "No hosted CI was executed for this candidate; an empty checks list is not green CI. Historical test guards/results retain their original source pins.",
+    "No full P1-B, live pilot or production acceptance follows."
+  ],
+  "protectedTotals": {
+    "consumedAdmissions": 2,
+    "actualPrepare": 1,
+    "bundles": 0,
+    "nativeChainProviderQualificationRuns": 0
+  },
+  "realSigner": "DISABLED",
+  "production": "NO_GO",
+  "originalPaymentAndAuthority": "Original bytes/hash/payload/requirements/context and consumed authority are preserved. PR193 VALIDATED possible exact-same-signed-block resend remains distinct from UNKNOWN/ACKNOWLEDGED. No replacement, re-signing, authority reset or retry of the old failed ownership namespace.",
+  "review": {
+    "kind": "PRIMARY_SELF_IMPLEMENTATION_AND_COMPLETE_HANDOFF_READBACK",
+    "independentHumanApproval": false,
+    "allCurrentStreamsCountsLaunchSourceAndRetentionReferencesReadBack": true
+  },
+  "publication": "This result describes local qualification only. Confirm the eventual public commit/main tree and applicable protections/checks separately."
+}
