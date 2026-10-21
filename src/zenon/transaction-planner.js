@@ -121,12 +121,7 @@ export function createZenonUserSendSubject(input) {
         || frontier.address !== top.payerAddress) rejectBinding();
     const height = frontier.height + 1;
     positiveInteger(height);
-    const challenge = snapshotJson(top.paymentRequired, 0, { nodes: 512, characters: 32768 });
-    VALIDATE_CHALLENGE(challenge);
-    if (challenge.accepts.length !== 1 || new URL(challenge.resource.url).protocol !== 'https:') rejectBinding();
-    const accepted = SNAPSHOT_REQUIREMENT(top.accepted);
-    if (accepted.network !== EXPERIMENTAL_LIVE_NETWORK
-        || !SAME_REQUIREMENT(accepted, challenge.accepts[0])) rejectBinding();
+    const { challenge, accepted } = snapshotSelectedUpfrontIntent(top.paymentRequired, top.accepted);
     const intentDigest = INTENT_DIGEST(challenge, accepted);
     const subject = {
       subjectVersion: 1, version: 1, chainIdentifier: frontier.chainIdentifier,
@@ -164,24 +159,14 @@ export function snapshotZenonUserSendPolicyBinding(input) {
     const top = bindingRecord(input, BINDING_FIELDS);
     if (top.bindingVersion !== 1) rejectBinding();
     const subject = snapshotSubject(top.subject);
-    const challenge = snapshotJson(top.paymentRequired, 0, { nodes: 512, characters: 32768 });
-    VALIDATE_CHALLENGE(challenge);
-    if (challenge.accepts.length !== 1 || new URL(challenge.resource.url).protocol !== 'https:') rejectBinding();
-    const accepted = SNAPSHOT_REQUIREMENT(top.accepted);
-    if (accepted.network !== EXPERIMENTAL_LIVE_NETWORK
-        || !SAME_REQUIREMENT(accepted, challenge.accepts[0])) rejectBinding();
+    const { challenge, accepted } = snapshotSelectedUpfrontIntent(top.paymentRequired, top.accepted);
     if (typeof top.payerAddress !== 'string' || top.payerAddress !== subject.address
         || subject.toAddress !== accepted.payTo || subject.amount !== accepted.amount
         || subject.tokenStandard !== accepted.asset
         || String(subject.chainIdentifier) !== accepted.extra.zenonChain.chainIdentifier) rejectBinding();
     const intentDigest = INTENT_DIGEST(challenge, accepted);
     if (subject.data !== Buffer.from(intentDigest, 'hex').toString('base64')) rejectBinding();
-    const compiled = bindingRecord(top.compiledSporkIds, COMPILED_FIELDS);
-    requireHash(compiled.dynamicPlasmaId); requireHash(compiled.libp2pId);
-    if (compiled.dynamicPlasmaId === compiled.libp2pId) rejectBinding();
-    const compiledSporkIds = freeze({
-      dynamicPlasmaId: compiled.dynamicPlasmaId, libp2pId: compiled.libp2pId,
-    });
+    const compiledSporkIds = snapshotCompiledSporks(top.compiledSporkIds);
     const request = SNAPSHOT_REQUEST({
       address: subject.address, blockType: subject.blockType,
       toAddress: subject.toAddress, data: subject.data,
@@ -416,4 +401,64 @@ function rejectBinding() {
 
 function notImplemented(contract, method) {
   throw new TypeError(`${contract}.${method} must be implemented`);
+}
+
+const OBSERVATION_INTENT_FIELDS = freeze([
+  'observationIntentVersion', 'phase', 'paymentRequired', 'accepted',
+  'payerAddress', 'compiledSporkIds',
+]);
+
+/**
+ * Initial schema3 DP read input from the selected intent alone. A quote read
+ * needs payer/type/recipient/intent data, not an account sequence or an already
+ * selected Momentum acknowledgement. Reuse the exact selected-upfront snapshot,
+ * canonical intent digest, compiled IDs and closed payer/request codec used by
+ * the existing subject/binder. No placeholder frontier/ack is invented.
+ *
+ * Returned frozen collection input works directly with the existing explicit
+ * request-bound collector, which derives its expected digest before reading.
+ * This function is synchronous DATA only: no collector, callback, Promise,
+ * endpoint, work producer, wallet, signer or operation is constructed/invoked.
+ * It does not admit a UserSend subject/block or quote reuse. Actual account
+ * state/sequence, the original acknowledgement, policy/runtime, funds and
+ * payer/provider/signing authority remain independent later gates. The phase
+ * is declared metadata, not proof of signer state or replacement permission.
+ */
+export function createZenonUserSendObservationInput(input) {
+  try {
+    if (arguments.length !== 1) rejectBinding();
+    const top = bindingRecord(input, OBSERVATION_INTENT_FIELDS);
+    if (top.observationIntentVersion !== 1 || top.phase !== 'UNSIGNED') rejectBinding();
+    const { challenge, accepted } = snapshotSelectedUpfrontIntent(top.paymentRequired, top.accepted);
+    const compiledSporkIds = snapshotCompiledSporks(top.compiledSporkIds);
+    const intentDigest = INTENT_DIGEST(challenge, accepted);
+    const request = SNAPSHOT_REQUEST({
+      address: top.payerAddress, blockType: 2, toAddress: accepted.payTo,
+      data: Buffer.from(intentDigest, 'hex').toString('base64'),
+    });
+    return freeze({
+      phase: 'UNSIGNED', expectedChainProfile: accepted.extra.zenonChain,
+      compiledSporkIds, quoteRequest: request.quoteRequest,
+      requiredFusedObservationVersion: 1, quoteRequestContextVersion: 1,
+    });
+  } catch { rejectBinding(); }
+}
+
+// Same checks and ordering as the two original inline selected-intent paths.
+// Keep digest computation and later subject equality at their original sites.
+function snapshotSelectedUpfrontIntent(paymentRequired, requirement) {
+  const challenge = snapshotJson(paymentRequired, 0, { nodes: 512, characters: 32768 });
+  VALIDATE_CHALLENGE(challenge);
+  if (challenge.accepts.length !== 1 || new URL(challenge.resource.url).protocol !== 'https:') rejectBinding();
+  const accepted = SNAPSHOT_REQUIREMENT(requirement);
+  if (accepted.network !== EXPERIMENTAL_LIVE_NETWORK
+      || !SAME_REQUIREMENT(accepted, challenge.accepts[0])) rejectBinding();
+  return freeze({ challenge, accepted });
+}
+
+function snapshotCompiledSporks(value) {
+  const compiled = bindingRecord(value, COMPILED_FIELDS);
+  requireHash(compiled.dynamicPlasmaId); requireHash(compiled.libp2pId);
+  if (compiled.dynamicPlasmaId === compiled.libp2pId) rejectBinding();
+  return freeze({ dynamicPlasmaId: compiled.dynamicPlasmaId, libp2pId: compiled.libp2pId });
 }

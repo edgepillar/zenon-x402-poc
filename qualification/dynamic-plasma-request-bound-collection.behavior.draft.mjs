@@ -286,3 +286,5 @@ test('request-bound composition preserves every original collector byte and adds
   assert.equal(result.normalization.classification, 'DP_ACTIVE');
   assert.equal(result.normalization.chainAuthentication, 'NOT_ESTABLISHED');
 });
+
+export { fixture as requestBoundCollectionFixture };
