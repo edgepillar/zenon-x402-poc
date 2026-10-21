@@ -1,0 +1,355 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-21",
+  "status": "SELECTED_ASSERTIONS_PASSED_WITH_RETAINED_CONTROLLER_HANDOFF_FAILURE",
+  "roadmapLane": "P2: backend-linked recovery",
+  "finiteComponentComplete": true,
+  "fullP2Complete": false,
+  "productionAcceptance": "NO_GO",
+  "implementation": {
+    "storeMethod": "ServiceCreditSqliteStore.getOriginalRequestExecutionSnapshot(request)",
+    "storeRead": "One validated compound revision binds all eight normalized original-request fields to the ledger request and linked durable execution. A reused request ID with different fields is rejected.",
+    "reader": "createServiceCreditBackendOriginalOutcomeReader({ store, admittedGrantId })",
+    "admission": "Existing complete-ledger startup validation, selected-grant narrowing and original POST capability-proof verification precede the one atomic read.",
+    "surface": [
+      "read(originalRequestEnvelope)",
+      "close()"
+    ],
+    "defaultExecutionOwnerChanged": false,
+    "newHttpRoute": false,
+    "missingOriginalDoesNotReserveOrAuthorize": true,
+    "readDoesNotInvokePricingClockApplicationRecoveryOrPayment": true,
+    "readTransaction": "Existing BEGIN IMMEDIATE with integrity, envelope, hydration and durable cross-link checks; this is not an OS-readonly handle.",
+    "close": "Fences only this reader, including reentrant close; never closes the borrowed store or another execution owner.",
+    "admissionLimit": "Immutable startup capability commitment only. Current grant lifecycle, funding, payer/provider policy, context and READY are separate gates.",
+    "cachedSuccessLimit": "Recorded backend result only; not independently established service delivery."
+  },
+  "sourceBinding": {
+    "parentMain": "c2c355f5e35083921efee757edb766e1bcf35799",
+    "parentTree": "ea55000670026d449c1006107b7f22d20c83e1d3",
+    "oldStore": {
+      "bytes": 82141,
+      "LF": 2333,
+      "sha256": "bda45bd553c8580a7bd66573bb2fb7c3bf12d79bab49a91fe3ac6dc1ebad8422",
+      "gitBlob": "6a7364fbc59c43edffb7a73f550210644e78daff"
+    },
+    "selectedFileCount": 8,
+    "selectedBytes": 234900,
+    "perFileCap": 131072,
+    "totalCap": 524288,
+    "files": [
+      {
+        "path": "src/service-credit-sqlite-store.js",
+        "bytes": 83516,
+        "LF": 2366,
+        "sha256": "eea4032830dc1f641c4832e0dab33066633ba487eaf19581e3295cf8810460f3",
+        "gitBlob": "ae5260ef3442079fe73544d2d730d05724758fa1"
+      },
+      {
+        "path": "src/service-credit-model.js",
+        "bytes": 55461,
+        "LF": 1580,
+        "sha256": "7ff7e3d88ab8c3b38a0073541533fbdb7a0d9f2be42f337ac35f6a3b05615c3a",
+        "gitBlob": "e6ac17254874584d1a01f70e7abc6f771bd35d73"
+      },
+      {
+        "path": "src/service-credit-execution-contract.js",
+        "bytes": 30258,
+        "LF": 956,
+        "sha256": "298f8e74885e1c507953c0fcf7874832f815296746e6bacbdac97a425f1a6c73",
+        "gitBlob": "acfbb5c5e943b9e09958a7831b3dbe159463dcf9"
+      },
+      {
+        "path": "src/service-credit-http.js",
+        "bytes": 32432,
+        "LF": 958,
+        "sha256": "c76a7f1864bdfcd0c26916bf28fba615c8aecf899d53e69467e3ebe7d3353d0d",
+        "gitBlob": "040da1547c2fa6cc4a4044c47619b253f16d19a1"
+      },
+      {
+        "path": "src/service-credit-capability.js",
+        "bytes": 8284,
+        "LF": 256,
+        "sha256": "cb2b96d9a2e56c132dd1b4aca8f1c065b244ecd0e7e92f41ea3f4a8c969d17c3",
+        "gitBlob": "2e19d42c1b9311a75897c84669849f56ae40f785"
+      },
+      {
+        "path": "package.json",
+        "bytes": 1413,
+        "LF": 40,
+        "sha256": "8c9a25504fbf6f87c31cdf245a6f4eec5a88cc89c8352151dc66a577c5771ef5",
+        "gitBlob": "ec7193f6fd76f34778515079dc777594175c4c34"
+      },
+      {
+        "path": "src/service-credit-backend-original-outcome-reader.js",
+        "bytes": 6511,
+        "LF": 153,
+        "sha256": "d3776771fe7aae1e6b51f744f7c2e72258b3ba71be65052e116931b4549d5bbb",
+        "gitBlob": "978d8e97bb733cca782bb053f640d03f2598270c"
+      },
+      {
+        "path": "qualification/service-credit-backend-original-outcome-read.behavior.draft.mjs",
+        "bytes": 17025,
+        "LF": 243,
+        "sha256": "0587384df524c9ea6c7e37ed2fb38f46fad1ec017dd36937c40602be4a041045",
+        "gitBlob": "34f9613a04bb0e4edf895591b5972d61f7660d2b"
+      }
+    ],
+    "existingStoreDiff": {
+      "additions": 33,
+      "deletions": 0
+    },
+    "laterSourceVolumeObservation": {
+      "sourceAndPreservationFilesWithDeviceGenerationChange": 132,
+      "contentAndOtherEightIdentityFields": "MATCH",
+      "historicalPhysicalIdentityContinuity": "NOT_ESTABLISHED",
+      "storageRootIdentityAndVolumeUuid": "UNCHANGED",
+      "storageOwnershipRebound": false,
+      "nativeExperimentReexecuted": false
+    }
+  },
+  "selectedNativeExecution": {
+    "runtime": {
+      "node": "24.19.0",
+      "platform": "darwin",
+      "arch": "arm64"
+    },
+    "entry": "qualification/service-credit-backend-original-outcome-read.behavior.draft.mjs",
+    "nativeCommands": 1,
+    "actualExit": 0,
+    "commandState": "COMPLETE",
+    "outputComplete": true,
+    "counts": {
+      "cancelled": 0,
+      "fail": 0,
+      "pass": 4,
+      "skipped": 0,
+      "suites": 0,
+      "tests": 4,
+      "todo": 0
+    },
+    "tests": [
+      {
+        "name": "backend original read rejects foreign admission and never reserves a missing original",
+        "outcome": "PASS",
+        "scenario": "ADMISSION_AND_ABSENCE"
+      },
+      {
+        "name": "backend original read preserves NOT_INVOKED and PREPARED without advancing either",
+        "outcome": "PASS",
+        "scenario": "NONTERMINAL_AND_NOT_INVOKED"
+      },
+      {
+        "name": "backend original read returns only the linked cached success across same-process reopen",
+        "outcome": "PASS",
+        "scenario": "CACHED_SUCCESS_AND_REOPEN"
+      },
+      {
+        "name": "backend original read retains uncertainty and close fencing and refuses corrupt schema",
+        "outcome": "PASS",
+        "scenario": "UNCERTAINTY_CLOSE_AND_CORRUPTION"
+      }
+    ],
+    "diagnostics": [
+      {
+        "atomicReadCalls": 1,
+        "clockCalls": 2,
+        "executionCallbacks": 0,
+        "kind": "BACKEND_ORIGINAL_OUTCOME_READ",
+        "networkCalls": 0,
+        "pricingCalls": 0,
+        "rawCloses": 0,
+        "rawOpens": 0,
+        "readRevisionChanges": 0,
+        "realPaymentSigner": "DISABLED",
+        "sameProcessOnly": true,
+        "scenario": "ADMISSION_AND_ABSENCE",
+        "serviceDelivery": "NOT_ESTABLISHED",
+        "sqliteFiles": 1,
+        "syntheticProofs": 2,
+        "version": 1,
+        "zenonSdkImported": false
+      },
+      {
+        "atomicReadCalls": 3,
+        "clockCalls": 5,
+        "executionCallbacks": 0,
+        "kind": "BACKEND_ORIGINAL_OUTCOME_READ",
+        "networkCalls": 0,
+        "pricingCalls": 2,
+        "rawCloses": 0,
+        "rawOpens": 0,
+        "readRevisionChanges": 0,
+        "realPaymentSigner": "DISABLED",
+        "sameProcessOnly": true,
+        "scenario": "NONTERMINAL_AND_NOT_INVOKED",
+        "serviceDelivery": "NOT_ESTABLISHED",
+        "sqliteFiles": 1,
+        "syntheticProofs": 3,
+        "version": 1,
+        "zenonSdkImported": false
+      },
+      {
+        "atomicReadCalls": 8,
+        "clockCalls": 7,
+        "executionCallbacks": 0,
+        "kind": "BACKEND_ORIGINAL_OUTCOME_READ",
+        "networkCalls": 0,
+        "pricingCalls": 2,
+        "rawCloses": 0,
+        "rawOpens": 0,
+        "readRevisionChanges": 0,
+        "realPaymentSigner": "DISABLED",
+        "sameProcessOnly": true,
+        "scenario": "CACHED_SUCCESS_AND_REOPEN",
+        "serviceDelivery": "NOT_ESTABLISHED",
+        "sqliteFiles": 1,
+        "syntheticProofs": 4,
+        "version": 1,
+        "zenonSdkImported": false
+      },
+      {
+        "atomicReadCalls": 13,
+        "clockCalls": 9,
+        "executionCallbacks": 0,
+        "kind": "BACKEND_ORIGINAL_OUTCOME_READ",
+        "networkCalls": 0,
+        "pricingCalls": 3,
+        "rawCloses": 1,
+        "rawOpens": 1,
+        "readRevisionChanges": 0,
+        "realPaymentSigner": "DISABLED",
+        "sameProcessOnly": true,
+        "scenario": "UNCERTAINTY_CLOSE_AND_CORRUPTION",
+        "serviceDelivery": "NOT_ESTABLISHED",
+        "sqliteFiles": 1,
+        "syntheticProofs": 6,
+        "version": 1,
+        "zenonSdkImported": false
+      }
+    ],
+    "streams": {
+      "stdout": {
+        "bytes": 2709,
+        "sha256": "ac44c51640ae633647735b3e549fde684ec37563e8c793c09fac3ede44d7603f"
+      },
+      "stderr": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    "sameProcessReopenOnly": true,
+    "realProcessRestart": false,
+    "syntheticSetup": "New private SQLite ledger, one synthetic offer and two mock-backed grants. Existing durable APIs create selected fixture states; no application callback or real chain PREPARE runs.",
+    "capabilityCryptography": "Two fresh in-memory Ed25519 key pairs, six synthetic capability proofs, real local proof verification. No wallet or payment signing.",
+    "nodePermissionModel": "OFF_REQUIRED_FOR_EXISTING_STORE_FCHMOD_FSYNC",
+    "launchRestrictions": [
+      "env -i with only reviewed locale, scratch, opt-in and source-pin variables",
+      "one explicit positional test file",
+      "built-in node:test runner with isolation none and concurrency false",
+      "string code generation disabled",
+      "native add-ons disabled",
+      "no dependency installation or installed package import",
+      "no SDK, network, wallet, payment signer or service process"
+    ],
+    "inlineQualificationCaller": {
+      "savedOperationalHelper": false,
+      "bytes": 7667,
+      "argvBytes": 10719
+    },
+    "timeouts": {
+      "nodeTestMs": 5000,
+      "managerCommandSeconds": 30,
+      "metadataLockSeconds": 180,
+      "notHardLifetimeCancellationOrNativeCleanupGuarantees": true
+    },
+    "nativePremises": "Node loader, test runner, streams, crypto, SQLite and OS/filesystem behavior remain premises. This is not an OS/network sandbox or production durability proof."
+  },
+  "handoff": {
+    "originalNativeTask": "CLOSED_FAILURE",
+    "nativeAssertions": "PASS_4_OF_4",
+    "failureStage": "Post-run controller namespace validation, after complete child exit and stream capture",
+    "failureCause": "The controller expected only the database and omitted the manager-registered empty stream directory.",
+    "originalFailureReclassified": false,
+    "originalPostRunRecordsAbsent": [
+      "source-after.json",
+      "preservation-after.json",
+      "preservation-after-sources-1.json",
+      "preservation-after-sources-2.json",
+      "primary-outcome.json",
+      "sqlite-files.json"
+    ],
+    "independentPostJoinReview": {
+      "completeNativeOutputReviewed": true,
+      "actualArgvAndSourcePinsChecked": true,
+      "stdoutAndStderrCasLedgerAndCreatorChecked": true,
+      "sourceAndPreservationReread": true,
+      "ownedProcessGroupObservedAbsent": true,
+      "metadataTask": "CLOSED_SUCCESS",
+      "newNativeCommands": 0,
+      "newSqliteFiles": 0,
+      "nativeExperimentReplayed": false,
+      "wholeWorkflowCleanPass": false
+    },
+    "retainedReceiptSha256": {
+      "originalTask": "a989d57d0dd8113764dbf6195746fe40539e8535233c696f5ab737bf25c69404",
+      "originalCommand": "37ef20076ad36b46d47d74c98a7d700ef4c6639117bfaffb3a5668447acfde7d",
+      "originalContext": "073f7f42549c7f05aa626b9b4bb333f35be4b6c1c751da25f2324f9452d03734",
+      "originalLaunch": "b86db549b2969ae39a944aa3b69d891b28f2ac51957d9e24beb217c5304548ca",
+      "originalControllerFailure": "45b6376479ad4a0c17c5dbcf8674be895ca1370c31721b14b50e6afed9736612",
+      "originalCleanup": "912e5e07c7c0e097ea5ccb1798ed8773bb6d121cfa817e28f4102c1f8c394bba",
+      "independentJoinedOutcome": "b4ffd37e358698a3dd7e288b1bcea2af9385299bdee2b565fd82785c07cd69b5",
+      "independentPostJoinSource": "ebc9caa9a581568065a4b06b0d2b349779478d65ecc1a1eaf257b64b915f9f5d",
+      "independentMetadataOutcome": "b5ab88b4bb4bf909ba60c3744f79b3d830ffca9bf574d9cec6f0acbd171aa153"
+    },
+    "priorEvidence": {
+      "repositoryFiles": 124,
+      "repositoryBytes": 2948901,
+      "priorOutcomeFiles": 267,
+      "priorOutcomeBytes": 3355308,
+      "oldFailedNamespaceAndAbsences": "UNCHANGED",
+      "earlierFailures": "RETAINED_NOT_COUNTED_AS_PASSED_ASSERTIONS"
+    }
+  },
+  "storage": {
+    "newPrivateSyntheticSqliteFiles": 1,
+    "rawSqliteBytes": 24576,
+    "rawSqliteSha256": "5648fa2a9a0db75f0ed85c3411226829021322b25b64b80a96faba00caeca735",
+    "finalSchema": "Deliberately corrupt synthetic fixture, used to verify refusal",
+    "rawDatabaseCasAdopted": false,
+    "rawDatabaseDeleted": false,
+    "originalScratchCleanup": "HOLD_UNREGISTERED_DATABASE_NOT_ADOPTED_OR_DELETED",
+    "metadataOnlyScratchCleanup": "CLEANED_EMPTY_ZERO_BYTES",
+    "capturedOutputRetainedByDigest": true,
+    "zipCopies": 0,
+    "freeSpaceFloorBytes": 10737418240,
+    "managerExpectedBytes": 2097152,
+    "managerTaskQuotaBytes": 4194304,
+    "quotasAreNotOsEnforced": true
+  },
+  "preservedBoundaries": {
+    "consumedAdmissions": 2,
+    "actualChainPrepare": 1,
+    "bundles": 0,
+    "nativeChainProviderQualificationRuns": 0,
+    "realPaymentSigner": "DISABLED",
+    "originalPaymentRequestBytesHashPayloadRequirementsContext": "UNCHANGED",
+    "consumedAuthority": "UNCHANGED",
+    "PR193": "Possible VALIDATED exact-same-signed-block resend remains distinct from UNKNOWN and ACKNOWLEDGED.",
+    "ownershipFailure165": "NOT_RETRIED",
+    "workerOrAgentDispatch": false,
+    "automationOrModelOrMemoryMutation": false
+  },
+  "notEstablished": [
+    "HTTP status endpoint or wire protocol",
+    "full custodied client recovery integration",
+    "new execution or resend authority after absence, NOT_INVOKED or uncertainty",
+    "real process restart, kill or power-loss recovery",
+    "current independent context, funding or payer/provider policy authority",
+    "real provider READY, application execution or service delivery",
+    "chain signing, inclusion, native durability or pilot acceptance",
+    "broad suite, SDK/store/controller qualification or hosted CI"
+  ],
+  "hostedCI": "NOT_RUN_THIS_SLICE; empty check/status lists are not green",
+  "next": "Wire this read capability into a separately scoped backend/client recovery boundary, preserving exact original identity and no-retry authority. Real process restart, independent context/funding/READY and service delivery remain separate acceptance gates."
+}

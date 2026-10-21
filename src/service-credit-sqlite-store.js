@@ -1244,6 +1244,39 @@ export class ServiceCreditSqliteStore {
     ));
   }
 
+  /**
+   * Reads one exact original request and its linked execution from one validated
+   * compound revision. This is not admission or invocation permission: a missing
+   * record never reserves credit, and this method never prepares or recovers work.
+   * Like the other store reads it uses BEGIN IMMEDIATE, not an OS-readonly handle.
+   */
+  getOriginalRequestExecutionSnapshot(request) {
+    if (arguments.length !== 1) {
+      failStore('SERVICE_CREDIT_STORE_INVALID_EXECUTION_INPUT');
+    }
+    return this.#runPublicOperation(() => {
+      const input = captureReservationInput(request);
+      return this.#runTransaction('getOriginalRequestExecutionSnapshot', () => {
+        this.#validateDatabase();
+        const { executionState, physicalEnvelope } = this.#readLedger();
+        const original = findLedgerRequest(
+          physicalEnvelope.ledgerState,
+          input.grantId,
+          input.requestId,
+        );
+        if (original !== null && !reservationMatchesLedger(original, input)) {
+          throw fixedModelFailure('REQUEST_ID_CONFLICT');
+        }
+        const execution = executionState === null ? null : findDurableExecutionByRequest(
+          executionState,
+          input.grantId,
+          input.requestId,
+        );
+        return receipt({ revision: physicalEnvelope.revision, request: original, execution });
+      });
+    });
+  }
+
   initializeDurableExecution(options) {
     if (arguments.length !== 1) {
       failStore('SERVICE_CREDIT_STORE_INVALID_EXECUTION_INPUT');
