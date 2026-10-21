@@ -4,7 +4,7 @@ import { createVerificationBoundSelectedSettlementContext } from './x402-verific
 import { normalizeSelectedSettlementCallbackResult } from './x402-selected-settlement-context.js';
 import {
   validateActiveUpfrontRequirement, validatePaymentRequired, validatePaymentPayloadEnvelope,
-  sameRequirements, sameResource,
+  sameRequirements, sameResource, decodeB64Json, MAX_X402_HEADER_ENCODED_BYTES,
 } from './x402-wire.js';
 
 const OWNER = createVerificationBoundSelectedSettlementContext;
@@ -27,6 +27,7 @@ const initialObjectJson = descriptor(objectPrototype, 'toJSON'), initialArrayJso
 const NativeMap = Map, mapGet = Map.prototype.get, mapHas = Map.prototype.has, mapSet = Map.prototype.set;
 const push = arrayPrototype.push;
 const ErrorType = TypeError;
+const DECODE_HEADER = decodeB64Json, HEADER_LIMIT = MAX_X402_HEADER_ENCODED_BYTES;
 const CONFIG = freeze([
   'requirement', 'localFacilitator', 'validateChallenge', 'reconcilePendingSettlement',
   'maxPendingReconciliations', 'contextLimit',
@@ -320,6 +321,8 @@ function constructBridge(configuration, argumentCount, officialCore223) {
    * once to the same SDK operation in its before-handler phase, and requires
    * exactly one reconciliation by the existing owner before accepting a reply.
    * No after-handler no-op success or second positive reply is accepted.
+   * The bounded wire receipt must agree with the normalized result and original
+   * payment. A mismatch retains consumed authority and closes this continuation.
    *
    * Only the pinned request DATA shape (primitive fields plus an opaque adapter)
    * is admitted. Adapter internals and native/global behavior remain trusted
@@ -399,7 +402,13 @@ function constructBridge(configuration, argumentCount, officialCore223) {
           const headers = record(ownData(raw, 'headers'), freeze(['PAYMENT-RESPONSE']));
           const header = headers['PAYMENT-RESPONSE'];
           if (typeof header !== 'string' || header.length === 0
-              || header.length > 131072) fail('operation_rejected');
+              || header.length > HEADER_LIMIT) fail('operation_rejected');
+          const wireResult = NORMALIZE(DECODE_HEADER(header, {
+            maxEncodedBytes: HEADER_LIMIT, maxDecodedBytes: HEADER_LIMIT,
+          }), original);
+          if (wireResult.responseJson !== normalized.responseJson
+              || wireResult.disposition !== normalized.disposition
+              || wireResult.publicationStatus !== normalized.publicationStatus) fail('operation_rejected');
           return freeze({
             settlement: deepFreeze(parse(normalized.responseJson)),
             headers: deepFreeze(parse(serialize({ 'PAYMENT-RESPONSE': header }))),
