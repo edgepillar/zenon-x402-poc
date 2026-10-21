@@ -1,0 +1,618 @@
+{
+  "schemaVersion": 1,
+  "scope": "OCT21_P2_SEQUENTIAL_CHILD_CLOSE_FAULT_HARDENING_V1",
+  "status": "SELECTED_LOCAL_SYNTHETIC_COMPONENT_TESTS_PASSED",
+  "recordedDate": "2026-10-21",
+  "source": {
+    "inputMainCommit": "55a372172727aa44ff97460a02b6dbb4d923f89b",
+    "inputMainTree": "702ec8c6c03e8d49f3c54b0d2227f7f62e259729",
+    "authoredGraph": [
+      {
+        "path": "src/service-credit-custodied-sequential-runner-core.js",
+        "bytes": 15749,
+        "LF": 489,
+        "sha256": "42b5f7d7f1f8318ff50dd79d1729d93220c51ab95a7449610d44de91916c7914",
+        "gitBlob": "7432cae4a25db4f79fc3d517c12f31b01b16f895"
+      },
+      {
+        "path": "src/service-credit-original-request-custody-contract.js",
+        "bytes": 14051,
+        "LF": 356,
+        "sha256": "fd349de553a17abcc2e0567ba6640e6e3d5d26cfa79ee1e355928dc9fa8d3915",
+        "gitBlob": "f911d42d01b69e6577f9bcd66f4ed59aab8ab882"
+      },
+      {
+        "path": "src/service-credit-custodied-sequential-runner.js",
+        "bytes": 4184,
+        "LF": 93,
+        "sha256": "793c2d383e6b96f75ed676fe98a274b8777e293b9bef56eed028f0825df31326",
+        "gitBlob": "1a1dc1069e639b717084916cbefbc4f99e2cc597"
+      },
+      {
+        "path": "src/service-credit-custodied-http-client.js",
+        "bytes": 10755,
+        "LF": 292,
+        "sha256": "ddbc54faf4a14d95e6274bc9df27b7b49db251bab67c11b871cfb2f9e78b4f15",
+        "gitBlob": "90fd4c8a2cc8fb552f8eb0cb45607bfa44c61108"
+      },
+      {
+        "path": "src/service-credit-custodied-request-owner.js",
+        "bytes": 35073,
+        "LF": 938,
+        "sha256": "6e7493a4859d48530820e68a4a19a513aad014ffc1048b42965a3ad36ae7c5f7",
+        "gitBlob": "2dee22fd780db9de662fe1243075e74cef0bf296"
+      },
+      {
+        "path": "src/service-credit-http-execute-dispatch.js",
+        "bytes": 27034,
+        "LF": 770,
+        "sha256": "254ba8eef5ea5efb3a1b901be09e9cb33afbc3cfcf63789ca4a23316b6180d1b",
+        "gitBlob": "280dd20dc669e2856d263eba62ccd0fe9af72f21"
+      },
+      {
+        "path": "package.json",
+        "bytes": 1413,
+        "LF": 40,
+        "sha256": "8c9a25504fbf6f87c31cdf245a6f4eec5a88cc89c8352151dc66a577c5771ef5",
+        "gitBlob": "ec7193f6fd76f34778515079dc777594175c4c34"
+      },
+      {
+        "path": "test/service-credit-custodied-sequential-runner-accepted-receipt-prototype.test.js",
+        "bytes": 2817,
+        "LF": 73,
+        "sha256": "bbf99a61bac18b984c6d545200666388278646ef002ddac08ba3a3220e7eabad",
+        "gitBlob": "d9a733d4dc3e04db182d620d7b654e666938ea6b"
+      },
+      {
+        "path": "qualification/service-credit-custodied-runner-receipt-core-v2-compatibility.mjs",
+        "bytes": 45005,
+        "LF": 1193,
+        "sha256": "406bc0a15d7672cfc99b2294e6d5809d2dff35bdbb8b76adbe8cfd63b0334e20",
+        "gitBlob": "7f777255919b83949ca3ae3009a79796e9f207d3"
+      },
+      {
+        "path": "qualification/service-credit-custodied-runner-receipt-core-v3-compatibility.mjs",
+        "bytes": 28663,
+        "LF": 536,
+        "sha256": "53702b0abbaa291b0237efe5819ec528583d9e2e84063c351f33e92ddc7ec31e",
+        "gitBlob": "f30d3d7c3f9d361305008d943bb97f58109dbf95"
+      },
+      {
+        "path": "qualification/service-credit-custodied-sequential-runner-close-fault.behavior.draft.mjs",
+        "bytes": 14341,
+        "LF": 301,
+        "sha256": "9ab68ed76e8550812dd6e6273fa43eba6db7ba03193ba4d315827892c1dcb34d",
+        "gitBlob": "df5e96f2065bc811956e913745851f17595d2515"
+      }
+    ],
+    "fileCount": 11,
+    "authoredBytes": 199085,
+    "sourceCapBytes": 229376,
+    "perFileCapBytes": 65536,
+    "literalImports": [
+      [
+        "src/service-credit-custodied-sequential-runner-core.js",
+        "node:buffer"
+      ],
+      [
+        "src/service-credit-custodied-sequential-runner-core.js",
+        "node:util"
+      ],
+      [
+        "src/service-credit-custodied-sequential-runner-core.js",
+        "./service-credit-original-request-custody-contract.js"
+      ],
+      [
+        "src/service-credit-original-request-custody-contract.js",
+        "node:buffer"
+      ],
+      [
+        "src/service-credit-original-request-custody-contract.js",
+        "node:crypto"
+      ],
+      [
+        "src/service-credit-original-request-custody-contract.js",
+        "node:util"
+      ],
+      [
+        "src/service-credit-custodied-sequential-runner.js",
+        "./service-credit-custodied-http-client.js"
+      ],
+      [
+        "src/service-credit-custodied-sequential-runner.js",
+        "./service-credit-original-request-custody-contract.js"
+      ],
+      [
+        "src/service-credit-custodied-sequential-runner.js",
+        "./service-credit-custodied-sequential-runner-core.js"
+      ],
+      [
+        "src/service-credit-custodied-http-client.js",
+        "node:util"
+      ],
+      [
+        "src/service-credit-custodied-http-client.js",
+        "./service-credit-original-request-custody-contract.js"
+      ],
+      [
+        "src/service-credit-custodied-http-client.js",
+        "./service-credit-custodied-request-owner.js"
+      ],
+      [
+        "src/service-credit-custodied-http-client.js",
+        "./service-credit-http-execute-dispatch.js"
+      ],
+      [
+        "src/service-credit-custodied-request-owner.js",
+        "node:buffer"
+      ],
+      [
+        "src/service-credit-custodied-request-owner.js",
+        "node:util"
+      ],
+      [
+        "src/service-credit-custodied-request-owner.js",
+        "./service-credit-original-request-custody-contract.js"
+      ],
+      [
+        "src/service-credit-http-execute-dispatch.js",
+        "node:buffer"
+      ],
+      [
+        "src/service-credit-http-execute-dispatch.js",
+        "node:util"
+      ],
+      [
+        "src/service-credit-http-execute-dispatch.js",
+        "node:timers"
+      ],
+      [
+        "src/service-credit-http-execute-dispatch.js",
+        "./service-credit-original-request-custody-contract.js"
+      ],
+      [
+        "test/service-credit-custodied-sequential-runner-accepted-receipt-prototype.test.js",
+        "node:test"
+      ],
+      [
+        "test/service-credit-custodied-sequential-runner-accepted-receipt-prototype.test.js",
+        "node:assert/strict"
+      ],
+      [
+        "test/service-credit-custodied-sequential-runner-accepted-receipt-prototype.test.js",
+        "../src/service-credit-custodied-sequential-runner-core.js"
+      ],
+      [
+        "qualification/service-credit-custodied-runner-receipt-core-v2-compatibility.mjs",
+        "node:test"
+      ],
+      [
+        "qualification/service-credit-custodied-runner-receipt-core-v2-compatibility.mjs",
+        "node:assert/strict"
+      ],
+      [
+        "qualification/service-credit-custodied-runner-receipt-core-v2-compatibility.mjs",
+        "node:buffer"
+      ],
+      [
+        "qualification/service-credit-custodied-runner-receipt-core-v2-compatibility.mjs",
+        "node:fs"
+      ],
+      [
+        "qualification/service-credit-custodied-runner-receipt-core-v2-compatibility.mjs",
+        "node:crypto"
+      ],
+      [
+        "qualification/service-credit-custodied-runner-receipt-core-v2-compatibility.mjs",
+        "node:timers"
+      ],
+      [
+        "qualification/service-credit-custodied-runner-receipt-core-v2-compatibility.mjs",
+        "../src/service-credit-custodied-sequential-runner.js"
+      ],
+      [
+        "qualification/service-credit-custodied-runner-receipt-core-v2-compatibility.mjs",
+        "../src/service-credit-original-request-custody-contract.js"
+      ],
+      [
+        "qualification/service-credit-custodied-runner-receipt-core-v3-compatibility.mjs",
+        "node:test"
+      ],
+      [
+        "qualification/service-credit-custodied-runner-receipt-core-v3-compatibility.mjs",
+        "node:assert/strict"
+      ],
+      [
+        "qualification/service-credit-custodied-runner-receipt-core-v3-compatibility.mjs",
+        "node:buffer"
+      ],
+      [
+        "qualification/service-credit-custodied-runner-receipt-core-v3-compatibility.mjs",
+        "node:fs"
+      ],
+      [
+        "qualification/service-credit-custodied-runner-receipt-core-v3-compatibility.mjs",
+        "node:crypto"
+      ],
+      [
+        "qualification/service-credit-custodied-runner-receipt-core-v3-compatibility.mjs",
+        "node:timers"
+      ],
+      [
+        "qualification/service-credit-custodied-runner-receipt-core-v3-compatibility.mjs",
+        "../src/service-credit-custodied-sequential-runner.js"
+      ],
+      [
+        "qualification/service-credit-custodied-runner-receipt-core-v3-compatibility.mjs",
+        "../src/service-credit-custodied-sequential-runner-core.js"
+      ],
+      [
+        "qualification/service-credit-custodied-runner-receipt-core-v3-compatibility.mjs",
+        "../src/service-credit-original-request-custody-contract.js"
+      ],
+      [
+        "qualification/service-credit-custodied-sequential-runner-close-fault.behavior.draft.mjs",
+        "node:test"
+      ],
+      [
+        "qualification/service-credit-custodied-sequential-runner-close-fault.behavior.draft.mjs",
+        "node:assert/strict"
+      ],
+      [
+        "qualification/service-credit-custodied-sequential-runner-close-fault.behavior.draft.mjs",
+        "node:fs"
+      ],
+      [
+        "qualification/service-credit-custodied-sequential-runner-close-fault.behavior.draft.mjs",
+        "node:crypto"
+      ],
+      [
+        "qualification/service-credit-custodied-sequential-runner-close-fault.behavior.draft.mjs",
+        "../test/service-credit-custodied-sequential-runner-accepted-receipt-prototype.test.js"
+      ],
+      [
+        "qualification/service-credit-custodied-sequential-runner-close-fault.behavior.draft.mjs",
+        "./service-credit-custodied-runner-receipt-core-v2-compatibility.mjs"
+      ],
+      [
+        "qualification/service-credit-custodied-sequential-runner-close-fault.behavior.draft.mjs",
+        "./service-credit-custodied-runner-receipt-core-v3-compatibility.mjs"
+      ],
+      [
+        "qualification/service-credit-custodied-sequential-runner-close-fault.behavior.draft.mjs",
+        "../src/service-credit-custodied-sequential-runner-core.js"
+      ]
+    ],
+    "actualChildOperations": "Captured private operations; constructor labels are DATA and do not create or qualify native owners.",
+    "oldCore": {
+      "path": "src/service-credit-custodied-sequential-runner-core.js",
+      "bytes": 15384,
+      "LF": 482,
+      "sha256": "cb2e3fd23a4fdc318902ae95f6f03b3073507ff5ced279626e15151fca171ab2",
+      "gitBlob": "83122ec62d7701dc1b210438b8be0a9792781433"
+    },
+    "primaryCompleteSourceAndImportReview": true
+  },
+  "selection": {
+    "roadmapLane": "P2 backend/client lifecycle; independent of DP work production and main/CI scheduling.",
+    "basis": "A finite source-bound conditional fault was independently reproduced. Missing coverage alone was not treated as novelty.",
+    "ownership": "Primary self-implementation; no external worker dispatch, task messaging or automation changes.",
+    "finiteChange": "Latch the close invocation before entering the private child, independently of its return value; catch a synchronous throw and reuse the existing unobservable-close failure path.",
+    "retainedCoverage": "All14 authored receipt/core/borrowed-V2/V3 registrations are retained. Only one core sourceSpecs tuple in each of the two compatibility entries changes; complete inverse recovers each previous file.",
+    "assertionOrHelperWeakening": false
+  },
+  "baseline": {
+    "status": "SYNTHETIC_BASELINE_FAULTS_OBSERVED_NOT_FIXED",
+    "graph": [
+      {
+        "path": "src/service-credit-custodied-sequential-runner-core.js",
+        "bytes": 15384,
+        "LF": 482,
+        "sha256": "cb2e3fd23a4fdc318902ae95f6f03b3073507ff5ced279626e15151fca171ab2",
+        "gitBlob": "83122ec62d7701dc1b210438b8be0a9792781433"
+      },
+      {
+        "path": "src/service-credit-original-request-custody-contract.js",
+        "bytes": 14051,
+        "LF": 356,
+        "sha256": "fd349de553a17abcc2e0567ba6640e6e3d5d26cfa79ee1e355928dc9fa8d3915",
+        "gitBlob": "f911d42d01b69e6577f9bcd66f4ed59aab8ab882"
+      },
+      {
+        "path": "package.json",
+        "bytes": 1413,
+        "LF": 40,
+        "sha256": "8c9a25504fbf6f87c31cdf245a6f4eec5a88cc89c8352151dc66a577c5771ef5",
+        "gitBlob": "ec7193f6fd76f34778515079dc777594175c4c34"
+      }
+    ],
+    "actualDiagnosticCases": 6,
+    "authoredNodeTestAssertions": 0,
+    "actualExit": 0,
+    "outputComplete": true,
+    "zeroExitMeaning": "The diagnostic captured the expected old faults; it does not mean the faulty implementation passed the fixed contract.",
+    "cases": [
+      {
+        "label": "BORROWED",
+        "mode": "synchronous-throw",
+        "actualChildCloseCalls": 2,
+        "reportedCloseCalls": 1,
+        "escapedTestSentinels": 2,
+        "closeOutcome": "WAITING",
+        "submitted": 0
+      },
+      {
+        "label": "BORROWED",
+        "mode": "null-return",
+        "actualChildCloseCalls": 2,
+        "reportedCloseCalls": 1,
+        "escapedTestSentinels": 0,
+        "closeOutcome": "UNOBSERVABLE",
+        "submitted": 0
+      },
+      {
+        "label": "OWNED_EXISTING_V2",
+        "mode": "synchronous-throw",
+        "actualChildCloseCalls": 2,
+        "reportedCloseCalls": 1,
+        "escapedTestSentinels": 2,
+        "closeOutcome": "WAITING",
+        "submitted": 0
+      },
+      {
+        "label": "OWNED_EXISTING_V2",
+        "mode": "null-return",
+        "actualChildCloseCalls": 2,
+        "reportedCloseCalls": 1,
+        "escapedTestSentinels": 0,
+        "closeOutcome": "UNOBSERVABLE",
+        "submitted": 0
+      },
+      {
+        "label": "OWNED_EXISTING_V3_DISPATCH_INTENT",
+        "mode": "synchronous-throw",
+        "actualChildCloseCalls": 2,
+        "reportedCloseCalls": 1,
+        "escapedTestSentinels": 2,
+        "closeOutcome": "WAITING",
+        "submitted": 0
+      },
+      {
+        "label": "OWNED_EXISTING_V3_DISPATCH_INTENT",
+        "mode": "null-return",
+        "actualChildCloseCalls": 2,
+        "reportedCloseCalls": 1,
+        "escapedTestSentinels": 0,
+        "closeOutcome": "UNOBSERVABLE",
+        "submitted": 0
+      }
+    ],
+    "stdout": {
+      "bytes": 1164,
+      "sha256": "e09677e8cd0ede17674112a38dea8f542030d4cb0cb3cffe69fb445f72d77541"
+    },
+    "stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "fixedInlineCaller": "process.exitCode = 125;\nconst assert = require('node:assert/strict');\nconst { pathToFileURL } = require('node:url');\n(async () => {\n  if (process.versions.node !== '24.19.0' || process.platform !== 'darwin'\n      || process.arch !== 'arm64' || process.argv.length !== 2) throw Error('RUNTIME_OR_ARGUMENTS');\n  const { createServiceCreditCustodiedSequentialRunnerCore: CREATE } =\n    await import(pathToFileURL(process.argv[1]).href);\n  const owner = Object.freeze({ uncertainty: Object.freeze({\n    custody: false, submission: false, undrained: false,\n  }) });\n  const rows = [];\n  for (const label of ['BORROWED', 'OWNED_EXISTING_V2', 'OWNED_EXISTING_V3_DISPATCH_INTENT']) {\n    for (const mode of ['synchronous-throw', 'null-return']) {\n      let calls = 0, caught = 0, submits = 0;\n      const sentinel = Object.freeze({ syntheticPrivate: true });\n      const runner = CREATE({\n        selectedGrantId: 'grant.close', storeOwnership: label,\n        submitOriginal() { submits++; throw sentinel; },\n        snapshot: () => Object.freeze({ owner, lastTransport: null }),\n        close() { calls++; if (mode === 'synchronous-throw') throw sentinel; return null; },\n      });\n      for (let i = 0; i < 2; i++) {\n        try { assert.strictEqual(runner.close(), null); }\n        catch (error) {\n          if (mode !== 'synchronous-throw' || error !== sentinel) throw Error('UNEXPECTED_ESCAPE');\n          caught++;\n        }\n      }\n      const view = runner.snapshot();\n      assert.equal(calls, 2); assert.equal(submits, 0); assert.equal(view.closeCalls, 1);\n      assert.equal(view.closed, true); assert.equal(view.active, false);\n      assert.equal(view.closeOutcome, mode === 'synchronous-throw' ? 'WAITING' : 'UNOBSERVABLE');\n      assert.equal(caught, mode === 'synchronous-throw' ? 2 : 0);\n      rows.push({ label, mode, actualChildCloseCalls: calls, reportedCloseCalls: view.closeCalls,\n        escapedTestSentinels: caught, closeOutcome: view.closeOutcome, submitted: submits });\n    }\n  }\n  process.stdout.write(JSON.stringify({ status: 'SYNTHETIC_BASELINE_FAULTS_OBSERVED_NOT_FIXED',\n    cases: rows, actualCases: 6, realNativeOwnerOrSqliteDefectEstablished: false }) + '\\n');\n  process.exitCode = 0;\n})().catch(() => {\n  process.stderr.write('synthetic baseline inspection failed\\n');\n  process.exitCode = 1;\n});\n",
+    "commandClass": "One explicit old-core module path, env -i, three exact fs-read grants, no writes/children/workers/addons.",
+    "noHangingOrUnhandledAutomaticCloseBaselineAttempt": true,
+    "realNativeOwnerOrSqliteDefectEstablished": false
+  },
+  "implementation": {
+    "latch": "closeCalls is set before CHILD_CLOSE; a repeated or reentrant invocation never calls that child again, including null/undefined returns.",
+    "synchronousThrow": "Discard the thrown value without reading hooks; return undefined because no native close Promise was obtained.",
+    "noFabricatedCloseReceipt": true,
+    "hold": "Use CLOSE_UNOBSERVABLE / UNOBSERVABLE and unknownUndrained; release queued entries and fail the one-shot run once its active callback is observed.",
+    "laterFailureClassification": "Later active-entry processing may refine failure to CHILD_UNCERTAINTY or ENTRY_REJECTED. It never clears the failed/unobservable close.",
+    "validPromise": "Return the identical actual native close Promise; no substitute, chained Promise or cleanup acknowledgement is introduced.",
+    "reentrantCloseBeforeChildReturn": "Returns the existing null slot, not a new Promise. The outer valid child Promise is retained when the child returns.",
+    "noRetryResetResendOrStoreCloseAdded": true
+  },
+  "qualification": {
+    "passNames": [
+      "accepted run receipt survives caller array prototype mutation",
+      "two originals use one client and wait for ordered bodyless completion",
+      "structural admission rejects hooks and isolates copied batch strings",
+      "later semantic rejection preserves honest partial completion",
+      "first transport uncertainty stops the queue and preserves failed close",
+      "reentrant run identity cannot admit a replacement list",
+      "manual close fences admission and queued work with one close promise",
+      "actual owner recovery conflict and binding fences prevent transport",
+      "undrained failure and maximum batch keep frozen redacted bounds",
+      "V3 sequential opt-in fences two originals and preserves the one-shot receipt and borrowed close",
+      "V3 sequential mid-batch refusals preserve partial completion and never dispatch queued originals",
+      "V3 sequential manual close stops queued work while draining the active declared interface",
+      "V3 sequential uncertain first transport drains fake handles and preserves failed close and intent",
+      "Sequential core ownership labels are frozen DATA without constructor hooks or SQL authority",
+      "sequential close latches synchronous child faults without leaking or retrying",
+      "sequential close latches invalid null and non-Promise returns without caller hooks",
+      "sequential auto-close faults reject the original receipt after callback completion",
+      "sequential entry failure and invalid completion cannot strand a close-faulted receipt",
+      "sequential manual close faults fence queued work and await only the active callback",
+      "sequential close latches before a reentrant child call and preserves its native Promise",
+      "sequential close retains exact fulfilled and rejected native close Promises"
+    ],
+    "counts": {
+      "tests": 21,
+      "suites": 0,
+      "pass": 21,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "newAuthoredRegistrations": 7,
+    "retainedAuthoredRegistrations": 14,
+    "actualNativeNodeCommands": 1,
+    "testReruns": 0,
+    "joined": true,
+    "actualExit": 0,
+    "outputComplete": true,
+    "completeTAPReport": "# entry qualification/service-credit-custodied-sequential-runner-close-fault.behavior.draft.mjs\n# Node 24.19.0 platform=darwin arch=arm64\nTAP version 13\n# Subtest: accepted run receipt survives caller array prototype mutation\nok 1 - accepted run receipt survives caller array prototype mutation\n# Subtest: two originals use one client and wait for ordered bodyless completion\nok 2 - two originals use one client and wait for ordered bodyless completion\n# Subtest: structural admission rejects hooks and isolates copied batch strings\nok 3 - structural admission rejects hooks and isolates copied batch strings\n# Subtest: later semantic rejection preserves honest partial completion\nok 4 - later semantic rejection preserves honest partial completion\n# Subtest: first transport uncertainty stops the queue and preserves failed close\nok 5 - first transport uncertainty stops the queue and preserves failed close\n# Subtest: reentrant run identity cannot admit a replacement list\nok 6 - reentrant run identity cannot admit a replacement list\n# Subtest: manual close fences admission and queued work with one close promise\nok 7 - manual close fences admission and queued work with one close promise\n# Subtest: actual owner recovery conflict and binding fences prevent transport\nok 8 - actual owner recovery conflict and binding fences prevent transport\n# Subtest: undrained failure and maximum batch keep frozen redacted bounds\nok 9 - undrained failure and maximum batch keep frozen redacted bounds\n# Subtest: V3 sequential opt-in fences two originals and preserves the one-shot receipt and borrowed close\nok 10 - V3 sequential opt-in fences two originals and preserves the one-shot receipt and borrowed close\n# Subtest: V3 sequential mid-batch refusals preserve partial completion and never dispatch queued originals\nok 11 - V3 sequential mid-batch refusals preserve partial completion and never dispatch queued originals\n# Subtest: V3 sequential manual close stops queued work while draining the active declared interface\nok 12 - V3 sequential manual close stops queued work while draining the active declared interface\n# Subtest: V3 sequential uncertain first transport drains fake handles and preserves failed close and intent\nok 13 - V3 sequential uncertain first transport drains fake handles and preserves failed close and intent\n# Subtest: Sequential core ownership labels are frozen DATA without constructor hooks or SQL authority\nok 14 - Sequential core ownership labels are frozen DATA without constructor hooks or SQL authority\n# Subtest: sequential close latches synchronous child faults without leaking or retrying\nok 15 - sequential close latches synchronous child faults without leaking or retrying\n# Subtest: sequential close latches invalid null and non-Promise returns without caller hooks\nok 16 - sequential close latches invalid null and non-Promise returns without caller hooks\n# Subtest: sequential auto-close faults reject the original receipt after callback completion\nok 17 - sequential auto-close faults reject the original receipt after callback completion\n# Subtest: sequential entry failure and invalid completion cannot strand a close-faulted receipt\nok 18 - sequential entry failure and invalid completion cannot strand a close-faulted receipt\n# Subtest: sequential manual close faults fence queued work and await only the active callback\nok 19 - sequential manual close faults fence queued work and await only the active callback\n# Subtest: sequential close latches before a reentrant child call and preserves its native Promise\nok 20 - sequential close latches before a reentrant child call and preserves its native Promise\n# Subtest: sequential close retains exact fulfilled and rejected native close Promises\nok 21 - sequential close retains exact fulfilled and rejected native close Promises\n1..21\n# tests 21\n# suites 0\n# pass 21\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# qualification PASS qualification/service-credit-custodied-sequential-runner-close-fault.behavior.draft.mjs\n",
+    "streams": {
+      "stdout": {
+        "bytes": 4014,
+        "sha256": "6f7a46405d3c44d2e41937c394cb9ab4e7ce76bef0a4e1d54ada52cb7e9167c8"
+      },
+      "stderr": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    "sourceBeforeAfterMatched": true,
+    "exactAuthoredNamesMatchedRunnerEventsAndTAP": true,
+    "runtime": {
+      "name": "Node.js",
+      "version": "24.19.0",
+      "platform": "darwin",
+      "architecture": "arm64",
+      "bytes": 121304480,
+      "sha256": "dbedff294bab84a0a86c04e15fbcbeb1c97ca10bef1b32b0634cd24b36f62100",
+      "priorCompleteDigestReusedOnlyWithExactNineFieldPhysicalIdentity": true
+    },
+    "launch": {
+      "callerRecipe": "CommonJS node:test run API; one explicit entry; no input-type, globs, discovery, isolation children, watch or forceExit.",
+      "fixedInlineCaller": "process.exitCode = 125;\nconst { run } = require('node:test');\nconst { tap } = require('node:test/reporters');\nconst { Writable, pipeline, finished } = require('node:stream');\nconst selections = {\n  \"qualification/service-credit-custodied-sequential-runner-close-fault.behavior.draft.mjs\": [\n    \"accepted run receipt survives caller array prototype mutation\",\n    \"two originals use one client and wait for ordered bodyless completion\",\n    \"structural admission rejects hooks and isolates copied batch strings\",\n    \"later semantic rejection preserves honest partial completion\",\n    \"first transport uncertainty stops the queue and preserves failed close\",\n    \"reentrant run identity cannot admit a replacement list\",\n    \"manual close fences admission and queued work with one close promise\",\n    \"actual owner recovery conflict and binding fences prevent transport\",\n    \"undrained failure and maximum batch keep frozen redacted bounds\",\n    \"V3 sequential opt-in fences two originals and preserves the one-shot receipt and borrowed close\",\n    \"V3 sequential mid-batch refusals preserve partial completion and never dispatch queued originals\",\n    \"V3 sequential manual close stops queued work while draining the active declared interface\",\n    \"V3 sequential uncertain first transport drains fake handles and preserves failed close and intent\",\n    \"Sequential core ownership labels are frozen DATA without constructor hooks or SQL authority\",\n    \"sequential close latches synchronous child faults without leaking or retrying\",\n    \"sequential close latches invalid null and non-Promise returns without caller hooks\",\n    \"sequential auto-close faults reject the original receipt after callback completion\",\n    \"sequential entry failure and invalid completion cannot strand a close-faulted receipt\",\n    \"sequential manual close faults fence queued work and await only the active callback\",\n    \"sequential close latches before a reentrant child call and preserves its native Promise\",\n    \"sequential close retains exact fulfilled and rejected native close Promises\"\n  ]\n};\nlet selected = 'unselected';\n(async () => {\n  if (process.versions.node !== '24.19.0' || process.argv.length !== 2\n      || process.platform !== 'darwin' || process.arch !== 'arm64') throw Error('RUNTIME_OR_ARGUMENTS');\n  selected = Object.keys(selections).find(p => process.argv[1] === process.cwd() + '/' + p);\n  if (!selected) { selected = 'unselected'; throw Error('SELECTION'); }\n  const expected = selections[selected], seen = new Set(), reported = new Set();\n  const counts = new Map(), plans = [];\n  let bad = false, ended = false, reporterDone = false, versions = 0, bytes = 0, pending = '';\n  const known = name => expected.includes(name);\n  process.stdout.write('# entry ' + selected + '\\n# Node ' + process.versions.node\n    + ' platform=' + process.platform + ' arch=' + process.arch + '\\n');\n  function safeLine(line) {\n    let match;\n    if (line === 'TAP version 13') { versions++; return line; }\n    if ((match = /^# Subtest: (.+)$/.exec(line))) {\n      if (known(match[1])) return line;\n      bad = true;\n    } else if ((match = /^(ok|not ok) \\d+ - (.+)$/.exec(line))) {\n      if (!known(match[2]) || reported.has(match[2]) || match[1] !== 'ok') bad = true;\n      if (known(match[2])) { reported.add(match[2]); return line; }\n    } else if ((match = /^1\\.\\.(\\d+)$/.exec(line))) {\n      plans.push(Number(match[1])); return line;\n    } else if ((match = /^# (tests|suites|pass|fail|cancelled|skipped|todo) (\\d+)$/.exec(line))) {\n      if (counts.has(match[1])) bad = true;\n      counts.set(match[1], Number(match[2])); return line;\n    } else if (/^Bail out!/.test(line)) bad = true;\n    return null; // Do not publish physical locations, stacks or arbitrary diagnostics.\n  }\n  const source = run({\n    files: [process.argv[1]], isolation: 'none', concurrency: false,\n    timeout: 5000, forceExit: false, watch: false,\n  });\n  source.on('test:pass', data => {\n    if (!known(data.name) || seen.has(data.name) || data.nesting !== 0\n        || (data.skip !== undefined && data.skip !== false)\n        || (data.todo !== undefined && data.todo !== false)) bad = true;\n    seen.add(data.name);\n  });\n  source.on('test:fail', () => { bad = true; });\n  source.on('error', () => { bad = true; });\n  source.once('end', () => { ended = true; });\n  const sourceDone = new Promise(resolve => {\n    finished(source, { writable: false }, error => { if (error) bad = true; resolve(); });\n  });\n  const sink = new Writable({\n    write(chunk, encoding, callback) {\n      try {\n        bytes += Buffer.byteLength(chunk);\n        if (bytes > 65536) throw Error('REPORTER_CAP');\n        pending += String(chunk);\n        const lines = pending.split('\\n'); pending = lines.pop();\n        const safe = lines.map(safeLine).filter(line => line !== null);\n        if (safe.length) process.stdout.write(safe.join('\\n') + '\\n', callback);\n        else callback();\n      } catch { callback(Error('REPORTER_FAILED')); }\n    },\n    final(callback) { if (pending !== '') bad = true; callback(); },\n  });\n  const reporter = source.compose(tap);\n  const reportDone = new Promise(resolve => {\n    pipeline(reporter, sink, error => { reporterDone = !error; if (error) bad = true; resolve(); });\n  });\n  await Promise.all([sourceDone, reportDone]);\n  const zero = ['suites', 'fail', 'cancelled', 'skipped', 'todo'];\n  if (bad || !ended || !reporterDone || versions !== 1 || plans.length !== 1\n      || plans[0] !== expected.length || seen.size !== expected.length\n      || reported.size !== expected.length || !expected.every(name => seen.has(name) && reported.has(name))\n      || counts.get('tests') !== expected.length || counts.get('pass') !== expected.length\n      || !zero.every(key => counts.get(key) === 0)\n      || process.exitCode !== 125) throw Error('INCOMPLETE_OR_UNEXPECTED_RESULTS');\n  process.exitCode = 0;\n  process.stdout.write('# qualification PASS ' + selected + '\\n');\n})().catch(() => {\n  if ([undefined, 0, 125].includes(process.exitCode)) process.exitCode = 1;\n  process.stderr.write('qualification caller failed\\n');\n  process.stdout.write('# qualification FAIL ' + selected + '\\n');\n});",
+      "environment": [
+        "TZ=UTC",
+        "LANG=C",
+        "LC_ALL=C"
+      ],
+      "allOtherEnvironmentCleared": true,
+      "argvTemplate": [
+        "env",
+        "-i",
+        "TZ=UTC",
+        "LANG=C",
+        "LC_ALL=C",
+        "<reviewed-node>",
+        "--permission",
+        "<one --allow-fs-read=<repo>/<relative-path> for each exact authoredGraph file>",
+        "--disallow-code-generation-from-strings",
+        "--no-addons",
+        "--no-warnings",
+        "--eval",
+        "<fixedInlineCaller>",
+        "<repo>/qualification/service-credit-custodied-sequential-runner-close-fault.behavior.draft.mjs"
+      ],
+      "fileReadGrants": [
+        "src/service-credit-custodied-sequential-runner-core.js",
+        "src/service-credit-original-request-custody-contract.js",
+        "src/service-credit-custodied-sequential-runner.js",
+        "src/service-credit-custodied-http-client.js",
+        "src/service-credit-custodied-request-owner.js",
+        "src/service-credit-http-execute-dispatch.js",
+        "package.json",
+        "test/service-credit-custodied-sequential-runner-accepted-receipt-prototype.test.js",
+        "qualification/service-credit-custodied-runner-receipt-core-v2-compatibility.mjs",
+        "qualification/service-credit-custodied-runner-receipt-core-v3-compatibility.mjs",
+        "qualification/service-credit-custodied-sequential-runner-close-fault.behavior.draft.mjs"
+      ],
+      "directoryReadExpansion": false,
+      "grantsNotGiven": [
+        "fs-write",
+        "child",
+        "worker",
+        "addon",
+        "WASI",
+        "inspector"
+      ],
+      "runner": {
+        "isolation": "none",
+        "concurrency": false,
+        "timeoutMs": 5000,
+        "forceExit": false,
+        "watch": false
+      },
+      "managerTimeoutSeconds": 30,
+      "stdoutCapBytes": 65536,
+      "stderrCapBytesAtMost": 1048576
+    },
+    "coverage": {
+      "allOwnershipLabelsAreSyntheticData": [
+        "BORROWED",
+        "OWNED_EXISTING_V2",
+        "OWNED_EXISTING_V3_DISPATCH_INTENT"
+      ],
+      "injectedFaults": [
+        "synchronous thrown proxy without property reads",
+        "null/undefined/false/non-Promise object/proxy returns",
+        "automatic close after successful callback",
+        "rejected callback",
+        "nonvoid callback completion",
+        "manual close while one callback remains pending",
+        "reentrant close before child returns",
+        "valid native close rejection and nonvoid fulfillment"
+      ],
+      "preserves": [
+        "one original run Promise receipt",
+        "accepted-array identity after prototype mutation",
+        "maximum8 batch and queue release",
+        "honest attempted/completed/not-attempted counts",
+        "valid actual cached close Promise identity",
+        "borrowed store close count0",
+        "original metadata and V3 intent fences in retained declared-interface tests"
+      ],
+      "noActualSqliteSdkSocketKeySignatureOrProviderUsed": true
+    }
+  },
+  "preservation": {
+    "sourceGraphStable": true,
+    "otherPinnedRepositoryFilesUnchanged": 44,
+    "otherPinnedBytes": 1153588,
+    "historicalQualificationOrDraftFilesUnchanged": 34,
+    "earlierFailedNamespaceFilesUnchanged": 10,
+    "earlierFailedMissingRecordsRemainAbsent": true,
+    "newBaselineNamespaceFilesUnchanged": 11,
+    "oldPublishedResultsNotReboundToThisGraph": true,
+    "baselineDiagnosticNotReclassifiedAsFixedAssertions": true,
+    "pendingNonceDraftFilesUnchangedAndNotImported": true,
+    "privateHttpsOwnerAndOct03CandidatesUnexecuted": true
+  },
+  "retention": {
+    "approvedPrivateManagerUsed": true,
+    "volumeAndStoreIdentityChecked": true,
+    "productionFreeFloorBytes": 10737418240,
+    "expectedBytesPerTask": 4194304,
+    "quotaBytesPerTask": 8388608,
+    "distinctOwnedTasks": 2,
+    "bothClosed": "SUCCESS",
+    "baselineAndFixedOutputsRetainedByExactDigest": true,
+    "fixedInspectionMetadataReadBytes": 102634,
+    "baselineInspectionMetadataReadBytes": 71535,
+    "ownedScratchCleanupBytes": 0,
+    "casObjectsRemoved": 0,
+    "historicalCleanup": false,
+    "bothOwnedProcessGroupsObservedEmpty": true,
+    "osCleanupGuaranteed": false
+  },
+  "hostedCI": {
+    "statusAtRecording": "NOT_RUN_FOR_THIS_CANDIDATE",
+    "manualRecipe": ".github/workflows/runner-receipt-qualification.yml",
+    "existingApprovedSelectionUnchanged": "Exactly14 cases in the same three core/V2/V3 entries. Only current graph hashes and scope comments are updated.",
+    "newSevenFaultCasesAddedToHostedScope": false,
+    "broadCIOrInstallOrBuildAuthorizedByThisRecord": false
+  },
+  "publicationAtRecording": "NOT_YET_PUBLISHED",
+  "nonclaims": [
+    "Selected local component observations, not a full suite, actual native child fault reproduction, SQL owner qualification, real process recovery or durability.",
+    "No SDK or actual PoW producer was imported or evaluated. The separate unexecuted nonce-search draft remains outside this test graph.",
+    "No signing, payment, request replacement, consumed-authority reset, retry, live provider, provisioning or actual chain PREPARE.",
+    "Native loader, runner, stream, Promise/intrinsic and cooperative callback behavior remain premises. Timeouts, permission flags and an empty observed process group are not a hard lifetime, cancellation, OS network sandbox or cleanup guarantee.",
+    "No service delivery, authenticated current authority, current funding, real provider READY, inclusion/finality or pilot acceptance is established.",
+    "No former failed loader, assertion, storage promotion or HOLD is erased or counted as a passing assertion."
+  ],
+  "protectedTotals": {
+    "consumedAdmissions": 2,
+    "actualPrepare": 1,
+    "bundles": 0,
+    "nativeQualificationRuns": 0
+  },
+  "readiness": {
+    "offlineScopedDevelopment": "GO",
+    "production": "NO_GO",
+    "realSigner": "DISABLED"
+  }
+}

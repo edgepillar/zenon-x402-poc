@@ -1,6 +1,6 @@
-# Source draft only: no hosted result is established by this file.
-# Manual qualification of packet cd7369771575224cfcd554f698d0f5fa4c71162a.
-# Main integration requires independent review of the exact hosted head and 14 PASS.
+# Source-bound manual recipe; this file establishes no hosted result.
+# Preserve the same 1 + 8 + 5 cases against the close-fault-hardened core.
+# The seven new fault-injection cases remain local-only, outside this CI scope.
 name: Runner receipt qualification
 on:
   workflow_dispatch:
@@ -34,15 +34,15 @@ jobs:
           printf 'source-head=%s\nsource-tree=%s\n' "$actual" "$(git rev-parse 'HEAD^{tree}')"
           sha256sum --check --strict <<'SOURCE'
           793c2d383e6b96f75ed676fe98a274b8777e293b9bef56eed028f0825df31326  src/service-credit-custodied-sequential-runner.js
-          cb2e3fd23a4fdc318902ae95f6f03b3073507ff5ced279626e15151fca171ab2  src/service-credit-custodied-sequential-runner-core.js
+          42b5f7d7f1f8318ff50dd79d1729d93220c51ab95a7449610d44de91916c7914  src/service-credit-custodied-sequential-runner-core.js
           ddbc54faf4a14d95e6274bc9df27b7b49db251bab67c11b871cfb2f9e78b4f15  src/service-credit-custodied-http-client.js
           6e7493a4859d48530820e68a4a19a513aad014ffc1048b42965a3ad36ae7c5f7  src/service-credit-custodied-request-owner.js
           254ba8eef5ea5efb3a1b901be09e9cb33afbc3cfcf63789ca4a23316b6180d1b  src/service-credit-http-execute-dispatch.js
           fd349de553a17abcc2e0567ba6640e6e3d5d26cfa79ee1e355928dc9fa8d3915  src/service-credit-original-request-custody-contract.js
           8c9a25504fbf6f87c31cdf245a6f4eec5a88cc89c8352151dc66a577c5771ef5  package.json
           bbf99a61bac18b984c6d545200666388278646ef002ddac08ba3a3220e7eabad  test/service-credit-custodied-sequential-runner-accepted-receipt-prototype.test.js
-          c5b26177b33461d08390bee71c89ea3ed8a2b39e1cb60ad5cd06afadb410bb8b  qualification/service-credit-custodied-runner-receipt-core-v2-compatibility.mjs
-          c7aacb2ea9ba16dc7505095712ff3a588278ffb74452500622f3fbc68c5aa146  qualification/service-credit-custodied-runner-receipt-core-v3-compatibility.mjs
+          406bc0a15d7672cfc99b2294e6d5809d2dff35bdbb8b76adbe8cfd63b0334e20  qualification/service-credit-custodied-runner-receipt-core-v2-compatibility.mjs
+          53702b0abbaa291b0237efe5819ec528583d9e2e84063c351f33e92ddc7ec31e  qualification/service-credit-custodied-runner-receipt-core-v3-compatibility.mjs
           SOURCE
           test "$(wc -c < test/service-credit-custodied-sequential-runner-accepted-receipt-prototype.test.js)" -eq 2817
           test "$(wc -c < qualification/service-credit-custodied-runner-receipt-core-v2-compatibility.mjs)" -eq 45005

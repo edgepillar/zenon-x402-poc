@@ -151,14 +151,21 @@ export function createServiceCreditCustodiedSequentialRunnerCore(configuration) 
   function ensureClose() {
     closed = true;
     releaseQueue();
-    if (closePromise !== null) return closePromise;
+    // Latch the invocation before entering the child, independently of its
+    // return value. A throw, null return or reentrant close must not retry it.
+    if (closeCalls !== 0) return closePromise;
     closeCalls = 1;
     closeOutcome = 'WAITING';
     phase = runCapability === null ? 'CLOSED' : 'WAITING_CLOSE';
 
     // The actual private child closes admission synchronously and returns its
     // native cached close Promise. No substitute or chained Promise is returned.
-    closePromise = CHILD_CLOSE();
+    try { closePromise = CHILD_CLOSE(); }
+    catch {
+      // No native close Promise was obtained. Reuse the unobservable failure
+      // path below without exposing the thrown value or inventing a receipt.
+      closePromise = undefined;
+    }
     if (closePromise === runCapability?.promise || !safePromise(closePromise)) {
       observationUndrained = true;
       failureKind = 'CLOSE_UNOBSERVABLE';
