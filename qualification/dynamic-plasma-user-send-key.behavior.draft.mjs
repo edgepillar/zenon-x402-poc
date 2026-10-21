@@ -8,7 +8,7 @@ import { Buffer } from 'node:buffer';
 // signature, wallet, SDK, nonce producer, owner or live operation is used.
 assert.equal(process.argv.length, 2);
 const pins = [
-  ["../src/zenon/transaction-planner.js", 16738, "bbf51fa2fc75df7f69973a89ae275ec709622942444eb30cea0cc9924afbf143"],
+  ["../src/zenon/transaction-planner.js", 20374, "4ef2c72a44d5f0f5ce918172a6ff30b13b693fa173bc74cb56565f5402417c2c"],
   ["../src/zenon/bounded-dynamic-plasma-strategy.js", 15729, "7b82560bdeb25e573912090a2fe8de7b45912500a7a7c4434fe06dcf94e06d62"],
   ["../src/canonical.js", 967, "0d55ddf1727cafb0dcd46df2922305568615552a4d2ae34a5c30e90b9d8d998c"],
   ["../src/x402-wire.js", 39886, "5fba91af5a352f62d1a335c7176a45a604e2af5d92b1c4b0e53825c1f20d4e56"],

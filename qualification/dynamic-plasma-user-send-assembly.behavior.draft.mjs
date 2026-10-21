@@ -8,7 +8,7 @@ import { Buffer } from 'node:buffer';
 // generation, Ed25519, signing, transport owner or live operation is used.
 assert.equal(process.argv.length, 2);
 const pins = [
-  ["../src/zenon/transaction-planner.js", 16738, "bbf51fa2fc75df7f69973a89ae275ec709622942444eb30cea0cc9924afbf143"],
+  ["../src/zenon/transaction-planner.js", 20374, "4ef2c72a44d5f0f5ce918172a6ff30b13b693fa173bc74cb56565f5402417c2c"],
   ["../src/zenon/bounded-dynamic-plasma-strategy.js", 15729, "7b82560bdeb25e573912090a2fe8de7b45912500a7a7c4434fe06dcf94e06d62"],
   ["../src/canonical.js", 967, "0d55ddf1727cafb0dcd46df2922305568615552a4d2ae34a5c30e90b9d8d998c"],
   ["../src/x402-wire.js", 39886, "5fba91af5a352f62d1a335c7176a45a604e2af5d92b1c4b0e53825c1f20d4e56"],
@@ -27,15 +27,15 @@ const pins = [
   ["../qualification/dynamic-plasma-required-fused-policy-adapter.behavior.draft.mjs", 17942, "8f641945d9f699579a2440a7c6f90e16c4d1712e0e042e9135f0468a8db514f1"],
   ["../qualification/dynamic-plasma-four-field-strategy.behavior.draft.mjs", 13760, "7d8e8a975aab82f54889d1a9544a25f2a73ce958cd369d4ee76c5c6021787621"],
   ["../qualification/dynamic-plasma-request-bound-policy.behavior.draft.mjs", 26305, "84b6490bfb9a6c5c77bc783c11f08b95d26134b0c0939b2a5c064da8e51a3861"],
-  ["../qualification/dynamic-plasma-user-send-policy.behavior.draft.mjs", 27617, "d5d3b836530d3d47d230577f81a377c337550e61e6d5c724dba11a28928297fa"],
-  ["../qualification/dynamic-plasma-prepared-user-send-fields.behavior.draft.mjs", 23476, "a6824cda4f407b85098c14b99260bd3cd40e59c9dbf93f9b891a383affb4d211"],
-  ["../qualification/dynamic-plasma-user-send-draft.behavior.draft.mjs", 23733, "44de83fbc3ecd6d41352ad39975d803920834753c0c70a447f49f34b7277d0d9"],
+  ["../qualification/dynamic-plasma-user-send-policy.behavior.draft.mjs", 27617, "b28eea5492774c01efc564335ce841177e84eafeb90581a546b0cc20afa81fb0"],
+  ["../qualification/dynamic-plasma-prepared-user-send-fields.behavior.draft.mjs", 23476, "895e79b69ffa68efb4d71bcf0f1168769ec5578a321b65b499ecee520b8d763e"],
+  ["../qualification/dynamic-plasma-user-send-draft.behavior.draft.mjs", 23733, "ba36fe63ab0455d3b38e7f5d86b870cc948b0ba711449277ec123bbd2831c7f7"],
   ["../test-support/phase2a-account-block-preimage.js", 7724, "dde02531faaf3c45c5ab9760beba84fe56664f923c1d61fa64b077682d97dc0e"],
-  ["../qualification/dynamic-plasma-user-send-hash.behavior.draft.mjs", 28034, "cbf9e6f6c07a74ab021cee27ab8bcb2c6f026f0b5c1095af35e022898250884f"],
+  ["../qualification/dynamic-plasma-user-send-hash.behavior.draft.mjs", 28034, "84183ec31555643cb997c85efa8eea8756cb6fc27e3ffce0dbe1e4a706fac039"],
   ["../src/zenon/dynamic-plasma-user-send-work-binding.js", 4522, "218b4391c97e4adde905415e20ec0e2015fca98643db85b6efd682aa3b5c5681"],
-  ["../qualification/dynamic-plasma-user-send-work.behavior.draft.mjs", 24164, "d654c784cbc4167e443d7c7803feee67342821d779e76a6069a410fc58a9e3ab"],
+  ["../qualification/dynamic-plasma-user-send-work.behavior.draft.mjs", 24164, "fc1879600594882341cea31699e90b80fcd3d2c480305ac49e0b1528d609af77"],
   ["../src/zenon/dynamic-plasma-user-send-key-binding.js", 4237, "37ad7e74b038801297e4bffb0cb8ba92cbd79009ed32c4ae5b134fe2cb154be2"],
-  ["../qualification/dynamic-plasma-user-send-key.behavior.draft.mjs", 25162, "0b1409638ca89ce46268932a2286936a9de2b4069b15a0af6d7e3014641c0c9e"],
+  ["../qualification/dynamic-plasma-user-send-key.behavior.draft.mjs", 25162, "91205bb871678f1e24dfa123139bba709ec6df8576fde31c445736f696bc42f6"],
   ["../src/zenon/dynamic-plasma-user-send-assembly.js", 7772, "05012a2a983ceca018674c4d1f63823f3f7ed53b0970a4b4bd486c4278832b04"],
   ["../src/zenon/dynamic-plasma-user-send-work-input.js", 2853, "2ff9c089e5903c059746d0a1c38688a2849f94d04d429279811fbbfbb40450a4"],
 ];

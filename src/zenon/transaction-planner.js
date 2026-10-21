@@ -43,6 +43,11 @@ const NONCE = /^[0-9a-f]{16}$/;
 const PUBLIC_KEY = /^[A-Za-z0-9+/]{43}=$/;
 const TOKEN = /^[\x21-\x7e]{10,128}$/;
 const ZERO_HASH = '0'.repeat(64);
+const SUBJECT_INPUT_FIELDS = freeze([
+  'subjectInputVersion', 'phase', 'paymentRequired', 'accepted', 'payerAddress',
+  'compiledSporkIds', 'accountFrontier', 'momentumAcknowledged',
+]);
+const ACCOUNT_FRONTIER_FIELDS = freeze(['address', 'chainIdentifier', 'hash', 'height']);
 const BINDING_FIELDS = freeze([
   'bindingVersion', 'subject', 'paymentRequired', 'accepted', 'payerAddress', 'compiledSporkIds',
 ]);
@@ -81,6 +86,64 @@ export function assertZenonTransactionPlanner(value) {
     throw new TypeError('ZenonTransactionPlanner.prepareUnsigned() must be implemented');
   }
   return value;
+}
+
+/**
+ * Build the concrete UserSend subject from a selected intent and an explicit
+ * declared account frontier, rather than copying caller-selected transfer or
+ * next-sequence fields. Derive height=frontier.height+1 and previousHash from
+ * the same address/chain-bound declaration. Source: go-zenon
+ * e58d8e80eabd9fd5630ed62e0707424d96b5303c verifier/account_block.go
+ * previous(), plus the existing exact subject and selected-intent contract.
+ *
+ * Null/missing/unavailable frontier is NEVER inferred to mean an empty
+ * account. Only explicit height0+zeroHash DATA can describe an empty frontier;
+ * that declaration is not proof of a new/empty or current account. Every
+ * returned field is detached and the existing complete policy binder checks
+ * the derived subject again. The operation is synchronous, with no caller
+ * callback or await; its UNSIGNED phase is DATA, not authority.
+ *
+ * This does not read account state, authenticate a frontier/acknowledgement,
+ * check funds, run SDK/current-state preparation or a real PREPARE, produce
+ * work, sign, publish, refresh a quote or replace a payment. The planner stub,
+ * active buyer, real signer and independent acceptance gates are unchanged.
+ */
+export function createZenonUserSendSubject(input) {
+  try {
+    if (arguments.length !== 1) rejectBinding();
+    const top = bindingRecord(input, SUBJECT_INPUT_FIELDS);
+    if (top.subjectInputVersion !== 1 || top.phase !== 'UNSIGNED') rejectBinding();
+    const frontier = bindingRecord(top.accountFrontier, ACCOUNT_FRONTIER_FIELDS);
+    positiveInteger(frontier.chainIdentifier);
+    requireHash(frontier.hash);
+    if (!isSafeInteger(frontier.height) || frontier.height < 0 || same(frontier.height, -0)
+        || (frontier.height === 0) !== (frontier.hash === ZERO_HASH)
+        || frontier.address !== top.payerAddress) rejectBinding();
+    const height = frontier.height + 1;
+    positiveInteger(height);
+    const challenge = snapshotJson(top.paymentRequired, 0, { nodes: 512, characters: 32768 });
+    VALIDATE_CHALLENGE(challenge);
+    if (challenge.accepts.length !== 1 || new URL(challenge.resource.url).protocol !== 'https:') rejectBinding();
+    const accepted = SNAPSHOT_REQUIREMENT(top.accepted);
+    if (accepted.network !== EXPERIMENTAL_LIVE_NETWORK
+        || !SAME_REQUIREMENT(accepted, challenge.accepts[0])) rejectBinding();
+    const intentDigest = INTENT_DIGEST(challenge, accepted);
+    const subject = {
+      subjectVersion: 1, version: 1, chainIdentifier: frontier.chainIdentifier,
+      blockType: 2, previousHash: frontier.hash, height,
+      momentumAcknowledged: top.momentumAcknowledged,
+      address: frontier.address, toAddress: accepted.payTo, amount: accepted.amount,
+      tokenStandard: accepted.asset, fromBlockHash: ZERO_HASH,
+      data: Buffer.from(intentDigest, 'hex').toString('base64'),
+    };
+    // Both passes are synchronous and descriptor-closed. The independent
+    // existing binder rechecks all selected intent/profile/payer/spork fields;
+    // no input hook can run between deriving the intent and this final check.
+    return snapshotZenonUserSendPolicyBinding({
+      bindingVersion: 1, subject, paymentRequired: top.paymentRequired, accepted: top.accepted,
+      payerAddress: top.payerAddress, compiledSporkIds: top.compiledSporkIds,
+    }).subject;
+  } catch { rejectBinding(); }
 }
 
 /**
