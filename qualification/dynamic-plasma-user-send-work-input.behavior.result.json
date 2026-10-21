@@ -1,0 +1,619 @@
+{
+  "schemaVersion": 1,
+  "slice": "OCT21_P1_DECLARED_USER_SEND_WORK_INPUT_V1",
+  "status": "SELECTED_LOCAL_WORK_INPUT_REQUEST_AND_REGRESSIONS_PASSED",
+  "baseline": {
+    "repository": "edgepillar/zenon-x402-poc",
+    "commit": "72d68f72817681876ec449d73e88ba615f2ca576",
+    "tree": "90d807fc8138546a4e2d75775c0b1f8cf6ad7213"
+  },
+  "roadmapLane": "P1-A raw DP adapter: concrete work input and original-quote pre-work request before any actual nonce production or SDK preparation.",
+  "implementation": {
+    "workInput": "src/zenon/dynamic-plasma-user-send-work-input.js",
+    "workRequest": "src/zenon/dynamic-plasma-user-send-work-request.js",
+    "sharedConsumer": "src/zenon/dynamic-plasma-user-send-work-binding.js",
+    "projection": "SHA3-256 of exact address20 || previousHash32;52-byte preimage,32-byte digest; original supplied difficulty retained.",
+    "request": "The captured existing draft producer independently binds payment intent, original quote, observed request, price window and selected pair. Its body snapshots synchronously before its returned Promise; only detached draft DATA is read after await.",
+    "stage": "BEFORE_NONCE_GENERATION; draft hash/nonce remain zero placeholders and publicKey/signature remain empty.",
+    "noIntentShortcut": "Work-input equality alone is not a transfer/payment commitment. Different transfers from the same declared account frontier can share it; the intent/price consumer remains mandatory.",
+    "noProduction": "No search, nonce increment/generation, key/signature operation, SDK import/evaluation, current-state preparation, signer or publication capability is added.",
+    "noRewrite": "No caller block, payment, retry, replacement, material or approval argument is accepted by the request producer. Original quote, payment bytes and consumed authority are not changed.",
+    "normativeSource": {
+      "repository": "zenon-network/go-zenon",
+      "commit": "e58d8e80eabd9fd5630ed62e0707424d96b5303c",
+      "method": "pow/pow.go GetAccountBlockHash; types.NewHash uses common/crypto.Hash",
+      "pins": [
+        {
+          "path": "pow/pow.go",
+          "bytes": 2730,
+          "LF": 110,
+          "sha256": "2f8f84a91d0281ad84f787bdb4c4a972f21f2c89206231d0e9e054180bb82249",
+          "gitBlob": "b13cc0eceb1a9841a9fb9cd6f3448f04b7fcde61"
+        },
+        {
+          "path": "common/crypto/hash.go",
+          "bytes": 471,
+          "LF": 32,
+          "sha256": "7b94f17b28e88591846753ddc54a206fd3f2e267d628108c04a0b815fba967ed",
+          "gitBlob": "d7b538496f0cf3dd6499e0e4ea76dd4ebb1f290b"
+        },
+        {
+          "path": "common/types/hash.go",
+          "bytes": 1679,
+          "LF": 93,
+          "sha256": "6fcf015180e1fe10dc97a8d4b7fbf4deb2c8edbbcf9e895410ac613a7f25c12d",
+          "gitBlob": "b9f52e57fdbd8f59d31650e7581225f374bcc49c"
+        },
+        {
+          "path": "chain/nom/account_block.go",
+          "bytes": 13686,
+          "LF": 447,
+          "sha256": "ac3fa4c6c159a8e5f79a184a4fbde9585e36055ee5ef88ad691af4cdd81a8817",
+          "gitBlob": "996e0a3faa19ea45554893a31cf869fba7679db7"
+        },
+        {
+          "path": "verifier/account_block.go",
+          "bytes": 13161,
+          "LF": 495,
+          "sha256": "1e25042eb00afbd71f43981c4a94ce9341bf45bd80bd14f994952c0d513c70f3",
+          "gitBlob": "c5c7ac5f791142d07b083ecd6d8a913e79a0bd07"
+        }
+      ],
+      "execution": "NOT_RUN"
+    },
+    "noActivation": "Both new modules remain separately imported/default-off. Active buyer, planner stub, SDK, real signer, owners, controllers, network, schemas and operational entrypoints are unchanged."
+  },
+  "sourceReview": {
+    "exactPins": [
+      {
+        "path": "src/zenon/transaction-planner.js",
+        "bytes": 16738,
+        "LF": 356,
+        "sha256": "bbf51fa2fc75df7f69973a89ae275ec709622942444eb30cea0cc9924afbf143",
+        "gitBlob": "626d35f38609dfab02344d2a4878a815797e7e62"
+      },
+      {
+        "path": "src/zenon/bounded-dynamic-plasma-strategy.js",
+        "bytes": 15729,
+        "LF": 353,
+        "sha256": "7b82560bdeb25e573912090a2fe8de7b45912500a7a7c4434fe06dcf94e06d62",
+        "gitBlob": "ee85b7a4da8bf4190ae099e6bc5074059fccebbc"
+      },
+      {
+        "path": "src/canonical.js",
+        "bytes": 967,
+        "LF": 26,
+        "sha256": "0d55ddf1727cafb0dcd46df2922305568615552a4d2ae34a5c30e90b9d8d998c",
+        "gitBlob": "5367f9c72ee13017a61630e1f0cffdced21d52c4"
+      },
+      {
+        "path": "src/x402-wire.js",
+        "bytes": 39886,
+        "LF": 934,
+        "sha256": "5fba91af5a352f62d1a335c7176a45a604e2af5d92b1c4b0e53825c1f20d4e56",
+        "gitBlob": "fb060d4e349b1c31a1219a0cc137af250a8a2291"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-required-fused-policy-adapter.js",
+        "bytes": 12024,
+        "LF": 272,
+        "sha256": "e2b693d4df9065d44ba590f4d0c8dffeb8e55187668eedfa396b4026c9905c3e",
+        "gitBlob": "b592aafd4c41461318376ea9acc1373f99317455"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-observation-collector.js",
+        "bytes": 35157,
+        "LF": 885,
+        "sha256": "d614506b0054a87fe553cc79812b7e5355bea924bd3654902026ece58e796eb8",
+        "gitBlob": "faad8e8975dcd30c861c7f9970157d59c2c39fc6"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-observation-normalizer.js",
+        "bytes": 28398,
+        "LF": 698,
+        "sha256": "2c3f7d42ded21a5513ff26c23a00a35a53aa334f053d10930f1571a020286897",
+        "gitBlob": "c406db8471aa6c8afd812c222c673c809491cf00"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-json-rpc-read-transport.js",
+        "bytes": 10832,
+        "LF": 283,
+        "sha256": "fd03b2ad87d16660aa61d3961c163d724d5f89cd6d4bb9c4391d739566d5e5ca",
+        "gitBlob": "0475b7ab42889f67fb030fa7344d73d8bd6957d7"
+      },
+      {
+        "path": "src/zenon/bounded-json-rpc-read-core.js",
+        "bytes": 20906,
+        "LF": 563,
+        "sha256": "5572d24175455c6b3a9924688d601d31585454ce62dac9eb27151d2a65c83fcd",
+        "gitBlob": "c0266d1367f842d502f48e6c230611b85320cb0f"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-price-policy.js",
+        "bytes": 14957,
+        "LF": 418,
+        "sha256": "41e2e2044597cfa69c5adca292bcd762a189076be1cd939bec10798d7e35c52b",
+        "gitBlob": "ed505153487adb5284d895c922641b6de5d9caf8"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-compatibility.js",
+        "bytes": 7732,
+        "LF": 225,
+        "sha256": "b3989ce15e5f2e9d07b0ed035fe96bcce9f22cac93f5e497fdca5c37bf7618dd",
+        "gitBlob": "3811b748b3f905e454c8a4af4650bb7f89eb1cf2"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-required-fused-quote.js",
+        "bytes": 5416,
+        "LF": 133,
+        "sha256": "f5e10ff2dbfff3b6b63d87f0abadd0bb52b5d6b8fe0ead6a55fc5ea14207b730",
+        "gitBlob": "e820fd31ffde4ef77a2efa6e1fd3ed1775778726"
+      },
+      {
+        "path": "src/zenon/plasma-strategy.js",
+        "bytes": 974,
+        "LF": 32,
+        "sha256": "1c597d4e169ba8a5e6d2b7852c4ffa3a8ec9b854332fe354b9b013c36ebae093",
+        "gitBlob": "5cddc2d270aaf043e6e43145e95ffe0be3dde475"
+      },
+      {
+        "path": "package.json",
+        "bytes": 1413,
+        "LF": 40,
+        "sha256": "8c9a25504fbf6f87c31cdf245a6f4eec5a88cc89c8352151dc66a577c5771ef5",
+        "gitBlob": "ec7193f6fd76f34778515079dc777594175c4c34"
+      },
+      {
+        "path": "test/dynamic-plasma-price-policy.test.js",
+        "bytes": 28827,
+        "LF": 639,
+        "sha256": "ab6591d268744f611bd5f04f3c199ee53dcf45d871e0b89ac49c57f4981039b5",
+        "gitBlob": "24df572e87893f81bcc988932206b02ad3d96be3"
+      },
+      {
+        "path": "qualification/dynamic-plasma-price-policy-frontier-binding.behavior.draft.mjs",
+        "bytes": 8745,
+        "LF": 212,
+        "sha256": "d7f672ee4464bd002e893e231dec5acc85785db2407f7df25fa601d74f972409",
+        "gitBlob": "ad7bccd414b6317885f7d8a7c90c57e53bb40279"
+      },
+      {
+        "path": "qualification/dynamic-plasma-required-fused-policy-adapter.behavior.draft.mjs",
+        "bytes": 17942,
+        "LF": 375,
+        "sha256": "8f641945d9f699579a2440a7c6f90e16c4d1712e0e042e9135f0468a8db514f1",
+        "gitBlob": "65cd274dd9d2dd1a7b6223ad009154cc89377d27"
+      },
+      {
+        "path": "qualification/dynamic-plasma-four-field-strategy.behavior.draft.mjs",
+        "bytes": 13760,
+        "LF": 281,
+        "sha256": "7d8e8a975aab82f54889d1a9544a25f2a73ce958cd369d4ee76c5c6021787621",
+        "gitBlob": "d0f37a3d4dc2f06cd66e4eb202b8cb0bf8bd6278"
+      },
+      {
+        "path": "qualification/dynamic-plasma-request-bound-policy.behavior.draft.mjs",
+        "bytes": 26305,
+        "LF": 485,
+        "sha256": "84b6490bfb9a6c5c77bc783c11f08b95d26134b0c0939b2a5c064da8e51a3861",
+        "gitBlob": "ef9a27a2d76bb47b75c5c5652740410cc366af02"
+      },
+      {
+        "path": "qualification/dynamic-plasma-user-send-policy.behavior.draft.mjs",
+        "bytes": 27617,
+        "LF": 466,
+        "sha256": "d5d3b836530d3d47d230577f81a377c337550e61e6d5c724dba11a28928297fa",
+        "gitBlob": "e931840dcedf0473b03725693e6bc99b96e2a71a"
+      },
+      {
+        "path": "qualification/dynamic-plasma-prepared-user-send-fields.behavior.draft.mjs",
+        "bytes": 23476,
+        "LF": 377,
+        "sha256": "a6824cda4f407b85098c14b99260bd3cd40e59c9dbf93f9b891a383affb4d211",
+        "gitBlob": "5d4525a9dee1680574be64226d40dfc9d9c8c702"
+      },
+      {
+        "path": "qualification/dynamic-plasma-user-send-draft.behavior.draft.mjs",
+        "bytes": 23733,
+        "LF": 380,
+        "sha256": "44de83fbc3ecd6d41352ad39975d803920834753c0c70a447f49f34b7277d0d9",
+        "gitBlob": "855e408b395a3b156c8f09608329458d0634494e"
+      },
+      {
+        "path": "test-support/phase2a-account-block-preimage.js",
+        "bytes": 7724,
+        "LF": 210,
+        "sha256": "dde02531faaf3c45c5ab9760beba84fe56664f923c1d61fa64b077682d97dc0e",
+        "gitBlob": "a6a48b0ea2f105a3bcc82c76fe02531eea18f8e0"
+      },
+      {
+        "path": "qualification/dynamic-plasma-user-send-hash.behavior.draft.mjs",
+        "bytes": 28034,
+        "LF": 454,
+        "sha256": "cbf9e6f6c07a74ab021cee27ab8bcb2c6f026f0b5c1095af35e022898250884f",
+        "gitBlob": "99e03ea983b1df0caec72b3522c764ba5b5c2351"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-user-send-work-binding.js",
+        "bytes": 4522,
+        "LF": 98,
+        "sha256": "218b4391c97e4adde905415e20ec0e2015fca98643db85b6efd682aa3b5c5681",
+        "gitBlob": "1591c6fd60e90713fbec9b4249a69c1e5626405e"
+      },
+      {
+        "path": "qualification/dynamic-plasma-user-send-work.behavior.draft.mjs",
+        "bytes": 24164,
+        "LF": 422,
+        "sha256": "d654c784cbc4167e443d7c7803feee67342821d779e76a6069a410fc58a9e3ab",
+        "gitBlob": "7bfe2e06ff0cb373b25d8500e21e8048322de22f"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-user-send-key-binding.js",
+        "bytes": 4237,
+        "LF": 91,
+        "sha256": "37ad7e74b038801297e4bffb0cb8ba92cbd79009ed32c4ae5b134fe2cb154be2",
+        "gitBlob": "c366f0fee4132604b40604547fe22f1bc1dba65d"
+      },
+      {
+        "path": "qualification/dynamic-plasma-user-send-key.behavior.draft.mjs",
+        "bytes": 25162,
+        "LF": 439,
+        "sha256": "0b1409638ca89ce46268932a2286936a9de2b4069b15a0af6d7e3014641c0c9e",
+        "gitBlob": "d06771b0ecfc77f58dd471e056232da6b642dc46"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-user-send-assembly.js",
+        "bytes": 7772,
+        "LF": 162,
+        "sha256": "05012a2a983ceca018674c4d1f63823f3f7ed53b0970a4b4bd486c4278832b04",
+        "gitBlob": "a0537856f6692d278c9043ab9c1c734d1bde61ba"
+      },
+      {
+        "path": "qualification/dynamic-plasma-user-send-assembly.behavior.draft.mjs",
+        "bytes": 29723,
+        "LF": 493,
+        "sha256": "f18951d6a475c29e1a651828e6f8ecbed60e257c12c75d6173083d18c009b953",
+        "gitBlob": "df3f5b952813b15413155ebb3915ecbc122402e6"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-user-send-work-input.js",
+        "bytes": 2853,
+        "LF": 59,
+        "sha256": "2ff9c089e5903c059746d0a1c38688a2849f94d04d429279811fbbfbb40450a4",
+        "gitBlob": "dad4febf4ef6f09216640245c7e3805e01ad0127"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-user-send-work-request.js",
+        "bytes": 2564,
+        "LF": 50,
+        "sha256": "bc66c7d629eae230c46f62c88fa97960860d94b5d65d3c5611612ccae13fe9ce",
+        "gitBlob": "d4e9731b0af82a892226c2817e9d5a5273b39599"
+      },
+      {
+        "path": "qualification/dynamic-plasma-user-send-work-input.behavior.draft.mjs",
+        "bytes": 27254,
+        "LF": 426,
+        "sha256": "51edfef5f873865271199057815bab1f7887d4be53ba649730262cf149b3c959",
+        "gitBlob": "6a8793b680bdde440490ac62ac1e536d5c5d7a29"
+      }
+    ],
+    "workConsumerInverseVerified": true,
+    "inverse": "Restoring only its original import, captured name and inline work-data hash expression recovers the prior consumer byte-for-byte. The unsigned hash check, zero-difficulty skip, nonce predicate, LE64 threshold and receipts are otherwise unchanged.",
+    "old118ScenarioBodiesUnchanged": true,
+    "guardChanges": [
+      {
+        "path": "qualification/dynamic-plasma-user-send-work.behavior.draft.mjs",
+        "before": {
+          "bytes": 24031,
+          "LF": 421,
+          "sha256": "9add5dda433075ad8fa810f86588c76e1353aa246e92ef8426ad0b76b9963e0a",
+          "gitBlob": "05b8659ebecb4c58322ae6b5f1d34a45804a71c3"
+        },
+        "after": {
+          "bytes": 24164,
+          "LF": 422,
+          "sha256": "d654c784cbc4167e443d7c7803feee67342821d779e76a6069a410fc58a9e3ab",
+          "gitBlob": "7bfe2e06ff0cb373b25d8500e21e8048322de22f"
+        },
+        "allBytesOutsidePinArrayUnchanged": true
+      },
+      {
+        "path": "qualification/dynamic-plasma-user-send-key.behavior.draft.mjs",
+        "before": {
+          "bytes": 25029,
+          "LF": 438,
+          "sha256": "8c0c264dc2c718c0026ccc328614a8e60036c870631d8f10b54612fe22c6d404",
+          "gitBlob": "701be585b462d70f73ec547b2198984fea755eff"
+        },
+        "after": {
+          "bytes": 25162,
+          "LF": 439,
+          "sha256": "0b1409638ca89ce46268932a2286936a9de2b4069b15a0af6d7e3014641c0c9e",
+          "gitBlob": "d06771b0ecfc77f58dd471e056232da6b642dc46"
+        },
+        "allBytesOutsidePinArrayUnchanged": true
+      },
+      {
+        "path": "qualification/dynamic-plasma-user-send-assembly.behavior.draft.mjs",
+        "before": {
+          "bytes": 29590,
+          "LF": 492,
+          "sha256": "a1bcedc15a58ddb90ad1f3416d2241cada5d3f0cde998862ff597cec1b9f09b6",
+          "gitBlob": "725bd9dac302483cf7a22c5851e12501cac0b97c"
+        },
+        "after": {
+          "bytes": 29723,
+          "LF": 493,
+          "sha256": "f18951d6a475c29e1a651828e6f8ecbed60e257c12c75d6173083d18c009b953",
+          "gitBlob": "df3f5b952813b15413155ebb3915ecbc122402e6"
+        },
+        "allBytesOutsidePinArrayUnchanged": true
+      }
+    ],
+    "guardSemantics": "Only3 source-pin arrays changed, retaining all prior path rows and adding the new shared work-input dependency. Existing exact export-count/loop/generator-isolation assertions are unchanged.",
+    "historicalResults": "All earlier result JSONs retain their original bytes and source bindings; they are not relabeled as current-head results."
+  },
+  "qualification": {
+    "completedAt": 1792542351.6691961,
+    "runtime": {
+      "node": "24.19.0",
+      "platform": "darwin",
+      "arch": "arm64",
+      "nodeSHA256": "ab982ffe2d922fd0625872f3474c4264ad09b04ab0a375eb3e77dac92f64508a"
+    },
+    "counts": {
+      "tests": 130,
+      "suites": 0,
+      "pass": 130,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "selection": {
+      "retainedChangedGraphAssertions": 118,
+      "newAssertions": 12,
+      "entry": "qualification/dynamic-plasma-user-send-work-input.behavior.draft.mjs"
+    },
+    "passNames": [
+      "shared instant math keeps legacy classifier and RPC boundaries",
+      "integer frontier bounds use explicit rate and advance count",
+      "bounded allocations obey fusion and difficulty budgets",
+      "receipts are fresh frozen serializable declared bindings",
+      "concrete unsigned strategy uses the real policy and base",
+      "current context rejects stale regressing and mismatched plans",
+      "validation requires the exact original selected fields",
+      "hostile records fail without traps getters or coercion",
+      "public numbers and bounded arithmetic reject unsafe values",
+      "unavailable data and non-unsigned phases grant no authority",
+      "identical origin frontier accepts sufficient pools for fusion-only and hybrid plans",
+      "same height and hash refuse changed fusion or work prices through all entry points",
+      "age one and two refuse reuse of the origin hash through all entry points",
+      "distinct hashes at age one and two preserve planned fields and no-authority labels",
+      "four-field policy adapter shares exact fusion-only planner and validator fields",
+      "four-field policy headroom stays distinct from observed total across two advances",
+      "four-field policy hybrid plan never attaches fused-only total alongside PoW",
+      "four-field policy refuses missing or inconsistent current and original totals",
+      "four-field policy binds stable observed frontier and refuses unsupported admission",
+      "four-field policy rebuild refuses changed bindings and nested receipt tampering",
+      "four-field policy delegates stale resource and price bounds without refreshing authority",
+      "four-field policy validator requires the original selected pair not a fresh recommendation",
+      "four-field policy hostile records and unsafe primitives refuse without invoking hooks",
+      "four-field policy detached DATA roundtrips preserve explicit version and no-action labels",
+      "four-field strategy explicitly dispatches real SPI quote and apply to the shared adapter",
+      "four-field strategy preserves original headroom and hybrid pairs across declared advances",
+      "four-field strategy refuses inconsistent totals and never downgrades missing fields",
+      "four-field strategy isolates legacy receipts and rechecks current declared bindings",
+      "four-field strategy requires exact unsigned version and arity without payment authority",
+      "four-field strategy rejects hostile context descriptors without invoking hooks",
+      "request-bound consumer connects the real collector normalizer SPI and shared validator",
+      "request-bound consumer rejects coherent foreign request snapshots through all entry points",
+      "request-bound consumer independently binds declared profile genesis and compiled spork identities",
+      "request-bound consumer prevents cross-request receipt reuse without treating coherent DATA as authority",
+      "request-bound consumer matches policy p to declared variables and refuses changed pricing context",
+      "request-bound consumer preserves original budgeted fields through the declared advance window",
+      "request-bound consumer keeps hybrid fields distinct from the fusion-only total target",
+      "request-bound consumer rejects altered context receipt and nested policy DATA",
+      "request-bound consumer detaches snapshots and preserves JSON receipts without refreshing authority",
+      "request-bound consumer requires explicit selectors raw schema unsigned SPI and isolated receipt versions",
+      "request-bound consumer rejects unavailable incoherent and pre-DP endpoint evidence before policy use",
+      "request-bound consumer rejects hostile expected observed and receipt records without invoking hooks",
+      "UserSend pricing derives the exact subject and intent before the existing shared policy",
+      "UserSend pricing refuses payer recipient amount asset chain and intent mismatches",
+      "UserSend pricing binds account sequence fields even when the RPC request is unchanged",
+      "UserSend pricing binds the selected resource and complete accepted intent without replacement authority",
+      "UserSend pricing requires the subject acknowledgement at the original quoted Momentum",
+      "UserSend pricing preserves original fields and rejects stale resources prices runtime or policy",
+      "UserSend pricing keeps hybrid selected fields separate from the fusion-only total",
+      "UserSend pricing accepts only the existing selected single-offer upfront view",
+      "UserSend pricing isolates receipt versions and refuses outer or inner tampering",
+      "UserSend binding snapshots and JSON receipts remain detached and do not reset authority",
+      "UserSend binding rejects hostile records descriptors arrays and coercion without invoking hooks",
+      "UserSend binding keeps typed bounds unsigned phases arity and unfinished preparation gates explicit",
+      "Prepared UserSend binds the actual detached unsigned fields to intent and original price selection",
+      "Prepared UserSend refuses changed payment and account fields despite a separately valid pair",
+      "Prepared UserSend validates actual Plasma fields and never substitutes a fusion-only total for hybrid",
+      "Prepared UserSend enforces unsigned exact JSON syntax without claiming work or public-key verification",
+      "Prepared UserSend retains original acknowledgement while rechecking current price resource and age bounds",
+      "Prepared UserSend commits all reported fields and detaches snapshots without authenticating preparation",
+      "Prepared UserSend refuses hostile descriptors proxies and coercion before invoking any hook",
+      "Prepared UserSend keeps phase arity receipt and no-authority boundaries with preparation still unimplemented",
+      "Unsigned UserSend producer assembles the original selected pair into the exact raw block",
+      "Unsigned UserSend producer carries hybrid headroom rather than the fusion-only total",
+      "Unsigned UserSend producer retains original acknowledgement and selection without refreshing quotes",
+      "Unsigned UserSend producer refuses expired resources prices policy and changed intent bindings",
+      "Unsigned UserSend producer detaches deterministic drafts and never mutates retained inputs",
+      "Unsigned UserSend producer uses captured pure stages without virtual wallet or preparer callbacks",
+      "Unsigned UserSend producer refuses hostile inputs without getters proxy traps or coercion",
+      "Unsigned UserSend producer exposes only the pre-work stage and never accepts a prior payment for rewriting",
+      "Unsigned UserSend hash matches the retained independent306-byte preimage without importing SDK",
+      "Unsigned UserSend hash rejects draft placeholders still accepted by the field-only consumer",
+      "Unsigned UserSend hash covers every encoded payment account acknowledgement and Plasma field",
+      "Unsigned UserSend hash match alone cannot replace the independently bound payment or selected pair",
+      "Unsigned UserSend hash and price binding preserves original fields through admitted current advances",
+      "Unsigned UserSend hash binding keeps hybrid selection separate from fusion-only target and work proof",
+      "Unsigned UserSend hash encoding preserves safe uint64 and uint256 boundaries without coercion",
+      "Unsigned UserSend hash excludes public key but refuses signatures without claiming key or work validity",
+      "Unsigned UserSend hash cores reuse closed address validation and require canonical ZTS checksum",
+      "Unsigned UserSend hash rejects hostile data descriptors proxies and hooks before native hashing",
+      "Unsigned UserSend hash consumer keeps exact arity phases receipt separation and no-authority labels",
+      "Unsigned UserSend draft to hash consumer uses detached declared fields without work or wallet callbacks",
+      "declared work validates the supplied hash and fixed nonce against the pinned LE64 predicate",
+      "declared work uses exact fixed nonce bytes and unsigned threshold arithmetic without searching",
+      "declared work rejects hash-correct arbitrary high-difficulty nonces that the hash-only path accepts",
+      "declared work requires the actual block hash and never repairs stale or changed supplied bytes",
+      "declared zero difficulty skips the nonce predicate without claiming sufficient Plasma or work",
+      "work binding reuses the real intent hash and original price selection for the same detached block",
+      "work binding rejects invalid hybrid work even when actual fields and original price selection match",
+      "work consistency alone cannot replace independently bound payment selected fields or current price limits",
+      "work binding uses the captured implementation without virtual preparer signer or work callbacks",
+      "work APIs reject hostile descriptors proxies unsafe difficulty and arity without invoking hooks",
+      "work binding retains the pre-await checked bytes and returns detached serializable data without authority",
+      "work module stays opt-in fixed-cost and separate from generators owners SDK signing and publication",
+      "public-key binding matches the exact supplied bytes to the actual UserSend payer address",
+      "public-key binding rejects missing or substituted keys still accepted by hash and nonce checks",
+      "public-key binding requires the actual payer address rather than an independently valid key",
+      "public-key binding preserves canonical key syntax empty-signature and exact-field requirements",
+      "public-key byte mapping does not establish curve validity key possession or signing authority",
+      "key and price binding consumes the same original hash nonce intent and selected Plasma fields",
+      "matching public bytes cannot replace the independently selected payment or original allocation",
+      "matching public bytes do not bypass nonce validation or original quote price-window guards",
+      "public-key APIs reject hostile key address context descriptors proxies and providers without callbacks",
+      "public-key APIs enforce exact arity phases and receipt separation without resetting authority",
+      "key and price binding retains detached pre-await public bytes without rereading mutated caller input",
+      "public-key module remains a fixed-size opt-in hash mapping without key signature or runtime machinery",
+      "unsigned assembly builds a fresh fully checked declared block from original context quote and supplied bytes",
+      "shared unsigned hash computation materializes the exact306-byte recipe without rewriting caller fields",
+      "unsigned assembly accepts only exact supplied material and never a caller block hash or signature for replacement",
+      "unsigned assembly snapshots all context quote and material data before the first await",
+      "unsigned assembly refuses a supplied key that does not match the independently selected payer",
+      "unsigned assembly preserves original headroom and acknowledgement through admitted declared price advances",
+      "unsigned assembly refuses stale exhausted and misbound inputs without refreshing the original quote",
+      "unsigned assembly never returns an accepted hybrid block with hash-correct but invalid supplied work",
+      "unsigned assembly retains the existing normalizer maximum spork-list shape within bounded snapshots",
+      "unsigned assembly rejects hostile descriptors proxies cycles and excessive data without invoking hooks",
+      "unsigned assembly uses captured pure stages rather than overridden preparer or wallet callbacks",
+      "unsigned assembly keeps arity phase immutable result and default-off non-preparation boundaries",
+      "work request produces the original selected hybrid difficulty and exact52-byte work input before nonce generation",
+      "shared work input matches independent address-frontier hashing and the existing fixed-nonce verifier",
+      "fusion-only work request flows into the existing unsigned assembler without pretending to generate work",
+      "work request retains original selection and acknowledgement across the admitted declared price window",
+      "work request refuses stale price exhausted budget and intent changes without refreshing its quote",
+      "work request snapshots through the captured synchronous draft before its first await",
+      "work input rejects hostile exact-field data unsafe numbers signatures and arity without hooks",
+      "work request rejects hostile context quote phases and arity without invoking callbacks",
+      "work request uses the captured draft implementation rather than an overridden preparer",
+      "work request never accepts a caller block material payment or replacement argument",
+      "work input equality is not an intent commitment and cannot bypass original request binding",
+      "work input and request stay frozen serializable default-off DATA without native SDK generator or signing machinery"
+    ],
+    "graph": {
+      "exactFiles": 33,
+      "totalSourceBytes": 545543,
+      "newNativeOrThirdPartyImports": false
+    },
+    "positiveScope": [
+      "Actual declared hybrid work request carries the original selected difficulty and exact work digest.",
+      "Independent52-byte hash oracle agrees with the shared projection and existing verifier using a fixed supplied nonce at declared difficulty1; no nonce search occurs.",
+      "Fusion-only request flows into the existing raw unsigned assembler with unchanged subject, intent, selected fields and acknowledgement.",
+      "Original hybrid selection survives coherent declared price changes through the admitted two-Momentum window.",
+      "Inputs are snapshotted before first await and results remain detached, frozen and JSON serializable."
+    ],
+    "negativeScope": [
+      "Stale or over-bound prices, coherent exhausted available pool, changed budget/resource/recipient and replaced quote refuse.",
+      "Descriptors, proxies, unsafe numeric forms, bad checksum/fields/signature syntax and wrong arity refuse without caller hooks.",
+      "Captured draft implementation prevents virtual preparer callback substitution.",
+      "No prior block, material, retry or payment can be passed as a replacement argument; work-input equality cannot bypass independent intent binding."
+    ],
+    "notPositiveHybridEvidence": "A pre-work hybrid DATA request is not a found nonce or accepted hybrid assembly. The existing negative hash-correct/invalid-nonce path is retained. No actual work producer was run.",
+    "launch": {
+      "form": "One explicit CommonJS node:test run API call, exact positional entry, isolation:none, concurrency:false, no discovery, no --input-type.",
+      "environment": "env -i TZ=UTC LANG=C LC_ALL=C",
+      "permissions": "--permission plus only33 explicit --allow-fs-read=<repository-root>/<exactPins.path> grants; --disallow-code-generation-from-strings --no-addons --no-warnings. No directory, fs-write, child or worker grant.",
+      "builtins": "Existing reviewed graph plus node:test, node:test/reporters and node:stream for the inline joined caller.",
+      "inlineCallerReconstruction": {
+        "purpose": "Exact provenance recipe, not a saved/installed operational helper.",
+        "prefix": "process.exitCode = 125;\nconst { run } = require('node:test');\nconst { tap } = require('node:test/reporters');\nconst { Writable, pipeline, finished } = require('node:stream');\n",
+        "selectionConstruction": "'const selections = ' + JSON.stringify({[qualification.selection.entry]: qualification.passNames}, null, 2) + ';'",
+        "suffix": "\nlet selected = 'unselected';\n(async () => {\n  if (process.versions.node !== '24.19.0' || process.argv.length !== 2\n      || process.platform !== 'darwin' || process.arch !== 'arm64') throw Error('RUNTIME_OR_ARGUMENTS');\n  selected = Object.keys(selections).find(p => process.argv[1] === process.cwd() + '/' + p);\n  if (!selected) { selected = 'unselected'; throw Error('SELECTION'); }\n  const expected = selections[selected], seen = new Set(), reported = new Set();\n  const counts = new Map(), plans = [];\n  let bad = false, ended = false, reporterDone = false, versions = 0, bytes = 0, pending = '';\n  const known = name => expected.includes(name);\n  process.stdout.write('# entry ' + selected + '\\n# Node ' + process.versions.node\n    + ' platform=' + process.platform + ' arch=' + process.arch + '\\n');\n  function safeLine(line) {\n    let match;\n    if (line === 'TAP version 13') { versions++; return line; }\n    if ((match = /^# Subtest: (.+)$/.exec(line))) {\n      if (known(match[1])) return line;\n      bad = true;\n    } else if ((match = /^(ok|not ok) \\d+ - (.+)$/.exec(line))) {\n      if (!known(match[2]) || reported.has(match[2]) || match[1] !== 'ok') bad = true;\n      if (known(match[2])) { reported.add(match[2]); return line; }\n    } else if ((match = /^1\\.\\.(\\d+)$/.exec(line))) {\n      plans.push(Number(match[1])); return line;\n    } else if ((match = /^# (tests|suites|pass|fail|cancelled|skipped|todo) (\\d+)$/.exec(line))) {\n      if (counts.has(match[1])) bad = true;\n      counts.set(match[1], Number(match[2])); return line;\n    } else if (/^Bail out!/.test(line)) bad = true;\n    return null; // Do not publish physical locations, stacks or arbitrary diagnostics.\n  }\n  const source = run({\n    files: [process.argv[1]], isolation: 'none', concurrency: false,\n    timeout: 5000, forceExit: false, watch: false,\n  });\n  source.on('test:pass', data => {\n    if (!known(data.name) || seen.has(data.name) || data.nesting !== 0\n        || (data.skip !== undefined && data.skip !== false)\n        || (data.todo !== undefined && data.todo !== false)) bad = true;\n    seen.add(data.name);\n  });\n  source.on('test:fail', () => { bad = true; });\n  source.on('error', () => { bad = true; });\n  source.once('end', () => { ended = true; });\n  const sourceDone = new Promise(resolve => {\n    finished(source, { writable: false }, error => { if (error) bad = true; resolve(); });\n  });\n  const sink = new Writable({\n    write(chunk, encoding, callback) {\n      try {\n        bytes += Buffer.byteLength(chunk);\n        if (bytes > 65536) throw Error('REPORTER_CAP');\n        pending += String(chunk);\n        const lines = pending.split('\\n'); pending = lines.pop();\n        const safe = lines.map(safeLine).filter(line => line !== null);\n        if (safe.length) process.stdout.write(safe.join('\\n') + '\\n', callback);\n        else callback();\n      } catch { callback(Error('REPORTER_FAILED')); }\n    },\n    final(callback) { if (pending !== '') bad = true; callback(); },\n  });\n  const reporter = source.compose(tap);\n  const reportDone = new Promise(resolve => {\n    pipeline(reporter, sink, error => { reporterDone = !error; if (error) bad = true; resolve(); });\n  });\n  await Promise.all([sourceDone, reportDone]);\n  const zero = ['suites', 'fail', 'cancelled', 'skipped', 'todo'];\n  if (bad || !ended || !reporterDone || versions !== 1 || plans.length !== 1\n      || plans[0] !== expected.length || seen.size !== expected.length\n      || reported.size !== expected.length || !expected.every(name => seen.has(name) && reported.has(name))\n      || counts.get('tests') !== expected.length || counts.get('pass') !== expected.length\n      || !zero.every(key => counts.get(key) === 0)\n      || process.exitCode !== 125) throw Error('INCOMPLETE_OR_UNEXPECTED_RESULTS');\n  process.exitCode = 0;\n  process.stdout.write('# qualification PASS ' + selected + '\\n');\n})().catch(() => {\n  if ([undefined, 0, 125].includes(process.exitCode)) process.exitCode = 1;\n  process.stderr.write('qualification caller failed\\n');\n  process.stdout.write('# qualification FAIL ' + selected + '\\n');\n});",
+        "byteEqualityToActualCallerIndependentlyChecked": true
+      },
+      "join": "Both test-event source and TAP reporter pipeline must finish. Every authored name must appear once as an actual pass and once in TAP; one plan and all7 counters must match before exit0.",
+      "managerMetadata": "context, exact launch and exact selection are separate bounded records; all JSON payload sizes are checked before opening the task."
+    },
+    "actual": {
+      "nativeCommands": 1,
+      "state": "COMPLETE",
+      "actualExit": 0,
+      "outputComplete": true,
+      "reason": null
+    },
+    "streams": {
+      "stdout": {
+        "bytes": 26591,
+        "sha256": "5d4f6729865d63c68fc6e378d615a2960f509cc9b1f54d6ba7acc98dcb9c8c64"
+      },
+      "stderr": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    "retention": "Full streams remain protected private CAS objects referenced by the successful closed task; this result stores only stream bytes/SHA-256, not a second TAP copy or ZIP.",
+    "independentlyVerified": "Primary read the complete task, actual command argv, context, launch, selection, source-after, outcome, close, cleanup, CAS ownership/creator records and full stdout/stderr; all130 actual names matched authored selection, exact source/runtime/helper/store bindings remained unchanged.",
+    "limits": {
+      "perSourceBytes": 65536,
+      "totalSourceBytesCap": 589824,
+      "stdoutBytesCap": 65536,
+      "expectedTaskBytes": 4194304,
+      "taskQuotaBytes": 8388608,
+      "managerTimeoutSeconds": 30,
+      "nodeTestTimeoutMs": 5000,
+      "minimumFreeSpaceGiB": 10
+    },
+    "caveat": "Node loader/test/stream/native behavior is a premise. Permission flags, timeout, sampled quotas and an empty post-run process-group observation are not an OS/network sandbox or hard lifetime/cancellation/native-cleanup proof. Managed close cleaned only this task's empty registered disposable scratch,0 bytes; historical evidence and CAS objects were not cleaned."
+  },
+  "publicationBoundary": {
+    "modified": [
+      "src/zenon/dynamic-plasma-user-send-work-binding.js",
+      "qualification/dynamic-plasma-user-send-work.behavior.draft.mjs",
+      "qualification/dynamic-plasma-user-send-key.behavior.draft.mjs",
+      "qualification/dynamic-plasma-user-send-assembly.behavior.draft.mjs"
+    ],
+    "added": [
+      "src/zenon/dynamic-plasma-user-send-work-input.js",
+      "src/zenon/dynamic-plasma-user-send-work-request.js",
+      "qualification/dynamic-plasma-user-send-work-input.behavior.draft.mjs",
+      "qualification/dynamic-plasma-user-send-work-input.behavior.result.json"
+    ],
+    "removed": [],
+    "excluded": [
+      "src/zenon/dynamic-plasma-https-observation-owner.js",
+      "qualification/dynamic-plasma-collection-input.behavior.draft.mjs",
+      "qualification/dynamic-plasma-collection-input.behavior.result.json"
+    ],
+    "CI": "NOT_RUN; no green hosted, suite, native owner or release claim",
+    "activation": "NONE"
+  },
+  "remainingGates": [
+    "Actual SDK/current-account-state preparation remains separately unimplemented/unqualified.",
+    "No actual work/nonce producer, payer key possession or signature validation/signing authority is established.",
+    "Independent current context/funding, payer/provider/policy authority and real provider READY remain separate.",
+    "Current binary/genesis/sporks/runtime p, authenticated chain evidence and actual DP preparation/work/signing/inclusion price movement remain unqualified.",
+    "Original signed bytes/hash custody, durable commit uncertainty, actual restart/recovery and same-payment pending composition remain separate gates.",
+    "Live credit/service acceptance and production readiness remain NOT_ESTABLISHED.",
+    "The unchanged local HTTPS-owner lifecycle candidate remains unexecuted and unpublished."
+  ],
+  "protectedTotals": {
+    "consumedAdmissions": 2,
+    "actualPrepare": 1,
+    "bundles": 0,
+    "nativeChainProviderQualificationRuns": 0
+  },
+  "preserved": {
+    "realSigner": "DISABLED",
+    "originalPaymentRequestBytesHashPayloadRequirementsContext": "UNCHANGED",
+    "consumedAuthority": "NOT_RESET",
+    "pr193": "VALIDATED exact-same-signed-block possible resend stays distinct from UNKNOWN and ACKNOWLEDGED; no replacement or re-signing",
+    "automationModelsExternalWorker": "UNCHANGED; primary self-implementation; no new worker/agent/session"
+  }
+}

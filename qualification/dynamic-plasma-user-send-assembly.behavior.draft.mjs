@@ -32,11 +32,12 @@ const pins = [
   ["../qualification/dynamic-plasma-user-send-draft.behavior.draft.mjs", 23733, "44de83fbc3ecd6d41352ad39975d803920834753c0c70a447f49f34b7277d0d9"],
   ["../test-support/phase2a-account-block-preimage.js", 7724, "dde02531faaf3c45c5ab9760beba84fe56664f923c1d61fa64b077682d97dc0e"],
   ["../qualification/dynamic-plasma-user-send-hash.behavior.draft.mjs", 28034, "cbf9e6f6c07a74ab021cee27ab8bcb2c6f026f0b5c1095af35e022898250884f"],
-  ["../src/zenon/dynamic-plasma-user-send-work-binding.js", 4732, "2ecc56698c906795982b19641ad104fb9e1586e4a0fe4d643def9d870a72bd47"],
-  ["../qualification/dynamic-plasma-user-send-work.behavior.draft.mjs", 24031, "9add5dda433075ad8fa810f86588c76e1353aa246e92ef8426ad0b76b9963e0a"],
+  ["../src/zenon/dynamic-plasma-user-send-work-binding.js", 4522, "218b4391c97e4adde905415e20ec0e2015fca98643db85b6efd682aa3b5c5681"],
+  ["../qualification/dynamic-plasma-user-send-work.behavior.draft.mjs", 24164, "d654c784cbc4167e443d7c7803feee67342821d779e76a6069a410fc58a9e3ab"],
   ["../src/zenon/dynamic-plasma-user-send-key-binding.js", 4237, "37ad7e74b038801297e4bffb0cb8ba92cbd79009ed32c4ae5b134fe2cb154be2"],
-  ["../qualification/dynamic-plasma-user-send-key.behavior.draft.mjs", 25029, "8c0c264dc2c718c0026ccc328614a8e60036c870631d8f10b54612fe22c6d404"],
+  ["../qualification/dynamic-plasma-user-send-key.behavior.draft.mjs", 25162, "0b1409638ca89ce46268932a2286936a9de2b4069b15a0af6d7e3014641c0c9e"],
   ["../src/zenon/dynamic-plasma-user-send-assembly.js", 7772, "05012a2a983ceca018674c4d1f63823f3f7ed53b0970a4b4bd486c4278832b04"],
+  ["../src/zenon/dynamic-plasma-user-send-work-input.js", 2853, "2ff9c089e5903c059746d0a1c38688a2849f94d04d429279811fbbfbb40450a4"],
 ];
 const sources = new Map();
 for (const [path, bytes, sha256] of pins) {

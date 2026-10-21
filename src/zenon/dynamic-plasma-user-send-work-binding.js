@@ -1,11 +1,11 @@
 import { Buffer } from 'node:buffer';
 import { createHash } from 'node:crypto';
 import { validateZenonUnsignedUserSendHash } from './transaction-planner.js';
-import { decodeZenonUserSendHashCores } from './dynamic-plasma-json-rpc-read-transport.js';
+import { deriveZenonUserSendWorkInput } from './dynamic-plasma-user-send-work-input.js';
 import { BoundedDynamicPlasmaStrategy } from './bounded-dynamic-plasma-strategy.js';
 
 const VALIDATE_HASH = validateZenonUnsignedUserSendHash;
-const HASH_CORES = decodeZenonUserSendHashCores;
+const WORK_INPUT = deriveZenonUserSendWorkInput;
 const BIND_HASH_PRICE = BoundedDynamicPlasmaStrategy.prototype.bindHashedUserSend;
 const APPLY = Reflect.apply;
 const HASH = createHash;
@@ -73,12 +73,7 @@ function checkDeclaredWork(block) {
       dataHash: null, nonceDigest: null, value: null, threshold: null,
     });
   }
-  const cores = HASH_CORES({
-    address: block.address, toAddress: block.toAddress, tokenStandard: block.tokenStandard,
-  });
-  const dataHash = HASH('sha3-256').update(Buffer.concat([
-    Buffer.from(cores.address), Buffer.from(block.previousHash, 'hex'),
-  ])).digest();
+  const dataHash = Buffer.from(WORK_INPUT(block).dataHash, 'hex');
   const nonceDigest = HASH('sha3-256').update(Buffer.concat([
     Buffer.from(block.nonce, 'hex'), dataHash,
   ])).digest();

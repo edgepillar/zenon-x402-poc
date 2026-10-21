@@ -22,8 +22,9 @@ const pins = [
   ["../src/zenon/plasma-strategy.js", 974, "1c597d4e169ba8a5e6d2b7852c4ffa3a8ec9b854332fe354b9b013c36ebae093"],
   ["../package.json", 1413, "8c9a25504fbf6f87c31cdf245a6f4eec5a88cc89c8352151dc66a577c5771ef5"],
   ["../test-support/phase2a-account-block-preimage.js", 7724, "dde02531faaf3c45c5ab9760beba84fe56664f923c1d61fa64b077682d97dc0e"],
-  ["../src/zenon/dynamic-plasma-user-send-work-binding.js", 4732, "2ecc56698c906795982b19641ad104fb9e1586e4a0fe4d643def9d870a72bd47"],
+  ["../src/zenon/dynamic-plasma-user-send-work-binding.js", 4522, "218b4391c97e4adde905415e20ec0e2015fca98643db85b6efd682aa3b5c5681"],
   ["../src/zenon/dynamic-plasma-user-send-key-binding.js", 4237, "37ad7e74b038801297e4bffb0cb8ba92cbd79009ed32c4ae5b134fe2cb154be2"],
+  ["../src/zenon/dynamic-plasma-user-send-work-input.js", 2853, "2ff9c089e5903c059746d0a1c38688a2849f94d04d429279811fbbfbb40450a4"],
 ];
 const sources = new Map();
 for (const [path, bytes, sha256] of pins) {
