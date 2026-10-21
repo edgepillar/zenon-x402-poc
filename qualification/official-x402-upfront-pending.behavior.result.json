@@ -1,0 +1,855 @@
+{
+  "schema": "zenon-x402-local-qualification-result/v1",
+  "date": "2026-10-21",
+  "scope": "OCT21_P1B_ACTUAL_OFFICIAL_CORE223_RETAINED_UPFRONT_PENDING_COMPOSITION",
+  "status": "THREE_SELECTED_ACTUAL_OFFICIAL_CORE223_RETAINED_CONTEXT_CASES_PASS_BASELINE_FAILURE_RETAINED",
+  "summary": "An explicit opt-in official-core 2.23.0 upfront profile reuses the existing selected settlement bridge and verification-bound owner. The original frozen-DATA factory is retained. Three selected actual installed-package composition cases pass; this is not full SDK conformance, automatic pending-helper qualification, active cutover, real service delivery, or live payment recovery.",
+  "roadmap": {
+    "lane": "P1-B actual official x402 composition",
+    "closedHere": "The finite same-process retained-context composition matrix against the exact existing core/Zod bytes below.",
+    "stillOpen": [
+      "automatic request-transport retry and any absent native SDK pending helper",
+      "real signed original-payment and original-request custody",
+      "durable commit and process restart/recovery",
+      "real provider READY, current funding/payer/provider/policy authority",
+      "network/HTTP host integration, inclusion/receive and service delivery",
+      "broader app/SDK/native-owner qualification and production acceptance"
+    ]
+  },
+  "source": {
+    "baselineMain": "f91431a78a23674cfd5b0f3a8e8d5c90ed8a3786",
+    "baselineTree": "338f2251b483c9db346dbdacc44b74966ee35741",
+    "oldBridge": {
+      "path": "src/x402-selected-settlement-server-bridge.js",
+      "bytes": 25304,
+      "LF": 474,
+      "sha256": "f805d0b02379e4812a07ce8fd7ee12167b394dbb328de01d58e5630cf7d385cc",
+      "gitBlob": "5730512fe66604925c515383a9254fe0d7f526d4"
+    },
+    "newBridge": {
+      "path": "src/x402-selected-settlement-server-bridge.js",
+      "bytes": 27858,
+      "LF": 521,
+      "sha256": "7798612391e33eb14810d323658be10d02fa0c63b71d0808b7b215c46cf687ee",
+      "gitBlob": "ad7a5a3c14e64e0c7ff010183e5bf8d5c916d5dd"
+    },
+    "baselineRepositoryGraph": [
+      {
+        "path": "src/x402-selected-settlement-server-bridge.js",
+        "bytes": 25304,
+        "LF": 474,
+        "sha256": "f805d0b02379e4812a07ce8fd7ee12167b394dbb328de01d58e5630cf7d385cc",
+        "gitBlob": "5730512fe66604925c515383a9254fe0d7f526d4"
+      },
+      {
+        "path": "src/x402-verification-bound-settlement-context.js",
+        "bytes": 11311,
+        "LF": 221,
+        "sha256": "b3ad2fd33dae7e77a77f069cbc1259bf77e18a2bf383aa30f41bcc19221656f5",
+        "gitBlob": "6734a4aa011239402c141b874612a3be0733b4bf"
+      },
+      {
+        "path": "src/x402-selected-settlement-context.js",
+        "bytes": 16818,
+        "LF": 456,
+        "sha256": "afb6e16603023dd58d6a71cff5790a802dcfa4b98bc9d380b51ccc3d58e10991",
+        "gitBlob": "321d2a03a45296907c0a35a50d1e038e82307a40"
+      },
+      {
+        "path": "src/x402-wire.js",
+        "bytes": 39886,
+        "LF": 934,
+        "sha256": "5fba91af5a352f62d1a335c7176a45a604e2af5d92b1c4b0e53825c1f20d4e56",
+        "gitBlob": "fb060d4e349b1c31a1219a0cc137af250a8a2291"
+      },
+      {
+        "path": "package.json",
+        "bytes": 1413,
+        "LF": 40,
+        "sha256": "8c9a25504fbf6f87c31cdf245a6f4eec5a88cc89c8352151dc66a577c5771ef5",
+        "gitBlob": "ec7193f6fd76f34778515079dc777594175c4c34"
+      },
+      {
+        "path": "qualification/official-x402-upfront-pending-baseline.behavior.draft.mjs",
+        "bytes": 20761,
+        "LF": 414,
+        "sha256": "fe544abbefb4dd01ea2ae67af086e808885b286b5269f01f19b38938a652408b",
+        "gitBlob": "eefdf910f8e11a3da96de09d62b7dd59c518af8b"
+      }
+    ],
+    "fixedRepositoryGraph": [
+      {
+        "path": "src/x402-selected-settlement-server-bridge.js",
+        "bytes": 27858,
+        "LF": 521,
+        "sha256": "7798612391e33eb14810d323658be10d02fa0c63b71d0808b7b215c46cf687ee",
+        "gitBlob": "ad7a5a3c14e64e0c7ff010183e5bf8d5c916d5dd"
+      },
+      {
+        "path": "src/x402-verification-bound-settlement-context.js",
+        "bytes": 11311,
+        "LF": 221,
+        "sha256": "b3ad2fd33dae7e77a77f069cbc1259bf77e18a2bf383aa30f41bcc19221656f5",
+        "gitBlob": "6734a4aa011239402c141b874612a3be0733b4bf"
+      },
+      {
+        "path": "src/x402-selected-settlement-context.js",
+        "bytes": 16818,
+        "LF": 456,
+        "sha256": "afb6e16603023dd58d6a71cff5790a802dcfa4b98bc9d380b51ccc3d58e10991",
+        "gitBlob": "321d2a03a45296907c0a35a50d1e038e82307a40"
+      },
+      {
+        "path": "src/x402-wire.js",
+        "bytes": 39886,
+        "LF": 934,
+        "sha256": "5fba91af5a352f62d1a335c7176a45a604e2af5d92b1c4b0e53825c1f20d4e56",
+        "gitBlob": "fb060d4e349b1c31a1219a0cc137af250a8a2291"
+      },
+      {
+        "path": "package.json",
+        "bytes": 1413,
+        "LF": 40,
+        "sha256": "8c9a25504fbf6f87c31cdf245a6f4eec5a88cc89c8352151dc66a577c5771ef5",
+        "gitBlob": "ec7193f6fd76f34778515079dc777594175c4c34"
+      },
+      {
+        "path": "qualification/official-x402-upfront-pending.behavior.draft.mjs",
+        "bytes": 21061,
+        "LF": 416,
+        "sha256": "ba29342a24aaa1d69047f0e6e5580958c2c21b061ba75e0df79c0e27a6f3909b",
+        "gitBlob": "2ca54f46ce1d93adc63ec40c0f13f40c41b5f1f5"
+      }
+    ],
+    "existingRequiredPackageGraph": [
+      {
+        "path": "@x402/core/package.json",
+        "bytes": 3853,
+        "LF": 138,
+        "sha256": "4130a95721f50c0997dcba3728d14d5584c4f99c12c8c3f9870b21f31da212fd",
+        "gitBlob": "7d72182a84f0a84d73e6260be70af1f520f33657"
+      },
+      {
+        "path": "zod/package.json",
+        "bytes": 3284,
+        "LF": 118,
+        "sha256": "70eedbe34fd52385a4ae2f3e5759b19682189f0118ea73a6e7c32c677f61668e",
+        "gitBlob": "eedcfb0f8e3343c8ac5ba32e5117a032352a986c"
+      },
+      {
+        "path": "@x402/core/dist/esm/client/index.mjs",
+        "bytes": 26707,
+        "LF": 676,
+        "sha256": "653613f25e2fa24615af7d1fe943679177774215a16600289175f61c4df5dda9",
+        "gitBlob": "3474afd63523463825633207d6fbfd782aeca5aa"
+      },
+      {
+        "path": "@x402/core/dist/esm/server/index.mjs",
+        "bytes": 1761,
+        "LF": 60,
+        "sha256": "fa62aa75d072a9a1e2bb00be93ef4980e15507e3617942f1d7ab05c69954a19e",
+        "gitBlob": "5a6d9914baad58a9edee7f897882abce6c011b57"
+      },
+      {
+        "path": "@x402/core/dist/esm/http/index.mjs",
+        "bytes": 1177,
+        "LF": 42,
+        "sha256": "f87cf0256b51820628469681ba1421de97f17d55c2eff64bbe9040ef4f5ea084",
+        "gitBlob": "0dda52c01e2437b16637aaf0b84353092c111861"
+      },
+      {
+        "path": "@x402/core/dist/esm/schemas/index.mjs",
+        "bytes": 1591,
+        "LF": 69,
+        "sha256": "b4c12db796c6654de17d8542d65cd78bbbe8cf4bbcc71d05912450d8adfcf0c9",
+        "gitBlob": "93af501678f80952035795321b6c30a015928679"
+      },
+      {
+        "path": "@x402/core/dist/esm/chunk-BA2VL4DT.mjs",
+        "bytes": 116817,
+        "LF": 3151,
+        "sha256": "f2ad975e24db34808470b081c9deedaf6aafa53ab95121d29661a1a8b1507f84",
+        "gitBlob": "307a10a04e0cb515418f38be50e422634acd305b"
+      },
+      {
+        "path": "@x402/core/dist/esm/chunk-N4QXZG2Z.mjs",
+        "bytes": 5040,
+        "LF": 160,
+        "sha256": "19c189f7417214b211ee4abdaada531a80e5adc8504d593c172fe1e2ce61c03e",
+        "gitBlob": "56010f0571a73a7c82d74f88d4feb01263d9d612"
+      },
+      {
+        "path": "@x402/core/dist/esm/chunk-VE37GDG2.mjs",
+        "bytes": 107,
+        "LF": 6,
+        "sha256": "56fb4db85f03d88dfa5d42c81be8527f72deae2bca4004dfaea6415f186dc086",
+        "gitBlob": "9229b6cbcb04f9a1a374588f9dc31b22c21499ba"
+      },
+      {
+        "path": "@x402/core/dist/esm/chunk-P3DFEIO7.mjs",
+        "bytes": 2602,
+        "LF": 82,
+        "sha256": "9c124f03f792fcef472452fcaf30d03bd7d6ea44170675d60ccc473d3b02f983",
+        "gitBlob": "ec0f7809277982b2d2b38747fc3a3c87a3bb9fd2"
+      },
+      {
+        "path": "@x402/core/dist/esm/chunk-UQQR4X3S.mjs",
+        "bytes": 5837,
+        "LF": 172,
+        "sha256": "a7756bf22635f58e52dce87753863e51f407a38f5c32382a1076c39bd6cb9a62",
+        "gitBlob": "46913a8401fabcdb431cfd504c1708d07f9b1c26"
+      },
+      {
+        "path": "@x402/core/dist/esm/chunk-BJTO5JO5.mjs",
+        "bytes": 433,
+        "LF": 10,
+        "sha256": "1c521b4fbee4089393c982b94b5f8a4f81b1043c2f8cd1848d0d6056430e761f",
+        "gitBlob": "8ea659a7b711a9e45bf435cb6a8300df1d92e8be"
+      },
+      {
+        "path": "zod/index.js",
+        "bytes": 105,
+        "LF": 4,
+        "sha256": "6419c4ac0e637ff08463083e31886d10354f74cbcc4e584400b2b837e39ac881",
+        "gitBlob": "bf6f1643ab4526b97b1eb1a6dcdea48262f70194"
+      },
+      {
+        "path": "zod/v3/external.js",
+        "bytes": 205,
+        "LF": 6,
+        "sha256": "5d26d2e47e2352def36f89a3e8bf8581da22b7f857e07ef3114cd52cf4813445",
+        "gitBlob": "f0a4be4c7aa63b363b654384b103396050a06e29"
+      },
+      {
+        "path": "zod/v3/errors.js",
+        "bytes": 243,
+        "LF": 9,
+        "sha256": "d40831f478288d76e82bbbcc3b7e95c8513b6e76471f2d49a37c979bc57d492d",
+        "gitBlob": "26fdf628a00ac2e0984c1f7d8e31652dcff1253d"
+      },
+      {
+        "path": "zod/v3/helpers/parseUtil.js",
+        "bytes": 3601,
+        "LF": 109,
+        "sha256": "b57484013bb360bac2e334d58fcd5f6cbfa63ffcc7d8ff3dbbb3380ca659b956",
+        "gitBlob": "91b2afb81b4358fb84d637bc963a868517c6a516"
+      },
+      {
+        "path": "zod/v3/helpers/typeAliases.js",
+        "bytes": 11,
+        "LF": 1,
+        "sha256": "8e609bb71c20b858c77f0e9f90bb1319db8477b13f9f965f1a1e18524bf50881",
+        "gitBlob": "cb0ff5c3b541f646105198ee23ac0fc3d805023e"
+      },
+      {
+        "path": "zod/v3/helpers/util.js",
+        "bytes": 4055,
+        "LF": 133,
+        "sha256": "906ef685e5853d496e293ee8f8a2bb8b1ed2d078a1bcdfedb2dfd61d75b6330c",
+        "gitBlob": "b9641f29b7dfd7b8d7d6a3e2361803a51078ea7f"
+      },
+      {
+        "path": "zod/v3/types.js",
+        "bytes": 131212,
+        "LF": 3693,
+        "sha256": "9763a2938f0e7f983363ef4bf6530e7583e3f2d54f8a4a6684efad58febc6e8e",
+        "gitBlob": "40b11c0f01b2af54e0ed48e198607bd8836d9a63"
+      },
+      {
+        "path": "zod/v3/ZodError.js",
+        "bytes": 4349,
+        "LF": 133,
+        "sha256": "f5ac9e86b92e201d41e294d7aa35986a2aa28829e1bcc8ac25f7c8dce0674b99",
+        "gitBlob": "fed6a959bdd005f6b75a71733d3f231417a5955d"
+      },
+      {
+        "path": "zod/v3/locales/en.js",
+        "bytes": 5602,
+        "LF": 109,
+        "sha256": "51a6dcc5d4bd52a64da127c012c6c963395c1d9a343ad75d4a8eca662fc8b205",
+        "gitBlob": "a67fc82a2272c022fa462931950af2a17a2f9b64"
+      },
+      {
+        "path": "zod/v3/helpers/errorUtil.js",
+        "bytes": 300,
+        "LF": 6,
+        "sha256": "68589c0cf44c8b4ad19b77418f53caad2cd1dbc8d714f526e1876ebdee4828c5",
+        "gitBlob": "e1640d1a4f696b5268518f3e15fa10ca5c8e61b8"
+      }
+    ],
+    "sourceFilesPerCommand": 28,
+    "requiredPackageFiles": 22,
+    "requiredPackageBytes": 318892,
+    "baselineSourceBytes": 434385,
+    "fixedSourceBytes": 437239,
+    "totalSourceCap": 524288,
+    "perFileCap": 262144,
+    "packageStaticEdges": [
+      [
+        "@x402/core/dist/esm/client/index.mjs",
+        "../chunk-BA2VL4DT.mjs",
+        "@x402/core/dist/esm/chunk-BA2VL4DT.mjs"
+      ],
+      [
+        "@x402/core/dist/esm/client/index.mjs",
+        "../chunk-N4QXZG2Z.mjs",
+        "@x402/core/dist/esm/chunk-N4QXZG2Z.mjs"
+      ],
+      [
+        "@x402/core/dist/esm/client/index.mjs",
+        "../chunk-VE37GDG2.mjs",
+        "@x402/core/dist/esm/chunk-VE37GDG2.mjs"
+      ],
+      [
+        "@x402/core/dist/esm/client/index.mjs",
+        "../chunk-P3DFEIO7.mjs",
+        "@x402/core/dist/esm/chunk-P3DFEIO7.mjs"
+      ],
+      [
+        "@x402/core/dist/esm/client/index.mjs",
+        "../chunk-UQQR4X3S.mjs",
+        "@x402/core/dist/esm/chunk-UQQR4X3S.mjs"
+      ],
+      [
+        "@x402/core/dist/esm/client/index.mjs",
+        "../chunk-BJTO5JO5.mjs",
+        "@x402/core/dist/esm/chunk-BJTO5JO5.mjs"
+      ],
+      [
+        "@x402/core/dist/esm/server/index.mjs",
+        "../chunk-BA2VL4DT.mjs",
+        "@x402/core/dist/esm/chunk-BA2VL4DT.mjs"
+      ],
+      [
+        "@x402/core/dist/esm/server/index.mjs",
+        "../chunk-N4QXZG2Z.mjs",
+        "@x402/core/dist/esm/chunk-N4QXZG2Z.mjs"
+      ],
+      [
+        "@x402/core/dist/esm/server/index.mjs",
+        "../chunk-VE37GDG2.mjs",
+        "@x402/core/dist/esm/chunk-VE37GDG2.mjs"
+      ],
+      [
+        "@x402/core/dist/esm/server/index.mjs",
+        "../chunk-P3DFEIO7.mjs",
+        "@x402/core/dist/esm/chunk-P3DFEIO7.mjs"
+      ],
+      [
+        "@x402/core/dist/esm/server/index.mjs",
+        "../chunk-UQQR4X3S.mjs",
+        "@x402/core/dist/esm/chunk-UQQR4X3S.mjs"
+      ],
+      [
+        "@x402/core/dist/esm/server/index.mjs",
+        "../chunk-BJTO5JO5.mjs",
+        "@x402/core/dist/esm/chunk-BJTO5JO5.mjs"
+      ],
+      [
+        "@x402/core/dist/esm/http/index.mjs",
+        "../chunk-BA2VL4DT.mjs",
+        "@x402/core/dist/esm/chunk-BA2VL4DT.mjs"
+      ],
+      [
+        "@x402/core/dist/esm/http/index.mjs",
+        "../chunk-N4QXZG2Z.mjs",
+        "@x402/core/dist/esm/chunk-N4QXZG2Z.mjs"
+      ],
+      [
+        "@x402/core/dist/esm/http/index.mjs",
+        "../chunk-VE37GDG2.mjs",
+        "@x402/core/dist/esm/chunk-VE37GDG2.mjs"
+      ],
+      [
+        "@x402/core/dist/esm/http/index.mjs",
+        "../chunk-P3DFEIO7.mjs",
+        "@x402/core/dist/esm/chunk-P3DFEIO7.mjs"
+      ],
+      [
+        "@x402/core/dist/esm/http/index.mjs",
+        "../chunk-UQQR4X3S.mjs",
+        "@x402/core/dist/esm/chunk-UQQR4X3S.mjs"
+      ],
+      [
+        "@x402/core/dist/esm/http/index.mjs",
+        "../chunk-BJTO5JO5.mjs",
+        "@x402/core/dist/esm/chunk-BJTO5JO5.mjs"
+      ],
+      [
+        "@x402/core/dist/esm/schemas/index.mjs",
+        "../chunk-N4QXZG2Z.mjs",
+        "@x402/core/dist/esm/chunk-N4QXZG2Z.mjs"
+      ],
+      [
+        "@x402/core/dist/esm/schemas/index.mjs",
+        "../chunk-BJTO5JO5.mjs",
+        "@x402/core/dist/esm/chunk-BJTO5JO5.mjs"
+      ],
+      [
+        "@x402/core/dist/esm/chunk-BA2VL4DT.mjs",
+        "./chunk-N4QXZG2Z.mjs",
+        "@x402/core/dist/esm/chunk-N4QXZG2Z.mjs"
+      ],
+      [
+        "@x402/core/dist/esm/chunk-BA2VL4DT.mjs",
+        "./chunk-VE37GDG2.mjs",
+        "@x402/core/dist/esm/chunk-VE37GDG2.mjs"
+      ],
+      [
+        "@x402/core/dist/esm/chunk-BA2VL4DT.mjs",
+        "./chunk-P3DFEIO7.mjs",
+        "@x402/core/dist/esm/chunk-P3DFEIO7.mjs"
+      ],
+      [
+        "@x402/core/dist/esm/chunk-BA2VL4DT.mjs",
+        "./chunk-UQQR4X3S.mjs",
+        "@x402/core/dist/esm/chunk-UQQR4X3S.mjs"
+      ],
+      [
+        "@x402/core/dist/esm/chunk-BA2VL4DT.mjs",
+        "./chunk-BJTO5JO5.mjs",
+        "@x402/core/dist/esm/chunk-BJTO5JO5.mjs"
+      ],
+      [
+        "@x402/core/dist/esm/chunk-N4QXZG2Z.mjs",
+        "zod",
+        "zod/index.js"
+      ],
+      [
+        "zod/index.js",
+        "./v3/external.js",
+        "zod/v3/external.js"
+      ],
+      [
+        "zod/v3/external.js",
+        "./errors.js",
+        "zod/v3/errors.js"
+      ],
+      [
+        "zod/v3/external.js",
+        "./helpers/parseUtil.js",
+        "zod/v3/helpers/parseUtil.js"
+      ],
+      [
+        "zod/v3/external.js",
+        "./helpers/typeAliases.js",
+        "zod/v3/helpers/typeAliases.js"
+      ],
+      [
+        "zod/v3/external.js",
+        "./helpers/util.js",
+        "zod/v3/helpers/util.js"
+      ],
+      [
+        "zod/v3/external.js",
+        "./types.js",
+        "zod/v3/types.js"
+      ],
+      [
+        "zod/v3/external.js",
+        "./ZodError.js",
+        "zod/v3/ZodError.js"
+      ],
+      [
+        "zod/v3/errors.js",
+        "./locales/en.js",
+        "zod/v3/locales/en.js"
+      ],
+      [
+        "zod/v3/helpers/parseUtil.js",
+        "../errors.js",
+        "zod/v3/errors.js"
+      ],
+      [
+        "zod/v3/helpers/parseUtil.js",
+        "../locales/en.js",
+        "zod/v3/locales/en.js"
+      ],
+      [
+        "zod/v3/types.js",
+        "./ZodError.js",
+        "zod/v3/ZodError.js"
+      ],
+      [
+        "zod/v3/types.js",
+        "./errors.js",
+        "zod/v3/errors.js"
+      ],
+      [
+        "zod/v3/types.js",
+        "./helpers/errorUtil.js",
+        "zod/v3/helpers/errorUtil.js"
+      ],
+      [
+        "zod/v3/types.js",
+        "./helpers/parseUtil.js",
+        "zod/v3/helpers/parseUtil.js"
+      ],
+      [
+        "zod/v3/types.js",
+        "./helpers/util.js",
+        "zod/v3/helpers/util.js"
+      ],
+      [
+        "zod/v3/ZodError.js",
+        "./helpers/util.js",
+        "zod/v3/helpers/util.js"
+      ],
+      [
+        "zod/v3/locales/en.js",
+        "../ZodError.js",
+        "zod/v3/ZodError.js"
+      ],
+      [
+        "zod/v3/locales/en.js",
+        "../helpers/util.js",
+        "zod/v3/helpers/util.js"
+      ]
+    ],
+    "sourceBeforeAndAfterStable": true,
+    "strictUtf8VendorBytes": true,
+    "publicArtifactsAscii": true,
+    "oldOwnerAndWireDependenciesUnchanged": true,
+    "historicalTestGuardsUnchanged": true
+  },
+  "implementation": {
+    "entry": "createSelectedSettlementServerBridgeForOfficialX402Core223",
+    "default": "createSelectedSettlementServerBridge still passes the private compatibility flag as false.",
+    "reuse": "ONE existing verification-bound owner per captured selected view, using the original hash claims, first-settlement consumption, pending observer, normalization and budget machinery.",
+    "changes": [
+      "Return a detached owned mutable enhancement result only in the explicit profile, because this core reassigns requirement.extra after enhancement.",
+      "In the explicit profile only, omit an own enumerable DATA error:undefined when retaining the challenge, matching its actual JSON wire omission. Reject accessors, proxies and other unsupported DATA; never mutate the SDK source object or repair payment fields.",
+      "Before the first upfront settle, use the SAME bridge verification routine and claim the outer settlement ticket first. The private verifier may run only under that matching owned ticket. Verification failure/uncertainty is not reset or converted to settlement permission.",
+      "Pending retries use the same owner's explicit observer; they never reverify, recreate the owner, reset consumed authority or call the first settlement capability again."
+    ],
+    "defaultBranchEvidence": "Source-reviewed false-flag paths preserve previous arity, frozen enhancement, challenge serialization and busy rules. The earlier 50-case result remains historical, not current-source runtime requalification.",
+    "activeCutover": "NONE_DEFAULT_OFF_UNWIRED",
+    "officialSdkImportsInProductionModule": 0,
+    "callbackAuthority": "Trusted embedding capabilities only; declared local verification and observation DATA are not chain authentication."
+  },
+  "officialPackageBoundary": {
+    "core": {
+      "version": "2.23.0",
+      "entries": [
+        "client",
+        "server",
+        "http",
+        "schemas"
+      ],
+      "packageJsonSha256": "4130a95721f50c0997dcba3728d14d5584c4f99c12c8c3f9870b21f31da212fd"
+    },
+    "zod": {
+      "version": "3.25.76",
+      "packageJsonSha256": "70eedbe34fd52385a4ae2f3e5759b19682189f0118ea73a6e7c32c677f61668e"
+    },
+    "provenance": "Exact existing local package contents and file identities were reviewed and pinned. A package version string/hash is not an independent registry provenance, publisher signature, release or latest-version claim.",
+    "installation": false,
+    "downloads": false,
+    "vendorCopiesOrCasAdoption": false,
+    "existingSdkBearingInteropTest": "Preserved, not imported, rewritten or published by this batch.",
+    "optionalPaywall": "Dormant unexecuted branch. JSON-only adapters do not load @x402/paywall.",
+    "defaultNetworkFacilitator": "Never constructed or used; the resource server is explicitly given the synthetic bridge facilitator."
+  },
+  "initialFailure": {
+    "entry": "qualification/official-x402-upfront-pending-baseline.behavior.draft.mjs",
+    "sourceGuard": "OLD_25304_BYTE_BRIDGE_ONLY",
+    "actualExit": 1,
+    "outputComplete": true,
+    "taskState": "CLOSED",
+    "taskOutcome": "FAILURE",
+    "counts": {
+      "tests": 1,
+      "suites": 0,
+      "pass": 0,
+      "fail": 1,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "failedName": "official x402 retained upfront context reaches one success from pending without another first settlement",
+    "nativeMessage": "Cannot assign to read only property 'extra' of object '#<Object>'",
+    "stage": "Official buildPaymentRequirements tried to reassign the current bridge's frozen enhancement result. Pending recovery was not reached.",
+    "stdout": {
+      "bytes": 773,
+      "sha256": "6865ae05f8eafbc756cc802c3dac4828a039a928e0c20ac4bb069f7d8b9b7221"
+    },
+    "stderr": {
+      "bytes": 28,
+      "sha256": "42cbb0e0f0ee7d514e0fcb47997c466245b53528dedfd274e57fdac89d448224"
+    },
+    "actualArgvBytes": 20072,
+    "launchRecordBytes": 21660,
+    "callerBytes": 8174,
+    "sourceAndPreservationStable": true,
+    "wholeOutcomeAndExactArgvCasAndCreatorReviewed": true,
+    "passedAssertion": false,
+    "unchangedInputReplay": false,
+    "ownedEmptyScratchCleanedBytes": 0
+  },
+  "qualification": {
+    "entry": "qualification/official-x402-upfront-pending.behavior.draft.mjs",
+    "constructor": "createSelectedSettlementServerBridgeForOfficialX402Core223",
+    "actualExit": 0,
+    "outputComplete": true,
+    "taskState": "CLOSED",
+    "taskOutcome": "SUCCESS",
+    "counts": {
+      "tests": 3,
+      "suites": 0,
+      "pass": 3,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "passNames": [
+      "official x402 retained upfront context reaches one success from pending without another first settlement",
+      "official x402 retained upfront context stays pending without modeled delivery or another first settlement",
+      "official x402 rejects changed or missing retained context before reconciliation and preserves the original payment"
+    ],
+    "stdout": {
+      "bytes": 3105,
+      "sha256": "6dbead8937283526310aa042edd57255168790b4b15b9b4ae5493da87ff8d0a3"
+    },
+    "stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "diagnostics": [
+      {
+        "kind": "OFFICIAL_X402_UPFRONT",
+        "version": 1,
+        "scenario": "PENDING_SUCCESS",
+        "coreVersion": "2.23.0",
+        "zodVersion": "3.25.76",
+        "clientPayloadCreations": 1,
+        "sdkHttpRequests": 2,
+        "sdkBeforeSettlementCalls": 3,
+        "localVerifyCalls": 1,
+        "localFirstCalls": 1,
+        "localObserverCalls": 1,
+        "modeledHandlerCalls": 1,
+        "positiveBridgeResponses": 1,
+        "originalHeaderStable": true,
+        "originalCallbackTupleStable": true,
+        "publicationUncertaintyRetained": true,
+        "declaredAcknowledgement": true,
+        "firstAuthorityConsumed": true,
+        "networkCalls": 0,
+        "signatures": 0,
+        "replacements": 0,
+        "sameProcessOnly": true,
+        "phaseExplicit": true,
+        "automaticSdkRetry": false,
+        "nativeHelperSynthesized": false,
+        "providerReady": false,
+        "serviceDelivery": "NOT_ESTABLISHED"
+      },
+      {
+        "kind": "OFFICIAL_X402_UPFRONT",
+        "version": 1,
+        "scenario": "PENDING_PENDING",
+        "coreVersion": "2.23.0",
+        "zodVersion": "3.25.76",
+        "clientPayloadCreations": 1,
+        "sdkHttpRequests": 2,
+        "sdkBeforeSettlementCalls": 3,
+        "localVerifyCalls": 1,
+        "localFirstCalls": 1,
+        "localObserverCalls": 1,
+        "modeledHandlerCalls": 0,
+        "positiveBridgeResponses": 0,
+        "originalHeaderStable": true,
+        "originalCallbackTupleStable": true,
+        "publicationUncertaintyRetained": true,
+        "declaredAcknowledgement": false,
+        "firstAuthorityConsumed": true,
+        "networkCalls": 0,
+        "signatures": 0,
+        "replacements": 0,
+        "sameProcessOnly": true,
+        "phaseExplicit": true,
+        "automaticSdkRetry": false,
+        "nativeHelperSynthesized": false,
+        "providerReady": false,
+        "serviceDelivery": "NOT_ESTABLISHED"
+      },
+      {
+        "kind": "OFFICIAL_X402_UPFRONT",
+        "version": 1,
+        "scenario": "CONTEXT_DRIFT",
+        "coreVersion": "2.23.0",
+        "zodVersion": "3.25.76",
+        "clientPayloadCreations": 1,
+        "sdkHttpRequests": 2,
+        "sdkBeforeSettlementCalls": 6,
+        "localVerifyCalls": 1,
+        "localFirstCalls": 1,
+        "localObserverCalls": 1,
+        "modeledHandlerCalls": 1,
+        "positiveBridgeResponses": 1,
+        "originalHeaderStable": true,
+        "originalCallbackTupleStable": true,
+        "publicationUncertaintyRetained": true,
+        "declaredAcknowledgement": true,
+        "firstAuthorityConsumed": true,
+        "networkCalls": 0,
+        "signatures": 0,
+        "replacements": 0,
+        "sameProcessOnly": true,
+        "phaseExplicit": true,
+        "automaticSdkRetry": false,
+        "nativeHelperSynthesized": false,
+        "providerReady": false,
+        "serviceDelivery": "NOT_ESTABLISHED"
+      }
+    ],
+    "cases": [
+      {
+        "scenario": "PENDING_SUCCESS",
+        "observed": "Actual official client creates one synthetic payload. Actual HTTP resource-server processing returns a pending PAYMENT-RESPONSE. Explicit before-handler settlement with that same retained SDK tuple reaches one positive response; a further terminal attempt is refused.",
+        "callbacks": {
+          "verify": 1,
+          "first": 1,
+          "observer": 1
+        },
+        "modeledHandlerCalls": 1
+      },
+      {
+        "scenario": "PENDING_PENDING",
+        "observed": "The same retained tuple reaches pending twice. The one-observation budget is exhausted without another first callback or modeled handler delivery.",
+        "callbacks": {
+          "verify": 1,
+          "first": 1,
+          "observer": 1
+        },
+        "modeledHandlerCalls": 0
+      },
+      {
+        "scenario": "CONTEXT_DRIFT",
+        "observed": "Changed declared signature/hash/resource, missing selected context, and an equal-but-foreign view identity are refused before the original pending observer. The unchanged original tuple can still reconcile once without a replacement payment.",
+        "callbacks": {
+          "verify": 1,
+          "first": 1,
+          "observer": 1
+        },
+        "modeledHandlerCalls": 1
+      }
+    ],
+    "driverBoundary": "The test driver explicitly calls the real SDK HTTP processSettlement with phase='before-handler', the first paid request's original decoded payload object, exact selected requirements object and transport context. It does not synthesize an absent native helper, repeat a fresh processHTTPRequest, or claim automatic request retry.",
+    "falsePositiveControl": "Default after-handler upfront processSettlement can report success without settling. Every selected recovery call passes the explicit before-handler phase and checks actual SDK pre-settle hook counts, original local callback counts, transaction/hash and real PAYMENT-RESPONSE codec output.",
+    "deliveryBoundary": "The SDK provides response instructions. Handler counters remain test-owned models; no framework route, native HTTP host, real resource or service delivery is run.",
+    "allCallbackTuplesIdentical": true,
+    "originalEncodedHeaderUnchanged": true,
+    "declaredPublication": "UNKNOWN stays distinct from declared ACKNOWLEDGED; uncertainty remains retained even when a later synthetic observer declares acknowledgement.",
+    "newPayments": 0,
+    "signatures": 0,
+    "networkCalls": 0,
+    "newSqliteFiles": 0
+  },
+  "launch": {
+    "runtime": {
+      "node": "24.19.0",
+      "platform": "darwin",
+      "arch": "arm64",
+      "nodeSha256": "dbedff294bab84a0a86c04e15fbcbeb1c97ca10bef1b32b0634cd24b36f62100"
+    },
+    "method": "One explicit positional fixture through an inline built-in node:test run({isolation:'none',concurrency:false}) caller. No test discovery/filtering, saved helper, SDK install, child/worker or native addon.",
+    "callerTemplate": "process.exitCode = 125;\nconst { run } = require('node:test');\nconst { types: nativeTypes } = require('node:util');\nconst { tap } = require('node:test/reporters');\nconst { Writable, pipeline, finished } = require('node:stream');\nconst selections = __SELECTED_FILES__;\nlet selected = 'unselected';\n(async () => {\n  if (process.versions.node !== '24.19.0' || process.argv.length !== 2\n      || process.platform !== 'darwin' || process.arch !== 'arm64') throw Error('RUNTIME_OR_ARGUMENTS');\n  selected = Object.keys(selections).find(p => process.argv[1] === process.cwd() + '/' + p);\n  if (!selected) { selected = 'unselected'; throw Error('SELECTION'); }\n  const expected = selections[selected], seen = new Set(), reported = new Set();\n  const counts = new Map(), plans = [];\n  let bad = false, ended = false, reporterDone = false, versions = 0, bytes = 0, pending = '';\n  const known = name => expected.includes(name);\n  process.stdout.write('# entry ' + selected + '\\n# Node ' + process.versions.node\n    + ' platform=' + process.platform + ' arch=' + process.arch + '\\n');\n  function safeLine(line) {\n    let match;\n    if (line === 'TAP version 13') { versions++; return line; }\n    if ((match = /^# Subtest: (.+)$/.exec(line))) {\n      if (known(match[1])) return line;\n      bad = true;\n    } else if ((match = /^(ok|not ok) \\d+ - (.+)$/.exec(line))) {\n      if (!known(match[2]) || reported.has(match[2]) || match[1] !== 'ok') bad = true;\n      if (known(match[2])) { reported.add(match[2]); return line; }\n    } else if ((match = /^1\\.\\.(\\d+)$/.exec(line))) {\n      plans.push(Number(match[1])); return line;\n    } else if ((match = /^# (tests|suites|pass|fail|cancelled|skipped|todo) (\\d+)$/.exec(line))) {\n      if (counts.has(match[1])) bad = true;\n      counts.set(match[1], Number(match[2])); return line;\n    } else if (/^Bail out!/.test(line)) bad = true;\n    return null; // Do not publish physical locations, stacks or arbitrary diagnostics.\n  }\n  const source = run({\n    files: [process.argv[1]], isolation: 'none', concurrency: false,\n    timeout: 5000, forceExit: false, watch: false,\n  });\n\n  let diagnosticCount = 0, eventLogBytes = 0;\n  const own = (x,k) => {\n    if (x === null || (typeof x !== 'object' && typeof x !== 'function') || nativeTypes.isProxy(x)) return undefined;\n    const d = Object.getOwnPropertyDescriptor(x,k);\n    return d && Object.hasOwn(d,'value') ? d.value : undefined;\n  };\n  function eventLog(label,value) {\n    const line = '# native-' + label + ' ' + JSON.stringify(value) + '\\n';\n    eventLogBytes += Buffer.byteLength(line);\n    if (eventLogBytes > 8192) { bad = true; return; }\n    process.stdout.write(line);\n  }\n  source.on('test:diagnostic', data => {\n    const message = own(data,'message');\n    if (typeof message !== 'string' || !message.startsWith('{\"kind\":\"OFFICIAL_X402_UPFRONT\"')) return;\n    try {\n      if (Buffer.byteLength(message) > 2048) throw Error('DIAGNOSTIC_CAP');\n      const value = JSON.parse(message);\n      const keys = ['kind','version','scenario','coreVersion','zodVersion','clientPayloadCreations',\n        'sdkHttpRequests','sdkBeforeSettlementCalls','localVerifyCalls','localFirstCalls','localObserverCalls',\n        'modeledHandlerCalls','positiveBridgeResponses','originalHeaderStable','originalCallbackTupleStable',\n        'publicationUncertaintyRetained','declaredAcknowledgement','firstAuthorityConsumed','networkCalls',\n        'signatures','replacements','sameProcessOnly','phaseExplicit','automaticSdkRetry',\n        'nativeHelperSynthesized','providerReady','serviceDelivery'];\n      if (Object.keys(value).length !== keys.length || keys.some(k=>!Object.hasOwn(value,k))\n        || value.kind !== 'OFFICIAL_X402_UPFRONT' || value.version !== 1\n        || !['PENDING_SUCCESS','PENDING_PENDING','CONTEXT_DRIFT'].includes(value.scenario)\n        || value.coreVersion !== '2.23.0' || value.zodVersion !== '3.25.76'\n        || value.originalHeaderStable !== true || value.originalCallbackTupleStable !== true\n        || value.publicationUncertaintyRetained !== true || typeof value.declaredAcknowledgement !== 'boolean'\n        || value.firstAuthorityConsumed !== true || value.sameProcessOnly !== true\n        || value.phaseExplicit !== true || value.automaticSdkRetry !== false || value.nativeHelperSynthesized !== false\n        || value.providerReady !== false || value.serviceDelivery !== 'NOT_ESTABLISHED') throw Error('DIAGNOSTIC_SCHEMA');\n      for (const k of ['clientPayloadCreations','sdkHttpRequests','sdkBeforeSettlementCalls','localVerifyCalls',\n        'localFirstCalls','localObserverCalls','modeledHandlerCalls','positiveBridgeResponses','networkCalls','signatures','replacements'])\n        if (!Number.isSafeInteger(value[k]) || value[k] < 0 || value[k] > 64) throw Error('DIAGNOSTIC_COUNTER');\n      if (value.networkCalls !== 0 || value.signatures !== 0 || value.replacements !== 0) throw Error('EXCLUDED_OPERATION');\n      diagnosticCount++; eventLog('diagnostic', value);\n    } catch { bad = true; }\n  });\n\n  source.on('test:pass', data => {\n    if (!known(data.name) || seen.has(data.name) || data.nesting !== 0\n        || (data.skip !== undefined && data.skip !== false)\n        || (data.todo !== undefined && data.todo !== false)) bad = true;\n    seen.add(data.name);\n  });\n  source.on('test:fail', data => {\n    bad = true;\n    const wrapper = own(own(data,'details'),'error'), cause = own(wrapper,'cause') || wrapper;\n    const code = own(cause,'code'), message = own(cause,'message');\n    const item = {name: known(own(data,'name')) ? own(data,'name') : 'UNSELECTED_NATIVE_FAILURE',\n      code: typeof code === 'string' && /^[A-Z0-9_]{1,128}$/.test(code) ? code : 'UNAVAILABLE',\n      message: typeof message === 'string' && message.length <= 512 && !/[\\/\\\\]/.test(message) ? message : 'REDACTED'};\n    for (const k of ['actual','expected']) {\n      const value = own(cause,k);\n      if (value === null || typeof value === 'boolean' || Number.isSafeInteger(value)) item[k] = value;\n    }\n    eventLog('failure',item);\n  });\n  source.on('error', () => { bad = true; });\n  source.once('end', () => { ended = true; });\n  const sourceDone = new Promise(resolve => {\n    finished(source, { writable: false }, error => { if (error) bad = true; resolve(); });\n  });\n  const sink = new Writable({\n    write(chunk, encoding, callback) {\n      try {\n        bytes += Buffer.byteLength(chunk);\n        if (bytes > 65536) throw Error('REPORTER_CAP');\n        pending += String(chunk);\n        const lines = pending.split('\\n'); pending = lines.pop();\n        const safe = lines.map(safeLine).filter(line => line !== null);\n        if (safe.length) process.stdout.write(safe.join('\\n') + '\\n', callback);\n        else callback();\n      } catch { callback(Error('REPORTER_FAILED')); }\n    },\n    final(callback) { if (pending !== '') bad = true; callback(); },\n  });\n  const reporter = source.compose(tap);\n  const reportDone = new Promise(resolve => {\n    pipeline(reporter, sink, error => { reporterDone = !error; if (error) bad = true; resolve(); });\n  });\n  await Promise.all([sourceDone, reportDone]);\n  const zero = ['suites', 'fail', 'cancelled', 'skipped', 'todo'];\n  if (bad || diagnosticCount !== expected.length || !ended || !reporterDone || versions !== 1 || plans.length !== 1\n      || plans[0] !== expected.length || seen.size !== expected.length\n      || reported.size !== expected.length || !expected.every(name => seen.has(name) && reported.has(name))\n      || counts.get('tests') !== expected.length || counts.get('pass') !== expected.length\n      || !zero.every(key => counts.get(key) === 0)\n      || process.exitCode !== 125) throw Error('INCOMPLETE_OR_UNEXPECTED_RESULTS');\n  process.exitCode = 0;\n  process.stdout.write('# qualification PASS ' + selected + '\\n');\n})().catch(() => {\n  if ([undefined, 0, 125].includes(process.exitCode)) process.exitCode = 1;\n  process.stderr.write('qualification caller failed\\n');\n  process.stdout.write('# qualification FAIL ' + selected + '\\n');\n});",
+    "reconstruction": "Replace the single __SELECTED_FILES__ token with compact JSON.stringify of the selectedFiles object for that callsite; all other caller bytes are fixed.",
+    "callsites": [
+      {
+        "phase": "BASELINE_UNCHANGED_BRIDGE",
+        "selectedFiles": {
+          "qualification/official-x402-upfront-pending-baseline.behavior.draft.mjs": [
+            "official x402 retained upfront context reaches one success from pending without another first settlement"
+          ]
+        },
+        "callerBytes": 8174,
+        "argumentBytes": 20072,
+        "launchRecordBytes": 21660
+      },
+      {
+        "phase": "FIXED_EXPLICIT_CORE223_PROFILE",
+        "selectedFiles": {
+          "qualification/official-x402-upfront-pending.behavior.draft.mjs": [
+            "official x402 retained upfront context reaches one success from pending without another first settlement",
+            "official x402 retained upfront context stays pending without modeled delivery or another first settlement",
+            "official x402 rejects changed or missing retained context before reconciliation and preserves the original payment"
+          ]
+        },
+        "callerBytes": 8390,
+        "argumentBytes": 20261,
+        "launchRecordBytes": 21844
+      }
+    ],
+    "environment": [
+      "env -i",
+      "TZ=UTC",
+      "LANG=C",
+      "LC_ALL=C",
+      "X402_OFFICIAL_OPT_IN=reviewed-existing-synthetic-only",
+      "X402_OFFICIAL_PACKAGE_ROOTS=<reviewed exact existing physical core and zod roots>",
+      "X402_OFFICIAL_SOURCE_PINS=<ordered five repository/package pins,22 existing dependency pins and selected fixture pin with stable local identities>"
+    ],
+    "nodeFlags": [
+      "--permission",
+      "one --allow-fs-read=<exact physical source file> per each of28 pins; no directory or wildcard read grant",
+      "--disallow-code-generation-from-strings",
+      "--no-addons",
+      "--no-warnings",
+      "--eval <reconstructed caller>",
+      "<one exact positional fixture>"
+    ],
+    "expectedBytes": 2097152,
+    "taskQuotaBytes": 4194304,
+    "stdoutCap": 65536,
+    "stderrCapAtMost": 1048576,
+    "testTimeoutMs": 5000,
+    "managerCommandTimeoutSeconds": 30,
+    "metadataLockTimeoutSeconds": 180,
+    "productionFreeSpaceFloorBytes": 10737418240,
+    "permissionBoundary": "No fs-write/child/worker/addon grant. This is not an OS/network sandbox or hard lifetime/cancellation/native-cleanup guarantee. A test-only fetch refusal counter remained zero.",
+    "nativePremises": "The exact native loader, Promise/stream/runner/runtime and OS behavior remain premises, not broad native qualification."
+  },
+  "review": {
+    "completeRequiredSourceAndDependencyReviewBeforeTargetImport": true,
+    "sourceAndPublicPatchReadback": true,
+    "productionDiffHunks": 10,
+    "noUnrelatedSourceChange": true,
+    "performedBy": "Primary self-implementation and a separate bounded read-only inspection of the complete TAP, exact launch, receipts, CAS objects/creator records, current source/preservation and process-group state; not independent human approval.",
+    "exactExpectedDiagnosticsReviewed": true,
+    "completeOutcomeReviewed": true,
+    "baselineFailureRetained": true,
+    "noFailureCountedAsPassedAssertion": true,
+    "noCombinedCleanFourCaseRun": true,
+    "oldFailedMetadataAndAbsencesUnchanged": true,
+    "priorOutcomeFiles": 162,
+    "priorOutcomeBytes": 2064767,
+    "preservedRepositoryFiles": 115,
+    "preservedRepositoryBytes": 2695842,
+    "allOwnedTasksClosed": true,
+    "knownOwnedProcessGroupsObservedAbsent": true,
+    "ownedEmptyScratchCleanedBytes": 0
+  },
+  "retainedBoundaries": [
+    "The original 2.23.0 pending-helper gap and historical NOT_RUN/PREDICTED_UNEXECUTED records are unchanged. This new manual retained-context consumer is a different precisely named API composition, not a fabricated execution of that helper.",
+    "The old-source baseline failed0/1; the changed-source selected command passed3/3. No failed loader or inventory refusal is silently counted as an assertion pass, and no unchanged completed scenario was repeated.",
+    "No complete original/default bridge regression suite, latest official SDK, production facilitator, network transport, caller-authentication policy or global replay guarantee is qualified.",
+    "All signed-looking fields and transaction hashes are inert declared synthetic DATA. No cryptographic signature, wallet, Zenon SDK import, nonce search, real PREPARE, publication, replacement payment, chain observation or actual credit grant is used.",
+    "No real process restart, persistent custody/durability, provider READY, actual service delivery or live-pilot/production acceptance follows from these results.",
+    "No dependency/package/source-map/paywall installation or download; the existing package files were read in place and unchanged. Initial ASCII-only vendor inventory refused valid UTF8 before imports; its corrected reader performed source inspection only, not a native test retry.",
+    "No hosted CI was run for this slice. Zero current-head actions/checks/statuses are not green CI. Publication requires fresh main/diff/PR/protection checks and an ordinary non-forced fast-forward."
+  ],
+  "protectedTotals": {
+    "consumedAdmissions": 2,
+    "actualPrepare": 1,
+    "bundles": 0,
+    "nativeQualificationRuns": 0
+  },
+  "realSigner": "DISABLED",
+  "originalRealPaymentAndRequestBytes": "UNCHANGED",
+  "consumedRealAuthority": "UNCHANGED",
+  "PR193": "VALIDATED possible exact-same-signed-block resend remains distinct from UNKNOWN and ACKNOWLEDGED; no reset, replacement or re-signing.",
+  "production": "NO_GO"
+}

@@ -95,9 +95,31 @@ const HASH = /^[0-9a-f]{64}$/, REASON = /^[a-z][a-z0-9_]{0,127}$/;
  * separate from UNKNOWN/ACKNOWLEDGED; this module adds no replacement right.
  */
 export function createSelectedSettlementServerBridge(configuration) {
+  return constructBridge(configuration, arguments.length, false);
+}
+
+/**
+ * Explicit opt-in compatibility profile for the separately pinned official
+ * @x402/core 2.23.0 upfront composition. No SDK package is imported here and
+ * this name is not runtime/package authentication or general SDK qualification.
+ *
+ * That SDK reassigns the enhanced requirement's extra field and skips a
+ * separate facilitator verify for upfront. Return an OWNED mutable enhancement
+ * copy, and reuse the SAME existing verification owner before first settle.
+ * Preserve the original frozen-DATA entry's behavior. Only an own undefined
+ * optional challenge error is omitted, matching the SDK's JSON wire encoding;
+ * no source object, payment bytes, selected identity or authority is rewritten.
+ * Pending reentry still uses only the original owner's bounded observer.
+ * This adds no automatic HTTP retry, durability, restart or signing capability.
+ */
+export function createSelectedSettlementServerBridgeForOfficialX402Core223(configuration) {
+  return constructBridge(configuration, arguments.length, true);
+}
+
+function constructBridge(configuration, argumentCount, officialCore223) {
   let fixed, receiver, verify, first, observe, schema, budget, limit;
   try {
-    if (arguments.length !== 1 || !invariant()) fail('configuration_rejected');
+    if (argumentCount !== 1 || !invariant()) fail('configuration_rejected');
     const c = record(configuration, CONFIG);
     fixed = parse(serialize(c.requirement)); REQUIREMENT(fixed); fixed = deepFreeze(fixed);
     receiver = c.localFacilitator;
@@ -126,6 +148,20 @@ export function createSelectedSettlementServerBridge(configuration) {
     REQUIREMENT(value);
     if (!SAME_REQUIREMENT(value, fixed)) fail('input_rejected');
   }
+  function challengeText(value) {
+    if (!officialCore223) return serialize(value);
+    if (typeof value !== 'object' || value === null || isProxy(value)
+        || prototype(value) !== objectPrototype || ownKeys(value).length > 32) fail('input_rejected');
+    const copy = create(objectPrototype);
+    for (const key of ownKeys(value)) {
+      if (typeof key !== 'string') fail('input_rejected');
+      const d = descriptor(value, key);
+      if (d === undefined || d.enumerable !== true || !hasOwn(d, 'value')) fail('input_rejected');
+      if (key === 'error' && d.value === undefined) continue;
+      put(copy, key, d.value);
+    }
+    return serialize(copy);
+  }
   function bindingFor(payload, view, entry) {
     const payloadJson = serialize(payload), requirementsJson = serialize(view);
     const p = parse(payloadJson), r = parse(requirementsJson), challenge = parse(entry.challengeJson);
@@ -149,7 +185,7 @@ export function createSelectedSettlementServerBridge(configuration) {
       if (!invariant()) fail('operation_rejected');
       const top = record(argument, ENRICH, true);
       const source = top.paymentRequiredResponse;
-      const challengeJson = serialize(source), challenge = parse(challengeJson);
+      const challengeJson = challengeText(source), challenge = parse(challengeJson);
       CHALLENGE(challenge);
       const views = arrayValues(top.requirements, 16);
       const originalViews = arrayValues(ownData(source, 'accepts'), 16);
@@ -164,7 +200,7 @@ export function createSelectedSettlementServerBridge(configuration) {
       }
       schemaCalls++;
       const result = apply(SCHEMA, undefined, [deepFreeze(parse(challengeJson))]);
-      if (!invariant() || result !== undefined || serialize(source) !== challengeJson) fail('operation_rejected');
+      if (!invariant() || result !== undefined || challengeText(source) !== challengeJson) fail('operation_rejected');
       const after = arrayValues(top.requirements, 16), afterOriginal = arrayValues(ownData(source, 'accepts'), 16);
       if (after.length !== views.length || afterOriginal.length !== views.length) fail('operation_rejected');
       for (let i = 0; i < views.length; i++)
@@ -203,13 +239,14 @@ export function createSelectedSettlementServerBridge(configuration) {
     return fulfilled(value);
   }
 
-  async function verifyRun(count, payload, view, ticket) {
+  async function verifyRun(count, payload, view, ticket, ownedSettleTicket = null) {
     let entry = null;
     try {
       if (captureBusy) fail('busy');
       if (count !== 2 || !invariant()) fail('input_rejected');
       entry = selected(view);
-      if (entry.verifyTicket !== null || entry.settleTicket !== null) fail('busy');
+      if (entry.verifyTicket !== null
+          || (entry.settleTicket !== null && entry.settleTicket !== ownedSettleTicket)) fail('busy');
       if (entry.phase !== 'CAPTURED') fail('stage_rejected');
       const original = bindingFor(payload, view, entry);
       if (apply(mapHas, hashClaims, [original.paymentHash])) fail('context_used');
@@ -242,6 +279,16 @@ export function createSelectedSettlementServerBridge(configuration) {
       if (count !== 2 || !invariant()) fail('input_rejected');
       entry = selected(view);
       if (entry.verifyTicket !== null || entry.settleTicket !== null) fail('busy');
+      if (officialCore223 && entry.phase === 'CAPTURED') {
+        // Claim the outer receipt before the verifier can reenter/return it.
+        // Only this private call may verify under its OWN settle ticket.
+        entry.settleTicket = ticket;
+        const verificationTicket = create(null); verificationTicket.promise = null;
+        const checking = shield(verifyRun(2, payload, view, verificationTicket, ticket));
+        verificationTicket.promise = checking;
+        await checking;
+        if (!invariant() || entry.verifyTicket !== null || entry.settleTicket !== ticket) fail('busy');
+      }
       if (entry.phase !== 'VERIFIED' || entry.owner === null) fail('stage_rejected');
       const binding = bindingFor(payload, view, entry);
       entry.settleTicket = ticket;
@@ -288,7 +335,7 @@ export function createSelectedSettlementServerBridge(configuration) {
       requireFixed(r);
       if (k.x402Version !== 2 || k.scheme !== 'exact' || k.network !== fixed.network
           || arrayValues(extensions, 16).length !== 0) fail('input_rejected');
-      return deepFreeze(r);
+      return officialCore223 ? r : deepFreeze(r);
     } catch { fail('input_rejected'); }
   }
   const flows = freeze({ default: freeze({ supported: freeze(['upfront']), default: 'upfront' }) });
