@@ -16,6 +16,7 @@ const PROTOTYPE = Object.getPrototypeOf;
 const HAS_OWN = Object.hasOwn;
 const FREEZE = Object.freeze;
 const DEFINE = Object.defineProperty;
+const NativePromise = Promise;
 const IS_PROXY = utilTypes.isProxy;
 const BYTE_LENGTH = Buffer.byteLength;
 const PARSE = JSON.parse;
@@ -33,6 +34,7 @@ const SQLITE_FIELDS = FREEZE([
   'databasePath', 'allowedRoot', 'backendStore', 'fundingResourceUrl',
   'custodyPolicy', 'selectedGrantId', 'deadlineMs',
 ]);
+const SQLITE_DISPATCH_FIELDS = FREEZE([...SQLITE_FIELDS, 'requestImpl']);
 const NO_DISPATCH = FREEZE(function recoveryDispatchForbidden() {
   throw failure('DISPATCH_FORBIDDEN');
 });
@@ -43,6 +45,10 @@ function failure(suffix) {
   DEFINE(error, 'code', { value: code, enumerable: true });
   DEFINE(error, 'stack', { value: `TypeError: ${code}` });
   return FREEZE(error);
+}
+
+function rejected(suffix) {
+  return new NativePromise((resolve, reject) => { reject(failure(suffix)); });
 }
 
 function exact(value, fields = FIELDS) {
@@ -156,10 +162,40 @@ export function createServiceCreditCustodiedBackendRecoveryClientV3(options) {
  * durability, real READY, delivery or pilot acceptance is established here.
  */
 export async function openServiceCreditCustodiedSqliteBackendRecoveryClientV3(options) {
+  if (arguments.length !== 1) throw failure('INVALID_CONFIGURATION');
+  return openOwnedBackendClient(options, false);
+}
+
+/**
+ * Separate opt-in service-credit submission capability plus backend recovery.
+ * Uses the same existing owned V3 client, original custody and insert-only
+ * dispatch-intent fence as the no-dispatch reader. requestImpl is an explicit
+ * trusted caller capability: there is no default transport or active cutover.
+ *
+ * Only an explicit submitOriginal call can invoke it. Backend reads never
+ * dispatch, retry, re-sign, replace a payment or clear uncertainty. A latched
+ * combined-read failure blocks submission; a read while the actual client is
+ * busy is refused without poisoning the later completed outcome. The original
+ * supplied Authorization remains excluded from persistent custody metadata.
+ *
+ * The existing owner still decides retained-original, intent, funding and
+ * uncertainty refusals. Neither BOUND nor a cached backend result supplies
+ * payer/provider/policy authority, real READY, delivery or pilot acceptance.
+ * The separate no-dispatch factories expose no submission method.
+ */
+export async function openServiceCreditCustodiedSqliteBackendClientV3(options) {
+  if (arguments.length !== 1) throw failure('INVALID_CONFIGURATION');
+  return openOwnedBackendClient(options, true);
+}
+
+async function openOwnedBackendClient(options, serviceDispatchEnabled) {
   let client = null, backend = null, config = null;
   try {
-    if (arguments.length !== 1) throw failure('INVALID_CONFIGURATION');
-    config = exact(options, SQLITE_FIELDS);
+    config = exact(options, serviceDispatchEnabled ? SQLITE_DISPATCH_FIELDS : SQLITE_FIELDS);
+    if (serviceDispatchEnabled
+        && (typeof config.requestImpl !== 'function' || IS_PROXY(config.requestImpl))) {
+      throw failure('INVALID_CONFIGURATION');
+    }
     const selectedGrantId = KEY({ grantId: config.selectedGrantId, requestId: 'scope' }).grantId;
     backend = CREATE_BACKEND({ store: config.backendStore, admittedGrantId: selectedGrantId });
     client = OPEN_SQLITE_CLIENT({
@@ -168,11 +204,11 @@ export async function openServiceCreditCustodiedSqliteBackendRecoveryClientV3(op
       fundingResourceUrl: config.fundingResourceUrl,
       custodyPolicy: config.custodyPolicy,
       selectedGrantId,
-      requestImpl: NO_DISPATCH,
+      requestImpl: serviceDispatchEnabled ? config.requestImpl : NO_DISPATCH,
       deadlineMs: config.deadlineMs,
     });
     const connected = connectClientBackend(
-      client, backend, selectedGrantId, 'PAYER_OWNED_BACKEND_BORROWED',
+      client, backend, selectedGrantId, 'PAYER_OWNED_BACKEND_BORROWED', serviceDispatchEnabled,
     );
     client = null;
     backend = null;
@@ -187,7 +223,7 @@ export async function openServiceCreditCustodiedSqliteBackendRecoveryClientV3(op
   }
 }
 
-function connectClientBackend(client, backend, selectedGrantId, storeOwnership) {
+function connectClientBackend(client, backend, selectedGrantId, storeOwnership, serviceDispatchEnabled = false) {
   const LOCAL_READ = client.readOriginalRecoveryState;
   const LOCAL_CLOSE = client.close;
   const LOCAL_SNAPSHOT = client.snapshot;
@@ -195,6 +231,7 @@ function connectClientBackend(client, backend, selectedGrantId, storeOwnership) 
   const BACKEND_CLOSE = backend.close;
   const LOCAL_ORIGINAL = client.readOriginal;
   const LOCAL_KEYS = client.readOriginalRecoveryKeys;
+  const LOCAL_SUBMIT = serviceDispatchEnabled ? client.submitOriginal : null;
   client = null;
   backend = null;
   let closed = false, reading = false, unavailable = false;
@@ -203,6 +240,13 @@ function connectClientBackend(client, backend, selectedGrantId, storeOwnership) 
     if (closed) throw failure('CLOSED');
     if (reading) throw failure('BUSY');
     if (unavailable) throw failure('UNAVAILABLE');
+    if (LOCAL_SUBMIT !== null) {
+      let active;
+      try { active = LOCAL_SNAPSHOT().client.owner.active; }
+      catch { unavailable = true; throw failure('UNAVAILABLE'); }
+      if (active === true) throw failure('BUSY');
+      if (active !== false) { unavailable = true; throw failure('UNAVAILABLE'); }
+    }
     if (arguments.length !== 2 || typeof authorizationHeader !== 'string'
         || authorizationHeader.length === 0 || authorizationHeader.length > 1024
         || APPLY(BYTE_LENGTH, Buffer, [authorizationHeader, 'utf8']) > 1024) {
@@ -253,6 +297,13 @@ function connectClientBackend(client, backend, selectedGrantId, storeOwnership) 
       envelope = null;
     }
   });
+  const submitOriginal = LOCAL_SUBMIT === null ? null : FREEZE(function submitOriginal(...args) {
+    if (args.length !== 1) return rejected('INVALID_INPUT');
+    if (closed) return rejected('CLOSED');
+    if (reading) return rejected('BUSY');
+    if (unavailable) return rejected('UNAVAILABLE');
+    return LOCAL_SUBMIT(args[0]);
+  });
   const close = FREEZE(function close(...args) {
     if (args.length !== 0) return APPLY(LOCAL_CLOSE, undefined, args);
     if (!closed) { closed = true; BACKEND_CLOSE(); }
@@ -261,9 +312,11 @@ function connectClientBackend(client, backend, selectedGrantId, storeOwnership) 
   const snapshot = FREEZE(function snapshot() {
     if (arguments.length !== 0) throw failure('INVALID_INPUT');
     return FREEZE({ client: LOCAL_SNAPSHOT(), closed, reading, unavailable,
-      storeOwnership, authority: 'NONE', serviceDelivery: 'NOT_ESTABLISHED' });
+      storeOwnership, authority: 'NONE', serviceDelivery: 'NOT_ESTABLISHED',
+      ...(LOCAL_SUBMIT === null ? {} : { serviceDispatchCapability: 'EXPLICIT_CALLER_TRANSPORT_ONLY' }) });
   });
   return FREEZE({
+    ...(LOCAL_SUBMIT === null ? {} : { submitOriginal }),
     readOriginal: LOCAL_ORIGINAL,
     readOriginalRecoveryState: LOCAL_READ,
     readOriginalRecoveryKeys: LOCAL_KEYS,

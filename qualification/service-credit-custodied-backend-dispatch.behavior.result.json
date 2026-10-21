@@ -1,0 +1,570 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-22",
+  "status": "SELECTED_NATIVE_COMPONENT_ASSERTIONS_PASSED",
+  "roadmapLane": "P2: explicit owned service-credit submission and backend recovery composition",
+  "finiteComponentComplete": true,
+  "fullP2Complete": false,
+  "productionAcceptance": "NO_GO",
+  "implementation": {
+    "newFactory": "openServiceCreditCustodiedSqliteBackendClientV3",
+    "ownedNoDispatchFactory": "openServiceCreditCustodiedSqliteBackendRecoveryClientV3",
+    "borrowedNoDispatchFactory": "createServiceCreditCustodiedBackendRecoveryClientV3",
+    "capability": "An explicit trusted requestImpl is required for the new separate submission factory. No default transport, active entry point, provider provisioning, payment operation or signing capability is added.",
+    "sharedOwner": "The same existing owned V3 HTTP client, payer SQLite custody, insert-only dispatch intent and cached native close Promise are reused. Backend storage remains borrowed.",
+    "readAndSubmitSeparation": "Only explicit submitOriginal calls can invoke the supplied transport. Recovery views still have authority NONE and all action/delivery flags false; reads never dispatch, retry, replace or re-sign.",
+    "activeReadFence": "A combined backend read while the actual owned client is active returns BUSY before local/backend I/O, without setting the unavailable latch. Closed and latched-unavailable connections refuse new submissions.",
+    "nativeOutcomeIdentity": "Submission delegates the actual root client Promise; close returns the actual root's identical cached Promise, including its asserted child-unknown rejection.",
+    "noDispatchSurface": "The owned reader's original six-method no-submit surface was exercised on this source. The borrowed factory's no-submit source path remains separate; historical borrowed tests were not rerun.",
+    "noCreationFallback": true,
+    "noMigration": true,
+    "noAutomaticRecoveryOrResend": true,
+    "noNewHttpEndpoint": true,
+    "defaultApplicationCutover": false,
+    "crossStoreAtomicity": false,
+    "unexercisedPath": "The fail-closed latched-unavailable submit guard is source implemented; these selected cases exercise active/closed refusals, not a forced backend read fault."
+  },
+  "sourceBinding": {
+    "parentMain": "f66e9015b6e70b0a442ec9f8dfee33f92393e7b9",
+    "parentTree": "e36ef8d8f257010605c59b66375e55d6361b9cc7",
+    "modifiedBase": {
+      "path": "src/service-credit-custodied-backend-recovery-client.js",
+      "bytes": 12111,
+      "LF": 274,
+      "sha256": "c5085431c61fc12d13ff931f0f36d697bbbe17631b074f1ed6c4c73bbdf2d1ef",
+      "gitBlob": "2d4ac608f66899fdd4c1c2cf5caa55d8f5f750d3"
+    },
+    "readFileCount": 19,
+    "sourceBytes": 527084,
+    "perFileCap": 131072,
+    "totalCap": 655360,
+    "files": [
+      {
+        "path": "src/service-credit-sqlite-store.js",
+        "bytes": 83516,
+        "LF": 2366,
+        "sha256": "eea4032830dc1f641c4832e0dab33066633ba487eaf19581e3295cf8810460f3",
+        "gitBlob": "ae5260ef3442079fe73544d2d730d05724758fa1"
+      },
+      {
+        "path": "src/service-credit-model.js",
+        "bytes": 55461,
+        "LF": 1580,
+        "sha256": "7ff7e3d88ab8c3b38a0073541533fbdb7a0d9f2be42f337ac35f6a3b05615c3a",
+        "gitBlob": "e6ac17254874584d1a01f70e7abc6f771bd35d73"
+      },
+      {
+        "path": "src/service-credit-execution-contract.js",
+        "bytes": 30258,
+        "LF": 956,
+        "sha256": "298f8e74885e1c507953c0fcf7874832f815296746e6bacbdac97a425f1a6c73",
+        "gitBlob": "acfbb5c5e943b9e09958a7831b3dbe159463dcf9"
+      },
+      {
+        "path": "src/service-credit-http.js",
+        "bytes": 32432,
+        "LF": 958,
+        "sha256": "c76a7f1864bdfcd0c26916bf28fba615c8aecf899d53e69467e3ebe7d3353d0d",
+        "gitBlob": "040da1547c2fa6cc4a4044c47619b253f16d19a1"
+      },
+      {
+        "path": "src/service-credit-capability.js",
+        "bytes": 8284,
+        "LF": 256,
+        "sha256": "cb2b96d9a2e56c132dd1b4aca8f1c065b244ecd0e7e92f41ea3f4a8c969d17c3",
+        "gitBlob": "2e19d42c1b9311a75897c84669849f56ae40f785"
+      },
+      {
+        "path": "package.json",
+        "bytes": 1413,
+        "LF": 40,
+        "sha256": "8c9a25504fbf6f87c31cdf245a6f4eec5a88cc89c8352151dc66a577c5771ef5",
+        "gitBlob": "ec7193f6fd76f34778515079dc777594175c4c34"
+      },
+      {
+        "path": "src/service-credit-backend-original-outcome-reader.js",
+        "bytes": 7738,
+        "LF": 182,
+        "sha256": "dadd9cbfbdcc2ff4bb24252fed85a135d2ce17397e713b1917a109eb6b28938d",
+        "gitBlob": "7f083a5f3a8716f8aae2c618945473671da2f6b7"
+      },
+      {
+        "path": "src/service-credit-custodied-http-client.js",
+        "bytes": 10755,
+        "LF": 292,
+        "sha256": "ddbc54faf4a14d95e6274bc9df27b7b49db251bab67c11b871cfb2f9e78b4f15",
+        "gitBlob": "90fd4c8a2cc8fb552f8eb0cb45607bfa44c61108"
+      },
+      {
+        "path": "src/service-credit-custodied-request-owner.js",
+        "bytes": 35073,
+        "LF": 938,
+        "sha256": "6e7493a4859d48530820e68a4a19a513aad014ffc1048b42965a3ad36ae7c5f7",
+        "gitBlob": "2dee22fd780db9de662fe1243075e74cef0bf296"
+      },
+      {
+        "path": "src/service-credit-original-request-custody-contract.js",
+        "bytes": 14051,
+        "LF": 356,
+        "sha256": "fd349de553a17abcc2e0567ba6640e6e3d5d26cfa79ee1e355928dc9fa8d3915",
+        "gitBlob": "f911d42d01b69e6577f9bcd66f4ed59aab8ab882"
+      },
+      {
+        "path": "src/service-credit-http-execute-dispatch.js",
+        "bytes": 27034,
+        "LF": 770,
+        "sha256": "254ba8eef5ea5efb3a1b901be09e9cb33afbc3cfcf63789ca4a23316b6180d1b",
+        "gitBlob": "280dd20dc669e2856d263eba62ccd0fe9af72f21"
+      },
+      {
+        "path": "src/service-credit-custodied-backend-recovery-client.js",
+        "bytes": 14880,
+        "LF": 327,
+        "sha256": "519b68a4dc7c1c6474c1794a4a4f141239a56f5fed84b73b1c7ebc47e9735782",
+        "gitBlob": "af8626c511823161e5fb0a83623e2e17c08e78d8"
+      },
+      {
+        "path": "src/service-credit-custodied-sqlite-http-client.js",
+        "bytes": 18540,
+        "LF": 511,
+        "sha256": "ea16d6ac5ce72d6434c06e98c52c324daf918dd570f15997cdc21e501f677f4e",
+        "gitBlob": "9572dfcca76b83b53bdd5bd132ffaf110720dc3a"
+      },
+      {
+        "path": "src/service-credit-zenon-funding-post-v1-payer-recovery-sqlite-store.js",
+        "bytes": 57471,
+        "LF": 1536,
+        "sha256": "974f5e28f851b8504efb71cb800e71881f8d37965bad927be2d18c5f7324b224",
+        "gitBlob": "36c1984a74d14fef0bd5478e4b9cd968abfbfbb7"
+      },
+      {
+        "path": "src/x402-wire.js",
+        "bytes": 39886,
+        "LF": 934,
+        "sha256": "5fba91af5a352f62d1a335c7176a45a604e2af5d92b1c4b0e53825c1f20d4e56",
+        "gitBlob": "fb060d4e349b1c31a1219a0cc137af250a8a2291"
+      },
+      {
+        "path": "src/service-credit-durable-http-session.js",
+        "bytes": 13978,
+        "LF": 425,
+        "sha256": "a0d6d1436cdb697f125fee2f4dc723a5ddcfd2ee7063b55d56fa006bb8ba69bf",
+        "gitBlob": "307b72b8a1d114463ad8e18935312b18ccb23199"
+      },
+      {
+        "path": "src/service-credit-durable-execution-owner.js",
+        "bytes": 40833,
+        "LF": 1301,
+        "sha256": "a63a795dda77489f7da0682d83a0683cf07240f83b803f449668cb687a956863",
+        "gitBlob": "f0fd445a17466dd1ab83c785c44aa5e6fdf1e765"
+      },
+      {
+        "path": "src/service-credit-durable-session-close.js",
+        "bytes": 2470,
+        "LF": 84,
+        "sha256": "5aae36a7da39ce5b7b9a8da8e9fbda88465cb1e4853dc791520a1df0ab87ede7",
+        "gitBlob": "f744b55595e2238dc088cf71ca8849e480cda1bc"
+      },
+      {
+        "path": "qualification/service-credit-custodied-backend-dispatch.behavior.draft.mjs",
+        "bytes": 33011,
+        "LF": 574,
+        "sha256": "372618d67a294e1950365dd6691ccc99305a3c52609a906f51e2096b939643c6",
+        "gitBlob": "071df821ac5668ce69c75004dbdde380a9281e06"
+      }
+    ],
+    "physicalIdentitiesBeforeAndAfter": "MATCH_THIS_RUN",
+    "priorQualification": "Earlier backend-read, declared-client-store and native-payer results and guards remain unchanged as historical source-bound records. None was reauthored or replayed for the changed source, and their counts are not combined with this six-case selection."
+  },
+  "nativeExecution": {
+    "entry": "qualification/service-credit-custodied-backend-dispatch.behavior.draft.mjs",
+    "selectedTestEntries": 1,
+    "otherTestEntries": 0,
+    "nativeCommands": 1,
+    "task": "CLOSED_SUCCESS",
+    "command": "COMPLETE",
+    "actualExit": 0,
+    "outputComplete": true,
+    "counts": {
+      "tests": 6,
+      "suites": 0,
+      "pass": 6,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "tests": [
+      {
+        "name": "backend dispatch requires explicit transport and keeps the recovery-only client attenuated",
+        "outcome": "PASS",
+        "scenario": "EXPLICIT_TRANSPORT_AND_ATTENUATION"
+      },
+      {
+        "name": "backend dispatch executes the actual native backend session after custody and intent persist",
+        "outcome": "PASS",
+        "scenario": "ACTUAL_BACKEND_SESSION_DISPATCH"
+      },
+      {
+        "name": "backend dispatch refuses an original already retained after normal native reopen",
+        "outcome": "PASS",
+        "scenario": "PERSISTED_ORIGINAL_NO_REPLAY"
+      },
+      {
+        "name": "backend dispatch preserves client uncertainty when response is lost after backend success",
+        "outcome": "PASS",
+        "scenario": "UNKNOWN_RESPONSE_AFTER_BACKEND_COMMIT"
+      },
+      {
+        "name": "backend dispatch keeps the same original and intent non-replayable after unknown close and reopen",
+        "outcome": "PASS",
+        "scenario": "UNKNOWN_NORMAL_REOPEN_NO_REPLAY"
+      },
+      {
+        "name": "backend dispatch rejects a busy backend read without poisoning the completed original",
+        "outcome": "PASS",
+        "scenario": "BUSY_READ_AND_CLOSED_SUBMISSION_FENCE"
+      }
+    ],
+    "firstAndOnlyExecutionOfThisSelection": true,
+    "runtime": {
+      "node": "24.19.0",
+      "platform": "darwin",
+      "arch": "arm64",
+      "nodeBinarySha256": "dbedff294bab84a0a86c04e15fbcbeb1c97ca10bef1b32b0634cd24b36f62100",
+      "digestReuse": "Prior whole-file runtime digests reused only after all nine physical identity fields matched; no repeated large binary digest scan."
+    },
+    "launch": {
+      "explicitPositionalEntry": true,
+      "environment": "env -i with exact owned task scratch, source pins and synthetic opt-in",
+      "testIsolation": "none",
+      "concurrency": false,
+      "watch": false,
+      "forceExit": false,
+      "codeGenerationFromStrings": "DISALLOWED",
+      "addons": "DISALLOWED",
+      "nodePermissionModel": "OFF_REQUIRED_FOR_EXISTING_NATIVE_FCHMOD_FSYNC",
+      "nodeTestTimeoutMs": 5000,
+      "managerCommandTimeoutSeconds": 30,
+      "metadataLockTimeoutSeconds": 180,
+      "inlineCallerBytes": 8569,
+      "argvBytes": 15131,
+      "savedOrInstalledOperationalHelper": false,
+      "osOrNetworkSandbox": false,
+      "hardLifetimeCancellationCleanupOrAggregateDiskQuotaGuarantee": false
+    },
+    "actualComponents": [
+      "existing V3 native payer SQLite store",
+      "existing owned V3 custodied HTTP client",
+      "existing backend native SQLite store",
+      "existing scoped durable HTTP session",
+      "existing durable execution owner"
+    ],
+    "declaredComponents": {
+      "transport": "Trusted socketless request/response handles call the actual session handle and forward its response descriptors. This is not native HTTP, HTTPS, TLS, sockets or a deployed provider.",
+      "deadlineRuntime": "A trusted manual monotonic clock and token schedule/cancel interface drive the actual execution owner. No native backend timer/deadline qualification is claimed.",
+      "fundingAndActivation": "One fixed synthetic funding header pair and a privileged controlled backend V2 activation record seed the fixtures. The zenon:testnet label, transaction hash, confirmation fields and MOMENTUM_INCLUDED assertion authenticate no real chain, funding or policy authority."
+    },
+    "syntheticCapabilityKeyPairs": 1,
+    "syntheticCapabilityProofs": 3,
+    "capabilityKeysAndProofs": "In memory only; Authorization is excluded from custody records and diagnostic output.",
+    "syntheticFundingPairs": 1,
+    "syntheticServiceCreditRequests": 3,
+    "networkCalls": 0,
+    "fixtureProcessSpawning": 0,
+    "realPaymentSigner": "DISABLED",
+    "officialSdkImported": false,
+    "zenonSdkImported": false,
+    "stdout": {
+      "bytes": 5299,
+      "sha256": "fff46d88f8069ace9e166dd098549cb225e33b99bfdffde8a967df4d63e7db89"
+    },
+    "stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "ownedProcessGroupObservedAbsent": true,
+    "unresolvedNativeCommand": false
+  },
+  "coverage": {
+    "firstDispatch": "Actual native custody and intent writes/readbacks precede each supplied request implementation invocation. The real local backend admission/session/execution owner records one success for each of the three declared service-credit requests.",
+    "noReplay": "Normal native close/reopen preserves exact original request/body, funding headers/hash, custody, intent and complete schema rows. An already-retained original is refused before another transport call or backend execution.",
+    "responseLostAfterCommit": "The actual backend has recorded success before the declared response is dropped. The live client retains submission uncertainty; a combined read returns CLIENT_RECONCILIATION_REQUIRED with the separate cached backend assertion and no delivery authority.",
+    "unknownClose": "One existing root close Promise deliberately rejects CHILD_OUTCOME_UNKNOWN, while its independently observed native payer close returns exactly once and releases that local slot. This asserted rejection is not a failed test or successful delivery claim.",
+    "unknownReopen": "After normal same-process reopen, the original/intent still prevents another submission of the same request. The backend cached result is historical data with deliveryConfirmed false.",
+    "uncertaintyLimit": "The client's in-memory submission flag is not a durable transport receipt. These cases do not establish durable reconstruction of prior client response uncertainty or fresh-process recovery.",
+    "busyRead": "During an actual pending backend application callback, combined read returns BUSY with no backend query and no unavailable latch. After explicit fixture completion, the same original can be read normally. A closed full client refuses submissions.",
+    "expectedConfigurationRefusals": [
+      "missing explicit transport",
+      "accessor transport without invoking its getter",
+      "proxy transport without invoking it"
+    ],
+    "counters": {
+      "explicitServiceCreditDispatches": 3,
+      "syntheticBackendServiceCallbacks": 3,
+      "nativeCustodyRetains": 3,
+      "nativeInsertOnlyIntents": 3,
+      "backendOriginalReads": 5,
+      "ownedOpens": 6,
+      "nativeStoreCloseReturns": 6,
+      "closeFulfilled": 5,
+      "assertedClientUnknownCloseRejections": 1,
+      "expectedFactoryRefusals": 3,
+      "finalNativePayerOwnerEpoch": 7,
+      "finalRetainedOriginals": 3,
+      "finalRetainedIntents": 3,
+      "finalBackendExecutions": 3
+    },
+    "diagnostics": [
+      {
+        "kind": "P2_BACKEND_DISPATCH",
+        "version": 1,
+        "scenario": "EXPLICIT_TRANSPORT_AND_ATTENUATION",
+        "requestCalls": 0,
+        "bodylessEndCalls": 0,
+        "syntheticServiceCallbacks": 0,
+        "backendOriginalQueries": 0,
+        "ownedOpens": 1,
+        "storeCloseReturns": 1,
+        "closeFulfilled": 1,
+        "expectedCloseRejections": 0,
+        "expectedFactoryRefusals": 3,
+        "syntheticProofs": 3,
+        "nativeRetains": 0,
+        "nativeIntentWrites": 0,
+        "serviceDispatches": 0,
+        "deadlineScheduled": 0,
+        "deadlineCancelled": 0,
+        "deadlineTokens": 0,
+        "nativeSqliteFiles": 2,
+        "declaredNoSocketTransport": true,
+        "declaredBackendDeadline": true,
+        "realPaymentSigner": "DISABLED",
+        "networkCalls": 0,
+        "serviceDelivery": "NOT_ESTABLISHED"
+      },
+      {
+        "kind": "P2_BACKEND_DISPATCH",
+        "version": 1,
+        "scenario": "ACTUAL_BACKEND_SESSION_DISPATCH",
+        "requestCalls": 1,
+        "bodylessEndCalls": 1,
+        "syntheticServiceCallbacks": 1,
+        "backendOriginalQueries": 1,
+        "ownedOpens": 2,
+        "storeCloseReturns": 2,
+        "closeFulfilled": 2,
+        "expectedCloseRejections": 0,
+        "expectedFactoryRefusals": 3,
+        "syntheticProofs": 3,
+        "nativeRetains": 1,
+        "nativeIntentWrites": 1,
+        "serviceDispatches": 1,
+        "deadlineScheduled": 1,
+        "deadlineCancelled": 1,
+        "deadlineTokens": 0,
+        "nativeSqliteFiles": 2,
+        "declaredNoSocketTransport": true,
+        "declaredBackendDeadline": true,
+        "realPaymentSigner": "DISABLED",
+        "networkCalls": 0,
+        "serviceDelivery": "NOT_ESTABLISHED"
+      },
+      {
+        "kind": "P2_BACKEND_DISPATCH",
+        "version": 1,
+        "scenario": "PERSISTED_ORIGINAL_NO_REPLAY",
+        "requestCalls": 1,
+        "bodylessEndCalls": 1,
+        "syntheticServiceCallbacks": 1,
+        "backendOriginalQueries": 2,
+        "ownedOpens": 3,
+        "storeCloseReturns": 3,
+        "closeFulfilled": 3,
+        "expectedCloseRejections": 0,
+        "expectedFactoryRefusals": 3,
+        "syntheticProofs": 3,
+        "nativeRetains": 1,
+        "nativeIntentWrites": 1,
+        "serviceDispatches": 1,
+        "deadlineScheduled": 1,
+        "deadlineCancelled": 1,
+        "deadlineTokens": 0,
+        "nativeSqliteFiles": 2,
+        "declaredNoSocketTransport": true,
+        "declaredBackendDeadline": true,
+        "realPaymentSigner": "DISABLED",
+        "networkCalls": 0,
+        "serviceDelivery": "NOT_ESTABLISHED"
+      },
+      {
+        "kind": "P2_BACKEND_DISPATCH",
+        "version": 1,
+        "scenario": "UNKNOWN_RESPONSE_AFTER_BACKEND_COMMIT",
+        "requestCalls": 2,
+        "bodylessEndCalls": 2,
+        "syntheticServiceCallbacks": 2,
+        "backendOriginalQueries": 3,
+        "ownedOpens": 4,
+        "storeCloseReturns": 4,
+        "closeFulfilled": 3,
+        "expectedCloseRejections": 1,
+        "expectedFactoryRefusals": 3,
+        "syntheticProofs": 3,
+        "nativeRetains": 2,
+        "nativeIntentWrites": 2,
+        "serviceDispatches": 2,
+        "deadlineScheduled": 2,
+        "deadlineCancelled": 2,
+        "deadlineTokens": 0,
+        "nativeSqliteFiles": 2,
+        "declaredNoSocketTransport": true,
+        "declaredBackendDeadline": true,
+        "realPaymentSigner": "DISABLED",
+        "networkCalls": 0,
+        "serviceDelivery": "NOT_ESTABLISHED"
+      },
+      {
+        "kind": "P2_BACKEND_DISPATCH",
+        "version": 1,
+        "scenario": "UNKNOWN_NORMAL_REOPEN_NO_REPLAY",
+        "requestCalls": 2,
+        "bodylessEndCalls": 2,
+        "syntheticServiceCallbacks": 2,
+        "backendOriginalQueries": 4,
+        "ownedOpens": 5,
+        "storeCloseReturns": 5,
+        "closeFulfilled": 4,
+        "expectedCloseRejections": 1,
+        "expectedFactoryRefusals": 3,
+        "syntheticProofs": 3,
+        "nativeRetains": 2,
+        "nativeIntentWrites": 2,
+        "serviceDispatches": 2,
+        "deadlineScheduled": 2,
+        "deadlineCancelled": 2,
+        "deadlineTokens": 0,
+        "nativeSqliteFiles": 2,
+        "declaredNoSocketTransport": true,
+        "declaredBackendDeadline": true,
+        "realPaymentSigner": "DISABLED",
+        "networkCalls": 0,
+        "serviceDelivery": "NOT_ESTABLISHED"
+      },
+      {
+        "kind": "P2_BACKEND_DISPATCH",
+        "version": 1,
+        "scenario": "BUSY_READ_AND_CLOSED_SUBMISSION_FENCE",
+        "requestCalls": 3,
+        "bodylessEndCalls": 3,
+        "syntheticServiceCallbacks": 3,
+        "backendOriginalQueries": 5,
+        "ownedOpens": 6,
+        "storeCloseReturns": 6,
+        "closeFulfilled": 5,
+        "expectedCloseRejections": 1,
+        "expectedFactoryRefusals": 3,
+        "syntheticProofs": 3,
+        "nativeRetains": 3,
+        "nativeIntentWrites": 3,
+        "serviceDispatches": 3,
+        "deadlineScheduled": 3,
+        "deadlineCancelled": 3,
+        "deadlineTokens": 0,
+        "nativeSqliteFiles": 2,
+        "declaredNoSocketTransport": true,
+        "declaredBackendDeadline": true,
+        "realPaymentSigner": "DISABLED",
+        "networkCalls": 0,
+        "serviceDelivery": "NOT_ESTABLISHED"
+      }
+    ]
+  },
+  "storage": {
+    "newSyntheticSqliteFiles": 2,
+    "rawSqliteBytes": 57344,
+    "rawFiles": [
+      {
+        "name": "backend.sqlite",
+        "bytes": 24576,
+        "sha256": "df7797c3f09021ae560979302514d785167f4abd0b348e2658592bab90c73818"
+      },
+      {
+        "name": "payer.sqlite",
+        "bytes": 32768,
+        "sha256": "d15964f9a05b07b6947787069cd822a76862f97ce6e8d92e9fb85026df290edd"
+      }
+    ],
+    "expectedAllocationBytes": 2097152,
+    "taskQuotaBytes": 4194304,
+    "minimumFreeSpaceFloorBytes": 10737418240,
+    "stdoutCapBytes": 65536,
+    "stderrCapBytes": 1048576,
+    "cleanup": "HOLD: raw child-created SQLite files are not manager-registered disposable data.",
+    "taskClosure": "CLOSED_SUCCESS is distinct from cleanup HOLD.",
+    "rawDatabasesOpenedAsSqliteByIndependentReader": false,
+    "rawDatabasesCASAdopted": false,
+    "rawDatabasesDeleted": false,
+    "archiveOrBinaryPayloadCopies": 0,
+    "historicalCleanup": false,
+    "runtimeWholeDigestBytesRescanned": 0
+  },
+  "retainedEvidence": {
+    "completePrimaryHandoffIndependentlyRead": true,
+    "completeTAPNamesPlanCountsAndDiagnosticsReviewed": true,
+    "sourceAndPreservationStable": true,
+    "preservedRepositoryFiles": 131,
+    "preservedRepositoryBytes": 3158996,
+    "priorDirectPrivateFiles": 67,
+    "protectedAbsences": 8,
+    "earlier267OutcomeSealRetained": true,
+    "earlier267FullRehashOrCompletedReviewOrExecutionRepeated": false,
+    "earlierFailuresAndStoppedSelectionsPreserved": true,
+    "readOnlyMetadataBytes": 264469,
+    "receiptSha256": {
+      "ownership": "c221f7b9957f6109bb87e0ba2e3f3f364f2dd6f8b892f2938ce0791940bb6f1c",
+      "context": "6328d50ceb9a0a38e389d39dc28c0e5a7936c1c65d917a3784fc17470ca193a3",
+      "selection": "d6cae807d74dd53502ad17cec80776806cf2522d89b1f9b6feb53381a30aa56f",
+      "launch": "74586a44370c9efe5f6a8f5b35d066be5ca177d2f2d0bfba7c0a7388c431145f",
+      "command": "62ce527ec5d4a30defd1ed3e86dd3f2b3663ea2aa340f449087794a441d4a18a",
+      "rawSqliteInventory": "e555a7a3f30c3ab12dbb8018cb1104995f8b5a59f5665de2ad0c2438698a81fc",
+      "sourceAfter": "b8f39eab7d3e1061990f53df4103fcc71120ad2676f780b0620ee927e641aaf4",
+      "primaryOutcome": "99a332fd0372998dd5c7669b8c17701f8444858ae776b3571a3fa17aeb08a52b",
+      "outcome": "5175e653d8a89af5dc0f5e943af953c369bdbe2ca9b6121c7950809a91b22a63",
+      "cleanup": "d721a0f8bfbe09212c4cbd29db6c6082841ed2e0978c8a4609919185ab205f19"
+    }
+  },
+  "protectedBoundaries": {
+    "consumedAdmissions": 2,
+    "actualChainPrepare": 1,
+    "bundles": 0,
+    "nativeChainProviderQualificationRuns": 0,
+    "localNodeSqliteComponentRunReportedSeparately": true,
+    "syntheticServiceCallbacksAreNotChainPayments": true,
+    "originalLivePaymentRequestBytesHashPayloadRequirementsAndContextPreserved": true,
+    "consumedAuthorityNotReset": true,
+    "failedOwnershipMetadataNotRetried": true,
+    "pr193": "Possible VALIDATED exact-same-signed-block resend stays distinct from UNKNOWN and ACKNOWLEDGED. No resend, replacement payment or re-signing was performed or authorized by recovery views.",
+    "realPaymentSigner": "DISABLED",
+    "providerProvisioning": false,
+    "privateBootstrapAndGhcrBoundaryUnchanged": true
+  },
+  "notEstablished": [
+    "Full P2, production or pilot acceptance",
+    "Native HTTP/HTTPS/TLS/socket behavior, actual network or an active operational route",
+    "Real-time backend deadlines, hard cancellation, native cleanup or a timing/capacity benchmark",
+    "Fresh-process restart, crash, power loss, physical durability or durable transport-uncertainty reconstruction",
+    "Native close failures or forced post-acquisition composition cleanup faults",
+    "Atomic transactions across payer and backend stores or uncooperative concurrent writers",
+    "Independent current context/funding, payer/provider/policy authority, real provider READY or service delivery",
+    "Original live payment recovery, same-signed-block resend, Zenon SDK or live DP preparation",
+    "Chain canonicality, inclusion, receive, finality, economics or sustainable capacity",
+    "Hosted CI or the historical/default complete test suite"
+  ],
+  "hostedCI": {
+    "status": "NOT_RUN",
+    "notGreen": true,
+    "noNewWorkflowOrRunTriggered": true
+  },
+  "next": "Continue the distinct unfinished recovery/runtime gates without replaying this completed selection. Preserve the original request/payment and the difference between client response uncertainty, a backend cached assertion and independent live acceptance."
+}
