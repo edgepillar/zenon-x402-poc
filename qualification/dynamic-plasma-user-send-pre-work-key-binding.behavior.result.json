@@ -1,0 +1,556 @@
+{
+  "schema": "zenon-x402-qualification/v1",
+  "scope": "OCT21_DP_PRE_WORK_PUBLIC_KEY_ADDRESS_GUARD_DECLARED_DATA_ONLY",
+  "status": "PASS_SELECTED_LOCAL_DECLARED_DATA_PRE_WORK_KEY_GUARD_ONLY",
+  "summary": "A new fixed-cost pre-work public-byte/address predicate passed 23 exact authored local cases. A separate local bounded-material draft now calls it before any yield or search while retaining the later full assembly key check. That producer integration remains unexecuted and unpublished; this result does not qualify nonce search, actual preparation, SDK, runtime pricing, payment, signing, provider operation or a pilot.",
+  "source": {
+    "repository": "edgepillar/zenon-x402-poc",
+    "retainedMain": "10406031dcf2d3918eb50503140eee3b57680b12",
+    "retainedMainTree": "edb6ee862bfd4233c35d6e2db7c62f6a68832d6a",
+    "retainedMainNonTreeFiles": 536,
+    "unchangedRetainedFiles": 16,
+    "newImplementationFiles": 1,
+    "newQualificationEntries": 1,
+    "graphFiles": 18,
+    "graphBytes": 216785,
+    "graphCapBytes": 262144,
+    "perFileCapBytes": 65536,
+    "literalImportEdges": 58,
+    "authoredGraph": [
+      {
+        "path": "src/zenon/dynamic-plasma-user-send-pre-work-key-binding.js",
+        "bytes": 3783,
+        "LF": 73,
+        "sha256": "81c0b84174d045baac9b3cc8915e3a079ecf60590cbe43230bff287ce37d8bd9",
+        "gitBlob": "5aba63fd478cb3e32c2b409dd48034f7256a38b3"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-user-send-key-binding.js",
+        "bytes": 4237,
+        "LF": 91,
+        "sha256": "37ad7e74b038801297e4bffb0cb8ba92cbd79009ed32c4ae5b134fe2cb154be2",
+        "gitBlob": "c366f0fee4132604b40604547fe22f1bc1dba65d"
+      },
+      {
+        "path": "src/zenon/transaction-planner.js",
+        "bytes": 22611,
+        "LF": 464,
+        "sha256": "079fe8da938e08e33a20ca1076492a829afa6fce3ae7f9b9f68d3bf4bff94233",
+        "gitBlob": "17b49a3d53974c9b3846ec6f352d6e8974bad7d3"
+      },
+      {
+        "path": "package.json",
+        "bytes": 1413,
+        "LF": 40,
+        "sha256": "8c9a25504fbf6f87c31cdf245a6f4eec5a88cc89c8352151dc66a577c5771ef5",
+        "gitBlob": "ec7193f6fd76f34778515079dc777594175c4c34"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-json-rpc-read-transport.js",
+        "bytes": 10832,
+        "LF": 283,
+        "sha256": "fd03b2ad87d16660aa61d3961c163d724d5f89cd6d4bb9c4391d739566d5e5ca",
+        "gitBlob": "0475b7ab42889f67fb030fa7344d73d8bd6957d7"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-user-send-work-binding.js",
+        "bytes": 4522,
+        "LF": 98,
+        "sha256": "218b4391c97e4adde905415e20ec0e2015fca98643db85b6efd682aa3b5c5681",
+        "gitBlob": "1591c6fd60e90713fbec9b4249a69c1e5626405e"
+      },
+      {
+        "path": "src/canonical.js",
+        "bytes": 967,
+        "LF": 26,
+        "sha256": "0d55ddf1727cafb0dcd46df2922305568615552a4d2ae34a5c30e90b9d8d998c",
+        "gitBlob": "5367f9c72ee13017a61630e1f0cffdced21d52c4"
+      },
+      {
+        "path": "src/x402-wire.js",
+        "bytes": 39886,
+        "LF": 934,
+        "sha256": "5fba91af5a352f62d1a335c7176a45a604e2af5d92b1c4b0e53825c1f20d4e56",
+        "gitBlob": "fb060d4e349b1c31a1219a0cc137af250a8a2291"
+      },
+      {
+        "path": "src/zenon/bounded-json-rpc-read-core.js",
+        "bytes": 21759,
+        "LF": 582,
+        "sha256": "10cc529bfb0676bb03dc4dad56059663f4a578b586c52f6404fc859d27d18f76",
+        "gitBlob": "3bd98a83413eb13e3bceb097d35fb874b4c030a2"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-user-send-work-input.js",
+        "bytes": 2853,
+        "LF": 59,
+        "sha256": "2ff9c089e5903c059746d0a1c38688a2849f94d04d429279811fbbfbb40450a4",
+        "gitBlob": "dad4febf4ef6f09216640245c7e3805e01ad0127"
+      },
+      {
+        "path": "src/zenon/bounded-dynamic-plasma-strategy.js",
+        "bytes": 15729,
+        "LF": 353,
+        "sha256": "7b82560bdeb25e573912090a2fe8de7b45912500a7a7c4434fe06dcf94e06d62",
+        "gitBlob": "ee85b7a4da8bf4190ae099e6bc5074059fccebbc"
+      },
+      {
+        "path": "src/zenon/plasma-strategy.js",
+        "bytes": 974,
+        "LF": 32,
+        "sha256": "1c597d4e169ba8a5e6d2b7852c4ffa3a8ec9b854332fe354b9b013c36ebae093",
+        "gitBlob": "5cddc2d270aaf043e6e43145e95ffe0be3dde475"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-compatibility.js",
+        "bytes": 7732,
+        "LF": 225,
+        "sha256": "b3989ce15e5f2e9d07b0ed035fe96bcce9f22cac93f5e497fdca5c37bf7618dd",
+        "gitBlob": "3811b748b3f905e454c8a4af4650bb7f89eb1cf2"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-price-policy.js",
+        "bytes": 14957,
+        "LF": 418,
+        "sha256": "41e2e2044597cfa69c5adca292bcd762a189076be1cd939bec10798d7e35c52b",
+        "gitBlob": "ed505153487adb5284d895c922641b6de5d9caf8"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-required-fused-policy-adapter.js",
+        "bytes": 12024,
+        "LF": 272,
+        "sha256": "e2b693d4df9065d44ba590f4d0c8dffeb8e55187668eedfa396b4026c9905c3e",
+        "gitBlob": "b592aafd4c41461318376ea9acc1373f99317455"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-required-fused-quote.js",
+        "bytes": 5416,
+        "LF": 133,
+        "sha256": "f5e10ff2dbfff3b6b63d87f0abadd0bb52b5d6b8fe0ead6a55fc5ea14207b730",
+        "gitBlob": "e820fd31ffde4ef77a2efa6e1fd3ed1775778726"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-observation-normalizer.js",
+        "bytes": 28398,
+        "LF": 698,
+        "sha256": "2c3f7d42ded21a5513ff26c23a00a35a53aa334f053d10930f1571a020286897",
+        "gitBlob": "c406db8471aa6c8afd812c222c673c809491cf00"
+      },
+      {
+        "path": "qualification/dynamic-plasma-user-send-pre-work-key-binding.behavior.draft.mjs",
+        "bytes": 18692,
+        "LF": 311,
+        "sha256": "bc8ad46cbe55e4a9db891ceb476cb45619a117aca76b7540a2682017ae6ef440",
+        "gitBlob": "c11b44726753c68c4b86c96df201540f81e239cf"
+      }
+    ],
+    "unchangedFilesMatchRetainedMain": true,
+    "existingKeyHashWorkPriceAndAssemblyModulesModified": false,
+    "sourceAndFileIdentityStableBeforeAndAfter": true,
+    "basis": {
+      "roadmap": "P1-A explicit DP resource budget and selected payer preparation boundary; unsigned, opt-in and default-off.",
+      "sourceFinding": "The retained local material producer checked key syntax but deferred payer/public-byte agreement to assembly after candidate work. The new predicate permits that cheap refusal before candidate work; the independent final key/hash/work/price checks are not removed.",
+      "findingClassification": "SOURCE_IDENTIFIED_LOCAL_DRAFT_ORDERING_AND_RESOURCE_IMPROVEMENT_NOT_A_LIVE_VULNERABILITY",
+      "normativeRule": "Existing post-work key binding rule: go-zenon e58d8e80eabd9fd5630ed62e0707424d96b5303c common/types/address.go, zero user-address prefix plus the first 19 bytes of SHA3-256(publicKey32).",
+      "inputContract": "One unchanged exact unsigned AccountBlock DATA grammar, with a present canonical 32-byte Base64 public key, zero hash/nonce and empty signature.",
+      "noMissingCoverageAsSoleNoveltyClaim": true
+    }
+  },
+  "implementation": {
+    "file": "src/zenon/dynamic-plasma-user-send-pre-work-key-binding.js",
+    "export": "validateZenonUnsignedUserSendPreWorkKeyBinding",
+    "existingSnapshotsAndAddressCodecReused": true,
+    "output": "Frozen 21-field public-byte/address consistency DATA receipt; no AccountBlock, nonce, payment, payload, authority or operational method.",
+    "inputNotMutatedOrFrozen": true,
+    "cost": "One fixed 32-byte public-key SHA3-256 digest plus bounded existing field/address validation; no candidate search.",
+    "positiveDifficultyTreatment": "Accepted only as pre-work declared DATA; no nonce predicate is evaluated.",
+    "noPreparedOrSignedInputRepair": true,
+    "noPlannerWrapperOrMaterialOwnerCreated": true,
+    "noActiveBuyerSDKWalletSignerOrProviderCutover": true,
+    "laterFullChecksMustRemain": true
+  },
+  "selection": {
+    "entry": "qualification/dynamic-plasma-user-send-pre-work-key-binding.behavior.draft.mjs",
+    "explicitFiles": [
+      "qualification/dynamic-plasma-user-send-pre-work-key-binding.behavior.draft.mjs"
+    ],
+    "expectedCount": 23,
+    "newCases": 23,
+    "expectedNames": [
+      "pre-work key guard returns only a frozen detached public-byte address consistency receipt",
+      "pre-work key guard reuses exact subject and field digests without claiming block hash validity",
+      "pre-work key guard accepts positive declared difficulty without evaluating a candidate or inventing work evidence",
+      "pre-work key guard matches separate fixed public-byte address vectors through an independent fixture encoder",
+      "pre-work key guard rejects another canonical public key rather than repairing the original payer",
+      "pre-work key guard rejects another valid payer address rather than returning material for it",
+      "pre-work key guard does not confuse a non-user address core with the supplied public key user address",
+      "pre-work key guard refuses empty malformed noncanonical or non-32-byte public keys",
+      "pre-work key guard refuses already hashed nonzero nonce or signed blocks without normalization",
+      "pre-work key guard refuses malformed address checksum token or original unsigned field grammar",
+      "pre-work key guard rejects missing or surplus fields and operational decorations",
+      "pre-work key guard checks exact arity and object shape without coercion",
+      "pre-work key guard rejects selected getters and proxies without invoking caller hooks",
+      "pre-work key guard refuses primitive conversion and inherited records without invoking them",
+      "pre-work key guard leaves caller records mutable and never rewrites original fields",
+      "pre-work key guard is a repeatable DATA predicate not an admission reset or signing capability",
+      "pre-work key guard reports a closed refusal without raw input paths callbacks or retained causes",
+      "pre-work key guard preserves absence of curve point key possession funding and chain authentication proof",
+      "pre-work key guard does not substitute for the unchanged completed hash and zero-work legacy key validator",
+      "pre-work key guard and unchanged legacy validator both refuse canonical key bytes not matching the payer",
+      "pre-work key guard does not turn coherent changed transfer DATA into authenticated intent or payer authority",
+      "pre-work key guard source is one fixed public-byte validation stage without work producer owner SDK or active cutover",
+      "pre-work key guard selected import graph excludes every nonce material SDK wallet and operational owner module"
+    ],
+    "otherTestEntriesImported": 0,
+    "nameOrSkipFilters": false,
+    "nonceAndMaterialModuleImports": 0,
+    "actualNonceCandidates": 0,
+    "legacyValidationCases": "Only declared difficulty-zero, supplied-field hash/key consistency; no nonce search or generated signature.",
+    "noPreviouslyCompleted214Or50OrSQLiteCasesRerun": true,
+    "localWorkIndependentOfWorkerCommunicationMainAndCI": true
+  },
+  "qualification": {
+    "taskState": "CLOSED",
+    "taskOutcome": "SUCCESS",
+    "commandState": "COMPLETE",
+    "actualExit": 0,
+    "outputComplete": true,
+    "terminationReason": null,
+    "nativeNodeCommands": 1,
+    "counts": {
+      "tests": 23,
+      "suites": 0,
+      "pass": 23,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "passNames": [
+      "pre-work key guard returns only a frozen detached public-byte address consistency receipt",
+      "pre-work key guard reuses exact subject and field digests without claiming block hash validity",
+      "pre-work key guard accepts positive declared difficulty without evaluating a candidate or inventing work evidence",
+      "pre-work key guard matches separate fixed public-byte address vectors through an independent fixture encoder",
+      "pre-work key guard rejects another canonical public key rather than repairing the original payer",
+      "pre-work key guard rejects another valid payer address rather than returning material for it",
+      "pre-work key guard does not confuse a non-user address core with the supplied public key user address",
+      "pre-work key guard refuses empty malformed noncanonical or non-32-byte public keys",
+      "pre-work key guard refuses already hashed nonzero nonce or signed blocks without normalization",
+      "pre-work key guard refuses malformed address checksum token or original unsigned field grammar",
+      "pre-work key guard rejects missing or surplus fields and operational decorations",
+      "pre-work key guard checks exact arity and object shape without coercion",
+      "pre-work key guard rejects selected getters and proxies without invoking caller hooks",
+      "pre-work key guard refuses primitive conversion and inherited records without invoking them",
+      "pre-work key guard leaves caller records mutable and never rewrites original fields",
+      "pre-work key guard is a repeatable DATA predicate not an admission reset or signing capability",
+      "pre-work key guard reports a closed refusal without raw input paths callbacks or retained causes",
+      "pre-work key guard preserves absence of curve point key possession funding and chain authentication proof",
+      "pre-work key guard does not substitute for the unchanged completed hash and zero-work legacy key validator",
+      "pre-work key guard and unchanged legacy validator both refuse canonical key bytes not matching the payer",
+      "pre-work key guard does not turn coherent changed transfer DATA into authenticated intent or payer authority",
+      "pre-work key guard source is one fixed public-byte validation stage without work producer owner SDK or active cutover",
+      "pre-work key guard selected import graph excludes every nonce material SDK wallet and operational owner module"
+    ],
+    "stdout": {
+      "bytes": 5226,
+      "sha256": "17465e8bd19e60dfaa1be76846ed1da8ca9681699138b7b959a4c869264e299f"
+    },
+    "stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "fullCapturedStreamsIndependentlyRead": true,
+    "exactAuthoredPassAndSubtestNamesMatched": true,
+    "oneTapVersionOnePlanAndSevenCountsChecked": true,
+    "nativePassEventsAndStrictCallerCompletionRequired": true,
+    "noResultInferredFromZeroExitAlone": true,
+    "sourceBeforeAfterTaskCASAndOwnershipChecked": true,
+    "ownedProcessGroupObservedAbsent": true,
+    "runtime": {
+      "nodeVersion": "24.19.0",
+      "platform": "darwin",
+      "arch": "arm64",
+      "nodeSha256": "dbedff294bab84a0a86c04e15fbcbeb1c97ca10bef1b32b0634cd24b36f62100",
+      "controllerPythonVersion": "3.12.14",
+      "controllerPythonSha256": "811e2679c20fd2c7413f7c5ca28ce903065eea8dadb8660f1b9379a28959a480",
+      "runtimeDigestsReusedOnlyWithExactRetainedNineFieldIdentity": true,
+      "nativeCryptoBufferLoaderPromiseRunnerStreamsAndOSRemainPremises": true
+    },
+    "launch": {
+      "environment": "env -i TZ=UTC LANG=C LC_ALL=C; only reviewed opt-in and exact private source-pin variables are supplied.",
+      "argvShape": [
+        "env",
+        "-i",
+        "TZ=UTC",
+        "LANG=C",
+        "LC_ALL=C",
+        "X402_DP_PRE_WORK_KEY_OPT_IN=reviewed-declared-data-only",
+        "X402_DP_PRE_WORK_KEY_SOURCE_PINS=<exact18 private file and identity pins>",
+        "<pinned Node executable>",
+        "--permission",
+        "<one --allow-fs-read per exact reviewed graph file>",
+        "--disallow-code-generation-from-strings",
+        "--no-addons",
+        "--no-warnings",
+        "--eval",
+        "<inlineCaller>",
+        "<one exact absolute selected entry>"
+      ],
+      "privateAbsolutePathsAndFileIdentitiesOmitted": true,
+      "exactReadFileCount": 18,
+      "readFileList": [
+        "src/zenon/dynamic-plasma-user-send-pre-work-key-binding.js",
+        "src/zenon/dynamic-plasma-user-send-key-binding.js",
+        "src/zenon/transaction-planner.js",
+        "package.json",
+        "src/zenon/dynamic-plasma-json-rpc-read-transport.js",
+        "src/zenon/dynamic-plasma-user-send-work-binding.js",
+        "src/canonical.js",
+        "src/x402-wire.js",
+        "src/zenon/bounded-json-rpc-read-core.js",
+        "src/zenon/dynamic-plasma-user-send-work-input.js",
+        "src/zenon/bounded-dynamic-plasma-strategy.js",
+        "src/zenon/plasma-strategy.js",
+        "src/zenon/dynamic-plasma-compatibility.js",
+        "src/zenon/dynamic-plasma-price-policy.js",
+        "src/zenon/dynamic-plasma-required-fused-policy-adapter.js",
+        "src/zenon/dynamic-plasma-required-fused-quote.js",
+        "src/zenon/dynamic-plasma-observation-normalizer.js",
+        "qualification/dynamic-plasma-user-send-pre-work-key-binding.behavior.draft.mjs"
+      ],
+      "permissionModel": "ON_EXACT18_READ_ONLY_FILES",
+      "noWriteChildWorkerOrAddonGrant": true,
+      "notAnOSOrNetworkSandbox": true,
+      "argumentBytes": 16771,
+      "launchRecordBytes": 17965,
+      "inlineCallerBytes": 7947,
+      "inlineCaller": "process.exitCode = 125;\nconst { run } = require('node:test');\nconst { types: nativeTypes } = require('node:util');\nconst { tap } = require('node:test/reporters');\nconst { Writable, pipeline, finished } = require('node:stream');\nconst selections = {\"qualification/dynamic-plasma-user-send-pre-work-key-binding.behavior.draft.mjs\":[\"pre-work key guard returns only a frozen detached public-byte address consistency receipt\",\"pre-work key guard reuses exact subject and field digests without claiming block hash validity\",\"pre-work key guard accepts positive declared difficulty without evaluating a candidate or inventing work evidence\",\"pre-work key guard matches separate fixed public-byte address vectors through an independent fixture encoder\",\"pre-work key guard rejects another canonical public key rather than repairing the original payer\",\"pre-work key guard rejects another valid payer address rather than returning material for it\",\"pre-work key guard does not confuse a non-user address core with the supplied public key user address\",\"pre-work key guard refuses empty malformed noncanonical or non-32-byte public keys\",\"pre-work key guard refuses already hashed nonzero nonce or signed blocks without normalization\",\"pre-work key guard refuses malformed address checksum token or original unsigned field grammar\",\"pre-work key guard rejects missing or surplus fields and operational decorations\",\"pre-work key guard checks exact arity and object shape without coercion\",\"pre-work key guard rejects selected getters and proxies without invoking caller hooks\",\"pre-work key guard refuses primitive conversion and inherited records without invoking them\",\"pre-work key guard leaves caller records mutable and never rewrites original fields\",\"pre-work key guard is a repeatable DATA predicate not an admission reset or signing capability\",\"pre-work key guard reports a closed refusal without raw input paths callbacks or retained causes\",\"pre-work key guard preserves absence of curve point key possession funding and chain authentication proof\",\"pre-work key guard does not substitute for the unchanged completed hash and zero-work legacy key validator\",\"pre-work key guard and unchanged legacy validator both refuse canonical key bytes not matching the payer\",\"pre-work key guard does not turn coherent changed transfer DATA into authenticated intent or payer authority\",\"pre-work key guard source is one fixed public-byte validation stage without work producer owner SDK or active cutover\",\"pre-work key guard selected import graph excludes every nonce material SDK wallet and operational owner module\"]};\nlet selected = 'unselected';\n(async () => {\n  if (process.versions.node !== '24.19.0' || process.argv.length !== 2\n      || process.platform !== 'darwin' || process.arch !== 'arm64') throw Error('RUNTIME_OR_ARGUMENTS');\n  selected = Object.keys(selections).find(p => process.argv[1] === process.cwd() + '/' + p);\n  if (!selected) { selected = 'unselected'; throw Error('SELECTION'); }\n  const expected = selections[selected], seen = new Set(), reported = new Set();\n  const counts = new Map(), plans = [];\n  let bad = false, ended = false, reporterDone = false, versions = 0, bytes = 0, pending = '';\n  const known = name => expected.includes(name);\n  process.stdout.write('# entry ' + selected + '\\n# Node ' + process.versions.node\n    + ' platform=' + process.platform + ' arch=' + process.arch + '\\n');\n  function safeLine(line) {\n    let match;\n    if (line === 'TAP version 13') { versions++; return line; }\n    if ((match = /^# Subtest: (.+)$/.exec(line))) {\n      if (known(match[1])) return line;\n      bad = true;\n    } else if ((match = /^(ok|not ok) \\d+ - (.+)$/.exec(line))) {\n      if (!known(match[2]) || reported.has(match[2]) || match[1] !== 'ok') bad = true;\n      if (known(match[2])) { reported.add(match[2]); return line; }\n    } else if ((match = /^1\\.\\.(\\d+)$/.exec(line))) {\n      plans.push(Number(match[1])); return line;\n    } else if ((match = /^# (tests|suites|pass|fail|cancelled|skipped|todo) (\\d+)$/.exec(line))) {\n      if (counts.has(match[1])) bad = true;\n      counts.set(match[1], Number(match[2])); return line;\n    } else if (/^Bail out!/.test(line)) bad = true;\n    return null; // Do not publish physical locations, stacks or arbitrary diagnostics.\n  }\n  const source = run({\n    files: [process.argv[1]], isolation: 'none', concurrency: false,\n    timeout: 5000, forceExit: false, watch: false,\n  });\n\n  let eventLogBytes = 0;\n  const own = (x,k) => {\n    if (x === null || (typeof x !== 'object' && typeof x !== 'function') || nativeTypes.isProxy(x)) return undefined;\n    const d = Object.getOwnPropertyDescriptor(x,k);\n    return d && Object.hasOwn(d,'value') ? d.value : undefined;\n  };\n  function eventLog(label,value) {\n    const line = '# native-' + label + ' ' + JSON.stringify(value) + '\\n';\n    eventLogBytes += Buffer.byteLength(line);\n    if (eventLogBytes > 8192) { bad = true; return; }\n    process.stdout.write(line);\n  }\n  source.on('test:pass', data => {\n    if (!known(data.name) || seen.has(data.name) || data.nesting !== 0\n        || (data.skip !== undefined && data.skip !== false)\n        || (data.todo !== undefined && data.todo !== false)) bad = true;\n    seen.add(data.name);\n  });\n  source.on('test:fail', data => {\n    bad = true;\n    const wrapper = own(own(data,'details'),'error'), cause = own(wrapper,'cause') || wrapper;\n    const code = own(cause,'code'), message = own(cause,'message');\n    const item = {name: known(own(data,'name')) ? own(data,'name') : 'UNSELECTED_NATIVE_FAILURE',\n      code: typeof code === 'string' && /^[A-Z0-9_]{1,128}$/.test(code) ? code : 'UNAVAILABLE',\n      message: typeof message === 'string' && message.length <= 512 && !/[\\/\\\\]/.test(message) ? message : 'REDACTED'};\n    for (const k of ['actual','expected']) {\n      const value = own(cause,k);\n      if (value === null || typeof value === 'boolean' || Number.isSafeInteger(value)) item[k] = value;\n    }\n    eventLog('failure',item);\n  });\n  source.on('error', () => { bad = true; });\n  source.once('end', () => { ended = true; });\n  const sourceDone = new Promise(resolve => {\n    finished(source, { writable: false }, error => { if (error) bad = true; resolve(); });\n  });\n  const sink = new Writable({\n    write(chunk, encoding, callback) {\n      try {\n        bytes += Buffer.byteLength(chunk);\n        if (bytes > 65536) throw Error('REPORTER_CAP');\n        pending += String(chunk);\n        const lines = pending.split('\\n'); pending = lines.pop();\n        const safe = lines.map(safeLine).filter(line => line !== null);\n        if (safe.length) process.stdout.write(safe.join('\\n') + '\\n', callback);\n        else callback();\n      } catch { callback(Error('REPORTER_FAILED')); }\n    },\n    final(callback) { if (pending !== '') bad = true; callback(); },\n  });\n  const reporter = source.compose(tap);\n  const reportDone = new Promise(resolve => {\n    pipeline(reporter, sink, error => { reporterDone = !error; if (error) bad = true; resolve(); });\n  });\n  await Promise.all([sourceDone, reportDone]);\n  const zero = ['suites', 'fail', 'cancelled', 'skipped', 'todo'];\n  if (bad || !ended || !reporterDone || versions !== 1 || plans.length !== 1\n      || plans[0] !== expected.length || seen.size !== expected.length\n      || reported.size !== expected.length || !expected.every(name => seen.has(name) && reported.has(name))\n      || counts.get('tests') !== expected.length || counts.get('pass') !== expected.length\n      || !zero.every(key => counts.get(key) === 0)\n      || process.exitCode !== 125) throw Error('INCOMPLETE_OR_UNEXPECTED_RESULTS');\n  process.exitCode = 0;\n  process.stdout.write('# qualification PASS ' + selected + '\\n');\n})().catch(() => {\n  if ([undefined, 0, 125].includes(process.exitCode)) process.exitCode = 1;\n  process.stderr.write('qualification caller failed\\n');\n  process.stdout.write('# qualification FAIL ' + selected + '\\n');\n});",
+      "argumentAndMetadataRecordCapBytes": 32768,
+      "runner": {
+        "api": "node:test run",
+        "isolation": "none",
+        "concurrency": false,
+        "timeoutMs": 5000,
+        "forceExit": false,
+        "watch": false,
+        "files": [
+          "qualification/dynamic-plasma-user-send-pre-work-key-binding.behavior.draft.mjs"
+        ]
+      },
+      "managerCommandTimeoutSeconds": 30,
+      "metadataLockTimeoutSeconds": 180,
+      "timeoutIsNotHardLifetimeCancellationCPUTimeOrNativeCleanupAssurance": true,
+      "stdoutCapBytes": 65536,
+      "stderrCapAtMostBytes": 1048576,
+      "noSavedOrInstalledOperationalHelper": true,
+      "noDependencyInstallation": true
+    },
+    "independentReadBoundaries": {
+      "sourceFiles": 18,
+      "sourceBytes": 216785,
+      "otherRepositoryFiles": 111,
+      "otherRepositoryBytes": 2603593,
+      "priorOutcomeFiles": 113,
+      "priorOutcomeBytes": 1650305,
+      "priorOutcomeByteCap": 1835008,
+      "oldOwnershipFailureNamespaceFiles": 10,
+      "oldOwnershipFailureAbsences": 2
+    },
+    "qualifiedBehavior": [
+      "Validate actual pre-work block address against canonical supplied public bytes through the retained closed field snapshot and address codec.",
+      "Return exactly 21 frozen primitive DATA fields; expose no prepared block or work/sign/publication capability.",
+      "Reject canonical but mismatched keys and foreign user/non-user addresses without repairing the payer.",
+      "Reject empty/noncanonical/incorrect-sized public keys, signed/already-hashed/nonzero-nonce inputs, malformed fields, surplus authority fields and unsupported object mechanics.",
+      "Reject getters, proxies and coercion hooks without invoking them; preserve mutable caller records and retain detached receipt bindings.",
+      "Keep positive declared difficulty explicitly unperformed, and preserve key-possession/signature/funding/chain/authority non-claims.",
+      "Retain the unchanged legacy full hash/zero-work/key consumer as a distinct later stage; the pre-work predicate cannot replace it."
+    ],
+    "notQualified": "Bounded-material producer admission/search/read ordering and full DP preparation integration were not imported or executed by this selection."
+  },
+  "localIntegrationDraft": {
+    "status": "WRITTEN_PARSE_ONLY_UNEXECUTED_UNPUBLISHED",
+    "publicPacketIncludesTheseDrafts": false,
+    "editedFiles": [
+      {
+        "path": "src/zenon/dynamic-plasma-bounded-material-exchange.js",
+        "bytes": 11992,
+        "LF": 213,
+        "sha256": "6773c946991834dfe3b01943bdb9bad7513ef0cbbb15b31e607b095bab42b28b",
+        "gitBlob": "1b84b826d4fc53f40127272e6b9651328961a085"
+      },
+      {
+        "path": "qualification/dynamic-plasma-bounded-material-exchange.behavior.draft.mjs",
+        "bytes": 29938,
+        "LF": 460,
+        "sha256": "88839d63637721abdf2b42dfac3ec11245a33a230b818a40790b09311aaa85b7",
+        "gitBlob": "21ec0e6eb2f0365ce8ced756859f76fa9cb87dd8"
+      },
+      {
+        "path": "qualification/dynamic-plasma-bounded-observed-balance-planner.behavior.draft.mjs",
+        "bytes": 27389,
+        "LF": 433,
+        "sha256": "34a9d7617b18bf7eb3e1e85a0b984a9ccb50f4d8c73828032f0d8e77e5553d6b",
+        "gitBlob": "212375ee5c99400f5cc8635ef9eba5c6d0f1606f"
+      }
+    ],
+    "scope": [
+      "Capture this pre-work validator in the existing bounded material exchange and call it on a private detached block with the configured public key before the initial yield and captured SEARCH.",
+      "Retain original work-request evidence flags, original block/quote, one-use/busy/used guards, bounded search limits and the independent full assembly key check.",
+      "Update only the unexecuted material and bounded-balance draft cases for early mismatch refusal; preserve all earlier source-pinned qualification entries."
+    ],
+    "newUnexecutedMaterialCases": 2,
+    "materialDraftRegistrations": 26,
+    "boundedBalanceDraftRegistrations": 21,
+    "priorNonceSearchDraftRegistrations": 16,
+    "proposedFullBoundedBalanceSelection": {
+      "registrations": 277,
+      "retainedPreviouslyExecuted": 214,
+      "currentUnexecutedProducerAndSearch": 42,
+      "currentUnexecutedBoundedBalanceCases": 21
+    },
+    "proposedCombinedCandidateReservation": 62112,
+    "aggregateCandidateCap": 65536,
+    "observedProducerOrReferenceCandidateEvaluations": 0,
+    "noClaimOfMeasuredCPUOrReadSavings": true,
+    "earlyKeyMismatchSavings": "Source ordering would avoid bounded candidate work and later assembly/read cycles for a mismatched key; the producer-level observation still requires its separately admitted qualification.",
+    "syntaxOnly": {
+      "commands": [
+        {
+          "path": "src/zenon/dynamic-plasma-bounded-material-exchange.js",
+          "sourceSha256": "6773c946991834dfe3b01943bdb9bad7513ef0cbbb15b31e607b095bab42b28b",
+          "actualExit": 0,
+          "stdoutBytes": 0,
+          "stderrBytes": 0,
+          "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "qualification/dynamic-plasma-bounded-material-exchange.behavior.draft.mjs",
+          "sourceSha256": "88839d63637721abdf2b42dfac3ec11245a33a230b818a40790b09311aaa85b7",
+          "actualExit": 0,
+          "stdoutBytes": 0,
+          "stderrBytes": 0,
+          "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "qualification/dynamic-plasma-bounded-observed-balance-planner.behavior.draft.mjs",
+          "sourceSha256": "34a9d7617b18bf7eb3e1e85a0b984a9ccb50f4d8c73828032f0d8e77e5553d6b",
+          "actualExit": 0,
+          "stdoutBytes": 0,
+          "stderrBytes": 0,
+          "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ],
+      "actualExits": [
+        0,
+        0,
+        0
+      ],
+      "flags": [
+        "--permission",
+        "<exact single source plus package.json read grants>",
+        "--disallow-code-generation-from-strings",
+        "--no-addons",
+        "--no-warnings",
+        "--check"
+      ],
+      "withoutTargetExecutionOrDependencyImport": true,
+      "notBehaviorOrProducerQualification": true
+    }
+  },
+  "retainedOriginalDraftVersions": {
+    "count": 3,
+    "logicalBytes": 66744,
+    "payloads": [
+      {
+        "path": "src/zenon/dynamic-plasma-bounded-material-exchange.js",
+        "bytes": 11199,
+        "LF": 202,
+        "sha256": "1054b5635ad763107411ec71f7eb6b604109698bfe8067788b47ecaa5e763d34",
+        "gitBlob": "a06de69ed9db6fb1d91a1908df897adac24f8aef"
+      },
+      {
+        "path": "qualification/dynamic-plasma-bounded-material-exchange.behavior.draft.mjs",
+        "bytes": 28167,
+        "LF": 435,
+        "sha256": "78b97a9212b0b5d83b239f0d4746b3036810f13e830738ae72c9a8de00aa6453",
+        "gitBlob": "43c558c42e704b319b56596fb349f8bdfc4365eb"
+      },
+      {
+        "path": "qualification/dynamic-plasma-bounded-observed-balance-planner.behavior.draft.mjs",
+        "bytes": 27378,
+        "LF": 433,
+        "sha256": "f1e9777e3941ffccde88b1639273807d01444622622fb38c0e5ac0b505300a00",
+        "gitBlob": "ec93bef86316c4d434106a71ca5945fc6979d64e"
+      }
+    ],
+    "retainedInPrivateOwnedCAS": true,
+    "noSecondPayloadArchiveOrClone": true,
+    "sourceRetentionController": {
+      "actualControllerExit": 1,
+      "observedFailureType": "TypeError",
+      "sourceIdentifiedCause": "An unsupported close(success=...) keyword was used; the existing manager API accepts a positional outcome.",
+      "allThreePayloadsPreservedAndIndependentlyVerified": true,
+      "nativeCommands": 0,
+      "originalProcessTerminalConfirmed": true,
+      "onlyOwnEmptyTaskLeaseReacquiredWithoutForce": true,
+      "finalTaskState": "CLOSED",
+      "finalTaskOutcome": "FAILURE",
+      "closeFailureRecordRetained": true,
+      "notCountedAsTestOrQualificationSuccess": true,
+      "noNativeCommandRerunOrConsumedAuthorityReset": true,
+      "registeredEmptyScratchCleanupBytes": 0,
+      "historicalDataOrHelpersModified": false
+    }
+  },
+  "storage": {
+    "manager": "Existing approved unchanged task-storage implementation",
+    "productionFreeSpaceFloorBytes": 10737418240,
+    "expectedAllocationBytes": 2097152,
+    "taskQuotaBytes": 4194304,
+    "noMountFallbackOrRootRecreation": true,
+    "retainedNewTestStdoutBytes": 5226,
+    "retainedNewTestStderrBytes": 0,
+    "testCreatedPersistentFiles": 0,
+    "ownedEmptyTestScratchCleanupBytes": 0,
+    "sourceAliases": 0,
+    "downloads": 0,
+    "zipExports": 0,
+    "historicalCleanupOrAdoption": false,
+    "taskAndScratchClosureIndependentlyChecked": true
+  },
+  "publicationBoundary": {
+    "intendedFiles": [
+      "src/zenon/dynamic-plasma-user-send-pre-work-key-binding.js",
+      "qualification/dynamic-plasma-user-send-pre-work-key-binding.behavior.draft.mjs",
+      "qualification/dynamic-plasma-user-send-pre-work-key-binding.behavior.result.json"
+    ],
+    "changes": "Three additions only. No existing production source, unexecuted producer/nonce/bounded planner draft, workflow, SDK, payment or ownership metadata is included.",
+    "freshMainDiffOwnershipRulesAndCIGatesRequiredBeforeTransfer": true,
+    "normalFastForwardOnly": true,
+    "forceOrProtectionBypass": false,
+    "hostedCIForThisPacket": "NOT_RUN",
+    "noNewHostedCIRequested": true,
+    "localPassNotHostedOrLiveAssurance": true
+  },
+  "nonClaims": [
+    "The predicate proves declared public-byte/address consistency, not a valid curve point, key possession, wallet/payer authority, signature or chain truth.",
+    "The same key/address with coherent changed transfer DATA does not establish selected external payment intent or grant authority.",
+    "No nonce candidate, PoW producer, actual SDK preparation, actual chain PREPARE, real signature, payment, publication, provider READY, service delivery or pilot acceptance was exercised.",
+    "The standalone 23-case result does not qualify the unexecuted producer linkage or the proposed 277-case composed selection.",
+    "Parse-only success is not import, behavior, work execution, lifetime/cancellation or native-cleanup proof.",
+    "Price policy/runtime p, current account/funding, payer/provider/policy authority, same-signed-payment uncertainty, persistence and process restart remain independent acceptance gates.",
+    "Original request/payment bytes, exact hash/payload/requirements/context, consumed authority and VALIDATED possible exact-same-signed-block resend versus UNKNOWN/ACKNOWLEDGED remain unchanged."
+  ],
+  "protectedTotals": {
+    "consumedAdmissions": 2,
+    "actualPrepare": 1,
+    "bundles": 0,
+    "nativeQualificationRuns": 0
+  },
+  "realSigner": "DISABLED",
+  "fullRoadmapQualified": false,
+  "productionAcceptance": "NO_GO"
+}
