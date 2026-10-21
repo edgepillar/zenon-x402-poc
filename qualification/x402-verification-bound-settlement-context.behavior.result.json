@@ -1,0 +1,376 @@
+{
+  "schemaVersion": 1,
+  "scope": "OCT21_P1B_VERIFICATION_BOUND_SELECTED_SETTLEMENT_CONTEXT",
+  "recordedDate": "2026-10-21",
+  "status": "SELECTED_LOCAL_DECLARED_DATA_COMPONENT_PASS_REAL_OFFICIAL_X402_RECOVERY_NOT_RUN",
+  "selection": {
+    "roadmapLane": "P1_B_PENDING_RECOVERY",
+    "finiteSlice": "Capture original serialized context before a declared verifier and bind all later first/pending settlement calls to that same context using one existing owner.",
+    "retainedOwnerAssertions": 10,
+    "newAssertions": 20,
+    "totalAssertions": 30,
+    "implementation": "Primary self-implementation; no worker, model, settings or automation mutation.",
+    "noveltyBasis": "New verification-to-settlement orchestration with explicit pre-verification binding and20 new assertions, not a metadata gap or repeated stopped selection.",
+    "ownership": {
+      "baselineMain": "a8517d844c6e763e65d1c862af5937d27d10ecd0",
+      "baselineTree": "bf1a1cd8f6fd524b9fd554aa5751a360d8bcbdff",
+      "openPRHeads": {
+        "157": "525578cc44db23943e9cfb5a62c4d1c487cca99a",
+        "175": "40eca21c34263513230c5d3c431250a0ed42aa90",
+        "193": "5b4bf1b6780586676007c84303510fb4e316cf5e",
+        "194": "79ca2b430ae53c55b1aba11e56c99e083d4a8431"
+      },
+      "newTargetPathOverlap": [],
+      "existingFilesChanged": 0
+    },
+    "authority": "Only bounded local synthetic declared-DATA/test-owned callback/native Promise checks. No SDK, native owner, actual verifier, payment or signing execution."
+  },
+  "implementation": {
+    "factory": "createVerificationBoundSelectedSettlementContext",
+    "configuration": "Exact {original, verifyOriginal, settleFirst, reconcilePending, maxPendingReconciliations}. Original is the existing five-string binding. All callback roles are distinct non-proxy trusted embedding choices.",
+    "bindingFields": [
+      "payloadJson",
+      "requirementsJson",
+      "challengeJson",
+      "paymentHash",
+      "network"
+    ],
+    "sequence": [
+      "Capture the original binding before any verifier callback, and construct ONE unchanged existing settlement owner.",
+      "verifyOriginal accepts only an exact matching binding. It calls the verifier at most once and accepts only exact {isValid:boolean} DATA, synchronous or a supported native Promise.",
+      "Only MATCHED_DECLARED_VALID permits attempt. False or admitted verification faults are non-retryable; wrong arity/foreign input before entry invokes no callback.",
+      "Every attempt matches the retained original binding before passing it to the SAME underlying owner.",
+      "The underlying owner alone enforces first-attempt consumption, bounded PENDING-only observer calls, terminality and one-positive response limits."
+    ],
+    "interfaces": [
+      "verifyOriginal(binding) -> native Promise of Boolean",
+      "attempt(binding) -> native Promise of existing validated response string",
+      "getSnapshot() -> frozen credential-free declared state"
+    ],
+    "snapshotLabels": {
+      "verificationEvidence": "DECLARED_CALLBACK_BOOLEAN_ONLY",
+      "bindingScope": "EXACT_DECLARED_SERIALIZED_CONTEXT_ONLY",
+      "persistence": "MEMORY_ONLY",
+      "recoveryAuthority": "NONE"
+    },
+    "callbackResults": "Settlement callbacks retain the existing exact owner packet interface. Normalization at an actual SDK boundary is separate, not invented here.",
+    "admission": "Busy precedes input inspection. One admitted verification invocation, including false/throw/reject/unsafe result. No reset, reverify, fallback, restore, close or replacement payment.",
+    "importantLimit": "A caller Boolean is not signature validation, authenticated bytes, current context/funding/payer/provider/policy authority or an operational permit. Equal strings are declared serializations, not raw wire/signed-block custody. Separate instances are not a global replay/restart guard.",
+    "cutover": "DEFAULT_OFF_UNWIRED. No active buyer, server, existing SDK bridge or signer source was changed. No active-CLI vulnerability or actual SDK compatibility claim is made."
+  },
+  "source": {
+    "baselineMain": "a8517d844c6e763e65d1c862af5937d27d10ecd0",
+    "retainedThreeFilesMatchImmutableBaselineBlobs": true,
+    "authoredGraph": [
+      {
+        "path": "src/x402-selected-settlement-context.js",
+        "bytes": 16818,
+        "LF": 456,
+        "sha256": "afb6e16603023dd58d6a71cff5790a802dcfa4b98bc9d380b51ccc3d58e10991",
+        "gitBlob": "321d2a03a45296907c0a35a50d1e038e82307a40"
+      },
+      {
+        "path": "test/x402-selected-settlement-context-owner.test.js",
+        "bytes": 27236,
+        "LF": 601,
+        "sha256": "861e41ce25894a24ffcaa14f76a219382feef37a75f66bf8c4302ad000d87264",
+        "gitBlob": "0c989cfe47a77c76fc0b3a10c1d3bd0500783f3e"
+      },
+      {
+        "path": "package.json",
+        "bytes": 1413,
+        "LF": 40,
+        "sha256": "8c9a25504fbf6f87c31cdf245a6f4eec5a88cc89c8352151dc66a577c5771ef5",
+        "gitBlob": "ec7193f6fd76f34778515079dc777594175c4c34"
+      },
+      {
+        "path": "src/x402-verification-bound-settlement-context.js",
+        "bytes": 11311,
+        "LF": 221,
+        "sha256": "b3ad2fd33dae7e77a77f069cbc1259bf77e18a2bf383aa30f41bcc19221656f5",
+        "gitBlob": "6734a4aa011239402c141b874612a3be0733b4bf"
+      },
+      {
+        "path": "qualification/x402-verification-bound-settlement-context.behavior.draft.mjs",
+        "bytes": 24852,
+        "LF": 380,
+        "sha256": "2efd1b9a34f3e2ffe5aed1b2a30142d3e6a51aca6b0752de11f08c500942c505",
+        "gitBlob": "be4bd8148d5c5c01e0a2814e03e13a9848206caf"
+      }
+    ],
+    "graphFiles": 5,
+    "graphBytes": 81630,
+    "graphCapBytes": 131072,
+    "perFileCapBytes": 65536,
+    "literalImportEdges": 15,
+    "reviewedPinnedDynamicImportEdges": 1,
+    "knownDynamicImport": {
+      "file": "test/x402-selected-settlement-context-owner.test.js",
+      "expression": "await import(pins[0].url)",
+      "target": "src/x402-selected-settlement-context.js",
+      "targetPin": {
+        "path": "src/x402-selected-settlement-context.js",
+        "bytes": 16818,
+        "LF": 456,
+        "sha256": "afb6e16603023dd58d6a71cff5790a802dcfa4b98bc9d380b51ccc3d58e10991",
+        "gitBlob": "321d2a03a45296907c0a35a50d1e038e82307a40"
+      },
+      "guard": "The immutable unit source contains exactly this one dynamic import; its sole literal source-pin tuple and complete registration loop were independently inspected."
+    },
+    "registrationAccounting": "Ten exact scenario-array names in the immutable owner unit, registered by its reviewed loop with the default all selector, followed by20 literal test registrations in the new entry. No name/skip filter.",
+    "nodeBuiltins": [
+      "node:buffer",
+      "node:util",
+      "node:test",
+      "node:assert/strict",
+      "node:fs",
+      "node:crypto"
+    ],
+    "callerAdditionalBuiltins": [
+      "node:test/reporters",
+      "node:stream"
+    ],
+    "noSDKOrBareDependencyImport": true,
+    "newFiles": [
+      {
+        "path": "src/x402-verification-bound-settlement-context.js",
+        "bytes": 11311,
+        "LF": 221,
+        "sha256": "b3ad2fd33dae7e77a77f069cbc1259bf77e18a2bf383aa30f41bcc19221656f5",
+        "gitBlob": "6734a4aa011239402c141b874612a3be0733b4bf"
+      },
+      {
+        "path": "qualification/x402-verification-bound-settlement-context.behavior.draft.mjs",
+        "bytes": 24852,
+        "LF": 380,
+        "sha256": "2efd1b9a34f3e2ffe5aed1b2a30142d3e6a51aca6b0752de11f08c500942c505",
+        "gitBlob": "be4bd8148d5c5c01e0a2814e03e13a9848206caf"
+      }
+    ]
+  },
+  "qualification": {
+    "entry": "qualification/x402-verification-bound-settlement-context.behavior.draft.mjs",
+    "passNames": [
+      "first success retains exact bindings and permanently consumes first authority",
+      "pending reaches one success through only the explicit original-context observer",
+      "pending budgets and missing observers retain pending without another first call",
+      "changed missing and foreign bindings cannot reach either callback",
+      "concurrent calls and reentrancy never coalesce another success capability",
+      "callback failures unsafe packets and explicit unknown outcomes remain held",
+      "publication declarations preserve uncertainty without inferred acknowledgements",
+      "hostile config input and result surfaces execute no traps or coercion",
+      "arity size and count bounds keep snapshots fresh frozen and credential-free",
+      "independent owners preserve local one-positive limits without restart authority",
+      "verification bound settlement exposes three frozen methods with captured distinct roles and zero constructor handoffs",
+      "verification bound settlement refuses settlement before verification and preserves original first authority",
+      "verification bound settlement snapshots the original before verification and returns only primitive verification and existing response strings",
+      "verification bound settlement keeps one original payment through pending to one success without another first call",
+      "verification bound settlement preserves pending budgets and absence of an observer without recreating the owner",
+      "verification bound settlement refuses every changed or missing binding before verification first settlement and pending observation",
+      "verification bound settlement permanently rejects a declared false verification without first or observer authority",
+      "verification bound settlement holds throwing rejected or malformed verification without reading raw private reasons",
+      "verification bound settlement stays busy before hostile input while the original verifier Promise is pending",
+      "verification bound settlement leaves wrong arity and hostile preflight input unconsumed without trap or coercion hooks",
+      "verification bound settlement observes native verification promises without an own then lookup and rejects unsupported mechanics",
+      "verification bound settlement snapshots fulfilled verification before any hostile result then or field getter assimilation",
+      "verification bound settlement rejects reentrant calls and its own verification receipt without resetting the original",
+      "verification bound settlement captures all role and original references before later option mutation",
+      "verification bound settlement retains busy and one positive response limits while first settlement is pending",
+      "verification bound settlement preserves unknown versus acknowledged declarations and terminal recovery boundaries",
+      "verification bound settlement shields public receipts and rejects preflight native mutation before any borrowed callback",
+      "verification bound settlement delegates finite original bounds and treats opaque declared strings as neither wire custody nor authentication",
+      "verification bound settlement independent instances preserve local scopes without granting global replay or restart authority",
+      "verification bound settlement source captures one existing owner without SDK bridge signer work native owner or default cutover"
+    ],
+    "counts": {
+      "tests": 30,
+      "suites": 0,
+      "pass": 30,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "nativeNodeCommandsForThisNewComposition": 1,
+    "sameExactInputReruns": 0,
+    "fullRunWithoutNameOrSkipFilter": true,
+    "joined": true,
+    "actualExit": 0,
+    "outputComplete": true,
+    "allActualNamesMatchedEveryAuthoredRegistration": true,
+    "actualNativePassEventsAndCompleteNamedTAPPlanAndAllSevenCountsMatched": true,
+    "stdout": {
+      "bytes": 7197,
+      "sha256": "d9b5c9aeab1135f475b07f24368440c6073f237c3d6619ed8d77ae3903c4d73b"
+    },
+    "stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "fullStdoutRetainedOnceInProtectedCAS": true,
+    "duplicatePublicStdoutOrZipCreated": false,
+    "runtime": {
+      "node": {
+        "version": "24.19.0",
+        "platform": "darwin",
+        "arch": "arm64",
+        "bytes": 121304480,
+        "sha256": "dbedff294bab84a0a86c04e15fbcbeb1c97ca10bef1b32b0634cd24b36f62100"
+      },
+      "controller": {
+        "pythonVersion": "3.12.14",
+        "bytes": 18058560,
+        "sha256": "811e2679c20fd2c7413f7c5ca28ce903065eea8dadb8660f1b9379a28959a480"
+      },
+      "digestReuse": "Earlier complete runtime digests reused only after exact nine-field identity checks; source/manager/store/volume identity checked before and after the command."
+    },
+    "launch": {
+      "fixedCommonJsRunApi": true,
+      "inlineCallerReconstruction": {
+        "repository": "edgepillar/zenon-x402-poc",
+        "commit": "c07c0110f2d3b322271336e64bde6f053d930253",
+        "record": {
+          "path": "qualification/dynamic-plasma-raw-adapter-consumer.behavior.result.json",
+          "bytes": 25139,
+          "LF": 363,
+          "sha256": "adc0c4a5310f3a5d92e3099ed510f7722a36c7136c9ebfe84fbf8e5b66928b4b",
+          "gitBlob": "062024e6b06cb7194245451d7678f2cdf63553c6"
+        },
+        "field": "qualification.launch.inlineCallerReconstruction",
+        "selectionConstruction": "'const selections = ' + JSON.stringify({[entry]:passNames}) + ';'",
+        "recipe": "base.prefix + selectionConstruction + base.suffix; no testNamePatterns/testSkipPatterns options. The exact actual caller was checked against this reconstruction."
+      },
+      "environment": [
+        "TZ=UTC",
+        "LANG=C",
+        "LC_ALL=C"
+      ],
+      "allOtherEnvironmentCleared": true,
+      "argvTemplate": [
+        "env",
+        "-i",
+        "TZ=UTC",
+        "LANG=C",
+        "LC_ALL=C",
+        "<pinned-node>",
+        "--permission",
+        "<one exact --allow-fs-read=<repo>/<authoredGraph path> per file>",
+        "--disallow-code-generation-from-strings",
+        "--no-addons",
+        "--no-warnings",
+        "--eval",
+        "<reconstructed inline caller>",
+        "<repo>/qualification/x402-verification-bound-settlement-context.behavior.draft.mjs"
+      ],
+      "exactFileReadGrants": 5,
+      "directoryReadExpansion": false,
+      "fsWriteChildWorkerAddonWasiOrInspectorGrants": false,
+      "noInputTypeDiscoveryGlobIsolationChildWatchForceExitOrNameFilter": true,
+      "inlineCallerBytes": 7587,
+      "argumentBytes": 8720,
+      "privateLaunchRecordBytes": 9187,
+      "unchangedManagerArgumentAndRecordCapBytes": 32768,
+      "runner": {
+        "isolation": "none",
+        "concurrency": false,
+        "timeoutMs": 5000,
+        "forceExit": false,
+        "watch": false
+      },
+      "managerTimeoutSeconds": 30,
+      "metadataLockTimeoutSeconds": 180,
+      "stdoutCapBytes": 65536,
+      "stderrCapBytesAtMost": 1048576,
+      "noSavedOperationalHelper": true
+    },
+    "selectedNewBehavior": [
+      "verification bound settlement exposes three frozen methods with captured distinct roles and zero constructor handoffs",
+      "verification bound settlement refuses settlement before verification and preserves original first authority",
+      "verification bound settlement snapshots the original before verification and returns only primitive verification and existing response strings",
+      "verification bound settlement keeps one original payment through pending to one success without another first call",
+      "verification bound settlement preserves pending budgets and absence of an observer without recreating the owner",
+      "verification bound settlement refuses every changed or missing binding before verification first settlement and pending observation",
+      "verification bound settlement permanently rejects a declared false verification without first or observer authority",
+      "verification bound settlement holds throwing rejected or malformed verification without reading raw private reasons",
+      "verification bound settlement stays busy before hostile input while the original verifier Promise is pending",
+      "verification bound settlement leaves wrong arity and hostile preflight input unconsumed without trap or coercion hooks",
+      "verification bound settlement observes native verification promises without an own then lookup and rejects unsupported mechanics",
+      "verification bound settlement snapshots fulfilled verification before any hostile result then or field getter assimilation",
+      "verification bound settlement rejects reentrant calls and its own verification receipt without resetting the original",
+      "verification bound settlement captures all role and original references before later option mutation",
+      "verification bound settlement retains busy and one positive response limits while first settlement is pending",
+      "verification bound settlement preserves unknown versus acknowledged declarations and terminal recovery boundaries",
+      "verification bound settlement shields public receipts and rejects preflight native mutation before any borrowed callback",
+      "verification bound settlement delegates finite original bounds and treats opaque declared strings as neither wire custody nor authentication",
+      "verification bound settlement independent instances preserve local scopes without granting global replay or restart authority",
+      "verification bound settlement source captures one existing owner without SDK bridge signer work native owner or default cutover"
+    ]
+  },
+  "preservation": {
+    "sourceBeforeAfterEqual": true,
+    "otherExactRepositoryArtifacts": 102,
+    "otherArtifactBytes": 2280181,
+    "otherArtifactReadCapBytes": 2359296,
+    "metadataPartitioning": "Each before/after preservation manifest has two51-row exact-reference parts plus a SHA-256-sealed summary, without raising the32KiB record cap or copying artifact payloads.",
+    "oldFailedMetadataNamespace": {
+      "files": 10,
+      "absentPathsUnchanged": 2,
+      "outcome": "CLOSED_FAILURE_UNCHANGED_NOT_RETRIED_OR_REWRITTEN"
+    },
+    "priorLocalOutcomes": {
+      "exactFiles": 61,
+      "bytes": 1117576,
+      "threeReaderOutcomes": "All remain FAILURE.",
+      "originalQuoteOwnerOutcome": "Separate retained190 PASS, not rerun in this30-case selection.",
+      "observedBalancePlannerOutcome": "Separate retained214 PASS, not rerun in this30-case selection."
+    },
+    "existingSDKBridge": "Preserved only as an exact unchanged repository artifact; not imported, evaluated, rewritten or published by this batch.",
+    "pendingNonceDrafts": "All four earlier nonce-search/bounded-material drafts remain unchanged, unexecuted and unpublished.",
+    "localGit": "Dirty checkout, HEAD and index preserved. No local staging, checkout, reset, commit or push."
+  },
+  "retention": {
+    "taskState": "CLOSED",
+    "taskOutcome": "SUCCESS",
+    "ownedProcessGroupObservedEmpty": true,
+    "actualExit": 0,
+    "outputComplete": true,
+    "independentMetadataReadBytes": 145828,
+    "priorOutcomeReadBytes": 1117576,
+    "scratchCleanupBytes": 0,
+    "objectsRemoved": 0,
+    "managerRootAndProductionPolicyUnchanged": true,
+    "minimumFreeBytes": 10737418240,
+    "declaredExpectedBytes": 4194304,
+    "taskQuotaBytes": 8388608,
+    "noHistoricalCleanupAdoptionOrHomeFallback": true
+  },
+  "hostedCI": {
+    "thisNewSelection": "NOT_RUN",
+    "broadWorkflowOrDispatch": "NOT_AUTHORIZED_NOT_PERFORMED",
+    "emptyChecksAreNotGreen": true,
+    "earlier14CoreV2V3HostedEvidence": "Separate retained evidence, not hosted qualification of this component."
+  },
+  "publicationAtRecording": "Three local additive files prepared. Publication requires fresh main/rules/diff/PR verification and a normal non-forced fast-forward; this record is not itself publication proof.",
+  "nonclaims": [
+    "The real official x402 composition bridge was not run; this component result does not close the P1-B real SDK pending-recovery gate.",
+    "No SDK install/import/evaluation, live network/RPC/HTTP owner, wallet, key generation, signing, payment, real PREPARE or service delivery.",
+    "No authenticated funding, real provider READY, canonical inclusion, durable commit, same-DB/process restart recovery or current payer/provider/policy authority.",
+    "No hard lifetime/cancellation/native cleanup or OS/network sandbox guarantee. Unsafe callback rejections require owner prehandling; indirect self-dependencies may deadlock.",
+    "Native loader/runner/stream/Promise/OS and unchanged dependency behavior remain premises.",
+    "Original signed payment/request bytes/hash/payload/requirements/context and consumed authority were not mutated; VALIDATED same-block resend remains separate from UNKNOWN/ACKNOWLEDGED.",
+    "No production, live-pilot or full SDK-conformance assurance."
+  ],
+  "protectedTotals": {
+    "consumedAdmissions": 2,
+    "actualPrepare": 1,
+    "bundles": 0,
+    "nativeQualificationRuns": 0
+  },
+  "readiness": {
+    "localComponent": "PASS_SELECTED_LOCAL_ONLY",
+    "roadmapP1BRealSDKRecovery": "OPEN_NOT_RUN",
+    "livePilot": "NOT_ACCEPTED",
+    "production": "NO_GO",
+    "next": "Integrate and qualify this binding in a separately admitted exact SDK composition without replacing payment, resetting authority or weakening current-context/funding/provider/durability/restart gates. Unrelated safe roadmap work must not stall on that gate."
+  }
+}
