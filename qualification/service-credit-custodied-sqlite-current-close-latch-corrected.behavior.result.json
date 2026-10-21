@@ -1,0 +1,554 @@
+{
+  "schema": "zenon-x402-qualification/v1",
+  "scope": "OCT21_P2_CURRENT_MAIN_SQLITE_CLOSE_LATCH_CORRECTED_SINGLE_CASE",
+  "status": "PASS_SELECTED_LOCAL_SYNTHETIC_SQLITE_CASE_ONLY",
+  "summary": "One corrected current-core SQLite close/drain/custody/reopen case passed. A separate earlier attempt remains a retained failure with one different passed case and one failed case. This is not a combined clean two-case run, process-restart proof, live service delivery, or pilot acceptance.",
+  "source": {
+    "repository": "edgepillar/zenon-x402-poc",
+    "retainedMain": "9d1463e10272c6708206b49cf7721a18ab21cd37",
+    "retainedMainTree": "8392a6e4f5a49ff8e20507b40e974e72f239c387",
+    "retainedMainNonTreeFiles": 534,
+    "productionFiles": 14,
+    "productionGraphBytes": 274485,
+    "graphFiles": 15,
+    "graphBytes": 297090,
+    "graphCapBytes": 327680,
+    "perFileReadCapBytes": 65536,
+    "literalImportEdges": 62,
+    "authoredGraph": [
+      {
+        "path": "src/service-credit-custodied-sqlite-http-client.js",
+        "bytes": 18540,
+        "LF": 511,
+        "sha256": "ea16d6ac5ce72d6434c06e98c52c324daf918dd570f15997cdc21e501f677f4e",
+        "gitBlob": "9572dfcca76b83b53bdd5bd132ffaf110720dc3a"
+      },
+      {
+        "path": "src/service-credit-custodied-sqlite-sequential-runner.js",
+        "bytes": 21467,
+        "LF": 510,
+        "sha256": "9378a09dfd23c6ad5e093971d16c5aad62c19b5f3cce353bb199f037df64d7e0",
+        "gitBlob": "105b22e1463ab8302b141510e2bb991b746169ad"
+      },
+      {
+        "path": "src/service-credit-custodied-recovery-observation-collection-core.js",
+        "bytes": 8579,
+        "LF": 213,
+        "sha256": "36b7cece2d436cbfcac5f4299dd6bd30e5eede6ebb2ebe769ae7bf3a6f1a72b4",
+        "gitBlob": "4dc8765be0aa4b0e927fface960e366a3a6ccd1e"
+      },
+      {
+        "path": "src/service-credit-zenon-funding-post-v1-payer-recovery-sqlite-store.js",
+        "bytes": 57459,
+        "LF": 1536,
+        "sha256": "9c925f241effbfec0bf014ff284e834c4d5679c4ea7224f83a6354cde6cffdaf",
+        "gitBlob": "260c2f43306b029ca694aa06b8c60d1be037c614"
+      },
+      {
+        "path": "src/x402-wire.js",
+        "bytes": 39886,
+        "LF": 934,
+        "sha256": "5fba91af5a352f62d1a335c7176a45a604e2af5d92b1c4b0e53825c1f20d4e56",
+        "gitBlob": "fb060d4e349b1c31a1219a0cc137af250a8a2291"
+      },
+      {
+        "path": "src/service-credit-pilot-client-plan.js",
+        "bytes": 7483,
+        "LF": 181,
+        "sha256": "73ee3d739de85150039e733234cd0761c228d68de040d1e126902e808a259ac6",
+        "gitBlob": "14334c82b5b7c80fb8f7f6a392a1a0f3c3adcbf1"
+      },
+      {
+        "path": "src/service-credit-pilot-status-view.js",
+        "bytes": 3202,
+        "LF": 60,
+        "sha256": "cf3822d8b9ec4eb4772452ed1888b96d398fd87c1ead44cd155a5acc1a6b66ed",
+        "gitBlob": "0890db504e44b704d0434dc309e711743570e652"
+      },
+      {
+        "path": "src/service-credit-custodied-recovery-collection-core.js",
+        "bytes": 13794,
+        "LF": 306,
+        "sha256": "51d06da70ecccd0cf8b38d650367d1ae903ea86010a5ebeadb682af98e4b890b",
+        "gitBlob": "5275832eebbf87e0cd37f3c2e3b82147ab625a72"
+      },
+      {
+        "path": "src/service-credit-http-execute-dispatch.js",
+        "bytes": 27034,
+        "LF": 770,
+        "sha256": "254ba8eef5ea5efb3a1b901be09e9cb33afbc3cfcf63789ca4a23316b6180d1b",
+        "gitBlob": "280dd20dc669e2856d263eba62ccd0fe9af72f21"
+      },
+      {
+        "path": "src/service-credit-original-request-custody-contract.js",
+        "bytes": 14051,
+        "LF": 356,
+        "sha256": "fd349de553a17abcc2e0567ba6640e6e3d5d26cfa79ee1e355928dc9fa8d3915",
+        "gitBlob": "f911d42d01b69e6577f9bcd66f4ed59aab8ab882"
+      },
+      {
+        "path": "src/service-credit-custodied-request-owner.js",
+        "bytes": 35073,
+        "LF": 938,
+        "sha256": "6e7493a4859d48530820e68a4a19a513aad014ffc1048b42965a3ad36ae7c5f7",
+        "gitBlob": "2dee22fd780db9de662fe1243075e74cef0bf296"
+      },
+      {
+        "path": "src/service-credit-custodied-http-client.js",
+        "bytes": 10755,
+        "LF": 292,
+        "sha256": "ddbc54faf4a14d95e6274bc9df27b7b49db251bab67c11b871cfb2f9e78b4f15",
+        "gitBlob": "90fd4c8a2cc8fb552f8eb0cb45607bfa44c61108"
+      },
+      {
+        "path": "src/service-credit-custodied-sequential-runner-core.js",
+        "bytes": 15749,
+        "LF": 489,
+        "sha256": "42b5f7d7f1f8318ff50dd79d1729d93220c51ab95a7449610d44de91916c7914",
+        "gitBlob": "7432cae4a25db4f79fc3d517c12f31b01b16f895"
+      },
+      {
+        "path": "package.json",
+        "bytes": 1413,
+        "LF": 40,
+        "sha256": "8c9a25504fbf6f87c31cdf245a6f4eec5a88cc89c8352151dc66a577c5771ef5",
+        "gitBlob": "ec7193f6fd76f34778515079dc777594175c4c34"
+      },
+      {
+        "path": "qualification/service-credit-custodied-sqlite-current-close-latch-corrected.behavior.draft.mjs",
+        "bytes": 22605,
+        "LF": 430,
+        "sha256": "0e43ad13bbeb2acf5cd35fb3f3878089066fce872a782a03051d848e3e79ace1",
+        "gitBlob": "072459c685653385482dee314827a15ec73c19c6"
+      }
+    ],
+    "productionFilesMatchRetainedMain": true,
+    "productionFilesChangedByThisSlice": 0,
+    "newFixtureFile": "qualification/service-credit-custodied-sqlite-current-close-latch-corrected.behavior.draft.mjs",
+    "sourceAndPreservedArtifactsStableBeforeAndAfter": true,
+    "changedCompositionBasis": {
+      "file": "src/service-credit-custodied-sequential-runner-core.js",
+      "priorSQLiteQualifiedBytes": 15288,
+      "priorSQLiteQualifiedSha256": "36c99342bf9e47559e39535aefcde78acbbdd7fb210d42a77dbbb93c2fd9f8ff",
+      "selectedCurrentBytes": 15749,
+      "selectedCurrentSha256": "42b5f7d7f1f8318ff50dd79d1729d93220c51ab95a7449610d44de91916c7914",
+      "selectedCurrentGitBlob": "7432cae4a25db4f79fc3d517c12f31b01b16f895",
+      "sourceChange": "The current core latches its first close attempt before invoking the child and conservatively avoids retry after null, thrown, or reentrant child-close outcomes.",
+      "noveltyBasis": "The actual SQLite composition now includes a changed published core; missing coverage alone was not used as evidence of novelty.",
+      "completedPureCore21AndHosted14NotRerun": true
+    }
+  },
+  "selection": {
+    "finiteCases": 1,
+    "registeredAssertions": 1,
+    "selectedNames": [
+      "current SQLite close latch fences the queued original until captured drain then reopens exact custody without replay"
+    ],
+    "explicitlySelectedFiles": [
+      "qualification/service-credit-custodied-sqlite-current-close-latch-corrected.behavior.draft.mjs"
+    ],
+    "otherTestFilesNotSelected": true,
+    "nameOrSkipFiltersUsed": false,
+    "firstPreviouslyPassedCaseNotRerun": true,
+    "existingProductionComponentsReused": true,
+    "primarySelfImplementation": true,
+    "noWorkerDispatchOrSettingsChange": true,
+    "localDevelopmentIndependentOfMainAndCI": true,
+    "boundary": "Only new private synthetic SQLite files, fixed fake request/response callbacks, and exact reviewed local source. No actual SDK, nonce search, wallet, payment signer, provider, HTTP socket, or chain operation was imported or invoked."
+  },
+  "qualification": {
+    "taskState": "CLOSED",
+    "taskOutcome": "SUCCESS",
+    "commandState": "COMPLETE",
+    "actualExit": 0,
+    "outputComplete": true,
+    "terminationReason": null,
+    "nativeNodeCommands": 1,
+    "counts": {
+      "tests": 1,
+      "suites": 0,
+      "pass": 1,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "passNames": [
+      "current SQLite close latch fences the queued original until captured drain then reopens exact custody without replay"
+    ],
+    "stdout": {
+      "bytes": 1104,
+      "sha256": "74ef7518a3a5562ead70f7f4038696c45b9b600f401730164c4991ec039a0f6c"
+    },
+    "stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "outputReview": {
+      "completeCapturedStreamsRead": true,
+      "exactAuthoredSubtestAndPassName": true,
+      "oneTapVersionAndOnePlan": true,
+      "sevenAggregateCountsChecked": true,
+      "passEventAndStrictCallerCompletionChecked": true,
+      "selectedCasesNotInferredFromZeroExit": true,
+      "nativeDiagnosticCount": 1,
+      "diagnosticClosedSchemaReviewed": true,
+      "rawStacksAndPrivatePathsNotPublished": true,
+      "sourceAndTaskAndCASOwnershipChecked": true,
+      "terminalProcessGroupObservedAbsent": true,
+      "noNativeCommandRerunForOutputReview": true,
+      "observerCorrection": "The first read-only inspection rejected its own reconstructed argument string because canonical metadata key ordering differed from the authored launch ordering. The exact source-authored path/identity order was reconstructed, then all strict checks passed. This did not alter source, launch, command, or native result.",
+      "outputTransportRecovery": "The successful full inspection output was truncated by the observation channel. A narrow read-only output recovery retrieved the retained records and complete 1104-byte TAP; it did not rerun tests or open SQLite."
+    },
+    "runtime": {
+      "nodeVersion": "24.19.0",
+      "platform": "darwin",
+      "arch": "arm64",
+      "sqliteVersion": "3.53.3",
+      "nodeSha256": "dbedff294bab84a0a86c04e15fbcbeb1c97ca10bef1b32b0634cd24b36f62100",
+      "controllerPythonVersion": "3.12.14",
+      "controllerPythonSha256": "811e2679c20fd2c7413f7c5ca28ce903065eea8dadb8660f1b9379a28959a480",
+      "runtimeDigestsReusedOnlyWithExactRetainedNineFieldFileIdentity": true,
+      "nativeLoaderRunnerStreamsSQLiteAndOSRemainPremises": true
+    },
+    "launch": {
+      "environment": "env -i TZ=UTC LANG=C LC_ALL=C with only reviewed source-pin, single private root, scratch, and opt-in variables",
+      "sourcePinPayload": [
+        {
+          "path": "src/service-credit-custodied-sqlite-http-client.js",
+          "bytes": 18540,
+          "LF": 511,
+          "sha256": "ea16d6ac5ce72d6434c06e98c52c324daf918dd570f15997cdc21e501f677f4e",
+          "gitBlob": "9572dfcca76b83b53bdd5bd132ffaf110720dc3a"
+        },
+        {
+          "path": "src/service-credit-custodied-sqlite-sequential-runner.js",
+          "bytes": 21467,
+          "LF": 510,
+          "sha256": "9378a09dfd23c6ad5e093971d16c5aad62c19b5f3cce353bb199f037df64d7e0",
+          "gitBlob": "105b22e1463ab8302b141510e2bb991b746169ad"
+        },
+        {
+          "path": "src/service-credit-custodied-recovery-observation-collection-core.js",
+          "bytes": 8579,
+          "LF": 213,
+          "sha256": "36b7cece2d436cbfcac5f4299dd6bd30e5eede6ebb2ebe769ae7bf3a6f1a72b4",
+          "gitBlob": "4dc8765be0aa4b0e927fface960e366a3a6ccd1e"
+        },
+        {
+          "path": "src/service-credit-zenon-funding-post-v1-payer-recovery-sqlite-store.js",
+          "bytes": 57459,
+          "LF": 1536,
+          "sha256": "9c925f241effbfec0bf014ff284e834c4d5679c4ea7224f83a6354cde6cffdaf",
+          "gitBlob": "260c2f43306b029ca694aa06b8c60d1be037c614"
+        },
+        {
+          "path": "src/x402-wire.js",
+          "bytes": 39886,
+          "LF": 934,
+          "sha256": "5fba91af5a352f62d1a335c7176a45a604e2af5d92b1c4b0e53825c1f20d4e56",
+          "gitBlob": "fb060d4e349b1c31a1219a0cc137af250a8a2291"
+        },
+        {
+          "path": "src/service-credit-pilot-client-plan.js",
+          "bytes": 7483,
+          "LF": 181,
+          "sha256": "73ee3d739de85150039e733234cd0761c228d68de040d1e126902e808a259ac6",
+          "gitBlob": "14334c82b5b7c80fb8f7f6a392a1a0f3c3adcbf1"
+        },
+        {
+          "path": "src/service-credit-pilot-status-view.js",
+          "bytes": 3202,
+          "LF": 60,
+          "sha256": "cf3822d8b9ec4eb4772452ed1888b96d398fd87c1ead44cd155a5acc1a6b66ed",
+          "gitBlob": "0890db504e44b704d0434dc309e711743570e652"
+        },
+        {
+          "path": "src/service-credit-custodied-recovery-collection-core.js",
+          "bytes": 13794,
+          "LF": 306,
+          "sha256": "51d06da70ecccd0cf8b38d650367d1ae903ea86010a5ebeadb682af98e4b890b",
+          "gitBlob": "5275832eebbf87e0cd37f3c2e3b82147ab625a72"
+        },
+        {
+          "path": "src/service-credit-http-execute-dispatch.js",
+          "bytes": 27034,
+          "LF": 770,
+          "sha256": "254ba8eef5ea5efb3a1b901be09e9cb33afbc3cfcf63789ca4a23316b6180d1b",
+          "gitBlob": "280dd20dc669e2856d263eba62ccd0fe9af72f21"
+        },
+        {
+          "path": "src/service-credit-original-request-custody-contract.js",
+          "bytes": 14051,
+          "LF": 356,
+          "sha256": "fd349de553a17abcc2e0567ba6640e6e3d5d26cfa79ee1e355928dc9fa8d3915",
+          "gitBlob": "f911d42d01b69e6577f9bcd66f4ed59aab8ab882"
+        },
+        {
+          "path": "src/service-credit-custodied-request-owner.js",
+          "bytes": 35073,
+          "LF": 938,
+          "sha256": "6e7493a4859d48530820e68a4a19a513aad014ffc1048b42965a3ad36ae7c5f7",
+          "gitBlob": "2dee22fd780db9de662fe1243075e74cef0bf296"
+        },
+        {
+          "path": "src/service-credit-custodied-http-client.js",
+          "bytes": 10755,
+          "LF": 292,
+          "sha256": "ddbc54faf4a14d95e6274bc9df27b7b49db251bab67c11b871cfb2f9e78b4f15",
+          "gitBlob": "90fd4c8a2cc8fb552f8eb0cb45607bfa44c61108"
+        },
+        {
+          "path": "src/service-credit-custodied-sequential-runner-core.js",
+          "bytes": 15749,
+          "LF": 489,
+          "sha256": "42b5f7d7f1f8318ff50dd79d1729d93220c51ab95a7449610d44de91916c7914",
+          "gitBlob": "7432cae4a25db4f79fc3d517c12f31b01b16f895"
+        },
+        {
+          "path": "package.json",
+          "bytes": 1413,
+          "LF": 40,
+          "sha256": "8c9a25504fbf6f87c31cdf245a6f4eec5a88cc89c8352151dc66a577c5771ef5",
+          "gitBlob": "ec7193f6fd76f34778515079dc777594175c4c34"
+        },
+        {
+          "path": "qualification/service-credit-custodied-sqlite-current-close-latch-corrected.behavior.draft.mjs",
+          "bytes": 22605,
+          "LF": 430,
+          "sha256": "0e43ad13bbeb2acf5cd35fb3f3878089066fce872a782a03051d848e3e79ace1",
+          "gitBlob": "072459c685653385482dee314827a15ec73c19c6"
+        }
+      ],
+      "privateFileIdentityPayloadRequiredButNotPublished": true,
+      "argumentBytes": 13129,
+      "launchRecordBytes": 14161,
+      "inlineCallerBytes": 7550,
+      "inlineCaller": "process.exitCode = 125;\nconst { run } = require('node:test');\nconst { types: nativeTypes } = require('node:util');\nconst { tap } = require('node:test/reporters');\nconst { Writable, pipeline, finished } = require('node:stream');\nconst selections = {\"qualification/service-credit-custodied-sqlite-current-close-latch-corrected.behavior.draft.mjs\":[\"current SQLite close latch fences the queued original until captured drain then reopens exact custody without replay\"]};\nlet selected = 'unselected';\n(async () => {\n  if (process.versions.node !== '24.19.0' || process.argv.length !== 2\n      || process.platform !== 'darwin' || process.arch !== 'arm64') throw Error('RUNTIME_OR_ARGUMENTS');\n  selected = Object.keys(selections).find(p => process.argv[1] === process.cwd() + '/' + p);\n  if (!selected) { selected = 'unselected'; throw Error('SELECTION'); }\n  const expected = selections[selected], seen = new Set(), reported = new Set();\n  const counts = new Map(), plans = [];\n  let bad = false, ended = false, reporterDone = false, versions = 0, bytes = 0, pending = '';\n  const known = name => expected.includes(name);\n  process.stdout.write('# entry ' + selected + '\\n# Node ' + process.versions.node\n    + ' platform=' + process.platform + ' arch=' + process.arch + '\\n');\n  function safeLine(line) {\n    let match;\n    if (line === 'TAP version 13') { versions++; return line; }\n    if ((match = /^# Subtest: (.+)$/.exec(line))) {\n      if (known(match[1])) return line;\n      bad = true;\n    } else if ((match = /^(ok|not ok) \\d+ - (.+)$/.exec(line))) {\n      if (!known(match[2]) || reported.has(match[2]) || match[1] !== 'ok') bad = true;\n      if (known(match[2])) { reported.add(match[2]); return line; }\n    } else if ((match = /^1\\.\\.(\\d+)$/.exec(line))) {\n      plans.push(Number(match[1])); return line;\n    } else if ((match = /^# (tests|suites|pass|fail|cancelled|skipped|todo) (\\d+)$/.exec(line))) {\n      if (counts.has(match[1])) bad = true;\n      counts.set(match[1], Number(match[2])); return line;\n    } else if (/^Bail out!/.test(line)) bad = true;\n    return null; // Do not publish physical locations, stacks or arbitrary diagnostics.\n  }\n  const source = run({\n    files: [process.argv[1]], isolation: 'none', concurrency: false,\n    timeout: 5000, forceExit: false, watch: false,\n  });\n\n  let diagnosticCount = 0, eventLogBytes = 0;\n  const own = (x,k) => {\n    if (x === null || (typeof x !== 'object' && typeof x !== 'function') || nativeTypes.isProxy(x)) return undefined;\n    const d = Object.getOwnPropertyDescriptor(x,k);\n    return d && Object.hasOwn(d,'value') ? d.value : undefined;\n  };\n  function eventLog(label,value) {\n    const line = '# native-' + label + ' ' + JSON.stringify(value) + '\\n';\n    eventLogBytes += Buffer.byteLength(line);\n    if (eventLogBytes > 8192) { bad = true; return; }\n    process.stdout.write(line);\n  }\n  source.on('test:diagnostic', data => {\n    const message = own(data,'message');\n    if (typeof message !== 'string' || !message.startsWith('{\"kind\":\"CURRENT_SQLITE_CLOSE_LATCH\"')) return;\n    try {\n      if (Buffer.byteLength(message) > 2048) throw Error('DIAGNOSTIC_CAP');\n      const value = JSON.parse(message);\n      const keys = ['kind','version','sourceBound','seedOpens','seedCloses','rawOpens','rawCloses',\n        'ownedOpens','ownedCloses','activeNative','unknownNative','peakNative','requestCalls',\n        'originalRows','ownerEpoch','semanticRowsSha256','nativeInterception','sqliteVersion',\n        'sameProcessOnly','serviceDelivery','authority'];\n      if (Object.keys(value).length !== keys.length || keys.some(k=>!Object.hasOwn(value,k))\n        || value.kind !== 'CURRENT_SQLITE_CLOSE_LATCH' || value.version !== 1 || value.sourceBound !== true\n        || value.unknownNative !== false || value.nativeInterception !== false || value.sameProcessOnly !== true\n        || value.serviceDelivery !== 'NOT_ESTABLISHED' || value.authority !== 'NONE'\n        || typeof value.semanticRowsSha256 !== 'string' || !/^[0-9a-f]{64}$/.test(value.semanticRowsSha256)\n        || typeof value.sqliteVersion !== 'string' || !/^\\d+\\.\\d+\\.\\d+$/.test(value.sqliteVersion)) throw Error('DIAGNOSTIC_SCHEMA');\n      for (const k of ['seedOpens','seedCloses','rawOpens','rawCloses','ownedOpens','ownedCloses',\n        'activeNative','peakNative','requestCalls','originalRows','ownerEpoch'])\n        if (!Number.isSafeInteger(value[k]) || value[k] < 0 || value[k] > 64) throw Error('DIAGNOSTIC_COUNTER');\n      diagnosticCount++; eventLog('diagnostic', value);\n    } catch { bad = true; }\n  });\n\n  source.on('test:pass', data => {\n    if (!known(data.name) || seen.has(data.name) || data.nesting !== 0\n        || (data.skip !== undefined && data.skip !== false)\n        || (data.todo !== undefined && data.todo !== false)) bad = true;\n    seen.add(data.name);\n  });\n  source.on('test:fail', data => {\n    bad = true;\n    const wrapper = own(own(data,'details'),'error'), cause = own(wrapper,'cause') || wrapper;\n    const code = own(cause,'code'), message = own(cause,'message');\n    const item = {name: known(own(data,'name')) ? own(data,'name') : 'UNSELECTED_NATIVE_FAILURE',\n      code: typeof code === 'string' && /^[A-Z0-9_]{1,128}$/.test(code) ? code : 'UNAVAILABLE',\n      message: typeof message === 'string' && message.length <= 512 && !/[\\/\\\\]/.test(message) ? message : 'REDACTED'};\n    for (const k of ['actual','expected']) {\n      const value = own(cause,k);\n      if (value === null || typeof value === 'boolean' || Number.isSafeInteger(value)) item[k] = value;\n    }\n    eventLog('failure',item);\n  });\n  source.on('error', () => { bad = true; });\n  source.once('end', () => { ended = true; });\n  const sourceDone = new Promise(resolve => {\n    finished(source, { writable: false }, error => { if (error) bad = true; resolve(); });\n  });\n  const sink = new Writable({\n    write(chunk, encoding, callback) {\n      try {\n        bytes += Buffer.byteLength(chunk);\n        if (bytes > 65536) throw Error('REPORTER_CAP');\n        pending += String(chunk);\n        const lines = pending.split('\\n'); pending = lines.pop();\n        const safe = lines.map(safeLine).filter(line => line !== null);\n        if (safe.length) process.stdout.write(safe.join('\\n') + '\\n', callback);\n        else callback();\n      } catch { callback(Error('REPORTER_FAILED')); }\n    },\n    final(callback) { if (pending !== '') bad = true; callback(); },\n  });\n  const reporter = source.compose(tap);\n  const reportDone = new Promise(resolve => {\n    pipeline(reporter, sink, error => { reporterDone = !error; if (error) bad = true; resolve(); });\n  });\n  await Promise.all([sourceDone, reportDone]);\n  const zero = ['suites', 'fail', 'cancelled', 'skipped', 'todo'];\n  if (bad || diagnosticCount !== expected.length || !ended || !reporterDone || versions !== 1 || plans.length !== 1\n      || plans[0] !== expected.length || seen.size !== expected.length\n      || reported.size !== expected.length || !expected.every(name => seen.has(name) && reported.has(name))\n      || counts.get('tests') !== expected.length || counts.get('pass') !== expected.length\n      || !zero.every(key => counts.get(key) === 0)\n      || process.exitCode !== 125) throw Error('INCOMPLETE_OR_UNEXPECTED_RESULTS');\n  process.exitCode = 0;\n  process.stdout.write('# qualification PASS ' + selected + '\\n');\n})().catch(() => {\n  if ([undefined, 0, 125].includes(process.exitCode)) process.exitCode = 1;\n  process.stderr.write('qualification caller failed\\n');\n  process.stdout.write('# qualification FAIL ' + selected + '\\n');\n});",
+      "argumentAndLaunchRecordCapBytes": 32768,
+      "absoluteNodeAndEntryPathsResolvedPrivatelyFromExactReviewedPins": true,
+      "nodeFlags": [
+        "--disallow-code-generation-from-strings",
+        "--no-addons",
+        "--no-warnings",
+        "--eval"
+      ],
+      "permissionModel": "OFF_REQUIRED_FOR_EXISTING_STORE_FCHMOD_FSYNC",
+      "notAnOSFilesystemOrNetworkSandbox": true,
+      "runner": {
+        "api": "node:test run",
+        "isolation": "none",
+        "concurrency": false,
+        "timeoutMs": 5000,
+        "forceExit": false,
+        "watch": false,
+        "files": [
+          "qualification/service-credit-custodied-sqlite-current-close-latch-corrected.behavior.draft.mjs"
+        ]
+      },
+      "timeoutLimits": {
+        "managerCommandTimeoutSeconds": 30,
+        "testTimeoutMs": 5000,
+        "metadataLockTimeoutSeconds": 180,
+        "notHardLifetimeCancellationOrNativeCleanupAssurance": true
+      },
+      "stdoutCapBytes": 65536,
+      "stderrCapAtMostBytes": 1048576,
+      "noSavedOrInstalledOperationalHelper": true,
+      "noDependencyInstallation": true
+    },
+    "checkedBehavior": [
+      "The existing-only current SQLite runner opens a newly seeded synthetic database and validates the exact original request/payment custody envelope.",
+      "One test-owned fake dispatch is active while a second original request remains queued.",
+      "The first close request is cached by exact Promise identity, prevents the queued dispatch, and does not prematurely close the owned database before captured transport drain.",
+      "A request-only close leaves the operation pending; the captured response close drains the known child and ends the run conservatively with CLOSE_REQUESTED.",
+      "Native owned close returns once for that runner; a second same-process root reopens the database and recovers the exact original envelope.",
+      "Recovered history does not trigger an additional fake dispatch or replacement payment. The reopened root closes through its known owner.",
+      "Three read-only raw SQLite snapshots preserve schema, funding, policy, original request/payment fields and semantic row digest while owner epochs advance from one through three.",
+      "Source-bound handle accounting ends with all six expected handle closes returned and no unknown handle state; this is not independent native finalizer or OS durability instrumentation."
+    ],
+    "sourceBoundObservations": {
+      "kind": "CURRENT_SQLITE_CLOSE_LATCH",
+      "version": 1,
+      "sourceBound": true,
+      "seedOpens": 1,
+      "seedCloses": 1,
+      "rawOpens": 3,
+      "rawCloses": 3,
+      "ownedOpens": 2,
+      "ownedCloses": 2,
+      "activeNative": 0,
+      "unknownNative": false,
+      "peakNative": 1,
+      "requestCalls": 1,
+      "originalRows": 1,
+      "ownerEpoch": 3,
+      "semanticRowsSha256": "98369a6186d11b2c7583a887b106c875197e5b4546fb4e3bd6691d3d057dd12f",
+      "nativeInterception": false,
+      "sqliteVersion": "3.53.3",
+      "sameProcessOnly": true,
+      "serviceDelivery": "NOT_ESTABLISHED",
+      "authority": "NONE"
+    },
+    "noNativeFaultInjection": true,
+    "noRealTransportServiceDeliveryOrChainExecution": true,
+    "sameProcessReopenOnly": true,
+    "processRestartRecovery": "NOT_RUN",
+    "osCrashPowerLossFsyncDurability": "NOT_ESTABLISHED"
+  },
+  "retainedInitialAttempt": {
+    "status": "CLOSED_FAILURE_UNCHANGED",
+    "commandState": "COMPLETE",
+    "actualExit": 1,
+    "outputComplete": true,
+    "counts": {
+      "tests": 2,
+      "suites": 0,
+      "pass": 1,
+      "fail": 1,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "stdout": {
+      "bytes": 849,
+      "sha256": "49985f5bc3b459c3dc1c2ccc6f8ac822727bc23dd43d7c696570a4cc3a6f25aa"
+    },
+    "stderr": {
+      "bytes": 28,
+      "sha256": "42cbb0e0f0ee7d514e0fcb47997c466245b53528dedfd274e57fdac89d448224"
+    },
+    "firstPassedName": "current SQLite close latch preserves one original through pre-run cached close and same-process reopen without dispatch",
+    "failedName": "current SQLite close latch fences the queued original until captured drain then reopens exact custody without replay",
+    "source": {
+      "bytes": 23423,
+      "LF": 444,
+      "sha256": "de9ea54ece332b77816ed41c28fbc9ec83874d01cdccf658787e067b8a70c073",
+      "gitBlob": "32f1dfd9f8ed564baa7e527a101cdbbaca513823",
+      "retainedPrivateCAS": true,
+      "payloadCopiesPreservedInCorrectedTask": 1,
+      "publicSourceIncluded": false
+    },
+    "diagnosis": {
+      "kind": "SOURCE_IDENTIFIED_FIXTURE_CANONICAL_SERIALIZATION_MISMATCH",
+      "sourceFile": "src/service-credit-http-execute-dispatch.js",
+      "actualExpectedOrder": [
+        "grantId",
+        "maxCostUnits",
+        "proofVersion",
+        "publicKey",
+        "requestId",
+        "signature"
+      ],
+      "initialFixtureOrder": [
+        "grantId",
+        "requestId",
+        "maxCostUnits",
+        "proofVersion",
+        "publicKey",
+        "signature"
+      ],
+      "sourceReason": "The dispatcher requires exact canonical authorization JSON serialization. The initial fixture supplied a different property order, so the dispatching case could not reach its first fake transport callback.",
+      "observedNativeFailureDetails": "NOT_RETAINED_BY_INITIAL_CALLER",
+      "noInventedRuntimeErrorOrStack": true,
+      "productionDefectNotEstablished": true
+    },
+    "correctedChanges": [
+      "Correct only the synthetic authorization property order and assert the canonical key order.",
+      "Remove the already-passed first registration and select only the previously failing case with one new private SQLite file.",
+      "Update the self-manifest and one-case fixture namespace.",
+      "Retain the initial fixture bytes, both initial databases, captured streams and CLOSED_FAILURE metadata without mutation.",
+      "Use bounded, closed-schema diagnostics in the new caller while preserving the existing pass-event, plan, aggregate-count and completion checks."
+    ],
+    "firstPassNotRerun": true,
+    "noProductionValidationWeakened": true,
+    "notRetriedOnUnchangedInputs": true,
+    "terminalProcessGroupObservedAbsent": true,
+    "cleanup": "HOLD_NO_DELETION_OR_RAW_DATABASE_ADOPTION"
+  },
+  "accounting": {
+    "distinctAuthoredScenariosWithAnActualPassAcrossBothAttempts": 2,
+    "currentPublicFixturePassCount": 1,
+    "initialPrivateFixturePassCount": 1,
+    "notOneCombinedCleanTwoPassRun": true,
+    "nativeNodeCommandsAcrossBothAttempts": 2,
+    "actualAssertionExecutionsAcrossBothAttempts": 3,
+    "initialFailureNeverReclassifiedAsSuccess": true,
+    "previouslyCompletedCoreAndHostedCasesNotReplayed": true,
+    "current14ProductionFilesAnd111OtherRepositoryArtifactsStable": true,
+    "priorOutcomePinsUnchanged": 113,
+    "priorOutcomeReadBytes": 1650305,
+    "priorOutcomesByteCap": 1835008,
+    "oldFailedOwnershipMetadataUntouched": true
+  },
+  "storage": {
+    "manager": "Previously approved unchanged task-storage implementation",
+    "productionFreeSpaceFloorBytes": 10737418240,
+    "expectedAllocationPerAttemptBytes": 8388608,
+    "taskQuotaPerAttemptBytes": 16777216,
+    "newSyntheticSQLiteFilesAcrossBothAttempts": 3,
+    "rawSQLiteBytesAcrossBothAttempts": 73728,
+    "currentSQLiteFile": {
+      "logicalName": "corrected-case/custody.sqlite",
+      "bytes": 24576,
+      "sha256": "566a8d0064f846a4de31969799ada6c9aede6190302f35c5db7fd7a053d84e9b"
+    },
+    "initialSQLiteFiles": [
+      {
+        "logicalName": "initial-pre-run-close/custody.sqlite",
+        "bytes": 24576,
+        "sha256": "566a8d0064f846a4de31969799ada6c9aede6190302f35c5db7fd7a053d84e9b"
+      },
+      {
+        "logicalName": "initial-queued-close/custody.sqlite",
+        "bytes": 24576,
+        "sha256": "cc33a1a06f6f831f273d57e3f4842d7552d971f048fe20d17075030b890af390"
+      }
+    ],
+    "privateDirectoriesRegisteredBeforeExecution": true,
+    "directoryMode": "0700",
+    "sqliteFileMode": "0600",
+    "independentFilesNotAliasesOrHardLinks": true,
+    "seedAndRuntimeDatabaseOperationsOccurredOnlyInsideSelectedTest": true,
+    "primaryAndControllerNeverOpenedSQLite": true,
+    "rawDatabaseCASAdoption": false,
+    "rawDatabaseExport": false,
+    "cleanupDecision": "HOLD",
+    "cleanupReason": "Raw database files created by the selected child remain unregistered and are preserved under the manager's refusal boundary.",
+    "cleanupBytes": 0,
+    "cleanupIsNotAQualificationPass": true,
+    "sourceClones": 0,
+    "zipExports": 0,
+    "historicalDataAdoptedOrDeleted": false,
+    "noMountFallbackOrRootRecreation": true,
+    "privatePathsAndFileIdentitiesOmitted": true
+  },
+  "publicationBoundary": {
+    "intendedPacket": "Exactly the corrected qualification draft and this result record; no production, initial failed draft, SDK, nonce/material, DP draft, ownership metadata, workflow, or unrelated local changes.",
+    "routineHumanPublicationAuthorityAlreadyGiven": true,
+    "recheckCurrentMainDiffRulesOwnershipAndCIBeforeMain": true,
+    "normalFastForwardOnly": true,
+    "forcePushOrProtectionBypass": false,
+    "noNewHostedCIRunRequested": true,
+    "hostedCIForThisPacket": "NOT_RUN",
+    "priorHosted14CaseOutcomeDoesNotQualifyThisSQLiteCase": true,
+    "noClaimOfGreenHostedCIAtRetainedMain": true,
+    "currentSourceBoundLocalOutcomeOnly": true
+  },
+  "nonClaims": [
+    "This is not a broad application, SDK, controller, native provider, live-chain, or live-pilot qualification.",
+    "The local SQLite store's prepare/fence/finish transitions are synthetic SQL state only and do not increase the actual chain PREPARE counter.",
+    "The fake request/response callbacks do not prove real HTTP delivery, provider READY, payer funding/authority, service credit redemption, or external acknowledgment.",
+    "Same-process database reopen is not process restart, crash recovery, uncertain-commit recovery, filesystem durability, or hardware power-loss proof.",
+    "A returned native close and source-bound counters are not independent finalizer, SQLite C++ binding, kernel, or native-cleanup guarantees.",
+    "The test uses fixed synthetic capability/proof fields; it does not sign a real payment or use wallet keys.",
+    "DP frontier, work/nonce, signing, inclusion, actual SDK compatibility, durable end-to-end recovery, and production acceptance remain separate gates.",
+    "The published signer remains disabled. Original payment/request bytes, exact hashes, requirements, context, consumed authority and VALIDATED versus UNKNOWN/ACKNOWLEDGED boundaries are unchanged."
+  ],
+  "protectedTotals": {
+    "consumedAdmissions": 2,
+    "actualPrepare": 1,
+    "bundles": 0,
+    "nativeQualificationRuns": 0
+  }
+}
