@@ -4,8 +4,9 @@ import { readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { Buffer } from 'node:buffer';
 
-// Only12 new adapter scenarios register. No historical qualification module,
-// SDK, native owner, work generator or real signer is imported.
+// Only24 selected scenarios register:12 retained adapter cases plus12 new
+// unsigned-consumer cases. No other qualification module, SDK, native owner,
+// work generator or real signer is imported. Historical142 cases do not run.
 assert.equal(process.argv.length, 2);
 const pins = [
   ["../src/zenon/transaction-planner.js",20374,"4ef2c72a44d5f0f5ce918172a6ff30b13b693fa173bc74cb56565f5402417c2c"],
@@ -28,7 +29,7 @@ const pins = [
   ["../src/zenon/dynamic-plasma-user-send-assembly.js",7772,"05012a2a983ceca018674c4d1f63823f3f7ed53b0970a4b4bd486c4278832b04"],
   ["../src/zenon/dynamic-plasma-user-send-work-input.js",2853,"2ff9c089e5903c059746d0a1c38688a2849f94d04d429279811fbbfbb40450a4"],
   ["../src/zenon/dynamic-plasma-user-send-work-request.js",2564,"bc66c7d629eae230c46f62c88fa97960860d94b5d65d3c5611612ccae13fe9ce"],
-  ["../src/zenon/declared-dynamic-plasma-user-send-adapter.js",5050,"76977bcb857e9ac561daaf080c20cd2b4ec9d289023260815b5da371f1516b7e"],
+  ["../src/zenon/declared-dynamic-plasma-user-send-adapter.js",6381,"30a55d75fcc55dd0f4f345e39fabab0ab5d338b44933ff7e922abd0d1cc999c2"],
 ];
 const sources = new Map();
 for (const [path, bytes, sha256] of pins) {
@@ -425,4 +426,240 @@ test('raw adapter stays stateless default-off frozen DATA without planner SDK si
   assert.match(source, /ASSEMBLE\(context\(view\), originalQuote, suppliedMaterial\)/);
   assert.doesNotMatch(source, /node:(?:fs|https?|tls|dns|child_process|worker_threads)|generateKeyPair|randomBytes|crypto\.sign|crypto\.verify|prepareBlock|publishRawTransaction|mnemonic|keystore|fetch\s*\(/);
   assert.doesNotMatch(source, /this\.(?:quote|createWorkRequest|assemble)\s*\(/);
+});
+
+const { bindZenonUnsignedUserSendKeyBinding: bindUnsigned }
+  = await import('../src/zenon/dynamic-plasma-user-send-key-binding.js');
+
+test('raw unsigned consumer returns the complete existing independent key work hash and price contract', { timeout: 5000 }, async () => {
+  const adapter = new Adapter(), value = view(), quote = await adapter.quote(value);
+  const assembly = await adapter.assemble(value, quote, material()), block = copy(assembly.accountBlock);
+  const before = copy([value, quote, block]);
+  const result = await adapter.validateUnsigned(value, quote, block);
+  assert.deepEqual(result, await bindUnsigned(manualContext(value), quote, block));
+  assert.deepEqual(result, assembly.validation);
+  assert.equal(result.unsignedKeyBindingVersion, 1);
+  assert.equal(result.scope, 'DECLARED_UNSIGNED_USER_SEND_HASH_NONCE_KEY_AND_PRICE_BINDING');
+  const actual = result.workBinding.hashPriceBinding.accountBlock; checked(actual, value);
+  assert.notEqual(actual, block); assert.notEqual(actual.momentumAcknowledged, block.momentumAcknowledged);
+  assert.deepEqual([value, quote, block], before); frozen(result);
+  assert.equal(Object.isFrozen(block), false); assert.equal(Object.isFrozen(value), false);
+});
+
+test('raw unsigned consumer rechecks a retained block through two declared price advances without repricing', { timeout: 5000 }, async () => {
+  const adapter = new Adapter(), origin = view(), quote = await adapter.quote(origin);
+  const block = (await adapter.assemble(origin, quote, material())).accountBlock;
+  const before = copy([origin, quote, block]);
+  for (const [advances, price] of [[0, 1000], [1, 1100], [2, 1210]]) {
+    const current = copy(origin); if (advances !== 0) advance(current, advances, price);
+    const result = await adapter.validateUnsigned(current, quote, block);
+    const bound = result.workBinding.hashPriceBinding;
+    assert.deepEqual(bound.accountBlock, block);
+    assert.deepEqual(bound.selection, { fusedPlasma: 25410, difficulty: 0 });
+    assert.equal(bound.computedHash, block.hash); assert.equal(bound.hashValidation, 'MATCHES_SUPPLIED_FIELDS');
+    assert.deepEqual(bound.accountBlock.momentumAcknowledged, { hash: H, height: 100 });
+  }
+  assert.deepEqual([origin, quote, block], before);
+});
+
+test('raw unsigned consumer refuses coherent stale over-price depleted policy and runtime changes', { timeout: 5000 }, async () => {
+  const adapter = new Adapter(), value = view(), quote = await adapter.quote(value);
+  const block = (await adapter.assemble(value, quote, material())).accountBlock, before = copy([quote, block]);
+  for (const kind of ['age', 'price', 'pool', 'budget', 'runtime', 'parameter', 'resource', 'recipient']) {
+    const current = copy(value);
+    if (kind === 'age') advance(current, 3);
+    if (kind === 'price') advance(current, 2, 1211);
+    if (kind === 'pool') {
+      for (const endpoint of current.observation.endpointObservations) endpoint.rpcObservation.availablePlasma = 25000;
+      advance(current, 1);
+    }
+    if (kind === 'budget') current.policy.maxFusedPlasma = 20000;
+    if (kind === 'runtime') current.runtimeContextDigest = 'sha256:' + 'c'.repeat(64);
+    if (kind === 'parameter') {
+      current.policy.maxPriceChangePercent = 11;
+      for (const endpoint of current.observation.endpointObservations) endpoint.plasmaVariables.MaxPriceChangePercent = 11;
+    }
+    if (kind === 'resource') current.paymentRequired.resource.url = 'https://resource.invalid/other';
+    if (kind === 'recipient') { current.accepted.payTo = C; current.paymentRequired.accepts[0] = copy(current.accepted); }
+    if (kind === 'resource' || kind === 'recipient') refreshView(current);
+    const currentBefore = copy(current);
+    await assert.rejects(adapter.validateUnsigned(current, quote, block), adapterError);
+    assert.deepEqual(current, currentBefore);
+  }
+  assert.deepEqual([quote, block], before);
+});
+
+test('raw unsigned consumer derives current account sequence and preserves the original acknowledgement binding', { timeout: 5000 }, async () => {
+  const adapter = new Adapter(), value = view(), quote = await adapter.quote(value);
+  const block = (await adapter.assemble(value, quote, material())).accountBlock;
+  for (const [height, hash] of [[7, '77'.repeat(32)], [6, '88'.repeat(32)], [0, ZERO]]) {
+    const current = copy(value); current.accountFrontier.height = height; current.accountFrontier.hash = hash;
+    await assert.rejects(adapter.validateUnsigned(current, quote, block), adapterError);
+  }
+  const current = copy(value); advance(current, 2, 1210);
+  current.momentumAcknowledged = { hash: H2, height: 102 };
+  await assert.rejects(adapter.validateUnsigned(current, quote, block), adapterError);
+  await assert.rejects(adapter.validateUnsigned({ ...value, accountFrontier: null }, quote, block), adapterError);
+  checked(block, value);
+});
+
+test('raw unsigned consumer rejects hash-correct altered intent sequence acknowledgement and selected fields', { timeout: 5000 }, async () => {
+  const adapter = new Adapter(), value = view(), quote = await adapter.quote(value);
+  const original = (await adapter.assemble(value, quote, material())).accountBlock;
+  const edits = [
+    block => { block.amount = '6'; }, block => { block.toAddress = C; },
+    block => { block.address = A; }, block => { block.tokenStandard = OTHER_ASSET; },
+    block => { block.chainIdentifier = 73405; }, block => { block.height = 8; },
+    block => { block.previousHash = '77'.repeat(32); },
+    block => { block.momentumAcknowledged = { hash: H1, height: 101 }; },
+    block => { block.data = Buffer.alloc(32, 9).toString('base64'); },
+    block => { block.fusedPlasma += 1; }, block => { block.difficulty = 1; },
+  ];
+  for (const edit of edits) {
+    const candidate = copy(original); edit(candidate); candidate.hash = oracleHash(candidate);
+    const before = copy(candidate); assert.equal(candidate.hash, oracleHash(candidate));
+    await assert.rejects(adapter.validateUnsigned(value, quote, candidate), adapterError);
+    assert.deepEqual(candidate, before);
+  }
+  checked(original, value);
+});
+
+test('raw unsigned consumer rejects damaged hash nonce public key and signed records without repair', { timeout: 5000 }, async () => {
+  const adapter = new Adapter(), value = view(), quote = await adapter.quote(value);
+  const original = (await adapter.assemble(value, quote, material())).accountBlock;
+  for (const edit of [
+    block => { block.hash = ZERO; }, block => { block.nonce = 'ff'.repeat(8); },
+    block => { block.nonce = 'ABCDEF0123456789'; }, block => { block.publicKey = ''; },
+    block => { block.publicKey = Buffer.alloc(32, 9).toString('base64'); },
+    block => { block.signature = 'AA=='; }, block => { block.operation = 'RETRY'; },
+    block => { delete block.amount; },
+  ]) {
+    const candidate = copy(original); edit(candidate); const before = copy(candidate);
+    await assert.rejects(adapter.validateUnsigned(value, quote, candidate), adapterError);
+    assert.deepEqual(candidate, before);
+  }
+  const substituted = { ...original, publicKey: Buffer.alloc(32, 9).toString('base64') };
+  assert.equal(oracleHash(substituted), original.hash); // Public key is not hash-covered.
+  await assert.rejects(adapter.validateUnsigned(value, quote, substituted), adapterError);
+  checked(original, value);
+});
+
+test('raw unsigned consumer requires exact arity version phase original quote and actual block data', { timeout: 5000 }, async () => {
+  const adapter = new Adapter(), value = view(), quote = await adapter.quote(value);
+  const assembly = await adapter.assemble(value, quote, material()), block = assembly.accountBlock;
+  await assert.rejects(adapter.validateUnsigned(value, quote), adapterError);
+  await assert.rejects(adapter.validateUnsigned(value, quote, block, null), adapterError);
+  for (const version of [0, 2, '1', undefined]) {
+    await assert.rejects(adapter.validateUnsigned({ ...value, rawUserSendViewVersion: version }, quote, block), adapterError);
+  }
+  for (const phase of ['SIGNED', 'VALIDATED', 'UNKNOWN', 'ACKNOWLEDGED', 'PREPARED']) {
+    await assert.rejects(adapter.validateUnsigned({ ...value, phase }, quote, block), adapterError);
+  }
+  for (const bad of [
+    { ...quote, authority: 'READY' }, { ...quote, userSendPolicyQuoteVersion: 2 },
+    { ...quote, subjectDigest: 'sha256:' + '0'.repeat(64) }, quote.sourceQuote, null,
+  ]) await assert.rejects(adapter.validateUnsigned(value, bad, block), adapterError);
+  for (const bad of [assembly, assembly.validation, { accountBlock: block }, null]) {
+    await assert.rejects(adapter.validateUnsigned(value, quote, bad), adapterError);
+  }
+  for (const field of ['subject', 'accountBlock', 'payment', 'signer', 'consumedAuthority']) {
+    await assert.rejects(adapter.validateUnsigned({ ...value, [field]: true }, quote, block), adapterError);
+  }
+});
+
+test('raw unsigned consumer refuses hostile view quote and block descriptors without caller hooks', { timeout: 5000 }, async () => {
+  const adapter = new Adapter(), value = view(), quote = await adapter.quote(value);
+  const block = (await adapter.assemble(value, quote, material())).accountBlock;
+  let hooks = 0; const hook = () => { hooks += 1; throw new Error('HOOK'); };
+  for (const [which, path] of [
+    [0, ['accountFrontier', 'hash']], [0, ['observation', 'endpointObservations', 0, 'beforeFrontier', 'height']],
+    [1, ['sourceQuote', 'sourceObservation', 'beforeFrontier', 'hash']],
+    [2, ['hash']], [2, ['publicKey']], [2, ['momentumAcknowledged', 'height']],
+  ]) {
+    const inputs = copy([value, quote, block]); let target = inputs[which];
+    for (const part of path.slice(0, -1)) target = target[part];
+    Object.defineProperty(target, path.at(-1), { get: hook, enumerable: true });
+    await assert.rejects(adapter.validateUnsigned(...inputs), adapterError);
+  }
+  for (const which of [0, 1, 2]) {
+    const inputs = [value, quote, block];
+    inputs[which] = new Proxy(inputs[which], { get: hook, ownKeys: hook, getPrototypeOf: hook, getOwnPropertyDescriptor: hook });
+    await assert.rejects(adapter.validateUnsigned(...inputs), adapterError);
+  }
+  const coerced = copy(block); coerced.fusedPlasma = { valueOf: hook, [Symbol.toPrimitive]: hook };
+  await assert.rejects(adapter.validateUnsigned(value, quote, coerced), adapterError);
+  const serialized = copy(block); serialized.toJSON = hook;
+  await assert.rejects(adapter.validateUnsigned(value, quote, serialized), adapterError);
+  assert.equal(hooks, 0);
+});
+
+test('raw unsigned consumer keeps pre-await view quote and exact block snapshots isolated', { timeout: 5000 }, async () => {
+  const adapter = new Adapter(), original = view(), sourceQuote = await adapter.quote(original);
+  const sourceBlock = (await adapter.assemble(original, sourceQuote, material())).accountBlock;
+  const expected = await adapter.validateUnsigned(original, sourceQuote, sourceBlock);
+  const value = copy(original), quote = copy(sourceQuote), block = copy(sourceBlock);
+  const pending = adapter.validateUnsigned(value, quote, block);
+  damage(value); quote.authority = 'READY'; quote.sourceQuote.pricePolicyQuote.selected.fusedPlasma = 0;
+  block.amount = '999'; block.hash = ZERO; block.nonce = 'ff'.repeat(8);
+  block.publicKey = ''; block.signature = 'AA=='; block.momentumAcknowledged.hash = ZERO;
+  const result = await pending; assert.deepEqual(result, expected);
+  checked(result.workBinding.hashPriceBinding.accountBlock, original); frozen(result);
+  assert.equal(Object.isFrozen(value), false); assert.equal(Object.isFrozen(quote), false);
+  assert.equal(Object.isFrozen(block), false);
+});
+
+test('raw unsigned consumer does not dispatch overridden assembly quote or policy methods', { timeout: 5000 }, async () => {
+  const adapter = new Adapter(), value = view(), quote = await adapter.quote(value);
+  const block = (await adapter.assemble(value, quote, material())).accountBlock;
+  const expected = await adapter.validateUnsigned(value, quote, block);
+  const methods = [
+    [Adapter.prototype, 'quote'], [Adapter.prototype, 'createWorkRequest'], [Adapter.prototype, 'assemble'],
+    [Bounded.prototype, 'quoteUserSend'], [Bounded.prototype, 'createUnsignedUserSendDraft'],
+    [Bounded.prototype, 'bindPreparedUserSend'], [Bounded.prototype, 'bindHashedUserSend'],
+  ];
+  const descriptors = methods.map(([owner, field]) => [owner, field, Object.getOwnPropertyDescriptor(owner, field)]);
+  let calls = 0;
+  for (const [owner, field, d] of descriptors) Object.defineProperty(owner, field, {
+    ...d, value() { calls += 1; throw new Error('OVERRIDE'); },
+  });
+  try { assert.deepEqual(await adapter.validateUnsigned(value, quote, block), expected); }
+  finally { for (const [owner, field, d] of descriptors) Object.defineProperty(owner, field, d); }
+  assert.equal(calls, 0);
+});
+
+test('raw unsigned consumer preserves declared zero-difficulty semantics without nonce generation or authority', { timeout: 5000 }, async () => {
+  const adapter = new Adapter(), value = view(), quote = await adapter.quote(value);
+  const original = (await adapter.assemble(value, quote, material())).accountBlock;
+  // Fixed declared alternatives, not a nonce search, replacement operation or
+  // authorization to alter any existing signed payment. No input is rewritten.
+  for (const nonce of ['0000000000000000', NONCE, 'ffffffffffffffff']) {
+    const supplied = { ...copy(original), nonce }; supplied.hash = oracleHash(supplied);
+    const before = copy(supplied), result = await adapter.validateUnsigned(value, quote, supplied);
+    assert.equal(result.workBinding.work.validation, 'NOT_REQUIRED_BY_DECLARED_ZERO_DIFFICULTY');
+    assert.equal(result.workBinding.work.threshold, null);
+    assert.equal(result.workBinding.hashPriceBinding.accountBlock.nonce, nonce);
+    assert.deepEqual(supplied, before);
+    assert.equal(result.authority, 'NONE'); assert.equal(result.afterSigningAction, 'NONE');
+    assert.equal(result.chainAuthentication, 'NOT_ESTABLISHED');
+    assert.equal(result.keyPossession, 'NOT_ESTABLISHED'); assert.equal(result.signatureValidation, 'NOT_PERFORMED');
+  }
+});
+
+test('raw unsigned consumer remains detached default-off DATA without planner signing or active buyer cutover', { timeout: 5000 }, async () => {
+  const adapter = new Adapter(), value = view(), quote = await adapter.quote(value);
+  const block = (await adapter.assemble(value, quote, material())).accountBlock;
+  const result = await adapter.validateUnsigned(value, quote, block), encoded = JSON.stringify(result);
+  assert.deepEqual(JSON.parse(encoded), result); frozen(result);
+  assert.throws(() => { result.workBinding.hashPriceBinding.accountBlock.amount = '999'; }, TypeError);
+  assert.equal(Object.hasOwn(result, 'prepareUnsigned'), false);
+  for (const field of ['prepareUnsigned', 'sign', 'publish', 'reset', 'close', 'READY']) assert.equal(adapter[field], undefined);
+  assert.throws(() => assertPlanner(adapter), /prepareUnsigned/); assert.deepEqual(Object.keys(adapter), []);
+  const source = sources.get('../src/zenon/declared-dynamic-plasma-user-send-adapter.js');
+  assert.match(source, /const VALIDATE_UNSIGNED = bindZenonUnsignedUserSendKeyBinding/);
+  assert.match(source, /async validateUnsigned\(view, originalQuote, accountBlock\)/);
+  assert.match(source, /VALIDATE_UNSIGNED\(context\(view\), originalQuote, accountBlock\)/);
+  assert.doesNotMatch(source, /this\.(?:quote|createWorkRequest|assemble|validateUnsigned)\s*\(/);
+  assert.equal((source.match(/^export /gm) ?? []).length, 1);
+  assert.doesNotMatch(source, /node:(?:fs|https?|tls|dns|child_process|worker_threads)|generateKeyPair|randomBytes|crypto\.sign|crypto\.verify|prepareBlock|publishRawTransaction|mnemonic|keystore|fetch\s*\(/);
+  checked(block, value);
 });

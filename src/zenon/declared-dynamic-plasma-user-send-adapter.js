@@ -3,11 +3,13 @@ import { BoundedDynamicPlasmaStrategy } from './bounded-dynamic-plasma-strategy.
 import { createZenonUserSendSubject } from './transaction-planner.js';
 import { createZenonUnsignedUserSendWorkRequest } from './dynamic-plasma-user-send-work-request.js';
 import { assembleZenonUnsignedUserSend } from './dynamic-plasma-user-send-assembly.js';
+import { bindZenonUnsignedUserSendKeyBinding } from './dynamic-plasma-user-send-key-binding.js';
 
 const SUBJECT = createZenonUserSendSubject;
 const QUOTE = BoundedDynamicPlasmaStrategy.prototype.quoteUserSend;
 const WORK_REQUEST = createZenonUnsignedUserSendWorkRequest;
 const ASSEMBLE = assembleZenonUnsignedUserSend;
+const VALIDATE_UNSIGNED = bindZenonUnsignedUserSendKeyBinding;
 const apply = Reflect.apply;
 const keys = Reflect.ownKeys;
 const descriptor = Object.getOwnPropertyDescriptor;
@@ -76,6 +78,28 @@ export class DeclaredDynamicPlasmaUserSendAdapter {
     try {
       if (arguments.length !== 3) reject();
       return await ASSEMBLE(context(view), originalQuote, suppliedMaterial);
+    } catch { reject(); }
+  }
+
+  /**
+   * Revalidate an EXISTING unsigned block against a fresh declared view and
+   * the ORIGINAL quote, rather than treating earlier assembly success as a
+   * later price/frontier check. Derive the independent subject again, then
+   * consume this SAME block's fields, hash, supplied nonce and public bytes
+   * through the captured complete key/work/hash/price binder. Never assemble
+   * or repair a replacement, refresh a quote, or virtually dispatch assembly.
+   *
+   * The captured binder snapshots/validates synchronously before its first
+   * await and returns its unchanged detached DATA contract. Empty signature
+   * is mandatory; an assembly receipt is not a block and is not trusted.
+   * Fresh means newly supplied DATA, NOT authenticated/current account state
+   * or new signing authority. After await the caller still needs independent
+   * current-state, funding, authority, signer and uncertainty/recovery gates.
+   */
+  async validateUnsigned(view, originalQuote, accountBlock) {
+    try {
+      if (arguments.length !== 3) reject();
+      return await VALIDATE_UNSIGNED(context(view), originalQuote, accountBlock);
     } catch { reject(); }
   }
 }
