@@ -4,12 +4,14 @@ import { createZenonUserSendSubject } from './transaction-planner.js';
 import { createZenonUnsignedUserSendWorkRequest } from './dynamic-plasma-user-send-work-request.js';
 import { assembleZenonUnsignedUserSend } from './dynamic-plasma-user-send-assembly.js';
 import { bindZenonUnsignedUserSendKeyBinding } from './dynamic-plasma-user-send-key-binding.js';
+import { snapshotDynamicPlasmaObservationCollectionInput } from './dynamic-plasma-observation-collector.js';
 
 const SUBJECT = createZenonUserSendSubject;
 const QUOTE = BoundedDynamicPlasmaStrategy.prototype.quoteUserSend;
 const WORK_REQUEST = createZenonUnsignedUserSendWorkRequest;
 const ASSEMBLE = assembleZenonUnsignedUserSend;
 const VALIDATE_UNSIGNED = bindZenonUnsignedUserSendKeyBinding;
+const SNAPSHOT_COLLECTION = snapshotDynamicPlasmaObservationCollectionInput;
 const apply = Reflect.apply;
 const keys = Reflect.ownKeys;
 const descriptor = Object.getOwnPropertyDescriptor;
@@ -58,6 +60,33 @@ export class DeclaredDynamicPlasmaUserSendAdapter {
   constructor() {
     if (arguments.length !== 0) reject();
     freeze(this);
+  }
+
+  /**
+   * Produce the existing schema3 collector input/digest pair from this view's
+   * independently derived selected intent. Pure, synchronous DATA only: no
+   * collector, transport, owner, Promise or callback is constructed/invoked.
+   * Observation, policy and runtimeContextDigest are not traversed/forwarded
+   * and may be null before observation; later pricing stages still validate
+   * them fully. Never accept a caller-selected quoteRequest or subject.
+   *
+   * The existing request digest binds RPC request/profile/sporks, NOT the
+   * entire subject/account frontier/acknowledgement, current state or signing
+   * authority. Those independent bindings remain mandatory at later stages.
+   */
+  createObservationInput(view) {
+    try {
+      if (arguments.length !== 1) reject();
+      const ctx = context(view);
+      return SNAPSHOT_COLLECTION({
+        phase: ctx.phase, requiredFusedObservationVersion: 1, quoteRequestContextVersion: 1,
+        expectedChainProfile: ctx.accepted.extra.zenonChain, compiledSporkIds: ctx.compiledSporkIds,
+        quoteRequest: {
+          address: ctx.subject.address, blockType: ctx.subject.blockType,
+          toAddress: ctx.subject.toAddress, data: ctx.subject.data,
+        },
+      });
+    } catch { reject(); }
   }
 
   async quote(view) {

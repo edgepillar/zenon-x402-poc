@@ -4,9 +4,9 @@ import { readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { Buffer } from 'node:buffer';
 
-// Only24 selected scenarios register:12 retained adapter cases plus12 new
-// unsigned-consumer cases. No other qualification module, SDK, native owner,
-// work generator or real signer is imported. Historical142 cases do not run.
+// Only32 selected scenarios register:24 retained adapter/consumer cases plus8
+// new observation-input cases. No other qualification module, SDK, native
+// owner, work generator or real signer is imported. Historical142 do not run.
 assert.equal(process.argv.length, 2);
 const pins = [
   ["../src/zenon/transaction-planner.js",20374,"4ef2c72a44d5f0f5ce918172a6ff30b13b693fa173bc74cb56565f5402417c2c"],
@@ -29,7 +29,7 @@ const pins = [
   ["../src/zenon/dynamic-plasma-user-send-assembly.js",7772,"05012a2a983ceca018674c4d1f63823f3f7ed53b0970a4b4bd486c4278832b04"],
   ["../src/zenon/dynamic-plasma-user-send-work-input.js",2853,"2ff9c089e5903c059746d0a1c38688a2849f94d04d429279811fbbfbb40450a4"],
   ["../src/zenon/dynamic-plasma-user-send-work-request.js",2564,"bc66c7d629eae230c46f62c88fa97960860d94b5d65d3c5611612ccae13fe9ce"],
-  ["../src/zenon/declared-dynamic-plasma-user-send-adapter.js",6381,"30a55d75fcc55dd0f4f345e39fabab0ab5d338b44933ff7e922abd0d1cc999c2"],
+  ["../src/zenon/declared-dynamic-plasma-user-send-adapter.js",7843,"c8dc5a7de2c0d726c574cb2e58868f16191a0b6b213d64e6cb24f440a9039c3c"],
 ];
 const sources = new Map();
 for (const [path, bytes, sha256] of pins) {
@@ -501,6 +501,154 @@ test('raw unsigned consumer derives current account sequence and preserves the o
   await assert.rejects(adapter.validateUnsigned(current, quote, block), adapterError);
   await assert.rejects(adapter.validateUnsigned({ ...value, accountFrontier: null }, quote, block), adapterError);
   checked(block, value);
+});
+
+const { snapshotDynamicPlasmaObservationCollectionInput: snapshotCollection }
+  = await import('../src/zenon/dynamic-plasma-observation-collector.js');
+
+test('raw observation input derives the same schema3 request before observations and flows into all later stages', { timeout: 5000 }, async () => {
+  const adapter = new Adapter(), value = view(), ctx = manualContext(value);
+  const expected = snapshotCollection({
+    phase: 'UNSIGNED', requiredFusedObservationVersion: 1, quoteRequestContextVersion: 1,
+    expectedChainProfile: value.accepted.extra.zenonChain, compiledSporkIds: value.compiledSporkIds,
+    quoteRequest: { address: ctx.subject.address, blockType: 2,
+      toAddress: ctx.subject.toAddress, data: ctx.subject.data },
+  });
+  const early = { ...copy(value), observation: null, policy: null, runtimeContextDigest: null };
+  const request = adapter.createObservationInput(early);
+  assert.deepEqual(request, expected); assert.equal(typeof request.then, 'undefined');
+  assert.equal(request.collectionInput.requiredFusedObservationVersion, 1);
+  assert.equal(request.collectionInput.quoteRequestContextVersion, 1);
+  assert.equal(request.expectedRequestContextDigest, value.observation.quoteRequestContext.digest);
+  const quote = await adapter.quote(value), work = await adapter.createWorkRequest(value, quote);
+  const assembly = await adapter.assemble(value, quote, material());
+  assert.equal(assembly.quoteRequestContextDigest, request.expectedRequestContextDigest);
+  assert.equal(work.accountBlock.data, request.collectionInput.quoteRequest.data);
+  assert.deepEqual(await adapter.validateUnsigned(value, quote, assembly.accountBlock), assembly.validation);
+  checked(assembly.accountBlock, value); frozen(request);
+});
+
+test('raw observation input follows coherent selected intent profile and compiled spork changes without caller requests', { timeout: 5000 }, async () => {
+  const adapter = new Adapter(), origin = view(), first = adapter.createObservationInput(origin);
+  for (const kind of ['amount', 'resource', 'recipient', 'asset', 'genesis', 'spork']) {
+    const value = copy(origin);
+    if (kind === 'amount') value.accepted.amount = '6';
+    if (kind === 'resource') value.paymentRequired.resource.url = 'https://resource.invalid/other';
+    if (kind === 'recipient') value.accepted.payTo = C;
+    if (kind === 'asset') value.accepted.asset = OTHER_ASSET;
+    if (kind === 'genesis') value.accepted.extra.zenonChain.genesisMomentumHash = '77'.repeat(32);
+    if (kind === 'spork') value.compiledSporkIds.dynamicPlasmaId = '03'.repeat(32);
+    value.paymentRequired.accepts[0] = copy(value.accepted);
+    const before = copy(value), result = adapter.createObservationInput(value), input = result.collectionInput;
+    assert.equal(input.quoteRequest.address, value.payerAddress);
+    assert.equal(input.quoteRequest.toAddress, value.accepted.payTo);
+    assert.equal(input.quoteRequest.data,
+      Buffer.from(paymentIntentDigest(value.paymentRequired, value.accepted), 'hex').toString('base64'));
+    assert.deepEqual(input.expectedChainProfile, value.accepted.extra.zenonChain);
+    assert.deepEqual(input.compiledSporkIds, value.compiledSporkIds);
+    assert.notEqual(result.expectedRequestContextDigest, first.expectedRequestContextDigest);
+    assert.deepEqual(value, before);
+  }
+});
+
+test('raw observation request digest does not masquerade as account sequence acknowledgement or full block binding', { timeout: 5000 }, async () => {
+  const adapter = new Adapter(), value = view(), quote = await adapter.quote(value);
+  const original = adapter.createObservationInput(value);
+  for (const kind of ['frontier', 'acknowledgement']) {
+    const current = copy(value);
+    if (kind === 'frontier') { current.accountFrontier.height = 7; current.accountFrontier.hash = '77'.repeat(32); }
+    if (kind === 'acknowledgement') current.momentumAcknowledged = { hash: H1, height: 101 };
+    assert.deepEqual(adapter.createObservationInput(current), original);
+    assert.notDeepEqual(manualContext(current).subject, manualContext(value).subject);
+    await assert.rejects(adapter.createWorkRequest(current, quote), adapterError);
+  }
+  assert.equal(Object.hasOwn(original.collectionInput.quoteRequest, 'previousHash'), false);
+  assert.equal(Object.hasOwn(original.collectionInput.quoteRequest, 'momentumAcknowledged'), false);
+});
+
+test('raw observation input requires the exact versioned unsigned view and rejects caller transport or request fields', { timeout: 5000 }, async () => {
+  const adapter = new Adapter(), value = view();
+  assert.throws(() => adapter.createObservationInput(), adapterError);
+  assert.throws(() => adapter.createObservationInput(value, null), adapterError);
+  for (const version of [0, 2, '1', undefined]) {
+    assert.throws(() => adapter.createObservationInput({ ...value, rawUserSendViewVersion: version }), adapterError);
+  }
+  for (const phase of ['SIGNED', 'UNKNOWN', 'ACKNOWLEDGED', 'VALIDATED', 'PREPARED']) {
+    assert.throws(() => adapter.createObservationInput({ ...value, phase }), adapterError);
+  }
+  for (const field of ['quoteRequest', 'subject', 'transport', 'transports', 'callRead', 'owner', 'payment', 'consumedAuthority']) {
+    assert.throws(() => adapter.createObservationInput({ ...value, [field]: true }), adapterError);
+  }
+  assert.throws(() => adapter.createObservationInput({ ...value, accountFrontier: null }), adapterError);
+  const wrong = copy(value); wrong.paymentRequired.accepts[0].amount = '6';
+  assert.throws(() => adapter.createObservationInput(wrong), adapterError);
+});
+
+test('raw observation input rejects hostile used fields and top-level descriptors without hooks', { timeout: 5000 }, async () => {
+  const adapter = new Adapter(), value = view(); let hooks = 0;
+  const hook = () => { hooks += 1; throw new Error('HOOK'); };
+  for (const path of [['phase'], ['observation'], ['accepted', 'amount'], ['accountFrontier', 'hash'],
+    ['momentumAcknowledged', 'height'], ['compiledSporkIds', 'dynamicPlasmaId']]) {
+    const bad = copy(value); let target = bad;
+    for (const part of path.slice(0, -1)) target = target[part];
+    Object.defineProperty(target, path.at(-1), { get: hook, enumerable: true });
+    assert.throws(() => adapter.createObservationInput(bad), adapterError);
+  }
+  const proxy = new Proxy(value, { get: hook, ownKeys: hook, getPrototypeOf: hook, getOwnPropertyDescriptor: hook });
+  assert.throws(() => adapter.createObservationInput(proxy), adapterError);
+  const coerced = copy(value); coerced.accountFrontier.height = { valueOf: hook, [Symbol.toPrimitive]: hook };
+  assert.throws(() => adapter.createObservationInput(coerced), adapterError);
+  assert.equal(hooks, 0);
+});
+
+test('raw observation input does not traverse unused planning payloads or treat them as policy approval', { timeout: 5000 }, async () => {
+  const adapter = new Adapter(), value = view(), quote = await adapter.quote(value);
+  const expected = adapter.createObservationInput(value); let hooks = 0;
+  const hook = () => { hooks += 1; throw new Error('HOOK'); };
+  const unused = new Proxy({}, { get: hook, ownKeys: hook, getPrototypeOf: hook, getOwnPropertyDescriptor: hook });
+  value.observation = unused; value.policy = unused; value.runtimeContextDigest = unused;
+  const result = adapter.createObservationInput(value);
+  assert.deepEqual(result, expected); assert.equal(hooks, 0);
+  assert.deepEqual(Object.keys(result).sort(), ['collectionInput', 'expectedRequestContextDigest']);
+  assert.equal(Object.hasOwn(result.collectionInput, 'policy'), false);
+  assert.equal(Object.hasOwn(result.collectionInput, 'observation'), false);
+  assert.equal(Object.hasOwn(result.collectionInput, 'runtimeContextDigest'), false);
+  await assert.rejects(adapter.quote(value), adapterError);
+  await assert.rejects(adapter.createWorkRequest(value, quote), adapterError);
+  assert.equal(hooks, 0);
+});
+
+test('raw observation input is synchronous detached frozen schema3 DATA despite later caller mutations', { timeout: 5000 }, async () => {
+  const adapter = new Adapter(), value = view(), result = adapter.createObservationInput(value);
+  const before = copy(result);
+  damage(value); value.accepted.extra.zenonChain.genesisMomentumHash = ZERO;
+  value.compiledSporkIds.dynamicPlasmaId = ZERO; value.payerAddress = A;
+  assert.deepEqual(result, before); frozen(result);
+  assert.deepEqual(JSON.parse(JSON.stringify(result)), result);
+  assert.throws(() => { result.collectionInput.quoteRequest.data = ''; }, TypeError);
+  assert.throws(() => { result.collectionInput.expectedChainProfile.chainIdentifier = '1'; }, TypeError);
+  assert.equal(Object.isFrozen(value), false); assert.equal(Object.isFrozen(value.accepted), false);
+  assert.equal(result.collectionInput.quoteRequestContextVersion, 1);
+  assert.equal(result.collectionInput.requiredFusedObservationVersion, 1);
+});
+
+test('raw observation input captures the pure snapshot without virtual policy calls or runtime activation', { timeout: 5000 }, async () => {
+  const adapter = new Adapter(), value = view(), expected = adapter.createObservationInput(value);
+  const fields = ['quote', 'createWorkRequest', 'assemble', 'validateUnsigned'];
+  const ds = fields.map(field => [field, Object.getOwnPropertyDescriptor(Adapter.prototype, field)]);
+  let calls = 0;
+  for (const [field, d] of ds) Object.defineProperty(Adapter.prototype, field, {
+    ...d, value() { calls += 1; throw new Error('OVERRIDE'); },
+  });
+  try { assert.deepEqual(adapter.createObservationInput(value), expected); }
+  finally { for (const [field, d] of ds) Object.defineProperty(Adapter.prototype, field, d); }
+  assert.equal(calls, 0); assert.throws(() => assertPlanner(adapter), /prepareUnsigned/);
+  const source = sources.get('../src/zenon/declared-dynamic-plasma-user-send-adapter.js');
+  assert.match(source, /const SNAPSHOT_COLLECTION = snapshotDynamicPlasmaObservationCollectionInput/);
+  assert.match(source, /\n  createObservationInput\(view\) \{/);
+  assert.doesNotMatch(source, /createDynamicPlasmaObservationCollector\s*\(|this\.(?:quote|createWorkRequest|assemble|validateUnsigned|createObservationInput)\s*\(/);
+  assert.doesNotMatch(source, /node:(?:fs|https?|tls|dns|child_process|worker_threads)|generateKeyPair|randomBytes|crypto\.sign|crypto\.verify|prepareBlock|publishRawTransaction|mnemonic|keystore|fetch\s*\(/);
+  assert.deepEqual(Object.keys(expected).sort(), ['collectionInput', 'expectedRequestContextDigest']);
 });
 
 test('raw unsigned consumer rejects hash-correct altered intent sequence acknowledgement and selected fields', { timeout: 5000 }, async () => {
