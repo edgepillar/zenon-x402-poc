@@ -1,0 +1,842 @@
+{
+  "schemaVersion": 1,
+  "scope": "OCT21_P1_OBSERVED_BALANCE_DEFERRED_MATERIAL_PLANNER_V3",
+  "status": "SOURCE_BOUND_SELECTED_LOCAL_SYNTHETIC_PASS_NOT_LIVE_DP_OR_PILOT_ACCEPTANCE",
+  "recordedDate": "2026-10-21",
+  "selection": {
+    "roadmapLane": "P1_A_DP_PREPARATION",
+    "finiteSlice": "Connect the explicit v3 balance-observed original-quote attempt to an opt-in deferred supplied-material prepareUnsigned SPI.",
+    "retainedAssertions": 190,
+    "newAssertions": 24,
+    "selectedAssertions": 214,
+    "noveltyBasis": "A new v3 orchestration path and24 authored assertions; not missing coverage, old metadata gaps or an unchanged stopped selection.",
+    "ownership": {
+      "implementation": "Primary self-implementation; no worker, model, settings or automation mutation.",
+      "baselineMain": "039e81dc775ee00380a3648f4cb6cd3be9e73a5c",
+      "baselineTree": "2e77f3af5d4e21fce7dd8b47e4ebf8ba4e3811be",
+      "openPRHeads": {
+        "157": "525578cc44db23943e9cfb5a62c4d1c487cca99a",
+        "175": "40eca21c34263513230c5d3c431250a0ed42aa90",
+        "193": "5b4bf1b6780586676007c84303510fb4e316cf5e",
+        "194": "79ca2b430ae53c55b1aba11e56c99e083d4a8431"
+      },
+      "newPathOverlap": [],
+      "existingFilesChanged": 0
+    },
+    "authority": "Bounded local descriptor-DATA and fixed test-owned callback/native Promise composition only, plus separately authorized small-batch publication. No actual producer, signer or native operational owner admission."
+  },
+  "implementation": {
+    "factory": "createObservedBalanceDeferredMaterialDynamicPlasmaTransactionPlanner",
+    "options": "Exact {readOptions:<existing {transports,accountExchange}>, materialExchange:<distinct non-proxy function>}.",
+    "context": "Exact {plannerContextVersion:3, readInput:<explicit observedUserSendReadVersion:3 UNSIGNED DATA>}. No supplied balance, material, plan or block.",
+    "sequence": [
+      "Snapshot all selected context before the initial yield or any borrowed callback.",
+      "Capture one existing v3 original-quote attempt.",
+      "Quote and then create the original work request; each stage freshly observes selected-payer AccountInfo between its own frontier brackets and dual DP reads.",
+      "Exactly one frozen {materialRequestVersion:1, phase:UNSIGNED, workRequest} handoff.",
+      "Observe only a supported native Promise through captured native then. Snapshot v1 publicKey/nonce DATA inside the native fulfillment reaction before await assimilation.",
+      "Assemble with the retained original quote/subject and another fresh bracketed balance/DP stage.",
+      "Validate the SAME retained unsigned block with final fresh balance/DP brackets; return only that accountBlock."
+    ],
+    "admission": "One admitted prepareUnsigned call, success or failure. Busy/used before hostile input. Wrong arity alone does not consume admission. No reset, close, cancel, retry, replacement material, quote refresh or fallback.",
+    "readBudget": "One existing32-handoff account wire, never recreated. A successful run uses four three-read account cycles:12 account handoffs and24 DP reads per endpoint. The unchanged underlying ten-cycle limit is not a deadline.",
+    "materialBudget": "At most one capability handoff. No nonce increment/search, randomness, generated key or signature.",
+    "boundary": "Stop this UNSIGNED API before external signing. Recreating an instance grants no current payer/provider/policy authority or replacement/re-signing right.",
+    "unchanged": [
+      "Active buyer and legacy SDK preparation",
+      "Prior supplied-v1 and deferred-v2 planners",
+      "Original request/payment bytes, hash, payload, requirements and context",
+      "Consumed authority; PR193 VALIDATED possible exact-same-signed-block resend versus UNKNOWN/ACKNOWLEDGED",
+      "Private HTTPS owner, OCT03 epoch candidate and old profiles/journals/payment identities"
+    ]
+  },
+  "source": {
+    "baselineMain": "039e81dc775ee00380a3648f4cb6cd3be9e73a5c",
+    "retained44FilesMatchImmutableBaselineBlobs": true,
+    "authoredGraph": [
+      {
+        "path": "src/zenon/transaction-planner.js",
+        "bytes": 22611,
+        "LF": 464,
+        "sha256": "079fe8da938e08e33a20ca1076492a829afa6fce3ae7f9b9f68d3bf4bff94233",
+        "gitBlob": "17b49a3d53974c9b3846ec6f352d6e8974bad7d3"
+      },
+      {
+        "path": "src/zenon/bounded-dynamic-plasma-strategy.js",
+        "bytes": 15729,
+        "LF": 353,
+        "sha256": "7b82560bdeb25e573912090a2fe8de7b45912500a7a7c4434fe06dcf94e06d62",
+        "gitBlob": "ee85b7a4da8bf4190ae099e6bc5074059fccebbc"
+      },
+      {
+        "path": "src/canonical.js",
+        "bytes": 967,
+        "LF": 26,
+        "sha256": "0d55ddf1727cafb0dcd46df2922305568615552a4d2ae34a5c30e90b9d8d998c",
+        "gitBlob": "5367f9c72ee13017a61630e1f0cffdced21d52c4"
+      },
+      {
+        "path": "src/x402-wire.js",
+        "bytes": 39886,
+        "LF": 934,
+        "sha256": "5fba91af5a352f62d1a335c7176a45a604e2af5d92b1c4b0e53825c1f20d4e56",
+        "gitBlob": "fb060d4e349b1c31a1219a0cc137af250a8a2291"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-required-fused-policy-adapter.js",
+        "bytes": 12024,
+        "LF": 272,
+        "sha256": "e2b693d4df9065d44ba590f4d0c8dffeb8e55187668eedfa396b4026c9905c3e",
+        "gitBlob": "b592aafd4c41461318376ea9acc1373f99317455"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-observation-collector.js",
+        "bytes": 38492,
+        "LF": 949,
+        "sha256": "6bb665dd97e4b262941ed11fb7a9fb5c6d7a162004a39fcbfbfa8cd7b3f82d98",
+        "gitBlob": "171a49f29379866ed111031d15423634ac2d17b4"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-observation-normalizer.js",
+        "bytes": 28398,
+        "LF": 698,
+        "sha256": "2c3f7d42ded21a5513ff26c23a00a35a53aa334f053d10930f1571a020286897",
+        "gitBlob": "c406db8471aa6c8afd812c222c673c809491cf00"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-json-rpc-read-transport.js",
+        "bytes": 10832,
+        "LF": 283,
+        "sha256": "fd03b2ad87d16660aa61d3961c163d724d5f89cd6d4bb9c4391d739566d5e5ca",
+        "gitBlob": "0475b7ab42889f67fb030fa7344d73d8bd6957d7"
+      },
+      {
+        "path": "src/zenon/bounded-json-rpc-read-core.js",
+        "bytes": 21759,
+        "LF": 582,
+        "sha256": "10cc529bfb0676bb03dc4dad56059663f4a578b586c52f6404fc859d27d18f76",
+        "gitBlob": "3bd98a83413eb13e3bceb097d35fb874b4c030a2"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-price-policy.js",
+        "bytes": 14957,
+        "LF": 418,
+        "sha256": "41e2e2044597cfa69c5adca292bcd762a189076be1cd939bec10798d7e35c52b",
+        "gitBlob": "ed505153487adb5284d895c922641b6de5d9caf8"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-compatibility.js",
+        "bytes": 7732,
+        "LF": 225,
+        "sha256": "b3989ce15e5f2e9d07b0ed035fe96bcce9f22cac93f5e497fdca5c37bf7618dd",
+        "gitBlob": "3811b748b3f905e454c8a4af4650bb7f89eb1cf2"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-required-fused-quote.js",
+        "bytes": 5416,
+        "LF": 133,
+        "sha256": "f5e10ff2dbfff3b6b63d87f0abadd0bb52b5d6b8fe0ead6a55fc5ea14207b730",
+        "gitBlob": "e820fd31ffde4ef77a2efa6e1fd3ed1775778726"
+      },
+      {
+        "path": "src/zenon/plasma-strategy.js",
+        "bytes": 974,
+        "LF": 32,
+        "sha256": "1c597d4e169ba8a5e6d2b7852c4ffa3a8ec9b854332fe354b9b013c36ebae093",
+        "gitBlob": "5cddc2d270aaf043e6e43145e95ffe0be3dde475"
+      },
+      {
+        "path": "package.json",
+        "bytes": 1413,
+        "LF": 40,
+        "sha256": "8c9a25504fbf6f87c31cdf245a6f4eec5a88cc89c8352151dc66a577c5771ef5",
+        "gitBlob": "ec7193f6fd76f34778515079dc777594175c4c34"
+      },
+      {
+        "path": "test-support/phase2a-account-block-preimage.js",
+        "bytes": 7724,
+        "LF": 210,
+        "sha256": "dde02531faaf3c45c5ab9760beba84fe56664f923c1d61fa64b077682d97dc0e",
+        "gitBlob": "a6a48b0ea2f105a3bcc82c76fe02531eea18f8e0"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-user-send-work-binding.js",
+        "bytes": 4522,
+        "LF": 98,
+        "sha256": "218b4391c97e4adde905415e20ec0e2015fca98643db85b6efd682aa3b5c5681",
+        "gitBlob": "1591c6fd60e90713fbec9b4249a69c1e5626405e"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-user-send-key-binding.js",
+        "bytes": 4237,
+        "LF": 91,
+        "sha256": "37ad7e74b038801297e4bffb0cb8ba92cbd79009ed32c4ae5b134fe2cb154be2",
+        "gitBlob": "c366f0fee4132604b40604547fe22f1bc1dba65d"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-user-send-assembly.js",
+        "bytes": 7772,
+        "LF": 162,
+        "sha256": "05012a2a983ceca018674c4d1f63823f3f7ed53b0970a4b4bd486c4278832b04",
+        "gitBlob": "a0537856f6692d278c9043ab9c1c734d1bde61ba"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-user-send-work-input.js",
+        "bytes": 2853,
+        "LF": 59,
+        "sha256": "2ff9c089e5903c059746d0a1c38688a2849f94d04d429279811fbbfbb40450a4",
+        "gitBlob": "dad4febf4ef6f09216640245c7e3805e01ad0127"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-user-send-work-request.js",
+        "bytes": 2564,
+        "LF": 50,
+        "sha256": "bc66c7d629eae230c46f62c88fa97960860d94b5d65d3c5611612ccae13fe9ce",
+        "gitBlob": "d4e9731b0af82a892226c2817e9d5a5273b39599"
+      },
+      {
+        "path": "src/zenon/declared-dynamic-plasma-user-send-adapter.js",
+        "bytes": 7843,
+        "LF": 164,
+        "sha256": "c8dc5a7de2c0d726c574cb2e58868f16191a0b6b213d64e6cb24f440a9039c3c",
+        "gitBlob": "5f5891db61c9869009e1bf440c76da1e9a1a43e1"
+      },
+      {
+        "path": "qualification/dynamic-plasma-raw-adapter.behavior.draft.mjs",
+        "bytes": 54696,
+        "LF": 816,
+        "sha256": "63376fe82c15e3df53fc48a5d53858ee896ef203b715adbd9fa81b185168dcbf",
+        "gitBlob": "c39a8211af665d9ffafe0adba00baa51f2d83874"
+      },
+      {
+        "path": "qualification/dynamic-plasma-request-bound-collection.behavior.draft.mjs",
+        "bytes": 18324,
+        "LF": 290,
+        "sha256": "0fc875ac411e3e8315a467e1074983b66eb5e5e02a9cff5a026659c0851c4794",
+        "gitBlob": "c960f283ccb9bc782e0866deca08a71ed21de740"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-account-frontier-read.js",
+        "bytes": 7417,
+        "LF": 152,
+        "sha256": "283209685a41aed5647c87e33d046d1f81b3a6820ea6ea307c11d2f99b91020d",
+        "gitBlob": "6fbb894a4db5db15e4ded168fd663eeb24898bf8"
+      },
+      {
+        "path": "qualification/dynamic-plasma-account-frontier-read.behavior.draft.mjs",
+        "bytes": 13729,
+        "LF": 218,
+        "sha256": "b8fe7fdff1874862ac948883ad159911c38de12e371a6e5b4fa58c6e994e19cf",
+        "gitBlob": "da66e447a45bd84acc77cf28c081dacd342be5c5"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-observed-user-send-subject.js",
+        "bytes": 5105,
+        "LF": 104,
+        "sha256": "bbcc1d718bcb1353f46e0650723e35c218db94754328103d4bce1d5765e13cd8",
+        "gitBlob": "5e29c6d70c965a4d72c0902504e57dae852a6223"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-account-frontier-read-transport.js",
+        "bytes": 3690,
+        "LF": 77,
+        "sha256": "c5c99de7d6f843e996fa5de5a646ddc869e27cdc2acc29206b97f34555bdcaa7",
+        "gitBlob": "07b6f9f7fe2ed72981da3c20868b3e72954e8575"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-observed-user-send-adapter.js",
+        "bytes": 8149,
+        "LF": 180,
+        "sha256": "8526519aa6bf5006c572447127680d3cc871ee4eee1b9046b4ea09f9ad9e1653",
+        "gitBlob": "bbda0ebf5a6d4d21f159f31304165810ebd89a77"
+      },
+      {
+        "path": "qualification/dynamic-plasma-observed-user-send-adapter.behavior.draft.mjs",
+        "bytes": 22655,
+        "LF": 316,
+        "sha256": "1ffecb7e86c08b3992005f6750f1777c257886daba15cdc71f9e95d0c3f541ef",
+        "gitBlob": "afbc0caa97ef4a79bdd76e5415f4cad07f4cd6d1"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-observed-user-send-read-adapter.js",
+        "bytes": 17026,
+        "LF": 323,
+        "sha256": "883104f7733ae68d755da4898e776ed8b18eba0a9d271cbc169b218e7a6776d8",
+        "gitBlob": "f30d29f8c50648f5b0341b3e73d6cb1a4bbb2828"
+      },
+      {
+        "path": "qualification/dynamic-plasma-observed-user-send-read-adapter.behavior.draft.mjs",
+        "bytes": 25029,
+        "LF": 385,
+        "sha256": "2546b9f54d69126fd3caa07c561a7d0cf5185c668c9dcac0d2be3e7b7fc64986",
+        "gitBlob": "e5e6a58481d85ee38e82e846ab684d11786fa0c1"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-user-send-balance-read.js",
+        "bytes": 7542,
+        "LF": 144,
+        "sha256": "ae1f3e5d309be0dc196fb6b35324d4c8287345b50a108d5030c1058645d2ed39",
+        "gitBlob": "f629aca2410dfd194fd73d3a651e624baa633386"
+      },
+      {
+        "path": "qualification/dynamic-plasma-user-send-balance-read.behavior.draft.mjs",
+        "bytes": 20832,
+        "LF": 304,
+        "sha256": "58332b4d2151c4f0d2bdc1dbfbfee2f3e919a92821206778310c29d8b8316d05",
+        "gitBlob": "c46fd304a0f188f8c8d3bed9b792563c83013b30"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-observed-user-send-attempt.js",
+        "bytes": 7192,
+        "LF": 148,
+        "sha256": "578de9a3251eea0ba6eb56271c7fc500afd4f5b39b3807e03d5c314755ff877f",
+        "gitBlob": "1824ab8d68514ee71ca183e80f82c7897b16bed3"
+      },
+      {
+        "path": "qualification/dynamic-plasma-observed-user-send-attempt.behavior.draft.mjs",
+        "bytes": 22003,
+        "LF": 351,
+        "sha256": "28415d2b93abf2598420b0edab5481704ed0e6501652e19b9c5eee568e4a271b",
+        "gitBlob": "f5dfc13abb35b3c852e284e102188929fd7f811f"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-supplied-material-planner.js",
+        "bytes": 10622,
+        "LF": 213,
+        "sha256": "ea465d97719735d4d876f073b5a1214b68ce1565e93a82d7058ebedf38d925c7",
+        "gitBlob": "8c026610b22509a891f0955caee280cfd0fe8fd1"
+      },
+      {
+        "path": "qualification/dynamic-plasma-supplied-material-planner.behavior.draft.mjs",
+        "bytes": 21351,
+        "LF": 334,
+        "sha256": "3762af0a67cb520d6d6cf99444870922dee6b0be6bbeb18c0597ff4571465e4d",
+        "gitBlob": "0efc235818aacbf0848a953acdef9f93881f57c9"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-deferred-material-planner.js",
+        "bytes": 13933,
+        "LF": 280,
+        "sha256": "0c21bfed5b4adc22483b7b5961dd7d3cc6587836ab750e7d3df9b52fa6a13827",
+        "gitBlob": "7cdc7e4cc681bcbc4a1f9038df10340a9bf7f10e"
+      },
+      {
+        "path": "qualification/dynamic-plasma-deferred-material-planner.behavior.draft.mjs",
+        "bytes": 28511,
+        "LF": 479,
+        "sha256": "a5569ba9870ddda95b8a9f23c0f04f535536dff9ef507997aee747107714b24a",
+        "gitBlob": "7abb16e7b55606c42f3ee3e2bc968cc50acf50e2"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-account-state-read-transport.js",
+        "bytes": 3632,
+        "LF": 74,
+        "sha256": "9aa818dabdacf0baec60ca570e854cc8a327e554ba5e5a76c670eb5ed02b29b8",
+        "gitBlob": "751a4b8c5a0c42e1d2b0a47af9d2ef7264229821"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-observed-balance-user-send-read-adapter.js",
+        "bytes": 15496,
+        "LF": 293,
+        "sha256": "0018c76c0e6bee0d0dbcd771613701162e3609b2dcebc36918c2092e3d6da432",
+        "gitBlob": "d49db75ceb95f04016e7957e34af72e4bf2357c9"
+      },
+      {
+        "path": "qualification/dynamic-plasma-observed-balance-user-send-read-adapter.behavior.draft.mjs",
+        "bytes": 25187,
+        "LF": 361,
+        "sha256": "e05a016116d8206953c9eea03ceda4795e919944bd960c5a41aaf62da3698020",
+        "gitBlob": "dc5a514618afd5534dcf7e69b66ff58f44981146"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-observed-balance-user-send-attempt.js",
+        "bytes": 7377,
+        "LF": 146,
+        "sha256": "5111ef500bf33c19113f7ffabadc8980792bc9b5fa388cf6095a3f89a5f69e7a",
+        "gitBlob": "e81cf35120457aa520036042899ccd43bf3d1835"
+      },
+      {
+        "path": "qualification/dynamic-plasma-observed-balance-user-send-attempt.behavior.draft.mjs",
+        "bytes": 20603,
+        "LF": 294,
+        "sha256": "ae8f93438ff3d7c99af24a6dc2a2f1e50fec99eb115e08c7136110600635a7e6",
+        "gitBlob": "419017fb578bf1a567bd961b8ccbc874ac91cab6"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-observed-balance-deferred-material-planner.js",
+        "bytes": 13858,
+        "LF": 278,
+        "sha256": "f6d2d8c364b7ee2206255eb628251dea81b32cdf20e5c7f8437e74cedc13516c",
+        "gitBlob": "c626d1e8c6d8ee416e3098991717da6f44864ce0"
+      },
+      {
+        "path": "qualification/dynamic-plasma-observed-balance-deferred-material-planner.behavior.draft.mjs",
+        "bytes": 29741,
+        "LF": 435,
+        "sha256": "db35b48b65e0bdd83a0f1a5222c5076cb8bb58a047d13e052119a984f03022a7",
+        "gitBlob": "c0579225b3aede7a55c400d055876e27f404f791"
+      }
+    ],
+    "graphFiles": 46,
+    "graphBytes": 682405,
+    "graphCapBytes": 720896,
+    "perFileCapBytes": 65536,
+    "literalImportEdges": 256,
+    "nodeBuiltins": [
+      "node:util",
+      "node:buffer",
+      "node:crypto",
+      "node:test",
+      "node:assert/strict",
+      "node:fs"
+    ],
+    "callerAdditionalBuiltins": [
+      "node:test/reporters",
+      "node:stream"
+    ],
+    "noBareOrOutOfGraphImport": true,
+    "newFiles": [
+      {
+        "path": "src/zenon/dynamic-plasma-observed-balance-deferred-material-planner.js",
+        "bytes": 13858,
+        "LF": 278,
+        "sha256": "f6d2d8c364b7ee2206255eb628251dea81b32cdf20e5c7f8437e74cedc13516c",
+        "gitBlob": "c626d1e8c6d8ee416e3098991717da6f44864ce0"
+      },
+      {
+        "path": "qualification/dynamic-plasma-observed-balance-deferred-material-planner.behavior.draft.mjs",
+        "bytes": 29741,
+        "LF": 435,
+        "sha256": "db35b48b65e0bdd83a0f1a5222c5076cb8bb58a047d13e052119a984f03022a7",
+        "gitBlob": "c0579225b3aede7a55c400d055876e27f404f791"
+      }
+    ]
+  },
+  "qualification": {
+    "entry": "qualification/dynamic-plasma-observed-balance-deferred-material-planner.behavior.draft.mjs",
+    "passNames": [
+      "raw adapter v1 carries one declared account intent through quote work request and unsigned assembly",
+      "raw adapter returns unchanged component contracts for the same independently derived subject",
+      "raw adapter produces original hybrid work input but never accepts invalid supplied work or searches",
+      "raw adapter refuses original quote reuse after advanced foreign or reset account frontiers",
+      "raw adapter preserves original acknowledgement and selected fields through the declared price window",
+      "raw adapter rejects coherent stale exhausted over-price and changed-intent views without repricing",
+      "raw adapter requires its exact versioned view and never accepts legacy contexts or operational dependencies",
+      "raw adapter stages retain their pre-await checked view quote and supplied material data",
+      "raw adapter rejects hostile view descriptors proxies and coercion without caller hooks",
+      "raw adapter captures source implementations instead of overridden preparer methods",
+      "raw adapter preserves exact arity original quote material and no replacement boundaries",
+      "raw adapter stays stateless default-off frozen DATA without planner SDK signer owner or runtime activation",
+      "raw unsigned consumer returns the complete existing independent key work hash and price contract",
+      "raw unsigned consumer rechecks a retained block through two declared price advances without repricing",
+      "raw unsigned consumer refuses coherent stale over-price depleted policy and runtime changes",
+      "raw unsigned consumer derives current account sequence and preserves the original acknowledgement binding",
+      "raw observation input derives the same schema3 request before observations and flows into all later stages",
+      "raw observation input follows coherent selected intent profile and compiled spork changes without caller requests",
+      "raw observation request digest does not masquerade as account sequence acknowledgement or full block binding",
+      "raw observation input requires the exact versioned unsigned view and rejects caller transport or request fields",
+      "raw observation input rejects hostile used fields and top-level descriptors without hooks",
+      "raw observation input does not traverse unused planning payloads or treat them as policy approval",
+      "raw observation input is synchronous detached frozen schema3 DATA despite later caller mutations",
+      "raw observation input captures the pure snapshot without virtual policy calls or runtime activation",
+      "raw unsigned consumer rejects hash-correct altered intent sequence acknowledgement and selected fields",
+      "raw unsigned consumer rejects damaged hash nonce public key and signed records without repair",
+      "raw unsigned consumer requires exact arity version phase original quote and actual block data",
+      "raw unsigned consumer refuses hostile view quote and block descriptors without caller hooks",
+      "raw unsigned consumer keeps pre-await view quote and exact block snapshots isolated",
+      "raw unsigned consumer does not dispatch overridden assembly quote or policy methods",
+      "raw unsigned consumer preserves declared zero-difficulty semantics without nonce generation or authority",
+      "raw unsigned consumer remains detached default-off DATA without planner signing or active buyer cutover",
+      "request-bound collection connects the raw-view request to dual closed transports and expected normalization",
+      "collected raw DATA feeds original unsigned stages and bounded price advances without repricing",
+      "request-bound collection captures mutable input before the first synthetic exchange can change it",
+      "request-bound collection refuses legacy modes phases external digests and extra arity before reads",
+      "request-bound collection and factory reject hostile descriptors proxies and aliased capabilities without hooks",
+      "request-bound collection stays busy through an owned pending read without inspecting reentrant input",
+      "explicit later collection gets a newly derived request digest while the original result stays bound",
+      "request-bound collection preserves unavailable endpoints after correlation text and exchange failures without retries",
+      "request-bound collection retains pre-DP and incoherent classifications without turning them into active evidence",
+      "request-bound composition captures transport references and preserves the original raw collector contract",
+      "request-bound composition reuses the internal Promise shield and inherited-then refusal without hook execution",
+      "request-bound composition preserves every original collector byte and adds no native owner or signing path",
+      "raw frontier read extracts only the expected four fields from the pinned full RPC result shape",
+      "raw frontier read connects the decoded sequence to existing DP request quote work assembly and consumer",
+      "raw frontier read never infers empty accounts from null zero missing or reduced results",
+      "raw frontier read requires numeric source lexemes and reserves a safe next account height",
+      "raw frontier read checks expected payer chain request correlation and supported wire version",
+      "raw frontier read reuses duplicate envelope key UTF8 depth and byte refusals before native parsing",
+      "raw frontier read requires exact descriptor DATA inputs without hooks operations or authority fields",
+      "raw result text export preserves untouched numeric source without transport allocation or coercion",
+      "raw frontier read captures native parsing and never claims full block signature genesis or current-state validation",
+      "raw frontier read leaves every earlier core byte unchanged and imports no operational provider",
+      "observed adapter derives initial read input without manual frontier acknowledgement or price capabilities",
+      "observed adapter initial plan retains the exact derived subject acknowledgement and existing quote",
+      "observed adapter composes both closed synthetic read paths through work assembly and same-block validation",
+      "observed adapter keeps the original acknowledgement across two price advances and rejects the third without refresh",
+      "observed adapter refuses changed unavailable foreign malformed and empty account sequences at every later stage",
+      "observed adapter independently binds selected intent and request context instead of trusting the original plan label",
+      "observed adapter preserves the original runtime price policy and selected pair rather than repricing a supplied plan",
+      "observed adapter refuses non-active legacy misbound and cached observations at initial quote and later consumption",
+      "observed adapter validates the same unsigned block and refuses signed modified key hash nonce and selection fields",
+      "observed adapter requires exact versions unsigned phase arity and descriptor-only view and plan grammars",
+      "observed adapter refuses hostile view plan subject quote and observation descriptors without invoking hooks",
+      "observed adapter snapshots every consumed input before awaiting and never mutates caller DATA",
+      "observed adapter plan remains reproducible DATA and account projection not authority or full block authentication",
+      "observed adapter captures existing implementations without native owners signing retry or virtual strategy dispatch",
+      "observed read adapter constructs only captured closed components and starts with zero exchange handoffs",
+      "observed read adapter brackets each existing unsigned stage with account reads around dual DP observations",
+      "observed read adapter preserves the original plan block and acknowledgement through two price advances then holds",
+      "observed read adapter rejects mismatched bracket projections and never treats agreement as full block authentication",
+      "observed read adapter refuses an advanced original account before any DP read at every later stage",
+      "observed read adapter holds on unavailable malformed miscorrelated and empty account results without retry",
+      "observed read adapter stops before the second account read when dual DP data is unavailable or incoherent",
+      "observed read adapter captures selected input original plan material and block before the first account callback",
+      "observed read adapter rejects exact input version phase arity and malformed original plans before reads",
+      "observed read adapter refuses hostile nested DATA proxies sparse arrays and foreign prototypes without hooks",
+      "observed read adapter remains busy during an owned pending account read and reentrant DP callback",
+      "observed read adapter validates configuration without invoking exchange capabilities or accepting aliased DP transports",
+      "observed read adapter drains safe failures and refuses decorated or unsafe exchange promises without hooks",
+      "observed read adapter retains exact unsigned bytes and holds after rejected signed damaged or replacement DATA",
+      "observed read adapter exhausts the same account wire budget without recreation reset fallback or extra handoffs",
+      "observed read adapter captures existing DATA stage methods without native owners SDK signing publication or active cutover",
+      "native balance read projects explicit selected atomic balance with no SDK blockCount or authority receipt",
+      "native balance read compares canonical big integer strings without Number rounding or decimal rescaling",
+      "native balance read binds payer height and selected token while refusing missing null and unreceived substitutions",
+      "native balance read reuses bounded raw scanning and captured numeric parsing without full token or frontier-hash proof",
+      "native balance read independently rechecks selected intent asset profile and compiled context",
+      "native balance read requires exact unsigned descriptor DATA without getters coercion proxies or operational fields",
+      "balance read v2 composes all existing unsigned stages without adding balance RPCs or changing result contracts",
+      "balance read v2 rejects insufficient malformed or mismatched DATA before DP and holds every later stage",
+      "balance read v2 retains the same plan quote acknowledgement and unsigned block across the original price window",
+      "balance read v2 captures raw balance text and all selected plan material and block DATA before callbacks",
+      "balance read v2 selection is explicit and version1 neither silently upgrades nor claims a balance gate",
+      "balance read v2 preserves busy held capture and no signer or active SDK authority boundaries",
+      "original unsigned attempt exposes only four frozen stages over the existing exact capability configuration",
+      "original unsigned attempt connects quote work assembly and same-block validation without extra read cycles",
+      "original unsigned attempt refuses wrong arity and stage before hostile input without poisoning valid progression",
+      "original unsigned attempt retains one detached original plan and accepts no replacement plan argument",
+      "original unsigned attempt captures initial intent balance and policy DATA before borrowed callbacks mutate them",
+      "original unsigned attempt retains work-stage snapshots and supplied material before later callbacks",
+      "original unsigned attempt validates only its retained unsigned block and cannot reassemble or replace it",
+      "original unsigned attempt keeps the original quote acknowledgement and block through its original price horizon",
+      "original unsigned attempt refuses an advanced original account before DP and never refreshes its retained plan",
+      "original unsigned attempt rechecks v2 balance at every admitted stage and holds an underfunded refusal",
+      "original unsigned attempt rejects v1 downgrade at every stage without an account or DP handoff",
+      "original unsigned attempt binds later selected intent to the retained plan before another read",
+      "original unsigned attempt rejects all reentrant stages as busy before hostile input while quote is pending",
+      "original unsigned attempt keeps each later pending stage exclusive and resumes only that admitted operation",
+      "original unsigned attempt sanitizes borrowed exchange failures and refuses unsafe thenables without caller hooks",
+      "original unsigned attempt shields its own public Promise when a borrowed callback tampers with inherited construction",
+      "original unsigned attempt preserves the same lifetime account wire budget across repeated same-block validation",
+      "original unsigned attempt is volatile DATA ownership only with no SDK planner signer producer or native owner cutover",
+      "supplied-material DP planner implements the existing structural SPI with one frozen method and exact capabilities",
+      "supplied-material DP planner returns only the exact existing final unsigned block after all four stages",
+      "supplied-material DP planner admits one call only and refuses repeat or wrong arity without reading hostile DATA",
+      "supplied-material DP planner snapshots all context and material before the first borrowed callback",
+      "supplied-material DP planner requires exact versioned descriptor DATA and rejects getters proxies or operational fields early",
+      "supplied-material DP planner checks canonical supplied public key and nonce syntax before any read without production",
+      "supplied-material DP planner withholds every block until final same-block validation and read completion",
+      "supplied-material DP planner hides failures at every stage and cannot return a partial block or retry",
+      "supplied-material DP planner keeps the original account sequence and refuses frontier changes at later stages",
+      "supplied-material DP planner enforces explicit read v2 and the existing selected-balance gate without fallback",
+      "supplied-material DP planner accepts only the original quote horizon and acknowledgement during intermediate price changes",
+      "supplied-material DP planner refuses a final expired price horizon without replacement material quote or block",
+      "supplied-material DP planner rejects a mismatched payer key and a single fixed nonce below positive required work",
+      "supplied-material DP planner remains busy through each borrowed-read barrier and used after successful completion",
+      "supplied-material DP planner bounds all snapshots including raw balance UTF8 and shields its public Promise",
+      "supplied-material DP planner is an opt-in supplied-DATA SPI only with no SDK producer signer or native owner",
+      "deferred DP planner exposes one frozen SPI with captured distinct capabilities and no constructor handoffs",
+      "deferred DP planner obtains material once after quote and original work request and returns only the final block",
+      "deferred DP planner preserves one admission and checks busy or used before hostile replacement input",
+      "deferred DP planner snapshots selected DATA before its initial yield and captures capability references",
+      "deferred DP planner requires explicit context version2 read version2 and exact descriptor DATA before reads",
+      "deferred DP planner stays busy with no additional reads while the single material Promise is pending",
+      "deferred DP planner refuses pre-material read failures without handoff and later failures without retry",
+      "deferred DP planner hides synchronous material faults and observed native rejections without inspecting raw reasons",
+      "deferred DP planner rejects unsupported material promises and thenables without caller hooks",
+      "deferred DP planner uses native observation without reading an own then getter or decorating the material Promise",
+      "deferred DP planner snapshots fulfillment before await assimilation of hostile material objects",
+      "deferred DP planner retains the observed material snapshot across later caller mutations and read barriers",
+      "deferred DP planner rejects an original account advance after material before any next DP read",
+      "deferred DP planner preserves the original quote acknowledgement and block through allowed material-time price advances",
+      "deferred DP planner holds an expired material-time price horizon without refreshed quote or replacement material",
+      "deferred DP planner rejects its own run receipt as material without a direct self-dependency or replacement call",
+      "deferred DP planner shields its public Promise and refuses pre-read native mechanics mutation without hooks",
+      "deferred DP planner rejects malformed supplied material before assembly without nonce search or key production",
+      "deferred DP planner retains full payer key and fixed positive-work consumer checks after the handoff",
+      "deferred DP planner returns no partial block before the final same-block read gate",
+      "deferred DP planner preserves declared balance gates and finite snapshots without adding a balance RPC",
+      "deferred DP planner remains default-off and cannot activate a native producer signer SDK or recovery owner",
+      "account state wire captures one exchange with zero construction handoffs and serializes both closed methods with shared IDs",
+      "account state wire refuses other methods shapes payer coercion getters proxies and unfrozen DATA before exchange",
+      "account state wire shares its32 handoff ceiling across both methods without reset or counter recreation",
+      "account state wire preserves native pending busy and exact envelope correlation without implicit retry",
+      "observed balance reader exposes only frozen captured stages and validates configuration without native owner handoffs",
+      "observed balance reader fetches account info before DP and brackets all four unchanged unsigned stages with one shared account wire",
+      "observed balance reader requires exact v3 input and cannot downgrade to supplied balance text or v1 v2 before reads",
+      "observed balance reader refuses missing unavailable or insufficient selected balance after two handoffs and before any DP read",
+      "observed balance reader binds native payer accountHeight selected asset and raw numeric lexemes without SDK conversion",
+      "observed balance reader holds when account frontier moves after coherent balance and dual DP projections without claiming atomic funds",
+      "observed balance reader rejects an advanced original account before balance or DP at every later stage",
+      "observed balance reader snapshots selected input and original plan before callbacks and issues no DP while AccountInfo is pending",
+      "observed balance reader obtains a new balance sample on later stages and never reuses a prior supplied sufficient balance",
+      "observed balance reader stops after AccountInfo or DP failures without an after read fallback or retry",
+      "observed balance reader observes only native exchange Promise mechanics at the new info boundary without thenable hooks",
+      "observed balance reader retains original quote acknowledgement through two price advances and holds beyond the declared horizon",
+      "observed balance reader consumes at most ten whole three-read cycles and refuses an eleventh before hostile input or any extra handoff",
+      "observed balance reader refuses getters proxies sparse arrays and unknown DATA with zero hooks and no input freezing",
+      "observed balance reader shields its public Promise and refuses pre-read native global drift with synchronous restore",
+      "observed balance reader captures existing stages and closed core without SDK nonce search native hosts active cutover or authority",
+      "observed balance attempt exposes four frozen methods with one captured reader and zero construction handoffs",
+      "observed balance attempt retains one original plan and same unsigned block through all fresh balance bracketed stages",
+      "observed balance attempt refuses wrong order and arity before input inspection without consuming the next legal stage",
+      "observed balance attempt later calls have no replacement plan quote block reassembly or requote surface",
+      "observed balance attempt permanently holds admitted malformed input even before the lower reader makes a handoff",
+      "observed balance attempt busy precedes hostile input while original AccountInfo is pending and does not launch a parallel stage",
+      "observed balance attempt detaches initial selected intent and later supplied material before the first account callback",
+      "observed balance attempt binds returned frozen plan and assembly receipts to retained originals rather than caller JSON copies",
+      "observed balance attempt rejects an advanced original account before balance or DP at both work and final validation",
+      "observed balance attempt never reuses prior sufficient balance when the next work stage returns insufficient AccountInfo",
+      "observed balance attempt keeps original acknowledgement through allowed price advances and never refreshes an expired quote",
+      "observed balance attempt refuses changed original intent policy or runtime after quote without creating a new plan",
+      "observed balance attempt preserves full payer key and fixed supplied nonce checks and holds without a material replacement attempt",
+      "observed balance attempt permanently holds a rejected final account read while retaining the same unsigned assembly DATA",
+      "observed balance attempt never invokes proxy getter coercion or private rejection reason hooks and does not freeze caller input",
+      "observed balance attempt revalidates the retained block only within ten original wire cycles then holds without resetting counters",
+      "observed balance attempt shields its public receipt and permanently holds pre-read native mechanics mutation after synchronous restore",
+      "observed balance attempt source captures the v3 reader once and excludes replacement native owners SDK work signing and default cutover",
+      "observed balance deferred DP planner exposes one frozen SPI with distinct captured capabilities and no constructor handoffs",
+      "observed balance deferred DP planner obtains one original work request after fresh quote and work balance reads then returns only the final block",
+      "observed balance deferred DP planner preserves one admission and checks busy or used before hostile replacement input",
+      "observed balance deferred DP planner snapshots all selected DATA before its initial yield and captures capability references",
+      "observed balance deferred DP planner requires exact context version3 and read version3 without supplied balance material or getter hooks",
+      "observed balance deferred DP planner stays busy without extra balance or DP reads while its one material Promise is pending",
+      "observed balance deferred DP planner refuses all selected account stage failures without material retry or fallback",
+      "observed balance deferred DP planner hides synchronous material faults and native rejections without raw reason hooks",
+      "observed balance deferred DP planner rejects unsupported material promises and thenables without caller hooks",
+      "observed balance deferred DP planner uses captured native observation without reading an own then getter or decorating material Promise",
+      "observed balance deferred DP planner snapshots fulfillment before await assimilation of hostile material objects",
+      "observed balance deferred DP planner keeps its fulfilled material snapshot across later caller mutations and fresh balance reads",
+      "observed balance deferred DP planner rejects an original account advance after material before the next balance or DP read",
+      "observed balance deferred DP planner preserves original quote acknowledgement and block through allowed material time price advances",
+      "observed balance deferred DP planner holds expired material time price horizon without quote refresh or replacement material",
+      "observed balance deferred DP planner rejects its own public run as material without a direct self dependency or replacement call",
+      "observed balance deferred DP planner shields public Promise and refuses pre read native mechanics mutation without hooks",
+      "observed balance deferred DP planner rejects malformed supplied material before assembly without producing keys or nonce",
+      "observed balance deferred DP planner retains full payer key and one fixed positive work consumer check after the handoff",
+      "observed balance deferred DP planner returns no partial block before the final same block frontier after gate",
+      "observed balance deferred DP planner bounds all snapshot DATA before callbacks without accepting a supplied balance escape",
+      "observed balance deferred DP planner never reuses prior sufficient balance at any quote work assembly or final stage",
+      "observed balance deferred DP planner holds malformed or wrong payer height token balance after material before the next DP read",
+      "observed balance deferred DP planner source captures only the v3 attempt and excludes producer native SDK signing and default activation"
+    ],
+    "counts": {
+      "tests": 214,
+      "suites": 0,
+      "pass": 214,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "nativeNodeCommandsForThisNewComposition": 1,
+    "sameExactInputReruns": 0,
+    "fullRunWithoutNameOrSkipFilter": true,
+    "joined": true,
+    "actualExit": 0,
+    "outputComplete": true,
+    "allActualNamesMatchedEveryAuthoredRegistration": true,
+    "actualNativePassEventsAndCompleteNamedTAPAndPlanAndAllSevenCountsMatched": true,
+    "stdout": {
+      "bytes": 51651,
+      "sha256": "b394e9cc0c0b521cc970445c250e952128e59908d1b0746127ef66c183707749"
+    },
+    "stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "fullStdoutRetainedOnceInProtectedCAS": true,
+    "duplicatePublicStdoutOrZipCreated": false,
+    "runtime": {
+      "node": {
+        "version": "24.19.0",
+        "platform": "darwin",
+        "arch": "arm64",
+        "bytes": 121304480,
+        "sha256": "dbedff294bab84a0a86c04e15fbcbeb1c97ca10bef1b32b0634cd24b36f62100"
+      },
+      "controller": {
+        "pythonVersion": "3.12.14",
+        "bytes": 18058560,
+        "sha256": "811e2679c20fd2c7413f7c5ca28ce903065eea8dadb8660f1b9379a28959a480"
+      },
+      "digestReuse": "Earlier complete runtime digests reused only after exact nine-field identity checks; source/manager/store/volume identity checked before and after the command."
+    },
+    "launch": {
+      "fixedCommonJsRunApi": true,
+      "inlineCallerReconstruction": {
+        "repository": "edgepillar/zenon-x402-poc",
+        "commit": "c07c0110f2d3b322271336e64bde6f053d930253",
+        "record": {
+          "path": "qualification/dynamic-plasma-raw-adapter-consumer.behavior.result.json",
+          "bytes": 25139,
+          "LF": 363,
+          "sha256": "adc0c4a5310f3a5d92e3099ed510f7722a36c7136c9ebfe84fbf8e5b66928b4b",
+          "gitBlob": "062024e6b06cb7194245451d7678f2cdf63553c6"
+        },
+        "field": "qualification.launch.inlineCallerReconstruction",
+        "selectionEncoding": "lossless-space-word-dictionary-base36-v1",
+        "encoderSource": "function encodeWordSelection(entry,names) {\n const words=[],indices=new Map();\n const encoded=names.map(name=>name.split(' ').map(word=>{\n  if(!indices.has(word)){indices.set(word,words.length);words.push(word);}\n  return indices.get(word).toString(36);\n }).join('.'));\n const block='const nameWords = '+JSON.stringify(words)+';\\nconst selections = {'+JSON.stringify(entry)+': '+JSON.stringify(encoded)+'.map(row => row.split(\".\").map(word => nameWords[parseInt(word, 36)]).join(\" \"))};';\n return {block,words,encoded};\n}",
+        "recipe": "base.prefix + encodeWordSelection(entry, passNames).block + base.suffix; base is the immutable field above. No testNamePatterns/testSkipPatterns options are added.",
+        "exactActualCallerStringEqualityIndependentlyVerified": true,
+        "decodedAll214NamesAndOrderVerified": true
+      },
+      "environment": [
+        "TZ=UTC",
+        "LANG=C",
+        "LC_ALL=C"
+      ],
+      "allOtherEnvironmentCleared": true,
+      "argvTemplate": [
+        "env",
+        "-i",
+        "TZ=UTC",
+        "LANG=C",
+        "LC_ALL=C",
+        "<pinned-node>",
+        "--permission",
+        "<one exact --allow-fs-read=<repo>/<authoredGraph path> per file>",
+        "--disallow-code-generation-from-strings",
+        "--no-addons",
+        "--no-warnings",
+        "--eval",
+        "<reconstructed inline caller>",
+        "<repo>/qualification/dynamic-plasma-observed-balance-deferred-material-planner.behavior.draft.mjs"
+      ],
+      "exactFileReadGrants": 46,
+      "directoryReadExpansion": false,
+      "fsWriteChildWorkerAddonWasiOrInspectorGrants": false,
+      "noInputTypeDiscoveryGlobIsolationChildWatchForceExitOrNameFilter": true,
+      "argumentBytes": 28371,
+      "privateLaunchRecordBytes": 30652,
+      "unchangedManagerArgumentAndRecordCapBytes": 32768,
+      "prefixEncodedCallerBytesBeforeOptimization": 25056,
+      "spaceWordEncodedCallerBytes": 20472,
+      "losslessSavedCallerBytes": 4584,
+      "wordDictionaryEntries": 631,
+      "newBuiltinsForEncoding": 0,
+      "runner": {
+        "isolation": "none",
+        "concurrency": false,
+        "timeoutMs": 5000,
+        "forceExit": false,
+        "watch": false
+      },
+      "managerTimeoutSeconds": 30,
+      "metadataLockTimeoutSeconds": 180,
+      "stdoutCapBytes": 65536,
+      "stderrCapBytesAtMost": 1048576,
+      "noSavedOperationalHelper": true
+    },
+    "selectedNewBehavior": [
+      "observed balance deferred DP planner exposes one frozen SPI with distinct captured capabilities and no constructor handoffs",
+      "observed balance deferred DP planner obtains one original work request after fresh quote and work balance reads then returns only the final block",
+      "observed balance deferred DP planner preserves one admission and checks busy or used before hostile replacement input",
+      "observed balance deferred DP planner snapshots all selected DATA before its initial yield and captures capability references",
+      "observed balance deferred DP planner requires exact context version3 and read version3 without supplied balance material or getter hooks",
+      "observed balance deferred DP planner stays busy without extra balance or DP reads while its one material Promise is pending",
+      "observed balance deferred DP planner refuses all selected account stage failures without material retry or fallback",
+      "observed balance deferred DP planner hides synchronous material faults and native rejections without raw reason hooks",
+      "observed balance deferred DP planner rejects unsupported material promises and thenables without caller hooks",
+      "observed balance deferred DP planner uses captured native observation without reading an own then getter or decorating material Promise",
+      "observed balance deferred DP planner snapshots fulfillment before await assimilation of hostile material objects",
+      "observed balance deferred DP planner keeps its fulfilled material snapshot across later caller mutations and fresh balance reads",
+      "observed balance deferred DP planner rejects an original account advance after material before the next balance or DP read",
+      "observed balance deferred DP planner preserves original quote acknowledgement and block through allowed material time price advances",
+      "observed balance deferred DP planner holds expired material time price horizon without quote refresh or replacement material",
+      "observed balance deferred DP planner rejects its own public run as material without a direct self dependency or replacement call",
+      "observed balance deferred DP planner shields public Promise and refuses pre read native mechanics mutation without hooks",
+      "observed balance deferred DP planner rejects malformed supplied material before assembly without producing keys or nonce",
+      "observed balance deferred DP planner retains full payer key and one fixed positive work consumer check after the handoff",
+      "observed balance deferred DP planner returns no partial block before the final same block frontier after gate",
+      "observed balance deferred DP planner bounds all snapshot DATA before callbacks without accepting a supplied balance escape",
+      "observed balance deferred DP planner never reuses prior sufficient balance at any quote work assembly or final stage",
+      "observed balance deferred DP planner holds malformed or wrong payer height token balance after material before the next DP read",
+      "observed balance deferred DP planner source captures only the v3 attempt and excludes producer native SDK signing and default activation"
+    ]
+  },
+  "preservation": {
+    "sourceBeforeAfterEqual": true,
+    "otherExactRepositoryArtifacts": 55,
+    "otherArtifactBytes": 1495218,
+    "oldFailedMetadataNamespace": {
+      "files": 10,
+      "absentPathsUnchanged": 2,
+      "outcome": "Unchanged CLOSED_FAILURE; never retried, rewritten or reset."
+    },
+    "priorLocalOutcomes": {
+      "exactFiles": 49,
+      "bytes": 859673,
+      "threeEarlierReaderOutcomes": "All remain FAILURE, including the aggregate/name-filter mismatch; no relabeling.",
+      "originalQuoteOwnerOutcome": "Unchanged independent SUCCESS for190 authored assertions, not a second current run.",
+      "immutableReaderFailureRecord": {
+        "commit": "039e81dc775ee00380a3648f4cb6cd3be9e73a5c",
+        "path": "qualification/dynamic-plasma-observed-balance-user-send-read-adapter.behavior.result.json",
+        "sha256": "4c6e142ee1f6be244b2cb261633c95cf2643711af1f709f0d5dac91b72537172",
+        "gitBlob": "2f060d8dffebf7a3708b3f1147731fff36ece71d"
+      },
+      "immutable190Result": {
+        "commit": "039e81dc775ee00380a3648f4cb6cd3be9e73a5c",
+        "path": "qualification/dynamic-plasma-observed-balance-user-send-attempt.behavior.result.json",
+        "sha256": "736f8d47efee381f773a3bccfa3983a9ff982c6354b9edc55dc66a765f0515b3",
+        "gitBlob": "6c491e02cfe5d0b4b91047c0abca7c97bcb77c52"
+      }
+    },
+    "localGit": "Existing dirty checkout preserved; no local index staging, checkout, commit, reset or push."
+  },
+  "retention": {
+    "taskState": "CLOSED",
+    "taskOutcome": "SUCCESS",
+    "ownedProcessGroupObservedEmpty": true,
+    "actualExit": 0,
+    "outputComplete": true,
+    "independentMetadataReadBytes": 208396,
+    "priorOutcomeReadBytes": 859673,
+    "scratchCleanupBytes": 0,
+    "objectsRemoved": 0,
+    "managerRootAndProductionPolicyUnchanged": true,
+    "minimumFreeBytes": 10737418240,
+    "declaredExpectedBytes": 4194304,
+    "taskQuotaBytes": 8388608,
+    "noHistoricalAdoptionCleanupOrHomeFallback": true,
+    "noLostWatcherOrMetadataRetryOfNativeExperiment": true
+  },
+  "hostedCI": {
+    "dpTests": "NOT_RUN",
+    "broadWorkflowOrDispatch": "NOT_AUTHORIZED_NOT_PERFORMED",
+    "emptyChecksAreNotGreen": true,
+    "earlierNarrow14CoreV2V3HostedResult": "Separate retained evidence, not hosted DP qualification."
+  },
+  "publicationAtRecording": "A local three-file additive batch, pending fresh main/rules/diff/PR verification and normal non-forced fast-forward. This record is not publication proof.",
+  "nonclaims": [
+    "No actual RPC/HTTPS exchange, native owner, SDK import/evaluation, dependency install, app build or active buyer cutover.",
+    "No nonce search/bounded-material producer imported or evaluated. Pending distinct authority is not presumed approved; fixed supplied-nonce consumer checks are not work production.",
+    "No generated keys, wallet, payment signing/re-signing, consumed-authority reset or replacement transaction.",
+    "No provider READY, authenticated funds, fresh atomic balance, canonical ancestry, runtime price, inclusion or live DP activation.",
+    "No durable signer custody, crash/restart recovery, hard lifetime/cancellation/native cleanup or OS/network sandbox guarantee.",
+    "Native loader/runner/stream/Promise/OS behavior and unchanged dependencies remain premises.",
+    "Selected local outcomes are not service delivery, pilot acceptance, capacity measurement, official x402 scheme acceptance or production readiness."
+  ],
+  "protectedTotals": {
+    "consumedAdmissions": 2,
+    "actualPrepare": 1,
+    "bundles": 0,
+    "nativeQualificationRuns": 0
+  },
+  "readiness": {
+    "finiteLocalSlice": "PASS_SELECTED_LOCAL_ONLY",
+    "livePilot": "NOT_ACCEPTED",
+    "production": "NO_GO",
+    "next": "Select a distinct qualified unfinished roadmap slice. Actual work/key owner, current authority, real provider READY, durability and restart/recovery remain separate. Main/CI must not block authorized local development."
+  }
+}
