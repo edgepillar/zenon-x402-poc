@@ -1,0 +1,72 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-22",
+  "status": "READ_ONLY_PREFLIGHT_REFUSED",
+  "roadmapLane": "P2 backend-bound sequential runner",
+  "parentMain": "a88d312100ebcf35a676a0abac72f9346227e271",
+  "gate": "EXACT_ROOT_AND_STORAGE_METADATA_IDENTITY",
+  "stage": "BEFORE_TASK_STORAGE_IMPORT_ADMISSION_AND_NATIVE_LAUNCH",
+  "error": "ROOT",
+  "observed": {
+    "approvedVolumeUuidMatches": true,
+    "mounted": true,
+    "rootIsDirectory": true,
+    "rootIsLink": false,
+    "rootCoreIdentityFieldsMatch": true,
+    "rootTimestampIdentityChanged": true,
+    "storageMetadataFileIdentityChanged": true,
+    "sameDeclaredStoreId": true,
+    "managerSourceSha256Unchanged": true,
+    "currentStorageMetadataSha256": "e7a7f522c1203a9315e59953a8ef316893de4844d94da67921b169f420a26516",
+    "previousGlobalScratchLimitBytes": 6442450944,
+    "observedGlobalScratchLimitBytes": 10737418240,
+    "minimumFreeSpaceFloorBytes": 10737418240,
+    "changeOrigin": "NOT_ESTABLISHED"
+  },
+  "retainedPlannedScope": {
+    "implementationFactory": "openServiceCreditCustodiedSqliteBackendSequentialRunnerV3",
+    "modifiedSource": "31d3ad19504c0d2a4046433bbbbd55e4115bafe15c8cc8e8ef73cfee095e0193",
+    "selectedEntry": "qualification/service-credit-custodied-backend-runner.behavior.draft.mjs",
+    "selectedEntrySha256": "16846f2af430ce914cec87fdbaffed0d13b9c3ad17828b7f123e152a9d4b31ed",
+    "readSourceFiles": 20,
+    "readSourceBytes": 549252,
+    "plannedScenarios": [
+      "EXPLICIT_TRANSPORT_AND_BATCH_PREFLIGHT",
+      "ACTUAL_TWO_ORIGINAL_SEQUENTIAL_BATCH",
+      "REOPEN_CACHED_DATA_AND_RETAINED_ORIGINAL_FENCE",
+      "UNKNOWN_FIRST_STOPS_QUEUED_TAIL",
+      "UNKNOWN_REOPEN_RETAINS_ORIGINAL_NO_REPLAY",
+      "MANUAL_CLOSE_DRAINS_ACTIVE_AND_FENCES_NEXT"
+    ],
+    "perTaskQuotaBytes": 4194304,
+    "expectedAllocationBytes": 2097152,
+    "plannedNewSyntheticSqliteFiles": 2
+  },
+  "execution": {
+    "taskStorageImported": false,
+    "taskCreated": false,
+    "nativeCommands": 0,
+    "nodeEntryImported": false,
+    "sqliteFilesCreated": 0,
+    "assertionsPassed": 0,
+    "assertionsFailed": 0,
+    "syntheticProofsGenerated": 0,
+    "networkCalls": 0,
+    "sdkImported": false,
+    "realPaymentSigner": "DISABLED",
+    "result": "NOT_RUN_NOT_A_FAILED_NATIVE_TEST"
+  },
+  "actionBoundary": {
+    "noIdentityReset": true,
+    "noMetadataOverwrite": true,
+    "noAlternateRoot": true,
+    "noHistoricalCleanup": true,
+    "noPublication": true,
+    "currentMetadataOriginConfirmationRequired": true,
+    "refusalRetainedBeforeAnyLaterSelection": true
+  },
+  "acceptance": {
+    "fullP2Complete": false,
+    "production": "NO_GO"
+  }
+}

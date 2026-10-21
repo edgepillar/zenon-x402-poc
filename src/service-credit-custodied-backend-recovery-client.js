@@ -3,6 +3,7 @@ import { types as utilTypes } from 'node:util';
 import { createServiceCreditCustodiedHttpClientV3 } from './service-credit-custodied-http-client.js';
 import { openServiceCreditCustodiedSqliteHttpClientV3 } from './service-credit-custodied-sqlite-http-client.js';
 import { createServiceCreditBackendOriginalOutcomeReader } from './service-credit-backend-original-outcome-reader.js';
+import { createServiceCreditCustodiedSequentialRunnerCore } from './service-credit-custodied-sequential-runner-core.js';
 import {
   snapshotOriginalServiceRequestCustodyKey,
   serializeOriginalServiceRequestCustody,
@@ -27,6 +28,7 @@ const SERIALIZE_INTENT = serializeOriginalServiceDispatchIntent;
 const CREATE_CLIENT = createServiceCreditCustodiedHttpClientV3;
 const OPEN_SQLITE_CLIENT = openServiceCreditCustodiedSqliteHttpClientV3;
 const CREATE_BACKEND = createServiceCreditBackendOriginalOutcomeReader;
+const CREATE_RUNNER = createServiceCreditCustodiedSequentialRunnerCore;
 const FIELDS = FREEZE([
   'store', 'backendStore', 'fundingResourceUrl', 'custodyPolicy', 'selectedGrantId', 'deadlineMs',
 ]);
@@ -188,7 +190,25 @@ export async function openServiceCreditCustodiedSqliteBackendClientV3(options) {
   return openOwnedBackendClient(options, true);
 }
 
-async function openOwnedBackendClient(options, serviceDispatchEnabled) {
+/**
+ * One opt-in bounded batch connected to the same owned V3 payer and borrowed
+ * backend recovery reader. An explicit trusted requestImpl is still required.
+ * The existing sequential core owns queue capture, stop-on-uncertainty and
+ * synchronous queued-next fencing. It returns the actual root close Promise;
+ * there is no second store owner, acquisition, native close or lifecycle.
+ *
+ * The returned surface has no single-submit escape hatch. Combined reads use
+ * the actual connection's exact-original, selected-grant and active-read fences.
+ * They cannot dispatch, retry, authorize a new payment or clear uncertainty.
+ * Callback completion and cached backend data are not delivery or authority.
+ * This is normal local reopen, not fresh-process or physical-durability proof.
+ */
+export async function openServiceCreditCustodiedSqliteBackendSequentialRunnerV3(options) {
+  if (arguments.length !== 1) throw failure('INVALID_CONFIGURATION');
+  return openOwnedBackendClient(options, true, true);
+}
+
+async function openOwnedBackendClient(options, serviceDispatchEnabled, sequentialEnabled = false) {
   let client = null, backend = null, config = null;
   try {
     config = exact(options, serviceDispatchEnabled ? SQLITE_DISPATCH_FIELDS : SQLITE_FIELDS);
@@ -210,9 +230,10 @@ async function openOwnedBackendClient(options, serviceDispatchEnabled) {
     const connected = connectClientBackend(
       client, backend, selectedGrantId, 'PAYER_OWNED_BACKEND_BORROWED', serviceDispatchEnabled,
     );
+    const result = sequentialEnabled ? connectSequentialBackendClient(connected, selectedGrantId) : connected;
     client = null;
     backend = null;
-    return connected;
+    return result;
   } catch (error) {
     if (backend !== null) backend.close();
     if (client !== null) await client.close();
@@ -221,6 +242,56 @@ async function openOwnedBackendClient(options, serviceDispatchEnabled) {
     config = null;
     options = null;
   }
+}
+
+function connectSequentialBackendClient(client, selectedGrantId) {
+  const ROOT_SNAPSHOT = client.snapshot;
+  const ROOT_CLOSE = client.close;
+  const ROOT_ORIGINAL = client.readOriginal;
+  const ROOT_STATE = client.readOriginalRecoveryState;
+  const ROOT_KEYS = client.readOriginalRecoveryKeys;
+  const ROOT_BACKEND = client.readOriginalBackendRecoveryState;
+  const runner = CREATE_RUNNER({
+    submitOriginal: client.submitOriginal,
+    snapshot: () => ROOT_SNAPSHOT().client.client,
+    close: ROOT_CLOSE,
+    selectedGrantId,
+    storeOwnership: 'OWNED_EXISTING_V3_DISPATCH_INTENT',
+  });
+  const RUNNER_SNAPSHOT = runner.snapshot;
+  client = null;
+  const snapshot = FREEZE(function snapshot() {
+    if (arguments.length !== 0) throw failure('INVALID_INPUT');
+    const connection = ROOT_SNAPSHOT(), sequence = RUNNER_SNAPSHOT();
+    const owned = connection.client;
+    return FREEZE({
+      connection,
+      runner: sequence,
+      unknown: sequence.unknown || connection.unavailable
+        || owned.close.childUncertainty === true || owned.close.unknownUndrained === true
+        || owned.resource.phase === 'HELD' || owned.resource.storeCloseOutcome === 'UNKNOWN',
+      unknownUndrained: sequence.unknownUndrained || owned.close.unknownUndrained === true,
+      storeOwnership: 'PAYER_OWNED_BACKEND_BORROWED',
+      serviceDispatchCapability: 'EXPLICIT_SEQUENTIAL_BATCH_ONLY',
+      qualification: 'UNQUALIFIED',
+      authority: 'NONE',
+      currentAuthority: 'NOT_ESTABLISHED',
+      realReady: 'NOT_ESTABLISHED',
+      serviceDelivery: 'NOT_ESTABLISHED',
+      restart: 'NOT_ESTABLISHED',
+      physicalDurability: 'NOT_ESTABLISHED',
+      pilot: 'NOT_ESTABLISHED',
+    });
+  });
+  return FREEZE({
+    runOriginals: runner.runOriginals,
+    readOriginal: ROOT_ORIGINAL,
+    readOriginalRecoveryState: ROOT_STATE,
+    readOriginalRecoveryKeys: ROOT_KEYS,
+    readOriginalBackendRecoveryState: ROOT_BACKEND,
+    snapshot,
+    close: runner.close,
+  });
 }
 
 function connectClientBackend(client, backend, selectedGrantId, storeOwnership, serviceDispatchEnabled = false) {

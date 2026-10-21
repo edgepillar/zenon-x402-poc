@@ -1,0 +1,65 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-22",
+  "status": "ROUTINE_RESOURCE_SELECTION_SOURCE_REVIEWED_NOT_RUNTIME_PROOF",
+  "roadmapLane": "P2 backend-bound sequential runner",
+  "existingScopedAuthority": "Previously approved new private synthetic SQLite tests, in-memory synthetic capability proofs, routine local source and resource decisions.",
+  "priorRefusal": {
+    "path": "qualification/service-credit-custodied-backend-runner.preflight-refusal.json",
+    "sha256": "b21e9701f38ceb975098051d72f73686bb2d9f3500c28717dbc76ea5c7420961",
+    "retainedUnchanged": true,
+    "oldInputPath": "qualification/service-credit-custodied-backend-runner.preflight-input.txt",
+    "oldInputSha256": "16846f2af430ce914cec87fdbaffed0d13b9c3ad17828b7f123e152a9d4b31ed",
+    "nativeCommands": 0,
+    "actualTaskStorageRefusal": false,
+    "description": "The inline preflight rejected an old exact configuration snapshot before importing task storage. No store acquisition, task admission, Node import or native test occurred."
+  },
+  "currentDecision": {
+    "sameMountedVolumeUuid": true,
+    "samePhysicalRootCoreIdentity": true,
+    "samePrivateOwnerAndModes": true,
+    "sameDeclaredStoreIdAndSchema": true,
+    "managerSourceUnchanged": true,
+    "runtimeIdentitiesUnchanged": true,
+    "storageMetadataSha256": "e7a7f522c1203a9315e59953a8ef316893de4844d94da67921b169f420a26516",
+    "onlyPolicyDifference": {
+      "field": "scratch_quota_bytes",
+      "previous": 6442450944,
+      "current": 10737418240
+    },
+    "changeActorIndependentlyAuthenticated": false,
+    "sameUserCooperativeStoragePremise": true,
+    "newDirectoryAdoption": false,
+    "rootOrStoreIdentityReset": false,
+    "persistentPolicyWrite": false,
+    "oldFailureRewritten": false,
+    "oldOwnershipFailuresRetried": false,
+    "newHumanApprovalClaimed": false,
+    "originQuestionNotUsedAsAdditionalExecutionGate": true,
+    "rationale": "Refresh mutable resource configuration for a new selection inside the existing scoped delegation. This is not adoption of a new root, reuse of replaced evidence, a reset of payment authority, a policy override or live acceptance."
+  },
+  "limits": {
+    "newSyntheticSqliteFiles": 2,
+    "expectedAllocationBytes": 2097152,
+    "perTaskQuotaBytes": 4194304,
+    "minimumFreeSpaceFloorBytes": 10737418240,
+    "additionalConservativeScratchPrecheckBytes": 6442450944,
+    "conservativePrecheck": "Planned read-only manager accounting before admission, not an atomic global/OS quota guarantee.",
+    "perManagerRecordBytes": 32768,
+    "preservationSourcePartMaxRows": 51,
+    "preservationPrivatePartMaxRows": 43,
+    "metadataLockSeconds": 180,
+    "commandSeconds": 30,
+    "nodeTestTimeoutMs": 5000
+  },
+  "boundaries": {
+    "nodeEntryNotYetExecuted": true,
+    "noNativeOrLiveOutcomeClaimed": true,
+    "noSdkNetworkWalletOrRealPaymentSigning": true,
+    "noInstallationOperationalHelperHostOrCi": true,
+    "rawUnregisteredFilesRemainHold": true,
+    "historicalDataUnchanged": true,
+    "production": "NO_GO",
+    "fullP2Complete": false
+  }
+}
