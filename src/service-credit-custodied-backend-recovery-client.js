@@ -1,6 +1,7 @@
 import { Buffer } from 'node:buffer';
 import { types as utilTypes } from 'node:util';
 import { createServiceCreditCustodiedHttpClientV3 } from './service-credit-custodied-http-client.js';
+import { openServiceCreditCustodiedSqliteHttpClientV3 } from './service-credit-custodied-sqlite-http-client.js';
 import { createServiceCreditBackendOriginalOutcomeReader } from './service-credit-backend-original-outcome-reader.js';
 import {
   snapshotOriginalServiceRequestCustodyKey,
@@ -23,9 +24,14 @@ const KEY = snapshotOriginalServiceRequestCustodyKey;
 const SERIALIZE = serializeOriginalServiceRequestCustody;
 const SERIALIZE_INTENT = serializeOriginalServiceDispatchIntent;
 const CREATE_CLIENT = createServiceCreditCustodiedHttpClientV3;
+const OPEN_SQLITE_CLIENT = openServiceCreditCustodiedSqliteHttpClientV3;
 const CREATE_BACKEND = createServiceCreditBackendOriginalOutcomeReader;
 const FIELDS = FREEZE([
   'store', 'backendStore', 'fundingResourceUrl', 'custodyPolicy', 'selectedGrantId', 'deadlineMs',
+]);
+const SQLITE_FIELDS = FREEZE([
+  'databasePath', 'allowedRoot', 'backendStore', 'fundingResourceUrl',
+  'custodyPolicy', 'selectedGrantId', 'deadlineMs',
 ]);
 const NO_DISPATCH = FREEZE(function recoveryDispatchForbidden() {
   throw failure('DISPATCH_FORBIDDEN');
@@ -39,13 +45,13 @@ function failure(suffix) {
   return FREEZE(error);
 }
 
-function exact(value) {
+function exact(value, fields = FIELDS) {
   if (value === null || typeof value !== 'object' || IS_PROXY(value)
-      || PROTOTYPE(value) !== Object.prototype || KEYS(value).length !== FIELDS.length) {
+      || PROTOTYPE(value) !== Object.prototype || KEYS(value).length !== fields.length) {
     throw failure('INVALID_CONFIGURATION');
   }
   const captured = {};
-  for (const name of FIELDS) {
+  for (const name of fields) {
     const descriptor = DESCRIPTOR(value, name);
     if (!descriptor?.enumerable || !HAS_OWN(descriptor, 'value')) {
       throw failure('INVALID_CONFIGURATION');
@@ -126,6 +132,62 @@ export function createServiceCreditCustodiedBackendRecoveryClientV3(options) {
   } finally {
     options = null;
   }
+  return connectClientBackend(client, backend, selectedGrantId, 'BOTH_BORROWED');
+}
+
+/**
+ * Opt-in owned EXISTING V3 payer SQLite connection to the borrowed backend.
+ * Reuses the current SQLite HTTP client's acquisition, resource slot and exact
+ * close lifecycle. No creation fallback, migration, recovery operation, caller
+ * transport or submission method is exposed. Successful open may advance the
+ * existing payer owner_epoch; this is not a SQLite readOnly connection.
+ *
+ * Configuration and selected grant are captured without invoking accessors.
+ * The backend reader is constructed first; its whole-ledger admission remains
+ * independent of payer acquisition. A failed payer acquisition fences that
+ * reader and preserves the existing owner's failure/HELD policy. If composition
+ * fails after acquisition, the actual owner's close is awaited exactly once;
+ * any rejection is propagated, never treated as successful release or retried.
+ *
+ * The shared connection below retains the exact-original and reread fences.
+ * close() returns the owned client's cached native Promise unchanged, while
+ * fencing the backend reader synchronously. It never closes backendStore.
+ * No cross-store transaction, authenticated funding, process restart, physical
+ * durability, real READY, delivery or pilot acceptance is established here.
+ */
+export async function openServiceCreditCustodiedSqliteBackendRecoveryClientV3(options) {
+  let client = null, backend = null, config = null;
+  try {
+    if (arguments.length !== 1) throw failure('INVALID_CONFIGURATION');
+    config = exact(options, SQLITE_FIELDS);
+    const selectedGrantId = KEY({ grantId: config.selectedGrantId, requestId: 'scope' }).grantId;
+    backend = CREATE_BACKEND({ store: config.backendStore, admittedGrantId: selectedGrantId });
+    client = OPEN_SQLITE_CLIENT({
+      databasePath: config.databasePath,
+      allowedRoot: config.allowedRoot,
+      fundingResourceUrl: config.fundingResourceUrl,
+      custodyPolicy: config.custodyPolicy,
+      selectedGrantId,
+      requestImpl: NO_DISPATCH,
+      deadlineMs: config.deadlineMs,
+    });
+    const connected = connectClientBackend(
+      client, backend, selectedGrantId, 'PAYER_OWNED_BACKEND_BORROWED',
+    );
+    client = null;
+    backend = null;
+    return connected;
+  } catch (error) {
+    if (backend !== null) backend.close();
+    if (client !== null) await client.close();
+    throw error;
+  } finally {
+    config = null;
+    options = null;
+  }
+}
+
+function connectClientBackend(client, backend, selectedGrantId, storeOwnership) {
   const LOCAL_READ = client.readOriginalRecoveryState;
   const LOCAL_CLOSE = client.close;
   const LOCAL_SNAPSHOT = client.snapshot;
@@ -199,7 +261,7 @@ export function createServiceCreditCustodiedBackendRecoveryClientV3(options) {
   const snapshot = FREEZE(function snapshot() {
     if (arguments.length !== 0) throw failure('INVALID_INPUT');
     return FREEZE({ client: LOCAL_SNAPSHOT(), closed, reading, unavailable,
-      storeOwnership: 'BOTH_BORROWED', authority: 'NONE', serviceDelivery: 'NOT_ESTABLISHED' });
+      storeOwnership, authority: 'NONE', serviceDelivery: 'NOT_ESTABLISHED' });
   });
   return FREEZE({
     readOriginal: LOCAL_ORIGINAL,
