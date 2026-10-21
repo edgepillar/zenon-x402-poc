@@ -14,6 +14,10 @@ const STORE_LOAD = STORE_PROTOTYPE.load;
 const STORE_READ = STORE_PROTOTYPE.getOriginalRequestExecutionSnapshot;
 const IDENTIFIER = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/;
 const TEST = RegExp.prototype.test;
+const ORIGINAL_FIELDS = FREEZE([
+  'modelVersion', 'grantId', 'requestId', 'method', 'routeId',
+  'canonicalBodyDigest', 'selectedContentType', 'maxCostUnits',
+]);
 
 function exactData(value, keys) {
   if (value === null || typeof value !== 'object' || IS_PROXY(value)
@@ -41,6 +45,15 @@ function outcome(status, snapshot = null, cachedResult = null) {
     signingAuthorized: false,
     deliveryStatus: 'NOT_ESTABLISHED',
   });
+}
+
+function matchesExpectedOriginal(request, expected) {
+  const captured = exactData(expected, ORIGINAL_FIELDS);
+  if (captured === null) return false;
+  for (const name of ORIGINAL_FIELDS) {
+    if (request[name] !== captured[name]) return false;
+  }
+  return true;
 }
 
 function project(snapshot) {
@@ -83,6 +96,9 @@ function project(snapshot) {
  * current grant lifecycle, funding, payer/provider policy, READY or live context.
  * Reads still use the store's existing BEGIN IMMEDIATE transaction machinery.
  * Same-UID code, native SQLite and the filesystem remain trusted premises.
+ * readExactOriginal(envelope, expectedRequest) additionally binds the admitted
+ * proof to all eight expected request fields BEFORE any backend outcome query,
+ * including when no backend record exists. It grants no additional authority.
  *
  * close() fences this reader only, including an in-flight reentrant close. It
  * never closes the borrowed store or another execution owner. Reopening a store
@@ -121,14 +137,17 @@ export function createServiceCreditBackendOriginalOutcomeReader(options) {
   const closedOutcome = outcome('CLOSED');
   const unavailable = outcome('UNAVAILABLE');
 
-  const read = FREEZE(function read(request) {
+  function readBound(request, expected, requireExact) {
     if (closed) return closedOutcome;
-    if (arguments.length !== 1 || reading) return unavailable;
+    if (reading) return unavailable;
     reading = true;
     try {
       const decision = admission.admit(request);
       if (closed) return closedOutcome;
       if (decision.status !== 'AUTHORIZED') return outcome(decision.status);
+      if (requireExact && !matchesExpectedOriginal(decision.request, expected)) {
+        return outcome('ORIGINAL_BINDING_MISMATCH');
+      }
       const snapshot = APPLY(STORE_READ, store, [decision.request]);
       if (closed) return closedOutcome;
       return project(snapshot);
@@ -141,6 +160,16 @@ export function createServiceCreditBackendOriginalOutcomeReader(options) {
     } finally {
       reading = false;
     }
+  }
+  const read = FREEZE(function read(request) {
+    if (closed) return closedOutcome;
+    if (arguments.length !== 1) return unavailable;
+    return readBound(request, null, false);
+  });
+  const readExactOriginal = FREEZE(function readExactOriginal(request, expected) {
+    if (closed) return closedOutcome;
+    if (arguments.length !== 2) return unavailable;
+    return readBound(request, expected, true);
   });
   const close = FREEZE(function close() {
     if (arguments.length !== 0) return unavailable;
@@ -149,5 +178,5 @@ export function createServiceCreditBackendOriginalOutcomeReader(options) {
     store = null;
     return closedOutcome;
   });
-  return FREEZE({ read, close });
+  return FREEZE({ read, readExactOriginal, close });
 }

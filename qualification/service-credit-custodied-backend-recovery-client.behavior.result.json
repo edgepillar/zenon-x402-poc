@@ -1,0 +1,426 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-22",
+  "status": "SELECTED_LOCAL_COMPONENT_ASSERTIONS_PASSED",
+  "roadmapLane": "P2: backend/client recovery binding",
+  "finiteComponentComplete": true,
+  "fullP2Complete": false,
+  "productionAcceptance": "NO_GO",
+  "implementation": {
+    "newFactory": "createServiceCreditCustodiedBackendRecoveryClientV3",
+    "expectedOriginalRead": "readExactOriginal(envelope, expectedRequest)",
+    "originalBinding": "All eight retained request fields are compared with the capability-admitted request before backend lookup, including an absent backend record. Accessor/proxy expectations are rejected without reading their getters or traps.",
+    "clientBinding": "The actual existing V3 custodied HTTP client supplies validated custody and current local funding state. The complete canonical original envelope, funding revision/status/identity, dispatch intent and uncertainty are checked again after the backend read.",
+    "failurePolicy": "An observed client binding change, client read fault or backend read failure latches only this connection unavailable. No automatic retry or re-execution occurs.",
+    "interface": "Read and close only. No submit, batch, transport factory, signer or payment operation is exposed.",
+    "borrowedStores": "Both stores remain borrowed; component close never closes either store.",
+    "close": "Synchronous admission/output fence plus the actual client's unchanged cached native close Promise. One injected client read fault deliberately preserves the client's CLOSE_FAILED rejection.",
+    "defaultCutover": false,
+    "newHttpEndpoint": false,
+    "existingClientModuleChanged": false,
+    "crossStoreAtomicity": false,
+    "authenticationLimit": "Backend proof verification is real local capability verification. The client's synchronous store interface is trusted declared data, not authenticated funding, a store brand or durability proof.",
+    "authority": "NONE",
+    "currentContextFundingProviderPolicyReadyDelivery": "Separate acceptance gates"
+  },
+  "sourceBinding": {
+    "parentMain": "280e3f8b7834e1cdc86a2ab9e2b01fdf4ea6042e",
+    "parentTree": "70228f158f5262619b2a34c5dea2fded43a2a95c",
+    "modifiedBase": {
+      "path": "src/service-credit-backend-original-outcome-reader.js",
+      "bytes": 6511,
+      "LF": 153,
+      "sha256": "d3776771fe7aae1e6b51f744f7c2e72258b3ba71be65052e116931b4549d5bbb",
+      "gitBlob": "978d8e97bb733cca782bb053f640d03f2598270c"
+    },
+    "readFileCount": 13,
+    "sourceBytes": 340556,
+    "perFileCap": 131072,
+    "totalCap": 524288,
+    "files": [
+      {
+        "path": "src/service-credit-sqlite-store.js",
+        "bytes": 83516,
+        "LF": 2366,
+        "sha256": "eea4032830dc1f641c4832e0dab33066633ba487eaf19581e3295cf8810460f3",
+        "gitBlob": "ae5260ef3442079fe73544d2d730d05724758fa1"
+      },
+      {
+        "path": "src/service-credit-model.js",
+        "bytes": 55461,
+        "LF": 1580,
+        "sha256": "7ff7e3d88ab8c3b38a0073541533fbdb7a0d9f2be42f337ac35f6a3b05615c3a",
+        "gitBlob": "e6ac17254874584d1a01f70e7abc6f771bd35d73"
+      },
+      {
+        "path": "src/service-credit-execution-contract.js",
+        "bytes": 30258,
+        "LF": 956,
+        "sha256": "298f8e74885e1c507953c0fcf7874832f815296746e6bacbdac97a425f1a6c73",
+        "gitBlob": "acfbb5c5e943b9e09958a7831b3dbe159463dcf9"
+      },
+      {
+        "path": "src/service-credit-http.js",
+        "bytes": 32432,
+        "LF": 958,
+        "sha256": "c76a7f1864bdfcd0c26916bf28fba615c8aecf899d53e69467e3ebe7d3353d0d",
+        "gitBlob": "040da1547c2fa6cc4a4044c47619b253f16d19a1"
+      },
+      {
+        "path": "src/service-credit-capability.js",
+        "bytes": 8284,
+        "LF": 256,
+        "sha256": "cb2b96d9a2e56c132dd1b4aca8f1c065b244ecd0e7e92f41ea3f4a8c969d17c3",
+        "gitBlob": "2e19d42c1b9311a75897c84669849f56ae40f785"
+      },
+      {
+        "path": "package.json",
+        "bytes": 1413,
+        "LF": 40,
+        "sha256": "8c9a25504fbf6f87c31cdf245a6f4eec5a88cc89c8352151dc66a577c5771ef5",
+        "gitBlob": "ec7193f6fd76f34778515079dc777594175c4c34"
+      },
+      {
+        "path": "src/service-credit-backend-original-outcome-reader.js",
+        "bytes": 7738,
+        "LF": 182,
+        "sha256": "dadd9cbfbdcc2ff4bb24252fed85a135d2ce17397e713b1917a109eb6b28938d",
+        "gitBlob": "7f083a5f3a8716f8aae2c618945473671da2f6b7"
+      },
+      {
+        "path": "src/service-credit-custodied-http-client.js",
+        "bytes": 10755,
+        "LF": 292,
+        "sha256": "ddbc54faf4a14d95e6274bc9df27b7b49db251bab67c11b871cfb2f9e78b4f15",
+        "gitBlob": "90fd4c8a2cc8fb552f8eb0cb45607bfa44c61108"
+      },
+      {
+        "path": "src/service-credit-custodied-request-owner.js",
+        "bytes": 35073,
+        "LF": 938,
+        "sha256": "6e7493a4859d48530820e68a4a19a513aad014ffc1048b42965a3ad36ae7c5f7",
+        "gitBlob": "2dee22fd780db9de662fe1243075e74cef0bf296"
+      },
+      {
+        "path": "src/service-credit-original-request-custody-contract.js",
+        "bytes": 14051,
+        "LF": 356,
+        "sha256": "fd349de553a17abcc2e0567ba6640e6e3d5d26cfa79ee1e355928dc9fa8d3915",
+        "gitBlob": "f911d42d01b69e6577f9bcd66f4ed59aab8ab882"
+      },
+      {
+        "path": "src/service-credit-http-execute-dispatch.js",
+        "bytes": 27034,
+        "LF": 770,
+        "sha256": "254ba8eef5ea5efb3a1b901be09e9cb33afbc3cfcf63789ca4a23316b6180d1b",
+        "gitBlob": "280dd20dc669e2856d263eba62ccd0fe9af72f21"
+      },
+      {
+        "path": "src/service-credit-custodied-backend-recovery-client.js",
+        "bytes": 9201,
+        "LF": 212,
+        "sha256": "524dccf0d4b77aefb3a84267c2d02e769dea3b95cbb11af280152e0d4779ee28",
+        "gitBlob": "e5e59552628e55cd0bec51fd16869d9f7458d528"
+      },
+      {
+        "path": "qualification/service-credit-custodied-backend-recovery-client.behavior.draft.mjs",
+        "bytes": 25340,
+        "LF": 409,
+        "sha256": "8d72bc6f5370a9bbdafc8570a8a205583ccffda97fba626b534ac5268c63951e",
+        "gitBlob": "f8c893c6572d8c55a83c23b9d13f62cc4b18c7f8"
+      }
+    ],
+    "physicalSourceIdentityBeforeAndAfter": "MATCH_THIS_RUN",
+    "oldFourTestFixture": "Retained unchanged as historical source-bound evidence, not rerun or reauthored for this changed module. The five current registrations are not a combined nine-test suite."
+  },
+  "nativeExecution": {
+    "runtime": {
+      "node": "24.19.0",
+      "platform": "darwin",
+      "arch": "arm64",
+      "nodeBinarySha256": "dbedff294bab84a0a86c04e15fbcbeb1c97ca10bef1b32b0634cd24b36f62100"
+    },
+    "entry": "qualification/service-credit-custodied-backend-recovery-client.behavior.draft.mjs",
+    "nativeCommands": 1,
+    "task": "CLOSED_SUCCESS",
+    "command": "COMPLETE",
+    "actualExit": 0,
+    "outputComplete": true,
+    "counts": {
+      "tests": 5,
+      "suites": 0,
+      "pass": 5,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "tests": [
+      {
+        "name": "custodied backend recovery links the exact retained original to recorded success without dispatch",
+        "outcome": "PASS",
+        "scenario": "LINKED_CACHED_ORIGINAL"
+      },
+      {
+        "name": "custodied backend recovery rejects differently bound valid proofs before backend lookup",
+        "outcome": "PASS",
+        "scenario": "EXACT_PROOF_BEFORE_LOOKUP"
+      },
+      {
+        "name": "custodied backend recovery preserves absence noninvocation and independent client uncertainty",
+        "outcome": "PASS",
+        "scenario": "INDEPENDENT_UNCERTAINTY"
+      },
+      {
+        "name": "custodied backend recovery quarantines changed funding custody intent and failed client reads",
+        "outcome": "PASS",
+        "scenario": "CLIENT_BINDING_FAILURES"
+      },
+      {
+        "name": "custodied backend recovery fences reentrant close and latches backend failure without replay",
+        "outcome": "PASS",
+        "scenario": "CLOSE_AND_BACKEND_FAILURE"
+      }
+    ],
+    "diagnostics": [
+      {
+        "kind": "CUSTODIED_BACKEND_RECOVERY",
+        "version": 1,
+        "scenario": "LINKED_CACHED_ORIGINAL",
+        "backendQueries": 2,
+        "syntheticProofs": 1,
+        "clientStoreLoads": 4,
+        "clientRecordReads": 2,
+        "clientIntentReads": 2,
+        "clientRetainCalls": 0,
+        "clientIntentWrites": 0,
+        "borrowedStoreCloses": 0,
+        "queryRevisionChanges": 0,
+        "nativeClockCalls": 5,
+        "nativePricingCalls": 1,
+        "clientContexts": 1,
+        "expectedClientCloseFailures": 0,
+        "backendClosedByFixture": false,
+        "nativeSqliteFiles": 1,
+        "clientStore": "DECLARED_SYNC_INTERFACE",
+        "sameProcessOnly": true,
+        "realPaymentSigner": "DISABLED",
+        "clientDurability": "NOT_ESTABLISHED",
+        "serviceDelivery": "NOT_ESTABLISHED",
+        "networkCalls": 0
+      },
+      {
+        "kind": "CUSTODIED_BACKEND_RECOVERY",
+        "version": 1,
+        "scenario": "EXACT_PROOF_BEFORE_LOOKUP",
+        "backendQueries": 2,
+        "syntheticProofs": 4,
+        "clientStoreLoads": 16,
+        "clientRecordReads": 8,
+        "clientIntentReads": 8,
+        "clientRetainCalls": 0,
+        "clientIntentWrites": 0,
+        "borrowedStoreCloses": 0,
+        "queryRevisionChanges": 0,
+        "nativeClockCalls": 5,
+        "nativePricingCalls": 1,
+        "clientContexts": 2,
+        "expectedClientCloseFailures": 0,
+        "backendClosedByFixture": false,
+        "nativeSqliteFiles": 1,
+        "clientStore": "DECLARED_SYNC_INTERFACE",
+        "sameProcessOnly": true,
+        "realPaymentSigner": "DISABLED",
+        "clientDurability": "NOT_ESTABLISHED",
+        "serviceDelivery": "NOT_ESTABLISHED",
+        "networkCalls": 0
+      },
+      {
+        "kind": "CUSTODIED_BACKEND_RECOVERY",
+        "version": 1,
+        "scenario": "INDEPENDENT_UNCERTAINTY",
+        "backendQueries": 9,
+        "syntheticProofs": 7,
+        "clientStoreLoads": 46,
+        "clientRecordReads": 23,
+        "clientIntentReads": 22,
+        "clientRetainCalls": 0,
+        "clientIntentWrites": 0,
+        "borrowedStoreCloses": 0,
+        "queryRevisionChanges": 0,
+        "nativeClockCalls": 9,
+        "nativePricingCalls": 3,
+        "clientContexts": 7,
+        "expectedClientCloseFailures": 0,
+        "backendClosedByFixture": false,
+        "nativeSqliteFiles": 1,
+        "clientStore": "DECLARED_SYNC_INTERFACE",
+        "sameProcessOnly": true,
+        "realPaymentSigner": "DISABLED",
+        "clientDurability": "NOT_ESTABLISHED",
+        "serviceDelivery": "NOT_ESTABLISHED",
+        "networkCalls": 0
+      },
+      {
+        "kind": "CUSTODIED_BACKEND_RECOVERY",
+        "version": 1,
+        "scenario": "CLIENT_BINDING_FAILURES",
+        "backendQueries": 13,
+        "syntheticProofs": 7,
+        "clientStoreLoads": 61,
+        "clientRecordReads": 30,
+        "clientIntentReads": 29,
+        "clientRetainCalls": 0,
+        "clientIntentWrites": 0,
+        "borrowedStoreCloses": 0,
+        "queryRevisionChanges": 0,
+        "nativeClockCalls": 9,
+        "nativePricingCalls": 3,
+        "clientContexts": 11,
+        "expectedClientCloseFailures": 1,
+        "backendClosedByFixture": false,
+        "nativeSqliteFiles": 1,
+        "clientStore": "DECLARED_SYNC_INTERFACE",
+        "sameProcessOnly": true,
+        "realPaymentSigner": "DISABLED",
+        "clientDurability": "NOT_ESTABLISHED",
+        "serviceDelivery": "NOT_ESTABLISHED",
+        "networkCalls": 0
+      },
+      {
+        "kind": "CUSTODIED_BACKEND_RECOVERY",
+        "version": 1,
+        "scenario": "CLOSE_AND_BACKEND_FAILURE",
+        "backendQueries": 14,
+        "syntheticProofs": 7,
+        "clientStoreLoads": 67,
+        "clientRecordReads": 33,
+        "clientIntentReads": 32,
+        "clientRetainCalls": 0,
+        "clientIntentWrites": 0,
+        "borrowedStoreCloses": 0,
+        "queryRevisionChanges": 0,
+        "nativeClockCalls": 9,
+        "nativePricingCalls": 3,
+        "clientContexts": 13,
+        "expectedClientCloseFailures": 1,
+        "backendClosedByFixture": true,
+        "nativeSqliteFiles": 1,
+        "clientStore": "DECLARED_SYNC_INTERFACE",
+        "sameProcessOnly": true,
+        "realPaymentSigner": "DISABLED",
+        "clientDurability": "NOT_ESTABLISHED",
+        "serviceDelivery": "NOT_ESTABLISHED",
+        "networkCalls": 0
+      }
+    ],
+    "diagnosticCounterMeaning": "backendQueries counts logical atomic-read API entries that reached the transaction hook, not every SQLite statement or a failed closed-handle attempt.",
+    "actualBackend": "One fresh private synthetic ServiceCreditSqliteStore database. Existing durable methods seed synthetic cached, NOT_INVOKED, PREPARED, MAY_HAVE_STARTED and OUTCOME_UNKNOWN records; no application callback is executed.",
+    "actualClient": "Actual existing V3 custodied HTTP client and owner, with a declared synchronous payer-store fixture. No payer SQLite file, network or HTTP event lifecycle is selected.",
+    "capabilities": "Two fresh in-memory Ed25519 key pairs and seven synthetic capability proofs. Existing original proofs are reused for read-only observations, never replaced by a new payment.",
+    "expectedClientCloseRejections": 1,
+    "closeRejectionMeaning": "The injected client read failure retains the existing owner's custody uncertainty and cached CLOSE_FAILED rejection. This is an asserted negative case, not failed native qualification, delivery or store release.",
+    "streams": {
+      "stdout": {
+        "bytes": 4554,
+        "sha256": "873b3f9eef67860945f5d7e15e52bc673c2cb5dc3fcc29082af2970c3925b9a5"
+      },
+      "stderr": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    "fullOutcomeReviewed": true,
+    "ownedProcessGroupObservedAbsent": true,
+    "sourceAndPreservationChecked": true,
+    "inlineQualificationCaller": {
+      "savedOperationalHelper": false,
+      "bytes": 8277,
+      "argvBytes": 12942
+    },
+    "launch": {
+      "environment": "env -i with only reviewed locale, new scratch, opt-in and exact source-pin values",
+      "entrySelection": "One explicit positional test file; no discovery of old test entries",
+      "runner": "node:test, isolation none, concurrency false, forceExit false",
+      "nodePermissionModel": "OFF_REQUIRED_FOR_EXISTING_STORE_FCHMOD_FSYNC",
+      "flags": [
+        "--disallow-code-generation-from-strings",
+        "--no-addons",
+        "--no-warnings"
+      ],
+      "nodeTestTimeoutMs": 5000,
+      "managerCommandSeconds": 30,
+      "metadataLockSeconds": 180,
+      "notHardLifetimeCancellationOrNativeCleanupGuarantees": true
+    },
+    "premises": "Captured components/intrinsics, the declared synchronous client-store semantics, Node loader/test runner/streams/crypto/native Promises, SQLite and OS/filesystem behavior remain premises. No OS/network sandbox or OS-enforced disk quota is claimed."
+  },
+  "coverage": {
+    "exactOriginalFields": 8,
+    "mismatchedValidProofs": "A different request ID or ceiling is refused before backend lookup; a foreign grant is refused by the selected-grant admission.",
+    "absences": "Neither missing client custody nor absent backend state reserves, invokes, dispatches, signs or starts a payment.",
+    "uncertainty": "Backend cached success does not clear independently observed client funding ambiguity. A later declared BOUND state does not clear the client's historical funding-ambiguity latch.",
+    "changes": "Funding revision, complete original custody or dispatch-intent changes during the backend read suppress output and prevent subsequent reads on that connection.",
+    "close": "Reentrant read is refused; reentrant close suppresses the in-flight output, preserves the actual close Promise identity and leaves the backend store readable until the fixture explicitly closes it.",
+    "backendFault": "The fixture closes its backend handle, then proves the connection latches unavailable and performs no second client/backend read."
+  },
+  "storage": {
+    "newNativeSqliteFiles": 1,
+    "rawSqliteBytes": 24576,
+    "rawSqliteSha256": "e08b562170fab3564abd82c2ae9bb4d908dfafbc47c63e474f2f6a0191ba200b",
+    "rawSqliteCasAdopted": false,
+    "rawSqliteDeleted": false,
+    "cleanup": "HOLD_UNREGISTERED_DATABASE_NOT_ADOPTED_OR_DELETED",
+    "registeredEmptyStreamDirectory": "Verified against the manager's recorded directory identity and kept distinct from the unregistered database; no cleanup authority is inferred.",
+    "controllerOpenedRawSqlite": false,
+    "zipCopies": 0,
+    "expectedBytes": 2097152,
+    "taskQuotaBytes": 4194304,
+    "freeSpaceFloorBytes": 10737418240,
+    "fullRuntimeDigestBytesReadOnceBeforeLaunch": 139363040
+  },
+  "retainedEvidence": {
+    "repositoryFiles": 127,
+    "repositoryBytes": 3063956,
+    "priorPrivateFiles": 31,
+    "protectedAbsences": 8,
+    "prior267FileCohort": "Existing sealed evidence was not replayed, rewritten or fully rehashed again in this slice.",
+    "previousControllerFailure": "Retained unchanged, including the original failed task and its missing post-run records. This new run does not repair or reclassify it.",
+    "receiptSha256": {
+      "task": "ff933c205614d3296481800d5cfe8c45d6255fbedc80730343f6e5f5e8f733ba",
+      "context": "3314b0742249ed789c9d21e2bd012aefde4f6728fe2fe9e081ade78729a415bb",
+      "launch": "14194345314043cee9792900ac018ae74a3cb65472f38e0aa6d3254f029edf83",
+      "selection": "7f152d9d24095b8cc89096c7d801223e3dde67e3b87adb92f86cf8726ea1782a",
+      "command": "59d1596330df14ad66334d2633934e911d99cdd92bf0254cfb95261fb6ddc70c",
+      "sourceAfter": "40e488ebd7a8717e1cc37aefeb77fee28190296b0edeb8f8e6f6e2c4365b3e7b",
+      "primaryOutcome": "99a332fd0372998dd5c7669b8c17701f8444858ae776b3571a3fa17aeb08a52b",
+      "outcome": "7a793ad45fdbf4f4b58e93f7851ae5f695345362d9863dc8357440eb5c2fc9b6",
+      "cleanup": "189c51b77c5c4fa9bd76df75b9497af94def3534ec019af7dcfc7f280ffd4687"
+    }
+  },
+  "protectedBoundaries": {
+    "consumedAdmissions": 2,
+    "actualChainPrepare": 1,
+    "bundles": 0,
+    "nativeChainProviderQualificationRuns": 0,
+    "realPaymentSigner": "DISABLED",
+    "originalPaymentRequestBytesHashPayloadRequirementsContext": "UNCHANGED",
+    "consumedAuthority": "UNCHANGED",
+    "PR193": "Possible VALIDATED exact-same-signed-block resend remains distinct from UNKNOWN and ACKNOWLEDGED.",
+    "ownershipFailure165": "NOT_RETRIED",
+    "workerOrAgentDispatch": false,
+    "automationModelOrMemoryMutation": false
+  },
+  "notEstablished": [
+    "Native payer SQLite and backend SQLite end-to-end composition",
+    "Client store durability or atomicity across stores",
+    "Actual process restart, kill, power-loss or native cleanup qualification",
+    "HTTP status endpoint, remote authenticated status or full client wire cutover",
+    "Current independent context, funding, payer/provider/policy authority or real provider READY",
+    "New execution, payment, replacement signing, refund or resend authority",
+    "Service delivery, canonical chain inclusion or live pilot acceptance",
+    "Broad application/SDK/store/controller suite or hosted CI"
+  ],
+  "hostedCI": "NOT_RUN_THIS_SLICE; empty checks/statuses are not green",
+  "next": "Qualify this connection with the existing native payer V3 SQLite custody interface on fresh private synthetic files, preserving its owner-epoch and close boundaries. Keep real process restart, independent funding/context/READY and live service delivery as separate gates."
+}
