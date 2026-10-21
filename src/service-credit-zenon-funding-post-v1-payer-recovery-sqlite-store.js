@@ -743,7 +743,7 @@ function validateDefinitions(database, config) {
     ? 'ZENON_FUNDING_PAYER_RECOVERY_STORE_CORRUPT'
     : 'ZENON_FUNDING_PAYER_RECOVERY_STORE_SCHEMA_UNSUPPORTED';
   const definitions = database
-    .prepare("SELECT type,name,sql FROM sqlite_master WHERE name NOT LIKE 'sqlite_%' ORDER BY name"
+    .prepare("SELECT type,name,sql FROM sqlite_master WHERE name NOT LIKE 'sqlite!_%' ESCAPE '!' ORDER BY name"
       + (dispatchIntentEnabled(config) ? " LIMIT 6" : ""))
     .all();
   if (custodyEnabled(config)) {

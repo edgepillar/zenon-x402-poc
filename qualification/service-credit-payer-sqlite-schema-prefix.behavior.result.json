@@ -1,0 +1,694 @@
+{
+  "schema": "zenon-x402-local-qualification-result/v1",
+  "date": "2026-10-21",
+  "scope": "OCT21_PAYER_RECOVERY_SCHEMA_LITERAL_PREFIX_FIXED_LOCAL_EMPTY_SYNTHETIC_SQLITE_ONLY",
+  "status": "PASS_SELECTED_SEVEN_FIXED_CASES_WITH_SEPARATE_OLD_SOURCE_REPRODUCTION_AND_RETAINED_INITIAL_SETUP_FAILURE",
+  "summary": "A one-expression literal sqlite_ prefix fix prevents unapproved schema objects hidden by the old LIKE wildcard from passing payer-recovery schema validation before owner acquisition. This result concerns only new empty private synthetic SQLite databases.",
+  "roadmap": "P2 payer custody storage schema admission; not live pilot acceptance or a full backend requalification",
+  "source": {
+    "baselineMain": "bd10eda2a74659a9febbcd772c3a117021c59f49",
+    "baselineTree": "b15c6931818234d0819e866a86cd9ab7163684ec",
+    "oldBackend": {
+      "path": "src/service-credit-zenon-funding-post-v1-payer-recovery-sqlite-store.js",
+      "bytes": 57459,
+      "LF": 1536,
+      "sha256": "9c925f241effbfec0bf014ff284e834c4d5679c4ea7224f83a6354cde6cffdaf",
+      "gitBlob": "260c2f43306b029ca694aa06b8c60d1be037c614"
+    },
+    "fixedBackend": {
+      "path": "src/service-credit-zenon-funding-post-v1-payer-recovery-sqlite-store.js",
+      "bytes": 57471,
+      "LF": 1536,
+      "sha256": "974f5e28f851b8504efb71cb800e71881f8d37965bad927be2d18c5f7324b224",
+      "gitBlob": "36c1984a74d14fef0bd5478e4b9cd968abfbfbb7"
+    },
+    "initialFailedGraph": [
+      {
+        "path": "src/service-credit-zenon-funding-post-v1-payer-recovery-sqlite-store.js",
+        "bytes": 57459,
+        "LF": 1536,
+        "sha256": "9c925f241effbfec0bf014ff284e834c4d5679c4ea7224f83a6354cde6cffdaf",
+        "gitBlob": "260c2f43306b029ca694aa06b8c60d1be037c614"
+      },
+      {
+        "path": "src/service-credit-original-request-custody-contract.js",
+        "bytes": 14051,
+        "LF": 356,
+        "sha256": "fd349de553a17abcc2e0567ba6640e6e3d5d26cfa79ee1e355928dc9fa8d3915",
+        "gitBlob": "f911d42d01b69e6577f9bcd66f4ed59aab8ab882"
+      },
+      {
+        "path": "src/x402-wire.js",
+        "bytes": 39886,
+        "LF": 934,
+        "sha256": "5fba91af5a352f62d1a335c7176a45a604e2af5d92b1c4b0e53825c1f20d4e56",
+        "gitBlob": "fb060d4e349b1c31a1219a0cc137af250a8a2291"
+      },
+      {
+        "path": "package.json",
+        "bytes": 1413,
+        "LF": 40,
+        "sha256": "8c9a25504fbf6f87c31cdf245a6f4eec5a88cc89c8352151dc66a577c5771ef5",
+        "gitBlob": "ec7193f6fd76f34778515079dc777594175c4c34"
+      },
+      {
+        "path": "qualification/service-credit-payer-sqlite-schema-prefix-baseline.behavior.draft.mjs",
+        "bytes": 14725,
+        "LF": 256,
+        "sha256": "e7cfe5ed3295e871bb2c466f68e451c9de1863ee46f33160690c60ad4519ac8f",
+        "gitBlob": "1ca3efba1997b727065131573de6b2c8e7ee8a63"
+      }
+    ],
+    "baselineReproductionGraph": [
+      {
+        "path": "src/service-credit-zenon-funding-post-v1-payer-recovery-sqlite-store.js",
+        "bytes": 57459,
+        "LF": 1536,
+        "sha256": "9c925f241effbfec0bf014ff284e834c4d5679c4ea7224f83a6354cde6cffdaf",
+        "gitBlob": "260c2f43306b029ca694aa06b8c60d1be037c614"
+      },
+      {
+        "path": "src/service-credit-original-request-custody-contract.js",
+        "bytes": 14051,
+        "LF": 356,
+        "sha256": "fd349de553a17abcc2e0567ba6640e6e3d5d26cfa79ee1e355928dc9fa8d3915",
+        "gitBlob": "f911d42d01b69e6577f9bcd66f4ed59aab8ab882"
+      },
+      {
+        "path": "src/x402-wire.js",
+        "bytes": 39886,
+        "LF": 934,
+        "sha256": "5fba91af5a352f62d1a335c7176a45a604e2af5d92b1c4b0e53825c1f20d4e56",
+        "gitBlob": "fb060d4e349b1c31a1219a0cc137af250a8a2291"
+      },
+      {
+        "path": "package.json",
+        "bytes": 1413,
+        "LF": 40,
+        "sha256": "8c9a25504fbf6f87c31cdf245a6f4eec5a88cc89c8352151dc66a577c5771ef5",
+        "gitBlob": "ec7193f6fd76f34778515079dc777594175c4c34"
+      },
+      {
+        "path": "qualification/service-credit-payer-sqlite-schema-prefix-baseline-corrected.behavior.draft.mjs",
+        "bytes": 14753,
+        "LF": 256,
+        "sha256": "737b5f4454fc96d05ead79763da39174dd48b4ba0b1a1496ed76f972b9e0fc78",
+        "gitBlob": "f41b0808ff24ddc247bdde1e50ed4387dd0e75d1"
+      }
+    ],
+    "fixedGraph": [
+      {
+        "path": "src/service-credit-zenon-funding-post-v1-payer-recovery-sqlite-store.js",
+        "bytes": 57471,
+        "LF": 1536,
+        "sha256": "974f5e28f851b8504efb71cb800e71881f8d37965bad927be2d18c5f7324b224",
+        "gitBlob": "36c1984a74d14fef0bd5478e4b9cd968abfbfbb7"
+      },
+      {
+        "path": "src/service-credit-original-request-custody-contract.js",
+        "bytes": 14051,
+        "LF": 356,
+        "sha256": "fd349de553a17abcc2e0567ba6640e6e3d5d26cfa79ee1e355928dc9fa8d3915",
+        "gitBlob": "f911d42d01b69e6577f9bcd66f4ed59aab8ab882"
+      },
+      {
+        "path": "src/x402-wire.js",
+        "bytes": 39886,
+        "LF": 934,
+        "sha256": "5fba91af5a352f62d1a335c7176a45a604e2af5d92b1c4b0e53825c1f20d4e56",
+        "gitBlob": "fb060d4e349b1c31a1219a0cc137af250a8a2291"
+      },
+      {
+        "path": "package.json",
+        "bytes": 1413,
+        "LF": 40,
+        "sha256": "8c9a25504fbf6f87c31cdf245a6f4eec5a88cc89c8352151dc66a577c5771ef5",
+        "gitBlob": "ec7193f6fd76f34778515079dc777594175c4c34"
+      },
+      {
+        "path": "qualification/service-credit-payer-sqlite-schema-prefix.behavior.draft.mjs",
+        "bytes": 15680,
+        "LF": 263,
+        "sha256": "a02effc36d02f436085b9864a26cb4038e57b18e990997bcad984db11b1dbc46",
+        "gitBlob": "c9321d40146f7aa1e801901d2daca40ecf40188f"
+      }
+    ],
+    "graphFilesPerCommand": 5,
+    "initialGraphBytes": 127534,
+    "baselineGraphBytes": 127562,
+    "fixedGraphBytes": 128501,
+    "graphCap": 196608,
+    "literalImportEdgesPerGraph": 20,
+    "sourceReadbackBeforeAndAfter": true,
+    "completeSourceReviewedBeforeExecution": true,
+    "singleProductionExpressionChanged": true,
+    "unchangedContractsAndWireSources": true,
+    "oldSourceRetainedOneCASObject": true,
+    "historicalFixturesNotRewritten": true
+  },
+  "change": {
+    "oldQuery": "name NOT LIKE 'sqlite_%'",
+    "newQuery": "name NOT LIKE 'sqlite!_%' ESCAPE '!'",
+    "unchanged": [
+      "schema ordering",
+      "V3 LIMIT 6",
+      "table definitions",
+      "V1/V2/V3 API and schema versions",
+      "owner_epoch update ordering",
+      "funding and custody state transitions",
+      "payment and original request fields"
+    ],
+    "cause": "In SQL LIKE, underscore matches any one character. The old pattern therefore excluded sqlitex-style names, not only the reserved sqlite_ prefix.",
+    "primaryReferences": [
+      "https://www.sqlite.org/lang_expr.html#like",
+      "https://www.sqlite.org/schematab.html"
+    ],
+    "baselineObservation": "In a new empty V3 database the old source accepted a sqlitex_probe table plus sqlitex_owner_trigger; opening advanced owner_epoch 1->2 and inserted one synthetic marker. This is a local reproduction, not safe-store qualification."
+  },
+  "initialFailure": {
+    "entry": "qualification/service-credit-payer-sqlite-schema-prefix-baseline.behavior.draft.mjs",
+    "source": [
+      {
+        "path": "src/service-credit-zenon-funding-post-v1-payer-recovery-sqlite-store.js",
+        "bytes": 57459,
+        "LF": 1536,
+        "sha256": "9c925f241effbfec0bf014ff284e834c4d5679c4ea7224f83a6354cde6cffdaf",
+        "gitBlob": "260c2f43306b029ca694aa06b8c60d1be037c614"
+      },
+      {
+        "path": "src/service-credit-original-request-custody-contract.js",
+        "bytes": 14051,
+        "LF": 356,
+        "sha256": "fd349de553a17abcc2e0567ba6640e6e3d5d26cfa79ee1e355928dc9fa8d3915",
+        "gitBlob": "f911d42d01b69e6577f9bcd66f4ed59aab8ab882"
+      },
+      {
+        "path": "src/x402-wire.js",
+        "bytes": 39886,
+        "LF": 934,
+        "sha256": "5fba91af5a352f62d1a335c7176a45a604e2af5d92b1c4b0e53825c1f20d4e56",
+        "gitBlob": "fb060d4e349b1c31a1219a0cc137af250a8a2291"
+      },
+      {
+        "path": "package.json",
+        "bytes": 1413,
+        "LF": 40,
+        "sha256": "8c9a25504fbf6f87c31cdf245a6f4eec5a88cc89c8352151dc66a577c5771ef5",
+        "gitBlob": "ec7193f6fd76f34778515079dc777594175c4c34"
+      },
+      {
+        "path": "qualification/service-credit-payer-sqlite-schema-prefix-baseline.behavior.draft.mjs",
+        "bytes": 14725,
+        "LF": 256,
+        "sha256": "e7cfe5ed3295e871bb2c466f68e451c9de1863ee46f33160690c60ad4519ac8f",
+        "gitBlob": "1ca3efba1997b727065131573de6b2c8e7ee8a63"
+      }
+    ],
+    "nativeNodeCommands": 1,
+    "taskState": "CLOSED",
+    "taskOutcome": "FAILURE",
+    "commandState": "COMPLETE",
+    "actualExit": 1,
+    "outputComplete": true,
+    "counts": {
+      "tests": 1,
+      "suites": 0,
+      "pass": 0,
+      "fail": 1,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "stdout": {
+      "bytes": 1073,
+      "sha256": "da3125f897b1b0a8231177150cdd0b1102dd9b0612891ca28b6c0741faaa0c3a"
+    },
+    "stderr": {
+      "bytes": 28,
+      "sha256": "42cbb0e0f0ee7d514e0fcb47997c466245b53528dedfd274e57fdac89d448224"
+    },
+    "authoredFailureCode": "ZENON_FUNDING_PAYER_RECOVERY_STORE_INVALID_CONFIGURATION",
+    "sourceIdentifiedCause": "The fixture supplied /compute but the unchanged custody-policy contract requires the exact /service-credit/v1/execute service path. The after hook also reported a namespace assertion because no database was created.",
+    "schemaScenarioReached": false,
+    "newSqliteFiles": 0,
+    "ownedEmptyScratchCleanedBytes": 0,
+    "passedAssertion": false,
+    "retainedUnchanged": true,
+    "noRerunOnUnchangedFixture": true
+  },
+  "baselineReproduction": {
+    "entry": "qualification/service-credit-payer-sqlite-schema-prefix-baseline-corrected.behavior.draft.mjs",
+    "sourceGuard": "OLD_BACKEND_ONLY",
+    "actualExit": 0,
+    "taskState": "CLOSED",
+    "taskOutcome": "SUCCESS",
+    "commandState": "COMPLETE",
+    "outputComplete": true,
+    "counts": {
+      "tests": 1,
+      "suites": 0,
+      "pass": 1,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "passNames": [
+      "payer V3 old wildcard prefix accepts a hidden schema trigger during owner acquisition in a new empty synthetic database"
+    ],
+    "stdout": {
+      "bytes": 1172,
+      "sha256": "92f61cfbfde6888e10161352c7a73f9143ca050471ac591c7e6a3d9d1ba6a547"
+    },
+    "stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "diagnostics": [
+      {
+        "kind": "PAYER_SCHEMA_PREFIX",
+        "version": 1,
+        "phase": "BASELINE_REPRODUCTION",
+        "profile": 3,
+        "objectKind": "trigger",
+        "outcome": "ACCEPTED_FOREIGN_SCHEMA",
+        "epochBefore": 1,
+        "epochAfter": 2,
+        "witnessBefore": 0,
+        "witnessAfter": 1,
+        "oldVisible": 5,
+        "literalVisible": 7,
+        "expectedUserObjects": 5,
+        "storeCreateCalls": 1,
+        "storeOpenCalls": 1,
+        "returnedStoreCloseCalls": 2,
+        "rawOpens": 3,
+        "rawCloses": 3,
+        "byteStable": false,
+        "foreignSchemaPreserved": true,
+        "sourceBound": true,
+        "constructorInternalClose": "NOT_INSTRUMENTED",
+        "sqliteVersion": "3.53.3",
+        "authority": "NONE",
+        "livePilot": false
+      }
+    ],
+    "newSqliteFiles": 1,
+    "rawFiles": [
+      {
+        "bytes": 36864,
+        "sha256": "21d410a7bab61e4ab130582989219522778ba0dd1ca735d957a71340256c3803"
+      }
+    ],
+    "rawSqliteCASAdopted": false,
+    "scratchDecision": "HOLD_UNREGISTERED_SYNTHETIC_DATABASE",
+    "safeStoreQualification": false
+  },
+  "qualification": {
+    "entry": "qualification/service-credit-payer-sqlite-schema-prefix.behavior.draft.mjs",
+    "sourceGuard": "FIXED_BACKEND_ONLY",
+    "actualExit": 0,
+    "taskState": "CLOSED",
+    "taskOutcome": "SUCCESS",
+    "commandState": "COMPLETE",
+    "outputComplete": true,
+    "counts": {
+      "tests": 7,
+      "suites": 0,
+      "pass": 7,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "passNames": [
+      "payer V1 literal system prefix reopens an unchanged valid two-table empty profile",
+      "payer V2 literal system prefix preserves legitimate internal autoindexes and reopens an empty custody profile",
+      "payer V3 literal system prefix preserves legitimate internal autoindexes and reopens an empty dispatch profile",
+      "payer V1 rejects a wildcard-shadow table before owner acquisition without changing database bytes",
+      "payer V2 rejects a mixed-case wildcard-shadow view before owner acquisition without changing database bytes",
+      "payer V3 rejects a wildcard-shadow index before owner acquisition without changing database bytes",
+      "payer V3 rejects a wildcard-shadow trigger before it can run or change owner epoch and database bytes"
+    ],
+    "stdout": {
+      "bytes": 5799,
+      "sha256": "e31e702c5a116b564d8bcce4ee2033609cacdf791e08d52ace8a280b02476483"
+    },
+    "stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "diagnostics": [
+      {
+        "kind": "PAYER_SCHEMA_PREFIX",
+        "version": 1,
+        "phase": "FIXED_REFUSAL",
+        "profile": 1,
+        "objectKind": "none",
+        "outcome": "VALID_PROFILE_OPENED",
+        "epochBefore": 1,
+        "epochAfter": 2,
+        "witnessBefore": 0,
+        "witnessAfter": 0,
+        "oldVisible": 2,
+        "literalVisible": 2,
+        "expectedUserObjects": 2,
+        "storeCreateCalls": 1,
+        "storeOpenCalls": 1,
+        "returnedStoreCloseCalls": 2,
+        "rawOpens": 2,
+        "rawCloses": 2,
+        "byteStable": false,
+        "foreignSchemaPreserved": true,
+        "sourceBound": true,
+        "constructorInternalClose": "NOT_INSTRUMENTED",
+        "sqliteVersion": "3.53.3",
+        "authority": "NONE",
+        "livePilot": false
+      },
+      {
+        "kind": "PAYER_SCHEMA_PREFIX",
+        "version": 1,
+        "phase": "FIXED_REFUSAL",
+        "profile": 2,
+        "objectKind": "none",
+        "outcome": "VALID_PROFILE_OPENED",
+        "epochBefore": 1,
+        "epochAfter": 2,
+        "witnessBefore": 0,
+        "witnessAfter": 0,
+        "oldVisible": 4,
+        "literalVisible": 4,
+        "expectedUserObjects": 4,
+        "storeCreateCalls": 1,
+        "storeOpenCalls": 1,
+        "returnedStoreCloseCalls": 2,
+        "rawOpens": 2,
+        "rawCloses": 2,
+        "byteStable": false,
+        "foreignSchemaPreserved": true,
+        "sourceBound": true,
+        "constructorInternalClose": "NOT_INSTRUMENTED",
+        "sqliteVersion": "3.53.3",
+        "authority": "NONE",
+        "livePilot": false
+      },
+      {
+        "kind": "PAYER_SCHEMA_PREFIX",
+        "version": 1,
+        "phase": "FIXED_REFUSAL",
+        "profile": 3,
+        "objectKind": "none",
+        "outcome": "VALID_PROFILE_OPENED",
+        "epochBefore": 1,
+        "epochAfter": 2,
+        "witnessBefore": 0,
+        "witnessAfter": 0,
+        "oldVisible": 5,
+        "literalVisible": 5,
+        "expectedUserObjects": 5,
+        "storeCreateCalls": 1,
+        "storeOpenCalls": 1,
+        "returnedStoreCloseCalls": 2,
+        "rawOpens": 2,
+        "rawCloses": 2,
+        "byteStable": false,
+        "foreignSchemaPreserved": true,
+        "sourceBound": true,
+        "constructorInternalClose": "NOT_INSTRUMENTED",
+        "sqliteVersion": "3.53.3",
+        "authority": "NONE",
+        "livePilot": false
+      },
+      {
+        "kind": "PAYER_SCHEMA_PREFIX",
+        "version": 1,
+        "phase": "FIXED_REFUSAL",
+        "profile": 1,
+        "objectKind": "table",
+        "outcome": "ZENON_FUNDING_PAYER_RECOVERY_STORE_SCHEMA_UNSUPPORTED",
+        "epochBefore": 1,
+        "epochAfter": 1,
+        "witnessBefore": 0,
+        "witnessAfter": 0,
+        "oldVisible": 2,
+        "literalVisible": 3,
+        "expectedUserObjects": 2,
+        "storeCreateCalls": 1,
+        "storeOpenCalls": 1,
+        "returnedStoreCloseCalls": 1,
+        "rawOpens": 3,
+        "rawCloses": 3,
+        "byteStable": true,
+        "foreignSchemaPreserved": true,
+        "sourceBound": true,
+        "constructorInternalClose": "NOT_INSTRUMENTED",
+        "sqliteVersion": "3.53.3",
+        "authority": "NONE",
+        "livePilot": false
+      },
+      {
+        "kind": "PAYER_SCHEMA_PREFIX",
+        "version": 1,
+        "phase": "FIXED_REFUSAL",
+        "profile": 2,
+        "objectKind": "view",
+        "outcome": "ZENON_FUNDING_PAYER_RECOVERY_STORE_SCHEMA_UNSUPPORTED",
+        "epochBefore": 1,
+        "epochAfter": 1,
+        "witnessBefore": 0,
+        "witnessAfter": 0,
+        "oldVisible": 4,
+        "literalVisible": 5,
+        "expectedUserObjects": 4,
+        "storeCreateCalls": 1,
+        "storeOpenCalls": 1,
+        "returnedStoreCloseCalls": 1,
+        "rawOpens": 3,
+        "rawCloses": 3,
+        "byteStable": true,
+        "foreignSchemaPreserved": true,
+        "sourceBound": true,
+        "constructorInternalClose": "NOT_INSTRUMENTED",
+        "sqliteVersion": "3.53.3",
+        "authority": "NONE",
+        "livePilot": false
+      },
+      {
+        "kind": "PAYER_SCHEMA_PREFIX",
+        "version": 1,
+        "phase": "FIXED_REFUSAL",
+        "profile": 3,
+        "objectKind": "index",
+        "outcome": "ZENON_FUNDING_PAYER_RECOVERY_STORE_CORRUPT",
+        "epochBefore": 1,
+        "epochAfter": 1,
+        "witnessBefore": 0,
+        "witnessAfter": 0,
+        "oldVisible": 5,
+        "literalVisible": 6,
+        "expectedUserObjects": 5,
+        "storeCreateCalls": 1,
+        "storeOpenCalls": 1,
+        "returnedStoreCloseCalls": 1,
+        "rawOpens": 3,
+        "rawCloses": 3,
+        "byteStable": true,
+        "foreignSchemaPreserved": true,
+        "sourceBound": true,
+        "constructorInternalClose": "NOT_INSTRUMENTED",
+        "sqliteVersion": "3.53.3",
+        "authority": "NONE",
+        "livePilot": false
+      },
+      {
+        "kind": "PAYER_SCHEMA_PREFIX",
+        "version": 1,
+        "phase": "FIXED_REFUSAL",
+        "profile": 3,
+        "objectKind": "trigger",
+        "outcome": "ZENON_FUNDING_PAYER_RECOVERY_STORE_CORRUPT",
+        "epochBefore": 1,
+        "epochAfter": 1,
+        "witnessBefore": 0,
+        "witnessAfter": 0,
+        "oldVisible": 5,
+        "literalVisible": 7,
+        "expectedUserObjects": 5,
+        "storeCreateCalls": 1,
+        "storeOpenCalls": 1,
+        "returnedStoreCloseCalls": 1,
+        "rawOpens": 3,
+        "rawCloses": 3,
+        "byteStable": true,
+        "foreignSchemaPreserved": true,
+        "sourceBound": true,
+        "constructorInternalClose": "NOT_INSTRUMENTED",
+        "sqliteVersion": "3.53.3",
+        "authority": "NONE",
+        "livePilot": false
+      }
+    ],
+    "newSqliteFiles": 7,
+    "rawFiles": [
+      {
+        "bytes": 12288,
+        "sha256": "deaa745b026938d026f614df7c2b61df2e97a6cf64569ca1fb808ac125e854dd"
+      },
+      {
+        "bytes": 24576,
+        "sha256": "23c329c4740f2ac5b3a667a7f06eef2ff82a8eae8a8510b82650965cdf50b810"
+      },
+      {
+        "bytes": 32768,
+        "sha256": "caff2bae42202f6aaaa1f4069394225361b6a83524a4f0eb4ca4dca8263aed88"
+      },
+      {
+        "bytes": 16384,
+        "sha256": "e4e88f23d611a05e5ac677b8653f0563ab49e97468de96dfe530282db1b39127"
+      },
+      {
+        "bytes": 24576,
+        "sha256": "1dcddd50f44bc334283a3110f0dd277cc64ef2a4409abb567992ca51908669d0"
+      },
+      {
+        "bytes": 36864,
+        "sha256": "e474374d08d40b5ba4cb86447bdd2ce5271237884ad498b6bba4e8fa6eaa6bcc"
+      },
+      {
+        "bytes": 36864,
+        "sha256": "763cb54554aecba31fa1e670f9c5e24108be2c27e697df162735719eba1c8a04"
+      }
+    ],
+    "rawSqliteCASAdopted": false,
+    "scratchDecision": "HOLD_UNREGISTERED_SYNTHETIC_DATABASES",
+    "validProfiles": 3,
+    "foreignObjectRefusals": 4,
+    "refusalPreservedWholeFileSha256": true,
+    "refusalPreservedOwnerEpoch": true,
+    "refusalPreservedForeignSchemaAndEmptyRows": true,
+    "legitimateAutoindexControls": 2,
+    "constructorInternalClose": "NOT_INSTRUMENTED",
+    "sameProcessOnly": true
+  },
+  "launch": {
+    "method": "One explicit positional file per Node command through reviewed inline run({isolation:'none'}) caller; no saved or installed helper, broad test discovery, test filtering, skipped/todo cases, or dependency installation.",
+    "node": {
+      "version": "24.19.0",
+      "platform": "darwin",
+      "arch": "arm64",
+      "binarySha256": "dbedff294bab84a0a86c04e15fbcbeb1c97ca10bef1b32b0634cd24b36f62100",
+      "sqliteVersion": "3.53.3"
+    },
+    "callerTemplate": "process.exitCode = 125;\nconst { run } = require('node:test');\nconst { types: nativeTypes } = require('node:util');\nconst { tap } = require('node:test/reporters');\nconst { Writable, pipeline, finished } = require('node:stream');\nconst selections = __SELECTED_FILES__;\nlet selected = 'unselected';\n(async () => {\n  if (process.versions.node !== '24.19.0' || process.argv.length !== 2\n      || process.platform !== 'darwin' || process.arch !== 'arm64') throw Error('RUNTIME_OR_ARGUMENTS');\n  selected = Object.keys(selections).find(p => process.argv[1] === process.cwd() + '/' + p);\n  if (!selected) { selected = 'unselected'; throw Error('SELECTION'); }\n  const expected = selections[selected], seen = new Set(), reported = new Set();\n  const counts = new Map(), plans = [];\n  let bad = false, ended = false, reporterDone = false, versions = 0, bytes = 0, pending = '';\n  const known = name => expected.includes(name);\n  process.stdout.write('# entry ' + selected + '\\n# Node ' + process.versions.node\n    + ' platform=' + process.platform + ' arch=' + process.arch + '\\n');\n  function safeLine(line) {\n    let match;\n    if (line === 'TAP version 13') { versions++; return line; }\n    if ((match = /^# Subtest: (.+)$/.exec(line))) {\n      if (known(match[1])) return line;\n      bad = true;\n    } else if ((match = /^(ok|not ok) \\d+ - (.+)$/.exec(line))) {\n      if (!known(match[2]) || reported.has(match[2]) || match[1] !== 'ok') bad = true;\n      if (known(match[2])) { reported.add(match[2]); return line; }\n    } else if ((match = /^1\\.\\.(\\d+)$/.exec(line))) {\n      plans.push(Number(match[1])); return line;\n    } else if ((match = /^# (tests|suites|pass|fail|cancelled|skipped|todo) (\\d+)$/.exec(line))) {\n      if (counts.has(match[1])) bad = true;\n      counts.set(match[1], Number(match[2])); return line;\n    } else if (/^Bail out!/.test(line)) bad = true;\n    return null; // Do not publish physical locations, stacks or arbitrary diagnostics.\n  }\n  const source = run({\n    files: [process.argv[1]], isolation: 'none', concurrency: false,\n    timeout: 5000, forceExit: false, watch: false,\n  });\n\n  let diagnosticCount = 0, eventLogBytes = 0;\n  const own = (x,k) => {\n    if (x === null || (typeof x !== 'object' && typeof x !== 'function') || nativeTypes.isProxy(x)) return undefined;\n    const d = Object.getOwnPropertyDescriptor(x,k);\n    return d && Object.hasOwn(d,'value') ? d.value : undefined;\n  };\n  function eventLog(label,value) {\n    const line = '# native-' + label + ' ' + JSON.stringify(value) + '\\n';\n    eventLogBytes += Buffer.byteLength(line);\n    if (eventLogBytes > 8192) { bad = true; return; }\n    process.stdout.write(line);\n  }\n  source.on('test:diagnostic', data => {\n    const message = own(data,'message');\n    if (typeof message !== 'string' || !message.startsWith('{\"kind\":\"PAYER_SCHEMA_PREFIX\"')) return;\n    try {\n      if (Buffer.byteLength(message) > 2048) throw Error('DIAGNOSTIC_CAP');\n      const value = JSON.parse(message);\n      const keys = ['kind','version','phase','profile','objectKind','outcome','epochBefore','epochAfter',\n        'witnessBefore','witnessAfter','oldVisible','literalVisible','expectedUserObjects',\n        'storeCreateCalls','storeOpenCalls','returnedStoreCloseCalls','rawOpens','rawCloses','byteStable',\n        'foreignSchemaPreserved','sourceBound','constructorInternalClose','sqliteVersion','authority','livePilot'];\n      if (Object.keys(value).length !== keys.length || keys.some(k=>!Object.hasOwn(value,k))\n        || value.kind !== 'PAYER_SCHEMA_PREFIX' || value.version !== 1\n        || !['BASELINE_REPRODUCTION','FIXED_REFUSAL'].includes(value.phase)\n        || ![1,2,3].includes(value.profile) || !['none','table','view','index','trigger'].includes(value.objectKind)\n        || !['ACCEPTED_FOREIGN_SCHEMA','VALID_PROFILE_OPENED','ZENON_FUNDING_PAYER_RECOVERY_STORE_CORRUPT',\n             'ZENON_FUNDING_PAYER_RECOVERY_STORE_SCHEMA_UNSUPPORTED'].includes(value.outcome)\n        || typeof value.byteStable !== 'boolean' || value.foreignSchemaPreserved !== true\n        || value.sourceBound !== true || value.constructorInternalClose !== 'NOT_INSTRUMENTED'\n        || value.authority !== 'NONE' || value.livePilot !== false\n        || typeof value.sqliteVersion !== 'string' || !/^\\d+\\.\\d+\\.\\d+$/.test(value.sqliteVersion)) throw Error('DIAGNOSTIC_SCHEMA');\n      for (const k of ['epochBefore','epochAfter','witnessBefore','witnessAfter','oldVisible','literalVisible',\n        'expectedUserObjects','storeCreateCalls','storeOpenCalls','returnedStoreCloseCalls','rawOpens','rawCloses'])\n        if (!Number.isSafeInteger(value[k]) || value[k] < 0 || value[k] > 64) throw Error('DIAGNOSTIC_COUNTER');\n      diagnosticCount++; eventLog('diagnostic', value);\n    } catch { bad = true; }\n  });\n\n  source.on('test:pass', data => {\n    if (!known(data.name) || seen.has(data.name) || data.nesting !== 0\n        || (data.skip !== undefined && data.skip !== false)\n        || (data.todo !== undefined && data.todo !== false)) bad = true;\n    seen.add(data.name);\n  });\n  source.on('test:fail', data => {\n    bad = true;\n    const wrapper = own(own(data,'details'),'error'), cause = own(wrapper,'cause') || wrapper;\n    const code = own(cause,'code'), message = own(cause,'message');\n    const item = {name: known(own(data,'name')) ? own(data,'name') : 'UNSELECTED_NATIVE_FAILURE',\n      code: typeof code === 'string' && /^[A-Z0-9_]{1,128}$/.test(code) ? code : 'UNAVAILABLE',\n      message: typeof message === 'string' && message.length <= 512 && !/[\\/\\\\]/.test(message) ? message : 'REDACTED'};\n    for (const k of ['actual','expected']) {\n      const value = own(cause,k);\n      if (value === null || typeof value === 'boolean' || Number.isSafeInteger(value)) item[k] = value;\n    }\n    eventLog('failure',item);\n  });\n  source.on('error', () => { bad = true; });\n  source.once('end', () => { ended = true; });\n  const sourceDone = new Promise(resolve => {\n    finished(source, { writable: false }, error => { if (error) bad = true; resolve(); });\n  });\n  const sink = new Writable({\n    write(chunk, encoding, callback) {\n      try {\n        bytes += Buffer.byteLength(chunk);\n        if (bytes > 65536) throw Error('REPORTER_CAP');\n        pending += String(chunk);\n        const lines = pending.split('\\n'); pending = lines.pop();\n        const safe = lines.map(safeLine).filter(line => line !== null);\n        if (safe.length) process.stdout.write(safe.join('\\n') + '\\n', callback);\n        else callback();\n      } catch { callback(Error('REPORTER_FAILED')); }\n    },\n    final(callback) { if (pending !== '') bad = true; callback(); },\n  });\n  const reporter = source.compose(tap);\n  const reportDone = new Promise(resolve => {\n    pipeline(reporter, sink, error => { reporterDone = !error; if (error) bad = true; resolve(); });\n  });\n  await Promise.all([sourceDone, reportDone]);\n  const zero = ['suites', 'fail', 'cancelled', 'skipped', 'todo'];\n  if (bad || diagnosticCount !== expected.length || !ended || !reporterDone || versions !== 1 || plans.length !== 1\n      || plans[0] !== expected.length || seen.size !== expected.length\n      || reported.size !== expected.length || !expected.every(name => seen.has(name) && reported.has(name))\n      || counts.get('tests') !== expected.length || counts.get('pass') !== expected.length\n      || !zero.every(key => counts.get(key) === 0)\n      || process.exitCode !== 125) throw Error('INCOMPLETE_OR_UNEXPECTED_RESULTS');\n  process.exitCode = 0;\n  process.stdout.write('# qualification PASS ' + selected + '\\n');\n})().catch(() => {\n  if ([undefined, 0, 125].includes(process.exitCode)) process.exitCode = 1;\n  process.stderr.write('qualification caller failed\\n');\n  process.stdout.write('# qualification FAIL ' + selected + '\\n');\n});",
+    "reconstruction": "Replace the single __SELECTED_FILES__ token with compact JSON.stringify of the callsite selectedFiles object. No other caller edits.",
+    "callsites": [
+      {
+        "phase": "INITIAL_SETUP_FAILURE",
+        "entry": "qualification/service-credit-payer-sqlite-schema-prefix-baseline.behavior.draft.mjs",
+        "selectedFiles": {
+          "qualification/service-credit-payer-sqlite-schema-prefix-baseline.behavior.draft.mjs": [
+            "payer V3 old wildcard prefix accepts a hidden schema trigger during owner acquisition in a new empty synthetic database"
+          ]
+        },
+        "callerBytes": 7961
+      },
+      {
+        "phase": "BASELINE_REPRODUCTION",
+        "entry": "qualification/service-credit-payer-sqlite-schema-prefix-baseline-corrected.behavior.draft.mjs",
+        "selectedFiles": {
+          "qualification/service-credit-payer-sqlite-schema-prefix-baseline-corrected.behavior.draft.mjs": [
+            "payer V3 old wildcard prefix accepts a hidden schema trigger during owner acquisition in a new empty synthetic database"
+          ]
+        },
+        "callerBytes": 7971,
+        "argumentBytes": 10316,
+        "launchRecordBytes": 10991
+      },
+      {
+        "phase": "FIXED_REFUSAL",
+        "entry": "qualification/service-credit-payer-sqlite-schema-prefix.behavior.draft.mjs",
+        "selectedFiles": {
+          "qualification/service-credit-payer-sqlite-schema-prefix.behavior.draft.mjs": [
+            "payer V1 literal system prefix reopens an unchanged valid two-table empty profile",
+            "payer V2 literal system prefix preserves legitimate internal autoindexes and reopens an empty custody profile",
+            "payer V3 literal system prefix preserves legitimate internal autoindexes and reopens an empty dispatch profile",
+            "payer V1 rejects a wildcard-shadow table before owner acquisition without changing database bytes",
+            "payer V2 rejects a mixed-case wildcard-shadow view before owner acquisition without changing database bytes",
+            "payer V3 rejects a wildcard-shadow index before owner acquisition without changing database bytes",
+            "payer V3 rejects a wildcard-shadow trigger before it can run or change owner epoch and database bytes"
+          ]
+        },
+        "callerBytes": 8553,
+        "argumentBytes": 11766,
+        "launchRecordBytes": 12494
+      }
+    ],
+    "environment": [
+      "env -i",
+      "TZ=UTC",
+      "LANG=C",
+      "LC_ALL=C",
+      "SPV_TASK_SCRATCH=<new manager-owned private scratch>",
+      "X402_PAYER_SCHEMA_OPT_IN=reviewed-managed-synthetic-only",
+      "X402_PAYER_SCHEMA_SOURCE_PINS=<ordered exact four source/package pins plus selected fixture pin, with local stable file identities>",
+      "X402_PAYER_SCHEMA_ROOTS=<ordered new empty private schema-case directories and observed identities>"
+    ],
+    "nodeFlags": [
+      "--disallow-code-generation-from-strings",
+      "--no-addons",
+      "--no-warnings",
+      "--eval <reconstructed inline caller>",
+      "<one exact positional entry>"
+    ],
+    "NodePermissionModel": "OFF_REQUIRED_FOR_STORE_FCHMOD_FSYNC_NOT_OS_OR_NETWORK_SANDBOX",
+    "testTimeoutMs": 5000,
+    "managerCommandTimeoutSeconds": 30,
+    "stdoutCap": 65536,
+    "stderrCapAtMost": 1048576,
+    "perDatabaseReadCap": 131072,
+    "baselineExpectedBytes": 2097152,
+    "baselineQuotaBytes": 4194304,
+    "fixedExpectedBytes": 4194304,
+    "fixedQuotaBytes": 8388608,
+    "productionFreeSpaceFloorBytes": 10737418240,
+    "metadataLockTimeoutSeconds": 180,
+    "timeLimitsAreNotHardLifetimeCancellationOrNativeCleanupGuarantees": true
+  },
+  "review": {
+    "performedBy": "Primary self-implementation followed by a separate bounded read-only receipt, complete TAP, CAS object/creator, source/preservation and process-group review; not independent human approval.",
+    "baselineOutcomeReviewComplete": true,
+    "fixedOutcomeReviewComplete": true,
+    "knownOwnedGroupsObservedAbsent": true,
+    "observerOpenedRawSqlite": false,
+    "allThreeTaskOutcomesClosed": true,
+    "otherRepositoryFilesUnchanged": 114,
+    "otherRepositoryBytesHashed": 2620431,
+    "priorOutcomeFilesUnchanged": 136,
+    "priorOutcomeBytesHashed": 1759225,
+    "old165FailureAndAbsencesUnchanged": true,
+    "noHistoricalFailureCountedAsPass": true,
+    "noUnchangedCompletedScenarioReplay": true,
+    "noHistoricalCleanupOrAdoption": true
+  },
+  "coverageBoundaries": [
+    "Seven fixed-source authored cases passed in one selected command. A separate one-case old-source command reproduced unsafe acceptance. The initial failed setup remains FAILURE; this is not a combined clean eight- or nine-test run.",
+    "The tests use only empty synthetic funding/custody/dispatch tables. No funding pair prepare, attempt fence, finish, request dispatch, grant debit, chain transaction, wallet, payment, signature, SDK, HTTP service or network operation is executed.",
+    "Known returned store/raw handles are closed by the fixture; failed-constructor C++ handles and OS cleanup are not independently instrumented. Passing tests do not establish full native lifetime assurance.",
+    "No process restart, crash recovery, actual pending payment recovery, service delivery, provider READY, storage durability, concurrent-owner or live-chain guarantee is established.",
+    "No hostile same-user rewrite prevention or authenticity claim follows from schema checks, hashes or metadata.",
+    "Historical source-bound results for other backend behaviors remain historical; a one-line fix and selected local cases do not rerun or qualify the full backend, app, SDK or suite.",
+    "No hosted CI was run for this slice. Zero observed checks/actions/statuses are not green CI. Main publication must use a fresh ordinary fast-forward and respect any current protection or ownership change."
+  ],
+  "protectedTotals": {
+    "consumedAdmissions": 2,
+    "actualPrepare": 1,
+    "bundles": 0,
+    "nativeQualificationRuns": 0
+  },
+  "realSigner": "DISABLED",
+  "originalPaymentAndRequest": "UNCHANGED",
+  "consumedAuthority": "UNCHANGED",
+  "PR193": "VALIDATED exact-same-signed-block possible resend remains distinct from UNKNOWN and ACKNOWLEDGED; no replacement or re-signing",
+  "production": "NO_GO"
+}
