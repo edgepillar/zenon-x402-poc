@@ -993,7 +993,6 @@ export function createZenonDurableHttpComposition(options) {
       state.phase = terminalPhase(state.terminalCode);
       const capability = state.closeCapability;
       state.closeCapability = null;
-      state.closePromise = null;
       capability.reject(failure(CODE.closeFailed));
     }
   }
@@ -1011,7 +1010,6 @@ export function createZenonDurableHttpComposition(options) {
     } catch {
       const capability = state.closeCapability;
       state.closeCapability = null;
-      state.closePromise = null;
       state.phase = PHASE.ACTIVATED_UNAVAILABLE;
       capability.reject(failure(CODE.closeFailed));
       return;
@@ -1021,7 +1019,6 @@ export function createZenonDurableHttpComposition(options) {
       () => {
         const capability = state.closeCapability;
         state.closeCapability = null;
-        state.closePromise = null;
         if (state.terminalCode === null) {
           state.terminalCode = state.activationCompleted
             ? CODE.activatedUnavailable
