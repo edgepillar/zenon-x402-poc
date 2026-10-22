@@ -1,0 +1,565 @@
+{
+  "format": "zenon-x402-poc/selected-local-behavior-result-v1",
+  "scope": "P2_NATIVE_V5_OWNER_RESPONSE_OBSERVATION_BINDING_AND_UNOBSERVED_INTENT_ADMISSION",
+  "status": "PASS_SELECTED_LOCAL_COMPONENT_BEHAVIOR_ONLY",
+  "fullP2Complete": false,
+  "productionStatus": "NO_GO",
+  "selection": {
+    "roadmapLane": "P2 original-request custody and local recovery",
+    "finiteSlice": "Bind the explicit V5 owner to the existing V5 declared-response observation store; confirm response readback before callback completion and fence selected-grant unobserved dispatch intents before new admission.",
+    "completedPredecessorMain": "1cbb730e21146026f3079ff038ed233437d86abc",
+    "completedWorkNotRerun": "The previous four V5 store cases and earlier V4 owner, HTTP, runner and process outcomes remain retained. This run executes six new owner-binding cases, including a selected V4 control.",
+    "sourceChanges": [
+      {
+        "path": "src/service-credit-custodied-request-owner.js",
+        "old": {
+          "path": "src/service-credit-custodied-request-owner.js",
+          "bytes": 44517,
+          "LF": 1136,
+          "sha256": "4f3f20195a0ec26be38e9b80e658dfccfd9477daff758a9717e819f3b55c04b2",
+          "gitBlob": "2d18b98b8d922253c1beee6c5f057705acc97069"
+        },
+        "new": {
+          "path": "src/service-credit-custodied-request-owner.js",
+          "bytes": 55155,
+          "LF": 1358,
+          "sha256": "2ba222760d4a922bf0466d95fd2671076b9d19b8c5fa4ea2cb3c66b1338562eb",
+          "gitBlob": "7f99bdadcc622db203e864edb12a1f4d1059a965"
+        },
+        "additions": 228,
+        "deletions": 6,
+        "V2V3V4FactoryBodiesByteIdentical": true,
+        "responseObservationInternalOptInDefault": false,
+        "compatibilityLimit": "The existing V2/V3/V4 factory bodies remain byte-identical; selected V4 controls are not a full historical regression suite."
+      }
+    ],
+    "addedFiles": [
+      "qualification/service-credit-custodied-owner-response-observation-v5.behavior.draft.mjs",
+      "qualification/service-credit-custodied-owner-response-observation-v5.behavior.result.json"
+    ],
+    "ownership": "Primary implementation and independent complete joined-outcome review. No worker, automation, model setting or session was modified.",
+    "exclusions": [
+      "HTTP client or default adoption",
+      "network or socket transport",
+      "SDK imports or evaluation",
+      "dependency installation",
+      "keys or signatures",
+      "wallet or real payment",
+      "DP producer or chain execution",
+      "existing database SQL",
+      "forced termination or crash",
+      "process or operating-system restart",
+      "power loss",
+      "broad application/controller/provider qualification",
+      "new operational helper or host"
+    ]
+  },
+  "implementation": {
+    "explicitFactory": "createServiceCreditCustodiedRequestOwnerV5",
+    "unchangedStoreSchema": 5,
+    "requiredResponseMethods": [
+      "recordOriginalResponseObservation",
+      "getOriginalResponseObservation",
+      "listUnobservedOriginalDispatchKeys"
+    ],
+    "callbackContract": "The dispatch callback returns a supported native Promise of canonical JSON.stringify({ok:true,resultCode}). submitOriginal still resolves to undefined; it does not return authenticated service success.",
+    "completionFence": [
+      "Validate the canonical bounded response JSON",
+      "Refresh selected-grant quarantine",
+      "Match current funding to the retained dispatch context",
+      "Re-read and validate the exact original and intent",
+      "Write an insert-only declared observation",
+      "Validate its original/intent digests, funding, policy, scope and powerless flags",
+      "Confirm exact response readback and stable funding",
+      "Refresh quarantine before reporting CALLBACK_COMPLETED"
+    ],
+    "responseGrammar": "The existing result-code key grammar and canonical two-field successful JSON, at most 512 UTF-8 bytes. Void, malformed, noncanonical and unsupported/unobservable callback returns are not synthesized into success.",
+    "constructorProbe": "A read-only frozen-DATA capability probe refuses missing, accessor, proxy, asynchronous, foreign-key or incompatible profile interfaces before any quarantine write. Interface shape is not a native-store brand or authentication.",
+    "admission": "After the probe, compare funding around a bounded selected-grant unobserved-intent query. A retained unobserved intent attempts the existing one-time insert-only quarantine latch before accepting another original.",
+    "grantBoundary": "Foreign grant input is refused before action. A valid foreign grant's pending intent does not quarantine the selected grant; the native store still validates its complete bounded contents.",
+    "recoveryProjection": "readOriginalRecoveryState includes a detached frozen responseObservation or null and a responseStatus. Existing intent and UNKNOWN/quarantine metadata remain intact, with authority NONE and serviceOutcome NOT_ESTABLISHED.",
+    "responseWitnesses": "A bounded per-selected-request checksum index detects later observed-response loss or change. It retains no response body or proof; it is memory-only and does not survive construction of a new owner.",
+    "witnessLimit": "Pending submission closures retain the data needed for fencing until completion/uncertainty. No secure memory erasure, restoration, anti-rollback or same-user-writer defense is claimed.",
+    "close": "Observable pending callback work may finish response persistence/readback while owner close drains. Borrowed owners never close the store. Unknown outcomes keep close UNKNOWN rather than reporting a successful drain.",
+    "observedIntentReset": false,
+    "quarantineClear": false,
+    "automaticOriginalReplay": false,
+    "automaticMigration": false,
+    "hashOperations": "Existing SHA-256 consistency bindings only; no key generation or signing.",
+    "checksumTrust": "Observation field and original/intent digest bindings are checked. As with V4 quarantine, native-store checksum correctness is a trusted synchronous-interface premise, not remote authentication.",
+    "authority": "NONE",
+    "deliveryConfirmed": false,
+    "serviceDelivery": "NOT_ESTABLISHED",
+    "httpClientV5Adopted": false,
+    "sequentialRunnerV5Adopted": false,
+    "defaultWiringChanged": false
+  },
+  "sourceBinding": {
+    "sourceCount": 6,
+    "sourceBytes": 211485,
+    "totalReadCapBytes": 262144,
+    "perFileCapBytes": 131072,
+    "files": [
+      {
+        "path": "src/service-credit-custodied-request-owner.js",
+        "bytes": 55155,
+        "LF": 1358,
+        "sha256": "2ba222760d4a922bf0466d95fd2671076b9d19b8c5fa4ea2cb3c66b1338562eb",
+        "gitBlob": "7f99bdadcc622db203e864edb12a1f4d1059a965"
+      },
+      {
+        "path": "src/service-credit-zenon-funding-post-v1-payer-recovery-sqlite-store.js",
+        "bytes": 76152,
+        "LF": 1904,
+        "sha256": "3b77ec2e17293f9cc0de75147c84c50aa34563e6bcfb1917da06a4ecb3f3b2c9",
+        "gitBlob": "a46cfdf1612002f12d036aa33f86e445b3e4e087"
+      },
+      {
+        "path": "src/service-credit-original-request-custody-contract.js",
+        "bytes": 14051,
+        "LF": 356,
+        "sha256": "fd349de553a17abcc2e0567ba6640e6e3d5d26cfa79ee1e355928dc9fa8d3915",
+        "gitBlob": "f911d42d01b69e6577f9bcd66f4ed59aab8ab882"
+      },
+      {
+        "path": "src/x402-wire.js",
+        "bytes": 39886,
+        "LF": 934,
+        "sha256": "5fba91af5a352f62d1a335c7176a45a604e2af5d92b1c4b0e53825c1f20d4e56",
+        "gitBlob": "fb060d4e349b1c31a1219a0cc137af250a8a2291"
+      },
+      {
+        "path": "package.json",
+        "bytes": 1413,
+        "LF": 40,
+        "sha256": "8c9a25504fbf6f87c31cdf245a6f4eec5a88cc89c8352151dc66a577c5771ef5",
+        "gitBlob": "ec7193f6fd76f34778515079dc777594175c4c34"
+      },
+      {
+        "path": "qualification/service-credit-custodied-owner-response-observation-v5.behavior.draft.mjs",
+        "bytes": 24828,
+        "LF": 303,
+        "sha256": "3bc7959700f6cb9e124bb41d82618aa0eb61a4a042f43c8cccf4b07edf60d6f4",
+        "gitBlob": "6b2a430e80b32876bd1f5b245e64e4d8e87bfaf3"
+      }
+    ],
+    "sourceBeforeAfterPhysicalIdentityStable": true,
+    "sourceAndFixtureCheckedBeforeNativeImports": true,
+    "existingDependencyReviewReusedOnlyAfterExactPhysicalContentAndMainBlobMatch": true,
+    "newBuiltinUse": "The owner uses node:crypto createHash for original/intent digest consistency; no key or signature API is invoked.",
+    "unrelatedImportExpansion": false,
+    "zenonSdkImported": false,
+    "packageInstallation": false
+  },
+  "execution": {
+    "kind": "ACTUAL_SELECTED_LOCAL_NODE_SQLITE_OWNER_COMPONENT_EXECUTION",
+    "selectedNodeCommands": 1,
+    "selectedEntry": "qualification/service-credit-custodied-owner-response-observation-v5.behavior.draft.mjs",
+    "runtime": {
+      "node": "24.19.0",
+      "platform": "darwin",
+      "arch": "arm64",
+      "sha256": "dbedff294bab84a0a86c04e15fbcbeb1c97ca10bef1b32b0634cd24b36f62100"
+    },
+    "task": "CLOSED_SUCCESS",
+    "actualExits": [
+      0
+    ],
+    "outputComplete": [
+      true
+    ],
+    "counts": {
+      "tests": 6,
+      "suites": 0,
+      "pass": 6,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "passNames": [
+      "V5 owner confirms bound response readback before callback completion and refuses implicit replay",
+      "V5 drain and normal reopen preserve observations without clearing intents or adopting foreign pending work",
+      "V4 callback semantics remain distinct and incompatible V5 owner probing does not quarantine V4",
+      "V5 startup quarantines a retained unobserved intent before any new dispatch or retention",
+      "V5 void invalid and unobservable callback replies remain UNKNOWN without response synthesis",
+      "V5 post-commit and readback faults retain observations but never report confirmed completion"
+    ],
+    "independentCompleteJoinedOutcomeReview": true,
+    "fullTapAndDiagnosticsRead": true,
+    "stdout": {
+      "bytes": 5521,
+      "sha256": "81fbc8eb40f5ba45df7f8923efd121005d9afcb6a6333833ce2f50f707d60687"
+    },
+    "stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "newSqliteFiles": 2,
+    "sqliteFileCountProgression": [
+      1,
+      1,
+      2,
+      2,
+      2,
+      2
+    ],
+    "returnedOwnedStoreCloses": 6,
+    "successfulOwnerCloses": 4,
+    "expectedUnknownOwnerCloses": 7,
+    "declaredServiceCallbacks": 9,
+    "blockedFreshOrReplaySubmits": 9,
+    "automaticQuarantineWrites": 7,
+    "confirmedResponseReadbacks": 3,
+    "factoryRefusals": 5,
+    "getterCalls": 0,
+    "afterCommitForwardingThrows": 1,
+    "missingReadbackRefusals": 1,
+    "foreignResponseRefusals": 1,
+    "accessorResponseRefusals": 1,
+    "lostWitnessRefusals": 1,
+    "ownedProcessGroupObservedAbsent": true,
+    "queuedNativeCommands": 0,
+    "networkCalls": 0,
+    "keypairsGenerated": 0,
+    "syntheticSignatureOperations": 0,
+    "realPaymentSigner": "DISABLED",
+    "nodePermissionModel": "OFF_REQUIRED_FOR_EXISTING_STORE_FCHMOD_FSYNC",
+    "fixedInlineRunner": "One exact positional fixture, six exact test names and matched complete diagnostics; Node builtin test/util/reporters/stream APIs. Not a saved or installed operational helper.",
+    "limits": {
+      "perTestMilliseconds": 5000,
+      "managedCommandSeconds": 30,
+      "metadataLockSeconds": 180,
+      "stdoutCapBytes": 65536,
+      "stderrCapBytes": 1048576
+    },
+    "limitBoundary": "These timeouts are not hard lifetime/cancellation/native-cleanup guarantees or an OS/network sandbox. Loader, runner, stream, SQLite, sync and OS behavior remain premises.",
+    "processBoundary": "Normal in-process owner/store close and reopen only. No forced kill, crash, fresh-process, operating-system restart, power-loss or physical-durability test."
+  },
+  "cases": [
+    {
+      "name": "V5 owner confirms bound response readback before callback completion and refuses implicit replay",
+      "outcome": "PASS",
+      "observed": "Four hostile/asynchronous/foreign capability configurations are refused without invoking getters or writing quarantine. A real V5 owner refuses foreign submit before action, persists the original and intent before callback, confirms a declared response before completion, and refuses implicit original replay.",
+      "committedResponseReadbacks": 1,
+      "constructorRefusals": 4,
+      "dispatchCalls": 1,
+      "foreignSubmits": 1,
+      "replayRefusals": 1
+    },
+    {
+      "name": "V5 drain and normal reopen preserve observations without clearing intents or adopting foreign pending work",
+      "outcome": "PASS",
+      "observed": "Owner close waits for an observable pending reply. Its response observation is persisted/read back while draining. Normal store reopen keeps prior originals, intents and observations; selected grant A accepts a new original while valid foreign grant B retains an unobserved intent.",
+      "ownerEpochTransition": "1 -> 2",
+      "priorRowsPreserved": true,
+      "selectedGrantQuarantineAbsent": true,
+      "confirmedResponseReadbacksTotal": 3,
+      "borrowedStoreClosedByOwner": false
+    },
+    {
+      "name": "V4 callback semantics remain distinct and incompatible V5 owner probing does not quarantine V4",
+      "outcome": "PASS",
+      "observed": "The V4 owner still accepts its void callback contract and has no response counters/projection. The incompatible V5 capability probe refuses a real V4 store without changing funding or writing quarantine. Its closed file remains byte/identity identical through the later V5 cases.",
+      "selectedControlOnly": true,
+      "fullV2V3V4Regression": false
+    },
+    {
+      "name": "V5 startup quarantines a retained unobserved intent before any new dispatch or retention",
+      "outcome": "PASS",
+      "observed": "After normal reopen, selected grant B's retained unobserved intent automatically latches quarantine before any new retention or callback. Same-original and fresh submits are blocked; recovery retains the exact original/intent with response null and authority NONE.",
+      "automaticQuarantineWrites": 1,
+      "callbackCalls": 0,
+      "retainCalls": 0,
+      "expectedClose": "UNKNOWN",
+      "priorRowsPreserved": true
+    },
+    {
+      "name": "V5 void invalid and unobservable callback replies remain UNKNOWN without response synthesis",
+      "outcome": "PASS",
+      "observed": "Void, noncanonical JSON and unsupported bare-string replies produce UNKNOWN, insert no response observation, attempt one quarantine per owner, reject subsequent fresh work and retain the original and dispatch intent.",
+      "observableFailures": 2,
+      "unobservableReturn": 1,
+      "expectedUnknownCloses": 3,
+      "synthesizedResponses": 0,
+      "retries": 0
+    },
+    {
+      "name": "V5 post-commit and readback faults retain observations but never report confirmed completion",
+      "outcome": "PASS",
+      "observed": "One forwarding exception is deliberately thrown after the native observation write commits; another forwarder hides the readback. Both preserve real committed rows but report UNKNOWN with zero confirmed completions. Recovery also refuses a valid foreign-grant observation, an accessor-bearing record and loss of an already witnessed response without invoking a getter.",
+      "forwardingFaultsNotSqlCommitFailure": true,
+      "confirmedCompletionsForFaultedSubmissions": 0,
+      "expectedUnknownCloses": 3,
+      "originalAndIntentRowsPreserved": true,
+      "finalV5Rows": {
+        "originals": 9,
+        "intents": 9,
+        "declaredResponseObservations": 5,
+        "quarantinedGrants": 7
+      },
+      "finalV5OwnerEpoch": 5,
+      "repairOrReset": false
+    }
+  ],
+  "diagnostics": [
+    {
+      "kind": "P2_OWNER_RESPONSE_OBSERVATION_V5",
+      "version": 1,
+      "scenario": "WRITE_READBACK_BEFORE_COMPLETION_NO_REPLAY",
+      "nativeSqliteFiles": 1,
+      "closedReturnedStores": 0,
+      "declaredServiceCallbacks": 1,
+      "blockedFreshOrReplaySubmits": 2,
+      "successfulOwnerCloses": 1,
+      "expectedUnknownOwnerCloses": 0,
+      "factoryRefusals": 4,
+      "automaticQuarantineWrites": 0,
+      "confirmedResponseReadbacks": 1,
+      "afterCommitForwardingThrows": 0,
+      "missingReadbackRefusals": 0,
+      "foreignResponseRefusals": 0,
+      "accessorResponseRefusals": 0,
+      "lostWitnessRefusals": 0,
+      "getterCalls": 0,
+      "networkCalls": 0,
+      "syntheticSignatureOperations": 0,
+      "realPaymentSigner": "DISABLED",
+      "serviceDelivery": "NOT_ESTABLISHED"
+    },
+    {
+      "kind": "P2_OWNER_RESPONSE_OBSERVATION_V5",
+      "version": 1,
+      "scenario": "DRAIN_THEN_NORMAL_REOPEN_SELECTED_GRANT_ONLY",
+      "nativeSqliteFiles": 1,
+      "closedReturnedStores": 2,
+      "declaredServiceCallbacks": 3,
+      "blockedFreshOrReplaySubmits": 2,
+      "successfulOwnerCloses": 3,
+      "expectedUnknownOwnerCloses": 0,
+      "factoryRefusals": 4,
+      "automaticQuarantineWrites": 0,
+      "confirmedResponseReadbacks": 3,
+      "afterCommitForwardingThrows": 0,
+      "missingReadbackRefusals": 0,
+      "foreignResponseRefusals": 0,
+      "accessorResponseRefusals": 0,
+      "lostWitnessRefusals": 0,
+      "getterCalls": 0,
+      "networkCalls": 0,
+      "syntheticSignatureOperations": 0,
+      "realPaymentSigner": "DISABLED",
+      "serviceDelivery": "NOT_ESTABLISHED"
+    },
+    {
+      "kind": "P2_OWNER_RESPONSE_OBSERVATION_V5",
+      "version": 1,
+      "scenario": "V4_UNCHANGED_CALLBACK_PROFILE_READ_ONLY_V5_REFUSAL",
+      "nativeSqliteFiles": 2,
+      "closedReturnedStores": 3,
+      "declaredServiceCallbacks": 4,
+      "blockedFreshOrReplaySubmits": 2,
+      "successfulOwnerCloses": 4,
+      "expectedUnknownOwnerCloses": 0,
+      "factoryRefusals": 5,
+      "automaticQuarantineWrites": 0,
+      "confirmedResponseReadbacks": 3,
+      "afterCommitForwardingThrows": 0,
+      "missingReadbackRefusals": 0,
+      "foreignResponseRefusals": 0,
+      "accessorResponseRefusals": 0,
+      "lostWitnessRefusals": 0,
+      "getterCalls": 0,
+      "networkCalls": 0,
+      "syntheticSignatureOperations": 0,
+      "realPaymentSigner": "DISABLED",
+      "serviceDelivery": "NOT_ESTABLISHED"
+    },
+    {
+      "kind": "P2_OWNER_RESPONSE_OBSERVATION_V5",
+      "version": 1,
+      "scenario": "RETAINED_UNOBSERVED_INTENT_STARTUP_FENCE",
+      "nativeSqliteFiles": 2,
+      "closedReturnedStores": 4,
+      "declaredServiceCallbacks": 4,
+      "blockedFreshOrReplaySubmits": 4,
+      "successfulOwnerCloses": 4,
+      "expectedUnknownOwnerCloses": 1,
+      "factoryRefusals": 5,
+      "automaticQuarantineWrites": 1,
+      "confirmedResponseReadbacks": 3,
+      "afterCommitForwardingThrows": 0,
+      "missingReadbackRefusals": 0,
+      "foreignResponseRefusals": 0,
+      "accessorResponseRefusals": 0,
+      "lostWitnessRefusals": 0,
+      "getterCalls": 0,
+      "networkCalls": 0,
+      "syntheticSignatureOperations": 0,
+      "realPaymentSigner": "DISABLED",
+      "serviceDelivery": "NOT_ESTABLISHED"
+    },
+    {
+      "kind": "P2_OWNER_RESPONSE_OBSERVATION_V5",
+      "version": 1,
+      "scenario": "INVALID_REPLY_NO_SUCCESS_SYNTHESIS_OR_RETRY",
+      "nativeSqliteFiles": 2,
+      "closedReturnedStores": 5,
+      "declaredServiceCallbacks": 7,
+      "blockedFreshOrReplaySubmits": 7,
+      "successfulOwnerCloses": 4,
+      "expectedUnknownOwnerCloses": 4,
+      "factoryRefusals": 5,
+      "automaticQuarantineWrites": 4,
+      "confirmedResponseReadbacks": 3,
+      "afterCommitForwardingThrows": 0,
+      "missingReadbackRefusals": 0,
+      "foreignResponseRefusals": 0,
+      "accessorResponseRefusals": 0,
+      "lostWitnessRefusals": 0,
+      "getterCalls": 0,
+      "networkCalls": 0,
+      "syntheticSignatureOperations": 0,
+      "realPaymentSigner": "DISABLED",
+      "serviceDelivery": "NOT_ESTABLISHED"
+    },
+    {
+      "kind": "P2_OWNER_RESPONSE_OBSERVATION_V5",
+      "version": 1,
+      "scenario": "POST_COMMIT_READBACK_BINDING_AND_WITNESS_FENCES",
+      "nativeSqliteFiles": 2,
+      "closedReturnedStores": 6,
+      "declaredServiceCallbacks": 9,
+      "blockedFreshOrReplaySubmits": 9,
+      "successfulOwnerCloses": 4,
+      "expectedUnknownOwnerCloses": 7,
+      "factoryRefusals": 5,
+      "automaticQuarantineWrites": 7,
+      "confirmedResponseReadbacks": 3,
+      "afterCommitForwardingThrows": 1,
+      "missingReadbackRefusals": 1,
+      "foreignResponseRefusals": 1,
+      "accessorResponseRefusals": 1,
+      "lostWitnessRefusals": 1,
+      "getterCalls": 0,
+      "networkCalls": 0,
+      "syntheticSignatureOperations": 0,
+      "realPaymentSigner": "DISABLED",
+      "serviceDelivery": "NOT_ESTABLISHED"
+    }
+  ],
+  "preservation": {
+    "directlyRecheckedRepositoryFiles": 169,
+    "directlyRecheckedPriorPrivateFiles": 338,
+    "authorizedSourceReplacement": {
+      "immutableMain": "1cbb730e21146026f3079ff038ed233437d86abc",
+      "path": "src/service-credit-custodied-request-owner.js",
+      "priorSha256": "4f3f20195a0ec26be38e9b80e658dfccfd9477daff758a9717e819f3b55c04b2",
+      "priorGitBlob": "2d18b98b8d922253c1beee6c5f057705acc97069",
+      "oldSourceClaimedPhysicallyUnchanged": false
+    },
+    "previousV5StoreSourceAndFourCaseFixtureUnchanged": true,
+    "oldEvidenceRewritten": false,
+    "protectedAbsences": 8,
+    "originalPaymentRequestAuthority": "Preserve the original payment/request bytes, hash, payload, requirements, context and consumed authority.",
+    "pr193": "VALIDATED possible exact-same-signed-block resend remains distinct from UNKNOWN and ACKNOWLEDGED. No resend, replacement, re-signing or settlement is executed.",
+    "failedOwnershipMetadataRetried": false,
+    "consumedAuthorityReset": false,
+    "precedingOutcomeReviewsOrEarlier267FullRehashReplayed": false,
+    "predecessorEvidence": {
+      "filesDecoded": 2,
+      "decodedBytes": 36707,
+      "readCapBytes": 65536,
+      "completePredecessorRowSealsMatched": true,
+      "olderAncestorRecordsDecoded": 0,
+      "recursiveTraversal": false,
+      "currentPhysicalAndContentCohortPinsDirectlyRechecked": true
+    },
+    "noLocalStageCommitResetCheckoutOrPush": true
+  },
+  "reviewDiagnostics": {
+    "nativeAssertionFailures": 0,
+    "nativeExecutions": 1,
+    "postRunReadOnlyInspectorAssembly": {
+      "firstAttempt": "IndentationError before inspection execution",
+      "cause": "Incorrect RAM-only helper extraction boundary",
+      "corrected": true,
+      "completeIndependentReviewThenPassed": true,
+      "nativeRerun": false,
+      "repositoryOrExistingTaskFilesRewritten": false
+    },
+    "olderFailuresAndRefusals": "Retained unchanged; not converted into fresh passing executions."
+  },
+  "storage": {
+    "rawSqlite": [
+      {
+        "role": "V5 owner response and quarantine component fixture",
+        "bytes": 90112,
+        "sha256": "867371f16d9f25c70d07a301524b7293bb2e2ed71b00e4e1ac18cb148ee765bc"
+      },
+      {
+        "role": "V4 callback/profile control",
+        "bytes": 40960,
+        "sha256": "1a8d5aa9428097bd6870fc49d078278989575f9cac82cc70cf4ffd9ac2224000"
+      }
+    ],
+    "retainedRawBytes": 131072,
+    "rawSqliteOpenedByController": false,
+    "rawSqliteCASAdopted": false,
+    "cleanup": "HOLD_UNREGISTERED_FILES",
+    "adoptionOrDeletion": false,
+    "existingDatabaseSql": false,
+    "expectedTaskBytes": 2097152,
+    "taskQuotaBytes": 4194304,
+    "productionFreeSpaceFloorBytes": 10737418240,
+    "safetyMarginBytes": 1073741824,
+    "approvedStoreScratchLimitBytes": 10737418240,
+    "stricterScratchPrecheckLimitBytes": 6442450944,
+    "observedScratchPrecheckBytes": 3806497472,
+    "storageMetadataIdentityAndPolicyMatched": true,
+    "rootPolicyRewritten": false,
+    "quotaLimit": "Cooperative bounded allocation and sampled monitoring, not an atomic OS-enforced aggregate quota."
+  },
+  "evidenceEfficiency": {
+    "stockManagerUnchanged": true,
+    "explicitRecordCalls": 3,
+    "currentMetadataFiles": 7,
+    "currentMetadataBytes": 73924,
+    "precedingOneCommandLayoutMetadataFiles": 7,
+    "layoutOptimizationRetained": true,
+    "launchSourcePreservationRawFileAndOutcomeBindingsIndependentlyChecked": true,
+    "missingHandoff": "UNKNOWN_NOT_QUALIFIED",
+    "priorPrivateFiles": 338,
+    "currentPrivateCohortAfterRun": 347,
+    "binaryTransport": "Bounded descriptor streams with one CAS object per digest; no second stdout copy, ZIP packaging or raw SQLite adoption.",
+    "measuredSpeedup": false,
+    "measuredPhysicalApfsReclaim": false
+  },
+  "acceptanceBoundaries": {
+    "sixSelectedLocalOwnerCases": "PASS",
+    "optInOwnerBinding": "IMPLEMENTED_COMPONENT_ONLY",
+    "actualHttpReplyParsingAndTransportBinding": "NOT_IMPLEMENTED_BY_THIS_PACKET",
+    "httpClientAndOwnedSqliteFactoryV5Adoption": "SEPARATE_UNCOMPLETED_SLICE",
+    "sequentialRunnerV5Adoption": "NOT_IMPLEMENTED_BY_THIS_PACKET",
+    "originalReplayAuthority": "NONE",
+    "authenticatedServerReceipt": "NOT_ESTABLISHED",
+    "serviceDelivery": "NOT_ESTABLISHED",
+    "fullP2": "INCOMPLETE",
+    "freshProcessRecovery": "NOT_EXERCISED_BY_THIS_PACKET",
+    "crashOrPowerLossDurability": "NOT_QUALIFIED",
+    "sdkOrDpRuntime": "NOT_EXECUTED",
+    "actualPaymentRecovery": "NOT_ESTABLISHED",
+    "providerReady": "NOT_ESTABLISHED",
+    "hostedCi": "NOT_RUN_NOT_GREEN",
+    "broadRegressionSuite": "NOT_RUN",
+    "pilotAcceptance": "NOT_ESTABLISHED",
+    "production": "NO_GO"
+  },
+  "protectedTotals": {
+    "consumedAdmissions": 2,
+    "actualChainPrepare": 1,
+    "bundles": 0,
+    "nativeChainProviderQualificationRuns": 0
+  },
+  "nextFiniteWork": "Explicitly bind the existing strict HTTP reply path to the V5 owner and V5 owned-store profile, preserving the current default and V4 factories, exact original/intent custody, UNKNOWN boundaries and one-grant authority."
+}

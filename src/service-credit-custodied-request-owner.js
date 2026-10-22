@@ -1,4 +1,5 @@
 import { Buffer } from 'node:buffer';
+import { createHash } from 'node:crypto';
 import { types as utilTypes } from 'node:util';
 import {
   snapshotOriginalServiceRequestCustodyPolicy,
@@ -31,6 +32,8 @@ const IS_FROZEN = Object.isFrozen;
 const STRING = String;
 const CREATE = Object.create;
 const STRINGIFY = JSON.stringify;
+const JSON_PARSE = JSON.parse;
+const CREATE_HASH = createHash;
 const TYPE_ERROR = TypeError;
 const NativePromise = Promise;
 const PROMISE_PROTOTYPE = NativePromise.prototype;
@@ -60,6 +63,18 @@ const QUARANTINE_FIELDS = FREEZE([
   'paymentHash', 'network', 'challengeDigest', 'paymentDigest', 'custodyPolicy',
   'status', 'authority', 'mayStartPayment', 'maySignPayment',
   'mayDispatchService', 'checksum',
+]);
+const RESPONSE_FIELDS = FREEZE([
+  'responseObservationVersion', 'scope', 'grantId', 'requestId',
+  'fundingResourceUrl', 'paymentHash', 'network', 'fundingRevision',
+  'challengeDigest', 'paymentDigest', 'custodyPolicy', 'originalDigest',
+  'dispatchIntentDigest', 'responseJson', 'resultCode', 'status', 'authority',
+  'mayStartPayment', 'maySignPayment', 'mayDispatchService', 'deliveryConfirmed',
+  'serviceDelivery', 'checksum',
+]);
+const RESPONSE_METHODS = FREEZE([
+  'recordOriginalResponseObservation', 'getOriginalResponseObservation',
+  'listUnobservedOriginalDispatchKeys',
 ]);
 const CONFIG_FIELDS = FREEZE([
   'store', 'fundingResourceUrl', 'custodyPolicy', 'selectedGrantId',
@@ -155,13 +170,45 @@ export function createServiceCreditCustodiedRequestOwnerV4(configuration) {
   if (arguments.length !== 1) throw failure('INVALID_CONFIGURATION');
   return createOwner(configuration, true, true);
 }
-function createOwner(configuration, dispatchIntentEnabled, persistentCustody = false) {
+/**
+ * V5 additionally binds the synchronous V5 response-observation interface.
+ * Dispatch returns a native Promise of the canonical successful response JSON.
+ * A void/invalid reply is UNKNOWN, never a synthetic success observation.
+ * Before reporting CALLBACK_COMPLETED, this owner verifies the original/intent
+ * and funding fences, writes the declared observation, and confirms readback.
+ *
+ * A read-only capability probe refuses incompatible/invalid interfaces before
+ * quarantine writes. Admission then checks selected-grant unobserved intents;
+ * an existing one attempts the same insert-only quarantine latch as V4.
+ * Observed intents are retained, never consumed or used to replay an original.
+ * Empty pending metadata grants no independent payer/provider/send authority.
+ *
+ * This remains a trusted callback/local store contract, not an HTTP response,
+ * authenticated receipt, delivery, crash durability or automatic V4 migration.
+ * V2/V3/V4 factories and HTTP/default wiring do not opt in.
+ */
+export function createServiceCreditCustodiedRequestOwnerV5(configuration) {
+  if (arguments.length !== 1) throw failure('INVALID_CONFIGURATION');
+  return createOwner(configuration, true, true, true);
+}
+function createOwner(configuration, dispatchIntentEnabled, persistentCustody = false,
+  responseObservationEnabled = false) {
   let config, policy, methods, selectedKey;
   try {
     config = exact(configuration, CONFIG_FIELDS);
     policy = POLICY(config.custodyPolicy, config.fundingResourceUrl);
     selectedKey = KEY({ grantId: config.selectedGrantId, requestId: 'scope' });
-    methods = captureMethods(config.store, dispatchIntentEnabled, persistentCustody);
+    methods = captureMethods(config.store, dispatchIntentEnabled, persistentCustody,
+      responseObservationEnabled);
+    if (responseObservationEnabled) {
+      const probe = APPLY(methods.listUnobservedOriginalDispatchKeys, config.store,
+        [{ grantId: selectedKey.grantId }]);
+      observeStorePromise(probe);
+      const keys = captureRecoveryKeys(probe, false);
+      for (const key of keys) {
+        if (key.grantId !== selectedKey.grantId) throw failure('INVALID_DATA');
+      }
+    }
   } catch {
     throw failure('INVALID_CONFIGURATION');
   }
@@ -170,6 +217,7 @@ function createOwner(configuration, dispatchIntentEnabled, persistentCustody = f
   const selectedGrantId = selectedKey.grantId;
   const entries = [];
   const knownRecords = new NativeMap();
+  const responseWitnesses = responseObservationEnabled ? new NativeMap() : null;
   const counts = {
     loadReads: 0,
     recordReads: 0,
@@ -187,6 +235,12 @@ function createOwner(configuration, dispatchIntentEnabled, persistentCustody = f
     counts.quarantineReads = 0;
     counts.quarantineWrites = 0;
     counts.quarantineReadbackConfirmations = 0;
+  }
+  if (responseObservationEnabled) {
+    counts.responseWrites = 0;
+    counts.responseReads = 0;
+    counts.responseReadbackConfirmations = 0;
+    counts.unobservedIntentReads = 1; // Read-only constructor capability probe.
   }
   let active = false;
   let closed = false;
@@ -417,6 +471,120 @@ function createOwner(configuration, dispatchIntentEnabled, persistentCustody = f
     }
   }
 
+
+  function responseForCurrent(raw, key, current, original, intent) {
+    try {
+      const value = exact(raw, RESPONSE_FIELDS);
+      if (!IS_FROZEN(raw) || current.status !== 'BOUND'
+          || value.responseObservationVersion !== 1
+          || value.scope !== 'LOCAL_DECLARED_HTTP_SUCCESS_RESPONSE'
+          || value.grantId !== key.grantId || value.requestId !== key.requestId
+          || value.fundingResourceUrl !== current.fundingResourceUrl
+          || value.paymentHash !== current.paymentHash || value.network !== current.network
+          || value.fundingRevision !== current.revision
+          || value.challengeDigest !== intent.challengeDigest
+          || value.paymentDigest !== intent.paymentDigest
+          || value.originalDigest !== responseDigest('zenon-x402:response-observation-original-v1',
+            SERIALIZE(original))
+          || value.dispatchIntentDigest !== responseDigest('zenon-x402:response-observation-intent-v1',
+            SERIALIZE_INTENT(intent))
+          || value.resultCode !== responseSuccessCode(value.responseJson)
+          || value.status !== 'DECLARED_SUCCESS_RESPONSE_OBSERVED'
+          || value.authority !== 'NONE' || value.mayStartPayment !== false
+          || value.maySignPayment !== false || value.mayDispatchService !== false
+          || value.deliveryConfirmed !== false
+          || value.serviceDelivery !== 'NOT_ESTABLISHED') throw failure('INVALID_DATA');
+      const capturedPolicy = POLICY(value.custodyPolicy, fundingResourceUrl);
+      if (!IS_FROZEN(value.custodyPolicy) || capturedPolicy.policyVersion !== policy.policyVersion
+          || capturedPolicy.maxRequests !== policy.maxRequests
+          || capturedPolicy.serviceResourceUrl !== policy.serviceResourceUrl) throw failure('INVALID_DATA');
+      for (const field of ['challengeDigest', 'paymentDigest', 'originalDigest',
+        'dispatchIntentDigest', 'checksum']) {
+        bounded(value[field], 71);
+        if (!APPLY(REGEXP_TEST, QUARANTINE_DIGEST, [value[field]])) throw failure('INVALID_DATA');
+      }
+      const known = APPLY(MAP_GET, responseWitnesses, [key.requestId]);
+      if (known !== undefined && known !== value.checksum) throw failure('INVALID_DATA');
+      // All projected fields are bounded primitives or detached frozen policy.
+      // As with V4, checksum authenticity is not inferred from interface shape.
+      const detached = CREATE(null), record = {};
+      for (const field of RESPONSE_FIELDS) {
+        const item = field === 'custodyPolicy' ? capturedPolicy : value[field];
+        detached[field] = item;
+        record[field] = item;
+      }
+      const detachedPolicy = CREATE(null);
+      for (const field of ['policyVersion', 'maxRequests', 'serviceResourceUrl']) {
+        detachedPolicy[field] = capturedPolicy[field];
+      }
+      detached.custodyPolicy = FREEZE(detachedPolicy);
+      return { record: FREEZE(record), text: STRINGIFY(FREEZE(detached)) };
+    } catch {
+      holdCustody();
+      throw failure('CUSTODY_OUTCOME_UNKNOWN');
+    }
+  }
+
+  function rememberResponse(key, observation) {
+    const known = APPLY(MAP_GET, responseWitnesses, [key.requestId]);
+    if (observation === null) {
+      if (known !== undefined) custodyChanged();
+      return;
+    }
+    if ((known !== undefined && known !== observation.checksum)
+        || (known === undefined && APPLY(MAP_SIZE, responseWitnesses, []) >= policy.maxRequests)) {
+      custodyChanged();
+    }
+    APPLY(MAP_SET, responseWitnesses, [key.requestId, observation.checksum]);
+  }
+
+  function optionalFunding() {
+    try { return currentFunding(); }
+    catch (error) {
+      if (known(error) === 'FUNDING_REQUIRED') return null;
+      throw error;
+    }
+  }
+
+  function refreshUnobservedDispatches() {
+    const before = optionalFunding();
+    const captured = captureRecoveryKeys(callStore('listUnobservedOriginalDispatchKeys',
+      [{ grantId: selectedGrantId }], 'unobservedIntentReads'));
+    const after = optionalFunding();
+    if ((before === null) !== (after === null)
+        || (before !== null && !sameFunding(before, after))) custodyChanged();
+    for (const key of captured) {
+      if (key.grantId !== selectedGrantId) custodyChanged();
+    }
+    if (captured.length !== 0) custodyChanged();
+  }
+
+  function retainResponse(value, key, context) {
+    responseSuccessCode(value);
+    refreshQuarantine();
+    if (held()) throw failure('CUSTODY_OUTCOME_UNKNOWN');
+    const before = currentFunding();
+    if (!sameFunding(before, context.funding)) custodyChanged();
+    const original = recordForCurrent(callStore('getOriginalRequest', [key],
+      'recordReads'), key, before);
+    const intent = intentForCurrent(callStore('getOriginalDispatchIntent', [key],
+      'intentReads'), key, before, original.record);
+    if (original.text !== SERIALIZE(context.original)
+        || intent.text !== SERIALIZE_INTENT(context.intent)) custodyChanged();
+    if (!sameFunding(before, currentFunding())) custodyChanged();
+    const written = responseForCurrent(callStore('recordOriginalResponseObservation',
+      [{ grantId: key.grantId, requestId: key.requestId, responseJson: value }],
+      'responseWrites'), key, before, original.record, intent.record);
+    const readback = responseForCurrent(callStore('getOriginalResponseObservation',
+      [key], 'responseReads'), key, before, original.record, intent.record);
+    if (written.text !== readback.text || readback.record.responseJson !== value
+        || !sameFunding(before, currentFunding())) custodyChanged();
+    refreshQuarantine();
+    if (held()) throw failure('CUSTODY_OUTCOME_UNKNOWN');
+    rememberResponse(key, readback.record);
+    bump('responseReadbackConfirmations');
+  }
+
   function find(key) {
     for (let index = 0; index < entries.length; index++) {
       if (entries[index].grantId === key.grantId
@@ -484,6 +652,7 @@ function createOwner(configuration, dispatchIntentEnabled, persistentCustody = f
     let retentionStarted = false;
     let handedOff = false;
     let finished = false;
+    let responseContext = null;
 
     function submissionFailed(unobservable) {
       if (finished) return;
@@ -497,7 +666,10 @@ function createOwner(configuration, dispatchIntentEnabled, persistentCustody = f
 
     function callbackCompleted(value) {
       if (finished) return;
-      if (value !== undefined) {
+      if (responseObservationEnabled) {
+        try { retainResponse(value, key, responseContext); }
+        catch { submissionFailed(false); return; }
+      } else if (value !== undefined) {
         submissionFailed(false);
         return;
       }
@@ -513,6 +685,11 @@ function createOwner(configuration, dispatchIntentEnabled, persistentCustody = f
     try {
       if (persistentCustody) {
         refreshQuarantine();
+        if (closed) throw failure('CLOSED');
+        if (held()) throw failure('CUSTODY_OUTCOME_UNKNOWN');
+      }
+      if (responseObservationEnabled) {
+        refreshUnobservedDispatches();
         if (closed) throw failure('CLOSED');
         if (held()) throw failure('CUSTODY_OUTCOME_UNKNOWN');
       }
@@ -623,6 +800,10 @@ function createOwner(configuration, dispatchIntentEnabled, persistentCustody = f
         }
         rememberRecord(key, readback.record, confirmed.record);
         counts.intentReadbackConfirmations++;
+        if (responseObservationEnabled) {
+          responseContext = FREEZE({ funding: current, original: readback.record,
+            intent: confirmed.record });
+        }
         if (closed) throw failure('RECOVERY_REQUIRED');
       }
 
@@ -757,6 +938,16 @@ function createOwner(configuration, dispatchIntentEnabled, persistentCustody = f
         if (intentRaw === null && known !== null && known.intentChecksum !== null) custodyChanged();
         if (intentRaw !== null) dispatchIntent = intentForCurrent(intentRaw, key, current, original).record;
       }
+      let responseObservation = null;
+      if (responseObservationEnabled && original !== null) {
+        const responseRaw = callStore('getOriginalResponseObservation', [key], 'responseReads');
+        if (responseRaw !== null) {
+          if (dispatchIntent === null) custodyChanged();
+          responseObservation = responseForCurrent(responseRaw, key, current, original,
+            dispatchIntent).record;
+        }
+        rememberResponse(key, responseObservation);
+      }
       let latest;
       try {
         latest = currentFunding();
@@ -788,6 +979,11 @@ function createOwner(configuration, dispatchIntentEnabled, persistentCustody = f
           dispatchIntent,
           dispatchStatus: dispatchIntent === null ? 'NO_INTENT_RECORDED' : 'POSSIBLY_ATTEMPTED',
         } : {}),
+        ...(responseObservationEnabled ? {
+          responseObservation,
+          responseStatus: responseObservation === null ? 'NOT_OBSERVED'
+            : 'LOCAL_DECLARED_SUCCESS_RESPONSE_OBSERVED',
+        } : {}),
       });
     } catch (error) {
       const code = known(error);
@@ -799,7 +995,7 @@ function createOwner(configuration, dispatchIntentEnabled, persistentCustody = f
     }
   }
 
-  function captureRecoveryKeys(raw) {
+  function captureRecoveryKeys(raw, holdOnInvalid = true) {
     const captured = [];
     try {
       if (typeof raw !== 'object' || raw === null || IS_PROXY(raw) || IS_PROMISE(raw)
@@ -845,7 +1041,7 @@ function createOwner(configuration, dispatchIntentEnabled, persistentCustody = f
         prior = key;
       }
     } catch {
-      holdCustody();
+      if (holdOnInvalid) holdCustody();
       throw failure('CUSTODY_OUTCOME_UNKNOWN');
     }
     return captured;
@@ -960,6 +1156,10 @@ function createOwner(configuration, dispatchIntentEnabled, persistentCustody = f
   }
 
   if (persistentCustody) refreshQuarantine();
+  if (responseObservationEnabled && !held()) {
+    try { refreshUnobservedDispatches(); }
+    catch { holdCustody(); }
+  }
   return FREEZE({
     submitOriginal: FREEZE(submitOriginal),
     readOriginal: FREEZE(readOriginal),
@@ -1007,7 +1207,7 @@ function exact(value, fields) {
   return project(value, fields, [], fields);
 }
 
-function captureMethods(store, dispatchIntentEnabled, persistentCustody) {
+function captureMethods(store, dispatchIntentEnabled, persistentCustody, responseObservationEnabled) {
   if (typeof store !== 'object' || store === null || IS_PROXY(store)) {
     throw failure('INVALID_CONFIGURATION');
   }
@@ -1024,6 +1224,10 @@ function captureMethods(store, dispatchIntentEnabled, persistentCustody) {
     names = [...names, 'getOriginalRequestCustodyQuarantine', 'latchOriginalRequestCustodyQuarantine'];
     found.getOriginalRequestCustodyQuarantine = null;
     found.latchOriginalRequestCustodyQuarantine = null;
+  }
+  if (responseObservationEnabled) {
+    names = [...names, ...RESPONSE_METHODS];
+    for (const name of RESPONSE_METHODS) found[name] = null;
   }
   let current = store;
   let depth = 0;
@@ -1055,10 +1259,28 @@ function captureMethods(store, dispatchIntentEnabled, persistentCustody) {
         || found.getOriginalDispatchIntent === null))
       || (persistentCustody && (found.getOriginalRequestCustodyQuarantine === null
         || found.latchOriginalRequestCustodyQuarantine === null))) throw failure('INVALID_CONFIGURATION');
+  if (responseObservationEnabled) {
+    for (const name of RESPONSE_METHODS) {
+      if (found[name] === null) throw failure('INVALID_CONFIGURATION');
+    }
+  }
   if (dispatchIntentEnabled && found.listOriginalRequestKeys === false) {
     found.listOriginalRequestKeys = null;
   }
   return FREEZE(found);
+}
+
+function responseSuccessCode(value) {
+  bounded(value, 512);
+  const parsed = exact(JSON_PARSE(value), ['ok', 'resultCode']);
+  const result = KEY({ grantId: 'result', requestId: parsed.resultCode });
+  if (parsed.ok !== true
+      || STRINGIFY({ ok: true, resultCode: result.requestId }) !== value) throw failure('INVALID_DATA');
+  return result.requestId;
+}
+
+function responseDigest(domain, value) {
+  return 'sha256:' + CREATE_HASH('sha256').update(domain).update('\0').update(value).digest('hex');
 }
 
 function bounded(value, limit) {
