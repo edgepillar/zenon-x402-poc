@@ -1,0 +1,643 @@
+{
+  "format": "zenon-x402-poc/selected-local-behavior-result-v1",
+  "scope": "P2_NATIVE_V5_NO_DISPATCH_RECOVERY_READER_RESPONSE_BINDING",
+  "status": "PASS_SELECTED_LOCAL_COMPONENT_BEHAVIOR_ONLY",
+  "fullP2Complete": false,
+  "productionStatus": "NO_GO",
+  "selection": {
+    "roadmapLane": "P2 original-request custody and local recovery",
+    "finiteSlice": "Expose the existing V5 owned runner's nine no-dispatch recovery operations through an explicit V5 reader. Validate response DATA, conservative declared plans, selected unobserved-intent quarantine and root-close history on a new private synthetic file.",
+    "completedPredecessorMain": "3b188a13f36d86954f90b56c58e4fdf47efa8abc",
+    "completedWorkNotRerun": "Completed V5 runner/HTTP/store outcomes and older V4 reader outcomes remain retained. The first failed authoring attempt below is preserved, not rewritten or rerun.",
+    "sourceChanges": [
+      {
+        "path": "src/service-credit-custodied-sqlite-recovery-reader.js",
+        "old": {
+          "path": "src/service-credit-custodied-sqlite-recovery-reader.js",
+          "bytes": 3987,
+          "LF": 97,
+          "sha256": "beda55abe29c986c4b79f5870ba13234fa39495150dd3edd3a284e4bc64ad843",
+          "gitBlob": "1bb9501e3c0bfb39c9c686e664df81922e01bdcd"
+        },
+        "new": {
+          "path": "src/service-credit-custodied-sqlite-recovery-reader.js",
+          "bytes": 5907,
+          "LF": 139,
+          "sha256": "75c3331bde079c811debe066c629e8f61aea75d6973542b8d0648cf36045bf30",
+          "gitBlob": "6b6f74ffb38228052f76f366f85b3080b576a1e6"
+        },
+        "additions": 42,
+        "deletions": 0
+      }
+    ],
+    "addedFiles": [
+      "qualification/service-credit-custodied-sqlite-recovery-reader-v5.behavior.draft.mjs",
+      "qualification/service-credit-custodied-sqlite-recovery-reader-v5.behavior-v2.draft.mjs",
+      "qualification/service-credit-custodied-sqlite-recovery-reader-v5.behavior.result.json"
+    ],
+    "ownership": "Primary implementation with independent complete joined-outcome review; no worker, automation, model selection or session was changed.",
+    "excluded": [
+      "real socket or network transport",
+      "SDK import or execution",
+      "dependency installation",
+      "key or signature generation/verification",
+      "wallet or real payment",
+      "DP producer or chain execution",
+      "existing database SQL",
+      "forced kill or crash",
+      "fresh process or OS restart",
+      "power loss or physical-durability qualification",
+      "broad application/controller/provider qualification",
+      "new operational helper or host",
+      "transport creation or request dispatch",
+      "public/default CLI or backend V5 adoption"
+    ]
+  },
+  "implementation": {
+    "exports": [
+      "openServiceCreditCustodiedSqliteRecoveryReaderV5"
+    ],
+    "factory": "Accept the same six exact configuration fields; inject only the existing frozen throwing NO_DISPATCH function into the actual owned V5 runner. Return a frozen attenuation containing the original nine captured root operations.",
+    "methods": [
+      "readOriginal",
+      "readOriginalRecoveryState",
+      "readOriginalRecoveryKeys",
+      "createOriginalRecoveryPlan",
+      "createOriginalRecoveryStatePlan",
+      "createOriginalRecoveryCollection",
+      "createOriginalRecoveryObservationCollection",
+      "close",
+      "snapshot"
+    ],
+    "oldV3AndV4FactoryBodiesByteIdentical": true,
+    "existingNoDispatchFunctionUnchanged": true,
+    "dependencies": "The owned V5 runner, HTTP client, owner, store, planner, status view and collection implementations retain their exact completed source pins.",
+    "responseMeaning": "The already-validated V5 recovery-state projection includes a local caller-declared response observation. In this slice the observation is explicitly seeded DATA, not produced by an HTTP exchange, authenticated service receipt or delivery proof.",
+    "authorityBoundary": "The returned reader has no batch, submit, transport, root, store, payment or signing capability. Every declared response/plan/collection remains powerless DATA. This is API attenuation, not authentication or an OS/network sandbox.",
+    "acquisitionBoundary": "V5 opens only an existing V5 profile. It can increment owner_epoch and automatically persist selected-grant quarantine for an older unobserved intent. It is not SQLite readOnly mode. V4-on-V5 acquisition refuses without file adoption or repair.",
+    "closeBoundary": "The actual root owns acquisition and one store-close attempt; the facade adds no close wrapper. Repeated close returns the same root Promise. Native store release and UNKNOWN child state remain separate.",
+    "plannerBoundary": "An UNKNOWN-initialized declared plan retains both fundingUncertain and serviceUncertain after a later success declaration. A freshly success-initialized declared plan may report its declared terminal result; neither grants authority or clears original/intent/quarantine. The owned nextStep remains RECONCILIATION_REQUIRED.",
+    "historyBoundary": "After root close, live collection read first propagates CLOSED, then latches unavailable without retry. Local collection close returns cached detached historical DATA and cannot close or reopen the root.",
+    "originalIntentReset": false,
+    "quarantineClear": false,
+    "automaticOriginalReplay": false,
+    "automaticMigration": false,
+    "createFallback": false,
+    "defaultOrV4Adoption": false,
+    "operationalEntryPointAdded": false
+  },
+  "sourceBinding": {
+    "sourceCount": 16,
+    "sourceBytes": 350625,
+    "totalReadCapBytes": 393216,
+    "perFileCapBytes": 131072,
+    "files": [
+      {
+        "path": "src/service-credit-custodied-sequential-runner-core.js",
+        "bytes": 15907,
+        "LF": 491,
+        "sha256": "1ea3bc77bc6f1ef7c5aef843f6d4f67109f3a7943a761c19e7dfcb37cfb84a0e",
+        "gitBlob": "2dca6dc97eab44cbdc6a007a27b3b128227378d0"
+      },
+      {
+        "path": "src/service-credit-custodied-sqlite-sequential-runner.js",
+        "bytes": 23370,
+        "LF": 542,
+        "sha256": "6a13fa59532928f707167431c4c769a110d1bba61df5b218db86354934110e6a",
+        "gitBlob": "7f54717658e1a66da3a426e9c1e4ed44b065b401"
+      },
+      {
+        "path": "src/service-credit-custodied-sqlite-http-client.js",
+        "bytes": 20887,
+        "LF": 550,
+        "sha256": "e7a8f3f7acdf9346d2b74a3d2918874b66e036b3dad0a363862dcc7119b68702",
+        "gitBlob": "f3270427e70d4082368cea1bb07c31e83990e9c9"
+      },
+      {
+        "path": "src/service-credit-custodied-http-client.js",
+        "bytes": 12646,
+        "LF": 324,
+        "sha256": "35997f41c9a5162fe29ed56776181a1691c0a0a69c7dbdfe8b61785af3998145",
+        "gitBlob": "33879d019492de8d278b0d0dc998bd1c7806b413"
+      },
+      {
+        "path": "src/service-credit-custodied-request-owner.js",
+        "bytes": 55155,
+        "LF": 1358,
+        "sha256": "2ba222760d4a922bf0466d95fd2671076b9d19b8c5fa4ea2cb3c66b1338562eb",
+        "gitBlob": "7f99bdadcc622db203e864edb12a1f4d1059a965"
+      },
+      {
+        "path": "src/service-credit-zenon-funding-post-v1-payer-recovery-sqlite-store.js",
+        "bytes": 76152,
+        "LF": 1904,
+        "sha256": "3b77ec2e17293f9cc0de75147c84c50aa34563e6bcfb1917da06a4ecb3f3b2c9",
+        "gitBlob": "a46cfdf1612002f12d036aa33f86e445b3e4e087"
+      },
+      {
+        "path": "src/service-credit-http-execute-dispatch.js",
+        "bytes": 28104,
+        "LF": 790,
+        "sha256": "929881081b22b90b07d3d1c4dc8f873d4d81ee5ae84542d24b7534674f4eb9c0",
+        "gitBlob": "ace43b4be48f00a5c649449cf1f04ab40e719190"
+      },
+      {
+        "path": "src/service-credit-original-request-custody-contract.js",
+        "bytes": 14051,
+        "LF": 356,
+        "sha256": "fd349de553a17abcc2e0567ba6640e6e3d5d26cfa79ee1e355928dc9fa8d3915",
+        "gitBlob": "f911d42d01b69e6577f9bcd66f4ed59aab8ab882"
+      },
+      {
+        "path": "src/x402-wire.js",
+        "bytes": 39886,
+        "LF": 934,
+        "sha256": "5fba91af5a352f62d1a335c7176a45a604e2af5d92b1c4b0e53825c1f20d4e56",
+        "gitBlob": "fb060d4e349b1c31a1219a0cc137af250a8a2291"
+      },
+      {
+        "path": "src/service-credit-pilot-client-plan.js",
+        "bytes": 7483,
+        "LF": 181,
+        "sha256": "73ee3d739de85150039e733234cd0761c228d68de040d1e126902e808a259ac6",
+        "gitBlob": "14334c82b5b7c80fb8f7f6a392a1a0f3c3adcbf1"
+      },
+      {
+        "path": "src/service-credit-pilot-status-view.js",
+        "bytes": 3202,
+        "LF": 60,
+        "sha256": "cf3822d8b9ec4eb4772452ed1888b96d398fd87c1ead44cd155a5acc1a6b66ed",
+        "gitBlob": "0890db504e44b704d0434dc309e711743570e652"
+      },
+      {
+        "path": "src/service-credit-custodied-recovery-collection-core.js",
+        "bytes": 13794,
+        "LF": 306,
+        "sha256": "51d06da70ecccd0cf8b38d650367d1ae903ea86010a5ebeadb682af98e4b890b",
+        "gitBlob": "5275832eebbf87e0cd37f3c2e3b82147ab625a72"
+      },
+      {
+        "path": "src/service-credit-custodied-recovery-observation-collection-core.js",
+        "bytes": 8579,
+        "LF": 213,
+        "sha256": "36b7cece2d436cbfcac5f4299dd6bd30e5eede6ebb2ebe769ae7bf3a6f1a72b4",
+        "gitBlob": "4dc8765be0aa4b0e927fface960e366a3a6ccd1e"
+      },
+      {
+        "path": "package.json",
+        "bytes": 1413,
+        "LF": 40,
+        "sha256": "8c9a25504fbf6f87c31cdf245a6f4eec5a88cc89c8352151dc66a577c5771ef5",
+        "gitBlob": "ec7193f6fd76f34778515079dc777594175c4c34"
+      },
+      {
+        "path": "src/service-credit-custodied-sqlite-recovery-reader.js",
+        "bytes": 5907,
+        "LF": 139,
+        "sha256": "75c3331bde079c811debe066c629e8f61aea75d6973542b8d0648cf36045bf30",
+        "gitBlob": "6b6f74ffb38228052f76f366f85b3080b576a1e6"
+      },
+      {
+        "path": "qualification/service-credit-custodied-sqlite-recovery-reader-v5.behavior-v2.draft.mjs",
+        "bytes": 24089,
+        "LF": 372,
+        "sha256": "0077ac32908d81dd7545de5712841b8194b645d1cb9ab00b7f8e02df064dc00e",
+        "gitBlob": "1ef2004d1f0e89409232538131710a3d326dac51"
+      }
+    ],
+    "sourceBeforeAfterPhysicalIdentityStable": true,
+    "exactFixtureAndSourceCheckedBeforeNativeImports": true,
+    "existingDependencyReviewReusedOnlyAfterExactPhysicalContentAndMainBlobMatch": true,
+    "sourceGraphExpansion": "Exactly the existing owned sequential runner composition graph plus this reader and the selected fixture. The borrowed-runner module is not imported. No unrelated SDK, directory or package expansion.",
+    "newExternalDependencies": false,
+    "packageInstallation": false
+  },
+  "execution": {
+    "kind": "ACTUAL_SELECTED_NO_DISPATCH_V5_READER_AND_NATIVE_SQLITE_COMPONENT_EXECUTION",
+    "selectedNodeCommands": 1,
+    "selectedEntry": "qualification/service-credit-custodied-sqlite-recovery-reader-v5.behavior-v2.draft.mjs",
+    "runtime": {
+      "node": "24.19.0",
+      "platform": "darwin",
+      "arch": "arm64",
+      "sha256": "dbedff294bab84a0a86c04e15fbcbeb1c97ca10bef1b32b0634cd24b36f62100"
+    },
+    "task": "CLOSED_SUCCESS",
+    "actualExits": [
+      0
+    ],
+    "outputComplete": [
+      true
+    ],
+    "counts": {
+      "tests": 4,
+      "suites": 0,
+      "pass": 4,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "passNames": [
+      "V5 no-dispatch reader exposes observed response DATA without acquiring a transport capability",
+      "V5 response-bound plans and catalog retain declared success without action authority",
+      "V5 reader quarantines a selected unobserved intent and preserves UNKNOWN across normal reopen",
+      "V5 reader root close fences observation collections and retains response history only"
+    ],
+    "independentCompleteJoinedOutcomeReview": true,
+    "fullTapAndDiagnosticsRead": true,
+    "stdout": {
+      "bytes": 4376,
+      "sha256": "3ea2245a5d211aff6fe087910cac10d645fa33263283bd08ab30884ac516d88b"
+    },
+    "stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "newSqliteFiles": 1,
+    "seedStoreReturnedCloses": 1,
+    "ownedReaders": 5,
+    "ownedStoreReturnedCloses": 5,
+    "returnedComponentStoreCloses": 6,
+    "normalRootCloses": 3,
+    "expectedUnknownRootCloses": 2,
+    "metadataPlans": 2,
+    "recoveryCollections": 1,
+    "observationCollections": 1,
+    "declaredSuccessDataInputs": 3,
+    "configurationRefusals": 4,
+    "profileRefusals": 1,
+    "foreignGrantRefusals": 1,
+    "catalogRefusals": 1,
+    "postRootCollectionReadFailures": 1,
+    "latchedUnavailableRefusals": 1,
+    "ownedQuarantineWrites": 1,
+    "ownedQuarantineReadbackConfirmations": 1,
+    "responseObservationsRetained": 1,
+    "requestAttempts": 0,
+    "transportCreated": false,
+    "ownedProcessGroupObservedAbsent": true,
+    "queuedNativeCommands": 0,
+    "actualNetworkCalls": 0,
+    "keypairsGenerated": 0,
+    "syntheticSignatureOperations": 0,
+    "realPaymentSigner": "DISABLED",
+    "nodePermissionModel": "OFF_REQUIRED_FOR_EXISTING_STORE_FCHMOD_FSYNC",
+    "fixedInlineRunner": "Node test/util/reporters/stream builtins; one exact positional entry, four exact names and four complete diagnostics. No saved or installed operational helper.",
+    "limits": {
+      "perTestMilliseconds": 5000,
+      "managedCommandSeconds": 30,
+      "metadataLockSeconds": 180,
+      "stdoutCapBytes": 65536,
+      "stderrCapBytes": 1048576
+    },
+    "limitsBoundary": "These limits are not hard lifetime, cancellation, native-cleanup or OS/network-sandbox guarantees. Native loader, runner, streams, SQLite, file sync, OS and trusted declared-handle behavior remain premises.",
+    "processBoundary": "Normal same-process close and reopen only. No forced termination, fresh-process recovery, actual process restart, OS restart, crash or power-loss experiment."
+  },
+  "cases": [
+    {
+      "name": "V5 no-dispatch reader exposes observed response DATA without acquiring a transport capability",
+      "outcome": "PASS",
+      "observed": "Invalid arity, an extra transport getter and a proxy are refused without evaluating getter/traps or acquiring the DB. V4-on-V5 acquisition refuses with unchanged closed bytes, identity and epoch. A valid V5 reader exposes exactly nine frozen operations, reads the selected observed original and filters its catalog; a foreign grant is refused. No transport or batch capability is exposed.",
+      "configurationRefusals": 4,
+      "profileRefusals": 1,
+      "foreignGrantRefusals": 1,
+      "ownerEpoch": 2,
+      "normalRootCloses": 1,
+      "quarantineWrites": 0
+    },
+    {
+      "name": "V5 response-bound plans and catalog retain declared success without action authority",
+      "outcome": "PASS",
+      "observed": "The same original, intent and response are retained across normal reopen. A plan initially UNKNOWN then declared successful retains both uncertainty latches and RECONCILE_FUNDING_AND_REQUEST. A fresh success-initialized declared plan reports READ_ORIGINAL_RESULT_ONLY, but both owned plans remain RECONCILIATION_REQUIRED and authority NONE. Whole-catalog collection refuses an incomplete catalog; detached close retains history without closing its root.",
+      "ownerEpoch": 3,
+      "metadataPlans": 2,
+      "recoveryCollections": 1,
+      "serviceDelivery": "NOT_ESTABLISHED"
+    },
+    {
+      "name": "V5 reader quarantines a selected unobserved intent and preserves UNKNOWN across normal reopen",
+      "outcome": "PASS",
+      "observed": "Opening the selected grant with a deliberately seeded unobserved intent writes and confirms one quarantine before any dispatch. Its close releases the store but rejects UNKNOWN. A normal reopen preserves that marker without another quarantine write. The foreign observed grant's response and all original/intent/funding/schema rows remain intact.",
+      "ownerEpochs": [
+        4,
+        5
+      ],
+      "ownedQuarantineWrites": 1,
+      "ownedQuarantineReadbackConfirmations": 1,
+      "expectedUnknownCloses": 2,
+      "requestAttempts": 0,
+      "implicitResends": 0
+    },
+    {
+      "name": "V5 reader root close fences observation collections and retains response history only",
+      "outcome": "PASS",
+      "observed": "The healthy observed grant remains scoped apart from the other grant's quarantine. Its observation collection accepts a powerless declared success. Root close drains normally; live collection read then propagates CLOSED and subsequently refuses unavailable without retry. Local close returns cached detached history containing the same response and no action authority.",
+      "finalOwnerEpoch": 6,
+      "observationCollections": 1,
+      "finalRows": {
+        "originals": 2,
+        "intents": 2,
+        "responseObservations": 1,
+        "quarantinedGrants": 1
+      },
+      "requestAttempts": 0
+    }
+  ],
+  "diagnostics": [
+    {
+      "kind": "P2_NO_DISPATCH_READER_V5",
+      "version": 1,
+      "scenario": "V5_ATTENUATED_OBSERVED_RESPONSE_AND_NO_PROFILE_ADOPTION",
+      "nativeSqliteFiles": 1,
+      "seedStoreReturnedCloses": 1,
+      "ownedReaders": 1,
+      "ownedStoreReturnedCloses": 1,
+      "normalCloses": 1,
+      "expectedUnknownCloses": 0,
+      "metadataPlans": 0,
+      "recoveryCollections": 0,
+      "observationCollections": 0,
+      "declaredSuccessDataInputs": 0,
+      "configurationRefusals": 4,
+      "profileRefusals": 1,
+      "foreignGrantRefusals": 1,
+      "catalogRefusals": 0,
+      "postRootCollectionReadFailures": 0,
+      "latchedUnavailableRefusals": 0,
+      "ownedQuarantineWrites": 0,
+      "ownedQuarantineReadbackConfirmations": 0,
+      "responseObservationsRetained": 1,
+      "requestAttempts": 0,
+      "transportCreated": false,
+      "authority": "NONE",
+      "serviceDelivery": "NOT_ESTABLISHED",
+      "realPaymentSigner": "DISABLED",
+      "networkCalls": 0,
+      "syntheticSignatureOperations": 0
+    },
+    {
+      "kind": "P2_NO_DISPATCH_READER_V5",
+      "version": 1,
+      "scenario": "V5_OBSERVED_RESPONSE_DOES_NOT_PROMOTE_DECLARED_SUCCESS",
+      "nativeSqliteFiles": 1,
+      "seedStoreReturnedCloses": 1,
+      "ownedReaders": 2,
+      "ownedStoreReturnedCloses": 2,
+      "normalCloses": 2,
+      "expectedUnknownCloses": 0,
+      "metadataPlans": 2,
+      "recoveryCollections": 1,
+      "observationCollections": 0,
+      "declaredSuccessDataInputs": 2,
+      "configurationRefusals": 4,
+      "profileRefusals": 1,
+      "foreignGrantRefusals": 1,
+      "catalogRefusals": 1,
+      "postRootCollectionReadFailures": 0,
+      "latchedUnavailableRefusals": 0,
+      "ownedQuarantineWrites": 0,
+      "ownedQuarantineReadbackConfirmations": 0,
+      "responseObservationsRetained": 1,
+      "requestAttempts": 0,
+      "transportCreated": false,
+      "authority": "NONE",
+      "serviceDelivery": "NOT_ESTABLISHED",
+      "realPaymentSigner": "DISABLED",
+      "networkCalls": 0,
+      "syntheticSignatureOperations": 0
+    },
+    {
+      "kind": "P2_NO_DISPATCH_READER_V5",
+      "version": 1,
+      "scenario": "V5_UNOBSERVED_INTENT_QUARANTINE_PERSISTS_WITHOUT_DISPATCH",
+      "nativeSqliteFiles": 1,
+      "seedStoreReturnedCloses": 1,
+      "ownedReaders": 4,
+      "ownedStoreReturnedCloses": 4,
+      "normalCloses": 2,
+      "expectedUnknownCloses": 2,
+      "metadataPlans": 2,
+      "recoveryCollections": 1,
+      "observationCollections": 0,
+      "declaredSuccessDataInputs": 2,
+      "configurationRefusals": 4,
+      "profileRefusals": 1,
+      "foreignGrantRefusals": 1,
+      "catalogRefusals": 1,
+      "postRootCollectionReadFailures": 0,
+      "latchedUnavailableRefusals": 0,
+      "ownedQuarantineWrites": 1,
+      "ownedQuarantineReadbackConfirmations": 1,
+      "responseObservationsRetained": 1,
+      "requestAttempts": 0,
+      "transportCreated": false,
+      "authority": "NONE",
+      "serviceDelivery": "NOT_ESTABLISHED",
+      "realPaymentSigner": "DISABLED",
+      "networkCalls": 0,
+      "syntheticSignatureOperations": 0
+    },
+    {
+      "kind": "P2_NO_DISPATCH_READER_V5",
+      "version": 1,
+      "scenario": "V5_ROOT_CLOSE_DETACHES_POWERLESS_RESPONSE_HISTORY",
+      "nativeSqliteFiles": 1,
+      "seedStoreReturnedCloses": 1,
+      "ownedReaders": 5,
+      "ownedStoreReturnedCloses": 5,
+      "normalCloses": 3,
+      "expectedUnknownCloses": 2,
+      "metadataPlans": 2,
+      "recoveryCollections": 1,
+      "observationCollections": 1,
+      "declaredSuccessDataInputs": 3,
+      "configurationRefusals": 4,
+      "profileRefusals": 1,
+      "foreignGrantRefusals": 1,
+      "catalogRefusals": 1,
+      "postRootCollectionReadFailures": 1,
+      "latchedUnavailableRefusals": 1,
+      "ownedQuarantineWrites": 1,
+      "ownedQuarantineReadbackConfirmations": 1,
+      "responseObservationsRetained": 1,
+      "requestAttempts": 0,
+      "transportCreated": false,
+      "authority": "NONE",
+      "serviceDelivery": "NOT_ESTABLISHED",
+      "realPaymentSigner": "DISABLED",
+      "networkCalls": 0,
+      "syntheticSignatureOperations": 0
+    }
+  ],
+  "preservation": {
+    "directlyRecheckedRepositoryFiles": 176,
+    "directlyRecheckedPriorPrivateFiles": 373,
+    "authorizedSourceReplacements": [
+      {
+        "main": "3b188a13f36d86954f90b56c58e4fdf47efa8abc",
+        "path": "src/service-credit-custodied-sqlite-recovery-reader.js",
+        "bytes": 3987,
+        "gitBlob": "1bb9501e3c0bfb39c9c686e664df81922e01bdcd",
+        "sha256": "beda55abe29c986c4b79f5870ba13234fa39495150dd3edd3a284e4bc64ad843",
+        "oldFileClaimedPhysicallyUnchanged": false
+      }
+    ],
+    "allCompletedV5RunnerHttpOwnerStoreSourcesAndEarlierArtifactsUnchanged": true,
+    "firstFailedFixtureAndEvidenceUnchanged": true,
+    "oldEvidenceRewritten": false,
+    "protectedAbsences": 8,
+    "originalPaymentRequestAuthority": "Original payment/request bytes, hash, payload, requirements, context and consumed authority remain unchanged.",
+    "pr193": "Preserve VALIDATED possible exact-same-signed-block resend separately from UNKNOWN and ACKNOWLEDGED. No resend, replacement, re-signing or settlement is executed.",
+    "failedOwnershipMetadataRetried": false,
+    "consumedAuthorityReset": false,
+    "precedingCompleteOutcomeReviewsOrEarlier267FullRehashReplayed": false,
+    "predecessorEvidence": {
+      "filesDecoded": 2,
+      "decodedBytes": 45549,
+      "readCapBytes": 65536,
+      "completePredecessorRowSealsMatched": true,
+      "olderAncestorRecordsDecoded": 0,
+      "recursiveTraversal": false,
+      "currentRetainedPhysicalAndContentPinsDirectlyRechecked": true
+    },
+    "noLocalStageCommitResetCheckoutOrPush": true
+  },
+  "reviewDiagnostics": {
+    "nativeExecutionsThisSlice": 2,
+    "successfulSelectedEntryExecutions": 1,
+    "initialFailedAuthoringAttempt": {
+      "entry": "qualification/service-credit-custodied-sqlite-recovery-reader-v5.behavior.draft.mjs",
+      "source": {
+        "path": "qualification/service-credit-custodied-sqlite-recovery-reader-v5.behavior.draft.mjs",
+        "bytes": 23897,
+        "LF": 371,
+        "sha256": "6ecfbea73ced0251d4f33bdfe0e92c45357340da928b7f5c5c12860e12abde56",
+        "gitBlob": "03e9be272edc391a336992ff984ed5323190e88f"
+      },
+      "task": "CLOSED_FAILURE",
+      "actualExit": 1,
+      "outputComplete": true,
+      "counts": {
+        "tests": 4,
+        "suites": 0,
+        "pass": 1,
+        "fail": 3,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "afterHookAlsoFailed": true,
+      "stdout": {
+        "sha256": "09680bbae0d6dca29d7df8176a2fb5725b29117a3b4724a8458df8b86b608228",
+        "bytes": 2853
+      },
+      "stderr": {
+        "sha256": "42cbb0e0f0ee7d514e0fcb47997c466245b53528dedfd274e57fdac89d448224",
+        "bytes": 28
+      },
+      "firstMismatch": {
+        "expected": "READ_ORIGINAL_RESULT_ONLY",
+        "actual": "RECONCILE_FUNDING_AND_REQUEST"
+      },
+      "cause": "The new fixture expected an UNKNOWN-initialized declared plan to forget prior ambiguity. The pinned existing planner intentionally latches both uncertainties. The later two cases failed stage guards and did not exercise their intended scenarios; the after hook also reported the incomplete stage.",
+      "resolution": "A distinct source-pinned v2 fixture expects the conservative next step and explicitly checks both true uncertainty flags. The production source is identical across both attempts.",
+      "originalFixtureAndFailureEvidencePreserved": true,
+      "noUnchangedNativeRetry": true,
+      "sourceAndPreservationStable": true,
+      "ownedProcessGroupObservedAbsent": true
+    },
+    "successfulAttempt": {
+      "entry": "qualification/service-credit-custodied-sqlite-recovery-reader-v5.behavior-v2.draft.mjs",
+      "counts": {
+        "tests": 4,
+        "suites": 0,
+        "pass": 4,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "completeIndependentReview": true
+    },
+    "postRunInspection": "Each distinct joined outcome was independently reviewed once. No completed native execution was replayed on unchanged inputs.",
+    "earlierFailures": "Retained unchanged, not relabeled as passing."
+  },
+  "storage": {
+    "rawSqlite": [
+      {
+        "role": "Preserved initial authoring-failure fixture",
+        "bytes": 49152,
+        "sha256": "76d6b7b60292c0ba5aeae345f112c6fc2c7b3a0eb41abb866ee96d249153c49c"
+      },
+      {
+        "role": "Passing V5 reader fixture",
+        "bytes": 49152,
+        "sha256": "7d8a3d094bed4d2efb43ba95e73242c5e73d13dcb3c03cc6066ecdaa0d035cc7"
+      }
+    ],
+    "retainedRawBytes": 98304,
+    "passingAttemptNewSqliteFiles": 1,
+    "totalNewSqliteFilesThisSlice": 2,
+    "rawSqliteOpenedByController": false,
+    "rawSqliteCASAdopted": false,
+    "cleanup": "HOLD_UNREGISTERED_FILES",
+    "adoptionOrDeletion": false,
+    "existingDatabaseSql": false,
+    "expectedTaskBytes": 2097152,
+    "taskQuotaBytes": 4194304,
+    "productionFreeSpaceFloorBytes": 10737418240,
+    "safetyMarginBytes": 1073741824,
+    "approvedStoreScratchLimitBytes": 10737418240,
+    "stricterScratchPrecheckLimitBytes": 6442450944,
+    "observedScratchPrecheckBytes": 3559743764,
+    "storageMetadataIdentityAndPolicyMatched": true,
+    "rootPolicyRewritten": false,
+    "quotaBoundary": "Cooperative bounded allocation and sampled monitoring, not an atomic OS-enforced aggregate quota."
+  },
+  "evidenceEfficiency": {
+    "stockManagerUnchanged": true,
+    "explicitRecordCallsPerAttempt": 3,
+    "currentMetadataFiles": 7,
+    "currentMetadataBytes": 101994,
+    "initialFailedAttemptMetadataFiles": 7,
+    "initialFailedAttemptMetadataBytes": 90744,
+    "compactLayoutRetained": true,
+    "launchSourcePreservationRawFileAndOutcomeBindingsIndependentlyChecked": true,
+    "missingHandoff": "UNKNOWN_NOT_QUALIFIED",
+    "priorPrivateFiles": 373,
+    "currentPrivateCohortAfterRun": 381,
+    "binaryTransport": "Bounded descriptor capture with one CAS object per stream digest, no second stdout copy, ZIP packaging or raw SQLite adoption.",
+    "measuredSpeedup": false,
+    "measuredPhysicalApfsReclaim": false
+  },
+  "acceptanceBoundaries": {
+    "fourSelectedLocalReaderCases": "PASS",
+    "initialAuthoringAttempt": "FAILURE_PRESERVED_SEPARATELY",
+    "explicitV5NoDispatchReader": "IMPLEMENTED_COMPONENT",
+    "actualTransport": "NOT_CREATED_OR_EXECUTED",
+    "responseProvenance": "EXPLICITLY_SEEDED_LOCAL_DECLARED_DATA",
+    "authorizationSignatureVerification": "NOT_EXECUTED",
+    "independentServerReceipt": "NOT_ESTABLISHED",
+    "serviceDelivery": "NOT_ESTABLISHED",
+    "otherRecoveryCases": "NOT_QUALIFIED_BY_THIS_PACKET",
+    "defaultCliOrBackendV5Adoption": "NOT_IMPLEMENTED_BY_THIS_PACKET",
+    "fullP2": "INCOMPLETE",
+    "freshProcessRecovery": "NOT_EXERCISED_BY_THIS_PACKET",
+    "crashOrPowerLossDurability": "NOT_QUALIFIED",
+    "sdkOrDpRuntime": "NOT_EXECUTED",
+    "actualPaymentRecovery": "NOT_ESTABLISHED",
+    "providerReady": "NOT_ESTABLISHED",
+    "hostedCi": "NOT_RUN_NOT_GREEN",
+    "broadRegressionSuite": "NOT_RUN",
+    "pilotAcceptance": "NOT_ESTABLISHED",
+    "production": "NO_GO"
+  },
+  "protectedTotals": {
+    "consumedAdmissions": 2,
+    "actualChainPrepare": 1,
+    "bundles": 0,
+    "nativeChainProviderQualificationRuns": 0
+  },
+  "nextFiniteWork": "Review an explicit V5 backend lifecycle binding to the completed runner and no-dispatch reader, with exact source coverage and resource/close authority boundaries before editing or testing. Do not repeat completed component outcomes or silently adopt V5 in default/CLI/payment paths. Fresh-process continuity and real transport/pilot acceptance remain separate gates."
+}

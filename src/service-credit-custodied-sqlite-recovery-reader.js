@@ -1,6 +1,7 @@
 import {
   openServiceCreditCustodiedSqliteSequentialRunnerV3,
   openServiceCreditCustodiedSqliteSequentialRunnerV4,
+  openServiceCreditCustodiedSqliteSequentialRunnerV5,
 } from './service-credit-custodied-sqlite-sequential-runner.js';
 import {
   exact, failure,
@@ -9,6 +10,7 @@ import {
 const FREEZE = Object.freeze;
 const OPEN = openServiceCreditCustodiedSqliteSequentialRunnerV3;
 const OPEN_V4 = openServiceCreditCustodiedSqliteSequentialRunnerV4;
+const OPEN_V5 = openServiceCreditCustodiedSqliteSequentialRunnerV5;
 const CONFIG_FIELDS = FREEZE([
   'databasePath', 'allowedRoot', 'fundingResourceUrl', 'custodyPolicy',
   'selectedGrantId', 'deadlineMs',
@@ -79,6 +81,46 @@ export async function openServiceCreditCustodiedSqliteRecoveryReaderV4(configura
   }
   try {
     const root = await OPEN_V4({ ...input, requestImpl: NO_DISPATCH });
+    return FREEZE({
+      readOriginal: root.readOriginal,
+      readOriginalRecoveryState: root.readOriginalRecoveryState,
+      readOriginalRecoveryKeys: root.readOriginalRecoveryKeys,
+      createOriginalRecoveryPlan: root.createOriginalRecoveryPlan,
+      createOriginalRecoveryStatePlan: root.createOriginalRecoveryStatePlan,
+      createOriginalRecoveryCollection: root.createOriginalRecoveryCollection,
+      createOriginalRecoveryObservationCollection: root.createOriginalRecoveryObservationCollection,
+      close: root.close,
+      snapshot: root.snapshot,
+    });
+  } finally {
+    input = null;
+  }
+}
+
+/**
+ * Explicit no-dispatch reader over the existing owned V5 runner. The same
+ * recovery-state read now includes its validated local response observation;
+ * neither that DATA nor a declared successful plan establishes delivery or
+ * grants action authority. All nine functions are the actual root operations.
+ * No caller transport, batch, submit, root or store capability is exposed.
+ * Existing V5 acquisition may advance owner_epoch and persist quarantine for
+ * an older unobserved intent. This is not SQLite readOnly, authentication or
+ * an OS/network sandbox. Close keeps its original cached Promise and UNKNOWN
+ * boundary. No V4 adoption, migration, replay, repair or authority reset.
+ * Normal reopen is not process restart or crash/power-loss qualification.
+ */
+export async function openServiceCreditCustodiedSqliteRecoveryReaderV5(configuration) {
+  if (arguments.length !== 1) throw failure('INVALID_CONFIGURATION');
+  let input;
+  try {
+    input = exact(configuration, CONFIG_FIELDS);
+  } catch {
+    throw failure('INVALID_CONFIGURATION');
+  } finally {
+    configuration = null;
+  }
+  try {
+    const root = await OPEN_V5({ ...input, requestImpl: NO_DISPATCH });
     return FREEZE({
       readOriginal: root.readOriginal,
       readOriginalRecoveryState: root.readOriginalRecoveryState,
