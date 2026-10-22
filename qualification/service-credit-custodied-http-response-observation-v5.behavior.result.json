@@ -1,0 +1,636 @@
+{
+  "format": "zenon-x402-poc/selected-local-behavior-result-v1",
+  "scope": "P2_NATIVE_V5_STRICT_HTTP_RESPONSE_OWNER_AND_EXISTING_STORE_BINDING",
+  "status": "PASS_SELECTED_LOCAL_COMPONENT_BEHAVIOR_ONLY",
+  "fullP2Complete": false,
+  "productionStatus": "NO_GO",
+  "selection": {
+    "roadmapLane": "P2 original-request custody and local recovery",
+    "finiteSlice": "Connect the existing strict response parser to the opt-in V5 response-observation owner and existing-store SQLite resource owner. Six selected socketless/native-SQLite cases include legacy dispatch and V4 controls.",
+    "completedPredecessorMain": "329ac8809ec33b124409086dd87c4dda20eae6cc",
+    "completedWorkNotRerun": "The preceding V5 owner and store outcomes, earlier V4 HTTP/runner/process cases, and old failure records are retained, not rerun.",
+    "sourceChanges": [
+      {
+        "path": "src/service-credit-custodied-http-client.js",
+        "old": {
+          "path": "src/service-credit-custodied-http-client.js",
+          "bytes": 11597,
+          "LF": 307,
+          "sha256": "822627be1876fb609bad582b767694a60022d7bf9d7375bb2e7fb961c034e4ab",
+          "gitBlob": "c15926796ff96f08e32d1c4291e5d9c4b814f450"
+        },
+        "new": {
+          "path": "src/service-credit-custodied-http-client.js",
+          "bytes": 12646,
+          "LF": 324,
+          "sha256": "35997f41c9a5162fe29ed56776181a1691c0a0a69c7dbdfe8b61785af3998145",
+          "gitBlob": "33879d019492de8d278b0d0dc998bd1c7806b413"
+        },
+        "additions": 20,
+        "deletions": 3
+      },
+      {
+        "path": "src/service-credit-custodied-sqlite-http-client.js",
+        "old": {
+          "path": "src/service-credit-custodied-sqlite-http-client.js",
+          "bytes": 19683,
+          "LF": 530,
+          "sha256": "06366488e679272170847af4929db3b3f782774022f97c748530ec73f729f0bc",
+          "gitBlob": "a198673f77c4320bb4af3adb35ba22d2a2fb3b38"
+        },
+        "new": {
+          "path": "src/service-credit-custodied-sqlite-http-client.js",
+          "bytes": 20887,
+          "LF": 550,
+          "sha256": "e7a8f3f7acdf9346d2b74a3d2918874b66e036b3dad0a363862dcc7119b68702",
+          "gitBlob": "f3270427e70d4082368cea1bb07c31e83990e9c9"
+        },
+        "additions": 26,
+        "deletions": 6
+      },
+      {
+        "path": "src/service-credit-http-execute-dispatch.js",
+        "old": {
+          "path": "src/service-credit-http-execute-dispatch.js",
+          "bytes": 27034,
+          "LF": 770,
+          "sha256": "254ba8eef5ea5efb3a1b901be09e9cb33afbc3cfcf63789ca4a23316b6180d1b",
+          "gitBlob": "280dd20dc669e2856d263eba62ccd0fe9af72f21"
+        },
+        "new": {
+          "path": "src/service-credit-http-execute-dispatch.js",
+          "bytes": 28104,
+          "LF": 790,
+          "sha256": "929881081b22b90b07d3d1c4dc8f873d4d81ee5ae84542d24b7534674f4eb9c0",
+          "gitBlob": "ace43b4be48f00a5c649449cf1f04ab40e719190"
+        },
+        "additions": 21,
+        "deletions": 1
+      }
+    ],
+    "addedFiles": [
+      "qualification/service-credit-custodied-http-response-observation-v5.behavior.draft.mjs",
+      "qualification/service-credit-custodied-http-response-observation-v5.behavior.result.json"
+    ],
+    "ownership": "Primary implementation with independent complete joined-outcome review; no worker, automation, model selection or session was changed.",
+    "excluded": [
+      "real socket or network transport",
+      "SDK import or execution",
+      "dependency installation",
+      "key or signature generation/verification",
+      "wallet or real payment",
+      "DP producer or chain execution",
+      "existing database SQL",
+      "forced kill or crash",
+      "fresh process or OS restart",
+      "power loss or physical-durability qualification",
+      "broad application/controller/provider qualification",
+      "new operational helper or host"
+    ]
+  },
+  "implementation": {
+    "exports": [
+      "createServiceCreditHttpExecuteDispatchV2",
+      "createServiceCreditCustodiedHttpClientV5",
+      "openServiceCreditCustodiedSqliteHttpClientV5"
+    ],
+    "dispatcherV2": "Resolve the exact canonical successful response JSON only after the existing required request/response completion/close interface events. Keep a bounded temporary string for the V2 mode, release the internal reference on settlement and retain no response string in snapshots.",
+    "dispatcherV1": "The original factory now delegates to the same private implementation with response exposure false; its selected successful result remains undefined. The original public arity and exact configuration grammar are unchanged.",
+    "parser": "Reuses the existing strict status, raw-header, UTF-8, bounded-byte and canonical two-field JSON validation. Response data is not reconstructed from a snapshot and no parser is duplicated.",
+    "replyLimitBytes": 512,
+    "lifecyclePreservation": "The dispatcher pump/header parser and the owned child-settlement/store-close implementations remain byte-identical. Shared lifecycle code is reused rather than copied.",
+    "oldHttpAndOwnedFactoryBodiesByteIdentical": true,
+    "borrowedV5": "The explicit HTTP V5 factory selects the V2 dispatcher and V5 owner. The existing owner writes and confirms its original/intent-bound declared observation before resolving submitOriginal to undefined.",
+    "ownedV5": "Open only an EXISTING V5 SQLite profile and compose the V5 HTTP child. Reuse the existing resource slot, acquisition-refusal classification, synchronous admission close, cached root close identity and one store-close attempt.",
+    "nativeStoreAndOwnerSourceUnchanged": true,
+    "rootOwnershipLabel": "OWNED_EXISTING_V5_RESPONSE_OBSERVATION",
+    "startupFence": "An old selected-grant unobserved intent is quarantined by the V5 owner before retention or dispatch. A foreign grant's pending intent does not quarantine the selected grant.",
+    "unknownBoundary": "Strict reply failure persists selected-grant quarantine and remains UNKNOWN after normal owned close/reopen; no implicit resend occurs. A returned native store close releases only this module's resource slot, not payment or external cleanup authority.",
+    "originalIntentReset": false,
+    "quarantineClear": false,
+    "automaticOriginalReplay": false,
+    "automaticMigration": false,
+    "createFallback": false,
+    "defaultOrV4Adoption": false,
+    "sequentialRunnerV5Adopted": false,
+    "operationalEntryPointAdded": false,
+    "authorization": "Forward the exact declared Authorization string once to the injected request capability. Exclude it from the owner input, original/intent/response rows and snapshots. This validates syntax/declared metadata only, not a capability signature or current authority.",
+    "localResponseMeaning": "Caller-supplied transport DATA, not an independently authenticated server receipt, service delivery, settlement or permission to pay/sign/send.",
+    "erasureBoundary": "The private byte buffer is cleared by the existing lifecycle and the new internal response-string reference is released on settlement. Caller, fulfilled Promise and native copies may remain; secure string erasure is not promised.",
+    "lateOrNativeEventBoundary": "The same reviewed interface-event and trusted requestImpl premises remain. This packet does not prove future late-event absence, hard cancellation, OS cleanup or native/network lifetime bounds."
+  },
+  "sourceBinding": {
+    "sourceCount": 9,
+    "sourceBytes": 277386,
+    "totalReadCapBytes": 327680,
+    "perFileCapBytes": 131072,
+    "files": [
+      {
+        "path": "src/service-credit-custodied-http-client.js",
+        "bytes": 12646,
+        "LF": 324,
+        "sha256": "35997f41c9a5162fe29ed56776181a1691c0a0a69c7dbdfe8b61785af3998145",
+        "gitBlob": "33879d019492de8d278b0d0dc998bd1c7806b413"
+      },
+      {
+        "path": "src/service-credit-custodied-sqlite-http-client.js",
+        "bytes": 20887,
+        "LF": 550,
+        "sha256": "e7a8f3f7acdf9346d2b74a3d2918874b66e036b3dad0a363862dcc7119b68702",
+        "gitBlob": "f3270427e70d4082368cea1bb07c31e83990e9c9"
+      },
+      {
+        "path": "src/service-credit-custodied-request-owner.js",
+        "bytes": 55155,
+        "LF": 1358,
+        "sha256": "2ba222760d4a922bf0466d95fd2671076b9d19b8c5fa4ea2cb3c66b1338562eb",
+        "gitBlob": "7f99bdadcc622db203e864edb12a1f4d1059a965"
+      },
+      {
+        "path": "src/service-credit-zenon-funding-post-v1-payer-recovery-sqlite-store.js",
+        "bytes": 76152,
+        "LF": 1904,
+        "sha256": "3b77ec2e17293f9cc0de75147c84c50aa34563e6bcfb1917da06a4ecb3f3b2c9",
+        "gitBlob": "a46cfdf1612002f12d036aa33f86e445b3e4e087"
+      },
+      {
+        "path": "src/service-credit-http-execute-dispatch.js",
+        "bytes": 28104,
+        "LF": 790,
+        "sha256": "929881081b22b90b07d3d1c4dc8f873d4d81ee5ae84542d24b7534674f4eb9c0",
+        "gitBlob": "ace43b4be48f00a5c649449cf1f04ab40e719190"
+      },
+      {
+        "path": "src/service-credit-original-request-custody-contract.js",
+        "bytes": 14051,
+        "LF": 356,
+        "sha256": "fd349de553a17abcc2e0567ba6640e6e3d5d26cfa79ee1e355928dc9fa8d3915",
+        "gitBlob": "f911d42d01b69e6577f9bcd66f4ed59aab8ab882"
+      },
+      {
+        "path": "src/x402-wire.js",
+        "bytes": 39886,
+        "LF": 934,
+        "sha256": "5fba91af5a352f62d1a335c7176a45a604e2af5d92b1c4b0e53825c1f20d4e56",
+        "gitBlob": "fb060d4e349b1c31a1219a0cc137af250a8a2291"
+      },
+      {
+        "path": "package.json",
+        "bytes": 1413,
+        "LF": 40,
+        "sha256": "8c9a25504fbf6f87c31cdf245a6f4eec5a88cc89c8352151dc66a577c5771ef5",
+        "gitBlob": "ec7193f6fd76f34778515079dc777594175c4c34"
+      },
+      {
+        "path": "qualification/service-credit-custodied-http-response-observation-v5.behavior.draft.mjs",
+        "bytes": 29092,
+        "LF": 470,
+        "sha256": "0066931fbbda62f5c0aa818f30e7d87716ad72271e4e8c69724e5f69779cbf6a",
+        "gitBlob": "09d62be92a5908f7b6b35c1ebded3e85b6ae8df5"
+      }
+    ],
+    "sourceBeforeAfterPhysicalIdentityStable": true,
+    "exactFixtureAndSourceCheckedBeforeNativeImports": true,
+    "existingDependencyReviewReusedOnlyAfterExactPhysicalContentAndMainBlobMatch": true,
+    "sourceGraphExpansion": "Exactly the already-reviewed HTTP composition graph plus this fixture; no unrelated file, directory, SDK or package import expansion.",
+    "newExternalDependencies": false,
+    "packageInstallation": false
+  },
+  "execution": {
+    "kind": "ACTUAL_SELECTED_SOCKETLESS_HTTP_AND_NATIVE_SQLITE_COMPONENT_EXECUTION",
+    "selectedNodeCommands": 1,
+    "selectedEntry": "qualification/service-credit-custodied-http-response-observation-v5.behavior.draft.mjs",
+    "runtime": {
+      "node": "24.19.0",
+      "platform": "darwin",
+      "arch": "arm64",
+      "sha256": "dbedff294bab84a0a86c04e15fbcbeb1c97ca10bef1b32b0634cd24b36f62100"
+    },
+    "task": "CLOSED_SUCCESS",
+    "actualExits": [
+      0
+    ],
+    "outputComplete": [
+      true
+    ],
+    "counts": {
+      "tests": 6,
+      "suites": 0,
+      "pass": 6,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "passNames": [
+      "Strict dispatch V2 returns canonical reply only after interface completion while V1 remains void",
+      "Borrowed HTTP V5 persists parsed response without persisting Authorization or replaying an original",
+      "Owned HTTP V5 drains then reopens with original intent and response rows preserved",
+      "Strict HTTP uncertainty persists quarantine and survives owned close and reopen without resending",
+      "Owned V5 startup fences an older unobserved intent before request or retention",
+      "V4 remains a distinct void-response profile and cross-profile acquisition preserves exact files"
+    ],
+    "independentCompleteJoinedOutcomeReview": true,
+    "fullTapAndDiagnosticsRead": true,
+    "stdout": {
+      "bytes": 5410,
+      "sha256": "02d2e2f8dddd0a4c3783a0e5d96fa052b51e6359d83fe97717bd4a1ae7c0d439"
+    },
+    "stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "newSqliteFiles": 2,
+    "sqliteFileCountProgression": [
+      0,
+      1,
+      1,
+      1,
+      1,
+      2
+    ],
+    "producerStoreCloses": 2,
+    "ownedStoreReturnedCloses": 5,
+    "borrowedClientCloses": 1,
+    "expectedUnknownRootCloses": 3,
+    "borrowedConfirmedResponseReadbacks": 1,
+    "ownedConfirmedResponseReadbacks": 1,
+    "declaredHttpRequests": 7,
+    "validatedFakeReplies": 5,
+    "uncertainFakeResponses": 2,
+    "blockedSubmits": 7,
+    "profileRefusals": 3,
+    "standaloneV1VoidResults": 1,
+    "standaloneV2CanonicalJsonResults": 1,
+    "malformedReplyRefusals": 1,
+    "ownedProcessGroupObservedAbsent": true,
+    "queuedNativeCommands": 0,
+    "actualNetworkCalls": 0,
+    "keypairsGenerated": 0,
+    "syntheticSignatureOperations": 0,
+    "realPaymentSigner": "DISABLED",
+    "nodePermissionModel": "OFF_REQUIRED_FOR_EXISTING_STORE_FCHMOD_FSYNC",
+    "fixedInlineRunner": "Node test/util/reporters/stream builtins; one exact positional fixture, six exact names and six complete diagnostics. No saved or installed operational helper.",
+    "limits": {
+      "perTestMilliseconds": 5000,
+      "managedCommandSeconds": 30,
+      "metadataLockSeconds": 180,
+      "stdoutCapBytes": 65536,
+      "stderrCapBytes": 1048576
+    },
+    "limitsBoundary": "These limits are not hard lifetime, cancellation, native-cleanup or OS/network-sandbox guarantees. Native loader, runner, streams, SQLite, file sync, OS and trusted declared-handle behavior remain premises.",
+    "processBoundary": "Normal same-process owner/store close and reopen only. No forced termination, fresh-process recovery, actual process restart, OS restart, crash or power-loss experiment."
+  },
+  "cases": [
+    {
+      "name": "Strict dispatch V2 returns canonical reply only after interface completion while V1 remains void",
+      "outcome": "PASS",
+      "observed": "Using the existing strict parser and socketless handles, legacy V1 resolves undefined while explicit V2 resolves the exact successful canonical JSON. Neither resolves before required close events. A noncanonical extra-field reply is rejected as UNKNOWN without synthesizing success.",
+      "declaredRequests": 3,
+      "acceptedReplies": 2,
+      "malformedRefusals": 1,
+      "newSqliteFilesAtThisPoint": 0
+    },
+    {
+      "name": "Borrowed HTTP V5 persists parsed response without persisting Authorization or replaying an original",
+      "outcome": "PASS",
+      "observed": "A borrowed V5 HTTP client writes/readbacks the actual parsed response in a new native V5 file. Foreign submit and implicit original replay produce no request. Borrowed client close does not close its store. Native rows contain no declared Authorization material.",
+      "declaredRequests": 1,
+      "confirmedObservationReadbacks": 1,
+      "originalAndIntentRetained": true,
+      "serviceDelivery": "NOT_ESTABLISHED"
+    },
+    {
+      "name": "Owned HTTP V5 drains then reopens with original intent and response rows preserved",
+      "outcome": "PASS",
+      "observed": "After the earlier borrowed client/store drain, an owned V5 open preserves the existing response and admits a distinct selected-grant original despite valid foreign pending work. Root close synchronously fences admission, waits for reply/observation drain, and closes the store once. Earlier rows and schema remain intact.",
+      "ownerEpochTransition": "1 -> 2",
+      "confirmedObservationReadbacks": 1,
+      "storeCloseAttempts": 1,
+      "rootClose": "DRAINED",
+      "newOriginalReplay": false
+    },
+    {
+      "name": "Strict HTTP uncertainty persists quarantine and survives owned close and reopen without resending",
+      "outcome": "PASS",
+      "observed": "A declared HTTP 503 reply takes the strict UNKNOWN path, stores no response observation and latches grant C quarantine. Owned close returns the store close but rejects with child UNKNOWN. A normal reopen reads the marker and blocks fresh dispatch without creating another request; all rows except owner epoch are identical.",
+      "ownerEpochTransitions": [
+        "2 -> 3",
+        "3 -> 4"
+      ],
+      "expectedUnknownRootCloses": 2,
+      "implicitResends": 0,
+      "quarantineReset": false
+    },
+    {
+      "name": "Owned V5 startup fences an older unobserved intent before request or retention",
+      "outcome": "PASS",
+      "observed": "An owned V5 open detects grant B's deliberately retained old unobserved intent before any new request or retention. Same-original and new-original submits are blocked, one quarantine is confirmed, and root close remains UNKNOWN while releasing the native store.",
+      "ownerEpochTransition": "4 -> 5",
+      "newRequests": 0,
+      "newRetentions": 0,
+      "automaticQuarantineWrites": 1,
+      "finalV5Rows": {
+        "originals": 4,
+        "intents": 4,
+        "declaredResponseObservations": 2,
+        "quarantinedGrants": 2
+      },
+      "allPriorOriginalIntentAndObservationRowsUnchanged": true
+    },
+    {
+      "name": "V4 remains a distinct void-response profile and cross-profile acquisition preserves exact files",
+      "outcome": "PASS",
+      "observed": "Borrowed V5 refuses an incompatible V4 store before quarantine writes. Cross-profile owned acquisitions refuse without changing exact closed file bytes, identities or epochs. A later valid V4 owned open proves the slot was released and preserves the old void-result behavior, with no response table or quarantine.",
+      "profileRefusals": 3,
+      "finalV4OwnerEpoch": 2,
+      "finalV4Rows": {
+        "originals": 1,
+        "intents": 1,
+        "declaredResponseObservations": 0,
+        "quarantines": 0
+      },
+      "v5FileRemainsExact": true,
+      "fullHistoricalRegressionSuite": false
+    }
+  ],
+  "diagnostics": [
+    {
+      "kind": "P2_HTTP_RESPONSE_OBSERVATION_V5",
+      "version": 1,
+      "scenario": "STRICT_REPLY_V2_AND_LEGACY_V1_LIFECYCLE",
+      "nativeSqliteFiles": 0,
+      "producerStoreCloses": 0,
+      "borrowedClientCloses": 0,
+      "ownedStoreReturnedCloses": 0,
+      "expectedUnknownRootCloses": 0,
+      "declaredHttpRequests": 3,
+      "validatedFakeReplies": 2,
+      "uncertainFakeResponses": 1,
+      "blockedSubmits": 0,
+      "profileRefusals": 0,
+      "standaloneV1Void": 1,
+      "standaloneV2Json": 1,
+      "malformedReplyRefusals": 1,
+      "borrowedConfirmedResponseReadbacks": 0,
+      "ownedConfirmedResponseReadbacks": 0,
+      "networkCalls": 0,
+      "syntheticSignatureOperations": 0,
+      "realPaymentSigner": "DISABLED",
+      "serviceDelivery": "NOT_ESTABLISHED"
+    },
+    {
+      "kind": "P2_HTTP_RESPONSE_OBSERVATION_V5",
+      "version": 1,
+      "scenario": "BORROWED_V5_NATIVE_OBSERVATION_NO_CREDENTIAL_CUSTODY",
+      "nativeSqliteFiles": 1,
+      "producerStoreCloses": 1,
+      "borrowedClientCloses": 1,
+      "ownedStoreReturnedCloses": 0,
+      "expectedUnknownRootCloses": 0,
+      "declaredHttpRequests": 4,
+      "validatedFakeReplies": 3,
+      "uncertainFakeResponses": 1,
+      "blockedSubmits": 2,
+      "profileRefusals": 0,
+      "standaloneV1Void": 1,
+      "standaloneV2Json": 1,
+      "malformedReplyRefusals": 1,
+      "borrowedConfirmedResponseReadbacks": 1,
+      "ownedConfirmedResponseReadbacks": 0,
+      "networkCalls": 0,
+      "syntheticSignatureOperations": 0,
+      "realPaymentSigner": "DISABLED",
+      "serviceDelivery": "NOT_ESTABLISHED"
+    },
+    {
+      "kind": "P2_HTTP_RESPONSE_OBSERVATION_V5",
+      "version": 1,
+      "scenario": "OWNED_V5_DRAIN_AND_NORMAL_REOPEN_NO_INTENT_RESET",
+      "nativeSqliteFiles": 1,
+      "producerStoreCloses": 1,
+      "borrowedClientCloses": 1,
+      "ownedStoreReturnedCloses": 1,
+      "expectedUnknownRootCloses": 0,
+      "declaredHttpRequests": 5,
+      "validatedFakeReplies": 4,
+      "uncertainFakeResponses": 1,
+      "blockedSubmits": 3,
+      "profileRefusals": 0,
+      "standaloneV1Void": 1,
+      "standaloneV2Json": 1,
+      "malformedReplyRefusals": 1,
+      "borrowedConfirmedResponseReadbacks": 1,
+      "ownedConfirmedResponseReadbacks": 1,
+      "networkCalls": 0,
+      "syntheticSignatureOperations": 0,
+      "realPaymentSigner": "DISABLED",
+      "serviceDelivery": "NOT_ESTABLISHED"
+    },
+    {
+      "kind": "P2_HTTP_RESPONSE_OBSERVATION_V5",
+      "version": 1,
+      "scenario": "STRICT_UNKNOWN_PERSISTED_ACROSS_OWNED_REOPEN_NO_RESEND",
+      "nativeSqliteFiles": 1,
+      "producerStoreCloses": 1,
+      "borrowedClientCloses": 1,
+      "ownedStoreReturnedCloses": 3,
+      "expectedUnknownRootCloses": 2,
+      "declaredHttpRequests": 6,
+      "validatedFakeReplies": 4,
+      "uncertainFakeResponses": 2,
+      "blockedSubmits": 5,
+      "profileRefusals": 0,
+      "standaloneV1Void": 1,
+      "standaloneV2Json": 1,
+      "malformedReplyRefusals": 1,
+      "borrowedConfirmedResponseReadbacks": 1,
+      "ownedConfirmedResponseReadbacks": 1,
+      "networkCalls": 0,
+      "syntheticSignatureOperations": 0,
+      "realPaymentSigner": "DISABLED",
+      "serviceDelivery": "NOT_ESTABLISHED"
+    },
+    {
+      "kind": "P2_HTTP_RESPONSE_OBSERVATION_V5",
+      "version": 1,
+      "scenario": "OWNED_V5_UNOBSERVED_INTENT_ADMISSION_FENCE",
+      "nativeSqliteFiles": 1,
+      "producerStoreCloses": 1,
+      "borrowedClientCloses": 1,
+      "ownedStoreReturnedCloses": 4,
+      "expectedUnknownRootCloses": 3,
+      "declaredHttpRequests": 6,
+      "validatedFakeReplies": 4,
+      "uncertainFakeResponses": 2,
+      "blockedSubmits": 7,
+      "profileRefusals": 0,
+      "standaloneV1Void": 1,
+      "standaloneV2Json": 1,
+      "malformedReplyRefusals": 1,
+      "borrowedConfirmedResponseReadbacks": 1,
+      "ownedConfirmedResponseReadbacks": 1,
+      "networkCalls": 0,
+      "syntheticSignatureOperations": 0,
+      "realPaymentSigner": "DISABLED",
+      "serviceDelivery": "NOT_ESTABLISHED"
+    },
+    {
+      "kind": "P2_HTTP_RESPONSE_OBSERVATION_V5",
+      "version": 1,
+      "scenario": "V4_COMPATIBILITY_AND_CROSS_PROFILE_NO_ADOPTION",
+      "nativeSqliteFiles": 2,
+      "producerStoreCloses": 2,
+      "borrowedClientCloses": 1,
+      "ownedStoreReturnedCloses": 5,
+      "expectedUnknownRootCloses": 3,
+      "declaredHttpRequests": 7,
+      "validatedFakeReplies": 5,
+      "uncertainFakeResponses": 2,
+      "blockedSubmits": 7,
+      "profileRefusals": 3,
+      "standaloneV1Void": 1,
+      "standaloneV2Json": 1,
+      "malformedReplyRefusals": 1,
+      "borrowedConfirmedResponseReadbacks": 1,
+      "ownedConfirmedResponseReadbacks": 1,
+      "networkCalls": 0,
+      "syntheticSignatureOperations": 0,
+      "realPaymentSigner": "DISABLED",
+      "serviceDelivery": "NOT_ESTABLISHED"
+    }
+  ],
+  "preservation": {
+    "directlyRecheckedRepositoryFiles": 169,
+    "directlyRecheckedPriorPrivateFiles": 347,
+    "authorizedSourceReplacements": [
+      {
+        "main": "329ac8809ec33b124409086dd87c4dda20eae6cc",
+        "path": "src/service-credit-custodied-http-client.js",
+        "bytes": 11597,
+        "gitBlob": "c15926796ff96f08e32d1c4291e5d9c4b814f450",
+        "sha256": "822627be1876fb609bad582b767694a60022d7bf9d7375bb2e7fb961c034e4ab",
+        "oldFileClaimedPhysicallyUnchanged": false
+      },
+      {
+        "main": "329ac8809ec33b124409086dd87c4dda20eae6cc",
+        "path": "src/service-credit-custodied-sqlite-http-client.js",
+        "bytes": 19683,
+        "gitBlob": "a198673f77c4320bb4af3adb35ba22d2a2fb3b38",
+        "sha256": "06366488e679272170847af4929db3b3f782774022f97c748530ec73f729f0bc",
+        "oldFileClaimedPhysicallyUnchanged": false
+      },
+      {
+        "main": "329ac8809ec33b124409086dd87c4dda20eae6cc",
+        "path": "src/service-credit-http-execute-dispatch.js",
+        "bytes": 27034,
+        "gitBlob": "280dd20dc669e2856d263eba62ccd0fe9af72f21",
+        "sha256": "254ba8eef5ea5efb3a1b901be09e9cb33afbc3cfcf63789ca4a23316b6180d1b",
+        "oldFileClaimedPhysicallyUnchanged": false
+      }
+    ],
+    "ownerV5AndStoreV5SourcesAndEarlierQualificationArtifactsUnchanged": true,
+    "oldEvidenceRewritten": false,
+    "protectedAbsences": 8,
+    "originalPaymentRequestAuthority": "Original payment/request bytes, hash, payload, requirements, context and consumed authority remain unchanged.",
+    "pr193": "Preserve VALIDATED possible exact-same-signed-block resend separately from UNKNOWN and ACKNOWLEDGED. No resend, replacement, re-signing or settlement is executed.",
+    "failedOwnershipMetadataRetried": false,
+    "consumedAuthorityReset": false,
+    "precedingCompleteOutcomeReviewsOrEarlier267FullRehashReplayed": false,
+    "predecessorEvidence": {
+      "filesDecoded": 2,
+      "decodedBytes": 37553,
+      "readCapBytes": 65536,
+      "completePredecessorRowSealsMatched": true,
+      "olderAncestorRecordsDecoded": 0,
+      "recursiveTraversal": false,
+      "currentRetainedPhysicalAndContentPinsDirectlyRechecked": true
+    },
+    "noLocalStageCommitResetCheckoutOrPush": true
+  },
+  "reviewDiagnostics": {
+    "nativeAssertionFailures": 0,
+    "nativeExecutions": 1,
+    "preNativeStatusRefusal": {
+      "nativeCommands": 0,
+      "assertions": 0,
+      "resolved": true,
+      "cause": "The newly edited dispatcher was previously clean in the tracked checkout; it added a normal owned worktree-modified status row.",
+      "resolution": "HEAD and index matched the exact pre-edit dispatcher blob. Removing only that owned status row and new qualification rows recovers the complete prior unrelated-status hash. No Git reset, stage or cleanup was performed."
+    },
+    "postRunInspection": "Complete independent read-only review passed on the first inspector invocation; no native execution was repeated.",
+    "earlierFailures": "Retained unchanged, not converted to fresh passing outcomes."
+  },
+  "storage": {
+    "rawSqlite": [
+      {
+        "role": "V5 strict HTTP owner/store component fixture",
+        "bytes": 49152,
+        "sha256": "19e95d6c4e27020c0a88ed693cb4cad35c6e7e889bff8ead4f5b637e04f86a06"
+      },
+      {
+        "role": "V4 compatibility control",
+        "bytes": 40960,
+        "sha256": "2aa2c3368fcf222e80faa5c3bfc120c076b034528fecf994d474e1fda0c9e04c"
+      }
+    ],
+    "retainedRawBytes": 90112,
+    "rawSqliteOpenedByController": false,
+    "rawSqliteCASAdopted": false,
+    "cleanup": "HOLD_UNREGISTERED_FILES",
+    "adoptionOrDeletion": false,
+    "existingDatabaseSql": false,
+    "expectedTaskBytes": 2097152,
+    "taskQuotaBytes": 4194304,
+    "productionFreeSpaceFloorBytes": 10737418240,
+    "safetyMarginBytes": 1073741824,
+    "approvedStoreScratchLimitBytes": 10737418240,
+    "stricterScratchPrecheckLimitBytes": 6442450944,
+    "observedScratchPrecheckBytes": 3559592396,
+    "storageMetadataIdentityAndPolicyMatched": true,
+    "rootPolicyRewritten": false,
+    "quotaBoundary": "Cooperative bounded allocation and sampled monitoring, not an atomic OS-enforced aggregate quota."
+  },
+  "evidenceEfficiency": {
+    "stockManagerUnchanged": true,
+    "explicitRecordCalls": 3,
+    "currentMetadataFiles": 7,
+    "currentMetadataBytes": 82652,
+    "precedingOneCommandLayoutMetadataFiles": 7,
+    "compactLayoutRetained": true,
+    "unusedFixtureBytesRemovedBeforeExecution": 951,
+    "launchSourcePreservationRawFileAndOutcomeBindingsIndependentlyChecked": true,
+    "missingHandoff": "UNKNOWN_NOT_QUALIFIED",
+    "priorPrivateFiles": 347,
+    "currentPrivateCohortAfterRun": 356,
+    "binaryTransport": "Bounded descriptor capture with one CAS object per stream digest, no second stdout copy, ZIP packaging or raw SQLite adoption.",
+    "measuredSpeedup": false,
+    "measuredPhysicalApfsReclaim": false
+  },
+  "acceptanceBoundaries": {
+    "sixSelectedLocalCases": "PASS",
+    "explicitStrictHttpV5Binding": "IMPLEMENTED_COMPONENT",
+    "actualNetworkOrHttpsTransport": "NOT_EXECUTED",
+    "authorizationSignatureVerification": "NOT_EXECUTED",
+    "independentServerReceipt": "NOT_ESTABLISHED",
+    "serviceDelivery": "NOT_ESTABLISHED",
+    "defaultCliOrSequentialRunnerV5Adoption": "NOT_IMPLEMENTED_BY_THIS_PACKET",
+    "fullP2": "INCOMPLETE",
+    "freshProcessRecovery": "NOT_EXERCISED_BY_THIS_PACKET",
+    "crashOrPowerLossDurability": "NOT_QUALIFIED",
+    "sdkOrDpRuntime": "NOT_EXECUTED",
+    "actualPaymentRecovery": "NOT_ESTABLISHED",
+    "providerReady": "NOT_ESTABLISHED",
+    "hostedCi": "NOT_RUN_NOT_GREEN",
+    "broadRegressionSuite": "NOT_RUN",
+    "pilotAcceptance": "NOT_ESTABLISHED",
+    "production": "NO_GO"
+  },
+  "protectedTotals": {
+    "consumedAdmissions": 2,
+    "actualChainPrepare": 1,
+    "bundles": 0,
+    "nativeChainProviderQualificationRuns": 0
+  },
+  "nextFiniteWork": "Review an explicit V5 sequential runner binding to these HTTP factories, preserving the existing V4/default contracts and UNKNOWN/resource-close boundaries. Fresh-process recovery and actual transport/pilot qualification remain separate gates."
+}

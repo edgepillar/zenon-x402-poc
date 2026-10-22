@@ -7,9 +7,11 @@ import {
   createServiceCreditCustodiedRequestOwner,
   createServiceCreditCustodiedRequestOwnerV3,
   createServiceCreditCustodiedRequestOwnerV4,
+  createServiceCreditCustodiedRequestOwnerV5,
 } from './service-credit-custodied-request-owner.js';
 import {
   createServiceCreditHttpExecuteDispatch,
+  createServiceCreditHttpExecuteDispatchV2,
 } from './service-credit-http-execute-dispatch.js';
 
 const APPLY = Reflect.apply;
@@ -31,7 +33,9 @@ const KEY = snapshotOriginalServiceRequestCustodyKey;
 const CREATE_OWNER = createServiceCreditCustodiedRequestOwner;
 const CREATE_OWNER_V3 = createServiceCreditCustodiedRequestOwnerV3;
 const CREATE_OWNER_V4 = createServiceCreditCustodiedRequestOwnerV4;
+const CREATE_OWNER_V5 = createServiceCreditCustodiedRequestOwnerV5;
 const CREATE_DISPATCH = createServiceCreditHttpExecuteDispatch;
+const CREATE_DISPATCH_V2 = createServiceCreditHttpExecuteDispatchV2;
 const PREFIX = 'SERVICE_CREDIT_CUSTODIED_HTTP_CLIENT_';
 
 const CONFIG_FIELDS = FREEZE([
@@ -93,7 +97,20 @@ export function createServiceCreditCustodiedHttpClientV4(configuration) {
   if (arguments.length !== 1) throw failure('INVALID_CONFIGURATION');
   return createClient(configuration, true, true);
 }
-function createClient(configuration, dispatchIntentEnabled, persistentCustody = false) {
+/**
+ * Explicit V5 binding: the strict V2 dispatcher passes its validated canonical
+ * response JSON to the V5 owner for insert-only observation/readback before
+ * callback completion. An old unobserved intent fences new selected-grant work.
+ * No parser, transport, quarantine or response state machine is duplicated.
+ * A local response observation is not authentication, delivery or retry/payment
+ * authority. V4/default clients retain their original void callback contract.
+ */
+export function createServiceCreditCustodiedHttpClientV5(configuration) {
+  if (arguments.length !== 1) throw failure('INVALID_CONFIGURATION');
+  return createClient(configuration, true, true, true);
+}
+function createClient(configuration, dispatchIntentEnabled, persistentCustody = false,
+  responseObservationEnabled = false) {
 
   let config, policy, selectedKey, owner;
   try {
@@ -108,7 +125,7 @@ function createClient(configuration, dispatchIntentEnabled, persistentCustody = 
       grantId: config.selectedGrantId,
       requestId: 'scope',
     });
-    owner = (persistentCustody ? CREATE_OWNER_V4
+    owner = (responseObservationEnabled ? CREATE_OWNER_V5 : persistentCustody ? CREATE_OWNER_V4
       : dispatchIntentEnabled ? CREATE_OWNER_V3 : CREATE_OWNER)({
       store: config.store,
       fundingResourceUrl: config.fundingResourceUrl,
@@ -173,7 +190,7 @@ function createClient(configuration, dispatchIntentEnabled, persistentCustody = 
 
       // This factory performs the actual canonical original/auth metadata
       // preflight. It performs no store access and selects no transport.
-      callbackAdapter = CREATE_DISPATCH({
+      callbackAdapter = (responseObservationEnabled ? CREATE_DISPATCH_V2 : CREATE_DISPATCH)({
         resourceUrl: input.serviceResourceUrl,
         originalRequestJson: input.originalRequestJson,
         authorizationHeader: input.authorizationHeader,

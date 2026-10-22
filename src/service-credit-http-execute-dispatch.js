@@ -102,6 +102,22 @@ const ALLOWED_HEADERS = FREEZE([
  */
 export function createServiceCreditHttpExecuteDispatch(options) {
   if (arguments.length !== 1) throw failure('INVALID_CONFIGURATION');
+  return createDispatch(options, false);
+}
+/**
+ * Explicit V2 result contract: resolve the exact bounded canonical successful
+ * response JSON only after the same required reply/close interface events.
+ * This is caller-supplied transport DATA, not an authenticated server receipt,
+ * service delivery, settlement or future/native event/cleanup guarantee.
+ * The original V1 contract still resolves undefined. No default transport is
+ * selected. The returned string is at most 512 bytes; secure string erasure or
+ * removal of caller/native copies is not promised.
+ */
+export function createServiceCreditHttpExecuteDispatchV2(options) {
+  if (arguments.length !== 1) throw failure('INVALID_CONFIGURATION');
+  return createDispatch(options, true);
+}
+function createDispatch(options, responseObservationEnabled = false) {
   let config, original;
   try {
     config = exact(options, CONFIG_FIELDS);
@@ -136,6 +152,7 @@ export function createServiceCreditHttpExecuteDispatch(options) {
   let deadlineFired = false;
   let credentialReferenceReleased = false;
   let replyValidated = false;
+  let responseObservationJson = null;
   let duplicateResponseCallback = false;
   let lateEventSeen = false;
   let implReturned = false;
@@ -188,10 +205,12 @@ export function createServiceCreditHttpExecuteDispatch(options) {
     settled = true;
     counts.settlements++;
     clearDeadline();
+    const observation = success && responseObservationEnabled ? responseObservationJson : undefined;
+    responseObservationJson = null;
     clearBody();
     if (success) {
       phase = 'INTERFACE_COMPLETED';
-      operation.resolve(undefined);
+      operation.resolve(observation);
     } else {
       phase = undrained ? 'UNKNOWN_UNDRAINED' : 'UNKNOWN';
       operation.reject(failure(undrained ? 'UNKNOWN_UNDRAINED' : 'OUTCOME_UNKNOWN'));
@@ -337,6 +356,7 @@ export function createServiceCreditHttpExecuteDispatch(options) {
         if (JSON_STRINGIFY({ ok: true, resultCode: decoded.resultCode }) !== text) {
           throw failure('INVALID_DATA');
         }
+        if (responseObservationEnabled) responseObservationJson = text;
         replyValidated = true;
       }
     } catch {
