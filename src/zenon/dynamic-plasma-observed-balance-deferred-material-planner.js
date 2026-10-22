@@ -1,8 +1,10 @@
 import { types as utilTypes } from 'node:util';
 import { Buffer } from 'node:buffer';
 import { createObservedBalanceDynamicPlasmaUserSendAttempt } from './dynamic-plasma-observed-balance-user-send-attempt.js';
+import { createObservedBalanceDynamicPlasmaUserSendCheckpointReadAdapter } from './dynamic-plasma-observed-balance-user-send-read-adapter.js';
 
 const CREATE_ATTEMPT = createObservedBalanceDynamicPlasmaUserSendAttempt;
+const CREATE_CHECKPOINT_READS = createObservedBalanceDynamicPlasmaUserSendCheckpointReadAdapter;
 const freeze = Object.freeze;
 const create = Object.create;
 const define = Object.defineProperty;
@@ -91,9 +93,37 @@ const NONCE = /^[0-9a-f]{16}$/;
  * Captured native intrinsics, loader/Promise/OS behavior remain premises.
  */
 export function createObservedBalanceDeferredMaterialDynamicPlasmaTransactionPlanner(options) {
+  if (arguments.length !== 1) fail('configuration_rejected');
+  return createPlanner(options, false);
+}
+
+/**
+ * Explicit opt-in plannerContextVersion:4 over the same inputv3/readOptions
+ * and one deferred supplied-material capability. Return one frozen powerless
+ * {originalPlan, accountBlock, checkpointJson, ...} only after final fresh
+ * bracketed balance/price validation. Retain the actual first quote and SAME
+ * assembly in this admitted run; never reconstruct an original from the final
+ * block, re-quote, call material twice or add a fifth read cycle. Private
+ * sequencing is owned here; the captured checkpoint reader owns the same
+ * ten-cycle/one-wire read budget. Busy/used/native-Promise and snapshot fences
+ * are shared below, not delegated to a caller factory or a wrapper run.
+ *
+ * The existing factory still requires context version3 and returns only its
+ * block. This new result is pre-sign declared DATA, not persistent custody,
+ * signer-state detection, consumed authority or permission to replace/pay.
+ * No nonce/key producer, SDK, external signing or default buyer is adopted.
+ * Expose ONLY prepareUnsignedCheckpoint, not the block-returning
+ * prepareUnsigned SPI; this packet cannot masquerade as an AccountBlock.
+ */
+export function createObservedBalanceDeferredMaterialCheckpointPreparer(options) {
+  if (arguments.length !== 1) fail('configuration_rejected');
+  return createPlanner(options, true);
+}
+
+function createPlanner(options, checkpointEnabled) {
   let steps, exchange;
   try {
-    if (arguments.length !== 1 || !invariant()) fail('configuration_rejected');
+    if (!invariant()) fail('configuration_rejected');
     const top = record(options, CONFIG);
     const reads = record(top.readOptions, READ_OPTIONS);
     exchange = top.materialExchange;
@@ -103,7 +133,7 @@ export function createObservedBalanceDeferredMaterialDynamicPlasmaTransactionPla
     for (const transport of transports) {
       if (exchange === record(transport, TRANSPORT).callRead) fail('configuration_rejected');
     }
-    const attempt = CREATE_ATTEMPT(reads);
+    const attempt = checkpointEnabled ? CREATE_CHECKPOINT_READS(reads) : CREATE_ATTEMPT(reads);
     steps = freeze({
       quote: attempt.quote, work: attempt.createWorkRequest,
       assemble: attempt.assemble, validate: attempt.validateUnsigned,
@@ -121,14 +151,14 @@ export function createObservedBalanceDeferredMaterialDynamicPlasmaTransactionPla
     try {
       if (!invariant()) fail('operation_rejected');
       const top = record(context, CONTEXT);
-      if (top.plannerContextVersion !== 3) fail('input_rejected');
+      if (top.plannerContextVersion !== (checkpointEnabled ? 4 : 3)) fail('input_rejected');
       const input = snapshotInput(top.readInput);
       // Fix/shield our public run identity before any borrowed callback can
       // reenter or return that same receipt as its own material operation.
       await undefined;
       if (!invariant()) fail('operation_rejected');
-      await apply(steps.quote, undefined, [input]);
-      const work = await apply(steps.work, undefined, [input]);
+      const originalPlan = await apply(steps.quote, undefined, [input]);
+      const work = await apply(steps.work, undefined, checkpointEnabled ? [input, originalPlan] : [input]);
       if (!invariant()) fail('operation_rejected');
       const request = freeze({
         materialRequestVersion: 1, phase: 'UNSIGNED', workRequest: work,
@@ -138,21 +168,27 @@ export function createObservedBalanceDeferredMaterialDynamicPlasmaTransactionPla
       const bridge = apply(nativeThen, pending, [captureFulfilled, () => receipt(false, null)]);
       const captured = await shield(bridge);
       if (!invariant() || !captured.accepted) fail('operation_rejected');
-      const assembly = await apply(steps.assemble, undefined, [input, captured.material]);
-      await apply(steps.validate, undefined, [input]);
+      const assembly = await apply(steps.assemble, undefined,
+        checkpointEnabled ? [input, originalPlan, captured.material] : [input, captured.material]);
+      const final = await apply(steps.validate, undefined,
+        checkpointEnabled ? [input, originalPlan, assembly.accountBlock] : [input]);
       if (!invariant()) fail('operation_rejected');
-      return assembly.accountBlock;
+      return checkpointEnabled ? final : assembly.accountBlock;
     } catch { fail('operation_rejected'); }
     finally { active = false; }
   }
 
-  return freeze({
-    prepareUnsigned: freeze(function prepareUnsigned(context) {
-      const pending = shield(run(arguments.length, context));
-      if (originalRun === null && active) originalRun = pending;
-      return pending;
-    }),
-  });
+  function dispatch(count, context) {
+    const pending = shield(run(count, context));
+    if (originalRun === null && active) originalRun = pending;
+    return pending;
+  }
+  const operation = checkpointEnabled
+    ? function prepareUnsignedCheckpoint(context) { return dispatch(arguments.length, context); }
+    : function prepareUnsigned(context) { return dispatch(arguments.length, context); };
+  return freeze(checkpointEnabled
+    ? { prepareUnsignedCheckpoint: freeze(operation) }
+    : { prepareUnsigned: freeze(operation) });
 }
 
 function captureFulfilled(value) {

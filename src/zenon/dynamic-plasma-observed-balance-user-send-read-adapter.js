@@ -5,6 +5,7 @@ import { decodeZenonAccountFrontierReadResult } from './dynamic-plasma-account-f
 import { createZenonUserSendObservationInput, snapshotZenonUserSendPolicyBinding } from './transaction-planner.js';
 import { validateZenonUserSendBalanceRead } from './dynamic-plasma-user-send-balance-read.js';
 import { ObservedDynamicPlasmaUserSendAdapter } from './dynamic-plasma-observed-user-send-adapter.js';
+import { encodeObservedZenonUnsignedOriginalQuoteCheckpoint } from './dynamic-plasma-observed-original-checkpoint.js';
 
 const COLLECTOR = createRequestBoundDynamicPlasmaObservationCollector;
 const ACCOUNT_WIRE = createZenonAccountStateReadTransport;
@@ -12,6 +13,7 @@ const FRONTIER = decodeZenonAccountFrontierReadResult;
 const REQUEST = createZenonUserSendObservationInput;
 const BINDING = snapshotZenonUserSendPolicyBinding;
 const BALANCE = validateZenonUserSendBalanceRead;
+const CHECKPOINT = encodeObservedZenonUnsignedOriginalQuoteCheckpoint;
 const STAGES = Object.freeze({
   quote: ObservedDynamicPlasmaUserSendAdapter.prototype.quote,
   work: ObservedDynamicPlasmaUserSendAdapter.prototype.createWorkRequest,
@@ -89,9 +91,28 @@ const PLAN = freeze(['observedUserSendPlanVersion', 'subject', 'quote']);
  * a premise, not a lifetime, cancellation or hard resource guarantee.
  */
 export function createObservedBalanceDynamicPlasmaUserSendReadAdapter(options) {
+  if (arguments.length !== 1) fail('configuration_rejected');
+  return createReadAdapter(options, false);
+}
+
+/**
+ * Explicit opt-in checkpoint stage variant over the SAME v3 read contract.
+ * Its quote/work/assembly stages are unchanged. Its final validateUnsigned
+ * stage returns the detached ORIGINAL plan/block and canonical checkpoint,
+ * only after the existing fresh account/balance/DP/bracket checks. Reuse the
+ * captured original-checkpoint encoder's exact same-block validation, not a
+ * second read cycle or re-quote. The previous factory remains block/check
+ * DATA only. No signing, durable custody, native owner or default is added.
+ */
+export function createObservedBalanceDynamicPlasmaUserSendCheckpointReadAdapter(options) {
+  if (arguments.length !== 1) fail('configuration_rejected');
+  return createReadAdapter(options, true);
+}
+
+function createReadAdapter(options, checkpointEnabled) {
   let collect, accountRead;
   try {
-    if (arguments.length !== 1 || !invariant()) fail('configuration_rejected');
+    if (!invariant()) fail('configuration_rejected');
     const top = record(options, OPTIONS);
     collect = COLLECTOR({ transports: top.transports }).collect;
     accountRead = ACCOUNT_WIRE({ exchange: top.accountExchange }).callRead;
@@ -161,6 +182,26 @@ export function createObservedBalanceDynamicPlasmaUserSendReadAdapter(options) {
         accountFrontierResultJson: afterText, observation: collected.observation,
         policy: stable.policy, runtimeContextDigest: stable.runtimeContextDigest,
       };
+      if (checkpointEnabled && kind === 'validate') {
+        // CHECKPOINT reuses the captured SAME existing unsigned validator.
+        // Keep this cycle's account/balance/price DATA; do not obtain a fifth
+        // cycle, refresh the quote, reassemble or parse an incoming packet.
+        const checkpointJson = await CHECKPOINT(view, plan, detail);
+        if (!invariant()) fail('input_rejected');
+        const result = create(null);
+        put(result, 'observedUnsignedCheckpointVersion', 1);
+        put(result, 'phase', 'UNSIGNED');
+        put(result, 'originalPlan', plan);
+        put(result, 'accountBlock', detail);
+        put(result, 'checkpointJson', checkpointJson);
+        put(result, 'declaredBalanceRead', 'VALIDATED_IN_THIS_BRACKETED_READ_CYCLE');
+        put(result, 'currentAuthority', 'NOT_ESTABLISHED');
+        put(result, 'signingAuthorization', 'NOT_ESTABLISHED');
+        put(result, 'chainAuthentication', 'NOT_ESTABLISHED');
+        put(result, 'persistence', 'NOT_PERFORMED');
+        put(result, 'authority', 'NONE');
+        return freeze(result);
+      }
       const args = kind === 'quote' ? [view] : kind === 'work' ? [view, plan] : [view, plan, detail];
       const result = await shield(apply(STAGES[kind], undefined, args));
       if (!invariant()) fail('input_rejected');
