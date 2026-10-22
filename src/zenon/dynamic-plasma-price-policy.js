@@ -5,6 +5,8 @@ import { types as utilTypes } from 'node:util';
 // dp/dp.go and definition/plasma.go.
 // p is supplied explicitly. N counts pricing-frontier advances, not time.
 // 128 is a local resource bound. Stable runtime/governance context is a premise.
+// Current observations must fit both integer-floored per-step price clamps.
+// This is declared-data consistency, not ancestry or runtime authentication.
 const freeze = Object.freeze;
 const ownKeys = Reflect.ownKeys;
 const getDescriptor = Object.getOwnPropertyDescriptor;
@@ -275,6 +277,17 @@ function boundedPrice(initial, policy, advances = policy.maxMomentumAdvances) {
   return price;
 }
 
+function boundedLowerPrice(initial, policy, advances) {
+  let price = initial;
+  const multiplier = 100n - toBigInt(policy.maxPriceChangePercent);
+  for (let step = 0; step < advances; step++) {
+    price = (price * multiplier) / 100n;
+    if (price < MINIMUM_PRICE) price = MINIMUM_PRICE;
+    safeResult(price);
+  }
+  return price;
+}
+
 function buildQuote(sourceCompatibility, policy, subjectDigest, runtimeContextDigest) {
   const instant = sourceCompatibility.quote;
   const fusionPrice = boundedPrice(toBigInt(instant.frontier.nextFusionPrice), policy);
@@ -378,6 +391,10 @@ function checkSelection(input, fields, validate) {
   if (toBigInt(now.frontier.nextFusionPrice) > boundedPrice(
     toBigInt(origin.frontier.nextFusionPrice), policy, observedAdvances,
   ) || toBigInt(now.frontier.nextWorkPrice) > boundedPrice(
+    toBigInt(origin.frontier.nextWorkPrice), policy, observedAdvances,
+  ) || toBigInt(now.frontier.nextFusionPrice) < boundedLowerPrice(
+    toBigInt(origin.frontier.nextFusionPrice), policy, observedAdvances,
+  ) || toBigInt(now.frontier.nextWorkPrice) < boundedLowerPrice(
     toBigInt(origin.frontier.nextWorkPrice), policy, observedAdvances,
   )) reject();
 
