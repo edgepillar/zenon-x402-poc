@@ -1,0 +1,480 @@
+{
+  "schema": "zenon-x402-local-qualification/v1",
+  "lane": "P4 fixed provider economics and durable funding-intake issuance",
+  "sourceBaseMain": "fd3a70e707b122440434b6b80d66ab8e1fedb8e4",
+  "sourceBaseTree": "affee0c8d922855b64b3b617fd8e4910d47ebb6c",
+  "scope": {
+    "implementation": "Integrate the actual fixed funding-policy callable with the actual service-credit SQLite store, funding-intake SQLite store and funding-intake owner. No production module is replaced or reauthored.",
+    "applicationSourceChanged": false,
+    "newQualificationFiles": [
+      "qualification/service-credit-fixed-policy-sqlite-import-guard.mjs",
+      "qualification/service-credit-fixed-policy-sqlite-issuance.behavior.draft.mjs"
+    ],
+    "authority": "Previously approved new private synthetic SQLite files only; normal same-process close/reopen and one deliberate test-only after-COMMIT callback failure. No bind/preflight, SDK, key generation, signature, network, payment, grant activation, real PREPARE or live pilot.",
+    "nativeSqliteNotNativeChainProviderQualification": true,
+    "selectedNames": [
+      "fixed policy SQLite setup uses exactly two new private files and refuses a bare import control before resolution",
+      "actual fixed policy issuance commits one orphan but returns no frame after the selected after-COMMIT fault",
+      "real same-file close and reopen replays the exact orphaned frame without rerunning provider economics",
+      "persisted fixed selection rejects a changed resource foreign holder and expired challenge without a new row or repricing",
+      "second real reopen retains expiry and the exact ISSUED row with no bound observer grant or service execution",
+      "selected SQLite integration closes every handle and disposes only its two identity-checked reproducible fixtures"
+    ],
+    "selectedCases": 6
+  },
+  "sourceSelection": {
+    "exactImmutableMainProductionAndPackageFiles": 23,
+    "newQualificationFiles": 2,
+    "localDifferentProfilePreservedAndExcluded": true,
+    "moduleSourceRewriting": false,
+    "vmOrFakeModuleSubstitution": false,
+    "sourceAliasMethod": "INDEPENDENT_APFS_CLONE_NO_HARDLINK_OR_COPY_FALLBACK"
+  },
+  "boundaries": {
+    "keyParsing": "A fixed public-key byte string is structurally parsed by the existing authority validator; no private key, key generation, proof or signature is used.",
+    "observer": "Observer modules are traversed as existing static dependencies, but no observer file, binding, catch-up, attestation or grant activation is created.",
+    "fixtureMeaning": "Two new identity-checked synthetic files; same-process normal close/reopen and a deliberately thrown post-commit callback. Not process restart, abrupt crash, power loss, real provider behavior or storage durability qualification.",
+    "databaseDigests": "Program-observed digests of selected reproducible fixtures, not independently retained database payloads or a separate native SQL audit.",
+    "importTripwire": "Synchronous native module.registerHooks preloaded before the entry, with a deliberate rejected bare-package control. It denies SDK/Noble/bare packages and outside-view modules; it is not an OS filesystem, network or hostile-process sandbox.",
+    "permissions": "Node Permission Model is intentionally OFF because the unchanged store requires descriptor-based fchmodSync. Filesystem O_NOFOLLOW, private modes, exclusive creation, identity and fsync checks remain unchanged.",
+    "hostAndNativeEngineRemainPremises": true,
+    "zeroOperationClaims": "No signing, key generation, bind/preflight, observer activation, network, payment or real PREPARE was reached by the selected source paths. The import counters and selected assertions are not OS-wide instrumentation."
+  },
+  "priorFailure": {
+    "retained": true,
+    "actualExit": 1,
+    "outputComplete": true,
+    "authoredTests": 6,
+    "pass": 0,
+    "fail": 6,
+    "stage": "Store creation: first test fails with SERVICE_CREDIT_STORE_CREATE_FAILED; later failures are cascading setup failures.",
+    "sourceEstablishedCause": "Node v24.19.0 fchmodSync unconditionally throws ERR_ACCESS_DENIED under --permission. The store calls it immediately after exclusive creation, before opening SQLite.",
+    "sourceReference": "https://github.com/nodejs/node/blob/v24.19.0/lib/fs.js#L1912-L1919",
+    "zeroLengthCreatedFileAndFailedSourceViewHeldUnchanged": true,
+    "previousFailureNotReclassifiedAsPassing": true,
+    "correction": "Only omit --permission and its three associated path-allow flags in a new private task. The source graph, selected assertions, import tripwire and actual store file guards are unchanged.",
+    "unchangedExperimentReplayed": false,
+    "stdout": {
+      "bytes": 8690,
+      "sha256": "30f46bd97f264afc552945ebb476c1a03d85e61d2f6f46b97f6b88b96f67d53c"
+    },
+    "stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  },
+  "publication": {
+    "packetFiles": 3,
+    "productionModulesModified": 0,
+    "workflowsModified": 0,
+    "dependenciesInstalled": 0,
+    "ci": "NOT_RUN_NOT_GREEN",
+    "mainEligibility": "Only this exact narrow synthetic integration packet after source, diff, PR, branch and retained-evidence review; no live-pilot assurance."
+  },
+  "unchangedRealTotals": {
+    "consumedAdmissions": 2,
+    "actualPrepare": 1,
+    "bundles": 0,
+    "nativeChainOrProviderQualificationRuns": 0
+  },
+  "notEstablished": [
+    "All P4 completion or provider economics approval",
+    "A real provider signing or attestation adapter",
+    "Funding observation, BOUND recovery, grant activation or service delivery",
+    "Process restart, abrupt crash, power loss, durability or rollback resistance",
+    "SDK or official x402 composition qualification",
+    "Dynamic Plasma active buyer/signer wiring or quote-to-inclusion qualification",
+    "Hosted CI, deployment, live pilot or production readiness"
+  ],
+  "nextFiniteGate": "Qualify a distinct still-uncompleted roadmap behavior against exact retained source coverage. Do not repeat these cases or treat missing coverage as novelty.",
+  "status": "SIX_SELECTED_FIXED_POLICY_NATIVE_SQLITE_ISSUANCE_CASES_PASSED",
+  "decision": "GO_FOR_THE_EXACT_SELECTED_SYNTHETIC_ISSUANCE_REOPEN_PACKET_ONLY",
+  "exactSourceGraph": {
+    "files": 25,
+    "bytes": 837929,
+    "staticImportEdges": 94,
+    "pins": [
+      {
+        "path": "package.json",
+        "bytes": 1413,
+        "LF": 40,
+        "sha256": "8c9a25504fbf6f87c31cdf245a6f4eec5a88cc89c8352151dc66a577c5771ef5",
+        "gitBlob": "ec7193f6fd76f34778515079dc777594175c4c34",
+        "origin": "LOCAL_BYTES_MATCH_IMMUTABLE_MAIN"
+      },
+      {
+        "path": "qualification/service-credit-fixed-policy-sqlite-import-guard.mjs",
+        "bytes": 2381,
+        "LF": 45,
+        "sha256": "66c7fd3f1c0aa7670670faca027a58722f96b5825c099dbc650a8b08c1f4d75a",
+        "gitBlob": "187ed4699cae110d7e57c8baeb315c309ad35621",
+        "origin": "NEW_QUALIFICATION_ENTRY_OR_GUARD"
+      },
+      {
+        "path": "qualification/service-credit-fixed-policy-sqlite-issuance.behavior.draft.mjs",
+        "bytes": 14906,
+        "LF": 222,
+        "sha256": "cfac8477ef791b925fa1e34733c514813be40b86913ec5a499554e6f2751c888",
+        "gitBlob": "9ab8023785a0bcb17e935060492f91d8d6bfd79b",
+        "origin": "NEW_QUALIFICATION_ENTRY_OR_GUARD"
+      },
+      {
+        "path": "src/canonical.js",
+        "bytes": 967,
+        "LF": 26,
+        "sha256": "0d55ddf1727cafb0dcd46df2922305568615552a4d2ae34a5c30e90b9d8d998c",
+        "gitBlob": "5367f9c72ee13017a61630e1f0cffdced21d52c4",
+        "origin": "LOCAL_BYTES_MATCH_IMMUTABLE_MAIN"
+      },
+      {
+        "path": "src/live-observation.js",
+        "bytes": 12389,
+        "LF": 361,
+        "sha256": "36ce902ffb667b17eaf3e2ac94beb287be1401b34d83f8253407a93d286328c4",
+        "gitBlob": "d29ef9b4c23db397006550728cfb35429c7c09f2",
+        "origin": "LOCAL_BYTES_MATCH_IMMUTABLE_MAIN"
+      },
+      {
+        "path": "src/live-runtime.js",
+        "bytes": 8126,
+        "LF": 242,
+        "sha256": "354b70662ff501ccc173ab20742f5efcd0e581f784245a1bf2ba51786f2dae7a",
+        "gitBlob": "25d34b1e37de42e6eec81590c2f26e5158c4d3b1",
+        "origin": "LOCAL_BYTES_MATCH_IMMUTABLE_MAIN"
+      },
+      {
+        "path": "src/service-credit-execution-contract.js",
+        "bytes": 30258,
+        "LF": 956,
+        "sha256": "298f8e74885e1c507953c0fcf7874832f815296746e6bacbdac97a425f1a6c73",
+        "gitBlob": "acfbb5c5e943b9e09958a7831b3dbe159463dcf9",
+        "origin": "LOCAL_BYTES_MATCH_IMMUTABLE_MAIN"
+      },
+      {
+        "path": "src/service-credit-model.js",
+        "bytes": 55461,
+        "LF": 1580,
+        "sha256": "7ff7e3d88ab8c3b38a0073541533fbdb7a0d9f2be42f337ac35f6a3b05615c3a",
+        "gitBlob": "e6ac17254874584d1a01f70e7abc6f771bd35d73",
+        "origin": "LOCAL_BYTES_MATCH_IMMUTABLE_MAIN"
+      },
+      {
+        "path": "src/service-credit-sqlite-store.js",
+        "bytes": 83516,
+        "LF": 2366,
+        "sha256": "eea4032830dc1f641c4832e0dab33066633ba487eaf19581e3295cf8810460f3",
+        "gitBlob": "ae5260ef3442079fe73544d2d730d05724758fa1",
+        "origin": "LOCAL_BYTES_MATCH_IMMUTABLE_MAIN"
+      },
+      {
+        "path": "src/service-credit-zenon-fixed-funding-policy.js",
+        "bytes": 8908,
+        "LF": 156,
+        "sha256": "38b01c7f325bd843cba134bd101e3e671145153638292f5bceeb9532697b3126",
+        "gitBlob": "2805cc2268279c2e4527e3c116ef072ab53c2640",
+        "origin": "LOCAL_BYTES_MATCH_IMMUTABLE_MAIN"
+      },
+      {
+        "path": "src/service-credit-zenon-funding-evidence.js",
+        "bytes": 48694,
+        "LF": 1407,
+        "sha256": "459c6cc2cdb57df1b648b2a56244935085770d9c3d1eee05ad56ddbf1bd98d80",
+        "gitBlob": "698aaa39aab6e2fa680eb8ebd8b9aa905f79354e",
+        "origin": "LOCAL_BYTES_MATCH_IMMUTABLE_MAIN"
+      },
+      {
+        "path": "src/service-credit-zenon-funding-intake-sqlite-store.js",
+        "bytes": 34138,
+        "LF": 818,
+        "sha256": "4d001bbeac004cdb88c454094b573bc00bd52822e9448d91ce9065a95b68c28c",
+        "gitBlob": "cb4211bd19c38165640f4825bc907c21618f647a",
+        "origin": "LOCAL_BYTES_MATCH_IMMUTABLE_MAIN"
+      },
+      {
+        "path": "src/service-credit-zenon-funding-intake.js",
+        "bytes": 19392,
+        "LF": 527,
+        "sha256": "52d1bddeb240fe6885abdc3a1cfcf44fe94735947b69d4c6a45510ee65102a1c",
+        "gitBlob": "34a167f3f2fc3eee0c5bd6c55bd3a2f6482c581f",
+        "origin": "LOCAL_BYTES_MATCH_IMMUTABLE_MAIN"
+      },
+      {
+        "path": "src/service-credit-zenon-funding-observer-sqlite-store.js",
+        "bytes": 87075,
+        "LF": 2449,
+        "sha256": "899a79ce7b3003b1f32ef7c23adcf06e55a74486abc4bd1cb63cb44f1c087d0c",
+        "gitBlob": "8c1ce3e6640ee1da8663754abba2e5d555932e9f",
+        "origin": "LOCAL_BYTES_MATCH_IMMUTABLE_MAIN"
+      },
+      {
+        "path": "src/service-credit-zenon-funding-observer-state.js",
+        "bytes": 58614,
+        "LF": 1738,
+        "sha256": "8f8f4e4b7bcbb95229eecc62cd82638e4adbcfda0ad54a3a7a089273457f5d8a",
+        "gitBlob": "d4a623ff662973e2c2082b5dea36807dbd8e45e7",
+        "origin": "LOCAL_BYTES_MATCH_IMMUTABLE_MAIN"
+      },
+      {
+        "path": "src/service-credit-zenon-funding-provider-attestation.js",
+        "bytes": 33736,
+        "LF": 1003,
+        "sha256": "87329f823d9459539246974909e8974db0792f047724f2a3d55c239af080cbdc",
+        "gitBlob": "4060251980875b4a95347a72365ddf639b331b34",
+        "origin": "LOCAL_BYTES_MATCH_IMMUTABLE_MAIN"
+      },
+      {
+        "path": "src/settlement-journal.js",
+        "bytes": 64798,
+        "LF": 1577,
+        "sha256": "b2151cb20ea3ce82e306b2b8d6b996b818d8fb4c226c35316384564eb9e1c25a",
+        "gitBlob": "aade1a802009125a42dd6a0ee81a28f9830f521e",
+        "origin": "LOCAL_BYTES_MATCH_IMMUTABLE_MAIN"
+      },
+      {
+        "path": "src/x402-wire.js",
+        "bytes": 39886,
+        "LF": 934,
+        "sha256": "5fba91af5a352f62d1a335c7176a45a604e2af5d92b1c4b0e53825c1f20d4e56",
+        "gitBlob": "fb060d4e349b1c31a1219a0cc137af250a8a2291",
+        "origin": "LOCAL_BYTES_MATCH_IMMUTABLE_MAIN"
+      },
+      {
+        "path": "src/zenon-payment.js",
+        "bytes": 128301,
+        "LF": 3500,
+        "sha256": "44ee797207d557175256b5f69c89c5009e238e4c1b5b01c83b118b7e7b0ab35c",
+        "gitBlob": "f6645973803cb430d94f12698b14b7684c27493b",
+        "origin": "LOCAL_BYTES_MATCH_IMMUTABLE_MAIN"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-compatibility.js",
+        "bytes": 7732,
+        "LF": 225,
+        "sha256": "b3989ce15e5f2e9d07b0ed035fe96bcce9f22cac93f5e497fdca5c37bf7618dd",
+        "gitBlob": "3811b748b3f905e454c8a4af4650bb7f89eb1cf2",
+        "origin": "LOCAL_BYTES_MATCH_IMMUTABLE_MAIN"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-price-policy.js",
+        "bytes": 16224,
+        "LF": 444,
+        "sha256": "eba3225c4d26cbb6e0be575ac4fd5073bc8b0c4454eb51e2bea4d91856d0c65e",
+        "gitBlob": "649dd09b60236b43c91d22e34b76f71f4b661361",
+        "origin": "LOCAL_BYTES_MATCH_IMMUTABLE_MAIN"
+      },
+      {
+        "path": "src/zenon/internal/legacy-sdk-1-0-5-signed-composite.js",
+        "bytes": 692,
+        "LF": 16,
+        "sha256": "9473d48ca372d5616f3006cfd2866af2b897f374b169c3511876bf1bc079620f",
+        "gitBlob": "3dbfdde3ae6ab2643b656665cd69aec1a160840d",
+        "origin": "LOCAL_BYTES_MATCH_IMMUTABLE_MAIN"
+      },
+      {
+        "path": "src/zenon/operator-trusted-chain-policy.js",
+        "bytes": 5337,
+        "LF": 155,
+        "sha256": "12715f104784f541493ac1d23f92b3e15ce120d0e8287e954eaf1151763d509d",
+        "gitBlob": "77446dce50e61831f29352ec2858a9047bd357ca",
+        "origin": "LOCAL_BYTES_MATCH_IMMUTABLE_MAIN"
+      },
+      {
+        "path": "src/zenon/operator-trusted-local-devnet-profile.js",
+        "bytes": 31832,
+        "LF": 942,
+        "sha256": "3882a76b699fa177cada93e055e9a05b4afe31fe1c3d0b3accbcc84e6dc7a9ec",
+        "gitBlob": "4d1a261ff9de3b660a3fb2584a87b1d67c237b0a",
+        "origin": "LOCAL_BYTES_MATCH_IMMUTABLE_MAIN"
+      },
+      {
+        "path": "src/zenon/operator-trusted-testnet-profile.js",
+        "bytes": 43153,
+        "LF": 1085,
+        "sha256": "ec30bbcfc6b443b7839d1306eaae8d7bd25dbbbf616fafd64afcaefa8af1e526",
+        "gitBlob": "a1c31e55677ef34ee76d45575b80ad30466ce1e7",
+        "origin": "EXACT_IMMUTABLE_MAIN_GIT_BLOB"
+      }
+    ],
+    "deferredImports": [
+      {
+        "from": "qualification/service-credit-fixed-policy-sqlite-issuance.behavior.draft.mjs",
+        "specifier": "qualification-forbidden-package-control",
+        "runtimePermission": "DENIED_BY_PRELOADED_TRIPWIRE_NOT_EVALUATED"
+      },
+      {
+        "from": "src/zenon-payment.js",
+        "specifier": "znn-typescript-sdk",
+        "runtimePermission": "DENIED_BY_PRELOADED_TRIPWIRE_NOT_EVALUATED"
+      },
+      {
+        "from": "src/zenon-payment.js",
+        "specifier": "@noble/ed25519",
+        "runtimePermission": "DENIED_BY_PRELOADED_TRIPWIRE_NOT_EVALUATED"
+      },
+      {
+        "from": "src/zenon-payment.js",
+        "specifier": "@noble/hashes/sha2",
+        "runtimePermission": "DENIED_BY_PRELOADED_TRIPWIRE_NOT_EVALUATED"
+      }
+    ]
+  },
+  "actualExecution": {
+    "correctedTaskNativeCommands": 1,
+    "initialFailedTaskNativeCommands": 1,
+    "sourceOrTestAssertionsChangedBetweenTasks": false,
+    "launchChanged": true,
+    "replaysOfUnchangedLaunch": 0,
+    "completedAtUtc": "2026-10-22T23:52:26.450Z",
+    "actualExit": 0,
+    "outputComplete": true,
+    "counts": {
+      "tests": 6,
+      "suites": 0,
+      "pass": 6,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "stdout": {
+      "bytes": 3992,
+      "sha256": "76403249e3ea252440af5883039163df3b7cb432a68fe15da9c0509eb8f42805"
+    },
+    "stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "reporterDurationMilliseconds": 365.754459,
+    "durationMeaning": "Node test-reporter time only, not managed admission, retained-source materialization, finalization or end-to-end wall time.",
+    "sqliteVersion": "3.53.3",
+    "counters": {
+      "createdDatabases": 2,
+      "reopenedStoreHandles": 4,
+      "readOnlyConnections": 6,
+      "policies": 1,
+      "owners": 4,
+      "policyCalls": 2,
+      "forbiddenRederivations": 0,
+      "afterCommitFaults": 1,
+      "issueAttempts": 9,
+      "framesReturned": 2,
+      "costCalls": 0,
+      "disposedFixtureFiles": 2
+    },
+    "fixtureDigests": [
+      {
+        "role": "service",
+        "bytes": 8192,
+        "sha256": "936d6eb66bd2fd377a8e29e744d92f6e6bea61b62d5ae7e92df3bf280d8a62bc"
+      },
+      {
+        "role": "intake",
+        "bytes": 45056,
+        "sha256": "98cddd182aa54d6bde0a3a0b1408b4a6d07688bd410c9931b0cc532b5f69ec43"
+      }
+    ],
+    "issuedRowProjectionSha256": "0d85b081ad95cbabf54efd8ad2d68f48a42607063c3a4a6f22bb24feccfe4077",
+    "originalFrameSha256": "d08411b095d4c9a702f0eeee08af1e14adb19f341213937b7d17ee1323c9b755",
+    "loadedSourceModules": [
+      "qualification/service-credit-fixed-policy-sqlite-import-guard.mjs",
+      "qualification/service-credit-fixed-policy-sqlite-issuance.behavior.draft.mjs",
+      "src/canonical.js",
+      "src/live-observation.js",
+      "src/live-runtime.js",
+      "src/service-credit-execution-contract.js",
+      "src/service-credit-model.js",
+      "src/service-credit-sqlite-store.js",
+      "src/service-credit-zenon-fixed-funding-policy.js",
+      "src/service-credit-zenon-funding-evidence.js",
+      "src/service-credit-zenon-funding-intake-sqlite-store.js",
+      "src/service-credit-zenon-funding-intake.js",
+      "src/service-credit-zenon-funding-observer-sqlite-store.js",
+      "src/service-credit-zenon-funding-observer-state.js",
+      "src/service-credit-zenon-funding-provider-attestation.js",
+      "src/settlement-journal.js",
+      "src/x402-wire.js",
+      "src/zenon-payment.js",
+      "src/zenon/dynamic-plasma-compatibility.js",
+      "src/zenon/dynamic-plasma-price-policy.js",
+      "src/zenon/internal/legacy-sdk-1-0-5-signed-composite.js",
+      "src/zenon/operator-trusted-chain-policy.js",
+      "src/zenon/operator-trusted-local-devnet-profile.js",
+      "src/zenon/operator-trusted-testnet-profile.js"
+    ],
+    "sdkImportAttempts": 0,
+    "deliberateBareImportRefusals": 1,
+    "unexpectedImportRefusals": 0,
+    "protectedRealTotalsChanged": false
+  },
+  "runtime": {
+    "nodeVersion": "24.19.0",
+    "platform": "darwin",
+    "arch": "arm64",
+    "binarySha256": "dbedff294bab84a0a86c04e15fbcbeb1c97ca10bef1b32b0634cd24b36f62100",
+    "binaryDigestReusedAfterExactNineFieldPhysicalIdentityCheck": true,
+    "environmentCleared": true,
+    "retainedEnvironmentKeys": [
+      "PATH",
+      "LANG",
+      "LC_ALL",
+      "TZ",
+      "PYTHONDONTWRITEBYTECODE",
+      "SPV_TASK_SCRATCH"
+    ],
+    "flags": [
+      "--disallow-code-generation-from-strings",
+      "--no-addons",
+      "--no-warnings",
+      "--unhandled-rejections=strict",
+      "--test-reporter=tap",
+      "--import=<owned-source-view>/qualification/service-credit-fixed-policy-sqlite-import-guard.mjs"
+    ],
+    "entry": "qualification/service-credit-fixed-policy-sqlite-issuance.behavior.draft.mjs",
+    "nodePermissionModelEnabled": false
+  },
+  "separateEvidenceReview": {
+    "status": "COMPLETE_SEPARATE_PROTECTED_EVIDENCE_REVIEW_PASS",
+    "method": "A separate read-only primary review of retained source/CAS/ownership records, the actual complete TAP, and the predeclared inputs/admission/verification contract. No Node, SQLite, SDK or test re-execution; not an independent human or second-agent audit.",
+    "completeMetadataRecordsRead": 7,
+    "callerMetadataRecordsWritten": 3,
+    "sourceInputManifestBytes": 30967,
+    "completeMetadataBytes": 43756,
+    "sourceWholeContentAndPhysicalPinsMatchedBeforeAfter": true,
+    "sourceInputLedgersAndClosedCreatorReferencesVerified": 25,
+    "sourceFilesPreserved": 294,
+    "privateFilesPreserved": 990,
+    "protectedAbsences": 29,
+    "oldFailureAndStoppedRecordsUnchanged": true,
+    "processGroupObservedAbsent": true,
+    "ownedTaskClosed": "SUCCESS",
+    "noNativeOrWorkerSessionPending": true
+  },
+  "resources": {
+    "managedTaskExpectedBytes": 4194304,
+    "managedTaskQuotaBytes": 4194304,
+    "stdoutCapBytes": 65536,
+    "stderrCapBytes": 1048576,
+    "perTestTimeoutMs": 5000,
+    "commandTimeoutSeconds": 30,
+    "metadataLockSeconds": 600,
+    "limitsMeaning": "Caller/manager limits and sampled disk monitoring, not OS-enforced aggregate disk, hard native lifetime or hostile-code guarantees.",
+    "newSourceInputObjects": 0,
+    "newSourceInputBytes": 0,
+    "existingSourceInputObjectsReused": 25,
+    "existingSourceInputBytesNotRewritten": 837929,
+    "independentApfsSourceAliases": 25,
+    "sourceAliasLogicalBytes": 837929,
+    "newDatabaseFiles": 2,
+    "databaseByteLimitEach": 1048576,
+    "fixtureDatabaseBytesAtSuccessfulDisposal": 53248,
+    "normalSqliteDeleteJournalModeAndFullSynchronousUnchanged": true,
+    "transientSqliteJournalFilesNotSeparateDatabaseFixtures": true,
+    "childDisposedSuccessfulSyntheticDatabaseFiles": 2,
+    "registeredSourceAliasAndMarkerLogicalBytesRemoved": 838054,
+    "protectedObjectsDeleted": 0,
+    "oldFailedDatabaseFileDeleted": false,
+    "ownedScratchAbsent": true,
+    "physicalApfsReclaimMeasured": false,
+    "cleanupMeaning": "Only this successful task's reproducible registered aliases/marker and two child-created identity-checked synthetic databases were removed. The earlier failed task's zero-length file and source view remain HOLD. No historical cache or evidence deletion."
+  }
+}
