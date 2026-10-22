@@ -1,0 +1,413 @@
+{
+  "schema": "zenon-x402-poc/selected-v4-owned-http-quarantine-result/v1",
+  "status": "PASS_THREE_SELECTED_LOCAL_NATIVE_SQLITE_DECLARED_HTTP_CASES",
+  "dateUTC": "2026-10-22",
+  "scope": "P2_OPT_IN_V4_HTTP_NATIVE_QUARANTINE_CONNECTION",
+  "selection": {
+    "baseline": "c2993cfd64ead8bc6be7425153ad9d25b60467dc",
+    "reason": "The existing HTTP and owned-SQLite factories selected only V2/V3 owners/stores. These explicit new V4 factories connect the already-implemented persistent quarantine owner to actual owned-store lifecycle and the existing declared HTTP dispatcher. Missing test coverage alone is not the novelty basis.",
+    "sourceChanges": [
+      {
+        "path": "src/service-credit-custodied-http-client.js",
+        "old": {
+          "path": "src/service-credit-custodied-http-client.js",
+          "bytes": 10755,
+          "LF": 292,
+          "sha256": "ddbc54faf4a14d95e6274bc9df27b7b49db251bab67c11b871cfb2f9e78b4f15",
+          "gitBlob": "90fd4c8a2cc8fb552f8eb0cb45607bfa44c61108"
+        },
+        "new": {
+          "path": "src/service-credit-custodied-http-client.js",
+          "bytes": 11597,
+          "LF": 307,
+          "sha256": "822627be1876fb609bad582b767694a60022d7bf9d7375bb2e7fb961c034e4ab",
+          "gitBlob": "c15926796ff96f08e32d1c4291e5d9c4b814f450"
+        },
+        "lineDiff": {
+          "additions": 17,
+          "deletions": 2,
+          "algorithm": "SequenceMatcher lines with keepends and autojunk=False"
+        }
+      },
+      {
+        "path": "src/service-credit-custodied-sqlite-http-client.js",
+        "old": {
+          "path": "src/service-credit-custodied-sqlite-http-client.js",
+          "bytes": 18540,
+          "LF": 511,
+          "sha256": "ea16d6ac5ce72d6434c06e98c52c324daf918dd570f15997cdc21e501f677f4e",
+          "gitBlob": "9572dfcca76b83b53bdd5bd132ffaf110720dc3a"
+        },
+        "new": {
+          "path": "src/service-credit-custodied-sqlite-http-client.js",
+          "bytes": 19683,
+          "LF": 530,
+          "sha256": "06366488e679272170847af4929db3b3f782774022f97c748530ec73f729f0bc",
+          "gitBlob": "a198673f77c4320bb4af3adb35ba22d2a2fb3b38"
+        },
+        "lineDiff": {
+          "additions": 25,
+          "deletions": 6,
+          "algorithm": "SequenceMatcher lines with keepends and autojunk=False"
+        }
+      }
+    ],
+    "existingCoverage": "Prior V3 fake-interface HTTP, earlier V2/SQLite selections, V4 explicit-store quarantine and V4 owner-only results remain retained. None is replayed or counted as new coverage."
+  },
+  "implementation": {
+    "borrowedFactory": "createServiceCreditCustodiedHttpClientV4",
+    "ownedFactory": "openServiceCreditCustodiedSqliteHttpClientV4",
+    "binding": "The explicit HTTP V4 factory selects createServiceCreditCustodiedRequestOwnerV4. The owned V4 factory selects the existing V4 open function and that HTTP child, using the existing resource-slot and close machinery.",
+    "defaults": "V2/V3 entry functions still pass their original flags; persistentCustody defaults false. No active/default CLI, runner or operational transport adoption.",
+    "namespaceCompatibility": "Two intentional enumerable V4 exports are added. This is not strict module-key-list compatibility. Historical source-pin/export goldens are preserved, not silently weakened or rerun.",
+    "persistence": "Existing V4 stores only. No create fallback, schema change, migration, funding preparation, quarantine reset or automatic resend.",
+    "ownership": "The HTTP child borrows the store. The root owns exactly its opened store, waits for child close settlement and attempts native close once. Returning from DB close releases only its local module resource slot.",
+    "uncertainty": "A persisted quarantine holds fresh V4 admission. Child uncertainty keeps root close rejected even after native close returns; slot release is not restoration of certainty or authority.",
+    "authority": "No real proof verification, signature, payer/provider/policy authority, real READY, service-delivery receipt or live acceptance is introduced."
+  },
+  "sourceBinding": {
+    "sourceCount": 9,
+    "sourceBytes": 247639,
+    "sourceCapBytes": 262144,
+    "perFileCapBytes": 65536,
+    "files": [
+      {
+        "path": "src/service-credit-custodied-http-client.js",
+        "bytes": 11597,
+        "LF": 307,
+        "sha256": "822627be1876fb609bad582b767694a60022d7bf9d7375bb2e7fb961c034e4ab",
+        "gitBlob": "c15926796ff96f08e32d1c4291e5d9c4b814f450"
+      },
+      {
+        "path": "src/service-credit-custodied-sqlite-http-client.js",
+        "bytes": 19683,
+        "LF": 530,
+        "sha256": "06366488e679272170847af4929db3b3f782774022f97c748530ec73f729f0bc",
+        "gitBlob": "a198673f77c4320bb4af3adb35ba22d2a2fb3b38"
+      },
+      {
+        "path": "src/service-credit-custodied-request-owner.js",
+        "bytes": 44517,
+        "LF": 1136,
+        "sha256": "4f3f20195a0ec26be38e9b80e658dfccfd9477daff758a9717e819f3b55c04b2",
+        "gitBlob": "2d18b98b8d922253c1beee6c5f057705acc97069"
+      },
+      {
+        "path": "src/service-credit-zenon-funding-post-v1-payer-recovery-sqlite-store.js",
+        "bytes": 64917,
+        "LF": 1687,
+        "sha256": "db4d3aca8c039e3433e49f6bafe42cbc4973e0f9478500dbe6cf36f53773232d",
+        "gitBlob": "4672760ef5fdf135b52700da889562b653b6fecb"
+      },
+      {
+        "path": "src/service-credit-http-execute-dispatch.js",
+        "bytes": 27034,
+        "LF": 770,
+        "sha256": "254ba8eef5ea5efb3a1b901be09e9cb33afbc3cfcf63789ca4a23316b6180d1b",
+        "gitBlob": "280dd20dc669e2856d263eba62ccd0fe9af72f21"
+      },
+      {
+        "path": "src/service-credit-original-request-custody-contract.js",
+        "bytes": 14051,
+        "LF": 356,
+        "sha256": "fd349de553a17abcc2e0567ba6640e6e3d5d26cfa79ee1e355928dc9fa8d3915",
+        "gitBlob": "f911d42d01b69e6577f9bcd66f4ed59aab8ab882"
+      },
+      {
+        "path": "src/x402-wire.js",
+        "bytes": 39886,
+        "LF": 934,
+        "sha256": "5fba91af5a352f62d1a335c7176a45a604e2af5d92b1c4b0e53825c1f20d4e56",
+        "gitBlob": "fb060d4e349b1c31a1219a0cc137af250a8a2291"
+      },
+      {
+        "path": "package.json",
+        "bytes": 1413,
+        "LF": 40,
+        "sha256": "8c9a25504fbf6f87c31cdf245a6f4eec5a88cc89c8352151dc66a577c5771ef5",
+        "gitBlob": "ec7193f6fd76f34778515079dc777594175c4c34"
+      },
+      {
+        "path": "qualification/service-credit-custodied-http-v4-quarantine.behavior.draft.mjs",
+        "bytes": 24541,
+        "LF": 415,
+        "sha256": "34da0950c4561fb17933ea70770aaa7f45c9fccfa22f20c2afc2abd8b36e2f67",
+        "gitBlob": "dcc9b5335eff310989e7954e465fae72185fbbf1"
+      }
+    ],
+    "importClosure": "Seven authored modules, root package metadata and one selected entry. Built-ins only; no installed package, SDK, network, child, worker or native-addon import.",
+    "unchangedOwnerStoreDispatcherContracts": true
+  },
+  "execution": {
+    "runtime": {
+      "node": "24.19.0",
+      "platform": "darwin",
+      "arch": "arm64"
+    },
+    "task": "CLOSED_SUCCESS",
+    "command": "COMPLETE",
+    "actualExit": 0,
+    "outputComplete": true,
+    "counts": {
+      "tests": 3,
+      "suites": 0,
+      "pass": 3,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "passNames": [
+      "V4 owned HTTP composition persists transport uncertainty before owned close",
+      "fresh owned V4 reopen blocks quarantined HTTP dispatch and retains scoped metadata",
+      "V4 and V3 owned factories refuse wrong profiles without migrating closed files"
+    ],
+    "diagnostics": [
+      {
+        "kind": "P2_HTTP_QUARANTINE_V4",
+        "version": 1,
+        "scenario": "OWNED_HTTP_UNKNOWN_LATCH_AND_DB_RELEASE",
+        "nativeSqliteFiles": 1,
+        "createdStoreCloses": 1,
+        "ownedStoreReturnedCloses": 1,
+        "declaredHttpRequests": 2,
+        "validatedFakeReplies": 1,
+        "uncertainFakeResponses": 1,
+        "blockedFreshSubmits": 0,
+        "wrongProfileRefusals": 0,
+        "automaticQuarantineWriteAttempts": 1,
+        "confirmedQuarantineReadbacks": 1,
+        "networkCalls": 0,
+        "syntheticSignatureOperations": 0,
+        "realPaymentSigner": "DISABLED",
+        "serviceDelivery": "NOT_ESTABLISHED"
+      },
+      {
+        "kind": "P2_HTTP_QUARANTINE_V4",
+        "version": 1,
+        "scenario": "NORMAL_REOPEN_SCOPED_QUARANTINE_NO_REPLAY",
+        "nativeSqliteFiles": 1,
+        "createdStoreCloses": 1,
+        "ownedStoreReturnedCloses": 3,
+        "declaredHttpRequests": 3,
+        "validatedFakeReplies": 2,
+        "uncertainFakeResponses": 1,
+        "blockedFreshSubmits": 1,
+        "wrongProfileRefusals": 0,
+        "automaticQuarantineWriteAttempts": 1,
+        "confirmedQuarantineReadbacks": 1,
+        "networkCalls": 0,
+        "syntheticSignatureOperations": 0,
+        "realPaymentSigner": "DISABLED",
+        "serviceDelivery": "NOT_ESTABLISHED"
+      },
+      {
+        "kind": "P2_HTTP_QUARANTINE_V4",
+        "version": 1,
+        "scenario": "WRONG_PROFILE_NO_MIGRATION_AND_V3_CONTROL",
+        "nativeSqliteFiles": 2,
+        "createdStoreCloses": 2,
+        "ownedStoreReturnedCloses": 4,
+        "declaredHttpRequests": 3,
+        "validatedFakeReplies": 2,
+        "uncertainFakeResponses": 1,
+        "blockedFreshSubmits": 1,
+        "wrongProfileRefusals": 2,
+        "automaticQuarantineWriteAttempts": 1,
+        "confirmedQuarantineReadbacks": 1,
+        "networkCalls": 0,
+        "syntheticSignatureOperations": 0,
+        "realPaymentSigner": "DISABLED",
+        "serviceDelivery": "NOT_ESTABLISHED"
+      }
+    ],
+    "selectedNodeCommands": 1,
+    "nativeExperimentRetries": 0,
+    "completeOutcomeAndExactSelectedTapReviewed": true,
+    "stdout": {
+      "bytes": 2368,
+      "sha256": "97cae4faa71b0cebceb941843d3902f490eb574d0f7f952ed32ef90be5051517"
+    },
+    "stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "ownedProcessGroupObservedAbsent": true,
+    "distinctUnknownRootCloseRejections": 2,
+    "ownedStoreReturnedCloses": 4,
+    "syntheticProducerCloseCalls": 2,
+    "declaredHttpRequests": 3,
+    "validatedFakeReplies": 2,
+    "uncertainFakeResponses": 1,
+    "blockedFreshSubmits": 1,
+    "wrongProfileRefusals": 2,
+    "automaticQuarantineWriteAttempts": 1,
+    "confirmedQuarantineReadbacks": 1,
+    "realPaymentSigner": "DISABLED",
+    "signatureOperations": 0,
+    "networkCalls": 0
+  },
+  "scenarios": [
+    {
+      "name": "V4 owned HTTP composition persists transport uncertainty before owned close",
+      "asserts": [
+        "The actual new V4 module exports are explicit enumerable API additions.",
+        "A newly seeded synthetic V4 file is closed before the owned factory opens it; BOUND is declared funding metadata, not chain inclusion or authority.",
+        "A bodyless fake-interface success and then a 503 response use exact original/Authorization syntax after native original/intent readback fences.",
+        "Both declared handles must close before the operation settles. The second outcome is UNKNOWN, with one automatic persisted quarantine and no credential persistence.",
+        "Root close retains its cached Promise, rejects CHILD_OUTCOME_UNKNOWN, closes the native store once and releases the slot.",
+        "Only after all production handles close does independent read-only SQL inspect epoch 2, two original/intent rows, the quarantine and retained funding rows."
+      ]
+    },
+    {
+      "name": "fresh owned V4 reopen blocks quarantined HTTP dispatch and retains scoped metadata",
+      "asserts": [
+        "Normal owned V4 reopen at epoch 3 reads persisted quarantine before new dispatch; lastTransport remains null.",
+        "A new same-grant submission is refused before new owner/store work or requestImpl invocation.",
+        "Scoped recovery keys/state retain exact originals and POSSIBLY_ATTEMPTED intents, with NONE/UNQUALIFIED and false action flags. Foreign-grant reads refuse before store work.",
+        "UNKNOWN root close still releases its native store/slot. All non-epoch rows remain exact.",
+        "A separately scoped, unquarantined grant completes only the existing declared fake-interface path at epoch 4. This does not establish real grant/provider authority or delivery.",
+        "There is no automatic replay, replacement payment, marker clear or process restart."
+      ]
+    },
+    {
+      "name": "V4 and V3 owned factories refuse wrong profiles without migrating closed files",
+      "asserts": [
+        "The second new private file is created with the existing V3 profile and closed before the open tests.",
+        "V4-on-V3 and V3-on-V4 owned-factory attempts refuse with ACQUISITION_FAILED; complete closed-file bytes, identities and epochs remain unchanged.",
+        "Subsequent V3 opening succeeds, demonstrating release of the refused acquisition slot without a reset API.",
+        "The V3 control retains its non-V4 owner snapshot/counters and closes DRAINED. It is a selected control, not a full legacy suite.",
+        "The V4 file remains byte-exact; the V3 file remains schema version 3 without a quarantine table."
+      ]
+    }
+  ],
+  "nativeFiles": {
+    "count": 2,
+    "totalBytes": 73728,
+    "files": [
+      {
+        "name": "client-v3.sqlite",
+        "bytes": 32768,
+        "sha256": "37358d71f54e6523615e38e05396bc93316dd06304038ce937d833b9a7c48271",
+        "finalState": "V3_PROFILE_UNMIGRATED_CONTROL"
+      },
+      {
+        "name": "client-v4.sqlite",
+        "bytes": 40960,
+        "sha256": "76b0daf74bc2ada9f7ee1630bc7f3bb70004fd2f716f5d6a845ad7dd6a5c2232",
+        "finalState": "V4_QUARANTINE_AND_EXACT_ORIGINAL_INTENT_ROWS"
+      }
+    ],
+    "rawDatabasesPublished": false,
+    "rawDatabasesCASAdopted": false,
+    "retention": "HOLD_UNREGISTERED_FILES_NO_ADOPTION_OR_DELETION",
+    "simultaneousIndependentSqlObserverConnections": 0,
+    "normalOwnerEpochs": {
+      "v4": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "v3": [
+        1,
+        2
+      ]
+    },
+    "wrongProfileEpochAdvancement": false,
+    "actualProcessRestart": false
+  },
+  "callsite": {
+    "explicitSinglePositionalEntry": true,
+    "environmentClearedWithEnvI": true,
+    "nodePermissionModel": "OFF_FOR_EXISTING_NATIVE_FCHMOD_FSYNC_MACHINERY",
+    "osOrNetworkSandboxGuarantee": false,
+    "dynamicStringCodeGeneration": "DISALLOWED",
+    "nativeAddons": "DISALLOWED",
+    "otherTestEntries": 0,
+    "builtinInlineReporter": true,
+    "savedOperationalHelperOrNewHost": false,
+    "argvStringPayloadBytes": 11671,
+    "callerBytes": 8248,
+    "nodeTestTimeoutMs": 5000,
+    "managerCommandTimeoutSeconds": 30,
+    "stdoutCapBytes": 65536,
+    "stderrCapBytes": 1048576,
+    "tapStdoutStderrDescriptorOutputExpected": true,
+    "deadlineMs": 2000,
+    "timeoutBoundary": "Test timeouts and the existing HTTP abort-initiation deadline are not hard native lifetime, cancellation, cleanup, OS or network-sandbox guarantees.",
+    "nativeLoaderRunnerStreamSqliteOsAndFilesystemBehavior": "Retained premises, not newly qualified global guarantees."
+  },
+  "preservation": {
+    "unchangedRepositoryFilesChecked": 152,
+    "priorPrivateFilesChecked": 237,
+    "protectedAbsencesChecked": 8,
+    "twoEditedOldSourcesExcludedOnlyFromUnchangedCohort": true,
+    "oldSourcePinsAndHistoricalRecordsRetained": true,
+    "sourceAndPriorEvidenceStable": true,
+    "newProtectedMetadataFiles": 12,
+    "newProtectedMetadataBytes": 78104,
+    "newRawSqliteFiles": 2,
+    "fixedLineageManifestCount": 5,
+    "exactBaseManifestParts": 6,
+    "recursiveParentTraversal": false,
+    "sourceDeltaPins": 3,
+    "privateDeltaPins": 15,
+    "completeReaderMetadataBytes": 292349,
+    "ancestryDecodedOnceWithinInspection": true,
+    "earlier267FullRehashOrExecutionReplayed": false,
+    "earlierNamespacesWritten": false,
+    "earlierFailuresRetained": true,
+    "expectedBytes": 2097152,
+    "taskQuotaBytes": 4194304,
+    "productionFloorBytes": 10737418240,
+    "conservativeScratchCheckBytes": 6442450944,
+    "policyRewritten": false,
+    "rawFixtureCleanup": "HOLD, not CLEANED. No protected evidence or raw database deleted.",
+    "runtimeDigestReuse": "Only after exact unchanged retained nine-field runtime identities; no redundant large-binary rehash.",
+    "quotaBoundary": "Cooperative sampled accounting, not an OS-enforced aggregate quota.",
+    "physicalApfsReclaimOrPerformanceGainMeasured": false
+  },
+  "authority": {
+    "protectedTotals": {
+      "consumedAdmissions": 2,
+      "actualChainPrepare": 1,
+      "bundles": 0,
+      "nativeChainProviderQualificationRuns": 0
+    },
+    "syntheticFundingModelWritesAreNotChainPrepare": true,
+    "originalPaymentRequestBytesHashPayloadRequirementsContextAndConsumedAuthority": "PRESERVED",
+    "pr193": "VALIDATED exact-same-signed-block resend remains distinct from UNKNOWN and ACKNOWLEDGED.",
+    "sdkImportOrInstall": "NONE",
+    "realWalletPaymentSigningOrProviderSetup": "NOT_RUN_DISABLED",
+    "dpNonceMaterialProducerExecution": "NOT_ADMITTED_NOT_RUN",
+    "failedOwnershipMetadataRetryOrAuthorityReset": false,
+    "automationOrModelSettingsChanged": false,
+    "privateBootstrapGhcrBoundaries": "UNCHANGED"
+  },
+  "limits": [
+    "This proves these three source-bound local component outcomes only, not a complete app, HTTP, SQLite, controller, SDK or legacy compatibility suite.",
+    "The HTTP handles are declared fake interfaces, not sockets, TLS/HTTPS qualification, actual backend requests, authenticated capability proofs or service delivery.",
+    "Normal close/reopen within one process is not actual process restart, power loss, fsync durability or crash-before-detection qualification.",
+    "Native store-close failure, unobservable transport cleanup and other hostile fault matrices are not exercised by this selection.",
+    "The new library factories remain explicit opt-ins; no active/default CLI or sequential-runner adoption is introduced.",
+    "Independent current context, funding, payer/provider/policy authority, real READY, durability, commit/uncertainty and restart/recovery remain separate acceptance gates."
+  ],
+  "next": "Advance a distinct unfinished runner/client lifecycle or exact-payment recovery slice after source-bound selection. Do not replay this unchanged selection or equate slot release with certainty.",
+  "fullP2Complete": false,
+  "productionReadiness": "NO_GO",
+  "pilotAcceptance": "NOT_ESTABLISHED",
+  "hostedCI": {
+    "status": "NOT_RUN_FOR_THIS_SELECTION",
+    "emptyChecksAreNotGreen": true,
+    "newWorkflowOrBroadCiAuthorization": false
+  },
+  "publication": {
+    "baseline": "c2993cfd64ead8bc6be7425153ad9d25b60467dc",
+    "packet": "Two existing explicit library connection modules and two new qualification files.",
+    "requiresSkipCiCommitMessage": true,
+    "normalFastForwardOnly": true,
+    "forcePushOrProtectionBypass": false,
+    "noLocalStageCommitResetCheckoutOrPush": true
+  }
+}

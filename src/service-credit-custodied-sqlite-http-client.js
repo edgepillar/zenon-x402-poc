@@ -4,12 +4,14 @@ import { types as utilTypes } from 'node:util';
 import {
   openZenonFundingPayerRecoveryCustodySqliteStoreV2,
   openZenonFundingPayerRecoveryDispatchIntentSqliteStoreV3,
+  openZenonFundingPayerRecoveryCustodyQuarantineSqliteStoreV4,
   ZenonFundingPayerRecoverySqliteStore,
   ZenonFundingPayerRecoverySqliteStoreError,
 } from './service-credit-zenon-funding-post-v1-payer-recovery-sqlite-store.js';
 import {
   createServiceCreditCustodiedHttpClient,
   createServiceCreditCustodiedHttpClientV3,
+  createServiceCreditCustodiedHttpClientV4,
 } from './service-credit-custodied-http-client.js';
 import {
   snapshotOriginalServiceRequestCustodyPolicy,
@@ -41,8 +43,10 @@ const SPECIES = Symbol.species;
 const NATIVE_SPECIES = DESCRIPTOR(NativePromise, SPECIES);
 const OPEN_V2 = openZenonFundingPayerRecoveryCustodySqliteStoreV2;
 const OPEN_V3 = openZenonFundingPayerRecoveryDispatchIntentSqliteStoreV3;
+const OPEN_V4 = openZenonFundingPayerRecoveryCustodyQuarantineSqliteStoreV4;
 const CREATE_CLIENT = createServiceCreditCustodiedHttpClient;
 const CREATE_CLIENT_V3 = createServiceCreditCustodiedHttpClientV3;
+const CREATE_CLIENT_V4 = createServiceCreditCustodiedHttpClientV4;
 const POLICY = snapshotOriginalServiceRequestCustodyPolicy;
 const KEY = snapshotOriginalServiceRequestCustodyKey;
 const STORE_PROTOTYPE = ZenonFundingPayerRecoverySqliteStore.prototype;
@@ -110,7 +114,19 @@ export function openServiceCreditCustodiedSqliteHttpClientV3(configuration) {
   if (arguments.length !== 1) throw failure('INVALID_CONFIGURATION');
   return openOwnedClient(configuration, true);
 }
-function openOwnedClient(configuration, dispatchIntentEnabled) {
+/**
+ * Explicit ownership of one EXISTING V4 store and the V4 HTTP child. There is
+ * no create fallback, migration, funding or implicit live transport. A fresh
+ * child reads the stored grant quarantine before any new submission. Child
+ * uncertainty still rejects root close even when the owned store close returns
+ * and releases this module's resource slot. Closing/reopening never resets the
+ * marker or establishes restart, payment, cleanup or service authority.
+ */
+export function openServiceCreditCustodiedSqliteHttpClientV4(configuration) {
+  if (arguments.length !== 1) throw failure('INVALID_CONFIGURATION');
+  return openOwnedClient(configuration, true, true);
+}
+function openOwnedClient(configuration, dispatchIntentEnabled, persistentCustody = false) {
 
   let input, policy, selected;
   try {
@@ -155,7 +171,7 @@ function openOwnedClient(configuration, dispatchIntentEnabled) {
   resourceSlot = slot;
 
   try {
-    slot.store = (dispatchIntentEnabled ? OPEN_V3 : OPEN_V2)({
+    slot.store = (persistentCustody ? OPEN_V4 : dispatchIntentEnabled ? OPEN_V3 : OPEN_V2)({
       databasePath: input.databasePath,
       allowedRoot: input.allowedRoot,
       resourceUrl: input.fundingResourceUrl,
@@ -167,7 +183,8 @@ function openOwnedClient(configuration, dispatchIntentEnabled) {
       slot.phase = 'HELD';
       throw failure('ACQUISITION_HELD');
     }
-    const facade = composeOwned(slot, input, policy, selected.grantId, dispatchIntentEnabled);
+    const facade = composeOwned(slot, input, policy, selected.grantId,
+      dispatchIntentEnabled, persistentCustody);
     slot.phase = 'OPEN';
     return facade;
   } catch (error) {
@@ -194,8 +211,9 @@ function openOwnedClient(configuration, dispatchIntentEnabled) {
   }
 }
 
-function composeOwned(slot, input, policy, selectedGrantId, dispatchIntentEnabled) {
-  let child = (dispatchIntentEnabled ? CREATE_CLIENT_V3 : CREATE_CLIENT)({
+function composeOwned(slot, input, policy, selectedGrantId, dispatchIntentEnabled, persistentCustody) {
+  let child = (persistentCustody ? CREATE_CLIENT_V4
+    : dispatchIntentEnabled ? CREATE_CLIENT_V3 : CREATE_CLIENT)({
     store: slot.store,
     fundingResourceUrl: input.fundingResourceUrl,
     custodyPolicy: policy,
@@ -305,7 +323,8 @@ function composeOwned(slot, input, policy, selectedGrantId, dispatchIntentEnable
       resource: FREEZE({
         phase: slot.phase,
         slotHeld: resourceSlot === slot,
-        ownership: dispatchIntentEnabled ? 'OWNED_EXISTING_V3_DISPATCH_INTENT' : 'OWNED_EXISTING_V2',
+        ownership: persistentCustody ? 'OWNED_EXISTING_V4_CUSTODY_QUARANTINE'
+          : dispatchIntentEnabled ? 'OWNED_EXISTING_V3_DISPATCH_INTENT' : 'OWNED_EXISTING_V2',
         storeAcquired: slot.storeAcquired,
         admissionClosed: slot.admissionClosed,
         storeCloseAttempts: slot.storeCloseAttempts,

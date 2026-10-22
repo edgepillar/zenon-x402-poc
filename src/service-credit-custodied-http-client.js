@@ -6,6 +6,7 @@ import {
 import {
   createServiceCreditCustodiedRequestOwner,
   createServiceCreditCustodiedRequestOwnerV3,
+  createServiceCreditCustodiedRequestOwnerV4,
 } from './service-credit-custodied-request-owner.js';
 import {
   createServiceCreditHttpExecuteDispatch,
@@ -29,6 +30,7 @@ const POLICY = snapshotOriginalServiceRequestCustodyPolicy;
 const KEY = snapshotOriginalServiceRequestCustodyKey;
 const CREATE_OWNER = createServiceCreditCustodiedRequestOwner;
 const CREATE_OWNER_V3 = createServiceCreditCustodiedRequestOwnerV3;
+const CREATE_OWNER_V4 = createServiceCreditCustodiedRequestOwnerV4;
 const CREATE_DISPATCH = createServiceCreditHttpExecuteDispatch;
 const PREFIX = 'SERVICE_CREDIT_CUSTODIED_HTTP_CLIENT_';
 
@@ -79,7 +81,19 @@ export function createServiceCreditCustodiedHttpClientV3(configuration) {
   if (arguments.length !== 1) throw failure('INVALID_CONFIGURATION');
   return createClient(configuration, true);
 }
-function createClient(configuration, dispatchIntentEnabled) {
+/**
+ * Explicit V4 binding to the existing persistent grant-quarantine owner.
+ * The borrowed V4 store is never created, migrated or closed by this client.
+ * Detected uncertainty is latched by that owner, not by a second HTTP state
+ * machine. A persisted marker blocks fresh dispatch and remains readable as
+ * metadata. Missing markers, local completion and normal reopen grant no
+ * authority, real READY, service delivery or process-restart assurance.
+ */
+export function createServiceCreditCustodiedHttpClientV4(configuration) {
+  if (arguments.length !== 1) throw failure('INVALID_CONFIGURATION');
+  return createClient(configuration, true, true);
+}
+function createClient(configuration, dispatchIntentEnabled, persistentCustody = false) {
 
   let config, policy, selectedKey, owner;
   try {
@@ -94,7 +108,8 @@ function createClient(configuration, dispatchIntentEnabled) {
       grantId: config.selectedGrantId,
       requestId: 'scope',
     });
-    owner = (dispatchIntentEnabled ? CREATE_OWNER_V3 : CREATE_OWNER)({
+    owner = (persistentCustody ? CREATE_OWNER_V4
+      : dispatchIntentEnabled ? CREATE_OWNER_V3 : CREATE_OWNER)({
       store: config.store,
       fundingResourceUrl: config.fundingResourceUrl,
       custodyPolicy: policy,
