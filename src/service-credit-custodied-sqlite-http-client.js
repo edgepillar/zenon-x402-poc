@@ -6,6 +6,7 @@ import {
   openZenonFundingPayerRecoveryDispatchIntentSqliteStoreV3,
   openZenonFundingPayerRecoveryCustodyQuarantineSqliteStoreV4,
   openZenonFundingPayerRecoveryResponseObservationSqliteStoreV5,
+  openZenonFundingPayerRecoveryOriginalPaymentSqliteStoreV6,
   ZenonFundingPayerRecoverySqliteStore,
   ZenonFundingPayerRecoverySqliteStoreError,
 } from './service-credit-zenon-funding-post-v1-payer-recovery-sqlite-store.js';
@@ -47,6 +48,7 @@ const OPEN_V2 = openZenonFundingPayerRecoveryCustodySqliteStoreV2;
 const OPEN_V3 = openZenonFundingPayerRecoveryDispatchIntentSqliteStoreV3;
 const OPEN_V4 = openZenonFundingPayerRecoveryCustodyQuarantineSqliteStoreV4;
 const OPEN_V5 = openZenonFundingPayerRecoveryResponseObservationSqliteStoreV5;
+const OPEN_V6 = openZenonFundingPayerRecoveryOriginalPaymentSqliteStoreV6;
 const CREATE_CLIENT = createServiceCreditCustodiedHttpClient;
 const CREATE_CLIENT_V3 = createServiceCreditCustodiedHttpClientV3;
 const CREATE_CLIENT_V4 = createServiceCreditCustodiedHttpClientV4;
@@ -56,6 +58,7 @@ const KEY = snapshotOriginalServiceRequestCustodyKey;
 const STORE_PROTOTYPE = ZenonFundingPayerRecoverySqliteStore.prototype;
 const STORE_ERROR_PROTOTYPE = ZenonFundingPayerRecoverySqliteStoreError.prototype;
 const STORE_CLOSE = DESCRIPTOR(STORE_PROTOTYPE, 'close')?.value;
+const STORE_READ_CHECKPOINT = DESCRIPTOR(STORE_PROTOTYPE, 'getOriginalPaymentCheckpoint')?.value;
 const PREFIX = 'SERVICE_CREDIT_CUSTODIED_SQLITE_HTTP_CLIENT_';
 const STORE_PREFIX = 'ZENON_FUNDING_PAYER_RECOVERY_STORE_';
 const CONFIG_FIELDS = FREEZE([
@@ -142,8 +145,20 @@ export function openServiceCreditCustodiedSqliteHttpClientV5(configuration) {
   if (arguments.length !== 1) throw failure('INVALID_CONFIGURATION');
   return openOwnedClient(configuration, true, true, true);
 }
+/**
+ * Explicit EXISTING V6 owner. The existing V5 child/one-close lifecycle is
+ * reused. Only a caller-pinned, read-only original-payment checkpoint view is
+ * added; it never calls funding prepare/recovery, dispatch or signing. It is
+ * not returned by snapshots or reduced to grant/service-request metadata.
+ * No V5 adoption, missing-checkpoint repair, new transport or default cutover.
+ * Normal close/reopen proves neither restart safety nor payment authority.
+ */
+export function openServiceCreditCustodiedSqliteHttpClientV6(configuration) {
+  if (arguments.length !== 1) throw failure('INVALID_CONFIGURATION');
+  return openOwnedClient(configuration, true, true, true, true);
+}
 function openOwnedClient(configuration, dispatchIntentEnabled, persistentCustody = false,
-  responseObservationEnabled = false) {
+  responseObservationEnabled = false, originalPaymentCheckpointEnabled = false) {
 
   let input, policy, selected;
   try {
@@ -151,7 +166,9 @@ function openOwnedClient(configuration, dispatchIntentEnabled, persistentCustody
     if (typeof input.requestImpl !== 'function' || IS_PROXY(input.requestImpl)
         || !IS_SAFE(input.deadlineMs) || input.deadlineMs < 1
         || input.deadlineMs > 60000 || IS(input.deadlineMs, -0)
-        || typeof STORE_CLOSE !== 'function' || IS_PROXY(STORE_CLOSE)) {
+        || typeof STORE_CLOSE !== 'function' || IS_PROXY(STORE_CLOSE)
+        || (originalPaymentCheckpointEnabled && (typeof STORE_READ_CHECKPOINT !== 'function'
+          || IS_PROXY(STORE_READ_CHECKPOINT)))) {
       throw failure('INVALID_CONFIGURATION');
     }
     pathText(input.databasePath);
@@ -188,7 +205,8 @@ function openOwnedClient(configuration, dispatchIntentEnabled, persistentCustody
   resourceSlot = slot;
 
   try {
-    slot.store = (responseObservationEnabled ? OPEN_V5 : persistentCustody ? OPEN_V4
+    slot.store = (originalPaymentCheckpointEnabled ? OPEN_V6
+      : responseObservationEnabled ? OPEN_V5 : persistentCustody ? OPEN_V4
       : dispatchIntentEnabled ? OPEN_V3 : OPEN_V2)({
       databasePath: input.databasePath,
       allowedRoot: input.allowedRoot,
@@ -202,7 +220,7 @@ function openOwnedClient(configuration, dispatchIntentEnabled, persistentCustody
       throw failure('ACQUISITION_HELD');
     }
     const facade = composeOwned(slot, input, policy, selected.grantId,
-      dispatchIntentEnabled, persistentCustody, responseObservationEnabled);
+      dispatchIntentEnabled, persistentCustody, responseObservationEnabled, originalPaymentCheckpointEnabled);
     slot.phase = 'OPEN';
     return facade;
   } catch (error) {
@@ -230,7 +248,7 @@ function openOwnedClient(configuration, dispatchIntentEnabled, persistentCustody
 }
 
 function composeOwned(slot, input, policy, selectedGrantId, dispatchIntentEnabled, persistentCustody,
-  responseObservationEnabled) {
+  responseObservationEnabled, originalPaymentCheckpointEnabled) {
   let child = (responseObservationEnabled ? CREATE_CLIENT_V5 : persistentCustody ? CREATE_CLIENT_V4
     : dispatchIntentEnabled ? CREATE_CLIENT_V3 : CREATE_CLIENT)({
     store: slot.store,
@@ -334,6 +352,14 @@ function composeOwned(slot, input, policy, selectedGrantId, dispatchIntentEnable
     return CHILD_READ_RECOVERY_KEYS();
   }
 
+  function readOriginalPaymentCheckpoint(expectedPins) {
+    if (arguments.length !== 1) throw failure('INVALID_INPUT');
+    if (slot.admissionClosed) throw failure('CLOSED');
+    if (CHILD_SNAPSHOT().owner.active) throw failure('BUSY');
+    // Captured store method, not a second resource owner or recovery action.
+    return APPLY(STORE_READ_CHECKPOINT, slot.store, [expectedPins]);
+  }
+
   function snapshot(...args) {
     if (args.length !== 0) throw failure('INVALID_INPUT');
     const view = CHILD_SNAPSHOT();
@@ -342,7 +368,8 @@ function composeOwned(slot, input, policy, selectedGrantId, dispatchIntentEnable
       resource: FREEZE({
         phase: slot.phase,
         slotHeld: resourceSlot === slot,
-        ownership: responseObservationEnabled ? 'OWNED_EXISTING_V5_RESPONSE_OBSERVATION'
+        ownership: originalPaymentCheckpointEnabled ? 'OWNED_EXISTING_V6_ORIGINAL_PAYMENT'
+          : responseObservationEnabled ? 'OWNED_EXISTING_V5_RESPONSE_OBSERVATION'
           : persistentCustody ? 'OWNED_EXISTING_V4_CUSTODY_QUARANTINE'
           : dispatchIntentEnabled ? 'OWNED_EXISTING_V3_DISPATCH_INTENT' : 'OWNED_EXISTING_V2',
         storeAcquired: slot.storeAcquired,
@@ -401,6 +428,7 @@ function composeOwned(slot, input, policy, selectedGrantId, dispatchIntentEnable
     readOriginal: FREEZE(readOriginal),
     readOriginalRecoveryState: FREEZE(readOriginalRecoveryState),
     ...(dispatchIntentEnabled ? { readOriginalRecoveryKeys: FREEZE(readOriginalRecoveryKeys) } : {}),
+    ...(originalPaymentCheckpointEnabled ? { readOriginalPaymentCheckpoint: FREEZE(readOriginalPaymentCheckpoint) } : {}),
     snapshot: FREEZE(snapshot),
     close: FREEZE(close),
   });

@@ -15,6 +15,9 @@ import { basename, dirname, isAbsolute, join, resolve } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import { types as utilTypes } from 'node:util';
 import {
+  restoreOriginalPaymentCheckpoint,
+} from './service-credit-pilot-original-payment-checkpoint.js';
+import {
   snapshotOriginalServiceRequestCustodyPolicy,
   snapshotOriginalServiceRequestCustodyKey,
   captureOriginalServiceRequestCustody,
@@ -42,6 +45,7 @@ export const ZENON_FUNDING_PAYER_RECOVERY_CUSTODY_SQLITE_SCHEMA_VERSION = 2;
 export const ZENON_FUNDING_PAYER_RECOVERY_DISPATCH_INTENT_SQLITE_SCHEMA_VERSION = 3;
 export const ZENON_FUNDING_PAYER_RECOVERY_CUSTODY_QUARANTINE_SQLITE_SCHEMA_VERSION = 4;
 export const ZENON_FUNDING_PAYER_RECOVERY_RESPONSE_OBSERVATION_SQLITE_SCHEMA_VERSION = 5;
+export const ZENON_FUNDING_PAYER_RECOVERY_ORIGINAL_PAYMENT_SQLITE_SCHEMA_VERSION = 6;
 export const ZENON_FUNDING_PAYER_RECOVERY_STATUS = Object.freeze({
   PREPARED: 'PREPARED',
   ATTEMPT_FENCED: 'ATTEMPT_FENCED',
@@ -88,6 +92,8 @@ function custodyEnabled(config) {
 const TABLE_DISPATCH_INTENTS = 'CREATE TABLE original_dispatch_intents(grant_id TEXT NOT NULL, request_id TEXT NOT NULL, envelope TEXT NOT NULL, PRIMARY KEY(grant_id,request_id), FOREIGN KEY(grant_id,request_id) REFERENCES original_service_requests(grant_id,request_id)) STRICT';
 const TABLE_CUSTODY_QUARANTINES = 'CREATE TABLE original_custody_quarantines(grant_id TEXT NOT NULL PRIMARY KEY, funding_singleton INTEGER NOT NULL CHECK(funding_singleton = 1) REFERENCES payer_recovery_state(singleton), envelope TEXT NOT NULL) STRICT';
 const TABLE_RESPONSE_OBSERVATIONS = 'CREATE TABLE original_response_observations(grant_id TEXT NOT NULL, request_id TEXT NOT NULL, envelope TEXT NOT NULL, PRIMARY KEY(grant_id,request_id), FOREIGN KEY(grant_id,request_id) REFERENCES original_dispatch_intents(grant_id,request_id)) STRICT';
+const TABLE_ORIGINAL_PAYMENT_CHECKPOINT = 'CREATE TABLE original_payment_checkpoint(singleton INTEGER PRIMARY KEY CHECK(singleton = 1) REFERENCES payer_recovery_state(singleton), envelope TEXT NOT NULL) STRICT';
+const RESTORE_PAYMENT_CHECKPOINT = restoreOriginalPaymentCheckpoint;
 const INTENT_CAPTURE = captureOriginalServiceDispatchIntent;
 const INTENT_PARSE = parseOriginalServiceDispatchIntent;
 const INTENT_SERIALIZE = serializeOriginalServiceDispatchIntent;
@@ -98,10 +104,59 @@ function custodyQuarantineEnabled(config) {
   return config.custodyQuarantineVersion === 4;
 }
 function databaseVersion(config) {
+  if (originalPaymentCheckpointEnabled(config)) return 6;
   if (responseObservationEnabled(config)) return 5;
   if (custodyQuarantineEnabled(config)) return 4;
   if (dispatchIntentEnabled(config)) return 3;
   return custodyEnabled(config) ? CUSTODY_DATABASE_USER_VERSION : DATABASE_USER_VERSION;
+}
+
+function originalPaymentCheckpointEnabled(config) {
+  return config.originalPaymentCheckpointVersion === 6;
+}
+
+function originalPaymentCheckpointPins(value, code) {
+  const pins = exactDataObject(snapshotJson(value, code), ['binding', 'digests'], code);
+  exactDataObject(pins.binding, ['requestId', 'paymentHash', 'origin', 'contextId'], code);
+  exactDataObject(pins.digests, ['requestBody', 'paymentPayload', 'paymentRequirements', 'context'], code);
+  return pins;
+}
+
+// The V6 profile gives the existing opaque checkpoint an explicit funding
+// binding: payload and requirements are the EXACT decoded-header bytes (their
+// canonical base64 is the stored PAYMENT-SIGNATURE/PAYMENT-REQUIRED header).
+// Body/context and their IDs are caller-declared originals, never reconstructed
+// from funding/grant metadata. Self-checks are not independent authentication.
+function checkedOriginalPaymentCheckpoint(serialized, pins, current, code) {
+  try {
+    const checkpoint = RESTORE_PAYMENT_CHECKPOINT(serialized, pins);
+    if (current === null
+        || checkpoint.binding.paymentHash !== current.paymentPayload.payload.transaction.hash
+        || checkpoint.binding.origin !== new URL(current.resourceUrl).origin
+        || checkpoint.originalBytes.paymentPayload !== current.paymentHeader
+        || checkpoint.originalBytes.paymentRequirements !== current.challengeHeader) fail(code);
+    return checkpoint;
+  } catch { fail(code); }
+}
+
+function originalPaymentCheckpointFromRow(row, current) {
+  const code = 'ZENON_FUNDING_PAYER_RECOVERY_STORE_CORRUPT';
+  try {
+    if (row?.singleton !== 1 || typeof row.envelope !== 'string'
+        || byteLength(row.envelope) > 32768) fail(code);
+    const parsed = JSON.parse(row.envelope);
+    return checkedOriginalPaymentCheckpoint(row.envelope, {
+      binding: parsed.binding, digests: parsed.digests,
+    }, current, code);
+  } catch { fail(code); }
+}
+
+function validateOriginalPaymentCheckpoint(database, current) {
+  const rows = database.prepare('SELECT singleton,envelope FROM original_payment_checkpoint LIMIT 2').all();
+  if (rows.length !== (current === null ? 0 : 1)) {
+    fail('ZENON_FUNDING_PAYER_RECOVERY_STORE_CORRUPT');
+  }
+  if (rows.length === 1) originalPaymentCheckpointFromRow(rows[0], current);
 }
 
 // Read the fixed SQLite header without opening a writable SQLite connection.
@@ -888,7 +943,8 @@ function validateDefinitions(database, config) {
     : 'ZENON_FUNDING_PAYER_RECOVERY_STORE_SCHEMA_UNSUPPORTED';
   const definitions = database
     .prepare("SELECT type,name,sql FROM sqlite_master WHERE name NOT LIKE 'sqlite!_%' ESCAPE '!' ORDER BY name"
-      + (responseObservationEnabled(config) ? " LIMIT 8" : custodyQuarantineEnabled(config) ? " LIMIT 7"
+      + (originalPaymentCheckpointEnabled(config) ? " LIMIT 9"
+        : responseObservationEnabled(config) ? " LIMIT 8" : custodyQuarantineEnabled(config) ? " LIMIT 7"
         : dispatchIntentEnabled(config) ? " LIMIT 6" : ""))
     .all();
   if (custodyEnabled(config)) {
@@ -901,6 +957,7 @@ function validateDefinitions(database, config) {
     if (dispatchIntentEnabled(config)) expected.unshift(['original_dispatch_intents', TABLE_DISPATCH_INTENTS]);
     if (custodyQuarantineEnabled(config)) expected.unshift(['original_custody_quarantines', TABLE_CUSTODY_QUARANTINES]);
     if (responseObservationEnabled(config)) expected.splice(3, 0, ['original_response_observations', TABLE_RESPONSE_OBSERVATIONS]);
+    if (originalPaymentCheckpointEnabled(config)) expected.splice(2, 0, ['original_payment_checkpoint', TABLE_ORIGINAL_PAYMENT_CHECKPOINT]);
     if (definitions.length !== expected.length) {
       fail(schemaCode);
     }
@@ -949,6 +1006,7 @@ function validateDatabase(database, config) {
   if (custodyEnabled(config)) {
     const current = rows.length === 1 ? parseRow(rows[0], config.resourceUrl) : null;
     validateCustodyRows(database, config, current);
+    if (originalPaymentCheckpointEnabled(config)) validateOriginalPaymentCheckpoint(database, current);
   }
 }
 
@@ -1031,6 +1089,7 @@ function openDatabase(config, identity, creating) {
         if (dispatchIntentEnabled(config)) database.exec(TABLE_DISPATCH_INTENTS);
         if (custodyQuarantineEnabled(config)) database.exec(TABLE_CUSTODY_QUARANTINES);
         if (responseObservationEnabled(config)) database.exec(TABLE_RESPONSE_OBSERVATIONS);
+        if (originalPaymentCheckpointEnabled(config)) database.exec(TABLE_ORIGINAL_PAYMENT_CHECKPOINT);
         database.prepare(
           'INSERT INTO original_request_custody_policy(singleton,policy_version,max_requests,service_resource_url) VALUES(1,?,?,?)',
         ).run(
@@ -1625,37 +1684,100 @@ export class ZenonFundingPayerRecoverySqliteStore {
   }
 
   prepare(input) {
+    if (originalPaymentCheckpointEnabled(this.#configuration)) {
+      fail('ZENON_FUNDING_PAYER_RECOVERY_STORE_ORIGINAL_PAYMENT_CHECKPOINT_REQUIRED');
+    }
     const pair = captureZenonFundingPostV1PayerRecoveryPair(
       input,
       this.#configuration.resourceUrl,
     );
-    return this.#write('prepare', () => {
+    return this.#write('prepare', () => this.#preparePair(pair));
+  }
+
+  /**
+   * V6 only: atomically retain the funding pair AND the original checkpoint.
+   * Exact input: pair, serializedCheckpoint, expectedPins. Pins must come from
+   * an independent retained caller reference, not be inferred from this DB.
+   * An identical call reads the existing state without changing its revision,
+   * status or ambiguity. No replacement, post-hoc attachment or reset exists.
+   * This writes synthetic/local DATA; it does not prepare or sign a chain tx.
+   */
+  prepareWithOriginalPaymentCheckpoint(input) {
+    if (!originalPaymentCheckpointEnabled(this.#configuration)) {
+      fail('ZENON_FUNDING_PAYER_RECOVERY_STORE_ORIGINAL_PAYMENT_CHECKPOINT_NOT_ENABLED');
+    }
+    const code = 'ZENON_FUNDING_PAYER_RECOVERY_STORE_INVALID_INPUT';
+    if (arguments.length !== 1) fail(code);
+    const values = exactDataObject(input, ['pair', 'serializedCheckpoint', 'expectedPins'], code);
+    const pair = captureZenonFundingPostV1PayerRecoveryPair(values.pair, this.#configuration.resourceUrl);
+    const pins = originalPaymentCheckpointPins(values.expectedPins, code);
+    checkedOriginalPaymentCheckpoint(values.serializedCheckpoint, pins, pair, code);
+    return this.#write('prepareWithOriginalPaymentCheckpoint', () => {
       const current = this.#read();
       if (current !== null) {
-        if (
-          current.challengeHeader !== pair.challengeHeader
-          || current.paymentHeader !== pair.paymentHeader
-        ) fail('ZENON_FUNDING_PAYER_RECOVERY_STORE_CONFLICT');
+        const row = this.#database.prepare('SELECT singleton,envelope FROM original_payment_checkpoint WHERE singleton=1').get();
+        if (current.challengeHeader !== pair.challengeHeader
+            || current.paymentHeader !== pair.paymentHeader
+            || row?.envelope !== values.serializedCheckpoint) {
+          fail('ZENON_FUNDING_PAYER_RECOVERY_STORE_CONFLICT');
+        }
         return current;
       }
-      const persisted = envelope(
-        pair,
-        1,
-        ZENON_FUNDING_PAYER_RECOVERY_STATUS.PREPARED,
-        false,
-      );
-      this.#database.prepare(
-        'INSERT INTO payer_recovery_state(singleton,revision,status,ambiguity_latched,challenge_digest,payment_digest,envelope) VALUES(1,?,?,?,?,?,?)',
-      ).run(
-        persisted.revision,
-        persisted.status,
-        0,
-        digest('zenon-x402:payer-recovery-challenge-v1', pair.challengeHeader),
-        digest('zenon-x402:payer-recovery-payment-v1', pair.paymentHeader),
-        canonicalJson(persisted),
-      );
-      return this.#read();
+      const prepared = this.#preparePair(pair);
+      const inserted = this.#database.prepare('INSERT INTO original_payment_checkpoint(singleton,envelope) VALUES(1,?)')
+        .run(values.serializedCheckpoint);
+      const row = this.#database.prepare('SELECT singleton,envelope FROM original_payment_checkpoint WHERE singleton=1').get();
+      if (inserted.changes !== 1 || row?.envelope !== values.serializedCheckpoint) {
+        fail('ZENON_FUNDING_PAYER_RECOVERY_STORE_CORRUPT');
+      }
+      originalPaymentCheckpointFromRow(row, prepared);
+      return prepared;
     });
+  }
+
+  /** V6 powerless DATA. External pins are required on EVERY read, even reopen. */
+  getOriginalPaymentCheckpoint(expectedPins) {
+    if (!originalPaymentCheckpointEnabled(this.#configuration)) {
+      fail('ZENON_FUNDING_PAYER_RECOVERY_STORE_ORIGINAL_PAYMENT_CHECKPOINT_NOT_ENABLED');
+    }
+    const code = 'ZENON_FUNDING_PAYER_RECOVERY_STORE_INVALID_INPUT';
+    if (arguments.length !== 1) fail(code);
+    const pins = originalPaymentCheckpointPins(expectedPins, code);
+    return this.#run(() => {
+      this.#validateDispatchProfile();
+      const row = this.#database.prepare('SELECT singleton,envelope FROM original_payment_checkpoint WHERE singleton=1').get();
+      if (row === undefined) return null;
+      return checkedOriginalPaymentCheckpoint(row.envelope, pins, this.#read(),
+        'ZENON_FUNDING_PAYER_RECOVERY_STORE_ORIGINAL_PAYMENT_CHECKPOINT_MISMATCH');
+    });
+  }
+
+  #preparePair(pair) {
+    const current = this.#read();
+    if (current !== null) {
+      if (
+        current.challengeHeader !== pair.challengeHeader
+        || current.paymentHeader !== pair.paymentHeader
+      ) fail('ZENON_FUNDING_PAYER_RECOVERY_STORE_CONFLICT');
+      return current;
+    }
+    const persisted = envelope(
+      pair,
+      1,
+      ZENON_FUNDING_PAYER_RECOVERY_STATUS.PREPARED,
+      false,
+    );
+    this.#database.prepare(
+      'INSERT INTO payer_recovery_state(singleton,revision,status,ambiguity_latched,challenge_digest,payment_digest,envelope) VALUES(1,?,?,?,?,?,?)',
+    ).run(
+      persisted.revision,
+      persisted.status,
+      0,
+      digest('zenon-x402:payer-recovery-challenge-v1', pair.challengeHeader),
+      digest('zenon-x402:payer-recovery-payment-v1', pair.paymentHeader),
+      canonicalJson(persisted),
+    );
+    return this.#read();
   }
 
   fenceAttempt(expectedStatus) {
@@ -1774,7 +1896,7 @@ export class ZenonFundingPayerRecoverySqliteStore {
   }
 }
 
-function openStore(options, creating, custody = false, dispatchIntent = false, custodyQuarantine = false, responseObservation = false) {
+function openStore(options, creating, custody = false, dispatchIntent = false, custodyQuarantine = false, responseObservation = false, originalPaymentCheckpoint = false) {
   const code = 'ZENON_FUNDING_PAYER_RECOVERY_STORE_INVALID_CONFIGURATION';
   if (
     options === null
@@ -1814,6 +1936,7 @@ function openStore(options, creating, custody = false, dispatchIntent = false, c
   if (dispatchIntent) config = Object.freeze({ ...config, dispatchIntentVersion: 3 });
   if (custodyQuarantine) config = Object.freeze({ ...config, custodyQuarantineVersion: 4 });
   if (responseObservation) config = Object.freeze({ ...config, responseObservationVersion: 5 });
+  if (originalPaymentCheckpoint) config = Object.freeze({ ...config, originalPaymentCheckpointVersion: 6 });
   if (OPEN_DATABASE_PATHS.has(config.databasePath)) {
     fail('ZENON_FUNDING_PAYER_RECOVERY_STORE_OWNER_BUSY');
   }
@@ -1901,4 +2024,19 @@ export function createZenonFundingPayerRecoveryResponseObservationSqliteStoreV5(
 export function openZenonFundingPayerRecoveryResponseObservationSqliteStoreV5(options) {
   if (arguments.length !== 1) fail('ZENON_FUNDING_PAYER_RECOVERY_STORE_INVALID_CONFIGURATION');
   return openStore(options, false, true, true, true, true);
+}
+
+/**
+ * Explicit V6: reuses V5 plus one insert-only original-payment checkpoint.
+ * V1-V5 files are refused before writable open, never adopted or migrated.
+ * Checksums/binding are local consistency only: no rollback resistance, crash
+ * durability, authenticated context, settlement/retry or payment authority.
+ */
+export function createZenonFundingPayerRecoveryOriginalPaymentSqliteStoreV6(options) {
+  if (arguments.length !== 1) fail('ZENON_FUNDING_PAYER_RECOVERY_STORE_INVALID_CONFIGURATION');
+  return openStore(options, true, true, true, true, true, true);
+}
+export function openZenonFundingPayerRecoveryOriginalPaymentSqliteStoreV6(options) {
+  if (arguments.length !== 1) fail('ZENON_FUNDING_PAYER_RECOVERY_STORE_INVALID_CONFIGURATION');
+  return openStore(options, false, true, true, true, true, true);
 }
