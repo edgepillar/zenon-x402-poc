@@ -1,0 +1,467 @@
+{
+  "schemaVersion": 1,
+  "kind": "P1A_UNSIGNED_ORIGINAL_QUOTE_CHECKPOINT_LOCAL_RESULT",
+  "status": "SELECTED_NATIVE_CASES_PASSED_MANAGED_FINALIZATION_FAILED",
+  "fullScopeQualified": false,
+  "sourceBase": "a655978364d1403c961df55e19c4c2255f225ad4",
+  "scope": {
+    "roadmapLane": "P1-A",
+    "implementation": "Opt-in bounded canonical pre-sign DATA checkpoint carrying the same unsigned UserSend block and its original price quote. Encoding and reading reuse the actual existing intent/hash/fixed-nonce/public-byte/price consumer against an independent caller context.",
+    "actionBoundary": "No re-quote, nonce search, replacement block, hash repair, signing, payment, dispatch, persistence, new native owner or active buyer/planner cutover.",
+    "ownershipBoundary": "The caller must independently retain the original context and intent and prevent full checkpoint substitution. Canonical equality and self-consistent quote DATA do not authenticate original issuance or renew consumed authority.",
+    "coverageNotNovelty": "Selection follows the current concrete planner's unsigned-block-only return and the existing binding's separately supplied records. Missing historical coverage alone is not evidence of novelty."
+  },
+  "implementation": {
+    "path": "src/zenon/dynamic-plasma-unsigned-original-checkpoint.js",
+    "bytes": 9301,
+    "LF": 198,
+    "sha256": "506551e4292491a905a27f56695c30642af6a0e6a85158586379649999f8da47",
+    "gitBlob": "46ac7a4761b078048c205eaf531a7aab7a1d81a9"
+  },
+  "entry": {
+    "path": "qualification/dynamic-plasma-unsigned-original-checkpoint.behavior.draft.mjs",
+    "bytes": 16838,
+    "LF": 245,
+    "sha256": "8b632606b37c8d9826717cab56c3427369a6070506c86a98b48c3cf9f9217db7",
+    "gitBlob": "1e5fcaec9d4088ce031f4cb3272b0af798ce202b"
+  },
+  "sourceGraph": {
+    "files": 21,
+    "bytes": 268873,
+    "staticImportEdges": 68,
+    "sourceRowsSha256": "40f78884fccea059df59496d5e7e5ff287f3055ac7537371fdbef9179cb744cf",
+    "allBeforeAfterPhysicalAndContentPinsMatched": true,
+    "inputs": [
+      {
+        "path": "package.json",
+        "bytes": 1413,
+        "LF": 40,
+        "sha256": "8c9a25504fbf6f87c31cdf245a6f4eec5a88cc89c8352151dc66a577c5771ef5",
+        "gitBlob": "ec7193f6fd76f34778515079dc777594175c4c34"
+      },
+      {
+        "path": "qualification/dynamic-plasma-unsigned-original-checkpoint.behavior.draft.mjs",
+        "bytes": 16838,
+        "LF": 245,
+        "sha256": "8b632606b37c8d9826717cab56c3427369a6070506c86a98b48c3cf9f9217db7",
+        "gitBlob": "1e5fcaec9d4088ce031f4cb3272b0af798ce202b"
+      },
+      {
+        "path": "src/canonical.js",
+        "bytes": 967,
+        "LF": 26,
+        "sha256": "0d55ddf1727cafb0dcd46df2922305568615552a4d2ae34a5c30e90b9d8d998c",
+        "gitBlob": "5367f9c72ee13017a61630e1f0cffdced21d52c4"
+      },
+      {
+        "path": "src/x402-wire.js",
+        "bytes": 39886,
+        "LF": 934,
+        "sha256": "5fba91af5a352f62d1a335c7176a45a604e2af5d92b1c4b0e53825c1f20d4e56",
+        "gitBlob": "fb060d4e349b1c31a1219a0cc137af250a8a2291"
+      },
+      {
+        "path": "src/zenon/bounded-dynamic-plasma-strategy.js",
+        "bytes": 15729,
+        "LF": 353,
+        "sha256": "7b82560bdeb25e573912090a2fe8de7b45912500a7a7c4434fe06dcf94e06d62",
+        "gitBlob": "ee85b7a4da8bf4190ae099e6bc5074059fccebbc"
+      },
+      {
+        "path": "src/zenon/bounded-json-rpc-read-core.js",
+        "bytes": 21759,
+        "LF": 582,
+        "sha256": "10cc529bfb0676bb03dc4dad56059663f4a578b586c52f6404fc859d27d18f76",
+        "gitBlob": "3bd98a83413eb13e3bceb097d35fb874b4c030a2"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-compatibility.js",
+        "bytes": 7732,
+        "LF": 225,
+        "sha256": "b3989ce15e5f2e9d07b0ed035fe96bcce9f22cac93f5e497fdca5c37bf7618dd",
+        "gitBlob": "3811b748b3f905e454c8a4af4650bb7f89eb1cf2"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-json-rpc-read-transport.js",
+        "bytes": 10832,
+        "LF": 283,
+        "sha256": "fd03b2ad87d16660aa61d3961c163d724d5f89cd6d4bb9c4391d739566d5e5ca",
+        "gitBlob": "0475b7ab42889f67fb030fa7344d73d8bd6957d7"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-observation-collector.js",
+        "bytes": 38492,
+        "LF": 949,
+        "sha256": "6bb665dd97e4b262941ed11fb7a9fb5c6d7a162004a39fcbfbfa8cd7b3f82d98",
+        "gitBlob": "171a49f29379866ed111031d15423634ac2d17b4"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-observation-normalizer.js",
+        "bytes": 28398,
+        "LF": 698,
+        "sha256": "2c3f7d42ded21a5513ff26c23a00a35a53aa334f053d10930f1571a020286897",
+        "gitBlob": "c406db8471aa6c8afd812c222c673c809491cf00"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-price-policy.js",
+        "bytes": 16224,
+        "LF": 444,
+        "sha256": "eba3225c4d26cbb6e0be575ac4fd5073bc8b0c4454eb51e2bea4d91856d0c65e",
+        "gitBlob": "649dd09b60236b43c91d22e34b76f71f4b661361"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-required-fused-policy-adapter.js",
+        "bytes": 12024,
+        "LF": 272,
+        "sha256": "e2b693d4df9065d44ba590f4d0c8dffeb8e55187668eedfa396b4026c9905c3e",
+        "gitBlob": "b592aafd4c41461318376ea9acc1373f99317455"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-required-fused-quote.js",
+        "bytes": 5416,
+        "LF": 133,
+        "sha256": "f5e10ff2dbfff3b6b63d87f0abadd0bb52b5d6b8fe0ead6a55fc5ea14207b730",
+        "gitBlob": "e820fd31ffde4ef77a2efa6e1fd3ed1775778726"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-unsigned-original-checkpoint.js",
+        "bytes": 9301,
+        "LF": 198,
+        "sha256": "506551e4292491a905a27f56695c30642af6a0e6a85158586379649999f8da47",
+        "gitBlob": "46ac7a4761b078048c205eaf531a7aab7a1d81a9"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-user-send-assembly.js",
+        "bytes": 7772,
+        "LF": 162,
+        "sha256": "05012a2a983ceca018674c4d1f63823f3f7ed53b0970a4b4bd486c4278832b04",
+        "gitBlob": "a0537856f6692d278c9043ab9c1c734d1bde61ba"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-user-send-fixed-work.js",
+        "bytes": 3475,
+        "LF": 77,
+        "sha256": "4ee83870df0b25c34d35c0f0d0ceb894ca9dab8c047f81b34a48dd816f1fbf38",
+        "gitBlob": "4ce2a790df84c77bc76615e5eebc309ecd2868ac"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-user-send-key-binding.js",
+        "bytes": 4237,
+        "LF": 91,
+        "sha256": "37ad7e74b038801297e4bffb0cb8ba92cbd79009ed32c4ae5b134fe2cb154be2",
+        "gitBlob": "c366f0fee4132604b40604547fe22f1bc1dba65d"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-user-send-work-binding.js",
+        "bytes": 1940,
+        "LF": 42,
+        "sha256": "79eba29a05427128ae3a12346fd3ee7cbaa526d6f39eb36ed58d388640638266",
+        "gitBlob": "a329d521458a5c5b6dbc87194d91d4165d5e759c"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-user-send-work-input.js",
+        "bytes": 2853,
+        "LF": 59,
+        "sha256": "2ff9c089e5903c059746d0a1c38688a2849f94d04d429279811fbbfbb40450a4",
+        "gitBlob": "dad4febf4ef6f09216640245c7e3805e01ad0127"
+      },
+      {
+        "path": "src/zenon/plasma-strategy.js",
+        "bytes": 974,
+        "LF": 32,
+        "sha256": "1c597d4e169ba8a5e6d2b7852c4ffa3a8ec9b854332fe354b9b013c36ebae093",
+        "gitBlob": "5cddc2d270aaf043e6e43145e95ffe0be3dde475"
+      },
+      {
+        "path": "src/zenon/transaction-planner.js",
+        "bytes": 22611,
+        "LF": 464,
+        "sha256": "079fe8da938e08e33a20ca1076492a829afa6fce3ae7f9b9f68d3bf4bff94233",
+        "gitBlob": "17b49a3d53974c9b3846ec6f352d6e8974bad7d3"
+      }
+    ],
+    "barePackages": 0,
+    "dynamicImports": 0,
+    "legacyQualificationEntriesLoaded": 0,
+    "excludedImports": [
+      "nonce-search",
+      "bounded-material",
+      "SDK",
+      "SQL",
+      "HTTPS",
+      "wallet",
+      "native settlement owner"
+    ]
+  },
+  "selectedCases": [
+    {
+      "index": 1,
+      "name": "original quote checkpoint roundtrips the same unsigned block and quote through the actual shared consumer",
+      "status": "PASSED"
+    },
+    {
+      "index": 2,
+      "name": "original quote checkpoint has deterministic sorted encoding independent of caller key insertion order",
+      "status": "PASSED"
+    },
+    {
+      "index": 3,
+      "name": "original quote checkpoint retains the same block at both permitted post-work price frontiers",
+      "status": "PASSED"
+    },
+    {
+      "index": 4,
+      "name": "original quote checkpoint refuses expiry without refreshing its quote block nonce or hash",
+      "status": "PASSED"
+    },
+    {
+      "index": 5,
+      "name": "original quote checkpoint refuses changed runtime p in the independent current observation",
+      "status": "PASSED"
+    },
+    {
+      "index": 6,
+      "name": "original quote checkpoint refuses a changed independently supplied runtime context digest",
+      "status": "PASSED"
+    },
+    {
+      "index": 7,
+      "name": "original quote checkpoint cannot replace the independent original intent or account subject",
+      "status": "PASSED"
+    },
+    {
+      "index": 8,
+      "name": "original quote checkpoint refuses a rehashed different transfer instead of accepting hash validity alone",
+      "status": "PASSED"
+    },
+    {
+      "index": 9,
+      "name": "original quote checkpoint rechecks public bytes not covered by the original account block hash",
+      "status": "PASSED"
+    },
+    {
+      "index": 10,
+      "name": "original quote checkpoint refuses signed metadata and an altered nonce or hash without repairing them",
+      "status": "PASSED"
+    },
+    {
+      "index": 11,
+      "name": "original quote checkpoint refuses a rehashed resource selection different from the original quote",
+      "status": "PASSED"
+    },
+    {
+      "index": 12,
+      "name": "original quote checkpoint rechecks the complete original quote instead of trusting its version or digest labels",
+      "status": "PASSED"
+    },
+    {
+      "index": 13,
+      "name": "original quote checkpoint refuses noncanonical ambiguous oversized or foreign-version wire encodings",
+      "status": "PASSED"
+    },
+    {
+      "index": 14,
+      "name": "original quote checkpoint refuses getters proxies coercion toJSON and cyclic or decorated data without hooks",
+      "status": "PASSED"
+    },
+    {
+      "index": 15,
+      "name": "original quote checkpoint detaches all selected input data synchronously before awaiting validation",
+      "status": "PASSED"
+    },
+    {
+      "index": 16,
+      "name": "original quote checkpoint returns powerless frozen data and cause-free exact-arity refusals within a finite budget",
+      "status": "PASSED"
+    }
+  ],
+  "actualCommand": {
+    "nativeLocalCommands": 1,
+    "replays": 0,
+    "state": "COMPLETE",
+    "actualExit": 0,
+    "outputComplete": true,
+    "counts": {
+      "tests": 16,
+      "suites": 0,
+      "pass": 16,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "stdout": {
+      "bytes": 4719,
+      "sha256": "41c0250c8371c63b2bac4f1ddfdbd1e8be8a1746a97527b3d0290f0fcd558825"
+    },
+    "stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "reporterDurationMs": 43.873125,
+    "durationMeaning": "Node test reporter time only; not process startup, storage admission, evidence promotion, cleanup or managed wall-clock time.",
+    "runtime": {
+      "nodeVersion": "24.19.0",
+      "platform": "darwin-arm64",
+      "binarySha256": "dbedff294bab84a0a86c04e15fbcbeb1c97ca10bef1b32b0634cd24b36f62100"
+    },
+    "launch": {
+      "argv": [
+        "node",
+        "--permission",
+        "--allow-fs-read=<repository>",
+        "--disallow-code-generation-from-strings",
+        "--no-addons",
+        "--no-warnings",
+        "--unhandled-rejections=strict",
+        "--test-reporter=tap",
+        "qualification/dynamic-plasma-unsigned-original-checkpoint.behavior.draft.mjs"
+      ],
+      "environmentCleared": true,
+      "writePermission": false,
+      "managerTimeoutSeconds": 30,
+      "metadataLockWaitSeconds": 180,
+      "stdoutCap": 65536,
+      "stderrCap": 1048576,
+      "notAHardLifetimeMemoryOrNetworkSandboxGuarantee": true
+    },
+    "diagnostics": {
+      "kind": "P1A_UNSIGNED_ORIGINAL_QUOTE_CHECKPOINT",
+      "encodes": 21,
+      "validations": 37,
+      "hooks": 0,
+      "candidateSearchCalls": 0,
+      "candidateEvaluations": 0,
+      "keyGeneration": 0,
+      "signatures": 0,
+      "persistentWrites": 0,
+      "originalQuoteAndBlockPreserved": true,
+      "qualification": "DECLARED_FIXED_DATA_ONLY_NOT_LIVE_DP"
+    }
+  },
+  "managedEvidence": {
+    "state": "CLOSED",
+    "outcome": "FAILURE",
+    "failure": {
+      "type": "Busy",
+      "message": "Store metadata lease remained busy; existing work was not interrupted",
+      "stage": "Final handoff record after successful complete native command and source/preservation checks."
+    },
+    "handoffRecordPersisted": false,
+    "controllerLiveHandoffObservationIsNotAProtectedStorageRecord": true,
+    "originalFailureRecordPreserved": true,
+    "relabelledAsTaskSuccess": false,
+    "metadataWriteRetried": false,
+    "experimentRerun": false,
+    "readOnlyReconciliation": {
+      "status": "RECONCILED_SELECTED_NATIVE_PASS_MANAGED_FINALIZATION_FAILURE",
+      "fullScopeQualified": false,
+      "completeMetadataRecordsRead": 8,
+      "completeMetadataBytesRead": 49392,
+      "allStreamsAndInputLedgersRead": true,
+      "inputLedgersAndCreatorsVerified": 21,
+      "sourceAndEarlierEvidenceUnchanged": true
+    },
+    "retainedRecordPins": [
+      {
+        "name": "task.json",
+        "bytes": 902,
+        "sha256": "05e7c96fbcd9bb847016e1d9e6f06caf04ac9c21cf65863198f5e24d2098c90b"
+      },
+      {
+        "name": "admission.json",
+        "bytes": 6810,
+        "sha256": "8b2431691552b3d977c10b00384277aa15186caf5d5b96646ba84fcaf69d27d8"
+      },
+      {
+        "name": "cleanup.json",
+        "bytes": 174,
+        "sha256": "cc8ea44863d6950c24194379183cc98a273624e512eaf5fa6cd366ff7f84994c"
+      },
+      {
+        "name": "command-aa5129883151497cb1553332c759b872.json",
+        "bytes": 985,
+        "sha256": "3d4906561d45806040ff1b5d0f91a08fab2da9c78ddf4e8031b2a58149ef59e2"
+      },
+      {
+        "name": "outcome.json",
+        "bytes": 62,
+        "sha256": "706c5773ec5f1bff51f531a1a1798db213604000d053579743d1986dcb50955b"
+      },
+      {
+        "name": "package-e00799b06f9349f6a19a81d1b2b2d60a.json",
+        "bytes": 470,
+        "sha256": "5346fc9053e0cd8a78d5f2279b694f85f731f44623e55594c0623569d413312d"
+      },
+      {
+        "name": "preservation-before.json",
+        "bytes": 815,
+        "sha256": "cee34a812fe54d329a414bf08eb80f3aadaa898711f5382882c2676259588828"
+      },
+      {
+        "name": "source-graph.json",
+        "bytes": 39174,
+        "sha256": "21168d4aa10d6b908fbfb222899a306895539d230f720e376ceca97228623440"
+      }
+    ],
+    "cleanup": {
+      "onlyOwnedTask": true,
+      "remainingRegisteredScratchBytes": 0,
+      "ownedScratchAbsent": true,
+      "objectsDeleted": 0,
+      "processGroupObservedAbsent": true
+    },
+    "qualificationMeaning": "The actual selected command passed. The managed task did not complete successfully. Do not call this full-scope qualification, hosted CI, live/runtime DP acceptance, original-payment custody, restart durability, signing authority or pilot readiness."
+  },
+  "resourceAndRetention": {
+    "managedQuotaBytes": 2097152,
+    "expectedAllocationBytes": 2097152,
+    "retainedInputReferences": 21,
+    "existingInputObjectsReused": 19,
+    "newInputObjects": 2,
+    "newInputBytes": 26139,
+    "unchangedInputBytesNotRewritten": 242734,
+    "currentTaskObjectReferences": 4,
+    "sourceExecutionClones": 0,
+    "archivesCreated": 0,
+    "payloadsEmbeddedInReferenceManifest": false,
+    "oldAllocationsRemainChargedToOriginalRetainedCreatorTasks": true,
+    "metadataInventoryScanCostObservedInManagerSource": true,
+    "otherMetadataLeaseHolderObservedReadOnly": true,
+    "noLockBrokenNoWriterInterruptedNoPolicyChanged": true,
+    "nextEfficiencyAction": "Consolidate future caller-side admission/source/preservation records where possible, without changing active helpers, weakening retained evidence or bypassing quotas. Do not rerun this completed command."
+  },
+  "preservation": {
+    "earlierSourceFiles": 268,
+    "earlierPrivateFiles": 868,
+    "earlierProtectedAbsences": 19,
+    "allPhysicalAndContentPinsMatched": true,
+    "earlierSourceRowsSha256": "16b0a895ba1dc3b3145bfa79b123e8fb07868d861901df327785584c59b59efc",
+    "earlierPrivateRowsSha256": "5c07da32459e44429e6ed31e5a608d191fdbc5bff1cbe8f1d9fcd777511394f1",
+    "unrelatedLocalRows": 652,
+    "unrelatedLocalRowsSha256": "2c87e76fd5bfe05f61a8626c61b6e6e9b4f65e7e083f4c32f362373432dca41f",
+    "localHeadBranchAndIndexUnchanged": true,
+    "originalPaymentRequestBytesAndConsumedAuthorityUnchanged": true,
+    "protectedRealTotals": {
+      "consumedAdmissions": 2,
+      "actualPrepare": 1,
+      "bundles": 0,
+      "nativeChainProviderQualificationRuns": 0
+    },
+    "automationSettingsModelWorkerWorkflowDependencyAndStoragePolicyUnchanged": true
+  },
+  "publication": {
+    "transferredToMain": false,
+    "stagingBranchCreated": false,
+    "reason": "Managed handoff finalization failed. Keep this packet unpublished, preserve the original task FAILURE and do not rerun the completed command. This report does not close the broader qualification gate.",
+    "hostedCI": "NOT_RUN_NOT_GREEN"
+  },
+  "limits": [
+    "Declared fixed-DATA checks only, using one supplied literal zero-difficulty nonce and existing fixed public bytes.",
+    "No candidate search or key/signature production. A zero-difficulty result is not current Plasma sufficiency.",
+    "No authenticated runtime p, ancestry, account balance, payer/provider/policy authority, native provider qualification, actual PREPARE, live pilot or production proof.",
+    "No filesystem checkpoint write/reopen/process-restart or durable custody behavior is implemented or qualified by the codec.",
+    "Do not treat a checkpoint or its validation receipt as a signing/payment capability or authorization to replace or re-sign an original payment.",
+    "All earlier completed/stopped outcomes, private bootstrap/GHCR boundaries and PR193 VALIDATED versus UNKNOWN/ACKNOWLEDGED distinctions remain unchanged."
+  ]
+}
