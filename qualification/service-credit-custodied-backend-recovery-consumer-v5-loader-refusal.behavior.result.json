@@ -1,0 +1,75 @@
+{
+  "format": "P2_BACKEND_RECOVERY_CONSUMER_V5_LOADER_RESULT_V1",
+  "status": "FAIL_SELECTED_ENTRY_NOT_LOADED",
+  "selectedBehaviorCasesStatus": "NOT_RUN",
+  "scope": "One retained native Node loader attempt for the new opt-in V5 no-dispatch recovery consumer; no application behavior or SQLite case executed.",
+  "mainAtSelection": "2d4a740567877108f7ffc17125e3625b20e99e43",
+  "sourceBinding": {
+    "module": {
+      "path": "src/service-credit-custodied-backend-recovery-client.js",
+      "bytes": 25427,
+      "LF": 530,
+      "sha256": "a41ca819b524cf6ee5eed9cf0540c3896ac2be4306300fa9eb12128c1348b07b",
+      "gitBlob": "5f3fa9e922f80847535a003d1023bc22061a67fe"
+    },
+    "fixture": {
+      "path": "qualification/service-credit-custodied-backend-recovery-consumer-v5.behavior.draft.mjs",
+      "bytes": 35499,
+      "LF": 521,
+      "sha256": "3e8d4b5eeb4e4c80c9201a0d248b76079207ef3db7f5d25a37e71e16d3403a9f",
+      "gitBlob": "6906958ad610655a048136fe3703c81030e49fcc"
+    },
+    "selectedSourceFiles": 26,
+    "selectedSourceBytes": 662432
+  },
+  "execution": {
+    "task": "82eabeacf2884d179f36bdf33ca4f534",
+    "command": "0ac35a8ee4da44a9b946d365dddd1da7",
+    "actualExit": 1,
+    "outputComplete": true,
+    "registeredFileWrapperTests": 1,
+    "wrapperPass": 0,
+    "wrapperFail": 1,
+    "selectedBehaviorTests": 0,
+    "selectedTestsExpected": 3,
+    "syntheticSqliteFiles": 0,
+    "syntheticKeys": 0,
+    "syntheticCapabilitySignatures": 0,
+    "actualNetworkCalls": 0,
+    "stdout": {
+      "bytes": 1526,
+      "sha256": "04dcb4ca4e0c2f11e61fc025db2ad6dc0e775d035122c54c37db5cc5a23fbbd0"
+    },
+    "stderr": {
+      "bytes": 327,
+      "sha256": "e43a9d97851316bd97020d3bc68ce1b5abe305eaba4a4aeec8aa0ddc651c92f1"
+    },
+    "errorCode": "ERR_INPUT_TYPE_NOT_ALLOWED",
+    "cause": "The inline ESM invocation used --input-type=module while the in-process test runner tried to resolve its selected file. The file was not evaluated.",
+    "exactSelectionMatched": false,
+    "ownedProcessGroupObservedAbsent": true,
+    "closedTaskOutcome": "FAILURE",
+    "cleanup": "CLEANED_ZERO_BYTE_OWNED_SCRATCH_ONLY"
+  },
+  "preservation": {
+    "currentRepositoryPinsMatched": 186,
+    "priorPrivatePinsMatched": 418,
+    "protectedAbsences": 8,
+    "repositorySourceRewrittenByExecution": false,
+    "priorFailureOrEvidenceRewritten": false
+  },
+  "nextFiniteWork": "Keep this failed attempt immutable. Review a corrected CommonJS --eval caller using the existing native runner/reporting pattern, then admit only the same three still-NOT_RUN cases on new private synthetic SQLite files. This is a changed launch, not a retry of an executed behavior case.",
+  "acceptance": {
+    "production": "NOT_ESTABLISHED",
+    "currentAuthority": "NOT_ESTABLISHED",
+    "delivery": "NOT_ESTABLISHED",
+    "pilot": "NOT_ESTABLISHED",
+    "realPaymentSigner": "DISABLED"
+  },
+  "protectedTotals": {
+    "consumedAdmissions": 2,
+    "actualChainPrepare": 1,
+    "bundles": 0,
+    "nativeChainProviderQualification": 0
+  }
+}

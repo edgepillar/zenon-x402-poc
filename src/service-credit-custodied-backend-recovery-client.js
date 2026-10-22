@@ -4,6 +4,7 @@ import { createServiceCreditCustodiedHttpClientV3 } from './service-credit-custo
 import { openServiceCreditCustodiedSqliteHttpClientV3 } from './service-credit-custodied-sqlite-http-client.js';
 import { openServiceCreditCustodiedSqliteHttpClientV4 } from './service-credit-custodied-sqlite-http-client.js';
 import { openServiceCreditCustodiedSqliteHttpClientV5 } from './service-credit-custodied-sqlite-http-client.js';
+import { openServiceCreditCustodiedSqliteRecoveryReaderV5 } from './service-credit-custodied-sqlite-recovery-reader.js';
 import { createServiceCreditBackendOriginalOutcomeReader } from './service-credit-backend-original-outcome-reader.js';
 import { createServiceCreditCustodiedSequentialRunnerCore } from './service-credit-custodied-sequential-runner-core.js';
 import {
@@ -264,6 +265,65 @@ export async function openServiceCreditCustodiedSqliteBackendClientV5(options) {
 export async function openServiceCreditCustodiedSqliteBackendSequentialRunnerV5(options) {
   if (arguments.length !== 1) throw failure('INVALID_CONFIGURATION');
   return openOwnedBackendClient(options, true, true, true, true);
+}
+
+/**
+ * Explicit no-dispatch V5 consumer over ONE existing owned payer and the same
+ * borrowed native backend. Reuses the actual recovery reader's four diagnostic
+ * plan/collection factories; it does not open a second payer or copy an owner.
+ * Local diagnostics read the same root's validated custody state. Only the
+ * combined backend read accepts the explicit original public proof; diagnostics
+ * do not query/authenticate the backend or promote declared observations.
+ *
+ * Diagnostic child close is local history detachment, not root/native close.
+ * Root close fences live reads and returns the original cached native Promise,
+ * including UNKNOWN; it never closes the borrowed backend store. Local plans
+ * may still detach their cached history after root close or a live read failure.
+ * All DATA/action, original intent/quarantine and exact-proof boundaries remain
+ * unchanged. No submit, batch, caller transport, root/store, signer, payment,
+ * creation, migration, implicit replay, default cutover or restart assurance.
+ */
+export async function openServiceCreditCustodiedSqliteBackendRecoveryConsumerV5(options) {
+  if (arguments.length !== 1) throw failure('INVALID_CONFIGURATION');
+  let config = null, backend = null, reader = null;
+  try {
+    config = exact(options, SQLITE_FIELDS);
+    const selectedGrantId = KEY({ grantId: config.selectedGrantId, requestId: 'scope' }).grantId;
+    backend = CREATE_BACKEND({ store: config.backendStore, admittedGrantId: selectedGrantId });
+    reader = await openServiceCreditCustodiedSqliteRecoveryReaderV5({
+      databasePath: config.databasePath,
+      allowedRoot: config.allowedRoot,
+      fundingResourceUrl: config.fundingResourceUrl,
+      custodyPolicy: config.custodyPolicy,
+      selectedGrantId,
+      deadlineMs: config.deadlineMs,
+    });
+    const connection = connectClientBackend(
+      reader, backend, selectedGrantId, 'PAYER_OWNED_BACKEND_BORROWED', false, true,
+    );
+    const consumer = FREEZE({
+      readOriginal: connection.readOriginal,
+      readOriginalRecoveryState: connection.readOriginalRecoveryState,
+      readOriginalRecoveryKeys: connection.readOriginalRecoveryKeys,
+      readOriginalBackendRecoveryState: connection.readOriginalBackendRecoveryState,
+      createOriginalRecoveryPlan: reader.createOriginalRecoveryPlan,
+      createOriginalRecoveryStatePlan: reader.createOriginalRecoveryStatePlan,
+      createOriginalRecoveryCollection: reader.createOriginalRecoveryCollection,
+      createOriginalRecoveryObservationCollection: reader.createOriginalRecoveryObservationCollection,
+      snapshot: connection.snapshot,
+      close: connection.close,
+    });
+    reader = null;
+    backend = null;
+    return consumer;
+  } catch (error) {
+    if (backend !== null) backend.close();
+    if (reader !== null) await reader.close();
+    throw error;
+  } finally {
+    config = null;
+    options = null;
+  }
 }
 
 async function openOwnedBackendClient(options, serviceDispatchEnabled, sequentialEnabled = false,
