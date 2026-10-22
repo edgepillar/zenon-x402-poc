@@ -8,6 +8,8 @@ import {
   GATE_B_OPERATOR_COORDINATOR_LIMITS,
   GATE_B_OPERATOR_COORDINATOR_STATUS_LINES,
   GATE_B_OPERATOR_ORIGIN_RELEASE_IPC_TYPES,
+  GATE_B_RESET_EPOCH_NATIVE_DIAGNOSTIC_IPC_TYPE,
+  GATE_B_RESET_EPOCH_NATIVE_DIAGNOSTIC_STAGES,
   createGateBOperatorCoordinatorIpcMessage,
   createGateBOperatorOriginReleaseIpcMessage,
   frameGateBOperatorCoordinatorBootstrap,
@@ -16,6 +18,7 @@ import {
   parseGateBOperatorCoordinatorBootstrapFrame,
   parseGateBOperatorCoordinatorIpcMessage,
   parseGateBOperatorOriginReleaseIpcMessage,
+  parseGateBResetEpochNativeDiagnosticIpcMessage,
 } from './gate-b-operator-coordinator-schema.js';
 import {
   GATE_B_OPERATOR_ORIGIN_GUARD_HOST,
@@ -43,6 +46,7 @@ const WATCHDOG_START_MAGIC = 0x47425354;
 const REAPER_TARGET_MAGIC = 0x47425250;
 const OUTPUT_MAX_BYTES = 512;
 const ARRAY_IS_ARRAY = Array.isArray;
+const ARRAY_INCLUDES = Array.prototype.includes;
 const DEFINE_PROPERTY = Object.defineProperty;
 const GET_OWN_PROPERTY_DESCRIPTOR = Object.getOwnPropertyDescriptor;
 const GET_PROTOTYPE_OF = Object.getPrototypeOf;
@@ -51,9 +55,26 @@ const IS_PROMISE = utilTypes.isPromise;
 const IS_PROXY = utilTypes.isProxy;
 const NATIVE_PROMISE = Promise;
 const OBJECT_PROTOTYPE = Object.prototype;
+const REFLECT_APPLY = Reflect.apply;
 const REFLECT_OWN_KEYS = Reflect.ownKeys;
+const WEAK_MAP_GET = WeakMap.prototype.get;
+const WEAK_MAP_SET = WeakMap.prototype.set;
 const RECORDS = new WeakMap();
 const WATCHDOG_RECORDS = new WeakMap();
+const LAUNCH_FAILURE_STAGES = new WeakMap();
+const FAILURE_DIAGNOSTIC_STAGE_VALUES = Object.freeze([
+  GATE_B_RESET_EPOCH_NATIVE_DIAGNOSTIC_STAGES.UNKNOWN,
+  GATE_B_RESET_EPOCH_NATIVE_DIAGNOSTIC_STAGES.HOSTNAME_SOURCE_WRITTEN,
+  GATE_B_RESET_EPOCH_NATIVE_DIAGNOSTIC_STAGES.QUICK_TUNNEL_ACTIVE_CONFIRMED,
+  GATE_B_RESET_EPOCH_NATIVE_DIAGNOSTIC_STAGES.HOSTNAME_HANDOFF_VERIFIED,
+  GATE_B_RESET_EPOCH_NATIVE_DIAGNOSTIC_STAGES.HOSTNAME_SOURCE_VERIFIED,
+  GATE_B_RESET_EPOCH_NATIVE_DIAGNOSTIC_STAGES.WALLET_MATERIAL_DERIVED,
+  GATE_B_RESET_EPOCH_NATIVE_DIAGNOSTIC_STAGES.WALLET_LEAF_RESERVED,
+  GATE_B_RESET_EPOCH_NATIVE_DIAGNOSTIC_STAGES.PRE_REVIEW_OUTPUTS_RESERVED,
+  GATE_B_RESET_EPOCH_NATIVE_DIAGNOSTIC_STAGES.PRE_REVIEW_OUTPUTS_COMMITTED,
+  GATE_B_RESET_EPOCH_NATIVE_DIAGNOSTIC_STAGES.OFFLINE_RECEIPT_RESERVED,
+  GATE_B_RESET_EPOCH_NATIVE_DIAGNOSTIC_STAGES.OFFLINE_RECEIPT_COMMITTED,
+]);
 const NATIVE_PROMISE_CONSTRUCTOR_DESCRIPTOR = Object.freeze({
   configurable: false,
   enumerable: false,
@@ -70,8 +91,32 @@ export class GateBOperatorCoordinatorLaunchError extends Error {
   }
 }
 
+function exactFailureDiagnosticStage(value) {
+  return Reflect.apply(ARRAY_INCLUDES, FAILURE_DIAGNOSTIC_STAGE_VALUES, [value])
+    ? value
+    : GATE_B_RESET_EPOCH_NATIVE_DIAGNOSTIC_STAGES.UNKNOWN;
+}
+
+function launchError(stage = GATE_B_RESET_EPOCH_NATIVE_DIAGNOSTIC_STAGES.UNKNOWN) {
+  const output = new GateBOperatorCoordinatorLaunchError();
+  const exact = exactFailureDiagnosticStage(stage);
+  if (exact !== GATE_B_RESET_EPOCH_NATIVE_DIAGNOSTIC_STAGES.UNKNOWN) {
+    REFLECT_APPLY(WEAK_MAP_SET, LAUNCH_FAILURE_STAGES, [output, exact]);
+  }
+  return output;
+}
+
 function fail() {
-  throw new GateBOperatorCoordinatorLaunchError();
+  throw launchError();
+}
+
+export function readGateBOperatorCoordinatorLaunchFailureStage(candidate) {
+  if (!candidate || (typeof candidate !== 'object' && typeof candidate !== 'function')) {
+    return GATE_B_RESET_EPOCH_NATIVE_DIAGNOSTIC_STAGES.UNKNOWN;
+  }
+  return exactFailureDiagnosticStage(
+    REFLECT_APPLY(WEAK_MAP_GET, LAUNCH_FAILURE_STAGES, [candidate]),
+  );
 }
 
 function dataProperty(value, name) {
@@ -289,12 +334,12 @@ async function reapGroup(groupId, dependencies) {
 
 function createCapability(record) {
   const capability = Object.freeze(Object.create(null));
-  RECORDS.set(capability, record);
+  REFLECT_APPLY(WEAK_MAP_SET, RECORDS, [capability, record]);
   return capability;
 }
 
 function recordFor(capability) {
-  const record = RECORDS.get(capability);
+  const record = REFLECT_APPLY(WEAK_MAP_GET, RECORDS, [capability]);
   if (!record) fail();
   return record;
 }
@@ -378,7 +423,7 @@ function releaseChild(record) {
 }
 
 function rejectMilestones(record) {
-  const error = new GateBOperatorCoordinatorLaunchError();
+  const error = launchError(record.diagnosticStage);
   if (record.rejectLaunch) record.rejectLaunch(error);
   if (record.rejectReview) record.rejectReview(error);
   if (record.rejectRun) record.rejectRun(error);
@@ -416,6 +461,40 @@ function preflightStatusLine(record) {
   return record.resetFamily
     ? GATE_B_OPERATOR_COORDINATOR_STATUS_LINES.RESET_OFFLINE_PREFLIGHT_VALID
     : GATE_B_OPERATOR_COORDINATOR_STATUS_LINES.PREFLIGHT_VALID;
+}
+
+function invalidateFailureDiagnostic(record) {
+  record.diagnosticEvidenceState = 'INVALID';
+  record.diagnosticStage = GATE_B_RESET_EPOCH_NATIVE_DIAGNOSTIC_STAGES.UNKNOWN;
+}
+
+function receiptDiagnosticStage(stage) {
+  return stage === GATE_B_RESET_EPOCH_NATIVE_DIAGNOSTIC_STAGES.OFFLINE_RECEIPT_RESERVED ||
+    stage === GATE_B_RESET_EPOCH_NATIVE_DIAGNOSTIC_STAGES.OFFLINE_RECEIPT_COMMITTED;
+}
+
+function consumeFailureDiagnostic(record, candidate) {
+  if (ownDataProperty(candidate, 'type') !==
+      GATE_B_RESET_EPOCH_NATIVE_DIAGNOSTIC_IPC_TYPE) return undefined;
+  let parsed;
+  try {
+    parsed = parseGateBResetEpochNativeDiagnosticIpcMessage(candidate);
+  } catch {
+    invalidateFailureDiagnostic(record);
+    return false;
+  }
+  const stateAllowed = record.state === 'LAUNCHING' ||
+    record.state === 'BOOTSTRAP_SUBMITTED' || record.state === 'REVIEW_SUBMITTED';
+  if (!record.resetFamily || !stateAllowed || record.terminalSettled ||
+      record.terminalWork !== undefined || record.finalIpc !== undefined ||
+      record.diagnosticEvidenceState !== 'MISSING' ||
+      (receiptDiagnosticStage(parsed.stage) && record.state !== 'REVIEW_SUBMITTED')) {
+    invalidateFailureDiagnostic(record);
+    return false;
+  }
+  record.diagnosticEvidenceState = 'VALID';
+  record.diagnosticStage = parsed.stage;
+  return true;
 }
 
 function checkMilestones(record) {
@@ -512,6 +591,11 @@ function installHandlers(record) {
   };
   const onMessage = message => {
     if (!record.acceptingProtocol) return;
+    const diagnostic = consumeFailureDiagnostic(record, message);
+    if (diagnostic !== undefined) {
+      if (diagnostic !== true) void quarantineAndReap(record);
+      return;
+    }
     if (exactFieldlessMessage(message, 'REVIEW_OPENED')) {
       if (record.state !== 'REVIEW_OPENING' || record.reviewOpenAck) {
         void quarantineAndReap(record);
@@ -745,6 +829,8 @@ function launchGateBOperatorProcess(
       child,
       closeSeen: false,
       dependencies,
+      diagnosticEvidenceState: 'MISSING',
+      diagnosticStage: GATE_B_RESET_EPOCH_NATIVE_DIAGNOSTIC_STAGES.UNKNOWN,
       exitCode: undefined,
       exitSeen: false,
       exitSignal: undefined,
@@ -987,7 +1073,7 @@ function createDeferred(rejecting = false) {
 }
 
 function siblingRecordFor(capability) {
-  return WATCHDOG_RECORDS.get(capability);
+  return REFLECT_APPLY(WEAK_MAP_GET, WATCHDOG_RECORDS, [capability]);
 }
 
 function releaseSiblingRecord(record) {
@@ -1043,7 +1129,7 @@ function releaseSiblingRecord(record) {
 }
 
 function rejectSiblingMilestones(record) {
-  const error = new GateBOperatorCoordinatorLaunchError();
+  const error = launchError(record.diagnosticStage);
   record.setupDeferred.reject(error);
   record.bootstrapDeferred?.reject(error);
   record.reviewDeferred?.reject(error);
@@ -1510,6 +1596,11 @@ function installSiblingHandlers(record) {
     if (record.terminalSettled) return;
     if (handle !== undefined) return poison();
     if (record.reaperLost || record.guardLost) return poison();
+    const diagnostic = consumeFailureDiagnostic(record, message);
+    if (diagnostic !== undefined) {
+      if (diagnostic !== true) poison();
+      return;
+    }
     if (record.terminalWork) {
       let parsed;
       try { parsed = parseGateBOperatorCoordinatorIpcMessage(message); } catch {
@@ -1858,6 +1949,8 @@ function createWatchdogRecord(
     cleanupSent: false,
     closedDeferred,
     dependencies,
+    diagnosticEvidenceState: 'MISSING',
+    diagnosticStage: GATE_B_RESET_EPOCH_NATIVE_DIAGNOSTIC_STAGES.UNKNOWN,
     finalIpc: undefined,
     guard,
     guardAbsent: false,
@@ -1947,7 +2040,7 @@ function createWatchdogRecord(
     watchdogExitSignal: undefined,
   };
   record.capability = Object.freeze(Object.create(null));
-  WATCHDOG_RECORDS.set(record.capability, record);
+  REFLECT_APPLY(WEAK_MAP_SET, WATCHDOG_RECORDS, [record.capability, record]);
   try {
     exactOriginAddress(record);
     record.stopObservingOriginGuard = Reflect.apply(
@@ -2118,7 +2211,7 @@ export async function launchGateBOperatorWatchdogSetup(
 export function submitGateBOperatorBootstrap(capability, bootstrap) {
   const record = siblingRecordFor(capability);
   if (!record) {
-    const ordinary = RECORDS.get(capability);
+    const ordinary = REFLECT_APPLY(WEAK_MAP_GET, RECORDS, [capability]);
     if (ordinary && !ordinary.terminalSettled) void quarantineAndReap(ordinary);
     return Promise.reject(new GateBOperatorCoordinatorLaunchError());
   }
@@ -2477,6 +2570,16 @@ export function getGateBOperatorCoordinatorStatus(capability) {
       record.state === 'CLOSED' || record.state === 'CLOSED_PENDING' ||
       record.state === 'QUARANTINED') return record.state;
   fail();
+}
+
+export function getGateBOperatorCoordinatorFailureDiagnosticStage(capability) {
+  const sibling = siblingRecordFor(capability);
+  const record = sibling ?? recordFor(capability);
+  if (record.state !== 'QUARANTINED' ||
+      record.diagnosticEvidenceState !== 'VALID') {
+    return GATE_B_RESET_EPOCH_NATIVE_DIAGNOSTIC_STAGES.UNKNOWN;
+  }
+  return exactFailureDiagnosticStage(record.diagnosticStage);
 }
 
 export function stopGateBOperatorCoordinator(capability) {

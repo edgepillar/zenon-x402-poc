@@ -9,6 +9,7 @@ import {
   frameGateBOperatorCoordinatorBootstrap,
   frameGateBOperatorCoordinatorReview,
   frameGateBOperatorReviewResult,
+  GATE_B_RESET_EPOCH_NATIVE_DIAGNOSTIC_STAGES,
   parseGateBOperatorCoordinatorBootstrapFrame,
   parseGateBOperatorCoordinatorReviewFrame,
   parseGateBOperatorReviewResultFrame,
@@ -21,12 +22,18 @@ import { openGateBPublicWsPrivateWorkspace } from
   './gate-b-public-ws-private-workspace.js';
 import {
   claimGateBQuickTunnelHostnameSourceHandoff,
+  isGateBQuickTunnelLaunchFailure,
   launchGateBQuickTunnelInInheritedProcessGroup,
+  readGateBQuickTunnelHostnameSourceHandoffDiagnosticStage,
   readGateBQuickTunnelHostnameSourceHandoffProvenance,
+  readGateBQuickTunnelLaunchFailureStage,
   stopGateBQuickTunnel,
   waitGateBQuickTunnelClosed,
 } from './gate-b-quick-tunnel-launcher.js';
-import { GATE_B_QUICK_TUNNEL_OPERATIONS } from './gate-b-quick-tunnel-schema.js';
+import {
+  GATE_B_QUICK_TUNNEL_FAILURE_STAGES,
+  GATE_B_QUICK_TUNNEL_OPERATIONS,
+} from './gate-b-quick-tunnel-schema.js';
 import { parseGateBResetEpochPolicyPreflight } from
   './gate-b-reset-epoch-policy-preflight.js';
 import {
@@ -60,6 +67,7 @@ const RESET_LIVE_APPROVAL_LEAF = 'reset-live-approval.json';
 const REPOSITORY_ROOT = fileURLToPath(new URL('../', import.meta.url));
 const ARRAY_IS_ARRAY = Array.isArray;
 const ARRAY_INCLUDES = Array.prototype.includes;
+const ARRAY_INDEX_OF = Array.prototype.indexOf;
 const ARRAY_SORT = Array.prototype.sort;
 const BUFFER_BYTE_LENGTH = Buffer.byteLength;
 const BUFFER_FILL = Buffer.prototype.fill;
@@ -82,6 +90,7 @@ const REGEXP_TEST = RegExp.prototype.test;
 const WEAK_MAP_GET = WeakMap.prototype.get;
 const WEAK_MAP_SET = WeakMap.prototype.set;
 const CAPABILITY_STATES = new WeakMap();
+const FAILURE_STAGES = new WeakMap();
 const NATIVE_PROMISE_CONSTRUCTOR_DESCRIPTOR = OBJECT_FREEZE({
   configurable: false,
   enumerable: false,
@@ -121,11 +130,23 @@ const FIVE_LEAVES = OBJECT_FREEZE([
   GATE_B_PUBLIC_WS_INPUT_LEAVES.buyerRpc,
   GATE_B_PUBLIC_WS_INPUT_LEAVES.facilitatorRpc,
 ]);
-const RESERVED_PRE_REVIEW_LEAVES = OBJECT_FREEZE([
-  GATE_B_PUBLIC_WS_INPUT_LEAVES.buyerWallet,
+const REMAINING_PRE_REVIEW_LEAVES = OBJECT_FREEZE([
   GATE_B_PUBLIC_WS_INPUT_LEAVES.buyerRpc,
   GATE_B_PUBLIC_WS_INPUT_LEAVES.facilitatorRpc,
   GATE_B_PUBLIC_WS_INPUT_LEAVES.runConfig,
+]);
+const DIAGNOSTIC_STAGE_SEQUENCE = OBJECT_FREEZE([
+  GATE_B_RESET_EPOCH_NATIVE_DIAGNOSTIC_STAGES.UNKNOWN,
+  GATE_B_RESET_EPOCH_NATIVE_DIAGNOSTIC_STAGES.HOSTNAME_SOURCE_WRITTEN,
+  GATE_B_RESET_EPOCH_NATIVE_DIAGNOSTIC_STAGES.QUICK_TUNNEL_ACTIVE_CONFIRMED,
+  GATE_B_RESET_EPOCH_NATIVE_DIAGNOSTIC_STAGES.HOSTNAME_HANDOFF_VERIFIED,
+  GATE_B_RESET_EPOCH_NATIVE_DIAGNOSTIC_STAGES.HOSTNAME_SOURCE_VERIFIED,
+  GATE_B_RESET_EPOCH_NATIVE_DIAGNOSTIC_STAGES.WALLET_MATERIAL_DERIVED,
+  GATE_B_RESET_EPOCH_NATIVE_DIAGNOSTIC_STAGES.WALLET_LEAF_RESERVED,
+  GATE_B_RESET_EPOCH_NATIVE_DIAGNOSTIC_STAGES.PRE_REVIEW_OUTPUTS_RESERVED,
+  GATE_B_RESET_EPOCH_NATIVE_DIAGNOSTIC_STAGES.PRE_REVIEW_OUTPUTS_COMMITTED,
+  GATE_B_RESET_EPOCH_NATIVE_DIAGNOSTIC_STAGES.OFFLINE_RECEIPT_RESERVED,
+  GATE_B_RESET_EPOCH_NATIVE_DIAGNOSTIC_STAGES.OFFLINE_RECEIPT_COMMITTED,
 ]);
 const SIX_LEAVES = OBJECT_FREEZE([
   ...FIVE_LEAVES,
@@ -141,12 +162,44 @@ export class GateBResetEpochExactSixNativeAdapterError extends Error {
   }
 }
 
-function error() {
-  return new GateBResetEpochExactSixNativeAdapterError();
+function exactDiagnosticStage(value) {
+  return REFLECT_APPLY(ARRAY_INCLUDES, DIAGNOSTIC_STAGE_SEQUENCE, [value])
+    ? value
+    : GATE_B_RESET_EPOCH_NATIVE_DIAGNOSTIC_STAGES.UNKNOWN;
+}
+
+function error(stage = GATE_B_RESET_EPOCH_NATIVE_DIAGNOSTIC_STAGES.UNKNOWN) {
+  const output = new GateBResetEpochExactSixNativeAdapterError();
+  const exact = exactDiagnosticStage(stage);
+  if (exact !== GATE_B_RESET_EPOCH_NATIVE_DIAGNOSTIC_STAGES.UNKNOWN) {
+    REFLECT_APPLY(WEAK_MAP_SET, FAILURE_STAGES, [output, exact]);
+  }
+  return output;
 }
 
 function fail() {
   throw error();
+}
+
+function advanceDiagnosticStage(state, next) {
+  const currentIndex = REFLECT_APPLY(
+    ARRAY_INDEX_OF,
+    DIAGNOSTIC_STAGE_SEQUENCE,
+    [state.diagnosticStage],
+  );
+  const nextIndex = REFLECT_APPLY(ARRAY_INDEX_OF, DIAGNOSTIC_STAGE_SEQUENCE, [next]);
+  if (currentIndex < 0 || nextIndex <= currentIndex) fail();
+  state.diagnosticStage = next;
+  return next;
+}
+
+export function readGateBResetEpochExactSixNativeFailureStage(candidate) {
+  if (!candidate || (typeof candidate !== 'object' && typeof candidate !== 'function')) {
+    return GATE_B_RESET_EPOCH_NATIVE_DIAGNOSTIC_STAGES.UNKNOWN;
+  }
+  return exactDiagnosticStage(
+    REFLECT_APPLY(WEAK_MAP_GET, FAILURE_STAGES, [candidate]),
+  );
 }
 
 function pinNativePromiseConstructor(promise) {
@@ -422,7 +475,8 @@ function exactQuickTunnelProvenance(handoff, expected) {
   let provenance;
   try {
     provenance = readGateBQuickTunnelHostnameSourceHandoffProvenance(handoff);
-  } catch {
+  } catch (reason) {
+    if (isGateBQuickTunnelLaunchFailure(reason)) throw reason;
     fail();
   }
   if (!provenance || IS_PROXY(provenance) || GET_PROTOTYPE_OF(provenance) !== null ||
@@ -846,6 +900,8 @@ async function prepareSettlement(bootstrapInput, injected, dependencySelection) 
       configDigest: undefined,
       dependencies,
       dependencySelection,
+      diagnosticEvidenceValid: true,
+      diagnosticStage: GATE_B_RESET_EPOCH_NATIVE_DIAGNOSTIC_STAGES.UNKNOWN,
       futureLiveConsumerEligible: false,
       handoff: undefined,
       hostname: undefined,
@@ -900,18 +956,38 @@ async function prepareSettlement(bootstrapInput, injected, dependencySelection) 
       workspaceRoot: bootstrap.workspaceRoot,
     };
     state.residuePossible = true;
-    state.lease = await (dependencies.quickTunnelInjections === undefined
-      ? callAsync(launchGateBQuickTunnelInInheritedProcessGroup, undefined, [tunnelBootstrap])
-      : callAsync(launchGateBQuickTunnelInInheritedProcessGroup, undefined, [
-        tunnelBootstrap,
-        dependencies.quickTunnelInjections,
-      ]));
+    try {
+      state.lease = await (dependencies.quickTunnelInjections === undefined
+        ? callAsync(launchGateBQuickTunnelInInheritedProcessGroup, undefined, [tunnelBootstrap])
+        : callAsync(launchGateBQuickTunnelInInheritedProcessGroup, undefined, [
+          tunnelBootstrap,
+          dependencies.quickTunnelInjections,
+        ]));
+    } catch (reason) {
+      if (readGateBQuickTunnelLaunchFailureStage(reason) ===
+          GATE_B_QUICK_TUNNEL_FAILURE_STAGES.HOSTNAME_SOURCE_WRITTEN) {
+        advanceDiagnosticStage(
+          state,
+          GATE_B_RESET_EPOCH_NATIVE_DIAGNOSTIC_STAGES.HOSTNAME_SOURCE_WRITTEN,
+        );
+      }
+      throw reason;
+    }
+    advanceDiagnosticStage(
+      state,
+      GATE_B_RESET_EPOCH_NATIVE_DIAGNOSTIC_STAGES.QUICK_TUNNEL_ACTIVE_CONFIRMED,
+    );
     ensureActive(state, 'PREPARING');
     state.handoff = claimGateBQuickTunnelHostnameSourceHandoff(
       state.lease,
       bootstrap.workspaceRoot,
     );
     state.quickTunnelProvenance = exactQuickTunnelProvenance(state.handoff);
+    if (readGateBQuickTunnelHostnameSourceHandoffDiagnosticStage(state.handoff) !==
+        GATE_B_QUICK_TUNNEL_FAILURE_STAGES.HOSTNAME_SOURCE_WRITTEN) {
+      state.diagnosticEvidenceValid = false;
+      fail();
+    }
     if (state.quickTunnelProvenance.dependencySelection.mode ===
         INJECTED_QUICK_TUNNEL_DEPENDENCY_MODE) state.testOnly = true;
     if (dependencySelection === CAPTURED_DEFAULT_DEPENDENCY_SELECTION &&
@@ -919,6 +995,10 @@ async function prepareSettlement(bootstrapInput, injected, dependencySelection) 
           CAPTURED_QUICK_TUNNEL_DEPENDENCY_MODE) fail();
     await currentHandoff(state);
     ensureActive(state, 'PREPARING');
+    advanceDiagnosticStage(
+      state,
+      GATE_B_RESET_EPOCH_NATIVE_DIAGNOSTIC_STAGES.HOSTNAME_HANDOFF_VERIFIED,
+    );
     await assertExactLeaves(bootstrap.workspaceRoot, [
       GATE_B_PUBLIC_WS_INPUT_LEAVES.hostnameSource,
     ]);
@@ -941,6 +1021,10 @@ async function prepareSettlement(bootstrapInput, injected, dependencySelection) 
     state.hostname = hostnameSource.hostname;
     if (await callAsync(dataProperty(state.workspace, 'verify'), state.workspace,
       [hostnameRecord, hostnameBytes.length]) !== true) fail();
+    advanceDiagnosticStage(
+      state,
+      GATE_B_RESET_EPOCH_NATIVE_DIAGNOSTIC_STAGES.HOSTNAME_SOURCE_VERIFIED,
+    );
 
     walletMaterial = createWalletMaterial(surface, dependencies);
     const walletBytes = walletMaterial.takeWalletBytes();
@@ -948,6 +1032,10 @@ async function prepareSettlement(bootstrapInput, injected, dependencySelection) 
     state.payer = walletMaterial.payer;
     if (state.payer === state.payee) fail();
     state.walletDigest = digestWalletBytes(walletBytes);
+    advanceDiagnosticStage(
+      state,
+      GATE_B_RESET_EPOCH_NATIVE_DIAGNOSTIC_STAGES.WALLET_MATERIAL_DERIVED,
+    );
     const documents = buildPreparedDocuments(
       bootstrap,
       policyDescriptor,
@@ -963,11 +1051,25 @@ async function prepareSettlement(bootstrapInput, injected, dependencySelection) 
     state.paymentIntentDigest = documents.paymentIntentDigest;
     walletMaterial = undefined;
 
-    const outputRecords = exactRecords(await callAsync(
+    const walletRecords = exactRecords(await callAsync(
       dataProperty(state.workspace, 'reserveOutputs'),
       state.workspace,
-      [RESERVED_PRE_REVIEW_LEAVES],
-    ), RESERVED_PRE_REVIEW_LEAVES.length);
+      [[GATE_B_PUBLIC_WS_INPUT_LEAVES.buyerWallet]],
+    ), 1);
+    advanceDiagnosticStage(
+      state,
+      GATE_B_RESET_EPOCH_NATIVE_DIAGNOSTIC_STAGES.WALLET_LEAF_RESERVED,
+    );
+    const remainingRecords = exactRecords(await callAsync(
+      dataProperty(state.workspace, 'reserveOutputs'),
+      state.workspace,
+      [REMAINING_PRE_REVIEW_LEAVES],
+    ), REMAINING_PRE_REVIEW_LEAVES.length);
+    const outputRecords = [walletRecords[0], ...remainingRecords];
+    advanceDiagnosticStage(
+      state,
+      GATE_B_RESET_EPOCH_NATIVE_DIAGNOSTIC_STAGES.PRE_REVIEW_OUTPUTS_RESERVED,
+    );
     state.records = [
       outputRecords[0],
       hostnameRecord,
@@ -999,17 +1101,29 @@ async function prepareSettlement(bootstrapInput, injected, dependencySelection) 
     await verifyRetainedRecords(state, FIVE_LEAVES);
     await currentHandoff(state);
     ensureActive(state, 'PREPARING');
+    advanceDiagnosticStage(
+      state,
+      GATE_B_RESET_EPOCH_NATIVE_DIAGNOSTIC_STAGES.PRE_REVIEW_OUTPUTS_COMMITTED,
+    );
     state.phase = 'REVIEW_REQUIRED';
     state.status = STATUSES.REVIEW_REQUIRED;
     wipeBuffers(secretBuffers);
     secretBuffers.length = 0;
     return createCapability(state);
-  } catch {
+  } catch (reason) {
+    if (state && isGateBQuickTunnelLaunchFailure(reason) &&
+        readGateBQuickTunnelLaunchFailureStage(reason) ===
+          GATE_B_QUICK_TUNNEL_FAILURE_STAGES.UNKNOWN) {
+      state.diagnosticEvidenceValid = false;
+    }
+    const diagnosticStage = state?.diagnosticEvidenceValid === true
+      ? exactDiagnosticStage(state.diagnosticStage)
+      : GATE_B_RESET_EPOCH_NATIVE_DIAGNOSTIC_STAGES.UNKNOWN;
     if (state) {
       state.quarantined = state.residuePossible;
       try { await beginClose(state, state.quarantined); } catch {}
     }
-    fail();
+    throw error(diagnosticStage);
   } finally {
     wipeBuffers(secretBuffers);
   }
@@ -1047,6 +1161,10 @@ async function validateOfflineCrossCheckSettlement(
       [[GATE_B_PUBLIC_WS_INPUT_LEAVES.resetEpochOfflinePreflightReceipt]],
     ), 1);
     const receiptRecord = receiptRecords[0];
+    advanceDiagnosticStage(
+      state,
+      GATE_B_RESET_EPOCH_NATIVE_DIAGNOSTIC_STAGES.OFFLINE_RECEIPT_RESERVED,
+    );
     if (REFLECT_APPLY(dataProperty(state.workspace, 'assertDistinct'), state.workspace,
       [[...state.records, receiptRecord]]) !== true) fail();
     if (await callAsync(dataProperty(state.workspace, 'write'), state.workspace,
@@ -1066,13 +1184,25 @@ async function validateOfflineCrossCheckSettlement(
     ensureActive(state, 'REVIEWING');
     await currentHandoff(state);
     ensureActive(state, 'REVIEWING');
+    advanceDiagnosticStage(
+      state,
+      GATE_B_RESET_EPOCH_NATIVE_DIAGNOSTIC_STAGES.OFFLINE_RECEIPT_COMMITTED,
+    );
     state.phase = 'OFFLINE_RECEIPT_VALID';
     state.status = STATUSES.OFFLINE_RECEIPT_VALID;
     return STATUSES.OFFLINE_RECEIPT_VALID;
-  } catch {
+  } catch (reason) {
+    if (isGateBQuickTunnelLaunchFailure(reason) &&
+        readGateBQuickTunnelLaunchFailureStage(reason) ===
+          GATE_B_QUICK_TUNNEL_FAILURE_STAGES.UNKNOWN) {
+      state.diagnosticEvidenceValid = false;
+    }
+    const diagnosticStage = state.diagnosticEvidenceValid === true
+      ? exactDiagnosticStage(state.diagnosticStage)
+      : GATE_B_RESET_EPOCH_NATIVE_DIAGNOSTIC_STAGES.UNKNOWN;
     state.quarantined = true;
     try { await beginClose(state, true); } catch {}
-    fail();
+    throw error(diagnosticStage);
   } finally {
     wipeBuffer(receiptBytes);
   }

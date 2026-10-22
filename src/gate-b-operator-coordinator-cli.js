@@ -18,8 +18,10 @@ import {
   GATE_B_OPERATOR_COORDINATOR_STATUS_LINES,
   GATE_B_OPERATOR_ORIGIN_RELEASE_IPC_TYPES,
   GATE_B_OPERATOR_REVIEW_CHILD_IPC_TYPES,
+  GATE_B_RESET_EPOCH_NATIVE_DIAGNOSTIC_STAGES,
   createGateBOperatorCoordinatorIpcMessage,
   createGateBOperatorOriginReleaseIpcMessage,
+  createGateBResetEpochNativeDiagnosticIpcMessage,
   frameGateBOperatorReviewResult,
   createGateBOperatorReviewChildIpcMessage,
   parseGateBOperatorCoordinatorBootstrapFrame,
@@ -33,6 +35,7 @@ import {
 import {
   getGateBResetEpochExactSixNativeStatus,
   prepareGateBResetEpochExactSixNativeForReview,
+  readGateBResetEpochExactSixNativeFailureStage,
   stopGateBResetEpochExactSixNative,
   validateGateBResetEpochExactSixNativeOfflineCrossCheck,
   waitGateBResetEpochExactSixNativeClosed,
@@ -58,6 +61,7 @@ const CONTROLLER_CLOSED = 'GATE_B_CONTROLLER_CLOSED_RUN_NOT_EXECUTED';
 const CONTROLLER_CLOSED_PENDING =
   'GATE_B_CONTROLLER_CLOSED_PENDING_INDEPENDENT_VERIFICATION';
 const CONTROLLER_QUARANTINED = 'GATE_B_CONTROLLER_FAILED_WORKSPACE_QUARANTINED';
+const FAILURE_DIAGNOSTIC_SEND_TIMEOUT_MS = 100;
 const REVIEW_FORCE_MS = 500;
 const ARRAY_IS_ARRAY = Array.isArray;
 const DEFINE_PROPERTY = Object.defineProperty;
@@ -693,6 +697,7 @@ export async function runGateBOperatorCoordinatorCli(options = undefined) {
   let stopping = false;
   let terminal = false;
   let quarantine = false;
+  let resetFamily = false;
   let acceptingControl = true;
   let reviewOpenState = 'LOCKED';
   let runOpenState = 'LOCKED';
@@ -760,6 +765,27 @@ export async function runGateBOperatorCoordinatorCli(options = undefined) {
       ]);
     } catch {
       reject(new GateBOperatorCoordinatorCliError());
+    }
+  });
+  const sendFailureDiagnostic = stage => new Promise(resolve => {
+    let settled = false;
+    const finish = confirmed => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      resolve(confirmed);
+    };
+    const timer = setTimeout(
+      () => finish(false),
+      FAILURE_DIAGNOSTIC_SEND_TIMEOUT_MS,
+    );
+    try {
+      Reflect.apply(dependencies.channelSend, dependencies.channel, [
+        createGateBResetEpochNativeDiagnosticIpcMessage(stage),
+        error => finish(!error),
+      ]);
+    } catch {
+      finish(false);
     }
   });
   const requestOriginRelease = () => {
@@ -939,7 +965,7 @@ export async function runGateBOperatorCoordinatorCli(options = undefined) {
     try { bootstrap = parseGateBOperatorCoordinatorBootstrapFrame(initialFrame); } finally {
       try { if (Buffer.isBuffer(initialFrame)) initialFrame.fill(0); } catch {}
     }
-    const resetFamily = bootstrap.schemaVersion === 5;
+    resetFamily = bootstrap.schemaVersion === 5;
     controllerFunctions = Object.freeze(resetFamily ? {
       getStatus: dependencies.getResetControllerStatus,
       prepare: dependencies.prepareResetController,
@@ -1072,9 +1098,16 @@ export async function runGateBOperatorCoordinatorCli(options = undefined) {
     await sendLifecycle(GATE_B_OPERATOR_COORDINATOR_IPC_TYPES.PENDING);
     await stopRequested;
     return await finalize();
-  } catch {
+  } catch (reason) {
     quarantine = true;
     if (!dependencies) return false;
+    requestStop();
+    if (resetFamily) {
+      const stage = readGateBResetEpochExactSixNativeFailureStage(reason);
+      if (stage !== GATE_B_RESET_EPOCH_NATIVE_DIAGNOSTIC_STAGES.UNKNOWN) {
+        await sendFailureDiagnostic(stage);
+      }
+    }
     return await finalize();
   } finally {
     acceptingControl = false;

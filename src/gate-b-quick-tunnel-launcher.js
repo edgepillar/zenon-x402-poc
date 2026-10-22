@@ -6,6 +6,7 @@ import { types as utilTypes } from 'node:util';
 import {
   createGateBQuickTunnelIpcMessage,
   frameGateBQuickTunnelBootstrap,
+  GATE_B_QUICK_TUNNEL_FAILURE_STAGES,
   GATE_B_QUICK_TUNNEL_IPC_TYPES,
   parseGateBQuickTunnelIpcMessage,
 } from './gate-b-quick-tunnel-schema.js';
@@ -40,9 +41,11 @@ const SCHEDULE_INTERVAL = setInterval;
 const SCHEDULE_TIMER = setTimeout;
 const WEAK_MAP_DELETE = WeakMap.prototype.delete;
 const WEAK_MAP_GET = WeakMap.prototype.get;
+const WEAK_MAP_HAS = WeakMap.prototype.has;
 const WEAK_MAP_SET = WeakMap.prototype.set;
 const LEASE_RECORDS = new WeakMap();
 const HANDOFF_LAUNCH_PROVENANCE = new WeakMap();
+const LAUNCH_FAILURE_STAGES = new WeakMap();
 const NATIVE_PROMISE_CONSTRUCTOR_DESCRIPTOR = OBJECT_FREEZE({
   configurable: false,
   enumerable: false,
@@ -59,12 +62,37 @@ export class GateBQuickTunnelLaunchError extends Error {
   }
 }
 
-function error() {
-  return new GateBQuickTunnelLaunchError();
+function exactFailureStage(value) {
+  return value === GATE_B_QUICK_TUNNEL_FAILURE_STAGES.HOSTNAME_SOURCE_WRITTEN
+    ? value
+    : GATE_B_QUICK_TUNNEL_FAILURE_STAGES.UNKNOWN;
+}
+
+function error(stage = GATE_B_QUICK_TUNNEL_FAILURE_STAGES.UNKNOWN) {
+  const output = new GateBQuickTunnelLaunchError();
+  const exact = exactFailureStage(stage);
+  REFLECT_APPLY(WEAK_MAP_SET, LAUNCH_FAILURE_STAGES, [output, exact]);
+  return output;
 }
 
 function fail() {
   throw error();
+}
+
+export function readGateBQuickTunnelLaunchFailureStage(candidate) {
+  if (!candidate || (typeof candidate !== 'object' && typeof candidate !== 'function')) {
+    return GATE_B_QUICK_TUNNEL_FAILURE_STAGES.UNKNOWN;
+  }
+  return exactFailureStage(
+    REFLECT_APPLY(WEAK_MAP_GET, LAUNCH_FAILURE_STAGES, [candidate]),
+  );
+}
+
+export function isGateBQuickTunnelLaunchFailure(candidate) {
+  if (!candidate || (typeof candidate !== 'object' && typeof candidate !== 'function')) {
+    return false;
+  }
+  return REFLECT_APPLY(WEAK_MAP_HAS, LAUNCH_FAILURE_STAGES, [candidate]);
 }
 
 function pinNativePromiseConstructor(promise) {
@@ -595,7 +623,7 @@ function failRecord(record) {
         record.state = closed ? 'CLOSED_FAILED' : 'QUARANTINED';
         if (!record.launchSettled) {
           record.launchSettled = true;
-          record.rejectLaunch(error());
+          record.rejectLaunch(error(record.failureStage));
         }
         settleClosureFailure(record);
       },
@@ -604,7 +632,7 @@ function failRecord(record) {
         record.state = 'QUARANTINED';
         if (!record.launchSettled) {
           record.launchSettled = true;
-          record.rejectLaunch(error());
+          record.rejectLaunch(error(record.failureStage));
         }
         settleClosureFailure(record);
       },
@@ -615,7 +643,7 @@ function failRecord(record) {
   releaseOwnedChild(record);
   if (!record.launchSettled) {
     record.launchSettled = true;
-    record.rejectLaunch(error());
+    record.rejectLaunch(error(record.failureStage));
   }
   const cleanup = observeNativePromise(
     beginGroupReap(record),
@@ -725,7 +753,22 @@ function onMessage(record, candidate) {
   try {
     message = parseGateBQuickTunnelIpcMessage(candidate);
   } catch {
+    if (ownDataProperty(candidate, 'type') ===
+        GATE_B_QUICK_TUNNEL_IPC_TYPES.HOSTNAME_SOURCE_WRITTEN) {
+      record.failureStage = GATE_B_QUICK_TUNNEL_FAILURE_STAGES.UNKNOWN;
+    }
     failRecord(record);
+    return;
+  }
+  if (message.type === GATE_B_QUICK_TUNNEL_IPC_TYPES.HOSTNAME_SOURCE_WRITTEN) {
+    if (record.state !== 'ACTIVE_PENDING' || message.requestId !== 1 ||
+        record.sourceWrittenReceived) {
+      record.failureStage = GATE_B_QUICK_TUNNEL_FAILURE_STAGES.UNKNOWN;
+      failRecord(record);
+      return;
+    }
+    record.sourceWrittenReceived = true;
+    record.failureStage = GATE_B_QUICK_TUNNEL_FAILURE_STAGES.HOSTNAME_SOURCE_WRITTEN;
     return;
   }
   if (record.state === 'BOOTSTRAP_JOIN') {
@@ -890,6 +933,8 @@ async function launchGateBQuickTunnelInternalSettlement(
       stopSent: false,
       readyReceived: false,
       startSent: false,
+      sourceWrittenReceived: false,
+      failureStage: GATE_B_QUICK_TUNNEL_FAILURE_STAGES.UNKNOWN,
       frameWritten: false,
       launchSettled: false,
       closureSettled: false,
@@ -939,14 +984,15 @@ async function launchGateBQuickTunnelInternalSettlement(
       maybeSendStart(record);
     }]);
     return await launchPromise;
-  } catch {
+  } catch (reason) {
+    const failureStage = readGateBQuickTunnelLaunchFailureStage(reason);
     if (record) {
       failRecord(record);
       try { await record.reapPromise; } catch {}
     } else if (retainedSnapshot && dependencies) {
       await reapUnvalidatedChild(retainedSnapshot, dependencies, authoritativeGroup);
     }
-    fail();
+    throw error(failureStage);
   } finally {
     if (Buffer.isBuffer(frame)) frame.fill(0);
   }
@@ -1054,7 +1100,7 @@ export function assertGateBQuickTunnelReady(lease) {
     }
     return promise;
   } catch {
-    return rejectNativePromise(error());
+    return rejectNativePromise(error(record?.failureStage));
   }
 }
 
@@ -1100,7 +1146,7 @@ export function claimGateBQuickTunnelHostnameSourceHandoff(lease, workspaceRoot)
     record.hostnameSourceHandoff = handoff;
     return handoff;
   } catch {
-    throw error();
+    throw error(record?.failureStage);
   }
 }
 
@@ -1118,6 +1164,27 @@ export function readGateBQuickTunnelHostnameSourceHandoffProvenance(handoff) {
         record.hostnameSourceHandoff !== handoff ||
         record.hostnameSourceHandoffClaimed !== true) fail();
     return provenance.attenuated;
+  } catch {
+    throw error();
+  }
+}
+
+export function readGateBQuickTunnelHostnameSourceHandoffDiagnosticStage(handoff) {
+  try {
+    const provenance = REFLECT_APPLY(
+      WEAK_MAP_GET,
+      HANDOFF_LAUNCH_PROVENANCE,
+      [handoff],
+    );
+    if (!provenance || provenance.handoff !== handoff) fail();
+    const record = leaseRecord(provenance.lease);
+    if (handoffLaunchProvenance(record, provenance.lease, handoff) !== provenance ||
+        record.state !== 'ACTIVE_IDLE' || record.pendingCheck !== null ||
+        record.hostnameSourceHandoff !== handoff ||
+        record.hostnameSourceHandoffClaimed !== true) fail();
+    return record.sourceWrittenReceived
+      ? GATE_B_QUICK_TUNNEL_FAILURE_STAGES.HOSTNAME_SOURCE_WRITTEN
+      : GATE_B_QUICK_TUNNEL_FAILURE_STAGES.UNKNOWN;
   } catch {
     throw error();
   }

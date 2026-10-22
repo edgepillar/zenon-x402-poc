@@ -20,6 +20,9 @@ import {
   GATE_B_OPERATOR_COORDINATOR_LIMITS,
   GATE_B_OPERATOR_COORDINATOR_STATUS_LINES,
   GATE_B_OPERATOR_ORIGIN_RELEASE_IPC_TYPES,
+  GATE_B_RESET_EPOCH_NATIVE_DIAGNOSTIC_IPC_TYPE,
+  GATE_B_RESET_EPOCH_NATIVE_DIAGNOSTIC_STAGES,
+  createGateBResetEpochNativeDiagnosticIpcMessage,
   createGateBOperatorOriginReleaseIpcMessage,
   frameGateBOperatorCoordinatorBootstrap,
   frameGateBOperatorCoordinatorReview,
@@ -27,6 +30,7 @@ import {
   parseGateBOperatorCoordinatorBootstrapFrame,
   parseGateBOperatorCoordinatorReviewFrame,
   parseGateBOperatorCoordinatorRunFrame,
+  parseGateBResetEpochNativeDiagnosticIpcMessage,
   parseGateBOperatorReviewResultFrame,
   createGateBOperatorCoordinatorIpcMessage,
   frameGateBOperatorReviewResult,
@@ -37,9 +41,11 @@ import {
   runGateBOperatorCoordinatorCli,
 } from '../src/gate-b-operator-coordinator-cli.js';
 import {
+  getGateBOperatorCoordinatorFailureDiagnosticStage,
   getGateBOperatorCoordinatorStatus,
   launchGateBOperatorCoordinator,
   launchGateBOperatorWatchdogSetup,
+  readGateBOperatorCoordinatorLaunchFailureStage,
   stopGateBOperatorCoordinator,
   submitGateBOperatorBootstrap,
   submitGateBOperatorCoordinatorReview,
@@ -870,6 +876,30 @@ test('framing rejects truncation, oversize, invalid UTF-8, duplicates, and early
     stream.end(Buffer.concat([second, second]));
     await assert.rejects(reader.readReview());
   });
+});
+
+test('native failure diagnostic IPC is fixed-enum, exact, frozen, and never UNKNOWN', () => {
+  for (const stage of Object.values(GATE_B_RESET_EPOCH_NATIVE_DIAGNOSTIC_STAGES)) {
+    if (stage === GATE_B_RESET_EPOCH_NATIVE_DIAGNOSTIC_STAGES.UNKNOWN) continue;
+    const message = createGateBResetEpochNativeDiagnosticIpcMessage(stage);
+    assert.equal(Object.isFrozen(message), true);
+    assert.deepEqual(Reflect.ownKeys(message), ['ipcVersion', 'stage', 'type']);
+    assert.deepEqual(parseGateBResetEpochNativeDiagnosticIpcMessage(message), message);
+  }
+  assert.throws(() => createGateBResetEpochNativeDiagnosticIpcMessage(
+    GATE_B_RESET_EPOCH_NATIVE_DIAGNOSTIC_STAGES.UNKNOWN,
+  ));
+  assert.throws(() => parseGateBResetEpochNativeDiagnosticIpcMessage({
+    ipcVersion: 1,
+    stage: 'NOT_A_STAGE',
+    type: GATE_B_RESET_EPOCH_NATIVE_DIAGNOSTIC_IPC_TYPE,
+  }));
+  assert.throws(() => parseGateBResetEpochNativeDiagnosticIpcMessage({
+    extra: true,
+    ...createGateBResetEpochNativeDiagnosticIpcMessage(
+      GATE_B_RESET_EPOCH_NATIVE_DIAGNOSTIC_STAGES.HOSTNAME_SOURCE_VERIFIED,
+    ),
+  }));
 });
 
 test('schema rejects proxies, accessors, symbols, sparse arrays, custom prototypes, boxed values, and thenables', () => {
@@ -2071,6 +2101,8 @@ function fakeCoordinatorProcess(changes = {}) {
     } else if (inputPhase === 1) {
       parseGateBOperatorCoordinatorReviewFrame(chunk);
       inputPhase = 2;
+      child.reviewReceived = true;
+      if (changes.holdReview === true) return;
       queueMicrotask(() => {
         child.stdout.write(GATE_B_OPERATOR_COORDINATOR_STATUS_LINES.PREFLIGHT_VALID);
         child.emit('message', createGateBOperatorCoordinatorIpcMessage('PREFLIGHT_VALID'));
@@ -2625,6 +2657,186 @@ function ordinaryRunLauncherOptions(child, changes = {}) {
     ...changes,
   };
 }
+
+test('schema-5 launcher retains only ordered branded failure diagnostics', async t => {
+  await t.test('review failure stage is available only after quarantine', async () => {
+    const child = fakeCoordinatorProcess({ holdReview: true });
+    const capability = await launchGateBOperatorCoordinator(
+      resetBootstrap(),
+      ordinaryRunLauncherOptions(child),
+    );
+    const reviewed = submitGateBOperatorCoordinatorReview(capability, resetReview());
+    await waitFor(() => child.reviewReceived === true);
+    child.emit('message', createGateBResetEpochNativeDiagnosticIpcMessage(
+      GATE_B_RESET_EPOCH_NATIVE_DIAGNOSTIC_STAGES.OFFLINE_RECEIPT_RESERVED,
+    ));
+    assert.equal(
+      getGateBOperatorCoordinatorFailureDiagnosticStage(capability),
+      GATE_B_RESET_EPOCH_NATIVE_DIAGNOSTIC_STAGES.UNKNOWN,
+    );
+    child.emit('error', new Error('synthetic'));
+    let observed;
+    await assert.rejects(reviewed, candidate => {
+      observed = candidate;
+      return true;
+    });
+    assert.equal(await waitGateBOperatorCoordinatorClosed(capability), 'QUARANTINED');
+    assert.equal(
+      readGateBOperatorCoordinatorLaunchFailureStage(observed),
+      GATE_B_RESET_EPOCH_NATIVE_DIAGNOSTIC_STAGES.OFFLINE_RECEIPT_RESERVED,
+    );
+    assert.equal(
+      getGateBOperatorCoordinatorFailureDiagnosticStage(capability),
+      GATE_B_RESET_EPOCH_NATIVE_DIAGNOSTIC_STAGES.OFFLINE_RECEIPT_RESERVED,
+    );
+    assert.equal('stage' in observed, false);
+  });
+
+  await t.test('receipt evidence before review is out of order and resolves UNKNOWN', async () => {
+    const child = fakeCoordinatorProcess();
+    const launched = launchGateBOperatorCoordinator(
+      resetBootstrap(),
+      ordinaryRunLauncherOptions(child),
+    );
+    child.emit('message', createGateBResetEpochNativeDiagnosticIpcMessage(
+      GATE_B_RESET_EPOCH_NATIVE_DIAGNOSTIC_STAGES.OFFLINE_RECEIPT_COMMITTED,
+    ));
+    let observed;
+    await assert.rejects(launched, candidate => {
+      observed = candidate;
+      return true;
+    });
+    assert.equal(
+      readGateBOperatorCoordinatorLaunchFailureStage(observed),
+      GATE_B_RESET_EPOCH_NATIVE_DIAGNOSTIC_STAGES.UNKNOWN,
+    );
+  });
+
+  await t.test('duplicate evidence consumes the diagnostic and resolves UNKNOWN', async () => {
+    const child = fakeCoordinatorProcess({ holdReview: true });
+    const capability = await launchGateBOperatorCoordinator(
+      resetBootstrap(),
+      ordinaryRunLauncherOptions(child),
+    );
+    const reviewed = submitGateBOperatorCoordinatorReview(capability, resetReview());
+    await waitFor(() => child.reviewReceived === true);
+    const message = createGateBResetEpochNativeDiagnosticIpcMessage(
+      GATE_B_RESET_EPOCH_NATIVE_DIAGNOSTIC_STAGES.PRE_REVIEW_OUTPUTS_COMMITTED,
+    );
+    child.emit('message', message);
+    child.emit('message', message);
+    let observed;
+    await assert.rejects(reviewed, candidate => {
+      observed = candidate;
+      return true;
+    });
+    assert.equal(await waitGateBOperatorCoordinatorClosed(capability), 'QUARANTINED');
+    assert.equal(
+      readGateBOperatorCoordinatorLaunchFailureStage(observed),
+      GATE_B_RESET_EPOCH_NATIVE_DIAGNOSTIC_STAGES.UNKNOWN,
+    );
+    assert.equal(
+      getGateBOperatorCoordinatorFailureDiagnosticStage(capability),
+      GATE_B_RESET_EPOCH_NATIVE_DIAGNOSTIC_STAGES.UNKNOWN,
+    );
+  });
+
+  await t.test('missing and caller-forged evidence resolve UNKNOWN', async () => {
+    const child = fakeCoordinatorProcess();
+    const launched = launchGateBOperatorCoordinator(
+      resetBootstrap(),
+      ordinaryRunLauncherOptions(child),
+    );
+    child.emit('error', new Error('synthetic'));
+    let observed;
+    await assert.rejects(launched, candidate => {
+      observed = candidate;
+      return true;
+    });
+    assert.equal(
+      readGateBOperatorCoordinatorLaunchFailureStage(observed),
+      GATE_B_RESET_EPOCH_NATIVE_DIAGNOSTIC_STAGES.UNKNOWN,
+    );
+    assert.equal(
+      readGateBOperatorCoordinatorLaunchFailureStage(Object.freeze({
+        stage: GATE_B_RESET_EPOCH_NATIVE_DIAGNOSTIC_STAGES.WALLET_LEAF_RESERVED,
+      })),
+      GATE_B_RESET_EPOCH_NATIVE_DIAGNOSTIC_STAGES.UNKNOWN,
+    );
+  });
+});
+
+test('post-import WeakMap prototype replacement cannot forge or suppress diagnostics',
+  { concurrency: false }, async () => {
+    const getDescriptor = Object.getOwnPropertyDescriptor(WeakMap.prototype, 'get');
+    const setDescriptor = Object.getOwnPropertyDescriptor(WeakMap.prototype, 'set');
+    const forged = Object.freeze(Object.create(null));
+    const forgedStage = GATE_B_RESET_EPOCH_NATIVE_DIAGNOSTIC_STAGES.WALLET_LEAF_RESERVED;
+    const genuineStage =
+      GATE_B_RESET_EPOCH_NATIVE_DIAGNOSTIC_STAGES.OFFLINE_RECEIPT_RESERVED;
+    const child = fakeCoordinatorProcess({ holdReview: true });
+    const options = ordinaryRunLauncherOptions(child);
+    const bootstrapCandidate = resetBootstrap();
+    const reviewCandidate = resetReview();
+    let capability;
+    let closed;
+    let observed;
+    let reviewed;
+    let replacementGetCalls = 0;
+    let replacementSetCalls = 0;
+    let forgedObserved;
+    let capabilityStage;
+    let errorStage;
+    let status;
+    try {
+      Object.defineProperty(WeakMap.prototype, 'get', {
+        ...getDescriptor,
+        value(key) {
+          replacementGetCalls += 1;
+          return key === forged ? forgedStage : undefined;
+        },
+      });
+      Object.defineProperty(WeakMap.prototype, 'set', {
+        ...setDescriptor,
+        value() {
+          replacementSetCalls += 1;
+          return this;
+        },
+      });
+
+      forgedObserved = readGateBOperatorCoordinatorLaunchFailureStage(forged);
+      capability = await launchGateBOperatorCoordinator(bootstrapCandidate, options);
+      reviewed = submitGateBOperatorCoordinatorReview(capability, reviewCandidate);
+      await waitFor(() => child.reviewReceived === true);
+      child.emit('message', createGateBResetEpochNativeDiagnosticIpcMessage(genuineStage));
+      child.emit('error', new Error('synthetic'));
+      try {
+        await reviewed;
+      } catch (candidate) {
+        observed = candidate;
+      }
+      closed = await waitGateBOperatorCoordinatorClosed(capability);
+      errorStage = readGateBOperatorCoordinatorLaunchFailureStage(observed);
+      capabilityStage = getGateBOperatorCoordinatorFailureDiagnosticStage(capability);
+      status = getGateBOperatorCoordinatorStatus(capability);
+    } finally {
+      Object.defineProperty(WeakMap.prototype, 'get', getDescriptor);
+      Object.defineProperty(WeakMap.prototype, 'set', setDescriptor);
+      if (reviewed) void reviewed.catch(() => {});
+      if (capability && closed === undefined) {
+        try { await stopGateBOperatorCoordinator(capability); } catch {}
+      }
+    }
+
+    assert.equal(replacementGetCalls, 0);
+    assert.equal(replacementSetCalls, 0);
+    assert.equal(forgedObserved, GATE_B_RESET_EPOCH_NATIVE_DIAGNOSTIC_STAGES.UNKNOWN);
+    assert.equal(closed, 'QUARANTINED');
+    assert.equal(status, 'QUARANTINED');
+    assert.equal(errorStage, genuineStage);
+    assert.equal(capabilityStage, genuineStage);
+    assert.equal('stage' in observed, false);
+  });
 
 test('production RUN API permits the watchdog submit-then-immediate-release-wait order',
   async () => {
