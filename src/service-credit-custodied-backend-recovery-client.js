@@ -7,6 +7,7 @@ import { openServiceCreditCustodiedSqliteHttpClientV5 } from './service-credit-c
 import { openServiceCreditCustodiedSqliteHttpClientV6 } from './service-credit-custodied-sqlite-http-client.js';
 import { encodeOriginalPaymentCheckpoint } from './service-credit-pilot-original-payment-checkpoint.js';
 import { openServiceCreditCustodiedSqliteRecoveryReaderV5 } from './service-credit-custodied-sqlite-recovery-reader.js';
+import { openServiceCreditCustodiedSqliteRecoveryReaderV6 } from './service-credit-custodied-sqlite-recovery-reader.js';
 import { createServiceCreditBackendOriginalOutcomeReader } from './service-credit-backend-original-outcome-reader.js';
 import { createServiceCreditCustodiedSequentialRunnerCore } from './service-credit-custodied-sequential-runner-core.js';
 import {
@@ -346,6 +347,64 @@ export async function openServiceCreditCustodiedSqliteBackendRecoveryConsumerV5(
       readOriginalRecoveryState: connection.readOriginalRecoveryState,
       readOriginalRecoveryKeys: connection.readOriginalRecoveryKeys,
       readOriginalBackendRecoveryState: connection.readOriginalBackendRecoveryState,
+      createOriginalRecoveryPlan: reader.createOriginalRecoveryPlan,
+      createOriginalRecoveryStatePlan: reader.createOriginalRecoveryStatePlan,
+      createOriginalRecoveryCollection: reader.createOriginalRecoveryCollection,
+      createOriginalRecoveryObservationCollection: reader.createOriginalRecoveryObservationCollection,
+      snapshot: connection.snapshot,
+      close: connection.close,
+    });
+    reader = null;
+    backend = null;
+    return consumer;
+  } catch (error) {
+    if (backend !== null) backend.close();
+    if (reader !== null) await reader.close();
+    throw error;
+  } finally {
+    config = null;
+    options = null;
+  }
+}
+
+/**
+ * Connect existing diagnostic plan/collection consumers to V6 persistent
+ * original-payment custody and the actual borrowed backend. All diagnostic
+ * factories capture the SAME owned reader; they do not open another payer.
+ * Combined backend reads require the original independent checkpoint pins
+ * on every query, as in the existing V6 client. Explicit checkpoint reads
+ * remain separate powerless DATA and are absent from snapshots/plans.
+ *
+ * Diagnostic close detaches local cached history only. Root close remains
+ * the original cached Promise, including UNKNOWN, and never closes the
+ * borrowed backend. No submission, batch, caller transport, root/store,
+ * creation, migration, signer, replay/reset or payment authority is exposed.
+ * Existing V5 consumer and default/application entry points are unchanged.
+ */
+export async function openServiceCreditCustodiedSqliteBackendRecoveryConsumerV6(options) {
+  if (arguments.length !== 1) throw failure('INVALID_CONFIGURATION');
+  let config = null, backend = null, reader = null;
+  try {
+    config = exact(options, SQLITE_FIELDS);
+    const selectedGrantId = KEY({ grantId: config.selectedGrantId, requestId: 'scope' }).grantId;
+    backend = CREATE_BACKEND({ store: config.backendStore, admittedGrantId: selectedGrantId });
+    reader = await openServiceCreditCustodiedSqliteRecoveryReaderV6({
+      databasePath: config.databasePath,
+      allowedRoot: config.allowedRoot,
+      fundingResourceUrl: config.fundingResourceUrl,
+      custodyPolicy: config.custodyPolicy,
+      selectedGrantId,
+      deadlineMs: config.deadlineMs,
+    });
+    const connection = connectClientBackend(
+      reader, backend, selectedGrantId, 'PAYER_OWNED_BACKEND_BORROWED', false, true, true,
+    );
+    const consumer = FREEZE({
+      readOriginal: connection.readOriginal,
+      readOriginalRecoveryState: connection.readOriginalRecoveryState,
+      readOriginalRecoveryKeys: connection.readOriginalRecoveryKeys,
+      readOriginalBackendRecoveryState: connection.readOriginalBackendRecoveryState,
+      readOriginalPaymentCheckpoint: connection.readOriginalPaymentCheckpoint,
       createOriginalRecoveryPlan: reader.createOriginalRecoveryPlan,
       createOriginalRecoveryStatePlan: reader.createOriginalRecoveryStatePlan,
       createOriginalRecoveryCollection: reader.createOriginalRecoveryCollection,

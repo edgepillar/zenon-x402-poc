@@ -2,6 +2,7 @@ import {
   openServiceCreditCustodiedSqliteSequentialRunnerV3,
   openServiceCreditCustodiedSqliteSequentialRunnerV4,
   openServiceCreditCustodiedSqliteSequentialRunnerV5,
+  openServiceCreditCustodiedSqliteSequentialRunnerV6,
 } from './service-credit-custodied-sqlite-sequential-runner.js';
 import {
   exact, failure,
@@ -11,6 +12,7 @@ const FREEZE = Object.freeze;
 const OPEN = openServiceCreditCustodiedSqliteSequentialRunnerV3;
 const OPEN_V4 = openServiceCreditCustodiedSqliteSequentialRunnerV4;
 const OPEN_V5 = openServiceCreditCustodiedSqliteSequentialRunnerV5;
+const OPEN_V6 = openServiceCreditCustodiedSqliteSequentialRunnerV6;
 const CONFIG_FIELDS = FREEZE([
   'databasePath', 'allowedRoot', 'fundingResourceUrl', 'custodyPolicy',
   'selectedGrantId', 'deadlineMs',
@@ -125,6 +127,45 @@ export async function openServiceCreditCustodiedSqliteRecoveryReaderV5(configura
       readOriginal: root.readOriginal,
       readOriginalRecoveryState: root.readOriginalRecoveryState,
       readOriginalRecoveryKeys: root.readOriginalRecoveryKeys,
+      createOriginalRecoveryPlan: root.createOriginalRecoveryPlan,
+      createOriginalRecoveryStatePlan: root.createOriginalRecoveryStatePlan,
+      createOriginalRecoveryCollection: root.createOriginalRecoveryCollection,
+      createOriginalRecoveryObservationCollection: root.createOriginalRecoveryObservationCollection,
+      close: root.close,
+      snapshot: root.snapshot,
+    });
+  } finally {
+    input = null;
+  }
+}
+
+/**
+ * Explicit no-dispatch V6 reader. ONE existing V6 owned runner supplies all
+ * four existing plan/collection factories and the explicit pinned checkpoint
+ * read; no second owner or diagnostic close wrapper is created. Local plans
+ * remain powerless history, not independent checkpoint-pin authentication.
+ * The caller must supply the original independent pins for a raw checkpoint
+ * read. Snapshots/plans never embed that raw checkpoint. Existing UNKNOWN and
+ * cached root-close Promise boundaries are unchanged. No V5 fallback, store
+ * creation, migration, retry, transport, batch or submit capability is exposed.
+ */
+export async function openServiceCreditCustodiedSqliteRecoveryReaderV6(configuration) {
+  if (arguments.length !== 1) throw failure('INVALID_CONFIGURATION');
+  let input;
+  try {
+    input = exact(configuration, CONFIG_FIELDS);
+  } catch {
+    throw failure('INVALID_CONFIGURATION');
+  } finally {
+    configuration = null;
+  }
+  try {
+    const root = await OPEN_V6({ ...input, requestImpl: NO_DISPATCH });
+    return FREEZE({
+      readOriginal: root.readOriginal,
+      readOriginalRecoveryState: root.readOriginalRecoveryState,
+      readOriginalRecoveryKeys: root.readOriginalRecoveryKeys,
+      readOriginalPaymentCheckpoint: root.readOriginalPaymentCheckpoint,
       createOriginalRecoveryPlan: root.createOriginalRecoveryPlan,
       createOriginalRecoveryStatePlan: root.createOriginalRecoveryStatePlan,
       createOriginalRecoveryCollection: root.createOriginalRecoveryCollection,

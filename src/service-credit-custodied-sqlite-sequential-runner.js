@@ -6,6 +6,7 @@ import {
   openServiceCreditCustodiedSqliteHttpClientV3,
   openServiceCreditCustodiedSqliteHttpClientV4,
   openServiceCreditCustodiedSqliteHttpClientV5,
+  openServiceCreditCustodiedSqliteHttpClientV6,
 } from './service-credit-custodied-sqlite-http-client.js';
 import {
   snapshotOriginalServiceRequestCustodyPolicy,
@@ -43,6 +44,7 @@ const OPEN_OWNED = openServiceCreditCustodiedSqliteHttpClient;
 const OPEN_OWNED_V3 = openServiceCreditCustodiedSqliteHttpClientV3;
 const OPEN_OWNED_V4 = openServiceCreditCustodiedSqliteHttpClientV4;
 const OPEN_OWNED_V5 = openServiceCreditCustodiedSqliteHttpClientV5;
+const OPEN_OWNED_V6 = openServiceCreditCustodiedSqliteHttpClientV6;
 const CREATE_CORE = createServiceCreditCustodiedSequentialRunnerCore;
 const POLICY = snapshotOriginalServiceRequestCustodyPolicy;
 const KEY = snapshotOriginalServiceRequestCustodyKey;
@@ -144,8 +146,20 @@ export async function openServiceCreditCustodiedSqliteSequentialRunnerV5(configu
   if (arguments.length !== 1) throw failure('INVALID_CONFIGURATION');
   return openRunner(configuration, true, true, true);
 }
+/**
+ * Explicit existing V6 payer owner with the SAME state-bound recovery plans
+ * and collections. Only the owner/profile and captured checkpoint read differ.
+ * Raw checkpoint DATA requires explicit independent pins and is never added to
+ * snapshots or diagnostic plans. These plans are declared local history, not
+ * checkpoint authentication, signing, retry or dispatch authority. No V5
+ * adoption, extra store/close owner, migration or default cutover is added.
+ */
+export async function openServiceCreditCustodiedSqliteSequentialRunnerV6(configuration) {
+  if (arguments.length !== 1) throw failure('INVALID_CONFIGURATION');
+  return openRunner(configuration, true, true, true, true);
+}
 async function openRunner(configuration, dispatchIntentEnabled, persistentCustody = false,
-  responseObservationEnabled = false) {
+  responseObservationEnabled = false, originalPaymentCheckpointEnabled = false) {
 
   let input, policy, selected;
   try {
@@ -182,7 +196,8 @@ async function openRunner(configuration, dispatchIntentEnabled, persistentCustod
   // The actual owner's ACQUISITION_HELD/RESOURCE_HELD and other refusals retain
   // their original meaning. An absent returned root is not ours to release.
   try {
-    root = (responseObservationEnabled ? OPEN_OWNED_V5 : persistentCustody ? OPEN_OWNED_V4
+    root = (originalPaymentCheckpointEnabled ? OPEN_OWNED_V6
+      : responseObservationEnabled ? OPEN_OWNED_V5 : persistentCustody ? OPEN_OWNED_V4
       : dispatchIntentEnabled ? OPEN_OWNED_V3 : OPEN_OWNED)(input);
   } finally {
     input = null;
@@ -200,12 +215,14 @@ async function openRunner(configuration, dispatchIntentEnabled, persistentCustod
     const ROOT_READ = root.readOriginal;
     const ROOT_READ_RECOVERY_STATE = root.readOriginalRecoveryState;
     const ROOT_READ_RECOVERY_KEYS = dispatchIntentEnabled ? root.readOriginalRecoveryKeys : null;
+    const ROOT_CHECKPOINT = originalPaymentCheckpointEnabled ? root.readOriginalPaymentCheckpoint : null;
     const runner = CREATE_CORE({
       submitOriginal: ROOT_SUBMIT,
       snapshot: () => ROOT_SNAPSHOT().client,
       close: ROOT_CLOSE,
       selectedGrantId,
-      storeOwnership: responseObservationEnabled ? 'OWNED_EXISTING_V5_RESPONSE_OBSERVATION'
+      storeOwnership: originalPaymentCheckpointEnabled ? 'OWNED_EXISTING_V6_ORIGINAL_PAYMENT'
+        : responseObservationEnabled ? 'OWNED_EXISTING_V5_RESPONSE_OBSERVATION'
         : persistentCustody ? 'OWNED_EXISTING_V4_CUSTODY_QUARANTINE'
         : dispatchIntentEnabled ? 'OWNED_EXISTING_V3_DISPATCH_INTENT' : 'OWNED_EXISTING_V2',
     });
@@ -472,6 +489,7 @@ async function openRunner(configuration, dispatchIntentEnabled, persistentCustod
       runOriginals: runner.runOriginals,
       readOriginal: ROOT_READ,
       readOriginalRecoveryState: ROOT_READ_RECOVERY_STATE,
+      ...(originalPaymentCheckpointEnabled ? { readOriginalPaymentCheckpoint: ROOT_CHECKPOINT } : {}),
       ...(dispatchIntentEnabled ? { readOriginalRecoveryKeys: ROOT_READ_RECOVERY_KEYS } : {}),
       createOriginalRecoveryPlan: FREEZE(createOriginalRecoveryPlan),
       createOriginalRecoveryStatePlan: FREEZE(createOriginalRecoveryStatePlan),
