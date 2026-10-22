@@ -1,0 +1,523 @@
+{
+  "format": "zenon-x402-poc/selected-local-behavior-result-v1",
+  "scope": "P2_NATIVE_V5_BACKEND_NORMAL_EXIT_FRESH_PROCESS_CONTINUITY",
+  "status": "PASS_SELECTED_LOCAL_COMPONENT_BEHAVIOR_ONLY",
+  "fullP2Complete": false,
+  "productionStatus": "NO_GO",
+  "selection": {
+    "roadmapLane": "P2 original-request custody and bounded backend recovery",
+    "finiteSlice": "Explicit V5 payer/backend response DATA and UNKNOWN continuity across two normally exited foreground Node processes on the same two new synthetic SQLite files.",
+    "completedPredecessorMain": "4748e22f07f52fba092642ed0f7f8529755f740e",
+    "completedWorkNotRerun": "The preceding V5 component cases and earlier V4 process experiment were retained as source/evidence references, not rerun. This packet adds a distinct V5 mixed observed/unobserved normal-exit process boundary.",
+    "sourceChanges": [],
+    "addedFiles": [
+      "qualification/service-credit-custodied-backend-v5-process-recovery.behavior.draft.mjs",
+      "qualification/service-credit-custodied-backend-v5-process-recovery.behavior.result.json"
+    ],
+    "ownership": "Primary agent self-implementation; existing V5 owned payer component and borrowed backend. No outside worker, model or automation changes.",
+    "excluded": [
+      "Actual application/OS restart",
+      "Forced kill, crash and power loss",
+      "SDK and dependency installation",
+      "Real sockets, HTTPS and network",
+      "Wallet and real payment signing",
+      "Provider setup and live pilot",
+      "Default CLI migration",
+      "Broad regression suite",
+      "Hosted CI"
+    ]
+  },
+  "implementation": {
+    "productionSourceChanged": false,
+    "seed": "Open one new V5 payer and one new native backend/session. Run four planned originals: retain two strict success responses before later dispatch, commit the third backend result and declare response loss, then stop the unattempted queued tail. Close all fixture-owned components before normal process exit.",
+    "recover": "A distinct fresh process validates both full file hashes and physical identities before repository/SQLite import, then uses the V5 no-dispatch backend reader and the exact first three synthetic public proofs from the completed seed stream.",
+    "publicWitness": "Bounded data only: seed PID, grant identifier, three exact originalRequestJson/authorizationHeader public-proof pairs, owner epoch, non-epoch payer/backend logical row and schema digests, and full database file pins. Public proof values and private physical identities are not included in this report.",
+    "privateKeyBoundary": "One synthetic Ed25519 private key is generated and used only in seed memory. It is not exported, persisted or passed to the fresh process. Dropping JavaScript references is not a memory-erasure guarantee.",
+    "recoverKeyOrProofGeneration": false,
+    "preRecoverLaunchBoundary": "Seed exit zero, complete joined output, independently parsed stock command receipt/CAS stream, observed absent seed process group, exact database pins and unchanged source/preservation cohort.",
+    "responseDistinction": "The first two originals retain exact responseJson/status observations. The third backend outcome is CACHED_SUCCESS but has no observed local response; the intent/quarantine state remains reconciliation-required. Backend success is DATA, not client dispatch or payment authority.",
+    "ownerEpochs": [
+      2,
+      3
+    ],
+    "payerRows": "Three originals, three dispatch intents, two response observations and one quarantine; all non-epoch logical rows and schema digests unchanged across the fresh process.",
+    "backendRows": "Three successful executions; synthetic consumedUnits=3, availableUnits=7, heldUnits=0. Backend rows, schema and full file hash remain unchanged across the fresh process.",
+    "queuedTail": "Absent from both backend and payer stores; never attempted.",
+    "freshRead": "Three exact-original backend reads, no row changes, response writes, quarantine writes, HTTP dispatch or service callback.",
+    "closeBoundary": "Each process observes one returned native payer store close, while the cached root close remains CHILD_UNKNOWN because the original quarantine is unresolved. Fixture-owned backend/session handles are closed separately; the payer facade never claims borrowed-backend ownership.",
+    "backendOwnership": "BORROWED_NOT_CLOSED_BY_PAYER_FACADE",
+    "originalIntentReset": false,
+    "quarantineClear": false,
+    "automaticOriginalReplay": false,
+    "automaticMigration": false,
+    "createFallback": false,
+    "defaultOrV4Adoption": false,
+    "operationalEntryPointAdded": false,
+    "atomicTwoStoreTransaction": false
+  },
+  "sourceBinding": {
+    "sourceCount": 20,
+    "sourceBytes": 599562,
+    "totalReadCapBytes": 655360,
+    "perFileCapBytes": 131072,
+    "files": [
+      {
+        "path": "src/service-credit-sqlite-store.js",
+        "bytes": 83516,
+        "LF": 2366,
+        "sha256": "eea4032830dc1f641c4832e0dab33066633ba487eaf19581e3295cf8810460f3",
+        "gitBlob": "ae5260ef3442079fe73544d2d730d05724758fa1"
+      },
+      {
+        "path": "src/service-credit-model.js",
+        "bytes": 55461,
+        "LF": 1580,
+        "sha256": "7ff7e3d88ab8c3b38a0073541533fbdb7a0d9f2be42f337ac35f6a3b05615c3a",
+        "gitBlob": "e6ac17254874584d1a01f70e7abc6f771bd35d73"
+      },
+      {
+        "path": "src/service-credit-execution-contract.js",
+        "bytes": 30258,
+        "LF": 956,
+        "sha256": "298f8e74885e1c507953c0fcf7874832f815296746e6bacbdac97a425f1a6c73",
+        "gitBlob": "acfbb5c5e943b9e09958a7831b3dbe159463dcf9"
+      },
+      {
+        "path": "src/service-credit-http.js",
+        "bytes": 32432,
+        "LF": 958,
+        "sha256": "c76a7f1864bdfcd0c26916bf28fba615c8aecf899d53e69467e3ebe7d3353d0d",
+        "gitBlob": "040da1547c2fa6cc4a4044c47619b253f16d19a1"
+      },
+      {
+        "path": "src/service-credit-capability.js",
+        "bytes": 8284,
+        "LF": 256,
+        "sha256": "cb2b96d9a2e56c132dd1b4aca8f1c065b244ecd0e7e92f41ea3f4a8c969d17c3",
+        "gitBlob": "2e19d42c1b9311a75897c84669849f56ae40f785"
+      },
+      {
+        "path": "package.json",
+        "bytes": 1413,
+        "LF": 40,
+        "sha256": "8c9a25504fbf6f87c31cdf245a6f4eec5a88cc89c8352151dc66a577c5771ef5",
+        "gitBlob": "ec7193f6fd76f34778515079dc777594175c4c34"
+      },
+      {
+        "path": "src/service-credit-backend-original-outcome-reader.js",
+        "bytes": 7738,
+        "LF": 182,
+        "sha256": "dadd9cbfbdcc2ff4bb24252fed85a135d2ce17397e713b1917a109eb6b28938d",
+        "gitBlob": "7f083a5f3a8716f8aae2c618945473671da2f6b7"
+      },
+      {
+        "path": "src/service-credit-custodied-http-client.js",
+        "bytes": 12646,
+        "LF": 324,
+        "sha256": "35997f41c9a5162fe29ed56776181a1691c0a0a69c7dbdfe8b61785af3998145",
+        "gitBlob": "33879d019492de8d278b0d0dc998bd1c7806b413"
+      },
+      {
+        "path": "src/service-credit-custodied-request-owner.js",
+        "bytes": 55155,
+        "LF": 1358,
+        "sha256": "2ba222760d4a922bf0466d95fd2671076b9d19b8c5fa4ea2cb3c66b1338562eb",
+        "gitBlob": "7f99bdadcc622db203e864edb12a1f4d1059a965"
+      },
+      {
+        "path": "src/service-credit-original-request-custody-contract.js",
+        "bytes": 14051,
+        "LF": 356,
+        "sha256": "fd349de553a17abcc2e0567ba6640e6e3d5d26cfa79ee1e355928dc9fa8d3915",
+        "gitBlob": "f911d42d01b69e6577f9bcd66f4ed59aab8ab882"
+      },
+      {
+        "path": "src/service-credit-http-execute-dispatch.js",
+        "bytes": 28104,
+        "LF": 790,
+        "sha256": "929881081b22b90b07d3d1c4dc8f873d4d81ee5ae84542d24b7534674f4eb9c0",
+        "gitBlob": "ace43b4be48f00a5c649449cf1f04ab40e719190"
+      },
+      {
+        "path": "src/service-credit-custodied-backend-recovery-client.js",
+        "bytes": 22402,
+        "LF": 470,
+        "sha256": "f7139deb70ba3a16b120ea7cd436829a354f47dcec76c757d662c5565156fd6e",
+        "gitBlob": "45cef1201a9306837a670a5fd110c6c903f4e803"
+      },
+      {
+        "path": "src/service-credit-custodied-sqlite-http-client.js",
+        "bytes": 20887,
+        "LF": 550,
+        "sha256": "e7a8f3f7acdf9346d2b74a3d2918874b66e036b3dad0a363862dcc7119b68702",
+        "gitBlob": "f3270427e70d4082368cea1bb07c31e83990e9c9"
+      },
+      {
+        "path": "src/service-credit-zenon-funding-post-v1-payer-recovery-sqlite-store.js",
+        "bytes": 76152,
+        "LF": 1904,
+        "sha256": "3b77ec2e17293f9cc0de75147c84c50aa34563e6bcfb1917da06a4ecb3f3b2c9",
+        "gitBlob": "a46cfdf1612002f12d036aa33f86e445b3e4e087"
+      },
+      {
+        "path": "src/x402-wire.js",
+        "bytes": 39886,
+        "LF": 934,
+        "sha256": "5fba91af5a352f62d1a335c7176a45a604e2af5d92b1c4b0e53825c1f20d4e56",
+        "gitBlob": "fb060d4e349b1c31a1219a0cc137af250a8a2291"
+      },
+      {
+        "path": "src/service-credit-durable-http-session.js",
+        "bytes": 13978,
+        "LF": 425,
+        "sha256": "a0d6d1436cdb697f125fee2f4dc723a5ddcfd2ee7063b55d56fa006bb8ba69bf",
+        "gitBlob": "307b72b8a1d114463ad8e18935312b18ccb23199"
+      },
+      {
+        "path": "src/service-credit-durable-execution-owner.js",
+        "bytes": 40833,
+        "LF": 1301,
+        "sha256": "a63a795dda77489f7da0682d83a0683cf07240f83b803f449668cb687a956863",
+        "gitBlob": "f0fd445a17466dd1ab83c785c44aa5e6fdf1e765"
+      },
+      {
+        "path": "src/service-credit-durable-session-close.js",
+        "bytes": 2470,
+        "LF": 84,
+        "sha256": "5aae36a7da39ce5b7b9a8da8e9fbda88465cb1e4853dc791520a1df0ab87ede7",
+        "gitBlob": "f744b55595e2238dc088cf71ca8849e480cda1bc"
+      },
+      {
+        "path": "src/service-credit-custodied-sequential-runner-core.js",
+        "bytes": 15907,
+        "LF": 491,
+        "sha256": "1ea3bc77bc6f1ef7c5aef843f6d4f67109f3a7943a761c19e7dfcb37cfb84a0e",
+        "gitBlob": "2dca6dc97eab44cbdc6a007a27b3b128227378d0"
+      },
+      {
+        "path": "qualification/service-credit-custodied-backend-v5-process-recovery.behavior.draft.mjs",
+        "bytes": 37989,
+        "LF": 648,
+        "sha256": "039ee5e774960b2fddae6a8aa4e094a2e904f30b728f42b36143c16181a307fc",
+        "gitBlob": "63e68ef0cae11ad816473c95c069e89afdf053a2"
+      }
+    ],
+    "sourceBeforeAfterPhysicalIdentityStable": true,
+    "exactFixtureAndSourceCheckedBeforeNativeImports": true,
+    "existingDependencyReviewReusedOnlyAfterExactPhysicalContentAndMainBlobMatch": true,
+    "sourceGraphExpansion": "Same nineteen reviewed production/package files as the preceding V5 backend packet plus one new finite process fixture. Node builtins only; no external dependency or unrelated source evaluation.",
+    "newExternalDependencies": false,
+    "packageInstallation": false
+  },
+  "execution": {
+    "kind": "ACTUAL_SELECTED_V5_NATIVE_BACKEND_PAYER_NORMAL_EXIT_PROCESS_CONTINUITY",
+    "selectedNodeCommands": 2,
+    "selectedEntry": "qualification/service-credit-custodied-backend-v5-process-recovery.behavior.draft.mjs",
+    "phaseOrder": [
+      "seed",
+      "recover"
+    ],
+    "runtime": {
+      "node": "24.19.0",
+      "platform": "darwin",
+      "arch": "arm64",
+      "sha256": "dbedff294bab84a0a86c04e15fbcbeb1c97ca10bef1b32b0634cd24b36f62100"
+    },
+    "task": "CLOSED_SUCCESS",
+    "actualExits": [
+      0,
+      0
+    ],
+    "outputComplete": [
+      true,
+      true
+    ],
+    "counts": {
+      "tests": 2,
+      "suites": 0,
+      "pass": 2,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "passNames": [
+      "seed process closes V5 backend with observed responses and later lost-response quarantine",
+      "fresh process retains V5 response and UNKNOWN distinctions without HTTP or re-signing"
+    ],
+    "independentCompleteJoinedOutcomeReview": true,
+    "fullTapAndPrivateWitnessRead": true,
+    "phaseStreams": [
+      {
+        "phase": "seed",
+        "stdout": {
+          "bytes": 4646,
+          "sha256": "459d482527fe3074dfc4bc72480e5b55cfbcb0d4c430d8c41a448a22f9759b0a"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "phase": "recover",
+        "stdout": {
+          "bytes": 4640,
+          "sha256": "77069606b50976881ada089384986434803970890febdc61b4e69fb55e96f0a5"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      }
+    ],
+    "distinctProcessIds": true,
+    "seedGroupAbsentBeforeRecoverLaunchObserved": true,
+    "bothOwnedGroupsObservedAbsent": true,
+    "sameOriginalPublicVectorSha256": "8d80765fc302dbda5b571611664b21fd537fee73e0b4779756d4fc18d022856d",
+    "publicProofDataReusedNotRegenerated": true,
+    "newSqliteFiles": 2,
+    "ownedPayerOpens": [
+      1,
+      1
+    ],
+    "ownedPayerReturnedCloses": [
+      1,
+      1
+    ],
+    "expectedUnknownOwnedCloses": [
+      1,
+      1
+    ],
+    "borrowedBackendClosedByPayerFacade": false,
+    "fixtureClosedItsBackendAndSession": true,
+    "declaredHttpRequests": [
+      3,
+      0
+    ],
+    "bodylessEndCalls": [
+      3,
+      0
+    ],
+    "strictReplies": [
+      2,
+      0
+    ],
+    "responseLossesAfterBackendCommit": [
+      1,
+      0
+    ],
+    "syntheticBackendCallbacks": [
+      3,
+      0
+    ],
+    "backendOriginalQueries": [
+      0,
+      3
+    ],
+    "backendOriginalQueryChanges": [
+      0,
+      0
+    ],
+    "responseWrites": [
+      2,
+      0
+    ],
+    "responseReadbackConfirmations": [
+      2,
+      0
+    ],
+    "beforeNextResponseConfirmations": [
+      2,
+      0
+    ],
+    "quarantineWrites": [
+      1,
+      0
+    ],
+    "quarantineReadbackConfirmations": [
+      1,
+      0
+    ],
+    "controlledDeadlineScheduled": [
+      3,
+      0
+    ],
+    "controlledDeadlineCancelled": [
+      3,
+      0
+    ],
+    "controlledDeadlineTokensAtEnd": [
+      0,
+      0
+    ],
+    "syntheticCapabilityKeyPairs": [
+      1,
+      0
+    ],
+    "syntheticCapabilityProofs": [
+      4,
+      0
+    ],
+    "syntheticCapabilitySigningOperations": [
+      4,
+      0
+    ],
+    "syntheticCapabilityVerification": "EXERCISED_NOT_COUNTED",
+    "realPaymentSignatureOperations": 0,
+    "realPaymentSigner": "DISABLED",
+    "actualNetworkCalls": 0,
+    "queuedNativeCommands": 0,
+    "nodePermissionModel": "OFF_REQUIRED_FOR_EXISTING_STORE_FCHMOD_FSYNC",
+    "fixedInlineRunner": "Node test/util/reporters/stream builtins, one exact positional fixture and one phase-specific registered name in each of two sequential foreground commands. No saved or installed operational helper and no fixture child/worker.",
+    "callerBytes": {
+      "seed": 11421,
+      "recover": 11418
+    },
+    "limits": {
+      "perTestMilliseconds": 5000,
+      "managedCommandSeconds": 30,
+      "metadataLockSeconds": 180,
+      "stdoutCapBytes": 65536,
+      "stderrCapBytes": 1048576,
+      "compactRecordCapBytes": 32768,
+      "argumentCapBytes": 32768,
+      "witnessCapBytes": 8192,
+      "currentMetadataReadCapBytes": 131072
+    },
+    "limitsBoundary": "These limits are not hard lifetime, cancellation, native-cleanup or OS/network-sandbox guarantees. Native loader, runner, streams, SQLite, file sync, OS and trusted declared-handle behavior remain premises.",
+    "processBoundary": "Two sequential normally exited Node processes only. This is not an actual application or OS restart, forced termination, crash, power loss, live transport or real payment recovery qualification."
+  },
+  "cases": [
+    {
+      "name": "seed process closes V5 backend with observed responses and later lost-response quarantine",
+      "status": "PASS",
+      "boundary": "Two exact observed replies precede a third committed-but-lost reply; persistent quarantine stops the fourth queued original and survives a normal seed process exit."
+    },
+    {
+      "name": "fresh process retains V5 response and UNKNOWN distinctions without HTTP or re-signing",
+      "status": "PASS",
+      "boundary": "Fresh process binds both full file pins before import, reuses three exact public proofs, preserves two observed versus one unobserved response and unresolved quarantine, and changes only the owner epoch from 2 to 3."
+    }
+  ],
+  "preservation": {
+    "directlyRecheckedRepositoryFiles": 181,
+    "directlyRecheckedPriorPrivateFiles": 390,
+    "authorizedSourceReplacements": [],
+    "completedV5ComponentsAndEarlierArtifactsUnchanged": true,
+    "allEarlierFailuresPreserved": true,
+    "oldEvidenceRewritten": false,
+    "protectedAbsences": 8,
+    "originalPaymentRequestAuthority": "Original payment/request bytes, hash, payload, requirements, context and consumed authority remain unchanged.",
+    "pr193": "Preserve VALIDATED possible exact-same-signed-block resend separately from UNKNOWN and ACKNOWLEDGED. No resend, replacement, re-signing or settlement is executed.",
+    "failedOwnershipMetadataRetried": false,
+    "consumedAuthorityReset": false,
+    "precedingCompleteOutcomeReviewsOrEarlier267FullRehashReplayed": false,
+    "predecessorEvidence": {
+      "filesDecoded": 2,
+      "decodedBytes": 42581,
+      "readCapBytes": 65536,
+      "completePredecessorRowSealsMatched": true,
+      "olderAncestorRecordsDecoded": 0,
+      "recursiveTraversal": false,
+      "currentRetainedPhysicalAndContentPinsDirectlyRechecked": true
+    },
+    "noLocalStageCommitResetCheckoutOrPush": true
+  },
+  "reviewDiagnostics": {
+    "nativeExecutions": 2,
+    "nativeAssertionFailures": 0,
+    "preNativeAdmissionRefusals": 0,
+    "completeIndependentReview": "Both complete private CAS streams, strict diagnostics and public-proof vector, actual argv, process boundaries, eight final task metadata records, two final SQLite pins and the retained preservation cohort matched on the first final inspector invocation.",
+    "noNativeExecutionRepeated": true,
+    "noChangedSourceOrRuntimeDuringRun": true,
+    "earlierFailures": "Retained unchanged, not converted into passing evidence."
+  },
+  "storage": {
+    "rawSqlite": [
+      {
+        "path": "backend-v5-process.sqlite",
+        "bytes": 24576,
+        "sha256": "86a3c703dc656a6aeb416a289f621cdc2fb4589348877198036dbedd4e1e0685"
+      },
+      {
+        "path": "payer-v5-process.sqlite",
+        "bytes": 49152,
+        "sha256": "4da7e03a737ef9526aaecec0ddb26e064c6018aed146174104c39fe7e8eb30cb"
+      }
+    ],
+    "retainedRawBytes": 73728,
+    "rawSqliteOpenedByController": false,
+    "rawSqliteCASAdopted": false,
+    "cleanup": "HOLD_UNREGISTERED_RAW_SQLITE_FILES",
+    "adoptionOrDeletion": false,
+    "existingUserDatabaseSql": false,
+    "expectedTaskBytes": 4194304,
+    "taskQuotaBytes": 8388608,
+    "productionFreeSpaceFloorBytes": 10737418240,
+    "safetyMarginBytes": 1073741824,
+    "approvedStoreScratchLimitBytes": 10737418240,
+    "stricterScratchPrecheckLimitBytes": 6442450944,
+    "observedScratchPrecheckBytes": 3560870610,
+    "storageMetadataIdentityAndPolicyMatched": true,
+    "rootPolicyRewritten": false,
+    "quotaBoundary": "Task and scratch prechecks are recorded admission checks, not atomic OS reservation or sandbox guarantees."
+  },
+  "evidenceEfficiency": {
+    "stockManagerUnchanged": true,
+    "explicitRecordCalls": 3,
+    "currentMetadataFiles": 8,
+    "currentMetadataBytes": 108306,
+    "precedingTwoCommandLayout": {
+      "metadataFiles": 17,
+      "metadataBytes": 158690,
+      "completedExperimentRerun": false
+    },
+    "metadataFileCountReduction": 9,
+    "metadataByteReductionAgainstRetainedLayout": 50384,
+    "comparisonBoundary": "Actual retained-record counts and logical byte sizes only; the old and new fixtures have different source and diagnostic payloads. No matched benchmark, measured execution speedup or measured physical APFS reclaim is claimed.",
+    "priorPrivateFiles": 390,
+    "currentPrivateCohortAfterRun": 400,
+    "layout": "Admission retains source/selection/launch policy once; each stock command receipt retains its exact argv once. Compact handoff retains phase facts and witness digests instead of duplicate TAP, argv and source records. Complete streams stay in digest-keyed CAS.",
+    "launchSourcePreservationRawFileAndOutcomeBindingsIndependentlyChecked": true,
+    "missingHandoff": "UNKNOWN_NOT_QUALIFIED",
+    "binaryTransport": "Bounded descriptor output and one CAS object per stream digest; no second stdout copy, ZIP packaging or raw database adoption.",
+    "measuredRuntimeSpeedup": false,
+    "measuredPhysicalApfsReclaim": false
+  },
+  "acceptanceBoundaries": {
+    "twoSelectedNormalExitProcessCases": "PASS",
+    "mixedV5ResponseAndUnknownContinuity": "PASS_SELECTED_SYNTHETIC_COMPONENT_BOUNDARY",
+    "exactPublicProofVectorHandoff": "EXERCISED_PRIVATE_DATA_ONLY",
+    "freshProcessNoGenerationNoDispatchNoExtraDebit": "EXERCISED",
+    "syntheticCapabilitySigningAndVerification": "SEED_IN_MEMORY_SIGNING_PUBLIC_PROOF_VERIFICATION_ONLY",
+    "realCredentialCustody": "NOT_QUALIFIED",
+    "realPaymentSigning": "NOT_EXECUTED",
+    "nativeSyntheticBackendExecutions": 3,
+    "syntheticCreditCounters": "CHECKED_LOCALLY_NOT_REAL_FUNDING_ECONOMICS",
+    "independentServerReceipt": "NOT_ESTABLISHED",
+    "serviceDelivery": "NOT_ESTABLISHED",
+    "fullClientSuccessfulSubmit": "NOT_EXERCISED_BY_THIS_PACKET",
+    "responseDifferenceComparatorBranch": "NOT_DELIBERATELY_TRIGGERED_BY_THIS_PACKET",
+    "defaultCliCutover": "NOT_IMPLEMENTED_BY_THIS_PACKET",
+    "actualSocketOrHttpsTransport": "NOT_EXECUTED",
+    "actualApplicationRestartRecovery": "NOT_ESTABLISHED",
+    "crashOrPowerLossDurability": "NOT_QUALIFIED",
+    "atomicTwoStoreSnapshot": "NOT_ESTABLISHED",
+    "sdkOrDpRuntime": "NOT_EXECUTED",
+    "actualPaymentRecovery": "NOT_ESTABLISHED",
+    "providerReady": "NOT_ESTABLISHED",
+    "hostedCi": "NOT_RUN_NOT_GREEN",
+    "broadRegressionSuite": "NOT_RUN",
+    "fullP2": "INCOMPLETE",
+    "pilotAcceptance": "NOT_ESTABLISHED",
+    "production": "NO_GO"
+  },
+  "protectedTotals": {
+    "consumedAdmissions": 2,
+    "actualChainPrepare": 1,
+    "bundles": 0,
+    "nativeChainProviderQualificationRuns": 0
+  },
+  "nextFiniteWork": "Select a distinct unfinished V5 client behavior, such as full-client successful submit or response projection drift, only after exact retained coverage/source/ownership and launch review. Missing coverage alone is not novelty. Preserve unresolved original intent and UNKNOWN boundaries; do not rerun this normal-exit experiment, infer default cutover or claim live recovery."
+}
