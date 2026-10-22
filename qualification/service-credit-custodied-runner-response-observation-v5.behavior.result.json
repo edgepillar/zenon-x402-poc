@@ -1,0 +1,736 @@
+{
+  "format": "zenon-x402-poc/selected-local-behavior-result-v1",
+  "scope": "P2_NATIVE_V5_RESPONSE_OBSERVATION_SEQUENTIAL_RUNNER_BINDING",
+  "status": "PASS_SELECTED_LOCAL_COMPONENT_BEHAVIOR_ONLY",
+  "fullP2Complete": false,
+  "productionStatus": "NO_GO",
+  "selection": {
+    "roadmapLane": "P2 original-request custody and local recovery",
+    "finiteSlice": "Bind borrowed and owned sequential runners explicitly to the completed V5 response-observation HTTP factories. Six selected socketless/native-SQLite cases cover sequential response readback, one-shot identity, UNKNOWN queue stop, normal reopen and V4 separation.",
+    "completedPredecessorMain": "fda99aa39d509e7562214ac08fd28daf9fcf9c2d",
+    "completedWorkNotRerun": "Completed HTTP/owner/store V5 and older V4 runner/process outcomes are retained. The current runner composition is distinct; missing coverage is not treated as novelty.",
+    "sourceChanges": [
+      {
+        "path": "src/service-credit-custodied-sequential-runner.js",
+        "old": {
+          "path": "src/service-credit-custodied-sequential-runner.js",
+          "bytes": 4967,
+          "LF": 107,
+          "sha256": "47db104e64ab9f54113aedc2b16ea923379c9de490e9ced670b9fecb4881a41d",
+          "gitBlob": "728bc9c163ac6caec15f53daa4cbb85322266a95"
+        },
+        "new": {
+          "path": "src/service-credit-custodied-sequential-runner.js",
+          "bytes": 5773,
+          "LF": 121,
+          "sha256": "de0f3e143066f19ac3f3cab072abe8d250ea72b9fac9ad2c5bedb75110d7ec56",
+          "gitBlob": "f624375877ee0dd3d8352a5d13e35d95b43a12e7"
+        },
+        "additions": 16,
+        "deletions": 2
+      },
+      {
+        "path": "src/service-credit-custodied-sqlite-sequential-runner.js",
+        "old": {
+          "path": "src/service-credit-custodied-sqlite-sequential-runner.js",
+          "bytes": 22418,
+          "LF": 526,
+          "sha256": "a9e8abba40f9430ae3e31a32fe9e9f9b6c129d26d34a2f5f9984d2cf805da5c4",
+          "gitBlob": "515dce1ff3ce6877ec1aa240442b8e00a9d98051"
+        },
+        "new": {
+          "path": "src/service-credit-custodied-sqlite-sequential-runner.js",
+          "bytes": 23370,
+          "LF": 542,
+          "sha256": "6a13fa59532928f707167431c4c769a110d1bba61df5b218db86354934110e6a",
+          "gitBlob": "7f54717658e1a66da3a426e9c1e4ed44b065b401"
+        },
+        "additions": 19,
+        "deletions": 3
+      },
+      {
+        "path": "src/service-credit-custodied-sequential-runner-core.js",
+        "old": {
+          "path": "src/service-credit-custodied-sequential-runner-core.js",
+          "bytes": 15827,
+          "LF": 490,
+          "sha256": "640d578e99f9cb21cf8d79ec870e676e3d9087ebee831e795b1b120b9860ddfb",
+          "gitBlob": "b75b088ee691e0f73b2bd579a28bf9b6b070b77e"
+        },
+        "new": {
+          "path": "src/service-credit-custodied-sequential-runner-core.js",
+          "bytes": 15907,
+          "LF": 491,
+          "sha256": "1ea3bc77bc6f1ef7c5aef843f6d4f67109f3a7943a761c19e7dfcb37cfb84a0e",
+          "gitBlob": "2dca6dc97eab44cbdc6a007a27b3b128227378d0"
+        },
+        "additions": 2,
+        "deletions": 1
+      }
+    ],
+    "addedFiles": [
+      "qualification/service-credit-custodied-runner-response-observation-v5.behavior.draft.mjs",
+      "qualification/service-credit-custodied-runner-response-observation-v5.behavior.result.json"
+    ],
+    "ownership": "Primary implementation with independent complete joined-outcome review; no worker, automation, model selection or session was changed.",
+    "excluded": [
+      "real socket or network transport",
+      "SDK import or execution",
+      "dependency installation",
+      "key or signature generation/verification",
+      "wallet or real payment",
+      "DP producer or chain execution",
+      "existing database SQL",
+      "forced kill or crash",
+      "fresh process or OS restart",
+      "power loss or physical-durability qualification",
+      "broad application/controller/provider qualification",
+      "new operational helper or host"
+    ]
+  },
+  "implementation": {
+    "exports": [
+      "createServiceCreditCustodiedSequentialRunnerV5",
+      "openServiceCreditCustodiedSqliteSequentialRunnerV5"
+    ],
+    "borrowedV5": "Select the existing V5 HTTP child through an explicit factory. Reuse the same sequential core: each accepted original waits for the owner's response-observation readback before completion and before the next request. Borrowed runner close does not close the native store.",
+    "ownedV5": "Open only an EXISTING V5 SQLite profile through the existing owned V5 HTTP factory. Select the V5 ownership label and reuse the existing resource slot, one-shot run, synchronous admission close, child drain, store-close attempt and UNKNOWN propagation.",
+    "rootOwnershipLabel": "OWNED_EXISTING_V5_RESPONSE_OBSERVATION",
+    "coreDelta": "Only admit the explicit V5 ownership label in the existing ownership predicate. Queue, replay, run result, callback and close implementations are unchanged.",
+    "coreDeltaOnlyOwnershipLabelAdmission": true,
+    "defaultV3AndV4FactoryBodiesByteIdentical": true,
+    "allOwnedRecoveryAndCleanupImplementationsByteIdentical": true,
+    "unchangedDependencies": "HTTP client, dispatcher, owner, SQLite store, recovery-plan, status-view and collection implementations retain their exact predecessor pins.",
+    "oneShotIdentity": "Only the accepted batch array identity returns its cached active or terminal Promise. A different array is refused; cached replay does not inspect a later replaced array element getter.",
+    "partialRun": "An earlier successful response remains retained if a later request becomes UNKNOWN. Later queued work is not dispatched or retained. A manually stopped partial run rejects with CLOSE_REQUESTED even when close drains the started request successfully.",
+    "reopenFence": "Normal reopen preserves prior original/intent/response rows. Existing selected-grant quarantine and an older unobserved intent block dispatch; automatic quarantine is retained rather than reset.",
+    "diagnosticRecoveryBoundary": "One declared UNKNOWN state plan remains RECONCILIATION_REQUIRED with no terminal promotion or action authority despite an existing response observation. A detached plan retains historical DATA after root close; this does not qualify other planner or collection methods.",
+    "responseMeaning": "Caller-declared transport DATA, not an authenticated service receipt, delivery proof, settlement, capability proof or permission to sign/pay/send.",
+    "authorization": "The fixtures use declared Authorization syntax only; no capability signature is created or verified. Authorization material is not persisted in native custody rows.",
+    "originalIntentReset": false,
+    "quarantineClear": false,
+    "automaticOriginalReplay": false,
+    "automaticMigration": false,
+    "createFallback": false,
+    "defaultOrV4Adoption": false,
+    "operationalEntryPointAdded": false
+  },
+  "sourceBinding": {
+    "sourceCount": 16,
+    "sourceBytes": 357793,
+    "totalReadCapBytes": 393216,
+    "perFileCapBytes": 131072,
+    "files": [
+      {
+        "path": "src/service-credit-custodied-sequential-runner-core.js",
+        "bytes": 15907,
+        "LF": 491,
+        "sha256": "1ea3bc77bc6f1ef7c5aef843f6d4f67109f3a7943a761c19e7dfcb37cfb84a0e",
+        "gitBlob": "2dca6dc97eab44cbdc6a007a27b3b128227378d0"
+      },
+      {
+        "path": "src/service-credit-custodied-sequential-runner.js",
+        "bytes": 5773,
+        "LF": 121,
+        "sha256": "de0f3e143066f19ac3f3cab072abe8d250ea72b9fac9ad2c5bedb75110d7ec56",
+        "gitBlob": "f624375877ee0dd3d8352a5d13e35d95b43a12e7"
+      },
+      {
+        "path": "src/service-credit-custodied-sqlite-sequential-runner.js",
+        "bytes": 23370,
+        "LF": 542,
+        "sha256": "6a13fa59532928f707167431c4c769a110d1bba61df5b218db86354934110e6a",
+        "gitBlob": "7f54717658e1a66da3a426e9c1e4ed44b065b401"
+      },
+      {
+        "path": "src/service-credit-custodied-sqlite-http-client.js",
+        "bytes": 20887,
+        "LF": 550,
+        "sha256": "e7a8f3f7acdf9346d2b74a3d2918874b66e036b3dad0a363862dcc7119b68702",
+        "gitBlob": "f3270427e70d4082368cea1bb07c31e83990e9c9"
+      },
+      {
+        "path": "src/service-credit-custodied-http-client.js",
+        "bytes": 12646,
+        "LF": 324,
+        "sha256": "35997f41c9a5162fe29ed56776181a1691c0a0a69c7dbdfe8b61785af3998145",
+        "gitBlob": "33879d019492de8d278b0d0dc998bd1c7806b413"
+      },
+      {
+        "path": "src/service-credit-custodied-request-owner.js",
+        "bytes": 55155,
+        "LF": 1358,
+        "sha256": "2ba222760d4a922bf0466d95fd2671076b9d19b8c5fa4ea2cb3c66b1338562eb",
+        "gitBlob": "7f99bdadcc622db203e864edb12a1f4d1059a965"
+      },
+      {
+        "path": "src/service-credit-zenon-funding-post-v1-payer-recovery-sqlite-store.js",
+        "bytes": 76152,
+        "LF": 1904,
+        "sha256": "3b77ec2e17293f9cc0de75147c84c50aa34563e6bcfb1917da06a4ecb3f3b2c9",
+        "gitBlob": "a46cfdf1612002f12d036aa33f86e445b3e4e087"
+      },
+      {
+        "path": "src/service-credit-http-execute-dispatch.js",
+        "bytes": 28104,
+        "LF": 790,
+        "sha256": "929881081b22b90b07d3d1c4dc8f873d4d81ee5ae84542d24b7534674f4eb9c0",
+        "gitBlob": "ace43b4be48f00a5c649449cf1f04ab40e719190"
+      },
+      {
+        "path": "src/service-credit-original-request-custody-contract.js",
+        "bytes": 14051,
+        "LF": 356,
+        "sha256": "fd349de553a17abcc2e0567ba6640e6e3d5d26cfa79ee1e355928dc9fa8d3915",
+        "gitBlob": "f911d42d01b69e6577f9bcd66f4ed59aab8ab882"
+      },
+      {
+        "path": "src/x402-wire.js",
+        "bytes": 39886,
+        "LF": 934,
+        "sha256": "5fba91af5a352f62d1a335c7176a45a604e2af5d92b1c4b0e53825c1f20d4e56",
+        "gitBlob": "fb060d4e349b1c31a1219a0cc137af250a8a2291"
+      },
+      {
+        "path": "src/service-credit-pilot-client-plan.js",
+        "bytes": 7483,
+        "LF": 181,
+        "sha256": "73ee3d739de85150039e733234cd0761c228d68de040d1e126902e808a259ac6",
+        "gitBlob": "14334c82b5b7c80fb8f7f6a392a1a0f3c3adcbf1"
+      },
+      {
+        "path": "src/service-credit-pilot-status-view.js",
+        "bytes": 3202,
+        "LF": 60,
+        "sha256": "cf3822d8b9ec4eb4772452ed1888b96d398fd87c1ead44cd155a5acc1a6b66ed",
+        "gitBlob": "0890db504e44b704d0434dc309e711743570e652"
+      },
+      {
+        "path": "src/service-credit-custodied-recovery-collection-core.js",
+        "bytes": 13794,
+        "LF": 306,
+        "sha256": "51d06da70ecccd0cf8b38d650367d1ae903ea86010a5ebeadb682af98e4b890b",
+        "gitBlob": "5275832eebbf87e0cd37f3c2e3b82147ab625a72"
+      },
+      {
+        "path": "src/service-credit-custodied-recovery-observation-collection-core.js",
+        "bytes": 8579,
+        "LF": 213,
+        "sha256": "36b7cece2d436cbfcac5f4299dd6bd30e5eede6ebb2ebe769ae7bf3a6f1a72b4",
+        "gitBlob": "4dc8765be0aa4b0e927fface960e366a3a6ccd1e"
+      },
+      {
+        "path": "package.json",
+        "bytes": 1413,
+        "LF": 40,
+        "sha256": "8c9a25504fbf6f87c31cdf245a6f4eec5a88cc89c8352151dc66a577c5771ef5",
+        "gitBlob": "ec7193f6fd76f34778515079dc777594175c4c34"
+      },
+      {
+        "path": "qualification/service-credit-custodied-runner-response-observation-v5.behavior.draft.mjs",
+        "bytes": 31391,
+        "LF": 499,
+        "sha256": "c03c30ba21d75d7df440632a983a8784cc4f53a487c4d392ec276fc9c7fcba48",
+        "gitBlob": "6de34e70bcb54b6e55601f783c5a47c6424e312f"
+      }
+    ],
+    "sourceBeforeAfterPhysicalIdentityStable": true,
+    "exactFixtureAndSourceCheckedBeforeNativeImports": true,
+    "existingDependencyReviewReusedOnlyAfterExactPhysicalContentAndMainBlobMatch": true,
+    "sourceGraphExpansion": "Sixteen exact source/package/fixture files: the already-reviewed sequential runner composition graph plus this fixture. No unrelated SDK, directory or package imports.",
+    "newExternalDependencies": false,
+    "packageInstallation": false
+  },
+  "execution": {
+    "kind": "ACTUAL_SELECTED_SOCKETLESS_V5_RUNNER_AND_NATIVE_SQLITE_COMPONENT_EXECUTION",
+    "selectedNodeCommands": 1,
+    "selectedEntry": "qualification/service-credit-custodied-runner-response-observation-v5.behavior.draft.mjs",
+    "runtime": {
+      "node": "24.19.0",
+      "platform": "darwin",
+      "arch": "arm64",
+      "sha256": "dbedff294bab84a0a86c04e15fbcbeb1c97ca10bef1b32b0634cd24b36f62100"
+    },
+    "task": "CLOSED_SUCCESS",
+    "actualExits": [
+      0
+    ],
+    "outputComplete": [
+      true
+    ],
+    "counts": {
+      "tests": 6,
+      "suites": 0,
+      "pass": 6,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "passNames": [
+      "Borrowed V5 runner records two sequential replies and caches only the accepted array identity",
+      "Owned V5 normal reopen retains response observations without promoting diagnostic recovery authority",
+      "Owned V5 runner preserves earlier response then stops queued work on strict HTTP UNKNOWN",
+      "Reopened V5 runners refuse quarantined and unobserved-intent batches before HTTP",
+      "Manual V5 close retains the started response but rejects partial run without quarantining queued work",
+      "V4 runner stays void-response compatible and cross-profile V5 acquisition does not adopt files"
+    ],
+    "independentCompleteJoinedOutcomeReview": true,
+    "fullTapAndDiagnosticsRead": true,
+    "stdout": {
+      "bytes": 5936,
+      "sha256": "034b8b06ee8e664fcff1872ae5b08eb52bf5b0fe830564377eae06aa63354ba2"
+    },
+    "stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "newSqliteFiles": 2,
+    "sqliteFileCountProgression": [
+      1,
+      1,
+      1,
+      1,
+      1,
+      2
+    ],
+    "directStoreCloses": 3,
+    "ownedStoreReturnedCloses": 5,
+    "returnedComponentStoreCloses": 8,
+    "borrowedRunners": 2,
+    "ownedRunners": 5,
+    "expectedUnknownOwnedCloses": 3,
+    "declaredHttpRequests": 7,
+    "validatedFakeReplies": 6,
+    "uncertainFakeResponses": 1,
+    "failedRuns": 4,
+    "manualStoppedRuns": 1,
+    "identityReplayChecks": 2,
+    "getterCalls": 0,
+    "profileRefusals": 2,
+    "statePlans": 1,
+    "childSubmitAttempts": 9,
+    "completedCallbacks": 6,
+    "responseReadbackConfirmations": 5,
+    "automaticQuarantineWrites": 2,
+    "maxActiveFakeRequests": 1,
+    "ownedProcessGroupObservedAbsent": true,
+    "queuedNativeCommands": 0,
+    "actualNetworkCalls": 0,
+    "keypairsGenerated": 0,
+    "syntheticSignatureOperations": 0,
+    "realPaymentSigner": "DISABLED",
+    "nodePermissionModel": "OFF_REQUIRED_FOR_EXISTING_STORE_FCHMOD_FSYNC",
+    "fixedInlineRunner": "Node test/util/reporters/stream builtins; one exact positional fixture, six exact names and six complete diagnostics. No saved or installed operational helper.",
+    "limits": {
+      "perTestMilliseconds": 5000,
+      "managedCommandSeconds": 30,
+      "metadataLockSeconds": 180,
+      "stdoutCapBytes": 65536,
+      "stderrCapBytes": 1048576
+    },
+    "limitsBoundary": "These limits are not hard lifetime, cancellation, native-cleanup or OS/network-sandbox guarantees. Native loader, runner, streams, SQLite, file sync, OS and trusted declared-handle behavior remain premises.",
+    "processBoundary": "Normal same-process close and reopen only. No forced termination, fresh-process recovery, actual process restart, OS restart, crash or power-loss experiment."
+  },
+  "cases": [
+    {
+      "name": "Borrowed V5 runner records two sequential replies and caches only the accepted array identity",
+      "outcome": "PASS",
+      "observed": "A structurally foreign batch is refused before retention or HTTP. Two accepted originals finish sequentially with confirmed V5 response readbacks before completion. Active and terminal replays of the accepted array return the same Promise without evaluating a later element getter; a different array is refused. Borrowed auto-close leaves its store open. The producer deliberately seeds a separate grant's unobserved intent before normal store close.",
+      "httpRequests": 2,
+      "confirmedResponseReadbacks": 2,
+      "ownerEpoch": 1,
+      "rows": {
+        "originals": 3,
+        "intents": 3,
+        "responseObservations": 2,
+        "quarantinedGrants": 0
+      },
+      "unobservedIntent": "DECLARED_SEED_NOT_CRASH_EVIDENCE"
+    },
+    {
+      "name": "Owned V5 normal reopen retains response observations without promoting diagnostic recovery authority",
+      "outcome": "PASS",
+      "observed": "Owned V5 normal reopen reads the two prior responses. A declared OUTCOME_UNKNOWN state plan on an observed original remains RECONCILIATION_REQUIRED, terminal null and action authority NONE, with all permission/delivery flags false. A distinct third original succeeds; auto-close closes its store once. A detached plan after root close returns only cached historical DATA.",
+      "ownerEpoch": 2,
+      "httpRequests": 1,
+      "confirmedResponseReadbacks": 1,
+      "rows": {
+        "originals": 4,
+        "intents": 4,
+        "responseObservations": 3,
+        "quarantinedGrants": 0
+      },
+      "priorOriginalIntentResponseAndFundingRowsUnchanged": true
+    },
+    {
+      "name": "Owned V5 runner preserves earlier response then stops queued work on strict HTTP UNKNOWN",
+      "outcome": "PASS",
+      "observed": "The first original response is retained. A declared strict HTTP 503 on the second request persists UNKNOWN quarantine; the third queued original is neither retained nor dispatched. Run rejects ENTRY_REJECTED with planned 3, attempted 2 and completed 1. Owned close releases its store but rejects UNKNOWN.",
+      "ownerEpoch": 3,
+      "httpRequests": 2,
+      "confirmedResponseReadbacks": 1,
+      "rows": {
+        "originals": 6,
+        "intents": 6,
+        "responseObservations": 4,
+        "quarantinedGrants": 1
+      }
+    },
+    {
+      "name": "Reopened V5 runners refuse quarantined and unobserved-intent batches before HTTP",
+      "outcome": "PASS",
+      "observed": "Two normal owned reopens independently block a quarantined grant and the deliberately seeded unobserved-intent grant before HTTP. The latter adds exactly one quarantine. Each selected batch attempts its first entry, completes none, releases its queue and fails; owned close remains UNKNOWN. Prior original, intent and observation rows are preserved.",
+      "ownerEpochs": [
+        4,
+        5
+      ],
+      "httpRequests": 0,
+      "newOriginalRetentions": 0,
+      "newQuarantineWrites": 1,
+      "implicitResends": 0,
+      "rows": {
+        "originals": 6,
+        "intents": 6,
+        "responseObservations": 4,
+        "quarantinedGrants": 2
+      }
+    },
+    {
+      "name": "Manual V5 close retains the started response but rejects partial run without quarantining queued work",
+      "outcome": "PASS",
+      "observed": "Manual close synchronously fences admission and releases queued work before the first response. The started request finishes with retained/readback response; the second is unattempted and absent. Close drains successfully while the partial run rejects CLOSE_REQUESTED. No new quarantine is written and the borrowed native store remains open until direct producer close.",
+      "ownerEpoch": 6,
+      "httpRequests": 1,
+      "confirmedResponseReadbacks": 1,
+      "close": "FULFILLED_DRAINED",
+      "run": "RUN_FAILED_CLOSE_REQUESTED",
+      "unknown": false,
+      "rows": {
+        "originals": 7,
+        "intents": 7,
+        "responseObservations": 5,
+        "quarantinedGrants": 2
+      }
+    },
+    {
+      "name": "V4 runner stays void-response compatible and cross-profile V5 acquisition does not adopt files",
+      "outcome": "PASS",
+      "observed": "V5-on-V4 and V4-on-V5 owned acquisitions refuse with RP_ACQUISITION_FAILED. Exact closed file bytes, identities and epochs remain unchanged, and both module slots are released. A later valid V4 owned runner succeeds with its legacy void response and no V5 observation table or response counters. The V5 file remains exact throughout controls.",
+      "profileRefusals": 2,
+      "httpRequests": 1,
+      "finalV4OwnerEpoch": 2,
+      "finalV4Rows": {
+        "originals": 1,
+        "intents": 1,
+        "responseObservations": 0,
+        "quarantinedGrants": 0
+      },
+      "fullHistoricalRegressionSuite": false
+    }
+  ],
+  "diagnostics": [
+    {
+      "kind": "P2_RUNNER_RESPONSE_OBSERVATION_V5",
+      "version": 1,
+      "scenario": "BORROWED_V5_SEQUENTIAL_READBACK_AND_IDENTITY_RECEIPT",
+      "nativeSqliteFiles": 1,
+      "directStoreCloses": 1,
+      "borrowedRunners": 1,
+      "ownedRunners": 0,
+      "ownedStoreReturnedCloses": 0,
+      "expectedUnknownOwnedCloses": 0,
+      "declaredHttpRequests": 2,
+      "validatedFakeReplies": 2,
+      "uncertainFakeResponses": 0,
+      "failedRuns": 0,
+      "manualStoppedRuns": 0,
+      "identityReplayChecks": 2,
+      "getterCalls": 0,
+      "profileRefusals": 0,
+      "statePlans": 0,
+      "childSubmitAttempts": 2,
+      "completedCallbacks": 2,
+      "responseReadbackConfirmations": 2,
+      "automaticQuarantineWrites": 0,
+      "maxActiveFakeRequests": 1,
+      "networkCalls": 0,
+      "syntheticSignatureOperations": 0,
+      "realPaymentSigner": "DISABLED",
+      "serviceDelivery": "NOT_ESTABLISHED"
+    },
+    {
+      "kind": "P2_RUNNER_RESPONSE_OBSERVATION_V5",
+      "version": 1,
+      "scenario": "OWNED_V5_NORMAL_REOPEN_AND_POWERLESS_STATE_PLAN",
+      "nativeSqliteFiles": 1,
+      "directStoreCloses": 1,
+      "borrowedRunners": 1,
+      "ownedRunners": 1,
+      "ownedStoreReturnedCloses": 1,
+      "expectedUnknownOwnedCloses": 0,
+      "declaredHttpRequests": 3,
+      "validatedFakeReplies": 3,
+      "uncertainFakeResponses": 0,
+      "failedRuns": 0,
+      "manualStoppedRuns": 0,
+      "identityReplayChecks": 2,
+      "getterCalls": 0,
+      "profileRefusals": 0,
+      "statePlans": 1,
+      "childSubmitAttempts": 3,
+      "completedCallbacks": 3,
+      "responseReadbackConfirmations": 3,
+      "automaticQuarantineWrites": 0,
+      "maxActiveFakeRequests": 1,
+      "networkCalls": 0,
+      "syntheticSignatureOperations": 0,
+      "realPaymentSigner": "DISABLED",
+      "serviceDelivery": "NOT_ESTABLISHED"
+    },
+    {
+      "kind": "P2_RUNNER_RESPONSE_OBSERVATION_V5",
+      "version": 1,
+      "scenario": "PARTIAL_RESPONSE_RETENTION_AND_UNKNOWN_QUEUE_STOP",
+      "nativeSqliteFiles": 1,
+      "directStoreCloses": 1,
+      "borrowedRunners": 1,
+      "ownedRunners": 2,
+      "ownedStoreReturnedCloses": 2,
+      "expectedUnknownOwnedCloses": 1,
+      "declaredHttpRequests": 5,
+      "validatedFakeReplies": 4,
+      "uncertainFakeResponses": 1,
+      "failedRuns": 1,
+      "manualStoppedRuns": 0,
+      "identityReplayChecks": 2,
+      "getterCalls": 0,
+      "profileRefusals": 0,
+      "statePlans": 1,
+      "childSubmitAttempts": 5,
+      "completedCallbacks": 4,
+      "responseReadbackConfirmations": 4,
+      "automaticQuarantineWrites": 1,
+      "maxActiveFakeRequests": 1,
+      "networkCalls": 0,
+      "syntheticSignatureOperations": 0,
+      "realPaymentSigner": "DISABLED",
+      "serviceDelivery": "NOT_ESTABLISHED"
+    },
+    {
+      "kind": "P2_RUNNER_RESPONSE_OBSERVATION_V5",
+      "version": 1,
+      "scenario": "REOPENED_UNKNOWN_AND_UNOBSERVED_INTENT_NO_DISPATCH",
+      "nativeSqliteFiles": 1,
+      "directStoreCloses": 1,
+      "borrowedRunners": 1,
+      "ownedRunners": 4,
+      "ownedStoreReturnedCloses": 4,
+      "expectedUnknownOwnedCloses": 3,
+      "declaredHttpRequests": 5,
+      "validatedFakeReplies": 4,
+      "uncertainFakeResponses": 1,
+      "failedRuns": 3,
+      "manualStoppedRuns": 0,
+      "identityReplayChecks": 2,
+      "getterCalls": 0,
+      "profileRefusals": 0,
+      "statePlans": 1,
+      "childSubmitAttempts": 7,
+      "completedCallbacks": 4,
+      "responseReadbackConfirmations": 4,
+      "automaticQuarantineWrites": 2,
+      "maxActiveFakeRequests": 1,
+      "networkCalls": 0,
+      "syntheticSignatureOperations": 0,
+      "realPaymentSigner": "DISABLED",
+      "serviceDelivery": "NOT_ESTABLISHED"
+    },
+    {
+      "kind": "P2_RUNNER_RESPONSE_OBSERVATION_V5",
+      "version": 1,
+      "scenario": "MANUAL_PARTIAL_STOP_WITH_RETAINED_RESPONSE_NO_NEW_QUARANTINE",
+      "nativeSqliteFiles": 1,
+      "directStoreCloses": 2,
+      "borrowedRunners": 2,
+      "ownedRunners": 4,
+      "ownedStoreReturnedCloses": 4,
+      "expectedUnknownOwnedCloses": 3,
+      "declaredHttpRequests": 6,
+      "validatedFakeReplies": 5,
+      "uncertainFakeResponses": 1,
+      "failedRuns": 4,
+      "manualStoppedRuns": 1,
+      "identityReplayChecks": 2,
+      "getterCalls": 0,
+      "profileRefusals": 0,
+      "statePlans": 1,
+      "childSubmitAttempts": 8,
+      "completedCallbacks": 5,
+      "responseReadbackConfirmations": 5,
+      "automaticQuarantineWrites": 2,
+      "maxActiveFakeRequests": 1,
+      "networkCalls": 0,
+      "syntheticSignatureOperations": 0,
+      "realPaymentSigner": "DISABLED",
+      "serviceDelivery": "NOT_ESTABLISHED"
+    },
+    {
+      "kind": "P2_RUNNER_RESPONSE_OBSERVATION_V5",
+      "version": 1,
+      "scenario": "LEGACY_V4_CONTROL_AND_CROSS_PROFILE_NO_ADOPTION",
+      "nativeSqliteFiles": 2,
+      "directStoreCloses": 3,
+      "borrowedRunners": 2,
+      "ownedRunners": 5,
+      "ownedStoreReturnedCloses": 5,
+      "expectedUnknownOwnedCloses": 3,
+      "declaredHttpRequests": 7,
+      "validatedFakeReplies": 6,
+      "uncertainFakeResponses": 1,
+      "failedRuns": 4,
+      "manualStoppedRuns": 1,
+      "identityReplayChecks": 2,
+      "getterCalls": 0,
+      "profileRefusals": 2,
+      "statePlans": 1,
+      "childSubmitAttempts": 9,
+      "completedCallbacks": 6,
+      "responseReadbackConfirmations": 5,
+      "automaticQuarantineWrites": 2,
+      "maxActiveFakeRequests": 1,
+      "networkCalls": 0,
+      "syntheticSignatureOperations": 0,
+      "realPaymentSigner": "DISABLED",
+      "serviceDelivery": "NOT_ESTABLISHED"
+    }
+  ],
+  "preservation": {
+    "directlyRecheckedRepositoryFiles": 171,
+    "directlyRecheckedPriorPrivateFiles": 356,
+    "authorizedSourceReplacements": [
+      {
+        "main": "fda99aa39d509e7562214ac08fd28daf9fcf9c2d",
+        "path": "src/service-credit-custodied-sequential-runner.js",
+        "bytes": 4967,
+        "gitBlob": "728bc9c163ac6caec15f53daa4cbb85322266a95",
+        "sha256": "47db104e64ab9f54113aedc2b16ea923379c9de490e9ced670b9fecb4881a41d",
+        "oldFileClaimedPhysicallyUnchanged": false
+      },
+      {
+        "main": "fda99aa39d509e7562214ac08fd28daf9fcf9c2d",
+        "path": "src/service-credit-custodied-sqlite-sequential-runner.js",
+        "bytes": 22418,
+        "gitBlob": "515dce1ff3ce6877ec1aa240442b8e00a9d98051",
+        "sha256": "a9e8abba40f9430ae3e31a32fe9e9f9b6c129d26d34a2f5f9984d2cf805da5c4",
+        "oldFileClaimedPhysicallyUnchanged": false
+      },
+      {
+        "main": "fda99aa39d509e7562214ac08fd28daf9fcf9c2d",
+        "path": "src/service-credit-custodied-sequential-runner-core.js",
+        "bytes": 15827,
+        "gitBlob": "b75b088ee691e0f73b2bd579a28bf9b6b070b77e",
+        "sha256": "640d578e99f9cb21cf8d79ec870e676e3d9087ebee831e795b1b120b9860ddfb",
+        "oldFileClaimedPhysicallyUnchanged": false
+      }
+    ],
+    "httpV5OwnerV5StoreV5AndEarlierQualificationArtifactsUnchanged": true,
+    "oldEvidenceRewritten": false,
+    "protectedAbsences": 8,
+    "originalPaymentRequestAuthority": "Original payment/request bytes, hash, payload, requirements, context and consumed authority remain unchanged.",
+    "pr193": "Preserve VALIDATED possible exact-same-signed-block resend separately from UNKNOWN and ACKNOWLEDGED. No resend, replacement, re-signing or settlement is executed.",
+    "failedOwnershipMetadataRetried": false,
+    "consumedAuthorityReset": false,
+    "precedingCompleteOutcomeReviewsOrEarlier267FullRehashReplayed": false,
+    "predecessorEvidence": {
+      "filesDecoded": 2,
+      "decodedBytes": 41593,
+      "readCapBytes": 65536,
+      "completePredecessorRowSealsMatched": true,
+      "olderAncestorRecordsDecoded": 0,
+      "recursiveTraversal": false,
+      "currentRetainedPhysicalAndContentPinsDirectlyRechecked": true
+    },
+    "noLocalStageCommitResetCheckoutOrPush": true
+  },
+  "reviewDiagnostics": {
+    "nativeAssertionFailures": 0,
+    "nativeExecutions": 1,
+    "preNativeRefusals": 0,
+    "postRunInspection": "Complete independent read-only review passed on the first inspector invocation. No native execution was repeated.",
+    "earlierFailures": "Retained unchanged, not converted to fresh passing outcomes."
+  },
+  "storage": {
+    "rawSqlite": [
+      {
+        "role": "V5 borrowed/owned sequential runner fixture",
+        "bytes": 73728,
+        "sha256": "f3a81b8f1e58fd66341fa8620826691048ac3c7ac3dfad69430f019d2cf4e764"
+      },
+      {
+        "role": "V4 compatibility control",
+        "bytes": 40960,
+        "sha256": "ebac0823113fbd47273c3bced1e2182d64a19481a2bfad3c7def1a579eed59e6"
+      }
+    ],
+    "retainedRawBytes": 114688,
+    "rawSqliteOpenedByController": false,
+    "rawSqliteCASAdopted": false,
+    "cleanup": "HOLD_UNREGISTERED_FILES",
+    "adoptionOrDeletion": false,
+    "existingDatabaseSql": false,
+    "expectedTaskBytes": 2097152,
+    "taskQuotaBytes": 4194304,
+    "productionFreeSpaceFloorBytes": 10737418240,
+    "safetyMarginBytes": 1073741824,
+    "approvedStoreScratchLimitBytes": 10737418240,
+    "stricterScratchPrecheckLimitBytes": 6442450944,
+    "observedScratchPrecheckBytes": 3559579924,
+    "storageMetadataIdentityAndPolicyMatched": true,
+    "rootPolicyRewritten": false,
+    "quotaBoundary": "Cooperative bounded allocation and sampled monitoring, not an atomic OS-enforced aggregate quota."
+  },
+  "evidenceEfficiency": {
+    "stockManagerUnchanged": true,
+    "explicitRecordCalls": 3,
+    "currentMetadataFiles": 7,
+    "currentMetadataBytes": 97857,
+    "precedingOneCommandLayoutMetadataFiles": 7,
+    "compactLayoutRetained": true,
+    "launchSourcePreservationRawFileAndOutcomeBindingsIndependentlyChecked": true,
+    "missingHandoff": "UNKNOWN_NOT_QUALIFIED",
+    "priorPrivateFiles": 356,
+    "currentPrivateCohortAfterRun": 365,
+    "binaryTransport": "Bounded descriptor capture with one CAS object per stream digest, no second stdout copy, ZIP packaging or raw SQLite adoption.",
+    "measuredSpeedup": false,
+    "measuredPhysicalApfsReclaim": false
+  },
+  "acceptanceBoundaries": {
+    "sixSelectedLocalCases": "PASS",
+    "explicitSequentialRunnerV5Binding": "IMPLEMENTED_COMPONENT",
+    "actualNetworkOrHttpsTransport": "NOT_EXECUTED",
+    "authorizationSignatureVerification": "NOT_EXECUTED",
+    "independentServerReceipt": "NOT_ESTABLISHED",
+    "serviceDelivery": "NOT_ESTABLISHED",
+    "oneDeclaredUnknownStatePlan": "REMAINS_DIAGNOSTIC_NO_ACTION_AUTHORITY",
+    "otherRecoveryPlansAndCollections": "NOT_QUALIFIED_BY_THIS_PACKET",
+    "defaultCliOrBackendV5Adoption": "NOT_IMPLEMENTED_BY_THIS_PACKET",
+    "fullP2": "INCOMPLETE",
+    "freshProcessRecovery": "NOT_EXERCISED_BY_THIS_PACKET",
+    "crashOrPowerLossDurability": "NOT_QUALIFIED",
+    "sdkOrDpRuntime": "NOT_EXECUTED",
+    "actualPaymentRecovery": "NOT_ESTABLISHED",
+    "providerReady": "NOT_ESTABLISHED",
+    "hostedCi": "NOT_RUN_NOT_GREEN",
+    "broadRegressionSuite": "NOT_RUN",
+    "pilotAcceptance": "NOT_ESTABLISHED",
+    "production": "NO_GO"
+  },
+  "protectedTotals": {
+    "consumedAdmissions": 2,
+    "actualChainPrepare": 1,
+    "bundles": 0,
+    "nativeChainProviderQualificationRuns": 0
+  },
+  "nextFiniteWork": "Select and source-bind an explicit V5 no-dispatch recovery reader or distinct V5 fresh-process response/UNKNOWN continuity slice. Do not repeat completed runner/HTTP outcomes. Existing V4/default, backend and operational behavior is not silently adopted or qualified; actual transport and pilot gates remain separate."
+}

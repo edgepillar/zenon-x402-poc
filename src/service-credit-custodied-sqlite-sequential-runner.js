@@ -5,6 +5,7 @@ import {
   openServiceCreditCustodiedSqliteHttpClient,
   openServiceCreditCustodiedSqliteHttpClientV3,
   openServiceCreditCustodiedSqliteHttpClientV4,
+  openServiceCreditCustodiedSqliteHttpClientV5,
 } from './service-credit-custodied-sqlite-http-client.js';
 import {
   snapshotOriginalServiceRequestCustodyPolicy,
@@ -41,6 +42,7 @@ const RESOLVE = resolve;
 const OPEN_OWNED = openServiceCreditCustodiedSqliteHttpClient;
 const OPEN_OWNED_V3 = openServiceCreditCustodiedSqliteHttpClientV3;
 const OPEN_OWNED_V4 = openServiceCreditCustodiedSqliteHttpClientV4;
+const OPEN_OWNED_V5 = openServiceCreditCustodiedSqliteHttpClientV5;
 const CREATE_CORE = createServiceCreditCustodiedSequentialRunnerCore;
 const POLICY = snapshotOriginalServiceRequestCustodyPolicy;
 const KEY = snapshotOriginalServiceRequestCustodyKey;
@@ -130,7 +132,20 @@ export async function openServiceCreditCustodiedSqliteSequentialRunnerV4(configu
   if (arguments.length !== 1) throw failure('INVALID_CONFIGURATION');
   return openRunner(configuration, true, true);
 }
-async function openRunner(configuration, dispatchIntentEnabled, persistentCustody = false) {
+/**
+ * Explicit EXISTING V5 profile and V5 HTTP child. Only child selection and the
+ * accepted ownership label change; queue, replay identity, stop/close and
+ * recovery-plan/collection implementations are reused. Observations remain
+ * powerless DATA and an intent remains reconciliation-required, even when a
+ * declared response was retained. No create fallback, V4 migration, authority
+ * reset, default adoption or process/crash durability claim.
+ */
+export async function openServiceCreditCustodiedSqliteSequentialRunnerV5(configuration) {
+  if (arguments.length !== 1) throw failure('INVALID_CONFIGURATION');
+  return openRunner(configuration, true, true, true);
+}
+async function openRunner(configuration, dispatchIntentEnabled, persistentCustody = false,
+  responseObservationEnabled = false) {
 
   let input, policy, selected;
   try {
@@ -167,7 +182,7 @@ async function openRunner(configuration, dispatchIntentEnabled, persistentCustod
   // The actual owner's ACQUISITION_HELD/RESOURCE_HELD and other refusals retain
   // their original meaning. An absent returned root is not ours to release.
   try {
-    root = (persistentCustody ? OPEN_OWNED_V4
+    root = (responseObservationEnabled ? OPEN_OWNED_V5 : persistentCustody ? OPEN_OWNED_V4
       : dispatchIntentEnabled ? OPEN_OWNED_V3 : OPEN_OWNED)(input);
   } finally {
     input = null;
@@ -190,7 +205,8 @@ async function openRunner(configuration, dispatchIntentEnabled, persistentCustod
       snapshot: () => ROOT_SNAPSHOT().client,
       close: ROOT_CLOSE,
       selectedGrantId,
-      storeOwnership: persistentCustody ? 'OWNED_EXISTING_V4_CUSTODY_QUARANTINE'
+      storeOwnership: responseObservationEnabled ? 'OWNED_EXISTING_V5_RESPONSE_OBSERVATION'
+        : persistentCustody ? 'OWNED_EXISTING_V4_CUSTODY_QUARANTINE'
         : dispatchIntentEnabled ? 'OWNED_EXISTING_V3_DISPATCH_INTENT' : 'OWNED_EXISTING_V2',
     });
     const RUNNER_SNAPSHOT = runner.snapshot;

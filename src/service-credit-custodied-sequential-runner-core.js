@@ -61,7 +61,8 @@ export function createServiceCreditCustodiedSequentialRunnerCore(configuration) 
         || (config.storeOwnership !== 'BORROWED'
           && config.storeOwnership !== 'OWNED_EXISTING_V2'
           && config.storeOwnership !== 'OWNED_EXISTING_V3_DISPATCH_INTENT'
-          && config.storeOwnership !== 'OWNED_EXISTING_V4_CUSTODY_QUARANTINE')) {
+          && config.storeOwnership !== 'OWNED_EXISTING_V4_CUSTODY_QUARANTINE'
+          && config.storeOwnership !== 'OWNED_EXISTING_V5_RESPONSE_OBSERVATION')) {
       throw failure('INVALID_CONFIGURATION');
     }
     selected = KEY({ grantId: config.selectedGrantId, requestId: 'scope' });
