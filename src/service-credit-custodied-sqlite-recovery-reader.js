@@ -1,5 +1,6 @@
 import {
   openServiceCreditCustodiedSqliteSequentialRunnerV3,
+  openServiceCreditCustodiedSqliteSequentialRunnerV4,
 } from './service-credit-custodied-sqlite-sequential-runner.js';
 import {
   exact, failure,
@@ -7,6 +8,7 @@ import {
 
 const FREEZE = Object.freeze;
 const OPEN = openServiceCreditCustodiedSqliteSequentialRunnerV3;
+const OPEN_V4 = openServiceCreditCustodiedSqliteSequentialRunnerV4;
 const CONFIG_FIELDS = FREEZE([
   'databasePath', 'allowedRoot', 'fundingResourceUrl', 'custodyPolicy',
   'selectedGrantId', 'deadlineMs',
@@ -55,3 +57,41 @@ export async function openServiceCreditCustodiedSqliteRecoveryReaderV3(configura
     input = null;
   }
 }
+
+/**
+ * Opt-in no-dispatch V4 recovery surface over the same owned V4 runner.
+ * Persisted grant quarantine remains UNKNOWN even after the native DB closes.
+ * Declared observations/plans/collections never clear it or authorize a send.
+ * All nine methods, including the cached close Promise, are the actual root's
+ * captured operations. No caller transport, submit, batch or root is exposed.
+ * Opening may advance owner_epoch; this is not SQLite readOnly or restart proof.
+ * The existing V3 entry and default/application/CLI paths remain unchanged.
+ */
+export async function openServiceCreditCustodiedSqliteRecoveryReaderV4(configuration) {
+  if (arguments.length !== 1) throw failure('INVALID_CONFIGURATION');
+  let input;
+  try {
+    input = exact(configuration, CONFIG_FIELDS);
+  } catch {
+    throw failure('INVALID_CONFIGURATION');
+  } finally {
+    configuration = null;
+  }
+  try {
+    const root = await OPEN_V4({ ...input, requestImpl: NO_DISPATCH });
+    return FREEZE({
+      readOriginal: root.readOriginal,
+      readOriginalRecoveryState: root.readOriginalRecoveryState,
+      readOriginalRecoveryKeys: root.readOriginalRecoveryKeys,
+      createOriginalRecoveryPlan: root.createOriginalRecoveryPlan,
+      createOriginalRecoveryStatePlan: root.createOriginalRecoveryStatePlan,
+      createOriginalRecoveryCollection: root.createOriginalRecoveryCollection,
+      createOriginalRecoveryObservationCollection: root.createOriginalRecoveryObservationCollection,
+      close: root.close,
+      snapshot: root.snapshot,
+    });
+  } finally {
+    input = null;
+  }
+}
+
