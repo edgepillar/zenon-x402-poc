@@ -1,0 +1,493 @@
+{
+  "schema": "zenon-x402-selected-local-result/v1",
+  "status": "PASS_TEN_SELECTED_LOCAL_COMPONENT_CASES",
+  "lane": "P1-A fixed-cost work validation boundary",
+  "completedAtUTC": "2026-10-22T16:00:26.654Z",
+  "sourceReference": {
+    "repository": "edgepillar/zenon-x402-poc",
+    "baseMain": "67394ebda63397cf5905ba72e7b025a80b44a358",
+    "baseTree": "814ecca4692f8a76b63d7553ce662c7e0bf117e5",
+    "beforeWorkBinding": {
+      "path": "src/zenon/dynamic-plasma-user-send-work-binding.js",
+      "bytes": 4522,
+      "LF": 98,
+      "sha256": "218b4391c97e4adde905415e20ec0e2015fca98643db85b6efd682aa3b5c5681",
+      "gitBlob": "1591c6fd60e90713fbec9b4249a69c1e5626405e"
+    },
+    "beforeImageRetainedInProtectedCAS": true
+  },
+  "implementation": {
+    "newModule": "src/zenon/dynamic-plasma-user-send-fixed-work.js",
+    "legacyModule": "src/zenon/dynamic-plasma-user-send-work-binding.js",
+    "fixedValidatorAndPredicateBodies": "Byte-for-byte retained from the source-bound before-image.",
+    "legacyValidationExport": "The exact same function object is re-exported from the old path.",
+    "legacyAsyncBinding": "Retains the captured original hash/price binder. After its await, independently validate the same detached immutable block's full hash/nonce and keep only its work result.",
+    "tradeoff": "The legacy async price-binding path deliberately performs one extra fixed-cost block-hash check. No runtime speedup is claimed for that path.",
+    "unchanged": [
+      "Public export names and fixed validation receipt/error formats.",
+      "The declared nonce predicate and safe-number difficulty domain.",
+      "Original quote, intent and selected-field admission.",
+      "No search, retry, quote refresh, key/signature or active default."
+    ],
+    "nonceSearchDraft": "Not imported, evaluated, changed or qualified by this slice."
+  },
+  "efficiency": {
+    "measurementKind": "STATIC_LITERAL_IMPORT_CLOSURE_NOT_RUNTIME_BENCHMARK",
+    "before": {
+      "entry": "src/zenon/dynamic-plasma-user-send-work-binding.js",
+      "files": 14,
+      "bytes": 189160,
+      "referenceMain": "67394ebda63397cf5905ba72e7b025a80b44a358",
+      "workBindingBeforeSha256": "218b4391c97e4adde905415e20ec0e2015fca98643db85b6efd682aa3b5c5681"
+    },
+    "after": {
+      "entry": "src/zenon/dynamic-plasma-user-send-fixed-work.js",
+      "files": 7,
+      "bytes": 102383,
+      "sourcePins": [
+        {
+          "path": "src/zenon/dynamic-plasma-user-send-fixed-work.js",
+          "bytes": 3475,
+          "LF": 77,
+          "sha256": "4ee83870df0b25c34d35c0f0d0ceb894ca9dab8c047f81b34a48dd816f1fbf38",
+          "gitBlob": "4ce2a790df84c77bc76615e5eebc309ecd2868ac"
+        },
+        {
+          "path": "src/zenon/transaction-planner.js",
+          "bytes": 22611,
+          "LF": 464,
+          "sha256": "079fe8da938e08e33a20ca1076492a829afa6fce3ae7f9b9f68d3bf4bff94233",
+          "gitBlob": "17b49a3d53974c9b3846ec6f352d6e8974bad7d3"
+        },
+        {
+          "path": "src/canonical.js",
+          "bytes": 967,
+          "LF": 26,
+          "sha256": "0d55ddf1727cafb0dcd46df2922305568615552a4d2ae34a5c30e90b9d8d998c",
+          "gitBlob": "5367f9c72ee13017a61630e1f0cffdced21d52c4"
+        },
+        {
+          "path": "src/x402-wire.js",
+          "bytes": 39886,
+          "LF": 934,
+          "sha256": "5fba91af5a352f62d1a335c7176a45a604e2af5d92b1c4b0e53825c1f20d4e56",
+          "gitBlob": "fb060d4e349b1c31a1219a0cc137af250a8a2291"
+        },
+        {
+          "path": "src/zenon/dynamic-plasma-json-rpc-read-transport.js",
+          "bytes": 10832,
+          "LF": 283,
+          "sha256": "fd03b2ad87d16660aa61d3961c163d724d5f89cd6d4bb9c4391d739566d5e5ca",
+          "gitBlob": "0475b7ab42889f67fb030fa7344d73d8bd6957d7"
+        },
+        {
+          "path": "src/zenon/bounded-json-rpc-read-core.js",
+          "bytes": 21759,
+          "LF": 582,
+          "sha256": "10cc529bfb0676bb03dc4dad56059663f4a578b586c52f6404fc859d27d18f76",
+          "gitBlob": "3bd98a83413eb13e3bceb097d35fb874b4c030a2"
+        },
+        {
+          "path": "src/zenon/dynamic-plasma-user-send-work-input.js",
+          "bytes": 2853,
+          "LF": 59,
+          "sha256": "2ff9c089e5903c059746d0a1c38688a2849f94d04d429279811fbbfbb40450a4",
+          "gitBlob": "dad4febf4ef6f09216640245c7e3805e01ad0127"
+        }
+      ]
+    },
+    "sourceFilesRemovedFromHashOnlyClosure": 7,
+    "sourceBytesRemovedFromHashOnlyClosure": 86777,
+    "scope": "A hash/nonce-only caller can explicitly import the new module without the price/strategy graph. Legacy price-binding imports still retain that graph; the active buyer is unchanged.",
+    "repositoryProductionSourceNetBytes": 893,
+    "wallClockSpeedup": "NOT_MEASURED",
+    "measuredPhysicalAPFSReclaim": "NOT_ESTABLISHED",
+    "retentionReuse": {
+      "sourceCASHits": 13,
+      "sourceCASImports": 4,
+      "additionalBeforeImageObjects": 1
+    },
+    "managerTaskCreateToCloseSeconds": 360.233,
+    "managerTaskDurationMeaning": "One observed staging/capture/retention/inspection/cleanup interval, not an app, PoW, chain, service or throughput benchmark."
+  },
+  "selection": {
+    "entry": "qualification/dynamic-plasma-fixed-work-separation.behavior.draft.mjs",
+    "count": 10,
+    "caseNames": [
+      "fixed-work separation preserves zero-difficulty semantics for all three supplied literal nonces",
+      "fixed-work separation validates supplied difficulty-one nonces without searching or replacing them",
+      "fixed-work separation agrees with fifteen independent fixed-nonce LE64 predicates",
+      "fixed-work separation still rejects wrong hashes signed metadata and unsafe field domains",
+      "fixed-work separation rejects getters proxies and coercion without invoking hooks",
+      "fixed-work separation returns detached frozen receipts without freezing or mutating caller data",
+      "fixed-work separation does not promote shared payer-frontier work to full payment or key authority",
+      "fixed-work separation preserves exact-arity cause-free errors and a finite non-search check budget",
+      "fixed-work separation preserves the exact legacy validation function and public export surface",
+      "fixed-work separation retains original-quote async binding and rejects altered or expired declared state"
+    ],
+    "oldCompleteTestsReplayed": false,
+    "fullDefaultSuiteRun": false,
+    "fixedNonces": [
+      "0000000000000000",
+      "0102030405060708",
+      "ffffffffffffffff"
+    ],
+    "guardedDirectInvocations": 40,
+    "independentFixedNonceReferenceChecks": 15,
+    "legacyAsyncInvocations": 3,
+    "candidateSearchCalls": 0,
+    "signatures": 0,
+    "referenceScope": "Five declared difficulties and three preselected nonce literals. This is fixed-cost predicate comparison, not candidate search or independent SDK/block-hash conformance.",
+    "legacyCoverage": [
+      "Export function identity and unchanged two-name API surface.",
+      "Original-quote success retains the detached block despite caller mutation.",
+      "A changed selected Plasma field refuses.",
+      "An expired original quote refuses without refresh."
+    ]
+  },
+  "sourceReview": {
+    "closedSourceFiles": 17,
+    "closedSourceBytes": 206023,
+    "productionSourceFiles": 15,
+    "sourcePins": [
+      {
+        "path": "qualification/dynamic-plasma-fixed-work-separation.behavior.draft.mjs",
+        "bytes": 14557,
+        "LF": 225,
+        "sha256": "6239f5e52ce967e4b9345835a65c5f23fb49dd1c29e77d12c1d2b3b9f8b37c80",
+        "gitBlob": "ee8639b9b7325967cb2bbbbc769083c91af96fab"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-user-send-fixed-work.js",
+        "bytes": 3475,
+        "LF": 77,
+        "sha256": "4ee83870df0b25c34d35c0f0d0ceb894ca9dab8c047f81b34a48dd816f1fbf38",
+        "gitBlob": "4ce2a790df84c77bc76615e5eebc309ecd2868ac"
+      },
+      {
+        "path": "src/zenon/transaction-planner.js",
+        "bytes": 22611,
+        "LF": 464,
+        "sha256": "079fe8da938e08e33a20ca1076492a829afa6fce3ae7f9b9f68d3bf4bff94233",
+        "gitBlob": "17b49a3d53974c9b3846ec6f352d6e8974bad7d3"
+      },
+      {
+        "path": "src/canonical.js",
+        "bytes": 967,
+        "LF": 26,
+        "sha256": "0d55ddf1727cafb0dcd46df2922305568615552a4d2ae34a5c30e90b9d8d998c",
+        "gitBlob": "5367f9c72ee13017a61630e1f0cffdced21d52c4"
+      },
+      {
+        "path": "src/x402-wire.js",
+        "bytes": 39886,
+        "LF": 934,
+        "sha256": "5fba91af5a352f62d1a335c7176a45a604e2af5d92b1c4b0e53825c1f20d4e56",
+        "gitBlob": "fb060d4e349b1c31a1219a0cc137af250a8a2291"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-json-rpc-read-transport.js",
+        "bytes": 10832,
+        "LF": 283,
+        "sha256": "fd03b2ad87d16660aa61d3961c163d724d5f89cd6d4bb9c4391d739566d5e5ca",
+        "gitBlob": "0475b7ab42889f67fb030fa7344d73d8bd6957d7"
+      },
+      {
+        "path": "src/zenon/bounded-json-rpc-read-core.js",
+        "bytes": 21759,
+        "LF": 582,
+        "sha256": "10cc529bfb0676bb03dc4dad56059663f4a578b586c52f6404fc859d27d18f76",
+        "gitBlob": "3bd98a83413eb13e3bceb097d35fb874b4c030a2"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-user-send-work-input.js",
+        "bytes": 2853,
+        "LF": 59,
+        "sha256": "2ff9c089e5903c059746d0a1c38688a2849f94d04d429279811fbbfbb40450a4",
+        "gitBlob": "dad4febf4ef6f09216640245c7e3805e01ad0127"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-user-send-work-binding.js",
+        "bytes": 1940,
+        "LF": 42,
+        "sha256": "79eba29a05427128ae3a12346fd3ee7cbaa526d6f39eb36ed58d388640638266",
+        "gitBlob": "a329d521458a5c5b6dbc87194d91d4165d5e759c"
+      },
+      {
+        "path": "src/zenon/bounded-dynamic-plasma-strategy.js",
+        "bytes": 15729,
+        "LF": 353,
+        "sha256": "7b82560bdeb25e573912090a2fe8de7b45912500a7a7c4434fe06dcf94e06d62",
+        "gitBlob": "ee85b7a4da8bf4190ae099e6bc5074059fccebbc"
+      },
+      {
+        "path": "src/zenon/plasma-strategy.js",
+        "bytes": 974,
+        "LF": 32,
+        "sha256": "1c597d4e169ba8a5e6d2b7852c4ffa3a8ec9b854332fe354b9b013c36ebae093",
+        "gitBlob": "5cddc2d270aaf043e6e43145e95ffe0be3dde475"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-compatibility.js",
+        "bytes": 7732,
+        "LF": 225,
+        "sha256": "b3989ce15e5f2e9d07b0ed035fe96bcce9f22cac93f5e497fdca5c37bf7618dd",
+        "gitBlob": "3811b748b3f905e454c8a4af4650bb7f89eb1cf2"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-price-policy.js",
+        "bytes": 15457,
+        "LF": 427,
+        "sha256": "dc935f2d06d518c0ec4cec3f20f9233b931fd8c3f35c2d6733f03f33dcab61d0",
+        "gitBlob": "3f51ff06c3ae4189fc5e01233f1998bd1abe612c"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-required-fused-policy-adapter.js",
+        "bytes": 12024,
+        "LF": 272,
+        "sha256": "e2b693d4df9065d44ba590f4d0c8dffeb8e55187668eedfa396b4026c9905c3e",
+        "gitBlob": "b592aafd4c41461318376ea9acc1373f99317455"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-required-fused-quote.js",
+        "bytes": 5416,
+        "LF": 133,
+        "sha256": "f5e10ff2dbfff3b6b63d87f0abadd0bb52b5d6b8fe0ead6a55fc5ea14207b730",
+        "gitBlob": "e820fd31ffde4ef77a2efa6e1fd3ed1775778726"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-observation-normalizer.js",
+        "bytes": 28398,
+        "LF": 698,
+        "sha256": "2c3f7d42ded21a5513ff26c23a00a35a53aa334f053d10930f1571a020286897",
+        "gitBlob": "c406db8471aa6c8afd812c222c673c809491cf00"
+      },
+      {
+        "path": "package.json",
+        "bytes": 1413,
+        "LF": 40,
+        "sha256": "8c9a25504fbf6f87c31cdf245a6f4eec5a88cc89c8352151dc66a577c5771ef5",
+        "gitBlob": "ec7193f6fd76f34778515079dc777594175c4c34"
+      }
+    ],
+    "unchangedProductionImages": 13,
+    "priorCurrentPolicyRecord": {
+      "path": "qualification/dynamic-plasma-price-policy-current-main.local-result.json",
+      "sha256": "a4e43a6c54fb73d679c4cd59186b43ecc6a07600e07d12a385ac25fc0491af1e"
+    },
+    "newOrChangedBodiesFullyReviewed": true,
+    "completeWorkInputSourceReviewed": true,
+    "allApplicationImportsLiteralAndLocalOrAllowedNodeBuiltins": true,
+    "searchProducerSDKSQLNetworkImports": false,
+    "derivation": "The complete fixed validator, predicate and fixed error constructor match the before-image. The legacy async method changes only its captured work consumer, with the explicit additional hash check described above."
+  },
+  "execution": {
+    "nativeCommands": 1,
+    "nativeCommandsMeaning": "Selected Node test commands only.",
+    "actualExits": [
+      0
+    ],
+    "complete": true,
+    "passed": 10,
+    "failed": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0,
+    "sameExactInputNativeReruns": 0,
+    "runtime": [
+      {
+        "label": "node",
+        "version": "24.19.0",
+        "platform": "darwin",
+        "architecture": "arm64",
+        "bytes": 121304480,
+        "sha256": "dbedff294bab84a0a86c04e15fbcbeb1c97ca10bef1b32b0634cd24b36f62100",
+        "digestReuse": "Prior full digest reused only after exact nine-field physical identity match."
+      },
+      {
+        "label": "python",
+        "version": "3.12.14",
+        "platform": "darwin",
+        "architecture": "arm64",
+        "bytes": 18058560,
+        "sha256": "811e2679c20fd2c7413f7c5ca28ce903065eea8dadb8660f1b9379a28959a480",
+        "digestReuse": "Prior full digest reused only after exact nine-field physical identity match."
+      }
+    ],
+    "launch": {
+      "envCleared": true,
+      "environmentKeyNames": [
+        "PATH",
+        "LANG",
+        "LC_ALL",
+        "TZ",
+        "PYTHONDONTWRITEBYTECODE",
+        "DP_FIXED_WORK_OPT_IN",
+        "DP_FIXED_WORK_CONTEXT",
+        "SPV_TASK_SCRATCH"
+      ],
+      "inlineBytes": 7123,
+      "inlineSha256": "20a92e2399af82337a733549b67a6b96b710ef9e2089d212c3755feed35d81fc",
+      "options": [
+        "--disallow-code-generation-from-strings",
+        "--no-addons",
+        "--no-warnings",
+        "--test-reporter=tap",
+        "--eval <reviewed source and identity guarded caller>",
+        "<fixed ten-case entry>"
+      ],
+      "nodeTestRun": {
+        "isolation": "none",
+        "concurrency": false,
+        "timeoutMilliseconds": 5000,
+        "forceExit": false,
+        "watch": false
+      },
+      "nodePermissionModel": false,
+      "initialExitSentinel": 125
+    },
+    "reporter": {
+      "stockNodeTestRunner": true,
+      "stockTapReporter": true,
+      "fullUnfilteredStreamRetained": true,
+      "nativePassEventsMatchedExactly": true,
+      "sourceEndAndReporterPipelineJoined": true,
+      "TAPPlanObserved": true,
+      "plan": "1..10",
+      "sevenSummaryCountsMatched": true,
+      "stdout": {
+        "bytes": 2919,
+        "sha256": "602f7fe01c76746754854d046a4cf4b825d5896a09dd3de96a79cdca535327d0"
+      },
+      "stderr": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "stdoutCapBytes": 65536,
+      "stderrCapBytes": 1048576
+    },
+    "diagnostics": [
+      {
+        "kind": "P1A_FIXED_WORK_SEPARATION",
+        "guardedDirectCalls": 40,
+        "referenceChecks": 15,
+        "legacyAsyncCalls": 3,
+        "candidateSearchCalls": 0,
+        "signatures": 0,
+        "originalQuotePreserved": true,
+        "qualification": "DECLARED_DATA_ONLY_NOT_LIVE_DP"
+      }
+    ],
+    "sourceImagePinsMatchedBeforeAndAfter": true,
+    "sourceAliasRowsSha256": "b6f70bc81fe98c87f0fa1bb9a4534e465f9c73e76cabc1099b58d1e09fac9988",
+    "ownedProcessGroupObservedAbsent": true,
+    "sourceAliasInspectionBoundary": "Before/after alias bindings are retained producer records. Removed aliases cannot be freshly inspected after owned cleanup; the independent review instead read all retained CAS images and ownership records.",
+    "nativeLoaderRunnerCryptoStreamAndOSBehavior": "PREMISES_NOT_A_SECURITY_PROOF",
+    "timeoutBoundary": "The 5000 ms test and 30 s manager timeouts are not hard lifetime, cancellation, CPU-time, native cleanup or OS/network sandbox guarantees.",
+    "resultBoundary": "These joined observations establish only the exact selected local declared-data outcomes."
+  },
+  "retention": {
+    "approvedPrivateManagedRootUsed": true,
+    "newTaskExpectedBytes": 2097152,
+    "newTaskQuotaBytes": 4194304,
+    "all17SourceImagesBothCompleteStreamsAndBeforeImageRetained": true,
+    "duplicateStdoutOrZipCreated": false,
+    "independentAPFSAliases": true,
+    "hardLinksUsed": false,
+    "ownedTaskState": "CLOSED",
+    "ownedTaskOutcome": "SUCCESS",
+    "ownedScratchCleanup": {
+      "decision": "CLEANED",
+      "logicalBytes": 206023
+    },
+    "historicalCleanup": false,
+    "metadataFiles": 9,
+    "metadataBytes": 60057,
+    "metadataPins": [
+      {
+        "label": "task.json",
+        "bytes": 2053,
+        "sha256": "4d0231b9cc7020cee555c0679a7fae583acd52b0cbad427a6ad0cec059154637"
+      },
+      {
+        "label": "admission.json",
+        "bytes": 13865,
+        "sha256": "e35aeea359925c0196e70137320d4de7e1117ade1365eeabd18241ccb0718135"
+      },
+      {
+        "label": "cleanup.json",
+        "bytes": 179,
+        "sha256": "9b194855775012f5df2b192db12fa7f18bfbc86f1641148a079c32d170ae0803"
+      },
+      {
+        "label": "command receipt",
+        "bytes": 8113,
+        "sha256": "bbf694a7f4890186642ed23a4e5ac903b7bd19d95911e1e4f5361efcebef26a4"
+      },
+      {
+        "label": "handoff.json",
+        "bytes": 13301,
+        "sha256": "e36fd8bb7c1d03682a3c846e816c48bbe958e5a04a4bf9000fe35d1b2270c9ff"
+      },
+      {
+        "label": "outcome.json",
+        "bytes": 61,
+        "sha256": "d44d27192bf9a04bfc0985fa933f107278b664d14d92ea922ac57b1b85803341"
+      },
+      {
+        "label": "explicit package manifest",
+        "bytes": 2991,
+        "sha256": "005ecc45b6eb876e85c1f2b92929f4000e780b5a97093b82170d034f44ea7c9e"
+      },
+      {
+        "label": "preservation-before.json",
+        "bytes": 567,
+        "sha256": "1ecea792a07598714c6002ca7ef65acf7f5c5af94ff990c419ca63004101ad18"
+      },
+      {
+        "label": "source-graph.json",
+        "bytes": 18927,
+        "sha256": "f7adea8b108a4cc407eb3b6538ea7db60f426b1e84b50b2a77cef54e5cdaa4bd"
+      }
+    ],
+    "priorPreservation": {
+      "sourceFiles": 252,
+      "privateFiles": 676,
+      "protectedAbsences": 12,
+      "sourceRowsSha256": "05881980be535081c92f6b5f0bd166b079ce5cb2c72d1345d882fb2e861ec091",
+      "privateRowsSha256": "f98d939799fd8c7ed3c1c6ecc200114196bcbf56b7898566bcbdf6fb56cf6265",
+      "allPhysicalAndContentPinsMatched": true
+    },
+    "independentReadOnlyReview": {
+      "exit": 0,
+      "allMetadataAndOwnershipRecordsRead": true,
+      "allObjectOwnershipBindingsValidated": true,
+      "beforeImageRetainedAndVerified": true,
+      "stockArgvAndReceiptMatched": true,
+      "completeStreams": true
+    }
+  },
+  "authorityAndEvidenceBoundary": {
+    "allowed": "Ten source/environment/launch-reviewed local synthetic fixed-nonce and declared original-quote compatibility cases; no candidate search.",
+    "notRun": [
+      "Nonce candidate search or bounded material/planner execution.",
+      "SDK imports or dependency installation.",
+      "Key generation, signatures, attestations, payments or real PREPARE.",
+      "SQL, real restart/recovery or native work-provider/owner qualification.",
+      "Network, authenticated account/chain state, runtime p or live price observations.",
+      "Provider READY, service delivery, inclusion or pilot acceptance.",
+      "Hosted CI or the broad default test suite."
+    ],
+    "fullP1AComplete": false,
+    "pilotOrProductionAcceptance": "NOT_ESTABLISHED",
+    "mainOrGreenCIIsLiveProof": false,
+    "protectedRealTotalsUnchanged": {
+      "consumedAdmissions": 2,
+      "actualChainPrepare": 1,
+      "bundles": 0,
+      "nativeChainOrProviderQualificationRuns": 0
+    },
+    "originalPaymentRequestBytesHashAndConsumedAuthority": "PRESERVED",
+    "validatedPossibleSameSignedBlockResendVersusUnknownAcknowledged": "UNCHANGED_DISTINCT_BOUNDARIES"
+  }
+}
