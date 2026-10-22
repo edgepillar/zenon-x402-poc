@@ -1,0 +1,432 @@
+{
+  "schema": "zenon-x402-poc/selected-owner-quarantine-v4-result/v1",
+  "status": "PASS_SELECTED_LOCAL_NATIVE_SQLITE_ONLY",
+  "scope": "P2_OPT_IN_V4_AUTOMATIC_OWNER_CUSTODY_QUARANTINE",
+  "dateUTC": "2026-10-22",
+  "selection": {
+    "baseline": "043c3307ff6688a7735190ebb221dd68fbc7d55f",
+    "oldSource": {
+      "path": "src/service-credit-custodied-request-owner.js",
+      "bytes": 37513,
+      "LF": 986,
+      "sha256": "01e3dd01a8f3cd408b6d5df0938994b7ca704d778d8ea7c144b40ca264163a3d",
+      "gitBlob": "3e337868c2daef14573def71c767680e8e4a9184"
+    },
+    "newSource": {
+      "path": "src/service-credit-custodied-request-owner.js",
+      "bytes": 44517,
+      "LF": 1136,
+      "sha256": "4f3f20195a0ec26be38e9b80e658dfccfd9477daff758a9717e819f3b55c04b2",
+      "gitBlob": "2d18b98b8d922253c1beee6c5f057705acc97069"
+    },
+    "target": "Explicit V4 library owner only; V2/V3 entry points and active/default HTTP wiring remain unchanged.",
+    "novelty": "Existing V4 native-store quarantine required an explicit caller latch. This slice binds detected custody/submission uncertainty to that interface and reads it into a fresh opt-in owner. Earlier explicit-store and witness/index results are retained, not replayed."
+  },
+  "sourceBinding": {
+    "sourceCount": 6,
+    "sourceBytes": 184166,
+    "sourceCapBytes": 196608,
+    "perFileCapBytes": 65536,
+    "files": [
+      {
+        "path": "src/service-credit-zenon-funding-post-v1-payer-recovery-sqlite-store.js",
+        "bytes": 64917,
+        "LF": 1687,
+        "sha256": "db4d3aca8c039e3433e49f6bafe42cbc4973e0f9478500dbe6cf36f53773232d",
+        "gitBlob": "4672760ef5fdf135b52700da889562b653b6fecb"
+      },
+      {
+        "path": "src/service-credit-custodied-request-owner.js",
+        "bytes": 44517,
+        "LF": 1136,
+        "sha256": "4f3f20195a0ec26be38e9b80e658dfccfd9477daff758a9717e819f3b55c04b2",
+        "gitBlob": "2d18b98b8d922253c1beee6c5f057705acc97069"
+      },
+      {
+        "path": "src/service-credit-original-request-custody-contract.js",
+        "bytes": 14051,
+        "LF": 356,
+        "sha256": "fd349de553a17abcc2e0567ba6640e6e3d5d26cfa79ee1e355928dc9fa8d3915",
+        "gitBlob": "f911d42d01b69e6577f9bcd66f4ed59aab8ab882"
+      },
+      {
+        "path": "src/x402-wire.js",
+        "bytes": 39886,
+        "LF": 934,
+        "sha256": "5fba91af5a352f62d1a335c7176a45a604e2af5d92b1c4b0e53825c1f20d4e56",
+        "gitBlob": "fb060d4e349b1c31a1219a0cc137af250a8a2291"
+      },
+      {
+        "path": "package.json",
+        "bytes": 1413,
+        "LF": 40,
+        "sha256": "8c9a25504fbf6f87c31cdf245a6f4eec5a88cc89c8352151dc66a577c5771ef5",
+        "gitBlob": "ec7193f6fd76f34778515079dc777594175c4c34"
+      },
+      {
+        "path": "qualification/service-credit-custodied-owner-v4-quarantine.behavior.draft.mjs",
+        "bytes": 19382,
+        "LF": 252,
+        "sha256": "935787ad9a5e71ae96ab102688662ba4622d17c9fef20402ae00a81ecf368c55",
+        "gitBlob": "eee42c06014928649ff78044b694b02f62a3a3c8"
+      }
+    ],
+    "actualImportClosure": "Four authored modules, root package metadata and one selected entry; built-in-only imports. The native store and pure contracts are unchanged.",
+    "modifiedFileCount": 1,
+    "newQualificationFiles": 2
+  },
+  "behavior": {
+    "factory": "createServiceCreditCustodiedRequestOwnerV4",
+    "defaultWiringChanged": false,
+    "newDatabaseSchemaOrMigration": false,
+    "trustedInterface": [
+      "getOriginalRequestCustodyQuarantine",
+      "latchOriginalRequestCustodyQuarantine"
+    ],
+    "constructor": "One synchronous quarantine read; never a constructor write. A valid persisted marker holds the fresh owner. An unavailable/invalid read holds PERSISTENCE_UNKNOWN without an automatic write.",
+    "automaticLatch": "Detected custody or callback/submission uncertainty marks writeAttempted BEFORE one synchronous latch. The returned frozen DATA and readback must have equal detached fixed-order fields, configured scope/policy and valid digest grammar.",
+    "confirmation": "PERSISTED_UNKNOWN means locally read-back quarantine metadata; not successful delivery, authenticated funding, native-store branding or send authority.",
+    "writeFailure": "An unconfirmed/throwing latch or readback remains PERSISTENCE_UNKNOWN. No automatic retry, reset, clear or recovery action is provided.",
+    "nativeStorePremise": "The captured synchronous native-store interface validates exact funding/header binding and the quarantine checksum. The owner does not independently authenticate that store or recompute its checksum.",
+    "recovery": "A fresh V4 owner reads persisted generic uncertainty, not the historical local cause. Originals/intents remain readable as metadata; no original request or payment is resent.",
+    "lifecycle": "close retains the identical cached Promise, reports UNKNOWN when held, and never closes the borrowed store.",
+    "limits": "Record absence is not authority. Crash-before-detection, actual process restart, power loss, broad app/store qualification and default-client adoption are not established."
+  },
+  "execution": {
+    "runtime": {
+      "node": "24.19.0",
+      "platform": "darwin",
+      "arch": "arm64"
+    },
+    "task": "CLOSED_SUCCESS",
+    "command": "COMPLETE",
+    "actualExit": 0,
+    "outputComplete": true,
+    "counts": {
+      "tests": 5,
+      "suites": 0,
+      "pass": 5,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "passNames": [
+      "V4 automatically commits callback uncertainty before reporting rejection",
+      "V4 automatically quarantines observed original loss without deleting native rows",
+      "fresh V4 owners restore persisted quarantine after a normal reopen",
+      "post-commit quarantine failure stays UNKNOWN without a second automatic write",
+      "unavailable initial quarantine read holds a V4 owner without writing"
+    ],
+    "diagnostics": [
+      {
+        "kind": "P2_OWNER_QUARANTINE_V4",
+        "version": 1,
+        "scenario": "AUTO_SUBMISSION_UNKNOWN_BEFORE_REJECTION",
+        "nativeSqliteFiles": 1,
+        "closedReturnedStores": 0,
+        "declaredServiceCallbacks": 2,
+        "blockedFreshSubmits": 0,
+        "automaticQuarantineWriteAttempts": 1,
+        "confirmedQuarantineReadbacks": 1,
+        "networkCalls": 0,
+        "syntheticSignatureOperations": 0,
+        "realPaymentSigner": "DISABLED",
+        "serviceDelivery": "NOT_ESTABLISHED"
+      },
+      {
+        "kind": "P2_OWNER_QUARANTINE_V4",
+        "version": 1,
+        "scenario": "AUTO_CUSTODY_UNKNOWN_EXACT_ROWS_RETAINED",
+        "nativeSqliteFiles": 1,
+        "closedReturnedStores": 1,
+        "declaredServiceCallbacks": 3,
+        "blockedFreshSubmits": 1,
+        "automaticQuarantineWriteAttempts": 2,
+        "confirmedQuarantineReadbacks": 2,
+        "networkCalls": 0,
+        "syntheticSignatureOperations": 0,
+        "realPaymentSigner": "DISABLED",
+        "serviceDelivery": "NOT_ESTABLISHED"
+      },
+      {
+        "kind": "P2_OWNER_QUARANTINE_V4",
+        "version": 1,
+        "scenario": "NORMAL_REOPEN_RESTORES_QUARANTINE_NOT_HISTORICAL_CAUSE",
+        "nativeSqliteFiles": 1,
+        "closedReturnedStores": 2,
+        "declaredServiceCallbacks": 3,
+        "blockedFreshSubmits": 3,
+        "automaticQuarantineWriteAttempts": 2,
+        "confirmedQuarantineReadbacks": 2,
+        "networkCalls": 0,
+        "syntheticSignatureOperations": 0,
+        "realPaymentSigner": "DISABLED",
+        "serviceDelivery": "NOT_ESTABLISHED"
+      },
+      {
+        "kind": "P2_OWNER_QUARANTINE_V4",
+        "version": 1,
+        "scenario": "POST_COMMIT_UNKNOWN_NO_AUTOMATIC_RETRY",
+        "nativeSqliteFiles": 2,
+        "closedReturnedStores": 4,
+        "declaredServiceCallbacks": 4,
+        "blockedFreshSubmits": 5,
+        "automaticQuarantineWriteAttempts": 3,
+        "confirmedQuarantineReadbacks": 2,
+        "networkCalls": 0,
+        "syntheticSignatureOperations": 0,
+        "realPaymentSigner": "DISABLED",
+        "serviceDelivery": "NOT_ESTABLISHED"
+      },
+      {
+        "kind": "P2_OWNER_QUARANTINE_V4",
+        "version": 1,
+        "scenario": "INITIAL_READ_UNKNOWN_ZERO_WRITES",
+        "nativeSqliteFiles": 2,
+        "closedReturnedStores": 4,
+        "declaredServiceCallbacks": 4,
+        "blockedFreshSubmits": 6,
+        "automaticQuarantineWriteAttempts": 3,
+        "confirmedQuarantineReadbacks": 2,
+        "networkCalls": 0,
+        "syntheticSignatureOperations": 0,
+        "realPaymentSigner": "DISABLED",
+        "serviceDelivery": "NOT_ESTABLISHED"
+      }
+    ],
+    "selectedNodeCommands": 1,
+    "totalNodeCommandsThisSlice": 2,
+    "earlierFailedLoaderCommands": 1,
+    "namedSelectedAssertionsPassedAcrossOutcomes": 5,
+    "actualSqliteComponentRuns": 1,
+    "stdout": {
+      "bytes": 3186,
+      "sha256": "be8befd894c0e04aa648aaa5a424f5bef9c979fb8b332612bee8d81944440676"
+    },
+    "stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "completeOutcomeAndExactSelectedTapReviewed": true,
+    "ownedProcessGroupObservedAbsent": true,
+    "distinctUnknownOwnerCloseRejections": 7,
+    "automaticQuarantineWriteAttempts": 3,
+    "confirmedQuarantineReadbacks": 2,
+    "postCommitUnknownFaults": 1,
+    "initialClosedStoreReadFaults": 1,
+    "returnedStoreCloseCalls": 4,
+    "declaredServiceCallbacks": 4,
+    "blockedFreshSubmits": 6,
+    "signatureOperations": 0,
+    "networkCalls": 0,
+    "realPaymentSigner": "DISABLED"
+  },
+  "earlierFailure": {
+    "retained": true,
+    "kind": "ENTRY_SYNTAX_LOADING_FAILURE",
+    "actualExit": 1,
+    "counts": {
+      "tests": 1,
+      "suites": 0,
+      "pass": 0,
+      "fail": 1,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "namedSelectedCasesPassed": 0,
+    "sqliteFilesCreated": 0,
+    "reason": "Unexpected token ')' in the new fixture's remember helper.",
+    "correction": "Removed one extra closing parenthesis. The corrected entry has a distinct hash and ran only in a new owned task.",
+    "originalEntry": {
+      "bytes": 19383,
+      "LF": 252,
+      "sha256": "8f4894a9274c7cbd6e48714c58686671d397042109633ae4a060056192fae969"
+    },
+    "originalEntryBytesRetainedInNewProtectedRecord": true,
+    "stdout": {
+      "sha256": "156e75b9a6e83c9eed2b30d147c0f5c8737a6740aac1f4be31b821b90d10956a",
+      "bytes": 429
+    },
+    "stderr": {
+      "sha256": "42cbb0e0f0ee7d514e0fcb47997c466245b53528dedfd274e57fdac89d448224",
+      "bytes": 28
+    },
+    "failedLoaderNotCountedAsPassedAssertion": true,
+    "readOnlyInspectorFailure": "A first inspection expected a scratch directory after zero-byte cleanup. The corrected read joined the existing CLOSED failure and retained streams; it did not repeat a native experiment."
+  },
+  "scenarios": [
+    {
+      "name": "V4 automatically commits callback uncertainty before reporting rejection",
+      "asserts": [
+        "A rejected native callback Promise causes one native quarantine COMMIT before the owner rejection becomes observable.",
+        "The original submission cause remains true, custody/undrained flags remain false at that observation, and exactly one latch/readback confirms PERSISTED_UNKNOWN.",
+        "Original and intent bytes are retained; UNKNOWN close has cached Promise identity and leaves the borrowed native store usable.",
+        "A separate unquarantined grant completes only a declared callback. An unused V3 owner's snapshot has no V4 fields or counters."
+      ]
+    },
+    {
+      "name": "V4 automatically quarantines observed original loss without deleting native rows",
+      "asserts": [
+        "After successful retention/fencing, a forwarding projection returns null for the known original while native rows remain intact.",
+        "The synchronous recovery error follows an automatic native quarantine COMMIT, and one-time persistence is not repeated.",
+        "Restoring the projection does not reset uncertainty. Fresh submission refuses before new store work/callback.",
+        "After all production handles close, independent read-only SQL sees three exact original/intent rows and two quarantine rows."
+      ]
+    },
+    {
+      "name": "fresh V4 owners restore persisted quarantine after a normal reopen",
+      "asserts": [
+        "Normal reopen increments only the native owner epoch; originals, intents, quarantines, funding, policy and schema remain exact.",
+        "Fresh V4 owners for the two quarantined grants start held and block new submissions before new store work.",
+        "Recovery retains exact originals/intents with POSSIBLY_ATTEMPTED; it is not permission to send or delivery evidence.",
+        "The unquarantined grant remains metadata-readable and has no automatic quarantine write. This is not an actual process restart."
+      ]
+    },
+    {
+      "name": "post-commit quarantine failure stays UNKNOWN without a second automatic write",
+      "asserts": [
+        "The existing afterCommit test hook throws only after the grant-D quarantine COMMIT in the second new private file.",
+        "The old owner reports PERSISTENCE_UNKNOWN with exactly one automatic write and zero confirmed readbacks; the original failure is not replaced by success.",
+        "Blocked submission, snapshots and close do not retry/reset. Independent SQL after closing all handles sees the committed marker and original/intent.",
+        "A fresh normal reopen reads PERSISTED_UNKNOWN and blocks; the old owner remains PERSISTENCE_UNKNOWN. All non-epoch rows stay exact."
+      ]
+    },
+    {
+      "name": "unavailable initial quarantine read holds a V4 owner without writing",
+      "asserts": [
+        "A fresh V4 owner using the already-closed native store latches local custody uncertainty from one failed initial read.",
+        "It performs zero load/write calls; a new submission is blocked and UNKNOWN close retains cached Promise identity.",
+        "Repeated snapshots/close do not retry the getter or write. The closed native database's logical stamp stays exact."
+      ]
+    }
+  ],
+  "callsite": {
+    "explicitSinglePositionalEntry": true,
+    "environmentClearedWithEnvI": true,
+    "nodePermissionModel": "OFF_FOR_EXISTING_NATIVE_FCHMOD_FSYNC_MACHINERY",
+    "osOrNetworkSandboxGuarantee": false,
+    "dynamicStringCodeGeneration": "DISALLOWED",
+    "nativeAddons": "DISALLOWED",
+    "otherTestEntries": 0,
+    "savedOperationalHelperOrNewHost": false,
+    "nodeTestTimeoutMs": 5000,
+    "managerCommandTimeoutSeconds": 30,
+    "stdoutCapBytes": 65536,
+    "stderrCapBytes": 1048576,
+    "tapStdoutStderrDescriptorOutputExpected": true,
+    "timeoutBoundary": "Not a hard native lifetime, cancellation, cleanup, OS or network sandbox guarantee.",
+    "nativeLoaderRunnerStreamOsSqliteAndFilesystemBehavior": "Retained premises, not newly qualified global guarantees.",
+    "argvStringPayloadBytes": 11334,
+    "callerBytes": 8864,
+    "builtinInlineReporter": true,
+    "childWorkerCreationAndNetworkInAuthoredGraph": false
+  },
+  "preservation": {
+    "unchangedRepositoryFilesChecked": 151,
+    "priorPrivateFilesChecked": 222,
+    "protectedAbsencesChecked": 8,
+    "editedOldOwnerExcludedOnlyFromUnchangedCohort": true,
+    "oldSourcePinAndHistoricalRecordsRetained": true,
+    "sourceAndPriorEvidenceStable": true,
+    "newProtectedMetadataFiles": 13,
+    "newProtectedMetadataBytes": 103586,
+    "newRawSqliteFiles": 2,
+    "earlierLoaderMetadataFilesRetained": 11,
+    "fixedLineageManifestCount": 4,
+    "exactBaseManifestParts": 6,
+    "recursiveParentTraversal": false,
+    "sourceDeltaPins": 3,
+    "privateDeltaPins": 25,
+    "completeReaderMetadataBytes": 298195,
+    "ancestryDecodedOnceWithinInspection": true,
+    "earlier267FullRehashOrExecutionReplayed": false,
+    "earlierNamespacesWritten": false,
+    "expectedBytes": 2097152,
+    "taskQuotaBytes": 4194304,
+    "productionFloorBytes": 10737418240,
+    "conservativeScratchCheckBytes": 6442450944,
+    "policyRewritten": false,
+    "rawFixtureCleanup": "HOLD, not CLEANED. No protected evidence or raw database deleted.",
+    "emptyFailedLoaderScratchCleanup": "Only its owned zero-byte scratch was cleaned; protected failure streams and records remain.",
+    "quotaBoundary": "Cooperative sampled accounting, not an OS-enforced aggregate quota.",
+    "runtimeDigests": "Reused only after exact unchanged retained runtime identity tuples; no redundant large-binary rehash.",
+    "physicalApfsReclaimOrPerformanceGainMeasured": false
+  },
+  "nativeFiles": {
+    "count": 2,
+    "totalBytes": 81920,
+    "files": [
+      {
+        "name": "owner-a.sqlite",
+        "bytes": 40960,
+        "sha256": "03ea165b18e25d66efc3beb5fa29a98b37d073164f9a6e449632d49eb1800348",
+        "finalState": "SYNTHETIC_V4_QUARANTINE_RETAINED"
+      },
+      {
+        "name": "owner-b.sqlite",
+        "bytes": 40960,
+        "sha256": "3ff77db6d53a918911117d23a945de721fe78468239a0c042ed98d388cb930cc",
+        "finalState": "SYNTHETIC_V4_QUARANTINE_RETAINED"
+      }
+    ],
+    "rawDatabasesPublished": false,
+    "rawDatabasesCASAdopted": false,
+    "retention": "HOLD_UNREGISTERED_FILES_NO_ADOPTION_OR_DELETION",
+    "simultaneousIndependentSqlObserverConnections": 0,
+    "normalOwnerEpochs": {
+      "firstFile": [
+        1,
+        2
+      ],
+      "secondFile": [
+        1,
+        2
+      ]
+    },
+    "corruptionInjected": false,
+    "scope": "Exactly two new private synthetic files. No historical or user database is opened or modified."
+  },
+  "authority": {
+    "protectedTotals": {
+      "consumedAdmissions": 2,
+      "actualChainPrepare": 1,
+      "bundles": 0,
+      "nativeChainProviderQualificationRuns": 0
+    },
+    "syntheticFundingModelWritesAreNotChainPrepare": true,
+    "originalPaymentRequestBytesHashPayloadRequirementsContextAndConsumedAuthority": "PRESERVED",
+    "pr193": "VALIDATED exact-same-signed-block resend remains distinct from UNKNOWN and ACKNOWLEDGED.",
+    "realWalletPaymentSigningOrProviderSetup": "NOT_RUN_DISABLED",
+    "sdkImportOrInstall": "NONE",
+    "dpNonceMaterialProducerExecution": "NOT_ADMITTED_NOT_RUN",
+    "failedOwnershipMetadataRetryOrAuthorityReset": false,
+    "automationOrModelSettingsChanged": false,
+    "privateBootstrapGhcrBoundaries": "UNCHANGED"
+  },
+  "limits": [
+    "These are source-bound selected local component outcomes, not a complete application, store, controller or SDK suite.",
+    "No actual process restart, crash, power loss, authenticated funding, real provider READY, real service delivery or live pilot is exercised.",
+    "The owner trusts the reviewed synchronous store interface; frozen grammar/readback equality is not an authenticated native-store brand.",
+    "No HTTP factory/default adoption or automatic request/payment resend is introduced. Other client versions do not acquire V4 volatile state automatically.",
+    "Independent current context, funding, payer/provider/policy authority, READY, durability, commit/uncertainty and restart/recovery remain separate acceptance gates."
+  ],
+  "next": "Select an independently unfinished, source-bound lifecycle or opt-in client-composition slice. Do not replay this unchanged selection or treat V4 metadata persistence as live acceptance.",
+  "fullP2Complete": false,
+  "productionReadiness": "NO_GO",
+  "pilotAcceptance": "NOT_ESTABLISHED",
+  "hostedCI": {
+    "status": "NOT_RUN_FOR_THIS_SELECTION",
+    "emptyChecksAreNotGreen": true,
+    "newWorkflowOrBroadCiAuthorization": false
+  },
+  "publication": {
+    "baseline": "043c3307ff6688a7735190ebb221dd68fbc7d55f",
+    "packet": "One existing opt-in library owner plus two new qualification files.",
+    "requiresSkipCiCommitMessage": true,
+    "normalFastForwardOnly": true,
+    "forcePushOrProtectionBypass": false,
+    "noLocalStageCommitResetCheckoutOrPush": true
+  }
+}

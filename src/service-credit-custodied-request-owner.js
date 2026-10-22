@@ -29,6 +29,8 @@ const ARRAY_PROTOTYPE = Array.prototype;
 const ARRAY_IS_ARRAY = Array.isArray;
 const IS_FROZEN = Object.isFrozen;
 const STRING = String;
+const CREATE = Object.create;
+const STRINGIFY = JSON.stringify;
 const TYPE_ERROR = TypeError;
 const NativePromise = Promise;
 const PROMISE_PROTOTYPE = NativePromise.prototype;
@@ -52,6 +54,13 @@ const PARSE_INTENT = parseOriginalServiceDispatchIntent;
 const SERIALIZE_INTENT = serializeOriginalServiceDispatchIntent;
 const PREFIX = 'SERVICE_CREDIT_CUSTODIED_REQUEST_OWNER_';
 const HASH = /^[0-9a-f]{64}$/;
+const QUARANTINE_DIGEST = /^sha256:[0-9a-f]{64}$/;
+const QUARANTINE_FIELDS = FREEZE([
+  'custodyQuarantineVersion', 'scope', 'grantId', 'fundingResourceUrl',
+  'paymentHash', 'network', 'challengeDigest', 'paymentDigest', 'custodyPolicy',
+  'status', 'authority', 'mayStartPayment', 'maySignPayment',
+  'mayDispatchService', 'checksum',
+]);
 const CONFIG_FIELDS = FREEZE([
   'store', 'fundingResourceUrl', 'custodyPolicy', 'selectedGrantId',
 ]);
@@ -127,13 +136,32 @@ export function createServiceCreditCustodiedRequestOwnerV3(configuration) {
   if (arguments.length !== 1) throw failure('INVALID_CONFIGURATION');
   return createOwner(configuration, true);
 }
-function createOwner(configuration, dispatchIntentEnabled) {
+/**
+ * V4 additionally requires the synchronous V4 grant-quarantine store interface.
+ * Constructor/read refreshes are read-only. A detected custody or submission
+ * uncertainty attempts one insert-only latch before reporting that failure.
+ * A confirmed readback means LOCAL PERSISTED UNKNOWN, never service success.
+ * Unavailable/invalid reads or an unconfirmed write stay PERSISTENCE_UNKNOWN;
+ * neither retry, reset, clear nor automatic resend is provided. A fresh owner
+ * reads a persisted quarantine but cannot restore its historical local cause.
+ *
+ * This validates frozen DATA grammar, configured scope/policy and exact latch
+ * readback equality. It trusts the store's funding/checksum validation; method
+ * presence is not a native-store brand or independently authenticated receipt.
+ * Absence is not action authority. Crash-before-detection and actual process
+ * restart/durability remain unqualified. V2/V3 and default wiring stay unchanged.
+ */
+export function createServiceCreditCustodiedRequestOwnerV4(configuration) {
+  if (arguments.length !== 1) throw failure('INVALID_CONFIGURATION');
+  return createOwner(configuration, true, true);
+}
+function createOwner(configuration, dispatchIntentEnabled, persistentCustody = false) {
   let config, policy, methods, selectedKey;
   try {
     config = exact(configuration, CONFIG_FIELDS);
     policy = POLICY(config.custodyPolicy, config.fundingResourceUrl);
     selectedKey = KEY({ grantId: config.selectedGrantId, requestId: 'scope' });
-    methods = captureMethods(config.store, dispatchIntentEnabled);
+    methods = captureMethods(config.store, dispatchIntentEnabled, persistentCustody);
   } catch {
     throw failure('INVALID_CONFIGURATION');
   }
@@ -155,6 +183,11 @@ function createOwner(configuration, dispatchIntentEnabled) {
     counts.intentReads = 0;
     counts.intentReadbackConfirmations = 0;
   }
+  if (persistentCustody) {
+    counts.quarantineReads = 0;
+    counts.quarantineWrites = 0;
+    counts.quarantineReadbackConfirmations = 0;
+  }
   let active = false;
   let closed = false;
   let phase = 'IDLE';
@@ -165,6 +198,9 @@ function createOwner(configuration, dispatchIntentEnabled) {
   let drainStatus = 'NONE';
   let closeCapability = null;
   let closeOutcome = 'NOT_REQUESTED';
+  let quarantineStatus = 'NOT_RECORDED';
+  let quarantineWriteAttempted = false;
+  let quarantineWitness = null;
 
   function bump(field) {
     if (counts[field] === Number.MAX_SAFE_INTEGER) throw failure('LIMIT');
@@ -174,12 +210,92 @@ function createOwner(configuration, dispatchIntentEnabled) {
   function holdCustody() {
     custodyUncertainty = true;
     if (!unknownUndrained && !submissionUncertainty) phase = 'CUSTODY_OUTCOME_UNKNOWN';
+    if (persistentCustody) persistQuarantine();
   }
 
   function holdSubmission(unobservable) {
     submissionUncertainty = true;
     if (unobservable) unknownUndrained = true;
     phase = unknownUndrained ? 'UNKNOWN_UNDRAINED' : 'SUBMISSION_OUTCOME_UNKNOWN';
+    if (persistentCustody) persistQuarantine();
+  }
+
+  function quarantineText(raw) {
+    const record = exact(raw, QUARANTINE_FIELDS);
+    if (!IS_FROZEN(raw) || record.custodyQuarantineVersion !== 1
+        || record.scope !== 'LOCAL_GRANT_CUSTODY_UNCERTAINTY'
+        || record.grantId !== selectedGrantId
+        || record.fundingResourceUrl !== fundingResourceUrl
+        || record.status !== 'CUSTODY_OUTCOME_UNKNOWN' || record.authority !== 'NONE'
+        || record.mayStartPayment !== false || record.maySignPayment !== false
+        || record.mayDispatchService !== false) throw failure('INVALID_DATA');
+    bounded(record.paymentHash, 64);
+    bounded(record.network, 256);
+    if (!APPLY(REGEXP_TEST, HASH, [record.paymentHash])) throw failure('INVALID_DATA');
+    for (const field of ['challengeDigest', 'paymentDigest', 'checksum']) {
+      bounded(record[field], 71);
+      if (!APPLY(REGEXP_TEST, QUARANTINE_DIGEST, [record[field]])) throw failure('INVALID_DATA');
+    }
+    const capturedPolicy = POLICY(record.custodyPolicy, fundingResourceUrl);
+    if (!IS_FROZEN(record.custodyPolicy) || capturedPolicy.policyVersion !== policy.policyVersion
+        || capturedPolicy.maxRequests !== policy.maxRequests
+        || capturedPolicy.serviceResourceUrl !== policy.serviceResourceUrl) throw failure('INVALID_DATA');
+    // Null-prototype detached DATA avoids inherited toJSON hooks. Field order
+    // is fixed here; native storage independently validates its own checksum.
+    const detached = CREATE(null), detachedPolicy = CREATE(null);
+    for (const field of ['policyVersion', 'maxRequests', 'serviceResourceUrl']) {
+      detachedPolicy[field] = capturedPolicy[field];
+    }
+    for (let index = 0; index < QUARANTINE_FIELDS.length; index++) {
+      const field = QUARANTINE_FIELDS[index];
+      detached[field] = field === 'custodyPolicy' ? FREEZE(detachedPolicy) : record[field];
+    }
+    return STRINGIFY(FREEZE(detached));
+  }
+
+  function callQuarantine(name, counter) {
+    bump(counter);
+    const raw = APPLY(methods[name], store, [{ grantId: selectedGrantId }]);
+    observeStorePromise(raw);
+    return raw;
+  }
+
+  function refreshQuarantine() {
+    if (!persistentCustody || quarantineStatus === 'PERSISTENCE_UNKNOWN') return;
+    try {
+      const raw = callQuarantine('getOriginalRequestCustodyQuarantine', 'quarantineReads');
+      if (raw === null) {
+        if (quarantineWitness !== null) throw failure('INVALID_DATA');
+        return;
+      }
+      const text = quarantineText(raw);
+      if (quarantineWitness !== null && text !== quarantineWitness) throw failure('INVALID_DATA');
+      quarantineWitness = text;
+      quarantineStatus = 'PERSISTED_UNKNOWN';
+      holdCustody();
+    } catch {
+      quarantineStatus = 'PERSISTENCE_UNKNOWN';
+      holdCustody();
+    }
+  }
+
+  function persistQuarantine() {
+    if (quarantineWriteAttempted || quarantineStatus !== 'NOT_RECORDED') return;
+    // Latch before the call: throwing, reentrancy and ambiguous commit never
+    // permit a second automatic write from this owner.
+    quarantineWriteAttempted = true;
+    try {
+      const written = quarantineText(callQuarantine('latchOriginalRequestCustodyQuarantine',
+        'quarantineWrites'));
+      const readback = quarantineText(callQuarantine('getOriginalRequestCustodyQuarantine',
+        'quarantineReads'));
+      if (written !== readback) throw failure('INVALID_DATA');
+      quarantineWitness = readback;
+      quarantineStatus = 'PERSISTED_UNKNOWN';
+      bump('quarantineReadbackConfirmations');
+    } catch {
+      quarantineStatus = 'PERSISTENCE_UNKNOWN';
+    }
   }
 
   function held() {
@@ -395,6 +511,11 @@ function createOwner(configuration, dispatchIntentEnabled) {
     }
 
     try {
+      if (persistentCustody) {
+        refreshQuarantine();
+        if (closed) throw failure('CLOSED');
+        if (held()) throw failure('CUSTODY_OUTCOME_UNKNOWN');
+      }
       const current = currentFunding();
       if (closed) throw failure('CLOSED');
       if (current.status !== 'BOUND') throw failure('FUNDING_NOT_BOUND');
@@ -505,6 +626,11 @@ function createOwner(configuration, dispatchIntentEnabled) {
         if (closed) throw failure('RECOVERY_REQUIRED');
       }
 
+      if (persistentCustody) {
+        refreshQuarantine();
+        if (closed) throw failure('RECOVERY_REQUIRED');
+        if (held()) throw failure('CUSTODY_OUTCOME_UNKNOWN');
+      }
       handedOff = true;
       counts.dispatchCalls++;
       drainStatus = 'PENDING';
@@ -553,6 +679,8 @@ function createOwner(configuration, dispatchIntentEnabled) {
     }
     active = true;
     try {
+      if (persistentCustody) refreshQuarantine();
+      if (closed) throw failure('CLOSED');
       const current = currentFunding();
       if (closed) throw failure('CLOSED');
       const raw = callStore('getOriginalRequest', [key], 'recordReads');
@@ -611,6 +739,8 @@ function createOwner(configuration, dispatchIntentEnabled) {
     }
     active = true;
     try {
+      if (persistentCustody) refreshQuarantine();
+      if (closed) throw failure('CLOSED');
       const current = currentFunding();
       if (closed) throw failure('CLOSED');
       const raw = callStore('getOriginalRequest', [key], 'recordReads');
@@ -734,6 +864,8 @@ function createOwner(configuration, dispatchIntentEnabled) {
     if (methods.listOriginalRequestKeys === null) throw failure('RECOVERY_KEYS_UNAVAILABLE');
     active = true;
     try {
+      if (persistentCustody) refreshQuarantine();
+      if (closed) throw failure('CLOSED');
       const current = currentFunding();
       if (closed) throw failure('CLOSED');
       const captured = captureRecoveryKeys(callStore('listOriginalRequestKeys', [], 'recordReads'));
@@ -804,6 +936,16 @@ function createOwner(configuration, dispatchIntentEnabled) {
       serviceOutcome: 'NOT_ESTABLISHED',
       durability: 'NOT_ESTABLISHED',
       recoveryAuthority: 'NONE',
+      ...(persistentCustody ? { custodyQuarantine: FREEZE({
+        status: quarantineStatus,
+        writeAttempted: quarantineWriteAttempted,
+        evidence: 'TRUSTED_STORE_QUARANTINE_INTERFACE',
+        qualification: 'UNQUALIFIED',
+        authority: 'NONE',
+        mayStartPayment: false,
+        maySignPayment: false,
+        mayDispatchService: false,
+      }) } : {}),
     });
   }
 
@@ -817,6 +959,7 @@ function createOwner(configuration, dispatchIntentEnabled) {
     return closeCapability.promise;
   }
 
+  if (persistentCustody) refreshQuarantine();
   return FREEZE({
     submitOriginal: FREEZE(submitOriginal),
     readOriginal: FREEZE(readOriginal),
@@ -864,18 +1007,23 @@ function exact(value, fields) {
   return project(value, fields, [], fields);
 }
 
-function captureMethods(store, dispatchIntentEnabled) {
+function captureMethods(store, dispatchIntentEnabled, persistentCustody) {
   if (typeof store !== 'object' || store === null || IS_PROXY(store)) {
     throw failure('INVALID_CONFIGURATION');
   }
   const found = { load: null, getOriginalRequest: null, retainOriginalRequest: null };
-  const names = dispatchIntentEnabled
+  let names = dispatchIntentEnabled
     ? [...STORE_METHODS, 'fenceOriginalDispatchIntent', 'getOriginalDispatchIntent',
       'listOriginalRequestKeys'] : STORE_METHODS;
   if (dispatchIntentEnabled) {
     found.fenceOriginalDispatchIntent = null;
     found.getOriginalDispatchIntent = null;
     found.listOriginalRequestKeys = null;
+  }
+  if (persistentCustody) {
+    names = [...names, 'getOriginalRequestCustodyQuarantine', 'latchOriginalRequestCustodyQuarantine'];
+    found.getOriginalRequestCustodyQuarantine = null;
+    found.latchOriginalRequestCustodyQuarantine = null;
   }
   let current = store;
   let depth = 0;
@@ -904,7 +1052,9 @@ function captureMethods(store, dispatchIntentEnabled) {
   if (current !== null || found.load === null || found.getOriginalRequest === null
       || found.retainOriginalRequest === null
       || (dispatchIntentEnabled && (found.fenceOriginalDispatchIntent === null
-        || found.getOriginalDispatchIntent === null))) throw failure('INVALID_CONFIGURATION');
+        || found.getOriginalDispatchIntent === null))
+      || (persistentCustody && (found.getOriginalRequestCustodyQuarantine === null
+        || found.latchOriginalRequestCustodyQuarantine === null))) throw failure('INVALID_CONFIGURATION');
   if (dispatchIntentEnabled && found.listOriginalRequestKeys === false) {
     found.listOriginalRequestKeys = null;
   }
