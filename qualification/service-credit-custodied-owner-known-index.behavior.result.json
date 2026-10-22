@@ -1,0 +1,403 @@
+{
+  "schema": "zenon-x402-selected-local-qualification/v1",
+  "lane": "P2_PRIVATE_KNOWN_RECORD_WITNESS_INDEX",
+  "status": "SELECTED_LOCAL_PASS_NOT_NATIVE_SQLITE_OR_PILOT_ACCEPTANCE",
+  "purpose": "Replace owner-local witness-wide linear scans with a private bounded request-id index, retaining the existing selected-grant scope, checksums, uncertainty, capacity and lifecycle contracts.",
+  "sourceParentMain": "ea8ad86c9fe97fb73886020378b7c8fb6b78e840",
+  "selection": {
+    "finiteScope": "One product-source change plus one new five-case declared-store entry and this result.",
+    "reason": "The current owner linearly scans its known-record witness array for every lookup and again for an intent upgrade. Repeated full-capacity recovery therefore repeats witness-wide application loops. This packet replaces those loops; missing coverage is not the novelty claim.",
+    "preservedOldOutcomes": "The prior eight declared-store and three actual-V3-SQLite selected outcomes remain pinned to the earlier 37342-byte owner. They were not replayed or relabeled as current-source native evidence.",
+    "sourceDelta": {
+      "path": "src/service-credit-custodied-request-owner.js",
+      "before": {
+        "bytes": 37342,
+        "LF": 987,
+        "sha256": "1908c182d15028a7f9ae0f1b2dbd25e87b0753ab856d2f4949fef46a01a707cf",
+        "gitBlob": "ed9835f7b9442d57465f0d06906b519ef3a2ddfe"
+      },
+      "after": {
+        "bytes": 37513,
+        "LF": 986,
+        "sha256": "01e3dd01a8f3cd408b6d5df0938994b7ca704d778d8ea7c144b40ca264163a3d",
+        "gitBlob": "3e337868c2daef14573def71c767680e8e4a9184"
+      },
+      "additions": 13,
+      "deletions": 14,
+      "hunks": 6
+    },
+    "completedOrStoppedSelectionsReplayed": false
+  },
+  "implementation": {
+    "storage": "One private native Map per owner, keyed by requestId within the immutable selected grant. The stored witness still includes grantId and lookup also checks that exact grant.",
+    "capturedOperations": [
+      "Map constructor",
+      "Map.prototype.get",
+      "Map.prototype.set",
+      "Map.prototype.size getter"
+    ],
+    "invariant": "All observation entry points retain their existing requireScope fence before witness lookup or mutation.",
+    "bound": "At most custodyPolicy.maxRequests distinct selected-grant keys; an upgrade of an existing key does not consume another slot.",
+    "retainedData": "Detached frozen key/checksum witnesses only, never bodies, proofs, response receipts or dispatch authority.",
+    "unchanged": [
+      "Public V2/V3 surfaces and snapshots",
+      "Original/intent checksum comparison and sticky custody uncertainty",
+      "Unobserved absence and no-intent semantics",
+      "Submission tracking entries and their existing lookup path",
+      "Store ownership, close Promise identity, callback counters and default opt-in behavior"
+    ],
+    "newPersistenceSchemaStoreMigrationOrRecoveryAuthority": false,
+    "mapAndPristineIntrinsicBehavior": "Retained native premises, not newly qualified against hostile global intrinsic mutation."
+  },
+  "optimization": {
+    "established": "The explicit knownRecords-wide lookup and replacement loops are removed from the application source.",
+    "notEstablished": [
+      "Measured latency improvement",
+      "TPS or capacity benchmark",
+      "Native Map worst-case complexity or bounded latency",
+      "Aggregate memory savings",
+      "Physical APFS reclaim"
+    ],
+    "observedSelectedLoad": "Each of V2 and V3 validates 1024 distinct witnesses, rereads them in reverse order and observes one retained key after capacity refusal.",
+    "sourceReadBytes": 66888,
+    "largeRuntimeRehashBytes": 0,
+    "runtimePinReuse": "Retained whole-binary digests reused only after exact unchanged file-identity tuples.",
+    "newSqliteFiles": 0,
+    "dependencyInstallations": 0,
+    "newOperationalHelperOrHost": false
+  },
+  "sourceBinding": {
+    "sourceCount": 4,
+    "sourceBytes": 66888,
+    "perFileReadCapBytes": 65536,
+    "totalReadCapBytes": 98304,
+    "files": [
+      {
+        "path": "src/service-credit-custodied-request-owner.js",
+        "bytes": 37513,
+        "LF": 986,
+        "sha256": "01e3dd01a8f3cd408b6d5df0938994b7ca704d778d8ea7c144b40ca264163a3d",
+        "gitBlob": "3e337868c2daef14573def71c767680e8e4a9184"
+      },
+      {
+        "path": "src/service-credit-original-request-custody-contract.js",
+        "bytes": 14051,
+        "LF": 356,
+        "sha256": "fd349de553a17abcc2e0567ba6640e6e3d5d26cfa79ee1e355928dc9fa8d3915",
+        "gitBlob": "f911d42d01b69e6577f9bcd66f4ed59aab8ab882"
+      },
+      {
+        "path": "package.json",
+        "bytes": 1413,
+        "LF": 40,
+        "sha256": "8c9a25504fbf6f87c31cdf245a6f4eec5a88cc89c8352151dc66a577c5771ef5",
+        "gitBlob": "ec7193f6fd76f34778515079dc777594175c4c34"
+      },
+      {
+        "path": "qualification/service-credit-custodied-owner-known-index.behavior.draft.mjs",
+        "bytes": 13911,
+        "LF": 206,
+        "sha256": "38a508f5ec344fc921dd33ce3f52124af49bbf942589e12e890730bd915c248b",
+        "gitBlob": "a260b2df5fb68e96706a3f137a972bbc00f1404d"
+      }
+    ],
+    "wholeAuthoredFilesReadBeforeAndAfter": true,
+    "physicalIdentitiesCheckedPrivately": true,
+    "productionDependencies": "Only the unchanged original-request-custody contract and reviewed Node builtins; package scope is pinned.",
+    "unrelatedRepositoryImportsOrEvaluation": false
+  },
+  "execution": {
+    "runtime": {
+      "node": "24.19.0",
+      "platform": "darwin",
+      "architecture": "arm64"
+    },
+    "selectedNodeCommands": 1,
+    "task": "CLOSED_SUCCESS",
+    "command": "COMPLETE",
+    "actualExit": 0,
+    "outputComplete": true,
+    "counts": {
+      "tests": 5,
+      "suites": 0,
+      "pass": 5,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "passNames": [
+      "V2 maximum-capacity witness index preserves reverse reads and capacity refusal",
+      "V3 maximum-capacity witness index preserves original and intent checksums",
+      "full index upgrades one known intent without allocating another witness slot",
+      "indexed original checksum changes remain sticky after restored data",
+      "prototype-named request ids and foreign grants preserve the normal V3 lifecycle"
+    ],
+    "diagnostics": [
+      {
+        "kind": "P2_KNOWN_INDEX",
+        "version": 1,
+        "scenario": "V2_FULL_CAPACITY_INDEX",
+        "ownerVersion": 2,
+        "maxRequests": 1024,
+        "distinctValidatedKeys": 1024,
+        "successfulRecoveryStateReads": 2049,
+        "submits": 0,
+        "retains": 0,
+        "intentWrites": 0,
+        "custodyUnknown": true,
+        "closeOutcome": "UNKNOWN",
+        "storeCloseCalls": 0,
+        "nativeSqliteFiles": 0,
+        "networkCalls": 0,
+        "syntheticSignatureOperations": 0,
+        "realPaymentSigner": "DISABLED",
+        "serviceDelivery": "NOT_ESTABLISHED"
+      },
+      {
+        "kind": "P2_KNOWN_INDEX",
+        "version": 1,
+        "scenario": "V3_FULL_CAPACITY_INDEX",
+        "ownerVersion": 3,
+        "maxRequests": 1024,
+        "distinctValidatedKeys": 1024,
+        "successfulRecoveryStateReads": 2049,
+        "submits": 0,
+        "retains": 0,
+        "intentWrites": 0,
+        "custodyUnknown": true,
+        "closeOutcome": "UNKNOWN",
+        "storeCloseCalls": 0,
+        "nativeSqliteFiles": 0,
+        "networkCalls": 0,
+        "syntheticSignatureOperations": 0,
+        "realPaymentSigner": "DISABLED",
+        "serviceDelivery": "NOT_ESTABLISHED"
+      },
+      {
+        "kind": "P2_KNOWN_INDEX",
+        "version": 1,
+        "scenario": "FULL_INDEX_SAME_KEY_INTENT_UPGRADE",
+        "ownerVersion": 3,
+        "maxRequests": 1,
+        "distinctValidatedKeys": 1,
+        "successfulRecoveryStateReads": 5,
+        "submits": 0,
+        "retains": 0,
+        "intentWrites": 0,
+        "custodyUnknown": true,
+        "closeOutcome": "UNKNOWN",
+        "storeCloseCalls": 0,
+        "nativeSqliteFiles": 0,
+        "networkCalls": 0,
+        "syntheticSignatureOperations": 0,
+        "realPaymentSigner": "DISABLED",
+        "serviceDelivery": "NOT_ESTABLISHED"
+      },
+      {
+        "kind": "P2_KNOWN_INDEX",
+        "version": 1,
+        "scenario": "INDEXED_CHECKSUM_CHANGE_STICKY",
+        "ownerVersion": 3,
+        "maxRequests": 2,
+        "distinctValidatedKeys": 2,
+        "successfulRecoveryStateReads": 3,
+        "submits": 0,
+        "retains": 0,
+        "intentWrites": 0,
+        "custodyUnknown": true,
+        "closeOutcome": "UNKNOWN",
+        "storeCloseCalls": 0,
+        "nativeSqliteFiles": 0,
+        "networkCalls": 0,
+        "syntheticSignatureOperations": 0,
+        "realPaymentSigner": "DISABLED",
+        "serviceDelivery": "NOT_ESTABLISHED"
+      },
+      {
+        "kind": "P2_KNOWN_INDEX",
+        "version": 1,
+        "scenario": "SCOPED_PROTOTYPE_NAMES_NORMAL_SUBMISSIONS",
+        "ownerVersion": 3,
+        "maxRequests": 2,
+        "distinctValidatedKeys": 2,
+        "successfulRecoveryStateReads": 4,
+        "submits": 2,
+        "retains": 2,
+        "intentWrites": 2,
+        "custodyUnknown": false,
+        "closeOutcome": "DRAINED",
+        "storeCloseCalls": 0,
+        "nativeSqliteFiles": 0,
+        "networkCalls": 0,
+        "syntheticSignatureOperations": 0,
+        "realPaymentSigner": "DISABLED",
+        "serviceDelivery": "NOT_ESTABLISHED"
+      }
+    ],
+    "stdout": {
+      "bytes": 3386,
+      "sha256": "741582969e0b57959ff72fcffacdc56febcaecfbcccd7e9ab8facb1c1989609c"
+    },
+    "stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "completeOutcomeAndExactSelectedTapReadBack": true,
+    "ownedProcessGroupObservedAbsent": true,
+    "successfulRecoveryStateReadsAcrossFixtures": 4110,
+    "expectedDistinctUnknownOwnerCloseRejections": 4,
+    "expectedDrainedOwnerCloses": 1,
+    "declaredDispatchCallbacks": 2,
+    "borrowedStoreCloseCalls": 0,
+    "newSqliteFiles": 0,
+    "signatureOperations": 0,
+    "networkCalls": 0,
+    "realPaymentSigner": "DISABLED"
+  },
+  "scenarios": [
+    {
+      "name": "V2 maximum-capacity witness index preserves reverse reads and capacity refusal",
+      "asserts": [
+        "V2 retains 1024 selected keys, preserves reverse-read original bytes, and refuses a 1025th distinct observation.",
+        "A legitimate unobserved null remains data; restored reads after overflow retain custody uncertainty. No retain or dispatch occurs."
+      ]
+    },
+    {
+      "name": "V3 maximum-capacity witness index preserves original and intent checksums",
+      "asserts": [
+        "V3 performs the same capacity/reverse-read lifecycle with exact original and intent checksums.",
+        "Overflow latches UNKNOWN and blocks new submission before store methods or callbacks."
+      ]
+    },
+    {
+      "name": "full index upgrades one known intent without allocating another witness slot",
+      "asserts": [
+        "At maxRequests=1, repeated observation and no-intent -> known-intent upgrade do not allocate another witness slot.",
+        "A plain original read does not erase the known intent witness. Missing intent latches UNKNOWN; restored intent bytes do not clear it."
+      ]
+    },
+    {
+      "name": "indexed original checksum changes remain sticky after restored data",
+      "asserts": [
+        "Two indexed keys include constructor and toString.",
+        "A valid but changed original plus matching replacement intent is rejected by the old witness. Restoring both exact records does not clear uncertainty."
+      ]
+    },
+    {
+      "name": "prototype-named request ids and foreign grants preserve the normal V3 lifecycle",
+      "asserts": [
+        "A foreign grant with the same requestId is rejected before any store method, without poisoning the selected owner.",
+        "constructor/toString requests submit normally, preserve two-original counters and repeated recovery bytes, and close DRAINED.",
+        "Callback completion is declared local behavior, not service delivery or durable response evidence."
+      ]
+    }
+  ],
+  "callsite": {
+    "explicitSinglePositionalEntry": true,
+    "environmentClearedWithEnvI": true,
+    "nodePermissionModel": "ON",
+    "exactFileReadGrants": 4,
+    "directoryReadGrant": false,
+    "filesystemWriteGrant": false,
+    "childGrant": false,
+    "workerGrant": false,
+    "addonGrant": false,
+    "dynamicStringCodeGeneration": "DISALLOWED",
+    "builtinInlineReporter": true,
+    "savedOrInstalledOperationalHelper": false,
+    "callerBytes": 9048,
+    "argvStringPayloadBytes": 11382,
+    "nodeTestTimeoutMs": 5000,
+    "managerCommandTimeoutSeconds": 30,
+    "timeoutBoundary": "Not a hard native lifetime, cancellation, cleanup, OS or network sandbox guarantee.",
+    "stdoutCapBytes": 65536,
+    "stderrCapBytes": 1048576,
+    "tapStdoutStderrDescriptorOutputExpected": true,
+    "nativeLoaderRunnerStreamAndOsBehavior": "Retained premises, not globally sandbox-qualified."
+  },
+  "preservation": {
+    "unchangedRepositoryFilesChecked": 147,
+    "priorPrivateFilesChecked": 185,
+    "protectedAbsencesChecked": 8,
+    "ownedOldSourceExcludedOnlyFromUnchangedCohort": true,
+    "oldSourcePinAndHistoricalReportsRetained": true,
+    "beforeAndAfterSourcesAndEvidenceStable": true,
+    "newProtectedMetadataFiles": 12,
+    "newProtectedMetadataBytes": 64576,
+    "newRawSqliteFiles": 0,
+    "rawOldSqliteEvidencePreserved": true,
+    "manifestFormat": "COMPACT_PRESERVATION_V3_FIXED_DEPTH",
+    "ancestryManifests": 2,
+    "baseManifestParts": 6,
+    "recursiveParentTraversal": false,
+    "sourceDeltaPins": 2,
+    "privateDeltaPins": 13,
+    "beforeManifestObjectSerializedBytes": 9825,
+    "actualBeforeManifestBytes": 12350,
+    "protectedSourceExclusion": "Only the explicitly edited 37342-byte owner row is removed from the current unchanged cohort; its immutable parent and earlier execution records remain untouched.",
+    "earlier267FullRehashOrExecutionReplayed": false,
+    "earlierNamespacesWritten": false,
+    "expectedBytes": 1048576,
+    "taskQuotaBytes": 2097152,
+    "productionFloorBytes": 10737418240,
+    "conservativeScratchCheckBytes": 6442450944,
+    "policyRewritten": false,
+    "scratch": "CLEANED, zero bytes, only the registered empty stream directory; no protected evidence deleted.",
+    "scratchObservedAbsent": true,
+    "quotaBoundary": "Cooperative sampled accounting, not an OS-enforced aggregate quota."
+  },
+  "metadataReaderIssue": {
+    "stage": "Independent post-run preservation reader",
+    "initialOutcome": "METADATA_CAP",
+    "readerCapBytes": 393216,
+    "failedReadRetained": true,
+    "failedAssertion": false,
+    "correction": "Verify and decode the fixed immutable ancestry once per inspection; reuse the verified rows for before/after seal comparisons. All current retained file pins are still checked in full.",
+    "successfulReaderMetadataBytes": 233890,
+    "readerCapIncreased": false,
+    "nativeCommandReplayed": false,
+    "savedOrInstalledHelper": false
+  },
+  "authority": {
+    "protectedTotals": {
+      "consumedAdmissions": 2,
+      "actualChainPrepare": 1,
+      "bundles": 0,
+      "nativeChainProviderQualificationRuns": 0
+    },
+    "walletPaymentOrRealSigning": "NOT_RUN_DISABLED",
+    "sdkImportOrInstall": "NONE",
+    "providerSetup": "NONE",
+    "dpNonceMaterialProducerExecution": "NOT_ADMITTED_NOT_RUN",
+    "originalPaymentRequestBytesHashPayloadRequirementsContextAndConsumedAuthority": "PRESERVED",
+    "pr193": "VALIDATED exact-same-signed-block resend remains distinct from UNKNOWN and ACKNOWLEDGED.",
+    "failedOwnershipMetadataRetryOrAuthorityReset": false,
+    "automationOrModelSettingsChanged": false,
+    "privateBootstrapGhcrBoundaries": "UNCHANGED"
+  },
+  "limits": [
+    "Only these five selected declared-store application tests qualify the new indexed owner source.",
+    "Earlier actual SQLite results pin the previous owner and are not current-source SQLite evidence.",
+    "No SQLite, SDK, transport, provider, proof/signature, payment, native work or active buyer path ran.",
+    "The index and uncertainty remain volatile; a fresh owner is not restoration or durable restart recovery.",
+    "No benchmark, service delivery, authenticated funding, process restart, physical durability or pilot acceptance is established.",
+    "Independent current context, funding, payer/provider/policy authority, real provider READY, commit/uncertainty, durability and restart/recovery remain separate acceptance gates."
+  ],
+  "fullP2Complete": false,
+  "productionReadiness": "NO_GO",
+  "pilotAcceptance": "NOT_ESTABLISHED",
+  "hostedCI": {
+    "status": "NOT_RUN_FOR_THIS_SELECTION",
+    "emptyChecksAreNotGreen": true,
+    "newWorkflowOrBroadCiAuthorization": false
+  },
+  "publication": {
+    "baseline": "ea8ad86c9fe97fb73886020378b7c8fb6b78e840",
+    "packet": "One existing product source plus two new qualification files.",
+    "commitMessageRequiresSkipCi": true,
+    "normalFastForwardOnly": true,
+    "forcePushOrProtectionBypass": false,
+    "noLocalStageCommitResetCheckoutOrPush": true
+  }
+}

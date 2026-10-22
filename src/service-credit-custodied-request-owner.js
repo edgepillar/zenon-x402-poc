@@ -38,6 +38,10 @@ const NATIVE_SPECIES = DESCRIPTOR(NativePromise, SPECIES);
 const ERROR_CODES = new WeakMap();
 const WEAK_GET = WeakMap.prototype.get;
 const WEAK_SET = WeakMap.prototype.set;
+const NativeMap = Map;
+const MAP_GET = NativeMap.prototype.get;
+const MAP_SET = NativeMap.prototype.set;
+const MAP_SIZE = DESCRIPTOR(NativeMap.prototype, 'size').get;
 const POLICY = snapshotOriginalServiceRequestCustodyPolicy;
 const KEY = snapshotOriginalServiceRequestCustodyKey;
 const CAPTURE = captureOriginalServiceRequestCustody;
@@ -102,7 +106,10 @@ const STATUSES = FREEZE([
  * change latches custody uncertainty rather than reporting fresh absence.
  * They are not restored by a new owner or proof of durable/authentic contents;
  * secure memory erasure is not promised.
- * at most custodyPolicy.maxRequests distinct selected-grant keys are remembered.
+ * At most custodyPolicy.maxRequests distinct selected-grant keys are remembered.
+ * The private request-id index avoids rescanning all witnesses on each recovery
+ * read. Its immutable grant scope is checked before any indexed observation;
+ * no body, proof, persisted index or new recovery authority is introduced.
  *
  * Native promises require the captured native prototype and a safe constructor/
  * species path. Own then getters are not read. Unobservable handles remain held.
@@ -134,7 +141,7 @@ function createOwner(configuration, dispatchIntentEnabled) {
   const fundingResourceUrl = config.fundingResourceUrl;
   const selectedGrantId = selectedKey.grantId;
   const entries = [];
-  const knownRecords = [];
+  const knownRecords = new NativeMap();
   const counts = {
     loadReads: 0,
     recordReads: 0,
@@ -307,11 +314,8 @@ function createOwner(configuration, dispatchIntentEnabled) {
   }
 
   function knownRecord(key) {
-    for (let index = 0; index < knownRecords.length; index++) {
-      const known = knownRecords[index];
-      if (known.grantId === key.grantId && known.requestId === key.requestId) return known;
-    }
-    return null;
+    const known = APPLY(MAP_GET, knownRecords, [key.requestId]);
+    return known !== undefined && known.grantId === key.grantId ? known : null;
   }
 
   function custodyChanged() {
@@ -329,16 +333,11 @@ function createOwner(configuration, dispatchIntentEnabled) {
         || (intent !== null && known.intentChecksum !== null
           && known.intentChecksum !== intent.checksum))) custodyChanged();
     if (known !== null && (intent === null || known.intentChecksum === intent.checksum)) return;
-    if (known === null && knownRecords.length >= policy.maxRequests) custodyChanged();
+    if (known === null && APPLY(MAP_SIZE, knownRecords, []) >= policy.maxRequests) custodyChanged();
     const next = FREEZE({ grantId: key.grantId, requestId: key.requestId,
       originalChecksum: original.checksum,
       intentChecksum: intent === null ? null : intent.checksum });
-    if (known === null) knownRecords[knownRecords.length] = next;
-    else {
-      for (let index = 0; index < knownRecords.length; index++) {
-        if (knownRecords[index] === known) { knownRecords[index] = next; return; }
-      }
-    }
+    APPLY(MAP_SET, knownRecords, [key.requestId, next]);
   }
 
   function submitOriginal(...args) {
