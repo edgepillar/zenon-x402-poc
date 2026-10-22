@@ -1,0 +1,293 @@
+{
+  "schema": "zenon-x402-source-review/v1",
+  "status": "SOURCE_DRAFT_ONLY_NOT_PARSED_IMPORTED_OR_EXECUTED",
+  "lane": "P1-A isolated bounded nonce source preparation",
+  "baseMain": "383975fad13a22808f7af54229776fb69f7c6df2",
+  "implementation": {
+    "path": "src/zenon/dynamic-plasma-user-send-nonce-search.js",
+    "before": {
+      "path": "src/zenon/dynamic-plasma-user-send-nonce-search.js",
+      "bytes": 8439,
+      "LF": 156,
+      "sha256": "f3592a7b39d0af5e4ed0ef7dd0710b6ab3a2d386eb02bff2fde8a305fa2f0673",
+      "gitBlob": "e14251ec6c1b4087f4d1dacf105f73523552a7ee"
+    },
+    "after": {
+      "path": "src/zenon/dynamic-plasma-user-send-nonce-search.js",
+      "bytes": 8437,
+      "LF": 156,
+      "sha256": "8eda71acf12265b65015ad6db20c1c7b357b207874c8e4c8b72e2889bf86f318",
+      "gitBlob": "ec65d9e2ea6522e07bb80b95b9dc398d7714af2f"
+    },
+    "change": "One static import switches to the qualified fixed-cost validator module. Every other byte is preserved.",
+    "nonceAlgorithmChanged": false,
+    "activeBuyerSDKOwnerOrSigningWiringAdded": false,
+    "beforeImageRetained": true,
+    "beforeImageRetention": {
+      "kind": "OWNED_PRIVATE_SOURCE_RETENTION_ONLY",
+      "bytes": 8439,
+      "sha256": "f3592a7b39d0af5e4ed0ef7dd0710b6ab3a2d386eb02bff2fde8a305fa2f0673",
+      "taskState": "CLOSED",
+      "taskOutcome": "SUCCESS",
+      "nativeNodeCommands": 0,
+      "execution": "NOT_RUN",
+      "noQualificationInference": true
+    }
+  },
+  "sourceClosure": {
+    "kind": "STATIC_LITERAL_IMPORT_GRAPH_ONLY",
+    "beforeFiles": 16,
+    "beforeBytes": 198492,
+    "afterFiles": 8,
+    "afterBytes": 110820,
+    "sourceFilesRemoved": 8,
+    "sourceBytesRemoved": 87672,
+    "wallClockSpeedup": "NOT_MEASURED",
+    "physicalDiskReclaim": "NOT_ESTABLISHED",
+    "afterPins": [
+      {
+        "path": "src/zenon/dynamic-plasma-user-send-nonce-search.js",
+        "bytes": 8437,
+        "LF": 156,
+        "sha256": "8eda71acf12265b65015ad6db20c1c7b357b207874c8e4c8b72e2889bf86f318",
+        "gitBlob": "ec65d9e2ea6522e07bb80b95b9dc398d7714af2f"
+      },
+      {
+        "path": "src/zenon/transaction-planner.js",
+        "bytes": 22611,
+        "LF": 464,
+        "sha256": "079fe8da938e08e33a20ca1076492a829afa6fce3ae7f9b9f68d3bf4bff94233",
+        "gitBlob": "17b49a3d53974c9b3846ec6f352d6e8974bad7d3"
+      },
+      {
+        "path": "src/canonical.js",
+        "bytes": 967,
+        "LF": 26,
+        "sha256": "0d55ddf1727cafb0dcd46df2922305568615552a4d2ae34a5c30e90b9d8d998c",
+        "gitBlob": "5367f9c72ee13017a61630e1f0cffdced21d52c4"
+      },
+      {
+        "path": "src/x402-wire.js",
+        "bytes": 39886,
+        "LF": 934,
+        "sha256": "5fba91af5a352f62d1a335c7176a45a604e2af5d92b1c4b0e53825c1f20d4e56",
+        "gitBlob": "fb060d4e349b1c31a1219a0cc137af250a8a2291"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-json-rpc-read-transport.js",
+        "bytes": 10832,
+        "LF": 283,
+        "sha256": "fd03b2ad87d16660aa61d3961c163d724d5f89cd6d4bb9c4391d739566d5e5ca",
+        "gitBlob": "0475b7ab42889f67fb030fa7344d73d8bd6957d7"
+      },
+      {
+        "path": "src/zenon/bounded-json-rpc-read-core.js",
+        "bytes": 21759,
+        "LF": 582,
+        "sha256": "10cc529bfb0676bb03dc4dad56059663f4a578b586c52f6404fc859d27d18f76",
+        "gitBlob": "3bd98a83413eb13e3bceb097d35fb874b4c030a2"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-user-send-work-input.js",
+        "bytes": 2853,
+        "LF": 59,
+        "sha256": "2ff9c089e5903c059746d0a1c38688a2849f94d04d429279811fbbfbb40450a4",
+        "gitBlob": "dad4febf4ef6f09216640245c7e3805e01ad0127"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-user-send-fixed-work.js",
+        "bytes": 3475,
+        "LF": 77,
+        "sha256": "4ee83870df0b25c34d35c0f0d0ceb894ca9dab8c047f81b34a48dd816f1fbf38",
+        "gitBlob": "4ce2a790df84c77bc76615e5eebc309ecd2868ac"
+      }
+    ]
+  },
+  "qualificationDraft": {
+    "entry": "qualification/dynamic-plasma-bounded-nonce-isolated.behavior.draft.mjs",
+    "entryPin": {
+      "path": "qualification/dynamic-plasma-bounded-nonce-isolated.behavior.draft.mjs",
+      "bytes": 19484,
+      "LF": 301,
+      "sha256": "727260dd243ea4d29c3f8062625e7e6c2de8498e3839480622f8d322e570deb3",
+      "gitBlob": "20fad04e2ef2fa5132167d47b87f165f7b75d696"
+    },
+    "plannedCases": 16,
+    "caseNames": [
+      "bounded nonce search returns existing placeholder DATA without candidate work for declared zero difficulty",
+      "bounded nonce search produces the first explicit cursor at difficulty one and discloses bounded production",
+      "bounded nonce search matches an independent finite LE64 prefix across safe declared difficulties and cursors",
+      "bounded nonce search with zero positive-work budget evaluates no candidate and retains the exact start cursor",
+      "bounded nonce search exhausts exactly its4096 candidate ceiling without fallback or a fabricated nonce",
+      "bounded nonce search stops at the last nonce and never increments into the work data hash",
+      "bounded nonce search exposes little-endian carry and an explicit DATA-only continuation without automatic resume",
+      "bounded nonce search rejects invalid limits and a difficulty above its declared ceiling before candidate evaluation",
+      "bounded nonce search accepts only exact versioned unsigned pre-work DATA and not prepared signed or decorated blocks",
+      "bounded nonce search rejects descriptor hooks proxies coercion and operational limits without invocation",
+      "bounded nonce search checks each found candidate through the existing full hash and fixed-nonce consumer",
+      "bounded nonce search receipts are detached frozen DATA without mutating or freezing caller inputs",
+      "bounded nonce search does not turn shared address-frontier work into a full payment commitment or authority",
+      "bounded nonce search is deterministic on an exact explicit request and never owns retry or recovery authority",
+      "bounded nonce search source captures existing consumers and excludes randomness SDK signing native owners and overflow fallback",
+      "bounded nonce search qualification remains below its total65536 declared producer and reference candidate ceiling"
+    ],
+    "plannedSourceFiles": 10,
+    "plannedSourceBytes": 131717,
+    "sourcePins": [
+      {
+        "path": "qualification/dynamic-plasma-bounded-nonce-isolated.behavior.draft.mjs",
+        "bytes": 19484,
+        "LF": 301,
+        "sha256": "727260dd243ea4d29c3f8062625e7e6c2de8498e3839480622f8d322e570deb3",
+        "gitBlob": "20fad04e2ef2fa5132167d47b87f165f7b75d696"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-user-send-nonce-search.js",
+        "bytes": 8437,
+        "LF": 156,
+        "sha256": "8eda71acf12265b65015ad6db20c1c7b357b207874c8e4c8b72e2889bf86f318",
+        "gitBlob": "ec65d9e2ea6522e07bb80b95b9dc398d7714af2f"
+      },
+      {
+        "path": "src/zenon/transaction-planner.js",
+        "bytes": 22611,
+        "LF": 464,
+        "sha256": "079fe8da938e08e33a20ca1076492a829afa6fce3ae7f9b9f68d3bf4bff94233",
+        "gitBlob": "17b49a3d53974c9b3846ec6f352d6e8974bad7d3"
+      },
+      {
+        "path": "src/canonical.js",
+        "bytes": 967,
+        "LF": 26,
+        "sha256": "0d55ddf1727cafb0dcd46df2922305568615552a4d2ae34a5c30e90b9d8d998c",
+        "gitBlob": "5367f9c72ee13017a61630e1f0cffdced21d52c4"
+      },
+      {
+        "path": "src/x402-wire.js",
+        "bytes": 39886,
+        "LF": 934,
+        "sha256": "5fba91af5a352f62d1a335c7176a45a604e2af5d92b1c4b0e53825c1f20d4e56",
+        "gitBlob": "fb060d4e349b1c31a1219a0cc137af250a8a2291"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-json-rpc-read-transport.js",
+        "bytes": 10832,
+        "LF": 283,
+        "sha256": "fd03b2ad87d16660aa61d3961c163d724d5f89cd6d4bb9c4391d739566d5e5ca",
+        "gitBlob": "0475b7ab42889f67fb030fa7344d73d8bd6957d7"
+      },
+      {
+        "path": "src/zenon/bounded-json-rpc-read-core.js",
+        "bytes": 21759,
+        "LF": 582,
+        "sha256": "10cc529bfb0676bb03dc4dad56059663f4a578b586c52f6404fc859d27d18f76",
+        "gitBlob": "3bd98a83413eb13e3bceb097d35fb874b4c030a2"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-user-send-work-input.js",
+        "bytes": 2853,
+        "LF": 59,
+        "sha256": "2ff9c089e5903c059746d0a1c38688a2849f94d04d429279811fbbfbb40450a4",
+        "gitBlob": "dad4febf4ef6f09216640245c7e3805e01ad0127"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-user-send-fixed-work.js",
+        "bytes": 3475,
+        "LF": 77,
+        "sha256": "4ee83870df0b25c34d35c0f0d0ceb894ca9dab8c047f81b34a48dd816f1fbf38",
+        "gitBlob": "4ce2a790df84c77bc76615e5eebc309ecd2868ac"
+      },
+      {
+        "path": "package.json",
+        "bytes": 1413,
+        "LF": 40,
+        "sha256": "8c9a25504fbf6f87c31cdf245a6f4eec5a88cc89c8352151dc66a577c5771ef5",
+        "gitBlob": "ec7193f6fd76f34778515079dc777594175c4c34"
+      }
+    ],
+    "historicalEntry": {
+      "path": "qualification/dynamic-plasma-user-send-nonce-search.behavior.draft.mjs",
+      "bytes": 17414,
+      "LF": 268,
+      "sha256": "4da4d9237317f2ae20fa4bfa9e484fb2ed18709700da8d51c96df1b38b753cb4",
+      "gitBlob": "47aa5e090e29d88b61f3b2e66a4a35a4c1e3b889",
+      "unchanged": true
+    },
+    "derivation": "Reuse the sixteen authored nonce-contract scenarios with a standalone declared pre-work carrier. The first fifteen assertion bodies are retained except for an extra verification reservation; the final case strengthens the finite aggregate budget. Do not load the historical adapter/planner qualification chain.",
+    "sameFixtureOrOutcomeRelabeled": false,
+    "coverageMeaning": "A changed dependency-bound local candidate and an isolated test draft, not evidence of novelty or globally absent coverage.",
+    "noImportOfHistoricalQualificationEntries": true,
+    "noQuoteOrPlannerInvocationForCarrier": true,
+    "execution": "NOT_RUN",
+    "javaScriptParse": "NOT_RUN",
+    "imports": "NOT_RUN",
+    "nativeNodeCommands": 0,
+    "actualExit": null,
+    "receipts": null,
+    "results": null,
+    "actualCandidateEvaluations": null,
+    "requiredOptIn": {
+      "environmentKey": "DP_BOUNDED_NONCE_OPT_IN",
+      "value": "sixteen-isolated-synthetic-cases-only",
+      "meaning": "A caller guard, never execution permission, a sandbox, or signing authority."
+    },
+    "launchStatus": "A future launch still requires exact source/dependency/environment/argv/outcome review and the explicit bounded-search exception."
+  },
+  "plannedBudget": {
+    "perSearchMaxAttempts": 4096,
+    "totalCandidateCeiling": 65536,
+    "producerReservationsByCase": [
+      4096,
+      16,
+      240,
+      0,
+      4096,
+      8192,
+      2,
+      0,
+      0,
+      0,
+      1,
+      1,
+      2,
+      33,
+      0,
+      0
+    ],
+    "producerReservationTotal": 16679,
+    "referenceEvaluationUpperBound": 4342,
+    "verificationReservationUpperBound": 73,
+    "combinedUpperBound": 21094,
+    "guardedProducerCalls": 72,
+    "directArityRefusals": 2,
+    "meaning": "Declared conservative source/fixture bounds, not measured attempts or a hard lifetime, CPU-time, cancellation, native cleanup or OS/network sandbox guarantee.",
+    "nativeLoaderRunnerCryptoAndOSBehavior": "PREMISES_NOT_A_SECURITY_PROOF"
+  },
+  "retainedQualifiedComponent": {
+    "path": "qualification/dynamic-plasma-fixed-work-separation.local-result.json",
+    "sha256": "f2b90113c5fa01feca128234d01ba90d2f9263445730a4cb0c69b3fe4f76f957",
+    "meaning": "Prior fixed-nonce and legacy API results only. They do not qualify this bounded search or new carrier."
+  },
+  "publication": {
+    "performed": false,
+    "reason": "New candidate-search execution remains unqualified. Keep this local draft separate from the previously qualified main update."
+  },
+  "boundaries": {
+    "notRun": [
+      "Candidate search, native work provider or real PREPARE.",
+      "SDK, key generation, signatures, payment or network.",
+      "SQL, real restart/recovery, provider READY or pilot acceptance.",
+      "CI, default suite, commit, push or publication."
+    ],
+    "originalPaymentRequestBytesHashAndConsumedAuthority": "PRESERVED",
+    "validatedPossibleSameSignedBlockResendVersusUnknownAcknowledged": "UNCHANGED_DISTINCT_BOUNDARIES",
+    "protectedRealTotalsUnchanged": {
+      "consumedAdmissions": 2,
+      "actualChainPrepare": 1,
+      "bundles": 0,
+      "nativeChainOrProviderQualificationRuns": 0
+    },
+    "fullP1AComplete": false,
+    "pilotOrProductionAcceptance": "NOT_ESTABLISHED"
+  }
+}
