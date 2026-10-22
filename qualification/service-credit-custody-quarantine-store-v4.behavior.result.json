@@ -1,0 +1,406 @@
+{
+  "schema": "zenon-x402-selected-local-qualification/v1",
+  "lane": "P2_EXPLICIT_V4_PERSISTENT_GRANT_CUSTODY_QUARANTINE",
+  "status": "SELECTED_LOCAL_PASS_NOT_FULL_P2_OR_PILOT_ACCEPTANCE",
+  "purpose": "Add an explicit opt-in V4 insert-only per-grant custody quarantine, so a recorded uncertainty fence survives normal native SQLite reopen without altering original funding/request/intent bytes.",
+  "sourceParentMain": "f9c99d1e5b28c925afcf60d013e84478d1b163b5",
+  "implementation": {
+    "newExports": [
+      "createZenonFundingPayerRecoveryCustodyQuarantineSqliteStoreV4",
+      "openZenonFundingPayerRecoveryCustodyQuarantineSqliteStoreV4"
+    ],
+    "sqliteUserVersion": 4,
+    "quarantineRecordVersion": 1,
+    "newMethods": [
+      "latchOriginalRequestCustodyQuarantine",
+      "getOriginalRequestCustodyQuarantine"
+    ],
+    "exactInput": "One own-data grantId field; existing custody-key grammar validates its immutable scope.",
+    "insertOnly": "One canonical checksum-bound record per grant. Repeated latches return that same record; no clear, delete, overwrite, reset or migration API is introduced.",
+    "binding": [
+      "Exact stored funding resource URL, payment hash and network",
+      "Exact challenge/payment header digests",
+      "Stored custody policy and grantId"
+    ],
+    "bound": "The number of quarantine rows cannot exceed custodyPolicy.maxRequests; all rows validate before selected reads or writes.",
+    "writeFence": "V4 retainOriginalRequest and fenceOriginalDispatchIntent refuse a quarantined grant before inserting or replacing custody/intent rows.",
+    "granularity": "Another grant is neither implicitly quarantined nor authorized.",
+    "readBoundary": "Existing originals/intents remain readable while the native record is valid. Corrupt quarantine data refuses the whole V4 profile.",
+    "oldProfiles": "Existing V1/V2/V3 factories leave the new flag off. V3 and V4 wrong-version files are refused through the fixed read-only SQLite header preflight; no adoption or migration.",
+    "explicitCallerAction": "The caller must explicitly latch detected local uncertainty. Existing owners do not automatically write this new record or restore it into their volatile uncertainty flags.",
+    "unchangedDefaults": "No buyer, SDK, HTTP client factory, signing path or default activation is switched to V4.",
+    "recordAuthority": "NONE; null means no local record, never permission to send or proof of safe recovery.",
+    "notAuthenticated": "Checksums and source pins are not authentication against same-UID database mutation."
+  },
+  "selection": {
+    "finiteScope": "Four selected tests, one foreground Node command, two new private synthetic SQLite files.",
+    "reason": "The retained actual-store outcome pins a prior source and demonstrates that a fresh owner starts with false volatile flags after normal reopen. This packet adds a new persistent, grant-scoped write refusal rather than relabeling those old flags or relying on missing coverage as novelty.",
+    "oldSource": {
+      "path": "src/service-credit-zenon-funding-post-v1-payer-recovery-sqlite-store.js",
+      "bytes": 57471,
+      "LF": 1536,
+      "sha256": "974f5e28f851b8504efb71cb800e71881f8d37965bad927be2d18c5f7324b224",
+      "gitBlob": "36c1984a74d14fef0bd5478e4b9cd968abfbfbb7"
+    },
+    "newSource": {
+      "path": "src/service-credit-zenon-funding-post-v1-payer-recovery-sqlite-store.js",
+      "bytes": 64917,
+      "LF": 1687,
+      "sha256": "db4d3aca8c039e3433e49f6bafe42cbc4973e0f9478500dbe6cf36f53773232d",
+      "gitBlob": "4672760ef5fdf135b52700da889562b653b6fecb"
+    },
+    "sourceComparison": {
+      "algorithm": "Python difflib SequenceMatcher, autojunk false",
+      "additions": 154,
+      "deletions": 3,
+      "editGroups": 15,
+      "countsAreNotAnAssumptionAboutGitHubDiffAlignment": true
+    },
+    "historicalResultsPreserved": true,
+    "completedOrStoppedSelectionsReplayed": false
+  },
+  "sourceBinding": {
+    "sourceCount": 6,
+    "sourceBytes": 176120,
+    "perFileReadCapBytes": 65536,
+    "totalReadCapBytes": 196608,
+    "files": [
+      {
+        "path": "src/service-credit-zenon-funding-post-v1-payer-recovery-sqlite-store.js",
+        "bytes": 64917,
+        "LF": 1687,
+        "sha256": "db4d3aca8c039e3433e49f6bafe42cbc4973e0f9478500dbe6cf36f53773232d",
+        "gitBlob": "4672760ef5fdf135b52700da889562b653b6fecb"
+      },
+      {
+        "path": "src/service-credit-custodied-request-owner.js",
+        "bytes": 37513,
+        "LF": 986,
+        "sha256": "01e3dd01a8f3cd408b6d5df0938994b7ca704d778d8ea7c144b40ca264163a3d",
+        "gitBlob": "3e337868c2daef14573def71c767680e8e4a9184"
+      },
+      {
+        "path": "src/service-credit-original-request-custody-contract.js",
+        "bytes": 14051,
+        "LF": 356,
+        "sha256": "fd349de553a17abcc2e0567ba6640e6e3d5d26cfa79ee1e355928dc9fa8d3915",
+        "gitBlob": "f911d42d01b69e6577f9bcd66f4ed59aab8ab882"
+      },
+      {
+        "path": "src/x402-wire.js",
+        "bytes": 39886,
+        "LF": 934,
+        "sha256": "5fba91af5a352f62d1a335c7176a45a604e2af5d92b1c4b0e53825c1f20d4e56",
+        "gitBlob": "fb060d4e349b1c31a1219a0cc137af250a8a2291"
+      },
+      {
+        "path": "package.json",
+        "bytes": 1413,
+        "LF": 40,
+        "sha256": "8c9a25504fbf6f87c31cdf245a6f4eec5a88cc89c8352151dc66a577c5771ef5",
+        "gitBlob": "ec7193f6fd76f34778515079dc777594175c4c34"
+      },
+      {
+        "path": "qualification/service-credit-custody-quarantine-store-v4.behavior.draft.mjs",
+        "bytes": 18340,
+        "LF": 254,
+        "sha256": "9547ba00c7cfb89687c205ce185ddd6530ddf0c3fc47de31620033c8a2008f06",
+        "gitBlob": "7c70a4b5354978f61d4991cb044f32f86dbef213"
+      }
+    ],
+    "completeAuthoredFileReadsBeforeAndAfter": true,
+    "physicalIdentityCheckedPrivately": true,
+    "dependencies": "Existing request owner, original-request custody contract, x402-wire, pinned package scope and reviewed Node builtins only.",
+    "unrelatedRepositoryImportsOrEvaluation": false
+  },
+  "execution": {
+    "runtime": {
+      "node": "24.19.0",
+      "platform": "darwin",
+      "architecture": "arm64"
+    },
+    "selectedNodeCommands": 1,
+    "task": "CLOSED_SUCCESS",
+    "command": "COMPLETE",
+    "actualExit": 0,
+    "outputComplete": true,
+    "counts": {
+      "tests": 4,
+      "suites": 0,
+      "pass": 4,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "passNames": [
+      "V4 grant quarantine binds exact funding and idempotent insert-only metadata",
+      "normal V4 reopen blocks quarantined grant writes with a fresh existing owner",
+      "V4 quarantine capacity and V3 profile refusal preserve closed file bytes",
+      "corrupt V4 quarantine metadata is refused before reopen epoch advancement"
+    ],
+    "diagnostics": [
+      {
+        "kind": "P2_CUSTODY_QUARANTINE_V4",
+        "version": 1,
+        "scenario": "INSERT_ONLY_EXACT_FUNDING_BINDING",
+        "nativeSqliteFiles": 1,
+        "originalRows": 1,
+        "intentRows": 1,
+        "quarantineRows": 1,
+        "closedReturnedStores": 1,
+        "declaredServiceCallbacks": 1,
+        "blockedFreshSubmits": 0,
+        "wrongVersionRefusals": 0,
+        "corruptOpenRefusals": 0,
+        "corruptionInjected": false,
+        "networkCalls": 0,
+        "syntheticSignatureOperations": 0,
+        "realPaymentSigner": "DISABLED",
+        "serviceDelivery": "NOT_ESTABLISHED"
+      },
+      {
+        "kind": "P2_CUSTODY_QUARANTINE_V4",
+        "version": 1,
+        "scenario": "REOPEN_RETAINS_SCOPED_WRITE_FENCE",
+        "nativeSqliteFiles": 1,
+        "originalRows": 2,
+        "intentRows": 2,
+        "quarantineRows": 1,
+        "closedReturnedStores": 2,
+        "declaredServiceCallbacks": 2,
+        "blockedFreshSubmits": 1,
+        "wrongVersionRefusals": 0,
+        "corruptOpenRefusals": 0,
+        "corruptionInjected": false,
+        "networkCalls": 0,
+        "syntheticSignatureOperations": 0,
+        "realPaymentSigner": "DISABLED",
+        "serviceDelivery": "NOT_ESTABLISHED"
+      },
+      {
+        "kind": "P2_CUSTODY_QUARANTINE_V4",
+        "version": 1,
+        "scenario": "BOUNDED_QUARANTINE_NO_VERSION_MIGRATION",
+        "nativeSqliteFiles": 2,
+        "originalRows": 2,
+        "intentRows": 2,
+        "quarantineRows": 4,
+        "closedReturnedStores": 4,
+        "declaredServiceCallbacks": 2,
+        "blockedFreshSubmits": 1,
+        "wrongVersionRefusals": 2,
+        "corruptOpenRefusals": 0,
+        "corruptionInjected": false,
+        "networkCalls": 0,
+        "syntheticSignatureOperations": 0,
+        "realPaymentSigner": "DISABLED",
+        "serviceDelivery": "NOT_ESTABLISHED"
+      },
+      {
+        "kind": "P2_CUSTODY_QUARANTINE_V4",
+        "version": 1,
+        "scenario": "CORRUPT_METADATA_FAILS_BEFORE_EPOCH_ADVANCE",
+        "nativeSqliteFiles": 2,
+        "originalRows": 2,
+        "intentRows": 2,
+        "quarantineRows": 4,
+        "closedReturnedStores": 4,
+        "declaredServiceCallbacks": 2,
+        "blockedFreshSubmits": 1,
+        "wrongVersionRefusals": 2,
+        "corruptOpenRefusals": 1,
+        "corruptionInjected": true,
+        "networkCalls": 0,
+        "syntheticSignatureOperations": 0,
+        "realPaymentSigner": "DISABLED",
+        "serviceDelivery": "NOT_ESTABLISHED"
+      }
+    ],
+    "stdout": {
+      "bytes": 2840,
+      "sha256": "6c058300bc9fc140eca27b368c25240978bc1ec76f75b493892568ce3cd69975"
+    },
+    "stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "completeOutcomeAndExactSelectedTapReviewed": true,
+    "ownedProcessGroupObservedAbsent": true,
+    "expectedUnknownOwnerCloseRejections": 1,
+    "expectedWrongVersionOpenRefusals": 2,
+    "expectedCorruptOpenRefusals": 1,
+    "returnedStoreCloseCalls": 4,
+    "declaredServiceCallbacks": 2,
+    "newSyntheticSqliteFiles": 2,
+    "signatureOperations": 0,
+    "networkCalls": 0,
+    "realPaymentSigner": "DISABLED",
+    "expectedRefusalsArePassedAssertionsNotFailedTests": true
+  },
+  "scenarios": [
+    {
+      "name": "V4 grant quarantine binds exact funding and idempotent insert-only metadata",
+      "asserts": [
+        "V4 creation has no quarantine record and cannot latch before any funding pair exists.",
+        "A fixed synthetic funding pair reaches BOUND revision 3; an existing V3 owner retains and fences one original.",
+        "Explicit quarantine latching is idempotent and independently matches the exact original challenge/payment header digests, policy and checksum.",
+        "Original, intent and funding bytes remain unchanged; a quarantined intent write refuses.",
+        "Only after closing all production owners does an independent read-only SQL connection inspect the committed row and epoch 1."
+      ]
+    },
+    {
+      "name": "normal V4 reopen blocks quarantined grant writes with a fresh existing owner",
+      "asserts": [
+        "Normal V4 reopen preserves the same quarantine row at epoch 2.",
+        "A fresh existing V3 owner still has false volatile flags; those observations are not rewritten.",
+        "A new submission for that grant reaches the native quarantine fence, produces no callback/original/intent and latches local UNKNOWN.",
+        "A distinct grant with no quarantine uses the existing declared callback path; it is not evidence of real grant or provider authority.",
+        "Closing production owners precedes SQL inspection; original grant-A bytes and its quarantine remain exact, funding/schema are unchanged."
+      ]
+    },
+    {
+      "name": "V4 quarantine capacity and V3 profile refusal preserve closed file bytes",
+      "asserts": [
+        "Descriptor-accessor and extra-field inputs reject without invoking the getter.",
+        "The four-row configured quarantine capacity is enforced; an existing latch remains idempotent at capacity.",
+        "Capacity refusal preserves the existing rows; the absent fifth record grants no authority.",
+        "One second new private file is created with the existing V3 factory.",
+        "V4-on-V3 and V3-on-V4 opening refuse; complete closed-file bytes and file identities are unchanged."
+      ]
+    },
+    {
+      "name": "corrupt V4 quarantine metadata is refused before reopen epoch advancement",
+      "asserts": [
+        "Only one quarantine envelope in the newly created V4 synthetic file is deliberately corrupted after all production handles are closed.",
+        "V4 reopening rejects CORRUPT before owner_epoch advancement.",
+        "No corruption repair, replacement, fixture restoration or retry occurs; the intentionally corrupt file remains retained as failure-path evidence.",
+        "Original, intent, funding, policy and schema rows remain unchanged."
+      ]
+    }
+  ],
+  "nativeFiles": {
+    "count": 2,
+    "totalBytes": 73728,
+    "files": [
+      {
+        "name": "payer-v3.sqlite",
+        "bytes": 32768,
+        "sha256": "3ec6972e0b6883207cba807236b5ef352d593759b55aa88862a3f0cc95e69644",
+        "finalState": "V3_COMPATIBILITY_FILE_NO_MIGRATION"
+      },
+      {
+        "name": "payer-v4.sqlite",
+        "bytes": 40960,
+        "sha256": "1dd29caae2d2aacafdf2db1846504a8643e1e250f263474afad00fe60a6d0b76",
+        "finalState": "INTENTIONALLY_CORRUPT_QUARANTINE_ENVELOPE_EXPECTED_REFUSAL_EVIDENCE"
+      }
+    ],
+    "rawDatabasesPublished": false,
+    "rawDatabasesCASAdopted": false,
+    "retention": "HOLD_UNREGISTERED_FILES_NO_ADOPTION_OR_DELETION",
+    "simultaneousIndependentSqlObserverConnections": 0,
+    "normalV4OwnerEpochs": [
+      1,
+      2,
+      3
+    ],
+    "wrongVersionOrCorruptOpenEpochAdvancement": false,
+    "corruptionScope": "Exactly one new synthetic quarantine envelope; no historical or user database is opened or modified."
+  },
+  "callsite": {
+    "explicitSinglePositionalEntry": true,
+    "environmentClearedWithEnvI": true,
+    "nodePermissionModel": "OFF_FOR_EXISTING_NATIVE_FCHMOD_FSYNC_MACHINERY",
+    "osOrNetworkSandboxGuarantee": false,
+    "dynamicStringCodeGeneration": "DISALLOWED",
+    "nativeAddons": "DISALLOWED",
+    "childWorkerCreationAndNetworkInAuthoredGraph": false,
+    "builtinInlineReporter": true,
+    "savedOperationalHelperOrNewHost": false,
+    "argvStringPayloadBytes": 11073,
+    "callerBytes": 8626,
+    "nodeTestTimeoutMs": 5000,
+    "managerCommandTimeoutSeconds": 30,
+    "stdoutCapBytes": 65536,
+    "stderrCapBytes": 1048576,
+    "tapStdoutStderrDescriptorOutputExpected": true,
+    "timeoutBoundary": "Not a hard native lifetime, cancellation, cleanup, OS or network sandbox guarantee.",
+    "nativeLoaderRunnerStreamOsSqliteAndFilesystemBehavior": "Retained premises, not newly qualified global guarantees."
+  },
+  "preservation": {
+    "unchangedRepositoryFilesChecked": 149,
+    "priorPrivateFilesChecked": 197,
+    "protectedAbsencesChecked": 8,
+    "currentOldStoreExcludedOnlyFromUnchangedCohort": true,
+    "oldSourcePinAndHistoricalRecordsRetained": true,
+    "sourceAndPriorEvidenceStable": true,
+    "newProtectedMetadataFiles": 12,
+    "newProtectedMetadataBytes": 67785,
+    "newRawSqliteFiles": 2,
+    "fixedLineageManifestCount": 3,
+    "exactBaseManifestParts": 6,
+    "recursiveParentTraversal": false,
+    "sourceDeltaPins": 3,
+    "privateDeltaPins": 12,
+    "beforeManifestSerializedObjectBytes": 10162,
+    "beforeManifestActualFileBytes": 12891,
+    "completeReaderMetadataBytes": 249507,
+    "ancestryDecodedOnceWithinInspection": true,
+    "earlier267FullRehashOrExecutionReplayed": false,
+    "earlierNamespacesWritten": false,
+    "expectedBytes": 2097152,
+    "taskQuotaBytes": 4194304,
+    "productionFloorBytes": 10737418240,
+    "conservativeScratchCheckBytes": 6442450944,
+    "policyRewritten": false,
+    "rawFixtureCleanup": "HOLD, not CLEANED. No protected evidence or raw database deleted.",
+    "quotaBoundary": "Cooperative sampled accounting, not an OS-enforced aggregate quota.",
+    "runtimeDigests": "Reused only after exact unchanged retained runtime identity tuples; no redundant large-binary rehash.",
+    "physicalApfsReclaimOrPerformanceGainMeasured": false
+  },
+  "authority": {
+    "protectedTotals": {
+      "consumedAdmissions": 2,
+      "actualChainPrepare": 1,
+      "bundles": 0,
+      "nativeChainProviderQualificationRuns": 0
+    },
+    "syntheticFundingModelWritesAreNotChainPrepare": true,
+    "originalPaymentRequestBytesHashPayloadRequirementsContextAndConsumedAuthority": "PRESERVED",
+    "pr193": "VALIDATED exact-same-signed-block resend remains distinct from UNKNOWN and ACKNOWLEDGED.",
+    "realWalletPaymentSigningOrProviderSetup": "NOT_RUN_DISABLED",
+    "sdkImportOrInstall": "NONE",
+    "dpNonceMaterialProducerExecution": "NOT_ADMITTED_NOT_RUN",
+    "failedOwnershipMetadataRetryOrAuthorityReset": false,
+    "automationOrModelSettingsChanged": false,
+    "privateBootstrapGhcrBoundaries": "UNCHANGED"
+  },
+  "limits": [
+    "This establishes these four local native SQLite component outcomes only, not complete store, application, SDK or controller qualification.",
+    "The explicit caller-recorded grant quarantine survives a normal same-process reopen; automatic detection/latching and client-factory adoption remain unimplemented.",
+    "Fresh owner volatile flags are not restored or falsified. Persisted quarantine and owner-local uncertainty remain separate facts.",
+    "The V1/V2/V3 unchanged branches are source-reviewed; the selected V3 file/profile checks are not a full legacy regression suite.",
+    "No actual process restart, crash, power loss, service delivery, authenticated funding, real provider READY or live pilot was exercised.",
+    "The retained V4 fixture intentionally ends with corrupt quarantine metadata; passing the refusal assertion does not make that file a valid recovery store.",
+    "Quarantine-row absence and another grant's successful declared callback provide no independent payer/provider/policy authority.",
+    "Independent current context, funding, authority, READY, durability, commit/uncertainty and restart/recovery remain separate acceptance gates."
+  ],
+  "next": "Connect explicit uncertainty detection to this opt-in record with source-bound lifecycle tests; keep real process restart and live acceptance separately gated.",
+  "fullP2Complete": false,
+  "productionReadiness": "NO_GO",
+  "pilotAcceptance": "NOT_ESTABLISHED",
+  "hostedCI": {
+    "status": "NOT_RUN_FOR_THIS_SELECTION",
+    "emptyChecksAreNotGreen": true,
+    "newWorkflowOrBroadCiAuthorization": false
+  },
+  "publication": {
+    "baseline": "f9c99d1e5b28c925afcf60d013e84478d1b163b5",
+    "packet": "One existing opt-in library source plus two new qualification files.",
+    "requiresSkipCiCommitMessage": true,
+    "normalFastForwardOnly": true,
+    "forcePushOrProtectionBypass": false,
+    "noLocalStageCommitResetCheckoutOrPush": true
+  }
+}
