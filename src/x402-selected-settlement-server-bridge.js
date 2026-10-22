@@ -76,7 +76,10 @@ const HASH = /^[0-9a-f]{64}$/, REASON = /^[a-z][a-z0-9_]{0,127}$/;
  * callback counts are bounded by retained contexts; observers additionally
  * retain the existing0..16 per-owner budget. These are local admission/data
  * bounds, not hard CPU/memory/lifetime, cancellation or OS/network guarantees.
- * There is no close/reset/reclaim/TTL/fallback. New instances do not grant
+ * There is no bridge-wide close/reset/reclaim/TTL/fallback. An official
+ * pending continuation may detach its own explicit references; retained hash
+ * claims, owner state and admission budgets are never reset or reclaimed.
+ * New instances do not grant
  * replacement, re-signing, retry or current payer/provider/policy authority.
  *
  * Rejections expose no raw reasons. Native Promises are observed with captured
@@ -328,6 +331,16 @@ function constructBridge(configuration, argumentCount, officialCore223) {
    * is admitted. Adapter internals and native/global behavior remain trusted
    * premises, not authenticated context. Do not use this to reconstruct context
    * after a process restart. Authorization and actual delivery have other owners.
+   *
+   * close() synchronously fences this continuation, returns one cached native
+   * Promise, and detaches its explicit transport/SDK references only after its
+   * own active resume has settled. A queued, not-yet-invoked call is refused.
+   * An already invoked SDK operation is observed, not cancelled or rolled back;
+   * its late reply is not returned as a continuation success. The underlying
+   * owner's settlement/publication facts and permanent claim remain intact.
+   * This is not bridge/owner shutdown, revocation of other borrowed references,
+   * GC/erasure, native cleanup, a timeout or a hard lifetime guarantee. A borrowed
+   * operation that never settles can keep close pending indefinitely.
    */
   function createPendingContinuation(configuration) {
     if (arguments.length !== 1 || !invariant()) fail('input_rejected');
@@ -350,6 +363,7 @@ function constructBridge(configuration, argumentCount, officialCore223) {
     let expectedReconciliations = initial.pendingReconciliations;
     let phase = 'PENDING', active = false, calls = 0, positiveReplies = 0;
     let referencesReleased = false;
+    let closed = false, closeTicket = null, closeOutcome = 'NOT_REQUESTED';
     function checkOriginal() {
       const current = bindingFor(payload, view, entry);
       if (current.payloadJson !== original.payloadJson
@@ -365,6 +379,23 @@ function constructBridge(configuration, argumentCount, officialCore223) {
       payload = null; view = null; context = null; processSettlement = null;
       sealedContext = null; referencesReleased = true;
     }
+    function finishClose() {
+      if (!closed || active || closeOutcome === 'DETACHED') return;
+      release(); closeOutcome = 'DETACHED';
+      apply(closeTicket.resolve, undefined, []);
+    }
+    function requestClose(count) {
+      if (count !== 0 || !invariant()) {
+        return shield((async () => { fail('input_rejected'); })());
+      }
+      if (closeTicket !== null) return closeTicket.promise;
+      let resolveClose = null;
+      const promise = shield(new NativePromise(resolve => { resolveClose = resolve; }));
+      closeTicket = freeze({ promise, resolve: resolveClose });
+      closed = true; closeOutcome = 'DRAINING';
+      finishClose();
+      return promise;
+    }
     function currentOwner() {
       if (entry.verifyTicket !== null || entry.settleTicket !== null) fail('busy');
       const owner = entry.owner.getSnapshot().settlement;
@@ -378,6 +409,7 @@ function constructBridge(configuration, argumentCount, officialCore223) {
     }
     async function resumeRun(count, ticket) {
       if (count !== 0 || !invariant()) fail('input_rejected');
+      if (closed) fail('closed');
       if (active) fail('busy');
       if (phase !== 'PENDING') fail('stage_rejected');
       checkOriginal();
@@ -387,13 +419,15 @@ function constructBridge(configuration, argumentCount, officialCore223) {
       try {
         await undefined; // Publish the receipt and fence reentry before any capability call.
         if (!invariant()) fail('operation_rejected');
+        if (closed) fail('closed');
         checkOriginal();
         const before = currentOwner();
         calls++; invoked = true;
         const returned = apply(processSettlement, undefined, [
           payload, view, undefined, context, undefined, undefined, 'before-handler',
         ]);
-        if (!invariant() || returned === ticket.promise || typeof returned !== 'object'
+        if (!invariant() || returned === ticket.promise || returned === closeTicket?.promise
+            || typeof returned !== 'object'
             || returned === null || isProxy(returned) || !isPromise(returned)
             || !supportedPromise(returned)) fail('operation_rejected');
         const accepted = apply(nativeThen, returned, [raw => {
@@ -416,6 +450,7 @@ function constructBridge(configuration, argumentCount, officialCore223) {
         }, () => { fail('operation_rejected'); }]);
         const result = await shield(accepted);
         if (!invariant()) fail('operation_rejected');
+        if (closed) fail('closed');
         checkOriginal();
         const after = entry.owner.getSnapshot().settlement;
         if (entry.phase !== 'VERIFIED' || entry.verifyTicket !== null
@@ -436,7 +471,8 @@ function constructBridge(configuration, argumentCount, officialCore223) {
         fail('continuation_rejected');
       } finally {
         active = false;
-        if (phase !== 'PENDING') release();
+        if (closed || phase !== 'PENDING') release();
+        finishClose();
       }
     }
     return freeze({
@@ -445,11 +481,13 @@ function constructBridge(configuration, argumentCount, officialCore223) {
         const pending = shield(resumeRun(arguments.length, ticket));
         ticket.promise = pending; return pending;
       }),
+      close: freeze(function close() { return requestClose(arguments.length); }),
       getSnapshot: freeze(function getSnapshot() {
         if (arguments.length !== 0 || !invariant()) fail('input_rejected');
         const settlement = entry.owner.getSnapshot().settlement;
         return freeze({
           phase, active, sdkContinuationCalls: calls, positiveReplies, referencesReleased,
+          closed, closeOutcome, settlementState: settlement.state,
           pendingReconciliations: settlement.pendingReconciliations,
           maxPendingReconciliations: settlement.maxPendingReconciliations,
           firstAuthorityConsumed: settlement.firstAuthorityConsumed,

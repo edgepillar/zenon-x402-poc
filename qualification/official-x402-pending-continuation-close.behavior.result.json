@@ -1,0 +1,568 @@
+{
+  "resultVersion": 1,
+  "status": "FOUR_SELECTED_OFFICIAL_CORE223_CONTINUATION_CLOSE_CASES_PASS",
+  "date": "2026-10-22",
+  "lane": "P1-B bounded same-payment pending recovery lifecycle",
+  "baseMain": "bee62dd0dd5695a5e241910038af6ff640868e96",
+  "fullP1BOrRoadmapComplete": false,
+  "implementation": {
+    "path": "src/x402-selected-settlement-server-bridge.js",
+    "entry": "createSelectedSettlementServerBridgeForOfficialX402Core223(...).createPendingContinuation(...).close",
+    "before": {
+      "path": "src/x402-selected-settlement-server-bridge.js",
+      "bytes": 37946,
+      "LF": 711,
+      "sha256": "8d1e494c89abb340efd7a9a1fd15bca53ed099bf6e72b9d09902449635bc46b4",
+      "gitBlob": "30c912807ed01debf63f742f0fea4e87658b0673"
+    },
+    "after": {
+      "path": "src/x402-selected-settlement-server-bridge.js",
+      "bytes": 39943,
+      "LF": 749,
+      "sha256": "38f47d24e1dcdd0f632e786054dc2e9544de2f261f74e949e28fee43ed56f40b",
+      "gitBlob": "483633ee18735355d9614cafe8f7bd8044a7d8b7"
+    },
+    "netAddedBytes": 1997,
+    "netAddedLines": 38,
+    "scope": "Explicit idempotent detach/drain close on the existing continuation only; not a new bridge or settlement owner.",
+    "behavior": [
+      "Close synchronously fences this continuation and returns one cached native Promise.",
+      "An idle close detaches only the continuation's explicit SDK/transport references.",
+      "A queued resume is refused before its borrowed SDK capability is invoked.",
+      "An already invoked resume is observed until its native Promise settles. Close waits for this owned run's finally path, without cancellation or rollback.",
+      "A late success is not returned as a continuation success. Underlying SUCCEEDED/ACKNOWLEDGED facts and prior publication uncertainty remain separately visible.",
+      "Returning this continuation's own close Promise is refused instead of creating a direct receipt dependency deadlock.",
+      "Permanent hash/continuation claims, consumed first authority and observer budgets are never reset or reclaimed."
+    ],
+    "snapshotAdditions": [
+      "closed",
+      "closeOutcome",
+      "settlementState"
+    ],
+    "defaultBoundary": "No active buyer/server/CLI cutover, new operational helper or external dependency. Existing default-role methods, verifier/first-settlement/observer ownership and wire receipt checks are retained.",
+    "retentionBoundary": "DETACHED means five explicit continuation reference variables are null. The bridge/owner still retains original serialized bindings, hash claims and trusted role capabilities; other references are not revoked. No GC, erasure or measured memory reclamation is claimed.",
+    "lifetimeBoundary": "A borrowed operation that never settles can keep close pending indefinitely. This is not bridge/owner shutdown, revocation, a hard timeout, lifetime/cancellation/native-cleanup or OS/network-sandbox guarantee; indirect cycles remain a trusted-capability limitation."
+  },
+  "qualification": {
+    "entry": "qualification/official-x402-pending-continuation-close.behavior.draft.mjs",
+    "names": [
+      "official pending continuation close detaches idle references without resetting the original claim",
+      "official pending continuation close fences a queued resume before any SDK delegation",
+      "official pending continuation close drains an in-flight success without delivering or erasing publication uncertainty",
+      "official pending continuation refuses its own reentrant close receipt without a dependency deadlock"
+    ],
+    "nativeNodeCommands": 1,
+    "actualExit": 0,
+    "outputComplete": true,
+    "counts": {
+      "tests": 4,
+      "suites": 0,
+      "pass": 4,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "task": "278558dad42f48faabec198b6edd9e21",
+    "command": "59d865b6f28644ceb4a74c35e5eedcf6",
+    "taskState": "CLOSED",
+    "taskOutcome": "SUCCESS",
+    "ownedProcessGroupObservedAbsent": true,
+    "runtime": {
+      "node": "24.19.0",
+      "platform": "darwin",
+      "architecture": "arm64",
+      "nodeBinarySha256": "dbedff294bab84a0a86c04e15fbcbeb1c97ca10bef1b32b0634cd24b36f62100",
+      "python": "3.12.14",
+      "pythonBinarySha256": "811e2679c20fd2c7413f7c5ca28ce903065eea8dadb8660f1b9379a28959a480",
+      "digestsReusedOnlyAfterCurrentExactNineFieldIdentityMatch": true
+    },
+    "officialCoreVersion": "2.23.0",
+    "zodVersion": "3.25.76",
+    "existingExternalClosure": {
+      "files": 22,
+      "bytes": 318892,
+      "literalStaticEdges": 44,
+      "installations": 0,
+      "contentMatchesExactPriorClosure": true,
+      "closureExpansion": false
+    },
+    "sourceFiles": 28,
+    "sourceBytes": 454454,
+    "sourceCapBytes": 524288,
+    "perFileCapBytes": 262144,
+    "sourcePins": [
+      {
+        "path": "src/x402-selected-settlement-server-bridge.js",
+        "bytes": 39943,
+        "LF": 749,
+        "sha256": "38f47d24e1dcdd0f632e786054dc2e9544de2f261f74e949e28fee43ed56f40b",
+        "gitBlob": "483633ee18735355d9614cafe8f7bd8044a7d8b7"
+      },
+      {
+        "path": "src/x402-verification-bound-settlement-context.js",
+        "bytes": 11311,
+        "LF": 221,
+        "sha256": "b3ad2fd33dae7e77a77f069cbc1259bf77e18a2bf383aa30f41bcc19221656f5",
+        "gitBlob": "6734a4aa011239402c141b874612a3be0733b4bf"
+      },
+      {
+        "path": "src/x402-selected-settlement-context.js",
+        "bytes": 16818,
+        "LF": 456,
+        "sha256": "afb6e16603023dd58d6a71cff5790a802dcfa4b98bc9d380b51ccc3d58e10991",
+        "gitBlob": "321d2a03a45296907c0a35a50d1e038e82307a40"
+      },
+      {
+        "path": "src/x402-wire.js",
+        "bytes": 39886,
+        "LF": 934,
+        "sha256": "5fba91af5a352f62d1a335c7176a45a604e2af5d92b1c4b0e53825c1f20d4e56",
+        "gitBlob": "fb060d4e349b1c31a1219a0cc137af250a8a2291"
+      },
+      {
+        "path": "package.json",
+        "bytes": 1413,
+        "LF": 40,
+        "sha256": "8c9a25504fbf6f87c31cdf245a6f4eec5a88cc89c8352151dc66a577c5771ef5",
+        "gitBlob": "ec7193f6fd76f34778515079dc777594175c4c34"
+      },
+      {
+        "path": "@x402/core/package.json",
+        "bytes": 3853,
+        "LF": 138,
+        "sha256": "4130a95721f50c0997dcba3728d14d5584c4f99c12c8c3f9870b21f31da212fd",
+        "gitBlob": "7d72182a84f0a84d73e6260be70af1f520f33657"
+      },
+      {
+        "path": "zod/package.json",
+        "bytes": 3284,
+        "LF": 118,
+        "sha256": "70eedbe34fd52385a4ae2f3e5759b19682189f0118ea73a6e7c32c677f61668e",
+        "gitBlob": "eedcfb0f8e3343c8ac5ba32e5117a032352a986c"
+      },
+      {
+        "path": "@x402/core/dist/esm/client/index.mjs",
+        "bytes": 26707,
+        "LF": 676,
+        "sha256": "653613f25e2fa24615af7d1fe943679177774215a16600289175f61c4df5dda9",
+        "gitBlob": "3474afd63523463825633207d6fbfd782aeca5aa"
+      },
+      {
+        "path": "@x402/core/dist/esm/server/index.mjs",
+        "bytes": 1761,
+        "LF": 60,
+        "sha256": "fa62aa75d072a9a1e2bb00be93ef4980e15507e3617942f1d7ab05c69954a19e",
+        "gitBlob": "5a6d9914baad58a9edee7f897882abce6c011b57"
+      },
+      {
+        "path": "@x402/core/dist/esm/http/index.mjs",
+        "bytes": 1177,
+        "LF": 42,
+        "sha256": "f87cf0256b51820628469681ba1421de97f17d55c2eff64bbe9040ef4f5ea084",
+        "gitBlob": "0dda52c01e2437b16637aaf0b84353092c111861"
+      },
+      {
+        "path": "@x402/core/dist/esm/schemas/index.mjs",
+        "bytes": 1591,
+        "LF": 69,
+        "sha256": "b4c12db796c6654de17d8542d65cd78bbbe8cf4bbcc71d05912450d8adfcf0c9",
+        "gitBlob": "93af501678f80952035795321b6c30a015928679"
+      },
+      {
+        "path": "@x402/core/dist/esm/chunk-BA2VL4DT.mjs",
+        "bytes": 116817,
+        "LF": 3151,
+        "sha256": "f2ad975e24db34808470b081c9deedaf6aafa53ab95121d29661a1a8b1507f84",
+        "gitBlob": "307a10a04e0cb515418f38be50e422634acd305b"
+      },
+      {
+        "path": "@x402/core/dist/esm/chunk-N4QXZG2Z.mjs",
+        "bytes": 5040,
+        "LF": 160,
+        "sha256": "19c189f7417214b211ee4abdaada531a80e5adc8504d593c172fe1e2ce61c03e",
+        "gitBlob": "56010f0571a73a7c82d74f88d4feb01263d9d612"
+      },
+      {
+        "path": "@x402/core/dist/esm/chunk-VE37GDG2.mjs",
+        "bytes": 107,
+        "LF": 6,
+        "sha256": "56fb4db85f03d88dfa5d42c81be8527f72deae2bca4004dfaea6415f186dc086",
+        "gitBlob": "9229b6cbcb04f9a1a374588f9dc31b22c21499ba"
+      },
+      {
+        "path": "@x402/core/dist/esm/chunk-P3DFEIO7.mjs",
+        "bytes": 2602,
+        "LF": 82,
+        "sha256": "9c124f03f792fcef472452fcaf30d03bd7d6ea44170675d60ccc473d3b02f983",
+        "gitBlob": "ec0f7809277982b2d2b38747fc3a3c87a3bb9fd2"
+      },
+      {
+        "path": "@x402/core/dist/esm/chunk-UQQR4X3S.mjs",
+        "bytes": 5837,
+        "LF": 172,
+        "sha256": "a7756bf22635f58e52dce87753863e51f407a38f5c32382a1076c39bd6cb9a62",
+        "gitBlob": "46913a8401fabcdb431cfd504c1708d07f9b1c26"
+      },
+      {
+        "path": "@x402/core/dist/esm/chunk-BJTO5JO5.mjs",
+        "bytes": 433,
+        "LF": 10,
+        "sha256": "1c521b4fbee4089393c982b94b5f8a4f81b1043c2f8cd1848d0d6056430e761f",
+        "gitBlob": "8ea659a7b711a9e45bf435cb6a8300df1d92e8be"
+      },
+      {
+        "path": "zod/index.js",
+        "bytes": 105,
+        "LF": 4,
+        "sha256": "6419c4ac0e637ff08463083e31886d10354f74cbcc4e584400b2b837e39ac881",
+        "gitBlob": "bf6f1643ab4526b97b1eb1a6dcdea48262f70194"
+      },
+      {
+        "path": "zod/v3/external.js",
+        "bytes": 205,
+        "LF": 6,
+        "sha256": "5d26d2e47e2352def36f89a3e8bf8581da22b7f857e07ef3114cd52cf4813445",
+        "gitBlob": "f0a4be4c7aa63b363b654384b103396050a06e29"
+      },
+      {
+        "path": "zod/v3/errors.js",
+        "bytes": 243,
+        "LF": 9,
+        "sha256": "d40831f478288d76e82bbbcc3b7e95c8513b6e76471f2d49a37c979bc57d492d",
+        "gitBlob": "26fdf628a00ac2e0984c1f7d8e31652dcff1253d"
+      },
+      {
+        "path": "zod/v3/helpers/parseUtil.js",
+        "bytes": 3601,
+        "LF": 109,
+        "sha256": "b57484013bb360bac2e334d58fcd5f6cbfa63ffcc7d8ff3dbbb3380ca659b956",
+        "gitBlob": "91b2afb81b4358fb84d637bc963a868517c6a516"
+      },
+      {
+        "path": "zod/v3/helpers/typeAliases.js",
+        "bytes": 11,
+        "LF": 1,
+        "sha256": "8e609bb71c20b858c77f0e9f90bb1319db8477b13f9f965f1a1e18524bf50881",
+        "gitBlob": "cb0ff5c3b541f646105198ee23ac0fc3d805023e"
+      },
+      {
+        "path": "zod/v3/helpers/util.js",
+        "bytes": 4055,
+        "LF": 133,
+        "sha256": "906ef685e5853d496e293ee8f8a2bb8b1ed2d078a1bcdfedb2dfd61d75b6330c",
+        "gitBlob": "b9641f29b7dfd7b8d7d6a3e2361803a51078ea7f"
+      },
+      {
+        "path": "zod/v3/types.js",
+        "bytes": 131212,
+        "LF": 3693,
+        "sha256": "9763a2938f0e7f983363ef4bf6530e7583e3f2d54f8a4a6684efad58febc6e8e",
+        "gitBlob": "40b11c0f01b2af54e0ed48e198607bd8836d9a63"
+      },
+      {
+        "path": "zod/v3/ZodError.js",
+        "bytes": 4349,
+        "LF": 133,
+        "sha256": "f5ac9e86b92e201d41e294d7aa35986a2aa28829e1bcc8ac25f7c8dce0674b99",
+        "gitBlob": "fed6a959bdd005f6b75a71733d3f231417a5955d"
+      },
+      {
+        "path": "zod/v3/locales/en.js",
+        "bytes": 5602,
+        "LF": 109,
+        "sha256": "51a6dcc5d4bd52a64da127c012c6c963395c1d9a343ad75d4a8eca662fc8b205",
+        "gitBlob": "a67fc82a2272c022fa462931950af2a17a2f9b64"
+      },
+      {
+        "path": "zod/v3/helpers/errorUtil.js",
+        "bytes": 300,
+        "LF": 6,
+        "sha256": "68589c0cf44c8b4ad19b77418f53caad2cd1dbc8d714f526e1876ebdee4828c5",
+        "gitBlob": "e1640d1a4f696b5268518f3e15fa10ca5c8e61b8"
+      },
+      {
+        "path": "qualification/official-x402-pending-continuation-close.behavior.draft.mjs",
+        "bytes": 26191,
+        "LF": 510,
+        "sha256": "045adb10d14a8e6f7d0f7097b24f88d224d939ded51699371baa66c8236d621f",
+        "gitBlob": "b3d4e34eae661e533e959411d68418f147072156"
+      }
+    ],
+    "currentPhysicalPackageReview": {
+      "priorNineFieldIdsNotSilentlyReused": true,
+      "differingField": "st_dev",
+      "allOtherEightFieldsAndAllContentPinsMatched": true,
+      "causeNotInferred": true,
+      "currentVolumeAndFullCurrentFileIdentitiesPinned": true,
+      "historicalPackageOrEvidenceMetadataRewritten": false,
+      "currentResultAppliesOnlyToThisReviewedSnapshot": true
+    },
+    "environment": "Cleared environment; fixed locale/time zone, opt-in marker, exact existing physical package roots and current source-file pins only.",
+    "restrictions": [
+      "Node permission model enabled",
+      "28 exact file read grants; no directory or wildcard expansion",
+      "--disallow-code-generation-from-strings",
+      "--no-addons",
+      "no fs-write/child/worker/addon grant"
+    ],
+    "caller": {
+      "fixedInline": true,
+      "savedOrInstalledOperationalHelper": false,
+      "bytes": 10747,
+      "exactArgvRetainedOnceInPrivateCommandReceipt": true,
+      "selectionFourDiagnosticsAndTapEofStrictlyChecked": true
+    },
+    "stdout": {
+      "bytes": 5298,
+      "sha256": "ed5fdc207272523f02dfaf263dc5c55963559148f77bc4a04485a3ae2a715333"
+    },
+    "stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "diagnostics": [
+      {
+        "kind": "OFFICIAL_X402_CONTINUATION_CLOSE",
+        "version": 1,
+        "scenario": "IDLE_PENDING",
+        "coreVersion": "2.23.0",
+        "zodVersion": "3.25.76",
+        "clientPayloadCreations": 1,
+        "sdkHttpRequests": 2,
+        "sdkBeforeSettlementCalls": 1,
+        "verifyCalls": 1,
+        "firstSettlementCalls": 1,
+        "observerCalls": 0,
+        "continuationCalls": 0,
+        "positiveBridgeResponses": 0,
+        "positiveContinuationReplies": 0,
+        "modeledHandlerCalls": 0,
+        "continuationPhase": "PENDING",
+        "settlementState": "PENDING",
+        "closed": true,
+        "closeOutcome": "DETACHED",
+        "referencesReleased": true,
+        "active": false,
+        "firstAuthorityConsumed": true,
+        "pendingReconciliations": 0,
+        "publicationStatus": "UNKNOWN",
+        "uncertaintyRetained": true,
+        "acknowledgementDeclared": false,
+        "originalHeaderStable": true,
+        "originalCallbackTupleStable": true,
+        "sameClosePromise": true,
+        "sdkOperationCancelled": false,
+        "ownerOrBudgetReset": false,
+        "nativeCleanupEstablished": false,
+        "directCloseReceiptCycleRefused": false,
+        "networkCalls": 0,
+        "signatures": 0,
+        "replacements": 0,
+        "realSigner": "DISABLED",
+        "sameProcessOnly": true,
+        "serviceDelivery": "NOT_ESTABLISHED"
+      },
+      {
+        "kind": "OFFICIAL_X402_CONTINUATION_CLOSE",
+        "version": 1,
+        "scenario": "QUEUED_BEFORE_SDK",
+        "coreVersion": "2.23.0",
+        "zodVersion": "3.25.76",
+        "clientPayloadCreations": 1,
+        "sdkHttpRequests": 2,
+        "sdkBeforeSettlementCalls": 1,
+        "verifyCalls": 1,
+        "firstSettlementCalls": 1,
+        "observerCalls": 0,
+        "continuationCalls": 0,
+        "positiveBridgeResponses": 0,
+        "positiveContinuationReplies": 0,
+        "modeledHandlerCalls": 0,
+        "continuationPhase": "PENDING",
+        "settlementState": "PENDING",
+        "closed": true,
+        "closeOutcome": "DETACHED",
+        "referencesReleased": true,
+        "active": false,
+        "firstAuthorityConsumed": true,
+        "pendingReconciliations": 0,
+        "publicationStatus": "UNKNOWN",
+        "uncertaintyRetained": true,
+        "acknowledgementDeclared": false,
+        "originalHeaderStable": true,
+        "originalCallbackTupleStable": true,
+        "sameClosePromise": true,
+        "sdkOperationCancelled": false,
+        "ownerOrBudgetReset": false,
+        "nativeCleanupEstablished": false,
+        "directCloseReceiptCycleRefused": false,
+        "networkCalls": 0,
+        "signatures": 0,
+        "replacements": 0,
+        "realSigner": "DISABLED",
+        "sameProcessOnly": true,
+        "serviceDelivery": "NOT_ESTABLISHED"
+      },
+      {
+        "kind": "OFFICIAL_X402_CONTINUATION_CLOSE",
+        "version": 1,
+        "scenario": "IN_FLIGHT_SUCCESS",
+        "coreVersion": "2.23.0",
+        "zodVersion": "3.25.76",
+        "clientPayloadCreations": 1,
+        "sdkHttpRequests": 2,
+        "sdkBeforeSettlementCalls": 2,
+        "verifyCalls": 1,
+        "firstSettlementCalls": 1,
+        "observerCalls": 1,
+        "continuationCalls": 1,
+        "positiveBridgeResponses": 1,
+        "positiveContinuationReplies": 0,
+        "modeledHandlerCalls": 0,
+        "continuationPhase": "UNKNOWN",
+        "settlementState": "SUCCEEDED",
+        "closed": true,
+        "closeOutcome": "DETACHED",
+        "referencesReleased": true,
+        "active": false,
+        "firstAuthorityConsumed": true,
+        "pendingReconciliations": 1,
+        "publicationStatus": "ACKNOWLEDGED",
+        "uncertaintyRetained": true,
+        "acknowledgementDeclared": true,
+        "originalHeaderStable": true,
+        "originalCallbackTupleStable": true,
+        "sameClosePromise": true,
+        "sdkOperationCancelled": false,
+        "ownerOrBudgetReset": false,
+        "nativeCleanupEstablished": false,
+        "directCloseReceiptCycleRefused": false,
+        "networkCalls": 0,
+        "signatures": 0,
+        "replacements": 0,
+        "realSigner": "DISABLED",
+        "sameProcessOnly": true,
+        "serviceDelivery": "NOT_ESTABLISHED"
+      },
+      {
+        "kind": "OFFICIAL_X402_CONTINUATION_CLOSE",
+        "version": 1,
+        "scenario": "DIRECT_CLOSE_RECEIPT",
+        "coreVersion": "2.23.0",
+        "zodVersion": "3.25.76",
+        "clientPayloadCreations": 1,
+        "sdkHttpRequests": 2,
+        "sdkBeforeSettlementCalls": 1,
+        "verifyCalls": 1,
+        "firstSettlementCalls": 1,
+        "observerCalls": 0,
+        "continuationCalls": 1,
+        "positiveBridgeResponses": 0,
+        "positiveContinuationReplies": 0,
+        "modeledHandlerCalls": 0,
+        "continuationPhase": "UNKNOWN",
+        "settlementState": "PENDING",
+        "closed": true,
+        "closeOutcome": "DETACHED",
+        "referencesReleased": true,
+        "active": false,
+        "firstAuthorityConsumed": true,
+        "pendingReconciliations": 0,
+        "publicationStatus": "UNKNOWN",
+        "uncertaintyRetained": true,
+        "acknowledgementDeclared": false,
+        "originalHeaderStable": true,
+        "originalCallbackTupleStable": true,
+        "sameClosePromise": true,
+        "sdkOperationCancelled": false,
+        "ownerOrBudgetReset": false,
+        "nativeCleanupEstablished": false,
+        "directCloseReceiptCycleRefused": true,
+        "networkCalls": 0,
+        "signatures": 0,
+        "replacements": 0,
+        "realSigner": "DISABLED",
+        "sameProcessOnly": true,
+        "serviceDelivery": "NOT_ESTABLISHED"
+      }
+    ],
+    "evidenceBoundary": "Actual pinned official client/resource-server/HTTP composition with trusted synthetic verifier/settlement callbacks. The direct-close-receipt case substitutes only the borrowed continuation callback after actual initial SDK composition; it performs no second SDK delegation. Handler counters model zero delivery, not real service proof.",
+    "limits": {
+      "perTestMilliseconds": 5000,
+      "managerTimeoutSeconds": 30,
+      "metadataLockSeconds": 180,
+      "stdoutCapBytes": 65536,
+      "stderrCapBytes": 1048576,
+      "compactJsonRecordCallCapBytes": 32768,
+      "formattedMetadataFileReadCapBytes": 65536,
+      "currentMetadataTotalReadCapBytes": 131072,
+      "argumentCapBytes": 32768
+    },
+    "limitations": "Observed joins, Node permissions, fetch refusal, cooperative quotas and process-group absence are not hard lifetime/cancellation/native-cleanup or OS/network guarantees. Captured native intrinsics, loader/runner/streams, opaque adapter behavior, same-UID code and trusted capabilities remain premises."
+  },
+  "review": {
+    "primarySelfImplementation": true,
+    "completeCurrentHandoffCommandTapDiagnosticsAndStderrRead": true,
+    "independentHumanApproval": false,
+    "noWorkerOrModelChange": true,
+    "noAutomationChange": true
+  },
+  "preservation": {
+    "repositoryFilesRechecked": 190,
+    "priorPrivateFilesRechecked": 449,
+    "protectedAbsences": 8,
+    "sourceAndEvidenceBeforeAfterMatched": true,
+    "authorizedSourceReplacement": "src/x402-selected-settlement-server-bridge.js",
+    "immutablePriorReference": "main bee62dd0dd5695a5e241910038af6ff640868e96 / blob 30c912807ed01debf63f742f0fea4e87658b0673",
+    "oldFailedNamespacesAndArtifactsPreserved": true,
+    "oldCompletedExperimentsOrCompleteReviewsReplayed": false,
+    "earlier267PayloadFullRehash": false,
+    "historicalOfficialEvidence": "The earlier owned-continuation report pins a 37245-byte bridge; the later wire-control report pins the 37946-byte baseline used here. Neither is repinned or presented as a current-source suite.",
+    "originalPaymentRequestAndAuthority": "Original payment/request bytes, hash, payload, requirements, context and consumed authority remain unchanged. VALIDATED possible exact-same-signed-block resend remains separate from UNKNOWN/ACKNOWLEDGED. No replacement, re-signing, resend, authority reset or failed ownership-metadata retry occurs.",
+    "localGit": "Existing HEAD, branch, empty index and 615 unrelated status rows preserved. No local stage, commit, reset, checkout or push."
+  },
+  "efficiency": {
+    "expectedTaskBytes": 2097152,
+    "taskQuotaBytes": 4194304,
+    "productionFreeSpaceFloorBytes": 10737418240,
+    "approvedStoreScratchLimitBytes": 10737418240,
+    "stricterScratchPrecheckLimitBytes": 6442450944,
+    "currentMetadataFiles": 7,
+    "currentMetadataBytes": 70241,
+    "retainedStdoutBytes": 5298,
+    "newSqliteFiles": 0,
+    "downloads": 0,
+    "installations": 0,
+    "packaging": 0,
+    "cleanup": "Only owned empty registered scratch cleaned: zero bytes.",
+    "historicalCleanup": false,
+    "predecessorPrefixFilesRead": 2,
+    "predecessorPrefixReadCapBytes": 65536,
+    "sourceSnapshots": "One exact source snapshot plus equal before/after seals, without duplicate payload arrays.",
+    "sourceAliasCopies": 0
+  },
+  "acceptance": {
+    "fullSuite": false,
+    "hostedCI": "NOT_RUN",
+    "genericOrLatestOfficialX402Conformance": "NOT_ESTABLISHED",
+    "realNetwork": false,
+    "ZenonSdk": false,
+    "SQLite": false,
+    "paymentOrCapabilitySigningOperations": 0,
+    "realSigner": "DISABLED",
+    "freshProcessRestart": false,
+    "realSamePaymentRecovery": "NOT_ESTABLISHED",
+    "providerReady": "NOT_ESTABLISHED",
+    "serviceDelivery": "NOT_ESTABLISHED",
+    "livePilot": "NOT_ESTABLISHED",
+    "production": "NO_GO"
+  },
+  "protectedTotals": {
+    "consumedAdmissions": 2,
+    "actualChainPrepare": 1,
+    "bundles": 0,
+    "nativeChainProviderQualification": 0
+  },
+  "nextFiniteWork": "Select a distinct unfinished bounded roadmap slice. This close lifecycle does not qualify live same-payment recovery, default adoption, DP runtime or release. Main/CI remains separate from local development."
+}
