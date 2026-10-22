@@ -1,0 +1,448 @@
+{
+  "schema": "zenon-x402-selected-local-result/v1",
+  "status": "PASS_SIXTEEN_SELECTED_LOCAL_COMPONENT_CASES",
+  "lane": "P1-A current-main bounded strategy and shared price policy",
+  "completedAtUTC": "2026-10-22T15:23:11.307Z",
+  "sourceReference": {
+    "repository": "edgepillar/zenon-x402-poc",
+    "baseMain": "200b16aa16c48784da44b66ec5faff2cefca0e2e",
+    "baseTree": "e2f079183a571554106b8f0e276247b6ddb55a82",
+    "currentPolicySha256": "dc935f2d06d518c0ec4cec3f20f9233b931fd8c3f35c2d6733f03f33dcab61d0",
+    "productionCodeChangedInThisSlice": false
+  },
+  "selection": {
+    "entry": "qualification/dynamic-plasma-price-policy-current-main.behavior.draft.mjs",
+    "newIntegrationCases": 2,
+    "retainedScenarioBodiesRequalifiedAgainstChangedPolicy": 14,
+    "historicalTestOrResultRewritten": false,
+    "historicalTenCaseSource": "test/dynamic-plasma-price-policy.test.js",
+    "historicalTenCaseSourceSha256": "ab6591d268744f611bd5f04f3c199ee53dcf45d871e0b89ac49c57f4981039b5",
+    "entryDerivation": "A separate copy retains all ten historical scenario bodies and guard assertions. Only its explicit price-policy byte/hash pin selects the current 15457-byte policy. The unchanged four frontier scenarios and two new strategy cases are appended.",
+    "previousSixStandalonePolicyCasesReplayed": false,
+    "reasonForRequalification": "The prior fourteen-case result bound the old 14957-byte policy, not the changed current-main policy. The six standalone elapsed-price cases did not cover this current strategy/validator integration.",
+    "caseNames": [
+      "shared instant math keeps legacy classifier and RPC boundaries",
+      "integer frontier bounds use explicit rate and advance count",
+      "bounded allocations obey fusion and difficulty budgets",
+      "receipts are fresh frozen serializable declared bindings",
+      "concrete unsigned strategy uses the real policy and base",
+      "current context rejects stale regressing and mismatched plans",
+      "validation requires the exact original selected fields",
+      "hostile records fail without traps getters or coercion",
+      "public numbers and bounded arithmetic reject unsafe values",
+      "unavailable data and non-unsigned phases grant no authority",
+      "identical origin frontier accepts sufficient pools for fusion-only and hybrid plans",
+      "same height and hash refuse changed fusion or work prices through all entry points",
+      "age one and two refuse reuse of the origin hash through all entry points",
+      "distinct hashes at age one and two preserve planned fields and no-authority labels",
+      "current bounded strategy refuses early fusion and work price jumps for fusion-only metadata",
+      "current bounded strategy refuses early fusion and work price jumps for work-only metadata"
+    ]
+  },
+  "sourceReview": {
+    "closedSourceFiles": 16,
+    "closedSourceBytes": 226758,
+    "productionFiles": 12,
+    "productionBytes": 181785,
+    "productionLiteralLocalImportEdges": 32,
+    "productionBareImports": 0,
+    "productionDynamicImports": 0,
+    "unchangedProductionImagesMatchedPriorCompleteReview": 11,
+    "priorCompleteReview": {
+      "path": "qualification/dynamic-plasma-observed-balance-deferred-material-planner.behavior.result.json",
+      "bytes": 55485,
+      "sha256": "bbc423dc92eb391d2139d31132163c1ee614a6c2fb4f34b379028b8689dfcd32"
+    },
+    "changedPolicyReviewAndSelectedResult": "qualification/dynamic-plasma-actual-advance-price-bound.local-result.json",
+    "changedPolicyReviewResultSha256": "96081dd05f9145f208b865b6359c18e822e0f25903fe4eef6ea7be1c9ef17118",
+    "reviewedBeforeLaunch": [
+      "The complete new entry derivation and two new test bodies.",
+      "The exact source, dependency, runtime, environment, storage and caller bindings.",
+      "The changed policy review and eleven unchanged production source image matches.",
+      "The one-command stock runner, joined TAP stream and failure latch."
+    ],
+    "sourcePins": [
+      {
+        "path": "src/zenon/bounded-dynamic-plasma-strategy.js",
+        "bytes": 15729,
+        "LF": 353,
+        "sha256": "7b82560bdeb25e573912090a2fe8de7b45912500a7a7c4434fe06dcf94e06d62",
+        "gitBlob": "ee85b7a4da8bf4190ae099e6bc5074059fccebbc"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-price-policy.js",
+        "bytes": 15457,
+        "LF": 427,
+        "sha256": "dc935f2d06d518c0ec4cec3f20f9233b931fd8c3f35c2d6733f03f33dcab61d0",
+        "gitBlob": "3f51ff06c3ae4189fc5e01233f1998bd1abe612c"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-compatibility.js",
+        "bytes": 7732,
+        "LF": 225,
+        "sha256": "b3989ce15e5f2e9d07b0ed035fe96bcce9f22cac93f5e497fdca5c37bf7618dd",
+        "gitBlob": "3811b748b3f905e454c8a4af4650bb7f89eb1cf2"
+      },
+      {
+        "path": "src/zenon/plasma-strategy.js",
+        "bytes": 974,
+        "LF": 32,
+        "sha256": "1c597d4e169ba8a5e6d2b7852c4ffa3a8ec9b854332fe354b9b013c36ebae093",
+        "gitBlob": "5cddc2d270aaf043e6e43145e95ffe0be3dde475"
+      },
+      {
+        "path": "src/zenon/transaction-planner.js",
+        "bytes": 22611,
+        "LF": 464,
+        "sha256": "079fe8da938e08e33a20ca1076492a829afa6fce3ae7f9b9f68d3bf4bff94233",
+        "gitBlob": "17b49a3d53974c9b3846ec6f352d6e8974bad7d3"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-required-fused-policy-adapter.js",
+        "bytes": 12024,
+        "LF": 272,
+        "sha256": "e2b693d4df9065d44ba590f4d0c8dffeb8e55187668eedfa396b4026c9905c3e",
+        "gitBlob": "b592aafd4c41461318376ea9acc1373f99317455"
+      },
+      {
+        "path": "src/canonical.js",
+        "bytes": 967,
+        "LF": 26,
+        "sha256": "0d55ddf1727cafb0dcd46df2922305568615552a4d2ae34a5c30e90b9d8d998c",
+        "gitBlob": "5367f9c72ee13017a61630e1f0cffdced21d52c4"
+      },
+      {
+        "path": "src/x402-wire.js",
+        "bytes": 39886,
+        "LF": 934,
+        "sha256": "5fba91af5a352f62d1a335c7176a45a604e2af5d92b1c4b0e53825c1f20d4e56",
+        "gitBlob": "fb060d4e349b1c31a1219a0cc137af250a8a2291"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-json-rpc-read-transport.js",
+        "bytes": 10832,
+        "LF": 283,
+        "sha256": "fd03b2ad87d16660aa61d3961c163d724d5f89cd6d4bb9c4391d739566d5e5ca",
+        "gitBlob": "0475b7ab42889f67fb030fa7344d73d8bd6957d7"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-required-fused-quote.js",
+        "bytes": 5416,
+        "LF": 133,
+        "sha256": "f5e10ff2dbfff3b6b63d87f0abadd0bb52b5d6b8fe0ead6a55fc5ea14207b730",
+        "gitBlob": "e820fd31ffde4ef77a2efa6e1fd3ed1775778726"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-observation-normalizer.js",
+        "bytes": 28398,
+        "LF": 698,
+        "sha256": "2c3f7d42ded21a5513ff26c23a00a35a53aa334f053d10930f1571a020286897",
+        "gitBlob": "c406db8471aa6c8afd812c222c673c809491cf00"
+      },
+      {
+        "path": "src/zenon/bounded-json-rpc-read-core.js",
+        "bytes": 21759,
+        "LF": 582,
+        "sha256": "10cc529bfb0676bb03dc4dad56059663f4a578b586c52f6404fc859d27d18f76",
+        "gitBlob": "3bd98a83413eb13e3bceb097d35fb874b4c030a2"
+      },
+      {
+        "path": "package.json",
+        "bytes": 1413,
+        "LF": 40,
+        "sha256": "8c9a25504fbf6f87c31cdf245a6f4eec5a88cc89c8352151dc66a577c5771ef5",
+        "gitBlob": "ec7193f6fd76f34778515079dc777594175c4c34"
+      },
+      {
+        "path": "qualification/dynamic-plasma-price-policy-frontier-binding.behavior.draft.mjs",
+        "bytes": 8745,
+        "LF": 212,
+        "sha256": "d7f672ee4464bd002e893e231dec5acc85785db2407f7df25fa601d74f972409",
+        "gitBlob": "ad7bccd414b6317885f7d8a7c90c57e53bb40279"
+      },
+      {
+        "path": "qualification/dynamic-plasma-price-policy-current-main.behavior.draft.mjs",
+        "bytes": 30005,
+        "LF": 658,
+        "sha256": "c52885178482709b221255c4bb1de335cd674c375d9a9da4508d5e49d4eaa53f",
+        "gitBlob": "d156084c0de3bcd785faa88b8fda32e03a221dd8"
+      },
+      {
+        "path": "qualification/dynamic-plasma-strategy-actual-advance.behavior.draft.mjs",
+        "bytes": 4810,
+        "LF": 80,
+        "sha256": "4c41b5108c215bfc2b6571bbe98d6cb95677b61db66b333a503cc26476a7588d",
+        "gitBlob": "917450f67d290a974c866d646606e3986160f7b7"
+      }
+    ]
+  },
+  "execution": {
+    "nativeCommands": 1,
+    "actualExits": [
+      0
+    ],
+    "complete": true,
+    "passed": 16,
+    "failed": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0,
+    "sameExactInputNativeReruns": 0,
+    "runtime": [
+      {
+        "label": "node",
+        "version": "24.19.0",
+        "platform": "darwin",
+        "architecture": "arm64",
+        "bytes": 121304480,
+        "sha256": "dbedff294bab84a0a86c04e15fbcbeb1c97ca10bef1b32b0634cd24b36f62100",
+        "identityBinding": "Prior full digest reused only after exact nine-field file identity match."
+      },
+      {
+        "label": "python",
+        "version": "3.12.14",
+        "platform": "darwin",
+        "architecture": "arm64",
+        "bytes": 18058560,
+        "sha256": "811e2679c20fd2c7413f7c5ca28ce903065eea8dadb8660f1b9379a28959a480",
+        "identityBinding": "Prior full digest reused only after exact nine-field file identity match."
+      }
+    ],
+    "launch": {
+      "envCleared": true,
+      "environmentKeyNames": [
+        "PATH",
+        "LANG",
+        "LC_ALL",
+        "TZ",
+        "PYTHONDONTWRITEBYTECODE",
+        "DP_CURRENT_OPT_IN",
+        "DP_CURRENT_CONTEXT",
+        "SPV_TASK_SCRATCH"
+      ],
+      "inlineBytes": 7527,
+      "inlineSha256": "0c6fc34a4833cc020a40d1b2b1fa63b02e2605e06d81bf6b4d2c903b37dcb3da",
+      "options": [
+        "--disallow-code-generation-from-strings",
+        "--no-addons",
+        "--no-warnings",
+        "--test-reporter=tap",
+        "--eval <reviewed source/identity guarded caller>",
+        "<fixed current-main entry>"
+      ],
+      "nodeTestRun": {
+        "isolation": "none",
+        "concurrency": false,
+        "timeoutMilliseconds": 5000,
+        "forceExit": false,
+        "watch": false
+      },
+      "initialExitSentinel": 125,
+      "nodePermissionModel": false
+    },
+    "reporter": {
+      "stockNodeTestRunner": true,
+      "stockTapReporter": true,
+      "fullUnfilteredStreamRetained": true,
+      "nativePassEventsMatchedExactly": true,
+      "sourceEndAndReporterPipelineJoined": true,
+      "TAPPlanObserved": true,
+      "plan": "1..16",
+      "sevenSummaryCountsMatched": true,
+      "stdout": {
+        "bytes": 3859,
+        "sha256": "bdda5e2123499b01397a620a64dac77da3aa7233c875e7723c7f1286ef728bfb"
+      },
+      "stderr": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "stdoutCapBytes": 65536,
+      "stderrCapBytes": 1048576
+    },
+    "sourceImagePinsMatchedBeforeAndAfter": true,
+    "sourceAliasRowsSha256": "0264e9272150b16f3aab595a028733818e81a64693fc143aafd9703c63bbeae1",
+    "sourceAliasesAfterCleanup": "Not available for fresh inspection. Recorded before/after bindings and all retained source CAS objects were independently checked.",
+    "ownedProcessGroupObservedAbsent": true,
+    "nativeLoaderRunnerStreamAndOSBehavior": "PREMISES_NOT_A_SECURITY_PROOF",
+    "timeoutBoundary": "The 5000 ms per-test and 30 s manager timeouts are not hard lifetime, cancellation, native cleanup or OS/network sandbox guarantees.",
+    "selectedResultBoundary": "These joined results establish only the exact selected local declared-data execution outcomes."
+  },
+  "newIntegrationCoverage": {
+    "entryPoints": [
+      "selectDynamicPlasmaPricePolicyFields",
+      "validateDynamicPlasmaPricePolicySelection",
+      "BoundedDynamicPlasmaStrategy.quote/apply"
+    ],
+    "declaredPercent": 10,
+    "declaredMaxMomentumAdvances": 3,
+    "originPrices": {
+      "fusionPrice": 1200,
+      "workPrice": 1200
+    },
+    "originalFullHorizonBoundPrices": {
+      "fusionPrice": 1597,
+      "workPrice": 1597
+    },
+    "earlyAgeOneInvalidPricePairs": [
+      [
+        1321,
+        1200
+      ],
+      [
+        1200,
+        1321
+      ]
+    ],
+    "actualAgeOneCeiling": 1320,
+    "coherentAgePricePairs": [
+      [
+        1,
+        1320
+      ],
+      [
+        2,
+        1452
+      ],
+      [
+        3,
+        1597
+      ]
+    ],
+    "refusedSelections": 12,
+    "coherentSelections": 18,
+    "originalQuoteAndInputPreserved": true,
+    "operationalCalls": 0,
+    "diagnostics": [
+      {
+        "kind": "P1A_CURRENT_STRATEGY_ELAPSED_BOUND",
+        "selection": 1,
+        "mode": "FUSION_ONLY",
+        "refusedSelections": 6,
+        "coherentSelections": 9,
+        "originalQuotePreserved": true,
+        "operationalCalls": 0,
+        "qualification": "DECLARED_DATA_ONLY_NOT_LIVE_DP"
+      },
+      {
+        "kind": "P1A_CURRENT_STRATEGY_ELAPSED_BOUND",
+        "selection": 2,
+        "mode": "WORK_ONLY",
+        "refusedSelections": 6,
+        "coherentSelections": 9,
+        "originalQuotePreserved": true,
+        "operationalCalls": 0,
+        "qualification": "DECLARED_DATA_ONLY_NOT_LIVE_DP"
+      }
+    ]
+  },
+  "retention": {
+    "approvedPrivateManagedRootUsed": true,
+    "newTaskExpectedBytes": 2097152,
+    "newTaskQuotaBytes": 4194304,
+    "sourceCasHits": 4,
+    "sourceCasImports": 12,
+    "all16SourceImagesAndBothCompleteStreamsRetained": true,
+    "duplicateStdoutOrZipCreated": false,
+    "independentSourceAliases": true,
+    "hardLinksUsed": false,
+    "ownedTaskState": "CLOSED",
+    "ownedTaskOutcome": "SUCCESS",
+    "ownedScratchCleanup": {
+      "decision": "CLEANED",
+      "logicalBytes": 226758,
+      "measuredPhysicalAPFSReclaim": "NOT_ESTABLISHED"
+    },
+    "historicalCleanup": false,
+    "metadataFiles": 9,
+    "metadataBytes": 60046,
+    "metadataPins": [
+      {
+        "label": "task.json",
+        "bytes": 1917,
+        "sha256": "a510b01bf7cfe65349dd281d5e17792c668fce108dae40944f0a888a3cdceb59"
+      },
+      {
+        "label": "admission.json",
+        "bytes": 13920,
+        "sha256": "878fdb773a4d741470f980fd88e5292387495da5dd728a31acbb23a66ae8e3ad"
+      },
+      {
+        "label": "cleanup.json",
+        "bytes": 179,
+        "sha256": "2c2e5bbe686b2c20447fd841000c202bf24c7009a1cc136ec7de957015caddba"
+      },
+      {
+        "label": "command receipt",
+        "bytes": 8557,
+        "sha256": "55d5629acbd523bb5fa7964587bfcfd968241f1af234b7f36fb4c6ff18dfc171"
+      },
+      {
+        "label": "handoff.json",
+        "bytes": 14699,
+        "sha256": "fa8823fe995b87f228b22c687c94e271f8a1b600c46893cc85223dd8aa006265"
+      },
+      {
+        "label": "outcome.json",
+        "bytes": 61,
+        "sha256": "5b0b52952c782e8a4e78f2d27b8dbd3045e1bc4a3dc1e8083fd7aa98e5c606cd"
+      },
+      {
+        "label": "explicit package manifest",
+        "bytes": 2733,
+        "sha256": "e0ca2377f47119e05aedba0e44060bb1cb59f30807453a83d695e32cdf615250"
+      },
+      {
+        "label": "preservation-before.json",
+        "bytes": 588,
+        "sha256": "30a5bcb3c6a74b83c2f6d929b409eb11fdbd461629c2a0ffd5b72600c6cd2599"
+      },
+      {
+        "label": "source-graph.json",
+        "bytes": 17392,
+        "sha256": "a058fddd0570eede00a5838fd39814052c3ecf215591e4b92246049f84f9d2fd"
+      }
+    ],
+    "priorPreservation": {
+      "sourceFiles": 247,
+      "privateFiles": 641,
+      "protectedAbsences": 11,
+      "sourceRowsSha256": "49a790386213794b9e898a5909ca14f9340ff6e13b127b5354fc63b11fa26da4",
+      "privateRowsSha256": "79001481931a04ab1023ca9fd87636186ed4d90fc9e792ce3ea320f37bcea05d",
+      "allPhysicalAndContentPinsMatched": true
+    },
+    "independentReadOnlyCheck": {
+      "exit": 0,
+      "allMetadataAndOwnershipRecordsRead": true,
+      "retainedCasAndCompleteStreamsRead": true,
+      "receiptAndStockArgvMatched": true,
+      "controllerToolReply": "The read-only check finished with exit 0; its oversized display was truncated. This record uses the retained full handoff plus a separate bounded task-record read. The native tests were not rerun."
+    }
+  },
+  "authorityAndEvidenceBoundary": {
+    "allowed": "Exactly sixteen selected local synthetic declared-data strategy/policy cases, using declared prices, p, height/hash, an approved managed root and the reviewed caller.",
+    "notRun": [
+      "Zenon SDK or dependency installation",
+      "Nonce candidate search or actual PoW",
+      "Keys, signatures, attestation or payment",
+      "SQL or real recovery/restart",
+      "Network or authenticated account/chain/RPC observation",
+      "Dynamic Plasma deployed parameter p or runtime behavior",
+      "Four-field, request-bound or UserSend strategy paths",
+      "Real transaction planner preparation or inclusion",
+      "Native ownership/provider qualification or READY",
+      "Hosted CI or broad default test suite"
+    ],
+    "mainOrGreenCIIsLiveProof": false,
+    "fullP1AComplete": false,
+    "pilotOrProductionAcceptance": "NOT_ESTABLISHED",
+    "protectedRealTotalsUnchanged": {
+      "consumedAdmissions": 2,
+      "actualChainPrepare": 1,
+      "bundles": 0,
+      "nativeChainOrProviderQualificationRuns": 0
+    },
+    "originalRealPaymentBytesHashAndConsumedAuthority": "PRESERVED",
+    "validatedSameSignedBlockResendVersusUnknownOrAcknowledged": "UNCHANGED_DISTINCT_BOUNDARIES"
+  }
+}
