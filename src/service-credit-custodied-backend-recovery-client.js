@@ -2,6 +2,7 @@ import { Buffer } from 'node:buffer';
 import { types as utilTypes } from 'node:util';
 import { createServiceCreditCustodiedHttpClientV3 } from './service-credit-custodied-http-client.js';
 import { openServiceCreditCustodiedSqliteHttpClientV3 } from './service-credit-custodied-sqlite-http-client.js';
+import { openServiceCreditCustodiedSqliteHttpClientV4 } from './service-credit-custodied-sqlite-http-client.js';
 import { createServiceCreditBackendOriginalOutcomeReader } from './service-credit-backend-original-outcome-reader.js';
 import { createServiceCreditCustodiedSequentialRunnerCore } from './service-credit-custodied-sequential-runner-core.js';
 import {
@@ -27,6 +28,7 @@ const SERIALIZE = serializeOriginalServiceRequestCustody;
 const SERIALIZE_INTENT = serializeOriginalServiceDispatchIntent;
 const CREATE_CLIENT = createServiceCreditCustodiedHttpClientV3;
 const OPEN_SQLITE_CLIENT = openServiceCreditCustodiedSqliteHttpClientV3;
+const OPEN_SQLITE_CLIENT_V4 = openServiceCreditCustodiedSqliteHttpClientV4;
 const CREATE_BACKEND = createServiceCreditBackendOriginalOutcomeReader;
 const CREATE_RUNNER = createServiceCreditCustodiedSequentialRunnerCore;
 const FIELDS = FREEZE([
@@ -212,7 +214,31 @@ export async function openServiceCreditCustodiedSqliteBackendSequentialRunnerV3(
   return openOwnedBackendClient(options, true, true);
 }
 
-async function openOwnedBackendClient(options, serviceDispatchEnabled, sequentialEnabled = false) {
+/**
+ * Explicit EXISTING V4 payer bindings to the same borrowed backend reader.
+ * These entries reuse the V4 client's persisted selected-grant quarantine and
+ * unchanged owned close lifecycle. Cached backend success never clears that
+ * marker or authorizes payment, signing, dispatch or delivery. There is no
+ * create fallback, migration or active/default/CLI adoption; V3 stays separate.
+ * The recovery entry exposes neither submission nor caller transport. The
+ * other two require the existing explicit trusted requestImpl capability.
+ */
+export async function openServiceCreditCustodiedSqliteBackendRecoveryClientV4(options) {
+  if (arguments.length !== 1) throw failure('INVALID_CONFIGURATION');
+  return openOwnedBackendClient(options, false, false, true);
+}
+
+export async function openServiceCreditCustodiedSqliteBackendClientV4(options) {
+  if (arguments.length !== 1) throw failure('INVALID_CONFIGURATION');
+  return openOwnedBackendClient(options, true, false, true);
+}
+
+export async function openServiceCreditCustodiedSqliteBackendSequentialRunnerV4(options) {
+  if (arguments.length !== 1) throw failure('INVALID_CONFIGURATION');
+  return openOwnedBackendClient(options, true, true, true);
+}
+
+async function openOwnedBackendClient(options, serviceDispatchEnabled, sequentialEnabled = false, persistentCustody = false) {
   let client = null, backend = null, config = null;
   try {
     config = exact(options, serviceDispatchEnabled ? SQLITE_DISPATCH_FIELDS : SQLITE_FIELDS);
@@ -222,7 +248,8 @@ async function openOwnedBackendClient(options, serviceDispatchEnabled, sequentia
     }
     const selectedGrantId = KEY({ grantId: config.selectedGrantId, requestId: 'scope' }).grantId;
     backend = CREATE_BACKEND({ store: config.backendStore, admittedGrantId: selectedGrantId });
-    client = OPEN_SQLITE_CLIENT({
+    const OPEN = persistentCustody ? OPEN_SQLITE_CLIENT_V4 : OPEN_SQLITE_CLIENT;
+    client = OPEN({
       databasePath: config.databasePath,
       allowedRoot: config.allowedRoot,
       fundingResourceUrl: config.fundingResourceUrl,
@@ -234,7 +261,7 @@ async function openOwnedBackendClient(options, serviceDispatchEnabled, sequentia
     const connected = connectClientBackend(
       client, backend, selectedGrantId, 'PAYER_OWNED_BACKEND_BORROWED', serviceDispatchEnabled,
     );
-    const result = sequentialEnabled ? connectSequentialBackendClient(connected, selectedGrantId) : connected;
+    const result = sequentialEnabled ? connectSequentialBackendClient(connected, selectedGrantId, persistentCustody) : connected;
     client = null;
     backend = null;
     return result;
@@ -248,7 +275,7 @@ async function openOwnedBackendClient(options, serviceDispatchEnabled, sequentia
   }
 }
 
-function connectSequentialBackendClient(client, selectedGrantId) {
+function connectSequentialBackendClient(client, selectedGrantId, persistentCustody = false) {
   const ROOT_SNAPSHOT = client.snapshot;
   const ROOT_CLOSE = client.close;
   const ROOT_ORIGINAL = client.readOriginal;
@@ -260,7 +287,7 @@ function connectSequentialBackendClient(client, selectedGrantId) {
     snapshot: () => ROOT_SNAPSHOT().client.client,
     close: ROOT_CLOSE,
     selectedGrantId,
-    storeOwnership: 'OWNED_EXISTING_V3_DISPATCH_INTENT',
+    storeOwnership: persistentCustody ? 'OWNED_EXISTING_V4_CUSTODY_QUARANTINE' : 'OWNED_EXISTING_V3_DISPATCH_INTENT',
   });
   const RUNNER_SNAPSHOT = runner.snapshot;
   client = null;
