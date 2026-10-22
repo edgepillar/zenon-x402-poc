@@ -1,6 +1,7 @@
 import {
   createServiceCreditCustodiedHttpClient,
   createServiceCreditCustodiedHttpClientV3,
+  createServiceCreditCustodiedHttpClientV4,
 } from './service-credit-custodied-http-client.js';
 import {
   snapshotOriginalServiceRequestCustodyKey,
@@ -14,6 +15,7 @@ import {
 const FREEZE = Object.freeze;
 const CREATE_CLIENT = createServiceCreditCustodiedHttpClient;
 const CREATE_CLIENT_V3 = createServiceCreditCustodiedHttpClientV3;
+const CREATE_CLIENT_V4 = createServiceCreditCustodiedHttpClientV4;
 const CREATE_CORE = createServiceCreditCustodiedSequentialRunnerCore;
 const KEY = snapshotOriginalServiceRequestCustodyKey;
 const CONFIG_FIELDS = FREEZE([
@@ -65,12 +67,24 @@ export function createServiceCreditCustodiedSequentialRunnerV3(configuration) {
   if (arguments.length !== 1) throw failure('INVALID_CONFIGURATION');
   return createRunner(configuration, true);
 }
-function createRunner(configuration, dispatchIntentEnabled) {
+/**
+ * Explicit V4 client/owner binding, retaining the same one-shot queue and close
+ * core. A persisted quarantine refuses the child submission before transport;
+ * attempted still counts child calls, not HTTP requests or delivery. Detected
+ * uncertainty is persisted only by the actual V4 owner. No store close,
+ * migration, resend, authority reset or default-path adoption is introduced.
+ */
+export function createServiceCreditCustodiedSequentialRunnerV4(configuration) {
+  if (arguments.length !== 1) throw failure('INVALID_CONFIGURATION');
+  return createRunner(configuration, true, true);
+}
+function createRunner(configuration, dispatchIntentEnabled, persistentCustody = false) {
   let config, selected, child;
   try {
     config = exact(configuration, CONFIG_FIELDS);
     selected = KEY({ grantId: config.selectedGrantId, requestId: 'scope' });
-    child = (dispatchIntentEnabled ? CREATE_CLIENT_V3 : CREATE_CLIENT)(config);
+    child = (persistentCustody ? CREATE_CLIENT_V4
+      : dispatchIntentEnabled ? CREATE_CLIENT_V3 : CREATE_CLIENT)(config);
   } catch {
     throw failure('INVALID_CONFIGURATION');
   }

@@ -4,6 +4,7 @@ import { types as utilTypes } from 'node:util';
 import {
   openServiceCreditCustodiedSqliteHttpClient,
   openServiceCreditCustodiedSqliteHttpClientV3,
+  openServiceCreditCustodiedSqliteHttpClientV4,
 } from './service-credit-custodied-sqlite-http-client.js';
 import {
   snapshotOriginalServiceRequestCustodyPolicy,
@@ -39,6 +40,7 @@ const IS_ABSOLUTE = isAbsolute;
 const RESOLVE = resolve;
 const OPEN_OWNED = openServiceCreditCustodiedSqliteHttpClient;
 const OPEN_OWNED_V3 = openServiceCreditCustodiedSqliteHttpClientV3;
+const OPEN_OWNED_V4 = openServiceCreditCustodiedSqliteHttpClientV4;
 const CREATE_CORE = createServiceCreditCustodiedSequentialRunnerCore;
 const POLICY = snapshotOriginalServiceRequestCustodyPolicy;
 const KEY = snapshotOriginalServiceRequestCustodyKey;
@@ -116,7 +118,19 @@ export async function openServiceCreditCustodiedSqliteSequentialRunnerV3(configu
   if (arguments.length !== 1) throw failure('INVALID_CONFIGURATION');
   return openRunner(configuration, true);
 }
-async function openRunner(configuration, dispatchIntentEnabled) {
+/**
+ * Explicit existing-store V4 connection through the actual owned V4 HTTP
+ * client. The queue, one-shot receipt and close machinery are reused unchanged;
+ * only the additional ownership label is accepted by the shared core. Existing
+ * scoped recovery reads/plans remain metadata, never resend or payment authority.
+ * A released DB slot does not clear persisted quarantine or child uncertainty.
+ * No create fallback, migration, default runner adoption or real restart proof.
+ */
+export async function openServiceCreditCustodiedSqliteSequentialRunnerV4(configuration) {
+  if (arguments.length !== 1) throw failure('INVALID_CONFIGURATION');
+  return openRunner(configuration, true, true);
+}
+async function openRunner(configuration, dispatchIntentEnabled, persistentCustody = false) {
 
   let input, policy, selected;
   try {
@@ -153,7 +167,8 @@ async function openRunner(configuration, dispatchIntentEnabled) {
   // The actual owner's ACQUISITION_HELD/RESOURCE_HELD and other refusals retain
   // their original meaning. An absent returned root is not ours to release.
   try {
-    root = (dispatchIntentEnabled ? OPEN_OWNED_V3 : OPEN_OWNED)(input);
+    root = (persistentCustody ? OPEN_OWNED_V4
+      : dispatchIntentEnabled ? OPEN_OWNED_V3 : OPEN_OWNED)(input);
   } finally {
     input = null;
     policy = null;
@@ -175,7 +190,8 @@ async function openRunner(configuration, dispatchIntentEnabled) {
       snapshot: () => ROOT_SNAPSHOT().client,
       close: ROOT_CLOSE,
       selectedGrantId,
-      storeOwnership: dispatchIntentEnabled ? 'OWNED_EXISTING_V3_DISPATCH_INTENT' : 'OWNED_EXISTING_V2',
+      storeOwnership: persistentCustody ? 'OWNED_EXISTING_V4_CUSTODY_QUARANTINE'
+        : dispatchIntentEnabled ? 'OWNED_EXISTING_V3_DISPATCH_INTENT' : 'OWNED_EXISTING_V2',
     });
     const RUNNER_SNAPSHOT = runner.snapshot;
 

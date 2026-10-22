@@ -60,7 +60,8 @@ export function createServiceCreditCustodiedSequentialRunnerCore(configuration) 
         || typeof config.close !== 'function' || IS_PROXY(config.close)
         || (config.storeOwnership !== 'BORROWED'
           && config.storeOwnership !== 'OWNED_EXISTING_V2'
-          && config.storeOwnership !== 'OWNED_EXISTING_V3_DISPATCH_INTENT')) {
+          && config.storeOwnership !== 'OWNED_EXISTING_V3_DISPATCH_INTENT'
+          && config.storeOwnership !== 'OWNED_EXISTING_V4_CUSTODY_QUARANTINE')) {
       throw failure('INVALID_CONFIGURATION');
     }
     selected = KEY({ grantId: config.selectedGrantId, requestId: 'scope' });
