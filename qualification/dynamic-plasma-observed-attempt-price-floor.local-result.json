@@ -1,0 +1,507 @@
+{
+  "schemaVersion": 1,
+  "scope": "OCT22_P1A_OBSERVED_ORIGINAL_QUOTE_ATTEMPT_LOWER_CLAMP",
+  "status": "THREE_SELECTED_LOCAL_DECLARED_DATA_CONSUMER_CASES_PASS",
+  "recordedDate": "2026-10-22",
+  "selection": {
+    "sourceInputMainCommit": "aac8a5af70273401dc89b92c21954b494d26a40c",
+    "sourceInputMainTree": "9fa90b9c000bdce56a5c7c7695b393724bed7816",
+    "roadmapLane": "P1-A bounded Dynamic Plasma quote/price/resource policy",
+    "finiteSlice": "Propagate the already implemented elapsed-price lower clamp through the real v3 observed-balance original-quote attempt, its captured reader, collector and two existing closed JSON-RPC DATA wires.",
+    "notANewDefectClaim": "Missing retained coverage does not establish novelty. No new application defect is claimed or fixed here.",
+    "primarySelfImplementation": true,
+    "workerDispatches": 0,
+    "modelSessionAutomationChanges": 0,
+    "newCaseNames": [
+      "observed attempt holds a too-fast fusion decline before creating any work request",
+      "observed attempt holds a too-fast work-price decline before creating any work request",
+      "observed attempt accepts the exact lower clamp with the original quote and acknowledgement"
+    ],
+    "previousCoverageNotRepeated": [
+      {
+        "path": "qualification/dynamic-plasma-elapsed-price-floor.local-result.json",
+        "sha256": "0581497e5a047a952eb5a83451ad7de80e6313ce6b92f517f254d6b6b359e4e9",
+        "retained": "seven direct/legacy SPI downward-clamp cases on changed policy; not repeated"
+      },
+      {
+        "path": "qualification/dynamic-plasma-observed-balance-user-send-attempt.behavior.result.json",
+        "sha256": "736f8d47efee381f773a3bccfa3983a9ff982c6354b9edc55dc66a765f0515b3",
+        "retained": "18 original v3 attempt cases and retained suite on prior graph; not imported or repeated"
+      }
+    ],
+    "priorAttemptSourceChanges": [
+      {
+        "path": "src/zenon/dynamic-plasma-price-policy.js",
+        "current": "eba3225c4d26cbb6e0be575ac4fd5073bc8b0c4454eb51e2bea4d91856d0c65e",
+        "prior": "41e2e2044597cfa69c5adca292bcd762a189076be1cd939bec10798d7e35c52b",
+        "priorBytes": 14957,
+        "currentBytes": 16224
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-user-send-fixed-work.js",
+        "current": "4ee83870df0b25c34d35c0f0d0ceb894ca9dab8c047f81b34a48dd816f1fbf38",
+        "prior": null,
+        "currentBytes": 3475
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-user-send-work-binding.js",
+        "current": "79eba29a05427128ae3a12346fd3ee7cbaa526d6f39eb36ed58d388640638266",
+        "prior": "218b4391c97e4adde905415e20ec0e2015fca98643db85b6efd682aa3b5c5681",
+        "priorBytes": 4522,
+        "currentBytes": 1940
+      }
+    ]
+  },
+  "implementation": {
+    "changedApplicationFiles": 0,
+    "changedDependencies": 0,
+    "newEntry": {
+      "path": "qualification/dynamic-plasma-observed-attempt-price-floor.behavior.draft.mjs",
+      "bytes": 18012,
+      "LF": 376,
+      "sha256": "8b3f4615eab70bc4ba7eab0bc0efae3d0548356354e63471807524e10abced97",
+      "gitBlob": "593e640f4df24d7261061686d56914fdad5d13ef"
+    },
+    "newTestCodeOnly": true,
+    "closedStageBodies": "quote(inputv3) then createWorkRequest(inputv3); no assembly, fixed-nonce/key validation or material producer body is admitted.",
+    "heldGuardProbes": "After each price refusal the same instance refuses quote/work/assemble/validate facade calls before inspecting hostile inputs. These are guard probes, not admitted assembly or validation stages.",
+    "boundResource": "Each case retains one original quote and one existing account wire plus the same two DP wires. Six synthetic account exchanges and 24 synthetic DP exchanges occur per case. Restoring DATA never reopens a held attempt.",
+    "priceOracle": {
+      "originFusionPrice": 2000,
+      "originWorkPrice": 2000,
+      "maxPriceChangePercent": 10,
+      "quotedMaximumAdvances": 2,
+      "actuallyElapsedAdvances": 1,
+      "exactLowerEdge": 1800,
+      "refusedOneBelowEdge": 1799,
+      "originalReservedUpperPrices": {
+        "fusionPrice": 2420,
+        "workPrice": 2420
+      },
+      "selected": {
+        "fusedPlasma": 0,
+        "difficulty": 76230000
+      },
+      "basePlasma": 21000,
+      "originalAcknowledgementHeight": 100,
+      "currentDeclaredPriceHeight": 101
+    },
+    "successfulControl": "The exact 1800 lower edge returns one frozen pre-nonce work-request DATA record using the original quote, original 100-height acknowledgement, zero hash/nonce placeholders, and empty publicKey/signature. A second work request refuses without more reads.",
+    "negativeControls": "Independent 1799 fusion and work-price declines reject despite sufficient original resource reservation. Both attempts permanently hold; no quote refresh, wire recreation, replacement material or reset is attempted."
+  },
+  "source": {
+    "graph": [
+      {
+        "path": "package.json",
+        "bytes": 1413,
+        "LF": 40,
+        "sha256": "8c9a25504fbf6f87c31cdf245a6f4eec5a88cc89c8352151dc66a577c5771ef5",
+        "gitBlob": "ec7193f6fd76f34778515079dc777594175c4c34"
+      },
+      {
+        "path": "src/canonical.js",
+        "bytes": 967,
+        "LF": 26,
+        "sha256": "0d55ddf1727cafb0dcd46df2922305568615552a4d2ae34a5c30e90b9d8d998c",
+        "gitBlob": "5367f9c72ee13017a61630e1f0cffdced21d52c4"
+      },
+      {
+        "path": "src/x402-wire.js",
+        "bytes": 39886,
+        "LF": 934,
+        "sha256": "5fba91af5a352f62d1a335c7176a45a604e2af5d92b1c4b0e53825c1f20d4e56",
+        "gitBlob": "fb060d4e349b1c31a1219a0cc137af250a8a2291"
+      },
+      {
+        "path": "src/zenon/bounded-dynamic-plasma-strategy.js",
+        "bytes": 15729,
+        "LF": 353,
+        "sha256": "7b82560bdeb25e573912090a2fe8de7b45912500a7a7c4434fe06dcf94e06d62",
+        "gitBlob": "ee85b7a4da8bf4190ae099e6bc5074059fccebbc"
+      },
+      {
+        "path": "src/zenon/bounded-json-rpc-read-core.js",
+        "bytes": 21759,
+        "LF": 582,
+        "sha256": "10cc529bfb0676bb03dc4dad56059663f4a578b586c52f6404fc859d27d18f76",
+        "gitBlob": "3bd98a83413eb13e3bceb097d35fb874b4c030a2"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-account-frontier-read.js",
+        "bytes": 7417,
+        "LF": 152,
+        "sha256": "283209685a41aed5647c87e33d046d1f81b3a6820ea6ea307c11d2f99b91020d",
+        "gitBlob": "6fbb894a4db5db15e4ded168fd663eeb24898bf8"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-account-state-read-transport.js",
+        "bytes": 3632,
+        "LF": 74,
+        "sha256": "9aa818dabdacf0baec60ca570e854cc8a327e554ba5e5a76c670eb5ed02b29b8",
+        "gitBlob": "751a4b8c5a0c42e1d2b0a47af9d2ef7264229821"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-compatibility.js",
+        "bytes": 7732,
+        "LF": 225,
+        "sha256": "b3989ce15e5f2e9d07b0ed035fe96bcce9f22cac93f5e497fdca5c37bf7618dd",
+        "gitBlob": "3811b748b3f905e454c8a4af4650bb7f89eb1cf2"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-json-rpc-read-transport.js",
+        "bytes": 10832,
+        "LF": 283,
+        "sha256": "fd03b2ad87d16660aa61d3961c163d724d5f89cd6d4bb9c4391d739566d5e5ca",
+        "gitBlob": "0475b7ab42889f67fb030fa7344d73d8bd6957d7"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-observation-collector.js",
+        "bytes": 38492,
+        "LF": 949,
+        "sha256": "6bb665dd97e4b262941ed11fb7a9fb5c6d7a162004a39fcbfbfa8cd7b3f82d98",
+        "gitBlob": "171a49f29379866ed111031d15423634ac2d17b4"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-observation-normalizer.js",
+        "bytes": 28398,
+        "LF": 698,
+        "sha256": "2c3f7d42ded21a5513ff26c23a00a35a53aa334f053d10930f1571a020286897",
+        "gitBlob": "c406db8471aa6c8afd812c222c673c809491cf00"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-observed-balance-user-send-attempt.js",
+        "bytes": 7377,
+        "LF": 146,
+        "sha256": "5111ef500bf33c19113f7ffabadc8980792bc9b5fa388cf6095a3f89a5f69e7a",
+        "gitBlob": "e81cf35120457aa520036042899ccd43bf3d1835"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-observed-balance-user-send-read-adapter.js",
+        "bytes": 15496,
+        "LF": 293,
+        "sha256": "0018c76c0e6bee0d0dbcd771613701162e3609b2dcebc36918c2092e3d6da432",
+        "gitBlob": "d49db75ceb95f04016e7957e34af72e4bf2357c9"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-observed-user-send-adapter.js",
+        "bytes": 8149,
+        "LF": 180,
+        "sha256": "8526519aa6bf5006c572447127680d3cc871ee4eee1b9046b4ea09f9ad9e1653",
+        "gitBlob": "bbda0ebf5a6d4d21f159f31304165810ebd89a77"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-observed-user-send-subject.js",
+        "bytes": 5105,
+        "LF": 104,
+        "sha256": "bbcc1d718bcb1353f46e0650723e35c218db94754328103d4bce1d5765e13cd8",
+        "gitBlob": "5e29c6d70c965a4d72c0902504e57dae852a6223"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-price-policy.js",
+        "bytes": 16224,
+        "LF": 444,
+        "sha256": "eba3225c4d26cbb6e0be575ac4fd5073bc8b0c4454eb51e2bea4d91856d0c65e",
+        "gitBlob": "649dd09b60236b43c91d22e34b76f71f4b661361"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-required-fused-policy-adapter.js",
+        "bytes": 12024,
+        "LF": 272,
+        "sha256": "e2b693d4df9065d44ba590f4d0c8dffeb8e55187668eedfa396b4026c9905c3e",
+        "gitBlob": "b592aafd4c41461318376ea9acc1373f99317455"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-required-fused-quote.js",
+        "bytes": 5416,
+        "LF": 133,
+        "sha256": "f5e10ff2dbfff3b6b63d87f0abadd0bb52b5d6b8fe0ead6a55fc5ea14207b730",
+        "gitBlob": "e820fd31ffde4ef77a2efa6e1fd3ed1775778726"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-user-send-assembly.js",
+        "bytes": 7772,
+        "LF": 162,
+        "sha256": "05012a2a983ceca018674c4d1f63823f3f7ed53b0970a4b4bd486c4278832b04",
+        "gitBlob": "a0537856f6692d278c9043ab9c1c734d1bde61ba"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-user-send-balance-read.js",
+        "bytes": 7542,
+        "LF": 144,
+        "sha256": "ae1f3e5d309be0dc196fb6b35324d4c8287345b50a108d5030c1058645d2ed39",
+        "gitBlob": "f629aca2410dfd194fd73d3a651e624baa633386"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-user-send-fixed-work.js",
+        "bytes": 3475,
+        "LF": 77,
+        "sha256": "4ee83870df0b25c34d35c0f0d0ceb894ca9dab8c047f81b34a48dd816f1fbf38",
+        "gitBlob": "4ce2a790df84c77bc76615e5eebc309ecd2868ac"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-user-send-key-binding.js",
+        "bytes": 4237,
+        "LF": 91,
+        "sha256": "37ad7e74b038801297e4bffb0cb8ba92cbd79009ed32c4ae5b134fe2cb154be2",
+        "gitBlob": "c366f0fee4132604b40604547fe22f1bc1dba65d"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-user-send-work-binding.js",
+        "bytes": 1940,
+        "LF": 42,
+        "sha256": "79eba29a05427128ae3a12346fd3ee7cbaa526d6f39eb36ed58d388640638266",
+        "gitBlob": "a329d521458a5c5b6dbc87194d91d4165d5e759c"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-user-send-work-input.js",
+        "bytes": 2853,
+        "LF": 59,
+        "sha256": "2ff9c089e5903c059746d0a1c38688a2849f94d04d429279811fbbfbb40450a4",
+        "gitBlob": "dad4febf4ef6f09216640245c7e3805e01ad0127"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-user-send-work-request.js",
+        "bytes": 2564,
+        "LF": 50,
+        "sha256": "bc66c7d629eae230c46f62c88fa97960860d94b5d65d3c5611612ccae13fe9ce",
+        "gitBlob": "d4e9731b0af82a892226c2817e9d5a5273b39599"
+      },
+      {
+        "path": "src/zenon/plasma-strategy.js",
+        "bytes": 974,
+        "LF": 32,
+        "sha256": "1c597d4e169ba8a5e6d2b7852c4ffa3a8ec9b854332fe354b9b013c36ebae093",
+        "gitBlob": "5cddc2d270aaf043e6e43145e95ffe0be3dde475"
+      },
+      {
+        "path": "src/zenon/transaction-planner.js",
+        "bytes": 22611,
+        "LF": 464,
+        "sha256": "079fe8da938e08e33a20ca1076492a829afa6fce3ae7f9b9f68d3bf4bff94233",
+        "gitBlob": "17b49a3d53974c9b3846ec6f352d6e8974bad7d3"
+      },
+      {
+        "path": "qualification/dynamic-plasma-observed-attempt-price-floor.behavior.draft.mjs",
+        "bytes": 18012,
+        "LF": 376,
+        "sha256": "8b3f4615eab70bc4ba7eab0bc0efae3d0548356354e63471807524e10abced97",
+        "gitBlob": "593e640f4df24d7261061686d56914fdad5d13ef"
+      }
+    ],
+    "fileCount": 28,
+    "bytes": 318028,
+    "all27ExistingFileGitBlobsMatchPinnedMain": true,
+    "literalNonBuiltinEdges": 62,
+    "externalPackages": 0,
+    "oldTestEntriesImported": 0,
+    "allLiteralSourceEdgesBoundToGraph": true,
+    "noDynamicEvaluationOrDependencyExpansion": true,
+    "currentPhysicalAndContentPinsRecheckedBeforeAfter": true,
+    "completeRetainedDependencyReviewReusedOnlyAfterPinChecks": true,
+    "newEntryReadCompletelyBeforeNativeLaunch": true
+  },
+  "qualification": {
+    "passNames": [
+      "observed attempt holds a too-fast fusion decline before creating any work request",
+      "observed attempt holds a too-fast work-price decline before creating any work request",
+      "observed attempt accepts the exact lower clamp with the original quote and acknowledgement"
+    ],
+    "counts": {
+      "tests": 3,
+      "suites": 0,
+      "pass": 3,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "nativeNodeCommands": 1,
+    "sameInputNativeReruns": 0,
+    "oldTestReruns": 0,
+    "fullSelectedEntryWithoutNameOrSkipFilter": true,
+    "actualExit": 0,
+    "outputComplete": true,
+    "reason": null,
+    "scratchScanRetries": 0,
+    "allNamedTAPCountsAndThreeDiagnosticObjectsMatched": true,
+    "stdout": {
+      "bytes": 2081,
+      "sha256": "f473fb93492b4985d883c76fe317ce7f23a17e8492d849863065e83713748a86"
+    },
+    "stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "fullStdoutRetainedOnceInProtectedCAS": true,
+    "duplicatePublicStdoutOrZipCreated": false,
+    "runtime": {
+      "node": "24.19.0",
+      "platform": "darwin",
+      "arch": "arm64",
+      "binaryBytes": 121304480,
+      "binarySha256": "dbedff294bab84a0a86c04e15fbcbeb1c97ca10bef1b32b0634cd24b36f62100",
+      "previousFullRuntimeDigestReusedOnlyAfterExactNineFieldPhysicalIdentityCheck": true
+    },
+    "launch": {
+      "entry": "qualification/dynamic-plasma-observed-attempt-price-floor.behavior.draft.mjs",
+      "applicationEnvironmentCleared": true,
+      "fsReadGrants": 1,
+      "fsReadScope": "owned staged source tree only",
+      "fsWriteChildWorkerAddonGrants": 0,
+      "stringCodeGenerationDisabled": true,
+      "noAddons": true,
+      "unhandledRejections": "strict",
+      "reporter": "tap",
+      "perTestTimeoutMs": 5000,
+      "managerRequestedTimeoutSeconds": 30,
+      "metadataLeaseWaitSeconds": 180,
+      "stdoutCapBytes": 65536,
+      "stderrCapBytes": 1048576
+    },
+    "reporterDurationMs": 52.312166,
+    "durationMeaning": "Node TAP reporter time only, not managed preparation/metadata/retention time, a latency bound or benchmark.",
+    "observedCounters": {
+      "syntheticAccountReadExchanges": 18,
+      "syntheticDPReadExchanges": 72,
+      "returnedWorkRequestDataRecords": 1,
+      "admittedAssemblyStages": 0,
+      "workProducerCalls": 0,
+      "keysGenerated": 0,
+      "cryptographicSignatures": 0,
+      "SDKCalls": 0,
+      "SQLiteFiles": 0,
+      "networkCalls": 0,
+      "actualChainPrepare": 0
+    },
+    "diagnostics": [
+      {
+        "kind": "DP_OBSERVED_ATTEMPT_PRICE_FLOOR",
+        "version": 1,
+        "scenario": 1,
+        "accountReads": 6,
+        "dpReads": 24,
+        "stageCycles": 2,
+        "workRequests": 0,
+        "held": true,
+        "originalQuoteStable": true,
+        "originalAcknowledgementHeight": 100,
+        "selectedDifficulty": 76230000,
+        "workProducerCalls": 0,
+        "assemblyCalls": 0,
+        "keys": 0,
+        "signatures": 0,
+        "networkCalls": 0,
+        "realPrepare": 0,
+        "authority": "NONE",
+        "qualification": "DECLARED_DATA_CONSUMER_ONLY_NOT_LIVE_DP"
+      },
+      {
+        "kind": "DP_OBSERVED_ATTEMPT_PRICE_FLOOR",
+        "version": 1,
+        "scenario": 2,
+        "accountReads": 6,
+        "dpReads": 24,
+        "stageCycles": 2,
+        "workRequests": 0,
+        "held": true,
+        "originalQuoteStable": true,
+        "originalAcknowledgementHeight": 100,
+        "selectedDifficulty": 76230000,
+        "workProducerCalls": 0,
+        "assemblyCalls": 0,
+        "keys": 0,
+        "signatures": 0,
+        "networkCalls": 0,
+        "realPrepare": 0,
+        "authority": "NONE",
+        "qualification": "DECLARED_DATA_CONSUMER_ONLY_NOT_LIVE_DP"
+      },
+      {
+        "kind": "DP_OBSERVED_ATTEMPT_PRICE_FLOOR",
+        "version": 1,
+        "scenario": 3,
+        "accountReads": 6,
+        "dpReads": 24,
+        "stageCycles": 2,
+        "workRequests": 1,
+        "held": false,
+        "originalQuoteStable": true,
+        "originalAcknowledgementHeight": 100,
+        "selectedDifficulty": 76230000,
+        "workProducerCalls": 0,
+        "assemblyCalls": 0,
+        "keys": 0,
+        "signatures": 0,
+        "networkCalls": 0,
+        "realPrepare": 0,
+        "authority": "NONE",
+        "qualification": "DECLARED_DATA_CONSUMER_ONLY_NOT_LIVE_DP"
+      }
+    ]
+  },
+  "independentReview": {
+    "fullMetadataFilesRead": 9,
+    "metadataBytesRead": 60761,
+    "all30ProtectedObjectsTheirLedgersCreatorsAndTaskReferencesChecked": true,
+    "receiptSourceLaunchStreamsAndCompleteHandoffIndependentlyMatched": true,
+    "initialReadOnlyCheckerRefusal": "An outcome checker initially compared the manager ledger's two-integer dev/inode identity to a nine-field map. Only that comparison was corrected to the unchanged manager schema; strict nine-field/content file pins remained separately required. No Node case or closed evidence was rewritten or repeated.",
+    "readOnlyCheckerCorrectionChangedNoTestOutcome": true
+  },
+  "preservation": {
+    "otherRepositoryArtifactsChecked": 262,
+    "previousPrivateEvidenceFilesChecked": 795,
+    "protectedAbsences": 16,
+    "allPhysicalAndContentPinsMatched": true,
+    "oldFailuresAndStoppedDraftsRetained": true,
+    "nonceSearchDraftUnchangedUnexecuted": true,
+    "originalPaymentRequestBytesAndConsumedAuthorityUnchanged": true,
+    "localHeadAndIndexUntouched": true
+  },
+  "retention": {
+    "approvedExistingPrivateManagerAndRootUsed": true,
+    "mountAndStorageMetadataIdentityAndPolicyMatched": true,
+    "managerUnchanged": true,
+    "productionFreeSpaceFloorBytes": 10737418240,
+    "expectedTaskBytes": 2097152,
+    "taskQuotaBytes": 2097152,
+    "ownedTaskState": "CLOSED",
+    "ownedTaskOutcome": "SUCCESS",
+    "registeredDisposableSourceBytesCleaned": 318028,
+    "scratchObservedAbsent": true,
+    "ownedProcessGroupObservedAbsent": true,
+    "CASSourceHits": 16,
+    "CASSourceImports": 12,
+    "allInputsOutputsAndFailureHistoryRetained": true,
+    "historicalCleanup": false,
+    "cleanupRecoverability": "Only reproducible registered source clones were removed; their original source bytes and complete result streams remain protected in CAS."
+  },
+  "hostedCI": {
+    "status": "NOT_RUN_NOT_GREEN",
+    "newWorkflowOrDispatches": 0,
+    "baseHeadChecks": 0,
+    "baseHeadStatuses": 0,
+    "baseHeadRuns": 0,
+    "localResultIsNotHostedCI": true
+  },
+  "publicationAtRecording": "NOT_YET_PUBLISHED",
+  "nonclaims": [
+    "Selected synthetic declared-DATA consumer consistency only, not a full repository suite, authentic RPC/account state, ancestry, ABA exclusion, funds, real runtime p/governance, deployed DP, work, signing, inclusion, provider READY, restart, service delivery or pilot acceptance.",
+    "The real application modules are exercised using test-owned literal JSON replies and native Promises. Fixed public-key/signature-looking response bytes are DATA, not generated or verified cryptographic signatures. No SDK, native RPC/HTTPS host, wallet, signer, material/key producer, nonce search, installation, build or real payment runs.",
+    "One returned pre-nonce work-request DATA record is not a produced nonce, prepared/signed block, actual chain PREPARE, permission to sign or a replacement for preserved original payment bytes.",
+    "Native loader/runner/streams/crypto/Promise/OS behavior remains a premise. Per-test and manager timeout values, Node permission flags, joined results and observed process absence are not hard lifetime, cancellation, quota, OS/network sandbox or native cleanup guarantees.",
+    "The existing VALIDATED possible exact-same-signed-block resend path remains distinct from UNKNOWN/ACKNOWLEDGED. No authority, original context, uncertainty or publication status is reset.",
+    "Main/CI remains separate from local development. This record establishes no hosted CI pass, deployment or activation."
+  ],
+  "protectedTotals": {
+    "consumedAdmissions": 2,
+    "actualPrepare": 1,
+    "bundles": 0,
+    "nativeQualificationRuns": 0,
+    "localNodeValidationReportedSeparately": true
+  },
+  "readiness": {
+    "offlineScopedDevelopment": "PROGRESS_SELECTED_LOCAL_CONSUMER_PROOF",
+    "production": "NO_GO",
+    "realSigner": "DISABLED"
+  }
+}
