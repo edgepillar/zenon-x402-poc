@@ -1,11 +1,12 @@
 import { types as utilTypes } from 'node:util';
+import { Buffer } from 'node:buffer';
 import { createRequestBoundDynamicPlasmaObservationCollector } from './dynamic-plasma-observation-collector.js';
 import { createZenonAccountStateReadTransport } from './dynamic-plasma-account-state-read-transport.js';
 import { decodeZenonAccountFrontierReadResult } from './dynamic-plasma-account-frontier-read.js';
 import { createZenonUserSendObservationInput, snapshotZenonUserSendPolicyBinding } from './transaction-planner.js';
 import { validateZenonUserSendBalanceRead } from './dynamic-plasma-user-send-balance-read.js';
 import { ObservedDynamicPlasmaUserSendAdapter } from './dynamic-plasma-observed-user-send-adapter.js';
-import { encodeObservedZenonUnsignedOriginalQuoteCheckpoint } from './dynamic-plasma-observed-original-checkpoint.js';
+import { encodeObservedZenonUnsignedOriginalQuoteCheckpoint, validateObservedZenonUnsignedOriginalQuoteCheckpoint } from './dynamic-plasma-observed-original-checkpoint.js';
 
 const COLLECTOR = createRequestBoundDynamicPlasmaObservationCollector;
 const ACCOUNT_WIRE = createZenonAccountStateReadTransport;
@@ -14,6 +15,8 @@ const REQUEST = createZenonUserSendObservationInput;
 const BINDING = snapshotZenonUserSendPolicyBinding;
 const BALANCE = validateZenonUserSendBalanceRead;
 const CHECKPOINT = encodeObservedZenonUnsignedOriginalQuoteCheckpoint;
+const READ_CHECKPOINT = validateObservedZenonUnsignedOriginalQuoteCheckpoint;
+const byteLength = Buffer.byteLength;
 const STAGES = Object.freeze({
   quote: ObservedDynamicPlasmaUserSendAdapter.prototype.quote,
   work: ObservedDynamicPlasmaUserSendAdapter.prototype.createWorkRequest,
@@ -109,7 +112,37 @@ export function createObservedBalanceDynamicPlasmaUserSendCheckpointReadAdapter(
   return createReadAdapter(options, true);
 }
 
-function createReadAdapter(options, checkpointEnabled) {
+/**
+ * Default-off read-only checkpoint reuse over the SAME inputv3, one account
+ * wire and ten-cycle budget. Expose ONLY validateUnsignedCheckpoint(input,
+ * originalPlan, originalBlock, checkpointJson). All four independent inputs
+ * are captured before the first borrowed callback. Originals must remain
+ * under separate caller custody: incoming checkpoint fields never select
+ * the expectation, the current read context, a new quote or replacement work.
+ *
+ * One fresh frontier -> balance -> dual DP -> frontier cycle first checks
+ * the original account/intent and current declared funds/price horizon. The
+ * existing observed checkpoint validator then requires the exact canonical
+ * bytes for those independent originals. No packet is returned before the
+ * final account bracket, and no partial eleventh cycle can start. A failure
+ * after the first handoff holds this instance; no retry/reset or new owner
+ * can grant replacement, signing, renewal or payment authority.
+ *
+ * This does NOT restore persistent custody or detect external signing. Use
+ * only BEFORE signing; retain signed originals and consumed authority under
+ * their separate owner. AccountInfo still lacks a chain/hash anchor and the
+ * bracket is not atomic, fresh/authenticated funds, ABA exclusion, runtime
+ * qualification or inclusion evidence. Borrowed exchanges, supported native
+ * Promises and unchanged dependencies retain their existing trust/lifetime
+ * premises. No material capability, nonce/key/signature, SDK, SQL/storage,
+ * actual PREPARE, native RPC owner, live payment or default buyer is added.
+ */
+export function createObservedBalanceDynamicPlasmaUnsignedCheckpointReader(options) {
+  if (arguments.length !== 1) fail('configuration_rejected');
+  return createReadAdapter(options, false, true);
+}
+
+function createReadAdapter(options, checkpointEnabled, checkpointReadOnly = false) {
   let collect, accountRead;
   try {
     if (!invariant()) fail('configuration_rejected');
@@ -119,10 +152,10 @@ function createReadAdapter(options, checkpointEnabled) {
   } catch { fail('configuration_rejected'); }
   let active = false, held = false, cycles = 0;
 
-  function dispatch(kind, count, input, originalPlan, extra) {
-    return shield(run(kind, count, input, originalPlan, extra));
+  function dispatch(kind, count, input, originalPlan, extra, checkpointJson) {
+    return shield(run(kind, count, input, originalPlan, extra, checkpointJson));
   }
-  async function run(kind, count, input, originalPlan, extra) {
+  async function run(kind, count, input, originalPlan, extra, checkpointJson) {
     if (active) fail('busy');
     if (held) fail('held');
     if (cycles >= 10) fail('exhausted');
@@ -130,8 +163,9 @@ function createReadAdapter(options, checkpointEnabled) {
     let readIssued = false;
     try {
       if (!invariant()) fail('input_rejected');
-      const expectedCount = kind === 'quote' ? 1 : kind === 'work' ? 2 : 3;
+      const expectedCount = kind === 'quote' ? 1 : kind === 'work' ? 2 : kind === 'checkpoint' ? 4 : 3;
       if (count !== expectedCount) fail('input_rejected');
+      const incomingCheckpoint = kind === 'checkpoint' ? checkpointText(checkpointJson) : null;
       const budget = { nodes: 32768, characters: 2097152 };
       const stable = snapshotData(record(input, INPUT), 0, budget);
       if (stable.observedUserSendReadVersion !== 3 || stable.phase !== 'UNSIGNED'
@@ -182,6 +216,27 @@ function createReadAdapter(options, checkpointEnabled) {
         accountFrontierResultJson: afterText, observation: collected.observation,
         policy: stable.policy, runtimeContextDigest: stable.runtimeContextDigest,
       };
+      if (checkpointReadOnly && kind === 'checkpoint') {
+        const checked = await READ_CHECKPOINT(view, plan, detail, incomingCheckpoint);
+        if (!invariant()) fail('input_rejected');
+        const result = create(null);
+        put(result, 'observedBalanceCheckpointReadVersion', 1);
+        put(result, 'phase', 'UNSIGNED');
+        put(result, 'originalPlan', plan);
+        put(result, 'accountBlock', checked.accountBlock);
+        put(result, 'checkpointJson', checked.checkpointJson);
+        put(result, 'validation', checked.validation);
+        put(result, 'originalPacketBinding', checked.originalPacketBinding);
+        put(result, 'accountFrontierProjection', checked.accountFrontierProjection);
+        put(result, 'declaredBalanceRead', 'VALIDATED_IN_THIS_BRACKETED_READ_CYCLE');
+        put(result, 'currentAuthority', 'NOT_ESTABLISHED');
+        put(result, 'signingAuthorization', 'NOT_ESTABLISHED');
+        put(result, 'chainAuthentication', 'NOT_ESTABLISHED');
+        put(result, 'persistence', 'NOT_PERFORMED');
+        put(result, 'authority', 'NONE');
+        put(result, 'afterSigningAction', 'NONE');
+        return freeze(result);
+      }
       if (checkpointEnabled && kind === 'validate') {
         // CHECKPOINT reuses the captured SAME existing unsigned validator.
         // Keep this cycle's account/balance/price DATA; do not obtain a fifth
@@ -226,6 +281,11 @@ function createReadAdapter(options, checkpointEnabled) {
     if (!invariant() || !value.accepted) fail('input_rejected');
     return value.text;
   }
+  if (checkpointReadOnly) return freeze({
+    validateUnsignedCheckpoint: freeze(function validateUnsignedCheckpoint(input, plan, block, text) {
+      return dispatch('checkpoint', arguments.length, input, plan, block, text);
+    }),
+  });
   return freeze({
     quote: freeze(function quote(input) { return dispatch('quote', arguments.length, input); }),
     createWorkRequest: freeze(function createWorkRequest(input, plan) {
@@ -238,6 +298,11 @@ function createReadAdapter(options, checkpointEnabled) {
       return dispatch('validate', arguments.length, input, plan, block);
     }),
   });
+}
+function checkpointText(value) {
+  if (typeof value !== 'string' || value.length > 32768
+      || apply(byteLength, Buffer, [value, 'utf8']) > 32768) fail('input_rejected');
+  return value;
 }
 function decode(text, input, request) {
   return FRONTIER({

@@ -1,0 +1,480 @@
+{
+  "recordVersion": 1,
+  "kind": "DYNAMIC_PLASMA_OBSERVED_BALANCE_CHECKPOINT_READER_SELECTED_LOCAL_RESULT",
+  "status": "PASS_SELECTED_CURRENT_SOURCE_COMPONENT",
+  "sourceBase": {
+    "repository": "edgepillar/zenon-x402-poc",
+    "main": "303386a0afc08f59ecbe08833eb3471c78e50b0e",
+    "tree": "16f4a27864fb65209f73b3d3307eadb4395dba4a"
+  },
+  "scope": {
+    "lane": "P1-A opt-in unsigned original-quote reuse; not live DP or durable payment recovery",
+    "completedSlice": "Add one read-only checkpoint operation to the existing bracketed account/balance/dual-DP owner. Validate incoming canonical bytes against independently retained original plan and block only after one fresh declared balance/price/account cycle.",
+    "sourceBasis": [
+      "The existing observed original-checkpoint consumer accepts a supplied current view and explicitly does not check current account balance. The retained checkpoint read-stage variant produces canonical checkpoint text at its final validateUnsigned stage; it does not accept incoming text or validate its exact original-packet binding.",
+      "The new operation connects those existing contracts in their actual read owner, rather than adding a standalone metadata validator, replacement quote, work producer, persistence owner or fake payment path.",
+      "This is a distinct current-source reuse operation. Missing coverage alone is not the novelty claim. Earlier checkpoint generation, nonce and qualification commands are not replayed or relabeled."
+    ],
+    "factory": "createObservedBalanceDynamicPlasmaUnsignedCheckpointReader({transports, accountExchange})",
+    "solePublicOperation": "validateUnsignedCheckpoint(inputv3, originalPlan, originalBlock, checkpointJson)",
+    "contextAndOriginals": "Independent caller-owned DATA; incoming packet fields never choose the current read context or expected original plan/block.",
+    "activeBuyerOrPlannerAdoption": false,
+    "defaultActivation": false,
+    "persistentCustodySupplied": false,
+    "signingOrPaymentAuthority": false,
+    "noOverallRoadmapCompletionClaim": true
+  },
+  "behavior": {
+    "sequence": [
+      "Capture all four inputs before any borrowed callback.",
+      "Read the original selected payer's account frontier.",
+      "Read and validate the selected asset balance against the same account height.",
+      "Collect the existing two request-bound DP observations.",
+      "Read the account frontier again and require the same projection.",
+      "Use the existing original-checkpoint validator to require exact canonical bytes for the independent original plan and block under the current declared view."
+    ],
+    "noOutputBeforeFinalBracket": true,
+    "originalQuoteAndBlock": "The original quote, hash, nonce, acknowledgement and complete block are retained. Reuse performs no new quote, material handoff, work search, reassembly, quote refresh or replacement.",
+    "originalBinding": "A coherent different nonce/hash packet that the general codec accepts is still rejected against the independent original block and plan.",
+    "balanceAndAccount": "Missing selected-asset data and insufficient funds refuse before DP reads. A moved first frontier refuses before balance; a changed final bracket refuses before returning a packet.",
+    "horizon": "The original declared p=10, N=2 fixture remains the same block through current Momentum ages 0, 1 and 2; age 3, changed declared runtime context and changed observed price parameter refuse. These are selected synthetic projections, not an inclusion guarantee.",
+    "budgets": "One captured shared32-handoff account wire, at most ten admitted three-read cycles. An eleventh cycle refuses before any input inspection or partial read. Existing raw DP transports and method allowlists are unchanged.",
+    "failure": "A failure after the first account handoff permanently holds that reader. Busy, held and exhausted checks precede hostile input inspection. Bounded type/size, arity, version, phase and descriptor failures before a handoff do not consume a cycle.",
+    "checkpointText": "Primitive text is bounded to 32768 code units and 32768 UTF-8 bytes before a handoff. Incoming text is not parsed by the read adapter or used to select expectations; canonical equality is checked by the existing observed consumer after the current reads.",
+    "compatibility": "The two existing factories retain their public surfaces. Selected changed-source controls exercise one legacy validateUnsigned result and one checkpoint-generation result, each with exactly one fresh three-read cycle. This is not a replay or requalification of their entire historical suites."
+  },
+  "sourceReview": {
+    "immutableGraphFiles": 29,
+    "immutableGraphBytes": 341163,
+    "staticImportEdges": 111,
+    "exactGraphReviewedBeforeLaunch": true,
+    "sourceChanges": [
+      {
+        "before": {
+          "path": "src/zenon/dynamic-plasma-observed-balance-user-send-read-adapter.js",
+          "bytes": 17663,
+          "LF": 334,
+          "sha256": "1f12fca88ec897932598010b7dc4da2e94817bca8556b8fd5838133780e324fe",
+          "gitBlob": "b1152be04fa64bfe8963c826aa07f74a9ea710e7"
+        },
+        "after": {
+          "path": "src/zenon/dynamic-plasma-observed-balance-user-send-read-adapter.js",
+          "bytes": 21485,
+          "LF": 399,
+          "sha256": "ac85faa8326d73d005807b2a75d6480aaf3f404c17ae6ecfab038d6102d678ab",
+          "gitBlob": "79d887a90ec04d4ae7cbeb66420da35dbee7af71"
+        },
+        "wholeSourceInverseMatchedRetainedOriginal": true
+      }
+    ],
+    "originalSourcePreservation": "The complete inverse of the nine bounded source transformations matched the exact previous Git blob, SHA-256 and retained protected original input before execution; the original protected input was checked again during separate result readback.",
+    "sourceFiles": [
+      {
+        "path": "package.json",
+        "bytes": 1413,
+        "LF": 40,
+        "sha256": "8c9a25504fbf6f87c31cdf245a6f4eec5a88cc89c8352151dc66a577c5771ef5",
+        "gitBlob": "ec7193f6fd76f34778515079dc777594175c4c34"
+      },
+      {
+        "path": "qualification/dynamic-plasma-observed-balance-checkpoint-reader.behavior.draft.mjs",
+        "bytes": 22891,
+        "LF": 340,
+        "sha256": "be8dd415bd176b35dc8e5e79705da9486fd57facee25905365a56a0bcc7ff0de",
+        "gitBlob": "dbe0c58aeb020870df61cc9838591a007a559ff9"
+      },
+      {
+        "path": "src/canonical.js",
+        "bytes": 967,
+        "LF": 26,
+        "sha256": "0d55ddf1727cafb0dcd46df2922305568615552a4d2ae34a5c30e90b9d8d998c",
+        "gitBlob": "5367f9c72ee13017a61630e1f0cffdced21d52c4"
+      },
+      {
+        "path": "src/x402-wire.js",
+        "bytes": 39886,
+        "LF": 934,
+        "sha256": "5fba91af5a352f62d1a335c7176a45a604e2af5d92b1c4b0e53825c1f20d4e56",
+        "gitBlob": "fb060d4e349b1c31a1219a0cc137af250a8a2291"
+      },
+      {
+        "path": "src/zenon/bounded-dynamic-plasma-strategy.js",
+        "bytes": 15729,
+        "LF": 353,
+        "sha256": "7b82560bdeb25e573912090a2fe8de7b45912500a7a7c4434fe06dcf94e06d62",
+        "gitBlob": "ee85b7a4da8bf4190ae099e6bc5074059fccebbc"
+      },
+      {
+        "path": "src/zenon/bounded-json-rpc-read-core.js",
+        "bytes": 21759,
+        "LF": 582,
+        "sha256": "10cc529bfb0676bb03dc4dad56059663f4a578b586c52f6404fc859d27d18f76",
+        "gitBlob": "3bd98a83413eb13e3bceb097d35fb874b4c030a2"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-account-frontier-read.js",
+        "bytes": 7417,
+        "LF": 152,
+        "sha256": "283209685a41aed5647c87e33d046d1f81b3a6820ea6ea307c11d2f99b91020d",
+        "gitBlob": "6fbb894a4db5db15e4ded168fd663eeb24898bf8"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-account-state-read-transport.js",
+        "bytes": 3632,
+        "LF": 74,
+        "sha256": "9aa818dabdacf0baec60ca570e854cc8a327e554ba5e5a76c670eb5ed02b29b8",
+        "gitBlob": "751a4b8c5a0c42e1d2b0a47af9d2ef7264229821"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-compatibility.js",
+        "bytes": 7732,
+        "LF": 225,
+        "sha256": "b3989ce15e5f2e9d07b0ed035fe96bcce9f22cac93f5e497fdca5c37bf7618dd",
+        "gitBlob": "3811b748b3f905e454c8a4af4650bb7f89eb1cf2"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-json-rpc-read-transport.js",
+        "bytes": 10832,
+        "LF": 283,
+        "sha256": "fd03b2ad87d16660aa61d3961c163d724d5f89cd6d4bb9c4391d739566d5e5ca",
+        "gitBlob": "0475b7ab42889f67fb030fa7344d73d8bd6957d7"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-observation-collector.js",
+        "bytes": 38492,
+        "LF": 949,
+        "sha256": "6bb665dd97e4b262941ed11fb7a9fb5c6d7a162004a39fcbfbfa8cd7b3f82d98",
+        "gitBlob": "171a49f29379866ed111031d15423634ac2d17b4"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-observation-normalizer.js",
+        "bytes": 28398,
+        "LF": 698,
+        "sha256": "2c3f7d42ded21a5513ff26c23a00a35a53aa334f053d10930f1571a020286897",
+        "gitBlob": "c406db8471aa6c8afd812c222c673c809491cf00"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-observed-balance-user-send-read-adapter.js",
+        "bytes": 21485,
+        "LF": 399,
+        "sha256": "ac85faa8326d73d005807b2a75d6480aaf3f404c17ae6ecfab038d6102d678ab",
+        "gitBlob": "79d887a90ec04d4ae7cbeb66420da35dbee7af71"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-observed-original-checkpoint.js",
+        "bytes": 10343,
+        "LF": 202,
+        "sha256": "f0b485e3970bda3af3aa27f8d46d22a54322d7a893dbda3fa121d23c90d9d30b",
+        "gitBlob": "4d366df7eec92f9137381e90ca52e2f6fc1569a0"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-observed-user-send-adapter.js",
+        "bytes": 8149,
+        "LF": 180,
+        "sha256": "8526519aa6bf5006c572447127680d3cc871ee4eee1b9046b4ea09f9ad9e1653",
+        "gitBlob": "bbda0ebf5a6d4d21f159f31304165810ebd89a77"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-observed-user-send-subject.js",
+        "bytes": 5105,
+        "LF": 104,
+        "sha256": "bbcc1d718bcb1353f46e0650723e35c218db94754328103d4bce1d5765e13cd8",
+        "gitBlob": "5e29c6d70c965a4d72c0902504e57dae852a6223"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-price-policy.js",
+        "bytes": 16224,
+        "LF": 444,
+        "sha256": "eba3225c4d26cbb6e0be575ac4fd5073bc8b0c4454eb51e2bea4d91856d0c65e",
+        "gitBlob": "649dd09b60236b43c91d22e34b76f71f4b661361"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-required-fused-policy-adapter.js",
+        "bytes": 12024,
+        "LF": 272,
+        "sha256": "e2b693d4df9065d44ba590f4d0c8dffeb8e55187668eedfa396b4026c9905c3e",
+        "gitBlob": "b592aafd4c41461318376ea9acc1373f99317455"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-required-fused-quote.js",
+        "bytes": 5416,
+        "LF": 133,
+        "sha256": "f5e10ff2dbfff3b6b63d87f0abadd0bb52b5d6b8fe0ead6a55fc5ea14207b730",
+        "gitBlob": "e820fd31ffde4ef77a2efa6e1fd3ed1775778726"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-unsigned-original-checkpoint.js",
+        "bytes": 9301,
+        "LF": 198,
+        "sha256": "506551e4292491a905a27f56695c30642af6a0e6a85158586379649999f8da47",
+        "gitBlob": "46ac7a4761b078048c205eaf531a7aab7a1d81a9"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-user-send-assembly.js",
+        "bytes": 7772,
+        "LF": 162,
+        "sha256": "05012a2a983ceca018674c4d1f63823f3f7ed53b0970a4b4bd486c4278832b04",
+        "gitBlob": "a0537856f6692d278c9043ab9c1c734d1bde61ba"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-user-send-balance-read.js",
+        "bytes": 7542,
+        "LF": 144,
+        "sha256": "ae1f3e5d309be0dc196fb6b35324d4c8287345b50a108d5030c1058645d2ed39",
+        "gitBlob": "f629aca2410dfd194fd73d3a651e624baa633386"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-user-send-fixed-work.js",
+        "bytes": 3475,
+        "LF": 77,
+        "sha256": "4ee83870df0b25c34d35c0f0d0ceb894ca9dab8c047f81b34a48dd816f1fbf38",
+        "gitBlob": "4ce2a790df84c77bc76615e5eebc309ecd2868ac"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-user-send-key-binding.js",
+        "bytes": 4237,
+        "LF": 91,
+        "sha256": "37ad7e74b038801297e4bffb0cb8ba92cbd79009ed32c4ae5b134fe2cb154be2",
+        "gitBlob": "c366f0fee4132604b40604547fe22f1bc1dba65d"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-user-send-work-binding.js",
+        "bytes": 1940,
+        "LF": 42,
+        "sha256": "79eba29a05427128ae3a12346fd3ee7cbaa526d6f39eb36ed58d388640638266",
+        "gitBlob": "a329d521458a5c5b6dbc87194d91d4165d5e759c"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-user-send-work-input.js",
+        "bytes": 2853,
+        "LF": 59,
+        "sha256": "2ff9c089e5903c059746d0a1c38688a2849f94d04d429279811fbbfbb40450a4",
+        "gitBlob": "dad4febf4ef6f09216640245c7e3805e01ad0127"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-user-send-work-request.js",
+        "bytes": 2564,
+        "LF": 50,
+        "sha256": "bc66c7d629eae230c46f62c88fa97960860d94b5d65d3c5611612ccae13fe9ce",
+        "gitBlob": "d4e9731b0af82a892226c2817e9d5a5273b39599"
+      },
+      {
+        "path": "src/zenon/plasma-strategy.js",
+        "bytes": 974,
+        "LF": 32,
+        "sha256": "1c597d4e169ba8a5e6d2b7852c4ffa3a8ec9b854332fe354b9b013c36ebae093",
+        "gitBlob": "5cddc2d270aaf043e6e43145e95ffe0be3dde475"
+      },
+      {
+        "path": "src/zenon/transaction-planner.js",
+        "bytes": 22611,
+        "LF": 464,
+        "sha256": "079fe8da938e08e33a20ca1076492a829afa6fce3ae7f9b9f68d3bf4bff94233",
+        "gitBlob": "17b49a3d53974c9b3846ec6f352d6e8974bad7d3"
+      }
+    ],
+    "reusedFixtureDeclarationSource": {
+      "path": "qualification/dynamic-plasma-observed-checkpoint-planner.behavior.draft.mjs",
+      "bytes": 19897,
+      "LF": 299,
+      "sha256": "a7bc072211b1f90089d0f87b2a03848e3b1b779ea3d45ced5e937aa959d2cd3c",
+      "gitBlob": "9f5a1922d0dc370879a7858a5c2c45842124cff7"
+    },
+    "fixtureMeaning": "Only selected synthetic declarations are reused. No prior test or qualification entry is imported or registered.",
+    "runtimePremises": [
+      "Only reviewed existing local modules and Node builtins are loaded; no SDK, key/signature owner, nonce-search producer, SQL, listener/socket, actual PREPARE or external package is imported.",
+      "AccountInfo lacks a chain identifier and block hash. Two matching frontier projections plus a matching height do not prove freshness, atomicity, ancestry, ABA exclusion, authenticated funds or spendability.",
+      "Policy, runtime context, original expectations, public bytes and current observations remain declared DATA. Coherently fabricated DATA can still pass; no provider READY, canonical chain, inclusion, finality or live runtime is authenticated.",
+      "Borrowed exchanges are operational trusted capabilities whose owners retain endpoint identity, deadlines, cancellation, unsafe-Promise prehandling and terminal cleanup duties. They are not sandboxed by this module.",
+      "Captured intrinsics and unchanged imported validators remain premises. Finite shape/string budgets do not prebound materialization of an enormous own-key set and are not an OS memory, lifetime, process or hostile-code sandbox."
+    ]
+  },
+  "actualExecution": {
+    "commands": 1,
+    "priorExperimentsReplayed": 0,
+    "selectedNames": [
+      "checkpoint reader reuses exact original bytes with fresh balances at both admitted price advances",
+      "checkpoint reader rejects a coherent substituted packet against separately retained originals and then holds",
+      "checkpoint reader refuses missing funds changed account expiry and parameter drift without re-quoting",
+      "checkpoint reader withholds output until the final bracket and snapshots originals before borrowed callbacks",
+      "checkpoint reader rejects malformed text accessor proxy and wrong-version inputs before any read cycle",
+      "checkpoint reader stops before an eleventh cycle without renewing any signing or payment authority",
+      "changed-source legacy validation and checkpoint generation keep their existing surfaces and one-cycle outputs",
+      "checkpoint reader holds after unsafe or rejected borrowed reads without invoking thenable hooks or new reads"
+    ],
+    "counts": {
+      "tests": 8,
+      "suites": 0,
+      "pass": 8,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "diagnostics": {
+      "kind": "P1A_BALANCE_CHECKPOINT_READER",
+      "readers": 14,
+      "compatibilityReaders": 2,
+      "accountReadCallbacks": 73,
+      "dpReadCallbacks": 264,
+      "readCycles": 27,
+      "checkpointResults": 15,
+      "compatibilityResults": 2,
+      "preReadRejections": 13,
+      "heldGuardChecks": 10,
+      "busyGuardChecks": 1,
+      "exhaustedGuardChecks": 1,
+      "hooks": 0,
+      "originalFixtureQuotes": 1,
+      "originalFixtureAssemblies": 1,
+      "originalFixtureEncodes": 1,
+      "coherentAlternativeCodecControlCalls": 2,
+      "restorationQuoteOrMaterialCalls": 0,
+      "incomingCheckpointParsedByReadAdapter": false,
+      "nonceSearchCalls": 0,
+      "candidateEvaluations": 0,
+      "keyGeneration": 0,
+      "signatures": 0,
+      "persistentWrites": 0,
+      "oldQualificationEntriesRegistered": 0,
+      "qualification": "DECLARED_FIXED_DATA_ONLY_NOT_LIVE_DP_OR_DURABLE_RECOVERY"
+    },
+    "fixture": "One pure actual observed quote/assembly/encoding over fixed public bytes and a literal zero-difficulty nonce. The restoration path itself calls neither quote nor material/assembly APIs.",
+    "selectedReads": "Fourteen new readers, two focused compatibility readers, 27 synthetic read cycles, 73 account callbacks and 264 DP callbacks. Fifteen exact original-packet reuse results and two compatibility results; no native RPC owner is used.",
+    "negativeControls": "One coherently different packet accepted by the general codec is refused by original binding. Seven current-account/balance/price/runtime refusal modes, thirteen pre-read refusals, ten held guards, one busy guard, one exhaustion guard and unsafe/rejected borrowed reads are selected.",
+    "actualExit": 0,
+    "outputComplete": true,
+    "stdout": {
+      "bytes": 3060,
+      "sha256": "5bafc792636ef18b8880a75ae21db3df1a393fbadaec0fe24134cf4fbe332131"
+    },
+    "stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "nodeReporterDurationMs": 153.910666,
+    "nodeReporterDurationIsNotManagedWallTime": true,
+    "commandCompletedAtUTC": "2026-10-22T22:53:56.132Z",
+    "runtime": {
+      "nodeVersion": "24.19.0",
+      "platform": "darwin",
+      "architecture": "arm64",
+      "nodeSha256": "dbedff294bab84a0a86c04e15fbcbeb1c97ca10bef1b32b0634cd24b36f62100"
+    },
+    "launch": {
+      "entry": "qualification/dynamic-plasma-observed-balance-checkpoint-reader.behavior.draft.mjs",
+      "permissionMode": true,
+      "filesystemWritePermission": false,
+      "filesystemReadScope": "Read-only repository permission with an audited exact explicit source closure; not an OS sandbox.",
+      "codeGenerationFromStrings": false,
+      "nativeAddons": false,
+      "clearedEnvironment": true,
+      "unhandledRejections": "strict",
+      "reporter": "tap",
+      "selectedTestTimeoutMs": 5000,
+      "managerCommandTimeoutSeconds": 30,
+      "stdoutLimitBytes": 65536,
+      "stderrLimitBytes": 1048576,
+      "qualificationInvocation": "One direct Node entry, not npm test, a glob, the complete suite or hosted CI."
+    }
+  },
+  "retainedEvidence": {
+    "taskState": "CLOSED",
+    "taskOutcome": "SUCCESS",
+    "evidenceContractVersion": 2,
+    "contract": "One predeclared caller source-admission reference manifest plus mandatory command, outcome and cleanup records; no duplicate caller handoff is required.",
+    "separateProtectedRecordReadback": "PASS: all five complete records, exact argv/selected names/counts/diagnostic, source and original-input content/physical bindings, stream digests, object ledgers and closed creator retention were checked after the command completed.",
+    "completeMetadataRecordsRead": 5,
+    "metadataBytes": 34930,
+    "callerMetadataRecordsWritten": 1,
+    "admissionManifestCompactBytes": 26609,
+    "immutableRecordDigests": [
+      {
+        "record": "admission.json",
+        "bytes": 32794,
+        "sha256": "d6aeda3d7728e5ceaf6c352a34fb2b579ee550d060c5f8b61175d66b82fd14ac"
+      },
+      {
+        "record": "cleanup.json",
+        "bytes": 174,
+        "sha256": "769796c8d6bdcef0511d82bec8b2e06a76539c08d33bec90c975d5d40b7bb030"
+      },
+      {
+        "record": "command.json",
+        "bytes": 992,
+        "sha256": "93eea98df388ed0da23033a2405fdc00fb6e18db7b8a8d912215ec49e4de6632"
+      },
+      {
+        "record": "outcome.json",
+        "bytes": 61,
+        "sha256": "b48bf8ed39ee02cb088a41a5dc0218bc1dd93508a88a12034bc556bcd32ab83e"
+      },
+      {
+        "record": "task.json",
+        "bytes": 909,
+        "sha256": "52ab84f7465d5ad3a592b9db1403610d059dabffcdcbe8c5052449d5937f33d0"
+      }
+    ],
+    "sourceInputReferencesVerified": 29,
+    "sourceInputLedgersAndCreatorsVerified": 29,
+    "existingSourceObjectsReused": 27,
+    "newSourceObjects": 2,
+    "newSourceInputBytes": 44376,
+    "unchangedInputBytesNotRewritten": 296787,
+    "sourceExecutionClones": 0,
+    "payloadsEmbedded": false,
+    "processGroupObservedAbsent": true,
+    "ownedScratchAbsent": true,
+    "ownedScratchBytesRemoved": 0,
+    "protectedObjectsDeleted": 0,
+    "unrelatedRetainedSourceFilesUnchanged": 280,
+    "explicitSourceFilesChanged": 1,
+    "existingProtectedPrivateRowsUnchanged": 920,
+    "earlierProtectedAbsencesUnchanged": 26,
+    "unrelatedLocalChangesAndIndexPreserved": true,
+    "historicalEvidence": "Earlier original-checkpoint generation, nonce, codec, incomplete handoff and stopped/source-phase records retain their exact sources and outcomes. No old failure or partial result is repaired or promoted by this command."
+  },
+  "unchangedBoundaries": {
+    "nonceSearches": 0,
+    "candidateEvaluations": 0,
+    "keysGenerated": 0,
+    "signatures": 0,
+    "sqliteFiles": 0,
+    "selectedTestNetworkCalls": 0,
+    "selectedTestPersistentWrites": 0,
+    "selectedTestRealPrepareCalls": 0,
+    "livePilot": false,
+    "payment": false,
+    "providerSetup": false,
+    "persistentStoreOrProcessReopen": false,
+    "originalPaymentAndRequestBytesPreserved": true,
+    "consumedAuthorityPreserved": true,
+    "pr193ValidatedSameBlockResendNotUnknownOrAcknowledged": true,
+    "privateBootstrapAndGhcrUnchanged": true,
+    "protectedRealTotals": {
+      "consumedAdmissions": 2,
+      "actualPrepare": 1,
+      "bundles": 0,
+      "nativeChainOrProviderQualificationRuns": 0
+    },
+    "localNodeCommandIsNotChainOrProviderQualification": true,
+    "automationSettingsChanged": false,
+    "externalWorkerDispatched": false,
+    "modelSettingsChanged": false
+  },
+  "publicationIntent": {
+    "packet": "One explicitly modified read-owner source plus the new eight-case entry and this source-bound result.",
+    "existingReadmeRewritten": false,
+    "normalNonForceSmallBatch": true,
+    "hostedCi": "NOT_RUN_NOT_GREEN",
+    "broadSuite": "NOT_RUN",
+    "publicationOrGreenCiIsNotLiveReadiness": true
+  },
+  "remainingGates": [
+    "This read-only DATA operation does not retain originals or prevent their replacement in external storage, supply authenticated runtime/account state, detect external signing or consume signing/payment authority. It must be used only before signing.",
+    "Actual durable custody, crash/reopen/process replacement, original signed bytes/hash recovery and UNKNOWN/ACKNOWLEDGED publication reconciliation remain with their independent owners and qualification records.",
+    "The active buyer still uses the separately gated legacy SDK preparation/signing path. Actual SDK/PoW/signer adoption, current node/epoch/genesis/spork/profile and real price/runtime evidence are not qualified by these eight cases.",
+    "Provider/attestor custody, fixed real economics, authenticated HTTPS/chain observations, inclusion/receive policy, supervised live pilot acceptance and measured capacity remain separate required roadmap gates.",
+    "No prior changed-source graph or entire legacy planner suite is requalified here; only the exact selected graph and focused compatibility operations above are proven."
+  ]
+}
