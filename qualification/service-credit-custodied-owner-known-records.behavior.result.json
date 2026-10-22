@@ -1,0 +1,451 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-22",
+  "status": "SELECTED_DECLARED_STORE_OWNER_ASSERTIONS_PASSED",
+  "roadmapLane": "P2: original-request custody and explicit recovery lifecycle",
+  "finiteComponentComplete": true,
+  "fullP2Complete": false,
+  "productionAcceptance": "NO_GO",
+  "implementation": {
+    "modifiedModule": "src/service-credit-custodied-request-owner.js",
+    "behavior": "Remember validated original and intent observations as owner-local key/checksum witnesses. Later disappearance or changed checksums latch CUSTODY_OUTCOME_UNKNOWN instead of returning fresh absence or a replacement record.",
+    "sourcesOfKnowledge": "Successful original/intent readback before dispatch and fully validated recovery reads. A started retention attempt also prevents a later missing original from becoming unobserved absence.",
+    "bound": "At most custodyPolicy.maxRequests selected-grant keys, in the existing explicit 1..1024 capacity range. Each private entry contains the two key strings and the original checksum plus optional intent checksum; no full body, proof, payment payload or response is cached.",
+    "unchanged": "Exported surfaces, projected data shape, normal action counters, borrowed-store ownership and cached close Promise behavior remain unchanged in the selected scenarios.",
+    "uncertainty": "Restoring the original intent after a detected loss does not clear the latched custody flag. Later submissions remain refused without another store call or callback.",
+    "absence": "An unobserved missing key may still return null. A retained original for which no intent has been observed may still return NO_INTENT_RECORDED; neither output authorizes dispatch.",
+    "limits": "Witnesses are private to one owner, are not restored by a new owner, do not repair lost data and are not durable/authenticated receipts. Secure memory erasure is not promised.",
+    "noNewStoreSchemaMigrationTransportOrActiveCutover": true,
+    "noPaymentSigningRetryOrAuthorityReset": true
+  },
+  "sourceBinding": {
+    "parentMain": "bafb2f55041ff895d2e37cf8abd1fed0d55b3f74",
+    "parentTree": "109d22e7cf96b575fac791a33fd10d0aa92aebf6",
+    "modifiedBase": {
+      "path": "src/service-credit-custodied-request-owner.js",
+      "bytes": 35073,
+      "LF": 938,
+      "sha256": "6e7493a4859d48530820e68a4a19a513aad014ffc1048b42965a3ad36ae7c5f7",
+      "gitBlob": "2dee22fd780db9de662fe1243075e74cef0bf296"
+    },
+    "modifiedCurrent": {
+      "path": "src/service-credit-custodied-request-owner.js",
+      "bytes": 37342,
+      "LF": 987,
+      "sha256": "1908c182d15028a7f9ae0f1b2dbd25e87b0753ab856d2f4949fef46a01a707cf",
+      "gitBlob": "ed9835f7b9442d57465f0d06906b519ef3a2ddfe"
+    },
+    "modifiedDiff": {
+      "additions": 50,
+      "deletions": 1
+    },
+    "readFileCount": 4,
+    "sourceBytes": 67246,
+    "perFileCap": 65536,
+    "totalCap": 98304,
+    "files": [
+      {
+        "path": "src/service-credit-custodied-request-owner.js",
+        "bytes": 37342,
+        "LF": 987,
+        "sha256": "1908c182d15028a7f9ae0f1b2dbd25e87b0753ab856d2f4949fef46a01a707cf",
+        "gitBlob": "ed9835f7b9442d57465f0d06906b519ef3a2ddfe"
+      },
+      {
+        "path": "src/service-credit-original-request-custody-contract.js",
+        "bytes": 14051,
+        "LF": 356,
+        "sha256": "fd349de553a17abcc2e0567ba6640e6e3d5d26cfa79ee1e355928dc9fa8d3915",
+        "gitBlob": "f911d42d01b69e6577f9bcd66f4ed59aab8ab882"
+      },
+      {
+        "path": "package.json",
+        "bytes": 1413,
+        "LF": 40,
+        "sha256": "8c9a25504fbf6f87c31cdf245a6f4eec5a88cc89c8352151dc66a577c5771ef5",
+        "gitBlob": "ec7193f6fd76f34778515079dc777594175c4c34"
+      },
+      {
+        "path": "qualification/service-credit-custodied-owner-known-records.behavior.draft.mjs",
+        "bytes": 14440,
+        "LF": 234,
+        "sha256": "8727b4dc5560652e04f28d16047da2f251010b9ad06a31b6508dca17b9437fd0",
+        "gitBlob": "e2e973cae1a99ca81dff1fda00bd15090c95520d"
+      }
+    ],
+    "physicalIdentitiesBeforeAndAfter": "MATCH_THIS_RUN",
+    "earlierCoverage": "Earlier owner and downstream native SQLite/fresh-process records pin the preceding owner source. Their artifacts and guards remain unchanged; their counts are not combined or rebound to this source.",
+    "earlierCompletedReviewOrExecutionRepeated": false
+  },
+  "execution": {
+    "entry": "qualification/service-credit-custodied-owner-known-records.behavior.draft.mjs",
+    "selectedTestEntries": 1,
+    "otherTestEntries": 0,
+    "selectedNodeCommands": 1,
+    "task": "CLOSED_SUCCESS",
+    "command": "COMPLETE",
+    "actualExit": 0,
+    "outputComplete": true,
+    "counts": {
+      "tests": 8,
+      "suites": 0,
+      "pass": 8,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "tests": [
+      {
+        "name": "V2 rejects disappearance of an original confirmed during submission",
+        "outcome": "PASS",
+        "scenario": "V2_SUBMITTED_ORIGINAL_DISAPPEARED"
+      },
+      {
+        "name": "V3 rejects disappearance of a confirmed dispatch intent without clearing uncertainty",
+        "outcome": "PASS",
+        "scenario": "V3_SUBMITTED_INTENT_DISAPPEARED"
+      },
+      {
+        "name": "V2 rejects disappearance of an original previously observed by recovery",
+        "outcome": "PASS",
+        "scenario": "V2_OBSERVED_ORIGINAL_DISAPPEARED"
+      },
+      {
+        "name": "V3 rejects a changed previously observed intent checksum",
+        "outcome": "PASS",
+        "scenario": "V3_OBSERVED_INTENT_CHANGED"
+      },
+      {
+        "name": "V3 rejects a changed previously observed original checksum",
+        "outcome": "PASS",
+        "scenario": "V3_OBSERVED_ORIGINAL_CHANGED"
+      },
+      {
+        "name": "unobserved absence and an original without observed intent stay valid data",
+        "outcome": "PASS",
+        "scenario": "UNOBSERVED_ABSENCE_AND_NO_INTENT"
+      },
+      {
+        "name": "recovery observations stay bounded by the configured custody capacity",
+        "outcome": "PASS",
+        "scenario": "OBSERVATION_CAPACITY_FENCE"
+      },
+      {
+        "name": "normal two-original V3 lifecycle preserves bytes counters and close behavior",
+        "outcome": "PASS",
+        "scenario": "NORMAL_TWO_ORIGINAL_LIFECYCLE"
+      }
+    ],
+    "firstAndOnlyExecutionOfThisSelection": true,
+    "runtime": {
+      "node": "24.19.0",
+      "platform": "darwin",
+      "arch": "arm64",
+      "nodeBinarySha256": "dbedff294bab84a0a86c04e15fbcbeb1c97ca10bef1b32b0634cd24b36f62100",
+      "digestReuse": "Whole runtime digests reused only after all nine physical identity fields matched; no large binary rehash."
+    },
+    "launch": {
+      "explicitPositionalEntry": true,
+      "environment": "env -i with one synthetic opt-in and four exact source pins",
+      "nodePermissionModel": "ON",
+      "fsReadFiles": [
+        "src/service-credit-custodied-request-owner.js",
+        "src/service-credit-original-request-custody-contract.js",
+        "package.json",
+        "qualification/service-credit-custodied-owner-known-records.behavior.draft.mjs"
+      ],
+      "directoryReadGrant": false,
+      "fsWriteGrant": false,
+      "childProcessGrant": false,
+      "workerGrant": false,
+      "addonGrant": false,
+      "codeGenerationFromStrings": "DISALLOWED",
+      "testIsolation": "none",
+      "concurrency": false,
+      "watch": false,
+      "forceExit": false,
+      "nodeTestTimeoutMs": 5000,
+      "managerCommandTimeoutSeconds": 30,
+      "metadataLockTimeoutSeconds": 180,
+      "inlineCallerBytes": 9831,
+      "argumentStringPayloadBytes": 12177,
+      "savedOrInstalledOperationalHelper": false,
+      "osOrNetworkSandbox": false,
+      "hardLifetimeCancellationCleanupOrAggregateQuotaGuarantee": false
+    },
+    "actualComponents": "Current V2/V3 JavaScript owners and original/intent custody contracts are executed.",
+    "declaredComponents": "Trusted synchronous stores, funding projections and callbacks are synthetic in-memory fixture data. Map deletion/replacement is an injected declared-store inconsistency, not actual SQLite corruption or a filesystem experiment.",
+    "selectedOwners": 8,
+    "v2Owners": 2,
+    "v3Owners": 6,
+    "declaredCallbackCompletions": 4,
+    "declaredOriginalRetains": 4,
+    "declaredIntentWrites": 3,
+    "assertedUnknownCloseRejections": 6,
+    "drainedCloses": 2,
+    "borrowedStoreCloseCalls": 0,
+    "newSqliteFiles": 0,
+    "signatureOperations": 0,
+    "networkCalls": 0,
+    "officialSdkImported": false,
+    "zenonSdkImported": false,
+    "realPaymentSigner": "DISABLED",
+    "stdout": {
+      "bytes": 4462,
+      "sha256": "2771a27f0b35ee0a0134f309092907b9eb9aaeee3e810ea13df145ad268533f7"
+    },
+    "stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "ownedProcessGroupObservedAbsent": true,
+    "unresolvedCommand": false
+  },
+  "coverage": {
+    "submittedOriginalLoss": "A V2 original confirmed during submission later disappears. readOriginal fails closed, and a subsequent submit makes no store call or callback.",
+    "submittedIntentLoss": "A V3 intent confirmed before a completed callback disappears. Recovery refuses it; reading the still-valid original or restoring the old intent does not clear custody uncertainty.",
+    "observedOriginalLoss": "A V2 original first learned through a recovery read later disappears. Recovery does not return null.",
+    "observedIntentChange": "A previously observed V3 intent is replaced by a different valid-checksum intent for the same original. Existing envelope validation passes, but the local witness detects the change.",
+    "observedOriginalChange": "A previously observed V3 original is replaced by a different valid original and matching intent. The prior original checksum still detects the change.",
+    "legitimateAbsence": "Previously unobserved absence and an original with no observed intent remain redacted data with authority NONE and no inferred service outcome.",
+    "capacity": "An inconsistent declared store supplies a third distinct original under maxRequests=2. The third observation refuses instead of growing the witness set beyond policy; no retain, fence or callback occurs.",
+    "normalLifecycle": "Two normal V3 original/intent submissions and repeated recovery/original reads preserve exact serialized envelopes, declared funding bytes, the existing six action/readback counters and a drained cached close.",
+    "diagnostics": [
+      {
+        "kind": "P2_KNOWN_CUSTODY",
+        "version": 1,
+        "scenario": "V2_SUBMITTED_ORIGINAL_DISAPPEARED",
+        "ownerVersion": 2,
+        "submits": 1,
+        "retains": 1,
+        "intentWrites": 0,
+        "callbackCompletions": 1,
+        "custodyUnknown": true,
+        "closeOutcome": "UNKNOWN",
+        "storeCloseCalls": 0,
+        "nativeSqliteFiles": 0,
+        "networkCalls": 0,
+        "realPaymentSigner": "DISABLED",
+        "serviceDelivery": "NOT_ESTABLISHED"
+      },
+      {
+        "kind": "P2_KNOWN_CUSTODY",
+        "version": 1,
+        "scenario": "V3_SUBMITTED_INTENT_DISAPPEARED",
+        "ownerVersion": 3,
+        "submits": 1,
+        "retains": 1,
+        "intentWrites": 1,
+        "callbackCompletions": 1,
+        "custodyUnknown": true,
+        "closeOutcome": "UNKNOWN",
+        "storeCloseCalls": 0,
+        "nativeSqliteFiles": 0,
+        "networkCalls": 0,
+        "realPaymentSigner": "DISABLED",
+        "serviceDelivery": "NOT_ESTABLISHED"
+      },
+      {
+        "kind": "P2_KNOWN_CUSTODY",
+        "version": 1,
+        "scenario": "V2_OBSERVED_ORIGINAL_DISAPPEARED",
+        "ownerVersion": 2,
+        "submits": 0,
+        "retains": 0,
+        "intentWrites": 0,
+        "callbackCompletions": 0,
+        "custodyUnknown": true,
+        "closeOutcome": "UNKNOWN",
+        "storeCloseCalls": 0,
+        "nativeSqliteFiles": 0,
+        "networkCalls": 0,
+        "realPaymentSigner": "DISABLED",
+        "serviceDelivery": "NOT_ESTABLISHED"
+      },
+      {
+        "kind": "P2_KNOWN_CUSTODY",
+        "version": 1,
+        "scenario": "V3_OBSERVED_INTENT_CHANGED",
+        "ownerVersion": 3,
+        "submits": 0,
+        "retains": 0,
+        "intentWrites": 0,
+        "callbackCompletions": 0,
+        "custodyUnknown": true,
+        "closeOutcome": "UNKNOWN",
+        "storeCloseCalls": 0,
+        "nativeSqliteFiles": 0,
+        "networkCalls": 0,
+        "realPaymentSigner": "DISABLED",
+        "serviceDelivery": "NOT_ESTABLISHED"
+      },
+      {
+        "kind": "P2_KNOWN_CUSTODY",
+        "version": 1,
+        "scenario": "V3_OBSERVED_ORIGINAL_CHANGED",
+        "ownerVersion": 3,
+        "submits": 0,
+        "retains": 0,
+        "intentWrites": 0,
+        "callbackCompletions": 0,
+        "custodyUnknown": true,
+        "closeOutcome": "UNKNOWN",
+        "storeCloseCalls": 0,
+        "nativeSqliteFiles": 0,
+        "networkCalls": 0,
+        "realPaymentSigner": "DISABLED",
+        "serviceDelivery": "NOT_ESTABLISHED"
+      },
+      {
+        "kind": "P2_KNOWN_CUSTODY",
+        "version": 1,
+        "scenario": "UNOBSERVED_ABSENCE_AND_NO_INTENT",
+        "ownerVersion": 3,
+        "submits": 0,
+        "retains": 0,
+        "intentWrites": 0,
+        "callbackCompletions": 0,
+        "custodyUnknown": false,
+        "closeOutcome": "DRAINED",
+        "storeCloseCalls": 0,
+        "nativeSqliteFiles": 0,
+        "networkCalls": 0,
+        "realPaymentSigner": "DISABLED",
+        "serviceDelivery": "NOT_ESTABLISHED"
+      },
+      {
+        "kind": "P2_KNOWN_CUSTODY",
+        "version": 1,
+        "scenario": "OBSERVATION_CAPACITY_FENCE",
+        "ownerVersion": 3,
+        "submits": 0,
+        "retains": 0,
+        "intentWrites": 0,
+        "callbackCompletions": 0,
+        "custodyUnknown": true,
+        "closeOutcome": "UNKNOWN",
+        "storeCloseCalls": 0,
+        "nativeSqliteFiles": 0,
+        "networkCalls": 0,
+        "realPaymentSigner": "DISABLED",
+        "serviceDelivery": "NOT_ESTABLISHED"
+      },
+      {
+        "kind": "P2_KNOWN_CUSTODY",
+        "version": 1,
+        "scenario": "NORMAL_TWO_ORIGINAL_LIFECYCLE",
+        "ownerVersion": 3,
+        "submits": 2,
+        "retains": 2,
+        "intentWrites": 2,
+        "callbackCompletions": 2,
+        "custodyUnknown": false,
+        "closeOutcome": "DRAINED",
+        "storeCloseCalls": 0,
+        "nativeSqliteFiles": 0,
+        "networkCalls": 0,
+        "realPaymentSigner": "DISABLED",
+        "serviceDelivery": "NOT_ESTABLISHED"
+      }
+    ]
+  },
+  "storage": {
+    "expectedAllocationBytes": 1572864,
+    "taskQuotaBytes": 2097152,
+    "minimumFreeSpaceFloorBytes": 10737418240,
+    "stdoutCapBytes": 65536,
+    "stderrCapBytes": 1048576,
+    "metadataRecordLimitBytes": 32768,
+    "newSqliteFiles": 0,
+    "childCreatedFiles": 0,
+    "newQualificationTasks": 1,
+    "scratchOutcome": "CLEANED: only this task's registered empty scratch/stream directories were removed after all captured streams were retained.",
+    "scratchObservedAbsent": true,
+    "materialUserDataDeleted": false,
+    "oldSqliteOrFailureEvidenceDeleted": false,
+    "archiveOrBinaryPayloadCopies": 0,
+    "historicalCleanup": false,
+    "persistentStoragePolicyWritten": false,
+    "conservativeScratchPrecheck": {
+      "allocationBytes": 1572864,
+      "atomicOrOsQuotaGuarantee": false,
+      "limitBytes": 6442450944,
+      "observedBytes": 3549962179
+    },
+    "precheckIsNotAtomicGlobalOrOsQuota": true
+  },
+  "retainedEvidence": {
+    "completePrimaryHandoffIndependentlyRead": true,
+    "completeTAPNamesPlanCountsAndDiagnosticsReviewed": true,
+    "sourceAndPreservationStable": true,
+    "preservedRepositoryFiles": 143,
+    "priorDirectPrivateFiles": 160,
+    "protectedAbsences": 8,
+    "modifiedOwnedSourceExcludedFromUnchangedCohort": {
+      "path": "src/service-credit-custodied-request-owner.js",
+      "bytes": 35073,
+      "LF": 938,
+      "sha256": "6e7493a4859d48530820e68a4a19a513aad014ffc1048b42965a3ad36ae7c5f7",
+      "gitBlob": "2dee22fd780db9de662fe1243075e74cef0bf296"
+    },
+    "exclusionMeaning": "Only the intentionally changed owner module is excluded from the prior unchanged-source prefix. Its old pin remains in immutable earlier manifests; every other retained file remains byte/identity bound.",
+    "preservation": "Reuse the immutable 138-source/109-private prefix parts, exclude that one owned source, and bind six source plus 51 private delta pins to complete-cohort seals.",
+    "newEvidenceMetadataFiles": 12,
+    "readOnlyMetadataBytes": 355166,
+    "earlier267OutcomeSealRetained": true,
+    "earlier267FullRehashOrCompletedReviewOrExecutionRepeated": false,
+    "earlierFailuresAndStoppedSelectionsPreserved": true,
+    "publicationReadOnlyJoinCorrection": {
+      "originalOutcome": "KeyError: nativeExecution in the publication-only metadata reader",
+      "correction": "Read the current report's execution field; no source, launch or test was changed or rerun.",
+      "originalFailureRetained": true,
+      "countedAsPassedAssertion": false
+    },
+    "receiptSha256": {
+      "ownership": "edd20c7969d63b32eeb6dbc87862b9fc9d1b656db4b45935445c9b493bf2ab90",
+      "context": "634bd6bf65fb7b557b4e97ea291b335c2e75b51fb0260dea39986e43386d473c",
+      "selection": "1f688e8ad00787a93c24792e1b60ead551e33c785eb3b8ce24712c3eebc0b9ed",
+      "launch": "ab32dbdc6c182a626650ce2a5deb987b2117e10d05f54903a750e4cbc5d07203",
+      "preservationBefore": "ce28a673ae06e64b7658b5d2fb485fcf4bb38e5b7e17c0fdd5390e126b0d92c3",
+      "preservationAfter": "ce28a673ae06e64b7658b5d2fb485fcf4bb38e5b7e17c0fdd5390e126b0d92c3",
+      "command": "323389081df29ba292dec808f13059b7bfff87c0de0bc12aef95f0cafd913deb",
+      "streamNamespace": "5dafa793cfba2cbeb72f0537c450f48fe9c46c805483993bf5d4e21a606333ad",
+      "sourceAfter": "c58e892fff70f950016cf7eaa2aadd9c247ec594ee8243caf920504514240734",
+      "primaryOutcome": "f4765905db58e80829de9ddad0019becd9bb17e7dfd27b76c02e3dc043c3dbf9",
+      "outcome": "cc4dc64e0c9e873871728265f7aa27dddfc9d22b5b653110d6f502a69894ed7b",
+      "cleanup": "2d1c1eb79f219955d4753672154fcb9b01e7199d835222dc58cba72fa012fd3b"
+    }
+  },
+  "protectedBoundaries": {
+    "consumedAdmissions": 2,
+    "actualChainPrepare": 1,
+    "bundles": 0,
+    "nativeChainProviderQualificationRuns": 0,
+    "localNodeSqliteComponentRunReportedSeparately": true,
+    "syntheticServiceCallbacksAreNotChainPayments": true,
+    "originalLivePaymentRequestBytesHashPayloadRequirementsAndContextPreserved": true,
+    "consumedAuthorityNotReset": true,
+    "failedOwnershipMetadataNotRetried": true,
+    "pr193": "Possible VALIDATED exact-same-signed-block resend stays distinct from UNKNOWN and ACKNOWLEDGED. No resend, replacement payment or re-signing was performed or authorized by recovery views.",
+    "realPaymentSigner": "DISABLED",
+    "providerProvisioning": false,
+    "privateBootstrapAndGhcrBoundaryUnchanged": true
+  },
+  "notEstablished": [
+    "Full P2, production or pilot acceptance",
+    "Current-source native SQLite composition, actual database corruption, filesystem replacement, crash, restart or physical durability",
+    "Restoration of owner-local witnesses by a new owner or persistence of a client response receipt",
+    "Independent store authenticity, same-UID hostile rewriting or complete historical custody",
+    "Native network/HTTPS, real provider READY, current funding/context and payer/provider/policy authority",
+    "Original live payment recovery, same-signed-block resend, Zenon SDK, DP preparation or inclusion/finality",
+    "Sustainable capacity, hard cancellation, OS sandboxing or a memory/latency benchmark",
+    "Hosted CI or the historical/default complete test suite"
+  ],
+  "hostedCI": {
+    "status": "NOT_RUN",
+    "notGreen": true,
+    "noNewWorkflowOrRunTriggered": true
+  },
+  "next": "Continue a distinct unfinished roadmap component. Preserve the original operation and consumed authority; do not turn missing/unobserved data or owner-local witnesses into retry, delivery or durable restart evidence."
+}

@@ -97,6 +97,12 @@ const STATUSES = FREEZE([
  * Store methods are trusted to implement the reviewed synchronous interface.
  * No await or dispatch callback occurs before retain/readback/binding fencing.
  * No existing record is automatically replayed. A new owner is not restoration.
+ * Validated original/intent observations are remembered as bounded key/checksum
+ * witnesses, never cached bodies, proofs or response receipts. Later loss or
+ * change latches custody uncertainty rather than reporting fresh absence.
+ * They are not restored by a new owner or proof of durable/authentic contents;
+ * secure memory erasure is not promised.
+ * at most custodyPolicy.maxRequests distinct selected-grant keys are remembered.
  *
  * Native promises require the captured native prototype and a safe constructor/
  * species path. Own then getters are not read. Unobservable handles remain held.
@@ -128,6 +134,7 @@ function createOwner(configuration, dispatchIntentEnabled) {
   const fundingResourceUrl = config.fundingResourceUrl;
   const selectedGrantId = selectedKey.grantId;
   const entries = [];
+  const knownRecords = [];
   const counts = {
     loadReads: 0,
     recordReads: 0,
@@ -299,6 +306,41 @@ function createOwner(configuration, dispatchIntentEnabled) {
     if (key.grantId !== selectedGrantId) throw failure('FOREIGN_GRANT');
   }
 
+  function knownRecord(key) {
+    for (let index = 0; index < knownRecords.length; index++) {
+      const known = knownRecords[index];
+      if (known.grantId === key.grantId && known.requestId === key.requestId) return known;
+    }
+    return null;
+  }
+
+  function custodyChanged() {
+    holdCustody();
+    throw failure('CUSTODY_OUTCOME_UNKNOWN');
+  }
+
+  function requireUnobservedAbsence(key) {
+    if (find(key) !== null || knownRecord(key) !== null) custodyChanged();
+  }
+
+  function rememberRecord(key, original, intent = null) {
+    const known = knownRecord(key);
+    if (known !== null && (known.originalChecksum !== original.checksum
+        || (intent !== null && known.intentChecksum !== null
+          && known.intentChecksum !== intent.checksum))) custodyChanged();
+    if (known !== null && (intent === null || known.intentChecksum === intent.checksum)) return;
+    if (known === null && knownRecords.length >= policy.maxRequests) custodyChanged();
+    const next = FREEZE({ grantId: key.grantId, requestId: key.requestId,
+      originalChecksum: original.checksum,
+      intentChecksum: intent === null ? null : intent.checksum });
+    if (known === null) knownRecords[knownRecords.length] = next;
+    else {
+      for (let index = 0; index < knownRecords.length; index++) {
+        if (knownRecords[index] === known) { knownRecords[index] = next; return; }
+      }
+    }
+  }
+
   function submitOriginal(...args) {
     if (closed) return rejected('CLOSED');
     if (active) return rejected('BUSY');
@@ -441,6 +483,7 @@ function createOwner(configuration, dispatchIntentEnabled) {
         holdCustody();
         throw failure('CUSTODY_OUTCOME_UNKNOWN');
       }
+      rememberRecord(key, readback.record);
       counts.readbackConfirmations++;
       if (closed) throw failure('RECOVERY_REQUIRED');
       if (dispatchIntentEnabled) {
@@ -458,6 +501,7 @@ function createOwner(configuration, dispatchIntentEnabled) {
           holdCustody();
           throw failure('CUSTODY_OUTCOME_UNKNOWN');
         }
+        rememberRecord(key, readback.record, confirmed.record);
         counts.intentReadbackConfirmations++;
         if (closed) throw failure('RECOVERY_REQUIRED');
       }
@@ -515,6 +559,7 @@ function createOwner(configuration, dispatchIntentEnabled) {
       const raw = callStore('getOriginalRequest', [key], 'recordReads');
       if (raw === null) {
         if (closed) throw failure('CLOSED');
+        requireUnobservedAbsence(key);
         return null;
       }
       if (raw === undefined) {
@@ -535,6 +580,7 @@ function createOwner(configuration, dispatchIntentEnabled) {
       }
       // Reentrant close fences output after complete custody validation.
       if (closed) throw failure('CLOSED');
+      rememberRecord(key, record);
       return record;
     } catch (error) {
       const code = known(error);
@@ -578,6 +624,8 @@ function createOwner(configuration, dispatchIntentEnabled) {
       let dispatchIntent = null;
       if (dispatchIntentEnabled && original !== null) {
         const intentRaw = callStore('getOriginalDispatchIntent', [key], 'intentReads');
+        const known = knownRecord(key);
+        if (intentRaw === null && known !== null && known.intentChecksum !== null) custodyChanged();
         if (intentRaw !== null) dispatchIntent = intentForCurrent(intentRaw, key, current, original).record;
       }
       let latest;
@@ -592,7 +640,8 @@ function createOwner(configuration, dispatchIntentEnabled) {
         throw failure('CUSTODY_OUTCOME_UNKNOWN');
       }
       if (closed) throw failure('CLOSED');
-      if (original === null) return null;
+      if (original === null) { requireUnobservedAbsence(key); return null; }
+      rememberRecord(key, original, dispatchIntent);
       return FREEZE({
         original,
         funding: latest,
