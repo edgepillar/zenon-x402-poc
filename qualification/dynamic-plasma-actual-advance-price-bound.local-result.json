@@ -1,0 +1,420 @@
+{
+  "version": 1,
+  "status": "PASS_SIX_SELECTED_LOCAL_COMPONENT_CASES",
+  "scope": "P1-A declared-data price-policy actual-advance bound",
+  "sourceBase": {
+    "repository": "edgepillar/zenon-x402-poc",
+    "main": "a710dbfcccb12dcae8098b20af233cc0029c0b06",
+    "tree": "a109b10a7bb17c0d644fa8422087303f452115fd"
+  },
+  "decision": {
+    "localComponent": "COMPLETE_FOR_THE_SIX_SELECTED_CASES",
+    "fullP1A": "NOT_COMPLETE",
+    "production": "NO_GO"
+  },
+  "selection": {
+    "rationale": "The original quote reserves resources for its maximum horizon. Current selection previously compared reported prices only with that full-horizon ceiling, even when fewer advances had elapsed. The four selected counterexamples were positively accepted by both baseline selection entry points. The candidate additionally bounds current reported prices by the original declared p and the actual reported height advance.",
+    "retainedCoverage": {
+      "mainFiles": 632,
+      "nonMainReferences": 165,
+      "openPullRequests": [
+        {
+          "number": 194,
+          "head": "79ca2b430ae53c55b1aba11e56c99e083d4a8431",
+          "files": 20,
+          "overlap": []
+        },
+        {
+          "number": 193,
+          "head": "5b4bf1b6780586676007c84303510fb4e316cf5e",
+          "files": 2,
+          "overlap": []
+        },
+        {
+          "number": 175,
+          "head": "40eca21c34263513230c5d3c431250a0ed42aa90",
+          "files": 11,
+          "overlap": []
+        },
+        {
+          "number": 157,
+          "head": "525578cc44db23943e9cfb5a62c4d1c487cca99a",
+          "files": 2,
+          "overlap": []
+        }
+      ],
+      "openIssueRecords": 8
+    },
+    "limit": "Finite current-main source/call-chain and open-PR target overlap. No exhaustive content review of every branch and no novelty claim inferred from missing coverage.",
+    "owner": "Self implementation and a separate complete read-only primary evidence readback; no external worker, new host or saved operational helper."
+  },
+  "implementation": {
+    "path": "src/zenon/dynamic-plasma-price-policy.js",
+    "before": {
+      "path": "src/zenon/dynamic-plasma-price-policy.js",
+      "bytes": 14957,
+      "LF": 418,
+      "sha256": "41e2e2044597cfa69c5adca292bcd762a189076be1cd939bec10798d7e35c52b",
+      "gitBlob": "ed505153487adb5284d895c922641b6de5d9caf8"
+    },
+    "after": {
+      "path": "src/zenon/dynamic-plasma-price-policy.js",
+      "bytes": 15457,
+      "LF": 427,
+      "sha256": "dc935f2d06d518c0ec4cec3f20f9233b931fd8c3f35c2d6733f03f33dcab61d0",
+      "gitBlob": "3f51ff06c3ae4189fc5e01233f1998bd1abe612c"
+    },
+    "behavior": "After existing identity, age, availability and full-horizon checks, current fusion/work prices must also fit integer-floored growth over the reported advances actually elapsed.",
+    "fullHorizonPreserved": true,
+    "originalQuoteAndSelectedFieldsPreserved": true,
+    "unchanged": [
+      "Quote/receipt version and field schema",
+      "Original maximum horizon resource allocation",
+      "Declared p domain and 128-advance resource cap",
+      "Original exact fusedPlasma and difficulty selection",
+      "Account availability and identity/quote binding checks",
+      "Same-height/hash and positive-age hash consistency guards",
+      "No-authority/no-after-signing-action labels",
+      "Active buyer, SDK, planner wiring, signing and recovery owners"
+    ],
+    "compatibility": "Tighter declared-observation consistency only. A once-admitted but impossibly fast declared price path now rejects; it supplies no chain authentication or new signing/replacement authority."
+  },
+  "execution": {
+    "nativeCommands": 1,
+    "actualExits": [
+      0
+    ],
+    "selected": 6,
+    "passed": 6,
+    "failed": 0,
+    "skipped": 0,
+    "cancelled": 0,
+    "completeStreams": true,
+    "runtime": {
+      "node": "24.19.0",
+      "platform": "darwin",
+      "arch": "arm64",
+      "sha256": "dbedff294bab84a0a86c04e15fbcbeb1c97ca10bef1b32b0634cd24b36f62100",
+      "digestReuse": "Prior complete runtime digest reused after exact current nine-field physical identity match"
+    },
+    "sourcePins": [
+      {
+        "path": "package.json",
+        "bytes": 1413,
+        "LF": 40,
+        "sha256": "8c9a25504fbf6f87c31cdf245a6f4eec5a88cc89c8352151dc66a577c5771ef5",
+        "gitBlob": "ec7193f6fd76f34778515079dc777594175c4c34"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-price-policy.js",
+        "bytes": 15457,
+        "LF": 427,
+        "sha256": "dc935f2d06d518c0ec4cec3f20f9233b931fd8c3f35c2d6733f03f33dcab61d0",
+        "gitBlob": "3f51ff06c3ae4189fc5e01233f1998bd1abe612c"
+      },
+      {
+        "path": "qualification/dynamic-plasma-actual-advance-price-bound.behavior.draft.mjs",
+        "bytes": 9520,
+        "LF": 180,
+        "sha256": "cd9f3a40626ce75f9309bf9c7c7fd2109bb93cab54f939eeefab1cc43782ec3c",
+        "gitBlob": "cc47b82c29fff5270e4242e65f813afa2514cf5a"
+      }
+    ],
+    "sourceImages": [
+      {
+        "imagePath": "package.json",
+        "role": "PACKAGE",
+        "originPath": "package.json",
+        "bytes": 1413,
+        "LF": 40,
+        "sha256": "8c9a25504fbf6f87c31cdf245a6f4eec5a88cc89c8352151dc66a577c5771ef5",
+        "gitBlob": "ec7193f6fd76f34778515079dc777594175c4c34"
+      },
+      {
+        "imagePath": "baseline/dynamic-plasma-price-policy.js",
+        "role": "EXACT_PINNED_MAIN_BASELINE",
+        "originPath": "src/zenon/dynamic-plasma-price-policy.js",
+        "bytes": 14957,
+        "LF": 418,
+        "sha256": "41e2e2044597cfa69c5adca292bcd762a189076be1cd939bec10798d7e35c52b",
+        "gitBlob": "ed505153487adb5284d895c922641b6de5d9caf8"
+      },
+      {
+        "imagePath": "candidate/dynamic-plasma-price-policy.js",
+        "role": "CANDIDATE",
+        "originPath": "src/zenon/dynamic-plasma-price-policy.js",
+        "bytes": 15457,
+        "LF": 427,
+        "sha256": "dc935f2d06d518c0ec4cec3f20f9233b931fd8c3f35c2d6733f03f33dcab61d0",
+        "gitBlob": "3f51ff06c3ae4189fc5e01233f1998bd1abe612c"
+      },
+      {
+        "imagePath": "qualification/dynamic-plasma-actual-advance-price-bound.behavior.draft.mjs",
+        "role": "ENTRY",
+        "originPath": "qualification/dynamic-plasma-actual-advance-price-bound.behavior.draft.mjs",
+        "bytes": 9520,
+        "LF": 180,
+        "sha256": "cd9f3a40626ce75f9309bf9c7c7fd2109bb93cab54f939eeefab1cc43782ec3c",
+        "gitBlob": "cc47b82c29fff5270e4242e65f813afa2514cf5a"
+      }
+    ],
+    "staging": "The explicit entry executes only in the reviewed source/{package.json,baseline/policy,candidate/policy,qualification/entry} task layout. Both policy bodies are unchanged copies of their pinned source images; no loader/query suffix, import rewriting, virtual method replacement or external package is used.",
+    "names": [
+      "elapsed price bound rejects a one-step fusion jump despite spare full-horizon headroom",
+      "elapsed price bound rejects a one-step work jump despite spare full-horizon headroom",
+      "elapsed price bound rejects a two-step jump above the actual two-step ceiling",
+      "elapsed price bound applies integer flooring at the actual elapsed step",
+      "elapsed price bound keeps original selections at coherent one-step and two-step prices",
+      "elapsed price bound preserves the full horizon for declared rates one ten twenty-five and one hundred"
+    ],
+    "diagnostics": [
+      {
+        "kind": "P1A_ELAPSED_PRICE_BOUND",
+        "selection": 1,
+        "status": "ASSERTIONS_COMPLETED",
+        "baselineSelections": 2,
+        "candidateRejections": 2,
+        "coherentSelections": 0,
+        "originalQuotePreserved": true,
+        "operationalCalls": 0,
+        "qualification": "DECLARED_DATA_ONLY_NO_RUNTIME_P_OR_CHAIN_PROOF"
+      },
+      {
+        "kind": "P1A_ELAPSED_PRICE_BOUND",
+        "selection": 2,
+        "status": "ASSERTIONS_COMPLETED",
+        "baselineSelections": 2,
+        "candidateRejections": 2,
+        "coherentSelections": 0,
+        "originalQuotePreserved": true,
+        "operationalCalls": 0,
+        "qualification": "DECLARED_DATA_ONLY_NO_RUNTIME_P_OR_CHAIN_PROOF"
+      },
+      {
+        "kind": "P1A_ELAPSED_PRICE_BOUND",
+        "selection": 3,
+        "status": "ASSERTIONS_COMPLETED",
+        "baselineSelections": 2,
+        "candidateRejections": 2,
+        "coherentSelections": 0,
+        "originalQuotePreserved": true,
+        "operationalCalls": 0,
+        "qualification": "DECLARED_DATA_ONLY_NO_RUNTIME_P_OR_CHAIN_PROOF"
+      },
+      {
+        "kind": "P1A_ELAPSED_PRICE_BOUND",
+        "selection": 4,
+        "status": "ASSERTIONS_COMPLETED",
+        "baselineSelections": 2,
+        "candidateRejections": 2,
+        "coherentSelections": 0,
+        "originalQuotePreserved": true,
+        "operationalCalls": 0,
+        "qualification": "DECLARED_DATA_ONLY_NO_RUNTIME_P_OR_CHAIN_PROOF"
+      },
+      {
+        "kind": "P1A_ELAPSED_PRICE_BOUND",
+        "selection": 5,
+        "status": "ASSERTIONS_COMPLETED",
+        "baselineSelections": 0,
+        "candidateRejections": 0,
+        "coherentSelections": 16,
+        "originalQuotePreserved": true,
+        "operationalCalls": 0,
+        "qualification": "DECLARED_DATA_ONLY_NO_RUNTIME_P_OR_CHAIN_PROOF"
+      },
+      {
+        "kind": "P1A_ELAPSED_PRICE_BOUND",
+        "selection": 6,
+        "status": "ASSERTIONS_COMPLETED",
+        "baselineSelections": 0,
+        "candidateRejections": 0,
+        "coherentSelections": 32,
+        "originalQuotePreserved": true,
+        "operationalCalls": 0,
+        "qualification": "DECLARED_DATA_ONLY_NO_RUNTIME_P_OR_CHAIN_PROOF"
+      }
+    ],
+    "assertionTotals": {
+      "baselineCounterexampleSelections": 8,
+      "candidateRejections": 8,
+      "coherentOriginalSelections": 48,
+      "operationalCalls": 0
+    },
+    "reporter": {
+      "requested": "tap",
+      "TAPPlanObserved": true,
+      "exactPlan": "1..6"
+    },
+    "streams": {
+      "stdout": {
+        "bytes": 3169,
+        "sha256": "c37d8be2f7e5a361f01ea91fd4e908338eeca55cde473bccc27abad1246640d4"
+      },
+      "stderr": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    "evidenceRecords": [
+      {
+        "kind": "task",
+        "bytes": 1050,
+        "sha256": "b92edbb88bf690d102bfb521464407632134256df036021852d708b95565b139"
+      },
+      {
+        "kind": "admission",
+        "bytes": 8860,
+        "sha256": "6700f1f722e46d862474c3b3e1347c16095f694f5008130cd5d8f187dde22880"
+      },
+      {
+        "kind": "cleanup",
+        "bytes": 178,
+        "sha256": "fc006fb4cef671d01dc343994b9c1e22fff6d7022c288536ed9fed4244cbe784"
+      },
+      {
+        "kind": "command",
+        "bytes": 7656,
+        "sha256": "6c5301189b1a6961627a1aec7462729f5834035542b6281b87709ce0d33109c9"
+      },
+      {
+        "kind": "handoff",
+        "bytes": 13140,
+        "sha256": "0a9000437223564883ef1308b514eb294c66a14a59cc0d01a731bd1396cc837b"
+      },
+      {
+        "kind": "outcome",
+        "bytes": 61,
+        "sha256": "07e6e8787788c72a6f42c03e452742c5f953457049acfc996e818ce31e700b15"
+      },
+      {
+        "kind": "package",
+        "bytes": 746,
+        "sha256": "3a620ffb4d070b31fdf70f4861806150fca346d0ca09b6cfc1f148c1c030611d"
+      },
+      {
+        "kind": "preservation-before",
+        "bytes": 506,
+        "sha256": "01ab7ef5aefa51050ed6c8bfd3ab40ac838dd9eb411da81c0875149fc98b599d"
+      },
+      {
+        "kind": "source-graph",
+        "bytes": 4232,
+        "sha256": "27e394be38ffb9a9321a2492082b14d2f6a01bc510bf16883fdd36b32b2a89fa"
+      }
+    ],
+    "evidenceRecordBytes": 36429,
+    "sourceAndPrivatePreservation": {
+      "previousSourceArtifacts": 234,
+      "previousPrivateArtifacts": 624,
+      "protectedAbsences": 10,
+      "physicalAndContentPinsMatched": true
+    },
+    "independentReadback": "Complete retained receipts, source/CAS ownership records and full stdout/stderr were re-read in a separate read-only process and checked against the exact reviewed argv, source roles, TAP names, plan and diagnostics. This is not an independent human review.",
+    "oldFourteenCaseOutcome": "PRESERVED_UNCHANGED_NOT_REPLAYED",
+    "historicalTestBoundary": "Existing historical source-pin test artifacts were not reauthored or run. Their old byte/hash guards are historical inputs, not current-candidate suite evidence. The default suite and wider policy-consumer graph remain NOT_RUN for this candidate.",
+    "limits": {
+      "testTimeoutMilliseconds": 5000,
+      "managerTimeoutSeconds": 30,
+      "stdoutCapBytes": 32768,
+      "stderrCapBytes": 1048576,
+      "nodePermissionModel": false,
+      "hardLifetimeOrCancellationGuarantee": false,
+      "nativeCleanupOrOsNetworkSandboxGuarantee": false
+    }
+  },
+  "examples": [
+    {
+      "resource": "fusion",
+      "origin": 1000,
+      "declaredP": 10,
+      "maximumHorizon": 3,
+      "reportedAdvances": 1,
+      "actualAdvanceCeiling": 1100,
+      "reportedPrice": 1101,
+      "originalHorizonCeiling": 1331,
+      "outcome": "BASELINE_ACCEPTED_CANDIDATE_REJECTED"
+    },
+    {
+      "resource": "work",
+      "origin": 1000,
+      "declaredP": 10,
+      "maximumHorizon": 3,
+      "reportedAdvances": 1,
+      "actualAdvanceCeiling": 1100,
+      "reportedPrice": 1101,
+      "originalHorizonCeiling": 1331,
+      "outcome": "BASELINE_ACCEPTED_CANDIDATE_REJECTED"
+    },
+    {
+      "resource": "fusion",
+      "origin": 1000,
+      "declaredP": 10,
+      "maximumHorizon": 3,
+      "reportedAdvances": 2,
+      "actualAdvanceCeiling": 1210,
+      "reportedPrice": 1211,
+      "originalHorizonCeiling": 1331,
+      "outcome": "BASELINE_ACCEPTED_CANDIDATE_REJECTED"
+    },
+    {
+      "resource": "fusion",
+      "origin": 1019,
+      "declaredP": 1,
+      "maximumHorizon": 3,
+      "reportedAdvances": 1,
+      "actualAdvanceCeiling": 1029,
+      "reportedPrice": 1030,
+      "originalHorizonCeiling": 1049,
+      "outcome": "BASELINE_ACCEPTED_CANDIDATE_REJECTED"
+    }
+  ],
+  "storage": {
+    "sourceImages": 4,
+    "sourceBytes": 41347,
+    "expectedBytes": 2097152,
+    "taskQuotaBytes": 4194304,
+    "casInputsReused": 1,
+    "casInputsAdded": 3,
+    "independentApfsAliases": true,
+    "cleanup": "CLEANED_NEW_OWNED_DISPOSABLE_ALIASES_ONLY",
+    "cleanedLogicalScratchBytes": 41347,
+    "removedAliasFreshInspection": "NOT_AVAILABLE_AFTER_CLEANUP; before/after physical bindings are retained producer records and all retained objects were independently read",
+    "sourceImagesAndStreamsRetainedInCas": true,
+    "physicalApfsReclaimMeasured": false,
+    "historicalCleanup": false,
+    "hardlinks": false,
+    "recursiveArchive": false
+  },
+  "boundaries": {
+    "declaredDataOnly": true,
+    "actualRuntimeP": "NOT_ESTABLISHED",
+    "chainAuthentication": "NOT_ESTABLISHED",
+    "actualNonceWork": "NOT_RUN",
+    "newKeys": 0,
+    "newSignatures": 0,
+    "SDK": "NOT_IMPORTED",
+    "SQL": "NOT_USED",
+    "network": "NOT_USED",
+    "paymentOrRealPrepare": "NOT_RUN",
+    "providerReady": "NOT_ESTABLISHED",
+    "hostedCI": "NOT_RUN_NOT_GREEN",
+    "originalPaymentRequestAndConsumedAuthority": "UNCHANGED",
+    "PR193": "VALIDATED possible exact-same-signed-block resend remains distinct from UNKNOWN/ACKNOWLEDGED; no resend, replacement or re-signing.",
+    "protectedActualTotals": {
+      "consumedAdmissions": 2,
+      "actualChainPrepare": 1,
+      "bundles": 0,
+      "nativeChainOrProviderQualificationRuns": 0
+    },
+    "premises": "Native loader/runner/intrinsics/streams/OS behavior, source-to-import races, declared runtime/governance context and unchanged dependency behavior remain premises.",
+    "notEstablished": [
+      "Actual deployed p, binary/genesis/spork or chain identity",
+      "Price changes during real preparation, work, signing and inclusion",
+      "SDK shipment or active route adoption",
+      "Whole suite, wider consumer integration, restart, durability or pilot acceptance",
+      "Inclusion, funding or service-delivery guarantees"
+    ]
+  },
+  "nextFiniteWork": "Select a distinct unfinished qualified roadmap slice. Do not replay these unchanged completed scenarios. Keep main/CI separate from authorized local development."
+}

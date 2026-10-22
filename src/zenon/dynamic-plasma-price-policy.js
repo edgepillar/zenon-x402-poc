@@ -264,10 +264,10 @@ function snapshotPolicy(value) {
   });
 }
 
-function boundedPrice(initial, policy) {
+function boundedPrice(initial, policy, advances = policy.maxMomentumAdvances) {
   let price = initial;
   const multiplier = 100n + toBigInt(policy.maxPriceChangePercent);
-  for (let step = 0; step < policy.maxMomentumAdvances; step++) {
+  for (let step = 0; step < advances; step++) {
     price = (price * multiplier) / 100n;
     if (price < MINIMUM_PRICE) price = MINIMUM_PRICE;
     safeResult(price);
@@ -371,6 +371,15 @@ function checkSelection(input, fields, validate) {
       || (age > 0n && now.frontier.hash === origin.frontier.hash)
       || now.frontier.nextFusionPrice > quote.boundPrices.fusionPrice
       || now.frontier.nextWorkPrice > quote.boundPrices.workPrice) reject();
+
+  // The quote reserves its full horizon, but a current declared observation
+  // must also fit the price-growth ceiling for the advances actually elapsed.
+  const observedAdvances = toNumber(age);
+  if (toBigInt(now.frontier.nextFusionPrice) > boundedPrice(
+    toBigInt(origin.frontier.nextFusionPrice), policy, observedAdvances,
+  ) || toBigInt(now.frontier.nextWorkPrice) > boundedPrice(
+    toBigInt(origin.frontier.nextWorkPrice), policy, observedAdvances,
+  )) reject();
 
   // Price only the original planned fusion allocation, not the current pool.
   const required = calculateDynamicPlasmaPriceAmounts(
