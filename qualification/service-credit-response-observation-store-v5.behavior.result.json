@@ -1,0 +1,441 @@
+{
+  "format": "zenon-x402-poc/selected-local-behavior-result-v1",
+  "scope": "P2_NATIVE_V5_INSERT_ONLY_RESPONSE_OBSERVATION_FOUNDATION",
+  "status": "PASS_SELECTED_LOCAL_COMPONENT_BEHAVIOR_ONLY",
+  "fullP2Complete": false,
+  "productionStatus": "NO_GO",
+  "selection": {
+    "roadmapLane": "P2 original-request custody and local recovery",
+    "finiteSlice": "An explicit opt-in V5 SQLite profile records an insert-only, caller-declared successful HTTP response observation bound to an existing original request and dispatch intent. Four selected native component cases include a V4 profile control.",
+    "completedPredecessorMain": "bfea6019362f3be57ba9d4ca65e932b938337a1a",
+    "completedWorkNotRerun": "The preceding V4 backend-process and recovery-reader outcomes are retained, not repeated. This run tests new V5 response observations and selected profile controls.",
+    "admittedReason": "V4 persists a dispatch intent, not a response observation. This is an already-declared recovery boundary, not a newly demonstrated V4 bug or an inference of novelty from missing coverage.",
+    "sourceChanges": [
+      {
+        "path": "src/service-credit-zenon-funding-post-v1-payer-recovery-sqlite-store.js",
+        "old": {
+          "bytes": 64917,
+          "sha256": "db4d3aca8c039e3433e49f6bafe42cbc4973e0f9478500dbe6cf36f53773232d",
+          "gitBlob": "4672760ef5fdf135b52700da889562b653b6fecb"
+        },
+        "new": {
+          "path": "src/service-credit-zenon-funding-post-v1-payer-recovery-sqlite-store.js",
+          "bytes": 76152,
+          "LF": 1904,
+          "sha256": "3b77ec2e17293f9cc0de75147c84c50aa34563e6bcfb1917da06a4ecb3f3b2c9",
+          "gitBlob": "a46cfdf1612002f12d036aa33f86e445b3e4e087"
+        },
+        "additions": 219,
+        "deletions": 2,
+        "allV1ThroughV4FactoryBodiesByteIdentical": true,
+        "sharedInternalOptInDefault": false,
+        "compatibilityLimit": "Byte-identical V1-V4 factory bodies and selected V4 runtime controls are not a full V1-V4 regression suite."
+      }
+    ],
+    "addedFiles": [
+      "qualification/service-credit-response-observation-store-v5.behavior.draft.mjs",
+      "qualification/service-credit-response-observation-store-v5.behavior.result.json"
+    ],
+    "unchangedOwnerBoundary": "No HTTP owner, default factory, CLI, automatic dispatch, retry, signing or recovery-admission path adopts V5.",
+    "ownership": "Primary implementation and independent complete handoff review; no external worker was dispatched.",
+    "excluded": [
+      "SDK imports or execution",
+      "dependency installation",
+      "network or socket transport",
+      "keys or signatures",
+      "wallet or real payment",
+      "DP producer or chain execution",
+      "existing database SQL",
+      "forced kill or crash",
+      "power loss or operating-system restart",
+      "broad application, controller or native-provider qualification",
+      "host provisioning",
+      "new operational helper"
+    ]
+  },
+  "implementation": {
+    "schemaVersion": 5,
+    "appId": "0x5a505252",
+    "explicitFactories": [
+      "createZenonFundingPayerRecoveryResponseObservationSqliteStoreV5",
+      "openZenonFundingPayerRecoveryResponseObservationSqliteStoreV5"
+    ],
+    "exportedConstant": "ZENON_FUNDING_PAYER_RECOVERY_RESPONSE_OBSERVATION_SQLITE_SCHEMA_VERSION",
+    "methods": [
+      "recordOriginalResponseObservation",
+      "getOriginalResponseObservation",
+      "listUnobservedOriginalDispatchKeys"
+    ],
+    "table": "original_response_observations",
+    "insertOnly": true,
+    "binding": [
+      "grantId and requestId",
+      "existing BOUND funding resource, hash, network, revision and context",
+      "challenge and payment digests",
+      "policy",
+      "canonical original-request envelope digest",
+      "canonical dispatch-intent envelope digest",
+      "canonical response JSON and resultCode"
+    ],
+    "responseGrammar": "Exactly canonical JSON.stringify({ok:true,resultCode}) under the existing bounded identifier grammar, at most 512 UTF-8 bytes. Extra keys, duplicate JSON members, noncanonical encodings and false success are refused.",
+    "observationScope": "LOCAL_DECLARED_HTTP_SUCCESS_RESPONSE",
+    "observationStatus": "DECLARED_SUCCESS_RESPONSE_OBSERVED",
+    "checksumDomain": "zenon-x402:original-response-observation-v1",
+    "writeBoundary": "The existing privileged local store handle supplies a declared observation. This does not authenticate a remote server, receipt or service result.",
+    "transactionLifecycle": "Reuses the existing BEGIN IMMEDIATE, profile validation, commit-uncertainty and readback lifecycle. Whole-store observation validation precedes key-specific reduction.",
+    "idempotency": "An exact duplicate is idempotent only before quarantine; a conflicting response is refused. Quarantine refuses even an identical late write while retaining the earlier readable observation.",
+    "pendingKeys": "Returns only dispatch-intent keys without a stored observation. An empty list does not clear quarantine or grant permission.",
+    "authority": "NONE",
+    "actionFlags": false,
+    "originalIntentDeletion": false,
+    "quarantineClear": false,
+    "migrationOrAdoption": false,
+    "oldProfileAccess": "All three V5 methods refuse on V4. Cross-version opens refuse before changing the exact closed file bytes.",
+    "trustedLocalRecordLimit": "The checksum and digest bindings are consistency checks, not authentication, anti-rollback or protection against a privileged same-user writer."
+  },
+  "sourceBinding": {
+    "sourceCount": 5,
+    "sourceBytes": 152231,
+    "totalReadCapBytes": 262144,
+    "perFileCapBytes": 131072,
+    "files": [
+      {
+        "path": "src/service-credit-zenon-funding-post-v1-payer-recovery-sqlite-store.js",
+        "bytes": 76152,
+        "LF": 1904,
+        "sha256": "3b77ec2e17293f9cc0de75147c84c50aa34563e6bcfb1917da06a4ecb3f3b2c9",
+        "gitBlob": "a46cfdf1612002f12d036aa33f86e445b3e4e087"
+      },
+      {
+        "path": "src/service-credit-original-request-custody-contract.js",
+        "bytes": 14051,
+        "LF": 356,
+        "sha256": "fd349de553a17abcc2e0567ba6640e6e3d5d26cfa79ee1e355928dc9fa8d3915",
+        "gitBlob": "f911d42d01b69e6577f9bcd66f4ed59aab8ab882"
+      },
+      {
+        "path": "src/x402-wire.js",
+        "bytes": 39886,
+        "LF": 934,
+        "sha256": "5fba91af5a352f62d1a335c7176a45a604e2af5d92b1c4b0e53825c1f20d4e56",
+        "gitBlob": "fb060d4e349b1c31a1219a0cc137af250a8a2291"
+      },
+      {
+        "path": "package.json",
+        "bytes": 1413,
+        "LF": 40,
+        "sha256": "8c9a25504fbf6f87c31cdf245a6f4eec5a88cc89c8352151dc66a577c5771ef5",
+        "gitBlob": "ec7193f6fd76f34778515079dc777594175c4c34"
+      },
+      {
+        "path": "qualification/service-credit-response-observation-store-v5.behavior.draft.mjs",
+        "bytes": 20729,
+        "LF": 310,
+        "sha256": "7949cc96cde969bcc10a66735c646e0abeae402fdfc920880cba85ee83c7c9db",
+        "gitBlob": "b10c9f8fd03f62a1824fed6631039deb3cdfc1d6"
+      }
+    ],
+    "sourceBeforeAfterPhysicalIdentityStable": true,
+    "digestAndPhysicalIdentityCheckedBeforeNativeImports": true,
+    "applicationImportsRestrictedToReviewedGraph": true,
+    "sdkImportOrEvaluation": false,
+    "packageInstallation": false
+  },
+  "execution": {
+    "kind": "ACTUAL_SELECTED_LOCAL_NODE_SQLITE_COMPONENT_EXECUTION",
+    "selectedNodeCommands": 1,
+    "selectedEntry": "qualification/service-credit-response-observation-store-v5.behavior.draft.mjs",
+    "runtime": {
+      "node": "24.19.0",
+      "platform": "darwin",
+      "arch": "arm64",
+      "sha256": "dbedff294bab84a0a86c04e15fbcbeb1c97ca10bef1b32b0634cd24b36f62100"
+    },
+    "task": "CLOSED_SUCCESS",
+    "actualExits": [
+      0
+    ],
+    "outputComplete": [
+      true
+    ],
+    "counts": {
+      "tests": 4,
+      "suites": 0,
+      "pass": 4,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "passNames": [
+      "V5 observations bind exact originals and intents without consuming or authorizing them",
+      "V5 normal reopen retains observations while quarantine still refuses late success writes",
+      "V4 remains a distinct profile and cross-version opens preserve exact closed file bytes",
+      "V5 foreign observation corruption is refused before owner epoch advancement"
+    ],
+    "independentCompleteJoinedOutcomeReview": true,
+    "fullTapAndDiagnosticsRead": true,
+    "stdout": {
+      "bytes": 3207,
+      "sha256": "90473e29154cabee49abd10ce9d5f557d9ad53af4fab5465e60f9b1801aa8b73"
+    },
+    "stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "actualSqliteFiles": 2,
+    "sqliteFileCountProgression": [
+      1,
+      1,
+      2,
+      2
+    ],
+    "returnedOwnedStoreCloses": 4,
+    "ownedProcessGroupObservedAbsent": true,
+    "queuedNativeCommands": 0,
+    "syntheticSignatureOperations": 0,
+    "keypairsGenerated": 0,
+    "transportCalls": 0,
+    "realPaymentSigner": "DISABLED",
+    "nodePermissionModel": "OFF",
+    "permissionModelLimit": "Existing SQLite file permission and sync operations require the reviewed runtime premises. This is not an OS or network sandbox.",
+    "fixedInlineRunner": "Node builtins node:test, node:util, node:test/reporters and node:stream; one exact positional fixture, exact registered names and four matched diagnostics. Not a saved or installed operational helper.",
+    "deadlines": {
+      "perTestMilliseconds": 5000,
+      "managedCommandSeconds": 30,
+      "lockMilliseconds": 180
+    },
+    "deadlineLimit": "These timeouts are not hard lifetime, cancellation, native-cleanup, physical durability or OS/network-sandbox guarantees. Native loader, runner, streams, SQLite and OS behavior remain premises.",
+    "processExitLimit": "Normal close and reopen only. No forced termination, crash, process restart, OS restart, power-loss or physical-durability claim."
+  },
+  "cases": [
+    {
+      "name": "V5 observations bind exact originals and intents without consuming or authorizing them",
+      "outcome": "PASS",
+      "observed": "Exact insert-only response observations bind two synthetic grants without consuming original requests, intents or funding. Pending-key results exclude only observed intents; an undispatched original is not misclassified as a pending dispatch.",
+      "inputRefusals": 5,
+      "getterOrProxyTraps": 0,
+      "conflictRefusals": 1,
+      "missingIntentRefusals": 1,
+      "storedObservations": 2,
+      "returnedStoreCloses": 1
+    },
+    {
+      "name": "V5 normal reopen retains observations while quarantine still refuses late success writes",
+      "outcome": "PASS",
+      "observed": "Normal reopen retains both observations and original bindings. A third observation empties the selected grant's unobserved-intent list without erasing its intent. After quarantine is latched, an identical late response write is refused and the prior observation remains readable.",
+      "ownerEpochTransition": "1 -> 2",
+      "quarantineWriteRefusals": 1,
+      "storedObservations": 3,
+      "retainedQuarantineRows": 1,
+      "returnedStoreCloses": 2,
+      "emptyPendingListGrantsAuthority": false
+    },
+    {
+      "name": "V4 remains a distinct profile and cross-version opens preserve exact closed file bytes",
+      "outcome": "PASS",
+      "observed": "A distinct newly created V4 control keeps its quarantine. Three V5 methods refuse on V4. Two cross-version opens refuse with exact closed-file bytes and physical identities unchanged. A later valid V4 reopen advances only its owner epoch while retaining the original data and schema.",
+      "disabledProfileRefusals": 3,
+      "crossVersionRefusals": 2,
+      "returnedStoreCloses": 4,
+      "automaticMigrationOrAdoption": false
+    },
+    {
+      "name": "V5 foreign observation corruption is refused before owner epoch advancement",
+      "outcome": "PASS",
+      "observed": "A single foreign-grant observation envelope in the new synthetic V5 file is deliberately replaced with malformed data. A V5 reopen refuses corruption before owner-epoch advancement. The failed open preserves the exact malformed closed file, other rows and schema; the V4 file is unchanged.",
+      "corruptedCells": 1,
+      "corruptOpenRefusals": 1,
+      "repaired": false,
+      "ownerEpochAdvancedByFailedOpen": false,
+      "finalV5SemanticState": "INTENTIONALLY_CORRUPT_SYNTHETIC_FIXTURE_RETAINED_NOT_USABLE"
+    }
+  ],
+  "diagnostics": [
+    {
+      "kind": "P2_RESPONSE_OBSERVATION_V5",
+      "version": 1,
+      "scenario": "EXACT_INSERT_ONLY_DECLARED_RESPONSE_OBSERVATIONS",
+      "nativeSqliteFiles": 1,
+      "returnedStoreCloses": 1,
+      "inputRefusals": 5,
+      "conflictRefusals": 1,
+      "missingIntentRefusals": 1,
+      "quarantineWriteRefusals": 0,
+      "disabledProfileRefusals": 0,
+      "versionRefusals": 0,
+      "corruptOpenRefusals": 0,
+      "corruptionInjected": false,
+      "authority": "NONE",
+      "networkCalls": 0,
+      "syntheticSignatureOperations": 0,
+      "realPaymentSigner": "DISABLED",
+      "serviceDelivery": "NOT_ESTABLISHED",
+      "httpOwnerV5Adopted": false
+    },
+    {
+      "kind": "P2_RESPONSE_OBSERVATION_V5",
+      "version": 1,
+      "scenario": "REOPEN_WITHOUT_INTENT_RESET_OR_QUARANTINE_CLEAR",
+      "nativeSqliteFiles": 1,
+      "returnedStoreCloses": 2,
+      "inputRefusals": 5,
+      "conflictRefusals": 1,
+      "missingIntentRefusals": 1,
+      "quarantineWriteRefusals": 1,
+      "disabledProfileRefusals": 0,
+      "versionRefusals": 0,
+      "corruptOpenRefusals": 0,
+      "corruptionInjected": false,
+      "authority": "NONE",
+      "networkCalls": 0,
+      "syntheticSignatureOperations": 0,
+      "realPaymentSigner": "DISABLED",
+      "serviceDelivery": "NOT_ESTABLISHED",
+      "httpOwnerV5Adopted": false
+    },
+    {
+      "kind": "P2_RESPONSE_OBSERVATION_V5",
+      "version": 1,
+      "scenario": "V4_UNCHANGED_PROFILE_NO_ADOPTION_OR_MIGRATION",
+      "nativeSqliteFiles": 2,
+      "returnedStoreCloses": 4,
+      "inputRefusals": 5,
+      "conflictRefusals": 1,
+      "missingIntentRefusals": 1,
+      "quarantineWriteRefusals": 1,
+      "disabledProfileRefusals": 3,
+      "versionRefusals": 2,
+      "corruptOpenRefusals": 0,
+      "corruptionInjected": false,
+      "authority": "NONE",
+      "networkCalls": 0,
+      "syntheticSignatureOperations": 0,
+      "realPaymentSigner": "DISABLED",
+      "serviceDelivery": "NOT_ESTABLISHED",
+      "httpOwnerV5Adopted": false
+    },
+    {
+      "kind": "P2_RESPONSE_OBSERVATION_V5",
+      "version": 1,
+      "scenario": "WHOLE_STORE_CORRUPTION_REFUSAL_NO_REPAIR_OR_EPOCH_ADVANCE",
+      "nativeSqliteFiles": 2,
+      "returnedStoreCloses": 4,
+      "inputRefusals": 5,
+      "conflictRefusals": 1,
+      "missingIntentRefusals": 1,
+      "quarantineWriteRefusals": 1,
+      "disabledProfileRefusals": 3,
+      "versionRefusals": 2,
+      "corruptOpenRefusals": 1,
+      "corruptionInjected": true,
+      "authority": "NONE",
+      "networkCalls": 0,
+      "syntheticSignatureOperations": 0,
+      "realPaymentSigner": "DISABLED",
+      "serviceDelivery": "NOT_ESTABLISHED",
+      "httpOwnerV5Adopted": false
+    }
+  ],
+  "preservation": {
+    "directlyRecheckedRepositoryFiles": 167,
+    "directlyRecheckedPriorPrivateFiles": 329,
+    "authorizedSourceReplacement": {
+      "immutableMain": "bfea6019362f3be57ba9d4ca65e932b938337a1a",
+      "path": "src/service-credit-zenon-funding-post-v1-payer-recovery-sqlite-store.js",
+      "priorSha256": "db4d3aca8c039e3433e49f6bafe42cbc4973e0f9478500dbe6cf36f53773232d",
+      "priorGitBlob": "4672760ef5fdf135b52700da889562b653b6fecb",
+      "oldFileClaimedPhysicallyUnchanged": false
+    },
+    "oldEvidenceRewritten": false,
+    "protectedAbsences": 8,
+    "originalPaymentRequestAuthority": "Original payment/request bytes, hash, payload, requirements, context and consumed authority remain unchanged.",
+    "pr193": "VALIDATED exact-same-signed-block resend possibility remains distinct from UNKNOWN and ACKNOWLEDGED. No resend, replacement, re-signing or settlement is performed.",
+    "prior267CompleteOutcomeReviewsOrFullRehashReplayed": false,
+    "predecessorEvidence": {
+      "filesDecoded": 2,
+      "bytesDecoded": 36418,
+      "readCapBytes": 65536,
+      "completePredecessorRowSealsMatched": true,
+      "olderAncestorRecordsDecoded": 0,
+      "recursiveTraversal": false,
+      "distinction": "A bounded reviewed-prefix manifest and its published result bind prior coverage. Every current retained physical/content pin is still checked directly; this is not a replay of completed outcomes."
+    },
+    "failureEvidence": "The pre-native patch-context mismatch changed no file and launched zero native commands/assertions. It is retained separately, not counted as a failed or passed Node test. Earlier failures and refusals remain unchanged.",
+    "noLocalStageCommitResetCheckoutOrPush": true,
+    "noOwnershipResetOrConsumedAuthorityReset": true
+  },
+  "storage": {
+    "newPrivateSyntheticFiles": [
+      {
+        "role": "V5 deliberately corrupted response-observation fixture",
+        "bytes": 49152,
+        "sha256": "d04615287f6c1dacb3fe7d7628d7e87bcdfdfb4a4e74b8a8788c6f7cf53b922c"
+      },
+      {
+        "role": "V4 selected profile control",
+        "bytes": 40960,
+        "sha256": "b5964dc823dc187424e61aa6d1c6e4ad1ff54b853178c50361ef8e01e6762cd2"
+      }
+    ],
+    "retainedRawBytes": 90112,
+    "rawSqliteCASAdopted": false,
+    "rawSqliteOpenedByController": false,
+    "cleanup": "HOLD_UNREGISTERED_FILES",
+    "deletion": false,
+    "existingDatabaseSql": false,
+    "expectedTaskBytes": 2097152,
+    "taskQuotaBytes": 4194304,
+    "productionFreeSpaceFloorBytes": 10737418240,
+    "safetyMarginBytes": 1073741824,
+    "approvedStoreScratchLimitBytes": 10737418240,
+    "stricterPerLaunchScratchPrecheckLimitBytes": 6442450944,
+    "observedScratchPrecheckBytes": 3696355325,
+    "storageMetadataMatchedActiveAdmission": true,
+    "rootPolicyRewritten": false,
+    "policyLimit": "The conservative scan and expected allocation are a bounded capacity precheck, not an atomic OS quota guarantee."
+  },
+  "evidenceEfficiency": {
+    "stockManagerUnchanged": true,
+    "explicitRecordCalls": 3,
+    "currentMetadataFiles": 7,
+    "currentMetadataBytes": 77132,
+    "previousOneCommandLayoutMetadataFiles": 12,
+    "explicitRecordCallsAvoided": 5,
+    "actualChange": "Admission combines context and launch; one reviewed-prefix preservation record; joined handoff combines source-after, preservation-after, raw-file pins and primary outcome. Manager command/outcome/cleanup/task records remain distinct.",
+    "missingHandoff": "UNKNOWN_NOT_QUALIFIED",
+    "completeLaunchSourceOutcomeAndPreservationBindingsIndependentlyChecked": true,
+    "priorPrivateFiles": 329,
+    "currentPrivateCohortAfterRun": 338,
+    "binaryTransport": "Bounded descriptor capture, one CAS object per stream digest. Raw SQLite fixtures are retained without adoption, duplication, ZIP packaging or deletion.",
+    "measuredSpeedup": false,
+    "measuredPhysicalApfsReclaim": false
+  },
+  "acceptanceBoundaries": {
+    "componentResult": "PASS_ONLY_FOR_FOUR_SELECTED_LOCAL_CASES",
+    "callerDeclaredResponseObservation": "IMPLEMENTED_OPT_IN_COMPONENT",
+    "authenticatedServerReceipt": "NOT_ESTABLISHED",
+    "httpOwnerV5Adoption": "NOT_IMPLEMENTED",
+    "responseObservationOwnerBindingAndAdmission": "SEPARATE_UNCOMPLETED_SLICE",
+    "actualHttpReplyCutClassification": "NOT_QUALIFIED",
+    "fullP2": "INCOMPLETE",
+    "crossProcessRecovery": "NOT_EXERCISED_BY_THIS_PACKET",
+    "crashOrPowerLossDurability": "NOT_QUALIFIED",
+    "nativeCleanupOrCancellation": "NOT_QUALIFIED",
+    "realPaymentRecovery": "NOT_ESTABLISHED",
+    "sdkOrDpRuntime": "NOT_EXECUTED",
+    "serviceDelivery": "NOT_ESTABLISHED",
+    "providerReady": "NOT_ESTABLISHED",
+    "hostedCi": "NOT_RUN_NOT_GREEN",
+    "broadRegressionSuite": "NOT_RUN",
+    "pilotAcceptance": "NOT_ESTABLISHED",
+    "production": "NO_GO"
+  },
+  "protectedTotals": {
+    "consumedAdmissions": 2,
+    "actualChainPrepare": 1,
+    "bundles": 0,
+    "nativeChainProviderQualificationRuns": 0
+  },
+  "nextFiniteWork": "Review and implement an explicitly opt-in owner binding for response observations without erasing original intents, resetting consumed authority or treating local observation metadata as authenticated service delivery. This component packet does not authorize that owner path automatically."
+}

@@ -41,6 +41,7 @@ export const ZENON_FUNDING_PAYER_RECOVERY_SQLITE_SCHEMA_VERSION = 1;
 export const ZENON_FUNDING_PAYER_RECOVERY_CUSTODY_SQLITE_SCHEMA_VERSION = 2;
 export const ZENON_FUNDING_PAYER_RECOVERY_DISPATCH_INTENT_SQLITE_SCHEMA_VERSION = 3;
 export const ZENON_FUNDING_PAYER_RECOVERY_CUSTODY_QUARANTINE_SQLITE_SCHEMA_VERSION = 4;
+export const ZENON_FUNDING_PAYER_RECOVERY_RESPONSE_OBSERVATION_SQLITE_SCHEMA_VERSION = 5;
 export const ZENON_FUNDING_PAYER_RECOVERY_STATUS = Object.freeze({
   PREPARED: 'PREPARED',
   ATTEMPT_FENCED: 'ATTEMPT_FENCED',
@@ -86,6 +87,7 @@ function custodyEnabled(config) {
 
 const TABLE_DISPATCH_INTENTS = 'CREATE TABLE original_dispatch_intents(grant_id TEXT NOT NULL, request_id TEXT NOT NULL, envelope TEXT NOT NULL, PRIMARY KEY(grant_id,request_id), FOREIGN KEY(grant_id,request_id) REFERENCES original_service_requests(grant_id,request_id)) STRICT';
 const TABLE_CUSTODY_QUARANTINES = 'CREATE TABLE original_custody_quarantines(grant_id TEXT NOT NULL PRIMARY KEY, funding_singleton INTEGER NOT NULL CHECK(funding_singleton = 1) REFERENCES payer_recovery_state(singleton), envelope TEXT NOT NULL) STRICT';
+const TABLE_RESPONSE_OBSERVATIONS = 'CREATE TABLE original_response_observations(grant_id TEXT NOT NULL, request_id TEXT NOT NULL, envelope TEXT NOT NULL, PRIMARY KEY(grant_id,request_id), FOREIGN KEY(grant_id,request_id) REFERENCES original_dispatch_intents(grant_id,request_id)) STRICT';
 const INTENT_CAPTURE = captureOriginalServiceDispatchIntent;
 const INTENT_PARSE = parseOriginalServiceDispatchIntent;
 const INTENT_SERIALIZE = serializeOriginalServiceDispatchIntent;
@@ -96,6 +98,7 @@ function custodyQuarantineEnabled(config) {
   return config.custodyQuarantineVersion === 4;
 }
 function databaseVersion(config) {
+  if (responseObservationEnabled(config)) return 5;
   if (custodyQuarantineEnabled(config)) return 4;
   if (dispatchIntentEnabled(config)) return 3;
   return custodyEnabled(config) ? CUSTODY_DATABASE_USER_VERSION : DATABASE_USER_VERSION;
@@ -206,6 +209,87 @@ function validateCustodyRows(database, config, current) {
   for (const row of rows) custodyRecordFromRow(row, current, config);
   if (dispatchIntentEnabled(config)) validateDispatchIntentRows(database, config, current, policy);
   if (custodyQuarantineEnabled(config)) validateCustodyQuarantines(database, config, current, policy);
+  if (responseObservationEnabled(config)) validateResponseObservations(database, config, current, policy);
+  return count;
+}
+
+
+function responseObservationEnabled(config) {
+  return config.responseObservationVersion === 5;
+}
+
+function responseObservationText(value, code) {
+  try {
+    if (typeof value !== 'string' || byteLength(value) < 1 || byteLength(value) > 512) fail(code);
+    const parsed = exactDataObject(JSON.parse(value), ['ok', 'resultCode'], code);
+    if (parsed.ok !== true) fail(code);
+    CUSTODY_KEY({ grantId: 'result', requestId: parsed.resultCode });
+    if (JSON.stringify({ ok: true, resultCode: parsed.resultCode }) !== value) fail(code);
+    return parsed.resultCode;
+  } catch { fail(code); }
+}
+
+function responseObservationRecord(key, current, config, original, intent, responseJson) {
+  const core = {
+    responseObservationVersion: 1,
+    scope: 'LOCAL_DECLARED_HTTP_SUCCESS_RESPONSE',
+    grantId: key.grantId,
+    requestId: key.requestId,
+    ...custodyBinding(current),
+    fundingRevision: current.revision,
+    challengeDigest: digest('zenon-x402:payer-recovery-challenge-v1', current.challengeHeader),
+    paymentDigest: digest('zenon-x402:payer-recovery-payment-v1', current.paymentHeader),
+    custodyPolicy: config.custodyPolicy,
+    originalDigest: digest('zenon-x402:response-observation-original-v1', CUSTODY_SERIALIZE(original)),
+    dispatchIntentDigest: digest('zenon-x402:response-observation-intent-v1', INTENT_SERIALIZE(intent)),
+    responseJson,
+    resultCode: responseObservationText(responseJson, 'ZENON_FUNDING_PAYER_RECOVERY_STORE_CORRUPT'),
+    status: 'DECLARED_SUCCESS_RESPONSE_OBSERVED',
+    authority: 'NONE',
+    mayStartPayment: false,
+    maySignPayment: false,
+    mayDispatchService: false,
+    deliveryConfirmed: false,
+    serviceDelivery: 'NOT_ESTABLISHED',
+  };
+  return deepFreeze({
+    ...core,
+    checksum: digest('zenon-x402:original-response-observation-v1', core),
+  });
+}
+
+function responseObservationForRow(row, database, config, current) {
+  const code = 'ZENON_FUNDING_PAYER_RECOVERY_STORE_CORRUPT';
+  try {
+    if (current === null || current.status !== 'BOUND' || row === undefined
+        || typeof row.envelope !== 'string' || byteLength(row.envelope) > MAX_RECORD_BYTES) fail(code);
+    const key = CUSTODY_KEY({ grantId: row.grant_id, requestId: row.request_id });
+    const parsed = JSON.parse(row.envelope);
+    if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) fail(code);
+    const originalRow = database.prepare(
+      'SELECT * FROM original_service_requests WHERE grant_id=? AND request_id=?',
+    ).get(key.grantId, key.requestId);
+    const intentRow = database.prepare(
+      'SELECT * FROM original_dispatch_intents WHERE grant_id=? AND request_id=?',
+    ).get(key.grantId, key.requestId);
+    const original = custodyRecordFromRow(originalRow, current, config);
+    const intent = dispatchIntentForRow(intentRow, database, config, current);
+    const expected = responseObservationRecord(key, current, config, original, intent, parsed.responseJson);
+    if (canonicalJson(expected) !== row.envelope) fail(code);
+    return expected;
+  } catch { fail(code); }
+}
+
+function validateResponseObservations(database, config, current, policy) {
+  const code = 'ZENON_FUNDING_PAYER_RECOVERY_STORE_CORRUPT';
+  const count = database.prepare('SELECT COUNT(*) AS count FROM original_response_observations').get()?.count;
+  if (!Number.isSafeInteger(count) || count < 0 || count > policy.maxRequests
+      || (current === null && count !== 0)) fail(code);
+  const rows = database.prepare(
+    'SELECT * FROM original_response_observations ORDER BY grant_id,request_id LIMIT ?',
+  ).all(policy.maxRequests + 1);
+  if (rows.length !== count) fail(code);
+  for (const row of rows) responseObservationForRow(row, database, config, current);
   return count;
 }
 
@@ -804,7 +888,7 @@ function validateDefinitions(database, config) {
     : 'ZENON_FUNDING_PAYER_RECOVERY_STORE_SCHEMA_UNSUPPORTED';
   const definitions = database
     .prepare("SELECT type,name,sql FROM sqlite_master WHERE name NOT LIKE 'sqlite!_%' ESCAPE '!' ORDER BY name"
-      + (custodyQuarantineEnabled(config) ? " LIMIT 7"
+      + (responseObservationEnabled(config) ? " LIMIT 8" : custodyQuarantineEnabled(config) ? " LIMIT 7"
         : dispatchIntentEnabled(config) ? " LIMIT 6" : ""))
     .all();
   if (custodyEnabled(config)) {
@@ -816,6 +900,7 @@ function validateDefinitions(database, config) {
     ];
     if (dispatchIntentEnabled(config)) expected.unshift(['original_dispatch_intents', TABLE_DISPATCH_INTENTS]);
     if (custodyQuarantineEnabled(config)) expected.unshift(['original_custody_quarantines', TABLE_CUSTODY_QUARANTINES]);
+    if (responseObservationEnabled(config)) expected.splice(3, 0, ['original_response_observations', TABLE_RESPONSE_OBSERVATIONS]);
     if (definitions.length !== expected.length) {
       fail(schemaCode);
     }
@@ -945,6 +1030,7 @@ function openDatabase(config, identity, creating) {
         database.exec(TABLE_ORIGINAL_REQUESTS);
         if (dispatchIntentEnabled(config)) database.exec(TABLE_DISPATCH_INTENTS);
         if (custodyQuarantineEnabled(config)) database.exec(TABLE_CUSTODY_QUARANTINES);
+        if (responseObservationEnabled(config)) database.exec(TABLE_RESPONSE_OBSERVATIONS);
         database.prepare(
           'INSERT INTO original_request_custody_policy(singleton,policy_version,max_requests,service_resource_url) VALUES(1,?,?,?)',
         ).run(
@@ -1308,6 +1394,119 @@ export class ZenonFundingPayerRecoverySqliteStore {
     });
   }
 
+
+  #requireResponseObservation() {
+    if (!responseObservationEnabled(this.#configuration)) {
+      fail('ZENON_FUNDING_PAYER_RECOVERY_STORE_RESPONSE_OBSERVATION_NOT_ENABLED');
+    }
+  }
+
+  /**
+   * V5-only insert-only caller-declared response observation. This is NOT a
+   * server receipt, authenticated event, delivery proof or permission to send.
+   * The raw store handle is a trusted local writer; it must not be exposed to
+   * untrusted clients. Only the strict existing 200-response JSON grammar is
+   * accepted. Original, intent, funding and policy bindings are store-derived.
+   * No intent is removed. A quarantine is never cleared; even an identical
+   * write is refused once this grant is quarantined. Existing records remain
+   * readable as powerless DATA. There is no migration, repair or reset API.
+   */
+  recordOriginalResponseObservation(input) {
+    this.#requireResponseObservation();
+    const code = 'ZENON_FUNDING_PAYER_RECOVERY_STORE_INVALID_INPUT';
+    if (arguments.length !== 1) fail(code);
+    const value = exactDataObject(input, ['grantId', 'requestId', 'responseJson'], code);
+    let key;
+    try { key = CUSTODY_KEY({ grantId: value.grantId, requestId: value.requestId }); }
+    catch { fail(code); }
+    responseObservationText(value.responseJson, code);
+    return this.#write('recordOriginalResponseObservation', () => {
+      const { current } = this.#custodyState();
+      if (current === null || current.status !== 'BOUND') {
+        fail('ZENON_FUNDING_PAYER_RECOVERY_STORE_INVALID_TRANSITION');
+      }
+      this.#rejectCustodyQuarantine(key.grantId, current);
+      const originalRow = this.#database.prepare(
+        'SELECT * FROM original_service_requests WHERE grant_id=? AND request_id=?',
+      ).get(key.grantId, key.requestId);
+      const intentRow = this.#database.prepare(
+        'SELECT * FROM original_dispatch_intents WHERE grant_id=? AND request_id=?',
+      ).get(key.grantId, key.requestId);
+      if (originalRow === undefined || intentRow === undefined) {
+        fail('ZENON_FUNDING_PAYER_RECOVERY_STORE_INVALID_TRANSITION');
+      }
+      const original = this.#checkedCustodyRow(originalRow, current);
+      const intent = dispatchIntentForRow(intentRow, this.#database, this.#configuration, current);
+      const candidate = responseObservationRecord(
+        key, current, this.#configuration, original, intent, value.responseJson,
+      );
+      const text = canonicalJson(candidate);
+      const prior = this.#database.prepare(
+        'SELECT * FROM original_response_observations WHERE grant_id=? AND request_id=?',
+      ).get(key.grantId, key.requestId);
+      if (prior !== undefined) {
+        if (prior.envelope !== text) fail('ZENON_FUNDING_PAYER_RECOVERY_STORE_RESPONSE_OBSERVATION_CONFLICT');
+        return responseObservationForRow(prior, this.#database, this.#configuration, current);
+      }
+      const inserted = this.#database.prepare(
+        'INSERT INTO original_response_observations(grant_id,request_id,envelope) VALUES(?,?,?)',
+      ).run(key.grantId, key.requestId, text);
+      const stored = this.#database.prepare(
+        'SELECT * FROM original_response_observations WHERE grant_id=? AND request_id=?',
+      ).get(key.grantId, key.requestId);
+      if (inserted.changes !== 1 || stored?.envelope !== text) {
+        this.#quarantined = true;
+        fail('ZENON_FUNDING_PAYER_RECOVERY_STORE_CORRUPT');
+      }
+      return responseObservationForRow(stored, this.#database, this.#configuration, current);
+    });
+  }
+
+  /** V5 DATA only; null is absence of an observation, never a failed-send proof. */
+  getOriginalResponseObservation(input) {
+    this.#requireResponseObservation();
+    if (arguments.length !== 1) fail('ZENON_FUNDING_PAYER_RECOVERY_STORE_INVALID_INPUT');
+    let key;
+    try { key = CUSTODY_KEY(input); }
+    catch { fail('ZENON_FUNDING_PAYER_RECOVERY_STORE_INVALID_INPUT'); }
+    return this.#run(() => {
+      this.#validateDispatchProfile();
+      const row = this.#database.prepare(
+        'SELECT * FROM original_response_observations WHERE grant_id=? AND request_id=?',
+      ).get(key.grantId, key.requestId);
+      return row === undefined ? null
+        : responseObservationForRow(row, this.#database, this.#configuration, this.#read());
+    });
+  }
+
+  /**
+   * V5 bounded selected-grant DATA after full-store validation. An unobserved
+   * intent remains POSSIBLY_ATTEMPTED, not retry authority. An empty list is
+   * neither a quarantine clear nor current funding/payer/provider permission.
+   */
+  listUnobservedOriginalDispatchKeys(input) {
+    this.#requireResponseObservation();
+    if (arguments.length !== 1) fail('ZENON_FUNDING_PAYER_RECOVERY_STORE_INVALID_INPUT');
+    const grantId = custodyQuarantineGrant(input);
+    return this.#run(() => {
+      this.#validateDispatchProfile();
+      try {
+        const rows = this.#database.prepare(
+          'SELECT i.grant_id,i.request_id FROM original_dispatch_intents AS i'
+          + ' LEFT JOIN original_response_observations AS r ON r.grant_id=i.grant_id AND r.request_id=i.request_id'
+          + ' WHERE i.grant_id=? AND r.grant_id IS NULL ORDER BY i.grant_id,i.request_id LIMIT ?',
+        ).all(grantId, this.#configuration.custodyPolicy.maxRequests + 1);
+        if (rows.length > this.#configuration.custodyPolicy.maxRequests) {
+          fail('ZENON_FUNDING_PAYER_RECOVERY_STORE_CORRUPT');
+        }
+        return deepFreeze(rows.map(row => CUSTODY_KEY({ grantId: row.grant_id, requestId: row.request_id })));
+      } catch {
+        this.#quarantined = true;
+        fail('ZENON_FUNDING_PAYER_RECOVERY_STORE_CORRUPT');
+      }
+    });
+  }
+
   #validateDispatchProfile() {
     try { validateDatabase(this.#database, this.#configuration); }
     catch {
@@ -1575,7 +1774,7 @@ export class ZenonFundingPayerRecoverySqliteStore {
   }
 }
 
-function openStore(options, creating, custody = false, dispatchIntent = false, custodyQuarantine = false) {
+function openStore(options, creating, custody = false, dispatchIntent = false, custodyQuarantine = false, responseObservation = false) {
   const code = 'ZENON_FUNDING_PAYER_RECOVERY_STORE_INVALID_CONFIGURATION';
   if (
     options === null
@@ -1614,6 +1813,7 @@ function openStore(options, creating, custody = false, dispatchIntent = false, c
   }
   if (dispatchIntent) config = Object.freeze({ ...config, dispatchIntentVersion: 3 });
   if (custodyQuarantine) config = Object.freeze({ ...config, custodyQuarantineVersion: 4 });
+  if (responseObservation) config = Object.freeze({ ...config, responseObservationVersion: 5 });
   if (OPEN_DATABASE_PATHS.has(config.databasePath)) {
     fail('ZENON_FUNDING_PAYER_RECOVERY_STORE_OWNER_BUSY');
   }
@@ -1684,4 +1884,21 @@ export function createZenonFundingPayerRecoveryCustodyQuarantineSqliteStoreV4(op
 export function openZenonFundingPayerRecoveryCustodyQuarantineSqliteStoreV4(options) {
   if (arguments.length !== 1) fail('ZENON_FUNDING_PAYER_RECOVERY_STORE_INVALID_CONFIGURATION');
   return openStore(options, false, true, true, true);
+}
+
+
+/**
+ * Explicit V5 response-observation profile; V1-V4 files are refused unchanged.
+ * Reuses the existing native owner/epoch, custody, intent and quarantine rules.
+ * Only new selected callers opt in. No HTTP/owner/default/CLI path adopts V5.
+ * This is local declared DATA, not authenticated delivery, rollback resistance,
+ * crash/power-loss qualification, reconciliation or payment/retry authority.
+ */
+export function createZenonFundingPayerRecoveryResponseObservationSqliteStoreV5(options) {
+  if (arguments.length !== 1) fail('ZENON_FUNDING_PAYER_RECOVERY_STORE_INVALID_CONFIGURATION');
+  return openStore(options, true, true, true, true, true);
+}
+export function openZenonFundingPayerRecoveryResponseObservationSqliteStoreV5(options) {
+  if (arguments.length !== 1) fail('ZENON_FUNDING_PAYER_RECOVERY_STORE_INVALID_CONFIGURATION');
+  return openStore(options, false, true, true, true, true);
 }
