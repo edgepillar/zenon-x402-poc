@@ -1,0 +1,215 @@
+{
+  "schemaVersion": 1,
+  "kind": "UNSIGNED_ORIGINAL_QUOTE_CHECKPOINT_SOURCE_PUBLICATION_REVIEW",
+  "status": "APPROVED_FOR_SCOPED_OPT_IN_SOURCE_PUBLICATION_NOT_FULL_QUALIFICATION",
+  "reviewedAtUtc": "2026-10-22T21:06:57.830829+00:00",
+  "sourceBaseMain": "a655978364d1403c961df55e19c4c2255f225ad4",
+  "scope": {
+    "target": "Additive default-off codec source, its unchanged selected local test entry and original partial-result record, plus this publication-readiness review.",
+    "paths": [
+      "src/zenon/dynamic-plasma-unsigned-original-checkpoint.js",
+      "qualification/dynamic-plasma-unsigned-original-checkpoint.behavior.draft.mjs",
+      "qualification/dynamic-plasma-unsigned-original-checkpoint.local-result.json",
+      "qualification/dynamic-plasma-unsigned-original-checkpoint.publication-review.json"
+    ],
+    "authorization": "Standing human authorization for small sufficiently reviewed and validated main batches. This decision is a routine source-publication decision only.",
+    "publicationDecisionChange": "Supersedes only the earlier routine publication hold. It does not supersede, repair or relabel any execution outcome, protected failure, unexecuted case or acceptance gate.",
+    "qualificationMeaning": "The same 16-case native command passed and its complete command receipt, source objects and streams are protected. Its managed task remains CLOSED / FAILURE because the final duplicate handoff record was not saved. Source publication is not a claim that that task or full-scope qualification succeeded."
+  },
+  "unchangedPacketPins": [
+    {
+      "path": "src/zenon/dynamic-plasma-unsigned-original-checkpoint.js",
+      "bytes": 9301,
+      "sha256": "506551e4292491a905a27f56695c30642af6a0e6a85158586379649999f8da47",
+      "gitBlob": "46ac7a4761b078048c205eaf531a7aab7a1d81a9"
+    },
+    {
+      "path": "qualification/dynamic-plasma-unsigned-original-checkpoint.behavior.draft.mjs",
+      "bytes": 16838,
+      "sha256": "8b632606b37c8d9826717cab56c3427369a6070506c86a98b48c3cf9f9217db7",
+      "gitBlob": "1e5fcaec9d4088ce031f4cb3272b0af798ce202b"
+    },
+    {
+      "path": "qualification/dynamic-plasma-unsigned-original-checkpoint.local-result.json",
+      "bytes": 18528,
+      "sha256": "0d065320c947318fc476e54a1c3d178d63c052dca351137ec602513fc027d9aa",
+      "gitBlob": "1d391fcbbc8592d537e7a4d29bb5b0aef8cdf438"
+    }
+  ],
+  "retainedSelectedExecution": {
+    "newCommandsForThisPublication": 0,
+    "priorCommandReplayed": false,
+    "actualExit": 0,
+    "outputComplete": true,
+    "counts": {
+      "tests": 16,
+      "suites": 0,
+      "pass": 16,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "stdout": {
+      "bytes": 4719,
+      "sha256": "41c0250c8371c63b2bac4f1ddfdbd1e8be8a1746a97527b3d0290f0fcd558825"
+    },
+    "stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "managedTaskState": "CLOSED",
+    "managedTaskOutcome": "FAILURE",
+    "protectedHandoffRecordPersisted": false,
+    "fullScopeQualified": false,
+    "originalFailureAndResultRecordUnchanged": true
+  },
+  "evidenceAndReadiness": {
+    "reusedReadOnlyEvidenceReconciliation": "RECONCILED_SELECTED_NATIVE_PASS_MANAGED_FINALIZATION_FAILURE",
+    "completeProtectedMetadataRecordsPreviouslyRead": 8,
+    "allInputLedgersAndCreatorsPreviouslyVerified": 21,
+    "currentSourceAndProtectedEvidencePhysicalAndContentPinsMatched": true,
+    "mainDependencyBindings": [
+      {
+        "path": "package.json",
+        "gitBlob": "ec7193f6fd76f34778515079dc777594175c4c34",
+        "matched": true
+      },
+      {
+        "path": "src/canonical.js",
+        "gitBlob": "5367f9c72ee13017a61630e1f0cffdced21d52c4",
+        "matched": true
+      },
+      {
+        "path": "src/x402-wire.js",
+        "gitBlob": "fb060d4e349b1c31a1219a0cc137af250a8a2291",
+        "matched": true
+      },
+      {
+        "path": "src/zenon/bounded-dynamic-plasma-strategy.js",
+        "gitBlob": "ee85b7a4da8bf4190ae099e6bc5074059fccebbc",
+        "matched": true
+      },
+      {
+        "path": "src/zenon/bounded-json-rpc-read-core.js",
+        "gitBlob": "3bd98a83413eb13e3bceb097d35fb874b4c030a2",
+        "matched": true
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-compatibility.js",
+        "gitBlob": "3811b748b3f905e454c8a4af4650bb7f89eb1cf2",
+        "matched": true
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-json-rpc-read-transport.js",
+        "gitBlob": "0475b7ab42889f67fb030fa7344d73d8bd6957d7",
+        "matched": true
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-observation-collector.js",
+        "gitBlob": "171a49f29379866ed111031d15423634ac2d17b4",
+        "matched": true
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-observation-normalizer.js",
+        "gitBlob": "c406db8471aa6c8afd812c222c673c809491cf00",
+        "matched": true
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-price-policy.js",
+        "gitBlob": "649dd09b60236b43c91d22e34b76f71f4b661361",
+        "matched": true
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-required-fused-policy-adapter.js",
+        "gitBlob": "b592aafd4c41461318376ea9acc1373f99317455",
+        "matched": true
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-required-fused-quote.js",
+        "gitBlob": "e820fd31ffde4ef77a2efa6e1fd3ed1775778726",
+        "matched": true
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-user-send-assembly.js",
+        "gitBlob": "a0537856f6692d278c9043ab9c1c734d1bde61ba",
+        "matched": true
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-user-send-fixed-work.js",
+        "gitBlob": "4ce2a790df84c77bc76615e5eebc309ecd2868ac",
+        "matched": true
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-user-send-key-binding.js",
+        "gitBlob": "c366f0fee4132604b40604547fe22f1bc1dba65d",
+        "matched": true
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-user-send-work-binding.js",
+        "gitBlob": "a329d521458a5c5b6dbc87194d91d4165d5e759c",
+        "matched": true
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-user-send-work-input.js",
+        "gitBlob": "dad4febf4ef6f09216640245c7e3805e01ad0127",
+        "matched": true
+      },
+      {
+        "path": "src/zenon/plasma-strategy.js",
+        "gitBlob": "5cddc2d270aaf043e6e43145e95ffe0be3dde475",
+        "matched": true
+      },
+      {
+        "path": "src/zenon/transaction-planner.js",
+        "gitBlob": "17b49a3d53974c9b3846ec6f352d6e8974bad7d3",
+        "matched": true
+      }
+    ],
+    "sourceMatchesTheActualSelectedCommand": true,
+    "originalRuntime": "Node 24.19.0 / darwin-arm64",
+    "notAFreshRuntimeOrHostedCIResult": true
+  },
+  "riskReview": {
+    "activeExecutionPathsModified": false,
+    "defaultBuyerOrPlannerAdoption": false,
+    "dependenciesOrWorkflowsChanged": false,
+    "SDKOrSignerOrPaymentOwnerChanged": false,
+    "nonceSearchOrSignatureOrSQLOrNetworkRunAdded": false,
+    "standaloneCheckpointIsNotOriginalCustody": true,
+    "coherentWholeCheckpointSubstitutionStillRequiresIndependentCallerProtection": true,
+    "priceAndRuntimeContextRemainDeclaredData": true,
+    "signingAuthority": "NOT_ESTABLISHED",
+    "productionAndLivePilotReadiness": "NOT_ESTABLISHED",
+    "hostedCI": "NOT_RUN_NOT_GREEN",
+    "branchProtectionObserved": false,
+    "branchRulesObserved": [],
+    "branchProtectionOrRequiredChecksBypassed": false
+  },
+  "excludedWork": {
+    "newObservedOriginalAdapterPublished": false,
+    "itsSixSelectedCases": "NOT_RUN",
+    "newAdmissionFailure": "Metadata lease Busy before any task or command was created; not a runtime test failure.",
+    "earlierKnownOwnedAdmissionTaskFinalization": "Finished through the unchanged manager as CLOSED / FAILURE with zero commands; only its registered empty scratch was removed.",
+    "originalClosedFailureAndUnexecutedSourcePhaseRecordsPreserved": true,
+    "allPaymentRequestBytesHashesContextsAndConsumedAuthorityUnchanged": true,
+    "realTotals": {
+      "consumedAdmissions": 2,
+      "actualPrepare": 1,
+      "bundles": 0,
+      "nativeChainProviderQualificationRuns": 0
+    }
+  },
+  "publicationProcedure": {
+    "required": "Fresh main, exact four-file added-only diff, original 655 paths unchanged, source dependency blob equality, ownership/PR/ref checks and relevant local evidence review, followed by normal non-forced fast-forward and readback.",
+    "commitSkipCIIntent": true,
+    "noFullSuiteOrHostedQualificationRequested": true,
+    "localHeadBranchIndexAndUnrelatedEditsMustRemainUntouched": true
+  },
+  "limits": [
+    "Only the selected original 16-case local result supports this source publication. No new experiment or qualification is reported.",
+    "The original managed task FAILURE and fullScopeQualified:false stay visible in the unchanged result record.",
+    "This is not active buyer integration, original-payment custody, current account/balance authentication, signing authority, SDK/native provider operation, restart durability, inclusion, live DP, pilot or production acceptance.",
+    "The new six-case observed-original application connection stays local and unexecuted; no claim about its runtime behavior is made."
+  ]
+}
