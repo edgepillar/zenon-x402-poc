@@ -1,0 +1,283 @@
+{
+  "recordVersion": 1,
+  "kind": "SERVICE_CREDIT_ZENON_FIXED_FUNDING_POLICY_SELECTED_LOCAL_RESULT",
+  "status": "PASS_SELECTED_LOCAL_BEHAVIOR",
+  "sourceBase": {
+    "repository": "edgepillar/zenon-x402-poc",
+    "main": "6b671ffc2a937fb479f1f3b13143e4c6c154fa94",
+    "tree": "ad016ce3229280675138169fad4f5f8576599587"
+  },
+  "scope": {
+    "lane": "P4 supervised service-credit pilot preparation; optional fixed economic-policy implementation",
+    "completedSlice": "Implement one default-off fixed deriveFundingTerms policy and exercise it through the actual funding-resource consumer and actual in-memory model, without evidence verification or grant activation.",
+    "sourceBasis": [
+      "The retained funding owner requires an explicitly supplied deriveFundingTerms callback. This packet supplies that existing interface; it does not claim that the interface was broken or that incomplete coverage proved novelty.",
+      "The existing durable/HTTP composition already captures and forwards that privileged callback. No owner, route, buyer, signer, default, package, dependency or workflow is changed by this packet.",
+      "The retained pilot boundary still requires independently reviewed origin/certificate and attestor custody, approved immutable evidence, operator-selected frozen economics and separately authorized real observation, recovery and live acceptance."
+    ],
+    "ownership": "Trusted operator configuration selects every economic value and selected holder/capability. This factory does not authenticate the operator or authorize public construction.",
+    "explicitFactory": "createFixedZenonFundingPolicy({offer, selection, terms})",
+    "exactConsumerInput": "deriveFundingTerms({offer, holderId, capabilityCommitment})",
+    "economicDefaults": false,
+    "operatorEconomicsChosenHere": false,
+    "activeCompositionAdoption": false,
+    "noGlobalCompletionClaim": true
+  },
+  "behavior": {
+    "capturedConfiguration": "Complete model-v1 stored offer, four-field offer/holder/capability selection and complete five-field funding terms are synchronously detached from descriptor DATA; caller records are neither mutated nor frozen.",
+    "binding": "Every offer field, offer/policy identity and version, holderId and capabilityCommitment must match. The callable returns the same deeply frozen private terms record.",
+    "economics": "totalUnits, positive canonical amount, payee, asset, explicit chain/confirmation requirement and absolute expiresAt are supplied by privileged configuration. No wall-clock read, relative expiry, callback selection, per-request economics or automatic renewal is introduced.",
+    "rejection": "Wrong arity, constructor use, accessors, proxies, malformed shapes/versions, cycles at scalar positions, oversized strings and policy/scope drift are rejected with fixed frozen sanitized TypeErrors without invoking supplied hooks.",
+    "consumerBoundary": "The existing owner still validates stored offers, resource binding, authority/chain/confirmation policy, current expiry, activation intent and requirement before its existing verifier/commit lifecycle.",
+    "rotationBoundary": "A new offer/funding-policy version is explicitly configured in the synthetic rotation case. This stateless factory cannot enforce cross-instance version governance, prevent rollback or prove operator approval."
+  },
+  "sourceReview": {
+    "immutableGraphFiles": 7,
+    "immutableGraphBytes": 168246,
+    "staticImportEdges": 19,
+    "exactGraphReviewedBeforeLaunch": true,
+    "oldQualificationEntriesImported": 0,
+    "dependencyInstallation": false,
+    "existingProductionSourcesModified": 0,
+    "sourceFiles": [
+      {
+        "path": "package.json",
+        "bytes": 1413,
+        "LF": 40,
+        "sha256": "8c9a25504fbf6f87c31cdf245a6f4eec5a88cc89c8352151dc66a577c5771ef5",
+        "gitBlob": "ec7193f6fd76f34778515079dc777594175c4c34"
+      },
+      {
+        "path": "qualification/service-credit-zenon-fixed-funding-policy.behavior.draft.mjs",
+        "bytes": 12917,
+        "LF": 193,
+        "sha256": "9eb69c56908c1c458423ddcebb0167d4b2608d1c7bab99c70a47a70381758fd8",
+        "gitBlob": "62fbf066bff47e67278e63501fc52cd41b0aef86"
+      },
+      {
+        "path": "src/canonical.js",
+        "bytes": 967,
+        "LF": 26,
+        "sha256": "0d55ddf1727cafb0dcd46df2922305568615552a4d2ae34a5c30e90b9d8d998c",
+        "gitBlob": "5367f9c72ee13017a61630e1f0cffdced21d52c4"
+      },
+      {
+        "path": "src/service-credit-model.js",
+        "bytes": 55461,
+        "LF": 1580,
+        "sha256": "7ff7e3d88ab8c3b38a0073541533fbdb7a0d9f2be42f337ac35f6a3b05615c3a",
+        "gitBlob": "e6ac17254874584d1a01f70e7abc6f771bd35d73"
+      },
+      {
+        "path": "src/service-credit-zenon-fixed-funding-policy.js",
+        "bytes": 8908,
+        "LF": 156,
+        "sha256": "38b01c7f325bd843cba134bd101e3e671145153638292f5bceeb9532697b3126",
+        "gitBlob": "2805cc2268279c2e4527e3c116ef072ab53c2640"
+      },
+      {
+        "path": "src/service-credit-zenon-funding-evidence.js",
+        "bytes": 48694,
+        "LF": 1407,
+        "sha256": "459c6cc2cdb57df1b648b2a56244935085770d9c3d1eee05ad56ddbf1bd98d80",
+        "gitBlob": "698aaa39aab6e2fa680eb8ebd8b9aa905f79354e"
+      },
+      {
+        "path": "src/x402-wire.js",
+        "bytes": 39886,
+        "LF": 934,
+        "sha256": "5fba91af5a352f62d1a335c7176a45a604e2af5d92b1c4b0e53825c1f20d4e56",
+        "gitBlob": "fb060d4e349b1c31a1219a0cc137af250a8a2291"
+      }
+    ],
+    "runtimePremises": [
+      "The graph and selected entry use only reviewed existing local modules and Node builtins; no SDK, SQL, external package, socket, key-generation or signing owner is imported.",
+      "Captured intrinsics and unchanged imported validators remain premises. Fixed shape/string limits do not prebound materialization of an enormous own-key set and are not an OS memory, lifetime or hostile-process sandbox.",
+      "The requirement validator checks declared DATA, not authenticated chain state, canonicality, finality, receipt, spendability or provider READY."
+    ]
+  },
+  "actualExecution": {
+    "commands": 1,
+    "priorExperimentsReplayed": 0,
+    "selectedNames": [
+      "fixed funding policy returns one captured frozen synchronous terms record without caller mutation or rolling expiry",
+      "fixed funding policy binds every offer field and exact holder capability without accepting per-call economics",
+      "fixed funding policy requires all explicit economic fields and rejects invalid grammar or policy version at construction",
+      "fixed funding policy rejects accessor proxy cycle oversized and wrong-arity inputs without invoking hooks",
+      "actual funding resource consumer uses fixed stored offer terms and rejects expired or changed scope without granting credit",
+      "actual funding consumer rejects activation drift before verifier and requires an explicit new offer policy version"
+    ],
+    "counts": {
+      "tests": 6,
+      "suites": 0,
+      "pass": 6,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "diagnostics": {
+      "kind": "P4_FIXED_FUNDING_POLICY",
+      "configuredPolicies": 6,
+      "models": 2,
+      "consumers": 3,
+      "resourceAttempts": 8,
+      "issuedCandidates": 4,
+      "rejectedActivationCalls": 2,
+      "verifierCalls": 0,
+      "deriveCostCalls": 0,
+      "modelClockCalls": 0,
+      "fundingClockCalls": 6,
+      "hooks": 0,
+      "grantsAdded": 0,
+      "nonceSearchCalls": 0,
+      "candidateEvaluations": 0,
+      "keyGeneration": 0,
+      "signatures": 0,
+      "sqliteFiles": 0,
+      "networkCalls": 0,
+      "realPrepareCalls": 0,
+      "persistentWrites": 0,
+      "oldQualificationEntriesRegistered": 0,
+      "qualification": "SELECTED_SYNTHETIC_POLICY_NOT_LIVE_PROVIDER"
+    },
+    "actualObjects": "Two actual InMemoryServiceCreditModel instances and three actual createZenonFundingEvidenceActivation consumers; six configured policies; eight resource attempts and four returned DATA candidates.",
+    "activationMeaning": "Exactly two calls to the existing activate API were rejected for changed intent or changed requirement before the verifier. No grant was activated, no grant was added, and model state was unchanged across each selected consumer operation.",
+    "verifierCalls": 0,
+    "costDerivationCalls": 0,
+    "modelClockCalls": 0,
+    "fundingClockCalls": 6,
+    "actualExit": 0,
+    "outputComplete": true,
+    "stdout": {
+      "bytes": 2431,
+      "sha256": "a51251aabc27b92970d91bba660c78ac3223fe15856ec1361ba8f01f71380063"
+    },
+    "stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "nodeReporterDurationMs": 18.947291,
+    "nodeReporterDurationIsNotManagedWallTime": true,
+    "commandCompletedAtUTC": "2026-10-22T22:29:53.586Z",
+    "runtime": {
+      "nodeVersion": "24.19.0",
+      "platform": "darwin",
+      "architecture": "arm64",
+      "nodeSha256": "dbedff294bab84a0a86c04e15fbcbeb1c97ca10bef1b32b0634cd24b36f62100"
+    },
+    "launch": {
+      "entry": "qualification/service-credit-zenon-fixed-funding-policy.behavior.draft.mjs",
+      "permissionMode": true,
+      "filesystemWritePermission": false,
+      "filesystemReadScope": "Repository read permission; exact audited explicit source graph. Not an OS sandbox.",
+      "codeGenerationFromStrings": false,
+      "nativeAddons": false,
+      "clearedEnvironment": true,
+      "unhandledRejections": "strict",
+      "reporter": "tap",
+      "selectedTestTimeoutMs": 5000,
+      "managerCommandTimeoutSeconds": 30,
+      "stdoutLimitBytes": 65536,
+      "stderrLimitBytes": 1048576,
+      "qualificationInvocation": "One direct Node entry, not npm test, a glob, the complete suite or hosted CI."
+    }
+  },
+  "retainedEvidence": {
+    "taskState": "CLOSED",
+    "taskOutcome": "SUCCESS",
+    "contractVersion": 2,
+    "contract": "One predeclared caller source-admission reference manifest plus mandatory command, outcome and cleanup records; no duplicate caller handoff is required.",
+    "separateProtectedRecordReadback": "PASS: all five complete records, exact argv/selected names/counts/diagnostic, source content/physical bindings, stream digests, input object ledgers and closed creator retention were checked after the command completed.",
+    "completeMetadataRecordsRead": 5,
+    "metadataBytes": 15760,
+    "callerMetadataRecordsWritten": 1,
+    "admissionManifestCompactBytes": 11385,
+    "immutableRecordDigests": [
+      {
+        "record": "admission.json",
+        "bytes": 13638,
+        "sha256": "bb0fbc28bc304bd1d0755b721b1a6d4c329d68ffad034e8500af3735123bc5ec"
+      },
+      {
+        "record": "cleanup.json",
+        "bytes": 174,
+        "sha256": "ee137ed12df6ed804ec9d6bebbae666a200d46a39bf3cf98d32ec55005551958"
+      },
+      {
+        "record": "command.json",
+        "bytes": 984,
+        "sha256": "fffccb181e818919ead17a5517a3b6bcd7cb5409a76a2c93c56af7ab40297fdf"
+      },
+      {
+        "record": "outcome.json",
+        "bytes": 61,
+        "sha256": "a7cf8f143743b6cee95e4c868dd1dfdcfb0a1227b1cad16a2afee8fd990f105e"
+      },
+      {
+        "record": "task.json",
+        "bytes": 903,
+        "sha256": "5adb2145d57c8c3b9dd03cf53707ed2ce49294e73f754ea879e2ec5f177d9462"
+      }
+    ],
+    "sourceInputReferencesVerified": 7,
+    "sourceInputLedgersAndCreatorsVerified": 7,
+    "existingSourceObjectsReused": 5,
+    "newSourceObjects": 2,
+    "newSourceInputBytes": 21825,
+    "unchangedInputBytesNotRewritten": 146421,
+    "sourceExecutionClones": 0,
+    "payloadsEmbedded": false,
+    "processGroupObservedAbsent": true,
+    "ownedScratchAbsent": true,
+    "ownedScratchBytesRemoved": 0,
+    "protectedObjectsDeleted": 0,
+    "existingProtectedSourceRowsUnchanged": 278,
+    "existingProtectedPrivateRowsUnchanged": 909,
+    "earlierProtectedAbsencesUnchanged": 25,
+    "unrelatedLocalChangesAndIndexPreserved": true,
+    "historicalFailuresAndSourceOnlyRecords": "Preserved without replay, repair, relabeling or retroactive success. The earlier missing caller handoff and stopped/source-phase records retain their own outcomes."
+  },
+  "unchangedBoundaries": {
+    "sqliteFiles": 0,
+    "keysGenerated": 0,
+    "signatures": 0,
+    "nonceSearches": 0,
+    "candidateEvaluations": 0,
+    "selectedTestNetworkCalls": 0,
+    "selectedTestPersistentWrites": 0,
+    "selectedTestRealPrepareCalls": 0,
+    "livePilot": false,
+    "payment": false,
+    "verifierOrSourceExecution": false,
+    "providerSetup": false,
+    "originalPaymentAndRequestBytesPreserved": true,
+    "consumedAuthorityPreserved": true,
+    "pr193ValidatedSameBlockResendNotUnknownOrAcknowledged": true,
+    "privateBootstrapAndGhcrUnchanged": true,
+    "protectedRealTotals": {
+      "consumedAdmissions": 2,
+      "actualPrepare": 1,
+      "bundles": 0,
+      "nativeChainOrProviderQualificationRuns": 0
+    },
+    "localNodeCommandIsNotChainOrProviderQualification": true,
+    "automationSettingsChanged": false,
+    "externalWorkerDispatched": false,
+    "modelSettingsChanged": false
+  },
+  "publicationIntent": {
+    "packet": "Only the new fixed-policy source, its six-case direct entry and this source-bound local result.",
+    "existingSourcesOrReadmeRewritten": false,
+    "normalNonForceSmallBatch": true,
+    "hostedCi": "NOT_RUN_NOT_GREEN",
+    "broadSuite": "NOT_RUN",
+    "publicationOrGreenCiIsNotLiveReadiness": true
+  },
+  "remainingGates": [
+    "Privileged operator must choose and approve real economic terms, expiry, payee, chain/confirmation profile, selected holder and capability; no such live configuration is selected or adopted here.",
+    "Independently review actual provider/attestor and origin/certificate custody and complete separately authorized observation, loss/recovery and live acceptance before pilot activation.",
+    "A deployment/composition integration, cross-instance rotation/rollback governance, real authenticated funding, evidence verification, durability and live payment behavior are not qualified by these six cases.",
+    "Prior DP and official x402 lanes, local results and stopped/failed qualifications retain their own exact source graphs and outcomes. Nothing here requalifies changed graphs or completes the overall roadmap."
+  ]
+}
