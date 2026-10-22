@@ -794,7 +794,7 @@ export function createZenonDurableHttpComposition(options) {
     }
   }
 
-  function buildSession() {
+  function buildSession(activeGrantBinding) {
     assertBoundStores();
     let session;
     try {
@@ -803,6 +803,7 @@ export function createZenonDurableHttpComposition(options) {
         execute: guardedExecute,
         deadlineRuntime,
         selectedDurationMs: durableExecution.selectedDurationMs,
+        admittedGrantId: activeGrantBinding.grantId,
       }]);
     } catch {
       fail(CODE.activatedUnavailable);
@@ -886,7 +887,7 @@ export function createZenonDurableHttpComposition(options) {
             activationResult,
             captured.intent,
           );
-          buildSession();
+          buildSession(activeGrantBinding);
           state.startupPending = false;
           if (state.phase === PHASE.CLOSING) {
             capability.reject(failure(CODE.closed));
