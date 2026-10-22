@@ -4,6 +4,8 @@ import { createServiceCreditCustodiedHttpClientV3 } from './service-credit-custo
 import { openServiceCreditCustodiedSqliteHttpClientV3 } from './service-credit-custodied-sqlite-http-client.js';
 import { openServiceCreditCustodiedSqliteHttpClientV4 } from './service-credit-custodied-sqlite-http-client.js';
 import { openServiceCreditCustodiedSqliteHttpClientV5 } from './service-credit-custodied-sqlite-http-client.js';
+import { openServiceCreditCustodiedSqliteHttpClientV6 } from './service-credit-custodied-sqlite-http-client.js';
+import { encodeOriginalPaymentCheckpoint } from './service-credit-pilot-original-payment-checkpoint.js';
 import { openServiceCreditCustodiedSqliteRecoveryReaderV5 } from './service-credit-custodied-sqlite-recovery-reader.js';
 import { createServiceCreditBackendOriginalOutcomeReader } from './service-credit-backend-original-outcome-reader.js';
 import { createServiceCreditCustodiedSequentialRunnerCore } from './service-credit-custodied-sequential-runner-core.js';
@@ -32,6 +34,8 @@ const CREATE_CLIENT = createServiceCreditCustodiedHttpClientV3;
 const OPEN_SQLITE_CLIENT = openServiceCreditCustodiedSqliteHttpClientV3;
 const OPEN_SQLITE_CLIENT_V4 = openServiceCreditCustodiedSqliteHttpClientV4;
 const OPEN_SQLITE_CLIENT_V5 = openServiceCreditCustodiedSqliteHttpClientV5;
+const OPEN_SQLITE_CLIENT_V6 = openServiceCreditCustodiedSqliteHttpClientV6;
+const CHECKPOINT_TEXT = encodeOriginalPaymentCheckpoint;
 const CREATE_BACKEND = createServiceCreditBackendOriginalOutcomeReader;
 const CREATE_RUNNER = createServiceCreditCustodiedSequentialRunnerCore;
 const FIELDS = FREEZE([
@@ -268,6 +272,42 @@ export async function openServiceCreditCustodiedSqliteBackendSequentialRunnerV5(
 }
 
 /**
+ * Explicit EXISTING V6 payer connections. Reuses ONE V6 HTTP owner, the same
+ * borrowed backend reader and, for batches, the existing sequential core.
+ * No V5 adoption, new owner, transport default, funding or retry path is added.
+ *
+ * readOriginalBackendRecoveryState(key, originalProof, expectedCheckpointPins)
+ * requires the original externally retained checkpoint pins on EVERY V6 read.
+ * The same complete canonical checkpoint is read before and after the backend
+ * query, in addition to the existing original/funding/intent/response fences.
+ * A mismatch latches only this connection unavailable; cached backend success
+ * cannot clear uncertainty, reset payment authority or authorize dispatch.
+ * There is still no atomic transaction across the two stores.
+ *
+ * readOriginalPaymentCheckpoint(pins) returns explicit powerless local DATA,
+ * even if combined backend reads became unavailable. It never queries the
+ * backend or submits a request. Closed/busy reads remain refused; snapshots
+ * and ordinary recovery views never include the raw payment checkpoint.
+ * The no-dispatch entry exposes no submission or caller transport. The other
+ * entries retain the existing explicit service-only submission capability.
+ * Normal reopen is not real restart, rollback resistance or pilot acceptance.
+ */
+export async function openServiceCreditCustodiedSqliteBackendRecoveryClientV6(options) {
+  if (arguments.length !== 1) throw failure('INVALID_CONFIGURATION');
+  return openOwnedBackendClient(options, false, false, true, true, true);
+}
+
+export async function openServiceCreditCustodiedSqliteBackendClientV6(options) {
+  if (arguments.length !== 1) throw failure('INVALID_CONFIGURATION');
+  return openOwnedBackendClient(options, true, false, true, true, true);
+}
+
+export async function openServiceCreditCustodiedSqliteBackendSequentialRunnerV6(options) {
+  if (arguments.length !== 1) throw failure('INVALID_CONFIGURATION');
+  return openOwnedBackendClient(options, true, true, true, true, true);
+}
+
+/**
  * Explicit no-dispatch V5 consumer over ONE existing owned payer and the same
  * borrowed native backend. Reuses the actual recovery reader's four diagnostic
  * plan/collection factories; it does not open a second payer or copy an owner.
@@ -327,7 +367,7 @@ export async function openServiceCreditCustodiedSqliteBackendRecoveryConsumerV5(
 }
 
 async function openOwnedBackendClient(options, serviceDispatchEnabled, sequentialEnabled = false,
-  persistentCustody = false, responseObservationEnabled = false) {
+  persistentCustody = false, responseObservationEnabled = false, originalPaymentCheckpointEnabled = false) {
   let client = null, backend = null, config = null;
   try {
     config = exact(options, serviceDispatchEnabled ? SQLITE_DISPATCH_FIELDS : SQLITE_FIELDS);
@@ -337,7 +377,8 @@ async function openOwnedBackendClient(options, serviceDispatchEnabled, sequentia
     }
     const selectedGrantId = KEY({ grantId: config.selectedGrantId, requestId: 'scope' }).grantId;
     backend = CREATE_BACKEND({ store: config.backendStore, admittedGrantId: selectedGrantId });
-    const OPEN = responseObservationEnabled ? OPEN_SQLITE_CLIENT_V5
+    const OPEN = originalPaymentCheckpointEnabled ? OPEN_SQLITE_CLIENT_V6
+      : responseObservationEnabled ? OPEN_SQLITE_CLIENT_V5
       : persistentCustody ? OPEN_SQLITE_CLIENT_V4 : OPEN_SQLITE_CLIENT;
     client = OPEN({
       databasePath: config.databasePath,
@@ -351,9 +392,11 @@ async function openOwnedBackendClient(options, serviceDispatchEnabled, sequentia
     const connected = connectClientBackend(
       client, backend, selectedGrantId, 'PAYER_OWNED_BACKEND_BORROWED', serviceDispatchEnabled,
       responseObservationEnabled,
+      originalPaymentCheckpointEnabled,
     );
     const result = sequentialEnabled ? connectSequentialBackendClient(
       connected, selectedGrantId, persistentCustody, responseObservationEnabled,
+      originalPaymentCheckpointEnabled,
     ) : connected;
     client = null;
     backend = null;
@@ -369,19 +412,21 @@ async function openOwnedBackendClient(options, serviceDispatchEnabled, sequentia
 }
 
 function connectSequentialBackendClient(client, selectedGrantId, persistentCustody = false,
-  responseObservationEnabled = false) {
+  responseObservationEnabled = false, originalPaymentCheckpointEnabled = false) {
   const ROOT_SNAPSHOT = client.snapshot;
   const ROOT_CLOSE = client.close;
   const ROOT_ORIGINAL = client.readOriginal;
   const ROOT_STATE = client.readOriginalRecoveryState;
   const ROOT_KEYS = client.readOriginalRecoveryKeys;
   const ROOT_BACKEND = client.readOriginalBackendRecoveryState;
+  const ROOT_CHECKPOINT = originalPaymentCheckpointEnabled ? client.readOriginalPaymentCheckpoint : null;
   const runner = CREATE_RUNNER({
     submitOriginal: client.submitOriginal,
     snapshot: () => ROOT_SNAPSHOT().client.client,
     close: ROOT_CLOSE,
     selectedGrantId,
-    storeOwnership: responseObservationEnabled ? 'OWNED_EXISTING_V5_RESPONSE_OBSERVATION'
+    storeOwnership: originalPaymentCheckpointEnabled ? 'OWNED_EXISTING_V6_ORIGINAL_PAYMENT'
+      : responseObservationEnabled ? 'OWNED_EXISTING_V5_RESPONSE_OBSERVATION'
       : persistentCustody ? 'OWNED_EXISTING_V4_CUSTODY_QUARANTINE' : 'OWNED_EXISTING_V3_DISPATCH_INTENT',
   });
   const RUNNER_SNAPSHOT = runner.snapshot;
@@ -415,13 +460,14 @@ function connectSequentialBackendClient(client, selectedGrantId, persistentCusto
     readOriginalRecoveryState: ROOT_STATE,
     readOriginalRecoveryKeys: ROOT_KEYS,
     readOriginalBackendRecoveryState: ROOT_BACKEND,
+    ...(originalPaymentCheckpointEnabled ? { readOriginalPaymentCheckpoint: ROOT_CHECKPOINT } : {}),
     snapshot,
     close: runner.close,
   });
 }
 
 function connectClientBackend(client, backend, selectedGrantId, storeOwnership, serviceDispatchEnabled = false,
-  responseObservationEnabled = false) {
+  responseObservationEnabled = false, originalPaymentCheckpointEnabled = false) {
   const LOCAL_READ = client.readOriginalRecoveryState;
   const LOCAL_CLOSE = client.close;
   const LOCAL_SNAPSHOT = client.snapshot;
@@ -430,6 +476,7 @@ function connectClientBackend(client, backend, selectedGrantId, storeOwnership, 
   const LOCAL_ORIGINAL = client.readOriginal;
   const LOCAL_KEYS = client.readOriginalRecoveryKeys;
   const LOCAL_SUBMIT = serviceDispatchEnabled ? client.submitOriginal : null;
+  const LOCAL_CHECKPOINT = originalPaymentCheckpointEnabled ? client.readOriginalPaymentCheckpoint : null;
   client = null;
   backend = null;
   let closed = false, reading = false, unavailable = false;
@@ -445,7 +492,9 @@ function connectClientBackend(client, backend, selectedGrantId, storeOwnership, 
       if (active === true) throw failure('BUSY');
       if (active !== false) { unavailable = true; throw failure('UNAVAILABLE'); }
     }
-    if (arguments.length !== 2 || typeof authorizationHeader !== 'string'
+    if (arguments.length !== (originalPaymentCheckpointEnabled ? 3 : 2)
+        || (originalPaymentCheckpointEnabled && arguments[2] === undefined)
+        || typeof authorizationHeader !== 'string'
         || authorizationHeader.length === 0 || authorizationHeader.length > 1024
         || APPLY(BYTE_LENGTH, Buffer, [authorizationHeader, 'utf8']) > 1024) {
       throw failure('INVALID_INPUT');
@@ -454,7 +503,18 @@ function connectClientBackend(client, backend, selectedGrantId, storeOwnership, 
     if (key.grantId !== selectedGrantId) throw failure('FOREIGN_GRANT');
     reading = true;
     let before = null, after = null, expected = null, envelope = null;
+    let checkpoint = null, checkpointText = null, checkpointPins = null;
     try {
+      if (originalPaymentCheckpointEnabled) {
+        checkpoint = LOCAL_CHECKPOINT(arguments[2]);
+        if (checkpoint === null) throw failure('ORIGINAL_PAYMENT_CHECKPOINT_UNAVAILABLE');
+        checkpointText = CHECKPOINT_TEXT(checkpoint);
+        // The first read matched the caller's independent pins. Its frozen
+        // binding/digests are now this query's fixed witness, not mutable pins
+        // borrowed from the backend callback or a new trust root from the DB.
+        checkpointPins = FREEZE({ binding: checkpoint.binding, digests: checkpoint.digests });
+        checkpoint = null;
+      }
       before = LOCAL_READ(key);
       if (closed) throw failure('CLOSED');
       if (before === null) return view('CLIENT_ORIGINAL_NOT_RECORDED');
@@ -471,6 +531,14 @@ function connectClientBackend(client, backend, selectedGrantId, storeOwnership, 
       if (closed) throw failure('CLOSED');
       after = LOCAL_READ(key);
       if (closed) throw failure('CLOSED');
+      if (originalPaymentCheckpointEnabled) {
+        checkpoint = LOCAL_CHECKPOINT(checkpointPins);
+        if (checkpoint === null || CHECKPOINT_TEXT(checkpoint) !== checkpointText) {
+          throw failure('ORIGINAL_PAYMENT_CHECKPOINT_CHANGED');
+        }
+        if (closed) throw failure('CLOSED');
+        checkpoint = null;
+      }
       if (after === null || SERIALIZE(after.original) !== originalText
           || STRINGIFY(after.funding) !== fundingText || STRINGIFY(after.uncertainty) !== uncertaintyText
           || intentText(after) !== dispatchText
@@ -498,8 +566,18 @@ function connectClientBackend(client, backend, selectedGrantId, storeOwnership, 
       after = null;
       expected = null;
       envelope = null;
+      checkpoint = null;
+      checkpointText = null;
+      checkpointPins = null;
     }
   });
+  const readOriginalPaymentCheckpoint = LOCAL_CHECKPOINT === null ? null
+    : FREEZE(function readOriginalPaymentCheckpoint(expectedPins) {
+      if (arguments.length !== 1) throw failure('INVALID_INPUT');
+      if (closed) throw failure('CLOSED');
+      if (reading) throw failure('BUSY');
+      return LOCAL_CHECKPOINT(expectedPins);
+    });
   const submitOriginal = LOCAL_SUBMIT === null ? null : FREEZE(function submitOriginal(...args) {
     if (args.length !== 1) return rejected('INVALID_INPUT');
     if (closed) return rejected('CLOSED');
@@ -524,6 +602,7 @@ function connectClientBackend(client, backend, selectedGrantId, storeOwnership, 
     readOriginalRecoveryState: LOCAL_READ,
     readOriginalRecoveryKeys: LOCAL_KEYS,
     readOriginalBackendRecoveryState,
+    ...(LOCAL_CHECKPOINT === null ? {} : { readOriginalPaymentCheckpoint }),
     snapshot,
     close,
   });
