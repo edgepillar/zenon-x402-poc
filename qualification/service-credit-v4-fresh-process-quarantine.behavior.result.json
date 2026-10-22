@@ -1,0 +1,504 @@
+{
+  "schema": "zenon-x402-local-qualification-result/v1",
+  "status": "TWO_SELECTED_NORMAL_EXIT_FRESH_PROCESS_CASES_PASS",
+  "dateUTC": "2026-10-22",
+  "scope": "P2_V4_NORMAL_EXIT_FRESH_PROCESS_QUARANTINE_CONTINUITY",
+  "summary": "Two separately selected foreground Node processes exercise one new private synthetic V4 SQLite database through the existing owned sequential runner. The first persists HTTP uncertainty and exits normally. A different process reopens the same file, restores the same selected-grant quarantine and rejects a new original without another HTTP dispatch. This is a bounded normal-exit component result, not crash, power-loss, operating-system restart or real-payment recovery qualification.",
+  "selection": {
+    "lane": "P2 backend-bound client/runner and persistent original-request custody",
+    "baselineMain": "166f13bb63a548ca2af0b4b0baaf10b953e04954",
+    "baselineTree": "71a6126bb80dd86143b48ddd24b68cc79eb6ae3e",
+    "retainedCoverage": "The preceding V4 runner result covers borrowed/owned queue stops, partial completion, manual close and same-process reopen. Its limits explicitly exclude an actual fresh process. This new fixture selects the existing V4 quarantine path across two normal foreground process lifetimes; the earlier V2/V3 observation-collection process-boundary record has different source/path coverage and its FAILURE/HOLD remains unchanged.",
+    "productionSourceEdits": 0,
+    "newQualificationFiles": 2,
+    "testEntry": "qualification/service-credit-v4-fresh-process-quarantine.behavior.draft.mjs",
+    "phaseNames": [
+      "seed process persists V4 quarantine and closes the original synthetic store",
+      "fresh process restores the same V4 quarantine without new HTTP dispatch"
+    ],
+    "registeredCasesPerCommand": 1,
+    "otherTestEntries": 0,
+    "nativeSqliteFiles": 1,
+    "normalExitOnly": true,
+    "preExistingApplicationEntries": [
+      "createZenonFundingPayerRecoveryCustodyQuarantineSqliteStoreV4",
+      "openServiceCreditCustodiedSqliteSequentialRunnerV4",
+      "readOriginalRecoveryState",
+      "readOriginalRecoveryKeys"
+    ],
+    "defaultApplicationOrCliCutover": false,
+    "excluded": [
+      "dependency installation and package/SDK expansion",
+      "Zenon SDK and official x402 package imports",
+      "nonce/material producer import or evaluation",
+      "network, wallet, real payment or signing",
+      "existing user or historical databases",
+      "forced kill, crash, power-loss or operating-system restart",
+      "new operational helper, daemon or host",
+      "broad application/store/controller/native qualification",
+      "live provider, service delivery or pilot acceptance"
+    ]
+  },
+  "sourceBinding": {
+    "sourceFiles": 15,
+    "sourceBytes": 315635,
+    "perFileCapBytes": 65536,
+    "totalSourceCapBytes": 393216,
+    "pins": [
+      {
+        "path": "src/service-credit-custodied-sequential-runner-core.js",
+        "bytes": 15827,
+        "LF": 490,
+        "sha256": "640d578e99f9cb21cf8d79ec870e676e3d9087ebee831e795b1b120b9860ddfb",
+        "gitBlob": "b75b088ee691e0f73b2bd579a28bf9b6b070b77e"
+      },
+      {
+        "path": "src/service-credit-custodied-sqlite-sequential-runner.js",
+        "bytes": 22418,
+        "LF": 526,
+        "sha256": "a9e8abba40f9430ae3e31a32fe9e9f9b6c129d26d34a2f5f9984d2cf805da5c4",
+        "gitBlob": "515dce1ff3ce6877ec1aa240442b8e00a9d98051"
+      },
+      {
+        "path": "src/service-credit-custodied-sqlite-http-client.js",
+        "bytes": 19683,
+        "LF": 530,
+        "sha256": "06366488e679272170847af4929db3b3f782774022f97c748530ec73f729f0bc",
+        "gitBlob": "a198673f77c4320bb4af3adb35ba22d2a2fb3b38"
+      },
+      {
+        "path": "src/service-credit-custodied-http-client.js",
+        "bytes": 11597,
+        "LF": 307,
+        "sha256": "822627be1876fb609bad582b767694a60022d7bf9d7375bb2e7fb961c034e4ab",
+        "gitBlob": "c15926796ff96f08e32d1c4291e5d9c4b814f450"
+      },
+      {
+        "path": "src/service-credit-custodied-request-owner.js",
+        "bytes": 44517,
+        "LF": 1136,
+        "sha256": "4f3f20195a0ec26be38e9b80e658dfccfd9477daff758a9717e819f3b55c04b2",
+        "gitBlob": "2d18b98b8d922253c1beee6c5f057705acc97069"
+      },
+      {
+        "path": "src/service-credit-zenon-funding-post-v1-payer-recovery-sqlite-store.js",
+        "bytes": 64917,
+        "LF": 1687,
+        "sha256": "db4d3aca8c039e3433e49f6bafe42cbc4973e0f9478500dbe6cf36f53773232d",
+        "gitBlob": "4672760ef5fdf135b52700da889562b653b6fecb"
+      },
+      {
+        "path": "src/service-credit-http-execute-dispatch.js",
+        "bytes": 27034,
+        "LF": 770,
+        "sha256": "254ba8eef5ea5efb3a1b901be09e9cb33afbc3cfcf63789ca4a23316b6180d1b",
+        "gitBlob": "280dd20dc669e2856d263eba62ccd0fe9af72f21"
+      },
+      {
+        "path": "src/service-credit-original-request-custody-contract.js",
+        "bytes": 14051,
+        "LF": 356,
+        "sha256": "fd349de553a17abcc2e0567ba6640e6e3d5d26cfa79ee1e355928dc9fa8d3915",
+        "gitBlob": "f911d42d01b69e6577f9bcd66f4ed59aab8ab882"
+      },
+      {
+        "path": "src/x402-wire.js",
+        "bytes": 39886,
+        "LF": 934,
+        "sha256": "5fba91af5a352f62d1a335c7176a45a604e2af5d92b1c4b0e53825c1f20d4e56",
+        "gitBlob": "fb060d4e349b1c31a1219a0cc137af250a8a2291"
+      },
+      {
+        "path": "src/service-credit-pilot-client-plan.js",
+        "bytes": 7483,
+        "LF": 181,
+        "sha256": "73ee3d739de85150039e733234cd0761c228d68de040d1e126902e808a259ac6",
+        "gitBlob": "14334c82b5b7c80fb8f7f6a392a1a0f3c3adcbf1"
+      },
+      {
+        "path": "src/service-credit-pilot-status-view.js",
+        "bytes": 3202,
+        "LF": 60,
+        "sha256": "cf3822d8b9ec4eb4772452ed1888b96d398fd87c1ead44cd155a5acc1a6b66ed",
+        "gitBlob": "0890db504e44b704d0434dc309e711743570e652"
+      },
+      {
+        "path": "src/service-credit-custodied-recovery-collection-core.js",
+        "bytes": 13794,
+        "LF": 306,
+        "sha256": "51d06da70ecccd0cf8b38d650367d1ae903ea86010a5ebeadb682af98e4b890b",
+        "gitBlob": "5275832eebbf87e0cd37f3c2e3b82147ab625a72"
+      },
+      {
+        "path": "src/service-credit-custodied-recovery-observation-collection-core.js",
+        "bytes": 8579,
+        "LF": 213,
+        "sha256": "36b7cece2d436cbfcac5f4299dd6bd30e5eede6ebb2ebe769ae7bf3a6f1a72b4",
+        "gitBlob": "4dc8765be0aa4b0e927fface960e366a3a6ccd1e"
+      },
+      {
+        "path": "package.json",
+        "bytes": 1413,
+        "LF": 40,
+        "sha256": "8c9a25504fbf6f87c31cdf245a6f4eec5a88cc89c8352151dc66a577c5771ef5",
+        "gitBlob": "ec7193f6fd76f34778515079dc777594175c4c34"
+      },
+      {
+        "path": "qualification/service-credit-v4-fresh-process-quarantine.behavior.draft.mjs",
+        "bytes": 21234,
+        "LF": 383,
+        "sha256": "33ff88f5b0f8a5ed1af2b47ffe63b1f27362e412652eeb9b76e22c8dee23da8e",
+        "gitBlob": "57e94e26fd858a3131fe499766c01b3469d6d950"
+      }
+    ],
+    "allFourteenExistingGraphFilesMatchBaselineMain": true,
+    "fullContentAndNineFieldPhysicalIdentityCheckedBeforeAndAfter": true,
+    "sourceOrPackageFilesWrittenByNativePhases": 0,
+    "importBoundary": "Thirteen existing production modules, root package metadata and the one selected fixture. The borrowed-runner facade is not imported. Native SQLite and the explicitly reviewed Node builtins remain runtime premises."
+  },
+  "execution": {
+    "task": "CLOSED_SUCCESS",
+    "selectedNodeCommands": 2,
+    "actualExits": [
+      0,
+      0
+    ],
+    "outputComplete": [
+      true,
+      true
+    ],
+    "counts": {
+      "tests": 2,
+      "suites": 0,
+      "pass": 2,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "runtime": {
+      "nodeVersion": "24.19.0",
+      "platform": "darwin",
+      "arch": "arm64",
+      "executableBytes": 121304480,
+      "executableSha256": "dbedff294bab84a0a86c04e15fbcbeb1c97ca10bef1b32b0634cd24b36f62100",
+      "executableDigestReusedOnlyAfterExactNineFieldIdentity": true,
+      "freshExecutableDigestRead": false
+    },
+    "commands": [
+      {
+        "phase": "seed",
+        "registeredCases": 1,
+        "actualExit": 0,
+        "outputComplete": true,
+        "passName": "seed process persists V4 quarantine and closes the original synthetic store",
+        "stdout": {
+          "bytes": 1697,
+          "sha256": "99fbc8860888fbad0f464780d522a5b14d431896200bd475d10cd635edebf043"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "phase": "recover",
+        "registeredCases": 1,
+        "actualExit": 0,
+        "outputComplete": true,
+        "passName": "fresh process restores the same V4 quarantine without new HTTP dispatch",
+        "stdout": {
+          "bytes": 1754,
+          "sha256": "112b983767ee1ffe452c05c3d3667cd2ae7e87c88ed98ca97ee1c16170a6d5ff"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      }
+    ],
+    "stdoutPublication": "Raw stdout contains bounded PRIVATE process/file diagnostics and stays in the private evidence store. Only stream byte counts and SHA-256 are published here.",
+    "distinctProcessIdsVerified": true,
+    "seedProcessGroupObservedAbsentBeforeRecoverLaunch": true,
+    "bothProcessGroupsObservedAbsentAfterJoin": true,
+    "noPendingNativeSession": true,
+    "phase2Admission": "After the first command was COMPLETE with actual exit 0, full TAP and CAS ownership/provenance were read, its group was observed absent, the entire closed SQLite file and physical identity were pinned, and sources/prior evidence were rechecked. Only the validated bounded witness DATA was passed to phase2 in an env-i variable; it was never evaluated as code or used as payment/dispatch authority.",
+    "independentCompleteJoinedOutcomeReview": true,
+    "counters": {
+      "childSubmitAttempts": 2,
+      "declaredHttpRequestsByPhase": [
+        1,
+        0
+      ],
+      "expectedRunRejections": 2,
+      "automaticQuarantineWriteAttempts": 1,
+      "confirmedQuarantineReadbacks": 1,
+      "ownedStoreReturnedCloses": 2,
+      "rootUnknownCloses": 2,
+      "networkCalls": 0,
+      "syntheticSignatureOperations": 0
+    }
+  },
+  "scenarios": [
+    {
+      "phase": "seed",
+      "result": "PASS",
+      "name": "seed process persists V4 quarantine and closes the original synthetic store",
+      "behavior": [
+        "Create exactly one new V4 SQLite file in the open owned task and set only declared synthetic funding metadata to BOUND revision 3.",
+        "The existing owned V4 runner durably retains the original and dispatch intent before the one declared HTTP request.",
+        "A declared 503 response plus joined fake request/response close notifications produces RUN_FAILED and one confirmed native selected-grant quarantine.",
+        "Owned database close returns and releases the slot, but the cached root close rejects CHILD_OUTCOME_UNKNOWN and remains CHILD_UNKNOWN.",
+        "The process exits normally. Its complete command receipt and private file witness are joined before any reader launch."
+      ],
+      "observed": {
+        "ownerEpoch": 2,
+        "quarantineStatus": "PERSISTED_UNKNOWN",
+        "quarantineWrites": 1,
+        "readbackConfirmations": 1,
+        "declaredHttpRequests": 1,
+        "authority": "NONE"
+      }
+    },
+    {
+      "phase": "recover",
+      "result": "PASS",
+      "name": "fresh process restores the same V4 quarantine without new HTTP dispatch",
+      "behavior": [
+        "A different Node process verifies the complete seed file bytes/SHA-256 and all nine physical identity fields before native SQLite/repository module imports or reopen.",
+        "The same selected grant, custody policy and funding resource are used. A normal reopen advances owner epoch from 2 to 3 and restores persisted custody uncertainty.",
+        "Original and dispatch-intent serialization, payment hash, BOUND revision and recovery-key metadata remain available without action or delivery authority.",
+        "A new original for that quarantined grant rejects before another HTTP request, another custody/intent write or any quarantine write/readback attempt.",
+        "All non-epoch logical rows and schema digests match phase1; original, intent, quarantine and funding-state digests are identical.",
+        "Database close returns once, while the cached root close still rejects CHILD_OUTCOME_UNKNOWN. Both processes are subsequently observed absent."
+      ],
+      "observed": {
+        "ownerEpoch": 3,
+        "quarantineStatus": "PERSISTED_UNKNOWN",
+        "quarantineWrites": 0,
+        "readbackConfirmations": 0,
+        "declaredHttpRequests": 0,
+        "authority": "NONE"
+      }
+    }
+  ],
+  "nativeFiles": {
+    "newFiles": 1,
+    "bytes": 40960,
+    "seedClosedFileSha256": "8f7cb26ee8ad75d91076118955b24c37bb86e3a3dd3c175916c7e4210c07dfe0",
+    "readerPreOpenFileSha256": "8f7cb26ee8ad75d91076118955b24c37bb86e3a3dd3c175916c7e4210c07dfe0",
+    "recoveredClosedFileSha256": "e2f3505ae44beec2ac3c92c49b67a2805d8a755a449ee02324d840305a580d36",
+    "preOpenFullBytesAndNineFieldIdentityMatch": true,
+    "finalStableFirstSixIdentityFieldsMatch": true,
+    "ownerEpochs": [
+      2,
+      3
+    ],
+    "nonEpochLogicalRowsAndSchemaSha256": "995d0459a78845b4bd6248f3db2b0a202216afe765dabb9c43b8ba714b29b885",
+    "originalEnvelopeSha256": "7412c3b8617c586cc3e93cf3e995104bf057831cc7033aa4f88966db11310ab0",
+    "intentEnvelopeSha256": "039bf03fabc31295b90e196d2921e34a587facc67ada0921e128d73eecf193c9",
+    "quarantineEnvelopeSha256": "33fd54db2de63682475f864baf5797d35483a855de6404d0b3ab241bb92d25c1",
+    "fundingStateRowsSha256": "57b28fcf10f758ee4d09eb8e3a359d37ca904ffce09a86e05d10234fa13040ed",
+    "physicalHashChange": "The final binary hash differs after normal reopen. The test asserts an owner-epoch increment and unchanged non-epoch logical rows/schema, not that SQLite physical changes consist solely of the epoch field.",
+    "scope": "Only this newly created synthetic database. Read-only SQL snapshots occur after all production handles have closed. The controller/inspector use bounded byte reads, not SQL opens.",
+    "retention": "HOLD_UNREGISTERED_FILES",
+    "casAdoption": false,
+    "rawDatabasePublished": false,
+    "deletion": false,
+    "registeredEmptyStreamDirectories": 2,
+    "legacyTreeTouched": false
+  },
+  "callsite": {
+    "selection": "One explicit positional fixture path, one registered phase per command; node:test.run isolation none, concurrency false, watch false, forceExit false.",
+    "environment": "env -i with only TZ/LANG/LC_ALL, owned-task scratch and the fixed opt-in, phase, source pins and bounded witness DATA.",
+    "inlineCallers": {
+      "seed": {
+        "bytes": 9121,
+        "sha256": "ed27361185d705f4140fb127aaa484c2f40503d70efee4322ec8715ad7a6c93f"
+      },
+      "recover": {
+        "bytes": 9120,
+        "sha256": "aae66308b1d455c6feba0c6d3d7fb10b4f1d9ceb6de8285b0f56c99574f90ae5"
+      }
+    },
+    "callerModules": [
+      "node:test",
+      "node:util",
+      "node:test/reporters",
+      "node:stream"
+    ],
+    "restrictions": [
+      "--disallow-code-generation-from-strings",
+      "--no-addons",
+      "--no-warnings"
+    ],
+    "nodePermissionModel": "OFF_REQUIRED_FOR_EXISTING_STORE_FCHMOD_FSYNC",
+    "savedOrInstalledOperationalHelper": false,
+    "nodeFixtureChildOrWorkerImports": false,
+    "nodeTestTimeoutMs": 5000,
+    "managerCommandSeconds": 30,
+    "expectedBytes": 4194304,
+    "quotaBytes": 8388608,
+    "stdoutCapPerCommand": 65536,
+    "stderrCapPerCommand": 1048576,
+    "productionFreeSpaceFloorBytes": 10737418240,
+    "conservativeScratchCeilingBytes": 6442450944,
+    "metadataLockSeconds": 180,
+    "policyRewritten": false,
+    "limits": "Neither the 5000 ms test timeout nor the manager/permission flags establish a hard lifetime, complete cancellation/native cleanup, aggregate OS disk quota, or OS/network sandbox. The stock manager's bounded supervision behavior remains a premise; no forced termination scenario was selected."
+  },
+  "preservation": {
+    "directlyRecheckedRepositoryFiles": 159,
+    "directlyRecheckedPriorPrivateFiles": 265,
+    "protectedAbsences": 8,
+    "physicalAndContentPinsUnchanged": true,
+    "earlier267OutcomeSealSha256": "4cbe9fe0f8aa17421025ef997caa8946e6d7975faaa3efc0d33509fdc82cfcf6",
+    "earlier267FullRehashOrCompletedTestsOrReviewsReplayed": false,
+    "earlierFailureAndPendingPromotionStatesUnchanged": true,
+    "oldNamespaceWrites": 0,
+    "fixedLineageManifests": 7,
+    "exactBasePartReferences": 6,
+    "recursiveManifestTraversal": false,
+    "currentTaskMetadataReadBytes": 135187,
+    "fixedLineageMetadataReadBytes": 243534,
+    "metadataReadCapPerClass": 262144,
+    "newProtectedMetadataFiles": 17,
+    "newProtectedMetadataBytes": 135187,
+    "evidence": [
+      {
+        "role": "task.json",
+        "bytes": 1020,
+        "sha256": "b8d9789ba7b6367c909c4cded8e37b74e0b6499c7e9bf91d04fd42de0f986b98"
+      },
+      {
+        "role": "context.json",
+        "bytes": 12934,
+        "sha256": "173bd177380ebb55df98590f9d217d23a75b28d2e6841aca2f284526981b2b4c"
+      },
+      {
+        "role": "selection.json",
+        "bytes": 1524,
+        "sha256": "c7196cc7a83a9829608ae5395b759406d4c13f55de3e492009291e01bc81cc8e"
+      },
+      {
+        "role": "preservation-before.json",
+        "bytes": 16284,
+        "sha256": "c849a68f04df18692f90b21189e65243ba01d22e6353aa6cf2cb84d9dc110efe"
+      },
+      {
+        "role": "launch-seed.json",
+        "bytes": 15938,
+        "sha256": "234877b681b062c4eb45b735288c539c5eb9c15dff25bc9dc1fc28c8a0976a85"
+      },
+      {
+        "role": "command-seed.json",
+        "bytes": 15878,
+        "sha256": "4266635d787ab0faa91bdf9ee3e52e449db7e6e0e09cf8c9ae14eb954a22c085"
+      },
+      {
+        "role": "phase-seed.json",
+        "bytes": 4138,
+        "sha256": "c5d463613c4c5492700412a0f16cd9a037fbd5f2694cd2471615f898e77de92b"
+      },
+      {
+        "role": "phase-boundary.json",
+        "bytes": 1158,
+        "sha256": "53477ea9c4134f3ff5bf80155ea6c654a737bdd9102fe15a894810f4815f0a9a"
+      },
+      {
+        "role": "launch-recover.json",
+        "bytes": 17424,
+        "sha256": "1e1539999bd444d29eff3eb944737014513be7c94672d4ec0eeddc004cada8fb"
+      },
+      {
+        "role": "command-recover.json",
+        "bytes": 16580,
+        "sha256": "70a88a5bf507dcb4d7b5d97ea0c7b4c8a86790ecdc9fdd438ba8ecbc53bbc2af"
+      },
+      {
+        "role": "phase-recover.json",
+        "bytes": 4265,
+        "sha256": "61664f23a33cb1813ad8f13ab642e11f324eed8d2cae52a8ceeedcb8770df79b"
+      },
+      {
+        "role": "sqlite-files.json",
+        "bytes": 1221,
+        "sha256": "5b2072ec6d3b2893eb8629abc907c93dc3e931cfb8bee65026d41ad8ad468c05"
+      },
+      {
+        "role": "source-after.json",
+        "bytes": 9780,
+        "sha256": "98a2f0d87d11b86be0831415b17d164845a8daf60e313bb2a72cc0ee496191b8"
+      },
+      {
+        "role": "preservation-after.json",
+        "bytes": 16284,
+        "sha256": "c849a68f04df18692f90b21189e65243ba01d22e6353aa6cf2cb84d9dc110efe"
+      },
+      {
+        "role": "primary-outcome.json",
+        "bytes": 466,
+        "sha256": "eb87dbd7a5af045a3c70eac09258f0d80fe853224cbd0e42e9b2fc149b58eb4f"
+      },
+      {
+        "role": "outcome.json",
+        "bytes": 61,
+        "sha256": "ec782721600a40868daaf9fd54e3d019473f8b3b47e9c98cdeb46254b535c80d"
+      },
+      {
+        "role": "cleanup.json",
+        "bytes": 232,
+        "sha256": "81156ea56b59dd1b5995abb488aae35253e9eb2f2165de443f2955a1fd8ca786"
+      }
+    ],
+    "storageManagerSha256": "a4d82a72214c9698fda7ae363c38b2470c08da5e2e04c63ee9284e43f638f081",
+    "newPayloads": "Two small complete stdout streams, one reused empty stderr object, and one held 40 KiB raw synthetic SQLite file. No recursive archive, second binary payload copy, new download, CAS adoption or legacy cleanup.",
+    "localWorktree": "Existing dirty branch, HEAD and empty index retained. Only the two qualification files are added to this publication packet; no local stage, commit, reset, checkout or push mutation."
+  },
+  "authority": {
+    "originalRealPaymentAndRequestBytesHashPayloadRequirementsContext": "UNCHANGED_NOT_USED",
+    "consumedAdmissions": 2,
+    "actualChainPrepare": 1,
+    "bundles": 0,
+    "nativeChainProviderQualificationRuns": 0,
+    "realPaymentSigner": "DISABLED",
+    "authority": "NONE",
+    "serviceDelivery": "NOT_ESTABLISHED",
+    "realProviderReady": "NOT_ESTABLISHED",
+    "liveRecovery": "NOT_QUALIFIED",
+    "sqliteResultIsNotChainProviderQualification": true,
+    "pr193": "Preserve possible VALIDATED exact-same-signed-block resend separately from UNKNOWN/ACKNOWLEDGED. No resend, replacement, re-signing or consumed-authority reset occurs here.",
+    "failedOwnershipMetadataAndPrivateBootstrapBoundaries": "UNCHANGED"
+  },
+  "limits": [
+    "This closes only the selected normal-exit fresh-Node-process V4 quarantine-continuity matrix on the exact bytes/platform above, not full P2 durability or restart/recovery qualification.",
+    "The fixture uses declared synthetic funding, payload/proof syntax and fake in-process HTTP handles. It has no wallet keys, cryptographic proof verification, actual payment, network, real provider or service delivery.",
+    "Native loader, Node test runner, streams, process-group observations, filesystem and SQLite/OS behavior remain trusted premises. File equality and evidence modes are not authentication against a hostile same-user actor.",
+    "Current funding, payer/provider/policy authority, independent context, real provider READY, commit/uncertainty, crash/power-loss recovery, inclusion/receive and live-pilot acceptance remain separate gates.",
+    "A new process refusing the quarantined grant is not automatic successful payment recovery and grants no new dispatch/signing/delivery authority.",
+    "The previous observation-collection process-boundary FAILURE/HOLD and owner loader failure are retained honestly; neither is retried, relabeled or counted as a pass.",
+    "No broad app/SDK/store/controller suite, build or hosted CI was run. Empty Actions/check/status lists are not green CI."
+  ],
+  "next": "Select a distinct unfinished source-bound roadmap slice without replaying unchanged qualification. Keep real restart/failure-mode acceptance, official x402/real-payment recovery, DP runtime/producer admission and main/CI gates separate.",
+  "fullP2Complete": false,
+  "productionReadiness": "NO_GO",
+  "pilotAcceptance": "NOT_ACCEPTED",
+  "hostedCI": {
+    "status": "NOT_RUN",
+    "emptyIsNotGreen": true,
+    "workflowChanged": false
+  },
+  "publication": {
+    "existingSourceEdits": 0,
+    "newFiles": [
+      "qualification/service-credit-v4-fresh-process-quarantine.behavior.draft.mjs",
+      "qualification/service-credit-v4-fresh-process-quarantine.behavior.result.json"
+    ],
+    "baselineMain": "166f13bb63a548ca2af0b4b0baaf10b953e04954",
+    "packet": "Only this opt-in fixture and sanitized result; no production/default/CLI/source edit.",
+    "intendedBranch": "x402/p2-v4-fresh-process",
+    "intendedMainUpdate": "NORMAL_FAST_FORWARD_FORCE_FALSE",
+    "commitMessage": "test: qualify V4 quarantine across fresh Node processes [skip ci]",
+    "publicArtifacts": "English ASCII; no private paths, process IDs, file identities, credentials, raw diagnostics or database contents."
+  }
+}
