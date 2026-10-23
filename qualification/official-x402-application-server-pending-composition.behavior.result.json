@@ -1,0 +1,655 @@
+{
+  "schema": 1,
+  "status": "THREE_SELECTED_NEW_APPLICATION_SERVER_COMPOSITIONS_QUALIFIED_LOCALLY",
+  "lane": "P1B_OFFICIAL_X402_APPLICATION_BINDING",
+  "sourceBaseMain": "5bfdc55c8ad67554406bd966714507b893ef6ff4",
+  "sourceBaseTree": "65b36a2ea5f765eba6e8a27d39f648e03d66344b",
+  "selectedApplicationBindingQualified": true,
+  "fullP1BOrRoadmapComplete": false,
+  "fullOfficialCompatibilityQualified": false,
+  "livePilotQualified": false,
+  "implementation": {
+    "path": "src/x402-official-selected-settlement-server.js",
+    "factory": "createOfficialSelectedSettlementServer",
+    "source": {
+      "path": "src/x402-official-selected-settlement-server.js",
+      "bytes": 14136,
+      "LF": 258,
+      "sha256": "d84cbeb27ea77f21752cb5623b06a83831a53aa44ae863afcda85c5341571de6",
+      "gitBlob": "ce49bef304b457f5617e8ce7c4cdda76ad008a5e"
+    },
+    "defaultOff": true,
+    "ordinaryBuyerServerCliUnchanged": true,
+    "behavior": [
+      "Construct and retain the real pinned official resource/HTTP SDK instances privately, reusing one existing production server bridge and its verification-bound owners.",
+      "Accept only one bounded PAYMENT-SIGNATURE scalar or null for a single configured GET /paid route. A trusted native host must authenticate and bind its request separately.",
+      "Capture the actual SDK tuple in a private hook. Reuse that exact tuple through the existing same-original pending continuation without exposing SDK registries, callbacks, route objects, a cancellation dispatcher or caller-constructed tuples.",
+      "A single synchronous application busy fence serializes request and explicit continuation entry; the existing continuation's native resume/close receipts are retained unchanged.",
+      "Retain the original header scalar in the private request adapter. Refuse changed resource/requirement DATA before another SDK request, without resetting the original pending capability.",
+      "Return only detached frozen HTTP/settlement DATA and a frozen explicit pending capability. No automatic retry, replacement, handler or delivery owner is added."
+    ],
+    "qualificationsNotEstablished": [
+      "Actual native HTTP/framework routing or request authentication",
+      "Immediate successful first-settlement echo branch",
+      "Zero-observer-budget and full multi-request admission matrices",
+      "Hostile SDK/native intrinsics or same-UID races",
+      "Hard timeout, cancellation, memory erasure, bridge-wide close or arbitrary indirect Promise-cycle protection",
+      "Durable restart, cross-instance replay, current consent, raw signed-byte custody, canonical finality and service delivery"
+    ]
+  },
+  "selection": {
+    "positiveSourceAssociation": {
+      "sourceBaseMain": "5bfdc55c8ad67554406bd966714507b893ef6ff4",
+      "sourceBaseTree": "65b36a2ea5f765eba6e8a27d39f648e03d66344b",
+      "newApplicationFactory": "createOfficialSelectedSettlementServer",
+      "positiveAssociation": "The actual official resource/HTTP server and capture of its pending tuple are still manually assembled in test harnesses. This separate opt-in application module privately owns that exact SDK construction, fixed single-route request adapter and same-original bounded continuation.",
+      "existingProductionInputsMatchMain": true,
+      "existingProductionFilesModified": 0,
+      "earlierSelectedCompositionsUsedTestLocalServerAssembly": true,
+      "earlierCompletedCasesNotReplayedOrTransferred": true,
+      "packageClosureUnchanged": true,
+      "normalBarePackageResolutionRequired": true,
+      "noDefaultBuyerServerCliCutover": true,
+      "noProviderOrSigningAuthorityExpanded": true,
+      "actualDeliveryNotIntroduced": true
+    },
+    "entry": {
+      "path": "qualification/official-x402-application-server-pending-composition.behavior.draft.mjs",
+      "bytes": 21506,
+      "LF": 273,
+      "sha256": "303c48394f901743b8dc05774a3956a30670d3a77f4f8ba3b4a1db9dea4f4bad",
+      "gitBlob": "ff4ce7388987ed630f886f04cbe9091338fdef4f"
+    },
+    "cases": [
+      "application official server owns the SDK pending tuple and returns one original success",
+      "application official server retains consumed first authority when its observer budget remains pending",
+      "application official server refuses changed request context while retaining the original pending continuation"
+    ],
+    "previousApplicationClientEntryNotImported": true,
+    "legacyInteropEntryNotImported": true,
+    "priorCompletedExperimentsNotReplayed": true,
+    "missingCoverageDoesNotEstablishNovelty": true
+  },
+  "qualification": {
+    "counts": {
+      "tests": 3,
+      "suites": 0,
+      "pass": 3,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "actualNodeExit": 0,
+    "outputComplete": true,
+    "officialCoreVersion": "2.23.0",
+    "zodVersion": "3.25.76",
+    "packageInstallations": 0,
+    "diagnostics": [
+      {
+        "kind": "OFFICIAL_X402_APPLICATION_SERVER_COMPOSITION",
+        "version": 1,
+        "scenario": "PENDING_TO_SUCCESS_PRIVATE_SERVER_BINDING",
+        "coreVersion": "2.23.0",
+        "zodVersion": "3.25.76",
+        "serverRequestCalls": 2,
+        "serverSchemaCalls": 2,
+        "clientSchemaCalls": 1,
+        "clientCreatorCalls": 1,
+        "verifyCalls": 1,
+        "firstSettlementCalls": 1,
+        "observerCalls": 1,
+        "sdkContinuationCalls": 1,
+        "positiveContinuationReplies": 1,
+        "continuationPhase": "SUCCEEDED",
+        "originalHeaderRetained": true,
+        "originalCallbackSerializationsRetained": true,
+        "privateSdkTupleHookChecks": true,
+        "changedContextRequestsRefused": 0,
+        "modeledHandlerCalls": 1,
+        "firstSettlementAuthorityConsumed": true,
+        "publicationUncertaintyRetained": true,
+        "publicationStatus": "ACKNOWLEDGED",
+        "networkCalls": 0,
+        "keys": 0,
+        "signatures": 0,
+        "sql": 0,
+        "nonceSearch": 0,
+        "payments": 0,
+        "realPrepare": 0,
+        "replacements": 0,
+        "serviceDelivery": "NOT_ESTABLISHED",
+        "sameProcessOnly": true,
+        "automaticSdkRetry": false
+      },
+      {
+        "kind": "OFFICIAL_X402_APPLICATION_SERVER_COMPOSITION",
+        "version": 1,
+        "scenario": "PENDING_TO_PENDING_BUDGET_EXHAUSTED",
+        "coreVersion": "2.23.0",
+        "zodVersion": "3.25.76",
+        "serverRequestCalls": 2,
+        "serverSchemaCalls": 2,
+        "clientSchemaCalls": 1,
+        "clientCreatorCalls": 1,
+        "verifyCalls": 1,
+        "firstSettlementCalls": 1,
+        "observerCalls": 1,
+        "sdkContinuationCalls": 1,
+        "positiveContinuationReplies": 0,
+        "continuationPhase": "PENDING_EXHAUSTED",
+        "originalHeaderRetained": true,
+        "originalCallbackSerializationsRetained": true,
+        "privateSdkTupleHookChecks": true,
+        "changedContextRequestsRefused": 0,
+        "modeledHandlerCalls": 0,
+        "firstSettlementAuthorityConsumed": true,
+        "publicationUncertaintyRetained": true,
+        "publicationStatus": "UNKNOWN",
+        "networkCalls": 0,
+        "keys": 0,
+        "signatures": 0,
+        "sql": 0,
+        "nonceSearch": 0,
+        "payments": 0,
+        "realPrepare": 0,
+        "replacements": 0,
+        "serviceDelivery": "NOT_ESTABLISHED",
+        "sameProcessOnly": true,
+        "automaticSdkRetry": false
+      },
+      {
+        "kind": "OFFICIAL_X402_APPLICATION_SERVER_COMPOSITION",
+        "version": 1,
+        "scenario": "CHANGED_CONTEXT_REFUSED_ORIGINAL_CONTINUATION_RETAINED",
+        "coreVersion": "2.23.0",
+        "zodVersion": "3.25.76",
+        "serverRequestCalls": 2,
+        "serverSchemaCalls": 2,
+        "clientSchemaCalls": 1,
+        "clientCreatorCalls": 1,
+        "verifyCalls": 1,
+        "firstSettlementCalls": 1,
+        "observerCalls": 1,
+        "sdkContinuationCalls": 1,
+        "positiveContinuationReplies": 1,
+        "continuationPhase": "SUCCEEDED",
+        "originalHeaderRetained": true,
+        "originalCallbackSerializationsRetained": true,
+        "privateSdkTupleHookChecks": true,
+        "changedContextRequestsRefused": 1,
+        "modeledHandlerCalls": 1,
+        "firstSettlementAuthorityConsumed": true,
+        "publicationUncertaintyRetained": true,
+        "publicationStatus": "ACKNOWLEDGED",
+        "networkCalls": 0,
+        "keys": 0,
+        "signatures": 0,
+        "sql": 0,
+        "nonceSearch": 0,
+        "payments": 0,
+        "realPrepare": 0,
+        "replacements": 0,
+        "serviceDelivery": "NOT_ESTABLISHED",
+        "sameProcessOnly": true,
+        "automaticSdkRetry": false
+      }
+    ],
+    "reviewer": "Separate primary-agent read-only consumer of all six protected records, exact source/CAS ownership, raw streams, actual argv, alias namespace and cleanup; not a second agent or human review.",
+    "rawStdout": {
+      "bytes": 3591,
+      "sha256": "96f3b8897071ba5f58b39c9534bb875fe2b940ecc72b0ec4d088c48dda0b2d04"
+    },
+    "rawStderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "recordSchemaPair": {
+      "admission": 7,
+      "verification": 7
+    },
+    "controllerProgramSha256": "f0bebe6413113c9578c0da5ea184c58b331b6aa57f059f3431365d991369d941",
+    "initialAttempt": {
+      "actualNodeExit": 1,
+      "outputComplete": true,
+      "counts": {
+        "tests": 3,
+        "pass": 0,
+        "fail": 3,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "sourceEntry": {
+        "path": "qualification/official-x402-application-server-pending-composition.behavior.draft.mjs",
+        "bytes": 21379,
+        "LF": 271,
+        "sha256": "7a063f52d21a0fed86afafd4719510b00af43918893e586ed311f08d6f4e29e3",
+        "gitBlob": "6bf245ddefe3e5ee6b344d477d8fdb9067c9ad73"
+      },
+      "applicationSource": "d84cbeb27ea77f21752cb5623b06a83831a53aa44ae863afcda85c5341571de6",
+      "failure": "The test compared the SDK requirement JSON with fixture insertion order instead of the actual first verifier requirement serialization. The three cases failed the final preservation assertion, not a qualified pass.",
+      "repair": "Only the new entry changed: capture the first actual verifier requirement serialization, retain semantic equality with the fixture separately, and compare every subsequent callback exactly with that original string. Application source, selected scenarios, SDK inputs and operational authority did not change. No payment or SDK bytes were reordered or normalized.",
+      "rawStdout": {
+        "sha256": "5542dd42d821cb624fcf97b80c48e93fa52ac5bca61f8f3de74c813cd2a550ff",
+        "bytes": 8621
+      },
+      "rawStderr": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "allFailedRecordsAndSourceObjectsPreserved": true,
+      "records": [
+        {
+          "record": "task",
+          "bytes": 3027,
+          "sha256": "7ff7cc242d7a81f295708800fab9aefef3a8d82b1d8872186792af777d3cd9f2"
+        },
+        {
+          "record": "admission",
+          "bytes": 29356,
+          "sha256": "21175e6cd4ad71a499f3df20983ab0cc89507611b8ad5305078b36dff9bbcd48"
+        },
+        {
+          "record": "cleanup",
+          "bytes": 179,
+          "sha256": "89e609cbb13733c5bb08344ff21a46f96e63dc19d2a633ad530ba05398c6473d"
+        },
+        {
+          "record": "command",
+          "bytes": 6648,
+          "sha256": "41002ef9ffee8669969fa5c4b7a919accfc91122bb6453846aac26dbf3fa6154"
+        },
+        {
+          "record": "outcome",
+          "bytes": 61,
+          "sha256": "142928a898d3b4a67e059962433e3a701a8fa3ff2bff25eab76ba2599c75b0ae"
+        }
+      ]
+    },
+    "finalRecords": [
+      {
+        "record": "task",
+        "bytes": 3001,
+        "sha256": "69ef7738787bbddd24d68df663b455ad4bddfcfa1f14e287918c9a82dc3489ee"
+      },
+      {
+        "record": "admission",
+        "bytes": 30681,
+        "sha256": "d1b46ab80c28b22ca815cfa53c10d694a3356e5e805a668589c3da0de3104c7d"
+      },
+      {
+        "record": "cleanup",
+        "bytes": 179,
+        "sha256": "6e8e6bc3434608e05415ce19d5c015d3e747580531ab85f6cfbded1e7a43e6f8"
+      },
+      {
+        "record": "command",
+        "bytes": 6648,
+        "sha256": "ea18bc64d9e016a8b120052f3b3c8d99c149bb1a563d25c736e6f77dcee83d2b"
+      },
+      {
+        "record": "outcome",
+        "bytes": 62,
+        "sha256": "89d2c5dc2f10914e4c6b1bbf35bcc14c8d737a33ddd502df28de350f9825d2be"
+      },
+      {
+        "record": "verification",
+        "bytes": 2188,
+        "sha256": "a21ce4b366ec1cf2f073ffe77e3abc7f481c1abbdd9b8918cdb91395f1335bf4"
+      }
+    ],
+    "totalActualNodeCommandsThisSlice": 2,
+    "successfulCurrentEntryCommands": 1,
+    "unchangedFailedEntryNotRerun": true,
+    "nodeCommandsForInitialFailedEntry": 1,
+    "nodeCommandsForChangedEntry": 1
+  },
+  "execution": {
+    "actualConsumer": "Reusable official application client -> actual pinned SDK client -> new reusable application server -> actual pinned SDK resource/HTTP server -> existing production verification-bound selected-settlement owner and pending continuation",
+    "declaredCallbackTotalsForSuccessfulEntry": {
+      "creator": 3,
+      "verifier": 3,
+      "firstSettlement": 3,
+      "boundedObserver": 3,
+      "modeledHandler": 2
+    },
+    "realNetworkOperations": 0,
+    "keysGenerated": 0,
+    "signaturesGeneratedOrVerified": 0,
+    "sqlOperations": 0,
+    "nonceSearch": 0,
+    "realPrepare": 0,
+    "payments": 0,
+    "replacements": 0,
+    "nativeChainProviderQualificationRuns": 0,
+    "serviceDelivery": "NOT_ESTABLISHED",
+    "sameProcessOnly": true,
+    "normalBarePackageResolution": true,
+    "noLoaderRewriteOrVm": true,
+    "defaultSdkCutover": false
+  },
+  "sourceClosure": {
+    "files": 31,
+    "bytes": 492577,
+    "staticImportDeclarations": 76,
+    "nonBuiltinStaticDeclarations": 57,
+    "uniqueNonBuiltinStaticEdges": 55,
+    "externalUniqueStaticEdges": 44,
+    "dynamicImportDeclarations": 4,
+    "barePackageImportDeclarations": 4,
+    "sourceRowsSha256": "009ea1a6bb6b5efa98571e476bdb261c89dd8003685f553f5e577da25036b37b",
+    "sourceAndExecutionAliasesVerifiedBeforeAfter": true,
+    "filesPinned": [
+      {
+        "path": "src/x402-official-selected-settlement-server.js",
+        "bytes": 14136,
+        "LF": 258,
+        "sha256": "d84cbeb27ea77f21752cb5623b06a83831a53aa44ae863afcda85c5341571de6",
+        "gitBlob": "ce49bef304b457f5617e8ce7c4cdda76ad008a5e"
+      },
+      {
+        "path": "src/x402-official-selected-payment-client.js",
+        "bytes": 9226,
+        "LF": 177,
+        "sha256": "6103703a48ab93b33e1d322d01da367d9552d1e37c9d983326f6e58d1e77693c",
+        "gitBlob": "f7a47d8d3405f624fa2dc489745752994263ce53"
+      },
+      {
+        "path": "src/x402-selected-payment-client-bridge.js",
+        "bytes": 19446,
+        "LF": 370,
+        "sha256": "d8252e421240005f51b1627ab97b624496325403508d57b030be423e871a5083",
+        "gitBlob": "a405eb73cab88302ee5c0e130bdfc9d1ef9eebfa"
+      },
+      {
+        "path": "src/x402-selected-settlement-server-bridge.js",
+        "bytes": 39943,
+        "LF": 749,
+        "sha256": "38f47d24e1dcdd0f632e786054dc2e9544de2f261f74e949e28fee43ed56f40b",
+        "gitBlob": "483633ee18735355d9614cafe8f7bd8044a7d8b7"
+      },
+      {
+        "path": "src/x402-verification-bound-settlement-context.js",
+        "bytes": 11311,
+        "LF": 221,
+        "sha256": "b3ad2fd33dae7e77a77f069cbc1259bf77e18a2bf383aa30f41bcc19221656f5",
+        "gitBlob": "6734a4aa011239402c141b874612a3be0733b4bf"
+      },
+      {
+        "path": "src/x402-selected-settlement-context.js",
+        "bytes": 16818,
+        "LF": 456,
+        "sha256": "afb6e16603023dd58d6a71cff5790a802dcfa4b98bc9d380b51ccc3d58e10991",
+        "gitBlob": "321d2a03a45296907c0a35a50d1e038e82307a40"
+      },
+      {
+        "path": "src/x402-wire.js",
+        "bytes": 39886,
+        "LF": 934,
+        "sha256": "5fba91af5a352f62d1a335c7176a45a604e2af5d92b1c4b0e53825c1f20d4e56",
+        "gitBlob": "fb060d4e349b1c31a1219a0cc137af250a8a2291"
+      },
+      {
+        "path": "package.json",
+        "bytes": 1413,
+        "LF": 40,
+        "sha256": "8c9a25504fbf6f87c31cdf245a6f4eec5a88cc89c8352151dc66a577c5771ef5",
+        "gitBlob": "ec7193f6fd76f34778515079dc777594175c4c34"
+      },
+      {
+        "path": "@x402/core/package.json",
+        "bytes": 3853,
+        "LF": 138,
+        "sha256": "4130a95721f50c0997dcba3728d14d5584c4f99c12c8c3f9870b21f31da212fd",
+        "gitBlob": "7d72182a84f0a84d73e6260be70af1f520f33657"
+      },
+      {
+        "path": "zod/package.json",
+        "bytes": 3284,
+        "LF": 118,
+        "sha256": "70eedbe34fd52385a4ae2f3e5759b19682189f0118ea73a6e7c32c677f61668e",
+        "gitBlob": "eedcfb0f8e3343c8ac5ba32e5117a032352a986c"
+      },
+      {
+        "path": "@x402/core/dist/esm/client/index.mjs",
+        "bytes": 26707,
+        "LF": 676,
+        "sha256": "653613f25e2fa24615af7d1fe943679177774215a16600289175f61c4df5dda9",
+        "gitBlob": "3474afd63523463825633207d6fbfd782aeca5aa"
+      },
+      {
+        "path": "@x402/core/dist/esm/server/index.mjs",
+        "bytes": 1761,
+        "LF": 60,
+        "sha256": "fa62aa75d072a9a1e2bb00be93ef4980e15507e3617942f1d7ab05c69954a19e",
+        "gitBlob": "5a6d9914baad58a9edee7f897882abce6c011b57"
+      },
+      {
+        "path": "@x402/core/dist/esm/http/index.mjs",
+        "bytes": 1177,
+        "LF": 42,
+        "sha256": "f87cf0256b51820628469681ba1421de97f17d55c2eff64bbe9040ef4f5ea084",
+        "gitBlob": "0dda52c01e2437b16637aaf0b84353092c111861"
+      },
+      {
+        "path": "@x402/core/dist/esm/schemas/index.mjs",
+        "bytes": 1591,
+        "LF": 69,
+        "sha256": "b4c12db796c6654de17d8542d65cd78bbbe8cf4bbcc71d05912450d8adfcf0c9",
+        "gitBlob": "93af501678f80952035795321b6c30a015928679"
+      },
+      {
+        "path": "@x402/core/dist/esm/chunk-BA2VL4DT.mjs",
+        "bytes": 116817,
+        "LF": 3151,
+        "sha256": "f2ad975e24db34808470b081c9deedaf6aafa53ab95121d29661a1a8b1507f84",
+        "gitBlob": "307a10a04e0cb515418f38be50e422634acd305b"
+      },
+      {
+        "path": "@x402/core/dist/esm/chunk-N4QXZG2Z.mjs",
+        "bytes": 5040,
+        "LF": 160,
+        "sha256": "19c189f7417214b211ee4abdaada531a80e5adc8504d593c172fe1e2ce61c03e",
+        "gitBlob": "56010f0571a73a7c82d74f88d4feb01263d9d612"
+      },
+      {
+        "path": "@x402/core/dist/esm/chunk-VE37GDG2.mjs",
+        "bytes": 107,
+        "LF": 6,
+        "sha256": "56fb4db85f03d88dfa5d42c81be8527f72deae2bca4004dfaea6415f186dc086",
+        "gitBlob": "9229b6cbcb04f9a1a374588f9dc31b22c21499ba"
+      },
+      {
+        "path": "@x402/core/dist/esm/chunk-P3DFEIO7.mjs",
+        "bytes": 2602,
+        "LF": 82,
+        "sha256": "9c124f03f792fcef472452fcaf30d03bd7d6ea44170675d60ccc473d3b02f983",
+        "gitBlob": "ec0f7809277982b2d2b38747fc3a3c87a3bb9fd2"
+      },
+      {
+        "path": "@x402/core/dist/esm/chunk-UQQR4X3S.mjs",
+        "bytes": 5837,
+        "LF": 172,
+        "sha256": "a7756bf22635f58e52dce87753863e51f407a38f5c32382a1076c39bd6cb9a62",
+        "gitBlob": "46913a8401fabcdb431cfd504c1708d07f9b1c26"
+      },
+      {
+        "path": "@x402/core/dist/esm/chunk-BJTO5JO5.mjs",
+        "bytes": 433,
+        "LF": 10,
+        "sha256": "1c521b4fbee4089393c982b94b5f8a4f81b1043c2f8cd1848d0d6056430e761f",
+        "gitBlob": "8ea659a7b711a9e45bf435cb6a8300df1d92e8be"
+      },
+      {
+        "path": "zod/index.js",
+        "bytes": 105,
+        "LF": 4,
+        "sha256": "6419c4ac0e637ff08463083e31886d10354f74cbcc4e584400b2b837e39ac881",
+        "gitBlob": "bf6f1643ab4526b97b1eb1a6dcdea48262f70194"
+      },
+      {
+        "path": "zod/v3/external.js",
+        "bytes": 205,
+        "LF": 6,
+        "sha256": "5d26d2e47e2352def36f89a3e8bf8581da22b7f857e07ef3114cd52cf4813445",
+        "gitBlob": "f0a4be4c7aa63b363b654384b103396050a06e29"
+      },
+      {
+        "path": "zod/v3/errors.js",
+        "bytes": 243,
+        "LF": 9,
+        "sha256": "d40831f478288d76e82bbbcc3b7e95c8513b6e76471f2d49a37c979bc57d492d",
+        "gitBlob": "26fdf628a00ac2e0984c1f7d8e31652dcff1253d"
+      },
+      {
+        "path": "zod/v3/helpers/parseUtil.js",
+        "bytes": 3601,
+        "LF": 109,
+        "sha256": "b57484013bb360bac2e334d58fcd5f6cbfa63ffcc7d8ff3dbbb3380ca659b956",
+        "gitBlob": "91b2afb81b4358fb84d637bc963a868517c6a516"
+      },
+      {
+        "path": "zod/v3/helpers/typeAliases.js",
+        "bytes": 11,
+        "LF": 1,
+        "sha256": "8e609bb71c20b858c77f0e9f90bb1319db8477b13f9f965f1a1e18524bf50881",
+        "gitBlob": "cb0ff5c3b541f646105198ee23ac0fc3d805023e"
+      },
+      {
+        "path": "zod/v3/helpers/util.js",
+        "bytes": 4055,
+        "LF": 133,
+        "sha256": "906ef685e5853d496e293ee8f8a2bb8b1ed2d078a1bcdfedb2dfd61d75b6330c",
+        "gitBlob": "b9641f29b7dfd7b8d7d6a3e2361803a51078ea7f"
+      },
+      {
+        "path": "zod/v3/types.js",
+        "bytes": 131212,
+        "LF": 3693,
+        "sha256": "9763a2938f0e7f983363ef4bf6530e7583e3f2d54f8a4a6684efad58febc6e8e",
+        "gitBlob": "40b11c0f01b2af54e0ed48e198607bd8836d9a63"
+      },
+      {
+        "path": "zod/v3/ZodError.js",
+        "bytes": 4349,
+        "LF": 133,
+        "sha256": "f5ac9e86b92e201d41e294d7aa35986a2aa28829e1bcc8ac25f7c8dce0674b99",
+        "gitBlob": "fed6a959bdd005f6b75a71733d3f231417a5955d"
+      },
+      {
+        "path": "zod/v3/locales/en.js",
+        "bytes": 5602,
+        "LF": 109,
+        "sha256": "51a6dcc5d4bd52a64da127c012c6c963395c1d9a343ad75d4a8eca662fc8b205",
+        "gitBlob": "a67fc82a2272c022fa462931950af2a17a2f9b64"
+      },
+      {
+        "path": "zod/v3/helpers/errorUtil.js",
+        "bytes": 300,
+        "LF": 6,
+        "sha256": "68589c0cf44c8b4ad19b77418f53caad2cd1dbc8d714f526e1876ebdee4828c5",
+        "gitBlob": "e1640d1a4f696b5268518f3e15fa10ca5c8e61b8"
+      },
+      {
+        "path": "qualification/official-x402-application-server-pending-composition.behavior.draft.mjs",
+        "bytes": 21506,
+        "LF": 273,
+        "sha256": "303c48394f901743b8dc05774a3956a30670d3a77f4f8ba3b4a1db9dea4f4bad",
+        "gitBlob": "ff4ce7388987ed630f886f04cbe9091338fdef4f"
+      }
+    ],
+    "existingMainInputFiles": 7,
+    "existingRuntimePackageFiles": 22,
+    "existingRuntimePackageBytes": 318892
+  },
+  "retainedEvidence": {
+    "priorRecordsAndFailuresUnchanged": true,
+    "physicalAndContentPinsMatched": true,
+    "afterSuccessfulEntry": {
+      "repoSourceFiles": 313,
+      "nativePrivateFiles": 114,
+      "externalPrivateFiles": 1021,
+      "privateFiles": 1135,
+      "protectedScratchAbsences": 40
+    },
+    "rawPrivatePathsAndDiagnosticsNotPublished": true,
+    "closedRecordsNotRewritten": true,
+    "sourceObjectsRetained": true,
+    "oldStorageRefusalNotGlobalBlocker": true
+  },
+  "storageAndEfficiency": {
+    "managerUnchanged": true,
+    "rootPolicyAndVolumeIdentityUnchanged": true,
+    "productionFreeSpaceFloorAndOldReservationsPreserved": true,
+    "taskQuotaBytes": 2097152,
+    "stdoutCapBytes": 32768,
+    "stderrCapBytes": 1048576,
+    "peakLogicalBytesBound": 2066498,
+    "initialAttempt": {
+      "sourceAliases": 31,
+      "aliasLogicalBytes": 492450,
+      "newSourceObjects": 2,
+      "newSourceBytes": 35515,
+      "reusedSourceObjects": 29,
+      "reusedSourceBytes": 456935,
+      "ownedAliasBytesCleaned": 492450,
+      "protectedObjectsDeleted": 0
+    },
+    "changedEntry": {
+      "sourceAliases": 31,
+      "aliasLogicalBytes": 492577,
+      "newSourceObjects": 1,
+      "newSourceBytes": 21506,
+      "reusedSourceObjects": 30,
+      "reusedSourceBytes": 471071,
+      "ownedAliasBytesCleaned": 492577,
+      "protectedObjectsDeleted": 0
+    },
+    "independentApfsClones": true,
+    "hardLinks": 0,
+    "portableCopyFallback": false,
+    "duplicateSourcePayloadCopiesOnReuse": 0,
+    "onlyOwnedRegisteredDisposableAliasesRemoved": true,
+    "failedAndSuccessfulTasksClosed": true,
+    "managedCallerElapsedSeconds": 1.576468125,
+    "managedCallerSpan": "guard/admission/new-source-retention/APFS-alias-materialization/command/verification/owned-alias-cleanup/close/readback; excludes earlier preparation",
+    "nodeReporterDurationMs": 28.532875,
+    "wallTimeDoesNotIncludeEarlierPreparation": true,
+    "physicalApfsReclaimMeasured": false,
+    "archiveOrDownloadsCreated": 0,
+    "metadataFormat": "One full source graph plus ordered identity and ownership references; no repeated full graph/argv copies. Compact admission 23342 bytes; pretty stored admission 30681 bytes. No manager limit or helper was changed."
+  },
+  "scopeBoundaries": {
+    "protectedRealTotals": {
+      "consumedAdmissions": 2,
+      "actualPrepare": 1,
+      "bundles": 0,
+      "nativeQualificationRuns": 0
+    },
+    "dpPreparationSeparate": true,
+    "originalActualPaymentRequestBytesHashAndContextUnchanged": true,
+    "consumedAuthorityNotReset": true,
+    "validatedSameSignedBlockResendDistinguishedFromUnknownAcknowledged": true,
+    "privateBootstrapAndGhcrBoundariesUnchanged": true,
+    "oldDraftsStoppedSlicesAndFailureRecordsUnchanged": true,
+    "zenonSdkNotImported": true,
+    "providerSetup": false,
+    "realSigner": false,
+    "automationOrModelSettingsChanged": false,
+    "workerDispatched": false
+  },
+  "publicationBoundary": {
+    "packet": "Only the new opt-in application server, its selected entry and this sanitized result. Existing paths and local Git state remain untouched.",
+    "hostedCi": "NOT_RUN_NOT_GREEN",
+    "requiredBeforeMain": "Fresh exact main/tree/PR/rules/push check, exact three-file diff/source match, retained evidence check and normal fast-forward only.",
+    "noForcePushOrRuleBypass": true,
+    "publicCommentsOrPrStateChanges": false
+  },
+  "remainingGates": [
+    "P1-B native host request/delivery-owner wiring needs its own exact qualified scope; a successful DATA receipt is not service delivery.",
+    "The unselected paths listed above are authored only and are not transferred from earlier test evidence.",
+    "Whole official compatibility, durable restart, live supervised pilot and production acceptance remain separate uncompleted gates.",
+    "DP preparation, signing/provider/chain qualification and original consumed authority stay in their existing separate lanes."
+  ]
+}
