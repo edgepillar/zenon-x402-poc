@@ -12,6 +12,13 @@ Its four passed cases and failed fifth case do not qualify this host. The
 separate corrected V3 fixture still selects the old application graph; it is
 not a test of this new host.
 
+The actual deadline binding now privately delegates ownership to the tested
+application deadline core. Its 32 selected SDK/SQL/socket/timer-free cases are
+documented in [the separate component result](P1_APPLICATION_DEADLINE_CORE.md).
+Only that core was imported/executed. The native binding and host remain
+unparsed and unrun; component results must not be presented as their runtime
+qualification. The old V3 fixture still excludes all three of these modules.
+
 ## API and ownership
 
 `createNativeOfficialServiceCreditHttpsApplication` accepts four exact groups:
@@ -53,6 +60,12 @@ delivering callback. Failed cancellation, clock failure, thrown/non-void
 callback or uncertain scheduling latches UNKNOWN. Late wakes are suppressed;
 they do not repair a rejected close verdict.
 
+Failed/unknown arm or cancellation is not retried. Close during an in-flight
+cancellation waits for its return rather than entering the actuator twice.
+A reentrant close during arm remains UNKNOWN even if a later-known handle can
+be cleaned once. Snapshot core observations remain distinct from the explicit
+binding's native call-attempt counts.
+
 These bounds and tracked observations are cooperative; they are not an OS
 sandbox, guaranteed CPU deadline or physical timer-drain certificate.
 
@@ -76,7 +89,8 @@ not service-delivery, independent funding, restart or economic authorization.
 
 ## Qualification gates still open
 
-Neither source module has run or even been parsed in this increment.
+Neither native source module has run or even been parsed in this increment;
+the shared component core alone has the separate selected local result above.
 Current-source selected native composition and early-close/failure/late-wake
 cases remain required before a native qualification claim. The explicit host
 must not be substituted into a differently scoped one-shot experiment.
