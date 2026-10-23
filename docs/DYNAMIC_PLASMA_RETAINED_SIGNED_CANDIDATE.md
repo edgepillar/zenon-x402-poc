@@ -72,12 +72,14 @@ have no new hard deadline, cancellation or hostile-callback sandbox.
 
 ## Integration boundary and next required work
 
-This increment implements and qualifies the actual missing retained-original
-read stage. The effectful original-funding preparation/submission owners and
-their DATA capture still use the existing v6 contract and do **not** call the
-new stage yet. An explicit v2 owner/data integration must select v7, retain the
-same packet and call this operation before entering atomic original-funding
-custody. No active buyer or signer cutover is performed here.
+This result implements and qualifies the retained-original read stage, not the
+effectful SDK/SQLite application. A subsequent [explicit v2 integration](DYNAMIC_PLASMA_ORIGINAL_FUNDING_V2.md)
+adds contextv7 DATA and SOURCE-ONLY preparation/submission selection on the
+scoped working branch. Its intended commit calls this operation before atomic
+original-funding custody without rebuilding the packet. The DATA portion has
+its own selected result; the changed effectful owners have not been parsed,
+imported, runtime-qualified or promoted to main. Existing v1 remains on v6.
+No active buyer or signer cutover is performed here.
 
 The effectful SDK/preflight/SQLite modules were not imported. Their old
 nine-case native profile remains an unchanged source snapshot and must reject

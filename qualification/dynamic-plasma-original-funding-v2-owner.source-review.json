@@ -1,0 +1,324 @@
+{
+  "schemaVersion": 1,
+  "status": "SOURCE_ONLY_V2_OWNER_LINKAGE_REVIEW_NOT_PARSED_OR_IMPORTED",
+  "sourceAssociation": {
+    "sourceParent": "2bdfe9c2f96252eb24b2f4a6a33a3ce9a0d2ccaf",
+    "baseMain": "cf7ce6938905b210171f62287c1bb1c1e83b8542",
+    "changes": [
+      {
+        "before": {
+          "path": "src/zenon/dynamic-plasma-original-funding-data.js",
+          "bytes": 13815,
+          "LF": 254,
+          "sha256": "a8469e58733bd1314d05385bfbf2235559b148c33b0a9be21a20e1c974217801",
+          "gitBlob": "1bb4e0b282ff23f05786f5f2ed1008a41303b3a2"
+        },
+        "after": {
+          "path": "src/zenon/dynamic-plasma-original-funding-data.js",
+          "bytes": 15109,
+          "LF": 285,
+          "sha256": "b2cf8d63646ed4da467ddb3e621247470c2462925c190866d5a070d9dc5b123d",
+          "gitBlob": "08865c6d84895cba9ff5acbcc0fba66a991ca007"
+        }
+      },
+      {
+        "before": {
+          "path": "src/zenon/dynamic-plasma-original-funding-preparation.js",
+          "bytes": 12149,
+          "LF": 200,
+          "sha256": "690824a883194f152ad53070bce1db44be2c436fd957269e96e0a32c3f8f8f2f",
+          "gitBlob": "d99ffab9c75b80212d656be979763dd060e8fa2d"
+        },
+        "after": {
+          "path": "src/zenon/dynamic-plasma-original-funding-preparation.js",
+          "bytes": 15618,
+          "LF": 257,
+          "sha256": "0e1eb8bb94ecd4da8d4dc8f9b384510e8c2764601ba22e228126ba9ed01368c6",
+          "gitBlob": "52174703adc79f457081dfaecde0e308cfc5ccdc"
+        }
+      },
+      {
+        "before": {
+          "path": "src/zenon/dynamic-plasma-original-funding-submission.js",
+          "bytes": 15202,
+          "LF": 252,
+          "sha256": "a91a909bc5a5c3dc067d515164f1d6453178b468b28ef24713fdad70ceffa4a0",
+          "gitBlob": "4fab6451123a78055435f32f9d57bb7b50769670"
+        },
+        "after": {
+          "path": "src/zenon/dynamic-plasma-original-funding-submission.js",
+          "bytes": 16585,
+          "LF": 280,
+          "sha256": "011077f16718334ef0c67c51901cc1f090ac872181e621da48932ec6f102698e",
+          "gitBlob": "31216eda808896fb7e5dc2c1532dc46cb8944531"
+        }
+      }
+    ],
+    "supportPins": [
+      {
+        "path": "src/zenon/dynamic-plasma-observed-balance-deferred-material-planner.js",
+        "bytes": 29368,
+        "LF": 557,
+        "sha256": "4cd321d23d9786c0cdff6ff9490b03d07441ba75aa66011b64ca4c16a84a4a4a",
+        "gitBlob": "3c62fecdfa649c1775ab233d4157b567bc809c06"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-original-funding-store-claim.js",
+        "bytes": 2640,
+        "LF": 59,
+        "sha256": "b5aa2b5d2e1b213d89622d11500fa674e536025317bee2f41740ee040c753945",
+        "gitBlob": "2a3e9da5a64f55ff631b5e33371226568b07aa4c"
+      },
+      {
+        "path": "src/zenon-payment.js",
+        "bytes": 128301,
+        "LF": 3500,
+        "sha256": "44ee797207d557175256b5f69c89c5009e238e4c1b5b01c83b118b7e7b0ab35c",
+        "gitBlob": "f6645973803cb430d94f12698b14b7684c27493b"
+      },
+      {
+        "path": "src/service-credit-zenon-funding-post-v1-payer-recovery-sqlite-store.js",
+        "bytes": 83681,
+        "LF": 2042,
+        "sha256": "bea9e00aa6208f776561c975d54640dfb676168dd4d0b44d125c9dc684912c4a",
+        "gitBlob": "e6af1576df21a20a466d089a4ba6ecdf7380a0df"
+      },
+      {
+        "path": "src/service-credit-zenon-funding-post-v1-payer-recovery-owner.js",
+        "bytes": 18507,
+        "LF": 550,
+        "sha256": "150aaeeaebd5c8f9bdf7b8c84f79e9cccada265469b89c28c4252ee81d6f6de2",
+        "gitBlob": "b9acc3ea6c8999f2464b4f8c25348dcf0fb26a0b"
+      },
+      {
+        "path": "src/service-credit-pilot-original-payment-checkpoint.js",
+        "bytes": 4003,
+        "LF": 89,
+        "sha256": "930905f31824a6cadc16dfb84572cd4dc38a81e2fce4569b73b6bef29dec97d1",
+        "gitBlob": "51c6391bc22f561ebff0005ced31e538aa83f4fa"
+      },
+      {
+        "path": "src/canonical.js",
+        "bytes": 967,
+        "LF": 26,
+        "sha256": "0d55ddf1727cafb0dcd46df2922305568615552a4d2ae34a5c30e90b9d8d998c",
+        "gitBlob": "5367f9c72ee13017a61630e1f0cffdced21d52c4"
+      }
+    ]
+  },
+  "reviewMethod": "PHYSICAL_SOURCE_AND_DIFF_REVIEW_WITH_NARROW_NAMED_IMPORT_AND_ORDER_CHECKS_NOT_A_JAVASCRIPT_PARSER",
+  "namedBindings": [
+    [
+      "src/zenon/dynamic-plasma-original-funding-data.js",
+      "src/canonical.js",
+      "canonicalJson"
+    ],
+    [
+      "src/zenon/dynamic-plasma-original-funding-data.js",
+      "src/x402-wire.js",
+      "decodeB64Json"
+    ],
+    [
+      "src/zenon/dynamic-plasma-original-funding-data.js",
+      "src/x402-wire.js",
+      "encodeB64Json"
+    ],
+    [
+      "src/zenon/dynamic-plasma-original-funding-data.js",
+      "src/x402-wire.js",
+      "MAX_X402_HEADER_ENCODED_BYTES"
+    ],
+    [
+      "src/zenon/dynamic-plasma-original-funding-data.js",
+      "src/x402-wire.js",
+      "sameRequirements"
+    ],
+    [
+      "src/zenon/dynamic-plasma-original-funding-data.js",
+      "src/x402-wire.js",
+      "validatePaymentRequired"
+    ],
+    [
+      "src/zenon/dynamic-plasma-original-funding-data.js",
+      "src/x402-wire.js",
+      "validatePaymentPayloadEnvelope"
+    ],
+    [
+      "src/zenon/dynamic-plasma-original-funding-data.js",
+      "src/service-credit-pilot-original-payment-checkpoint.js",
+      "captureOriginalPaymentCheckpoint"
+    ],
+    [
+      "src/zenon/dynamic-plasma-original-funding-data.js",
+      "src/service-credit-pilot-original-payment-checkpoint.js",
+      "encodeOriginalPaymentCheckpoint"
+    ],
+    [
+      "src/zenon/dynamic-plasma-original-funding-data.js",
+      "src/service-credit-pilot-original-payment-checkpoint.js",
+      "restoreOriginalPaymentCheckpoint"
+    ],
+    [
+      "src/zenon/dynamic-plasma-original-funding-data.js",
+      "src/zenon/transaction-planner.js",
+      "createZenonUserSendObservationInput"
+    ],
+    [
+      "src/zenon/dynamic-plasma-original-funding-data.js",
+      "src/zenon/transaction-planner.js",
+      "snapshotZenonUnsignedUserSendFields"
+    ],
+    [
+      "src/zenon/dynamic-plasma-original-funding-data.js",
+      "src/zenon/transaction-planner.js",
+      "snapshotZenonUserSendPolicyBinding"
+    ],
+    [
+      "src/zenon/dynamic-plasma-original-funding-data.js",
+      "src/zenon/dynamic-plasma-user-send-key-binding.js",
+      "validateZenonUnsignedUserSendKeyBinding"
+    ],
+    [
+      "src/zenon/dynamic-plasma-original-funding-preparation.js",
+      "src/canonical.js",
+      "canonicalJson"
+    ],
+    [
+      "src/zenon/dynamic-plasma-original-funding-preparation.js",
+      "src/zenon-payment.js",
+      "preflightZenonPayment"
+    ],
+    [
+      "src/zenon/dynamic-plasma-original-funding-preparation.js",
+      "src/service-credit-zenon-funding-post-v1-payer-recovery-sqlite-store.js",
+      "ZenonFundingPayerRecoverySqliteStore"
+    ],
+    [
+      "src/zenon/dynamic-plasma-original-funding-preparation.js",
+      "src/service-credit-pilot-original-payment-checkpoint.js",
+      "encodeOriginalPaymentCheckpoint"
+    ],
+    [
+      "src/zenon/dynamic-plasma-original-funding-preparation.js",
+      "src/zenon/dynamic-plasma-observed-balance-deferred-material-planner.js",
+      "createObservedBalanceDeadlineBoundMaterialWalletCandidatePreparer"
+    ],
+    [
+      "src/zenon/dynamic-plasma-original-funding-preparation.js",
+      "src/zenon/dynamic-plasma-observed-balance-deferred-material-planner.js",
+      "createObservedBalanceDeadlineBoundMaterialRetainedCandidatePreparer"
+    ],
+    [
+      "src/zenon/dynamic-plasma-original-funding-preparation.js",
+      "src/zenon/dynamic-plasma-original-funding-store-claim.js",
+      "claimZenonDynamicPlasmaOriginalFundingStore"
+    ],
+    [
+      "src/zenon/dynamic-plasma-original-funding-preparation.js",
+      "src/zenon/dynamic-plasma-original-funding-data.js",
+      "captureZenonDynamicPlasmaOriginalFundingInput"
+    ],
+    [
+      "src/zenon/dynamic-plasma-original-funding-preparation.js",
+      "src/zenon/dynamic-plasma-original-funding-data.js",
+      "assembleZenonDynamicPlasmaOriginalFundingData"
+    ],
+    [
+      "src/zenon/dynamic-plasma-original-funding-preparation.js",
+      "src/zenon/dynamic-plasma-original-funding-data.js",
+      "captureZenonDynamicPlasmaOriginalFundingInputV2"
+    ],
+    [
+      "src/zenon/dynamic-plasma-original-funding-preparation.js",
+      "src/zenon/dynamic-plasma-original-funding-data.js",
+      "assembleZenonDynamicPlasmaOriginalFundingDataV2"
+    ],
+    [
+      "src/zenon/dynamic-plasma-original-funding-preparation.js",
+      "src/zenon/dynamic-plasma-original-funding-data.js",
+      "snapshotZenonDynamicPlasmaOriginalFundingPins"
+    ],
+    [
+      "src/zenon/dynamic-plasma-original-funding-submission.js",
+      "src/zenon/dynamic-plasma-original-funding-preparation.js",
+      "createZenonDynamicPlasmaOriginalFundingPreparation"
+    ],
+    [
+      "src/zenon/dynamic-plasma-original-funding-submission.js",
+      "src/zenon/dynamic-plasma-original-funding-preparation.js",
+      "createZenonDynamicPlasmaOriginalFundingPreparationV2"
+    ],
+    [
+      "src/zenon/dynamic-plasma-original-funding-submission.js",
+      "src/zenon/dynamic-plasma-original-funding-data.js",
+      "snapshotZenonDynamicPlasmaOriginalFundingPins"
+    ],
+    [
+      "src/zenon/dynamic-plasma-original-funding-submission.js",
+      "src/service-credit-zenon-funding-post-v1-payer-recovery-owner.js",
+      "createZenonFundingPostV1PayerRecoveryOwner"
+    ],
+    [
+      "src/zenon/dynamic-plasma-original-funding-submission.js",
+      "src/service-credit-zenon-funding-post-v1-payer-recovery-sqlite-store.js",
+      "ZenonFundingPayerRecoverySqliteStore"
+    ],
+    [
+      "src/zenon/dynamic-plasma-original-funding-submission.js",
+      "src/service-credit-pilot-original-payment-checkpoint.js",
+      "encodeOriginalPaymentCheckpoint"
+    ]
+  ],
+  "sourceOrder": "INDEPENDENT_PINS_THEN_ONE_CURRENT_READ_THEN_SAME_PACKET_ATOMIC_CUSTODY",
+  "sourceObservations": {
+    "explicitFactories": [
+      "createZenonDynamicPlasmaOriginalFundingPreparationV2",
+      "createZenonDynamicPlasmaOriginalFundingSubmissionV2"
+    ],
+    "captureAndAssemblyContext": 7,
+    "actualRetainedPreparerHardwired": true,
+    "actualPreflightHardwired": true,
+    "actualV6StorePrototypeMethodsHardwired": true,
+    "originalStoreObjectClaimUnchanged": true,
+    "independentPinsBeforeCurrentRead": true,
+    "sameSignedBlockAndUnsignedCheckpointComparedBeforeStore": true,
+    "oneCurrentReadCallSite": true,
+    "noAwaitBetweenAcceptedGateAndAtomicStoreEntry": true,
+    "commitDoesNotReassembleOrSign": true,
+    "currentReadRefusalLeavesHeldBeforeCommit": true,
+    "postStoreEntryFailureRemainsUnknown": true,
+    "submissionStillUsesSameOriginalV6BytesAndPins": true,
+    "noReplayUnknownExposed": true,
+    "oldV1FactorySelectionRemainsContext6": true
+  },
+  "runtime": {
+    "parse": "NOT_RUN",
+    "import": "NOT_RUN",
+    "SDK": "NOT_RUN",
+    "signatures": "NOT_RUN",
+    "SQLite": "NOT_RUN",
+    "network": "NOT_RUN",
+    "transport": "NOT_RUN",
+    "positivePoW": "NOT_RUN",
+    "fullEffectfulGraphQualified": false
+  },
+  "publicationBoundary": {
+    "dataModuleEligibleAfterSelectedTests": true,
+    "effectfulOwnersMainTransfer": false,
+    "effectfulOwnersWorkingBranchOnly": true,
+    "defaultBuyerChanged": false,
+    "oldNativeProfiles": "UNCHANGED_AND_MUST_REFUSE_NEW_SOURCE_HASHES",
+    "hostedCI": "NOT_RUN_NOT_GREEN",
+    "economicPilot": "NO_GO"
+  },
+  "limitations": [
+    "Import-name and source-order checks do not prove JavaScript linkage or runtime behavior.",
+    "Declared non-atomic reads do not authenticate chain state or guarantee time-of-use freshness.",
+    "One public commit admission consumes the attempt, including pin/read refusal. Original packet stays inspectable; no reset or replacement right is exposed.",
+    "Material timeout is not a wallet/read/whole-operation deadline; borrowed pending work still requires external hold/lifetime management.",
+    "Normal store readback is not forced-process-exit, crash, power-loss or live economic qualification."
+  ],
+  "newTasks": 0,
+  "newScratch": 0
+}
+
