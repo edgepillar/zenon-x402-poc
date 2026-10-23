@@ -1,0 +1,237 @@
+{
+  "schema": "zenon-x402-source-review/v1",
+  "status": "SOURCE_DRAFT_NOT_JS_PARSED_NOT_IMPORTED_NOT_EXECUTED",
+  "lane": "P1-B reusable selected-payment client role",
+  "sourceBaseMain": "37911baf82509ff4d3cfdb29090a2ee1c0ed4732",
+  "sourceBaseTree": "6b203eee222ce3ef6f677711eefcbce87a35c54a",
+  "selectedLocalScopeQualified": false,
+  "fullRoadmapScopeQualified": false,
+  "selection": {
+    "finiteSlice": "Implement the previously test-local selected-payment client role as a default-off application module over the existing strict wire validators, with retained one-shot context claims after failure or ambiguity.",
+    "positiveSourceAssociation": "Immutable main contains the client adapter only inside the legacy official interop test. Existing application modules already provide selected server/settlement roles, but not this selected client role. The new application module supplies that operational boundary without importing the test or SDK.",
+    "missingCoverageAloneEstablishesNovelty": false,
+    "immutableMainInteropFile": {
+      "path": "test/official-x402-client-resource-server-interop.test.js",
+      "bytes": 40931,
+      "sha256": "67af54232e50619986872a9a354c8a9c30f7f4b54e00f16ff671ba7e36af18e1",
+      "gitBlob": "36f2b73ed21ce06978c8017c00f16281a073fa37"
+    },
+    "clientSection": {
+      "bytes": 6542,
+      "sha256": "e845220db55fc5a2699a164513496d43389964429ee1e450fc404fb26f8e2d2b",
+      "sectionIdenticalToImmutableMain": true
+    },
+    "wholeUnrelatedLocalLegacyInteropFileRewritten": false,
+    "priorPassingTestsTransferred": false
+  },
+  "applicationChanges": {
+    "addedModule": {
+      "path": "src/x402-selected-payment-client-bridge.js",
+      "bytes": 19446,
+      "LF": 370,
+      "sha256": "d8252e421240005f51b1627ab97b624496325403508d57b030be423e871a5083",
+      "gitBlob": "a405eb73cab88302ee5c0e130bdfc9d1ef9eebfa"
+    },
+    "behavior": [
+      "Capture exact ordered selected-offer identity and bounded descriptor-only challenge snapshots.",
+      "Capture the explicit trusted creator and schema methods; accept only explicit fixed-asset metadata, not a default payment owner.",
+      "Consume a selected context before creator entry; retain identity tombstones after rejection, failure hooks, malformed fulfillment or changed input.",
+      "Do not allow duplicate/failure-hook refusals to poison the first in-flight original creation.",
+      "Mark creation ambiguity only after that call actually entered the borrowed creator, not because an older call ran.",
+      "Snapshot native fulfillment before public Promise resolution; reject unsupported Promise/thenable/proxy and direct public-receipt dependency surfaces.",
+      "Detach raw inputs on completion or idle cancellation; bound capture attempts and retained contexts without reset, retry, replacement or authority renewal."
+    ],
+    "activeBuyerServerCliPackageOrWorkflowChanges": false,
+    "existingApplicationFilesModified": 0,
+    "notEstablished": [
+      "Official SDK or HTTP conformance",
+      "signature/hash verification or raw signed-byte custody",
+      "durable/process-restart recovery or a global replay/consent owner",
+      "real PREPARE, provider authority, live payment, deployment or production readiness"
+    ]
+  },
+  "sourceClosure": {
+    "kind": "STATIC_LITERAL_IMPORT_GRAPH_TEXT_AND_HASH_REVIEW_ONLY",
+    "files": 4,
+    "bytes": 81197,
+    "staticImportEdges": 8,
+    "builtins": [
+      "node:assert/strict",
+      "node:buffer",
+      "node:test",
+      "node:util"
+    ],
+    "dynamicImports": 0,
+    "barePackages": 0,
+    "oldQualificationEntriesImported": 0,
+    "pins": [
+      {
+        "path": "package.json",
+        "bytes": 1413,
+        "LF": 40,
+        "sha256": "8c9a25504fbf6f87c31cdf245a6f4eec5a88cc89c8352151dc66a577c5771ef5",
+        "gitBlob": "ec7193f6fd76f34778515079dc777594175c4c34"
+      },
+      {
+        "path": "qualification/x402-selected-payment-client-bridge.behavior.draft.mjs",
+        "bytes": 20452,
+        "LF": 326,
+        "sha256": "5c5a8d16dc0d832cd4bcffe3f25f04170b7f0d85986772ecaeecc3ae051ffd1e",
+        "gitBlob": "b57b4d021743694f59ef4dd9124a41183ea46afa"
+      },
+      {
+        "path": "src/x402-selected-payment-client-bridge.js",
+        "bytes": 19446,
+        "LF": 370,
+        "sha256": "d8252e421240005f51b1627ab97b624496325403508d57b030be423e871a5083",
+        "gitBlob": "a405eb73cab88302ee5c0e130bdfc9d1ef9eebfa"
+      },
+      {
+        "path": "src/x402-wire.js",
+        "bytes": 39886,
+        "LF": 934,
+        "sha256": "5fba91af5a352f62d1a335c7176a45a604e2af5d92b1c4b0e53825c1f20d4e56",
+        "gitBlob": "fb060d4e349b1c31a1219a0cc137af250a8a2291"
+      }
+    ],
+    "existingRuntimeDependenciesMatchImmutableMain": true,
+    "parsingOrImportingJavaScriptPerformed": false
+  },
+  "plannedSelectedQualification": {
+    "entry": "qualification/x402-selected-payment-client-bridge.behavior.draft.mjs",
+    "selectedCases": 16,
+    "names": [
+      "selected client bridge exposes immutable SDK shaped roles and captures configuration without caller hooks",
+      "selected client bridge returns only explicit fixed asset metadata without opening payment authority",
+      "selected client bridge captures the exact ordered selected view and creates one detached original payload",
+      "selected client bridge denies missing cloned duplicate and consumed identities without a second creator call",
+      "selected client bridge failure hook cancels an idle context without releasing its one shot identity",
+      "selected client bridge rejects changed source resource requirement order and view identity before creator entry",
+      "selected client bridge snapshots schema input and refuses mutation substitution async replies and capture reentry",
+      "selected client bridge duplicate and failure hook refusals do not poison the first pending creation",
+      "selected client bridge retains consumed ambiguity on thrown rejected or malformed creator outcomes",
+      "selected client bridge snapshots raw fulfilled DATA without invoking callback proxy getter or thenable hooks",
+      "selected client bridge observes supported native promises with captured then and refuses unsafe receipts",
+      "selected client bridge rechecks original context after pending fulfillment without replacement or second creation",
+      "selected client bridge preserves explicit empty extension context without adding unsupported extension semantics",
+      "selected client bridge bounds failed capture attempts dense offers descriptor hooks and text before callbacks",
+      "selected client bridge captures operational methods and keeps precreator drift distinct from an older creation",
+      "selected client bridge refuses changed intrinsic premises and keeps snapshots powerless and payload free"
+    ],
+    "expectedDiagnostic": {
+      "kind": "P1B_SELECTED_PAYMENT_CLIENT_BRIDGE",
+      "version": 1,
+      "selectedCases": 16,
+      "fixtures": 43,
+      "schemas": 33,
+      "creators": 23,
+      "officialSdkImports": 0,
+      "keys": 0,
+      "signatures": 0,
+      "sql": 0,
+      "network": 0,
+      "nonceSearch": 0,
+      "realPrepare": 0,
+      "authority": "NONE",
+      "qualification": "LOCAL_SDK_FREE_COMPONENT_NOT_OFFICIAL_CORE_OR_LIVE_PAYMENT_QUALIFICATION"
+    },
+    "diagnosticIsObserved": false,
+    "actionBoundary": {
+      "actualConsumer": "New selected-payment client role -> unchanged actual x402 wire validators -> explicit test-owned declared DATA callbacks",
+      "selectedCases": 16,
+      "fixtureCount": 43,
+      "schemaCallbacks": 33,
+      "creatorCallbacks": 23,
+      "contextLimitPerFactory": [
+        1,
+        64
+      ],
+      "offersPerChallengeMaximum": 16,
+      "jsonDepthMaximum": 16,
+      "jsonNodesMaximum": 4096,
+      "jsonBytesMaximum": 131072,
+      "sourceImportsOnly": true,
+      "officialSdkPackagesLoaded": 0,
+      "candidateEvaluationsPermitted": 0,
+      "signaturesGeneratedOrVerified": 0,
+      "keysGenerated": 0,
+      "sqlOperations": 0,
+      "networkOperations": 0,
+      "payments": 0,
+      "realPrepare": 0,
+      "livePilot": 0,
+      "sourceAliasesCreated": 0,
+      "priorPositiveNonceExceptionReused": false,
+      "priorQualificationEntriesLoadedOrReplayed": false,
+      "oldFailureAndStoppedEvidencePreserved": true,
+      "workerDispatched": false,
+      "authorityOrConsumedStateExpanded": false
+    },
+    "proposedLaunch": {
+      "runtime": "Node 24.19.0 darwin arm64",
+      "runtimeSha256": "dbedff294bab84a0a86c04e15fbcbeb1c97ca10bef1b32b0634cd24b36f62100",
+      "callerProgramSha256": "4d77fb29f1cb2551f0497d8fe315c83013b464c3ddfe9ec7457d42053c08825e",
+      "qualificationCommands": 1,
+      "environmentCleared": true,
+      "perTestTimeoutMs": 5000,
+      "commandTimeoutSeconds": 30,
+      "stdoutCapBytes": 65536,
+      "stderrCapBytes": 1048576,
+      "nodeFsWritesAllowed": false,
+      "sourceExecution": "Original exact pinned read-only checkout files; no alias/source payload copy.",
+      "noOsHostileCodeNetworkOrHardCpuCancellationSandboxClaim": true
+    }
+  },
+  "actualAttempt": {
+    "controllerExit": 1,
+    "stage": "TASK_STORAGE_CAPACITY_PRESCAN",
+    "reason": "ADMISSION_REFUSED_PROTECTED_OR_FOREIGN_SCRATCH_TREE",
+    "refusalSource": "An unrelated retained protected directory in the shared qualification store. Private owner/path/process details are intentionally omitted.",
+    "qualificationTaskCreated": false,
+    "applicationCommandLaunched": false,
+    "applicationImports": 0,
+    "nodeActualExit": null,
+    "outputComplete": null,
+    "actualTestCounts": null,
+    "actualDiagnostics": null,
+    "newSourceObjectsPromoted": 0,
+    "sourceAliasesCreated": 0,
+    "classification": "Storage admission refusal before application execution; not a JavaScript/test failure or passing qualification.",
+    "existingDataMovedDeletedReboundOrAdopted": false,
+    "managerPatchedOrPolicyLowered": false,
+    "defaultRootOrHomeCacheFallbackPerformed": false,
+    "sourceAndPrivateEvidencePreserved": true,
+    "newIsolatedPrivateQualificationRootDecision": "PENDING_HUMAN_APPROVAL; NO_NEW_ROOT_CREATED"
+  },
+  "scopeBoundaries": {
+    "sdk": 0,
+    "keyGeneration": 0,
+    "signatureOperations": 0,
+    "sql": 0,
+    "networkApplicationOperations": 0,
+    "nonceSearch": 0,
+    "realPrepare": 0,
+    "payments": 0,
+    "livePilot": 0,
+    "workerDispatches": 0,
+    "trustedCallbacks": "Operational in real use; these proposed tests supply only fixed declared DATA callbacks. Consistency does not establish signing consent.",
+    "newObjectsOrInstancesGrantNewAuthority": false,
+    "originalSignedPaymentAndConsumedAuthorityChanged": false,
+    "oldFailuresStoppedAndCompletedSlicesRewritten": false,
+    "protectedRealTotals": {
+      "consumedAdmissions": 2,
+      "actualPrepare": 1,
+      "bundles": 0,
+      "nativeChainOrProviderQualificationRuns": 0
+    }
+  },
+  "publicationBoundary": {
+    "sourceOnly": true,
+    "intendedBranch": "x402/p1b-selected-client-bridge-draft",
+    "mainTransferPermittedByThisRecord": false,
+    "newWorkflowOrCiDispatch": false,
+    "hostedCi": "NOT_RUN_NOT_GREEN",
+    "automationSettingsChanged": false
+  },
+  "nextGate": "Preserve the existing shared-store refusal and old data. After an approved isolated storage boundary or a verified external repair, admit and execute the reviewed sixteen-case command once, then separately inspect exact raw output/records before any qualified main transfer."
+}
