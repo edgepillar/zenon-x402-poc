@@ -7,9 +7,11 @@ import { snapshotZenonDynamicPlasmaOriginalFundingPins } from './dynamic-plasma-
 import { createZenonFundingPostV1PayerRecoveryOwner } from '../service-credit-zenon-funding-post-v1-payer-recovery-owner.js';
 import { ZenonFundingPayerRecoverySqliteStore } from '../service-credit-zenon-funding-post-v1-payer-recovery-sqlite-store.js';
 import { encodeOriginalPaymentCheckpoint } from '../service-credit-pilot-original-payment-checkpoint.js';
+import { createOriginalFundingReadCloseCoordinator } from './dynamic-plasma-original-funding-read-close.js';
 
 const PREPARATION = createZenonDynamicPlasmaOriginalFundingPreparation;
 const PREPARATION_V2 = createZenonDynamicPlasmaOriginalFundingPreparationV2;
+const READ_CLOSE_JOIN = createOriginalFundingReadCloseCoordinator;
 const PAYER = createZenonFundingPostV1PayerRecoveryOwner;
 const PINS = snapshotZenonDynamicPlasmaOriginalFundingPins, ENCODE = encodeOriginalPaymentCheckpoint;
 const FREEZE = Object.freeze, CREATE = Object.create, DEFINE = Object.defineProperty;
@@ -90,11 +92,29 @@ export function createZenonDynamicPlasmaOriginalFundingSubmissionV2(configuratio
   return createSubmission(configuration, true);
 }
 
-function createSubmission(configuration, retainedValidationEnabled) {
-  let preparer, payer, store, resource;
+/** Opt-in SOURCE V3: same contextv7/V2 preparation, but a joined read/store close.
+ * The actual lifecycle is blocked before requesting read abort. The actual
+ * payer/store close is vetoed on any uncertain read close. Existing V1/V2
+ * public selections and legacy close path stay unchanged; no native result is
+ * rebound to this changed SDK/SQLite/HTTPS application source.
+ */
+export function createZenonDynamicPlasmaOriginalFundingSubmissionV3(configuration) {
+  if (arguments.length !== 1) fail('configuration_rejected');
+  return createSubmission(configuration, true, true);
+}
+
+function createSubmission(configuration, retainedValidationEnabled, joinedReadCloseEnabled = false) {
+  let preparer, payer, store, resource, readSessionClose = null;
   try {
     if (!invariant()) fail('configuration_rejected');
-    const input = record(configuration, ['preparerOptions', 'store', 'fundingResourceUrl', 'deadlineMs', 'fetchImpl']);
+    const input = record(configuration, joinedReadCloseEnabled
+      ? ['preparerOptions', 'store', 'fundingResourceUrl', 'deadlineMs', 'fetchImpl', 'readSession']
+      : ['preparerOptions', 'store', 'fundingResourceUrl', 'deadlineMs', 'fetchImpl']);
+    if (joinedReadCloseEnabled) {
+      const session = record(input.readSession, ['readOptions', 'close', 'inspect']);
+      if (value(input.preparerOptions, 'readOptions') !== session.readOptions) fail('configuration_rejected');
+      readSessionClose = method(session, 'close');
+    }
     store = input.store; resource = input.fundingResourceUrl;
     if (typeof store !== 'object' || store === null || IS_PROXY(store) || PROTOTYPE(store) !== STORE
         || STORE_METHODS.some(name => DESCRIPTOR(store, name) !== undefined)
@@ -117,6 +137,18 @@ function createSubmission(configuration, retainedValidationEnabled) {
   let phase = 'IDLE', lifecycle = 'OPEN', packet = null, pending = null, closing = null;
   let prepareAttempts = 0, commitAttempts = 0, submissionAttempts = 0, submissionEntered = false;
   let fundingIntakeStatus = null;
+  const joinedClose = joinedReadCloseEnabled ? READ_CLOSE_JOIN(FREEZE({
+    startReadClose: readSessionClose,
+    snapshotOperation: FREEZE(function snapshotOperation() { return pending; }),
+    closeFunding: FREEZE(function closeFunding() {
+      if (!invariant()) fail('close_unknown');
+      const owned = shield(APPLY(CLOSE, PAYER_OWNER, []));
+      // Prehandle the genuine payer's close before returning it to the join.
+      APPLY(THEN, owned, [() => undefined, () => undefined]);
+      return owned;
+    }),
+    canCloseFunding: FREEZE(function canCloseFunding() { return invariant(); }),
+  })) : null;
   configuration = null; preparer = null; payer = null; store = null; resource = null;
 
   function retained(pins, status, revision) {
@@ -172,7 +204,7 @@ function createSubmission(configuration, retainedValidationEnabled) {
       if (typeof status !== 'string' || !HAS(PHASES, status)) fail('submission_unknown');
       retained(pins, status, 3); // PREPARED -> actual durable fence -> actual completion.
       fundingIntakeStatus = status; phase = PHASES[status];
-      return FREEZE({ originalFundingSubmissionVersion: retainedValidationEnabled ? 2 : 1, phase, fundingIntakeStatus,
+      return FREEZE({ originalFundingSubmissionVersion: joinedReadCloseEnabled ? 3 : retainedValidationEnabled ? 2 : 1, phase, fundingIntakeStatus,
         transactionHash: packet.transactionHash, authority: 'NONE', chainPublication: 'NOT_ESTABLISHED',
         inclusion: 'NOT_ESTABLISHED', grant: 'NOT_ESTABLISHED', serviceDelivery: 'NOT_ESTABLISHED' });
     } catch {
@@ -201,6 +233,14 @@ function createSubmission(configuration, retainedValidationEnabled) {
     return promise;
   }
   function close() {
+    if (joinedClose !== null) {
+      if (arguments.length !== 0) return rejected('input_rejected');
+      if (closing !== null) return closing;
+      lifecycle = 'CLOSING';
+      closing = joinedClose.promise; // Before read close can reenter this owner.
+      joinedClose.start();
+      return closing;
+    }
     if (arguments.length !== 0 || !invariant()) return rejected('input_rejected');
     if (closing !== null) return closing;
     lifecycle = 'CLOSING';
@@ -219,6 +259,15 @@ function createSubmission(configuration, retainedValidationEnabled) {
   }
   function inspectOriginalFunding() {
     if (arguments.length !== 0 || !invariant()) fail('input_rejected');
+    if (joinedClose !== null) {
+      const joined = joinedClose.inspect();
+      return FREEZE({ originalFundingSubmissionInspectionVersion: 3, phase, lifecycle: joined.lifecycle,
+        joinedReadClose: joined, publicOperationActive: pending !== null,
+        prepareAttempts, commitAttempts, submissionAttempts, submissionEntered, fundingIntakeStatus,
+        preparation: APPLY(INSPECT, PREPARER, []), authority: 'NONE', automaticReplay: false,
+        chainPublication: 'NOT_ESTABLISHED', grant: 'NOT_ESTABLISHED', serviceDelivery: 'NOT_ESTABLISHED',
+        transportDrain: 'NOT_EXPOSED_BY_THIS_VIEW' });
+    }
     return FREEZE({ originalFundingSubmissionInspectionVersion: retainedValidationEnabled ? 2 : 1, phase, lifecycle, publicOperationActive: pending !== null,
       prepareAttempts, commitAttempts, submissionAttempts, submissionEntered, fundingIntakeStatus,
       preparation: APPLY(INSPECT, PREPARER, []), authority: 'NONE', automaticReplay: false,

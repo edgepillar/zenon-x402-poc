@@ -1,0 +1,288 @@
+{
+  "kind": "ORIGINAL_FUNDING_READ_OPERATION_CLOSE_COMPONENT_RESULT",
+  "version": 1,
+  "status": "TWENTY_FOUR_COMPONENT_CASES_PASS_NOT_V3_NATIVE_QUALIFICATION",
+  "sourceBase": {
+    "branch": "x402/p1-router-late-pending-close-integration-v2",
+    "commit": "408dd5210de1355c7e6329c3fe22c31e0e7c0966"
+  },
+  "mainParent": "3723ce65551004185d2d70b58584c8b7de8455d0",
+  "runtime": {
+    "node": "24.19.0",
+    "platform": "darwin",
+    "arch": "arm64"
+  },
+  "nodeSha256": "dbedff294bab84a0a86c04e15fbcbeb1c97ca10bef1b32b0634cd24b36f62100",
+  "sourceAssociation": {
+    "sourceInputs": [
+      {
+        "path": "package.json",
+        "bytes": 2677,
+        "LF": 40,
+        "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+        "gitBlob": "45752ffde39d29666094f7f1c755060d75e43deb"
+      },
+      {
+        "path": "qualification/dynamic-plasma-original-funding-read-close.behavior.draft.mjs",
+        "bytes": 16282,
+        "LF": 194,
+        "sha256": "c9c56cc4f4d0b3663213a057908ce42c21d280ddc8ea3946ed81e56280a4062a",
+        "gitBlob": "b43d9ce8dc9386ded4025deb08b7940f7f854b72"
+      },
+      {
+        "path": "src/zenon/bounded-json-rpc-read-admission.js",
+        "bytes": 2627,
+        "LF": 51,
+        "sha256": "0b0b0806487c2e648a83367a9ebcd48a3a92493158ebca23abe8d6d6849d9ff3",
+        "gitBlob": "9e9ee352d7cf0013d96851c769f2a205ccf98449"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-original-funding-read-close.js",
+        "bytes": 9568,
+        "LF": 178,
+        "sha256": "5086567b2c0cce0fc3419db69641beb7e5e434d47f83e17015682964ad482a45",
+        "gitBlob": "f2a1b30bb02a6b192fc3b0fe0b4fc5b65e2d297b"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-retained-read-session-core.js",
+        "bytes": 10450,
+        "LF": 204,
+        "sha256": "a0f91046c47cfa770f30bf299f620086351ee15977f669d9ec6016dd08d65794",
+        "gitBlob": "b9151955b073be614946525e70320600f7a6850b"
+      }
+    ],
+    "existingInputsMatchBothPublishedParents": 3,
+    "newCoordinatorAndTestInputs": 2
+  },
+  "counts": {
+    "tests": 24,
+    "pass": 24,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "cases": [
+    {
+      "number": 1,
+      "name": "construction is inert and reserves one frozen prehandled public Promise before any resource callback",
+      "status": "PASS"
+    },
+    {
+      "number": 2,
+      "name": "invalid configuration proxies getters and mutable callbacks refuse without touching any capability",
+      "status": "PASS"
+    },
+    {
+      "number": 3,
+      "name": "one cached start requests read close before the operation snapshot and never repeats either callback",
+      "status": "PASS"
+    },
+    {
+      "number": 4,
+      "name": "settling the active operation first cannot release funding while read close is still pending",
+      "status": "PASS"
+    },
+    {
+      "number": 5,
+      "name": "both clean read close and active-operation settlement are required before the real funding-close callback slot",
+      "status": "PASS"
+    },
+    {
+      "number": 6,
+      "name": "clean read close alone never bypasses an unresolved active operation",
+      "status": "PASS"
+    },
+    {
+      "number": 7,
+      "name": "an active-operation rejection is joined without inspecting raw properties or calling it payment success",
+      "status": "PASS"
+    },
+    {
+      "number": 8,
+      "name": "one rejected read close permanently vetoes funding release even after the operation later settles",
+      "status": "PASS"
+    },
+    {
+      "number": 9,
+      "name": "a synchronous read-close throw is scrubbed and cannot reach the operation snapshot or funding close",
+      "status": "PASS"
+    },
+    {
+      "number": 10,
+      "name": "thenables proxies and non-undefined read-close outcomes never become a close permit",
+      "status": "PASS"
+    },
+    {
+      "number": 11,
+      "name": "a failed snapshot still requests read close first but holds funding lifetime",
+      "status": "PASS"
+    },
+    {
+      "number": 12,
+      "name": "unsafe active-operation handles are refused without reading their then property",
+      "status": "PASS"
+    },
+    {
+      "number": 13,
+      "name": "direct public-close dependencies and read-close operation aliases are rejected rather than deadlocked",
+      "status": "PASS"
+    },
+    {
+      "number": 14,
+      "name": "a false or throwing source-owner guard vetoes the funding close entry without a retry",
+      "status": "PASS"
+    },
+    {
+      "number": 15,
+      "name": "source-owner drift after funding-close entry makes the result unknown even if CLOSED arrives",
+      "status": "PASS"
+    },
+    {
+      "number": 16,
+      "name": "funding-close throws and rejections are scrubbed and never retried",
+      "status": "PASS"
+    },
+    {
+      "number": 17,
+      "name": "a funding-close Promise cannot alias the read close operation or reserved public close",
+      "status": "PASS"
+    },
+    {
+      "number": 18,
+      "name": "CLOSED is read only from frozen own DATA; accessor or proxy close outcomes are never inspected",
+      "status": "PASS"
+    },
+    {
+      "number": 19,
+      "name": "runtime then drift still requests read stop but never reaches funding close or a new reaction hook",
+      "status": "PASS"
+    },
+    {
+      "number": 20,
+      "name": "reentrant close callbacks see the same reserved Promise and cannot start duplicate release",
+      "status": "PASS"
+    },
+    {
+      "number": 21,
+      "name": "wrong start arity is inert and inspection is detached frozen non-authoritative DATA",
+      "status": "PASS"
+    },
+    {
+      "number": 22,
+      "name": "actual read-session close starts all three owner closes before a joined active operation can settle",
+      "status": "PASS"
+    },
+    {
+      "number": 23,
+      "name": "actual read-session uncertainty vetoes declared funding close after all later read and operation settlements",
+      "status": "PASS"
+    },
+    {
+      "number": 24,
+      "name": "actual read-session abort can release a pending operation without converting its failure into success",
+      "status": "PASS"
+    }
+  ],
+  "run": {
+    "startedAtUnix": 1792791839.842041,
+    "completedAtUnix": 1792791839.945631,
+    "actualExit": 0,
+    "reason": null,
+    "outputComplete": true,
+    "argv": [
+      "$PINNED_NODE_24_19_0",
+      "--permission",
+      "--allow-fs-read=$REPO/package.json",
+      "--allow-fs-read=$REPO/qualification/dynamic-plasma-original-funding-read-close.behavior.draft.mjs",
+      "--allow-fs-read=$REPO/src/zenon/bounded-json-rpc-read-admission.js",
+      "--allow-fs-read=$REPO/src/zenon/dynamic-plasma-original-funding-read-close.js",
+      "--allow-fs-read=$REPO/src/zenon/dynamic-plasma-retained-read-session-core.js",
+      "--no-addons",
+      "--disallow-code-generation-from-strings",
+      "--disable-proto=throw",
+      "--unhandled-rejections=strict",
+      "--test-reporter=tap",
+      "$REPO/qualification/dynamic-plasma-original-funding-read-close.behavior.draft.mjs"
+    ],
+    "stdout": {
+      "bytes": 6633,
+      "sha256": "372c5abbec26af60b2dfba7c38c726997c1aca929f5bae030cd93a9d8a3aeecf",
+      "content": "# original-funding-read-close-components {\"cases\":24,\"readCloseCalls\":39,\"operationSnapshots\":34,\"declaredFundingCloses\":20,\"guardCalls\":32,\"hooks\":0,\"joinedReadOwnerCloses\":9,\"SDK\":0,\"SQLite\":0,\"nativeHTTPS\":0,\"cryptoOperations\":0,\"keys\":0,\"signatures\":0,\"nonceEvaluations\":0,\"newTasks\":0,\"newScratch\":0,\"newRoots\":0,\"actualSubmissionOwnerImported\":false,\"fullV3FundingQualified\":false}\nTAP version 13\n# Subtest: construction is inert and reserves one frozen prehandled public Promise before any resource callback\nok 1 - construction is inert and reserves one frozen prehandled public Promise before any resource callback\n  ---\n  duration_ms: 1.2605\n  type: 'test'\n  ...\n# Subtest: invalid configuration proxies getters and mutable callbacks refuse without touching any capability\nok 2 - invalid configuration proxies getters and mutable callbacks refuse without touching any capability\n  ---\n  duration_ms: 0.468541\n  type: 'test'\n  ...\n# Subtest: one cached start requests read close before the operation snapshot and never repeats either callback\nok 3 - one cached start requests read close before the operation snapshot and never repeats either callback\n  ---\n  duration_ms: 0.382292\n  type: 'test'\n  ...\n# Subtest: settling the active operation first cannot release funding while read close is still pending\nok 4 - settling the active operation first cannot release funding while read close is still pending\n  ---\n  duration_ms: 0.274958\n  type: 'test'\n  ...\n# Subtest: both clean read close and active-operation settlement are required before the real funding-close callback slot\nok 5 - both clean read close and active-operation settlement are required before the real funding-close callback slot\n  ---\n  duration_ms: 0.8035\n  type: 'test'\n  ...\n# Subtest: clean read close alone never bypasses an unresolved active operation\nok 6 - clean read close alone never bypasses an unresolved active operation\n  ---\n  duration_ms: 0.413625\n  type: 'test'\n  ...\n# Subtest: an active-operation rejection is joined without inspecting raw properties or calling it payment success\nok 7 - an active-operation rejection is joined without inspecting raw properties or calling it payment success\n  ---\n  duration_ms: 0.192958\n  type: 'test'\n  ...\n# Subtest: one rejected read close permanently vetoes funding release even after the operation later settles\nok 8 - one rejected read close permanently vetoes funding release even after the operation later settles\n  ---\n  duration_ms: 0.174625\n  type: 'test'\n  ...\n# Subtest: a synchronous read-close throw is scrubbed and cannot reach the operation snapshot or funding close\nok 9 - a synchronous read-close throw is scrubbed and cannot reach the operation snapshot or funding close\n  ---\n  duration_ms: 0.13475\n  type: 'test'\n  ...\n# Subtest: thenables proxies and non-undefined read-close outcomes never become a close permit\nok 10 - thenables proxies and non-undefined read-close outcomes never become a close permit\n  ---\n  duration_ms: 0.221125\n  type: 'test'\n  ...\n# Subtest: a failed snapshot still requests read close first but holds funding lifetime\nok 11 - a failed snapshot still requests read close first but holds funding lifetime\n  ---\n  duration_ms: 0.112125\n  type: 'test'\n  ...\n# Subtest: unsafe active-operation handles are refused without reading their then property\nok 12 - unsafe active-operation handles are refused without reading their then property\n  ---\n  duration_ms: 0.187167\n  type: 'test'\n  ...\n# Subtest: direct public-close dependencies and read-close operation aliases are rejected rather than deadlocked\nok 13 - direct public-close dependencies and read-close operation aliases are rejected rather than deadlocked\n  ---\n  duration_ms: 0.327\n  type: 'test'\n  ...\n# Subtest: a false or throwing source-owner guard vetoes the funding close entry without a retry\nok 14 - a false or throwing source-owner guard vetoes the funding close entry without a retry\n  ---\n  duration_ms: 0.570875\n  type: 'test'\n  ...\n# Subtest: source-owner drift after funding-close entry makes the result unknown even if CLOSED arrives\nok 15 - source-owner drift after funding-close entry makes the result unknown even if CLOSED arrives\n  ---\n  duration_ms: 0.19775\n  type: 'test'\n  ...\n# Subtest: funding-close throws and rejections are scrubbed and never retried\nok 16 - funding-close throws and rejections are scrubbed and never retried\n  ---\n  duration_ms: 0.230625\n  type: 'test'\n  ...\n# Subtest: a funding-close Promise cannot alias the read close operation or reserved public close\nok 17 - a funding-close Promise cannot alias the read close operation or reserved public close\n  ---\n  duration_ms: 0.350333\n  type: 'test'\n  ...\n# Subtest: CLOSED is read only from frozen own DATA; accessor or proxy close outcomes are never inspected\nok 18 - CLOSED is read only from frozen own DATA; accessor or proxy close outcomes are never inspected\n  ---\n  duration_ms: 0.652042\n  type: 'test'\n  ...\n# Subtest: runtime then drift still requests read stop but never reaches funding close or a new reaction hook\nok 19 - runtime then drift still requests read stop but never reaches funding close or a new reaction hook\n  ---\n  duration_ms: 0.164375\n  type: 'test'\n  ...\n# Subtest: reentrant close callbacks see the same reserved Promise and cannot start duplicate release\nok 20 - reentrant close callbacks see the same reserved Promise and cannot start duplicate release\n  ---\n  duration_ms: 0.127958\n  type: 'test'\n  ...\n# Subtest: wrong start arity is inert and inspection is detached frozen non-authoritative DATA\nok 21 - wrong start arity is inert and inspection is detached frozen non-authoritative DATA\n  ---\n  duration_ms: 0.1225\n  type: 'test'\n  ...\n# Subtest: actual read-session close starts all three owner closes before a joined active operation can settle\nok 22 - actual read-session close starts all three owner closes before a joined active operation can settle\n  ---\n  duration_ms: 0.579834\n  type: 'test'\n  ...\n# Subtest: actual read-session uncertainty vetoes declared funding close after all later read and operation settlements\nok 23 - actual read-session uncertainty vetoes declared funding close after all later read and operation settlements\n  ---\n  duration_ms: 0.184875\n  type: 'test'\n  ...\n# Subtest: actual read-session abort can release a pending operation without converting its failure into success\nok 24 - actual read-session abort can release a pending operation without converting its failure into success\n  ---\n  duration_ms: 0.243334\n  type: 'test'\n  ...\n1..24\n# tests 24\n# suites 0\n# pass 24\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 17.116333\n"
+    },
+    "stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "content": ""
+    },
+    "localSourceNodeAndGitStateUnchangedAcrossExecution": true,
+    "indexEmpty": true
+  },
+  "declaredCallbackDiagnostics": {
+    "cases": 24,
+    "readCloseCalls": 39,
+    "operationSnapshots": 34,
+    "declaredFundingCloses": 20,
+    "guardCalls": 32,
+    "hooks": 0,
+    "joinedReadOwnerCloses": 9,
+    "SDK": 0,
+    "SQLite": 0,
+    "nativeHTTPS": 0,
+    "cryptoOperations": 0,
+    "keys": 0,
+    "signatures": 0,
+    "nonceEvaluations": 0,
+    "newTasks": 0,
+    "newScratch": 0,
+    "newRoots": 0,
+    "actualSubmissionOwnerImported": false,
+    "fullV3FundingQualified": false
+  },
+  "scope": {
+    "componentNodeCommands": 1,
+    "syntaxOnlyCommands": 2,
+    "NodeChildren": 0,
+    "SDK": false,
+    "SQLite": false,
+    "nativeHTTPS": false,
+    "nodeCryptoImported": false,
+    "actualSubmissionOwnerImported": false,
+    "fullNativeFactoryImported": false,
+    "actualReadSessionCoreUsed": true,
+    "actualStoreCloseExecuted": false,
+    "actualWalletUsed": false,
+    "keys": 0,
+    "signatures": 0,
+    "nonceEvaluations": 0,
+    "newTasks": 0,
+    "newScratch": 0,
+    "newRoots": 0,
+    "nativeScopeReused": false
+  },
+  "limits": {
+    "wallClockSeconds": 15,
+    "stdoutBytes": 65536,
+    "stderrBytes": 65536,
+    "fsRead": "Exact five pinned inputs",
+    "fsWrite": false,
+    "childProcess": false,
+    "addons": false,
+    "note": "These supplemental flags and declared resource callbacks do not prove native confinement or cleanup."
+  },
+  "verification": {
+    "reservedPromiseBeforeCallbacks": true,
+    "readCloseBeforeOperationSnapshot": true,
+    "activeOperationOutcomeNotInspected": true,
+    "readCloseAndOperationJoinBeforeFundingClose": true,
+    "sourceGuardBeforeAndAfterFundingClose": true,
+    "permanentVetoOnReadUncertainty": true,
+    "rawFailurePropertiesUnread": true,
+    "directSelfDependenciesRefused": true,
+    "actualRetainedReadSessionThreeOwnerComposition": true,
+    "nativeStoreReleaseQualified": false,
+    "realV3FundingQualified": false,
+    "hostedCI": "NOT_RUN_NOT_GREEN",
+    "liveOrProduction": false
+  }
+}
