@@ -1,0 +1,147 @@
+{
+  "schemaVersion": 1,
+  "profileId": "p0-current-p2-node24-v1",
+  "sourceBase": "fb939175edc5633fc63e159b0c650554b18aba22",
+  "runtime": {
+    "node": "24.19.0",
+    "platforms": [
+      "darwin-arm64",
+      "linux-x64",
+      "linux-arm64"
+    ],
+    "installDependencies": false
+  },
+  "packageContract": {
+    "name": "zenon-x402-poc",
+    "type": "module",
+    "nodeEngine": ">=24",
+    "x402CoreDeclared": "2.23.0",
+    "x402CoreExecuted": false,
+    "sdkExecuted": false
+  },
+  "scope": "DECLARED_INTERFACE_COMPONENTS_AND_PROFILE_CONTRACT_ONLY",
+  "excludedScopes": [
+    "historical-discovery",
+    "sdk",
+    "x402-package-execution",
+    "sqlite",
+    "native-http",
+    "network",
+    "keys-or-signatures",
+    "nonce-search",
+    "real-prepare",
+    "payment",
+    "provider-or-pilot"
+  ],
+  "selections": [
+    {
+      "path": "test/current-qualification-profile.test.js",
+      "names": [
+        "current profile admits a closed immutable source and case selection",
+        "current profile rejects malformed text and unknown schema members",
+        "current profile refuses floating runtime and dependency installation",
+        "current profile keeps package declaration separate from package execution",
+        "current profile refuses missing reordered or historical entry paths",
+        "current profile rejects duplicate empty and unsafe case names",
+        "current profile rejects traversal incomplete or additional source rows",
+        "current profile requires bounded exact hashes sizes and source budget",
+        "current profile cannot omit excluded authority or broaden its declared scope",
+        "current profile recheck rejects content and physical identity drift",
+        "current profile requires real complete passes and both stream completions",
+        "current profile rejects skipped duplicate unexpected nested or failed case results"
+      ]
+    },
+    {
+      "path": "test/service-credit-custodied-sequential-runner-accepted-receipt-prototype.test.js",
+      "names": [
+        "accepted run receipt survives caller array prototype mutation"
+      ]
+    },
+    {
+      "path": "qualification/service-credit-dispatch-abort-drain.behavior.draft.mjs",
+      "names": [
+        "V1 missing request close becomes unknown-undrained without retry or synthetic release",
+        "V2 missing response close rejects and late complete reply cannot create a response receipt",
+        "early error uses the capped one-second abort observation instead of the sixty-second request deadline",
+        "actual V3 custodied runner close terminates unknown and never submits its queued second original",
+        "normal V2 response bytes and actual V3 two-original completion retain their existing contracts",
+        "V1 and V2 observed abort closes before the drain budget remain unknown but not undrained",
+        "repeated errors do not renew the one abort-drain budget or repeat destroy and settlement"
+      ]
+    }
+  ],
+  "sources": [
+    {
+      "path": "package.json",
+      "bytes": 2529,
+      "LF": 42,
+      "sha256": "43b55453328d3f3a2dc11759bb26a83df9c24df7d4482cd7745a139e2fa421a6"
+    },
+    {
+      "path": "scripts/current-qualification-profile.mjs",
+      "bytes": 8992,
+      "LF": 171,
+      "sha256": "e7eac65a0a5da5eae25a15fe76d0b8e8be897f39134bfdaf8f04a16ba4790402"
+    },
+    {
+      "path": "scripts/run-current-qualification.mjs",
+      "bytes": 5666,
+      "LF": 108,
+      "sha256": "1eec80694d9430dff8f0d54baf2617124a3b2c885677d43f4f413c665bf9038e"
+    },
+    {
+      "path": "test/current-qualification-profile.test.js",
+      "bytes": 6614,
+      "LF": 108,
+      "sha256": "2dda06665243e9a984965aafee9b0c258d21490b25dae6b4ed8725c2cde00dbe"
+    },
+    {
+      "path": "test/service-credit-custodied-sequential-runner-accepted-receipt-prototype.test.js",
+      "bytes": 2817,
+      "LF": 73,
+      "sha256": "bbf99a61bac18b984c6d545200666388278646ef002ddac08ba3a3220e7eabad"
+    },
+    {
+      "path": "qualification/service-credit-dispatch-abort-drain.behavior.draft.mjs",
+      "bytes": 20224,
+      "LF": 355,
+      "sha256": "6cc01f7cd8b683b49bae7aacfd44591c33e45db248ee16957f62107221e7ee61"
+    },
+    {
+      "path": "src/service-credit-http-execute-dispatch.js",
+      "bytes": 29328,
+      "LF": 815,
+      "sha256": "e07470a9fde311c806beb09b1c4369b4724213682bcbcacc228ece0e0e36f5ef"
+    },
+    {
+      "path": "src/service-credit-custodied-sequential-runner.js",
+      "bytes": 5773,
+      "LF": 121,
+      "sha256": "de0f3e143066f19ac3f3cab072abe8d250ea72b9fac9ad2c5bedb75110d7ec56"
+    },
+    {
+      "path": "src/service-credit-original-request-custody-contract.js",
+      "bytes": 14051,
+      "LF": 356,
+      "sha256": "fd349de553a17abcc2e0567ba6640e6e3d5d26cfa79ee1e355928dc9fa8d3915"
+    },
+    {
+      "path": "src/service-credit-custodied-http-client.js",
+      "bytes": 12646,
+      "LF": 324,
+      "sha256": "35997f41c9a5162fe29ed56776181a1691c0a0a69c7dbdfe8b61785af3998145"
+    },
+    {
+      "path": "src/service-credit-custodied-sequential-runner-core.js",
+      "bytes": 15983,
+      "LF": 492,
+      "sha256": "044477cb1300453f10bacf070037db175d08deec1d488549b34a5cb92e6328bd"
+    },
+    {
+      "path": "src/service-credit-custodied-request-owner.js",
+      "bytes": 55155,
+      "LF": 1358,
+      "sha256": "2ba222760d4a922bf0466d95fd2671076b9d19b8c5fa4ea2cb3c66b1338562eb"
+    }
+  ]
+}
