@@ -4,6 +4,7 @@ import { preflightZenonPayment } from '../zenon-payment.js';
 import { ZenonFundingPayerRecoverySqliteStore } from '../service-credit-zenon-funding-post-v1-payer-recovery-sqlite-store.js';
 import { encodeOriginalPaymentCheckpoint } from '../service-credit-pilot-original-payment-checkpoint.js';
 import { createObservedBalanceDeadlineBoundMaterialWalletCandidatePreparer } from './dynamic-plasma-observed-balance-deferred-material-planner.js';
+import { claimZenonDynamicPlasmaOriginalFundingStore } from './dynamic-plasma-original-funding-store-claim.js';
 import {
   captureZenonDynamicPlasmaOriginalFundingInput,
   assembleZenonDynamicPlasmaOriginalFundingData,
@@ -11,6 +12,7 @@ import {
 } from './dynamic-plasma-original-funding-data.js';
 
 const CREATE_PREPARER = createObservedBalanceDeadlineBoundMaterialWalletCandidatePreparer;
+const CLAIM_STORE = claimZenonDynamicPlasmaOriginalFundingStore;
 const CAPTURE = captureZenonDynamicPlasmaOriginalFundingInput;
 const ASSEMBLE = assembleZenonDynamicPlasmaOriginalFundingData;
 const PINS = snapshotZenonDynamicPlasmaOriginalFundingPins;
@@ -47,6 +49,9 @@ const STORE_CHECKPOINT = DESCRIPTOR(STORE_PROTOTYPE, 'getOriginalPaymentCheckpoi
  * premises, not consent inferred from DATA or a hard lifetime/cycle sandbox.
  * They must not depend on this owner's public preparation Promise. Unresolved
  * or indirect callback dependencies still require their owner to stop/hold.
+ * This module's store-object claim also refuses a second local owner of the
+ * same store instance before any wallet/read operation. It never releases on
+ * failure or close. It is NOT a DB-path, cross-namespace or restart fence.
  *
  * prepareOriginalFunding captures originals -> rejects an occupied store ->
  * calls the actual context-v6 candidate preparer -> encodes the original wire
@@ -77,6 +82,8 @@ export function createZenonDynamicPlasmaOriginalFundingPreparation(configuration
     resource = APPLY(STORE_RESOURCE, store, []);
     if (resource !== input.fundingResourceUrl) fail('configuration_rejected');
     preparer = CREATE_PREPARER(input.preparerOptions);
+    // Finish non-operational checks first; no reset or released claim exists.
+    CLAIM_STORE(store);
   } catch { fail('configuration_rejected'); }
   const STORE = store, RESOURCE = resource;
   const PREPARE_CANDIDATE = preparer.prepareSignedCandidate;
