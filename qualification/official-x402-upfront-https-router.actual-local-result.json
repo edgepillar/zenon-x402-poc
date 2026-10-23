@@ -1,0 +1,156 @@
+{
+  "kind": "P1_OFFICIAL_X402_ROUTER_DECLARED_CONTRACT_ACTUAL_LOCAL_RESULT",
+  "version": 1,
+  "status": "DECLARED_CONTRACTS_PASSED_APPLICATION_AND_NATIVE_FLOW_NOT_QUALIFIED",
+  "sourceBase": "ff44a7f41a00fbc26dd4aa81a636f62eddfc632a",
+  "sourceFiles": 5,
+  "sourceBytes": 183389,
+  "sources": [
+    {
+      "path": "package.json",
+      "bytes": 2529,
+      "LF": 42,
+      "sha256": "43b55453328d3f3a2dc11759bb26a83df9c24df7d4482cd7745a139e2fa421a6"
+    },
+    {
+      "path": "src/x402-official-https-request-binding.js",
+      "bytes": 5085,
+      "LF": 99,
+      "sha256": "dabf215408887bd0d2ba346085c5ab2df13f724e8759b7a98b71b09c8dc8d692"
+    },
+    {
+      "path": "src/x402-official-upfront-https-router.js",
+      "bytes": 17316,
+      "LF": 338,
+      "sha256": "5d2b5e32e9b2b6f73cc311f007c09ed315463e21f4e93c611c1642f44465cedf"
+    },
+    {
+      "path": "src/service-credit-bounded-https-ingress-owner.js",
+      "bytes": 143191,
+      "LF": 4092,
+      "sha256": "3ba52fb8f33e332a30297dc93e9e6162e4c1d957b3fda1bdf61090ac57d0971a"
+    },
+    {
+      "path": "qualification/official-x402-upfront-https-router.behavior.draft.mjs",
+      "bytes": 15268,
+      "LF": 248,
+      "sha256": "87a300fe5b64adaa6aeb02d52a2eb2e1ae105dd1123db5deb4e49454440f94df"
+    }
+  ],
+  "entry": "qualification/official-x402-upfront-https-router.behavior.draft.mjs",
+  "selectedNames": [
+    "router binds method target Host and zero-body before declared application calls",
+    "router resumes only the retained pending tuple then caches its original acknowledgement",
+    "router retains exhausted pending receipt without resetting first-call or observer authority",
+    "changed-context application refusal leaves the original pending continuation available",
+    "router bounds retained payment contexts and never substitutes a new payment on capacity",
+    "credit path delegates separately while a funding receipt never invokes the service",
+    "response loss retains reply before write without a new funding invocation on the exact replay",
+    "close drains late pending ownership and never writes or reports late success after revocation",
+    "an unusable SDK-shaped reply retains its pending owner for one close rather than leaking it",
+    "explicit GET constructor and legacy POST constructor remain inert and share the existing close owner"
+  ],
+  "counts": {
+    "tests": 10,
+    "suites": 0,
+    "pass": 10,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "diagnostic": {
+    "kind": "OFFICIAL_X402_ROUTER_DECLARED_CONTRACT",
+    "version": 1,
+    "selectedCases": 10,
+    "actualOfficialSdk": false,
+    "actualApplicationFactory": false,
+    "nativeHttpsOrTls": false,
+    "nativeSocket": false,
+    "sql": false,
+    "keys": 0,
+    "signatures": 0,
+    "nonceSearch": 0,
+    "payments": 0,
+    "realPrepare": 0,
+    "declaredCallableSeamsOnly": true,
+    "fullP1": "NOT_ESTABLISHED",
+    "serviceDelivery": "NOT_ESTABLISHED"
+  },
+  "runtime": {
+    "node": "24.19.0",
+    "platform": "darwin",
+    "architecture": "arm64",
+    "executableSha256": "dbedff294bab84a0a86c04e15fbcbeb1c97ca10bef1b32b0634cd24b36f62100"
+  },
+  "actualCommand": {
+    "nativeParentCommands": 1,
+    "childProcesses": 0,
+    "actualExit": 0,
+    "completeStreams": true,
+    "stdout": {
+      "sha256": "ba8b0bbef0ca3f5f81a4927ae357a35c85b300fe5052147abf133b3451e38544",
+      "bytes": 2967
+    },
+    "stderr": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "callerProgramSha256": "efb1e4cb3463143870b0e246cf0ad3c1f6ccfa2cb15401963fddfcb3b752580d",
+    "admissionSha256": "a7a93bb2f3b2782f34b6bd2557c735d56fbf0a3ab3ef579d06829407122a1d8b"
+  },
+  "primaryReview": {
+    "status": "COMPLETE_ROUTER_CONTRACT_PRIMARY_REVIEW_PASS",
+    "separateClosedRecordsAndStreamsRead": true,
+    "metadataRecords": 5,
+    "sourceContentAndPhysicalIdentityMatchedBeforeAfter": true,
+    "originalPublishedIngressPreimageRetained": true,
+    "processGroupAbsentAfterJoin": true,
+    "taskClosed": "SUCCESS",
+    "ownedScratchAbsent": true,
+    "unrelatedGitAndExistingEvidencePreserved": true
+  },
+  "reviewedButNotParsedOrExecuted": [
+    {
+      "path": "src/x402-official-service-credit-https-application.js",
+      "bytes": 7579,
+      "LF": 131,
+      "sha256": "361afdd207328f9d2e637196f009c0dc57c362a8141388fd3fa5bcdbe8afeab8"
+    },
+    {
+      "path": "docs/P1_OFFICIAL_X402_NATIVE_HTTPS_APPLICATION.md",
+      "bytes": 6554,
+      "LF": 111,
+      "sha256": "e14527df13b12dbb0c8d5fc54bccfef7011112ee53c7e7b85f892f2c8b9b0016"
+    }
+  ],
+  "evidenceLimits": {
+    "actualOfficialSdk": false,
+    "applicationFactory": false,
+    "nativeServerFactory": false,
+    "nativeHttpsSession": false,
+    "nativeSocket": false,
+    "sqlite": false,
+    "constructorOnlyForIngress": true,
+    "responseLossModelOnly": true,
+    "ordinaryInstalledPackageNamespace": "NOT_QUALIFIED",
+    "hostedCI": "NOT_RUN_NOT_GREEN",
+    "keys": 0,
+    "signatures": 0,
+    "nonceSearch": 0,
+    "payments": 0,
+    "realPrepare": 0,
+    "fullP1": "NOT_ESTABLISHED",
+    "serviceDelivery": "NOT_ESTABLISHED",
+    "economicPilot": "NO_GO"
+  },
+  "resourceAccounting": {
+    "quotaBytes": 2097152,
+    "newSourceBytes": 175775,
+    "reusedSourceBytes": 7614,
+    "sourceAliases": 0,
+    "sourcePackageInstallation": 0,
+    "protectedOriginalsDeleted": 0
+  },
+  "remaining": "Qualify the actual native HTTPS/official x402 path separately, then connect the real client-side V6 original-payment custody with the same application and explicit selected-grant service flow. Do not relabel these declared-callable cases as either qualification."
+}
