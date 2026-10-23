@@ -6,6 +6,10 @@ import {
   validateActiveUpfrontRequirement, validateResource, validatePaymentPayloadEnvelope,
   sameRequirements, sameResource, decodeB64Json, MAX_X402_HEADER_ENCODED_BYTES,
 } from './x402-wire.js';
+import {
+  captureOfficialUpfrontHttpsRoute,
+  captureOfficialUpfrontHttpsRequest,
+} from './x402-official-https-request-binding.js';
 
 const APPLY = Reflect.apply, KEYS = Reflect.ownKeys, DESC = Object.getOwnPropertyDescriptor;
 const PROTO = Object.getPrototypeOf, OWN = Object.hasOwn, FREEZE = Object.freeze;
@@ -22,6 +26,8 @@ const CREATE_BRIDGE = createSelectedSettlementServerBridgeForOfficialX402Core223
 const REQUIREMENT = validateActiveUpfrontRequirement, RESOURCE = validateResource;
 const PAYLOAD = validatePaymentPayloadEnvelope, SAME_REQUIREMENT = sameRequirements, SAME_RESOURCE = sameResource;
 const DECODE = decodeB64Json, HEADER_LIMIT = MAX_X402_HEADER_ENCODED_BYTES;
+const CAPTURE_HTTP_ROUTE = captureOfficialUpfrontHttpsRoute;
+const CAPTURE_HTTP_REQUEST = captureOfficialUpfrontHttpsRequest;
 const CONFIG = FREEZE(['requirement', 'resource', 'localFacilitator', 'validateChallenge',
   'reconcilePendingSettlement', 'maxPendingReconciliations', 'contextLimit']);
 
@@ -32,8 +38,13 @@ const CONFIG = FREEZE(['requirement', 'resource', 'localFacilitator', 'validateC
  *
  * Own the actual SDK resource/HTTP servers and their request adapter privately.
  * Accept only null (unpaid) or one bounded PAYMENT-SIGNATURE scalar. This API
- * does NOT authenticate or route a native HTTP request. A trusted host must bind
- * its own method/path/resource to this single configured route before calling.
+ * processRequest does NOT authenticate or route a native HTTP request. A host
+ * using that legacy scalar API must bind method/path/resource before calling.
+ * The explicit processHttpRequest entry instead snapshots own HTTP/1.1 request
+ * fields and exact Host/GET/target/zero-body framing before entering that SAME
+ * scalar operation. It requires the canonical HTTPS /paid resource profile;
+ * no nonmatching route falls back to synthetic adapter values. The socket's
+ * declared encrypted flag remains a trusted-host premise, not TLS attestation.
  * No listener, fetch, socket, handler, cancellation dispatcher or SDK object is
  * exposed. Initialization uses only the existing bridge's support callback.
  *
@@ -58,13 +69,16 @@ const CONFIG = FREEZE(['requirement', 'resource', 'localFacilitator', 'validateC
  * not a hostile-code, OS, timeout, memory-erasure or transport sandbox.
  */
 export async function createOfficialSelectedSettlementServer(options) {
-  let bridge, http, fixed, resource, requestLimit, observerBudget;
+  let bridge, http, fixed, resource, requestLimit, observerBudget, httpRoute;
   try {
     if (arguments.length !== 1) fail('configuration_rejected');
     const c = record(options, CONFIG);
     bounded(c.requirement); REQUIREMENT(c.requirement); fixed = snapshot(c.requirement);
     record(c.resource, ['url', 'description', 'mimeType']);
     bounded(c.resource); RESOURCE(c.resource); resource = snapshot(c.resource);
+    // Keep the original scalar API's resource acceptance unchanged. The new
+    // native-request entry refuses a resource outside its exact HTTPS profile.
+    try { httpRoute = CAPTURE_HTTP_ROUTE(resource.url); } catch { httpRoute = null; }
     requestLimit = c.contextLimit; observerBudget = c.maxPendingReconciliations;
     bridge = CREATE_BRIDGE({ requirement: fixed, localFacilitator: c.localFacilitator,
       validateChallenge: c.validateChallenge, reconcilePendingSettlement: c.reconcilePendingSettlement,
@@ -83,7 +97,8 @@ export async function createOfficialSelectedSettlementServer(options) {
   finally { options = null; }
   const HTTP = http, BRIDGE = bridge, FIXED = fixed, RESOURCE_INFO = resource;
   const REQUEST_LIMIT = requestLimit, OBSERVER_BUDGET = observerBudget;
-  http = null; bridge = null; fixed = null; resource = null;
+  const HTTP_ROUTE = httpRoute;
+  http = null; bridge = null; fixed = null; resource = null; httpRoute = null;
   let operation = null, requestCalls = 0, resumeAttempts = 0;
 
   function capture(context) {
@@ -170,13 +185,24 @@ export async function createOfficialSelectedSettlementServer(options) {
     } catch { fail('request_rejected'); }
     finally { operation = null; header = null; }
   });
+  const processHttpRequest = FREEZE(function processHttpRequest(request) {
+    try {
+      if (arguments.length !== 1 || HTTP_ROUTE === null) fail('input_rejected');
+      const captured = CAPTURE_HTTP_REQUEST(request, HTTP_ROUTE);
+      // Preserve the actual existing request Promise, busy fence, context and
+      // continuation. No extra SDK owner or first-settlement authority exists.
+      return processRequest(captured.paymentSignature);
+    } catch {
+      return new NativePromise((resolve, reject) => { reject(failure('input_rejected')); });
+    } finally { request = null; }
+  });
   const getSnapshot = FREEZE(function getSnapshot() {
     return FREEZE({ profile: 'OFFICIAL_CORE_2_23_0_SINGLE_GET_PAID_UPFRONT',
       requestCalls, requestLimit: REQUEST_LIMIT, resumeAttempts, active: operation !== null,
       bridge: BRIDGE.getSnapshot(),
       persistence: 'MEMORY_ONLY', serviceDelivery: 'NOT_ESTABLISHED', currentAuthority: 'NOT_ESTABLISHED' });
   });
-  return FREEZE({ processRequest, getSnapshot });
+  return FREEZE({ processRequest, processHttpRequest, getSnapshot });
 }
 
 function data(value, key) {
