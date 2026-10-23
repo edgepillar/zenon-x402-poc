@@ -1,0 +1,85 @@
+{
+  "kind": "POST_FAILURE_NATIVE_FUNDING_DIAGNOSTICS_SOURCE_REVIEW_NOT_EXECUTION",
+  "nativeRunStatus": "FAILED_NO_GO",
+  "priorTestedManifest": {
+    "path": "qualification/funding-post-native-loopback-tls.inputs.json",
+    "bytes": 3446,
+    "LF": 105,
+    "sha256": "4859fc773cbb4b032cbcea89867d252881505d8d01e8a19075e5d0a69c8033ad",
+    "gitBlob": "1680970f1aba8a9f0b49f71155b4dbc11eeaeabb"
+  },
+  "currentInputs": [
+    {
+      "path": "src/service-credit-funding-post-native-https-transport.js",
+      "bytes": 17574,
+      "LF": 308,
+      "sha256": "cfd30efb8b2c48d3d301631fa8fc6ccaaa569fc3edb473c63bd170e8f603a0a1",
+      "gitBlob": "5273c7dc49470a054a87a4813652ce664386c773"
+    },
+    {
+      "path": "qualification/funding-post-native-loopback-tls.behavior.draft.mjs",
+      "bytes": 13381,
+      "LF": 234,
+      "sha256": "f227c9975243376cb5e3c13f382a9dc8fdee44b55f9f67c424a6b3ccfbd450bd",
+      "gitBlob": "c760c23d7c0d6d4e4edfc5072c4275d07bf0c0a3"
+    },
+    {
+      "path": "qualification/funding-post-native-loopback-tls.selection.draft.mjs",
+      "bytes": 1093,
+      "LF": 19,
+      "sha256": "cf293a00c06f720b98a8c848977ea9b1a48ba4850b770c40b71be49530b64ba9",
+      "gitBlob": "36c39780876ff148c9b5a601fee3b0faa52d0109"
+    },
+    {
+      "path": "qualification/run-funding-post-native-loopback-tls.local.py",
+      "bytes": 17205,
+      "LF": 311,
+      "sha256": "4535d39c312d9bcd59a0b3890d71f79df46628c1b7d8f8be63b51747e10d33f1",
+      "gitBlob": "e484adeb02800f66c518ce8be52f0de57800b640"
+    },
+    {
+      "path": "qualification/funding-post-native-loopback-tls.inputs.json",
+      "bytes": 3446,
+      "LF": 105,
+      "sha256": "4859fc773cbb4b032cbcea89867d252881505d8d01e8a19075e5d0a69c8033ad",
+      "gitBlob": "1680970f1aba8a9f0b49f71155b4dbc11eeaeabb"
+    },
+    {
+      "path": "qualification/funding-post-native-loopback-tls.storage-policy.json",
+      "bytes": 383,
+      "LF": 14,
+      "sha256": "4f07ab197693934ff8b00ff76dc391aa5ac7a543332ba0538d3788c142b733dd",
+      "gitBlob": "b360db9971165613fb76467c3da00a60f96b47c6"
+    }
+  ],
+  "actualPostFailureNodeCommands": 0,
+  "sourceParseByNode": false,
+  "preservedBoundaries": [
+    "Unknown is latched permanently and never authorizes a retry.",
+    "First fault is retained once; late drain does not rewrite it.",
+    "Native request, TLS, framing, response custody and close gates remain enabled.",
+    "No additional import edge, package, SDK, SQLite, nonce or payment signer.",
+    "Only fixed event names and allowlisted own-data error codes; no error object/message/stack retained.",
+    "Diagnostic output is not proof of native authentication, drain, service delivery or a repaired defect."
+  ],
+  "firstFaultFields": [
+    "reason",
+    "lastObservedStage",
+    "nativeCode"
+  ],
+  "callsiteReview": {
+    "markUnknownAllReasonsSourceConstants": true,
+    "stopAllReasonsSourceConstants": true,
+    "eventAllStagesSourceConstants": true,
+    "nativeCodeReadsOwnDataDescriptorOnly": true,
+    "proxyCauseRejected": true,
+    "errorTextNeverRead": true
+  },
+  "currentDraftAdmission": "The retained historical manifest intentionally mismatches the changed transport and fixture. The launcher rejects before new task admission; this does not reset the consumed two-attempt allowance.",
+  "outstanding": [
+    "Root cause of the first native BOUND failure is not established.",
+    "No partial-body, abort or invalid-input native scenario ran.",
+    "Current post-failure diagnostics and fixture failure frame are unparsed and unexecuted.",
+    "No full DP/x402/SQLite composition or current-main runtime/hosted CI qualification."
+  ]
+}
