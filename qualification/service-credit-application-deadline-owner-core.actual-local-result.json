@@ -1,0 +1,149 @@
+{
+  "schemaVersion": 1,
+  "status": "SDK_SQL_SOCKET_TIMER_FREE_COMPONENT_PASS",
+  "baseCommit": "1b7981c15b40ee490f66c51074a796e5a00bfa1d",
+  "workingSourceBaseCommit": "7cb64aea89ad0da4d789a836e562a0a5358fdb69",
+  "sourceBinding": "Selected local files are pinned by exact bytes/hash/Git blob below. The new files were uncommitted at execution; base commits are context, not a claim that those commits already contain the executed additions.",
+  "counts": {
+    "tests": 32,
+    "pass": 32,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "runtime": {
+    "node": "24.19.0",
+    "platform": "darwin",
+    "arch": "arm64",
+    "nodeBinarySha256": "dbedff294bab84a0a86c04e15fbcbeb1c97ca10bef1b32b0634cd24b36f62100"
+  },
+  "componentRun": {
+    "kind": "Q70_SDK_SQL_SOCKET_TIMER_FREE_DEADLINE_CORE_COMPONENT_RUN",
+    "actualExit": 0,
+    "outputComplete": true,
+    "timedOut": false,
+    "sourceInputs": [
+      {
+        "path": "package.json",
+        "bytes": 2677,
+        "LF": 40,
+        "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+        "gitBlob": "45752ffde39d29666094f7f1c755060d75e43deb"
+      },
+      {
+        "path": "src/service-credit-application-deadline-owner-core.js",
+        "bytes": 9917,
+        "LF": 192,
+        "sha256": "27de310ebb7452e9be011e46d86e38b04614c259142bb47400ddbb9dedf00149",
+        "gitBlob": "a59133249ef5ada3b1666c476f7c02aa542c4513"
+      },
+      {
+        "path": "qualification/service-credit-application-deadline-owner-core.behavior.draft.mjs",
+        "bytes": 18616,
+        "LF": 298,
+        "sha256": "bd905c85708b64a83653ac30a23eec4462da1dcbe07ec8f784ffc4d6b43d4d14",
+        "gitBlob": "b6302e347fa082f318cda4ccab33366cf4796569"
+      }
+    ],
+    "sourceBytes": 31210,
+    "entry": "qualification/service-credit-application-deadline-owner-core.behavior.draft.mjs",
+    "controls": [
+      "Node permission mode with only these three filesystem-read grants and no filesystem-write grants.",
+      "Direct selected entry with TAP, not global discovery and not a child test runner.",
+      "No addons, code generation from strings, __proto__ mutation or unhandled-rejection tolerance.",
+      "Sanitized environment; no package install, compile-cache writes, coverage or application credentials.",
+      "Bounded parent capture: 65,536 stdout bytes, 8,192 stderr bytes, 20-second outer timeout.",
+      "All three source files and identities rechecked unchanged after process exit."
+    ],
+    "stdout": {
+      "bytes": 7359,
+      "sha256": "723e39fbfb24f83d8b9d74e97c77c50c3997769892e331cb769d3e2ce002d410",
+      "content": "# application-deadline-core-scope {\"kind\":\"SDK_SQL_SOCKET_TIMER_FREE_APPLICATION_DEADLINE_OWNER_CORE\",\"sourceInputs\":3,\"constructedOwners\":48,\"actualNativeBindingImports\":0,\"actualApplicationTimers\":0,\"sockets\":0,\"SQLiteConnections\":0,\"SDK\":0,\"keyGeneration\":0,\"signing\":0,\"nonceSearch\":0,\"newScratch\":0,\"NodeChildren\":0,\"realMonotonicClockReads\":0,\"trustedCallbacksInThisFixture\":\"DECLARED_SYNTHETIC\",\"fullP1\":\"NOT_ESTABLISHED\",\"nativeHostQualification\":\"NOT_ESTABLISHED\"}\nTAP version 13\n# Subtest: construction is inert and exposes frozen separated contracts\nok 1 - construction is inert and exposes frozen separated contracts\n  ---\n  duration_ms: 1.033083\n  type: 'test'\n  ...\n# Subtest: empty close is cached, void and revokes new timers and clock reads\nok 2 - empty close is cached, void and revokes new timers and clock reads\n  ---\n  duration_ms: 0.376334\n  type: 'test'\n  ...\n# Subtest: opaque tickets never reveal the actuator handle and duplicate wakes are inert\nok 3 - opaque tickets never reveal the actuator handle and duplicate wakes are inert\n  ---\n  duration_ms: 0.202541\n  type: 'test'\n  ...\n# Subtest: ingress cancel is idempotent boolean while service cancel is idempotent void\nok 4 - ingress cancel is idempotent boolean while service cancel is idempotent void\n  ---\n  duration_ms: 0.120875\n  type: 'test'\n  ...\n# Subtest: cancel of fired tickets preserves each return contract without a second actuator call\nok 5 - cancel of fired tickets preserves each return contract without a second actuator call\n  ---\n  duration_ms: 0.061833\n  type: 'test'\n  ...\n# Subtest: kind mismatch and foreign-owner tickets never enter cancellation\nok 6 - kind mismatch and foreign-owner tickets never enter cancellation\n  ---\n  duration_ms: 0.101166\n  type: 'test'\n  ...\n# Subtest: proxy and forged ticket rejection invokes no user trap\nok 7 - proxy and forged ticket rejection invokes no user trap\n  ---\n  duration_ms: 0.113209\n  type: 'test'\n  ...\n# Subtest: concurrency refusal is inert and a completed slot can be reused\nok 8 - concurrency refusal is inert and a completed slot can be reused\n  ---\n  duration_ms: 0.080041\n  type: 'test'\n  ...\n# Subtest: total arm budget cannot be reset by a completion or close\nok 9 - total arm budget cannot be reset by a completion or close\n  ---\n  duration_ms: 0.08175\n  type: 'test'\n  ...\n# Subtest: invalid delays and callback proxies do not consume the arm budget\nok 10 - invalid delays and callback proxies do not consume the arm budget\n  ---\n  duration_ms: 0.240083\n  type: 'test'\n  ...\n# Subtest: monotonic reads accept equal bigint time without arming a timer\nok 11 - monotonic reads accept equal bigint time without arming a timer\n  ---\n  duration_ms: 0.068542\n  type: 'test'\n  ...\n# Subtest: a decreasing or invalid monotonic result latches UNKNOWN without coercion\nok 12 - a decreasing or invalid monotonic result latches UNKNOWN without coercion\n  ---\n  duration_ms: 0.345291\n  type: 'test'\n  ...\n# Subtest: a thrown clock read is not retried and close remains UNKNOWN\nok 13 - a thrown clock read is not retried and close remains UNKNOWN\n  ---\n  duration_ms: 0.098041\n  type: 'test'\n  ...\n# Subtest: close from inside a clock read cannot be promoted by the returning value\nok 14 - close from inside a clock read cannot be promoted by the returning value\n  ---\n  duration_ms: 0.043667\n  type: 'test'\n  ...\n# Subtest: close waits for an already delivering callback and never cancels its fired handle\nok 15 - close waits for an already delivering callback and never cancels its fired handle\n  ---\n  duration_ms: 0.042708\n  type: 'test'\n  ...\n# Subtest: close cancels every armed kind once and suppresses late cancelled wakes\nok 16 - close cancels every armed kind once and suppresses late cancelled wakes\n  ---\n  duration_ms: 0.062041\n  type: 'test'\n  ...\n# Subtest: throwing delivered work keeps UNKNOWN and prevents later armed work\nok 17 - throwing delivered work keeps UNKNOWN and prevents later armed work\n  ---\n  duration_ms: 0.082708\n  type: 'test'\n  ...\n# Subtest: non-void callbacks are rejected without assimilating returned thenables\nok 18 - non-void callbacks are rejected without assimilating returned thenables\n  ---\n  duration_ms: 0.132\n  type: 'test'\n  ...\n# Subtest: failed cancellation is not retried by repeated cancel or close\nok 19 - failed cancellation is not retried by repeated cancel or close\n  ---\n  duration_ms: 0.083459\n  type: 'test'\n  ...\n# Subtest: late wake after failed cancellation releases a held row but not the verdict\nok 20 - late wake after failed cancellation releases a held row but not the verdict\n  ---\n  duration_ms: 0.096166\n  type: 'test'\n  ...\n# Subtest: a non-void cancellation result is UNKNOWN and is never retried\nok 21 - a non-void cancellation result is UNKNOWN and is never retried\n  ---\n  duration_ms: 0.050708\n  type: 'test'\n  ...\n# Subtest: arm failure retains unknown ownership and a late wake cannot run work\nok 22 - arm failure retains unknown ownership and a late wake cannot run work\n  ---\n  duration_ms: 0.062209\n  type: 'test'\n  ...\n# Subtest: invalid actuator handles are not sent to cancellation or interpreted as success\nok 23 - invalid actuator handles are not sent to cancellation or interpreted as success\n  ---\n  duration_ms: 0.185209\n  type: 'test'\n  ...\n# Subtest: a synchronous premature wake is suppressed and the returned handle cleaned once\nok 24 - a synchronous premature wake is suppressed and the returned handle cleaned once\n  ---\n  duration_ms: 0.088667\n  type: 'test'\n  ...\n# Subtest: reentrant close during arm keeps UNKNOWN and cancels a subsequently known handle once\nok 25 - reentrant close during arm keeps UNKNOWN and cancels a subsequently known handle once\n  ---\n  duration_ms: 0.055375\n  type: 'test'\n  ...\n# Subtest: close during cancellation waits without entering the actuator twice\nok 26 - close during cancellation waits without entering the actuator twice\n  ---\n  duration_ms: 0.036333\n  type: 'test'\n  ...\n# Subtest: recursive cancel does not reenter the actuator or repair UNKNOWN\nok 27 - recursive cancel does not reenter the actuator or repair UNKNOWN\n  ---\n  duration_ms: 0.095542\n  type: 'test'\n  ...\n# Subtest: mutating original configuration cannot replace captured callbacks or limits\nok 28 - mutating original configuration cannot replace captured callbacks or limits\n  ---\n  duration_ms: 0.081625\n  type: 'test'\n  ...\n# Subtest: invalid public arities are rejected without capability calls\nok 29 - invalid public arities are rejected without capability calls\n  ---\n  duration_ms: 0.076625\n  type: 'test'\n  ...\n# Subtest: configuration proxies, getters and callback proxies are rejected before invocation\nok 30 - configuration proxies, getters and callback proxies are rejected before invocation\n  ---\n  duration_ms: 0.06825\n  type: 'test'\n  ...\n# Subtest: invalid limit numbers and excess fields are rejected before any capability call\nok 31 - invalid limit numbers and excess fields are rejected before any capability call\n  ---\n  duration_ms: 0.135666\n  type: 'test'\n  ...\n# Subtest: snapshots contain no actuator handles, callbacks or opaque ticket contents\nok 32 - snapshots contain no actuator handles, callbacks or opaque ticket contents\n  ---\n  duration_ms: 0.098041\n  type: 'test'\n  ...\n1..32\n# tests 32\n# suites 0\n# pass 32\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 14.652458\n"
+    },
+    "stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "content": ""
+    }
+  },
+  "scopeDiagnostic": {
+    "kind": "SDK_SQL_SOCKET_TIMER_FREE_APPLICATION_DEADLINE_OWNER_CORE",
+    "sourceInputs": 3,
+    "constructedOwners": 48,
+    "actualNativeBindingImports": 0,
+    "actualApplicationTimers": 0,
+    "sockets": 0,
+    "SQLiteConnections": 0,
+    "SDK": 0,
+    "keyGeneration": 0,
+    "signing": 0,
+    "nonceSearch": 0,
+    "newScratch": 0,
+    "NodeChildren": 0,
+    "realMonotonicClockReads": 0,
+    "trustedCallbacksInThisFixture": "DECLARED_SYNTHETIC",
+    "fullP1": "NOT_ESTABLISHED",
+    "nativeHostQualification": "NOT_ESTABLISHED"
+  },
+  "sourceOnlyNativeBinding": {
+    "file": {
+      "path": "src/service-credit-native-application-deadline-owner.js",
+      "bytes": 2648,
+      "LF": 47,
+      "sha256": "f4d4e5f55e43f5a83607da0f27c684fcf98ed40a408e894b8f309ecf9159fb76",
+      "gitBlob": "2bd90b62d73340f58ffe6bf13fe35a4dec0477f4"
+    },
+    "oldGitBlob": "dd69cbd146aea12c668620645f65a778be5b189b",
+    "change": "Replace duplicated lifecycle implementation with the actual tested core. Capture real timer and monotonic intrinsics only in the explicit native binding, passed privately to the core. Preserve opaque tickets, distinct cancel contracts and default-off construction.",
+    "nativeBindingParsed": false,
+    "nativeBindingExecuted": false,
+    "nativeHostExecuted": false,
+    "syntaxCheck": "NOT_RUN",
+    "coreOnlyResultDoesNotQualifyNativeBinding": true,
+    "mainTransfer": "EXCLUDED"
+  },
+  "behavior": {
+    "contracts": {
+      "ingressCancel": "BOOLEAN",
+      "serviceCancel": "UNDEFINED"
+    },
+    "failedActuatorRetry": "FORBIDDEN",
+    "closePromise": "CACHED_ONCE",
+    "lateCleanup": "MAY_RELEASE_RETAINED_ROWS_WITHOUT_REPAIRING_UNKNOWN",
+    "reentrantCloseDuringCallback": "WAITS_FOR_DELIVERING_CALLBACK",
+    "reentrantCloseDuringArm": "UNKNOWN_WITH_AT_MOST_ONE_LATE_KNOWN_HANDLE_CANCELLATION",
+    "lateClockResult": "MAY_DOWNGRADE_CURRENT_PHASE_WITHOUT_REWRITING_HISTORICAL_SETTLEMENT",
+    "authority": "NONE",
+    "physicalTimerDrain": "NOT_ESTABLISHED"
+  },
+  "thisIncrementTotals": {
+    "NodeCommands": 1,
+    "OpenSSLCommands": 0,
+    "newTasks": 0,
+    "newScratch": 0,
+    "SQLiteConnections": 0,
+    "sockets": 0,
+    "applicationTimers": 0,
+    "realMonotonicClockReads": 0,
+    "SDK": 0,
+    "keyGeneration": 0,
+    "signatures": 0,
+    "nonceSearch": 0,
+    "externalNetworkTestCalls": 0,
+    "nativeV2Reruns": 0,
+    "nativeV3Attempts": 0,
+    "nativeHostAttempts": 0
+  },
+  "limits": {
+    "trustedCallbacks": "DECLARED_SYNTHETIC_IN_COMPONENT_TESTS_NOT_NATIVE_INTRINSIC_QUALIFICATION",
+    "V1AndV2Evidence": "PRESERVED_UNCHANGED",
+    "V2OneShot": "CONSUMED_NOT_REUSED",
+    "V3OldApplicationGraph": "UNCHANGED_NOT_RUN",
+    "hostedCI": "NOT_RUN_NOT_GREEN",
+    "fullP1": "NOT_ESTABLISHED",
+    "serviceDelivery": "NOT_ESTABLISHED",
+    "economicPilot": "NO_GO"
+  }
+}
+
