@@ -1,0 +1,277 @@
+{
+  "kind": "P1_ORIGINAL_PAYMENT_CHECKPOINT_CLIENT_ACTUAL_COMPONENT_RESULT",
+  "version": 1,
+  "status": "SDK_SQL_FREE_COMPONENT_24_PASS_REAL_FACTORY_SOURCE_ONLY",
+  "sourceParent": "75daf54462bb8426a22a9427ac943b1c501ff728",
+  "currentMainAtExecution": "62461ed8da670ef6cdabae20eb4ed764e9f0c52a",
+  "counts": {
+    "tests": 24,
+    "pass": 24,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "executedSelection": "Only the new in-memory original-checkpoint adapter and its existing SDK/SQL-free local dependencies",
+  "run": {
+    "actualExit": 0,
+    "outputComplete": true,
+    "elapsedSeconds": 0.11578608399941004,
+    "stdout": {
+      "bytes": 5373,
+      "sha256": "efec015b11a3ebc0622111948ca0e58e4010d449aa5e117d89f77dc121b77f4f",
+      "content": "# checkpoint-original-client-source {\"node\":\"24.19.0\",\"platform\":\"darwin\",\"arch\":\"arm64\",\"sourceInputs\":7,\"actualOfficialSdk\":false,\"actualV6Store\":false,\"sql\":0,\"network\":0,\"keys\":0,\"signatures\":0,\"nonceSearch\":0,\"payments\":0}\nTAP version 13\n# Subtest: construction performs no read and exposes no checkpoint in its snapshot\nok 1 - construction performs no read and exposes no checkpoint in its snapshot\n  ---\n  duration_ms: 2.961542\n  type: 'test'\n  ...\n# Subtest: official JSON key reordering returns exact original header after three pinned reads\nok 2 - official JSON key reordering returns exact original header after three pinned reads\n  ---\n  duration_ms: 1.28925\n  type: 'test'\n  ...\n# Subtest: constructor refuses wrong independent pins before any read\nok 3 - constructor refuses wrong independent pins before any read\n  ---\n  duration_ms: 0.36125\n  type: 'test'\n  ...\n# Subtest: constructor refuses another origin path query or insecure resource\nok 4 - constructor refuses another origin path query or insecure resource\n  ---\n  duration_ms: 0.44925\n  type: 'test'\n  ...\n# Subtest: GET binding refuses nonempty original request body\nok 5 - GET binding refuses nonempty original request body\n  ---\n  duration_ms: 0.213791\n  type: 'test'\n  ...\n# Subtest: constructor binds exact original payment hash as well as checkpoint digests\nok 6 - constructor binds exact original payment hash as well as checkpoint digests\n  ---\n  duration_ms: 0.775041\n  type: 'test'\n  ...\n# Subtest: changed challenge header is refused before read or context consumption\nok 7 - changed challenge header is refused before read or context consumption\n  ---\n  duration_ms: 0.7705\n  type: 'test'\n  ...\n# Subtest: per-call foreign binding or digest never enters the reader\nok 8 - per-call foreign binding or digest never enters the reader\n  ---\n  duration_ms: 0.848208\n  type: 'test'\n  ...\n# Subtest: creator cannot read or return original before external challenge admission\nok 9 - creator cannot read or return original before external challenge admission\n  ---\n  duration_ms: 0.570042\n  type: 'test'\n  ...\n# Subtest: changed SDK selected challenge is refused without consuming original\nok 10 - changed SDK selected challenge is refused without consuming original\n  ---\n  duration_ms: 1.111458\n  type: 'test'\n  ...\n# Subtest: a second creator or context cannot reset consumed original\nok 11 - a second creator or context cannot reset consumed original\n  ---\n  duration_ms: 0.659917\n  type: 'test'\n  ...\n# Subtest: read failure remains HELD and uncertainty survives close\nok 12 - read failure remains HELD and uncertainty survives close\n  ---\n  duration_ms: 0.466541\n  type: 'test'\n  ...\n# Subtest: changed complete checkpoint latches HELD rather than learning replacement pins\nok 13 - changed complete checkpoint latches HELD rather than learning replacement pins\n  ---\n  duration_ms: 0.381917\n  type: 'test'\n  ...\n# Subtest: async and getter-bearing checkpoint replies are not assimilated\nok 14 - async and getter-bearing checkpoint replies are not assimilated\n  ---\n  duration_ms: 0.930916\n  type: 'test'\n  ...\n# Subtest: reentrant read cannot create a second read or consume the context\nok 15 - reentrant read cannot create a second read or consume the context\n  ---\n  duration_ms: 0.693083\n  type: 'test'\n  ...\n# Subtest: close during read suppresses the returned checkpoint and keeps uncertainty\nok 16 - close during read suppresses the returned checkpoint and keeps uncertainty\n  ---\n  duration_ms: 0.272584\n  type: 'test'\n  ...\n# Subtest: changed SDK transaction resource or selected amount never releases a header\nok 17 - changed SDK transaction resource or selected amount never releases a header\n  ---\n  duration_ms: 1.851583\n  type: 'test'\n  ...\n# Subtest: nonempty SDK extensions and noncanonical base64 are refused before read\nok 18 - nonempty SDK extensions and noncanonical base64 are refused before read\n  ---\n  duration_ms: 0.555583\n  type: 'test'\n  ...\n# Subtest: absent or empty SDK extensions do not replace the retained header\nok 19 - absent or empty SDK extensions do not replace the retained header\n  ---\n  duration_ms: 0.482708\n  type: 'test'\n  ...\n# Subtest: wire parser errors are bounded local codes without nested diagnostic paths\nok 20 - wire parser errors are bounded local codes without nested diagnostic paths\n  ---\n  duration_ms: 0.653917\n  type: 'test'\n  ...\n# Subtest: accessor proxy and extra constructor fields are rejected without invoking hooks\nok 21 - accessor proxy and extra constructor fields are rejected without invoking hooks\n  ---\n  duration_ms: 0.340583\n  type: 'test'\n  ...\n# Subtest: per-call pins accessor is refused without entering reader\nok 22 - per-call pins accessor is refused without entering reader\n  ---\n  duration_ms: 0.317084\n  type: 'test'\n  ...\n# Subtest: source input and returned original payload mutation cannot replace selected bytes\nok 23 - source input and returned original payload mutation cannot replace selected bytes\n  ---\n  duration_ms: 0.545667\n  type: 'test'\n  ...\n# Subtest: closed adapter cannot read create or select a header and does not close borrowed store\nok 24 - closed adapter cannot read create or select a header and does not close borrowed store\n  ---\n  duration_ms: 0.200208\n  type: 'test'\n  ...\n1..24\n# tests 24\n# suites 0\n# pass 24\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 25.874417\n"
+    },
+    "stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "content": ""
+    },
+    "runtime": {
+      "node": "24.19.0",
+      "platform": "darwin",
+      "arch": "arm64",
+      "sha256": "dbedff294bab84a0a86c04e15fbcbeb1c97ca10bef1b32b0634cd24b36f62100"
+    },
+    "sourceInputs": [
+      {
+        "path": "package.json",
+        "bytes": 2677,
+        "LF": 40,
+        "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+        "gitBlob": "45752ffde39d29666094f7f1c755060d75e43deb"
+      },
+      {
+        "path": "src/x402-original-payment-checkpoint-client.js",
+        "bytes": 11189,
+        "LF": 223,
+        "sha256": "bb7cba7dcab0f023c90c3b4150f6fe27c2eb2e899310e4f5ca3cef9673c055e7",
+        "gitBlob": "3b2a31c23ee7b075d72a64587a90b21279305e5d"
+      },
+      {
+        "path": "src/canonical.js",
+        "bytes": 967,
+        "LF": 26,
+        "sha256": "0d55ddf1727cafb0dcd46df2922305568615552a4d2ae34a5c30e90b9d8d998c",
+        "gitBlob": "5367f9c72ee13017a61630e1f0cffdced21d52c4"
+      },
+      {
+        "path": "src/service-credit-pilot-original-payment-checkpoint.js",
+        "bytes": 4003,
+        "LF": 89,
+        "sha256": "930905f31824a6cadc16dfb84572cd4dc38a81e2fce4569b73b6bef29dec97d1",
+        "gitBlob": "51c6391bc22f561ebff0005ced31e538aa83f4fa"
+      },
+      {
+        "path": "src/x402-wire.js",
+        "bytes": 39886,
+        "LF": 934,
+        "sha256": "5fba91af5a352f62d1a335c7176a45a604e2af5d92b1c4b0e53825c1f20d4e56",
+        "gitBlob": "fb060d4e349b1c31a1219a0cc137af250a8a2291"
+      },
+      {
+        "path": "src/x402-official-https-request-binding.js",
+        "bytes": 5085,
+        "LF": 99,
+        "sha256": "dabf215408887bd0d2ba346085c5ab2df13f724e8759b7a98b71b09c8dc8d692",
+        "gitBlob": "47059c772407233b8b6f54632ba065893ff92dd3"
+      },
+      {
+        "path": "qualification/x402-original-payment-checkpoint-client.behavior.draft.mjs",
+        "bytes": 13971,
+        "LF": 234,
+        "sha256": "db16a4314c978937c2a0d0b723f97d7a7d213d88da652176b9a9cbfce5ea2835",
+        "gitBlob": "56f992fb19fc4e3e6624905589818ec3cd50747c"
+      }
+    ],
+    "NodeCommands": 1,
+    "NodeChildren": 0,
+    "OpenSSLCommands": 0,
+    "storageFilesCreated": 0,
+    "newManagedTasks": 0,
+    "actualOfficialSdk": 0,
+    "actualV6Sqlite": 0,
+    "network": 0,
+    "keys": 0,
+    "signatures": 0,
+    "nonceSearch": 0,
+    "payments": 0
+  },
+  "priorFailedIteration": {
+    "actualExit": 1,
+    "outputComplete": true,
+    "tests": 23,
+    "pass": 22,
+    "fail": 1,
+    "sourceInputs": [
+      {
+        "path": "package.json",
+        "bytes": 2677,
+        "LF": 40,
+        "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+        "gitBlob": "45752ffde39d29666094f7f1c755060d75e43deb"
+      },
+      {
+        "path": "src/x402-original-payment-checkpoint-client.js",
+        "bytes": 11031,
+        "LF": 218,
+        "sha256": "39ecbc27a83f5b9ab7eb2b4c237b28055408ce7006d4cc89fc54827918ec701d",
+        "gitBlob": "9e7e51785a319a6bd0d287c89184ba43000cf557"
+      },
+      {
+        "path": "src/canonical.js",
+        "bytes": 967,
+        "LF": 26,
+        "sha256": "0d55ddf1727cafb0dcd46df2922305568615552a4d2ae34a5c30e90b9d8d998c",
+        "gitBlob": "5367f9c72ee13017a61630e1f0cffdced21d52c4"
+      },
+      {
+        "path": "src/service-credit-pilot-original-payment-checkpoint.js",
+        "bytes": 4003,
+        "LF": 89,
+        "sha256": "930905f31824a6cadc16dfb84572cd4dc38a81e2fce4569b73b6bef29dec97d1",
+        "gitBlob": "51c6391bc22f561ebff0005ced31e538aa83f4fa"
+      },
+      {
+        "path": "src/x402-wire.js",
+        "bytes": 39886,
+        "LF": 934,
+        "sha256": "5fba91af5a352f62d1a335c7176a45a604e2af5d92b1c4b0e53825c1f20d4e56",
+        "gitBlob": "fb060d4e349b1c31a1219a0cc137af250a8a2291"
+      },
+      {
+        "path": "src/x402-official-https-request-binding.js",
+        "bytes": 5085,
+        "LF": 99,
+        "sha256": "dabf215408887bd0d2ba346085c5ab2df13f724e8759b7a98b71b09c8dc8d692",
+        "gitBlob": "47059c772407233b8b6f54632ba065893ff92dd3"
+      },
+      {
+        "path": "qualification/x402-original-payment-checkpoint-client.behavior.draft.mjs",
+        "bytes": 13460,
+        "LF": 225,
+        "sha256": "8d88528b6d3683cd63cc548c9979e627f742d25d4424a9fc7ecae2ea56010cc9",
+        "gitBlob": "200c5521f87aa3f65bffb390f0b0c244eba067a3"
+      }
+    ],
+    "stdoutOriginalBytes": 7895,
+    "stdoutOriginalSha256": "6c70ff1b453eb4adbb6521ee83731dee93247c537db5d81682073d6fa486c55c",
+    "stdoutSanitized": "# checkpoint-original-client-source {\"node\":\"24.19.0\",\"platform\":\"darwin\",\"arch\":\"arm64\",\"sourceInputs\":7,\"actualOfficialSdk\":false,\"actualV6Store\":false,\"sql\":0,\"network\":0,\"keys\":0,\"signatures\":0,\"nonceSearch\":0,\"payments\":0}\nTAP version 13\n# Subtest: construction performs no read and exposes no checkpoint in its snapshot\nok 1 - construction performs no read and exposes no checkpoint in its snapshot\n  ---\n  duration_ms: 2.711667\n  type: 'test'\n  ...\n# Subtest: official JSON key reordering returns exact original header after three pinned reads\nok 2 - official JSON key reordering returns exact original header after three pinned reads\n  ---\n  duration_ms: 1.143042\n  type: 'test'\n  ...\n# Subtest: constructor refuses wrong independent pins before any read\nok 3 - constructor refuses wrong independent pins before any read\n  ---\n  duration_ms: 0.359916\n  type: 'test'\n  ...\n# Subtest: constructor refuses another origin path query or insecure resource\nok 4 - constructor refuses another origin path query or insecure resource\n  ---\n  duration_ms: 0.394917\n  type: 'test'\n  ...\n# Subtest: GET binding refuses nonempty original request body\nok 5 - GET binding refuses nonempty original request body\n  ---\n  duration_ms: 0.380458\n  type: 'test'\n  ...\n# Subtest: constructor binds exact original payment hash as well as checkpoint digests\nok 6 - constructor binds exact original payment hash as well as checkpoint digests\n  ---\n  duration_ms: 0.721583\n  type: 'test'\n  ...\n# Subtest: changed challenge header is refused before read or context consumption\nok 7 - changed challenge header is refused before read or context consumption\n  ---\n  duration_ms: 0.600459\n  type: 'test'\n  ...\n# Subtest: per-call foreign binding or digest never enters the reader\nok 8 - per-call foreign binding or digest never enters the reader\n  ---\n  duration_ms: 0.653334\n  type: 'test'\n  ...\n# Subtest: creator cannot read or return original before external challenge admission\nok 9 - creator cannot read or return original before external challenge admission\n  ---\n  duration_ms: 0.457084\n  type: 'test'\n  ...\n# Subtest: changed SDK selected challenge is refused without consuming original\nok 10 - changed SDK selected challenge is refused without consuming original\n  ---\n  duration_ms: 0.979084\n  type: 'test'\n  ...\n# Subtest: a second creator or context cannot reset consumed original\nok 11 - a second creator or context cannot reset consumed original\n  ---\n  duration_ms: 0.579333\n  type: 'test'\n  ...\n# Subtest: read failure remains HELD and uncertainty survives close\nok 12 - read failure remains HELD and uncertainty survives close\n  ---\n  duration_ms: 0.381375\n  type: 'test'\n  ...\n# Subtest: changed complete checkpoint latches HELD rather than learning replacement pins\nok 13 - changed complete checkpoint latches HELD rather than learning replacement pins\n  ---\n  duration_ms: 0.302\n  type: 'test'\n  ...\n# Subtest: async and getter-bearing checkpoint replies are not assimilated\nok 14 - async and getter-bearing checkpoint replies are not assimilated\n  ---\n  duration_ms: 0.7425\n  type: 'test'\n  ...\n# Subtest: reentrant read cannot create a second read or consume the context\nok 15 - reentrant read cannot create a second read or consume the context\n  ---\n  duration_ms: 0.478416\n  type: 'test'\n  ...\n# Subtest: close during read suppresses the returned checkpoint and keeps uncertainty\nok 16 - close during read suppresses the returned checkpoint and keeps uncertainty\n  ---\n  duration_ms: 0.288292\n  type: 'test'\n  ...\n# Subtest: changed SDK transaction resource or selected amount never releases a header\nok 17 - changed SDK transaction resource or selected amount never releases a header\n  ---\n  duration_ms: 1.485083\n  type: 'test'\n  ...\n# Subtest: nonempty SDK extensions and noncanonical base64 are refused before read\nnot ok 18 - nonempty SDK extensions and noncanonical base64 are refused before read\n  ---\n  duration_ms: 0.651917\n  type: 'test'\n  location: '$REPO/qualification/x402-original-payment-checkpoint-client.behavior.draft.mjs:177:1'\n  failureType: 'testCodeFailure'\n  error: |-\n    The error is expected to be an instance of \"TypeError\". Received \"Error\"\n    \n    Error message:\n    \n    PaymentPayload.extensions is unsupported\n  code: 'ERR_ASSERTION'\n  name: 'AssertionError'\n  expected: [Function: TypeError]\n  actual:\n  error: 'PaymentPayload.extensions is unsupported'\n  stack: |-\n    validateEmptyExtensionsProperty ($REPO/src/x402-wire.js:209:11)\n    validatePaymentPayloadEnvelope ($REPO/src/x402-wire.js:895:3)\n    payloadData ($REPO/src/x402-original-payment-checkpoint-client.js:154:3)\n    Object.selectOriginalPaymentHeader ($REPO/src/x402-original-payment-checkpoint-client.js:128:42)\n    $REPO/qualification/x402-original-payment-checkpoint-client.behavior.draft.mjs:180:27\n    getActual (node:assert:611:5)\n    strict.throws (node:assert:759:24)\n    rejected ($REPO/qualification/x402-original-payment-checkpoint-client.behavior.draft.mjs:43:31)\n    TestContext.<anonymous> ($REPO/qualification/x402-original-payment-checkpoint-client.behavior.draft.mjs:180:3)\n    Test.runInAsyncScope (node:async_hooks:227:14)\n  operator: 'throws'\n  stack: |-\n    rejected ($REPO/qualification/x402-original-payment-checkpoint-client.behavior.draft.mjs:43:31)\n    TestContext.<anonymous> ($REPO/qualification/x402-original-payment-checkpoint-client.behavior.draft.mjs:180:3)\n    Test.runInAsyncScope (node:async_hooks:227:14)\n    Test.run (node:internal/test_runner/test:1382:25)\n    Test.processPendingSubtests (node:internal/test_runner/test:960:18)\n    Test.postRun (node:internal/test_runner/test:1522:19)\n    Test.run (node:internal/test_runner/test:1447:12)\n    async Test.processPendingSubtests (node:internal/test_runner/test:960:7)\n  ...\n# Subtest: absent or empty SDK extensions do not replace the retained header\nok 19 - absent or empty SDK extensions do not replace the retained header\n  ---\n  duration_ms: 0.4675\n  type: 'test'\n  ...\n# Subtest: accessor proxy and extra constructor fields are rejected without invoking hooks\nok 20 - accessor proxy and extra constructor fields are rejected without invoking hooks\n  ---\n  duration_ms: 0.178167\n  type: 'test'\n  ...\n# Subtest: per-call pins accessor is refused without entering reader\nok 21 - per-call pins accessor is refused without entering reader\n  ---\n  duration_ms: 0.217292\n  type: 'test'\n  ...\n# Subtest: source input and returned original payload mutation cannot replace selected bytes\nok 22 - source input and returned original payload mutation cannot replace selected bytes\n  ---\n  duration_ms: 0.646917\n  type: 'test'\n  ...\n# Subtest: closed adapter cannot read create or select a header and does not close borrowed store\nok 23 - closed adapter cannot read create or select a header and does not close borrowed store\n  ---\n  duration_ms: 0.453542\n  type: 'test'\n  ...\n1..23\n# tests 23\n# suites 0\n# pass 22\n# fail 1\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 23.730042\n",
+    "stdoutSanitization": "Only the absolute repository prefix and its file-URL form were replaced with $REPO. Original stream digest is retained separately; sanitized text is not claimed byte-identical.",
+    "stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "content": ""
+    },
+    "cause": "A rejected nonempty extension propagated a generic wire Error instead of the adapter's bounded TypeError. The implementation now maps this failure to its stable header_rejected code; a new diagnostic-path regression was added.",
+    "historicalResultRelabeled": false,
+    "reproducibleSourceChanges": [
+      {
+        "path": "src/x402-original-payment-checkpoint-client.js",
+        "initialSha256": "39ecbc27a83f5b9ab7eb2b4c237b28055408ce7006d4cc89fc54827918ec701d",
+        "initialBytes": 11031,
+        "currentSha256": "bb7cba7dcab0f023c90c3b4150f6fe27c2eb2e899310e4f5ca3cef9673c055e7",
+        "initialBytesReconstructedAndVerified": true,
+        "deltaInitialToCurrent": "--- src/x402-original-payment-checkpoint-client.js (initial failed component run)\n+++ src/x402-original-payment-checkpoint-client.js (current passing component run)\n@@ -75,7 +75,8 @@\n   function callerPins(pins) {\n     admitted();\n     const copied = snapshot(pins);\n-    RESTORE(SERIALIZED, copied); // Expectations are never learned from the reader.\n+    try { RESTORE(SERIALIZED, copied); } // Expectations are never learned from the reader.\n+    catch { fail('pins_rejected'); }\n     return deepFreeze(copied);\n   }\n   function retained(pins) {\n@@ -109,8 +110,10 @@\n     if (arguments.length !== 2) fail('input_rejected');\n     admitted();\n     // Invalid input does not enter the read capability or consume the original.\n-    if (CANONICAL(snapshot(challenge)) !== REQUIRED_TEXT\n-        || !sameRequirements(snapshot(accepted), selected.requirement)) fail('challenge_rejected');\n+    try {\n+      if (CANONICAL(snapshot(challenge)) !== REQUIRED_TEXT\n+          || !sameRequirements(snapshot(accepted), selected.requirement)) fail('challenge_rejected');\n+    } catch { fail('challenge_rejected'); }\n     if (admittedPins === null) fail('challenge_not_admitted');\n     if (creationAttempts !== 0) fail('original_already_consumed');\n     // Consume before the reader can reenter. Its failure never resets this.\n@@ -124,8 +127,10 @@\n     if (arguments.length !== 2) fail('input_rejected');\n     admitted();\n     if (!created) fail('header_rejected');\n-    const candidate = DECODE(encoded, { maxEncodedBytes: 8192, maxDecodedBytes: 6144 });\n-    if (ENCODE(candidate) !== encoded || payloadData(candidate) !== PAYLOAD_DATA) fail('header_rejected');\n+    try {\n+      const candidate = DECODE(encoded, { maxEncodedBytes: 8192, maxDecodedBytes: 6144 });\n+      if (ENCODE(candidate) !== encoded || payloadData(candidate) !== PAYLOAD_DATA) fail('header_rejected');\n+    } catch { fail('header_rejected'); }\n     const checked = callerPins(pins);\n     retained(checked);\n     return originalHeader;\n"
+      },
+      {
+        "path": "qualification/x402-original-payment-checkpoint-client.behavior.draft.mjs",
+        "initialSha256": "8d88528b6d3683cd63cc548c9979e627f742d25d4424a9fc7ecae2ea56010cc9",
+        "initialBytes": 13460,
+        "currentSha256": "db16a4314c978937c2a0d0b723f97d7a7d213d88da652176b9a9cbfce5ea2835",
+        "initialBytesReconstructedAndVerified": true,
+        "deltaInitialToCurrent": "--- qualification/x402-original-payment-checkpoint-client.behavior.draft.mjs (initial failed component run)\n+++ qualification/x402-original-payment-checkpoint-client.behavior.draft.mjs (current passing component run)\n@@ -186,6 +186,15 @@\n   const p = copy(f.payload); p.extensions = {};\n   assert.equal(f.client.selectOriginalPaymentHeader(encodeB64Json(p), f.pins), f.paymentHeader);\n });\n+test('wire parser errors are bounded local codes without nested diagnostic paths', OPT, () => {\n+  const f = fixture().start(); f.admit(); f.create();\n+  const p = copy(f.payload); p.extensions = { unrelated: true };\n+  assert.throws(() => f.client.selectOriginalPaymentHeader(encodeB64Json(p), f.pins), error => {\n+    assert.equal(error.code, 'x402_original_payment_checkpoint_client_header_rejected');\n+    assert.equal(error.stack, 'TypeError: ' + error.code); return true;\n+  });\n+  assert.equal(f.reads, 2);\n+});\n test('accessor proxy and extra constructor fields are rejected without invoking hooks', OPT, () => {\n   for (const modify of [\n     c => Object.defineProperty(c, 'expectedPins', { enumerable: true, get() { throw Error('hook'); } }),\n"
+      }
+    ]
+  },
+  "thisIncrementTotals": {
+    "NodeCommands": 3,
+    "componentTestCommands": 2,
+    "syntaxOnlyCommands": 1,
+    "OpenSSLCommands": 0,
+    "NodeChildren": 0,
+    "newManagedTasks": 0,
+    "actualOfficialSdk": 0,
+    "actualSqlite": 0,
+    "nativeHttps": 0,
+    "keys": 0,
+    "signatures": 0,
+    "nonceSearch": 0,
+    "payments": 0,
+    "priorSingleUseNativeHttpsScopeReused": false
+  },
+  "sourceOnlyFactory": {
+    "path": "src/x402-official-v6-original-payment-client.js",
+    "bytes": 11296,
+    "LF": 210,
+    "sha256": "84f1b27f7b0e71d1122672e83b970a7e60d3881233a3b35387efc89220c5b1b4",
+    "gitBlob": "ee582ed684cd73c5ae92d9583aa7057d111baaea",
+    "status": "SOURCE_SYNTAX_CHECKED_NOT_IMPORTED",
+    "actualFactories": [
+      "createOfficialSelectedPaymentClient",
+      "openServiceCreditCustodiedSqliteHttpClientV6"
+    ],
+    "substituteFactoryAccepted": false,
+    "actualFactoryExecuted": false,
+    "actualV6OpenOrRead": false,
+    "openingMayWriteOwnerEpoch": true,
+    "networkDuringConstruction": false,
+    "fundingTransitionOrReplayAdded": false,
+    "syntaxChecked": true,
+    "syntaxOnly": {
+      "kind": "Q66_EFFECTFUL_FACTORY_SYNTAX_ONLY",
+      "actualExit": 0,
+      "stdoutBytes": 0,
+      "stderrBytes": 0,
+      "stderr": "",
+      "source": {
+        "path": "src/x402-official-v6-original-payment-client.js",
+        "bytes": 11296,
+        "LF": 210,
+        "sha256": "84f1b27f7b0e71d1122672e83b970a7e60d3881233a3b35387efc89220c5b1b4",
+        "gitBlob": "ee582ed684cd73c5ae92d9583aa7057d111baaea"
+      },
+      "NodeCommands": 1,
+      "modulesImported": 0,
+      "actualSdk": 0,
+      "SQL": 0,
+      "network": 0,
+      "keys": 0,
+      "signatures": 0,
+      "newTasks": 0
+    }
+  },
+  "observedContract": {
+    "constructorReads": 0,
+    "correctRestorationReads": 3,
+    "externalPinsOnEachRead": true,
+    "completeOriginalCheckpointCompared": true,
+    "exactGetPaidOriginBound": true,
+    "nonemptyOriginalBodyRejected": true,
+    "creatorConsumedBeforeReadReentry": true,
+    "changedTransactionOrContextRefused": true,
+    "sdkJsonPropertyOrderMayDiffer": true,
+    "onlyExactOriginalHeaderReturned": true,
+    "nonemptyExtensionsRefused": true,
+    "readFailureHeld": true,
+    "closePreservesUncertainty": true,
+    "snapshotOmitsOriginalCheckpoint": true,
+    "signerOrTransportInvoked": false
+  },
+  "evidenceLimits": {
+    "trustedReaderIsNotV6Authentication": true,
+    "pinsConsistencyIsNotExternalRetentionProof": true,
+    "metadataHashesAreNotSignatures": true,
+    "coreCallbacksDeclaredData": true,
+    "realSdkAndV6Factory": "NOT_EXECUTED",
+    "fullNativeHttpsOfficialSdkV6SameFlow": "NOT_QUALIFIED",
+    "fullP0": false,
+    "fullP1": false,
+    "fullP2": false,
+    "serviceDelivery": "NOT_ESTABLISHED",
+    "economicPilot": "NO_GO",
+    "hostedCI": "NOT_RUN_NOT_GREEN",
+    "defaultCutover": false,
+    "ordinaryInstalledNamespace": "NOT_QUALIFIED"
+  }
+}
