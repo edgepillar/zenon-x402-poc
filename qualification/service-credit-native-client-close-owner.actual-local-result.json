@@ -1,0 +1,146 @@
+{
+  "schemaVersion": 1,
+  "status": "SDK_SQL_SOCKET_FREE_COMPONENT_PASS",
+  "baseCommit": "2fca8b2b14f737f3341f2c0bf62158dfafa3513f",
+  "counts": {
+    "tests": 27,
+    "pass": 27,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "runtime": {
+    "node": "24.19.0",
+    "platform": "darwin",
+    "arch": "arm64",
+    "nodeSha256": "dbedff294bab84a0a86c04e15fbcbeb1c97ca10bef1b32b0634cd24b36f62100"
+  },
+  "componentRun": {
+    "kind": "Q68_SDK_SQL_SOCKET_FREE_CLOSE_CORE_COMPONENT_RUN",
+    "actualExit": 0,
+    "outputComplete": true,
+    "timedOut": false,
+    "sourceInputs": [
+      {
+        "path": "package.json",
+        "bytes": 2677,
+        "LF": 40,
+        "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+        "gitBlob": "45752ffde39d29666094f7f1c755060d75e43deb"
+      },
+      {
+        "path": "src/service-credit-native-client-close-owner.js",
+        "bytes": 7170,
+        "LF": 149,
+        "sha256": "00366016a37cf71234cb305e860b5d3f406c97f6b6a7af8569ae76726b759c91",
+        "gitBlob": "ed68174f93050d837786ab799b3b6dee5f7e0676"
+      },
+      {
+        "path": "qualification/service-credit-native-client-close-owner.behavior.draft.mjs",
+        "bytes": 14735,
+        "LF": 242,
+        "sha256": "3737458cbd41a5908e0844c3fed8a9c4e9c336ca53fc813a0d01af19f2f49152",
+        "gitBlob": "e0e1663bc5b0ff418aa4b8f17ce0d88c52565cb9"
+      }
+    ],
+    "nodeSha256": "dbedff294bab84a0a86c04e15fbcbeb1c97ca10bef1b32b0634cd24b36f62100",
+    "stdout": {
+      "bytes": 5754,
+      "sha256": "ffc1b1ea8e5de167492ddacd29d7f512561d62269e9fe185296f0cf2cb5e5d92",
+      "content": "# close-core-scope {\"kind\":\"SDK_SQL_SOCKET_FREE_CLOSE_OWNER\",\"sourceInputs\":3,\"constructedOwners\":38,\"actualNativeTransportImports\":0,\"applicationTimers\":0,\"sockets\":0,\"SQLiteConnections\":0,\"SDK\":0,\"keyGeneration\":0,\"signing\":0,\"nonceSearch\":0,\"newScratch\":0,\"NodeChildren\":0,\"fullP1\":\"NOT_ESTABLISHED\"}\nTAP version 13\n# Subtest: close construction is inert and has no native effects\nok 1 - close construction is inert and has no native effects\n  ---\n  duration_ms: 0.629209\n  type: 'test'\n  ...\n# Subtest: beginClose caches before any trusted callback or observation\nok 2 - beginClose caches before any trusted callback or observation\n  ---\n  duration_ms: 0.188542\n  type: 'test'\n  ...\n# Subtest: zero actual observations return the frozen legacy clean receipt once\nok 3 - zero actual observations return the frozen legacy clean receipt once\n  ---\n  duration_ms: 0.215833\n  type: 'test'\n  ...\n# Subtest: a remaining requests observation fences local material release\nok 4 - a remaining requests observation fences local material release\n  ---\n  duration_ms: 0.114666\n  type: 'test'\n  ...\n# Subtest: a remaining sockets observation fences local material release\nok 5 - a remaining sockets observation fences local material release\n  ---\n  duration_ms: 0.067458\n  type: 'test'\n  ...\n# Subtest: a remaining timers observation fences local material release\nok 6 - a remaining timers observation fences local material release\n  ---\n  duration_ms: 0.061875\n  type: 'test'\n  ...\n# Subtest: preexisting UNKNOWN is not repaired by a zero-count close\nok 7 - preexisting UNKNOWN is not repaired by a zero-count close\n  ---\n  duration_ms: 0.263709\n  type: 'test'\n  ...\n# Subtest: a grace deadline cannot create an unrequested close\nok 8 - a grace deadline cannot create an unrequested close\n  ---\n  duration_ms: 0.105125\n  type: 'test'\n  ...\n# Subtest: deadline UNKNOWN settles promptly while late native observations can release once\nok 9 - deadline UNKNOWN settles promptly while late native observations can release once\n  ---\n  duration_ms: 0.106459\n  type: 'test'\n  ...\n# Subtest: repeated deadlines never retry release or heal the cached rejection\nok 10 - repeated deadlines never retry release or heal the cached rejection\n  ---\n  duration_ms: 0.159834\n  type: 'test'\n  ...\n# Subtest: an observation failure can later clean up but never become CLOSED\nok 11 - an observation failure can later clean up but never become CLOSED\n  ---\n  duration_ms: 0.096292\n  type: 'test'\n  ...\n# Subtest: proxy count records are rejected without invoking their traps\nok 12 - proxy count records are rejected without invoking their traps\n  ---\n  duration_ms: 0.0915\n  type: 'test'\n  ...\n# Subtest: count getters are rejected without invocation\nok 13 - count getters are rejected without invocation\n  ---\n  duration_ms: 0.094041\n  type: 'test'\n  ...\n# Subtest: unfrozen observations cannot establish quiescence\nok 14 - unfrozen observations cannot establish quiescence\n  ---\n  duration_ms: 0.087875\n  type: 'test'\n  ...\n# Subtest: invalid count numbers are never interpreted as clean observations\nok 15 - invalid count numbers are never interpreted as clean observations\n  ---\n  duration_ms: 0.264917\n  type: 'test'\n  ...\n# Subtest: release exceptions stay UNKNOWN and are never retried\nok 16 - release exceptions stay UNKNOWN and are never retried\n  ---\n  duration_ms: 0.080666\n  type: 'test'\n  ...\n# Subtest: non-void release results are rejected without thenable assimilation\nok 17 - non-void release results are rejected without thenable assimilation\n  ---\n  duration_ms: 0.144459\n  type: 'test'\n  ...\n# Subtest: release reentrancy cannot duplicate cleanup or produce a clean verdict\nok 18 - release reentrancy cannot duplicate cleanup or produce a clean verdict\n  ---\n  duration_ms: 0.065209\n  type: 'test'\n  ...\n# Subtest: read reentrancy remains bounded and preserves UNKNOWN\nok 19 - read reentrancy remains bounded and preserves UNKNOWN\n  ---\n  duration_ms: 0.053083\n  type: 'test'\n  ...\n# Subtest: UNKNOWN discovered during release is not overwritten by its return\nok 20 - UNKNOWN discovered during release is not overwritten by its return\n  ---\n  duration_ms: 0.042375\n  type: 'test'\n  ...\n# Subtest: new observed work after release remains uncertain without a second release\nok 21 - new observed work after release remains uncertain without a second release\n  ---\n  duration_ms: 0.051291\n  type: 'test'\n  ...\n# Subtest: mutating configuration cannot replace the privately captured capabilities\nok 22 - mutating configuration cannot replace the privately captured capabilities\n  ---\n  duration_ms: 0.034834\n  type: 'test'\n  ...\n# Subtest: late UNKNOWN downgrades current state without rewriting historical settlement\nok 23 - late UNKNOWN downgrades current state without rewriting historical settlement\n  ---\n  duration_ms: 0.044542\n  type: 'test'\n  ...\n# Subtest: a cancelled grace callback after a clean settlement is inert\nok 24 - a cancelled grace callback after a clean settlement is inert\n  ---\n  duration_ms: 0.050417\n  type: 'test'\n  ...\n# Subtest: invalid method arities do not consume close or invoke callbacks\nok 25 - invalid method arities do not consume close or invoke callbacks\n  ---\n  duration_ms: 0.084375\n  type: 'test'\n  ...\n# Subtest: configuration accessors and proxies are rejected without invocation\nok 26 - configuration accessors and proxies are rejected without invocation\n  ---\n  duration_ms: 0.113166\n  type: 'test'\n  ...\n# Subtest: snapshots are frozen observations and expose no retained callback data\nok 27 - snapshots are frozen observations and expose no retained callback data\n  ---\n  duration_ms: 0.082875\n  type: 'test'\n  ...\n1..27\n# tests 27\n# suites 0\n# pass 27\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 11.688834\n"
+    },
+    "stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "content": ""
+    },
+    "actualNativeTransportExecuted": false,
+    "SDK": 0,
+    "SQLite": 0,
+    "network": 0,
+    "applicationTimers": 0,
+    "keys": 0,
+    "signatures": 0,
+    "nonce": 0,
+    "NodeChildren": 0,
+    "newScratch": 0,
+    "newTasks": 0
+  },
+  "scopeDiagnostic": {
+    "kind": "SDK_SQL_SOCKET_FREE_CLOSE_OWNER",
+    "sourceInputs": 3,
+    "constructedOwners": 38,
+    "actualNativeTransportImports": 0,
+    "applicationTimers": 0,
+    "sockets": 0,
+    "SQLiteConnections": 0,
+    "SDK": 0,
+    "keyGeneration": 0,
+    "signing": 0,
+    "nonceSearch": 0,
+    "newScratch": 0,
+    "NodeChildren": 0,
+    "fullP1": "NOT_ESTABLISHED"
+  },
+  "sourceOnlyNativeBinding": {
+    "path": "src/service-credit-native-https-client-transport.js",
+    "bytes": 12133,
+    "LF": 228,
+    "sha256": "e44e378b029d3747d4fa276c5dde480f81cc075add345d0d15d0aa8b0d9b3f24",
+    "gitBlob": "ab6740f8e82c0cf06d5c268ce0b6750d87d0ddeb",
+    "previousSourceCommit": "aa9195a60e53784a8c60c46556a42e51d47382ea",
+    "previousSha256": "2a82c9abef4a6add5b407f1f4d18cab1dd4c3513186ed06a841d3601b760004e",
+    "status": "SOURCE_AND_SYNTAX_ONLY_NOT_RUNTIME_QUALIFIED",
+    "syntaxOnly": {
+      "kind": "NATIVE_CLIENT_SYNTAX_ONLY",
+      "actualExit": 0,
+      "stdoutBytes": 0,
+      "stderrBytes": 0,
+      "stdout": "",
+      "stderr": "",
+      "bytes": 12133,
+      "LF": 228,
+      "sha256": "e44e378b029d3747d4fa276c5dde480f81cc075add345d0d15d0aa8b0d9b3f24",
+      "gitBlob": "ab6740f8e82c0cf06d5c268ce0b6750d87d0ddeb",
+      "actualNativeClientExecuted": false,
+      "NodeCommands": 1,
+      "newScratch": 0
+    }
+  },
+  "preliminarySyntaxObservation": {
+    "status": "RESULT_OBSERVATION_UNKNOWN",
+    "NodeCommands": 1,
+    "actualNativeClientExecuted": false,
+    "cause": "A Python warning prefix caused the outer JSON parser to fail. The inner parser result was not retained and is not counted as a pass. No native transport experiment was repeated."
+  },
+  "thisIncrementTotals": {
+    "NodeCommands": 3,
+    "componentCommands": 1,
+    "syntaxOnlyCommands": 2,
+    "OpenSSLCommands": 0,
+    "actualNativeTransportCommands": 0,
+    "newTasks": 0,
+    "newScratch": 0,
+    "SDK": 0,
+    "SQLite": 0,
+    "sockets": 0,
+    "applicationTimers": 0,
+    "keyGeneration": 0,
+    "signatures": 0,
+    "nonceSearch": 0,
+    "realPrepare": 0
+  },
+  "limits": {
+    "observations": "DECLARED_CALLBACK_COUNTS_ONLY",
+    "nativeTransportExecuted": false,
+    "physicalSocketDrain": "NOT_ESTABLISHED",
+    "lateNativeCleanup": "NOT_ESTABLISHED",
+    "previousP1Attempt": "FAILED_OR_INCOMPLETE_UNCHANGED",
+    "fullP1": "NOT_ESTABLISHED",
+    "economicPilot": "NO_GO",
+    "hostedCI": "NOT_RUN_NOT_GREEN",
+    "freshP1NativeApproval": "STILL_REQUIRED"
+  }
+}
+
