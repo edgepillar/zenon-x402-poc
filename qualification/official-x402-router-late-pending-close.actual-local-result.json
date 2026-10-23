@@ -1,0 +1,263 @@
+{
+  "kind": "OFFICIAL_X402_ROUTER_LATE_PENDING_CLOSE_CURRENT_COMPONENT_ACTUAL_LOCAL_RESULT",
+  "version": 1,
+  "status": "PASS_COMPONENT_ONLY_NOT_NATIVE_OR_FULL_APPLICATION_QUALIFICATION",
+  "sourceParents": [
+    "29a9284588b72edb840bdbcc9ec7db2ca82310f7",
+    "3f9f1ac51c3f55dc41660a0d5cf9493af5bac806"
+  ],
+  "sourceIntegration": {
+    "commonBase": "ff44a7f41a00fbc26dd4aa81a636f62eddfc632a",
+    "currentSourceTree": "8acb413d26d05bb6c21325659709c37a1701c283",
+    "incomingSourceTree": "c724f44f41c838cce7f1a6f2878f785edb2b4f9e",
+    "currentSourceFiles": 769,
+    "incomingChangedFiles": 10,
+    "incomingAddedFiles": 9,
+    "incomingModifiedFiles": 1,
+    "threeWayConflicts": 0,
+    "currentPackageAndDpGraphPreserved": true,
+    "historicalArtifactsNotRelabeled": true
+  },
+  "sourceChange": {
+    "path": "src/x402-official-upfront-https-router.js",
+    "before": {
+      "path": "src/x402-official-upfront-https-router.js",
+      "bytes": 17316,
+      "LF": 338,
+      "sha256": "5d2b5e32e9b2b6f73cc311f007c09ed315463e21f4e93c611c1642f44465cedf",
+      "gitBlob": "a7381ef7109e678579cfbfd7f3377fc8e1b8e429"
+    },
+    "after": {
+      "path": "src/x402-official-upfront-https-router.js",
+      "bytes": 17580,
+      "LF": 342,
+      "sha256": "4d3b0c07c411587d8daff27e3c59f564e1dcd320f4db23a58cd3a6ac63a53611",
+      "gitBlob": "abca7d8f8919da6fe778b542db71572d3f0e2aac"
+    },
+    "scope": "Move acquired pending-owner cleanup into finally after reply processing; preserve exact original context, replies and uncertainty.",
+    "prePatchNativeOrComponentReproduction": false
+  },
+  "executedSourceInputs": [
+    {
+      "path": "package.json",
+      "bytes": 2677,
+      "LF": 40,
+      "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+      "gitBlob": "45752ffde39d29666094f7f1c755060d75e43deb"
+    },
+    {
+      "path": "src/x402-official-https-request-binding.js",
+      "bytes": 5085,
+      "LF": 99,
+      "sha256": "dabf215408887bd0d2ba346085c5ab2df13f724e8759b7a98b71b09c8dc8d692",
+      "gitBlob": "47059c772407233b8b6f54632ba065893ff92dd3"
+    },
+    {
+      "path": "src/x402-official-upfront-https-router.js",
+      "bytes": 17580,
+      "LF": 342,
+      "sha256": "4d3b0c07c411587d8daff27e3c59f564e1dcd320f4db23a58cd3a6ac63a53611",
+      "gitBlob": "abca7d8f8919da6fe778b542db71572d3f0e2aac"
+    },
+    {
+      "path": "src/service-credit-bounded-https-ingress-owner.js",
+      "bytes": 143191,
+      "LF": 4092,
+      "sha256": "3ba52fb8f33e332a30297dc93e9e6162e4c1d957b3fda1bdf61090ac57d0971a",
+      "gitBlob": "be7cf8bce732388e51be4e3cb6ff711bac1659ab"
+    },
+    {
+      "path": "qualification/official-x402-upfront-https-router.behavior.draft.mjs",
+      "bytes": 15268,
+      "LF": 248,
+      "sha256": "87a300fe5b64adaa6aeb02d52a2eb2e1ae105dd1123db5deb4e49454440f94df",
+      "gitBlob": "ca19261da3f025e5c61995d801f9f6206dfa0d52"
+    },
+    {
+      "path": "qualification/official-x402-router-late-pending-close.behavior.draft.mjs",
+      "bytes": 10322,
+      "LF": 235,
+      "sha256": "5076c514f885ad25014a68c103fe1a5b739227fd4b5571b6df3404b9903e6390",
+      "gitBlob": "c28731db3d0287a693f0db1a794465b7a4cec530"
+    }
+  ],
+  "sourceBytes": 194123,
+  "selectedNames": [
+    "router binds method target Host and zero-body before declared application calls",
+    "router resumes only the retained pending tuple then caches its original acknowledgement",
+    "router retains exhausted pending receipt without resetting first-call or observer authority",
+    "changed-context application refusal leaves the original pending continuation available",
+    "router bounds retained payment contexts and never substitutes a new payment on capacity",
+    "credit path delegates separately while a funding receipt never invokes the service",
+    "response loss retains reply before write without a new funding invocation on the exact replay",
+    "close drains late pending ownership and never writes or reports late success after revocation",
+    "an unusable SDK-shaped reply retains its pending owner for one close rather than leaking it",
+    "explicit GET constructor and legacy POST constructor remain inert and share the existing close owner",
+    "closing before malformed body drains the late pending owner exactly once",
+    "closing before invalid receipt header drains the late pending owner exactly once",
+    "reentrant close before reply serialization retains the same pending cleanup",
+    "late pending close rejection preserves uncertain terminal state",
+    "late pending close waits for its actual completion without a replacement",
+    "a close-return contract violation is uncertain and does not invoke a thenable",
+    "malformed open reply retains original context without another funding call",
+    "valid open pending reply stays owned until explicit close",
+    "late valid pending reply remains unwritten and is drained once",
+    "an unbound late pending owner is closed without retaining a payment slot"
+  ],
+  "counts": {
+    "tests": 20,
+    "suites": 0,
+    "pass": 20,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "selection": {
+    "unchangedOriginalRouterCases": 10,
+    "newLatePendingCloseCases": 10,
+    "oldEntryUnchanged": true,
+    "preloadIsNewRegressionFileNotResolverHook": true,
+    "argvReplacement": false,
+    "sourceTransforms": 0,
+    "discovery": false,
+    "testFilter": false,
+    "ingressConstructorOnly": true,
+    "borrowedCallbacksNotActualOfficialSdk": true
+  },
+  "runtime": {
+    "node": "24.19.0",
+    "nodeVersionAssertedByBothEntries": true,
+    "executableSha256": "dbedff294bab84a0a86c04e15fbcbeb1c97ca10bef1b32b0634cd24b36f62100",
+    "expectedPlatform": "darwin",
+    "expectedArchitecture": "arm64",
+    "platformArchitectureNotReemittedByThisInvocation": true
+  },
+  "commandLogicalPaths": [
+    "node",
+    "--permission",
+    "--allow-fs-read=./package.json",
+    "--allow-fs-read=./src/x402-official-https-request-binding.js",
+    "--allow-fs-read=./src/x402-official-upfront-https-router.js",
+    "--allow-fs-read=./src/service-credit-bounded-https-ingress-owner.js",
+    "--allow-fs-read=./qualification/official-x402-upfront-https-router.behavior.draft.mjs",
+    "--allow-fs-read=./qualification/official-x402-router-late-pending-close.behavior.draft.mjs",
+    "--no-addons",
+    "--no-warnings",
+    "--disallow-code-generation-from-strings",
+    "--unhandled-rejections=strict",
+    "--test-reporter=tap",
+    "--import=./qualification/official-x402-router-late-pending-close.behavior.draft.mjs",
+    "./qualification/official-x402-upfront-https-router.behavior.draft.mjs"
+  ],
+  "commandPathRepresentation": "ACTUAL_ARGV_WITH_PRIVATE_PREFIXES_REPLACED_BY_REPOSITORY_RELATIVE_PATHS",
+  "NodeCommands": 1,
+  "NodeChildren": 0,
+  "exitCode": 0,
+  "elapsedSeconds": 0.12643458299953636,
+  "elapsedMeaning": "CONTROLLER_OBSERVED_ONE_COMPONENT_TEST_COMMAND_NOT_SERVICE_LATENCY_OR_HARD_DEADLINE",
+  "controllerProgramSha256": "8b36daa5c90b9e2b493b8d8f2213895552073a30ecb88e769d15efc2cba1ae26",
+  "admissionSha256": "f56760e2755559f71580cb95e16de8283421d3bf1a86bfabf746d5573994b277",
+  "capture": {
+    "complete": true,
+    "stdoutBytes": 5440,
+    "stderrBytes": 0,
+    "stdoutSha256": "c45a6e404df054625deb314425a9b57e5321151861e7f40cc703567a5d23eac9",
+    "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stdoutCap": 65536,
+    "stderrCap": 65536,
+    "stdout": "# router-late-pending-close {\"kind\":\"ROUTER_LATE_PENDING_CLOSE_DECLARED_CALLBACKS\",\"version\":1,\"completedCases\":10,\"actualRouter\":true,\"declaredCallbackSeamsOnly\":true,\"SDK\":0,\"SQL\":0,\"nativeHttps\":0,\"sockets\":0,\"keys\":0,\"signatures\":0,\"nonceSearch\":0,\"payments\":0,\"realPrepare\":0,\"physicalResourceRelease\":false,\"fullP1\":\"NOT_ESTABLISHED\"}\n# {\"kind\":\"OFFICIAL_X402_ROUTER_DECLARED_CONTRACT\",\"version\":1,\"selectedCases\":10,\"actualOfficialSdk\":false,\"actualApplicationFactory\":false,\"nativeHttpsOrTls\":false,\"nativeSocket\":false,\"sql\":false,\"keys\":0,\"signatures\":0,\"nonceSearch\":0,\"payments\":0,\"realPrepare\":0,\"declaredCallableSeamsOnly\":true,\"fullP1\":\"NOT_ESTABLISHED\",\"serviceDelivery\":\"NOT_ESTABLISHED\"}\nTAP version 13\n# Subtest: closing before malformed body drains the late pending owner exactly once\nok 1 - closing before malformed body drains the late pending owner exactly once\n  ---\n  duration_ms: 5.116625\n  type: 'test'\n  ...\n# Subtest: closing before invalid receipt header drains the late pending owner exactly once\nok 2 - closing before invalid receipt header drains the late pending owner exactly once\n  ---\n  duration_ms: 0.182125\n  type: 'test'\n  ...\n# Subtest: reentrant close before reply serialization retains the same pending cleanup\nok 3 - reentrant close before reply serialization retains the same pending cleanup\n  ---\n  duration_ms: 0.178042\n  type: 'test'\n  ...\n# Subtest: late pending close rejection preserves uncertain terminal state\nok 4 - late pending close rejection preserves uncertain terminal state\n  ---\n  duration_ms: 0.193917\n  type: 'test'\n  ...\n# Subtest: late pending close waits for its actual completion without a replacement\nok 5 - late pending close waits for its actual completion without a replacement\n  ---\n  duration_ms: 0.233458\n  type: 'test'\n  ...\n# Subtest: a close-return contract violation is uncertain and does not invoke a thenable\nok 6 - a close-return contract violation is uncertain and does not invoke a thenable\n  ---\n  duration_ms: 0.187875\n  type: 'test'\n  ...\n# Subtest: malformed open reply retains original context without another funding call\nok 7 - malformed open reply retains original context without another funding call\n  ---\n  duration_ms: 0.276125\n  type: 'test'\n  ...\n# Subtest: valid open pending reply stays owned until explicit close\nok 8 - valid open pending reply stays owned until explicit close\n  ---\n  duration_ms: 0.133875\n  type: 'test'\n  ...\n# Subtest: late valid pending reply remains unwritten and is drained once\nok 9 - late valid pending reply remains unwritten and is drained once\n  ---\n  duration_ms: 0.118542\n  type: 'test'\n  ...\n# Subtest: an unbound late pending owner is closed without retaining a payment slot\nok 10 - an unbound late pending owner is closed without retaining a payment slot\n  ---\n  duration_ms: 0.175917\n  type: 'test'\n  ...\n# Subtest: router binds method target Host and zero-body before declared application calls\nok 11 - router binds method target Host and zero-body before declared application calls\n  ---\n  duration_ms: 0.433542\n  type: 'test'\n  ...\n# Subtest: router resumes only the retained pending tuple then caches its original acknowledgement\nok 12 - router resumes only the retained pending tuple then caches its original acknowledgement\n  ---\n  duration_ms: 0.27325\n  type: 'test'\n  ...\n# Subtest: router retains exhausted pending receipt without resetting first-call or observer authority\nok 13 - router retains exhausted pending receipt without resetting first-call or observer authority\n  ---\n  duration_ms: 0.128\n  type: 'test'\n  ...\n# Subtest: changed-context application refusal leaves the original pending continuation available\nok 14 - changed-context application refusal leaves the original pending continuation available\n  ---\n  duration_ms: 0.110542\n  type: 'test'\n  ...\n# Subtest: router bounds retained payment contexts and never substitutes a new payment on capacity\nok 15 - router bounds retained payment contexts and never substitutes a new payment on capacity\n  ---\n  duration_ms: 0.096625\n  type: 'test'\n  ...\n# Subtest: credit path delegates separately while a funding receipt never invokes the service\nok 16 - credit path delegates separately while a funding receipt never invokes the service\n  ---\n  duration_ms: 0.169541\n  type: 'test'\n  ...\n# Subtest: response loss retains reply before write without a new funding invocation on the exact replay\nok 17 - response loss retains reply before write without a new funding invocation on the exact replay\n  ---\n  duration_ms: 0.126792\n  type: 'test'\n  ...\n# Subtest: close drains late pending ownership and never writes or reports late success after revocation\nok 18 - close drains late pending ownership and never writes or reports late success after revocation\n  ---\n  duration_ms: 0.146833\n  type: 'test'\n  ...\n# Subtest: an unusable SDK-shaped reply retains its pending owner for one close rather than leaking it\nok 19 - an unusable SDK-shaped reply retains its pending owner for one close rather than leaking it\n  ---\n  duration_ms: 0.116417\n  type: 'test'\n  ...\n# Subtest: explicit GET constructor and legacy POST constructor remain inert and share the existing close owner\nok 20 - explicit GET constructor and legacy POST constructor remain inert and share the existing close owner\n  ---\n  duration_ms: 4.963959\n  type: 'test'\n  ...\n1..20\n# tests 20\n# suites 0\n# pass 20\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 48.491334\n",
+    "stderr": ""
+  },
+  "markers": [
+    {
+      "kind": "ROUTER_LATE_PENDING_CLOSE_DECLARED_CALLBACKS",
+      "version": 1,
+      "completedCases": 10,
+      "actualRouter": true,
+      "declaredCallbackSeamsOnly": true,
+      "SDK": 0,
+      "SQL": 0,
+      "nativeHttps": 0,
+      "sockets": 0,
+      "keys": 0,
+      "signatures": 0,
+      "nonceSearch": 0,
+      "payments": 0,
+      "realPrepare": 0,
+      "physicalResourceRelease": false,
+      "fullP1": "NOT_ESTABLISHED"
+    },
+    {
+      "kind": "OFFICIAL_X402_ROUTER_DECLARED_CONTRACT",
+      "version": 1,
+      "selectedCases": 10,
+      "actualOfficialSdk": false,
+      "actualApplicationFactory": false,
+      "nativeHttpsOrTls": false,
+      "nativeSocket": false,
+      "sql": false,
+      "keys": 0,
+      "signatures": 0,
+      "nonceSearch": 0,
+      "payments": 0,
+      "realPrepare": 0,
+      "declaredCallableSeamsOnly": true,
+      "fullP1": "NOT_ESTABLISHED",
+      "serviceDelivery": "NOT_ESTABLISHED"
+    }
+  ],
+  "primaryReview": {
+    "completeStreamsAndAllTwentyExactNames": true,
+    "noSkipsTodoCancellationsOrExtraCases": true,
+    "sourceContentAndNinePhysicalIdentityFieldsBeforeAfterMatched": true,
+    "runtimeIdentityBeforeAfterMatched": true,
+    "processGroupAbsentAfterJoin": true,
+    "localStatusBeforeAfterMatched": true,
+    "sourceImportClosureSdkSqlAndNetworkFree": true,
+    "rawTapRetainedInThisRecord": true,
+    "historicalResultUnchanged": true
+  },
+  "effects": {
+    "SDK": 0,
+    "SQL": 0,
+    "x402Package": 0,
+    "network": 0,
+    "keys": 0,
+    "signatures": 0,
+    "nonceSearch": 0,
+    "chainPrepare": 0,
+    "newScratchFiles": 0,
+    "newStorageTasks": 0,
+    "fileWriteGrant": false
+  },
+  "resourceAccounting": {
+    "newStorageTasks": 0,
+    "newQualificationScratchFiles": 0,
+    "fileWriteGrant": false,
+    "packageInstallation": 0,
+    "sourcePackageCopies": 0,
+    "rawCapturesKeptInMemoryThenThisTextRecord": true,
+    "stdoutCap": 65536,
+    "stderrCap": 65536,
+    "taskStorageRemainingSlotNotUsed": true
+  },
+  "evidenceLimits": {
+    "actualOfficialX402": false,
+    "actualApplicationFactory": false,
+    "realV6Sqlite": false,
+    "nativeTlsOrSockets": false,
+    "physicalResourceRelease": false,
+    "hardOsOrHostileCodeSandbox": false,
+    "realFundingOrGrantActivation": false,
+    "delivery": false,
+    "hostedCI": "NOT_RUN_NOT_GREEN",
+    "ordinaryInstalledNamespace": "NOT_QUALIFIED",
+    "nativePendingDraftRequiresFreshMatchingScope": true,
+    "fullP0": false,
+    "fullP1": false,
+    "fullP2": false,
+    "economicPilot": "NO_GO",
+    "mainEligible": false
+  }
+}

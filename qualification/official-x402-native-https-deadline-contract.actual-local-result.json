@@ -1,0 +1,150 @@
+{
+  "kind": "OFFICIAL_X402_NATIVE_DEADLINE_DORMANT_ACTUAL_LOCAL_RESULT",
+  "version": 1,
+  "status": "SELECTED_NETWORK_FREE_CONTRACTS_PASSED",
+  "sourceBase": "ff44a7f41a00fbc26dd4aa81a636f62eddfc632a",
+  "selectedEntry": {
+    "path": "qualification/official-x402-native-https-deadline-contract.behavior.draft.mjs",
+    "bytes": 7135,
+    "LF": 118,
+    "sha256": "c49af2f74a433b78451c03ab5f3d46999eda9c43e76abb27cc366d0906f0d732",
+    "gitBlob": "e83409dcc85747e373678c4f9661fd317c506008"
+  },
+  "sourceFiles": 5,
+  "sourceBytes": 180991,
+  "sourceRowsSha256": "cd5aec4b3e8f7a328720f278e990e2a6c50f680fafe627a916bafee6dc067d91",
+  "sourceGraph": [
+    {
+      "path": "package.json",
+      "bytes": 2529,
+      "LF": 42,
+      "sha256": "43b55453328d3f3a2dc11759bb26a83df9c24df7d4482cd7745a139e2fa421a6",
+      "gitBlob": "7bc7ded2f483c69e152bece090b8381fb0095e43",
+      "role": "PACKAGE_METADATA"
+    },
+    {
+      "path": "src/x402-official-https-request-binding.js",
+      "bytes": 5085,
+      "LF": 99,
+      "sha256": "dabf215408887bd0d2ba346085c5ab2df13f724e8759b7a98b71b09c8dc8d692",
+      "gitBlob": "47059c772407233b8b6f54632ba065893ff92dd3",
+      "role": "NATIVE_NODE_ESM_SOURCE"
+    },
+    {
+      "path": "src/service-credit-bounded-https-ingress-owner.js",
+      "bytes": 143191,
+      "LF": 4092,
+      "sha256": "3ba52fb8f33e332a30297dc93e9e6162e4c1d957b3fda1bdf61090ac57d0971a",
+      "gitBlob": "be7cf8bce732388e51be4e3cb6ff711bac1659ab",
+      "role": "NATIVE_NODE_ESM_SOURCE"
+    },
+    {
+      "path": "qualification/official-x402-native-https-pending.behavior.draft.mjs",
+      "bytes": 23051,
+      "LF": 477,
+      "sha256": "192d641871e64fc953c379ebc899e61c086918f90b26b62282d24bde6ea98ece",
+      "gitBlob": "4f162aef202a2f0da6754dc77a91d23abaedf988",
+      "role": "READ_AS_TEXT_NOT_PARSED_OR_EXECUTED"
+    },
+    {
+      "path": "qualification/official-x402-native-https-deadline-contract.behavior.draft.mjs",
+      "bytes": 7135,
+      "LF": 118,
+      "sha256": "c49af2f74a433b78451c03ab5f3d46999eda9c43e76abb27cc366d0906f0d732",
+      "gitBlob": "e83409dcc85747e373678c4f9661fd317c506008",
+      "role": "NATIVE_NODE_ESM_SOURCE"
+    }
+  ],
+  "selectedCases": [
+    "source-bound native fixture deadlines construct dormant and close without native authority",
+    "shorter close grace is refused before any listener downstream or deadline call",
+    "equal request and close deadlines preserve the existing accepted boundary"
+  ],
+  "counts": {
+    "tests": 3,
+    "suites": 0,
+    "pass": 3,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "actualNodeExit": 0,
+  "outputComplete": true,
+  "stdout": {
+    "bytes": 1289,
+    "sha256": "9584615c8b8d46d86d06511ea918c1730b3c8dd7e777590785ba8a8c7622eaa5"
+  },
+  "stderr": {
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "diagnostic": {
+    "kind": "OFFICIAL_X402_NATIVE_DEADLINE_DORMANT_CONTRACT",
+    "version": 1,
+    "selectedCases": 3,
+    "nativeFixtureReadAsTextOnly": true,
+    "nativeFixtureParsedOrExecuted": false,
+    "intendedRequestDeadlineMs": 2000,
+    "intendedCloseGraceMs": 3000,
+    "rejectedCloseGraceMs": 1000,
+    "dormantOwnersClosed": 4,
+    "nativeFactoryCalls": 0,
+    "requestCalls": 0,
+    "actualOfficialSdk": false,
+    "nativeSockets": 0,
+    "tls": false,
+    "SQL": 0,
+    "keys": 0,
+    "signatures": 0,
+    "fullP1": "NOT_ESTABLISHED",
+    "nativeHttpsQualification": "NOT_ESTABLISHED"
+  },
+  "evidence": {
+    "admissionSha256": "d1444e17b73ac3e324f01333b6ac68869d6c36e21d2fead72b2a961cdc0b2283",
+    "controllerSha256": "2eeca6b253f0d84322589e204fd48866dedf5d0b308369abaa38c916bd0f29f3",
+    "metadataRecords": 5,
+    "taskOutcome": "SUCCESS",
+    "scratchAbsent": true,
+    "processGroupGone": true,
+    "separateCompletePrimaryReview": true,
+    "priorNativeFailureRetained": true
+  },
+  "resources": {
+    "taskQuotaBytes": 2097152,
+    "peakLogicalBytesBound": 1144298,
+    "newSourceRetentions": 2,
+    "newSourceBytes": 30186,
+    "borrowedSourceReferences": 3,
+    "sourceAliases": 0,
+    "parentNodeCommands": 1,
+    "childProcesses": 0
+  },
+  "runtime": {
+    "node": "24.19.0",
+    "platform": "darwin",
+    "arch": "arm64",
+    "nodeBinary": {
+      "bytes": 121304480,
+      "sha256": "dbedff294bab84a0a86c04e15fbcbeb1c97ca10bef1b32b0634cd24b36f62100"
+    }
+  },
+  "limits": {
+    "requestResponseDeadlineMs": 2000,
+    "correctedCloseGraceMs": 3000,
+    "rejectedCloseGraceMs": 1000,
+    "equalBoundaryMs": 2000,
+    "productionGuardUnchanged": true
+  },
+  "notEstablished": [
+    "Native HTTPS after the source fix",
+    "Official SDK client/server over native HTTPS",
+    "Application-factory or V6 integration",
+    "Ordinary installed package namespace",
+    "Hosted CI",
+    "Service delivery",
+    "Full P1",
+    "Economic pilot"
+  ]
+}
+
