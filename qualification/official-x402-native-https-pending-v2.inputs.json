@@ -1,0 +1,178 @@
+{
+  "kind": "CURRENT_THREE_CASE_NATIVE_HTTPS_SOURCE_NAMESPACE_NOT_EXECUTED",
+  "version": 2,
+  "sourceParent": "235d3fc2c424d8701de23c3f30a863d69c19f217",
+  "currentMain": "ba5a33c1de34a8d3ad869958f9aac1c625098ab7",
+  "entry": "qualification/official-x402-native-https-pending-v2.behavior.draft.mjs",
+  "entryGuardSourceFiles": 35,
+  "namespaceSourceFiles": 36,
+  "applicationFilesIncludingPreload": 14,
+  "packageFiles": 22,
+  "sourceBytes": 701939,
+  "expandedNamespaceSourceRowsSha256": "7f96ec3a80d5f507dd30c1171613f73974790a3255e28438e75cdcc05fa6829b",
+  "applicationInputs": [
+    {
+      "path": "src/x402-official-selected-settlement-server.js",
+      "bytes": 15704,
+      "LF": 284,
+      "sha256": "7e226d378b909bbe30a536b4829313f7cc25d772ac2c0dbfba741c64fc2515b5",
+      "gitBlob": "0c5457b489462470fd4c2f1c4d9cb87a8dfbdf5c"
+    },
+    {
+      "path": "src/x402-official-https-request-binding.js",
+      "bytes": 5085,
+      "LF": 99,
+      "sha256": "dabf215408887bd0d2ba346085c5ab2df13f724e8759b7a98b71b09c8dc8d692",
+      "gitBlob": "47059c772407233b8b6f54632ba065893ff92dd3"
+    },
+    {
+      "path": "src/x402-official-selected-payment-client.js",
+      "bytes": 9226,
+      "LF": 177,
+      "sha256": "6103703a48ab93b33e1d322d01da367d9552d1e37c9d983326f6e58d1e77693c",
+      "gitBlob": "f7a47d8d3405f624fa2dc489745752994263ce53"
+    },
+    {
+      "path": "src/x402-selected-payment-client-bridge.js",
+      "bytes": 19446,
+      "LF": 370,
+      "sha256": "d8252e421240005f51b1627ab97b624496325403508d57b030be423e871a5083",
+      "gitBlob": "a405eb73cab88302ee5c0e130bdfc9d1ef9eebfa"
+    },
+    {
+      "path": "src/x402-selected-settlement-server-bridge.js",
+      "bytes": 39943,
+      "LF": 749,
+      "sha256": "38f47d24e1dcdd0f632e786054dc2e9544de2f261f74e949e28fee43ed56f40b",
+      "gitBlob": "483633ee18735355d9614cafe8f7bd8044a7d8b7"
+    },
+    {
+      "path": "src/x402-verification-bound-settlement-context.js",
+      "bytes": 11311,
+      "LF": 221,
+      "sha256": "b3ad2fd33dae7e77a77f069cbc1259bf77e18a2bf383aa30f41bcc19221656f5",
+      "gitBlob": "6734a4aa011239402c141b874612a3be0733b4bf"
+    },
+    {
+      "path": "src/x402-selected-settlement-context.js",
+      "bytes": 16818,
+      "LF": 456,
+      "sha256": "afb6e16603023dd58d6a71cff5790a802dcfa4b98bc9d380b51ccc3d58e10991",
+      "gitBlob": "321d2a03a45296907c0a35a50d1e038e82307a40"
+    },
+    {
+      "path": "src/x402-wire.js",
+      "bytes": 39886,
+      "LF": 934,
+      "sha256": "5fba91af5a352f62d1a335c7176a45a604e2af5d92b1c4b0e53825c1f20d4e56",
+      "gitBlob": "fb060d4e349b1c31a1219a0cc137af250a8a2291"
+    },
+    {
+      "path": "package.json",
+      "bytes": 2677,
+      "LF": 40,
+      "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+      "gitBlob": "45752ffde39d29666094f7f1c755060d75e43deb"
+    },
+    {
+      "path": "src/x402-official-upfront-https-router.js",
+      "bytes": 18721,
+      "LF": 360,
+      "sha256": "0980e8a648eda8f0ee57353010f5ffda50bdd38ac95ee49e129201de136b9921",
+      "gitBlob": "910d9676ac19fc08eb03c6e005517d2d862702ef"
+    },
+    {
+      "path": "src/service-credit-bounded-https-ingress-owner.js",
+      "bytes": 143191,
+      "LF": 4092,
+      "sha256": "3ba52fb8f33e332a30297dc93e9e6162e4c1d957b3fda1bdf61090ac57d0971a",
+      "gitBlob": "be7cf8bce732388e51be4e3cb6ff711bac1659ab"
+    },
+    {
+      "path": "src/service-credit-bounded-node-https-server-factory.js",
+      "bytes": 26968,
+      "LF": 778,
+      "sha256": "aead901ba154c39ea25e5cdcc363ea91ed6749841f6e8945cd01debc52cae387",
+      "gitBlob": "5900a111df486329e0e0644b78b49048ed551ca7"
+    },
+    {
+      "path": "qualification/official-x402-native-https-pending-v2.behavior.draft.mjs",
+      "bytes": 23133,
+      "LF": 478,
+      "sha256": "9f88c6a62ecffe580d65bb2a105cfed55922e6ccaeddbfd00f085e65851de317",
+      "gitBlob": "aba8104f7d9d58215d94635e689391a29168a226"
+    },
+    {
+      "path": "qualification/official-x402-native-https-namespace-v2.preload.draft.mjs",
+      "bytes": 10938,
+      "LF": 231,
+      "sha256": "151dcae75c7a2a84abf7635d76930371f3d4732f9ed65ea3a6312aa6483f7af5",
+      "gitBlob": "ee9dca6f3da549178fda424ed1e681ce9d6ea655"
+    }
+  ],
+  "packageInputsReference": {
+    "path": "qualification/official-x402-native-https-pending.failed-local-result.json",
+    "bytes": 13347,
+    "LF": 393,
+    "sha256": "aae6e601c6d274a10eb23be40031bfc462e16c7e0d89e01ec53bcd2498be8212",
+    "gitBlob": "4fbf6b4a7933622317cf8957a88aafeb4463edcf",
+    "sourceCommit": "3f9f1ac51c3f55dc41660a0d5cf9493af5bac806",
+    "selectionPrefixes": [
+      "@x402/core/",
+      "zod/"
+    ],
+    "selectedRows": 22,
+    "sourceGraphField": "sourceGraph",
+    "priorRunResultNotReused": true
+  },
+  "bareBindings": [
+    {
+      "parent": "app/src/x402-official-selected-payment-client.js",
+      "specifier": "@x402/core/client",
+      "target": "packages/@x402/core/dist/esm/client/index.mjs"
+    },
+    {
+      "parent": "app/src/x402-official-selected-settlement-server.js",
+      "specifier": "@x402/core/server",
+      "target": "packages/@x402/core/dist/esm/server/index.mjs"
+    },
+    {
+      "parent": "packages/@x402/core/dist/esm/chunk-N4QXZG2Z.mjs",
+      "specifier": "zod",
+      "target": "packages/zod/index.js"
+    }
+  ],
+  "allowedBuiltins": [
+    "node:assert/strict",
+    "node:buffer",
+    "node:crypto",
+    "node:events",
+    "node:fs",
+    "node:http",
+    "node:https",
+    "node:module",
+    "node:net",
+    "node:path",
+    "node:test",
+    "node:url",
+    "node:util"
+  ],
+  "selectedNames": [
+    "native HTTPS original pending request resumes once and replays acknowledgement without another settle",
+    "native HTTPS pending budget stays exhausted without a new first settlement",
+    "native HTTPS changed context is refused while its original pending continuation survives"
+  ],
+  "declaredExpectedConnections": 15,
+  "declaredMaximumConnections": 16,
+  "privateProfilePlan": {
+    "bytes": 14956,
+    "sha256": "8f5eba4ac4e55e24c80c913406270f8eeecfa527fcb798775b63110ca74a716a",
+    "retained": false,
+    "launched": false
+  },
+  "NodeCommands": 0,
+  "OpenSSLCommands": 0,
+  "newStorageTasks": 0,
+  "nativeCasesExecuted": 0,
+  "ordinaryInstalledNamespaceQualified": false
+}
