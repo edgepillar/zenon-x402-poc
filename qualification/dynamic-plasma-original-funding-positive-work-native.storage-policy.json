@@ -1,0 +1,14 @@
+{
+  "min_free_bytes": 10737418240,
+  "safety_margin_bytes": 1073741824,
+  "task_quota_bytes": 4194304,
+  "scratch_quota_bytes": 16777216,
+  "store_quota_bytes": 16777216,
+  "metadata_quota_bytes": 8388608,
+  "max_tasks": 3,
+  "max_objects": 256,
+  "max_commands_per_task": 1,
+  "max_output_bytes": 65536,
+  "abandoned_after_seconds": 86400,
+  "unreferenced_after_seconds": 1209600
+}
