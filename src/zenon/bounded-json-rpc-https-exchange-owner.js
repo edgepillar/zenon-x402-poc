@@ -8,6 +8,7 @@ import { Buffer } from 'node:buffer';
 import { TextDecoder, types as utilTypes } from 'node:util';
 import { performance } from 'node:perf_hooks';
 import { setTimeout, clearTimeout } from 'node:timers';
+import { createBoundedJsonRpcReadAdmission } from './bounded-json-rpc-read-admission.js';
 // Internal, default-off, pre-pinned, method-neutral HTTPS exchange owner.
 // Closed static wrappers retain their public route/configuration grammars and
 // method adapters; this module alone owns native HTTPS/socket lifecycle. It
@@ -88,13 +89,15 @@ const initialCanonical = canonicalPromises();
 const INVALID = Symbol('rejected native read');
 const MAX_BODY = 1052672;
 const MAX_REQUEST_BYTES = 1024;
-const MAX_ATTEMPTS = 13;
+const CREATE_ADMISSION = createBoundedJsonRpcReadAdmission;
 const MAX_HEADER_BYTES = 16384;
 const MAX_HEADER_PAIRS = 64;
 const CONFIGURATION_FIELDS = freeze(['route', 'timeoutMs', 'closeGraceMs']);
 const ROUTE_FIELDS = freeze(['hostname', 'path', 'ipv4Address']);
 const DYNAMIC_PLASMA = 'dynamic_plasma';
 const ZENON_FUNDING = 'zenon_funding';
+const RETAINED_DP = 'dynamic_plasma_retained_candidate';
+const RETAINED_ACCOUNT = 'zenon_account_state_retained_candidate';
 
 // Shared, stateless tombstone only. It never retains an owner or generation.
 function discard() {}
@@ -189,6 +192,14 @@ function profile(value) {
       label: 'Zenon funding HTTPS read transport owner',
       prefix: 'zenon_funding_https_read_transport_owner_',
     }));
+  }
+  if (value === RETAINED_DP) {
+    return freeze(record({ label: 'Retained Dynamic Plasma HTTPS read transport owner',
+      prefix: 'dynamic_plasma_retained_https_read_transport_owner_' }));
+  }
+  if (value === RETAINED_ACCOUNT) {
+    return freeze(record({ label: 'Retained account-state HTTPS exchange owner',
+      prefix: 'zenon_retained_account_https_exchange_owner_' }));
   }
   invalid();
 }
@@ -392,9 +403,11 @@ export function createBoundedJsonRpcHttpsExchangeOwner(
   let closeGraceMs;
   let sourcePolicyDescriptor;
   let selected;
+  let admission;
   try {
     selected = profile(profileName);
     assertInvariant();
+    admission = CREATE_ADMISSION(profileName);
     const receivesSourcePolicy = arguments.length === 5;
     if ((arguments.length !== 4 && !receivesSourcePolicy) || publicArgumentCount !== 1
         || typeof snapshotConfiguration !== 'function' || isProxy(snapshotConfiguration)
@@ -416,7 +429,7 @@ export function createBoundedJsonRpcHttpsExchangeOwner(
     // Runtime-default PKI deliberately means that no exact CA trust-anchor set
     // is pinned here. TLS authenticates the configured hostname, not Zenon
     // chain identity, canonicality or finality.
-    sourcePolicyDescriptor = freeze(record({
+    sourcePolicyDescriptor = record({
       connection: freeze(record({
         keepAlive: false,
         mode: 'fresh-socket-per-request',
@@ -454,8 +467,16 @@ export function createBoundedJsonRpcHttpsExchangeOwner(
         trustMode: 'runtime-default-pki',
         zenonChainIdentityAuthenticated: false,
       })),
-      version: 1,
-    }));
+      version: admission.profile.policyVersion,
+    });
+    if (admission.profile.policyVersion === 2) {
+      put(sourcePolicyDescriptor, 'admission', freeze(record({
+        profile: admission.profile.name,
+        maximumRequests: admission.profile.maximumRequests,
+        purpose: 'ONE_CONTEXTV7_RETAINED_CANDIDATE_ATTEMPT',
+      })));
+    }
+    sourcePolicyDescriptor = freeze(sourcePolicyDescriptor);
     if (receivesSourcePolicy) {
       apply(receiveSourcePolicyDescriptor, undefined, [sourcePolicyDescriptor]);
       assertInvariant();
@@ -474,7 +495,6 @@ export function createBoundedJsonRpcHttpsExchangeOwner(
   let closeUncertain = false;
   let closeSettled = false;
   let active = null;
-  let attempts = 0;
   let lastTime = 0;
 
   function clock() {
@@ -755,11 +775,14 @@ export function createBoundedJsonRpcHttpsExchangeOwner(
   }
 
   const exchange = freeze(function exchange(body) {
-    if (terminal || closing || active !== null || attempts >= MAX_ATTEMPTS || !invariant()) { terminal = true; return unavailable; }
+    if (terminal || closing || active !== null || !admission.available() || !invariant()) { terminal = true; return unavailable; }
     try {
       if (arguments.length !== 1 || typeof body !== 'string' || body.length < 1 || body.length > MAX_REQUEST_BYTES) invalid();
       for (let index = 0; index < body.length; index += 1) if (codeAt(body, index) < 32 || codeAt(body, index) > 126) invalid();
     } catch { terminal = true; return unavailable; }
+    // Consume the private source-selected budget before native capability
+    // creation. Only the two explicit retained profiles differ from legacy13.
+    if (!admission.claim()) { terminal = true; return unavailable; }
     const outward = pending();
     const gen = record({
       outward, request: null, response: null, socket: null, agent: null,
@@ -772,7 +795,6 @@ export function createBoundedJsonRpcHttpsExchangeOwner(
       retired: false, cleanupStarted: false, graceExpired: false,
     });
     active = gen;
-    attempts += 1;
     try {
       gen.deadline = clock() + sourcePolicyDescriptor.timing.timeoutMs;
       assertInvariant();
