@@ -1,0 +1,132 @@
+{
+  "kind": "FUNDING_POST_NATIVE_RESPONSE_CUSTODY_COMPONENT_ACTUAL_LOCAL_RESULT",
+  "version": 1,
+  "status": "PASS_SELECTED_COMPONENT_ONLY_NOT_NATIVE_HTTPS",
+  "execution": {
+    "componentRuntimeNodeCommands": 1,
+    "componentNodeActualExit": 0,
+    "sourceSyntaxOnlyCommands": 7,
+    "sourceSyntaxOnlyCommandsImportModules": false,
+    "runtime": {
+      "node": "24.19.0",
+      "platform": "darwin",
+      "arch": "arm64",
+      "sha256": "dbedff294bab84a0a86c04e15fbcbeb1c97ca10bef1b32b0634cd24b36f62100"
+    },
+    "NodePermissionModel": true,
+    "OSOrNetworkSandbox": false,
+    "allowedFileReads": [
+      "package.json",
+      "src/service-credit-funding-post-native-response.js",
+      "qualification/service-credit-funding-post-native-response.behavior.draft.mjs"
+    ],
+    "testDiscovery": false,
+    "testChildren": false,
+    "dependencyInstall": false,
+    "newScratch": 0,
+    "newTasks": 0,
+    "newRoots": 0,
+    "sourceBytesRecheckedAfterComponent": true,
+    "initialReadOnlyPreflight": "REFUSED: raw stat equality included access time; before Node entry.",
+    "correctedReadOnlyPreflight": "PASS: device/inode/owner/mode/link/size/mtime/ctime identity; access time excluded."
+  },
+  "counts": {
+    "tests": 20,
+    "suites": 0,
+    "pass": 20,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "testNames": [
+    "funding response waits for end and both actual-close observations",
+    "funding response accepts socket close before request close only after end",
+    "funding response detaches raw headers without inventing acknowledgement",
+    "funding response copies body chunks before source mutation",
+    "funding response permits exactly sixty-four detached body bytes",
+    "funding response handles an exact zero-length response without implying success",
+    "funding response early take permanently vetoes later completion",
+    "funding response refuses headers before TLS without later promotion",
+    "funding response duplicate TLS or header observations are terminal",
+    "funding response request close before end is not a completed response",
+    "funding response errored or premature socket close permanently holds",
+    "funding response short body or duplicate end cannot be accepted",
+    "funding response rejects overflow before retaining unbounded body data",
+    "funding response requires a canonical bounded Content-Length",
+    "funding response rejects encoded trailer and duplicate header ambiguity",
+    "funding response independently bounds header pairs and aggregate bytes",
+    "funding response rejects proxies accessors and sparse arrays without hooks",
+    "funding response rejects shared substituted and hooked body buffers",
+    "funding response late errors revoke current state but cannot recall a taken copy",
+    "funding response wrong arity and second take never renew custody"
+  ],
+  "componentSourcePins": [
+    {
+      "path": "src/service-credit-funding-post-native-response.js",
+      "bytes": 7903,
+      "LF": 157,
+      "sha256": "b5084844ecf029445bc55efd0b9d0ef61b8c2e65424ea74a6dfb30941f9f676c",
+      "gitBlob": "0bae9c30c7a11624612418bb6a1e7643effb0775"
+    },
+    {
+      "path": "qualification/service-credit-funding-post-native-response.behavior.draft.mjs",
+      "bytes": 9665,
+      "LF": 149,
+      "sha256": "da12df3b79df061a26158ba98740a42a216ddeda22faf1dd6308e9bc857e5139",
+      "gitBlob": "f6d1dff20840973baaa9a6cbb6a8a80a580d9db8"
+    },
+    {
+      "path": "package.json",
+      "bytes": 2677,
+      "LF": 40,
+      "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+      "gitBlob": "45752ffde39d29666094f7f1c755060d75e43deb"
+    }
+  ],
+  "capture": {
+    "stdoutBytes": 4537,
+    "stdoutSha256": "5c267154070ba2b269f02d202328d2adecd301410a642494fcd4d96d5ad1011d",
+    "stderrBytes": 0,
+    "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "outputComplete": true,
+    "stdout": "# funding-post-response-custody-component {\"expectedCases\":20,\"nativeTransportImported\":false,\"sockets\":0,\"productTimers\":0,\"SDK\":false,\"SQLite\":false,\"keys\":0,\"signatures\":0,\"nonceSearch\":false,\"nativeEventsAuthenticated\":false,\"realFunding\":false,\"fullP1\":false}\nTAP version 13\n# Subtest: funding response waits for end and both actual-close observations\nok 1 - funding response waits for end and both actual-close observations\n  ---\n  duration_ms: 0.868209\n  type: 'test'\n  ...\n# Subtest: funding response accepts socket close before request close only after end\nok 2 - funding response accepts socket close before request close only after end\n  ---\n  duration_ms: 0.156292\n  type: 'test'\n  ...\n# Subtest: funding response detaches raw headers without inventing acknowledgement\nok 3 - funding response detaches raw headers without inventing acknowledgement\n  ---\n  duration_ms: 0.700625\n  type: 'test'\n  ...\n# Subtest: funding response copies body chunks before source mutation\nok 4 - funding response copies body chunks before source mutation\n  ---\n  duration_ms: 0.130375\n  type: 'test'\n  ...\n# Subtest: funding response permits exactly sixty-four detached body bytes\nok 5 - funding response permits exactly sixty-four detached body bytes\n  ---\n  duration_ms: 0.166334\n  type: 'test'\n  ...\n# Subtest: funding response handles an exact zero-length response without implying success\nok 6 - funding response handles an exact zero-length response without implying success\n  ---\n  duration_ms: 0.149458\n  type: 'test'\n  ...\n# Subtest: funding response early take permanently vetoes later completion\nok 7 - funding response early take permanently vetoes later completion\n  ---\n  duration_ms: 0.292542\n  type: 'test'\n  ...\n# Subtest: funding response refuses headers before TLS without later promotion\nok 8 - funding response refuses headers before TLS without later promotion\n  ---\n  duration_ms: 0.095042\n  type: 'test'\n  ...\n# Subtest: funding response duplicate TLS or header observations are terminal\nok 9 - funding response duplicate TLS or header observations are terminal\n  ---\n  duration_ms: 0.179792\n  type: 'test'\n  ...\n# Subtest: funding response request close before end is not a completed response\nok 10 - funding response request close before end is not a completed response\n  ---\n  duration_ms: 0.233458\n  type: 'test'\n  ...\n# Subtest: funding response errored or premature socket close permanently holds\nok 11 - funding response errored or premature socket close permanently holds\n  ---\n  duration_ms: 0.114417\n  type: 'test'\n  ...\n# Subtest: funding response short body or duplicate end cannot be accepted\nok 12 - funding response short body or duplicate end cannot be accepted\n  ---\n  duration_ms: 0.097292\n  type: 'test'\n  ...\n# Subtest: funding response rejects overflow before retaining unbounded body data\nok 13 - funding response rejects overflow before retaining unbounded body data\n  ---\n  duration_ms: 0.07325\n  type: 'test'\n  ...\n# Subtest: funding response requires a canonical bounded Content-Length\nok 14 - funding response requires a canonical bounded Content-Length\n  ---\n  duration_ms: 0.20925\n  type: 'test'\n  ...\n# Subtest: funding response rejects encoded trailer and duplicate header ambiguity\nok 15 - funding response rejects encoded trailer and duplicate header ambiguity\n  ---\n  duration_ms: 0.147625\n  type: 'test'\n  ...\n# Subtest: funding response independently bounds header pairs and aggregate bytes\nok 16 - funding response independently bounds header pairs and aggregate bytes\n  ---\n  duration_ms: 0.190583\n  type: 'test'\n  ...\n# Subtest: funding response rejects proxies accessors and sparse arrays without hooks\nok 17 - funding response rejects proxies accessors and sparse arrays without hooks\n  ---\n  duration_ms: 0.128875\n  type: 'test'\n  ...\n# Subtest: funding response rejects shared substituted and hooked body buffers\nok 18 - funding response rejects shared substituted and hooked body buffers\n  ---\n  duration_ms: 0.127125\n  type: 'test'\n  ...\n# Subtest: funding response late errors revoke current state but cannot recall a taken copy\nok 19 - funding response late errors revoke current state but cannot recall a taken copy\n  ---\n  duration_ms: 0.073709\n  type: 'test'\n  ...\n# Subtest: funding response wrong arity and second take never renew custody\nok 20 - funding response wrong arity and second take never renew custody\n  ---\n  duration_ms: 0.145083\n  type: 'test'\n  ...\n1..20\n# tests 20\n# suites 0\n# pass 20\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 12.953333\n",
+    "stderr": "",
+    "independentEvaluation": true,
+    "exactTestNamesAndTapCounts": true,
+    "extraComponentRuns": 0
+  },
+  "behavior": {
+    "maxResponseBodyBytes": 64,
+    "maxResponseHeaderPairs": 64,
+    "maxResponseHeaderBytes": 16384,
+    "partialResponseNeverTaken": true,
+    "requiresTlsObservation": true,
+    "requiresExactContentLength": true,
+    "requiresEndAndRequestAndCleanSocketClose": true,
+    "oneShotResponseTake": true,
+    "unknownPermanentlyLatched": true,
+    "lateErrorDoesNotRecallTransferredCopy": true,
+    "nativeEventsAuthenticated": false,
+    "eventsInTest": "DECLARED_IN_PROCESS",
+    "timerOwnerImported": false
+  },
+  "interpretation": {
+    "newProductionComponent": "The actual native funding adapter imports this same byte-custody implementation.",
+    "newNativeTransport": "SOURCE_ONLY_NOT_IMPORTED_OR_EXECUTED",
+    "newNativeDpComposition": "SOURCE_ONLY_NOT_IMPORTED_OR_EXECUTED",
+    "nativeHTTPS": false,
+    "fullP1": false,
+    "fullP2": false,
+    "SDK": false,
+    "SQLite": false,
+    "nonceSearch": false,
+    "keys": 0,
+    "signatures": 0,
+    "realFunding": false,
+    "providerAuthority": false,
+    "livePilot": false,
+    "production": false,
+    "currentHeadCI": "NOT_RUN_NOT_GREEN"
+  }
+}
