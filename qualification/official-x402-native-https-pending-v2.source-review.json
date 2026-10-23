@@ -1,0 +1,160 @@
+{
+  "kind": "CURRENT_NATIVE_HTTPS_V2_SOURCE_AND_READ_ONLY_NAMESPACE_PLAN",
+  "version": 2,
+  "status": "SOURCE_PREPARED_NO_JS_PARSE_OR_NATIVE_EXECUTION",
+  "sourceParent": "235d3fc2c424d8701de23c3f30a863d69c19f217",
+  "currentMain": "ba5a33c1de34a8d3ad869958f9aac1c625098ab7",
+  "historicalEntry": {
+    "path": "qualification/official-x402-native-https-pending.behavior.draft.mjs",
+    "bytes": 23051,
+    "LF": 477,
+    "sha256": "192d641871e64fc953c379ebc899e61c086918f90b26b62282d24bde6ea98ece",
+    "gitBlob": "4f162aef202a2f0da6754dc77a91d23abaedf988"
+  },
+  "historicalFailureReference": {
+    "path": "qualification/official-x402-native-https-pending.failed-local-result.json",
+    "bytes": 13347,
+    "LF": 393,
+    "sha256": "aae6e601c6d274a10eb23be40031bfc462e16c7e0d89e01ec53bcd2498be8212",
+    "gitBlob": "4fbf6b4a7933622317cf8957a88aafeb4463edcf",
+    "sourceCommit": "3f9f1ac51c3f55dc41660a0d5cf9493af5bac806"
+  },
+  "newEntry": {
+    "path": "qualification/official-x402-native-https-pending-v2.behavior.draft.mjs",
+    "bytes": 23133,
+    "LF": 478,
+    "sha256": "9f88c6a62ecffe580d65bb2a105cfed55922e6ccaeddbfd00f085e65851de317",
+    "gitBlob": "aba8104f7d9d58215d94635e689391a29168a226"
+  },
+  "newPreload": {
+    "path": "qualification/official-x402-native-https-namespace-v2.preload.draft.mjs",
+    "bytes": 10938,
+    "LF": 231,
+    "sha256": "151dcae75c7a2a84abf7635d76930371f3d4732f9ed65ea3a6312aa6483f7af5",
+    "gitBlob": "ee9dca6f3da549178fda424ed1e681ce9d6ea655"
+  },
+  "sourceDriftFromHistoricalEntry": [
+    "package.json",
+    "src/x402-official-upfront-https-router.js"
+  ],
+  "unchangedPackageRows": 22,
+  "existingApplicationRowsMatchedToPublishedParent": 12,
+  "unchangedThreeCaseBodies": true,
+  "selectedNames": [
+    "native HTTPS original pending request resumes once and replays acknowledgement without another settle",
+    "native HTTPS pending budget stays exhausted without a new first settlement",
+    "native HTTPS changed context is refused while its original pending continuation survives"
+  ],
+  "sourceInputs": {
+    "entryGuardFiles": 35,
+    "namespaceFiles": 36,
+    "applicationFilesIncludingPreload": 14,
+    "packageFiles": 22,
+    "bytes": 701939,
+    "expandedNamespaceRowsSha256": "7f96ec3a80d5f507dd30c1171613f73974790a3255e28438e75cdcc05fa6829b"
+  },
+  "namespace": {
+    "kind": "OFFICIAL_X402_NATIVE_HTTPS_THREE_CASE_PINNED_NODE24_V2",
+    "profileVersion": 2,
+    "readOnlyPrivateProfileBytes": 14956,
+    "readOnlyPrivateProfileSha256": "8f5eba4ac4e55e24c80c913406270f8eeecfa527fcb798775b63110ca74a716a",
+    "privateProfileRetained": false,
+    "privateProfileLaunched": false,
+    "all36ContentsAndNineIdentityFieldsCheckedBeforeSdkOrTls": true,
+    "sameThreadSynchronousResolveOnly": true,
+    "fixedBareEdges": 3,
+    "loadHook": false,
+    "sourceOrFormatReplacement": false,
+    "aliases": false,
+    "workers": 0,
+    "children": 0,
+    "install": 0,
+    "sourceRowsSealRequiresExternalManifestComparison": true,
+    "readDirectoryGrantsNotAnOsSandbox": true,
+    "canonicalUrlFormSourceInformedForRestrictedPosixAlphabet": true,
+    "nativeUriOrResolverQualification": false,
+    "allowedBuiltins": [
+      "node:assert/strict",
+      "node:buffer",
+      "node:crypto",
+      "node:events",
+      "node:fs",
+      "node:http",
+      "node:https",
+      "node:module",
+      "node:net",
+      "node:path",
+      "node:test",
+      "node:url",
+      "node:util"
+    ]
+  },
+  "declaredNativeScope": {
+    "cases": 3,
+    "expectedConnections": 15,
+    "maximumConnections": 16,
+    "bindHost": "127.0.0.1",
+    "bindPort": 44447,
+    "tls": "TLSv1.3",
+    "alpn": "http/1.1",
+    "tlsFixtureKeyPairs": 1,
+    "proposedOpenSslCommands": 1,
+    "proposedNodeCommands": 1,
+    "proposedNodeChildren": 0,
+    "proposedNewManagedTasks": 1,
+    "quotaBytes": 2097152,
+    "keyAndCertificateCapsEach": 16384,
+    "existingPrivateRootOnly": true,
+    "rootInitialization": false,
+    "policyIncrease": false,
+    "externalNetwork": 0,
+    "installation": 0,
+    "sqlite": 0,
+    "ZenonSDK": 0,
+    "walletCapabilityPaymentProviderSigning": 0,
+    "nonceSearch": 0,
+    "realPrepare": 0,
+    "payments": 0
+  },
+  "observedThisTurn": {
+    "PythonReadOnlyProfilePlans": 1,
+    "NodeCommands": 0,
+    "OpenSSLCommands": 0,
+    "nativeConnections": 0,
+    "keysGenerated": 0,
+    "SDK": 0,
+    "SQL": 0,
+    "newStorageTasks": 0,
+    "profileKeptInMemoryOnly": true
+  },
+  "executionAuthority": {
+    "freshScopedHumanAnswerRequired": true,
+    "questionDisplayed": true,
+    "humanAnswerObserved": false,
+    "displayedQuestionOrSelectionTagIsNotApproval": true,
+    "priorConsumedHttpsAttemptNotReused": true,
+    "separateDpNineCaseScopeUnchanged": true
+  },
+  "remainingPrelaunchGates": [
+    "Direct human authority for this exact new native scope.",
+    "Fresh manager/runtime/OpenSSL/config, mounted-volume UUID, ownership, immutable closed-input references and free-floor/reservation checks.",
+    "Conservative full-allocation admission under the unchanged quota; do not initialize a new root or raise policy to bypass refusal.",
+    "Review and pin the actual OpenSSL/config and managed launcher; register every new TLS output before launch.",
+    "Create only the actual owned-task private profile with freshly captured identities; compare all source rows to the public manifest and pass its exact hash.",
+    "One exact native execution after TLS preparation; preserve any failure, exit/EOF uncertainty and raw captures rather than rerunning for metadata."
+  ],
+  "evidenceLimits": {
+    "actualOfficialSdkExecuted": false,
+    "nativeHttpsQualified": false,
+    "applicationFactoryExecuted": false,
+    "serviceSessionDeclaredOnly": true,
+    "V6ApplicationIntegration": false,
+    "fullP0": false,
+    "fullP1": false,
+    "fullP2": false,
+    "hostedCI": "NOT_RUN_NOT_GREEN",
+    "ordinaryInstalledNamespace": "NOT_QUALIFIED",
+    "economicPilot": "NO_GO",
+    "mainEligible": false
+  }
+}
