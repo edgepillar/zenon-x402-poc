@@ -1,9 +1,13 @@
 import { types as utilTypes } from 'node:util';
 import { createBoundedNonceDynamicPlasmaMaterialExchange } from './dynamic-plasma-bounded-material-exchange.js';
-import { createObservedBalanceDeferredMaterialDynamicPlasmaTransactionPlanner } from './dynamic-plasma-observed-balance-deferred-material-planner.js';
+import {
+  createObservedBalanceDeferredMaterialDynamicPlasmaTransactionPlanner,
+  createObservedBalanceDeferredMaterialCheckpointPreparer,
+} from './dynamic-plasma-observed-balance-deferred-material-planner.js';
 
 const CREATE_MATERIAL = createBoundedNonceDynamicPlasmaMaterialExchange;
 const CREATE_PLANNER = createObservedBalanceDeferredMaterialDynamicPlasmaTransactionPlanner;
+const CREATE_CHECKPOINT_PREPARER = createObservedBalanceDeferredMaterialCheckpointPreparer;
 const freeze = Object.freeze;
 const create = Object.create;
 const define = Object.defineProperty;
@@ -63,6 +67,35 @@ export function createBoundedObservedBalanceDynamicPlasmaTransactionPlanner(opti
     const top = configuration(options);
     const materialExchange = CREATE_MATERIAL(top.materialOptions);
     return CREATE_PLANNER({ readOptions: top.readOptions, materialExchange });
+  } catch { reject(); }
+}
+
+/**
+ * Explicit opt-in bounded-material binding for the existing version4 original
+ * checkpoint preparation sequence. Same exact {readOptions, materialOptions}
+ * configuration and one owned producer/budget as the version3 block planner;
+ * no supplied material callback, caller factory or replacement quote/block.
+ * Return the existing checkpoint preparer DIRECTLY, preserving its private
+ * public-Promise identity, one-admission/busy/used fences and four fresh read
+ * cycles. Its only operation is prepareUnsignedCheckpoint, not prepareUnsigned;
+ * the packet must never be mistaken for the AccountBlock planner SPI.
+ *
+ * Retain the actual first quote, the same produced unsigned block and its
+ * canonical checkpoint only after final account/balance/price validation.
+ * Zero difficulty uses the producer's WORK_NOT_REQUIRED branch, with zero
+ * candidate evaluations. Positive work remains subject to the unchanged
+ * explicit producer budget and needs its own exact-source qualification; a
+ * fused-only result does not qualify that branch. No budget/default/authority
+ * is added, and a checkpoint grants no signing, retry or replacement right.
+ * Not persistent custody, signer-state proof, authenticated chain state,
+ * native-owner integration or live PREPARE/payment/pilot activation.
+ */
+export function createBoundedObservedBalanceDynamicPlasmaCheckpointPreparer(options) {
+  try {
+    if (arguments.length !== 1) reject();
+    const top = configuration(options);
+    const materialExchange = CREATE_MATERIAL(top.materialOptions);
+    return CREATE_CHECKPOINT_PREPARER({ readOptions: top.readOptions, materialExchange });
   } catch { reject(); }
 }
 
