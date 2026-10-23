@@ -4,12 +4,13 @@ import { request as nativeRequest } from 'node:https';
 import { OutgoingMessage } from 'node:http';
 import { isIP, Socket } from 'node:net';
 import { types as utilTypes } from 'node:util';
+import { createNativeHttpsClientCloseOwner } from './service-credit-native-client-close-owner.js';
 
 const REQUEST = nativeRequest, ON = EventEmitter.prototype.on, ONCE = EventEmitter.prototype.once;
 const DESTROY_REQUEST = OutgoingMessage.prototype.destroy, DESTROY_SOCKET = Socket.prototype.destroy;
 const FREEZE = Object.freeze, DESC = Object.getOwnPropertyDescriptor, PROTO = Object.getPrototypeOf;
 const KEYS = Reflect.ownKeys, OWN = Object.hasOwn, APPLY = Reflect.apply, IS_PROXY = utilTypes.isProxy;
-const NativePromise = Promise, SCHEDULE = setTimeout, CANCEL = clearTimeout;
+const SCHEDULE = setTimeout, CANCEL = clearTimeout, FILL = Buffer.prototype.fill;
 const BYTE_LENGTH = Buffer.byteLength, IS_BUFFER = Buffer.isBuffer, ALLOC = Buffer.alloc;
 const TYPED_ARRAY = PROTO(Uint8Array.prototype);
 const ARRAY_BUFFER = DESC(TYPED_ARRAY, 'buffer').get;
@@ -25,6 +26,9 @@ const ARRAY_BUFFER = DESC(TYPED_ARRAY, 'buffer').get;
  * and one new native request/socket per call. Source/request limits are
  * cooperative bounds, not an OS network or hostile-code sandbox.
  * This owner observes native handles; it does not claim service delivery.
+ * A grace expiry keeps CLOSE_UNKNOWN even if later native close events drain
+ * all tracked handles. Local CA/timer release may still finish once afterward;
+ * that late cleanup never repairs the uncertain Promise or authorizes retry.
  */
 export function createServiceCreditNativeHttpsClientTransport(configuration) {
   let c, origin, authority, hostname, ca;
@@ -51,27 +55,33 @@ export function createServiceCreditNativeHttpsClientTransport(configuration) {
   const ORIGIN = origin, AUTHORITY = authority, HOSTNAME = hostname;
   configuration = null; c = null; origin = null; authority = null; hostname = null;
   const requests = new Map(), sockets = new Set(), timers = new Set();
-  let phase = 'OPEN', unknown = false, starts = 0, authenticated = 0;
-  let closing = null, resolveClose, rejectClose, closeTimer = null;
+  let starts = 0, authenticated = 0, closing = null, closeTimer = null;
+  const closeOwner = createNativeHttpsClientCloseOwner({
+    readObservedCounts: FREEZE(() => FREEZE({ requests: requests.size, sockets: sockets.size,
+      // Only the close-grace token is excluded; the releaser cancels it below.
+      timers: timers.size - (closeTimer !== null && timers.has(closeTimer) ? 1 : 0) })),
+    releaseLocalMaterial: FREEZE(() => {
+      cancel(closeTimer); closeTimer = null;
+      if (ca !== null) { APPLY(FILL, ca, [0]); ca = null; }
+    }),
+  });
 
   function timer(callback, milliseconds) {
     let token;
-    token = SCHEDULE(() => { timers.delete(token); callback(); }, milliseconds);
+    token = SCHEDULE(() => {
+      timers.delete(token);
+      try { callback(); } finally { settleClose(); }
+    }, milliseconds);
     timers.add(token); return token;
   }
   function cancel(token) {
     if (token !== null && timers.delete(token)) CANCEL(token);
   }
-  function markUnknown() { unknown = true; }
-  function settleClose() {
-    if (phase !== 'CLOSING' || requests.size !== 0 || sockets.size !== 0) return;
-    cancel(closeTimer); closeTimer = null;
-    if (timers.size !== 0) { unknown = true; return; }
-    ca.fill(0); ca = null;
-    phase = unknown ? 'CLOSE_UNKNOWN' : 'CLOSED';
-    if (unknown) rejectClose(error('close_unknown'));
-    else resolveClose(FREEZE({ phase: 'CLOSED', trackedRequests: 0, trackedSockets: 0, ownedTimers: 0,
-      serviceDelivery: 'NOT_ESTABLISHED' }));
+  function markUnknown() { closeOwner.markUnknown(); }
+  function settleClose() { closeOwner.observe(); }
+  function admissionOpen() {
+    const state = closeOwner.snapshot();
+    return state.phase === 'OPEN' && !state.unknown;
   }
   function destroy(entry, code) {
     markUnknown();
@@ -80,7 +90,7 @@ export function createServiceCreditNativeHttpsClientTransport(configuration) {
   const requestImpl = FREEZE(function requestImpl(resourceUrl, options, onResponse) {
     let target, method, headers;
     try {
-      if (arguments.length !== 3 || phase !== 'OPEN' || unknown || starts >= LIMIT
+      if (arguments.length !== 3 || !admissionOpen() || starts >= LIMIT
           || requests.size >= CONCURRENT || typeof onResponse !== 'function' || IS_PROXY(onResponse))
         fail('unavailable');
       if (resourceUrl !== ORIGIN + '/paid' && resourceUrl !== ORIGIN + '/service-credit/v1/execute')
@@ -116,7 +126,7 @@ export function createServiceCreditNativeHttpsClientTransport(configuration) {
         minVersion: 'TLSv1.3', maxVersion: 'TLSv1.3', ALPNProtocols: ['http/1.1'],
         maxHeaderSize: 16384, insecureHTTPParser: false }, response => {
         APPLY(ON, response, ['error', markUnknown]);
-        if (phase !== 'OPEN' || !entry.peer) {
+        if (!admissionOpen() || !entry.peer) {
           destroy(entry, 'response_unavailable'); response.destroy(); return;
         }
         try { onResponse(response); } catch { destroy(entry, 'response_callback_failed'); response.destroy(); }
@@ -144,7 +154,7 @@ export function createServiceCreditNativeHttpsClientTransport(configuration) {
         }]);
         APPLY(ONCE, socket, ['secureConnect', () => {
           cancel(entry.handshake); entry.handshake = null;
-          if (phase !== 'OPEN' || socket.authorized !== true || socket.getProtocol() !== 'TLSv1.3'
+          if (!admissionOpen() || socket.authorized !== true || socket.getProtocol() !== 'TLSv1.3'
               || socket.alpnProtocol !== 'http/1.1') { destroy(entry, 'tls_binding_rejected'); return; }
           entry.peer = true; authenticated++;
         }]);
@@ -156,13 +166,12 @@ export function createServiceCreditNativeHttpsClientTransport(configuration) {
   const close = FREEZE(function close() {
     if (arguments.length !== 0) fail('input_rejected');
     if (closing !== null) return closing;
-    closing = new NativePromise((resolve, reject) => { resolveClose = resolve; rejectClose = reject; });
-    Object.defineProperty(closing, 'constructor', { value: NativePromise });
-    phase = 'CLOSING';
-    closeTimer = timer(() => {
-      closeTimer = null; unknown = true; phase = 'CLOSE_UNKNOWN';
-      rejectClose(error('close_unknown')); // A late close never repairs this verdict.
-    }, GRACE);
+    closing = closeOwner.beginClose(); // Revoke admission before native destroy callbacks.
+    try {
+      closeTimer = timer(() => {
+        closeTimer = null; closeOwner.deadlineExpired();
+      }, GRACE);
+    } catch { markUnknown(); closeOwner.deadlineExpired(); }
     for (const entry of requests.values()) destroy(entry, 'close_requested');
     for (const socket of sockets) { try { APPLY(DESTROY_SOCKET, socket, []); } catch { markUnknown(); } }
     settleClose();
@@ -170,8 +179,11 @@ export function createServiceCreditNativeHttpsClientTransport(configuration) {
   });
   const snapshot = FREEZE(function snapshot() {
     if (arguments.length !== 0) fail('input_rejected');
-    return FREEZE({ phase, unknown, requestStarts: starts, authenticatedTlsHandshakes: authenticated,
+    const closeState = closeOwner.snapshot();
+    return FREEZE({ phase: closeState.phase, unknown: closeState.unknown,
+      requestStarts: starts, authenticatedTlsHandshakes: authenticated,
       trackedRequests: requests.size, trackedSockets: sockets.size, ownedTimers: timers.size,
+      close: closeState,
       defaultEnabled: false, nativeImplementation: true, serviceDelivery: 'NOT_ESTABLISHED' });
   });
   return FREEZE({ requestImpl, close, snapshot });
