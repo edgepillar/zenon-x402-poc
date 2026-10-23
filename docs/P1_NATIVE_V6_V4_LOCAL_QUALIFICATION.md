@@ -90,12 +90,19 @@ The root now has four closed tasks at its four-task limit. Its existing free
 floor, quotas, metadata and ownership were not rebound, and no new root,
 historical cleanup or permission reuse occurred.
 
-Main receives this report and its exact local result, plus a historical V3
-report cross-reference. The tested graph is not the current main runtime graph:
+At the initial V4 publication, main received this report and its exact local
+result, plus a historical V3 report cross-reference. The tested graph then
+differed from the main runtime graph:
 four native application/client/router modules are absent there, and the
 bounded ingress bytes differ. Native code stays together on the working
 branch rather than publishing an incomplete mixture or calling the old main
 ingress qualified by this experiment.
+
+The later [scoped application main transfer](P1_SCOPED_APPLICATION_MAIN_TRANSFER.md)
+addresses that source difference as one cohesive runtime batch, with separate
+ingress component regressions and exact source-byte correspondence. It does not
+rerun or relabel this native experiment, qualify the new host, or change the
+remaining gates below.
 
 The separate native-host current-handoff invalidation change was **not imported,
 parsed or executed** in V4. Its new close-Promise/current-snapshot distinction
