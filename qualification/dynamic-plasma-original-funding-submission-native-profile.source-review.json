@@ -1,0 +1,242 @@
+{
+  "kind": "DP_ORIGINAL_FUNDING_SUBMISSION_NATIVE_PROFILE_SOURCE_REVIEW_NOT_EXECUTED",
+  "version": 1,
+  "sourceBase": "ba5a33c1de34a8d3ad869958f9aac1c625098ab7",
+  "applicationSourceParent": "f00b70cc41cda70d100da8304af39c457f288534",
+  "preload": {
+    "path": "qualification/dynamic-plasma-original-funding-submission-namespace.preload.draft.mjs",
+    "bytes": 9867,
+    "sha256": "857b3b93be9f38024159ab93c90d58664b832f25723e23a12625f85ee4862486",
+    "gitBlob": "d81e488490b7b775beb722d4f1b365b8c72c0f1f"
+  },
+  "inputsManifest": "qualification/dynamic-plasma-original-funding-submission-native-profile.inputs.json",
+  "entry": {
+    "path": "qualification/dynamic-plasma-original-funding-submission-v1.behavior.draft.mjs",
+    "sha256": "a2b483e2d0ddb4ceb52844084d319ce97ad4d9a820f3b014fb7e5a59aef81e88",
+    "authoredCases": 8,
+    "executedCases": 0
+  },
+  "helper": {
+    "path": "qualification/dynamic-plasma-original-funding-submission.fixture.draft.mjs",
+    "sha256": "e1aa5acb7c7753bf77d3a6dc582bcf874067992cf8ac9b592edcc8438ef7c3ac"
+  },
+  "currentApplicationBinding": {
+    "existingApplicationInputs": 50,
+    "newPreloadInputs": 1,
+    "differentRefInputs": 0,
+    "allExistingInputsMatchExactApplicationSourceParent": true,
+    "wholeCleanCheckoutQualified": false
+  },
+  "graph": {
+    "files": 433,
+    "applicationFiles": 51,
+    "packageFiles": 382,
+    "bytes": 2609148,
+    "sourceRowsSha256": "e1c415383c2ea2e02fb3cb8bb57b5206ce72807ce3fbeba9f333b4eb14ab8221",
+    "literalEdges": 1001,
+    "activeDeferredLiteralImports": 5,
+    "commentTypeReferences": 44,
+    "nonExecutableEmbeddedBrowserTemplateImports": 1,
+    "unselectedComputedSdkPowSites": 3,
+    "optionalNativeRequiresExcludedByRequiredWsFlags": 2,
+    "completeSdkIndexRetained": true,
+    "sourceTransforms": 0,
+    "fakeSdk": false,
+    "fakeStore": false,
+    "fakePreflight": false
+  },
+  "packageVersions": [
+    {
+      "path": "packages/znn-typescript-sdk/package.json",
+      "name": "znn-typescript-sdk",
+      "version": "1.0.5"
+    },
+    {
+      "path": "packages/@noble/ed25519/package.json",
+      "name": "@noble/ed25519",
+      "version": "2.3.0"
+    },
+    {
+      "path": "packages/@noble/hashes/package.json",
+      "name": "@noble/hashes",
+      "version": "1.8.0"
+    }
+  ],
+  "packageProvenance": "EXISTING_LOCAL_PINNED_BYTES_NOT_AUTHENTICATED_PACKAGE_REGISTRY_PROVENANCE",
+  "resolution": {
+    "mechanism": "NODE_24_19_SYNCHRONOUS_REGISTER_HOOKS_RESOLVE_ONLY",
+    "sameProcess": true,
+    "bareBindings": [
+      {
+        "ordinaryRepoNodeModulesAbsent": true,
+        "parent": "app/qualification/dynamic-plasma-original-funding-submission.fixture.draft.mjs",
+        "selected": "packages/@noble/ed25519/index.js",
+        "specifier": "@noble/ed25519"
+      },
+      {
+        "ordinaryRepoNodeModulesAbsent": true,
+        "parent": "app/qualification/dynamic-plasma-original-funding-submission.fixture.draft.mjs",
+        "selected": "packages/@noble/hashes/esm/sha2.js",
+        "specifier": "@noble/hashes/sha2"
+      },
+      {
+        "ordinaryRepoNodeModulesAbsent": true,
+        "parent": "app/src/zenon-payment.js",
+        "selected": "packages/znn-typescript-sdk/dist/index.js",
+        "specifier": "znn-typescript-sdk"
+      },
+      {
+        "ordinaryRepoNodeModulesAbsent": true,
+        "parent": "app/src/zenon-payment.js",
+        "selected": "packages/@noble/ed25519/index.js",
+        "specifier": "@noble/ed25519"
+      },
+      {
+        "ordinaryRepoNodeModulesAbsent": true,
+        "parent": "app/src/zenon-payment.js",
+        "selected": "packages/@noble/hashes/esm/sha2.js",
+        "specifier": "@noble/hashes/sha2"
+      }
+    ],
+    "otherResolution": "UNCHANGED_NATIVE_NEXT_RESOLVE_THEN_DECLARED_INPUT_CHECK",
+    "loadHook": false,
+    "sourceReplacement": false,
+    "formatReplacement": false,
+    "asyncLoader": false,
+    "childOrWorker": false,
+    "ordinaryInstalledNamespaceQualified": false,
+    "nativeResolutionQualified": false
+  },
+  "prelaunchGuards": {
+    "exactEntryAndHelperSha256": true,
+    "sourceIdentityFields": 9,
+    "allSourceBytesCheckedBeforeFixtureImport": true,
+    "resolutionIdentityRecheck": true,
+    "profileSha256Required": true,
+    "profileSelectionIsNotHumanAuthorization": true,
+    "requiredEnv": [
+      "X402_DP_SUBMISSION_PROFILE_PATH",
+      "X402_DP_SUBMISSION_PROFILE_SHA256",
+      "X402_DP_SUBMISSION_SCOPE_SELECTION=eight-synthetic-cases-only",
+      "WS_NO_BUFFER_UTIL=1",
+      "WS_NO_UTF_8_VALIDATE=1",
+      "NODE_DISABLE_COMPILE_CACHE=1"
+    ],
+    "forbiddenEnv": [
+      "NODE_OPTIONS"
+    ],
+    "sourceFilesMaximum": 480,
+    "sourceFileBytesMaximum": 1048576,
+    "aggregateSourceBytesMaximum": 4194304,
+    "profileBytesMaximum": 262144,
+    "resolveCallsMaximum": 4096
+  },
+  "declaredLauncher": {
+    "node": "24.19.0",
+    "platform": "darwin",
+    "arch": "arm64",
+    "runtimeProfileBytes": 157055,
+    "runtimeProfileSha256": "52cc7d1973b3f214969c3ac7c09a5203ceaad597ae36b8b9eb3a828dab305237",
+    "profileRetained": false,
+    "readOnlyApplicationFiles": 51,
+    "readOnlyPackageDirectoryScopes": 67,
+    "argvCount": 132,
+    "argvUtf8Bytes": 14164,
+    "directScriptWithEightAwaitedTests": true,
+    "testDiscovery": false,
+    "nodeTestChildMode": false,
+    "expectedNodeCommands": 1,
+    "expectedChildren": 0,
+    "filesystemWrites": "FRESH_OWNED_MANAGER_SCRATCH_ONLY",
+    "permissionsAreNotOsOrNetworkSandbox": true,
+    "packageDirectoryPermissionsAreBroaderThanIndividualDeclaredFiles": true,
+    "install": false,
+    "sourceOrPackageCopiesForNamespace": false,
+    "experimentalSqliteWarningSuppressedNotConvertedToQualification": true
+  },
+  "boundedIntendedNativeScope": {
+    "requiresSeparateDirectHumanEightCaseScope": true,
+    "sqliteFiles": 8,
+    "v6Files": 7,
+    "v5NegativeFiles": 1,
+    "independentPinJsonFiles": 7,
+    "newInMemorySyntheticEd25519Keys": 1,
+    "distinctSyntheticTransactionSignatures": 7,
+    "syntheticFetchCallbacks": 3,
+    "syntheticResponseLoss": true,
+    "syntheticLateResponse": true,
+    "commitLossHook": true,
+    "reentrantRecoveryCloseHook": true,
+    "forcedProcessInterruption": false,
+    "secureErasureClaim": false,
+    "realHttps": false,
+    "realWallet": false,
+    "realProvider": false,
+    "network": false,
+    "nonceSearch": false,
+    "sdkPrepareBlock": false,
+    "realPrepare": false,
+    "livePilot": false,
+    "payment": false
+  },
+  "storagePlan": {
+    "kind": "READ_ONLY_CLOSED_REFERENCE_PROJECTION_NOT_TASK_ADMISSION",
+    "quotaBytes": 2097152,
+    "sourceRows": 433,
+    "ownClosedJavascriptRows": 312,
+    "borrowedClosedJavascriptRows": 36,
+    "packageMetadataMemberRows": 77,
+    "borrowedApplicationMetadataRows": 1,
+    "newUniqueJavascriptObjects": 7,
+    "newJavascriptBytes": 145121,
+    "avoidedRepeatedJavascriptBytes": 616075,
+    "packageMetadataReference": "PREVIOUSLY_CLOSED_EXPLICIT_MANIFEST_MEMBERS",
+    "newProfileBytes": 157055,
+    "stdoutCaptureCap": 32768,
+    "stderrCaptureCap": 1048576,
+    "knownNewInputAndFullCaptureReservationBytes": 1383520,
+    "remainingForOtherInputsDatabasesPinsJournals": 713632,
+    "rawDatabasePeakEstablished": false,
+    "allEightCasesMustRemainSelected": true,
+    "newTasks": 0,
+    "cleanup": false,
+    "adoption": false,
+    "policyRaised": false,
+    "sourceBytesReadIsNotNewDiskAllocation": true
+  },
+  "sourceReviewFindings": [
+    "All fifty pre-existing application inputs match the exact source-only application parent; the new preload is reviewed separately.",
+    "Historical source, profiles, failures and stopped records are retained unchanged. The clean tracked local inactive candidate was reconciled to existing published bytes; this is not a runtime source transform.",
+    "The package metadata reference expands to exactly 382 package inputs; the full private runtime profile still contains all 433 leaf inputs.",
+    "Closed object, owner task and ledger identities/content were read and checked before treating retained inputs as reusable references.",
+    "The seven newly needed JavaScript objects and new runtime profile have not been retained in a new task.",
+    "An environment selection string does not establish human approval, launch admission, native resolution or runtime behavior.",
+    "Neither readonly storage capacity inspection nor this budget arithmetic establishes the peak of eight SQLite files and their sidecars.",
+    "No source was parsed or imported by Node and no native behavior case or fresh command capture exists for this packet."
+  ],
+  "evidence": {
+    "sourceRead": true,
+    "sourceAndDependencyGraphInspected": true,
+    "launchArgvAndManagerLimitsInspected": true,
+    "sourceParsedByNode": false,
+    "moduleImported": false,
+    "nodeCommands": 0,
+    "sqliteOpened": 0,
+    "syntheticKeysGenerated": 0,
+    "syntheticSignatures": 0,
+    "caseResults": 0,
+    "nativeGraphQualified": false,
+    "applicationCompositionRuntimeQualified": false,
+    "cleanMainOrOwnerRuntimeQualified": false,
+    "hostedCi": "NOT_RUN_NOT_GREEN",
+    "mainPromotion": false
+  },
+  "nextGates": [
+    "Obtain the distinct direct eight-case SDK/key/SQLite execution scope.",
+    "Recheck mount, policy, all source and retained-input identities, raw scratch capacity and exact launcher immediately before admission.",
+    "Retain only genuinely new inputs plus the exact full profile under one newly admitted task; preserve prior task references.",
+    "Run the eight-case entry once, using the reviewed same-process native resolution profile and a fresh owned scratch path.",
+    "Keep actual exit, EOF completeness, marker, all eight TAP results, raw store identities and any unknown or failed evidence; do not rerun merely to change metadata.",
+    "Review an exact result/source/launcher match before considering a separate main transfer."
+  ]
+}
