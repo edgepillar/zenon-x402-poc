@@ -1,0 +1,321 @@
+{
+  "schema": "zenon-x402-selected-payment-client-bridge-local-result/v1",
+  "status": "PASS_SELECTED_LOCAL_SDK_FREE_COMPONENT",
+  "lane": "P1-B selected-payment client role; official x402 compatibility remains a separate lane",
+  "sourceBaseMain": "37911baf82509ff4d3cfdb29090a2ee1c0ed4732",
+  "sourceBaseTree": "6b203eee222ce3ef6f677711eefcbce87a35c54a",
+  "historicalSourceOnlyBranch": {
+    "branch": "x402/p1b-selected-client-bridge-draft",
+    "commit": "44e40cd7ad5105d0180b501116ee62cbae867aba",
+    "sourceReview": {
+      "path": "qualification/x402-selected-payment-client-bridge.source-review.json",
+      "bytes": 11478,
+      "sha256": "59835094d0a9ba9568be712c39fb74a0fe33e56d55ba8c88a153692bacd94e29",
+      "gitBlob": "2e58f4ba9242af1c7d0654c694a71bd32fcdd63f"
+    },
+    "preservedWithoutEditing": true,
+    "meaning": "The earlier source-only review describes its creation time. This additive result records the subsequent actual local run; it does not rewrite that chronology."
+  },
+  "selectedLocalScopeQualified": true,
+  "officialCoreCompatibilityQualified": false,
+  "fullRoadmapScopeQualified": false,
+  "activationOrLivePilotQualified": false,
+  "implementation": {
+    "module": "src/x402-selected-payment-client-bridge.js",
+    "entry": "qualification/x402-selected-payment-client-bridge.behavior.draft.mjs",
+    "consumer": "Explicit selected-payment client role using the unchanged actual wire validators and test-owned declared DATA callbacks",
+    "roles": [
+      "scheme",
+      "findDefaultAsset",
+      "schemeHooks.onBeforePaymentCreation",
+      "schemeHooks.onPaymentCreationFailure",
+      "createPaymentPayload",
+      "getSnapshot"
+    ],
+    "oneShotBoundary": "Consume the retained context identity before creator entry. Retain ambiguity after creator entry without retry, replacement, release, TTL or reset. A duplicate call cannot poison the original pending call.",
+    "snapshotBoundary": "Bounded descriptor-only snapshots, exact ordered selected context, immutable callback views, captured creator method, native-Promise fulfillment observation and context rereads before and after creator completion.",
+    "limits": {
+      "contextLimit": [
+        1,
+        64
+      ],
+      "offersPerChallenge": 16,
+      "jsonDepth": 16,
+      "jsonNodes": 4096,
+      "jsonBytes": 131072
+    },
+    "integrationDefault": "Not wired into the active buyer, server, CLI, package scripts or workflows. No default SDK, signer or transport is introduced.",
+    "exclusions": "Payload validation is structural declared DATA only, not signature verification, exact signed-byte custody, a global replay/consent owner, official SDK/HTTP conformance or restart/live proof."
+  },
+  "positiveSourceAssociation": {
+    "main": "37911baf82509ff4d3cfdb29090a2ee1c0ed4732",
+    "reference": "test/official-x402-client-resource-server-interop.test.js",
+    "referenceMainGitBlob": "36f2b73ed21ce06978c8017c00f16281a073fa37",
+    "clientFunctionSectionBytes": 6542,
+    "clientFunctionSectionSha256": "e845220db55fc5a2699a164513496d43389964429ee1e450fc404fb26f8e2d2b",
+    "clientFunctionSectionEqualsImmutableMain": true,
+    "wholeLocalLegacyFileEqualsMain": false,
+    "legacyFileNotModifiedOrPublishedByThisSlice": true,
+    "otherLocalEditsPreserved": true,
+    "earlierPassingResultsTransferred": false,
+    "selectionBasis": "A concrete SDK-free runtime client contract was separated from the immutable legacy interop client function while reusing the actual wire validators. Missing coverage alone was not treated as novelty."
+  },
+  "sourceClosure": {
+    "files": 4,
+    "bytes": 81197,
+    "staticImportEdges": 8,
+    "sourceRows": [
+      {
+        "path": "package.json",
+        "bytes": 1413,
+        "LF": 40,
+        "sha256": "8c9a25504fbf6f87c31cdf245a6f4eec5a88cc89c8352151dc66a577c5771ef5",
+        "gitBlob": "ec7193f6fd76f34778515079dc777594175c4c34"
+      },
+      {
+        "path": "qualification/x402-selected-payment-client-bridge.behavior.draft.mjs",
+        "bytes": 20452,
+        "LF": 326,
+        "sha256": "5c5a8d16dc0d832cd4bcffe3f25f04170b7f0d85986772ecaeecc3ae051ffd1e",
+        "gitBlob": "b57b4d021743694f59ef4dd9124a41183ea46afa"
+      },
+      {
+        "path": "src/x402-selected-payment-client-bridge.js",
+        "bytes": 19446,
+        "LF": 370,
+        "sha256": "d8252e421240005f51b1627ab97b624496325403508d57b030be423e871a5083",
+        "gitBlob": "a405eb73cab88302ee5c0e130bdfc9d1ef9eebfa"
+      },
+      {
+        "path": "src/x402-wire.js",
+        "bytes": 39886,
+        "LF": 934,
+        "sha256": "5fba91af5a352f62d1a335c7176a45a604e2af5d92b1c4b0e53825c1f20d4e56",
+        "gitBlob": "fb060d4e349b1c31a1219a0cc137af250a8a2291"
+      }
+    ],
+    "builtins": [
+      "node:assert/strict",
+      "node:buffer",
+      "node:test",
+      "node:util"
+    ],
+    "dynamicImports": 0,
+    "barePackageImports": 0,
+    "officialSdkPackagesLoaded": 0,
+    "registrationBearingLegacyEntriesLoaded": 0
+  },
+  "actualRun": {
+    "completedAtUtc": "2026-10-23T02:44:13.871Z",
+    "commands": 1,
+    "priorExperimentsReplayed": 0,
+    "runtime": {
+      "node": "24.19.0",
+      "sha256": "dbedff294bab84a0a86c04e15fbcbeb1c97ca10bef1b32b0634cd24b36f62100"
+    },
+    "argvScope": [
+      "--permission",
+      "--allow-fs-read=<pinned-repository>",
+      "--disallow-code-generation-from-strings",
+      "--no-addons",
+      "--no-warnings",
+      "--unhandled-rejections=strict",
+      "--test-reporter=tap",
+      "<selected-entry>"
+    ],
+    "clearedEnvironment": true,
+    "commandTimeoutSeconds": 30,
+    "testTimeoutMs": 5000,
+    "testConcurrency": false,
+    "stdoutCapBytes": 65536,
+    "stderrCapBytes": 1048576,
+    "actualExit": 0,
+    "outputComplete": true,
+    "taskState": "CLOSED",
+    "taskOutcome": "SUCCESS",
+    "counts": {
+      "tests": 16,
+      "suites": 0,
+      "pass": 16,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "selectedNames": [
+      "selected client bridge exposes immutable SDK shaped roles and captures configuration without caller hooks",
+      "selected client bridge returns only explicit fixed asset metadata without opening payment authority",
+      "selected client bridge captures the exact ordered selected view and creates one detached original payload",
+      "selected client bridge denies missing cloned duplicate and consumed identities without a second creator call",
+      "selected client bridge failure hook cancels an idle context without releasing its one shot identity",
+      "selected client bridge rejects changed source resource requirement order and view identity before creator entry",
+      "selected client bridge snapshots schema input and refuses mutation substitution async replies and capture reentry",
+      "selected client bridge duplicate and failure hook refusals do not poison the first pending creation",
+      "selected client bridge retains consumed ambiguity on thrown rejected or malformed creator outcomes",
+      "selected client bridge snapshots raw fulfilled DATA without invoking callback proxy getter or thenable hooks",
+      "selected client bridge observes supported native promises with captured then and refuses unsafe receipts",
+      "selected client bridge rechecks original context after pending fulfillment without replacement or second creation",
+      "selected client bridge preserves explicit empty extension context without adding unsupported extension semantics",
+      "selected client bridge bounds failed capture attempts dense offers descriptor hooks and text before callbacks",
+      "selected client bridge captures operational methods and keeps precreator drift distinct from an older creation",
+      "selected client bridge refuses changed intrinsic premises and keeps snapshots powerless and payload free"
+    ],
+    "diagnostic": {
+      "kind": "P1B_SELECTED_PAYMENT_CLIENT_BRIDGE",
+      "version": 1,
+      "selectedCases": 16,
+      "fixtures": 43,
+      "schemas": 33,
+      "creators": 23,
+      "officialSdkImports": 0,
+      "keys": 0,
+      "signatures": 0,
+      "sql": 0,
+      "network": 0,
+      "nonceSearch": 0,
+      "realPrepare": 0,
+      "authority": "NONE",
+      "qualification": "LOCAL_SDK_FREE_COMPONENT_NOT_OFFICIAL_CORE_OR_LIVE_PAYMENT_QUALIFICATION"
+    },
+    "stdout": {
+      "bytes": 4984,
+      "sha256": "b1a8b33e6688c2be9b24f313be4b3e22656d4a78f3ea0ef643589efca336f7e4"
+    },
+    "stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "nodeReporterDurationMs": 32.153792,
+    "managedCallerElapsedSeconds": 3.670005375,
+    "managedCallerSpan": "guard/admission/source-retention/command/verification/close/readback; excludes root initialization and earlier preparation",
+    "timingMeaning": "Descriptive timing for this selected run, not application or chain throughput, a benchmark comparison, a hard CPU guarantee or an OS sandbox guarantee.",
+    "ownedProcessGroupObservedAbsent": true,
+    "ownedScratchAbsentAfterManagedClose": true
+  },
+  "evidence": {
+    "retention": "Four pinned source inputs and both actual output streams retained as digest-bound objects with closed retaining ownership records.",
+    "sourceInputs": 4,
+    "sourceBytes": 81197,
+    "newSourceObjects": 4,
+    "newSourceObjectBytes": 81197,
+    "sourceObjectsReusedFromOtherRoots": 0,
+    "runtimeSourceAliases": 0,
+    "hardLinks": 0,
+    "archives": 0,
+    "mandatoryRecords": [
+      {
+        "role": "task.json",
+        "bytes": 1043,
+        "sha256": "02e0a09c163cc54a2f3cc14401926c08a70f454a1d4ba3e8c9530a569171e2fd"
+      },
+      {
+        "role": "admission.json",
+        "bytes": 12407,
+        "sha256": "ef751d90e61453837f3fa195299b7a85a1a8095b2ad60e6c7d0cd46c0ddc0d0d"
+      },
+      {
+        "role": "cleanup.json",
+        "bytes": 174,
+        "sha256": "ee3c1767a42682c4c8eb8f498c7218ccf0968cb2dc075cd3a0262408b5c17a62"
+      },
+      {
+        "role": "command.json",
+        "bytes": 978,
+        "sha256": "43f14f082f5e5bb1a56380d2093f193c910aec350acaaf143621121672fe3aad"
+      },
+      {
+        "role": "outcome.json",
+        "bytes": 62,
+        "sha256": "67991712b39ea0928888486855b89736b4093495b624f0c67718da3e5de400eb"
+      },
+      {
+        "role": "verification.json",
+        "bytes": 1997,
+        "sha256": "ea7a86f2a488e50e3428aaad6d3553465dda0f1899f7e358354f3a100056d944"
+      }
+    ],
+    "completeMetadataRecordsRead": 6,
+    "metadataBytes": 16661,
+    "sourceInputLedgersAndClosedRetainingOwnersVerified": 4,
+    "separateReview": {
+      "status": "COMPLETE_SEPARATE_PROTECTED_EVIDENCE_REVIEW_PASS",
+      "reviewer": "Separate read-only pass by the primary agent; not an independent human or second-agent audit",
+      "replayedApplicationTests": false,
+      "checked": "All six complete metadata records, raw TAP names/counts/diagnostic, output completeness, CAS contents and ownership, source pins, local Git state, both root identities/policies and retained historical evidence."
+    }
+  },
+  "storage": {
+    "scope": "New private goal-specific namespace on the same UUID-verified approved mounted volume; not a default-root change or a migration.",
+    "authority": "Existing explicit routine resource delegation and AGENTS fresh-private-root rule. An unnecessary earlier reconfirmation gate was superseded by that existing authority; no new human answer was inferred.",
+    "earlierSharedRootAdmission": {
+      "controllerExit": 1,
+      "taskCreated": false,
+      "nodeCommandsExecuted": 0,
+      "refusalPreserved": true,
+      "notAJavaScriptTestFailure": true
+    },
+    "earlierRootItsPolicyAndRefusalUnchanged": true,
+    "oldDataMovedDeletedAdoptedOrRebound": false,
+    "historicalCacheTouched": false,
+    "homeCacheFallback": false,
+    "productionFloorBytes": 10737418240,
+    "outstandingOldReservationsAccountedAtInitializationBytes": 93855940608,
+    "additionalSafetyBufferBytes": 1073741824,
+    "isolatedRootMinimumFreeBytes": 105667100672,
+    "bootstrapReserveBytes": 1048576,
+    "taskQuotaBytes": 2097152,
+    "scratchQuotaBytes": 4194304,
+    "objectQuotaBytes": 16777216,
+    "metadataQuotaBytes": 4194304,
+    "quotaAccounting": "The four new portable source-retention copies, 81197 bytes total, were explicitly accounted in the 2 MiB task quota; execution used original pinned source paths without an alias or source execution copy.",
+    "freeSpaceGuard": "Checked the production floor plus all outstanding earlier-root reservations, additional safety buffer, new expected allocation and bootstrap reserve. The earlier store's admission refusal was not erased or called repaired.",
+    "oldProtectedPrivateFilesVerified": 1021,
+    "oldProtectedAbsencesVerified": 34,
+    "retainedRepositorySourceFilesVerifiedBeforeAddingThisResult": 303,
+    "newTaskMetadataRecords": 6,
+    "newObjectAndOwnershipPins": 12,
+    "protectedObjectsDeleted": 0,
+    "helpersOrExistingPoliciesModified": false
+  },
+  "scopeBoundaries": {
+    "officialSdkImports": 0,
+    "dependencyInstallations": 0,
+    "keysGenerated": 0,
+    "signaturesGeneratedOrVerified": 0,
+    "sqlOperations": 0,
+    "applicationNetworkOperations": 0,
+    "nonceCandidateEvaluations": 0,
+    "payments": 0,
+    "realPrepare": 0,
+    "livePilot": 0,
+    "nativeChainOrProviderQualificationRuns": 0,
+    "originalRequestPaymentBytesAndConsumedAuthorityUnchanged": true,
+    "pr193ValidatedSameSignedBlockResendNotEquatedWithUnknownOrAcknowledged": true,
+    "privateBootstrapAndGhcrBoundariesUnchanged": true,
+    "oldFailuresStoppedSlicesAndUnchangedInputsPreserved": true,
+    "automationSettingsUnchanged": true,
+    "workerDispatched": false,
+    "protectedRealTotals": {
+      "consumedAdmissions": 2,
+      "actualPrepare": 1,
+      "bundles": 0,
+      "nativeChainOrProviderQualificationRuns": 0
+    }
+  },
+  "publicationBoundary": {
+    "packet": "Only the new module, selected entry, immutable historical source review and this actual local result.",
+    "proposedTransfer": "Small source-bound local qualification transfer against the exact current main. Refresh main, branch refs, PR overlap, rules and CI before any non-forced transfer.",
+    "hostedCi": {
+      "checks": 0,
+      "statuses": 0,
+      "runs": 0,
+      "meaning": "NOT_RUN_NOT_GREEN; no hosted CI run is claimed or triggered as qualification by this record."
+    },
+    "noLiveActivationOrOfficialSdkClaim": true
+  },
+  "remainingGates": [
+    "Official x402 client composition requires its own exact pinned dependency/source/entry admission; these SDK-free results do not qualify that separate lane.",
+    "Any active application wiring, transport, restart/global replay owner, real signing, chain/provider execution or live pilot remains a distinct reviewed scope.",
+    "The original shared-store refusal remains preserved and is not a global implementation blocker."
+  ]
+}
