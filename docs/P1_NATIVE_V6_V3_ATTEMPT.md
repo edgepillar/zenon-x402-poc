@@ -128,7 +128,10 @@ default is transferred to main.
 
 ## Remaining gates
 
-The consumed V3 permission was not reused. No V4 native attempt ran.
+The consumed V3 permission was not reused. No V4 native attempt ran in this
+V3/source-gate increment. A later, separately approved V4 attempt is recorded in
+[its own local qualification](P1_NATIVE_V6_V4_LOCAL_QUALIFICATION.md); it does not
+change the failed V3 result.
 The new native HTTPS host, native application deadline binding and its shared
 component core were excluded from this old application graph; this result does
 not qualify them.
