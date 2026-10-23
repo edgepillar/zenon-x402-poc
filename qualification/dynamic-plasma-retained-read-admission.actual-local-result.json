@@ -1,0 +1,327 @@
+{
+  "kind": "DYNAMIC_PLASMA_RETAINED_READ_ADMISSION_SELECTED_COMPONENT_RESULT",
+  "version": 1,
+  "status": "TWENTY_COMPONENT_CASES_PASS_NOT_NATIVE_HTTPS_QUALIFICATION",
+  "sourceBase": {
+    "branch": "x402/p1-router-late-pending-close-integration-v2",
+    "commit": "392d6099de90f2165c334edc14ce0403f39512f0"
+  },
+  "mainParent": "c44f2f645e7e4ec6680a9b462222bbdb0b529ca2",
+  "sourceAssociation": {
+    "kind": "LITERAL_SOURCE_BYTES_AT_SELECTED_EXECUTION",
+    "sourceInputs": [
+      {
+        "path": "package.json",
+        "bytes": 2677,
+        "LF": 40,
+        "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+        "gitBlob": "45752ffde39d29666094f7f1c755060d75e43deb"
+      },
+      {
+        "path": "qualification/dynamic-plasma-retained-read-admission.behavior.draft.mjs",
+        "bytes": 15266,
+        "LF": 223,
+        "sha256": "7fb6bf7cabe54f5fd20f658ef873c0033c85f8c71e7fd1265119a25166cd3c2b",
+        "gitBlob": "3c3278511d77429c4e6953729a916a918f2969d0"
+      },
+      {
+        "path": "src/zenon/bounded-json-rpc-read-admission.js",
+        "bytes": 2627,
+        "LF": 51,
+        "sha256": "0b0b0806487c2e648a83367a9ebcd48a3a92493158ebca23abe8d6d6849d9ff3",
+        "gitBlob": "9e9ee352d7cf0013d96851c769f2a205ccf98449"
+      },
+      {
+        "path": "src/zenon/bounded-json-rpc-read-core.js",
+        "bytes": 21759,
+        "LF": 582,
+        "sha256": "10cc529bfb0676bb03dc4dad56059663f4a578b586c52f6404fc859d27d18f76",
+        "gitBlob": "3bd98a83413eb13e3bceb097d35fb874b4c030a2"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-account-state-read-transport.js",
+        "bytes": 3632,
+        "LF": 74,
+        "sha256": "9aa818dabdacf0baec60ca570e854cc8a327e554ba5e5a76c670eb5ed02b29b8",
+        "gitBlob": "751a4b8c5a0c42e1d2b0a47af9d2ef7264229821"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-compatibility.js",
+        "bytes": 7732,
+        "LF": 225,
+        "sha256": "b3989ce15e5f2e9d07b0ed035fe96bcce9f22cac93f5e497fdca5c37bf7618dd",
+        "gitBlob": "3811b748b3f905e454c8a4af4650bb7f89eb1cf2"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-json-rpc-read-transport.js",
+        "bytes": 10832,
+        "LF": 283,
+        "sha256": "fd03b2ad87d16660aa61d3961c163d724d5f89cd6d4bb9c4391d739566d5e5ca",
+        "gitBlob": "0475b7ab42889f67fb030fa7344d73d8bd6957d7"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-observation-collector.js",
+        "bytes": 38492,
+        "LF": 949,
+        "sha256": "6bb665dd97e4b262941ed11fb7a9fb5c6d7a162004a39fcbfbfa8cd7b3f82d98",
+        "gitBlob": "171a49f29379866ed111031d15423634ac2d17b4"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-observation-normalizer.js",
+        "bytes": 28398,
+        "LF": 698,
+        "sha256": "2c3f7d42ded21a5513ff26c23a00a35a53aa334f053d10930f1571a020286897",
+        "gitBlob": "c406db8471aa6c8afd812c222c673c809491cf00"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-price-policy.js",
+        "bytes": 16224,
+        "LF": 444,
+        "sha256": "eba3225c4d26cbb6e0be575ac4fd5073bc8b0c4454eb51e2bea4d91856d0c65e",
+        "gitBlob": "649dd09b60236b43c91d22e34b76f71f4b661361"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-required-fused-quote.js",
+        "bytes": 5416,
+        "LF": 133,
+        "sha256": "f5e10ff2dbfff3b6b63d87f0abadd0bb52b5d6b8fe0ead6a55fc5ea14207b730",
+        "gitBlob": "e820fd31ffde4ef77a2efa6e1fd3ed1775778726"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-retained-account-exchange-gate.js",
+        "bytes": 4659,
+        "LF": 89,
+        "sha256": "3304fee96333a0544c9ad3be0c5d465ff6d2377ae3ae657ac11f84482bb357f9",
+        "gitBlob": "39104ab5dbea4195a778e7226b9076fcd1f31366"
+      }
+    ],
+    "existingSourceInputsMatchBothPublishedParents": 9,
+    "newComponentAndTestInputs": 3,
+    "changedNativeCoreOrWrapperImported": false
+  },
+  "runtime": {
+    "node": "24.19.0",
+    "platform": "darwin",
+    "arch": "arm64",
+    "nodeSha256": "dbedff294bab84a0a86c04e15fbcbeb1c97ca10bef1b32b0634cd24b36f62100"
+  },
+  "counts": {
+    "tests": 20,
+    "pass": 20,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "cases": [
+    {
+      "number": 1,
+      "name": "legacy profiles retain thirteen and only explicit retained names select seventy-eight or eighteen",
+      "status": "PASS"
+    },
+    {
+      "number": 2,
+      "name": "all four actual counters admit exactly their fixed slots and remain exhausted without renewal",
+      "status": "PASS"
+    },
+    {
+      "number": 3,
+      "name": "counter surfaces and detached snapshots are frozen and expose no reset or continuation",
+      "status": "PASS"
+    },
+    {
+      "number": 4,
+      "name": "counter arity and closed name validation cannot consume or supply a floating budget",
+      "status": "PASS"
+    },
+    {
+      "number": 5,
+      "name": "six maximal paginated DP cycles and account brackets derive the real one-hundred-seventy-four ceiling",
+      "status": "PASS"
+    },
+    {
+      "number": 6,
+      "name": "two independent endpoint counters and one account counter never share or refund slots",
+      "status": "PASS"
+    },
+    {
+      "number": 7,
+      "name": "gate construction is inert and retains the original close function",
+      "status": "PASS"
+    },
+    {
+      "number": 8,
+      "name": "invalid owner shapes proxies and getters are rejected before any operational callback",
+      "status": "PASS"
+    },
+    {
+      "number": 9,
+      "name": "actual account-state wire crosses all eighteen original generated request IDs without reset or re-encoding",
+      "status": "PASS"
+    },
+    {
+      "number": 10,
+      "name": "both closed account methods forward the identical original string bytes",
+      "status": "PASS"
+    },
+    {
+      "number": 11,
+      "name": "publish funding and unrelated RPC methods are rejected before exchange and close only once",
+      "status": "PASS"
+    },
+    {
+      "number": 12,
+      "name": "numeric IDs are only the exact canonical one-through-eighteen generated domain",
+      "status": "PASS"
+    },
+    {
+      "number": 13,
+      "name": "invalid payer checksums are rejected with the actual address codec before native delegation",
+      "status": "PASS"
+    },
+    {
+      "number": 14,
+      "name": "whitespace extra fields malformed parameters and oversized or non-string packets are not normalized",
+      "status": "PASS"
+    },
+    {
+      "number": 15,
+      "name": "actual account-wire busy refusal cannot issue a second borrowed exchange or consume the next ID",
+      "status": "PASS"
+    },
+    {
+      "number": 16,
+      "name": "synchronous borrowed failure is scrubbed without inspecting its properties or retrying",
+      "status": "PASS"
+    },
+    {
+      "number": 17,
+      "name": "underlying close uncertainty remains the same rejected close and is never reported as native cleanup",
+      "status": "PASS"
+    },
+    {
+      "number": 18,
+      "name": "repeated raw IDs do not renew the actual shared account admission counter",
+      "status": "PASS"
+    },
+    {
+      "number": 19,
+      "name": "successful delegation preserves the original owned Promise identity and never reads borrowed outcome properties",
+      "status": "PASS"
+    },
+    {
+      "number": 20,
+      "name": "runtime then drift fails closed permanently even after restoration without invoking the hook",
+      "status": "PASS"
+    }
+  ],
+  "run": {
+    "startedAtUnix": 1792790157.885727,
+    "completedAtUnix": 1792790158.002568,
+    "actualExit": 0,
+    "reason": null,
+    "outputComplete": true,
+    "argv": [
+      "$PINNED_NODE_24_19_0",
+      "--permission",
+      "--allow-fs-read=$REPO/package.json",
+      "--allow-fs-read=$REPO/qualification/dynamic-plasma-retained-read-admission.behavior.draft.mjs",
+      "--allow-fs-read=$REPO/src/zenon/bounded-json-rpc-read-admission.js",
+      "--allow-fs-read=$REPO/src/zenon/bounded-json-rpc-read-core.js",
+      "--allow-fs-read=$REPO/src/zenon/dynamic-plasma-account-state-read-transport.js",
+      "--allow-fs-read=$REPO/src/zenon/dynamic-plasma-compatibility.js",
+      "--allow-fs-read=$REPO/src/zenon/dynamic-plasma-json-rpc-read-transport.js",
+      "--allow-fs-read=$REPO/src/zenon/dynamic-plasma-observation-collector.js",
+      "--allow-fs-read=$REPO/src/zenon/dynamic-plasma-observation-normalizer.js",
+      "--allow-fs-read=$REPO/src/zenon/dynamic-plasma-price-policy.js",
+      "--allow-fs-read=$REPO/src/zenon/dynamic-plasma-required-fused-quote.js",
+      "--allow-fs-read=$REPO/src/zenon/dynamic-plasma-retained-account-exchange-gate.js",
+      "--no-addons",
+      "--disallow-code-generation-from-strings",
+      "--disable-proto=throw",
+      "--unhandled-rejections=strict",
+      "--test-reporter=tap",
+      "$REPO/qualification/dynamic-plasma-retained-read-admission.behavior.draft.mjs"
+    ],
+    "stdout": {
+      "bytes": 5456,
+      "sha256": "c220fd656ba33dd1298851910ab5576694e6afe5d1a8307c5919586517cda76f",
+      "content": "# retained-read-admission-components {\"cases\":20,\"declaredExchanges\":44,\"declaredAccepted\":42,\"declaredCloseStarts\":25,\"proxyTraps\":0,\"getters\":0,\"nativeHttpsOwnerImported\":false,\"nativeConnections\":0,\"SDK\":0,\"SQLite\":0,\"keys\":0,\"signatures\":0,\"nonceEvaluations\":0,\"newTasks\":0,\"newScratch\":0,\"fullNativeRetainedReadsQualified\":false}\nTAP version 13\n# Subtest: legacy profiles retain thirteen and only explicit retained names select seventy-eight or eighteen\nok 1 - legacy profiles retain thirteen and only explicit retained names select seventy-eight or eighteen\n  ---\n  duration_ms: 0.317917\n  type: 'test'\n  ...\n# Subtest: all four actual counters admit exactly their fixed slots and remain exhausted without renewal\nok 2 - all four actual counters admit exactly their fixed slots and remain exhausted without renewal\n  ---\n  duration_ms: 0.154792\n  type: 'test'\n  ...\n# Subtest: counter surfaces and detached snapshots are frozen and expose no reset or continuation\nok 3 - counter surfaces and detached snapshots are frozen and expose no reset or continuation\n  ---\n  duration_ms: 0.661083\n  type: 'test'\n  ...\n# Subtest: counter arity and closed name validation cannot consume or supply a floating budget\nok 4 - counter arity and closed name validation cannot consume or supply a floating budget\n  ---\n  duration_ms: 0.25625\n  type: 'test'\n  ...\n# Subtest: six maximal paginated DP cycles and account brackets derive the real one-hundred-seventy-four ceiling\nok 5 - six maximal paginated DP cycles and account brackets derive the real one-hundred-seventy-four ceiling\n  ---\n  duration_ms: 0.09925\n  type: 'test'\n  ...\n# Subtest: two independent endpoint counters and one account counter never share or refund slots\nok 6 - two independent endpoint counters and one account counter never share or refund slots\n  ---\n  duration_ms: 0.133917\n  type: 'test'\n  ...\n# Subtest: gate construction is inert and retains the original close function\nok 7 - gate construction is inert and retains the original close function\n  ---\n  duration_ms: 0.210291\n  type: 'test'\n  ...\n# Subtest: invalid owner shapes proxies and getters are rejected before any operational callback\nok 8 - invalid owner shapes proxies and getters are rejected before any operational callback\n  ---\n  duration_ms: 0.220083\n  type: 'test'\n  ...\n# Subtest: actual account-state wire crosses all eighteen original generated request IDs without reset or re-encoding\nok 9 - actual account-state wire crosses all eighteen original generated request IDs without reset or re-encoding\n  ---\n  duration_ms: 6.285542\n  type: 'test'\n  ...\n# Subtest: both closed account methods forward the identical original string bytes\nok 10 - both closed account methods forward the identical original string bytes\n  ---\n  duration_ms: 0.254875\n  type: 'test'\n  ...\n# Subtest: publish funding and unrelated RPC methods are rejected before exchange and close only once\nok 11 - publish funding and unrelated RPC methods are rejected before exchange and close only once\n  ---\n  duration_ms: 0.171583\n  type: 'test'\n  ...\n# Subtest: numeric IDs are only the exact canonical one-through-eighteen generated domain\nok 12 - numeric IDs are only the exact canonical one-through-eighteen generated domain\n  ---\n  duration_ms: 0.21525\n  type: 'test'\n  ...\n# Subtest: invalid payer checksums are rejected with the actual address codec before native delegation\nok 13 - invalid payer checksums are rejected with the actual address codec before native delegation\n  ---\n  duration_ms: 0.146458\n  type: 'test'\n  ...\n# Subtest: whitespace extra fields malformed parameters and oversized or non-string packets are not normalized\nok 14 - whitespace extra fields malformed parameters and oversized or non-string packets are not normalized\n  ---\n  duration_ms: 0.296208\n  type: 'test'\n  ...\n# Subtest: actual account-wire busy refusal cannot issue a second borrowed exchange or consume the next ID\nok 15 - actual account-wire busy refusal cannot issue a second borrowed exchange or consume the next ID\n  ---\n  duration_ms: 0.256542\n  type: 'test'\n  ...\n# Subtest: synchronous borrowed failure is scrubbed without inspecting its properties or retrying\nok 16 - synchronous borrowed failure is scrubbed without inspecting its properties or retrying\n  ---\n  duration_ms: 0.157917\n  type: 'test'\n  ...\n# Subtest: underlying close uncertainty remains the same rejected close and is never reported as native cleanup\nok 17 - underlying close uncertainty remains the same rejected close and is never reported as native cleanup\n  ---\n  duration_ms: 0.13\n  type: 'test'\n  ...\n# Subtest: repeated raw IDs do not renew the actual shared account admission counter\nok 18 - repeated raw IDs do not renew the actual shared account admission counter\n  ---\n  duration_ms: 1.424584\n  type: 'test'\n  ...\n# Subtest: successful delegation preserves the original owned Promise identity and never reads borrowed outcome properties\nok 19 - successful delegation preserves the original owned Promise identity and never reads borrowed outcome properties\n  ---\n  duration_ms: 0.170542\n  type: 'test'\n  ...\n# Subtest: runtime then drift fails closed permanently even after restoration without invoking the hook\nok 20 - runtime then drift fails closed permanently even after restoration without invoking the hook\n  ---\n  duration_ms: 0.106709\n  type: 'test'\n  ...\n1..20\n# tests 20\n# suites 0\n# pass 20\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 17.504083\n"
+    },
+    "stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "content": ""
+    },
+    "localSourceNodeAndGitStateUnchangedAcrossExecution": true,
+    "indexEmpty": true
+  },
+  "declaredCallbackDiagnostics": {
+    "cases": 20,
+    "declaredExchanges": 44,
+    "declaredAccepted": 42,
+    "declaredCloseStarts": 25,
+    "proxyTraps": 0,
+    "getters": 0,
+    "nativeHttpsOwnerImported": false,
+    "nativeConnections": 0,
+    "SDK": 0,
+    "SQLite": 0,
+    "keys": 0,
+    "signatures": 0,
+    "nonceEvaluations": 0,
+    "newTasks": 0,
+    "newScratch": 0,
+    "fullNativeRetainedReadsQualified": false
+  },
+  "scope": {
+    "NodeCommands": 1,
+    "NodeChildren": 0,
+    "newTasks": 0,
+    "newScratch": 0,
+    "newRoots": 0,
+    "SDK": false,
+    "SQLite": false,
+    "nativeHttpsOwnerImported": false,
+    "socketOrNetwork": false,
+    "keys": 0,
+    "signatures": 0,
+    "nonceCandidateEvaluations": 0,
+    "realPrepare": false,
+    "nativeScopeReused": false,
+    "nodeCryptoImportedAsInertNormalizerDefinition": true,
+    "normalizerOrCollectorOperationsInvoked": false,
+    "declaredCloseStartsAreNotNativeDrains": true
+  },
+  "limits": {
+    "wallClockSeconds": 15,
+    "stdoutBytes": 65536,
+    "stderrBytes": 65536,
+    "fsRead": "Exact twelve pinned inputs only",
+    "fsWrite": false,
+    "childProcess": false,
+    "addons": false,
+    "note": "Permission flags are supplemental restrictions, not proof of native network confinement; this exact import/call graph contains no native network owner."
+  },
+  "preparation": {
+    "nodeStartedOnRefusal": false,
+    "note": "A prelaunch raw-text prohibition first rejected inert package dependency metadata. Literal executable imports were then checked before the single actual component run."
+  },
+  "verification": {
+    "legacyProfilesThirteen": true,
+    "retainedDPPerEndpoint78": true,
+    "retainedAccount18": true,
+    "twoDPEndpointsPlusAccountCeiling174": true,
+    "maximumSporkPages8": true,
+    "exactOriginalAccountWireBytes": true,
+    "allEighteenGeneratedAccountIds": true,
+    "invalidMethodsAndIdsRejectedBeforeExchange": true,
+    "borrowedOutcomePropertiesNotRead": true,
+    "closeUncertaintyPreserved": true,
+    "nativeTlsRouteDeadlineCleanupQualified": false,
+    "fullRetainedFundingCompositionQualified": false,
+    "SDKOrSqliteCompositionQualified": false,
+    "hostedCI": "NOT_RUN_NOT_GREEN",
+    "liveOrProduction": false
+  }
+}
