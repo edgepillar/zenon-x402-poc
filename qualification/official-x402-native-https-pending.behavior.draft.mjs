@@ -379,7 +379,7 @@ async function fixture(success) {
     limits: freeze({ maxHeaderBytes: 16384, maxHeaderCount: 32, maxConcurrentSockets: 2, maxConnectionStarts: 16,
       maxConcurrentRequests: 1, maxRequestStarts: 12, tlsHandshakeDeadlineMs: 500, headerDeadlineMs: 1000,
       requestResponseDeadlineMs: 2000, idleSocketDeadlineMs: 3000, startDeadlineMs: 2000,
-      closeGraceMs: 1000, metricsCounterLimit: 10000 }),
+      closeGraceMs: 3000, metricsCounterLimit: 10000 }),
     downstream: freeze({ handle: f.router.handle, close: f.router.close }), deadlineRuntime: f.runtime.value,
     httpsServerFactory: factory });
   await f.owner.start(); assert.equal(f.owner.snapshotMetrics().phase, 'LISTENING');

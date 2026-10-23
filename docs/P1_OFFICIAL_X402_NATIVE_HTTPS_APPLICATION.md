@@ -17,6 +17,20 @@ HTTPS, actual SDK and V6 application qualification remain separate; the model
 response-loss cases do not establish native recovery. Do not transfer earlier
 component passes to this changed graph.
 
+One separately authorized native experiment then loaded the pinned real SDK and
+selected all three cases, but FAILED BEFORE LISTENING: the fixture requested a
+2000 ms request deadline with only 1000 ms close grace. The existing ingress
+correctly refused that configuration; zero native connections were attempted.
+All three tests failed. The complete failed sources, command and streams remain
+retained; see qualification/official-x402-native-https-pending.failed-local-result.json.
+The fixture now uses 3000 ms close grace without weakening the production rule.
+Three separately executed, source-bound network-free regressions passed for the
+corrected dormant construction, rejected shorter grace and accepted equal
+boundary. They read the native fixture as TEXT, never parse or execute it. See
+qualification/official-x402-native-https-deadline-contract.actual-local-result.json.
+The corrected native fixture has NOT been rerun; there is still no native HTTPS,
+V6 or full-application pass to transfer to main.
+
 ## Actual application graph
 
 createOfficialServiceCreditHttpsApplication creates:
