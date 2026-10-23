@@ -1,0 +1,563 @@
+{
+  "kind": "V3_SIX_CLOSE_CASE_DRAFT_PREFLIGHT_ONLY_ACTUAL_LOCAL_RESULT",
+  "version": 1,
+  "qualification": "NATIVE_APPLICATION_CASES_NOT_EXECUTED",
+  "casesPrepared": 6,
+  "nativeApplicationCasesExecuted": 0,
+  "sourceParent": "00d70ff658664928bc57e634bca50de88dc269a6",
+  "sourceParentAssociation": "Immutable previously verified source graph; source ref re-read successfully, full current main/PR/CI refresh unavailable.",
+  "inventory": {
+    "path": "qualification/dynamic-plasma-original-funding-v3-close-native.inputs.json",
+    "applicationFiles": 57,
+    "applicationRuntimeFiles": 52,
+    "packageFiles": 382,
+    "sourceFiles": 439,
+    "sourceBytes": 2658524,
+    "sourceRowsSha256": "37fe8ab855b20feaf59a3e1709d14829f0796a1693ba8b2b6e355bb6a2d6e132",
+    "packageInputsReference": {
+      "sourceCommit": "30ecaf4a62889fed45a3e085383e5ac46a896532",
+      "path": "qualification/dynamic-plasma-original-funding-native-profile.inputs.json",
+      "bytes": 109214,
+      "sha256": "e68f7b6a1d5ceafebbd35227302bc246632ad1cb00058509c381a0faaf1ae456",
+      "gitBlob": "6e513da4a933e23c4562f2a4c0d738068f65072f",
+      "selectionPrefix": "packages/",
+      "selectedRows": 382
+    }
+  },
+  "fixtureScope": {
+    "actualSubmissionEntry": "createZenonDynamicPlasmaOriginalFundingSubmissionV3",
+    "actualReadSessionCore": "createRetainedDynamicPlasmaReadSessionCore",
+    "realExistingSDKAndNobleSelectedButNotExecuted": true,
+    "genuineNewV6SQLiteSelectedButNotOpened": true,
+    "retainedV2FixtureUnchanged": true,
+    "fullBoundedHttpsFactorySelected": false,
+    "fixedDeclaredDifficulty": 0,
+    "oldV2TwelveCaseResultNotReplaced": true,
+    "declaredReadAndFetchCallbacksNotNativeHTTPS": true
+  },
+  "intendedCases": [
+    "Prepare, independent pins, current revalidation, real V6 custody, one declared BOUND response and joined read/store close.",
+    "Reentrant close during actual SQL recovery prevents POST entry while retaining original PREPARED packet.",
+    "Uncertain read close keeps the idle original V6 store HELD; no late upgrade, force-close, reopening or submission.",
+    "Closing at first pending account read aborts before work or signing and joins empty-store close.",
+    "Closing at sixth pending account read after signing refuses custody without replacement or another signature.",
+    "Different readOptions identity refuses construction before wallet/read callbacks; caller retains store ownership."
+  ],
+  "syntaxOnlyNodeCommands": [
+    {
+      "kind": "V3_SIX_CLOSE_CASE_SYNTAX_ONLY_CAPTURE",
+      "sourceInputs": [
+        {
+          "path": "package.json",
+          "bytes": 2677,
+          "LF": 40,
+          "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+          "gitBlob": "45752ffde39d29666094f7f1c755060d75e43deb"
+        },
+        {
+          "path": "qualification/dynamic-plasma-original-funding-v3-close-native.selection.draft.mjs",
+          "bytes": 1926,
+          "LF": 27,
+          "sha256": "5ae83b4feded43578a381397d3b7e82a7a5a7bcfb0b2f34cd6924a0bf2bbc520",
+          "gitBlob": "58b66cccb3ae1ddc758824ddd3948c285d709ecc"
+        }
+      ],
+      "nodeSha256": "dbedff294bab84a0a86c04e15fbcbeb1c97ca10bef1b32b0634cd24b36f62100",
+      "runtime": {
+        "node": "24.19.0",
+        "platform": "darwin",
+        "arch": "arm64"
+      },
+      "startedAtUnix": 1792793406.3724742,
+      "completedAtUnix": 1792793406.447989,
+      "actualExit": 0,
+      "reason": null,
+      "outputComplete": true,
+      "streams": {
+        "stdout": {
+          "rawBytes": 0,
+          "rawSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "content": ""
+        },
+        "stderr": {
+          "rawBytes": 0,
+          "rawSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "content": ""
+        }
+      },
+      "argv": [
+        "$PINNED_NODE_24_19_0",
+        "--permission",
+        "--allow-fs-read=$REPO/package.json",
+        "--allow-fs-read=$REPO/qualification/dynamic-plasma-original-funding-v3-close-native.selection.draft.mjs",
+        "--no-addons",
+        "--disallow-code-generation-from-strings",
+        "--disable-proto=throw",
+        "--unhandled-rejections=strict",
+        "--check",
+        "$REPO/qualification/dynamic-plasma-original-funding-v3-close-native.selection.draft.mjs"
+      ],
+      "sourceInspection": {
+        "syntaxOnly": true,
+        "applicationExecuted": false,
+        "SDKImported": false,
+        "nonceProducerImported": false,
+        "SQLite": false,
+        "signing": false,
+        "network": false,
+        "newTasks": 0,
+        "newScratch": 0
+      },
+      "localStatusRows": 893,
+      "localStatusSha256": "e967a435c8819a74bd88396df689a4cfc25d867f2ac8ab22079624a78d0dff57",
+      "indexEmpty": true
+    },
+    {
+      "kind": "V3_SIX_CLOSE_CASE_SYNTAX_ONLY_CAPTURE",
+      "sourceInputs": [
+        {
+          "path": "package.json",
+          "bytes": 2677,
+          "LF": 40,
+          "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+          "gitBlob": "45752ffde39d29666094f7f1c755060d75e43deb"
+        },
+        {
+          "path": "qualification/dynamic-plasma-original-funding-v3-close-native.behavior.draft.mjs",
+          "bytes": 16892,
+          "LF": 250,
+          "sha256": "70eeeb1cf8c66fc3c82a5d3dc939bba519863b61a5abaaad9c0b9cb829ca0f31",
+          "gitBlob": "6313af43fb7ddc8878f18c0161d9804990fb7bb4"
+        }
+      ],
+      "nodeSha256": "dbedff294bab84a0a86c04e15fbcbeb1c97ca10bef1b32b0634cd24b36f62100",
+      "runtime": {
+        "node": "24.19.0",
+        "platform": "darwin",
+        "arch": "arm64"
+      },
+      "startedAtUnix": 1792793406.37245,
+      "completedAtUnix": 1792793406.4471521,
+      "actualExit": 0,
+      "reason": null,
+      "outputComplete": true,
+      "streams": {
+        "stdout": {
+          "rawBytes": 0,
+          "rawSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "content": ""
+        },
+        "stderr": {
+          "rawBytes": 0,
+          "rawSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "content": ""
+        }
+      },
+      "argv": [
+        "$PINNED_NODE_24_19_0",
+        "--permission",
+        "--allow-fs-read=$REPO/package.json",
+        "--allow-fs-read=$REPO/qualification/dynamic-plasma-original-funding-v3-close-native.behavior.draft.mjs",
+        "--no-addons",
+        "--disallow-code-generation-from-strings",
+        "--disable-proto=throw",
+        "--unhandled-rejections=strict",
+        "--check",
+        "$REPO/qualification/dynamic-plasma-original-funding-v3-close-native.behavior.draft.mjs"
+      ],
+      "sourceInspection": {
+        "syntaxOnly": true,
+        "applicationExecuted": false,
+        "SDKImported": false,
+        "nonceProducerImported": false,
+        "SQLite": false,
+        "signing": false,
+        "network": false,
+        "newTasks": 0,
+        "newScratch": 0
+      },
+      "localStatusRows": 893,
+      "localStatusSha256": "e967a435c8819a74bd88396df689a4cfc25d867f2ac8ab22079624a78d0dff57",
+      "indexEmpty": true
+    },
+    {
+      "kind": "V3_SIX_CLOSE_CASE_SYNTAX_ONLY_CAPTURE",
+      "sourceInputs": [
+        {
+          "path": "package.json",
+          "bytes": 2677,
+          "LF": 40,
+          "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+          "gitBlob": "45752ffde39d29666094f7f1c755060d75e43deb"
+        },
+        {
+          "path": "qualification/dynamic-plasma-original-funding-v3-close-native.preload.draft.mjs",
+          "bytes": 11724,
+          "LF": 228,
+          "sha256": "c4c04fb9c08580e24186582f7b01f945c9096f2db7e2a474fc0c828045678b22",
+          "gitBlob": "5709184319d538258c37340b1f6bd41558586152"
+        }
+      ],
+      "nodeSha256": "dbedff294bab84a0a86c04e15fbcbeb1c97ca10bef1b32b0634cd24b36f62100",
+      "runtime": {
+        "node": "24.19.0",
+        "platform": "darwin",
+        "arch": "arm64"
+      },
+      "startedAtUnix": 1792793406.372799,
+      "completedAtUnix": 1792793406.4480588,
+      "actualExit": 0,
+      "reason": null,
+      "outputComplete": true,
+      "streams": {
+        "stdout": {
+          "rawBytes": 0,
+          "rawSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "content": ""
+        },
+        "stderr": {
+          "rawBytes": 0,
+          "rawSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "content": ""
+        }
+      },
+      "argv": [
+        "$PINNED_NODE_24_19_0",
+        "--permission",
+        "--allow-fs-read=$REPO/package.json",
+        "--allow-fs-read=$REPO/qualification/dynamic-plasma-original-funding-v3-close-native.preload.draft.mjs",
+        "--no-addons",
+        "--disallow-code-generation-from-strings",
+        "--disable-proto=throw",
+        "--unhandled-rejections=strict",
+        "--check",
+        "$REPO/qualification/dynamic-plasma-original-funding-v3-close-native.preload.draft.mjs"
+      ],
+      "sourceInspection": {
+        "syntaxOnly": true,
+        "applicationExecuted": false,
+        "SDKImported": false,
+        "nonceProducerImported": false,
+        "SQLite": false,
+        "signing": false,
+        "network": false,
+        "newTasks": 0,
+        "newScratch": 0
+      },
+      "localStatusRows": 893,
+      "localStatusSha256": "e967a435c8819a74bd88396df689a4cfc25d867f2ac8ab22079624a78d0dff57",
+      "indexEmpty": true
+    }
+  ],
+  "rejectionBeforeEffectImportsControls": [
+    {
+      "kind": "V3_SIX_CLOSE_CASE_REJECTION_BEFORE_EFFECT_IMPORTS_CONTROL",
+      "sourceInputs": [
+        {
+          "path": "package.json",
+          "bytes": 2677,
+          "LF": 40,
+          "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+          "gitBlob": "45752ffde39d29666094f7f1c755060d75e43deb"
+        },
+        {
+          "path": "qualification/dynamic-plasma-original-funding-v3-close-native.selection.draft.mjs",
+          "bytes": 1926,
+          "LF": 27,
+          "sha256": "5ae83b4feded43578a381397d3b7e82a7a5a7bcfb0b2f34cd6924a0bf2bbc520",
+          "gitBlob": "58b66cccb3ae1ddc758824ddd3948c285d709ecc"
+        }
+      ],
+      "nodeSha256": "dbedff294bab84a0a86c04e15fbcbeb1c97ca10bef1b32b0634cd24b36f62100",
+      "runtime": {
+        "node": "24.19.0",
+        "platform": "darwin",
+        "arch": "arm64"
+      },
+      "startedAtUnix": 1792793432.1109529,
+      "completedAtUnix": 1792793432.19056,
+      "actualExit": 1,
+      "reason": null,
+      "outputComplete": true,
+      "streams": {
+        "stdout": {
+          "rawBytes": 0,
+          "rawSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "content": ""
+        },
+        "stderr": {
+          "rawBytes": 765,
+          "rawSha256": "886c8b24bf80c842fefa5419138d5bbd539705237e9668d932fcbac907ac53e8",
+          "sanitizedContent": "file://$REPO/qualification/dynamic-plasma-original-funding-v3-close-native.selection.draft.mjs:20\n  throw new TypeError('X402_V3_SIX_CASE_SELECTION_REJECTED_BEFORE_EFFECT_IMPORTS');\n        ^\n\nTypeError: X402_V3_SIX_CASE_SELECTION_REJECTED_BEFORE_EFFECT_IMPORTS\n    at file://$REPO/qualification/dynamic-plasma-original-funding-v3-close-native.selection.draft.mjs:20:9\n    at ModuleJob.run (node:internal/modules/esm/module_job:439:25)\n    at async node:internal/modules/esm/loader:643:26\n    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)\n\nNode.js v24.19.0\n",
+          "privateRepositoryPrefixRedacted": true
+        }
+      },
+      "argv": [
+        "$PINNED_NODE_24_19_0",
+        "--permission",
+        "--allow-fs-read=$REPO/package.json",
+        "--allow-fs-read=$REPO/qualification/dynamic-plasma-original-funding-v3-close-native.selection.draft.mjs",
+        "--no-addons",
+        "--disallow-code-generation-from-strings",
+        "--disable-proto=throw",
+        "--unhandled-rejections=strict",
+        "$REPO/qualification/dynamic-plasma-original-funding-v3-close-native.selection.draft.mjs"
+      ],
+      "sourceInspection": {
+        "syntaxOnly": false,
+        "guardOnly": true,
+        "applicationExecuted": false,
+        "SDKImported": false,
+        "nonceProducerImported": false,
+        "SQLite": false,
+        "signing": false,
+        "network": false,
+        "newTasks": 0,
+        "newScratch": 0
+      },
+      "localStatusRows": 893,
+      "localStatusSha256": "e967a435c8819a74bd88396df689a4cfc25d867f2ac8ab22079624a78d0dff57",
+      "indexEmpty": true,
+      "expectedExit": 1,
+      "controlResult": "PASS_EXPECTED_REJECTION_NOT_NATIVE_APPLICATION_EXECUTION"
+    },
+    {
+      "kind": "V3_SIX_CLOSE_CASE_REJECTION_BEFORE_EFFECT_IMPORTS_CONTROL",
+      "sourceInputs": [
+        {
+          "path": "package.json",
+          "bytes": 2677,
+          "LF": 40,
+          "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+          "gitBlob": "45752ffde39d29666094f7f1c755060d75e43deb"
+        },
+        {
+          "path": "qualification/dynamic-plasma-original-funding-v3-close-native.preload.draft.mjs",
+          "bytes": 11724,
+          "LF": 228,
+          "sha256": "c4c04fb9c08580e24186582f7b01f945c9096f2db7e2a474fc0c828045678b22",
+          "gitBlob": "5709184319d538258c37340b1f6bd41558586152"
+        }
+      ],
+      "nodeSha256": "dbedff294bab84a0a86c04e15fbcbeb1c97ca10bef1b32b0634cd24b36f62100",
+      "runtime": {
+        "node": "24.19.0",
+        "platform": "darwin",
+        "arch": "arm64"
+      },
+      "startedAtUnix": 1792793432.307216,
+      "completedAtUnix": 1792793432.3637319,
+      "actualExit": 1,
+      "reason": null,
+      "outputComplete": true,
+      "streams": {
+        "stdout": {
+          "rawBytes": 0,
+          "rawSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "content": ""
+        },
+        "stderr": {
+          "rawBytes": 385,
+          "rawSha256": "44e444c69e7e9501c9452e607461d30d7cbf26ef9db4d37fbc8a503546f2a3c2",
+          "sanitizedContent": "file://$REPO/qualification/dynamic-plasma-original-funding-v3-close-native.preload.draft.mjs:224\n  const error = new TypeError(code);\n                ^\n\n[TypeError: X402_PINNED_DP_V3_SIX_CLOSE_CASE_PROFILE_REJECTED] {\n  code: 'X402_PINNED_DP_V3_SIX_CLOSE_CASE_PROFILE_REJECTED'\n}\n\nNode.js v24.19.0\n",
+          "privateRepositoryPrefixRedacted": true
+        }
+      },
+      "argv": [
+        "$PINNED_NODE_24_19_0",
+        "--permission",
+        "--allow-fs-read=$REPO/package.json",
+        "--allow-fs-read=$REPO/qualification/dynamic-plasma-original-funding-v3-close-native.preload.draft.mjs",
+        "--no-addons",
+        "--disallow-code-generation-from-strings",
+        "--disable-proto=throw",
+        "--unhandled-rejections=strict",
+        "$REPO/qualification/dynamic-plasma-original-funding-v3-close-native.preload.draft.mjs"
+      ],
+      "sourceInspection": {
+        "syntaxOnly": false,
+        "guardOnly": true,
+        "applicationExecuted": false,
+        "SDKImported": false,
+        "nonceProducerImported": false,
+        "SQLite": false,
+        "signing": false,
+        "network": false,
+        "newTasks": 0,
+        "newScratch": 0
+      },
+      "localStatusRows": 893,
+      "localStatusSha256": "e967a435c8819a74bd88396df689a4cfc25d867f2ac8ab22079624a78d0dff57",
+      "indexEmpty": true,
+      "expectedExit": 1,
+      "controlResult": "PASS_EXPECTED_REJECTION_NOT_NATIVE_APPLICATION_EXECUTION"
+    }
+  ],
+  "readOnlyPythonControls": {
+    "kind": "V3_CLOSE_PROFILE_READONLY_STANDARD_LIBRARY_CONTROLS",
+    "actualExit": 0,
+    "checksPassed": 14,
+    "checks": [
+      {
+        "name": "syntax:qualification/dynamic-plasma-original-funding-v3-close-profile.draft.py",
+        "result": "PASS_SYNTAX_ONLY"
+      },
+      {
+        "name": "syntax:qualification/run-dp-original-funding-v3-close-native.local.py",
+        "result": "PASS_SYNTAX_ONLY"
+      },
+      {
+        "name": "in_memory_positive_profile_439_owned_source_pins",
+        "result": "PASS_NO_NATIVE_EXECUTION"
+      },
+      {
+        "name": "missing_application_row",
+        "result": "PASS_EXPECTED_PROFILE_REJECTION"
+      },
+      {
+        "name": "missing_package_row",
+        "result": "PASS_EXPECTED_PROFILE_REJECTION"
+      },
+      {
+        "name": "boolean_byte_count_refused",
+        "result": "PASS_EXPECTED_PROFILE_REJECTION"
+      },
+      {
+        "name": "traversal_row_refused",
+        "result": "PASS_EXPECTED_PROFILE_REJECTION"
+      },
+      {
+        "name": "duplicate_logical_row_refused",
+        "result": "PASS_EXPECTED_PROFILE_REJECTION"
+      },
+      {
+        "name": "old_v2_submission_pin_refused",
+        "result": "PASS_EXPECTED_PROFILE_REJECTION"
+      },
+      {
+        "name": "duplicate_builtin_refused",
+        "result": "PASS_EXPECTED_PROFILE_REJECTION"
+      },
+      {
+        "name": "scoped_file_url_codec",
+        "result": "PASS"
+      },
+      {
+        "name": "url_refusal:a?b.js",
+        "result": "PASS_EXPECTED_PROFILE_REJECTION"
+      },
+      {
+        "name": "url_refusal:a%b.js",
+        "result": "PASS_EXPECTED_PROFILE_REJECTION"
+      },
+      {
+        "name": "native_launcher_Task_run_keyword_ABI",
+        "result": "PASS_AST_SOURCE_ONLY"
+      }
+    ],
+    "preflightSourceInputs": [
+      {
+        "path": "qualification/dynamic-plasma-original-funding-v3-close-profile.draft.py",
+        "bytes": 8759,
+        "LF": 170,
+        "sha256": "557a40c2eff3a01f4497df58736354f2de471ed1a2db19bc527ad065e0a2217f",
+        "gitBlob": "d1b88406e6609621b54354f6be0088ec8355913b"
+      },
+      {
+        "path": "qualification/run-dp-original-funding-v3-close-native.local.py",
+        "bytes": 17476,
+        "LF": 295,
+        "sha256": "ba451b8a6b9bcb399bd94028e953b2df7173e82f7b62158ac4b71a259a7dee48",
+        "gitBlob": "702fbd3eaca55cc354f4be23d9cb9d69e9ce906b"
+      }
+    ],
+    "inMemoryPrivateProfileBytes": 159647,
+    "profileConstructedOnlyInMemory": true,
+    "privateProfileNotPersistedOrPublished": true,
+    "taskManagerExecuted": false,
+    "all439DeclaredSourceFilesVerified": true,
+    "SDKExecuted": false,
+    "SQLiteOpened": false,
+    "keysCreated": 0,
+    "signatures": 0,
+    "newRoots": 0,
+    "newTasks": 0,
+    "newScratch": 0
+  },
+  "runtimeEffectsThisPass": {
+    "NodeSyntaxOnlyCommands": 3,
+    "NodeGuardRejectionCommands": 2,
+    "nativeApplicationCommands": 0,
+    "SDKImports": 0,
+    "SQLiteFilesCreated": 0,
+    "SQLiteOpened": 0,
+    "keysCreated": 0,
+    "signatures": 0,
+    "nativeSockets": 0,
+    "networkFetchCallbacks": 0,
+    "nonceSearch": 0,
+    "realPREPARE": 0,
+    "newTaskStorageRoots": 0,
+    "newTaskStorageTasks": 0,
+    "newScratch": 0,
+    "automationChanges": 0,
+    "packageInstallations": 0,
+    "workerDispatches": 0
+  },
+  "proposedNativeBoundsNotAuthorization": {
+    "selectedCases": 6,
+    "newSQLiteFiles": 6,
+    "newV6SQLiteFiles": 6,
+    "independentPinFiles": 4,
+    "inMemorySyntheticKeys": 1,
+    "syntheticTransactionSignatures": 4,
+    "declaredFetchCallbacks": 1,
+    "nativeSockets": 0,
+    "NodeChildren": 0,
+    "workers": 0,
+    "nonceSearch": 0,
+    "SDKPrepareBlock": 0,
+    "realPayment": 0,
+    "normalReopens": 0,
+    "taskQuotaBytes": 4194304,
+    "maximumNodeCommandsPerTask": 1,
+    "maximumRunsIfSeparatelyApproved": 3,
+    "stdoutMaximumBytes": 65536,
+    "stderrMaximumBytes": 65536
+  },
+  "nativeAuthority": {
+    "oldV2RunsConsumed": 3,
+    "oldV2MaximumRuns": 3,
+    "oldV2LatestPassed": 11,
+    "oldV2LatestFailed": 1,
+    "noFourthV2Command": true,
+    "newV3ScopeRequestedSeparately": true,
+    "newV3ScopeInferredFromOldApproval": false,
+    "newV3NativeCommandsLaunched": 0
+  },
+  "publication": {
+    "state": "NOT_ATTEMPTED_FRESH_MAIN_PR_CI_UNAVAILABLE",
+    "GitHubWrites": 0,
+    "sourceRefObserved": "00d70ff658664928bc57e634bca50de88dc269a6",
+    "mainLastVerifiedPriorPass": "0d9192baf57a272e6009e116347c327094471a77",
+    "mainCurrent": "UNKNOWN_NOT_FRESHLY_VERIFIED",
+    "PRCurrent": "UNKNOWN_NOT_FRESHLY_VERIFIED",
+    "CICurrent": "UNKNOWN_NOT_FRESHLY_VERIFIED",
+    "readErrors": [
+      "GitHub API TLS handshake timeout while refreshing main and full baseline.",
+      "Independent git ls-remote ended 128 with connection reset by peer."
+    ],
+    "noFailedRemoteMutationToRetry": true,
+    "forcePush": false,
+    "CIRequested": false
+  },
+  "evidenceLimits": [
+    "No V3 SDK/SQLite case executed; syntax and guard controls are not those six cases.",
+    "V2's three failed runs and corrected unexecuted drafts remain separate, unchanged evidence.",
+    "No native HTTPS/positive-work/full bounded factory/resource-drain/crash/production qualification.",
+    "The native-fchmod profile has no Node Permission Model or OS/network sandbox.",
+    "Pin/resolver/budget checks are cooperative, not authentication, authorization, hard resource or cleanup guarantees.",
+    "Uncertain native store close would retain the same store, not create reopening or retry authority.",
+    "Main/CI, provider activation, grant/service delivery and live/economic pilot remain unestablished."
+  ]
+}

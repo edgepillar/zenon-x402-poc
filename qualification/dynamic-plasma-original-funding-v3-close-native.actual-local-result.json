@@ -1,0 +1,425 @@
+{
+  "kind": "ORIGINAL_FUNDING_V3_SIX_SELECTED_NATIVE_CLOSE_CASE_ACTUAL_LOCAL_RESULT",
+  "version": 1,
+  "qualification": "SELECTED_V3_NATIVE_CLOSE_CASES_PASS_ON_FIXTURE_VERSION_2",
+  "applicationSourceParent": "00d70ff658664928bc57e634bca50de88dc269a6",
+  "sourceDiscoveryBranch": "x402/p1-router-late-pending-close-integration-v2",
+  "sourceBinding": "All 52 application runtime files match the immutable application parent. The two public inventories bind the distinct qualification files by bytes, SHA-256 and Git blob, and reference the same 382 existing package inputs. Branch links are discovery links, not substitute source pins.",
+  "runtime": {
+    "node": "24.19.0",
+    "platform": "darwin",
+    "arch": "arm64",
+    "nodeSha256": "dbedff294bab84a0a86c04e15fbcbeb1c97ca10bef1b32b0634cd24b36f62100",
+    "profileMode": "reviewed-native-fchmod",
+    "NodePermissionModel": false,
+    "OSOrNetworkSandbox": false,
+    "ordinaryInstalledNamespaceQualified": false
+  },
+  "selectedPackages": {
+    "znn-typescript-sdk": "1.0.5",
+    "@noble/ed25519": "2.3.0",
+    "@noble/hashes": "1.8.0"
+  },
+  "authorization": {
+    "directHumanApprovalForThisV3Scope": true,
+    "maximumReviewedNativeRuns": 3,
+    "actualNativeRuns": 2,
+    "thirdRunUsed": false,
+    "oldV2ThreeRunApprovalReused": false,
+    "perRunCeiling": {
+      "selectedCases": 6,
+      "newSQLiteFiles": 6,
+      "newV6SQLiteFiles": 6,
+      "independentPinFiles": 4,
+      "inMemorySyntheticKeys": 1,
+      "syntheticTransactionSignatures": 4,
+      "declaredFetchCallbacks": 1,
+      "nativeSockets": 0,
+      "NodeChildren": 0,
+      "workers": 0,
+      "nonceSearch": 0,
+      "SDKPrepareBlock": 0,
+      "realPayment": 0,
+      "normalReopens": 0,
+      "taskQuotaBytes": 4194304,
+      "maximumNodeCommandsPerTask": 1,
+      "maximumRunsIfSeparatelyApproved": 3,
+      "stdoutMaximumBytes": 65536,
+      "stderrMaximumBytes": 65536
+    },
+    "limitsAreNotOSOrNetworkSandbox": true,
+    "unspentRunDoesNotAuthorizeOtherCases": true
+  },
+  "fixtureScope": {
+    "actualSubmissionEntry": "createZenonDynamicPlasmaOriginalFundingSubmissionV3",
+    "actualReadSessionCore": "createRetainedDynamicPlasmaReadSessionCore",
+    "genuineSDKAndNoble": true,
+    "genuineNewV6SQLite": true,
+    "unchangedV2FixtureHelper": true,
+    "readAndFetchCapabilities": "Declared in-process synthetic callbacks; not native HTTPS.",
+    "fixedDeclaredDifficulty": 0,
+    "fullBoundedHttpsFactoryImported": false,
+    "BOUNDMeaning": "Funding-intake acknowledgement only; not on-chain publication, grant activation, settlement or service delivery.",
+    "productionSourceOrDeadlineChangedBetweenAttempts": false,
+    "applicationDefaultOrBuyerActivated": false
+  },
+  "attemptComparison": {
+    "firstAttempt": "Fixture version 1: five pass, one fail. Complete failed receipt and source preserved.",
+    "secondAttempt": "Fixture version 2: all six pass, zero skips/cancels/todos, actual exit zero.",
+    "corrections": [
+      "Only the success fixture's explicit deadline increased from 200 ms to 2000 ms; production code and deadlines are unchanged.",
+      "The declared fetch callback now retains its assertion failure stage for diagnosis; exact assertions remain required.",
+      "Counters are emitted before final assertions. The same six cases and effect ceilings remain selected.",
+      "The second launcher also conservatively accounts for its own managed root reservations."
+    ],
+    "causeOfFirstFailure": "NOT_CONCLUSIVELY_ESTABLISHED. The first success case returned submission_unknown; its original fetch stage was not captured. A later pass after fixture changes is not a proved production root cause or a production fix.",
+    "oldTwelveCaseV2QualificationUnchanged": true
+  },
+  "attempts": [
+    {
+      "attempt": 1,
+      "fixtureVersion": 1,
+      "profileVersion": 1,
+      "inputInventory": {
+        "path": "qualification/dynamic-plasma-original-funding-v3-close-native.inputs.json",
+        "sha256": "74fc22a3e7c3d9d5a6c447a6cd27a853752987b6de6c9e52b1a952062ac86463",
+        "applicationRuntimeFiles": 52,
+        "applicationAndQualificationFiles": 57,
+        "packageFiles": 382,
+        "allDeclaredFiles": 439,
+        "sourceBytes": 2658524,
+        "sourceRowsSha256": "37fe8ab855b20feaf59a3e1709d14829f0796a1693ba8b2b6e355bb6a2d6e132"
+      },
+      "receipt": {
+        "state": "COMPLETE",
+        "actualExit": 1,
+        "outputComplete": true,
+        "scratchScanRetries": 0,
+        "reason": null,
+        "completedAtUnix": 1792794328.917312,
+        "taskState": "CLOSED",
+        "taskOutcome": "FAILURE"
+      },
+      "cases": [
+        {
+          "number": 1,
+          "name": "actual V3 prepares commits submits once and joins three read closes before closing the real V6 store",
+          "result": "FAIL"
+        },
+        {
+          "number": 2,
+          "name": "actual V3 reentrant close during native recovery blocks POST entry while preserving original PREPARED bytes",
+          "result": "PASS"
+        },
+        {
+          "number": 3,
+          "name": "actual V3 uncertain read close keeps the idle native PREPARED store held and never promotes after all read settlements",
+          "result": "PASS"
+        },
+        {
+          "number": 4,
+          "name": "actual V3 close aborts the first pending account read before work or signing and joins empty-store close",
+          "result": "PASS"
+        },
+        {
+          "number": 5,
+          "name": "actual V3 close aborts the sixth read after signing without custody entry reassembly or another signature",
+          "result": "PASS"
+        },
+        {
+          "number": 6,
+          "name": "actual V3 refuses a different readOptions object before wallet or transport and leaves construction ownership with the caller",
+          "result": "PASS"
+        }
+      ],
+      "summary": {
+        "tests": 6,
+        "pass": 5,
+        "fail": 1,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "streams": {
+        "stdout": {
+          "rawBytes": 3024,
+          "rawSha256": "1c6b5aa540b9721e4ff4d3bd011ce6eb08e1c1cba27450425b584510190a109f",
+          "publicContentIsPathRedacted": true,
+          "publicContent": "TAP version 13\n# Subtest: actual V3 prepares commits submits once and joins three read closes before closing the real V6 store\nnot ok 1 - actual V3 prepares commits submits once and joins three read closes before closing the real V6 store\n  ---\n  duration_ms: 955.064375\n  type: 'test'\n  location: '$REPO/qualification/dynamic-plasma-original-funding-v3-close-native.behavior.draft.mjs:168:7'\n  failureType: 'testCodeFailure'\n  error: 'zenon_dynamic_plasma_original_funding_submission_submission_unknown'\n  code: 'zenon_dynamic_plasma_original_funding_submission_submission_unknown'\n  name: 'TypeError'\n  ...\n# Subtest: actual V3 reentrant close during native recovery blocks POST entry while preserving original PREPARED bytes\nok 2 - actual V3 reentrant close during native recovery blocks POST entry while preserving original PREPARED bytes\n  ---\n  duration_ms: 232.237\n  type: 'test'\n  ...\n# Subtest: actual V3 uncertain read close keeps the idle native PREPARED store held and never promotes after all read settlements\nok 3 - actual V3 uncertain read close keeps the idle native PREPARED store held and never promotes after all read settlements\n  ---\n  duration_ms: 209.89275\n  type: 'test'\n  ...\n# Subtest: actual V3 close aborts the first pending account read before work or signing and joins empty-store close\nok 4 - actual V3 close aborts the first pending account read before work or signing and joins empty-store close\n  ---\n  duration_ms: 94.617417\n  type: 'test'\n  ...\n# Subtest: actual V3 close aborts the sixth read after signing without custody entry reassembly or another signature\nok 5 - actual V3 close aborts the sixth read after signing without custody entry reassembly or another signature\n  ---\n  duration_ms: 125.395958\n  type: 'test'\n  ...\n# Subtest: actual V3 refuses a different readOptions object before wallet or transport and leaves construction ownership with the caller\nok 6 - actual V3 refuses a different readOptions object before wallet or transport and leaves construction ownership with the caller\n  ---\n  duration_ms: 95.331583\n  type: 'test'\n  ...\n1..6\n# Error: A resource generated asynchronous activity after the test ended. This activity created the error \"AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\\\\n\\\\n5 !== 6\\\\n\" which triggered an uncaughtException event, caught by the test runner.\n# tests 6\n# suites 0\n# pass 5\n# fail 1\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 1718.103791\n# pinned-dp-original-funding-v3-close-node-namespace {\"profileKind\":\"ZENON_DP_ORIGINAL_FUNDING_V3_SIX_CLOSE_CASE_NODE24\",\"expectedCases\":6,\"profileVersion\":1,\"sourceRowsSha256\":\"37fe8ab855b20feaf59a3e1709d14829f0796a1693ba8b2b6e355bb6a2d6e132\",\"inputsVerifiedBeforeFixture\":439,\"declaredSourceBytes\":2658524,\"resolveCalls\":664,\"bareImportOverrideHits\":5,\"declaredFilesResolved\":215,\"sourceTransforms\":0,\"ordinaryInstalledNamespaceQualified\":false,\"noNetworkOrOsSandboxClaim\":true}\n"
+        },
+        "stderr": {
+          "rawBytes": 0,
+          "rawSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "content": ""
+        },
+        "hashMeaning": "Raw hashes describe the complete privately retained streams, not path-redacted public text."
+      },
+      "namespace": {
+        "profileKind": "ZENON_DP_ORIGINAL_FUNDING_V3_SIX_CLOSE_CASE_NODE24",
+        "expectedCases": 6,
+        "profileVersion": 1,
+        "sourceRowsSha256": "37fe8ab855b20feaf59a3e1709d14829f0796a1693ba8b2b6e355bb6a2d6e132",
+        "inputsVerifiedBeforeFixture": 439,
+        "declaredSourceBytes": 2658524,
+        "resolveCalls": 664,
+        "bareImportOverrideHits": 5,
+        "declaredFilesResolved": 215,
+        "sourceTransforms": 0,
+        "ordinaryInstalledNamespaceQualified": false,
+        "noNetworkOrOsSandboxClaim": true
+      },
+      "emittedFixtureCounters": null,
+      "counterInterpretation": "No final fixture-counter footer was emitted; do not infer exact totals from absent output. The namespace footer and filesystem metadata were independently checked.",
+      "independentProtectedRecordReview": {
+        "rawStreamDigestsAndBytesVerified": true,
+        "owningCASReferencesVerified": true,
+        "privateProfileAnd439SourceRowsVerified": true,
+        "retained57ApplicationAndQualificationFilesVerified": true,
+        "actualProcessGroupAbsent": true,
+        "filesystemMetadataOnly": {
+          "newSQLiteFilesObserved": 6,
+          "independentPinFilesObserved": 4,
+          "SQLiteLogicalBytes": 319488,
+          "SQLiteContentsReopenedOrReadByReviewer": false
+        },
+        "cleanupDecision": "HOLD",
+        "cleanupReason": "Unregistered native fixture files are preserved; a CLOSED task or SUCCESS outcome is not cleanup success."
+      }
+    },
+    {
+      "attempt": 2,
+      "fixtureVersion": 2,
+      "profileVersion": 2,
+      "inputInventory": {
+        "path": "qualification/dynamic-plasma-original-funding-v3-close-native.inputs-v2.json",
+        "sha256": "2f63d885a51b334520d5033955bc11e9610993d96425b07957cada05921e017a",
+        "applicationRuntimeFiles": 52,
+        "applicationAndQualificationFiles": 57,
+        "packageFiles": 382,
+        "allDeclaredFiles": 439,
+        "sourceBytes": 2659555,
+        "sourceRowsSha256": "226d4f6b1ab755ddd5c38fc78d29e3568d1c9b2732f7e1bfca6abf470a304a62"
+      },
+      "receipt": {
+        "state": "COMPLETE",
+        "actualExit": 0,
+        "outputComplete": true,
+        "scratchScanRetries": 0,
+        "reason": null,
+        "completedAtUnix": 1792794702.572462,
+        "taskState": "CLOSED",
+        "taskOutcome": "SUCCESS"
+      },
+      "cases": [
+        {
+          "number": 1,
+          "name": "actual V3 prepares commits submits once and joins three read closes before closing the real V6 store",
+          "result": "PASS"
+        },
+        {
+          "number": 2,
+          "name": "actual V3 reentrant close during native recovery blocks POST entry while preserving original PREPARED bytes",
+          "result": "PASS"
+        },
+        {
+          "number": 3,
+          "name": "actual V3 uncertain read close keeps the idle native PREPARED store held and never promotes after all read settlements",
+          "result": "PASS"
+        },
+        {
+          "number": 4,
+          "name": "actual V3 close aborts the first pending account read before work or signing and joins empty-store close",
+          "result": "PASS"
+        },
+        {
+          "number": 5,
+          "name": "actual V3 close aborts the sixth read after signing without custody entry reassembly or another signature",
+          "result": "PASS"
+        },
+        {
+          "number": 6,
+          "name": "actual V3 refuses a different readOptions object before wallet or transport and leaves construction ownership with the caller",
+          "result": "PASS"
+        }
+      ],
+      "summary": {
+        "tests": 6,
+        "pass": 6,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "streams": {
+        "stdout": {
+          "rawBytes": 3447,
+          "rawSha256": "8261e4e6eee8b03af041ccc40d11a97e97a656cbd4f2a210d74a6dcade609458",
+          "publicContentIsPathRedacted": false,
+          "publicContent": "# original-funding-v3-native-close-fixture {\"cases\":6,\"createAttempts\":6,\"addressEntries\":5,\"signatureEntries\":4,\"materialEntries\":4,\"dpForwardEntries\":276,\"accountForwardEntries\":71,\"fetchEntries\":1,\"readOwnerCloses\":18,\"casesEntered\":6,\"casesCompleted\":6,\"heldStores\":1,\"secondaryCleanupFailures\":0,\"recoveryCloseHooks\":1,\"fixture\":{\"fixtures\":6,\"addressCallbacks\":5,\"signatures\":4,\"accountReadCallbacks\":71,\"dpReadCallbacks\":276,\"materialHandoffs\":4,\"pinFilesWritten\":4,\"fetchCalls\":0,\"commitLossHooks\":0,\"recoveryCloseHooks\":0,\"transportReleases\":0,\"uniqueSignedHashes\":4},\"syntheticKeys\":1,\"maximumSignatures\":4,\"newV6Databases\":6,\"newPinFiles\":4,\"declaredReadCallbacksOnly\":true,\"nativeHTTPS\":0,\"nonceEvaluations\":0,\"normalReopens\":0,\"actualFullBoundedHttpsFactoryImported\":false,\"liveOrProduction\":false,\"heldStoreNotForceClosed\":true}\n# six-case-original-funding-v3-close-selection {\"selectionVersion\":1,\"expectedCases\":6,\"selectionIsNotHumanAuthorization\":true,\"sourceTransforms\":0,\"ordinaryInstalledNamespaceQualified\":false,\"nativeHTTPS\":0,\"nonceEvaluations\":0,\"authority\":\"NONE\"}\nTAP version 13\n# Subtest: actual V3 prepares commits submits once and joins three read closes before closing the real V6 store\nok 1 - actual V3 prepares commits submits once and joins three read closes before closing the real V6 store\n  ---\n  duration_ms: 462.356833\n  type: 'test'\n  ...\n# Subtest: actual V3 reentrant close during native recovery blocks POST entry while preserving original PREPARED bytes\nok 2 - actual V3 reentrant close during native recovery blocks POST entry while preserving original PREPARED bytes\n  ---\n  duration_ms: 191.167083\n  type: 'test'\n  ...\n# Subtest: actual V3 uncertain read close keeps the idle native PREPARED store held and never promotes after all read settlements\nok 3 - actual V3 uncertain read close keeps the idle native PREPARED store held and never promotes after all read settlements\n  ---\n  duration_ms: 193.673541\n  type: 'test'\n  ...\n# Subtest: actual V3 close aborts the first pending account read before work or signing and joins empty-store close\nok 4 - actual V3 close aborts the first pending account read before work or signing and joins empty-store close\n  ---\n  duration_ms: 74.139792\n  type: 'test'\n  ...\n# Subtest: actual V3 close aborts the sixth read after signing without custody entry reassembly or another signature\nok 5 - actual V3 close aborts the sixth read after signing without custody entry reassembly or another signature\n  ---\n  duration_ms: 117.302292\n  type: 'test'\n  ...\n# Subtest: actual V3 refuses a different readOptions object before wallet or transport and leaves construction ownership with the caller\nok 6 - actual V3 refuses a different readOptions object before wallet or transport and leaves construction ownership with the caller\n  ---\n  duration_ms: 71.135541\n  type: 'test'\n  ...\n1..6\n# tests 6\n# suites 0\n# pass 6\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 1114.818875\n# pinned-dp-original-funding-v3-close-node-namespace {\"profileKind\":\"ZENON_DP_ORIGINAL_FUNDING_V3_SIX_CLOSE_CASE_NODE24\",\"expectedCases\":6,\"profileVersion\":2,\"sourceRowsSha256\":\"226d4f6b1ab755ddd5c38fc78d29e3568d1c9b2732f7e1bfca6abf470a304a62\",\"inputsVerifiedBeforeFixture\":439,\"declaredSourceBytes\":2659555,\"resolveCalls\":664,\"bareImportOverrideHits\":5,\"declaredFilesResolved\":215,\"sourceTransforms\":0,\"ordinaryInstalledNamespaceQualified\":false,\"noNetworkOrOsSandboxClaim\":true}\n"
+        },
+        "stderr": {
+          "rawBytes": 0,
+          "rawSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "content": ""
+        },
+        "hashMeaning": "Raw hashes describe the complete privately retained streams, not path-redacted public text."
+      },
+      "namespace": {
+        "profileKind": "ZENON_DP_ORIGINAL_FUNDING_V3_SIX_CLOSE_CASE_NODE24",
+        "expectedCases": 6,
+        "profileVersion": 2,
+        "sourceRowsSha256": "226d4f6b1ab755ddd5c38fc78d29e3568d1c9b2732f7e1bfca6abf470a304a62",
+        "inputsVerifiedBeforeFixture": 439,
+        "declaredSourceBytes": 2659555,
+        "resolveCalls": 664,
+        "bareImportOverrideHits": 5,
+        "declaredFilesResolved": 215,
+        "sourceTransforms": 0,
+        "ordinaryInstalledNamespaceQualified": false,
+        "noNetworkOrOsSandboxClaim": true
+      },
+      "emittedFixtureCounters": {
+        "cases": 6,
+        "createAttempts": 6,
+        "addressEntries": 5,
+        "signatureEntries": 4,
+        "materialEntries": 4,
+        "dpForwardEntries": 276,
+        "accountForwardEntries": 71,
+        "fetchEntries": 1,
+        "readOwnerCloses": 18,
+        "casesEntered": 6,
+        "casesCompleted": 6,
+        "heldStores": 1,
+        "secondaryCleanupFailures": 0,
+        "recoveryCloseHooks": 1,
+        "fixture": {
+          "fixtures": 6,
+          "addressCallbacks": 5,
+          "signatures": 4,
+          "accountReadCallbacks": 71,
+          "dpReadCallbacks": 276,
+          "materialHandoffs": 4,
+          "pinFilesWritten": 4,
+          "fetchCalls": 0,
+          "commitLossHooks": 0,
+          "recoveryCloseHooks": 0,
+          "transportReleases": 0,
+          "uniqueSignedHashes": 4
+        },
+        "syntheticKeys": 1,
+        "maximumSignatures": 4,
+        "newV6Databases": 6,
+        "newPinFiles": 4,
+        "declaredReadCallbacksOnly": true,
+        "nativeHTTPS": 0,
+        "nonceEvaluations": 0,
+        "normalReopens": 0,
+        "actualFullBoundedHttpsFactoryImported": false,
+        "liveOrProduction": false,
+        "heldStoreNotForceClosed": true
+      },
+      "counterInterpretation": "The actual fetch-entry counter is fetchEntries=1. fixture.fetchCalls=0 is an unused legacy helper counter and does not mean no fetch callback ran. Callback counters are not global OS/network instrumentation.",
+      "independentProtectedRecordReview": {
+        "rawStreamDigestsAndBytesVerified": true,
+        "owningCASReferencesVerified": true,
+        "privateProfileAnd439SourceRowsVerified": true,
+        "retained57ApplicationAndQualificationFilesVerified": true,
+        "actualProcessGroupAbsent": true,
+        "filesystemMetadataOnly": {
+          "newSQLiteFilesObserved": 6,
+          "independentPinFilesObserved": 4,
+          "SQLiteLogicalBytes": 319488,
+          "SQLiteContentsReopenedOrReadByReviewer": false
+        },
+        "cleanupDecision": "HOLD",
+        "cleanupReason": "Unregistered native fixture files are preserved; a CLOSED task or SUCCESS outcome is not cleanup success."
+      }
+    }
+  ],
+  "storage": {
+    "freshPrivateManagedRoots": 1,
+    "closedTasks": 2,
+    "thirdTaskAbsent": true,
+    "taskQuotaBytes": 4194304,
+    "minFreeBytes": 10737418240,
+    "policyPath": "qualification/dynamic-plasma-original-funding-v3-close-native.storage-policy.json",
+    "policySha256": "23f1907af1b63da824570634327ee517162bfa49d930d0efe4f03bef42f139e0",
+    "mountedVolumeIdentityCheckedBeforeEachRun": true,
+    "capacityAndReservationsCheckedBeforeEachRun": true,
+    "previousReservationScope": "This x402 task's prior roots plus the configured default root: five validated roots. The second launcher also accounts for its own root. This is not a global multi-project reservation qualification.",
+    "olderRootsAdoptedOrCleaned": false,
+    "rawReceiptsProfilesSQLiteAndPinFilesRetainedPrivately": true,
+    "cleanupDecision": "HOLD",
+    "logicalBytesNotPhysicalReclaim": true,
+    "noRecursiveSourceOrDependencyCopy": true
+  },
+  "preparation": {
+    "sourcePackagesLaunchersRuntimeManagerVolumeAndCapacityReviewedBeforeEachRun": true,
+    "preflightOnlyReportPreserved": "qualification/dynamic-plasma-original-funding-v3-close-native.preflight-local-result.json",
+    "fixtureVersion2SyntaxChecks": [
+      {
+        "path": "qualification/dynamic-plasma-original-funding-v3-close-native.selection-v2.draft.mjs",
+        "sha256": "acc146835913e1eacbfb617373a0b4b06f5d5055c3d9425527872ed901c0bfe4",
+        "actualExit": 0,
+        "stdoutBytes": 0,
+        "stderrBytes": 0,
+        "syntaxOnly": true
+      },
+      {
+        "path": "qualification/dynamic-plasma-original-funding-v3-close-native.behavior-v2.draft.mjs",
+        "sha256": "0748a1ec7c27e980a08049f4f08fa7ef33f1812b9c736fd1a210dbe0ac4df716",
+        "actualExit": 0,
+        "stdoutBytes": 0,
+        "stderrBytes": 0,
+        "syntaxOnly": true
+      },
+      {
+        "path": "qualification/dynamic-plasma-original-funding-v3-close-native.preload-v2.draft.mjs",
+        "sha256": "dd011afc546422ae081ccc8b65ab50d1e4c5b8a3fd71ecd29bc11cdc64074839",
+        "actualExit": 0,
+        "stdoutBytes": 0,
+        "stderrBytes": 0,
+        "syntaxOnly": true
+      }
+    ]
+  },
+  "preservedPriorV2Result": {
+    "path": "qualification/dynamic-plasma-original-funding-submission-v2-native.actual-local-result.json",
+    "sha256": "e00553709a70cef34f5b62137579afaf61e9b42c6ea9a560f055acaf267bc354",
+    "lastPass": 11,
+    "lastFail": 1,
+    "oldThreeRunAuthorityExhausted": true,
+    "newSixCaseV3ResultDoesNotReplaceIt": true
+  },
+  "publicationReview": {
+    "sourceParent": "00d70ff658664928bc57e634bca50de88dc269a6",
+    "mainParent": "0d9192baf57a272e6009e116347c327094471a77",
+    "openPRs": 4,
+    "targetFileOverlap": false,
+    "mainProtected": false,
+    "mainRules": 0,
+    "currentSourceAndMainCI": {
+      "source": {
+        "checks": 0,
+        "statuses": 0,
+        "runs": 0
+      },
+      "main": {
+        "checks": 0,
+        "statuses": 0,
+        "runs": 0
+      }
+    },
+    "interpretation": "No hosted CI execution or green result is claimed. Source fixtures remain opt-in; main receives selected evidence/docs only, not this native test graph or a default cutover."
+  },
+  "evidenceLimits": [
+    "Selected native SDK/Noble plus SQLite composition with synthetic in-process reads/fetch, not a native HTTPS composition.",
+    "No positive-difficulty nonce search, ordinary installed namespace qualification or full bounded HTTPS factory.",
+    "No forced process kill, normal store reopen, crash-consistency, filesystem durability or hard resource-drain qualification.",
+    "No existing user data, live wallet, external socket, payment/provider signature, SDK prepareBlock or real PREPARE/pilot selected by these fixtures.",
+    "No hosted CI execution, provider activation, chain funding proof, grant/service delivery, economic pilot or production readiness.",
+    "The earlier failed fixture and old V2 failures remain evidence; a passing selected V3 run does not close the full P0-P4 roadmap.",
+    "Source/identity/resolver checks are cooperative. No OS/network sandbox or whole-machine isolation claim."
+  ]
+}
