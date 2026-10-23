@@ -79,9 +79,21 @@ report `CLIENT_RECONCILIATION_REQUIRED`. Neither observation confirms delivery,
 clears persisted uncertainty or permits a retry, signature or replacement.
 The current-authority and service-delivery fields remain `NOT_ESTABLISHED`.
 
-A failure produces exit 1 and only
-`SERVICE_CREDIT_RECOVERY_INSPECTION_FAILED` on stderr. A failed close is not
-silently retried or reported as release. The importable
+A program refusal produces exit 1 with the fixed
+`SERVICE_CREDIT_RECOVERY_INSPECTION_FAILED` line on stderr. The command does not
+override Node's runtime warning policy: runtime diagnostics are distinct from
+that fixed program line. Both successful native invocations in the selected
+Node 24.19.0/macOS arm64 result had empty stderr. Other runtime/platform profiles
+and a warning-present path are not qualified by that observation.
+
+An explicit quiet runtime profile places `--no-warnings` before the script:
+
+```sh
+node --no-warnings src/service-credit-recovery-inspect-cli.js --manifest /private/operator-recovery/inspect.json --allowed-root /private/operator-recovery
+```
+
+This suppresses Node warnings, not program refusals; it grants no new authority.
+A failed close is not silently retried or reported as release. The importable
 `inspectServiceCreditOriginal` API provides only a fixed internal stage enum on
 its redacted exception; the CLI never prints underlying reasons.
 
@@ -101,10 +113,29 @@ missing payer file. The CLI caused no additional dispatch, debit, execution or
 proof. The original funding/checkpoint/request rows and backend ledger stayed
 unchanged; two real local payer owner acquisitions were observed.
 
-This exercises the importable CLI argument/manifest/native-owner command path,
-not a separate process's stdin/stdout launcher. Same-process close/reopen is not
-application restart, crash durability or an OS/network sandbox. Broader malformed
-input, concurrency, close-failure and platform matrices remain separately
-unqualified. No existing tests were imported/replayed, and no SDK, network,
-provider signature, real payment, PREPARE, chain qualification or live pilot ran.
-Hosted CI is NOT_RUN, not green. Full P2 and production acceptance remain open.
+That paired API result exercises the importable CLI argument/manifest/native-owner
+command path, not a separate process's stdin/stdout launcher. It remains
+unchanged and must not be reinterpreted as native-process evidence.
+
+The additional selected process result is
+`qualification/service-credit-recovery-inspect-process.behavior.result.json`.
+One new test starts four actual CLI processes using two new private synthetic
+SQLite files and one in-memory capability key/proof. It checks the default
+invocation with one trailing LF, the explicit quiet profile without LF, invalid
+flags while stdin stays open with no bytes/EOF, and 1027 noncredential bytes.
+Both successful processes return the same redacted JSON. Both negative cases
+return only the fixed refusal and cause no further payer owner acquisition.
+All four exits, stream EOFs and child-close events were observed, with no
+remaining process at the check. The original rows and backend ledger remain
+unchanged; exactly two local inspection owner acquisitions occur.
+
+This is normal-exit native reopen of the same original, not forced-crash,
+hardware-loss or full server-restart qualification. No application source or
+default CLI behavior changed. The old usage-document version is retained as an
+exact protected preimage as well as at its immutable Git commit.
+
+Broader malformed-input, input-stall, concurrency, close-failure and platform
+matrices remain separately unqualified. No existing test entry was replayed.
+No SDK, network, provider signature, real payment, PREPARE, chain qualification
+or live pilot ran. Hosted CI is NOT_RUN, not green. Full P2 and production
+acceptance remain open.
