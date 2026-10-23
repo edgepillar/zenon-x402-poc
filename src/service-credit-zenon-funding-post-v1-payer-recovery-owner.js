@@ -29,7 +29,13 @@ export const ZENON_FUNDING_PAYER_RECOVERY_OWNER_CODES = Object.freeze({
   closed: 'ZENON_FUNDING_PAYER_RECOVERY_OWNER_CLOSED',
 });
 
+export const ZENON_FUNDING_PAYER_RECOVERY_OWNER_V2_CODES = Object.freeze({
+  ...ZENON_FUNDING_PAYER_RECOVERY_OWNER_CODES,
+  nativeResourceCloseUnknown: 'ZENON_FUNDING_PAYER_RECOVERY_OWNER_NATIVE_RESOURCE_CLOSE_UNKNOWN',
+});
+
 const OWNER_KEYS = Object.freeze(['store', 'deadlineMs', 'fetchImpl']);
+const GUARDED_OWNER_KEYS = Object.freeze([...OWNER_KEYS, 'nativeResourceCloseGuard']);
 const RESERVED_STORES = new WeakSet();
 const NATIVE_PROMISE = Promise;
 const CLIENT_SUBMIT = 'submitAuthorizedPayment';
@@ -182,12 +188,36 @@ export function createZenonFundingPostV1PayerRecoveryOwner(options) {
   if (arguments.length !== 1) {
     fail(ZENON_FUNDING_PAYER_RECOVERY_OWNER_CODES.invalidConfiguration);
   }
+  return createOwner(options, false);
+}
+
+/**
+ * Opt-in V2 SOURCE ONLY: actual payer/store lifetime plus a synchronous,
+ * source-owned native-resource close guard. Only literal true is accepted;
+ * no thenable assimilation, retry, fallback close or newly inferred authority.
+ * The reserved close Promise precedes guard reentry. After every operation
+ * join, recheck immediately BEFORE the actual store.close entry and AFTER its
+ * return. A pre-entry refusal holds the still-open store; post-entry refusal
+ * records UNKNOWN but cannot undo a close that already returned.
+ * The real composition supplies its private current-owner observation, not an
+ * operator assertion. A callback alone is not native/OS authentication proof.
+ */
+export function createZenonFundingPostV1PayerRecoveryOwnerV2(options) {
+  if (arguments.length !== 1) fail(ZENON_FUNDING_PAYER_RECOVERY_OWNER_CODES.invalidConfiguration);
+  return createOwner(options, true);
+}
+
+function createOwner(options, guardedNativeClose) {
   const configuration = exactDataObject(
     options,
-    OWNER_KEYS,
-    ['store', 'deadlineMs'],
+    guardedNativeClose ? GUARDED_OWNER_KEYS : OWNER_KEYS,
+    guardedNativeClose ? ['store', 'deadlineMs', 'nativeResourceCloseGuard'] : ['store', 'deadlineMs'],
     ZENON_FUNDING_PAYER_RECOVERY_OWNER_CODES.invalidConfiguration,
   );
+  const nativeCloseGuard = guardedNativeClose ? configuration.nativeResourceCloseGuard : null;
+  if (guardedNativeClose && (typeof nativeCloseGuard !== 'function' || utilTypes.isProxy(nativeCloseGuard)
+      || Object.getPrototypeOf(nativeCloseGuard) !== Function.prototype || !Object.isFrozen(nativeCloseGuard)))
+    fail(ZENON_FUNDING_PAYER_RECOVERY_OWNER_CODES.invalidConfiguration);
   if (
     !exactStore(configuration.store)
     || !Number.isSafeInteger(configuration.deadlineMs)
@@ -223,6 +253,8 @@ export function createZenonFundingPostV1PayerRecoveryOwner(options) {
   let activeAttempt = null;
   let closeOperation = null;
   let quarantined = false;
+  let nativeCloseStage = 'NOT_REQUESTED', nativeGuardRefusal = null;
+  let storeCloseCallEntered = false, storeCloseCallReturned = false;
 
   function ownerFailure() {
     if (quarantined) {
@@ -502,6 +534,56 @@ export function createZenonFundingPostV1PayerRecoveryOwner(options) {
     return beginAttempt(ZENON_FUNDING_PAYER_RECOVERY_STATUS.OUTCOME_UNKNOWN);
   });
 
+  function requireNativeClose(stage) {
+    if (nativeCloseGuard === null) return;
+    let clean = false;
+    try { clean = Reflect.apply(nativeCloseGuard, undefined, []) === true; } catch {}
+    if (!clean) {
+      quarantined = true;
+      nativeGuardRefusal = stage; nativeCloseStage = 'GUARD_REFUSED';
+      throw failure(ZENON_FUNDING_PAYER_RECOVERY_OWNER_V2_CODES.nativeResourceCloseUnknown);
+    }
+  }
+
+  async function closeOwnedStore() {
+    if (guardedNativeClose) nativeCloseStage = 'JOINING_OPERATIONS';
+    const pendingLocal = localOperation;
+    if (pendingLocal !== null) {
+      try { await pendingLocal; } catch {}
+    }
+    const pendingAttempt = activeAttempt;
+    if (pendingAttempt !== null) {
+      try { await pendingAttempt.lifecyclePromise; } catch {}
+      if (!pendingAttempt.drainProven) {
+        quarantined = true;
+        throw failure(ZENON_FUNDING_PAYER_RECOVERY_OWNER_CODES.drainUnresolved);
+      }
+      if (activeAttempt === pendingAttempt) activeAttempt = null;
+    }
+    // This boundary must be after all awaits above, not merely at the
+    // coordinator's earlier payer-close admission. No await separates this
+    // source-owned check from the genuine synchronous store.close entry.
+    if (guardedNativeClose) nativeCloseStage = 'CHECKING_BEFORE_STORE';
+    requireNativeClose('BEFORE_STORE');
+    try {
+      if (guardedNativeClose) { nativeCloseStage = 'STORE_CLOSE'; storeCloseCallEntered = true; }
+      Reflect.apply(
+        ZenonFundingPayerRecoverySqliteStore.prototype.close,
+        store,
+        [],
+      );
+      if (guardedNativeClose) storeCloseCallReturned = true;
+    } catch {
+      quarantined = true;
+      throw failure(ZENON_FUNDING_PAYER_RECOVERY_OWNER_CODES.storeFailed);
+    }
+    if (guardedNativeClose) nativeCloseStage = 'CHECKING_AFTER_STORE';
+    requireNativeClose('AFTER_STORE');
+    phase = 'CLOSED';
+    if (guardedNativeClose) nativeCloseStage = 'CLOSED';
+    return statusResult('CLOSED');
+  }
+
   const close = Object.freeze((...args) => {
     if (args.length !== 0) {
       return NATIVE_PROMISE.reject(failure(
@@ -510,41 +592,35 @@ export function createZenonFundingPostV1PayerRecoveryOwner(options) {
     }
     if (closeOperation !== null) return closeOperation;
     phase = 'CLOSING';
-    closeOperation = (async () => {
-      const pendingLocal = localOperation;
-      if (pendingLocal !== null) {
-        try { await pendingLocal; } catch {}
-      }
-      const pendingAttempt = activeAttempt;
-      if (pendingAttempt !== null) {
-        try { await pendingAttempt.lifecyclePromise; } catch {}
-        if (!pendingAttempt.drainProven) {
-          quarantined = true;
-          throw failure(ZENON_FUNDING_PAYER_RECOVERY_OWNER_CODES.drainUnresolved);
-        }
-        if (activeAttempt === pendingAttempt) activeAttempt = null;
-      }
-      try {
-        Reflect.apply(
-          ZenonFundingPayerRecoverySqliteStore.prototype.close,
-          store,
-          [],
-        );
-      } catch {
-        quarantined = true;
-        throw failure(ZENON_FUNDING_PAYER_RECOVERY_OWNER_CODES.storeFailed);
-      }
-      phase = 'CLOSED';
-      return statusResult('CLOSED');
-    })();
+    if (!guardedNativeClose) {
+      closeOperation = closeOwnedStore();
+      return closeOperation;
+    }
+    // Reserve before the V2 guard can call close() again synchronously.
+    let resolveClose, rejectClose;
+    closeOperation = new NATIVE_PROMISE((resolve, reject) => {
+      resolveClose = resolve; rejectClose = reject;
+    });
+    closeOperation.then(() => undefined, () => undefined);
+    closeOwnedStore().then(resolveClose, rejectClose);
     return closeOperation;
   });
 
-  return Object.freeze({
+  const methods = {
     recover,
     prepare,
     submitPrepared,
     replayUnknown,
     close,
-  });
+  };
+  if (guardedNativeClose) {
+    methods.inspectClose = Object.freeze(function inspectClose() {
+      if (arguments.length !== 0) fail(ZENON_FUNDING_PAYER_RECOVERY_OWNER_CODES.invalidInput);
+      return Object.freeze({ nativeResourceCloseGuardVersion: 2, phase, quarantined,
+        closeRequested: closeOperation !== null, nativeCloseStage, nativeGuardRefusal,
+        storeCloseCallEntered, storeCloseCallReturned, guardIsNativeAuthentication: false,
+        nativePhysicalDrain: 'NOT_ESTABLISHED', automaticRetry: false, authority: 'NONE' });
+    });
+  }
+  return Object.freeze(methods);
 }
