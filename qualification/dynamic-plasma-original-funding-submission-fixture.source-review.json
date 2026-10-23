@@ -1,0 +1,240 @@
+{
+  "kind": "DP_ORIGINAL_FUNDING_ACTUAL_APPLICATION_NATIVE_FIXTURE_SOURCE_REVIEW",
+  "version": 1,
+  "status": "EIGHT_CASE_SOURCE_FIXTURE_AUTHORED_NOT_PARSED_IMPORTED_OR_RUN",
+  "mainBase": "ba5a33c1de34a8d3ad869958f9aac1c625098ab7",
+  "sourceParent": "9cd0a1c85774e306d115ce84e1dbe5f13d72c68a",
+  "sourceParentTree": "48b6bb548b625d4ae5f42156699d2971c1a0246f",
+  "targetSourceBranch": "x402/p1-dp-original-funding-submission-fixture-source-v1",
+  "entry": {
+    "path": "qualification/dynamic-plasma-original-funding-submission-v1.behavior.draft.mjs",
+    "bytes": 18196,
+    "sha256": "a2b483e2d0ddb4ceb52844084d319ce97ad4d9a820f3b014fb7e5a59aef81e88",
+    "gitBlob": "10710ff5b49cbd108bd9d74779dd477cba0900aa"
+  },
+  "helper": {
+    "path": "qualification/dynamic-plasma-original-funding-submission.fixture.draft.mjs",
+    "bytes": 15366,
+    "sha256": "e1aa5acb7c7753bf77d3a6dc582bcf874067992cf8ac9b592edcc8438ef7c3ac",
+    "gitBlob": "c99e7a404e8f39cbef61caba74dbdd269e24b60f"
+  },
+  "documentation": {
+    "path": "docs/DYNAMIC_PLASMA_ORIGINAL_FUNDING_SUBMISSION_FIXTURE.md",
+    "bytes": 6753,
+    "sha256": "c7f6b70746a6c8e75d4f1a5c9bd8b3ed978d59c435e5aa5b9acf456696118d73",
+    "gitBlob": "f23239ff2a2cfde00bf85b1f6fa68e40d1edeaad"
+  },
+  "selectedActualApplicationSources": [
+    {
+      "path": "src/zenon/dynamic-plasma-original-funding-submission.js",
+      "bytes": 15202,
+      "sha256": "a91a909bc5a5c3dc067d515164f1d6453178b468b28ef24713fdad70ceffa4a0",
+      "gitBlob": "4fab6451123a78055435f32f9d57bb7b50769670"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-original-funding-preparation.js",
+      "bytes": 12149,
+      "sha256": "690824a883194f152ad53070bce1db44be2c436fd957269e96e0a32c3f8f8f2f",
+      "gitBlob": "d99ffab9c75b80212d656be979763dd060e8fa2d"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-original-funding-data.js",
+      "bytes": 13815,
+      "sha256": "a8469e58733bd1314d05385bfbf2235559b148c33b0a9be21a20e1c974217801",
+      "gitBlob": "1bb4e0b282ff23f05786f5f2ed1008a41303b3a2"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-observed-balance-deferred-material-planner.js",
+      "bytes": 26795,
+      "sha256": "c8b5b914f718c1d1236417c5005be94084b9bf16bb8e1d5162a3082c40018bec",
+      "gitBlob": "b63ea842553409a334a78437c6e110976942df7b"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-observed-balance-user-send-read-adapter.js",
+      "bytes": 27252,
+      "sha256": "380695bfb37d6b137e0de2275ead4086f4397026391dba76acfbabba8e5dfa3b",
+      "gitBlob": "ec092121c8e93520abbb6e54c17d05a8689ad1a4"
+    },
+    {
+      "path": "src/service-credit-zenon-funding-post-v1-payer-recovery-owner.js",
+      "bytes": 17260,
+      "sha256": "1a0887c690bdde060a5b3575275142b57e0cdfa0e2ee1861dff3558eddcd0126",
+      "gitBlob": "ce73531a2bf913bcdd3fe604ef91aa64877e9828"
+    },
+    {
+      "path": "src/service-credit-zenon-funding-post-v1-client.js",
+      "bytes": 26077,
+      "sha256": "49ea2adbea7a26a2e87b05a5f96e6bb01230853f91922c531b4fdaf7da3fc22d",
+      "gitBlob": "98fa7d808eead2b1663487bb259426c09d5eaac9"
+    },
+    {
+      "path": "src/service-credit-zenon-funding-post-v1-payer-recovery-sqlite-store.js",
+      "bytes": 83681,
+      "sha256": "bea9e00aa6208f776561c975d54640dfb676168dd4d0b44d125c9dc684912c4a",
+      "gitBlob": "e6af1576df21a20a466d089a4ba6ecdf7380a0df"
+    },
+    {
+      "path": "src/service-credit-pilot-original-payment-checkpoint.js",
+      "bytes": 4003,
+      "sha256": "930905f31824a6cadc16dfb84572cd4dc38a81e2fce4569b73b6bef29dec97d1",
+      "gitBlob": "51c6391bc22f561ebff0005ced31e538aa83f4fa"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-json-rpc-read-transport.js",
+      "bytes": 10832,
+      "sha256": "fd03b2ad87d16660aa61d3961c163d724d5f89cd6d4bb9c4391d739566d5e5ca",
+      "gitBlob": "0475b7ab42889f67fb030fa7344d73d8bd6957d7"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-observation-normalizer.js",
+      "bytes": 28398,
+      "sha256": "2c3f7d42ded21a5513ff26c23a00a35a53aa334f053d10930f1571a020286897",
+      "gitBlob": "c406db8471aa6c8afd812c222c673c809491cf00"
+    },
+    {
+      "path": "src/canonical.js",
+      "bytes": 967,
+      "sha256": "0d55ddf1727cafb0dcd46df2922305568615552a4d2ae34a5c30e90b9d8d998c",
+      "gitBlob": "5367f9c72ee13017a61630e1f0cffdced21d52c4"
+    },
+    {
+      "path": "src/x402-wire.js",
+      "bytes": 39886,
+      "sha256": "5fba91af5a352f62d1a335c7176a45a604e2af5d92b1c4b0e53825c1f20d4e56",
+      "gitBlob": "fb060d4e349b1c31a1219a0cc137af250a8a2291"
+    },
+    {
+      "path": "src/zenon-payment.js",
+      "bytes": 128301,
+      "sha256": "44ee797207d557175256b5f69c89c5009e238e4c1b5b01c83b118b7e7b0ab35c",
+      "gitBlob": "f6645973803cb430d94f12698b14b7684c27493b"
+    }
+  ],
+  "selectedSourcePinCount": 17,
+  "caseTitles": [
+    "actual funding composition captures originals synchronously and posts once only after V6 and independent pins",
+    "a lost funding response preserves one original unknown outcome and no replay after normal close/reopen",
+    "a real V6 commit-before-return loss blocks funding submission and retains the original signed packet",
+    "a genuine pre-existing attempt fence refuses submission before transport and does not learn new originals",
+    "reentrant close during the actual recovery transaction sees the pending owner and prevents submission entry",
+    "deadline uncertainty remains unknown while the synthetic transport holds close and after a late BOUND result",
+    "a genuine non-V6 store refuses checkpoint commit before any POST without discarding or replacing its signed candidate",
+    "configuration refuses proxy, wrong-brand and shadowed stores or missing/proxy fetch without wallet or transport effects"
+  ],
+  "authoredCaseCount": 8,
+  "actualExecution": {
+    "parsed": false,
+    "imported": false,
+    "nodeCommands": 0,
+    "managedCommands": 0,
+    "newStorageTasks": 0,
+    "SQLiteFilesCreated": 0,
+    "independentPinFilesCreated": 0,
+    "syntheticKeysGenerated": 0,
+    "syntheticSignatures": 0,
+    "SDKPreflights": 0,
+    "fetchCalls": 0,
+    "networkConnections": 0,
+    "nonceSearch": 0,
+    "SDKPrepareBlock": 0,
+    "chainPrepare": 0,
+    "payment": 0,
+    "executedCases": 0,
+    "hostedCI": 0
+  },
+  "declaredFutureEffects": {
+    "directNodeCommands": 1,
+    "testRunnerChildren": 0,
+    "workers": 0,
+    "newPrivateSqliteFiles": 8,
+    "V6Files": 7,
+    "V5NegativeFiles": 1,
+    "newIndependentPinJsonFiles": 7,
+    "newInMemoryEd25519Keys": 1,
+    "syntheticTransactionSignatures": 7,
+    "uniqueOriginalTransactionHashes": 7,
+    "syntheticAddressCallbacks": 7,
+    "syntheticAccountReadCallbacks": 105,
+    "syntheticDpReadCallbacks": 420,
+    "syntheticMaterialHandoffs": 7,
+    "syntheticFetchCalls": 3,
+    "commitLossHooks": 1,
+    "recoveryCloseHooks": 1,
+    "heldTransportReleases": 1,
+    "nonceSearch": 0,
+    "SDKPrepareBlock": 0,
+    "sockets": 0,
+    "realHttpOrHttps": 0,
+    "realChainPrepare": 0,
+    "payment": 0,
+    "declaredCountsAreNotActualObservations": true,
+    "declaredCountsAreNotSandboxOrPhysicalAllocationCaps": true
+  },
+  "expectedCountsNotResults": {
+    "fixtures": 8,
+    "addressCallbacks": 7,
+    "signatures": 7,
+    "accountReadCallbacks": 105,
+    "dpReadCallbacks": 420,
+    "materialHandoffs": 7,
+    "pinFilesWritten": 7,
+    "fetchCalls": 3,
+    "commitLossHooks": 1,
+    "recoveryCloseHooks": 1,
+    "transportReleases": 1,
+    "uniqueSignedHashes": 7
+  },
+  "sourceDesign": {
+    "actualSubjectFactory": "createZenonDynamicPlasmaOriginalFundingSubmission",
+    "actualPreparationAndPayerAndFundingClient": true,
+    "actualNativeStoreFactories": true,
+    "realSelectedSdkCryptographicPreflight": true,
+    "substitutedSdkPreflightStoreOrClientFactory": false,
+    "genuineV5IsANegativeCaseNotASuccessSubstitute": true,
+    "sharedSyntheticReadAndWalletInputs": true,
+    "syntheticTransportResponseDataNotRealServer": true,
+    "perCaseResourceBindingRequiresDistinctHashes": true,
+    "callerMutationBeforeFirstAwait": true,
+    "independentExpectedPinsNeverLearnedFromDatabase": true,
+    "exclusivePinFilesAndNoFollowBoundedReadback": true,
+    "normalReopenAdvancesOwnerEpoch": true,
+    "hookAndTransportAssertionFailuresRetainedOutsideUnknownMapping": true,
+    "heldTransportExplicitlyReleasedInFinally": true,
+    "noRawFixtureOutputDeletion": true,
+    "keyOverwriteNormalExitBestEffortNotSecureErasure": true,
+    "entryUsesExplicitlyAwaitedTopLevelCases": true
+  },
+  "nativeTestApiReference": "https://nodejs.org/download/release/v24.19.0/docs/api/test.html#testname-options-fn",
+  "nativeScopeAndCapacity": {
+    "newScopeNotCoveredByEarlierTwoCaseFixture": true,
+    "previousPinnedEntryOrPreloadNotReusable": true,
+    "consumedHttpsApprovalNotReused": true,
+    "fullCurrentImportGraphReviewed": false,
+    "ordinaryInstalledNamespaceQualified": false,
+    "exactLauncherReviewed": false,
+    "futureStorageCapacityAdmitted": false,
+    "existingTaskQuotaPolicyChanged": false,
+    "newRootOrPolicyIncrease": false,
+    "currentSourcePublicationIsNotExecutionAuthorization": true
+  },
+  "remainingGates": [
+    "Review/freeze the full current native graph, package/namespace/runtime bytes and exact direct launcher; preserve or reconcile different-ref inputs rather than claiming current-main qualification.",
+    "Match any required fresh execution scope to all eight actual cases and their declared effects; previous two-case SDK/V6 or HTTPS permissions are not this scope.",
+    "Show that eight databases, seven pin files, retained inputs and full captures fit the unchanged owned storage admission before one actual command; do not reduce coverage merely to pass or silently raise limits.",
+    "Read actual exit and complete TAP/counter records; distinguish passed/failed/skipped/cancelled and never relabel this source manifest as an execution result.",
+    "Keep failures/raw outputs/cleanup HOLD without replaying the experiment for metadata recovery; no history adoption or helper retrofit.",
+    "Real HTTPS/socket lifetime, forced interruption/power loss, positive PoW with changing horizon/price, official x402/one-grant service integration, chain publication/reconciliation, current CI and economic pilot remain separate."
+  ],
+  "qualification": {
+    "sourceOnly": true,
+    "mainEligible": false,
+    "nativeRuntime": false,
+    "cleanCurrentMain": false,
+    "hostedCI": false,
+    "fullP0": false,
+    "fullP1": false,
+    "fullP2": false,
+    "economicPilot": "NO_GO",
+    "authority": "NONE"
+  }
+}
