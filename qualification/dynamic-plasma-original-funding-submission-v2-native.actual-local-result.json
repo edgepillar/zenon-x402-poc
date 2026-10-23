@@ -1,0 +1,869 @@
+{
+  "kind": "DP_ORIGINAL_FUNDING_V2_TWELVE_CASE_ACTUAL_LOCAL_RESULT",
+  "version": 1,
+  "status": "NOT_FULLY_QUALIFIED_11_PASS_1_FAIL",
+  "applicationRuntimeSourceParent": "f5cedfc81b8741eee9d08a677d4f7a8856e09034",
+  "exactApplicationRuntimeInputs": 49,
+  "applicationRuntimeInputsUnchangedAcrossAllThreeRuns": true,
+  "authority": {
+    "localNativeRunsMaximum": 3,
+    "localNativeRunsConsumed": 3,
+    "remainingNativeRuns": 0,
+    "effectsPerRun": {
+      "selectedCases": 12,
+      "newSQLiteFiles": 12,
+      "newV6SQLiteFiles": 11,
+      "negativeV5SQLiteFiles": 1,
+      "independentPinFiles": 10,
+      "inMemorySyntheticKeys": 1,
+      "syntheticTransactionSignatures": 10,
+      "declaredFetchCallbacks": 3,
+      "nativeSockets": 0,
+      "NodeChildren": 0,
+      "workers": 0,
+      "nonceSearch": 0,
+      "SDKPrepareBlock": 0,
+      "realPayment": 0,
+      "taskQuotaBytes": 4194304
+    },
+    "freshNativeAuthorityRequired": true
+  },
+  "inputInventory": {
+    "path": "qualification/dynamic-plasma-original-funding-submission-v2-native.inputs.json",
+    "sha256": "42d4ab143b0c2a7606125dd4c6e78ae88518e0c5a6a36609fc3fe57b3e51fff7",
+    "packageInputsReference": {
+      "sourceCommit": "30ecaf4a62889fed45a3e085383e5ac46a896532",
+      "path": "qualification/dynamic-plasma-original-funding-native-profile.inputs.json",
+      "bytes": 109214,
+      "sha256": "e68f7b6a1d5ceafebbd35227302bc246632ad1cb00058509c381a0faaf1ae456",
+      "gitBlob": "6e513da4a933e23c4562f2a4c0d738068f65072f",
+      "selectionPrefix": "packages/",
+      "selectedRows": 382
+    }
+  },
+  "attempts": [
+    {
+      "attempt": 1,
+      "status": "FAILED_NOT_A_QUALIFIED_PASS",
+      "counts": {
+        "tests": 12,
+        "pass": 0,
+        "fail": 12,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "cases": [
+        {
+          "number": 1,
+          "name": "actual funding composition captures originals synchronously and posts once only after V6 and independent pins",
+          "status": "FAIL"
+        },
+        {
+          "number": 2,
+          "name": "a lost funding response preserves one original unknown outcome and no replay after normal close/reopen",
+          "status": "FAIL"
+        },
+        {
+          "number": 3,
+          "name": "a real V6 commit-before-return loss blocks funding submission and retains the original signed packet",
+          "status": "FAIL"
+        },
+        {
+          "number": 4,
+          "name": "a genuine pre-existing attempt fence refuses submission before transport and does not learn new originals",
+          "status": "FAIL"
+        },
+        {
+          "number": 5,
+          "name": "reentrant close during the actual recovery transaction sees the pending owner and prevents submission entry",
+          "status": "FAIL"
+        },
+        {
+          "number": 6,
+          "name": "deadline uncertainty remains unknown while the synthetic transport holds close and after a late BOUND result",
+          "status": "FAIL"
+        },
+        {
+          "number": 7,
+          "name": "a genuine non-V6 store refuses checkpoint commit before any POST without discarding or replacing its signed candidate",
+          "status": "FAIL"
+        },
+        {
+          "number": 8,
+          "name": "v2 keeps original signed bytes and actual V6 custody through pre-custody price advance 1",
+          "status": "FAIL"
+        },
+        {
+          "number": 9,
+          "name": "v2 keeps original signed bytes and actual V6 custody through pre-custody price advance 2",
+          "status": "FAIL"
+        },
+        {
+          "number": 10,
+          "name": "v2 horizon refusal retains the actual signed packet before any V6 commit and does not open a new attempt",
+          "status": "FAIL"
+        },
+        {
+          "number": 11,
+          "name": "configuration refuses proxy, wrong-brand and shadowed stores or missing/proxy fetch without wallet or transport effects",
+          "status": "FAIL"
+        },
+        {
+          "number": 12,
+          "name": "direct payer close reentry waits for the actual empty V6 recovery transaction and permits normal reopen",
+          "status": "FAIL"
+        }
+      ],
+      "failedStage": "FIXTURE_SERVICE_PATH_REJECTED_BEFORE_DATABASE_CREATE",
+      "completedAtUtc": "2026-10-23T20:33:26.191882+00:00",
+      "sourceBinding": {
+        "sourceRowsSha256": "80c636b8b5e57b14d09ab33379efcb765927d166b7dde6b3047417a0d56d18ec",
+        "sourceBytes": 2638967,
+        "applicationInputs": 54,
+        "packageInputs": 382,
+        "baseInventory": "qualification/dynamic-plasma-original-funding-submission-v2-native.inputs.json",
+        "baseInventorySha256": "42d4ab143b0c2a7606125dd4c6e78ae88518e0c5a6a36609fc3fe57b3e51fff7",
+        "applicationInputOverrides": [
+          {
+            "path": "app/qualification/dynamic-plasma-original-funding-submission-v2-native.preload.draft.mjs",
+            "bytes": 11546,
+            "LF": 228,
+            "sha256": "08b64ac020055d5c6862dfeb0bd6f53cb0c2a573a20f2fdea0865c2574d11b0a",
+            "gitBlob": "c0af1aae2df1a2f4621f83bc1e2cdcf636b15999"
+          },
+          {
+            "path": "app/qualification/dynamic-plasma-original-funding-submission-v2-selection.behavior.draft.mjs",
+            "bytes": 1447,
+            "LF": 23,
+            "sha256": "a756d6c432ef65c13fd8660be9eb33217d43baff652fd75a739b5ed5432e9fe0",
+            "gitBlob": "8c23c7f433c7e6c95d57887b9d43b59560630a5c"
+          },
+          {
+            "path": "app/qualification/dynamic-plasma-original-funding-submission-v2.behavior.draft.mjs",
+            "bytes": 22529,
+            "LF": 335,
+            "sha256": "2341b76aee9590e3cdd74e99cc4b679a9afbd2f0a6eb4768482d91d527494f18",
+            "gitBlob": "c09d03992e57a11bd5008d810d6a89cc20bbb0c9"
+          },
+          {
+            "path": "app/qualification/dynamic-plasma-original-funding-submission-v2.fixture.draft.mjs",
+            "bytes": 15802,
+            "LF": 239,
+            "sha256": "9de3f43e03bcd8c0a8396328c7ed098e6530474387b22d3c069ae15686ad4b2e",
+            "gitBlob": "2ab8531398d919d653ee11816746b77cbbab4469"
+          },
+          {
+            "path": "app/qualification/service-credit-payer-owner-reentrant-recovery-close-v2.behavior.draft.mjs",
+            "bytes": 5595,
+            "LF": 107,
+            "sha256": "d391aea95a457b25320729dac78e5a6f54df5eab77a7f98c3fbe5bcef8ebd3aa",
+            "gitBlob": "d528ba6aa075e2ebd9e428e994f36d946c92fb71"
+          }
+        ],
+        "originalInventorySha256": "93b82fbd6303eb2168b7494d03acf3e2fcebd88548f511ec1fbb1793c0bb9f55",
+        "originalInventoryProtectedPrivately": true,
+        "all54ExecutedApplicationInputsProtectedPrivately": true,
+        "profileSha256": "88cb918e9ce7dd63ed9cfa05def270a2e87c5e787a96535b68d1c9148ab6b2a6",
+        "privateProfileContentPublished": false
+      },
+      "launcherInputs": [
+        {
+          "path": "qualification/dynamic-plasma-original-funding-submission-v2-profile.draft.py",
+          "bytes": 8927,
+          "LF": 171,
+          "sha256": "89c642b38b054978feefaa4f83513b4adf1e5308d31185d3ae592634a03e7308",
+          "gitBlob": "ae8c26b216036a4e1a81aea4204bac1933627c79"
+        },
+        {
+          "path": "qualification/run-dp-original-funding-v2-native.local.py",
+          "bytes": 15177,
+          "LF": 267,
+          "sha256": "d207c9b48d2d54027950f25fce1e2e507f01e471892a87fa691ccd7c923e3843",
+          "gitBlob": "ffe72fef4a702181531af520760f2acaf3fd5a6f"
+        }
+      ],
+      "runtime": {
+        "node": "24.19.0",
+        "platform": "darwin",
+        "arch": "arm64",
+        "profileMode": "permission-model-incompatible",
+        "NodePermissionModel": true,
+        "nativeOsSandbox": false
+      },
+      "run": {
+        "actualExit": 1,
+        "state": "COMPLETE",
+        "outputComplete": true,
+        "reason": null,
+        "scanRetries": 0,
+        "nativeNodeCommands": 1,
+        "stdout": {
+          "rawBytes": 9379,
+          "rawSha256": "1a4da7e8ded74e635d70ae9be1bc947537df816bf1b90448edff4e894d42f33b",
+          "publicTransform": "replace exact private repository prefix with $REPO; no other changes",
+          "publicBytes": 8335,
+          "publicSha256": "fe2178ec2b09ad46a01ca0ed78c9f6d14906b05299d014ee145f66c4811d9f2c",
+          "content": "# payer-reentrant-recovery-close-v2 {\"fixtureVersion\":1,\"caseCallbacks\":1,\"beforeCommits\":0,\"afterCommits\":0,\"fetchCalls\":0,\"declaredNewSqliteFiles\":1,\"declaredReopensOfSameFile\":1,\"keys\":0,\"signatures\":0,\"authority\":\"NONE\"}\n# twelve-case-original-funding-v2-selection {\"selectionVersion\":1,\"expectedTotalCases\":12,\"fundingV2Cases\":11,\"directPayerCases\":1,\"selectionIsNotHumanAuthorization\":true,\"sourceTransforms\":0,\"authority\":\"NONE\"}\nTAP version 13\n# Subtest: actual funding composition captures originals synchronously and posts once only after V6 and independent pins\nnot ok 1 - actual funding composition captures originals synchronously and posts once only after V6 and independent pins\n  ---\n  duration_ms: 2.043375\n  type: 'test'\n  location: '$REPO/qualification/dynamic-plasma-original-funding-submission-v2.behavior.draft.mjs:135:7'\n  failureType: 'testCodeFailure'\n  error: 'ZENON_FUNDING_PAYER_RECOVERY_STORE_INVALID_CONFIGURATION'\n  code: 'ZENON_FUNDING_PAYER_RECOVERY_STORE_INVALID_CONFIGURATION'\n  name: 'ZenonFundingPayerRecoverySqliteStoreError'\n  ...\n# Subtest: a lost funding response preserves one original unknown outcome and no replay after normal close/reopen\nnot ok 2 - a lost funding response preserves one original unknown outcome and no replay after normal close/reopen\n  ---\n  duration_ms: 0.826833\n  type: 'test'\n  location: '$REPO/qualification/dynamic-plasma-original-funding-submission-v2.behavior.draft.mjs:165:7'\n  failureType: 'testCodeFailure'\n  error: 'ZENON_FUNDING_PAYER_RECOVERY_STORE_INVALID_CONFIGURATION'\n  code: 'ZENON_FUNDING_PAYER_RECOVERY_STORE_INVALID_CONFIGURATION'\n  name: 'ZenonFundingPayerRecoverySqliteStoreError'\n  ...\n# Subtest: a real V6 commit-before-return loss blocks funding submission and retains the original signed packet\nnot ok 3 - a real V6 commit-before-return loss blocks funding submission and retains the original signed packet\n  ---\n  duration_ms: 0.649125\n  type: 'test'\n  location: '$REPO/qualification/dynamic-plasma-original-funding-submission-v2.behavior.draft.mjs:180:7'\n  failureType: 'testCodeFailure'\n  error: 'ZENON_FUNDING_PAYER_RECOVERY_STORE_INVALID_CONFIGURATION'\n  code: 'ZENON_FUNDING_PAYER_RECOVERY_STORE_INVALID_CONFIGURATION'\n  name: 'ZenonFundingPayerRecoverySqliteStoreError'\n  ...\n# Subtest: a genuine pre-existing attempt fence refuses submission before transport and does not learn new originals\nnot ok 4 - a genuine pre-existing attempt fence refuses submission before transport and does not learn new originals\n  ---\n  duration_ms: 0.524791\n  type: 'test'\n  location: '$REPO/qualification/dynamic-plasma-original-funding-submission-v2.behavior.draft.mjs:200:7'\n  failureType: 'testCodeFailure'\n  error: 'ZENON_FUNDING_PAYER_RECOVERY_STORE_INVALID_CONFIGURATION'\n  code: 'ZENON_FUNDING_PAYER_RECOVERY_STORE_INVALID_CONFIGURATION'\n  name: 'ZenonFundingPayerRecoverySqliteStoreError'\n  ...\n# Subtest: reentrant close during the actual recovery transaction sees the pending owner and prevents submission entry\nnot ok 5 - reentrant close during the actual recovery transaction sees the pending owner and prevents submission entry\n  ---\n  duration_ms: 0.4205\n  type: 'test'\n  location: '$REPO/qualification/dynamic-plasma-original-funding-submission-v2.behavior.draft.mjs:214:7'\n  failureType: 'testCodeFailure'\n  error: 'ZENON_FUNDING_PAYER_RECOVERY_STORE_INVALID_CONFIGURATION'\n  code: 'ZENON_FUNDING_PAYER_RECOVERY_STORE_INVALID_CONFIGURATION'\n  name: 'ZenonFundingPayerRecoverySqliteStoreError'\n  ...\n# Subtest: deadline uncertainty remains unknown while the synthetic transport holds close and after a late BOUND result\nnot ok 6 - deadline uncertainty remains unknown while the synthetic transport holds close and after a late BOUND result\n  ---\n  duration_ms: 0.398167\n  type: 'test'\n  location: '$REPO/qualification/dynamic-plasma-original-funding-submission-v2.behavior.draft.mjs:237:7'\n  failureType: 'testCodeFailure'\n  error: 'ZENON_FUNDING_PAYER_RECOVERY_STORE_INVALID_CONFIGURATION'\n  code: 'ZENON_FUNDING_PAYER_RECOVERY_STORE_INVALID_CONFIGURATION'\n  name: 'ZenonFundingPayerRecoverySqliteStoreError'\n  ...\n# Subtest: a genuine non-V6 store refuses checkpoint commit before any POST without discarding or replacing its signed candidate\nnot ok 7 - a genuine non-V6 store refuses checkpoint commit before any POST without discarding or replacing its signed candidate\n  ---\n  duration_ms: 0.416917\n  type: 'test'\n  location: '$REPO/qualification/dynamic-plasma-original-funding-submission-v2.behavior.draft.mjs:254:7'\n  failureType: 'testCodeFailure'\n  error: 'ZENON_FUNDING_PAYER_RECOVERY_STORE_INVALID_CONFIGURATION'\n  code: 'ZENON_FUNDING_PAYER_RECOVERY_STORE_INVALID_CONFIGURATION'\n  name: 'ZenonFundingPayerRecoverySqliteStoreError'\n  ...\n# Subtest: v2 keeps original signed bytes and actual V6 custody through pre-custody price advance 1\nnot ok 8 - v2 keeps original signed bytes and actual V6 custody through pre-custody price advance 1\n  ---\n  duration_ms: 0.387542\n  type: 'test'\n  location: '$REPO/qualification/dynamic-plasma-original-funding-submission-v2.behavior.draft.mjs:267:7'\n  failureType: 'testCodeFailure'\n  error: 'ZENON_FUNDING_PAYER_RECOVERY_STORE_INVALID_CONFIGURATION'\n  code: 'ZENON_FUNDING_PAYER_RECOVERY_STORE_INVALID_CONFIGURATION'\n  name: 'ZenonFundingPayerRecoverySqliteStoreError'\n  ...\n# Subtest: v2 keeps original signed bytes and actual V6 custody through pre-custody price advance 2\nnot ok 9 - v2 keeps original signed bytes and actual V6 custody through pre-custody price advance 2\n  ---\n  duration_ms: 0.332583\n  type: 'test'\n  location: '$REPO/qualification/dynamic-plasma-original-funding-submission-v2.behavior.draft.mjs:267:7'\n  failureType: 'testCodeFailure'\n  error: 'ZENON_FUNDING_PAYER_RECOVERY_STORE_INVALID_CONFIGURATION'\n  code: 'ZENON_FUNDING_PAYER_RECOVERY_STORE_INVALID_CONFIGURATION'\n  name: 'ZenonFundingPayerRecoverySqliteStoreError'\n  ...\n# Subtest: v2 horizon refusal retains the actual signed packet before any V6 commit and does not open a new attempt\nnot ok 10 - v2 horizon refusal retains the actual signed packet before any V6 commit and does not open a new attempt\n  ---\n  duration_ms: 0.329\n  type: 'test'\n  location: '$REPO/qualification/dynamic-plasma-original-funding-submission-v2.behavior.draft.mjs:292:7'\n  failureType: 'testCodeFailure'\n  error: 'ZENON_FUNDING_PAYER_RECOVERY_STORE_INVALID_CONFIGURATION'\n  code: 'ZENON_FUNDING_PAYER_RECOVERY_STORE_INVALID_CONFIGURATION'\n  name: 'ZenonFundingPayerRecoverySqliteStoreError'\n  ...\n# Subtest: configuration refuses proxy, wrong-brand and shadowed stores or missing/proxy fetch without wallet or transport effects\nnot ok 11 - configuration refuses proxy, wrong-brand and shadowed stores or missing/proxy fetch without wallet or transport effects\n  ---\n  duration_ms: 0.34425\n  type: 'test'\n  location: '$REPO/qualification/dynamic-plasma-original-funding-submission-v2.behavior.draft.mjs:314:7'\n  failureType: 'testCodeFailure'\n  error: 'ZENON_FUNDING_PAYER_RECOVERY_STORE_INVALID_CONFIGURATION'\n  code: 'ZENON_FUNDING_PAYER_RECOVERY_STORE_INVALID_CONFIGURATION'\n  name: 'ZenonFundingPayerRecoverySqliteStoreError'\n  ...\n# Subtest: direct payer close reentry waits for the actual empty V6 recovery transaction and permits normal reopen\nnot ok 12 - direct payer close reentry waits for the actual empty V6 recovery transaction and permits normal reopen\n  ---\n  duration_ms: 0.268917\n  type: 'test'\n  location: '$REPO/qualification/service-credit-payer-owner-reentrant-recovery-close-v2.behavior.draft.mjs:40:7'\n  failureType: 'testCodeFailure'\n  error: 'ZENON_FUNDING_PAYER_RECOVERY_STORE_INVALID_CONFIGURATION'\n  code: 'ZENON_FUNDING_PAYER_RECOVERY_STORE_INVALID_CONFIGURATION'\n  name: 'ZenonFundingPayerRecoverySqliteStoreError'\n  ...\n1..12\n# tests 12\n# suites 0\n# pass 0\n# fail 12\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 16.741375\n# pinned-dp-original-funding-v2-node-namespace {\"profileKind\":\"ZENON_DP_ORIGINAL_FUNDING_V2_TWELVE_CASE_NODE24\",\"expectedCases\":12,\"profileVersion\":3,\"sourceRowsSha256\":\"80c636b8b5e57b14d09ab33379efcb765927d166b7dde6b3047417a0d56d18ec\",\"inputsVerifiedBeforeFixture\":436,\"declaredSourceBytes\":2638967,\"resolveCalls\":212,\"bareImportOverrideHits\":2,\"declaredFilesResolved\":58,\"sourceTransforms\":0,\"ordinaryInstalledNamespaceQualified\":false,\"noNetworkOrOsSandboxClaim\":true}\n"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "content": ""
+        }
+      },
+      "namespace": {
+        "profileKind": "ZENON_DP_ORIGINAL_FUNDING_V2_TWELVE_CASE_NODE24",
+        "expectedCases": 12,
+        "profileVersion": 3,
+        "sourceRowsSha256": "80c636b8b5e57b14d09ab33379efcb765927d166b7dde6b3047417a0d56d18ec",
+        "inputsVerifiedBeforeFixture": 436,
+        "declaredSourceBytes": 2638967,
+        "resolveCalls": 212,
+        "bareImportOverrideHits": 2,
+        "declaredFilesResolved": 58,
+        "sourceTransforms": 0,
+        "ordinaryInstalledNamespaceQualified": false,
+        "noNetworkOrOsSandboxClaim": true
+      },
+      "actualCounters": null,
+      "sourceBoundEffects": {
+        "inMemorySyntheticKeys": 1,
+        "syntheticTransactionSignatures": 0,
+        "declaredFetchCallbacks": 0,
+        "newSQLitePaths": 0,
+        "nativeDatabaseCreationReached": false,
+        "actualZenonSdkPreflightReached": false
+      },
+      "managedRetention": {
+        "taskState": "CLOSED",
+        "taskOutcome": "FAILURE",
+        "taskQuotaBytes": 4194304,
+        "minimumFreeBytes": 10737418240,
+        "ownedCleanup": [
+          {
+            "bytes": 0,
+            "decision": "CLEANED"
+          }
+        ],
+        "newFixtureFiles": [],
+        "oldRootsAdopted": false,
+        "oldRootsCleaned": false
+      }
+    },
+    {
+      "attempt": 2,
+      "status": "FAILED_NOT_A_QUALIFIED_PASS",
+      "counts": {
+        "tests": 12,
+        "pass": 0,
+        "fail": 12,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "cases": [
+        {
+          "number": 1,
+          "name": "actual funding composition captures originals synchronously and posts once only after V6 and independent pins",
+          "status": "FAIL"
+        },
+        {
+          "number": 2,
+          "name": "a lost funding response preserves one original unknown outcome and no replay after normal close/reopen",
+          "status": "FAIL"
+        },
+        {
+          "number": 3,
+          "name": "a real V6 commit-before-return loss blocks funding submission and retains the original signed packet",
+          "status": "FAIL"
+        },
+        {
+          "number": 4,
+          "name": "a genuine pre-existing attempt fence refuses submission before transport and does not learn new originals",
+          "status": "FAIL"
+        },
+        {
+          "number": 5,
+          "name": "reentrant close during the actual recovery transaction sees the pending owner and prevents submission entry",
+          "status": "FAIL"
+        },
+        {
+          "number": 6,
+          "name": "deadline uncertainty remains unknown while the synthetic transport holds close and after a late BOUND result",
+          "status": "FAIL"
+        },
+        {
+          "number": 7,
+          "name": "a genuine non-V6 store refuses checkpoint commit before any POST without discarding or replacing its signed candidate",
+          "status": "FAIL"
+        },
+        {
+          "number": 8,
+          "name": "v2 keeps original signed bytes and actual V6 custody through pre-custody price advance 1",
+          "status": "FAIL"
+        },
+        {
+          "number": 9,
+          "name": "v2 keeps original signed bytes and actual V6 custody through pre-custody price advance 2",
+          "status": "FAIL"
+        },
+        {
+          "number": 10,
+          "name": "v2 horizon refusal retains the actual signed packet before any V6 commit and does not open a new attempt",
+          "status": "FAIL"
+        },
+        {
+          "number": 11,
+          "name": "configuration refuses proxy, wrong-brand and shadowed stores or missing/proxy fetch without wallet or transport effects",
+          "status": "FAIL"
+        },
+        {
+          "number": 12,
+          "name": "direct payer close reentry waits for the actual empty V6 recovery transaction and permits normal reopen",
+          "status": "FAIL"
+        }
+      ],
+      "failedStage": "LAUNCHER_PERMISSION_MODEL_INCOMPATIBLE_WITH_GENUINE_STORE_FCHMOD",
+      "completedAtUtc": "2026-10-23T20:37:21.160766+00:00",
+      "sourceBinding": {
+        "sourceRowsSha256": "9f76a48d6e6f89a53239d6ca539ff6c442516c13b2f20c23ced977ddfe99fed6",
+        "sourceBytes": 2638955,
+        "applicationInputs": 54,
+        "packageInputs": 382,
+        "baseInventory": "qualification/dynamic-plasma-original-funding-submission-v2-native.inputs.json",
+        "baseInventorySha256": "42d4ab143b0c2a7606125dd4c6e78ae88518e0c5a6a36609fc3fe57b3e51fff7",
+        "applicationInputOverrides": [
+          {
+            "path": "app/qualification/dynamic-plasma-original-funding-submission-v2-native.preload.draft.mjs",
+            "bytes": 11534,
+            "LF": 228,
+            "sha256": "407ba9a2a9f5461a6c5ea588ef8e5534ff55a980cb73783bed55cbf70ea0b720",
+            "gitBlob": "f73cd93bd0ecf09b4c235b2c019e93c8d0468dc9"
+          }
+        ],
+        "originalInventorySha256": "4f0b21897792987dda2ae1ba51a83f3f7a41f2d93fb5f58c7261fe05adb26437",
+        "originalInventoryProtectedPrivately": true,
+        "all54ExecutedApplicationInputsProtectedPrivately": true,
+        "profileSha256": "5cab233515d0e3902b5b6cf233436051adaaac68bd0eb44b93a38d5dda271911",
+        "privateProfileContentPublished": false
+      },
+      "launcherInputs": [
+        {
+          "path": "qualification/dynamic-plasma-original-funding-submission-v2-profile.draft.py",
+          "bytes": 8927,
+          "LF": 171,
+          "sha256": "12bfc5d4d60222ba374cbc8388c331a7d2b4590780fe77825a6c1078b270f7a3",
+          "gitBlob": "e563d7cd679149b7a3b03c178cb9bfaa78a1db80"
+        },
+        {
+          "path": "qualification/run-dp-original-funding-v2-native.local.py",
+          "bytes": 15177,
+          "LF": 267,
+          "sha256": "d207c9b48d2d54027950f25fce1e2e507f01e471892a87fa691ccd7c923e3843",
+          "gitBlob": "ffe72fef4a702181531af520760f2acaf3fd5a6f"
+        }
+      ],
+      "runtime": {
+        "node": "24.19.0",
+        "platform": "darwin",
+        "arch": "arm64",
+        "profileMode": "permission-model-incompatible",
+        "NodePermissionModel": true,
+        "nativeOsSandbox": false
+      },
+      "run": {
+        "actualExit": 1,
+        "state": "COMPLETE",
+        "outputComplete": true,
+        "reason": null,
+        "scanRetries": 0,
+        "nativeNodeCommands": 1,
+        "stdout": {
+          "rawBytes": 9186,
+          "rawSha256": "49f112547eb766de086a1f2e821a2feeadcb7cdc5ad2800dffb2259b1ced4571",
+          "publicTransform": "replace exact private repository prefix with $REPO; no other changes",
+          "publicBytes": 8142,
+          "publicSha256": "a852330c998c7b81013e9480b57cc35e08f3c2c4e3ca06b5c12a5a15025ade9f",
+          "content": "# payer-reentrant-recovery-close-v2 {\"fixtureVersion\":1,\"caseCallbacks\":1,\"beforeCommits\":0,\"afterCommits\":0,\"fetchCalls\":0,\"declaredNewSqliteFiles\":1,\"declaredReopensOfSameFile\":1,\"keys\":0,\"signatures\":0,\"authority\":\"NONE\"}\n# twelve-case-original-funding-v2-selection {\"selectionVersion\":1,\"expectedTotalCases\":12,\"fundingV2Cases\":11,\"directPayerCases\":1,\"selectionIsNotHumanAuthorization\":true,\"sourceTransforms\":0,\"authority\":\"NONE\"}\nTAP version 13\n# Subtest: actual funding composition captures originals synchronously and posts once only after V6 and independent pins\nnot ok 1 - actual funding composition captures originals synchronously and posts once only after V6 and independent pins\n  ---\n  duration_ms: 2.207\n  type: 'test'\n  location: '$REPO/qualification/dynamic-plasma-original-funding-submission-v2.behavior.draft.mjs:135:7'\n  failureType: 'testCodeFailure'\n  error: 'ZENON_FUNDING_PAYER_RECOVERY_STORE_CREATE_FAILED'\n  code: 'ZENON_FUNDING_PAYER_RECOVERY_STORE_CREATE_FAILED'\n  name: 'ZenonFundingPayerRecoverySqliteStoreError'\n  ...\n# Subtest: a lost funding response preserves one original unknown outcome and no replay after normal close/reopen\nnot ok 2 - a lost funding response preserves one original unknown outcome and no replay after normal close/reopen\n  ---\n  duration_ms: 0.943667\n  type: 'test'\n  location: '$REPO/qualification/dynamic-plasma-original-funding-submission-v2.behavior.draft.mjs:165:7'\n  failureType: 'testCodeFailure'\n  error: 'ZENON_FUNDING_PAYER_RECOVERY_STORE_CREATE_FAILED'\n  code: 'ZENON_FUNDING_PAYER_RECOVERY_STORE_CREATE_FAILED'\n  name: 'ZenonFundingPayerRecoverySqliteStoreError'\n  ...\n# Subtest: a real V6 commit-before-return loss blocks funding submission and retains the original signed packet\nnot ok 3 - a real V6 commit-before-return loss blocks funding submission and retains the original signed packet\n  ---\n  duration_ms: 0.57125\n  type: 'test'\n  location: '$REPO/qualification/dynamic-plasma-original-funding-submission-v2.behavior.draft.mjs:180:7'\n  failureType: 'testCodeFailure'\n  error: 'ZENON_FUNDING_PAYER_RECOVERY_STORE_CREATE_FAILED'\n  code: 'ZENON_FUNDING_PAYER_RECOVERY_STORE_CREATE_FAILED'\n  name: 'ZenonFundingPayerRecoverySqliteStoreError'\n  ...\n# Subtest: a genuine pre-existing attempt fence refuses submission before transport and does not learn new originals\nnot ok 4 - a genuine pre-existing attempt fence refuses submission before transport and does not learn new originals\n  ---\n  duration_ms: 0.566834\n  type: 'test'\n  location: '$REPO/qualification/dynamic-plasma-original-funding-submission-v2.behavior.draft.mjs:200:7'\n  failureType: 'testCodeFailure'\n  error: 'ZENON_FUNDING_PAYER_RECOVERY_STORE_CREATE_FAILED'\n  code: 'ZENON_FUNDING_PAYER_RECOVERY_STORE_CREATE_FAILED'\n  name: 'ZenonFundingPayerRecoverySqliteStoreError'\n  ...\n# Subtest: reentrant close during the actual recovery transaction sees the pending owner and prevents submission entry\nnot ok 5 - reentrant close during the actual recovery transaction sees the pending owner and prevents submission entry\n  ---\n  duration_ms: 0.663\n  type: 'test'\n  location: '$REPO/qualification/dynamic-plasma-original-funding-submission-v2.behavior.draft.mjs:214:7'\n  failureType: 'testCodeFailure'\n  error: 'ZENON_FUNDING_PAYER_RECOVERY_STORE_CREATE_FAILED'\n  code: 'ZENON_FUNDING_PAYER_RECOVERY_STORE_CREATE_FAILED'\n  name: 'ZenonFundingPayerRecoverySqliteStoreError'\n  ...\n# Subtest: deadline uncertainty remains unknown while the synthetic transport holds close and after a late BOUND result\nnot ok 6 - deadline uncertainty remains unknown while the synthetic transport holds close and after a late BOUND result\n  ---\n  duration_ms: 0.556875\n  type: 'test'\n  location: '$REPO/qualification/dynamic-plasma-original-funding-submission-v2.behavior.draft.mjs:237:7'\n  failureType: 'testCodeFailure'\n  error: 'ZENON_FUNDING_PAYER_RECOVERY_STORE_CREATE_FAILED'\n  code: 'ZENON_FUNDING_PAYER_RECOVERY_STORE_CREATE_FAILED'\n  name: 'ZenonFundingPayerRecoverySqliteStoreError'\n  ...\n# Subtest: a genuine non-V6 store refuses checkpoint commit before any POST without discarding or replacing its signed candidate\nnot ok 7 - a genuine non-V6 store refuses checkpoint commit before any POST without discarding or replacing its signed candidate\n  ---\n  duration_ms: 0.537125\n  type: 'test'\n  location: '$REPO/qualification/dynamic-plasma-original-funding-submission-v2.behavior.draft.mjs:254:7'\n  failureType: 'testCodeFailure'\n  error: 'ZENON_FUNDING_PAYER_RECOVERY_STORE_CREATE_FAILED'\n  code: 'ZENON_FUNDING_PAYER_RECOVERY_STORE_CREATE_FAILED'\n  name: 'ZenonFundingPayerRecoverySqliteStoreError'\n  ...\n# Subtest: v2 keeps original signed bytes and actual V6 custody through pre-custody price advance 1\nnot ok 8 - v2 keeps original signed bytes and actual V6 custody through pre-custody price advance 1\n  ---\n  duration_ms: 0.477417\n  type: 'test'\n  location: '$REPO/qualification/dynamic-plasma-original-funding-submission-v2.behavior.draft.mjs:267:7'\n  failureType: 'testCodeFailure'\n  error: 'ZENON_FUNDING_PAYER_RECOVERY_STORE_CREATE_FAILED'\n  code: 'ZENON_FUNDING_PAYER_RECOVERY_STORE_CREATE_FAILED'\n  name: 'ZenonFundingPayerRecoverySqliteStoreError'\n  ...\n# Subtest: v2 keeps original signed bytes and actual V6 custody through pre-custody price advance 2\nnot ok 9 - v2 keeps original signed bytes and actual V6 custody through pre-custody price advance 2\n  ---\n  duration_ms: 0.559041\n  type: 'test'\n  location: '$REPO/qualification/dynamic-plasma-original-funding-submission-v2.behavior.draft.mjs:267:7'\n  failureType: 'testCodeFailure'\n  error: 'ZENON_FUNDING_PAYER_RECOVERY_STORE_CREATE_FAILED'\n  code: 'ZENON_FUNDING_PAYER_RECOVERY_STORE_CREATE_FAILED'\n  name: 'ZenonFundingPayerRecoverySqliteStoreError'\n  ...\n# Subtest: v2 horizon refusal retains the actual signed packet before any V6 commit and does not open a new attempt\nnot ok 10 - v2 horizon refusal retains the actual signed packet before any V6 commit and does not open a new attempt\n  ---\n  duration_ms: 0.578041\n  type: 'test'\n  location: '$REPO/qualification/dynamic-plasma-original-funding-submission-v2.behavior.draft.mjs:292:7'\n  failureType: 'testCodeFailure'\n  error: 'ZENON_FUNDING_PAYER_RECOVERY_STORE_CREATE_FAILED'\n  code: 'ZENON_FUNDING_PAYER_RECOVERY_STORE_CREATE_FAILED'\n  name: 'ZenonFundingPayerRecoverySqliteStoreError'\n  ...\n# Subtest: configuration refuses proxy, wrong-brand and shadowed stores or missing/proxy fetch without wallet or transport effects\nnot ok 11 - configuration refuses proxy, wrong-brand and shadowed stores or missing/proxy fetch without wallet or transport effects\n  ---\n  duration_ms: 0.498958\n  type: 'test'\n  location: '$REPO/qualification/dynamic-plasma-original-funding-submission-v2.behavior.draft.mjs:314:7'\n  failureType: 'testCodeFailure'\n  error: 'ZENON_FUNDING_PAYER_RECOVERY_STORE_CREATE_FAILED'\n  code: 'ZENON_FUNDING_PAYER_RECOVERY_STORE_CREATE_FAILED'\n  name: 'ZenonFundingPayerRecoverySqliteStoreError'\n  ...\n# Subtest: direct payer close reentry waits for the actual empty V6 recovery transaction and permits normal reopen\nnot ok 12 - direct payer close reentry waits for the actual empty V6 recovery transaction and permits normal reopen\n  ---\n  duration_ms: 0.355834\n  type: 'test'\n  location: '$REPO/qualification/service-credit-payer-owner-reentrant-recovery-close-v2.behavior.draft.mjs:40:7'\n  failureType: 'testCodeFailure'\n  error: 'ZENON_FUNDING_PAYER_RECOVERY_STORE_CREATE_FAILED'\n  code: 'ZENON_FUNDING_PAYER_RECOVERY_STORE_CREATE_FAILED'\n  name: 'ZenonFundingPayerRecoverySqliteStoreError'\n  ...\n1..12\n# tests 12\n# suites 0\n# pass 0\n# fail 12\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 18.034459\n# pinned-dp-original-funding-v2-node-namespace {\"profileKind\":\"ZENON_DP_ORIGINAL_FUNDING_V2_TWELVE_CASE_NODE24\",\"expectedCases\":12,\"profileVersion\":3,\"sourceRowsSha256\":\"9f76a48d6e6f89a53239d6ca539ff6c442516c13b2f20c23ced977ddfe99fed6\",\"inputsVerifiedBeforeFixture\":436,\"declaredSourceBytes\":2638955,\"resolveCalls\":212,\"bareImportOverrideHits\":2,\"declaredFilesResolved\":58,\"sourceTransforms\":0,\"ordinaryInstalledNamespaceQualified\":false,\"noNetworkOrOsSandboxClaim\":true}\n"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "content": ""
+        }
+      },
+      "namespace": {
+        "profileKind": "ZENON_DP_ORIGINAL_FUNDING_V2_TWELVE_CASE_NODE24",
+        "expectedCases": 12,
+        "profileVersion": 3,
+        "sourceRowsSha256": "9f76a48d6e6f89a53239d6ca539ff6c442516c13b2f20c23ced977ddfe99fed6",
+        "inputsVerifiedBeforeFixture": 436,
+        "declaredSourceBytes": 2638955,
+        "resolveCalls": 212,
+        "bareImportOverrideHits": 2,
+        "declaredFilesResolved": 58,
+        "sourceTransforms": 0,
+        "ordinaryInstalledNamespaceQualified": false,
+        "noNetworkOrOsSandboxClaim": true
+      },
+      "actualCounters": null,
+      "sourceBoundEffects": {
+        "inMemorySyntheticKeys": 1,
+        "syntheticTransactionSignatures": 0,
+        "declaredFetchCallbacks": 0,
+        "newSQLitePaths": 12,
+        "nativeDatabaseCreationReached": false,
+        "actualZenonSdkPreflightReached": false
+      },
+      "managedRetention": {
+        "taskState": "CLOSED",
+        "taskOutcome": "FAILURE",
+        "taskQuotaBytes": 4194304,
+        "minimumFreeBytes": 10737418240,
+        "ownedCleanup": [
+          {
+            "decision": "HOLD",
+            "reason": "Refused: Scratch contains unregistered files or directories"
+          }
+        ],
+        "newFixtureFiles": [
+          {
+            "name": "bound.db",
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "privateMode": true,
+            "SQLiteHeader": false,
+            "userVersion": null
+          },
+          {
+            "name": "commit-loss.db",
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "privateMode": true,
+            "SQLiteHeader": false,
+            "userVersion": null
+          },
+          {
+            "name": "configuration.db",
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "privateMode": true,
+            "SQLiteHeader": false,
+            "userVersion": null
+          },
+          {
+            "name": "expired-horizon.db",
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "privateMode": true,
+            "SQLiteHeader": false,
+            "userVersion": null
+          },
+          {
+            "name": "non-v6.db",
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "privateMode": true,
+            "SQLiteHeader": false,
+            "userVersion": null
+          },
+          {
+            "name": "payer-reentrant-recovery-close-v2.sqlite",
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "privateMode": true,
+            "SQLiteHeader": false,
+            "userVersion": null
+          },
+          {
+            "name": "price-one.db",
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "privateMode": true,
+            "SQLiteHeader": false,
+            "userVersion": null
+          },
+          {
+            "name": "price-two.db",
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "privateMode": true,
+            "SQLiteHeader": false,
+            "userVersion": null
+          },
+          {
+            "name": "reentrant-close.db",
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "privateMode": true,
+            "SQLiteHeader": false,
+            "userVersion": null
+          },
+          {
+            "name": "response-loss.db",
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "privateMode": true,
+            "SQLiteHeader": false,
+            "userVersion": null
+          },
+          {
+            "name": "state-conflict.db",
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "privateMode": true,
+            "SQLiteHeader": false,
+            "userVersion": null
+          },
+          {
+            "name": "undrained.db",
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "privateMode": true,
+            "SQLiteHeader": false,
+            "userVersion": null
+          }
+        ],
+        "oldRootsAdopted": false,
+        "oldRootsCleaned": false
+      }
+    },
+    {
+      "attempt": 3,
+      "status": "FAILED_NOT_A_QUALIFIED_PASS",
+      "counts": {
+        "tests": 12,
+        "pass": 11,
+        "fail": 1,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "cases": [
+        {
+          "number": 1,
+          "name": "actual funding composition captures originals synchronously and posts once only after V6 and independent pins",
+          "status": "PASS"
+        },
+        {
+          "number": 2,
+          "name": "a lost funding response preserves one original unknown outcome and no replay after normal close/reopen",
+          "status": "PASS"
+        },
+        {
+          "number": 3,
+          "name": "a real V6 commit-before-return loss blocks funding submission and retains the original signed packet",
+          "status": "PASS"
+        },
+        {
+          "number": 4,
+          "name": "a genuine pre-existing attempt fence refuses submission before transport and does not learn new originals",
+          "status": "PASS"
+        },
+        {
+          "number": 5,
+          "name": "reentrant close during the actual recovery transaction sees the pending owner and prevents submission entry",
+          "status": "PASS"
+        },
+        {
+          "number": 6,
+          "name": "deadline uncertainty remains unknown while the synthetic transport holds close and after a late BOUND result",
+          "status": "FAIL"
+        },
+        {
+          "number": 7,
+          "name": "a genuine non-V6 store refuses checkpoint commit before any POST without discarding or replacing its signed candidate",
+          "status": "PASS"
+        },
+        {
+          "number": 8,
+          "name": "v2 keeps original signed bytes and actual V6 custody through pre-custody price advance 1",
+          "status": "PASS"
+        },
+        {
+          "number": 9,
+          "name": "v2 keeps original signed bytes and actual V6 custody through pre-custody price advance 2",
+          "status": "PASS"
+        },
+        {
+          "number": 10,
+          "name": "v2 horizon refusal retains the actual signed packet before any V6 commit and does not open a new attempt",
+          "status": "PASS"
+        },
+        {
+          "number": 11,
+          "name": "configuration refuses proxy, wrong-brand and shadowed stores or missing/proxy fetch without wallet or transport effects",
+          "status": "PASS"
+        },
+        {
+          "number": 12,
+          "name": "direct payer close reentry waits for the actual empty V6 recovery transaction and permits normal reopen",
+          "status": "PASS"
+        }
+      ],
+      "failedStage": "EXPECTED_SUCCESSFUL_CLOSE_CONTRADICTS_BOUNDED_DRAIN_REFUSAL",
+      "completedAtUtc": "2026-10-23T20:39:22.298727+00:00",
+      "sourceBinding": {
+        "sourceRowsSha256": "fd6191e29b3e2e32d5685b28a37eb957e13bf3b74ef4c203f239db42b5545885",
+        "sourceBytes": 2639285,
+        "applicationInputs": 54,
+        "packageInputs": 382,
+        "baseInventory": "qualification/dynamic-plasma-original-funding-submission-v2-native.inputs.json",
+        "baseInventorySha256": "42d4ab143b0c2a7606125dd4c6e78ae88518e0c5a6a36609fc3fe57b3e51fff7",
+        "applicationInputOverrides": [],
+        "originalInventorySha256": "42d4ab143b0c2a7606125dd4c6e78ae88518e0c5a6a36609fc3fe57b3e51fff7",
+        "originalInventoryProtectedPrivately": true,
+        "all54ExecutedApplicationInputsProtectedPrivately": true,
+        "profileSha256": "3dfe822cb6dccbff81e12431715252814b602ee26eef235e2614c25f79a38300",
+        "privateProfileContentPublished": false
+      },
+      "launcherInputs": [
+        {
+          "path": "qualification/dynamic-plasma-original-funding-submission-v2-profile.draft.py",
+          "bytes": 8927,
+          "LF": 171,
+          "sha256": "12bfc5d4d60222ba374cbc8388c331a7d2b4590780fe77825a6c1078b270f7a3",
+          "gitBlob": "e563d7cd679149b7a3b03c178cb9bfaa78a1db80"
+        },
+        {
+          "path": "qualification/run-dp-original-funding-v2-native.local.py",
+          "bytes": 15821,
+          "LF": 275,
+          "sha256": "d2889843b3637e953ff6150ba5d842df38ca5782c54efeabb76f66e076d16114",
+          "gitBlob": "f9bdc3f824dac102182ed3e737bfd4df994c1165"
+        }
+      ],
+      "runtime": {
+        "node": "24.19.0",
+        "platform": "darwin",
+        "arch": "arm64",
+        "profileMode": "reviewed-native-fchmod",
+        "NodePermissionModel": false,
+        "nativeOsSandbox": false
+      },
+      "run": {
+        "actualExit": 1,
+        "state": "COMPLETE",
+        "outputComplete": true,
+        "reason": null,
+        "scanRetries": 1,
+        "nativeNodeCommands": 1,
+        "stdout": {
+          "rawBytes": 5100,
+          "rawSha256": "901d4ac171563d6ad472db59da3b4f2a70dcd0ada7cc432c4e0baa0b4723bb9f",
+          "publicTransform": "replace exact private repository prefix with $REPO; no other changes",
+          "publicBytes": 5013,
+          "publicSha256": "2b0ddbd384cdce8cb8ce1d5af61d87d3c2ccb26a26dbb83b4328ed374e9907cb",
+          "content": "TAP version 13\n# Subtest: actual funding composition captures originals synchronously and posts once only after V6 and independent pins\nok 1 - actual funding composition captures originals synchronously and posts once only after V6 and independent pins\n  ---\n  duration_ms: 463.207459\n  type: 'test'\n  ...\n# Subtest: a lost funding response preserves one original unknown outcome and no replay after normal close/reopen\nok 2 - a lost funding response preserves one original unknown outcome and no replay after normal close/reopen\n  ---\n  duration_ms: 215.3815\n  type: 'test'\n  ...\n# Subtest: a real V6 commit-before-return loss blocks funding submission and retains the original signed packet\nok 3 - a real V6 commit-before-return loss blocks funding submission and retains the original signed packet\n  ---\n  duration_ms: 145.930708\n  type: 'test'\n  ...\n# Subtest: a genuine pre-existing attempt fence refuses submission before transport and does not learn new originals\nok 4 - a genuine pre-existing attempt fence refuses submission before transport and does not learn new originals\n  ---\n  duration_ms: 192.819834\n  type: 'test'\n  ...\n# Subtest: reentrant close during the actual recovery transaction sees the pending owner and prevents submission entry\nok 5 - reentrant close during the actual recovery transaction sees the pending owner and prevents submission entry\n  ---\n  duration_ms: 151.439417\n  type: 'test'\n  ...\n# original-funding-submission-v2-native-fixture {\"fixtures\":11,\"addressCallbacks\":10,\"signatures\":10,\"accountReadCallbacks\":180,\"dpReadCallbacks\":720,\"materialHandoffs\":10,\"pinFilesWritten\":10,\"fetchCalls\":3,\"commitLossHooks\":1,\"recoveryCloseHooks\":1,\"transportReleases\":1,\"uniqueSignedHashes\":10}\n# payer-reentrant-recovery-close-v2 {\"fixtureVersion\":1,\"caseCallbacks\":1,\"beforeCommits\":1,\"afterCommits\":1,\"fetchCalls\":0,\"declaredNewSqliteFiles\":1,\"declaredReopensOfSameFile\":1,\"keys\":0,\"signatures\":0,\"authority\":\"NONE\"}\n# twelve-case-original-funding-v2-selection {\"selectionVersion\":1,\"expectedTotalCases\":12,\"fundingV2Cases\":11,\"directPayerCases\":1,\"selectionIsNotHumanAuthorization\":true,\"sourceTransforms\":0,\"authority\":\"NONE\"}\n# Subtest: deadline uncertainty remains unknown while the synthetic transport holds close and after a late BOUND result\nnot ok 6 - deadline uncertainty remains unknown while the synthetic transport holds close and after a late BOUND result\n  ---\n  duration_ms: 207.12975\n  type: 'test'\n  location: '$REPO/qualification/dynamic-plasma-original-funding-submission-v2.behavior.draft.mjs:237:7'\n  failureType: 'testCodeFailure'\n  error: 'zenon_dynamic_plasma_original_funding_submission_close_unknown'\n  code: 'zenon_dynamic_plasma_original_funding_submission_close_unknown'\n  name: 'TypeError'\n  ...\n# Subtest: a genuine non-V6 store refuses checkpoint commit before any POST without discarding or replacing its signed candidate\nok 7 - a genuine non-V6 store refuses checkpoint commit before any POST without discarding or replacing its signed candidate\n  ---\n  duration_ms: 75.930166\n  type: 'test'\n  ...\n# Subtest: v2 keeps original signed bytes and actual V6 custody through pre-custody price advance 1\nok 8 - v2 keeps original signed bytes and actual V6 custody through pre-custody price advance 1\n  ---\n  duration_ms: 146.895375\n  type: 'test'\n  ...\n# Subtest: v2 keeps original signed bytes and actual V6 custody through pre-custody price advance 2\nok 9 - v2 keeps original signed bytes and actual V6 custody through pre-custody price advance 2\n  ---\n  duration_ms: 143.466583\n  type: 'test'\n  ...\n# Subtest: v2 horizon refusal retains the actual signed packet before any V6 commit and does not open a new attempt\nok 10 - v2 horizon refusal retains the actual signed packet before any V6 commit and does not open a new attempt\n  ---\n  duration_ms: 113.755916\n  type: 'test'\n  ...\n# Subtest: configuration refuses proxy, wrong-brand and shadowed stores or missing/proxy fetch without wallet or transport effects\nok 11 - configuration refuses proxy, wrong-brand and shadowed stores or missing/proxy fetch without wallet or transport effects\n  ---\n  duration_ms: 37.042375\n  type: 'test'\n  ...\n# Subtest: direct payer close reentry waits for the actual empty V6 recovery transaction and permits normal reopen\nok 12 - direct payer close reentry waits for the actual empty V6 recovery transaction and permits normal reopen\n  ---\n  duration_ms: 66.026875\n  type: 'test'\n  ...\n1..12\n# tests 12\n# suites 0\n# pass 11\n# fail 1\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 1964.171208\n# pinned-dp-original-funding-v2-node-namespace {\"profileKind\":\"ZENON_DP_ORIGINAL_FUNDING_V2_TWELVE_CASE_NODE24\",\"expectedCases\":12,\"profileVersion\":3,\"sourceRowsSha256\":\"fd6191e29b3e2e32d5685b28a37eb957e13bf3b74ef4c203f239db42b5545885\",\"inputsVerifiedBeforeFixture\":436,\"declaredSourceBytes\":2639285,\"resolveCalls\":662,\"bareImportOverrideHits\":5,\"declaredFilesResolved\":212,\"sourceTransforms\":0,\"ordinaryInstalledNamespaceQualified\":false,\"noNetworkOrOsSandboxClaim\":true}\n"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "content": ""
+        }
+      },
+      "namespace": {
+        "profileKind": "ZENON_DP_ORIGINAL_FUNDING_V2_TWELVE_CASE_NODE24",
+        "expectedCases": 12,
+        "profileVersion": 3,
+        "sourceRowsSha256": "fd6191e29b3e2e32d5685b28a37eb957e13bf3b74ef4c203f239db42b5545885",
+        "inputsVerifiedBeforeFixture": 436,
+        "declaredSourceBytes": 2639285,
+        "resolveCalls": 662,
+        "bareImportOverrideHits": 5,
+        "declaredFilesResolved": 212,
+        "sourceTransforms": 0,
+        "ordinaryInstalledNamespaceQualified": false,
+        "noNetworkOrOsSandboxClaim": true
+      },
+      "actualCounters": {
+        "fixtures": 11,
+        "addressCallbacks": 10,
+        "signatures": 10,
+        "accountReadCallbacks": 180,
+        "dpReadCallbacks": 720,
+        "materialHandoffs": 10,
+        "pinFilesWritten": 10,
+        "fetchCalls": 3,
+        "commitLossHooks": 1,
+        "recoveryCloseHooks": 1,
+        "transportReleases": 1,
+        "uniqueSignedHashes": 10
+      },
+      "sourceBoundEffects": {
+        "inMemorySyntheticKeys": 1,
+        "syntheticTransactionSignatures": 10,
+        "declaredFetchCallbacks": 3,
+        "newSQLitePaths": 12,
+        "nativeDatabaseCreationReached": true,
+        "actualZenonSdkPreflightReached": true
+      },
+      "managedRetention": {
+        "taskState": "CLOSED",
+        "taskOutcome": "FAILURE",
+        "taskQuotaBytes": 4194304,
+        "minimumFreeBytes": 10737418240,
+        "ownedCleanup": [
+          {
+            "decision": "HOLD",
+            "reason": "Refused: Scratch contains unregistered files or directories"
+          }
+        ],
+        "newFixtureFiles": [
+          {
+            "name": "bound.db",
+            "bytes": 53248,
+            "sha256": "8427f8d0b6d8f6ae45e381e6d52ee88c4d927be1d97857659d2777f56e3b3a57",
+            "privateMode": true,
+            "SQLiteHeader": true,
+            "userVersion": 6
+          },
+          {
+            "name": "commit-loss.db",
+            "bytes": 53248,
+            "sha256": "726bfc313914f0697611fd498c6ddc238fa5894c9016c6c07390ae9fdbaf7cb4",
+            "privateMode": true,
+            "SQLiteHeader": true,
+            "userVersion": 6
+          },
+          {
+            "name": "configuration.db",
+            "bytes": 53248,
+            "sha256": "e32e547658278c2bd2a13114aa68d8beec6e80eeb1952f5f6210c9ce1e34628a",
+            "privateMode": true,
+            "SQLiteHeader": true,
+            "userVersion": 6
+          },
+          {
+            "name": "expired-horizon.db",
+            "bytes": 53248,
+            "sha256": "b61c990091109cd2dc49d1a75de2ab0362e42891f06f5c1dbe470fa70b15ceac",
+            "privateMode": true,
+            "SQLiteHeader": true,
+            "userVersion": 6
+          },
+          {
+            "name": "non-v6.db",
+            "bytes": 49152,
+            "sha256": "7de8d1392629332a7d11976a42a7e715cea37ead7abc8a0051c59265bc96796a",
+            "privateMode": true,
+            "SQLiteHeader": true,
+            "userVersion": 5
+          },
+          {
+            "name": "payer-reentrant-recovery-close-v2.sqlite",
+            "bytes": 53248,
+            "sha256": "b61c990091109cd2dc49d1a75de2ab0362e42891f06f5c1dbe470fa70b15ceac",
+            "privateMode": true,
+            "SQLiteHeader": true,
+            "userVersion": 6
+          },
+          {
+            "name": "price-one.db",
+            "bytes": 53248,
+            "sha256": "c827d733ea5fd153c8579bbd1d467c7f050b7014ba2f42cb296d7ef4182f876b",
+            "privateMode": true,
+            "SQLiteHeader": true,
+            "userVersion": 6
+          },
+          {
+            "name": "price-two.db",
+            "bytes": 53248,
+            "sha256": "69a8d445ae244344f5ab0402b27775620411aeddb9cd3229b442e27b8bfe70cb",
+            "privateMode": true,
+            "SQLiteHeader": true,
+            "userVersion": 6
+          },
+          {
+            "name": "reentrant-close.db",
+            "bytes": 53248,
+            "sha256": "56f0c2594c7a3493c68f880be83430f30a634e07c85a87e86e23019b2093c9f3",
+            "privateMode": true,
+            "SQLiteHeader": true,
+            "userVersion": 6
+          },
+          {
+            "name": "response-loss.db",
+            "bytes": 53248,
+            "sha256": "ce228cc3cef2afb9490c439cc51ef73288487d7211af1c1e8c459a4243d02a31",
+            "privateMode": true,
+            "SQLiteHeader": true,
+            "userVersion": 6
+          },
+          {
+            "name": "state-conflict.db",
+            "bytes": 53248,
+            "sha256": "3f577b125c792d814d032ca0fa080713bdfb0de1e5669581c42713fb3d9b6fea",
+            "privateMode": true,
+            "SQLiteHeader": true,
+            "userVersion": 6
+          },
+          {
+            "name": "undrained.db",
+            "bytes": 53248,
+            "sha256": "df96e0261fc12c08437c0b99dcf3b393b23a2f90d9a5ae56a529aa1341cf9336",
+            "privateMode": true,
+            "SQLiteHeader": true,
+            "userVersion": 6
+          }
+        ],
+        "oldRootsAdopted": false,
+        "oldRootsCleaned": false
+      }
+    }
+  ],
+  "finalAssessment": {
+    "all12Passed": false,
+    "latestCounts": {
+      "tests": 12,
+      "pass": 11,
+      "fail": 1,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "realExistingSdkAndNobleUsed": true,
+    "realStoreAndPayerUsed": true,
+    "currentReadPriceAdvanceOneAndTwoPassed": true,
+    "sameSignedOriginalBeforeCustodyPreserved": true,
+    "horizonRefusalBeforeCustodyPassed": true,
+    "directPayerReentrantRecoveryClosePassed": true,
+    "remainingFailure": "The fixture awaited successful close after an unresolved fetch exhausted the actual payer's bounded drain grace. Actual close rejected with close_unknown. A finally close masked any earlier assertion at this stage; do not infer every old subpredicate passed.",
+    "reviewedContract": "Terminal false drain retains the same quarantined owner and native store. Late BOUND is not successful close, replay, replacement or release authority.",
+    "nativeFailedCloseAndLateResponseRetentionFullyVerified": false,
+    "mainRuntimePromoted": false,
+    "fullP0P1": false,
+    "positivePowChain": false,
+    "realRpc": false,
+    "nativeHttps": false,
+    "forcedInterruption": false,
+    "hostedCI": "NOT_RUN_NOT_GREEN",
+    "livePayment": false,
+    "economicPilot": false
+  },
+  "sourceOnlyCorrection": {
+    "status": "AUTHORED_NOT_EXECUTED_NOT_NATIVE_QUALIFIED",
+    "sources": [
+      {
+        "path": "qualification/dynamic-plasma-original-funding-submission-v2-bounded-drain.behavior.draft.mjs",
+        "bytes": 24393,
+        "LF": 364,
+        "sha256": "607fb2d29e83eea9a060431d559a6ecd50995f0f39a0de426274603c30dd8a1a",
+        "gitBlob": "d2bf05e369fcb1bea44a9ef2e9f8a83820ab05d1"
+      },
+      {
+        "path": "qualification/dynamic-plasma-original-funding-submission-v2-bounded-drain-selection.behavior.draft.mjs",
+        "bytes": 1290,
+        "LF": 20,
+        "sha256": "db2e66024b3d7963b062b2f46164a376c5db8061c991850031f974db736c4275",
+        "gitBlob": "0a03679b430b728dbb04123845a9426d977bddb0"
+      }
+    ],
+    "oldExecutedFixtureUnchanged": true,
+    "changes": "Keep all twelve scenarios. Require close_unknown and CLOSE_OUTCOME_UNKNOWN, preserve durable UNKNOWN/independent pins, reject owner reentry/reopen, and require the same rejected close after late release; never directly close the held store.",
+    "freshProfileRequired": true,
+    "oldProfileDoesNotSelectCorrectedEntry": true
+  },
+  "publicationBoundary": "Evidence publication is not promotion or activation of the four effectful runtime differences from main. No workflow, default buyer, SDK, schema, provider or payment setup is changed."
+}
