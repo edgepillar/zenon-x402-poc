@@ -1,0 +1,248 @@
+{
+  "kind": "EXACT_DP_SDK_V6_PINNED_NODE24_PROFILE_SOURCE_REVIEW",
+  "version": 1,
+  "status": "SOURCE_PROFILE_PREPARED_INPUTS_RETAINED_NOT_RUN",
+  "sourceBase": "ba5a33c1de34a8d3ad869958f9aac1c625098ab7",
+  "sourceOwnerCommit": "de986f82745f4b31af3b907e93377e4573b23af7",
+  "applicationSourceBindings": {
+    "ownerCommit": "de986f82745f4b31af3b907e93377e4573b23af7",
+    "applicationInputsExcludingPreload": 46,
+    "matchingOwnerTree": 45,
+    "mixedRefProfile": true,
+    "cleanOwnerOrMainCheckoutQualified": false,
+    "preservedDifferentRefInput": {
+      "path": "src/zenon/operator-trusted-testnet-profile.js",
+      "bytes": 43918,
+      "sha256": "ab1e17b9d1e99e16807b512f0cca696538c2acde4b0384a8417c9feab3a9909d",
+      "gitBlob": "6baa2f44aa8fa95f7dfcc8ffe847a80ba1011aa1",
+      "sourceCommit": "e1a5bafeadda9a679dc2261b1abea164820fb8a5",
+      "sourceTree": "b7cccaee52289905d0768c9edd9c3a43b1a012f4",
+      "ownerTreeBlob": "a1c31e55677ef34ee76d45575b80ad30466ce1e7",
+      "completeRemoteSourceTreeRead": true,
+      "changedOrRepublished": false
+    }
+  },
+  "currentDocumentation": {
+    "path": "docs/DYNAMIC_PLASMA_ORIGINAL_FUNDING_NATIVE_PROFILE.md",
+    "bytes": 7000,
+    "sha256": "a7821040f70587daa29a7d33b6ab265e18075e2ad77aeff36a325c1c752876d7",
+    "gitBlob": "06daed757bc0908776398ec87808a58f04fdc339"
+  },
+  "retainedDocumentationPredatesMixedRefClarification": true,
+  "targetSourceBranch": "x402/p1-dp-original-funding-pinned-node24-source-v1",
+  "mainEligible": false,
+  "preload": {
+    "path": "qualification/dynamic-plasma-original-funding-pinned-namespace.preload.draft.mjs",
+    "bytes": 9538,
+    "sha256": "824313d43b29cdc49af18cc5047f36741486bdfb92d25d3d7791a42069518673",
+    "gitBlob": "15067479edcaf04c96a3f9bce5ab888000d4ddc7"
+  },
+  "preloadParsedOrImported": false,
+  "sourceTransforms": 0,
+  "sourceFiles": 429,
+  "sourceBytes": 2537526,
+  "sourceRowsSha256": "ce4925b20a88c9fc939424995458f74593c744d88c114f8ae25100a9b3037492",
+  "inputFile": "qualification/dynamic-plasma-original-funding-native-profile.inputs.json",
+  "edgeAccounting": {
+    "applicationSdkLiteralInventoryEdgesBeforePreload": 980,
+    "preloadBuiltinImportEdges": 5,
+    "combinedDeclaredLiteralEdges": 985,
+    "staticLiteralEdgesFieldInInputsMeansInventoryBeforePreload": true,
+    "commentTypeReferencesNotExecutable": 44,
+    "embeddedBrowserTemplateNotExecutable": 1,
+    "executableDeferredLiteralSites": 5,
+    "literalInventoryIsNotRuntimeResolutionProof": true
+  },
+  "reviewedDeferredPaths": [
+    {
+      "path": "packages/znn-typescript-sdk/dist/pow/pow.js",
+      "scope": "PoW init/generate/benchmark and browser wrapper are not called; WASM and dynamic Function paths are not selected."
+    },
+    {
+      "path": "packages/znn-typescript-sdk/dist/pow/powWorker.js",
+      "scope": "Worker source text is inside an unselected worker-generation path; no worker is permitted."
+    },
+    {
+      "path": "packages/znn-typescript-sdk/dist/wallet/keyFile.js",
+      "scope": "Password hashing/decryption paths are not selected; argon2 and argon2-browser are not imported."
+    },
+    {
+      "path": "packages/asn1.js/lib/asn1/api.js",
+      "scope": "VM codec creation is deferred until ASN.1 decode/encode, not this account-block/preflight path."
+    },
+    {
+      "path": "packages/ws/lib/buffer-util.js",
+      "scope": "WS_NO_BUFFER_UTIL=1 excludes the optional native accelerator."
+    },
+    {
+      "path": "packages/ws/lib/validation.js",
+      "scope": "WS_NO_UTF_8_VALIDATE=1 excludes the optional native accelerator."
+    }
+  ],
+  "selectedPackageDeclarations": [
+    {
+      "path": "packages/@noble/ed25519/package.json",
+      "name": "@noble/ed25519",
+      "version": "2.3.0",
+      "type": "module"
+    },
+    {
+      "path": "packages/@noble/hashes/package.json",
+      "name": "@noble/hashes",
+      "version": "1.8.0",
+      "type": "commonjs"
+    },
+    {
+      "path": "packages/@open-rpc/client-js/package.json",
+      "name": "@open-rpc/client-js",
+      "version": "2.0.0",
+      "type": "module"
+    },
+    {
+      "path": "packages/crypto-browserify/package.json",
+      "name": "crypto-browserify",
+      "version": "3.12.1",
+      "type": "commonjs"
+    },
+    {
+      "path": "packages/rpc-websockets/package.json",
+      "name": "rpc-websockets",
+      "version": "9.3.9",
+      "type": "commonjs"
+    },
+    {
+      "path": "packages/ws/package.json",
+      "name": "ws",
+      "version": "8.21.3",
+      "type": "commonjs"
+    },
+    {
+      "path": "packages/znn-typescript-sdk/package.json",
+      "name": "znn-typescript-sdk",
+      "version": "1.0.5",
+      "type": "module"
+    }
+  ],
+  "packageVersionsAreNotAuthenticatedReleaseProvenance": true,
+  "namespace": {
+    "ordinaryRepoNodeModulesObservedAbsent": true,
+    "ordinaryInstalledNamespaceQualified": false,
+    "alternative": "Explicit native Node synchronous resolver with five reviewed application edges to three existing real package entries",
+    "NodeApi": "https://nodejs.org/download/release/v24.19.0/docs/api/module.html#moduleregisterhooksoptions",
+    "defaultsDelegatedForAllOtherEdges": true,
+    "actualSDKEntryNotShrunk": true,
+    "fakeSdkPreflightOrStore": false,
+    "sourceTransforms": 0,
+    "asynchronousLoaderThreads": 0,
+    "workers": 0,
+    "children": 0,
+    "moduleAllowlist": 429,
+    "nativeResolutionQualified": false,
+    "sameUserOrNetworkSandboxClaim": false
+  },
+  "proposedLaunch": {
+    "node": "24.19.0",
+    "platform": "darwin-arm64",
+    "nodeCommands": 1,
+    "childProcesses": 0,
+    "argvCount": 128,
+    "argvUtf8Bytes": 13479,
+    "managerArgvCountLimit": 256,
+    "managerArgvByteLimit": 32768,
+    "readOnlyExactApplicationFiles": 47,
+    "readOnlyDeclaredPackageDirectoryScopes": 67,
+    "filesystemGrantsBroaderThanIndividualPackageInputs": true,
+    "extraReadTargets": "Pinned profile object and fresh owned scratch only",
+    "writeTarget": "Fresh owned task scratch only",
+    "addons": false,
+    "codeGenerationFromStrings": false,
+    "compileCache": false,
+    "environmentSelectionIsNotAuthorizationProof": true,
+    "prototypeChecksAreNotAHostileCodeSandbox": true
+  },
+  "actualInputRetention": {
+    "kind": "SOURCE_RETENTION_ONLY_NOT_NATIVE_QUALIFICATION",
+    "taskClosed": "SUCCESS",
+    "scratchAbsent": true,
+    "completeClosedRecordsIndependentlyRead": 6,
+    "sourceFilesIndependentlyRead": 429,
+    "managedCommands": 0,
+    "Node": 0,
+    "SDK": 0,
+    "SQL": 0,
+    "keyGeneration": 0,
+    "signatureGeneration": 0,
+    "signatureVerification": 0,
+    "network": 0,
+    "sourceRowsSha256": "ce4925b20a88c9fc939424995458f74593c744d88c114f8ae25100a9b3037492",
+    "admissionSha256": "eb02b44d7cfe9e0a0eb4d237cf51d0507cfa159d7e3298d6a69c1da55cbfc67c",
+    "borrowedClosedInputRows": 45,
+    "newJavascriptSourceRows": 307,
+    "newUniqueJavascriptObjects": 303,
+    "newMetadataSourceRows": 77,
+    "newUniqueGroupedMetadataMembers": 74,
+    "newCasObjects": 308,
+    "retainedPayloadBytes": 1894981,
+    "quotaBytes": 2097152,
+    "artifacts": {
+      "native-runtime-profile": {
+        "bytes": 155236,
+        "sha256": "e452c8dfdf38432386908cdaea8adf0b882a10279a78c426ea7d631ee42d0997"
+      },
+      "package-metadata-members": {
+        "bytes": 194842,
+        "sha256": "31bc2dd0c6846dcc165ae8f34fd5f689d9335299b549d31b8ce3934d278b6046"
+      },
+      "profile-documentation": {
+        "bytes": 6009,
+        "sha256": "1a93496f11dc7e5ad46e15def91ef249049202131b24b6ef9336a34336ea06b3"
+      },
+      "public-inputs": {
+        "bytes": 109214,
+        "sha256": "e68f7b6a1d5ceafebbd35227302bc246632ad1cb00058509c381a0faaf1ae456"
+      },
+      "source-audit-zlib": {
+        "bytes": 58290,
+        "sha256": "7bb200a59eeb7af0d6681244cf3444c4d33748788f05770e83ace85c234c773c"
+      }
+    },
+    "allSourceBytesAndPhysicalPinsMatched": true,
+    "sourceAliases": 0,
+    "recursiveArchive": false,
+    "historicalCleanupOrAdoption": false,
+    "policyOrOwnershipChanged": false
+  },
+  "intendedNativeFixture": {
+    "sourceOnly": true,
+    "scenarioCount": 2,
+    "scenariosExecuted": 0,
+    "newSQLiteFiles": 2,
+    "newIndependentPinJsonFiles": 2,
+    "newInMemorySyntheticEd25519Keys": 1,
+    "syntheticTransactionSignatures": 2,
+    "actualPreflightVerifications": 2,
+    "fixedZeroDifficultyNonceOnly": true,
+    "nonceSearch": 0,
+    "SDKPrepareBlock": 0,
+    "realChainPrepare": 0,
+    "payment": 0,
+    "successAndNormalReopen": true,
+    "commitBeforeReturnUncertainty": true,
+    "normalReopenIsNotReadOnlyOrCrashProof": true,
+    "outputFilesMustRemainProtectedIfCleanupHolds": true,
+    "sourceNamespaceDoesNotAuthorizeExecution": true
+  },
+  "remainingGates": [
+    "Direct matching operator authorization for the new SDK/synthetic-signature/private-SQLite scope.",
+    "Reconcile the preserved different-ref application dependency before claiming current-main or clean-owner qualification; this declared mixed-ref profile is not either.",
+    "Recheck all pins, launcher, private fixture root and available storage before one actual command.",
+    "Read actual exit, full streams, native source-binding counters and both scenario outcomes; never infer pass from this source review.",
+    "Retain raw failures or cleanup HOLD without repeating a native experiment for metadata recovery.",
+    "Ordinary dependency installation, native HTTPS/x402/one-grant application composition, full P0/P1 and economic pilot remain separate."
+  ],
+  "nativeQualification": false,
+  "hostedCIQualified": false,
+  "fullP0Qualified": false,
+  "fullP1Qualified": false,
+  "authority": "NONE"
+}
