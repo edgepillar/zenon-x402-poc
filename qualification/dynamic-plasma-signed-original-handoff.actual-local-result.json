@@ -1,0 +1,315 @@
+{
+  "schema": "zenon-x402-selected-local-result/v1",
+  "status": "ACTUAL_SELECTED_PURE_DATA_LOCAL_PASS",
+  "lane": "P1 Dynamic Plasma signed-original field-preservation boundary",
+  "sourceAssociation": {
+    "baseMain": "5c8ddd3752dea8b652f4f4afa50b6f8f62e56d2c",
+    "baseTree": "cac75e6b4cf46af22297bf8095e44289f96f1e7b",
+    "sourcePins": [
+      {
+        "path": "package.json",
+        "bytes": 2677,
+        "LF": 40,
+        "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+        "gitBlob": "45752ffde39d29666094f7f1c755060d75e43deb"
+      },
+      {
+        "path": "qualification/dynamic-plasma-signed-original-handoff.behavior.draft.mjs",
+        "bytes": 17478,
+        "LF": 253,
+        "sha256": "dee8958b5db5dc2259d390f5c7ffdb282d6d8aeb3c23a1b2e6d3ee5cf9a298e5",
+        "gitBlob": "dc46c4baa401e1bb11a1a7b21c8dcc7c8bd3d94e"
+      },
+      {
+        "path": "src/canonical.js",
+        "bytes": 967,
+        "LF": 26,
+        "sha256": "0d55ddf1727cafb0dcd46df2922305568615552a4d2ae34a5c30e90b9d8d998c",
+        "gitBlob": "5367f9c72ee13017a61630e1f0cffdced21d52c4"
+      },
+      {
+        "path": "src/x402-wire.js",
+        "bytes": 39886,
+        "LF": 934,
+        "sha256": "5fba91af5a352f62d1a335c7176a45a604e2af5d92b1c4b0e53825c1f20d4e56",
+        "gitBlob": "fb060d4e349b1c31a1219a0cc137af250a8a2291"
+      },
+      {
+        "path": "src/zenon/bounded-dynamic-plasma-strategy.js",
+        "bytes": 15729,
+        "LF": 353,
+        "sha256": "7b82560bdeb25e573912090a2fe8de7b45912500a7a7c4434fe06dcf94e06d62",
+        "gitBlob": "ee85b7a4da8bf4190ae099e6bc5074059fccebbc"
+      },
+      {
+        "path": "src/zenon/bounded-json-rpc-read-core.js",
+        "bytes": 21759,
+        "LF": 582,
+        "sha256": "10cc529bfb0676bb03dc4dad56059663f4a578b586c52f6404fc859d27d18f76",
+        "gitBlob": "3bd98a83413eb13e3bceb097d35fb874b4c030a2"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-compatibility.js",
+        "bytes": 7732,
+        "LF": 225,
+        "sha256": "b3989ce15e5f2e9d07b0ed035fe96bcce9f22cac93f5e497fdca5c37bf7618dd",
+        "gitBlob": "3811b748b3f905e454c8a4af4650bb7f89eb1cf2"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-json-rpc-read-transport.js",
+        "bytes": 10832,
+        "LF": 283,
+        "sha256": "fd03b2ad87d16660aa61d3961c163d724d5f89cd6d4bb9c4391d739566d5e5ca",
+        "gitBlob": "0475b7ab42889f67fb030fa7344d73d8bd6957d7"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-observation-collector.js",
+        "bytes": 38492,
+        "LF": 949,
+        "sha256": "6bb665dd97e4b262941ed11fb7a9fb5c6d7a162004a39fcbfbfa8cd7b3f82d98",
+        "gitBlob": "171a49f29379866ed111031d15423634ac2d17b4"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-observation-normalizer.js",
+        "bytes": 28398,
+        "LF": 698,
+        "sha256": "2c3f7d42ded21a5513ff26c23a00a35a53aa334f053d10930f1571a020286897",
+        "gitBlob": "c406db8471aa6c8afd812c222c673c809491cf00"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-price-policy.js",
+        "bytes": 16224,
+        "LF": 444,
+        "sha256": "eba3225c4d26cbb6e0be575ac4fd5073bc8b0c4454eb51e2bea4d91856d0c65e",
+        "gitBlob": "649dd09b60236b43c91d22e34b76f71f4b661361"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-required-fused-policy-adapter.js",
+        "bytes": 12024,
+        "LF": 272,
+        "sha256": "e2b693d4df9065d44ba590f4d0c8dffeb8e55187668eedfa396b4026c9905c3e",
+        "gitBlob": "b592aafd4c41461318376ea9acc1373f99317455"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-required-fused-quote.js",
+        "bytes": 5416,
+        "LF": 133,
+        "sha256": "f5e10ff2dbfff3b6b63d87f0abadd0bb52b5d6b8fe0ead6a55fc5ea14207b730",
+        "gitBlob": "e820fd31ffde4ef77a2efa6e1fd3ed1775778726"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-signed-original-handoff.js",
+        "bytes": 8843,
+        "LF": 191,
+        "sha256": "bb592312c8d8cd3f4f80817b84bb9273a9232fe843f5ffeb66ac5266bd13ed9a",
+        "gitBlob": "4b3a18cb94b1daded74b798b81e881948cbb4637"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-user-send-assembly.js",
+        "bytes": 7772,
+        "LF": 162,
+        "sha256": "05012a2a983ceca018674c4d1f63823f3f7ed53b0970a4b4bd486c4278832b04",
+        "gitBlob": "a0537856f6692d278c9043ab9c1c734d1bde61ba"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-user-send-fixed-work.js",
+        "bytes": 3475,
+        "LF": 77,
+        "sha256": "4ee83870df0b25c34d35c0f0d0ceb894ca9dab8c047f81b34a48dd816f1fbf38",
+        "gitBlob": "4ce2a790df84c77bc76615e5eebc309ecd2868ac"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-user-send-key-binding.js",
+        "bytes": 4237,
+        "LF": 91,
+        "sha256": "37ad7e74b038801297e4bffb0cb8ba92cbd79009ed32c4ae5b134fe2cb154be2",
+        "gitBlob": "c366f0fee4132604b40604547fe22f1bc1dba65d"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-user-send-work-binding.js",
+        "bytes": 1940,
+        "LF": 42,
+        "sha256": "79eba29a05427128ae3a12346fd3ee7cbaa526d6f39eb36ed58d388640638266",
+        "gitBlob": "a329d521458a5c5b6dbc87194d91d4165d5e759c"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-user-send-work-input.js",
+        "bytes": 2853,
+        "LF": 59,
+        "sha256": "2ff9c089e5903c059746d0a1c38688a2849f94d04d429279811fbbfbb40450a4",
+        "gitBlob": "dad4febf4ef6f09216640245c7e3805e01ad0127"
+      },
+      {
+        "path": "src/zenon/plasma-strategy.js",
+        "bytes": 974,
+        "LF": 32,
+        "sha256": "1c597d4e169ba8a5e6d2b7852c4ffa3a8ec9b854332fe354b9b013c36ebae093",
+        "gitBlob": "5cddc2d270aaf043e6e43145e95ffe0be3dde475"
+      },
+      {
+        "path": "src/zenon/transaction-planner.js",
+        "bytes": 22611,
+        "LF": 464,
+        "sha256": "079fe8da938e08e33a20ca1076492a829afa6fce3ae7f9b9f68d3bf4bff94233",
+        "gitBlob": "17b49a3d53974c9b3846ec6f352d6e8974bad7d3"
+      }
+    ],
+    "sourceFiles": 21,
+    "sourceBytes": 270319,
+    "sourceAtExecution": "Exact pinned read-only checkout DATA, including two new source files; not an execution of a published future commit.",
+    "postPublicationCorrespondence": "Must be established by exact blob/tree readback; source-base labels are never rewritten to the future commit."
+  },
+  "implementation": {
+    "path": "src/zenon/dynamic-plasma-signed-original-handoff.js",
+    "defaultOff": true,
+    "legacyBuyerChanged": false,
+    "openPr193OverlapAvoided": true,
+    "actualChecks": [
+      "Capture and validate the original unsigned block and quote before returning a handoff.",
+      "Consume a local one-candidate latch before inspecting an acceptance attempt.",
+      "Require the same closed field set and all original fields except signature, including publicKey and both Momentum ACK fields.",
+      "Reuse the actual intent/hash/fixed-nonce/key-address/price binder with the captured originals and independently current declared context.",
+      "Refuse expiry, replacement, concurrent second candidates and mutated fields without re-quoting or generating work."
+    ],
+    "notSignatureVerification": true,
+    "notDurableCustody": true,
+    "noCallbackOrWalletInvoked": true
+  },
+  "actualExecution": {
+    "runtime": {
+      "name": "Node.js",
+      "version": "24.19.0",
+      "platform": "darwin",
+      "architecture": "arm64",
+      "sha256": "dbedff294bab84a0a86c04e15fbcbeb1c97ca10bef1b32b0634cd24b36f62100"
+    },
+    "nodeCommands": 1,
+    "childProcesses": 0,
+    "entry": "qualification/dynamic-plasma-signed-original-handoff.behavior.draft.mjs",
+    "selectedNames": [
+      "signed original handoff preserves every original field and only attaches signature-shaped DATA",
+      "signed original handoff revalidates the same hash nonce and ACK at both allowed later price frontiers",
+      "signed original handoff rejects expiry without refresh replacement or a second candidate",
+      "signed original handoff rechecks runtime p context and independently selected intent",
+      "signed original handoff rejects mutation of each scalar field and both nested ACK fields",
+      "signed original handoff rejects changed public bytes even when the block hash is unchanged",
+      "signed original handoff rejects a coherently rehashed replacement rather than accepting hash validity alone",
+      "signed original handoff refuses empty noncanonical oversized and nonstring signature fields",
+      "signed original handoff refuses extra missing symbol and exotic candidate fields",
+      "signed original handoff refuses candidate getters nested getters and proxies without invoking hooks",
+      "signed original handoff refuses original quote block and context hooks before returning a facade",
+      "signed original handoff rejects an already signed or invalid original without producing a facade",
+      "signed original handoff captures original block quote and context before its first await",
+      "signed original handoff captures signed candidate and current context before its first await",
+      "signed original handoff admits only one candidate even during concurrent current-context validation",
+      "signed original handoff consumes a malformed acceptance attempt and sanitizes the terminal error",
+      "signed original handoff enforces exact arity without inspecting extra or missing values",
+      "signed original handoff retains native Promise and frozen detached DATA contracts"
+    ],
+    "counts": {
+      "tests": 18,
+      "suites": 0,
+      "pass": 18,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "actualExit": 0,
+    "streamsComplete": true,
+    "stdout": {
+      "sha256": "728ad39ffc31aaa55669360981de1575c02a5f0ef15e64b6bddb3b5d658ab510",
+      "bytes": 4723
+    },
+    "stderr": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "admissionSha256": "07b6be6a88ac43b2e51ce8c5c4ab7a762f1f08c8adcd3c1b1c00fbb19c74747e",
+    "closedRecordsIndependentlyRead": 5,
+    "processGroupAbsent": true,
+    "registeredScratchAbsent": true,
+    "managedTaskClosed": true,
+    "managedTaskOutcome": "SUCCESS",
+    "testRunnerDurationMilliseconds": 106.680666,
+    "controllerObservedSeconds": 8.399036625,
+    "timingMeaning": "One selected local fixture result, not network latency, throughput or a production performance benchmark."
+  },
+  "fixture": {
+    "publicKeyBytes": "32 constant 0x07 bytes; public DATA only",
+    "nonce": "0102030405060708",
+    "difficulty": 0,
+    "signatureField": "64 constant 0x2a bytes encoded as canonical Base64; deliberately NOT a cryptographic signature",
+    "currentContext": "Synthetic independent declared DATA; not authenticated chain or balance observations",
+    "fixedNoncePredicate": "No positive-work candidate search is evaluated by this zero-difficulty fixture.",
+    "boundedCalls": {
+      "captureCeiling": 96,
+      "acceptCeiling": 128
+    }
+  },
+  "launch": {
+    "nodePermissionModel": true,
+    "exactReadOnlyInputs": 21,
+    "sourceAliases": 0,
+    "dependencyInstallation": false,
+    "codeGenerationFromStrings": false,
+    "nativeAddons": false,
+    "childrenOrWorkersPermitted": false,
+    "filesystemWritePermission": false,
+    "networkPermission": false,
+    "environmentCleared": true,
+    "timeoutSeconds": 45,
+    "stdoutCapBytes": 65536,
+    "stderrCapBytes": 1048576,
+    "noOsOrHostileProcessSandboxClaim": true
+  },
+  "storage": {
+    "taskQuotaBytes": 2097152,
+    "declaredPeakLogicalBytesBound": 1209381,
+    "newRuntimeSourceObjects": 2,
+    "newRuntimeSourceBytes": 26321,
+    "borrowedProtectedSourceReferences": 19,
+    "documentationRetainedBytes": 3412,
+    "recursiveArchive": false,
+    "sourceAliases": 0,
+    "historicalEvidenceUnchanged": true,
+    "physicalReclaim": "NOT_MEASURED",
+    "quotaMeaning": "Cooperative manager accounting and declared bounds, not an OS-enforced disk or memory quota."
+  },
+  "boundaries": {
+    "signatureGeneration": 0,
+    "signatureVerification": 0,
+    "privateKeys": 0,
+    "wallet": 0,
+    "nonceSearch": 0,
+    "SDK": 0,
+    "x402PackageExecution": 0,
+    "SQL": 0,
+    "nativeHTTPS": 0,
+    "network": 0,
+    "actualPrepare": 0,
+    "payment": 0,
+    "hostedCI": "NOT_RUN_NOT_GREEN",
+    "nativeChainProviderQualification": 0,
+    "fullP1Qualified": false,
+    "fullRoadmapComplete": false,
+    "productionReady": false,
+    "providerReady": "NOT_ESTABLISHED",
+    "legacyPhase2CCutover": "UNCHANGED_SEPARATE_GATE",
+    "protectedRealTotals": {
+      "consumedAdmissions": 2,
+      "actualChainPrepare": 1,
+      "bundles": 0,
+      "nativeChainProviderQualificationRuns": 0
+    },
+    "originalSignedPaymentRequestAndConsumedAuthority": "UNCHANGED_SEPARATE_OWNER",
+    "priorResultsReplayedOrRelabeled": false
+  },
+  "remainingGates": [
+    "Actual separately authorized wallet signing and cryptographic payment preflight.",
+    "Actual current account/balance/price read-owner composition around the same original block.",
+    "Original signed-payment custody and one-operation publish/reconcile composition.",
+    "Current-source native HTTPS plus V6/one-grant P1 integration; this local DATA test is not that experiment.",
+    "Positive-work/runtime and bounded economic testnet acceptance remain separate."
+  ]
+}
