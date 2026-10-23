@@ -3,18 +3,26 @@ import { canonicalJson } from '../canonical.js';
 import { preflightZenonPayment } from '../zenon-payment.js';
 import { ZenonFundingPayerRecoverySqliteStore } from '../service-credit-zenon-funding-post-v1-payer-recovery-sqlite-store.js';
 import { encodeOriginalPaymentCheckpoint } from '../service-credit-pilot-original-payment-checkpoint.js';
-import { createObservedBalanceDeadlineBoundMaterialWalletCandidatePreparer } from './dynamic-plasma-observed-balance-deferred-material-planner.js';
+import {
+  createObservedBalanceDeadlineBoundMaterialWalletCandidatePreparer,
+  createObservedBalanceDeadlineBoundMaterialRetainedCandidatePreparer,
+} from './dynamic-plasma-observed-balance-deferred-material-planner.js';
 import { claimZenonDynamicPlasmaOriginalFundingStore } from './dynamic-plasma-original-funding-store-claim.js';
 import {
   captureZenonDynamicPlasmaOriginalFundingInput,
   assembleZenonDynamicPlasmaOriginalFundingData,
+  captureZenonDynamicPlasmaOriginalFundingInputV2,
+  assembleZenonDynamicPlasmaOriginalFundingDataV2,
   snapshotZenonDynamicPlasmaOriginalFundingPins,
 } from './dynamic-plasma-original-funding-data.js';
 
 const CREATE_PREPARER = createObservedBalanceDeadlineBoundMaterialWalletCandidatePreparer;
+const CREATE_RETAINED_PREPARER = createObservedBalanceDeadlineBoundMaterialRetainedCandidatePreparer;
 const CLAIM_STORE = claimZenonDynamicPlasmaOriginalFundingStore;
 const CAPTURE = captureZenonDynamicPlasmaOriginalFundingInput;
 const ASSEMBLE = assembleZenonDynamicPlasmaOriginalFundingData;
+const CAPTURE_V2 = captureZenonDynamicPlasmaOriginalFundingInputV2;
+const ASSEMBLE_V2 = assembleZenonDynamicPlasmaOriginalFundingDataV2;
 const PINS = snapshotZenonDynamicPlasmaOriginalFundingPins;
 const PREFLIGHT = preflightZenonPayment, CANONICAL = canonicalJson;
 const ENCODE_CHECKPOINT = encodeOriginalPaymentCheckpoint;
@@ -69,9 +77,27 @@ const STORE_CHECKPOINT = DESCRIPTOR(STORE_PROTOTYPE, 'getOriginalPaymentCheckpoi
  * network, dispatch, delivery, inclusion or economic-pilot authority.
  */
 export function createZenonDynamicPlasmaOriginalFundingPreparation(configuration) {
+  if (arguments.length !== 1) fail('configuration_rejected');
+  return createPreparation(configuration, false);
+}
+
+/**
+ * SOURCE-ONLY v2 owner: hardwire contextv7, actual preflight and ONE retained
+ * candidate current read AFTER independent pins, immediately BEFORE entering
+ * the existing V6 atomic custody method. No reassembly, re-signing, re-quote,
+ * replacement, new owner or retry on refusal. The old v1 entry stays on v6.
+ * Neither pure DATA tests nor the contextv7 component result qualifies this
+ * SDK/signature/SQLite composition. Do not import it in DATA-only tests.
+ */
+export function createZenonDynamicPlasmaOriginalFundingPreparationV2(configuration) {
+  if (arguments.length !== 1) fail('configuration_rejected');
+  return createPreparation(configuration, true);
+}
+
+function createPreparation(configuration, retainedValidationEnabled) {
   let preparer, resource, store;
   try {
-    if (arguments.length !== 1 || !invariant()) fail('configuration_rejected');
+    if (!invariant()) fail('configuration_rejected');
     const input = record(configuration, ['preparerOptions', 'store', 'fundingResourceUrl']);
     store = input.store;
     if (typeof store !== 'object' || store === null || IS_PROXY(store)
@@ -81,15 +107,20 @@ export function createZenonDynamicPlasmaOriginalFundingPreparation(configuration
       if (typeof method !== 'function' || IS_PROXY(method)) fail('configuration_rejected');
     resource = APPLY(STORE_RESOURCE, store, []);
     if (resource !== input.fundingResourceUrl) fail('configuration_rejected');
-    preparer = CREATE_PREPARER(input.preparerOptions);
+    preparer = (retainedValidationEnabled ? CREATE_RETAINED_PREPARER : CREATE_PREPARER)(input.preparerOptions);
     // Finish non-operational checks first; no reset or released claim exists.
     CLAIM_STORE(store);
   } catch { fail('configuration_rejected'); }
   const STORE = store, RESOURCE = resource;
   const PREPARE_CANDIDATE = preparer.prepareSignedCandidate;
   const INSPECT_CANDIDATE = preparer.getSignedOriginalData;
+  const REVALIDATE_CANDIDATE = retainedValidationEnabled ? preparer.revalidateSignedOriginal : null;
+  const CAPTURE_INPUT = retainedValidationEnabled ? CAPTURE_V2 : CAPTURE;
+  const ASSEMBLE_DATA = retainedValidationEnabled ? ASSEMBLE_V2 : ASSEMBLE;
   let used = false, active = false, phase = 'IDLE', packet = null, originals = null;
   let preflightPassed = false, commitAttempts = 0, storeEntered = false, storeReturned = false;
+  let originalUnsignedJson = null, preSignCheckpointJson = null;
+  let preCustodyRevalidationAttempts = 0, preCustodyRevalidationPassed = false;
   configuration = null; store = null; resource = null; preparer = null;
 
   async function prepare(count, incoming) {
@@ -99,21 +130,25 @@ export function createZenonDynamicPlasmaOriginalFundingPreparation(configuration
     used = true; active = true; phase = 'PREPARING';
     try {
       if (!invariant()) fail('operation_rejected');
-      originals = CAPTURE(incoming, RESOURCE);
+      originals = CAPTURE_INPUT(incoming, RESOURCE);
       await undefined;
       if (!invariant() || APPLY(STORE_LOAD, STORE, []) !== null) fail('occupied_or_unusable_store');
       const candidate = await APPLY(PREPARE_CANDIDATE, undefined, [originals.plannerContext]);
       if (!invariant()) fail('operation_rejected');
-      packet = ASSEMBLE(originals, {
+      packet = ASSEMBLE_DATA(originals, {
         originalUnsignedBlock: candidate.originalUnsignedBlock, accountBlock: candidate.accountBlock,
       }, RESOURCE);
+      if (retainedValidationEnabled) {
+        originalUnsignedJson = CANONICAL(value(candidate, 'originalUnsignedBlock'));
+        preSignCheckpointJson = value(candidate, 'preSignCheckpointJson');
+      }
       const checked = await PREFLIGHT(packet.paymentPayload, packet.requirement, packet.paymentRequired);
       if (!invariant() || value(checked, 'transactionHash') !== packet.transactionHash
           || value(checked, 'intentDigest') !== packet.paymentPayload.payload.intentDigest
           || CANONICAL(value(checked, 'signedAccountBlock')) !== CANONICAL(packet.paymentPayload.payload.transaction))
         fail('operation_rejected');
       preflightPassed = true; phase = 'AWAITING_INDEPENDENT_PINS';
-      return FREEZE({ originalFundingPreparationVersion: 1, phase,
+      return FREEZE({ originalFundingPreparationVersion: retainedValidationEnabled ? 2 : 1, phase,
         packet, preflight: 'ACTUAL_LOCAL_PREFLIGHT_RETURNED', persistence: 'NOT_PERFORMED', authority: 'NONE' });
     } catch {
       phase = 'PREPARE_REFUSED';
@@ -130,6 +165,21 @@ export function createZenonDynamicPlasmaOriginalFundingPreparation(configuration
       const pins = PINS(packet.serializedCheckpoint, record(incoming, ['expectedPins']).expectedPins);
       await undefined;
       if (!invariant()) fail('operation_rejected');
+      if (retainedValidationEnabled) {
+        preCustodyRevalidationAttempts = 1; phase = 'REVALIDATING_BEFORE_COMMIT';
+        const checked = await APPLY(REVALIDATE_CANDIDATE, undefined, []);
+        if (!invariant() || value(checked, 'observedSignedCandidateVersion') !== 2
+            || value(checked, 'validationPurpose') !== 'BEFORE_ORIGINAL_SIGNED_CUSTODY'
+            || value(checked, 'signing') !== 'NOT_INVOKED'
+            || value(checked, 'candidateFieldValidation') !== 'MATCHES_CAPTURED_ORIGINAL'
+            || value(checked, 'preSignCheckpointJson') !== preSignCheckpointJson
+            || CANONICAL(value(checked, 'originalUnsignedBlock')) !== originalUnsignedJson
+            || CANONICAL(value(checked, 'accountBlock')) !== CANONICAL(packet.paymentPayload.payload.transaction))
+          fail('operation_rejected');
+        preCustodyRevalidationPassed = true; phase = 'COMMITTING';
+      }
+      // No await, wallet, encoder or caller callback between this gate and the
+      // captured atomic store entry. The read itself remains non-atomic DATA.
       storeEntered = true;
       const stored = APPLY(STORE_PREPARE, STORE, [{ pair: packet.pair,
         serializedCheckpoint: packet.serializedCheckpoint, expectedPins: pins }]);
@@ -142,9 +192,11 @@ export function createZenonDynamicPlasmaOriginalFundingPreparation(configuration
       const checkpoint = APPLY(STORE_CHECKPOINT, STORE, [pins]);
       if (!invariant() || ENCODE_CHECKPOINT(checkpoint) !== packet.serializedCheckpoint) fail('operation_rejected');
       phase = 'LOCAL_STORE_READBACK_MATCHED';
-      return FREEZE({ originalFundingCommitVersion: 1, phase, transactionHash: packet.transactionHash,
+      const result = { originalFundingCommitVersion: retainedValidationEnabled ? 2 : 1, phase, transactionHash: packet.transactionHash,
         pair: packet.pair, expectedPins: pins, signatureValidation: 'ACTUAL_LOCAL_PREFLIGHT_RETURNED',
-        crashDurability: 'NOT_QUALIFIED', publication: 'NOT_PERFORMED', authority: 'NONE' });
+        crashDurability: 'NOT_QUALIFIED', publication: 'NOT_PERFORMED', authority: 'NONE' };
+      if (retainedValidationEnabled) put(result, 'preCustodyRevalidation', 'SAME_ORIGINAL_CURRENT_READ_VALIDATED');
+      return FREEZE(result);
     } catch {
       phase = storeEntered ? 'COMMIT_OUTCOME_UNKNOWN' : 'HELD_BEFORE_COMMIT';
       fail('commit_unknown_or_refused');
@@ -152,10 +204,15 @@ export function createZenonDynamicPlasmaOriginalFundingPreparation(configuration
   }
   function inspectOriginalFunding() {
     if (arguments.length !== 0 || !invariant()) fail('input_rejected');
-    return FREEZE({ originalFundingInspectionVersion: 1, phase, active, used,
+    const result = { originalFundingInspectionVersion: retainedValidationEnabled ? 2 : 1, phase, active, used,
       originals, packet, candidate: APPLY(INSPECT_CANDIDATE, undefined, []), preflightPassed,
       commitAttempts, storeEntered, storeReturned, authority: 'NONE',
-      publication: 'NOT_PERFORMED', externalStoreLifetime: 'CALLER_OWNED' });
+      publication: 'NOT_PERFORMED', externalStoreLifetime: 'CALLER_OWNED' };
+    if (retainedValidationEnabled) {
+      put(result, 'preCustodyRevalidationAttempts', preCustodyRevalidationAttempts);
+      put(result, 'preCustodyRevalidationPassed', preCustodyRevalidationPassed);
+    }
+    return FREEZE(result);
   }
   return FREEZE({
     prepareOriginalFunding: FREEZE(function prepareOriginalFunding(input) { return shield(prepare(arguments.length, input)); }),
