@@ -1,0 +1,587 @@
+{
+  "schema": "zenon-x402-production-client-pending-composition-result/v1",
+  "status": "THREE_SELECTED_ACTUAL_OFFICIAL_CORE223_COMPOSITIONS_PASS",
+  "lane": "P1-B actual selected-payment pending recovery",
+  "sourceBaseMain": "00c6c41706843897eee003bdbc42411556b1b47d",
+  "sourceBaseTree": "e17d8c664b39025acc197ce6c0f59ac97aab91c0",
+  "selectedProductionRoleCompositionQualified": true,
+  "fullP1BOrRoadmapComplete": false,
+  "fullOfficialX402CompatibilityQualified": false,
+  "livePilotQualified": false,
+  "selection": {
+    "finiteSlice": "Connect the new production selected-payment client bridge, unchanged production server bridge and pinned official x402 2.23.0 client/HTTP/resource server in three new synthetic compositions.",
+    "novelty": "The earlier actual-core entries used a test-only bare schemeClient. These three new cases wire the unchanged production selected-payment client bridge together with the unchanged production settlement-server bridge through actual pinned official client, HTTP codecs, resource-server and HTTP settlement code.",
+    "implementationChanges": "One new explicit qualification entry. Existing production modules, legacy tests, package files, ordinary CLIs and workflows remain unchanged.",
+    "priorQualificationEntriesImportedOrReplayed": 0,
+    "clientComponentEarlierPassingCases": 16,
+    "earlierPassingResultsCountedAsNewCompositionCases": 0,
+    "templateSource": "The earlier owned-continuation test source was reused as a source template, not imported or executed as another test entry.",
+    "authority": "Existing narrow synthetic official-x402 test exception plus delegated routine exact-source qualification decisions. No new SDK install, operational signer, transport, payment or live authority."
+  },
+  "composition": {
+    "clientFactory": "createSelectedPaymentClientBridge",
+    "serverFactory": "createSelectedSettlementServerBridgeForOfficialX402Core223",
+    "officialRoles": [
+      "x402Client",
+      "x402HTTPClient",
+      "x402ResourceServer",
+      "x402HTTPResourceServer"
+    ],
+    "coreVersion": "2.23.0",
+    "zodVersion": "3.25.76",
+    "sourceBaseProductionFilesMatchImmutableMain": true,
+    "network": "zenon:mock",
+    "assetMetadata": "Explicit synthetic asset, decimals and label under an explicit bounded spend policy; not authenticated asset metadata or a canonical Zenon network registration.",
+    "callbacks": "Local creator, verifier, first settlement and pending observer return declared DATA. Transaction hash, signature and nonce fields are fixed synthetic strings, not generated or verified cryptographic payments.",
+    "scenarios": [
+      {
+        "name": "PENDING_TO_SUCCESS",
+        "observed": "One client creation, one declared verifier, one first-settlement callback and one pending observer. The same encoded header and original payload/requirement/transport identities are retained. One positive continuation response gates one modeled handler count; another continuation is refused before another SDK delegation."
+      },
+      {
+        "name": "PENDING_TO_PENDING_BUDGET_EXHAUSTED",
+        "observed": "The same payment remains pending after its one observer budget. No modeled handler call or positive response. Exhaustion retains UNKNOWN publication uncertainty and refuses another continuation without first settlement, new payload or replacement."
+      },
+      {
+        "name": "CLIENT_CONTEXT_DRIFT_DURING_CREATION",
+        "observed": "After the production creator enters, mutating the original challenge description causes the actual official-client chain to reject with the production bridge creation-rejected error. The client context remains consumed and creation uncertainty retained; no header is submitted, verifier/settlement/observer/handler is entered or replacement is created."
+      }
+    ],
+    "callbackTotals": {
+      "clientSchemas": 3,
+      "serverSchemas": 5,
+      "creators": 3,
+      "verifiers": 2,
+      "firstSettlements": 2,
+      "pendingObservers": 2,
+      "officialHttpRequests": 5,
+      "sdkContinuationCalls": 2,
+      "modeledHandlerCalls": 1
+    },
+    "serviceDelivery": "NOT_ESTABLISHED",
+    "limits": "Same-process in-memory role composition only. Modeled handler effects are not real resource delivery, original signed-byte custody, durable restart recovery, global replay prevention, canonical inclusion, finality or live settlement."
+  },
+  "actualRun": {
+    "entry": "qualification/official-x402-selected-client-pending-composition.behavior.draft.mjs",
+    "completedAtUtc": "2026-10-23T03:20:26.719Z",
+    "selectedNames": [
+      "official production client and server composition reaches one pending success without replacement",
+      "official production client and server composition exhausts pending budget without a new payment",
+      "official production client composition rejects context drift during creation before submitting a payload"
+    ],
+    "counts": {
+      "tests": 3,
+      "suites": 0,
+      "pass": 3,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "diagnostics": [
+      {
+        "kind": "OFFICIAL_X402_PRODUCTION_CLIENT_COMPOSITION",
+        "version": 1,
+        "scenario": "PENDING_TO_SUCCESS",
+        "coreVersion": "2.23.0",
+        "zodVersion": "3.25.76",
+        "clientSchemaCalls": 1,
+        "serverSchemaCalls": 2,
+        "clientCreatorCalls": 1,
+        "clientCreatedPayloads": 1,
+        "clientUncertainCreations": 0,
+        "consumedClientContexts": 1,
+        "clientRetainedInputs": 0,
+        "sdkHttpRequests": 2,
+        "verifyCalls": 1,
+        "firstSettlementCalls": 1,
+        "observerCalls": 1,
+        "continuationCalls": 1,
+        "positiveSettlementResponses": 1,
+        "positiveContinuationReplies": 1,
+        "continuationPhase": "SUCCEEDED",
+        "modeledHandlerCalls": 1,
+        "originalHeaderRetained": true,
+        "publicationUncertaintyRetained": true,
+        "firstSettlementAuthorityConsumed": true,
+        "publicationStatus": "ACKNOWLEDGED",
+        "networkCalls": 0,
+        "keys": 0,
+        "signatures": 0,
+        "sql": 0,
+        "nonceSearch": 0,
+        "payments": 0,
+        "realPrepare": 0,
+        "replacements": 0,
+        "serviceDelivery": "NOT_ESTABLISHED",
+        "sameProcessOnly": true,
+        "automaticSdkRetry": false
+      },
+      {
+        "kind": "OFFICIAL_X402_PRODUCTION_CLIENT_COMPOSITION",
+        "version": 1,
+        "scenario": "PENDING_TO_PENDING_BUDGET_EXHAUSTED",
+        "coreVersion": "2.23.0",
+        "zodVersion": "3.25.76",
+        "clientSchemaCalls": 1,
+        "serverSchemaCalls": 2,
+        "clientCreatorCalls": 1,
+        "clientCreatedPayloads": 1,
+        "clientUncertainCreations": 0,
+        "consumedClientContexts": 1,
+        "clientRetainedInputs": 0,
+        "sdkHttpRequests": 2,
+        "verifyCalls": 1,
+        "firstSettlementCalls": 1,
+        "observerCalls": 1,
+        "continuationCalls": 1,
+        "positiveSettlementResponses": 0,
+        "positiveContinuationReplies": 0,
+        "continuationPhase": "PENDING_EXHAUSTED",
+        "modeledHandlerCalls": 0,
+        "originalHeaderRetained": true,
+        "publicationUncertaintyRetained": true,
+        "firstSettlementAuthorityConsumed": true,
+        "publicationStatus": "UNKNOWN",
+        "networkCalls": 0,
+        "keys": 0,
+        "signatures": 0,
+        "sql": 0,
+        "nonceSearch": 0,
+        "payments": 0,
+        "realPrepare": 0,
+        "replacements": 0,
+        "serviceDelivery": "NOT_ESTABLISHED",
+        "sameProcessOnly": true,
+        "automaticSdkRetry": false
+      },
+      {
+        "kind": "OFFICIAL_X402_PRODUCTION_CLIENT_COMPOSITION",
+        "version": 1,
+        "scenario": "CLIENT_CONTEXT_DRIFT_DURING_CREATION",
+        "coreVersion": "2.23.0",
+        "zodVersion": "3.25.76",
+        "clientSchemaCalls": 1,
+        "serverSchemaCalls": 1,
+        "clientCreatorCalls": 1,
+        "clientCreatedPayloads": 0,
+        "clientUncertainCreations": 1,
+        "consumedClientContexts": 1,
+        "clientRetainedInputs": 0,
+        "sdkHttpRequests": 1,
+        "verifyCalls": 0,
+        "firstSettlementCalls": 0,
+        "observerCalls": 0,
+        "continuationCalls": 0,
+        "positiveSettlementResponses": 0,
+        "positiveContinuationReplies": 0,
+        "continuationPhase": "NOT_CREATED",
+        "modeledHandlerCalls": 0,
+        "originalHeaderRetained": false,
+        "publicationUncertaintyRetained": false,
+        "firstSettlementAuthorityConsumed": false,
+        "publicationStatus": "NOT_ENTERED",
+        "networkCalls": 0,
+        "keys": 0,
+        "signatures": 0,
+        "sql": 0,
+        "nonceSearch": 0,
+        "payments": 0,
+        "realPrepare": 0,
+        "replacements": 0,
+        "serviceDelivery": "NOT_ESTABLISHED",
+        "sameProcessOnly": true,
+        "automaticSdkRetry": false
+      }
+    ],
+    "nativeNodeCommands": 1,
+    "actualExit": 0,
+    "outputComplete": true,
+    "taskState": "CLOSED",
+    "taskOutcome": "SUCCESS",
+    "stdout": {
+      "bytes": 3606,
+      "sha256": "fec9773194782417fc63393f669f896adbd57bc5c02d814a58ff50a3cb51eaf5"
+    },
+    "stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "runtime": {
+      "node": "24.19.0",
+      "nodeBinarySha256": "dbedff294bab84a0a86c04e15fbcbeb1c97ca10bef1b32b0634cd24b36f62100",
+      "python": "3.12.14",
+      "pythonBinarySha256": "811e2679c20fd2c7413f7c5ca28ce903065eea8dadb8660f1b9379a28959a480",
+      "digestsReusedOnlyAfterCurrentExactNineFieldIdentityMatch": true
+    },
+    "launch": {
+      "nodePermissionModel": true,
+      "exactReadFileGrants": 29,
+      "writeChildWorkerAddonPermission": false,
+      "dynamicCodeGenerationFromStrings": false,
+      "environmentCleared": true,
+      "testTimeoutMs": 5000,
+      "concurrency": false,
+      "commandTimeoutSeconds": 30,
+      "stdoutCapBytes": 65536,
+      "stderrCapBytes": 1048576,
+      "globalFetchCounter": 0
+    },
+    "callerProgramSha256": "256dad4d474b0b79e97ff5d19f6c4d6dcde911ff7fea9d13acb2d086f641b183",
+    "nodeReporterDurationMs": 30.574583,
+    "managedCallerElapsedSeconds": 1.713364541,
+    "managedCallerSpan": "guard/admission/source-retention/command/verification/close/readback; excludes root initialization and earlier preparation",
+    "timingMeaning": "Descriptive timing for this selected run, not a comparison benchmark, application throughput, a hard CPU deadline, cancellation guarantee or an OS/network sandbox.",
+    "ownedProcessGroupObservedAbsent": true,
+    "ownedScratchAbsentAfterManagedClose": true,
+    "oldExperimentsReplayed": 0
+  },
+  "sourceClosure": {
+    "files": 29,
+    "bytes": 474252,
+    "sourcePins": [
+      {
+        "path": "src/x402-selected-payment-client-bridge.js",
+        "bytes": 19446,
+        "LF": 370,
+        "sha256": "d8252e421240005f51b1627ab97b624496325403508d57b030be423e871a5083",
+        "gitBlob": "a405eb73cab88302ee5c0e130bdfc9d1ef9eebfa"
+      },
+      {
+        "path": "src/x402-selected-settlement-server-bridge.js",
+        "bytes": 39943,
+        "LF": 749,
+        "sha256": "38f47d24e1dcdd0f632e786054dc2e9544de2f261f74e949e28fee43ed56f40b",
+        "gitBlob": "483633ee18735355d9614cafe8f7bd8044a7d8b7"
+      },
+      {
+        "path": "src/x402-verification-bound-settlement-context.js",
+        "bytes": 11311,
+        "LF": 221,
+        "sha256": "b3ad2fd33dae7e77a77f069cbc1259bf77e18a2bf383aa30f41bcc19221656f5",
+        "gitBlob": "6734a4aa011239402c141b874612a3be0733b4bf"
+      },
+      {
+        "path": "src/x402-selected-settlement-context.js",
+        "bytes": 16818,
+        "LF": 456,
+        "sha256": "afb6e16603023dd58d6a71cff5790a802dcfa4b98bc9d380b51ccc3d58e10991",
+        "gitBlob": "321d2a03a45296907c0a35a50d1e038e82307a40"
+      },
+      {
+        "path": "src/x402-wire.js",
+        "bytes": 39886,
+        "LF": 934,
+        "sha256": "5fba91af5a352f62d1a335c7176a45a604e2af5d92b1c4b0e53825c1f20d4e56",
+        "gitBlob": "fb060d4e349b1c31a1219a0cc137af250a8a2291"
+      },
+      {
+        "path": "package.json",
+        "bytes": 1413,
+        "LF": 40,
+        "sha256": "8c9a25504fbf6f87c31cdf245a6f4eec5a88cc89c8352151dc66a577c5771ef5",
+        "gitBlob": "ec7193f6fd76f34778515079dc777594175c4c34"
+      },
+      {
+        "path": "@x402/core/package.json",
+        "bytes": 3853,
+        "LF": 138,
+        "sha256": "4130a95721f50c0997dcba3728d14d5584c4f99c12c8c3f9870b21f31da212fd",
+        "gitBlob": "7d72182a84f0a84d73e6260be70af1f520f33657"
+      },
+      {
+        "path": "zod/package.json",
+        "bytes": 3284,
+        "LF": 118,
+        "sha256": "70eedbe34fd52385a4ae2f3e5759b19682189f0118ea73a6e7c32c677f61668e",
+        "gitBlob": "eedcfb0f8e3343c8ac5ba32e5117a032352a986c"
+      },
+      {
+        "path": "@x402/core/dist/esm/client/index.mjs",
+        "bytes": 26707,
+        "LF": 676,
+        "sha256": "653613f25e2fa24615af7d1fe943679177774215a16600289175f61c4df5dda9",
+        "gitBlob": "3474afd63523463825633207d6fbfd782aeca5aa"
+      },
+      {
+        "path": "@x402/core/dist/esm/server/index.mjs",
+        "bytes": 1761,
+        "LF": 60,
+        "sha256": "fa62aa75d072a9a1e2bb00be93ef4980e15507e3617942f1d7ab05c69954a19e",
+        "gitBlob": "5a6d9914baad58a9edee7f897882abce6c011b57"
+      },
+      {
+        "path": "@x402/core/dist/esm/http/index.mjs",
+        "bytes": 1177,
+        "LF": 42,
+        "sha256": "f87cf0256b51820628469681ba1421de97f17d55c2eff64bbe9040ef4f5ea084",
+        "gitBlob": "0dda52c01e2437b16637aaf0b84353092c111861"
+      },
+      {
+        "path": "@x402/core/dist/esm/schemas/index.mjs",
+        "bytes": 1591,
+        "LF": 69,
+        "sha256": "b4c12db796c6654de17d8542d65cd78bbbe8cf4bbcc71d05912450d8adfcf0c9",
+        "gitBlob": "93af501678f80952035795321b6c30a015928679"
+      },
+      {
+        "path": "@x402/core/dist/esm/chunk-BA2VL4DT.mjs",
+        "bytes": 116817,
+        "LF": 3151,
+        "sha256": "f2ad975e24db34808470b081c9deedaf6aafa53ab95121d29661a1a8b1507f84",
+        "gitBlob": "307a10a04e0cb515418f38be50e422634acd305b"
+      },
+      {
+        "path": "@x402/core/dist/esm/chunk-N4QXZG2Z.mjs",
+        "bytes": 5040,
+        "LF": 160,
+        "sha256": "19c189f7417214b211ee4abdaada531a80e5adc8504d593c172fe1e2ce61c03e",
+        "gitBlob": "56010f0571a73a7c82d74f88d4feb01263d9d612"
+      },
+      {
+        "path": "@x402/core/dist/esm/chunk-VE37GDG2.mjs",
+        "bytes": 107,
+        "LF": 6,
+        "sha256": "56fb4db85f03d88dfa5d42c81be8527f72deae2bca4004dfaea6415f186dc086",
+        "gitBlob": "9229b6cbcb04f9a1a374588f9dc31b22c21499ba"
+      },
+      {
+        "path": "@x402/core/dist/esm/chunk-P3DFEIO7.mjs",
+        "bytes": 2602,
+        "LF": 82,
+        "sha256": "9c124f03f792fcef472452fcaf30d03bd7d6ea44170675d60ccc473d3b02f983",
+        "gitBlob": "ec0f7809277982b2d2b38747fc3a3c87a3bb9fd2"
+      },
+      {
+        "path": "@x402/core/dist/esm/chunk-UQQR4X3S.mjs",
+        "bytes": 5837,
+        "LF": 172,
+        "sha256": "a7756bf22635f58e52dce87753863e51f407a38f5c32382a1076c39bd6cb9a62",
+        "gitBlob": "46913a8401fabcdb431cfd504c1708d07f9b1c26"
+      },
+      {
+        "path": "@x402/core/dist/esm/chunk-BJTO5JO5.mjs",
+        "bytes": 433,
+        "LF": 10,
+        "sha256": "1c521b4fbee4089393c982b94b5f8a4f81b1043c2f8cd1848d0d6056430e761f",
+        "gitBlob": "8ea659a7b711a9e45bf435cb6a8300df1d92e8be"
+      },
+      {
+        "path": "zod/index.js",
+        "bytes": 105,
+        "LF": 4,
+        "sha256": "6419c4ac0e637ff08463083e31886d10354f74cbcc4e584400b2b837e39ac881",
+        "gitBlob": "bf6f1643ab4526b97b1eb1a6dcdea48262f70194"
+      },
+      {
+        "path": "zod/v3/external.js",
+        "bytes": 205,
+        "LF": 6,
+        "sha256": "5d26d2e47e2352def36f89a3e8bf8581da22b7f857e07ef3114cd52cf4813445",
+        "gitBlob": "f0a4be4c7aa63b363b654384b103396050a06e29"
+      },
+      {
+        "path": "zod/v3/errors.js",
+        "bytes": 243,
+        "LF": 9,
+        "sha256": "d40831f478288d76e82bbbcc3b7e95c8513b6e76471f2d49a37c979bc57d492d",
+        "gitBlob": "26fdf628a00ac2e0984c1f7d8e31652dcff1253d"
+      },
+      {
+        "path": "zod/v3/helpers/parseUtil.js",
+        "bytes": 3601,
+        "LF": 109,
+        "sha256": "b57484013bb360bac2e334d58fcd5f6cbfa63ffcc7d8ff3dbbb3380ca659b956",
+        "gitBlob": "91b2afb81b4358fb84d637bc963a868517c6a516"
+      },
+      {
+        "path": "zod/v3/helpers/typeAliases.js",
+        "bytes": 11,
+        "LF": 1,
+        "sha256": "8e609bb71c20b858c77f0e9f90bb1319db8477b13f9f965f1a1e18524bf50881",
+        "gitBlob": "cb0ff5c3b541f646105198ee23ac0fc3d805023e"
+      },
+      {
+        "path": "zod/v3/helpers/util.js",
+        "bytes": 4055,
+        "LF": 133,
+        "sha256": "906ef685e5853d496e293ee8f8a2bb8b1ed2d078a1bcdfedb2dfd61d75b6330c",
+        "gitBlob": "b9641f29b7dfd7b8d7d6a3e2361803a51078ea7f"
+      },
+      {
+        "path": "zod/v3/types.js",
+        "bytes": 131212,
+        "LF": 3693,
+        "sha256": "9763a2938f0e7f983363ef4bf6530e7583e3f2d54f8a4a6684efad58febc6e8e",
+        "gitBlob": "40b11c0f01b2af54e0ed48e198607bd8836d9a63"
+      },
+      {
+        "path": "zod/v3/ZodError.js",
+        "bytes": 4349,
+        "LF": 133,
+        "sha256": "f5ac9e86b92e201d41e294d7aa35986a2aa28829e1bcc8ac25f7c8dce0674b99",
+        "gitBlob": "fed6a959bdd005f6b75a71733d3f231417a5955d"
+      },
+      {
+        "path": "zod/v3/locales/en.js",
+        "bytes": 5602,
+        "LF": 109,
+        "sha256": "51a6dcc5d4bd52a64da127c012c6c963395c1d9a343ad75d4a8eca662fc8b205",
+        "gitBlob": "a67fc82a2272c022fa462931950af2a17a2f9b64"
+      },
+      {
+        "path": "zod/v3/helpers/errorUtil.js",
+        "bytes": 300,
+        "LF": 6,
+        "sha256": "68589c0cf44c8b4ad19b77418f53caad2cd1dbc8d714f526e1876ebdee4828c5",
+        "gitBlob": "e1640d1a4f696b5268518f3e15fa10ca5c8e61b8"
+      },
+      {
+        "path": "qualification/official-x402-selected-client-pending-composition.behavior.draft.mjs",
+        "bytes": 26543,
+        "LF": 510,
+        "sha256": "5c4e06f95dfe2b6410df8df8e0e50cd91b1bd2b9f07230808f1d1366ae00f46c",
+        "gitBlob": "bee89263ff5dac9a418b2d859b058bd20b06b91d"
+      }
+    ],
+    "staticImportAndReexportDeclarations": 66,
+    "uniqueStaticEdges": 64,
+    "externalPackageFiles": 22,
+    "externalPackageBytes": 318892,
+    "externalImportAndReexportDeclarations": 46,
+    "externalUniqueStaticEdges": 44,
+    "declaredDynamicImports": 6,
+    "dynamicScope": "Four fixed official package entries and the two exact production bridge modules only.",
+    "builtins": [
+      "node:assert/strict",
+      "node:buffer",
+      "node:crypto",
+      "node:fs",
+      "node:path",
+      "node:test",
+      "node:url",
+      "node:util"
+    ],
+    "dependencyInstallations": 0,
+    "downloads": 0,
+    "closureExpansionBeyondExistingCoreAndZod": false,
+    "countingClarification": "Before the Node run, a read-only source preflight distinguished import/re-export declarations from unique source-target edges. Two repeated pairs account for the difference. Existing package bytes and historical records were not changed; those checks did not start application commands."
+  },
+  "evidence": {
+    "separateReview": {
+      "status": "COMPLETE_SEPARATE_PROTECTED_EVIDENCE_REVIEW_PASS",
+      "reviewer": "Separate read-only primary-agent pass, not a second agent or human audit",
+      "replayedTests": false,
+      "checked": "Complete six-record outcome chain, raw TAP names/counts/diagnostics, actual exit and completeness, launch and source graph, all source CAS objects and closed retaining owners, exact current physical/content pins, preserved historical evidence and local Git state."
+    },
+    "mandatoryRecords": [
+      {
+        "role": "task.json",
+        "bytes": 2640,
+        "sha256": "625dd3726204643e36d6c8679ed5d6ec7658fac4360d9ce641e8d177641315ab"
+      },
+      {
+        "role": "admission.json",
+        "bytes": 32127,
+        "sha256": "e49c4083eaabf40e8a5e1c23d891983304e1ed5ae8d3e96b30b6600d220e222a"
+      },
+      {
+        "role": "cleanup.json",
+        "bytes": 174,
+        "sha256": "dbaf1cf9a2866f04ea0e2689f73c2c06c53d18999e24944792d2306edf0efc35"
+      },
+      {
+        "role": "command.json",
+        "bytes": 4155,
+        "sha256": "98b0ab4ef049bd37453df9b9620961227806e15bde3900425d87baef081136d0"
+      },
+      {
+        "role": "outcome.json",
+        "bytes": 61,
+        "sha256": "63e36d31ea8f88aee0b3a4cc9e77cbe03b5b14fc28d15417391e3260eb0c51cd"
+      },
+      {
+        "role": "verification.json",
+        "bytes": 2006,
+        "sha256": "8e950f84943e0d823703c5228b03b33f52b7a0dd43e70307f1adb2624b0db9c3"
+      }
+    ],
+    "completeMetadataRecordsRead": 6,
+    "metadataBytes": 41163,
+    "admissionManifestBytes": 32127,
+    "verificationManifestBytes": 2006,
+    "sourceInputLedgersAndClosedRetainingOwnersVerified": 29,
+    "sourceAliasesCreated": 0,
+    "existingSourceObjectsReused": 3,
+    "existingSourceBytesNotRewritten": 60745,
+    "newSourceObjects": 26,
+    "newSourceBytes": 413507,
+    "borrowedSourcePayloadCopiesCreated": 0,
+    "hardLinks": 0,
+    "archives": 0,
+    "protectedObjectsDeleted": 0
+  },
+  "storage": {
+    "manager": "Approved unchanged task-storage implementation; previously initialized private goal-specific root on the UUID-verified approved volume.",
+    "taskQuotaBytes": 2097152,
+    "oldDefaultRootChanged": false,
+    "oldSharedRootRefusalPreserved": true,
+    "oldDataMovedDeletedAdoptedOrRebound": false,
+    "historicalCacheTouched": false,
+    "homeCacheFallback": false,
+    "existingPoliciesOrHelpersChanged": false,
+    "sourceRetention": "The 26 new retained source objects, 413507 bytes total, are explicitly quota-accounted portable copies. Three existing objects, 60745 bytes total, remain referenced by their already closed retaining owner without another source payload copy. Execution uses original pinned source paths and no runtime alias.",
+    "productionFreeSpaceFloorBytes": 10737418240,
+    "oldOutstandingReservationsAccountedCeilingBytes": 93855940608,
+    "additionalSafetyBufferBytes": 1073741824,
+    "configuredPrivateRootMinimumFreeBytes": 105667100672,
+    "globalOldAndNewReservationFloorMaintained": true,
+    "preexistingPrivatePinsVerified": 1039,
+    "preexistingProtectedAbsencesVerified": 35,
+    "repositorySourcePinsVerifiedBeforeAddingThisResult": 307,
+    "ownershipOrMountRefusalNotClearedOrBypassed": true
+  },
+  "boundaries": {
+    "realServiceDelivery": "NOT_ESTABLISHED",
+    "persistence": "MEMORY_ONLY",
+    "restartQualification": false,
+    "zenonSdkImports": 0,
+    "keysGenerated": 0,
+    "signaturesGeneratedOrVerified": 0,
+    "sqlOperations": 0,
+    "applicationNetworkOperations": 0,
+    "nonceCandidateEvaluations": 0,
+    "payments": 0,
+    "realPrepare": 0,
+    "livePilot": 0,
+    "nativeChainOrProviderQualificationRuns": 0,
+    "actualOriginalRequestPaymentBytesAndConsumedAuthorityUnchanged": true,
+    "pr193ValidatedExactSameSignedBlockResendNotExtendedToUnknownOrAcknowledged": true,
+    "earlierFailuresStoppedSlicesAndPrivateBootstrapGhcrBoundariesPreserved": true,
+    "noAutomaticSdkRetryOrReplacementAuthority": true,
+    "workerDispatched": false,
+    "automationSettingsUnchanged": true,
+    "protectedRealTotals": {
+      "consumedAdmissions": 2,
+      "actualPrepare": 1,
+      "bundles": 0,
+      "nativeChainOrProviderQualificationRuns": 0
+    }
+  },
+  "publicationBoundary": {
+    "proposedPacket": "Only this new composition entry and its actual result; no existing application/test/dependency/workflow edits.",
+    "mainTransferRequiresFreshCurrentMainDiffRefsPrRulesAndCiChecks": true,
+    "hostedCi": {
+      "checks": 0,
+      "statuses": 0,
+      "runs": 0,
+      "meaning": "NOT_RUN_NOT_GREEN"
+    },
+    "releaseOrActivation": false
+  },
+  "remainingGates": [
+    "These three actual-package synthetic cases do not complete all official x402 compatibility or P1-B. Active buyer/facilitator wiring, real cryptographic payment validation and broader protocol acceptance remain distinct.",
+    "Durable original-request ownership and real close/reopen or process-restart composition remain separate P2 work.",
+    "Authenticated chain/provider evidence, operational signing, deployment and supervised live pilot retain their existing independent authority and acceptance gates."
+  ]
+}
