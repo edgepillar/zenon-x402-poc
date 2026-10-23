@@ -23,20 +23,18 @@
     "buyer": "node src/buyer-cli.js",
     "verify:operator-trusted-observation": "node src/operator-trusted-observation-cli.js",
     "preflight:gate-b-reset-epoch-policy": "node src/gate-b-reset-epoch-policy-preflight-cli.js",
-    "test": "node --permission --allow-fs-read=./package.json --allow-fs-read=./scripts/current-qualification-profile.mjs --allow-fs-read=./scripts/run-current-qualification.mjs --allow-fs-read=./qualification/profiles/p0-current-p2-node24-v1.json --allow-fs-read=./test/current-qualification-profile.test.js --allow-fs-read=./test/service-credit-custodied-sequential-runner-accepted-receipt-prototype.test.js --allow-fs-read=./qualification/service-credit-dispatch-abort-drain.behavior.draft.mjs --allow-fs-read=./src/service-credit-http-execute-dispatch.js --allow-fs-read=./src/service-credit-custodied-sequential-runner.js --allow-fs-read=./src/service-credit-original-request-custody-contract.js --allow-fs-read=./src/service-credit-custodied-http-client.js --allow-fs-read=./src/service-credit-custodied-sequential-runner-core.js --allow-fs-read=./src/service-credit-custodied-request-owner.js --no-addons --disallow-code-generation-from-strings --unhandled-rejections=strict scripts/run-current-qualification.mjs",
+    "test": "node --permission --allow-fs-read=./package.json --allow-fs-read=./package-lock.json --allow-fs-read=./scripts/current-qualification-profile-v2.mjs --allow-fs-read=./scripts/run-current-qualification-v2.mjs --allow-fs-read=./scripts/x402-runtime-dependency-contract.mjs --allow-fs-read=./test/current-qualification-profile-v2.test.js --allow-fs-read=./test/service-credit-custodied-sequential-runner-accepted-receipt-prototype.test.js --allow-fs-read=./qualification/service-credit-dispatch-abort-drain.behavior.draft.mjs --allow-fs-read=./test/x402-runtime-dependency-contract.test.js --allow-fs-read=./src/service-credit-http-execute-dispatch.js --allow-fs-read=./src/service-credit-custodied-sequential-runner.js --allow-fs-read=./src/service-credit-original-request-custody-contract.js --allow-fs-read=./src/service-credit-custodied-http-client.js --allow-fs-read=./src/service-credit-custodied-sequential-runner-core.js --allow-fs-read=./src/service-credit-custodied-request-owner.js --allow-fs-read=./qualification/profiles/p0-current-p2-node24-v2.json --no-addons --disallow-code-generation-from-strings --unhandled-rejections=strict scripts/run-current-qualification-v2.mjs",
     "test:plan": "npm test -- --plan",
     "test:historical": "node scripts/run-current-qualification.mjs --historical"
   },
   "dependencies": {
     "@noble/ed25519": "^2.2.3",
     "@noble/hashes": "^1.8.0",
+    "@x402/core": "2.23.0",
     "znn-typescript-sdk": "^1.0.5"
   },
   "overrides": {
     "ws": "^8.21.0",
     "serialize-javascript": "^7.0.5"
-  },
-  "devDependencies": {
-    "@x402/core": "2.23.0"
   }
 }

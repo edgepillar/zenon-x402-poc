@@ -1,0 +1,308 @@
+{
+  "kind": "CURRENT_P2_PROFILE_V2_ACTUAL_LOCAL_RESULT",
+  "version": 1,
+  "status": "SELECTED_CURRENT_COMPONENTS_AND_RUNTIME_CONTRACT_PASS",
+  "sourceBase": "ff44a7f41a00fbc26dd4aa81a636f62eddfc632a",
+  "profileId": "p0-current-p2-node24-v2",
+  "manifest": {
+    "path": "qualification/profiles/p0-current-p2-node24-v2.json",
+    "bytes": 6840,
+    "sha256": "8bb8e5afae5789f0f113269051736b679f38eab721b4c05e3ceb8e72275435ed"
+  },
+  "manifestSha256": "8bb8e5afae5789f0f113269051736b679f38eab721b4c05e3ceb8e72275435ed",
+  "sourceRowsSha256": "a50a0b1f3c8c6706bc2ee73ad6b23f3d3bfdcdd3a3f7e6f8b555801e2769db56",
+  "sourceFiles": 16,
+  "declaredProfileSourceFiles": 15,
+  "sourceBytes": 245181,
+  "sourceGraph": [
+    {
+      "path": "package.json",
+      "bytes": 2677,
+      "LF": 40,
+      "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+      "gitBlob": "45752ffde39d29666094f7f1c755060d75e43deb",
+      "role": "METADATA_READ_NOT_PACKAGE_EXECUTION"
+    },
+    {
+      "path": "package-lock.json",
+      "bytes": 49240,
+      "LF": 1334,
+      "sha256": "44bf8922c9937b7d1175a666017f0a2fcbc48f1f8f8a3ccb39e2c31b5b205e91",
+      "gitBlob": "44440cfe88daad3a61c23b4ba25a4d831847e5f8",
+      "role": "METADATA_READ_NOT_PACKAGE_EXECUTION"
+    },
+    {
+      "path": "scripts/current-qualification-profile-v2.mjs",
+      "bytes": 9721,
+      "LF": 184,
+      "sha256": "ec7316598872da1f7876f54fc51e199de542cc303255ffe5c64fc09ac07e4c2f",
+      "gitBlob": "6697dccb76081baf1e0156189328ed843f386b9d",
+      "role": "NATIVE_NODE_QUALIFICATION_SOURCE"
+    },
+    {
+      "path": "scripts/run-current-qualification-v2.mjs",
+      "bytes": 5755,
+      "LF": 109,
+      "sha256": "7773c17f9c5858f9847a4409d641cb89b7b7fd51d720f7de5ba5d2b03cca1b66",
+      "gitBlob": "990a6a64c1f790bff5d5aa46616e7d8edf632ae7",
+      "role": "NATIVE_NODE_QUALIFICATION_SOURCE"
+    },
+    {
+      "path": "scripts/x402-runtime-dependency-contract.mjs",
+      "bytes": 3871,
+      "LF": 65,
+      "sha256": "c5805c5cbe379749b322174b44260129437456846153d25999c7491702a6ccc5",
+      "gitBlob": "aa1c806060cee0480b99248eb3e85a999a3d66f1",
+      "role": "NATIVE_NODE_QUALIFICATION_SOURCE"
+    },
+    {
+      "path": "test/current-qualification-profile-v2.test.js",
+      "bytes": 7018,
+      "LF": 112,
+      "sha256": "aedafca89a62db42ca89ab5df67567a65b4eef26819d65f3ce7949e263a94ab2",
+      "gitBlob": "75ec0b89d3cef7515c88adc304252bf7b835ea85",
+      "role": "NATIVE_NODE_QUALIFICATION_SOURCE"
+    },
+    {
+      "path": "test/service-credit-custodied-sequential-runner-accepted-receipt-prototype.test.js",
+      "bytes": 2817,
+      "LF": 73,
+      "sha256": "bbf99a61bac18b984c6d545200666388278646ef002ddac08ba3a3220e7eabad",
+      "gitBlob": "d9a733d4dc3e04db182d620d7b654e666938ea6b",
+      "role": "NATIVE_NODE_QUALIFICATION_SOURCE"
+    },
+    {
+      "path": "qualification/service-credit-dispatch-abort-drain.behavior.draft.mjs",
+      "bytes": 20224,
+      "LF": 355,
+      "sha256": "6cc01f7cd8b683b49bae7aacfd44591c33e45db248ee16957f62107221e7ee61",
+      "gitBlob": "ba7b7b910cfce72ab8316bbd1e78e55b7b413a82",
+      "role": "NATIVE_NODE_QUALIFICATION_SOURCE"
+    },
+    {
+      "path": "test/x402-runtime-dependency-contract.test.js",
+      "bytes": 4082,
+      "LF": 69,
+      "sha256": "ee2b008a44528b58bb79df6d052f327e9fc5d52effe3b9ebf8588395cbefe9ba",
+      "gitBlob": "8e5aebd2c3315a7ec5cc3dbf0858df955df2eb62",
+      "role": "NATIVE_NODE_QUALIFICATION_SOURCE"
+    },
+    {
+      "path": "src/service-credit-http-execute-dispatch.js",
+      "bytes": 29328,
+      "LF": 815,
+      "sha256": "e07470a9fde311c806beb09b1c4369b4724213682bcbcacc228ece0e0e36f5ef",
+      "gitBlob": "4b5bcb1b08b1ab44e65c8ed7bab76d41640a767b",
+      "role": "NATIVE_NODE_QUALIFICATION_SOURCE"
+    },
+    {
+      "path": "src/service-credit-custodied-sequential-runner.js",
+      "bytes": 5773,
+      "LF": 121,
+      "sha256": "de0f3e143066f19ac3f3cab072abe8d250ea72b9fac9ad2c5bedb75110d7ec56",
+      "gitBlob": "f624375877ee0dd3d8352a5d13e35d95b43a12e7",
+      "role": "NATIVE_NODE_QUALIFICATION_SOURCE"
+    },
+    {
+      "path": "src/service-credit-original-request-custody-contract.js",
+      "bytes": 14051,
+      "LF": 356,
+      "sha256": "fd349de553a17abcc2e0567ba6640e6e3d5d26cfa79ee1e355928dc9fa8d3915",
+      "gitBlob": "f911d42d01b69e6577f9bcd66f4ed59aab8ab882",
+      "role": "NATIVE_NODE_QUALIFICATION_SOURCE"
+    },
+    {
+      "path": "src/service-credit-custodied-http-client.js",
+      "bytes": 12646,
+      "LF": 324,
+      "sha256": "35997f41c9a5162fe29ed56776181a1691c0a0a69c7dbdfe8b61785af3998145",
+      "gitBlob": "33879d019492de8d278b0d0dc998bd1c7806b413",
+      "role": "NATIVE_NODE_QUALIFICATION_SOURCE"
+    },
+    {
+      "path": "src/service-credit-custodied-sequential-runner-core.js",
+      "bytes": 15983,
+      "LF": 492,
+      "sha256": "044477cb1300453f10bacf070037db175d08deec1d488549b34a5cb92e6328bd",
+      "gitBlob": "e91acb307f4f0f5fb5292a805f7ca1d02b21b68d",
+      "role": "NATIVE_NODE_QUALIFICATION_SOURCE"
+    },
+    {
+      "path": "src/service-credit-custodied-request-owner.js",
+      "bytes": 55155,
+      "LF": 1358,
+      "sha256": "2ba222760d4a922bf0466d95fd2671076b9d19b8c5fa4ea2cb3c66b1338562eb",
+      "gitBlob": "7f99bdadcc622db203e864edb12a1f4d1059a965",
+      "role": "NATIVE_NODE_QUALIFICATION_SOURCE"
+    },
+    {
+      "path": "qualification/profiles/p0-current-p2-node24-v2.json",
+      "bytes": 6840,
+      "LF": 180,
+      "sha256": "8bb8e5afae5789f0f113269051736b679f38eab721b4c05e3ceb8e72275435ed",
+      "gitBlob": "f6a8ae9ccc67d88a55168fdc690c5a7a9c2f2c8f",
+      "role": "METADATA_READ_NOT_PACKAGE_EXECUTION"
+    }
+  ],
+  "selectedCases": [
+    "current profile admits a closed immutable source and case selection",
+    "current profile rejects malformed text and unknown schema members",
+    "current profile refuses floating runtime and dependency installation",
+    "current profile keeps package declaration separate from package execution",
+    "current profile refuses missing reordered or historical entry paths",
+    "current profile rejects duplicate empty and unsafe case names",
+    "current profile rejects traversal incomplete or additional source rows",
+    "current profile requires bounded exact hashes sizes and source budget",
+    "current profile cannot omit excluded authority or broaden its declared scope",
+    "current profile recheck rejects content and physical identity drift",
+    "current profile requires real complete passes and both stream completions",
+    "current profile rejects skipped duplicate unexpected nested or failed case results",
+    "accepted run receipt survives caller array prototype mutation",
+    "V1 missing request close becomes unknown-undrained without retry or synthetic release",
+    "V2 missing response close rejects and late complete reply cannot create a response receipt",
+    "early error uses the capped one-second abort observation instead of the sixty-second request deadline",
+    "actual V3 custodied runner close terminates unknown and never submits its queued second original",
+    "normal V2 response bytes and actual V3 two-original completion retain their existing contracts",
+    "V1 and V2 observed abort closes before the drain budget remain unknown but not undrained",
+    "repeated errors do not renew the one abort-drain budget or repeat destroy and settlement",
+    "runtime x402 contract reads the current pinned manifest and lock without installing packages",
+    "runtime x402 contract refuses missing floating development peer and optional declarations",
+    "runtime x402 contract refuses manifest lock root and engine divergence",
+    "runtime x402 contract refuses development optional link and installer-only lock rows",
+    "runtime x402 contract refuses changed versions tarball sources and retained integrity",
+    "runtime x402 contract refuses changed or shadowed transitive zod resolution",
+    "runtime x402 contract refuses malformed oversized non-ASCII and non-object input text"
+  ],
+  "counts": {
+    "tests": 27,
+    "suites": 0,
+    "pass": 27,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "actualNodeExit": 0,
+  "outputComplete": true,
+  "stdout": {
+    "bytes": 6033,
+    "sha256": "6ff9aeab6c9f29ee724ee257cddb085e31a46751e883c7c64e6245d145d8274d"
+  },
+  "stderr": {
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "profileResult": {
+    "profileId": "p0-current-p2-node24-v2",
+    "node": "24.19.0",
+    "platform": "darwin",
+    "arch": "arm64",
+    "manifestSha256": "8bb8e5afae5789f0f113269051736b679f38eab721b4c05e3ceb8e72275435ed",
+    "sourceFiles": 15,
+    "selectedCases": 27,
+    "installedDependencies": false,
+    "scope": "DECLARED_COMPONENTS_PROFILE_AND_RUNTIME_DEPENDENCY_CONTRACT_ONLY",
+    "runtimeDependencyContract": {
+      "coreVersion": "2.23.0",
+      "coreDependencyKind": "runtime",
+      "zodVersion": "3.25.76",
+      "selectedRuntimeLockRows": 2,
+      "lockfileVersion": 3,
+      "retainedArtifactIntegrityUnchanged": true,
+      "installedDependencies": false,
+      "x402PackageExecuted": false,
+      "sdkExecuted": false,
+      "ordinaryInstalledNamespaceQualified": false
+    },
+    "result": "SELECTED_CURRENT_COMPONENTS_AND_RUNTIME_CONTRACT_PASS",
+    "counts": {
+      "tests": 27,
+      "suites": 0,
+      "pass": 27,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "sourcePinsRechecked": true,
+    "historicalEntriesRun": 0,
+    "hostedCiEstablishedByLocalCommand": false,
+    "fullApplicationQualified": false,
+    "serviceDelivery": "NOT_ESTABLISHED",
+    "pilot": "NO_GO"
+  },
+  "runtime": {
+    "node": "24.19.0",
+    "platform": "darwin",
+    "arch": "arm64",
+    "nodeBinary": {
+      "bytes": 121304480,
+      "sha256": "dbedff294bab84a0a86c04e15fbcbeb1c97ca10bef1b32b0634cd24b36f62100"
+    },
+    "nodeArgvDeclaredByPackageTest": true,
+    "npmCliExecuted": false,
+    "normalNativeNodeEsm": true,
+    "loaderHooks": false,
+    "sourceRewritten": false,
+    "childProcesses": 0
+  },
+  "dependencyChange": {
+    "coreVersion": "2.23.0",
+    "coreDeclaration": "runtime",
+    "zodVersion": "3.25.76",
+    "versionsResolvedUrlsAndIntegrityStringsUnchanged": true,
+    "unrelatedDependencyDataUnchanged": true,
+    "installationPerformed": false,
+    "artifactIntegrityExecutionQualified": false,
+    "ordinaryInstalledNamespaceQualified": false
+  },
+  "evidence": {
+    "admissionSha256": "8b71a6b54755434979f517197459d09fadcf11112f081e76eefbb7fa70d09654",
+    "controllerSha256": "6366ec264e4ac638defa077350b98ee2e1fa80e6c49818f7019b9b88d246d087",
+    "metadataRecords": 5,
+    "taskOutcome": "SUCCESS",
+    "scratchAbsent": true,
+    "processGroupGone": true,
+    "separateCompletePrimaryReview": true,
+    "sourceAndManifestPinsRechecked": true,
+    "prelaunchMetadataRefusal": {
+      "applicationCommands": 0,
+      "taskAdmitted": false,
+      "notAnExecutedTestFailure": true
+    },
+    "historicalV1FilesAndResultsUnchanged": true,
+    "earlierResultsNotRepinnedOrTransferred": true
+  },
+  "resources": {
+    "taskQuotaBytes": 2097152,
+    "peakLogicalBytesBound": 1236084,
+    "newSourceRetentions": 8,
+    "newSourceBytes": 89204,
+    "borrowedSourceReferences": 8,
+    "sourceAliases": 0,
+    "parentNodeCommands": 1,
+    "stdoutCap": 65536,
+    "stderrCap": 1048576
+  },
+  "excluded": {
+    "npmInstall": 0,
+    "SDK": 0,
+    "x402PackageExecution": 0,
+    "SQL": 0,
+    "nativeHttpOrNetwork": 0,
+    "keys": 0,
+    "signatures": 0,
+    "nonceSearch": 0,
+    "realPrepare": 0,
+    "payments": 0,
+    "hostedCI": 0
+  },
+  "notEstablished": [
+    "Actual omit=dev installation and ordinary x402 namespace",
+    "Hosted CI at this source",
+    "Other-platform runtime",
+    "Full P0 qualification",
+    "Native HTTPS or V6 full-application composition",
+    "Service delivery or economic pilot"
+  ]
+}

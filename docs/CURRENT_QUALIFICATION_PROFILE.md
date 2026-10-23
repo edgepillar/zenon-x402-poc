@@ -7,12 +7,16 @@ all files under test or qualification. npm run test:plan prints the explicit
 selection and checks its source pins without importing any test entry.
 
 The immutable profile is
-qualification/profiles/p0-current-p2-node24-v1.json. Its first generation selects
-12 profile-contract cases, one accepted-run receipt case, and seven abort-drain
-composition cases. Those eight component cases exercise the actual local
+qualification/profiles/p0-current-p2-node24-v2.json. This second generation selects
+12 profile-contract cases, one accepted-run receipt case, seven abort-drain
+composition cases, and seven runtime-dependency contract cases: 27 in total.
+Those eight component cases exercise the actual local
 dispatcher, custody contract, request owner, HTTP-client abstraction, sequential
 core and runner with declared in-memory store/transport interfaces. This is
-not the complete application test suite.
+not the complete application test suite. The dependency cases inspect the actual
+package/lock text without importing or installing its declared dependencies.
+The v1 manifest, validator, launcher, tests and result remain unchanged historical
+artifacts; their old package/source pins are not relabeled for this generation.
 
 A successful run requires every named registration to pass without skips, todo,
 cancellation, duplicate names, unexpected/nested registrations or incomplete
@@ -37,8 +41,12 @@ platform it ran on. Listing a platform is not platform qualification.
 The declared x402 package remains @x402/core 2.23.0. This profile does not import
 that package, qualify its installation, or exercise the Zenon SDK. The separate
 real-x402 client/server compositions remain bound to their original results.
-The production --omit=dev packaging contract and any upgrade to 2.28.0 remain
-separate work. No dependency or lockfile update is part of this increment.
+The exact 2.23.0 declaration is now a runtime dependency, and its core/zod lock
+rows are no longer development-only. Existing versions, registry URLs and
+integrity values remain unchanged. This source contract does NOT qualify an
+actual --omit=dev installation or ordinary installed-package namespace. Such
+execution and any upgrade to 2.28.0 remain separate work. See
+docs/X402_RUNTIME_DEPENDENCY_CONTRACT.md.
 
 The default workflow selects this profile and exact Node version without
 installing packages. Authored workflow changes are not a hosted result.
@@ -83,6 +91,18 @@ No automatic resigning, replacement, receipt-to-delivery inference, provider
 activation, historical cleanup or live-payment authority is introduced.
 
 ## Qualification status
+
+Generation v2 ran once on 2026-10-23 with pinned Node 24.19.0 on darwin-arm64:
+27 selected tests passed, with no failures, skips, cancellations, todo or stderr.
+Both streams completed, source/manifest pins were checked again, and the five
+closed records and exact streams received a separate complete primary review.
+The actual command used the Node argv declared by package scripts.test; npm CLI,
+dependency installation and actual x402/SDK execution were not selected.
+See qualification/current-p2-profile-v2.actual-local-result.json. Hosted CI,
+ordinary installed namespace, other platforms and full P0/P1 remain unqualified.
+The earlier 20-pass result below stays tied to its own v1 source graph.
+
+### Historical v1 local qualification
 
 On 2026-10-23 the exact Node argv declared by package scripts.test ran once
 with pinned Node 24.19.0 on darwin-arm64: 20 tests, 20 passes, zero failures,

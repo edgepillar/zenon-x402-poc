@@ -1,0 +1,180 @@
+{
+  "schemaVersion": 1,
+  "profileId": "p0-current-p2-node24-v2",
+  "sourceBase": "ff44a7f41a00fbc26dd4aa81a636f62eddfc632a",
+  "runtime": {
+    "node": "24.19.0",
+    "platforms": [
+      "darwin-arm64",
+      "linux-x64",
+      "linux-arm64"
+    ],
+    "installDependencies": false
+  },
+  "packageContract": {
+    "name": "zenon-x402-poc",
+    "type": "module",
+    "nodeEngine": ">=24",
+    "x402CoreDeclared": "2.23.0",
+    "x402CoreDependencyKind": "runtime",
+    "lockfileVersion": 3,
+    "installedNamespaceQualified": false,
+    "x402CoreExecuted": false,
+    "sdkExecuted": false
+  },
+  "scope": "DECLARED_COMPONENTS_PROFILE_AND_RUNTIME_DEPENDENCY_CONTRACT_ONLY",
+  "excludedScopes": [
+    "historical-discovery",
+    "sdk",
+    "x402-package-execution",
+    "sqlite",
+    "native-http",
+    "network",
+    "keys-or-signatures",
+    "nonce-search",
+    "real-prepare",
+    "payment",
+    "provider-or-pilot"
+  ],
+  "selections": [
+    {
+      "path": "test/current-qualification-profile-v2.test.js",
+      "names": [
+        "current profile admits a closed immutable source and case selection",
+        "current profile rejects malformed text and unknown schema members",
+        "current profile refuses floating runtime and dependency installation",
+        "current profile keeps package declaration separate from package execution",
+        "current profile refuses missing reordered or historical entry paths",
+        "current profile rejects duplicate empty and unsafe case names",
+        "current profile rejects traversal incomplete or additional source rows",
+        "current profile requires bounded exact hashes sizes and source budget",
+        "current profile cannot omit excluded authority or broaden its declared scope",
+        "current profile recheck rejects content and physical identity drift",
+        "current profile requires real complete passes and both stream completions",
+        "current profile rejects skipped duplicate unexpected nested or failed case results"
+      ]
+    },
+    {
+      "path": "test/service-credit-custodied-sequential-runner-accepted-receipt-prototype.test.js",
+      "names": [
+        "accepted run receipt survives caller array prototype mutation"
+      ]
+    },
+    {
+      "path": "qualification/service-credit-dispatch-abort-drain.behavior.draft.mjs",
+      "names": [
+        "V1 missing request close becomes unknown-undrained without retry or synthetic release",
+        "V2 missing response close rejects and late complete reply cannot create a response receipt",
+        "early error uses the capped one-second abort observation instead of the sixty-second request deadline",
+        "actual V3 custodied runner close terminates unknown and never submits its queued second original",
+        "normal V2 response bytes and actual V3 two-original completion retain their existing contracts",
+        "V1 and V2 observed abort closes before the drain budget remain unknown but not undrained",
+        "repeated errors do not renew the one abort-drain budget or repeat destroy and settlement"
+      ]
+    },
+    {
+      "path": "test/x402-runtime-dependency-contract.test.js",
+      "names": [
+        "runtime x402 contract reads the current pinned manifest and lock without installing packages",
+        "runtime x402 contract refuses missing floating development peer and optional declarations",
+        "runtime x402 contract refuses manifest lock root and engine divergence",
+        "runtime x402 contract refuses development optional link and installer-only lock rows",
+        "runtime x402 contract refuses changed versions tarball sources and retained integrity",
+        "runtime x402 contract refuses changed or shadowed transitive zod resolution",
+        "runtime x402 contract refuses malformed oversized non-ASCII and non-object input text"
+      ]
+    }
+  ],
+  "sources": [
+    {
+      "path": "package.json",
+      "bytes": 2677,
+      "LF": 40,
+      "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f"
+    },
+    {
+      "path": "package-lock.json",
+      "bytes": 49240,
+      "LF": 1334,
+      "sha256": "44bf8922c9937b7d1175a666017f0a2fcbc48f1f8f8a3ccb39e2c31b5b205e91"
+    },
+    {
+      "path": "scripts/current-qualification-profile-v2.mjs",
+      "bytes": 9721,
+      "LF": 184,
+      "sha256": "ec7316598872da1f7876f54fc51e199de542cc303255ffe5c64fc09ac07e4c2f"
+    },
+    {
+      "path": "scripts/run-current-qualification-v2.mjs",
+      "bytes": 5755,
+      "LF": 109,
+      "sha256": "7773c17f9c5858f9847a4409d641cb89b7b7fd51d720f7de5ba5d2b03cca1b66"
+    },
+    {
+      "path": "scripts/x402-runtime-dependency-contract.mjs",
+      "bytes": 3871,
+      "LF": 65,
+      "sha256": "c5805c5cbe379749b322174b44260129437456846153d25999c7491702a6ccc5"
+    },
+    {
+      "path": "test/current-qualification-profile-v2.test.js",
+      "bytes": 7018,
+      "LF": 112,
+      "sha256": "aedafca89a62db42ca89ab5df67567a65b4eef26819d65f3ce7949e263a94ab2"
+    },
+    {
+      "path": "test/service-credit-custodied-sequential-runner-accepted-receipt-prototype.test.js",
+      "bytes": 2817,
+      "LF": 73,
+      "sha256": "bbf99a61bac18b984c6d545200666388278646ef002ddac08ba3a3220e7eabad"
+    },
+    {
+      "path": "qualification/service-credit-dispatch-abort-drain.behavior.draft.mjs",
+      "bytes": 20224,
+      "LF": 355,
+      "sha256": "6cc01f7cd8b683b49bae7aacfd44591c33e45db248ee16957f62107221e7ee61"
+    },
+    {
+      "path": "test/x402-runtime-dependency-contract.test.js",
+      "bytes": 4082,
+      "LF": 69,
+      "sha256": "ee2b008a44528b58bb79df6d052f327e9fc5d52effe3b9ebf8588395cbefe9ba"
+    },
+    {
+      "path": "src/service-credit-http-execute-dispatch.js",
+      "bytes": 29328,
+      "LF": 815,
+      "sha256": "e07470a9fde311c806beb09b1c4369b4724213682bcbcacc228ece0e0e36f5ef"
+    },
+    {
+      "path": "src/service-credit-custodied-sequential-runner.js",
+      "bytes": 5773,
+      "LF": 121,
+      "sha256": "de0f3e143066f19ac3f3cab072abe8d250ea72b9fac9ad2c5bedb75110d7ec56"
+    },
+    {
+      "path": "src/service-credit-original-request-custody-contract.js",
+      "bytes": 14051,
+      "LF": 356,
+      "sha256": "fd349de553a17abcc2e0567ba6640e6e3d5d26cfa79ee1e355928dc9fa8d3915"
+    },
+    {
+      "path": "src/service-credit-custodied-http-client.js",
+      "bytes": 12646,
+      "LF": 324,
+      "sha256": "35997f41c9a5162fe29ed56776181a1691c0a0a69c7dbdfe8b61785af3998145"
+    },
+    {
+      "path": "src/service-credit-custodied-sequential-runner-core.js",
+      "bytes": 15983,
+      "LF": 492,
+      "sha256": "044477cb1300453f10bacf070037db175d08deec1d488549b34a5cb92e6328bd"
+    },
+    {
+      "path": "src/service-credit-custodied-request-owner.js",
+      "bytes": 55155,
+      "LF": 1358,
+      "sha256": "2ba222760d4a922bf0466d95fd2671076b9d19b8c5fa4ea2cb3c66b1338562eb"
+    }
+  ]
+}
