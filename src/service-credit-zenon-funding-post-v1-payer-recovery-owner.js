@@ -257,13 +257,23 @@ export function createZenonFundingPostV1PayerRecoveryOwner(options) {
   }
 
   function runLocal(operation) {
-    const promise = (async () => operation())();
+    // Claim the public pending operation before a synchronous store hook can
+    // reenter close(). Invoking the operation remains synchronous so input
+    // capture is not deferred to a later microtask.
+    let resolveLocal, rejectLocal;
+    const promise = new NATIVE_PROMISE((resolve, reject) => {
+      resolveLocal = resolve; rejectLocal = reject;
+    });
     localOperation = promise;
     promise.then(() => {
       if (localOperation === promise) localOperation = null;
     }, () => {
       if (localOperation === promise) localOperation = null;
     });
+    try {
+      const work = operation();
+      NATIVE_PROMISE.resolve(work).then(resolveLocal, rejectLocal);
+    } catch (error) { rejectLocal(error); }
     return promise;
   }
 
