@@ -1,11 +1,15 @@
 import { types as utilTypes } from 'node:util';
-import { createZenonDynamicPlasmaOriginalFundingPreparation } from './dynamic-plasma-original-funding-preparation.js';
+import {
+  createZenonDynamicPlasmaOriginalFundingPreparation,
+  createZenonDynamicPlasmaOriginalFundingPreparationV2,
+} from './dynamic-plasma-original-funding-preparation.js';
 import { snapshotZenonDynamicPlasmaOriginalFundingPins } from './dynamic-plasma-original-funding-data.js';
 import { createZenonFundingPostV1PayerRecoveryOwner } from '../service-credit-zenon-funding-post-v1-payer-recovery-owner.js';
 import { ZenonFundingPayerRecoverySqliteStore } from '../service-credit-zenon-funding-post-v1-payer-recovery-sqlite-store.js';
 import { encodeOriginalPaymentCheckpoint } from '../service-credit-pilot-original-payment-checkpoint.js';
 
 const PREPARATION = createZenonDynamicPlasmaOriginalFundingPreparation;
+const PREPARATION_V2 = createZenonDynamicPlasmaOriginalFundingPreparationV2;
 const PAYER = createZenonFundingPostV1PayerRecoveryOwner;
 const PINS = snapshotZenonDynamicPlasmaOriginalFundingPins, ENCODE = encodeOriginalPaymentCheckpoint;
 const FREEZE = Object.freeze, CREATE = Object.create, DEFINE = Object.defineProperty;
@@ -69,9 +73,27 @@ const PHASES = FREEZE({ BOUND: 'FUNDING_INTAKE_BOUND', OUTCOME_UNKNOWN: 'SUBMISS
  * claimed by these cooperative intrinsic/descriptor checks.
  */
 export function createZenonDynamicPlasmaOriginalFundingSubmission(configuration) {
+  if (arguments.length !== 1) fail('configuration_rejected');
+  return createSubmission(configuration, false);
+}
+
+/**
+ * SOURCE-ONLY v2 selection of the actual retained-candidate preparation owner.
+ * Its commit performs the one-shot contextv7 current read before original
+ * custody. Submit still requires the same independent pins and original V6
+ * bytes, and delegates once to the actual funding POST owner. No factory,
+ * store/preflight substitute, default cutover or new retry right is accepted.
+ * This changed SDK/SQLite application graph is NOT runtime-qualified.
+ */
+export function createZenonDynamicPlasmaOriginalFundingSubmissionV2(configuration) {
+  if (arguments.length !== 1) fail('configuration_rejected');
+  return createSubmission(configuration, true);
+}
+
+function createSubmission(configuration, retainedValidationEnabled) {
   let preparer, payer, store, resource;
   try {
-    if (arguments.length !== 1 || !invariant()) fail('configuration_rejected');
+    if (!invariant()) fail('configuration_rejected');
     const input = record(configuration, ['preparerOptions', 'store', 'fundingResourceUrl', 'deadlineMs', 'fetchImpl']);
     store = input.store; resource = input.fundingResourceUrl;
     if (typeof store !== 'object' || store === null || IS_PROXY(store) || PROTOTYPE(store) !== STORE
@@ -80,7 +102,9 @@ export function createZenonDynamicPlasmaOriginalFundingSubmission(configuration)
         || APPLY(RESOURCE, store, []) !== resource
         || !Number.isSafeInteger(input.deadlineMs) || input.deadlineMs < 1 || input.deadlineMs > 60000
         || typeof input.fetchImpl !== 'function' || IS_PROXY(input.fetchImpl)) fail('configuration_rejected');
-    preparer = PREPARATION({ preparerOptions: input.preparerOptions, store, fundingResourceUrl: resource });
+    preparer = (retainedValidationEnabled ? PREPARATION_V2 : PREPARATION)({
+      preparerOptions: input.preparerOptions, store, fundingResourceUrl: resource,
+    });
     payer = PAYER({ store, deadlineMs: input.deadlineMs, fetchImpl: input.fetchImpl });
     if (!invariant()) fail('configuration_rejected');
   } catch { fail('configuration_rejected'); }
@@ -111,7 +135,8 @@ export function createZenonDynamicPlasmaOriginalFundingSubmission(configuration)
     prepareAttempts = 1; phase = 'PREPARING';
     try {
       const result = await APPLY(PREPARE, PREPARER, [input]);
-      if (!invariant() || value(result, 'phase') !== 'AWAITING_INDEPENDENT_PINS') fail('prepare_refused');
+      if (!invariant() || value(result, 'phase') !== 'AWAITING_INDEPENDENT_PINS'
+          || (retainedValidationEnabled && value(result, 'originalFundingPreparationVersion') !== 2)) fail('prepare_refused');
       packet = value(result, 'packet'); phase = 'AWAITING_INDEPENDENT_PINS';
       return result;
     } catch { phase = 'PREPARATION_REFUSED'; fail('prepare_refused'); }
@@ -121,7 +146,10 @@ export function createZenonDynamicPlasmaOriginalFundingSubmission(configuration)
     commitAttempts = 1; phase = 'COMMITTING';
     try {
       const result = await APPLY(COMMIT, PREPARER, [input]);
-      if (!invariant() || value(result, 'phase') !== 'LOCAL_STORE_READBACK_MATCHED') fail('commit_refused');
+      if (!invariant() || value(result, 'phase') !== 'LOCAL_STORE_READBACK_MATCHED'
+          || (retainedValidationEnabled && (value(result, 'originalFundingCommitVersion') !== 2
+            || value(result, 'preCustodyRevalidation') !== 'SAME_ORIGINAL_CURRENT_READ_VALIDATED')))
+        fail('commit_refused');
       phase = 'LOCAL_STORE_READBACK_MATCHED';
       return result; // Still no recovery, funding POST or chain publication.
     } catch { phase = 'COMMIT_OUTCOME_UNKNOWN_OR_REFUSED'; fail('commit_unknown_or_refused'); }
@@ -144,7 +172,7 @@ export function createZenonDynamicPlasmaOriginalFundingSubmission(configuration)
       if (typeof status !== 'string' || !HAS(PHASES, status)) fail('submission_unknown');
       retained(pins, status, 3); // PREPARED -> actual durable fence -> actual completion.
       fundingIntakeStatus = status; phase = PHASES[status];
-      return FREEZE({ originalFundingSubmissionVersion: 1, phase, fundingIntakeStatus,
+      return FREEZE({ originalFundingSubmissionVersion: retainedValidationEnabled ? 2 : 1, phase, fundingIntakeStatus,
         transactionHash: packet.transactionHash, authority: 'NONE', chainPublication: 'NOT_ESTABLISHED',
         inclusion: 'NOT_ESTABLISHED', grant: 'NOT_ESTABLISHED', serviceDelivery: 'NOT_ESTABLISHED' });
     } catch {
@@ -191,7 +219,7 @@ export function createZenonDynamicPlasmaOriginalFundingSubmission(configuration)
   }
   function inspectOriginalFunding() {
     if (arguments.length !== 0 || !invariant()) fail('input_rejected');
-    return FREEZE({ originalFundingSubmissionInspectionVersion: 1, phase, lifecycle, publicOperationActive: pending !== null,
+    return FREEZE({ originalFundingSubmissionInspectionVersion: retainedValidationEnabled ? 2 : 1, phase, lifecycle, publicOperationActive: pending !== null,
       prepareAttempts, commitAttempts, submissionAttempts, submissionEntered, fundingIntakeStatus,
       preparation: APPLY(INSPECT, PREPARER, []), authority: 'NONE', automaticReplay: false,
       chainPublication: 'NOT_ESTABLISHED', grant: 'NOT_ESTABLISHED', serviceDelivery: 'NOT_ESTABLISHED',
