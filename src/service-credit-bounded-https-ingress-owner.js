@@ -2,6 +2,10 @@ import { EventEmitter } from 'node:events';
 import { OutgoingMessage } from 'node:http';
 import { isIP } from 'node:net';
 import { types as utilTypes } from 'node:util';
+import {
+  captureOfficialUpfrontHttpsRoute,
+  captureOfficialUpfrontHttpsRequest,
+} from './x402-official-https-request-binding.js';
 
 const NATIVE_ARRAY = Array;
 const ARRAY_IS_ARRAY = NATIVE_ARRAY.isArray;
@@ -1093,7 +1097,7 @@ function scanRawHeaders(rawHeaders, authority, limits) {
   }
 }
 
-function captureRequestAdmission(request, authority, limits, allowedTargets) {
+function captureRequestAdmission(request, authority, limits, allowedTargets, officialRoute) {
   try {
     if (
       request === null
@@ -1111,7 +1115,18 @@ function captureRequestAdmission(request, authority, limits, allowedTargets) {
       descriptors[key] = OBJECT_FREEZE(descriptor);
     }
     const rawHeaders = scanRawHeaders(descriptors.rawHeaders.value, authority, limits);
-    const protocolValid = descriptors.method.value === 'POST'
+    let selectedMethod = descriptors.method.value === 'POST'
+      && (officialRoute === null || descriptors.url.value !== '/paid');
+    if (officialRoute !== null && descriptors.method.value === 'GET'
+        && descriptors.url.value === '/paid') {
+      try {
+        // The same bounded application binding is checked again on every
+        // admission reinspection. Native TLS/socket ownership stays here.
+        captureOfficialUpfrontHttpsRequest(request, officialRoute);
+        selectedMethod = true;
+      } catch { selectedMethod = false; }
+    }
+    const protocolValid = selectedMethod
       && typeof descriptors.url.value === 'string'
       && setHas(allowedTargets, descriptors.url.value)
       && descriptors.httpVersion.value === '1.1'
@@ -1164,6 +1179,21 @@ function sameRequestAdmission(left, right) {
  */
 export function createServiceCreditBoundedHttpsIngressOwner(options) {
   if (arguments.length !== 1) throw failure(CODE.invalidConfiguration);
+  return createBoundedHttpsIngressOwner(options, false);
+}
+
+/**
+ * Explicit mixed application profile: exact zero-body GET /paid for the
+ * official x402 entry, POST for the other declared targets. It reuses the
+ * existing native generation, reservations, response ownership and close path.
+ * The original POST-only factory and all ordinary server defaults are unchanged.
+ */
+export function createServiceCreditBoundedHttpsIngressOwnerForOfficialX402(options) {
+  if (arguments.length !== 1) throw failure(CODE.invalidConfiguration);
+  return createBoundedHttpsIngressOwner(options, true);
+}
+
+function createBoundedHttpsIngressOwner(options, officialProfile) {
   let configuration = exactDataObject(options, CONFIGURATION_KEYS);
   const origin = configuration === null ? null : captureOrigin(configuration.origin);
   const requestTargets = configuration === null
@@ -1189,6 +1219,17 @@ export function createServiceCreditBoundedHttpsIngressOwner(options) {
     || deadlineRuntime === null
     || !safeCallable(configuration.httpsServerFactory, true)
   ) throw failure(CODE.invalidConfiguration);
+
+  let officialRoute = null;
+  if (officialProfile) {
+    let paidTargetDeclared = false;
+    for (let index = 0; index < requestTargets.length; index += 1) {
+      if (requestTargets[index] === '/paid') paidTargetDeclared = true;
+    }
+    if (!paidTargetDeclared) throw failure(CODE.invalidConfiguration);
+    try { officialRoute = captureOfficialUpfrontHttpsRoute(origin.canonicalOrigin + '/paid'); }
+    catch { throw failure(CODE.invalidConfiguration); }
+  }
 
   let trustedFactory = configuration.httpsServerFactory;
   let downstreamHandle = downstream.handle;
@@ -3189,6 +3230,7 @@ export function createServiceCreditBoundedHttpsIngressOwner(options) {
       origin.authority,
       limits,
       allowedTargets,
+      officialRoute,
     );
     if (!sameRequestAdmission(requestState.requestAdmission, currentAdmission)) {
       return 'DRIFT';
@@ -3398,6 +3440,7 @@ export function createServiceCreditBoundedHttpsIngressOwner(options) {
       origin.authority,
       limits,
       allowedTargets,
+      officialRoute,
     );
     if (requestAdmission === null) {
       increment('requestsRejected');
