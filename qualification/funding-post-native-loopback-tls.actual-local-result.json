@@ -1,0 +1,281 @@
+{
+  "schema": "zenon-x402-selected-native-qualification/v1",
+  "kind": "ACTUAL_SELECTED_LOOPBACK_TLS_FAILURE_NOT_PAYMENT_OR_FULL_DP_QUALIFICATION",
+  "status": "FAILED_NO_GO",
+  "historicalResult": true,
+  "localDate": "2026-10-24",
+  "sourceBaseline": "d73562c110571e36a56ee3003df7f180be0238d8",
+  "mainBaseline": "77d02d9af91d4316e335e158e80c4cb50882434c",
+  "nativeRuntime": {
+    "nodeVersion": "24.19.0",
+    "platform": "darwin",
+    "arch": "arm64",
+    "nodeSha256": "dbedff294bab84a0a86c04e15fbcbeb1c97ca10bef1b32b0634cd24b36f62100",
+    "opensslSha256": "49db04c17e3a8c169ebc48a1149d78c165a86c04913203f46b2a14ce7f4a14fc"
+  },
+  "scope": {
+    "selectedCases": 4,
+    "authorizedMaximumAttempts": 2,
+    "attemptsConsumed": 2,
+    "actualOpenSSLCommands": 2,
+    "actualNodeCommands": 1,
+    "nodeChildren": 0,
+    "maximumLoopbackConnectionsPerAttempt": 8,
+    "taskQuotaBytes": 4194304,
+    "minFreeBytes": 10737418240,
+    "newPrivateRoots": 1,
+    "SDK": false,
+    "SQLite": false,
+    "nonceSearch": false,
+    "capabilitySigning": false,
+    "providerSigning": false,
+    "walletPaymentSigning": false,
+    "externalNetwork": false,
+    "fullDpGraph": false,
+    "nativeOsNetworkSandbox": false
+  },
+  "sourceInputsAtAttempt2": [
+    {
+      "path": "package.json",
+      "bytes": 2677,
+      "LF": 40,
+      "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+      "gitBlob": "45752ffde39d29666094f7f1c755060d75e43deb"
+    },
+    {
+      "path": "src/service-credit-funding-post-native-https-transport.js",
+      "bytes": 15573,
+      "LF": 281,
+      "sha256": "740fb2492c030728e9c27d3ad920252f6d71bd369400694e9a8b062dd1ec27bd",
+      "gitBlob": "427c46d1bed9fcdb878c1ed69ec8b6dbaba3fe8c"
+    },
+    {
+      "path": "src/service-credit-funding-post-native-response.js",
+      "bytes": 7903,
+      "LF": 157,
+      "sha256": "b5084844ecf029445bc55efd0b9d0ef61b8c2e65424ea74a6dfb30941f9f676c",
+      "gitBlob": "0bae9c30c7a11624612418bb6a1e7643effb0775"
+    },
+    {
+      "path": "src/service-credit-native-client-close-owner.js",
+      "bytes": 7170,
+      "LF": 149,
+      "sha256": "00366016a37cf71234cb305e860b5d3f406c97f6b6a7af8569ae76726b759c91",
+      "gitBlob": "ed68174f93050d837786ab799b3b6dee5f7e0676"
+    },
+    {
+      "path": "qualification/funding-post-native-loopback-tls.selection.draft.mjs",
+      "bytes": 1093,
+      "LF": 19,
+      "sha256": "cf293a00c06f720b98a8c848977ea9b1a48ba4850b770c40b71be49530b64ba9",
+      "gitBlob": "36c39780876ff148c9b5a601fee3b0faa52d0109"
+    },
+    {
+      "path": "qualification/funding-post-native-loopback-tls.behavior.draft.mjs",
+      "bytes": 12849,
+      "LF": 224,
+      "sha256": "1557bd85e76546d290b59507441fc2c20f0aad9dce7479f69c607eaf28ec92db",
+      "gitBlob": "611687c93dfb0d4676350fba160437fe355fce5e"
+    },
+    {
+      "path": "qualification/funding-post-native-loopback-tls.storage-policy.json",
+      "bytes": 383,
+      "LF": 14,
+      "sha256": "4f07ab197693934ff8b00ff76dc391aa5ac7a543332ba0538d3788c142b733dd",
+      "gitBlob": "b360db9971165613fb76467c3da00a60f96b47c6"
+    }
+  ],
+  "sourceRowsSha256": "0ea51771caaca06319b5ed0ae1d8bffe756505b4bb4dac7e89f082d28761e78d",
+  "historicalInputManifest": {
+    "path": "qualification/funding-post-native-loopback-tls.inputs.json",
+    "bytes": 3446,
+    "LF": 105,
+    "sha256": "4859fc773cbb4b032cbcea89867d252881505d8d01e8a19075e5d0a69c8033ad",
+    "gitBlob": "1680970f1aba8a9f0b49f71155b4dbc11eeaeabb"
+  },
+  "launchers": [
+    {
+      "attempt": 1,
+      "bytes": 17226,
+      "sha256": "64910a752e1e9ad2900a75369e871f7279700bbd097a906161f291473762ce9c"
+    },
+    {
+      "attempt": 2,
+      "bytes": 17205,
+      "sha256": "4535d39c312d9bcd59a0b3890d71f79df46628c1b7d8f8be63b51747e10d33f1"
+    }
+  ],
+  "attempts": [
+    {
+      "attempt": 1,
+      "state": "CLOSED",
+      "outcome": "FAILURE",
+      "commands": 1,
+      "receipts": {
+        "tls-generation-receipt.json": {
+          "state": "COMPLETE",
+          "actual_exit": 1,
+          "output_complete": true,
+          "stdout": {
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "stderr": {
+            "bytes": 434,
+            "sha256": "7f8bc69347116c7eb65b58bcc04be7a53b55875461a7b015a65e1136025d2b1a"
+          },
+          "scratch_scan_retries": 0,
+          "reason": null
+        }
+      },
+      "cleanupDecision": "CLEANED",
+      "result": "TLS_SETUP_FAILED_BEFORE_NODE",
+      "cause": "System OpenSSL configuration did not resolve the environment-variable RANDFILE value.",
+      "nodeEntered": false,
+      "selectedCasesEntered": 0,
+      "networkScenariosEntered": 0
+    },
+    {
+      "attempt": 2,
+      "state": "CLOSED",
+      "outcome": "FAILURE",
+      "commands": 2,
+      "receipts": {
+        "tls-generation-receipt.json": {
+          "state": "COMPLETE",
+          "actual_exit": 0,
+          "output_complete": true,
+          "stdout": {
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "stderr": {
+            "bytes": 326,
+            "sha256": "d5c7c892b7e678ac318703113164852b36fcd899c92951f6bcc6fe967eaedd49"
+          },
+          "scratch_scan_retries": 0,
+          "reason": null
+        },
+        "native-receipt.json": {
+          "state": "COMPLETE",
+          "actual_exit": 1,
+          "output_complete": true,
+          "stdout": {
+            "bytes": 863,
+            "sha256": "8c77d7fa9d6b9b626aceb63437858780fff951ad62dcc90d1d72c539ef1f5232"
+          },
+          "stderr": {
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "scratch_scan_retries": 0,
+          "reason": null
+        }
+      },
+      "cleanupDecision": "HOLD",
+      "result": "FIRST_NATIVE_CASE_FAILED_REMAINING_CASES_NOT_ENTERED",
+      "setupCorrection": "Use ./openssl.rnd relative to the exact owned command cwd.",
+      "nodeEntered": true,
+      "selectedCasesEntered": 1,
+      "selectedCasesPassed": 0,
+      "selectedCasesFailed": 1,
+      "selectedCasesNotEntered": 3,
+      "failureCode": "FUNDING_POST_NATIVE_HTTPS_OUTCOME_UNKNOWN",
+      "rootCause": "NOT_ESTABLISHED",
+      "observedSuccessfulTlsHandshakes": null,
+      "observedConnectionCount": null
+    }
+  ],
+  "selectedCases": [
+    {
+      "name": "native funding TLS complete BOUND and actual close",
+      "status": "FAILED",
+      "detail": "OUTCOME_UNKNOWN rejection; successful authenticated TLS/body/close not established."
+    },
+    {
+      "name": "native funding TLS partial body remains UNKNOWN",
+      "status": "NOT_ENTERED"
+    },
+    {
+      "name": "native funding TLS abort remains UNKNOWN without replacement",
+      "status": "NOT_ENTERED"
+    },
+    {
+      "name": "native funding TLS wrong URL and method rejected before request",
+      "status": "NOT_ENTERED"
+    }
+  ],
+  "evidence": {
+    "privateRawOutputRetained": true,
+    "rawOutputPublished": false,
+    "privateTlsKeyCertificateRetained": true,
+    "rootFiles": 52,
+    "rootLogicalBytes": 103966,
+    "rootAllocatedBytes": 262144,
+    "retainedOriginalInputs": true,
+    "firstTaskReproducibleConfigurationBytesPromotedToCAS": 324,
+    "secondTaskCleanup": "HOLD_UNREGISTERED_NATIVE_TLS_FILES",
+    "historicalDataCleanup": false,
+    "taskCloseStateVerified": true
+  },
+  "followup": {
+    "sourceOnly": true,
+    "executed": false,
+    "parsedByNode": false,
+    "behaviorFixed": false,
+    "rootCauseEstablished": false,
+    "changes": [
+      "First-fault stage and allowlisted native code, without raw diagnostic data.",
+      "Fixture failure frame with bounded counters and source-private owner snapshots."
+    ],
+    "inputs": [
+      {
+        "path": "src/service-credit-funding-post-native-https-transport.js",
+        "bytes": 17574,
+        "LF": 308,
+        "sha256": "cfd30efb8b2c48d3d301631fa8fc6ccaaa569fc3edb473c63bd170e8f603a0a1",
+        "gitBlob": "5273c7dc49470a054a87a4813652ce664386c773"
+      },
+      {
+        "path": "qualification/funding-post-native-loopback-tls.behavior.draft.mjs",
+        "bytes": 13381,
+        "LF": 234,
+        "sha256": "f227c9975243376cb5e3c13f382a9dc8fdee44b55f9f67c424a6b3ccfbd450bd",
+        "gitBlob": "c760c23d7c0d6d4e4edfc5072c4275d07bf0c0a3"
+      }
+    ],
+    "historicalManifestDoesNotAdmitCurrentFollowup": true,
+    "remainingAttempts": 0
+  },
+  "GitHub": {
+    "baselineChecks": {
+      "source": {
+        "checks": 0,
+        "statuses": 0,
+        "runs": 0
+      },
+      "main": {
+        "checks": 0,
+        "statuses": 0,
+        "runs": 0
+      }
+    },
+    "interpretation": "NOT_RUN_NOT_GREEN",
+    "evidenceOnlyOnMain": true,
+    "failedNativeAdapterOnMain": false,
+    "workflowDispatches": 0,
+    "newPRs": 0,
+    "comments": 0
+  },
+  "qualificationLimits": {
+    "nativeTransport": "FAILED_NOT_QUALIFIED",
+    "fullNativeDP": "UNEXECUTED",
+    "realX402Composition": false,
+    "serviceCreditGrant": false,
+    "serviceDelivery": false,
+    "livePayment": false,
+    "productionReady": false,
+    "mainRuntimeQualified": false,
+    "prior20CaseComponentResult": "HISTORICAL_COMPONENT_ONLY_NOT_NATIVE_TLS"
+  }
+}

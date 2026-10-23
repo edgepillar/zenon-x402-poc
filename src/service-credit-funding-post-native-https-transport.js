@@ -17,6 +17,10 @@ const IS_BUFFER = Buffer.isBuffer, ARRAY_BUFFER = DESC(PROTO(Uint8Array.prototyp
 const BYTE_LENGTH = DESC(PROTO(Uint8Array.prototype), 'byteLength').get;
 const SIGNAL = AbortSignal.prototype, SIGNAL_ABORTED = DESC(SIGNAL, 'aborted').get;
 const ADD_EVENT = EventTarget.prototype.addEventListener, REMOVE_EVENT = EventTarget.prototype.removeEventListener;
+const SAFE_NATIVE_CODES = new Set(['ERR_ACCESS_DENIED', 'ERR_TLS_CERT_ALTNAME_INVALID',
+  'DEPTH_ZERO_SELF_SIGNED_CERT', 'SELF_SIGNED_CERT_IN_CHAIN', 'UNABLE_TO_VERIFY_LEAF_SIGNATURE',
+  'CERT_HAS_EXPIRED', 'CERT_NOT_YET_VALID', 'EPROTO', 'ECONNRESET', 'ECONNREFUSED', 'EPIPE',
+  'EAI_AGAIN', 'ENOTFOUND', 'ERR_SSL_TLSV1_ALERT_INTERNAL_ERROR']);
 
 /**
  * Default-off actual native TLS transport for one fixed funding POST-v1 URL.
@@ -55,6 +59,11 @@ export function createFundingPostNativeHttpsTransport(configuration) {
   configuration = null; c = null; resource = null; hostname = null; authority = null;
   const entries = new Set(), sockets = new Set(), timers = new Set();
   let starts = 0, handshakes = 0, closing = null, closeTimer = null, unknown = false;
+  let responseHeadersAccepted = 0, responseBodyBytesObserved = 0, responseEndsObserved = 0;
+  // Bounded stage/code observations only. Never retain an Error/message/stack,
+  // URL, header, certificate, response body or caller-provided diagnostic text.
+  // Authored after the first native failure; these diagnostics are SOURCE ONLY.
+  let lastObservedStage = 'CONSTRUCTED', firstUnknown = null;
   const closeOwner = createNativeHttpsClientCloseOwner({
     readObservedCounts: FREEZE(() => FREEZE({ requests: entries.size, sockets: sockets.size,
       timers: timers.size - (closeTimer !== null && timers.has(closeTimer) ? 1 : 0) })),
@@ -69,14 +78,27 @@ export function createFundingPostNativeHttpsTransport(configuration) {
     token = TIMER(() => { timers.delete(token); try { fn(); } finally { closeOwner.observe(); } }, delay);
     timers.add(token); return token;
   }
-  function markUnknown() { unknown = true; closeOwner.markUnknown(); }
+  function markUnknown(reason, cause = null) {
+    if (firstUnknown === null) {
+      let nativeCode = null;
+      try {
+        if (cause !== null && typeof cause === 'object' && !IS_PROXY(cause)) {
+          const descriptor = DESC(cause, 'code');
+          if (descriptor && OWN(descriptor, 'value') && typeof descriptor.value === 'string')
+            nativeCode = SAFE_NATIVE_CODES.has(descriptor.value) ? descriptor.value : 'OTHER';
+        }
+      } catch { nativeCode = 'UNAVAILABLE'; }
+      firstUnknown = FREEZE({ reason, lastObservedStage, nativeCode });
+    }
+    unknown = true; closeOwner.markUnknown();
+  }
   function settle(entry) {
     if (!entry.requestClosed || !entry.socketClosed || !entry.socketSeen) return;
     cancel(entry.deadline); entry.deadline = null;
     cancel(entry.handshake); entry.handshake = null;
     if (entry.signalAttached) {
       try { APPLY(REMOVE_EVENT, entry.signal, ['abort', entry.onAbort]); }
-      catch { markUnknown(); entry.custody.fail(); }
+      catch (cause) { markUnknown('ABORT_LISTENER_RELEASE_FAILED', cause); entry.custody.fail(); }
       entry.signalAttached = false;
     }
     entries.delete(entry); closeOwner.observe();
@@ -93,10 +115,10 @@ export function createFundingPostNativeHttpsTransport(configuration) {
         entry.resolve(FREEZE({ url: URL_VALUE, redirected: false, status: data.statusCode,
           headers: response.headers, body: response.body }));
       } finally { APPLY(FILL, data.body, [0]); }
-    } catch { markUnknown(); entry.reject(error('outcome_unknown')); }
+    } catch (cause) { markUnknown('RESPONSE_HANDOFF_FAILED', cause); entry.reject(error('outcome_unknown')); }
   }
-  function stop(entry) {
-    markUnknown(); entry.custody.fail();
+  function stop(entry, reason, cause = null) {
+    markUnknown(reason, cause); entry.custody.fail();
     if (!entry.done) { entry.done = true; entry.reject(error('outcome_unknown')); }
     if (!entry.stopping) {
       entry.stopping = true;
@@ -111,8 +133,9 @@ export function createFundingPostNativeHttpsTransport(configuration) {
       try { APPLY(DESTROY_SOCKET, entry.socket, []); } catch {}
     }
   }
-  function event(entry, operation) {
-    try { if (entry.stopping) return; operation(); } catch { stop(entry); }
+  function event(entry, stage, operation) {
+    try { if (entry.stopping) return; operation(); lastObservedStage = stage; }
+    catch (cause) { stop(entry, stage + '_REJECTED', cause); }
   }
   const fetchImpl = FREEZE(function fetchImpl(url, options) {
     let headers, signal;
@@ -148,7 +171,7 @@ export function createFundingPostNativeHttpsTransport(configuration) {
       socketSeen: false, socketStopRequested: false, requestClosed: false, socketClosed: false, signal, signalAttached: false,
       deadline: null, handshake: null, custody: createFundingPostNativeResponseCustody(), onAbort: null };
     entries.add(entry); // Retain ownership before the native constructor can reenter.
-    entry.onAbort = () => stop(entry);
+    entry.onAbort = () => stop(entry, 'REQUEST_ABORT');
     try {
       APPLY(ADD_EVENT, signal, ['abort', entry.onAbort, { once: true }]); entry.signalAttached = true;
       if (APPLY(SIGNAL_ABORTED, signal, []) !== false) throw error('outcome_unknown');
@@ -158,31 +181,42 @@ export function createFundingPostNativeHttpsTransport(configuration) {
         minVersion: 'TLSv1.3', maxVersion: 'TLSv1.3', ALPNProtocols: ['http/1.1'],
         maxHeaderSize: 16384, insecureHTTPParser: false,
       }, response => {
-        APPLY(ON, response, ['error', () => stop(entry)]);
-        APPLY(ON, response, ['aborted', () => stop(entry)]);
-        event(entry, () => entry.custody.acceptHeaders({ statusCode: response.statusCode, rawHeaders: response.rawHeaders }));
-        APPLY(ON, response, ['data', chunk => event(entry, () => entry.custody.acceptChunk(chunk))]);
-        APPLY(ONCE, response, ['end', () => event(entry, () => {
+        APPLY(ON, response, ['error', cause => stop(entry, 'RESPONSE_ERROR', cause)]);
+        APPLY(ON, response, ['aborted', () => stop(entry, 'RESPONSE_ABORTED')]);
+        event(entry, 'RESPONSE_HEADERS', () => {
+          entry.custody.acceptHeaders({ statusCode: response.statusCode, rawHeaders: response.rawHeaders });
+          responseHeadersAccepted++;
+        });
+        APPLY(ON, response, ['data', chunk => event(entry, 'RESPONSE_BODY', () => {
+          const before = entry.custody.snapshot().receivedBytes;
+          entry.custody.acceptChunk(chunk);
+          responseBodyBytesObserved += entry.custody.snapshot().receivedBytes - before;
+        })]);
+        APPLY(ONCE, response, ['end', () => event(entry, 'RESPONSE_END', () => {
           if (response.complete !== true || response.rawTrailers.length !== 0) throw error('outcome_unknown');
           entry.custody.acceptEnd();
+          responseEndsObserved++;
         })]);
         APPLY(ONCE, response, ['close', () => {
-          if (!entry.custody.snapshot().ended) stop(entry);
+          if (!entry.custody.snapshot().ended) stop(entry, 'INCOMPLETE_RESPONSE_CLOSE');
         }]);
       });
-      APPLY(ON, entry.request, ['error', () => stop(entry)]);
+      APPLY(ON, entry.request, ['error', cause => stop(entry, 'REQUEST_ERROR', cause)]);
       APPLY(ONCE, entry.request, ['close', () => {
         entry.requestClosed = true;
-        event(entry, () => entry.custody.acceptRequestClose()); settle(entry);
+        event(entry, 'REQUEST_CLOSE', () => entry.custody.acceptRequestClose()); settle(entry);
       }]);
       APPLY(ONCE, entry.request, ['socket', socket => {
-        if (entry.socketSeen || entry.requestClosed) { stop(entry); try { APPLY(DESTROY_SOCKET, socket, []); } catch {} return; }
+        if (entry.socketSeen || entry.requestClosed) {
+          stop(entry, 'SOCKET_ASSIGNMENT_REJECTED'); try { APPLY(DESTROY_SOCKET, socket, []); } catch {} return;
+        }
         entry.socketSeen = true; entry.socket = socket; sockets.add(socket);
-        entry.handshake = timer(() => stop(entry), HANDSHAKE);
-        APPLY(ON, socket, ['error', () => stop(entry)]);
+        lastObservedStage = 'SOCKET_ASSIGNED';
+        entry.handshake = timer(() => stop(entry, 'TLS_DEADLINE'), HANDSHAKE);
+        APPLY(ON, socket, ['error', cause => stop(entry, 'SOCKET_ERROR', cause)]);
         APPLY(ONCE, socket, ['secureConnect', () => {
           cancel(entry.handshake); entry.handshake = null;
-          event(entry, () => {
+          event(entry, 'TLS_AUTHENTICATED', () => {
             if (socket.authorized !== true || socket.getProtocol() !== 'TLSv1.3'
                 || socket.alpnProtocol !== 'http/1.1') throw error('outcome_unknown');
             entry.custody.acceptTls(); handshakes++;
@@ -190,14 +224,15 @@ export function createFundingPostNativeHttpsTransport(configuration) {
         }]);
         APPLY(ONCE, socket, ['close', hadError => {
           entry.socketClosed = true; sockets.delete(socket);
-          event(entry, () => entry.custody.acceptSocketClose({ hadError })); settle(entry);
+          event(entry, 'SOCKET_CLOSE', () => entry.custody.acceptSocketClose({ hadError })); settle(entry);
         }]);
-        if (closing !== null || entry.stopping) stop(entry);
+        if (closing !== null || entry.stopping) stop(entry, 'LATE_SOCKET_STOP');
       }]);
-      entry.deadline = timer(() => stop(entry), DEADLINE);
+      entry.deadline = timer(() => stop(entry, 'REQUEST_DEADLINE'), DEADLINE);
       if (entry.stopping || closing !== null) throw error('outcome_unknown');
       entry.request.end(); // The only end entry: fixed POST with zero body.
-    } catch { stop(entry); }
+      lastObservedStage = 'REQUEST_ENDED';
+    } catch (cause) { stop(entry, 'REQUEST_CREATE_OR_END_FAILED', cause); }
     finally { url = null; options = null; headers = null; signal = null; }
     return promise;
   });
@@ -207,8 +242,8 @@ export function createFundingPostNativeHttpsTransport(configuration) {
     closing = closeOwner.beginClose();
     APPLY(THEN, closing, [() => undefined, () => undefined]);
     try { closeTimer = timer(() => { closeTimer = null; closeOwner.deadlineExpired(); }, GRACE); }
-    catch { markUnknown(); closeOwner.deadlineExpired(); }
-    for (const entry of entries) stop(entry);
+    catch (cause) { markUnknown('CLOSE_TIMER_FAILED', cause); closeOwner.deadlineExpired(); }
+    for (const entry of entries) stop(entry, 'OWNER_CLOSE_WITH_ACTIVE_REQUEST');
     closeOwner.observe(); return closing;
   });
   const snapshot = FREEZE(function snapshot() {
@@ -216,6 +251,8 @@ export function createFundingPostNativeHttpsTransport(configuration) {
     const state = closeOwner.snapshot();
     return FREEZE({ phase: state.phase, unknown: unknown || state.unknown,
       requestStarts: starts, authenticatedTlsHandshakes: handshakes,
+      responseHeadersAccepted, responseBodyBytesObserved, responseEndsObserved,
+      lastObservedStage, firstUnknown,
       trackedRequests: entries.size, trackedSockets: sockets.size, ownedTimers: timers.size,
       close: state, defaultEnabled: false,
       nativeImplementation: true, nativeRuntimeQualified: false, authority: 'NONE' });

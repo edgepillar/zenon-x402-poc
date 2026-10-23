@@ -1,0 +1,105 @@
+{
+  "kind": "FOUR_CASE_NATIVE_FUNDING_LOOPBACK_TLS_INPUTS_NOT_A_RESULT",
+  "inputs": [
+    {
+      "path": "package.json",
+      "bytes": 2677,
+      "LF": 40,
+      "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+      "gitBlob": "45752ffde39d29666094f7f1c755060d75e43deb"
+    },
+    {
+      "path": "src/service-credit-funding-post-native-https-transport.js",
+      "bytes": 15573,
+      "LF": 281,
+      "sha256": "740fb2492c030728e9c27d3ad920252f6d71bd369400694e9a8b062dd1ec27bd",
+      "gitBlob": "427c46d1bed9fcdb878c1ed69ec8b6dbaba3fe8c"
+    },
+    {
+      "path": "src/service-credit-funding-post-native-response.js",
+      "bytes": 7903,
+      "LF": 157,
+      "sha256": "b5084844ecf029445bc55efd0b9d0ef61b8c2e65424ea74a6dfb30941f9f676c",
+      "gitBlob": "0bae9c30c7a11624612418bb6a1e7643effb0775"
+    },
+    {
+      "path": "src/service-credit-native-client-close-owner.js",
+      "bytes": 7170,
+      "LF": 149,
+      "sha256": "00366016a37cf71234cb305e860b5d3f406c97f6b6a7af8569ae76726b759c91",
+      "gitBlob": "ed68174f93050d837786ab799b3b6dee5f7e0676"
+    },
+    {
+      "path": "qualification/funding-post-native-loopback-tls.selection.draft.mjs",
+      "bytes": 1093,
+      "LF": 19,
+      "sha256": "cf293a00c06f720b98a8c848977ea9b1a48ba4850b770c40b71be49530b64ba9",
+      "gitBlob": "36c39780876ff148c9b5a601fee3b0faa52d0109"
+    },
+    {
+      "path": "qualification/funding-post-native-loopback-tls.behavior.draft.mjs",
+      "bytes": 12849,
+      "LF": 224,
+      "sha256": "1557bd85e76546d290b59507441fc2c20f0aad9dce7479f69c607eaf28ec92db",
+      "gitBlob": "611687c93dfb0d4676350fba160437fe355fce5e"
+    },
+    {
+      "path": "qualification/funding-post-native-loopback-tls.storage-policy.json",
+      "bytes": 383,
+      "LF": 14,
+      "sha256": "4f07ab197693934ff8b00ff76dc391aa5ac7a543332ba0538d3788c142b733dd",
+      "gitBlob": "b360db9971165613fb76467c3da00a60f96b47c6"
+    }
+  ],
+  "imports": {
+    "src/service-credit-funding-post-native-https-transport.js": [
+      "node:buffer",
+      "node:events",
+      "node:https",
+      "node:http",
+      "node:net",
+      "node:util",
+      "./service-credit-funding-post-native-response.js",
+      "./service-credit-native-client-close-owner.js"
+    ],
+    "src/service-credit-funding-post-native-response.js": [
+      "node:buffer",
+      "node:util"
+    ],
+    "src/service-credit-native-client-close-owner.js": [
+      "node:util"
+    ],
+    "qualification/funding-post-native-loopback-tls.selection.draft.mjs": [
+      "node:assert/strict",
+      "node:path",
+      "./funding-post-native-loopback-tls.behavior.draft.mjs"
+    ],
+    "qualification/funding-post-native-loopback-tls.behavior.draft.mjs": [
+      "node:assert/strict",
+      "node:buffer",
+      "node:https",
+      "node:fs",
+      "node:path",
+      "node:timers/promises",
+      "node:test",
+      "../src/service-credit-funding-post-native-https-transport.js"
+    ]
+  },
+  "sourceRowsSha256": "0ea51771caaca06319b5ed0ae1d8bffe756505b4bb4dac7e89f082d28761e78d",
+  "effectsCeiling": {
+    "selectedCases": 4,
+    "maximumRuns": 2,
+    "opensslCommandsPerRun": 1,
+    "nodeCommandsPerRun": 1,
+    "nodeChildren": 0,
+    "loopbackConnectionsPerRun": 8,
+    "taskQuotaBytes": 4194304,
+    "SDK": false,
+    "SQLite": false,
+    "nonce": false,
+    "paymentSigning": false,
+    "fullDpGraph": false,
+    "externalNetwork": false,
+    "nativeOsNetworkSandbox": false
+  }
+}
