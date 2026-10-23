@@ -1,0 +1,197 @@
+{
+  "kind": "DP_ORIGINAL_FUNDING_OWNER_STORE_CLAIM_SOURCE_REVIEW",
+  "version": 1,
+  "status": "SOURCE_ONLY_NOT_IMPORTED_NOT_RUNTIME_QUALIFIED",
+  "sourceBase": "4d7c778560265cda8b776f28ddb135db30a33fd2",
+  "targetSourceBranch": "x402/p1-dp-original-funding-store-claim-source-v1",
+  "updatedOwner": {
+    "path": "src/zenon/dynamic-plasma-original-funding-preparation.js",
+    "bytes": 12149,
+    "sha256": "690824a883194f152ad53070bce1db44be2c436fd957269e96e0a32c3f8f8f2f",
+    "gitBlob": "d99ffab9c75b80212d656be979763dd060e8fa2d"
+  },
+  "actualClaimPrimitive": {
+    "path": "src/zenon/dynamic-plasma-original-funding-store-claim.js",
+    "bytes": 2640,
+    "sha256": "b5aa2b5d2e1b213d89622d11500fa674e536025317bee2f41740ee040c753945",
+    "gitBlob": "2a3e9da5a64f55ff631b5e33371226568b07aa4c"
+  },
+  "futureNativeFixture": {
+    "path": "qualification/dynamic-plasma-original-funding-preparation-v1.behavior.draft.mjs",
+    "bytes": 20043,
+    "sha256": "16d3e664119f9472a874175d986c34a7254905ae69a7c96bc8c913e5b9d6f235",
+    "gitBlob": "6118638a7bb4857651c4b607efea5bb5c421decd"
+  },
+  "previousOwner": {
+    "sourceCommit": "b48a8a4a4e598cc378d01142f429669304c4bac1",
+    "path": "src/zenon/dynamic-plasma-original-funding-preparation.js",
+    "bytes": 11638,
+    "sha256": "62170884b2ff17cc164c9bf536d0b71e379c73607c8dc0e9ed70a52024632d61",
+    "gitBlob": "7154a8a0a1d17e3bc6e4bda7d3f99b3c4bd10908",
+    "bytesRetainedInClosedCAS": true,
+    "oldSourceReviewLeftImmutable": true
+  },
+  "sourceChange": "After actual store/resource and non-operational preparer configuration checks, claim this store object before returning any preparation interface. A second same-object owner is refused; no failure/close/reset releases the claim.",
+  "intendedOrder": [
+    "Validate actual store class/resource and complete non-operational candidate-preparer configuration.",
+    "Call actual one-use store-object claim primitive; no operational wallet/read callback is invoked by constructor configuration.",
+    "Only the first owner can expose prepare/commit; actual candidate, preflight, V6 atomic commit and unknown-outcome paths remain hardwired and default-off."
+  ],
+  "actualSyntaxChecks": [
+    {
+      "name": "updated-owner",
+      "actualNodeCommands": 1,
+      "sourceInputs": [
+        {
+          "path": "package.json",
+          "bytes": 2677,
+          "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+          "gitBlob": "45752ffde39d29666094f7f1c755060d75e43deb"
+        },
+        {
+          "path": "src/zenon/dynamic-plasma-original-funding-preparation.js",
+          "bytes": 12149,
+          "sha256": "690824a883194f152ad53070bce1db44be2c436fd957269e96e0a32c3f8f8f2f",
+          "gitBlob": "d99ffab9c75b80212d656be979763dd060e8fa2d"
+        }
+      ],
+      "actualExit": 0,
+      "stdout": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "stderr": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "streamsComplete": true,
+      "taskClosed": "SUCCESS",
+      "scratchAbsent": true,
+      "processGroupAbsent": true,
+      "closedRecordsIndependentlyRead": 5,
+      "admissionSha256": "531face8ce063a9df8b56105ae9d4e0f0fa0a1f36db8e5803f6e37ea27fdd661",
+      "importsResolved": false,
+      "moduleEvaluated": false,
+      "runtimeQualified": false,
+      "keyGeneration": 0,
+      "signatureOperations": 0,
+      "SDK": 0,
+      "SQL": 0,
+      "network": 0
+    },
+    {
+      "name": "future-native-fixture",
+      "actualNodeCommands": 1,
+      "sourceInputs": [
+        {
+          "path": "package.json",
+          "bytes": 2677,
+          "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+          "gitBlob": "45752ffde39d29666094f7f1c755060d75e43deb"
+        },
+        {
+          "path": "qualification/dynamic-plasma-original-funding-preparation-v1.behavior.draft.mjs",
+          "bytes": 20043,
+          "sha256": "16d3e664119f9472a874175d986c34a7254905ae69a7c96bc8c913e5b9d6f235",
+          "gitBlob": "6118638a7bb4857651c4b607efea5bb5c421decd"
+        }
+      ],
+      "actualExit": 0,
+      "stdout": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "stderr": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "streamsComplete": true,
+      "taskClosed": "SUCCESS",
+      "scratchAbsent": true,
+      "processGroupAbsent": true,
+      "closedRecordsIndependentlyRead": 5,
+      "admissionSha256": "980881145ea9b6d606cff1f4cdf042960388a73ef501d5c49bb3c07b717f2a60",
+      "importsResolved": false,
+      "moduleEvaluated": false,
+      "runtimeQualified": false,
+      "keyGeneration": 0,
+      "signatureOperations": 0,
+      "SDK": 0,
+      "SQL": 0,
+      "network": 0
+    }
+  ],
+  "actualPrimitiveQualification": {
+    "selectedCasesPassed": 12,
+    "sourceInputs": [
+      {
+        "path": "package.json",
+        "bytes": 2677,
+        "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+        "gitBlob": "45752ffde39d29666094f7f1c755060d75e43deb"
+      },
+      {
+        "path": "qualification/dynamic-plasma-original-funding-store-claim.behavior.draft.mjs",
+        "bytes": 7376,
+        "sha256": "8ac5db3bafdc3cde063380abc882757d229d2d41ebe69cc41caa0f6ee34f8651",
+        "gitBlob": "5c95b30e8d6c9cc32350b8bd616981496d6184b5"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-original-funding-store-claim.js",
+        "bytes": 2640,
+        "sha256": "b5aa2b5d2e1b213d89622d11500fa674e536025317bee2f41740ee040c753945",
+        "gitBlob": "2a3e9da5a64f55ff631b5e33371226568b07aa4c"
+      }
+    ],
+    "stdout": {
+      "sha256": "5005c23ef14797d7ff66ad93eb88af9de416576c41678f484ffb94f08f8f0006",
+      "bytes": 3272
+    },
+    "admissionSha256": "8b7fcfbf06e1582c0c2d8c56b18872fada2d1b86d2d704e3926be20f050512d3",
+    "notNativeOwnerOrStoreQualification": true
+  },
+  "futureFixture": {
+    "sourceOnly": true,
+    "parsedOnly": true,
+    "scenariosExecuted": 0,
+    "importsResolved": false,
+    "moduleEvaluated": false,
+    "intendedScenarioNames": [
+      "original funding actual SDK V6 composition commits one original candidate and refuses duplicate store owners",
+      "original funding actual SDK V6 composition retains commit uncertainty and original bytes across normal reopen without another signature"
+    ],
+    "intendedFiniteScope": {
+      "nodeCommands": 1,
+      "childProcesses": 0,
+      "freshPrivateSQLiteFiles": 2,
+      "newIndependentPinJsonFiles": 2,
+      "newInMemorySyntheticEd25519Keys": 1,
+      "syntheticWalletSignatures": 2,
+      "actualPreflightVerifications": 2,
+      "syntheticAccountReadCallbacks": 30,
+      "syntheticDpReadCallbacks": 120,
+      "materialHandoffs": 2,
+      "commitBeforeReturnLossHooks": 1,
+      "fixedZeroDifficultyNonceDataOnly": true,
+      "nonceSearch": 0,
+      "network": 0,
+      "SDKPrepareBlock": 0,
+      "realChainPrepare": 0,
+      "payment": 0
+    },
+    "normalReopenChangesOwnerEpoch": true,
+    "normalReopenIsNotCrashProof": true,
+    "futureKeyZeroingBestEffortOnly": true,
+    "sourceDependencyLauncherReviewComplete": false,
+    "ordinaryInstalledDependencyNamespaceQualified": false,
+    "newExecutionAuthorityEstablished": false,
+    "requiredBeforeExecution": "Pin/review the full actual SDK/native-store startup graph and exact bounded launcher, resolve the selected dependency namespace without silently installing or substituting it, and obtain the narrow new SDK/synthetic-wallet-signature/private-SQLite/pin-file scope."
+  },
+  "retainedLimits": [
+    "The claim is one store object in one evaluated module, not a DB-path, cross-namespace or restart fence.",
+    "Actual store state, independent original pins, exclusive lifetime and close/quarantine/recovery duties remain.",
+    "Syntax checks do not link/import/evaluate the actual SDK/store modules and prove no composition behavior.",
+    "No default buyer/legacy composite cutover, native HTTPS retry, real payment, pilot or hosted CI is authorized or activated."
+  ],
+  "authority": "NONE"
+}
