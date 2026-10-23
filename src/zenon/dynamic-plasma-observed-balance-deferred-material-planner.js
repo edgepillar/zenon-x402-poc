@@ -2,10 +2,14 @@ import { types as utilTypes } from 'node:util';
 import { Buffer } from 'node:buffer';
 import { setTimeout as nativeSetTimeout, clearTimeout as nativeClearTimeout } from 'node:timers';
 import { createObservedBalanceDynamicPlasmaUserSendAttempt } from './dynamic-plasma-observed-balance-user-send-attempt.js';
-import { createObservedBalanceDynamicPlasmaUserSendCheckpointReadAdapter } from './dynamic-plasma-observed-balance-user-send-read-adapter.js';
+import {
+  createObservedBalanceDynamicPlasmaUserSendCheckpointReadAdapter,
+  createObservedBalanceDynamicPlasmaWalletCandidateReadAdapter,
+} from './dynamic-plasma-observed-balance-user-send-read-adapter.js';
 
 const CREATE_ATTEMPT = createObservedBalanceDynamicPlasmaUserSendAttempt;
 const CREATE_CHECKPOINT_READS = createObservedBalanceDynamicPlasmaUserSendCheckpointReadAdapter;
+const CREATE_WALLET_READS = createObservedBalanceDynamicPlasmaWalletCandidateReadAdapter;
 const freeze = Object.freeze;
 const create = Object.create;
 const define = Object.defineProperty;
@@ -35,6 +39,7 @@ const ErrorType = TypeError;
 const BusyError = Error;
 const CONFIG = freeze(['readOptions', 'materialExchange']);
 const DEADLINE_CONFIG = freeze(['readOptions', 'materialExchange', 'materialWaitMs']);
+const WALLET_CONFIG = freeze([...DEADLINE_CONFIG, 'wallet']);
 const SET_TIMEOUT = nativeSetTimeout;
 const CLEAR_TIMEOUT = nativeClearTimeout;
 const READ_OPTIONS = freeze(['transports', 'accountExchange']);
@@ -151,11 +156,34 @@ export function createObservedBalanceDeadlineBoundMaterialCheckpointPreparer(opt
   return createPlanner(options, true, true);
 }
 
-function createPlanner(options, checkpointEnabled, deadlineEnabled = false) {
-  let steps, exchange, materialWaitMs = null;
+/**
+ * Explicit contextv6 composition: the actual deadline-bound material path ->
+ * original unsigned checkpoint/handoff -> ONE borrowed WalletAdapter.sign ->
+ * actual fifth bracketed account/balance/price read. Wallet.getAddress must
+ * first match the independently selected payer. No wallet/SDK is defaulted.
+ * Both wallet methods are operational capabilities, not consent inferred from
+ * DATA. Their separately authorized owner retains keys, pending-operation
+ * lifetime and any result not safely returned here. materialWaitMs still
+ * bounds material waiting ONLY, not wallet/read lifetime or cancellation.
+ *
+ * Return a signed CANDIDATE, not a verified payment payload. Canonical signature
+ * bytes are syntax only: real cryptographic payment preflight and durable
+ * original signed-payment custody MUST precede transport/publication. No such
+ * transport is exposed. After current-read refusal, volatile inspection keeps
+ * a field-bound original candidate without granting retry or re-signing rights.
+ * Old v3/v4/v5 factories and the default legacy buyer remain unchanged. This
+ * opt-in source is not the separate Phase2C cutover or a runtime qualification.
+ */
+export function createObservedBalanceDeadlineBoundMaterialWalletCandidatePreparer(options) {
+  if (arguments.length !== 1) fail('configuration_rejected');
+  return createPlanner(options, true, true, true);
+}
+
+function createPlanner(options, checkpointEnabled, deadlineEnabled = false, walletCandidateEnabled = false) {
+  let steps, exchange, materialWaitMs = null, walletReceiver = null, walletAddress = null, walletSign = null;
   try {
     if (!invariant()) fail('configuration_rejected');
-    const top = record(options, deadlineEnabled ? DEADLINE_CONFIG : CONFIG);
+    const top = record(options, walletCandidateEnabled ? WALLET_CONFIG : deadlineEnabled ? DEADLINE_CONFIG : CONFIG);
     if (deadlineEnabled) {
       materialWaitMs = top.materialWaitMs;
       if (!isSafeInteger(materialWaitMs) || materialWaitMs < 1 || materialWaitMs > 60000)
@@ -169,17 +197,65 @@ function createPlanner(options, checkpointEnabled, deadlineEnabled = false) {
     for (const transport of transports) {
       if (exchange === record(transport, TRANSPORT).callRead) fail('configuration_rejected');
     }
-    const attempt = checkpointEnabled ? CREATE_CHECKPOINT_READS(reads) : CREATE_ATTEMPT(reads);
+    if (walletCandidateEnabled) {
+      walletReceiver = top.wallet;
+      walletAddress = captureWalletMethod(walletReceiver, 'getAddress');
+      walletSign = captureWalletMethod(walletReceiver, 'sign');
+      if (walletAddress === walletSign || walletAddress === exchange || walletSign === exchange
+          || walletAddress === reads.accountExchange || walletSign === reads.accountExchange)
+        fail('configuration_rejected');
+      for (const transport of transports) {
+        const read = record(transport, TRANSPORT).callRead;
+        if (walletAddress === read || walletSign === read) fail('configuration_rejected');
+      }
+    }
+    const attempt = walletCandidateEnabled ? CREATE_WALLET_READS(reads)
+      : checkpointEnabled ? CREATE_CHECKPOINT_READS(reads) : CREATE_ATTEMPT(reads);
     steps = freeze({
       quote: attempt.quote, work: attempt.createWorkRequest,
       assemble: attempt.assemble, validate: attempt.validateUnsigned,
     });
   } catch { fail('configuration_rejected'); }
   const EXCHANGE = exchange;
+  const WALLET = walletReceiver, WALLET_ADDRESS = walletAddress, WALLET_SIGN = walletSign;
   let active = false, used = false, originalRun = null;
+  let walletHandoff = null, walletSignAttempts = 0, walletResultObserved = false;
   let waitPhase = 'NOT_STARTED', materialPending = false, timeoutExpired = false;
   let timersStarted = 0, timersCleared = 0, lateOutcomesIgnored = 0;
-  exchange = null; options = null;
+  exchange = null; options = null; walletReceiver = null; walletAddress = null; walletSign = null;
+
+  async function observeWallet(method, args, signedCandidate) {
+    if (!invariant()) fail('operation_rejected');
+    const pending = apply(method, WALLET, args);
+    if (!invariant() || pending === originalRun || !supportedPromise(pending)) fail('operation_rejected');
+    const bridge = apply(nativeThen, pending, [value => {
+      try {
+        if (!invariant()) return walletReceipt(false, null);
+        if (!signedCandidate) return walletReceipt(typeof value === 'string' && value.length <= 128, value);
+        return walletReceipt(true, snapshotData(value, 0, { nodes: 2048, characters: 32768 }));
+      } catch { return walletReceipt(false, null); }
+    }, () => walletReceipt(false, null)]);
+    // Return the private null-prototype receipt, never assimilate raw wallet
+    // fulfillment or consult a foreign/own then hook on a signed candidate.
+    const captured = await shield(bridge);
+    if (!invariant() || !captured.accepted) fail('operation_rejected');
+    return captured;
+  }
+  function getSignedOriginalData() {
+    if (arguments.length !== 0 || !invariant()) fail('input_rejected');
+    const result = create(null);
+    put(result, 'observedWalletCandidateInspectionVersion', 1);
+    put(result, 'walletSignAttempts', walletSignAttempts);
+    put(result, 'walletResultObserved', walletResultObserved);
+    put(result, 'candidate', walletHandoff === null ? null : walletHandoff.getSignedOriginalData());
+    put(result, 'externalWalletOperation', walletSignAttempts === 0 ? 'NOT_ENTERED'
+      : walletResultObserved ? 'RETURNED_DATA' : 'UNKNOWN');
+    put(result, 'signatureValidation', 'NOT_PERFORMED');
+    put(result, 'persistence', 'NOT_PERFORMED');
+    put(result, 'currentAuthority', 'NOT_ESTABLISHED');
+    put(result, 'authority', 'NONE');
+    return freeze(result);
+  }
 
   function waitForMaterial(pending) {
     let settled = false, timer = null, resolveObserved;
@@ -229,12 +305,16 @@ function createPlanner(options, checkpointEnabled, deadlineEnabled = false) {
     try {
       if (!invariant()) fail('operation_rejected');
       const top = record(context, CONTEXT);
-      if (top.plannerContextVersion !== (deadlineEnabled ? 5 : checkpointEnabled ? 4 : 3)) fail('input_rejected');
+      if (top.plannerContextVersion !== (walletCandidateEnabled ? 6 : deadlineEnabled ? 5 : checkpointEnabled ? 4 : 3)) fail('input_rejected');
       const input = snapshotInput(top.readInput);
       // Fix/shield our public run identity before any borrowed callback can
       // reenter or return that same receipt as its own material operation.
       await undefined;
       if (!invariant()) fail('operation_rejected');
+      if (walletCandidateEnabled) {
+        const address = await observeWallet(WALLET_ADDRESS, [], false);
+        if (address.value !== input.payerAddress) fail('operation_rejected');
+      }
       const originalPlan = await apply(steps.quote, undefined, [input]);
       const work = await apply(steps.work, undefined, checkpointEnabled ? [input, originalPlan] : [input]);
       if (!invariant()) fail('operation_rejected');
@@ -252,6 +332,13 @@ function createPlanner(options, checkpointEnabled, deadlineEnabled = false) {
       const final = await apply(steps.validate, undefined,
         checkpointEnabled ? [input, originalPlan, assembly.accountBlock] : [input]);
       if (!invariant()) fail('operation_rejected');
+      if (walletCandidateEnabled) {
+        walletHandoff = final;
+        walletSignAttempts += 1;
+        const signed = await observeWallet(WALLET_SIGN, [final.originalUnsignedBlock], true);
+        walletResultObserved = true;
+        return await final.acceptSigned(signed.value);
+      }
       return checkpointEnabled ? final : assembly.accountBlock;
     } catch { fail(deadlineEnabled && timeoutExpired ? 'material_wait_unknown' : 'operation_rejected'); }
     finally { active = false; }
@@ -262,15 +349,41 @@ function createPlanner(options, checkpointEnabled, deadlineEnabled = false) {
     if (originalRun === null && active) originalRun = pending;
     return pending;
   }
-  const operation = checkpointEnabled
+  const operation = walletCandidateEnabled
+    ? function prepareSignedCandidate(context) { return dispatch(arguments.length, context); }
+    : checkpointEnabled
     ? function prepareUnsignedCheckpoint(context) { return dispatch(arguments.length, context); }
     : function prepareUnsigned(context) { return dispatch(arguments.length, context); };
+  if (walletCandidateEnabled) return freeze({
+    prepareSignedCandidate: freeze(operation), getMaterialWaitSnapshot: freeze(getMaterialWaitSnapshot),
+    getSignedOriginalData: freeze(getSignedOriginalData),
+  });
   if (deadlineEnabled) return freeze({
     prepareUnsignedCheckpoint: freeze(operation), getMaterialWaitSnapshot: freeze(getMaterialWaitSnapshot),
   });
   return freeze(checkpointEnabled
     ? { prepareUnsignedCheckpoint: freeze(operation) }
     : { prepareUnsigned: freeze(operation) });
+}
+
+function walletReceipt(accepted, value) {
+  const result = create(null);
+  put(result, 'accepted', accepted); put(result, 'value', accepted ? value : null);
+  return freeze(result);
+}
+function captureWalletMethod(receiver, name) {
+  if (typeof receiver !== 'object' || receiver === null || isProxy(receiver)) fail('configuration_rejected');
+  let p = receiver;
+  for (let count = 0; count < 8 && p !== null && p !== objectPrototype; count++) {
+    if (isProxy(p)) fail('configuration_rejected');
+    const d = descriptor(p, name);
+    if (d !== undefined) {
+      if (!hasOwn(d, 'value') || typeof d.value !== 'function' || isProxy(d.value)) fail('configuration_rejected');
+      return d.value;
+    }
+    p = prototype(p);
+  }
+  fail('configuration_rejected');
 }
 
 function captureFulfilled(value) {

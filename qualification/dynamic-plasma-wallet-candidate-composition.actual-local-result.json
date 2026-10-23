@@ -1,0 +1,441 @@
+{
+  "schema": "zenon-x402-selected-local-result/v1",
+  "status": "ACTUAL_SELECTED_DECLARED_WALLET_COMPOSITION_LOCAL_PASS",
+  "lane": "P1 actual DP unsigned preparation to borrowed wallet candidate and post-wallet current read",
+  "sourceAssociation": {
+    "baseMain": "48c6628284d10981399fbe11b0b74121ef5a3734",
+    "baseTree": "ace70663b4b0201742686cb35bd742e44f0a2354",
+    "sourcePins": [
+      {
+        "path": "package.json",
+        "bytes": 2677,
+        "LF": 40,
+        "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+        "gitBlob": "45752ffde39d29666094f7f1c755060d75e43deb"
+      },
+      {
+        "path": "qualification/dynamic-plasma-wallet-candidate-composition.behavior.draft.mjs",
+        "bytes": 29142,
+        "LF": 439,
+        "sha256": "7248627d153ef5ff95d071d290092db708e9f2b33221a7cb518d182357a9c087",
+        "gitBlob": "029f0dadeddbdfd3f63116e386f01ea3fbf72ecb"
+      },
+      {
+        "path": "src/canonical.js",
+        "bytes": 967,
+        "LF": 26,
+        "sha256": "0d55ddf1727cafb0dcd46df2922305568615552a4d2ae34a5c30e90b9d8d998c",
+        "gitBlob": "5367f9c72ee13017a61630e1f0cffdced21d52c4"
+      },
+      {
+        "path": "src/x402-wire.js",
+        "bytes": 39886,
+        "LF": 934,
+        "sha256": "5fba91af5a352f62d1a335c7176a45a604e2af5d92b1c4b0e53825c1f20d4e56",
+        "gitBlob": "fb060d4e349b1c31a1219a0cc137af250a8a2291"
+      },
+      {
+        "path": "src/zenon/bounded-dynamic-plasma-strategy.js",
+        "bytes": 15729,
+        "LF": 353,
+        "sha256": "7b82560bdeb25e573912090a2fe8de7b45912500a7a7c4434fe06dcf94e06d62",
+        "gitBlob": "ee85b7a4da8bf4190ae099e6bc5074059fccebbc"
+      },
+      {
+        "path": "src/zenon/bounded-json-rpc-read-core.js",
+        "bytes": 21759,
+        "LF": 582,
+        "sha256": "10cc529bfb0676bb03dc4dad56059663f4a578b586c52f6404fc859d27d18f76",
+        "gitBlob": "3bd98a83413eb13e3bceb097d35fb874b4c030a2"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-account-frontier-read.js",
+        "bytes": 7417,
+        "LF": 152,
+        "sha256": "283209685a41aed5647c87e33d046d1f81b3a6820ea6ea307c11d2f99b91020d",
+        "gitBlob": "6fbb894a4db5db15e4ded168fd663eeb24898bf8"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-account-state-read-transport.js",
+        "bytes": 3632,
+        "LF": 74,
+        "sha256": "9aa818dabdacf0baec60ca570e854cc8a327e554ba5e5a76c670eb5ed02b29b8",
+        "gitBlob": "751a4b8c5a0c42e1d2b0a47af9d2ef7264229821"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-compatibility.js",
+        "bytes": 7732,
+        "LF": 225,
+        "sha256": "b3989ce15e5f2e9d07b0ed035fe96bcce9f22cac93f5e497fdca5c37bf7618dd",
+        "gitBlob": "3811b748b3f905e454c8a4af4650bb7f89eb1cf2"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-json-rpc-read-transport.js",
+        "bytes": 10832,
+        "LF": 283,
+        "sha256": "fd03b2ad87d16660aa61d3961c163d724d5f89cd6d4bb9c4391d739566d5e5ca",
+        "gitBlob": "0475b7ab42889f67fb030fa7344d73d8bd6957d7"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-observation-collector.js",
+        "bytes": 38492,
+        "LF": 949,
+        "sha256": "6bb665dd97e4b262941ed11fb7a9fb5c6d7a162004a39fcbfbfa8cd7b3f82d98",
+        "gitBlob": "171a49f29379866ed111031d15423634ac2d17b4"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-observation-normalizer.js",
+        "bytes": 28398,
+        "LF": 698,
+        "sha256": "2c3f7d42ded21a5513ff26c23a00a35a53aa334f053d10930f1571a020286897",
+        "gitBlob": "c406db8471aa6c8afd812c222c673c809491cf00"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-observed-balance-deferred-material-planner.js",
+        "bytes": 26795,
+        "LF": 509,
+        "sha256": "c8b5b914f718c1d1236417c5005be94084b9bf16bb8e1d5162a3082c40018bec",
+        "gitBlob": "b63ea842553409a334a78437c6e110976942df7b"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-observed-balance-user-send-attempt.js",
+        "bytes": 7377,
+        "LF": 146,
+        "sha256": "5111ef500bf33c19113f7ffabadc8980792bc9b5fa388cf6095a3f89a5f69e7a",
+        "gitBlob": "e81cf35120457aa520036042899ccd43bf3d1835"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-observed-balance-user-send-read-adapter.js",
+        "bytes": 27252,
+        "LF": 499,
+        "sha256": "380695bfb37d6b137e0de2275ead4086f4397026391dba76acfbabba8e5dfa3b",
+        "gitBlob": "ec092121c8e93520abbb6e54c17d05a8689ad1a4"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-observed-original-checkpoint.js",
+        "bytes": 10343,
+        "LF": 202,
+        "sha256": "f0b485e3970bda3af3aa27f8d46d22a54322d7a893dbda3fa121d23c90d9d30b",
+        "gitBlob": "4d366df7eec92f9137381e90ca52e2f6fc1569a0"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-observed-user-send-adapter.js",
+        "bytes": 8149,
+        "LF": 180,
+        "sha256": "8526519aa6bf5006c572447127680d3cc871ee4eee1b9046b4ea09f9ad9e1653",
+        "gitBlob": "bbda0ebf5a6d4d21f159f31304165810ebd89a77"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-observed-user-send-subject.js",
+        "bytes": 5105,
+        "LF": 104,
+        "sha256": "bbcc1d718bcb1353f46e0650723e35c218db94754328103d4bce1d5765e13cd8",
+        "gitBlob": "5e29c6d70c965a4d72c0902504e57dae852a6223"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-price-policy.js",
+        "bytes": 16224,
+        "LF": 444,
+        "sha256": "eba3225c4d26cbb6e0be575ac4fd5073bc8b0c4454eb51e2bea4d91856d0c65e",
+        "gitBlob": "649dd09b60236b43c91d22e34b76f71f4b661361"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-required-fused-policy-adapter.js",
+        "bytes": 12024,
+        "LF": 272,
+        "sha256": "e2b693d4df9065d44ba590f4d0c8dffeb8e55187668eedfa396b4026c9905c3e",
+        "gitBlob": "b592aafd4c41461318376ea9acc1373f99317455"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-required-fused-quote.js",
+        "bytes": 5416,
+        "LF": 133,
+        "sha256": "f5e10ff2dbfff3b6b63d87f0abadd0bb52b5d6b8fe0ead6a55fc5ea14207b730",
+        "gitBlob": "e820fd31ffde4ef77a2efa6e1fd3ed1775778726"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-signed-original-handoff.js",
+        "bytes": 8843,
+        "LF": 191,
+        "sha256": "bb592312c8d8cd3f4f80817b84bb9273a9232fe843f5ffeb66ac5266bd13ed9a",
+        "gitBlob": "4b3a18cb94b1daded74b798b81e881948cbb4637"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-unsigned-original-checkpoint.js",
+        "bytes": 9301,
+        "LF": 198,
+        "sha256": "506551e4292491a905a27f56695c30642af6a0e6a85158586379649999f8da47",
+        "gitBlob": "46ac7a4761b078048c205eaf531a7aab7a1d81a9"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-user-send-assembly.js",
+        "bytes": 7772,
+        "LF": 162,
+        "sha256": "05012a2a983ceca018674c4d1f63823f3f7ed53b0970a4b4bd486c4278832b04",
+        "gitBlob": "a0537856f6692d278c9043ab9c1c734d1bde61ba"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-user-send-balance-read.js",
+        "bytes": 7542,
+        "LF": 144,
+        "sha256": "ae1f3e5d309be0dc196fb6b35324d4c8287345b50a108d5030c1058645d2ed39",
+        "gitBlob": "f629aca2410dfd194fd73d3a651e624baa633386"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-user-send-fixed-work.js",
+        "bytes": 3475,
+        "LF": 77,
+        "sha256": "4ee83870df0b25c34d35c0f0d0ceb894ca9dab8c047f81b34a48dd816f1fbf38",
+        "gitBlob": "4ce2a790df84c77bc76615e5eebc309ecd2868ac"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-user-send-key-binding.js",
+        "bytes": 4237,
+        "LF": 91,
+        "sha256": "37ad7e74b038801297e4bffb0cb8ba92cbd79009ed32c4ae5b134fe2cb154be2",
+        "gitBlob": "c366f0fee4132604b40604547fe22f1bc1dba65d"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-user-send-work-binding.js",
+        "bytes": 1940,
+        "LF": 42,
+        "sha256": "79eba29a05427128ae3a12346fd3ee7cbaa526d6f39eb36ed58d388640638266",
+        "gitBlob": "a329d521458a5c5b6dbc87194d91d4165d5e759c"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-user-send-work-input.js",
+        "bytes": 2853,
+        "LF": 59,
+        "sha256": "2ff9c089e5903c059746d0a1c38688a2849f94d04d429279811fbbfbb40450a4",
+        "gitBlob": "dad4febf4ef6f09216640245c7e3805e01ad0127"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-user-send-work-request.js",
+        "bytes": 2564,
+        "LF": 50,
+        "sha256": "bc66c7d629eae230c46f62c88fa97960860d94b5d65d3c5611612ccae13fe9ce",
+        "gitBlob": "d4e9731b0af82a892226c2817e9d5a5273b39599"
+      },
+      {
+        "path": "src/zenon/plasma-strategy.js",
+        "bytes": 974,
+        "LF": 32,
+        "sha256": "1c597d4e169ba8a5e6d2b7852c4ffa3a8ec9b854332fe354b9b013c36ebae093",
+        "gitBlob": "5cddc2d270aaf043e6e43145e95ffe0be3dde475"
+      },
+      {
+        "path": "src/zenon/transaction-planner.js",
+        "bytes": 22611,
+        "LF": 464,
+        "sha256": "079fe8da938e08e33a20ca1076492a829afa6fce3ae7f9b9f68d3bf4bff94233",
+        "gitBlob": "17b49a3d53974c9b3846ec6f352d6e8974bad7d3"
+      }
+    ],
+    "sourceFiles": 32,
+    "sourceBytes": 397460,
+    "sourceAtExecution": "Exact pinned read-only checkout with two modified production-source modules and one new selected entry; no future published commit is relabeled as the execution source.",
+    "postPublicationCorrespondence": "Established separately by complete tree/blob readback; source-base labels remain immutable."
+  },
+  "implementation": {
+    "factory": "createObservedBalanceDeadlineBoundMaterialWalletCandidatePreparer",
+    "plannerContextVersion": 6,
+    "defaultOff": true,
+    "changedSources": [
+      "src/zenon/dynamic-plasma-observed-balance-user-send-read-adapter.js",
+      "src/zenon/dynamic-plasma-observed-balance-deferred-material-planner.js"
+    ],
+    "originalSourceImages": [
+      {
+        "path": "src/zenon/dynamic-plasma-observed-balance-user-send-read-adapter.js",
+        "bytes": 21485,
+        "LF": 399,
+        "sha256": "ac85faa8326d73d005807b2a75d6480aaf3f404c17ae6ecfab038d6102d678ab",
+        "gitBlob": "79d887a90ec04d4ae7cbeb66420da35dbee7af71"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-observed-balance-deferred-material-planner.js",
+        "bytes": 20685,
+        "LF": 396,
+        "sha256": "e88f61e4624e4fdbf073caed18b3c4fd7c59bf86797d3e426d5072a80d0fbf51",
+        "gitBlob": "82f32fa7948b38d8ffa2e1f1e4774319bd8bda0c"
+      }
+    ],
+    "preimageBytesRetainedInClosedCas": true,
+    "legacyBuyerChanged": false,
+    "phase2CCutover": false,
+    "chain": [
+      "Capture wallet methods without accessors and check its returned address against the independently selected payer before account/material work.",
+      "Run the actual original quote/work/material deadline/assembly/checkpoint path over four bracketed account/balance/dual-DP cycles.",
+      "Invoke the captured sign-shaped capability once with the frozen original unsigned AccountBlock.",
+      "Snapshot native fulfillment and reuse the actual original-field handoff before another account read, including unhashed publicKey.",
+      "Use the SAME account wire/read owner for a fifth current bracket/balance/price cycle; validate the ORIGINAL unsigned projection and original quote.",
+      "Retain field-bound signed candidate DATA for explicit volatile inspection while the fifth read is pending or after it refuses. No retry/resign/publish method."
+    ],
+    "preSignCheckpointReaderUsedAfterSigning": false,
+    "resultIsVerifiedPaymentPayload": false,
+    "resultIsDurableCustody": false
+  },
+  "actualExecution": {
+    "runtime": {
+      "name": "Node.js",
+      "version": "24.19.0",
+      "platform": "darwin",
+      "architecture": "arm64",
+      "sha256": "dbedff294bab84a0a86c04e15fbcbeb1c97ca10bef1b32b0634cd24b36f62100"
+    },
+    "nodeCommands": 1,
+    "childProcesses": 0,
+    "entry": "qualification/dynamic-plasma-wallet-candidate-composition.behavior.draft.mjs",
+    "selectedNames": [
+      "wallet candidate composes actual unsigned preparation one declared wallet response and a fifth current read",
+      "wallet candidate preserves original hash nonce and ACK across both permitted post-wallet price advances",
+      "wallet candidate retains the same field-bound signed DATA after post-wallet quote expiry without retry",
+      "wallet candidate rejects a moved account before the fifth balance or DP read and retains the original",
+      "wallet candidate rejects insufficient fifth-cycle balance before requesting DP or replacing a payment",
+      "wallet candidate rejects changed runtime p after the declared wallet response and retains signed originals",
+      "wallet candidate rejects changed unhashed public bytes before any post-wallet account read",
+      "wallet candidate rejects a coherently rehashed replacement nonce before any post-wallet account read",
+      "wallet candidate keeps a rejected declared wallet operation unknown without inspecting its raw reason",
+      "wallet candidate refuses self-dependent thenable proxy and unsafe native wallet Promises without hooks",
+      "wallet candidate snapshots native fulfillment before own then or field getters can be assimilated",
+      "wallet candidate performs no reads while the declared wallet response is pending and refuses reentry",
+      "wallet candidate inspection retains the original during a pending fifth read without creating dispatch authority",
+      "wallet candidate material deadline drains late DATA without invoking the declared wallet or resuming preparation",
+      "wallet candidate rejects a mismatching declared wallet address before any material or account work",
+      "wallet candidate configuration rejects borrowed wallet getters proxies and missing methods without invocation",
+      "wallet candidate leaves actual v3 v4 and v5 surfaces and unsigned checkpoint contracts unchanged",
+      "wallet candidate enforces exact arity distinct context version and volatile inspection without opening another operation"
+    ],
+    "counts": {
+      "tests": 18,
+      "suites": 0,
+      "pass": 18,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "fixtureCounts": {
+      "fixtures": 27,
+      "runs": 25,
+      "dpReadCallbacks": 1116,
+      "accountReadCallbacks": 282,
+      "materialHandoffs": 22,
+      "declaredAddressCallbacks": 22,
+      "declaredResultCallbacks": 18,
+      "hooks": 0
+    },
+    "actualExit": 0,
+    "streamsComplete": true,
+    "stdout": {
+      "sha256": "eed5c9cba1a116321b7c60c7c126e2a467468e3751a5b0320510a0c0d25dfdc4",
+      "bytes": 5330
+    },
+    "stderr": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "admissionSha256": "ac83ad113b2e1dba50f48b50472b118c0ffc342953161b9764594e48b424b3aa",
+    "closedRecordsIndependentlyRead": 5,
+    "processGroupAbsent": true,
+    "registeredScratchAbsent": true,
+    "managedTaskClosed": true,
+    "managedTaskOutcome": "SUCCESS",
+    "testRunnerDurationMilliseconds": 550.394541,
+    "controllerObservedSeconds": 7.436352709,
+    "timingMeaning": "One selected in-process fixture result; not network latency, throughput or a production benchmark."
+  },
+  "fixture": {
+    "realWalletImplementations": 0,
+    "declaredWalletDoublesOnly": true,
+    "declaredAddressCallbacks": 22,
+    "declaredResultCallbacks": 18,
+    "signatureGeneration": 0,
+    "signatureVerification": 0,
+    "privateKeys": 0,
+    "publicKeyBytes": "32 constant 0x07 public DATA bytes",
+    "signatureField": "64 constant invalid 0x2a bytes, deliberately not a cryptographic signature",
+    "material": "One literal zero-difficulty nonce 0102030405060708 for each admitted material handoff; no search",
+    "readReplies": "Synthetic in-process JSON reply texts through actual repository read transports and dual-DP collector",
+    "authority": "Declared address/data consistency is not wallet consent, key possession, authenticated runtime/funds or current payment authority."
+  },
+  "covered": [
+    "Nominal five-cycle preparation/candidate/current-validation order with one address call, one sign-shaped callback and one material handoff.",
+    "Both allowed later price advances preserve original ACK, nonce, key, transfer fields and whole block hash.",
+    "Post-wallet expiry, moved account, insufficient balance and changed runtime p retain the same field-bound candidate and never start another signing or material attempt.",
+    "Altered public bytes and a coherently rehashed replacement nonce refuse before a fifth account read.",
+    "Unsafe/self-dependent/foreign native fulfillment and raw rejection reasons are refused without hooks.",
+    "Pending borrowed wallet work performs no account/DP reads; reentry refuses. Pending current reads expose retained DATA without dispatch authority.",
+    "Material expiry drains late DATA without inspecting hooks, signing or resuming.",
+    "Selected current v3/v4/v5 surfaces and unsigned checkpoint contracts still pass. This is not a replay or blanket refresh of all historical cases."
+  ],
+  "launch": {
+    "nodePermissionModel": true,
+    "exactReadOnlyInputs": 32,
+    "sourceAliases": 0,
+    "dependencyInstallation": false,
+    "codeGenerationFromStrings": false,
+    "nativeAddons": false,
+    "childrenOrWorkersPermitted": false,
+    "filesystemWritePermission": false,
+    "networkPermission": false,
+    "environmentCleared": true,
+    "timeoutSeconds": 45,
+    "stdoutCapBytes": 65536,
+    "stderrCapBytes": 1048576,
+    "noOsOrHostileProcessSandboxClaim": true
+  },
+  "storage": {
+    "taskQuotaBytes": 2097152,
+    "declaredPeakLogicalBytesBound": 1267965,
+    "newRuntimeSourceObjects": 3,
+    "newRuntimeSourceBytes": 83189,
+    "borrowedProtectedSourceReferences": 29,
+    "documentationRetainedBytes": 5128,
+    "preimagesReusedFromClosedCas": true,
+    "sourceAliases": 0,
+    "recursiveArchive": false,
+    "historicalEvidenceUnchanged": true,
+    "physicalReclaim": "NOT_MEASURED",
+    "quotaMeaning": "Cooperative accounting and conservative declared bounds, not an OS-enforced disk/memory quota."
+  },
+  "boundaries": {
+    "realWalletQualified": false,
+    "cryptographicSignatureGeneration": 0,
+    "cryptographicSignatureVerification": 0,
+    "privateKeys": 0,
+    "nonceSearch": 0,
+    "positiveWorkQualifiedByThisRun": false,
+    "SDK": 0,
+    "x402PackageExecution": 0,
+    "SQL": 0,
+    "nativeRPC": 0,
+    "nativeHTTPS": 0,
+    "network": 0,
+    "actualPrepare": 0,
+    "payment": 0,
+    "hostedCI": "NOT_RUN_NOT_GREEN",
+    "fullP0Qualified": false,
+    "fullP1Qualified": false,
+    "fullRoadmapComplete": false,
+    "productionReady": false,
+    "providerReady": "NOT_ESTABLISHED",
+    "persistence": "NOT_PERFORMED",
+    "currentAuthority": "NOT_ESTABLISHED",
+    "protectedRealTotals": {
+      "consumedAdmissions": 2,
+      "actualChainPrepare": 1,
+      "bundles": 0,
+      "nativeChainProviderQualificationRuns": 0
+    },
+    "originalPaymentAndConsumedAuthority": "UNCHANGED_SEPARATE_OWNER",
+    "priorResultsReplayedOrRelabeled": false
+  },
+  "remainingGates": [
+    "Actual independently authorized wallet/signature implementation and real payment preflight.",
+    "Durable custody of original signed payment bytes/hash/context before any transport/publication, including wallet outcomes not safely returned here.",
+    "Current-source bounded positive-work composition and real runtime artifact/price/horizon qualification.",
+    "Native HTTPS plus V6 SQLite/one-grant application composition and interruption/recovery acceptance.",
+    "Any legacy buyer cutover and bounded economic/testnet pilot remain separate gates."
+  ]
+}

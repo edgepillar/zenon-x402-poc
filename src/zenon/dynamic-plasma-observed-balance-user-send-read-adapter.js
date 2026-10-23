@@ -7,6 +7,7 @@ import { createZenonUserSendObservationInput, snapshotZenonUserSendPolicyBinding
 import { validateZenonUserSendBalanceRead } from './dynamic-plasma-user-send-balance-read.js';
 import { ObservedDynamicPlasmaUserSendAdapter } from './dynamic-plasma-observed-user-send-adapter.js';
 import { encodeObservedZenonUnsignedOriginalQuoteCheckpoint, validateObservedZenonUnsignedOriginalQuoteCheckpoint } from './dynamic-plasma-observed-original-checkpoint.js';
+import { createZenonDynamicPlasmaSignedOriginalHandoff } from './dynamic-plasma-signed-original-handoff.js';
 
 const COLLECTOR = createRequestBoundDynamicPlasmaObservationCollector;
 const ACCOUNT_WIRE = createZenonAccountStateReadTransport;
@@ -16,6 +17,7 @@ const BINDING = snapshotZenonUserSendPolicyBinding;
 const BALANCE = validateZenonUserSendBalanceRead;
 const CHECKPOINT = encodeObservedZenonUnsignedOriginalQuoteCheckpoint;
 const READ_CHECKPOINT = validateObservedZenonUnsignedOriginalQuoteCheckpoint;
+const SIGNED_HANDOFF = createZenonDynamicPlasmaSignedOriginalHandoff;
 const byteLength = Buffer.byteLength;
 const STAGES = Object.freeze({
   quote: ObservedDynamicPlasmaUserSendAdapter.prototype.quote,
@@ -142,7 +144,26 @@ export function createObservedBalanceDynamicPlasmaUnsignedCheckpointReader(optio
   return createReadAdapter(options, false, true);
 }
 
-function createReadAdapter(options, checkpointEnabled, checkpointReadOnly = false) {
+/**
+ * Explicit wallet-candidate stage variant. The fourth pre-sign cycle captures
+ * the original checkpoint AND actual same-field handoff. One external wallet
+ * result may then be presented once. Its field binding finishes BEFORE a fifth
+ * frontier/balance/dual-DP/frontier cycle validates the ORIGINAL unsigned
+ * projection and quote. The pre-sign checkpoint reader is never used after
+ * signing. One shared account wire/cycle budget owns both sides of the wait.
+ *
+ * After a field-bound candidate is received, volatile inspection retains it
+ * even if the current read fails. Inspection grants neither retry, publication
+ * nor current authority. Cryptographic signature preflight and durable signed
+ * payment custody remain required, separate owners. No signer is invoked here.
+ * Existing factories/surfaces retain their pre-sign-only contracts.
+ */
+export function createObservedBalanceDynamicPlasmaWalletCandidateReadAdapter(options) {
+  if (arguments.length !== 1) fail('configuration_rejected');
+  return createReadAdapter(options, true, false, true);
+}
+
+function createReadAdapter(options, checkpointEnabled, checkpointReadOnly = false, walletCandidateEnabled = false) {
   let collect, accountRead;
   try {
     if (!invariant()) fail('configuration_rejected');
@@ -150,22 +171,24 @@ function createReadAdapter(options, checkpointEnabled, checkpointReadOnly = fals
     collect = COLLECTOR({ transports: top.transports }).collect;
     accountRead = ACCOUNT_WIRE({ exchange: top.accountExchange }).callRead;
   } catch { fail('configuration_rejected'); }
-  let active = false, held = false, cycles = 0;
+  let active = false, held = false, cycles = 0, walletHandoffStarted = false;
 
-  function dispatch(kind, count, input, originalPlan, extra, checkpointJson) {
-    return shield(run(kind, count, input, originalPlan, extra, checkpointJson));
+  function dispatch(kind, count, input, originalPlan, extra, checkpointJson, signedBlock) {
+    return shield(run(kind, count, input, originalPlan, extra, checkpointJson, signedBlock));
   }
-  async function run(kind, count, input, originalPlan, extra, checkpointJson) {
+  async function run(kind, count, input, originalPlan, extra, checkpointJson, signedBlock) {
     if (active) fail('busy');
     if (held) fail('held');
     if (cycles >= 10) fail('exhausted');
+    if (walletCandidateEnabled && kind !== 'signed' && walletHandoffStarted) fail('wallet_handoff_started');
+    if (walletCandidateEnabled && kind === 'validate') walletHandoffStarted = true;
     active = true;
     let readIssued = false;
     try {
       if (!invariant()) fail('input_rejected');
       const expectedCount = kind === 'quote' ? 1 : kind === 'work' ? 2 : kind === 'checkpoint' ? 4 : 3;
       if (count !== expectedCount) fail('input_rejected');
-      const incomingCheckpoint = kind === 'checkpoint' ? checkpointText(checkpointJson) : null;
+      const incomingCheckpoint = kind === 'checkpoint' || kind === 'signed' ? checkpointText(checkpointJson) : null;
       const budget = { nodes: 32768, characters: 2097152 };
       const stable = snapshotData(record(input, INPUT), 0, budget);
       if (stable.observedUserSendReadVersion !== 3 || stable.phase !== 'UNSIGNED'
@@ -216,6 +239,27 @@ function createReadAdapter(options, checkpointEnabled, checkpointReadOnly = fals
         accountFrontierResultJson: afterText, observation: collected.observation,
         policy: stable.policy, runtimeContextDigest: stable.runtimeContextDigest,
       };
+      if (walletCandidateEnabled && kind === 'signed') {
+        // Validate the original UNSIGNED projection using this genuinely new
+        // read cycle. Never strip/re-encode a signed checkpoint or reassemble.
+        const validation = await apply(STAGES.validate, undefined, [view, plan, detail]);
+        if (!invariant()) fail('input_rejected');
+        const result = create(null);
+        put(result, 'observedSignedCandidateVersion', 1);
+        put(result, 'accountBlock', signedBlock);
+        put(result, 'originalUnsignedBlock', detail);
+        put(result, 'originalPlan', plan);
+        put(result, 'preSignCheckpointJson', incomingCheckpoint);
+        put(result, 'currentValidation', validation);
+        put(result, 'declaredBalanceRead', 'VALIDATED_IN_THIS_BRACKETED_READ_CYCLE');
+        put(result, 'candidateFieldValidation', 'MATCHES_CAPTURED_ORIGINAL');
+        put(result, 'signatureValidation', 'NOT_PERFORMED');
+        put(result, 'currentAuthority', 'NOT_ESTABLISHED');
+        put(result, 'chainAuthentication', 'NOT_ESTABLISHED');
+        put(result, 'persistence', 'NOT_PERFORMED');
+        put(result, 'authority', 'NONE');
+        return freeze(result);
+      }
       if (checkpointReadOnly && kind === 'checkpoint') {
         const checked = await READ_CHECKPOINT(view, plan, detail, incomingCheckpoint);
         if (!invariant()) fail('input_rejected');
@@ -243,6 +287,18 @@ function createReadAdapter(options, checkpointEnabled, checkpointReadOnly = fals
         // cycle, refresh the quote, reassemble or parse an incoming packet.
         const checkpointJson = await CHECKPOINT(view, plan, detail);
         if (!invariant()) fail('input_rejected');
+        if (walletCandidateEnabled) {
+          const context = {
+            phase: stable.phase, subject: originalSubject,
+            paymentRequired: stable.paymentRequired, accepted: stable.accepted,
+            payerAddress: stable.payerAddress, compiledSporkIds: stable.compiledSporkIds,
+            observation: collected.observation, policy: stable.policy,
+            runtimeContextDigest: stable.runtimeContextDigest,
+          };
+          const originalHandoff = await SIGNED_HANDOFF(context, plan.quote, detail);
+          if (!invariant()) fail('input_rejected');
+          return walletHandoff(stable, plan, detail, checkpointJson, context, originalHandoff);
+        }
         const result = create(null);
         put(result, 'observedUnsignedCheckpointVersion', 1);
         put(result, 'phase', 'UNSIGNED');
@@ -280,6 +336,50 @@ function createReadAdapter(options, checkpointEnabled, checkpointReadOnly = fals
     const value = await shield(bridge);
     if (!invariant() || !value.accepted) fail('input_rejected');
     return value.text;
+  }
+  function walletHandoff(input, plan, originalBlock, checkpointJson, originalContext, originalHandoff) {
+    let used = false, retainedSigned = null, phase = 'NOT_RECEIVED';
+    async function accept(count, candidate) {
+      if (used) fail('signed_candidate_used');
+      used = true; phase = 'RECEIVING';
+      try {
+        if (count !== 1 || !invariant()) fail('input_rejected');
+        // This snapshots and field-checks the candidate before any new read.
+        // It uses only the private last pre-sign context at this stage; the
+        // signed result is withheld until the independent fifth cycle below.
+        const checked = await originalHandoff.acceptSigned(candidate, originalContext);
+        if (!invariant()) fail('input_rejected');
+        retainedSigned = checked.accountBlock; phase = 'VALIDATING_CURRENT_READS';
+        const result = await dispatch('signed', 3, input, plan, originalBlock, checkpointJson, retainedSigned);
+        if (!invariant()) fail('input_rejected');
+        phase = 'VALIDATED_DECLARED_READS';
+        return result;
+      } catch {
+        phase = retainedSigned === null ? 'REJECTED_BEFORE_CURRENT_READS' : 'UNKNOWN_OR_REJECTED';
+        fail('signed_candidate_rejected');
+      }
+    }
+    function getSignedOriginalData() {
+      if (arguments.length !== 0 || !invariant()) fail('input_rejected');
+      const result = create(null);
+      put(result, 'observedSignedCandidateInspectionVersion', 1);
+      put(result, 'phase', phase);
+      put(result, 'accountBlock', retainedSigned);
+      put(result, 'originalUnsignedBlock', originalBlock);
+      put(result, 'originalPlan', plan);
+      put(result, 'preSignCheckpointJson', checkpointJson);
+      put(result, 'candidateFieldValidation', retainedSigned === null ? 'NOT_ESTABLISHED' : 'MATCHES_CAPTURED_ORIGINAL');
+      put(result, 'signatureValidation', 'NOT_PERFORMED');
+      put(result, 'currentAuthority', 'NOT_ESTABLISHED');
+      put(result, 'persistence', 'NOT_PERFORMED');
+      put(result, 'authority', 'NONE');
+      return freeze(result);
+    }
+    return freeze({
+      originalUnsignedBlock: originalBlock,
+      acceptSigned: freeze(function acceptSigned(candidate) { return shield(accept(arguments.length, candidate)); }),
+      getSignedOriginalData: freeze(getSignedOriginalData),
+    });
   }
   if (checkpointReadOnly) return freeze({
     validateUnsignedCheckpoint: freeze(function validateUnsignedCheckpoint(input, plan, block, text) {
