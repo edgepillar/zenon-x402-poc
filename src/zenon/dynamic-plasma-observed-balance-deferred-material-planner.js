@@ -1,5 +1,6 @@
 import { types as utilTypes } from 'node:util';
 import { Buffer } from 'node:buffer';
+import { setTimeout as nativeSetTimeout, clearTimeout as nativeClearTimeout } from 'node:timers';
 import { createObservedBalanceDynamicPlasmaUserSendAttempt } from './dynamic-plasma-observed-balance-user-send-attempt.js';
 import { createObservedBalanceDynamicPlasmaUserSendCheckpointReadAdapter } from './dynamic-plasma-observed-balance-user-send-read-adapter.js';
 
@@ -33,6 +34,9 @@ const bufferToString = Buffer.prototype.toString;
 const ErrorType = TypeError;
 const BusyError = Error;
 const CONFIG = freeze(['readOptions', 'materialExchange']);
+const DEADLINE_CONFIG = freeze(['readOptions', 'materialExchange', 'materialWaitMs']);
+const SET_TIMEOUT = nativeSetTimeout;
+const CLEAR_TIMEOUT = nativeClearTimeout;
 const READ_OPTIONS = freeze(['transports', 'accountExchange']);
 const TRANSPORT = freeze(['callRead']);
 const CONTEXT = freeze(['plannerContextVersion', 'readInput']);
@@ -120,11 +124,43 @@ export function createObservedBalanceDeferredMaterialCheckpointPreparer(options)
   return createPlanner(options, true);
 }
 
-function createPlanner(options, checkpointEnabled) {
-  let steps, exchange;
+/**
+ * Explicit opt-in context version5, with exact options
+ * {readOptions, materialExchange, materialWaitMs:<integer 1..60000>}.
+ * The selected budget bounds ONLY waiting for a supported material Promise
+ * after the original quote/work stages and ONE handoff. It does not bound a
+ * synchronous callback, prior/later reads, the whole run or OS scheduling.
+ * It neither stops nor cancels the producer and never grants native cleanup.
+ *
+ * Expiry permanently consumes this preparer and rejects material_wait_unknown
+ * before assembly/further reads. The private rejection/fulfillment observers
+ * remain attached: a late outcome is drained without inspecting its value or
+ * reason, without replacement, and cannot resume this run. UNKNOWN_PENDING is
+ * not CLOSED; even UNKNOWN_DRAINED does not establish external owner cleanup.
+ * An unresolved borrowed operation may retain its private observer indefinitely.
+ * Its separately qualified owner retains terminal cleanup responsibility.
+ *
+ * getMaterialWaitSnapshot() returns only detached scalar observations, not a
+ * handle, checkpoint, resume/reset or authority. Successful material still
+ * undergoes the same original-quote/four-cycle final checks. v3/v4 remain
+ * unbounded and retain their exact existing surfaces and context versions.
+ * No producer, nonce search, key/signing, SDK, SQL or real PREPARE is adopted.
+ */
+export function createObservedBalanceDeadlineBoundMaterialCheckpointPreparer(options) {
+  if (arguments.length !== 1) fail('configuration_rejected');
+  return createPlanner(options, true, true);
+}
+
+function createPlanner(options, checkpointEnabled, deadlineEnabled = false) {
+  let steps, exchange, materialWaitMs = null;
   try {
     if (!invariant()) fail('configuration_rejected');
-    const top = record(options, CONFIG);
+    const top = record(options, deadlineEnabled ? DEADLINE_CONFIG : CONFIG);
+    if (deadlineEnabled) {
+      materialWaitMs = top.materialWaitMs;
+      if (!isSafeInteger(materialWaitMs) || materialWaitMs < 1 || materialWaitMs > 60000)
+        fail('configuration_rejected');
+    }
     const reads = record(top.readOptions, READ_OPTIONS);
     exchange = top.materialExchange;
     if (typeof exchange !== 'function' || isProxy(exchange)
@@ -141,8 +177,50 @@ function createPlanner(options, checkpointEnabled) {
   } catch { fail('configuration_rejected'); }
   const EXCHANGE = exchange;
   let active = false, used = false, originalRun = null;
+  let waitPhase = 'NOT_STARTED', materialPending = false, timeoutExpired = false;
+  let timersStarted = 0, timersCleared = 0, lateOutcomesIgnored = 0;
   exchange = null; options = null;
 
+  function waitForMaterial(pending) {
+    let settled = false, timer = null, resolveObserved;
+    const observed = shield(new NativePromise(resolve => { resolveObserved = resolve; }));
+    materialPending = true; waitPhase = 'WAITING';
+    function clearOwnedTimer() {
+      if (timer !== null) {
+        apply(CLEAR_TIMEOUT, undefined, [timer]); timer = null; timersCleared += 1;
+      }
+    }
+    function settle(fulfilled, value) {
+      materialPending = false;
+      if (settled) {
+        // Do not inspect even the descriptor/prototype/then of late DATA.
+        lateOutcomesIgnored += 1; waitPhase = 'UNKNOWN_DRAINED'; return;
+      }
+      settled = true; clearOwnedTimer();
+      waitPhase = fulfilled ? 'RETURNED' : 'REJECTED';
+      resolveObserved(fulfilled ? captureFulfilled(value) : receipt(false, null));
+    }
+    // Observe the native pending operation, never call a supplied .then.
+    // Both handlers return undefined, so this drain cannot assimilate material.
+    shield(apply(nativeThen, pending, [value => settle(true, value), () => settle(false, null)]));
+    timer = apply(SET_TIMEOUT, undefined, [() => {
+      if (settled) return;
+      settled = true; clearOwnedTimer(); timeoutExpired = true;
+      waitPhase = 'UNKNOWN_PENDING'; resolveObserved(receipt(false, null));
+    }, materialWaitMs]);
+    timersStarted += 1;
+    return observed;
+  }
+  function getMaterialWaitSnapshot() {
+    if (arguments.length !== 0 || !invariant()) fail('input_rejected');
+    const result = create(null);
+    const values = { materialWaitSnapshotVersion: 1, materialWaitMs, phase: waitPhase,
+      active, used, materialPending, timeoutExpired, timersStarted, timersCleared,
+      lateOutcomesIgnored, authority: 'NONE', currentAuthority: 'NOT_ESTABLISHED',
+      externalOwnerCleanup: 'NOT_ESTABLISHED' };
+    for (const key of ownKeys(values)) put(result, key, values[key]);
+    return freeze(result);
+  }
   async function run(count, context) {
     if (active) fail('busy');
     if (used) fail('used');
@@ -151,7 +229,7 @@ function createPlanner(options, checkpointEnabled) {
     try {
       if (!invariant()) fail('operation_rejected');
       const top = record(context, CONTEXT);
-      if (top.plannerContextVersion !== (checkpointEnabled ? 4 : 3)) fail('input_rejected');
+      if (top.plannerContextVersion !== (deadlineEnabled ? 5 : checkpointEnabled ? 4 : 3)) fail('input_rejected');
       const input = snapshotInput(top.readInput);
       // Fix/shield our public run identity before any borrowed callback can
       // reenter or return that same receipt as its own material operation.
@@ -165,7 +243,8 @@ function createPlanner(options, checkpointEnabled) {
       });
       const pending = apply(EXCHANGE, undefined, [request]);
       if (!invariant() || pending === originalRun || !supportedPromise(pending)) fail('operation_rejected');
-      const bridge = apply(nativeThen, pending, [captureFulfilled, () => receipt(false, null)]);
+      const bridge = deadlineEnabled ? waitForMaterial(pending)
+        : apply(nativeThen, pending, [captureFulfilled, () => receipt(false, null)]);
       const captured = await shield(bridge);
       if (!invariant() || !captured.accepted) fail('operation_rejected');
       const assembly = await apply(steps.assemble, undefined,
@@ -174,7 +253,7 @@ function createPlanner(options, checkpointEnabled) {
         checkpointEnabled ? [input, originalPlan, assembly.accountBlock] : [input]);
       if (!invariant()) fail('operation_rejected');
       return checkpointEnabled ? final : assembly.accountBlock;
-    } catch { fail('operation_rejected'); }
+    } catch { fail(deadlineEnabled && timeoutExpired ? 'material_wait_unknown' : 'operation_rejected'); }
     finally { active = false; }
   }
 
@@ -186,6 +265,9 @@ function createPlanner(options, checkpointEnabled) {
   const operation = checkpointEnabled
     ? function prepareUnsignedCheckpoint(context) { return dispatch(arguments.length, context); }
     : function prepareUnsigned(context) { return dispatch(arguments.length, context); };
+  if (deadlineEnabled) return freeze({
+    prepareUnsignedCheckpoint: freeze(operation), getMaterialWaitSnapshot: freeze(getMaterialWaitSnapshot),
+  });
   return freeze(checkpointEnabled
     ? { prepareUnsignedCheckpoint: freeze(operation) }
     : { prepareUnsigned: freeze(operation) });
