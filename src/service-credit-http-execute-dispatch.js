@@ -55,6 +55,7 @@ const PARSE_RECORD = parseOriginalServiceRequestCustody;
 const SERIALIZE_RECORD = serializeOriginalServiceRequestCustody;
 const PREFIX = 'SERVICE_CREDIT_HTTP_EXECUTE_DISPATCH_';
 const AUTH_PREFIX = 'ServiceCredit ';
+const MAX_ABORT_DRAIN_MS = 1000;
 const EMPTY_DIGEST = 'sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855';
 const BASE64URL = /^[A-Za-z0-9_-]+$/;
 const HEADER_NAME = /^[A-Za-z][A-Za-z0-9-]{0,127}$/;
@@ -91,6 +92,13 @@ const ALLOWED_HEADERS = FREEZE([
  *
  * deadlineMs is an explicit local 1..60000 ms abort-initiation bound, not a
  * cancellation, lifetime, inclusion or cleanup guarantee.
+ * Once an abort is waiting for observable handle closes, one additional
+ * min(deadlineMs,1000) ms observation budget applies. More error/data events
+ * do not renew it. Missing closes reject UNKNOWN_UNDRAINED, never claim release
+ * or permit a retry. Retained native event observers may still receive late
+ * closes; they cannot change the settled outcome or clear its uncertainty.
+ * Timers cannot bound a blocking caller callback, OS scheduling or the actual
+ * native resource lifetime. External ownership/terminal cleanup remain required.
  *
  * A resolved Promise means only the bounded reply and required interface
  * events were observed. It is never a service-delivery/settlement receipt.
@@ -138,6 +146,7 @@ function createDispatch(options, responseObservationEnabled = false) {
   let authorization = config.authorizationHeader;
   let requestImpl = config.requestImpl;
   const deadlineMs = config.deadlineMs;
+  const abortDrainMs = deadlineMs < MAX_ABORT_DRAIN_MS ? deadlineMs : MAX_ABORT_DRAIN_MS;
   const grantId = original.grantId;
   const requestId = original.requestId;
   const maxCostUnits = original.maxCostUnits;
@@ -160,6 +169,7 @@ function createDispatch(options, responseObservationEnabled = false) {
   let setupDepth = 0;
   let pumping = false;
   let timer = null;
+  let drainTimer = null;
   let operation = null;
   let request = null;
   let response = null;
@@ -198,6 +208,20 @@ function createDispatch(options, responseObservationEnabled = false) {
       nativeClearTimeout(timer);
       timer = null;
     }
+    if (drainTimer !== null) {
+      nativeClearTimeout(drainTimer);
+      drainTimer = null;
+    }
+  }
+
+  function armAbortDrainDeadline() {
+    if (drainTimer !== null || settled) return;
+    // This is an observation deadline, not permission to close/release a
+    // borrowed native handle. Keep the original at-most-once destroy fence.
+    drainTimer = nativeSetTimeout(() => {
+      drainTimer = null;
+      if (!settled) markUnknown(true);
+    }, abortDrainMs);
   }
 
   function finish(success) {
@@ -258,6 +282,7 @@ function createDispatch(options, responseObservationEnabled = false) {
       if (unknown) {
         if (request.closed && (response === null || response.closed)
             && (extraResponse === null || extraResponse.closed)) finish(false);
+        else armAbortDrainDeadline();
         return;
       }
       if (endCalled && request.closed && response !== null
@@ -493,7 +518,7 @@ function createDispatch(options, responseObservationEnabled = false) {
       unknown,
       undrained,
       deadlineFired,
-      timerArmed: timer !== null,
+      timerArmed: timer !== null || drainTimer !== null,
       credentialReferenceReleased,
       requestObserved: request?.observable === true,
       responseObserved: response?.observable === true,
