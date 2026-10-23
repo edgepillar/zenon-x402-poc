@@ -1,0 +1,132 @@
+{
+  "kind": "DP_ORIGINAL_FUNDING_PREPARATION_SOURCE_REVIEW",
+  "version": 1,
+  "status": "SOURCE_ONLY_NOT_IMPORTED_NOT_RUNTIME_QUALIFIED",
+  "sourceBase": "23cf6044c9d5351cf82377dbbb4faa0c183bb131",
+  "targetSourceBranch": "x402/p1-dp-original-funding-owner-source-v1",
+  "effectfulOwner": {
+    "path": "src/zenon/dynamic-plasma-original-funding-preparation.js",
+    "bytes": 11638,
+    "sha256": "62170884b2ff17cc164c9bf536d0b71e379c73607c8dc0e9ed70a52024632d61",
+    "gitBlob": "7154a8a0a1d17e3bc6e4bda7d3f99b3c4bd10908"
+  },
+  "directLocalSourcesInspected": [
+    {
+      "path": "src/canonical.js",
+      "bytes": 967,
+      "sha256": "0d55ddf1727cafb0dcd46df2922305568615552a4d2ae34a5c30e90b9d8d998c",
+      "gitBlob": "5367f9c72ee13017a61630e1f0cffdced21d52c4"
+    },
+    {
+      "path": "src/zenon-payment.js",
+      "bytes": 128301,
+      "sha256": "44ee797207d557175256b5f69c89c5009e238e4c1b5b01c83b118b7e7b0ab35c",
+      "gitBlob": "f6645973803cb430d94f12698b14b7684c27493b"
+    },
+    {
+      "path": "src/service-credit-zenon-funding-post-v1-payer-recovery-sqlite-store.js",
+      "bytes": 83681,
+      "sha256": "bea9e00aa6208f776561c975d54640dfb676168dd4d0b44d125c9dc684912c4a",
+      "gitBlob": "e6af1576df21a20a466d089a4ba6ecdf7380a0df"
+    },
+    {
+      "path": "src/service-credit-pilot-original-payment-checkpoint.js",
+      "bytes": 4003,
+      "sha256": "930905f31824a6cadc16dfb84572cd4dc38a81e2fce4569b73b6bef29dec97d1",
+      "gitBlob": "51c6391bc22f561ebff0005ced31e538aa83f4fa"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-observed-balance-deferred-material-planner.js",
+      "bytes": 26795,
+      "sha256": "c8b5b914f718c1d1236417c5005be94084b9bf16bb8e1d5162a3082c40018bec",
+      "gitBlob": "b63ea842553409a334a78437c6e110976942df7b"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-original-funding-data.js",
+      "bytes": 13815,
+      "sha256": "a8469e58733bd1314d05385bfbf2235559b148c33b0a9be21a20e1c974217801",
+      "gitBlob": "1bb4e0b282ff23f05786f5f2ed1008a41303b3a2"
+    }
+  ],
+  "actualSyntaxCheck": {
+    "commandProfile": "node --permission with two exact read-only input paths --check owner-source",
+    "sourceInputs": [
+      {
+        "path": "package.json",
+        "bytes": 2677,
+        "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+        "gitBlob": "45752ffde39d29666094f7f1c755060d75e43deb"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-original-funding-preparation.js",
+        "bytes": 11638,
+        "sha256": "62170884b2ff17cc164c9bf536d0b71e379c73607c8dc0e9ed70a52024632d61",
+        "gitBlob": "7154a8a0a1d17e3bc6e4bda7d3f99b3c4bd10908"
+      }
+    ],
+    "actualNodeCommands": 1,
+    "childProcesses": 0,
+    "actualExit": 0,
+    "streamsComplete": true,
+    "stdout": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "stderr": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "taskClosed": "SUCCESS",
+    "scratchAbsent": true,
+    "processGroupAbsent": true,
+    "closedRecordsIndependentlyRead": 5,
+    "admissionSha256": "b14ca902488de9191e91eca36fb3f18d33245939a9988a00bf5a815be6a556ec",
+    "controllerElapsedSeconds": 7.377658416,
+    "importsResolved": false,
+    "moduleEvaluated": false,
+    "SDK": false,
+    "SQL": false,
+    "signatureOperations": 0,
+    "runtimeQualified": false
+  },
+  "hardwiredNamedConsumers": [
+    "createObservedBalanceDeadlineBoundMaterialWalletCandidatePreparer",
+    "preflightZenonPayment",
+    "ZenonFundingPayerRecoverySqliteStore captured resourceUrl/load/prepareWithOriginalPaymentCheckpoint/getOriginalPaymentCheckpoint",
+    "encodeOriginalPaymentCheckpoint",
+    "captureZenonDynamicPlasmaOriginalFundingInput/assembleZenonDynamicPlasmaOriginalFundingData/snapshotZenonDynamicPlasmaOriginalFundingPins"
+  ],
+  "sourceIntendedSequence": [
+    "Capture independent originals before asynchronous callbacks; reject a nonempty caller-owned store before candidate preparation.",
+    "Run actual context-v6 candidate preparation, retain initial wire/checkpoint packet, then call real cryptographic payment preflight.",
+    "Stop before DB write and require separately retained independent pins; DATA equality is not durable-retention proof.",
+    "Consume one commit attempt, call actual V6 atomic method, require original PREPARED revision 1 and exact readback.",
+    "Any throw after entering atomic store method remains COMMIT_OUTCOME_UNKNOWN; retain volatile originals and never automatically retry or replace."
+  ],
+  "ownerPremisesAndLimits": [
+    "Default-off source owner is deliberately absent from main until a separately scoped exact-source runtime qualification.",
+    "Caller supplies a genuine already-open V6 store from the real factory and owns exclusive lifetime, close, quarantine and recovery.",
+    "Prototype equality alone is not hostile-code provenance; wrong profiles may refuse without granting a new signing attempt.",
+    "Borrowed wallet/read/material capabilities and unchanged runtime/dependency intrinsics remain trust premises.",
+    "Callbacks must not depend on the public preparation Promise; no indirect-cycle sandbox, hard cancellation or whole-operation deadline is proved.",
+    "Imported SDK/native-store transitive startup graph is not resolved, imported or executed by this syntax check.",
+    "Successful future local readback would not by itself prove crash safety, remote dispatch, inclusion, service delivery or pilot readiness.",
+    "Independent pins must be retained outside the DB by their caller before commit; no code claim proves the caller did so."
+  ],
+  "remainingGate": "Review and pin full actual startup graph and launcher, then obtain exact SDK/synthetic-wallet-signature/new-private-SQLite authority before one real composition experiment.",
+  "excluded": [
+    "Real wallet",
+    "Default buyer/Phase 2C cutover",
+    "SDK execution",
+    "SQL execution",
+    "Private keys or cryptographic signatures",
+    "RPC or HTTP sockets",
+    "New nonce search",
+    "Chain PREPARE",
+    "Funding/payment",
+    "Live pilot",
+    "Hosted CI"
+  ],
+  "dataQualificationIsNotOwnerQualification": true,
+  "authority": "NONE"
+}
