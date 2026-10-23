@@ -1,0 +1,209 @@
+{
+  "kind": "BOUNDED_ORIGINAL_FUNDING_CONFIGURATION_ACTUAL_LOCAL_RESULT",
+  "version": 1,
+  "status": "CONFIGURATION_DATA_ONLY_PASS_NOT_BOUNDED_FUNDING_COMPOSITION",
+  "sourceBase": "50a158ad5c011173e63e83f78422a95c1561d179",
+  "counts": {
+    "tests": 17,
+    "pass": 17,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "cases": [
+    {
+      "number": 1,
+      "name": "capture detaches the explicit material budget and preserves borrowed handle identities without invoking them",
+      "status": "PASS"
+    },
+    {
+      "number": 2,
+      "name": "separate DATA captures do not share or consume an operational producer or owner",
+      "status": "PASS"
+    },
+    {
+      "number": 3,
+      "name": "later caller mutations cannot change the captured public bytes cursor count or wait budgets",
+      "status": "PASS"
+    },
+    {
+      "number": 4,
+      "name": "arity and non-record configurations fail without fallback or defaults",
+      "status": "PASS"
+    },
+    {
+      "number": 5,
+      "name": "closed top-level schema refuses missing extra symbol and supplied factory or material callback fields",
+      "status": "PASS"
+    },
+    {
+      "number": 6,
+      "name": "top material and limit records must have their own plain-object prototype",
+      "status": "PASS"
+    },
+    {
+      "number": 7,
+      "name": "proxy records and operational handles are rejected without inspecting traps",
+      "status": "PASS"
+    },
+    {
+      "number": 8,
+      "name": "accessors are refused at every captured DATA level without getter execution",
+      "status": "PASS"
+    },
+    {
+      "number": 9,
+      "name": "nonenumerable fields and extra material or limit keys cannot be silently ignored",
+      "status": "PASS"
+    },
+    {
+      "number": 10,
+      "name": "public bytes require canonical 32-byte base64 without key generation or curve claims",
+      "status": "PASS"
+    },
+    {
+      "number": 11,
+      "name": "the nonce cursor is explicit eight-byte lowercase hex and is never searched or defaulted",
+      "status": "PASS"
+    },
+    {
+      "number": 12,
+      "name": "candidate count is an explicit safe integer from zero through 4096 with no renewal",
+      "status": "PASS"
+    },
+    {
+      "number": 13,
+      "name": "difficulty remains declared safe DATA with no implicit maximum or actual work predicate",
+      "status": "PASS"
+    },
+    {
+      "number": 14,
+      "name": "material wait and request deadline stay separate explicit bounded scalar budgets",
+      "status": "PASS"
+    },
+    {
+      "number": 15,
+      "name": "borrowed handles need object or function kinds but are not inspected as wallet store or transport brands",
+      "status": "PASS"
+    },
+    {
+      "number": 16,
+      "name": "resource capture bounds string DATA without fetching or claiming canonical store agreement",
+      "status": "PASS"
+    },
+    {
+      "number": 17,
+      "name": "safe failures contain neither caller DATA nor operational capability invocation",
+      "status": "PASS"
+    }
+  ],
+  "sourceAssociation": {
+    "sourceInputs": [
+      {
+        "path": "package.json",
+        "bytes": 2677,
+        "LF": 40,
+        "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+        "gitBlob": "45752ffde39d29666094f7f1c755060d75e43deb"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-bounded-original-funding-configuration.js",
+        "bytes": 4274,
+        "LF": 82,
+        "sha256": "229c61f2b8ade5ba722dd7ea475493200963d87e0bfb543a45ecfb1f26bdfbaf",
+        "gitBlob": "60dcbfd8897b5e6f4434870936ae782c5f5886e2"
+      },
+      {
+        "path": "qualification/dynamic-plasma-bounded-original-funding-configuration.behavior.draft.mjs",
+        "bytes": 10770,
+        "LF": 163,
+        "sha256": "074c8a35a31689e23ddc23a1eb08d95ba2e8498516f477814e748fdbb318b275",
+        "gitBlob": "e2f1d15f88f1f58ef599e6408e1ec5752f6f62e6"
+      }
+    ],
+    "binding": "exact physical content and identities checked before and after the single command",
+    "defaultBuyerChanged": false
+  },
+  "runtime": {
+    "node": "24.19.0",
+    "platform": "darwin",
+    "arch": "arm64"
+  },
+  "nodeSha256": "dbedff294bab84a0a86c04e15fbcbeb1c97ca10bef1b32b0634cd24b36f62100",
+  "run": {
+    "actualExit": 0,
+    "reason": null,
+    "outputComplete": true,
+    "startedAtUnix": 1792788774.738003,
+    "completedAtUnix": 1792788774.8399549,
+    "argv": [
+      "$PINNED_NODE_24_19_0",
+      "--permission",
+      "--allow-fs-read=$REPO/package.json",
+      "--allow-fs-read=$REPO/src/zenon/dynamic-plasma-bounded-original-funding-configuration.js",
+      "--allow-fs-read=$REPO/qualification/dynamic-plasma-bounded-original-funding-configuration.behavior.draft.mjs",
+      "--no-addons",
+      "--disallow-code-generation-from-strings",
+      "--disable-proto=throw",
+      "--unhandled-rejections=strict",
+      "--test-reporter=tap",
+      "$REPO/qualification/dynamic-plasma-bounded-original-funding-configuration.behavior.draft.mjs"
+    ],
+    "stdout": {
+      "bytes": 4517,
+      "sha256": "686f0bb1ea57968f36822f0ec152b93716a431ed20aca704d973dfe542638ebc",
+      "content": "# bounded-original-funding-config-only {\"cases\":17,\"callbackInvocations\":0,\"proxyTraps\":0,\"SDK\":0,\"SQLite\":0,\"nonceProducerImported\":false,\"effectfulAdapterImported\":false,\"candidateEvaluations\":0,\"keys\":0,\"signatures\":0,\"network\":0,\"newTasks\":0,\"newScratch\":0,\"fullBoundedFundingQualified\":false}\nTAP version 13\n# Subtest: capture detaches the explicit material budget and preserves borrowed handle identities without invoking them\nok 1 - capture detaches the explicit material budget and preserves borrowed handle identities without invoking them\n  ---\n  duration_ms: 1.307042\n  type: 'test'\n  ...\n# Subtest: separate DATA captures do not share or consume an operational producer or owner\nok 2 - separate DATA captures do not share or consume an operational producer or owner\n  ---\n  duration_ms: 0.178583\n  type: 'test'\n  ...\n# Subtest: later caller mutations cannot change the captured public bytes cursor count or wait budgets\nok 3 - later caller mutations cannot change the captured public bytes cursor count or wait budgets\n  ---\n  duration_ms: 0.098666\n  type: 'test'\n  ...\n# Subtest: arity and non-record configurations fail without fallback or defaults\nok 4 - arity and non-record configurations fail without fallback or defaults\n  ---\n  duration_ms: 0.309375\n  type: 'test'\n  ...\n# Subtest: closed top-level schema refuses missing extra symbol and supplied factory or material callback fields\nok 5 - closed top-level schema refuses missing extra symbol and supplied factory or material callback fields\n  ---\n  duration_ms: 0.247875\n  type: 'test'\n  ...\n# Subtest: top material and limit records must have their own plain-object prototype\nok 6 - top material and limit records must have their own plain-object prototype\n  ---\n  duration_ms: 0.165333\n  type: 'test'\n  ...\n# Subtest: proxy records and operational handles are rejected without inspecting traps\nok 7 - proxy records and operational handles are rejected without inspecting traps\n  ---\n  duration_ms: 0.754417\n  type: 'test'\n  ...\n# Subtest: accessors are refused at every captured DATA level without getter execution\nok 8 - accessors are refused at every captured DATA level without getter execution\n  ---\n  duration_ms: 0.2935\n  type: 'test'\n  ...\n# Subtest: nonenumerable fields and extra material or limit keys cannot be silently ignored\nok 9 - nonenumerable fields and extra material or limit keys cannot be silently ignored\n  ---\n  duration_ms: 0.18075\n  type: 'test'\n  ...\n# Subtest: public bytes require canonical 32-byte base64 without key generation or curve claims\nok 10 - public bytes require canonical 32-byte base64 without key generation or curve claims\n  ---\n  duration_ms: 0.310209\n  type: 'test'\n  ...\n# Subtest: the nonce cursor is explicit eight-byte lowercase hex and is never searched or defaulted\nok 11 - the nonce cursor is explicit eight-byte lowercase hex and is never searched or defaulted\n  ---\n  duration_ms: 0.199917\n  type: 'test'\n  ...\n# Subtest: candidate count is an explicit safe integer from zero through 4096 with no renewal\nok 12 - candidate count is an explicit safe integer from zero through 4096 with no renewal\n  ---\n  duration_ms: 0.249292\n  type: 'test'\n  ...\n# Subtest: difficulty remains declared safe DATA with no implicit maximum or actual work predicate\nok 13 - difficulty remains declared safe DATA with no implicit maximum or actual work predicate\n  ---\n  duration_ms: 0.374708\n  type: 'test'\n  ...\n# Subtest: material wait and request deadline stay separate explicit bounded scalar budgets\nok 14 - material wait and request deadline stay separate explicit bounded scalar budgets\n  ---\n  duration_ms: 0.589083\n  type: 'test'\n  ...\n# Subtest: borrowed handles need object or function kinds but are not inspected as wallet store or transport brands\nok 15 - borrowed handles need object or function kinds but are not inspected as wallet store or transport brands\n  ---\n  duration_ms: 0.604\n  type: 'test'\n  ...\n# Subtest: resource capture bounds string DATA without fetching or claiming canonical store agreement\nok 16 - resource capture bounds string DATA without fetching or claiming canonical store agreement\n  ---\n  duration_ms: 0.228667\n  type: 'test'\n  ...\n# Subtest: safe failures contain neither caller DATA nor operational capability invocation\nok 17 - safe failures contain neither caller DATA nor operational capability invocation\n  ---\n  duration_ms: 0.61275\n  type: 'test'\n  ...\n1..17\n# tests 17\n# suites 0\n# pass 17\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 12.947167\n"
+    },
+    "stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "content": ""
+    },
+    "outputCapBytesPerStream": 65536,
+    "timeoutSeconds": 15
+  },
+  "scopeDiagnostic": {
+    "cases": 17,
+    "callbackInvocations": 0,
+    "proxyTraps": 0,
+    "SDK": 0,
+    "SQLite": 0,
+    "nonceProducerImported": false,
+    "effectfulAdapterImported": false,
+    "candidateEvaluations": 0,
+    "keys": 0,
+    "signatures": 0,
+    "network": 0,
+    "newTasks": 0,
+    "newScratch": 0,
+    "fullBoundedFundingQualified": false
+  },
+  "scope": {
+    "NodeCommands": 1,
+    "NodeChildren": 0,
+    "newTasks": 0,
+    "newScratch": 0,
+    "newRoots": 0,
+    "SDK": false,
+    "SQLite": false,
+    "nonceProducerImported": false,
+    "nonceCandidateEvaluations": 0,
+    "keys": 0,
+    "signatures": 0,
+    "network": false,
+    "effectfulAdapterImported": false,
+    "nativeScopeReused": false
+  },
+  "verification": {
+    "exactApplicationInputs": 3,
+    "localGitStatusUnchangedDuringCommand": true,
+    "indexEmpty": true,
+    "allCasesPassedWithoutSkips": true,
+    "actualFullImportClosureRestrictedToDataOnly": true,
+    "ordinaryInstalledNamespaceQualified": false,
+    "hostedCI": "NOT_RUN_NOT_GREEN",
+    "fullBoundedFundingQualified": false
+  },
+  "nextGate": "Separately qualify the effectful hardwired adapter with actual positive bounded work, signer, fifth/sixth current reads, real SDK preflight and V6 custody/ambiguity. These configuration cases do not qualify that import or execution, consume a native slot, or expand prior signing/SQL/nonce permissions."
+}
