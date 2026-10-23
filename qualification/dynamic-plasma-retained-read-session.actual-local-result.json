@@ -1,0 +1,329 @@
+{
+  "kind": "RETAINED_DYNAMIC_PLASMA_READ_SESSION_COMPONENT_RESULT",
+  "version": 1,
+  "status": "CORRECTED_TWENTY_FOUR_COMPONENT_CASES_PASS_NOT_NATIVE_QUALIFICATION",
+  "sourceBase": {
+    "branch": "x402/p1-router-late-pending-close-integration-v2",
+    "commit": "3d7642a58124d8cfe2867e32bd3e712231b0bc77"
+  },
+  "mainParent": "4068c4fcd9e6e826578a9b2f906f8ef735efa73c",
+  "runtime": {
+    "node": "24.19.0",
+    "platform": "darwin",
+    "arch": "arm64"
+  },
+  "nodeSha256": "dbedff294bab84a0a86c04e15fbcbeb1c97ca10bef1b32b0634cd24b36f62100",
+  "sourceAssociation": {
+    "sourceInputs": [
+      {
+        "path": "package.json",
+        "bytes": 2677,
+        "LF": 40,
+        "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+        "gitBlob": "45752ffde39d29666094f7f1c755060d75e43deb"
+      },
+      {
+        "path": "qualification/dynamic-plasma-retained-read-session.behavior.draft.mjs",
+        "bytes": 18813,
+        "LF": 267,
+        "sha256": "725b610f4ce6cc24d66d5dbf5be25e46c1b546ae44468bcff0a1b9bc9c687868",
+        "gitBlob": "c1437259ff6182addf97062c19d1d4175c5ce212"
+      },
+      {
+        "path": "src/zenon/bounded-json-rpc-read-admission.js",
+        "bytes": 2627,
+        "LF": 51,
+        "sha256": "0b0b0806487c2e648a83367a9ebcd48a3a92493158ebca23abe8d6d6849d9ff3",
+        "gitBlob": "9e9ee352d7cf0013d96851c769f2a205ccf98449"
+      },
+      {
+        "path": "src/zenon/bounded-json-rpc-read-core.js",
+        "bytes": 21759,
+        "LF": 582,
+        "sha256": "10cc529bfb0676bb03dc4dad56059663f4a578b586c52f6404fc859d27d18f76",
+        "gitBlob": "3bd98a83413eb13e3bceb097d35fb874b4c030a2"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-account-state-read-transport.js",
+        "bytes": 3632,
+        "LF": 74,
+        "sha256": "9aa818dabdacf0baec60ca570e854cc8a327e554ba5e5a76c670eb5ed02b29b8",
+        "gitBlob": "751a4b8c5a0c42e1d2b0a47af9d2ef7264229821"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-json-rpc-read-transport.js",
+        "bytes": 10832,
+        "LF": 283,
+        "sha256": "fd03b2ad87d16660aa61d3961c163d724d5f89cd6d4bb9c4391d739566d5e5ca",
+        "gitBlob": "0475b7ab42889f67fb030fa7344d73d8bd6957d7"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-retained-account-exchange-gate.js",
+        "bytes": 4659,
+        "LF": 89,
+        "sha256": "3304fee96333a0544c9ad3be0c5d465ff6d2377ae3ae657ac11f84482bb357f9",
+        "gitBlob": "39104ab5dbea4195a778e7226b9076fcd1f31366"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-retained-read-session-core.js",
+        "bytes": 10450,
+        "LF": 204,
+        "sha256": "a0f91046c47cfa770f30bf299f620086351ee15977f669d9ec6016dd08d65794",
+        "gitBlob": "b9151955b073be614946525e70320600f7a6850b"
+      }
+    ],
+    "newCoreAndTestInputs": 2,
+    "existingInputsMatchPublishedParents": 6
+  },
+  "counts": {
+    "tests": 24,
+    "pass": 24,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "cases": [
+    {
+      "number": 1,
+      "name": "construction captures all three owners without reads or closes and exposes exact preparer readOptions",
+      "status": "PASS"
+    },
+    {
+      "number": 2,
+      "name": "each guarded read forwards the original request and original owned Promise with no outcome inspection",
+      "status": "PASS"
+    },
+    {
+      "number": 3,
+      "name": "invalid frozen shapes and owner accessors or proxies refuse before any callback or hook",
+      "status": "PASS"
+    },
+    {
+      "number": 4,
+      "name": "profile clones floating budgets and legacy thirteen-slot owners cannot impersonate the selected retained contract",
+      "status": "PASS"
+    },
+    {
+      "number": 5,
+      "name": "aliasing owner methods is refused before a shared callback could be counted as independent custody",
+      "status": "PASS"
+    },
+    {
+      "number": 6,
+      "name": "one cached close starts all three callbacks synchronously before any pending close resolves",
+      "status": "PASS"
+    },
+    {
+      "number": 7,
+      "name": "retained readOptions are closed immediately while close settlement is still pending",
+      "status": "PASS"
+    },
+    {
+      "number": 8,
+      "name": "active read abortion is requested before waiting on that read and does not manufacture an operation result",
+      "status": "PASS"
+    },
+    {
+      "number": 9,
+      "name": "one rejected close permanently rejects the cached session close without suppressing the other two requests",
+      "status": "PASS"
+    },
+    {
+      "number": 10,
+      "name": "late successful closes update observations but cannot promote a failed close or reopen admission",
+      "status": "PASS"
+    },
+    {
+      "number": 11,
+      "name": "successful-looking close objects and raw outcomes are not interpreted or accepted as undefined",
+      "status": "PASS"
+    },
+    {
+      "number": 12,
+      "name": "thenables and proxy close Promises are rejected without invoking any then or proxy hook",
+      "status": "PASS"
+    },
+    {
+      "number": 13,
+      "name": "decorated and subclassed Promise close mechanics are not assimilated or silently accepted",
+      "status": "PASS"
+    },
+    {
+      "number": 14,
+      "name": "direct dependency on the public close Promise is refused instead of deadlocking the session",
+      "status": "PASS"
+    },
+    {
+      "number": 15,
+      "name": "one shared close Promise cannot masquerade as two independent owner settlements",
+      "status": "PASS"
+    },
+    {
+      "number": 16,
+      "name": "close callback reentry sees closed admission before it can issue any read",
+      "status": "PASS"
+    },
+    {
+      "number": 17,
+      "name": "a synchronous read failure is scrubbed and closes every owner without inspecting the raw reason",
+      "status": "PASS"
+    },
+    {
+      "number": 18,
+      "name": "a synchronous close throw still requests the remaining owners and never exposes the raw failure",
+      "status": "PASS"
+    },
+    {
+      "number": 19,
+      "name": "wrong close arity cannot consume closure while wrong read arity fails closed for the entire session",
+      "status": "PASS"
+    },
+    {
+      "number": 20,
+      "name": "Object then runtime drift produces permanent close uncertainty without invoking the hook",
+      "status": "PASS"
+    },
+    {
+      "number": 21,
+      "name": "Promise then descriptor drift is rejected before attaching any borrowed reaction",
+      "status": "PASS"
+    },
+    {
+      "number": 22,
+      "name": "inspection snapshots are detached frozen DATA and never claim native cleanup or store lifetime",
+      "status": "PASS"
+    },
+    {
+      "number": 23,
+      "name": "an untrusted borrowed read result is forwarded by identity not transformed into an accepted owner Promise",
+      "status": "PASS"
+    },
+    {
+      "number": 24,
+      "name": "actual RPC wires and admission counters complete six maximal thirteen-read DP cycles plus eighteen account reads without recreation",
+      "status": "PASS"
+    }
+  ],
+  "run": {
+    "startedAtUnix": 1792791001.0431309,
+    "completedAtUnix": 1792791001.163535,
+    "actualExit": 0,
+    "reason": null,
+    "outputComplete": true,
+    "argv": [
+      "$PINNED_NODE_24_19_0",
+      "--permission",
+      "--allow-fs-read=$REPO/package.json",
+      "--allow-fs-read=$REPO/qualification/dynamic-plasma-retained-read-session.behavior.draft.mjs",
+      "--allow-fs-read=$REPO/src/zenon/bounded-json-rpc-read-admission.js",
+      "--allow-fs-read=$REPO/src/zenon/bounded-json-rpc-read-core.js",
+      "--allow-fs-read=$REPO/src/zenon/dynamic-plasma-account-state-read-transport.js",
+      "--allow-fs-read=$REPO/src/zenon/dynamic-plasma-json-rpc-read-transport.js",
+      "--allow-fs-read=$REPO/src/zenon/dynamic-plasma-retained-account-exchange-gate.js",
+      "--allow-fs-read=$REPO/src/zenon/dynamic-plasma-retained-read-session-core.js",
+      "--no-addons",
+      "--disallow-code-generation-from-strings",
+      "--disable-proto=throw",
+      "--unhandled-rejections=strict",
+      "--test-reporter=tap",
+      "$REPO/qualification/dynamic-plasma-retained-read-session.behavior.draft.mjs"
+    ],
+    "stdout": {
+      "bytes": 6767,
+      "sha256": "caea240a77888c1bae8c57c60e89fed58eef6deca338f5ea0222d15b6a886dc9",
+      "content": "# retained-read-session-components {\"cases\":24,\"declaredReads\":180,\"declaredCloseStarts\":72,\"hooks\":0,\"maximalWireReads\":174,\"nativeHttpsOwnerImported\":false,\"nativeConnections\":0,\"SDK\":0,\"SQLite\":0,\"cryptoOperations\":0,\"keys\":0,\"signatures\":0,\"nonceEvaluations\":0,\"newTasks\":0,\"newScratch\":0,\"realCollectorOrPreparerInvoked\":false,\"fullNativeRetainedFundingQualified\":false}\nTAP version 13\n# Subtest: construction captures all three owners without reads or closes and exposes exact preparer readOptions\nok 1 - construction captures all three owners without reads or closes and exposes exact preparer readOptions\n  ---\n  duration_ms: 1.399875\n  type: 'test'\n  ...\n# Subtest: each guarded read forwards the original request and original owned Promise with no outcome inspection\nok 2 - each guarded read forwards the original request and original owned Promise with no outcome inspection\n  ---\n  duration_ms: 0.185667\n  type: 'test'\n  ...\n# Subtest: invalid frozen shapes and owner accessors or proxies refuse before any callback or hook\nok 3 - invalid frozen shapes and owner accessors or proxies refuse before any callback or hook\n  ---\n  duration_ms: 0.78175\n  type: 'test'\n  ...\n# Subtest: profile clones floating budgets and legacy thirteen-slot owners cannot impersonate the selected retained contract\nok 4 - profile clones floating budgets and legacy thirteen-slot owners cannot impersonate the selected retained contract\n  ---\n  duration_ms: 0.772541\n  type: 'test'\n  ...\n# Subtest: aliasing owner methods is refused before a shared callback could be counted as independent custody\nok 5 - aliasing owner methods is refused before a shared callback could be counted as independent custody\n  ---\n  duration_ms: 0.269416\n  type: 'test'\n  ...\n# Subtest: one cached close starts all three callbacks synchronously before any pending close resolves\nok 6 - one cached close starts all three callbacks synchronously before any pending close resolves\n  ---\n  duration_ms: 0.392\n  type: 'test'\n  ...\n# Subtest: retained readOptions are closed immediately while close settlement is still pending\nok 7 - retained readOptions are closed immediately while close settlement is still pending\n  ---\n  duration_ms: 0.245166\n  type: 'test'\n  ...\n# Subtest: active read abortion is requested before waiting on that read and does not manufacture an operation result\nok 8 - active read abortion is requested before waiting on that read and does not manufacture an operation result\n  ---\n  duration_ms: 0.235\n  type: 'test'\n  ...\n# Subtest: one rejected close permanently rejects the cached session close without suppressing the other two requests\nok 9 - one rejected close permanently rejects the cached session close without suppressing the other two requests\n  ---\n  duration_ms: 0.26925\n  type: 'test'\n  ...\n# Subtest: late successful closes update observations but cannot promote a failed close or reopen admission\nok 10 - late successful closes update observations but cannot promote a failed close or reopen admission\n  ---\n  duration_ms: 0.17\n  type: 'test'\n  ...\n# Subtest: successful-looking close objects and raw outcomes are not interpreted or accepted as undefined\nok 11 - successful-looking close objects and raw outcomes are not interpreted or accepted as undefined\n  ---\n  duration_ms: 0.420959\n  type: 'test'\n  ...\n# Subtest: thenables and proxy close Promises are rejected without invoking any then or proxy hook\nok 12 - thenables and proxy close Promises are rejected without invoking any then or proxy hook\n  ---\n  duration_ms: 0.19325\n  type: 'test'\n  ...\n# Subtest: decorated and subclassed Promise close mechanics are not assimilated or silently accepted\nok 13 - decorated and subclassed Promise close mechanics are not assimilated or silently accepted\n  ---\n  duration_ms: 0.247791\n  type: 'test'\n  ...\n# Subtest: direct dependency on the public close Promise is refused instead of deadlocking the session\nok 14 - direct dependency on the public close Promise is refused instead of deadlocking the session\n  ---\n  duration_ms: 0.347167\n  type: 'test'\n  ...\n# Subtest: one shared close Promise cannot masquerade as two independent owner settlements\nok 15 - one shared close Promise cannot masquerade as two independent owner settlements\n  ---\n  duration_ms: 0.122709\n  type: 'test'\n  ...\n# Subtest: close callback reentry sees closed admission before it can issue any read\nok 16 - close callback reentry sees closed admission before it can issue any read\n  ---\n  duration_ms: 0.136791\n  type: 'test'\n  ...\n# Subtest: a synchronous read failure is scrubbed and closes every owner without inspecting the raw reason\nok 17 - a synchronous read failure is scrubbed and closes every owner without inspecting the raw reason\n  ---\n  duration_ms: 0.114125\n  type: 'test'\n  ...\n# Subtest: a synchronous close throw still requests the remaining owners and never exposes the raw failure\nok 18 - a synchronous close throw still requests the remaining owners and never exposes the raw failure\n  ---\n  duration_ms: 0.088625\n  type: 'test'\n  ...\n# Subtest: wrong close arity cannot consume closure while wrong read arity fails closed for the entire session\nok 19 - wrong close arity cannot consume closure while wrong read arity fails closed for the entire session\n  ---\n  duration_ms: 0.534959\n  type: 'test'\n  ...\n# Subtest: Object then runtime drift produces permanent close uncertainty without invoking the hook\nok 20 - Object then runtime drift produces permanent close uncertainty without invoking the hook\n  ---\n  duration_ms: 0.672167\n  type: 'test'\n  ...\n# Subtest: Promise then descriptor drift is rejected before attaching any borrowed reaction\nok 21 - Promise then descriptor drift is rejected before attaching any borrowed reaction\n  ---\n  duration_ms: 0.255375\n  type: 'test'\n  ...\n# Subtest: inspection snapshots are detached frozen DATA and never claim native cleanup or store lifetime\nok 22 - inspection snapshots are detached frozen DATA and never claim native cleanup or store lifetime\n  ---\n  duration_ms: 0.331958\n  type: 'test'\n  ...\n# Subtest: an untrusted borrowed read result is forwarded by identity not transformed into an accepted owner Promise\nok 23 - an untrusted borrowed read result is forwarded by identity not transformed into an accepted owner Promise\n  ---\n  duration_ms: 0.110167\n  type: 'test'\n  ...\n# Subtest: actual RPC wires and admission counters complete six maximal thirteen-read DP cycles plus eighteen account reads without recreation\nok 24 - actual RPC wires and admission counters complete six maximal thirteen-read DP cycles plus eighteen account reads without recreation\n  ---\n  duration_ms: 12.85625\n  type: 'test'\n  ...\n1..24\n# tests 24\n# suites 0\n# pass 24\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 28.700166\n"
+    },
+    "stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "content": ""
+    },
+    "localSourceNodeAndGitStateUnchangedAcrossExecution": true,
+    "indexEmpty": true
+  },
+  "declaredCallbackDiagnostics": {
+    "cases": 24,
+    "declaredReads": 180,
+    "declaredCloseStarts": 72,
+    "hooks": 0,
+    "maximalWireReads": 174,
+    "nativeHttpsOwnerImported": false,
+    "nativeConnections": 0,
+    "SDK": 0,
+    "SQLite": 0,
+    "cryptoOperations": 0,
+    "keys": 0,
+    "signatures": 0,
+    "nonceEvaluations": 0,
+    "newTasks": 0,
+    "newScratch": 0,
+    "realCollectorOrPreparerInvoked": false,
+    "fullNativeRetainedFundingQualified": false
+  },
+  "historicalFailure": {
+    "record": "qualification/dynamic-plasma-retained-read-session.first-failed-local-result.json",
+    "tests": 24,
+    "pass": 7,
+    "fail": 17,
+    "actualExit": 1,
+    "outputComplete": true,
+    "rawStdoutBytes": 19935,
+    "rawStdoutSha256": "47a042723fe56fd5c5e3c468c81452711399d8b949da75f6df9c9eb6f41bc014",
+    "oldSourcePinsNotRebound": true
+  },
+  "corrections": {
+    "application": "Inspect hook-relevant own Promise string names, not Node async-context symbol metadata; keep actual Promise/prototype/constructor/species checks and reject own then/accessors/subclasses.",
+    "test": "Observe the deliberately hostile raw read rejection directly with a reaction returning undefined and compare only identity. Do not route it through assert.rejects' async assimilation bridge."
+  },
+  "scope": {
+    "NodeCommandsThisRun": 1,
+    "totalComponentCommands": 2,
+    "syntaxOnlyCommands": 1,
+    "NodeChildren": 0,
+    "SDK": false,
+    "SQLite": false,
+    "nodeCryptoImported": false,
+    "nativeHttpsOwnerImported": false,
+    "socketOrNetwork": false,
+    "keys": 0,
+    "signatures": 0,
+    "nonceCandidateEvaluations": 0,
+    "newTasks": 0,
+    "newScratch": 0,
+    "newRoots": 0,
+    "realCollectorInvoked": false,
+    "realRetainedPreparerInvoked": false,
+    "realPrepare": false,
+    "nativeScopeReused": false
+  },
+  "limits": {
+    "wallClockSeconds": 15,
+    "stdoutBytes": 65536,
+    "stderrBytes": 65536,
+    "fsRead": "Exact eight pinned inputs",
+    "fsWrite": false,
+    "childProcess": false,
+    "addons": false,
+    "note": "Supplemental permission flags are not a native network sandbox proof. The selected literal import/call graph has no native network/SDK/SQL/crypto owner."
+  },
+  "verification": {
+    "threeOwnersCapturedWithoutIO": true,
+    "preparerReadOptionsSchema": true,
+    "originalRequestAndPromiseIdentity": true,
+    "maximalWireReadCount174": true,
+    "actualRpcWiresAndAdmissionCounters": true,
+    "concurrentCloseRequestsBeforeAnyWait": true,
+    "cachedCloseIdentity": true,
+    "directCloseSelfDependencyRejected": true,
+    "aliasedClosePromisesRejected": true,
+    "uncertaintyPermanent": true,
+    "lateCloseNeverPromotes": true,
+    "nativeCleanupQualified": false,
+    "storeLifetimeOwned": false,
+    "realRetainedPreparerQualified": false,
+    "fullNativeFundingQualified": false,
+    "hostedCI": "NOT_RUN_NOT_GREEN",
+    "liveOrProduction": false
+  }
+}
