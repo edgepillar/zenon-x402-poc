@@ -7,10 +7,10 @@ single-origin x402/service-credit application, bounded native HTTPS server
 factory and a native deadline owner. It removes the application's need for a
 caller-injected HTTPS/timer/clock factory without changing the default buyer.
 
-The P1 V2 native attempt did **not** import or execute these two new modules.
-Its four passed cases and failed fifth case do not qualify this host. The
-separate corrected V3 fixture still selects the old application graph; it is
-not a test of this new host.
+The P1 V2 and V3 native attempts did **not** import or execute these two new
+modules. Their four passed cases and failed fifth case do not qualify this host.
+The separate unparsed/unrun V4 fixture still selects the old application graph;
+it is not a test of this new host.
 
 The actual deadline binding now privately delegates ownership to the tested
 application deadline core. Its 32 selected SDK/SQL/socket/timer-free cases are
@@ -86,6 +86,23 @@ Any uncertainty yields CLOSE_UNKNOWN / KEEP_HELD. A late start failure can
 invalidate a current handoff but cannot rewrite the historical settlement of
 an already fulfilled Promise. Handoff observations are local ownership data,
 not service-delivery, independent funding, restart or economic authorization.
+
+The source now revalidates a previously clean handoff against the actual
+application/router and deadline-owner snapshots on each host snapshot call.
+A late router `uncertain` flag, deadline UNKNOWN, nonzero tracked activity or
+unreadable child snapshot invalidates that handoff permanently. A later clean
+snapshot cannot restore it. Snapshot failure emits a sanitized unavailable
+error and retains UNKNOWN, rather than returning the old handoff observation.
+
+`closePromiseOutcome` records only the historical close Promise settlement.
+After a late invalidation it can remain CLOSED while the current host is
+CLOSE_UNKNOWN / KEEP_HELD; a cached fulfilled Promise is not current handoff
+authority. Start also refuses an earlier latched uncertainty. No new child
+close, timer cancellation, store close or retry is triggered by revalidation.
+
+This change is source-only. Selected late-router/deadline uncertainty,
+snapshot-failure and no-healing cases have not been parsed or executed against
+the native host. Existing deadline-core passes do not qualify this composition.
 
 ## Qualification gates still open
 
