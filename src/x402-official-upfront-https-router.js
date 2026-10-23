@@ -8,6 +8,10 @@ import {
 const FREEZE = Object.freeze, DESC = Object.getOwnPropertyDescriptor;
 const OWN = Object.hasOwn, KEYS = Reflect.ownKeys, PROTO = Object.getPrototypeOf;
 const APPLY = Reflect.apply, THEN = Promise.prototype.then, NativePromise = Promise;
+const PROMISE = NativePromise.prototype, SPECIES = Symbol.species;
+const THEN_DESCRIPTOR = FREEZE(DESC(PROMISE, 'then'));
+const CONSTRUCTOR_DESCRIPTOR = FREEZE(DESC(PROMISE, 'constructor'));
+const SPECIES_DESCRIPTOR = FREEZE(DESC(NativePromise, SPECIES));
 const IS_PROXY = utilTypes.isProxy, IS_PROMISE = utilTypes.isPromise;
 const JSON_TEXT = JSON.stringify, BYTE_LENGTH = Buffer.byteLength;
 const CREDIT_TARGET = '/service-credit/v1/execute';
@@ -40,11 +44,25 @@ function callable(value) {
   return typeof value === 'function' && !IS_PROXY(value) && Object.isFrozen(value);
 }
 function observe(promise, fulfilled, rejected) {
-  if (!IS_PROMISE(promise) || IS_PROXY(promise) || PROTO(promise) !== NativePromise.prototype
-      || DESC(promise, 'then') !== undefined || DESC(promise, 'constructor') !== undefined)
+  if (!IS_PROMISE(promise) || IS_PROXY(promise) || PROTO(promise) !== PROMISE
+      || DESC(promise, 'then') !== undefined
+      || !samePromiseDescriptor(DESC(PROMISE, 'then'), THEN_DESCRIPTOR)
+      || !samePromiseDescriptor(DESC(PROMISE, 'constructor'), CONSTRUCTOR_DESCRIPTOR)
+      || !samePromiseDescriptor(DESC(NativePromise, SPECIES), SPECIES_DESCRIPTOR))
     return false;
+  const constructor = DESC(promise, 'constructor');
+  // The actual selected bridge locks this exact constructor on its public
+  // receipts. Admit that DATA descriptor, not accessors or arbitrary species.
+  if (constructor !== undefined && (!OWN(constructor, 'value')
+      || constructor.value !== NativePromise || constructor.enumerable !== false
+      || constructor.writable !== false || constructor.configurable !== false)) return false;
   APPLY(THEN, promise, [fulfilled, rejected]);
   return true;
+}
+function samePromiseDescriptor(actual, expected) {
+  if (actual === undefined || expected === undefined || KEYS(actual).length !== KEYS(expected).length)
+    return false;
+  return KEYS(expected).every(key => OWN(actual, key) && actual[key] === expected[key]);
 }
 function completion(value) {
   const c = record(value, ['success', 'failure'], true);
