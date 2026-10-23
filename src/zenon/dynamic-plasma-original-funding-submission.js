@@ -4,7 +4,8 @@ import {
   createZenonDynamicPlasmaOriginalFundingPreparationV2,
 } from './dynamic-plasma-original-funding-preparation.js';
 import { snapshotZenonDynamicPlasmaOriginalFundingPins } from './dynamic-plasma-original-funding-data.js';
-import { createZenonFundingPostV1PayerRecoveryOwner } from '../service-credit-zenon-funding-post-v1-payer-recovery-owner.js';
+import { createZenonFundingPostV1PayerRecoveryOwner,
+  createZenonFundingPostV1PayerRecoveryOwnerV2 } from '../service-credit-zenon-funding-post-v1-payer-recovery-owner.js';
 import { ZenonFundingPayerRecoverySqliteStore } from '../service-credit-zenon-funding-post-v1-payer-recovery-sqlite-store.js';
 import { encodeOriginalPaymentCheckpoint } from '../service-credit-pilot-original-payment-checkpoint.js';
 import { createOriginalFundingReadCloseCoordinator } from './dynamic-plasma-original-funding-read-close.js';
@@ -13,6 +14,7 @@ const PREPARATION = createZenonDynamicPlasmaOriginalFundingPreparation;
 const PREPARATION_V2 = createZenonDynamicPlasmaOriginalFundingPreparationV2;
 const READ_CLOSE_JOIN = createOriginalFundingReadCloseCoordinator;
 const PAYER = createZenonFundingPostV1PayerRecoveryOwner;
+const GUARDED_PAYER = createZenonFundingPostV1PayerRecoveryOwnerV2;
 const PINS = snapshotZenonDynamicPlasmaOriginalFundingPins, ENCODE = encodeOriginalPaymentCheckpoint;
 const FREEZE = Object.freeze, CREATE = Object.create, DEFINE = Object.defineProperty;
 const DESCRIPTOR = Object.getOwnPropertyDescriptor, PROTOTYPE = Object.getPrototypeOf, HAS = Object.hasOwn;
@@ -103,13 +105,33 @@ export function createZenonDynamicPlasmaOriginalFundingSubmissionV3(configuratio
   return createSubmission(configuration, true, true);
 }
 
-function createSubmission(configuration, retainedValidationEnabled, joinedReadCloseEnabled = false) {
-  let preparer, payer, store, resource, readSessionClose = null;
+/**
+ * SOURCE ONLY V4: V3's actual read/operation close join plus a private current
+ * native-resource guard, forwarded to the actual guarded payer. The payer
+ * rechecks after its own async joins immediately before/after real store close.
+ * V1/V2/V3 keep their previous selections; no old result qualifies this graph.
+ */
+export function createZenonDynamicPlasmaOriginalFundingSubmissionV4(configuration) {
+  if (arguments.length !== 1) fail('configuration_rejected');
+  return createSubmission(configuration, true, true, true);
+}
+
+function createSubmission(configuration, retainedValidationEnabled, joinedReadCloseEnabled = false,
+  guardedNativeCloseEnabled = false) {
+  let preparer, payer, store, resource, readSessionClose = null, nativeCloseGuard = null;
   try {
     if (!invariant()) fail('configuration_rejected');
-    const input = record(configuration, joinedReadCloseEnabled
+    const input = record(configuration, guardedNativeCloseEnabled
+      ? ['preparerOptions', 'store', 'fundingResourceUrl', 'deadlineMs', 'fetchImpl', 'readSession', 'nativeResourceCloseGuard']
+      : joinedReadCloseEnabled
       ? ['preparerOptions', 'store', 'fundingResourceUrl', 'deadlineMs', 'fetchImpl', 'readSession']
       : ['preparerOptions', 'store', 'fundingResourceUrl', 'deadlineMs', 'fetchImpl']);
+    if (guardedNativeCloseEnabled) {
+      nativeCloseGuard = input.nativeResourceCloseGuard;
+      if (typeof nativeCloseGuard !== 'function' || IS_PROXY(nativeCloseGuard)
+          || PROTOTYPE(nativeCloseGuard) !== Function.prototype || !Object.isFrozen(nativeCloseGuard))
+        fail('configuration_rejected');
+    }
     if (joinedReadCloseEnabled) {
       const session = record(input.readSession, ['readOptions', 'close', 'inspect']);
       if (value(input.preparerOptions, 'readOptions') !== session.readOptions) fail('configuration_rejected');
@@ -125,7 +147,10 @@ function createSubmission(configuration, retainedValidationEnabled, joinedReadCl
     preparer = (retainedValidationEnabled ? PREPARATION_V2 : PREPARATION)({
       preparerOptions: input.preparerOptions, store, fundingResourceUrl: resource,
     });
-    payer = PAYER({ store, deadlineMs: input.deadlineMs, fetchImpl: input.fetchImpl });
+    payer = guardedNativeCloseEnabled
+      ? GUARDED_PAYER({ store, deadlineMs: input.deadlineMs, fetchImpl: input.fetchImpl,
+        nativeResourceCloseGuard: nativeCloseGuard })
+      : PAYER({ store, deadlineMs: input.deadlineMs, fetchImpl: input.fetchImpl });
     if (!invariant()) fail('configuration_rejected');
   } catch { fail('configuration_rejected'); }
   const STORAGE = store, URL = resource, PREPARER = preparer, PAYER_OWNER = payer;
@@ -134,6 +159,7 @@ function createSubmission(configuration, retainedValidationEnabled, joinedReadCl
   const INSPECT = method(PREPARER, 'inspectOriginalFunding');
   const RECOVER = method(PAYER_OWNER, 'recover'), SUBMIT = method(PAYER_OWNER, 'submitPrepared');
   const CLOSE = method(PAYER_OWNER, 'close');
+  const INSPECT_CLOSE = guardedNativeCloseEnabled ? method(PAYER_OWNER, 'inspectClose') : null;
   let phase = 'IDLE', lifecycle = 'OPEN', packet = null, pending = null, closing = null;
   let prepareAttempts = 0, commitAttempts = 0, submissionAttempts = 0, submissionEntered = false;
   let fundingIntakeStatus = null;
@@ -147,7 +173,11 @@ function createSubmission(configuration, retainedValidationEnabled, joinedReadCl
       APPLY(THEN, owned, [() => undefined, () => undefined]);
       return owned;
     }),
-    canCloseFunding: FREEZE(function canCloseFunding() { return invariant(); }),
+    canCloseFunding: FREEZE(function canCloseFunding() {
+      if (!invariant()) return false;
+      if (nativeCloseGuard !== null && APPLY(nativeCloseGuard, undefined, []) !== true) return false;
+      return invariant();
+    }),
   })) : null;
   configuration = null; preparer = null; payer = null; store = null; resource = null;
 
@@ -204,7 +234,7 @@ function createSubmission(configuration, retainedValidationEnabled, joinedReadCl
       if (typeof status !== 'string' || !HAS(PHASES, status)) fail('submission_unknown');
       retained(pins, status, 3); // PREPARED -> actual durable fence -> actual completion.
       fundingIntakeStatus = status; phase = PHASES[status];
-      return FREEZE({ originalFundingSubmissionVersion: joinedReadCloseEnabled ? 3 : retainedValidationEnabled ? 2 : 1, phase, fundingIntakeStatus,
+      return FREEZE({ originalFundingSubmissionVersion: guardedNativeCloseEnabled ? 4 : joinedReadCloseEnabled ? 3 : retainedValidationEnabled ? 2 : 1, phase, fundingIntakeStatus,
         transactionHash: packet.transactionHash, authority: 'NONE', chainPublication: 'NOT_ESTABLISHED',
         inclusion: 'NOT_ESTABLISHED', grant: 'NOT_ESTABLISHED', serviceDelivery: 'NOT_ESTABLISHED' });
     } catch {
@@ -261,8 +291,9 @@ function createSubmission(configuration, retainedValidationEnabled, joinedReadCl
     if (arguments.length !== 0 || !invariant()) fail('input_rejected');
     if (joinedClose !== null) {
       const joined = joinedClose.inspect();
-      return FREEZE({ originalFundingSubmissionInspectionVersion: 3, phase, lifecycle: joined.lifecycle,
+      return FREEZE({ originalFundingSubmissionInspectionVersion: guardedNativeCloseEnabled ? 4 : 3, phase, lifecycle: joined.lifecycle,
         joinedReadClose: joined, publicOperationActive: pending !== null,
+        ...(guardedNativeCloseEnabled ? { nativeResourceClose: APPLY(INSPECT_CLOSE, PAYER_OWNER, []) } : {}),
         prepareAttempts, commitAttempts, submissionAttempts, submissionEntered, fundingIntakeStatus,
         preparation: APPLY(INSPECT, PREPARER, []), authority: 'NONE', automaticReplay: false,
         chainPublication: 'NOT_ESTABLISHED', grant: 'NOT_ESTABLISHED', serviceDelivery: 'NOT_ESTABLISHED',

@@ -2,12 +2,12 @@ import { types as utilTypes } from 'node:util';
 import { captureZenonDynamicPlasmaBoundedOriginalFundingConfiguration } from './dynamic-plasma-bounded-original-funding-configuration.js';
 import { createBoundedNonceDynamicPlasmaMaterialExchange } from './dynamic-plasma-bounded-material-exchange.js';
 import { createRetainedDynamicPlasmaHttpsReadSession } from './dynamic-plasma-retained-https-read-session.js';
-import { createZenonDynamicPlasmaOriginalFundingSubmissionV3 } from './dynamic-plasma-original-funding-submission.js';
+import { createZenonDynamicPlasmaOriginalFundingSubmissionV4 } from './dynamic-plasma-original-funding-submission.js';
 import { createFundingPostNativeHttpsTransport } from '../service-credit-funding-post-native-https-transport.js';
 
 const CAPTURE = captureZenonDynamicPlasmaBoundedOriginalFundingConfiguration;
 const MATERIAL = createBoundedNonceDynamicPlasmaMaterialExchange;
-const READS = createRetainedDynamicPlasmaHttpsReadSession, SUBMIT = createZenonDynamicPlasmaOriginalFundingSubmissionV3;
+const READS = createRetainedDynamicPlasmaHttpsReadSession, SUBMIT = createZenonDynamicPlasmaOriginalFundingSubmissionV4;
 const FUNDING = createFundingPostNativeHttpsTransport, FREEZE = Object.freeze;
 const DESC = Object.getOwnPropertyDescriptor, PROTO = Object.getPrototypeOf, KEYS = Reflect.ownKeys;
 const OWN = Object.hasOwn, APPLY = Reflect.apply, IS_PROXY = utilTypes.isProxy, IS_PROMISE = utilTypes.isPromise;
@@ -16,21 +16,26 @@ const NativePromise = Promise, PROMISE = NativePromise.prototype, THEN = PROMISE
 /**
  * SOURCE-ONLY full native read AND funding-POST selection, default off.
  * Builds actual bounded work, actual three-owner RPC read session, actual native
- * TLS POST transport and actual V3/SDK/V6 owner. No fetch/request/owner factory
+ * TLS POST transport and actual V4/guarded-payer/SDK/V6 owner. No fetch/request/owner factory
  * injection, key production, alternate preflight/store, retry or default cutover.
  *
  * The already supplied original challenge is used; this selection allows ONE
  * original funding POST, not an extra challenge round trip or replay.
  * Resource URLs must match and the transport deadline may not exceed the
- * existing payer deadline. All methods on the returned actual V3 owner are
+ * existing payer deadline. All methods on the returned actual V4 owner are
  * preserved directly, including explicit pins/commit and cached close Promise.
  *
- * V3 closes its operation admission before the combined read-close capability
+ * V4 closes its operation admission before the combined read-close capability
  * requests both native sides to close. Both child close attempts are started
  * independently, even if one throws. Only clean read close and a clean native
- * POST owner allow V3 to enter the actual payer/store close after operation join.
- * Any uncertainty vetoes that entry permanently; original bytes and store stay
- * HELD. This does not cancel wallet CPU or establish OS/drain/restart proof.
+ * POST owner allow V4 to enter the actual payer close after operation join.
+ * The private guard is rechecked by the genuine payer after its own async
+ * joins, immediately before/after actual store.close. Pre-entry refusal holds
+ * the open store. A post-entry failure cannot undo an already returned close.
+ * Pre-entry uncertainty vetoes that entry permanently and holds the open store.
+ * Original bytes/identity remain retained; a post-return refusal cannot claim
+ * that the already-closed handle is still open. No wallet CPU cancellation or
+ * OS/drain/restart proof is established.
  *
  * Construction performs no native request, search, signing or SQL. Failure asks
  * constructed inert owners to close, without claiming cleanup. A consumed store
@@ -56,10 +61,11 @@ export function createZenonDynamicPlasmaNativeHttpsOriginalFundingSubmission(con
     const materialExchange = MATERIAL(selected.materialOptions);
     reads = READS(selected.readOptions);
     const session = joinedSession(reads, funding);
-    return SUBMIT({ preparerOptions: { readOptions: session.readOptions, materialExchange,
+    return SUBMIT({ preparerOptions: { readOptions: session.readSession.readOptions, materialExchange,
       materialWaitMs: selected.materialWaitMs, wallet: selected.wallet }, store: selected.store,
       fundingResourceUrl: selected.fundingResourceUrl, deadlineMs: selected.deadlineMs,
-      fetchImpl: funding.fetchImpl, readSession: session });
+      fetchImpl: funding.fetchImpl, readSession: session.readSession,
+      nativeResourceCloseGuard: session.canCloseFunding });
   } catch {
     for (const owner of [reads, funding]) if (owner !== null) {
       try { prehandle(APPLY(owner.close, undefined, [])); } catch {}
@@ -69,6 +75,22 @@ export function createZenonDynamicPlasmaNativeHttpsOriginalFundingSubmission(con
 }
 function joinedSession(reads, funding) {
   let closing = null, unknown = false, readOutcome = 'NOT_REQUESTED', fundingOutcome = 'NOT_REQUESTED';
+  const READ_INSPECT = reads.inspect, FUNDING_SNAPSHOT = funding.snapshot;
+  const canCloseFunding = FREEZE(function canCloseFunding() {
+    if (arguments.length !== 0 || unknown || readOutcome !== 'CLOSED' || fundingOutcome !== 'CLOSED') return false;
+    try {
+      const r = APPLY(READ_INSPECT, undefined, []), f = APPLY(FUNDING_SNAPSHOT, undefined, []);
+      if (r.lifecycle !== 'CLOSED' || r.closeUncertaintyLatched !== false
+          || r.closeRequested !== 3 || r.closeSettled !== 3 || r.closeFulfilledUndefined !== 3
+          || f.phase !== 'CLOSED' || f.unknown !== false || f.trackedRequests !== 0
+          || f.trackedSockets !== 0 || f.ownedTimers !== 0
+          || f.close.closePromiseOutcome !== 'CLOSED' || f.close.quiescenceObserved !== true
+          || f.close.localMaterialRelease.attempts !== 1 || f.close.localMaterialRelease.outcome !== 'RETURNED') {
+        unknown = true; return false;
+      }
+      return true;
+    } catch { unknown = true; return false; }
+  });
   const close = FREEZE(function close() {
     if (arguments.length !== 0) return rejected('input_rejected');
     if (closing !== null) return closing;
@@ -78,10 +100,8 @@ function joinedSession(reads, funding) {
     function finish() {
       if (unknown || !readSettled || !fundingSettled) return;
       try {
-        const state = funding.snapshot();
-        if (state.phase !== 'CLOSED' || state.unknown || state.trackedRequests !== 0
-            || state.trackedSockets !== 0 || state.ownedTimers !== 0) { hold(); return; }
-        cell.resolve(undefined); // V3's existing read-close contract, no authority.
+        if (!canCloseFunding()) { hold(); return; }
+        cell.resolve(undefined); // Existing read-close contract, no authority.
       } catch { hold(); }
     }
     // No await/short-circuit between independent native close attempts.
@@ -112,7 +132,7 @@ function joinedSession(reads, funding) {
     return FREEZE({ reads: reads.inspect(), funding: funding.snapshot(), unknown,
       readOutcome, fundingOutcome, authority: 'NONE', nativeGraphQualified: false });
   });
-  return FREEZE({ readOptions: reads.readOptions, close, inspect });
+  return FREEZE({ readSession: FREEZE({ readOptions: reads.readOptions, close, inspect }), canCloseFunding });
 }
 function record(value, fields) {
   if (typeof value !== 'object' || value === null || IS_PROXY(value)
