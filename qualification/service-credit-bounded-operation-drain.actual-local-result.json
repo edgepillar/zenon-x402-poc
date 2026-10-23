@@ -1,0 +1,114 @@
+{
+  "kind": "BOUNDED_OPERATION_DRAIN_HELPER_ACTUAL_LOCAL_RESULT",
+  "version": 1,
+  "status": "PASS_COMPONENT_ONLY_NOT_NATIVE_OWNER_QUALIFICATION",
+  "sourceParent": "2b4d3f9575981b8563f575455a7daae1e3945bc8",
+  "currentMain": "ba5a33c1de34a8d3ad869958f9aac1c625098ab7",
+  "executedSourceInputs": [
+    {
+      "path": "src/service-credit-bounded-operation-drain.js",
+      "bytes": 4046,
+      "LF": 92,
+      "sha256": "ccaf1742f94a2ae312598c4bb2adc0c6168b1ade0167dbc8990422f5e7037885",
+      "gitBlob": "9cb4987ecd835e7b558d6088d562f417a9179da8"
+    },
+    {
+      "path": "test/service-credit-bounded-operation-drain.test.js",
+      "bytes": 4634,
+      "LF": 101,
+      "sha256": "77b37170b8f2aee0825176c6db1fc3744b5d0806dd7ccf7642ffd1932ea66359",
+      "gitBlob": "599794b1cab7d008c1c2debe28187fabb5949717"
+    },
+    {
+      "path": "package.json",
+      "bytes": 2677,
+      "LF": 40,
+      "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+      "gitBlob": "45752ffde39d29666094f7f1c755060d75e43deb"
+    }
+  ],
+  "ownerSourceGuardedButNotImported": {
+    "path": "src/service-credit-zenon-funding-post-v1-payer-recovery-owner.js",
+    "bytes": 18038,
+    "LF": 540,
+    "sha256": "68d1c4a8f4df5ddec20ea8d3190bc4c352179de3a30f6d0388c3e394a4463005",
+    "gitBlob": "1663efe46708c555c1cdc117f7b04e737afb7d8c"
+  },
+  "runtime": {
+    "node": "24.19.0",
+    "platform": "darwin",
+    "arch": "arm64",
+    "executableSha256": "dbedff294bab84a0a86c04e15fbcbeb1c97ca10bef1b32b0634cd24b36f62100"
+  },
+  "commandLogicalPaths": [
+    "node",
+    "--permission",
+    "--allow-fs-read=./package.json",
+    "--allow-fs-read=./src/service-credit-bounded-operation-drain.js",
+    "--allow-fs-read=./test/service-credit-bounded-operation-drain.test.js",
+    "--no-addons",
+    "--no-warnings",
+    "--disallow-code-generation-from-strings",
+    "--unhandled-rejections=strict",
+    "--test-reporter=tap",
+    "./test/service-credit-bounded-operation-drain.test.js"
+  ],
+  "commandPathRepresentation": "ACTUAL_ARGV_WITH_PRIVATE_PREFIXES_REPLACED_BY_REPOSITORY_RELATIVE_PATHS",
+  "environment": {
+    "PATH": "/usr/bin:/bin",
+    "LANG": "C",
+    "NODE_DISABLE_COMPILE_CACHE": "1"
+  },
+  "NodeCommands": 1,
+  "NodeChildren": 0,
+  "exitCode": 0,
+  "counts": {
+    "tests": 16,
+    "pass": 16,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "elapsedSeconds": 0.42826383400006307,
+  "elapsedMeaning": "CONTROLLER_OBSERVED_SINGLE_NODE_COMMAND_NOT_SERVICE_CAPACITY_MEASUREMENT",
+  "capture": {
+    "complete": true,
+    "stdoutBytes": 3017,
+    "stderrBytes": 0,
+    "stdoutSha256": "95da4f0192f13a5b9eff61da3dccee6c5566361b03455e4a74e4f62cd88d738a",
+    "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stdoutCap": 65536,
+    "stderrCap": 65536,
+    "stdout": "TAP version 13\n# Subtest: synchronous DRAINED completes one observation\nok 1 - synchronous DRAINED completes one observation\n  ---\n  duration_ms: 2.05025\n  type: 'test'\n  ...\n# Subtest: native async DRAINED is observed without a replacement operation\nok 2 - native async DRAINED is observed without a replacement operation\n  ---\n  duration_ms: 0.1245\n  type: 'test'\n  ...\n# Subtest: BUSY observations back off and reach the same owned operation\nok 3 - BUSY observations back off and reach the same owned operation\n  ---\n  duration_ms: 9.062167\n  type: 'test'\n  ...\n# Subtest: permanently BUSY is bounded and stops scheduling probes\nok 4 - permanently BUSY is bounded and stops scheduling probes\n  ---\n  duration_ms: 11.091\n  type: 'test'\n  ...\n# Subtest: a never-settling native probe cannot hold the public observation forever\nok 5 - a never-settling native probe cannot hold the public observation forever\n  ---\n  duration_ms: 11.942792\n  type: 'test'\n  ...\n# Subtest: late DRAINED cannot upgrade a timed-out observation\nok 6 - late DRAINED cannot upgrade a timed-out observation\n  ---\n  duration_ms: 12.14975\n  type: 'test'\n  ...\n# bounded-operation-drain-runtime {\"node\":\"24.19.0\",\"platform\":\"darwin\",\"arch\":\"arm64\"}\n# Subtest: late BUSY cannot restart polling after timeout\nok 7 - late BUSY cannot restart polling after timeout\n  ---\n  duration_ms: 11.416583\n  type: 'test'\n  ...\n# Subtest: UNKNOWN is terminal rather than retried\nok 8 - UNKNOWN is terminal rather than retried\n  ---\n  duration_ms: 0.150625\n  type: 'test'\n  ...\n# Subtest: synchronous probe failure fails closed\nok 9 - synchronous probe failure fails closed\n  ---\n  duration_ms: 0.103125\n  type: 'test'\n  ...\n# Subtest: native probe rejection is observed and fails closed\nok 10 - native probe rejection is observed and fails closed\n  ---\n  duration_ms: 0.102083\n  type: 'test'\n  ...\n# Subtest: invalid result data does not become DRAINED\nok 11 - invalid result data does not become DRAINED\n  ---\n  duration_ms: 0.095917\n  type: 'test'\n  ...\n# Subtest: arbitrary thenables are rejected without reading then\nok 12 - arbitrary thenables are rejected without reading then\n  ---\n  duration_ms: 0.072209\n  type: 'test'\n  ...\n# Subtest: a proxy probe is rejected without invoking its traps\nok 13 - a proxy probe is rejected without invoking its traps\n  ---\n  duration_ms: 0.04975\n  type: 'test'\n  ...\n# Subtest: invalid budgets and argument counts do not call the probe\nok 14 - invalid budgets and argument counts do not call the probe\n  ---\n  duration_ms: 0.051875\n  type: 'test'\n  ...\n# Subtest: promise constructor accessors are not executed\nok 15 - promise constructor accessors are not executed\n  ---\n  duration_ms: 0.049625\n  type: 'test'\n  ...\n# Subtest: an unexpected native promise result fails closed without retry\nok 16 - an unexpected native promise result fails closed without retry\n  ---\n  duration_ms: 0.045958\n  type: 'test'\n  ...\n1..16\n# tests 16\n# suites 0\n# pass 16\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 65.10675\n",
+    "stderr": ""
+  },
+  "sourceBeforeAfterMatched": true,
+  "binaryIdentityBeforeAfterMatched": true,
+  "localStatusBeforeAfterMatched": true,
+  "effects": {
+    "nativeOwnerImported": false,
+    "SQLite": 0,
+    "SDK": 0,
+    "x402PackageImports": 0,
+    "network": 0,
+    "install": 0,
+    "keys": 0,
+    "signatures": 0,
+    "nonceSearch": 0,
+    "chainPrepare": 0,
+    "newScratchFiles": 0,
+    "newStorageTasks": 0,
+    "fileWriteGrant": false
+  },
+  "evidenceLimits": {
+    "syntheticProbeCallbacks": true,
+    "nativeTransportDrain": false,
+    "nativeSqliteLifetime": false,
+    "fullOwnerComposition": false,
+    "mainOrHostedCIQualification": false,
+    "physicalResourceRelease": false,
+    "osOrHostileCodeHardDeadline": false,
+    "pilotOrPayment": false
+  }
+}

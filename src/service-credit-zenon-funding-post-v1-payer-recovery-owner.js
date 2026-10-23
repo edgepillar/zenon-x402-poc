@@ -12,6 +12,7 @@ import {
   ZenonFundingPayerRecoverySqliteStoreError,
 } from './service-credit-zenon-funding-post-v1-payer-recovery-sqlite-store.js';
 import { preflightZenonPayment } from './zenon-payment.js';
+import { observeServiceCreditOperationDrain } from './service-credit-bounded-operation-drain.js';
 
 export const ZENON_FUNDING_PAYER_RECOVERY_OWNER_CODES = Object.freeze({
   invalidConfiguration: 'ZENON_FUNDING_PAYER_RECOVERY_OWNER_INVALID_CONFIGURATION',
@@ -31,7 +32,6 @@ export const ZENON_FUNDING_PAYER_RECOVERY_OWNER_CODES = Object.freeze({
 const OWNER_KEYS = Object.freeze(['store', 'deadlineMs', 'fetchImpl']);
 const RESERVED_STORES = new WeakSet();
 const NATIVE_PROMISE = Promise;
-const NATIVE_SET_TIMEOUT = setTimeout;
 const CLIENT_SUBMIT = 'submitAuthorizedPayment';
 
 export class ZenonFundingPayerRecoveryOwnerError extends Error {
@@ -154,22 +154,17 @@ async function preflightRecord(record) {
   return pair;
 }
 
-function delayTurn() {
-  return new NATIVE_PROMISE(resolve => NATIVE_SET_TIMEOUT(resolve, 1));
-}
-
-async function waitForClientDrain(client) {
-  while (true) {
+function waitForClientDrain(client, deadlineMs) {
+  return observeServiceCreditOperationDrain(async () => {
     try {
       await Reflect.apply(client[CLIENT_SUBMIT], client, [null]);
-      return false;
+      return 'UNKNOWN';
     } catch (error) {
       const code = clientErrorCode(error);
-      if (code === ZENON_FUNDING_POST_V1_CLIENT_CODES.invalidInput) return true;
-      if (code !== ZENON_FUNDING_POST_V1_CLIENT_CODES.operationInFlight) return false;
-      await delayTurn();
+      if (code === ZENON_FUNDING_POST_V1_CLIENT_CODES.invalidInput) return 'DRAINED';
+      return code === ZENON_FUNDING_POST_V1_CLIENT_CODES.operationInFlight ? 'BUSY' : 'UNKNOWN';
     }
-  }
+  }, Math.min(deadlineMs, 1000));
 }
 
 /**
@@ -177,6 +172,11 @@ async function waitForClientDrain(client) {
  * Passing the store transfers its lifetime custody to this owner. Recovery is
  * explicit and performs no transport. Submission and replay are separate,
  * explicit operations and use only the exact pair already held by the store.
+ * Drain observation starts after the client's public result and is bounded
+ * by min(deadlineMs, 1000), with backoff instead of permanent 1 ms polling.
+ * Exhaustion quarantines the owner and retains the still-owned store; close
+ * rejects rather than implying drain, releasing custody or allowing replay.
+ * This is not cancellation of preflight or an OS/native-socket drain proof.
  */
 export function createZenonFundingPostV1PayerRecoveryOwner(options) {
   if (arguments.length !== 1) {
@@ -401,7 +401,11 @@ export function createZenonFundingPostV1PayerRecoveryOwner(options) {
           ZENON_FUNDING_POST_V1_CLIENT_CODES.outcomeUnknown,
         ));
       }
-      const drainPromise = waitForClientDrain(client);
+      // Do not spend the post-result drain grace during SDK preflight or the
+      // client's own request deadline. Both public outcomes start the same
+      // bounded observation; late drain cannot reverse a terminal false.
+      const beginDrainObservation = () => waitForClientDrain(client, configuration.deadlineMs);
+      const drainPromise = clientPromise.then(beginDrainObservation, beginDrainObservation);
       attempt.drainPromise = (async () => {
         const drained = await drainPromise;
         attempt.drainProven = drained;
