@@ -1,0 +1,489 @@
+{
+  "schema": "zenon-x402-selected-local-qualification/v1",
+  "status": "SELECTED_CURRENT_SOURCE_LOCAL_PASS_NOT_PILOT_QUALIFICATION",
+  "lane": "P1A_EXPLICIT_MATERIAL_WAIT_DEADLINE",
+  "sourceBaseMain": "8892c4ae721468e6f03d3786b78a82b519598f8b",
+  "sourceBaseTree": "81cf83f951f035dece55b5c63a0296fabc3bbb2f",
+  "sourceBaseRepositoryFiles": 698,
+  "sourceOnly": false,
+  "fullP1AOrRoadmapComplete": false,
+  "livePilotQualified": false,
+  "productionQualified": false,
+  "implementation": {
+    "module": "src/zenon/dynamic-plasma-observed-balance-deferred-material-planner.js",
+    "factory": "createObservedBalanceDeadlineBoundMaterialCheckpointPreparer",
+    "explicitOptions": [
+      "readOptions",
+      "materialExchange",
+      "materialWaitMs"
+    ],
+    "materialWaitMsRange": [
+      1,
+      60000
+    ],
+    "plannerContextVersion": 5,
+    "readInputVersion": 3,
+    "phase": "UNSIGNED",
+    "publicMethods": [
+      "prepareUnsignedCheckpoint",
+      "getMaterialWaitSnapshot"
+    ],
+    "change": "One explicitly selected observation budget for the supported native material Promise after the original quote/work stages and one handoff. Expiry permanently consumes admission and prevents assembly/further reads.",
+    "timeoutError": "zenon_observed_balance_deferred_material_dp_planner_material_wait_unknown",
+    "lateOutcomes": "Retain native fulfillment/rejection observers; drain without inspecting late material or rejection reason. No late continuation, retry, replacement, reset or authority renewal.",
+    "snapshotPhases": [
+      "NOT_STARTED",
+      "WAITING",
+      "RETURNED",
+      "REJECTED",
+      "UNKNOWN_PENDING",
+      "UNKNOWN_DRAINED"
+    ],
+    "snapshotLimits": "Detached scalar observations only. UNKNOWN_PENDING is not CLOSED; UNKNOWN_DRAINED does not establish external producer/owner cleanup.",
+    "unchangedVersion3": "Existing block-only planner retains its exact options, context version3 and prepareUnsigned surface.",
+    "unchangedVersion4": "Existing checkpoint preparer retains its exact options, context version4 and prepareUnsignedCheckpoint-only surface.",
+    "preservedSourcePreimage": {
+      "path": "src/zenon/dynamic-plasma-observed-balance-deferred-material-planner.js",
+      "bytes": 16187,
+      "LF": 314,
+      "sha256": "2204dfe6573826ee19e06a9de6b91f68c32be22998599441eea36d955b3a9f62",
+      "gitBlob": "00df3b96a0d43de649a0b63a6afab0b6f2823c0e",
+      "immutableGitMain": "8892c4ae721468e6f03d3786b78a82b519598f8b",
+      "retainedCASContentMatched": true,
+      "creatorClosedAndObjectReferencesMatched": true
+    },
+    "privateRunIdentityPreserved": true,
+    "busyAndUsedBeforeInputInspection": true,
+    "wrongArityDoesNotConsumeAdmission": true,
+    "defaultBuyerSdkSignerAndPaymentPathsUnchanged": true,
+    "notEstablished": [
+      "A deadline for synchronous materialExchange work or prior/later reads",
+      "A whole-run, hard wall-clock, CPU or OS lifetime bound",
+      "Producer cancellation, external cleanup or closure of an unresolved borrowed operation",
+      "Durable custody, signing-state or consumed-payment authority",
+      "Authenticated live DP prices, funds, ancestry, provider READY or inclusion"
+    ]
+  },
+  "selection": {
+    "entry": "qualification/dynamic-plasma-deadline-bound-material-checkpoint.behavior.draft.mjs",
+    "oldQualificationEntriesImportedOrReplayed": 0,
+    "names": [
+      "version5 returns the original checkpoint after material and final balance and two price advances",
+      "material expiry consumes admission before assembly and ignores a late hostile fulfillment",
+      "material expiry drains a late opaque rejection without exposing its reason or resuming reads",
+      "early rejected or malformed material clears its one timer and remains used without assembly",
+      "version5 preserves exact options and version and rejects its own run before starting a material timer",
+      "on-time material still fails the original price horizon without a new quote or replacement",
+      "changed-source version3 block and version4 checkpoint keep their old surfaces and four read cycles"
+    ],
+    "selectedCases": 7,
+    "includesChangedSourceLegacyVersion3And4Controls": true,
+    "fixedData": "Existing public-key bytes, fixed literal nonce at difficulty zero, synthetic read callbacks and synthetic price movement. No nonce search or key/signature operation.",
+    "productionReadAndAssemblyFunctionsInvoked": true,
+    "exportedProductionFunctionsNotStubbed": true
+  },
+  "qualification": {
+    "actualNodeExit": 0,
+    "outputComplete": true,
+    "counts": {
+      "tests": 7,
+      "suites": 0,
+      "pass": 7,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "diagnostic": {
+      "kind": "P1A_MATERIAL_WAIT_DEADLINE",
+      "version": 1,
+      "deadlinePreparers": 8,
+      "checkpointPlanners": 1,
+      "legacyPlanners": 1,
+      "admittedRuns": 10,
+      "materialHandoffs": 9,
+      "accountReadCallbacks": 75,
+      "dpReadCallbacks": 300,
+      "checkpointResults": 2,
+      "legacyBlockResults": 1,
+      "independentCheckpointValidations": 2,
+      "hooks": 0,
+      "nativeLateThenLookups": 1,
+      "selectedBudgetMsForEachExpiry": 25,
+      "expiryCases": 2,
+      "lateDrains": 2,
+      "materialTimersStarted": 6,
+      "materialTimersCleared": 6,
+      "postExpiryAssemblyOrReads": 0,
+      "materialRetries": 0,
+      "oldQualificationEntriesRegistered": 0,
+      "nonceSearchCalls": 0,
+      "candidateEvaluations": 0,
+      "keyGeneration": 0,
+      "signatures": 0,
+      "sql": 0,
+      "sockets": 0,
+      "sdk": 0,
+      "payments": 0,
+      "realPrepare": 0,
+      "hardOsDeadlineEstablished": false,
+      "producerCancellationEstablished": false,
+      "externalOwnerCleanupEstablished": false,
+      "qualification": "DECLARED_FIXED_DATA_ONLY_NOT_LIVE_DP"
+    },
+    "separateCompletePrimaryEvidenceRead": "PASS_NOT_AN_INDEPENDENT_HUMAN_REVIEW",
+    "nativeCommandProcessGroupObservedAbsent": true,
+    "forcedInterruptionOrHardwareDurabilityTest": false
+  },
+  "execution": {
+    "nativeApplicationCommands": 1,
+    "nativeChildProcesses": 0,
+    "runtime": {
+      "name": "Node.js",
+      "version": "24.19.0",
+      "platform": "darwin",
+      "architecture": "arm64",
+      "executableSha256": "dbedff294bab84a0a86c04e15fbcbeb1c97ca10bef1b32b0634cd24b36f62100",
+      "identityUnchangedFromPinnedExecutable": true
+    },
+    "controller": {
+      "name": "CPython",
+      "version": "3.12.14",
+      "executableSha256": "811e2679c20fd2c7413f7c5ca28ce903065eea8dadb8660f1b9379a28959a480"
+    },
+    "nodePermissionModel": true,
+    "permissionScope": "Read-only exact 31-file source closure; no child/worker/addon grants. This is not an OS or network sandbox claim.",
+    "commandTimeoutSeconds": 30,
+    "testTimeoutMs": 5000,
+    "reporterDurationMs": 221.894083,
+    "reporterDurationNotPerformanceOrHardDeadlineProof": true,
+    "managedCallerElapsedSeconds": 7.13216275,
+    "stdout": {
+      "bytes": 2769,
+      "sha256": "be189b62650186b2382e221a982b4e88d72f783b9a0705ad10aa54fe9fe1252b"
+    },
+    "stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  },
+  "sourceClosure": {
+    "files": 31,
+    "bytes": 371316,
+    "rowsSha256": "d81cf978d25ac440034d086e49142127f094b1223423019373aa995e83a3432d",
+    "staticImports": 116,
+    "dynamicImports": 0,
+    "pins": [
+      {
+        "path": "package.json",
+        "bytes": 1413,
+        "LF": 40,
+        "sha256": "8c9a25504fbf6f87c31cdf245a6f4eec5a88cc89c8352151dc66a577c5771ef5",
+        "gitBlob": "ec7193f6fd76f34778515079dc777594175c4c34"
+      },
+      {
+        "path": "qualification/dynamic-plasma-deadline-bound-material-checkpoint.behavior.draft.mjs",
+        "bytes": 24982,
+        "LF": 384,
+        "sha256": "fdc6629514ccf0ae110a5496e8418a178d402fbb4932105e17a3fcb276f11684",
+        "gitBlob": "4f9fbc5addeb0ca2f5b0450202445e05d9ac645f"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-observed-balance-deferred-material-planner.js",
+        "bytes": 20685,
+        "LF": 396,
+        "sha256": "e88f61e4624e4fdbf073caed18b3c4fd7c59bf86797d3e426d5072a80d0fbf51",
+        "gitBlob": "82f32fa7948b38d8ffa2e1f1e4774319bd8bda0c"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-json-rpc-read-transport.js",
+        "bytes": 10832,
+        "LF": 283,
+        "sha256": "fd03b2ad87d16660aa61d3961c163d724d5f89cd6d4bb9c4391d739566d5e5ca",
+        "gitBlob": "0475b7ab42889f67fb030fa7344d73d8bd6957d7"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-observed-original-checkpoint.js",
+        "bytes": 10343,
+        "LF": 202,
+        "sha256": "f0b485e3970bda3af3aa27f8d46d22a54322d7a893dbda3fa121d23c90d9d30b",
+        "gitBlob": "4d366df7eec92f9137381e90ca52e2f6fc1569a0"
+      },
+      {
+        "path": "src/canonical.js",
+        "bytes": 967,
+        "LF": 26,
+        "sha256": "0d55ddf1727cafb0dcd46df2922305568615552a4d2ae34a5c30e90b9d8d998c",
+        "gitBlob": "5367f9c72ee13017a61630e1f0cffdced21d52c4"
+      },
+      {
+        "path": "src/zenon/transaction-planner.js",
+        "bytes": 22611,
+        "LF": 464,
+        "sha256": "079fe8da938e08e33a20ca1076492a829afa6fce3ae7f9b9f68d3bf4bff94233",
+        "gitBlob": "17b49a3d53974c9b3846ec6f352d6e8974bad7d3"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-observation-normalizer.js",
+        "bytes": 28398,
+        "LF": 698,
+        "sha256": "2c3f7d42ded21a5513ff26c23a00a35a53aa334f053d10930f1571a020286897",
+        "gitBlob": "c406db8471aa6c8afd812c222c673c809491cf00"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-observed-balance-user-send-attempt.js",
+        "bytes": 7377,
+        "LF": 146,
+        "sha256": "5111ef500bf33c19113f7ffabadc8980792bc9b5fa388cf6095a3f89a5f69e7a",
+        "gitBlob": "e81cf35120457aa520036042899ccd43bf3d1835"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-observed-balance-user-send-read-adapter.js",
+        "bytes": 21485,
+        "LF": 399,
+        "sha256": "ac85faa8326d73d005807b2a75d6480aaf3f404c17ae6ecfab038d6102d678ab",
+        "gitBlob": "79d887a90ec04d4ae7cbeb66420da35dbee7af71"
+      },
+      {
+        "path": "src/zenon/bounded-json-rpc-read-core.js",
+        "bytes": 21759,
+        "LF": 582,
+        "sha256": "10cc529bfb0676bb03dc4dad56059663f4a578b586c52f6404fc859d27d18f76",
+        "gitBlob": "3bd98a83413eb13e3bceb097d35fb874b4c030a2"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-observed-user-send-adapter.js",
+        "bytes": 8149,
+        "LF": 180,
+        "sha256": "8526519aa6bf5006c572447127680d3cc871ee4eee1b9046b4ea09f9ad9e1653",
+        "gitBlob": "bbda0ebf5a6d4d21f159f31304165810ebd89a77"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-unsigned-original-checkpoint.js",
+        "bytes": 9301,
+        "LF": 198,
+        "sha256": "506551e4292491a905a27f56695c30642af6a0e6a85158586379649999f8da47",
+        "gitBlob": "46ac7a4761b078048c205eaf531a7aab7a1d81a9"
+      },
+      {
+        "path": "src/x402-wire.js",
+        "bytes": 39886,
+        "LF": 934,
+        "sha256": "5fba91af5a352f62d1a335c7176a45a604e2af5d92b1c4b0e53825c1f20d4e56",
+        "gitBlob": "fb060d4e349b1c31a1219a0cc137af250a8a2291"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-compatibility.js",
+        "bytes": 7732,
+        "LF": 225,
+        "sha256": "b3989ce15e5f2e9d07b0ed035fe96bcce9f22cac93f5e497fdca5c37bf7618dd",
+        "gitBlob": "3811b748b3f905e454c8a4af4650bb7f89eb1cf2"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-required-fused-quote.js",
+        "bytes": 5416,
+        "LF": 133,
+        "sha256": "f5e10ff2dbfff3b6b63d87f0abadd0bb52b5d6b8fe0ead6a55fc5ea14207b730",
+        "gitBlob": "e820fd31ffde4ef77a2efa6e1fd3ed1775778726"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-observation-collector.js",
+        "bytes": 38492,
+        "LF": 949,
+        "sha256": "6bb665dd97e4b262941ed11fb7a9fb5c6d7a162004a39fcbfbfa8cd7b3f82d98",
+        "gitBlob": "171a49f29379866ed111031d15423634ac2d17b4"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-account-state-read-transport.js",
+        "bytes": 3632,
+        "LF": 74,
+        "sha256": "9aa818dabdacf0baec60ca570e854cc8a327e554ba5e5a76c670eb5ed02b29b8",
+        "gitBlob": "751a4b8c5a0c42e1d2b0a47af9d2ef7264229821"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-account-frontier-read.js",
+        "bytes": 7417,
+        "LF": 152,
+        "sha256": "283209685a41aed5647c87e33d046d1f81b3a6820ea6ea307c11d2f99b91020d",
+        "gitBlob": "6fbb894a4db5db15e4ded168fd663eeb24898bf8"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-user-send-balance-read.js",
+        "bytes": 7542,
+        "LF": 144,
+        "sha256": "ae1f3e5d309be0dc196fb6b35324d4c8287345b50a108d5030c1058645d2ed39",
+        "gitBlob": "f629aca2410dfd194fd73d3a651e624baa633386"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-observed-user-send-subject.js",
+        "bytes": 5105,
+        "LF": 104,
+        "sha256": "bbcc1d718bcb1353f46e0650723e35c218db94754328103d4bce1d5765e13cd8",
+        "gitBlob": "5e29c6d70c965a4d72c0902504e57dae852a6223"
+      },
+      {
+        "path": "src/zenon/bounded-dynamic-plasma-strategy.js",
+        "bytes": 15729,
+        "LF": 353,
+        "sha256": "7b82560bdeb25e573912090a2fe8de7b45912500a7a7c4434fe06dcf94e06d62",
+        "gitBlob": "ee85b7a4da8bf4190ae099e6bc5074059fccebbc"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-user-send-work-request.js",
+        "bytes": 2564,
+        "LF": 50,
+        "sha256": "bc66c7d629eae230c46f62c88fa97960860d94b5d65d3c5611612ccae13fe9ce",
+        "gitBlob": "d4e9731b0af82a892226c2817e9d5a5273b39599"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-user-send-assembly.js",
+        "bytes": 7772,
+        "LF": 162,
+        "sha256": "05012a2a983ceca018674c4d1f63823f3f7ed53b0970a4b4bd486c4278832b04",
+        "gitBlob": "a0537856f6692d278c9043ab9c1c734d1bde61ba"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-user-send-key-binding.js",
+        "bytes": 4237,
+        "LF": 91,
+        "sha256": "37ad7e74b038801297e4bffb0cb8ba92cbd79009ed32c4ae5b134fe2cb154be2",
+        "gitBlob": "c366f0fee4132604b40604547fe22f1bc1dba65d"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-price-policy.js",
+        "bytes": 16224,
+        "LF": 444,
+        "sha256": "eba3225c4d26cbb6e0be575ac4fd5073bc8b0c4454eb51e2bea4d91856d0c65e",
+        "gitBlob": "649dd09b60236b43c91d22e34b76f71f4b661361"
+      },
+      {
+        "path": "src/zenon/plasma-strategy.js",
+        "bytes": 974,
+        "LF": 32,
+        "sha256": "1c597d4e169ba8a5e6d2b7852c4ffa3a8ec9b854332fe354b9b013c36ebae093",
+        "gitBlob": "5cddc2d270aaf043e6e43145e95ffe0be3dde475"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-required-fused-policy-adapter.js",
+        "bytes": 12024,
+        "LF": 272,
+        "sha256": "e2b693d4df9065d44ba590f4d0c8dffeb8e55187668eedfa396b4026c9905c3e",
+        "gitBlob": "b592aafd4c41461318376ea9acc1373f99317455"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-user-send-work-input.js",
+        "bytes": 2853,
+        "LF": 59,
+        "sha256": "2ff9c089e5903c059746d0a1c38688a2849f94d04d429279811fbbfbb40450a4",
+        "gitBlob": "dad4febf4ef6f09216640245c7e3805e01ad0127"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-user-send-work-binding.js",
+        "bytes": 1940,
+        "LF": 42,
+        "sha256": "79eba29a05427128ae3a12346fd3ee7cbaa526d6f39eb36ed58d388640638266",
+        "gitBlob": "a329d521458a5c5b6dbc87194d91d4165d5e759c"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-user-send-fixed-work.js",
+        "bytes": 3475,
+        "LF": 77,
+        "sha256": "4ee83870df0b25c34d35c0f0d0ceb894ca9dab8c047f81b34a48dd816f1fbf38",
+        "gitBlob": "4ce2a790df84c77bc76615e5eebc309ecd2868ac"
+      }
+    ],
+    "nativeImports": [
+      "node:assert/strict",
+      "node:buffer",
+      "node:crypto",
+      "node:test",
+      "node:timers",
+      "node:util"
+    ]
+  },
+  "retainedEvidence": {
+    "completeMetadataRecords": 6,
+    "metadataBytes": 41659,
+    "admissionSha256": "9010308f123174551b731c599bccc8b56747ef1ebba29199dbd2dc370ab5528b",
+    "admissionBytes": 32296,
+    "verificationSha256": "fa0a76aa3fc6e9ac2d1058f28cba55ca1edb8c129054200ac534d4ba22b628a0",
+    "verificationBytes": 2260,
+    "callerProgramSha256": "12b7e4c5c638a0fa3ba6534bf574555d0a66c4752d72e11edd552211c4448cbc",
+    "rawOutputPreserved": true,
+    "actualExitCompletenessAndSourceBindingsSeparatelyReread": true,
+    "oldFailedStoppedAndCompletedEvidencePreserved": true,
+    "publicRawPrivateReceiptsIncluded": false
+  },
+  "storageAndEfficiency": {
+    "explicitlyApprovedTaskSpecificPrivateRoot": true,
+    "sharedOldRootMutated": false,
+    "taskQuotaBytes": 2097152,
+    "logicalAllocationBoundBytes": 1143395,
+    "boundIncludesConfiguredOutputCaps": true,
+    "productionFreeSpaceFloorMaintainedWithOldAndOwnedReservations": true,
+    "protectedUnchangedSourceReferences": 29,
+    "sourceBytesNotRecopied": 325649,
+    "newSourceRetentions": 2,
+    "newSourceBytes": 45667,
+    "sourceAliases": 0,
+    "downloadOrArchiveCopies": 0,
+    "scratchAbsentAfterOwnedClose": true,
+    "closedTaskOutcome": "SUCCESS",
+    "protectedObjectsDeleted": 0,
+    "oldDatabaseOriginalsAndProtectedFilesUntouched": true,
+    "measuredApfsPhysicalReclaimClaim": false
+  },
+  "authorityBoundaries": {
+    "cases": 7,
+    "admittedRuns": 10,
+    "materialHandoffs": 9,
+    "lateDrains": 2,
+    "nativeCommands": 1,
+    "materialTimers": 6,
+    "sql": 0,
+    "SDK": 0,
+    "keyGeneration": 0,
+    "signatures": 0,
+    "network": 0,
+    "sockets": 0,
+    "nonceSearch": 0,
+    "candidateEvaluations": 0,
+    "realPrepare": 0,
+    "payments": 0,
+    "oldQualificationEntriesReplayed": 0,
+    "sourceAliases": 0,
+    "existingV3AndV4ChangedSourceControls": 2,
+    "producerCancellationEstablished": false,
+    "externalCleanupEstablished": false,
+    "hardOSDeadlineEstablished": false,
+    "trustedNativeIntrinsicsAndLoaderRemainPremises": true,
+    "inMemorySyntheticDataNotChainAuthentication": true,
+    "existingSignedPaymentAndRequestBytesHashContextUnchanged": true,
+    "validatedSameSignedBlockResendDistinctFromUnknownOrAcknowledged": true,
+    "protectedRealTotals": {
+      "consumedRealAdmissions": 2,
+      "actualPrepare": 1,
+      "bundles": 0,
+      "nativeChainOrProviderQualificationRuns": 0
+    },
+    "automationModelAndWorkerSettingsChanged": false
+  },
+  "publicationBoundary": {
+    "selectedLocalEvidenceOnly": true,
+    "hostedCI": {
+      "checks": 0,
+      "statuses": 0,
+      "runs": 0,
+      "meaning": "NOT_RUN_NOT_GREEN"
+    },
+    "mainTransferRequiresFreshExactMainDiffPRRulesAndEvidenceReview": true,
+    "noBranchProtectionBypassOrForcePush": true,
+    "noLiveActivationAuthorizedByPublication": true
+  },
+  "remainingGates": [
+    "Qualified external material owner with native terminal cleanup and independent resource/lifetime limits.",
+    "Separate source-bound real integration, current payer/provider authority and live-chain/runtime DP qualification.",
+    "SDK/current-state preparation, signing, original-operation custody and supervised pilot acceptance remain separately gated.",
+    "Full P1A, other roadmap lanes and production readiness remain incomplete."
+  ]
+}
