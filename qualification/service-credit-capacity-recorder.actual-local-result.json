@@ -1,0 +1,304 @@
+{
+  "kind": "SERVICE_CREDIT_CAPACITY_RECORDER_SELECTED_DATA_BEHAVIOR_ACTUAL_LOCAL_RESULT",
+  "version": 1,
+  "qualification": "23_SELECTED_DATA_RECORDER_CONTROLS_PASS_NOT_A_CAPACITY_BENCHMARK",
+  "sourceInputs": [
+    {
+      "path": "package.json",
+      "bytes": 2677,
+      "LF": 40,
+      "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+      "gitBlob": "45752ffde39d29666094f7f1c755060d75e43deb"
+    },
+    {
+      "path": "src/service-credit-capacity-recorder.js",
+      "bytes": 10801,
+      "LF": 236,
+      "sha256": "eca9bf4cad4717df5d61457044c2c5d0a6bc00b6af81964d09bf18325d4a46ad",
+      "gitBlob": "bc9b0a8a9abd48033e698e100cdc6ef90d2152c9"
+    },
+    {
+      "path": "qualification/service-credit-capacity-recorder.behavior.draft.mjs",
+      "bytes": 16608,
+      "LF": 315,
+      "sha256": "bd296d1728deff97e61320ab36f723b76e003fb670b7154a18e7da5437cb605b",
+      "gitBlob": "c9c488ca77571631ac11ba7f8000ea41955c149d"
+    }
+  ],
+  "runtime": {
+    "node": "24.19.0",
+    "platform": "darwin",
+    "arch": "arm64",
+    "nodeSha256": "dbedff294bab84a0a86c04e15fbcbeb1c97ca10bef1b32b0634cd24b36f62100"
+  },
+  "scope": "Pure recorder with caller-declared timestamps, outcomes and expected balance DATA. Not application load, authenticated execution or a native funding/session/ledger composition.",
+  "selectedCaseNames": [
+    "capacity recorder rejects nonexact configuration and bounded-limit violations",
+    "capacity recorder snapshots config without invoking getter or proxy hooks",
+    "capacity recorder keeps funding funded-call and ledger observations separate",
+    "capacity recorder computes exact nearest-rank p50 p95 p99 without timing conversion",
+    "capacity recorder preserves zero nanoseconds odd ranks and integers above Number precision",
+    "capacity recorder includes refused outcomes in terminal counts and not success latency",
+    "capacity recorder latches UNKNOWN while allowing already entered observations to finish",
+    "capacity recorder refuses new starts after UNKNOWN and cannot hide attempted observations",
+    "capacity recorder never evicts a slow result when its sample budget is full",
+    "capacity recorder caps in-flight observations without losing the original pending handle",
+    "capacity recorder counts per-lane concurrency without inferring ledger concurrency from calls",
+    "capacity recorder keeps independent in-flight budgets for all three lanes",
+    "capacity recorder rejects duplicate finish without double counting or changing UNKNOWN",
+    "capacity recorder refuses clock regression and retains incomplete status after a later finish",
+    "capacity recorder rejects nonprimitive out-of-range time and unknown phase without coercion",
+    "capacity recorder validates outcome before committing a finish and never reads exception objects",
+    "capacity recorder checks exact declared balances rather than conservation alone",
+    "capacity recorder rejects unsafe balance shapes types and overflow without getter hooks",
+    "capacity recorder bounds balance comparisons without retaining raw balances",
+    "capacity recorder marks unresolved observations incomplete and never promotes a finalized result",
+    "capacity recorder returns frozen cached JSON-safe summaries and no empty success claim",
+    "capacity recorder bounds full-budget duration storage and releases it only after scalar finalization",
+    "capacity recorder rejects method arity without fabricating successful observations"
+  ],
+  "counts": {
+    "tests": 23,
+    "suites": 0,
+    "pass": 23,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "execution": {
+    "actualNodeCommands": 1,
+    "actualNodeExit": 0,
+    "outputComplete": true,
+    "reason": null,
+    "NodePermissionModel": true,
+    "OSOrNetworkSandbox": false,
+    "sourceTransforms": 0,
+    "entryLoadedDirectly": true,
+    "argv": [
+      "$PINNED_NODE_24_19_0",
+      "--permission",
+      "--allow-fs-read=$REPO/package.json",
+      "--allow-fs-read=$REPO/src/service-credit-capacity-recorder.js",
+      "--allow-fs-read=$REPO/qualification/service-credit-capacity-recorder.behavior.draft.mjs",
+      "--no-addons",
+      "--disallow-code-generation-from-strings",
+      "--disable-proto=throw",
+      "--unhandled-rejections=strict",
+      "$REPO/qualification/service-credit-capacity-recorder.behavior.draft.mjs"
+    ],
+    "startedAtUnix": 1792795709.44642,
+    "completedAtUnix": 1792795709.5416162
+  },
+  "originalCapture": {
+    "event": "Q82_DATA_CAPACITY_RECORDER_ACTUAL_LOCAL_CAPTURE",
+    "actualExit": 0,
+    "outputComplete": true,
+    "reason": null,
+    "passedSelectedScope": false,
+    "counts": {},
+    "caseNames": [],
+    "sourceInputs": [
+      {
+        "path": "package.json",
+        "bytes": 2677,
+        "LF": 40,
+        "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+        "gitBlob": "45752ffde39d29666094f7f1c755060d75e43deb"
+      },
+      {
+        "path": "src/service-credit-capacity-recorder.js",
+        "bytes": 10801,
+        "LF": 236,
+        "sha256": "eca9bf4cad4717df5d61457044c2c5d0a6bc00b6af81964d09bf18325d4a46ad",
+        "gitBlob": "bc9b0a8a9abd48033e698e100cdc6ef90d2152c9"
+      },
+      {
+        "path": "qualification/service-credit-capacity-recorder.behavior.draft.mjs",
+        "bytes": 16608,
+        "LF": 315,
+        "sha256": "bd296d1728deff97e61320ab36f723b76e003fb670b7154a18e7da5437cb605b",
+        "gitBlob": "c9c488ca77571631ac11ba7f8000ea41955c149d"
+      }
+    ],
+    "runtime": {
+      "node": "24.19.0",
+      "platform": "darwin",
+      "arch": "arm64",
+      "nodeSha256": "dbedff294bab84a0a86c04e15fbcbeb1c97ca10bef1b32b0634cd24b36f62100"
+    },
+    "startedAtUnix": 1792795709.44642,
+    "completedAtUnix": 1792795709.5416162,
+    "streams": {
+      "stdout": {
+        "rawBytes": 2484,
+        "rawSha256": "305ea0bf3699092c34902f83ca048a12dbbbfbb3088ce4cf9339bc9e6e5a04f1",
+        "publicContent": "\u2714 capacity recorder rejects nonexact configuration and bounded-limit violations (0.916667ms)\n\u2714 capacity recorder snapshots config without invoking getter or proxy hooks (0.293833ms)\n\u2714 capacity recorder keeps funding funded-call and ledger observations separate (0.262584ms)\n\u2714 capacity recorder computes exact nearest-rank p50 p95 p99 without timing conversion (1.4315ms)\n\u2714 capacity recorder preserves zero nanoseconds odd ranks and integers above Number precision (0.396875ms)\n\u2714 capacity recorder includes refused outcomes in terminal counts and not success latency (0.174167ms)\n\u2714 capacity recorder latches UNKNOWN while allowing already entered observations to finish (0.1575ms)\n\u2714 capacity recorder refuses new starts after UNKNOWN and cannot hide attempted observations (0.119417ms)\n\u2714 capacity recorder never evicts a slow result when its sample budget is full (0.143042ms)\n\u2714 capacity recorder caps in-flight observations without losing the original pending handle (0.229292ms)\n\u2714 capacity recorder counts per-lane concurrency without inferring ledger concurrency from calls (0.141583ms)\n\u2714 capacity recorder keeps independent in-flight budgets for all three lanes (0.148208ms)\n\u2714 capacity recorder rejects duplicate finish without double counting or changing UNKNOWN (0.10475ms)\n\u2714 capacity recorder refuses clock regression and retains incomplete status after a later finish (0.077583ms)\n\u2714 capacity recorder rejects nonprimitive out-of-range time and unknown phase without coercion (0.197125ms)\n\u2714 capacity recorder validates outcome before committing a finish and never reads exception objects (0.077917ms)\n\u2714 capacity recorder checks exact declared balances rather than conservation alone (0.127375ms)\n\u2714 capacity recorder rejects unsafe balance shapes types and overflow without getter hooks (0.1995ms)\n\u2714 capacity recorder bounds balance comparisons without retaining raw balances (0.188375ms)\n\u2714 capacity recorder marks unresolved observations incomplete and never promotes a finalized result (0.075791ms)\n\u2714 capacity recorder returns frozen cached JSON-safe summaries and no empty success claim (0.120125ms)\n\u2714 capacity recorder bounds full-budget duration storage and releases it only after scalar finalization (9.296708ms)\n\u2714 capacity recorder rejects method arity without fabricating successful observations (0.158958ms)\n\u2139 tests 23\n\u2139 suites 0\n\u2139 pass 23\n\u2139 fail 0\n\u2139 cancelled 0\n\u2139 skipped 0\n\u2139 todo 0\n\u2139 duration_ms 19.608417\n"
+      },
+      "stderr": {
+        "rawBytes": 0,
+        "rawSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "publicContent": ""
+      }
+    },
+    "argv": [
+      "$PINNED_NODE_24_19_0",
+      "--permission",
+      "--allow-fs-read=$REPO/package.json",
+      "--allow-fs-read=$REPO/src/service-credit-capacity-recorder.js",
+      "--allow-fs-read=$REPO/qualification/service-credit-capacity-recorder.behavior.draft.mjs",
+      "--no-addons",
+      "--disallow-code-generation-from-strings",
+      "--disable-proto=throw",
+      "--unhandled-rejections=strict",
+      "$REPO/qualification/service-credit-capacity-recorder.behavior.draft.mjs"
+    ],
+    "effects": {
+      "newRoots": 0,
+      "newTasks": 0,
+      "newScratch": 0,
+      "newDownloads": 0,
+      "applicationOperations": 0,
+      "SDK": false,
+      "SQLite": false,
+      "nativeNetwork": false,
+      "keyGeneration": false,
+      "signatures": 0,
+      "nonceSearch": 0,
+      "benchmarkRunner": false,
+      "realPrepare": false,
+      "payment": false,
+      "NodeChildren": 0
+    },
+    "indexEmpty": true,
+    "localStatusRows": 907,
+    "localStatusSha256": "8cd94126a9327ff06ca7f78929ca4bb38acf550777ad69fd1785da10bfc69c6c"
+  },
+  "postExecutionEvaluation": {
+    "kind": "Q82_ORIGINAL_SPEC_REPORTER_OFFLINE_EVALUATION_PASS",
+    "selectedCases": 23,
+    "counts": {
+      "tests": 23,
+      "suites": 0,
+      "pass": 23,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "actualNodeExit": 0,
+    "originalWrapperExit": 1,
+    "wrapperIssue": "TAP_ONLY_EVALUATOR_REJECTED_SPEC_REPORTER_FORMAT",
+    "originalWrapperPassedSelectedScope": false,
+    "offlineEvaluationPassed": true,
+    "rawStreamsIndependentDigestVerified": true,
+    "sourcePinsRechecked": true,
+    "actualCaseNames": [
+      "capacity recorder rejects nonexact configuration and bounded-limit violations",
+      "capacity recorder snapshots config without invoking getter or proxy hooks",
+      "capacity recorder keeps funding funded-call and ledger observations separate",
+      "capacity recorder computes exact nearest-rank p50 p95 p99 without timing conversion",
+      "capacity recorder preserves zero nanoseconds odd ranks and integers above Number precision",
+      "capacity recorder includes refused outcomes in terminal counts and not success latency",
+      "capacity recorder latches UNKNOWN while allowing already entered observations to finish",
+      "capacity recorder refuses new starts after UNKNOWN and cannot hide attempted observations",
+      "capacity recorder never evicts a slow result when its sample budget is full",
+      "capacity recorder caps in-flight observations without losing the original pending handle",
+      "capacity recorder counts per-lane concurrency without inferring ledger concurrency from calls",
+      "capacity recorder keeps independent in-flight budgets for all three lanes",
+      "capacity recorder rejects duplicate finish without double counting or changing UNKNOWN",
+      "capacity recorder refuses clock regression and retains incomplete status after a later finish",
+      "capacity recorder rejects nonprimitive out-of-range time and unknown phase without coercion",
+      "capacity recorder validates outcome before committing a finish and never reads exception objects",
+      "capacity recorder checks exact declared balances rather than conservation alone",
+      "capacity recorder rejects unsafe balance shapes types and overflow without getter hooks",
+      "capacity recorder bounds balance comparisons without retaining raw balances",
+      "capacity recorder marks unresolved observations incomplete and never promotes a finalized result",
+      "capacity recorder returns frozen cached JSON-safe summaries and no empty success claim",
+      "capacity recorder bounds full-budget duration storage and releases it only after scalar finalization",
+      "capacity recorder rejects method arity without fabricating successful observations"
+    ],
+    "NodeCommandsInEvaluation": 0,
+    "nativeApplicationCommands": 0,
+    "benchmarkRuns": 0,
+    "newScratch": 0,
+    "explanation": "The original Node command completed all 23 controls with exit zero and complete streams. Its wrapper expected TAP, but this direct node:test invocation emitted the SPEC reporter. The wrapper therefore exited one with no parsed TAP cases. A read-only SPEC-specific evaluation independently checked the same raw stream digests, all 23 exact names and totals, and rechecked source pins. No Node command was replayed and no source result was relabelled as a new execution."
+  },
+  "implementedBehavior": {
+    "phases": [
+      "FUNDING",
+      "FUNDED_CALL",
+      "LEDGER_TRANSACTION"
+    ],
+    "noLedgerConcurrencyInferredFromFundedCalls": true,
+    "exactNearestRankPercentiles": [
+      "p50",
+      "p95",
+      "p99"
+    ],
+    "timestampUnit": "CALLER_SUPPLIED_BIGINT_NANOSECONDS",
+    "timestampRange": "0 through 2^128-1; globally nondecreasing in the recorder's synchronous event order",
+    "terminalAndSuccessfulLatenciesSeparate": true,
+    "allRecordedTerminalOutcomesRemainInDenominator": true,
+    "errorFraction": "Exact non-success numerator and terminal denominator; pending and refused observations reported separately.",
+    "unknownCannotBeRewrittenAsSuccess": true,
+    "sampleOrInFlightLimitRefusalDoesNotEvictExistingObservations": true,
+    "missingFinishAndInvalidInputKeepRecordingIncomplete": true,
+    "unknownOrBalanceMismatchStopsNewObservationsNotRealOperations": true,
+    "independentExpectedBalancesComparedExactly": true,
+    "balanceUnits": "Caller-declared nonnegative bigint units, each and sum <= 2^128-1.",
+    "noRawBalanceRequestHeaderKeyExceptionOrPayloadLog": true,
+    "maxSamplesPerPhase": 4096,
+    "maxInFlightPerPhase": 64,
+    "maximumSteadyStateDurationReferences": 24576,
+    "durationReferencesAreNotHeapByteOrOSLimits": true,
+    "finalizeSortsPrivateArraysInPlaceAndReleasesRecorderCollections": true,
+    "finalizeCachesImmutableScalarResult": true,
+    "notMountedInExistingDemoBuyerCLIOrBenchmark": true
+  },
+  "evidenceLimits": [
+    "All test timestamps, outcomes and balances are synthetic DATA. This module reads no native clock and executes no application operation.",
+    "Recorded test-run durations are not funding latency, funded-call latency, ledger concurrency, sustained load or TPS.",
+    "COMPLETE describes recorder coverage, not operational success. UNKNOWN may be completely recorded without becoming a successful operation.",
+    "An UNKNOWN terminal timestamp is the time the caller declared uncertainty, not proof the underlying operation terminated.",
+    "Expected ledger values are caller-declared. Matching them does not authenticate the ledger or establish correctness under actual contention.",
+    "The recorder's limits constrain its own observations, not application admission, memory bytes, CPU time, resource cancellation or native cleanup.",
+    "No real measurement driver, pilot, native HTTPS, SDK/SQLite integration, forced-kill/reopen or current-head hosted CI qualification is established.",
+    "The existing whole-demo local benchmark and P0 current qualification profile are unchanged; this is a separate opt-in recorder lane.",
+    "The selected native V3 results from the prior batch are neither replayed nor expanded by these DATA controls."
+  ],
+  "effects": {
+    "newRoots": 0,
+    "newTasks": 0,
+    "newScratch": 0,
+    "newDownloads": 0,
+    "applicationOperations": 0,
+    "SDK": false,
+    "SQLite": false,
+    "nativeNetwork": false,
+    "keyGeneration": false,
+    "signatures": 0,
+    "nonceSearch": 0,
+    "benchmarkRunner": false,
+    "realPrepare": false,
+    "payment": false,
+    "NodeChildren": 0
+  },
+  "storage": {
+    "newRoots": 0,
+    "newTasks": 0,
+    "newScratch": 0,
+    "newDownloads": 0,
+    "dependencyCopies": 0,
+    "rawDurationFiles": 0,
+    "historicalEvidenceOrRootsDeleted": false,
+    "retainedFailureAndCapture": "Original complete wrapper capture and SPEC-format re-evaluation remain distinct in this result."
+  },
+  "publicationBoundary": {
+    "plannedSourceBase": "04ea7dc1418ea2942f814a1d2780439ea9eff4b9",
+    "plannedMainBase": "3c959bc894f561d79544ce6cae0142d5b89b9227",
+    "scope": "The four-file candidate is a standalone DATA module, its selected controls, this result and usage documentation. No package/default/driver/workflow change, broad test, CI dispatch, PR state change, network/payment capability or native authority is added."
+  },
+  "fullP4Complete": false,
+  "productionQualified": false
+}
