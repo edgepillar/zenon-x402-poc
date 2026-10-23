@@ -1,0 +1,222 @@
+{
+  "kind": "RETAINED_DYNAMIC_PLASMA_HTTPS_READ_SESSION_SOURCE_REVIEW",
+  "version": 1,
+  "status": "IMPLEMENTED_SYNTAX_ONLY_NOT_NATIVE_RUNTIME_QUALIFIED",
+  "sourceBase": {
+    "branch": "x402/p1-router-late-pending-close-integration-v2",
+    "commit": "3d7642a58124d8cfe2867e32bd3e712231b0bc77"
+  },
+  "mainParent": "4068c4fcd9e6e826578a9b2f906f8ef735efa73c",
+  "gap": "The old one-shot observation owner closes endpoint A before endpoint B and cannot survive contextv7's six retained DP/account cycles. Independent retained HTTPS owners also lacked a shared private readOptions and close owner.",
+  "sourceWiring": {
+    "entry": "src/zenon/dynamic-plasma-retained-https-read-session.js",
+    "publicOptions": [
+      "endpoints",
+      "accountEndpoint"
+    ],
+    "actualDPOwners": 2,
+    "actualAccountOwners": 1,
+    "actualDPConstructor": "createRetainedDynamicPlasmaHttpsReadTransportOwner",
+    "actualAccountConstructor": "createRetainedAccountStateHttpsExchangeOwner",
+    "actualSessionCore": "createRetainedDynamicPlasmaReadSessionCore",
+    "returnActualCoreDirectly": true,
+    "callerSuppliedOwnerFactory": false,
+    "privateReadOptionsPassedWithoutReencoding": true,
+    "automaticPrepare": false,
+    "defaultBuyerChanged": false,
+    "sourceOnlyBudgets": {
+      "firstDP": 78,
+      "secondDP": 78,
+      "account": 18,
+      "combined": 174
+    },
+    "duties": "Native owner retains its unchanged route/TLS/request/deadline/grace/close validation. This session supplies no independent signer, store owner, real operation outcome, chain identity or cleanup proof."
+  },
+  "literalSourceAssociation": {
+    "inputs": [
+      {
+        "path": "package.json",
+        "bytes": 2677,
+        "LF": 40,
+        "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+        "gitBlob": "45752ffde39d29666094f7f1c755060d75e43deb"
+      },
+      {
+        "path": "qualification/dynamic-plasma-retained-read-session.behavior.draft.mjs",
+        "bytes": 18813,
+        "LF": 267,
+        "sha256": "725b610f4ce6cc24d66d5dbf5be25e46c1b546ae44468bcff0a1b9bc9c687868",
+        "gitBlob": "c1437259ff6182addf97062c19d1d4175c5ce212"
+      },
+      {
+        "path": "src/zenon/bounded-json-rpc-https-exchange-owner.js",
+        "bytes": 41196,
+        "LF": 890,
+        "sha256": "5a0fc893c01dad07644056d9847c30365088dd022901084d398298ec01b3eb32",
+        "gitBlob": "704eda583828f0c7e3704b17fef66ca36ab19b4d"
+      },
+      {
+        "path": "src/zenon/bounded-json-rpc-read-admission.js",
+        "bytes": 2627,
+        "LF": 51,
+        "sha256": "0b0b0806487c2e648a83367a9ebcd48a3a92493158ebca23abe8d6d6849d9ff3",
+        "gitBlob": "9e9ee352d7cf0013d96851c769f2a205ccf98449"
+      },
+      {
+        "path": "src/zenon/bounded-json-rpc-read-core.js",
+        "bytes": 21759,
+        "LF": 582,
+        "sha256": "10cc529bfb0676bb03dc4dad56059663f4a578b586c52f6404fc859d27d18f76",
+        "gitBlob": "3bd98a83413eb13e3bceb097d35fb874b4c030a2"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-account-state-read-transport.js",
+        "bytes": 3632,
+        "LF": 74,
+        "sha256": "9aa818dabdacf0baec60ca570e854cc8a327e554ba5e5a76c670eb5ed02b29b8",
+        "gitBlob": "751a4b8c5a0c42e1d2b0a47af9d2ef7264229821"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-json-rpc-read-transport.js",
+        "bytes": 10832,
+        "LF": 283,
+        "sha256": "fd03b2ad87d16660aa61d3961c163d724d5f89cd6d4bb9c4391d739566d5e5ca",
+        "gitBlob": "0475b7ab42889f67fb030fa7344d73d8bd6957d7"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-retained-account-exchange-gate.js",
+        "bytes": 4659,
+        "LF": 89,
+        "sha256": "3304fee96333a0544c9ad3be0c5d465ff6d2377ae3ae657ac11f84482bb357f9",
+        "gitBlob": "39104ab5dbea4195a778e7226b9076fcd1f31366"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-retained-https-read-owners.js",
+        "bytes": 4176,
+        "LF": 75,
+        "sha256": "d3fe9b99d6896ac0911e41a976ce224588c59517d39edf78e0b677c7e61e1f3c",
+        "gitBlob": "131017b9417ee671caf771e6459a88f60aa0ba0e"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-retained-https-read-session.js",
+        "bytes": 5187,
+        "LF": 97,
+        "sha256": "3b316d3b3c4de8731e04dad3c36b16a73d3b1d9b68827358f8ba5604156cf462",
+        "gitBlob": "f9cee8b83a451a5931e35d74362ff527e084aef9"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-retained-read-session-core.js",
+        "bytes": 10450,
+        "LF": 204,
+        "sha256": "a0f91046c47cfa770f30bf299f620086351ee15977f669d9ec6016dd08d65794",
+        "gitBlob": "b9151955b073be614946525e70320600f7a6850b"
+      }
+    ],
+    "nativeApplicationClosure": [
+      "src/zenon/bounded-json-rpc-https-exchange-owner.js",
+      "src/zenon/bounded-json-rpc-read-admission.js",
+      "src/zenon/bounded-json-rpc-read-core.js",
+      "src/zenon/dynamic-plasma-json-rpc-read-transport.js",
+      "src/zenon/dynamic-plasma-retained-account-exchange-gate.js",
+      "src/zenon/dynamic-plasma-retained-https-read-owners.js",
+      "src/zenon/dynamic-plasma-retained-https-read-session.js",
+      "src/zenon/dynamic-plasma-retained-read-session-core.js"
+    ],
+    "sourceExistingInputsMatched": 8,
+    "componentExistingInputsMatchMainAndSource": 6,
+    "qualification": "Static literal source association only for native entry; no native module evaluation."
+  },
+  "syntax": {
+    "entry": "src/zenon/dynamic-plasma-retained-https-read-session.js",
+    "sourceInputs": [
+      {
+        "path": "package.json",
+        "bytes": 2677,
+        "LF": 40,
+        "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+        "gitBlob": "45752ffde39d29666094f7f1c755060d75e43deb"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-retained-https-read-session.js",
+        "bytes": 5187,
+        "LF": 97,
+        "sha256": "3b316d3b3c4de8731e04dad3c36b16a73d3b1d9b68827358f8ba5604156cf462",
+        "gitBlob": "f9cee8b83a451a5931e35d74362ff527e084aef9"
+      }
+    ],
+    "runtime": {
+      "node": "24.19.0",
+      "platform": "darwin",
+      "arch": "arm64"
+    },
+    "nodeSha256": "dbedff294bab84a0a86c04e15fbcbeb1c97ca10bef1b32b0634cd24b36f62100",
+    "argv": [
+      "$PINNED_NODE_24_19_0",
+      "--permission",
+      "--allow-fs-read=$REPO/package.json",
+      "--allow-fs-read=$REPO/src/zenon/dynamic-plasma-retained-https-read-session.js",
+      "--no-addons",
+      "--disallow-code-generation-from-strings",
+      "--disable-proto=throw",
+      "--unhandled-rejections=strict",
+      "--check",
+      "$REPO/src/zenon/dynamic-plasma-retained-https-read-session.js"
+    ],
+    "actualExit": 0,
+    "reason": null,
+    "outputComplete": true,
+    "stdout": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "content": ""
+    },
+    "stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "content": ""
+    },
+    "applicationImported": false,
+    "kind": "SYNTAX_ONLY"
+  },
+  "testedCore": {
+    "entry": "src/zenon/dynamic-plasma-retained-read-session-core.js",
+    "result": "qualification/dynamic-plasma-retained-read-session.actual-local-result.json",
+    "tests": 24,
+    "pass": 24,
+    "fail": 0,
+    "unsafeSymbolMetadataRefusalCorrected": true,
+    "closeOutcomeUnknownCannotPromote": true,
+    "allThreeClosesStartedBeforeWaiting": true,
+    "readOutcomesForwardedNotAuthenticated": true,
+    "borrowedOwnersAreNotNativeBrands": true
+  },
+  "historicalFailure": {
+    "record": "qualification/dynamic-plasma-retained-read-session.first-failed-local-result.json",
+    "status": "FAILED_NOT_RECLASSIFIED",
+    "pass": 7,
+    "fail": 17,
+    "rawSha256": "47a042723fe56fd5c5e3c468c81452711399d8b949da75f6df9c9eb6f41bc014"
+  },
+  "previousEvidence": {
+    "nativeSDKSqliteRunsPreviouslyConsumed": 3,
+    "nativeSDKSqlitePassesOutOfTwelve": 11,
+    "nativeSDKSqliteFailureNotReclassified": true,
+    "priorNativeResultSha256": "e00553709a70cef34f5b62137579afaf61e9b42c6ea9a560f055acaf267bc354",
+    "all49PriorNativeRuntimeInputsUnchanged": true,
+    "nativeRunsThisChange": 0,
+    "earlierReadAdmissionTwentyCaseResultNotRebound": true
+  },
+  "publicationBoundary": {
+    "mainEligibleCore": "src/zenon/dynamic-plasma-retained-read-session-core.js",
+    "sourceBranchOnlyNativeEntry": "src/zenon/dynamic-plasma-retained-https-read-session.js",
+    "mainNativeFactoryEligible": false,
+    "mainNativeCoreUnchanged": true,
+    "previousSourceOnlyNativeOwnersNotTransferred": true,
+    "nativeResourcesQualified": false,
+    "fullP1FundingCompositionQualified": false,
+    "operationStoreAndWalletLifetimeJoined": false,
+    "hostedCI": "NOT_RUN_NOT_GREEN",
+    "economicPilot": false
+  },
+  "nextGate": "The private readOptions now match the actual retained preparer schema in source. Still join actual operation/store/wallet lifetimes without releasing a store on uncertain read close, then separately qualify the exact native HTTPS/funding/signing/SQLite graph under matching authority. The pending SDK/SQLite-only request does not cover this native HTTPS graph."
+}

@@ -1,0 +1,124 @@
+{
+  "kind": "RETAINED_READ_SESSION_FIRST_COMPONENT_RUN_FAILURE",
+  "version": 1,
+  "status": "FAILED_NOT_RECLASSIFIED",
+  "runtime": {
+    "node": "24.19.0",
+    "platform": "darwin",
+    "arch": "arm64"
+  },
+  "nodeSha256": "dbedff294bab84a0a86c04e15fbcbeb1c97ca10bef1b32b0634cd24b36f62100",
+  "sourceInputs": [
+    {
+      "path": "package.json",
+      "bytes": 2677,
+      "LF": 40,
+      "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+      "gitBlob": "45752ffde39d29666094f7f1c755060d75e43deb"
+    },
+    {
+      "path": "qualification/dynamic-plasma-retained-read-session.behavior.draft.mjs",
+      "bytes": 18647,
+      "LF": 266,
+      "sha256": "66b4b87fc7cfb5fd7860a1167abe16066161280946329826d3e1492693f73577",
+      "gitBlob": "303ba82adbd27d22d594016bb9e4b95590cc08c4"
+    },
+    {
+      "path": "src/zenon/bounded-json-rpc-read-admission.js",
+      "bytes": 2627,
+      "LF": 51,
+      "sha256": "0b0b0806487c2e648a83367a9ebcd48a3a92493158ebca23abe8d6d6849d9ff3",
+      "gitBlob": "9e9ee352d7cf0013d96851c769f2a205ccf98449"
+    },
+    {
+      "path": "src/zenon/bounded-json-rpc-read-core.js",
+      "bytes": 21759,
+      "LF": 582,
+      "sha256": "10cc529bfb0676bb03dc4dad56059663f4a578b586c52f6404fc859d27d18f76",
+      "gitBlob": "3bd98a83413eb13e3bceb097d35fb874b4c030a2"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-account-state-read-transport.js",
+      "bytes": 3632,
+      "LF": 74,
+      "sha256": "9aa818dabdacf0baec60ca570e854cc8a327e554ba5e5a76c670eb5ed02b29b8",
+      "gitBlob": "751a4b8c5a0c42e1d2b0a47af9d2ef7264229821"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-json-rpc-read-transport.js",
+      "bytes": 10832,
+      "LF": 283,
+      "sha256": "fd03b2ad87d16660aa61d3961c163d724d5f89cd6d4bb9c4391d739566d5e5ca",
+      "gitBlob": "0475b7ab42889f67fb030fa7344d73d8bd6957d7"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-retained-account-exchange-gate.js",
+      "bytes": 4659,
+      "LF": 89,
+      "sha256": "3304fee96333a0544c9ad3be0c5d465ff6d2377ae3ae657ac11f84482bb357f9",
+      "gitBlob": "39104ab5dbea4195a778e7226b9076fcd1f31366"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-retained-read-session-core.js",
+      "bytes": 10259,
+      "LF": 201,
+      "sha256": "240f618a5271961fc706a676a6dfbca2dfc1a68e3f30cf5bb3227da134fc3db9",
+      "gitBlob": "f3bf7c3e63ed31d3c70d62f28f455f731f49d588"
+    }
+  ],
+  "counts": {
+    "tests": 24,
+    "pass": 7,
+    "fail": 17,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "actualExit": 1,
+  "reason": null,
+  "outputComplete": true,
+  "stdout": {
+    "rawBytes": 19935,
+    "rawSha256": "47a042723fe56fd5c5e3c468c81452711399d8b949da75f6df9c9eb6f41bc014",
+    "redactedContent": "# retained-read-session-components {\"cases\":24,\"declaredReads\":180,\"declaredCloseStarts\":72,\"hooks\":1,\"maximalWireReads\":174,\"nativeHttpsOwnerImported\":false,\"nativeConnections\":0,\"SDK\":0,\"SQLite\":0,\"cryptoOperations\":0,\"keys\":0,\"signatures\":0,\"nonceEvaluations\":0,\"newTasks\":0,\"newScratch\":0,\"realCollectorOrPreparerInvoked\":false,\"fullNativeRetainedFundingQualified\":false}\nTAP version 13\n# Subtest: construction captures all three owners without reads or closes and exposes exact preparer readOptions\nok 1 - construction captures all three owners without reads or closes and exposes exact preparer readOptions\n  ---\n  duration_ms: 1.370084\n  type: 'test'\n  ...\n# Subtest: each guarded read forwards the original request and original owned Promise with no outcome inspection\nok 2 - each guarded read forwards the original request and original owned Promise with no outcome inspection\n  ---\n  duration_ms: 0.201\n  type: 'test'\n  ...\n# Subtest: invalid frozen shapes and owner accessors or proxies refuse before any callback or hook\nok 3 - invalid frozen shapes and owner accessors or proxies refuse before any callback or hook\n  ---\n  duration_ms: 0.417416\n  type: 'test'\n  ...\n# Subtest: profile clones floating budgets and legacy thirteen-slot owners cannot impersonate the selected retained contract\nok 4 - profile clones floating budgets and legacy thirteen-slot owners cannot impersonate the selected retained contract\n  ---\n  duration_ms: 0.8165\n  type: 'test'\n  ...\n# Subtest: aliasing owner methods is refused before a shared callback could be counted as independent custody\nok 5 - aliasing owner methods is refused before a shared callback could be counted as independent custody\n  ---\n  duration_ms: 0.240541\n  type: 'test'\n  ...\n# Subtest: one cached close starts all three callbacks synchronously before any pending close resolves\nnot ok 6 - one cached close starts all three callbacks synchronously before any pending close resolves\n  ---\n  duration_ms: 1.166584\n  type: 'test'\n  location: '$REPO/qualification/dynamic-plasma-retained-read-session.behavior.draft.mjs:92:7'\n  failureType: 'testCodeFailure'\n  error: |-\n    Expected values to be strictly equal:\n    + actual - expected\n    \n    + 'CLOSE_OUTCOME_UNKNOWN'\n    - 'CLOSING'\n           ^\n    \n  code: 'ERR_ASSERTION'\n  name: 'AssertionError'\n  expected: 'CLOSING'\n  actual: 'CLOSE_OUTCOME_UNKNOWN'\n  operator: 'strictEqual'\n  stack: |-\n    TestContext.<anonymous> (file://$REPO/qualification/dynamic-plasma-retained-read-session.behavior.draft.mjs:95:10)\n    Test.runInAsyncScope (node:async_hooks:227:14)\n    Test.run (node:internal/test_runner/test:1382:25)\n    Test.start (node:internal/test_runner/test:1242:17)\n    startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17)\n    run (node:internal/test_runner/harness:398:12)\n    test (node:internal/test_runner/harness:407:12)\n    file://$REPO/qualification/dynamic-plasma-retained-read-session.behavior.draft.mjs:92:7\n  ...\n# Subtest: retained readOptions are closed immediately while close settlement is still pending\nnot ok 7 - retained readOptions are closed immediately while close settlement is still pending\n  ---\n  duration_ms: 0.425\n  type: 'test'\n  location: '$REPO/qualification/dynamic-plasma-retained-read-session.behavior.draft.mjs:100:7'\n  failureType: 'testCodeFailure'\n  error: 'retained_dynamic_plasma_read_session_close_unknown'\n  code: 'retained_dynamic_plasma_read_session_close_unknown'\n  name: 'TypeError'\n  ...\n# Subtest: active read abortion is requested before waiting on that read and does not manufacture an operation result\nnot ok 8 - active read abortion is requested before waiting on that read and does not manufacture an operation result\n  ---\n  duration_ms: 0.235834\n  type: 'test'\n  location: '$REPO/qualification/dynamic-plasma-retained-read-session.behavior.draft.mjs:108:7'\n  failureType: 'testCodeFailure'\n  error: 'FORBIDDEN_HOOK'\n  code: 'ERR_TEST_FAILURE'\n  stack: |-\n    Object.fail (file://$REPO/qualification/dynamic-plasma-retained-read-session.behavior.draft.mjs:23:44)\n    waitForActual (node:assert:648:5)\n    async strict.rejects (node:assert:769:25)\n    async TestContext.<anonymous> (file://$REPO/qualification/dynamic-plasma-retained-read-session.behavior.draft.mjs:113:3)\n    async Test.run (node:internal/test_runner/test:1389:7)\n    async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3)\n    async file://$REPO/qualification/dynamic-plasma-retained-read-session.behavior.draft.mjs:108:1\n  ...\n# Subtest: one rejected close permanently rejects the cached session close without suppressing the other two requests\nnot ok 9 - one rejected close permanently rejects the cached session close without suppressing the other two requests\n  ---\n  duration_ms: 0.31375\n  type: 'test'\n  location: '$REPO/qualification/dynamic-plasma-retained-read-session.behavior.draft.mjs:116:7'\n  failureType: 'testCodeFailure'\n  error: |-\n    Expected values to be strictly equal:\n    \n    1 !== 0\n    \n  code: 'ERR_ASSERTION'\n  name: 'AssertionError'\n  expected: 0\n  actual: 1\n  operator: 'strictEqual'\n  stack: |-\n    TestContext.<anonymous> (file://$REPO/qualification/dynamic-plasma-retained-read-session.behavior.draft.mjs:121:107)\n    async Test.run (node:internal/test_runner/test:1389:7)\n    async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3)\n    async file://$REPO/qualification/dynamic-plasma-retained-read-session.behavior.draft.mjs:116:1\n  ...\n# Subtest: late successful closes update observations but cannot promote a failed close or reopen admission\nnot ok 10 - late successful closes update observations but cannot promote a failed close or reopen admission\n  ---\n  duration_ms: 0.266125\n  type: 'test'\n  location: '$REPO/qualification/dynamic-plasma-retained-read-session.behavior.draft.mjs:123:7'\n  failureType: 'testCodeFailure'\n  error: |-\n    Expected values to be strictly equal:\n    \n    0 !== 2\n    \n  code: 'ERR_ASSERTION'\n  name: 'AssertionError'\n  expected: 2\n  actual: 0\n  operator: 'strictEqual'\n  stack: |-\n    TestContext.<anonymous> (file://$REPO/qualification/dynamic-plasma-retained-read-session.behavior.draft.mjs:127:79)\n    async Test.run (node:internal/test_runner/test:1389:7)\n    async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3)\n    async file://$REPO/qualification/dynamic-plasma-retained-read-session.behavior.draft.mjs:123:1\n  ...\n# Subtest: successful-looking close objects and raw outcomes are not interpreted or accepted as undefined\nnot ok 11 - successful-looking close objects and raw outcomes are not interpreted or accepted as undefined\n  ---\n  duration_ms: 0.400458\n  type: 'test'\n  location: '$REPO/qualification/dynamic-plasma-retained-read-session.behavior.draft.mjs:130:7'\n  failureType: 'testCodeFailure'\n  error: |-\n    Expected values to be strictly equal:\n    \n    1 !== 0\n    \n  code: 'ERR_ASSERTION'\n  name: 'AssertionError'\n  expected: 0\n  actual: 1\n  operator: 'strictEqual'\n  stack: |-\n    TestContext.<anonymous> (file://$REPO/qualification/dynamic-plasma-retained-read-session.behavior.draft.mjs:135:10)\n    async Test.run (node:internal/test_runner/test:1389:7)\n    async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3)\n    async file://$REPO/qualification/dynamic-plasma-retained-read-session.behavior.draft.mjs:130:1\n  ...\n# Subtest: thenables and proxy close Promises are rejected without invoking any then or proxy hook\nnot ok 12 - thenables and proxy close Promises are rejected without invoking any then or proxy hook\n  ---\n  duration_ms: 0.193625\n  type: 'test'\n  location: '$REPO/qualification/dynamic-plasma-retained-read-session.behavior.draft.mjs:137:7'\n  failureType: 'testCodeFailure'\n  error: |-\n    Expected values to be strictly equal:\n    \n    1 !== 0\n    \n  code: 'ERR_ASSERTION'\n  name: 'AssertionError'\n  expected: 0\n  actual: 1\n  operator: 'strictEqual'\n  stack: |-\n    TestContext.<anonymous> (file://$REPO/qualification/dynamic-plasma-retained-read-session.behavior.draft.mjs:143:10)\n    async Test.run (node:internal/test_runner/test:1389:7)\n    async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3)\n    async file://$REPO/qualification/dynamic-plasma-retained-read-session.behavior.draft.mjs:137:1\n  ...\n# Subtest: decorated and subclassed Promise close mechanics are not assimilated or silently accepted\nnot ok 13 - decorated and subclassed Promise close mechanics are not assimilated or silently accepted\n  ---\n  duration_ms: 0.256375\n  type: 'test'\n  location: '$REPO/qualification/dynamic-plasma-retained-read-session.behavior.draft.mjs:145:7'\n  failureType: 'testCodeFailure'\n  error: |-\n    Expected values to be strictly equal:\n    \n    1 !== 0\n    \n  code: 'ERR_ASSERTION'\n  name: 'AssertionError'\n  expected: 0\n  actual: 1\n  operator: 'strictEqual'\n  stack: |-\n    TestContext.<anonymous> (file://$REPO/qualification/dynamic-plasma-retained-read-session.behavior.draft.mjs:152:10)\n    async Test.run (node:internal/test_runner/test:1389:7)\n    async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3)\n    async file://$REPO/qualification/dynamic-plasma-retained-read-session.behavior.draft.mjs:145:1\n  ...\n# Subtest: direct dependency on the public close Promise is refused instead of deadlocking the session\nok 14 - direct dependency on the public close Promise is refused instead of deadlocking the session\n  ---\n  duration_ms: 0.091792\n  type: 'test'\n  ...\n# Subtest: one shared close Promise cannot masquerade as two independent owner settlements\nok 15 - one shared close Promise cannot masquerade as two independent owner settlements\n  ---\n  duration_ms: 0.11475\n  type: 'test'\n  ...\n# Subtest: close callback reentry sees closed admission before it can issue any read\nnot ok 16 - close callback reentry sees closed admission before it can issue any read\n  ---\n  duration_ms: 0.120125\n  type: 'test'\n  location: '$REPO/qualification/dynamic-plasma-retained-read-session.behavior.draft.mjs:163:7'\n  failureType: 'testCodeFailure'\n  error: 'retained_dynamic_plasma_read_session_close_unknown'\n  code: 'retained_dynamic_plasma_read_session_close_unknown'\n  name: 'TypeError'\n  ...\n# Subtest: a synchronous read failure is scrubbed and closes every owner without inspecting the raw reason\nnot ok 17 - a synchronous read failure is scrubbed and closes every owner without inspecting the raw reason\n  ---\n  duration_ms: 0.115042\n  type: 'test'\n  location: '$REPO/qualification/dynamic-plasma-retained-read-session.behavior.draft.mjs:167:7'\n  failureType: 'testCodeFailure'\n  error: 'retained_dynamic_plasma_read_session_close_unknown'\n  code: 'retained_dynamic_plasma_read_session_close_unknown'\n  name: 'TypeError'\n  ...\n# Subtest: a synchronous close throw still requests the remaining owners and never exposes the raw failure\nnot ok 18 - a synchronous close throw still requests the remaining owners and never exposes the raw failure\n  ---\n  duration_ms: 0.117792\n  type: 'test'\n  location: '$REPO/qualification/dynamic-plasma-retained-read-session.behavior.draft.mjs:172:7'\n  failureType: 'testCodeFailure'\n  error: |-\n    Expected values to be strictly equal:\n    \n    1 !== 0\n    \n  code: 'ERR_ASSERTION'\n  name: 'AssertionError'\n  expected: 0\n  actual: 1\n  operator: 'strictEqual'\n  stack: |-\n    TestContext.<anonymous> (file://$REPO/qualification/dynamic-plasma-retained-read-session.behavior.draft.mjs:175:10)\n    async Test.run (node:internal/test_runner/test:1389:7)\n    async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3)\n    async file://$REPO/qualification/dynamic-plasma-retained-read-session.behavior.draft.mjs:172:1\n  ...\n# Subtest: wrong close arity cannot consume closure while wrong read arity fails closed for the entire session\nnot ok 19 - wrong close arity cannot consume closure while wrong read arity fails closed for the entire session\n  ---\n  duration_ms: 0.693666\n  type: 'test'\n  location: '$REPO/qualification/dynamic-plasma-retained-read-session.behavior.draft.mjs:177:7'\n  failureType: 'testCodeFailure'\n  error: 'retained_dynamic_plasma_read_session_close_unknown'\n  code: 'retained_dynamic_plasma_read_session_close_unknown'\n  name: 'TypeError'\n  ...\n# Subtest: Object then runtime drift produces permanent close uncertainty without invoking the hook\nnot ok 20 - Object then runtime drift produces permanent close uncertainty without invoking the hook\n  ---\n  duration_ms: 0.306625\n  type: 'test'\n  location: '$REPO/qualification/dynamic-plasma-retained-read-session.behavior.draft.mjs:183:7'\n  failureType: 'testCodeFailure'\n  error: |-\n    Expected values to be strictly equal:\n    \n    1 !== 0\n    \n  code: 'ERR_ASSERTION'\n  name: 'AssertionError'\n  expected: 0\n  actual: 1\n  operator: 'strictEqual'\n  stack: |-\n    TestContext.<anonymous> (file://$REPO/qualification/dynamic-plasma-retained-read-session.behavior.draft.mjs:188:50)\n    async Test.run (node:internal/test_runner/test:1389:7)\n    async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3)\n    async file://$REPO/qualification/dynamic-plasma-retained-read-session.behavior.draft.mjs:183:1\n  ...\n# Subtest: Promise then descriptor drift is rejected before attaching any borrowed reaction\nnot ok 21 - Promise then descriptor drift is rejected before attaching any borrowed reaction\n  ---\n  duration_ms: 0.218208\n  type: 'test'\n  location: '$REPO/qualification/dynamic-plasma-retained-read-session.behavior.draft.mjs:190:7'\n  failureType: 'testCodeFailure'\n  error: |-\n    Expected values to be strictly equal:\n    \n    1 !== 0\n    \n  code: 'ERR_ASSERTION'\n  name: 'AssertionError'\n  expected: 0\n  actual: 1\n  operator: 'strictEqual'\n  stack: |-\n    TestContext.<anonymous> (file://$REPO/qualification/dynamic-plasma-retained-read-session.behavior.draft.mjs:194:59)\n    async Test.run (node:internal/test_runner/test:1389:7)\n    async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3)\n    async file://$REPO/qualification/dynamic-plasma-retained-read-session.behavior.draft.mjs:190:1\n  ...\n# Subtest: inspection snapshots are detached frozen DATA and never claim native cleanup or store lifetime\nnot ok 22 - inspection snapshots are detached frozen DATA and never claim native cleanup or store lifetime\n  ---\n  duration_ms: 0.116959\n  type: 'test'\n  location: '$REPO/qualification/dynamic-plasma-retained-read-session.behavior.draft.mjs:196:7'\n  failureType: 'testCodeFailure'\n  error: 'retained_dynamic_plasma_read_session_close_unknown'\n  code: 'retained_dynamic_plasma_read_session_close_unknown'\n  name: 'TypeError'\n  ...\n# Subtest: an untrusted borrowed read result is forwarded by identity not transformed into an accepted owner Promise\nnot ok 23 - an untrusted borrowed read result is forwarded by identity not transformed into an accepted owner Promise\n  ---\n  duration_ms: 0.138417\n  type: 'test'\n  location: '$REPO/qualification/dynamic-plasma-retained-read-session.behavior.draft.mjs:204:7'\n  failureType: 'testCodeFailure'\n  error: |-\n    Expected values to be strictly equal:\n    \n    1 !== 0\n    \n  code: 'ERR_ASSERTION'\n  name: 'AssertionError'\n  expected: 0\n  actual: 1\n  operator: 'strictEqual'\n  stack: |-\n    TestContext.<anonymous> (file://$REPO/qualification/dynamic-plasma-retained-read-session.behavior.draft.mjs:206:53)\n    Test.runInAsyncScope (node:async_hooks:227:14)\n    Test.run (node:internal/test_runner/test:1382:25)\n    Test.start (node:internal/test_runner/test:1242:17)\n    startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17)\n    run (node:internal/test_runner/harness:398:12)\n    test (node:internal/test_runner/harness:407:12)\n    file://$REPO/qualification/dynamic-plasma-retained-read-session.behavior.draft.mjs:204:7\n  ...\n# Subtest: actual RPC wires and admission counters complete six maximal thirteen-read DP cycles plus eighteen account reads without recreation\nnot ok 24 - actual RPC wires and admission counters complete six maximal thirteen-read DP cycles plus eighteen account reads without recreation\n  ---\n  duration_ms: 12.050375\n  type: 'test'\n  location: '$REPO/qualification/dynamic-plasma-retained-read-session.behavior.draft.mjs:238:7'\n  failureType: 'testCodeFailure'\n  error: 'retained_dynamic_plasma_read_session_close_unknown'\n  code: 'retained_dynamic_plasma_read_session_close_unknown'\n  name: 'TypeError'\n  ...\n1..24\n# tests 24\n# suites 0\n# pass 7\n# fail 17\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 27.705916\n",
+    "note": "The public content replaces the private checkout prefix with $REPO. The byte count and SHA-256 identify the original complete capture, not the redacted string."
+  },
+  "stderr": {
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "content": ""
+  },
+  "argv": [
+    "$PINNED_NODE_24_19_0",
+    "--permission",
+    "--allow-fs-read=$REPO/package.json",
+    "--allow-fs-read=$REPO/qualification/dynamic-plasma-retained-read-session.behavior.draft.mjs",
+    "--allow-fs-read=$REPO/src/zenon/bounded-json-rpc-read-admission.js",
+    "--allow-fs-read=$REPO/src/zenon/bounded-json-rpc-read-core.js",
+    "--allow-fs-read=$REPO/src/zenon/dynamic-plasma-account-state-read-transport.js",
+    "--allow-fs-read=$REPO/src/zenon/dynamic-plasma-json-rpc-read-transport.js",
+    "--allow-fs-read=$REPO/src/zenon/dynamic-plasma-retained-account-exchange-gate.js",
+    "--allow-fs-read=$REPO/src/zenon/dynamic-plasma-retained-read-session-core.js",
+    "--no-addons",
+    "--disallow-code-generation-from-strings",
+    "--disable-proto=throw",
+    "--unhandled-rejections=strict",
+    "--test-reporter=tap",
+    "$REPO/qualification/dynamic-plasma-retained-read-session.behavior.draft.mjs"
+  ],
+  "sourceAndGitStateUnchangedAcrossThisExecution": true,
+  "findings": [
+    "The close observer used all own keys and rejected native Promise async-context symbol metadata. It must inspect hook-relevant own string names while keeping the actual Promise/prototype/constructor/species gates.",
+    "The raw-rejection test used an async assert.rejects bridge that assimilated the deliberately hostile raw rejection object. Use a direct rejection reaction returning undefined and compare only identity."
+  ],
+  "noNativeScopeUsed": true,
+  "nativeHttpsOwnerImported": false,
+  "SDK": false,
+  "SQLite": false,
+  "keys": 0,
+  "signatures": 0,
+  "nonceEvaluations": 0,
+  "newScratch": 0,
+  "newTasks": 0,
+  "qualification": "No clean session close or overall native composition is qualified by this failed run. Later corrected runs must carry different literal source pins."
+}
