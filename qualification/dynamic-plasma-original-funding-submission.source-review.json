@@ -1,0 +1,201 @@
+{
+  "kind": "DP_ORIGINAL_FUNDING_ACTUAL_PAYER_SUBMISSION_COMPOSITION_SOURCE_REVIEW",
+  "version": 1,
+  "status": "SOURCE_IMPLEMENTATION_ONLY_NOT_PARSED_IMPORTED_OR_RUN",
+  "mainBase": "ba5a33c1de34a8d3ad869958f9aac1c625098ab7",
+  "sourceParent": "30ecaf4a62889fed45a3e085383e5ac46a896532",
+  "sourceParentTree": "6cc47087f06e9362d550234020941c13244677e5",
+  "targetSourceBranch": "x402/p1-dp-original-funding-submission-source-v1",
+  "implementation": {
+    "path": "src/zenon/dynamic-plasma-original-funding-submission.js",
+    "bytes": 15202,
+    "sha256": "a91a909bc5a5c3dc067d515164f1d6453178b468b28ef24713fdad70ceffa4a0",
+    "gitBlob": "4fab6451123a78055435f32f9d57bb7b50769670"
+  },
+  "documentation": {
+    "path": "docs/DYNAMIC_PLASMA_ORIGINAL_FUNDING_SUBMISSION.md",
+    "bytes": 7198,
+    "sha256": "980fde54879e4249b8549cfcbdd60418fc6c584742d72e050b707d2ba8461115",
+    "gitBlob": "204656c099fff09a1efa52d9489f703b9fcb75f5"
+  },
+  "selectedApplicationDependencies": [
+    {
+      "path": "src/zenon/dynamic-plasma-original-funding-preparation.js",
+      "bytes": 12149,
+      "sha256": "690824a883194f152ad53070bce1db44be2c436fd957269e96e0a32c3f8f8f2f",
+      "gitBlob": "d99ffab9c75b80212d656be979763dd060e8fa2d"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-original-funding-data.js",
+      "bytes": 13815,
+      "sha256": "a8469e58733bd1314d05385bfbf2235559b148c33b0a9be21a20e1c974217801",
+      "gitBlob": "1bb4e0b282ff23f05786f5f2ed1008a41303b3a2"
+    },
+    {
+      "path": "src/service-credit-zenon-funding-post-v1-payer-recovery-owner.js",
+      "bytes": 17260,
+      "sha256": "1a0887c690bdde060a5b3575275142b57e0cdfa0e2ee1861dff3558eddcd0126",
+      "gitBlob": "ce73531a2bf913bcdd3fe604ef91aa64877e9828"
+    },
+    {
+      "path": "src/service-credit-zenon-funding-post-v1-payer-recovery-sqlite-store.js",
+      "bytes": 83681,
+      "sha256": "bea9e00aa6208f776561c975d54640dfb676168dd4d0b44d125c9dc684912c4a",
+      "gitBlob": "e6af1576df21a20a466d089a4ba6ecdf7380a0df"
+    },
+    {
+      "path": "src/service-credit-pilot-original-payment-checkpoint.js",
+      "bytes": 4003,
+      "sha256": "930905f31824a6cadc16dfb84572cd4dc38a81e2fce4569b73b6bef29dec97d1",
+      "gitBlob": "51c6391bc22f561ebff0005ced31e538aa83f4fa"
+    },
+    {
+      "path": "src/service-credit-zenon-funding-post-v1-client.js",
+      "bytes": 26077,
+      "sha256": "49ea2adbea7a26a2e87b05a5f96e6bb01230853f91922c531b4fdaf7da3fc22d",
+      "gitBlob": "98fa7d808eead2b1663487bb259426c09d5eaac9"
+    },
+    {
+      "path": "src/zenon-payment.js",
+      "bytes": 128301,
+      "sha256": "44ee797207d557175256b5f69c89c5009e238e4c1b5b01c83b118b7e7b0ab35c",
+      "gitBlob": "f6645973803cb430d94f12698b14b7684c27493b"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-observed-balance-deferred-material-planner.js",
+      "bytes": 26795,
+      "sha256": "c8b5b914f718c1d1236417c5005be94084b9bf16bb8e1d5162a3082c40018bec",
+      "gitBlob": "b63ea842553409a334a78437c6e110976942df7b"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-original-funding-store-claim.js",
+      "bytes": 2640,
+      "sha256": "b5aa2b5d2e1b213d89622d11500fa674e536025317bee2f41740ee040c753945",
+      "gitBlob": "2a3e9da5a64f55ff631b5e33371226568b07aa4c"
+    }
+  ],
+  "completeNativeDependencyGraphReviewed": false,
+  "ordinaryInstalledNamespaceQualified": false,
+  "priorPinnedNamespaceEntryNotReusableForThisComposition": true,
+  "sourceTransformOrSubstitutedSdkStorePreflight": false,
+  "defaultBuyerOrLegacyPathChanged": false,
+  "mainEligible": false,
+  "sourceOnly": true,
+  "actualExecution": {
+    "parsed": false,
+    "imported": false,
+    "NodeCommands": 0,
+    "managedCommands": 0,
+    "newStorageTasks": 0,
+    "newSQLiteFiles": 0,
+    "SDKPreflights": 0,
+    "syntheticKeys": 0,
+    "signatures": 0,
+    "nonceSearch": 0,
+    "SDKPrepareBlock": 0,
+    "fundingPosts": 0,
+    "networkConnections": 0,
+    "chainPrepare": 0,
+    "payment": 0,
+    "hostedCI": 0,
+    "acceptanceCasesExecuted": 0
+  },
+  "applicationContract": {
+    "configurationFields": [
+      "preparerOptions",
+      "store",
+      "fundingResourceUrl",
+      "deadlineMs",
+      "fetchImpl"
+    ],
+    "store": "Caller-opened exclusive genuine V6; successful construction transfers lifetime to the actual payer recovery owner",
+    "transport": "Explicit caller capability, never implicit global fetch; not authorization inferred from DATA",
+    "actualPreparationFactory": "createZenonDynamicPlasmaOriginalFundingPreparation",
+    "actualPayerFactory": "createZenonFundingPostV1PayerRecoveryOwner",
+    "noCallerSubstituteFactories": true,
+    "operations": [
+      "prepareOriginalFunding",
+      "commitOriginalFunding",
+      "submitOriginalFunding",
+      "inspectOriginalFunding",
+      "close"
+    ],
+    "beforeSubmission": [
+      "Require independently retained caller pins again",
+      "Match original headers/resource/checkpoint against genuine V6 PREPARED revision 1 with no ambiguity",
+      "Recover actual payer owner without transport",
+      "Recheck exact original state and close fence",
+      "Invoke actual submitPrepared once; actual payer owner owns preflight, durable attempt fence and funding POST-v1"
+    ],
+    "afterSubmission": "Require same headers/checkpoint at actual revision 3 and exact returned status; any post-entry mismatch remains unknown",
+    "originalWireReencodedForSend": false,
+    "prepareAttemptsMaximum": 1,
+    "commitAttemptsMaximum": 1,
+    "admittedSubmissionAttemptsMaximum": 1,
+    "replayUnknownExposed": false,
+    "automaticRetry": false,
+    "operationClaimBeforeCallbacks": true,
+    "synchronousInputCaptureNotDelayed": true,
+    "newChallengeOrReplacementExposed": false,
+    "unknownClearedByClose": false,
+    "cachedSuccessAuthorizesDispatch": false,
+    "checkpointPinsLearnedFromDatabase": false,
+    "fundingBoundIsNotChainPublicationOrGrant": true,
+    "publicOperationActiveIsNotTransportDrainProof": true,
+    "closeHardDeadlineClaim": false,
+    "underlyingUndrainedCloseStillAnAcceptanceGate": true,
+    "claimOrOwnershipReleaseOnFailure": false,
+    "payerConsentOrTrustAuthenticatedByData": false
+  },
+  "requiredUnexecutedAcceptanceCases": [
+    {
+      "id": "exact-original-intake-bound",
+      "requirement": "Actual DP preparation + native V6 atomic commit + real payer owner/client; verify exact original bytes, one POST, revision 3 and intake-only BOUND labels"
+    },
+    {
+      "id": "response-loss-original-unknown",
+      "requirement": "One selected transport rejection preserves exact original packet/hash and native OUTCOME_UNKNOWN; no replay or re-sign after repeated calls or close"
+    },
+    {
+      "id": "commit-before-return-loss",
+      "requirement": "Actual V6 after-commit return loss blocks submission with zero funding POSTs; inspection retains original bytes and child uncertainty"
+    },
+    {
+      "id": "wrong-independent-pins",
+      "requirement": "Descriptor-safe wrong pins refuse before SQL/recovery/transport or submission counter consumption"
+    },
+    {
+      "id": "original-state-conflict",
+      "requirement": "Changed native status/revision/original/checkpoint cannot enter submission or be relabeled successful"
+    },
+    {
+      "id": "close-before-submission-entry",
+      "requirement": "Close while the no-transport recovery is pending prevents later submitPrepared entry and keeps the old operation phase"
+    },
+    {
+      "id": "undrained-transport-close",
+      "requirement": "Do not infer resource release from a public Promise; actual drain/lifetime behavior and external hold remain explicit"
+    },
+    {
+      "id": "configuration-and-owner-refusals",
+      "requirement": "Reject proxy/shadowed store or missing/proxy fetch before wallet/transport. V6 is a caller precondition: a genuine non-V6 store must refuse checkpoint commit before funding POST, but a signed candidate may already exist and must be retained, not retried. Do not reset consumed claims."
+    }
+  ],
+  "remainingGates": [
+    "Author and review an isolated exact-source native behavior fixture for this larger application composition; the previous two-case preparation fixture is not its test.",
+    "Reconcile or explicitly identify all mixed-ref native inputs; never claim clean current-main qualification from a different profile.",
+    "Obtain only any newly required SDK/synthetic-signature/private-SQLite/transport scope and review exact dependencies/launcher before execution; do not reuse consumed HTTPS approval.",
+    "Retain actual outputs, failures and cleanup HOLD without rerunning an experiment to repair metadata.",
+    "Current-source hosted CI, native HTTPS/x402/V6/one-grant composition, chain publication/reconciliation, interruption/resource lifetime, provider authority and economic pilot remain separate."
+  ],
+  "qualification": {
+    "nativeRuntime": false,
+    "cleanCurrentMain": false,
+    "hostedCI": false,
+    "fullP0": false,
+    "fullP1": false,
+    "fullP2": false,
+    "economicPilot": "NO_GO",
+    "authority": "NONE"
+  }
+}
