@@ -1,0 +1,552 @@
+{
+  "schemaVersion": 1,
+  "status": "DECLARED_INGRESS_TRANSFER_REGRESSIONS_PASS",
+  "counts": {
+    "tests": 27,
+    "pass": 27,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "cases": [
+    {
+      "name": "both real factories construct inertly without invoking declared server or deadlines",
+      "status": "PASS"
+    },
+    {
+      "name": "official profile requires its exact paid target before any factory capability",
+      "status": "PASS"
+    },
+    {
+      "name": "official exact GET paid is admitted",
+      "status": "PASS"
+    },
+    {
+      "name": "official POST service remains admitted",
+      "status": "PASS"
+    },
+    {
+      "name": "legacy POST paid remains admitted without selecting the official profile",
+      "status": "PASS"
+    },
+    {
+      "name": "legacy GET paid is still rejected",
+      "status": "PASS"
+    },
+    {
+      "name": "official POST paid is rejected",
+      "status": "PASS"
+    },
+    {
+      "name": "official GET service is rejected",
+      "status": "PASS"
+    },
+    {
+      "name": "official PUT paid is rejected",
+      "status": "PASS"
+    },
+    {
+      "name": "official query target is rejected",
+      "status": "PASS"
+    },
+    {
+      "name": "official trailing-slash target is rejected",
+      "status": "PASS"
+    },
+    {
+      "name": "official encoded target is rejected",
+      "status": "PASS"
+    },
+    {
+      "name": "wrong Host is rejected before downstream",
+      "status": "PASS"
+    },
+    {
+      "name": "duplicate Host is rejected before downstream",
+      "status": "PASS"
+    },
+    {
+      "name": "nonzero GET body framing is rejected without a body read",
+      "status": "PASS"
+    },
+    {
+      "name": "transfer encoding is rejected without a body read",
+      "status": "PASS"
+    },
+    {
+      "name": "Expect is rejected without delegating",
+      "status": "PASS"
+    },
+    {
+      "name": "Upgrade is rejected without delegating",
+      "status": "PASS"
+    },
+    {
+      "name": "missing declared encryption is rejected before official admission",
+      "status": "PASS"
+    },
+    {
+      "name": "duplicate payment header is rejected before official admission",
+      "status": "PASS"
+    },
+    {
+      "name": "whitespace payment header is rejected before official admission",
+      "status": "PASS"
+    },
+    {
+      "name": "response capability cannot mutate method past the final official gate",
+      "status": "PASS"
+    },
+    {
+      "name": "response capability cannot mutate target past the final official gate",
+      "status": "PASS"
+    },
+    {
+      "name": "response capability cannot mutate Host past the final official gate",
+      "status": "PASS"
+    },
+    {
+      "name": "deadline capability cannot change GET framing before downstream",
+      "status": "PASS"
+    },
+    {
+      "name": "caller target-array mutation cannot broaden the captured official profile",
+      "status": "PASS"
+    },
+    {
+      "name": "closed official ingress keeps cached close and detached late callbacks inert",
+      "status": "PASS"
+    }
+  ],
+  "runtime": {
+    "node": "24.19.0",
+    "platform": "darwin",
+    "architecture": "arm64",
+    "nodeSha256": "dbedff294bab84a0a86c04e15fbcbeb1c97ca10bef1b32b0634cd24b36f62100"
+  },
+  "componentRun": {
+    "actualExit": 0,
+    "outputComplete": true,
+    "timedOut": false,
+    "sourceInputs": [
+      {
+        "path": "package.json",
+        "bytes": 2677,
+        "LF": 40,
+        "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+        "gitBlob": "45752ffde39d29666094f7f1c755060d75e43deb"
+      },
+      {
+        "path": "src/service-credit-bounded-https-ingress-owner.js",
+        "bytes": 143191,
+        "LF": 4092,
+        "sha256": "3ba52fb8f33e332a30297dc93e9e6162e4c1d957b3fda1bdf61090ac57d0971a",
+        "gitBlob": "be7cf8bce732388e51be4e3cb6ff711bac1659ab"
+      },
+      {
+        "path": "src/x402-official-https-request-binding.js",
+        "bytes": 5085,
+        "LF": 99,
+        "sha256": "dabf215408887bd0d2ba346085c5ab2df13f724e8759b7a98b71b09c8dc8d692",
+        "gitBlob": "47059c772407233b8b6f54632ba065893ff92dd3"
+      },
+      {
+        "path": "qualification/official-x402-ingress-main-transfer.behavior.draft.mjs",
+        "bytes": 14565,
+        "LF": 238,
+        "sha256": "38bb4443eef37077af9ce983d8b38fb67f3619e8cd7b41d34b0652a9b2237bb7",
+        "gitBlob": "832024ce7c8f1a6e798903977141f20a3ee7d2cf"
+      }
+    ],
+    "sourceEdges": [
+      [
+        "src/service-credit-bounded-https-ingress-owner.js",
+        "src/x402-official-https-request-binding.js"
+      ],
+      [
+        "qualification/official-x402-ingress-main-transfer.behavior.draft.mjs",
+        "src/service-credit-bounded-https-ingress-owner.js"
+      ]
+    ],
+    "argv": [
+      "$NODE",
+      "--permission",
+      "--allow-fs-read=$REPO/package.json",
+      "--allow-fs-read=$REPO/src/service-credit-bounded-https-ingress-owner.js",
+      "--allow-fs-read=$REPO/src/x402-official-https-request-binding.js",
+      "--allow-fs-read=$REPO/qualification/official-x402-ingress-main-transfer.behavior.draft.mjs",
+      "--no-addons",
+      "--disallow-code-generation-from-strings",
+      "--disable-proto=throw",
+      "--unhandled-rejections=strict",
+      "--test-reporter=tap",
+      "$REPO/qualification/official-x402-ingress-main-transfer.behavior.draft.mjs"
+    ],
+    "stdout": {
+      "bytes": 5234,
+      "sha256": "912a78bab836d2d46d78ced5b242de38c52e738028ccbb6a795c81beb9bd3d2e",
+      "content": "# {\"kind\":\"Q72_DECLARED_INGRESS_MAIN_TRANSFER_COMPONENT\",\"selectedCases\":27,\"declaredOwners\":27,\"actualIngressModule\":true,\"nativeServer\":0,\"nativeSockets\":0,\"TLS\":0,\"SDK\":0,\"SQLite\":0,\"applicationTimers\":0,\"keys\":0,\"signatures\":0,\"nonce\":0,\"NodeChildren\":0,\"newTasks\":0,\"newScratch\":0,\"nativeV4Reused\":false,\"nativeHostImported\":false,\"physicalDrain\":\"NOT_ESTABLISHED\"}\nTAP version 13\n# Subtest: both real factories construct inertly without invoking declared server or deadlines\nok 1 - both real factories construct inertly without invoking declared server or deadlines\n  ---\n  duration_ms: 5.35575\n  type: 'test'\n  ...\n# Subtest: official profile requires its exact paid target before any factory capability\nok 2 - official profile requires its exact paid target before any factory capability\n  ---\n  duration_ms: 0.730542\n  type: 'test'\n  ...\n# Subtest: official exact GET paid is admitted\nok 3 - official exact GET paid is admitted\n  ---\n  duration_ms: 2.609583\n  type: 'test'\n  ...\n# Subtest: official POST service remains admitted\nok 4 - official POST service remains admitted\n  ---\n  duration_ms: 0.685542\n  type: 'test'\n  ...\n# Subtest: legacy POST paid remains admitted without selecting the official profile\nok 5 - legacy POST paid remains admitted without selecting the official profile\n  ---\n  duration_ms: 0.571958\n  type: 'test'\n  ...\n# Subtest: legacy GET paid is still rejected\nok 6 - legacy GET paid is still rejected\n  ---\n  duration_ms: 0.426541\n  type: 'test'\n  ...\n# Subtest: official POST paid is rejected\nok 7 - official POST paid is rejected\n  ---\n  duration_ms: 0.342458\n  type: 'test'\n  ...\n# Subtest: official GET service is rejected\nok 8 - official GET service is rejected\n  ---\n  duration_ms: 0.231458\n  type: 'test'\n  ...\n# Subtest: official PUT paid is rejected\nok 9 - official PUT paid is rejected\n  ---\n  duration_ms: 0.837875\n  type: 'test'\n  ...\n# Subtest: official query target is rejected\nok 10 - official query target is rejected\n  ---\n  duration_ms: 0.4035\n  type: 'test'\n  ...\n# Subtest: official trailing-slash target is rejected\nok 11 - official trailing-slash target is rejected\n  ---\n  duration_ms: 0.2955\n  type: 'test'\n  ...\n# Subtest: official encoded target is rejected\nok 12 - official encoded target is rejected\n  ---\n  duration_ms: 0.198334\n  type: 'test'\n  ...\n# Subtest: wrong Host is rejected before downstream\nok 13 - wrong Host is rejected before downstream\n  ---\n  duration_ms: 0.212917\n  type: 'test'\n  ...\n# Subtest: duplicate Host is rejected before downstream\nok 14 - duplicate Host is rejected before downstream\n  ---\n  duration_ms: 0.127458\n  type: 'test'\n  ...\n# Subtest: nonzero GET body framing is rejected without a body read\nok 15 - nonzero GET body framing is rejected without a body read\n  ---\n  duration_ms: 0.104584\n  type: 'test'\n  ...\n# Subtest: transfer encoding is rejected without a body read\nok 16 - transfer encoding is rejected without a body read\n  ---\n  duration_ms: 0.288459\n  type: 'test'\n  ...\n# Subtest: Expect is rejected without delegating\nok 17 - Expect is rejected without delegating\n  ---\n  duration_ms: 0.239458\n  type: 'test'\n  ...\n# Subtest: Upgrade is rejected without delegating\nok 18 - Upgrade is rejected without delegating\n  ---\n  duration_ms: 0.130459\n  type: 'test'\n  ...\n# Subtest: missing declared encryption is rejected before official admission\nok 19 - missing declared encryption is rejected before official admission\n  ---\n  duration_ms: 0.113459\n  type: 'test'\n  ...\n# Subtest: duplicate payment header is rejected before official admission\nok 20 - duplicate payment header is rejected before official admission\n  ---\n  duration_ms: 0.105\n  type: 'test'\n  ...\n# Subtest: whitespace payment header is rejected before official admission\nok 21 - whitespace payment header is rejected before official admission\n  ---\n  duration_ms: 0.124834\n  type: 'test'\n  ...\n# Subtest: response capability cannot mutate method past the final official gate\nok 22 - response capability cannot mutate method past the final official gate\n  ---\n  duration_ms: 0.515584\n  type: 'test'\n  ...\n# Subtest: response capability cannot mutate target past the final official gate\nok 23 - response capability cannot mutate target past the final official gate\n  ---\n  duration_ms: 0.279\n  type: 'test'\n  ...\n# Subtest: response capability cannot mutate Host past the final official gate\nok 24 - response capability cannot mutate Host past the final official gate\n  ---\n  duration_ms: 0.299083\n  type: 'test'\n  ...\n# Subtest: deadline capability cannot change GET framing before downstream\nok 25 - deadline capability cannot change GET framing before downstream\n  ---\n  duration_ms: 0.366958\n  type: 'test'\n  ...\n# Subtest: caller target-array mutation cannot broaden the captured official profile\nok 26 - caller target-array mutation cannot broaden the captured official profile\n  ---\n  duration_ms: 0.429959\n  type: 'test'\n  ...\n# Subtest: closed official ingress keeps cached close and detached late callbacks inert\nok 27 - closed official ingress keeps cached close and detached late callbacks inert\n  ---\n  duration_ms: 0.3225\n  type: 'test'\n  ...\n1..27\n# tests 27\n# suites 0\n# pass 27\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 25.554709\n"
+    },
+    "stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "content": ""
+    }
+  },
+  "scopeDiagnostic": {
+    "kind": "Q72_DECLARED_INGRESS_MAIN_TRANSFER_COMPONENT",
+    "selectedCases": 27,
+    "declaredOwners": 27,
+    "actualIngressModule": true,
+    "nativeServer": 0,
+    "nativeSockets": 0,
+    "TLS": 0,
+    "SDK": 0,
+    "SQLite": 0,
+    "applicationTimers": 0,
+    "keys": 0,
+    "signatures": 0,
+    "nonce": 0,
+    "NodeChildren": 0,
+    "newTasks": 0,
+    "newScratch": 0,
+    "nativeV4Reused": false,
+    "nativeHostImported": false,
+    "physicalDrain": "NOT_ESTABLISHED"
+  },
+  "scope": {
+    "nativeServer": 0,
+    "nativeSockets": 0,
+    "TLS": 0,
+    "SDK": 0,
+    "SQLite": 0,
+    "applicationTimers": 0,
+    "keys": 0,
+    "signatures": 0,
+    "nonce": 0,
+    "NodeChildren": 0,
+    "newScratch": 0,
+    "newTasks": 0,
+    "nativeV4Rerun": 0,
+    "nativeHostImported": false,
+    "localNodeCommands": 1,
+    "NodeBinaryHashChunkBytes": 1048576
+  },
+  "mainTransfer": {
+    "beforeMain": "6f858bfc069b8ff3bb188666a307e0bc65d914c7",
+    "sourceParent": "5649f5e132f37d31f34bd88a4796f62ff8b0556f",
+    "changedRuntimeFiles": [
+      {
+        "path": "src/service-credit-bounded-https-ingress-owner.js",
+        "beforeMainBlob": "06b253b581449ca934edea8bf5bcea653b696b3b",
+        "bytes": 143191,
+        "LF": 4092,
+        "sha256": "3ba52fb8f33e332a30297dc93e9e6162e4c1d957b3fda1bdf61090ac57d0971a",
+        "gitBlob": "be7cf8bce732388e51be4e3cb6ff711bac1659ab"
+      },
+      {
+        "path": "src/service-credit-native-https-client-transport.js",
+        "beforeMainBlob": null,
+        "bytes": 12133,
+        "LF": 228,
+        "sha256": "e44e378b029d3747d4fa276c5dde480f81cc075add345d0d15d0aa8b0d9b3f24",
+        "gitBlob": "ab6740f8e82c0cf06d5c268ce0b6750d87d0ddeb"
+      },
+      {
+        "path": "src/x402-official-service-credit-https-application.js",
+        "beforeMainBlob": null,
+        "bytes": 7579,
+        "LF": 131,
+        "sha256": "361afdd207328f9d2e637196f009c0dc57c362a8141388fd3fa5bcdbe8afeab8",
+        "gitBlob": "691148572674081b2f1e8ebdd44f54319eaa3019"
+      },
+      {
+        "path": "src/x402-official-upfront-https-router.js",
+        "beforeMainBlob": null,
+        "bytes": 18721,
+        "LF": 360,
+        "sha256": "0980e8a648eda8f0ee57353010f5ffda50bdd38ac95ee49e129201de136b9921",
+        "gitBlob": "910d9676ac19fc08eb03c6e005517d2d862702ef"
+      },
+      {
+        "path": "src/x402-official-v6-original-payment-client.js",
+        "beforeMainBlob": null,
+        "bytes": 11296,
+        "LF": 210,
+        "sha256": "84f1b27f7b0e71d1122672e83b970a7e60d3881233a3b35387efc89220c5b1b4",
+        "gitBlob": "ee582ed684cd73c5ae92d9583aa7057d111baaea"
+      }
+    ],
+    "expectedRuntimeFileCount": 33,
+    "expectedRuntimeInputs": [
+      {
+        "path": "package.json",
+        "bytes": 2677,
+        "LF": 40,
+        "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+        "gitBlob": "45752ffde39d29666094f7f1c755060d75e43deb"
+      },
+      {
+        "path": "src/canonical.js",
+        "bytes": 967,
+        "LF": 26,
+        "sha256": "0d55ddf1727cafb0dcd46df2922305568615552a4d2ae34a5c30e90b9d8d998c",
+        "gitBlob": "5367f9c72ee13017a61630e1f0cffdced21d52c4"
+      },
+      {
+        "path": "src/service-credit-bounded-https-ingress-owner.js",
+        "bytes": 143191,
+        "LF": 4092,
+        "sha256": "3ba52fb8f33e332a30297dc93e9e6162e4c1d957b3fda1bdf61090ac57d0971a",
+        "gitBlob": "be7cf8bce732388e51be4e3cb6ff711bac1659ab"
+      },
+      {
+        "path": "src/service-credit-bounded-node-https-server-factory.js",
+        "bytes": 26968,
+        "LF": 778,
+        "sha256": "aead901ba154c39ea25e5cdcc363ea91ed6749841f6e8945cd01debc52cae387",
+        "gitBlob": "5900a111df486329e0e0644b78b49048ed551ca7"
+      },
+      {
+        "path": "src/service-credit-capability.js",
+        "bytes": 8284,
+        "LF": 256,
+        "sha256": "cb2b96d9a2e56c132dd1b4aca8f1c065b244ecd0e7e92f41ea3f4a8c969d17c3",
+        "gitBlob": "2e19d42c1b9311a75897c84669849f56ae40f785"
+      },
+      {
+        "path": "src/service-credit-custodied-http-client.js",
+        "bytes": 12646,
+        "LF": 324,
+        "sha256": "35997f41c9a5162fe29ed56776181a1691c0a0a69c7dbdfe8b61785af3998145",
+        "gitBlob": "33879d019492de8d278b0d0dc998bd1c7806b413"
+      },
+      {
+        "path": "src/service-credit-custodied-request-owner.js",
+        "bytes": 55155,
+        "LF": 1358,
+        "sha256": "2ba222760d4a922bf0466d95fd2671076b9d19b8c5fa4ea2cb3c66b1338562eb",
+        "gitBlob": "7f99bdadcc622db203e864edb12a1f4d1059a965"
+      },
+      {
+        "path": "src/service-credit-custodied-sqlite-http-client.js",
+        "bytes": 22706,
+        "LF": 578,
+        "sha256": "a66cfeccbf4e4490d939d006525a400f7dd7eac56911080c54c38ccc8e3374cd",
+        "gitBlob": "86ac76593fa9c9a6b39bb6a39c1a2ef994aff7f2"
+      },
+      {
+        "path": "src/service-credit-durable-execution-owner.js",
+        "bytes": 40833,
+        "LF": 1301,
+        "sha256": "a63a795dda77489f7da0682d83a0683cf07240f83b803f449668cb687a956863",
+        "gitBlob": "f0fd445a17466dd1ab83c785c44aa5e6fdf1e765"
+      },
+      {
+        "path": "src/service-credit-durable-http-session.js",
+        "bytes": 13978,
+        "LF": 425,
+        "sha256": "a0d6d1436cdb697f125fee2f4dc723a5ddcfd2ee7063b55d56fa006bb8ba69bf",
+        "gitBlob": "307b72b8a1d114463ad8e18935312b18ccb23199"
+      },
+      {
+        "path": "src/service-credit-durable-session-close.js",
+        "bytes": 2470,
+        "LF": 84,
+        "sha256": "5aae36a7da39ce5b7b9a8da8e9fbda88465cb1e4853dc791520a1df0ab87ede7",
+        "gitBlob": "f744b55595e2238dc088cf71ca8849e480cda1bc"
+      },
+      {
+        "path": "src/service-credit-execution-contract.js",
+        "bytes": 30258,
+        "LF": 956,
+        "sha256": "298f8e74885e1c507953c0fcf7874832f815296746e6bacbdac97a425f1a6c73",
+        "gitBlob": "acfbb5c5e943b9e09958a7831b3dbe159463dcf9"
+      },
+      {
+        "path": "src/service-credit-http-execute-dispatch.js",
+        "bytes": 29328,
+        "LF": 815,
+        "sha256": "e07470a9fde311c806beb09b1c4369b4724213682bcbcacc228ece0e0e36f5ef",
+        "gitBlob": "4b5bcb1b08b1ab44e65c8ed7bab76d41640a767b"
+      },
+      {
+        "path": "src/service-credit-http.js",
+        "bytes": 32432,
+        "LF": 958,
+        "sha256": "c76a7f1864bdfcd0c26916bf28fba615c8aecf899d53e69467e3ebe7d3353d0d",
+        "gitBlob": "040da1547c2fa6cc4a4044c47619b253f16d19a1"
+      },
+      {
+        "path": "src/service-credit-model.js",
+        "bytes": 55461,
+        "LF": 1580,
+        "sha256": "7ff7e3d88ab8c3b38a0073541533fbdb7a0d9f2be42f337ac35f6a3b05615c3a",
+        "gitBlob": "e6ac17254874584d1a01f70e7abc6f771bd35d73"
+      },
+      {
+        "path": "src/service-credit-native-client-close-owner.js",
+        "bytes": 7170,
+        "LF": 149,
+        "sha256": "00366016a37cf71234cb305e860b5d3f406c97f6b6a7af8569ae76726b759c91",
+        "gitBlob": "ed68174f93050d837786ab799b3b6dee5f7e0676"
+      },
+      {
+        "path": "src/service-credit-native-https-client-transport.js",
+        "bytes": 12133,
+        "LF": 228,
+        "sha256": "e44e378b029d3747d4fa276c5dde480f81cc075add345d0d15d0aa8b0d9b3f24",
+        "gitBlob": "ab6740f8e82c0cf06d5c268ce0b6750d87d0ddeb"
+      },
+      {
+        "path": "src/service-credit-original-request-custody-contract.js",
+        "bytes": 14051,
+        "LF": 356,
+        "sha256": "fd349de553a17abcc2e0567ba6640e6e3d5d26cfa79ee1e355928dc9fa8d3915",
+        "gitBlob": "f911d42d01b69e6577f9bcd66f4ed59aab8ab882"
+      },
+      {
+        "path": "src/service-credit-pilot-original-payment-checkpoint.js",
+        "bytes": 4003,
+        "LF": 89,
+        "sha256": "930905f31824a6cadc16dfb84572cd4dc38a81e2fce4569b73b6bef29dec97d1",
+        "gitBlob": "51c6391bc22f561ebff0005ced31e538aa83f4fa"
+      },
+      {
+        "path": "src/service-credit-sqlite-store.js",
+        "bytes": 83516,
+        "LF": 2366,
+        "sha256": "eea4032830dc1f641c4832e0dab33066633ba487eaf19581e3295cf8810460f3",
+        "gitBlob": "ae5260ef3442079fe73544d2d730d05724758fa1"
+      },
+      {
+        "path": "src/service-credit-zenon-funding-post-v1-payer-recovery-sqlite-store.js",
+        "bytes": 83681,
+        "LF": 2042,
+        "sha256": "bea9e00aa6208f776561c975d54640dfb676168dd4d0b44d125c9dc684912c4a",
+        "gitBlob": "e6af1576df21a20a466d089a4ba6ecdf7380a0df"
+      },
+      {
+        "path": "src/x402-official-https-request-binding.js",
+        "bytes": 5085,
+        "LF": 99,
+        "sha256": "dabf215408887bd0d2ba346085c5ab2df13f724e8759b7a98b71b09c8dc8d692",
+        "gitBlob": "47059c772407233b8b6f54632ba065893ff92dd3"
+      },
+      {
+        "path": "src/x402-official-selected-payment-client.js",
+        "bytes": 9226,
+        "LF": 177,
+        "sha256": "6103703a48ab93b33e1d322d01da367d9552d1e37c9d983326f6e58d1e77693c",
+        "gitBlob": "f7a47d8d3405f624fa2dc489745752994263ce53"
+      },
+      {
+        "path": "src/x402-official-selected-settlement-server.js",
+        "bytes": 15704,
+        "LF": 284,
+        "sha256": "7e226d378b909bbe30a536b4829313f7cc25d772ac2c0dbfba741c64fc2515b5",
+        "gitBlob": "0c5457b489462470fd4c2f1c4d9cb87a8dfbdf5c"
+      },
+      {
+        "path": "src/x402-official-service-credit-https-application.js",
+        "bytes": 7579,
+        "LF": 131,
+        "sha256": "361afdd207328f9d2e637196f009c0dc57c362a8141388fd3fa5bcdbe8afeab8",
+        "gitBlob": "691148572674081b2f1e8ebdd44f54319eaa3019"
+      },
+      {
+        "path": "src/x402-official-upfront-https-router.js",
+        "bytes": 18721,
+        "LF": 360,
+        "sha256": "0980e8a648eda8f0ee57353010f5ffda50bdd38ac95ee49e129201de136b9921",
+        "gitBlob": "910d9676ac19fc08eb03c6e005517d2d862702ef"
+      },
+      {
+        "path": "src/x402-official-v6-original-payment-client.js",
+        "bytes": 11296,
+        "LF": 210,
+        "sha256": "84f1b27f7b0e71d1122672e83b970a7e60d3881233a3b35387efc89220c5b1b4",
+        "gitBlob": "ee582ed684cd73c5ae92d9583aa7057d111baaea"
+      },
+      {
+        "path": "src/x402-original-payment-checkpoint-client.js",
+        "bytes": 11189,
+        "LF": 223,
+        "sha256": "bb7cba7dcab0f023c90c3b4150f6fe27c2eb2e899310e4f5ca3cef9673c055e7",
+        "gitBlob": "3b2a31c23ee7b075d72a64587a90b21279305e5d"
+      },
+      {
+        "path": "src/x402-selected-payment-client-bridge.js",
+        "bytes": 19446,
+        "LF": 370,
+        "sha256": "d8252e421240005f51b1627ab97b624496325403508d57b030be423e871a5083",
+        "gitBlob": "a405eb73cab88302ee5c0e130bdfc9d1ef9eebfa"
+      },
+      {
+        "path": "src/x402-selected-settlement-context.js",
+        "bytes": 16818,
+        "LF": 456,
+        "sha256": "afb6e16603023dd58d6a71cff5790a802dcfa4b98bc9d380b51ccc3d58e10991",
+        "gitBlob": "321d2a03a45296907c0a35a50d1e038e82307a40"
+      },
+      {
+        "path": "src/x402-selected-settlement-server-bridge.js",
+        "bytes": 39943,
+        "LF": 749,
+        "sha256": "38f47d24e1dcdd0f632e786054dc2e9544de2f261f74e949e28fee43ed56f40b",
+        "gitBlob": "483633ee18735355d9614cafe8f7bd8044a7d8b7"
+      },
+      {
+        "path": "src/x402-verification-bound-settlement-context.js",
+        "bytes": 11311,
+        "LF": 221,
+        "sha256": "b3ad2fd33dae7e77a77f069cbc1259bf77e18a2bf383aa30f41bcc19221656f5",
+        "gitBlob": "6734a4aa011239402c141b874612a3be0733b4bf"
+      },
+      {
+        "path": "src/x402-wire.js",
+        "bytes": 39886,
+        "LF": 934,
+        "sha256": "5fba91af5a352f62d1a335c7176a45a604e2af5d92b1c4b0e53825c1f20d4e56",
+        "gitBlob": "fb060d4e349b1c31a1219a0cc137af250a8a2291"
+      }
+    ],
+    "rule": "Transfer these five runtime files together. Verify all 33 non-fixture app inputs against the main tree after normal publication. Do not substitute a different ingress or relabel the native experiment as a fresh main run."
+  },
+  "nativeEvidence": {
+    "result": "qualification/p1-native-v6-two-sqlite-once-v4.actual-local-result.json",
+    "executedSourceCommit": "344acd0dbff40833bcdcde4d74b6c08fac825f4d",
+    "sourceRowsSha256": "acca2c1d820bedd58576701ca98ccec74298912b22e0c5c07f508214579bc23c",
+    "actualExit": 0,
+    "counts": {
+      "tests": 6,
+      "pass": 6,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "rawStdout": {
+      "bytes": 5089,
+      "sha256": "efe5f47901be40073783c923814ae986fc6f08295761d9c1eff8321b5592c543"
+    },
+    "freshNativeExecution": false,
+    "sourceByteCorrespondenceOnly": true,
+    "ordinaryInstalledNamespace": "NOT_QUALIFIED"
+  },
+  "boundaries": {
+    "defaultBuyerOrServerChanged": false,
+    "POSTOnlyFactoryPreserved": true,
+    "officialGetPaidIsExplicitProfile": true,
+    "otherNativeHost": "NOT_TRANSFERRED_NOT_IMPORTED_NOT_EXECUTED",
+    "nativeApplicationDeadlineBinding": "NOT_TRANSFERRED_NOT_EXECUTED",
+    "allHistoricalIngressTests": "NOT_SELECTED",
+    "hostedCI": "NOT_RUN_NOT_GREEN",
+    "fullP0P1": "NOT_ESTABLISHED",
+    "actualFundingOrProviderActivation": "NOT_ESTABLISHED",
+    "economicPilot": "NO_GO",
+    "storageCleanup": false,
+    "oldEvidenceUnchanged": true
+  }
+}
