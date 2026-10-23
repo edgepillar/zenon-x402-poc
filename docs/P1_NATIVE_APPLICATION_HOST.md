@@ -9,8 +9,9 @@ caller-injected HTTPS/timer/clock factory without changing the default buyer.
 
 The P1 V2 and V3 native attempts did **not** import or execute these two new
 modules. Their four passed cases and failed fifth case do not qualify this host.
-The separate unparsed/unrun V4 fixture still selects the old application graph;
-it is not a test of this new host.
+The separately approved V4 fixture passed its five selected old-application-graph
+cases, including normal reopen of the same two SQLite files; it did not import,
+parse or execute this host. See [the exact V4 result](P1_NATIVE_V6_V4_LOCAL_QUALIFICATION.md).
 
 The actual deadline binding now privately delegates ownership to the tested
 application deadline core. Its 32 selected SDK/SQL/socket/timer-free cases are
