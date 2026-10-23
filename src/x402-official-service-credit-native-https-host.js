@@ -82,18 +82,21 @@ export async function createNativeOfficialServiceCreditHttpsApplication(configur
   app = null; clock = null;
   let phase = 'CREATED', unknown = false, startCell = null, closeCell = null;
   let applicationCloseOutcome = 'NOT_REQUESTED', deadlineCloseOutcome = 'NOT_REQUESTED';
-  let deadlineCloseCalls = 0, handoff = false;
+  let deadlineCloseCalls = 0, handoff = false, closePromiseOutcome = 'NOT_REQUESTED';
 
-  function failStart() {
+  function invalidateHandoff() {
     unknown = true; handoff = false;
     if (phase === 'CLOSED') phase = 'CLOSE_UNKNOWN';
-    else if (phase !== 'CLOSING' && phase !== 'CLOSE_UNKNOWN') phase = 'START_UNKNOWN';
+  }
+  function failStart() {
+    invalidateHandoff();
+    if (phase !== 'CLOSING' && phase !== 'CLOSE_UNKNOWN') phase = 'START_UNKNOWN';
     startCell.reject(error('START_UNAVAILABLE'));
   }
   const start = FREEZE(function start() {
     if (arguments.length !== 0) return rejected('INPUT');
     if (startCell !== null) return startCell.promise;
-    if (phase !== 'CREATED') return rejected('CLOSED');
+    if (phase !== 'CREATED' || unknown) return rejected('CLOSED');
     startCell = capability(); phase = 'STARTING';
     try {
       const result = APPLY(START, APP, []);
@@ -107,19 +110,23 @@ export async function createNativeOfficialServiceCreditHttpsApplication(configur
     } catch { failStart(); }
     return startCell.promise;
   });
-  function finishClose(clean) {
-    handoff = false;
-    try {
-      const a = APP.snapshot(), d = CLOCK_OWNER.snapshot(), i = a.ingress, r = a.router;
-      handoff = clean && !unknown && applicationCloseOutcome === 'FULFILLED_CLOSED'
+  function cleanHandoffSnapshot(a, d) {
+    const i = a.ingress, r = a.router;
+    return !unknown && applicationCloseOutcome === 'FULFILLED_CLOSED'
         && deadlineCloseOutcome === 'FULFILLED_VOID' && i.phase === 'CLOSED'
         && ['trackedSockets','trackedRequests','trackedHandlers','ownedTimers'].every(key => i[key] === 0)
         && r.phase === 'CLOSED' && r.activeOperations === 0 && r.pendingCloses === 0
         && r.serviceSessionClosed === true && r.uncertain === false
-        && d.phase === 'CLOSED' && !d.unknown && d.activeTimers === 0 && d.deliveringCallbacks === 0;
-    } catch { unknown = true; }
+        && d.phase === 'CLOSED' && d.unknown === false && d.activeTimers === 0 && d.deliveringCallbacks === 0;
+  }
+  function finishClose(clean) {
+    if (closePromiseOutcome !== 'PENDING') { invalidateHandoff(); return; }
+    handoff = false;
+    try { handoff = clean && cleanHandoffSnapshot(APP.snapshot(), CLOCK_OWNER.snapshot()); }
+    catch { unknown = true; }
     if (!handoff) unknown = true;
     phase = unknown ? 'CLOSE_UNKNOWN' : 'CLOSED';
+    closePromiseOutcome = phase;
     if (unknown) closeCell.reject(error('CLOSE_UNKNOWN'));
     else closeCell.resolve(FREEZE({ status: 'CLOSED', borrowedStoreClosed: false,
       borrowedStoreHandoff: 'CLEAN_LOCAL_OWNER_CLOSE_OBSERVED', authority: 'NONE' }));
@@ -142,6 +149,7 @@ export async function createNativeOfficialServiceCreditHttpsApplication(configur
     if (arguments.length !== 0) return rejected('INPUT');
     if (closeCell !== null) return closeCell.promise;
     closeCell = capability(); phase = 'CLOSING'; applicationCloseOutcome = 'WAITING';
+    closePromiseOutcome = 'PENDING';
     try {
       const result = APPLY(CLOSE, APP, []);
       if (!observe(result, value => {
@@ -154,20 +162,28 @@ export async function createNativeOfficialServiceCreditHttpsApplication(configur
       }, () => { applicationCloseOutcome = 'REJECTED'; unknown = true; closeDeadlines(); })) {
         // No trustworthy child settlement: do not cut off its closing clocks.
         applicationCloseOutcome = 'UNOBSERVABLE'; unknown = true; phase = 'CLOSE_UNKNOWN';
+        closePromiseOutcome = 'CLOSE_UNKNOWN';
         closeCell.reject(error('CLOSE_UNKNOWN'));
       }
     } catch {
       applicationCloseOutcome = 'THREW'; unknown = true; phase = 'CLOSE_UNKNOWN';
+      closePromiseOutcome = 'CLOSE_UNKNOWN';
       closeCell.reject(error('CLOSE_UNKNOWN'));
     }
     return closeCell.promise;
   });
   const snapshot = FREEZE(function snapshot() {
     if (arguments.length !== 0) fail('INPUT');
-    const actual = APP.snapshot();
+    let actual, nativeDeadlines;
+    try {
+      actual = APP.snapshot(); nativeDeadlines = CLOCK_OWNER.snapshot();
+      // Current child uncertainty revokes an earlier observation permanently.
+      // The cached close Promise remains historical; snapshot never repairs it.
+      if (handoff && !cleanHandoffSnapshot(actual, nativeDeadlines)) invalidateHandoff();
+    } catch { invalidateHandoff(); throw error('SNAPSHOT_UNAVAILABLE'); }
     return FREEZE({ profile: 'NATIVE_OFFICIAL_X402_SCOPED_HTTPS_HOST_SOURCE',
-      phase, unknown, application: actual, ingress: actual.ingress, nativeDeadlines: CLOCK_OWNER.snapshot(),
-      applicationCloseOutcome, deadlineCloseOutcome, deadlineCloseCalls,
+      phase, unknown, application: actual, ingress: actual.ingress, nativeDeadlines,
+      applicationCloseOutcome, deadlineCloseOutcome, deadlineCloseCalls, closePromiseOutcome,
       borrowedStoreClosed: false, borrowedStoreHandoff: handoff
         ? 'CLEAN_LOCAL_OWNER_CLOSE_OBSERVED' : 'KEEP_HELD',
       defaultEnabled: false, authority: 'NONE', nativeRuntimeQualified: false,
