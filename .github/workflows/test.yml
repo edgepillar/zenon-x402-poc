@@ -17,7 +17,7 @@ concurrency:
 
 jobs:
   test:
-    name: Node 24
+    name: Current profile / Node 24.19.0
     runs-on: ubuntu-24.04
     timeout-minutes: 15
 
@@ -25,22 +25,39 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # actions/checkout v7.0.1
         with:
+          ref: ${{ github.sha }}
           persist-credentials: false
 
-      # Node 24 is the configured CI-tested minimum. This lane does not claim
-      # that every higher major admitted by the package engine range is exercised.
-      - name: Set up Node.js 24
+      # This current lane is separate from source-bound historical recipes.
+      # Its authored workflow is not evidence of a successful hosted execution.
+      - name: Set up the selected Node.js runtime
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # actions/setup-node v7.0.0
         with:
-          node-version: '24'
+          node-version: '24.19.0'
           check-latest: false
           package-manager-cache: false
 
-      - name: Install dependencies without lifecycle scripts
-        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Verify the selected clean source revision
+        shell: bash
+        env:
+          EXPECTED_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
+          test -z "$(git --no-optional-locks status --porcelain=v1 --untracked-files=all --ignored=matching)"
+          printf 'source-head=%s\nsource-tree=%s\n' "$EXPECTED_SHA" "$(git rev-parse 'HEAD^{tree}')"
 
-      - name: Run tests
+      # The selected profile imports built-ins and six local modules only.
+      # No npm install/ci, SDK, x402 package, SQL, key or native HTTP execution.
+      - name: Run only the current qualification profile
         run: npm test
 
       - name: Verify repository remains clean
-        run: test -z "$(git status --porcelain=v1 --untracked-files=all)"
+        if: always()
+        shell: bash
+        env:
+          EXPECTED_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
+          test -z "$(git --no-optional-locks status --porcelain=v1 --untracked-files=all --ignored=matching)"

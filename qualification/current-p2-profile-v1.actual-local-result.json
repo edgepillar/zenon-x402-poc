@@ -1,0 +1,349 @@
+{
+  "schemaVersion": 1,
+  "kind": "P0_CURRENT_SOURCE_PROFILE_LOCAL_RESULT",
+  "disposition": "SELECTED_CURRENT_COMPONENTS_AND_PROFILE_CONTRACT_LOCAL_PASS",
+  "qualificationDateUTC": "2026-10-23",
+  "sourceBase": {
+    "commit": "fb939175edc5633fc63e159b0c650554b18aba22",
+    "tree": "c8f6f686aafd783ba6abf7db67b720e657135919"
+  },
+  "profile": {
+    "id": "p0-current-p2-node24-v1",
+    "manifest": "qualification/profiles/p0-current-p2-node24-v1.json",
+    "manifestSha256": "b321e32a8fb5854207f967588e121c8364e2a8b98a71ab359077712ed78b1ca1",
+    "immutableGeneration": 1
+  },
+  "runtime": {
+    "node": "24.19.0",
+    "platform": "darwin",
+    "arch": "arm64",
+    "nodeSha256": "dbedff294bab84a0a86c04e15fbcbeb1c97ca10bef1b32b0634cd24b36f62100",
+    "nodeDigestReusedOnlyAfterExactPhysicalIdentityCheck": true,
+    "otherPlatformsExecuted": false
+  },
+  "command": {
+    "nodeParentCommands": 1,
+    "nodeChildProcesses": 0,
+    "cwd": "repository root",
+    "exactPackageTestArgvUsedWithPinnedNode": true,
+    "npmCliItselfExecuted": false,
+    "argv": [
+      "node",
+      "--permission",
+      "--allow-fs-read=./package.json",
+      "--allow-fs-read=./scripts/current-qualification-profile.mjs",
+      "--allow-fs-read=./scripts/run-current-qualification.mjs",
+      "--allow-fs-read=./qualification/profiles/p0-current-p2-node24-v1.json",
+      "--allow-fs-read=./test/current-qualification-profile.test.js",
+      "--allow-fs-read=./test/service-credit-custodied-sequential-runner-accepted-receipt-prototype.test.js",
+      "--allow-fs-read=./qualification/service-credit-dispatch-abort-drain.behavior.draft.mjs",
+      "--allow-fs-read=./src/service-credit-http-execute-dispatch.js",
+      "--allow-fs-read=./src/service-credit-custodied-sequential-runner.js",
+      "--allow-fs-read=./src/service-credit-original-request-custody-contract.js",
+      "--allow-fs-read=./src/service-credit-custodied-http-client.js",
+      "--allow-fs-read=./src/service-credit-custodied-sequential-runner-core.js",
+      "--allow-fs-read=./src/service-credit-custodied-request-owner.js",
+      "--no-addons",
+      "--disallow-code-generation-from-strings",
+      "--unhandled-rejections=strict",
+      "scripts/run-current-qualification.mjs"
+    ],
+    "environmentCleared": true,
+    "nodePermissionModel": true,
+    "noOsOrNetworkSandboxClaim": true,
+    "testTimeoutMs": 15000,
+    "commandObservationTimeoutSeconds": 30,
+    "stdoutCap": 32768,
+    "stderrCap": 1048576,
+    "actualExit": 0,
+    "outputComplete": true,
+    "processGroupObservedAbsentAfterJoin": true,
+    "reason": null
+  },
+  "selection": {
+    "profileContractCases": 12,
+    "applicationComponentCases": 8,
+    "acceptedRunReceiptCases": 1,
+    "abortDrainCompositionCases": 7,
+    "totalCases": 20,
+    "historicalEntriesDiscoveredOrExecuted": 0,
+    "names": [
+      "current profile admits a closed immutable source and case selection",
+      "current profile rejects malformed text and unknown schema members",
+      "current profile refuses floating runtime and dependency installation",
+      "current profile keeps package declaration separate from package execution",
+      "current profile refuses missing reordered or historical entry paths",
+      "current profile rejects duplicate empty and unsafe case names",
+      "current profile rejects traversal incomplete or additional source rows",
+      "current profile requires bounded exact hashes sizes and source budget",
+      "current profile cannot omit excluded authority or broaden its declared scope",
+      "current profile recheck rejects content and physical identity drift",
+      "current profile requires real complete passes and both stream completions",
+      "current profile rejects skipped duplicate unexpected nested or failed case results",
+      "accepted run receipt survives caller array prototype mutation",
+      "V1 missing request close becomes unknown-undrained without retry or synthetic release",
+      "V2 missing response close rejects and late complete reply cannot create a response receipt",
+      "early error uses the capped one-second abort observation instead of the sixty-second request deadline",
+      "actual V3 custodied runner close terminates unknown and never submits its queued second original",
+      "normal V2 response bytes and actual V3 two-original completion retain their existing contracts",
+      "V1 and V2 observed abort closes before the drain budget remain unknown but not undrained",
+      "repeated errors do not renew the one abort-drain budget or repeat destroy and settlement"
+    ],
+    "counts": {
+      "tests": 20,
+      "suites": 0,
+      "pass": 20,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    }
+  },
+  "result": {
+    "profileId": "p0-current-p2-node24-v1",
+    "node": "24.19.0",
+    "platform": "darwin",
+    "arch": "arm64",
+    "manifestSha256": "b321e32a8fb5854207f967588e121c8364e2a8b98a71ab359077712ed78b1ca1",
+    "sourceFiles": 12,
+    "selectedCases": 20,
+    "installedDependencies": false,
+    "scope": "DECLARED_INTERFACE_COMPONENTS_AND_PROFILE_CONTRACT_ONLY",
+    "result": "SELECTED_CURRENT_COMPONENTS_PASS",
+    "counts": {
+      "tests": 20,
+      "suites": 0,
+      "pass": 20,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "sourcePinsRechecked": true,
+    "historicalEntriesRun": 0,
+    "hostedCiEstablishedByLocalCommand": false,
+    "fullApplicationQualified": false,
+    "serviceDelivery": "NOT_ESTABLISHED",
+    "pilot": "NO_GO"
+  },
+  "streams": {
+    "stdout": {
+      "sha256": "2ea3a72a2d9241ecf9924774cc099ead7e01ba67f1c39b58459de26d93612978",
+      "bytes": 4377
+    },
+    "stderr": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "arbitraryDiagnosticsNotPublic": true
+  },
+  "sourceClosure": {
+    "files": 13,
+    "sourceBytes": 185162,
+    "staticImports": 41,
+    "literalDynamicBuiltinImports": 2,
+    "barePackageImports": 0,
+    "explicitNodeTestSelectionEdges": [
+      {
+        "from": "scripts/run-current-qualification.mjs",
+        "to": "test/current-qualification-profile.test.js"
+      },
+      {
+        "from": "scripts/run-current-qualification.mjs",
+        "to": "test/service-credit-custodied-sequential-runner-accepted-receipt-prototype.test.js"
+      },
+      {
+        "from": "scripts/run-current-qualification.mjs",
+        "to": "qualification/service-credit-dispatch-abort-drain.behavior.draft.mjs"
+      }
+    ],
+    "builtinImports": [
+      "node:assert/strict",
+      "node:buffer",
+      "node:crypto",
+      "node:fs",
+      "node:path",
+      "node:stream",
+      "node:test",
+      "node:test/reporters",
+      "node:timers",
+      "node:url",
+      "node:util"
+    ],
+    "pins": [
+      {
+        "path": "package.json",
+        "bytes": 2529,
+        "LF": 42,
+        "sha256": "43b55453328d3f3a2dc11759bb26a83df9c24df7d4482cd7745a139e2fa421a6",
+        "gitBlob": "7bc7ded2f483c69e152bece090b8381fb0095e43"
+      },
+      {
+        "path": "scripts/current-qualification-profile.mjs",
+        "bytes": 8992,
+        "LF": 171,
+        "sha256": "e7eac65a0a5da5eae25a15fe76d0b8e8be897f39134bfdaf8f04a16ba4790402",
+        "gitBlob": "1b07a0f01bfc2481334832f1cd9cf70eaa671939"
+      },
+      {
+        "path": "scripts/run-current-qualification.mjs",
+        "bytes": 5666,
+        "LF": 108,
+        "sha256": "1eec80694d9430dff8f0d54baf2617124a3b2c885677d43f4f413c665bf9038e",
+        "gitBlob": "8ec6e09fdf691d1e2f190cb0c42fa40e150f8dfb"
+      },
+      {
+        "path": "qualification/profiles/p0-current-p2-node24-v1.json",
+        "bytes": 5384,
+        "LF": 147,
+        "sha256": "b321e32a8fb5854207f967588e121c8364e2a8b98a71ab359077712ed78b1ca1",
+        "gitBlob": "656bda39d8ffc849a78cf71c930eea56d5a1d09d"
+      },
+      {
+        "path": "test/current-qualification-profile.test.js",
+        "bytes": 6614,
+        "LF": 108,
+        "sha256": "2dda06665243e9a984965aafee9b0c258d21490b25dae6b4ed8725c2cde00dbe",
+        "gitBlob": "558d4b203cbd07b36536d6fbdbf98679bd1c3414"
+      },
+      {
+        "path": "test/service-credit-custodied-sequential-runner-accepted-receipt-prototype.test.js",
+        "bytes": 2817,
+        "LF": 73,
+        "sha256": "bbf99a61bac18b984c6d545200666388278646ef002ddac08ba3a3220e7eabad",
+        "gitBlob": "d9a733d4dc3e04db182d620d7b654e666938ea6b"
+      },
+      {
+        "path": "qualification/service-credit-dispatch-abort-drain.behavior.draft.mjs",
+        "bytes": 20224,
+        "LF": 355,
+        "sha256": "6cc01f7cd8b683b49bae7aacfd44591c33e45db248ee16957f62107221e7ee61",
+        "gitBlob": "ba7b7b910cfce72ab8316bbd1e78e55b7b413a82"
+      },
+      {
+        "path": "src/service-credit-http-execute-dispatch.js",
+        "bytes": 29328,
+        "LF": 815,
+        "sha256": "e07470a9fde311c806beb09b1c4369b4724213682bcbcacc228ece0e0e36f5ef",
+        "gitBlob": "4b5bcb1b08b1ab44e65c8ed7bab76d41640a767b"
+      },
+      {
+        "path": "src/service-credit-custodied-sequential-runner.js",
+        "bytes": 5773,
+        "LF": 121,
+        "sha256": "de0f3e143066f19ac3f3cab072abe8d250ea72b9fac9ad2c5bedb75110d7ec56",
+        "gitBlob": "f624375877ee0dd3d8352a5d13e35d95b43a12e7"
+      },
+      {
+        "path": "src/service-credit-original-request-custody-contract.js",
+        "bytes": 14051,
+        "LF": 356,
+        "sha256": "fd349de553a17abcc2e0567ba6640e6e3d5d26cfa79ee1e355928dc9fa8d3915",
+        "gitBlob": "f911d42d01b69e6577f9bcd66f4ed59aab8ab882"
+      },
+      {
+        "path": "src/service-credit-custodied-http-client.js",
+        "bytes": 12646,
+        "LF": 324,
+        "sha256": "35997f41c9a5162fe29ed56776181a1691c0a0a69c7dbdfe8b61785af3998145",
+        "gitBlob": "33879d019492de8d278b0d0dc998bd1c7806b413"
+      },
+      {
+        "path": "src/service-credit-custodied-sequential-runner-core.js",
+        "bytes": 15983,
+        "LF": 492,
+        "sha256": "044477cb1300453f10bacf070037db175d08deec1d488549b34a5cb92e6328bd",
+        "gitBlob": "e91acb307f4f0f5fb5292a805f7ca1d02b21b68d"
+      },
+      {
+        "path": "src/service-credit-custodied-request-owner.js",
+        "bytes": 55155,
+        "LF": 1358,
+        "sha256": "2ba222760d4a922bf0466d95fd2671076b9d19b8c5fa4ea2cb3c66b1338562eb",
+        "gitBlob": "7f99bdadcc622db203e864edb12a1f4d1059a965"
+      }
+    ],
+    "physicalAndContentPinsBeforeAndAfterMatched": true,
+    "packageDeclarationOnly": {
+      "x402Core": "2.23.0",
+      "x402CoreImported": false,
+      "sdkImported": false,
+      "dependenciesInstalled": false
+    }
+  },
+  "evidence": {
+    "admissionSha256": "06a193d7955a25fd730eb5525f1eaaceba0d7bf5442a7be916f5dc9018c1b7fc",
+    "verificationSha256": "05d7107431c08358c8c1c6fd2447a7ae98880b24b3d3bc4694d73f57d02b5c08",
+    "sourceRowsSha256": "dfacf24de634bff28b0341e6c16206fe26ee2e2600dc9739128f9cd8fafc66a6",
+    "separateCompletePrimaryEvidenceReview": "PASS",
+    "completeMetadataRecordsReviewed": 6,
+    "completeStreamsReviewed": true,
+    "privatePathsAndIdentitiesOmitted": true
+  },
+  "retention": {
+    "newSourceRetentions": 6,
+    "newSourceBytes": 32002,
+    "borrowedSourceReferences": 7,
+    "sourceBytesReusedByReference": 153160,
+    "sourceAliases": 0,
+    "declaredConservativeLogicalPeakBytes": 1274803,
+    "taskQuotaBytes": 2097152,
+    "taskClosed": "SUCCESS",
+    "ownedEmptyScratchRemoved": true,
+    "protectedObjectsDeleted": 0,
+    "oldOriginalsAndFailureEvidencePreserved": true,
+    "historicalCleanup": false,
+    "hardQuotaOrPhysicalReclaimClaim": false
+  },
+  "historicalSeparation": {
+    "oldQualificationEntriesAndGuardsUnchanged": true,
+    "oldResultsNeverRelabeled": true,
+    "manualRunnerRecipeStillBoundToItsOriginalGraph": true,
+    "historicalDiscoveryDisabledInSupportedEntry": true,
+    "defaultEntryIsSelectedNotFullSuite": true,
+    "packagePreimage": {
+      "commit": "fb939175edc5633fc63e159b0c650554b18aba22",
+      "bytes": 1413,
+      "sha256": "8c9a25504fbf6f87c31cdf245a6f4eec5a88cc89c8352151dc66a577c5771ef5",
+      "gitBlob": "ec7193f6fd76f34778515079dc777594175c4c34"
+    },
+    "automaticWorkflowPreimage": {
+      "commit": "fb939175edc5633fc63e159b0c650554b18aba22",
+      "bytes": 1270,
+      "sha256": "c01cfb95ab6f3e274a8585e51e45a66e581d21de8f4e0b618d9a94264110820c",
+      "gitBlob": "d25b4b8c52a1cca66abb160ce961bae01d953925"
+    }
+  },
+  "excludedExecution": {
+    "sqliteFilesCreated": 0,
+    "SDK": 0,
+    "x402Package": 0,
+    "nativeHttp": 0,
+    "network": 0,
+    "keys": 0,
+    "signatures": 0,
+    "nonceSearch": 0,
+    "realPrepare": 0,
+    "payments": 0,
+    "provider": 0,
+    "livePilot": 0,
+    "hostedCi": 0
+  },
+  "readiness": {
+    "currentProfileLocal": "PASS",
+    "hostedCi": "NOT_RUN_NOT_GREEN",
+    "fullP0Milestone": "NOT_ESTABLISHED",
+    "fullApplicationComposition": "NOT_ESTABLISHED",
+    "nativeSocketAndStoreRecovery": "NOT_ESTABLISHED",
+    "economicRuntimeAuthority": "NOT_ESTABLISHED",
+    "serviceDelivery": "NOT_ESTABLISHED",
+    "economicPilot": "NO_GO",
+    "currentIntegrationImplementation": "GO"
+  },
+  "nextGates": [
+    "Qualify this selected current profile on its exact published commit in hosted CI under the applicable execution scope.",
+    "Extend the current profile with one real x402/client/server/native-HTTPS/V6-SQLite/one-grant application graph under separately reviewed test authority.",
+    "Qualify current DP preparation with positive nonce work, price and horizon changes while preserving original signed bytes and hash.",
+    "Keep native interruption, store ownership, provider runtime and economic pilot acceptance separate."
+  ]
+}

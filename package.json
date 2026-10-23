@@ -23,7 +23,9 @@
     "buyer": "node src/buyer-cli.js",
     "verify:operator-trusted-observation": "node src/operator-trusted-observation-cli.js",
     "preflight:gate-b-reset-epoch-policy": "node src/gate-b-reset-epoch-policy-preflight-cli.js",
-    "test": "node --test"
+    "test": "node --permission --allow-fs-read=./package.json --allow-fs-read=./scripts/current-qualification-profile.mjs --allow-fs-read=./scripts/run-current-qualification.mjs --allow-fs-read=./qualification/profiles/p0-current-p2-node24-v1.json --allow-fs-read=./test/current-qualification-profile.test.js --allow-fs-read=./test/service-credit-custodied-sequential-runner-accepted-receipt-prototype.test.js --allow-fs-read=./qualification/service-credit-dispatch-abort-drain.behavior.draft.mjs --allow-fs-read=./src/service-credit-http-execute-dispatch.js --allow-fs-read=./src/service-credit-custodied-sequential-runner.js --allow-fs-read=./src/service-credit-original-request-custody-contract.js --allow-fs-read=./src/service-credit-custodied-http-client.js --allow-fs-read=./src/service-credit-custodied-sequential-runner-core.js --allow-fs-read=./src/service-credit-custodied-request-owner.js --no-addons --disallow-code-generation-from-strings --unhandled-rejections=strict scripts/run-current-qualification.mjs",
+    "test:plan": "npm test -- --plan",
+    "test:historical": "node scripts/run-current-qualification.mjs --historical"
   },
   "dependencies": {
     "@noble/ed25519": "^2.2.3",
