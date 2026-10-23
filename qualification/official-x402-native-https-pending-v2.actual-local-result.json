@@ -1,0 +1,570 @@
+{
+  "kind": "OFFICIAL_X402_CURRENT_NATIVE_HTTPS_V2_ACTUAL_RESULT",
+  "version": 2,
+  "status": "THREE_NATIVE_TESTS_PASS_WITH_PRESERVED_LAUNCHER_CLASSIFICATION_ERROR",
+  "executedSourceCommit": "6bf0c1b80cad61c1c1e7ec17453f773414b25bd6",
+  "executedSourceRowsSha256": "7f96ec3a80d5f507dd30c1171613f73974790a3255e28438e75cdcc05fa6829b",
+  "sourceScope": "Exact existing core 2.23.0 / zod 3.25.76 and current application source, resolve-only pinned namespace",
+  "counts": {
+    "cancelled": 0,
+    "fail": 0,
+    "pass": 3,
+    "skipped": 0,
+    "suites": 0,
+    "tests": 3,
+    "todo": 0
+  },
+  "reporter": "Node built-in Spec, not TAP",
+  "durationMs": 91.669625,
+  "authority": {
+    "directHumanAuthorizationReceived": true,
+    "scope": "One current-source loopback HTTPS repeat only",
+    "oneAttemptConsumed": true,
+    "newManagedTasks": 1,
+    "OpenSSLCommands": 1,
+    "NodeCommands": 1,
+    "NodeChildren": 0,
+    "maxConnections": 16
+  },
+  "actualNativeFacts": {
+    "bindHost": "127.0.0.1",
+    "bindPort": 44447,
+    "connections": 15,
+    "authenticatedTlsHandshakes": 15,
+    "tls": "TLSv1.3",
+    "alpn": "http/1.1",
+    "certificateIpAndPrivateKeyMatchAsserted": true,
+    "peerCertificateDigestAsserted": true,
+    "requestMethodPathHostRejectedBeforeSdk": true,
+    "originalHeaderAndTupleRetained": true,
+    "firstSettlementCallsPerScenario": 1,
+    "observerCallsPerScenario": 1,
+    "creatorCallsPerScenario": 1,
+    "serviceCalls": 0,
+    "allThreeOwnersClosed": true,
+    "remainingTrackedSockets": 0,
+    "remainingTrackedRequests": 0,
+    "remainingTrackedHandlers": 0,
+    "remainingOwnedTimers": 0
+  },
+  "runtime": {
+    "node": "24.19.0",
+    "platform": "darwin",
+    "arch": "arm64",
+    "executedEntryAssertedRuntime": true,
+    "python": "3.12.14",
+    "binaries": [
+      {
+        "role": "node",
+        "bytes": 121304480,
+        "sha256": "dbedff294bab84a0a86c04e15fbcbeb1c97ca10bef1b32b0634cd24b36f62100"
+      },
+      {
+        "role": "python",
+        "bytes": 18058560,
+        "sha256": "811e2679c20fd2c7413f7c5ca28ce903065eea8dadb8660f1b9379a28959a480"
+      },
+      {
+        "role": "openssl",
+        "bytes": 1704416,
+        "sha256": "49db04c17e3a8c169ebc48a1149d78c165a86c04913203f46b2a14ce7f4a14fc"
+      }
+    ],
+    "nodePermissionModel": true,
+    "filesystemReadGrants": "Exact source files plus the private task scratch",
+    "filesystemWriteGrant": false,
+    "workerGrant": false,
+    "childProcessGrant": false,
+    "addonGrant": false,
+    "networkOrHostileCodeSandbox": false
+  },
+  "namespace": {
+    "bareImportOverrideHits": 3,
+    "declaredFilesResolved": 32,
+    "declaredSourceBytes": 701939,
+    "expectedCases": 3,
+    "inputsVerifiedBeforeFixture": 36,
+    "noNetworkOrOsSandboxClaim": true,
+    "ordinaryInstalledNamespaceQualified": false,
+    "profileKind": "OFFICIAL_X402_NATIVE_HTTPS_THREE_CASE_PINNED_NODE24_V2",
+    "profileVersion": 2,
+    "resolveCalls": 98,
+    "sourceRowsSha256": "7f96ec3a80d5f507dd30c1171613f73974790a3255e28438e75cdcc05fa6829b",
+    "sourceTransforms": 0
+  },
+  "classification": {
+    "originalManagedTaskOutcome": "FAILURE",
+    "originalLauncherStatus": "NATIVE_HTTPS_V2_FAILED_OR_INCOMPLETE",
+    "originalLauncherRecognizedDiagnostics": 0,
+    "originalReceiptsAndLauncherPreserved": true,
+    "cause": "The launcher expected TAP lines and summaries. The single Node command emitted built-in Spec output with 3 passes and 0 failures.",
+    "independentReadOnlyCaptureAudit": "THREE_NATIVE_TESTS_PASS_REPORTER_CLASSIFIER_BUG",
+    "auditUsedOriginalCompleteStreamsAndClosedCasReferences": true,
+    "nativeExperimentRepeated": false,
+    "originalManagedTaskRelabeled": false,
+    "originalScratchCleanup": "CLEANED; zero remaining bytes; retained objects preserved",
+    "launcherSource": {
+      "path": "qualification/run-official-x402-native-https-v2.local.py",
+      "sha256": "7425233377f561ae1d9a0b7ab16fb55bba20dfe1bba9495a4fbb122f28c6950b",
+      "knownReporterClassificationBug": true,
+      "notAFreshRunEntrypoint": true
+    },
+    "captureAuditorSource": {
+      "path": "qualification/evaluate-official-x402-native-https-v2-capture.py",
+      "sha256": "61077d2d414b2d780574737e486758d0366c928b85da86e95be298e85e3f471c",
+      "readOnly": true,
+      "NodeCommands": 0,
+      "OpenSSLCommands": 0,
+      "SDK": 0,
+      "sockets": 0,
+      "tasks": 0,
+      "writes": 0
+    }
+  },
+  "execution": {
+    "OpenSSL": {
+      "actualExit": 0,
+      "outputComplete": true,
+      "stdout": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "stderr": {
+        "bytes": 387,
+        "sha256": "da6259ed6fa9afa46f1ebdc10e10d736a0bb0c83aea2fe792f67af7f73cd2599"
+      },
+      "tlsFixtureKeyPairs": 1,
+      "privatePemMaterialNotPublished": true
+    },
+    "Node": {
+      "actualExit": 0,
+      "outputComplete": true,
+      "stdout": {
+        "bytes": 3869,
+        "contentBase64": "4pyUIG5hdGl2ZSBIVFRQUyBvcmlnaW5hbCBwZW5kaW5nIHJlcXVlc3QgcmVzdW1lcyBvbmNlIGFuZCByZXBsYXlzIGFja25vd2xlZGdlbWVudCB3aXRob3V0IGFub3RoZXIgc2V0dGxlICg0OC43MzU5MTZtcykK4oS5IHsia2luZCI6Ik9GRklDSUFMX1g0MDJfTkFUSVZFX0hUVFBTX0NPTVBPU0lUSU9OX1YyIiwidmVyc2lvbiI6Miwic2NlbmFyaW8iOiJOQVRJVkVfUEVORElOR19TVUNDRVNTX0VYQUNUX1JFUExBWSIsImNvcmVWZXJzaW9uIjoiMi4yMy4wIiwiem9kVmVyc2lvbiI6IjMuMjUuNzYiLCJhY3R1YWxOYXRpdmVTZXJ2ZXJGYWN0b3J5Ijp0cnVlLCJhY3R1YWxJbmdyZXNzT3duZXIiOnRydWUsImFjdHVhbE9mZmljaWFsU2VydmVyQW5kQ2xpZW50Ijp0cnVlLCJ0bHMiOiJUTFN2MS4zIiwiYWxwbiI6Imh0dHAvMS4xIiwibG9vcGJhY2tPbmx5Ijp0cnVlLCJuYXRpdmVDb25uZWN0aW9uQXR0ZW1wdHNUb3RhbCI6NywiYXV0aGVudGljYXRlZFRsc0hhbmRzaGFrZXNUb3RhbCI6Nywic2RrUmVxdWVzdENhbGxzIjoyLCJjcmVhdG9yQ2FsbHMiOjEsInZlcmlmaWVyQ2FsbHMiOjEsImZpcnN0U2V0dGxlbWVudENhbGxzIjoxLCJvYnNlcnZlckNhbGxzIjoxLCJzZXJ2aWNlQ2FsbHMiOjAsInNlcnZpY2VTZXNzaW9uRGVjbGFyZWRPbmx5Ijp0cnVlLCJhcHBsaWNhdGlvbkZhY3RvcnlFeGVjdXRlZCI6ZmFsc2UsIm9yaWdpbmFsUGF5bWVudEhlYWRlckFuZFR1cGxlUmV0YWluZWQiOnRydWUsIm5hdGl2ZUNsb3NlUGhhc2UiOiJDTE9TRUQiLCJ0cmFja2VkU29ja2V0cyI6MCwidHJhY2tlZFJlcXVlc3RzIjowLCJ0cmFja2VkSGFuZGxlcnMiOjAsIm93bmVkVGltZXJzIjowLCJzcWwiOjAsImNhcGFiaWxpdHlLZXlzIjowLCJjYXBhYmlsaXR5U2lnbmF0dXJlcyI6MCwid2FsbGV0S2V5cyI6MCwicGF5bWVudFNpZ25hdHVyZXMiOjAsInRsc0ZpeHR1cmVLZXlQYWlycyI6MSwibm9uY2VTZWFyY2giOjAsInJlYWxQcmVwYXJlIjowLCJwYXltZW50cyI6MCwic2VydmljZURlbGl2ZXJ5IjoiTk9UX0VTVEFCTElTSEVEIiwidjZBcHBsaWNhdGlvbkludGVncmF0aW9uIjoiTk9UX0VTVEFCTElTSEVEIiwiZnVsbFAxIjoiTk9UX0VTVEFCTElTSEVEIn0K4pyUIG5hdGl2ZSBIVFRQUyBwZW5kaW5nIGJ1ZGdldCBzdGF5cyBleGhhdXN0ZWQgd2l0aG91dCBhIG5ldyBmaXJzdCBzZXR0bGVtZW50ICgxOC43MzcxMjVtcykK4oS5IHsia2luZCI6Ik9GRklDSUFMX1g0MDJfTkFUSVZFX0hUVFBTX0NPTVBPU0lUSU9OX1YyIiwidmVyc2lvbiI6Miwic2NlbmFyaW8iOiJOQVRJVkVfUEVORElOR19FWEhBVVNURURfT1JJR0lOQUxfUkVUQUlORUQiLCJjb3JlVmVyc2lvbiI6IjIuMjMuMCIsInpvZFZlcnNpb24iOiIzLjI1Ljc2IiwiYWN0dWFsTmF0aXZlU2VydmVyRmFjdG9yeSI6dHJ1ZSwiYWN0dWFsSW5ncmVzc093bmVyIjp0cnVlLCJhY3R1YWxPZmZpY2lhbFNlcnZlckFuZENsaWVudCI6dHJ1ZSwidGxzIjoiVExTdjEuMyIsImFscG4iOiJodHRwLzEuMSIsImxvb3BiYWNrT25seSI6dHJ1ZSwibmF0aXZlQ29ubmVjdGlvbkF0dGVtcHRzVG90YWwiOjExLCJhdXRoZW50aWNhdGVkVGxzSGFuZHNoYWtlc1RvdGFsIjoxMSwic2RrUmVxdWVzdENhbGxzIjoyLCJjcmVhdG9yQ2FsbHMiOjEsInZlcmlmaWVyQ2FsbHMiOjEsImZpcnN0U2V0dGxlbWVudENhbGxzIjoxLCJvYnNlcnZlckNhbGxzIjoxLCJzZXJ2aWNlQ2FsbHMiOjAsInNlcnZpY2VTZXNzaW9uRGVjbGFyZWRPbmx5Ijp0cnVlLCJhcHBsaWNhdGlvbkZhY3RvcnlFeGVjdXRlZCI6ZmFsc2UsIm9yaWdpbmFsUGF5bWVudEhlYWRlckFuZFR1cGxlUmV0YWluZWQiOnRydWUsIm5hdGl2ZUNsb3NlUGhhc2UiOiJDTE9TRUQiLCJ0cmFja2VkU29ja2V0cyI6MCwidHJhY2tlZFJlcXVlc3RzIjowLCJ0cmFja2VkSGFuZGxlcnMiOjAsIm93bmVkVGltZXJzIjowLCJzcWwiOjAsImNhcGFiaWxpdHlLZXlzIjowLCJjYXBhYmlsaXR5U2lnbmF0dXJlcyI6MCwid2FsbGV0S2V5cyI6MCwicGF5bWVudFNpZ25hdHVyZXMiOjAsInRsc0ZpeHR1cmVLZXlQYWlycyI6MSwibm9uY2VTZWFyY2giOjAsInJlYWxQcmVwYXJlIjowLCJwYXltZW50cyI6MCwic2VydmljZURlbGl2ZXJ5IjoiTk9UX0VTVEFCTElTSEVEIiwidjZBcHBsaWNhdGlvbkludGVncmF0aW9uIjoiTk9UX0VTVEFCTElTSEVEIiwiZnVsbFAxIjoiTk9UX0VTVEFCTElTSEVEIn0K4pyUIG5hdGl2ZSBIVFRQUyBjaGFuZ2VkIGNvbnRleHQgaXMgcmVmdXNlZCB3aGlsZSBpdHMgb3JpZ2luYWwgcGVuZGluZyBjb250aW51YXRpb24gc3Vydml2ZXMgKDE1LjMwODc5MW1zKQrihLkgeyJraW5kIjoiT0ZGSUNJQUxfWDQwMl9OQVRJVkVfSFRUUFNfQ09NUE9TSVRJT05fVjIiLCJ2ZXJzaW9uIjoyLCJzY2VuYXJpbyI6Ik5BVElWRV9DSEFOR0VEX0NPTlRFWFRfT1JJR0lOQUxfQ09OVElOVUFUSU9OX1JFVEFJTkVEIiwiY29yZVZlcnNpb24iOiIyLjIzLjAiLCJ6b2RWZXJzaW9uIjoiMy4yNS43NiIsImFjdHVhbE5hdGl2ZVNlcnZlckZhY3RvcnkiOnRydWUsImFjdHVhbEluZ3Jlc3NPd25lciI6dHJ1ZSwiYWN0dWFsT2ZmaWNpYWxTZXJ2ZXJBbmRDbGllbnQiOnRydWUsInRscyI6IlRMU3YxLjMiLCJhbHBuIjoiaHR0cC8xLjEiLCJsb29wYmFja09ubHkiOnRydWUsIm5hdGl2ZUNvbm5lY3Rpb25BdHRlbXB0c1RvdGFsIjoxNSwiYXV0aGVudGljYXRlZFRsc0hhbmRzaGFrZXNUb3RhbCI6MTUsInNka1JlcXVlc3RDYWxscyI6MiwiY3JlYXRvckNhbGxzIjoxLCJ2ZXJpZmllckNhbGxzIjoxLCJmaXJzdFNldHRsZW1lbnRDYWxscyI6MSwib2JzZXJ2ZXJDYWxscyI6MSwic2VydmljZUNhbGxzIjowLCJzZXJ2aWNlU2Vzc2lvbkRlY2xhcmVkT25seSI6dHJ1ZSwiYXBwbGljYXRpb25GYWN0b3J5RXhlY3V0ZWQiOmZhbHNlLCJvcmlnaW5hbFBheW1lbnRIZWFkZXJBbmRUdXBsZVJldGFpbmVkIjp0cnVlLCJuYXRpdmVDbG9zZVBoYXNlIjoiQ0xPU0VEIiwidHJhY2tlZFNvY2tldHMiOjAsInRyYWNrZWRSZXF1ZXN0cyI6MCwidHJhY2tlZEhhbmRsZXJzIjowLCJvd25lZFRpbWVycyI6MCwic3FsIjowLCJjYXBhYmlsaXR5S2V5cyI6MCwiY2FwYWJpbGl0eVNpZ25hdHVyZXMiOjAsIndhbGxldEtleXMiOjAsInBheW1lbnRTaWduYXR1cmVzIjowLCJ0bHNGaXh0dXJlS2V5UGFpcnMiOjEsIm5vbmNlU2VhcmNoIjowLCJyZWFsUHJlcGFyZSI6MCwicGF5bWVudHMiOjAsInNlcnZpY2VEZWxpdmVyeSI6Ik5PVF9FU1RBQkxJU0hFRCIsInY2QXBwbGljYXRpb25JbnRlZ3JhdGlvbiI6Ik5PVF9FU1RBQkxJU0hFRCIsImZ1bGxQMSI6Ik5PVF9FU1RBQkxJU0hFRCJ9CuKEuSB0ZXN0cyAzCuKEuSBzdWl0ZXMgMArihLkgcGFzcyAzCuKEuSBmYWlsIDAK4oS5IGNhbmNlbGxlZCAwCuKEuSBza2lwcGVkIDAK4oS5IHRvZG8gMArihLkgZHVyYXRpb25fbXMgOTEuNjY5NjI1CiMgcGlubmVkLW5hdGl2ZS1odHRwcy12Mi1uYW1lc3BhY2UgeyJwcm9maWxlS2luZCI6Ik9GRklDSUFMX1g0MDJfTkFUSVZFX0hUVFBTX1RIUkVFX0NBU0VfUElOTkVEX05PREUyNF9WMiIsImV4cGVjdGVkQ2FzZXMiOjMsInByb2ZpbGVWZXJzaW9uIjoyLCJzb3VyY2VSb3dzU2hhMjU2IjoiN2Y5NmVjM2E4MGQ1ZjUwN2RkMzBjMTE3MTYxM2Y3Mzk3NDc5MGEzMjU1ZTI4NDM4ZTc1Y2RjYzA1ZmE2ODI5YiIsImlucHV0c1ZlcmlmaWVkQmVmb3JlRml4dHVyZSI6MzYsImRlY2xhcmVkU291cmNlQnl0ZXMiOjcwMTkzOSwicmVzb2x2ZUNhbGxzIjo5OCwiYmFyZUltcG9ydE92ZXJyaWRlSGl0cyI6MywiZGVjbGFyZWRGaWxlc1Jlc29sdmVkIjozMiwic291cmNlVHJhbnNmb3JtcyI6MCwib3JkaW5hcnlJbnN0YWxsZWROYW1lc3BhY2VRdWFsaWZpZWQiOmZhbHNlLCJub05ldHdvcmtPck9zU2FuZGJveENsYWltIjp0cnVlfQo=",
+        "sha256": "5de2539bc896f4ebcd9d59fb174468b3a03503a894a511ba87eefa98edf38fe3"
+      },
+      "stderr": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    }
+  },
+  "sourceGraph": [
+    {
+      "path": "src/x402-official-selected-settlement-server.js",
+      "bytes": 15704,
+      "LF": 284,
+      "sha256": "7e226d378b909bbe30a536b4829313f7cc25d772ac2c0dbfba741c64fc2515b5",
+      "gitBlob": "0c5457b489462470fd4c2f1c4d9cb87a8dfbdf5c"
+    },
+    {
+      "path": "src/x402-official-https-request-binding.js",
+      "bytes": 5085,
+      "LF": 99,
+      "sha256": "dabf215408887bd0d2ba346085c5ab2df13f724e8759b7a98b71b09c8dc8d692",
+      "gitBlob": "47059c772407233b8b6f54632ba065893ff92dd3"
+    },
+    {
+      "path": "src/x402-official-selected-payment-client.js",
+      "bytes": 9226,
+      "LF": 177,
+      "sha256": "6103703a48ab93b33e1d322d01da367d9552d1e37c9d983326f6e58d1e77693c",
+      "gitBlob": "f7a47d8d3405f624fa2dc489745752994263ce53"
+    },
+    {
+      "path": "src/x402-selected-payment-client-bridge.js",
+      "bytes": 19446,
+      "LF": 370,
+      "sha256": "d8252e421240005f51b1627ab97b624496325403508d57b030be423e871a5083",
+      "gitBlob": "a405eb73cab88302ee5c0e130bdfc9d1ef9eebfa"
+    },
+    {
+      "path": "src/x402-selected-settlement-server-bridge.js",
+      "bytes": 39943,
+      "LF": 749,
+      "sha256": "38f47d24e1dcdd0f632e786054dc2e9544de2f261f74e949e28fee43ed56f40b",
+      "gitBlob": "483633ee18735355d9614cafe8f7bd8044a7d8b7"
+    },
+    {
+      "path": "src/x402-verification-bound-settlement-context.js",
+      "bytes": 11311,
+      "LF": 221,
+      "sha256": "b3ad2fd33dae7e77a77f069cbc1259bf77e18a2bf383aa30f41bcc19221656f5",
+      "gitBlob": "6734a4aa011239402c141b874612a3be0733b4bf"
+    },
+    {
+      "path": "src/x402-selected-settlement-context.js",
+      "bytes": 16818,
+      "LF": 456,
+      "sha256": "afb6e16603023dd58d6a71cff5790a802dcfa4b98bc9d380b51ccc3d58e10991",
+      "gitBlob": "321d2a03a45296907c0a35a50d1e038e82307a40"
+    },
+    {
+      "path": "src/x402-wire.js",
+      "bytes": 39886,
+      "LF": 934,
+      "sha256": "5fba91af5a352f62d1a335c7176a45a604e2af5d92b1c4b0e53825c1f20d4e56",
+      "gitBlob": "fb060d4e349b1c31a1219a0cc137af250a8a2291"
+    },
+    {
+      "path": "package.json",
+      "bytes": 2677,
+      "LF": 40,
+      "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+      "gitBlob": "45752ffde39d29666094f7f1c755060d75e43deb"
+    },
+    {
+      "path": "@x402/core/package.json",
+      "bytes": 3853,
+      "LF": 138,
+      "sha256": "4130a95721f50c0997dcba3728d14d5584c4f99c12c8c3f9870b21f31da212fd",
+      "gitBlob": "7d72182a84f0a84d73e6260be70af1f520f33657"
+    },
+    {
+      "path": "zod/package.json",
+      "bytes": 3284,
+      "LF": 118,
+      "sha256": "70eedbe34fd52385a4ae2f3e5759b19682189f0118ea73a6e7c32c677f61668e",
+      "gitBlob": "eedcfb0f8e3343c8ac5ba32e5117a032352a986c"
+    },
+    {
+      "path": "@x402/core/dist/esm/client/index.mjs",
+      "bytes": 26707,
+      "LF": 676,
+      "sha256": "653613f25e2fa24615af7d1fe943679177774215a16600289175f61c4df5dda9",
+      "gitBlob": "3474afd63523463825633207d6fbfd782aeca5aa"
+    },
+    {
+      "path": "@x402/core/dist/esm/server/index.mjs",
+      "bytes": 1761,
+      "LF": 60,
+      "sha256": "fa62aa75d072a9a1e2bb00be93ef4980e15507e3617942f1d7ab05c69954a19e",
+      "gitBlob": "5a6d9914baad58a9edee7f897882abce6c011b57"
+    },
+    {
+      "path": "@x402/core/dist/esm/http/index.mjs",
+      "bytes": 1177,
+      "LF": 42,
+      "sha256": "f87cf0256b51820628469681ba1421de97f17d55c2eff64bbe9040ef4f5ea084",
+      "gitBlob": "0dda52c01e2437b16637aaf0b84353092c111861"
+    },
+    {
+      "path": "@x402/core/dist/esm/schemas/index.mjs",
+      "bytes": 1591,
+      "LF": 69,
+      "sha256": "b4c12db796c6654de17d8542d65cd78bbbe8cf4bbcc71d05912450d8adfcf0c9",
+      "gitBlob": "93af501678f80952035795321b6c30a015928679"
+    },
+    {
+      "path": "@x402/core/dist/esm/chunk-BA2VL4DT.mjs",
+      "bytes": 116817,
+      "LF": 3151,
+      "sha256": "f2ad975e24db34808470b081c9deedaf6aafa53ab95121d29661a1a8b1507f84",
+      "gitBlob": "307a10a04e0cb515418f38be50e422634acd305b"
+    },
+    {
+      "path": "@x402/core/dist/esm/chunk-N4QXZG2Z.mjs",
+      "bytes": 5040,
+      "LF": 160,
+      "sha256": "19c189f7417214b211ee4abdaada531a80e5adc8504d593c172fe1e2ce61c03e",
+      "gitBlob": "56010f0571a73a7c82d74f88d4feb01263d9d612"
+    },
+    {
+      "path": "@x402/core/dist/esm/chunk-VE37GDG2.mjs",
+      "bytes": 107,
+      "LF": 6,
+      "sha256": "56fb4db85f03d88dfa5d42c81be8527f72deae2bca4004dfaea6415f186dc086",
+      "gitBlob": "9229b6cbcb04f9a1a374588f9dc31b22c21499ba"
+    },
+    {
+      "path": "@x402/core/dist/esm/chunk-P3DFEIO7.mjs",
+      "bytes": 2602,
+      "LF": 82,
+      "sha256": "9c124f03f792fcef472452fcaf30d03bd7d6ea44170675d60ccc473d3b02f983",
+      "gitBlob": "ec0f7809277982b2d2b38747fc3a3c87a3bb9fd2"
+    },
+    {
+      "path": "@x402/core/dist/esm/chunk-UQQR4X3S.mjs",
+      "bytes": 5837,
+      "LF": 172,
+      "sha256": "a7756bf22635f58e52dce87753863e51f407a38f5c32382a1076c39bd6cb9a62",
+      "gitBlob": "46913a8401fabcdb431cfd504c1708d07f9b1c26"
+    },
+    {
+      "path": "@x402/core/dist/esm/chunk-BJTO5JO5.mjs",
+      "bytes": 433,
+      "LF": 10,
+      "sha256": "1c521b4fbee4089393c982b94b5f8a4f81b1043c2f8cd1848d0d6056430e761f",
+      "gitBlob": "8ea659a7b711a9e45bf435cb6a8300df1d92e8be"
+    },
+    {
+      "path": "zod/index.js",
+      "bytes": 105,
+      "LF": 4,
+      "sha256": "6419c4ac0e637ff08463083e31886d10354f74cbcc4e584400b2b837e39ac881",
+      "gitBlob": "bf6f1643ab4526b97b1eb1a6dcdea48262f70194"
+    },
+    {
+      "path": "zod/v3/external.js",
+      "bytes": 205,
+      "LF": 6,
+      "sha256": "5d26d2e47e2352def36f89a3e8bf8581da22b7f857e07ef3114cd52cf4813445",
+      "gitBlob": "f0a4be4c7aa63b363b654384b103396050a06e29"
+    },
+    {
+      "path": "zod/v3/errors.js",
+      "bytes": 243,
+      "LF": 9,
+      "sha256": "d40831f478288d76e82bbbcc3b7e95c8513b6e76471f2d49a37c979bc57d492d",
+      "gitBlob": "26fdf628a00ac2e0984c1f7d8e31652dcff1253d"
+    },
+    {
+      "path": "zod/v3/helpers/parseUtil.js",
+      "bytes": 3601,
+      "LF": 109,
+      "sha256": "b57484013bb360bac2e334d58fcd5f6cbfa63ffcc7d8ff3dbbb3380ca659b956",
+      "gitBlob": "91b2afb81b4358fb84d637bc963a868517c6a516"
+    },
+    {
+      "path": "zod/v3/helpers/typeAliases.js",
+      "bytes": 11,
+      "LF": 1,
+      "sha256": "8e609bb71c20b858c77f0e9f90bb1319db8477b13f9f965f1a1e18524bf50881",
+      "gitBlob": "cb0ff5c3b541f646105198ee23ac0fc3d805023e"
+    },
+    {
+      "path": "zod/v3/helpers/util.js",
+      "bytes": 4055,
+      "LF": 133,
+      "sha256": "906ef685e5853d496e293ee8f8a2bb8b1ed2d078a1bcdfedb2dfd61d75b6330c",
+      "gitBlob": "b9641f29b7dfd7b8d7d6a3e2361803a51078ea7f"
+    },
+    {
+      "path": "zod/v3/types.js",
+      "bytes": 131212,
+      "LF": 3693,
+      "sha256": "9763a2938f0e7f983363ef4bf6530e7583e3f2d54f8a4a6684efad58febc6e8e",
+      "gitBlob": "40b11c0f01b2af54e0ed48e198607bd8836d9a63"
+    },
+    {
+      "path": "zod/v3/ZodError.js",
+      "bytes": 4349,
+      "LF": 133,
+      "sha256": "f5ac9e86b92e201d41e294d7aa35986a2aa28829e1bcc8ac25f7c8dce0674b99",
+      "gitBlob": "fed6a959bdd005f6b75a71733d3f231417a5955d"
+    },
+    {
+      "path": "zod/v3/locales/en.js",
+      "bytes": 5602,
+      "LF": 109,
+      "sha256": "51a6dcc5d4bd52a64da127c012c6c963395c1d9a343ad75d4a8eca662fc8b205",
+      "gitBlob": "a67fc82a2272c022fa462931950af2a17a2f9b64"
+    },
+    {
+      "path": "zod/v3/helpers/errorUtil.js",
+      "bytes": 300,
+      "LF": 6,
+      "sha256": "68589c0cf44c8b4ad19b77418f53caad2cd1dbc8d714f526e1876ebdee4828c5",
+      "gitBlob": "e1640d1a4f696b5268518f3e15fa10ca5c8e61b8"
+    },
+    {
+      "path": "src/x402-official-upfront-https-router.js",
+      "bytes": 18721,
+      "LF": 360,
+      "sha256": "0980e8a648eda8f0ee57353010f5ffda50bdd38ac95ee49e129201de136b9921",
+      "gitBlob": "910d9676ac19fc08eb03c6e005517d2d862702ef"
+    },
+    {
+      "path": "src/service-credit-bounded-https-ingress-owner.js",
+      "bytes": 143191,
+      "LF": 4092,
+      "sha256": "3ba52fb8f33e332a30297dc93e9e6162e4c1d957b3fda1bdf61090ac57d0971a",
+      "gitBlob": "be7cf8bce732388e51be4e3cb6ff711bac1659ab"
+    },
+    {
+      "path": "src/service-credit-bounded-node-https-server-factory.js",
+      "bytes": 26968,
+      "LF": 778,
+      "sha256": "aead901ba154c39ea25e5cdcc363ea91ed6749841f6e8945cd01debc52cae387",
+      "gitBlob": "5900a111df486329e0e0644b78b49048ed551ca7"
+    },
+    {
+      "path": "qualification/official-x402-native-https-pending-v2.behavior.draft.mjs",
+      "bytes": 23133,
+      "LF": 478,
+      "sha256": "9f88c6a62ecffe580d65bb2a105cfed55922e6ccaeddbfd00f085e65851de317",
+      "gitBlob": "aba8104f7d9d58215d94635e689391a29168a226"
+    },
+    {
+      "path": "qualification/official-x402-native-https-namespace-v2.preload.draft.mjs",
+      "bytes": 10938,
+      "LF": 231,
+      "sha256": "151dcae75c7a2a84abf7635d76930371f3d4732f9ed65ea3a6312aa6483f7af5",
+      "gitBlob": "ee9dca6f3da549178fda424ed1e681ce9d6ea655"
+    }
+  ],
+  "diagnostics": [
+    {
+      "actualIngressOwner": true,
+      "actualNativeServerFactory": true,
+      "actualOfficialServerAndClient": true,
+      "alpn": "http/1.1",
+      "applicationFactoryExecuted": false,
+      "authenticatedTlsHandshakesTotal": 7,
+      "capabilityKeys": 0,
+      "capabilitySignatures": 0,
+      "coreVersion": "2.23.0",
+      "creatorCalls": 1,
+      "firstSettlementCalls": 1,
+      "fullP1": "NOT_ESTABLISHED",
+      "kind": "OFFICIAL_X402_NATIVE_HTTPS_COMPOSITION_V2",
+      "loopbackOnly": true,
+      "nativeClosePhase": "CLOSED",
+      "nativeConnectionAttemptsTotal": 7,
+      "nonceSearch": 0,
+      "observerCalls": 1,
+      "originalPaymentHeaderAndTupleRetained": true,
+      "ownedTimers": 0,
+      "paymentSignatures": 0,
+      "payments": 0,
+      "realPrepare": 0,
+      "scenario": "NATIVE_PENDING_SUCCESS_EXACT_REPLAY",
+      "sdkRequestCalls": 2,
+      "serviceCalls": 0,
+      "serviceDelivery": "NOT_ESTABLISHED",
+      "serviceSessionDeclaredOnly": true,
+      "sql": 0,
+      "tls": "TLSv1.3",
+      "tlsFixtureKeyPairs": 1,
+      "trackedHandlers": 0,
+      "trackedRequests": 0,
+      "trackedSockets": 0,
+      "v6ApplicationIntegration": "NOT_ESTABLISHED",
+      "verifierCalls": 1,
+      "version": 2,
+      "walletKeys": 0,
+      "zodVersion": "3.25.76"
+    },
+    {
+      "actualIngressOwner": true,
+      "actualNativeServerFactory": true,
+      "actualOfficialServerAndClient": true,
+      "alpn": "http/1.1",
+      "applicationFactoryExecuted": false,
+      "authenticatedTlsHandshakesTotal": 11,
+      "capabilityKeys": 0,
+      "capabilitySignatures": 0,
+      "coreVersion": "2.23.0",
+      "creatorCalls": 1,
+      "firstSettlementCalls": 1,
+      "fullP1": "NOT_ESTABLISHED",
+      "kind": "OFFICIAL_X402_NATIVE_HTTPS_COMPOSITION_V2",
+      "loopbackOnly": true,
+      "nativeClosePhase": "CLOSED",
+      "nativeConnectionAttemptsTotal": 11,
+      "nonceSearch": 0,
+      "observerCalls": 1,
+      "originalPaymentHeaderAndTupleRetained": true,
+      "ownedTimers": 0,
+      "paymentSignatures": 0,
+      "payments": 0,
+      "realPrepare": 0,
+      "scenario": "NATIVE_PENDING_EXHAUSTED_ORIGINAL_RETAINED",
+      "sdkRequestCalls": 2,
+      "serviceCalls": 0,
+      "serviceDelivery": "NOT_ESTABLISHED",
+      "serviceSessionDeclaredOnly": true,
+      "sql": 0,
+      "tls": "TLSv1.3",
+      "tlsFixtureKeyPairs": 1,
+      "trackedHandlers": 0,
+      "trackedRequests": 0,
+      "trackedSockets": 0,
+      "v6ApplicationIntegration": "NOT_ESTABLISHED",
+      "verifierCalls": 1,
+      "version": 2,
+      "walletKeys": 0,
+      "zodVersion": "3.25.76"
+    },
+    {
+      "actualIngressOwner": true,
+      "actualNativeServerFactory": true,
+      "actualOfficialServerAndClient": true,
+      "alpn": "http/1.1",
+      "applicationFactoryExecuted": false,
+      "authenticatedTlsHandshakesTotal": 15,
+      "capabilityKeys": 0,
+      "capabilitySignatures": 0,
+      "coreVersion": "2.23.0",
+      "creatorCalls": 1,
+      "firstSettlementCalls": 1,
+      "fullP1": "NOT_ESTABLISHED",
+      "kind": "OFFICIAL_X402_NATIVE_HTTPS_COMPOSITION_V2",
+      "loopbackOnly": true,
+      "nativeClosePhase": "CLOSED",
+      "nativeConnectionAttemptsTotal": 15,
+      "nonceSearch": 0,
+      "observerCalls": 1,
+      "originalPaymentHeaderAndTupleRetained": true,
+      "ownedTimers": 0,
+      "paymentSignatures": 0,
+      "payments": 0,
+      "realPrepare": 0,
+      "scenario": "NATIVE_CHANGED_CONTEXT_ORIGINAL_CONTINUATION_RETAINED",
+      "sdkRequestCalls": 2,
+      "serviceCalls": 0,
+      "serviceDelivery": "NOT_ESTABLISHED",
+      "serviceSessionDeclaredOnly": true,
+      "sql": 0,
+      "tls": "TLSv1.3",
+      "tlsFixtureKeyPairs": 1,
+      "trackedHandlers": 0,
+      "trackedRequests": 0,
+      "trackedSockets": 0,
+      "v6ApplicationIntegration": "NOT_ESTABLISHED",
+      "verifierCalls": 1,
+      "version": 2,
+      "walletKeys": 0,
+      "zodVersion": "3.25.76"
+    }
+  ],
+  "storage": {
+    "quotaBytes": 2097152,
+    "newPrivateTasks": 1,
+    "sourceObjectsVerified": 36,
+    "sourceBytes": 701939,
+    "fullCaptureReservationsAccountedFor": true,
+    "existingStoragePoliciesChanged": false,
+    "oldSourceAndFailedEvidencePreserved": true,
+    "rawControlAndTlsMaterialRetainedPrivately": true,
+    "noHistoricalCleanup": true,
+    "apfsPhysicalReclaimClaim": false,
+    "monitorIsNotOsDiskQuota": true
+  },
+  "evidenceLimits": {
+    "scope": "Only these three real loopback HTTPS compositions",
+    "ordinaryInstalledNamespace": "NOT_QUALIFIED",
+    "serviceSession": "DECLARED_DATA_ONLY",
+    "applicationFactoryExecuted": false,
+    "realV6CustodyExecuted": false,
+    "sqlite": 0,
+    "ZenonSDK": 0,
+    "walletCapabilityPaymentProviderSigning": 0,
+    "nonceSearch": 0,
+    "realPrepare": 0,
+    "payments": 0,
+    "realProviderAcceptance": false,
+    "liveChain": false,
+    "serviceDelivery": "NOT_ESTABLISHED",
+    "fullP0": false,
+    "fullP1": false,
+    "fullP2": false,
+    "fullP3": false,
+    "fullP4": false,
+    "economicPilot": "NO_GO",
+    "hostedCI": "NOT_RUN_NOT_GREEN",
+    "mainRuntimeBehavior": "NOT_QUALIFIED_BY_THIS_BRANCH_RESULT"
+  }
+}
+
