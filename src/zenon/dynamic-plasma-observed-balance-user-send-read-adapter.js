@@ -163,7 +163,23 @@ export function createObservedBalanceDynamicPlasmaWalletCandidateReadAdapter(opt
   return createReadAdapter(options, true, false, true);
 }
 
-function createReadAdapter(options, checkpointEnabled, checkpointReadOnly = false, walletCandidateEnabled = false) {
+/**
+ * Explicit retained-signed variant. After the ordinary fifth read validates
+ * one wallet candidate, revalidateSignedOriginal() may perform ONE additional
+ * current read before the caller's original-signed custody step. It uses the
+ * SAME private input/plan/unsigned projection, retained signed block and account
+ * wire; no replacement, quote, material, wallet or signature operation exists.
+ * Failure holds the original instead of renewing authority. The read bracket
+ * remains declared/non-atomic, not durable custody or cryptographic preflight.
+ * Existing factories retain their exact surfaces and five-cycle behavior.
+ */
+export function createObservedBalanceDynamicPlasmaRetainedSignedCandidateReadAdapter(options) {
+  if (arguments.length !== 1) fail('configuration_rejected');
+  return createReadAdapter(options, true, false, true, true);
+}
+
+function createReadAdapter(options, checkpointEnabled, checkpointReadOnly = false,
+  walletCandidateEnabled = false, retainedValidationEnabled = false) {
   let collect, accountRead;
   try {
     if (!invariant()) fail('configuration_rejected');
@@ -339,6 +355,7 @@ function createReadAdapter(options, checkpointEnabled, checkpointReadOnly = fals
   }
   function walletHandoff(input, plan, originalBlock, checkpointJson, originalContext, originalHandoff) {
     let used = false, retainedSigned = null, phase = 'NOT_RECEIVED';
+    let retainedValidationAttempts = 0;
     async function accept(count, candidate) {
       if (used) fail('signed_candidate_used');
       used = true; phase = 'RECEIVING';
@@ -373,13 +390,37 @@ function createReadAdapter(options, checkpointEnabled, checkpointReadOnly = fals
       put(result, 'currentAuthority', 'NOT_ESTABLISHED');
       put(result, 'persistence', 'NOT_PERFORMED');
       put(result, 'authority', 'NONE');
+      if (retainedValidationEnabled) put(result, 'retainedValidationAttempts', retainedValidationAttempts);
       return freeze(result);
     }
-    return freeze({
+    async function revalidate(count) {
+      if (count !== 0) fail('input_rejected');
+      if (!retainedValidationEnabled || retainedValidationAttempts !== 0
+          || phase !== 'VALIDATED_DECLARED_READS' || retainedSigned === null)
+        fail('retained_candidate_revalidation_unavailable');
+      retainedValidationAttempts = 1; phase = 'REVALIDATING_BEFORE_CUSTODY';
+      try {
+        // A fresh cycle validates private ORIGINALS. No caller can supply a new
+        // block, checkpoint, quote, context, balance or material for this check.
+        const checked = await dispatch('signed', 3, input, plan, originalBlock, checkpointJson, retainedSigned);
+        if (!invariant()) fail('input_rejected');
+        phase = 'PRE_CUSTODY_VALIDATED_DECLARED_READS';
+        return freeze({ ...checked, observedSignedCandidateVersion: 2,
+          validationPurpose: 'BEFORE_ORIGINAL_SIGNED_CUSTODY', signing: 'NOT_INVOKED' });
+      } catch {
+        phase = 'REVALIDATION_REFUSED_OR_UNKNOWN';
+        fail('retained_candidate_revalidation_rejected');
+      }
+    }
+    const surface = {
       originalUnsignedBlock: originalBlock,
       acceptSigned: freeze(function acceptSigned(candidate) { return shield(accept(arguments.length, candidate)); }),
       getSignedOriginalData: freeze(getSignedOriginalData),
+    };
+    if (retainedValidationEnabled) surface.revalidateSignedOriginal = freeze(function revalidateSignedOriginal() {
+      return shield(revalidate(arguments.length));
     });
+    return freeze(surface);
   }
   if (checkpointReadOnly) return freeze({
     validateUnsignedCheckpoint: freeze(function validateUnsignedCheckpoint(input, plan, block, text) {
