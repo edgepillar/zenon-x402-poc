@@ -1,0 +1,645 @@
+{
+  "schema": 1,
+  "status": "ONE_NEW_EXISTING_V6_APPLICATION_COMMAND_CASE_QUALIFIED_LOCALLY",
+  "lane": "P2_EXISTING_SQLITE_RECOVERY_APPLICATION_ENTRY",
+  "sourceBaseMain": "6f0d2b14af386ef21421f16b4b17cffa18f2ebc4",
+  "sourceBaseTree": "5e0d6f6e8d9faf2a4938ef387bedbafe444ab4ee",
+  "sourceBaseRepositoryFiles": 690,
+  "applicationCommandPathQualifiedForSelectedCase": true,
+  "nativeStdinStdoutProcessLauncherQualified": false,
+  "fullP2OrRoadmapComplete": false,
+  "livePilotQualified": false,
+  "productionQualified": false,
+  "implementation": {
+    "path": "src/service-credit-recovery-inspect-cli.js",
+    "source": {
+      "path": "src/service-credit-recovery-inspect-cli.js",
+      "bytes": 13846,
+      "LF": 268,
+      "sha256": "166464154fa78c8485def1327134314cec7a32b4e64c31ee4771dba2d5500444",
+      "gitBlob": "aa6b70cbd1766c223178a72fa593f0ff02ce55ef"
+    },
+    "exports": [
+      "inspectServiceCreditOriginal",
+      "runServiceCreditRecoveryInspectCli"
+    ],
+    "existingSourceFilesModified": 0,
+    "existingCliDefaultsUnchanged": true,
+    "positiveAssociation": {
+      "sourceBaseMain": "6f0d2b14af386ef21421f16b4b17cffa18f2ebc4",
+      "sourceBaseTree": "5e0d6f6e8d9faf2a4938ef387bedbafe444ab4ee",
+      "newApplicationCommand": "runServiceCreditRecoveryInspectCli",
+      "actualOwner": "Existing V6 payer-owned/backend-borrowed recovery client; this application owns and closes both opened stores.",
+      "positiveAssociation": "Existing V6 API and direct batch are implemented. Existing service-credit CLIs start demos/load flows, not independently pinned existing-store no-dispatch recovery. This entry calls the actual V6 connection and native backend, not a declared diagnostic substitute.",
+      "existingInputFilesModified": 0,
+      "existingCliDefaultsUnchanged": true,
+      "originalSignedBytesAndConsumedAuthorityUnchanged": true,
+      "earlierCompletedEntriesNotImportedOrReplayed": true,
+      "realStdinStdoutProcessLauncherQualified": false
+    },
+    "behavior": [
+      "Open only the existing native backend and existing V6 no-dispatch payer connection; no create/migrate fallback, new owner implementation or caller-selected runtime factory.",
+      "Read one exact original through the actual paired backend connection with the original proof and independent original checkpoint pins.",
+      "Validate the custody policy with BOTH original funding URL and policy, retaining the existing same-origin check.",
+      "Read a bounded private manifest under an explicit private root. The original proof remains an explicit in-memory input; the process launcher accepts it only via stdin, never argv/environment/manifest.",
+      "Return only bounded redacted observation DATA after closing payer then backend once. Fixed CLI errors contain no underlying reasons; internal API errors expose only a fixed stage enum.",
+      "Keep the original funding/checkpoint/request and backend records intact, other than the existing local payer owner_epoch acquisitions. No additional dispatch/debit/execution/proof is introduced by inspection."
+    ],
+    "noDispatchNotSqliteReadOnly": true,
+    "noNewCostPolicy": true,
+    "unselectedPathsNotQualified": [
+      "Separate native process stdin/stdout launcher, pipes and EOF behavior",
+      "Broader malformed-file/proof/path/platform matrices",
+      "Concurrency or close-failure injection",
+      "Actual process restart, forced crash or physical durability",
+      "Secure key/pin custody, current provider/payer authority, authenticated funding/finality/delivery",
+      "Live pilot, production, SDK preparation or signing"
+    ]
+  },
+  "selection": {
+    "entry": {
+      "path": "qualification/service-credit-recovery-inspect-cli.behavior.draft.mjs",
+      "bytes": 29289,
+      "LF": 418,
+      "sha256": "80ace873a3cb3d3005212616a163029b11a31bf265ad1c0be2c8239acdb75d72",
+      "gitBlob": "8740d9fea7c8b0c16306ac0c57a04ceae00b1af7"
+    },
+    "selectedNames": [
+      "existing V6 CLI inspects one original and refuses changed pins or a missing payer without dispatch"
+    ],
+    "finiteScope": "One new application command-path test: cached original observation, changed independent pins, and missing existing payer; one descriptor-safe argument preflight refusal.",
+    "newSqliteFilesPerAttempt": 2,
+    "proofFreePrivateManifestsPerAttempt": 3,
+    "oldEntriesImportedOrReplayed": 0,
+    "fixtureSetupSourceReusedWithoutOldEntryExecution": true,
+    "missingCoverageDoesNotEstablishNovelty": true,
+    "noBroadExistingApplicationBugClaim": true
+  },
+  "qualification": {
+    "actualNodeExit": 0,
+    "outputComplete": true,
+    "counts": {
+      "tests": 1,
+      "suites": 0,
+      "pass": 1,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "diagnostics": [
+      {
+        "kind": "P2_EXISTING_V6_RECOVERY_INSPECT_CLI",
+        "version": 1,
+        "cliCalls": 3,
+        "successfulInspections": 1,
+        "changedCheckpointRefusals": 1,
+        "missingPayerRefusals": 1,
+        "hostileArgumentsRefusedWithoutHooks": true,
+        "originalBackendStatus": "CACHED_SUCCESS",
+        "localReconciliationRequired": true,
+        "payerOwnerEpochDelta": 2,
+        "originalFundingCheckpointAndRequestRowsRetained": true,
+        "backendLedgerUnchangedByCli": true,
+        "nativeSqliteFiles": 2,
+        "declaredSeedRequests": 1,
+        "declaredSeedExecutions": 1,
+        "declaredSeedDebits": 1,
+        "additionalCliDispatches": 0,
+        "additionalProofs": 0,
+        "inMemorySyntheticCapabilityKeys": 1,
+        "syntheticCapabilitySignatures": 1,
+        "network": 0,
+        "sdk": 0,
+        "nonceSearch": 0,
+        "realPrepare": 0,
+        "payments": 0,
+        "providerSignatures": 0,
+        "realPaymentSignatures": 0,
+        "actualProcessRestart": false,
+        "nativeStdinStdoutLauncherQualified": false,
+        "serviceDelivery": "NOT_ESTABLISHED"
+      }
+    ],
+    "threeNativeStoreCommandAttempts": 3,
+    "argumentPreflightCalls": 1,
+    "review": "Separate primary-agent read-only consumer of all six protected records, actual source/CAS ownership, raw streams, real launch arguments, independent database captures, all three proof-free manifests and the manager HOLD. Not a second agent or human review.",
+    "stdout": {
+      "bytes": 1215,
+      "sha256": "8d9b7cfe4bc191d4ff756319ba497e066276d5dac7cf6a65f9c459659f398a45"
+    },
+    "stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "callerProgramSha256": "86becaa3f9c459080a32ca4b9d9aed72a25c2fe497ae3c46ba95a43e2cb041c8",
+    "admissionContractVersion": 1,
+    "verificationContractVersion": 1,
+    "records": [
+      {
+        "role": "task",
+        "bytes": 1492,
+        "sha256": "b41b8c9b0264aaeca0b57a201f03b59a8d3f40e1931be502deff0fb19cafb0f7"
+      },
+      {
+        "role": "admission",
+        "bytes": 29916,
+        "sha256": "0f7453528c6b40f06632d24fa577d9169bf4975cd556d32fa449899978b6b501"
+      },
+      {
+        "role": "cleanup",
+        "bytes": 232,
+        "sha256": "6373b144ef84ff4f168306694735f64bedc672e65a9aa013ab9fcc19fc396516"
+      },
+      {
+        "role": "command",
+        "bytes": 841,
+        "sha256": "9f653f64e496f16c83427195da295f1aa183703df93eb531caad76450ccef634"
+      },
+      {
+        "role": "outcome",
+        "bytes": 59,
+        "sha256": "2171b08bff2e392051ba8c42cb2aa7a128204a345db85943d4d818e18b393abf"
+      },
+      {
+        "role": "verification",
+        "bytes": 6366,
+        "sha256": "b7951c473598bc2ac2660bd58720b60fc50300bbe12206640439e0a2624364ec"
+      }
+    ],
+    "initialFailedAttempt": {
+      "actualNodeExit": 1,
+      "outputComplete": true,
+      "counts": {
+        "tests": 1,
+        "pass": 0,
+        "fail": 1,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "sourceApplication": {
+        "path": "src/service-credit-recovery-inspect-cli.js",
+        "bytes": 13393,
+        "LF": 261,
+        "sha256": "590b2e62d42d4b3a86aa1a99c7fd7b7008773575c15e659001a0ee381d742b15",
+        "gitBlob": "341deb4ec857dbfa045571d41571082259c61728"
+      },
+      "sourceEntry": {
+        "path": "qualification/service-credit-recovery-inspect-cli.behavior.draft.mjs",
+        "bytes": 29012,
+        "LF": 414,
+        "sha256": "4b0603d984ce5e5db42d1fb8bf0bd9dd285d0d45436e65bb2e0d67707f96821e",
+        "gitBlob": "dbe71525ed40d1cde5ac4b3b095e34f0288e3239"
+      },
+      "stdout": {
+        "sha256": "7cc8b4420d39a999f6fbe87ff4890f337464db76c1be6d3ac3a856620a0154de",
+        "bytes": 1137
+      },
+      "stderr": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "cause": "The new CLI called the existing custody-policy snapshot with one argument. That exact existing API requires policy and fundingResourceUrl, so the manifest was rejected before the paired owner path.",
+      "repair": "Pass both original fields to the existing validator, retaining its same-origin constraint. Add only fixed internal phase diagnostics, never raw exceptions, to support controlled diagnosis.",
+      "readOnlyArtifactInspection": "One immutable retained synthetic payer image was inspected read-only to distinguish seeding/acquisition observations. This did not invoke the application or create a new native application qualification.",
+      "closedFailureRecordsSourceObjectsAndBothDatabaseOriginalsPreserved": true,
+      "records": [
+        {
+          "role": "task",
+          "bytes": 1661,
+          "sha256": "1d7737ae1fbbba488cd511d80ea1542e1f7fd51064b4f6d0296556cb105cc529"
+        },
+        {
+          "role": "admission",
+          "bytes": 29133,
+          "sha256": "c7934003506802bf616d642c440b004d167e378fd03f8d84a638187c617774d1"
+        },
+        {
+          "role": "cleanup",
+          "bytes": 232,
+          "sha256": "f04cc105f33ef0a2506ed50a57a2797cee27432ddb442c4cceb5f3f6a355212a"
+        },
+        {
+          "role": "command",
+          "bytes": 841,
+          "sha256": "37b86d11dec5157559d7d623c6fbab83106e85c09cc5bb85f1f1b292c72b7570"
+        },
+        {
+          "role": "outcome",
+          "bytes": 61,
+          "sha256": "d42473f476e18d7aa9a5b57857c53dd66ffc678ecdc9c084d7cc4d95c4c21e58"
+        }
+      ]
+    },
+    "actualNodeCommandsForThisSlice": 2,
+    "currentChangedSourceCommands": 1,
+    "unchangedFailedSourceNotRepeated": true,
+    "earlierCompletedTestsNotReplayed": true
+  },
+  "execution": {
+    "runtime": {
+      "node": "24.19.0",
+      "python": "3.12.14",
+      "platform": "darwin",
+      "arch": "arm64",
+      "nodeBinarySha256": "dbedff294bab84a0a86c04e15fbcbeb1c97ca10bef1b32b0634cd24b36f62100",
+      "pythonBinarySha256": "811e2679c20fd2c7413f7c5ca28ce903065eea8dadb8660f1b9379a28959a480",
+      "fullRuntimeDigestsReusedOnlyAfterExactNineFieldPhysicalIdentity": true
+    },
+    "selectedCase": "One privileged declared grant/original seeds one native backend execution, then all handles are closed. The new CLI uses the actual native backend and V6 payer connection in the same process for the three selected observations.",
+    "successfulEntry": {
+      "syntheticCapabilityKeys": 1,
+      "syntheticCapabilitySignatures": 1,
+      "declaredSeedRequests": 1,
+      "declaredSeedDebits": 1,
+      "declaredSeedExecutions": 1,
+      "additionalInspectionRequests": 0,
+      "additionalInspectionProofs": 0,
+      "additionalInspectionDebits": 0,
+      "additionalInspectionExecutions": 0,
+      "payerOwnerEpochDelta": 2,
+      "backendLedgerUnchangedByInspection": true,
+      "independentCheckpointPinsRequired": true,
+      "originalFundingAndCustodyRowsUnchanged": true
+    },
+    "eachAttemptUsesNewPrivateFixtures": true,
+    "totalSyntheticKeysAndCapabilitySignaturesAcrossTwoAttempts": {
+      "keys": 2,
+      "signatures": 2
+    },
+    "network": 0,
+    "zenonSdk": 0,
+    "officialX402Sdk": 0,
+    "nonceSearch": 0,
+    "realPrepare": 0,
+    "payments": 0,
+    "providerSignatures": 0,
+    "realPaymentSignatures": 0,
+    "processRestart": false,
+    "forcedCrash": false,
+    "serviceDelivery": "NOT_ESTABLISHED",
+    "currentAuthority": "NOT_ESTABLISHED",
+    "hostedCi": "NOT_RUN_NOT_GREEN"
+  },
+  "sourceClosure": {
+    "files": 28,
+    "bytes": 694133,
+    "staticImportDeclarations": 110,
+    "literalDynamicImportDeclarations": 10,
+    "barePackages": 0,
+    "sourceRowsSha256": "7004d0748e20bce60b36287b861bb2b3ff688a63175fcb9d158aac8355a76a16",
+    "originalPinnedSourceExecution": true,
+    "sourceAliases": 0,
+    "existingInputFilesMatchedToCurrentMainBlobs": 26,
+    "filesPinned": [
+      {
+        "path": "package.json",
+        "bytes": 1413,
+        "LF": 40,
+        "sha256": "8c9a25504fbf6f87c31cdf245a6f4eec5a88cc89c8352151dc66a577c5771ef5",
+        "gitBlob": "ec7193f6fd76f34778515079dc777594175c4c34"
+      },
+      {
+        "path": "src/service-credit-capability.js",
+        "bytes": 8284,
+        "LF": 256,
+        "sha256": "cb2b96d9a2e56c132dd1b4aca8f1c065b244ecd0e7e92f41ea3f4a8c969d17c3",
+        "gitBlob": "2e19d42c1b9311a75897c84669849f56ae40f785"
+      },
+      {
+        "path": "src/service-credit-custodied-http-client.js",
+        "bytes": 12646,
+        "LF": 324,
+        "sha256": "35997f41c9a5162fe29ed56776181a1691c0a0a69c7dbdfe8b61785af3998145",
+        "gitBlob": "33879d019492de8d278b0d0dc998bd1c7806b413"
+      },
+      {
+        "path": "src/service-credit-custodied-recovery-collection-core.js",
+        "bytes": 13794,
+        "LF": 306,
+        "sha256": "51d06da70ecccd0cf8b38d650367d1ae903ea86010a5ebeadb682af98e4b890b",
+        "gitBlob": "5275832eebbf87e0cd37f3c2e3b82147ab625a72"
+      },
+      {
+        "path": "src/service-credit-custodied-recovery-observation-collection-core.js",
+        "bytes": 8579,
+        "LF": 213,
+        "sha256": "36b7cece2d436cbfcac5f4299dd6bd30e5eede6ebb2ebe769ae7bf3a6f1a72b4",
+        "gitBlob": "4dc8765be0aa4b0e927fface960e366a3a6ccd1e"
+      },
+      {
+        "path": "src/service-credit-custodied-request-owner.js",
+        "bytes": 55155,
+        "LF": 1358,
+        "sha256": "2ba222760d4a922bf0466d95fd2671076b9d19b8c5fa4ea2cb3c66b1338562eb",
+        "gitBlob": "7f99bdadcc622db203e864edb12a1f4d1059a965"
+      },
+      {
+        "path": "src/service-credit-custodied-sequential-runner-core.js",
+        "bytes": 15983,
+        "LF": 492,
+        "sha256": "044477cb1300453f10bacf070037db175d08deec1d488549b34a5cb92e6328bd",
+        "gitBlob": "e91acb307f4f0f5fb5292a805f7ca1d02b21b68d"
+      },
+      {
+        "path": "src/service-credit-custodied-sqlite-http-client.js",
+        "bytes": 22706,
+        "LF": 578,
+        "sha256": "a66cfeccbf4e4490d939d006525a400f7dd7eac56911080c54c38ccc8e3374cd",
+        "gitBlob": "86ac76593fa9c9a6b39bb6a39c1a2ef994aff7f2"
+      },
+      {
+        "path": "src/service-credit-custodied-sqlite-sequential-runner.js",
+        "bytes": 24572,
+        "LF": 560,
+        "sha256": "3448e5ee1c8408d47aa6ecdce9c7e133ee6515ba9ca929476ab5f433fb8f847d",
+        "gitBlob": "75811ab4779e416c3618f363eaa70fa385cfaa72"
+      },
+      {
+        "path": "src/service-credit-durable-execution-owner.js",
+        "bytes": 40833,
+        "LF": 1301,
+        "sha256": "a63a795dda77489f7da0682d83a0683cf07240f83b803f449668cb687a956863",
+        "gitBlob": "f0fd445a17466dd1ab83c785c44aa5e6fdf1e765"
+      },
+      {
+        "path": "src/service-credit-durable-http-session.js",
+        "bytes": 13978,
+        "LF": 425,
+        "sha256": "a0d6d1436cdb697f125fee2f4dc723a5ddcfd2ee7063b55d56fa006bb8ba69bf",
+        "gitBlob": "307b72b8a1d114463ad8e18935312b18ccb23199"
+      },
+      {
+        "path": "src/service-credit-durable-session-close.js",
+        "bytes": 2470,
+        "LF": 84,
+        "sha256": "5aae36a7da39ce5b7b9a8da8e9fbda88465cb1e4853dc791520a1df0ab87ede7",
+        "gitBlob": "f744b55595e2238dc088cf71ca8849e480cda1bc"
+      },
+      {
+        "path": "src/service-credit-execution-contract.js",
+        "bytes": 30258,
+        "LF": 956,
+        "sha256": "298f8e74885e1c507953c0fcf7874832f815296746e6bacbdac97a425f1a6c73",
+        "gitBlob": "acfbb5c5e943b9e09958a7831b3dbe159463dcf9"
+      },
+      {
+        "path": "src/service-credit-http-execute-dispatch.js",
+        "bytes": 28104,
+        "LF": 790,
+        "sha256": "929881081b22b90b07d3d1c4dc8f873d4d81ee5ae84542d24b7534674f4eb9c0",
+        "gitBlob": "ace43b4be48f00a5c649449cf1f04ab40e719190"
+      },
+      {
+        "path": "src/service-credit-http.js",
+        "bytes": 32432,
+        "LF": 958,
+        "sha256": "c76a7f1864bdfcd0c26916bf28fba615c8aecf899d53e69467e3ebe7d3353d0d",
+        "gitBlob": "040da1547c2fa6cc4a4044c47619b253f16d19a1"
+      },
+      {
+        "path": "src/service-credit-model.js",
+        "bytes": 55461,
+        "LF": 1580,
+        "sha256": "7ff7e3d88ab8c3b38a0073541533fbdb7a0d9f2be42f337ac35f6a3b05615c3a",
+        "gitBlob": "e6ac17254874584d1a01f70e7abc6f771bd35d73"
+      },
+      {
+        "path": "src/service-credit-original-request-custody-contract.js",
+        "bytes": 14051,
+        "LF": 356,
+        "sha256": "fd349de553a17abcc2e0567ba6640e6e3d5d26cfa79ee1e355928dc9fa8d3915",
+        "gitBlob": "f911d42d01b69e6577f9bcd66f4ed59aab8ab882"
+      },
+      {
+        "path": "src/service-credit-pilot-client-plan.js",
+        "bytes": 7483,
+        "LF": 181,
+        "sha256": "73ee3d739de85150039e733234cd0761c228d68de040d1e126902e808a259ac6",
+        "gitBlob": "14334c82b5b7c80fb8f7f6a392a1a0f3c3adcbf1"
+      },
+      {
+        "path": "src/service-credit-pilot-original-payment-checkpoint.js",
+        "bytes": 4003,
+        "LF": 89,
+        "sha256": "930905f31824a6cadc16dfb84572cd4dc38a81e2fce4569b73b6bef29dec97d1",
+        "gitBlob": "51c6391bc22f561ebff0005ced31e538aa83f4fa"
+      },
+      {
+        "path": "src/service-credit-pilot-status-view.js",
+        "bytes": 3202,
+        "LF": 60,
+        "sha256": "cf3822d8b9ec4eb4772452ed1888b96d398fd87c1ead44cd155a5acc1a6b66ed",
+        "gitBlob": "0890db504e44b704d0434dc309e711743570e652"
+      },
+      {
+        "path": "src/service-credit-sqlite-store.js",
+        "bytes": 83516,
+        "LF": 2366,
+        "sha256": "eea4032830dc1f641c4832e0dab33066633ba487eaf19581e3295cf8810460f3",
+        "gitBlob": "ae5260ef3442079fe73544d2d730d05724758fa1"
+      },
+      {
+        "path": "src/service-credit-zenon-funding-post-v1-payer-recovery-sqlite-store.js",
+        "bytes": 83681,
+        "LF": 2042,
+        "sha256": "bea9e00aa6208f776561c975d54640dfb676168dd4d0b44d125c9dc684912c4a",
+        "gitBlob": "e6af1576df21a20a466d089a4ba6ecdf7380a0df"
+      },
+      {
+        "path": "src/x402-wire.js",
+        "bytes": 39886,
+        "LF": 934,
+        "sha256": "5fba91af5a352f62d1a335c7176a45a604e2af5d92b1c4b0e53825c1f20d4e56",
+        "gitBlob": "fb060d4e349b1c31a1219a0cc137af250a8a2291"
+      },
+      {
+        "path": "src/service-credit-custodied-backend-recovery-client.js",
+        "bytes": 33016,
+        "LF": 668,
+        "sha256": "6c5e5d07a4ac96a72a2494a8e6efdec0a057e967ce887816f68eb53048b3c885",
+        "gitBlob": "f6aad1a7a89d81f15158814ec7e3991ae38a9fbe"
+      },
+      {
+        "path": "src/service-credit-custodied-sqlite-recovery-reader.js",
+        "bytes": 7754,
+        "LF": 180,
+        "sha256": "e3ac726602edd3d06137212a566772b5f66fde5d4b4b71c14b2b28d76b1f28fe",
+        "gitBlob": "7c148b647b3a5a4f0c105e7cd60546fa1720c2b7"
+      },
+      {
+        "path": "src/service-credit-backend-original-outcome-reader.js",
+        "bytes": 7738,
+        "LF": 182,
+        "sha256": "dadd9cbfbdcc2ff4bb24252fed85a135d2ce17397e713b1917a109eb6b28938d",
+        "gitBlob": "7f083a5f3a8716f8aae2c618945473671da2f6b7"
+      },
+      {
+        "path": "src/service-credit-recovery-inspect-cli.js",
+        "bytes": 13846,
+        "LF": 268,
+        "sha256": "166464154fa78c8485def1327134314cec7a32b4e64c31ee4771dba2d5500444",
+        "gitBlob": "aa6b70cbd1766c223178a72fa593f0ff02ce55ef"
+      },
+      {
+        "path": "qualification/service-credit-recovery-inspect-cli.behavior.draft.mjs",
+        "bytes": 29289,
+        "LF": 418,
+        "sha256": "80ace873a3cb3d3005212616a163029b11a31bf265ad1c0be2c8239acdb75d72",
+        "gitBlob": "8740d9fea7c8b0c16306ac0c57a04ceae00b1af7"
+      }
+    ],
+    "noImportsOfOlderQualificationEntries": true,
+    "noSourceRewriteOrVm": true
+  },
+  "retainedEvidence": {
+    "selectedTaskState": "CLOSED",
+    "selectedTaskOutcome": "SUCCESS",
+    "selectedNativeProcessGroupObservedAbsent": true,
+    "allSixRecordsAndStreamsReread": true,
+    "previousFailureTaskClosedAndPreserved": true,
+    "earlierStoppedFailuresAndActualAuthorityUnchanged": true,
+    "beforeNewDocumentAndResult": {
+      "repoSourceFiles": 316,
+      "nativePrivateFiles": 165,
+      "externalPrivateFiles": 1021,
+      "privateFiles": 1186,
+      "protectedAbsences": 46
+    },
+    "databaseOriginals": [
+      {
+        "attempt": "INITIAL_FAILED",
+        "bytes": 16384,
+        "sha256": "8635982e7bf0f37b363d0f2f598bb4e27f161e1db8869290f4ad7ecca7c54c57"
+      },
+      {
+        "attempt": "INITIAL_FAILED",
+        "bytes": 53248,
+        "sha256": "59a36b8c601088d61f30b571d02d6fe52e4ae4456727d44857723c1e66ebba01"
+      },
+      {
+        "attempt": "CHANGED_SOURCE_SUCCESS",
+        "bytes": 16384,
+        "sha256": "5d81e6a15412ebfc22ed58affad787c7075402c140c4741c10d9bba68b3ed087"
+      },
+      {
+        "attempt": "CHANGED_SOURCE_SUCCESS",
+        "bytes": 53248,
+        "sha256": "058ea896ee373d1a1a10c201988d4718406677b3d6938252315fdeb488a0112f"
+      }
+    ],
+    "selectedDatabaseCaptures": [
+      {
+        "name": "backend-inspect-v6.sqlite",
+        "bytes": 16384,
+        "sha256": "5d81e6a15412ebfc22ed58affad787c7075402c140c4741c10d9bba68b3ed087"
+      },
+      {
+        "name": "payer-inspect-v6.sqlite",
+        "bytes": 53248,
+        "sha256": "058ea896ee373d1a1a10c201988d4718406677b3d6938252315fdeb488a0112f"
+      }
+    ],
+    "selectedProofFreeManifestCaptures": [
+      {
+        "name": "inspect-original.json",
+        "bytes": 1478,
+        "sha256": "4f4c86a43ec7b8acb687b85b43a2cf6f45c32b8fa3ea161755aef630c1dc326a"
+      },
+      {
+        "name": "inspect-changed-pins.json",
+        "bytes": 1478,
+        "sha256": "11128413feaa3063d6459735b5c6413171121560e1e364226d0ea12b6a162755"
+      },
+      {
+        "name": "inspect-missing-payer.json",
+        "bytes": 1484,
+        "sha256": "9d29655979f5ddac2e8162e4ce4983c2a2525a37bf5cfe06f3b17e6b728ac8a2"
+      }
+    ],
+    "privatePathsRawProofsKeysAndDiagnosticsNotPublished": true,
+    "closedRecordsNotRewritten": true
+  },
+  "storageAndEfficiency": {
+    "approvedManagerUnchanged": true,
+    "rootPolicyAndMountedVolumeIdentityUnchanged": true,
+    "productionFreeSpaceFloorAndOutstandingReservationsPreserved": true,
+    "defaultRootUnchanged": true,
+    "oldRefusedStoreWrites": 0,
+    "oldRefusedStoreScratchScansCleanupAdoptionOrCapacityProbes": 0,
+    "sourceRetention": "Use only protected CAS object/ledger/closed-creator references. No payload is recopied merely because a different root's admission was refused. Unknown/unbound inputs are not adopted.",
+    "currentEntry": {
+      "protectedSourceReferences": 26,
+      "externalReferences": 21,
+      "nativeReferences": 5,
+      "sourceBytesNotRecopied": 650998,
+      "newSourceRetentions": 2,
+      "newSourceBytes": 43135,
+      "sourceAliases": 0,
+      "sourceArchiveCopies": 0
+    },
+    "initialAttempt": {
+      "protectedSourceReferences": 23,
+      "externalReferences": 21,
+      "nativeReferences": 2,
+      "newSourceRetentions": 5,
+      "newSourceBytes": 90913,
+      "sourceAliases": 0
+    },
+    "databaseFilesPerAttempt": 2,
+    "databaseBytesPerAttempt": 69632,
+    "totalRawDatabaseBytesAcrossBothAttempts": 139264,
+    "explicitBoundedDatabaseCapturesPerAttempt": 2,
+    "oneCasObjectPerDigest": true,
+    "duplicateStdoutZipOrRecursivePackaging": false,
+    "portableDatabaseCapturesExplicitAndQuotaAccounted": true,
+    "cleanupDecision": "HOLD",
+    "cleanupReason": "Two child-created SQLite originals are not manager-registered disposable files. Keep their original paths and identities; retain explicit bounded independent captures in CAS. Never adopt or delete them to manufacture a clean result.",
+    "bothTasksClosed": true,
+    "rawDatabaseOriginalsHeldAcrossBothAttempts": 4,
+    "registeredProofFreeManifestsConsumedOnlyThroughApprovedPreserve": true,
+    "protectedObjectsDeleted": 0,
+    "physicalApfsReclaimMeasured": false,
+    "taskQuotaBytes": 2097152,
+    "peakLogicalBytesBound": 2070389,
+    "databaseByteCapPerFile": 65536,
+    "manifestByteCap": 16384,
+    "stdoutCap": 16384,
+    "stderrCap": 1048576,
+    "compactAdmissionBytes": 23903,
+    "storedAdmissionBytes": 29916,
+    "completeRecordBytes": 38906,
+    "managedCallerElapsedSeconds": 2.347455834,
+    "managedCallerSpan": "guard/admission/retention/one native command/database and manifest preservation/verification/close/HOLD readback; excludes earlier preparation and initial failed attempt",
+    "nodeReporterDurationMs": 741.975541,
+    "wallTimeIsNotCapacityBenchmark": true
+  },
+  "authorityBoundaries": {
+    "protectedRealTotals": {
+      "consumedAdmissions": 2,
+      "actualPrepare": 1,
+      "bundles": 0,
+      "nativeQualificationRuns": 0
+    },
+    "dpPreparationAndOfficialX402CompatibilityRemainSeparate": true,
+    "originalActualPaymentAndRequestBytesHashContextUnchanged": true,
+    "consumedAuthorityNotReset": true,
+    "validatedSameSignedBlockResendDistinctFromUnknownAcknowledged": true,
+    "privateBootstrapAndGhcrBoundariesUnchanged": true,
+    "automationChanged": false,
+    "workerDispatched": false,
+    "modelSettingsChanged": false
+  },
+  "publicationBoundary": {
+    "packet": "Only the new opt-in CLI module, its selected native-store entry, this source-bound result, and its usage/limits document. All existing main paths and the local Git index/HEAD remain unchanged.",
+    "mainRequiresFreshScopeRulesPrAndDiffChecks": true,
+    "noForcePushOrProtectionBypass": true,
+    "noHostedCiSuccessInferred": true
+  },
+  "remainingGates": [
+    "Qualify the separate native process/stdin/stdout launcher before claiming that whole operational path.",
+    "Complete the remaining original runner, current-authority, delivery, restart and supervised acceptance gates at their actual scope; this one observation entry does not finish P2.",
+    "Do not rerun these completed source-bound cases unchanged or substitute their local results for DP, chain/provider, signing, live or production evidence."
+  ]
+}
