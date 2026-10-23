@@ -1,0 +1,243 @@
+{
+  "kind": "PAYER_OWNER_REENTRANT_RECOVERY_CLOSE_SOURCE_REVIEW_NOT_EXECUTED",
+  "version": 1,
+  "sourceParent": "10a4a69ce193d262737ead3d75b1241d1fbcead7",
+  "currentMain": "ba5a33c1de34a8d3ad869958f9aac1c625098ab7",
+  "ownerPreimage": {
+    "path": "src/service-credit-zenon-funding-post-v1-payer-recovery-owner.js",
+    "bytes": 18038,
+    "LF": 540,
+    "sha256": "68d1c4a8f4df5ddec20ea8d3190bc4c352179de3a30f6d0388c3e394a4463005",
+    "gitBlob": "1663efe46708c555c1cdc117f7b04e737afb7d8c"
+  },
+  "owner": {
+    "path": "src/service-credit-zenon-funding-post-v1-payer-recovery-owner.js",
+    "bytes": 18507,
+    "LF": 550,
+    "sha256": "150aaeeaebd5c8f9bdf7b8c84f79e9cccada265469b89c28c4252ee81d6f6de2",
+    "gitBlob": "b9acc3ea6c8999f2464b4f8c25348dcf0fb26a0b"
+  },
+  "directFixture": {
+    "path": "qualification/service-credit-payer-owner-reentrant-recovery-close-v1.behavior.draft.mjs",
+    "bytes": 5589,
+    "LF": 107,
+    "sha256": "1a0ac116b91b41e1b3f26832d62564690ef26ba82a11731f1521b660b095219c",
+    "gitBlob": "37e21ca1d7099731e485af27d61ca4a0bfd3349e"
+  },
+  "nineCaseDriver": {
+    "path": "qualification/dynamic-plasma-original-funding-submission-reentrant-v2.behavior.draft.mjs",
+    "bytes": 1658,
+    "LF": 27,
+    "sha256": "c673b4cfc8acf946b18befd37dadfe5a1629ebb7c716fa92b06da9296648d054",
+    "gitBlob": "fccde357ed0ef0efb2f878ad9ed1ef7d8d018558"
+  },
+  "protectedPriorSources": [
+    {
+      "path": "qualification/dynamic-plasma-original-funding-submission-v1.behavior.draft.mjs",
+      "bytes": 18196,
+      "LF": 276,
+      "sha256": "a2b483e2d0ddb4ceb52844084d319ce97ad4d9a820f3b014fb7e5a59aef81e88",
+      "gitBlob": "10710ff5b49cbd108bd9d74779dd477cba0900aa"
+    },
+    {
+      "path": "qualification/dynamic-plasma-original-funding-submission.fixture.draft.mjs",
+      "bytes": 15366,
+      "LF": 235,
+      "sha256": "e1aa5acb7c7753bf77d3a6dc582bcf874067992cf8ac9b592edcc8438ef7c3ac",
+      "gitBlob": "c99e7a404e8f39cbef61caba74dbdd269e24b60f"
+    },
+    {
+      "path": "qualification/dynamic-plasma-original-funding-submission-native-profile.inputs.json",
+      "bytes": 14570,
+      "LF": 384,
+      "sha256": "24cf9bc8b9f2c10b8e34e36999cac86709e859d678baaf3e18f8550ece05597b",
+      "gitBlob": "ce2ac0529398162296688ae240332897f9d1bdf8"
+    },
+    {
+      "path": "qualification/dynamic-plasma-original-funding-submission-native-profile.source-review.json",
+      "bytes": 9850,
+      "LF": 242,
+      "sha256": "bc484fe3c12a223fa8bd81ba5320a68752e7b3924534dec76ac3f1361c85c4a0",
+      "gitBlob": "feccab9067a4a72b10287ddbd39cd8815fa67400"
+    },
+    {
+      "path": "qualification/service-credit-bounded-operation-drain.actual-local-result.json",
+      "bytes": 6755,
+      "LF": 114,
+      "sha256": "1b33b1e5becb26deb7b9a8735c7d8daffec7cfa61336f5863afd9b94fd994836",
+      "gitBlob": "b758d25c58821ff3a6c7c5e5fae213099ff94fcc"
+    },
+    {
+      "path": "src/service-credit-bounded-operation-drain.js",
+      "bytes": 4046,
+      "LF": 92,
+      "sha256": "ccaf1742f94a2ae312598c4bb2adc0c6168b1ade0167dbc8990422f5e7037885",
+      "gitBlob": "9cb4987ecd835e7b558d6088d562f417a9179da8"
+    },
+    {
+      "path": "test/service-credit-bounded-operation-drain.test.js",
+      "bytes": 4634,
+      "LF": 101,
+      "sha256": "77b37170b8f2aee0825176c6db1fc3744b5d0806dd7ccf7642ffd1932ea66359",
+      "gitBlob": "599794b1cab7d008c1c2debe28187fabb5949717"
+    },
+    {
+      "path": "src/service-credit-zenon-funding-post-v1-payer-recovery-sqlite-store.js",
+      "bytes": 83681,
+      "LF": 2042,
+      "sha256": "bea9e00aa6208f776561c975d54640dfb676168dd4d0b44d125c9dc684912c4a",
+      "gitBlob": "e6af1576df21a20a466d089a4ba6ecdf7380a0df"
+    },
+    {
+      "path": "src/service-credit-zenon-funding-post-v1-client.js",
+      "bytes": 26077,
+      "LF": 727,
+      "sha256": "49ea2adbea7a26a2e87b05a5f96e6bb01230853f91922c531b4fdaf7da3fc22d",
+      "gitBlob": "98fa7d808eead2b1663487bb259426c09d5eaac9"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-original-funding-submission.js",
+      "bytes": 15202,
+      "LF": 252,
+      "sha256": "a91a909bc5a5c3dc067d515164f1d6453178b468b28ef24713fdad70ceffa4a0",
+      "gitBlob": "4fab6451123a78055435f32f9d57bb7b50769670"
+    }
+  ],
+  "changedOwnerScope": "EXACT_RUNLOCAL_REPLACEMENT_ONLY",
+  "sourceObservedHazard": "The previous async IIFE invoked operation before assigning localOperation. An empty synchronous V6 recoverAfterRestart commit hook could therefore request close before the payer recorded its pending local operation. No native reproduction or severity claim is made.",
+  "implementedOrder": [
+    "create the owned public Promise capability",
+    "assign localOperation before any operation callback",
+    "attach cleanup on either settlement",
+    "invoke operation synchronously, not from a delayed microtask",
+    "adopt its actual completion or synchronous failure"
+  ],
+  "sourceFlow": {
+    "existingAdmissionChecksPreserved": true,
+    "originalErrorsPreserved": true,
+    "synchronousInputCapturePreserved": true,
+    "newStoreOrSdkFactory": false,
+    "closeWaitsForClaimedOperation": true,
+    "clearOnlyIfStillSamePromise": true,
+    "drainBudgetAndBackoffUnchanged": true,
+    "storeCloseMethodUnchanged": true,
+    "sqliteSchemaUnchanged": true,
+    "packetOrIndependentPinLogicUnchanged": true,
+    "legacyBuyerUnchanged": true,
+    "automaticReplayOrResetAdded": false
+  },
+  "newGenuineNativeCase": {
+    "caseCount": 1,
+    "genuineOwner": true,
+    "genuineV6Store": true,
+    "usesHigherDpWrapper": false,
+    "newSqliteFiles": 1,
+    "V6Files": 1,
+    "reopensSameFile": 1,
+    "emptyStoreOnly": true,
+    "expectedRecoverRejection": "ZENON_FUNDING_PAYER_RECOVERY_OWNER_CLOSED",
+    "expectedClose": "CLOSED",
+    "beforeCommitHooks": 1,
+    "afterCommitHooks": 1,
+    "expectedFetchCalls": 0,
+    "newKeys": 0,
+    "signatures": 0,
+    "pinFiles": 0,
+    "fakeSdk": false,
+    "fakeStore": false,
+    "fakePreflight": false,
+    "closeFallbackOrDeletion": false
+  },
+  "combinedSelection": {
+    "cases": 9,
+    "existingEightEntryUnmodified": true,
+    "existingSharedHarnessUnmodified": true,
+    "existingCaseCount": 8,
+    "additionalCaseCount": 1,
+    "driverImportOrder": [
+      "qualification/dynamic-plasma-original-funding-submission-v1.behavior.draft.mjs",
+      "qualification/service-credit-payer-owner-reentrant-recovery-close-v1.behavior.draft.mjs"
+    ],
+    "literalImportsOnly": true,
+    "testFiltering": false,
+    "discovery": false,
+    "expectedNodeCommands": 1,
+    "expectedNodeChildren": 0,
+    "expectedNewSqliteFiles": 9,
+    "V6Files": 8,
+    "V5NegativeFiles": 1,
+    "independentPinFiles": 7,
+    "inMemorySyntheticEd25519Keys": 1,
+    "syntheticTransactionSignatures": 7,
+    "syntheticFetchCallbacks": 3,
+    "recoveryCloseHooks": 2,
+    "commitReturnLossHooks": 1,
+    "extraAfterCommitObservationHooks": 1,
+    "nonceSearch": 0,
+    "sdkPrepareBlock": 0,
+    "realPrepare": 0,
+    "realNetwork": 0,
+    "realWallet": 0,
+    "realProvider": 0,
+    "livePayment": 0,
+    "install": 0
+  },
+  "scopeAndCapacity": {
+    "newNineCaseDirectHumanScopeRequired": true,
+    "previousEightCaseScopeNotReused": true,
+    "consumedHttpsScopeNotReused": true,
+    "selectionStringIsNotAuthorization": true,
+    "fullCurrentNativeGraphReviewed": false,
+    "newNamespaceProfileAuthored": false,
+    "exactLauncherReviewed": false,
+    "futureStorageAdmission": false,
+    "quotaBytes": 2097152,
+    "rawNineDatabasePeakEstablished": false,
+    "remainingTaskSlotNotConsumed": true,
+    "noPolicyIncrease": true,
+    "noCleanupOrAdoption": true,
+    "existingPackageBytesReusedPlanned": true,
+    "noPackageOrSourceCopiesPerformed": true
+  },
+  "nativeFailurePolicy": [
+    "Preserve a failed/rejected owner close; do not force direct store.close to make the fixture pass.",
+    "Do not unlink SQLite files or journals, reset ownership or rewrite old outcomes.",
+    "Preserve actual exit, complete captures, identities and UNKNOWN/HELD evidence under the manager if a future run is admitted.",
+    "Do not treat ordinary close/reopen as process-kill, power-loss or physical-resource-release proof."
+  ],
+  "actualExecution": {
+    "NodeCommands": 0,
+    "parsedOrImportedOwner": false,
+    "parsedOrImportedFixtures": false,
+    "SDK": 0,
+    "SQL": 0,
+    "keys": 0,
+    "signatures": 0,
+    "network": 0,
+    "newStorageTasks": 0,
+    "newSqliteFiles": 0,
+    "casesExecuted": 0
+  },
+  "historicalComponentResult": {
+    "path": "qualification/service-credit-bounded-operation-drain.actual-local-result.json",
+    "sourceCommit": "10a4a69ce193d262737ead3d75b1241d1fbcead7",
+    "sha256": "1b33b1e5becb26deb7b9a8735c7d8daffec7cfa61336f5863afd9b94fd994836",
+    "helperCasesPassed": 16,
+    "unchanged": true,
+    "rerun": false,
+    "qualifiesThisOwnerEdit": false
+  },
+  "qualification": {
+    "sourceOnly": true,
+    "nativeOwner": false,
+    "nineCaseComposition": false,
+    "currentMain": false,
+    "hostedCI": false,
+    "fullP0": false,
+    "fullP1": false,
+    "fullP2": false,
+    "mainEligible": false,
+    "economicPilot": "NO_GO",
+    "authority": "NONE"
+  }
+}
