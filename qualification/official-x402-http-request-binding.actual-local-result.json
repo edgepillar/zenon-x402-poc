@@ -1,0 +1,509 @@
+{
+  "kind": "P1_OFFICIAL_X402_HTTP_REQUEST_BINDING_ACTUAL_LOCAL_RESULT",
+  "version": 1,
+  "status": "SELECTED_LOCAL_CASES_PASSED_NOT_FULL_P1",
+  "sourceBase": "8f0dd2c8594485ad9a699426014fb94209fc084c",
+  "sourceAssociation": {
+    "officialServer": "src/x402-official-selected-settlement-server.js",
+    "requestBinding": "src/x402-official-https-request-binding.js",
+    "existingScalarApiRetained": true,
+    "defaultOff": true,
+    "currentP0ProfileUnchanged": true,
+    "historicalResultsRelabeled": false
+  },
+  "runtime": {
+    "node": "24.19.0",
+    "platform": "darwin",
+    "architecture": "arm64",
+    "executableSha256": "dbedff294bab84a0a86c04e15fbcbeb1c97ca10bef1b32b0634cd24b36f62100"
+  },
+  "requestBinding": {
+    "entry": "qualification/official-x402-https-request-binding.behavior.draft.mjs",
+    "sourceFiles": 3,
+    "sourceBytes": 14190,
+    "sources": [
+      {
+        "path": "package.json",
+        "bytes": 2529,
+        "LF": 42,
+        "sha256": "43b55453328d3f3a2dc11759bb26a83df9c24df7d4482cd7745a139e2fa421a6"
+      },
+      {
+        "path": "src/x402-official-https-request-binding.js",
+        "bytes": 5085,
+        "LF": 99,
+        "sha256": "dabf215408887bd0d2ba346085c5ab2df13f724e8759b7a98b71b09c8dc8d692"
+      },
+      {
+        "path": "qualification/official-x402-https-request-binding.behavior.draft.mjs",
+        "bytes": 6576,
+        "LF": 101,
+        "sha256": "ffe4350b2190b00db429bea1fb54944410da26c44a9d4fe8717386c21806f288"
+      }
+    ],
+    "selectedNames": [
+      "official HTTPS route selects one exact canonical resource without transport",
+      "official HTTPS request retains absent or original payment header as frozen DATA",
+      "official HTTPS request rejects method target protocol authority and TLS changes",
+      "official HTTPS request refuses body framing upgrades and duplicate raw headers",
+      "official HTTPS request bounds raw header shape count bytes and payment scalar",
+      "official HTTPS request never invokes accessor proxy or stream hooks",
+      "official HTTPS request does not consume inputs on a rejected route or arity"
+    ],
+    "counts": {
+      "tests": 7,
+      "suites": 0,
+      "pass": 7,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "diagnostic": {
+      "kind": "P1_OFFICIAL_HTTPS_REQUEST_BINDING",
+      "version": 1,
+      "selectedCases": 7,
+      "declaredRequestFieldsOnly": true,
+      "rawHeaderPairsBound": 64,
+      "rawHeaderBytesBound": 16384,
+      "paymentHeaderBytesBound": 8192,
+      "officialPackageImported": false,
+      "officialServerImported": false,
+      "nativeHttpOrTls": 0,
+      "network": 0,
+      "sql": 0,
+      "keys": 0,
+      "signatures": 0,
+      "nonceSearch": 0,
+      "realPrepare": 0,
+      "payments": 0,
+      "serviceDelivery": "NOT_ESTABLISHED"
+    },
+    "actualExit": 0,
+    "completeStreams": true,
+    "stdout": {
+      "sha256": "53f5caf957d2eb2778c7b1e15dba27f18e973a025beff1c13004baf71328e214",
+      "bytes": 2075
+    },
+    "stderr": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "admissionSha256": "c3daa4d0e2d50d359c7165c1adbec9b5da8805a7e180ec100cb3621b194ac5d9",
+    "callerProgramSha256": "557dfcef989b1b24c40c6eb183f3b0c1f91110326033fdb619fedeb85d3cc016",
+    "primaryReview": "COMPLETE_PURE_HTTP_BINDING_PRIMARY_REVIEW_PASS",
+    "nativeParentCommands": 1,
+    "childProcesses": 0,
+    "officialPackageExecution": false
+  },
+  "officialComposition": {
+    "entry": "qualification/official-x402-http-request-pending-composition.behavior.draft.mjs",
+    "sourceFiles": 32,
+    "sourceBytes": 503580,
+    "sources": [
+      {
+        "path": "src/x402-official-selected-settlement-server.js",
+        "bytes": 15704,
+        "LF": 284,
+        "sha256": "7e226d378b909bbe30a536b4829313f7cc25d772ac2c0dbfba741c64fc2515b5"
+      },
+      {
+        "path": "src/x402-official-https-request-binding.js",
+        "bytes": 5085,
+        "LF": 99,
+        "sha256": "dabf215408887bd0d2ba346085c5ab2df13f724e8759b7a98b71b09c8dc8d692"
+      },
+      {
+        "path": "src/x402-official-selected-payment-client.js",
+        "bytes": 9226,
+        "LF": 177,
+        "sha256": "6103703a48ab93b33e1d322d01da367d9552d1e37c9d983326f6e58d1e77693c"
+      },
+      {
+        "path": "src/x402-selected-payment-client-bridge.js",
+        "bytes": 19446,
+        "LF": 370,
+        "sha256": "d8252e421240005f51b1627ab97b624496325403508d57b030be423e871a5083"
+      },
+      {
+        "path": "src/x402-selected-settlement-server-bridge.js",
+        "bytes": 39943,
+        "LF": 749,
+        "sha256": "38f47d24e1dcdd0f632e786054dc2e9544de2f261f74e949e28fee43ed56f40b"
+      },
+      {
+        "path": "src/x402-verification-bound-settlement-context.js",
+        "bytes": 11311,
+        "LF": 221,
+        "sha256": "b3ad2fd33dae7e77a77f069cbc1259bf77e18a2bf383aa30f41bcc19221656f5"
+      },
+      {
+        "path": "src/x402-selected-settlement-context.js",
+        "bytes": 16818,
+        "LF": 456,
+        "sha256": "afb6e16603023dd58d6a71cff5790a802dcfa4b98bc9d380b51ccc3d58e10991"
+      },
+      {
+        "path": "src/x402-wire.js",
+        "bytes": 39886,
+        "LF": 934,
+        "sha256": "5fba91af5a352f62d1a335c7176a45a604e2af5d92b1c4b0e53825c1f20d4e56"
+      },
+      {
+        "path": "package.json",
+        "bytes": 2529,
+        "LF": 42,
+        "sha256": "43b55453328d3f3a2dc11759bb26a83df9c24df7d4482cd7745a139e2fa421a6"
+      },
+      {
+        "path": "@x402/core/package.json",
+        "bytes": 3853,
+        "LF": 138,
+        "sha256": "4130a95721f50c0997dcba3728d14d5584c4f99c12c8c3f9870b21f31da212fd"
+      },
+      {
+        "path": "zod/package.json",
+        "bytes": 3284,
+        "LF": 118,
+        "sha256": "70eedbe34fd52385a4ae2f3e5759b19682189f0118ea73a6e7c32c677f61668e"
+      },
+      {
+        "path": "@x402/core/dist/esm/client/index.mjs",
+        "bytes": 26707,
+        "LF": 676,
+        "sha256": "653613f25e2fa24615af7d1fe943679177774215a16600289175f61c4df5dda9"
+      },
+      {
+        "path": "@x402/core/dist/esm/server/index.mjs",
+        "bytes": 1761,
+        "LF": 60,
+        "sha256": "fa62aa75d072a9a1e2bb00be93ef4980e15507e3617942f1d7ab05c69954a19e"
+      },
+      {
+        "path": "@x402/core/dist/esm/http/index.mjs",
+        "bytes": 1177,
+        "LF": 42,
+        "sha256": "f87cf0256b51820628469681ba1421de97f17d55c2eff64bbe9040ef4f5ea084"
+      },
+      {
+        "path": "@x402/core/dist/esm/schemas/index.mjs",
+        "bytes": 1591,
+        "LF": 69,
+        "sha256": "b4c12db796c6654de17d8542d65cd78bbbe8cf4bbcc71d05912450d8adfcf0c9"
+      },
+      {
+        "path": "@x402/core/dist/esm/chunk-BA2VL4DT.mjs",
+        "bytes": 116817,
+        "LF": 3151,
+        "sha256": "f2ad975e24db34808470b081c9deedaf6aafa53ab95121d29661a1a8b1507f84"
+      },
+      {
+        "path": "@x402/core/dist/esm/chunk-N4QXZG2Z.mjs",
+        "bytes": 5040,
+        "LF": 160,
+        "sha256": "19c189f7417214b211ee4abdaada531a80e5adc8504d593c172fe1e2ce61c03e"
+      },
+      {
+        "path": "@x402/core/dist/esm/chunk-VE37GDG2.mjs",
+        "bytes": 107,
+        "LF": 6,
+        "sha256": "56fb4db85f03d88dfa5d42c81be8527f72deae2bca4004dfaea6415f186dc086"
+      },
+      {
+        "path": "@x402/core/dist/esm/chunk-P3DFEIO7.mjs",
+        "bytes": 2602,
+        "LF": 82,
+        "sha256": "9c124f03f792fcef472452fcaf30d03bd7d6ea44170675d60ccc473d3b02f983"
+      },
+      {
+        "path": "@x402/core/dist/esm/chunk-UQQR4X3S.mjs",
+        "bytes": 5837,
+        "LF": 172,
+        "sha256": "a7756bf22635f58e52dce87753863e51f407a38f5c32382a1076c39bd6cb9a62"
+      },
+      {
+        "path": "@x402/core/dist/esm/chunk-BJTO5JO5.mjs",
+        "bytes": 433,
+        "LF": 10,
+        "sha256": "1c521b4fbee4089393c982b94b5f8a4f81b1043c2f8cd1848d0d6056430e761f"
+      },
+      {
+        "path": "zod/index.js",
+        "bytes": 105,
+        "LF": 4,
+        "sha256": "6419c4ac0e637ff08463083e31886d10354f74cbcc4e584400b2b837e39ac881"
+      },
+      {
+        "path": "zod/v3/external.js",
+        "bytes": 205,
+        "LF": 6,
+        "sha256": "5d26d2e47e2352def36f89a3e8bf8581da22b7f857e07ef3114cd52cf4813445"
+      },
+      {
+        "path": "zod/v3/errors.js",
+        "bytes": 243,
+        "LF": 9,
+        "sha256": "d40831f478288d76e82bbbcc3b7e95c8513b6e76471f2d49a37c979bc57d492d"
+      },
+      {
+        "path": "zod/v3/helpers/parseUtil.js",
+        "bytes": 3601,
+        "LF": 109,
+        "sha256": "b57484013bb360bac2e334d58fcd5f6cbfa63ffcc7d8ff3dbbb3380ca659b956"
+      },
+      {
+        "path": "zod/v3/helpers/typeAliases.js",
+        "bytes": 11,
+        "LF": 1,
+        "sha256": "8e609bb71c20b858c77f0e9f90bb1319db8477b13f9f965f1a1e18524bf50881"
+      },
+      {
+        "path": "zod/v3/helpers/util.js",
+        "bytes": 4055,
+        "LF": 133,
+        "sha256": "906ef685e5853d496e293ee8f8a2bb8b1ed2d078a1bcdfedb2dfd61d75b6330c"
+      },
+      {
+        "path": "zod/v3/types.js",
+        "bytes": 131212,
+        "LF": 3693,
+        "sha256": "9763a2938f0e7f983363ef4bf6530e7583e3f2d54f8a4a6684efad58febc6e8e"
+      },
+      {
+        "path": "zod/v3/ZodError.js",
+        "bytes": 4349,
+        "LF": 133,
+        "sha256": "f5ac9e86b92e201d41e294d7aa35986a2aa28829e1bcc8ac25f7c8dce0674b99"
+      },
+      {
+        "path": "zod/v3/locales/en.js",
+        "bytes": 5602,
+        "LF": 109,
+        "sha256": "51a6dcc5d4bd52a64da127c012c6c963395c1d9a343ad75d4a8eca662fc8b205"
+      },
+      {
+        "path": "zod/v3/helpers/errorUtil.js",
+        "bytes": 300,
+        "LF": 6,
+        "sha256": "68589c0cf44c8b4ad19b77418f53caad2cd1dbc8d714f526e1876ebdee4828c5"
+      },
+      {
+        "path": "qualification/official-x402-http-request-pending-composition.behavior.draft.mjs",
+        "bytes": 24740,
+        "LF": 458,
+        "sha256": "f2a2d3ed9e4b4bae268909f64d6be32416839c8fa0d3a2c917c181fb7d74d66b"
+      }
+    ],
+    "selectedNames": [
+      "HTTP-bound official server owns the SDK pending tuple and returns one original success",
+      "HTTP-bound official server retains consumed first authority when its observer budget remains pending",
+      "HTTP-bound official server refuses changed request context while retaining the original pending continuation"
+    ],
+    "counts": {
+      "tests": 3,
+      "suites": 0,
+      "pass": 3,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "diagnostics": [
+      {
+        "kind": "OFFICIAL_X402_HTTP_REQUEST_SERVER_COMPOSITION",
+        "version": 1,
+        "scenario": "PENDING_TO_SUCCESS_PRIVATE_SERVER_BINDING",
+        "httpRequestEntry": true,
+        "methodPathAndResourceBoundBeforeSdk": true,
+        "declaredRequestFieldsOnly": true,
+        "nativeHttpOrTlsHandshakeExecuted": false,
+        "invalidHttpBindings": 8,
+        "coreVersion": "2.23.0",
+        "zodVersion": "3.25.76",
+        "serverRequestCalls": 2,
+        "serverSchemaCalls": 2,
+        "clientSchemaCalls": 1,
+        "clientCreatorCalls": 1,
+        "verifyCalls": 1,
+        "firstSettlementCalls": 1,
+        "observerCalls": 1,
+        "sdkContinuationCalls": 1,
+        "positiveContinuationReplies": 1,
+        "continuationPhase": "SUCCEEDED",
+        "originalHeaderRetained": true,
+        "originalCallbackSerializationsRetained": true,
+        "privateSdkTupleHookChecks": true,
+        "changedContextRequestsRefused": 0,
+        "modeledHandlerCalls": 1,
+        "firstSettlementAuthorityConsumed": true,
+        "publicationUncertaintyRetained": true,
+        "publicationStatus": "ACKNOWLEDGED",
+        "networkCalls": 0,
+        "keys": 0,
+        "signatures": 0,
+        "sql": 0,
+        "nonceSearch": 0,
+        "payments": 0,
+        "realPrepare": 0,
+        "replacements": 0,
+        "serviceDelivery": "NOT_ESTABLISHED",
+        "sameProcessOnly": true,
+        "automaticSdkRetry": false
+      },
+      {
+        "kind": "OFFICIAL_X402_HTTP_REQUEST_SERVER_COMPOSITION",
+        "version": 1,
+        "scenario": "PENDING_TO_PENDING_BUDGET_EXHAUSTED",
+        "httpRequestEntry": true,
+        "methodPathAndResourceBoundBeforeSdk": true,
+        "declaredRequestFieldsOnly": true,
+        "nativeHttpOrTlsHandshakeExecuted": false,
+        "invalidHttpBindings": 0,
+        "coreVersion": "2.23.0",
+        "zodVersion": "3.25.76",
+        "serverRequestCalls": 2,
+        "serverSchemaCalls": 2,
+        "clientSchemaCalls": 1,
+        "clientCreatorCalls": 1,
+        "verifyCalls": 1,
+        "firstSettlementCalls": 1,
+        "observerCalls": 1,
+        "sdkContinuationCalls": 1,
+        "positiveContinuationReplies": 0,
+        "continuationPhase": "PENDING_EXHAUSTED",
+        "originalHeaderRetained": true,
+        "originalCallbackSerializationsRetained": true,
+        "privateSdkTupleHookChecks": true,
+        "changedContextRequestsRefused": 0,
+        "modeledHandlerCalls": 0,
+        "firstSettlementAuthorityConsumed": true,
+        "publicationUncertaintyRetained": true,
+        "publicationStatus": "UNKNOWN",
+        "networkCalls": 0,
+        "keys": 0,
+        "signatures": 0,
+        "sql": 0,
+        "nonceSearch": 0,
+        "payments": 0,
+        "realPrepare": 0,
+        "replacements": 0,
+        "serviceDelivery": "NOT_ESTABLISHED",
+        "sameProcessOnly": true,
+        "automaticSdkRetry": false
+      },
+      {
+        "kind": "OFFICIAL_X402_HTTP_REQUEST_SERVER_COMPOSITION",
+        "version": 1,
+        "scenario": "CHANGED_CONTEXT_REFUSED_ORIGINAL_CONTINUATION_RETAINED",
+        "httpRequestEntry": true,
+        "methodPathAndResourceBoundBeforeSdk": true,
+        "declaredRequestFieldsOnly": true,
+        "nativeHttpOrTlsHandshakeExecuted": false,
+        "invalidHttpBindings": 0,
+        "coreVersion": "2.23.0",
+        "zodVersion": "3.25.76",
+        "serverRequestCalls": 2,
+        "serverSchemaCalls": 2,
+        "clientSchemaCalls": 1,
+        "clientCreatorCalls": 1,
+        "verifyCalls": 1,
+        "firstSettlementCalls": 1,
+        "observerCalls": 1,
+        "sdkContinuationCalls": 1,
+        "positiveContinuationReplies": 1,
+        "continuationPhase": "SUCCEEDED",
+        "originalHeaderRetained": true,
+        "originalCallbackSerializationsRetained": true,
+        "privateSdkTupleHookChecks": true,
+        "changedContextRequestsRefused": 1,
+        "modeledHandlerCalls": 1,
+        "firstSettlementAuthorityConsumed": true,
+        "publicationUncertaintyRetained": true,
+        "publicationStatus": "ACKNOWLEDGED",
+        "networkCalls": 0,
+        "keys": 0,
+        "signatures": 0,
+        "sql": 0,
+        "nonceSearch": 0,
+        "payments": 0,
+        "realPrepare": 0,
+        "replacements": 0,
+        "serviceDelivery": "NOT_ESTABLISHED",
+        "sameProcessOnly": true,
+        "automaticSdkRetry": false
+      }
+    ],
+    "actualExit": 0,
+    "completeStreams": true,
+    "stdout": {
+      "bytes": 4384,
+      "sha256": "b38e27e67122c46a7ba44f70254854860f0677967531e5a782c4911847292413"
+    },
+    "stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "admissionSha256": "08ba69885552f1dfb62199e9fd067396f79eec5e900cdf45abc7a38e0e4b96ef",
+    "callerProgramSha256": "0970b9a32a140be2b359d66f3ec66bc75b58b2ae4f7d4e893510c2f299628f0d",
+    "sourceLoaderSha256": "8b4d921827ac51bf8b68c1601f7455a6d6bfaad7e357d36f6b675d01f95ce391",
+    "resolver": {
+      "version": 1,
+      "sameThreadNativeEsm": true,
+      "sourceRewritten": false,
+      "vm": false,
+      "workers": 0,
+      "aliases": 0,
+      "qualifiedFiles": 32,
+      "loadedEsmFiles": 29,
+      "loadedEsmBytes": 493914,
+      "barePackageSpecifiers": [
+        "@x402/core/client",
+        "@x402/core/server",
+        "zod"
+      ],
+      "normalInstalledNamespaceQualified": false
+    },
+    "primaryReview": "COMPLETE_OFFICIAL_HTTP_REQUEST_PRIMARY_REVIEW_PASS",
+    "nativeParentCommands": 1,
+    "childProcesses": 0,
+    "authorization": "DIRECT_HUMAN_THREE_SYNTHETIC_CASE_EXCEPTION",
+    "existingPackagesLoadedReadOnly": true,
+    "packageInstallation": false,
+    "newSourceRetentions": 0,
+    "newSourceBytes": 0
+  },
+  "evidenceReview": {
+    "separateClosedRecordAndStreamReview": true,
+    "completeCommandRecordsChecked": true,
+    "sourceContentAndPhysicalIdentityMatchedBeforeAfter": true,
+    "processGroupsAbsentAfterJoin": true,
+    "tasksClosed": "SUCCESS",
+    "ownedScratchAbsent": true,
+    "existingEvidenceAndUnrelatedGitStatePreserved": true,
+    "quotaBytesPerTask": 2097152,
+    "sourceAliases": 0,
+    "hardLinks": 0,
+    "initialPreHardeningSevenCaseRunRetainedSeparately": true,
+    "initialPreHardeningPassNotTransferredToChangedSources": true
+  },
+  "exclusions": {
+    "hostedCI": "NOT_RUN_NOT_GREEN",
+    "normalInstalledPackageNamespace": "NOT_QUALIFIED",
+    "nativeHttpsSession": "NOT_RUN",
+    "nativeSocket": "NOT_RUN",
+    "sqlite": "NOT_RUN",
+    "v6ApplicationIntegration": "NOT_ESTABLISHED",
+    "oneGrantApplicationComposition": "NOT_ESTABLISHED",
+    "keys": 0,
+    "signatures": 0,
+    "nonceSearch": 0,
+    "realPrepare": 0,
+    "chainPublication": 0,
+    "payments": 0,
+    "liveProvider": 0,
+    "serviceDelivery": "NOT_ESTABLISHED",
+    "fullP1": "NOT_ESTABLISHED",
+    "economicPilot": "NO_GO"
+  },
+  "remainingGate": "One native-HTTPS/official-x402/V6 application composition with exact resource and selected grant through success, pending, response loss, foreign grant and original replay; native lifecycle and provider/runtime acceptance remain separate."
+}
