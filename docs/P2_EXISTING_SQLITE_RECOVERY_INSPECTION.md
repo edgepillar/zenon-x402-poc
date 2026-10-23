@@ -29,8 +29,17 @@ standard input from your secure credential mechanism, then close the input
 (EOF). One trailing LF is accepted. Do not put the proof in argv, environment,
 the manifest, shell history or logs. No signer or private key is accepted.
 Temporary buffers are cleared; erasure of JavaScript strings is not guaranteed.
-The stdin launcher may wait for input; no hard lifetime/cancellation guarantee
-is made. Invalid flags are refused before reading stdin.
+The native stdin launcher now uses one total 5000 ms application input budget,
+starting when it attaches its input collector. Partial bytes do not renew the
+budget, and EOF is still required. Timeout, stream error, premature close or an
+oversized input refuses before opening either database. The collector pauses and
+requests destruction of its owned stdin stream and clears its own buffer/timer.
+
+This is a JavaScript application timer, not a hard OS/native lifetime guarantee,
+a store-operation deadline or permission to cancel/retry a payment. Event-loop
+or native delays can delay callbacks. The selected native evidence below uses
+pipe input on Node 24.19.0/macOS arm64; other stream/platform profiles are not
+qualified. Invalid flags are still refused before collecting stdin.
 
 ## Private manifest contract
 
@@ -129,13 +138,32 @@ All four exits, stream EOFs and child-close events were observed, with no
 remaining process at the check. The original rows and backend ledger remain
 unchanged; exactly two local inspection owner acquisitions occur.
 
-This is normal-exit native reopen of the same original, not forced-crash,
-hardware-loss or full server-restart qualification. No application source or
-default CLI behavior changed. The old usage-document version is retained as an
-exact protected preimage as well as at its immutable Git commit.
+That earlier process slice is normal-exit native reopen, not forced-crash,
+hardware-loss or full server-restart qualification. It changed no application
+source at that time. Its API/process records remain bound to the old exact CLI
+source, which is retained in protected CAS and immutable Git. They do not
+qualify a later changed stdin reader.
 
-Broader malformed-input, input-stall, concurrency, close-failure and platform
-matrices remain separately unqualified. No existing test entry was replayed.
-No SDK, network, provider signature, real payment, PREPARE, chain qualification
-or live pilot ran. Hosted CI is NOT_RUN, not green. Full P2 and production
-acceptance remain open.
+The changed-reader result is
+`qualification/service-credit-recovery-inspect-input-deadline.behavior.result.json`.
+It exercises five new native processes under one selected test: both original
+EOF forms, empty open stdin, partial open stdin with another byte at 3000 ms,
+and oversized noncredential input. Both successful inspections still return the
+same redacted line. Empty and partial streams refuse at approximately 5.03 and
+5.04 seconds in that single observation; the separate 7000 ms test guard never
+fires. Those times are evidence of the selected total-input-budget paths, not
+a hard OS guarantee or throughput benchmark. Neither refusal acquires another
+payer owner or changes original rows/backend ledger. All five processes close
+normally and their stream EOFs are observed.
+
+The exported inspection API, args/manifest handling, original-read and
+payer/backend-close function bodies are unchanged by this stdin-only edit.
+That source comparison does not transfer every older runtime case to the
+changed graph. The previous code and usage-document versions remain retained.
+
+Broader malformed/UTF-8 input, input error/premature-close injection, late full
+credentials after timeout, concurrency, close-failure and platform matrices
+remain separately unqualified. No existing test entry was replayed. No SDK,
+network, provider signature, real payment, PREPARE, chain qualification or live
+pilot ran. Hosted CI is NOT_RUN, not green. Full P2 and production acceptance
+remain open.

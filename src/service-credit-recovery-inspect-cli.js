@@ -3,6 +3,7 @@ import { types as utilTypes } from 'node:util';
 import { constants, openSync, closeSync, lstatSync, fstatSync, readSync, writeSync } from 'node:fs';
 import { dirname, isAbsolute, relative, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
+import { setTimeout, clearTimeout } from 'node:timers';
 import {
   snapshotOriginalServiceRequestCustodyPolicy,
   snapshotOriginalServiceRequestCustodyKey,
@@ -12,10 +13,12 @@ const FREEZE = Object.freeze, KEYS = Reflect.ownKeys, DESC = Object.getOwnProper
 const OWN = Object.hasOwn, PROTO = Object.getPrototypeOf, APPLY = Reflect.apply;
 const IS_PROXY = utilTypes.isProxy, SAFE = Number.isSafeInteger, IS = Object.is;
 const PARSE = JSON.parse, STRINGIFY = JSON.stringify, NativeError = TypeError;
+const NativePromise = Promise, SET_INPUT_TIMEOUT = setTimeout, CLEAR_INPUT_TIMEOUT = clearTimeout;
 const OPEN = openSync, CLOSE = closeSync, LSTAT = lstatSync, FSTAT = fstatSync;
 const READ = readSync, WRITE = writeSync, FROM = Buffer.from;
 const POLICY = snapshotOriginalServiceRequestCustodyPolicy, KEY = snapshotOriginalServiceRequestCustodyKey;
 const MANIFEST_BYTES = 16384, PROOF_BYTES = 1024, RESULT_BYTES = 2048;
+const PROOF_INPUT_MS = 5000;
 const FAILURE = 'SERVICE_CREDIT_RECOVERY_INSPECTION_FAILED\n';
 const FIELDS = FREEZE(['inspectionVersion', 'payerDatabasePath', 'backendDatabasePath',
   'fundingResourceUrl', 'custodyPolicy', 'selectedGrantId', 'deadlineMs', 'requestKey',
@@ -42,8 +45,9 @@ const LIMITS = FREEZE(['busyTimeoutMs', 'maxStateBytes', 'maxOffers', 'maxGrants
  *
  * Own one backend handle and one V6 payer connection, query once, close the
  * payer once and then the backend once on success/failure. A close failure
- * refuses output and is never retried or represented as release. No timeout,
- * forced cancellation, cleanup of files or hard native lifetime is promised.
+ * refuses output and is never retried or represented as release. Only native
+ * stdin acquisition has a 5000 ms application timer. It is not a store-operation
+ * timeout, forced cancellation, file cleanup or hard OS/native lifetime promise.
  *
  * Returned JSON is redacted DATA: backend CACHED_SUCCESS is a recorded claim,
  * never confirmed delivery, current authority, safe retry, funding, finality,
@@ -240,26 +244,62 @@ function writeLine(fd, line) {
   if (WRITE(fd, bytes, 0, bytes.length) !== bytes.length) fail();
 }
 function stdinProof() {
-  const raw = Buffer.alloc(PROOF_BYTES + 2);
-  let used = 0;
-  try {
-    while (used < raw.length) {
-      const n = READ(0, raw, used, raw.length - used, null);
-      if (n === 0) break;
-      used += n;
+  // The native launcher owns this stdin stream. Do not use an uncancellable
+  // blocking fd read or accept a credential before EOF. No store is open yet.
+  const input = process.stdin;
+  return new NativePromise((resolveInput, rejectInput) => {
+    const raw = Buffer.alloc(PROOF_BYTES + 2);
+    let used = 0, settled = false, timer = null;
+    function finish(complete) {
+      if (settled) return;
+      settled = true;
+      if (timer !== null) { CLEAR_INPUT_TIMEOUT(timer); timer = null; }
+      try {
+        input.pause();
+        input.removeListener('data', onData);
+        input.removeListener('end', onEnd);
+        // Keep the fixed error guard until native close; late input events
+        // cannot change the outcome or authorize opening either store.
+        if (!input.destroyed) input.destroy();
+        if (!complete) fail();
+        let text = new TextDecoder('utf-8', { fatal: true }).decode(raw.subarray(0, used));
+        if (text.endsWith('\n')) text = text.slice(0, -1);
+        if (text.length > PROOF_BYTES || Buffer.byteLength(text, 'utf8') > PROOF_BYTES
+            || /[\r\n\0]/.test(text)) fail();
+        resolveInput(text);
+      } catch (error) { rejectInput(error); }
+      finally { raw.fill(0); }
     }
-    let text = new TextDecoder('utf-8', { fatal: true }).decode(raw.subarray(0, used));
-    if (text.endsWith('\n')) text = text.slice(0, -1);
-    if (text.length > PROOF_BYTES || used > PROOF_BYTES + 1 || /[\r\n\0]/.test(text)) fail();
-    return text;
-  } finally { raw.fill(0); }
+    function onData(chunk) {
+      if (settled) return;
+      try {
+        if (!Buffer.isBuffer(chunk) || chunk.length > PROOF_BYTES + 1 - used) {
+          finish(false); return;
+        }
+        chunk.copy(raw, used); used += chunk.length;
+      } catch { finish(false); }
+    }
+    function onEnd() { finish(true); }
+    function onError() { finish(false); }
+    function onClose() {
+      if (!settled) finish(false);
+      input.removeListener('error', onError);
+    }
+    try {
+      input.on('error', onError); input.once('close', onClose);
+      input.on('data', onData); input.once('end', onEnd);
+      // One TOTAL budget, never reset by partial bytes or renewed input.
+      timer = SET_INPUT_TIMEOUT(() => finish(false), PROOF_INPUT_MS);
+      input.resume();
+    } catch { finish(false); }
+  });
 }
 if (typeof process.argv[1] === 'string' && pathToFileURL(process.argv[1]).href === import.meta.url) {
   void (async () => {
     let result;
     try {
       const args = captureArgs(process.argv.slice(2)); // Refuse bad flags before waiting on stdin.
-      result = await runServiceCreditRecoveryInspectCli(args, stdinProof());
+      result = await runServiceCreditRecoveryInspectCli(args, await stdinProof());
     }
     catch { result = { exitCode: 1, stdout: '', stderr: FAILURE }; }
     process.exitCode = result.exitCode;

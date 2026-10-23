@@ -1,0 +1,631 @@
+{
+  "schema": "service-credit-recovery-inspect-input-deadline-local-result-v1",
+  "status": "SELECTED_LOCAL_INPUT_DEADLINE_IMPLEMENTATION_PASS",
+  "lane": "P2 existing V6 paired-store recovery inspection",
+  "sourceBaseMain": "5e77a6f7d919eab8d4755e052a55092debb7bc9e",
+  "sourceBaseTree": "3288f8fb67c60a81088767fc7d5655fe79351800",
+  "sourceBaseRepositoryFiles": 696,
+  "nativeStdinStdoutProcessLauncherQualified": true,
+  "fullP2OrRoadmapComplete": false,
+  "livePilotQualified": false,
+  "productionQualified": false,
+  "implementation": {
+    "applicationPath": "src/service-credit-recovery-inspect-cli.js",
+    "existingApplicationSourceChanged": true,
+    "newNativeProcessEntry": "qualification/service-credit-recovery-inspect-input-deadline.behavior.draft.mjs",
+    "previousNativeProcessResult": "qualification/service-credit-recovery-inspect-process.behavior.result.json",
+    "positiveAssociation": "The pinned prior CLI performed synchronous fd-0 reads until EOF and the usage document explicitly allowed waiting indefinitely. Implement one total application input budget before any store open. This is a concrete lifecycle/resource change, not novelty inferred from an absent coverage row.",
+    "changedBehavior": "Replace the private native stdin blocking read with one asynchronous 5000 ms total application input budget. Partial bytes never renew it. EOF is still required; timeout/error/oversize refuses before opening either store.",
+    "unchangedBodyReview": "The existing exported inspection API, args, manifest, proof validation, original read, payer/backend close and redacted output function bodies are byte-identical to the retained prior source.",
+    "historicalQualificationDoesNotTransfer": true,
+    "noAlternativeStoreOrMetadataSubstitute": true
+  },
+  "selection": {
+    "tests": 1,
+    "nativeCliChildren": 5,
+    "names": [
+      "native V6 inspection bounds total stdin wait without renewing on partial bytes or opening stores"
+    ],
+    "cases": [
+      "Default invocation: the original proof plus one LF and EOF remains accepted.",
+      "Quiet invocation: the same original proof without LF and with EOF remains accepted.",
+      "Valid argv with empty stdin left open receives the fixed timeout refusal before store acquisition.",
+      "A noncredential prefix at start plus one byte at 3000 ms, without EOF, does not renew the total 5000 ms budget.",
+      "1027 noncredential bytes are refused before native store acquisition."
+    ],
+    "oldEntriesImportedOrReplayed": 0,
+    "earlierNonceCompositionPermission": "Previously completed and consumed; not reused."
+  },
+  "qualification": {
+    "counts": {
+      "tests": 1,
+      "suites": 0,
+      "pass": 1,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "actualParentExit": 0,
+    "completeOutput": true,
+    "normalExitNativeReopenOnly": true,
+    "forcedCrash": false,
+    "hardwareDurability": false,
+    "allFourChildCloseStdoutEofStderrEofAndPidAbsenceObserved": true,
+    "quietAndDefaultSuccessfulStdoutIdentical": true,
+    "successfulStdoutBytes": 397,
+    "observedSuccessfulDefaultStderr": "EMPTY",
+    "observedSuccessfulQuietStderr": "EMPTY",
+    "warningPresentAllowlistBranchExecuted": false,
+    "negativeStderr": "Exactly SERVICE_CREDIT_RECOVERY_INSPECTION_FAILED plus LF.",
+    "negativeStdoutBytes": 0,
+    "additionalCliDispatches": 0,
+    "additionalCliProofs": 0,
+    "additionalCliExecutionsOrDebits": 0,
+    "payerOwnerEpochDelta": 2,
+    "originalCheckpointFundingRequestAndResponseRowsRetained": true,
+    "backendLedgerUnchangedByCli": true,
+    "diagnostic": {
+      "kind": "P2_EXISTING_V6_RECOVERY_INSPECT_INPUT_DEADLINE",
+      "version": 1,
+      "nativeChildren": 5,
+      "successfulInspections": 2,
+      "defaultInvocation": true,
+      "quietInvocation": true,
+      "acceptedOriginalWithOneLf": true,
+      "acceptedOriginalWithoutLf": true,
+      "oversizedNoncredentialInputRefused": true,
+      "originalBackendStatus": "CACHED_SUCCESS",
+      "localReconciliationRequired": true,
+      "payerOwnerEpochDelta": 2,
+      "originalFundingCheckpointAndRequestRowsRetained": true,
+      "backendLedgerUnchangedByCli": true,
+      "nativeSqliteFiles": 2,
+      "declaredSeedRequests": 1,
+      "declaredSeedExecutions": 1,
+      "declaredSeedDebits": 1,
+      "additionalCliDispatches": 0,
+      "additionalProofs": 0,
+      "inMemorySyntheticCapabilityKeys": 1,
+      "syntheticCapabilitySignatures": 1,
+      "network": 0,
+      "sdk": 0,
+      "nonceSearch": 0,
+      "realPrepare": 0,
+      "payments": 0,
+      "providerSignatures": 0,
+      "realPaymentSignatures": 0,
+      "normalExitNativeReopen": true,
+      "forcedCrashTest": false,
+      "hardwareDurability": false,
+      "nativeStdinStdoutLauncherQualified": true,
+      "serviceDelivery": "NOT_ESTABLISHED",
+      "inputAcquisitionBudgetMs": 5000,
+      "emptyOpenInputRefused": true,
+      "partialOpenInputRefused": true,
+      "totalBudgetNotRenewedByPartialInput": true
+    },
+    "inputAcquisitionBudgetMs": 5000,
+    "emptyOpenStdinRefused": true,
+    "partialOpenStdinRefused": true,
+    "partialWriteScheduleMs": [
+      0,
+      3000
+    ],
+    "latePartialWriteObserved": 1,
+    "totalBudgetNotRenewedByPartialInput": true,
+    "emptyOpenStdinElapsedMs": 5033.425042,
+    "partialOpenStdinElapsedMs": 5036.742834,
+    "nativeGuardKills": 0
+  },
+  "execution": {
+    "runtime": {
+      "node": "24.19.0",
+      "platform": "darwin",
+      "arch": "arm64",
+      "binaryBytes": 121304480,
+      "binarySha256": "dbedff294bab84a0a86c04e15fbcbeb1c97ca10bef1b32b0634cd24b36f62100",
+      "hashReuse": "Previously retained full hash reused only after the exact nine-field physical identity and no-symlink check."
+    },
+    "parentNodeOptions": [
+      "--disallow-code-generation-from-strings",
+      "--no-addons",
+      "--no-warnings",
+      "--unhandled-rejections=strict",
+      "--test-reporter=tap"
+    ],
+    "childOptions": [
+      [],
+      [
+        "--no-warnings"
+      ],
+      [],
+      [],
+      []
+    ],
+    "childEnvironment": "Fixed PATH, LANG=C, LC_ALL=C, TZ=UTC; no inherited Node options, source-pin environment or credential.",
+    "proofTransport": "One original in-memory synthetic capability only through stdin; never argv, environment, manifest or public output.",
+    "childOutputCapPerStream": 2048,
+    "childTimeoutMs": 7000,
+    "parentTestTimeoutMs": 25000,
+    "managerTimeoutSeconds": 30,
+    "parentStdoutCap": 49152,
+    "parentStderrCap": 1048576,
+    "timeoutMeaning": "One application input-acquisition budget, not a hard OS deadline, store-operation timeout, arbitrary native cancellation or hostile subprocess sandbox. The test's separate 7000 ms guard never fired.",
+    "parentNodeCommands": 1,
+    "nativeCliChildren": 5,
+    "reporterDurationMs": 11001.845333,
+    "managedCallerElapsedSeconds": 14.364257541,
+    "timingMeaning": "One pinned runtime/platform observation, including two intentional input waits, not a capacity/performance or durability benchmark.",
+    "callerProgramSha256": "54cabb8d85702422d7ebe959ad4c25f5133c4bce294294e55cf09ececf1b2d77",
+    "selectedSourceRowsSha256": "2a4dfc5803bc7c8d63bebd19489b592f836bdf332587a8f49350fe2d2ed9720a",
+    "applicationInputBudgetMs": 5000
+  },
+  "sourceClosure": {
+    "files": 28,
+    "bytes": 702741,
+    "staticImports": 112,
+    "literalDynamicImports": 9,
+    "explicitProcessLaunchEdges": [
+      [
+        "qualification/service-credit-recovery-inspect-input-deadline.behavior.draft.mjs",
+        "src/service-credit-recovery-inspect-cli.js"
+      ]
+    ],
+    "barePackageImports": 0,
+    "existingExternalPackagesExecuted": 0,
+    "sourceBeforeAndAfterPhysicalAndContentPinsMatched": true,
+    "sources": [
+      {
+        "path": "package.json",
+        "bytes": 1413,
+        "LF": 40,
+        "sha256": "8c9a25504fbf6f87c31cdf245a6f4eec5a88cc89c8352151dc66a577c5771ef5",
+        "gitBlob": "ec7193f6fd76f34778515079dc777594175c4c34"
+      },
+      {
+        "path": "src/service-credit-capability.js",
+        "bytes": 8284,
+        "LF": 256,
+        "sha256": "cb2b96d9a2e56c132dd1b4aca8f1c065b244ecd0e7e92f41ea3f4a8c969d17c3",
+        "gitBlob": "2e19d42c1b9311a75897c84669849f56ae40f785"
+      },
+      {
+        "path": "src/service-credit-custodied-http-client.js",
+        "bytes": 12646,
+        "LF": 324,
+        "sha256": "35997f41c9a5162fe29ed56776181a1691c0a0a69c7dbdfe8b61785af3998145",
+        "gitBlob": "33879d019492de8d278b0d0dc998bd1c7806b413"
+      },
+      {
+        "path": "src/service-credit-custodied-recovery-collection-core.js",
+        "bytes": 13794,
+        "LF": 306,
+        "sha256": "51d06da70ecccd0cf8b38d650367d1ae903ea86010a5ebeadb682af98e4b890b",
+        "gitBlob": "5275832eebbf87e0cd37f3c2e3b82147ab625a72"
+      },
+      {
+        "path": "src/service-credit-custodied-recovery-observation-collection-core.js",
+        "bytes": 8579,
+        "LF": 213,
+        "sha256": "36b7cece2d436cbfcac5f4299dd6bd30e5eede6ebb2ebe769ae7bf3a6f1a72b4",
+        "gitBlob": "4dc8765be0aa4b0e927fface960e366a3a6ccd1e"
+      },
+      {
+        "path": "src/service-credit-custodied-request-owner.js",
+        "bytes": 55155,
+        "LF": 1358,
+        "sha256": "2ba222760d4a922bf0466d95fd2671076b9d19b8c5fa4ea2cb3c66b1338562eb",
+        "gitBlob": "7f99bdadcc622db203e864edb12a1f4d1059a965"
+      },
+      {
+        "path": "src/service-credit-custodied-sequential-runner-core.js",
+        "bytes": 15983,
+        "LF": 492,
+        "sha256": "044477cb1300453f10bacf070037db175d08deec1d488549b34a5cb92e6328bd",
+        "gitBlob": "e91acb307f4f0f5fb5292a805f7ca1d02b21b68d"
+      },
+      {
+        "path": "src/service-credit-custodied-sqlite-http-client.js",
+        "bytes": 22706,
+        "LF": 578,
+        "sha256": "a66cfeccbf4e4490d939d006525a400f7dd7eac56911080c54c38ccc8e3374cd",
+        "gitBlob": "86ac76593fa9c9a6b39bb6a39c1a2ef994aff7f2"
+      },
+      {
+        "path": "src/service-credit-custodied-sqlite-sequential-runner.js",
+        "bytes": 24572,
+        "LF": 560,
+        "sha256": "3448e5ee1c8408d47aa6ecdce9c7e133ee6515ba9ca929476ab5f433fb8f847d",
+        "gitBlob": "75811ab4779e416c3618f363eaa70fa385cfaa72"
+      },
+      {
+        "path": "src/service-credit-durable-execution-owner.js",
+        "bytes": 40833,
+        "LF": 1301,
+        "sha256": "a63a795dda77489f7da0682d83a0683cf07240f83b803f449668cb687a956863",
+        "gitBlob": "f0fd445a17466dd1ab83c785c44aa5e6fdf1e765"
+      },
+      {
+        "path": "src/service-credit-durable-http-session.js",
+        "bytes": 13978,
+        "LF": 425,
+        "sha256": "a0d6d1436cdb697f125fee2f4dc723a5ddcfd2ee7063b55d56fa006bb8ba69bf",
+        "gitBlob": "307b72b8a1d114463ad8e18935312b18ccb23199"
+      },
+      {
+        "path": "src/service-credit-durable-session-close.js",
+        "bytes": 2470,
+        "LF": 84,
+        "sha256": "5aae36a7da39ce5b7b9a8da8e9fbda88465cb1e4853dc791520a1df0ab87ede7",
+        "gitBlob": "f744b55595e2238dc088cf71ca8849e480cda1bc"
+      },
+      {
+        "path": "src/service-credit-execution-contract.js",
+        "bytes": 30258,
+        "LF": 956,
+        "sha256": "298f8e74885e1c507953c0fcf7874832f815296746e6bacbdac97a425f1a6c73",
+        "gitBlob": "acfbb5c5e943b9e09958a7831b3dbe159463dcf9"
+      },
+      {
+        "path": "src/service-credit-http-execute-dispatch.js",
+        "bytes": 28104,
+        "LF": 790,
+        "sha256": "929881081b22b90b07d3d1c4dc8f873d4d81ee5ae84542d24b7534674f4eb9c0",
+        "gitBlob": "ace43b4be48f00a5c649449cf1f04ab40e719190"
+      },
+      {
+        "path": "src/service-credit-http.js",
+        "bytes": 32432,
+        "LF": 958,
+        "sha256": "c76a7f1864bdfcd0c26916bf28fba615c8aecf899d53e69467e3ebe7d3353d0d",
+        "gitBlob": "040da1547c2fa6cc4a4044c47619b253f16d19a1"
+      },
+      {
+        "path": "src/service-credit-model.js",
+        "bytes": 55461,
+        "LF": 1580,
+        "sha256": "7ff7e3d88ab8c3b38a0073541533fbdb7a0d9f2be42f337ac35f6a3b05615c3a",
+        "gitBlob": "e6ac17254874584d1a01f70e7abc6f771bd35d73"
+      },
+      {
+        "path": "src/service-credit-original-request-custody-contract.js",
+        "bytes": 14051,
+        "LF": 356,
+        "sha256": "fd349de553a17abcc2e0567ba6640e6e3d5d26cfa79ee1e355928dc9fa8d3915",
+        "gitBlob": "f911d42d01b69e6577f9bcd66f4ed59aab8ab882"
+      },
+      {
+        "path": "src/service-credit-pilot-client-plan.js",
+        "bytes": 7483,
+        "LF": 181,
+        "sha256": "73ee3d739de85150039e733234cd0761c228d68de040d1e126902e808a259ac6",
+        "gitBlob": "14334c82b5b7c80fb8f7f6a392a1a0f3c3adcbf1"
+      },
+      {
+        "path": "src/service-credit-pilot-original-payment-checkpoint.js",
+        "bytes": 4003,
+        "LF": 89,
+        "sha256": "930905f31824a6cadc16dfb84572cd4dc38a81e2fce4569b73b6bef29dec97d1",
+        "gitBlob": "51c6391bc22f561ebff0005ced31e538aa83f4fa"
+      },
+      {
+        "path": "src/service-credit-pilot-status-view.js",
+        "bytes": 3202,
+        "LF": 60,
+        "sha256": "cf3822d8b9ec4eb4772452ed1888b96d398fd87c1ead44cd155a5acc1a6b66ed",
+        "gitBlob": "0890db504e44b704d0434dc309e711743570e652"
+      },
+      {
+        "path": "src/service-credit-sqlite-store.js",
+        "bytes": 83516,
+        "LF": 2366,
+        "sha256": "eea4032830dc1f641c4832e0dab33066633ba487eaf19581e3295cf8810460f3",
+        "gitBlob": "ae5260ef3442079fe73544d2d730d05724758fa1"
+      },
+      {
+        "path": "src/service-credit-zenon-funding-post-v1-payer-recovery-sqlite-store.js",
+        "bytes": 83681,
+        "LF": 2042,
+        "sha256": "bea9e00aa6208f776561c975d54640dfb676168dd4d0b44d125c9dc684912c4a",
+        "gitBlob": "e6af1576df21a20a466d089a4ba6ecdf7380a0df"
+      },
+      {
+        "path": "src/x402-wire.js",
+        "bytes": 39886,
+        "LF": 934,
+        "sha256": "5fba91af5a352f62d1a335c7176a45a604e2af5d92b1c4b0e53825c1f20d4e56",
+        "gitBlob": "fb060d4e349b1c31a1219a0cc137af250a8a2291"
+      },
+      {
+        "path": "src/service-credit-custodied-backend-recovery-client.js",
+        "bytes": 33016,
+        "LF": 668,
+        "sha256": "6c5e5d07a4ac96a72a2494a8e6efdec0a057e967ce887816f68eb53048b3c885",
+        "gitBlob": "f6aad1a7a89d81f15158814ec7e3991ae38a9fbe"
+      },
+      {
+        "path": "src/service-credit-custodied-sqlite-recovery-reader.js",
+        "bytes": 7754,
+        "LF": 180,
+        "sha256": "e3ac726602edd3d06137212a566772b5f66fde5d4b4b71c14b2b28d76b1f28fe",
+        "gitBlob": "7c148b647b3a5a4f0c105e7cd60546fa1720c2b7"
+      },
+      {
+        "path": "src/service-credit-backend-original-outcome-reader.js",
+        "bytes": 7738,
+        "LF": 182,
+        "sha256": "dadd9cbfbdcc2ff4bb24252fed85a135d2ce17397e713b1917a109eb6b28938d",
+        "gitBlob": "7f083a5f3a8716f8aae2c618945473671da2f6b7"
+      },
+      {
+        "path": "src/service-credit-recovery-inspect-cli.js",
+        "bytes": 15681,
+        "LF": 308,
+        "sha256": "ceb02f6c3a60e228c00134245956d9a3a95f9a1f01237643d80a941642e7ed7d",
+        "gitBlob": "9e79782cc525424b2db15d21ce61f023323a7b4b"
+      },
+      {
+        "path": "qualification/service-credit-recovery-inspect-input-deadline.behavior.draft.mjs",
+        "bytes": 36062,
+        "LF": 544,
+        "sha256": "f254f176dc22344e6c5c9b0d08dff80a07bf7d47b967f0e2a596b5a26c369021",
+        "gitBlob": "82c3a8cc3f972ae8bc3968111c99169f26ba1c07"
+      }
+    ]
+  },
+  "retainedEvidence": {
+    "parentStdout": {
+      "bytes": 6746,
+      "sha256": "155c02c0ee6e9e5533d3ae2fd5d4a49d65b46c79e756f8823ee9c518ec3e5f5c"
+    },
+    "parentStderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "admissionSha256": "51ce6e78654934c4963d3be5fb49c93e0a50fca5e64d5804ff5ef01035d316cf",
+    "verificationSha256": "328c0e1e7b84f019c5d7f9c1df8e67f7f7823903dac00b5e01cc295aaf3d497e",
+    "childReceiptPacketSha256": "52b814254509f6985e61cae54ab23cb93bb6df37679778af185be932f6951628",
+    "childObservations": [
+      {
+        "case": "DEFAULT_ORIGINAL_LF_EOF",
+        "exitCode": 0,
+        "signal": null,
+        "inputMode": "BYTES_THEN_EOF",
+        "inputFinished": true,
+        "elapsedMs": 123.515667,
+        "scheduledPartialWrites": 0,
+        "completedPartialWrites": 0,
+        "pendingPartialTimersAfterClose": 0,
+        "stdoutBytes": 397,
+        "stderrBytes": 0,
+        "stdoutSha256": "b5e7000fdbc9df440986e0c634b4a3f65aeb8bc428cb663e221ba9bbbed96c96",
+        "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdoutEof": true,
+        "stderrEof": true,
+        "processCloseObserved": true,
+        "pidObservedAbsent": true,
+        "timerExpired": false,
+        "capExceeded": false,
+        "stderrCategory": "EMPTY"
+      },
+      {
+        "case": "QUIET_ORIGINAL_NO_LF_EOF",
+        "exitCode": 0,
+        "signal": null,
+        "inputMode": "BYTES_THEN_EOF",
+        "inputFinished": true,
+        "elapsedMs": 117.581875,
+        "scheduledPartialWrites": 0,
+        "completedPartialWrites": 0,
+        "pendingPartialTimersAfterClose": 0,
+        "stdoutBytes": 397,
+        "stderrBytes": 0,
+        "stdoutSha256": "b5e7000fdbc9df440986e0c634b4a3f65aeb8bc428cb663e221ba9bbbed96c96",
+        "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdoutEof": true,
+        "stderrEof": true,
+        "processCloseObserved": true,
+        "pidObservedAbsent": true,
+        "timerExpired": false,
+        "capExceeded": false,
+        "stderrCategory": "EMPTY"
+      },
+      {
+        "case": "EMPTY_OPEN_STDIN_DEADLINE",
+        "exitCode": 1,
+        "signal": null,
+        "inputMode": "OPEN_NO_BYTES_NO_EOF",
+        "inputFinished": false,
+        "elapsedMs": 5033.425042,
+        "scheduledPartialWrites": 0,
+        "completedPartialWrites": 0,
+        "pendingPartialTimersAfterClose": 0,
+        "stdoutBytes": 0,
+        "stderrBytes": 42,
+        "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderrSha256": "666d2034640e753eb65e3f8ba2f6df3228055c28b07e6d453a4ff09e3dcb6e69",
+        "stdoutEof": true,
+        "stderrEof": true,
+        "processCloseObserved": true,
+        "pidObservedAbsent": true,
+        "timerExpired": false,
+        "capExceeded": false,
+        "stderrCategory": "FIXED_REFUSAL"
+      },
+      {
+        "case": "PARTIAL_STDIN_TOTAL_DEADLINE",
+        "exitCode": 1,
+        "signal": null,
+        "inputMode": "OPEN_PARTIAL_BYTES_NO_EOF",
+        "inputFinished": false,
+        "elapsedMs": 5036.742834,
+        "scheduledPartialWrites": 1,
+        "completedPartialWrites": 1,
+        "pendingPartialTimersAfterClose": 0,
+        "stdoutBytes": 0,
+        "stderrBytes": 42,
+        "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderrSha256": "666d2034640e753eb65e3f8ba2f6df3228055c28b07e6d453a4ff09e3dcb6e69",
+        "stdoutEof": true,
+        "stderrEof": true,
+        "processCloseObserved": true,
+        "pidObservedAbsent": true,
+        "timerExpired": false,
+        "capExceeded": false,
+        "stderrCategory": "FIXED_REFUSAL"
+      },
+      {
+        "case": "OVERSIZED_NONCREDENTIAL_STDIN",
+        "exitCode": 1,
+        "signal": null,
+        "inputMode": "BYTES_THEN_EOF",
+        "inputFinished": true,
+        "elapsedMs": 33.519625,
+        "scheduledPartialWrites": 0,
+        "completedPartialWrites": 0,
+        "pendingPartialTimersAfterClose": 0,
+        "stdoutBytes": 0,
+        "stderrBytes": 42,
+        "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderrSha256": "666d2034640e753eb65e3f8ba2f6df3228055c28b07e6d453a4ff09e3dcb6e69",
+        "stdoutEof": true,
+        "stderrEof": true,
+        "processCloseObserved": true,
+        "pidObservedAbsent": true,
+        "timerExpired": false,
+        "capExceeded": false,
+        "stderrCategory": "FIXED_REFUSAL"
+      }
+    ],
+    "completeTaskRecords": 6,
+    "metadataBytes": 47589,
+    "compactAdmissionBytes": 26653,
+    "admissionBytes": 33102,
+    "verificationBytes": 11867,
+    "independentReadback": {
+      "status": "COMPLETE_SEPARATE_INPUT_DEADLINE_EVIDENCE_REVIEW_PASS",
+      "reviewer": "Separate primary read-only source/full-record inspection, not another person or agent.",
+      "childRawStreamsRead": 10,
+      "actualApplicationExperimentReplayed": false
+    },
+    "applicationSourcePreimage": {
+      "path": "src/service-credit-recovery-inspect-cli.js",
+      "bytes": 13846,
+      "LF": 268,
+      "sha256": "166464154fa78c8485def1327134314cec7a32b4e64c31ee4771dba2d5500444",
+      "gitBlob": "aa6b70cbd1766c223178a72fa593f0ff02ce55ef",
+      "immutableGitCommit": "5e77a6f7d919eab8d4755e052a55092debb7bc9e",
+      "retainedProtectedCasSha256": "166464154fa78c8485def1327134314cec7a32b4e64c31ee4771dba2d5500444"
+    },
+    "usageDocumentPreimage": {
+      "path": "docs/P2_EXISTING_SQLITE_RECOVERY_INSPECTION.md",
+      "bytes": 7900,
+      "LF": 141,
+      "sha256": "06290f183c0cca5075021699fc39f81be9a9c28363b4cc0e4ecf48c82226c059",
+      "gitBlob": "44072105b06de64d3793978fa9eef74cd62849ea",
+      "immutableGitCommit": "5e77a6f7d919eab8d4755e052a55092debb7bc9e",
+      "retainedProtectedCas": {
+        "sha256": "06290f183c0cca5075021699fc39f81be9a9c28363b4cc0e4ecf48c82226c059",
+        "bytes": 7900
+      }
+    },
+    "rawDatabaseOriginalsHeld": 2,
+    "quotaAccountedIndependentDatabaseCaptures": [
+      {
+        "name": "backend-inspect-input-budget-v6.sqlite",
+        "sha256": "9f91f581b2fadbab64822e2020d1f3f5c1f4043368533023975b8c1714052e58",
+        "bytes": 16384
+      },
+      {
+        "name": "payer-inspect-input-budget-v6.sqlite",
+        "sha256": "2df55473a26df810097c6e5c0717e036274f65e315ed2da00e84f83229ad713b",
+        "bytes": 53248
+      }
+    ],
+    "proofFreeManifestCaptures": [
+      {
+        "name": "inspect-input-budget-original.json",
+        "sha256": "1a14addc1d3a5e9744bbe386597cabc6361c5e2de1a2804a653d66f50963d29a",
+        "bytes": 1504
+      }
+    ],
+    "privateEvidencePublished": false,
+    "cleanup": "HOLD child-created raw databases. No adoption, deletion, source-preimage replacement or historical cleanup."
+  },
+  "storageAndEfficiency": {
+    "taskQuotaBytes": 2097152,
+    "expectedAllocationBytes": 2097152,
+    "declaredWorstCaseLogicalBytes": 2086897,
+    "newPrivateSyntheticSqliteFiles": 2,
+    "rawDatabaseBytes": 69632,
+    "independentCaptureBytes": 69632,
+    "retainedSourceReferences": 26,
+    "retainedNativeSourceReferences": 5,
+    "retainedExternalSourceReferences": 21,
+    "sourceBytesNotRecopied": 650998,
+    "newSourceRetentions": 2,
+    "newSourceRetentionBytes": 51743,
+    "separateDocumentPreimageRetentionBytes": 7900,
+    "sourceAliases": 0,
+    "downloads": 0,
+    "packageInstallations": 0,
+    "recursivePackages": 0,
+    "oldPrivateEvidenceAndFailuresPreserved": true,
+    "oldRefusedStoreWritesOrAdoptionOrCleanup": 0,
+    "protectedObjectsDeleted": 0,
+    "taskClosed": "SUCCESS",
+    "pendingApplicationOrChildProcesses": 0,
+    "productionFloorPreserved": true,
+    "storageManagerPolicyAndRootIdentityUnchanged": true,
+    "physicalApfsReclaimClaimed": false
+  },
+  "authorityBoundaries": {
+    "inMemorySyntheticCapabilityKeys": 1,
+    "syntheticCapabilitySignatures": 1,
+    "declaredSeedRequests": 1,
+    "declaredSeedExecutions": 1,
+    "declaredSeedDebits": 1,
+    "privilegedGrantSeedMeaning": "Controlled synthetic DATA, not authenticated funding or activation.",
+    "sdk": 0,
+    "network": 0,
+    "nonceSearch": 0,
+    "realPrepare": 0,
+    "payments": 0,
+    "providerSignatures": 0,
+    "realPaymentSignatures": 0,
+    "protectedRealTotals": {
+      "consumedAdmissions": 2,
+      "actualPrepare": 1,
+      "bundles": 0,
+      "nativeChainOrProviderQualificationRuns": 0
+    },
+    "originalActualSignedBytesHashAndConsumedAuthorityUnchanged": true,
+    "PR193ValidatedExactSignedBlockResendStillDistinctFromUnknownAcknowledged": true,
+    "serviceDelivery": "NOT_ESTABLISHED",
+    "currentAuthority": "NOT_ESTABLISHED"
+  },
+  "publicationBoundary": {
+    "hostedCI": "NOT_RUN_NOT_GREEN",
+    "publicPacketPaths": [
+      "src/service-credit-recovery-inspect-cli.js",
+      "qualification/service-credit-recovery-inspect-input-deadline.behavior.draft.mjs",
+      "qualification/service-credit-recovery-inspect-input-deadline.behavior.result.json",
+      "docs/P2_EXISTING_SQLITE_RECOVERY_INSPECTION.md"
+    ],
+    "unrelatedBranchesAndOpenPRsMustBePreserved": true,
+    "forcePushOrProtectionBypass": false,
+    "automationsAndWorkerModelSettingsUnchanged": true,
+    "changedApplicationFiles": 1,
+    "historicalSourceAndResultsPreserved": true
+  },
+  "remainingGates": [
+    "Only the selected changed-CLI stdin input budget and normal-exit native reopen are qualified on Node 24.19.0/macOS arm64 pipe input.",
+    "The timer is not an OS deadline and is not a store, signing, payment or cancellation budget. A delayed event loop/native runtime may delay callbacks.",
+    "Warning-present behavior, broad UTF-8/malformed input, late complete credentials after timeout, stdin error/premature-close injection, concurrency and native close failures remain separate.",
+    "The old API/process records remain pinned to their old exact CLI source; unchanged exported API bodies do not turn all earlier runtime evidence into current-head qualification.",
+    "No forced crash, hardware loss, full server restart, real-wallet delivery, chain/provider qualification, distribution or production acceptance is established.",
+    "Retain original real signed bytes/hash/context and consumed authority. No replacement, re-sign, new PREPARE or live-provider permission is inferred.",
+    "Continue a distinct finite uncompleted source-qualified roadmap slice; do not replay this selected entry unchanged merely for more evidence."
+  ]
+}
