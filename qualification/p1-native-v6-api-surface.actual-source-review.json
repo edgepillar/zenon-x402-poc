@@ -1,0 +1,1455 @@
+{
+  "schemaVersion": 1,
+  "status": "SOURCE_GATE_REGRESSION_CASES_PASS_NOT_NATIVE_QUALIFICATION",
+  "counts": {
+    "tests": 15,
+    "pass": 15,
+    "fail": 0
+  },
+  "cases": [
+    {
+      "name": "historical_V1_versus_actual_named_surface",
+      "status": "PASS",
+      "expectedMissing": [
+        "Backend.open",
+        "f.raw.getOriginalCustodyQuarantine"
+      ],
+      "observedMissing": [
+        "Backend.open",
+        "f.raw.getOriginalCustodyQuarantine"
+      ]
+    },
+    {
+      "name": "historical_V2_versus_actual_named_surface",
+      "status": "PASS",
+      "expectedMissing": [
+        "Backend.open",
+        "f.raw.getOriginalCustodyQuarantine"
+      ],
+      "observedMissing": [
+        "Backend.open",
+        "f.raw.getOriginalCustodyQuarantine"
+      ]
+    },
+    {
+      "name": "historical_V3_versus_actual_named_surface",
+      "status": "PASS",
+      "expectedMissing": [
+        "Backend.open"
+      ],
+      "observedMissing": [
+        "Backend.open"
+      ]
+    },
+    {
+      "name": "historical_V4_versus_actual_named_surface",
+      "status": "PASS",
+      "expectedMissing": [],
+      "observedMissing": []
+    },
+    {
+      "name": "refuse_named_typo_f.backend.missingFixtureApi",
+      "status": "PASS"
+    },
+    {
+      "name": "refuse_named_typo_f.raw.getOriginalCustodyQuarantine",
+      "status": "PASS"
+    },
+    {
+      "name": "refuse_named_typo_f.client.missingFixtureApi",
+      "status": "PASS"
+    },
+    {
+      "name": "refuse_named_typo_client.missingFixtureApi",
+      "status": "PASS"
+    },
+    {
+      "name": "refuse_named_typo_f.native.missingFixtureApi",
+      "status": "PASS"
+    },
+    {
+      "name": "refuse_named_typo_f.app.missingFixtureApi",
+      "status": "PASS"
+    },
+    {
+      "name": "refuse_computed_backend_member",
+      "status": "PASS"
+    },
+    {
+      "name": "refuse_unreviewed_client_alias",
+      "status": "PASS"
+    },
+    {
+      "name": "refuse_changed_native_factory_surface",
+      "status": "PASS"
+    },
+    {
+      "name": "refuse_missing_named_import_export",
+      "status": "PASS"
+    },
+    {
+      "name": "do_not_count_client_suffix_as_a_separate_receiver",
+      "status": "PASS"
+    }
+  ],
+  "gate": {
+    "path": "qualification/review-p1-native-v6-api-surface.py",
+    "bytes": 8683,
+    "LF": 183,
+    "sha256": "a75d6ea8c0eaf5ca92aebd16fe1b0e3d55476ef0c6f0314028e8c9211c68b9d6",
+    "gitBlob": "3ed615edb1c8e95a05532a5706ff4c38cd5129cf"
+  },
+  "regressionRunner": {
+    "path": "qualification/p1-native-v6-api-surface-regression.py",
+    "bytes": 4237,
+    "LF": 42,
+    "sha256": "40110c467d0cebd624ad5ee5ce303306d87fec650798baf9b45ad3edff8034c8",
+    "gitBlob": "28e0d386057e7efc7d427cff25d35c0e8a0f9da0"
+  },
+  "sourceGraph": [
+    {
+      "path": "qualification/p1-native-v6-api-surface-regression.py",
+      "bytes": 4237,
+      "LF": 42,
+      "sha256": "40110c467d0cebd624ad5ee5ce303306d87fec650798baf9b45ad3edff8034c8",
+      "gitBlob": "28e0d386057e7efc7d427cff25d35c0e8a0f9da0"
+    },
+    {
+      "path": "qualification/p1-native-v6-two-sqlite-once.behavior-v2.draft.mjs",
+      "bytes": 29050,
+      "LF": 438,
+      "sha256": "60f5e3aa0a2a8c8e6dd959e33c78e74c1864fec4bf79a50e99a5c7945ff8256e",
+      "gitBlob": "611443c278351608df908d4e2507148b44c460cf"
+    },
+    {
+      "path": "qualification/p1-native-v6-two-sqlite-once.behavior-v3.draft.mjs",
+      "bytes": 31457,
+      "LF": 482,
+      "sha256": "9f1eb05d6b923537972e153cdde96dfd1db99bc24acdbfd4f6719a7a3944d24a",
+      "gitBlob": "37ec4198a091f5750e321f83eb87a0fa892cf143"
+    },
+    {
+      "path": "qualification/p1-native-v6-two-sqlite-once.behavior-v4.draft.mjs",
+      "bytes": 32052,
+      "LF": 493,
+      "sha256": "a8fe741dfd60092b15cab5c19ba1faf22f74e04770058e0d0c4e0ba99a09bdd0",
+      "gitBlob": "7c308ee67a78f80a59364ecb03433c3858cc948c"
+    },
+    {
+      "path": "qualification/p1-native-v6-two-sqlite-once.behavior.draft.mjs",
+      "bytes": 26904,
+      "LF": 401,
+      "sha256": "ebc041941aff00201b11df692c8e4e78c4ef0308394feade23f9e07d56075e6a",
+      "gitBlob": "6d943b80eb5784e30695c81c43026412718bb1d6"
+    },
+    {
+      "path": "qualification/review-p1-native-v6-api-surface.py",
+      "bytes": 8683,
+      "LF": 183,
+      "sha256": "a75d6ea8c0eaf5ca92aebd16fe1b0e3d55476ef0c6f0314028e8c9211c68b9d6",
+      "gitBlob": "3ed615edb1c8e95a05532a5706ff4c38cd5129cf"
+    },
+    {
+      "path": "src/service-credit-bounded-node-https-server-factory.js",
+      "bytes": 26968,
+      "LF": 778,
+      "sha256": "aead901ba154c39ea25e5cdcc363ea91ed6749841f6e8945cd01debc52cae387",
+      "gitBlob": "5900a111df486329e0e0644b78b49048ed551ca7"
+    },
+    {
+      "path": "src/service-credit-capability.js",
+      "bytes": 8284,
+      "LF": 256,
+      "sha256": "cb2b96d9a2e56c132dd1b4aca8f1c065b244ecd0e7e92f41ea3f4a8c969d17c3",
+      "gitBlob": "2e19d42c1b9311a75897c84669849f56ae40f785"
+    },
+    {
+      "path": "src/service-credit-native-https-client-transport.js",
+      "bytes": 12133,
+      "LF": 228,
+      "sha256": "e44e378b029d3747d4fa276c5dde480f81cc075add345d0d15d0aa8b0d9b3f24",
+      "gitBlob": "ab6740f8e82c0cf06d5c268ce0b6750d87d0ddeb"
+    },
+    {
+      "path": "src/service-credit-pilot-original-payment-checkpoint.js",
+      "bytes": 4003,
+      "LF": 89,
+      "sha256": "930905f31824a6cadc16dfb84572cd4dc38a81e2fce4569b73b6bef29dec97d1",
+      "gitBlob": "51c6391bc22f561ebff0005ced31e538aa83f4fa"
+    },
+    {
+      "path": "src/service-credit-sqlite-store.js",
+      "bytes": 83516,
+      "LF": 2366,
+      "sha256": "eea4032830dc1f641c4832e0dab33066633ba487eaf19581e3295cf8810460f3",
+      "gitBlob": "ae5260ef3442079fe73544d2d730d05724758fa1"
+    },
+    {
+      "path": "src/service-credit-zenon-funding-post-v1-payer-recovery-sqlite-store.js",
+      "bytes": 83681,
+      "LF": 2042,
+      "sha256": "bea9e00aa6208f776561c975d54640dfb676168dd4d0b44d125c9dc684912c4a",
+      "gitBlob": "e6af1576df21a20a466d089a4ba6ecdf7380a0df"
+    },
+    {
+      "path": "src/x402-official-service-credit-https-application.js",
+      "bytes": 7579,
+      "LF": 131,
+      "sha256": "361afdd207328f9d2e637196f009c0dc57c362a8141388fd3fa5bcdbe8afeab8",
+      "gitBlob": "691148572674081b2f1e8ebdd44f54319eaa3019"
+    },
+    {
+      "path": "src/x402-official-v6-original-payment-client.js",
+      "bytes": 11296,
+      "LF": 210,
+      "sha256": "84f1b27f7b0e71d1122672e83b970a7e60d3881233a3b35387efc89220c5b1b4",
+      "gitBlob": "ee582ed684cd73c5ae92d9583aa7057d111baaea"
+    }
+  ],
+  "runtime": {
+    "python": "3.12.14"
+  },
+  "historicalSourceFindings": [
+    {
+      "version": 1,
+      "entry": "qualification/p1-native-v6-two-sqlite-once.behavior.draft.mjs",
+      "missing": [
+        "Backend.open",
+        "f.raw.getOriginalCustodyQuarantine"
+      ],
+      "unsupported": [],
+      "status": "SOURCE_API_SURFACE_MISMATCH"
+    },
+    {
+      "version": 2,
+      "entry": "qualification/p1-native-v6-two-sqlite-once.behavior-v2.draft.mjs",
+      "missing": [
+        "Backend.open",
+        "f.raw.getOriginalCustodyQuarantine"
+      ],
+      "unsupported": [],
+      "status": "SOURCE_API_SURFACE_MISMATCH"
+    },
+    {
+      "version": 3,
+      "entry": "qualification/p1-native-v6-two-sqlite-once.behavior-v3.draft.mjs",
+      "missing": [
+        "Backend.open"
+      ],
+      "unsupported": [],
+      "status": "SOURCE_API_SURFACE_MISMATCH"
+    },
+    {
+      "version": 4,
+      "entry": "qualification/p1-native-v6-two-sqlite-once.behavior-v4.draft.mjs",
+      "missing": [],
+      "unsupported": [],
+      "status": "SOURCE_API_SURFACE_MATCH_ONLY"
+    }
+  ],
+  "correctedV4SourceReview": {
+    "status": "SOURCE_API_SURFACE_MATCH_ONLY",
+    "directCalls": [
+      {
+        "receiver": "Backend",
+        "method": "create",
+        "source": "src/service-credit-sqlite-store.js",
+        "line": 253,
+        "found": true
+      },
+      {
+        "receiver": "Backend",
+        "method": "openExisting",
+        "source": "src/service-credit-sqlite-store.js",
+        "line": 414,
+        "found": true
+      },
+      {
+        "receiver": "f.backend",
+        "method": "activateGrantFromTrustedRecord",
+        "source": "src/service-credit-sqlite-store.js",
+        "line": 233,
+        "found": true
+      },
+      {
+        "receiver": "f.backend",
+        "method": "registerOffer",
+        "source": "src/service-credit-sqlite-store.js",
+        "line": 256,
+        "found": true
+      },
+      {
+        "receiver": "f.backend",
+        "method": "initializeDurableExecution",
+        "source": "src/service-credit-sqlite-store.js",
+        "line": 261,
+        "found": true
+      },
+      {
+        "receiver": "f.backend",
+        "method": "load",
+        "source": "src/service-credit-sqlite-store.js",
+        "line": 261,
+        "found": true
+      },
+      {
+        "receiver": "f.backend",
+        "method": "getGrant",
+        "source": "src/service-credit-sqlite-store.js",
+        "line": 316,
+        "found": true
+      },
+      {
+        "receiver": "f.backend",
+        "method": "getGrant",
+        "source": "src/service-credit-sqlite-store.js",
+        "line": 357,
+        "found": true
+      },
+      {
+        "receiver": "f.backend",
+        "method": "load",
+        "source": "src/service-credit-sqlite-store.js",
+        "line": 360,
+        "found": true
+      },
+      {
+        "receiver": "f.backend",
+        "method": "load",
+        "source": "src/service-credit-sqlite-store.js",
+        "line": 363,
+        "found": true
+      },
+      {
+        "receiver": "f.backend",
+        "method": "load",
+        "source": "src/service-credit-sqlite-store.js",
+        "line": 369,
+        "found": true
+      },
+      {
+        "receiver": "f.backend",
+        "method": "getGrant",
+        "source": "src/service-credit-sqlite-store.js",
+        "line": 369,
+        "found": true
+      },
+      {
+        "receiver": "f.backend",
+        "method": "load",
+        "source": "src/service-credit-sqlite-store.js",
+        "line": 373,
+        "found": true
+      },
+      {
+        "receiver": "f.backend",
+        "method": "getGrant",
+        "source": "src/service-credit-sqlite-store.js",
+        "line": 374,
+        "found": true
+      },
+      {
+        "receiver": "f.backend",
+        "method": "load",
+        "source": "src/service-credit-sqlite-store.js",
+        "line": 413,
+        "found": true
+      },
+      {
+        "receiver": "f.backend",
+        "method": "close",
+        "source": "src/service-credit-sqlite-store.js",
+        "line": 413,
+        "found": true
+      },
+      {
+        "receiver": "f.backend",
+        "method": "load",
+        "source": "src/service-credit-sqlite-store.js",
+        "line": 417,
+        "found": true
+      },
+      {
+        "receiver": "f.backend",
+        "method": "getGrant",
+        "source": "src/service-credit-sqlite-store.js",
+        "line": 418,
+        "found": true
+      },
+      {
+        "receiver": "f.backend",
+        "method": "getGrant",
+        "source": "src/service-credit-sqlite-store.js",
+        "line": 419,
+        "found": true
+      },
+      {
+        "receiver": "f.backend",
+        "method": "getGrant",
+        "source": "src/service-credit-sqlite-store.js",
+        "line": 419,
+        "found": true
+      },
+      {
+        "receiver": "f.backend",
+        "method": "getDurableExecutionSnapshot",
+        "source": "src/service-credit-sqlite-store.js",
+        "line": 420,
+        "found": true
+      },
+      {
+        "receiver": "f.backend",
+        "method": "close",
+        "source": "src/service-credit-sqlite-store.js",
+        "line": 437,
+        "found": true
+      },
+      {
+        "receiver": "f.raw",
+        "method": "prepareWithOriginalPaymentCheckpoint",
+        "source": "src/service-credit-zenon-funding-post-v1-payer-recovery-sqlite-store.js",
+        "line": 302,
+        "found": true
+      },
+      {
+        "receiver": "f.raw",
+        "method": "load",
+        "source": "src/service-credit-zenon-funding-post-v1-payer-recovery-sqlite-store.js",
+        "line": 303,
+        "found": true
+      },
+      {
+        "receiver": "f.raw",
+        "method": "close",
+        "source": "src/service-credit-zenon-funding-post-v1-payer-recovery-sqlite-store.js",
+        "line": 303,
+        "found": true
+      },
+      {
+        "receiver": "f.raw",
+        "method": "load",
+        "source": "src/service-credit-zenon-funding-post-v1-payer-recovery-sqlite-store.js",
+        "line": 330,
+        "found": true
+      },
+      {
+        "receiver": "f.raw",
+        "method": "getOriginalPaymentCheckpoint",
+        "source": "src/service-credit-zenon-funding-post-v1-payer-recovery-sqlite-store.js",
+        "line": 331,
+        "found": true
+      },
+      {
+        "receiver": "f.raw",
+        "method": "fenceAttempt",
+        "source": "src/service-credit-zenon-funding-post-v1-payer-recovery-sqlite-store.js",
+        "line": 333,
+        "found": true
+      },
+      {
+        "receiver": "f.raw",
+        "method": "finishAttempt",
+        "source": "src/service-credit-zenon-funding-post-v1-payer-recovery-sqlite-store.js",
+        "line": 333,
+        "found": true
+      },
+      {
+        "receiver": "f.raw",
+        "method": "close",
+        "source": "src/service-credit-zenon-funding-post-v1-payer-recovery-sqlite-store.js",
+        "line": 334,
+        "found": true
+      },
+      {
+        "receiver": "f.raw",
+        "method": "load",
+        "source": "src/service-credit-zenon-funding-post-v1-payer-recovery-sqlite-store.js",
+        "line": 389,
+        "found": true
+      },
+      {
+        "receiver": "f.raw",
+        "method": "load",
+        "source": "src/service-credit-zenon-funding-post-v1-payer-recovery-sqlite-store.js",
+        "line": 390,
+        "found": true
+      },
+      {
+        "receiver": "f.raw",
+        "method": "getOriginalPaymentCheckpoint",
+        "source": "src/service-credit-zenon-funding-post-v1-payer-recovery-sqlite-store.js",
+        "line": 391,
+        "found": true
+      },
+      {
+        "receiver": "f.raw",
+        "method": "getOriginalRequest",
+        "source": "src/service-credit-zenon-funding-post-v1-payer-recovery-sqlite-store.js",
+        "line": 394,
+        "found": true
+      },
+      {
+        "receiver": "f.raw",
+        "method": "getOriginalDispatchIntent",
+        "source": "src/service-credit-zenon-funding-post-v1-payer-recovery-sqlite-store.js",
+        "line": 395,
+        "found": true
+      },
+      {
+        "receiver": "f.raw",
+        "method": "getOriginalResponseObservation",
+        "source": "src/service-credit-zenon-funding-post-v1-payer-recovery-sqlite-store.js",
+        "line": 397,
+        "found": true
+      },
+      {
+        "receiver": "f.raw",
+        "method": "getOriginalResponseObservation",
+        "source": "src/service-credit-zenon-funding-post-v1-payer-recovery-sqlite-store.js",
+        "line": 398,
+        "found": true
+      },
+      {
+        "receiver": "f.raw",
+        "method": "getOriginalRequestCustodyQuarantine",
+        "source": "src/service-credit-zenon-funding-post-v1-payer-recovery-sqlite-store.js",
+        "line": 399,
+        "found": true
+      },
+      {
+        "receiver": "f.raw",
+        "method": "getOriginalRequest",
+        "source": "src/service-credit-zenon-funding-post-v1-payer-recovery-sqlite-store.js",
+        "line": 401,
+        "found": true
+      },
+      {
+        "receiver": "f.raw",
+        "method": "close",
+        "source": "src/service-credit-zenon-funding-post-v1-payer-recovery-sqlite-store.js",
+        "line": 403,
+        "found": true
+      },
+      {
+        "receiver": "f.raw",
+        "method": "close",
+        "source": "src/service-credit-zenon-funding-post-v1-payer-recovery-sqlite-store.js",
+        "line": 429,
+        "found": true
+      },
+      {
+        "receiver": "f.client",
+        "method": "readOriginalPaymentCheckpoint",
+        "source": "src/x402-official-v6-original-payment-client.js",
+        "line": 208,
+        "found": true
+      },
+      {
+        "receiver": "f.client",
+        "method": "restoreOriginalPayment",
+        "source": "src/x402-official-v6-original-payment-client.js",
+        "line": 307,
+        "found": true
+      },
+      {
+        "receiver": "f.client",
+        "method": "snapshot",
+        "source": "src/x402-official-v6-original-payment-client.js",
+        "line": 311,
+        "found": true
+      },
+      {
+        "receiver": "f.client",
+        "method": "readOriginalPaymentCheckpoint",
+        "source": "src/x402-official-v6-original-payment-client.js",
+        "line": 317,
+        "found": true
+      },
+      {
+        "receiver": "f.client",
+        "method": "snapshot",
+        "source": "src/x402-official-v6-original-payment-client.js",
+        "line": 352,
+        "found": true
+      },
+      {
+        "receiver": "f.client",
+        "method": "submitOriginal",
+        "source": "src/x402-official-v6-original-payment-client.js",
+        "line": 353,
+        "found": true
+      },
+      {
+        "receiver": "f.client",
+        "method": "readOriginalRecoveryState",
+        "source": "src/x402-official-v6-original-payment-client.js",
+        "line": 354,
+        "found": true
+      },
+      {
+        "receiver": "f.client",
+        "method": "readOriginalRecoveryState",
+        "source": "src/x402-official-v6-original-payment-client.js",
+        "line": 364,
+        "found": true
+      },
+      {
+        "receiver": "f.client",
+        "method": "submitOriginal",
+        "source": "src/x402-official-v6-original-payment-client.js",
+        "line": 370,
+        "found": true
+      },
+      {
+        "receiver": "f.client",
+        "method": "submitOriginal",
+        "source": "src/x402-official-v6-original-payment-client.js",
+        "line": 379,
+        "found": true
+      },
+      {
+        "receiver": "f.client",
+        "method": "submitOriginal",
+        "source": "src/x402-official-v6-original-payment-client.js",
+        "line": 382,
+        "found": true
+      },
+      {
+        "receiver": "f.client",
+        "method": "snapshot",
+        "source": "src/x402-official-v6-original-payment-client.js",
+        "line": 385,
+        "found": true
+      },
+      {
+        "receiver": "f.client",
+        "method": "close",
+        "source": "src/x402-official-v6-original-payment-client.js",
+        "line": 428,
+        "found": true
+      },
+      {
+        "receiver": "client",
+        "method": "close",
+        "source": "src/x402-official-v6-original-payment-client.js",
+        "line": 211,
+        "found": true
+      },
+      {
+        "receiver": "client",
+        "method": "close",
+        "source": "src/x402-official-v6-original-payment-client.js",
+        "line": 211,
+        "found": true
+      },
+      {
+        "receiver": "client",
+        "method": "snapshot",
+        "source": "src/x402-official-v6-original-payment-client.js",
+        "line": 214,
+        "found": true
+      },
+      {
+        "receiver": "f.native",
+        "method": "requestImpl",
+        "source": "src/service-credit-native-https-client-transport.js",
+        "line": 160,
+        "found": true
+      },
+      {
+        "receiver": "f.native",
+        "method": "close",
+        "source": "src/service-credit-native-https-client-transport.js",
+        "line": 440,
+        "found": true
+      },
+      {
+        "receiver": "f.native",
+        "method": "close",
+        "source": "src/service-credit-native-https-client-transport.js",
+        "line": 440,
+        "found": true
+      },
+      {
+        "receiver": "f.native",
+        "method": "snapshot",
+        "source": "src/service-credit-native-https-client-transport.js",
+        "line": 442,
+        "found": true
+      },
+      {
+        "receiver": "f.native",
+        "method": "snapshot",
+        "source": "src/service-credit-native-https-client-transport.js",
+        "line": 443,
+        "found": true
+      },
+      {
+        "receiver": "f.native",
+        "method": "snapshot",
+        "source": "src/service-credit-native-https-client-transport.js",
+        "line": 445,
+        "found": true
+      },
+      {
+        "receiver": "f.native",
+        "method": "snapshot",
+        "source": "src/service-credit-native-https-client-transport.js",
+        "line": 464,
+        "found": true
+      },
+      {
+        "receiver": "f.native",
+        "method": "snapshot",
+        "source": "src/service-credit-native-https-client-transport.js",
+        "line": 477,
+        "found": true
+      },
+      {
+        "receiver": "f.app",
+        "method": "start",
+        "source": "src/x402-official-service-credit-https-application.js",
+        "line": 284,
+        "found": true
+      },
+      {
+        "receiver": "f.app",
+        "method": "snapshot",
+        "source": "src/x402-official-service-credit-https-application.js",
+        "line": 284,
+        "found": true
+      },
+      {
+        "receiver": "f.app",
+        "method": "close",
+        "source": "src/x402-official-service-credit-https-application.js",
+        "line": 404,
+        "found": true
+      },
+      {
+        "receiver": "f.app",
+        "method": "close",
+        "source": "src/x402-official-service-credit-https-application.js",
+        "line": 404,
+        "found": true
+      },
+      {
+        "receiver": "f.app",
+        "method": "snapshot",
+        "source": "src/x402-official-service-credit-https-application.js",
+        "line": 410,
+        "found": true
+      },
+      {
+        "receiver": "f.app",
+        "method": "close",
+        "source": "src/x402-official-service-credit-https-application.js",
+        "line": 431,
+        "found": true
+      },
+      {
+        "receiver": "f.app",
+        "method": "snapshot",
+        "source": "src/x402-official-service-credit-https-application.js",
+        "line": 465,
+        "found": true
+      },
+      {
+        "receiver": "f.app",
+        "method": "snapshot",
+        "source": "src/x402-official-service-credit-https-application.js",
+        "line": 477,
+        "found": true
+      }
+    ],
+    "namedExports": [
+      {
+        "source": "src/x402-official-service-credit-https-application.js",
+        "export": "createOfficialServiceCreditHttpsApplication",
+        "alias": "APPLICATION",
+        "found": true
+      },
+      {
+        "source": "src/x402-official-v6-original-payment-client.js",
+        "export": "openOfficialV6OriginalPaymentClient",
+        "alias": "CLIENT",
+        "found": true
+      },
+      {
+        "source": "src/service-credit-native-https-client-transport.js",
+        "export": "createServiceCreditNativeHttpsClientTransport",
+        "alias": "TRANSPORT",
+        "found": true
+      },
+      {
+        "source": "src/service-credit-bounded-node-https-server-factory.js",
+        "export": "createServiceCreditBoundedNodeHttpsServerFactory",
+        "alias": "SERVER_FACTORY",
+        "found": true
+      },
+      {
+        "source": "src/service-credit-sqlite-store.js",
+        "export": "ServiceCreditSqliteStore",
+        "alias": "Backend",
+        "found": true
+      },
+      {
+        "source": "src/service-credit-zenon-funding-post-v1-payer-recovery-sqlite-store.js",
+        "export": "ZenonFundingPayerRecoverySqliteStore",
+        "alias": "PAYER_STORE",
+        "found": true
+      },
+      {
+        "source": "src/service-credit-zenon-funding-post-v1-payer-recovery-sqlite-store.js",
+        "export": "createZenonFundingPayerRecoveryOriginalPaymentSqliteStoreV6",
+        "alias": "CREATE_PAYER",
+        "found": true
+      },
+      {
+        "source": "src/service-credit-zenon-funding-post-v1-payer-recovery-sqlite-store.js",
+        "export": "openZenonFundingPayerRecoveryOriginalPaymentSqliteStoreV6",
+        "alias": "OPEN_PAYER",
+        "found": true
+      },
+      {
+        "source": "src/service-credit-pilot-original-payment-checkpoint.js",
+        "export": "captureOriginalPaymentCheckpoint",
+        "alias": "CAPTURE",
+        "found": true
+      },
+      {
+        "source": "src/service-credit-pilot-original-payment-checkpoint.js",
+        "export": "encodeOriginalPaymentCheckpoint",
+        "alias": "ENCODE",
+        "found": true
+      },
+      {
+        "source": "src/service-credit-capability.js",
+        "export": "deriveServiceCreditCapabilityCommitment",
+        "alias": "COMMIT",
+        "found": true
+      },
+      {
+        "source": "src/service-credit-capability.js",
+        "export": "createServiceCreditCapabilitySigningBytes",
+        "alias": "SIGNING_BYTES",
+        "found": true
+      }
+    ],
+    "missing": [],
+    "unsupported": [],
+    "limits": "Lexical named calls/exports and fixed returned surfaces only. Not JS parse, execution, argument/return behavior, schema compatibility or native qualification."
+  },
+  "V3SourceReview": {
+    "status": "SOURCE_API_SURFACE_MISMATCH",
+    "directCalls": [
+      {
+        "receiver": "Backend",
+        "method": "create",
+        "source": "src/service-credit-sqlite-store.js",
+        "line": 243,
+        "found": true
+      },
+      {
+        "receiver": "Backend",
+        "method": "open",
+        "source": "src/service-credit-sqlite-store.js",
+        "line": 404,
+        "found": false
+      },
+      {
+        "receiver": "f.backend",
+        "method": "activateGrantFromTrustedRecord",
+        "source": "src/service-credit-sqlite-store.js",
+        "line": 223,
+        "found": true
+      },
+      {
+        "receiver": "f.backend",
+        "method": "registerOffer",
+        "source": "src/service-credit-sqlite-store.js",
+        "line": 246,
+        "found": true
+      },
+      {
+        "receiver": "f.backend",
+        "method": "initializeDurableExecution",
+        "source": "src/service-credit-sqlite-store.js",
+        "line": 251,
+        "found": true
+      },
+      {
+        "receiver": "f.backend",
+        "method": "load",
+        "source": "src/service-credit-sqlite-store.js",
+        "line": 251,
+        "found": true
+      },
+      {
+        "receiver": "f.backend",
+        "method": "getGrant",
+        "source": "src/service-credit-sqlite-store.js",
+        "line": 306,
+        "found": true
+      },
+      {
+        "receiver": "f.backend",
+        "method": "getGrant",
+        "source": "src/service-credit-sqlite-store.js",
+        "line": 347,
+        "found": true
+      },
+      {
+        "receiver": "f.backend",
+        "method": "load",
+        "source": "src/service-credit-sqlite-store.js",
+        "line": 350,
+        "found": true
+      },
+      {
+        "receiver": "f.backend",
+        "method": "load",
+        "source": "src/service-credit-sqlite-store.js",
+        "line": 353,
+        "found": true
+      },
+      {
+        "receiver": "f.backend",
+        "method": "load",
+        "source": "src/service-credit-sqlite-store.js",
+        "line": 359,
+        "found": true
+      },
+      {
+        "receiver": "f.backend",
+        "method": "getGrant",
+        "source": "src/service-credit-sqlite-store.js",
+        "line": 359,
+        "found": true
+      },
+      {
+        "receiver": "f.backend",
+        "method": "load",
+        "source": "src/service-credit-sqlite-store.js",
+        "line": 363,
+        "found": true
+      },
+      {
+        "receiver": "f.backend",
+        "method": "getGrant",
+        "source": "src/service-credit-sqlite-store.js",
+        "line": 364,
+        "found": true
+      },
+      {
+        "receiver": "f.backend",
+        "method": "load",
+        "source": "src/service-credit-sqlite-store.js",
+        "line": 403,
+        "found": true
+      },
+      {
+        "receiver": "f.backend",
+        "method": "close",
+        "source": "src/service-credit-sqlite-store.js",
+        "line": 403,
+        "found": true
+      },
+      {
+        "receiver": "f.backend",
+        "method": "load",
+        "source": "src/service-credit-sqlite-store.js",
+        "line": 407,
+        "found": true
+      },
+      {
+        "receiver": "f.backend",
+        "method": "getGrant",
+        "source": "src/service-credit-sqlite-store.js",
+        "line": 408,
+        "found": true
+      },
+      {
+        "receiver": "f.backend",
+        "method": "getGrant",
+        "source": "src/service-credit-sqlite-store.js",
+        "line": 409,
+        "found": true
+      },
+      {
+        "receiver": "f.backend",
+        "method": "getGrant",
+        "source": "src/service-credit-sqlite-store.js",
+        "line": 409,
+        "found": true
+      },
+      {
+        "receiver": "f.backend",
+        "method": "getDurableExecutionSnapshot",
+        "source": "src/service-credit-sqlite-store.js",
+        "line": 410,
+        "found": true
+      },
+      {
+        "receiver": "f.backend",
+        "method": "close",
+        "source": "src/service-credit-sqlite-store.js",
+        "line": 427,
+        "found": true
+      },
+      {
+        "receiver": "f.raw",
+        "method": "prepareWithOriginalPaymentCheckpoint",
+        "source": "src/service-credit-zenon-funding-post-v1-payer-recovery-sqlite-store.js",
+        "line": 292,
+        "found": true
+      },
+      {
+        "receiver": "f.raw",
+        "method": "load",
+        "source": "src/service-credit-zenon-funding-post-v1-payer-recovery-sqlite-store.js",
+        "line": 293,
+        "found": true
+      },
+      {
+        "receiver": "f.raw",
+        "method": "close",
+        "source": "src/service-credit-zenon-funding-post-v1-payer-recovery-sqlite-store.js",
+        "line": 293,
+        "found": true
+      },
+      {
+        "receiver": "f.raw",
+        "method": "load",
+        "source": "src/service-credit-zenon-funding-post-v1-payer-recovery-sqlite-store.js",
+        "line": 320,
+        "found": true
+      },
+      {
+        "receiver": "f.raw",
+        "method": "getOriginalPaymentCheckpoint",
+        "source": "src/service-credit-zenon-funding-post-v1-payer-recovery-sqlite-store.js",
+        "line": 321,
+        "found": true
+      },
+      {
+        "receiver": "f.raw",
+        "method": "fenceAttempt",
+        "source": "src/service-credit-zenon-funding-post-v1-payer-recovery-sqlite-store.js",
+        "line": 323,
+        "found": true
+      },
+      {
+        "receiver": "f.raw",
+        "method": "finishAttempt",
+        "source": "src/service-credit-zenon-funding-post-v1-payer-recovery-sqlite-store.js",
+        "line": 323,
+        "found": true
+      },
+      {
+        "receiver": "f.raw",
+        "method": "close",
+        "source": "src/service-credit-zenon-funding-post-v1-payer-recovery-sqlite-store.js",
+        "line": 324,
+        "found": true
+      },
+      {
+        "receiver": "f.raw",
+        "method": "load",
+        "source": "src/service-credit-zenon-funding-post-v1-payer-recovery-sqlite-store.js",
+        "line": 379,
+        "found": true
+      },
+      {
+        "receiver": "f.raw",
+        "method": "load",
+        "source": "src/service-credit-zenon-funding-post-v1-payer-recovery-sqlite-store.js",
+        "line": 380,
+        "found": true
+      },
+      {
+        "receiver": "f.raw",
+        "method": "getOriginalPaymentCheckpoint",
+        "source": "src/service-credit-zenon-funding-post-v1-payer-recovery-sqlite-store.js",
+        "line": 381,
+        "found": true
+      },
+      {
+        "receiver": "f.raw",
+        "method": "getOriginalRequest",
+        "source": "src/service-credit-zenon-funding-post-v1-payer-recovery-sqlite-store.js",
+        "line": 384,
+        "found": true
+      },
+      {
+        "receiver": "f.raw",
+        "method": "getOriginalDispatchIntent",
+        "source": "src/service-credit-zenon-funding-post-v1-payer-recovery-sqlite-store.js",
+        "line": 385,
+        "found": true
+      },
+      {
+        "receiver": "f.raw",
+        "method": "getOriginalResponseObservation",
+        "source": "src/service-credit-zenon-funding-post-v1-payer-recovery-sqlite-store.js",
+        "line": 387,
+        "found": true
+      },
+      {
+        "receiver": "f.raw",
+        "method": "getOriginalResponseObservation",
+        "source": "src/service-credit-zenon-funding-post-v1-payer-recovery-sqlite-store.js",
+        "line": 388,
+        "found": true
+      },
+      {
+        "receiver": "f.raw",
+        "method": "getOriginalRequestCustodyQuarantine",
+        "source": "src/service-credit-zenon-funding-post-v1-payer-recovery-sqlite-store.js",
+        "line": 389,
+        "found": true
+      },
+      {
+        "receiver": "f.raw",
+        "method": "getOriginalRequest",
+        "source": "src/service-credit-zenon-funding-post-v1-payer-recovery-sqlite-store.js",
+        "line": 391,
+        "found": true
+      },
+      {
+        "receiver": "f.raw",
+        "method": "close",
+        "source": "src/service-credit-zenon-funding-post-v1-payer-recovery-sqlite-store.js",
+        "line": 393,
+        "found": true
+      },
+      {
+        "receiver": "f.raw",
+        "method": "close",
+        "source": "src/service-credit-zenon-funding-post-v1-payer-recovery-sqlite-store.js",
+        "line": 419,
+        "found": true
+      },
+      {
+        "receiver": "f.client",
+        "method": "readOriginalPaymentCheckpoint",
+        "source": "src/x402-official-v6-original-payment-client.js",
+        "line": 198,
+        "found": true
+      },
+      {
+        "receiver": "f.client",
+        "method": "restoreOriginalPayment",
+        "source": "src/x402-official-v6-original-payment-client.js",
+        "line": 297,
+        "found": true
+      },
+      {
+        "receiver": "f.client",
+        "method": "snapshot",
+        "source": "src/x402-official-v6-original-payment-client.js",
+        "line": 301,
+        "found": true
+      },
+      {
+        "receiver": "f.client",
+        "method": "readOriginalPaymentCheckpoint",
+        "source": "src/x402-official-v6-original-payment-client.js",
+        "line": 307,
+        "found": true
+      },
+      {
+        "receiver": "f.client",
+        "method": "snapshot",
+        "source": "src/x402-official-v6-original-payment-client.js",
+        "line": 342,
+        "found": true
+      },
+      {
+        "receiver": "f.client",
+        "method": "submitOriginal",
+        "source": "src/x402-official-v6-original-payment-client.js",
+        "line": 343,
+        "found": true
+      },
+      {
+        "receiver": "f.client",
+        "method": "readOriginalRecoveryState",
+        "source": "src/x402-official-v6-original-payment-client.js",
+        "line": 344,
+        "found": true
+      },
+      {
+        "receiver": "f.client",
+        "method": "readOriginalRecoveryState",
+        "source": "src/x402-official-v6-original-payment-client.js",
+        "line": 354,
+        "found": true
+      },
+      {
+        "receiver": "f.client",
+        "method": "submitOriginal",
+        "source": "src/x402-official-v6-original-payment-client.js",
+        "line": 360,
+        "found": true
+      },
+      {
+        "receiver": "f.client",
+        "method": "submitOriginal",
+        "source": "src/x402-official-v6-original-payment-client.js",
+        "line": 369,
+        "found": true
+      },
+      {
+        "receiver": "f.client",
+        "method": "submitOriginal",
+        "source": "src/x402-official-v6-original-payment-client.js",
+        "line": 372,
+        "found": true
+      },
+      {
+        "receiver": "f.client",
+        "method": "snapshot",
+        "source": "src/x402-official-v6-original-payment-client.js",
+        "line": 375,
+        "found": true
+      },
+      {
+        "receiver": "f.client",
+        "method": "close",
+        "source": "src/x402-official-v6-original-payment-client.js",
+        "line": 418,
+        "found": true
+      },
+      {
+        "receiver": "client",
+        "method": "close",
+        "source": "src/x402-official-v6-original-payment-client.js",
+        "line": 201,
+        "found": true
+      },
+      {
+        "receiver": "client",
+        "method": "close",
+        "source": "src/x402-official-v6-original-payment-client.js",
+        "line": 201,
+        "found": true
+      },
+      {
+        "receiver": "client",
+        "method": "snapshot",
+        "source": "src/x402-official-v6-original-payment-client.js",
+        "line": 204,
+        "found": true
+      },
+      {
+        "receiver": "f.native",
+        "method": "requestImpl",
+        "source": "src/service-credit-native-https-client-transport.js",
+        "line": 150,
+        "found": true
+      },
+      {
+        "receiver": "f.native",
+        "method": "close",
+        "source": "src/service-credit-native-https-client-transport.js",
+        "line": 430,
+        "found": true
+      },
+      {
+        "receiver": "f.native",
+        "method": "close",
+        "source": "src/service-credit-native-https-client-transport.js",
+        "line": 430,
+        "found": true
+      },
+      {
+        "receiver": "f.native",
+        "method": "snapshot",
+        "source": "src/service-credit-native-https-client-transport.js",
+        "line": 432,
+        "found": true
+      },
+      {
+        "receiver": "f.native",
+        "method": "snapshot",
+        "source": "src/service-credit-native-https-client-transport.js",
+        "line": 433,
+        "found": true
+      },
+      {
+        "receiver": "f.native",
+        "method": "snapshot",
+        "source": "src/service-credit-native-https-client-transport.js",
+        "line": 435,
+        "found": true
+      },
+      {
+        "receiver": "f.native",
+        "method": "snapshot",
+        "source": "src/service-credit-native-https-client-transport.js",
+        "line": 454,
+        "found": true
+      },
+      {
+        "receiver": "f.native",
+        "method": "snapshot",
+        "source": "src/service-credit-native-https-client-transport.js",
+        "line": 467,
+        "found": true
+      },
+      {
+        "receiver": "f.app",
+        "method": "start",
+        "source": "src/x402-official-service-credit-https-application.js",
+        "line": 274,
+        "found": true
+      },
+      {
+        "receiver": "f.app",
+        "method": "snapshot",
+        "source": "src/x402-official-service-credit-https-application.js",
+        "line": 274,
+        "found": true
+      },
+      {
+        "receiver": "f.app",
+        "method": "close",
+        "source": "src/x402-official-service-credit-https-application.js",
+        "line": 394,
+        "found": true
+      },
+      {
+        "receiver": "f.app",
+        "method": "close",
+        "source": "src/x402-official-service-credit-https-application.js",
+        "line": 394,
+        "found": true
+      },
+      {
+        "receiver": "f.app",
+        "method": "snapshot",
+        "source": "src/x402-official-service-credit-https-application.js",
+        "line": 400,
+        "found": true
+      },
+      {
+        "receiver": "f.app",
+        "method": "close",
+        "source": "src/x402-official-service-credit-https-application.js",
+        "line": 421,
+        "found": true
+      },
+      {
+        "receiver": "f.app",
+        "method": "snapshot",
+        "source": "src/x402-official-service-credit-https-application.js",
+        "line": 455,
+        "found": true
+      },
+      {
+        "receiver": "f.app",
+        "method": "snapshot",
+        "source": "src/x402-official-service-credit-https-application.js",
+        "line": 467,
+        "found": true
+      }
+    ],
+    "namedExports": [
+      {
+        "source": "src/x402-official-service-credit-https-application.js",
+        "export": "createOfficialServiceCreditHttpsApplication",
+        "alias": "APPLICATION",
+        "found": true
+      },
+      {
+        "source": "src/x402-official-v6-original-payment-client.js",
+        "export": "openOfficialV6OriginalPaymentClient",
+        "alias": "CLIENT",
+        "found": true
+      },
+      {
+        "source": "src/service-credit-native-https-client-transport.js",
+        "export": "createServiceCreditNativeHttpsClientTransport",
+        "alias": "TRANSPORT",
+        "found": true
+      },
+      {
+        "source": "src/service-credit-bounded-node-https-server-factory.js",
+        "export": "createServiceCreditBoundedNodeHttpsServerFactory",
+        "alias": "SERVER_FACTORY",
+        "found": true
+      },
+      {
+        "source": "src/service-credit-sqlite-store.js",
+        "export": "ServiceCreditSqliteStore",
+        "alias": "Backend",
+        "found": true
+      },
+      {
+        "source": "src/service-credit-zenon-funding-post-v1-payer-recovery-sqlite-store.js",
+        "export": "ZenonFundingPayerRecoverySqliteStore",
+        "alias": "PAYER_STORE",
+        "found": true
+      },
+      {
+        "source": "src/service-credit-zenon-funding-post-v1-payer-recovery-sqlite-store.js",
+        "export": "createZenonFundingPayerRecoveryOriginalPaymentSqliteStoreV6",
+        "alias": "CREATE_PAYER",
+        "found": true
+      },
+      {
+        "source": "src/service-credit-zenon-funding-post-v1-payer-recovery-sqlite-store.js",
+        "export": "openZenonFundingPayerRecoveryOriginalPaymentSqliteStoreV6",
+        "alias": "OPEN_PAYER",
+        "found": true
+      },
+      {
+        "source": "src/service-credit-pilot-original-payment-checkpoint.js",
+        "export": "captureOriginalPaymentCheckpoint",
+        "alias": "CAPTURE",
+        "found": true
+      },
+      {
+        "source": "src/service-credit-pilot-original-payment-checkpoint.js",
+        "export": "encodeOriginalPaymentCheckpoint",
+        "alias": "ENCODE",
+        "found": true
+      },
+      {
+        "source": "src/service-credit-capability.js",
+        "export": "deriveServiceCreditCapabilityCommitment",
+        "alias": "COMMIT",
+        "found": true
+      },
+      {
+        "source": "src/service-credit-capability.js",
+        "export": "createServiceCreditCapabilitySigningBytes",
+        "alias": "SIGNING_BYTES",
+        "found": true
+      }
+    ],
+    "missing": [
+      "Backend.open"
+    ],
+    "unsupported": [],
+    "limits": "Lexical named calls/exports and fixed returned surfaces only. Not JS parse, execution, argument/return behavior, schema compatibility or native qualification."
+  },
+  "boundaries": {
+    "JavaScriptParsed": false,
+    "JavaScriptImported": false,
+    "NodeCommands": 0,
+    "SDK": 0,
+    "SQLiteConnections": 0,
+    "sockets": 0,
+    "signatures": 0,
+    "newTasks": 0,
+    "newScratch": 0,
+    "nativeV3Result": "FAILED_SEPARATE_RECORD",
+    "nativeV4Result": "NOT_RUN",
+    "nativeHostQualification": "NOT_ESTABLISHED",
+    "economicPilot": "NO_GO"
+  },
+  "requiredBeforeAnyFutureNativeLaunch": "Run this source gate against the exact pinned entry before opening a new task or invoking OpenSSL/Node. A successful source gate is not native approval; retain independent one-shot authority and the full launcher/source/capacity checks."
+}
+
