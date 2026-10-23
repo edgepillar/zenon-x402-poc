@@ -1,0 +1,308 @@
+{
+  "schema": "zenon-x402-selected-local-qualification/v1",
+  "status": "SELECTED_CURRENT_SOURCE_LOCAL_PASS_NOT_PILOT_QUALIFICATION",
+  "lane": "P2_EXISTING_DISPATCH_ABORT_DRAIN",
+  "sourceBaseMain": "b987e3b261e3374ec1f98aa946704d43aa62a793",
+  "sourceBaseTree": "e89497f1993fc35ef2cccb1e6cb32801719f0b4b",
+  "sourceBaseRepositoryFiles": 700,
+  "sourceOnly": false,
+  "fullP2OrRoadmapComplete": false,
+  "livePilotQualified": false,
+  "productionQualified": false,
+  "implementation": {
+    "module": "src/service-credit-http-execute-dispatch.js",
+    "factories": [
+      "createServiceCreditHttpExecuteDispatch",
+      "createServiceCreditHttpExecuteDispatchV2"
+    ],
+    "newFactoriesOwnersOrDefaultTransportSelections": 0,
+    "positiveBoundary": "The previous existing dispatcher could remain pending indefinitely after abort initiation when an observable handle never emitted close. Its request deadline alone did not complete that wait.",
+    "abortDrainBudget": "One min(deadlineMs,1000) ms observation budget, armed only while an abort is waiting for observable handle closes. Further events do not renew it.",
+    "expiredDrain": "Reject the original operation as UNKNOWN_UNDRAINED. Preserve unknown/undrained and at-most-once destroy/settlement; late closes cannot clear uncertainty, produce a successful receipt or permit retry.",
+    "observedDrain": "Closes arriving before that budget retain OUTCOME_UNKNOWN rather than UNKNOWN_UNDRAINED; successful V1/V2 completion contracts remain as before.",
+    "timerOwnership": "Clear both owned timers on settlement. Existing timerArmed now reports either owned timer; snapshot keys and count keys remain unchanged.",
+    "callbackAndCloseIdentity": "No outer Promise wrapper, replacement request, close retry, reset or new resource owner.",
+    "notEstablished": [
+      "A hard wall-clock, whole-run, CPU, cancellation or native-resource lifetime bound",
+      "Closure or release of an unclosed handle or an owned HELD store",
+      "Authenticated delivery, capability proof, provider readiness, real funds or live payment authority"
+    ],
+    "preservedSourcePreimage": {
+      "path": "src/service-credit-http-execute-dispatch.js",
+      "bytes": 28104,
+      "LF": 790,
+      "sha256": "929881081b22b90b07d3d1c4dc8f873d4d81ee5ae84542d24b7534674f4eb9c0",
+      "gitBlob": "ace43b4be48f00a5c649449cf1f04ab40e719190",
+      "immutableGitMain": "b987e3b261e3374ec1f98aa946704d43aa62a793",
+      "retainedCASContentMatched": true,
+      "creatorClosedAndObjectReferencesMatched": true
+    }
+  },
+  "selection": {
+    "entry": "qualification/service-credit-dispatch-abort-drain.behavior.draft.mjs",
+    "names": [
+      "V1 missing request close becomes unknown-undrained without retry or synthetic release",
+      "V2 missing response close rejects and late complete reply cannot create a response receipt",
+      "early error uses the capped one-second abort observation instead of the sixty-second request deadline",
+      "actual V3 custodied runner close terminates unknown and never submits its queued second original",
+      "normal V2 response bytes and actual V3 two-original completion retain their existing contracts",
+      "V1 and V2 observed abort closes before the drain budget remain unknown but not undrained",
+      "repeated errors do not renew the one abort-drain budget or repeat destroy and settlement"
+    ],
+    "selectedCases": 7,
+    "actualProductionCode": [
+      "V1/V2 dispatcher",
+      "V3 borrowed custodied HTTP client and request owner",
+      "One-shot sequential runner and cached close Promise"
+    ],
+    "fixtureBoundary": "Only the synchronous declared store and HTTPS-compatible request/response interface events are test-owned. No actual HTTPS implementation, native socket or SQLite is selected.",
+    "oldQualificationEntriesImportedOrReplayed": 0,
+    "declaredAuthorizationStringsOnly": true,
+    "signatureProductionOrVerification": false,
+    "additionalCurrentSourceControl": "Normal exact V2 response JSON, two V3 original completions, and observed-before-budget V1/V2 abort closes."
+  },
+  "qualification": {
+    "actualNodeExit": 0,
+    "outputComplete": true,
+    "counts": {
+      "tests": 7,
+      "suites": 0,
+      "pass": 7,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "diagnostic": {
+      "kind": "P2_DISPATCH_ABORT_DRAIN",
+      "version": 1,
+      "directDispatchers": 7,
+      "directRejected": 6,
+      "directFulfilled": 1,
+      "runnerInstances": 2,
+      "runnerRuns": 2,
+      "runnerFailed": 1,
+      "runnerCompleted": 1,
+      "requestCalls": 10,
+      "requestDestroys": 7,
+      "responseDestroys": 3,
+      "custodyWrites": 3,
+      "intentWrites": 3,
+      "borrowedStoreCloses": 0,
+      "rawReasonHooks": 0,
+      "abortDrainPolicy": "ONE_MIN_DEADLINE_MS_1000_MS_OBSERVATION_BUDGET",
+      "lateClosesNeverClearUnknown": true,
+      "queuedSecondAfterUnknown": 0,
+      "timedOutResponseReceipts": 0,
+      "originalFundingCustodyAndIntentPreserved": true,
+      "closePromiseIdentityPreserved": true,
+      "oldQualificationEntriesRegistered": 0,
+      "ownedFixtureTimersRemaining": 0,
+      "sql": 0,
+      "sdk": 0,
+      "keyGeneration": 0,
+      "signatures": 0,
+      "sockets": 0,
+      "network": 0,
+      "nonceSearch": 0,
+      "realPrepare": 0,
+      "payments": 0,
+      "nativeTransportQualified": false,
+      "hardOsDeadlineOrNativeCleanupEstablished": false
+    },
+    "separateCompletePrimaryEvidenceRead": "PASS_NOT_AN_INDEPENDENT_HUMAN_REVIEW",
+    "nativeApplicationProcessGroupObservedAbsent": true,
+    "nativeTransportOrProcessRestartQualified": false
+  },
+  "execution": {
+    "nativeApplicationCommands": 1,
+    "nativeChildProcesses": 0,
+    "runtime": {
+      "name": "Node.js",
+      "version": "24.19.0",
+      "platform": "darwin",
+      "architecture": "arm64",
+      "executableSha256": "dbedff294bab84a0a86c04e15fbcbeb1c97ca10bef1b32b0634cd24b36f62100",
+      "identityUnchangedFromPinnedExecutable": true,
+      "versionAssertedByEntry": true
+    },
+    "controller": {
+      "name": "CPython",
+      "version": "3.12.14",
+      "executableSha256": "811e2679c20fd2c7413f7c5ca28ce903065eea8dadb8660f1b9379a28959a480"
+    },
+    "nodePermissionModel": true,
+    "permissionScope": "Read-only exact eight-file source closure; no child/worker/addon grants. Not an OS or network sandbox claim.",
+    "commandTimeoutSeconds": 30,
+    "testTimeoutMs": 5000,
+    "reporterDurationMs": 2527.388584,
+    "managedCallerElapsedSeconds": 5.098964584,
+    "timingObservationsNotPerformanceOrHardDeadlineProof": true,
+    "stdout": {
+      "bytes": 2744,
+      "sha256": "581e1026a0858921302c319c5c2a5be8abe805808966f12df716315aae43626d"
+    },
+    "stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  },
+  "sourceClosure": {
+    "files": 8,
+    "bytes": 154573,
+    "rowsSha256": "616b5f8d18242f8eafe7150f317d7be4731df224e34c20c3fafda3cc7069919f",
+    "staticImports": 28,
+    "dynamicImports": 0,
+    "pins": [
+      {
+        "path": "package.json",
+        "bytes": 1413,
+        "LF": 40,
+        "sha256": "8c9a25504fbf6f87c31cdf245a6f4eec5a88cc89c8352151dc66a577c5771ef5",
+        "gitBlob": "ec7193f6fd76f34778515079dc777594175c4c34"
+      },
+      {
+        "path": "qualification/service-credit-dispatch-abort-drain.behavior.draft.mjs",
+        "bytes": 20224,
+        "LF": 355,
+        "sha256": "6cc01f7cd8b683b49bae7aacfd44591c33e45db248ee16957f62107221e7ee61",
+        "gitBlob": "ba7b7b910cfce72ab8316bbd1e78e55b7b413a82"
+      },
+      {
+        "path": "src/service-credit-http-execute-dispatch.js",
+        "bytes": 29328,
+        "LF": 815,
+        "sha256": "e07470a9fde311c806beb09b1c4369b4724213682bcbcacc228ece0e0e36f5ef",
+        "gitBlob": "4b5bcb1b08b1ab44e65c8ed7bab76d41640a767b"
+      },
+      {
+        "path": "src/service-credit-custodied-sequential-runner.js",
+        "bytes": 5773,
+        "LF": 121,
+        "sha256": "de0f3e143066f19ac3f3cab072abe8d250ea72b9fac9ad2c5bedb75110d7ec56",
+        "gitBlob": "f624375877ee0dd3d8352a5d13e35d95b43a12e7"
+      },
+      {
+        "path": "src/service-credit-original-request-custody-contract.js",
+        "bytes": 14051,
+        "LF": 356,
+        "sha256": "fd349de553a17abcc2e0567ba6640e6e3d5d26cfa79ee1e355928dc9fa8d3915",
+        "gitBlob": "f911d42d01b69e6577f9bcd66f4ed59aab8ab882"
+      },
+      {
+        "path": "src/service-credit-custodied-http-client.js",
+        "bytes": 12646,
+        "LF": 324,
+        "sha256": "35997f41c9a5162fe29ed56776181a1691c0a0a69c7dbdfe8b61785af3998145",
+        "gitBlob": "33879d019492de8d278b0d0dc998bd1c7806b413"
+      },
+      {
+        "path": "src/service-credit-custodied-sequential-runner-core.js",
+        "bytes": 15983,
+        "LF": 492,
+        "sha256": "044477cb1300453f10bacf070037db175d08deec1d488549b34a5cb92e6328bd",
+        "gitBlob": "e91acb307f4f0f5fb5292a805f7ca1d02b21b68d"
+      },
+      {
+        "path": "src/service-credit-custodied-request-owner.js",
+        "bytes": 55155,
+        "LF": 1358,
+        "sha256": "2ba222760d4a922bf0466d95fd2671076b9d19b8c5fa4ea2cb3c66b1338562eb",
+        "gitBlob": "7f99bdadcc622db203e864edb12a1f4d1059a965"
+      }
+    ],
+    "nativeImports": [
+      "node:assert/strict",
+      "node:buffer",
+      "node:crypto",
+      "node:test",
+      "node:timers",
+      "node:util"
+    ]
+  },
+  "retainedEvidence": {
+    "completeMetadataRecords": 6,
+    "metadataBytes": 21070,
+    "admissionSha256": "5ad9d5c0845e1eccc8cc51363166447c70b7c982fd0537010781ca1201793cfe",
+    "admissionBytes": 15436,
+    "verificationSha256": "22d3bdff1b3ef8373cbc73509ad454078759522d3f883b776b156151b7ead925",
+    "verificationBytes": 2266,
+    "callerProgramSha256": "30fb7bfeacbb01ce263ad2f158d2ddb2c99da14c704df5d7d17e3ae35ca97a1c",
+    "rawOutputPreserved": true,
+    "actualExitCompletenessAndSourceBindingsSeparatelyReread": true,
+    "oldFailedStoppedAndCompletedEvidencePreserved": true,
+    "publicRawPrivateReceiptsIncluded": false
+  },
+  "storageAndEfficiency": {
+    "explicitlyApprovedTaskSpecificPrivateRoot": true,
+    "sharedOldRootMutated": false,
+    "taskQuotaBytes": 2097152,
+    "logicalAllocationBoundBytes": 1153053,
+    "boundIncludesConfiguredOutputCaps": true,
+    "productionFloorMaintainedWithOldAndOwnedReservations": true,
+    "protectedUnchangedSourceReferences": 5,
+    "sourceBytesNotRecopied": 99248,
+    "newSourceRetentions": 3,
+    "newSourceBytes": 55325,
+    "unmodifiedRunnerSourceRetainedOnceForThisCurrentClosure": true,
+    "sourceAliases": 0,
+    "downloadOrArchiveCopies": 0,
+    "scratchAbsentAfterOwnedClose": true,
+    "closedTaskOutcome": "SUCCESS",
+    "protectedObjectsDeleted": 0,
+    "oldDatabaseOriginalsAndProtectedFilesUntouched": true,
+    "measuredApfsPhysicalReclaimClaim": false
+  },
+  "authorityBoundaries": {
+    "cases": 7,
+    "nativeCommands": 1,
+    "newPrivateFiles": 0,
+    "sql": 0,
+    "SDK": 0,
+    "keyGeneration": 0,
+    "signatures": 0,
+    "network": 0,
+    "sockets": 0,
+    "nonceSearch": 0,
+    "candidateEvaluations": 0,
+    "realPrepare": 0,
+    "payments": 0,
+    "oldQualificationEntriesReplayed": 0,
+    "sourceAliases": 0,
+    "actualNativeRequestImplementationSelected": false,
+    "borrowedStoreRemainsBorrowed": true,
+    "wholeRunOsDeadlineOrCleanupEstablished": false,
+    "existingOriginalRequestFundingAndDispatchIntentPreserved": true,
+    "authorizationNotPersistedOrRegenerated": true,
+    "borrowedStoreCloses": 0,
+    "lateClosesDoNotClearClientOrRunnerUncertainty": true,
+    "queuedSecondAfterUnknown": 0,
+    "ownedNativeSqliteHeldReleaseNotEstablished": true,
+    "validatedSameSignedBlockResendDistinctFromUnknownOrAcknowledged": true,
+    "protectedRealTotals": {
+      "consumedRealAdmissions": 2,
+      "actualPrepare": 1,
+      "bundles": 0,
+      "nativeChainOrProviderQualificationRuns": 0
+    },
+    "automationModelAndWorkerSettingsChanged": false
+  },
+  "publicationBoundary": {
+    "selectedLocalEvidenceOnly": true,
+    "hostedCI": {
+      "checks": 0,
+      "statuses": 0,
+      "runs": 0,
+      "meaning": "NOT_RUN_NOT_GREEN"
+    },
+    "freshExactMainDiffPRRulesAndEvidenceReviewRequired": true,
+    "noBranchProtectionBypassOrForcePush": true,
+    "noLiveActivationAuthorizedByPublication": true
+  },
+  "remainingGates": [
+    "Native HTTPS, socket close, actual owned SQLite HELD lifecycle and external terminal cleanup require separate source-bound qualification.",
+    "An application rejection never proves native cancellation or safe release; preserve the original operation and unknown authority.",
+    "Real backend integration, process restart, current payer/provider authority and supervised pilot acceptance remain separately gated.",
+    "Full P2, other roadmap lanes and production readiness remain incomplete."
+  ]
+}
