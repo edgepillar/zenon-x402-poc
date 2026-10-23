@@ -48,13 +48,28 @@ const READ = FREEZE(['observedUserSendReadVersion', 'phase', 'paymentRequired', 
  * state, a checkpoint-reader invocation or permission to sign again.
  */
 export function captureZenonDynamicPlasmaOriginalFundingInput(input, fundingResourceUrl) {
+  if (arguments.length !== 2) reject();
+  return captureInput(input, fundingResourceUrl, 6);
+}
+
+/**
+ * Explicit contextv7 DATA entry for the retained-candidate preparation owner.
+ * This selects a different contract; it does not upgrade v6 input or invoke
+ * revalidation, signing, preflight or custody. The actual v2 owner must do so.
+ */
+export function captureZenonDynamicPlasmaOriginalFundingInputV2(input, fundingResourceUrl) {
+  if (arguments.length !== 2) reject();
+  return captureInput(input, fundingResourceUrl, 7);
+}
+
+function captureInput(input, fundingResourceUrl, contextVersion) {
   try {
-    if (arguments.length !== 2 || !invariant()) reject();
+    if (!invariant()) reject();
     const url = resourceUrl(fundingResourceUrl);
     const stable = snapshot(input, 0, { nodes: 4096, characters: 131072 });
     const top = record(stable, ['plannerContext', 'challenge', 'originalRequest']);
     const planner = record(top.plannerContext, ['plannerContextVersion', 'readInput']);
-    if (planner.plannerContextVersion !== 6) reject();
+    if (planner.plannerContextVersion !== contextVersion) reject();
     const read = record(planner.readInput, READ);
     if (read.observedUserSendReadVersion !== 3 || read.phase !== 'UNSIGNED'
         || typeof read.runtimeContextDigest !== 'string'
@@ -96,9 +111,25 @@ export function captureZenonDynamicPlasmaOriginalFundingInput(input, fundingReso
  * from recovery metadata or re-encode a recovered payment for dispatch.
  */
 export function assembleZenonDynamicPlasmaOriginalFundingData(originals, candidate, fundingResourceUrl) {
+  if (arguments.length !== 3) reject();
+  return assembleData(originals, candidate, fundingResourceUrl, 6);
+}
+
+/**
+ * Initial contextv7 wire/checkpoint encoding only, returning DATA version2.
+ * Identical transaction/header/checkpoint bytes are retained across a later
+ * current-read check. Do not rebuild them at commit or infer that this DATA
+ * function performed the actual retained-candidate revalidation operation.
+ */
+export function assembleZenonDynamicPlasmaOriginalFundingDataV2(originals, candidate, fundingResourceUrl) {
+  if (arguments.length !== 3) reject();
+  return assembleData(originals, candidate, fundingResourceUrl, 7);
+}
+
+function assembleData(originals, candidate, fundingResourceUrl, contextVersion) {
   try {
-    if (arguments.length !== 3 || !invariant()) reject();
-    const input = captureZenonDynamicPlasmaOriginalFundingInput(originals, fundingResourceUrl);
+    if (!invariant()) reject();
+    const input = captureInput(originals, fundingResourceUrl, contextVersion);
     const pair = record(snapshot(candidate, 0, { nodes: 2048, characters: 65536 }),
       ['originalUnsignedBlock', 'accountBlock']);
     const original = FIELDS(pair.originalUnsignedBlock);
@@ -130,7 +161,7 @@ export function assembleZenonDynamicPlasmaOriginalFundingData(originals, candida
     const serializedCheckpoint = ENCODE_CHECKPOINT(captured.checkpoint);
     RESTORE(serializedCheckpoint, captured.pins);
     if (!invariant()) reject();
-    return FREEZE({ originalFundingDataVersion: 1,
+    return FREEZE({ originalFundingDataVersion: contextVersion === 7 ? 2 : 1,
       pair: FREEZE({ challenge: input.challenge, paymentSignatureHeader }),
       serializedCheckpoint, expectedPins: captured.pins,
       paymentPayload, requirement: read.accepted, paymentRequired: input.challenge.paymentRequired,
