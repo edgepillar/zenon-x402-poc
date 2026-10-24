@@ -1,6 +1,6 @@
 # Capacity payer-lane protocol
 
-The [protocol](../qualification/capacity-native-payer-lane.protocol.js) has 40
+The [protocol](../qualification/capacity-native-payer-lane.protocol.js) has 43
 passing selected local DATA controls on Node 24.19.0, darwin/arm64. This main
 batch contains the pure protocol, its direct tests and exact-source evidence.
 It does not contain or qualify the separate native payer-lane owner draft.
@@ -31,10 +31,18 @@ this pure protocol proves the state of a physical handle.
 ## Actual evidence and its limits
 
 The [controls](../qualification/capacity-native-payer-lane.protocol.behavior.mjs)
-directly import the real protocol: 40 pass, zero failures, cancellations, skips
-or TODO. The [result](../qualification/capacity-native-payer-lane.protocol.actual-local-result.json)
+directly import the real protocol: 43 pass, zero failures, cancellations, skips
+or TODO. Three cross-contract controls also call the genuine existing custody
+capture, validation, serialization and parsing functions on the unchanged bytes.
+The [current result](../qualification/capacity-native-payer-lane.protocol-v2.actual-local-result.json)
 records exact source hashes, expected case names, actual exits and complete
-stream digests. A single direct Node command uses the Node Permission Model
+stream digests. The earlier 40-control record is preserved as historical evidence,
+not current qualification: its self-consistent fixture omitted the required
+`sha256:` body-digest prefix. The protocol and fixture now use the real contract's
+prefixed digest; both the real custody contract and protocol reject the old bare
+hex and a wrong prefixed digest. The current controls perform metadata checksum
+hashing, not key generation, signing or cryptographic proof verification.
+A single direct Node command uses the Node Permission Model
 without source writes, child/worker permission or package installation; that is
 not an OS/network sandbox claim. It imports no native owner or SDK, opens no
 SQLite/socket, generates no keys/signatures and performs no nonce search. There
@@ -46,7 +54,7 @@ actual P1 client and V6 APIs, but requires additional real application sources
 that are not in this main batch. Its syntax-only result is not merged into this
 protocol's test total. Main receives no partial native graph or effectful default
 cutover. The existing 27-case hosted CI profile is unchanged and does not run
-these 40 controls.
+these 43 controls.
 
 P4 remains incomplete. Full-graph source/package admission, isolated native lane
 workers, actual parent application/RPC/grant orchestration, independent real
