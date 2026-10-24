@@ -70,3 +70,14 @@ separate. No default buyer, signer, workflow, package or hosted selection change
 The unchanged hosted profile still selects 27 DATA/component controls, not the
 new 163 controls. Green hosted CI cannot reclassify these local DATA results as
 native or production qualification. Old source-pinned records remain unchanged.
+
+## Independent cross-language DATA check
+
+The separate [Python timing-envelope checker](SERVICE_CREDIT_CAPACITY_PACED_TIMING_ENVELOPE_PYTHON_CHECK.md)
+now reconstructs the entire parent, queue and source recorder reports directly
+from this v2 single-copy raw layout. Its 65 selected controls use six clean and
+one HELD fixture produced by the genuine source owner/recorders. It imports no
+JavaScript, rewrites no R4 context and does not treat supplied check objects as
+proof. This remains timing DATA, not full native command/writer qualification;
+the timer and post-stop duration-series limitations remain explicit.
+
