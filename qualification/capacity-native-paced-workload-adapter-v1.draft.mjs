@@ -4,7 +4,8 @@
  * paced capacity owner. No injected worker, SQL, SDK, transport or clock.
  * Construction is inert; run/stop enter native timing/owners and need a NEW
  * finite approval plus a NEW complete parent profile/managed launcher. This
- * module is OUTSIDE the old R4 allowlist; it is not selected by any entry.
+ * module is OUTSIDE the old R4 allowlist; only the separate paced entry selects
+ * it. A managed private-profile producer/launcher is still required.
  * The current 139/404 graph must not be relabeled to admit this source. Pair
  * namespace/root guards and the remaining P4 preloader gates are not bypassed.
  * Not executed as native work, a sustainable benchmark or production proof.
@@ -15,7 +16,7 @@ import { types as utilTypes } from 'node:util';
 import { createServiceCreditCapacityPacedWorkloadOwnerCoreWithPrivateTimingTrace as CREATE_CORE } from '../src/service-credit-capacity-paced-workload-owner-core.js';
 import { captureNativeCapacityBalanceRead as BALANCE,
   captureNativeCapacityLedgerTimingPage as TIMING_PAGE } from '../src/service-credit-capacity-native-observation-data.js';
-import { createNativeCapacityPairedLane as CREATE_PAIR } from './capacity-native-paired-lane-v3.supervisor.draft.mjs';
+import { createNativeCapacityPacedPairedLane as CREATE_PAIR } from './capacity-native-paced-paired-lane-v1.supervisor.draft.mjs';
 import { createServiceCreditCapacityWindowWriterTraceData as WINDOW_TRACE } from '../src/service-credit-capacity-window-writer-trace-data.js';
 
 const F = Object.freeze, D = Object.getOwnPropertyDescriptor, O = Object.hasOwn;

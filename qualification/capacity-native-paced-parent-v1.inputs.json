@@ -1,0 +1,106 @@
+{
+  "sourceSelectionVersion": 1,
+  "kind": "NATIVE_CAPACITY_PACED_PARENT_WITH_FROZEN_R4_CHILDREN_SOURCE_NOT_EXECUTION",
+  "sourceParent": "d6e7f18bdec92c9a57caf050f413f630d4136fbe",
+  "mainParent": "11f8ade6526d39ee12d4a4d89fdb3ac61d11efea",
+  "runtime": {
+    "node": "24.19.0",
+    "platform": "darwin",
+    "arch": "arm64",
+    "nodeSha256": "dbedff294bab84a0a86c04e15fbcbeb1c97ca10bef1b32b0634cd24b36f62100",
+    "nodeBytes": 121304480
+  },
+  "legacyInventory": {
+    "path": "qualification/capacity-native-full-graph-v3.inputs.json",
+    "bytes": 8697,
+    "LF": 215,
+    "sha256": "3bb597da71736542615047d11af78ad6825df5bdb6e4561747d8c1f9dff7d0df",
+    "gitBlob": "0530e2b08929d45c93b4e4912dc69d27b0645204"
+  },
+  "legacyBaseline": {
+    "path": "qualification/issued-funding-post-native-vertical.inputs-v3.json",
+    "bytes": 138777,
+    "LF": 3836,
+    "sha256": "51ffb5b0ff0052523c1b7f3d75fa24e9be27e60ca3bcc09236b1f439096aaed1",
+    "gitBlob": "3dc05ccffd306e97056b4ed168d8121f63acebbc"
+  },
+  "parentSourceRowsSha256": "49da8ed7a1c416cfa8e2f22e04e10ce4fd28be015c139e8db16830279020687c",
+  "parentApplicationFiles": 145,
+  "parentPackageFiles": 404,
+  "parentDeclaredSourceBytes": 4892736,
+  "parentAdditionalInputs": [
+    {
+      "path": "app/qualification/capacity-native-paced-paired-lane-v1.supervisor.draft.mjs",
+      "bytes": 26158,
+      "LF": 291,
+      "sha256": "3fafd060f95cbfd235768b739f5043398e228b9a1988019d41c833447e314b47",
+      "gitBlob": "e21d21d39edb1eb2d0a7806e003b095ea39779b6"
+    },
+    {
+      "path": "app/qualification/capacity-native-paced-supervisor-v1.namespace.preload.draft.mjs",
+      "bytes": 22277,
+      "LF": 312,
+      "sha256": "0df91b28218c5fce00523263df33f5b0ed920125caa31b251e297c8d1619f24d",
+      "gitBlob": "33d54bd9b1151f7c3290c0fb88621db81277a2e3"
+    },
+    {
+      "path": "app/qualification/capacity-native-paced-workload-adapter-v1.draft.mjs",
+      "bytes": 19517,
+      "LF": 287,
+      "sha256": "735cfcf3957d4b945356a23eb9ea6020ffab3e6a66080e4cf65f04af13a3d0d1",
+      "gitBlob": "2719104c44da5b032d31714e5c3aef825a14e4bb"
+    },
+    {
+      "path": "app/qualification/capacity-native-paced-workload-v1.entry.draft.mjs",
+      "bytes": 8908,
+      "LF": 110,
+      "sha256": "53a6bfc88d38e1c2c9473ba1af7fdc63b93911b633da9ea28dc65eac94dbbdc5",
+      "gitBlob": "e69dc47c7108eb12cd74bb1078da0b08024dae63"
+    },
+    {
+      "path": "app/src/service-credit-capacity-paced-timing-trace-data.js",
+      "bytes": 20607,
+      "LF": 260,
+      "sha256": "3d338f0d8ba6f9ef53fdf81d49bdb6f0e16c98beb111a02f50a794dd67b1787b",
+      "gitBlob": "af9cfa9ea0bf3630803f7a8c1e8876032e7f781a"
+    },
+    {
+      "path": "app/src/service-credit-capacity-paced-workload-owner-core.js",
+      "bytes": 21119,
+      "LF": 398,
+      "sha256": "ec12fc8cef93f2ecda6ca88c8bf193db183a8a3f456d3a712411d319dfe7761f",
+      "gitBlob": "eb12bbbe1e3b468f1c8e0acf09ce94b076825178"
+    }
+  ],
+  "childSourceRowsSha256": "d756740994aeb53ebeee47320d732583d96381dfa8c00e18a30f414e70a77027",
+  "childApplicationFiles": 139,
+  "childPackageFiles": 404,
+  "parentRole": {
+    "profileVersion": 1,
+    "profileKind": "NATIVE_CAPACITY_PACED_SUPERVISOR_NODE24_V1",
+    "role": "SUPERVISOR",
+    "entry": "app/qualification/capacity-native-paced-workload-v1.entry.draft.mjs",
+    "preloader": "app/qualification/capacity-native-paced-supervisor-v1.namespace.preload.draft.mjs",
+    "namespace": "getPinnedNativeCapacityPacedSupervisorNamespaceSnapshotV1",
+    "selection": "native-capacity-paced-supervisor-source-draft-v1",
+    "workloadSelection": "native-capacity-paced-workload-source-draft-v1",
+    "runScope": "one-reviewed-native-capacity-paced-parent-v1"
+  },
+  "childRoleProfilesRemainVersion3": true,
+  "originalChildWorkersAndPreloadersUnchanged": true,
+  "separateParentNamespaceImplemented": true,
+  "completeChildProfileSourceComparisonImplemented": true,
+  "managedPrivateProfileProducerImplemented": false,
+  "completeManagedLauncherImplemented": false,
+  "completeGraphPhysicalFileRead": false,
+  "packageFilesOpenedForThisDeclaration": 0,
+  "preloaderOrEntryTopLevelExecuted": false,
+  "nativeAdmissionExecuted": false,
+  "nativeExecuted": false,
+  "sourceTransforms": 0,
+  "nativeBuiltinAliases": 0,
+  "compatibilitySupervisorNamespaceInstalled": false,
+  "nativeOsNetworkSandbox": false,
+  "sourceOrPackageTreeCopies": 0,
+  "authority": "NONE"
+}
