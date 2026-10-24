@@ -77,3 +77,13 @@ unchanged. Main, hosted CI, default buyer/signer, protected historical evidence
 and storage roots were not changed by this work.
 Full P2, real crash/reopen/native cleanup, physical durability, service delivery,
 live pilot and production remain unqualified.
+
+## Current principal path alignment
+
+The supervisor now selects the existing P1 fixture's
+`native-issued-service.sqlite` and `native-issued-payer-v6.sqlite` names, not
+an invented alternate pair. This does not remove intake/observer stores or
+reduce the future full application graph. The initial supervisor syntax result
+above remains source-bound and unchanged; the current path-only correction and
+fresh syntax check are recorded [separately](../qualification/recovery-crash-cutpoint-supervisor.paths.source-review.json).
+No supervisor/child/native experiment ran as part of that correction.

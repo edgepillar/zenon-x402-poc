@@ -1,0 +1,78 @@
+{
+  "kind": "CRASH_SUPERVISOR_PRINCIPAL_PATH_ALIGNMENT_SOURCE_REVIEW_NOT_NATIVE_PASS",
+  "version": 1,
+  "date": "2026-10-24",
+  "sourceParent": "454a219dcf63d628cb837f638943bb17e79e278f",
+  "actualProtocolDataResultUnchanged": "qualification/recovery-crash-cutpoint-protocol.actual-local-result.json",
+  "originalSupervisorSyntaxRetainedAtSourceParent": true,
+  "currentSupervisorSyntax": {
+    "actualExit": 0,
+    "streamsComplete": true,
+    "stdoutBytes": 0,
+    "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stderrBytes": 0,
+    "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "imported": false,
+    "nativeEffects": false,
+    "sources": [
+      {
+        "path": "qualification/recovery-crash-cutpoint-supervisor.draft.mjs",
+        "sha256": "e070136418e0fe9adaf9b65fedf17093d19fb3a9c52ebac07ef9822e860e04e8",
+        "bytes": 15824
+      },
+      {
+        "path": "package.json",
+        "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+        "bytes": 2677
+      },
+      {
+        "path": "qualification/recovery-crash-cutpoint-protocol.js",
+        "sha256": "2c04f8ead07c30a756fc57dc656d71432688bf17f682610848d0df93d8350baf",
+        "bytes": 10113
+      }
+    ]
+  },
+  "sourceBinding": {
+    "event": "Q114_CRASH_PRINCIPAL_PATHS_SOURCE_BINDING",
+    "samePrincipalPathNames": true,
+    "fullApplicationOtherStoresRemoved": false,
+    "sourceOnly": true,
+    "effectsExecuted": false,
+    "sources": [
+      {
+        "path": "qualification/recovery-crash-cutpoint-supervisor.draft.mjs",
+        "bytes": 15824,
+        "LF": 263,
+        "sha256": "e070136418e0fe9adaf9b65fedf17093d19fb3a9c52ebac07ef9822e860e04e8",
+        "gitBlob": "27b39e3ba5c6cf9e063bcd631bd10dbf8195c22e"
+      },
+      {
+        "path": "qualification/issued-funding-post-native-grant-operator.fixture.draft.mjs",
+        "bytes": 24047,
+        "LF": 313,
+        "sha256": "b1224cc52ef9a5dd67418392b3064ea79d6a7f8c8abb9c7fb9b986a42bb4f587",
+        "gitBlob": "a2438e531abb1fa9103aa43def9e94986d502368"
+      },
+      {
+        "path": "qualification/issued-funding-post-native-vertical.case.draft.mjs",
+        "bytes": 34893,
+        "LF": 487,
+        "sha256": "59240af09c54cf9252b016417091157b182a2ae10993e6f3744694bef2b319d8",
+        "gitBlob": "98fa0e8b5f98c0b47a749d4c68b8ab2195a574f2"
+      }
+    ]
+  },
+  "principalPaths": [
+    "native-issued-service.sqlite",
+    "native-issued-payer-v6.sqlite"
+  ],
+  "fullApplicationOtherStoresRemoved": false,
+  "oldInventedPairNotRetainedAsNativeTarget": true,
+  "currentV3ManifestAnd117ApplicationRowsUnchanged": true,
+  "actualSupervisorRuns": 0,
+  "actualCrashChild": "NOT_YET_IMPLEMENTED",
+  "fullNativeProfile": "NOT_YET_COMPLETED",
+  "fullApplicationCrashHeldSocketComposition": "NOT_QUALIFIED",
+  "authority": "NONE",
+  "productionQualified": false
+}
