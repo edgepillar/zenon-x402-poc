@@ -1,0 +1,305 @@
+{
+  "schemaVersion": 1,
+  "status": "ACTUAL_DATA_COMPONENT_PASS_NATIVE_ACTOR_SYNTAX_ONLY",
+  "sourceParent": "03fd5b5ba75d71208e7f24bf15fa95719bd690be",
+  "mainParent": "21aa0770caf6590053bff05ab9c24d200c0928c8",
+  "description": "Bind the explicit local RPC CA to the detached funding/service CA and wire the separate named local entry to the actual retained read core.",
+  "execution": {
+    "nodeVersion": "v24.19.0",
+    "platform": "darwin",
+    "architecture": "arm64",
+    "nodeExecutableSha256": "dbedff294bab84a0a86c04e15fbcbeb1c97ca10bef1b32b0634cd24b36f62100",
+    "totalNodeCommands": 3,
+    "pureComponentCommands": 2,
+    "syntaxOnlyCommands": 1,
+    "NodeChildren": 0,
+    "SDK": 0,
+    "SQLite": 0,
+    "keys": 0,
+    "signatures": 0,
+    "nonceEvaluations": 0,
+    "OpenSSL": 0,
+    "TLS": 0,
+    "sockets": 0,
+    "downloads": 0,
+    "installs": 0,
+    "newManagedRoots": 0,
+    "newManagedTasks": 0,
+    "newQualificationScratchBytes": 0,
+    "sourceTransforms": 0,
+    "nativeBuiltinAliases": 0,
+    "cleanup": 0
+  },
+  "currentComponent": {
+    "actualExit": 0,
+    "outputComplete": true,
+    "counts": {
+      "tests": 18,
+      "pass": 18,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "cases": [
+      "ok 1 - one closed DATA export and exact two-argument contract",
+      "ok 2 - matching explicit RPC port and CA produce only a frozen detached selection",
+      "ok 3 - trust comparison uses exact bytes rather than Buffer identity",
+      "ok 4 - one different CA byte refuses without changing either borrowed input",
+      "ok 5 - prefix-equivalent CAs of different lengths are not the same trust selection",
+      "ok 6 - unprivileged integer port bounds match the actual source-owned read policy",
+      "ok 7 - one-byte and 64 KiB equal synthetic trust buffers are fully copied",
+      "ok 8 - only exact frozen own DATA records including null-prototype snapshots are accepted",
+      "ok 9 - option accessors are refused before getter invocation",
+      "ok 10 - proxy and revoked option records are refused before reflection hooks",
+      "ok 11 - request factories extra flags symbols and hidden fields cannot widen selection",
+      "ok 12 - both CA inputs must be bounded genuine Buffer data without implicit conversions",
+      "ok 13 - shared backing storage and CA proxies are rejected in either trust domain",
+      "ok 14 - CA adornments fake prototypes and subclass buffers are not assimilated",
+      "ok 15 - mutation after capture cannot replace the owned read trust bytes",
+      "ok 16 - separate selections and actual role-policy copies have independent CA ownership",
+      "ok 17 - refusals reveal neither input CA material nor original reflection failures",
+      "ok 18 - selection carries no constructor callback authority or native qualification claim"
+    ],
+    "footer": {
+      "entered": 18,
+      "completed": 18,
+      "hooks": 0,
+      "actualPureModules": 2,
+      "nativeActorImported": false,
+      "nativeActorCalled": false,
+      "actualNativeOwners": 0,
+      "CAData": "SYNTHETIC_BYTES_NOT_CERTIFICATE_VALIDATION",
+      "SDK": 0,
+      "SQLite": 0,
+      "TLS": 0,
+      "sockets": 0,
+      "keys": 0,
+      "signatures": 0,
+      "nonceEvaluations": 0,
+      "authority": "NONE",
+      "productionQualified": false
+    },
+    "inputs": [
+      {
+        "path": "package.json",
+        "bytes": 2677,
+        "LF": 40,
+        "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+        "gitBlob": "45752ffde39d29666094f7f1c755060d75e43deb"
+      },
+      {
+        "path": "src/zenon/native-read-loopback-qualification-configuration.js",
+        "bytes": 4126,
+        "LF": 80,
+        "sha256": "1d8c20410d5ab8786c1fbf2dc1ef9c8346bc2b30c1c8146f16e46ff231cd0427",
+        "gitBlob": "15ae6af21f8f07351e7e4f680557d247cc379b88"
+      },
+      {
+        "path": "src/zenon/native-funding-service-loopback-read-selection.js",
+        "bytes": 1927,
+        "LF": 40,
+        "sha256": "fc97d86db3b24ef17572ff2cf14ac0620c422d8a7164de953f7e95b74656ac7c",
+        "gitBlob": "7962084da741d546738a64386428a885ba5d32c9"
+      },
+      {
+        "path": "qualification/native-funding-service-loopback-read-selection.behavior.draft.mjs",
+        "bytes": 11457,
+        "LF": 175,
+        "sha256": "4d1b322b46e9305d9091025a49ab56d64579aa1ea6000c032977a4e632109465",
+        "gitBlob": "98f6c24e4b1230dafdc493ecab6895f708a66fc8"
+      }
+    ],
+    "streams": {
+      "stdout": {
+        "bytes": 4309,
+        "sha256": "e921dfbb88d0a1bd30d177e148e121458c250e4d9fd99e572a9f3e4a7b84999d"
+      },
+      "stderr": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    "sourceIdentityBeforeAndAfter": "CHECKED_PRIVATE_IDENTITIES_NOT_PUBLISHED",
+    "selectedEntryOnly": true,
+    "testDiscovery": false,
+    "noAddons": true,
+    "dynamicCodeGeneration": false,
+    "compileCache": false,
+    "childPermission": false,
+    "workerPermission": false,
+    "filesystemWritePermission": false,
+    "filesystemReads": "FOUR_PINNED_SOURCE_FILES_ONLY",
+    "OSOrNetworkSandboxClaim": false
+  },
+  "retainedFirstFailure": {
+    "actualExit": 1,
+    "outputComplete": true,
+    "counts": {
+      "tests": 12,
+      "pass": 11,
+      "fail": 1,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "cases": [
+      "ok 1 - one closed DATA export and exact two-argument contract",
+      "ok 2 - matching explicit RPC port and CA produce only a frozen detached selection",
+      "ok 3 - trust comparison uses exact bytes rather than Buffer identity",
+      "ok 4 - one different CA byte refuses without changing either borrowed input",
+      "ok 5 - prefix-equivalent CAs of different lengths are not the same trust selection",
+      "ok 6 - unprivileged integer port bounds match the actual source-owned read policy",
+      "ok 7 - one-byte and 64 KiB equal synthetic trust buffers are fully copied",
+      "ok 8 - only exact frozen own DATA records including null-prototype snapshots are accepted",
+      "ok 9 - option accessors are refused before getter invocation",
+      "ok 10 - proxy and revoked option records are refused before reflection hooks",
+      "ok 11 - request factories extra flags symbols and hidden fields cannot widen selection",
+      "not ok 12 - both CA inputs must be bounded genuine Buffer data without implicit conversions"
+    ],
+    "inputs": [
+      {
+        "path": "package.json",
+        "bytes": 2677,
+        "LF": 40,
+        "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+        "gitBlob": "45752ffde39d29666094f7f1c755060d75e43deb"
+      },
+      {
+        "path": "src/zenon/native-read-loopback-qualification-configuration.js",
+        "bytes": 4126,
+        "LF": 80,
+        "sha256": "1d8c20410d5ab8786c1fbf2dc1ef9c8346bc2b30c1c8146f16e46ff231cd0427",
+        "gitBlob": "15ae6af21f8f07351e7e4f680557d247cc379b88"
+      },
+      {
+        "path": "src/zenon/native-funding-service-loopback-read-selection.js",
+        "bytes": 1927,
+        "LF": 40,
+        "sha256": "fc97d86db3b24ef17572ff2cf14ac0620c422d8a7164de953f7e95b74656ac7c",
+        "gitBlob": "7962084da741d546738a64386428a885ba5d32c9"
+      },
+      {
+        "path": "qualification/native-funding-service-loopback-read-selection.behavior.draft.mjs",
+        "bytes": 11389,
+        "LF": 173,
+        "sha256": "327889c7c010ec61ffd4ab775ca6fa94bce65ea39bc747b84b792a672d2b0b6a",
+        "gitBlob": "155d297ba27a976b07588645635a5a9bef10da0d"
+      }
+    ],
+    "streams": {
+      "stdout": {
+        "bytes": 4408,
+        "sha256": "c1da094ad661729671e51b2e8bc8dc91c7c3b3d8822f23042cf7475b2a84885c"
+      },
+      "stderr": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    "diagnosis": "The test options helper replaced an explicitly provided undefined CA with a default value. The twelfth case correctly failed; later cases were not entered.",
+    "fix": "Preserve explicit undefined separately from omitted arguments in the test helper. Production source was unchanged.",
+    "rawPrivateDiagnosticsPublished": false,
+    "retryAuthority": "ROUTINE_DATA_ONLY_COMPONENT_SCOPE_NOT_NATIVE_TLS_SCOPE"
+  },
+  "sourceReview": {
+    "actorBefore": {
+      "path": "src/zenon/dynamic-plasma-native-funding-service-client.js",
+      "bytes": 29282,
+      "LF": 471,
+      "sha256": "84e103d1adef0c1854e4326453b5ebff8c767b7d88c21e86eb7ce7f52020ace9",
+      "gitBlob": "2e35adfdf090205f90666f2e3387da70bdc03ac8"
+    },
+    "actorAfter": {
+      "path": "src/zenon/dynamic-plasma-native-funding-service-client.js",
+      "bytes": 31340,
+      "LF": 506,
+      "sha256": "5ed9ac6189f2f86bcc2195c5c6da03ecec7e1e779c4084490029270e617743a8",
+      "gitBlob": "53bba44ab96c860600ef9df10e94edae8aa1cff7"
+    },
+    "actorSyntax": {
+      "path": "src/zenon/dynamic-plasma-native-funding-service-client.js",
+      "syntaxActualExit": 0,
+      "outputComplete": true,
+      "applicationImported": false,
+      "input": {
+        "path": "src/zenon/dynamic-plasma-native-funding-service-client.js",
+        "bytes": 31340,
+        "LF": 506,
+        "sha256": "5ed9ac6189f2f86bcc2195c5c6da03ecec7e1e779c4084490029270e617743a8",
+        "gitBlob": "53bba44ab96c860600ef9df10e94edae8aa1cff7"
+      },
+      "stdoutBytes": 0,
+      "stderrBytes": 0,
+      "NodeCommands": 1,
+      "nativeTlsExecuted": false
+    },
+    "newPureHelper": {
+      "path": "src/zenon/native-funding-service-loopback-read-selection.js",
+      "bytes": 1927,
+      "LF": 40,
+      "sha256": "fc97d86db3b24ef17572ff2cf14ac0620c422d8a7164de953f7e95b74656ac7c",
+      "gitBlob": "7962084da741d546738a64386428a885ba5d32c9"
+    },
+    "localEntry": "openZenonDynamicPlasmaNativeFundingServiceClientForLocalQualification(configuration, localReadOptions)",
+    "unchangedPublicEntry": "openZenonDynamicPlasmaNativeFundingServiceClient(configuration)",
+    "localReadOptions": "EXACT_FROZEN_PORT_CA_DATA_ONLY",
+    "readOwnerFactory": "createRetainedDynamicPlasmaHttpsReadSessionForLocalQualification",
+    "defaultReadOwnerFactory": "createRetainedDynamicPlasmaHttpsReadSessionV2",
+    "captureOrder": "Local CA/port capture and same-CA comparison occur synchronously before module claim, native owner construction, store open or first await.",
+    "ownership": "Only temporary owned selection bytes are cleared after actual read owners synchronously detach their own copies; caller CA buffers are never cleared. The existing private service CA lifetime is unchanged.",
+    "rpcPort": "EXPLICIT_INTEGER_1024_TO_65535_MAY_DIFFER_FROM_APPLICATION_PORT",
+    "nativeRolePolicy": "UNCHANGED_LOCALHOST_127_0_0_1_WITH_CLOSED_FIRST_SECOND_ACCOUNT_PATHS_AND_NO_FALLBACK",
+    "preserved": "Existing V6 file ownership, actual funding/service constructors, original bytes/hash, one funding POST, handoff guard, bounded close and HELD behavior remain in the shared actor core.",
+    "verificationKind": "SOURCE_DIFF_AND_LITERAL_API_ALIGNMENT_NOT_BEHAVIOR",
+    "nativeActorImported": false,
+    "nativeActorCalled": false,
+    "actualRetainedReadOwnersCreated": 0,
+    "actualFundingOrServiceConstructorsCalled": 0,
+    "actualNativeCleanupProven": false,
+    "actualSharedActorPublicCompatibilityProven": false
+  },
+  "history": {
+    "pendingFullDpManifestPath": "qualification/dynamic-plasma-full-native-loopback.inputs.json",
+    "pendingFullDpManifestSha256": "a472e3bcd8840ef4236e395cb918ae5f2a84be9ca45d8f59417c0b77da291933",
+    "frozenPendingDpApplicationAndLauncherInputs": "CHECKED_UNCHANGED_NOT_EXECUTED",
+    "previousResults": "PRESERVED_AS_HISTORICAL_NOT_REQUALIFIED",
+    "oldFundingTlsAttempts": "NOT_REUSED_OR_EXTENDED"
+  },
+  "publication": {
+    "eligibleSourceFiles": [
+      "src/zenon/dynamic-plasma-native-funding-service-client.js",
+      "src/zenon/native-funding-service-loopback-read-selection.js",
+      "qualification/native-funding-service-loopback-read-selection.behavior.draft.mjs",
+      "qualification/native-funding-service-loopback-read-selection.actual-local-result.json",
+      "docs/P1_NATIVE_FUNDING_SERVICE_LOOPBACK_READ_SELECTION.md"
+    ],
+    "eligibleMainFiles": [
+      "src/zenon/native-funding-service-loopback-read-selection.js",
+      "qualification/native-funding-service-loopback-read-selection.behavior.draft.mjs",
+      "qualification/native-funding-service-loopback-read-selection.actual-local-result.json",
+      "docs/P1_NATIVE_FUNDING_SERVICE_LOOPBACK_READ_SELECTION.md"
+    ],
+    "nativeActorEligibleForMain": false,
+    "mainScope": "ADDITIVE_ACTUAL_DATA_HELPER_SELECTED_TEST_RESULT_AND_DOCUMENT_ONLY",
+    "CIAtParents": {
+      "source": {
+        "checks": 0,
+        "statuses": 0,
+        "runs": 0
+      },
+      "main": {
+        "checks": 0,
+        "statuses": 0,
+        "runs": 0
+      }
+    },
+    "CIInterpretation": "NO_CURRENT_PASS_INFERRED_NO_WORKFLOW_DISPATCH"
+  },
+  "next": "Continue the actual issued-application/native RPC harness. A new source-pinned wider runtime profile and separate authority are still required before SDK, SQL, signing, nonce and TLS composition.",
+  "fullP0Complete": false,
+  "fullP1Complete": false,
+  "fullP2Complete": false,
+  "fullRoadmapComplete": false,
+  "productionQualified": false
+}
