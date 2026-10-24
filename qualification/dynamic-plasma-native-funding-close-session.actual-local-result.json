@@ -1,0 +1,448 @@
+{
+  "status": "PASS_ACTUAL_CLOSE_COMPONENT_COMPOSITION_NOT_NATIVE_GRAPH",
+  "scope": "Actual extracted native-close session plus unchanged actual retained-read core, funding close lifecycle owner and bounded original-funding join. Native custody views and store boundaries remain declared data.",
+  "sourceParent": "9918c3a5f52e50acc0b2a45ba8fc74855c740c8e",
+  "mainParent": "659ea94e34e9b6cba6d38e82cbed00f8bfedc2ed",
+  "actualComponent": {
+    "actualExit": 0,
+    "outputComplete": true,
+    "reason": null,
+    "firstAttemptPassed": true,
+    "counts": {
+      "tests": 20,
+      "passed": 20,
+      "failed": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "cases": [
+      "inert construction preserves read options and cached inspection never probes owners",
+      "exact frozen owner capture refuses proxies accessors and unfrozen methods without hooks",
+      "both independent close requests start before either pending Promise settles",
+      "a throwing read close cannot suppress the independent funding close attempt",
+      "a throwing funding close preserves the already requested read close and permanent unknown",
+      "child rejection reasons remain opaque and no late successful peer repairs unknown",
+      "arbitrary thenables and direct public close dependencies are refused without then hooks",
+      "aliased child promises and accessor funding close results never establish a clean pair",
+      "aggregate read version counts and close uncertainty are current mandatory data",
+      "every native read owner must have current clean zero-count and late-error data",
+      "late funding uncertainty vetoes permits without rewriting an already fulfilled close",
+      "snapshot proxies accessors owner-array hooks and negative zero are refused without getters",
+      "reentrant current-view inspection permanently refuses instead of recursing into authority",
+      "wrong close guard and inspection arity cannot consume the genuine cached close",
+      "intrinsic drift still requests both prehandled declared closes without unsafe reactions",
+      "actual read core funding close owner and bounded join compose cleanly without native I/O",
+      "one never-settling actual read-core close cannot hold the enclosing public close forever",
+      "pending original operation stays joined and expiry cannot be repaired by later operation settlement",
+      "actual funding close-owner late error vetoes a declared post-await store boundary",
+      "a late declared retired-read error overrides historical aggregate close before store entry"
+    ],
+    "inputs": [
+      {
+        "path": "package.json",
+        "bytes": 2677,
+        "LF": 40,
+        "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+        "gitBlob": "45752ffde39d29666094f7f1c755060d75e43deb"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-native-funding-close-session.js",
+        "bytes": 11968,
+        "LF": 220,
+        "sha256": "642ba6edf4983818145b973116638e63f15eaa0fcc4fe342052d927a096d2bc7",
+        "gitBlob": "df3a376c6a1e4291a49eb65d07a256ea10aa07fe"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-retained-read-session-core.js",
+        "bytes": 10450,
+        "LF": 204,
+        "sha256": "a0f91046c47cfa770f30bf299f620086351ee15977f669d9ec6016dd08d65794",
+        "gitBlob": "b9151955b073be614946525e70320600f7a6850b"
+      },
+      {
+        "path": "src/zenon/bounded-json-rpc-read-admission.js",
+        "bytes": 2627,
+        "LF": 51,
+        "sha256": "0b0b0806487c2e648a83367a9ebcd48a3a92493158ebca23abe8d6d6849d9ff3",
+        "gitBlob": "9e9ee352d7cf0013d96851c769f2a205ccf98449"
+      },
+      {
+        "path": "src/service-credit-native-client-close-owner.js",
+        "bytes": 7170,
+        "LF": 149,
+        "sha256": "00366016a37cf71234cb305e860b5d3f406c97f6b6a7af8569ae76726b759c91",
+        "gitBlob": "ed68174f93050d837786ab799b3b6dee5f7e0676"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-original-funding-bounded-read-close.js",
+        "bytes": 10732,
+        "LF": 197,
+        "sha256": "69fe92b9460aba5f5ecb671a4befe059f0686f4ca2e50ffeaf468e25893f0f9c",
+        "gitBlob": "fa279111addab91315d54f7333bbbb9266369c53"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-original-funding-read-close.js",
+        "bytes": 9568,
+        "LF": 178,
+        "sha256": "5086567b2c0cce0fc3419db69641beb7e5e434d47f83e17015682964ad482a45",
+        "gitBlob": "f2a1b30bb02a6b192fc3b0fe0b4fc5b65e2d297b"
+      },
+      {
+        "path": "src/service-credit-bounded-operation-drain.js",
+        "bytes": 4046,
+        "LF": 92,
+        "sha256": "ccaf1742f94a2ae312598c4bb2adc0c6168b1ade0167dbc8990422f5e7037885",
+        "gitBlob": "9cb4987ecd835e7b558d6088d562f417a9179da8"
+      },
+      {
+        "path": "qualification/dynamic-plasma-native-funding-close-session.behavior.draft.mjs",
+        "bytes": 22101,
+        "LF": 302,
+        "sha256": "c10902bcd0362ce230cd9dc422947fafb3e24332984acedef817d4ee68f45230",
+        "gitBlob": "64f328c9d039122bb98004812fb0a069d17ca1c8"
+      }
+    ],
+    "streams": {
+      "stdout": {
+        "bytes": 5515,
+        "sha256": "6adaa7a5eb0e935baef05daa7b033492dce80f4c6b1a9fe7c2b5f4572b784b94"
+      },
+      "stderr": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    "footer": {
+      "entered": 20,
+      "completed": 20,
+      "hooks": 0,
+      "reads": 65,
+      "fundingEntries": 65,
+      "actualReadCoreConstructions": 5,
+      "actualFundingCoreConstructions": 5,
+      "declaredStoreEntries": 1,
+      "actualProductionModules": 7,
+      "nativeViews": "DECLARED_DATA_NOT_NATIVE_HANDLES",
+      "storeBoundary": "DECLARED_CALLBACK_NOT_ACTUAL_PAYER_OR_STORE",
+      "realBoundedTimers": true,
+      "actualNativeFactoryImported": false,
+      "actualV4Imported": false,
+      "actualPayerImported": false,
+      "SDK": 0,
+      "SQLite": 0,
+      "sockets": 0,
+      "keys": 0,
+      "signatures": 0,
+      "nonceEvaluations": 0,
+      "nativeResourceCleanup": "NOT_QUALIFIED",
+      "authority": "NONE"
+    },
+    "actualProductionModules": 7,
+    "actualReadCoreConstructions": 5,
+    "actualFundingCloseCoreConstructions": 5,
+    "runtime": {
+      "version": "v24.19.0",
+      "platform": "darwin",
+      "architecture": "arm64",
+      "sha256": "dbedff294bab84a0a86c04e15fbcbeb1c97ca10bef1b32b0634cd24b36f62100"
+    },
+    "command": {
+      "entry": "qualification/dynamic-plasma-native-funding-close-session.behavior.draft.mjs",
+      "directNodeCommands": 1,
+      "nodeChildProcesses": 0,
+      "selectedBy": "twenty-sdk-free-close-composition-cases",
+      "readOnlyInputGrants": 9,
+      "filesystemWriteGrant": false,
+      "childGrant": false,
+      "workerGrant": false,
+      "addons": false,
+      "compileCacheDisabled": true,
+      "dynamicCodeGenerationFromStrings": false,
+      "unhandledRejections": "strict",
+      "supervisorDeadlineSeconds": 15,
+      "captureCapPerStreamBytes": 65536,
+      "allInputIdentitiesAndBytesMatchedBeforeAfter": true,
+      "runtimeIdentityAndBytesMatched": true,
+      "completeCaptureRetainedInCommandRecord": true,
+      "ramCaptureOnly": true,
+      "OSOrNetworkSandboxClaim": false
+    },
+    "timingInterpretation": "Reported durations are not a performance benchmark or exact timer deadline guarantee.",
+    "declaredCounterInterpretation": "Footer reads/fundingEntries count declared fixture close callbacks, not native requests. One declared store entry is not SQLite or actual payer execution."
+  },
+  "actualNativeFactorySyntaxOnly": {
+    "event": "Q92_ACTUAL_NATIVE_FACTORY_SYNTAX_COMPLETE",
+    "NodeCommands": 1,
+    "NodeChildren": 0,
+    "inputs": [
+      {
+        "path": "package.json",
+        "bytes": 2677,
+        "LF": 40,
+        "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+        "gitBlob": "45752ffde39d29666094f7f1c755060d75e43deb"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-native-https-original-funding-submission.js",
+        "bytes": 6748,
+        "LF": 104,
+        "sha256": "dcae184c5d8db5b4104920f2f3f8904b524c2cab38b4a867b1568f5db72e9493",
+        "gitBlob": "554adc3620487813d9535590ff1f1cfbcdc24317"
+      }
+    ],
+    "results": [
+      {
+        "input": {
+          "path": "src/zenon/dynamic-plasma-native-https-original-funding-submission.js",
+          "bytes": 6748,
+          "LF": 104,
+          "sha256": "dcae184c5d8db5b4104920f2f3f8904b524c2cab38b4a867b1568f5db72e9493",
+          "gitBlob": "554adc3620487813d9535590ff1f1cfbcdc24317"
+        },
+        "syntaxActualExit": 0,
+        "outputComplete": true,
+        "reason": null,
+        "streams": {
+          "stdout": {
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "stderr": {
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        "stderr": "",
+        "applicationImported": false,
+        "applicationExecuted": false
+      }
+    ],
+    "SDKImports": 0,
+    "SQLiteOpens": 0,
+    "networkCalls": 0,
+    "newScratch": 0,
+    "nativeReadGraphImported": false,
+    "nativeReadGraphRuntimeQualified": false,
+    "previousSourcePin": {
+      "path": "src/zenon/dynamic-plasma-native-https-original-funding-submission.js",
+      "bytes": 10947,
+      "LF": 182,
+      "sha256": "9005bbcde0d3d05771f021916985d3238953d679eca136cb90226a8e940d6207",
+      "gitBlob": "b75e2ef97030e712d704d88fe3cb9d5e103039a1"
+    },
+    "interpretation": "The current changed native factory was parsed by node --check only; imports, actual native constructors, V4/payer, SDK and SQLite did not execute.",
+    "graphRuntimeQualified": false
+  },
+  "actualFactorySourceConnection": {
+    "factoryExport": "createZenonDynamicPlasmaNativeHttpsOriginalFundingSubmission",
+    "extractedSelection": "createNativeOriginalFundingCloseSession(reads, funding)",
+    "actualReadOwnerSelection": "createRetainedDynamicPlasmaHttpsReadSessionV2",
+    "actualFundingSelection": "createFundingPostNativeHttpsTransport",
+    "actualSubmissionSelection": "createZenonDynamicPlasmaOriginalFundingSubmissionV4",
+    "publiclySuppliedOwnerOrRequestFactories": false,
+    "defaultBuyerChanged": false,
+    "actualPublicV4MethodsPreservedBySource": true,
+    "previousInlineJoinRemoved": true,
+    "previousInlineOnlyPromiseHelpersRemoved": true,
+    "nativeFactoryLinesBefore": 182,
+    "nativeFactoryLinesAfter": 104,
+    "changedFactoryOnMain": false,
+    "actualFactoryImported": false,
+    "SDKSQLiteHTTPSGraphExecuted": false,
+    "previousResultsNotRebound": true
+  },
+  "behavior": {
+    "constructionAndCachedInspectionInert": true,
+    "readOptionsIdentityPreserved": true,
+    "publicCloseReservedAndPrehandledBeforeSourceCloseCallbacks": true,
+    "independentReadAndFundingCloseAttemptedEvenOnPeerThrowOrIntrinsicDrift": true,
+    "currentReadAggregateVersionCountsAndUncertaintyRequired": true,
+    "currentThreeOwnerNativeViewsRequired": true,
+    "currentFundingTopAndNestedCloseViewsRequired": true,
+    "localReleaseAttemptAndReturnRequired": true,
+    "currentNestedObservedCountsRequired": true,
+    "immutableOwnDataOnly": true,
+    "proxyAccessorThenableAndNegativeZeroRefused": true,
+    "reentrantInspectionPermanentlyRefused": true,
+    "directPublicCloseCycleAndChildPromiseAliasRefused": true,
+    "rawChildFailureReasonInspected": false,
+    "cachedHistoricalCloseOutcomePreservedOnLaterVeto": true,
+    "lateCurrentViewFailureCannotRestorePermits": true,
+    "addedTimers": 0,
+    "addedPollingLoops": 0,
+    "addedSocketOperations": 0,
+    "newStoreCloseImplementation": false,
+    "enclosingBudget": "Actual existing bounded original-funding join; this extracted session adds no watchdog.",
+    "physicalCleanup": "NOT_QUALIFIED",
+    "storeLifetime": "NOT_OWNED",
+    "automaticRetry": false,
+    "reopen": false,
+    "reSign": false,
+    "authority": "NONE"
+  },
+  "selectedCompositions": [
+    {
+      "case": 16,
+      "actualComponents": "read core + funding close lifecycle + extracted native join + bounded original-funding join",
+      "outcome": "CLOSED_CONTRACT_DATA_ONLY",
+      "nativeViews": "DECLARED",
+      "storeBoundary": "DECLARED"
+    },
+    {
+      "case": 17,
+      "outcome": "BOUNDED_UNKNOWN_ON_PENDING_READ",
+      "lateReadCompletionRestoresStoreEntry": false
+    },
+    {
+      "case": 18,
+      "outcome": "BOUNDED_UNKNOWN_ON_PENDING_ORIGINAL_OPERATION",
+      "lateOperationRestoresStoreEntry": false
+    },
+    {
+      "case": 19,
+      "outcome": "ACTUAL_FUNDING_CLOSE_CORE_LATE_UNKNOWN_VETO",
+      "actualClosePromiseHistory": "CLOSED",
+      "actualCurrentPhase": "CLOSE_UNKNOWN",
+      "declaredPostAwaitStoreEntries": 0
+    },
+    {
+      "case": 20,
+      "outcome": "DECLARED_RETIRED_READ_ERROR_VETO",
+      "historicalAggregateClose": "CLOSED",
+      "declaredStoreEntries": 0
+    }
+  ],
+  "optimization": {
+    "extractedRatherThanCopiedNativeJoin": true,
+    "cachedInspectionInvokesSourceInspectors": false,
+    "fixedMatchRecordsAllocatedOnceAtModuleInitialization": true,
+    "recordShapeValidatedOncePerMatch": true,
+    "noNewQualificationScratchOrArchives": true,
+    "newDownloads": 0,
+    "performanceOrCapacityBenchmarkClaim": false
+  },
+  "frozenFundingTlsProfile": {
+    "manifest": "qualification/funding-post-native-loopback-tls-current.inputs.json",
+    "manifestSha256": "523827fb540b30d15f954e93b3245e1efdde84fca3aeafba9bddaac363c471b9",
+    "selectedRows": 11,
+    "manifestAndSelectedInputBytesUnchanged": true,
+    "profileAdmissionReplayed": false,
+    "previousTwoNativeAttemptsRemainConsumed": true,
+    "newNativeAttempt": false,
+    "OpenSslCommands": 0,
+    "nativeAuthority": "PENDING_EXPLICIT_HUMAN_REPLY_NOT_INFERRED_FROM_COMPONENT_PASS"
+  },
+  "executionEffects": {
+    "totalNodeCommands": 2,
+    "componentNodeCommands": 1,
+    "factorySyntaxOnlyNodeCommands": 1,
+    "nodeChildProcesses": 0,
+    "nativeHttpsCommands": 0,
+    "OpenSslCommands": 0,
+    "SDKImports": 0,
+    "SQLiteOpens": 0,
+    "sockets": 0,
+    "keys": 0,
+    "signatures": 0,
+    "nonceEvaluations": 0,
+    "realPrepareCalls": 0,
+    "payments": 0,
+    "newManagedRoots": 0,
+    "newManagedTasks": 0,
+    "newQualificationScratchBytes": 0,
+    "existingDataDeleted": 0,
+    "historicalRootsOrMetadataTouchedByThisWork": false,
+    "publicSourceTestAndNormalizedReportAreNotDisposableScratch": true
+  },
+  "publication": {
+    "eligibleSourceFiles": [
+      "src/zenon/dynamic-plasma-native-funding-close-session.js",
+      "src/zenon/dynamic-plasma-native-https-original-funding-submission.js",
+      "qualification/dynamic-plasma-native-funding-close-session.behavior.draft.mjs",
+      "qualification/dynamic-plasma-native-funding-close-session.actual-local-result.json",
+      "docs/P2_NATIVE_FUNDING_CLOSE_SESSION.md"
+    ],
+    "eligibleMainFiles": [
+      "src/zenon/dynamic-plasma-native-funding-close-session.js",
+      "qualification/dynamic-plasma-native-funding-close-session.behavior.draft.mjs",
+      "qualification/dynamic-plasma-native-funding-close-session.actual-local-result.json",
+      "docs/P2_NATIVE_FUNDING_CLOSE_SESSION.md"
+    ],
+    "allUnchangedExecutedDependenciesAlreadyMatchBothParents": true,
+    "exactExecutedDependenciesAddedToMain": [],
+    "targetOverlapWithOpenPRs": false,
+    "CIAtParents": {
+      "source": {
+        "checks": 0,
+        "statuses": 0,
+        "runs": 0
+      },
+      "main": {
+        "checks": 0,
+        "statuses": 0,
+        "runs": 0
+      }
+    },
+    "CIInterpretation": "NO_CURRENT_PASS_INFERRED",
+    "openPRs": [
+      {
+        "number": 194,
+        "head": "79ca2b430ae53c55b1aba11e56c99e083d4a8431",
+        "files": 20,
+        "draft": true
+      },
+      {
+        "number": 193,
+        "head": "5b4bf1b6780586676007c84303510fb4e316cf5e",
+        "files": 2,
+        "draft": true
+      },
+      {
+        "number": 175,
+        "head": "40eca21c34263513230c5d3c431250a0ed42aa90",
+        "files": 11,
+        "draft": true
+      },
+      {
+        "number": 157,
+        "head": "525578cc44db23943e9cfb5a62c4d1c487cca99a",
+        "files": 2,
+        "draft": false
+      }
+    ],
+    "branchProtectionsAtReview": {
+      "x402/p1-router-late-pending-close-integration-v2": {
+        "protected": false,
+        "rules": []
+      },
+      "main": {
+        "protected": false,
+        "rules": []
+      }
+    },
+    "routineNormalFastForwardOnly": true,
+    "forcePush": false,
+    "workflowChange": false,
+    "workflowDispatch": false,
+    "PRCreationOrComment": false,
+    "publicationOutcome": "VERIFY_SEPARATELY_BY_EXACT_COMMIT_READBACK"
+  },
+  "limits": [
+    "All native custody snapshots and store-close boundaries in this test are declared data. The real native factory and actual payer/store were not imported.",
+    "An actual lifecycle owner fed by declared zero counts does not establish native socket/TLS release or SQLite cleanup.",
+    "Cached inspection reports previous observations. A current permit always requires fresh source-owned views; historical CLOSED never substitutes for them.",
+    "The enclosing deadline is cooperative on a responsive event loop, not an OS, CPU, hostile-code or exact timer guarantee.",
+    "Resource permissions are not payment success, inclusion, grant activation, delivery, retry or replay authority.",
+    "Post-entry/returned real store close cannot be undone; a later veto must preserve truthful historical entered/returned evidence.",
+    "The actual V4/native-read/native-funding/SDK/SQLite application remains unqualified under the changed source.",
+    "No TLS allowance, historical profile, default buyer or workflow is reset or broadened by this change."
+  ],
+  "fullP0Complete": false,
+  "fullP1Complete": false,
+  "fullP2Complete": false,
+  "fullRoadmapComplete": false,
+  "livePaymentQualified": false,
+  "economicPilotQualified": false,
+  "productionQualified": false
+}
