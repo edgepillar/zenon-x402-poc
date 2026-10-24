@@ -1,0 +1,462 @@
+{
+  "schemaVersion": 1,
+  "status": "SOURCE_REVIEW_AND_SYNTAX_ONLY_NOT_EXECUTED",
+  "sourceParent": "cefa6d1cfe67cac06fdfbcb372f7bf8199eb98c5",
+  "mainParent": "21aa0770caf6590053bff05ab9c24d200c0928c8",
+  "profile": "CURRENT_NATIVE_ISSUED_POST_GRANT_OPERATOR_DRAFT_V1",
+  "sourceReview": {
+    "event": "Q102_GRANT_OPERATOR_SOURCE_API_REVIEW",
+    "status": "SOURCE_ONLY_LITERAL_ALIGNMENT_NOT_RUNTIME_PROOF",
+    "input": {
+      "path": "qualification/issued-funding-post-native-grant-operator.fixture.draft.mjs",
+      "bytes": 24047,
+      "LF": 313,
+      "sha256": "b1224cc52ef9a5dd67418392b3064ea79d6a7f8c8abb9c7fb9b986a42bb4f587",
+      "gitBlob": "a2438e531abb1fa9103aa43def9e94986d502368"
+    },
+    "namedImports": [
+      {
+        "path": "src/canonical.js",
+        "name": "canonicalJson",
+        "line": 4
+      },
+      {
+        "path": "src/service-credit-activation.js",
+        "name": "deriveServiceCreditResourceBinding",
+        "line": 736
+      },
+      {
+        "path": "src/service-credit-model.js",
+        "name": "SERVICE_CREDIT_MODEL_VERSION",
+        "line": 66
+      },
+      {
+        "path": "src/service-credit-sqlite-store.js",
+        "name": "ServiceCreditSqliteStore",
+        "line": 1068
+      },
+      {
+        "path": "src/service-credit-zenon-funding-intake-sqlite-store.js",
+        "name": "createZenonFundingIntakeSqliteStore",
+        "line": 812
+      },
+      {
+        "path": "src/service-credit-zenon-funding-intake-sqlite-store.js",
+        "name": "deriveZenonFundingIntakeSelectionKey",
+        "line": 162
+      },
+      {
+        "path": "src/service-credit-zenon-funding-observer-sqlite-store.js",
+        "name": "createZenonFundingObserverSqliteStore",
+        "line": 2443
+      },
+      {
+        "path": "src/service-credit-zenon-funding-observer-sqlite-store.js",
+        "name": "openZenonFundingObserverSqliteStore",
+        "line": 2447
+      },
+      {
+        "path": "src/service-credit-zenon-funding-observer-sqlite-store.js",
+        "name": "deriveZenonFundingObserverSqliteRecordKey",
+        "line": 567
+      },
+      {
+        "path": "src/service-credit-zenon-funding-observer-state.js",
+        "name": "createZenonFundingObserverState",
+        "line": 1277
+      },
+      {
+        "path": "src/service-credit-zenon-funding-observer-state.js",
+        "name": "ZENON_FUNDING_OBSERVER_STATUS",
+        "line": 41
+      },
+      {
+        "path": "src/service-credit-zenon-funding-composition.js",
+        "name": "createZenonFundingComposition",
+        "line": 590
+      },
+      {
+        "path": "src/service-credit-zenon-funding-evidence.js",
+        "name": "prepareZenonFundingResource",
+        "line": 1030
+      },
+      {
+        "path": "src/service-credit-zenon-funding-evidence.js",
+        "name": "deriveZenonFundingObserverTarget",
+        "line": 1070
+      },
+      {
+        "path": "src/service-credit-zenon-funding-provider-attestation.js",
+        "name": "parseZenonFundingProviderAttestationAuthorityRecord",
+        "line": 572
+      },
+      {
+        "path": "src/service-credit-zenon-funding-provider-attestation.js",
+        "name": "createZenonFundingProviderAttestationSigningBytes",
+        "line": 897
+      },
+      {
+        "path": "src/x402-issued-funding-post-application-binding.js",
+        "name": "captureIssuedFundingPostServiceSelection",
+        "line": 25
+      },
+      {
+        "path": "src/x402-funding-post-checkpoint-route.js",
+        "name": "captureFundingPostCheckpointRoute",
+        "line": 10
+      }
+    ],
+    "classMethodReferences": [
+      {
+        "path": "src/service-credit-sqlite-store.js",
+        "name": "registerOffer",
+        "line": 1178
+      },
+      {
+        "path": "src/service-credit-sqlite-store.js",
+        "name": "getGrant",
+        "line": 1194
+      },
+      {
+        "path": "src/service-credit-zenon-funding-intake-sqlite-store.js",
+        "name": "loadBySelectionKey",
+        "line": 630
+      },
+      {
+        "path": "src/service-credit-zenon-funding-observer-sqlite-store.js",
+        "name": "load",
+        "line": 1410
+      },
+      {
+        "path": "src/service-credit-zenon-funding-observer-sqlite-store.js",
+        "name": "planBackfill",
+        "line": 1440
+      },
+      {
+        "path": "src/service-credit-zenon-funding-observer-sqlite-store.js",
+        "name": "applyPage",
+        "line": 1461
+      },
+      {
+        "path": "src/service-credit-zenon-funding-observer-sqlite-store.js",
+        "name": "applyInclusion",
+        "line": 1500
+      },
+      {
+        "path": "src/service-credit-zenon-funding-observer-sqlite-store.js",
+        "name": "peekPreparedAttestation",
+        "line": 1550
+      },
+      {
+        "path": "src/service-credit-zenon-funding-observer-sqlite-store.js",
+        "name": "commitAuthenticatedEnvelope",
+        "line": 1563
+      },
+      {
+        "path": "src/service-credit-zenon-funding-observer-sqlite-store.js",
+        "name": "matchReadyFundingEvidence",
+        "line": 1748
+      },
+      {
+        "path": "src/service-credit-zenon-funding-observer-sqlite-store.js",
+        "name": "projectCommittedFundingEvidence",
+        "line": 1729
+      },
+      {
+        "path": "src/service-credit-zenon-funding-observer-sqlite-store.js",
+        "name": "close",
+        "line": 1775
+      }
+    ],
+    "sourceInputs": [
+      {
+        "path": "src/canonical.js",
+        "bytes": 967,
+        "LF": 26,
+        "sha256": "0d55ddf1727cafb0dcd46df2922305568615552a4d2ae34a5c30e90b9d8d998c",
+        "gitBlob": "5367f9c72ee13017a61630e1f0cffdced21d52c4"
+      },
+      {
+        "path": "src/service-credit-activation.js",
+        "bytes": 24719,
+        "LF": 742,
+        "sha256": "9e1a2ce00b2950b290ebd0797d3a770f51ad252288c630ada5ebcd6cef54233a",
+        "gitBlob": "155be6ee91599e10043c0293de23d669e663b512"
+      },
+      {
+        "path": "src/service-credit-model.js",
+        "bytes": 55461,
+        "LF": 1580,
+        "sha256": "7ff7e3d88ab8c3b38a0073541533fbdb7a0d9f2be42f337ac35f6a3b05615c3a",
+        "gitBlob": "e6ac17254874584d1a01f70e7abc6f771bd35d73"
+      },
+      {
+        "path": "src/service-credit-sqlite-store.js",
+        "bytes": 83516,
+        "LF": 2366,
+        "sha256": "eea4032830dc1f641c4832e0dab33066633ba487eaf19581e3295cf8810460f3",
+        "gitBlob": "ae5260ef3442079fe73544d2d730d05724758fa1"
+      },
+      {
+        "path": "src/service-credit-zenon-funding-intake-sqlite-store.js",
+        "bytes": 34138,
+        "LF": 818,
+        "sha256": "4d001bbeac004cdb88c454094b573bc00bd52822e9448d91ce9065a95b68c28c",
+        "gitBlob": "cb4211bd19c38165640f4825bc907c21618f647a"
+      },
+      {
+        "path": "src/service-credit-zenon-funding-observer-sqlite-store.js",
+        "bytes": 87075,
+        "LF": 2449,
+        "sha256": "899a79ce7b3003b1f32ef7c23adcf06e55a74486abc4bd1cb63cb44f1c087d0c",
+        "gitBlob": "8c1ce3e6640ee1da8663754abba2e5d555932e9f"
+      },
+      {
+        "path": "src/service-credit-zenon-funding-observer-state.js",
+        "bytes": 58614,
+        "LF": 1738,
+        "sha256": "8f8f4e4b7bcbb95229eecc62cd82638e4adbcfda0ad54a3a7a089273457f5d8a",
+        "gitBlob": "d4a623ff662973e2c2082b5dea36807dbd8e45e7"
+      },
+      {
+        "path": "src/service-credit-zenon-funding-composition.js",
+        "bytes": 30736,
+        "LF": 856,
+        "sha256": "44ad33d3b773053978b474978e7c45c8f29a4796b08b6cf4299b1c6e2fab900a",
+        "gitBlob": "924812611fc60050c1585e30abb99595898f2502"
+      },
+      {
+        "path": "src/service-credit-zenon-funding-evidence.js",
+        "bytes": 48694,
+        "LF": 1407,
+        "sha256": "459c6cc2cdb57df1b648b2a56244935085770d9c3d1eee05ad56ddbf1bd98d80",
+        "gitBlob": "698aaa39aab6e2fa680eb8ebd8b9aa905f79354e"
+      },
+      {
+        "path": "src/service-credit-zenon-funding-provider-attestation.js",
+        "bytes": 33736,
+        "LF": 1003,
+        "sha256": "87329f823d9459539246974909e8974db0792f047724f2a3d55c239af080cbdc",
+        "gitBlob": "4060251980875b4a95347a72365ddf639b331b34"
+      },
+      {
+        "path": "src/x402-issued-funding-post-application-binding.js",
+        "bytes": 9565,
+        "LF": 130,
+        "sha256": "5e404dbeebc107f1aafe29d1ea37f1bf1f3bcede875864c44d88c81303f94468",
+        "gitBlob": "6fd32f40cda5555b3d0ce7d8b7e149f927a945ce"
+      },
+      {
+        "path": "src/x402-funding-post-checkpoint-route.js",
+        "bytes": 1310,
+        "LF": 29,
+        "sha256": "157e80e9f14b41c8cacc05423a7acd8616a6f759adac377f04f1fca21869831e",
+        "gitBlob": "777ff48ac9cf255f80cda7e22c68706b7d7084b3"
+      }
+    ],
+    "legacySourceReferences": [
+      {
+        "path": "test/service-credit-zenon-intake-to-credit-offline.test.js",
+        "bytes": 27167,
+        "LF": 755,
+        "sha256": "a393eb3f5ea04e637a8b934147dab89e0c51987e985d74505c5f0dffa52f0d7d",
+        "gitBlob": "477f4e83ec1352bb12194f479207fe6449601871"
+      },
+      {
+        "path": "qualification/dynamic-plasma-full-native-loopback.fixture.draft.mjs",
+        "bytes": 24351,
+        "LF": 375,
+        "sha256": "f28e3d782ab7c56b80e6f1e483c639b5b93f07559ff8bf8da07708439e3f1ab3",
+        "gitBlob": "d8ca3c4a5b727275046d3368dc0dcc8352526da5"
+      }
+    ],
+    "syntaxOnly": {
+      "path": "qualification/issued-funding-post-native-grant-operator.fixture.draft.mjs",
+      "syntaxActualExit": 0,
+      "outputComplete": true,
+      "applicationImported": false,
+      "input": {
+        "path": "qualification/issued-funding-post-native-grant-operator.fixture.draft.mjs",
+        "bytes": 24047,
+        "LF": 313,
+        "sha256": "b1224cc52ef9a5dd67418392b3064ea79d6a7f8c8abb9c7fb9b986a42bb4f587",
+        "gitBlob": "a2438e531abb1fa9103aa43def9e94986d502368"
+      },
+      "stdoutBytes": 0,
+      "stderrBytes": 0,
+      "NodeCommands": 1,
+      "nativeTlsExecuted": false
+    },
+    "applicationImported": false,
+    "SDK": false,
+    "SQLite": false,
+    "signing": false,
+    "newFilesOrRootsCreatedByReview": 0,
+    "frozenPendingDpManifestSha256": "a472e3bcd8840ef4236e395cb918ae5f2a84be9ca45d8f59417c0b77da291933",
+    "frozenPendingDpGraphUnchanged": true
+  },
+  "currentSyntaxOnly": {
+    "path": "qualification/issued-funding-post-native-grant-operator.fixture.draft.mjs",
+    "syntaxActualExit": 0,
+    "outputComplete": true,
+    "applicationImported": false,
+    "input": {
+      "path": "qualification/issued-funding-post-native-grant-operator.fixture.draft.mjs",
+      "bytes": 24047,
+      "LF": 313,
+      "sha256": "b1224cc52ef9a5dd67418392b3064ea79d6a7f8c8abb9c7fb9b986a42bb4f587",
+      "gitBlob": "a2438e531abb1fa9103aa43def9e94986d502368"
+    },
+    "stdoutBytes": 0,
+    "stderrBytes": 0,
+    "NodeCommands": 1,
+    "nativeTlsExecuted": false
+  },
+  "supersededSyntaxOnly": [
+    {
+      "path": "qualification/issued-funding-post-native-grant-operator.fixture.draft.mjs",
+      "syntaxActualExit": 0,
+      "outputComplete": true,
+      "applicationImported": false,
+      "input": {
+        "path": "qualification/issued-funding-post-native-grant-operator.fixture.draft.mjs",
+        "bytes": 23379,
+        "LF": 305,
+        "sha256": "68f97acd8dd72d1c3ed854bd018b0c51c80018a34c697ac313304f2c590083b3",
+        "gitBlob": "ffb3d24af6b2427242007b4c64d9235e589a4b93"
+      },
+      "stdoutBytes": 0,
+      "stderrBytes": 0,
+      "NodeCommands": 1,
+      "nativeTlsExecuted": false
+    },
+    {
+      "path": "qualification/issued-funding-post-native-grant-operator.fixture.draft.mjs",
+      "syntaxActualExit": 0,
+      "outputComplete": true,
+      "applicationImported": false,
+      "input": {
+        "path": "qualification/issued-funding-post-native-grant-operator.fixture.draft.mjs",
+        "bytes": 23907,
+        "LF": 313,
+        "sha256": "a04df114045890957e13cf3baddd3b8890f03164d2bba9935821693e0e1b4152",
+        "gitBlob": "de3a2f9e98194a12ae5dbd41732f2834c0bda087"
+      },
+      "stdoutBytes": 0,
+      "stderrBytes": 0,
+      "NodeCommands": 1,
+      "nativeTlsExecuted": false
+    }
+  ],
+  "evidenceInterpretation": {
+    "namedExportAlignmentOnly": 18,
+    "classMethodSourceReferencesOnly": 12,
+    "notACompleteRuntimeGraph": true,
+    "sourceLiteralMatchesAreNotTests": true,
+    "actualBehaviorTestsExecuted": 0,
+    "actualRuntimeResult": "NOT_ESTABLISHED",
+    "syntaxPassIsNotGraphImport": true
+  },
+  "actualExecution": {
+    "syntaxOnlyNodeCommands": 3,
+    "NodeChildren": 0,
+    "fixtureImported": false,
+    "fixtureFactoryCalled": false,
+    "SDK": 0,
+    "SQLite": 0,
+    "providerKeyGeneration": 0,
+    "providerSigning": 0,
+    "capabilitySigning": 0,
+    "walletSigning": 0,
+    "nonce": 0,
+    "OpenSSL": 0,
+    "TLS": 0,
+    "sockets": 0,
+    "downloads": 0,
+    "installs": 0,
+    "newManagedRoots": 0,
+    "newManagedTasks": 0,
+    "newQualificationScratchBytes": 0,
+    "cleanup": 0,
+    "sourceTransforms": 0,
+    "nativeBuiltinAliases": 0
+  },
+  "draftIfInvoked": {
+    "authorization": "NEW_EXACT_EFFECTFUL_SELECTION_REQUIRED_BEFORE_INVOCATION",
+    "constructorLimitPerModuleLifetime": 1,
+    "initialSQLiteCreateAttempts": 2,
+    "observerSQLitePathsMaximum": 2,
+    "primaryObserverOpenExistingOnly": true,
+    "foreignObserverCreateNewOnly": true,
+    "primaryAndForeignHashesMustDiffer": true,
+    "providerKeys": 1,
+    "providerSignatureCallsMaximum": 2,
+    "activationsMaximum": 2,
+    "pagesMaximum": 2,
+    "pageMembersMaximum": 4,
+    "confirmationMomentumsPerPageMaximum": 3,
+    "policyCallsMaximum": 32,
+    "databaseInspectionCapBytes": 4194304,
+    "quotaOrOsSandboxEnforcedByTheseCounters": false,
+    "rootCreation": false,
+    "existingServiceIntakeAdoption": false,
+    "missingPrimaryObserverFallback": false,
+    "primaryInput": "INDEPENDENT_ORIGINAL_HASH_AND_CHALLENGE_HEADER_MATCH_ACTUAL_BOUND_INTAKE_ROW",
+    "activation": "ACTUAL_OBSERVER_READY_AND_FIXED_FUNDING_COMPOSITION_NOT_DIRECT_TRUSTED_RECORD_INSERT",
+    "foreignEvidence": "DECLARED_SYNTHETIC_CHAIN_TRANSACTION_NOT_WALLET_PAYMENT",
+    "ownership": {
+      "serviceAndIntake": "CREATED_IN_NEW_PRIVATE_ROOT_THEN_EXPLICITLY_HANDED_TO_NATIVE_HARNESS",
+      "observers": "RETAIN_BEFORE_VALIDATION_CLOSE_AT_MOST_ONCE_AFTER_OWN_OPERATION_DRAINS",
+      "closeOwnedObserversDoesNotCloseServiceOrIntake": true,
+      "unknown": "HOLD_NO_RETRY_REOPEN_DELETE_OR_CLEANUP",
+      "keyMaterial": "EPHEMERAL_SYNTHETIC_PROVIDER_KEY_NOT_EXPORTED_OR_PERSISTED_ERASURE_NOT_GUARANTEED"
+    },
+    "fullNativeFixtureStillMissing": [
+      "actual bounded native RPC/application listeners and port ownership",
+      "actual DP signer/client/V6 setup with independent original pins",
+      "actual native service proof/foreign-grant/original-replay/lost-ACK case driver",
+      "complete source/runtime graph selection and reviewed managed-storage/native launch gates"
+    ]
+  },
+  "historicalEvidence": {
+    "pendingFullDpManifestSha256": "a472e3bcd8840ef4236e395cb918ae5f2a84be9ca45d8f59417c0b77da291933",
+    "pendingFullDpGraphUnchanged": true,
+    "oldTlsOrSdkSqliteSigningPermissionReused": false,
+    "legacyBroadTestImportedOrRun": false,
+    "legacyTempCleanupOrPreparePatternCopied": false
+  },
+  "publication": {
+    "eligibleSourceFiles": [
+      "qualification/issued-funding-post-native-grant-operator.fixture.draft.mjs",
+      "qualification/issued-funding-post-native-grant-operator.source-review.json",
+      "docs/P1_NATIVE_ISSUED_FUNDING_GRANT_OPERATOR_FIXTURE.md"
+    ],
+    "eligibleMainFiles": [],
+    "mainFilesChanged": 0,
+    "ordinaryBuyerChanged": false,
+    "productionCodeChanged": false,
+    "hostedWorkflowDispatched": false,
+    "PRStateChanged": false,
+    "publicCommentsPosted": false,
+    "forcePush": false,
+    "branchProtectionsBypassed": false
+  },
+  "currentParentCi": {
+    "source": {
+      "checks": 0,
+      "statuses": 0,
+      "runs": 0
+    },
+    "main": {
+      "checks": 0,
+      "statuses": 0,
+      "runs": 0
+    }
+  },
+  "CIInterpretation": "NO_CURRENT_PASS_INFERRED",
+  "fullP0Complete": false,
+  "fullP1Complete": false,
+  "fullP2Complete": false,
+  "fullRoadmapComplete": false,
+  "productionQualified": false
+}
