@@ -79,3 +79,9 @@ The complete native adapter/entry/namespace remains on the scoped source branch,
 not a runtime-qualified main path. Default buyer and workflows are unchanged.
 Native P2, capacity, economic acceptance, provider authority, pilot and
 production remain unqualified.
+
+The [offline bounded batch inspector](CAPACITY_PARENT_TIMING_DATA_BATCH.md)
+now exposes these pinned checks without entering the native graph. Its separate
+88-case DATA selection and two Python-only pipe smoke invocations passed.
+Parent-only and full-capture scopes remain distinct; no native or receipt
+authentication is inferred, and none of the pending native inputs changed.

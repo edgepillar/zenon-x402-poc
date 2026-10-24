@@ -1,0 +1,488 @@
+{
+  "resultVersion": 1,
+  "kind": "PARENT_TIMING_OFFLINE_BATCH_ACTUAL_DATA_NOT_NATIVE_PROOF",
+  "sourceParent": "2e5609bb4c81550de42a3d814c911c9662e9cd5a",
+  "mainParent": "cead0afe68e16a2507f74f811a03f317a2583f0f",
+  "implementation": "qualification/check-capacity-parent-timing-data-batch-v1.py",
+  "selectedTests": "qualification/capacity-parent-timing-data-batch-v1.behavior.py",
+  "runtime": {
+    "python": "3.12.14",
+    "flags": [
+      "-I",
+      "-B",
+      "-S"
+    ],
+    "platform": "darwin",
+    "architecture": "arm64"
+  },
+  "current": {
+    "event": "Q135_OFFLINE_BATCH_ACTUAL_DATA",
+    "attempt": 3,
+    "actualExit": 0,
+    "complete": true,
+    "elapsedSeconds": 0.27302654199593235,
+    "stdoutBytes": 1530,
+    "stdoutSha256": "485c8d04f06fc4a5040687563e2a8b16138492d7e320f20e4ed00ba7bd31e6ed",
+    "stderrBytes": 0,
+    "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "sourcePins": [
+      {
+        "path": "qualification/check-capacity-parent-timing-data-batch-v1.py",
+        "bytes": 9452,
+        "LF": 178,
+        "sha256": "662a7a64d22e63d740bf28df5416d7a955e7665df8fc517939e9fe447b711be7",
+        "gitBlob": "4738387b75b2b7825e4a69e832365cf225d084b4"
+      },
+      {
+        "path": "qualification/capacity-parent-timing-data-batch-v1.behavior.py",
+        "bytes": 22768,
+        "LF": 405,
+        "sha256": "65b38ed3232ac30b6b10c0bfd9572f95860215d9e01434e339713cf86eba9a04",
+        "gitBlob": "b8447d0e02163419cb9db8a0717562a1e7358196"
+      }
+    ],
+    "sourcePinsUnchanged": true,
+    "preservedNativeInputs": [
+      {
+        "path": "qualification/funding_tls_current_gate.py",
+        "bytes": 7969,
+        "LF": 145,
+        "sha256": "9777b8dca3c8c86e543c1f202c0cde248280ed3a108df4a688565ccf83132936",
+        "gitBlob": "91362d22ca606a6711612b02ecea3c6e92c55a59"
+      },
+      {
+        "path": "qualification/native_capacity_full_profile_v3.py",
+        "bytes": 23435,
+        "LF": 353,
+        "sha256": "6928303c36f034fc295145563e40304641a91fe7db35d62eb364031bbcff7e6a",
+        "gitBlob": "6268ca35b32c32611b9663e964ddf2485b941ddc"
+      },
+      {
+        "path": "qualification/native_capacity_managed_workload_v3.py",
+        "bytes": 49689,
+        "LF": 646,
+        "sha256": "6d4e2d726bd600b84be387147ee7cd6555daa8b72b8940a8719861a1078b4567",
+        "gitBlob": "c11c7981db6827e68d49dfdf354db3601afb5adc"
+      },
+      {
+        "path": "qualification/recovery_crash_native_profile.py",
+        "bytes": 33443,
+        "LF": 538,
+        "sha256": "75c2c9478b7e792a7bade739161af2bb8fb624cd407924ead2cf822dc23dacbd",
+        "gitBlob": "dc93890c4f9772b726e015ddd11d63bfa1a48ad4"
+      },
+      {
+        "path": "qualification/run-capacity-native-workload-v3.local.py",
+        "bytes": 26105,
+        "LF": 395,
+        "sha256": "4e2e29c31ae10c661bd5599506cda87482d030fc328dbde1e3e1066db5dba9e6",
+        "gitBlob": "eac94ea35f381307f61db1b7d709f29e1c23b8a5"
+      },
+      {
+        "path": "qualification/capacity-native-full-graph-v3.inputs.json",
+        "bytes": 8697,
+        "LF": 215,
+        "sha256": "3bb597da71736542615047d11af78ad6825df5bdb6e4561747d8c1f9dff7d0df",
+        "gitBlob": "0530e2b08929d45c93b4e4912dc69d27b0645204"
+      },
+      {
+        "path": "qualification/capacity-native-workload-v3.plan.json",
+        "bytes": 493,
+        "LF": 23,
+        "sha256": "0c269fc51a72dcc287192ad3d350aa5ea8ed265e3647940012821d81a87908a7",
+        "gitBlob": "1da0ab0a55f3f24458f3560c1ac695f424829ca4"
+      },
+      {
+        "path": "qualification/capacity-native-workload-v3.launch-inputs.json",
+        "bytes": 5391,
+        "LF": 145,
+        "sha256": "6c9979316924e44138ee9c42af1f925899ad52d969246ad206fe65a209a5baa3",
+        "gitBlob": "23707625b990d93942661dae4526c0662c3445fa"
+      },
+      {
+        "path": "src/service-credit-capacity-windowed-async-workload-owner-core.js",
+        "bytes": 36252,
+        "LF": 645,
+        "sha256": "fda636116343c497f269d926ae8e3a61f1b9cd1cf11b493c3d9ba99ef55a7444",
+        "gitBlob": "cc9eae4a2e553a0e71a531f191648c9cbe0cb101"
+      },
+      {
+        "path": "src/service-credit-capacity-parent-timing-trace-data.js",
+        "bytes": 13257,
+        "LF": 213,
+        "sha256": "9b48e9212efa6b000690b32c04f07277d2c868562a1e649766a28aab85e0907d",
+        "gitBlob": "8aecb7664c2a4772870fdeb51d10fe69bc71cb79"
+      },
+      {
+        "path": "src/service-credit-capacity-async-workload-owner-core.js",
+        "bytes": 26130,
+        "LF": 470,
+        "sha256": "a7b8a471e38f3d4c008882a67b752fb0331894a5d13e65f9650114259d189280",
+        "gitBlob": "04c956f48ccbad3ee8b4cdbe1d62983616708389"
+      },
+      {
+        "path": "qualification/service-credit-capacity-async-workload-owner-core.behavior.mjs",
+        "bytes": 41405,
+        "LF": 700,
+        "sha256": "00280563481f6dd123a49592f9df7d899a3bfa8e7fa8db92d6039f2fa766d500",
+        "gitBlob": "efa5ad616b4efec02428f3ec42955013af68bec9"
+      },
+      {
+        "path": "src/service-credit-capacity-window-recorder.js",
+        "bytes": 13321,
+        "LF": 242,
+        "sha256": "48855e34729ae68c179d6439aed962a719964732c992a83472330b7e41293579",
+        "gitBlob": "6e28e75b4fd6572fbae535ac066334349ed26038"
+      },
+      {
+        "path": "src/service-credit-capacity-recorder.js",
+        "bytes": 10801,
+        "LF": 236,
+        "sha256": "eca9bf4cad4717df5d61457044c2c5d0a6bc00b6af81964d09bf18325d4a46ad",
+        "gitBlob": "bc9b0a8a9abd48033e698e100cdc6ef90d2152c9"
+      },
+      {
+        "path": "qualification/capacity-native-workload-v2.launch-inputs.json",
+        "bytes": 4662,
+        "LF": 129,
+        "sha256": "62c3f269946fc9eb31c8114ad40c8a905d7f9a5bced1c61339d94c939fc2ba31",
+        "gitBlob": "1ce7bdbdcf02ed5bb50243865ca70a6972f3024d"
+      },
+      {
+        "path": "qualification/capacity-native-full-graph-v2.inputs.json",
+        "bytes": 7592,
+        "LF": 187,
+        "sha256": "1b22c63b752d0295db771e63bda4638e81fe372b83c0b36d4a0d90fb2cc802a7",
+        "gitBlob": "950d809d2f88ea8051d066c58d631bfc915a1cec"
+      },
+      {
+        "path": "qualification/run-capacity-native-workload-v2.local.py",
+        "bytes": 26889,
+        "LF": 403,
+        "sha256": "6f05fb04847f03ebbe294bf202f1d7370cbf91899553505228e2b196e778e42d",
+        "gitBlob": "536ebc2fa3cb7b268a0cf49dae342f3c25dd1e7d"
+      },
+      {
+        "path": "qualification/native_capacity_managed_workload_v2.py",
+        "bytes": 21650,
+        "LF": 314,
+        "sha256": "28f3c6efb23e2531406ec93dbeb3ef96c391f75a312d53d99b8464e631218e42",
+        "gitBlob": "3054bef10c1095b1186dbcaa879ae671fa3314c2"
+      }
+    ],
+    "result": {
+      "event": "PARENT_TIMING_OFFLINE_BATCH_SELECTED_DATA",
+      "testsRun": 88,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "successful": true,
+      "sourcePins": {
+        "qualification/check-capacity-parent-timing-data-batch-v1.py": "662a7a64d22e63d740bf28df5416d7a955e7665df8fc517939e9fe447b711be7",
+        "qualification/native_capacity_managed_workload_v3.py": "6d4e2d726bd600b84be387147ee7cd6555daa8b72b8940a8719861a1078b4567",
+        "qualification/native_capacity_managed_workload_v3.behavior.py": "c300550075b653010db480fb54febf41870f29817799bb60f4378c6e3c699bef",
+        "qualification/fixtures/capacity-parent-timing-source-data-v1.json": "0df8819b72d0fce70581116102a21d11726c5f264403cfff0537323dfb1031c1"
+      },
+      "sourcePinsUnchanged": true,
+      "pythonOnlyCliSmokes": [
+        {
+          "mode": "--check-capture",
+          "exit": 0,
+          "inputBytes": 38455,
+          "stdoutBytes": 1239,
+          "stdoutSha256": "bd0ff00b266b8e354e4b9d478e40f14700b7610d17437466dbb3ff0bac9ab526",
+          "stderrBytes": 0,
+          "syntheticDataOnly": true
+        },
+        {
+          "mode": "--check-parent",
+          "exit": 0,
+          "inputBytes": 9732,
+          "stdoutBytes": 1140,
+          "stdoutSha256": "442439895aba1e038241e822a32097e80e81b4c32289a4a1bf8fafe9189237c9",
+          "stderrBytes": 0,
+          "syntheticDataOnly": true
+        }
+      ],
+      "existing175CaseSuiteExecuted": false,
+      "sourceControlReadsInTestProcess": 1,
+      "syntheticCaptureDataOnly": true,
+      "nativeExecuted": false,
+      "managerImported": false,
+      "privateRootsOpened": false,
+      "SDK": false,
+      "SQLite": false,
+      "keys": false,
+      "signatures": false,
+      "nonceSearch": false,
+      "sockets": false,
+      "nativeChildren": false,
+      "qualificationScratchCreated": false,
+      "authority": "NONE"
+    },
+    "validated": true
+  },
+  "review": {
+    "actualPinnedPureControllerCompiledWithoutRewriting": true,
+    "callerExpectedRunAndWorkloadRequiredIndependently": true,
+    "noContextInferredFromCapture": true,
+    "parentOnlyScopeDoesNotValidateWholeWorkload": true,
+    "fullScopeChecksExactCaptureAndReceiptData": true,
+    "receiptAuthenticityEstablished": false,
+    "booleanIntegerAliasingRefuses": true,
+    "duplicateKeysNonfiniteNumbersAndNoncanonicalFramesRefuse": true,
+    "partialBatchNeverReturnsZeroExit": true,
+    "originalInnerCaptureKeyOrderPreservedForDigest": true,
+    "matchingDigestDoesNotAuthorizeOrAuthenticateClaims": true,
+    "sourceControlReadAndHashedOncePerCliProcess": true,
+    "sourceIdentityRecheckedBeforeAndAfterEveryCase": true,
+    "noEarlierInputFrameRetainedAcrossCases": true,
+    "rawTraceAndExceptionValuesNeverPrinted": true,
+    "finalCompletionRequiresEofSuccessfulFlushAndZeroExit": true,
+    "borrowedStreamsNotClosedByTool": true,
+    "reusableDataTestsRequireOnlyFourMainDataInputs": true,
+    "nativePreservationChecksKeptOutsideReusableSuite": true
+  },
+  "limits": {
+    "maximumCases": 8,
+    "maximumHeaderBytes": 65536,
+    "maximumAggregatePayloadBytes": 16842752,
+    "maximumCaseResultBytes": 2048,
+    "maximumAggregateOutputBytes": 24576,
+    "oneByteOverflowDetection": true,
+    "finalOneByteEofCheck": true,
+    "rawOriginalNonemptyStderrAccepted": false,
+    "retainedEarlierInputFrames": 0,
+    "parserTemporaryAllocationsStillRequired": true,
+    "measuredProcessHeapBoundEstablished": false,
+    "slowInputProducerDeadlineEstablished": false,
+    "nativeOsNetworkSandbox": false
+  },
+  "preservedNativePins": {
+    "graphSha256": "d756740994aeb53ebeee47320d732583d96381dfa8c00e18a30f414e70a77027",
+    "launchManifestSha256": "6c9979316924e44138ee9c42af1f925899ad52d969246ad206fe65a209a5baa3",
+    "pythonControlCount": 5,
+    "selectedNewToolIncludedInPendingNativeGraph": false,
+    "nativeAllowanceChanged": false,
+    "existing175ManagedControlsRerun": false,
+    "existing88ProfileControlsRerun": false,
+    "existing19InertControlsRerun": false
+  },
+  "execution": {
+    "selectedDataOnly": true,
+    "pythonOnlyCliSmokeCommandsPerSelection": 2,
+    "nativeExecuted": false,
+    "managerImported": false,
+    "privateRootOpened": false,
+    "qualificationScratchCreated": false,
+    "sourceOrPackageCopies": 0,
+    "SDK": false,
+    "x402Package": false,
+    "SQLite": false,
+    "keys": false,
+    "signatures": false,
+    "nonceSearch": false,
+    "sockets": false,
+    "nativeWorker": false,
+    "installs": false,
+    "externalNetworkInDataTests": false,
+    "historicalCleanup": false,
+    "automationChanged": false,
+    "currentHostedProfileChanged": false,
+    "hostedProfileCases": 27,
+    "pythonOnlyCliSmokeCommandsTotalAcrossThreeSelections": 6
+  },
+  "evidenceLimits": [
+    "Self-consistent DATA is not native-event, manager-receipt or caller-context authentication.",
+    "The parent-only mode recomputes the parent recorder; only full mode also checks whole capture/component DATA.",
+    "Full mode reconstructs the exact inner compact JSON frame and checks its supplied receipt digest, not the receipt's origin.",
+    "All synthetic receipt and child-close declarations remain synthetic.",
+    "Logical input/output limits are not an elapsed-time, physical heap, sandbox or sustainable-throughput guarantee.",
+    "The final complete record alone is insufficient: the consumer also needs EOF and actual exit zero.",
+    "The earlier 81-case and intermediate 88-case successes belong to their earlier test-source digests, not the final portable 88-case selection.",
+    "No fresh native capacity, economic acceptance, cleanup, payment or production qualification follows.",
+    "The native input declarations and 18 selected controls were checked for byte preservation only; the full application/package graph was not executed or freshly qualified."
+  ],
+  "nativeEventsAuthenticated": false,
+  "nativeResourcesQualified": false,
+  "storageCleanupQualified": false,
+  "sustainableCapacityQualified": false,
+  "economicAcceptanceQualified": false,
+  "productionQualified": false,
+  "authority": "NONE",
+  "earlierSelections": [
+    {
+      "event": "Q135_OFFLINE_BATCH_ACTUAL_DATA",
+      "attempt": 1,
+      "actualExit": 0,
+      "complete": true,
+      "elapsedSeconds": 0.27708916598930955,
+      "stdoutBytes": 2389,
+      "stdoutSha256": "c08646e7898cc9b02182cc826b2823a28dbf0b121523c7b18376c3ba679b13ba",
+      "stderrBytes": 0,
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sourcePins": [
+        {
+          "path": "qualification/check-capacity-parent-timing-data-batch-v1.py",
+          "bytes": 9452,
+          "LF": 178,
+          "sha256": "662a7a64d22e63d740bf28df5416d7a955e7665df8fc517939e9fe447b711be7",
+          "gitBlob": "4738387b75b2b7825e4a69e832365cf225d084b4"
+        },
+        {
+          "path": "qualification/capacity-parent-timing-data-batch-v1.behavior.py",
+          "bytes": 20579,
+          "LF": 351,
+          "sha256": "207ac2cd05a4bd32fdc3bc3d47d34ba8e9f68b819941d4b1955f0f5b8db7f424",
+          "gitBlob": "6cd3e1da41a7fd0fb6751b4cc629e8f2c52080e0"
+        }
+      ],
+      "sourcePinsUnchanged": true,
+      "result": {
+        "event": "PARENT_TIMING_OFFLINE_BATCH_SELECTED_DATA",
+        "testsRun": 81,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "successful": true,
+        "sourcePins": {
+          "qualification/check-capacity-parent-timing-data-batch-v1.py": "662a7a64d22e63d740bf28df5416d7a955e7665df8fc517939e9fe447b711be7",
+          "qualification/native_capacity_managed_workload_v3.py": "6d4e2d726bd600b84be387147ee7cd6555daa8b72b8940a8719861a1078b4567",
+          "qualification/native_capacity_managed_workload_v3.behavior.py": "c300550075b653010db480fb54febf41870f29817799bb60f4378c6e3c699bef",
+          "qualification/fixtures/capacity-parent-timing-source-data-v1.json": "0df8819b72d0fce70581116102a21d11726c5f264403cfff0537323dfb1031c1",
+          "qualification/funding_tls_current_gate.py": "9777b8dca3c8c86e543c1f202c0cde248280ed3a108df4a688565ccf83132936",
+          "qualification/native_capacity_full_profile_v3.py": "6928303c36f034fc295145563e40304641a91fe7db35d62eb364031bbcff7e6a",
+          "qualification/recovery_crash_native_profile.py": "75c2c9478b7e792a7bade739161af2bb8fb624cd407924ead2cf822dc23dacbd",
+          "qualification/run-capacity-native-workload-v3.local.py": "4e2e29c31ae10c661bd5599506cda87482d030fc328dbde1e3e1066db5dba9e6",
+          "qualification/capacity-native-full-graph-v3.inputs.json": "3bb597da71736542615047d11af78ad6825df5bdb6e4561747d8c1f9dff7d0df",
+          "qualification/capacity-native-workload-v3.launch-inputs.json": "6c9979316924e44138ee9c42af1f925899ad52d969246ad206fe65a209a5baa3",
+          "qualification/capacity-native-workload-v3.plan.json": "0c269fc51a72dcc287192ad3d350aa5ea8ed265e3647940012821d81a87908a7"
+        },
+        "sourcePinsUnchanged": true,
+        "pythonOnlyCliSmokes": [
+          {
+            "mode": "--check-capture",
+            "exit": 0,
+            "inputBytes": 38455,
+            "stdoutBytes": 1239,
+            "stdoutSha256": "bd0ff00b266b8e354e4b9d478e40f14700b7610d17437466dbb3ff0bac9ab526",
+            "stderrBytes": 0,
+            "syntheticDataOnly": true
+          },
+          {
+            "mode": "--check-parent",
+            "exit": 0,
+            "inputBytes": 9732,
+            "stdoutBytes": 1140,
+            "stdoutSha256": "442439895aba1e038241e822a32097e80e81b4c32289a4a1bf8fafe9189237c9",
+            "stderrBytes": 0,
+            "syntheticDataOnly": true
+          }
+        ],
+        "existing175CaseSuiteExecuted": false,
+        "sourceControlReadsInTestProcess": 1,
+        "syntheticCaptureDataOnly": true,
+        "nativeExecuted": false,
+        "managerImported": false,
+        "privateRootsOpened": false,
+        "SDK": false,
+        "SQLite": false,
+        "keys": false,
+        "signatures": false,
+        "nonceSearch": false,
+        "sockets": false,
+        "nativeChildren": false,
+        "qualificationScratchCreated": false,
+        "authority": "NONE"
+      },
+      "validated": true
+    },
+    {
+      "event": "Q135_OFFLINE_BATCH_ACTUAL_DATA",
+      "attempt": 2,
+      "actualExit": 0,
+      "complete": true,
+      "elapsedSeconds": 0.28534629198838957,
+      "stdoutBytes": 2389,
+      "stdoutSha256": "ce329b11f11cf91dad6161c2e9aa0cb4f3fc4cad7acdba4b72c536e4ec55ef01",
+      "stderrBytes": 0,
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sourcePins": [
+        {
+          "path": "qualification/check-capacity-parent-timing-data-batch-v1.py",
+          "bytes": 9452,
+          "LF": 178,
+          "sha256": "662a7a64d22e63d740bf28df5416d7a955e7665df8fc517939e9fe447b711be7",
+          "gitBlob": "4738387b75b2b7825e4a69e832365cf225d084b4"
+        },
+        {
+          "path": "qualification/capacity-parent-timing-data-batch-v1.behavior.py",
+          "bytes": 23655,
+          "LF": 412,
+          "sha256": "1a4f309e99f2793ab5b11f29772b49bd7573f59efda74a105f53fbd9eecd3672",
+          "gitBlob": "06d02b1d108099c6bd39fb6f011d726c8ff37336"
+        }
+      ],
+      "sourcePinsUnchanged": true,
+      "result": {
+        "event": "PARENT_TIMING_OFFLINE_BATCH_SELECTED_DATA",
+        "testsRun": 88,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "successful": true,
+        "sourcePins": {
+          "qualification/check-capacity-parent-timing-data-batch-v1.py": "662a7a64d22e63d740bf28df5416d7a955e7665df8fc517939e9fe447b711be7",
+          "qualification/native_capacity_managed_workload_v3.py": "6d4e2d726bd600b84be387147ee7cd6555daa8b72b8940a8719861a1078b4567",
+          "qualification/native_capacity_managed_workload_v3.behavior.py": "c300550075b653010db480fb54febf41870f29817799bb60f4378c6e3c699bef",
+          "qualification/fixtures/capacity-parent-timing-source-data-v1.json": "0df8819b72d0fce70581116102a21d11726c5f264403cfff0537323dfb1031c1",
+          "qualification/funding_tls_current_gate.py": "9777b8dca3c8c86e543c1f202c0cde248280ed3a108df4a688565ccf83132936",
+          "qualification/native_capacity_full_profile_v3.py": "6928303c36f034fc295145563e40304641a91fe7db35d62eb364031bbcff7e6a",
+          "qualification/recovery_crash_native_profile.py": "75c2c9478b7e792a7bade739161af2bb8fb624cd407924ead2cf822dc23dacbd",
+          "qualification/run-capacity-native-workload-v3.local.py": "4e2e29c31ae10c661bd5599506cda87482d030fc328dbde1e3e1066db5dba9e6",
+          "qualification/capacity-native-full-graph-v3.inputs.json": "3bb597da71736542615047d11af78ad6825df5bdb6e4561747d8c1f9dff7d0df",
+          "qualification/capacity-native-workload-v3.launch-inputs.json": "6c9979316924e44138ee9c42af1f925899ad52d969246ad206fe65a209a5baa3",
+          "qualification/capacity-native-workload-v3.plan.json": "0c269fc51a72dcc287192ad3d350aa5ea8ed265e3647940012821d81a87908a7"
+        },
+        "sourcePinsUnchanged": true,
+        "pythonOnlyCliSmokes": [
+          {
+            "mode": "--check-capture",
+            "exit": 0,
+            "inputBytes": 38455,
+            "stdoutBytes": 1239,
+            "stdoutSha256": "bd0ff00b266b8e354e4b9d478e40f14700b7610d17437466dbb3ff0bac9ab526",
+            "stderrBytes": 0,
+            "syntheticDataOnly": true
+          },
+          {
+            "mode": "--check-parent",
+            "exit": 0,
+            "inputBytes": 9732,
+            "stdoutBytes": 1140,
+            "stdoutSha256": "442439895aba1e038241e822a32097e80e81b4c32289a4a1bf8fafe9189237c9",
+            "stderrBytes": 0,
+            "syntheticDataOnly": true
+          }
+        ],
+        "existing175CaseSuiteExecuted": false,
+        "sourceControlReadsInTestProcess": 1,
+        "syntheticCaptureDataOnly": true,
+        "nativeExecuted": false,
+        "managerImported": false,
+        "privateRootsOpened": false,
+        "SDK": false,
+        "SQLite": false,
+        "keys": false,
+        "signatures": false,
+        "nonceSearch": false,
+        "sockets": false,
+        "nativeChildren": false,
+        "qualificationScratchCreated": false,
+        "authority": "NONE"
+      },
+      "validated": true
+    }
+  ]
+}
+
