@@ -1,5 +1,7 @@
 # Committed crash selection: one actual local failure
 
+Later evidence: a separately approved V2 attempt also failed, with a different observed termination. See the [V2 record](P2_COMMITTED_CRASH_V2_LOCAL_FAILURE.md). V1's result below is preserved and is not superseded by a pass.
+
 The one separately approved attempt against [source 35df768](https://github.com/edgepillar/zenon-x402-poc/commit/35df768f63101acedb786d9fb8fa72ad9e708d30) failed. This is not a successful commit-to-crash-to-reopen result. The allowance is consumed and was not reused.
 
 See the [sanitized actual record](../qualification/recovery-crash-committed-v1.actual-local-failure.json). The complete private parent capture and interrupted files remain protected; no original payment, proof, key, private path, raw diagnostic or database is included here.
