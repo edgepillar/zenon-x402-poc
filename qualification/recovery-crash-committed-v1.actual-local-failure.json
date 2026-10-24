@@ -1,0 +1,109 @@
+{
+  "kind": "ACTUAL_ONE_FULL_ISSUED_P2_COMMITTED_CRASH_V1_LOCAL_FAILURE",
+  "version": 1,
+  "date": "2026-10-24",
+  "approvedSourceCommit": "35df768f63101acedb786d9fb8fa72ad9e708d30",
+  "approvedSourceTree": "87ef77ed92619149af79033f247863dd91999926",
+  "launchManifest": {
+    "path": "qualification/recovery-crash-pair.launch-inputs.json",
+    "sha256": "566eab5f9a096cef5a544671901e3293074067e4bc83d1bfde73071888e3d84c"
+  },
+  "sourceRowsSha256": "5aff94f7427ba46bbf3cc8e8ddc4f896672909773e44ff0335a26dc52502e979",
+  "admission": {
+    "applicationFiles": 130,
+    "packageFiles": 404,
+    "sourceBytesReadOnly": 4710510,
+    "gitMappedSourceRows": 140,
+    "sourceTransforms": 0,
+    "nativeBuiltinAliases": 0,
+    "sourceCopies": 0,
+    "frozenApplicationAndControlFilesMatched": true,
+    "mountIdentityVerified": true,
+    "taskQuotaBytes": 4194304,
+    "minimumFreeBytes": 10737418240,
+    "reservationsChecked": true,
+    "scopedReservationRoots": 20
+  },
+  "attempt": {
+    "maximumApproved": 1,
+    "consumed": 1,
+    "nativeRepeated": false,
+    "taskState": "CLOSED",
+    "taskOutcome": "FAILURE",
+    "taskElapsedSeconds": 1.9799606800079346,
+    "commands": 2,
+    "testTlsCommand": {
+      "actualExit": 0,
+      "streamsComplete": true
+    },
+    "nodeParentCommand": {
+      "actualExit": 1,
+      "streamsComplete": true,
+      "stdoutBytes": 12222,
+      "stdoutSha256": "b9636d870506beb6f5cbc244239ac05d21de5a479d001b5b1c56992e6a239178",
+      "stderrBytes": 0,
+      "receiptSha256": "da256ae14e56f8a4ad9454f934afc0077bcc99b2e5421bd19b86a32210412249"
+    },
+    "parentCaptureStatus": "FAILED_OR_UNKNOWN_PRESERVE_EVIDENCE",
+    "validatorRefusal": "PAIR_ACTUAL_COMMAND_OUTCOME"
+  },
+  "actualObserved": {
+    "seedChildren": 1,
+    "recoveryChildren": 0,
+    "lastProtocolPhase": "FUNDING_ORIGINAL_FIXED",
+    "fundingWitnessCaptured": true,
+    "serviceWitnessCaptured": false,
+    "selectedCommitCutpointReached": false,
+    "selectedCommitKillRequested": false,
+    "selectedCommitKillAccepted": false,
+    "seed": {
+      "termination": "SIGKILL",
+      "classification": "FAILURE_ONLY_OWNED_STOP_NOT_SELECTED_CRASH",
+      "observerFault": true,
+      "stdoutComplete": true,
+      "stderrComplete": true,
+      "ipcDisconnected": true,
+      "stdoutBytes": 597,
+      "stdoutSha256": "39b9f3f3ac56e31f2a795799bd0ab3e5ccbb52133b6c76bd5ecb7721553effa6",
+      "stderrBytes": 0,
+      "namespaceFilesVerifiedBeforeApplication": 534
+    },
+    "finalEffectCounters": "NOT_AVAILABLE_NO_CUTPOINT_EFFECT_SNAPSHOT",
+    "ownedProcessGroupsLiveAtReadOnlyReconciliation": 0,
+    "selectedSeedPidLiveAtReadOnlyReconciliation": false,
+    "recoveryDispatches": 0,
+    "recoverySignatures": 0
+  },
+  "retained": {
+    "cleanup": "HOLD",
+    "reason": "UNREGISTERED_CHILD_ARTIFACTS",
+    "heldScratchFiles": 8,
+    "heldScratchLogicalBytes": 125821,
+    "originalFundingPins": true,
+    "payerSqliteAndInterruptedJournal": true,
+    "rawPrivateCaptureVerifiedInCAS": true,
+    "rawCaptureOrTlsKeyPublished": false,
+    "existingEvidenceModified": false,
+    "SQLiteReopenedForDiagnosis": false,
+    "deletedFiles": 0
+  },
+  "diagnosis": {
+    "confirmed": "The selected committed cutpoint was not reached. The parent observer reported a fault before service-original custody.",
+    "exactFailingGuard": "NOT_LOGGED_BY_V1_NOT_ESTABLISHED",
+    "sourceDefectFound": "V1 binds a writable directory to dev/ino/uid/gid/mode/nlink. Its entry count is not a stable writer identity.",
+    "relationToNativeFailure": "CANDIDATE_CAUSE_NOT_INDEPENDENTLY_CONFIRMED",
+    "regularFileLinkAndIdentityGuardsMustRemain": true
+  },
+  "qualification": {
+    "selectedCommittedCrash": "FAILED_NOT_QUALIFIED",
+    "sameFileRecovery": "NOT_RUN",
+    "fullP2": "NOT_QUALIFIED",
+    "physicalDurability": "NOT_QUALIFIED",
+    "nativeCleanup": "NOT_QUALIFIED_BY_A_PROCESS_SNAPSHOT",
+    "chainAuthentication": "NOT_ESTABLISHED",
+    "serviceDelivery": "NOT_ESTABLISHED",
+    "pilot": "NO_GO",
+    "production": "NO_GO",
+    "authority": "NONE"
+  }
+}
