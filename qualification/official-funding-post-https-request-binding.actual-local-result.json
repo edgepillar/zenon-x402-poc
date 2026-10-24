@@ -1,0 +1,416 @@
+{
+  "kind": "OFFICIAL_FUNDING_POST_HTTP_BINDING_COMPONENT_RESULT_ACTUAL_SDK_SERVER_POST_SELECTION_SOURCE_ONLY",
+  "status": "PASS_12_HTTP_BINDING_COMPONENT_CASES_ACTUAL_POST_SDK_SERVER_SOURCE_AND_SYNTAX_ONLY",
+  "sourceParent": "97ba2d122d5af32c0b5409f2aeb0a02ca4387cdf",
+  "mainParent": "7c7e5133ebf5f26a6d69256e9217884ed1f27cd9",
+  "sourceFinding": {
+    "existingOfficialServerRoute": "GET /paid",
+    "dpOriginalRoute": "POST /funding",
+    "currentHttpsApplicationAndRouterStillGetOnly": true,
+    "intakeBoundAck": "202_WITH_BOUND_BODY_LOCALLY_VERIFIED_INTAKE_NOT_CHAIN_ACK",
+    "officialSettlementReceiptIsNotIntakeBound": true,
+    "sourceConfirmedNotNativeReproduction": true
+  },
+  "implemented": {
+    "postRoute": "captureOfficialFundingPostHttpsRoute",
+    "postRequest": "captureOfficialFundingPostHttpsRequest",
+    "actualPostServer": "createOfficialFundingPostSelectedSettlementServer",
+    "actualSdkConstructorsAndTupleOwnerHardwired": true,
+    "actualSdkRouteKey": "POST /funding",
+    "actualPrivateSdkRequestAdapterMethod": "POST",
+    "actualPrivateSdkRequestAdapterPath": "/funding",
+    "sameExistingPendingContinuationAndTupleFences": true,
+    "explicitNewPostExportNotLegacyReinterpretation": true,
+    "oldGetSelectionAndSnapshotProfileRetainedInSource": true,
+    "oldGetRuntimeRequalificationNotEstablished": true,
+    "newPostConstructorStrictlyRejectsOtherRoutes": true,
+    "nativeHttpAdmissionBeforeSdkRequestEntryInSource": true,
+    "actualSdkPostGraphExecuted": false,
+    "intakeBoundOrGrantOrPublicationAckInvented": false,
+    "intakeAdapterOrResponseWriterOrDefaultApplicationChanged": false,
+    "defaultBuyerCutover": false
+  },
+  "actualComponent": {
+    "event": "Q99_ACTUAL_OFFICIAL_FUNDING_POST_REQUEST_BINDING_COMPONENT_CAPTURE",
+    "actualExit": 0,
+    "outputComplete": true,
+    "counts": {
+      "tests": 12,
+      "pass": 12,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "cases": [
+      "ok 1 - route is explicitly immutable POST funding DATA with empty-body profile",
+      "ok 2 - exact own HTTP fields retain the original header scalar without decoding or reencoding",
+      "ok 3 - an unpaid exact POST and explicit zero content length remain distinguishable from a paid header",
+      "ok 4 - GET wrong path query fragment and absolute request targets are refused",
+      "ok 5 - noncanonical route URLs insecure profiles and caller-forged route records are refused",
+      "ok 6 - Host is exact and duplicate case-insensitive host fields cannot select another origin",
+      "ok 7 - nonzero or ambiguous body framing upgrade expectations and trailers are refused",
+      "ok 8 - HTTP version and declared TLS fields must be own exact values not inherited facts",
+      "ok 9 - duplicate payment headers unsafe tokens whitespace control bytes and header bounds are refused",
+      "ok 10 - request socket and raw-header proxies or getters refuse with zero hooks",
+      "ok 11 - POST and legacy GET route identities cannot cross-select and both reject wrong arity",
+      "ok 12 - request binding creates no intake BOUND settlement or grant authority"
+    ],
+    "footer": {
+      "tests": 12,
+      "entered": 12,
+      "completed": 12,
+      "hooks": 0,
+      "actualPostBinding": true,
+      "actualGetBinding": true,
+      "actualOfficialSdk": false,
+      "actualNative": false,
+      "actualIntake": false,
+      "actualSQLite": false,
+      "settlementMappedToBound": false,
+      "authority": "NONE",
+      "inputs": [
+        {
+          "path": "package.json",
+          "bytes": 2677,
+          "LF": 40,
+          "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+          "gitBlob": "45752ffde39d29666094f7f1c755060d75e43deb"
+        },
+        {
+          "path": "src/x402-official-funding-post-https-request-binding.js",
+          "bytes": 4154,
+          "LF": 78,
+          "sha256": "ce7af7ffe5cb9bf002eb596a4cc8093081ce880687cffd44d2d7c7c56871cc37",
+          "gitBlob": "fa410cf056e9de332e6ff9c3c57b907ddf34b484"
+        },
+        {
+          "path": "src/x402-funding-post-checkpoint-route.js",
+          "bytes": 1310,
+          "LF": 29,
+          "sha256": "157e80e9f14b41c8cacc05423a7acd8616a6f759adac377f04f1fca21869831e",
+          "gitBlob": "777ff48ac9cf255f80cda7e22c68706b7d7084b3"
+        },
+        {
+          "path": "src/x402-official-https-request-binding.js",
+          "bytes": 5085,
+          "LF": 99,
+          "sha256": "dabf215408887bd0d2ba346085c5ab2df13f724e8759b7a98b71b09c8dc8d692",
+          "gitBlob": "47059c772407233b8b6f54632ba065893ff92dd3"
+        },
+        {
+          "path": "qualification/official-funding-post-https-request-binding.behavior.draft.mjs",
+          "bytes": 9213,
+          "LF": 133,
+          "sha256": "621b3ae7bc9aeb15bbf463e23f4c13c165361d773653053864e76f1d06d2a13d",
+          "gitBlob": "08dfd5b94be2255b88bf73a0a8ababf4bfd738b2"
+        }
+      ]
+    },
+    "inputs": [
+      {
+        "path": "package.json",
+        "bytes": 2677,
+        "LF": 40,
+        "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+        "gitBlob": "45752ffde39d29666094f7f1c755060d75e43deb"
+      },
+      {
+        "path": "src/x402-official-funding-post-https-request-binding.js",
+        "bytes": 4154,
+        "LF": 78,
+        "sha256": "ce7af7ffe5cb9bf002eb596a4cc8093081ce880687cffd44d2d7c7c56871cc37",
+        "gitBlob": "fa410cf056e9de332e6ff9c3c57b907ddf34b484"
+      },
+      {
+        "path": "src/x402-funding-post-checkpoint-route.js",
+        "bytes": 1310,
+        "LF": 29,
+        "sha256": "157e80e9f14b41c8cacc05423a7acd8616a6f759adac377f04f1fca21869831e",
+        "gitBlob": "777ff48ac9cf255f80cda7e22c68706b7d7084b3"
+      },
+      {
+        "path": "src/x402-official-https-request-binding.js",
+        "bytes": 5085,
+        "LF": 99,
+        "sha256": "dabf215408887bd0d2ba346085c5ab2df13f724e8759b7a98b71b09c8dc8d692",
+        "gitBlob": "47059c772407233b8b6f54632ba065893ff92dd3"
+      },
+      {
+        "path": "qualification/official-funding-post-https-request-binding.behavior.draft.mjs",
+        "bytes": 9213,
+        "LF": 133,
+        "sha256": "621b3ae7bc9aeb15bbf463e23f4c13c165361d773653053864e76f1d06d2a13d",
+        "gitBlob": "08dfd5b94be2255b88bf73a0a8ababf4bfd738b2"
+      }
+    ],
+    "streams": {
+      "stdout": {
+        "bytes": 4240,
+        "sha256": "9f1061dfb99a57a7f48a1e5905c1c204ad863fc5eeb0642e0b7920bd8e7fead2"
+      },
+      "stderr": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    "nativeClientImported": false,
+    "nativeClientExecuted": false,
+    "NodeCommands": 1,
+    "NodeChildren": 0,
+    "SDK": false,
+    "SQLite": false,
+    "signing": false,
+    "nonce": false,
+    "sockets": false,
+    "NodeVersion": "24.19.0",
+    "platform": "darwin",
+    "arch": "arm64",
+    "attempts": 2,
+    "currentSourcePassCount": 12,
+    "sourceBeforeAndAfterVerified": true,
+    "actualHttpBindingOnly": true,
+    "declaredTlsFlagNotPeerAuthentication": true,
+    "invalidSignatureTextDeliberatelyNotDecoded": true,
+    "actualOfficialSdk": false,
+    "actualNative": false,
+    "actualIntake": false,
+    "actualSQLite": false,
+    "keys": false
+  },
+  "earlierComponent": {
+    "event": "Q99_ACTUAL_OFFICIAL_FUNDING_POST_REQUEST_BINDING_COMPONENT_CAPTURE",
+    "actualExit": 0,
+    "outputComplete": true,
+    "counts": {
+      "tests": 12,
+      "pass": 12,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "cases": [
+      "ok 1 - route is explicitly immutable POST funding DATA with empty-body profile",
+      "ok 2 - exact own HTTP fields retain the original header scalar without decoding or reencoding",
+      "ok 3 - an unpaid exact POST and explicit zero content length remain distinguishable from a paid header",
+      "ok 4 - GET wrong path query fragment and absolute request targets are refused",
+      "ok 5 - noncanonical route URLs insecure profiles and caller-forged route records are refused",
+      "ok 6 - Host is exact and duplicate case-insensitive host fields cannot select another origin",
+      "ok 7 - nonzero or ambiguous body framing upgrade expectations and trailers are refused",
+      "ok 8 - HTTP version and declared TLS fields must be own exact values not inherited facts",
+      "ok 9 - duplicate payment headers unsafe tokens whitespace control bytes and header bounds are refused",
+      "ok 10 - request socket and raw-header proxies or getters refuse with zero hooks",
+      "ok 11 - POST and legacy GET route identities cannot cross-select and both reject wrong arity",
+      "ok 12 - request binding creates no intake BOUND settlement or grant authority"
+    ],
+    "footer": {
+      "tests": 12,
+      "entered": 12,
+      "completed": 12,
+      "hooks": 0,
+      "actualPostBinding": true,
+      "actualGetBinding": true,
+      "actualOfficialSdk": false,
+      "actualNative": false,
+      "actualIntake": false,
+      "actualSQLite": false,
+      "settlementMappedToBound": false,
+      "authority": "NONE",
+      "inputs": [
+        {
+          "path": "package.json",
+          "bytes": 2677,
+          "LF": 40,
+          "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+          "gitBlob": "45752ffde39d29666094f7f1c755060d75e43deb"
+        },
+        {
+          "path": "src/x402-official-funding-post-https-request-binding.js",
+          "bytes": 4154,
+          "LF": 78,
+          "sha256": "ce7af7ffe5cb9bf002eb596a4cc8093081ce880687cffd44d2d7c7c56871cc37",
+          "gitBlob": "fa410cf056e9de332e6ff9c3c57b907ddf34b484"
+        },
+        {
+          "path": "src/x402-funding-post-checkpoint-route.js",
+          "bytes": 1310,
+          "LF": 29,
+          "sha256": "157e80e9f14b41c8cacc05423a7acd8616a6f759adac377f04f1fca21869831e",
+          "gitBlob": "777ff48ac9cf255f80cda7e22c68706b7d7084b3"
+        },
+        {
+          "path": "src/x402-official-https-request-binding.js",
+          "bytes": 5085,
+          "LF": 99,
+          "sha256": "dabf215408887bd0d2ba346085c5ab2df13f724e8759b7a98b71b09c8dc8d692",
+          "gitBlob": "47059c772407233b8b6f54632ba065893ff92dd3"
+        },
+        {
+          "path": "qualification/official-funding-post-https-request-binding.behavior.draft.mjs",
+          "bytes": 9095,
+          "LF": 132,
+          "sha256": "1a3beceae5d50e616b54e529b2421b957dc6e776295215aa8b69c0ff0638b7ff",
+          "gitBlob": "c4090c00e7e5ea0d3fe6d924271e448fda87ae50"
+        }
+      ]
+    },
+    "inputs": [
+      {
+        "path": "package.json",
+        "bytes": 2677,
+        "LF": 40,
+        "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+        "gitBlob": "45752ffde39d29666094f7f1c755060d75e43deb"
+      },
+      {
+        "path": "src/x402-official-funding-post-https-request-binding.js",
+        "bytes": 4154,
+        "LF": 78,
+        "sha256": "ce7af7ffe5cb9bf002eb596a4cc8093081ce880687cffd44d2d7c7c56871cc37",
+        "gitBlob": "fa410cf056e9de332e6ff9c3c57b907ddf34b484"
+      },
+      {
+        "path": "src/x402-funding-post-checkpoint-route.js",
+        "bytes": 1310,
+        "LF": 29,
+        "sha256": "157e80e9f14b41c8cacc05423a7acd8616a6f759adac377f04f1fca21869831e",
+        "gitBlob": "777ff48ac9cf255f80cda7e22c68706b7d7084b3"
+      },
+      {
+        "path": "src/x402-official-https-request-binding.js",
+        "bytes": 5085,
+        "LF": 99,
+        "sha256": "dabf215408887bd0d2ba346085c5ab2df13f724e8759b7a98b71b09c8dc8d692",
+        "gitBlob": "47059c772407233b8b6f54632ba065893ff92dd3"
+      },
+      {
+        "path": "qualification/official-funding-post-https-request-binding.behavior.draft.mjs",
+        "bytes": 9095,
+        "LF": 132,
+        "sha256": "1a3beceae5d50e616b54e529b2421b957dc6e776295215aa8b69c0ff0638b7ff",
+        "gitBlob": "c4090c00e7e5ea0d3fe6d924271e448fda87ae50"
+      }
+    ],
+    "streams": {
+      "stdout": {
+        "bytes": 4237,
+        "sha256": "dac14c8c2cfc719cf26b5bfb8c607cb3e389618ddb920c4dbe414773181519b1"
+      },
+      "stderr": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    "nativeClientImported": false,
+    "nativeClientExecuted": false,
+    "NodeCommands": 1,
+    "NodeChildren": 0,
+    "SDK": false,
+    "SQLite": false,
+    "signing": false,
+    "nonce": false,
+    "sockets": false
+  },
+  "componentHistoryNote": "Two DATA commands passed. Before the second, two explicit legacy GET arity assertions were added to the new unpublished entry. Earlier input/stream pins remain historical; only the second run qualifies the final entry.",
+  "effectfulSyntax": {
+    "path": "src/x402-official-selected-settlement-server.js",
+    "syntaxActualExit": 0,
+    "outputComplete": true,
+    "applicationImported": false,
+    "input": {
+      "path": "src/x402-official-selected-settlement-server.js",
+      "bytes": 16953,
+      "LF": 308,
+      "sha256": "54b92ef81577888295c439bbb5ddb21f6072b47feb6aa7b66e0df3965e37f8ec",
+      "gitBlob": "6b7fcf7c9584bbb11fe72e0fd19e87348a2b8f20"
+    },
+    "stdoutBytes": 0,
+    "stderrBytes": 0,
+    "NodeCommands": 1,
+    "nativeTlsExecuted": false
+  },
+  "execution": {
+    "componentNodeCommands": 2,
+    "syntaxOnlyNodeCommands": 1,
+    "NodeChildren": 0,
+    "newOpenSSL": 0,
+    "newNativeTlsRuns": 0,
+    "newSdkRuns": 0,
+    "newSQLiteFiles": 0,
+    "newKeysOrSignatures": 0,
+    "newNonceSearches": 0,
+    "newTaskStorageRoots": 0,
+    "newTaskStorageTasks": 0,
+    "newQualificationScratchBytes": 0,
+    "installation": false,
+    "cleanup": false,
+    "hostedWorkflowDispatched": false
+  },
+  "preserved": {
+    "pendingFullDpProfileUnchanged": true,
+    "pendingFullDpManifestSha256": "a472e3bcd8840ef4236e395cb918ae5f2a84be9ca45d8f59417c0b77da291933",
+    "newOfficialPostServerGraphInPendingProfile": false,
+    "pendingProfilePermissionExpanded": false,
+    "oldNativeSdkSqlSigningNonceAllowancesNotReused": true,
+    "historicalPublishedEvidenceNotRelabeled": true
+  },
+  "publication": {
+    "eligibleSourceFiles": [
+      "src/x402-official-funding-post-https-request-binding.js",
+      "src/x402-official-selected-settlement-server.js",
+      "qualification/official-funding-post-https-request-binding.behavior.draft.mjs",
+      "qualification/official-funding-post-https-request-binding.actual-local-result.json",
+      "docs/P1_OFFICIAL_FUNDING_POST_SERVER_PROFILE.md"
+    ],
+    "eligibleMainFiles": [
+      "src/x402-official-funding-post-https-request-binding.js",
+      "qualification/official-funding-post-https-request-binding.behavior.draft.mjs",
+      "qualification/official-funding-post-https-request-binding.actual-local-result.json",
+      "docs/P1_OFFICIAL_FUNDING_POST_SERVER_PROFILE.md"
+    ],
+    "actualSdkServerPostSelectionOnMain": false,
+    "mainEffectfulBlobsMustRemain": {
+      "src/x402-official-selected-settlement-server.js": {
+        "sha": "0c5457b489462470fd4c2f1c4d9cb87a8dfbdf5c",
+        "type": "blob",
+        "mode": "100644"
+      },
+      "src/x402-official-service-credit-https-application.js": {
+        "sha": "691148572674081b2f1e8ebdd44f54319eaa3019",
+        "type": "blob",
+        "mode": "100644"
+      },
+      "src/x402-official-upfront-https-router.js": {
+        "sha": "910d9676ac19fc08eb03c6e005517d2d862702ef",
+        "type": "blob",
+        "mode": "100644"
+      }
+    },
+    "mainPathsMustRemainAbsent": [
+      "src/service-credit-funding-post-native-https-transport.js"
+    ],
+    "normalFastForwardOnly": true,
+    "forcePush": false,
+    "englishAsciiPrivacySafe": true
+  },
+  "currentHeadCI": {
+    "source": {
+      "checks": 0,
+      "statuses": 0,
+      "runs": 0
+    },
+    "main": {
+      "checks": 0,
+      "statuses": 0,
+      "runs": 0
+    }
+  },
+  "CIInterpretation": "NO_CURRENT_PASS_INFERRED",
+  "fullP0Complete": false,
+  "fullP1Complete": false,
+  "fullP2Complete": false,
+  "fullRoadmapComplete": false,
+  "productionQualified": false
+}
+
