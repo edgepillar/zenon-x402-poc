@@ -1,5 +1,10 @@
 # Full-graph P2 committed-intent crash: source draft
 
+This document retains the child-source milestone. The later private profile
+builder, managed launcher, 52 DATA tests and separate read-only results are in
+[the managed-launcher draft](P2_MANAGED_CRASH_PAIR_PROFILE_AND_LAUNCHER_DRAFT.md).
+Neither milestone is a native crash execution result.
+
 ## Current evidence, 2026-10-24
 
 The actual application child, separate grant-operator fixture, closed namespace
