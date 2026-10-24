@@ -1,0 +1,352 @@
+{
+  "resultVersion": 1,
+  "scope": "ACTUAL_PACED_PARENT_CONSTRUCTION_ABSENCE_GUARD_AND_PARSER_ONLY",
+  "status": "47_SELECTED_DATA_CONTROLS_AND_TWO_PARSER_ONLY_CHECKS_PASSED_NATIVE_EXECUTION_NOT_QUALIFIED",
+  "sourceParent": "d6e7f18bdec92c9a57caf050f413f630d4136fbe",
+  "mainParent": "11f8ade6526d39ee12d4a4d89fdb3ac61d11efea",
+  "runtime": {
+    "node": "24.19.0",
+    "platform": "darwin",
+    "arch": "arm64",
+    "nodeSha256": "dbedff294bab84a0a86c04e15fbcbeb1c97ca10bef1b32b0634cd24b36f62100"
+  },
+  "selectedEntry": "qualification/service-credit-capacity-paced-parent-binding-guard.behavior.mjs",
+  "actualData": {
+    "actualExit": 0,
+    "complete": true,
+    "validated": true,
+    "counts": {
+      "tests": 47,
+      "suites": 0,
+      "pass": 47,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "elapsedSeconds": 0.0813882500078762,
+    "elapsedTimeIsNotBenchmark": true,
+    "stdoutBytes": 8058,
+    "stdoutSha256": "96f1c28c49de22808ed230ad7e42139032ecfececd2a91c975264b5f35a95a00",
+    "stderrBytes": 0,
+    "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "sourcePinsUnchanged": true,
+    "sourcePins": [
+      {
+        "path": "package.json",
+        "bytes": 2677,
+        "LF": 40,
+        "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+        "gitBlob": "45752ffde39d29666094f7f1c755060d75e43deb"
+      },
+      {
+        "path": "qualification/capacity-native-paced-workload-adapter-v1.draft.mjs",
+        "bytes": 19517,
+        "LF": 287,
+        "sha256": "735cfcf3957d4b945356a23eb9ea6020ffab3e6a66080e4cf65f04af13a3d0d1",
+        "gitBlob": "2719104c44da5b032d31714e5c3aef825a14e4bb"
+      },
+      {
+        "path": "src/service-credit-capacity-paced-workload-owner-core.js",
+        "bytes": 21119,
+        "LF": 398,
+        "sha256": "ec12fc8cef93f2ecda6ca88c8bf193db183a8a3f456d3a712411d319dfe7761f",
+        "gitBlob": "eb12bbbe1e3b468f1c8e0acf09ce94b076825178"
+      },
+      {
+        "path": "src/service-credit-capacity-windowed-async-workload-owner-core.js",
+        "bytes": 36252,
+        "LF": 645,
+        "sha256": "fda636116343c497f269d926ae8e3a61f1b9cd1cf11b493c3d9ba99ef55a7444",
+        "gitBlob": "cc9eae4a2e553a0e71a531f191648c9cbe0cb101"
+      },
+      {
+        "path": "src/service-credit-capacity-window-recorder.js",
+        "bytes": 13321,
+        "LF": 242,
+        "sha256": "48855e34729ae68c179d6439aed962a719964732c992a83472330b7e41293579",
+        "gitBlob": "6e28e75b4fd6572fbae535ac066334349ed26038"
+      },
+      {
+        "path": "src/service-credit-capacity-recorder.js",
+        "bytes": 10801,
+        "LF": 236,
+        "sha256": "eca9bf4cad4717df5d61457044c2c5d0a6bc00b6af81964d09bf18325d4a46ad",
+        "gitBlob": "bc9b0a8a9abd48033e698e100cdc6ef90d2152c9"
+      },
+      {
+        "path": "src/service-credit-capacity-paced-timing-trace-data.js",
+        "bytes": 20607,
+        "LF": 260,
+        "sha256": "3d338f0d8ba6f9ef53fdf81d49bdb6f0e16c98beb111a02f50a794dd67b1787b",
+        "gitBlob": "af9cfa9ea0bf3630803f7a8c1e8876032e7f781a"
+      },
+      {
+        "path": "src/service-credit-capacity-parent-timing-trace-data.js",
+        "bytes": 13257,
+        "LF": 213,
+        "sha256": "9b48e9212efa6b000690b32c04f07277d2c868562a1e649766a28aab85e0907d",
+        "gitBlob": "8aecb7664c2a4772870fdeb51d10fe69bc71cb79"
+      },
+      {
+        "path": "src/service-credit-capacity-native-observation-data.js",
+        "bytes": 6173,
+        "LF": 103,
+        "sha256": "d6d19890334fbb6d7e92e605640d4638154f8e3e10588c8e217bf782a675b7ca",
+        "gitBlob": "aaf6b24f65a59e4b421805d7667a5fdf9e72433f"
+      },
+      {
+        "path": "qualification/capacity-native-paced-paired-lane-v1.supervisor.draft.mjs",
+        "bytes": 26158,
+        "LF": 291,
+        "sha256": "3fafd060f95cbfd235768b739f5043398e228b9a1988019d41c833447e314b47",
+        "gitBlob": "e21d21d39edb1eb2d0a7806e003b095ea39779b6"
+      },
+      {
+        "path": "src/native-private-directory-identity.js",
+        "bytes": 1927,
+        "LF": 40,
+        "sha256": "f3945ab75a86fd2d5f8f53baddf6fbd684ee55c68139f9c4f061c3d13b9cc844",
+        "gitBlob": "1500d55d3313cb1a02c07b49108eb3bcfa5f20ad"
+      },
+      {
+        "path": "src/service-credit-capacity-window-writer-trace-data.js",
+        "bytes": 8906,
+        "LF": 126,
+        "sha256": "b86377ec5474f85465073e7891bde9f706b167a40cb6677671a6012dab4d9bbd",
+        "gitBlob": "ceabbe01bb341ccf2c9c8f0d89229e3dd4268c5f"
+      },
+      {
+        "path": "src/service-credit-capacity-cohort-writer-trace-data.js",
+        "bytes": 10956,
+        "LF": 181,
+        "sha256": "75c3529584f7c6126f726734d085e107438c7a676ff1f63073956054aedcba65",
+        "gitBlob": "63bee5ad4714d3179666eef371373d4e0416a4a0"
+      },
+      {
+        "path": "qualification/service-credit-capacity-paced-native-binding-construction.behavior.mjs",
+        "bytes": 9094,
+        "LF": 172,
+        "sha256": "a3fa78b61991770fe47f003834ac2c68596df0841c0e8f3d03801bd7792aed5b",
+        "gitBlob": "3a09ebd43ab294e01778e8aa590a51848eb2f420"
+      },
+      {
+        "path": "qualification/service-credit-capacity-paced-parent-binding-guard.behavior.mjs",
+        "bytes": 2159,
+        "LF": 41,
+        "sha256": "6f291831ae77ba173cae13cbd58de87e6daa5dab7deb70e672c31746d25ca593",
+        "gitBlob": "55b7256e9fe03bc329c7dababb4e634c7c360eba"
+      }
+    ],
+    "staticSourceImportEdges": 18
+  },
+  "parserOnlyResults": [
+    {
+      "path": "qualification/capacity-native-paced-supervisor-v1.namespace.preload.draft.mjs",
+      "actualExit": 0,
+      "complete": true,
+      "elapsedSeconds": 0.05840095800522249,
+      "stdoutBytes": 0,
+      "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderrBytes": 0,
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sourceUnchanged": true,
+      "topLevelExecuted": false,
+      "importsResolved": false
+    },
+    {
+      "path": "qualification/capacity-native-paced-workload-v1.entry.draft.mjs",
+      "actualExit": 0,
+      "complete": true,
+      "elapsedSeconds": 0.02892254199832678,
+      "stdoutBytes": 0,
+      "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderrBytes": 0,
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sourceUnchanged": true,
+      "topLevelExecuted": false,
+      "importsResolved": false
+    }
+  ],
+  "parserOnlySourcePins": [
+    {
+      "path": "qualification/capacity-native-paced-supervisor-v1.namespace.preload.draft.mjs",
+      "bytes": 22277,
+      "LF": 312,
+      "sha256": "0df91b28218c5fce00523263df33f5b0ed920125caa31b251e297c8d1619f24d",
+      "gitBlob": "33d54bd9b1151f7c3290c0fb88621db81277a2e3"
+    },
+    {
+      "path": "qualification/capacity-native-paced-workload-v1.entry.draft.mjs",
+      "bytes": 8908,
+      "LF": 110,
+      "sha256": "53a6bfc88d38e1c2c9473ba1af7fdc63b93911b633da9ea28dc65eac94dbbdc5",
+      "gitBlob": "e69dc47c7108eb12cd74bb1078da0b08024dae63"
+    }
+  ],
+  "nodeCommands": 3,
+  "behaviorCommands": 1,
+  "parserOnlyCommands": 2,
+  "sourceInputsReadForBehavior": 15,
+  "sourceInputsParsedWithoutExecution": 2,
+  "behaviorRuntimeReadPermissionInputs": [
+    "package.json",
+    "qualification/capacity-native-paced-workload-adapter-v1.draft.mjs",
+    "src/service-credit-capacity-paced-workload-owner-core.js",
+    "src/service-credit-capacity-windowed-async-workload-owner-core.js",
+    "src/service-credit-capacity-window-recorder.js",
+    "src/service-credit-capacity-recorder.js",
+    "src/service-credit-capacity-paced-timing-trace-data.js",
+    "src/service-credit-capacity-parent-timing-trace-data.js",
+    "src/service-credit-capacity-native-observation-data.js",
+    "qualification/capacity-native-paced-paired-lane-v1.supervisor.draft.mjs",
+    "src/native-private-directory-identity.js",
+    "src/service-credit-capacity-window-writer-trace-data.js",
+    "src/service-credit-capacity-cohort-writer-trace-data.js",
+    "qualification/service-credit-capacity-paced-native-binding-construction.behavior.mjs",
+    "qualification/service-credit-capacity-paced-parent-binding-guard.behavior.mjs"
+  ],
+  "noFilesystemWriteChildWorkerOrNetworkPermission": true,
+  "codeGenerationFromStringsDisabled": true,
+  "nativeAddonsDisabled": true,
+  "importedBuiltinNames": [
+    "node:assert/strict",
+    "node:buffer",
+    "node:child_process",
+    "node:crypto",
+    "node:fs",
+    "node:path",
+    "node:test",
+    "node:timers",
+    "node:url",
+    "node:util"
+  ],
+  "selectedCoverage": {
+    "prior43ConstructionControlsReexecutedAgainstChangedAdapter": true,
+    "newAbsenceAndContextControls": 4,
+    "positiveParentNamespaceNotSubstitutedOrTested": true,
+    "namespaceAbsenceRefusedBeforePrivateProfileRead": true,
+    "realNewPairAndAdapterImported": true,
+    "genuineCoreSourceNotChanged": true,
+    "preloaderTopLevelNotExecuted": true,
+    "entryTopLevelNotExecuted": true,
+    "parserChecksDoNotResolveOrAuthenticateDependencies": true
+  },
+  "parentGraphDeclaration": {
+    "applicationFiles": 145,
+    "packageFiles": 404,
+    "sourceRowsSha256": "49da8ed7a1c416cfa8e2f22e04e10ce4fd28be015c139e8db16830279020687c",
+    "declaredBytes": 4892736,
+    "extraInputs": [
+      {
+        "path": "app/qualification/capacity-native-paced-paired-lane-v1.supervisor.draft.mjs",
+        "bytes": 26158,
+        "LF": 291,
+        "sha256": "3fafd060f95cbfd235768b739f5043398e228b9a1988019d41c833447e314b47",
+        "gitBlob": "e21d21d39edb1eb2d0a7806e003b095ea39779b6"
+      },
+      {
+        "path": "app/qualification/capacity-native-paced-supervisor-v1.namespace.preload.draft.mjs",
+        "bytes": 22277,
+        "LF": 312,
+        "sha256": "0df91b28218c5fce00523263df33f5b0ed920125caa31b251e297c8d1619f24d",
+        "gitBlob": "33d54bd9b1151f7c3290c0fb88621db81277a2e3"
+      },
+      {
+        "path": "app/qualification/capacity-native-paced-workload-adapter-v1.draft.mjs",
+        "bytes": 19517,
+        "LF": 287,
+        "sha256": "735cfcf3957d4b945356a23eb9ea6020ffab3e6a66080e4cf65f04af13a3d0d1",
+        "gitBlob": "2719104c44da5b032d31714e5c3aef825a14e4bb"
+      },
+      {
+        "path": "app/qualification/capacity-native-paced-workload-v1.entry.draft.mjs",
+        "bytes": 8908,
+        "LF": 110,
+        "sha256": "53a6bfc88d38e1c2c9473ba1af7fdc63b93911b633da9ea28dc65eac94dbbdc5",
+        "gitBlob": "e69dc47c7108eb12cd74bb1078da0b08024dae63"
+      },
+      {
+        "path": "app/src/service-credit-capacity-paced-timing-trace-data.js",
+        "bytes": 20607,
+        "LF": 260,
+        "sha256": "3d338f0d8ba6f9ef53fdf81d49bdb6f0e16c98beb111a02f50a794dd67b1787b",
+        "gitBlob": "af9cfa9ea0bf3630803f7a8c1e8876032e7f781a"
+      },
+      {
+        "path": "app/src/service-credit-capacity-paced-workload-owner-core.js",
+        "bytes": 21119,
+        "LF": 398,
+        "sha256": "ec12fc8cef93f2ecda6ca88c8bf193db183a8a3f456d3a712411d319dfe7761f",
+        "gitBlob": "eb12bbbe1e3b468f1c8e0acf09ce94b076825178"
+      }
+    ],
+    "legacyChildSourceRowsSha256": "d756740994aeb53ebeee47320d732583d96381dfa8c00e18a30f414e70a77027",
+    "legacyChildApplicationFiles": 139,
+    "legacyChildPackageFiles": 404,
+    "completeGraphPhysicalFileRead": false,
+    "packageFilesOpened": 0,
+    "nativeAdmissionExecuted": false
+  },
+  "manifestPins": [
+    {
+      "path": "qualification/capacity-native-full-graph-v3.inputs.json",
+      "bytes": 8697,
+      "LF": 215,
+      "sha256": "3bb597da71736542615047d11af78ad6825df5bdb6e4561747d8c1f9dff7d0df",
+      "gitBlob": "0530e2b08929d45c93b4e4912dc69d27b0645204"
+    },
+    {
+      "path": "qualification/issued-funding-post-native-vertical.inputs-v3.json",
+      "bytes": 138777,
+      "LF": 3836,
+      "sha256": "51ffb5b0ff0052523c1b7f3d75fa24e9be27e60ca3bcc09236b1f439096aaed1",
+      "gitBlob": "3dc05ccffd306e97056b4ed168d8121f63acebbc"
+    }
+  ],
+  "evidenceBoundary": {
+    "validAdapterRunOrStopInvoked": false,
+    "pairAcquisition": false,
+    "roleProfileReads": false,
+    "namespaceSubstituted": false,
+    "positiveNativeAdmissionExercised": false,
+    "nativeEffectsExecuted": false,
+    "SDK": false,
+    "SQLite": false,
+    "keys": false,
+    "signatures": false,
+    "nonceSearch": false,
+    "sockets": false,
+    "applicationChildren": false,
+    "workloadTimers": false,
+    "finalFreshBalanceBarrierExecuted": false,
+    "finalWriterTracePagingExecuted": false,
+    "nativeExecutionQualified": false,
+    "sustainableCapacityQualified": false,
+    "productionQualified": false,
+    "authority": "NONE"
+  },
+  "preservation": {
+    "oldNativeInputsBytePreserved": 18,
+    "historical43RecordUnchanged": true,
+    "historical43QualifiedSourceCommit": "d6e7f18bdec92c9a57caf050f413f630d4136fbe",
+    "historical43NotRelabeledAsCurrentSource": true,
+    "old139Application404PackageGraphUnchanged": true,
+    "prior155CoreDependenciesUnchangedNotRerun": true,
+    "hosted27ProfileUnchanged": true,
+    "new47ControlsNotHosted": true,
+    "newParserChecksNotHosted": true,
+    "managedTasksCreated": 0,
+    "qualificationScratchCreated": false,
+    "qualificationSourceCopies": 0,
+    "packageCopies": 0,
+    "historicalEvidenceChanged": false
+  },
+  "publicationBoundary": {
+    "developmentBranch": "x402/p1-router-late-pending-close-integration-v2",
+    "sourceOnlyPublication": true,
+    "mainTransferDeferred": true,
+    "mainOrCIWorkflowChanged": false
+  },
+  "remainingGate": "Implement and review the real managed private-profile producer/controller for distinct parent and child closures. Before effects, obtain separate finite native authority and fresh package/tool/root/capacity checks. Preserve R4 and all previous failures."
+}
