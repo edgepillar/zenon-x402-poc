@@ -1,10 +1,12 @@
 import { types as utilTypes } from 'node:util';
-import { createOriginalPaymentCheckpointClient } from './x402-original-payment-checkpoint-client.js';
+import { createOriginalPaymentCheckpointClient,
+  createFundingPostOriginalPaymentCheckpointClient } from './x402-original-payment-checkpoint-client.js';
 import { createOfficialSelectedPaymentClient } from './x402-official-selected-payment-client.js';
 import { openServiceCreditCustodiedSqliteHttpClientV6 } from './service-credit-custodied-sqlite-http-client.js';
 import { snapshotOriginalServiceRequestCustodyPolicy } from './service-credit-original-request-custody-contract.js';
 
 const CORE = createOriginalPaymentCheckpointClient, OFFICIAL = createOfficialSelectedPaymentClient;
+const FUNDING_POST_CORE = createFundingPostOriginalPaymentCheckpointClient;
 const OPEN_V6 = openServiceCreditCustodiedSqliteHttpClientV6;
 const POLICY = snapshotOriginalServiceRequestCustodyPolicy;
 const FREEZE = Object.freeze, DESC = Object.getOwnPropertyDescriptor, PROTO = Object.getPrototypeOf;
@@ -39,17 +41,35 @@ const SPECIES = DESC(NativePromise, Symbol.species);
  * native physical-drain, ordinary package namespace or full P1 qualification.
  */
 export async function openOfficialV6OriginalPaymentClient(configuration) {
+  if (arguments.length !== 1) fail('configuration_rejected');
+  return openOriginalPaymentClient(configuration, false);
+}
+
+/**
+ * SOURCE-ONLY named POST /funding connection to the ACTUAL existing V6 owner
+ * and official client. Same original signed checkpoint, independent pins and
+ * one-context restoration; no GET /paid reinterpretation or funding resend.
+ * Service-only submit still needs explicit original/proof and selected grant.
+ * The returned requestProfile is DATA, not native binding or send authority.
+ * This new SDK/SQLite graph has not been executed or runtime-qualified.
+ */
+export async function openOfficialV6FundingPostOriginalPaymentClient(configuration) {
+  if (arguments.length !== 1) fail('configuration_rejected');
+  return openOriginalPaymentClient(configuration, true);
+}
+
+async function openOriginalPaymentClient(configuration, fundingPost) {
   let payer = null, originals = null, official = null;
   let payerConfig, officialConfig, originalConfig, policy, selection;
   try {
-    if (arguments.length !== 1 || !invariant()) fail('configuration_rejected');
+    if (!invariant()) fail('configuration_rejected');
     const c = record(configuration, ['payerOptions', 'originalPayment', 'official']);
     payerConfig = record(c.payerOptions, ['databasePath', 'allowedRoot', 'fundingResourceUrl',
       'custodyPolicy', 'selectedGrantId', 'requestImpl', 'deadlineMs']);
     originalConfig = record(c.originalPayment, ['resourceUrl', 'serializedCheckpoint', 'expectedPins']);
     officialConfig = record(c.official, ['validateChallenge', 'assetInfo', 'contextLimit']);
     // CORE construction captures only caller DATA and never calls this reader.
-    originals = CORE({ ...originalConfig, readOriginalPaymentCheckpoint: FREEZE(pins => {
+    originals = (fundingPost ? FUNDING_POST_CORE : CORE)({ ...originalConfig, readOriginalPaymentCheckpoint: FREEZE(pins => {
       if (payer === null) fail('payer_unavailable');
       return payer.readOriginalPaymentCheckpoint(pins);
     }) });
@@ -72,6 +92,9 @@ export async function openOfficialV6OriginalPaymentClient(configuration) {
     configuration = null; payerConfig = null; originalConfig = null; officialConfig = null; policy = null;
   }
   const PAYER = payer, ORIGINAL = originals, SDK = official, RESOURCE = selection.resourceUrl;
+  const REQUEST_PROFILE = fundingPost ? selection.requestProfile : null;
+  const PROFILE = fundingPost ? 'OFFICIAL_X402_2_23_FUNDING_POST_RETAINED_ORIGINAL_V6_CLIENT'
+    : 'OFFICIAL_X402_2_23_RETAINED_ORIGINAL_V6_CLIENT';
   // The captured reader above intentionally keeps the actual payer reference.
   const SUBMIT = PAYER.submitOriginal, CLOSE = PAYER.close;
   let lifecycle = 'OPEN', pending = null, closing = null, restorations = 0;
@@ -104,6 +127,7 @@ export async function openOfficialV6OriginalPaymentClient(configuration) {
       const encoded = SDK.encodePaymentSignatureHeader(payload);
       const header = ORIGINAL.selectOriginalPaymentHeader(encoded, captured.expectedPins);
       return FREEZE({ resourceUrl: RESOURCE, paymentSignatureHeader: header,
+        ...(fundingPost ? { requestProfile: REQUEST_PROFILE } : {}),
         source: 'EXACT_RETAINED_V6_ORIGINAL', authority: 'NONE', transport: 'NOT_INVOKED',
         signatureCreated: false, fundingAcknowledgement: 'NOT_ESTABLISHED',
         grantActivation: 'NOT_ESTABLISHED', serviceDelivery: 'NOT_ESTABLISHED' });
@@ -146,7 +170,7 @@ export async function openOfficialV6OriginalPaymentClient(configuration) {
   });
   const snapshot = FREEZE(function snapshot() {
     if (arguments.length !== 0 || !invariant()) fail('input_rejected');
-    return FREEZE({ profile: 'OFFICIAL_X402_2_23_RETAINED_ORIGINAL_V6_CLIENT',
+    return FREEZE({ profile: PROFILE,
       lifecycle, operationActive: pending !== null, restorations,
       original: ORIGINAL.snapshot(), official: SDK.getSnapshot(), payer: PAYER.snapshot(),
       defaultEnabled: false, authority: 'NONE', originalFundingSubmission: 'EXTERNAL_EXPLICIT_OPERATION',
