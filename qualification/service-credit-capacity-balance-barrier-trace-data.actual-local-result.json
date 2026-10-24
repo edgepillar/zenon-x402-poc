@@ -1,0 +1,158 @@
+{
+  "kind": "BALANCE_BARRIER_RAW_TRACE_SELECTED_ACTUAL_DATA_NOT_NATIVE_CAPACITY",
+  "version": 1,
+  "sourceParent": "ecba4cd98d2d045016a834795efff67a5a3e1622",
+  "mainParent": "d0b12d37dcdb153ce5e92f649858101c92a7b147",
+  "sourcePins": [
+    {
+      "path": "package.json",
+      "bytes": 2677,
+      "LF": 40,
+      "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+      "gitBlob": "45752ffde39d29666094f7f1c755060d75e43deb"
+    },
+    {
+      "path": "src/service-credit-capacity-balance-barrier-trace-data.js",
+      "bytes": 10712,
+      "LF": 177,
+      "sha256": "235f5ff9b0b128a393244a545e6d5f83ffb3c8335e358efcc294968d562260e9",
+      "gitBlob": "0674cf00e3906b54441638903827d8bebe6f81aa"
+    },
+    {
+      "path": "qualification/service-credit-capacity-balance-barrier-trace-data.behavior.mjs",
+      "bytes": 14384,
+      "LF": 210,
+      "sha256": "8ca41bdaa046cda876e27af3c08d8c9203a29fb12f3897cd70218ca027019424",
+      "gitBlob": "aed705d23c2f489f9864ff9087e14b0821cc0704"
+    }
+  ],
+  "actualCommand": {
+    "actualExit": 0,
+    "complete": true,
+    "validated": true,
+    "counts": {
+      "tests": 64,
+      "suites": 0,
+      "pass": 64,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "NodeDataCommands": 1,
+    "elapsedSeconds": 0.09973591699963436,
+    "stdoutBytes": 13587,
+    "stdoutSha256": "bcc02d5b762ead369c2f4a96a9f28e70615f178d20da5ecc4dc4f2ddc5198e35",
+    "stderrBytes": 0,
+    "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "sourceAndProtectedInputsUnchanged": true,
+    "protectedInputCount": 35,
+    "timingBenchmarkQualified": false
+  },
+  "implementation": {
+    "actualRecorderAndCheckerImplemented": true,
+    "maxLanes": 16,
+    "barriersPerLane": 3,
+    "maxObservations": 48,
+    "maxPrivateEvents": 96,
+    "callerSuppliedParentMonotonicNanoseconds": true,
+    "wholeFinalWriterTraceBarrierIncluded": true,
+    "pureBalanceRpcOrSqlLatencyInferred": false,
+    "completeRawSeriesRequired": true,
+    "nearestRankPercentilesRecomputed": true,
+    "completeOutcomesInDenominator": true,
+    "unknownIsSticky": true,
+    "lateFinishRepairsFinalSnapshot": false,
+    "silentEviction": false,
+    "automaticRetry": false,
+    "callbacksOrResourcesOwned": false,
+    "finalSummaryAndEvidenceCached": true,
+    "temporaryDurationArraysReleased": true,
+    "rawEventsRetainedOnlyInPrivateCapsule": true
+  },
+  "executionBoundary": {
+    "actualNewSourceModuleExecutedWithDeclaredData": true,
+    "NodeDataCommands": 1,
+    "nativeApplicationCommands": 0,
+    "SDK": false,
+    "SQLite": false,
+    "keys": false,
+    "signatures": false,
+    "nonceSearch": false,
+    "sockets": false,
+    "children": false,
+    "actualClockReadByComponent": false,
+    "sourceOrPackageCopies": 0,
+    "qualificationScratchCreated": false,
+    "managerImported": false,
+    "privateStorageOpened": false,
+    "existingNativeGraphsChanged": false,
+    "oldR4ApprovalConsumed": false,
+    "automationsChanged": false
+  },
+  "evidenceLimits": {
+    "callerTimesAndOutcomesAuthenticated": false,
+    "nativeAdapterUsesNewComponent": false,
+    "existingOuterCaptureBalanceSeriesNowRecomputed": false,
+    "realBalanceRpcMeasured": false,
+    "pureSqlLatencyQualified": false,
+    "physicalResourceReleaseQualified": false,
+    "sustainableCapacityQualified": false,
+    "pilotOrProductionQualified": false
+  },
+  "publication": {
+    "scope": "INDEPENDENT_DATA_COMPONENT_ONLY_NOT_FULL_NATIVE_CLOSURE",
+    "eligiblePaths": [
+      "src/service-credit-capacity-balance-barrier-trace-data.js",
+      "qualification/service-credit-capacity-balance-barrier-trace-data.behavior.mjs",
+      "qualification/service-credit-capacity-balance-barrier-trace-data.actual-local-result.json",
+      "docs/SERVICE_CREDIT_CAPACITY_BALANCE_BARRIER_TRACE.md"
+    ],
+    "defaultScriptsChanged": false,
+    "workflowsChanged": false,
+    "existingHostedProfileCases": 27,
+    "new64ControlsHosted": false,
+    "newNativeActivation": false
+  },
+  "separatePacedMainReview": {
+    "sourceHead": "ecba4cd98d2d045016a834795efff67a5a3e1622",
+    "mainHead": "d0b12d37dcdb153ce5e92f649858101c92a7b147",
+    "applicationRowsChecked": 145,
+    "packageRowsDeclared": 404,
+    "candidateRoots": 169,
+    "minimumMainDifferences": 47,
+    "firstLevelDocumentationExtraPaths": [
+      "qualification/native-capacity-paced-managed-launcher-v1.actual-local-result.json",
+      "qualification/service-credit-capacity-paced-native-binding-construction.actual-local-result.json",
+      "qualification/service-credit-capacity-paced-parent-binding-guard.actual-local-result.json"
+    ],
+    "existingRuntimeEdits": [
+      {
+        "path": "src/service-credit-custodied-sqlite-http-client.js",
+        "mainBlob": "86ac76593fa9c9a6b39bb6a39c1a2ef994aff7f2",
+        "sourceBlob": "e8082803bb8f0f2c780d660c897bfb6856ba7932"
+      },
+      {
+        "path": "src/service-credit-native-https-client-transport.js",
+        "mainBlob": "ab6740f8e82c0cf06d5c268ce0b6750d87d0ddeb",
+        "sourceBlob": "6635dd2f656e79b8079007421a69c991920884da"
+      },
+      {
+        "path": "src/x402-official-selected-settlement-server.js",
+        "mainBlob": "0c5457b489462470fd4c2f1c4d9cb87a8dfbdf5c",
+        "sourceBlob": "e0e15f175fc60ef3f0d4f3bec8d265edf2d9ee46"
+      },
+      {
+        "path": "src/x402-official-v6-original-payment-client.js",
+        "mainBlob": "ee582ed684cd73c5ae92d9583aa7057d111baaea",
+        "sourceBlob": "535453072223388fbcae4741a6fc7c37723377ce"
+      }
+    ],
+    "fullNativeClosureEligible": false,
+    "legacyRuntimeRegressionEstablished": false,
+    "pendingNativeChecksExecuted": false,
+    "nativeOrEconomicPermissionExpanded": false,
+    "compatibleSubsetPresentedAsFullClosure": false
+  },
+  "authority": "NONE"
+}
