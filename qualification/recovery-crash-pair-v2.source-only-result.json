@@ -1,0 +1,133 @@
+{
+  "kind": "P2_COMMITTED_CRASH_PAIR_V2_SOURCE_REVIEW_NOT_NATIVE_RESULT",
+  "version": 2,
+  "date": "2026-10-24",
+  "sourceParent": "eafc175e800885ed9d2c1de7a176848b94bcf881",
+  "sourceInputs": [
+    {
+      "path": "src/native-private-directory-identity.js",
+      "bytes": 1927,
+      "LF": 40,
+      "sha256": "f3945ab75a86fd2d5f8f53baddf6fbd684ee55c68139f9c4f061c3d13b9cc844",
+      "gitBlob": "1500d55d3313cb1a02c07b49108eb3bcfa5f20ad"
+    },
+    {
+      "path": "qualification/native-private-directory-identity.behavior.mjs",
+      "bytes": 3222,
+      "LF": 57,
+      "sha256": "b5f29c5f48589a0b375d93d7e5e58019c8ea7c3f8383c9568171c000149aa0f7",
+      "gitBlob": "ab03bfe0cdc9b5d96cce30a1fadbf324053e6fa5"
+    },
+    {
+      "path": "qualification/recovery-crash-cutpoint-supervisor-v2.draft.mjs",
+      "bytes": 24041,
+      "LF": 345,
+      "sha256": "de0dc9131f86cd16f357ba6bda17e0cf10a8983fdebdd9a4655c70c882e98168",
+      "gitBlob": "d32e58c5562018dbc9f377a77a6c7ed79f1ea657"
+    },
+    {
+      "path": "qualification/recovery-crash-pair-v2.entry.draft.mjs",
+      "bytes": 8425,
+      "LF": 127,
+      "sha256": "acc3d786970d88842815dba7ca84da156926b0c75915068e55f04e68ccd9c04f",
+      "gitBlob": "44a84c33e69e491d77bb4ddd3a4e0b804a632c14"
+    },
+    {
+      "path": "qualification/run-recovery-crash-pair-v2.local.py",
+      "bytes": 16243,
+      "LF": 242,
+      "sha256": "7fd18925308d2cdb0342afbea05b7a2d854bdfc17f288c487bdbcd5692659904",
+      "gitBlob": "7051c78b023f3a7053f6798b57e728154c8a1c87"
+    },
+    {
+      "path": "qualification/recovery-crash-pair-v2.launch-inputs.json",
+      "bytes": 4495,
+      "LF": 132,
+      "sha256": "d180e3b0f65e48ac1df8ff38003fd71acab0346b93602b60a38081d56175bbfd",
+      "gitBlob": "8a64a06e60f684a9c8d0af8b7a8e5defd713f9cf"
+    }
+  ],
+  "frozenV1FailureRecord": "qualification/recovery-crash-committed-v1.actual-local-failure.json",
+  "sourceOnlyAdmission": {
+    "event": "Q124_V2_MANAGED_SOURCE_ADMISSION",
+    "actualExit": 0,
+    "stdout": "{\"event\": \"P2_V2_SOURCE_ADMITTED_NOT_NATIVE\", \"fullChildApplicationFiles\": 130, \"packageFilesDeclared\": 404, \"parentControlFiles\": 6, \"parentPrivateProfileBytes\": 3416, \"frozenV1Preserved\": true, \"effectsExecuted\": false}\n",
+    "stderr": "",
+    "manifestSha256": "d180e3b0f65e48ac1df8ff38003fd71acab0346b93602b60a38081d56175bbfd",
+    "manifestBytes": 4495,
+    "sourcePinsUnchanged": true,
+    "applicationOrPackageExecuted": false,
+    "nativeAttempt": false,
+    "storeCreated": false
+  },
+  "actualData": {
+    "result": "qualification/native-private-directory-identity.actual-local-result.json",
+    "tests": 17,
+    "pass": 17,
+    "scope": "FIVE_FIELD_DIRECTORY_STAT_IDENTITY_DATA_ONLY"
+  },
+  "syntaxCollector": {
+    "actualNodeCheckCommandsBeforeCollectorFailure": 4,
+    "actualZeroExitsProvedByReachingLaterCollector": true,
+    "finalSourceRecheckInThatCollector": "NOT_REACHED",
+    "standaloneSuccessfulSyntaxReceipt": "NOT_RETAINED",
+    "notCountedAsNativeExecution": true
+  },
+  "implementation": {
+    "unchangedChildApplicationFiles": 130,
+    "unchangedChildPackageFiles": 404,
+    "childSourceBytes": 4710510,
+    "parentSourceInputs": 6,
+    "pinnedHistoricalSourceAdmissionReusedWithoutInvokingOldRecipe": true,
+    "childSourceInventoryDuplicated": false,
+    "sourceTransforms": false,
+    "nativeAliases": false,
+    "stableDirectoryIdentityFields": [
+      "dev",
+      "ino",
+      "uid",
+      "gid",
+      "mode"
+    ],
+    "directoryNlinkPinned": false,
+    "regularFileSingleLinkRequired": true,
+    "regularFileFullIdentityPinsPreserved": true,
+    "boundedFailureStageAdded": true,
+    "failureOnlyKillNeverCountsAsSelectedCutpoint": true
+  },
+  "preservation": {
+    "frozenV1SourceAndFailure": true,
+    "V1JournalHeldNotReopened": true,
+    "preparedSelectionUnchanged": true,
+    "otherRootsUnchanged": true,
+    "sourceOrPackagesCopied": 0,
+    "packageInstall": false,
+    "workflowChanged": false
+  },
+  "currentV2Execution": {
+    "nativeAllowance": "NOT_GRANTED",
+    "managedRootCreated": false,
+    "managedTasks": 0,
+    "OpenSSLCommands": 0,
+    "nodeParents": 0,
+    "nodeChildren": 0,
+    "SDK": false,
+    "SQLite": false,
+    "keys": 0,
+    "signatures": 0,
+    "sockets": false,
+    "nonceCandidates": 0
+  },
+  "qualifications": {
+    "managedSourceAdmission": "PASS_SOURCE_ONLY",
+    "newNativePair": "NOT_RUN",
+    "exactV1FailureCause": "NOT_ESTABLISHED",
+    "crashRecovery": "NOT_QUALIFIED",
+    "physicalDurability": "NOT_QUALIFIED",
+    "capacity": "NOT_QUALIFIED",
+    "otherCapacityDraftRootGuards": "SEPARATE_FOLLOWUP_REQUIRED",
+    "pilot": "NO_GO",
+    "production": "NO_GO",
+    "authority": "NONE"
+  }
+}

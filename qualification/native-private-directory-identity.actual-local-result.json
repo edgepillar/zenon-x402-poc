@@ -1,0 +1,86 @@
+{
+  "kind": "ACTUAL_NATIVE_PRIVATE_DIRECTORY_IDENTITY_DATA_NOT_FILESYSTEM_QUALIFICATION",
+  "version": 1,
+  "date": "2026-10-24",
+  "sourceParent": "eafc175e800885ed9d2c1de7a176848b94bcf881",
+  "currentResult": {
+    "event": "Q124_PRIVATE_DIRECTORY_IDENTITY_ACTUAL_DATA",
+    "collectorAttempt": 2,
+    "actualExit": 0,
+    "complete": true,
+    "counts": {
+      "tests": 17,
+      "suites": 0,
+      "pass": 17,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "validated": true,
+    "elapsedSeconds": 0.08176179200381739,
+    "stdoutBytes": 2975,
+    "stdoutSha256": "cec86261c1d0c74afae0c86f5227ab093a43d8a85f17c7a299379955feacc8c1",
+    "stderrBytes": 0,
+    "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "sourcePins": [
+      {
+        "path": "package.json",
+        "bytes": 2677,
+        "LF": 40,
+        "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+        "gitBlob": "45752ffde39d29666094f7f1c755060d75e43deb"
+      },
+      {
+        "path": "src/native-private-directory-identity.js",
+        "bytes": 1927,
+        "LF": 40,
+        "sha256": "f3945ab75a86fd2d5f8f53baddf6fbd684ee55c68139f9c4f061c3d13b9cc844",
+        "gitBlob": "1500d55d3313cb1a02c07b49108eb3bcfa5f20ad"
+      },
+      {
+        "path": "qualification/native-private-directory-identity.behavior.mjs",
+        "bytes": 3222,
+        "LF": 57,
+        "sha256": "b5f29c5f48589a0b375d93d7e5e58019c8ea7c3f8383c9568171c000149aa0f7",
+        "gitBlob": "ab03bfe0cdc9b5d96cce30a1fadbf324053e6fa5"
+      }
+    ],
+    "sourcePinsUnchanged": true,
+    "nodeBinaryHashedOnceThisCommand": true,
+    "SDK": false,
+    "SQLite": false,
+    "keys": false,
+    "signatures": false,
+    "nonceSearch": false,
+    "sockets": false,
+    "children": false,
+    "qualificationScratchCreated": false,
+    "nativeDirectoryOperations": false,
+    "nativeCrashQualified": false
+  },
+  "preservedCollectorFailure": {
+    "status": "WRAPPER_OUTPUT_DECODE_FAILURE",
+    "type": "UnicodeDecodeError",
+    "offset": 0,
+    "byte": "0xe2",
+    "syntaxCommandsReturnedBeforeError": 4,
+    "selectedDataCommandCompleted": true,
+    "selectedDataCountsNotRetained": true,
+    "selectedDataOutcome": "NOT_ESTABLISHED",
+    "nativeEffects": false,
+    "nativeP2AllowanceNotReused": true
+  },
+  "scope": "Actual five-field DATA helper. Declared nlink/size/time changes are not a native APFS experiment.",
+  "qualifications": {
+    "data": "PASS_17_OF_17",
+    "nativeFilesystem": "NOT_QUALIFIED",
+    "nativeCrash": "NOT_QUALIFIED",
+    "SDK": false,
+    "SQLite": false,
+    "signatures": false,
+    "sockets": false,
+    "production": false,
+    "authority": "NONE"
+  }
+}
