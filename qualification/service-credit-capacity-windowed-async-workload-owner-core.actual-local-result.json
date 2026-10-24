@@ -1,0 +1,158 @@
+{
+  "resultVersion": 1,
+  "kind": "CAPACITY_WINDOWED_ASYNC_WORKLOAD_OWNER_SELECTED_DATA_NOT_NATIVE",
+  "sourceParent": "e6c88b27f1b76e03c5b33a7b06bb1b03ad71948b",
+  "mainParent": "bf20a3d5fa5a3d607e4eecf0b228b24ae7bca175",
+  "runtime": {
+    "node": "24.19.0",
+    "nodeSha256": "dbedff294bab84a0a86c04e15fbcbeb1c97ca10bef1b32b0634cd24b36f62100",
+    "platform": "darwin",
+    "arch": "arm64"
+  },
+  "actual": {
+    "exit": 0,
+    "complete": true,
+    "counts": {
+      "tests": 111,
+      "suites": 0,
+      "pass": 111,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "validated": true,
+    "stdoutBytes": 25942,
+    "stdoutSha256": "b3277a8f402f12d601a7d67276c98354070037d10bab5f86fbda6664021327ae",
+    "stderrBytes": 0,
+    "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "sourcePinsUnchanged": true
+  },
+  "sourcePins": [
+    {
+      "path": "package.json",
+      "bytes": 2677,
+      "LF": 40,
+      "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+      "gitBlob": "45752ffde39d29666094f7f1c755060d75e43deb"
+    },
+    {
+      "path": "src/service-credit-capacity-windowed-async-workload-owner-core.js",
+      "bytes": 31976,
+      "LF": 563,
+      "sha256": "e6559f7646d65795339c99fb853d0a9dbeb4e69ee8df6c2fcb0070d9c4ca2624",
+      "gitBlob": "f41334ea389adf5f9ee2f69cc0b2e525cbe718dd"
+    },
+    {
+      "path": "src/service-credit-capacity-window-recorder.js",
+      "bytes": 13321,
+      "LF": 242,
+      "sha256": "48855e34729ae68c179d6439aed962a719964732c992a83472330b7e41293579",
+      "gitBlob": "6e28e75b4fd6572fbae535ac066334349ed26038"
+    },
+    {
+      "path": "src/service-credit-capacity-recorder.js",
+      "bytes": 10801,
+      "LF": 236,
+      "sha256": "eca9bf4cad4717df5d61457044c2c5d0a6bc00b6af81964d09bf18325d4a46ad",
+      "gitBlob": "bc9b0a8a9abd48033e698e100cdc6ef90d2152c9"
+    },
+    {
+      "path": "qualification/service-credit-capacity-windowed-async-workload-owner-core.behavior.mjs",
+      "bytes": 58322,
+      "LF": 973,
+      "sha256": "46cd6a8a056563d2c988081ef33b2cf2faf1a3d7b72d5ba08f1181855f01c3e2",
+      "gitBlob": "329cefec658cddeed93a00285975b430fdee4960"
+    }
+  ],
+  "selectedCoverage": {
+    "regressionsExercisedAgainstNewV3Core": 65,
+    "newMarkerControls": 46,
+    "constructionInert": true,
+    "allLaneOpenAcknowledgementsBeforeMeasuredDispatch": true,
+    "setupDeadlineCoversOpen": true,
+    "stopRequestedBeforeOriginalDrain": true,
+    "normalCloseWaitsForOpenAndStopAcknowledgements": true,
+    "allEnteredMarkersReservedBeforeStopCapabilityReentry": true,
+    "oneDrainDeadlineNotRenewed": true,
+    "lateCompletionCannotUpgradeCachedHeld": true,
+    "markerThenablesNotAssimilated": true,
+    "untrustedGettersNotInvoked": true,
+    "clockDomainsNotSubtracted": true,
+    "declaredHostFixturesNotNativeBindings": true
+  },
+  "preservedV2Inputs": [
+    {
+      "path": "src/service-credit-capacity-async-workload-owner-core.js",
+      "sha256": "a7b8a471e38f3d4c008882a67b752fb0331894a5d13e65f9650114259d189280",
+      "bytes": 26130
+    },
+    {
+      "path": "qualification/service-credit-capacity-async-workload-owner-core.behavior.mjs",
+      "sha256": "00280563481f6dd123a49592f9df7d899a3bfa8e7fa8db92d6039f2fa766d500",
+      "bytes": 41405
+    },
+    {
+      "path": "src/service-credit-capacity-window-recorder.js",
+      "sha256": "48855e34729ae68c179d6439aed962a719964732c992a83472330b7e41293579",
+      "bytes": 13321
+    },
+    {
+      "path": "src/service-credit-capacity-recorder.js",
+      "sha256": "eca9bf4cad4717df5d61457044c2c5d0a6bc00b6af81964d09bf18325d4a46ad",
+      "bytes": 10801
+    },
+    {
+      "path": "qualification/capacity-native-workload-v2.launch-inputs.json",
+      "sha256": "62c3f269946fc9eb31c8114ad40c8a905d7f9a5bced1c61339d94c939fc2ba31",
+      "bytes": 4662
+    },
+    {
+      "path": "qualification/capacity-native-full-graph-v2.inputs.json",
+      "sha256": "1b22c63b752d0295db771e63bda4638e81fe372b83c0b36d4a0d90fb2cc802a7",
+      "bytes": 7592
+    },
+    {
+      "path": "qualification/run-capacity-native-workload-v2.local.py",
+      "sha256": "6f05fb04847f03ebbe294bf202f1d7370cbf91899553505228e2b196e778e42d",
+      "bytes": 26889
+    },
+    {
+      "path": "qualification/native_capacity_managed_workload_v2.py",
+      "sha256": "28f3c6efb23e2531406ec93dbeb3ef96c391f75a312d53d99b8464e631218e42",
+      "bytes": 21650
+    }
+  ],
+  "qualification": {
+    "syntheticDeclaredDataOnly": true,
+    "SDK": false,
+    "SQLite": false,
+    "keys": false,
+    "signatures": false,
+    "nonceSearch": false,
+    "sockets": false,
+    "children": false,
+    "nativeWorkload": false,
+    "nativeEventsAuthenticated": false,
+    "nativeClockAuthenticated": false,
+    "nativeResourcesQualified": false,
+    "measurementWindowIsolationQualified": false,
+    "sustainableCapacityQualified": false,
+    "economicAcceptance": false,
+    "liveOrProduction": false,
+    "existingNativeV2SourcesChanged": false,
+    "oldAllowancesRenewed": false,
+    "nativeApprovalPendingUnchanged": true,
+    "authority": "NONE"
+  },
+  "resources": {
+    "newTaskRoots": 0,
+    "qualificationScratchCreated": false,
+    "sourceCopiesCreated": 0,
+    "packagesInstalled": false,
+    "cleanupPerformed": false,
+    "existingEvidenceChanged": false,
+    "hostedCiProfileExpanded": false
+  }
+}
+
