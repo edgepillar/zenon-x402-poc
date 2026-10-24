@@ -1,0 +1,344 @@
+{
+  "resultVersion": 1,
+  "kind": "PACED_TIMING_RUNTIME_CHECKER_ACTUAL_DATA_NOT_NATIVE_AUTHENTICATION",
+  "sourceParent": "b53b77c85b84e047b99c236b26df8b8885579972",
+  "mainParent": "0c02c92758b4c6b20fcaa6b50ddc18158f933810",
+  "actual": {
+    "event": "Q138_PACED_OWNER_ACTUAL_DATA",
+    "attempt": 2,
+    "actualExit": 0,
+    "complete": true,
+    "counts": {
+      "tests": 155,
+      "suites": 0,
+      "pass": 155,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "validated": true,
+    "elapsedSeconds": 1.3706837080098921,
+    "stdoutBytes": 31707,
+    "stdoutSha256": "472e602cbbd43b9d2fe9afc6c60da3a06a4f31f136db9a5a98bfdec36a0c1fea",
+    "stderrBytes": 0,
+    "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "sourcePins": [
+      {
+        "path": "package.json",
+        "bytes": 2677,
+        "LF": 40,
+        "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+        "gitBlob": "45752ffde39d29666094f7f1c755060d75e43deb"
+      },
+      {
+        "path": "src/service-credit-capacity-paced-workload-owner-core.js",
+        "bytes": 21119,
+        "LF": 398,
+        "sha256": "ec12fc8cef93f2ecda6ca88c8bf193db183a8a3f456d3a712411d319dfe7761f",
+        "gitBlob": "eb12bbbe1e3b468f1c8e0acf09ce94b076825178"
+      },
+      {
+        "path": "src/service-credit-capacity-windowed-async-workload-owner-core.js",
+        "bytes": 36252,
+        "LF": 645,
+        "sha256": "fda636116343c497f269d926ae8e3a61f1b9cd1cf11b493c3d9ba99ef55a7444",
+        "gitBlob": "cc9eae4a2e553a0e71a531f191648c9cbe0cb101"
+      },
+      {
+        "path": "src/service-credit-capacity-window-recorder.js",
+        "bytes": 13321,
+        "LF": 242,
+        "sha256": "48855e34729ae68c179d6439aed962a719964732c992a83472330b7e41293579",
+        "gitBlob": "6e28e75b4fd6572fbae535ac066334349ed26038"
+      },
+      {
+        "path": "src/service-credit-capacity-recorder.js",
+        "bytes": 10801,
+        "LF": 236,
+        "sha256": "eca9bf4cad4717df5d61457044c2c5d0a6bc00b6af81964d09bf18325d4a46ad",
+        "gitBlob": "bc9b0a8a9abd48033e698e100cdc6ef90d2152c9"
+      },
+      {
+        "path": "qualification/service-credit-capacity-paced-workload-owner-core.behavior.mjs",
+        "bytes": 26035,
+        "LF": 452,
+        "sha256": "73bcb9a4ee4881693fb22e7597340fe1dc95fd64163a04c582185d44be7dee9b",
+        "gitBlob": "40453f7801e61493ff1f6bce221902cf75864088"
+      },
+      {
+        "path": "src/service-credit-capacity-parent-timing-trace-data.js",
+        "bytes": 13257,
+        "LF": 213,
+        "sha256": "9b48e9212efa6b000690b32c04f07277d2c868562a1e649766a28aab85e0907d",
+        "gitBlob": "8aecb7664c2a4772870fdeb51d10fe69bc71cb79"
+      },
+      {
+        "path": "qualification/service-credit-capacity-paced-private-timing.behavior.mjs",
+        "bytes": 16273,
+        "LF": 234,
+        "sha256": "7184a2d4340000e51296cf1e9a8d8837973fa227445ede9a35456f3843778f00",
+        "gitBlob": "c8757bc35971081c2f314f1ff28c7febc7457032"
+      },
+      {
+        "path": "src/service-credit-capacity-paced-timing-trace-data.js",
+        "bytes": 20607,
+        "LF": 260,
+        "sha256": "3d338f0d8ba6f9ef53fdf81d49bdb6f0e16c98beb111a02f50a794dd67b1787b",
+        "gitBlob": "af9cfa9ea0bf3630803f7a8c1e8876032e7f781a"
+      },
+      {
+        "path": "qualification/service-credit-capacity-paced-timing-trace-data.behavior.mjs",
+        "bytes": 16195,
+        "LF": 219,
+        "sha256": "c73873008f88199cbda5db08f44d03154495680ab1ede8875dc9114ba672419d",
+        "gitBlob": "ff2c6d90b77e0715912573667da04d345650b3b5"
+      }
+    ],
+    "sourcePinsUnchanged": true,
+    "outputBounded": true,
+    "privateFailurePreviewMaximumBytes": 32768,
+    "nativeExecuted": false,
+    "SDK": false,
+    "SQLite": false,
+    "keys": false,
+    "signatures": false,
+    "nonceSearch": false,
+    "sockets": false,
+    "children": false,
+    "qualificationScratchCreated": false,
+    "sourceCopies": 0,
+    "packageCopies": 0,
+    "authority": "NONE"
+  },
+  "runtime": {
+    "node": "24.19.0",
+    "platform": "darwin",
+    "architecture": "arm64",
+    "nodeSha256": "dbedff294bab84a0a86c04e15fbcbeb1c97ca10bef1b32b0634cd24b36f62100"
+  },
+  "implementation": {
+    "checker": "checkServiceCreditCapacityPacedTimingTraceData",
+    "runtimeOwnerCallsActualIndependentCheckerBeforePrivateSuccess": true,
+    "callerExpectationsCapturedIndependentlyFromSourceConfiguration": true,
+    "expectedPlanNotLearnedFromReturnedReport": true,
+    "ordinaryFactoryApiAndHealthyPrivateReportsUnchanged": true,
+    "privateMismatchDowngradesSourceAuthored": true,
+    "factoryDowngradeWithInjectedVerifierExecuted": false,
+    "producerAndCheckerNoApplicationRecorderSubstitutes": true,
+    "noRecorderReplay": true,
+    "noClockReadOrTimerOrResourceEntry": true,
+    "inputFrozenDataCheckedInPlace": true,
+    "inputTreeCopied": false,
+    "maximumVisitedDataNodes": 1000000,
+    "maximumDataDepth": 32,
+    "maximumArrayEntries": 30000,
+    "maximumStringCodeUnits": 65536,
+    "durationsAndRequestsBoundedByRecorderSamples": 4096,
+    "allSuccessSummariesShareSortedDistribution": true,
+    "separateSuccessSubsetAllocatedOnlyAfterFirstRejection": true,
+    "fixedMismatchErrorNeverEchoesInput": true
+  },
+  "selectedCoverage": {
+    "currentControls": 155,
+    "currentReexecutedRegressions": 75,
+    "newCheckerControls": 80,
+    "genuineProducerPositiveDataAccepted": true,
+    "genuineCoreParentCheckerUsed": true,
+    "queueAndSourceRecorderFieldsRecomputed": true,
+    "phasePercentilesPeaksCountsDenominatorsAndSpansChecked": true,
+    "fifoPerLaneOrdinalsOverlapAndGapChecked": true,
+    "callerPlanLaneGapAndRecordingLimitBinding": true,
+    "pacedSourceAndWithdrawalsCrossBoundToCoreLogicalFundedCalls": true,
+    "selfConsistentShiftedPacedClockRejected": true,
+    "internallyMatchingForgedSourceOutcomesRejected": true,
+    "cleanWithdrawalBeforeWaitDoesNotInventSample": true,
+    "postStopLedgerDeclaredBoundsChecked": true,
+    "postStopLedgerDurationsIndependentlyRecomputed": false,
+    "timerEventsIndependentlyRecomputed": false,
+    "inBoundTimerCountDemonstrablyRemainsADeclaration": true,
+    "gettersProxiesUnfrozenDataCyclesAndOversizedDepthRejected": true,
+    "incompleteHeldOrLateCompletedEvidenceRejected": true,
+    "full4080CallPrivateStressPassed": true,
+    "additionalHostCallsDuringChecker": 0,
+    "nativeEventsAuthenticated": false,
+    "authority": "NONE"
+  },
+  "history": {
+    "preservedPrior75Result": "qualification/service-credit-capacity-paced-private-timing.actual-local-result.json",
+    "prior75QualifiedMainCommit": "0c02c92758b4c6b20fcaa6b50ddc18158f933810",
+    "prior75And5647ResultsBytePreserved": true,
+    "old11149175StandaloneResultsNotRerunOrRelabeled": true,
+    "nativeGraphSha256": "d756740994aeb53ebeee47320d732583d96381dfa8c00e18a30f414e70a77027",
+    "nativeLaunchSha256": "6c9979316924e44138ee9c42af1f925899ad52d969246ad206fe65a209a5baa3",
+    "pendingNativeR4InputsChanged": false,
+    "newNativeRuns": 0,
+    "nativeAllowancesRenewed": false
+  },
+  "execution": {
+    "selectedDataOnly": true,
+    "SDK": false,
+    "x402Package": false,
+    "SQLite": false,
+    "keys": false,
+    "signatures": false,
+    "nonceSearch": false,
+    "sockets": false,
+    "applicationChildren": false,
+    "managerImported": false,
+    "privateRootsOpened": false,
+    "qualificationScratchCreated": false,
+    "downloads": false,
+    "installs": false,
+    "sourceCopies": 0,
+    "packageCopies": 0,
+    "historicalCleanup": false,
+    "automationsChanged": false,
+    "defaultBuyerChanged": false,
+    "packageOrWorkflowChanged": false,
+    "currentHostedProfileCases": 27,
+    "current155ControlsHosted": false
+  },
+  "evidenceLimits": [
+    "The checker validates frozen source DATA, not authentic caller, run, source graph, chain, source effects, physical close or ledger correctness.",
+    "Only queue/source distributions and the genuine core parent recorder are independently recomputed; timer events are not in the trace.",
+    "Post-stop ledger durations are only bounded declared DATA with explicit false independent-recomputation status.",
+    "Core close/window/balance bookkeeping remains declared source DATA and is not native event authentication.",
+    "Private producer matching was exercised with the actual checker; the downgrade-on-checker-mismatch branch was source reviewed, not tested using an injected checker.",
+    "Host callbacks, monotonic readings, balances, Promise outcomes and 4080-call stress are explicit synthetic DATA.",
+    "Logical node/depth/sample bounds and no input-tree copy are not OS sandbox, physical heap, wall time or native output-byte guarantees.",
+    "The prior 75-case result belongs to the immutable 0c02c927 revision, not the changed owner source.",
+    "The unchanged native R4 namespace does not select the paced owner or checker; no old effect allowance covers their native execution.",
+    "Native capacity, same-ledger pressure, economic/provider acceptance, pilot and production remain open.",
+    "Both 155-case selections are retained at their exact source digests; the first negative-vector input reconstructs from one bounded byte replacement without another source copy."
+  ],
+  "nativeEventsAuthenticated": false,
+  "nativeResourcesQualified": false,
+  "sustainableCapacityQualified": false,
+  "economicAcceptanceQualified": false,
+  "productionQualified": false,
+  "authority": "NONE",
+  "earlierSelection": {
+    "event": "Q138_PACED_OWNER_ACTUAL_DATA",
+    "attempt": 1,
+    "actualExit": 0,
+    "complete": true,
+    "counts": {
+      "tests": 155,
+      "suites": 0,
+      "pass": 155,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "validated": true,
+    "elapsedSeconds": 1.319095707993256,
+    "stdoutBytes": 31719,
+    "stdoutSha256": "4618b6ace5e5b983b4e7c2f3682669b482152cb75046f7282a3934791b46b693",
+    "stderrBytes": 0,
+    "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "sourcePins": [
+      {
+        "path": "package.json",
+        "bytes": 2677,
+        "LF": 40,
+        "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+        "gitBlob": "45752ffde39d29666094f7f1c755060d75e43deb"
+      },
+      {
+        "path": "src/service-credit-capacity-paced-workload-owner-core.js",
+        "bytes": 21119,
+        "LF": 398,
+        "sha256": "ec12fc8cef93f2ecda6ca88c8bf193db183a8a3f456d3a712411d319dfe7761f",
+        "gitBlob": "eb12bbbe1e3b468f1c8e0acf09ce94b076825178"
+      },
+      {
+        "path": "src/service-credit-capacity-windowed-async-workload-owner-core.js",
+        "bytes": 36252,
+        "LF": 645,
+        "sha256": "fda636116343c497f269d926ae8e3a61f1b9cd1cf11b493c3d9ba99ef55a7444",
+        "gitBlob": "cc9eae4a2e553a0e71a531f191648c9cbe0cb101"
+      },
+      {
+        "path": "src/service-credit-capacity-window-recorder.js",
+        "bytes": 13321,
+        "LF": 242,
+        "sha256": "48855e34729ae68c179d6439aed962a719964732c992a83472330b7e41293579",
+        "gitBlob": "6e28e75b4fd6572fbae535ac066334349ed26038"
+      },
+      {
+        "path": "src/service-credit-capacity-recorder.js",
+        "bytes": 10801,
+        "LF": 236,
+        "sha256": "eca9bf4cad4717df5d61457044c2c5d0a6bc00b6af81964d09bf18325d4a46ad",
+        "gitBlob": "bc9b0a8a9abd48033e698e100cdc6ef90d2152c9"
+      },
+      {
+        "path": "qualification/service-credit-capacity-paced-workload-owner-core.behavior.mjs",
+        "bytes": 26035,
+        "LF": 452,
+        "sha256": "73bcb9a4ee4881693fb22e7597340fe1dc95fd64163a04c582185d44be7dee9b",
+        "gitBlob": "40453f7801e61493ff1f6bce221902cf75864088"
+      },
+      {
+        "path": "src/service-credit-capacity-parent-timing-trace-data.js",
+        "bytes": 13257,
+        "LF": 213,
+        "sha256": "9b48e9212efa6b000690b32c04f07277d2c868562a1e649766a28aab85e0907d",
+        "gitBlob": "8aecb7664c2a4772870fdeb51d10fe69bc71cb79"
+      },
+      {
+        "path": "qualification/service-credit-capacity-paced-private-timing.behavior.mjs",
+        "bytes": 16273,
+        "LF": 234,
+        "sha256": "7184a2d4340000e51296cf1e9a8d8837973fa227445ede9a35456f3843778f00",
+        "gitBlob": "c8757bc35971081c2f314f1ff28c7febc7457032"
+      },
+      {
+        "path": "src/service-credit-capacity-paced-timing-trace-data.js",
+        "bytes": 20607,
+        "LF": 260,
+        "sha256": "3d338f0d8ba6f9ef53fdf81d49bdb6f0e16c98beb111a02f50a794dd67b1787b",
+        "gitBlob": "af9cfa9ea0bf3630803f7a8c1e8876032e7f781a"
+      },
+      {
+        "path": "qualification/service-credit-capacity-paced-timing-trace-data.behavior.mjs",
+        "bytes": 16191,
+        "LF": 219,
+        "sha256": "01a58fca95e451d11f4f494b56424f963c8ced5726ea40b2a02ea61e39e7d6f4",
+        "gitBlob": "94aca5b7669bd503c55c97134c1f928f28440e20"
+      }
+    ],
+    "sourcePinsUnchanged": true,
+    "outputBounded": true,
+    "privateFailurePreviewMaximumBytes": 32768,
+    "nativeExecuted": false,
+    "SDK": false,
+    "SQLite": false,
+    "keys": false,
+    "signatures": false,
+    "nonceSearch": false,
+    "sockets": false,
+    "children": false,
+    "qualificationScratchCreated": false,
+    "sourceCopies": 0,
+    "packageCopies": 0,
+    "authority": "NONE"
+  },
+  "earlierInputReconstruction": {
+    "verifiedByPublicationPreflightRequired": true,
+    "oldVariantExecutedAgain": false,
+    "sourceCopies": 0,
+    "path": "qualification/service-credit-capacity-paced-timing-trace-data.behavior.mjs",
+    "currentAsciiNeedle": "'\\u00e7'",
+    "restoreUtf8Bytes": [
+      39,
+      195,
+      167,
+      39
+    ],
+    "expectedEarlierSha256": "01a58fca95e451d11f4f494b56424f963c8ced5726ea40b2a02ea61e39e7d6f4",
+    "reason": "Use an ASCII source escape for the same negative UTF8 input vector. Final 155-case selection reran on exact changed bytes."
+  }
+}
