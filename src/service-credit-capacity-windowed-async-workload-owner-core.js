@@ -49,7 +49,18 @@ const OUTCOMES = F(['SUCCEEDED', 'REJECTED', 'UNKNOWN']);
  */
 export function createServiceCreditCapacityWindowedAsyncWorkloadOwnerCore(configuration) {
   if (arguments.length !== 1 || !invariant()) fail('configuration_rejected');
+  return construct(configuration, false);
+}
+
+/** Explicit source selection; timestamps remain private, bounded DATA. */
+export function createServiceCreditCapacityWindowedAsyncWorkloadOwnerCoreWithPrivateTimingTrace(configuration) {
+  if (arguments.length !== 1 || !invariant()) fail('configuration_rejected');
+  return construct(configuration, true);
+}
+
+function construct(configuration, traceEnabled) {
   let plan, runtime, lanes, recorder, drainLedger, limits;
+  let captureTimingEvidence = null;
   try {
     const c = exact(configuration, ['plan', 'recordingLimits', 'runtime', 'lanes']);
     plan = F(exact(c.plan, ['warmupCallsPerLane', 'measurementCallsPerLane',
@@ -79,6 +90,10 @@ export function createServiceCreditCapacityWindowedAsyncWorkloadOwnerCore(config
     if (slots > limits.maxSamplesPerPhase || 3 * lanes.length > limits.maxSamplesPerPhase
         || lanes.length > limits.maxInFlightPerPhase) fail('configuration_rejected');
     recorder = WINDOW(limits);
+    if (traceEnabled) {
+      const traced = privateTimingRecorder(recorder, limits);
+      recorder = traced.recorder; captureTimingEvidence = traced.capture;
+    }
     drainLedger = BASE(limits); // Only explicit ledger starts within already-entered work after stop.
   } catch { fail('configuration_rejected'); }
   configuration = null;
@@ -507,7 +522,74 @@ export function createServiceCreditCapacityWindowedAsyncWorkloadOwnerCore(config
       finalCached: final !== null, recording: recorder.inspect(),
       postStopLedgerRecording: drainLedger.inspect(), ledgerBoundariesStarted: ledgerStarts, authority: 'NONE' });
   });
-  return F({ run, stop, inspect });
+  return traceEnabled ? F({ run, stop, inspect, captureTimingEvidence }) : F({ run, stop, inspect });
+}
+
+// This wraps the genuine recorder rather than replacing its admission, clock,
+// cohort or UNKNOWN semantics. The exact accepted timestamps are retained only
+// for this explicit source selection. No additional clock or host call occurs.
+function privateTimingRecorder(actual, limits) {
+  const maximumEvents = 7 * limits.maxSamplesPerPhase + 4, events = [];
+  let issue = false, cached = null, cohort = null, observation = 0;
+  const methods = {};
+  for (const name of ['startWarmup', 'startMeasurement', 'stopMeasurement', 'begin',
+    'recordLedgerBalanceCheck', 'inspect', 'finalize']) methods[name] = D(actual, name).value;
+  function call(name, args) {
+    try { return A(methods[name], undefined, args); }
+    catch (error) { if (cached === null) issue = true; throw error; }
+  }
+  function append(row) {
+    if (events.length >= maximumEvents) { issue = true; fail('private_timing_trace_limit'); }
+    events.push(F({ sequence: events.length + 1, ...row }));
+  }
+  const startWarmup = F(function startWarmup(at) {
+    const value = call('startWarmup', arguments);
+    cohort = 'WARMUP'; append({ kind: 'START_WARMUP', atNs: String(at) }); return value;
+  });
+  const startMeasurement = F(function startMeasurement(at) {
+    const value = call('startMeasurement', arguments);
+    cohort = 'MEASUREMENT'; append({ kind: 'START_MEASUREMENT', atNs: String(at) }); return value;
+  });
+  const stopMeasurement = F(function stopMeasurement(at) {
+    const value = call('stopMeasurement', arguments);
+    append({ kind: 'STOP_MEASUREMENT', atNs: String(at) }); return value;
+  });
+  const begin = F(function begin(phase, at) {
+    const handle = call('begin', arguments), id = ++observation, finishActual = D(handle, 'finish').value;
+    append({ kind: 'BEGIN', observation: id, phase, cohort, atNs: String(at) });
+    const finish = F(function finish(outcome, ended) {
+      let value;
+      try { value = A(finishActual, undefined, arguments); }
+      catch (error) { if (cached === null) issue = true; throw error; }
+      append({ kind: 'FINISH', observation: id, outcome, atNs: String(ended) }); return value;
+    });
+    return F({ finish });
+  });
+  const recordLedgerBalanceCheck = F(function recordLedgerBalanceCheck(input, at) {
+    const matches = call('recordLedgerBalanceCheck', arguments);
+    // Never retain a balance, grant, request, witness or error payload.
+    append({ kind: 'BALANCE_CHECK', matches, atNs: String(at) }); return matches;
+  });
+  const inspect = F(function inspect() { return call('inspect', arguments); });
+  const finalize = F(function finalize(at) {
+    const value = call('finalize', arguments);
+    if (cached === null) {
+      append({ kind: 'FINALIZE', atNs: String(at) });
+      cached = F({ parentTimingTraceVersion: 1, scope: 'PRIVATE_PARENT_RECORDER_EVENTS_NOT_NATIVE_AUTHENTICATION',
+        clockDomain: 'PARENT_MONOTONIC_RECORDER_EVENT_ORDER', limits,
+        unknown: issue || value.recordingState === 'INCOMPLETE' || value.stopReason !== null, maximumEvents,
+        events: F(events), rawIdentifiersIncluded: false,
+        postStopLedgerTraceIncluded: false, nativeEventsAuthenticated: false,
+        nativeResourcesQualified: false, sustainableCapacityQualified: false, authority: 'NONE' });
+    }
+    return value;
+  });
+  const capture = F(function captureTimingEvidence() {
+    if (arguments.length !== 0 || cached === null) fail('private_timing_trace_not_finalized');
+    return cached;
+  });
+  return F({ recorder: F({ startWarmup, startMeasurement, stopMeasurement, begin,
+    recordLedgerBalanceCheck, inspect, finalize }), capture });
 }
 function exact(value, fields, frozen = false) {
   if (value === null || typeof value !== 'object' || IS_PROXY(value) || P(value) !== Object.prototype
