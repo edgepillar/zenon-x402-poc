@@ -9,6 +9,7 @@ import { TextDecoder, types as utilTypes } from 'node:util';
 import { performance } from 'node:perf_hooks';
 import { setTimeout, clearTimeout } from 'node:timers';
 import { createBoundedJsonRpcReadAdmission } from './bounded-json-rpc-read-admission.js';
+import { createNativeReadRetiredErrorLatch } from './native-read-retired-error-latch.js';
 // Internal, default-off, pre-pinned, method-neutral HTTPS exchange owner.
 // Closed static wrappers retain their public route/configuration grammars and
 // method adapters; this module alone owns native HTTPS/socket lifecycle. It
@@ -90,6 +91,7 @@ const INVALID = Symbol('rejected native read');
 const MAX_BODY = 1052672;
 const MAX_REQUEST_BYTES = 1024;
 const CREATE_ADMISSION = createBoundedJsonRpcReadAdmission;
+const RETIRED_ERROR_LATCH = createNativeReadRetiredErrorLatch;
 const MAX_HEADER_BYTES = 16384;
 const MAX_HEADER_PAIRS = 64;
 const CONFIGURATION_FIELDS = freeze(['route', 'timeoutMs', 'closeGraceMs']);
@@ -404,19 +406,25 @@ export function createBoundedJsonRpcHttpsExchangeOwner(
   let sourcePolicyDescriptor;
   let selected;
   let admission;
+  const receivesNativeCustody = arguments.length === 6;
+  const receiveNativeCustody = receivesNativeCustody ? arguments[5] : null;
   try {
     selected = profile(profileName);
     assertInvariant();
     admission = CREATE_ADMISSION(profileName);
     const receivesSourcePolicy = arguments.length === 5;
-    if ((arguments.length !== 4 && !receivesSourcePolicy) || publicArgumentCount !== 1
+    if ((arguments.length !== 4 && !receivesSourcePolicy && !receivesNativeCustody) || publicArgumentCount !== 1
         || typeof snapshotConfiguration !== 'function' || isProxy(snapshotConfiguration)
         || prototype(snapshotConfiguration) !== functionPrototype
         || (receivesSourcePolicy && (profileName !== ZENON_FUNDING
           || typeof receiveSourcePolicyDescriptor !== 'function'
           || isProxy(receiveSourcePolicyDescriptor)
           || prototype(receiveSourcePolicyDescriptor) !== functionPrototype
-          || !isFrozen(receiveSourcePolicyDescriptor)))) invalid();
+          || !isFrozen(receiveSourcePolicyDescriptor)))
+        || (receivesNativeCustody && (receiveSourcePolicyDescriptor !== undefined
+          || (profileName !== RETAINED_DP && profileName !== RETAINED_ACCOUNT)
+          || typeof receiveNativeCustody !== 'function' || isProxy(receiveNativeCustody)
+          || prototype(receiveNativeCustody) !== functionPrototype || !isFrozen(receiveNativeCustody)))) invalid();
     const normalized = apply(snapshotConfiguration, undefined, [adapterOptions]);
     const configuration = exact(normalized, CONFIGURATION_FIELDS, null);
     const input = exact(configuration.route, ROUTE_FIELDS, null);
@@ -496,12 +504,17 @@ export function createBoundedJsonRpcHttpsExchangeOwner(
   let closeSettled = false;
   let active = null;
   let lastTime = 0;
+  // This separate closure holds one boolean, not this owner/route/generation.
+  // Legacy four/five-argument selections keep their stateless tombstone.
+  const retiredErrors = receivesNativeCustody ? RETIRED_ERROR_LATCH() : null;
+  const afterRetirementError = retiredErrors === null ? discard : retiredErrors.onError;
+  function retiredErrorObserved() { return retiredErrors !== null && retiredErrors.isLatched(); }
 
   function clock() {
     const value = apply(nowNative, performance, []);
     if (typeof value !== 'number' || !isFiniteNumber(value) || value < lastTime || value < 0 || value > maxSafeInteger) invalid();
     lastTime = value;
-    if (!invariant()) {
+    if (!invariant() || retiredErrorObserved()) {
       terminal = true;
       if (active !== null) { active.failed = true; rejectGeneration(active); }
     }
@@ -534,8 +547,12 @@ export function createBoundedJsonRpcHttpsExchangeOwner(
   function finishClose() {
     if (closeOperation === null || closeSettled || active !== null) return;
     closeSettled = true;
-    if (closeUncertain || !invariant()) reservedClose.reject(fixedError(selected, 'close_uncertain'));
-    else reservedClose.resolve(undefined);
+    if (closeUncertain || retiredErrorObserved() || !invariant()) {
+      // A rejected settlement stays uncertain in every subsequent V2 view,
+      // including after intrinsic descriptors have been restored.
+      if (receivesNativeCustody) closeUncertain = true;
+      reservedClose.reject(fixedError(selected, 'close_uncertain'));
+    } else reservedClose.resolve(undefined);
   }
   function zero(value) {
     if (value !== null) {
@@ -547,7 +564,8 @@ export function createBoundedJsonRpcHttpsExchangeOwner(
     gen.retired = true;
     cancel(gen, 'deadlineTimer');
     cancel(gen, 'graceTimer');
-    const resources = [gen.request, gen.response, gen.socket];
+    const resources = receivesNativeCustody
+      ? [gen.request, gen.response, gen.socket, gen.agent] : [gen.request, gen.response, gen.socket];
     for (let index = 0; index < gen.listeners.length; index += 1) {
       const listener = gen.listeners[index];
       try { apply(remove, listener.target, [listener.name, listener.callback]); }
@@ -559,7 +577,7 @@ export function createBoundedJsonRpcHttpsExchangeOwner(
     for (let index = 0; index < resources.length; index += 1) {
       const resource = resources[index];
       if (resource !== null) {
-        try { apply(on, resource, ['error', discard]); }
+        try { apply(on, resource, ['error', afterRetirementError]); }
         catch { gen.uncertain = true; }
       }
     }
@@ -571,9 +589,10 @@ export function createBoundedJsonRpcHttpsExchangeOwner(
     finishClose();
   }
   function drainLateSocket(value) {
+    if (retiredErrors !== null) retiredErrors.onError();
     try {
       nativeObject(value, TLSSocket.prototype);
-      apply(on, value, ['error', discard]);
+      apply(on, value, ['error', afterRetirementError]);
       apply(socketDestroy, value, []);
     } catch { closeUncertain = true; terminal = true; }
   }
@@ -628,7 +647,7 @@ export function createBoundedJsonRpcHttpsExchangeOwner(
       const text = gen.text;
       // Closure/listener/timer cleanup is part of acceptance, not a follow-up.
       retire(gen);
-      if (gen.uncertain || !invariant() || closing || terminal) invalid();
+      if (gen.uncertain || retiredErrorObserved() || !invariant() || closing || terminal) invalid();
       gen.settled = true;
       gen.outward.resolve(text);
     } catch {
@@ -721,7 +740,8 @@ export function createBoundedJsonRpcHttpsExchangeOwner(
   }
   function onResponse(gen, value) {
     if (gen.retired) {
-      try { nativeObject(value, IncomingMessage.prototype); apply(on, value, ['error', discard]); apply(responseDestroy, value, []); }
+      if (retiredErrors !== null) retiredErrors.onError();
+      try { nativeObject(value, IncomingMessage.prototype); apply(on, value, ['error', afterRetirementError]); apply(responseDestroy, value, []); }
       catch { closeUncertain = true; terminal = true; }
       return;
     }
@@ -729,7 +749,8 @@ export function createBoundedJsonRpcHttpsExchangeOwner(
       nativeObject(value, IncomingMessage.prototype);
       if (gen.response !== null) {
         if (value !== gen.response) {
-          try { apply(on, value, ['error', discard]); apply(responseDestroy, value, []); }
+          if (receivesNativeCustody) gen.uncertain = true;
+          try { apply(on, value, ['error', afterRetirementError]); apply(responseDestroy, value, []); }
           catch { gen.uncertain = true; }
         }
         fail(gen); return;
@@ -775,7 +796,7 @@ export function createBoundedJsonRpcHttpsExchangeOwner(
   }
 
   const exchange = freeze(function exchange(body) {
-    if (terminal || closing || active !== null || !admission.available() || !invariant()) { terminal = true; return unavailable; }
+    if (terminal || closing || retiredErrorObserved() || active !== null || !admission.available() || !invariant()) { terminal = true; return unavailable; }
     try {
       if (arguments.length !== 1 || typeof body !== 'string' || body.length < 1 || body.length > MAX_REQUEST_BYTES) invalid();
       for (let index = 0; index < body.length; index += 1) if (codeAt(body, index) < 32 || codeAt(body, index) > 126) invalid();
@@ -885,6 +906,36 @@ export function createBoundedJsonRpcHttpsExchangeOwner(
     finishClose();
     return closeOperation;
   });
+  if (receivesNativeCustody) {
+    const inspectNativeCustody = freeze(function inspectNativeCustody() {
+      if (arguments.length !== 0) throw fixedError(selected, 'configuration_rejected');
+      const valid = invariant(), gen = active;
+      // Observed intrinsic drift is sticky even if descriptors are restored.
+      // Inspection latches state but starts no cleanup/native capability.
+      if (!valid) { closeUncertain = true; terminal = true; }
+      const lateError = retiredErrorObserved();
+      const unknown = !valid || closeUncertain || lateError || (gen !== null && gen.uncertain);
+      // Null means unknown accounting, not zero native handles. Retiring an
+      // uncertain generation cannot manufacture a clean/zero-count verdict.
+      return freeze(record({ nativeReadCustodyVersion: 1,
+        closeRequested: closeOperation !== null, closePromiseSettled: closeSettled,
+        uncertaintyLatched: unknown, retiredErrorObserved: lateError,
+        activeGeneration: gen !== null,
+        trackedRequests: unknown ? null : gen !== null && gen.request !== null ? 1 : 0,
+        trackedResponses: unknown ? null : gen !== null && gen.response !== null ? 1 : 0,
+        trackedSockets: unknown ? null : gen !== null && gen.socket !== null ? 1 : 0,
+        trackedAgents: unknown ? null : gen !== null && gen.agent !== null ? 1 : 0,
+        ownedTimers: unknown ? null : gen === null ? 0
+          : (gen.deadlineTimer !== null ? 1 : 0) + (gen.graceTimer !== null ? 1 : 0),
+        closeObserved: closing && closeSettled && gen === null && !unknown,
+        countersDescribe: 'OWNER_OBSERVED_REFERENCES_NOT_ALL_OS_HANDLES',
+        nativePhysicalDrain: 'NOT_QUALIFIED', authority: 'NONE' }));
+    });
+    try {
+      if (apply(receiveNativeCustody, undefined, [inspectNativeCustody]) !== undefined) invalid();
+      assertInvariant();
+    } catch { throw fixedError(selected, 'configuration_rejected'); }
+  }
   assertInvariant();
   return freeze({ exchange, close });
 }

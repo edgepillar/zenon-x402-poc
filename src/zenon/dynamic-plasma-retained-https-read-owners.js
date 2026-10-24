@@ -21,9 +21,35 @@ const DP = 'dynamic_plasma_retained_candidate', ACCOUNT = 'zenon_account_state_r
  * Existing public owner factories stay on their legacy thirteen-request mode.
  */
 export function createRetainedDynamicPlasmaHttpsReadTransportOwner(options) {
-  const owner = OWNER(options, arguments.length, snapshotConfiguration, DP);
-  const transport = WIRE(FREEZE({ exchange: owner.exchange }));
-  return FREEZE({ transport, close: owner.close, requestBudget: PROFILE(DP) });
+  return retainedOwner(options, arguments.length, DP, false);
+}
+
+/** Explicit source-only V2 additionally retains the actual native inspector. */
+export function createRetainedDynamicPlasmaHttpsReadTransportOwnerV2(options) {
+  return retainedOwner(options, arguments.length, DP, true);
+}
+
+function retainedOwner(options, argumentCount, profileName, nativeCustody) {
+  let inspector = null;
+  const receive = FREEZE(function receive(inspect) {
+    if (arguments.length !== 1 || inspector !== null || typeof inspect !== 'function'
+        || IS_PROXY(inspect) || PROTOTYPE(inspect) !== Function.prototype || !IS_FROZEN(inspect)) reject();
+    inspector = inspect;
+  });
+  const owner = nativeCustody
+    ? OWNER(options, argumentCount, snapshotConfiguration, profileName, undefined, receive)
+    : OWNER(options, argumentCount, snapshotConfiguration, profileName);
+  if (nativeCustody && inspector === null) reject();
+  let methods;
+  if (profileName === ACCOUNT) {
+    const gate = GATE(owner);
+    methods = { exchange: gate.exchange, close: gate.close, requestBudget: PROFILE(ACCOUNT) };
+  } else {
+    const transport = WIRE(FREEZE({ exchange: owner.exchange }));
+    methods = { transport, close: owner.close, requestBudget: PROFILE(DP) };
+  }
+  if (nativeCustody) methods.inspectNativeCustody = inspector;
+  return FREEZE(methods);
 }
 
 /**
@@ -38,9 +64,12 @@ export function createRetainedDynamicPlasmaHttpsReadTransportOwner(options) {
  * request budgets. Real native qualification remains separately gated.
  */
 export function createRetainedAccountStateHttpsExchangeOwner(options) {
-  const owner = OWNER(options, arguments.length, snapshotConfiguration, ACCOUNT);
-  const gate = GATE(owner);
-  return FREEZE({ exchange: gate.exchange, close: gate.close, requestBudget: PROFILE(ACCOUNT) });
+  return retainedOwner(options, arguments.length, ACCOUNT, false);
+}
+
+/** Same account byte gate and budget, plus a private actual-native view. */
+export function createRetainedAccountStateHttpsExchangeOwnerV2(options) {
+  return retainedOwner(options, arguments.length, ACCOUNT, true);
 }
 
 function exact(value, fields) {
