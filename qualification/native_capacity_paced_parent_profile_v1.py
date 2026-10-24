@@ -16,13 +16,13 @@ import re
 import stat
 import sys
 
-MANIFEST = "qualification/capacity-native-paced-parent-v1.inputs.json"
-MANIFEST_SHA = "4e3cc74861de8319d154970b46c769b3907ade05248e2dac35f3b0dbf5084ff4"
+MANIFEST = "qualification/capacity-native-paced-parent-v2.inputs.json"
+MANIFEST_SHA = "d4cae3a44dd0bb3cca7c892a333bac64802ddad26370e09be5b1564fbe535f8d"
 LEGACY_BUILDER = "qualification/native_capacity_full_profile_v3.py"
 LEGACY_BUILDER_SHA = "6928303c36f034fc295145563e40304641a91fe7db35d62eb364031bbcff7e6a"
 HELPERS = "qualification/recovery_crash_native_profile.py"
 HELPERS_SHA = "75c2c9478b7e792a7bade739161af2bb8fb624cd407924ead2cf822dc23dacbd"
-PARENT_SEAL = "49da8ed7a1c416cfa8e2f22e04e10ce4fd28be015c139e8db16830279020687c"
+PARENT_SEAL = "bc27ddefb319c92e1d17858c30d5c0922913bbec7d7547eb73a954e1c4be9a1b"
 CHILD_SEAL = "d756740994aeb53ebeee47320d732583d96381dfa8c00e18a30f414e70a77027"
 PARENT_KIND = "NATIVE_CAPACITY_PACED_SUPERVISOR_NODE24_V1"
 PARENT_ENTRY = "app/qualification/capacity-native-paced-workload-v1.entry.draft.mjs"
@@ -92,7 +92,7 @@ def capture_selection(base, legacy, manifest_raw, inventory_raw, baseline_raw):
         "PACED_SELECTION_PIN")
     manifest = base.decode_json(manifest_raw, 65536)
     old = legacy.capture_selection(base, inventory_raw, baseline_raw)
-    require(manifest["sourceSelectionVersion"] == 1 and manifest["authority"] == "NONE"
+    require(manifest["sourceSelectionVersion"] == 2 and manifest["authority"] == "NONE"
         and manifest["parentSourceRowsSha256"] == PARENT_SEAL
         and manifest["childSourceRowsSha256"] == legacy.SOURCE_SEAL == CHILD_SEAL
         and manifest["legacyInventory"] == base.pin(legacy.INVENTORY, inventory_raw)
@@ -105,7 +105,7 @@ def capture_selection(base, legacy, manifest_raw, inventory_raw, baseline_raw):
     require(tuple(extras) == EXTRAS and not set(extras).intersection(row["path"] for row in old["rows"]),
         "SIX_PARENT_ADDITIONS_ONLY")
     rows = sorted(old["rows"] + list(extras.values()), key=lambda row: row["path"])
-    require(len(rows) == 549 and sum(row["bytes"] for row in rows) == manifest["parentDeclaredSourceBytes"] == 4892736
+    require(len(rows) == 549 and sum(row["bytes"] for row in rows) == manifest["parentDeclaredSourceBytes"] == 4894126
         and hashlib.sha256(legacy.canonical(rows)).hexdigest() == PARENT_SEAL, "PACED_COMPLETE_PARENT_SEAL")
     require(manifest["parentRole"]["profileKind"] == PARENT_KIND
         and manifest["parentRole"]["entry"] == PARENT_ENTRY

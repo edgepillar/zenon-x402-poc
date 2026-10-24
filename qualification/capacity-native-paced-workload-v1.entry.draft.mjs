@@ -45,29 +45,23 @@ try {
   if(seen.size!==rows.length)fail();
   // This is the real source-owned pair/core adapter, not an injected workload.
   const {createNativeCapacityPacedWorkloadAdapter:CREATE}=await import('./capacity-native-paced-workload-adapter-v1.draft.mjs');
-  const {checkServiceCreditCapacityPacedTimingTraceData:CHECK_PACED}=await import('../src/service-credit-capacity-paced-timing-trace-data.js');
-  const {checkServiceCreditCapacityParentTimingTraceData:CHECK_PARENT}=await import('../src/service-credit-capacity-parent-timing-trace-data.js');
+  const {captureServiceCreditCapacityPacedTimingEnvelopeData:CAPTURE_TIMING}=await import('../src/service-credit-capacity-paced-timing-trace-data.js');
   owned=CREATE(deepFreeze(plan));
   const result=await owned.run(),evidence=owned.privateEvidence();
-  let parentTrace=null,parentCheck=null;
-  try{parentTrace=owned.privateParentTimingEvidence();}catch{/* Preserve the failed capture as UNKNOWN. */}
-  try{if(parentTrace!==null)parentCheck=CHECK_PARENT(F({trace:parentTrace,recording:result.core.core.recording}));}catch{/* No repaired pass. */}
-  const parentTimingData=F({parentTimingCaptureVersion:1,
-    context:F({runId:plan.context.runId,sourceRowsSha256:namespace.sourceRowsSha256,
-      laneIds:F(plan.laneProfiles.map(row=>row.laneId))}),trace:parentTrace,check:parentCheck,
-    status:parentCheck===null?'UNKNOWN_OR_MISMATCHED_PARENT_TRACE':'MATCHING_DECLARED_PARENT_TRACE'});
-  let pacedTrace=null,pacedCheck=null;
-  try{pacedTrace=owned.privatePacedTimingEvidence();}catch{/* Remain UNKNOWN; never repair/replay. */}
-  try{if(pacedTrace!==null)pacedCheck=CHECK_PACED(F({trace:pacedTrace,report:result.core,expected:F({
-    plan:plan.plan,recordingLimits:plan.recordingLimits,laneCount:plan.laneProfiles.length,
-    minimumStartGapMs:plan.pacing.minimumStartGapMs})}));}catch{/* No inferred pass. */}
-  const pacedTimingData=F({pacedTimingCaptureVersion:1,
-    context:F({runId:plan.context.runId,sourceRowsSha256:namespace.sourceRowsSha256,
-      childSourceRowsSha256:namespace.childSourceRowsSha256,laneIds:F(plan.laneProfiles.map(row=>row.laneId))}),
-    trace:pacedTrace,check:pacedCheck,status:pacedCheck===null?'UNKNOWN_OR_MISMATCHED_PACED_TRACE':'MATCHING_DECLARED_PACED_TRACE'});
-  const packed=F({pacedCaptureVersion:1,kind:'PRIVATE_PACED_NATIVE_CAPACITY_COMPONENT_CAPTURE_NOT_PRODUCTION',
+  let pacedTimingData=null;
+  try{
+    const trace=owned.privatePacedTimingEvidence();
+    pacedTimingData=CAPTURE_TIMING(F({trace,report:result.core,expected:F({
+      plan:plan.plan,recordingLimits:plan.recordingLimits,laneCount:plan.laneProfiles.length,
+      minimumStartGapMs:plan.pacing.minimumStartGapMs}),context:F({
+      runId:plan.context.runId,sourceRowsSha256:namespace.sourceRowsSha256,
+      childSourceRowsSha256:namespace.childSourceRowsSha256,laneIds:F(plan.laneProfiles.map(row=>row.laneId))})}));
+  }catch{/* Unsafe/unavailable capture is UNKNOWN; do not invent a second trace. */}
+  // Envelope v2 serializes the genuine inner parent trace ONLY inside the
+  // paced capsule. Both independently computed check summaries remain present.
+  const packed=F({pacedCaptureVersion:2,kind:'PRIVATE_PACED_NATIVE_CAPACITY_COMPONENT_CAPTURE_NOT_PRODUCTION',
     sourceRowsSha256:namespace.sourceRowsSha256,childSourceRowsSha256:namespace.childSourceRowsSha256,
-    result,parentTimingData,pacedTimingData,evidence:F(evidence.map(row=>F({
+    result,pacedTimingData,evidence:F(evidence.map(row=>F({
       laneId:row.laneId,pairSnapshot:row.pairSnapshot,serviceWriterIntervals:row.serviceWriterIntervals,
       serviceWriterAttribution:row.serviceWriterAttribution,
       serviceMeasurementWindow:row.serviceMeasurementWindow,
@@ -76,7 +70,7 @@ try {
     nativeResourcesQualified:false,sustainableCapacityQualified:false,chainAuthenticated:false,productionQualified:false,authority:'NONE'});
   const bytes=Buffer.from(JSON.stringify(packed)+'\n');if(bytes.length>MAX)fail();
   await new Promise((yes,no)=>process.stdout.write(bytes,error=>error?no(error):yes()));
-  process.exitCode=result.status==='OBSERVED_COMPONENT_ONLY'&&result.core.outcome==='OBSERVED_OWNERS_RETURNED'&&parentCheck!==null&&pacedCheck!==null?0:1;
+  process.exitCode=result.status==='OBSERVED_COMPONENT_ONLY'&&result.core.outcome==='OBSERVED_OWNERS_RETURNED'&&pacedTimingData?.status==='MATCHING_DECLARED_PACED_TRACE'&&pacedTimingData.check!==null&&pacedTimingData.parentCheck!==null?0:1;
   // Natural exit only: live children/timers remain real obligations. The owned
   // managed command's outer bound may stop its process group on UNKNOWN.
 }catch{

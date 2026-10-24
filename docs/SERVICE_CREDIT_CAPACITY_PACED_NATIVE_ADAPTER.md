@@ -1,16 +1,19 @@
 # Paced native capacity adapter: separate parent source binding
 
-Status: private profile producer implemented; 64 selected producer DATA controls
-and one actual 549-file read-only source check passed. The previous Node binding
-selection remains 47 DATA controls and two parser-only checks on unchanged
-Node source. These selections are not combined; native execution is NOT qualified.
+Status: v2 single-copy timing capture is source-implemented. Its 163 current
+Node DATA controls passed separately from 64 current producer DATA controls,
+a successful 549-file read-only source check and one entry-parser-only check.
+Historical 43/47 constructor selections remain tied to their old source pins;
+they were not rerun/reclassified against this changed checker and entry.
+These selections are not combined; native execution is NOT qualified.
 The current constructor/admission-absence DATA selection is separate from
 native execution and from the old R4 selection. No existing unpaced entry,
 default script or hosted workflow selects the new paced entry.
 
-This development-branch batch does not transfer to main. Its real paced-pair
-dependency and complete launch closure are not yet adopted there. Main/CI
-remains separate from local development.
+The standalone checker/envelope component is a separate small main batch.
+The native entry, current source selection and producer binding stay on the
+development branch; their complete managed launch closure is not adopted on
+main. Main/CI remains separate from local development.
 
 ## Real source graph, not a renamed R4 allowance
 
@@ -25,9 +28,10 @@ admits 145 application and 404 package source rows. Its six added application
 rows are the paced owner, paced checker, paced adapter, paced paired supervisor,
 paced preloader and paced entry. The old 139/404 graph is preserved as a strict
 subset, verified against its original complete source seal, not a count alone.
-The [new source selection](../qualification/capacity-native-paced-parent-v1.inputs.json)
+The [current v2 source selection](../qualification/capacity-native-paced-parent-v2.inputs.json)
 pins those six current inputs and the original child declaration separately.
-This declaration does not claim a fresh physical read of all 549 graph files.
+The old v1 selection is unchanged. This v2 source declaration binds changed
+checker/entry bytes without relabeling the old selection or native allowance.
 
 Actual payer and service children keep the unchanged R4 workers, preloaders,
 139/404 profile bytes and original child source seal. The new parent validates
@@ -72,8 +76,12 @@ NOT a fixed offered rate. Private evidence has separate capabilities:
 
 Neither private read adds a clock observation, execution or recorder replay.
 The [separate native entry](../qualification/capacity-native-paced-workload-v1.entry.draft.mjs)
-binds its plan to admitted child references, runs the actual adapter and checks
-both private capsules against independently captured plan/limit expectations.
+binds its plan to admitted child references and the actual adapter. Source
+capture v2 reads one paced capsule, containing the inner parent trace, and
+retains both genuine checks from independently captured plan/limit expectations.
+The [private envelope](SERVICE_CREDIT_CAPACITY_PACED_TIMING_ENVELOPE_V2.md)
+serializes that raw parent trace only once. No second raw parent field or
+redundant direct parent arithmetic pass is added by the entry.
 Unknown/mismatched evidence cannot produce a clean exit. Raw streams and
 contexts remain private capture DATA, never public qualification or native
 authentication by declaration.
@@ -97,9 +105,9 @@ The [historical 43-case result](../qualification/service-credit-capacity-paced-n
 remains bound to its immutable
 [d6e7f18 revision](https://github.com/edgepillar/zenon-x402-poc/commit/d6e7f18bdec92c9a57caf050f413f630d4136fbe).
 It used the old unpaced pair as the adapter dependency and is not silently
-reclassified as evidence for the changed pair. The prior 155 owner/checker
-controls remain tied to their unchanged source pins; they are not native
-adapter or namespace qualification. The hosted 27-control profile is unchanged.
+reclassified as evidence for the changed pair. The historical 155 owner/checker
+record remains tied to its old source pins; all 155 controls reran as part of
+the new 163-case envelope selection. Neither proves native adapter admission. The hosted 27-control profile is unchanged.
 
 No new actual pacing timer, final native barrier, trace paging, child exit,
 HTTPS, SQLite, signature, nonce search, native release or task storage was
@@ -135,19 +143,19 @@ bytes stay in memory for the future task-owned writer. A parent compares each
 complete canonical child payload as well as its reference digest, and rejects
 parent/sibling/role-root/profile-reference aliases.
 
-The frozen source selection is preserved, including its historical
-producer-absent declaration. The new producer/result advance implementation
-status without rewriting that old source/evidence contract.
+The frozen v1 selection and historical producer result stay unchanged. The
+current producer binds the separate v2 selection and its changed parent seal.
+Child rows, their original seal and role-profile schema remain unchanged.
 
 The [64 selected producer controls](../qualification/native_capacity_paced_parent_profile_v1.behavior.py)
 compare complete leaf bytes against the genuine unchanged R4 producer, reject
 forged whole-child payloads even with matching new hashes, and plan 16 lanes/32
 children entirely in memory. They do not authenticate physical root ownership.
-The [actual local result](../qualification/native_capacity_paced_parent_profile_v1.actual-local-result.json)
+The [current v2 actual result](../qualification/native_capacity_paced_parent_profile_v2.actual-local-result.json)
 separately records the successful existing-source read: 145 application and 404
 package files, all graph content pinned, and one existing Node-binary hash.
 The read-only check imported no SDK module and opened no private-role root.
-The roughly 1.26-second DATA run and 0.67-second read-only run are observations,
+The roughly 1.26-second DATA run and 0.70-second read-only run are observations,
 not latency/capacity benchmarks or timing guarantees.
 
 The managed controller must still own fresh approved task roots, write/promote
@@ -155,3 +163,9 @@ these bytes through the storage manager, verify current controls and roots,
 and retain real complete command receipts. No private profile or successful
 source read grants execution, payment, provider, retry, pilot or production
 authority. The unchanged hosted profile does not run the new producer controls.
+
+The v2 entry passed only a parser check, not execution or positive namespace
+admission. The timing-only DATA serialization comparison removed 866,810 bytes
+from the 4,080-call case without dropping events/checks. It is not a full native
+capture-size, physical reclaim or throughput measurement. A real task-owned
+controller and independent native-capture qualification are still required.
