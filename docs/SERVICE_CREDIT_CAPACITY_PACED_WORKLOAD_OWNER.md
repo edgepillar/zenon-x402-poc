@@ -1,6 +1,6 @@
 # Paced service-credit source workload owner
 
-Status: **75 current selected DATA controls passed**, including a 16-lane, 4,080-call
+Status: **155 current selected DATA controls passed**, including a 16-lane, 4,080-call
 synthetic stress case. This is an opt-in source runtime composition, not a native
 workload result, fixed-rate benchmark, pilot or sustainable-throughput claim.
 
@@ -132,8 +132,14 @@ costs and preserve the original measurement deadline. Native sustainable load,
 physical release, independent same-ledger pressure/balance checks, economic
 acceptance, provider authority, pilot and production remain separate open gates.
 
-The [current private timing selection](SERVICE_CREDIT_CAPACITY_PACED_PRIVATE_TIMING.md)
+The [prior private timing selection](SERVICE_CREDIT_CAPACITY_PACED_PRIVATE_TIMING.md)
 reran all 56 controls against the changed source and added 19 private controls:
-75 passed. It exposes one separate frozen private capsule with no additional
+75 passed at its immutable 0c02c927 baseline. It exposes one separate frozen private capsule with no additional
 host clock/timer calls. Old 47/56-case results stay tied to their old source
 pins; the pending native R4 graph still does not select this paced source.
+
+The [current runtime checker](SERVICE_CREDIT_CAPACITY_PACED_TIMING_CHECKER.md)
+now validates complete private evidence against independently captured source
+expectations before private success. All prior 75 controls and 80 new checker
+controls passed on the changed source: 155 total. A mismatch becomes HELD_UNKNOWN;
+timer observation, native execution and post-stop ledger timing are not inferred.

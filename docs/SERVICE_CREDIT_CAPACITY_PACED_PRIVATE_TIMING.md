@@ -1,7 +1,7 @@
 # Private paced source timing capture
 
-Status: **75 current selected DATA controls passed**: 56 paced-owner regressions
-and 19 new private-timing controls. This is source-bound event capture, not
+Status: **155 current selected DATA controls passed**: the prior 75 paced/private
+controls plus 80 runtime-checker controls. This is source-bound event capture, not
 native execution, sustainable throughput or a live-pilot qualification.
 
 The changed [paced owner](../src/service-credit-capacity-paced-workload-owner-core.js)
@@ -26,7 +26,10 @@ matches the actual core recorder report in the selected tests.
 
 After the run has finalized, captureTimingEvidence() returns one frozen cached
 capsule. Earlier capture or wrong arity refuses. Raw events never enter the
-ordinary result or inspect response.
+ordinary result or inspect response. The
+[current independent runtime checker](SERVICE_CREDIT_CAPACITY_PACED_TIMING_CHECKER.md)
+now also gates complete-looking private success using separately captured source
+expectations. Mismatch preserves an UNKNOWN capsule and HELD_UNKNOWN result.
 
 | Private event | Retained local DATA | Meaning |
 | --- | --- | --- |
@@ -88,13 +91,17 @@ imports the existing 56 controls and reuses their declared host fixtures. It add
 19 controls without copying a source tree or emulating SDK/SQL/native behavior.
 An independent test reference recomputes every queue and dispatched recorder
 field, including nearest-rank percentiles, peaks, denominators, empty series and
-full spans. It does not replay the recorders. This is test reference arithmetic;
-a reusable paced-capture runtime verifier is not claimed.
+full spans. It does not replay the recorders. At that earlier milestone this
+was test reference arithmetic, not a reusable runtime checker. The current
+checker above is a separate implementation.
 
-The [actual current result](../qualification/service-credit-capacity-paced-private-timing.actual-local-result.json)
+The [historical 75-case result](../qualification/service-credit-capacity-paced-private-timing.actual-local-result.json)
 pins all eight loaded source inputs and complete stream digests. One command
 passed all 75 tests with no failures, cancellations, skips, TODOs or stderr.
 Its local test duration was about 0.83 seconds, not a native benchmark.
+Those pins belong to the immutable
+[0c02c927 revision](https://github.com/edgepillar/zenon-x402-poc/commit/0c02c92758b4c6b20fcaa6b50ddc18158f933810),
+not the changed current producer. The current 155-case result is linked above.
 
 The [prior 56-case report](../qualification/service-credit-capacity-paced-workload-owner-core.actual-local-result.json)
 is unchanged. Its source and earlier 47-case reconstruction recipe belong to
@@ -105,6 +112,6 @@ or rerun just to regenerate metadata.
 No SDK/x402 package, SQLite, key, signature, nonce search, socket, application
 worker, manager task, private root, qualification scratch, installer,
 source/package copy, historical cleanup or automation ran. The unchanged hosted
-profile remains 27 selected DATA/component cases and does not execute these 75
-controls. Same-ledger pressure, authenticated native balance correctness,
+profile remains 27 selected DATA/component cases and does not execute either
+the 75 or 155 paced controls. Same-ledger pressure, authenticated native balance correctness,
 economic/provider acceptance, pilot and production remain separate open gates.
