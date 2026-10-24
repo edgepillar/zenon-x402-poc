@@ -70,8 +70,11 @@ and selection declaration retain their source-bound historical fields. This
 new result establishes the later producer implementation; it does not rewrite
 those earlier results as if the producer had already existed at their revision.
 
-A new complete profile/entry bundle, resource/stream reservation, independent
-FULL outer-capture-v3 verifier and real managed-launch binding remain required.
+At this snapshot the new resource planner and complete bundle were still pending.
+The later [profile/resource/entry binding](SERVICE_CREDIT_CAPACITY_PACED_PROFILE_RESOURCE_BUNDLE_V2.md)
+implements both with 85 resource DATA controls and 44 full-bundle controls, while
+keeping this earlier result unchanged. The independent FULL outer-capture-v3
+verifier, real managed-launch binding and physical policy admission remain open.
 The old resource plan, 71 MiB/72-second declaration, 549-row private profiles,
 old bundle and outer-v2 checker are not silently reused as qualification.
 
