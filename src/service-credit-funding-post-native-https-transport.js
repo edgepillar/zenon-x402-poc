@@ -6,6 +6,7 @@ import { Socket, isIP } from 'node:net';
 import { types as utilTypes } from 'node:util';
 import { createFundingPostNativeResponseCustody } from './service-credit-funding-post-native-response.js';
 import { createNativeHttpsClientCloseOwner } from './service-credit-native-client-close-owner.js';
+import { startFundingPostReadableFlow } from './service-credit-funding-post-readable-flow.js';
 
 const REQUEST = nativeRequest, ON = EventEmitter.prototype.on, ONCE = EventEmitter.prototype.once;
 const DESTROY_REQUEST = OutgoingMessage.prototype.destroy, DESTROY_SOCKET = Socket.prototype.destroy;
@@ -14,6 +15,7 @@ const KEYS = Reflect.ownKeys, OWN = Object.hasOwn, APPLY = Reflect.apply, IS_PRO
 const TIMER = setTimeout, CANCEL = clearTimeout, FILL = Buffer.prototype.fill;
 const NativePromise = Promise, THEN = NativePromise.prototype.then, RESPONSE = Response, HEADERS = Headers;
 const IS_BUFFER = Buffer.isBuffer, ARRAY_BUFFER = DESC(PROTO(Uint8Array.prototype), 'buffer').get;
+const START_RESPONSE_FLOW = startFundingPostReadableFlow;
 const BYTE_LENGTH = DESC(PROTO(Uint8Array.prototype), 'byteLength').get;
 const SIGNAL = AbortSignal.prototype, SIGNAL_ABORTED = DESC(SIGNAL, 'aborted').get;
 const ADD_EVENT = EventTarget.prototype.addEventListener, REMOVE_EVENT = EventTarget.prototype.removeEventListener;
@@ -60,6 +62,7 @@ export function createFundingPostNativeHttpsTransport(configuration) {
   const entries = new Set(), sockets = new Set(), timers = new Set();
   let starts = 0, handshakes = 0, closing = null, closeTimer = null, unknown = false;
   let responseHeadersAccepted = 0, responseBodyBytesObserved = 0, responseEndsObserved = 0;
+  let responseFlowsStarted = 0;
   // Bounded stage/code observations only. Never retain an Error/message/stack,
   // URL, header, certificate, response body or caller-provided diagnostic text.
   // Authored after the first native failure; these diagnostics are SOURCE ONLY.
@@ -93,6 +96,9 @@ export function createFundingPostNativeHttpsTransport(configuration) {
     unknown = true; closeOwner.markUnknown();
   }
   function settle(entry) {
+    // A synchronous callback during resume must not publish a response before
+    // that flow-start entry has returned successfully and its guard survives.
+    if (entry.responseFlowStarting) return;
     if (!entry.requestClosed || !entry.socketClosed || !entry.socketSeen) return;
     cancel(entry.deadline); entry.deadline = null;
     cancel(entry.handshake); entry.handshake = null;
@@ -169,7 +175,8 @@ export function createFundingPostNativeHttpsTransport(configuration) {
     APPLY(THEN, promise, [() => undefined, () => undefined]);
     const entry = { resolve, reject, done: false, stopping: false, request: null, socket: null,
       socketSeen: false, socketStopRequested: false, requestClosed: false, socketClosed: false, signal, signalAttached: false,
-      deadline: null, handshake: null, custody: createFundingPostNativeResponseCustody(), onAbort: null };
+      deadline: null, handshake: null, custody: createFundingPostNativeResponseCustody(), onAbort: null,
+      responseFlowStarted: false, responseFlowStarting: false };
     entries.add(entry); // Retain ownership before the native constructor can reenter.
     entry.onAbort = () => stop(entry, 'REQUEST_ABORT');
     try {
@@ -200,6 +207,18 @@ export function createFundingPostNativeHttpsTransport(configuration) {
         APPLY(ONCE, response, ['close', () => {
           if (!entry.custody.snapshot().ended) stop(entry, 'INCOMPLETE_RESPONSE_CLOSE');
         }]);
+        // Captured EventEmitter.on does not start Readable data flow. Install
+        // ALL response guards first, then enter the captured real resume once.
+        // A refused/aborted response never receives a fresh flow capability.
+        event(entry, 'RESPONSE_FLOW_STARTED', () => {
+          if (entry.done || entry.responseFlowStarted) throw error('outcome_unknown');
+          entry.responseFlowStarted = true; entry.responseFlowStarting = true;
+          try { START_RESPONSE_FLOW(response); }
+          finally { entry.responseFlowStarting = false; }
+          if (entry.stopping || closing !== null) throw error('outcome_unknown');
+          responseFlowsStarted++;
+        });
+        settle(entry);
       });
       APPLY(ON, entry.request, ['error', cause => stop(entry, 'REQUEST_ERROR', cause)]);
       APPLY(ONCE, entry.request, ['close', () => {
@@ -251,7 +270,7 @@ export function createFundingPostNativeHttpsTransport(configuration) {
     const state = closeOwner.snapshot();
     return FREEZE({ phase: state.phase, unknown: unknown || state.unknown,
       requestStarts: starts, authenticatedTlsHandshakes: handshakes,
-      responseHeadersAccepted, responseBodyBytesObserved, responseEndsObserved,
+      responseHeadersAccepted, responseBodyBytesObserved, responseEndsObserved, responseFlowsStarted,
       lastObservedStage, firstUnknown,
       trackedRequests: entries.size, trackedSockets: sockets.size, ownedTimers: timers.size,
       close: state, defaultEnabled: false,
