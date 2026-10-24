@@ -1,0 +1,195 @@
+{
+  "kind": "ACTUAL_INGRESS_SHARED_LIMITS_MAIN_ADOPTION_COMPONENT_RESULT_V1",
+  "date": "2026-10-24",
+  "status": "SELECTED_ACTUAL_INGRESS_SHARED_LIMIT_COMPONENTS_PASS",
+  "sourceSelection": {
+    "workingSourceHead": "2263964279f4723bbfeccd3c0aab0687f5668be8",
+    "baseMain": "c2cd06aa863b89a0e0bfec76705859ae758a164f",
+    "workingSourceTreeSeal": "4cbd01050f5d253eb8701dfa32974406be3f9e198802b1e53567e336675bbde8",
+    "baseMainTreeSeal": "3a59eb55534ba331d1527022165884433a8ecb36f987df812a230f4b3bdf1f4b"
+  },
+  "runtimeBatch": [
+    {
+      "path": "src/service-credit-bounded-https-ingress-limits.js",
+      "main": null,
+      "source": {
+        "sha": "beb1fa1576a592fe206de34ccbb498ad4a6ed186",
+        "type": "blob",
+        "mode": "100644"
+      },
+      "local": {
+        "path": "src/service-credit-bounded-https-ingress-limits.js",
+        "bytes": 2661,
+        "LF": 50,
+        "sha256": "35e2cc603398a929979b2f939f558d43002079038922d6248cc654c425eafb68",
+        "gitBlob": "beb1fa1576a592fe206de34ccbb498ad4a6ed186"
+      }
+    },
+    {
+      "path": "src/service-credit-bounded-https-ingress-owner.js",
+      "main": {
+        "sha": "be7cf8bce732388e51be4e3cb6ff711bac1659ab",
+        "type": "blob",
+        "mode": "100644"
+      },
+      "source": {
+        "sha": "ca95e2876408adeffc44487cbbaaa5471e9b4b29",
+        "type": "blob",
+        "mode": "100644"
+      },
+      "local": {
+        "path": "src/service-credit-bounded-https-ingress-owner.js",
+        "bytes": 140920,
+        "LF": 4039,
+        "sha256": "7c8a663f8541373c93cf7b90b243a4d5ec88db43a400fbf411c9535571e20830",
+        "gitBlob": "ca95e2876408adeffc44487cbbaaa5471e9b4b29"
+      }
+    }
+  ],
+  "behavior": {
+    "sharedLimitFields": 13,
+    "numericBoundsAndRelationshipsPreserved": true,
+    "metricReserve": 32,
+    "badResponse5000Close1000RejectedBeforeOperationalCallbacks": true,
+    "mainAlreadyRejectedThatCombination": true,
+    "noClaimOfPreviouslyPermissiveMain": true,
+    "sharedHostAndIngressRule": true,
+    "hostSqlSdkCompositionIncludedInThisTransfer": false
+  },
+  "execution": {
+    "node": "24.19.0",
+    "platform": "darwin-arm64",
+    "actualExit": 0,
+    "streamsComplete": true,
+    "tests": 14,
+    "pass": 14,
+    "fail": 0,
+    "skipped": 0,
+    "cancelled": 0,
+    "todo": 0,
+    "attemptsEntered": 1,
+    "stdout": {
+      "bytes": 2045,
+      "sha256": "bf5ab30fc7b7415d09f7783b4c5e056417472e2b04f62e07524672ab5adc4b22"
+    },
+    "stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "sources": [
+      {
+        "path": "qualification/actual-ingress-shared-limits.behavior.mjs",
+        "sha256": "0e4480ec1e94b2dbf6faa59e667c477dd391d3eb6f0da18d8d26b6638cfa89f5",
+        "bytes": 14085
+      },
+      {
+        "path": "package.json",
+        "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+        "bytes": 2677
+      },
+      {
+        "path": "src/service-credit-bounded-https-ingress-owner.js",
+        "sha256": "7c8a663f8541373c93cf7b90b243a4d5ec88db43a400fbf411c9535571e20830",
+        "bytes": 140920
+      },
+      {
+        "path": "src/service-credit-bounded-https-ingress-limits.js",
+        "sha256": "35e2cc603398a929979b2f939f558d43002079038922d6248cc654c425eafb68",
+        "bytes": 2661
+      },
+      {
+        "path": "src/x402-official-https-request-binding.js",
+        "sha256": "dabf215408887bd0d2ba346085c5ab2df13f724e8759b7a98b71b09c8dc8d692",
+        "bytes": 5085
+      }
+    ],
+    "sourcePinsRechecked": true,
+    "observations": {
+      "entered": 14,
+      "completed": 14,
+      "constructionRefusals": 352,
+      "constructorsReturned": 24,
+      "declaredStarts": 10,
+      "declaredRequests": 10,
+      "declaredCloses": 24,
+      "getterCalls": 0,
+      "proxyTraps": 0,
+      "scope": "ACTUAL_INGRESS_SHARED_LIMITS_WITH_DECLARED_INTERFACES",
+      "nativeServerOrSocket": false,
+      "nativeTls": false,
+      "actualApplicationTimers": false,
+      "SDK": false,
+      "SQLite": false,
+      "signing": false,
+      "nonce": false,
+      "issuedGrantNativeQualified": false,
+      "sourceTransforms": 0,
+      "nativeAliases": 0,
+      "authority": "NONE"
+    },
+    "limits": {
+      "readAllowlistFiles": 5,
+      "stdoutCapBytes": 65536,
+      "stderrCapBytes": 8192,
+      "outerObservationSeconds": 20,
+      "perCaseMilliseconds": 2000,
+      "filesystemWritesPermitted": false,
+      "NodeChildrenPermitted": false,
+      "NodeWorkersPermitted": false,
+      "sourceCopies": false,
+      "qualificationScratch": false,
+      "osNetworkSandbox": false
+    }
+  },
+  "scope": {
+    "actualIngressModule": true,
+    "sharedLimitsModule": true,
+    "bothLegacyAndOfficialFactories": true,
+    "declaredServerSocketAndDeadlineInterfaces": true,
+    "nativeServer": false,
+    "nativeSocket": false,
+    "TLS": false,
+    "actualApplicationTimers": false,
+    "SDK": false,
+    "SQLite": false,
+    "keysOrSignatures": false,
+    "nonce": false,
+    "nativeAliases": false,
+    "sourceTransforms": false,
+    "ordinaryInstalledPackageNamespaceQualified": false
+  },
+  "historicalEvidence": {
+    "prior27IngressCaseRecord": "https://github.com/edgepillar/zenon-x402-poc/blob/2263964279f4723bbfeccd3c0aab0687f5668be8/qualification/official-x402-ingress-main-transfer.actual-local-result.json",
+    "earlierReportsAndRecipesUnmodified": true,
+    "earlierCountsNotRebound": true,
+    "newNativeCases": 0,
+    "issuedCleanV1": "CONSUMED_CONSTRUCTION_FAILURE_RETAINED",
+    "issuedV2ManifestSha256": "980bc24a3effe011b6199338f3a3224da8c79e33b48a40296cbe4bf13ee21c5b",
+    "issuedV2Runs": 0,
+    "issuedV2Approval": "NOT_RECEIVED",
+    "fullDpRuntime69GraphChanged": false
+  },
+  "mainWorkflow": {
+    "profile": "p0-current-p2-node24-v2",
+    "selectedCases": 27,
+    "profileAndWorkflowChanged": false,
+    "existingHostedScopeApproved": true,
+    "new14CaseFixtureAddedToCi": false,
+    "dependencyInstallation": false,
+    "SDKOrX402PackageExecution": false,
+    "SQLite": false,
+    "network": false,
+    "keysOrSignatures": false,
+    "nonce": false,
+    "hostedPassEstablishedByThisLocalResult": false
+  },
+  "evidenceLimits": {
+    "nativeHttpOrTlsQualified": false,
+    "issuedGrantVerticalSliceQualified": false,
+    "sdkSqlEarlyHostAdmissionExecuted": false,
+    "crashDurabilityQualified": false,
+    "sourceReviewIsNotNativeExecution": true,
+    "economicPilot": "NO_GO",
+    "productionQualified": false
+  }
+}
