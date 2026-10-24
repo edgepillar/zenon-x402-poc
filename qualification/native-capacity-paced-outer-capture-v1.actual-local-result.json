@@ -1,0 +1,236 @@
+{
+  "kind": "PACED_V2_OUTER_CONTRACT_SELECTED_ACTUAL_DATA_NOT_NATIVE_CAPTURE",
+  "version": 1,
+  "sourceParent": "0da672b27fb7a9993f99f48860fd497f22162735",
+  "mainParent": "334c9447dd33a86c34366c5e771e46e5b412ea41",
+  "sourcePins": [
+    {
+      "path": "qualification/native_capacity_paced_outer_capture_data_v1.py",
+      "bytes": 21646,
+      "LF": 323,
+      "sha256": "34623109c9810c1e04cc15efe9d8f39ab18ed894c4ae2b1c308fad95bde13e85",
+      "gitBlob": "dd36f05b1b122bc3d34dd2ee153f5d2e185c7eb9"
+    },
+    {
+      "path": "qualification/native_capacity_paced_outer_capture_data_v1.behavior.py",
+      "bytes": 18387,
+      "LF": 262,
+      "sha256": "4e4c5613852f471aaca21d54ffe4c530e2a7a140f29331c7971857bad6c61352",
+      "gitBlob": "cee9fb6478018d07501f7de2d733c6e16d52afa0"
+    },
+    {
+      "path": "qualification/fixtures/capacity-paced-outer-contract-v1.json",
+      "bytes": 138237,
+      "LF": 1,
+      "sha256": "ee28f98bc0ecff728e1f7dbe11170796ed789c0c0dc1ebb37d58829d6b70e712",
+      "gitBlob": "8187d90f0b46d4abdb46ebb3c79a11426bab44a9"
+    },
+    {
+      "path": "qualification/native_capacity_managed_workload_v3.py",
+      "bytes": 49689,
+      "LF": 646,
+      "sha256": "6d4e2d726bd600b84be387147ee7cd6555daa8b72b8940a8719861a1078b4567",
+      "gitBlob": "c11c7981db6827e68d49dfdf354db3601afb5adc"
+    },
+    {
+      "path": "qualification/native_capacity_paced_resource_plan_v1.py",
+      "bytes": 12146,
+      "LF": 211,
+      "sha256": "fb680d472ad261bf28aa2b703cf7b51ac93fed4a329ff1443cb021ea7a8991a9",
+      "gitBlob": "524b614df4afb82e2a2070e48c6e3a7345c44b5b"
+    },
+    {
+      "path": "qualification/native_capacity_paced_timing_envelope_data_v1.py",
+      "bytes": 34479,
+      "LF": 485,
+      "sha256": "96d332f0a3e56edf03db54e47a078535d01a5e0665a3bf29834f582039cc0a99",
+      "gitBlob": "efe5e866c96b74c67e1e74a565fa9e1adf986e79"
+    }
+  ],
+  "fixtureProducerSourcePins": [
+    {
+      "path": "package.json",
+      "bytes": 2677,
+      "LF": 40,
+      "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+      "gitBlob": "45752ffde39d29666094f7f1c755060d75e43deb"
+    },
+    {
+      "path": "src/service-credit-capacity-paced-workload-owner-core.js",
+      "bytes": 21119,
+      "LF": 398,
+      "sha256": "ec12fc8cef93f2ecda6ca88c8bf193db183a8a3f456d3a712411d319dfe7761f",
+      "gitBlob": "eb12bbbe1e3b468f1c8e0acf09ce94b076825178"
+    },
+    {
+      "path": "src/service-credit-capacity-windowed-async-workload-owner-core.js",
+      "bytes": 36252,
+      "LF": 645,
+      "sha256": "fda636116343c497f269d926ae8e3a61f1b9cd1cf11b493c3d9ba99ef55a7444",
+      "gitBlob": "cc9eae4a2e553a0e71a531f191648c9cbe0cb101"
+    },
+    {
+      "path": "src/service-credit-capacity-window-recorder.js",
+      "bytes": 13321,
+      "LF": 242,
+      "sha256": "48855e34729ae68c179d6439aed962a719964732c992a83472330b7e41293579",
+      "gitBlob": "6e28e75b4fd6572fbae535ac066334349ed26038"
+    },
+    {
+      "path": "src/service-credit-capacity-recorder.js",
+      "bytes": 10801,
+      "LF": 236,
+      "sha256": "eca9bf4cad4717df5d61457044c2c5d0a6bc00b6af81964d09bf18325d4a46ad",
+      "gitBlob": "bc9b0a8a9abd48033e698e100cdc6ef90d2152c9"
+    },
+    {
+      "path": "src/service-credit-capacity-parent-timing-trace-data.js",
+      "bytes": 13257,
+      "LF": 213,
+      "sha256": "9b48e9212efa6b000690b32c04f07277d2c868562a1e649766a28aab85e0907d",
+      "gitBlob": "8aecb7664c2a4772870fdeb51d10fe69bc71cb79"
+    },
+    {
+      "path": "src/service-credit-capacity-paced-timing-trace-data.js",
+      "bytes": 22759,
+      "LF": 299,
+      "sha256": "4459f9e90692b99af0b831e9acf013b579fe63b2113b8ef5abd81f29c559f5dc",
+      "gitBlob": "0f06c70e53c61497c10b7e4de3fac8697904856e"
+    },
+    {
+      "path": "src/service-credit-capacity-window-writer-trace-data.js",
+      "bytes": 8906,
+      "LF": 126,
+      "sha256": "b86377ec5474f85465073e7891bde9f706b167a40cb6677671a6012dab4d9bbd",
+      "gitBlob": "ceabbe01bb341ccf2c9c8f0d89229e3dd4268c5f"
+    },
+    {
+      "path": "src/service-credit-capacity-cohort-writer-trace-data.js",
+      "bytes": 10956,
+      "LF": 181,
+      "sha256": "75c3529584f7c6126f726734d085e107438c7a676ff1f63073956054aedcba65",
+      "gitBlob": "63bee5ad4714d3179666eef371373d4e0416a4a0"
+    },
+    {
+      "path": "src/service-credit-capacity-native-observation-data.js",
+      "bytes": 6173,
+      "LF": 103,
+      "sha256": "d6d19890334fbb6d7e92e605640d4638154f8e3e10588c8e217bf782a675b7ca",
+      "gitBlob": "aaf6b24f65a59e4b421805d7667a5fdf9e72433f"
+    },
+    {
+      "path": "qualification/capacity-paced-outer-contract-fixture-data-v1.mjs",
+      "bytes": 16661,
+      "LF": 219,
+      "sha256": "7874ac44e19998978212ca212f0a8745f8def741540b93c11b5a3c555fa33a68",
+      "gitBlob": "9096c60040bf60e911c4cae215984a0d8ebbfc5c"
+    }
+  ],
+  "actualPython": {
+    "actualExit": 0,
+    "complete": true,
+    "validated": true,
+    "tests": 87,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "commands": 1,
+    "stdoutBytes": 338,
+    "stdoutSha256": "d5e8f7043c7742be27803383d55ab73f3dc6d7f8764c41ddda3e1175506fa6a2",
+    "stderrBytes": 0,
+    "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "elapsedSeconds": 0.599626499999431,
+    "timingBenchmarkQualified": false,
+    "sourcePinsUnchanged": true,
+    "protectedInputCount": 28
+  },
+  "actualFixtureProducer": {
+    "actualExit": 0,
+    "complete": true,
+    "validated": true,
+    "commands": 1,
+    "declaredOuterCases": [
+      "full",
+      "withdrawal",
+      "preWaitWithdrawal"
+    ],
+    "NodeVersionObservedBySource": "v24.19.0",
+    "sourceOwnerAndWriterHelpersGenuine": true,
+    "pairChildAndReceiptFactsSynthetic": true,
+    "actualNativeAdapterExecuted": false,
+    "stdoutBytes": 138237,
+    "stdoutSha256": "ee28f98bc0ecff728e1f7dbe11170796ed789c0c0dc1ebb37d58829d6b70e712",
+    "stderrBytes": 0,
+    "elapsedSeconds": 0.3785325839999132,
+    "sourcePinsUnchanged": true,
+    "historicalTestSelectionsReexecuted": false,
+    "timingBenchmarkQualified": false
+  },
+  "implementation": {
+    "originalPacedV2LayoutValidated": true,
+    "fullOuterFieldClosure": true,
+    "independentParentPacedAndWriterDataCombined": true,
+    "perLaneDispatchCountsCrossBound": true,
+    "logicalWithdrawalNotCountedAsChildExecute": true,
+    "originalPayerCommandSequenceMatched": true,
+    "completeStreamDigestsAndChildEOFBoundAsData": true,
+    "oldR4CaptureEnvelopeRewritten": false,
+    "oldChildSourceSealRebound": false,
+    "verifiedExactPythonControlSourceBytesCompiled": true,
+    "cachedBytecodeAccepted": false,
+    "completeInputTreeCopied": false,
+    "secondFullJsonSerializationRequired": false,
+    "fullRawFrameSliceRequired": false,
+    "realManagedControllerOrTaskWriterImplemented": false
+  },
+  "coverage": [
+    "Logical completion may be true while a withdrawn original never entered its child",
+    "Unchanged global totals cannot hide swapped per-lane source counts",
+    "Whole private stdout/stderr receipts, child EOF and stream-prefix digests",
+    "Payer INIT/OPEN/PREPARE/COMMIT/SUBMIT/BIND/EXECUTE/CLOSE/RELEASE_IPC DATA sequence",
+    "Original child writer command binding, cohort/window classification and whole-bracket metrics",
+    "Separate parent/payer/service clock domains, including consistent independent clock shifts",
+    "One bounded compact JSON frame; duplicate keys, float/nonfinite/negative-zero values and extra frames refuse",
+    "Missing evidence, HELD owners, incomplete original commands and resource/receipt uncertainty refuse"
+  ],
+  "evidenceBoundary": {
+    "sourceComponentsExecutedWithSyntheticCallbacks": true,
+    "nativePairAndReceiptRecordsDeclared": true,
+    "actualNativeAdapterExecuted": false,
+    "fakeNativeNamespaceInstalled": false,
+    "managerImported": false,
+    "privateProfilesOpenedOrWritten": false,
+    "SDK": false,
+    "SQLite": false,
+    "keys": false,
+    "signatures": false,
+    "nonceSearch": false,
+    "sockets": false,
+    "hostTimers": false,
+    "nativeChildren": false,
+    "qualificationScratchCreated": false,
+    "sourceOrPackageTreeCopied": false
+  },
+  "limitations": {
+    "timerEventSeriesRecomputed": false,
+    "postStopLedgerDurationSeriesRecomputed": false,
+    "balanceRoundTripSeriesRecomputed": false,
+    "receiptsIndependentlyAuthenticated": false,
+    "nativeSourceGraphRequalified": false,
+    "actualNativeOuterCaptureQualified": false,
+    "storageCleanupQualified": false,
+    "heapByteBoundEstablished": false,
+    "nativeResourcesQualified": false,
+    "sustainableCapacityQualified": false,
+    "chainAuthenticated": false,
+    "productionQualified": false,
+    "hostedProfileSelectsThese87Controls": false
+  },
+  "preservation": {
+    "historicalR4InputsUnchanged": true,
+    "prior65TimingInputsUnchanged": true,
+    "finiteR4ApprovalConsumed": false,
+    "historicalSuccessfulOrFailedResultsRewritten": false
+  },
+  "authority": "NONE"
+}

@@ -184,3 +184,12 @@ parent and paced recorder summaries from the v2 raw trace without relabeling
 R4 or trusting JavaScript check objects. This closes timing-DATA arithmetic
 only: the full outer native result, real command receipts, child and writer
 evidence, task-owned launch and storage closure are still separate obligations.
+
+The [new outer-contract DATA validator](SERVICE_CREDIT_CAPACITY_PACED_OUTER_CAPTURE_DATA.md)
+now implements the outer/payer/writer consistency checks without flattening
+this paced result into an old R4 envelope. Its 87 selected passing controls
+include logical completion with a withheld original and per-lane DISPATCH
+binding. Pair/child/receipt fixture records are explicitly synthetic DATA,
+not native execution. A real task-owned paced launcher/profile writer and
+actual private command/source/storage binding remain the next implementation
+and qualification gate; no R4 native allowance is transferred to this graph.
