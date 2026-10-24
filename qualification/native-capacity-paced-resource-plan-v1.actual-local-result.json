@@ -1,0 +1,88 @@
+{
+  "kind": "PACED_RESOURCE_AND_ENTRY_PLAN_SELECTED_ACTUAL_DATA_NOT_NATIVE",
+  "version": 1,
+  "sourceParent": "2f337b60b458a0a5f4fd15db19c47c7ac121b92e",
+  "mainParent": "ec2f7f7f404996a87db48c33f8ce0f26a00d4425",
+  "sourcePins": [
+    {
+      "path": "qualification/native_capacity_paced_resource_plan_v1.py",
+      "bytes": 12146,
+      "LF": 211,
+      "sha256": "fb680d472ad261bf28aa2b703cf7b51ac93fed4a329ff1443cb021ea7a8991a9",
+      "gitBlob": "524b614df4afb82e2a2070e48c6e3a7345c44b5b"
+    },
+    {
+      "path": "qualification/native_capacity_paced_resource_plan_v1.behavior.py",
+      "bytes": 21941,
+      "LF": 302,
+      "sha256": "62bcbb4f9ef5efe84ee0a9a636af01f17d633983f5280ad7022fb230186e0dd1",
+      "gitBlob": "1d168e756e86690bc07d29351e07f1ffc0efaea5"
+    }
+  ],
+  "selection": {
+    "tests": 75,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "successful": true,
+    "sourcePinsUnchanged": true,
+    "preservedR4ControlInputs": 18,
+    "pacedRuntimeInputsUnchanged": 6
+  },
+  "actualCommand": {
+    "pythonCommands": 1,
+    "actualExit": 0,
+    "complete": true,
+    "stdoutBytes": 302,
+    "stdoutSha256": "51c16a4b9eb683c7214c17a20044d24b6d086257d5e719a429bf2744376a905f",
+    "stderrBytes": 0,
+    "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "elapsedSeconds": 0.083004209009232,
+    "timingBenchmarkQualified": false
+  },
+  "coverage": [
+    "Both genuine recorder event ceilings counted once in v2 raw timing layout",
+    "Both proposed managed command stdout and separately capped stderr reservations",
+    "Full role-profile and independent TLS alias reservations",
+    "Ten GiB floor retained; other reservations explicitly not observed by DATA",
+    "Fixed measurement-window timeout; no additional pacing-derived wait",
+    "Oversized capture policy refused without dropping samples, events or automatic retry",
+    "Whole canonical native-entry plan bytes with complete ordered role references",
+    "Exact built-in DATA admission, detached plans and no coercion hooks"
+  ],
+  "executionBoundary": {
+    "managerImported": false,
+    "privateRootOpened": false,
+    "privateProfileOpened": false,
+    "privateProfileWritten": false,
+    "qualificationScratchCreated": false,
+    "applicationOrPackageModuleImported": false,
+    "SDKExecuted": false,
+    "SQLiteExecuted": false,
+    "keysOrSignaturesExecuted": false,
+    "nonceSearchExecuted": false,
+    "socketOrNetworkExecuted": false,
+    "nativeChildExecuted": false,
+    "sourceOrPackageTreeCopied": false
+  },
+  "limits": {
+    "controllerImplemented": false,
+    "taskOwnedWriterImplemented": false,
+    "nativeEntryExecutedByThisSelection": false,
+    "nativeCaptureIndependentlyQualified": false,
+    "byteReservationsAreMeasurements": false,
+    "OSQuotaEstablished": false,
+    "rootOrProfileAuthenticationEstablished": false,
+    "throughputOrProductionQualified": false,
+    "hostedProfileSelectsThese75Controls": false
+  },
+  "currentMainPriorBatch": {
+    "head": "ec2f7f7f404996a87db48c33f8ce0f26a00d4425",
+    "exactPushRun": 40125939434,
+    "attempt": 1,
+    "conclusion": "success",
+    "selectedExistingCases": 27,
+    "new75ControlsHosted": false
+  },
+  "authority": "NONE"
+}
