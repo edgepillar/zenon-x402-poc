@@ -1,0 +1,283 @@
+{
+  "kind": "SERVICE_CREDIT_CAPACITY_WORKLOAD_OWNER_CORE_ACTUAL_DATA_RESULT",
+  "version": 1,
+  "qualification": "48_SELECTED_COMPONENT_DATA_CONTROLS_PASS_NOT_A_NATIVE_WORKLOAD_DRIVER",
+  "sourceParent": "153c80ed7df1fdf8c99c85c3b7207c08c9c66080",
+  "mainBase": "99652944eb12808788dbd6a231bc0f4a2a58cf9e",
+  "qualificationScope": "EXACT_OWNER_CORE_AND_RECORDER_SOURCE_BYTES_WITH_DECLARED_HOST_CAPABILITIES",
+  "actualLocalResult": {
+    "event": "Q120_CAPACITY_WORKLOAD_OWNER_ACTUAL_DATA_RESULT",
+    "actualExit": 0,
+    "complete": true,
+    "selectionValidated": true,
+    "wallSeconds": 0.10641716700047255,
+    "runtime": [
+      {
+        "Node": "v24.19.0",
+        "platform": "darwin",
+        "arch": "arm64",
+        "eventsDeclared": true,
+        "nativeEffects": false
+      }
+    ],
+    "expectedCaseCount": 48,
+    "passedCaseNames": [
+      "workload construction is inert and does not read a clock or invoke lane capabilities",
+      "workload joins genuine recorder funding warmup measurement balance and close contracts",
+      "workload reserves and reuses one run Promise before trusted lane reentry",
+      "workload funding is an all-lane barrier before the first funded call",
+      "workload parallel lanes never overlap two operations within the same lane",
+      "workload operation ordinals are bounded and never reset for repeated run calls",
+      "workload window expiry stops dispatch but waits for entered operation drain before close",
+      "workload manual stop shares the run Promise and never launches queued replacements",
+      "workload stop before run closes owned lanes without funding or balance reads",
+      "workload UNKNOWN funding prevents all funded-call admission without another funding attempt",
+      "workload rejected funding remains recorded and does not activate service",
+      "workload declared service rejection remains in error fractions while finite work continues",
+      "workload service UNKNOWN stops all lanes and late success cannot reopen dispatch",
+      "workload rejected operation Promise is UNKNOWN and never leaks its error",
+      "workload synchronous throw after capability entry is not a definite no-effect result",
+      "workload does not assimilate returned thenables or invoke their getters",
+      "workload does not infer ledger transactions from funded-call results",
+      "workload explicit operation-bound ledger capabilities record actual component timing paths",
+      "workload ledger UNKNOWN is sticky even when the enclosing operation later succeeds",
+      "workload unfinished ledger boundary blocks normal close until its actual declared completion",
+      "workload drain expiry requests closes once and retains honest pending operation counts",
+      "workload never-settling close uses the same bounded drain timer without renewing it",
+      "workload close rejection does not skip independent owner close attempts",
+      "workload non-undefined close return never becomes a returned owner close",
+      "workload timer cancellation throw is sticky even after all owner closes return",
+      "workload timer setup throw cannot dispatch measured work or trigger unbounded retry",
+      "workload synchronous timer callback is refused and its exact returned token is stopped",
+      "workload cancellation requires the explicit undefined contract rather than literal true",
+      "workload repeated timer token is unknown and cannot renew the observation budget",
+      "workload mismatched balance at the funding barrier stops all service work",
+      "workload final balances are observed before close and never read after returned close",
+      "workload final balance mismatch retains observed calls but withholds overall measurement",
+      "workload failed clock before dispatch never fabricates a funding entry",
+      "workload clock failure at a terminal observation retains incomplete recorder coverage",
+      "workload trusted callback reentrant stop gets the reserved run and no next service command",
+      "workload stale ledger capability cannot be reused during a newer active operation",
+      "workload ledger observation budget cannot be expanded by repeated completed markers",
+      "workload source capabilities and plan are captured without running getters proxies or coercion",
+      "workload plan mutation and public arity errors cannot replace already captured work",
+      "workload returned balance proxy is refused before its descriptor hooks can execute",
+      "workload ledger work starting after stop drains separately without changing the application operation",
+      "workload trusted clock reentrant stop cannot dispatch an operation after admission closed",
+      "workload reentrant drain deadline at the last balance read preserves terminal HELD",
+      "workload timer token returned after reentrant finalization is stopped exactly once",
+      "workload reentrant clock cannot exceed the per-operation ledger budget before marker admission",
+      "workload funding that never settles is bounded by setup then one drain deadline",
+      "workload warmup that never settles cannot postpone measurement startup without a bound",
+      "workload malformed drain callback cannot consume the only deadline and leave run pending"
+    ],
+    "totals": {
+      "tests": 48,
+      "suites": 0,
+      "pass": 48,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "stdoutBytes": 11561,
+    "stdoutSha256": "43f8c0b9e7a5b6717842df0dede0a067cfa5d16bd618169b5cbd87cf2842853a",
+    "stderrBytes": 0,
+    "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "sources": [
+      {
+        "path": "qualification/service-credit-capacity-workload-owner-core.behavior.mjs",
+        "bytes": 30548,
+        "LF": 549,
+        "sha256": "b8f69ce288d510816c05eab3202463eab53fbc21ee730d5435a72d3246747a7b",
+        "gitBlob": "e60d43017af2e706bbbaf0b266771a938077276f"
+      },
+      {
+        "path": "src/service-credit-capacity-workload-owner-core.js",
+        "bytes": 22727,
+        "LF": 416,
+        "sha256": "c363dd0fdc240021aa0be9ac5250ed77d381b2b42737f73bcf249ea685c95ec8",
+        "gitBlob": "4acf70befbfc19ddabbce14b9139bb37137cf392"
+      },
+      {
+        "path": "src/service-credit-capacity-window-recorder.js",
+        "bytes": 13321,
+        "LF": 242,
+        "sha256": "48855e34729ae68c179d6439aed962a719964732c992a83472330b7e41293579",
+        "gitBlob": "6e28e75b4fd6572fbae535ac066334349ed26038"
+      },
+      {
+        "path": "src/service-credit-capacity-recorder.js",
+        "bytes": 10801,
+        "LF": 236,
+        "sha256": "eca9bf4cad4717df5d61457044c2c5d0a6bc00b6af81964d09bf18325d4a46ad",
+        "gitBlob": "bc9b0a8a9abd48033e698e100cdc6ef90d2152c9"
+      },
+      {
+        "path": "package.json",
+        "bytes": 2677,
+        "LF": 40,
+        "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+        "gitBlob": "45752ffde39d29666094f7f1c755060d75e43deb"
+      }
+    ],
+    "sourcePinsUnchanged": true,
+    "actualWorkloadOwnerAndWindowRecorderImported": true,
+    "applicationWorkloadExecuted": false,
+    "benchmarkExecuted": false,
+    "SDK": false,
+    "SQLite": false,
+    "sockets": false,
+    "keys": false,
+    "signatures": false,
+    "nonceSearch": false,
+    "childProcesses": 0,
+    "workers": 0,
+    "scratchCreated": false,
+    "sourceCopiesCreated": 0,
+    "capacityQualified": false,
+    "authority": "NONE"
+  },
+  "earlierLocalSourceRevisions": [
+    {
+      "selectedCases": 40,
+      "actualExit": 0,
+      "complete": true,
+      "stdoutBytes": 9594,
+      "stdoutSha256": "04347038f35f66b65ae09bc9ca39b86ce34fa87ddcfccff9a22f1e2cbf6a0e2f",
+      "sourcePins": [
+        {
+          "path": "qualification/service-credit-capacity-workload-owner-core.behavior.mjs",
+          "bytes": 24693,
+          "LF": 443,
+          "sha256": "5ecbe60b61788e53ff5effbdefde76b8cf617f2c74f1f87860ba431f32647400",
+          "gitBlob": "47d92d911e980f67452fd96e167f6e42c333cd91"
+        },
+        {
+          "path": "src/service-credit-capacity-workload-owner-core.js",
+          "bytes": 19904,
+          "LF": 363,
+          "sha256": "dafe6357d1ea9123e071e578f3ac508873f435ad55c63535493ef35ab908d8ab",
+          "gitBlob": "485e232923b500d0098323da3f3e23ca856742b2"
+        }
+      ],
+      "supersededForCurrentCode": true
+    },
+    {
+      "selectedCases": 44,
+      "actualExit": 0,
+      "complete": true,
+      "stdoutBytes": 10590,
+      "stdoutSha256": "9b27861cf5052f767531f50f1af3037bdc4dfc416bb3d180129fc06acbad86c2",
+      "sourcePins": [
+        {
+          "path": "qualification/service-credit-capacity-workload-owner-core.behavior.mjs",
+          "bytes": 27162,
+          "LF": 488,
+          "sha256": "48f1b9b0c176aeaf2240df8603b70dbecb23cba0b882614943cde88a03ef49de",
+          "gitBlob": "126ce73a8c3d1d6e6fbe933f4e02abab4dac2526"
+        },
+        {
+          "path": "src/service-credit-capacity-workload-owner-core.js",
+          "bytes": 21833,
+          "LF": 395,
+          "sha256": "41dc2a52df93c3f2176084e9533e4bfe854ca43cca324ac709cedd4edcb692c4",
+          "gitBlob": "5e6fc39ea738c375dcc324cddb1e43f1f610039c"
+        }
+      ],
+      "supersededForCurrentCode": true
+    },
+    {
+      "selectedCases": 45,
+      "actualExit": 0,
+      "complete": true,
+      "stdoutBytes": 10843,
+      "stdoutSha256": "fa82f71f5fe23b2ae490e7c5a3a3433c9ed58af825f6e4bffc4ffff9255bcd39",
+      "sourcePins": [
+        {
+          "path": "qualification/service-credit-capacity-workload-owner-core.behavior.mjs",
+          "bytes": 28164,
+          "LF": 511,
+          "sha256": "b1b99035fdb6e81891d9e842b3326e6e0f10fa1d9d69ae9e588864c317503453",
+          "gitBlob": "2c7a7b5a2fe9a4a6cc60b82e34990d359190a118"
+        },
+        {
+          "path": "src/service-credit-capacity-workload-owner-core.js",
+          "bytes": 22024,
+          "LF": 397,
+          "sha256": "c17f16e881e127b7e4a2e516332ac384ed692b1ce2be328267eeb1b4a642bdfb",
+          "gitBlob": "cf20f2cd80047ffbe662f9fde0e0ff92f4b9ad63"
+        }
+      ],
+      "supersededForCurrentCode": true
+    }
+  ],
+  "currentCaseCountOnly": 48,
+  "historicalAndCurrentTotalsCombined": false,
+  "runtime": {
+    "node": "24.19.0",
+    "platform": "darwin",
+    "arch": "arm64",
+    "nodeSha256": "dbedff294bab84a0a86c04e15fbcbeb1c97ca10bef1b32b0634cd24b36f62100"
+  },
+  "execution": {
+    "actualNodeCommandsForCurrentRevision": 1,
+    "actualNodeExit": 0,
+    "completeStreams": true,
+    "NodePermissionModel": true,
+    "allowedSourceReadPaths": [
+      "qualification/service-credit-capacity-workload-owner-core.behavior.mjs",
+      "src/service-credit-capacity-workload-owner-core.js",
+      "src/service-credit-capacity-window-recorder.js",
+      "src/service-credit-capacity-recorder.js",
+      "package.json"
+    ],
+    "NodeWritesPermitted": false,
+    "NodeChildrenPermitted": false,
+    "workersPermitted": false,
+    "addonsPermitted": false,
+    "osNetworkSandbox": false,
+    "sourceTransforms": 0,
+    "testReporter": "TAP",
+    "exactExpectedCaseNamesMatched": true,
+    "applicationTimerTokensAreDeclaredData": true,
+    "nativeClockRead": false,
+    "nativeTimersCreated": 0,
+    "realNativeLanesCreated": 0,
+    "defaultTestDiscoveryChanged": false
+  },
+  "invariants": {
+    "oneOperationPerLane": true,
+    "wholeOwnerStopsOnUnknown": true,
+    "noImplicitFundingRetry": true,
+    "genuineNativePromisesRequired": true,
+    "ledgerBoundariesNotInferredFromCalls": true,
+    "ledgerCapabilityBoundToOriginalOperation": true,
+    "ledgerBudgetReservedAcrossReentry": true,
+    "postStopLedgerOnlyForPreviouslyEnteredWork": true,
+    "postStopLedgerExcludedFromWindowRate": true,
+    "setupBudgetCoversFundingAndWarmup": true,
+    "fixedMeasurementAndDrainTimers": true,
+    "malformedDrainCallbackCannotConsumeOnlyTerminalDeadline": true,
+    "independentCloseAttempts": true,
+    "lateObservationsCannotUpgradeCachedResult": true,
+    "clockAndTimerReentryAdmissionRechecked": true,
+    "balanceChecksBeforeCloseOnly": true,
+    "rawCausesAndOriginalMaterialNotReturned": true
+  },
+  "nativeAdapter": "NOT_IMPLEMENTED_BY_THIS_COMPONENT",
+  "trustBoundary": "Caller-supplied frozen lane functions remain trusted source capabilities, not native identity or economic authority.",
+  "existingP4RecordersChanged": false,
+  "nativeP2SelectionsChanged": false,
+  "oldQualificationRecordsRewritten": false,
+  "hosted48CaseQualification": false,
+  "capacityQualified": false,
+  "productionQualified": false,
+  "authority": "NONE",
+  "remainingGates": [
+    "Bind real isolated P1 lane workers/adapters and original request/checkpoint custody without a replacement graph.",
+    "Use independently derived real balance expectations and actual transaction boundaries.",
+    "Qualify the complete source/package/native selection under a separate finite native allowance.",
+    "Run approved sustained load and report native timing, errors, drain and capacity separately from these DATA controls."
+  ]
+}
