@@ -1,6 +1,7 @@
 import { Buffer } from 'node:buffer';
 import { dirname, isAbsolute, resolve } from 'node:path';
 import { types as utilTypes } from 'node:util';
+import { createNativeGuardedStoreCloseBoundary } from './service-credit-native-guarded-store-close.js';
 import {
   openZenonFundingPayerRecoveryCustodySqliteStoreV2,
   openZenonFundingPayerRecoveryDispatchIntentSqliteStoreV3,
@@ -55,6 +56,7 @@ const CREATE_CLIENT_V4 = createServiceCreditCustodiedHttpClientV4;
 const CREATE_CLIENT_V5 = createServiceCreditCustodiedHttpClientV5;
 const POLICY = snapshotOriginalServiceRequestCustodyPolicy;
 const KEY = snapshotOriginalServiceRequestCustodyKey;
+const NATIVE_CLOSE_BOUNDARY = createNativeGuardedStoreCloseBoundary;
 const STORE_PROTOTYPE = ZenonFundingPayerRecoverySqliteStore.prototype;
 const STORE_ERROR_PROTOTYPE = ZenonFundingPayerRecoverySqliteStoreError.prototype;
 const STORE_CLOSE = DESCRIPTOR(STORE_PROTOTYPE, 'close')?.value;
@@ -157,12 +159,28 @@ export function openServiceCreditCustodiedSqliteHttpClientV6(configuration) {
   if (arguments.length !== 1) throw failure('INVALID_CONFIGURATION');
   return openOwnedClient(configuration, true, true, true, true);
 }
+/**
+ * SOURCE-ONLY named V6 with a PRIVATE source-owned native-resource close guard.
+ * Same actual store/client/slot, no substitute or implicit native transport.
+ * Guard refusal after the async child join vetoes real store.close entry and
+ * permanently holds this slot. A post-return refusal holds the CLOSED slot
+ * without claiming its already-returned store close stayed open. Legacy
+ * selections keep their previous independent child/DB close policy.
+ */
+export function openServiceCreditCustodiedSqliteHttpClientV6WithNativeCloseGuard(configuration) {
+  if (arguments.length !== 1) throw failure('INVALID_CONFIGURATION');
+  return openOwnedClient(configuration, true, true, true, true, true);
+}
 function openOwnedClient(configuration, dispatchIntentEnabled, persistentCustody = false,
-  responseObservationEnabled = false, originalPaymentCheckpointEnabled = false) {
+  responseObservationEnabled = false, originalPaymentCheckpointEnabled = false, nativeGuardEnabled = false) {
 
   let input, policy, selected;
   try {
-    input = exact(configuration, CONFIG_FIELDS);
+    input = exact(configuration, nativeGuardEnabled ? [...CONFIG_FIELDS, 'nativeResourceCloseGuard'] : CONFIG_FIELDS);
+    if (nativeGuardEnabled && (typeof input.nativeResourceCloseGuard !== 'function'
+        || IS_PROXY(input.nativeResourceCloseGuard)
+        || PROTOTYPE(input.nativeResourceCloseGuard) !== Function.prototype
+        || !Object.isFrozen(input.nativeResourceCloseGuard))) throw failure('INVALID_CONFIGURATION');
     if (typeof input.requestImpl !== 'function' || IS_PROXY(input.requestImpl)
         || !IS_SAFE(input.deadlineMs) || input.deadlineMs < 1
         || input.deadlineMs > 60000 || IS(input.deadlineMs, -0)
@@ -201,7 +219,15 @@ function openOwnedClient(configuration, dispatchIntentEnabled, persistentCustody
     admissionClosed: false,
     storeCloseAttempts: 0,
     storeCloseOutcome: 'NOT_ATTEMPTED',
+    nativeCloseBoundary: null,
   };
+  if (nativeGuardEnabled) slot.nativeCloseBoundary = NATIVE_CLOSE_BOUNDARY(FREEZE({
+    nativeGuard: input.nativeResourceCloseGuard,
+    closeResource: FREEZE(function closeActualOwnedStore() {
+      if (slot.store === null) throw failure('STORE_CLOSE_UNKNOWN');
+      return APPLY(STORE_CLOSE, slot.store, []);
+    }),
+  }));
   resourceSlot = slot;
 
   try {
@@ -316,9 +342,14 @@ function composeOwned(slot, input, policy, selectedGrantId, dispatchIntentEnable
     const storeReturned = closeOwnedStore(slot);
     closeFinished = true;
     if (!storeReturned) {
-      closeOutcome = childUncertainty ? 'BOTH_UNKNOWN' : 'STORE_UNKNOWN';
-      closeCapability.reject(failure(childUncertainty
-        ? 'CHILD_AND_STORE_UNKNOWN' : 'STORE_CLOSE_UNKNOWN'));
+      const native = slot.nativeCloseBoundary === null ? null : slot.nativeCloseBoundary.snapshot();
+      if (native !== null && native.held && (native.resourceCloseEntered === false || native.resourceCloseReturned)) {
+        closeOutcome = native.resourceCloseReturned ? 'NATIVE_UNKNOWN_AFTER_STORE_RETURN' : 'NATIVE_UNKNOWN_STORE_HELD';
+        closeCapability.reject(failure('NATIVE_RESOURCE_CLOSE_UNKNOWN'));
+      } else {
+        closeOutcome = childUncertainty ? 'BOTH_UNKNOWN' : 'STORE_UNKNOWN';
+        closeCapability.reject(failure(childUncertainty ? 'CHILD_AND_STORE_UNKNOWN' : 'STORE_CLOSE_UNKNOWN'));
+      }
     } else if (childUncertainty) {
       closeOutcome = 'CHILD_UNKNOWN';
       closeCapability.reject(failure('CHILD_OUTCOME_UNKNOWN'));
@@ -385,6 +416,7 @@ function composeOwned(slot, input, policy, selectedGrantId, dispatchIntentEnable
         outcome: closeOutcome,
       }),
       client: view,
+      ...(slot.nativeCloseBoundary === null ? {} : { nativeClose: slot.nativeCloseBoundary.snapshot() }),
       qualification: 'UNQUALIFIED',
       actualPersistence: 'NOT_ESTABLISHED',
       restart: 'NOT_ESTABLISHED',
@@ -447,6 +479,16 @@ function childFlags(view) {
 }
 
 function closeOwnedStore(slot) {
+  if (slot.nativeCloseBoundary !== null) {
+    const clean = slot.nativeCloseBoundary.close(), observed = slot.nativeCloseBoundary.snapshot();
+    slot.storeCloseAttempts = observed.resourceCloseEntered ? 1 : 0;
+    slot.storeCloseOutcome = observed.resourceCloseReturned ? 'RETURNED'
+      : observed.resourceCloseEntered ? 'UNKNOWN' : 'NOT_ATTEMPTED';
+    if (!clean) { slot.phase = 'HELD'; return false; }
+    slot.store = null; slot.phase = 'RELEASED';
+    if (resourceSlot === slot) resourceSlot = null;
+    return true;
+  }
   if (slot.storeCloseAttempts !== 0) {
     return slot.storeCloseOutcome === 'RETURNED';
   }
