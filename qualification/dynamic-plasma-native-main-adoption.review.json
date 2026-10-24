@@ -1,0 +1,269 @@
+{
+  "kind": "SCOPED_NATIVE_DP_MAIN_ADOPTION_REVIEW_V1",
+  "date": "2026-10-24",
+  "status": "SOURCE_BYTE_CORRESPONDENCE_AND_SELECTED_INERT_COMPONENT_PASS",
+  "sourceSelection": {
+    "workingSourceHead": "a64ec71060472d324425493799e50685247f0e43",
+    "baseMain": "dfc799cef3d2c77f1192bc10c8433c6349f567d9",
+    "baseMainFiles": 875,
+    "baseMainTreeSeal": "3c649ff6271721a28c4507eb428ab35914072cb005d1aae6044c9d3a209a213a",
+    "prospectiveRuntimeOnlyFiles": 881,
+    "prospectiveRuntimeOnlyTreeSeal": "70043b9885de150dd9f708aa2b0c7a1dee6c7a4a3b83ebbe644dddacc0668ddf",
+    "runtimeOnlySealExcludesNewEvidenceFiles": true
+  },
+  "runtimeBatch": [
+    {
+      "path": "src/service-credit-funding-post-native-https-transport.js",
+      "bytes": 18761,
+      "LF": 327,
+      "sha256": "3b3fec921b46c62ed7557043f99cffb2e1a12f515bf4e607ea8f61525db28b7c",
+      "gitBlob": "ea47b0e9cc9479f6bb98b07b3b886d6100c630e3"
+    },
+    {
+      "path": "src/service-credit-zenon-funding-post-v1-payer-recovery-owner.js",
+      "bytes": 22581,
+      "LF": 626,
+      "sha256": "d62450b462a5412c35dfa474cbf7cac1e5aad88ecd6fc04106e36a67f8459a80",
+      "gitBlob": "cd030bb52146ae3445822224de25268f1c972b78"
+    },
+    {
+      "path": "src/zenon/bounded-json-rpc-https-exchange-owner.js",
+      "bytes": 48201,
+      "LF": 1000,
+      "sha256": "2c501f3353d55e31d4baedcb068e2bac5943ca7e3e4171521a3bb0ee8a0a8bdb",
+      "gitBlob": "1eb4626a7bdecc496811ebcd59464500f4ca9937"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-native-https-original-funding-submission.js",
+      "bytes": 8317,
+      "LF": 132,
+      "sha256": "813ee2aa8488f788025d9ee2704e4a207dfd6dc2e34cbf5c827988d1908ae8d6",
+      "gitBlob": "2f91f1df738364a0f8892fec0b111d490dd1d95e"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-original-funding-preparation.js",
+      "bytes": 15618,
+      "LF": 257,
+      "sha256": "0e1eb8bb94ecd4da8d4dc8f9b384510e8c2764601ba22e228126ba9ed01368c6",
+      "gitBlob": "52174703adc79f457081dfaecde0e308cfc5ccdc"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-original-funding-submission.js",
+      "bytes": 22507,
+      "LF": 377,
+      "sha256": "666551930bcf481d136c773de12d00228822c0f2a810d5c92aafa401acf80c68",
+      "gitBlob": "169e70d4e5678d0e2f07f9dcbe0b3f1167f690e3"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-retained-https-read-owners.js",
+      "bytes": 6241,
+      "LF": 117,
+      "sha256": "48ed2db2e36a12a93c106d76315f376a56f186cbf591ac544cb02c51f203c64d",
+      "gitBlob": "f03533b766e8f5f1e98c9a2b878e59a49631c5ce"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-retained-https-read-session.js",
+      "bytes": 8464,
+      "LF": 150,
+      "sha256": "791d2c74a81a18d4e3b4478d9ca569db1ec971f5c1e0540ddac02eb3a79938b7",
+      "gitBlob": "a18bec3918105f7cd2151d5a71d4b436401fe1a3"
+    }
+  ],
+  "retainedNativeEvidence": {
+    "qualifiedSourceHead": "aaf6967e940780affed0c3517a9f8c4aaafff75f",
+    "manifest": "qualification/dynamic-plasma-full-native-loopback.inputs.json",
+    "manifestSha256": "a472e3bcd8840ef4236e395cb918ae5f2a84be9ca45d8f59417c0b77da291933",
+    "result": {
+      "path": "qualification/dynamic-plasma-full-native-loopback.actual-local-result.json",
+      "bytes": 5092,
+      "LF": 144,
+      "sha256": "e0191d25607e51f084b5a8cf3a7b396a3a505236a7ae2b8f4226903bc02459ca",
+      "gitBlob": "45df4b98a99fb0d91e36404cff718144b98635df"
+    },
+    "selectedCases": 3,
+    "passed": 3,
+    "attemptsRemaining": 0,
+    "runtimeModules": 69,
+    "allRuntimeModulesMatchProspectiveMain": true,
+    "newNativeCasesExecuted": 0,
+    "nativeSourceCopiesOrTransforms": false,
+    "ordinaryInstalledNamespaceQualified": false,
+    "nativeBuiltinAliases": false,
+    "newPermissionInferred": false
+  },
+  "newInertExecution": {
+    "node": "24.19.0",
+    "platform": "darwin-arm64",
+    "actualExit": 0,
+    "streamsComplete": true,
+    "tests": 12,
+    "pass": 12,
+    "fail": 0,
+    "skipped": 0,
+    "cancelled": 0,
+    "todo": 0,
+    "stdout": {
+      "bytes": 1769,
+      "sha256": "ee0e298564d8892c6a3c2cb7136ec13b4aa0def0d88ac00b39f17dd03d0caf0d"
+    },
+    "stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "sources": [
+      {
+        "path": "qualification/bounded-json-rpc-inert-construction.behavior.mjs",
+        "sha256": "e6d1a08aaddf7a0af8601a13d8653457808a305619e8cbed9e2793a2f95dbc45",
+        "bytes": 11993
+      },
+      {
+        "path": "src/zenon/bounded-json-rpc-https-exchange-owner.js",
+        "sha256": "2c501f3353d55e31d4baedcb068e2bac5943ca7e3e4171521a3bb0ee8a0a8bdb",
+        "bytes": 48201
+      },
+      {
+        "path": "src/zenon/bounded-json-rpc-read-admission.js",
+        "sha256": "0b0b0806487c2e648a83367a9ebcd48a3a92493158ebca23abe8d6d6849d9ff3",
+        "bytes": 2627
+      },
+      {
+        "path": "src/zenon/native-read-retired-error-latch.js",
+        "sha256": "a7c2c242f2df97e8f6fcd6171d0f24b3ec048f25115135dcb08dd83a21f48d84",
+        "bytes": 994
+      },
+      {
+        "path": "src/zenon/native-read-generation-handles-closed.js",
+        "sha256": "136c4088341d71d10ec8a4f07fbfbf959607c6a6676a2f6a86b56f6d3ac92de5",
+        "bytes": 1194
+      },
+      {
+        "path": "src/zenon/native-read-loopback-qualification-configuration.js",
+        "sha256": "1d8c20410d5ab8786c1fbf2dc1ef9c8346bc2b30c1c8146f16e46ff231cd0427",
+        "bytes": 4126
+      }
+    ],
+    "observations": {
+      "entered": 12,
+      "completed": 12,
+      "snapshotCalls": 45,
+      "inspectorReceipts": 7,
+      "emptyCloseReturns": 10,
+      "getterCalls": 0,
+      "proxyTraps": 0,
+      "invalidExchangeCalls": 2,
+      "postCloseExchangeCalls": 4,
+      "scope": "ACTUAL_CORE_CONSTRUCTION_ADMISSION_EMPTY_CLOSE_ONLY",
+      "nativeRequestEntry": "EXCLUDED_BY_SELECTED_CALL_PATHS_NOT_INSTRUMENTED",
+      "nativeEventsAuthenticated": false,
+      "sourceTransforms": 0,
+      "nativeAliases": 0,
+      "completeDpGraphQualified": false,
+      "issuedGrantNativeQualified": false,
+      "authority": "NONE"
+    },
+    "sourcePinsRechecked": true,
+    "limits": {
+      "stdoutBytes": 65536,
+      "stderrBytes": 8192,
+      "outerObservationSeconds": 20,
+      "perCaseMilliseconds": 1000,
+      "sourceReadAllowlistFiles": 6,
+      "filesystemWritesPermitted": false,
+      "NodeChildrenPermitted": false,
+      "NodeWorkersPermitted": false,
+      "sourceOrPackageCopies": false,
+      "qualificationScratch": false,
+      "osNetworkSandbox": false
+    },
+    "builtinHttpsAndTlsModulesLoaded": true,
+    "nativeRequestOrTlsSessionExercised": false,
+    "newCryptoSqlSdkOrNonceExecution": false,
+    "newNativeIntegrationQualified": false
+  },
+  "mainWorkflow": {
+    "profile": "p0-current-p2-node24-v2",
+    "profileSha256": "8bb8e5afae5789f0f113269051736b679f38eab721b4c05e3ceb8e72275435ed",
+    "selectedCases": 27,
+    "workflow": ".github/workflows/test.yml",
+    "platform": "ubuntu-24.04",
+    "node": "24.19.0",
+    "profileSourcesAndWorkflowUnchanged": 17,
+    "humanApprovedExistingHostedScope": true,
+    "workflowChanged": false,
+    "installation": false,
+    "SDKExecution": false,
+    "x402PackageExecution": false,
+    "SQLite": false,
+    "sockets": false,
+    "keysOrSignatures": false,
+    "nonceSearch": false,
+    "preAdoptionMainCI": {
+      "checks": 0,
+      "statuses": 0,
+      "runs": 0
+    },
+    "preAdoptionSourceCI": {
+      "checks": 0,
+      "statuses": 0,
+      "runs": 0
+    },
+    "hostedPassEstablishedByThisReview": false
+  },
+  "issuedGrantLane": {
+    "manifest": "qualification/issued-funding-post-native-vertical.inputs-v2.json",
+    "manifestSha256": "980bc24a3effe011b6199338f3a3224da8c79e33b48a40296cbe4bf13ee21c5b",
+    "applicationInputsUnchanged": 117,
+    "newNativeV2Cases": 0,
+    "cleanV1Allowance": "CONSUMED_FAILURE_RETAINED",
+    "freshV2HumanApproval": "NOT_RECEIVED_AT_REVIEW"
+  },
+  "preservation": {
+    "mainProtectedAtReview": false,
+    "mainRulesAtReview": [],
+    "openPullRequests": [
+      {
+        "number": 194,
+        "head": "79ca2b430ae53c55b1aba11e56c99e083d4a8431",
+        "draft": true,
+        "changedFiles": 20,
+        "runtimeOverlap": []
+      },
+      {
+        "number": 193,
+        "head": "5b4bf1b6780586676007c84303510fb4e316cf5e",
+        "draft": true,
+        "changedFiles": 2,
+        "runtimeOverlap": []
+      },
+      {
+        "number": 175,
+        "head": "40eca21c34263513230c5d3c431250a0ed42aa90",
+        "draft": true,
+        "changedFiles": 11,
+        "runtimeOverlap": []
+      },
+      {
+        "number": 157,
+        "head": "525578cc44db23943e9cfb5a62c4d1c487cca99a",
+        "draft": false,
+        "changedFiles": 2,
+        "runtimeOverlap": []
+      }
+    ],
+    "noForcePush": true,
+    "noProtectionBypass": true,
+    "defaultBuyerSignerOrPlannerCutover": false,
+    "historicalNativeResultsUnmodified": true,
+    "heldStoreOrEvidenceCleanup": false
+  },
+  "evidenceLimits": {
+    "nativeCorrespondenceIsNotFreshMainExecution": true,
+    "legacyRequestOrFailurePathsExhaustivelyQualified": false,
+    "newTestsDoNotExerciseNetworkingOrLateNativeEvents": true,
+    "newTestsDoNotQualifyPayerSqliteOrSigning": true,
+    "officialIssuedGrantVerticalSliceQualified": false,
+    "crashOrForcedInterruptionQualified": false,
+    "pilot": "NO_GO",
+    "productionQualified": false
+  }
+}
