@@ -1,0 +1,174 @@
+{
+  "kind": "ISSUED_NATIVE_FULL_GRAPH_V3_SOURCE_SELECTION_NOT_NATIVE_PASS",
+  "version": 1,
+  "date": "2026-10-24",
+  "publishedRuntimeSource": "8387bc7a7ad51e5dbba2c1ec116d8859c75fd8d0",
+  "publishedMainBudgetFix": "e9c2b7964b2b9aad802f636c800487a49faabda9",
+  "originalAttempt": {
+    "manifestSha256": "296dd3eee42e0756dc93e9b720f838ec2ff180a3ba898f4253bdae8d4d4a5b47",
+    "case": "clean",
+    "attemptsConsumed": 1,
+    "result": "FAILED_CONSTRUCTION",
+    "rawEvidenceAndTaskRetained": true
+  },
+  "supersededV2": {
+    "manifest": "qualification/issued-funding-post-native-vertical.inputs-v2.json",
+    "sha256": "980bc24a3effe011b6199338f3a3224da8c79e33b48a40296cbe4bf13ee21c5b",
+    "nativeAttempts": 0,
+    "status": "SOURCE_SUPERSEDED_NO_NATIVE_APPROVAL_RECEIVED_NOT_RUN",
+    "rewritten": false
+  },
+  "currentInventory": {
+    "manifest": "qualification/issued-funding-post-native-vertical.inputs-v3.json",
+    "sha256": "51ffb5b0ff0052523c1b7f3d75fa24e9be27e60ca3bcc09236b1f439096aaed1",
+    "sourceParent": "8038df2dc58d452175335b9a59b0de1e5b435804",
+    "sourceRowsSha256": "81b9e3b15b442704535cbe040d0f56baaed6530d8c796f4389c6c2acaeb9381c",
+    "applicationFiles": 117,
+    "existingPackageFiles": 404,
+    "sourceInputFiles": 521,
+    "sourceBytesReadOnly": 4364641,
+    "privateProfileBytes": 216651,
+    "onlyApplicationChangeFromV2": "src/x402-issued-funding-post-application-binding.js",
+    "caseChangedFromV2": false,
+    "applicationFactoryChangedFromV2": false,
+    "graphReduced": false,
+    "sourceTransforms": 0,
+    "nativeBuiltinAliases": 0,
+    "ordinaryInstalledNamespaceQualified": false
+  },
+  "actualChecks": {
+    "grantBudgetData": {
+      "report": "qualification/issued-grant-snapshot-budget.actual-local-result.json",
+      "newCases": 10,
+      "existingBindingCases": 16,
+      "nativeGraphImported": false
+    },
+    "manifestAndCaptureData": {
+      "tests": 21,
+      "pass": 21,
+      "actualExit": 0,
+      "streamsComplete": true,
+      "sourcePinsUnchanged": true,
+      "stdoutBytes": 0,
+      "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderrBytes": 2411,
+      "stderrSha256": "046c2a535b0f10aa75f5c481b65223079d38a1b08abbdc295eb42f605087c0be",
+      "sources": [
+        {
+          "path": "qualification/issued-funding-native-profile.test.py",
+          "bytes": 8946,
+          "LF": 175,
+          "sha256": "f2b0c4b07f0eb979378aa3ddbe6187d423f9289cf4a70a4f556e69c1ae4140b9",
+          "gitBlob": "d27b91d5ec81059eb3a2634a40863491d9310913"
+        },
+        {
+          "path": "qualification/issued_funding_native_profile.py",
+          "bytes": 17784,
+          "LF": 244,
+          "sha256": "48b04cdd7ec0675e9aa5fcc9cd24bb86f2f769ec066a86ec9325a9ce2077a4da",
+          "gitBlob": "2467c6d55f1e8b9cf07c57afe93c979fc682a41d"
+        },
+        {
+          "path": "qualification/issued-funding-post-native-vertical.inputs-v3.json",
+          "bytes": 138777,
+          "LF": 3836,
+          "sha256": "51ffb5b0ff0052523c1b7f3d75fa24e9be27e60ca3bcc09236b1f439096aaed1",
+          "gitBlob": "3dc05ccffd306e97056b4ed168d8121f63acebbc"
+        }
+      ],
+      "nativeTranscriptsFabricated": true,
+      "nativeGraphImported": false
+    },
+    "pythonSyntaxOnly": {
+      "files": 3,
+      "bytecodeWritten": false,
+      "applicationOrPackageImported": false
+    },
+    "sourceOnlyAdmission": {
+      "applicationFiles": 117,
+      "packagesDeclared": 404,
+      "packageFilesRead": 0,
+      "effectsExecuted": false
+    },
+    "readOnlyPreNativeAdmission": {
+      "applicationFiles": 117,
+      "packageFilesRead": 404,
+      "sourceBytesReadOnly": 4364641,
+      "existingSourcesRecopied": false,
+      "taskRootCreated": false,
+      "capacityStatus": "PASS_AT_OBSERVATION_NOT_FUTURE_AUTHORITY",
+      "historicalReservationsRechecked": true,
+      "scopedRoots": 14,
+      "minimumFreeBytes": 10737418240,
+      "effectsExecuted": false,
+      "nativeAuthority": "NONE"
+    }
+  },
+  "currentEffectsCeiling": {
+    "selectedCases": 1,
+    "maximumRuns": 1,
+    "opensslCommands": 1,
+    "nodeCommands": 1,
+    "nodeChildren": 0,
+    "newSqlitePaths": 5,
+    "independentPinFiles": 2,
+    "syntheticEd25519Keys": 4,
+    "transactionSignatures": 1,
+    "capabilitySignatures": 3,
+    "providerSignatures": 2,
+    "testTlsMaterialSeparate": true,
+    "maxRpcConnections": 174,
+    "maxApplicationConnections": 8,
+    "maxTotalConnections": 182,
+    "expectedTotalConnections": 96,
+    "maxCandidatesPerSearch": 4096,
+    "maxReferenceCandidates": 32768,
+    "producerCandidateReservation": 4096,
+    "fixedVerificationReservation": 16384,
+    "maxAggregateCandidates": 65536,
+    "taskQuotaBytes": 4194304,
+    "maximumSourceReadBytes": 6291456,
+    "existingSourcesRecopied": false,
+    "externalNetwork": false,
+    "install": false,
+    "realWallet": false,
+    "realPayment": false,
+    "sdkPrepareBlock": false,
+    "nativeOsNetworkSandbox": false
+  },
+  "storagePolicy": {
+    "min_free_bytes": 10737418240,
+    "safety_margin_bytes": 1073741824,
+    "task_quota_bytes": 4194304,
+    "scratch_quota_bytes": 4194304,
+    "store_quota_bytes": 4194304,
+    "metadata_quota_bytes": 4194304,
+    "max_tasks": 1,
+    "max_objects": 48,
+    "max_commands_per_task": 2,
+    "max_output_bytes": 65536,
+    "abandoned_after_seconds": 86400,
+    "unreferenced_after_seconds": 1209600
+  },
+  "authority": {
+    "currentV3NativeApproved": false,
+    "currentV3NativeCases": 0,
+    "currentV3AttemptConsumed": false,
+    "oldAllowancesReused": false,
+    "existingFailedTaskReopened": false,
+    "oldRootsModified": false,
+    "lostAckApproved": false,
+    "hostedCIImpliesNativeAuthority": false,
+    "mainDefaultCutover": false,
+    "livePilot": "NO_GO",
+    "production": "NO_GO"
+  },
+  "preservedEvidence": {
+    "originalV1Manifest": true,
+    "originalV1Failure": true,
+    "V2Manifest": true,
+    "priorSourceReviewRecords": true,
+    "priorThreeCaseDpInventory": true,
+    "oldHistoricalBindingAvailableAtSourceParent": "8038df2dc58d452175335b9a59b0de1e5b435804"
+  }
+}

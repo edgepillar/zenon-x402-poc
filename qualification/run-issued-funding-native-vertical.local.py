@@ -16,7 +16,9 @@ import re
 import stat
 import sys
 
-MANIFEST = "qualification/issued-funding-post-native-vertical.inputs-v2.json"
+# V1/V2 inventories remain immutable historical selections. The current V3
+# inventory includes the reviewed grant snapshot field-name budget correction.
+MANIFEST = "qualification/issued-funding-post-native-vertical.inputs-v3.json"
 PROFILE = "qualification/issued_funding_native_profile.py"
 ENTRY = "qualification/issued-funding-post-native-vertical.case.draft.mjs"
 PRELOAD = "qualification/issued-funding-post-native-vertical.preload.draft.mjs"

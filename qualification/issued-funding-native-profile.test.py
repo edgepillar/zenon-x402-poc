@@ -14,7 +14,7 @@ HERE = Path(__file__).absolute().parent
 spec = importlib.util.spec_from_file_location("issued_native_profile_data_test", HERE / "issued_funding_native_profile.py")
 profile = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(profile)
-MANIFEST = json.loads((HERE / "issued-funding-post-native-vertical.inputs-v2.json").read_bytes())
+MANIFEST = json.loads((HERE / "issued-funding-post-native-vertical.inputs-v3.json").read_bytes())
 
 
 def synthetic(mode="clean"):
