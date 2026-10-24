@@ -4,7 +4,9 @@ import { types as utilTypes } from 'node:util';
 import { openZenonFundingPayerRecoveryOriginalPaymentSqliteStoreV6,
   ZenonFundingPayerRecoverySqliteStore } from '../service-credit-zenon-funding-post-v1-payer-recovery-sqlite-store.js';
 import { createFundingPostNativeHttpsTransport } from '../service-credit-funding-post-native-https-transport.js';
-import { createRetainedDynamicPlasmaHttpsReadSessionV2 } from './dynamic-plasma-retained-https-read-session.js';
+import { createRetainedDynamicPlasmaHttpsReadSessionV2,
+  createRetainedDynamicPlasmaHttpsReadSessionForLocalQualification } from './dynamic-plasma-retained-https-read-session.js';
+import { captureNativeFundingServiceLoopbackReadSelection } from './native-funding-service-loopback-read-selection.js';
 import { createNativeOriginalFundingCloseSession } from './dynamic-plasma-native-funding-close-session.js';
 import { createBoundedNonceDynamicPlasmaMaterialExchange } from './dynamic-plasma-bounded-material-exchange.js';
 import { createZenonDynamicPlasmaOriginalFundingSubmissionV4 } from './dynamic-plasma-original-funding-submission.js';
@@ -17,6 +19,8 @@ import { observeServiceCreditOperationDrain } from '../service-credit-bounded-op
 
 const OPEN_STORE = openZenonFundingPayerRecoveryOriginalPaymentSqliteStoreV6;
 const FUNDING = createFundingPostNativeHttpsTransport, READS = createRetainedDynamicPlasmaHttpsReadSessionV2;
+const LOCAL_READS = createRetainedDynamicPlasmaHttpsReadSessionForLocalQualification;
+const LOCAL_SELECTION = captureNativeFundingServiceLoopbackReadSelection;
 const SESSION = createNativeOriginalFundingCloseSession, MATERIAL = createBoundedNonceDynamicPlasmaMaterialExchange;
 const SUBMISSION = createZenonDynamicPlasmaOriginalFundingSubmissionV4;
 const ORIGINAL_INPUT = captureZenonDynamicPlasmaOriginalFundingInputV2;
@@ -58,7 +62,25 @@ let applicationSlot = null;
  * resistance, OS/hostile-code sandbox, physical-drain or production proof.
  */
 export async function openZenonDynamicPlasmaNativeFundingServiceClient(configuration) {
-  if (arguments.length !== 1 || !invariant() || applicationSlot !== null) fail('configuration_or_owner_unavailable');
+  if (arguments.length !== 1) fail('configuration_or_owner_unavailable');
+  return openClient(configuration, null, false);
+}
+
+/**
+ * Named SOURCE-ONLY local qualification, never selected by the public entry.
+ * The actual three retained read owners authenticate localhost/127.0.0.1 on
+ * one explicit unprivileged RPC port with the same detached CA as funding and
+ * service. Their closed role paths and budgets stay enforced by the native
+ * core. No supplied owner/fetch/SDK factory or production/default fallback.
+ * This wider actual graph has NOT_EXECUTED status; selection is not authority.
+ */
+export async function openZenonDynamicPlasmaNativeFundingServiceClientForLocalQualification(configuration, localReadOptions) {
+  if (arguments.length !== 2) fail('configuration_or_owner_unavailable');
+  return openClient(configuration, localReadOptions, true);
+}
+
+async function openClient(configuration, localReadOptions, localQualification) {
+  if (!invariant() || applicationSlot !== null) fail('configuration_or_owner_unavailable');
   let storeOptions, fundingOptions, serviceOptions, policy, materialOptions, fundingTransportOptions;
   let reads = null, post = null, session = null, funder = null, service = null, store = null;
   let fileIdentity = null, openingStore = false, transferred = false, held = false, checking = false;
@@ -66,7 +88,7 @@ export async function openZenonDynamicPlasmaNativeFundingServiceClient(configura
   let pending = null, closing = null, handoffAttempts = 0, serviceOpenEntered = false;
   let fundingClose = null, fundingCloseOutcome = 'NOT_REQUESTED', serviceClose = null, serviceCloseOutcome = 'NOT_REQUESTED';
   let operationDrain = 'NOT_REQUESTED', historicalClose = 'NOT_REQUESTED', closeError = null;
-  let privateCa = null;
+  let privateCa = null, localReadSelection = null;
   const slot = { phase: 'STARTING', store: null, funder: null, service: null,
     reads: null, post: null, session: null };
   function hold(reason) {
@@ -79,6 +101,9 @@ export async function openZenonDynamicPlasmaNativeFundingServiceClient(configura
   }
   function releaseCa() {
     if (privateCa !== null) { APPLY(FILL, privateCa, [0]); privateCa = null; }
+  }
+  function releaseLocalReadSelection() {
+    if (localReadSelection !== null) { APPLY(FILL, localReadSelection.ca, [0]); localReadSelection = null; }
   }
   function fundingNativeClean() {
     try { return !held && invariant() && session !== null && session.canCloseFunding() === true; }
@@ -153,13 +178,21 @@ export async function openZenonDynamicPlasmaNativeFundingServiceClient(configura
     for (let i = 0; i < fundingCa.length; i++) if (fundingCa[i] !== privateCa[i]) sameCa = false;
     APPLY(FILL, fundingCa, [0]);
     if (!sameCa) fail('configuration_or_owner_unavailable');
+    // Capture before any await/native owner/store construction. The read CA
+    // must match the already detached funding/service trust, not a later
+    // caller mutation. Each actual read owner makes its own independent copy.
+    if (localQualification) localReadSelection = LOCAL_SELECTION(localReadOptions, privateCa);
     serviceTransport = F({ ...serviceTransport, ca: privateCa });
     fundingTransportOptions = F({ ...fundingTransportOptions, ca: privateCa });
     serviceOptions = F({ ...serviceOptions, official, transportOptions: serviceTransport });
     applicationSlot = slot; // No await before claiming this module's application owner.
     const material = MATERIAL(materialOptions); // Inert; no search/signing.
     post = FUNDING(fundingTransportOptions); slot.post = post;
-    reads = READS(fundingOptions.readSessionOptions); slot.reads = reads;
+    try {
+      reads = localQualification ? LOCAL_READS(fundingOptions.readSessionOptions, localReadSelection)
+        : READS(fundingOptions.readSessionOptions);
+      slot.reads = reads;
+    } finally { releaseLocalReadSelection(); } // Only our temporary copy; owners retain their own bytes.
     session = SESSION(reads, post); slot.session = session;
     fileIdentity = identity(storeOptions.databasePath);
     openingStore = true;
@@ -204,6 +237,8 @@ export async function openZenonDynamicPlasmaNativeFundingServiceClient(configura
     releaseCa(); // No service constructor escaped this failed construction.
     fail(held ? 'construction_close_unknown' : 'configuration_or_owner_unavailable');
   } finally {
+    releaseLocalReadSelection();
+    localReadOptions = null;
     configuration = null; materialOptions = null; fundingTransportOptions = null;
   }
   const FUNDING_DEADLINE = fundingOptions.deadlineMs;
