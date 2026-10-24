@@ -9,6 +9,7 @@ import {
   validateActiveUpfrontRequirement, sameRequirements, sameResource,
 } from './x402-wire.js';
 import { captureOfficialUpfrontHttpsRoute } from './x402-official-https-request-binding.js';
+import { captureFundingPostCheckpointRoute } from './x402-funding-post-checkpoint-route.js';
 
 const FREEZE = Object.freeze, PROTO = Object.getPrototypeOf, DESC = Object.getOwnPropertyDescriptor;
 const KEYS = Reflect.ownKeys, OWN = Object.hasOwn, APPLY = Reflect.apply;
@@ -32,13 +33,34 @@ const DECODE = decodeB64Json, ENCODE = encodeB64Json, CANONICAL = canonicalJson;
  * exact original header, NEVER the SDK-reencoded comparison value.
  */
 export function createOriginalPaymentCheckpointClient(configuration) {
+  if (arguments.length !== 1) fail('configuration_rejected');
+  return createCheckpointClient(configuration, false);
+}
+
+/**
+ * Separate POST /funding selection for the actual DP funding checkpoint.
+ * Reuses all independent-pin/full-byte/one-context fences. Never reinterpret
+ * a GET /paid challenge, change a signed payload, sign or submit a payment.
+ * The returned selection explicitly carries fixed method/target/body DATA;
+ * it is neither a native request binding nor service/dispatch authority.
+ */
+export function createFundingPostOriginalPaymentCheckpointClient(configuration) {
+  if (arguments.length !== 1) fail('configuration_rejected');
+  return createCheckpointClient(configuration, true);
+}
+
+function createCheckpointClient(configuration, fundingPost) {
   let resource, original, fixedRequired, fixedPayload, readCheckpoint;
+  let requestProfile = null;
   try {
-    if (arguments.length !== 1 || !invariant()) fail('configuration_rejected');
+    if (!invariant()) fail('configuration_rejected');
     const c = record(configuration, [
       'resourceUrl', 'serializedCheckpoint', 'expectedPins', 'readOriginalPaymentCheckpoint',
     ]);
-    resource = captureOfficialUpfrontHttpsRoute(c.resourceUrl).resourceUrl;
+    if (fundingPost) {
+      requestProfile = captureFundingPostCheckpointRoute(c.resourceUrl);
+      resource = requestProfile.resourceUrl;
+    } else resource = captureOfficialUpfrontHttpsRoute(c.resourceUrl).resourceUrl;
     if (typeof c.readOriginalPaymentCheckpoint !== 'function' || IS_PROXY(c.readOriginalPaymentCheckpoint))
       fail('configuration_rejected');
     original = RESTORE(c.serializedCheckpoint, snapshot(c.expectedPins));
@@ -66,7 +88,8 @@ export function createOriginalPaymentCheckpointClient(configuration) {
   let challengeHeader = original.originalBytes.paymentRequirements;
   let phase = 'OPEN', reading = false, reads = 0, creationAttempts = 0, created = false, uncertain = false;
   let admittedPins = null;
-  let selected = FREEZE({ resourceUrl: resource, requirement: deepFreeze(snapshot(fixedRequired.accepts[0])) });
+  let selected = FREEZE({ resourceUrl: resource, requirement: deepFreeze(snapshot(fixedRequired.accepts[0])),
+    ...(fundingPost ? { requestProfile } : {}) });
   configuration = null; resource = null; original = null; fixedRequired = null; fixedPayload = null;
 
   function admitted() {

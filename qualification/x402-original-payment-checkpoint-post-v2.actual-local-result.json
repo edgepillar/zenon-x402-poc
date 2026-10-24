@@ -1,0 +1,295 @@
+{
+  "kind": "CURRENT_GET_AND_FUNDING_POST_CHECKPOINT_COMPONENT_RESULT_OFFICIAL_V6_CONNECTION_NOT_RUNTIME_RESULT",
+  "status": "PASS_36_COMPONENT_CASES_OFFICIAL_V6_POST_SOURCE_AND_SYNTAX_ONLY",
+  "sourceParent": "53c7b7cf31fbaf16764a4ca6986180d451fc689d",
+  "mainParent": "af1c62a0ca96cc9be7e27d5aecb6bbb6a8a8740e",
+  "sourceFinding": {
+    "kind": "SOURCE_CONFIRMED_PROFILE_MISMATCH_NOT_NATIVE_REPRODUCTION",
+    "oldCheckpointClient": "ZERO_BODY_GET_PAID_ONLY",
+    "dpFundingProfile": "ZERO_BODY_POST_FUNDING",
+    "sameOriginIsNotMethodPathEquivalence": true,
+    "legacyModeWeakened": false,
+    "newPostSelectionExplicitlyNamed": true
+  },
+  "implemented": {
+    "pureRoute": "captureFundingPostCheckpointRoute",
+    "pureCheckpointClient": "createFundingPostOriginalPaymentCheckpointClient",
+    "actualOfficialV6Factory": "openOfficialV6FundingPostOriginalPaymentClient",
+    "actualOfficialV6Module": "src/x402-official-v6-original-payment-client.js",
+    "oldOfficialV6Factory": "openOfficialV6OriginalPaymentClient",
+    "oldFactoryKeepsGetSelection": true,
+    "postRoute": {
+      "method": "POST",
+      "requestTarget": "/funding",
+      "originalBodyBase64": ""
+    },
+    "expectedPinsStillExternal": true,
+    "exactOriginalHeaderPreserved": true,
+    "allTransactionDataCompared": true,
+    "postProfileIsDataNotNativeAuthentication": true,
+    "automaticFundingSubmission": false,
+    "automaticResignOrReplacement": false,
+    "automaticDPStoreCloseOrReopenOrGrantActivation": false,
+    "actualV6AndOfficialConstructorsHardwired": true,
+    "noSdkOrStoreFactoryInjection": true,
+    "newEffectfulOfficialV6ConnectionExecuted": false
+  },
+  "actualComponent": {
+    "actualExit": 0,
+    "outputComplete": true,
+    "counts": {
+      "tests": 36,
+      "pass": 36,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "cases": [
+      "ok 1 - construction performs no read and exposes no checkpoint in its snapshot",
+      "ok 2 - official JSON key reordering returns exact original header after three pinned reads",
+      "ok 3 - constructor refuses wrong independent pins before any read",
+      "ok 4 - constructor refuses another origin path query or insecure resource",
+      "ok 5 - GET binding refuses nonempty original request body",
+      "ok 6 - constructor binds exact original payment hash as well as checkpoint digests",
+      "ok 7 - changed challenge header is refused before read or context consumption",
+      "ok 8 - per-call foreign binding or digest never enters the reader",
+      "ok 9 - creator cannot read or return original before external challenge admission",
+      "ok 10 - changed SDK selected challenge is refused without consuming original",
+      "ok 11 - a second creator or context cannot reset consumed original",
+      "ok 12 - read failure remains HELD and uncertainty survives close",
+      "ok 13 - changed complete checkpoint latches HELD rather than learning replacement pins",
+      "ok 14 - async and getter-bearing checkpoint replies are not assimilated",
+      "ok 15 - reentrant read cannot create a second read or consume the context",
+      "ok 16 - close during read suppresses the returned checkpoint and keeps uncertainty",
+      "ok 17 - changed SDK transaction resource or selected amount never releases a header",
+      "ok 18 - nonempty SDK extensions and noncanonical base64 are refused before read",
+      "ok 19 - absent or empty SDK extensions do not replace the retained header",
+      "ok 20 - wire parser errors are bounded local codes without nested diagnostic paths",
+      "ok 21 - accessor proxy and extra constructor fields are rejected without invoking hooks",
+      "ok 22 - per-call pins accessor is refused without entering reader",
+      "ok 23 - source input and returned original payload mutation cannot replace selected bytes",
+      "ok 24 - closed adapter cannot read create or select a header and does not close borrowed store",
+      "ok 25 - funding POST construction carries an explicit immutable method target body without reads",
+      "ok 26 - funding POST restores exact original header after reordered envelope and three independent reads",
+      "ok 27 - GET and funding POST named selections reject one another before any reader call",
+      "ok 28 - funding route rejects another path trailing delimiters query userinfo normalization and insecure URLs",
+      "ok 29 - funding route permits canonical explicit IPv4 port without invoking networking",
+      "ok 30 - funding selection never reinterprets same-origin GET checkpoint bytes as POST",
+      "ok 31 - funding POST refuses a nonempty original body before reading the V6 capability",
+      "ok 32 - funding POST independently pinned context mismatch cannot enter the reader",
+      "ok 33 - funding POST changed reader checkpoint stays HELD and close does not repair it",
+      "ok 34 - funding POST changed SDK nonce or resource cannot return replacement signed bytes",
+      "ok 35 - funding method profile and configuration cannot be changed into a generic request capability",
+      "ok 36 - legacy GET selection remains exactly the old two-field shape without a POST profile"
+    ],
+    "footer": {
+      "node": "24.19.0",
+      "platform": "darwin",
+      "arch": "arm64",
+      "sourceInputs": 8,
+      "legacyGETCases": 24,
+      "fundingPOSTCases": 12,
+      "actualOfficialSdk": false,
+      "actualV6Store": false,
+      "namedOfficialV6PostFactoryImported": false,
+      "sql": 0,
+      "network": 0,
+      "keys": 0,
+      "signatures": 0,
+      "nonceSearch": 0,
+      "payments": 0
+    },
+    "legacyGetCases": 24,
+    "newPostCases": 12,
+    "inputs": [
+      {
+        "path": "package.json",
+        "bytes": 2677,
+        "LF": 40,
+        "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+        "gitBlob": "45752ffde39d29666094f7f1c755060d75e43deb"
+      },
+      {
+        "path": "src/x402-original-payment-checkpoint-client.js",
+        "bytes": 12251,
+        "LF": 246,
+        "sha256": "b98c64fb071a55578bfd5c49790d11f8fca443e59e32beb8498eb67941201103",
+        "gitBlob": "6fdc3917e64f9dbad61ffb4b236951e3cb9ebcf5"
+      },
+      {
+        "path": "src/canonical.js",
+        "bytes": 967,
+        "LF": 26,
+        "sha256": "0d55ddf1727cafb0dcd46df2922305568615552a4d2ae34a5c30e90b9d8d998c",
+        "gitBlob": "5367f9c72ee13017a61630e1f0cffdced21d52c4"
+      },
+      {
+        "path": "src/service-credit-pilot-original-payment-checkpoint.js",
+        "bytes": 4003,
+        "LF": 89,
+        "sha256": "930905f31824a6cadc16dfb84572cd4dc38a81e2fce4569b73b6bef29dec97d1",
+        "gitBlob": "51c6391bc22f561ebff0005ced31e538aa83f4fa"
+      },
+      {
+        "path": "src/x402-wire.js",
+        "bytes": 39886,
+        "LF": 934,
+        "sha256": "5fba91af5a352f62d1a335c7176a45a604e2af5d92b1c4b0e53825c1f20d4e56",
+        "gitBlob": "fb060d4e349b1c31a1219a0cc137af250a8a2291"
+      },
+      {
+        "path": "src/x402-official-https-request-binding.js",
+        "bytes": 5085,
+        "LF": 99,
+        "sha256": "dabf215408887bd0d2ba346085c5ab2df13f724e8759b7a98b71b09c8dc8d692",
+        "gitBlob": "47059c772407233b8b6f54632ba065893ff92dd3"
+      },
+      {
+        "path": "src/x402-funding-post-checkpoint-route.js",
+        "bytes": 1310,
+        "LF": 29,
+        "sha256": "157e80e9f14b41c8cacc05423a7acd8616a6f759adac377f04f1fca21869831e",
+        "gitBlob": "777ff48ac9cf255f80cda7e22c68706b7d7084b3"
+      },
+      {
+        "path": "qualification/x402-original-payment-checkpoint-post-v2.behavior.draft.mjs",
+        "bytes": 20801,
+        "LF": 335,
+        "sha256": "a0f44dcabba3b5e7114225a70ecdf9d78c7ccd30093825ba53c4417e7da9ccd0",
+        "gitBlob": "694647e9cdbbb8ea00742f8cca59ef9ae90f792c"
+      }
+    ],
+    "streams": {
+      "stdout": {
+        "bytes": 8335,
+        "sha256": "1e0495f077f1c4507bbc1d770f94f6afcf5ddd16b314d4aa08c033edf13b6331"
+      },
+      "stderr": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    "runtime": {
+      "node": "24.19.0",
+      "platform": "darwin",
+      "arch": "arm64",
+      "nodeSha256": "dbedff294bab84a0a86c04e15fbcbeb1c97ca10bef1b32b0634cd24b36f62100"
+    },
+    "NodeCommands": 1,
+    "NodeChildren": 0,
+    "NodePermissionModel": true,
+    "sourceTransforms": 0,
+    "nativeBuiltinAliases": 0,
+    "testFrameworkTimeoutIsNotHardCancellation": true,
+    "declaredPayloadSignatureIsNotCryptographicSignature": true,
+    "actualSDK": false,
+    "actualSQLite": false,
+    "actualNetwork": false,
+    "nonceSearch": false,
+    "keys": false,
+    "signing": false,
+    "payments": false
+  },
+  "effectfulSyntax": {
+    "path": "src/x402-official-v6-original-payment-client.js",
+    "syntaxActualExit": 0,
+    "outputComplete": true,
+    "applicationImported": false,
+    "input": {
+      "path": "src/x402-official-v6-original-payment-client.js",
+      "bytes": 12558,
+      "LF": 234,
+      "sha256": "0ecf1a0023c418ffae40b908dc0dec7e491d01d542e25ecad05216eeac35ad2b",
+      "gitBlob": "67a43ad01ac366456b41c08f64ce98cf88d161d0"
+    },
+    "stdoutBytes": 0,
+    "stderrBytes": 0,
+    "NodeCommands": 1,
+    "nativeTlsExecuted": false,
+    "kind": "SYNTAX_ONLY_NO_OFFICIAL_PACKAGE_OR_SQLITE_IMPORT"
+  },
+  "legacyEvidence": {
+    "oldBodyAndResultUnchanged": true,
+    "pins": [
+      {
+        "path": "qualification/x402-original-payment-checkpoint-client.behavior.draft.mjs",
+        "bytes": 13971,
+        "LF": 234,
+        "sha256": "db16a4314c978937c2a0d0b723f97d7a7d213d88da652176b9a9cbfce5ea2835",
+        "gitBlob": "56f992fb19fc4e3e6624905589818ec3cd50747c"
+      },
+      {
+        "path": "qualification/x402-original-payment-checkpoint-client.actual-local-result.json",
+        "bytes": 25771,
+        "LF": 277,
+        "sha256": "8fd65434ef636e9f883c70f496276ba62ad6229cd1e3e48fc9c29252c777c57f",
+        "gitBlob": "9cc2e76e229ffe8b68419d9ba78d9f5f8a0ceaef"
+      }
+    ],
+    "new36CaseFileVersionedSeparately": true,
+    "oldResultNotReboundToCurrentCore": true
+  },
+  "authorityPreserved": {
+    "pendingFullDPProfileUnchanged": true,
+    "pendingFullDPManifestSha256": "a472e3bcd8840ef4236e395cb918ae5f2a84be9ca45d8f59417c0b77da291933",
+    "changedModulesNotInPendingFullDPGraph": true,
+    "previousOneShotGrantsNotReused": true,
+    "newManagedRoots": 0,
+    "newManagedTasks": 0,
+    "newQualificationScratchBytes": 0,
+    "newNativeTLS": 0,
+    "OpenSslCommands": 0,
+    "packageInstallations": 0,
+    "SDKImports": 0,
+    "SQLite": 0,
+    "nonceCandidates": 0,
+    "signatures": 0,
+    "ordinaryBuyerChanged": false,
+    "providerSigningEnabled": false,
+    "automationsChanged": false
+  },
+  "publication": {
+    "eligibleSourceFiles": [
+      "src/x402-funding-post-checkpoint-route.js",
+      "src/x402-original-payment-checkpoint-client.js",
+      "src/x402-official-v6-original-payment-client.js",
+      "qualification/x402-original-payment-checkpoint-post-v2.behavior.draft.mjs",
+      "qualification/x402-original-payment-checkpoint-post-v2.actual-local-result.json",
+      "docs/P1_FUNDING_POST_ORIGINAL_CHECKPOINT_CLIENT.md"
+    ],
+    "eligibleMainFiles": [
+      "src/x402-funding-post-checkpoint-route.js",
+      "src/x402-original-payment-checkpoint-client.js",
+      "qualification/x402-original-payment-checkpoint-post-v2.behavior.draft.mjs",
+      "qualification/x402-original-payment-checkpoint-post-v2.actual-local-result.json",
+      "docs/P1_FUNDING_POST_ORIGINAL_CHECKPOINT_CLIENT.md"
+    ],
+    "officialV6PostConnectionOnMain": false,
+    "mainExistingOfficialV6BlobMustRemain": {
+      "sha": "ee582ed684cd73c5ae92d9583aa7057d111baaea",
+      "type": "blob",
+      "mode": "100644"
+    },
+    "CIAtParents": {
+      "source": {
+        "checks": 0,
+        "statuses": 0,
+        "runs": 0
+      },
+      "main": {
+        "checks": 0,
+        "statuses": 0,
+        "runs": 0
+      }
+    },
+    "CIInterpretation": "NO_CURRENT_PASS_INFERRED",
+    "workflowDispatch": false,
+    "publicationOutcome": "VERIFY_SEPARATELY_BY_EXACT_COMMIT_READBACK"
+  },
+  "fullP0Complete": false,
+  "fullP1Complete": false,
+  "fullP2Complete": false,
+  "fullRoadmapComplete": false,
+  "productionQualified": false
+}
