@@ -1,0 +1,291 @@
+{
+  "kind": "NATIVE_CAPACITY_PAYER_LANE_SOURCE_BINDING_AND_ACTUAL_PROTOCOL_DATA_RESULT",
+  "version": 1,
+  "qualification": "40_PROTOCOL_DATA_CONTROLS_PASS_NATIVE_BINDING_SYNTAX_ONLY_NOT_EXECUTED",
+  "sourceParent": "22b151734470c1970d9de9382a5585ea35cadd5f",
+  "mainBase": "4923fb409f30b3b425e7f50f3b4ad77fc146b18b",
+  "actualLocalResult": {
+    "event": "Q121_CAPACITY_NATIVE_LANE_PROTOCOL_ACTUAL_DATA_RESULT",
+    "actualExit": 0,
+    "complete": true,
+    "selectionValidated": true,
+    "wallSeconds": 0.08976599999732571,
+    "runtime": [
+      {
+        "Node": "v24.19.0",
+        "platform": "darwin",
+        "arch": "arm64",
+        "eventsDeclared": true,
+        "nativeEffects": false
+      }
+    ],
+    "expectedCaseCount": 40,
+    "passedCaseNames": [
+      "lane protocol construction is native-free and initially inert",
+      "context accepts exact bounded identifiers and detached source DATA",
+      "context accessors and proxies are rejected without invocation",
+      "actual client call capacity is explicit with no silent truncation",
+      "plan capture is detached deeply frozen and exact arity",
+      "actual funding method sequence has five distinct successful boundaries",
+      "invalid method order rejects without consuming an operation",
+      "each lane admits one active operation only",
+      "a cloned ticket cannot complete or free an active operation",
+      "tickets from another lane are not interchangeable",
+      "duplicate completion latches uncertainty and cannot authorize a retry",
+      "UNKNOWN at every funding boundary permanently holds the lane",
+      "warmup precedes measurement with exact ordinal reservations",
+      "zero warmup goes directly to measurement without a fabricated warmup",
+      "maximum bounded plan completes 256 declared calls without reset",
+      "completed call plan refuses excess and duplicate originals",
+      "returned close waits for active operation accounting",
+      "unknown close remains unknown after late operation success",
+      "close request is cached even before opening and blocks new admissions",
+      "late UNKNOWN is never erased by an already returned close",
+      "duplicate close completion preserves returned historical fact but holds the lane",
+      "explicit local uncertainty does not discard the active ticket",
+      "public protocol snapshot is immutable and contains no context or original material",
+      "all service originals are detached frozen before dispatch",
+      "foreign grant and resource are rejected before original capture",
+      "duplicate original request IDs are never adopted",
+      "original manifest enforces the complete exact cohort order",
+      "original accessors and proxies are rejected without reading their values",
+      "nonempty body and nonexisting business profiles are rejected",
+      "request JSON must preserve canonical field order and exact bytes",
+      "cost digest method content type and version cannot drift",
+      "proof header shape rejects controls unsupported prefix and oversize without authenticating proofs",
+      "only the explicit unprivileged loopback service route is selected",
+      "complete manifest has a bounded aggregate memory envelope",
+      "holes inherited fields symbols and array side fields are rejected",
+      "public protocol methods require exact arity and outcome values",
+      "ordinal aliases booleans accessors and extra selection keys cannot consume a call",
+      "an unknown service original is reserved once and cannot be replaced",
+      "unknown handoff cannot authorize a new funding or selected-grant lane",
+      "returned close cannot clear an earlier held observation or manufacture handle proof"
+    ],
+    "totals": {
+      "tests": 40,
+      "suites": 0,
+      "pass": 40,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "stdoutBytes": 8193,
+    "stdoutSha256": "7b6fede6ed0bd6aa2ecc1a71a8f0518342d78e2243394db5a1a5a5390ccc2289",
+    "stderrBytes": 0,
+    "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "sources": [
+      {
+        "path": "qualification/capacity-native-payer-lane.protocol.behavior.mjs",
+        "bytes": 17210,
+        "LF": 236,
+        "sha256": "7280ca8171fcf0efdfdb9fc43b7f2e3849d605a83056ea5b3cbb585bfe13a25b",
+        "gitBlob": "678205f72628df3b1e7d3164b51f7c4bdbf5ba49"
+      },
+      {
+        "path": "qualification/capacity-native-payer-lane.protocol.js",
+        "bytes": 9094,
+        "LF": 155,
+        "sha256": "102425d24ec80f594f7fbb9ba23c712c6163022e02f0b238c2bdbcba62b436ca",
+        "gitBlob": "e99590cd5ba84cea763b0d0d0b15099261bba704"
+      },
+      {
+        "path": "package.json",
+        "bytes": 2677,
+        "LF": 40,
+        "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+        "gitBlob": "45752ffde39d29666094f7f1c755060d75e43deb"
+      }
+    ],
+    "sourcePinsUnchanged": true,
+    "actualLaneProtocolImported": true,
+    "nativeOwnerImported": false,
+    "applicationWorkloadExecuted": false,
+    "benchmarkExecuted": false,
+    "SDK": false,
+    "SQLite": false,
+    "sockets": false,
+    "keys": false,
+    "signatures": false,
+    "nonceSearch": false,
+    "childProcesses": 0,
+    "workers": 0,
+    "scratchCreated": false,
+    "sourceCopiesCreated": 0,
+    "capacityQualified": false,
+    "authority": "NONE"
+  },
+  "nativeOwnerSyntaxOnly": {
+    "event": "Q121_CAPACITY_NATIVE_LANE_OWNER_SYNTAX_ONLY",
+    "actualExit": 0,
+    "source": {
+      "path": "qualification/capacity-native-payer-lane.owner.draft.mjs",
+      "bytes": 21148,
+      "LF": 337,
+      "sha256": "2a9c288c6abb6d79ca78edc8081e2d4890dcc8de241e7d47188212c4659c5f9a",
+      "gitBlob": "1ef4c7f7c60a72f169566517cec50ffdb93c808b"
+    },
+    "stdoutBytes": 0,
+    "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stderrBytes": 0,
+    "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "checkedCodeImported": false,
+    "applicationOrPackageExecuted": false,
+    "childrenSpawnedByCheckedCode": 0,
+    "SQLite": false,
+    "signatures": false,
+    "nativeCrashRuns": 0,
+    "scratchCreated": false,
+    "sourcePinsUnchanged": true
+  },
+  "earlierSyntaxRevision": {
+    "source": {
+      "path": "qualification/capacity-native-payer-lane.owner.draft.mjs",
+      "bytes": 21067,
+      "LF": 336,
+      "sha256": "1b0bb9150ee10c1838527865e188ab3c55426362ff0fa2dcab30a1c690f888ab",
+      "gitBlob": "3d37804668cba046acf8e6d846e72f90b79a40da"
+    },
+    "actualExit": 0,
+    "checkedCodeImported": false,
+    "supersededForCurrentOwner": true
+  },
+  "sourceBindingReview": {
+    "status": "SOURCE_REVIEW_ONLY_NOT_NATIVE_EXECUTION",
+    "inputs": [
+      {
+        "path": "src/zenon/dynamic-plasma-native-funding-service-client.js",
+        "bytes": 31340,
+        "LF": 506,
+        "sha256": "5ed9ac6189f2f86bcc2195c5c6da03ecec7e1e779c4084490029270e617743a8",
+        "gitBlob": "53bba44ab96c860600ef9df10e94edae8aa1cff7"
+      },
+      {
+        "path": "src/service-credit-zenon-funding-post-v1-payer-recovery-sqlite-store.js",
+        "bytes": 83681,
+        "LF": 2042,
+        "sha256": "bea9e00aa6208f776561c975d54640dfb676168dd4d0b44d125c9dc684912c4a",
+        "gitBlob": "e6af1576df21a20a466d089a4ba6ecdf7380a0df"
+      },
+      {
+        "path": "src/service-credit-pilot-original-payment-checkpoint.js",
+        "bytes": 4003,
+        "LF": 89,
+        "sha256": "930905f31824a6cadc16dfb84572cd4dc38a81e2fce4569b73b6bef29dec97d1",
+        "gitBlob": "51c6391bc22f561ebff0005ced31e538aa83f4fa"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-original-funding-submission.js",
+        "bytes": 22507,
+        "LF": 377,
+        "sha256": "666551930bcf481d136c773de12d00228822c0f2a810d5c92aafa401acf80c68",
+        "gitBlob": "169e70d4e5678d0e2f07f9dcbe0b3f1167f690e3"
+      },
+      {
+        "path": "src/service-credit-original-request-custody-contract.js",
+        "bytes": 14051,
+        "LF": 356,
+        "sha256": "fd349de553a17abcc2e0567ba6640e6e3d5d26cfa79ee1e355928dc9fa8d3915",
+        "gitBlob": "f911d42d01b69e6577f9bcd66f4ed59aab8ab882"
+      },
+      {
+        "path": "src/x402-official-v6-original-payment-client.js",
+        "bytes": 14497,
+        "LF": 264,
+        "sha256": "8fcbe27d631fb1f21c2f128550be7124040b676920f30233e328dbad9f3d3aae",
+        "gitBlob": "535453072223388fbcae4741a6fc7c37723377ce"
+      },
+      {
+        "path": "src/x402-native-v6-funding-post-client.js",
+        "bytes": 19472,
+        "LF": 344,
+        "sha256": "d5bcd301ffaa65d8a6c9d383b56b736055633b963e7b8328de4c6360b5ae5d05",
+        "gitBlob": "2818d119f0005f1cbb92608a75c43b4e4d3ae7f6"
+      }
+    ],
+    "hardwiredClient": "openZenonDynamicPlasmaNativeFundingServiceClientForLocalQualification",
+    "hardwiredFreshStore": "createZenonFundingPayerRecoveryOriginalPaymentSqliteStoreV6",
+    "hardwiredCheckpointRestore": "restoreOriginalPaymentCheckpoint",
+    "nativeMethodNames": [
+      "prepareOriginalFunding",
+      "commitOriginalFunding",
+      "submitOriginalFunding",
+      "handoffToService",
+      "submitOriginal",
+      "inspect",
+      "close"
+    ],
+    "originalsProfile": "service-credit.execute.v1.empty-body",
+    "signatureVerificationByDataCapture": false,
+    "fundingCommitResultPhase": "LOCAL_STORE_READBACK_MATCHED",
+    "fundingSubmitResultPhase": "FUNDING_INTAKE_BOUND",
+    "handoffResultPhase": "SERVICE_CLIENT_OPEN_ORIGINAL_RESTORED",
+    "serviceSubmitResult": "FULFILLED_UNDEFINED",
+    "privatePinFiles": [
+      "capacity-funding-original.pins.json",
+      "capacity-service-originals.pins.json"
+    ],
+    "independentFundingPinsBeforeCommit": true,
+    "allServiceOriginalsBeforeFirstDispatch": true,
+    "perLaneCallsMaximum": 256,
+    "silentPlanTruncation": false,
+    "oneClientPerProcessLifetime": true,
+    "sourceFactoriesInjectable": false,
+    "nativeAliases": false,
+    "existingApplicationModuleSlotReset": false,
+    "recoveryRetryOrReplacement": false,
+    "fullNativeBindingExecution": "NOT_ESTABLISHED"
+  },
+  "execution": {
+    "node": "24.19.0",
+    "platform": "darwin",
+    "arch": "arm64",
+    "nodeSha256": "dbedff294bab84a0a86c04e15fbcbeb1c97ca10bef1b32b0634cd24b36f62100",
+    "currentProtocolDataNodeCommands": 1,
+    "currentOwnerSyntaxOnlyNodeCommands": 1,
+    "earlierOwnerSyntaxOnlyNodeCommands": 1,
+    "exactExpectedCaseNamesMatched": true,
+    "NodePermissionModel": true,
+    "osNetworkSandbox": false,
+    "allowedDataSourceReadPaths": [
+      "qualification/capacity-native-payer-lane.protocol.behavior.mjs",
+      "qualification/capacity-native-payer-lane.protocol.js",
+      "package.json"
+    ],
+    "NodeWritesPermitted": false,
+    "NodeChildrenPermitted": false,
+    "nativeOwnerImportedByTests": false,
+    "SDKExecuted": false,
+    "SQLiteOpened": false,
+    "socketsOpened": 0,
+    "keysGenerated": 0,
+    "signaturesCreated": 0,
+    "nonceSearches": 0,
+    "nativeWorkerProcesses": 0,
+    "taskStorageRootsCreated": 0,
+    "scratchCreated": false,
+    "sourceCopiesCreated": 0
+  },
+  "hosted40CaseQualification": false,
+  "currentCaseCountOnly": 40,
+  "historicalAndCurrentTotalsCombined": false,
+  "namespacePreloader": "NOT_IMPLEMENTED_NEW_PROFILE_REQUIRED",
+  "workerAndParentLauncher": "NOT_IMPLEMENTED",
+  "independentRealBalanceOracle": "NOT_IMPLEMENTED_BY_THIS_BINDING",
+  "nativeTransactionInstrumentation": "NOT_IMPLEMENTED_BY_THIS_BINDING",
+  "nativeWorkloadExecuted": false,
+  "capacityQualified": false,
+  "productionQualified": false,
+  "existingP4RecordersChanged": false,
+  "nativeP2SelectionsChanged": false,
+  "oldQualificationRecordsRewritten": false,
+  "authority": "NONE",
+  "remainingGates": [
+    "Implement a closed full-graph P4 namespace preloader with source/package/builtin admission before SDK/SQLite imports.",
+    "Implement real per-lane native worker IPC and parent application/RPC/grant orchestration without replacing the P1 graph.",
+    "Bind independent actual backend balances and local native transaction timing; do not treat IPC arrival as SQL latency.",
+    "Review complete sources and managed-launcher capacity under a new finite native allowance before any P4 runtime experiment.",
+    "Run approved sustained native load and keep measured capacity separate from DATA controls and syntax checks."
+  ]
+}
