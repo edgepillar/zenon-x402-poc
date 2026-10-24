@@ -1,0 +1,89 @@
+{
+  "kind": "NATIVE_CAPACITY_FULL_PAYER_LANE_SOURCE_INPUTS",
+  "version": 2,
+  "profileKind": "NATIVE_CAPACITY_PAYER_LANE_NODE24_V1",
+  "encoding": "EXACT_BASELINE_REFERENCE_PLUS_ADDITIONS_FULL_SCOPE_UNCHANGED",
+  "sourceParent": "9d83406cd2d5539a53da5085700bf4eff1d36fd3",
+  "scope": "FULL_ACTUAL_P1_BASELINE_PLUS_REAL_P4_WORKER_SOURCE_ONLY",
+  "baseline": {
+    "path": "app/qualification/issued-funding-post-native-vertical.inputs-v3.json",
+    "sha256": "51ffb5b0ff0052523c1b7f3d75fa24e9be27e60ca3bcc09236b1f439096aaed1",
+    "applicationFiles": 117,
+    "packageFiles": 404,
+    "inheritAllApplicationInputs": true,
+    "inheritAllPackageInputs": true,
+    "inheritAllBareBindings": true,
+    "inheritAllAllowedBuiltins": true,
+    "inheritAllPackageVersions": true
+  },
+  "additionalApplicationInputs": [
+    {
+      "path": "app/qualification/capacity-native-payer-lane.namespace.preload.draft.mjs",
+      "bytes": 12583,
+      "LF": 171,
+      "sha256": "34d0d2855b7c7b42f8b9dcc0bfe18d6165c047d0be9e2a0d6bd0bf9dce4ab6cf",
+      "gitBlob": "7883dd6f92fffcdf143015bc5b36fc890b4ba74a"
+    },
+    {
+      "path": "app/qualification/capacity-native-payer-lane.owner.draft.mjs",
+      "bytes": 21148,
+      "LF": 337,
+      "sha256": "2a9c288c6abb6d79ca78edc8081e2d4890dcc8de241e7d47188212c4659c5f9a",
+      "gitBlob": "1ef4c7f7c60a72f169566517cec50ffdb93c808b"
+    },
+    {
+      "path": "app/qualification/capacity-native-payer-lane.protocol.js",
+      "bytes": 9101,
+      "LF": 155,
+      "sha256": "6f24dfd6172ec6df1acc528caecbc22a220b3025f92d2c3ed9508d2e16a0c8e3",
+      "gitBlob": "23ca9ac95597506f3e2a41a5fedc2cd3daecce7b"
+    },
+    {
+      "path": "app/qualification/capacity-native-payer-lane.worker.draft.mjs",
+      "bytes": 20257,
+      "LF": 283,
+      "sha256": "56d50ee55c7b8d1723487a14c78e798c436b0ee67bef3841b58fa6a31d3c6532",
+      "gitBlob": "8b49ef49f15a85ff018b6597a5fdae5b856450d3"
+    },
+    {
+      "path": "app/qualification/issued-funding-post-native-vertical.inputs-v3.json",
+      "bytes": 138777,
+      "LF": 3836,
+      "sha256": "51ffb5b0ff0052523c1b7f3d75fa24e9be27e60ca3bcc09236b1f439096aaed1",
+      "gitBlob": "3dc05ccffd306e97056b4ed168d8121f63acebbc"
+    }
+  ],
+  "additionalBareBindings": [
+    {
+      "parent": "app/qualification/capacity-native-payer-lane.worker.draft.mjs",
+      "specifier": "@noble/ed25519",
+      "target": "packages/@noble/ed25519/index.js"
+    },
+    {
+      "parent": "app/qualification/capacity-native-payer-lane.worker.draft.mjs",
+      "specifier": "@noble/hashes/sha2",
+      "target": "packages/@noble/hashes/esm/sha2.js"
+    },
+    {
+      "parent": "app/qualification/capacity-native-payer-lane.worker.draft.mjs",
+      "specifier": "znn-typescript-sdk",
+      "target": "packages/znn-typescript-sdk/dist/index.js"
+    }
+  ],
+  "sourceRowsSha256": "a761aa4f055aad556442d8224711832918882189c8bc7befd783b80dbbc2bb63",
+  "fullApplicationFiles": 122,
+  "fullPackageFiles": 404,
+  "fullSourceFiles": 526,
+  "sourceBytes": 4566507,
+  "sourceFilesRead": 526,
+  "packageSourceFilesRead": 404,
+  "baselineApplication117Preserved": true,
+  "baselinePackages404Preserved": true,
+  "packagesExecuted": false,
+  "applicationExecuted": false,
+  "sourceCopiesCreated": 0,
+  "privateProfileCreated": false,
+  "taskRootCreated": false,
+  "nativeAttemptConsumed": false,
+  "nativeAuthority": "NONE"
+}

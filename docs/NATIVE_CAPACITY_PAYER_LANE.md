@@ -1,7 +1,8 @@
 # Native capacity payer-lane binding
 
 Status: an explicit, default-off **source draft** hardwired to the actual P1
-payer client. Its separate protocol has 40 passing local DATA controls. The
+payer client. Its separate protocol has 43 passing local DATA controls, including
+direct compatibility checks against the real existing custody contract. The
 native owner passed syntax checking only; it was not imported or executed.
 This is not a native workload, capacity result, pilot or production qualification.
 
@@ -72,34 +73,38 @@ that every physical handle is still open.
 ## Execution and evidence
 
 The [selected controls](../qualification/capacity-native-payer-lane.protocol.behavior.mjs)
-directly execute the real pure protocol on Node 24.19.0, darwin/arm64: 40 passed,
+directly execute the real pure protocol on Node 24.19.0, darwin/arm64: 43 passed,
 zero failed, cancelled, skipped or TODO. They do not import the native draft or
 substitute fake SDK/native owners. Their proof-shaped strings are deliberately
 unauthenticated DATA, not generated signatures.
 
-The [exact-source result](../qualification/capacity-native-payer-lane.actual-local-result.json)
-records source hashes, expected case names, actual exits, complete stream digests
-and a separate syntax-only owner check. One earlier owner syntax check is retained
-as superseded after a source-review hardening change; it is not added to the test
-total. No SDK, SQLite, socket, key, signature, nonce, child, worker or native
+The [current protocol result](../qualification/capacity-native-payer-lane.protocol-v2.actual-local-result.json)
+records source hashes, expected case names, actual exits and complete stream digests.
+The [earlier binding result](../qualification/capacity-native-payer-lane.actual-local-result.json)
+is preserved as historical evidence, not current protocol qualification. Its
+40-case fixture missed the real contract's required `sha256:` body-digest prefix;
+the current correction is checked against real custody capture/roundtrip functions.
+Metadata checksum hashing is exercised, but proof authentication is not.
+No SDK, SQLite, socket, key, signature, nonce, child, worker or native
 application workload ran. No qualification scratch, task root, source copy or
 package installation was needed. Command/test durations are not capacity,
 transaction latency or sustainable throughput measurements.
 
 The existing 27-case hosted CI selection is unchanged. It does not execute these
-40 DATA controls or the native binding, even if its exact-main run succeeds.
+43 DATA controls or the native binding, even if its exact-main run succeeds.
 
 ## Explicit unfinished gates
 
-The new `NATIVE_CAPACITY_PAYER_LANE_NODE24_V1` namespace preloader, managed
-worker/parent launcher and finite native experiment are not implemented or
-qualified here. The draft refuses a missing or mismatched current namespace
-snapshot before importing effectful SDK/SQLite modules; it does not install a
-fabricated getter or reuse another experiment's native allowance. Source/profile
-checks do not grant human authority or provide an OS/network sandbox.
+The new `NATIVE_CAPACITY_PAYER_LANE_NODE24_V1` [preloader and worker source](NATIVE_CAPACITY_PAYER_LANE_WORKER_SOURCE.md)
+are now authored and syntax-checked only. They preserve the full 117-application /
+404-package baseline, extending the application inventory to 122 files. The real
+managed parent/profile builder and finite native experiment are still not
+implemented or qualified. The binding refuses a missing or mismatched current
+namespace before effectful SDK/SQLite imports. Source/profile checks do not grant
+human authority or provide an OS/network sandbox.
 
-Next work is the full real-graph source/package preloader, isolated lane worker
-IPC and actual parent application/RPC/grant orchestration. The existing workload
+Next work is managed worker supervision and actual parent application/RPC/grant
+orchestration, followed by full native qualification. The existing workload
 coordinator still needs a genuine lane adapter plus an independent real backend
 balance oracle and actual local transaction boundaries. Do not time IPC arrival
 as SQL latency or combine unrelated process clocks. Native load, abort/drain,
