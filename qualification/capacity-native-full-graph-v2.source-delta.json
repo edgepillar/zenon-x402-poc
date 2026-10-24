@@ -1,0 +1,209 @@
+{
+  "sourceDeltaVersion": 2,
+  "kind": "VERSIONED_REAL_FULL_CAPACITY_GRAPH_NO_EXECUTION_AUTHORITY",
+  "sourceParent": "50f65804a3353b971f9bfd4b45ecad4bc8114c5f",
+  "preservedPreviousSources": [
+    {
+      "path": "qualification/capacity-native-payer-lane.owner.draft.mjs",
+      "bytes": 21148,
+      "LF": 337,
+      "sha256": "2a9c288c6abb6d79ca78edc8081e2d4890dcc8de241e7d47188212c4659c5f9a",
+      "gitBlob": "1ef4c7f7c60a72f169566517cec50ffdb93c808b"
+    },
+    {
+      "path": "qualification/capacity-native-payer-lane.worker.draft.mjs",
+      "bytes": 21014,
+      "LF": 297,
+      "sha256": "c393d69a6c5d92ab58af13eaf150666efff25e93748388470f9764f19471359a",
+      "gitBlob": "daef188afffe58418e7818fc805c400b0a1d434f"
+    },
+    {
+      "path": "qualification/capacity-native-service-lane.owner.draft.mjs",
+      "bytes": 28784,
+      "LF": 310,
+      "sha256": "3ec72f01cee540a068295a36339289ac30dc7b827ae41aeee6c85dce37b0c0be",
+      "gitBlob": "e17fb3cf33b6c731f01c9ac0466051b1c43df6e2"
+    },
+    {
+      "path": "qualification/capacity-native-service-lane.worker.draft.mjs",
+      "bytes": 8072,
+      "LF": 107,
+      "sha256": "d77c325a869b8c0922713da1d5381b4c7507eb8fdc342d69cbf4dad0122f4a02",
+      "gitBlob": "7be2ae2633a35a38257d2b8b9e51b768fd710ef4"
+    },
+    {
+      "path": "qualification/capacity-native-paired-lane.supervisor.draft.mjs",
+      "bytes": 21812,
+      "LF": 231,
+      "sha256": "395d2fbf52b8138fb9bda776def23dcbef74cc5c866b9eb3b0d33ade7a99566f",
+      "gitBlob": "6db4fcce6643bc11833f282109a4798e892c4008"
+    },
+    {
+      "path": "qualification/capacity-native-workload-adapter.draft.mjs",
+      "bytes": 15184,
+      "LF": 225,
+      "sha256": "8ad3634a26f1c5a4516df62493295e1f9785976a8af125dde5dc63b11d9ef2b9",
+      "gitBlob": "ed3b91c224a5441f950321543a4198a71fcd1ba6"
+    },
+    {
+      "path": "qualification/issued-funding-post-native-vertical.inputs-v3.json",
+      "bytes": 138777,
+      "LF": 3836,
+      "sha256": "51ffb5b0ff0052523c1b7f3d75fa24e9be27e60ca3bcc09236b1f439096aaed1",
+      "gitBlob": "3dc05ccffd306e97056b4ed168d8121f63acebbc"
+    }
+  ],
+  "versionedNewSources": [
+    {
+      "path": "qualification/capacity-native-payer-lane-v2.owner.draft.mjs",
+      "bytes": 21480,
+      "LF": 340,
+      "sha256": "fdba015995ad10e138fca7596ed324711810bd45cd7a664bb2ce7447142b9f57",
+      "gitBlob": "998d6a55a25e03fb2839bc34e426f6b8425961db"
+    },
+    {
+      "path": "qualification/capacity-native-payer-lane-v2.worker.draft.mjs",
+      "bytes": 21279,
+      "LF": 299,
+      "sha256": "8ab5d166d80635363b427228864a55d392d1bd78940e4b38a91786d6c70d73fe",
+      "gitBlob": "4ce31b1435de36438eec1050f545f56d7aaa9f74"
+    },
+    {
+      "path": "qualification/capacity-native-payer-lane-v2.namespace.preload.draft.mjs",
+      "bytes": 254,
+      "LF": 3,
+      "sha256": "490105a5836565e90f35d863a41063c01e519a2341598c4c6133cf06b6256d1b",
+      "gitBlob": "f3b490217b694b0beccef7f5f7fe1c701bb0a2ff"
+    },
+    {
+      "path": "qualification/capacity-native-service-lane-v2.owner.draft.mjs",
+      "bytes": 29036,
+      "LF": 312,
+      "sha256": "2f36d0d1ef8fb250358630e30eadcfc157c1764a5e2232d30b23d46957141e6a",
+      "gitBlob": "119d177b7b8627c5d2f8966dc7788ff6cf04eb3d"
+    },
+    {
+      "path": "qualification/capacity-native-service-lane-v2.worker.draft.mjs",
+      "bytes": 8340,
+      "LF": 109,
+      "sha256": "815af9c6cbfa2657128393181974794a1c411ebb6b68905f0450ed2ee7e5f802",
+      "gitBlob": "3c6aded0b70096b3eed11dcbbec9e5e0b99d48a8"
+    },
+    {
+      "path": "qualification/capacity-native-service-lane-v2.namespace.preload.draft.mjs",
+      "bytes": 258,
+      "LF": 3,
+      "sha256": "66fc9ca885bb984a83f8e357359f9732a8e71dc028d305c1fd88c2fce9a28e72",
+      "gitBlob": "ec036984711d35ef91433c7940cc46440294e1a8"
+    },
+    {
+      "path": "qualification/capacity-native-paired-lane-v2.supervisor.draft.mjs",
+      "bytes": 22410,
+      "LF": 237,
+      "sha256": "be8dd242df3eec463baa7665647c9259660e4e26c000296e344897f2e2d9b1d1",
+      "gitBlob": "2b8d487858176a9946ebca3789361a2fd1db2b2e"
+    },
+    {
+      "path": "qualification/capacity-native-supervisor-v2.namespace.preload.draft.mjs",
+      "bytes": 264,
+      "LF": 3,
+      "sha256": "39a5d90e5e89bdb541a7498b85d064f36a3a72662b7e13266be18579e5b9d5f3",
+      "gitBlob": "505cbf141e96fd3e5ec605e6d4664443c8807f61"
+    },
+    {
+      "path": "qualification/capacity-native-workload-adapter-v2.draft.mjs",
+      "bytes": 15275,
+      "LF": 226,
+      "sha256": "ed09e362cab643a27f7a85896cdf7db10df97f96c333684db1b1b553392073b5",
+      "gitBlob": "93006c41b55005c5a959e130c53c5026bdcd659c"
+    },
+    {
+      "path": "qualification/capacity-native-full-namespace-v2.preload-common.draft.mjs",
+      "bytes": 19841,
+      "LF": 277,
+      "sha256": "ea86d9aebff7b3e09bbb3bfb720a8d502562841896c87f025914698b355050b2",
+      "gitBlob": "083b5c58e2306fe41afcbaf31ccaaf89730dde06"
+    },
+    {
+      "path": "qualification/capacity-native-workload-v2.entry.draft.mjs",
+      "bytes": 6672,
+      "LF": 87,
+      "sha256": "30020681ad665284e653a1f5bf1a09b1dd905c78fbdf5f0ad49e1a96d86b5672",
+      "gitBlob": "1c1b381ef8af63a2f159eb3cdf2764fad8ed6648"
+    },
+    {
+      "path": "qualification/capacity-native-full-graph-v2.inputs.json",
+      "bytes": 7592,
+      "LF": 187,
+      "sha256": "1b22c63b752d0295db771e63bda4638e81fe372b83c0b36d4a0d90fb2cc802a7",
+      "gitBlob": "950d809d2f88ea8051d066c58d631bfc915a1cec"
+    },
+    {
+      "path": "qualification/native_capacity_full_profile_v2.py",
+      "bytes": 23084,
+      "LF": 347,
+      "sha256": "3918841bea76266f7571677135c01b1094a56de0667802e538ee8fd965309af1",
+      "gitBlob": "2dbbece2e2a28ae42100b54b684d30f49a1638b7"
+    },
+    {
+      "path": "qualification/native_capacity_full_profile_v2.behavior.py",
+      "bytes": 18754,
+      "LF": 276,
+      "sha256": "17e3fb825ef3758452c17575af6a26dd0e7db0810db2b4422be11ed0fe159745",
+      "gitBlob": "d6e9f21f1ccbe4ed83bd601434a1614ce9683364"
+    },
+    {
+      "path": "qualification/capacity-native-workload-adapter-v2.inert-behavior.mjs",
+      "bytes": 4483,
+      "LF": 70,
+      "sha256": "0f5fc62034aec43ee9c290d3bf1746832770c7e7781414090e27357e1da8742d",
+      "gitBlob": "32882ee4682a38d1e798d4a34e213134896db088"
+    }
+  ],
+  "fullBaseline": {
+    "manifest": {
+      "path": "app/qualification/issued-funding-post-native-vertical.inputs-v3.json",
+      "bytes": 138777,
+      "LF": 3836,
+      "sha256": "51ffb5b0ff0052523c1b7f3d75fa24e9be27e60ca3bcc09236b1f439096aaed1",
+      "gitBlob": "3dc05ccffd306e97056b4ed168d8121f63acebbc"
+    },
+    "applicationFilesPreserved": 117,
+    "packageFilesPreserved": 404,
+    "addedApplicationFiles": 18,
+    "totalApplicationFiles": 135,
+    "totalPackageFiles": 404,
+    "sourceRowsSha256": "c8e616b5d4a29261434ee3761f89b99ae5b5b73d6938381a65c427fe879d2aa8",
+    "sourceBytes": 4715980,
+    "baselineRowsReplaced": 0
+  },
+  "changes": [
+    "Use stable dev/ino/uid/gid/mode identity for private directories, not mutable nlink/size/mtime/ctime.",
+    "Keep full nine-field identity and nlink=1 guards on immutable files and executable pins.",
+    "Admit exact owner-only 0400 CAS and 0600 scratch profiles; do not alter TLS or existing artifacts.",
+    "Provide three real role preloaders and one real parent entry for the unchanged full issued payer/service application graph.",
+    "Compare each complete child profile to the exact parent graph, context, root and role before fork.",
+    "Preserve real IPC/EOF/exit, SQL writer timing and three fresh asynchronous balance barriers; no fake namespace/SDK/SQL or compact substitute.",
+    "Read the existing full source registry once per source-only capture; share it across bounded in-memory role plans without copying package trees."
+  ],
+  "nativeAdmission": {
+    "rolePreloadersAuthored": true,
+    "parentEntryAuthored": true,
+    "sourceRegistryBuilderAuthored": true,
+    "completeManagedNativeLauncherImplemented": false,
+    "rolePreloadersExecuted": false,
+    "nativeFullGraphExecuted": false,
+    "authority": "NONE"
+  },
+  "selectedActualData": {
+    "profileTests": 85,
+    "inertAdapterTests": 7,
+    "skipped": 0
+  },
+  "oldFailedAttemptsChanged": false,
+  "oldNativeSourceRewritten": false,
+  "oldPermissionsRenewed": false,
+  "newMainOrCiQualificationClaimed": false,
+  "productionQualified": false,
+  "authority": "NONE"
+}
