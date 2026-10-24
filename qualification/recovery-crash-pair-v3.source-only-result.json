@@ -1,0 +1,191 @@
+{
+  "schemaVersion": 1,
+  "kind": "ACTUAL_SOURCE_ONLY_FULL_P2_DIAGNOSTIC_GRAPH_NOT_NATIVE",
+  "recordedDate": "2026-10-24",
+  "status": "SOURCE_AND_SELECTED_DATA_VALIDATED_NATIVE_NOT_RUN",
+  "sourceParent": "bd23a4d6307ab0628f67dcbb312dd393bf1eb7d1",
+  "sourceRowsSha256": "df9b5bf8f89618c7aa13baf2f84c25f14c851d0f0320b4caa210526b709a90f7",
+  "launchManifestSha256": "a96fb639f3e2f7b51c2f9275d6c936065ef14570783ebfa1e37a21c0f4bde50f",
+  "sourcePins": [
+    {
+      "path": "src/native-qualification-operation-diagnostics.js",
+      "bytes": 6569,
+      "LF": 112,
+      "sha256": "6191c76fcc358f49262ed3d7852dd5683918320e88498254ef222d85af8c2e48",
+      "gitBlob": "6526983ad941caebfb0d8bfe4cfd87c43773a835"
+    },
+    {
+      "path": "qualification/native-qualification-operation-diagnostics.behavior.mjs",
+      "bytes": 6772,
+      "LF": 94,
+      "sha256": "79db557b0e93c3c310a1820fa03d1766a3ce61ba17eed5e3c1a265dc73fa0059",
+      "gitBlob": "c253dce2f891eec940158df7079b631a141c3706"
+    },
+    {
+      "path": "qualification/recovery-crash-committed-intent-v2.child.draft.mjs",
+      "bytes": 52122,
+      "LF": 700,
+      "sha256": "fbb8872339e3d8e6b8907813c827aa303b450052c1a911b2409a004e439681fd",
+      "gitBlob": "19a8155d3da7c196fdf38cfc4550b9bf2318ca69"
+    },
+    {
+      "path": "qualification/recovery-crash-full-namespace-v2.preload.draft.mjs",
+      "bytes": 12456,
+      "LF": 186,
+      "sha256": "e0f36862dc32a16942f03a79d2cc71e6666bdf2e474ea22e46a575ca34188cfc",
+      "gitBlob": "71822d68baaea67da2f38728a83b01e06eb05581"
+    },
+    {
+      "path": "qualification/recovery-crash-full-graph-v2.source-inputs.json",
+      "bytes": 3122,
+      "LF": 82,
+      "sha256": "2ff9eb3ff68ea63013e25a253e436f8f8e620c858562463083f5e34379a663ba",
+      "gitBlob": "cebd6af9c7e5233edde5158c236afde3d379b43b"
+    },
+    {
+      "path": "qualification/recovery_crash_diagnostic_native_profile.py",
+      "bytes": 22849,
+      "LF": 292,
+      "sha256": "a0ad357ee28e1f1f3c81bf41253a1b8506cf36dde6fd2eb6e3064065094cd262",
+      "gitBlob": "56a56b8a249e02fbb2b60ab0b2177ca28d127cca"
+    },
+    {
+      "path": "qualification/recovery-crash-cutpoint-supervisor-v3.draft.mjs",
+      "bytes": 24412,
+      "LF": 349,
+      "sha256": "4f010e934e79c343d98e8467153d3f0a8364c2df72825eabd882c813981e49a7",
+      "gitBlob": "4e91182b7878790b77fafe90718b9265def1ad01"
+    },
+    {
+      "path": "qualification/recovery-crash-pair-v3.entry.draft.mjs",
+      "bytes": 8415,
+      "LF": 127,
+      "sha256": "85eee1ba765f93bc12b9871a5825daf455d0a1fc33a4bd9c3a42d37ff76fc1fc",
+      "gitBlob": "7fb50f73367c603ac5b309c9602773e050eebc27"
+    },
+    {
+      "path": "qualification/run-recovery-crash-pair-v3.local.py",
+      "bytes": 18152,
+      "LF": 268,
+      "sha256": "a80be5d37e4bcd580503385e9112d67187f9a499087e99d52e896a597bab6bde",
+      "gitBlob": "462692632770310b87e9965bf4eac889b4e39d76"
+    },
+    {
+      "path": "qualification/recovery-crash-pair-v3.launch-inputs.json",
+      "bytes": 5055,
+      "LF": 146,
+      "sha256": "a96fb639f3e2f7b51c2f9275d6c936065ef14570783ebfa1e37a21c0f4bde50f",
+      "gitBlob": "408f3b83098f908c28ae0c9c30cbdab268fe5f67"
+    },
+    {
+      "path": "qualification/recovery-crash-diagnostic-profile.behavior.py",
+      "bytes": 12128,
+      "LF": 204,
+      "sha256": "ae1d2d1741c8c877fb449a2de8354610d9c950a5cc2cb72fb1daf809f06f9a62",
+      "gitBlob": "63f49a745d313f70be15292c5e8c273a382b53b2"
+    }
+  ],
+  "fullNamespace": {
+    "applicationFiles": 134,
+    "packageFiles": 404,
+    "totalDeclaredFiles": 538,
+    "declaredSourceBytes": 4922826,
+    "allFrozen130ApplicationInputsPreserved": true,
+    "allFrozen404PackageInputsPreserved": true,
+    "previousSeedAndPreloaderOverwritten": false,
+    "additionalApplicationFiles": 4,
+    "existingSourcesRecopied": false,
+    "ordinaryInstalledNamespaceQualified": false
+  },
+  "actualLocalData": {
+    "nodeHelper": {
+      "result": "native-qualification-operation-diagnostics.actual-local-result.json",
+      "passed": 16,
+      "skipped": 0
+    },
+    "pythonProfile": {
+      "actualExit": 0,
+      "complete": true,
+      "passed": 17,
+      "skipped": 0,
+      "stdoutBytes": 0,
+      "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderrBytes": 116,
+      "stderrSha256": "68fd171e8236dab7442e5efa3b8df046a89b304a79fc5644983e7e49b35fb9c7",
+      "sourcePinsUnchanged": true,
+      "fabricatedParserInputsAreNotNativeProof": true
+    }
+  },
+  "actualSourceOnlyLaunch": {
+    "actualExit": 0,
+    "complete": true,
+    "applicationFilesRead": 134,
+    "packageFilesRead": 404,
+    "parentControlFiles": 6,
+    "childPrivateProfileBytes": 258833,
+    "parentPrivateProfileBytes": 3416,
+    "stdoutBytes": 601,
+    "stdoutSha256": "d8eaeb31115b5d1fee4f1b2ed1d558d5383cfbd680edfce46f87d9163d502a10",
+    "stderrBytes": 0,
+    "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "launcherManifestUnchanged": true,
+    "SDKImported": false,
+    "SQLite": false,
+    "keys": false,
+    "signatures": false,
+    "nonceSearch": false,
+    "sockets": false,
+    "nativeChildPrograms": 0,
+    "newTaskRoots": 0,
+    "qualificationScratchCreated": false,
+    "sourceCopiesCreated": 0
+  },
+  "syntaxOnly": {
+    "nodeCheckedFiles": 6,
+    "actualNodeExits": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "checkedCodeImported": false,
+    "pythonCompiledFiles": 2,
+    "pythonSourceFilesImportedByCompile": false,
+    "bytecodeWritten": false
+  },
+  "preexecutionCollectorFailure": {
+    "kind": "PYTHON_COLLECTOR_SYNTAX_ERROR_BEFORE_TEST_LAUNCH",
+    "actualExit": 1,
+    "testsExecuted": 0,
+    "countedAsTestAttempt": false,
+    "nativeRunExecuted": false,
+    "resolved": true
+  },
+  "previousNativeAttempts": {
+    "committedV1": "FAILED_CONSUMED_PRESERVED",
+    "committedV2": "FAILED_CONSUMED_PRESERVED",
+    "newDiagnosticGraphNativeAttempts": 0,
+    "oldEvidenceReopenedForNativeRetry": false,
+    "exactOldInternalFailure": "NOT_ESTABLISHED"
+  },
+  "nextGate": {
+    "separateFiniteNativeApprovalRequired": true,
+    "selectionLabelIsAuthority": false,
+    "sourceOnlyOrDataSuccessIsNativeQualification": false,
+    "maximumProspectiveRuns": 1,
+    "effectsCeilingDefinedByManifest": true,
+    "currentAllowanceAvailable": false
+  },
+  "limits": {
+    "selectedCutpointObserved": false,
+    "nativeCrashFullP2Qualified": false,
+    "physicalDurabilityQualified": false,
+    "serviceDelivery": "NOT_ESTABLISHED",
+    "realChainQualified": false,
+    "productionQualified": false,
+    "nativeOsNetworkSandbox": false,
+    "authority": "NONE"
+  }
+}
