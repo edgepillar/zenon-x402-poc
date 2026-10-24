@@ -8,6 +8,10 @@ import { Buffer } from 'node:buffer';
 import { TextDecoder, types as utilTypes } from 'node:util';
 import { performance } from 'node:perf_hooks';
 import { setTimeout, clearTimeout } from 'node:timers';
+import { createBoundedJsonRpcReadAdmission } from './bounded-json-rpc-read-admission.js';
+import { createNativeReadRetiredErrorLatch } from './native-read-retired-error-latch.js';
+import { nativeReadGenerationHandlesClosed } from './native-read-generation-handles-closed.js';
+import { captureNativeReadLoopbackQualificationRoute } from './native-read-loopback-qualification-configuration.js';
 // Internal, default-off, pre-pinned, method-neutral HTTPS exchange owner.
 // Closed static wrappers retain their public route/configuration grammars and
 // method adapters; this module alone owns native HTTPS/socket lifecycle. It
@@ -88,13 +92,18 @@ const initialCanonical = canonicalPromises();
 const INVALID = Symbol('rejected native read');
 const MAX_BODY = 1052672;
 const MAX_REQUEST_BYTES = 1024;
-const MAX_ATTEMPTS = 13;
+const CREATE_ADMISSION = createBoundedJsonRpcReadAdmission;
+const RETIRED_ERROR_LATCH = createNativeReadRetiredErrorLatch;
+const GENERATION_HANDLES_CLOSED = nativeReadGenerationHandlesClosed;
+const LOCAL_ROUTE = captureNativeReadLoopbackQualificationRoute;
 const MAX_HEADER_BYTES = 16384;
 const MAX_HEADER_PAIRS = 64;
 const CONFIGURATION_FIELDS = freeze(['route', 'timeoutMs', 'closeGraceMs']);
 const ROUTE_FIELDS = freeze(['hostname', 'path', 'ipv4Address']);
 const DYNAMIC_PLASMA = 'dynamic_plasma';
 const ZENON_FUNDING = 'zenon_funding';
+const RETAINED_DP = 'dynamic_plasma_retained_candidate';
+const RETAINED_ACCOUNT = 'zenon_account_state_retained_candidate';
 
 // Shared, stateless tombstone only. It never retains an owner or generation.
 function discard() {}
@@ -189,6 +198,14 @@ function profile(value) {
       label: 'Zenon funding HTTPS read transport owner',
       prefix: 'zenon_funding_https_read_transport_owner_',
     }));
+  }
+  if (value === RETAINED_DP) {
+    return freeze(record({ label: 'Retained Dynamic Plasma HTTPS read transport owner',
+      prefix: 'dynamic_plasma_retained_https_read_transport_owner_' }));
+  }
+  if (value === RETAINED_ACCOUNT) {
+    return freeze(record({ label: 'Retained account-state HTTPS exchange owner',
+      prefix: 'zenon_retained_account_https_exchange_owner_' }));
   }
   invalid();
 }
@@ -392,31 +409,51 @@ export function createBoundedJsonRpcHttpsExchangeOwner(
   let closeGraceMs;
   let sourcePolicyDescriptor;
   let selected;
+  let admission;
+  // Only the separately named retained local-qualification wrappers select
+  // this seventh argument. Legacy public 4/5/6 selections keep their grammar,
+  // port 443 and runtime-default PKI; no route/factory fallback is introduced.
+  const localQualification = arguments.length === 7;
+  const receivesNativeCustody = arguments.length === 6 || localQualification;
+  const receiveNativeCustody = receivesNativeCustody ? arguments[5] : null;
+  const localOptions = localQualification ? arguments[6] : null;
+  let localCa = null, localPort = 443, localCaReleaseAttempts = 0, localCaReleaseOutcome = 'NOT_REQUESTED';
+  let closeUncertain = false;
   try {
     selected = profile(profileName);
     assertInvariant();
+    admission = CREATE_ADMISSION(profileName);
     const receivesSourcePolicy = arguments.length === 5;
-    if ((arguments.length !== 4 && !receivesSourcePolicy) || publicArgumentCount !== 1
+    if ((arguments.length !== 4 && !receivesSourcePolicy && !receivesNativeCustody) || publicArgumentCount !== 1
         || typeof snapshotConfiguration !== 'function' || isProxy(snapshotConfiguration)
         || prototype(snapshotConfiguration) !== functionPrototype
         || (receivesSourcePolicy && (profileName !== ZENON_FUNDING
           || typeof receiveSourcePolicyDescriptor !== 'function'
           || isProxy(receiveSourcePolicyDescriptor)
           || prototype(receiveSourcePolicyDescriptor) !== functionPrototype
-          || !isFrozen(receiveSourcePolicyDescriptor)))) invalid();
+          || !isFrozen(receiveSourcePolicyDescriptor)))
+        || (receivesNativeCustody && (receiveSourcePolicyDescriptor !== undefined
+          || (profileName !== RETAINED_DP && profileName !== RETAINED_ACCOUNT)
+          || typeof receiveNativeCustody !== 'function' || isProxy(receiveNativeCustody)
+          || prototype(receiveNativeCustody) !== functionPrototype || !isFrozen(receiveNativeCustody)))) invalid();
     const normalized = apply(snapshotConfiguration, undefined, [adapterOptions]);
     const configuration = exact(normalized, CONFIGURATION_FIELDS, null);
     const input = exact(configuration.route, ROUTE_FIELDS, null);
-    route = freeze(record({ hostname: hostname(input.hostname), path: path(input.path), ipv4Address: ipv4(input.ipv4Address) }));
+    if (localQualification) {
+      const local = LOCAL_ROUTE(input, localOptions, profileName);
+      localCa = local.ca; localPort = local.port;
+      route = freeze(record({ hostname: local.hostname, path: local.path, ipv4Address: local.ipv4Address }));
+    } else route = freeze(record({ hostname: hostname(input.hostname), path: path(input.path), ipv4Address: ipv4(input.ipv4Address) }));
     timeoutMs = milliseconds(configuration.timeoutMs);
     closeGraceMs = milliseconds(configuration.closeGraceMs);
     // This is the single canonical snapshot of the security-relevant HTTPS
     // policy enforced below. The funding wrapper commits to this exact frozen
     // value; it does not independently normalize the route a second time.
-    // Runtime-default PKI deliberately means that no exact CA trust-anchor set
-    // is pinned here. TLS authenticates the configured hostname, not Zenon
-    // chain identity, canonicality or finality.
-    sourcePolicyDescriptor = freeze(record({
+    // Legacy modes keep runtime-default PKI without an exact pinned CA set.
+    // Named local qualification instead supplies its private explicit CA copy.
+    // Either form authenticates the configured hostname, not Zenon chain
+    // identity, canonicality or finality.
+    sourcePolicyDescriptor = record({
       connection: freeze(record({
         keepAlive: false,
         mode: 'fresh-socket-per-request',
@@ -427,7 +464,7 @@ export function createBoundedJsonRpcHttpsExchangeOwner(
         hostname: route.hostname,
         path: route.path,
         pinnedIpv4Address: route.ipv4Address,
-        port: 443,
+        port: localQualification ? localPort : 443,
       })),
       lookup: freeze(record({
         autoSelectFamily: false,
@@ -446,21 +483,35 @@ export function createBoundedJsonRpcHttpsExchangeOwner(
       })),
       tls: freeze(record({
         alpnProtocol: 'http/1.1',
-        exactCaTrustAnchorsPinned: false,
+        exactCaTrustAnchorsPinned: localQualification,
         hostnameVerification: 'node.checkServerIdentity',
         maximumVersion: 'TLSv1.3',
         minimumVersion: 'TLSv1.3',
         sniHostname: route.hostname,
-        trustMode: 'runtime-default-pki',
+        trustMode: localQualification ? 'explicit-ca-loopback-qualification' : 'runtime-default-pki',
         zenonChainIdentityAuthenticated: false,
       })),
-      version: 1,
-    }));
+      version: admission.profile.policyVersion,
+    });
+    if (admission.profile.policyVersion === 2) {
+      put(sourcePolicyDescriptor, 'admission', freeze(record({
+        profile: admission.profile.name,
+        maximumRequests: admission.profile.maximumRequests,
+        purpose: 'ONE_CONTEXTV7_RETAINED_CANDIDATE_ATTEMPT',
+      })));
+    }
+    if (localQualification) put(sourcePolicyDescriptor, 'qualification', freeze(record({
+      localOnly: true, productionRouteQualified: false, humanExecutionAuthority: 'NOT_INFERRED',
+    })));
+    sourcePolicyDescriptor = freeze(sourcePolicyDescriptor);
     if (receivesSourcePolicy) {
       apply(receiveSourcePolicyDescriptor, undefined, [sourcePolicyDescriptor]);
       assertInvariant();
     }
-  } catch { throw fixedError(selected ?? internalProfile(), 'configuration_rejected'); }
+  } catch {
+    releaseLocalCa();
+    throw fixedError(selected ?? internalProfile(), 'configuration_rejected');
+  }
 
   const unavailable = rejected(selected, 'unavailable');
   const invalidClose = rejected(selected, 'configuration_rejected');
@@ -471,17 +522,20 @@ export function createBoundedJsonRpcHttpsExchangeOwner(
   let closeOperation = null;
   let closing = false;
   let terminal = false;
-  let closeUncertain = false;
   let closeSettled = false;
   let active = null;
-  let attempts = 0;
   let lastTime = 0;
+  // This separate closure holds one boolean, not this owner/route/generation.
+  // Legacy four/five-argument selections keep their stateless tombstone.
+  const retiredErrors = receivesNativeCustody ? RETIRED_ERROR_LATCH() : null;
+  const afterRetirementError = retiredErrors === null ? discard : retiredErrors.onError;
+  function retiredErrorObserved() { return retiredErrors !== null && retiredErrors.isLatched(); }
 
   function clock() {
     const value = apply(nowNative, performance, []);
     if (typeof value !== 'number' || !isFiniteNumber(value) || value < lastTime || value < 0 || value > maxSafeInteger) invalid();
     lastTime = value;
-    if (!invariant()) {
+    if (!invariant() || retiredErrorObserved()) {
       terminal = true;
       if (active !== null) { active.failed = true; rejectGeneration(active); }
     }
@@ -513,9 +567,20 @@ export function createBoundedJsonRpcHttpsExchangeOwner(
   }
   function finishClose() {
     if (closeOperation === null || closeSettled || active !== null) return;
+    releaseLocalCa();
     closeSettled = true;
-    if (closeUncertain || !invariant()) reservedClose.reject(fixedError(selected, 'close_uncertain'));
-    else reservedClose.resolve(undefined);
+    if (closeUncertain || retiredErrorObserved() || !invariant()) {
+      // A rejected settlement stays uncertain in every subsequent V2 view,
+      // including after intrinsic descriptors have been restored.
+      if (receivesNativeCustody) closeUncertain = true;
+      reservedClose.reject(fixedError(selected, 'close_uncertain'));
+    } else reservedClose.resolve(undefined);
+  }
+  function releaseLocalCa() {
+    if (localCa === null) return;
+    const owned = localCa; localCa = null; localCaReleaseAttempts++;
+    try { apply(bufferFill, owned, [0]); localCaReleaseOutcome = 'RETURNED'; }
+    catch { localCaReleaseOutcome = 'UNKNOWN'; closeUncertain = true; }
   }
   function zero(value) {
     if (value !== null) {
@@ -527,7 +592,8 @@ export function createBoundedJsonRpcHttpsExchangeOwner(
     gen.retired = true;
     cancel(gen, 'deadlineTimer');
     cancel(gen, 'graceTimer');
-    const resources = [gen.request, gen.response, gen.socket];
+    const resources = receivesNativeCustody
+      ? [gen.request, gen.response, gen.socket, gen.agent] : [gen.request, gen.response, gen.socket];
     for (let index = 0; index < gen.listeners.length; index += 1) {
       const listener = gen.listeners[index];
       try { apply(remove, listener.target, [listener.name, listener.callback]); }
@@ -539,7 +605,7 @@ export function createBoundedJsonRpcHttpsExchangeOwner(
     for (let index = 0; index < resources.length; index += 1) {
       const resource = resources[index];
       if (resource !== null) {
-        try { apply(on, resource, ['error', discard]); }
+        try { apply(on, resource, ['error', afterRetirementError]); }
         catch { gen.uncertain = true; }
       }
     }
@@ -551,9 +617,10 @@ export function createBoundedJsonRpcHttpsExchangeOwner(
     finishClose();
   }
   function drainLateSocket(value) {
+    if (retiredErrors !== null) retiredErrors.onError();
     try {
       nativeObject(value, TLSSocket.prototype);
-      apply(on, value, ['error', discard]);
+      apply(on, value, ['error', afterRetirementError]);
       apply(socketDestroy, value, []);
     } catch { closeUncertain = true; terminal = true; }
   }
@@ -588,9 +655,15 @@ export function createBoundedJsonRpcHttpsExchangeOwner(
       } catch { fail(gen); }
     };
   }
+  function generationHandlesClosed(gen) {
+    if (!receivesNativeCustody) return !gen.requestStarted
+      || (gen.requestClosed && (!gen.socketAssigned || gen.socketClosed));
+    return GENERATION_HANDLES_CLOSED(gen.requestStarted, gen.requestClosed,
+      gen.socketAssigned, gen.socketClosed, gen.response !== null, gen.responseClosed);
+  }
   function finish(gen) {
     if (gen.retired || gen.creating || gen.cleaning || gen.resuming) return;
-    const closed = !gen.requestStarted || (gen.requestClosed && (!gen.socketAssigned || gen.socketClosed));
+    const closed = generationHandlesClosed(gen);
     if (gen.graceExpired && !closed) gen.uncertain = true;
     // A socket close cannot stand in for a still-live request. With no socket,
     // keep the request guard through grace to catch a late socket assignment.
@@ -608,7 +681,7 @@ export function createBoundedJsonRpcHttpsExchangeOwner(
       const text = gen.text;
       // Closure/listener/timer cleanup is part of acceptance, not a follow-up.
       retire(gen);
-      if (gen.uncertain || !invariant() || closing || terminal) invalid();
+      if (gen.uncertain || retiredErrorObserved() || !invariant() || closing || terminal) invalid();
       gen.settled = true;
       gen.outward.resolve(text);
     } catch {
@@ -624,7 +697,7 @@ export function createBoundedJsonRpcHttpsExchangeOwner(
       const remaining = gen.cleanupDeadline - clock();
       if (remaining > 0) { schedule(gen, 'graceTimer', () => graceExpired(gen), remaining); return; }
       gen.graceExpired = true;
-      if (gen.requestStarted && (!gen.requestClosed || (gen.socketAssigned && !gen.socketClosed))) gen.uncertain = true;
+      if (!generationHandlesClosed(gen)) gen.uncertain = true;
       if (gen.requestClosedAt !== null && gen.requestClosedAt > gen.cleanupDeadline) gen.uncertain = true;
       finish(gen);
     } catch { gen.uncertain = true; rejectGeneration(gen); retire(gen); }
@@ -701,7 +774,8 @@ export function createBoundedJsonRpcHttpsExchangeOwner(
   }
   function onResponse(gen, value) {
     if (gen.retired) {
-      try { nativeObject(value, IncomingMessage.prototype); apply(on, value, ['error', discard]); apply(responseDestroy, value, []); }
+      if (retiredErrors !== null) retiredErrors.onError();
+      try { nativeObject(value, IncomingMessage.prototype); apply(on, value, ['error', afterRetirementError]); apply(responseDestroy, value, []); }
       catch { closeUncertain = true; terminal = true; }
       return;
     }
@@ -709,7 +783,8 @@ export function createBoundedJsonRpcHttpsExchangeOwner(
       nativeObject(value, IncomingMessage.prototype);
       if (gen.response !== null) {
         if (value !== gen.response) {
-          try { apply(on, value, ['error', discard]); apply(responseDestroy, value, []); }
+          if (receivesNativeCustody) gen.uncertain = true;
+          try { apply(on, value, ['error', afterRetirementError]); apply(responseDestroy, value, []); }
           catch { gen.uncertain = true; }
         }
         fail(gen); return;
@@ -717,7 +792,21 @@ export function createBoundedJsonRpcHttpsExchangeOwner(
       gen.response = value;
       listen(gen, value, 'error', () => fail(gen));
       listen(gen, value, 'aborted', () => fail(gen));
-      listen(gen, value, 'close', () => { if (!gen.bodyEnded) fail(gen); });
+      listen(gen, value, 'close', () => {
+        // The legacy selection keeps its previous acceptance contract. The
+        // retained-custody selection must observe THIS response's own close;
+        // request/socket close and body end cannot substitute for that event.
+        if (!receivesNativeCustody) { if (!gen.bodyEnded) fail(gen); return; }
+        if (gen.retired) return;
+        gen.responseClosed = true;
+        try {
+          const observedAt = clock();
+          if (gen.cleanupStarted && observedAt > gen.cleanupDeadline) gen.uncertain = true;
+          if (!invariant() || (!gen.failed && observedAt >= gen.deadline) || gen.uncertain) { fail(gen); return; }
+          if (!gen.bodyEnded && !gen.failed && !closing) { fail(gen); return; }
+          finish(gen);
+        } catch { gen.uncertain = true; fail(gen); }
+      });
       if (!gen.secure || gen.failed || closing || terminal) invalid();
       gen.expectedLength = responseLength(value);
       gen.buffer = apply(bufferAlloc, Buffer, [gen.expectedLength]);
@@ -755,11 +844,14 @@ export function createBoundedJsonRpcHttpsExchangeOwner(
   }
 
   const exchange = freeze(function exchange(body) {
-    if (terminal || closing || active !== null || attempts >= MAX_ATTEMPTS || !invariant()) { terminal = true; return unavailable; }
+    if (terminal || closing || retiredErrorObserved() || active !== null || !admission.available() || !invariant()) { terminal = true; return unavailable; }
     try {
       if (arguments.length !== 1 || typeof body !== 'string' || body.length < 1 || body.length > MAX_REQUEST_BYTES) invalid();
       for (let index = 0; index < body.length; index += 1) if (codeAt(body, index) < 32 || codeAt(body, index) > 126) invalid();
     } catch { terminal = true; return unavailable; }
+    // Consume the private source-selected budget before native capability
+    // creation. Only the two explicit retained profiles differ from legacy13.
+    if (!admission.claim()) { terminal = true; return unavailable; }
     const outward = pending();
     const gen = record({
       outward, request: null, response: null, socket: null, agent: null,
@@ -767,12 +859,12 @@ export function createBoundedJsonRpcHttpsExchangeOwner(
       deadline: 0, cleanupDeadline: 0, deadlineTimer: null, graceTimer: null,
       received: 0, expectedLength: 0, creating: true, cleaning: false, resuming: false,
       requestStarted: false, requestClosed: false, requestClosedAt: null, socketAssigned: false, socketClosed: false,
+      responseClosed: false,
       requestDestroyed: false, responseDestroyed: false, socketDestroyed: false, agentDestroyed: false,
       secure: false, bodyEnded: false, failed: false, uncertain: false, settled: false,
       retired: false, cleanupStarted: false, graceExpired: false,
     });
     active = gen;
-    attempts += 1;
     try {
       gen.deadline = clock() + sourcePolicyDescriptor.timing.timeoutMs;
       assertInvariant();
@@ -805,8 +897,10 @@ export function createBoundedJsonRpcHttpsExchangeOwner(
           }
         }
       });
-      const headers = freeze({ Host: sourcePolicyDescriptor.endpoint.hostname, 'Content-Type': 'application/json', Accept: 'application/json', 'Content-Length': string(body.length), Connection: 'close' });
-      const nativeOptions = freeze({
+      const headers = freeze({ Host: localQualification
+        ? sourcePolicyDescriptor.endpoint.hostname + ':' + localPort : sourcePolicyDescriptor.endpoint.hostname,
+        'Content-Type': 'application/json', Accept: 'application/json', 'Content-Length': string(body.length), Connection: 'close' });
+      const nativeOptionFields = {
         protocol: 'https:', hostname: sourcePolicyDescriptor.endpoint.hostname,
         port: sourcePolicyDescriptor.endpoint.port, path: sourcePolicyDescriptor.endpoint.path,
         method: sourcePolicyDescriptor.request.method,
@@ -818,7 +912,12 @@ export function createBoundedJsonRpcHttpsExchangeOwner(
         maxVersion: sourcePolicyDescriptor.tls.maximumVersion,
         ALPNProtocols: freeze([sourcePolicyDescriptor.tls.alpnProtocol]), agent: gen.agent, headers,
         setHost: false, maxHeaderSize: MAX_HEADER_BYTES, insecureHTTPParser: false, joinDuplicateHeaders: false,
-      });
+      };
+      if (localQualification) {
+        if (localCa === null) invalid();
+        put(nativeOptionFields, 'ca', localCa);
+      }
+      const nativeOptions = freeze(nativeOptionFields);
       assertInvariant();
       gen.requestStarted = true;
       const returned = apply(httpsRequest, undefined, [nativeOptions]);
@@ -863,6 +962,39 @@ export function createBoundedJsonRpcHttpsExchangeOwner(
     finishClose();
     return closeOperation;
   });
+  if (receivesNativeCustody) {
+    const inspectNativeCustody = freeze(function inspectNativeCustody() {
+      if (arguments.length !== 0) throw fixedError(selected, 'configuration_rejected');
+      const valid = invariant(), gen = active;
+      // Observed intrinsic drift is sticky even if descriptors are restored.
+      // Inspection latches state but starts no cleanup/native capability.
+      if (!valid) { closeUncertain = true; terminal = true; }
+      const lateError = retiredErrorObserved();
+      const unknown = !valid || closeUncertain || lateError || (gen !== null && gen.uncertain);
+      // Null means unknown accounting, not zero native handles. Retiring an
+      // uncertain generation cannot manufacture a clean/zero-count verdict.
+      return freeze(record({ nativeReadCustodyVersion: 1,
+        closeRequested: closeOperation !== null, closePromiseSettled: closeSettled,
+        uncertaintyLatched: unknown, retiredErrorObserved: lateError,
+        activeGeneration: gen !== null,
+        trackedRequests: unknown ? null : gen !== null && gen.request !== null ? 1 : 0,
+        trackedResponses: unknown ? null : gen !== null && gen.response !== null ? 1 : 0,
+        trackedSockets: unknown ? null : gen !== null && gen.socket !== null ? 1 : 0,
+        trackedAgents: unknown ? null : gen !== null && gen.agent !== null ? 1 : 0,
+        ownedTimers: unknown ? null : gen === null ? 0
+          : (gen.deadlineTimer !== null ? 1 : 0) + (gen.graceTimer !== null ? 1 : 0),
+        closeObserved: closing && closeSettled && gen === null && !unknown,
+        countersDescribe: 'OWNER_OBSERVED_REFERENCES_NOT_ALL_OS_HANDLES',
+        ...(localQualification ? { loopbackQualification: freeze(record({ selected: true,
+          ownedCaBytesRetained: localCa !== null, localCaReleaseAttempts, localCaReleaseOutcome,
+          productionRouteQualified: false, authority: 'NONE' })) } : {}),
+        nativePhysicalDrain: 'NOT_QUALIFIED', authority: 'NONE' }));
+    });
+    try {
+      if (apply(receiveNativeCustody, undefined, [inspectNativeCustody]) !== undefined) invalid();
+      assertInvariant();
+    } catch { throw fixedError(selected, 'configuration_rejected'); }
+  }
   assertInvariant();
   return freeze({ exchange, close });
 }
