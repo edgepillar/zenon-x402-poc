@@ -21,18 +21,19 @@ import sys
 from urllib.parse import unquote, urlparse
 
 SELF = "qualification/run-capacity-native-paced-workload-v1.local.py"
-MANIFEST = "qualification/capacity-native-paced-workload-v1.launch-inputs.json"
+MANIFEST = "qualification/capacity-native-paced-workload-v2.launch-inputs.json"
 PLAN = "qualification/capacity-native-paced-workload-v1.plan.json"
 PARENT = "qualification/capacity-native-paced-parent-v2.inputs.json"
 INVENTORY = "qualification/capacity-native-full-graph-v3.inputs.json"
 BASELINE = "qualification/issued-funding-post-native-vertical.inputs-v3.json"
-KIND = "ONE_PACED_NATIVE_CAPACITY_V1_MANAGED_LAUNCH_SOURCE_NOT_EXECUTION"
+KIND = "ONE_PACED_NATIVE_CAPACITY_V2_MANAGED_LAUNCH_SOURCE_NOT_EXECUTION"
 FROZEN = (
     ("qualification/funding_tls_current_gate.py", "9777b8dca3c8c86e543c1f202c0cde248280ed3a108df4a688565ccf83132936"),
     ("qualification/native_capacity_full_profile_v3.py", "6928303c36f034fc295145563e40304641a91fe7db35d62eb364031bbcff7e6a"),
     ("qualification/native_capacity_managed_workload_v3.py", "6d4e2d726bd600b84be387147ee7cd6555daa8b72b8940a8719861a1078b4567"),
     ("qualification/native_capacity_paced_outer_capture_data_v1.py", "34623109c9810c1e04cc15efe9d8f39ab18ed894c4ae2b1c308fad95bde13e85"),
     ("qualification/native_capacity_paced_parent_profile_v1.py", "6160d349760d0dc98a477f543384736ccad055c889659a637229654e0d393f43"),
+    ("qualification/native_capacity_paced_profile_bundle_v1.py", "2054c2a7f68ad7f2464a41b7e15eabade5d94ef31d1c36d61b52257d78a70f06"),
     ("qualification/native_capacity_paced_resource_plan_v1.py", "fb680d472ad261bf28aa2b703cf7b51ac93fed4a329ff1443cb021ea7a8991a9"),
     ("qualification/native_capacity_paced_timing_envelope_data_v1.py", "96d332f0a3e56edf03db54e47a078535d01a5e0665a3bf29834f582039cc0a99"),
     ("qualification/recovery_crash_native_profile.py", "75c2c9478b7e792a7bade739161af2bb8fb624cd407924ead2cf822dc23dacbd"),
@@ -132,7 +133,7 @@ def validate_launch_data(manifest, inputs, effects, policy):
         "childSourceRowsSha256", "managedLauncherSourceAuthored", "nativeExecuted", "nativeAllowanceGranted",
         "nativeOsNetworkSandbox", "authority"}
     require(type(manifest) is dict and set(manifest) == fields, "CLOSED_PACED_LAUNCH_FIELDS")
-    require(type(manifest["version"]) is int and manifest["version"] == 1 and manifest["kind"] == KIND
+    require(type(manifest["version"]) is int and manifest["version"] == 2 and manifest["kind"] == KIND
         and type(manifest["sourceParent"]) is str and re.fullmatch(r"[0-9a-f]{40}", manifest["sourceParent"])
         and manifest["managedLauncherSourceAuthored"] is True and manifest["authority"] == "NONE"
         and all(manifest[k] is False for k in ("nativeExecuted", "nativeAllowanceGranted", "nativeOsNetworkSandbox")),
@@ -170,6 +171,7 @@ def source_admission(repo, manifest_sha256):
     for label, name in (("common", "qualification/run-capacity-native-workload-v3.local.py"),
             ("resource", "qualification/native_capacity_paced_resource_plan_v1.py"),
             ("producer", "qualification/native_capacity_paced_parent_profile_v1.py"),
+            ("bundle", "qualification/native_capacity_paced_profile_bundle_v1.py"),
             ("outer", "qualification/native_capacity_paced_outer_capture_data_v1.py"),
             ("tls", "qualification/funding_tls_current_gate.py"),
             ("data", "qualification/native_capacity_managed_workload_v3.py")):
@@ -265,7 +267,7 @@ def recheck_profile_sources(profile, common, node):
 
 def native_intent(args, effects):
     """Flags are tripwires, NOT human authorization."""
-    require(args.execute is True and args.native_selection == "one-new-approved-native-paced-capacity-v1"
+    require(args.execute is True and args.native_selection == "one-new-approved-native-paced-capacity-v2"
         and args.approval_launch_sha256 == args.manifest_sha256
         and args.approval_plan_sha256 == effects["workloadPlanSha256"], "NEW_EXACT_PACED_FINITE_SCOPE_REQUIRED")
 
@@ -323,7 +325,7 @@ def execute(args, repo, admitted, planner):
         return capacity(volume, args.volume_uuid, root, common, effects,
             None if task is None else (store.id, task.id))
     try:
-        with store.task("zenon-x402-paced-native-capacity-v1-once", expected_bytes=effects["expectedPeakBytesReserved"],
+        with store.task("zenon-x402-paced-native-capacity-v2-once", expected_bytes=effects["expectedPeakBytesReserved"],
                 quota_bytes=effects["taskQuotaBytes"]) as task:
             def retained(relative, raw):
                 path = task.write(relative, raw)
@@ -338,9 +340,8 @@ def execute(args, repo, admitted, planner):
             run_id = sha((store.id + ":" + task.id + ":" + producer.PARENT_SEAL + ":" + effects["workloadPlanSha256"]).encode("ascii"))
             task.record("scope.json", dict(runId=run_id, launchSha256=args.manifest_sha256,
                 effectsCeiling=effects, automaticRetry=False, nativeOsNetworkSandbox=False))
-            bundles, lane_profiles, role_roots = [], [], []
+            bundles, role_roots = [], []
             for ordinal, lane_id in enumerate(admitted["workload"]["laneIds"], 1):
-                refs = {}
                 for role in ("PAYER", "SERVICE"):
                     relative = "lanes/" + format(ordinal, "02d") + "/" + role.lower()
                     marker = task.write(relative + "/admission.json", resource.canonical_bytes(dict(runId=run_id,
@@ -353,15 +354,15 @@ def execute(args, repo, admitted, planner):
                     bundle = dict(reference=dict(role=role, laneId=lane_id, path=reference["path"], sha256=reference["sha256"],
                         entryURL=full["entryURL"], preloaderURL=full["preloaderURL"],
                         rootPath=root_data["path"], rootIdentity=root_data["identity"]), profileBytes=built["profileBytes"])
-                    bundles.append(bundle); refs[role.lower() + "Profile"] = reference
+                    bundles.append(bundle)
                     role_roots.append((role, relative))
-                lane_profiles.append(dict(laneId=lane_id, **refs))
-            built = planner.plan_parent(dict(runId=run_id, laneId="workload.parent"),
+            assembly = c["bundle"].assemble(planner, resource, admitted["workload"], run_id,
                 dict(path=str(task.scratch), identity=common.private_directory(task.scratch)), bundles)
+            built, planned = assembly["parentProfile"], assembly["entryPlan"]
             parent = retained("profiles/supervisor.json", built["profileBytes"])
             source_profile = strict(built["profileBytes"])
-            planned = resource.entry_plan(admitted["workload"], run_id, lane_profiles)
             entry_plan = retained("profiles/workload.json", planned["planBytes"])
+            task.record("profile-entry-binding-data.json", assembly["summary"])
             config = task.write("tls.cnf", common.TLS_CONFIG)
             private_inputs.append((config, *read(config)))
             before_native()

@@ -79,8 +79,9 @@ records zero failures/errors/skips and zero stderr with unchanged source inputs.
 The existing 65 timing controls were not rerun just for metadata.
 
 The [real task-owned paced launcher](SERVICE_CREDIT_CAPACITY_PACED_MANAGED_LAUNCHER.md)
-is now source-implemented with 63 selected passing DATA controls and successful
-read-only source checks. Its managed/native branch has not run. Runtime binding
+is now source-implemented with 64 current launcher controls and a separate
+39-control full-profile/entry selection using the actual read-only source
+context. Its managed/native branch has not run. Runtime binding
 of approved owned inputs, fresh source/package/tool/root identities, command
 receipts, private captures and storage closure/HOLD remains unqualified. The
 original R4 finite grant is not consumed or moved to this graph. No native capture,

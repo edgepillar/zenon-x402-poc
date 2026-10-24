@@ -87,8 +87,8 @@ def valid(self):
     before = copy.deepcopy(manifest)
     self.assertIsNone(validate())
     self.assertEqual(manifest, before)
-    self.assertEqual(len(manifest["pythonControls"]), 10)
-    self.assertEqual(len(inputs), 14)
+    self.assertEqual(len(manifest["pythonControls"]), 11)
+    self.assertEqual(len(inputs), 15)
     self.assertEqual(effects["taskQuotaBytes"], 71 * 1048576)
     self.assertEqual(effects["nodeTimeoutSeconds"], 72)
     self.assertEqual(effects["loopbackTcpConnectionsMaximum"], 362)
@@ -239,7 +239,7 @@ def cli_defaults(self):
     self.assertIsNone(args.root)
     with self.assertRaisesRegex(ValueError, "NEW_EXACT_PACED_FINITE_SCOPE_REQUIRED"):
         m.native_intent(args, effects)
-    args.native_selection = "one-new-approved-native-paced-capacity-v1"
+    args.native_selection = "one-new-approved-native-paced-capacity-v2"
     args.approval_launch_sha256 = manifest_sha
     args.approval_plan_sha256 = effects["workloadPlanSha256"]
     with self.assertRaisesRegex(ValueError, "NEW_EXACT_PACED_FINITE_SCOPE_REQUIRED"):

@@ -52,8 +52,9 @@ are implemented. Fresh source/package/tool/root checks and separately scoped
 native authority remain REQUIRED for runtime qualification; no native launch
 is qualified by this source implementation.
 The [new task-owned launcher](SERVICE_CREDIT_CAPACITY_PACED_MANAGED_LAUNCHER.md)
-now authors that real manager/profile/command path. Its 63 selected DATA controls
-and source-only checks pass; its native branch, aliases and task ownership have
+now authors that real manager/profile/command path. Its 64 current launcher
+controls and separate 39-control complete-profile/entry selection pass with
+read-only source checks; its native branch, aliases and task ownership have
 not run or been runtime-qualified. This does not reclassify older source results.
 
 ## Actual binding and measurement semantics
