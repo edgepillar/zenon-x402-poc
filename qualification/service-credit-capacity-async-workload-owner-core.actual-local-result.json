@@ -1,0 +1,102 @@
+{
+  "schemaVersion": 1,
+  "kind": "ACTUAL_ASYNC_CAPACITY_OWNER_CORE_DATA_NOT_NATIVE",
+  "recordedDate": "2026-10-24",
+  "status": "SELECTED_COMPONENT_DATA_PASSED_NOT_NATIVE",
+  "runtime": {
+    "node": "24.19.0",
+    "platform": "darwin",
+    "arch": "arm64",
+    "binarySha256": "dbedff294bab84a0a86c04e15fbcbeb1c97ca10bef1b32b0634cd24b36f62100"
+  },
+  "sourcePins": [
+    {
+      "path": "package.json",
+      "bytes": 2677,
+      "LF": 40,
+      "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+      "gitBlob": "45752ffde39d29666094f7f1c755060d75e43deb"
+    },
+    {
+      "path": "src/service-credit-capacity-async-workload-owner-core.js",
+      "bytes": 26130,
+      "LF": 470,
+      "sha256": "a7b8a471e38f3d4c008882a67b752fb0331894a5d13e65f9650114259d189280",
+      "gitBlob": "04c956f48ccbad3ee8b4cdbe1d62983616708389"
+    },
+    {
+      "path": "src/service-credit-capacity-window-recorder.js",
+      "bytes": 13321,
+      "LF": 242,
+      "sha256": "48855e34729ae68c179d6439aed962a719964732c992a83472330b7e41293579",
+      "gitBlob": "6e28e75b4fd6572fbae535ac066334349ed26038"
+    },
+    {
+      "path": "src/service-credit-capacity-recorder.js",
+      "bytes": 10801,
+      "LF": 236,
+      "sha256": "eca9bf4cad4717df5d61457044c2c5d0a6bc00b6af81964d09bf18325d4a46ad",
+      "gitBlob": "bc9b0a8a9abd48033e698e100cdc6ef90d2152c9"
+    },
+    {
+      "path": "qualification/service-credit-capacity-async-workload-owner-core.behavior.mjs",
+      "bytes": 41405,
+      "LF": 700,
+      "sha256": "00280563481f6dd123a49592f9df7d899a3bfa8e7fa8db92d6039f2fa766d500",
+      "gitBlob": "efa5ad616b4efec02428f3ec42955013af68bec9"
+    }
+  ],
+  "actual": {
+    "exit": 0,
+    "complete": true,
+    "counts": {
+      "tests": 65,
+      "suites": 0,
+      "pass": 65,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "stdoutBytes": 15553,
+    "stdoutSha256": "576c8a08bc9ef56ed04a731184e6d5b1ce4ffc46ee0b4ecd997930b2a6717adc",
+    "stderrBytes": 0,
+    "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "sourcePinsUnchanged": true
+  },
+  "scope": {
+    "directNodeTestFile": true,
+    "readOnlySourceAllowlistFiles": 5,
+    "SDK": false,
+    "SQLite": false,
+    "keys": false,
+    "signatures": false,
+    "nonceSearch": false,
+    "sockets": false,
+    "workers": false,
+    "nativeTimersFromApplication": false,
+    "newTaskRoots": 0,
+    "qualificationScratchCreated": false,
+    "sourceCopiesCreated": 0
+  },
+  "qualification": {
+    "nativeWorkloadExecuted": false,
+    "nativeResourcesQualified": false,
+    "chainAuthenticated": false,
+    "sustainableCapacityQualified": false,
+    "productionQualified": false,
+    "authority": "NONE"
+  },
+  "componentContract": {
+    "version": 2,
+    "balancePromisesRequired": true,
+    "synchronousBalanceCacheFallback": false,
+    "allLaneBalanceBarrier": true,
+    "maximumBalanceRounds": 3,
+    "enteredReadsCoveredBySetupAndDrain": true,
+    "lateCompletionUpgradesHeld": false,
+    "ledgerTimingInferredFromOperationPromises": false
+  },
+  "historicalSyncCoreAndResultsUnchanged": true,
+  "hostedCiLane": "Separate unchanged 27-control profile; does not execute these 65 tests."
+}
