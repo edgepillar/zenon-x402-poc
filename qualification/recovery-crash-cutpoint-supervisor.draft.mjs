@@ -15,7 +15,9 @@ import { createRecoveryCrashCutpointProtocol } from './recovery-crash-cutpoint-p
 const F = Object.freeze, IS_PROXY = utilTypes.isProxy, K = Reflect.ownKeys;
 const ENTRY = resolve(dirname(fileURLToPath(import.meta.url)), 'recovery-crash-committed-intent.child.draft.mjs');
 const OUT_LIMIT = 65536, ERR_LIMIT = 8192, MESSAGE_LIMIT = 65536;
-const FILES = ['backend-committed-crash.sqlite', 'payer-committed-crash.sqlite'];
+// Keep the actual issued application's principal paths. Do not introduce a
+// smaller substitute pair just to make an otherwise different case pass.
+const FILES = ['native-issued-service.sqlite', 'native-issued-payer-v6.sqlite'];
 const HASH = /^[0-9a-f]{64}$/, IDENTIFIER = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/;
 const sha = bytes => createHash('sha256').update(bytes).digest('hex');
 
