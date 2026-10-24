@@ -1,0 +1,132 @@
+{
+  "kind": "ONE_FULL_ISSUED_P2_CRASH_PAIR_V2_LAUNCH_SOURCE_NOT_A_RESULT",
+  "version": 2,
+  "sourceParent": "eafc175e800885ed9d2c1de7a176848b94bcf881",
+  "frozenLaunch": {
+    "path": "qualification/recovery-crash-pair.launch-inputs.json",
+    "bytes": 5039,
+    "LF": 147,
+    "sha256": "566eab5f9a096cef5a544671901e3293074067e4bc83d1bfde73071888e3d84c",
+    "gitBlob": "79e9453529239862079353416974e1c65880c454"
+  },
+  "pythonControls": [
+    {
+      "path": "qualification/run-recovery-crash-pair.local.py",
+      "bytes": 17343,
+      "LF": 284,
+      "sha256": "ccbf2baa73e78b7eaa9093d12a3476d45e1b4498c74337c6502739ec7c333391",
+      "gitBlob": "6c598bf7a917d8618be57e9a2ab59cad717b415b"
+    },
+    {
+      "path": "qualification/run-recovery-crash-pair-v2.local.py",
+      "bytes": 16243,
+      "LF": 242,
+      "sha256": "7fd18925308d2cdb0342afbea05b7a2d854bdfc17f288c487bdbcd5692659904",
+      "gitBlob": "7051c78b023f3a7053f6798b57e728154c8a1c87"
+    }
+  ],
+  "parentControls": [
+    {
+      "path": "app/qualification/recovery-crash-pair-v2.entry.draft.mjs",
+      "bytes": 8425,
+      "LF": 127,
+      "sha256": "acc3d786970d88842815dba7ca84da156926b0c75915068e55f04e68ccd9c04f",
+      "gitBlob": "44a84c33e69e491d77bb4ddd3a4e0b804a632c14"
+    },
+    {
+      "path": "app/qualification/recovery-crash-cutpoint-supervisor-v2.draft.mjs",
+      "bytes": 24041,
+      "LF": 345,
+      "sha256": "de0dc9131f86cd16f357ba6bda17e0cf10a8983fdebdd9a4655c70c882e98168",
+      "gitBlob": "d32e58c5562018dbc9f377a77a6c7ed79f1ea657"
+    },
+    {
+      "path": "app/src/native-private-directory-identity.js",
+      "bytes": 1927,
+      "LF": 40,
+      "sha256": "f3945ab75a86fd2d5f8f53baddf6fbd684ee55c68139f9c4f061c3d13b9cc844",
+      "gitBlob": "1500d55d3313cb1a02c07b49108eb3bcfa5f20ad"
+    },
+    {
+      "path": "app/package.json",
+      "bytes": 2677,
+      "LF": 40,
+      "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+      "gitBlob": "45752ffde39d29666094f7f1c755060d75e43deb"
+    },
+    {
+      "path": "app/qualification/recovery-crash-cutpoint-protocol-v2.js",
+      "bytes": 10964,
+      "LF": 177,
+      "sha256": "5b599b1e1ee7b048baf1ace99a170bc5a633be7667b00c069103eed8f4e1fa39",
+      "gitBlob": "6c8d8b163eff0453ab2ce3ee48734b8171f4f6cf"
+    },
+    {
+      "path": "app/src/service-credit-pilot-original-payment-checkpoint.js",
+      "bytes": 4003,
+      "LF": 89,
+      "sha256": "930905f31824a6cadc16dfb84572cd4dc38a81e2fce4569b73b6bef29dec97d1",
+      "gitBlob": "51c6391bc22f561ebff0005ced31e538aa83f4fa"
+    }
+  ],
+  "effectsCeiling": {
+    "selectedCases": 1,
+    "maximumRuns": 1,
+    "opensslCommands": 1,
+    "nodeParentCommands": 1,
+    "nodeChildren": 2,
+    "maximumChildSignalRequests": 2,
+    "selectedSeedSigkillRequests": 1,
+    "ownedCommandGroupsOnly": true,
+    "newSqlitePaths": 5,
+    "auxiliaryReadonlySqliteOpens": 8,
+    "independentPinFiles": 2,
+    "syntheticEd25519Keys": 4,
+    "transactionSignatures": 1,
+    "capabilitySignatures": 2,
+    "providerSignatures": 2,
+    "testTlsMaterialSeparate": true,
+    "maxRpcConnections": 174,
+    "maxApplicationConnections": 8,
+    "maxTotalConnections": 182,
+    "maxCandidatesPerSearch": 4096,
+    "maxReferenceCandidates": 32768,
+    "producerCandidateReservation": 4096,
+    "fixedVerificationReservation": 16384,
+    "maxAggregateCandidates": 65536,
+    "maximumCutpointWaitMs": 5000,
+    "childObserverMs": 45000,
+    "parentCommandTimeoutSeconds": 120,
+    "parentStdoutBytes": 524288,
+    "childStdoutBytes": 65536,
+    "childStderrBytes": 8192,
+    "taskQuotaBytes": 4194304,
+    "maximumSourceReadBytes": 6291456,
+    "existingSourcesRecopied": false,
+    "externalNetwork": false,
+    "install": false,
+    "realWallet": false,
+    "realPayment": false,
+    "sdkPrepareBlock": false,
+    "nativeOsNetworkSandbox": false
+  },
+  "storagePolicy": {
+    "min_free_bytes": 10737418240,
+    "safety_margin_bytes": 1073741824,
+    "task_quota_bytes": 4194304,
+    "scratch_quota_bytes": 4194304,
+    "store_quota_bytes": 4194304,
+    "metadata_quota_bytes": 4194304,
+    "max_tasks": 1,
+    "max_objects": 48,
+    "max_commands_per_task": 2,
+    "max_output_bytes": 524288,
+    "abandoned_after_seconds": 86400,
+    "unreferenced_after_seconds": 1209600
+  },
+  "sourceRowsSha256": "5aff94f7427ba46bbf3cc8e8ddc4f896672909773e44ff0335a26dc52502e979",
+  "sourceTransforms": false,
+  "nativeBuiltinAliases": false,
+  "nativeExecuted": false,
+  "nativeOsNetworkSandbox": false
+}
