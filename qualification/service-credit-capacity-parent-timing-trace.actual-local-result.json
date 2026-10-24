@@ -1,0 +1,177 @@
+{
+  "kind": "CURRENT_PARENT_RECORDER_TIMING_TRACE_SELECTED_DATA_NOT_NATIVE",
+  "resultVersion": 1,
+  "sourceParent": "1aa075ae8e4d848abd2b6b2e565ec138ee9cea6b",
+  "mainParent": "1753877381b0a81fa6394c5b7cda9b9b465e792b",
+  "runtime": {
+    "node": "24.19.0",
+    "platform": "darwin",
+    "arch": "arm64",
+    "nodeSha256": "dbedff294bab84a0a86c04e15fbcbeb1c97ca10bef1b32b0634cd24b36f62100"
+  },
+  "actual": {
+    "groups": [
+      {
+        "selection": "existing_async_core",
+        "actualExit": 0,
+        "complete": true,
+        "counts": {
+          "tests": 111,
+          "suites": 0,
+          "pass": 111,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        },
+        "validated": true,
+        "elapsedSeconds": 0.1369278329948429,
+        "stdoutBytes": 25936,
+        "stdoutSha256": "66511876e8a902f979f12b05b69465398027ad350b2cee9cbcf9d3dfbaff887f",
+        "stderrBytes": 0,
+        "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "sourcePinsUnchanged": true
+      },
+      {
+        "selection": "parent_timing_trace",
+        "actualExit": 0,
+        "complete": true,
+        "counts": {
+          "tests": 49,
+          "suites": 0,
+          "pass": 49,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        },
+        "validated": true,
+        "elapsedSeconds": 0.08190120800281875,
+        "stdoutBytes": 8849,
+        "stdoutSha256": "ed705fa85a04cbb10c2dcabda0cbab60503cd1bb56a9a5528ad6a54b3b28ecf5",
+        "stderrBytes": 0,
+        "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "sourcePinsUnchanged": true
+      }
+    ],
+    "reboundManagedCaptureData": {
+      "exit": 0,
+      "complete": true,
+      "validated": true,
+      "counts": {
+        "testsRun": 135,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "stdoutBytes": 617,
+      "stdoutSha256": "26e7efd05c94fb8507ea30f68e74d247403816abd658d3f0744573c69b3c17c4",
+      "stderrBytes": 0,
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sourcePinsUnchanged": true
+    }
+  },
+  "sourcePins": [
+    {
+      "path": "package.json",
+      "bytes": 2677,
+      "LF": 40,
+      "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+      "gitBlob": "45752ffde39d29666094f7f1c755060d75e43deb"
+    },
+    {
+      "path": "qualification/native_capacity_managed_workload_v3.behavior.py",
+      "bytes": 35827,
+      "LF": 452,
+      "sha256": "a41df61944ff3f40a6c8247ece7181c039ea00e2187c6c52c6cb08fa2e4e9030",
+      "gitBlob": "f8242ec791cb8c2a5f4c581a3540798066e7d5e2"
+    },
+    {
+      "path": "qualification/native_capacity_managed_workload_v3.py",
+      "bytes": 36833,
+      "LF": 503,
+      "sha256": "428a698d6de786d6b326256d345ffd7b6a2122bd4580ff1f13a2eb85f99db61a",
+      "gitBlob": "abe5f1dfb3efb5f5714c75d59bc5cf5ce26536ee"
+    },
+    {
+      "path": "qualification/service-credit-capacity-parent-timing-trace.behavior.mjs",
+      "bytes": 16817,
+      "LF": 235,
+      "sha256": "5e0f3a8889b411746ecccd70bcf5f4f461d05ee0ffb36f362ee0406ddfdf3db3",
+      "gitBlob": "ecf039f69b055f05fbcb4ed75305f6fccc3a2d37"
+    },
+    {
+      "path": "qualification/service-credit-capacity-windowed-async-workload-owner-core.behavior.mjs",
+      "bytes": 58322,
+      "LF": 973,
+      "sha256": "46cd6a8a056563d2c988081ef33b2cf2faf1a3d7b72d5ba08f1181855f01c3e2",
+      "gitBlob": "329cefec658cddeed93a00285975b430fdee4960"
+    },
+    {
+      "path": "src/service-credit-capacity-parent-timing-trace-data.js",
+      "bytes": 13257,
+      "LF": 213,
+      "sha256": "9b48e9212efa6b000690b32c04f07277d2c868562a1e649766a28aab85e0907d",
+      "gitBlob": "8aecb7664c2a4772870fdeb51d10fe69bc71cb79"
+    },
+    {
+      "path": "src/service-credit-capacity-recorder.js",
+      "bytes": 10801,
+      "LF": 236,
+      "sha256": "eca9bf4cad4717df5d61457044c2c5d0a6bc00b6af81964d09bf18325d4a46ad",
+      "gitBlob": "bc9b0a8a9abd48033e698e100cdc6ef90d2152c9"
+    },
+    {
+      "path": "src/service-credit-capacity-window-recorder.js",
+      "bytes": 13321,
+      "LF": 242,
+      "sha256": "48855e34729ae68c179d6439aed962a719964732c992a83472330b7e41293579",
+      "gitBlob": "6e28e75b4fd6572fbae535ac066334349ed26038"
+    },
+    {
+      "path": "src/service-credit-capacity-windowed-async-workload-owner-core.js",
+      "bytes": 36252,
+      "LF": 645,
+      "sha256": "fda636116343c497f269d926ae8e3a61f1b9cd1cf11b493c3d9ba99ef55a7444",
+      "gitBlob": "cc9eae4a2e553a0e71a531f191648c9cbe0cb101"
+    }
+  ],
+  "selection": {
+    "legacyFactorySurfaceUnchanged": true,
+    "legacyAndTracedReportEqualInSelectedFixture": true,
+    "noAdditionalClockReadsInSelectedFixture": true,
+    "privateCaptureExplicitOptIn": true,
+    "privateEventsBound": "7 * maxSamplesPerPhase + 4",
+    "maximumPrivateEvents": 28676,
+    "immutableSingleCachedEventArray": true,
+    "checkerDoesNotReplayRecorder": true,
+    "checkerDoesNotCopyEventArray": true,
+    "allPhasePercentilesAndWindowCountersRecomputed": true,
+    "errorsAndIncompleteTraceRefused": true,
+    "postStopLedgerTraceIncluded": false,
+    "currentNativeAdapterSelectsPrivateTrace": false,
+    "currentNativeCaptureContainsPrivateParentTrace": false
+  },
+  "qualification": {
+    "syntheticSourceCallbacksAndDeclaredEventDataOnly": true,
+    "noNativeProtocolOrTimingProof": true,
+    "SDK": false,
+    "SQLite": false,
+    "keys": false,
+    "signatures": false,
+    "nonceSearch": false,
+    "sockets": false,
+    "nativeChildren": false,
+    "applicationTimers": false,
+    "privateRootsOpened": false,
+    "qualificationScratchCreated": false,
+    "physicalHeapBoundEstablished": false,
+    "sustainableCapacityQualified": false,
+    "economicAcceptance": false,
+    "productionQualified": false,
+    "defaultPaymentBehaviorChanged": false,
+    "workflowsChanged": false,
+    "oldResultsRelabeled": false,
+    "authority": "NONE"
+  }
+}

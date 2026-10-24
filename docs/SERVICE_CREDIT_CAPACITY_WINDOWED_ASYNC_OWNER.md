@@ -3,7 +3,13 @@
 Status: implemented as a separate opt-in V3 source component; **111 selected
 DATA controls passed** on Node 24.19.0, darwin/arm64. This is not a native
 workload run, authenticated service-child window, throughput benchmark or
-production qualification. No native adapter imports this V3 core yet.
+production qualification. The original qualification did not execute a native adapter.
+
+The historical result below retains its original source pins. The changed shared
+core was rerun through the same 111 controls for the
+[private parent timing selection](SERVICE_CREDIT_CAPACITY_PARENT_TIMING_TRACE.md).
+The current native V3 source adapter still selects the ordinary factory; the
+private trace is not silently enabled by its source-only graph rebinding.
 
 The [new owner](../src/service-credit-capacity-windowed-async-workload-owner-core.js)
 composes the existing [window recorder](../src/service-credit-capacity-window-recorder.js)
