@@ -1,0 +1,273 @@
+{
+  "resultVersion": 1,
+  "kind": "PACED_SOURCE_WORKLOAD_ACTUAL_SELECTED_DATA_NOT_NATIVE_CAPACITY",
+  "sourceParent": "71f16d1bd2ede823b98807ccf24cc0710f8369e6",
+  "mainParent": "8b6ab50e65570d1a321efed06c7ac52d59503c0c",
+  "runtime": {
+    "node": "24.19.0",
+    "platform": "darwin",
+    "architecture": "arm64",
+    "binarySha256": "dbedff294bab84a0a86c04e15fbcbeb1c97ca10bef1b32b0634cd24b36f62100"
+  },
+  "current": {
+    "event": "Q136_PACED_OWNER_ACTUAL_DATA",
+    "attempt": 2,
+    "actualExit": 0,
+    "complete": true,
+    "counts": {
+      "tests": 56,
+      "suites": 0,
+      "pass": 56,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "validated": true,
+    "elapsedSeconds": 0.450475917008589,
+    "stdoutBytes": 11833,
+    "stdoutSha256": "5b1d15f671619bb727293c8e6bf355dd890428bec95210eff90f87a257bbcdab",
+    "stderrBytes": 0,
+    "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "sourcePins": [
+      {
+        "path": "package.json",
+        "bytes": 2677,
+        "LF": 40,
+        "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+        "gitBlob": "45752ffde39d29666094f7f1c755060d75e43deb"
+      },
+      {
+        "path": "src/service-credit-capacity-paced-workload-owner-core.js",
+        "bytes": 17153,
+        "LF": 329,
+        "sha256": "0f826b8947902f31012d79844cad06ab89a45aba4a8a35e1a093dae18b4e2a95",
+        "gitBlob": "883d7b9caf481ef9d3f01ff746f9e4532650edce"
+      },
+      {
+        "path": "src/service-credit-capacity-windowed-async-workload-owner-core.js",
+        "bytes": 36252,
+        "LF": 645,
+        "sha256": "fda636116343c497f269d926ae8e3a61f1b9cd1cf11b493c3d9ba99ef55a7444",
+        "gitBlob": "cc9eae4a2e553a0e71a531f191648c9cbe0cb101"
+      },
+      {
+        "path": "src/service-credit-capacity-window-recorder.js",
+        "bytes": 13321,
+        "LF": 242,
+        "sha256": "48855e34729ae68c179d6439aed962a719964732c992a83472330b7e41293579",
+        "gitBlob": "6e28e75b4fd6572fbae535ac066334349ed26038"
+      },
+      {
+        "path": "src/service-credit-capacity-recorder.js",
+        "bytes": 10801,
+        "LF": 236,
+        "sha256": "eca9bf4cad4717df5d61457044c2c5d0a6bc00b6af81964d09bf18325d4a46ad",
+        "gitBlob": "bc9b0a8a9abd48033e698e100cdc6ef90d2152c9"
+      },
+      {
+        "path": "qualification/service-credit-capacity-paced-workload-owner-core.behavior.mjs",
+        "bytes": 25887,
+        "LF": 449,
+        "sha256": "a6dc28764f08ac656ed5ed09e8c6a7b7d8576fd1436bd5279173a1e84d9be6c5",
+        "gitBlob": "67977bad00bc0eeb5fafaaf822c50e2bc9fd7acf"
+      }
+    ],
+    "sourcePinsUnchanged": true,
+    "nativeExecuted": false,
+    "SDK": false,
+    "SQLite": false,
+    "keys": false,
+    "signatures": false,
+    "nonceSearch": false,
+    "sockets": false,
+    "children": false,
+    "qualificationScratchCreated": false,
+    "sourceCopies": 0,
+    "packageCopies": 0,
+    "authority": "NONE"
+  },
+  "earlierSelection": {
+    "event": "Q136_PACED_OWNER_ACTUAL_DATA",
+    "attempt": 1,
+    "actualExit": 0,
+    "complete": true,
+    "counts": {
+      "tests": 47,
+      "suites": 0,
+      "pass": 47,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "validated": true,
+    "elapsedSeconds": 0.10845470799540635,
+    "stdoutBytes": 9860,
+    "stdoutSha256": "ad6f4232b5b25ffa951d5a3bf5b4eaaa6a017db20a1fa25b86630a3713f3fd99",
+    "stderrBytes": 0,
+    "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "sourcePins": [
+      {
+        "path": "package.json",
+        "bytes": 2677,
+        "LF": 40,
+        "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+        "gitBlob": "45752ffde39d29666094f7f1c755060d75e43deb"
+      },
+      {
+        "path": "src/service-credit-capacity-paced-workload-owner-core.js",
+        "bytes": 17102,
+        "LF": 328,
+        "sha256": "c7c19946c5f644ac61d8dacd10fa9fa26861470a325d74017a2a83cf8d2c7e4e",
+        "gitBlob": "324d3199882c9a1bb8c6ac4e48310ec140da54bc"
+      },
+      {
+        "path": "src/service-credit-capacity-windowed-async-workload-owner-core.js",
+        "bytes": 36252,
+        "LF": 645,
+        "sha256": "fda636116343c497f269d926ae8e3a61f1b9cd1cf11b493c3d9ba99ef55a7444",
+        "gitBlob": "cc9eae4a2e553a0e71a531f191648c9cbe0cb101"
+      },
+      {
+        "path": "src/service-credit-capacity-window-recorder.js",
+        "bytes": 13321,
+        "LF": 242,
+        "sha256": "48855e34729ae68c179d6439aed962a719964732c992a83472330b7e41293579",
+        "gitBlob": "6e28e75b4fd6572fbae535ac066334349ed26038"
+      },
+      {
+        "path": "src/service-credit-capacity-recorder.js",
+        "bytes": 10801,
+        "LF": 236,
+        "sha256": "eca9bf4cad4717df5d61457044c2c5d0a6bc00b6af81964d09bf18325d4a46ad",
+        "gitBlob": "bc9b0a8a9abd48033e698e100cdc6ef90d2152c9"
+      },
+      {
+        "path": "qualification/service-credit-capacity-paced-workload-owner-core.behavior.mjs",
+        "bytes": 21050,
+        "LF": 370,
+        "sha256": "e6cf8425908d5a3cb1e5aad80eaa10b75b46fad683714c45879d05f7e0ed21b1",
+        "gitBlob": "fd4573fd59d6a7b00a55ff8d081f7d8f92fe57fc"
+      }
+    ],
+    "sourcePinsUnchanged": true,
+    "nativeExecuted": false,
+    "SDK": false,
+    "SQLite": false,
+    "keys": false,
+    "signatures": false,
+    "nonceSearch": false,
+    "sockets": false,
+    "children": false,
+    "qualificationScratchCreated": false,
+    "sourceCopies": 0,
+    "packageCopies": 0,
+    "authority": "NONE"
+  },
+  "implementation": {
+    "factory": "createServiceCreditCapacityPacedWorkloadOwnerCore",
+    "genuineWindowedOwnerComposed": true,
+    "genuineWindowAndBaseRecorders": true,
+    "singleFundingPerLanePreserved": true,
+    "warmupNotPaced": true,
+    "originalCommandAndOperationLedgerCapabilityForwardedUnchanged": true,
+    "globalFifoMinimumGap": true,
+    "minimumStartGapMilliseconds": [
+      1,
+      1000
+    ],
+    "gapAnchoredToActualSourceEntry": true,
+    "missedSlotsNotReplayed": true,
+    "fixedOfferedRateEstablished": false,
+    "closedLoopBackpressurePreserved": true,
+    "queuedWaitAndActualSourcePromiseObservationRecordedSeparately": true,
+    "coreLatenciesExplicitlyIncludeQueueWait": true,
+    "cancelledBeforeEntryNotCountedAsSourceEntry": true,
+    "solePacingTimerNotMeasurementDeadlineRenewal": true,
+    "stopOnlyWithdrawsNotYetEnteredWork": true,
+    "enteredOriginalsRemainObserved": true,
+    "unobservableReturnRetainsUnknownSourceSlot": true,
+    "lateCompletionCannotRewriteCachedHeld": true,
+    "perSourceLaneOperationsMaximum": 1,
+    "pacingKnownLiveTimersMaximum": 1,
+    "queuedCallsMaximum": "selected lane count, at most 16",
+    "retainedDurationSeriesBoundedByGenuineRecorders": true,
+    "commandReferenceDroppedByPacerAtSourceEntry": true,
+    "nativeOsNetworkSandbox": false,
+    "measuredPhysicalHeapByteBoundEstablished": false
+  },
+  "selectedStressData": {
+    "sourceFixtureLanes": 16,
+    "recordingSamplesPerPhaseMaximum": 4096,
+    "declaredFundingCalls": 16,
+    "declaredMeasuredSourceEntries": 4080,
+    "declaredFreshBalanceReadCallbacks": 48,
+    "virtualClockAndScheduler": true,
+    "nativeApplication": false,
+    "benchmark": false,
+    "sustainableCapacityQualified": false,
+    "authority": "NONE"
+  },
+  "review": {
+    "constructionInert": true,
+    "accessorProxyAndFunctionAliasInputsRejected": true,
+    "returnedPromiseAccessorAndSubclassNotAssimilated": true,
+    "lateTimerNoCatchupBurst": true,
+    "stopWhileInstallingCancelsExactLateToken": true,
+    "clockReentrantStopBeforeEntry": true,
+    "timerReuseAcrossCoreAndPacerRejected": true,
+    "earlySynchronousAndWrongArityTimerEventsUnknown": true,
+    "sourceCloseFailureAndNeverSettlingOperationHeld": true,
+    "zeroRetryOrReplacement": true,
+    "originalDefaultBuyerAndNativeR4InputsUnchanged": true
+  },
+  "pendingNativeScope": {
+    "graphSha256": "d756740994aeb53ebeee47320d732583d96381dfa8c00e18a30f414e70a77027",
+    "launchManifestSha256": "6c9979316924e44138ee9c42af1f925899ad52d969246ad206fe65a209a5baa3",
+    "newPacedModuleIncluded": false,
+    "newNativeAllowanceGranted": false,
+    "newNativeRuns": 0
+  },
+  "execution": {
+    "selectedDataOnly": true,
+    "SDK": false,
+    "x402Package": false,
+    "SQLite": false,
+    "keys": false,
+    "signatures": false,
+    "nonceSearch": false,
+    "sockets": false,
+    "applicationChildren": false,
+    "managerImported": false,
+    "privateRootsOpened": false,
+    "qualificationScratchCreated": false,
+    "downloads": false,
+    "sourceCopies": 0,
+    "packageCopies": 0,
+    "oldEvidenceCleanup": false,
+    "automationsChanged": false,
+    "packageOrWorkflowChanged": false,
+    "existingHostedProfileCases": 27,
+    "new56CasesHosted": false,
+    "older111And175ControlsRerun": false
+  },
+  "evidenceLimits": [
+    "This is a real source-owner composition exercised with explicit DATA host callbacks and virtual time, not a native adapter run.",
+    "Minimum-gap admission remains closed-loop: slow source operations reduce the achieved offered rate. It is not a fixed-rate open-loop generator.",
+    "The old core's logical measured calls can include requests withdrawn before source entry; only the separate dispatched-call series covers entered source calls.",
+    "Source latency covers parent-side source entry to observed Promise settlement, not pure service SQL, L1 inclusion or authenticated child execution.",
+    "The 4080-call stress case proves selected bounded source behavior only; its virtual time and local command duration are not throughput or latency evidence.",
+    "One known live pacing slot and finite logical recorder limits are not physical heap, elapsed-time or hostile-host resource guarantees.",
+    "Pacer source is outside the pending native R4 graph. No old allowance covers its native execution.",
+    "The earlier 47-case pass belongs to its earlier source and test digests, not the final 56-case selection.",
+    "Native capacity, physical release, same-ledger contention, economic acceptance, live pilot and production remain unqualified."
+  ],
+  "earlierInputReconstruction": {"verifiedReadOnly":true,"oldVariantsExecuted":false,"sourceCopies":0,"implementationRemoveOnce":"      const command = row.command; row.command = null;\n","implementationReplaceOnce":{"from":"try { result = A(row.execute, undefined, [command]); }","to":"try { result = A(row.execute, undefined, [row.command]); }"},"behaviorPrefixBytes":21050,"expectedImplementationSha256":"c7c19946c5f644ac61d8dacd10fa9fa26861470a325d74017a2a83cf8d2c7e4e","expectedBehaviorSha256":"e6cf8425908d5a3cb1e5aad80eaa10b75b46fad683714c45879d05f7e0ed21b1"},
+  "nativeEventsAuthenticated": false,
+  "nativeResourcesQualified": false,
+  "sustainableCapacityQualified": false,
+  "economicAcceptanceQualified": false,
+  "productionQualified": false,
+  "authority": "NONE"
+}
