@@ -1,0 +1,443 @@
+{
+  "kind": "ORIGINAL_FUNDING_TO_SERVICE_HANDOFF_INPUT_COMPONENT_RESULT_ACTUAL_NATIVE_APPLICATION_SOURCE_ONLY",
+  "status": "PASS_12_INPUT_COMPONENT_CASES_ACTUAL_APPLICATION_SOURCE_AND_SYNTAX_ONLY",
+  "sourceParent": "d7e2d74f1e815257a9a2d91a9b1dd19cb29939e4",
+  "mainParent": "a52246efbadcb931797c43fc04a50b671dfdf6ad",
+  "implemented": {
+    "actualActor": "openZenonDynamicPlasmaNativeFundingServiceClient",
+    "actualActorModule": "src/zenon/dynamic-plasma-native-funding-service-client.js",
+    "inputContract": "captureOriginalFundingServiceHandoffRequest",
+    "nativeHandoffSelection": "openNativeOfficialV6FundingPostOriginalPaymentClientWithFundingHandoffGuard",
+    "existingEmptyV6Required": true,
+    "missingFileCreationOrMigration": false,
+    "actualConstructorsHardwired": true,
+    "borrowedStoreOrFactoryInjection": false,
+    "oneExplicitPrepareCommitAndFundingSubmission": true,
+    "handoffRequiresObservedBoundIntake": true,
+    "boundDoesNotActivateGrant": true,
+    "independentOriginalAndPinsSuppliedAgain": true,
+    "pinsNeverLearnedFromDatabase": true,
+    "badHandoffDataRejectedBeforeCloseOrAttemptConsumption": true,
+    "explicitSelectedGrantRequired": true,
+    "exactOriginalChallengeAndSerializedBytesCompared": true,
+    "actualFundingCloseBeforeServiceOpen": true,
+    "sameConfiguredFileAndRetainedIdentityRechecked": true,
+    "freshPrivateNativeFundingSessionRequired": true,
+    "staleClosePromiseNotAPermit": true,
+    "fundingGuardForwardedToActualServiceStoreClose": true,
+    "privateServiceCaDetachedBeforeFunding": true,
+    "fundingAndServiceCaBytesMustMatch": true,
+    "callerCaNeverZeroed": true,
+    "privateCaAtMost65536Bytes": true,
+    "localCaZeroingNotSecureErasureProof": true,
+    "officialMetadataDetachedAndConfiguredAssetCheckedBeforePrepare": true,
+    "serviceConstructorHiddenHoldDuringCloseNotCleanlyReleased": true,
+    "twoIndependentCloseAttemptsBeforeAwait": true,
+    "currentPublicOperationJoinBounded": true,
+    "oldOperationAndOriginalPacketInspectableAfterRefusal": true,
+    "automaticResignOrReplacementOrFundingReplay": false,
+    "defaultBuyerCutover": false,
+    "fileIdentityIsAtomicLeaseOrRollbackResistance": false,
+    "actualNativeSdkV6ApplicationExecuted": false
+  },
+  "actualComponent": {
+    "event": "Q98_ACTUAL_FUNDING_SERVICE_HANDOFF_INPUT_COMPONENT_CAPTURE",
+    "actualExit": 0,
+    "outputComplete": true,
+    "counts": {
+      "tests": 12,
+      "pass": 12,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "cases": [
+      "ok 1 - matching external originals pins challenge and explicit grant are captured without a checkpoint read",
+      "ok 2 - nested independent expectations are detached and immutable before any async handoff",
+      "ok 3 - coherent but different prepared original cannot replace the source-retained packet",
+      "ok 4 - foreign independent binding or digest is refused instead of learned from checkpoint data",
+      "ok 5 - grant selection is mandatory closed DATA and never inferred from funding or originals",
+      "ok 6 - a changed challenge header cannot reset the original context during handoff",
+      "ok 7 - a coherent GET paid original is still refused by the explicit POST funding contract",
+      "ok 8 - same-origin other route and nonempty body are not silently reinterpreted as funding POST",
+      "ok 9 - malformed or noncanonical checkpoint bytes do not consume a different retained source",
+      "ok 10 - proxy getters and coercion hooks in request retained or nested pins are never invoked",
+      "ok 11 - extra fields and wrong arity refuse without introducing close transport or storage capabilities",
+      "ok 12 - passing declared unsigned evidence never upgrades it to economic native or durable authority"
+    ],
+    "footer": {
+      "tests": 12,
+      "entered": 12,
+      "completed": 12,
+      "hooks": 0,
+      "actualHandoffInputComponent": true,
+      "actualPostCheckpointCore": true,
+      "actualSdk": false,
+      "actualV6": false,
+      "actualNative": false,
+      "actualApplicationActor": false,
+      "authority": "NONE",
+      "physicalDrain": "NOT_ESTABLISHED",
+      "inputs": [
+        {
+          "path": "package.json",
+          "bytes": 2677,
+          "LF": 40,
+          "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+          "gitBlob": "45752ffde39d29666094f7f1c755060d75e43deb"
+        },
+        {
+          "path": "src/zenon/dynamic-plasma-original-funding-service-handoff-request.js",
+          "bytes": 4584,
+          "LF": 75,
+          "sha256": "07affc3e40d785406fea54794ee694c03e31ab49fc8857369cdf52e33a331cab",
+          "gitBlob": "0382f9f6235a4fbc6f5935d3db77b29efaf1a345"
+        },
+        {
+          "path": "src/x402-original-payment-checkpoint-client.js",
+          "bytes": 12251,
+          "LF": 246,
+          "sha256": "b98c64fb071a55578bfd5c49790d11f8fca443e59e32beb8498eb67941201103",
+          "gitBlob": "6fdc3917e64f9dbad61ffb4b236951e3cb9ebcf5"
+        },
+        {
+          "path": "src/canonical.js",
+          "bytes": 967,
+          "LF": 26,
+          "sha256": "0d55ddf1727cafb0dcd46df2922305568615552a4d2ae34a5c30e90b9d8d998c",
+          "gitBlob": "5367f9c72ee13017a61630e1f0cffdced21d52c4"
+        },
+        {
+          "path": "src/service-credit-pilot-original-payment-checkpoint.js",
+          "bytes": 4003,
+          "LF": 89,
+          "sha256": "930905f31824a6cadc16dfb84572cd4dc38a81e2fce4569b73b6bef29dec97d1",
+          "gitBlob": "51c6391bc22f561ebff0005ced31e538aa83f4fa"
+        },
+        {
+          "path": "src/x402-wire.js",
+          "bytes": 39886,
+          "LF": 934,
+          "sha256": "5fba91af5a352f62d1a335c7176a45a604e2af5d92b1c4b0e53825c1f20d4e56",
+          "gitBlob": "fb060d4e349b1c31a1219a0cc137af250a8a2291"
+        },
+        {
+          "path": "src/x402-official-https-request-binding.js",
+          "bytes": 5085,
+          "LF": 99,
+          "sha256": "dabf215408887bd0d2ba346085c5ab2df13f724e8759b7a98b71b09c8dc8d692",
+          "gitBlob": "47059c772407233b8b6f54632ba065893ff92dd3"
+        },
+        {
+          "path": "src/x402-funding-post-checkpoint-route.js",
+          "bytes": 1310,
+          "LF": 29,
+          "sha256": "157e80e9f14b41c8cacc05423a7acd8616a6f759adac377f04f1fca21869831e",
+          "gitBlob": "777ff48ac9cf255f80cda7e22c68706b7d7084b3"
+        },
+        {
+          "path": "src/service-credit-original-request-custody-contract.js",
+          "bytes": 14051,
+          "LF": 356,
+          "sha256": "fd349de553a17abcc2e0567ba6640e6e3d5d26cfa79ee1e355928dc9fa8d3915",
+          "gitBlob": "f911d42d01b69e6577f9bcd66f4ed59aab8ab882"
+        },
+        {
+          "path": "qualification/original-funding-service-handoff-request.behavior.draft.mjs",
+          "bytes": 11428,
+          "LF": 160,
+          "sha256": "a2bf1bae19611d6e158b3487ba424577127035da41452411098080ad2e4c2698",
+          "gitBlob": "2bd002572c3a206bfcf039b40caa6f5a624e79e7"
+        }
+      ]
+    },
+    "inputs": [
+      {
+        "path": "package.json",
+        "bytes": 2677,
+        "LF": 40,
+        "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+        "gitBlob": "45752ffde39d29666094f7f1c755060d75e43deb"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-original-funding-service-handoff-request.js",
+        "bytes": 4584,
+        "LF": 75,
+        "sha256": "07affc3e40d785406fea54794ee694c03e31ab49fc8857369cdf52e33a331cab",
+        "gitBlob": "0382f9f6235a4fbc6f5935d3db77b29efaf1a345"
+      },
+      {
+        "path": "src/x402-original-payment-checkpoint-client.js",
+        "bytes": 12251,
+        "LF": 246,
+        "sha256": "b98c64fb071a55578bfd5c49790d11f8fca443e59e32beb8498eb67941201103",
+        "gitBlob": "6fdc3917e64f9dbad61ffb4b236951e3cb9ebcf5"
+      },
+      {
+        "path": "src/canonical.js",
+        "bytes": 967,
+        "LF": 26,
+        "sha256": "0d55ddf1727cafb0dcd46df2922305568615552a4d2ae34a5c30e90b9d8d998c",
+        "gitBlob": "5367f9c72ee13017a61630e1f0cffdced21d52c4"
+      },
+      {
+        "path": "src/service-credit-pilot-original-payment-checkpoint.js",
+        "bytes": 4003,
+        "LF": 89,
+        "sha256": "930905f31824a6cadc16dfb84572cd4dc38a81e2fce4569b73b6bef29dec97d1",
+        "gitBlob": "51c6391bc22f561ebff0005ced31e538aa83f4fa"
+      },
+      {
+        "path": "src/x402-wire.js",
+        "bytes": 39886,
+        "LF": 934,
+        "sha256": "5fba91af5a352f62d1a335c7176a45a604e2af5d92b1c4b0e53825c1f20d4e56",
+        "gitBlob": "fb060d4e349b1c31a1219a0cc137af250a8a2291"
+      },
+      {
+        "path": "src/x402-official-https-request-binding.js",
+        "bytes": 5085,
+        "LF": 99,
+        "sha256": "dabf215408887bd0d2ba346085c5ab2df13f724e8759b7a98b71b09c8dc8d692",
+        "gitBlob": "47059c772407233b8b6f54632ba065893ff92dd3"
+      },
+      {
+        "path": "src/x402-funding-post-checkpoint-route.js",
+        "bytes": 1310,
+        "LF": 29,
+        "sha256": "157e80e9f14b41c8cacc05423a7acd8616a6f759adac377f04f1fca21869831e",
+        "gitBlob": "777ff48ac9cf255f80cda7e22c68706b7d7084b3"
+      },
+      {
+        "path": "src/service-credit-original-request-custody-contract.js",
+        "bytes": 14051,
+        "LF": 356,
+        "sha256": "fd349de553a17abcc2e0567ba6640e6e3d5d26cfa79ee1e355928dc9fa8d3915",
+        "gitBlob": "f911d42d01b69e6577f9bcd66f4ed59aab8ab882"
+      },
+      {
+        "path": "qualification/original-funding-service-handoff-request.behavior.draft.mjs",
+        "bytes": 11428,
+        "LF": 160,
+        "sha256": "a2bf1bae19611d6e158b3487ba424577127035da41452411098080ad2e4c2698",
+        "gitBlob": "2bd002572c3a206bfcf039b40caa6f5a624e79e7"
+      }
+    ],
+    "streams": {
+      "stdout": {
+        "bytes": 5417,
+        "sha256": "ce983b9429a853f4f7a93a36d9218eddfb920192d2ae75901e8d64ef9922b12d"
+      },
+      "stderr": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    "nativeClientImported": false,
+    "nativeClientExecuted": false,
+    "NodeCommands": 1,
+    "NodeChildren": 0,
+    "SDK": false,
+    "SQLite": false,
+    "signing": false,
+    "nonce": false,
+    "sockets": false,
+    "NodeVersion": "24.19.0",
+    "platform": "darwin",
+    "arch": "arm64",
+    "attempts": 1,
+    "sourceIdentitiesBeforeAndAfterVerified": true,
+    "declaredDataNotValidSignature": true,
+    "actualInputContractAndPostDataCore": true,
+    "actualApplicationActor": false,
+    "actualSdk": false,
+    "actualV6": false,
+    "actualNative": false,
+    "externalNetwork": false,
+    "loopbackSockets": false,
+    "keys": false
+  },
+  "effectfulSyntax": {
+    "currentInputs": [
+      {
+        "path": "src/x402-native-v6-funding-post-client.js",
+        "bytes": 19472,
+        "LF": 344,
+        "sha256": "d5bcd301ffaa65d8a6c9d383b56b736055633b963e7b8328de4c6360b5ae5d05",
+        "gitBlob": "2818d119f0005f1cbb92608a75c43b4e4d3ae7f6"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-native-funding-service-client.js",
+        "bytes": 29282,
+        "LF": 471,
+        "sha256": "84e103d1adef0c1854e4326453b5ebff8c767b7d88c21e86eb7ce7f52020ace9",
+        "gitBlob": "2e35adfdf090205f90666f2e3387da70bdc03ac8"
+      }
+    ],
+    "currentResults": [
+      {
+        "path": "src/x402-native-v6-funding-post-client.js",
+        "syntaxActualExit": 0,
+        "outputComplete": true,
+        "applicationImported": false,
+        "input": {
+          "path": "src/x402-native-v6-funding-post-client.js",
+          "bytes": 19472,
+          "LF": 344,
+          "sha256": "d5bcd301ffaa65d8a6c9d383b56b736055633b963e7b8328de4c6360b5ae5d05",
+          "gitBlob": "2818d119f0005f1cbb92608a75c43b4e4d3ae7f6"
+        },
+        "stdoutBytes": 0,
+        "stderrBytes": 0,
+        "NodeCommands": 1,
+        "nativeTlsExecuted": false
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-native-funding-service-client.js",
+        "syntaxActualExit": 0,
+        "outputComplete": true,
+        "applicationImported": false,
+        "input": {
+          "path": "src/zenon/dynamic-plasma-native-funding-service-client.js",
+          "bytes": 29282,
+          "LF": 471,
+          "sha256": "84e103d1adef0c1854e4326453b5ebff8c767b7d88c21e86eb7ce7f52020ace9",
+          "gitBlob": "2e35adfdf090205f90666f2e3387da70bdc03ac8"
+        },
+        "stdoutBytes": 0,
+        "stderrBytes": 0,
+        "NodeCommands": 1,
+        "nativeTlsExecuted": false
+      }
+    ],
+    "checksPerformed": 4,
+    "earlierSourceChecks": [
+      {
+        "path": "src/x402-native-v6-funding-post-client.js",
+        "syntaxActualExit": 0,
+        "outputComplete": true,
+        "applicationImported": false,
+        "input": {
+          "path": "src/x402-native-v6-funding-post-client.js",
+          "bytes": 18892,
+          "LF": 337,
+          "sha256": "efeb6760db9fd1dfeb7488f6c1fc4028ad8d3dd47f4e471d041a16dd37444976",
+          "gitBlob": "be93ce4c47c6808cac507d6c5db6858681e9dcda"
+        },
+        "stdoutBytes": 0,
+        "stderrBytes": 0,
+        "NodeCommands": 1,
+        "nativeTlsExecuted": false
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-native-funding-service-client.js",
+        "syntaxActualExit": 0,
+        "outputComplete": true,
+        "applicationImported": false,
+        "input": {
+          "path": "src/zenon/dynamic-plasma-native-funding-service-client.js",
+          "bytes": 25553,
+          "LF": 414,
+          "sha256": "39c3603efa3f1b4aef9e16a12f41afaa6b23069f145eba58ce946e754370e42f",
+          "gitBlob": "400423987563b3e7fad9da6465511303b18a17e0"
+        },
+        "stdoutBytes": 0,
+        "stderrBytes": 0,
+        "NodeCommands": 1,
+        "nativeTlsExecuted": false
+      }
+    ],
+    "applicationImported": false,
+    "actualApplicationExecuted": false
+  },
+  "execution": {
+    "componentNodeCommands": 1,
+    "syntaxOnlyNodeCommands": 4,
+    "NodeChildren": 0,
+    "newOpenSSL": 0,
+    "newNativeTlsRuns": 0,
+    "newSdkRuns": 0,
+    "newSQLiteFiles": 0,
+    "newKeysOrSignatures": 0,
+    "newNonceSearches": 0,
+    "newTaskStorageRoots": 0,
+    "newTaskStorageTasks": 0,
+    "newQualificationScratchBytes": 0,
+    "installation": false,
+    "cleanup": false,
+    "hostedWorkflowDispatched": false
+  },
+  "preserved": {
+    "pendingFullDpProfileUnchanged": true,
+    "pendingFullDpManifestSha256": "a472e3bcd8840ef4236e395cb918ae5f2a84be9ca45d8f59417c0b77da291933",
+    "newActorOrServiceGraphInPendingProfile": false,
+    "pendingProfilePermissionExpanded": false,
+    "oldTlsOrSdkSqlAllowancesNotReused": true,
+    "historicalEvidenceNotRelabeled": true,
+    "unrelatedWorkAndIndexPreserved": true
+  },
+  "publication": {
+    "eligibleSourceFiles": [
+      "src/zenon/dynamic-plasma-original-funding-service-handoff-request.js",
+      "src/x402-native-v6-funding-post-client.js",
+      "src/zenon/dynamic-plasma-native-funding-service-client.js",
+      "qualification/original-funding-service-handoff-request.behavior.draft.mjs",
+      "qualification/original-funding-service-handoff-request.actual-local-result.json",
+      "docs/P1_NATIVE_FUNDING_TO_SERVICE_HANDOFF.md"
+    ],
+    "eligibleMainFiles": [
+      "src/zenon/dynamic-plasma-original-funding-service-handoff-request.js",
+      "qualification/original-funding-service-handoff-request.behavior.draft.mjs",
+      "qualification/original-funding-service-handoff-request.actual-local-result.json",
+      "docs/P1_NATIVE_FUNDING_TO_SERVICE_HANDOFF.md"
+    ],
+    "actualNativeActorAndHandoffSelectionOnMain": false,
+    "mainEffectfulBlobsMustRemain": {
+      "src/service-credit-custodied-sqlite-http-client.js": {
+        "sha": "86ac76593fa9c9a6b39bb6a39c1a2ef994aff7f2",
+        "type": "blob",
+        "mode": "100644"
+      },
+      "src/x402-official-v6-original-payment-client.js": {
+        "sha": "ee582ed684cd73c5ae92d9583aa7057d111baaea",
+        "type": "blob",
+        "mode": "100644"
+      },
+      "src/service-credit-native-https-client-transport.js": {
+        "sha": "ab6740f8e82c0cf06d5c268ce0b6750d87d0ddeb",
+        "type": "blob",
+        "mode": "100644"
+      },
+      "src/x402-original-payment-checkpoint-client.js": {
+        "sha": "6fdc3917e64f9dbad61ffb4b236951e3cb9ebcf5",
+        "type": "blob",
+        "mode": "100644"
+      }
+    },
+    "mainNativeFactoryMustRemainAbsent": true,
+    "normalFastForwardOnly": true,
+    "forcePush": false,
+    "englishAsciiPrivacySafe": true,
+    "componentPassDoesNotQualifyNewNativeGraph": true
+  },
+  "currentHeadCI": {
+    "source": {
+      "checks": 0,
+      "statuses": 0,
+      "runs": 0
+    },
+    "main": {
+      "checks": 0,
+      "statuses": 0,
+      "runs": 0
+    }
+  },
+  "CIInterpretation": "NO_CURRENT_PASS_INFERRED",
+  "fullP0Complete": false,
+  "fullP1Complete": false,
+  "fullP2Complete": false,
+  "fullRoadmapComplete": false,
+  "productionQualified": false
+}
+
