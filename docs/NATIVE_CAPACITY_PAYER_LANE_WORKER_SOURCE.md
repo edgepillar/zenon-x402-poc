@@ -4,6 +4,12 @@ Status: authored source, syntax-checked only. Neither the worker nor preloader w
 imported or executed. No native P4 allowance was requested or consumed. This is
 not an end-to-end run, load measurement, throughput result or production proof.
 
+The [paired service/supervisor source increment](NATIVE_CAPACITY_PAIRED_LANE_SOURCE.md)
+adds RELEASE_IPC to the current payer worker, after CLOSE and outstanding send
+callbacks. Its current command bound is 264 including release. The initial
+two-file syntax result and 122/404 inventory linked below are preserved historical
+source evidence, not the current paired-role admission or runtime qualification.
+
 ## Actual worker flow
 
 The [worker](../qualification/capacity-native-payer-lane.worker.draft.mjs) uses
@@ -38,7 +44,7 @@ actual signing call. No proof, original, transaction or nonce range is regenerat
 after uncertainty. EXECUTE selects only a retained cohort/ordinal original.
 
 IPC commands are source-correlated to run, lane, source seal and an increasing
-sequence. There is one active operation, no queued replacement, at most 263 admitted
+sequence. There is one active operation, no queued replacement, at most 264 admitted
 commands and bounded captured/output DATA. These are application admission bounds,
 not kernel IPC-frame, hostile-parent memory or OS sandbox guarantees.
 

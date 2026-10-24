@@ -1,0 +1,65 @@
+{
+  "kind": "NATIVE_CAPACITY_PAIRED_LANE_ROLE_SOURCE_DELTA",
+  "version": 1,
+  "sourceParent": "aae99eb6c6ad19d6368d0760f5ce721e4f17a790",
+  "encoding": "FIXED_P1_BASELINE_AND_HISTORICAL_PAYER_REFERENCE_PLUS_ROLE_SOURCE_ROWS",
+  "baseline": {
+    "path": "qualification/issued-funding-post-native-vertical.inputs-v3.json",
+    "bytes": 138777,
+    "LF": 3836,
+    "sha256": "51ffb5b0ff0052523c1b7f3d75fa24e9be27e60ca3bcc09236b1f439096aaed1",
+    "gitBlob": "3dc05ccffd306e97056b4ed168d8121f63acebbc"
+  },
+  "historicalPayerInventory": {
+    "path": "qualification/capacity-native-payer-lane.source-inputs.json",
+    "bytes": 3359,
+    "LF": 89,
+    "sha256": "e8a75bc5672257e59db92d9c0ec449e37c02e2de2841f48ec838b090dbe95b89",
+    "gitBlob": "b799c22dc720f10a5dacbb2f1aa80b5ffd107bb1"
+  },
+  "baselineApplication117MustRemain": true,
+  "baselinePackages404MustRemain": true,
+  "currentRoleSourceRows": [
+    {
+      "path": "qualification/capacity-native-payer-lane.worker.draft.mjs",
+      "bytes": 21014,
+      "LF": 297,
+      "sha256": "c393d69a6c5d92ab58af13eaf150666efff25e93748388470f9764f19471359a",
+      "gitBlob": "daef188afffe58418e7818fc805c400b0a1d434f"
+    },
+    {
+      "path": "qualification/capacity-native-service-lane.owner.draft.mjs",
+      "bytes": 28784,
+      "LF": 310,
+      "sha256": "3ec72f01cee540a068295a36339289ac30dc7b827ae41aeee6c85dce37b0c0be",
+      "gitBlob": "e17fb3cf33b6c731f01c9ac0466051b1c43df6e2"
+    },
+    {
+      "path": "qualification/capacity-native-service-lane.worker.draft.mjs",
+      "bytes": 8072,
+      "LF": 107,
+      "sha256": "d77c325a869b8c0922713da1d5381b4c7507eb8fdc342d69cbf4dad0122f4a02",
+      "gitBlob": "7be2ae2633a35a38257d2b8b9e51b768fd710ef4"
+    },
+    {
+      "path": "qualification/capacity-native-paired-lane.supervisor.draft.mjs",
+      "bytes": 21812,
+      "LF": 231,
+      "sha256": "395d2fbf52b8138fb9bda776def23dcbef74cc5c866b9eb3b0d33ade7a99566f",
+      "gitBlob": "6db4fcce6643bc11833f282109a4798e892c4008"
+    }
+  ],
+  "overridesHistoricalPayerWorkerSourcePin": true,
+  "historicalPayerSourceRecordsPreserved": true,
+  "sourceRowsAreNotACompleteNativeAdmission": true,
+  "missingControlArtifacts": [
+    "qualification/capacity-native-service-lane.namespace.preload.draft.mjs",
+    "qualification/capacity-native-supervisor.namespace.preload.draft.mjs",
+    "qualification/capacity_native_profiles.py",
+    "qualification/run-native-capacity-paired.local.py"
+  ],
+  "effectfulModulesImported": false,
+  "privateProfilesCreated": false,
+  "nativeAttemptConsumed": false,
+  "authority": "NONE"
+}

@@ -39,6 +39,7 @@ let stage = 'NEW', held = false, lastSequence = 0, active = null, closing = null
 let owner = null, ownerOpening = false, ownerAcquisitionEntered = false, closeOutcome = 'NOT_REQUESTED', plan = null, keysReleased = false;
 let walletSeed = null, capabilityPrivate = null, publicWallet = null, capabilityPublic = null, commitment = null, payer = null;
 let libs = null, ca = null, appOrigin = null, payee = null, sourceBindEntered = false;
+let release = null, releaseSent = false;
 let walletAddressCalls = 0, walletSignatures = 0, capabilitySignatures = 0, outboundMessages = 0, pendingSends = 0;
 
 // No timers, SDK, SQL, key generation or sockets have been entered above.
@@ -55,7 +56,7 @@ function hold() { held = true; process.exitCode = 1; }
 function clock() { const n = process.hrtime.bigint(); if (typeof n !== 'bigint' || n < 0n || n >= (1n << 128n)) fail(); return n; }
 function send(sequence, kind, status, value, startNs, endNs) {
   // Private IPC may carry the retained ORIGINAL witness. Nothing is printed.
-  if (typeof sequence !== 'number' || !Number.isSafeInteger(sequence) || sequence < 0 || ++outboundMessages > 265) { hold(); return; }
+  if (typeof sequence !== 'number' || !Number.isSafeInteger(sequence) || sequence < 0 || ++outboundMessages > 266) { hold(); return; }
   const packet = { protocolVersion:1,context:CONTEXT,sequence,kind,status,value,
     timing:{ source:'CHILD_LOCAL_MONOTONIC_OPERATION_NOT_SQL_LATENCY',startNs:startNs.toString(),endNs:endNs.toString() } };
   let encoded;
@@ -64,6 +65,10 @@ function send(sequence, kind, status, value, startNs, endNs) {
   pendingSends++;
   try { APPLY(SEND,process,[packet,undefined,{ keepOpen:false },error => {
     pendingSends--; if (error) { hold(); stopOnce(); }
+    else if (kind === 'RELEASE_IPC') {
+      if (pendingSends !== 0 || active !== null || closeOutcome !== 'RETURNED' || held) { hold(); stopOnce(); }
+      else process.disconnect();
+    } else maybeRelease();
   }]); } catch { pendingSends--; hold(); stopOnce(); }
 }
 function onMessage(message, handle) {
@@ -73,9 +78,13 @@ function onMessage(message, handle) {
     c = exact(captureData(message),['protocolVersion','context','sequence','kind','payload']);
     const ctx = exact(c.context,['runId','laneId','sourceRowsSha256']);
     if (c.protocolVersion !== 1 || Object.keys(CONTEXT).some(k => CONTEXT[k] !== ctx[k])
-        || !Number.isSafeInteger(c.sequence) || Object.is(c.sequence,-0) || c.sequence !== lastSequence + 1 || c.sequence > 263
+        || !Number.isSafeInteger(c.sequence) || Object.is(c.sequence,-0) || c.sequence !== lastSequence + 1 || c.sequence > 264
         || typeof c.kind !== 'string') fail();
     lastSequence = c.sequence; // No queue, duplicate command or replacement after refusal.
+    if (c.kind === 'RELEASE_IPC') {
+      exact(c.payload,[]); if (release !== null || !closeRequested || closeOutcome !== 'RETURNED' || held || active !== null) fail();
+      release = c; maybeRelease(); return;
+    }
     if (c.kind === 'CLOSE') {
       exact(c.payload,[]); if (closeRequested) fail();
       const begin = clock(); const p = stopOnce();
@@ -100,6 +109,11 @@ function onMessage(message, handle) {
     send(c.sequence,c.kind,'UNKNOWN',null,begin,end);
     if (active === entry) active = null; done.resolve(undefined); stopOnce();
   });
+}
+function maybeRelease() {
+  if (release === null || releaseSent || pendingSends !== 0 || active !== null) return;
+  if (held || closeOutcome !== 'RETURNED') { hold(); return; }
+  releaseSent = true; const n = clock(); send(release.sequence,'RELEASE_IPC','RELEASING_IPC',facts(),n,n);
 }
 async function perform(kind, payload) {
   if (kind === 'INIT') {
