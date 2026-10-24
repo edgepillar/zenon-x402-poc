@@ -94,7 +94,9 @@ The later [full profile/resource/entry binding](SERVICE_CREDIT_CAPACITY_PACED_PR
 implements the new resource calculation and complete bundle with 129 DATA controls.
 The later [full outer-v3 verifier](SERVICE_CREDIT_CAPACITY_PACED_OUTER_CAPTURE_V3.md)
 adds independent raw balance reconstruction and 131 passing DATA controls.
-The real managed-launch binding and physical policy admission are still required.
+The later [new managed launcher](SERVICE_CREDIT_CAPACITY_PACED_MANAGED_LAUNCHER_V3.md)
+binds these real source controls with 89 passing DATA cases. Its native branch
+has not run; physical policy admission and actual native composition remain open.
 Existing 145-application-row parent profiles,
 the old v2 outer validator and old
 71 MiB/72-second reservations cannot be relabeled as qualification of this new

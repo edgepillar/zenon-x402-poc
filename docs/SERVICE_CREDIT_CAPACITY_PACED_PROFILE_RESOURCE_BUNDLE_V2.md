@@ -108,7 +108,9 @@ At this source snapshot the new full outer verifier was still pending. The later
 [independent outer-v3 verifier](SERVICE_CREDIT_CAPACITY_PACED_OUTER_CAPTURE_V3.md)
 now reconstructs complete balance series plus retained child/writer/receipt DATA,
 with 131 controls passed after a separately recorded failed attempt.
-The real managed-launch binding remains unfinished, and the new resource policy
+The later [new managed launcher](SERVICE_CREDIT_CAPACITY_PACED_MANAGED_LAUNCHER_V3.md)
+binds the actual complete source pipeline with 89 passing DATA cases and a
+source-only CLI. Its native branch is authored but unexecuted, and the new policy
 has not been physically admitted. Existing R4 approval is unconsumed and is not a new paced grant; exact
 finite authority and fresh source/tool/storage admission would still be required
 before any native attempt. No task/root, fresh storage poll, cleanup, metadata
