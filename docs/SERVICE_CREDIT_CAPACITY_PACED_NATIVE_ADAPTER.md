@@ -47,9 +47,14 @@ capture uses the parent's seal. No graph is relabeled to pass an old guard.
 
 The pending unpaced R4 files, original input inventory, launcher and old
 qualification evidence remain byte-preserved. Their finite allowance is NOT
-renewed or expanded. The private profile producer below is implemented. A reviewed
-managed controller, fresh source/package/tool/root checks and a separately scoped
-native authority remain REQUIRED; this is not a complete managed native launch.
+renewed or expanded. The private profile producer and managed-controller source
+are implemented. Fresh source/package/tool/root checks and separately scoped
+native authority remain REQUIRED for runtime qualification; no native launch
+is qualified by this source implementation.
+The [new task-owned launcher](SERVICE_CREDIT_CAPACITY_PACED_MANAGED_LAUNCHER.md)
+now authors that real manager/profile/command path. Its 63 selected DATA controls
+and source-only checks pass; its native branch, aliases and task ownership have
+not run or been runtime-qualified. This does not reclassify older source results.
 
 ## Actual binding and measurement semantics
 
@@ -111,8 +116,9 @@ the new 163-case envelope selection. Neither proves native adapter admission. Th
 
 No new actual pacing timer, final native barrier, trace paging, child exit,
 HTTPS, SQLite, signature, nonce search, native release or task storage was
-exercised here. The next implementation gate is the real managed controller for
-these separate parent/child closures. The profile producer is implemented below.
+exercised here. The real managed-controller source for these parent/child closures
+is now implemented separately, but its native branch remains unexecuted.
+The profile producer is implemented below.
 Native
 throughput, same-ledger pressure, physical release, provider/economic authority,
 pilot and production remain open.
@@ -190,6 +196,6 @@ now implements the outer/payer/writer consistency checks without flattening
 this paced result into an old R4 envelope. Its 87 selected passing controls
 include logical completion with a withheld original and per-lane DISPATCH
 binding. Pair/child/receipt fixture records are explicitly synthetic DATA,
-not native execution. A real task-owned paced launcher/profile writer and
-actual private command/source/storage binding remain the next implementation
-and qualification gate; no R4 native allowance is transferred to this graph.
+not native execution. The real task-owned paced launcher/profile writer is now
+source-implemented separately; actual private command/source/storage binding
+remains a qualification gate. No R4 native allowance is transferred to this graph.
