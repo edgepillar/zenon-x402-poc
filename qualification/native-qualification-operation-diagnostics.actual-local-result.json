@@ -1,0 +1,93 @@
+{
+  "schemaVersion": 1,
+  "kind": "ACTUAL_LOCAL_OPERATION_DIAGNOSTIC_DATA_NOT_NATIVE_OR_PRODUCTION",
+  "recordedDate": "2026-10-24",
+  "status": "SELECTED_DATA_TESTS_PASSED",
+  "runtime": {
+    "node": "24.19.0",
+    "platform": "darwin",
+    "arch": "arm64",
+    "binarySha256": "dbedff294bab84a0a86c04e15fbcbeb1c97ca10bef1b32b0634cd24b36f62100"
+  },
+  "entrypoint": "qualification/native-qualification-operation-diagnostics.behavior.mjs",
+  "sourcePins": [
+    {
+      "path": "package.json",
+      "bytes": 2677,
+      "LF": 40,
+      "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+      "gitBlob": "45752ffde39d29666094f7f1c755060d75e43deb"
+    },
+    {
+      "path": "src/native-qualification-operation-diagnostics.js",
+      "bytes": 6569,
+      "LF": 112,
+      "sha256": "6191c76fcc358f49262ed3d7852dd5683918320e88498254ef222d85af8c2e48",
+      "gitBlob": "6526983ad941caebfb0d8bfe4cfd87c43773a835"
+    },
+    {
+      "path": "qualification/native-qualification-operation-diagnostics.behavior.mjs",
+      "bytes": 6772,
+      "LF": 94,
+      "sha256": "79db557b0e93c3c310a1820fa03d1766a3ce61ba17eed5e3c1a265dc73fa0059",
+      "gitBlob": "c253dce2f891eec940158df7079b631a141c3706"
+    }
+  ],
+  "actual": {
+    "exit": 0,
+    "complete": true,
+    "counts": {
+      "tests": 16,
+      "suites": 0,
+      "pass": 16,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "stdoutBytes": 3096,
+    "stdoutSha256": "dead87d09adc98c26013effb3ff28a681a265a8bf391c5998c4f6545fa77df25",
+    "stderrBytes": 0,
+    "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "sourcePinsUnchanged": true
+  },
+  "scope": {
+    "actualDiagnosticHelperImported": true,
+    "strictDtoCaptureImported": true,
+    "nodePermissionReadAllowlistFiles": 3,
+    "nodeTestRunnerChildren": 0,
+    "qualificationScratchCreated": false,
+    "fullApplicationImported": false,
+    "SDK": false,
+    "SQLite": false,
+    "keys": false,
+    "signatures": false,
+    "nonceSearch": false,
+    "sockets": false,
+    "payment": false
+  },
+  "behavior": {
+    "maximumStageEntries": 128,
+    "stagesAllowlisted": true,
+    "phasesAllowlisted": true,
+    "errorCodesAllowlisted": true,
+    "rawErrorsRetained": false,
+    "errorMessagesRetained": false,
+    "errorStacksRetained": false,
+    "originalPaymentDataRetained": false,
+    "accessorsInvoked": false,
+    "proxyTrapsInvoked": false,
+    "firstFailureSticky": true,
+    "mutatorsReturnUndefined": true
+  },
+  "limits": {
+    "diagnosticsAuthenticateNativeEvents": false,
+    "sourceCursorProvesSqlOrTransportSuccess": false,
+    "nativeCrashQualified": false,
+    "physicalDurabilityQualified": false,
+    "productionQualified": false,
+    "authority": "NONE"
+  },
+  "evidenceRetention": "Actual exit, complete stream counts and digests recorded; no new scratch or CAS artifact was created.",
+  "mainCiScope": "The unchanged 27-control hosted profile does not execute this separate 16-test file."
+}
