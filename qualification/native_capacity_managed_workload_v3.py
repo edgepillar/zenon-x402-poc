@@ -11,9 +11,9 @@ import json
 import math
 import re
 
-GRAPH_SHA = "c517355f0eaa2b21eea7289b91f40d3464adb5966f60ff085dbc0b0a96d8a92c"
-INVENTORY_SHA = "73624c02d9bc39a7186ae994434ced83311ed718a6499997b3ee5cc4fdcda10a"
-PROFILE_SHA = "93568d6e149c6da0eedbbcbe2fa8115dd4b23d4a0965faef0b1f47729ab0b244"
+GRAPH_SHA = "d756740994aeb53ebeee47320d732583d96381dfa8c00e18a30f414e70a77027"
+INVENTORY_SHA = "3bb597da71736542615047d11af78ad6825df5bdb6e4561747d8c1f9dff7d0df"
+PROFILE_SHA = "6928303c36f034fc295145563e40304641a91fe7db35d62eb364031bbcff7e6a"
 PAYEE = "z1qq3zyg3zyg3zyg3zyg3zyg3zyg3zyg3z3yw2mk"  # Public 20-byte fixture, not a wallet.
 MIB = 1048576
 FLOOR = 10 * 1024 * MIB
@@ -115,7 +115,9 @@ def resource_plan(value):
     # remain bounded by the real V3 entry. An overflow remains UNKNOWN, not a
     # silently smaller workload or an automatically repeated experiment.
     trace_rows = 12*calls+64
-    possible_capture = 131072 + lanes*(1024*trace_rows + 384*264 + 32768 + 65536)
+    parent_events = 7*v["recordingLimits"]["maxSamplesPerPhase"]+4
+    parent_bytes = 8192+256*parent_events
+    possible_capture = 131072 + lanes*(1024*trace_rows + 384*264 + 32768 + 65536) + parent_bytes
     stdout = min(PARENT_CAPTURE_MAX, ((possible_capture+65535)//65536)*65536)
     profiles = (2*lanes+1)*524288
     # Four SQLite files plus possible DELETE journals and two independent pin
@@ -132,6 +134,9 @@ def resource_plan(value):
         nodeChildProcessesMaximum=2*lanes, opensslCommands=1, maximumRuns=1,
         windowMarkerCommandsMaximum=2*lanes, ipcTicketsMaximumPerChild=5,
         serviceWriterRowsMaximum=lanes*trace_rows, privateWriterAttributionRowsMaximum=lanes*trace_rows,
+        privateParentTimingEventsMaximum=parent_events, parentTimingBytesPerEventReserved=256,
+        parentTimingWrapperBytesReserved=8192, privateParentTimingBytesReserved=parent_bytes,
+        parentTimingSourceClockReadsAdditional=0, parentTimingCheckInsideActualEntrySourceAuthored=True,
         serviceChildClockReadsMaximum=lanes*(4*trace_rows+2), logicalFullCaptureBytesMaximum=possible_capture,
         fullCaptureBytesPerWriterReserved=1024, windowSummaryBytesPerLaneReserved=65536,
         captureJsonTreeCopyRequired=False, captureHeapByteBoundEstablished=False,
@@ -199,7 +204,7 @@ def validate_capture_data(stdout, stderr, receipt, workload, expected_run_id):
         require(type(raw) is bytes and slot["sha256"] == sha(raw) and type(slot["bytes"]) is int
             and slot["bytes"] == len(raw), "MANAGED_STREAM_CONTENT_BINDING")
     v = bounded_capture_data(stdout, bound["nodeStdoutLimit"])
-    fields(v, ("captureVersion", "kind", "sourceRowsSha256", "result", "evidence", "nativeResourcesQualified",
+    fields(v, ("captureVersion", "kind", "sourceRowsSha256", "result", "parentTimingData", "evidence", "nativeResourcesQualified",
         "sustainableCapacityQualified", "chainAuthenticated", "productionQualified", "authority"), "PARENT_CAPTURE_FIELDS")
     require(type(v["captureVersion"]) is int and v["captureVersion"] == 3
         and v["kind"] == "PRIVATE_FULL_NATIVE_CAPACITY_COMPONENT_CAPTURE_NOT_PRODUCTION"
@@ -240,6 +245,7 @@ def validate_capture_data(stdout, stderr, receipt, workload, expected_run_id):
         and core.get("balanceContract") == "GENUINE_PROMISE_FRESH_READ_NOT_SYNC_CACHE"
         and core.get("authority") == "NONE", "COMPONENT_OWNER_NOT_RETURNED")
     recording = core.get("recording")
+    parent_check = validate_parent_timing_data(v["parentTimingData"], recording, plan, expected_run_id)
     require(type(recording) is dict and recording.get("recordingState") == "COMPLETE"
         and recording.get("recordingIssue") is None and recording.get("pendingObservations") == 0
         and recording.get("capacityQualification") == "NOT_ESTABLISHED"
@@ -340,7 +346,8 @@ def validate_capture_data(stdout, stderr, receipt, workload, expected_run_id):
         and core["plannedCallsCompleted"] == (completed == lanes*bound["totalCallsPerLane"]), "PLANNED_CALL_COMPLETION_DATA")
     return dict(componentCaptureDataMatches=True, completedOriginalCalls=completed, childClosesObservedAsData=child_count,
         freshBalanceBarriersAsData=3, writerIntervalsAsData=writer_rows, measurementNanoseconds=str(duration),
-        writerWindowAndCohortDataRecomputed=True, dataOnlyNotNativeAuthentication=True, nativeResourcesQualified=False, storageCleanupQualified=False,
+        writerWindowAndCohortDataRecomputed=True, parentPhaseMetricsIndependentlyRecomputed=True,
+        parentTimingEventsAsData=parent_check["eventsChecked"], dataOnlyNotNativeAuthentication=True, nativeResourcesQualified=False, storageCleanupQualified=False,
         sustainableCapacityQualified=False, chainAuthenticated=False, productionQualified=False, authority="NONE")
 
 
@@ -354,7 +361,15 @@ def bounded_capture_data(raw, maximum):
     The receipt and complete original bytes must be retained before this check.
     This reduces logical parser duplication; it is not a measured heap bound.
     """
-    value = decode(raw, maximum); nodes = 0
+    value = decode(raw, maximum)
+    capture_tree_in_place(value)
+    require(json.dumps(value, separators=(",",":"), ensure_ascii=True).encode("ascii")+b"\n" == raw,
+        "ONE_EXACT_JSON_FRAME_WITH_NEWLINE")
+    return value
+
+def capture_tree_in_place(value):
+    """Strict builtin DATA traversal, with no second object-graph copy."""
+    nodes = 0
     def visit(v, depth):
         nonlocal nodes
         nodes += 1
@@ -373,9 +388,6 @@ def bounded_capture_data(raw, maximum):
         else:
             require(v is None or type(v) is bool, "EXACT_CAPTURE_TYPES")
     visit(value, 0)
-    require(json.dumps(value, separators=(",",":"), ensure_ascii=True).encode("ascii")+b"\n" == raw,
-        "ONE_EXACT_JSON_FRAME_WITH_NEWLINE")
-    return value
 
 def closed_storage_data(closed, cleanup, store_id, task_id):
     require(type(store_id)is str and re.fullmatch(r"[0-9a-f]{32}",store_id)
@@ -500,4 +512,135 @@ def validate_window_trace_data(row, evidence, pair, workload, expected_run_id):
     require_metric(row.get("writerBracketNs"),[nanoseconds(r["bracketElapsedNs"])for r in intervals])
     require_metric(row.get("insideWriterTransactionNs"),[nanoseconds(r["insideTransactionElapsedNs"])for r in intervals])
     return dict(writerWindowDataMatches=True,originalBindingsRecomputed=True,nativeEventsAuthenticated=False,authority="NONE")
+
+
+def validate_parent_timing_data(capsule, recording, workload, expected_run_id):
+    """Independent Python arithmetic; never imports or replays the JS recorder."""
+    capture_tree_in_place(capsule); capture_tree_in_place(recording)
+    fields(capsule,("parentTimingCaptureVersion","context","trace","check","status"),"PARENT_CAPTURE_FIELDS")
+    integer(capsule["parentTimingCaptureVersion"],1,1,"PARENT_CAPTURE_VERSION")
+    fields(capsule["context"],("runId","sourceRowsSha256","laneIds"),"PARENT_CONTEXT_FIELDS")
+    require(type(expected_run_id)is str and HASH.fullmatch(expected_run_id)
+        and canonical(capsule["context"])==canonical(dict(runId=expected_run_id,sourceRowsSha256=GRAPH_SHA,laneIds=workload["laneIds"])),
+        "FRESH_PARENT_RUN_SOURCE_LANE_BINDING")
+    require(capsule["status"]=="MATCHING_DECLARED_PARENT_TRACE","PARENT_CHECK_UNKNOWN")
+    trace=capsule["trace"]
+    fields(trace,("parentTimingTraceVersion","scope","clockDomain","limits","unknown","maximumEvents","events",
+        "rawIdentifiersIncluded","postStopLedgerTraceIncluded","nativeEventsAuthenticated","nativeResourcesQualified",
+        "sustainableCapacityQualified","authority"),"PARENT_TRACE_FIELDS")
+    integer(trace["parentTimingTraceVersion"],1,1,"PARENT_TRACE_VERSION")
+    require(trace["scope"]=="PRIVATE_PARENT_RECORDER_EVENTS_NOT_NATIVE_AUTHENTICATION"
+        and trace["clockDomain"]=="PARENT_MONOTONIC_RECORDER_EVENT_ORDER" and trace["unknown"]is False
+        and all(trace[k]is False for k in("rawIdentifiersIncluded","postStopLedgerTraceIncluded",
+            "nativeEventsAuthenticated","nativeResourcesQualified","sustainableCapacityQualified"))
+        and trace["authority"]=="NONE","PARENT_TRACE_UNKNOWN_OR_AUTHORITY")
+    limits=trace["limits"];fields(limits,("maxSamplesPerPhase","maxInFlightPerPhase"),"PARENT_LIMIT_FIELDS")
+    integer(limits["maxSamplesPerPhase"],1,4096,"PARENT_SAMPLE_BOUND");integer(limits["maxInFlightPerPhase"],1,64,"PARENT_IN_FLIGHT_BOUND")
+    require(limits["maxInFlightPerPhase"]<=limits["maxSamplesPerPhase"]
+        and canonical(limits)==canonical(workload["recordingLimits"]),"PARENT_PLAN_LIMIT_BINDING")
+    integer(trace["maximumEvents"],7*limits["maxSamplesPerPhase"]+4,7*limits["maxSamplesPerPhase"]+4,"PARENT_EVENT_BOUND")
+    rows=trace["events"];require(type(rows)is list and 1<=len(rows)<=trace["maximumEvents"],"PARENT_EVENT_ARRAY")
+    phases=("FUNDING","FUNDED_CALL","LEDGER_TRANSACTION");cohort_names=("WARMUP","MEASUREMENT")
+    def count():return dict(settled=0,succeeded=0,rejected=0,unknown=0)
+    lanes={name:dict(entered=0,active=0,peak=0,windowPeak=0,warmupActive=0,measuredActive=0,warmupAtStart=0,
+        warmupAtStop=0,measuredAtStop=0,warmupInside=count(),measuredInside=count(),warmupAfter=count(),measuredAfter=count())for name in phases}
+    cohorts={name:dict(phases={phase:dict(entered=0,settled=0,succeeded=0,rejected=0,active=0,peak=0,
+        all=[],success=[])for phase in phases},first=None,last=None,balances=0)for name in cohort_names}
+    stages={name:dict(samples=0,mismatches=0)for name in("WARMUP","MEASURING","DRAINING")}
+    stage="CREATED";run_start=warmup_start=start=stop=ended=previous=None;observation=balance_checks=0;active={}
+    def tick(meta,at):
+        if meta["first"]is None:meta["first"]=at
+        meta["last"]=at
+    for index,row in enumerate(rows):
+        require(type(row)is dict,"PARENT_EVENT_OBJECT")
+        integer(row.get("sequence"),index+1,index+1,"PARENT_EVENT_SEQUENCE");require(ended is None,"PARENT_EVENT_AFTER_FINALIZE")
+        at=nanoseconds(row.get("atNs"));kind=row.get("kind")
+        require(previous is None or previous<=at,"PARENT_EVENT_CLOCK_ORDER");previous=at
+        if kind=="START_WARMUP":
+            fields(row,("sequence","kind","atNs"),"PARENT_BOUNDARY_FIELDS");require(stage=="CREATED","PARENT_WARMUP_ORDER")
+            warmup_start=run_start=at;stage="WARMUP"
+        elif kind=="START_MEASUREMENT":
+            fields(row,("sequence","kind","atNs"),"PARENT_BOUNDARY_FIELDS");require(stage in("CREATED","WARMUP"),"PARENT_START_ORDER")
+            if run_start is None:run_start=at
+            start=at;stage="MEASURING"
+            for lane in lanes.values():lane["warmupAtStart"]=lane["warmupActive"];lane["windowPeak"]=lane["active"]
+        elif kind=="STOP_MEASUREMENT":
+            fields(row,("sequence","kind","atNs"),"PARENT_BOUNDARY_FIELDS");require(stage=="MEASURING"and at>start,"PARENT_STOP_ORDER")
+            stop=at;stage="DRAINING"
+            for lane in lanes.values():lane["warmupAtStop"]=lane["warmupActive"];lane["measuredAtStop"]=lane["measuredActive"]
+        elif kind=="BEGIN":
+            fields(row,("sequence","kind","observation","phase","cohort","atNs"),"PARENT_BEGIN_FIELDS")
+            cohort="WARMUP"if stage=="WARMUP"else"MEASUREMENT"
+            require(stage in("WARMUP","MEASURING")and type(row["phase"])is str and row["phase"]in phases
+                and row["cohort"]==cohort,"PARENT_BEGIN_COHORT")
+            integer(row["observation"],observation+1,observation+1,"PARENT_BEGIN_ORDINAL")
+            lane=lanes[row["phase"]];group=cohorts[cohort]["phases"][row["phase"]]
+            require(lane["entered"]<limits["maxSamplesPerPhase"]and lane["active"]<limits["maxInFlightPerPhase"],"PARENT_PHASE_CAPACITY")
+            observation+=1;lane["entered"]+=1;lane["active"]+=1;group["entered"]+=1;group["active"]+=1
+            lane["warmupActive"if cohort=="WARMUP"else"measuredActive"]+=1
+            lane["peak"]=max(lane["peak"],lane["active"]);group["peak"]=max(group["peak"],group["active"])
+            if stage=="MEASURING":lane["windowPeak"]=max(lane["windowPeak"],lane["active"])
+            tick(cohorts[cohort],at);active[observation]=dict(at=at,phase=row["phase"],cohort=cohort)
+        elif kind=="FINISH":
+            fields(row,("sequence","kind","observation","outcome","atNs"),"PARENT_FINISH_FIELDS")
+            integer(row["observation"],1,3*limits["maxSamplesPerPhase"],"PARENT_FINISH_ORDINAL")
+            require(row["observation"]in active and row["outcome"]in("SUCCEEDED","REJECTED"),"PARENT_FINISH_UNKNOWN_OR_DUPLICATE")
+            begun=active.pop(row["observation"]);lane=lanes[begun["phase"]];meta=cohorts[begun["cohort"]];group=meta["phases"][begun["phase"]]
+            lane["active"]-=1;group["active"]-=1;group["settled"]+=1;lane["warmupActive"if begun["cohort"]=="WARMUP"else"measuredActive"]-=1
+            elapsed=at-begun["at"];group["all"].append(elapsed)
+            if row["outcome"]=="SUCCEEDED":group["succeeded"]+=1;group["success"].append(elapsed)
+            else:group["rejected"]+=1
+            tick(meta,at)
+            if stage in("MEASURING","DRAINING"):
+                key=("warmup"if begun["cohort"]=="WARMUP"else"measured")+("Inside"if stage=="MEASURING"else"After")
+                lane[key]["settled"]+=1;lane[key]["succeeded"if row["outcome"]=="SUCCEEDED"else"rejected"]+=1
+        elif kind=="BALANCE_CHECK":
+            fields(row,("sequence","kind","matches","atNs"),"PARENT_BALANCE_FIELDS")
+            require(stage in stages and row["matches"]is True and balance_checks<limits["maxSamplesPerPhase"],"PARENT_BALANCE_UNKNOWN")
+            balance_checks+=1;stages[stage]["samples"]+=1;cohorts["WARMUP"if stage=="WARMUP"else"MEASUREMENT"]["balances"]+=1
+        elif kind=="FINALIZE":
+            fields(row,("sequence","kind","atNs"),"PARENT_BOUNDARY_FIELDS")
+            require(stage=="DRAINING"and not active and index==len(rows)-1,"PARENT_FINALIZATION_PENDING_OR_ORDER");ended=at
+        else:raise ValueError("PARENT_EVENT_KIND")
+    require(ended is not None and start is not None and stop is not None,"PARENT_COMPLETE_WINDOW")
+    def metric(values):
+        if not values:return dict(samples=0,min=None,p50=None,p95=None,p99=None,max=None)
+        ordered=sorted(values)
+        def rank(p):return str(ordered[(len(ordered)*p-1)//100])
+        return dict(samples=len(ordered),min=str(ordered[0]),p50=rank(50),p95=rank(95),p99=rank(99),max=str(ordered[-1]))
+    summaries={};phase_summaries={}
+    for cohort in cohort_names:
+        meta=cohorts[cohort];entries=0;phase_rows={}
+        for name in phases:
+            g=meta["phases"][name];entries+=g["entered"]
+            phase_rows[name]=dict(entered=g["entered"],settled=g["settled"],pending=0,succeeded=g["succeeded"],rejected=g["rejected"],unknown=0,
+                peakInFlight=g["peak"],nonSuccessFraction=None if g["settled"]==0 else dict(numerator=g["rejected"],denominator=g["settled"]),
+                terminalLatencyNanoseconds=metric(g["all"]),successfulLatencyNanoseconds=metric(g["success"]))
+        summaries[cohort]=dict(capacityRecorderVersion=1,scope="CALLER_DECLARED_OBSERVATIONS_ONLY",clock="CALLER_SUPPLIED_MONOTONIC_NANOSECONDS",
+            percentileMethod="NEAREST_RANK",recordingState="EMPTY"if entries==0 else"COMPLETE",recordingIssue=None,stopReason=None,limits=limits,
+            refusedStarts=0,pendingObservations=0,observedSpanNanoseconds=None if meta["first"]is None else str(meta["last"]-meta["first"]),phases=phase_rows,
+            ledgerBalanceChecks=dict(samples=meta["balances"],mismatches=0,result="NOT_RECORDED"if meta["balances"]==0 else"MATCHES_CALLER_DECLARED_EXPECTATIONS"),
+            capacityQualification="NOT_ESTABLISHED",ledgerCorrectness="NOT_ESTABLISHED",authenticatedExecution=False,liveOrProduction=False,authority="NONE")
+    for name in phases:
+        lane=lanes[name];measured=cohorts["MEASUREMENT"]["phases"][name]
+        rate="NO_MEASUREMENT_STARTS"if measured["entered"]==0 else"OBSERVED_WINDOW_RATIO_ONLY"
+        phase_summaries[name]=dict(enteredAcrossCohorts=lane["entered"],peakInFlightAcrossCohorts=lane["peak"],peakInFlightDuringMeasurement=lane["windowPeak"],
+            warmupInFlightAtStart=lane["warmupAtStart"],warmupInFlightAtStop=lane["warmupAtStop"],measurementInFlightAtStop=lane["measuredAtStop"],
+            warmupTerminalsDuringMeasurement=lane["warmupInside"],measurementTerminalsDuringMeasurement=lane["measuredInside"],
+            warmupTerminalsAfterMeasurement=lane["warmupAfter"],measurementTerminalsAfterMeasurement=lane["measuredAfter"],
+            successfulWindowCompletionRatio=None if rate=="NO_MEASUREMENT_STARTS"else dict(numerator=str(lane["measuredInside"]["succeeded"]*10**9),
+                denominator=str(stop-start),unit="CALLER_OBSERVED_SUCCESSFUL_COMPLETIONS_PER_SECOND"),rateStatus=rate)
+    expected=dict(capacityWindowRecorderVersion=1,scope="CALLER_DECLARED_BOUNDARIES_NOT_BENCHMARK_EXECUTION",boundaryOrder="EXPLICIT_CALL_ORDER_ON_NONDECREASING_TIMESTAMPS",
+        recordingState="EMPTY"if observation==0 else"COMPLETE",recordingIssue=None,stopReason=None,limits=limits,refusedStarts=0,pendingObservations=0,
+        warmupNanoseconds=None if warmup_start is None else str(start-warmup_start),measurementNanoseconds=str(stop-start),drainNanoseconds=str(ended-stop),
+        runNanoseconds=str(ended-run_start),phases=phase_summaries,cohorts=summaries,
+        ledgerBalanceChecks=dict(samples=balance_checks,mismatches=0,stages=stages,expectedBalances="CALLER_DECLARED_NOT_AUTHENTICATED"),
+        capacityQualification="NOT_ESTABLISHED",sustainableThroughput="NOT_ESTABLISHED",nativeClockAuthenticated=False,physicalDrainQualified=False,liveOrProduction=False,authority="NONE")
+    require(type(recording)is dict and canonical(recording)==canonical(expected),"PARENT_ALL_RECORDER_FIELDS_MISMATCH")
+    result=dict(parentTimingTraceDataVersion=1,status="COMPLETE_MATCHING_DECLARED_PARENT_TRACE_DATA",eventsChecked=len(rows),observationsChecked=observation,
+        measurementNanoseconds=str(stop-start),allPhaseSummariesRecomputed=True,rawIdentifiersIncluded=False,parentAndChildClocksSubtracted=False,
+        postStopLedgerTraceQualified=False,nativeEventsAuthenticated=False,nativeResourcesQualified=False,sustainableCapacityQualified=False,authority="NONE")
+    require(type(capsule["check"])is dict and canonical(capsule["check"])==canonical(result),"PARENT_ENTRY_CHECK_NOT_INDEPENDENTLY_MATCHED")
+    return result
+
 
