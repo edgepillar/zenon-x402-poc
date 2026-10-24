@@ -92,3 +92,9 @@ handling, an exact full-source adapter/profile, same-child-clock writer
 classification and separately authorized native measurement. P2 recovery,
 economic acceptance, live pilot and production remain separate gates.
 
+An opt-in [paced source workload composition](SERVICE_CREDIT_CAPACITY_PACED_WORKLOAD_OWNER.md)
+now adds bounded minimum-gap measured-call admission with separate queue and
+actual source-entry latency distributions. Its 56 DATA controls passed, including
+4,080 synthetic measured calls. It is not selected by the pending native R4
+graph and does not establish fixed-rate load or native sustainable capacity.
+
