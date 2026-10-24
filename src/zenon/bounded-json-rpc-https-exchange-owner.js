@@ -11,6 +11,7 @@ import { setTimeout, clearTimeout } from 'node:timers';
 import { createBoundedJsonRpcReadAdmission } from './bounded-json-rpc-read-admission.js';
 import { createNativeReadRetiredErrorLatch } from './native-read-retired-error-latch.js';
 import { nativeReadGenerationHandlesClosed } from './native-read-generation-handles-closed.js';
+import { captureNativeReadLoopbackQualificationRoute } from './native-read-loopback-qualification-configuration.js';
 // Internal, default-off, pre-pinned, method-neutral HTTPS exchange owner.
 // Closed static wrappers retain their public route/configuration grammars and
 // method adapters; this module alone owns native HTTPS/socket lifecycle. It
@@ -94,6 +95,7 @@ const MAX_REQUEST_BYTES = 1024;
 const CREATE_ADMISSION = createBoundedJsonRpcReadAdmission;
 const RETIRED_ERROR_LATCH = createNativeReadRetiredErrorLatch;
 const GENERATION_HANDLES_CLOSED = nativeReadGenerationHandlesClosed;
+const LOCAL_ROUTE = captureNativeReadLoopbackQualificationRoute;
 const MAX_HEADER_BYTES = 16384;
 const MAX_HEADER_PAIRS = 64;
 const CONFIGURATION_FIELDS = freeze(['route', 'timeoutMs', 'closeGraceMs']);
@@ -408,8 +410,15 @@ export function createBoundedJsonRpcHttpsExchangeOwner(
   let sourcePolicyDescriptor;
   let selected;
   let admission;
-  const receivesNativeCustody = arguments.length === 6;
+  // Only the separately named retained local-qualification wrappers select
+  // this seventh argument. Legacy public 4/5/6 selections keep their grammar,
+  // port 443 and runtime-default PKI; no route/factory fallback is introduced.
+  const localQualification = arguments.length === 7;
+  const receivesNativeCustody = arguments.length === 6 || localQualification;
   const receiveNativeCustody = receivesNativeCustody ? arguments[5] : null;
+  const localOptions = localQualification ? arguments[6] : null;
+  let localCa = null, localPort = 443, localCaReleaseAttempts = 0, localCaReleaseOutcome = 'NOT_REQUESTED';
+  let closeUncertain = false;
   try {
     selected = profile(profileName);
     assertInvariant();
@@ -430,15 +439,20 @@ export function createBoundedJsonRpcHttpsExchangeOwner(
     const normalized = apply(snapshotConfiguration, undefined, [adapterOptions]);
     const configuration = exact(normalized, CONFIGURATION_FIELDS, null);
     const input = exact(configuration.route, ROUTE_FIELDS, null);
-    route = freeze(record({ hostname: hostname(input.hostname), path: path(input.path), ipv4Address: ipv4(input.ipv4Address) }));
+    if (localQualification) {
+      const local = LOCAL_ROUTE(input, localOptions, profileName);
+      localCa = local.ca; localPort = local.port;
+      route = freeze(record({ hostname: local.hostname, path: local.path, ipv4Address: local.ipv4Address }));
+    } else route = freeze(record({ hostname: hostname(input.hostname), path: path(input.path), ipv4Address: ipv4(input.ipv4Address) }));
     timeoutMs = milliseconds(configuration.timeoutMs);
     closeGraceMs = milliseconds(configuration.closeGraceMs);
     // This is the single canonical snapshot of the security-relevant HTTPS
     // policy enforced below. The funding wrapper commits to this exact frozen
     // value; it does not independently normalize the route a second time.
-    // Runtime-default PKI deliberately means that no exact CA trust-anchor set
-    // is pinned here. TLS authenticates the configured hostname, not Zenon
-    // chain identity, canonicality or finality.
+    // Legacy modes keep runtime-default PKI without an exact pinned CA set.
+    // Named local qualification instead supplies its private explicit CA copy.
+    // Either form authenticates the configured hostname, not Zenon chain
+    // identity, canonicality or finality.
     sourcePolicyDescriptor = record({
       connection: freeze(record({
         keepAlive: false,
@@ -450,7 +464,7 @@ export function createBoundedJsonRpcHttpsExchangeOwner(
         hostname: route.hostname,
         path: route.path,
         pinnedIpv4Address: route.ipv4Address,
-        port: 443,
+        port: localQualification ? localPort : 443,
       })),
       lookup: freeze(record({
         autoSelectFamily: false,
@@ -469,12 +483,12 @@ export function createBoundedJsonRpcHttpsExchangeOwner(
       })),
       tls: freeze(record({
         alpnProtocol: 'http/1.1',
-        exactCaTrustAnchorsPinned: false,
+        exactCaTrustAnchorsPinned: localQualification,
         hostnameVerification: 'node.checkServerIdentity',
         maximumVersion: 'TLSv1.3',
         minimumVersion: 'TLSv1.3',
         sniHostname: route.hostname,
-        trustMode: 'runtime-default-pki',
+        trustMode: localQualification ? 'explicit-ca-loopback-qualification' : 'runtime-default-pki',
         zenonChainIdentityAuthenticated: false,
       })),
       version: admission.profile.policyVersion,
@@ -486,12 +500,18 @@ export function createBoundedJsonRpcHttpsExchangeOwner(
         purpose: 'ONE_CONTEXTV7_RETAINED_CANDIDATE_ATTEMPT',
       })));
     }
+    if (localQualification) put(sourcePolicyDescriptor, 'qualification', freeze(record({
+      localOnly: true, productionRouteQualified: false, humanExecutionAuthority: 'NOT_INFERRED',
+    })));
     sourcePolicyDescriptor = freeze(sourcePolicyDescriptor);
     if (receivesSourcePolicy) {
       apply(receiveSourcePolicyDescriptor, undefined, [sourcePolicyDescriptor]);
       assertInvariant();
     }
-  } catch { throw fixedError(selected ?? internalProfile(), 'configuration_rejected'); }
+  } catch {
+    releaseLocalCa();
+    throw fixedError(selected ?? internalProfile(), 'configuration_rejected');
+  }
 
   const unavailable = rejected(selected, 'unavailable');
   const invalidClose = rejected(selected, 'configuration_rejected');
@@ -502,7 +522,6 @@ export function createBoundedJsonRpcHttpsExchangeOwner(
   let closeOperation = null;
   let closing = false;
   let terminal = false;
-  let closeUncertain = false;
   let closeSettled = false;
   let active = null;
   let lastTime = 0;
@@ -548,6 +567,7 @@ export function createBoundedJsonRpcHttpsExchangeOwner(
   }
   function finishClose() {
     if (closeOperation === null || closeSettled || active !== null) return;
+    releaseLocalCa();
     closeSettled = true;
     if (closeUncertain || retiredErrorObserved() || !invariant()) {
       // A rejected settlement stays uncertain in every subsequent V2 view,
@@ -555,6 +575,12 @@ export function createBoundedJsonRpcHttpsExchangeOwner(
       if (receivesNativeCustody) closeUncertain = true;
       reservedClose.reject(fixedError(selected, 'close_uncertain'));
     } else reservedClose.resolve(undefined);
+  }
+  function releaseLocalCa() {
+    if (localCa === null) return;
+    const owned = localCa; localCa = null; localCaReleaseAttempts++;
+    try { apply(bufferFill, owned, [0]); localCaReleaseOutcome = 'RETURNED'; }
+    catch { localCaReleaseOutcome = 'UNKNOWN'; closeUncertain = true; }
   }
   function zero(value) {
     if (value !== null) {
@@ -871,8 +897,10 @@ export function createBoundedJsonRpcHttpsExchangeOwner(
           }
         }
       });
-      const headers = freeze({ Host: sourcePolicyDescriptor.endpoint.hostname, 'Content-Type': 'application/json', Accept: 'application/json', 'Content-Length': string(body.length), Connection: 'close' });
-      const nativeOptions = freeze({
+      const headers = freeze({ Host: localQualification
+        ? sourcePolicyDescriptor.endpoint.hostname + ':' + localPort : sourcePolicyDescriptor.endpoint.hostname,
+        'Content-Type': 'application/json', Accept: 'application/json', 'Content-Length': string(body.length), Connection: 'close' });
+      const nativeOptionFields = {
         protocol: 'https:', hostname: sourcePolicyDescriptor.endpoint.hostname,
         port: sourcePolicyDescriptor.endpoint.port, path: sourcePolicyDescriptor.endpoint.path,
         method: sourcePolicyDescriptor.request.method,
@@ -884,7 +912,12 @@ export function createBoundedJsonRpcHttpsExchangeOwner(
         maxVersion: sourcePolicyDescriptor.tls.maximumVersion,
         ALPNProtocols: freeze([sourcePolicyDescriptor.tls.alpnProtocol]), agent: gen.agent, headers,
         setHost: false, maxHeaderSize: MAX_HEADER_BYTES, insecureHTTPParser: false, joinDuplicateHeaders: false,
-      });
+      };
+      if (localQualification) {
+        if (localCa === null) invalid();
+        put(nativeOptionFields, 'ca', localCa);
+      }
+      const nativeOptions = freeze(nativeOptionFields);
       assertInvariant();
       gen.requestStarted = true;
       const returned = apply(httpsRequest, undefined, [nativeOptions]);
@@ -952,6 +985,9 @@ export function createBoundedJsonRpcHttpsExchangeOwner(
           : (gen.deadlineTimer !== null ? 1 : 0) + (gen.graceTimer !== null ? 1 : 0),
         closeObserved: closing && closeSettled && gen === null && !unknown,
         countersDescribe: 'OWNER_OBSERVED_REFERENCES_NOT_ALL_OS_HANDLES',
+        ...(localQualification ? { loopbackQualification: freeze(record({ selected: true,
+          ownedCaBytesRetained: localCa !== null, localCaReleaseAttempts, localCaReleaseOutcome,
+          productionRouteQualified: false, authority: 'NONE' })) } : {}),
         nativePhysicalDrain: 'NOT_QUALIFIED', authority: 'NONE' }));
     });
     try {
