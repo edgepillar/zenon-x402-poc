@@ -164,6 +164,14 @@ and retain real complete command receipts. No private profile or successful
 source read grants execution, payment, provider, retry, pilot or production
 authority. The unchanged hosted profile does not run the new producer controls.
 
+The separate [resource and canonical entry-plan component](SERVICE_CREDIT_CAPACITY_PACED_RESOURCE_PLAN.md)
+now accounts for both recorder event ceilings, the v2 single-copy raw layout,
+full role profiles and both managed command streams. Its 75 selected DATA
+controls passed without native execution. Oversized reservations refuse policy
+construction instead of silently reducing the workload. It prepares the actual
+entry plan entirely in memory; it does not implement the task-owned writer or
+independent native-capture verification, and does not change the R4 closure.
+
 The v2 entry passed only a parser check, not execution or positive namespace
 admission. The timing-only DATA serialization comparison removed 866,810 bytes
 from the 4,080-call case without dropping events/checks. It is not a full native
