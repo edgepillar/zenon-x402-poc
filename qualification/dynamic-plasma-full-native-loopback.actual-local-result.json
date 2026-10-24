@@ -1,0 +1,144 @@
+{
+  "kind": "ACTUAL_SELECTED_SYNTHETIC_FULL_NATIVE_DP_LOOPBACK_RESULT",
+  "status": "PASS_THREE_SELECTED_CASES_NOT_PRODUCTION_QUALIFICATION",
+  "date": "2026-10-24",
+  "qualifiedSourceHead": "aaf6967e940780affed0c3517a9f8c4aaafff75f",
+  "sourceBinding": {
+    "manifestPath": "qualification/dynamic-plasma-full-native-loopback.inputs.json",
+    "manifestSha256": "a472e3bcd8840ef4236e395cb918ae5f2a84be9ca45d8f59417c0b77da291933",
+    "sourceRowsSha256": "e6617bdc907d1c2d362e459038bda0801e3eb71e62a8e637b8d5ebb9cedd89b1",
+    "applicationAndProfileFiles": 74,
+    "applicationRuntimeFiles": 69,
+    "packageFiles": 382,
+    "sourceInputFiles": 456,
+    "applicationLauncherAndManifestFilesMatchedQualifiedSourceHead": 80,
+    "allInputsVerifiedBeforeFixtureImport": true,
+    "sourceTransforms": 0,
+    "nativeBuiltinAliases": 0
+  },
+  "runtime": {
+    "node": "24.19.0",
+    "platform": "darwin",
+    "architecture": "arm64",
+    "zenonSdk": "1.0.5",
+    "nobleEd25519": "2.3.0",
+    "nobleHashes": "1.8.0",
+    "ordinaryInstalledNamespaceQualified": false,
+    "nativeOsNetworkSandbox": false,
+    "NodePermissionModel": false
+  },
+  "execution": {
+    "authorizedAttempts": 1,
+    "attemptsEntered": 1,
+    "attemptsRemaining": 0,
+    "opensslCommands": 1,
+    "opensslActualExit": 0,
+    "opensslCaptureComplete": true,
+    "nodeCommands": 1,
+    "nodeChildren": 0,
+    "nodeActualExit": 0,
+    "nodeCaptureComplete": true,
+    "tests": 3,
+    "pass": 3,
+    "fail": 0,
+    "skipped": 0,
+    "cancelled": 0,
+    "todo": 0,
+    "nodeStdout": {
+      "bytes": 2913,
+      "sha256": "b8972ba08ad4ad0e7f050711f2fd5f0f3521fd43c89ac24c0be910ca32738c12"
+    },
+    "nodeStderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "rawCapturesPublished": false
+  },
+  "selectedCases": [
+    {
+      "case": "BOUND",
+      "status": "PASS",
+      "observed": "Actual retained native HTTPS reads, bounded work, SDK signing/preflight, independent pins, V6 custody and one original funding POST reached BOUND and normal joined close."
+    },
+    {
+      "case": "LOST_FUNDING_ACK",
+      "status": "PASS",
+      "observed": "The server dropped the socket after observing the durable-fenced original POST. V6 retained the original bytes as OUTCOME_UNKNOWN; the actual owner vetoed store.close without reopening, replay, replacement or re-signing."
+    },
+    {
+      "case": "EXPIRED_HORIZON_AFTER_SIGNING",
+      "status": "PASS",
+      "observed": "The current read advanced beyond the allowed horizon after signing. Commit was refused before V6 custody and before a funding POST; the original signed candidate was unchanged and normal joined close succeeded."
+    }
+  ],
+  "observed": {
+    "casesEntered": 3,
+    "casesCompleted": 3,
+    "createAttempts": 3,
+    "newSqliteFiles": 3,
+    "independentPinFiles": 3,
+    "syntheticKeys": 1,
+    "transactionSignatures": 3,
+    "uniqueSignedHashes": 3,
+    "tcpConnections": 272,
+    "tlsConnections": 272,
+    "rpcRequests": 270,
+    "fundingRequests": 2,
+    "lostAcks": 1,
+    "normalCloses": 2,
+    "normalReopens": 0,
+    "expectedHeldStores": 1,
+    "unexpectedHeldStores": 0,
+    "heldStoreNotForceClosed": true,
+    "secondaryCleanupFailures": 0,
+    "asyncFailures": 0,
+    "forcedServerSocketDestructions": 0,
+    "ownedRawSocketsAtCompletion": 0,
+    "ownedTlsSocketsAtCompletion": 0,
+    "referenceWindows": 4,
+    "referenceCandidates": 13081,
+    "producerCandidateReservation": 12288,
+    "fixedVerificationReservation": 16384,
+    "aggregateCandidateReservation": 41753,
+    "actualProducerCandidateCount": "NOT_INSTRUMENTED"
+  },
+  "limits": {
+    "maximumLoopbackConnections": 524,
+    "maximumCandidatesPerSearch": 4096,
+    "maximumAggregateCandidates": 65536,
+    "taskQuotaBytes": 4194304,
+    "minimumFreeBytes": 10737418240,
+    "historicalReservationsIncluded": true,
+    "resourceLimitsAreNotAnOsSandbox": true,
+    "performanceBenchmark": false
+  },
+  "taskCompletion": {
+    "state": "CLOSED",
+    "outcome": "SUCCESS",
+    "cleanupDisposition": "HOLD",
+    "cleanupReason": "Child-created SQLite and pin files remain unregistered; their evidence is preserved rather than adopted or deleted.",
+    "cleanupSuccessInferredFromTestPass": false,
+    "selectedResultWasRecordedBeforeTaskClose": true,
+    "finalTaskAndCleanupRecordsInspectedAfterClose": true
+  },
+  "evidenceLimits": {
+    "actualNativeHttps": true,
+    "actualSdkPreflightAndSyntheticSigning": true,
+    "actualV6Sqlite": true,
+    "injectedReadFetchMaterialOwnerOrStore": false,
+    "officialX402RuntimeComposition": "NOT_INCLUDED",
+    "issuedSelectedGrantServiceVerticalSlice": "NOT_INCLUDED",
+    "providerSigning": false,
+    "capabilitySigning": false,
+    "SDKPrepareBlock": false,
+    "externalNetwork": false,
+    "installation": false,
+    "realWalletOrPayment": false,
+    "chainPublication": "NOT_ESTABLISHED",
+    "livePilot": false,
+    "hostedCiForThisResult": "NOT_RUN",
+    "mainQualifiedByThisResult": false,
+    "fullP1Complete": false,
+    "productionQualified": false
+  }
+}

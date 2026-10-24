@@ -1,4 +1,19 @@
-# Full native DP loopback application fixture (unexecuted draft)
+# Full native DP loopback application fixture
+
+## Selected native result, 2026-10-24
+
+One separately authorized attempt passed all three selected cases against the
+frozen manifest below. See the [actual local result](P1_FULL_NATIVE_DP_LOOPBACK_LOCAL_RESULT.md)
+for source binding, observed counters, the consumed one-attempt allowance and
+the separate CLOSED/SUCCESS task versus HOLD cleanup disposition. This does not
+qualify main, official x402/issued-grant integration or production.
+
+## Historical source-only draft
+
+The following pre-run description is retained as historical source-review
+context. Its statements that native admission or cases had not run describe
+the draft-authoring state, not the selected local result above. The original
+source-review JSON is unchanged.
 
 The selected test body now calls the actual local-qualification full factory:
 `createZenonDynamicPlasmaNativeHttpsOriginalFundingSubmissionForLocalQualification`.
