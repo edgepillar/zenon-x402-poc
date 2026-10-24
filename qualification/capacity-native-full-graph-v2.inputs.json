@@ -1,0 +1,187 @@
+{
+  "sourceSelectionVersion": 2,
+  "kind": "FULL_NATIVE_CAPACITY_V2_ALL_ROLES_SOURCE_NOT_EXECUTION",
+  "sourceParent": "50f65804a3353b971f9bfd4b45ecad4bc8114c5f",
+  "runtime": {
+    "node": "24.19.0",
+    "platform": "darwin",
+    "arch": "arm64",
+    "nodeSha256": "dbedff294bab84a0a86c04e15fbcbeb1c97ca10bef1b32b0634cd24b36f62100",
+    "nodeBytes": 121304480
+  },
+  "baselineManifest": {
+    "path": "app/qualification/issued-funding-post-native-vertical.inputs-v3.json",
+    "bytes": 138777,
+    "LF": 3836,
+    "sha256": "51ffb5b0ff0052523c1b7f3d75fa24e9be27e60ca3bcc09236b1f439096aaed1",
+    "gitBlob": "3dc05ccffd306e97056b4ed168d8121f63acebbc"
+  },
+  "baselineApplicationInputsPreserved": 117,
+  "baselinePackageInputsPreserved": 404,
+  "additionalApplicationInputs": [
+    {
+      "path": "app/qualification/capacity-native-full-namespace-v2.preload-common.draft.mjs",
+      "bytes": 19841,
+      "LF": 277,
+      "sha256": "ea86d9aebff7b3e09bbb3bfb720a8d502562841896c87f025914698b355050b2",
+      "gitBlob": "083b5c58e2306fe41afcbaf31ccaaf89730dde06"
+    },
+    {
+      "path": "app/qualification/capacity-native-paired-lane-v2.supervisor.draft.mjs",
+      "bytes": 22410,
+      "LF": 237,
+      "sha256": "be8dd242df3eec463baa7665647c9259660e4e26c000296e344897f2e2d9b1d1",
+      "gitBlob": "2b8d487858176a9946ebca3789361a2fd1db2b2e"
+    },
+    {
+      "path": "app/qualification/capacity-native-payer-lane-v2.namespace.preload.draft.mjs",
+      "bytes": 254,
+      "LF": 3,
+      "sha256": "490105a5836565e90f35d863a41063c01e519a2341598c4c6133cf06b6256d1b",
+      "gitBlob": "f3b490217b694b0beccef7f5f7fe1c701bb0a2ff"
+    },
+    {
+      "path": "app/qualification/capacity-native-payer-lane-v2.owner.draft.mjs",
+      "bytes": 21480,
+      "LF": 340,
+      "sha256": "fdba015995ad10e138fca7596ed324711810bd45cd7a664bb2ce7447142b9f57",
+      "gitBlob": "998d6a55a25e03fb2839bc34e426f6b8425961db"
+    },
+    {
+      "path": "app/qualification/capacity-native-payer-lane-v2.worker.draft.mjs",
+      "bytes": 21279,
+      "LF": 299,
+      "sha256": "8ab5d166d80635363b427228864a55d392d1bd78940e4b38a91786d6c70d73fe",
+      "gitBlob": "4ce31b1435de36438eec1050f545f56d7aaa9f74"
+    },
+    {
+      "path": "app/qualification/capacity-native-payer-lane.protocol.js",
+      "bytes": 9101,
+      "LF": 155,
+      "sha256": "6f24dfd6172ec6df1acc528caecbc22a220b3025f92d2c3ed9508d2e16a0c8e3",
+      "gitBlob": "23ca9ac95597506f3e2a41a5fedc2cd3daecce7b"
+    },
+    {
+      "path": "app/qualification/capacity-native-service-lane-v2.namespace.preload.draft.mjs",
+      "bytes": 258,
+      "LF": 3,
+      "sha256": "66fc9ca885bb984a83f8e357359f9732a8e71dc028d305c1fd88c2fce9a28e72",
+      "gitBlob": "ec036984711d35ef91433c7940cc46440294e1a8"
+    },
+    {
+      "path": "app/qualification/capacity-native-service-lane-v2.owner.draft.mjs",
+      "bytes": 29036,
+      "LF": 312,
+      "sha256": "2f36d0d1ef8fb250358630e30eadcfc157c1764a5e2232d30b23d46957141e6a",
+      "gitBlob": "119d177b7b8627c5d2f8966dc7788ff6cf04eb3d"
+    },
+    {
+      "path": "app/qualification/capacity-native-service-lane-v2.worker.draft.mjs",
+      "bytes": 8340,
+      "LF": 109,
+      "sha256": "815af9c6cbfa2657128393181974794a1c411ebb6b68905f0450ed2ee7e5f802",
+      "gitBlob": "3c6aded0b70096b3eed11dcbbec9e5e0b99d48a8"
+    },
+    {
+      "path": "app/qualification/capacity-native-supervisor-v2.namespace.preload.draft.mjs",
+      "bytes": 264,
+      "LF": 3,
+      "sha256": "39a5d90e5e89bdb541a7498b85d064f36a3a72662b7e13266be18579e5b9d5f3",
+      "gitBlob": "505cbf141e96fd3e5ec605e6d4664443c8807f61"
+    },
+    {
+      "path": "app/qualification/capacity-native-workload-adapter-v2.draft.mjs",
+      "bytes": 15275,
+      "LF": 226,
+      "sha256": "ed09e362cab643a27f7a85896cdf7db10df97f96c333684db1b1b553392073b5",
+      "gitBlob": "93006c41b55005c5a959e130c53c5026bdcd659c"
+    },
+    {
+      "path": "app/qualification/capacity-native-workload-v2.entry.draft.mjs",
+      "bytes": 6672,
+      "LF": 87,
+      "sha256": "30020681ad665284e653a1f5bf1a09b1dd905c78fbdf5f0ad49e1a96d86b5672",
+      "gitBlob": "1c1b381ef8af63a2f159eb3cdf2764fad8ed6648"
+    },
+    {
+      "path": "app/qualification/issued-funding-post-native-vertical.inputs-v3.json",
+      "bytes": 138777,
+      "LF": 3836,
+      "sha256": "51ffb5b0ff0052523c1b7f3d75fa24e9be27e60ca3bcc09236b1f439096aaed1",
+      "gitBlob": "3dc05ccffd306e97056b4ed168d8121f63acebbc"
+    },
+    {
+      "path": "app/src/native-private-directory-identity.js",
+      "bytes": 1927,
+      "LF": 40,
+      "sha256": "f3945ab75a86fd2d5f8f53baddf6fbd684ee55c68139f9c4f061c3d13b9cc844",
+      "gitBlob": "1500d55d3313cb1a02c07b49108eb3bcfa5f20ad"
+    },
+    {
+      "path": "app/src/service-credit-capacity-async-workload-owner-core.js",
+      "bytes": 26130,
+      "LF": 470,
+      "sha256": "a7b8a471e38f3d4c008882a67b752fb0331894a5d13e65f9650114259d189280",
+      "gitBlob": "04c956f48ccbad3ee8b4cdbe1d62983616708389"
+    },
+    {
+      "path": "app/src/service-credit-capacity-native-observation-data.js",
+      "bytes": 6173,
+      "LF": 103,
+      "sha256": "d6d19890334fbb6d7e92e605640d4638154f8e3e10588c8e217bf782a675b7ca",
+      "gitBlob": "aaf6b24f65a59e4b421805d7667a5fdf9e72433f"
+    },
+    {
+      "path": "app/src/service-credit-capacity-recorder.js",
+      "bytes": 10801,
+      "LF": 236,
+      "sha256": "eca9bf4cad4717df5d61457044c2c5d0a6bc00b6af81964d09bf18325d4a46ad",
+      "gitBlob": "bc9b0a8a9abd48033e698e100cdc6ef90d2152c9"
+    },
+    {
+      "path": "app/src/service-credit-capacity-window-recorder.js",
+      "bytes": 13321,
+      "LF": 242,
+      "sha256": "48855e34729ae68c179d6439aed962a719964732c992a83472330b7e41293579",
+      "gitBlob": "6e28e75b4fd6572fbae535ac066334349ed26038"
+    }
+  ],
+  "roleSpecs": {
+    "PAYER": {
+      "kind": "NATIVE_CAPACITY_PAYER_LANE_NODE24_V2",
+      "entry": "app/qualification/capacity-native-payer-lane-v2.worker.draft.mjs",
+      "preloader": "app/qualification/capacity-native-payer-lane-v2.namespace.preload.draft.mjs",
+      "namespace": "getPinnedNativeCapacityPayerLaneNamespaceSnapshotV2",
+      "pathEnv": "X402_NATIVE_CAPACITY_PROFILE_PATH",
+      "shaEnv": "X402_NATIVE_CAPACITY_PROFILE_SHA256"
+    },
+    "SERVICE": {
+      "kind": "NATIVE_CAPACITY_SERVICE_LANE_NODE24_V2",
+      "entry": "app/qualification/capacity-native-service-lane-v2.worker.draft.mjs",
+      "preloader": "app/qualification/capacity-native-service-lane-v2.namespace.preload.draft.mjs",
+      "namespace": "getPinnedNativeCapacityServiceLaneNamespaceSnapshotV2",
+      "pathEnv": "X402_NATIVE_CAPACITY_SERVICE_PROFILE_PATH",
+      "shaEnv": "X402_NATIVE_CAPACITY_SERVICE_PROFILE_SHA256"
+    },
+    "SUPERVISOR": {
+      "kind": "NATIVE_CAPACITY_SUPERVISOR_NODE24_V2",
+      "entry": "app/qualification/capacity-native-workload-v2.entry.draft.mjs",
+      "preloader": "app/qualification/capacity-native-supervisor-v2.namespace.preload.draft.mjs",
+      "namespace": "getPinnedNativeCapacitySupervisorNamespaceSnapshotV2",
+      "pathEnv": "X402_NATIVE_CAPACITY_SUPERVISOR_PROFILE_PATH",
+      "shaEnv": "X402_NATIVE_CAPACITY_SUPERVISOR_PROFILE_SHA256"
+    }
+  },
+  "applicationFiles": 135,
+  "packageFiles": 404,
+  "sourceRowsSha256": "c8e616b5d4a29261434ee3761f89b99ae5b5b73d6938381a65c427fe879d2aa8",
+  "declaredSourceBytes": 4715980,
+  "rolePreloadersImplemented": true,
+  "completeManagedLauncherImplemented": false,
+  "nativeExecuted": false,
+  "sourceTransforms": false,
+  "nativeBuiltinAliases": false,
+  "ordinaryInstalledNamespaceQualified": false,
+  "nativeOsNetworkSandbox": false,
+  "authority": "NONE"
+}
