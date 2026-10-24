@@ -1,0 +1,241 @@
+{
+  "kind": "CURRENT_NATIVE_CLIENT_REQUEST_STOP_COMPONENT_RESULT_AND_NATIVE_SOURCE_CONNECTION_NOT_TLS_RESULT",
+  "status": "PASS_18_COMPONENT_CASES_NATIVE_CLIENT_SOURCE_AND_SYNTAX_ONLY",
+  "sourceParent": "8803841292e280812fef3477f33bc6fce0e983d0",
+  "mainParent": "da26508972cf39bf9d14262054bd6fce8beeb2e9",
+  "sourceFinding": {
+    "kind": "SOURCE_DIAGNOSED_NOT_NATIVE_REPRODUCED",
+    "module": {
+      "path": "src/service-credit-native-https-client-transport.js",
+      "bytes": 12133,
+      "LF": 228,
+      "sha256": "e44e378b029d3747d4fa276c5dde480f81cc075add345d0d15d0aa8b0d9b3f24",
+      "gitBlob": "ab6740f8e82c0cf06d5c268ce0b6750d87d0ddeb"
+    },
+    "observation": "A socket assigned after close was requested but before request-close could enter handshake-timer setup; stop destroyed the request but did not explicitly stop a future socket association.",
+    "newNativeClient": {
+      "path": "src/service-credit-native-https-client-transport.js",
+      "bytes": 13702,
+      "LF": 247,
+      "sha256": "9751ba8b2a86e682fe0375aba3cc6427873c8004475126d4b71c2405c290ed6a",
+      "gitBlob": "6635dd2f656e79b8079007421a69c991920884da"
+    },
+    "implementation": "Actual adapter now tracks socket-to-entry ownership, claims request/socket destroy once, immediately stops late socket assignment before TLS admission, and retains actual close observations.",
+    "hardwiredNativeDestroy": true,
+    "noInjectedNativeFactory": true,
+    "publicClientContractUnchanged": true,
+    "nativeClientImportedByComponent": false,
+    "nativeClientExecuted": false,
+    "nativeTimingImprovementMeasured": false
+  },
+  "actualComponent": {
+    "actualExit": 0,
+    "outputComplete": true,
+    "counts": {
+      "tests": 18,
+      "pass": 18,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "cases": [
+      "ok 1 - construction is inert and exposes no close or handshake authority",
+      "ok 2 - stop before either assignment destroys each later owned handle once",
+      "ok 3 - normal associations permit handshake and normal close destroys nothing",
+      "ok 4 - repeated stop reasons do not repeat destroys or replace the original reason",
+      "ok 5 - late socket after request stop is destroyed immediately without handshake",
+      "ok 6 - late socket after observed request close never destroys the closed request",
+      "ok 7 - observed socket close prevents a later socket destroy entry",
+      "ok 8 - request destroy throw still attempts the socket and never retries either",
+      "ok 9 - socket destroy throw is permanently unknown without a second call",
+      "ok 10 - request destroy reentry cannot acquire another destroy claim",
+      "ok 11 - socket attached inside request destroy is stopped once before returning",
+      "ok 12 - reentrant genuine-close observations release references without redundant destroys",
+      "ok 13 - duplicate assignments cannot replace ownership or destroy unrelated handles",
+      "ok 14 - configuration proxies and getters are refused without invoking their traps",
+      "ok 15 - opaque handle properties stay unread and proxy handles are refused",
+      "ok 16 - late stop and drain never repair the actual close-owner unknown verdict in DATA composition",
+      "ok 17 - wrong arities and after-close reassociation do not mutate live ownership",
+      "ok 18 - invalid stop data is rejected before callbacks and inspection stays immutable"
+    ],
+    "footer": {
+      "entered": 18,
+      "completed": 18,
+      "declaredDestroyEntries": 24,
+      "nativeClientImported": false,
+      "nativeBuiltinAliases": 0,
+      "sourceTransforms": 0,
+      "applicationSockets": 0,
+      "TLS": false,
+      "applicationTimers": 0,
+      "SDK": false,
+      "SQLite": false,
+      "nonce": false,
+      "signing": false,
+      "physicalDrainQualified": false,
+      "authority": "NONE"
+    },
+    "inputs": [
+      {
+        "path": "package.json",
+        "bytes": 2677,
+        "LF": 40,
+        "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+        "gitBlob": "45752ffde39d29666094f7f1c755060d75e43deb"
+      },
+      {
+        "path": "src/service-credit-native-client-request-stop-owner.js",
+        "bytes": 5794,
+        "LF": 113,
+        "sha256": "1a1d9f0dec325210251f3f6aedb92a30e820d04f7a0dd710f25b3c8fd0ec079c",
+        "gitBlob": "d99031babeabc5360d4950fbbe2633b6589aca37"
+      },
+      {
+        "path": "src/service-credit-native-client-close-owner.js",
+        "bytes": 7170,
+        "LF": 149,
+        "sha256": "00366016a37cf71234cb305e860b5d3f406c97f6b6a7af8569ae76726b759c91",
+        "gitBlob": "ed68174f93050d837786ab799b3b6dee5f7e0676"
+      },
+      {
+        "path": "qualification/native-client-request-stop-owner.behavior.draft.mjs",
+        "bytes": 11746,
+        "LF": 190,
+        "sha256": "35bfab5fe4a136f134328a152caebaaeaf23c844a5a4f3624f9b9ad161c29f48",
+        "gitBlob": "bbf782459f4183332662971ee213db9dc1028e95"
+      }
+    ],
+    "streams": {
+      "stdout": {
+        "bytes": 4307,
+        "sha256": "85985f0267b1a4fe51b7c6b23456a5aa8fa22a493d600681b459033c70b26639"
+      },
+      "stderr": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    "NodeCommands": 1,
+    "NodeChildren": 0,
+    "frameworkTimeoutIsNotHardCancellation": true,
+    "declaredHandlesNotNativeBrands": true,
+    "sourceTransforms": 0,
+    "nativeBuiltinAliases": 0,
+    "runtime": {
+      "node": "24.19.0",
+      "platform": "darwin",
+      "arch": "arm64",
+      "nodeSha256": "dbedff294bab84a0a86c04e15fbcbeb1c97ca10bef1b32b0634cd24b36f62100",
+      "actualVersionGuardExecuted": true,
+      "hostAndMachOArchitectureChecked": true
+    },
+    "execution": {
+      "NodePermissionModel": true,
+      "selectedFsReadInputs": [
+        "package.json",
+        "src/service-credit-native-client-request-stop-owner.js",
+        "src/service-credit-native-client-close-owner.js",
+        "qualification/native-client-request-stop-owner.behavior.draft.mjs"
+      ],
+      "compileCacheDisabled": true,
+      "broadTestDiscovery": false,
+      "sourceTransforms": false,
+      "nativeOsNetworkSandboxClaim": false
+    }
+  },
+  "nativeSyntax": {
+    "path": "src/service-credit-native-https-client-transport.js",
+    "syntaxActualExit": 0,
+    "outputComplete": true,
+    "applicationImported": false,
+    "input": {
+      "path": "src/service-credit-native-https-client-transport.js",
+      "bytes": 13702,
+      "LF": 247,
+      "sha256": "9751ba8b2a86e682fe0375aba3cc6427873c8004475126d4b71c2405c290ed6a",
+      "gitBlob": "6635dd2f656e79b8079007421a69c991920884da"
+    },
+    "stdoutBytes": 0,
+    "stderrBytes": 0,
+    "NodeCommands": 1,
+    "nativeTlsExecuted": false,
+    "kind": "SYNTAX_ONLY_NO_MODULE_IMPORT_OR_NATIVE_CONSTRUCTION"
+  },
+  "sourceConnection": {
+    "nativeClientModule": "src/service-credit-native-https-client-transport.js",
+    "componentExport": "createNativeHttpsClientRequestStopOwner",
+    "componentModule": "src/service-credit-native-client-request-stop-owner.js",
+    "lateSocketTrackingPrecedesStop": true,
+    "lateStopPrecedesHandshakeTimerAndSecureConnectListener": true,
+    "nativeRequestIsStillReturnedUnwrapped": true,
+    "socketOwnerRetainedUntilActualSocketClose": true,
+    "requestErrorResponseErrorSocketErrorUseSameStopClaim": true,
+    "noCleanCloseFromDestroyReturn": true,
+    "mainNativeClientMustRemainUnchanged": {
+      "sha": "ab6740f8e82c0cf06d5c268ce0b6750d87d0ddeb",
+      "type": "blob",
+      "mode": "100644"
+    }
+  },
+  "limits": {
+    "componentEvidenceDoesNotQualifyNativeTLS": true,
+    "physicalSocketDrain": "NOT_ESTABLISHED",
+    "realStoreLifetime": "NOT_ESTABLISHED",
+    "OSNetworkSandbox": false,
+    "liveOrProduction": false
+  },
+  "authorityPreserved": {
+    "pendingFullNativeDPManifestSha256": "a472e3bcd8840ef4236e395cb918ae5f2a84be9ca45d8f59417c0b77da291933",
+    "fullNativeDPProfileUnchanged": true,
+    "changedClientNotInPendingDPGraph": true,
+    "oldOneShotGrantsNotReused": true,
+    "noNewNativeTLS": 0,
+    "noOpenSsl": 0,
+    "noSDK": 0,
+    "noSQLite": 0,
+    "noNonce": 0,
+    "noSigning": 0,
+    "newManagedRoots": 0,
+    "newManagedTasks": 0,
+    "newQualificationScratchBytes": 0,
+    "ordinaryBuyerChanged": false,
+    "automationsChanged": false
+  },
+  "publication": {
+    "eligibleSourceFiles": [
+      "src/service-credit-native-client-request-stop-owner.js",
+      "src/service-credit-native-https-client-transport.js",
+      "qualification/native-client-request-stop-owner.behavior.draft.mjs",
+      "qualification/native-client-request-stop-owner.actual-local-result.json",
+      "docs/P2_NATIVE_CLIENT_LATE_SOCKET_STOP.md"
+    ],
+    "eligibleMainFiles": [
+      "src/service-credit-native-client-request-stop-owner.js",
+      "qualification/native-client-request-stop-owner.behavior.draft.mjs",
+      "qualification/native-client-request-stop-owner.actual-local-result.json",
+      "docs/P2_NATIVE_CLIENT_LATE_SOCKET_STOP.md"
+    ],
+    "nativeClientRuntimeEditEligibleForMain": false,
+    "CIAtParents": {
+      "source": {
+        "checks": 0,
+        "statuses": 0,
+        "runs": 0
+      },
+      "main": {
+        "checks": 0,
+        "statuses": 0,
+        "runs": 0
+      }
+    },
+    "CIInterpretation": "NO_CURRENT_PASS_INFERRED",
+    "publicationOutcome": "VERIFY_SEPARATELY_BY_EXACT_COMMIT_READBACK",
+    "workflowDispatch": false
+  },
+  "fullP0Complete": false,
+  "fullP1Complete": false,
+  "fullP2Complete": false,
+  "fullRoadmapComplete": false,
+  "productionQualified": false
+}
