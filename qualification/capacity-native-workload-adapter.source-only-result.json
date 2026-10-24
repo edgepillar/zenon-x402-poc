@@ -1,0 +1,136 @@
+{
+  "schemaVersion": 1,
+  "kind": "ACTUAL_NATIVE_ADAPTER_INERT_DATA_NOT_WORKLOAD_EXECUTION",
+  "recordedDate": "2026-10-24",
+  "status": "SOURCE_AND_INERT_CONSTRUCTION_CHECKS_ONLY_CURRENT_NATIVE_GRAPH_NOT_ADMITTED",
+  "sourceParent": "30e683a181f6f2008ec3131241a91fcb717c0c48",
+  "sourcePins": [
+    {
+      "path": "package.json",
+      "bytes": 2677,
+      "LF": 40,
+      "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+      "gitBlob": "45752ffde39d29666094f7f1c755060d75e43deb"
+    },
+    {
+      "path": "src/service-credit-capacity-async-workload-owner-core.js",
+      "bytes": 26130,
+      "LF": 470,
+      "sha256": "a7b8a471e38f3d4c008882a67b752fb0331894a5d13e65f9650114259d189280",
+      "gitBlob": "04c956f48ccbad3ee8b4cdbe1d62983616708389"
+    },
+    {
+      "path": "src/service-credit-capacity-window-recorder.js",
+      "bytes": 13321,
+      "LF": 242,
+      "sha256": "48855e34729ae68c179d6439aed962a719964732c992a83472330b7e41293579",
+      "gitBlob": "6e28e75b4fd6572fbae535ac066334349ed26038"
+    },
+    {
+      "path": "src/service-credit-capacity-recorder.js",
+      "bytes": 10801,
+      "LF": 236,
+      "sha256": "eca9bf4cad4717df5d61457044c2c5d0a6bc00b6af81964d09bf18325d4a46ad",
+      "gitBlob": "bc9b0a8a9abd48033e698e100cdc6ef90d2152c9"
+    },
+    {
+      "path": "src/service-credit-capacity-native-observation-data.js",
+      "bytes": 6173,
+      "LF": 103,
+      "sha256": "d6d19890334fbb6d7e92e605640d4638154f8e3e10588c8e217bf782a675b7ca",
+      "gitBlob": "aaf6b24f65a59e4b421805d7667a5fdf9e72433f"
+    },
+    {
+      "path": "qualification/capacity-native-paired-lane.supervisor.draft.mjs",
+      "bytes": 21812,
+      "LF": 231,
+      "sha256": "395d2fbf52b8138fb9bda776def23dcbef74cc5c866b9eb3b0d33ade7a99566f",
+      "gitBlob": "6db4fcce6643bc11833f282109a4798e892c4008"
+    },
+    {
+      "path": "qualification/capacity-native-workload-adapter.draft.mjs",
+      "bytes": 15184,
+      "LF": 225,
+      "sha256": "8ad3634a26f1c5a4516df62493295e1f9785976a8af125dde5dc63b11d9ef2b9",
+      "gitBlob": "ed3b91c224a5441f950321543a4198a71fcd1ba6"
+    },
+    {
+      "path": "qualification/capacity-native-workload-adapter.inert-behavior.mjs",
+      "bytes": 4480,
+      "LF": 70,
+      "sha256": "4ee29fc8bc5442f755631818bdfeca7457e22927784c9d9905f575d65d0c975f",
+      "gitBlob": "69f17bb6c84f843515dacf02b220b71a053b6b2f"
+    }
+  ],
+  "actual": {
+    "exit": 0,
+    "complete": true,
+    "counts": {
+      "tests": 7,
+      "suites": 0,
+      "pass": 7,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "stdoutBytes": 1685,
+    "stdoutSha256": "4e2a2559962fb403339a33d2bf4230d5b4f00750b35bb5b5221c21dadbca4ca6",
+    "stderrBytes": 0,
+    "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "sourcePinsUnchanged": true
+  },
+  "actualImportedDefinitions": {
+    "newAsyncOwner": true,
+    "realRecorders": true,
+    "realPairedLaneSupervisor": true,
+    "realWorkloadAdapter": true,
+    "observationDataHelper": true
+  },
+  "notEntered": {
+    "nativePairConstructor": true,
+    "validRun": true,
+    "validStop": true,
+    "adapterNativeTimers": true,
+    "processFork": true,
+    "SDK": true,
+    "SQLite": true,
+    "socket": true,
+    "keys": true,
+    "signatures": true,
+    "nonceSearch": true
+  },
+  "resources": {
+    "newRoots": 0,
+    "qualificationScratchCreated": false,
+    "sourceCopiesCreated": 0,
+    "archivesCreated": 0,
+    "taskStorageMetadataChanged": false
+  },
+  "otherCurrentChecks": {
+    "asyncOwnerDataPassed": 65,
+    "observationHelperDataPassed": 16,
+    "theseAreSeparateDirectComponentCommands": true,
+    "historicalCountsNotSummed": true
+  },
+  "sourceLimitations": {
+    "notCompleteNativeManifest": true,
+    "missingServiceAndSupervisorPreloaders": true,
+    "missingPrivateProfileBuilderAndFiniteLauncher": true,
+    "oldMutableDirectoryNlinkGuardNotWeakened": true,
+    "stableIdentityMigrationPending": true,
+    "actualPhysicalLaneRootIndependenceNotEstablished": true,
+    "oldNativeAllowancesNotReused": true
+  },
+  "qualification": {
+    "nativeWorkload": false,
+    "nativeCleanup": false,
+    "measuredCapacity": false,
+    "sustainableThroughput": false,
+    "liveChain": false,
+    "economicPilot": false,
+    "production": false,
+    "authority": "NONE"
+  },
+  "hostedCi": "Unchanged separate 27-control main profile; none of these 65/16/7 component checks are part of that hosted selection."
+}
