@@ -10,6 +10,7 @@ import { performance } from 'node:perf_hooks';
 import { setTimeout, clearTimeout } from 'node:timers';
 import { createBoundedJsonRpcReadAdmission } from './bounded-json-rpc-read-admission.js';
 import { createNativeReadRetiredErrorLatch } from './native-read-retired-error-latch.js';
+import { nativeReadGenerationHandlesClosed } from './native-read-generation-handles-closed.js';
 // Internal, default-off, pre-pinned, method-neutral HTTPS exchange owner.
 // Closed static wrappers retain their public route/configuration grammars and
 // method adapters; this module alone owns native HTTPS/socket lifecycle. It
@@ -92,6 +93,7 @@ const MAX_BODY = 1052672;
 const MAX_REQUEST_BYTES = 1024;
 const CREATE_ADMISSION = createBoundedJsonRpcReadAdmission;
 const RETIRED_ERROR_LATCH = createNativeReadRetiredErrorLatch;
+const GENERATION_HANDLES_CLOSED = nativeReadGenerationHandlesClosed;
 const MAX_HEADER_BYTES = 16384;
 const MAX_HEADER_PAIRS = 64;
 const CONFIGURATION_FIELDS = freeze(['route', 'timeoutMs', 'closeGraceMs']);
@@ -627,9 +629,15 @@ export function createBoundedJsonRpcHttpsExchangeOwner(
       } catch { fail(gen); }
     };
   }
+  function generationHandlesClosed(gen) {
+    if (!receivesNativeCustody) return !gen.requestStarted
+      || (gen.requestClosed && (!gen.socketAssigned || gen.socketClosed));
+    return GENERATION_HANDLES_CLOSED(gen.requestStarted, gen.requestClosed,
+      gen.socketAssigned, gen.socketClosed, gen.response !== null, gen.responseClosed);
+  }
   function finish(gen) {
     if (gen.retired || gen.creating || gen.cleaning || gen.resuming) return;
-    const closed = !gen.requestStarted || (gen.requestClosed && (!gen.socketAssigned || gen.socketClosed));
+    const closed = generationHandlesClosed(gen);
     if (gen.graceExpired && !closed) gen.uncertain = true;
     // A socket close cannot stand in for a still-live request. With no socket,
     // keep the request guard through grace to catch a late socket assignment.
@@ -663,7 +671,7 @@ export function createBoundedJsonRpcHttpsExchangeOwner(
       const remaining = gen.cleanupDeadline - clock();
       if (remaining > 0) { schedule(gen, 'graceTimer', () => graceExpired(gen), remaining); return; }
       gen.graceExpired = true;
-      if (gen.requestStarted && (!gen.requestClosed || (gen.socketAssigned && !gen.socketClosed))) gen.uncertain = true;
+      if (!generationHandlesClosed(gen)) gen.uncertain = true;
       if (gen.requestClosedAt !== null && gen.requestClosedAt > gen.cleanupDeadline) gen.uncertain = true;
       finish(gen);
     } catch { gen.uncertain = true; rejectGeneration(gen); retire(gen); }
@@ -758,7 +766,21 @@ export function createBoundedJsonRpcHttpsExchangeOwner(
       gen.response = value;
       listen(gen, value, 'error', () => fail(gen));
       listen(gen, value, 'aborted', () => fail(gen));
-      listen(gen, value, 'close', () => { if (!gen.bodyEnded) fail(gen); });
+      listen(gen, value, 'close', () => {
+        // The legacy selection keeps its previous acceptance contract. The
+        // retained-custody selection must observe THIS response's own close;
+        // request/socket close and body end cannot substitute for that event.
+        if (!receivesNativeCustody) { if (!gen.bodyEnded) fail(gen); return; }
+        if (gen.retired) return;
+        gen.responseClosed = true;
+        try {
+          const observedAt = clock();
+          if (gen.cleanupStarted && observedAt > gen.cleanupDeadline) gen.uncertain = true;
+          if (!invariant() || (!gen.failed && observedAt >= gen.deadline) || gen.uncertain) { fail(gen); return; }
+          if (!gen.bodyEnded && !gen.failed && !closing) { fail(gen); return; }
+          finish(gen);
+        } catch { gen.uncertain = true; fail(gen); }
+      });
       if (!gen.secure || gen.failed || closing || terminal) invalid();
       gen.expectedLength = responseLength(value);
       gen.buffer = apply(bufferAlloc, Buffer, [gen.expectedLength]);
@@ -811,6 +833,7 @@ export function createBoundedJsonRpcHttpsExchangeOwner(
       deadline: 0, cleanupDeadline: 0, deadlineTimer: null, graceTimer: null,
       received: 0, expectedLength: 0, creating: true, cleaning: false, resuming: false,
       requestStarted: false, requestClosed: false, requestClosedAt: null, socketAssigned: false, socketClosed: false,
+      responseClosed: false,
       requestDestroyed: false, responseDestroyed: false, socketDestroyed: false, agentDestroyed: false,
       secure: false, bodyEnded: false, failed: false, uncertain: false, settled: false,
       retired: false, cleanupStarted: false, graceExpired: false,
