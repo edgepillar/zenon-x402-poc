@@ -10,11 +10,13 @@ server, signer, payment planner or network selection.
 The [machine-readable review](../qualification/dynamic-plasma-native-main-adoption.review.json)
 pins each transferred file. Applying those eight blobs to base main makes all
 69 application runtime modules byte-identical to the earlier
-[three-case native DP result](P1_FULL_NATIVE_DP_LOOPBACK_LOCAL_RESULT.md).
+[three-case native DP result](https://github.com/edgepillar/zenon-x402-poc/blob/ef0951b73e1c1b0d3b6eda00f5373fcadebf638e/docs/P1_FULL_NATIVE_DP_LOOPBACK_LOCAL_RESULT.md).
 The earlier qualified source is
 `aaf6967e940780affed0c3517a9f8c4aaafff75f`; its manifest, recipe, raw-evidence
 references and result remain unchanged. This is source-byte correspondence,
 not a new native run or a relabelled current-main native result.
+Historical native recipes, manifests and results are resolved at that immutable
+source commit; they are not silently added to main's runnable test selection.
 
 | Runtime delta | Boundary |
 | --- | --- |
