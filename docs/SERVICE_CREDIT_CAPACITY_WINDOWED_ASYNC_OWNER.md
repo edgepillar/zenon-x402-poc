@@ -94,7 +94,8 @@ economic acceptance, live pilot and production remain separate gates.
 
 An opt-in [paced source workload composition](SERVICE_CREDIT_CAPACITY_PACED_WORKLOAD_OWNER.md)
 now adds bounded minimum-gap measured-call admission with separate queue and
-actual source-entry latency distributions. Its 56 DATA controls passed, including
-4,080 synthetic measured calls. It is not selected by the pending native R4
+actual source-entry latency distributions. Its current
+[75 DATA controls](SERVICE_CREDIT_CAPACITY_PACED_PRIVATE_TIMING.md) passed, including
+4,080 synthetic measured calls and separate private timing capture. It is not selected by the pending native R4
 graph and does not establish fixed-rate load or native sustainable capacity.
 
