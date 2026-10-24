@@ -1,0 +1,497 @@
+{
+  "kind": "SOURCE_BOUND_FULL_NATIVE_DP_LOOPBACK_FIXTURE_REVIEW_NOT_APPLICATION_EXECUTION",
+  "status": "PASS_SOURCE_ADMISSION_AND_FOUR_FILE_SYNTAX_ONLY_FULL_NATIVE_NOT_RUN",
+  "sourceParent": "0be13c3b5662f2181be356f7ff21a4545b4bea95",
+  "mainParent": "da26508972cf39bf9d14262054bd6fce8beeb2e9",
+  "sourceManifest": {
+    "path": "qualification/dynamic-plasma-full-native-loopback.inputs.json",
+    "sha256": "a472e3bcd8840ef4236e395cb918ae5f2a84be9ca45d8f59417c0b77da291933",
+    "sourceRowsSha256": "e6617bdc907d1c2d362e459038bda0801e3eb71e62a8e637b8d5ebb9cedd89b1",
+    "applicationFiles": 74,
+    "applicationRuntimeFiles": 69,
+    "packageFilesDeclared": 382,
+    "packageFilesRead": 0,
+    "sourceFilesDeclared": 456,
+    "declaredSourceBytes": 2833016
+  },
+  "implemented": {
+    "actualFullFactory": "createZenonDynamicPlasmaNativeHttpsOriginalFundingSubmissionForLocalQualification",
+    "actualFactoryModule": "src/zenon/dynamic-plasma-native-https-original-funding-submission.js",
+    "actualV6Factory": "createZenonFundingPayerRecoveryOriginalPaymentSqliteStoreV6",
+    "hardwiredNativeReadAndFunding": true,
+    "noReadFetchMaterialOwnerOrStoreSubstitute": true,
+    "threeAuthoredScenarios": [
+      "positive work then original funding POST and BOUND close",
+      "lost funding ACK preserves original bytes and refuses actual store close",
+      "horizon expiry after signing refuses before V6 custody and funding POST"
+    ],
+    "nativeServerTranscript": "EXACT_ROLE_PATHS_METHODS_IDS_PARAMS_AND_ORIGINAL_PAYMENT_HEADER",
+    "defaultLauncherMode": "SOURCE_ONLY",
+    "privateProfileIncludesLocalUrls": "NEVER_PUBLISH",
+    "newNativeBuiltinAliases": 0,
+    "sourceTransforms": 0,
+    "ordinaryInstalledNamespaceQualified": false
+  },
+  "actualSourceAdmission": {
+    "actualExit": 0,
+    "outputComplete": true,
+    "summary": {
+      "event": "FULL_NATIVE_LOOPBACK_SOURCE_ADMITTED",
+      "applicationFiles": 74,
+      "applicationRuntimeFiles": 69,
+      "packageFilesDeclared": 382,
+      "packageFilesRead": 0,
+      "effectsExecuted": false,
+      "authority": "NONE"
+    },
+    "actualApplicationFilesRead": 74,
+    "actualLauncherInputsRead": 5,
+    "nativePlanExecuted": false,
+    "managerImported": false,
+    "packageModulesImported": false
+  },
+  "actualSyntax": {
+    "kind": "SYNTAX_ONLY_NOT_IMPORT_OR_RUNTIME",
+    "results": [
+      {
+        "path": "qualification/dynamic-plasma-full-native-loopback.fixture.draft.mjs",
+        "exit": 0,
+        "stdoutBytes": 0,
+        "stderrBytes": 0
+      },
+      {
+        "path": "qualification/dynamic-plasma-full-native-loopback.behavior.draft.mjs",
+        "exit": 0,
+        "stdoutBytes": 0,
+        "stderrBytes": 0
+      },
+      {
+        "path": "qualification/dynamic-plasma-full-native-loopback.selection.draft.mjs",
+        "exit": 0,
+        "stdoutBytes": 0,
+        "stderrBytes": 0
+      },
+      {
+        "path": "qualification/dynamic-plasma-full-native-loopback.preload.draft.mjs",
+        "exit": 0,
+        "stdoutBytes": 0,
+        "stderrBytes": 0
+      }
+    ],
+    "inputs": [
+      {
+        "path": "qualification/dynamic-plasma-full-native-loopback.behavior.draft.mjs",
+        "bytes": 11320,
+        "LF": 198,
+        "sha256": "5cfba4dbee41c508bfa074753e9ede5572b932caa742c5d711e260df8de8dff3",
+        "gitBlob": "ef45a6f3dc9bfb2517d3a27c382a5fc1e38f63a4"
+      },
+      {
+        "path": "qualification/dynamic-plasma-full-native-loopback.fixture.draft.mjs",
+        "bytes": 24351,
+        "LF": 375,
+        "sha256": "f28e3d782ab7c56b80e6f1e483c639b5b93f07559ff8bf8da07708439e3f1ab3",
+        "gitBlob": "d8ca3c4a5b727275046d3368dc0dcc8352526da5"
+      },
+      {
+        "path": "qualification/dynamic-plasma-full-native-loopback.preload.draft.mjs",
+        "bytes": 12060,
+        "LF": 244,
+        "sha256": "0c9d1debccee661b0e2682617b0af55c61b324ea1c5b8b5fdd0e994c7b3d6a76",
+        "gitBlob": "df7ebdea780085603eff07335789ca853d1830e5"
+      },
+      {
+        "path": "qualification/dynamic-plasma-full-native-loopback.selection.draft.mjs",
+        "bytes": 1812,
+        "LF": 26,
+        "sha256": "faca4303ed279a1dbfc8267311c477f10a1c0054efd66e297a4b5120c2cd4e26",
+        "gitBlob": "3e198561ddeb14a3af75c923a803ff9052131ec5"
+      }
+    ],
+    "applicationImports": 0
+  },
+  "actualPythonSyntax": {
+    "method": "stdlib AST parse during manifest construction",
+    "selectedAuthoredFiles": [
+      "qualification/dynamic-plasma-full-native-loopback-profile.draft.py",
+      "qualification/run-dp-full-native-loopback.local.py"
+    ],
+    "status": "PASS_SYNTAX_ONLY_NO_NATIVE_BRANCH_EXECUTION"
+  },
+  "sourceParentBinding": {
+    "unchangedParentApplicationFiles": 70,
+    "all69ApplicationModulesMatchSourceParent": true,
+    "parentApplicationPins": [
+      {
+        "path": "package.json",
+        "gitBlob": "45752ffde39d29666094f7f1c755060d75e43deb"
+      },
+      {
+        "path": "src/canonical.js",
+        "gitBlob": "5367f9c72ee13017a61630e1f0cffdced21d52c4"
+      },
+      {
+        "path": "src/live-observation.js",
+        "gitBlob": "d29ef9b4c23db397006550728cfb35429c7c09f2"
+      },
+      {
+        "path": "src/live-runtime.js",
+        "gitBlob": "25d34b1e37de42e6eec81590c2f26e5158c4d3b1"
+      },
+      {
+        "path": "src/service-credit-bounded-operation-drain.js",
+        "gitBlob": "9cb4987ecd835e7b558d6088d562f417a9179da8"
+      },
+      {
+        "path": "src/service-credit-funding-post-native-https-transport.js",
+        "gitBlob": "ea47b0e9cc9479f6bb98b07b3b886d6100c630e3"
+      },
+      {
+        "path": "src/service-credit-funding-post-native-response.js",
+        "gitBlob": "0bae9c30c7a11624612418bb6a1e7643effb0775"
+      },
+      {
+        "path": "src/service-credit-funding-post-readable-flow.js",
+        "gitBlob": "ac52bba7279286e6a0b33b0feca57d8a1eefc6c5"
+      },
+      {
+        "path": "src/service-credit-native-client-close-owner.js",
+        "gitBlob": "ed68174f93050d837786ab799b3b6dee5f7e0676"
+      },
+      {
+        "path": "src/service-credit-original-request-custody-contract.js",
+        "gitBlob": "f911d42d01b69e6577f9bcd66f4ed59aab8ab882"
+      },
+      {
+        "path": "src/service-credit-pilot-original-payment-checkpoint.js",
+        "gitBlob": "51c6391bc22f561ebff0005ced31e538aa83f4fa"
+      },
+      {
+        "path": "src/service-credit-zenon-funding-post-v1-client.js",
+        "gitBlob": "98fa7d808eead2b1663487bb259426c09d5eaac9"
+      },
+      {
+        "path": "src/service-credit-zenon-funding-post-v1-payer-recovery-owner.js",
+        "gitBlob": "cd030bb52146ae3445822224de25268f1c972b78"
+      },
+      {
+        "path": "src/service-credit-zenon-funding-post-v1-payer-recovery-sqlite-store.js",
+        "gitBlob": "e6af1576df21a20a466d089a4ba6ecdf7380a0df"
+      },
+      {
+        "path": "src/settlement-journal.js",
+        "gitBlob": "aade1a802009125a42dd6a0ee81a28f9830f521e"
+      },
+      {
+        "path": "src/x402-wire.js",
+        "gitBlob": "fb060d4e349b1c31a1219a0cc137af250a8a2291"
+      },
+      {
+        "path": "src/zenon-payment.js",
+        "gitBlob": "f6645973803cb430d94f12698b14b7684c27493b"
+      },
+      {
+        "path": "src/zenon/bounded-dynamic-plasma-strategy.js",
+        "gitBlob": "ee85b7a4da8bf4190ae099e6bc5074059fccebbc"
+      },
+      {
+        "path": "src/zenon/bounded-json-rpc-https-exchange-owner.js",
+        "gitBlob": "1eb4626a7bdecc496811ebcd59464500f4ca9937"
+      },
+      {
+        "path": "src/zenon/bounded-json-rpc-read-admission.js",
+        "gitBlob": "9e9ee352d7cf0013d96851c769f2a205ccf98449"
+      },
+      {
+        "path": "src/zenon/bounded-json-rpc-read-core.js",
+        "gitBlob": "3bd98a83413eb13e3bceb097d35fb874b4c030a2"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-account-frontier-read.js",
+        "gitBlob": "6fbb894a4db5db15e4ded168fd663eeb24898bf8"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-account-state-read-transport.js",
+        "gitBlob": "751a4b8c5a0c42e1d2b0a47af9d2ef7264229821"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-bounded-material-exchange.js",
+        "gitBlob": "1b84b826d4fc53f40127272e6b9651328961a085"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-bounded-original-funding-configuration.js",
+        "gitBlob": "60dcbfd8897b5e6f4434870936ae782c5f5886e2"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-compatibility.js",
+        "gitBlob": "3811b748b3f905e454c8a4af4650bb7f89eb1cf2"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-json-rpc-read-transport.js",
+        "gitBlob": "0475b7ab42889f67fb030fa7344d73d8bd6957d7"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-native-funding-close-session.js",
+        "gitBlob": "df3a376c6a1e4291a49eb65d07a256ea10aa07fe"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-native-https-original-funding-submission.js",
+        "gitBlob": "2f91f1df738364a0f8892fec0b111d490dd1d95e"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-observation-collector.js",
+        "gitBlob": "171a49f29379866ed111031d15423634ac2d17b4"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-observation-normalizer.js",
+        "gitBlob": "c406db8471aa6c8afd812c222c673c809491cf00"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-observed-balance-deferred-material-planner.js",
+        "gitBlob": "3c62fecdfa649c1775ab233d4157b567bc809c06"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-observed-balance-user-send-attempt.js",
+        "gitBlob": "e81cf35120457aa520036042899ccd43bf3d1835"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-observed-balance-user-send-read-adapter.js",
+        "gitBlob": "1f36eb5c025aa543ae9cca482a7ba49b307cb24d"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-observed-original-checkpoint.js",
+        "gitBlob": "4d366df7eec92f9137381e90ca52e2f6fc1569a0"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-observed-user-send-adapter.js",
+        "gitBlob": "bbda0ebf5a6d4d21f159f31304165810ebd89a77"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-observed-user-send-subject.js",
+        "gitBlob": "5e29c6d70c965a4d72c0902504e57dae852a6223"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-original-funding-bounded-read-close.js",
+        "gitBlob": "fa279111addab91315d54f7333bbbb9266369c53"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-original-funding-data.js",
+        "gitBlob": "08865c6d84895cba9ff5acbcc0fba66a991ca007"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-original-funding-preparation.js",
+        "gitBlob": "52174703adc79f457081dfaecde0e308cfc5ccdc"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-original-funding-read-close.js",
+        "gitBlob": "f2a1b30bb02a6b192fc3b0fe0b4fc5b65e2d297b"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-original-funding-store-claim.js",
+        "gitBlob": "2a3e9da5a64f55ff631b5e33371226568b07aa4c"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-original-funding-submission.js",
+        "gitBlob": "169e70d4e5678d0e2f07f9dcbe0b3f1167f690e3"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-price-policy.js",
+        "gitBlob": "649dd09b60236b43c91d22e34b76f71f4b661361"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-required-fused-policy-adapter.js",
+        "gitBlob": "b592aafd4c41461318376ea9acc1373f99317455"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-required-fused-quote.js",
+        "gitBlob": "e820fd31ffde4ef77a2efa6e1fd3ed1775778726"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-retained-account-exchange-gate.js",
+        "gitBlob": "39104ab5dbea4195a778e7226b9076fcd1f31366"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-retained-https-read-owners.js",
+        "gitBlob": "f03533b766e8f5f1e98c9a2b878e59a49631c5ce"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-retained-https-read-session.js",
+        "gitBlob": "a18bec3918105f7cd2151d5a71d4b436401fe1a3"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-retained-read-session-core.js",
+        "gitBlob": "b9151955b073be614946525e70320600f7a6850b"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-signed-original-handoff.js",
+        "gitBlob": "4b3a18cb94b1daded74b798b81e881948cbb4637"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-unsigned-original-checkpoint.js",
+        "gitBlob": "46ac7a4761b078048c205eaf531a7aab7a1d81a9"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-user-send-assembly.js",
+        "gitBlob": "a0537856f6692d278c9043ab9c1c734d1bde61ba"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-user-send-balance-read.js",
+        "gitBlob": "f629aca2410dfd194fd73d3a651e624baa633386"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-user-send-fixed-work.js",
+        "gitBlob": "4ce2a790df84c77bc76615e5eebc309ecd2868ac"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-user-send-key-binding.js",
+        "gitBlob": "c366f0fee4132604b40604547fe22f1bc1dba65d"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-user-send-nonce-search.js",
+        "gitBlob": "ec65d9e2ea6522e07bb80b95b9dc398d7714af2f"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-user-send-pre-work-key-binding.js",
+        "gitBlob": "5aba63fd478cb3e32c2b409dd48034f7256a38b3"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-user-send-work-binding.js",
+        "gitBlob": "a329d521458a5c5b6dbc87194d91d4165d5e759c"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-user-send-work-input.js",
+        "gitBlob": "dad4febf4ef6f09216640245c7e3805e01ad0127"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-user-send-work-request.js",
+        "gitBlob": "d4e9731b0af82a892226c2817e9d5a5273b39599"
+      },
+      {
+        "path": "src/zenon/internal/legacy-sdk-1-0-5-signed-composite.js",
+        "gitBlob": "3dbfdde3ae6ab2643b656665cd69aec1a160840d"
+      },
+      {
+        "path": "src/zenon/native-read-generation-handles-closed.js",
+        "gitBlob": "466c20d9849c81306ba10f6001eb9951f14cd55d"
+      },
+      {
+        "path": "src/zenon/native-read-loopback-qualification-configuration.js",
+        "gitBlob": "15ae6af21f8f07351e7e4f680557d247cc379b88"
+      },
+      {
+        "path": "src/zenon/native-read-retired-error-latch.js",
+        "gitBlob": "97cff24934379cf9d8b1ae9b5fe43df68afd6483"
+      },
+      {
+        "path": "src/zenon/operator-trusted-chain-policy.js",
+        "gitBlob": "77446dce50e61831f29352ec2858a9047bd357ca"
+      },
+      {
+        "path": "src/zenon/operator-trusted-local-devnet-profile.js",
+        "gitBlob": "4d1a261ff9de3b660a3fb2584a87b1d67c237b0a"
+      },
+      {
+        "path": "src/zenon/operator-trusted-testnet-profile.js",
+        "gitBlob": "a1c31e55677ef34ee76d45575b80ad30466ce1e7"
+      },
+      {
+        "path": "src/zenon/plasma-strategy.js",
+        "gitBlob": "5cddc2d270aaf043e6e43145e95ffe0be3dde475"
+      },
+      {
+        "path": "src/zenon/transaction-planner.js",
+        "gitBlob": "17b49a3d53974c9b3846ec6f352d6e8974bad7d3"
+      }
+    ],
+    "actualGraphNotImported": true
+  },
+  "proposedFutureCeilingNotAuthority": {
+    "maximumRuns": 1,
+    "selectedCases": 3,
+    "opensslCommandsPerRun": 1,
+    "nodeCommandsPerRun": 1,
+    "nodeChildren": 0,
+    "loopbackConnectionsPerRun": 524,
+    "expectedConnectionsIfAllPass": 272,
+    "newSqliteFiles": 3,
+    "independentPinFiles": 3,
+    "syntheticKeys": 1,
+    "syntheticTransactionSignatures": 3,
+    "maximumCandidatesPerSearch": 4096,
+    "maximumReferenceCandidates": 32768,
+    "maximumProducerCandidateReservation": 12288,
+    "fixedVerificationCandidateReservation": 16384,
+    "maximumAggregateCandidates": 65536,
+    "taskQuotaBytes": 4194304,
+    "externalNetwork": false,
+    "realWalletOrPayment": false,
+    "providerSigning": false,
+    "capabilitySigning": false,
+    "SDKPrepareBlock": false,
+    "nativeOsNetworkSandbox": false
+  },
+  "executionEffects": {
+    "NodeSyntaxOnlyCommandsThisTurn": 12,
+    "sourceOnlyLauncherCommandsThisTurn": 3,
+    "OpenSslCommands": 0,
+    "nativeNodeCommands": 0,
+    "newKeys": 0,
+    "newSignatures": 0,
+    "newSQLiteFiles": 0,
+    "newPinFiles": 0,
+    "nonceCandidates": 0,
+    "connections": 0,
+    "packageInstallations": 0,
+    "managedRoots": 0,
+    "managedTasks": 0,
+    "qualificationScratchBytes": 0
+  },
+  "evidenceLimits": {
+    "actualFullNativeApplicationExecuted": false,
+    "threeNativeScenariosExecuted": false,
+    "officialX402CompositionIncluded": false,
+    "privatePackageRootAdmitted": false,
+    "physicalSocketDrainEstablished": false,
+    "crashRecoveryEstablished": false,
+    "cleanupHOLDMayBeExpectedAfterFutureChildFiles": true,
+    "OSNetworkSandbox": false,
+    "narrowFundingTlsAuthorityNotExpanded": true,
+    "oldAllowancesNotReused": true
+  },
+  "publication": {
+    "eligibleSourceFiles": [
+      "qualification/dynamic-plasma-full-native-loopback.fixture.draft.mjs",
+      "qualification/dynamic-plasma-full-native-loopback.behavior.draft.mjs",
+      "qualification/dynamic-plasma-full-native-loopback.selection.draft.mjs",
+      "qualification/dynamic-plasma-full-native-loopback.preload.draft.mjs",
+      "qualification/dynamic-plasma-full-native-loopback-profile.draft.py",
+      "qualification/run-dp-full-native-loopback.local.py",
+      "qualification/dynamic-plasma-full-native-loopback.storage-policy.json",
+      "qualification/dynamic-plasma-full-native-loopback.inputs.json",
+      "qualification/dynamic-plasma-full-native-loopback.source-review.json",
+      "docs/P1_FULL_NATIVE_DP_LOOPBACK_FIXTURE_DRAFT.md"
+    ],
+    "eligibleMainFiles": [],
+    "mainRuntimeChanged": false,
+    "sourceAndMainCIAtParents": {
+      "source": {
+        "checks": 0,
+        "statuses": 0,
+        "runs": 0
+      },
+      "main": {
+        "checks": 0,
+        "statuses": 0,
+        "runs": 0
+      }
+    },
+    "publicationOutcome": "VERIFY_SEPARATELY_BY_EXACT_COMMIT_READBACK",
+    "workflowDispatch": false,
+    "unrelatedRefsAndPRs": "PRESERVE"
+  },
+  "fullP0Complete": false,
+  "fullP1Complete": false,
+  "fullP2Complete": false,
+  "fullRoadmapComplete": false,
+  "productionQualified": false
+}
