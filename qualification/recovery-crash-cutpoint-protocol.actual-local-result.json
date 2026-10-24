@@ -1,0 +1,149 @@
+{
+  "kind": "ACTUAL_RECOVERY_CRASH_CUTPOINT_PROTOCOL_DATA_RESULT_NOT_NATIVE_CRASH",
+  "version": 1,
+  "date": "2026-10-24",
+  "sourceBaseline": "dd5699dea99ca7aa23c7d9d117cb2ceeb84febef",
+  "mainUnchanged": "e9c2b7964b2b9aad802f636c800487a49faabda9",
+  "scope": "ACTUAL_PROTOCOL_CODE_WITH_DECLARED_MESSAGES_AND_TERMINATION_EVENTS",
+  "execution": {
+    "tests": 20,
+    "pass": 20,
+    "fail": 0,
+    "skipped": 0,
+    "cancelled": 0,
+    "actualExit": 0,
+    "streamsComplete": true,
+    "stdoutBytes": 2155,
+    "stdoutSha256": "a0d48b6cb24b43471f27c053e6c0e0216a2895e5547b696cfa73ed815e55c3e5",
+    "stderrBytes": 0,
+    "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "sourcePinsUnchanged": true,
+    "sources": [
+      {
+        "path": "qualification/recovery-crash-cutpoint-protocol.behavior.mjs",
+        "sha256": "b2455a3d8e2d443dd61d4a4e16c8b920011308c9ca6bb61f35cb85c9493f5213",
+        "bytes": 11745
+      },
+      {
+        "path": "package.json",
+        "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+        "bytes": 2677
+      },
+      {
+        "path": "qualification/recovery-crash-cutpoint-protocol.js",
+        "sha256": "2c04f8ead07c30a756fc57dc656d71432688bf17f682610848d0df93d8350baf",
+        "bytes": 10113
+      }
+    ],
+    "observations": {
+      "entered": 20,
+      "completed": 20,
+      "refused": 78,
+      "hooks": 0,
+      "actualProtocol": true,
+      "eventsDeclared": true,
+      "childProcesses": 0,
+      "signals": 0,
+      "SQLite": false,
+      "keysOrSignatures": false,
+      "nativeCrashQualified": false,
+      "authority": "NONE"
+    }
+  },
+  "supervisor": {
+    "status": "SOURCE_DRAFT_SYNTAX_ONLY_NOT_IMPORTED_OR_RUN",
+    "syntaxActualExit": 0,
+    "syntaxStreamsComplete": true,
+    "stdoutBytes": 0,
+    "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stderrBytes": 0,
+    "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "sources": [
+      {
+        "path": "qualification/recovery-crash-cutpoint-supervisor.draft.mjs",
+        "sha256": "5dff45e7fd87e4b2894f8891365bda8e0a242f3f662fac17c078400400fac929",
+        "bytes": 15675
+      },
+      {
+        "path": "package.json",
+        "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+        "bytes": 2677
+      },
+      {
+        "path": "qualification/recovery-crash-cutpoint-protocol.js",
+        "sha256": "2c04f8ead07c30a756fc57dc656d71432688bf17f682610848d0df93d8350baf",
+        "bytes": 10113
+      }
+    ],
+    "actualChildProgram": "NOT_YET_IMPLEMENTED",
+    "actualChildEntry": "qualification/recovery-crash-committed-intent.child.draft.mjs",
+    "futureNativeProfileAndManagedLauncher": "NOT_YET_COMPLETED",
+    "hasAutomaticEntry": false
+  },
+  "runtime": {
+    "node": "24.19.0",
+    "platform": "darwin",
+    "arch": "arm64",
+    "permissionModel": true,
+    "filesystemWritesPermitted": false,
+    "childProcessesPermitted": false,
+    "workersPermitted": false,
+    "nativeAddonsPermitted": false,
+    "osNetworkSandbox": false
+  },
+  "implementedInSource": [
+    "Independent original witness must be fixed before dispatch cutpoint",
+    "One selected seed signal request, without retries or arbitrary PID scanning",
+    "Normal seed exit and SIGTERM cannot satisfy the SIGKILL cutpoint",
+    "Seed exit alone cannot open recovery before stream EOF and IPC close",
+    "Recovery retains original commitments and increments owner epoch only once",
+    "Backend cached success cannot remove persistent UNKNOWN or grant action authority",
+    "Parent captures bounded actual native child output only if a separately approved complete graph is later selected",
+    "Parent preserves its same observation handles on setup/send failure and never replaces an uncertain run"
+  ],
+  "codeReviewCorrections": [
+    "Observe an owned child before PID/protocol admission can throw",
+    "Recheck entry/profile physical identity and SHA-256 before fork and cutpoint",
+    "Capped output is incomplete rather than a successful complete capture",
+    "Require private profile bytes and stable principal database identities",
+    "Preserve CHILD_UNKNOWN independently of a returned payer store close"
+  ],
+  "preservation": {
+    "currentV3ManifestSha256": "51ffb5b0ff0052523c1b7f3d75fa24e9be27e60ca3bcc09236b1f439096aaed1",
+    "currentV3Application117Unchanged": true,
+    "currentV3Controls5Unchanged": true,
+    "currentV3CleanRequestUnchanged": true,
+    "oldNativeAllowancesReused": false,
+    "historicalEvidenceRewritten": false,
+    "defaultApplicationChanged": false,
+    "workflowChanged": false,
+    "mainChanged": false
+  },
+  "actualEffects": {
+    "childProcesses": 0,
+    "signals": 0,
+    "IPC": false,
+    "SQLite": false,
+    "SDK": false,
+    "officialX402Package": false,
+    "keysOrSignatures": false,
+    "nonceSearch": false,
+    "sockets": false,
+    "taskRootCreated": false,
+    "scratchCreated": false,
+    "sourceCopiesCreated": false
+  },
+  "qualification": {
+    "protocolData": "PASS",
+    "actualSupervisor": "NOT_RUN",
+    "actualCrashChild": "NOT_YET_IMPLEMENTED",
+    "fullActualNativeApplicationGraph": "REQUIRED_NOT_SUBSTITUTED",
+    "forcedKillSqliteReopen": "NOT_RUN",
+    "fullP2SocketHeldStoreComposition": "NOT_QUALIFIED",
+    "physicalDurability": "NOT_QUALIFIED",
+    "authority": "NONE",
+    "delivery": "NOT_ESTABLISHED",
+    "pilot": "NO_GO",
+    "production": "NO_GO"
+  }
+}
