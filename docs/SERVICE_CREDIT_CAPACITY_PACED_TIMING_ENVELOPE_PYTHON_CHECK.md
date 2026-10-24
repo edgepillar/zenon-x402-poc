@@ -77,3 +77,10 @@ Storage closure/HOLD stays separate from component matching.
 The 27-control hosted profile is unchanged and does not select the new 65
 controls. No native, economic, sustainable-capacity, pilot or production gate
 is marked complete by these source DATA results.
+
+The separate [paced v2 outer-contract validator](SERVICE_CREDIT_CAPACITY_PACED_OUTER_CAPTURE_DATA.md)
+now combines this timing arithmetic with per-lane DISPATCH/original counts,
+complete command/child stream facts and genuine child-writer window checks.
+Its 87 selected controls use explicitly declared outer pair/receipt facts;
+they are not an actual native adapter run. Real task ownership, private inputs,
+fresh admission, managed command receipts and storage closure remain required.
