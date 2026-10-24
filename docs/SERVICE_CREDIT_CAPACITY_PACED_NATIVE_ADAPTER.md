@@ -177,3 +177,10 @@ admission. The timing-only DATA serialization comparison removed 866,810 bytes
 from the 4,080-call case without dropping events/checks. It is not a full native
 capture-size, physical reclaim or throughput measurement. A real task-owned
 controller and independent native-capture qualification are still required.
+
+The separate [independent Python timing-envelope checker](SERVICE_CREDIT_CAPACITY_PACED_TIMING_ENVELOPE_PYTHON_CHECK.md)
+is now implemented with 65 selected passing DATA controls. It reconstructs the
+parent and paced recorder summaries from the v2 raw trace without relabeling
+R4 or trusting JavaScript check objects. This closes timing-DATA arithmetic
+only: the full outer native result, real command receipts, child and writer
+evidence, task-owned launch and storage closure are still separate obligations.
