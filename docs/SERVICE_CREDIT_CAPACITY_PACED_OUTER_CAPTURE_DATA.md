@@ -78,9 +78,11 @@ The [actual result](../qualification/native-capacity-paced-outer-capture-v1.actu
 records zero failures/errors/skips and zero stderr with unchanged source inputs.
 The existing 65 timing controls were not rerun just for metadata.
 
-A real task-owned paced controller/profile writer must still create and bind
-approved owned inputs, fresh source/package/tool/root identities, actual command
-receipts, private capture bytes and separate storage closure/HOLD. The original
-R4 finite grant is not consumed or moved to this graph. No actual native capture,
+The [real task-owned paced launcher](SERVICE_CREDIT_CAPACITY_PACED_MANAGED_LAUNCHER.md)
+is now source-implemented with 63 selected passing DATA controls and successful
+read-only source checks. Its managed/native branch has not run. Runtime binding
+of approved owned inputs, fresh source/package/tool/root identities, command
+receipts, private captures and storage closure/HOLD remains unqualified. The
+original R4 finite grant is not consumed or moved to this graph. No native capture,
 resource release, sustainable capacity, pilot or production is qualified here.
 The unchanged 27-control hosted profile does not run these 87 controls.
