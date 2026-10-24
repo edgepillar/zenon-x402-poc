@@ -1,0 +1,187 @@
+{
+  "kind": "INDEPENDENT_PYTHON_PACED_V2_TIMING_ENVELOPE_SELECTED_ACTUAL_DATA",
+  "version": 1,
+  "sourceParent": "0b001378aeb8268edff266923c6558667c193b63",
+  "mainParent": "64badf16f2cf351612d5681f1a4033d7cf892072",
+  "sourcePins": [
+    {
+      "path": "qualification/native_capacity_paced_timing_envelope_data_v1.py",
+      "bytes": 34479,
+      "LF": 485,
+      "sha256": "96d332f0a3e56edf03db54e47a078535d01a5e0665a3bf29834f582039cc0a99",
+      "gitBlob": "efe5e866c96b74c67e1e74a565fa9e1adf986e79"
+    },
+    {
+      "path": "qualification/native_capacity_paced_timing_envelope_data_v1.behavior.py",
+      "bytes": 14451,
+      "LF": 248,
+      "sha256": "ae87fdd673acea8b59b66b95efcd2b77daadbcdfb2b20417062fc4643c177b9d",
+      "gitBlob": "38d89fe535eaeef55226f5755c897737d98885d4"
+    },
+    {
+      "path": "qualification/fixtures/capacity-paced-cross-language-v1.json",
+      "bytes": 157770,
+      "LF": 1,
+      "sha256": "66fa3f34a7d55f53d1bbf8ad61edb036504ea77cd1d0d720b834c47fbba361b5",
+      "gitBlob": "0256e1911878228523a683e0abf7dcb03c224f17"
+    }
+  ],
+  "fixtureProducerSourcePins": [
+    {
+      "path": "package.json",
+      "bytes": 2677,
+      "LF": 40,
+      "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+      "gitBlob": "45752ffde39d29666094f7f1c755060d75e43deb"
+    },
+    {
+      "path": "src/service-credit-capacity-paced-workload-owner-core.js",
+      "bytes": 21119,
+      "LF": 398,
+      "sha256": "ec12fc8cef93f2ecda6ca88c8bf193db183a8a3f456d3a712411d319dfe7761f",
+      "gitBlob": "eb12bbbe1e3b468f1c8e0acf09ce94b076825178"
+    },
+    {
+      "path": "src/service-credit-capacity-windowed-async-workload-owner-core.js",
+      "bytes": 36252,
+      "LF": 645,
+      "sha256": "fda636116343c497f269d926ae8e3a61f1b9cd1cf11b493c3d9ba99ef55a7444",
+      "gitBlob": "cc9eae4a2e553a0e71a531f191648c9cbe0cb101"
+    },
+    {
+      "path": "src/service-credit-capacity-window-recorder.js",
+      "bytes": 13321,
+      "LF": 242,
+      "sha256": "48855e34729ae68c179d6439aed962a719964732c992a83472330b7e41293579",
+      "gitBlob": "6e28e75b4fd6572fbae535ac066334349ed26038"
+    },
+    {
+      "path": "src/service-credit-capacity-recorder.js",
+      "bytes": 10801,
+      "LF": 236,
+      "sha256": "eca9bf4cad4717df5d61457044c2c5d0a6bc00b6af81964d09bf18325d4a46ad",
+      "gitBlob": "bc9b0a8a9abd48033e698e100cdc6ef90d2152c9"
+    },
+    {
+      "path": "src/service-credit-capacity-parent-timing-trace-data.js",
+      "bytes": 13257,
+      "LF": 213,
+      "sha256": "9b48e9212efa6b000690b32c04f07277d2c868562a1e649766a28aab85e0907d",
+      "gitBlob": "8aecb7664c2a4772870fdeb51d10fe69bc71cb79"
+    },
+    {
+      "path": "src/service-credit-capacity-paced-timing-trace-data.js",
+      "bytes": 22759,
+      "LF": 299,
+      "sha256": "4459f9e90692b99af0b831e9acf013b579fe63b2113b8ef5abd81f29c559f5dc",
+      "gitBlob": "0f06c70e53c61497c10b7e4de3fac8697904856e"
+    },
+    {
+      "path": "qualification/capacity-paced-cross-language-fixture-data-v1.mjs",
+      "bytes": 8189,
+      "LF": 131,
+      "sha256": "725636be9d4f07461ad3adedfdb7f55a9ac44ed0e73c97bd3da4574f12489dab",
+      "gitBlob": "d93a7654c72a1a529b28e993de7e5c32e4ca7c49"
+    }
+  ],
+  "actualPython": {
+    "actualExit": 0,
+    "complete": true,
+    "validated": true,
+    "tests": 65,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "stdoutBytes": 278,
+    "stdoutSha256": "b9c6cda1a7dfdcaf18a61dfd9d22145e6e1996a141b4d269047e7b6387b73238",
+    "stderrBytes": 0,
+    "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "elapsedSeconds": 0.15263458399567753,
+    "timingBenchmarkQualified": false,
+    "sourcePinsUnchanged": true,
+    "protectedUnchangedInputs": 26,
+    "commands": 1
+  },
+  "actualFixtureProducer": {
+    "actualExit": 0,
+    "complete": true,
+    "validated": true,
+    "NodeVersionObservedBySource": "v24.19.0",
+    "commands": 1,
+    "cleanScenarios": 6,
+    "heldScenarios": 1,
+    "cleanScenarioNames": [
+      "full",
+      "mixed",
+      "sixteenLanes",
+      "withdrawal",
+      "preWaitWithdrawal",
+      "postStopLedger"
+    ],
+    "heldLateSnapshotUnchanged": true,
+    "stdoutBytes": 157770,
+    "stdoutSha256": "66fa3f34a7d55f53d1bbf8ad61edb036504ea77cd1d0d720b834c47fbba361b5",
+    "stderrBytes": 0,
+    "elapsedSeconds": 0.5415860000066459,
+    "sourcePinsUnchanged": true,
+    "timingBenchmarkQualified": false,
+    "historicalTestSelectionsReexecuted": false
+  },
+  "implementation": {
+    "independentPythonParentArithmetic": true,
+    "wholeParentRecorderCompared": true,
+    "queueAndSourceRecordersRecomputed": true,
+    "nearestRankPercentilesRecomputed": true,
+    "FIFOAndLaneNonoverlapRecomputed": true,
+    "minimumStartGapRecomputed": true,
+    "originalCoreLogicalBracketsCrossBound": true,
+    "bothSuppliedJavaScriptChecksIndependentlyMatched": true,
+    "singleInnerRawTraceReadDirectly": true,
+    "oldR4ContextOrEnvelopeRewritten": false,
+    "JavaScriptImportedOrReplayedByPython": false,
+    "entireInputTreeCopied": false,
+    "entireInputTreeSerializedForComparison": false,
+    "inputMutated": false,
+    "wholeNativeCaptureValidatorImplemented": false
+  },
+  "qualificationScope": {
+    "realSourceOwnerAndRecordersExecutedWithSyntheticCallbacks": true,
+    "fakeNativeNamespaceInstalled": false,
+    "nativeApplicationOrSdkSubstituteUsed": false,
+    "managerImported": false,
+    "privateRoleRootsOpened": false,
+    "privateProfilesWritten": false,
+    "SDK": false,
+    "SQLite": false,
+    "keys": false,
+    "signatures": false,
+    "nonceSearch": false,
+    "sockets": false,
+    "hostTimers": false,
+    "nativeChildren": false,
+    "qualificationScratchCreated": false,
+    "sourceOrPackageTreeCopied": false
+  },
+  "limitations": {
+    "timerEventsIndependentlyRecomputed": false,
+    "postStopLedgerDurationSeriesRecomputed": false,
+    "callerExpectationsAuthenticated": false,
+    "sourceContextAuthenticated": false,
+    "realCommandOrManagedReceiptValidated": false,
+    "serviceChildWriterEvidenceValidatedByThisModule": false,
+    "wholeNativeCaptureQualified": false,
+    "nativeResourcesQualified": false,
+    "heapByteBoundEstablished": false,
+    "sustainableCapacityQualified": false,
+    "economicAcceptanceQualified": false,
+    "productionQualified": false,
+    "hostedProfileSelectsThese65Controls": false
+  },
+  "preservation": {
+    "unpacedR4ControlsUnchanged": true,
+    "prior75PlannerInputsUnchanged": true,
+    "nativeAllowanceConsumed": false,
+    "oldSuccessfulOrFailedResultsRewritten": false
+  },
+  "authority": "NONE"
+}
