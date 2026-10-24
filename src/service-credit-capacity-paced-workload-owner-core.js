@@ -2,6 +2,7 @@ import { types as utilTypes } from 'node:util';
 import { createServiceCreditCapacityWindowedAsyncWorkloadOwnerCore,
   createServiceCreditCapacityWindowedAsyncWorkloadOwnerCoreWithPrivateTimingTrace } from './service-credit-capacity-windowed-async-workload-owner-core.js';
 import { createServiceCreditCapacityRecorder } from './service-credit-capacity-recorder.js';
+import { checkServiceCreditCapacityPacedTimingTraceData } from './service-credit-capacity-paced-timing-trace-data.js';
 
 const F = Object.freeze, A = Reflect.apply, D = Object.getOwnPropertyDescriptor;
 const P = Object.getPrototypeOf, K = Reflect.ownKeys, O = Object.hasOwn;
@@ -11,6 +12,7 @@ const CTOR = D(PP, 'constructor'), SPECIES = D(NATIVE, Symbol.species);
 const CORE = createServiceCreditCapacityWindowedAsyncWorkloadOwnerCore;
 const TRACED_CORE = createServiceCreditCapacityWindowedAsyncWorkloadOwnerCoreWithPrivateTimingTrace;
 const RECORDER = createServiceCreditCapacityRecorder;
+const PACED_TIMING_CHECK = checkServiceCreditCapacityPacedTimingTraceData;
 const MAX_NS = (1n << 128n) - 1n, MILLION = 1000000n;
 const METHODS = F(['fund', 'execute', 'checkBalances', 'openMeasurementWindow', 'stopMeasurementWindow', 'close']);
 const OUTCOMES = F(['SUCCEEDED', 'REJECTED', 'UNKNOWN']);
@@ -294,6 +296,19 @@ function construct(configuration, traceEnabled) {
       rawIdentifiersIncluded: false, additionalClockReads: 0, nativeEventsAuthenticated: false,
       nativeResourcesQualified: false, sustainableCapacityQualified: false, authority: 'NONE',
     });
+    if (traceEnabled && privateCached.unknown === false) {
+      try {
+        // Independent expectations come from captured source configuration,
+        // never from the returned trace/report. A mismatch is not success.
+        PACED_TIMING_CHECK(F({ trace: privateCached, report: final, expected: F({
+          plan, recordingLimits: limits, laneCount: lanes.length, minimumStartGapMs: gapMs,
+        }) }));
+      } catch {
+        unknown('PRIVATE_TIMING_CHECK_UNKNOWN');
+        final = F({ ...final, outcome: 'HELD_UNKNOWN', issue });
+        privateCached = F({ ...privateCached, unknown: true });
+      }
+    }
     resolveRun(final);
   }
   function start(stopFirst) {
