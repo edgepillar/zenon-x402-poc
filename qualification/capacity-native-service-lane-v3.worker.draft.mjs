@@ -18,7 +18,7 @@ const snapshot=d.value();
 if(snapshot.profileKind!=='NATIVE_CAPACITY_SERVICE_LANE_NODE24_V3'||!/^[0-9a-f]{64}$/.test(snapshot.sourceRowsSha256||'')
     ||snapshot.baselineApplication117Preserved!==true||snapshot.baselinePackages404Preserved!==true
     ||snapshot.sourceTransforms!==0||snapshot.nativeBuiltinAliases!==0
-    ||snapshot.applicationFiles!==138||snapshot.packageFiles!==404||snapshot.ordinaryInstalledNamespaceQualified!==false)fail();
+    ||snapshot.applicationFiles!==139||snapshot.packageFiles!==404||snapshot.ordinaryInstalledNamespaceQualified!==false)fail();
 const context=F({runId:E.X402_NATIVE_CAPACITY_RUN_ID,laneId:E.X402_NATIVE_CAPACITY_LANE_ID,sourceRowsSha256:snapshot.sourceRowsSha256});
 if(!/^[0-9a-f]{64}$/.test(context.runId||'')||!/^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/.test(context.laneId||''))fail();
 let owner=null,opening=false,acquisitionEntered=false,active=null,closing=null,closeRequested=false,held=false,stage='NEW',sequence=0;

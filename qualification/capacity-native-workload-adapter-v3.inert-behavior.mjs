@@ -142,3 +142,15 @@ test('native worker and preloader namespace are never replaced by the inert test
   // Valid native run/stop/open/timestamp calls are deliberately NOT made.
 });
 
+test('private parent timing capability refuses before finalization without reading a native clock',()=>{
+  const owner=create(config());assert.equal(Object.isFrozen(owner.privateParentTimingEvidence),true);
+  assert.throws(()=>owner.privateParentTimingEvidence());
+  const s=owner.inspect();assert.equal(s.runRequested,false);assert.equal(s.pairAcquisitionsEntered,0);
+  assert.equal(s.core.phase,'CREATED');assert.equal(s.core.held,false);
+});
+test('private parent timing arity rejection cannot enter a native run or expose a profile',()=>{
+  const owner=create(config());assert.throws(()=>owner.privateParentTimingEvidence('extra'));
+  assert.equal(owner.inspect().runRequested,false);assert.equal(owner.inspect().pairHandlesCaptured,0);
+  assert.equal(JSON.stringify(owner.inspect()).includes('/synthetic'),false);
+});
+

@@ -1,0 +1,195 @@
+{
+  "kind": "PARENT_TIMING_CAPTURE_CONTROLLER_CURRENT_DATA_NOT_NATIVE",
+  "resultVersion": 1,
+  "sourceParent": "354686881d0f74796b6aac675ba87a7cce48d7b0",
+  "mainParent": "ed206e5dfd1e2cc17e394b8772f8dadac2790462",
+  "runtime": {
+    "node": "24.19.0",
+    "python": "3.12.14",
+    "platform": "darwin",
+    "arch": "arm64"
+  },
+  "actual": {
+    "exit": 0,
+    "complete": true,
+    "validated": true,
+    "counts": {
+      "testsRun": 175,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "stdoutBytes": 754,
+    "stdoutSha256": "efb337640696d3bb96b7cf69f10a0d8fa9b83249999abb39037c88dd6e0c2b81",
+    "stderrBytes": 0,
+    "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "sourcePinsUnchanged": true
+  },
+  "fixture": {
+    "path": "qualification/fixtures/capacity-parent-timing-source-data-v1.json",
+    "sha256": "0df8819b72d0fce70581116102a21d11726c5f264403cfff0537323dfb1031c1",
+    "sourceGeneration": {
+      "exit": 0,
+      "complete": true,
+      "validated": true,
+      "stdoutBytes": 18968,
+      "stdoutSha256": "9b51a951574e6890fd1d2f576c17f7ef9cd473e29d9938cee30d841c5feb39a9",
+      "stderrBytes": 0,
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sourcePinsUnchanged": true
+    },
+    "scenarios": [
+      "full",
+      "partial"
+    ],
+    "syntheticOnly": true,
+    "genuineSourceCoreAndJsCheckerUsed": true,
+    "nativeEvidence": false
+  },
+  "sourcePins": [
+    {
+      "path": "package.json",
+      "bytes": 2677,
+      "LF": 40,
+      "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+      "gitBlob": "45752ffde39d29666094f7f1c755060d75e43deb"
+    },
+    {
+      "path": "qualification/capacity-parent-timing-fixture-data.mjs",
+      "bytes": 3400,
+      "LF": 46,
+      "sha256": "d823b17e75d73db085d7c29703152981cb63751c5c56e82249ed11ebd1373a1e",
+      "gitBlob": "6d890e737ca4dac86550dd10a6489f3788c4fefe"
+    },
+    {
+      "path": "qualification/native_capacity_managed_workload_v3.behavior.py",
+      "bytes": 42047,
+      "LF": 538,
+      "sha256": "c300550075b653010db480fb54febf41870f29817799bb60f4378c6e3c699bef",
+      "gitBlob": "0a43bdb7a63684db406bee131edca0e1b71177ca"
+    },
+    {
+      "path": "qualification/native_capacity_managed_workload_v3.py",
+      "bytes": 49689,
+      "LF": 646,
+      "sha256": "6d4e2d726bd600b84be387147ee7cd6555daa8b72b8940a8719861a1078b4567",
+      "gitBlob": "c11c7981db6827e68d49dfdf354db3601afb5adc"
+    },
+    {
+      "path": "src/service-credit-capacity-parent-timing-trace-data.js",
+      "bytes": 13257,
+      "LF": 213,
+      "sha256": "9b48e9212efa6b000690b32c04f07277d2c868562a1e649766a28aab85e0907d",
+      "gitBlob": "8aecb7664c2a4772870fdeb51d10fe69bc71cb79"
+    },
+    {
+      "path": "src/service-credit-capacity-recorder.js",
+      "bytes": 10801,
+      "LF": 236,
+      "sha256": "eca9bf4cad4717df5d61457044c2c5d0a6bc00b6af81964d09bf18325d4a46ad",
+      "gitBlob": "bc9b0a8a9abd48033e698e100cdc6ef90d2152c9"
+    },
+    {
+      "path": "src/service-credit-capacity-window-recorder.js",
+      "bytes": 13321,
+      "LF": 242,
+      "sha256": "48855e34729ae68c179d6439aed962a719964732c992a83472330b7e41293579",
+      "gitBlob": "6e28e75b4fd6572fbae535ac066334349ed26038"
+    },
+    {
+      "path": "src/service-credit-capacity-windowed-async-workload-owner-core.js",
+      "bytes": 36252,
+      "LF": 645,
+      "sha256": "fda636116343c497f269d926ae8e3a61f1b9cd1cf11b493c3d9ba99ef55a7444",
+      "gitBlob": "cc9eae4a2e553a0e71a531f191648c9cbe0cb101"
+    }
+  ],
+  "selected": {
+    "tests": 175,
+    "newParentControls": 40,
+    "priorControlsStillSelected": 135,
+    "independentPythonRecomputesAllRecorderFields": true,
+    "independentExpectedRunSourceLaneContext": true,
+    "matchesGenuineCoreAndJsCheckerForFullAndSpillOutData": true,
+    "unknownMissingMismatchAndBooleanCoercionRefused": true,
+    "sourceAndPackageCopiesCreated": 0,
+    "jsonTreeCopiedByValidator": false
+  },
+  "failurePreserved": {
+    "stage": "managed DATA fixture isolation",
+    "exit": 1,
+    "complete": true,
+    "counts": {
+      "testsRun": 175,
+      "failures": 1,
+      "errors": 0,
+      "skipped": 0
+    },
+    "stdoutBytes": 755,
+    "stdoutSha256": "21786f6a998deac019970643c4a1e4fd26877910501dbd7abb0af9469457a13d",
+    "stderrBytes": 1007,
+    "stderrSha256": "ebffb10d96c709653d65f0e125690f0918aa2860d6fdc92c59002dcba3985ccb",
+    "sourcePins": [
+      {
+        "path": "qualification/native_capacity_managed_workload_v3.behavior.py",
+        "bytes": 42040,
+        "LF": 538,
+        "sha256": "c4a6ec4ccc36e67cf55d9d233d490e389463d9527ba33e4ba81c0db3344b39b4",
+        "gitBlob": "e3768f1e892a39ed172c77ca2129417d7bc79ff3"
+      },
+      {
+        "path": "qualification/native_capacity_managed_workload_v3.py",
+        "bytes": 49689,
+        "LF": 646,
+        "sha256": "7c9eb67f17c21b803845f88da19a24073a73c175eb5064a27d03d096cad26a51",
+        "gitBlob": "8e109654842e054fb260983228158b19549a7bfc"
+      }
+    ],
+    "classification": "FAILED_DATA_RUN_NOT_NATIVE",
+    "cause": "Returned fixture laneIds aliased the expected plan; fixture now makes an independent copy.",
+    "ruleWeakened": false,
+    "inputDeltaRef": "qualification/parent-timing-failed-data-inputs.delta.json",
+    "originalFailedInputBytesHashVerified": true,
+    "oldVariantExecutedForReconstruction": false,
+    "fullSourceCopiesWrittenForPreservation": 0
+  },
+  "nativeIntegration": {
+    "actualAdapterSelectsTracedCoreInSource": true,
+    "actualParentEntryChecksThenRetainsPrivateTraceInSource": true,
+    "parentRawTraceInPublicReport": false,
+    "completeNamespaceApplicationFiles": 139,
+    "completeNamespacePackageFiles": 404,
+    "sourceOnly": true,
+    "nativeExecuted": false,
+    "newAllowanceGranted": false
+  },
+  "planned": {
+    "privateParentEventsMaximum": 900,
+    "parentBytesReserved": 238592,
+    "logicalFullFrameBytes": 1022976,
+    "stdoutCap": 1048576,
+    "taskQuotaBytes": 74448896,
+    "minFreeBytes": 10737418240,
+    "effectsExecuted": false,
+    "oldApprovalScopesRenewed": false
+  },
+  "qualification": {
+    "SDK": false,
+    "SQLite": false,
+    "keys": false,
+    "signatures": false,
+    "nonceSearch": false,
+    "sockets": false,
+    "nativeChildren": false,
+    "privateRootsOpened": false,
+    "qualificationScratchCreated": false,
+    "nativeClockAuthenticated": false,
+    "nativeResourcesQualified": false,
+    "sustainableCapacityQualified": false,
+    "economicAcceptance": false,
+    "productionQualified": false,
+    "defaultBuyerChanged": false,
+    "workflowChanged": false,
+    "authority": "NONE"
+  }
+}

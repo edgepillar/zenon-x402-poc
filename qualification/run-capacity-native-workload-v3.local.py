@@ -245,7 +245,7 @@ def main():
     require(sys.flags.isolated and sys.flags.no_site and sys.dont_write_bytecode, "ISOLATED_NO_BYTECODE_REQUIRED")
     repo = Path(args.repo); no_links(repo)
     manifest, data, profile, base, tls_gate, owned, workload, effects, unchanged = source_admission(repo,args.manifest_sha256)
-    print(json.dumps(dict(event="P4_MANAGED_V3_SOURCE_ONLY_NOT_NATIVE",applicationFilesRead=138,packageFilesDeclared=404,
+    print(json.dumps(dict(event="P4_MANAGED_V3_SOURCE_ONLY_NOT_NATIVE",applicationFilesRead=139,packageFilesDeclared=404,
         effectsCeiling=effects,completeManagedControlSourceAuthored=True,nativeAllowanceGranted=False,authority="NONE")),flush=True)
     registry = None
     if args.packages is not None:
@@ -253,7 +253,7 @@ def main():
         registry = profile.build_source_registry(base,str(repo),args.packages,args.node,owned[INVENTORY][0],owned[BASELINE][0])
         unchanged()
         print(json.dumps(dict(event="P4_MANAGED_V3_REGISTRY_READ_IN_PLACE",sourceRowsSha256=profile.SOURCE_SEAL,
-            files=542,sourceCopies=0,packageCopies=0,nodeExecuted=False,privateRootsOpened=False)),flush=True)
+            files=543,sourceCopies=0,packageCopies=0,nodeExecuted=False,privateRootsOpened=False)),flush=True)
     if not args.execute and not args.pre_native_plan:
         return 0
     require(sys.platform == "darwin" and os.uname().machine == "arm64" and sys.version.split()[0] == "3.12.14", "NATIVE_DRIVER_RUNTIME")

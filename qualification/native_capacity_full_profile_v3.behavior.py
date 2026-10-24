@@ -1,7 +1,7 @@
 """P4 V3 DATA-only profile tests; never install a namespace or enter native work.
 
-Only this source, the pinned builder, the frozen Python helper and two public
-JSON input tables are read. Synthetic identity/root/profile DTOs remain memory
+This source, the pinned builder, the frozen helper, two public JSON input tables
+and the three declared worker/entry sources are read. Synthetic profile DTOs remain memory
 DATA: they are NOT native observations, task ownership or execution authority.
 No scratch, private roots, packages, Node, child processes or crypto keys run.
 """
@@ -16,7 +16,7 @@ import stat
 import sys
 import unittest
 
-BUILDER_SHA = "93568d6e149c6da0eedbbcbe2fa8115dd4b23d4a0965faef0b1f47729ab0b244"
+BUILDER_SHA = "6928303c36f034fc295145563e40304641a91fe7db35d62eb364031bbcff7e6a"
 repo = Path(__file__).absolute().parents[1]
 builder_path = repo / "qualification/native_capacity_full_profile_v3.py"
 for at in (builder_path, *builder_path.parents):
@@ -96,8 +96,8 @@ def setat(value, path, replacement):
     value[path[-1]] = replacement
 
 def full_selection(self):
-    self.assertEqual(len(selection["rows"]), 542)
-    self.assertEqual(sum(r["path"].startswith("app/") for r in selection["rows"]), 138)
+    self.assertEqual(len(selection["rows"]), 543)
+    self.assertEqual(sum(r["path"].startswith("app/") for r in selection["rows"]), 139)
     self.assertEqual(sum(r["path"].startswith("packages/") for r in selection["rows"]), 404)
     self.assertEqual(sum(r["bytes"] for r in selection["rows"]), m.SOURCE_BYTES)
     baseline = b.decode_json(baseline_raw)
@@ -112,7 +112,7 @@ def exact_profile(self, role):
     self.assertEqual(profile["role"], role); self.assertEqual(profile["profileKind"], m.SPECS[role]["kind"])
     self.assertEqual(profile["entryURL"], INDEX[m.SPECS[role]["entry"]]["url"])
     self.assertEqual(profile["preloaderURL"], INDEX[m.SPECS[role]["preloader"]]["url"])
-    self.assertEqual(len(profile["inputs"]), 542); self.assertEqual(profile["rootIdentity"], ROOT["identity"])
+    self.assertEqual(len(profile["inputs"]), 543); self.assertEqual(profile["rootIdentity"], ROOT["identity"])
     self.assertEqual(profile["allowedBuiltins"], sorted(b.BUILTINS+(["node:child_process"] if role == "SUPERVISOR" else [])))
     self.assertEqual(result["profileBytes"], m.canonical(profile)+b"\n")
     self.assertEqual(result["profileSha256"], hashlib.sha256(result["profileBytes"]).hexdigest())
@@ -264,11 +264,12 @@ def v3_windows(self):
     paths = {p["path"] for p in selection["rows"]}
     for name in ("app/qualification/capacity-native-service-window-v3.owner.draft.mjs",
             "app/src/service-credit-capacity-windowed-async-workload-owner-core.js",
+            "app/src/service-credit-capacity-parent-timing-trace-data.js",
             "app/src/service-credit-capacity-window-writer-trace-data.js",
             "app/src/service-credit-capacity-cohort-writer-trace-data.js"):
         self.assertIn(name, paths)
     self.assertNotIn("app/src/service-credit-capacity-async-workload-owner-core.js", paths)
-    self.assertEqual(len(m.ADDITIONS), 21)
+    self.assertEqual(len(m.ADDITIONS), 22)
 check("genuine_full_v3_window_sources_not_v2_core_or_a_compact_substitute", v3_windows)
 def v3_versions(self):
     for role in ("PAYER", "SERVICE", "SUPERVISOR"):
@@ -277,6 +278,19 @@ def v3_versions(self):
         self.assertTrue(value["profileKind"].endswith("_V3"))
         self.assertTrue(m.SPECS[role]["namespace"].endswith("V3"))
 check("all_role_profile_and_namespace_versions_are_v3", v3_versions)
+
+def native_literal_counts(self):
+    # Literal SOURCE consistency, not execution of a worker or preloader.
+    import re
+    indexed={p["path"]:p for p in selection["rows"]}
+    for role in ("PAYER","SERVICE","SUPERVISOR"):
+        logical=m.SPECS[role]["entry"];raw,ident=m.read_owned(repo/logical[4:],1048576)
+        self.assertEqual(dict(path=logical,bytes=len(raw),LF=raw.count(b"\n"),sha256=hashlib.sha256(raw).hexdigest(),
+            gitBlob=hashlib.sha1(b"blob "+str(len(raw)).encode()+b"\0"+raw).hexdigest()),indexed[logical])
+        found=re.findall(r"(?:snapshot|admitted|namespace)\.applicationFiles\s*!==\s*([0-9]+)",raw.decode("ascii"))
+        self.assertEqual(found,[str(sum(p["path"].startswith("app/")for p in selection["rows"]))])
+        self.assertEqual(m.read_owned(repo/logical[4:],1048576),(raw,ident))
+check("literal_native_role_admission_counts_match_complete_inventory_not_old_graph", native_literal_counts)
 
 if __name__ == "__main__":
     output = io.StringIO()

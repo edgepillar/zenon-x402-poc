@@ -74,14 +74,16 @@ and counters are explicitly synthetic DATA. Node permissions are not an
 OS/network sandbox. The unchanged 27-case hosted profile does not run these
 49/111/135 local selections.
 
-## Native integration is not silently enabled
+## Explicit source integration, not native qualification
 
-The current native V3 adapter still selects the ordinary core. Its full graph
-was rebound to the changed shared file and remains source-only; the new private
-trace is not yet in its capture. Before selecting it there, retain the raw trace
-privately, bind its exact run/source context, include every new import in the
-full graph, and reserve its worst-case frame/storage size. Do not reuse the
-old capture ceiling or infer permission from this component result.
+The source-only native V3 revision 4 explicitly selects this private factory,
+binds its raw trace to the run/source/lane context, includes the genuine checker
+in the complete namespace, and reserves the changed full-frame size. The Python
+controller independently recomputes its report and check. See the
+[current controller contract](SERVICE_CREDIT_CAPACITY_PARENT_CAPTURE_CONTROLLER.md).
+The old 768 KiB ceiling and earlier allowances cannot be reused. The actual
+adapter/entry integration is source/selected-DATA qualified only, not native-run
+or current physical-resource evidence.
 
 Native P2, sustainable load, economic acceptance, provider authority, pilot and
 production remain separate and unqualified.

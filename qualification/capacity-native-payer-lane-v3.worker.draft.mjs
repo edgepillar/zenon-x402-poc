@@ -31,7 +31,7 @@ if (process.version !== 'v24.19.0' || process.platform !== 'darwin' || process.a
 const NAMESPACE = desc.value, admitted = NAMESPACE();
 if (admitted.profileKind !== 'NATIVE_CAPACITY_PAYER_LANE_NODE24_V3'
     || admitted.baselineApplication117Preserved !== true || admitted.baselinePackages404Preserved !== true
-    || admitted.applicationFiles !== 138 || admitted.packageFiles !== 404 || admitted.sourceTransforms !== 0
+    || admitted.applicationFiles !== 139 || admitted.packageFiles !== 404 || admitted.sourceTransforms !== 0
     || admitted.nativeBuiltinAliases !== 0 || admitted.ordinaryInstalledNamespaceQualified !== false
     || !/^[0-9a-f]{64}$/.test(admitted.sourceRowsSha256 || '')) fail();
 const CONTEXT = F({ runId:E.X402_NATIVE_CAPACITY_RUN_ID,laneId:E.X402_NATIVE_CAPACITY_LANE_ID,

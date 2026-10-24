@@ -1,7 +1,7 @@
 {
   "sourceSelectionVersion": 3,
   "kind": "FULL_NATIVE_CAPACITY_V3_ALL_ROLES_SOURCE_NOT_EXECUTION",
-  "sourceParent": "1aa075ae8e4d848abd2b6b2e565ec138ee9cea6b",
+  "sourceParent": "354686881d0f74796b6aac675ba87a7cce48d7b0",
   "runtime": {
     "node": "24.19.0",
     "platform": "darwin",
@@ -21,10 +21,10 @@
   "additionalApplicationInputs": [
     {
       "path": "app/qualification/capacity-native-full-namespace-v3.preload-common.draft.mjs",
-      "bytes": 20054,
-      "LF": 281,
-      "sha256": "452547f2aa3a740cf562bdee83c63be9a78eed70c4b57a0931538a156b054e8e",
-      "gitBlob": "7628a0507d0a140d4f12d69fe46911e9ec32e18d"
+      "bytes": 20119,
+      "LF": 282,
+      "sha256": "f65389d097b2dfc128b41860d5690a25cdc6f550afcb7ad8885098d4642f8172",
+      "gitBlob": "fcf7b238b4ac685561559e19c5e53b14246d12ac"
     },
     {
       "path": "app/qualification/capacity-native-paired-lane-v3.supervisor.draft.mjs",
@@ -51,8 +51,8 @@
       "path": "app/qualification/capacity-native-payer-lane-v3.worker.draft.mjs",
       "bytes": 21280,
       "LF": 300,
-      "sha256": "31334141e77da486dcb074766e71b962ac52c6b8104115780247260537885900",
-      "gitBlob": "475bcba541d71ab22b8ad1ef3e225a9effeb09a9"
+      "sha256": "5e36f8524cca16893de5518388a0b4813d2292dcf69285641b236eae2ed194f0",
+      "gitBlob": "ecf9126439399c163ca75ee069329d61e9d8dd71"
     },
     {
       "path": "app/qualification/capacity-native-payer-lane.protocol.js",
@@ -79,8 +79,8 @@
       "path": "app/qualification/capacity-native-service-lane-v3.worker.draft.mjs",
       "bytes": 9052,
       "LF": 120,
-      "sha256": "3927fe60b38178438d8f8f63506e1609219749896787cefdd93898aa6a17bf7d",
-      "gitBlob": "6e92bd45cc47b179d82813eb6f6286689581a16f"
+      "sha256": "07d5846dd7fcc6071080fa2eb0aab9dfebf5a5d33806aabe3ec172ae18612a99",
+      "gitBlob": "4ce77f4cf0306fdbf209a34d84a4687230b324c9"
     },
     {
       "path": "app/qualification/capacity-native-service-window-v3.owner.draft.mjs",
@@ -98,17 +98,17 @@
     },
     {
       "path": "app/qualification/capacity-native-workload-adapter-v3.draft.mjs",
-      "bytes": 17930,
-      "LF": 263,
-      "sha256": "8905ffd5be92a5792bb9141cb0f45592f6342d013fef4e9379b4211eabe4b426",
-      "gitBlob": "0ce4f3508cdf6bd4fbca2b298ddb3f0cc95aebac"
+      "bytes": 18302,
+      "LF": 269,
+      "sha256": "1886f4a6190e01a5659069d9e2e7a18d13128eace740f9903f7c02fa36832954",
+      "gitBlob": "f0d793cb3b0015d3ffb045eda5ddbc2130627970"
     },
     {
       "path": "app/qualification/capacity-native-workload-v3.entry.draft.mjs",
-      "bytes": 6795,
-      "LF": 90,
-      "sha256": "a5c498d6ed682903866c4d24d547b0d80afe76754f79a1e9bf07b42db9c848c5",
-      "gitBlob": "e23c3201c1d03729ad8349467b6cd1a6ea4212a7"
+      "bytes": 7610,
+      "LF": 98,
+      "sha256": "b8bc90fd8d20a92ce55fe814c8a185411ea6dd2257312660693d4653230d338e",
+      "gitBlob": "255bc77e4cc2ac0e27da741362ccd5173a34491e"
     },
     {
       "path": "app/qualification/issued-funding-post-native-vertical.inputs-v3.json",
@@ -137,6 +137,13 @@
       "LF": 103,
       "sha256": "d6d19890334fbb6d7e92e605640d4638154f8e3e10588c8e217bf782a675b7ca",
       "gitBlob": "aaf6b24f65a59e4b421805d7667a5fdf9e72433f"
+    },
+    {
+      "path": "app/src/service-credit-capacity-parent-timing-trace-data.js",
+      "bytes": 13257,
+      "LF": 213,
+      "sha256": "9b48e9212efa6b000690b32c04f07277d2c868562a1e649766a28aab85e0907d",
+      "gitBlob": "8aecb7664c2a4772870fdeb51d10fe69bc71cb79"
     },
     {
       "path": "app/src/service-credit-capacity-recorder.js",
@@ -193,10 +200,10 @@
       "shaEnv": "X402_NATIVE_CAPACITY_SUPERVISOR_PROFILE_SHA256"
     }
   },
-  "applicationFiles": 138,
+  "applicationFiles": 139,
   "packageFiles": 404,
-  "sourceRowsSha256": "c517355f0eaa2b21eea7289b91f40d3464adb5966f60ff085dbc0b0a96d8a92c",
-  "declaredSourceBytes": 4759641,
+  "sourceRowsSha256": "d756740994aeb53ebeee47320d732583d96381dfa8c00e18a30f414e70a77027",
+  "declaredSourceBytes": 4774150,
   "rolePreloadersImplemented": true,
   "completeManagedLauncherImplemented": true,
   "nativeExecuted": false,

@@ -8,8 +8,9 @@ production qualification. The original qualification did not execute a native ad
 The historical result below retains its original source pins. The changed shared
 core was rerun through the same 111 controls for the
 [private parent timing selection](SERVICE_CREDIT_CAPACITY_PARENT_TIMING_TRACE.md).
-The current native V3 source adapter still selects the ordinary factory; the
-private trace is not silently enabled by its source-only graph rebinding.
+Native V3 revision 4 explicitly selects the private factory in source; see the
+[current controller contract](SERVICE_CREDIT_CAPACITY_PARENT_CAPTURE_CONTROLLER.md).
+Its graph and changed capture budget remain unexecuted as native work.
 
 The [new owner](../src/service-credit-capacity-windowed-async-workload-owner-core.js)
 composes the existing [window recorder](../src/service-credit-capacity-window-recorder.js)
