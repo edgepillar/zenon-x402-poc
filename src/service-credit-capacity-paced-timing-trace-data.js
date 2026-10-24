@@ -19,7 +19,45 @@ const BASE_FIELDS = F(['capacityRecorderVersion', 'scope', 'clock', 'percentileM
  */
 export function checkServiceCreditCapacityPacedTimingTraceData(input) {
   if (arguments.length !== 1) fail();
+  return checked(input, false, false);
+}
+
+/**
+ * PRIVATE DATA envelope v2: retain the genuine paced capsule once, including
+ * its single inner parent trace. Return both genuine checks from one arithmetic
+ * pass; no caller-supplied check, raw-trace copy, timer or native observation.
+ * Safe frozen UNKNOWN/mismatched evidence is retained, never upgraded/dropped.
+ * Context is bounded caller DATA, not authenticated run/source authority.
+ */
+export function captureServiceCreditCapacityPacedTimingEnvelopeData(input) {
+  if (arguments.length !== 1) fail();
   bounded(input);
+  const c = exact(input, ['context', 'trace', 'report', 'expected']);
+  const context = exact(c.context, ['runId', 'sourceRowsSha256', 'childSourceRowsSha256', 'laneIds']);
+  for (const name of ['runId', 'sourceRowsSha256', 'childSourceRowsSha256'])
+    need(typeof context[name] === 'string' && /^[0-9a-f]{64}$/.test(context[name]));
+  need(context.sourceRowsSha256 !== context.childSourceRowsSha256);
+  const laneIds = dense(context.laneIds, 16), seen = new Set();
+  need(laneIds.length === data(c.expected, 'laneCount'));
+  for (const name of laneIds) {
+    need(typeof name === 'string' && /^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/.test(name) && !seen.has(name));
+    seen.add(name);
+  }
+  let checks = null;
+  try {
+    // The complete input was already traversed above. These exact own fields
+    // are retained by reference in a new frozen root, never transformed.
+    checks = checked(F({ trace: c.trace, report: c.report, expected: c.expected }), true, true);
+  } catch { /* Preserve safe raw evidence as UNKNOWN, not a repaired pass. */ }
+  return F({ pacedTimingCaptureVersion: 2, context: c.context, trace: c.trace,
+    check: checks === null ? null : checks.pacedCheck,
+    parentCheck: checks === null ? null : checks.parentCheck,
+    parentTraceLocation: 'trace.coreParentTimingTrace',
+    status: checks === null ? 'UNKNOWN_OR_MISMATCHED_PACED_TRACE' : 'MATCHING_DECLARED_PACED_TRACE' });
+}
+
+function checked(input, withParent, prevalidated) {
+  if (!prevalidated) bounded(input);
   const c = exact(input, ['trace', 'report', 'expected']);
   const e = exact(c.expected, ['plan', 'recordingLimits', 'laneCount', 'minimumStartGapMs']);
   const plan = exact(e.plan, PLAN_FIELDS), limits = exact(e.recordingLimits, ['maxSamplesPerPhase', 'maxInFlightPerPhase']);
@@ -83,7 +121,7 @@ export function checkServiceCreditCapacityPacedTimingTraceData(input) {
     && core.nativeResourcesQualified === false && core.benchmarkQualified === false && core.capacityQualified === false && core.authority === 'NONE');
   need(['PLAN_COMPLETE', 'MANUAL_MEASUREMENT_STOP', 'MEASUREMENT_WINDOW_ELAPSED'].includes(core.reason));
   match(core.plan, plan); match(data(core.recording, 'limits'), limits);
-  CORE_CHECK(F({ trace: t.coreParentTimingTrace, recording: core.recording }));
+  const parentCheck = CORE_CHECK(F({ trace: t.coreParentTimingTrace, recording: core.recording }));
   match(data(t.coreParentTimingTrace, 'limits'), limits);
   need(core.balanceBarriersObserved === data(data(core.recording, 'ledgerBalanceChecks'), 'samples'));
   integer(core.ledgerBoundariesStarted, 0, limits.maxSamplesPerPhase);
@@ -148,13 +186,14 @@ export function checkServiceCreditCapacityPacedTimingTraceData(input) {
     .every(count => count === plan.measurementCallsPerLane)));
   match(c.report.queueWaitRecording, baseReport(wait, limits));
   match(c.report.dispatchedCallRecording, baseReport(source, limits));
-  return F({ pacedTimingTraceDataVersion: 1, status: 'COMPLETE_MATCHING_DECLARED_PACED_TIMING_DATA',
+  const pacedCheck = F({ pacedTimingTraceDataVersion: 1, status: 'COMPLETE_MATCHING_DECLARED_PACED_TIMING_DATA',
     eventsChecked: rows.length, requestsChecked: requests.size, sourceEntriesChecked: entries,
     preEntryWithdrawalsChecked: withdrawals, queueAndSourceRecordersRecomputed: true,
     coreParentRecorderIndependentlyChecked: true, coreLogicalFundedCallsCrossBound: true,
     timerEventsIndependentlyRecomputed: false, postStopLedgerDurationSeriesRecomputed: false,
     callerExpectationsAuthenticated: false, runOrNativeSourceContextAuthenticated: false,
     nativeEventsAuthenticated: false, nativeResourcesQualified: false, sustainableCapacityQualified: false, authority: 'NONE' });
+  return withParent ? F({ pacedCheck, parentCheck }) : pacedCheck;
 }
 
 function series() { return { entered: 0, settled: 0, active: 0, peak: 0, succeeded: 0, rejected: 0, all: [], success: null, first: null, last: null }; }

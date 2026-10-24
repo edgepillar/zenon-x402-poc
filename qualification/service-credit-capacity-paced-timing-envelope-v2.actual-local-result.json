@@ -1,0 +1,196 @@
+{
+  "resultVersion": 1,
+  "scope": "ACTUAL_SINGLE_COPY_PACED_TIMING_ENVELOPE_DATA_NOT_NATIVE",
+  "status": "163_CURRENT_SELECTED_DATA_CONTROLS_PASSED_NATIVE_EXECUTION_NOT_QUALIFIED",
+  "sourceParent": "2a3f70019e116474b70d2cf1acb3439ce552bd89",
+  "mainParent": "11f8ade6526d39ee12d4a4d89fdb3ac61d11efea",
+  "selectedEntry": "qualification/service-credit-capacity-paced-timing-envelope-v2.behavior.mjs",
+  "actual": {
+    "event": "Q142_SINGLE_COPY_TIMING_ENVELOPE_ACTUAL_DATA",
+    "attempt": 1,
+    "actualExit": 0,
+    "complete": true,
+    "counts": {
+      "tests": 163,
+      "suites": 0,
+      "pass": 163,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "validated": true,
+    "elapsedSeconds": 1.820511541009182,
+    "stdoutBytes": 34016,
+    "stdoutSha256": "456b1a8dffe7d24ec2bd020f4321ee3a3e6888e7298086a2b08149d50ffe9628",
+    "stderrBytes": 0,
+    "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "sourcePins": [
+      {
+        "path": "package.json",
+        "bytes": 2677,
+        "LF": 40,
+        "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+        "gitBlob": "45752ffde39d29666094f7f1c755060d75e43deb"
+      },
+      {
+        "path": "src/service-credit-capacity-paced-workload-owner-core.js",
+        "bytes": 21119,
+        "LF": 398,
+        "sha256": "ec12fc8cef93f2ecda6ca88c8bf193db183a8a3f456d3a712411d319dfe7761f",
+        "gitBlob": "eb12bbbe1e3b468f1c8e0acf09ce94b076825178"
+      },
+      {
+        "path": "src/service-credit-capacity-windowed-async-workload-owner-core.js",
+        "bytes": 36252,
+        "LF": 645,
+        "sha256": "fda636116343c497f269d926ae8e3a61f1b9cd1cf11b493c3d9ba99ef55a7444",
+        "gitBlob": "cc9eae4a2e553a0e71a531f191648c9cbe0cb101"
+      },
+      {
+        "path": "src/service-credit-capacity-window-recorder.js",
+        "bytes": 13321,
+        "LF": 242,
+        "sha256": "48855e34729ae68c179d6439aed962a719964732c992a83472330b7e41293579",
+        "gitBlob": "6e28e75b4fd6572fbae535ac066334349ed26038"
+      },
+      {
+        "path": "src/service-credit-capacity-recorder.js",
+        "bytes": 10801,
+        "LF": 236,
+        "sha256": "eca9bf4cad4717df5d61457044c2c5d0a6bc00b6af81964d09bf18325d4a46ad",
+        "gitBlob": "bc9b0a8a9abd48033e698e100cdc6ef90d2152c9"
+      },
+      {
+        "path": "qualification/service-credit-capacity-paced-workload-owner-core.behavior.mjs",
+        "bytes": 26035,
+        "LF": 452,
+        "sha256": "73bcb9a4ee4881693fb22e7597340fe1dc95fd64163a04c582185d44be7dee9b",
+        "gitBlob": "40453f7801e61493ff1f6bce221902cf75864088"
+      },
+      {
+        "path": "src/service-credit-capacity-parent-timing-trace-data.js",
+        "bytes": 13257,
+        "LF": 213,
+        "sha256": "9b48e9212efa6b000690b32c04f07277d2c868562a1e649766a28aab85e0907d",
+        "gitBlob": "8aecb7664c2a4772870fdeb51d10fe69bc71cb79"
+      },
+      {
+        "path": "qualification/service-credit-capacity-paced-private-timing.behavior.mjs",
+        "bytes": 16273,
+        "LF": 234,
+        "sha256": "7184a2d4340000e51296cf1e9a8d8837973fa227445ede9a35456f3843778f00",
+        "gitBlob": "c8757bc35971081c2f314f1ff28c7febc7457032"
+      },
+      {
+        "path": "src/service-credit-capacity-paced-timing-trace-data.js",
+        "bytes": 22759,
+        "LF": 299,
+        "sha256": "4459f9e90692b99af0b831e9acf013b579fe63b2113b8ef5abd81f29c559f5dc",
+        "gitBlob": "0f06c70e53c61497c10b7e4de3fac8697904856e"
+      },
+      {
+        "path": "qualification/service-credit-capacity-paced-timing-trace-data.behavior.mjs",
+        "bytes": 16195,
+        "LF": 219,
+        "sha256": "c73873008f88199cbda5db08f44d03154495680ab1ede8875dc9114ba672419d",
+        "gitBlob": "ff2c6d90b77e0715912573667da04d345650b3b5"
+      },
+      {
+        "path": "qualification/service-credit-capacity-paced-timing-envelope-v2.behavior.mjs",
+        "bytes": 9484,
+        "LF": 144,
+        "sha256": "59c51a2fd9ab682a2cffd1615e337938182ff2b92705fd0f7ac3fead7c47b599",
+        "gitBlob": "236d7ddf5e5f44f26d3a3689b4edc086edf0108e"
+      }
+    ],
+    "sourcePinsUnchanged": true,
+    "outputBounded": true,
+    "dataSizeComparison": {
+      "sourceCalls": 4080,
+      "parentEvents": 8244,
+      "pacedEvents": 16321,
+      "oldTimingLayoutBytes": 3025919,
+      "newTimingLayoutBytes": 2159109,
+      "singleCoreTraceBytes": 866430,
+      "bytesRemoved": 866810,
+      "rawParentTraceOccurrencesBefore": 2,
+      "rawParentTraceOccurrencesAfter": 1,
+      "oldLayoutReconstructedAsDataOnly": true,
+      "oldNativeEntryExecuted": false,
+      "nativeBenchmark": false
+    },
+    "privateFailurePreviewMaximumBytes": 32768,
+    "nativeExecuted": false,
+    "SDK": false,
+    "SQLite": false,
+    "keys": false,
+    "signatures": false,
+    "nonceSearch": false,
+    "sockets": false,
+    "children": false,
+    "qualificationScratchCreated": false,
+    "sourceCopies": 0,
+    "packageCopies": 0,
+    "authority": "NONE"
+  },
+  "currentRegressions": 155,
+  "newEnvelopeControls": 8,
+  "implementation": {
+    "existingCheckerPublicApiRetained": true,
+    "actualParentCheckerResultReused": true,
+    "genuineIndependentPacedAndParentChecksRetained": true,
+    "parentArithmeticPassesPerEnvelopeCall": 1,
+    "rawParentTraceOccurrencesAfterSerialization": 1,
+    "rawReportCopiedIntoEnvelope": false,
+    "rawTraceCopied": false,
+    "safeUnknownOrMismatchedEvidenceRetained": true,
+    "unsafeDataHooksNotExecuted": true,
+    "noExtraHostClockOrSourceCalls": true,
+    "rawEventsOmittedOrTruncatedForSize": false,
+    "declaredContextNotAuthenticated": true
+  },
+  "dataSerializationComparison": {
+    "sourceCalls": 4080,
+    "parentEvents": 8244,
+    "pacedEvents": 16321,
+    "oldTimingLayoutBytes": 3025919,
+    "newTimingLayoutBytes": 2159109,
+    "singleCoreTraceBytes": 866430,
+    "bytesRemoved": 866810,
+    "rawParentTraceOccurrencesBefore": 2,
+    "rawParentTraceOccurrencesAfter": 1,
+    "oldLayoutReconstructedAsDataOnly": true,
+    "oldNativeEntryExecuted": false,
+    "nativeBenchmark": false
+  },
+  "comparisonBoundary": {
+    "oldJsonLayoutReconstructedOnly": true,
+    "oldNativeEntryExecuted": false,
+    "fullNativeCaptureMeasured": false,
+    "nativeThroughputOrLatencyBenchmark": false,
+    "physicalApfsOrCasReclaimMeasured": false,
+    "peakRssGuarantee": false
+  },
+  "history": {
+    "prior155RecordPreserved": true,
+    "prior155MainCommit": "11f8ade6526d39ee12d4a4d89fdb3ac61d11efea",
+    "prior43And47NativeBindingRecordsPreserved": true,
+    "oldPrivateTraceSchemasUnchanged": true,
+    "oldR4GraphAndControlsUnchanged": true,
+    "nativeAllowancesRenewed": false
+  },
+  "publicationBoundary": {
+    "coherentStandaloneMainComponent": true,
+    "nativeEntryOrProfileProducerNotPartOfMainBatch": true,
+    "hosted27ProfileUnchanged": true,
+    "new163ControlsNotHosted": true,
+    "defaultBuyerOrSignerNotChanged": true
+  },
+  "nativeEventsAuthenticated": false,
+  "nativeResourcesQualified": false,
+  "sustainableCapacityQualified": false,
+  "economicAcceptanceQualified": false,
+  "productionQualified": false,
+  "authority": "NONE"
+}
