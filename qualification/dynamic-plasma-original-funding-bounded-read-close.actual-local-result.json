@@ -1,0 +1,353 @@
+{
+  "status": "PASS_ACTUAL_COMPONENT_ONLY_NOT_V4_APPLICATION",
+  "scope": "Actual bounded read-close coordinator with actual original join and actual bounded drain observer; declared in-memory resource callbacks and real Node timers.",
+  "sourceParent": "1aa6fca9986d6468f14a6518f0171b5588240d54",
+  "mainParent": "6cddd79ff4ca3f3af91ff58b959ed0917995893a",
+  "actualComponent": {
+    "actualExit": 0,
+    "outputComplete": true,
+    "supervisorReason": null,
+    "counts": {
+      "tests": 18,
+      "passed": 18,
+      "failed": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "cases": [
+      "construction is inert and reserves one cached close before clocks probes or callbacks",
+      "invalid shape callbacks budgets and arity refuse without caller getters or coercion",
+      "clean actual join completes once and does not reinterpret close as payment success",
+      "pending read close and pending operation are both joined before one funding entry",
+      "a rejected active operation is joined without reading raw failure properties",
+      "never-settling read close yields permanent unknown without entering funding",
+      "never-settling operation cannot retain an unbounded public close or authorize late funding",
+      "funding close already entered but never settled is unknown not an assertion that a store remains open",
+      "the same live permit vetoes a deferred source close boundary after the budget has ended",
+      "rejected or non-undefined read close refuses funding without awaiting its budget",
+      "false throwing and thenable resource guards never grant funding close or invoke a then getter",
+      "a public close dependency in read close is rejected instead of waiting on itself",
+      "a public close dependency in the active operation is rejected without a second read close",
+      "a public close dependency returned by funding is permanent unknown after one callback entry",
+      "reentrant read stop sees the already reserved identical public close",
+      "wrong start arity remains inert and cannot consume the genuine single close",
+      "intrinsic drift still requests owned read stop while refusing unsafe reactions or funding entry",
+      "settled clean close remains cached after its budget while no future funding authority is exposed"
+    ],
+    "inputs": [
+      {
+        "path": "package.json",
+        "bytes": 2677,
+        "LF": 40,
+        "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+        "gitBlob": "45752ffde39d29666094f7f1c755060d75e43deb"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-original-funding-bounded-read-close.js",
+        "bytes": 10732,
+        "LF": 197,
+        "sha256": "69fe92b9460aba5f5ecb671a4befe059f0686f4ca2e50ffeaf468e25893f0f9c",
+        "gitBlob": "fa279111addab91315d54f7333bbbb9266369c53"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-original-funding-read-close.js",
+        "bytes": 9568,
+        "LF": 178,
+        "sha256": "5086567b2c0cce0fc3419db69641beb7e5e434d47f83e17015682964ad482a45",
+        "gitBlob": "f2a1b30bb02a6b192fc3b0fe0b4fc5b65e2d297b"
+      },
+      {
+        "path": "src/service-credit-bounded-operation-drain.js",
+        "bytes": 4046,
+        "LF": 92,
+        "sha256": "ccaf1742f94a2ae312598c4bb2adc0c6168b1ade0167dbc8990422f5e7037885",
+        "gitBlob": "9cb4987ecd835e7b558d6088d562f417a9179da8"
+      },
+      {
+        "path": "qualification/dynamic-plasma-original-funding-bounded-read-close.behavior.draft.mjs",
+        "bytes": 12596,
+        "LF": 167,
+        "sha256": "c648d274d6bb35cdf77b5e447c99b561136895bc528b8f85cc3dfbea54f6ba6e",
+        "gitBlob": "8f551ea700238557f398caae8e4c246b1cf1962b"
+      }
+    ],
+    "streams": {
+      "stdout": {
+        "bytes": 4862,
+        "sha256": "3d0ba02bdbb8be07df70409666973c1480442f21898b7c046a1a121861677711"
+      },
+      "stderr": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    "runtime": {
+      "version": "v24.19.0",
+      "platform": "darwin",
+      "architecture": "arm64",
+      "sha256": "dbedff294bab84a0a86c04e15fbcbeb1c97ca10bef1b32b0634cd24b36f62100"
+    },
+    "command": {
+      "entry": "qualification/dynamic-plasma-original-funding-bounded-read-close.behavior.draft.mjs",
+      "nodeCommands": 1,
+      "nodeChildProcesses": 0,
+      "selectedBy": "eighteen-sdk-free-real-timer-cases",
+      "directEntryWithoutNodeTestChildDiscovery": true,
+      "exactReadOnlyInputGrants": 5,
+      "filesystemWriteGrant": false,
+      "childGrant": false,
+      "workerGrant": false,
+      "addons": false,
+      "compileCacheDisabled": true,
+      "dynamicCodeGenerationFromStrings": false,
+      "unhandledRejections": "strict",
+      "supervisorDeadlineSeconds": 15,
+      "maximumCapturedBytesPerStream": 65536,
+      "inputIdentitiesAndBytesUnchanged": true,
+      "runtimeIdentityAndBytesUnchanged": true,
+      "captureRetainedInCommandRecord": true,
+      "ramCaptureOnly": true,
+      "OSOrNetworkSandboxClaim": false
+    },
+    "counters": {
+      "entered": 18,
+      "completed": 18,
+      "callerHooks": 0,
+      "readCloseCallbackEntries": 19,
+      "fundingCloseCallbackEntries": 9,
+      "realTimers": true,
+      "resourceCallbacks": "DECLARED_DATA_NOT_NATIVE_HANDLES",
+      "actualV4Imported": false,
+      "actualPayerImported": false,
+      "SDK": 0,
+      "SQLite": 0,
+      "sockets": 0,
+      "keys": 0,
+      "signatures": 0,
+      "nonceEvaluations": 0
+    },
+    "timingInterpretation": "Case durations are not a benchmark or exact callback-deadline evidence."
+  },
+  "actualV4SyntaxOnly": {
+    "event": "Q91_ACTUAL_V4_SYNTAX_COMPLETE",
+    "NodeCommands": 1,
+    "NodeChildren": 0,
+    "inputs": [
+      {
+        "path": "package.json",
+        "bytes": 2677,
+        "LF": 40,
+        "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+        "gitBlob": "45752ffde39d29666094f7f1c755060d75e43deb"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-original-funding-submission.js",
+        "bytes": 22507,
+        "LF": 377,
+        "sha256": "666551930bcf481d136c773de12d00228822c0f2a810d5c92aafa401acf80c68",
+        "gitBlob": "169e70d4e5678d0e2f07f9dcbe0b3f1167f690e3"
+      }
+    ],
+    "results": [
+      {
+        "input": {
+          "path": "src/zenon/dynamic-plasma-original-funding-submission.js",
+          "bytes": 22507,
+          "LF": 377,
+          "sha256": "666551930bcf481d136c773de12d00228822c0f2a810d5c92aafa401acf80c68",
+          "gitBlob": "169e70d4e5678d0e2f07f9dcbe0b3f1167f690e3"
+        },
+        "syntaxActualExit": 0,
+        "outputComplete": true,
+        "reason": null,
+        "streams": {
+          "stdout": {
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "stderr": {
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        "stderr": "",
+        "applicationImported": false,
+        "applicationExecuted": false
+      }
+    ],
+    "SDKImports": 0,
+    "SQLiteOpens": 0,
+    "networkCalls": 0,
+    "newScratch": 0,
+    "nativeReadGraphImported": false,
+    "nativeReadGraphRuntimeQualified": false,
+    "graphRuntimeQualified": false,
+    "interpretation": "node --check parsed only the current submission file. It did not import dependencies, construct V4, open SQLite or run the actual payer.",
+    "previousSourcePin": {
+      "path": "src/zenon/dynamic-plasma-original-funding-submission.js",
+      "bytes": 21187,
+      "LF": 360,
+      "sha256": "caf60b4b2a61b8259b9d671d3d262e3d5a49fa30a2e79bb72df21c4ceb74c1df",
+      "gitBlob": "31b8143be15fae2c97989597e067622ac34640ce"
+    }
+  },
+  "sourceOnlyV4Integration": {
+    "selectedExport": "createZenonDynamicPlasmaOriginalFundingSubmissionV4",
+    "selectedJoin": "createOriginalFundingBoundedReadCloseCoordinator",
+    "cooperativeBudgetSelection": "Math.min(existing deadlineMs, 1000)",
+    "addedConfigurationFields": 0,
+    "newFactoryOrClockInjection": false,
+    "oldV1V2V3SelectionsUnchangedByReviewedDiff": true,
+    "actualPayerUnchangedPin": {
+      "path": "src/service-credit-zenon-funding-post-v1-payer-recovery-owner.js",
+      "bytes": 22581,
+      "LF": 626,
+      "sha256": "d62450b462a5412c35dfa474cbf7cac1e5aad88ecd6fc04106e36a67f8459a80",
+      "gitBlob": "cd030bb52146ae3445822224de25268f1c972b78"
+    },
+    "reviewedActualPayerChain": [
+      "The actual V4 passes a private composite native-resource/current-budget guard to the actual guarded payer.",
+      "The actual payer awaits its own pending local operation and active attempt before the BEFORE_STORE guard.",
+      "No await separates BEFORE_STORE from the genuine synchronous store.close call.",
+      "The actual payer checks the same composite guard at AFTER_STORE and retains its actual entered/returned/refusal-stage inspection."
+    ],
+    "syntheticCallbacksDoNotQualifyThatChain": true,
+    "SDKSQLiteHTTPSApplicationExecuted": false,
+    "noOldResultReboundToChangedV4": true,
+    "changedSubmissionOnMain": false,
+    "defaultBuyerChanged": false
+  },
+  "behavior": {
+    "constructionInert": true,
+    "reservedCachedPrehandledPublicClose": true,
+    "readStopRequestedEvenIfInitialBudgetOrIntrinsicCheckFails": true,
+    "pendingReadOperationOrFundingCannotKeepPublicClosePendingIndefinitelyOnResponsiveEventLoop": true,
+    "oneOwnedCompletionPromiseInsteadOfBusyPolling": true,
+    "normalCompletionProbeEntries": 1,
+    "budgetCheckedBeforeAndAfterSourceGuard": true,
+    "onlyLiteralTrueGuardAdmitted": true,
+    "permanentUnknownAfterExpiryOrRefusal": true,
+    "lateCompletionRestoresAuthority": false,
+    "directPublicCloseAliasesRefused": true,
+    "paymentOutcome": "NOT_ESTABLISHED",
+    "nativeResourceCleanup": "NOT_QUALIFIED",
+    "authority": "NONE",
+    "actualFundingCallbackMayAlreadyHaveEnteredWhenUnknown": true,
+    "storeCloseState": "SEE_ACTUAL_PAYER_INSPECTION",
+    "canUndoReturnedStoreClose": false,
+    "canAssertStoreRemainedOpenAfterFundingEntry": false,
+    "runtimeOperationCancelled": false,
+    "automaticRetry": false,
+    "reSign": false,
+    "replacement": false
+  },
+  "frozenFundingTlsSelection": {
+    "manifest": "qualification/funding-post-native-loopback-tls-current.inputs.json",
+    "manifestSha256": "523827fb540b30d15f954e93b3245e1efdde84fca3aeafba9bddaac363c471b9",
+    "inputRows": 11,
+    "manifestAndSelectedInputBytesUnchanged": true,
+    "currentSourceOnlyAdmissionReplayed": false,
+    "newNativeTlsAttempt": false,
+    "previousTwoTlsAttemptsRemainConsumed": true,
+    "followupAuthority": "PENDING_EXPLICIT_HUMAN_REPLY",
+    "OpenSslCommands": 0,
+    "nativeHttpsCommands": 0,
+    "existingFailureEvidencePreserved": true
+  },
+  "storage": {
+    "newManagedRoots": 0,
+    "newManagedTasks": 0,
+    "newQualificationScratchBytes": 0,
+    "newDownloads": 0,
+    "archivesCreated": 0,
+    "existingDataDeleted": 0,
+    "historicalRootsOrMetadataModified": false,
+    "publicSourceTestAndNormalizedReportAreNotDisposableScratch": true
+  },
+  "publication": {
+    "eligibleSourceFiles": [
+      "src/zenon/dynamic-plasma-original-funding-bounded-read-close.js",
+      "src/zenon/dynamic-plasma-original-funding-submission.js",
+      "qualification/dynamic-plasma-original-funding-bounded-read-close.behavior.draft.mjs",
+      "qualification/dynamic-plasma-original-funding-bounded-read-close.actual-local-result.json",
+      "docs/P2_ORIGINAL_FUNDING_BOUNDED_READ_CLOSE.md"
+    ],
+    "eligibleMainFiles": [
+      "src/zenon/dynamic-plasma-original-funding-bounded-read-close.js",
+      "qualification/dynamic-plasma-original-funding-bounded-read-close.behavior.draft.mjs",
+      "qualification/dynamic-plasma-original-funding-bounded-read-close.actual-local-result.json",
+      "docs/P2_ORIGINAL_FUNDING_BOUNDED_READ_CLOSE.md",
+      "src/service-credit-bounded-operation-drain.js"
+    ],
+    "exactTestedDependencyAddition": "src/service-credit-bounded-operation-drain.js",
+    "sourceDependencyPinMatchesExecutedBytes": true,
+    "initialReadOnlyBaselineRefusedMissingMainDependency": true,
+    "baselineRefreshAlsoRetainedOneLocalAssertionEditingFailure": true,
+    "noPublicationDuringRefusedBaselineChecks": true,
+    "CIAtParents": {
+      "source": {
+        "checks": 0,
+        "statuses": 0,
+        "runs": 0
+      },
+      "main": {
+        "checks": 0,
+        "statuses": 0,
+        "runs": 0
+      }
+    },
+    "CIInterpretation": "NO_CURRENT_PASS_INFERRED",
+    "openPRs": [
+      {
+        "number": 194,
+        "head": "79ca2b430ae53c55b1aba11e56c99e083d4a8431",
+        "files": 20,
+        "draft": true
+      },
+      {
+        "number": 193,
+        "head": "5b4bf1b6780586676007c84303510fb4e316cf5e",
+        "files": 2,
+        "draft": true
+      },
+      {
+        "number": 175,
+        "head": "40eca21c34263513230c5d3c431250a0ed42aa90",
+        "files": 11,
+        "draft": true
+      },
+      {
+        "number": 157,
+        "head": "525578cc44db23943e9cfb5a62c4d1c487cca99a",
+        "files": 2,
+        "draft": false
+      }
+    ],
+    "targetOverlapWithOpenPRs": false,
+    "sourceAndMainProtectedAtReview": false,
+    "rulesAtReview": [],
+    "routineNormalFastForwardOnly": true,
+    "forcePush": false,
+    "workflowChange": false,
+    "workflowDispatch": false,
+    "PRCreationOrComment": false,
+    "otherBranchChanges": false,
+    "publicationOutcome": "VERIFY_SEPARATELY_BY_EXACT_COMMIT_READBACK"
+  },
+  "limits": [
+    "Cooperative deadlines are observed only when the JavaScript event loop and owned callbacks make progress; they are not OS, hostile-code, CPU cancellation or exact timer guarantees.",
+    "The component run imported neither the actual V4 submission nor the actual payer, SDK, SQLite or network modules.",
+    "Resource-close callbacks in this run are declared data. CLOSED does not prove physical socket/TLS/store cleanup, payment success, inclusion, activation or delivery.",
+    "An observed budget veto prevents later admitted entry, but cannot undo a store.close that already entered or returned.",
+    "The changed actual V4/payer/SQLite/HTTPS graph remains source-only; its one-file syntax result is not application execution.",
+    "The native funding-only TLS profile and its pending one-shot authority remain separate and unchanged."
+  ],
+  "fullP0Complete": false,
+  "fullP1Complete": false,
+  "fullP2Complete": false,
+  "fullRoadmapComplete": false,
+  "livePaymentQualified": false,
+  "economicPilotQualified": false,
+  "productionQualified": false
+}

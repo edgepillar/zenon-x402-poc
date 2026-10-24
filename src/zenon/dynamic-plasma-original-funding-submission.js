@@ -9,10 +9,12 @@ import { createZenonFundingPostV1PayerRecoveryOwner,
 import { ZenonFundingPayerRecoverySqliteStore } from '../service-credit-zenon-funding-post-v1-payer-recovery-sqlite-store.js';
 import { encodeOriginalPaymentCheckpoint } from '../service-credit-pilot-original-payment-checkpoint.js';
 import { createOriginalFundingReadCloseCoordinator } from './dynamic-plasma-original-funding-read-close.js';
+import { createOriginalFundingBoundedReadCloseCoordinator } from './dynamic-plasma-original-funding-bounded-read-close.js';
 
 const PREPARATION = createZenonDynamicPlasmaOriginalFundingPreparation;
 const PREPARATION_V2 = createZenonDynamicPlasmaOriginalFundingPreparationV2;
 const READ_CLOSE_JOIN = createOriginalFundingReadCloseCoordinator;
+const BOUNDED_READ_CLOSE_JOIN = createOriginalFundingBoundedReadCloseCoordinator;
 const PAYER = createZenonFundingPostV1PayerRecoveryOwner;
 const GUARDED_PAYER = createZenonFundingPostV1PayerRecoveryOwnerV2;
 const PINS = snapshotZenonDynamicPlasmaOriginalFundingPins, ENCODE = encodeOriginalPaymentCheckpoint;
@@ -109,6 +111,9 @@ export function createZenonDynamicPlasmaOriginalFundingSubmissionV3(configuratio
  * SOURCE ONLY V4: V3's actual read/operation close join plus a private current
  * native-resource guard, forwarded to the actual guarded payer. The payer
  * rechecks after its own async joins immediately before/after real store close.
+ * The actual V4 join observes at most min(deadlineMs, 1000) cooperative ms;
+ * its permanent budget veto is rechecked at those same real store boundaries.
+ * This is not cancellation or an OS deadline, and cannot undo a returned close.
  * V1/V2/V3 keep their previous selections; no old result qualifies this graph.
  */
 export function createZenonDynamicPlasmaOriginalFundingSubmissionV4(configuration) {
@@ -119,6 +124,7 @@ export function createZenonDynamicPlasmaOriginalFundingSubmissionV4(configuratio
 function createSubmission(configuration, retainedValidationEnabled, joinedReadCloseEnabled = false,
   guardedNativeCloseEnabled = false) {
   let preparer, payer, store, resource, readSessionClose = null, nativeCloseGuard = null;
+  let nativeCloseJoin = null, closeBudgetMs = null;
   try {
     if (!invariant()) fail('configuration_rejected');
     const input = record(configuration, guardedNativeCloseEnabled
@@ -147,9 +153,17 @@ function createSubmission(configuration, retainedValidationEnabled, joinedReadCl
     preparer = (retainedValidationEnabled ? PREPARATION_V2 : PREPARATION)({
       preparerOptions: input.preparerOptions, store, fundingResourceUrl: resource,
     });
+    closeBudgetMs = guardedNativeCloseEnabled ? Math.min(input.deadlineMs, 1000) : null;
     payer = guardedNativeCloseEnabled
       ? GUARDED_PAYER({ store, deadlineMs: input.deadlineMs, fetchImpl: input.fetchImpl,
-        nativeResourceCloseGuard: nativeCloseGuard })
+        nativeResourceCloseGuard: FREEZE(function currentNativeAndBudgetGuard() {
+          // The actual payer calls this AFTER its own awaits, not merely at
+          // earlier coordinator admission. An observed budget veto is permanent.
+          if (arguments.length !== 0 || nativeCloseJoin === null
+              || APPLY(nativeCloseJoin.canCloseFunding, undefined, []) !== true) return false;
+          return APPLY(nativeCloseGuard, undefined, []) === true
+            && APPLY(nativeCloseJoin.canCloseFunding, undefined, []) === true;
+        }) })
       : PAYER({ store, deadlineMs: input.deadlineMs, fetchImpl: input.fetchImpl });
     if (!invariant()) fail('configuration_rejected');
   } catch { fail('configuration_rejected'); }
@@ -163,7 +177,7 @@ function createSubmission(configuration, retainedValidationEnabled, joinedReadCl
   let phase = 'IDLE', lifecycle = 'OPEN', packet = null, pending = null, closing = null;
   let prepareAttempts = 0, commitAttempts = 0, submissionAttempts = 0, submissionEntered = false;
   let fundingIntakeStatus = null;
-  const joinedClose = joinedReadCloseEnabled ? READ_CLOSE_JOIN(FREEZE({
+  const closeCallbacks = joinedReadCloseEnabled ? FREEZE({
     startReadClose: readSessionClose,
     snapshotOperation: FREEZE(function snapshotOperation() { return pending; }),
     closeFunding: FREEZE(function closeFunding() {
@@ -178,7 +192,10 @@ function createSubmission(configuration, retainedValidationEnabled, joinedReadCl
       if (nativeCloseGuard !== null && APPLY(nativeCloseGuard, undefined, []) !== true) return false;
       return invariant();
     }),
-  })) : null;
+  }) : null;
+  const joinedClose = !joinedReadCloseEnabled ? null : guardedNativeCloseEnabled
+    ? BOUNDED_READ_CLOSE_JOIN(closeCallbacks, closeBudgetMs) : READ_CLOSE_JOIN(closeCallbacks);
+  nativeCloseJoin = guardedNativeCloseEnabled ? joinedClose : null;
   configuration = null; preparer = null; payer = null; store = null; resource = null;
 
   function retained(pins, status, revision) {
