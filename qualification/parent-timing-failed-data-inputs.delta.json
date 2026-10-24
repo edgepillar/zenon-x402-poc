@@ -1,0 +1,55 @@
+{
+  "kind": "FAILED_SYNTHETIC_DATA_INPUT_DELTA_NOT_EXECUTION",
+  "version": 1,
+  "basis": "Pinned current files plus exact single-occurrence replacements; reconstructed bytes matched the original failed-run SHA-256.",
+  "inputs": [
+    {
+      "path": "qualification/native_capacity_managed_workload_v3.py",
+      "currentSha256": "6d4e2d726bd600b84be387147ee7cd6555daa8b72b8940a8719861a1078b4567",
+      "failedSha256": "7c9eb67f17c21b803845f88da19a24073a73c175eb5064a27d03d096cad26a51",
+      "failedBytes": 49689,
+      "replaceCurrentToFailed": [
+        {
+          "current": "d756740994aeb53ebeee47320d732583d96381dfa8c00e18a30f414e70a77027",
+          "failed": "4d1fe3063272003fb99eda0f864a31a38275699a851a37fc5cae635dcb1fb307",
+          "occurrences": 1
+        },
+        {
+          "current": "3bb597da71736542615047d11af78ad6825df5bdb6e4561747d8c1f9dff7d0df",
+          "failed": "6102a9c91bc13588e4b016f85178e1c0e2baa4499257e22a0632a2b3539c221e",
+          "occurrences": 1
+        },
+        {
+          "current": "6928303c36f034fc295145563e40304641a91fe7db35d62eb364031bbcff7e6a",
+          "failed": "560b49d353cc6f89789e42e748622700c146abdc399d14e6378f26dac16f3a5b",
+          "occurrences": 1
+        }
+      ]
+    },
+    {
+      "path": "qualification/native_capacity_managed_workload_v3.behavior.py",
+      "currentSha256": "c300550075b653010db480fb54febf41870f29817799bb60f4378c6e3c699bef",
+      "failedSha256": "c4a6ec4ccc36e67cf55d9d233d490e389463d9527ba33e4ba81c0db3344b39b4",
+      "failedBytes": 42040,
+      "replaceCurrentToFailed": [
+        {
+          "current": "6d4e2d726bd600b84be387147ee7cd6555daa8b72b8940a8719861a1078b4567",
+          "failed": "7c9eb67f17c21b803845f88da19a24073a73c175eb5064a27d03d096cad26a51",
+          "occurrences": 1
+        },
+        {
+          "current": "laneIds=clone(WORK[\"laneIds\"])",
+          "failed": "laneIds=WORK[\"laneIds\"]",
+          "occurrences": 1
+        }
+      ]
+    }
+  ],
+  "fixtureSha256": "0df8819b72d0fce70581116102a21d11726c5f264403cfff0537323dfb1031c1",
+  "readOnlyReconstruction": true,
+  "oldVariantExecuted": false,
+  "fullSourceCopiesWritten": 0,
+  "failedOutcomePreserved": true,
+  "nativeQualified": false,
+  "authority": "NONE"
+}

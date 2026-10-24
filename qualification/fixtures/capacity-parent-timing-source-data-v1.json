@@ -1,0 +1,1219 @@
+{
+  "fixtureVersion": 1,
+  "kind": "SYNTHETIC_SOURCE_RECORDER_DATA_NOT_NATIVE_EVIDENCE",
+  "scenarios": {
+    "full": {
+      "completedOriginalCallsPerLane": 5,
+      "trace": {
+        "parentTimingTraceVersion": 1,
+        "scope": "PRIVATE_PARENT_RECORDER_EVENTS_NOT_NATIVE_AUTHENTICATION",
+        "clockDomain": "PARENT_MONOTONIC_RECORDER_EVENT_ORDER",
+        "limits": {
+          "maxSamplesPerPhase": 128,
+          "maxInFlightPerPhase": 4
+        },
+        "unknown": false,
+        "maximumEvents": 900,
+        "events": [
+          {
+            "sequence": 1,
+            "kind": "START_WARMUP",
+            "atNs": "1"
+          },
+          {
+            "sequence": 2,
+            "kind": "BEGIN",
+            "observation": 1,
+            "phase": "FUNDING",
+            "cohort": "WARMUP",
+            "atNs": "2"
+          },
+          {
+            "sequence": 3,
+            "kind": "BEGIN",
+            "observation": 2,
+            "phase": "FUNDING",
+            "cohort": "WARMUP",
+            "atNs": "3"
+          },
+          {
+            "sequence": 4,
+            "kind": "FINISH",
+            "observation": 1,
+            "outcome": "SUCCEEDED",
+            "atNs": "4"
+          },
+          {
+            "sequence": 5,
+            "kind": "FINISH",
+            "observation": 2,
+            "outcome": "SUCCEEDED",
+            "atNs": "5"
+          },
+          {
+            "sequence": 6,
+            "kind": "BALANCE_CHECK",
+            "matches": true,
+            "atNs": "6"
+          },
+          {
+            "sequence": 7,
+            "kind": "BALANCE_CHECK",
+            "matches": true,
+            "atNs": "7"
+          },
+          {
+            "sequence": 8,
+            "kind": "BEGIN",
+            "observation": 3,
+            "phase": "FUNDED_CALL",
+            "cohort": "WARMUP",
+            "atNs": "8"
+          },
+          {
+            "sequence": 9,
+            "kind": "BEGIN",
+            "observation": 4,
+            "phase": "FUNDED_CALL",
+            "cohort": "WARMUP",
+            "atNs": "9"
+          },
+          {
+            "sequence": 10,
+            "kind": "FINISH",
+            "observation": 3,
+            "outcome": "SUCCEEDED",
+            "atNs": "10"
+          },
+          {
+            "sequence": 11,
+            "kind": "FINISH",
+            "observation": 4,
+            "outcome": "SUCCEEDED",
+            "atNs": "11"
+          },
+          {
+            "sequence": 12,
+            "kind": "BALANCE_CHECK",
+            "matches": true,
+            "atNs": "12"
+          },
+          {
+            "sequence": 13,
+            "kind": "BALANCE_CHECK",
+            "matches": true,
+            "atNs": "13"
+          },
+          {
+            "sequence": 14,
+            "kind": "START_MEASUREMENT",
+            "atNs": "14"
+          },
+          {
+            "sequence": 15,
+            "kind": "BEGIN",
+            "observation": 5,
+            "phase": "FUNDED_CALL",
+            "cohort": "MEASUREMENT",
+            "atNs": "15"
+          },
+          {
+            "sequence": 16,
+            "kind": "BEGIN",
+            "observation": 6,
+            "phase": "FUNDED_CALL",
+            "cohort": "MEASUREMENT",
+            "atNs": "16"
+          },
+          {
+            "sequence": 17,
+            "kind": "FINISH",
+            "observation": 5,
+            "outcome": "SUCCEEDED",
+            "atNs": "17"
+          },
+          {
+            "sequence": 18,
+            "kind": "BEGIN",
+            "observation": 7,
+            "phase": "FUNDED_CALL",
+            "cohort": "MEASUREMENT",
+            "atNs": "18"
+          },
+          {
+            "sequence": 19,
+            "kind": "FINISH",
+            "observation": 6,
+            "outcome": "SUCCEEDED",
+            "atNs": "19"
+          },
+          {
+            "sequence": 20,
+            "kind": "BEGIN",
+            "observation": 8,
+            "phase": "FUNDED_CALL",
+            "cohort": "MEASUREMENT",
+            "atNs": "20"
+          },
+          {
+            "sequence": 21,
+            "kind": "FINISH",
+            "observation": 7,
+            "outcome": "SUCCEEDED",
+            "atNs": "21"
+          },
+          {
+            "sequence": 22,
+            "kind": "BEGIN",
+            "observation": 9,
+            "phase": "FUNDED_CALL",
+            "cohort": "MEASUREMENT",
+            "atNs": "22"
+          },
+          {
+            "sequence": 23,
+            "kind": "FINISH",
+            "observation": 8,
+            "outcome": "SUCCEEDED",
+            "atNs": "23"
+          },
+          {
+            "sequence": 24,
+            "kind": "BEGIN",
+            "observation": 10,
+            "phase": "FUNDED_CALL",
+            "cohort": "MEASUREMENT",
+            "atNs": "24"
+          },
+          {
+            "sequence": 25,
+            "kind": "FINISH",
+            "observation": 9,
+            "outcome": "SUCCEEDED",
+            "atNs": "25"
+          },
+          {
+            "sequence": 26,
+            "kind": "BEGIN",
+            "observation": 11,
+            "phase": "FUNDED_CALL",
+            "cohort": "MEASUREMENT",
+            "atNs": "26"
+          },
+          {
+            "sequence": 27,
+            "kind": "FINISH",
+            "observation": 10,
+            "outcome": "SUCCEEDED",
+            "atNs": "27"
+          },
+          {
+            "sequence": 28,
+            "kind": "BEGIN",
+            "observation": 12,
+            "phase": "FUNDED_CALL",
+            "cohort": "MEASUREMENT",
+            "atNs": "28"
+          },
+          {
+            "sequence": 29,
+            "kind": "FINISH",
+            "observation": 11,
+            "outcome": "SUCCEEDED",
+            "atNs": "29"
+          },
+          {
+            "sequence": 30,
+            "kind": "FINISH",
+            "observation": 12,
+            "outcome": "SUCCEEDED",
+            "atNs": "30"
+          },
+          {
+            "sequence": 31,
+            "kind": "STOP_MEASUREMENT",
+            "atNs": "31"
+          },
+          {
+            "sequence": 32,
+            "kind": "BALANCE_CHECK",
+            "matches": true,
+            "atNs": "32"
+          },
+          {
+            "sequence": 33,
+            "kind": "BALANCE_CHECK",
+            "matches": true,
+            "atNs": "33"
+          },
+          {
+            "sequence": 34,
+            "kind": "FINALIZE",
+            "atNs": "34"
+          }
+        ],
+        "rawIdentifiersIncluded": false,
+        "postStopLedgerTraceIncluded": false,
+        "nativeEventsAuthenticated": false,
+        "nativeResourcesQualified": false,
+        "sustainableCapacityQualified": false,
+        "authority": "NONE"
+      },
+      "recording": {
+        "capacityWindowRecorderVersion": 1,
+        "scope": "CALLER_DECLARED_BOUNDARIES_NOT_BENCHMARK_EXECUTION",
+        "boundaryOrder": "EXPLICIT_CALL_ORDER_ON_NONDECREASING_TIMESTAMPS",
+        "recordingState": "COMPLETE",
+        "recordingIssue": null,
+        "stopReason": null,
+        "limits": {
+          "maxSamplesPerPhase": 128,
+          "maxInFlightPerPhase": 4
+        },
+        "refusedStarts": 0,
+        "pendingObservations": 0,
+        "warmupNanoseconds": "13",
+        "measurementNanoseconds": "17",
+        "drainNanoseconds": "3",
+        "runNanoseconds": "33",
+        "phases": {
+          "FUNDING": {
+            "enteredAcrossCohorts": 2,
+            "peakInFlightAcrossCohorts": 2,
+            "peakInFlightDuringMeasurement": 0,
+            "warmupInFlightAtStart": 0,
+            "warmupInFlightAtStop": 0,
+            "measurementInFlightAtStop": 0,
+            "warmupTerminalsDuringMeasurement": {
+              "settled": 0,
+              "succeeded": 0,
+              "rejected": 0,
+              "unknown": 0
+            },
+            "measurementTerminalsDuringMeasurement": {
+              "settled": 0,
+              "succeeded": 0,
+              "rejected": 0,
+              "unknown": 0
+            },
+            "warmupTerminalsAfterMeasurement": {
+              "settled": 0,
+              "succeeded": 0,
+              "rejected": 0,
+              "unknown": 0
+            },
+            "measurementTerminalsAfterMeasurement": {
+              "settled": 0,
+              "succeeded": 0,
+              "rejected": 0,
+              "unknown": 0
+            },
+            "successfulWindowCompletionRatio": null,
+            "rateStatus": "NO_MEASUREMENT_STARTS"
+          },
+          "FUNDED_CALL": {
+            "enteredAcrossCohorts": 10,
+            "peakInFlightAcrossCohorts": 2,
+            "peakInFlightDuringMeasurement": 2,
+            "warmupInFlightAtStart": 0,
+            "warmupInFlightAtStop": 0,
+            "measurementInFlightAtStop": 0,
+            "warmupTerminalsDuringMeasurement": {
+              "settled": 0,
+              "succeeded": 0,
+              "rejected": 0,
+              "unknown": 0
+            },
+            "measurementTerminalsDuringMeasurement": {
+              "settled": 8,
+              "succeeded": 8,
+              "rejected": 0,
+              "unknown": 0
+            },
+            "warmupTerminalsAfterMeasurement": {
+              "settled": 0,
+              "succeeded": 0,
+              "rejected": 0,
+              "unknown": 0
+            },
+            "measurementTerminalsAfterMeasurement": {
+              "settled": 0,
+              "succeeded": 0,
+              "rejected": 0,
+              "unknown": 0
+            },
+            "successfulWindowCompletionRatio": {
+              "numerator": "8000000000",
+              "denominator": "17",
+              "unit": "CALLER_OBSERVED_SUCCESSFUL_COMPLETIONS_PER_SECOND"
+            },
+            "rateStatus": "OBSERVED_WINDOW_RATIO_ONLY"
+          },
+          "LEDGER_TRANSACTION": {
+            "enteredAcrossCohorts": 0,
+            "peakInFlightAcrossCohorts": 0,
+            "peakInFlightDuringMeasurement": 0,
+            "warmupInFlightAtStart": 0,
+            "warmupInFlightAtStop": 0,
+            "measurementInFlightAtStop": 0,
+            "warmupTerminalsDuringMeasurement": {
+              "settled": 0,
+              "succeeded": 0,
+              "rejected": 0,
+              "unknown": 0
+            },
+            "measurementTerminalsDuringMeasurement": {
+              "settled": 0,
+              "succeeded": 0,
+              "rejected": 0,
+              "unknown": 0
+            },
+            "warmupTerminalsAfterMeasurement": {
+              "settled": 0,
+              "succeeded": 0,
+              "rejected": 0,
+              "unknown": 0
+            },
+            "measurementTerminalsAfterMeasurement": {
+              "settled": 0,
+              "succeeded": 0,
+              "rejected": 0,
+              "unknown": 0
+            },
+            "successfulWindowCompletionRatio": null,
+            "rateStatus": "NO_MEASUREMENT_STARTS"
+          }
+        },
+        "cohorts": {
+          "WARMUP": {
+            "capacityRecorderVersion": 1,
+            "scope": "CALLER_DECLARED_OBSERVATIONS_ONLY",
+            "clock": "CALLER_SUPPLIED_MONOTONIC_NANOSECONDS",
+            "percentileMethod": "NEAREST_RANK",
+            "recordingState": "COMPLETE",
+            "recordingIssue": null,
+            "stopReason": null,
+            "limits": {
+              "maxSamplesPerPhase": 128,
+              "maxInFlightPerPhase": 4
+            },
+            "refusedStarts": 0,
+            "pendingObservations": 0,
+            "observedSpanNanoseconds": "9",
+            "phases": {
+              "FUNDING": {
+                "entered": 2,
+                "settled": 2,
+                "pending": 0,
+                "succeeded": 2,
+                "rejected": 0,
+                "unknown": 0,
+                "peakInFlight": 2,
+                "nonSuccessFraction": {
+                  "numerator": 0,
+                  "denominator": 2
+                },
+                "terminalLatencyNanoseconds": {
+                  "samples": 2,
+                  "min": "2",
+                  "p50": "2",
+                  "p95": "2",
+                  "p99": "2",
+                  "max": "2"
+                },
+                "successfulLatencyNanoseconds": {
+                  "samples": 2,
+                  "min": "2",
+                  "p50": "2",
+                  "p95": "2",
+                  "p99": "2",
+                  "max": "2"
+                }
+              },
+              "FUNDED_CALL": {
+                "entered": 2,
+                "settled": 2,
+                "pending": 0,
+                "succeeded": 2,
+                "rejected": 0,
+                "unknown": 0,
+                "peakInFlight": 2,
+                "nonSuccessFraction": {
+                  "numerator": 0,
+                  "denominator": 2
+                },
+                "terminalLatencyNanoseconds": {
+                  "samples": 2,
+                  "min": "2",
+                  "p50": "2",
+                  "p95": "2",
+                  "p99": "2",
+                  "max": "2"
+                },
+                "successfulLatencyNanoseconds": {
+                  "samples": 2,
+                  "min": "2",
+                  "p50": "2",
+                  "p95": "2",
+                  "p99": "2",
+                  "max": "2"
+                }
+              },
+              "LEDGER_TRANSACTION": {
+                "entered": 0,
+                "settled": 0,
+                "pending": 0,
+                "succeeded": 0,
+                "rejected": 0,
+                "unknown": 0,
+                "peakInFlight": 0,
+                "nonSuccessFraction": null,
+                "terminalLatencyNanoseconds": {
+                  "samples": 0,
+                  "min": null,
+                  "p50": null,
+                  "p95": null,
+                  "p99": null,
+                  "max": null
+                },
+                "successfulLatencyNanoseconds": {
+                  "samples": 0,
+                  "min": null,
+                  "p50": null,
+                  "p95": null,
+                  "p99": null,
+                  "max": null
+                }
+              }
+            },
+            "ledgerBalanceChecks": {
+              "samples": 4,
+              "mismatches": 0,
+              "result": "MATCHES_CALLER_DECLARED_EXPECTATIONS"
+            },
+            "capacityQualification": "NOT_ESTABLISHED",
+            "ledgerCorrectness": "NOT_ESTABLISHED",
+            "authenticatedExecution": false,
+            "liveOrProduction": false,
+            "authority": "NONE"
+          },
+          "MEASUREMENT": {
+            "capacityRecorderVersion": 1,
+            "scope": "CALLER_DECLARED_OBSERVATIONS_ONLY",
+            "clock": "CALLER_SUPPLIED_MONOTONIC_NANOSECONDS",
+            "percentileMethod": "NEAREST_RANK",
+            "recordingState": "COMPLETE",
+            "recordingIssue": null,
+            "stopReason": null,
+            "limits": {
+              "maxSamplesPerPhase": 128,
+              "maxInFlightPerPhase": 4
+            },
+            "refusedStarts": 0,
+            "pendingObservations": 0,
+            "observedSpanNanoseconds": "15",
+            "phases": {
+              "FUNDING": {
+                "entered": 0,
+                "settled": 0,
+                "pending": 0,
+                "succeeded": 0,
+                "rejected": 0,
+                "unknown": 0,
+                "peakInFlight": 0,
+                "nonSuccessFraction": null,
+                "terminalLatencyNanoseconds": {
+                  "samples": 0,
+                  "min": null,
+                  "p50": null,
+                  "p95": null,
+                  "p99": null,
+                  "max": null
+                },
+                "successfulLatencyNanoseconds": {
+                  "samples": 0,
+                  "min": null,
+                  "p50": null,
+                  "p95": null,
+                  "p99": null,
+                  "max": null
+                }
+              },
+              "FUNDED_CALL": {
+                "entered": 8,
+                "settled": 8,
+                "pending": 0,
+                "succeeded": 8,
+                "rejected": 0,
+                "unknown": 0,
+                "peakInFlight": 2,
+                "nonSuccessFraction": {
+                  "numerator": 0,
+                  "denominator": 8
+                },
+                "terminalLatencyNanoseconds": {
+                  "samples": 8,
+                  "min": "2",
+                  "p50": "3",
+                  "p95": "3",
+                  "p99": "3",
+                  "max": "3"
+                },
+                "successfulLatencyNanoseconds": {
+                  "samples": 8,
+                  "min": "2",
+                  "p50": "3",
+                  "p95": "3",
+                  "p99": "3",
+                  "max": "3"
+                }
+              },
+              "LEDGER_TRANSACTION": {
+                "entered": 0,
+                "settled": 0,
+                "pending": 0,
+                "succeeded": 0,
+                "rejected": 0,
+                "unknown": 0,
+                "peakInFlight": 0,
+                "nonSuccessFraction": null,
+                "terminalLatencyNanoseconds": {
+                  "samples": 0,
+                  "min": null,
+                  "p50": null,
+                  "p95": null,
+                  "p99": null,
+                  "max": null
+                },
+                "successfulLatencyNanoseconds": {
+                  "samples": 0,
+                  "min": null,
+                  "p50": null,
+                  "p95": null,
+                  "p99": null,
+                  "max": null
+                }
+              }
+            },
+            "ledgerBalanceChecks": {
+              "samples": 2,
+              "mismatches": 0,
+              "result": "MATCHES_CALLER_DECLARED_EXPECTATIONS"
+            },
+            "capacityQualification": "NOT_ESTABLISHED",
+            "ledgerCorrectness": "NOT_ESTABLISHED",
+            "authenticatedExecution": false,
+            "liveOrProduction": false,
+            "authority": "NONE"
+          }
+        },
+        "ledgerBalanceChecks": {
+          "samples": 6,
+          "mismatches": 0,
+          "stages": {
+            "WARMUP": {
+              "samples": 4,
+              "mismatches": 0
+            },
+            "MEASURING": {
+              "samples": 0,
+              "mismatches": 0
+            },
+            "DRAINING": {
+              "samples": 2,
+              "mismatches": 0
+            }
+          },
+          "expectedBalances": "CALLER_DECLARED_NOT_AUTHENTICATED"
+        },
+        "capacityQualification": "NOT_ESTABLISHED",
+        "sustainableThroughput": "NOT_ESTABLISHED",
+        "nativeClockAuthenticated": false,
+        "physicalDrainQualified": false,
+        "liveOrProduction": false,
+        "authority": "NONE"
+      },
+      "recomputed": {
+        "parentTimingTraceDataVersion": 1,
+        "status": "COMPLETE_MATCHING_DECLARED_PARENT_TRACE_DATA",
+        "eventsChecked": 34,
+        "observationsChecked": 12,
+        "measurementNanoseconds": "17",
+        "allPhaseSummariesRecomputed": true,
+        "rawIdentifiersIncluded": false,
+        "parentAndChildClocksSubtracted": false,
+        "postStopLedgerTraceQualified": false,
+        "nativeEventsAuthenticated": false,
+        "nativeResourcesQualified": false,
+        "sustainableCapacityQualified": false,
+        "authority": "NONE"
+      }
+    },
+    "partial": {
+      "completedOriginalCallsPerLane": 2,
+      "trace": {
+        "parentTimingTraceVersion": 1,
+        "scope": "PRIVATE_PARENT_RECORDER_EVENTS_NOT_NATIVE_AUTHENTICATION",
+        "clockDomain": "PARENT_MONOTONIC_RECORDER_EVENT_ORDER",
+        "limits": {
+          "maxSamplesPerPhase": 128,
+          "maxInFlightPerPhase": 4
+        },
+        "unknown": false,
+        "maximumEvents": 900,
+        "events": [
+          {
+            "sequence": 1,
+            "kind": "START_WARMUP",
+            "atNs": "1"
+          },
+          {
+            "sequence": 2,
+            "kind": "BEGIN",
+            "observation": 1,
+            "phase": "FUNDING",
+            "cohort": "WARMUP",
+            "atNs": "2"
+          },
+          {
+            "sequence": 3,
+            "kind": "BEGIN",
+            "observation": 2,
+            "phase": "FUNDING",
+            "cohort": "WARMUP",
+            "atNs": "3"
+          },
+          {
+            "sequence": 4,
+            "kind": "FINISH",
+            "observation": 1,
+            "outcome": "SUCCEEDED",
+            "atNs": "4"
+          },
+          {
+            "sequence": 5,
+            "kind": "FINISH",
+            "observation": 2,
+            "outcome": "SUCCEEDED",
+            "atNs": "5"
+          },
+          {
+            "sequence": 6,
+            "kind": "BALANCE_CHECK",
+            "matches": true,
+            "atNs": "6"
+          },
+          {
+            "sequence": 7,
+            "kind": "BALANCE_CHECK",
+            "matches": true,
+            "atNs": "7"
+          },
+          {
+            "sequence": 8,
+            "kind": "BEGIN",
+            "observation": 3,
+            "phase": "FUNDED_CALL",
+            "cohort": "WARMUP",
+            "atNs": "8"
+          },
+          {
+            "sequence": 9,
+            "kind": "BEGIN",
+            "observation": 4,
+            "phase": "FUNDED_CALL",
+            "cohort": "WARMUP",
+            "atNs": "9"
+          },
+          {
+            "sequence": 10,
+            "kind": "FINISH",
+            "observation": 3,
+            "outcome": "SUCCEEDED",
+            "atNs": "10"
+          },
+          {
+            "sequence": 11,
+            "kind": "FINISH",
+            "observation": 4,
+            "outcome": "SUCCEEDED",
+            "atNs": "11"
+          },
+          {
+            "sequence": 12,
+            "kind": "BALANCE_CHECK",
+            "matches": true,
+            "atNs": "12"
+          },
+          {
+            "sequence": 13,
+            "kind": "BALANCE_CHECK",
+            "matches": true,
+            "atNs": "13"
+          },
+          {
+            "sequence": 14,
+            "kind": "START_MEASUREMENT",
+            "atNs": "14"
+          },
+          {
+            "sequence": 15,
+            "kind": "BEGIN",
+            "observation": 5,
+            "phase": "FUNDED_CALL",
+            "cohort": "MEASUREMENT",
+            "atNs": "15"
+          },
+          {
+            "sequence": 16,
+            "kind": "BEGIN",
+            "observation": 6,
+            "phase": "FUNDED_CALL",
+            "cohort": "MEASUREMENT",
+            "atNs": "16"
+          },
+          {
+            "sequence": 17,
+            "kind": "STOP_MEASUREMENT",
+            "atNs": "17"
+          },
+          {
+            "sequence": 18,
+            "kind": "FINISH",
+            "observation": 5,
+            "outcome": "SUCCEEDED",
+            "atNs": "18"
+          },
+          {
+            "sequence": 19,
+            "kind": "FINISH",
+            "observation": 6,
+            "outcome": "SUCCEEDED",
+            "atNs": "19"
+          },
+          {
+            "sequence": 20,
+            "kind": "BALANCE_CHECK",
+            "matches": true,
+            "atNs": "20"
+          },
+          {
+            "sequence": 21,
+            "kind": "BALANCE_CHECK",
+            "matches": true,
+            "atNs": "21"
+          },
+          {
+            "sequence": 22,
+            "kind": "FINALIZE",
+            "atNs": "22"
+          }
+        ],
+        "rawIdentifiersIncluded": false,
+        "postStopLedgerTraceIncluded": false,
+        "nativeEventsAuthenticated": false,
+        "nativeResourcesQualified": false,
+        "sustainableCapacityQualified": false,
+        "authority": "NONE"
+      },
+      "recording": {
+        "capacityWindowRecorderVersion": 1,
+        "scope": "CALLER_DECLARED_BOUNDARIES_NOT_BENCHMARK_EXECUTION",
+        "boundaryOrder": "EXPLICIT_CALL_ORDER_ON_NONDECREASING_TIMESTAMPS",
+        "recordingState": "COMPLETE",
+        "recordingIssue": null,
+        "stopReason": null,
+        "limits": {
+          "maxSamplesPerPhase": 128,
+          "maxInFlightPerPhase": 4
+        },
+        "refusedStarts": 0,
+        "pendingObservations": 0,
+        "warmupNanoseconds": "13",
+        "measurementNanoseconds": "3",
+        "drainNanoseconds": "5",
+        "runNanoseconds": "21",
+        "phases": {
+          "FUNDING": {
+            "enteredAcrossCohorts": 2,
+            "peakInFlightAcrossCohorts": 2,
+            "peakInFlightDuringMeasurement": 0,
+            "warmupInFlightAtStart": 0,
+            "warmupInFlightAtStop": 0,
+            "measurementInFlightAtStop": 0,
+            "warmupTerminalsDuringMeasurement": {
+              "settled": 0,
+              "succeeded": 0,
+              "rejected": 0,
+              "unknown": 0
+            },
+            "measurementTerminalsDuringMeasurement": {
+              "settled": 0,
+              "succeeded": 0,
+              "rejected": 0,
+              "unknown": 0
+            },
+            "warmupTerminalsAfterMeasurement": {
+              "settled": 0,
+              "succeeded": 0,
+              "rejected": 0,
+              "unknown": 0
+            },
+            "measurementTerminalsAfterMeasurement": {
+              "settled": 0,
+              "succeeded": 0,
+              "rejected": 0,
+              "unknown": 0
+            },
+            "successfulWindowCompletionRatio": null,
+            "rateStatus": "NO_MEASUREMENT_STARTS"
+          },
+          "FUNDED_CALL": {
+            "enteredAcrossCohorts": 4,
+            "peakInFlightAcrossCohorts": 2,
+            "peakInFlightDuringMeasurement": 2,
+            "warmupInFlightAtStart": 0,
+            "warmupInFlightAtStop": 0,
+            "measurementInFlightAtStop": 2,
+            "warmupTerminalsDuringMeasurement": {
+              "settled": 0,
+              "succeeded": 0,
+              "rejected": 0,
+              "unknown": 0
+            },
+            "measurementTerminalsDuringMeasurement": {
+              "settled": 0,
+              "succeeded": 0,
+              "rejected": 0,
+              "unknown": 0
+            },
+            "warmupTerminalsAfterMeasurement": {
+              "settled": 0,
+              "succeeded": 0,
+              "rejected": 0,
+              "unknown": 0
+            },
+            "measurementTerminalsAfterMeasurement": {
+              "settled": 2,
+              "succeeded": 2,
+              "rejected": 0,
+              "unknown": 0
+            },
+            "successfulWindowCompletionRatio": {
+              "numerator": "0",
+              "denominator": "3",
+              "unit": "CALLER_OBSERVED_SUCCESSFUL_COMPLETIONS_PER_SECOND"
+            },
+            "rateStatus": "OBSERVED_WINDOW_RATIO_ONLY"
+          },
+          "LEDGER_TRANSACTION": {
+            "enteredAcrossCohorts": 0,
+            "peakInFlightAcrossCohorts": 0,
+            "peakInFlightDuringMeasurement": 0,
+            "warmupInFlightAtStart": 0,
+            "warmupInFlightAtStop": 0,
+            "measurementInFlightAtStop": 0,
+            "warmupTerminalsDuringMeasurement": {
+              "settled": 0,
+              "succeeded": 0,
+              "rejected": 0,
+              "unknown": 0
+            },
+            "measurementTerminalsDuringMeasurement": {
+              "settled": 0,
+              "succeeded": 0,
+              "rejected": 0,
+              "unknown": 0
+            },
+            "warmupTerminalsAfterMeasurement": {
+              "settled": 0,
+              "succeeded": 0,
+              "rejected": 0,
+              "unknown": 0
+            },
+            "measurementTerminalsAfterMeasurement": {
+              "settled": 0,
+              "succeeded": 0,
+              "rejected": 0,
+              "unknown": 0
+            },
+            "successfulWindowCompletionRatio": null,
+            "rateStatus": "NO_MEASUREMENT_STARTS"
+          }
+        },
+        "cohorts": {
+          "WARMUP": {
+            "capacityRecorderVersion": 1,
+            "scope": "CALLER_DECLARED_OBSERVATIONS_ONLY",
+            "clock": "CALLER_SUPPLIED_MONOTONIC_NANOSECONDS",
+            "percentileMethod": "NEAREST_RANK",
+            "recordingState": "COMPLETE",
+            "recordingIssue": null,
+            "stopReason": null,
+            "limits": {
+              "maxSamplesPerPhase": 128,
+              "maxInFlightPerPhase": 4
+            },
+            "refusedStarts": 0,
+            "pendingObservations": 0,
+            "observedSpanNanoseconds": "9",
+            "phases": {
+              "FUNDING": {
+                "entered": 2,
+                "settled": 2,
+                "pending": 0,
+                "succeeded": 2,
+                "rejected": 0,
+                "unknown": 0,
+                "peakInFlight": 2,
+                "nonSuccessFraction": {
+                  "numerator": 0,
+                  "denominator": 2
+                },
+                "terminalLatencyNanoseconds": {
+                  "samples": 2,
+                  "min": "2",
+                  "p50": "2",
+                  "p95": "2",
+                  "p99": "2",
+                  "max": "2"
+                },
+                "successfulLatencyNanoseconds": {
+                  "samples": 2,
+                  "min": "2",
+                  "p50": "2",
+                  "p95": "2",
+                  "p99": "2",
+                  "max": "2"
+                }
+              },
+              "FUNDED_CALL": {
+                "entered": 2,
+                "settled": 2,
+                "pending": 0,
+                "succeeded": 2,
+                "rejected": 0,
+                "unknown": 0,
+                "peakInFlight": 2,
+                "nonSuccessFraction": {
+                  "numerator": 0,
+                  "denominator": 2
+                },
+                "terminalLatencyNanoseconds": {
+                  "samples": 2,
+                  "min": "2",
+                  "p50": "2",
+                  "p95": "2",
+                  "p99": "2",
+                  "max": "2"
+                },
+                "successfulLatencyNanoseconds": {
+                  "samples": 2,
+                  "min": "2",
+                  "p50": "2",
+                  "p95": "2",
+                  "p99": "2",
+                  "max": "2"
+                }
+              },
+              "LEDGER_TRANSACTION": {
+                "entered": 0,
+                "settled": 0,
+                "pending": 0,
+                "succeeded": 0,
+                "rejected": 0,
+                "unknown": 0,
+                "peakInFlight": 0,
+                "nonSuccessFraction": null,
+                "terminalLatencyNanoseconds": {
+                  "samples": 0,
+                  "min": null,
+                  "p50": null,
+                  "p95": null,
+                  "p99": null,
+                  "max": null
+                },
+                "successfulLatencyNanoseconds": {
+                  "samples": 0,
+                  "min": null,
+                  "p50": null,
+                  "p95": null,
+                  "p99": null,
+                  "max": null
+                }
+              }
+            },
+            "ledgerBalanceChecks": {
+              "samples": 4,
+              "mismatches": 0,
+              "result": "MATCHES_CALLER_DECLARED_EXPECTATIONS"
+            },
+            "capacityQualification": "NOT_ESTABLISHED",
+            "ledgerCorrectness": "NOT_ESTABLISHED",
+            "authenticatedExecution": false,
+            "liveOrProduction": false,
+            "authority": "NONE"
+          },
+          "MEASUREMENT": {
+            "capacityRecorderVersion": 1,
+            "scope": "CALLER_DECLARED_OBSERVATIONS_ONLY",
+            "clock": "CALLER_SUPPLIED_MONOTONIC_NANOSECONDS",
+            "percentileMethod": "NEAREST_RANK",
+            "recordingState": "COMPLETE",
+            "recordingIssue": null,
+            "stopReason": null,
+            "limits": {
+              "maxSamplesPerPhase": 128,
+              "maxInFlightPerPhase": 4
+            },
+            "refusedStarts": 0,
+            "pendingObservations": 0,
+            "observedSpanNanoseconds": "4",
+            "phases": {
+              "FUNDING": {
+                "entered": 0,
+                "settled": 0,
+                "pending": 0,
+                "succeeded": 0,
+                "rejected": 0,
+                "unknown": 0,
+                "peakInFlight": 0,
+                "nonSuccessFraction": null,
+                "terminalLatencyNanoseconds": {
+                  "samples": 0,
+                  "min": null,
+                  "p50": null,
+                  "p95": null,
+                  "p99": null,
+                  "max": null
+                },
+                "successfulLatencyNanoseconds": {
+                  "samples": 0,
+                  "min": null,
+                  "p50": null,
+                  "p95": null,
+                  "p99": null,
+                  "max": null
+                }
+              },
+              "FUNDED_CALL": {
+                "entered": 2,
+                "settled": 2,
+                "pending": 0,
+                "succeeded": 2,
+                "rejected": 0,
+                "unknown": 0,
+                "peakInFlight": 2,
+                "nonSuccessFraction": {
+                  "numerator": 0,
+                  "denominator": 2
+                },
+                "terminalLatencyNanoseconds": {
+                  "samples": 2,
+                  "min": "3",
+                  "p50": "3",
+                  "p95": "3",
+                  "p99": "3",
+                  "max": "3"
+                },
+                "successfulLatencyNanoseconds": {
+                  "samples": 2,
+                  "min": "3",
+                  "p50": "3",
+                  "p95": "3",
+                  "p99": "3",
+                  "max": "3"
+                }
+              },
+              "LEDGER_TRANSACTION": {
+                "entered": 0,
+                "settled": 0,
+                "pending": 0,
+                "succeeded": 0,
+                "rejected": 0,
+                "unknown": 0,
+                "peakInFlight": 0,
+                "nonSuccessFraction": null,
+                "terminalLatencyNanoseconds": {
+                  "samples": 0,
+                  "min": null,
+                  "p50": null,
+                  "p95": null,
+                  "p99": null,
+                  "max": null
+                },
+                "successfulLatencyNanoseconds": {
+                  "samples": 0,
+                  "min": null,
+                  "p50": null,
+                  "p95": null,
+                  "p99": null,
+                  "max": null
+                }
+              }
+            },
+            "ledgerBalanceChecks": {
+              "samples": 2,
+              "mismatches": 0,
+              "result": "MATCHES_CALLER_DECLARED_EXPECTATIONS"
+            },
+            "capacityQualification": "NOT_ESTABLISHED",
+            "ledgerCorrectness": "NOT_ESTABLISHED",
+            "authenticatedExecution": false,
+            "liveOrProduction": false,
+            "authority": "NONE"
+          }
+        },
+        "ledgerBalanceChecks": {
+          "samples": 6,
+          "mismatches": 0,
+          "stages": {
+            "WARMUP": {
+              "samples": 4,
+              "mismatches": 0
+            },
+            "MEASURING": {
+              "samples": 0,
+              "mismatches": 0
+            },
+            "DRAINING": {
+              "samples": 2,
+              "mismatches": 0
+            }
+          },
+          "expectedBalances": "CALLER_DECLARED_NOT_AUTHENTICATED"
+        },
+        "capacityQualification": "NOT_ESTABLISHED",
+        "sustainableThroughput": "NOT_ESTABLISHED",
+        "nativeClockAuthenticated": false,
+        "physicalDrainQualified": false,
+        "liveOrProduction": false,
+        "authority": "NONE"
+      },
+      "recomputed": {
+        "parentTimingTraceDataVersion": 1,
+        "status": "COMPLETE_MATCHING_DECLARED_PARENT_TRACE_DATA",
+        "eventsChecked": 22,
+        "observationsChecked": 6,
+        "measurementNanoseconds": "3",
+        "allPhaseSummariesRecomputed": true,
+        "rawIdentifiersIncluded": false,
+        "parentAndChildClocksSubtracted": false,
+        "postStopLedgerTraceQualified": false,
+        "nativeEventsAuthenticated": false,
+        "nativeResourcesQualified": false,
+        "sustainableCapacityQualified": false,
+        "authority": "NONE"
+      }
+    }
+  },
+  "SDK": false,
+  "SQLite": false,
+  "keys": false,
+  "signatures": false,
+  "nonceSearch": false,
+  "sockets": false,
+  "applicationTimers": false,
+  "nativeChildren": false,
+  "authority": "NONE"
+}

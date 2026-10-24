@@ -15,7 +15,8 @@ import stat
 import sys
 import unittest
 
-PINS = {"qualification/native_capacity_managed_workload_v3.py": "428a698d6de786d6b326256d345ffd7b6a2122bd4580ff1f13a2eb85f99db61a"}
+PINS = {"qualification/native_capacity_managed_workload_v3.py": "6d4e2d726bd600b84be387147ee7cd6555daa8b72b8940a8719861a1078b4567",
+    "qualification/fixtures/capacity-parent-timing-source-data-v1.json": "0df8819b72d0fce70581116102a21d11726c5f264403cfff0537323dfb1031c1"}
 repo = Path(__file__).absolute().parents[1]
 def identity(s):
     return [s.st_dev,s.st_ino,s.st_uid,s.st_gid,s.st_mode,s.st_nlink,s.st_size,s.st_mtime_ns,s.st_ctime_ns]
@@ -40,6 +41,8 @@ def load(name,label):
 d = load("qualification/native_capacity_managed_workload_v3.py","capacity_managed_v3_tests_data")
 WORK = d.capture_plan(json.loads("{\"workloadVersion\":3,\"laneIds\":[\"lane.one\",\"lane.two\"],\"plan\":{\"warmupCallsPerLane\":1,\"measurementCallsPerLane\":4,\"setupBudgetMs\":30000,\"measurementWindowMs\":1000,\"drainGraceMs\":1000,\"maxLedgerTransactionsPerOperation\":3},\"recordingLimits\":{\"maxSamplesPerPhase\":128,\"maxInFlightPerPhase\":4},\"payeeAddress\":\"z1qq3zyg3zyg3zyg3zyg3zyg3zyg3zyg3z3yw2mk\",\"commandBudgetMs\":10000,\"closeBudgetMs\":10000}"))
 RUN_ID = "ab"*32
+FIXTURE=json.loads(sources["qualification/fixtures/capacity-parent-timing-source-data-v1.json"][0])
+if FIXTURE["kind"]!="SYNTHETIC_SOURCE_RECORDER_DATA_NOT_NATIVE_EVIDENCE"or FIXTURE["authority"]!="NONE":raise ValueError("SYNTHETIC_DATA_FIXTURE_ONLY")
 def clone(v):return copy.deepcopy(v)
 def assign(value,path,replacement):
     for key in path[:-1]:value=value[key]
@@ -197,7 +200,8 @@ def declaration(completed=5):
             nativeQualified=False,capacityQualified=False,authority="NONE"),serviceWriterIntervals=intervals,serviceWriterAttribution=attribution,
             serviceMeasurementWindow=window,payerOperationTimings=commands,
             privateStreams=[dict(role=role,stdout=stream(),stderr=stream())for role in("PAYER","SERVICE")]))
-    phase=lambda n:dict(phases=dict(FUNDING=dict(succeeded=2),FUNDED_CALL=dict(succeeded=n)))
+    parent=clone(FIXTURE["scenarios"]["full"if completed==5 else"partial"])
+    if parent["completedOriginalCallsPerLane"]!=completed:raise ValueError("DECLARED_FIXTURE_COMPLETION_SELECTION")
     core=dict(capacityWorkloadOwnerVersion=3,scope="TRUSTED_WINDOWED_ASYNC_SOURCE_LANES_NOT_NATIVE_QUALIFICATION",
         outcome="OBSERVED_OWNERS_RETURNED",plan=clone(WORK["plan"]),laneCount=2,returnedCloses=2,unknownCloses=0,pendingCloses=0,
         pendingOperations=0,pendingLedgerBoundaries=0,pendingBalanceReads=0,balanceBarrierPending=False,
@@ -206,9 +210,7 @@ def declaration(completed=5):
         windowHandoffContract="GENUINE_PROMISE_SERVICE_CHILD_MARKERS_NOT_PARENT_CLOCK_ALIGNMENT",
         measurementWindowIsolationQualified=False,measurementStatus="OBSERVED_COMPONENT_ONLY",uncertainty=None,
         authority="NONE",nativeClockAuthenticated=False,nativeResourcesQualified=False,benchmarkQualified=False,capacityQualified=False,
-        plannedCallsCompleted=completed==5,recording=dict(recordingState="COMPLETE",recordingIssue=None,pendingObservations=0,
-            capacityQualification="NOT_ESTABLISHED",sustainableThroughput="NOT_ESTABLISHED",measurementNanoseconds="1000000",
-            cohorts=dict(WARMUP=phase(2),MEASUREMENT=phase(2*(completed-1))),ledgerBalanceChecks=dict(samples=6,mismatches=0)))
+        plannedCallsCompleted=completed==5,recording=parent["recording"])
     result=dict(nativeCapacityWorkloadAdapterVersion=3,status="OBSERVED_COMPONENT_ONLY",core=core,lanes=row_list,
         sustainedCapacityQualified=False,nativeEventsAuthenticated=False,nativeResourcesQualified=False,nativeOsNetworkSandbox=False,
         productionQualified=False,childClockDomainsMerged=False,ledgerTimeInferredFromPromise=False,authority="NONE",
@@ -216,6 +218,8 @@ def declaration(completed=5):
         writerTraceCovers="WHOLE_RUN_BRACKETS_CLASSIFIED_AGAINST_SEPARATE_SERVICE_CHILD_WINDOW",
         parentAndServiceWindowsAligned=False,writerBracketsClipped=False,measurementWindowIsolationQualified=False)
     return dict(captureVersion=3,kind="PRIVATE_FULL_NATIVE_CAPACITY_COMPONENT_CAPTURE_NOT_PRODUCTION",
+        parentTimingData=dict(parentTimingCaptureVersion=1,context=dict(runId=RUN_ID,sourceRowsSha256=d.GRAPH_SHA,laneIds=clone(WORK["laneIds"])),
+            trace=parent["trace"],check=parent["recomputed"],status="MATCHING_DECLARED_PARENT_TRACE"),
         sourceRowsSha256=d.GRAPH_SHA,result=result,evidence=evidence,nativeResourcesQualified=False,
         sustainableCapacityQualified=False,chainAuthenticated=False,productionQualified=False,authority="NONE")
 
@@ -234,6 +238,7 @@ def matches(self,completed):
     self.assertEqual(result["completedOriginalCalls"],2*completed)
     self.assertEqual(result["childClosesObservedAsData"],4)
     self.assertIs(result["dataOnlyNotNativeAuthentication"],True)
+    self.assertIs(result["parentPhaseMetricsIndependentlyRecomputed"],True)
     for field in ("nativeResourcesQualified","storageCleanupQualified","sustainableCapacityQualified","chainAuthenticated","productionQualified"):
         self.assertIs(result[field],False)
 check("synthetic_complete_capture_stays_data_not_native_proof",lambda self:matches(self,5))
@@ -342,7 +347,10 @@ def new_bounds(self):
     self.assertEqual(value["serviceWriterRowsMaximum"],248)
     self.assertEqual(value["serviceChildClockReadsMaximum"],996)
     self.assertEqual(value["ipcTicketsMaximumPerChild"],5)
-    self.assertEqual(value["nodeStdoutLimit"],786432)
+    self.assertEqual(value["nodeStdoutLimit"],1048576)
+    self.assertEqual(value["privateParentTimingEventsMaximum"],900)
+    self.assertEqual(value["privateParentTimingBytesReserved"],238592)
+    self.assertEqual(value["parentTimingSourceClockReadsAdditional"],0)
     self.assertEqual(value["taskQuotaBytes"],71*1048576)
     self.assertIs(value["captureJsonTreeCopyRequired"],False)
     self.assertIs(value["captureHeapByteBoundEstablished"],False)
@@ -437,6 +445,84 @@ reject_capture("false_group_changed_count",lambda v:v["result"]["lanes"][0]["ser
 reject_capture("incomplete_window_summary",lambda v:v["result"]["lanes"][0]["serviceChildWindowWriterTrace"].update(status="INCOMPLETE_DECLARED_WINDOW_TRACE_DATA"))
 reject_capture("false_window_elapsed",lambda v:v["result"]["lanes"][0]["serviceChildWindowWriterTrace"].update(declaredWindowElapsedNs="1"))
 reject_capture("private_id_in_summary",lambda v:v["result"]["lanes"][0]["serviceChildWindowWriterTrace"].update(rawIdentifiersIncluded=True))
+
+
+
+def parent_capsule(completed=5):
+    v=declaration(completed)
+    return v["parentTimingData"],v["result"]["core"]["recording"]
+def reject_parent(name,edit):
+    def run(self):
+        capsule,recording=parent_capsule();edit(capsule,recording)
+        with self.assertRaises(ValueError):d.validate_parent_timing_data(capsule,recording,WORK,RUN_ID)
+    check("parent_trace_rejects_"+name,run)
+def cross_language(self):
+    for completed in(5,2):
+        capsule,recording=parent_capsule(completed)
+        value=d.validate_parent_timing_data(capsule,recording,WORK,RUN_ID)
+        self.assertEqual(value,capsule["check"])
+        self.assertEqual(value["observationsChecked"],2+2*completed)
+        self.assertIs(value["allPhaseSummariesRecomputed"],True)
+        self.assertIs(value["nativeEventsAuthenticated"],False)
+        self.assertEqual(value["authority"],"NONE")
+    _,partial=parent_capsule(2)
+    self.assertEqual(partial["phases"]["FUNDED_CALL"]["successfulWindowCompletionRatio"]["numerator"],"0")
+check("independent_python_matches_genuine_core_and_js_checker_for_full_and_spillout_data",cross_language)
+reject_parent("foreign_run",lambda c,r:c["context"].update(runId="cd"*32))
+reject_parent("foreign_source",lambda c,r:c["context"].update(sourceRowsSha256="0"*64))
+reject_parent("reordered_lanes",lambda c,r:c["context"]["laneIds"].reverse())
+reject_parent("missing_context",lambda c,r:c.pop("context"))
+reject_parent("unknown_check",lambda c,r:c.update(status="UNKNOWN_OR_MISMATCHED_PARENT_TRACE"))
+reject_parent("null_trace",lambda c,r:c.update(trace=None))
+reject_parent("null_entry_check",lambda c,r:c.update(check=None))
+reject_parent("boolean_version",lambda c,r:c.update(parentTimingCaptureVersion=True))
+reject_parent("extra_capture_field",lambda c,r:c.update(payment="forbidden"))
+reject_parent("unknown_trace",lambda c,r:c["trace"].update(unknown=True))
+reject_parent("foreign_clock",lambda c,r:c["trace"].update(clockDomain="SERVICE_CHILD_LOCAL"))
+reject_parent("changed_limits",lambda c,r:c["trace"]["limits"].update(maxSamplesPerPhase=129))
+reject_parent("expanded_event_limit",lambda c,r:c["trace"].update(maximumEvents=901))
+reject_parent("empty_events",lambda c,r:c["trace"].update(events=[]))
+reject_parent("missing_finish",lambda c,r:c["trace"]["events"].pop(3))
+reject_parent("boolean_sequence",lambda c,r:c["trace"]["events"][0].update(sequence=True))
+reject_parent("bad_sequence",lambda c,r:c["trace"]["events"][0].update(sequence=2))
+reject_parent("repeated_boundary",lambda c,r:c["trace"]["events"][-1].update(kind="START_MEASUREMENT"))
+reject_parent("reordered_events",lambda c,r:c["trace"]["events"].reverse())
+reject_parent("unbounded_timestamp",lambda c,r:c["trace"]["events"][0].update(atNs=str(2**128)))
+reject_parent("noncanonical_timestamp",lambda c,r:c["trace"]["events"][0].update(atNs="01"))
+reject_parent("extra_event_field",lambda c,r:c["trace"]["events"][0].update(requestId="not-allowed"))
+reject_parent("native_claim",lambda c,r:c["trace"].update(nativeEventsAuthenticated=True))
+reject_parent("raw_ids_claim",lambda c,r:c["trace"].update(rawIdentifiersIncluded=True))
+reject_parent("post_stop_claim",lambda c,r:c["trace"].update(postStopLedgerTraceIncluded=True))
+reject_parent("recording_version_coercion",lambda c,r:r.update(capacityWindowRecorderVersion=True))
+reject_parent("recording_extra",lambda c,r:r.update(productionQualified=True))
+reject_parent("measurement_time",lambda c,r:r.update(measurementNanoseconds="1"))
+reject_parent("funding_percentile",lambda c,r:r["cohorts"]["WARMUP"]["phases"]["FUNDING"]["successfulLatencyNanoseconds"].update(p99="999"))
+reject_parent("call_percentile",lambda c,r:r["cohorts"]["MEASUREMENT"]["phases"]["FUNDED_CALL"]["terminalLatencyNanoseconds"].update(p50="999"))
+reject_parent("counter_coercion",lambda c,r:r.update(refusedStarts=False))
+reject_parent("ratio_denominator",lambda c,r:r["phases"]["FUNDED_CALL"]["successfulWindowCompletionRatio"].update(denominator="1"))
+reject_parent("ratio_numerator",lambda c,r:r["phases"]["FUNDED_CALL"]["successfulWindowCompletionRatio"].update(numerator="1"))
+reject_parent("balance_stage",lambda c,r:r["ledgerBalanceChecks"]["stages"]["DRAINING"].update(samples=0))
+reject_parent("entry_check_counter",lambda c,r:c["check"].update(observationsChecked=0))
+reject_parent("entry_check_boolean",lambda c,r:c["check"].update(parentTimingTraceDataVersion=True))
+reject_parent("entry_check_extra",lambda c,r:c["check"].update(retryAllowed=True))
+def no_parent_hooks(self):
+    hooks=[]
+    class Hooked(dict):
+        def items(self):hooks.append(1);raise RuntimeError("MUST_NOT_EXECUTE")
+    capsule,recording=parent_capsule()
+    capsule["trace"]["events"][0]=Hooked(capsule["trace"]["events"][0])
+    with self.assertRaises(ValueError):d.validate_parent_timing_data(capsule,recording,WORK,RUN_ID)
+    self.assertEqual(hooks,[])
+check("parent_trace_does_not_execute_subclass_hooks",no_parent_hooks)
+def bytes_reserved(self):
+    b=d.resource_plan(WORK)
+    self.assertEqual(b["logicalFullCaptureBytesMaximum"],1022976)
+    self.assertLessEqual(b["logicalFullCaptureBytesMaximum"],b["nodeStdoutLimit"])
+    self.assertEqual(b["parentTimingWrapperBytesReserved"],8192)
+    self.assertEqual(b["parentTimingBytesPerEventReserved"],256)
+    self.assertIs(b["parentTimingCheckInsideActualEntrySourceAuthored"],True)
+    self.assertIs(b["effectsExecuted"],False)
+check("parent_capture_reservation_covers_full_trace_without_silent_workload_reduction",bytes_reserved)
 
 if __name__=="__main__":
     output=io.StringIO()
