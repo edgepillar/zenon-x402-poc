@@ -2,12 +2,14 @@ import { types as utilTypes } from 'node:util';
 import { createOriginalPaymentCheckpointClient,
   createFundingPostOriginalPaymentCheckpointClient } from './x402-original-payment-checkpoint-client.js';
 import { createOfficialSelectedPaymentClient } from './x402-official-selected-payment-client.js';
-import { openServiceCreditCustodiedSqliteHttpClientV6 } from './service-credit-custodied-sqlite-http-client.js';
+import { openServiceCreditCustodiedSqliteHttpClientV6,
+  openServiceCreditCustodiedSqliteHttpClientV6WithNativeCloseGuard } from './service-credit-custodied-sqlite-http-client.js';
 import { snapshotOriginalServiceRequestCustodyPolicy } from './service-credit-original-request-custody-contract.js';
 
 const CORE = createOriginalPaymentCheckpointClient, OFFICIAL = createOfficialSelectedPaymentClient;
 const FUNDING_POST_CORE = createFundingPostOriginalPaymentCheckpointClient;
 const OPEN_V6 = openServiceCreditCustodiedSqliteHttpClientV6;
+const OPEN_GUARDED_V6 = openServiceCreditCustodiedSqliteHttpClientV6WithNativeCloseGuard;
 const POLICY = snapshotOriginalServiceRequestCustodyPolicy;
 const FREEZE = Object.freeze, DESC = Object.getOwnPropertyDescriptor, PROTO = Object.getPrototypeOf;
 const OWN = Object.hasOwn, KEYS = Reflect.ownKeys, APPLY = Reflect.apply;
@@ -58,14 +60,30 @@ export async function openOfficialV6FundingPostOriginalPaymentClient(configurati
   return openOriginalPaymentClient(configuration, true);
 }
 
-async function openOriginalPaymentClient(configuration, fundingPost) {
+/**
+ * SOURCE-ONLY POST selection with the ACTUAL guarded V6 root. The private
+ * nativeResourceCloseGuard belongs to the enclosing native client, not payment
+ * DATA or a reusable permit. It runs again at actual store.close entry/return,
+ * after async child joins. No change to legacy GET/plain POST close selection.
+ */
+export async function openOfficialV6GuardedFundingPostOriginalPaymentClient(configuration) {
+  if (arguments.length !== 1) fail('configuration_rejected');
+  return openOriginalPaymentClient(configuration, true, true);
+}
+
+async function openOriginalPaymentClient(configuration, fundingPost, nativeGuarded = false) {
   let payer = null, originals = null, official = null;
   let payerConfig, officialConfig, originalConfig, policy, selection;
   try {
     if (!invariant()) fail('configuration_rejected');
     const c = record(configuration, ['payerOptions', 'originalPayment', 'official']);
-    payerConfig = record(c.payerOptions, ['databasePath', 'allowedRoot', 'fundingResourceUrl',
-      'custodyPolicy', 'selectedGrantId', 'requestImpl', 'deadlineMs']);
+    const payerFields = ['databasePath', 'allowedRoot', 'fundingResourceUrl',
+      'custodyPolicy', 'selectedGrantId', 'requestImpl', 'deadlineMs'];
+    payerConfig = record(c.payerOptions, nativeGuarded ? [...payerFields, 'nativeResourceCloseGuard'] : payerFields);
+    if (nativeGuarded && (typeof payerConfig.nativeResourceCloseGuard !== 'function'
+        || IS_PROXY(payerConfig.nativeResourceCloseGuard)
+        || PROTO(payerConfig.nativeResourceCloseGuard) !== Function.prototype
+        || !Object.isFrozen(payerConfig.nativeResourceCloseGuard))) fail('configuration_rejected');
     originalConfig = record(c.originalPayment, ['resourceUrl', 'serializedCheckpoint', 'expectedPins']);
     officialConfig = record(c.official, ['validateChallenge', 'assetInfo', 'contextLimit']);
     // CORE construction captures only caller DATA and never calls this reader.
@@ -81,19 +99,23 @@ async function openOriginalPaymentClient(configuration, fundingPost) {
     official = OFFICIAL({ requirement: selection.requirement, localClient: originals.localClient,
       ...officialConfig });
     // No arbitrary root/factory, missing-DB fallback or server-side payer.
-    payer = OPEN_V6({ ...payerConfig, custodyPolicy: policy });
-  } catch {
+    payer = (nativeGuarded ? OPEN_GUARDED_V6 : OPEN_V6)({ ...payerConfig, custodyPolicy: policy });
+  } catch (caught) {
     if (originals !== null) originals.close();
     if (payer !== null) {
       try { await payer.close(); } catch { fail('construction_close_unknown'); }
     }
+    // The actual root may hold an acquired or indeterminate native DB before
+    // returning a facade. Do not collapse that refusal into clean config failure.
+    if (nativeGuarded && heldRootRefusal(caught)) fail('construction_close_unknown');
     fail('configuration_rejected');
   } finally {
     configuration = null; payerConfig = null; originalConfig = null; officialConfig = null; policy = null;
   }
   const PAYER = payer, ORIGINAL = originals, SDK = official, RESOURCE = selection.resourceUrl;
   const REQUEST_PROFILE = fundingPost ? selection.requestProfile : null;
-  const PROFILE = fundingPost ? 'OFFICIAL_X402_2_23_FUNDING_POST_RETAINED_ORIGINAL_V6_CLIENT'
+  const PROFILE = nativeGuarded ? 'OFFICIAL_X402_2_23_GUARDED_FUNDING_POST_RETAINED_ORIGINAL_V6_CLIENT'
+    : fundingPost ? 'OFFICIAL_X402_2_23_FUNDING_POST_RETAINED_ORIGINAL_V6_CLIENT'
     : 'OFFICIAL_X402_2_23_RETAINED_ORIGINAL_V6_CLIENT';
   // The captured reader above intentionally keeps the actual payer reference.
   const SUBMIT = PAYER.submitOriginal, CLOSE = PAYER.close;
@@ -201,6 +223,14 @@ function record(value, fields) {
     Object.defineProperty(out, field, { value: d.value, enumerable: true });
   }
   return out;
+}
+function heldRootRefusal(value) {
+  if (value === null || typeof value !== 'object' || IS_PROXY(value)
+      || PROTO(value) !== TypeError.prototype) return false;
+  const d = DESC(value, 'code');
+  return d !== undefined && OWN(d, 'value')
+    && (d.value === 'SERVICE_CREDIT_CUSTODIED_SQLITE_HTTP_CLIENT_ACQUISITION_HELD'
+      || d.value === 'SERVICE_CREDIT_CUSTODIED_SQLITE_HTTP_CLIENT_RESOURCE_HELD');
 }
 function same(actual, expected) {
   if (!actual || !expected || KEYS(actual).length !== KEYS(expected).length) return false;
