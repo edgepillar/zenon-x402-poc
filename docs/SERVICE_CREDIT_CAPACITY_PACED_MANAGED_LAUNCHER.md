@@ -1,8 +1,9 @@
 # Paced task-owned launcher: source and DATA qualification
 
-Status: the real managed launcher is SOURCE-IMPLEMENTED. Its 63 selected Python
-DATA controls, default source-only invocation and complete installed-source
-read all passed. The task-owned/native branch has NOT run. No manager, private
+Status: the real managed launcher is SOURCE-IMPLEMENTED. Its 64 current Python
+DATA controls and default source-only invocation passed. A separate 39-control
+full-profile/entry selection passed using the actual installed-source context.
+The task-owned/native branch has NOT run. No manager, private
 root, task, profile file, alias, OpenSSL command, Node application or child was
 entered by these checks. Main adoption and native qualification remain separate.
 
@@ -15,7 +16,7 @@ uses the genuine approved task-storage API in its explicit native branch:
 payment transport, source rewrite, profile-row omission or fallback tree copy.
 
 A future separately approved invocation requires a NEW unused store with the
-exact [proposed policy](../qualification/capacity-native-paced-workload-v1.launch-inputs.json).
+exact [proposed policy](../qualification/capacity-native-paced-workload-v2.launch-inputs.json).
 The launcher does not initialize or adopt that root. Existing tasks, objects,
 object records and unexpected root entries refuse admission. The manager and
 CLI must match their independently frozen source pins before manager import.
@@ -35,8 +36,9 @@ identities, source roots, tool identities and storage reservations.
 
 ## Closed selection and conservative resources
 
-The [launch declaration](../qualification/capacity-native-paced-workload-v1.launch-inputs.json)
-pins this launcher and nine unchanged Python controls, the complete parent
+The [v2 launch declaration](../qualification/capacity-native-paced-workload-v2.launch-inputs.json)
+pins this launcher and ten Python controls, including the new complete-profile
+assembler and nine unchanged controls. It also binds the complete parent
 selection, original inventory/baseline and the new paced plan. Duplicate JSON
 keys and nonfinite constants refuse. Type-exact DATA comparison does not accept
 a boolean in place of an integer or a numeric permission alias.
@@ -66,7 +68,7 @@ but NOT run against the private storage estate in this selection.
 Default invocation requires the exact launch digest and remains source-only:
 
 ```text
-python3.12 -I -B -S qualification/run-capacity-native-paced-workload-v1.local.py --repo /absolute/reviewed-checkout --manifest-sha256 c74feaa88bc21e50d2989bc60e5a83851aa943eb9af3963ef664aef7af9ac52b
+python3.12 -I -B -S qualification/run-capacity-native-paced-workload-v1.local.py --repo /absolute/reviewed-checkout --manifest-sha256 809e8517676fdb44d8f993d7cb370f508da8f9c8214e677218cbd2375f6148b3
 ```
 
 Optional explicit existing-package and Node paths add a read-only full context
@@ -74,19 +76,27 @@ check; they do not import packages or execute Node. The actual check verified
 145 application and 404 existing package files, hashed the existing Node once,
 created no source/package copies and wrote no private profiles.
 
-The [63 selected controls](../qualification/native_capacity_paced_managed_launcher_v1.behavior.py)
+The [64 current launcher controls](../qualification/native_capacity_paced_managed_launcher_v1.behavior.py)
 exercise actual manifest/control bytes, exact typed equality, frozen controls,
 capacity arithmetic and CLI tripwires. An audit hook observed zero write opens,
 native processes, SQLite connections or sockets within that DATA command.
 The AST check establishes that the actual managed calls exist in source;
 it does NOT establish their runtime behavior. No task/manager double was run.
 
-The [actual result](../qualification/native-capacity-paced-managed-launcher-v1.actual-local-result.json)
-separates the final source-bound pass from an earlier successful selection on
-superseded source bytes. It also preserves the initial preparation SyntaxError,
-corrected before any manifest, manager or task was created. No native allowance
-was consumed. Recorded subsecond durations are observations, not benchmarks.
-Existing historical tests and hosted CI were not rerun to create metadata.
+The [current result](../qualification/native-capacity-paced-managed-launcher-v2.actual-local-result.json)
+keeps the 64 launcher and 39 complete-profile selections separate. The
+[new assembly component](SERVICE_CREDIT_CAPACITY_PACED_PROFILE_BUNDLE.md) is
+called by the authored native branch and binds the same complete children to
+both the parent profile and entry plan; it adds no profile JSON decoding or
+second parent serialization. Actual roots and CAS locations in its DATA tests
+are explicit synthetic declarations, not observed ownership.
+
+The [previous 63-case result](../qualification/native-capacity-paced-managed-launcher-v1.actual-local-result.json)
+and v1 manifest remain unchanged at their immutable source revision. The prior
+result also retains the corrected initial preparation SyntaxError. Neither is
+reclassified for changed launcher bytes. No native allowance was consumed.
+Recorded subsecond durations are observations, not benchmarks. Existing
+historical tests and hosted CI were not rerun only to create metadata.
 
 ## Native permission, capture and storage remain separate
 
