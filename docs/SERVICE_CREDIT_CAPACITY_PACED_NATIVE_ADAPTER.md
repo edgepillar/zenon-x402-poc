@@ -1,7 +1,9 @@
 # Paced native capacity adapter: separate parent source binding
 
-Status: 47 selected DATA controls and two parser-only checks passed;
-native execution NOT qualified.
+Status: private profile producer implemented; 64 selected producer DATA controls
+and one actual 549-file read-only source check passed. The previous Node binding
+selection remains 47 DATA controls and two parser-only checks on unchanged
+Node source. These selections are not combined; native execution is NOT qualified.
 The current constructor/admission-absence DATA selection is separate from
 native execution and from the old R4 selection. No existing unpaced entry,
 default script or hosted workflow selects the new paced entry.
@@ -41,10 +43,9 @@ capture uses the parent's seal. No graph is relabeled to pass an old guard.
 
 The pending unpaced R4 files, original input inventory, launcher and old
 qualification evidence remain byte-preserved. Their finite allowance is NOT
-renewed or expanded. A reviewed managed private-profile producer/launcher,
-fresh source/package/tool/root checks and a separately scoped native authority
-remain REQUIRED. This addition supplies native source components, not that
-complete managed launch path.
+renewed or expanded. The private profile producer below is implemented. A reviewed
+managed controller, fresh source/package/tool/root checks and a separately scoped
+native authority remain REQUIRED; this is not a complete managed native launch.
 
 ## Actual binding and measurement semantics
 
@@ -88,7 +89,7 @@ context only. They do not simulate a positive namespace or execute the preloader
 Two separate parser-only checks can establish that the new preloader/entry
 parse in the pinned Node runtime. They do not execute top-level code, resolve
 packages, install hooks, open roots or prove positive native admission.
-The [current actual result](../qualification/service-credit-capacity-paced-parent-binding-guard.actual-local-result.json)
+The [previous Node-binding result](../qualification/service-credit-capacity-paced-parent-binding-guard.actual-local-result.json)
 records one 47-control behavior command and two successful parser-only commands,
 all with exit zero, no failures/skips/cancellations/TODOs and zero stderr.
 
@@ -102,7 +103,55 @@ adapter or namespace qualification. The hosted 27-control profile is unchanged.
 
 No new actual pacing timer, final native barrier, trace paging, child exit,
 HTTPS, SQLite, signature, nonce search, native release or task storage was
-exercised here. The next implementation gate is the real managed profile
-producer/controller for these separate parent/child source closures. Native
+exercised here. The next implementation gate is the real managed controller for
+these separate parent/child closures. The profile producer is implemented below.
+Native
 throughput, same-ledger pressure, physical release, provider/economic authority,
 pilot and production remain open.
+
+## Implemented private profile producer
+
+The [producer](../qualification/native_capacity_paced_parent_profile_v1.py)
+has two explicit paths. DATA preparation accepts declared registry and identity
+DTOs; it never promotes a caller's read claim to file verification. The
+source-only API reads the actual complete installed graph in place, checks all
+pins and captures identities. It imports no JavaScript package and creates no
+task root, private-role directory or profile file.
+
+The producer loads the exact pinned, unchanged R4/base Python source bytes,
+without text replacement or accepting a cached bytecode variant. It validates
+the old registry once, adds six parent-only records once, and keeps owned
+detached records shared across subsequent profile plans. The existing Node
+executable is hashed once per actual source context, not once per lane or
+profile; it is not executed. No source/package tree or binary copy is made.
+Small declaration reads and Python-loader identity guards are additional
+reads; graph byte totals count unique selected content, not total filesystem I/O.
+
+Child plans retain all 543 R4 rows, role version 3 and the old seal. Parent plans
+have all 549 rows, version 1 and the distinct paced seal. Full private metadata
+is still serialized for each required profile: no source row is omitted,
+namespace shortened or digest-only child substituted to save space. Private
+bytes stay in memory for the future task-owned writer. A parent compares each
+complete canonical child payload as well as its reference digest, and rejects
+parent/sibling/role-root/profile-reference aliases.
+
+The frozen source selection is preserved, including its historical
+producer-absent declaration. The new producer/result advance implementation
+status without rewriting that old source/evidence contract.
+
+The [64 selected producer controls](../qualification/native_capacity_paced_parent_profile_v1.behavior.py)
+compare complete leaf bytes against the genuine unchanged R4 producer, reject
+forged whole-child payloads even with matching new hashes, and plan 16 lanes/32
+children entirely in memory. They do not authenticate physical root ownership.
+The [actual local result](../qualification/native_capacity_paced_parent_profile_v1.actual-local-result.json)
+separately records the successful existing-source read: 145 application and 404
+package files, all graph content pinned, and one existing Node-binary hash.
+The read-only check imported no SDK module and opened no private-role root.
+The roughly 1.26-second DATA run and 0.67-second read-only run are observations,
+not latency/capacity benchmarks or timing guarantees.
+
+The managed controller must still own fresh approved task roots, write/promote
+these bytes through the storage manager, verify current controls and roots,
+and retain real complete command receipts. No private profile or successful
+source read grants execution, payment, provider, retry, pilot or production
+authority. The unchanged hosted profile does not run the new producer controls.
