@@ -1,0 +1,286 @@
+{
+  "kind": "ACTUAL_PURE_ISSUED_GRANT_SNAPSHOT_BUDGET_LOCAL_RESULT",
+  "version": 1,
+  "date": "2026-10-24",
+  "evidenceScope": "REAL_PURE_BINDING_WITH_DECLARED_GRANT_AND_BOUND_DATA_NOT_NATIVE_OR_GRANT_AUTHENTICATION",
+  "sourceBaseline": "8038df2dc58d452175335b9a59b0de1e5b435804",
+  "mainBaseline": "cdafb35cd201fd872df877cf3b3d5fe31e8ee531",
+  "implementation": {
+    "path": "src/x402-issued-funding-post-application-binding.js",
+    "beforeSha256": "5e404dbeebc107f1aafe29d1ea37f1bf1f3bcede875864c44d88c81303f94468",
+    "afterSha256": "e5ff9d77cb6ad590b26591ef559ac35523f0a60ade40accc775ea2bf128bea48",
+    "sharedUtf8Bytes": 131072,
+    "nodeLimit": 4096,
+    "depthLimit": 16,
+    "counted": "All ordinary record field names plus string values in one detached grant snapshot",
+    "notClaimed": [
+      "A JSON wire-byte budget",
+      "Array-index or JSON punctuation accounting",
+      "An OS memory limit",
+      "An authenticated or activated grant"
+    ]
+  },
+  "runtime": {
+    "node": "24.19.0",
+    "platform": "darwin",
+    "arch": "arm64",
+    "permissionModel": true,
+    "filesystemWritesPermitted": false,
+    "childrenPermitted": false,
+    "workersPermitted": false,
+    "nativeAddonsPermitted": false,
+    "codeGenerationFromStrings": false,
+    "osNetworkSandbox": false
+  },
+  "reproduction": {
+    "status": "EXPECTED_FAILURE_ON_OLD_SOURCE",
+    "fixtureUnchangedAcrossRedAndGreen": true,
+    "firstCaseEntered": 1,
+    "firstCaseFailed": 1,
+    "remainingCasesStopped": true,
+    "assertion": "Missing expected exception",
+    "reason": "A single oversized field name was accepted and consumed the original DATA grant pin",
+    "actualExit": 1,
+    "streamsComplete": true,
+    "sourcePinsUnchanged": true,
+    "stdoutBytes": 2001,
+    "stdoutSha256": "e33bf47f49505c219cc736a2d21613950cef19c5e98e1af12a1255c5f795d738",
+    "stderrBytes": 0,
+    "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "execution": {
+    "status": "PASS",
+    "tests": 10,
+    "pass": 10,
+    "fail": 0,
+    "skipped": 0,
+    "cancelled": 0,
+    "actualExit": 0,
+    "streamsComplete": true,
+    "sourcePinsUnchanged": true,
+    "stdoutBytes": 1389,
+    "stdoutSha256": "7ef7ae2845910f7ec273bafc60857a4bc824d4058d307e3e9e8c2a602dc9c793",
+    "stderrBytes": 0,
+    "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "observations": {
+      "entered": 10,
+      "completed": 10,
+      "rejections": 12,
+      "successfulPins": 14,
+      "hooks": 0,
+      "stringAndFieldNameUtf8Limit": 131072,
+      "scope": "ACTUAL_PURE_BINDING_DECLARED_GRANT_DATA",
+      "nodeLimit": 4096,
+      "depthLimit": 16,
+      "SDK": false,
+      "SQLite": false,
+      "native": false,
+      "keysOrSignatures": false,
+      "nonce": false,
+      "grantActivation": false,
+      "authority": "NONE"
+    },
+    "sources": [
+      {
+        "path": "qualification/issued-grant-snapshot-budget.behavior.mjs",
+        "sha256": "21fd069f071bd3ec20af2414dd9c74a9b090a6de71a87a290d05ecd009945b56",
+        "bytes": 8996
+      },
+      {
+        "path": "package.json",
+        "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+        "bytes": 2677
+      },
+      {
+        "path": "src/x402-issued-funding-post-application-binding.js",
+        "sha256": "e5ff9d77cb6ad590b26591ef559ac35523f0a60ade40accc775ea2bf128bea48",
+        "bytes": 9788
+      },
+      {
+        "path": "src/x402-issued-funding-post-sdk-resource.js",
+        "sha256": "b4500c461d61b742a4bf6f6bbfb6f6c83b478a976f1300b8c07bf2db1543e681",
+        "bytes": 7469
+      },
+      {
+        "path": "src/canonical.js",
+        "sha256": "0d55ddf1727cafb0dcd46df2922305568615552a4d2ae34a5c30e90b9d8d998c",
+        "bytes": 967
+      },
+      {
+        "path": "src/x402-wire.js",
+        "sha256": "5fba91af5a352f62d1a335c7176a45a604e2af5d92b1c4b0e53825c1f20d4e56",
+        "bytes": 39886
+      },
+      {
+        "path": "src/x402-funding-post-checkpoint-route.js",
+        "sha256": "157e80e9f14b41c8cacc05423a7acd8616a6f759adac377f04f1fca21869831e",
+        "bytes": 1310
+      }
+    ]
+  },
+  "existingBindingDataRegression": {
+    "status": "FRESH_PASS_ON_CORRECTED_SOURCE_NOT_A_RELABELED_OLD_RUN",
+    "tests": 16,
+    "pass": 16,
+    "fail": 0,
+    "skipped": 0,
+    "cancelled": 0,
+    "actualExit": 0,
+    "streamsComplete": true,
+    "sourcePinsUnchanged": true,
+    "stdoutBytes": 3415,
+    "stdoutSha256": "f2fb7420da190188ef526f7faac71ab684e9253f85ee88060ddf22705652ad4e",
+    "stderrBytes": 0,
+    "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "observations": {
+      "tests": 16,
+      "entered": 16,
+      "completed": 16,
+      "hooks": 0,
+      "actualApplicationBinding": true,
+      "actualResponseCustody": true,
+      "declaredGrantAndBoundData": true,
+      "declaredNativeEvents": true,
+      "actualOfficialSdk": false,
+      "actualIntake": false,
+      "actualSQLite": false,
+      "actualNative": false,
+      "signatures": false,
+      "grantActivation": false,
+      "settlementMappedToBound": false,
+      "authority": "NONE",
+      "inputs": [
+        {
+          "path": "package.json",
+          "bytes": 2677,
+          "LF": 40,
+          "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f"
+        },
+        {
+          "path": "src/x402-issued-funding-post-application-binding.js",
+          "bytes": 9788,
+          "LF": 133,
+          "sha256": "e5ff9d77cb6ad590b26591ef559ac35523f0a60ade40accc775ea2bf128bea48"
+        },
+        {
+          "path": "src/x402-issued-funding-post-sdk-resource.js",
+          "bytes": 7469,
+          "LF": 129,
+          "sha256": "b4500c461d61b742a4bf6f6bbfb6f6c83b478a976f1300b8c07bf2db1543e681"
+        },
+        {
+          "path": "src/canonical.js",
+          "bytes": 967,
+          "LF": 26,
+          "sha256": "0d55ddf1727cafb0dcd46df2922305568615552a4d2ae34a5c30e90b9d8d998c"
+        },
+        {
+          "path": "src/x402-wire.js",
+          "bytes": 39886,
+          "LF": 934,
+          "sha256": "5fba91af5a352f62d1a335c7176a45a604e2af5d92b1c4b0e53825c1f20d4e56"
+        },
+        {
+          "path": "src/x402-funding-post-checkpoint-route.js",
+          "bytes": 1310,
+          "LF": 29,
+          "sha256": "157e80e9f14b41c8cacc05423a7acd8616a6f759adac377f04f1fca21869831e"
+        },
+        {
+          "path": "src/service-credit-funding-post-native-response.js",
+          "bytes": 7903,
+          "LF": 157,
+          "sha256": "b5084844ecf029445bc55efd0b9d0ef61b8c2e65424ea74a6dfb30941f9f676c"
+        },
+        {
+          "path": "qualification/issued-funding-post-application-binding.behavior.draft.mjs",
+          "bytes": 17114,
+          "LF": 200,
+          "sha256": "f724df67bbdb9e237a0b8c87de36249644986d5c71957ac7d7faeac8a68f1c7e"
+        }
+      ]
+    },
+    "sources": [
+      {
+        "path": "qualification/issued-funding-post-application-binding.behavior.draft.mjs",
+        "sha256": "f724df67bbdb9e237a0b8c87de36249644986d5c71957ac7d7faeac8a68f1c7e",
+        "bytes": 17114
+      },
+      {
+        "path": "package.json",
+        "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+        "bytes": 2677
+      },
+      {
+        "path": "src/x402-issued-funding-post-application-binding.js",
+        "sha256": "e5ff9d77cb6ad590b26591ef559ac35523f0a60ade40accc775ea2bf128bea48",
+        "bytes": 9788
+      },
+      {
+        "path": "src/x402-issued-funding-post-sdk-resource.js",
+        "sha256": "b4500c461d61b742a4bf6f6bbfb6f6c83b478a976f1300b8c07bf2db1543e681",
+        "bytes": 7469
+      },
+      {
+        "path": "src/canonical.js",
+        "sha256": "0d55ddf1727cafb0dcd46df2922305568615552a4d2ae34a5c30e90b9d8d998c",
+        "bytes": 967
+      },
+      {
+        "path": "src/x402-wire.js",
+        "sha256": "5fba91af5a352f62d1a335c7176a45a604e2af5d92b1c4b0e53825c1f20d4e56",
+        "bytes": 39886
+      },
+      {
+        "path": "src/x402-funding-post-checkpoint-route.js",
+        "sha256": "157e80e9f14b41c8cacc05423a7acd8616a6f759adac377f04f1fca21869831e",
+        "bytes": 1310
+      },
+      {
+        "path": "src/service-credit-funding-post-native-response.js",
+        "sha256": "b5084844ecf029445bc55efd0b9d0ef61b8c2e65424ea74a6dfb30941f9f676c",
+        "bytes": 7903
+      }
+    ]
+  },
+  "resources": {
+    "qualificationScratchCreated": false,
+    "sourceCopiesCreated": false,
+    "packageCopiesCreated": false,
+    "taskRootCreated": false,
+    "rawDiagnosticsPublished": false
+  },
+  "effects": {
+    "SDK": false,
+    "officialX402Package": false,
+    "SQLite": false,
+    "sockets": false,
+    "keysOrSignatures": false,
+    "nonceSearch": false,
+    "actualIssuedNativeCase": false,
+    "grantActivation": false,
+    "realPayment": false,
+    "defaultBuyerChanged": false,
+    "workflowChanged": false
+  },
+  "historicalEvidence": {
+    "oldManifestsAndResultFilesRewritten": false,
+    "fullDpNativeResultUnchanged": true,
+    "issuedNativeV1FailureRetained": true,
+    "oldV2NativeSelection": "SUPERSEDED_SOURCE_NOT_APPROVED_NOT_RUN"
+  },
+  "mainCI": {
+    "profile": "p0-current-p2-node24-v2",
+    "cases": 27,
+    "unchanged": true,
+    "includesTheseNewRegressions": false,
+    "newCommitHostedResult": "NOT_ESTABLISHED_BY_THIS_LOCAL_RECORD"
+  },
+  "qualification": {
+    "pureDataBudgetFix": "GO",
+    "nativeIssuedGrantIntegration": "NOT_ESTABLISHED",
+    "ordinaryInstalledNamespace": "NOT_QUALIFIED",
+    "livePilot": "NO_GO",
+    "production": "NO_GO"
+  }
+}
