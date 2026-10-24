@@ -16,7 +16,7 @@ import re
 import stat
 import sys
 
-MANIFEST = "qualification/issued-funding-post-native-vertical.inputs.json"
+MANIFEST = "qualification/issued-funding-post-native-vertical.inputs-v2.json"
 PROFILE = "qualification/issued_funding_native_profile.py"
 ENTRY = "qualification/issued-funding-post-native-vertical.case.draft.mjs"
 PRELOAD = "qualification/issued-funding-post-native-vertical.preload.draft.mjs"

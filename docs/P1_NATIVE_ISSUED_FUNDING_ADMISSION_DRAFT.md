@@ -1,5 +1,20 @@
 # Actual issued-native case admission: source/read-only qualification
 
+## Current state, 2026-10-24
+
+The original clean native attempt ran and failed during actual application
+construction. Its one-attempt allowance is consumed. The source-bound limit
+correction and separate current V2 inventory are documented in the
+[failure and limits-fix report](P1_NATIVE_ISSUED_FUNDING_CLEAN_V1_FAILURE_AND_LIMITS_FIX.md).
+V2 has DATA/syntax evidence only; it has not run natively.
+
+The following admission narrative is historical for the original 520-row
+inventory. Its unexecuted/unused/refusal statements describe that earlier
+snapshot, not the native failure or the consumed DP allowance now recorded
+separately. Historical inventories/review records remain unchanged.
+
+## Historical original admission
+
 The actual vertical case now has a closed namespace preloader, a read-only
 profile builder and a one-case managed launcher. They select the actual issued
 application, native RPC/client/HTTPS owners, official core, SDK/Noble and V6
