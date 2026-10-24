@@ -5,6 +5,7 @@ import { OutgoingMessage } from 'node:http';
 import { isIP, Socket } from 'node:net';
 import { types as utilTypes } from 'node:util';
 import { createNativeHttpsClientCloseOwner } from './service-credit-native-client-close-owner.js';
+import { createNativeHttpsClientRequestStopOwner } from './service-credit-native-client-request-stop-owner.js';
 
 const REQUEST = nativeRequest, ON = EventEmitter.prototype.on, ONCE = EventEmitter.prototype.once;
 const DESTROY_REQUEST = OutgoingMessage.prototype.destroy, DESTROY_SOCKET = Socket.prototype.destroy;
@@ -14,6 +15,9 @@ const SCHEDULE = setTimeout, CANCEL = clearTimeout, FILL = Buffer.prototype.fill
 const BYTE_LENGTH = Buffer.byteLength, IS_BUFFER = Buffer.isBuffer, ALLOC = Buffer.alloc;
 const TYPED_ARRAY = PROTO(Uint8Array.prototype);
 const ARRAY_BUFFER = DESC(TYPED_ARRAY, 'buffer').get;
+const REQUEST_STOP = createNativeHttpsClientRequestStopOwner;
+const STOP_REQUEST = FREEZE((request, code) => APPLY(DESTROY_REQUEST, request, [error(code)]));
+const STOP_SOCKET = FREEZE(socket => APPLY(DESTROY_SOCKET, socket, []));
 
 /**
  * Explicit native TLS client for the SAME /paid and service-credit origin.
@@ -29,6 +33,9 @@ const ARRAY_BUFFER = DESC(TYPED_ARRAY, 'buffer').get;
  * A grace expiry keeps CLOSE_UNKNOWN even if later native close events drain
  * all tracked handles. Local CA/timer release may still finish once afterward;
  * that late cleanup never repairs the uncertain Promise or authorizes retry.
+ * Request/socket destruction is claimed once per owned handle. A socket that
+ * arrives after close/abort is tracked and stopped BEFORE any handshake timer
+ * or listener can start new work. This source change has not run over TLS.
  */
 export function createServiceCreditNativeHttpsClientTransport(configuration) {
   let c, origin, authority, hostname, ca;
@@ -54,7 +61,7 @@ export function createServiceCreditNativeHttpsClientTransport(configuration) {
   const DEADLINE = c.requestDeadlineMs, HANDSHAKE = c.handshakeDeadlineMs, GRACE = c.closeGraceMs;
   const ORIGIN = origin, AUTHORITY = authority, HOSTNAME = hostname;
   configuration = null; c = null; origin = null; authority = null; hostname = null;
-  const requests = new Map(), sockets = new Set(), timers = new Set();
+  const requests = new Map(), sockets = new Map(), timers = new Set();
   let starts = 0, authenticated = 0, closing = null, closeTimer = null;
   const closeOwner = createNativeHttpsClientCloseOwner({
     readObservedCounts: FREEZE(() => FREEZE({ requests: requests.size, sockets: sockets.size,
@@ -85,7 +92,7 @@ export function createServiceCreditNativeHttpsClientTransport(configuration) {
   }
   function destroy(entry, code) {
     markUnknown();
-    try { APPLY(DESTROY_REQUEST, entry.request, [error(code)]); } catch {}
+    entry.stop.stop(code);
   }
   const requestImpl = FREEZE(function requestImpl(resourceUrl, options, onResponse) {
     let target, method, headers;
@@ -118,43 +125,53 @@ export function createServiceCreditNativeHttpsClientTransport(configuration) {
     // Count before entering native request construction; no automatic retry.
     starts++;
     const entry = { request: null, socket: null, socketSeen: false, peer: false,
-      requestClosed: false, deadline: null, handshake: null };
+      requestClosed: false, deadline: null, handshake: null,
+      stop: REQUEST_STOP({ destroyRequest: STOP_REQUEST, destroySocket: STOP_SOCKET }) };
     let request;
     try {
       request = REQUEST(resourceUrl, { method, headers: { ...headers, Host: AUTHORITY, Connection: 'close' },
         agent: false, rejectUnauthorized: true, ca, servername: isIP(HOSTNAME) ? '' : HOSTNAME,
         minVersion: 'TLSv1.3', maxVersion: 'TLSv1.3', ALPNProtocols: ['http/1.1'],
         maxHeaderSize: 16384, insecureHTTPParser: false }, response => {
-        APPLY(ON, response, ['error', markUnknown]);
+        APPLY(ON, response, ['error', () => destroy(entry, 'response_error')]);
         if (!admissionOpen() || !entry.peer) {
           destroy(entry, 'response_unavailable'); response.destroy(); return;
         }
         try { onResponse(response); } catch { destroy(entry, 'response_callback_failed'); response.destroy(); }
       });
       entry.request = request; requests.set(request, entry);
+      if (!entry.stop.attachRequest(request)) { destroy(entry, 'request_association_failed'); fail('native_request_failed'); }
       entry.deadline = timer(() => { entry.deadline = null; destroy(entry, 'deadline'); }, DEADLINE);
-      APPLY(ON, request, ['error', markUnknown]);
+      APPLY(ON, request, ['error', () => destroy(entry, 'request_error')]);
       APPLY(ONCE, request, ['close', () => {
         entry.requestClosed = true;
+        entry.stop.markRequestClosed(); entry.request = null;
         cancel(entry.deadline); entry.deadline = null;
         cancel(entry.handshake); entry.handshake = null;
-        if (!entry.socketSeen) markUnknown();
+        if (!entry.socketSeen) destroy(entry, 'request_closed_before_socket');
         requests.delete(request); settleClose();
       }]);
       APPLY(ONCE, request, ['socket', socket => {
-        if (entry.socketSeen || entry.requestClosed) {
+        if (entry.socketSeen) {
           markUnknown(); try { APPLY(DESTROY_SOCKET, socket, []); } catch {} return;
         }
-        entry.socketSeen = true; entry.socket = socket; sockets.add(socket);
-        entry.handshake = timer(() => { entry.handshake = null; destroy(entry, 'tls_deadline'); }, HANDSHAKE);
-        APPLY(ON, socket, ['error', markUnknown]);
+        entry.socketSeen = true; entry.socket = socket; sockets.set(socket, entry);
+        APPLY(ON, socket, ['error', () => destroy(entry, 'socket_error')]);
         APPLY(ONCE, socket, ['close', () => {
+          entry.stop.markSocketClosed(); entry.socket = null;
           cancel(entry.handshake); entry.handshake = null;
           sockets.delete(socket); settleClose();
         }]);
+        // Install owned close tracking before the stop gate may destroy a late
+        // assignment. No TLS timer/secureConnect work is admitted after stop.
+        if (entry.requestClosed || !admissionOpen()) destroy(entry, 'late_socket_after_stop');
+        if (!entry.stop.attachSocket(socket)) { destroy(entry, 'socket_association_failed'); return; }
+        if (!entry.stop.canStartHandshake()) { settleClose(); return; }
+        entry.handshake = timer(() => { entry.handshake = null; destroy(entry, 'tls_deadline'); }, HANDSHAKE);
         APPLY(ONCE, socket, ['secureConnect', () => {
           cancel(entry.handshake); entry.handshake = null;
-          if (!admissionOpen() || socket.authorized !== true || socket.getProtocol() !== 'TLSv1.3'
+          if (!admissionOpen() || !entry.stop.canStartHandshake()
+              || socket.authorized !== true || socket.getProtocol() !== 'TLSv1.3'
               || socket.alpnProtocol !== 'http/1.1') { destroy(entry, 'tls_binding_rejected'); return; }
           entry.peer = true; authenticated++;
         }]);
@@ -173,7 +190,9 @@ export function createServiceCreditNativeHttpsClientTransport(configuration) {
       }, GRACE);
     } catch { markUnknown(); closeOwner.deadlineExpired(); }
     for (const entry of requests.values()) destroy(entry, 'close_requested');
-    for (const socket of sockets) { try { APPLY(DESTROY_SOCKET, socket, []); } catch { markUnknown(); } }
+    // A request may have closed while its socket is still tracked. Keep its
+    // owner in this map until the ACTUAL socket close; use the same stop claim.
+    for (const entry of sockets.values()) destroy(entry, 'close_requested');
     settleClose();
     return closing;
   });
