@@ -1,5 +1,11 @@
 # Full native capacity V3 window source
 
+Historical first-source selection at
+[25c62dc](https://github.com/edgepillar/zenon-x402-poc/tree/25c62dc7fc511f9ebed3b33a92908f8ed8d42c4f).
+The results below bind that revision, not the changed current graph. See the
+[managed V3 source revision](./NATIVE_CAPACITY_MANAGED_WORKLOAD_V3_SOURCE.md)
+for current private attribution and independent capture recomputation.
+
 Status: source implemented and locally parsed; **not natively executed**.
 The source-only graph contains 138 application files and the same 404 package
 files. All 117 baseline P1 application rows and all 404 package rows remain

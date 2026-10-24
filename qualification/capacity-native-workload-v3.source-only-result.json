@@ -1,0 +1,504 @@
+{
+  "resultVersion": 2,
+  "kind": "MANAGED_CAPACITY_V3_SOURCE_ONLY_REVISION_2_NOT_NATIVE",
+  "sourceParent": "25c62dc7fc511f9ebed3b33a92908f8ed8d42c4f",
+  "graph": {
+    "applicationFiles": 138,
+    "packageFiles": 404,
+    "baselineApplication117Preserved": true,
+    "baselinePackages404Preserved": true,
+    "sourceRowsSha256": "03305e857cf787aaba7dfb43412fb38cdcd9c8615284ca25e242a0eb322cec99",
+    "declaredSourceBytes": 4755365,
+    "inventorySha256": "d9599aa00924777f91cb1cbb51a508b5bda156ef30994d342bd3a4512d5b2d97",
+    "profileBuilderSha256": "3cab5240c30a4c872a04fb9a1304429eadbc4d81e8851bed8a8fd9d34dce7112"
+  },
+  "launchManifestSha256": "cac07be52bc9620f95cb18fb8ce6d91390754559c1ad9ac3fa75e7eff1d3b07a",
+  "effectsCeiling": {
+    "planVersion": 3,
+    "workloadPlanSha256": "305ac4cc311f18b370d3295206ba8ef1a533eee23bdbbbd5166474226816fd0b",
+    "sourceRowsSha256": "03305e857cf787aaba7dfb43412fb38cdcd9c8615284ca25e242a0eb322cec99",
+    "laneCount": 2,
+    "totalCallsPerLane": 5,
+    "warmupCallsMaximum": 2,
+    "measuredCallsMaximum": 8,
+    "nodeParentCommands": 1,
+    "nodeChildProcessesMaximum": 4,
+    "opensslCommands": 1,
+    "maximumRuns": 1,
+    "windowMarkerCommandsMaximum": 4,
+    "ipcTicketsMaximumPerChild": 5,
+    "serviceWriterRowsMaximum": 248,
+    "privateWriterAttributionRowsMaximum": 248,
+    "serviceChildClockReadsMaximum": 996,
+    "logicalFullCaptureBytesMaximum": 784384,
+    "fullCaptureBytesPerWriterReserved": 1024,
+    "windowSummaryBytesPerLaneReserved": 65536,
+    "captureJsonTreeCopyRequired": false,
+    "captureHeapByteBoundEstablished": false,
+    "loopbackTcpConnectionsMaximum": 362,
+    "externalNetwork": false,
+    "sqliteNewPathsMaximum": 8,
+    "sqliteWalOrShmAllowed": false,
+    "independentPinFilesMaximum": 4,
+    "inMemoryEd25519KeysMaximum": 6,
+    "transactionSignaturesMaximum": 2,
+    "capabilitySignaturesMaximum": 10,
+    "providerSignaturesMaximum": 2,
+    "nonceCandidatesPerWindowMaximum": 4096,
+    "nonceCandidatesPerLaneReserved": 65536,
+    "nonceCandidatesTotalReserved": 131072,
+    "testTlsKeyPairsMaximum": 1,
+    "privateProfileBytesReserved": 2621440,
+    "nodeStdoutLimit": 786432,
+    "nodeEntryCaptureMaximum": 16777216,
+    "theoreticalCaptureMayExceedEntryCap": false,
+    "nativeFileBytesReserved": 67108864,
+    "taskQuotaBytes": 74448896,
+    "expectedPeakBytes": 74448896,
+    "nodeTimeoutSeconds": 72,
+    "opensslTimeoutSeconds": 20,
+    "minimumFreeBytes": 10737418240,
+    "sourceCopiesRequired": 0,
+    "packageCopiesRequired": 0,
+    "automaticRetry": false,
+    "childCreatedFilesAutomaticAdoption": false,
+    "childCreatedFilesAutomaticDeletion": false,
+    "cleanupMayRemainHold": true,
+    "diskQuotaOsEnforced": false,
+    "nativeOsNetworkSandbox": false,
+    "effectsExecuted": false,
+    "authority": "NONE"
+  },
+  "storagePolicy": {
+    "min_free_bytes": 10737418240,
+    "safety_margin_bytes": 1073741824,
+    "task_quota_bytes": 74448896,
+    "scratch_quota_bytes": 74448896,
+    "store_quota_bytes": 74448896,
+    "metadata_quota_bytes": 4194304,
+    "max_tasks": 1,
+    "max_objects": 128,
+    "max_commands_per_task": 2,
+    "max_output_bytes": 786432,
+    "abandoned_after_seconds": 86400,
+    "unreferenced_after_seconds": 1209600
+  },
+  "actual": {
+    "managedData": {
+      "exit": 0,
+      "complete": true,
+      "validated": true,
+      "counts": {
+        "event": "P4_MANAGED_WORKLOAD_V3_SELECTED_DATA_NOT_EXECUTION",
+        "testsRun": 135,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "successful": true,
+        "sourcePins": {
+          "qualification/native_capacity_managed_workload_v3.py": "f6bba9490d53fbacb620dd57ad518d3199168b84fd7a3a5809fcdaca98ea1c99"
+        },
+        "sourcePinsUnchanged": true,
+        "syntheticCaptureDataOnly": true,
+        "nativeExecuted": false,
+        "managerImported": false,
+        "privateRootsOpened": false,
+        "SDK": false,
+        "SQLite": false,
+        "keys": false,
+        "signatures": false,
+        "nonceSearch": false,
+        "sockets": false,
+        "nativeChildren": false,
+        "qualificationScratchCreated": false,
+        "authority": "NONE"
+      },
+      "stdoutBytes": 617,
+      "stdoutSha256": "3aa76835860a4835406b864eaa83d7bcd00fe92f2cb70cd36e65d7071c71b75c",
+      "stderrBytes": 0,
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sourcePinsUnchanged": true
+    },
+    "inert": {
+      "exit": 0,
+      "complete": true,
+      "validated": true,
+      "counts": {
+        "tests": 17,
+        "suites": 0,
+        "pass": 17,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "stdoutBytes": 4235,
+      "stdoutSha256": "25625287bb781ecc3d84b50c81fe0b55be6364ad8dbaa210d9085b401d76e66c",
+      "stderrBytes": 0,
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sourcePinsUnchanged": true
+    },
+    "profileData": {
+      "exit": 0,
+      "complete": true,
+      "validated": true,
+      "counts": {
+        "event": "P4_FULL_V3_ROLE_PROFILE_DATA_NOT_NATIVE",
+        "testsRun": 87,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "successful": true,
+        "sourceBuilderPin": "3cab5240c30a4c872a04fb9a1304429eadbc4d81e8851bed8a8fd9d34dce7112",
+        "sourceRowsSha256": "03305e857cf787aaba7dfb43412fb38cdcd9c8615284ca25e242a0eb322cec99",
+        "builderUnchanged": true,
+        "nativeExecuted": false,
+        "fakeNamespaceInstalled": false,
+        "privateRootsOpened": false,
+        "SDK": false,
+        "SQLite": false,
+        "keys": false,
+        "signatures": false,
+        "sockets": false,
+        "nonceSearch": false,
+        "children": false,
+        "profilesWritten": false,
+        "qualificationScratchCreated": false,
+        "authority": "NONE"
+      },
+      "stdoutBytes": 631,
+      "stdoutSha256": "91ebcecd17eba9e324af9ed3730a67aec7470176e1f255f8777cd09fb3aeb525",
+      "stderrBytes": 0,
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sourcePinsUnchanged": true
+    },
+    "sourceOnlyCLI": {
+      "exit": 0,
+      "complete": true,
+      "validated": true,
+      "stdoutBytes": 2333,
+      "stdoutSha256": "c772fc7ea3bbb4f386640384347161ce043ab63f35bb3a372d373b5d1904466a",
+      "stderrBytes": 0,
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sourcePinsUnchanged": true
+    },
+    "sourceOnlyEvents": [
+      {
+        "event": "P4_MANAGED_V3_SOURCE_ONLY_NOT_NATIVE",
+        "applicationFilesRead": 138,
+        "packageFilesDeclared": 404,
+        "effectsCeiling": {
+          "planVersion": 3,
+          "workloadPlanSha256": "305ac4cc311f18b370d3295206ba8ef1a533eee23bdbbbd5166474226816fd0b",
+          "sourceRowsSha256": "03305e857cf787aaba7dfb43412fb38cdcd9c8615284ca25e242a0eb322cec99",
+          "laneCount": 2,
+          "totalCallsPerLane": 5,
+          "warmupCallsMaximum": 2,
+          "measuredCallsMaximum": 8,
+          "nodeParentCommands": 1,
+          "nodeChildProcessesMaximum": 4,
+          "opensslCommands": 1,
+          "maximumRuns": 1,
+          "windowMarkerCommandsMaximum": 4,
+          "ipcTicketsMaximumPerChild": 5,
+          "serviceWriterRowsMaximum": 248,
+          "privateWriterAttributionRowsMaximum": 248,
+          "serviceChildClockReadsMaximum": 996,
+          "logicalFullCaptureBytesMaximum": 784384,
+          "fullCaptureBytesPerWriterReserved": 1024,
+          "windowSummaryBytesPerLaneReserved": 65536,
+          "captureJsonTreeCopyRequired": false,
+          "captureHeapByteBoundEstablished": false,
+          "loopbackTcpConnectionsMaximum": 362,
+          "externalNetwork": false,
+          "sqliteNewPathsMaximum": 8,
+          "sqliteWalOrShmAllowed": false,
+          "independentPinFilesMaximum": 4,
+          "inMemoryEd25519KeysMaximum": 6,
+          "transactionSignaturesMaximum": 2,
+          "capabilitySignaturesMaximum": 10,
+          "providerSignaturesMaximum": 2,
+          "nonceCandidatesPerWindowMaximum": 4096,
+          "nonceCandidatesPerLaneReserved": 65536,
+          "nonceCandidatesTotalReserved": 131072,
+          "testTlsKeyPairsMaximum": 1,
+          "privateProfileBytesReserved": 2621440,
+          "nodeStdoutLimit": 786432,
+          "nodeEntryCaptureMaximum": 16777216,
+          "theoreticalCaptureMayExceedEntryCap": false,
+          "nativeFileBytesReserved": 67108864,
+          "taskQuotaBytes": 74448896,
+          "expectedPeakBytes": 74448896,
+          "nodeTimeoutSeconds": 72,
+          "opensslTimeoutSeconds": 20,
+          "minimumFreeBytes": 10737418240,
+          "sourceCopiesRequired": 0,
+          "packageCopiesRequired": 0,
+          "automaticRetry": false,
+          "childCreatedFilesAutomaticAdoption": false,
+          "childCreatedFilesAutomaticDeletion": false,
+          "cleanupMayRemainHold": true,
+          "diskQuotaOsEnforced": false,
+          "nativeOsNetworkSandbox": false,
+          "effectsExecuted": false,
+          "authority": "NONE"
+        },
+        "completeManagedControlSourceAuthored": true,
+        "nativeAllowanceGranted": false,
+        "authority": "NONE"
+      },
+      {
+        "event": "P4_MANAGED_V3_REGISTRY_READ_IN_PLACE",
+        "sourceRowsSha256": "03305e857cf787aaba7dfb43412fb38cdcd9c8615284ca25e242a0eb322cec99",
+        "files": 542,
+        "sourceCopies": 0,
+        "packageCopies": 0,
+        "nodeExecuted": false,
+        "privateRootsOpened": false
+      }
+    ],
+    "syntaxOnly": {
+      "JavaScript": 2,
+      "Python": 5,
+      "importsExecuted": false,
+      "sourcePinsUnchanged": true,
+      "results": [
+        {
+          "path": "qualification/capacity-native-workload-adapter-v3.draft.mjs",
+          "actualExit": 0,
+          "stdoutBytes": 0,
+          "stderrBytes": 0,
+          "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "qualification/capacity-native-workload-v3.entry.draft.mjs",
+          "actualExit": 0,
+          "stdoutBytes": 0,
+          "stderrBytes": 0,
+          "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ]
+    }
+  },
+  "sourcePins": [
+    {
+      "path": "package.json",
+      "bytes": 2677,
+      "LF": 40,
+      "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+      "gitBlob": "45752ffde39d29666094f7f1c755060d75e43deb"
+    },
+    {
+      "path": "qualification/capacity-native-full-graph-v3.inputs.json",
+      "bytes": 8425,
+      "LF": 209,
+      "sha256": "d9599aa00924777f91cb1cbb51a508b5bda156ef30994d342bd3a4512d5b2d97",
+      "gitBlob": "0bb99342568f0abcda4ddb0e5a756e712ed412f0"
+    },
+    {
+      "path": "qualification/capacity-native-paired-lane-v3.supervisor.draft.mjs",
+      "bytes": 25906,
+      "LF": 288,
+      "sha256": "33392301ef64e402163f8d21f0ed29334924183f5489408195d38b2251bb8f4a",
+      "gitBlob": "297daf82987510452625e1b1848140025c7f5941"
+    },
+    {
+      "path": "qualification/capacity-native-service-window-v3.owner.draft.mjs",
+      "bytes": 5151,
+      "LF": 87,
+      "sha256": "89e0fded8af54694208861d2abcb7947afd30d96e4a9e3b8296de64870d66f7e",
+      "gitBlob": "31d86a2c924bb27ba3d2fd619d0bdb63db8690cc"
+    },
+    {
+      "path": "qualification/capacity-native-workload-adapter-v3.draft.mjs",
+      "bytes": 17930,
+      "LF": 263,
+      "sha256": "8905ffd5be92a5792bb9141cb0f45592f6342d013fef4e9379b4211eabe4b426",
+      "gitBlob": "0ce4f3508cdf6bd4fbca2b298ddb3f0cc95aebac"
+    },
+    {
+      "path": "qualification/capacity-native-workload-adapter-v3.inert-behavior.mjs",
+      "bytes": 9323,
+      "LF": 144,
+      "sha256": "342a985f208bafb0bc56c4bb79d61d36819829ab719e44976c8063143d426d43",
+      "gitBlob": "db687095a31e48bcbcbc9c2c6bde542fff9bde2d"
+    },
+    {
+      "path": "qualification/capacity-native-workload-v3.entry.draft.mjs",
+      "bytes": 6795,
+      "LF": 90,
+      "sha256": "a5c498d6ed682903866c4d24d547b0d80afe76754f79a1e9bf07b42db9c848c5",
+      "gitBlob": "e23c3201c1d03729ad8349467b6cd1a6ea4212a7"
+    },
+    {
+      "path": "qualification/capacity-native-workload-v3.launch-inputs.json",
+      "bytes": 5093,
+      "LF": 140,
+      "sha256": "cac07be52bc9620f95cb18fb8ce6d91390754559c1ad9ac3fa75e7eff1d3b07a",
+      "gitBlob": "dadb85aa435507a0eed5cc6327da48d4ee24de10"
+    },
+    {
+      "path": "qualification/capacity-native-workload-v3.plan.json",
+      "bytes": 493,
+      "LF": 23,
+      "sha256": "0c269fc51a72dcc287192ad3d350aa5ea8ed265e3647940012821d81a87908a7",
+      "gitBlob": "1da0ab0a55f3f24458f3560c1ac695f424829ca4"
+    },
+    {
+      "path": "qualification/funding_tls_current_gate.py",
+      "bytes": 7969,
+      "LF": 145,
+      "sha256": "9777b8dca3c8c86e543c1f202c0cde248280ed3a108df4a688565ccf83132936",
+      "gitBlob": "91362d22ca606a6711612b02ecea3c6e92c55a59"
+    },
+    {
+      "path": "qualification/issued-funding-post-native-vertical.inputs-v3.json",
+      "bytes": 138777,
+      "LF": 3836,
+      "sha256": "51ffb5b0ff0052523c1b7f3d75fa24e9be27e60ca3bcc09236b1f439096aaed1",
+      "gitBlob": "3dc05ccffd306e97056b4ed168d8121f63acebbc"
+    },
+    {
+      "path": "qualification/native_capacity_full_profile_v3.behavior.py",
+      "bytes": 19817,
+      "LF": 295,
+      "sha256": "723c9cbff3cfca531f1988bf371ade0eb8b7a056edae82c17cf79c2bef641383",
+      "gitBlob": "5a22d1eb1ffe25507af23e8190e15c88ad8819d2"
+    },
+    {
+      "path": "qualification/native_capacity_full_profile_v3.py",
+      "bytes": 23370,
+      "LF": 352,
+      "sha256": "3cab5240c30a4c872a04fb9a1304429eadbc4d81e8851bed8a8fd9d34dce7112",
+      "gitBlob": "f6294498f0d27735d5a27b1ab06bcc30c631e2e2"
+    },
+    {
+      "path": "qualification/native_capacity_managed_workload_v3.behavior.py",
+      "bytes": 35827,
+      "LF": 452,
+      "sha256": "90f171b1feb173670b90079e20b99ecc237a29eb7f887b4e52a5a1d378ea9777",
+      "gitBlob": "b08d5a1f4b0c848faf2f9eb4d56b3f2b2d69a3c9"
+    },
+    {
+      "path": "qualification/native_capacity_managed_workload_v3.py",
+      "bytes": 36833,
+      "LF": 503,
+      "sha256": "f6bba9490d53fbacb620dd57ad518d3199168b84fd7a3a5809fcdaca98ea1c99",
+      "gitBlob": "5eabf3df0b9f9075f8fd95cfd18c52092734e71d"
+    },
+    {
+      "path": "qualification/recovery_crash_native_profile.py",
+      "bytes": 33443,
+      "LF": 538,
+      "sha256": "75c2c9478b7e792a7bade739161af2bb8fb624cd407924ead2cf822dc23dacbd",
+      "gitBlob": "dc93890c4f9772b726e015ddd11d63bfa1a48ad4"
+    },
+    {
+      "path": "qualification/run-capacity-native-workload-v3.local.py",
+      "bytes": 26105,
+      "LF": 395,
+      "sha256": "0834d32fcae93fc6ad679625c24974300670fd228f336f35231a98cab272da25",
+      "gitBlob": "347dc0b097fd5145ba087a1f7224087d442968c7"
+    },
+    {
+      "path": "src/native-private-directory-identity.js",
+      "bytes": 1927,
+      "LF": 40,
+      "sha256": "f3945ab75a86fd2d5f8f53baddf6fbd684ee55c68139f9c4f061c3d13b9cc844",
+      "gitBlob": "1500d55d3313cb1a02c07b49108eb3bcfa5f20ad"
+    },
+    {
+      "path": "src/service-credit-capacity-cohort-writer-trace-data.js",
+      "bytes": 10956,
+      "LF": 181,
+      "sha256": "75c3529584f7c6126f726734d085e107438c7a676ff1f63073956054aedcba65",
+      "gitBlob": "63bee5ad4714d3179666eef371373d4e0416a4a0"
+    },
+    {
+      "path": "src/service-credit-capacity-native-observation-data.js",
+      "bytes": 6173,
+      "LF": 103,
+      "sha256": "d6d19890334fbb6d7e92e605640d4638154f8e3e10588c8e217bf782a675b7ca",
+      "gitBlob": "aaf6b24f65a59e4b421805d7667a5fdf9e72433f"
+    },
+    {
+      "path": "src/service-credit-capacity-recorder.js",
+      "bytes": 10801,
+      "LF": 236,
+      "sha256": "eca9bf4cad4717df5d61457044c2c5d0a6bc00b6af81964d09bf18325d4a46ad",
+      "gitBlob": "bc9b0a8a9abd48033e698e100cdc6ef90d2152c9"
+    },
+    {
+      "path": "src/service-credit-capacity-window-recorder.js",
+      "bytes": 13321,
+      "LF": 242,
+      "sha256": "48855e34729ae68c179d6439aed962a719964732c992a83472330b7e41293579",
+      "gitBlob": "6e28e75b4fd6572fbae535ac066334349ed26038"
+    },
+    {
+      "path": "src/service-credit-capacity-window-writer-trace-data.js",
+      "bytes": 8906,
+      "LF": 126,
+      "sha256": "b86377ec5474f85465073e7891bde9f706b167a40cb6677671a6012dab4d9bbd",
+      "gitBlob": "ceabbe01bb341ccf2c9c8f0d89229e3dd4268c5f"
+    },
+    {
+      "path": "src/service-credit-capacity-windowed-async-workload-owner-core.js",
+      "bytes": 31976,
+      "LF": 563,
+      "sha256": "e6559f7646d65795339c99fb853d0a9dbeb4e69ee8df6c2fcb0070d9c4ca2624",
+      "gitBlob": "f41334ea389adf5f9ee2f69cc0b2e525cbe718dd"
+    }
+  ],
+  "provenance": {
+    "previousGraphSha256": "1ca3019657b83678fc902fd17513cd98dbd222b51448ed3268a59e30223dd6a3",
+    "previousSourceCommit": "25c62dc7fc511f9ebed3b33a92908f8ed8d42c4f",
+    "previousSourceResult": "qualification/capacity-native-full-graph-v3.source-only-result.json",
+    "previousSourceResultSha256": "e8f110fc3f3372283d13ad261eae46bbbfd25099b56642148e72d89a8fafad7d",
+    "previousResultQualifiesCurrentChangedGraph": false,
+    "previousResultBytesPreserved": true,
+    "nativeV2SourcesAndConsumedP2FailuresPreserved": true
+  },
+  "source": {
+    "completeManagedControlSourceAuthored": true,
+    "privateAttributionAddedToRealAdapterAndEntry": true,
+    "originalBindingsPrivateOnly": true,
+    "runIdentityExpectedFromActualManagerTask": true,
+    "sourceOnlyDefault": true,
+    "newExactNativeAllowanceRequired": true,
+    "automaticRetry": false,
+    "childCreatedFilesAdopted": false,
+    "historicalCleanupPerformed": false,
+    "sourceReviewIsNativeProtocolProof": false
+  },
+  "native": {
+    "executed": false,
+    "newAllowanceGranted": false,
+    "SDK": false,
+    "SQLite": false,
+    "keys": false,
+    "signatures": false,
+    "nonceSearch": false,
+    "sockets": false,
+    "nativeChildren": false,
+    "nativeResourcesQualified": false,
+    "sustainableCapacityQualified": false,
+    "productionQualified": false,
+    "OSNetworkSandbox": false,
+    "authority": "NONE"
+  },
+  "resources": {
+    "newTaskRoots": 0,
+    "qualificationScratchCreated": false,
+    "privateProfilesWritten": false,
+    "managerImported": false,
+    "sourceCopiesCreated": 0,
+    "packageCopiesCreated": 0,
+    "heapBytesMeasured": false,
+    "cleanupPerformed": false,
+    "automationsChanged": false
+  }
+}
+

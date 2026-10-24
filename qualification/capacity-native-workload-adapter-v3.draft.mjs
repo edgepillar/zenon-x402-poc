@@ -45,7 +45,7 @@ export function createNativeCapacityWorkloadAdapter(configuration) {
     return { laneId: row.laneId, payerProfile: profile(row.payerProfile), serviceProfile: profile(row.serviceProfile),
       pair: null, acquisitionEntered: false, funded: false, held: false, warmupCompleted: 0, measuredCompleted: 0,
       balanceReadsEntered: 0, balanceReadsPending: 0, balanceReadNs: [], intervals: [], timingPages: 0,
-      finalTraceObserved: false, windowTrace: null, measurementUnknown: false, closing: null, closeStatus: 'NOT_REQUESTED' };
+      finalTraceObserved: false, windowTrace: null, windowAttribution: [], measurementUnknown: false, closing: null, closeStatus: 'NOT_REQUESTED' };
   });
   let owner, running = null;
   function live(state) { if (state.held || state.closing !== null || state.pair === null) fail(); }
@@ -116,7 +116,18 @@ export function createNativeCapacityWorkloadAdapter(configuration) {
             const raw = await state.pair.ledgerPage(F({ from, maximum: 64 })); live(state);
             const page = TIMING_PAGE(raw, F({ from, maximum: 64, totalCalls, expectedTotal, previousAfterCommitNs }));
             state.timingPages++; if (page.total === 0) fail();
-            trace.append(raw); state.intervals.push(...page.intervals); from = page.next; expectedTotal = page.total;
+            const attributed = trace.append(raw);
+            // PRIVATE evidence only. Retain the genuine raw command binding
+            // beside its sanitized cohort/window row so an independent
+            // controller can recompute every group and percentile. No raw
+            // operation name, header, key or witness enters report().
+            const rawRows = D(raw, 'records').value;
+            const bindings = attributed.intervals.map((row, index) => {
+              const command = D(rawRows[index], 'command').value;
+              return F({ ...row, originalCommandDigest: command === 'CONTROL' ? null : command });
+            });
+            state.windowAttribution.push(...bindings); state.intervals.push(...page.intervals);
+            from = page.next; expectedTotal = page.total;
             previousAfterCommitNs = page.lastAfterCommitNs;
           } while (from < expectedTotal);
           state.windowTrace = trace.finalize();
@@ -207,6 +218,7 @@ export function createNativeCapacityWorkloadAdapter(configuration) {
   const privateEvidence = F(function privateEvidence() {
     if (arguments.length !== 0) fail();
     return F(states.map(s => F({ laneId: s.laneId, serviceWriterIntervals: F([...s.intervals]),
+      serviceWriterAttribution: F([...s.windowAttribution]),
       serviceMeasurementWindow: s.pair === null ? null : s.pair.measurementWindowSnapshot(),
       pairSnapshot: s.pair === null ? null : s.pair.inspect(),
       payerOperationTimings: s.pair === null ? F([]) : s.pair.payerOperationTimings(),

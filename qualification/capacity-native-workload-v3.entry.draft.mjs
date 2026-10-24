@@ -48,6 +48,7 @@ try {
   const packed=F({captureVersion:3,kind:'PRIVATE_FULL_NATIVE_CAPACITY_COMPONENT_CAPTURE_NOT_PRODUCTION',
     sourceRowsSha256:namespace.sourceRowsSha256,result,evidence:F(evidence.map(row=>F({
       laneId:row.laneId,pairSnapshot:row.pairSnapshot,serviceWriterIntervals:row.serviceWriterIntervals,
+      serviceWriterAttribution:row.serviceWriterAttribution,
       serviceMeasurementWindow:row.serviceMeasurementWindow,
       payerOperationTimings:row.payerOperationTimings,privateStreams:F(row.privateStreams.map(stream=>F({
         role:stream.role,stdout:blob(stream.stdout,1024),stderr:blob(stream.stderr,8192)})))}))),
