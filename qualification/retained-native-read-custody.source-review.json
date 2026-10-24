@@ -1,0 +1,222 @@
+{
+  "kind": "RETAINED_NATIVE_READ_CUSTODY_V2_SOURCE_LINK_REVIEW_NOT_NATIVE_RUNTIME",
+  "status": "LEAF_5_PASS_NATIVE_LINK_PARSED_ONLY",
+  "sourceParent": "dac74bb9555f48d9b379d07f5a35ac18a8824f45",
+  "mainParent": "5d229cee069904c09ef6a870d29d837bc5e51389",
+  "componentResult": "qualification/native-read-retired-error-latch.actual-local-result.json",
+  "componentCasesPassed": 5,
+  "componentExecutedInputs": [
+    {
+      "path": "package.json",
+      "bytes": 2677,
+      "LF": 40,
+      "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+      "gitBlob": "45752ffde39d29666094f7f1c755060d75e43deb"
+    },
+    {
+      "path": "src/zenon/native-read-retired-error-latch.js",
+      "bytes": 994,
+      "LF": 24,
+      "sha256": "a7c2c242f2df97e8f6fcd6171d0f24b3ec048f25115135dcb08dd83a21f48d84",
+      "gitBlob": "97cff24934379cf9d8b1ae9b5fe43df68afd6483"
+    },
+    {
+      "path": "qualification/native-read-retired-error-latch.behavior.draft.mjs",
+      "bytes": 3491,
+      "LF": 58,
+      "sha256": "e079d4b1c0d51c3ec69b6b4864a3eb317d5d0902b6007092c3e8cc921795db55",
+      "gitBlob": "797bc22609847ec16da4cb15140287e64af8e338"
+    }
+  ],
+  "currentNativeInputs": [
+    {
+      "path": "src/zenon/bounded-json-rpc-https-exchange-owner.js",
+      "bytes": 44831,
+      "LF": 941,
+      "sha256": "c270192d97be823f94eca1f5db6cf2fbf7f6128049e686579a00dedc3d8cc410",
+      "gitBlob": "e9c2420bed6a6f9d0a739384bceecb8f73cb86c0"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-retained-https-read-owners.js",
+      "bytes": 5371,
+      "LF": 104,
+      "sha256": "725ee84143fd18416e638ae6acc0295e1fdea9c20fb4ee67d8b3e35b5bec77e8",
+      "gitBlob": "f496edb1ea70c67f5b1303f4322c0ace56156a86"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-retained-https-read-session.js",
+      "bytes": 7345,
+      "LF": 135,
+      "sha256": "e2e081c26a69f6cdf91cf30bdb14510b6fdb141b81b74b1fe0753d16f8be53c5",
+      "gitBlob": "575f803c66b9f85aed162dc46ab9b532a3fd8693"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-native-https-original-funding-submission.js",
+      "bytes": 10947,
+      "LF": 182,
+      "sha256": "9005bbcde0d3d05771f021916985d3238953d679eca136cb90226a8e940d6207",
+      "gitBlob": "b75e2ef97030e712d704d88fe3cb9d5e103039a1"
+    }
+  ],
+  "unchangedContractWitnesses": [
+    {
+      "path": "src/zenon/bounded-json-rpc-read-admission.js",
+      "bytes": 2627,
+      "LF": 51,
+      "sha256": "0b0b0806487c2e648a83367a9ebcd48a3a92493158ebca23abe8d6d6849d9ff3",
+      "gitBlob": "9e9ee352d7cf0013d96851c769f2a205ccf98449"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-retained-read-session-core.js",
+      "bytes": 10450,
+      "LF": 204,
+      "sha256": "a0f91046c47cfa770f30bf299f620086351ee15977f669d9ec6016dd08d65794",
+      "gitBlob": "b9151955b073be614946525e70320600f7a6850b"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-original-funding-submission.js",
+      "bytes": 21187,
+      "LF": 360,
+      "sha256": "caf60b4b2a61b8259b9d671d3d262e3d5a49fa30a2e79bb72df21c4ceb74c1df",
+      "gitBlob": "31b8143be15fae2c97989597e067622ac34640ce"
+    },
+    {
+      "path": "src/service-credit-zenon-funding-post-v1-payer-recovery-owner.js",
+      "bytes": 22581,
+      "LF": 626,
+      "sha256": "d62450b462a5412c35dfa474cbf7cac1e5aad88ecd6fc04106e36a67f8459a80",
+      "gitBlob": "cd030bb52146ae3445822224de25268f1c972b78"
+    },
+    {
+      "path": "src/service-credit-native-client-close-owner.js",
+      "bytes": 7170,
+      "LF": 149,
+      "sha256": "00366016a37cf71234cb305e860b5d3f406c97f6b6a7af8569ae76726b759c91",
+      "gitBlob": "ed68174f93050d837786ab799b3b6dee5f7e0676"
+    },
+    {
+      "path": "src/service-credit-funding-post-native-https-transport.js",
+      "bytes": 17574,
+      "LF": 308,
+      "sha256": "cfd30efb8b2c48d3d301631fa8fc6ccaaa569fc3edb473c63bd170e8f603a0a1",
+      "gitBlob": "5273c7dc49470a054a87a4813652ce664386c773"
+    }
+  ],
+  "sourceLinkControls": {
+    "kind": "READ_ONLY_LITERAL_SOURCE_LINK_CONTROLS_NOT_NATIVE_RUNTIME",
+    "matched": 6,
+    "checks": [
+      "private_six_argument_mode_is_retained_only",
+      "same_shared_latch_used_on_all_selected_retired_handles",
+      "unknown_accounting_is_not_zero_and_drift_or_rejection_is_sticky",
+      "late_error_vetoes_new_admission_and_retired_response_acceptance",
+      "actual_owner_inspectors_forwarded_without_replacing_read_or_close_methods",
+      "actual_v4_guard_checks_each_of_three_native_views_with_strict_zero"
+    ],
+    "notBehaviorQualification": true
+  },
+  "implementation": {
+    "nativeInspectorDeliveredByActualCore": true,
+    "sourceSinkSelectedForRetainedProfilesOnly": true,
+    "legacyFourAndFiveArgumentModesRetained": true,
+    "legacyPublicOwnerShape": [
+      "exchange",
+      "close"
+    ],
+    "retainedV2BudgetUnchanged": [
+      78,
+      78,
+      18
+    ],
+    "sameRealReadCloseFunctions": true,
+    "inspectorFields": [
+      "closeRequested",
+      "closePromiseSettled",
+      "uncertaintyLatched",
+      "retiredErrorObserved",
+      "activeGeneration",
+      "trackedRequests",
+      "trackedResponses",
+      "trackedSockets",
+      "trackedAgents",
+      "ownedTimers",
+      "closeObserved"
+    ],
+    "unknownCountersAreNull": true,
+    "noUnknownToZeroCoercion": true,
+    "driftAndRejectedCloseRemainLatched": true,
+    "samePerOwnerLeafInstalledOnRetiredHandles": true,
+    "rawErrorFieldsRead": false,
+    "rawErrorOrOwnerGraphRetainedByLeaf": false,
+    "lateErrorVetoesReadAdmissionAndAcceptance": true,
+    "privateV4GuardRequiresEachNativeView": true,
+    "inspectorMayLatchStateOnDrift": true,
+    "inspectionCreatesRequestsOrCleanup": false,
+    "observedReferencesNotEveryOsHandle": true,
+    "nativePhysicalDrain": "NOT_QUALIFIED",
+    "automaticRetry": false,
+    "automaticResign": false,
+    "defaultBuyerChanged": false
+  },
+  "actualExecution": {
+    "componentNodeCommands": 1,
+    "syntaxOnlyNodeCommands": 5,
+    "currentNativeFilesParsed": 4,
+    "NativeOwnerImports": 0,
+    "NativeOwnerConstruction": 0,
+    "NativeOwnerExecution": 0,
+    "SDKImports": 0,
+    "SQLiteOpens": 0,
+    "sockets": 0,
+    "signatures": 0,
+    "keys": 0,
+    "nonceSearch": 0,
+    "OpenSSLCommands": 0,
+    "newManagedRoots": 0,
+    "newManagedTasks": 0,
+    "newQualificationScratchBytes": 0,
+    "sourceCopies": 0,
+    "packageDownloads": 0,
+    "archives": 0,
+    "cleanup": 0
+  },
+  "evidenceLimits": [
+    "The five tests call the actual shared leaf with declared DATA; they do not deliver real native error events.",
+    "The four native source files passed syntax-only checks. Five parser commands include one preserved pre-correction core parse and its corrected-source recheck.",
+    "No native owner/session/V4 source graph was imported, constructed or executed.",
+    "Snapshots describe source-owned references and event-level close observations, not all OS handles or physical finalization.",
+    "The earlier funding POST TLS failure is not diagnosed/repaired here; its two-attempt allowance remains consumed.",
+    "Historical V3/positive-work and other native records stay pinned to their own sources; this is not current full-stack qualification."
+  ],
+  "publication": {
+    "sourceFiles": 9,
+    "mainFiles": 4,
+    "mainScope": "EXACT_TESTED_LEAF_TEST_COMPONENT_RESULT_AND_SCOPE_DOC",
+    "nativeChangesStayOffMain": true,
+    "mainDefaultRuntimeUnchanged": true,
+    "packageAndWorkflowsUnchanged": true,
+    "CIAtParents": {
+      "source": {
+        "checks": 0,
+        "statuses": 0,
+        "runs": 0
+      },
+      "main": {
+        "checks": 0,
+        "statuses": 0,
+        "runs": 0
+      }
+    },
+    "CIInterpretation": "NOT_RUN_NOT_GREEN",
+    "newPRs": 0,
+    "comments": 0,
+    "workflowDispatches": 0,
+    "forcePush": false
+  },
+  "remaining": [
+    "Actual native read error/close event timing, uncertainty retirement and late events on exact current source.",
+    "Actual retained V2/native V4/payer V2/SQLite lifetime join with original signed custody.",
+    "Repair and requalify the separate funding POST TLS transport under fresh bounded authority.",
+    "Forced interruption, lost ACK, HELD-store restart, current-head CI, provider/operator authority, economic pilot and production."
+  ]
+}

@@ -1,13 +1,13 @@
 import { types as utilTypes } from 'node:util';
 import { captureZenonDynamicPlasmaBoundedOriginalFundingConfiguration } from './dynamic-plasma-bounded-original-funding-configuration.js';
 import { createBoundedNonceDynamicPlasmaMaterialExchange } from './dynamic-plasma-bounded-material-exchange.js';
-import { createRetainedDynamicPlasmaHttpsReadSession } from './dynamic-plasma-retained-https-read-session.js';
+import { createRetainedDynamicPlasmaHttpsReadSessionV2 } from './dynamic-plasma-retained-https-read-session.js';
 import { createZenonDynamicPlasmaOriginalFundingSubmissionV4 } from './dynamic-plasma-original-funding-submission.js';
 import { createFundingPostNativeHttpsTransport } from '../service-credit-funding-post-native-https-transport.js';
 
 const CAPTURE = captureZenonDynamicPlasmaBoundedOriginalFundingConfiguration;
 const MATERIAL = createBoundedNonceDynamicPlasmaMaterialExchange;
-const READS = createRetainedDynamicPlasmaHttpsReadSession, SUBMIT = createZenonDynamicPlasmaOriginalFundingSubmissionV4;
+const READS = createRetainedDynamicPlasmaHttpsReadSessionV2, SUBMIT = createZenonDynamicPlasmaOriginalFundingSubmissionV4;
 const FUNDING = createFundingPostNativeHttpsTransport, FREEZE = Object.freeze;
 const DESC = Object.getOwnPropertyDescriptor, PROTO = Object.getPrototypeOf, KEYS = Reflect.ownKeys;
 const OWN = Object.hasOwn, APPLY = Reflect.apply, IS_PROXY = utilTypes.isProxy, IS_PROMISE = utilTypes.isPromise;
@@ -75,11 +75,12 @@ export function createZenonDynamicPlasmaNativeHttpsOriginalFundingSubmission(con
 }
 function joinedSession(reads, funding) {
   let closing = null, unknown = false, readOutcome = 'NOT_REQUESTED', fundingOutcome = 'NOT_REQUESTED';
-  const READ_INSPECT = reads.inspect, FUNDING_SNAPSHOT = funding.snapshot;
+  const READ_INSPECT = reads.inspect, READ_NATIVE = reads.inspectNativeCustody, FUNDING_SNAPSHOT = funding.snapshot;
   const canCloseFunding = FREEZE(function canCloseFunding() {
     if (arguments.length !== 0 || unknown || readOutcome !== 'CLOSED' || fundingOutcome !== 'CLOSED') return false;
     try {
-      const r = APPLY(READ_INSPECT, undefined, []), f = APPLY(FUNDING_SNAPSHOT, undefined, []);
+      const r = APPLY(READ_INSPECT, undefined, []), n = APPLY(READ_NATIVE, undefined, []);
+      const f = APPLY(FUNDING_SNAPSHOT, undefined, []);
       if (r.lifecycle !== 'CLOSED' || r.closeUncertaintyLatched !== false
           || r.closeRequested !== 3 || r.closeSettled !== 3 || r.closeFulfilledUndefined !== 3
           || f.phase !== 'CLOSED' || f.unknown !== false || f.trackedRequests !== 0
@@ -87,6 +88,19 @@ function joinedSession(reads, funding) {
           || f.close.closePromiseOutcome !== 'CLOSED' || f.close.quiescenceObserved !== true
           || f.close.localMaterialRelease.attempts !== 1 || f.close.localMaterialRelease.outcome !== 'RETURNED') {
         unknown = true; return false;
+      }
+      if (n.nativeReadSessionCustodyVersion !== 2 || !Array.isArray(n.owners) || n.owners.length !== 3) {
+        unknown = true; return false;
+      }
+      for (let index = 0; index < 3; index++) {
+        const owner = n.owners[index];
+        if (owner.nativeReadCustodyVersion !== 1 || owner.closeRequested !== true
+            || owner.closePromiseSettled !== true || owner.uncertaintyLatched !== false
+            || owner.retiredErrorObserved !== false || owner.activeGeneration !== false
+            || owner.closeObserved !== true || owner.trackedRequests !== 0 || owner.trackedResponses !== 0
+            || owner.trackedSockets !== 0 || owner.trackedAgents !== 0 || owner.ownedTimers !== 0) {
+          unknown = true; return false;
+        }
       }
       return true;
     } catch { unknown = true; return false; }
@@ -129,7 +143,7 @@ function joinedSession(reads, funding) {
   });
   const inspect = FREEZE(function inspect() {
     if (arguments.length !== 0) fail('input_rejected');
-    return FREEZE({ reads: reads.inspect(), funding: funding.snapshot(), unknown,
+    return FREEZE({ reads: reads.inspect(), nativeReads: reads.inspectNativeCustody(), funding: funding.snapshot(), unknown,
       readOutcome, fundingOutcome, authority: 'NONE', nativeGraphQualified: false });
   });
   return FREEZE({ readSession: FREEZE({ readOptions: reads.readOptions, close, inspect }), canCloseFunding });

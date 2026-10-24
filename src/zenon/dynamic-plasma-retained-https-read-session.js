@@ -2,11 +2,15 @@ import { types as utilTypes } from 'node:util';
 import {
   createRetainedDynamicPlasmaHttpsReadTransportOwner,
   createRetainedAccountStateHttpsExchangeOwner,
+  createRetainedDynamicPlasmaHttpsReadTransportOwnerV2,
+  createRetainedAccountStateHttpsExchangeOwnerV2,
 } from './dynamic-plasma-retained-https-read-owners.js';
 import { createRetainedDynamicPlasmaReadSessionCore } from './dynamic-plasma-retained-read-session-core.js';
 
 const DP = createRetainedDynamicPlasmaHttpsReadTransportOwner;
 const ACCOUNT = createRetainedAccountStateHttpsExchangeOwner, SESSION = createRetainedDynamicPlasmaReadSessionCore;
+const DP_V2 = createRetainedDynamicPlasmaHttpsReadTransportOwnerV2;
+const ACCOUNT_V2 = createRetainedAccountStateHttpsExchangeOwnerV2;
 const FREEZE = Object.freeze, CREATE = Object.create, DEFINE = Object.defineProperty;
 const DESCRIPTOR = Object.getOwnPropertyDescriptor, PROTOTYPE = Object.getPrototypeOf;
 const KEYS = Reflect.ownKeys, HAS = Object.hasOwn, APPLY = Reflect.apply;
@@ -36,9 +40,23 @@ const IS_PROXY = utilTypes.isProxy, IS_FROZEN = Object.isFrozen;
  * no test/network, signing, SDK/SQLite or pilot authority is inferred here.
  */
 export function createRetainedDynamicPlasmaHttpsReadSession(options) {
+  if (arguments.length !== 1) reject();
+  return createSession(options, false);
+}
+
+/**
+ * SOURCE ONLY V2: same real read core/method identities plus the three private
+ * native-owner views. A fulfilled aggregate Promise is not substituted for
+ * current per-owner counters/late-error state. Inspection opens no connection.
+ */
+export function createRetainedDynamicPlasmaHttpsReadSessionV2(options) {
+  if (arguments.length !== 1) reject();
+  return createSession(options, true);
+}
+
+function createSession(options, nativeCustody) {
   let selected;
   try {
-    if (arguments.length !== 1) reject();
     const top = exact(options, ['endpoints', 'accountEndpoint']);
     const endpoints = two(top.endpoints);
     selected = FREEZE([endpoint(endpoints[0]), endpoint(endpoints[1]), endpoint(top.accountEndpoint)]);
@@ -47,9 +65,29 @@ export function createRetainedDynamicPlasmaHttpsReadSession(options) {
   } catch { reject(); }
   const owners = [];
   try {
-    put(owners, '0', DP(selected[0])); put(owners, '1', DP(selected[1]));
-    put(owners, '2', ACCOUNT(selected[2]));
-    return SESSION(FREEZE({ firstOwner: owners[0], secondOwner: owners[1], accountOwner: owners[2] }));
+    put(owners, '0', (nativeCustody ? DP_V2 : DP)(selected[0]));
+    put(owners, '1', (nativeCustody ? DP_V2 : DP)(selected[1]));
+    put(owners, '2', (nativeCustody ? ACCOUNT_V2 : ACCOUNT)(selected[2]));
+    // The existing core receives its exact legacy grammar and the SAME actual
+    // read/close functions; no fake owner, new request or wrapping close result.
+    const first = nativeCustody ? FREEZE({ transport: owners[0].transport,
+      close: owners[0].close, requestBudget: owners[0].requestBudget }) : owners[0];
+    const second = nativeCustody ? FREEZE({ transport: owners[1].transport,
+      close: owners[1].close, requestBudget: owners[1].requestBudget }) : owners[1];
+    const account = nativeCustody ? FREEZE({ exchange: owners[2].exchange,
+      close: owners[2].close, requestBudget: owners[2].requestBudget }) : owners[2];
+    const session = SESSION(FREEZE({ firstOwner: first, secondOwner: second, accountOwner: account }));
+    if (!nativeCustody) return session;
+    const inspectors = FREEZE([owners[0].inspectNativeCustody, owners[1].inspectNativeCustody,
+      owners[2].inspectNativeCustody]);
+    const inspectNativeCustody = FREEZE(function inspectNativeCustody() {
+      if (arguments.length !== 0) reject();
+      return FREEZE({ nativeReadSessionCustodyVersion: 2,
+        owners: FREEZE([APPLY(inspectors[0], undefined, []), APPLY(inspectors[1], undefined, []),
+          APPLY(inspectors[2], undefined, [])]), nativePhysicalDrain: 'NOT_QUALIFIED', authority: 'NONE' });
+    });
+    return FREEZE({ readOptions: session.readOptions, close: session.close,
+      inspect: session.inspect, inspectNativeCustody });
   } catch {
     // Actual constructors are inert and no readOptions escaped. Ask every
     // created owner to close; do not claim asynchronous/native cleanup or
