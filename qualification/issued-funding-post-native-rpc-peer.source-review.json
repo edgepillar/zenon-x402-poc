@@ -1,0 +1,309 @@
+{
+  "schemaVersion": 1,
+  "status": "SOURCE_REVIEW_AND_SYNTAX_ONLY_NOT_EXECUTED",
+  "sourceParent": "9383e66f0bd14c0210902b08ef794da9fc568c25",
+  "mainParent": "dfc799cef3d2c77f1192bc10c8433c6349f567d9",
+  "scope": "Actual bounded native RPC peer support for the issued-funding vertical harness; not the full harness or a runtime result.",
+  "currentSyntaxOnly": {
+    "path": "qualification/issued-funding-post-native-rpc-peer.fixture.draft.mjs",
+    "syntaxActualExit": 0,
+    "outputComplete": true,
+    "applicationImported": false,
+    "input": {
+      "path": "qualification/issued-funding-post-native-rpc-peer.fixture.draft.mjs",
+      "bytes": 20696,
+      "LF": 265,
+      "sha256": "8500fc75a7736a976a9b07efb537e70f7f4f4ca3a1c7a2ee41d33496f8cb706b",
+      "gitBlob": "7b3db68a430419cde14c43fadea9dadfec4ada93"
+    },
+    "stdoutBytes": 0,
+    "stderrBytes": 0,
+    "NodeCommands": 1,
+    "nativeTlsExecuted": false
+  },
+  "retainedEarlierSyntaxOnly": {
+    "path": "qualification/issued-funding-post-native-rpc-peer.fixture.draft.mjs",
+    "syntaxActualExit": 0,
+    "outputComplete": true,
+    "applicationImported": false,
+    "input": {
+      "path": "qualification/issued-funding-post-native-rpc-peer.fixture.draft.mjs",
+      "bytes": 20700,
+      "LF": 265,
+      "sha256": "ae2a7a23b1f1a7f70f3f275092d4bf8b06835296bc2eb1a49ac8fe46ff6059db",
+      "gitBlob": "ae620d353841b7cfa17b584972c40bf22fe98843"
+    },
+    "stdoutBytes": 0,
+    "stderrBytes": 0,
+    "NodeCommands": 1,
+    "nativeTlsExecuted": false
+  },
+  "sourceReview": {
+    "event": "Q104_NATIVE_RPC_SOURCE_LITERAL_REVIEW",
+    "input": {
+      "path": "qualification/issued-funding-post-native-rpc-peer.fixture.draft.mjs",
+      "bytes": 20696,
+      "LF": 265,
+      "sha256": "8500fc75a7736a976a9b07efb537e70f7f4f4ca3a1c7a2ee41d33496f8cb706b",
+      "gitBlob": "7b3db68a430419cde14c43fadea9dadfec4ada93"
+    },
+    "localGraphInputs": [
+      {
+        "path": "qualification/issued-funding-post-native-rpc-peer.fixture.draft.mjs",
+        "bytes": 20696,
+        "LF": 265,
+        "sha256": "8500fc75a7736a976a9b07efb537e70f7f4f4ca3a1c7a2ee41d33496f8cb706b",
+        "gitBlob": "7b3db68a430419cde14c43fadea9dadfec4ada93"
+      },
+      {
+        "path": "src/service-credit-bounded-operation-drain.js",
+        "bytes": 4046,
+        "LF": 92,
+        "sha256": "ccaf1742f94a2ae312598c4bb2adc0c6168b1ade0167dbc8990422f5e7037885",
+        "gitBlob": "9cb4987ecd835e7b558d6088d562f417a9179da8"
+      },
+      {
+        "path": "src/x402-issued-funding-post-sdk-resource.js",
+        "bytes": 7469,
+        "LF": 129,
+        "sha256": "b4500c461d61b742a4bf6f6bbfb6f6c83b478a976f1300b8c07bf2db1543e681",
+        "gitBlob": "fca3aa91c16155c9abc9ada5e5c8aceb55b6a2c4"
+      },
+      {
+        "path": "src/x402-funding-post-checkpoint-route.js",
+        "bytes": 1310,
+        "LF": 29,
+        "sha256": "157e80e9f14b41c8cacc05423a7acd8616a6f759adac377f04f1fca21869831e",
+        "gitBlob": "777ff48ac9cf255f80cda7e22c68706b7d7084b3"
+      },
+      {
+        "path": "src/x402-wire.js",
+        "bytes": 39886,
+        "LF": 934,
+        "sha256": "5fba91af5a352f62d1a335c7176a45a604e2af5d92b1c4b0e53825c1f20d4e56",
+        "gitBlob": "fb060d4e349b1c31a1219a0cc137af250a8a2291"
+      },
+      {
+        "path": "src/canonical.js",
+        "bytes": 967,
+        "LF": 26,
+        "sha256": "0d55ddf1727cafb0dcd46df2922305568615552a4d2ae34a5c30e90b9d8d998c",
+        "gitBlob": "5367f9c72ee13017a61630e1f0cffdced21d52c4"
+      }
+    ],
+    "directImports": [
+      "node:assert/strict",
+      "node:buffer",
+      "node:https",
+      "node:util",
+      "../src/canonical.js",
+      "../src/x402-issued-funding-post-sdk-resource.js",
+      "../src/service-credit-bounded-operation-drain.js"
+    ],
+    "namedExports": [
+      {
+        "path": "src/canonical.js",
+        "export": "canonicalJson"
+      },
+      {
+        "path": "src/canonical.js",
+        "export": "paymentIntentDigest"
+      },
+      {
+        "path": "src/x402-issued-funding-post-sdk-resource.js",
+        "export": "createIssuedFundingPostSdkResourceBinding"
+      },
+      {
+        "path": "src/service-credit-bounded-operation-drain.js",
+        "export": "observeServiceCreditOperationDrain"
+      }
+    ],
+    "sourceProperties": [
+      {
+        "label": "actual-native-server-import",
+        "match": true
+      },
+      {
+        "label": "no-proxy-funding-route",
+        "match": true
+      },
+      {
+        "label": "one-actual-native-factory",
+        "match": true
+      },
+      {
+        "label": "same-original-issued-capture",
+        "match": true
+      },
+      {
+        "label": "original-intent-not-canned-context",
+        "match": true
+      },
+      {
+        "label": "cached-close-before-native-call",
+        "match": true
+      },
+      {
+        "label": "actual-close-call",
+        "match": true
+      },
+      {
+        "label": "native-close-current-view",
+        "match": true
+      },
+      {
+        "label": "native-handles-current-view",
+        "match": true
+      },
+      {
+        "label": "held-no-late-upgrade",
+        "match": true
+      },
+      {
+        "label": "no-healthy-forced-destruction",
+        "match": true
+      },
+      {
+        "label": "source-original-v7-input",
+        "match": true
+      },
+      {
+        "label": "actual-local-route-grammar",
+        "match": true
+      }
+    ],
+    "scope": "LITERAL_SOURCE_REVIEW_NOT_PARSING_NOT_RUNTIME",
+    "moduleImported": false,
+    "factoryCalled": false,
+    "behaviorTests": 0
+  },
+  "intendedFactory": {
+    "name": "createNativeIssuedFundingPostRpcPeerFixture",
+    "arity": 1,
+    "input": "EXACT_FROZEN_{tlsMaterial:{key,cert},payerAddress,payeeAddress}",
+    "tlsInput": "TWO_GENUINE_NONSHARED_BUFFER_COPIES_1_TO_16384_BYTES_EACH_NO_BORROWED_CLEAR",
+    "output": [
+      "port",
+      "bindIssuedChallenge",
+      "readSessionOptions",
+      "inspect",
+      "close"
+    ],
+    "challengeInput": "EXACT_FROZEN_{resourceUrl,frame}",
+    "frame": "ORIGINAL_ACTUAL_APPLICATION_402_FRAME_WITH_UNCHANGED_CANONICAL_PAYMENT_REQUIRED_HEADER",
+    "frameProvenance": "CALLER_MUST_OBTAIN_REAL_NATIVE_APPLICATION_FRAME_CAPTURE_ALONE_DOES_NOT_AUTHENTICATE_IT",
+    "bindRule": "ONE_ATTEMPT_NO_REPLACEMENT_AFTER_FAILURE",
+    "readConfiguration": "ACTUAL_RETAINED_LOCAL_READ_ROUTE_SHAPES_WITH_SEPARATE_RPC_PORT_SAME_CA_REQUIRED_BY_ACTOR",
+    "fundingRoute": false,
+    "applicationProxy": false,
+    "cannedBoundResponse": false,
+    "currentExecutionAuthority": false,
+    "selectionFlagIsAuthority": false
+  },
+  "declaredFutureBehavior": {
+    "native": "Actual node:https server bound exclusively to 127.0.0.1, ephemeral unprivileged port, TLS 1.3 and HTTP/1.1; no outbound connection.",
+    "routes": [
+      "/rpc/first",
+      "/rpc/second",
+      "/rpc/account"
+    ],
+    "headers": "Exact singleton Host/content-type/Accept/content-length/Connection set, localhost with explicit RPC port, close-only, no transfer encoding or payment signature.",
+    "rpc": "Sequential role IDs, exact method/parameter cycles, account frontier brackets, same original issued intent.",
+    "chain": "FIXED_DECLARED_73404_PROFILE_NOT_NODE_SPV_AUTHENTICATION",
+    "price": "Declared 1000 to 1210 price after two Momentum advances, 25409 available versus 25410 required fused and 3000 work difficulty. No work search or signature occurs in this peer.",
+    "close": "One cached Promise claimed before native close; callback plus close event plus current not-listening/zero raw/TLS/request handles/no startup timer. Refusal or timeout stays HELD; later completion cannot reset it.",
+    "refusalStops": "Socket destruction is only a failure/refusal stop and makes HELD permanent, never healthy cleanup evidence.",
+    "ordinaryClose": "NO_FORCED_SOCKET_DESTRUCTION_NO_CLOSE_ALL_CONNECTIONS_NO_REOPEN_NO_RETRY",
+    "ownership": "One native construction per module lifetime including failure; server and private TLS copies remain retained on unknown construction/close. Only owned TLS copies clear on healthy close.",
+    "bounds": {
+      "tcpConnections": 174,
+      "tlsConnections": 174,
+      "requestStarts": 174,
+      "firstRequests": 78,
+      "secondRequests": 78,
+      "accountRequests": 18,
+      "concurrentConnections": 3,
+      "concurrentRequests": 1,
+      "bodyBytes": 1024,
+      "responseBytes": 16384,
+      "headerBytes": 8192,
+      "headerPairs": 8,
+      "requestDeadlineMs": 2000,
+      "handshakeDeadlineMs": 1000,
+      "closeBudgetMs": 1000,
+      "tlsMaterialBytesPerBuffer": 16384
+    },
+    "limitsMeaning": "SOURCE_GUARDS_AND_OBSERVED_EVENT_COUNTERS_NOT_EXECUTED_LIMIT_PROOF_NOT_OS_NETWORK_SANDBOX_OR_EXECUTION_PERMISSION"
+  },
+  "reviewedImplementationDetails": [
+    "Cached close is retained before the native call so a synchronous error/callback cannot start another close.",
+    "Healthy close observes both real native callback and close event and current raw/TLS/request/timer state; no force-destroy path can upgrade HELD.",
+    "Native request and response errors are observed before admission can reject.",
+    "TLS Buffer backing store/length use captured intrinsic getters; caller accessors and adornments are not read.",
+    "One received RPC body is parsed once; source response is serialized once.",
+    "Original frame capture uses the actual existing resource-binding source. Payment intent is derived from that exact issued resource/requirement, not legacy canned tags.",
+    "Source-only readInput has observedUserSendReadVersion 3 and fits the real contextv7 actor selection. The actor is not invoked."
+  ],
+  "actualExecution": {
+    "syntaxOnlyNodeCommands": 2,
+    "actualBehaviorTestsExecuted": 0,
+    "moduleImported": false,
+    "fixtureFactoryCalled": false,
+    "nativeServerConstructors": 0,
+    "listenCalls": 0,
+    "TLS": 0,
+    "sockets": 0,
+    "RPC": 0,
+    "SDK": 0,
+    "SQLite": 0,
+    "keys": 0,
+    "signatures": 0,
+    "nonceEvaluations": 0,
+    "OpenSSL": 0,
+    "NodeChildren": 0,
+    "downloads": 0,
+    "installs": 0,
+    "newManagedRoots": 0,
+    "newManagedTasks": 0,
+    "newQualificationScratchBytes": 0,
+    "cleanup": 0,
+    "sourceTransforms": 0,
+    "nativeBuiltinAliases": 0
+  },
+  "historicalBoundary": {
+    "legacyRpcFixture": "READ_ONLY_DATA_REFERENCE_NOT_IMPORTED_OR_REBOUND",
+    "pendingFullDpManifestPath": "qualification/dynamic-plasma-full-native-loopback.inputs.json",
+    "pendingFullDpManifestSha256": "a472e3bcd8840ef4236e395cb918ae5f2a84be9ca45d8f59417c0b77da291933",
+    "frozenPendingDpGraph": "UNCHANGED_UNANSWERED_SCOPE_NOT_REUSED",
+    "oldFundingTlsAttempts": "NOT_REUSED",
+    "priorResults": "HISTORICAL_NOT_REQUALIFIED"
+  },
+  "publication": {
+    "eligibleSourceFiles": [
+      "qualification/issued-funding-post-native-rpc-peer.fixture.draft.mjs",
+      "qualification/issued-funding-post-native-rpc-peer.source-review.json",
+      "docs/P1_NATIVE_ISSUED_FUNDING_RPC_PEER_FIXTURE.md"
+    ],
+    "eligibleMainFiles": [],
+    "mainFilesChanged": 0,
+    "CIAtParents": {
+      "source": {
+        "checks": 0,
+        "statuses": 0,
+        "runs": 0
+      },
+      "main": {
+        "checks": 0,
+        "statuses": 0,
+        "runs": 0
+      }
+    },
+    "CIInterpretation": "NO_CURRENT_PASS_INFERRED_NO_WORKFLOW_DISPATCH"
+  },
+  "next": "Finish the actual driver: native application and port reservation, actual native unpaid challenge, bounded reference work and signer, independent pins, V6 custody/one funding POST, real provider activation, selected-grant service/replay/foreign/lost-ACK and actual close gates. Then review a new complete pinned runtime profile before requesting its separate scope.",
+  "fullP0Complete": false,
+  "fullP1Complete": false,
+  "fullP2Complete": false,
+  "fullRoadmapComplete": false,
+  "productionQualified": false
+}
