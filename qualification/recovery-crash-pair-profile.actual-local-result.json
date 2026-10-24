@@ -1,0 +1,453 @@
+{
+  "kind": "ACTUAL_FULL_P2_PROFILE_DATA_AND_SOURCE_ONLY_LAUNCH_RESULT_NOT_NATIVE_CRASH",
+  "version": 1,
+  "date": "2026-10-24",
+  "sourceParent": "1aeabcc49648719f97e0f1d5dca2cc6982f32e8c",
+  "mainAtReview": "e9c2b7964b2b9aad802f636c800487a49faabda9",
+  "currentDataResult": {
+    "event": "Q116_FULL_CRASH_PROFILE_ACTUAL_DATA_RESULT",
+    "actualExit": 0,
+    "complete": true,
+    "Python": "3.12.14",
+    "isolated": true,
+    "noSite": true,
+    "noBytecode": true,
+    "stdoutBytes": 7906,
+    "stdoutSha256": "d20ce4834475ff771e4f8d33d4b31f1be1fdc891550fe25a920dfcbcc4d1a386",
+    "stderrBytes": 0,
+    "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "counts": {
+      "entered": 52,
+      "completed": 52,
+      "passCount": 52,
+      "fail": 0,
+      "errors": 0,
+      "skipped": 0,
+      "hooks": 0,
+      "applicationInputs": 130,
+      "packageInputs": 404,
+      "eventsDeclared": true,
+      "SDK": false,
+      "SQLite": false,
+      "childProcesses": 0,
+      "signals": 0,
+      "scratchCreated": false,
+      "nativeCrashQualified": false,
+      "authority": "NONE"
+    },
+    "sources": [
+      {
+        "path": "qualification/recovery_crash_native_profile.py",
+        "bytes": 33443,
+        "LF": 538,
+        "sha256": "75c2c9478b7e792a7bade739161af2bb8fb624cd407924ead2cf822dc23dacbd",
+        "gitBlob": "dc93890c4f9772b726e015ddd11d63bfa1a48ad4"
+      },
+      {
+        "path": "qualification/recovery-crash-native-profile.test.py",
+        "bytes": 25024,
+        "LF": 450,
+        "sha256": "d105bc929733de3c2333e792d08bab037eaa01f5615bf21a1b3ff740b9d5f8f7",
+        "gitBlob": "3098f9e8f51453503d01ecafe0684ce73b2d37b1"
+      },
+      {
+        "path": "qualification/recovery-crash-full-graph.source-inputs.json",
+        "bytes": 141169,
+        "LF": 3889,
+        "sha256": "68cc83addfc65c0679d6289ae67b33602c29b470c8689e3169c069efdf3e7aaf",
+        "gitBlob": "bf82509dc3fb73eb212be4730a1f9e9c49239671"
+      },
+      {
+        "path": "qualification/issued-funding-post-native-vertical.inputs-v3.json",
+        "bytes": 138777,
+        "LF": 3836,
+        "sha256": "51ffb5b0ff0052523c1b7f3d75fa24e9be27e60ca3bcc09236b1f439096aaed1",
+        "gitBlob": "3dc05ccffd306e97056b4ed168d8121f63acebbc"
+      }
+    ],
+    "sourcePinsUnchanged": true,
+    "applicationImported": false,
+    "packagesImported": false,
+    "childProcesses": 0,
+    "SQLite": false,
+    "scratchCreated": false,
+    "taskRootsCreated": 0,
+    "nativeCrashRuns": 0
+  },
+  "developmentHistory": {
+    "initialDataAttempt": {
+      "actualExit": 1,
+      "counts": {
+        "entered": 36,
+        "completed": 33,
+        "passCount": 33,
+        "fail": 1,
+        "errors": 2,
+        "skipped": 0,
+        "hooks": 0,
+        "applicationInputs": 130,
+        "packageInputs": 404,
+        "eventsDeclared": true,
+        "SDK": false,
+        "SQLite": false,
+        "childProcesses": 0,
+        "signals": 0,
+        "scratchCreated": false,
+        "nativeCrashQualified": false,
+        "authority": "NONE"
+      },
+      "stdoutBytes": 9115,
+      "stdoutSha256": "e2fcbe77a113172d081ca7d874f5b3b561407b377c67fbf95120e03481b651eb",
+      "sources": [
+        {
+          "path": "qualification/recovery_crash_native_profile.py",
+          "bytes": 21991,
+          "LF": 385,
+          "sha256": "7802aec722957af0eec90b2eca1dc0e4d3816fc8e6d695868c2b0164fdb1856e",
+          "gitBlob": "2fc612859733df501eff0c22cffaadb348a2746d"
+        },
+        {
+          "path": "qualification/recovery-crash-native-profile.test.py",
+          "bytes": 14928,
+          "LF": 292,
+          "sha256": "ae16791cbf4747b9b7ca85cfb3b7f7105a84f1805f819f50ecbe32e499525f09",
+          "gitBlob": "8e5cafe7ef304290d4e749f8bb0b724de0e139d6"
+        },
+        {
+          "path": "qualification/recovery-crash-full-graph.source-inputs.json",
+          "bytes": 141169,
+          "LF": 3889,
+          "sha256": "68cc83addfc65c0679d6289ae67b33602c29b470c8689e3169c069efdf3e7aaf",
+          "gitBlob": "bf82509dc3fb73eb212be4730a1f9e9c49239671"
+        },
+        {
+          "path": "qualification/issued-funding-post-native-vertical.inputs-v3.json",
+          "bytes": 138777,
+          "LF": 3836,
+          "sha256": "51ffb5b0ff0052523c1b7f3d75fa24e9be27e60ca3bcc09236b1f439096aaed1",
+          "gitBlob": "3dc05ccffd306e97056b4ed168d8121f63acebbc"
+        }
+      ]
+    },
+    "correction": "Deep-copy declared parent-control rows in each test; negative mutations had changed a shared test fixture. Admission checks were not relaxed.",
+    "correctedBuilder36DataResult": {
+      "actualExit": 0,
+      "counts": {
+        "entered": 36,
+        "completed": 36,
+        "passCount": 36,
+        "fail": 0,
+        "errors": 0,
+        "skipped": 0,
+        "hooks": 0,
+        "applicationInputs": 130,
+        "packageInputs": 404,
+        "eventsDeclared": true,
+        "SDK": false,
+        "SQLite": false,
+        "childProcesses": 0,
+        "signals": 0,
+        "scratchCreated": false,
+        "nativeCrashQualified": false,
+        "authority": "NONE"
+      },
+      "stdoutBytes": 5416,
+      "stdoutSha256": "576bc9fb8a8dfde2e49329599214b431a75a3728087723db4a0e4d0cf573f1aa",
+      "sources": [
+        {
+          "path": "qualification/recovery_crash_native_profile.py",
+          "bytes": 21991,
+          "LF": 385,
+          "sha256": "7802aec722957af0eec90b2eca1dc0e4d3816fc8e6d695868c2b0164fdb1856e",
+          "gitBlob": "2fc612859733df501eff0c22cffaadb348a2746d"
+        },
+        {
+          "path": "qualification/recovery-crash-native-profile.test.py",
+          "bytes": 15021,
+          "LF": 293,
+          "sha256": "ef225ffc7eafdcaa332ebf7343caa625dcee928d5d4c48c6b4d30a8d06c76bdb",
+          "gitBlob": "b5c3cf8268a1bd1e0f90618244c0865c50eeb255"
+        },
+        {
+          "path": "qualification/recovery-crash-full-graph.source-inputs.json",
+          "bytes": 141169,
+          "LF": 3889,
+          "sha256": "68cc83addfc65c0679d6289ae67b33602c29b470c8689e3169c069efdf3e7aaf",
+          "gitBlob": "bf82509dc3fb73eb212be4730a1f9e9c49239671"
+        },
+        {
+          "path": "qualification/issued-funding-post-native-vertical.inputs-v3.json",
+          "bytes": 138777,
+          "LF": 3836,
+          "sha256": "51ffb5b0ff0052523c1b7f3d75fa24e9be27e60ca3bcc09236b1f439096aaed1",
+          "gitBlob": "3dc05ccffd306e97056b4ed168d8121f63acebbc"
+        }
+      ]
+    },
+    "currentResultIs52NotSumOfHistoricalRuns": true,
+    "rawDiagnosticsNotPublished": true
+  },
+  "parentEntrySyntax": {
+    "event": "Q116_MANAGED_PARENT_ENTRY_SYNTAX_ONLY",
+    "checks": [
+      {
+        "path": "qualification/recovery-crash-pair.entry.draft.mjs",
+        "actualExit": 0,
+        "stdoutBytes": 0,
+        "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderrBytes": 0,
+        "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "source": {
+          "path": "qualification/recovery-crash-pair.entry.draft.mjs",
+          "bytes": 8174,
+          "LF": 127,
+          "sha256": "29621bfec5330a7f04b8cef9fd62a8f5d30f68f277db58d1856c00b23bbb36ab",
+          "gitBlob": "252274b0ca2ad46e941ee9937c8625e62a3fc735"
+        }
+      }
+    ],
+    "imported": false,
+    "applicationOrPackageExecuted": false,
+    "SQL": false,
+    "childrenSpawnedByCheckedCode": 0,
+    "signals": 0,
+    "sourcePinsUnchanged": true,
+    "scratchCreated": false
+  },
+  "actualReadOnlySourceAndProfileChecks": {
+    "event": "Q116_SOURCE_ONLY_AND_PRIVATE_PROFILE_READ_GUARDS_PASS",
+    "sourceOnly": {
+      "actualExit": 0,
+      "complete": true,
+      "stdoutBytes": 224,
+      "stdoutSha256": "504cf5704ad5b540fdf47f599d821de11c8bb96b70e386085641835ba40cb005",
+      "stderrBytes": 0,
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "observation": {
+        "event": "RECOVERY_CRASH_SOURCE_ADMITTED",
+        "applicationFiles": 130,
+        "packageFilesDeclared": 404,
+        "packageFilesRead": 0,
+        "parentControlFiles": 5,
+        "PythonControlFiles": 4,
+        "effectsExecuted": false,
+        "nativeAuthority": "NONE"
+      }
+    },
+    "childProfile": {
+      "applicationFiles": 130,
+      "packageFiles": 404,
+      "sourceBytesReadOnly": 4710510,
+      "privateProfileBytes": 255967,
+      "sourceRowsSha256": "5aff94f7427ba46bbf3cc8e8ddc4f896672909773e44ff0335a26dc52502e979",
+      "localReadGuardsMatched": true
+    },
+    "parentProfile": {
+      "controlFiles": 5,
+      "privateProfileBytes": 2930,
+      "localReadGuardsMatched": true
+    },
+    "sources": [
+      {
+        "path": "qualification/recovery-crash-pair.launch-inputs.json",
+        "bytes": 5039,
+        "LF": 147,
+        "sha256": "566eab5f9a096cef5a544671901e3293074067e4bc83d1bfde73071888e3d84c",
+        "gitBlob": "79e9453529239862079353416974e1c65880c454"
+      },
+      {
+        "path": "qualification/recovery_crash_native_profile.py",
+        "bytes": 33443,
+        "LF": 538,
+        "sha256": "75c2c9478b7e792a7bade739161af2bb8fb624cd407924ead2cf822dc23dacbd",
+        "gitBlob": "dc93890c4f9772b726e015ddd11d63bfa1a48ad4"
+      },
+      {
+        "path": "qualification/run-recovery-crash-pair.local.py",
+        "bytes": 17343,
+        "LF": 284,
+        "sha256": "ccbf2baa73e78b7eaa9093d12a3476d45e1b4498c74337c6502739ec7c333391",
+        "gitBlob": "6c598bf7a917d8618be57e9a2ab59cad717b415b"
+      },
+      {
+        "path": "qualification/recovery-crash-pair.entry.draft.mjs",
+        "bytes": 8174,
+        "LF": 127,
+        "sha256": "29621bfec5330a7f04b8cef9fd62a8f5d30f68f277db58d1856c00b23bbb36ab",
+        "gitBlob": "252274b0ca2ad46e941ee9937c8625e62a3fc735"
+      },
+      {
+        "path": "qualification/recovery-crash-full-graph.source-inputs.json",
+        "bytes": 141169,
+        "LF": 3889,
+        "sha256": "68cc83addfc65c0679d6289ae67b33602c29b470c8689e3169c069efdf3e7aaf",
+        "gitBlob": "bf82509dc3fb73eb212be4730a1f9e9c49239671"
+      },
+      {
+        "path": "qualification/issued-funding-post-native-vertical.inputs-v3.json",
+        "bytes": 138777,
+        "LF": 3836,
+        "sha256": "51ffb5b0ff0052523c1b7f3d75fa24e9be27e60ca3bcc09236b1f439096aaed1",
+        "gitBlob": "3dc05ccffd306e97056b4ed168d8121f63acebbc"
+      }
+    ],
+    "sourcePinsUnchanged": true,
+    "actualNodeEntryImportedOrRun": false,
+    "NodeProcesses": 0,
+    "SQLite": false,
+    "SDK": false,
+    "keysOrSignatures": false,
+    "nonce": false,
+    "sockets": false,
+    "sourceCopiesCreated": 0,
+    "scratchCreated": false,
+    "taskRootsCreated": 0,
+    "nativeAuthority": "NONE",
+    "nativeCrashRuns": 0
+  },
+  "preNativeReadOnlyPlan": {
+    "actualExit": 0,
+    "observation": {
+      "event": "RECOVERY_CRASH_READ_ONLY_PRE_NATIVE_PLAN",
+      "applicationFiles": 130,
+      "packageFiles": 404,
+      "sourceBytesReadOnly": 4710510,
+      "childPrivateProfileBytes": 255967,
+      "parentPrivateProfileBytes": 2930,
+      "existingSourcesRecopied": false,
+      "effectsExecuted": false,
+      "nativeAuthority": "NONE",
+      "capacity": {
+        "availableBytes": 295655137280,
+        "requiredBytes": 183819567104,
+        "scopedReservationBytes": 172004212736,
+        "scopedRoots": 14,
+        "minimumFreeBytes": 10737418240
+      }
+    },
+    "pointInTimeOnly": true,
+    "newRootCreated": false,
+    "taskCreated": false,
+    "NodeAppExecuted": false,
+    "OpenSSLExecuted": false,
+    "managerWritesExecuted": false,
+    "historicalRootsOrMetadataChanged": false,
+    "doesNotAuthorizeNativeExecution": true
+  },
+  "implementedInSource": [
+    "Admit the immutable full 130-app/404-package source inventory and preserve all 117 V3 application rows",
+    "Separate the five pinned parent inputs from the full child namespace",
+    "Include LF, SHA-256, Git blob and nine-part local identity in each child profile row",
+    "Match scoped-package @ and space file URLs without a native module alias",
+    "Read application/package bytes in place and return private profiles in memory without a package tree copy",
+    "Keep the CLI source-only by default and require an explicit finite native selection and new empty owned task store for execute",
+    "Preserve strict historical reservations, mounted-volume identity, 10 GiB floor and 4 MiB task quota",
+    "Pin all executable Python definitions before loading them; use isolated no-site no-bytecode Python",
+    "Invoke only one parent Node command with at most two sequential owned children in a future approved run",
+    "Bound parent stdout and retain complete child stdout/stderr and independent original witnesses in its private CAS capture",
+    "Reject inferred EOF, duplicate PID, a normal seed exit, recovery retry/signing/nonce, changed source or UNKNOWN/authority upgrade",
+    "Require actual complete command and stream receipts before accepting the parser output",
+    "Keep actual task close and cleanup separate from a selected local process-pair observation"
+  ],
+  "prospectiveNativeScope": {
+    "selectedCases": 1,
+    "maximumRuns": 1,
+    "opensslCommands": 1,
+    "nodeParentCommands": 1,
+    "nodeChildren": 2,
+    "maximumChildSignalRequests": 2,
+    "selectedSeedSigkillRequests": 1,
+    "ownedCommandGroupsOnly": true,
+    "newSqlitePaths": 5,
+    "auxiliaryReadonlySqliteOpens": 8,
+    "independentPinFiles": 2,
+    "syntheticEd25519Keys": 4,
+    "transactionSignatures": 1,
+    "capabilitySignatures": 2,
+    "providerSignatures": 2,
+    "testTlsMaterialSeparate": true,
+    "maxRpcConnections": 174,
+    "maxApplicationConnections": 8,
+    "maxTotalConnections": 182,
+    "maxCandidatesPerSearch": 4096,
+    "maxReferenceCandidates": 32768,
+    "producerCandidateReservation": 4096,
+    "fixedVerificationReservation": 16384,
+    "maxAggregateCandidates": 65536,
+    "maximumCutpointWaitMs": 5000,
+    "childObserverMs": 45000,
+    "parentCommandTimeoutSeconds": 120,
+    "parentStdoutBytes": 524288,
+    "childStdoutBytes": 65536,
+    "childStderrBytes": 8192,
+    "taskQuotaBytes": 4194304,
+    "maximumSourceReadBytes": 6291456,
+    "existingSourcesRecopied": false,
+    "externalNetwork": false,
+    "install": false,
+    "realWallet": false,
+    "realPayment": false,
+    "sdkPrepareBlock": false,
+    "nativeOsNetworkSandbox": false
+  },
+  "prospectiveStoragePolicy": {
+    "min_free_bytes": 10737418240,
+    "safety_margin_bytes": 1073741824,
+    "task_quota_bytes": 4194304,
+    "scratch_quota_bytes": 4194304,
+    "store_quota_bytes": 4194304,
+    "metadata_quota_bytes": 4194304,
+    "max_tasks": 1,
+    "max_objects": 48,
+    "max_commands_per_task": 2,
+    "max_output_bytes": 524288,
+    "abandoned_after_seconds": 86400,
+    "unreferenced_after_seconds": 1209600
+  },
+  "actualEffects": {
+    "applicationChildProcesses": 0,
+    "signals": 0,
+    "IPC": false,
+    "SQLite": false,
+    "SDK": false,
+    "x402PackagesExecuted": false,
+    "keysOrSignatures": false,
+    "nonceSearch": false,
+    "sockets": false,
+    "OpenSSLCommands": 0,
+    "taskRootsCreated": 0,
+    "scratchCreated": false,
+    "sourceCopiesCreated": 0
+  },
+  "preservation": {
+    "frozenV3ManifestSha256": "51ffb5b0ff0052523c1b7f3d75fa24e9be27e60ca3bcc09236b1f439096aaed1",
+    "frozenV3Application117AndControls5Unchanged": true,
+    "fullChildInventorySha256": "68cc83addfc65c0679d6289ae67b33602c29b470c8689e3169c069efdf3e7aaf",
+    "fullChildSourceRowsSha256": "5aff94f7427ba46bbf3cc8e8ddc4f896672909773e44ff0335a26dc52502e979",
+    "fullChildInventoryAndV1V2ProtocolResultsUnchanged": true,
+    "defaultApplicationChanged": false,
+    "workflowChanged": false,
+    "mainChanged": false,
+    "oldAllowancesReused": false,
+    "historicalEvidenceRewritten": false,
+    "storageCleanupPerformed": false
+  },
+  "qualification": {
+    "profileAndCaptureData": "PASS_52_OF_52",
+    "sourceOnlyCLI": "PASS_ACTUAL_EXIT_0",
+    "physicalReadGuards": "MATCHED_LOCAL_INPUTS_NOT_RUNTIME_RESOLUTION_PROOF",
+    "preNativeReadOnlyPlan": "PASS_POINT_IN_TIME_ONLY",
+    "parentNodeEntry": "SYNTAX_ONLY_NOT_IMPORTED_OR_RUN",
+    "effectfulExecuteBranch": "NOT_RUN",
+    "separateFiniteP2NativeApproval": "REQUIRED_NOT_GRANTED_BY_SOURCE_SELECTION_OR_OLDER_ALLOWANCES",
+    "fullP2CrashSocketHeldStoreComposition": "NOT_QUALIFIED",
+    "nativeCleanup": "NOT_QUALIFIED",
+    "powerLossDurability": "NOT_QUALIFIED",
+    "chainAuthentication": "NOT_ESTABLISHED",
+    "serviceDelivery": "NOT_ESTABLISHED",
+    "pilot": "NO_GO",
+    "production": "NO_GO",
+    "authority": "NONE"
+  }
+}
+
