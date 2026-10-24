@@ -1,0 +1,224 @@
+{
+  "resultVersion": 1,
+  "status": "PASS_READABLE_COMPONENTS_ONLY",
+  "sourceParent": "8cd23ff3b624e088de3aa8522f23f51e6452e383",
+  "mainParent": "7d32def694687264561269db28bb80e90ced0634",
+  "runtime": {
+    "node": "24.19.0",
+    "platform": "darwin",
+    "arch": "arm64",
+    "binarySha256": "dbedff294bab84a0a86c04e15fbcbeb1c97ca10bef1b32b0634cd24b36f62100"
+  },
+  "execution": {
+    "componentRuntimeNodeCommands": 1,
+    "syntaxOnlyNodeCommands": 1,
+    "NodeChildren": 0,
+    "componentActualExit": 0,
+    "outputComplete": true,
+    "permissions": "exact source read grants; no child/worker/addon/filesystem-write grant",
+    "compileCache": "DISABLED",
+    "captureCapsPerStreamBytes": 65536,
+    "supervisorDeadlineSeconds": 15,
+    "osOrNetworkSandboxClaim": false
+  },
+  "counts": {
+    "tests": 8,
+    "passed": 8,
+    "failed": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "observedComponentCounters": {
+    "casesEntered": 8,
+    "casesCompleted": 8,
+    "actualReadables": 7,
+    "actualReadableCloses": 7,
+    "successfulFlowEntries": 7,
+    "ownResumeGetterEntries": 0,
+    "inputProxyTraps": 0,
+    "declaredTlsObservations": 4,
+    "nativeFundingOwnerImported": false,
+    "sockets": 0,
+    "SDK": 0,
+    "SQLite": 0,
+    "keys": 0,
+    "signatures": 0,
+    "nonceEvaluations": 0,
+    "historicalTlsFailureRootCauseEstablished": false,
+    "nativeTlsQualification": false,
+    "authority": "NONE"
+  },
+  "executedInputs": [
+    {
+      "path": "package.json",
+      "bytes": 2677,
+      "LF": 40,
+      "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+      "gitBlob": "45752ffde39d29666094f7f1c755060d75e43deb"
+    },
+    {
+      "path": "src/service-credit-funding-post-readable-flow.js",
+      "bytes": 1568,
+      "LF": 34,
+      "sha256": "e624b56cabfb72aed927f0fb78d866b90da2bde5aefdadd71a16f65159e48d4e",
+      "gitBlob": "ac52bba7279286e6a0b33b0feca57d8a1eefc6c5"
+    },
+    {
+      "path": "src/service-credit-funding-post-native-response.js",
+      "bytes": 7903,
+      "LF": 157,
+      "sha256": "b5084844ecf029445bc55efd0b9d0ef61b8c2e65424ea74a6dfb30941f9f676c",
+      "gitBlob": "0bae9c30c7a11624612418bb6a1e7643effb0775"
+    },
+    {
+      "path": "qualification/funding-post-readable-flow.behavior.draft.mjs",
+      "bytes": 8253,
+      "LF": 122,
+      "sha256": "5aafc7cf68f84bb88bda701ddbd3c350fd5330f999dd2d05252f08eb46238773",
+      "gitBlob": "b309c35505fa0675c2fe995ae57d5cb0c214ca46"
+    }
+  ],
+  "componentStreams": {
+    "stdout": {
+      "bytes": 2567,
+      "sha256": "04999e167234c417df30b91b15f0bea4e8f64a53cef745b3af81ba401697af1c"
+    },
+    "stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  },
+  "syntaxOnly": {
+    "inputs": [
+      {
+        "path": "package.json",
+        "bytes": 2677,
+        "LF": 40,
+        "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+        "gitBlob": "45752ffde39d29666094f7f1c755060d75e43deb"
+      },
+      {
+        "path": "src/service-credit-funding-post-native-https-transport.js",
+        "bytes": 18761,
+        "LF": 327,
+        "sha256": "3b3fec921b46c62ed7557043f99cffb2e1a12f515bf4e607ea8f61525db28b7c",
+        "gitBlob": "ea47b0e9cc9479f6bb98b07b3b886d6100c630e3"
+      }
+    ],
+    "results": [
+      {
+        "input": {
+          "path": "src/service-credit-funding-post-native-https-transport.js",
+          "bytes": 18761,
+          "LF": 327,
+          "sha256": "3b3fec921b46c62ed7557043f99cffb2e1a12f515bf4e607ea8f61525db28b7c",
+          "gitBlob": "ea47b0e9cc9479f6bb98b07b3b886d6100c630e3"
+        },
+        "syntaxActualExit": 0,
+        "outputComplete": true,
+        "reason": null,
+        "streams": {
+          "stdout": {
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "stderr": {
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        "applicationImported": false,
+        "applicationExecuted": false
+      }
+    ],
+    "applicationImported": false,
+    "applicationExecuted": false
+  },
+  "nativeSourceIntegration": {
+    "qualification": "STATIC_SOURCE_PLUS_SYNTAX_ONLY",
+    "currentInput": {
+      "path": "src/service-credit-funding-post-native-https-transport.js",
+      "bytes": 18761,
+      "LF": 327,
+      "sha256": "3b3fec921b46c62ed7557043f99cffb2e1a12f515bf4e607ea8f61525db28b7c",
+      "gitBlob": "ea47b0e9cc9479f6bb98b07b3b886d6100c630e3"
+    },
+    "previousInput": {
+      "path": "src/service-credit-funding-post-native-https-transport.js",
+      "bytes": 17574,
+      "LF": 308,
+      "sha256": "cfd30efb8b2c48d3d301631fa8fc6ccaaa569fc3edb473c63bd170e8f603a0a1",
+      "gitBlob": "5273c7dc49470a054a87a4813652ce664386c773"
+    },
+    "guardsInstalledBeforeFlowEntry": true,
+    "capturedActualReadableResume": true,
+    "ownerFlowEntryOnce": true,
+    "settlementHeldUntilFlowEntryReturns": true,
+    "partialOrFailedBodyStillUnknown": true,
+    "requestSocketTlsFramingGuardsNotRelaxed": true,
+    "fullNativeFundingOwnerRuntimeTested": false,
+    "fullDpGraphImported": false,
+    "defaultBuyerChanged": false
+  },
+  "interpretation": {
+    "isolatedEventEmitterRegistrationNoFlowObserved": true,
+    "actualReadableBodiesAndCloses": true,
+    "actualReadableClosesAuthenticateHttpClose": false,
+    "declaredTlsObservationsAuthenticateTls": false,
+    "declaredRequestSocketEventsAuthenticateNativeHandles": false,
+    "historicalTlsFailureRootCauseEstablished": false,
+    "historicalTlsResultUnchanged": true,
+    "nativeTlsQualification": false,
+    "newTlsAttempt": 0,
+    "OpenSslCommands": 0,
+    "sockets": 0,
+    "SDKImports": 0,
+    "SQLiteOpens": 0,
+    "keys": 0,
+    "signatures": 0,
+    "nonceEvaluations": 0,
+    "realPrepare": 0,
+    "authority": "NONE",
+    "fullP1Complete": false,
+    "fullP2Complete": false,
+    "productionQualified": false
+  },
+  "resources": {
+    "newManagedRoots": 0,
+    "newManagedTasks": 0,
+    "newQualificationScratchBytes": 0,
+    "downloads": 0,
+    "archives": 0,
+    "cleanupPerformed": false,
+    "priorHeldEvidencePreserved": true,
+    "benchmarkClaim": false
+  },
+  "documentation": {
+    "versionPinnedStreamApi": "https://nodejs.org/download/release/v24.19.0/docs/api/stream.html#readableresume",
+    "role": "API context; actual local stream result is independent of documentation"
+  },
+  "publication": {
+    "eligibleMainFiles": [
+      "src/service-credit-funding-post-readable-flow.js",
+      "qualification/funding-post-readable-flow.behavior.draft.mjs",
+      "qualification/funding-post-readable-flow.actual-local-result.json",
+      "docs/P1_FUNDING_POST_READABLE_FLOW.md"
+    ],
+    "nativeTransportStaysOffMain": true,
+    "CIAtParents": {
+      "source": {
+        "checks": 0,
+        "statuses": 0,
+        "runs": 0
+      },
+      "main": {
+        "checks": 0,
+        "statuses": 0,
+        "runs": 0
+      }
+    },
+    "CIInterpretation": "NOT_RUN_NOT_GREEN",
+    "historicalResultsRebound": false
+  }
+}
