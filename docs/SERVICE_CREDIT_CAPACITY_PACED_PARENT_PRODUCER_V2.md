@@ -76,7 +76,10 @@ implements both with 85 resource DATA controls and 44 full-bundle controls, whil
 keeping this earlier result unchanged. The later
 [full outer-v3 DATA verifier](SERVICE_CREDIT_CAPACITY_PACED_OUTER_CAPTURE_V3.md)
 now has 131 passing controls, with its first failed attempt kept separate.
-Real managed-launch binding and physical policy admission remain open.
+The later [new managed launcher](SERVICE_CREDIT_CAPACITY_PACED_MANAGED_LAUNCHER_V3.md)
+now binds the actual complete source pipeline with 89 passing DATA cases.
+Native composition, positive complete selected-default application evidence and
+physical policy admission remain open; source authorship is not native authority.
 The old resource plan, 71 MiB/72-second declaration, 549-row private profiles,
 old bundle and outer-v2 checker are not silently reused as qualification.
 

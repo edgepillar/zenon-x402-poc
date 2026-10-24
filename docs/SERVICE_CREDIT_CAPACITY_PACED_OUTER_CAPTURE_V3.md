@@ -103,8 +103,11 @@ they are observations, not an OS/network sandbox.
 ## Remaining real binding and main gate
 
 The [new profile/resource/entry assembler](SERVICE_CREDIT_CAPACITY_PACED_PROFILE_RESOURCE_BUNDLE_V2.md)
-and this full DATA verifier are implemented, but the real managed-launch binding
-and physical new policy admission are not. The original R4 finite approval is
+and this full DATA verifier are implemented. The later
+[new managed launcher](SERVICE_CREDIT_CAPACITY_PACED_MANAGED_LAUNCHER_V3.md)
+now binds these actual controls with 89 passing DATA cases plus a source-only CLI.
+Its native branch is authored, not executed; physical new policy admission and
+positive complete selected-default application evidence remain open. The original R4 finite approval is
 unconsumed and not transferred. Exact finite authority plus fresh source/tool/
 storage admission remains required before any new native graph can run.
 
