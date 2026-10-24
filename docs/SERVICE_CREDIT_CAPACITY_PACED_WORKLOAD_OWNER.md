@@ -1,6 +1,6 @@
 # Paced service-credit source workload owner
 
-Status: **56 selected DATA controls passed**, including a 16-lane, 4,080-call
+Status: **75 current selected DATA controls passed**, including a 16-lane, 4,080-call
 synthetic stress case. This is an opt-in source runtime composition, not a native
 workload result, fixed-rate benchmark, pilot or sustainable-throughput claim.
 
@@ -101,12 +101,14 @@ directly import the new factory, the genuine windowed owner and recorders. No
 SDK/store/transport facade is substituted for a native result. Host callbacks,
 balances, clocks, timers and Promise outcomes are explicitly declared DATA.
 
-The [actual result](../qualification/service-credit-capacity-paced-workload-owner-core.actual-local-result.json)
+The [historical result](../qualification/service-credit-capacity-paced-workload-owner-core.actual-local-result.json)
 retains the earlier 47-case selection and final 56-case selection at their own
 source digests. The earlier inputs reconstruct from two bounded source edits
-and a prefix of the current test file; their hashes matched without executing
+and a prefix of the test file at the
+[immutable 45cbc1a revision](https://github.com/edgepillar/zenon-x402-poc/commit/45cbc1a41c517a8a061f44bcbcaf6c5c44c40b43);
+their hashes matched without executing
 old variants or keeping another source tree.
-The current 56 controls all passed with no skips, cancellations,
+At that pinned revision, 56 controls passed with no skips, cancellations,
 TODOs or stderr. Their one local command took about 0.45 seconds, including the
 4,080-call case. That duration is not a throughput or capacity benchmark.
 
@@ -120,7 +122,7 @@ authenticated balance correctness under native pressure.
 No SDK/x402 package, SQLite, key, signature, nonce search, socket, application
 child, manager task, private storage root, qualification scratch, installer,
 source/package copy, historical cleanup or automation ran. The unchanged hosted
-profile remains 27 DATA/component cases and does not run these new 56 controls.
+profile remains 27 DATA/component cases and does not run the paced-owner controls.
 The older 111/175 controls were not rerun merely to regenerate metadata.
 
 The native R4 graph and its launch controls remain outside this addition.
@@ -129,3 +131,9 @@ bind real source ownership and original operations, account for pacing/recorder
 costs and preserve the original measurement deadline. Native sustainable load,
 physical release, independent same-ledger pressure/balance checks, economic
 acceptance, provider authority, pilot and production remain separate open gates.
+
+The [current private timing selection](SERVICE_CREDIT_CAPACITY_PACED_PRIVATE_TIMING.md)
+reran all 56 controls against the changed source and added 19 private controls:
+75 passed. It exposes one separate frozen private capsule with no additional
+host clock/timer calls. Old 47/56-case results stay tied to their old source
+pins; the pending native R4 graph still does not select this paced source.
