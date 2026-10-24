@@ -1,8 +1,12 @@
 # Independent paced timing DATA checker
 
-Status: **155 selected DATA controls passed**: all prior 75 current-source
-regressions plus 80 new checker controls. This is runtime source integration,
-not native authentication, sustainable throughput or a pilot acceptance.
+Current selection: **163 DATA controls passed** on the changed checker, including
+the 155 prior owner/checker regressions and eight private-envelope controls.
+See [envelope v2](SERVICE_CREDIT_CAPACITY_PACED_TIMING_ENVELOPE_V2.md) for its
+current source-pinned result and single-copy serialization evidence. The older
+155-case record below remains bound to its historical source, not rewritten.
+This is runtime source integration, not native authentication, sustainable
+throughput or pilot acceptance. The existing checker API is unchanged.
 
 The [checker](../src/service-credit-capacity-paced-timing-trace-data.js)
 exports checkServiceCreditCapacityPacedTimingTraceData. It imports only the
