@@ -1,0 +1,120 @@
+{
+  "kind": "ACTUAL_ONE_FULL_ISSUED_P2_COMMITTED_CRASH_V2_LOCAL_FAILURE",
+  "version": 2,
+  "date": "2026-10-24",
+  "approvedSourceCommit": "aab33cdddece6ceaa2801884dd8910b787de0a85",
+  "approvedSourceTree": "7013332b9cd53e59b9a4d495d7bfc1701e564976",
+  "launchManifest": {
+    "path": "qualification/recovery-crash-pair-v2.launch-inputs.json",
+    "sha256": "d180e3b0f65e48ac1df8ff38003fd71acab0346b93602b60a38081d56175bbfd"
+  },
+  "unchangedChildSourceRowsSha256": "5aff94f7427ba46bbf3cc8e8ddc4f896672909773e44ff0335a26dc52502e979",
+  "admission": {
+    "applicationFiles": 130,
+    "packageFiles": 404,
+    "parentFiles": 6,
+    "publicAndLocalMappedRows": 145,
+    "sourceBytesReadOnly": 4710510,
+    "childSourceCopies": 0,
+    "sourceTransforms": 0,
+    "nativeBuiltinAliases": 0,
+    "mountIdentityVerified": true,
+    "reservationsChecked": true,
+    "priorRoots": 21,
+    "minimumFreeBytes": 10737418240,
+    "taskQuotaBytes": 4194304
+  },
+  "attempt": {
+    "separateV2Approval": true,
+    "maximumApproved": 1,
+    "consumed": 1,
+    "repeated": false,
+    "oldV1AllowanceReused": false,
+    "taskState": "CLOSED",
+    "taskOutcome": "FAILURE",
+    "taskElapsedSeconds": 2.297899007797241,
+    "testTlsCommand": {
+      "actualExit": 0,
+      "streamsComplete": true
+    },
+    "nodeParentCommand": {
+      "actualExit": 1,
+      "streamsComplete": true,
+      "stdoutBytes": 12439,
+      "stdoutSha256": "b8ac71cf345acdf229cee2f986537961f346d644e6d00aefda822d06be1592f2",
+      "stderrBytes": 0,
+      "receiptSha256": "926e2398282472c7a97c1ec4eaf93eb4289c82f488d284c972cc100bd85b4f6f"
+    },
+    "validatorRefusal": "PAIR_ACTUAL_COMMAND_OUTCOME"
+  },
+  "actualObserved": {
+    "captureStatus": "FAILED_OR_UNKNOWN_PRESERVE_EVIDENCE",
+    "failureObservation": {
+      "supervisorVersion": 2,
+      "stage": "SEED_TERMINATION_ADMISSION",
+      "seedFaultCode": null,
+      "recoveryFaultCode": null,
+      "selectedCommitSignalRequested": false
+    },
+    "protocolPhase": "FAILED",
+    "seedChildren": 1,
+    "recoveryChildren": 0,
+    "fundingWitnessCaptured": true,
+    "serviceWitnessCaptured": false,
+    "selectedCommitCutpointReached": false,
+    "selectedCommitKillRequested": false,
+    "selectedCommitKillAccepted": false,
+    "seed": {
+      "actualExit": 1,
+      "signal": null,
+      "observerFault": false,
+      "killSent": false,
+      "stdoutComplete": true,
+      "stderrComplete": true,
+      "ipcDisconnected": true,
+      "namespaceFilesVerifiedBeforeApplication": 534,
+      "stdoutBytes": 597,
+      "stdoutSha256": "39b9f3f3ac56e31f2a795799bd0ab3e5ccbb52133b6c76bd5ecb7721553effa6",
+      "stderrBytes": 53,
+      "stderrSha256": "f92f3dba925f8d59f74e1a722cb6ef428454b0665f94b52364a22aed8a2821e1",
+      "genericFailureMarkerObserved": true
+    },
+    "finalEffectCounters": "NOT_AVAILABLE_NO_CUTPOINT_EFFECT_SNAPSHOT",
+    "ownedProcessGroupsLiveAtReadOnlyReconciliation": 0,
+    "recoveryDispatches": 0,
+    "recoverySignatures": 0
+  },
+  "retained": {
+    "cleanup": "HOLD",
+    "heldScratchFiles": 9,
+    "heldScratchLogicalBytes": 150401,
+    "syntheticFundingObserverFilePresent": true,
+    "payerDatabaseAndInterruptedJournal": true,
+    "originalFundingPins": true,
+    "privateCASCaptureVerified": true,
+    "rawCaptureOrTlsKeyPublished": false,
+    "V1FilesAndJournalOpenedOrModified": false,
+    "SQLiteReopenedForDiagnosis": false,
+    "deletedFiles": 0
+  },
+  "diagnosis": {
+    "confirmed": "The parent observer did not fault; the seed terminated through its own generic failure path before the selected committed cutpoint.",
+    "parentDirectoryGuard": "SOURCE_CORRECTED_NOT_A_FULL_NATIVE_PASS",
+    "exactSeedFailureLocation": "NOT_RETAINED_BY_FROZEN_CHILD",
+    "nextSafeWork": "Review and add bounded per-operation seed diagnostics in a separately versioned full child, without rerunning a consumed allowance or replacing the application graph.",
+    "V1FailureRetroactivelyCleared": false,
+    "normalFailedSeedExitIsNotSelectedCrash": true
+  },
+  "qualification": {
+    "selectedCommittedCrash": "FAILED_NOT_QUALIFIED",
+    "sameFileRecovery": "NOT_RUN",
+    "fullP2": "NOT_QUALIFIED",
+    "physicalDurability": "NOT_QUALIFIED",
+    "nativeCleanup": "NOT_QUALIFIED_BY_A_PROCESS_SNAPSHOT",
+    "chainAuthentication": "NOT_ESTABLISHED",
+    "serviceDelivery": "NOT_ESTABLISHED",
+    "pilot": "NO_GO",
+    "production": "NO_GO",
+    "authority": "NONE"
+  }
+}
