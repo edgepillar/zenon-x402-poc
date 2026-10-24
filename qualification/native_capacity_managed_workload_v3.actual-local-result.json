@@ -1,0 +1,105 @@
+{
+  "resultVersion": 1,
+  "kind": "MANAGED_CAPACITY_V3_CAPTURE_RECOMPUTATION_SELECTED_DATA_NOT_NATIVE",
+  "sourceParent": "25c62dc7fc511f9ebed3b33a92908f8ed8d42c4f",
+  "mainParent": "88b998f76953f3b60bd984926e722b2b5d804d5d",
+  "actual": {
+    "exit": 0,
+    "complete": true,
+    "validated": true,
+    "counts": {
+      "event": "P4_MANAGED_WORKLOAD_V3_SELECTED_DATA_NOT_EXECUTION",
+      "testsRun": 135,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "successful": true,
+      "sourcePins": {
+        "qualification/native_capacity_managed_workload_v3.py": "f6bba9490d53fbacb620dd57ad518d3199168b84fd7a3a5809fcdaca98ea1c99"
+      },
+      "sourcePinsUnchanged": true,
+      "syntheticCaptureDataOnly": true,
+      "nativeExecuted": false,
+      "managerImported": false,
+      "privateRootsOpened": false,
+      "SDK": false,
+      "SQLite": false,
+      "keys": false,
+      "signatures": false,
+      "nonceSearch": false,
+      "sockets": false,
+      "nativeChildren": false,
+      "qualificationScratchCreated": false,
+      "authority": "NONE"
+    },
+    "stdoutBytes": 617,
+    "stdoutSha256": "3aa76835860a4835406b864eaa83d7bcd00fe92f2cb70cd36e65d7071c71b75c",
+    "stderrBytes": 0,
+    "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "sourcePinsUnchanged": true
+  },
+  "sourcePins": [
+    {
+      "path": "qualification/native_capacity_managed_workload_v3.behavior.py",
+      "bytes": 35827,
+      "LF": 452,
+      "sha256": "90f171b1feb173670b90079e20b99ecc237a29eb7f887b4e52a5a1d378ea9777",
+      "gitBlob": "b08d5a1f4b0c848faf2f9eb4d56b3f2b2d69a3c9"
+    },
+    {
+      "path": "qualification/native_capacity_managed_workload_v3.py",
+      "bytes": 36833,
+      "LF": 503,
+      "sha256": "f6bba9490d53fbacb620dd57ad518d3199168b84fd7a3a5809fcdaca98ea1c99",
+      "gitBlob": "5eabf3df0b9f9075f8fd95cfd18c52092734e71d"
+    }
+  ],
+  "selectedCoverage": {
+    "controls": 135,
+    "freshExpectedRunBinding": true,
+    "exactOriginalDigestBinding": true,
+    "writerWindowAndCohortRecomputed": true,
+    "wholeBracketPercentilesRecomputed": true,
+    "clockReadCounterCorrelatedConservatively": true,
+    "equalNanosecondOrderNotInvented": true,
+    "parentAndServiceClocksNotSubtracted": true,
+    "completeFramesRequired": true,
+    "sourceTreeNotDuplicatedByDecoder": true,
+    "productionHeapByteBoundEstablished": false,
+    "oversizeWorkloadNotSilentlyShrunk": true,
+    "storageHoldNotUpgraded": true,
+    "fixturesSyntheticDataOnly": true
+  },
+  "qualification": {
+    "syntheticDeclaredDataOnly": true,
+    "SDK": false,
+    "SQLite": false,
+    "keys": false,
+    "signatures": false,
+    "nonceSearch": false,
+    "sockets": false,
+    "children": false,
+    "nativeWorkload": false,
+    "nativeEventsAuthenticated": false,
+    "nativeResourcesQualified": false,
+    "measurementWindowIsolationQualified": false,
+    "pureSqlLatencyQualified": false,
+    "sustainableCapacityQualified": false,
+    "economicAcceptance": false,
+    "liveOrProduction": false,
+    "oldNativeV2SourcesChanged": false,
+    "oldAllowancesRenewed": false,
+    "pendingV2ApprovalUnchanged": true,
+    "authority": "NONE"
+  },
+  "resources": {
+    "newTaskRoots": 0,
+    "qualificationScratchCreated": false,
+    "packagesInstalled": false,
+    "sourceCopiesCreated": 0,
+    "cleanupPerformed": false,
+    "existingEvidenceChanged": false,
+    "hostedCiProfileExpanded": false
+  }
+}
+
