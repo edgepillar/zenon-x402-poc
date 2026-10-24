@@ -1,0 +1,129 @@
+{
+  "kind": "ONE_FULL_NATIVE_CAPACITY_V2_MANAGED_LAUNCH_SOURCE_NOT_EXECUTION",
+  "version": 2,
+  "sourceParent": "8e3e5be170b2f1bc948bc5735bee2079589d174e",
+  "pythonControls": [
+    {
+      "path": "qualification/funding_tls_current_gate.py",
+      "bytes": 7969,
+      "LF": 145,
+      "sha256": "9777b8dca3c8c86e543c1f202c0cde248280ed3a108df4a688565ccf83132936",
+      "gitBlob": "91362d22ca606a6711612b02ecea3c6e92c55a59"
+    },
+    {
+      "path": "qualification/native_capacity_full_profile_v2.py",
+      "bytes": 23084,
+      "LF": 347,
+      "sha256": "3918841bea76266f7571677135c01b1094a56de0667802e538ee8fd965309af1",
+      "gitBlob": "2dbbece2e2a28ae42100b54b684d30f49a1638b7"
+    },
+    {
+      "path": "qualification/native_capacity_managed_workload_v2.py",
+      "bytes": 21650,
+      "LF": 314,
+      "sha256": "28f3c6efb23e2531406ec93dbeb3ef96c391f75a312d53d99b8464e631218e42",
+      "gitBlob": "3054bef10c1095b1186dbcaa879ae671fa3314c2"
+    },
+    {
+      "path": "qualification/recovery_crash_native_profile.py",
+      "bytes": 33443,
+      "LF": 538,
+      "sha256": "75c2c9478b7e792a7bade739161af2bb8fb624cd407924ead2cf822dc23dacbd",
+      "gitBlob": "dc93890c4f9772b726e015ddd11d63bfa1a48ad4"
+    },
+    {
+      "path": "qualification/run-capacity-native-workload-v2.local.py",
+      "bytes": 26889,
+      "LF": 403,
+      "sha256": "6f05fb04847f03ebbe294bf202f1d7370cbf91899553505228e2b196e778e42d",
+      "gitBlob": "536ebc2fa3cb7b268a0cf49dae342f3c25dd1e7d"
+    }
+  ],
+  "inventory": {
+    "path": "qualification/capacity-native-full-graph-v2.inputs.json",
+    "bytes": 7592,
+    "LF": 187,
+    "sha256": "1b22c63b752d0295db771e63bda4638e81fe372b83c0b36d4a0d90fb2cc802a7",
+    "gitBlob": "950d809d2f88ea8051d066c58d631bfc915a1cec"
+  },
+  "baseline": {
+    "path": "qualification/issued-funding-post-native-vertical.inputs-v3.json",
+    "bytes": 138777,
+    "LF": 3836,
+    "sha256": "51ffb5b0ff0052523c1b7f3d75fa24e9be27e60ca3bcc09236b1f439096aaed1",
+    "gitBlob": "3dc05ccffd306e97056b4ed168d8121f63acebbc"
+  },
+  "workload": {
+    "path": "qualification/capacity-native-workload-v2.plan.json",
+    "bytes": 492,
+    "LF": 22,
+    "sha256": "4806f98a4dfbfcc01c6365ce271319f172f2b23534026990bc2e783434506b2b",
+    "gitBlob": "d380fafe5bac986d8460dd3930af8d4521376e30"
+  },
+  "effectsCeiling": {
+    "planVersion": 2,
+    "workloadPlanSha256": "e706a728f736cbe672cf23d384951bacea497107b4863b8c44b8fbf0ac003690",
+    "sourceRowsSha256": "c8e616b5d4a29261434ee3761f89b99ae5b5b73d6938381a65c427fe879d2aa8",
+    "laneCount": 2,
+    "totalCallsPerLane": 5,
+    "warmupCallsMaximum": 2,
+    "measuredCallsMaximum": 8,
+    "nodeParentCommands": 1,
+    "nodeChildProcessesMaximum": 4,
+    "opensslCommands": 1,
+    "maximumRuns": 1,
+    "loopbackTcpConnectionsMaximum": 362,
+    "externalNetwork": false,
+    "sqliteNewPathsMaximum": 8,
+    "sqliteWalOrShmAllowed": false,
+    "independentPinFilesMaximum": 4,
+    "inMemoryEd25519KeysMaximum": 6,
+    "transactionSignaturesMaximum": 2,
+    "capabilitySignaturesMaximum": 10,
+    "providerSignaturesMaximum": 2,
+    "nonceCandidatesPerWindowMaximum": 4096,
+    "nonceCandidatesPerLaneReserved": 65536,
+    "nonceCandidatesTotalReserved": 131072,
+    "testTlsKeyPairsMaximum": 1,
+    "privateProfileBytesReserved": 2621440,
+    "nodeStdoutLimit": 589824,
+    "nodeEntryCaptureMaximum": 16777216,
+    "theoreticalCaptureMayExceedEntryCap": false,
+    "nativeFileBytesReserved": 67108864,
+    "taskQuotaBytes": 74448896,
+    "expectedPeakBytes": 74448896,
+    "nodeTimeoutSeconds": 72,
+    "opensslTimeoutSeconds": 20,
+    "minimumFreeBytes": 10737418240,
+    "sourceCopiesRequired": 0,
+    "packageCopiesRequired": 0,
+    "automaticRetry": false,
+    "childCreatedFilesAutomaticAdoption": false,
+    "childCreatedFilesAutomaticDeletion": false,
+    "cleanupMayRemainHold": true,
+    "diskQuotaOsEnforced": false,
+    "nativeOsNetworkSandbox": false,
+    "effectsExecuted": false,
+    "authority": "NONE"
+  },
+  "storagePolicy": {
+    "min_free_bytes": 10737418240,
+    "safety_margin_bytes": 1073741824,
+    "task_quota_bytes": 74448896,
+    "scratch_quota_bytes": 74448896,
+    "store_quota_bytes": 74448896,
+    "metadata_quota_bytes": 4194304,
+    "max_tasks": 1,
+    "max_objects": 128,
+    "max_commands_per_task": 2,
+    "max_output_bytes": 589824,
+    "abandoned_after_seconds": 86400,
+    "unreferenced_after_seconds": 1209600
+  },
+  "sourceRowsSha256": "c8e616b5d4a29261434ee3761f89b99ae5b5b73d6938381a65c427fe879d2aa8",
+  "completeManagedControlSourceAuthored": true,
+  "nativeExecuted": false,
+  "nativeAllowanceGranted": false,
+  "nativeOsNetworkSandbox": false,
+  "authority": "NONE"
+}
