@@ -122,6 +122,9 @@ function snapshot(value,depth=0,budget={nodes:4096,bytes:131072}){
     if(!d||!O(d,'value')||!Number.isSafeInteger(d.value)||d.value<0||d.value>128||keys.length!==d.value+1)fail();
     for(let i=0;i<d.value;i++)out.push(snapshot(own(value,String(i)),depth+1,budget));
   }else{record(value);for(const key of keys){if(typeof key!=='string'||key==='toJSON')fail();
+    // Field names and string values share the UTF-8 budget. Unknown extension
+    // names must not bypass it before their values are copied or inspected.
+    budget.bytes-=Buffer.byteLength(key);if(budget.bytes<0)fail();
     Object.defineProperty(out,key,{value:snapshot(own(value,key),depth+1,budget),enumerable:true});}}
   return F(out);
 }
