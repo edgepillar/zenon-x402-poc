@@ -1,0 +1,634 @@
+{
+  "kind": "FULL_NATIVE_LOOPBACK_INPUT_INVENTORY_NOT_EXECUTION_RESULT",
+  "version": 1,
+  "applicationSourceParent": "0be13c3b5662f2181be356f7ff21a4545b4bea95",
+  "applicationRuntimeFiles": 69,
+  "applicationFiles": 74,
+  "packageFiles": 382,
+  "sourceFiles": 456,
+  "sourceBytes": 2833016,
+  "sourceRowsSha256": "e6617bdc907d1c2d362e459038bda0801e3eb71e62a8e637b8d5ebb9cedd89b1",
+  "packageInputsReference": {
+    "sourceCommit": "30ecaf4a62889fed45a3e085383e5ac46a896532",
+    "path": "qualification/dynamic-plasma-original-funding-native-profile.inputs.json",
+    "bytes": 109214,
+    "sha256": "e68f7b6a1d5ceafebbd35227302bc246632ad1cb00058509c381a0faaf1ae456",
+    "gitBlob": "6e513da4a933e23c4562f2a4c0d738068f65072f",
+    "selectionPrefix": "packages/",
+    "selectedRows": 382,
+    "LF": 3022
+  },
+  "allowedBuiltins": [
+    "node:assert/strict",
+    "node:buffer",
+    "node:crypto",
+    "node:events",
+    "node:fs",
+    "node:fs/promises",
+    "node:http",
+    "node:https",
+    "node:module",
+    "node:net",
+    "node:path",
+    "node:perf_hooks",
+    "node:sqlite",
+    "node:stream",
+    "node:test",
+    "node:timers",
+    "node:tls",
+    "node:url",
+    "node:util",
+    "node:vm",
+    "node:zlib"
+  ],
+  "applicationInputs": [
+    {
+      "path": "app/package.json",
+      "bytes": 2677,
+      "LF": 40,
+      "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+      "gitBlob": "45752ffde39d29666094f7f1c755060d75e43deb"
+    },
+    {
+      "path": "app/qualification/dynamic-plasma-full-native-loopback.behavior.draft.mjs",
+      "bytes": 11320,
+      "LF": 198,
+      "sha256": "5cfba4dbee41c508bfa074753e9ede5572b932caa742c5d711e260df8de8dff3",
+      "gitBlob": "ef45a6f3dc9bfb2517d3a27c382a5fc1e38f63a4"
+    },
+    {
+      "path": "app/qualification/dynamic-plasma-full-native-loopback.fixture.draft.mjs",
+      "bytes": 24351,
+      "LF": 375,
+      "sha256": "f28e3d782ab7c56b80e6f1e483c639b5b93f07559ff8bf8da07708439e3f1ab3",
+      "gitBlob": "d8ca3c4a5b727275046d3368dc0dcc8352526da5"
+    },
+    {
+      "path": "app/qualification/dynamic-plasma-full-native-loopback.preload.draft.mjs",
+      "bytes": 12060,
+      "LF": 244,
+      "sha256": "0c9d1debccee661b0e2682617b0af55c61b324ea1c5b8b5fdd0e994c7b3d6a76",
+      "gitBlob": "df7ebdea780085603eff07335789ca853d1830e5"
+    },
+    {
+      "path": "app/qualification/dynamic-plasma-full-native-loopback.selection.draft.mjs",
+      "bytes": 1812,
+      "LF": 26,
+      "sha256": "faca4303ed279a1dbfc8267311c477f10a1c0054efd66e297a4b5120c2cd4e26",
+      "gitBlob": "3e198561ddeb14a3af75c923a803ff9052131ec5"
+    },
+    {
+      "path": "app/src/canonical.js",
+      "bytes": 967,
+      "LF": 26,
+      "sha256": "0d55ddf1727cafb0dcd46df2922305568615552a4d2ae34a5c30e90b9d8d998c",
+      "gitBlob": "5367f9c72ee13017a61630e1f0cffdced21d52c4"
+    },
+    {
+      "path": "app/src/live-observation.js",
+      "bytes": 12389,
+      "LF": 361,
+      "sha256": "36ce902ffb667b17eaf3e2ac94beb287be1401b34d83f8253407a93d286328c4",
+      "gitBlob": "d29ef9b4c23db397006550728cfb35429c7c09f2"
+    },
+    {
+      "path": "app/src/live-runtime.js",
+      "bytes": 8126,
+      "LF": 242,
+      "sha256": "354b70662ff501ccc173ab20742f5efcd0e581f784245a1bf2ba51786f2dae7a",
+      "gitBlob": "25d34b1e37de42e6eec81590c2f26e5158c4d3b1"
+    },
+    {
+      "path": "app/src/service-credit-bounded-operation-drain.js",
+      "bytes": 4046,
+      "LF": 92,
+      "sha256": "ccaf1742f94a2ae312598c4bb2adc0c6168b1ade0167dbc8990422f5e7037885",
+      "gitBlob": "9cb4987ecd835e7b558d6088d562f417a9179da8"
+    },
+    {
+      "path": "app/src/service-credit-funding-post-native-https-transport.js",
+      "bytes": 18761,
+      "LF": 327,
+      "sha256": "3b3fec921b46c62ed7557043f99cffb2e1a12f515bf4e607ea8f61525db28b7c",
+      "gitBlob": "ea47b0e9cc9479f6bb98b07b3b886d6100c630e3"
+    },
+    {
+      "path": "app/src/service-credit-funding-post-native-response.js",
+      "bytes": 7903,
+      "LF": 157,
+      "sha256": "b5084844ecf029445bc55efd0b9d0ef61b8c2e65424ea74a6dfb30941f9f676c",
+      "gitBlob": "0bae9c30c7a11624612418bb6a1e7643effb0775"
+    },
+    {
+      "path": "app/src/service-credit-funding-post-readable-flow.js",
+      "bytes": 1568,
+      "LF": 34,
+      "sha256": "e624b56cabfb72aed927f0fb78d866b90da2bde5aefdadd71a16f65159e48d4e",
+      "gitBlob": "ac52bba7279286e6a0b33b0feca57d8a1eefc6c5"
+    },
+    {
+      "path": "app/src/service-credit-native-client-close-owner.js",
+      "bytes": 7170,
+      "LF": 149,
+      "sha256": "00366016a37cf71234cb305e860b5d3f406c97f6b6a7af8569ae76726b759c91",
+      "gitBlob": "ed68174f93050d837786ab799b3b6dee5f7e0676"
+    },
+    {
+      "path": "app/src/service-credit-original-request-custody-contract.js",
+      "bytes": 14051,
+      "LF": 356,
+      "sha256": "fd349de553a17abcc2e0567ba6640e6e3d5d26cfa79ee1e355928dc9fa8d3915",
+      "gitBlob": "f911d42d01b69e6577f9bcd66f4ed59aab8ab882"
+    },
+    {
+      "path": "app/src/service-credit-pilot-original-payment-checkpoint.js",
+      "bytes": 4003,
+      "LF": 89,
+      "sha256": "930905f31824a6cadc16dfb84572cd4dc38a81e2fce4569b73b6bef29dec97d1",
+      "gitBlob": "51c6391bc22f561ebff0005ced31e538aa83f4fa"
+    },
+    {
+      "path": "app/src/service-credit-zenon-funding-post-v1-client.js",
+      "bytes": 26077,
+      "LF": 727,
+      "sha256": "49ea2adbea7a26a2e87b05a5f96e6bb01230853f91922c531b4fdaf7da3fc22d",
+      "gitBlob": "98fa7d808eead2b1663487bb259426c09d5eaac9"
+    },
+    {
+      "path": "app/src/service-credit-zenon-funding-post-v1-payer-recovery-owner.js",
+      "bytes": 22581,
+      "LF": 626,
+      "sha256": "d62450b462a5412c35dfa474cbf7cac1e5aad88ecd6fc04106e36a67f8459a80",
+      "gitBlob": "cd030bb52146ae3445822224de25268f1c972b78"
+    },
+    {
+      "path": "app/src/service-credit-zenon-funding-post-v1-payer-recovery-sqlite-store.js",
+      "bytes": 83681,
+      "LF": 2042,
+      "sha256": "bea9e00aa6208f776561c975d54640dfb676168dd4d0b44d125c9dc684912c4a",
+      "gitBlob": "e6af1576df21a20a466d089a4ba6ecdf7380a0df"
+    },
+    {
+      "path": "app/src/settlement-journal.js",
+      "bytes": 64798,
+      "LF": 1577,
+      "sha256": "b2151cb20ea3ce82e306b2b8d6b996b818d8fb4c226c35316384564eb9e1c25a",
+      "gitBlob": "aade1a802009125a42dd6a0ee81a28f9830f521e"
+    },
+    {
+      "path": "app/src/x402-wire.js",
+      "bytes": 39886,
+      "LF": 934,
+      "sha256": "5fba91af5a352f62d1a335c7176a45a604e2af5d92b1c4b0e53825c1f20d4e56",
+      "gitBlob": "fb060d4e349b1c31a1219a0cc137af250a8a2291"
+    },
+    {
+      "path": "app/src/zenon-payment.js",
+      "bytes": 128301,
+      "LF": 3500,
+      "sha256": "44ee797207d557175256b5f69c89c5009e238e4c1b5b01c83b118b7e7b0ab35c",
+      "gitBlob": "f6645973803cb430d94f12698b14b7684c27493b"
+    },
+    {
+      "path": "app/src/zenon/bounded-dynamic-plasma-strategy.js",
+      "bytes": 15729,
+      "LF": 353,
+      "sha256": "7b82560bdeb25e573912090a2fe8de7b45912500a7a7c4434fe06dcf94e06d62",
+      "gitBlob": "ee85b7a4da8bf4190ae099e6bc5074059fccebbc"
+    },
+    {
+      "path": "app/src/zenon/bounded-json-rpc-https-exchange-owner.js",
+      "bytes": 48201,
+      "LF": 1000,
+      "sha256": "2c501f3353d55e31d4baedcb068e2bac5943ca7e3e4171521a3bb0ee8a0a8bdb",
+      "gitBlob": "1eb4626a7bdecc496811ebcd59464500f4ca9937"
+    },
+    {
+      "path": "app/src/zenon/bounded-json-rpc-read-admission.js",
+      "bytes": 2627,
+      "LF": 51,
+      "sha256": "0b0b0806487c2e648a83367a9ebcd48a3a92493158ebca23abe8d6d6849d9ff3",
+      "gitBlob": "9e9ee352d7cf0013d96851c769f2a205ccf98449"
+    },
+    {
+      "path": "app/src/zenon/bounded-json-rpc-read-core.js",
+      "bytes": 21759,
+      "LF": 582,
+      "sha256": "10cc529bfb0676bb03dc4dad56059663f4a578b586c52f6404fc859d27d18f76",
+      "gitBlob": "3bd98a83413eb13e3bceb097d35fb874b4c030a2"
+    },
+    {
+      "path": "app/src/zenon/dynamic-plasma-account-frontier-read.js",
+      "bytes": 7417,
+      "LF": 152,
+      "sha256": "283209685a41aed5647c87e33d046d1f81b3a6820ea6ea307c11d2f99b91020d",
+      "gitBlob": "6fbb894a4db5db15e4ded168fd663eeb24898bf8"
+    },
+    {
+      "path": "app/src/zenon/dynamic-plasma-account-state-read-transport.js",
+      "bytes": 3632,
+      "LF": 74,
+      "sha256": "9aa818dabdacf0baec60ca570e854cc8a327e554ba5e5a76c670eb5ed02b29b8",
+      "gitBlob": "751a4b8c5a0c42e1d2b0a47af9d2ef7264229821"
+    },
+    {
+      "path": "app/src/zenon/dynamic-plasma-bounded-material-exchange.js",
+      "bytes": 11992,
+      "LF": 213,
+      "sha256": "6773c946991834dfe3b01943bdb9bad7513ef0cbbb15b31e607b095bab42b28b",
+      "gitBlob": "1b84b826d4fc53f40127272e6b9651328961a085"
+    },
+    {
+      "path": "app/src/zenon/dynamic-plasma-bounded-original-funding-configuration.js",
+      "bytes": 4274,
+      "LF": 82,
+      "sha256": "229c61f2b8ade5ba722dd7ea475493200963d87e0bfb543a45ecfb1f26bdfbaf",
+      "gitBlob": "60dcbfd8897b5e6f4434870936ae782c5f5886e2"
+    },
+    {
+      "path": "app/src/zenon/dynamic-plasma-compatibility.js",
+      "bytes": 7732,
+      "LF": 225,
+      "sha256": "b3989ce15e5f2e9d07b0ed035fe96bcce9f22cac93f5e497fdca5c37bf7618dd",
+      "gitBlob": "3811b748b3f905e454c8a4af4650bb7f89eb1cf2"
+    },
+    {
+      "path": "app/src/zenon/dynamic-plasma-json-rpc-read-transport.js",
+      "bytes": 10832,
+      "LF": 283,
+      "sha256": "fd03b2ad87d16660aa61d3961c163d724d5f89cd6d4bb9c4391d739566d5e5ca",
+      "gitBlob": "0475b7ab42889f67fb030fa7344d73d8bd6957d7"
+    },
+    {
+      "path": "app/src/zenon/dynamic-plasma-native-funding-close-session.js",
+      "bytes": 11968,
+      "LF": 220,
+      "sha256": "642ba6edf4983818145b973116638e63f15eaa0fcc4fe342052d927a096d2bc7",
+      "gitBlob": "df3a376c6a1e4291a49eb65d07a256ea10aa07fe"
+    },
+    {
+      "path": "app/src/zenon/dynamic-plasma-native-https-original-funding-submission.js",
+      "bytes": 8317,
+      "LF": 132,
+      "sha256": "813ee2aa8488f788025d9ee2704e4a207dfd6dc2e34cbf5c827988d1908ae8d6",
+      "gitBlob": "2f91f1df738364a0f8892fec0b111d490dd1d95e"
+    },
+    {
+      "path": "app/src/zenon/dynamic-plasma-observation-collector.js",
+      "bytes": 38492,
+      "LF": 949,
+      "sha256": "6bb665dd97e4b262941ed11fb7a9fb5c6d7a162004a39fcbfbfa8cd7b3f82d98",
+      "gitBlob": "171a49f29379866ed111031d15423634ac2d17b4"
+    },
+    {
+      "path": "app/src/zenon/dynamic-plasma-observation-normalizer.js",
+      "bytes": 28398,
+      "LF": 698,
+      "sha256": "2c3f7d42ded21a5513ff26c23a00a35a53aa334f053d10930f1571a020286897",
+      "gitBlob": "c406db8471aa6c8afd812c222c673c809491cf00"
+    },
+    {
+      "path": "app/src/zenon/dynamic-plasma-observed-balance-deferred-material-planner.js",
+      "bytes": 29368,
+      "LF": 557,
+      "sha256": "4cd321d23d9786c0cdff6ff9490b03d07441ba75aa66011b64ca4c16a84a4a4a",
+      "gitBlob": "3c62fecdfa649c1775ab233d4157b567bc809c06"
+    },
+    {
+      "path": "app/src/zenon/dynamic-plasma-observed-balance-user-send-attempt.js",
+      "bytes": 7377,
+      "LF": 146,
+      "sha256": "5111ef500bf33c19113f7ffabadc8980792bc9b5fa388cf6095a3f89a5f69e7a",
+      "gitBlob": "e81cf35120457aa520036042899ccd43bf3d1835"
+    },
+    {
+      "path": "app/src/zenon/dynamic-plasma-observed-balance-user-send-read-adapter.js",
+      "bytes": 29569,
+      "LF": 540,
+      "sha256": "36f40b8bac1359d8e1986ed75714ccb7c94912829181a03fa6b479ad262a2184",
+      "gitBlob": "1f36eb5c025aa543ae9cca482a7ba49b307cb24d"
+    },
+    {
+      "path": "app/src/zenon/dynamic-plasma-observed-original-checkpoint.js",
+      "bytes": 10343,
+      "LF": 202,
+      "sha256": "f0b485e3970bda3af3aa27f8d46d22a54322d7a893dbda3fa121d23c90d9d30b",
+      "gitBlob": "4d366df7eec92f9137381e90ca52e2f6fc1569a0"
+    },
+    {
+      "path": "app/src/zenon/dynamic-plasma-observed-user-send-adapter.js",
+      "bytes": 8149,
+      "LF": 180,
+      "sha256": "8526519aa6bf5006c572447127680d3cc871ee4eee1b9046b4ea09f9ad9e1653",
+      "gitBlob": "bbda0ebf5a6d4d21f159f31304165810ebd89a77"
+    },
+    {
+      "path": "app/src/zenon/dynamic-plasma-observed-user-send-subject.js",
+      "bytes": 5105,
+      "LF": 104,
+      "sha256": "bbcc1d718bcb1353f46e0650723e35c218db94754328103d4bce1d5765e13cd8",
+      "gitBlob": "5e29c6d70c965a4d72c0902504e57dae852a6223"
+    },
+    {
+      "path": "app/src/zenon/dynamic-plasma-original-funding-bounded-read-close.js",
+      "bytes": 10732,
+      "LF": 197,
+      "sha256": "69fe92b9460aba5f5ecb671a4befe059f0686f4ca2e50ffeaf468e25893f0f9c",
+      "gitBlob": "fa279111addab91315d54f7333bbbb9266369c53"
+    },
+    {
+      "path": "app/src/zenon/dynamic-plasma-original-funding-data.js",
+      "bytes": 15109,
+      "LF": 285,
+      "sha256": "b2cf8d63646ed4da467ddb3e621247470c2462925c190866d5a070d9dc5b123d",
+      "gitBlob": "08865c6d84895cba9ff5acbcc0fba66a991ca007"
+    },
+    {
+      "path": "app/src/zenon/dynamic-plasma-original-funding-preparation.js",
+      "bytes": 15618,
+      "LF": 257,
+      "sha256": "0e1eb8bb94ecd4da8d4dc8f9b384510e8c2764601ba22e228126ba9ed01368c6",
+      "gitBlob": "52174703adc79f457081dfaecde0e308cfc5ccdc"
+    },
+    {
+      "path": "app/src/zenon/dynamic-plasma-original-funding-read-close.js",
+      "bytes": 9568,
+      "LF": 178,
+      "sha256": "5086567b2c0cce0fc3419db69641beb7e5e434d47f83e17015682964ad482a45",
+      "gitBlob": "f2a1b30bb02a6b192fc3b0fe0b4fc5b65e2d297b"
+    },
+    {
+      "path": "app/src/zenon/dynamic-plasma-original-funding-store-claim.js",
+      "bytes": 2640,
+      "LF": 59,
+      "sha256": "b5aa2b5d2e1b213d89622d11500fa674e536025317bee2f41740ee040c753945",
+      "gitBlob": "2a3e9da5a64f55ff631b5e33371226568b07aa4c"
+    },
+    {
+      "path": "app/src/zenon/dynamic-plasma-original-funding-submission.js",
+      "bytes": 22507,
+      "LF": 377,
+      "sha256": "666551930bcf481d136c773de12d00228822c0f2a810d5c92aafa401acf80c68",
+      "gitBlob": "169e70d4e5678d0e2f07f9dcbe0b3f1167f690e3"
+    },
+    {
+      "path": "app/src/zenon/dynamic-plasma-price-policy.js",
+      "bytes": 16224,
+      "LF": 444,
+      "sha256": "eba3225c4d26cbb6e0be575ac4fd5073bc8b0c4454eb51e2bea4d91856d0c65e",
+      "gitBlob": "649dd09b60236b43c91d22e34b76f71f4b661361"
+    },
+    {
+      "path": "app/src/zenon/dynamic-plasma-required-fused-policy-adapter.js",
+      "bytes": 12024,
+      "LF": 272,
+      "sha256": "e2b693d4df9065d44ba590f4d0c8dffeb8e55187668eedfa396b4026c9905c3e",
+      "gitBlob": "b592aafd4c41461318376ea9acc1373f99317455"
+    },
+    {
+      "path": "app/src/zenon/dynamic-plasma-required-fused-quote.js",
+      "bytes": 5416,
+      "LF": 133,
+      "sha256": "f5e10ff2dbfff3b6b63d87f0abadd0bb52b5d6b8fe0ead6a55fc5ea14207b730",
+      "gitBlob": "e820fd31ffde4ef77a2efa6e1fd3ed1775778726"
+    },
+    {
+      "path": "app/src/zenon/dynamic-plasma-retained-account-exchange-gate.js",
+      "bytes": 4659,
+      "LF": 89,
+      "sha256": "3304fee96333a0544c9ad3be0c5d465ff6d2377ae3ae657ac11f84482bb357f9",
+      "gitBlob": "39104ab5dbea4195a778e7226b9076fcd1f31366"
+    },
+    {
+      "path": "app/src/zenon/dynamic-plasma-retained-https-read-owners.js",
+      "bytes": 6241,
+      "LF": 117,
+      "sha256": "48ed2db2e36a12a93c106d76315f376a56f186cbf591ac544cb02c51f203c64d",
+      "gitBlob": "f03533b766e8f5f1e98c9a2b878e59a49631c5ce"
+    },
+    {
+      "path": "app/src/zenon/dynamic-plasma-retained-https-read-session.js",
+      "bytes": 8464,
+      "LF": 150,
+      "sha256": "791d2c74a81a18d4e3b4478d9ca569db1ec971f5c1e0540ddac02eb3a79938b7",
+      "gitBlob": "a18bec3918105f7cd2151d5a71d4b436401fe1a3"
+    },
+    {
+      "path": "app/src/zenon/dynamic-plasma-retained-read-session-core.js",
+      "bytes": 10450,
+      "LF": 204,
+      "sha256": "a0f91046c47cfa770f30bf299f620086351ee15977f669d9ec6016dd08d65794",
+      "gitBlob": "b9151955b073be614946525e70320600f7a6850b"
+    },
+    {
+      "path": "app/src/zenon/dynamic-plasma-signed-original-handoff.js",
+      "bytes": 8843,
+      "LF": 191,
+      "sha256": "bb592312c8d8cd3f4f80817b84bb9273a9232fe843f5ffeb66ac5266bd13ed9a",
+      "gitBlob": "4b3a18cb94b1daded74b798b81e881948cbb4637"
+    },
+    {
+      "path": "app/src/zenon/dynamic-plasma-unsigned-original-checkpoint.js",
+      "bytes": 9301,
+      "LF": 198,
+      "sha256": "506551e4292491a905a27f56695c30642af6a0e6a85158586379649999f8da47",
+      "gitBlob": "46ac7a4761b078048c205eaf531a7aab7a1d81a9"
+    },
+    {
+      "path": "app/src/zenon/dynamic-plasma-user-send-assembly.js",
+      "bytes": 7772,
+      "LF": 162,
+      "sha256": "05012a2a983ceca018674c4d1f63823f3f7ed53b0970a4b4bd486c4278832b04",
+      "gitBlob": "a0537856f6692d278c9043ab9c1c734d1bde61ba"
+    },
+    {
+      "path": "app/src/zenon/dynamic-plasma-user-send-balance-read.js",
+      "bytes": 7542,
+      "LF": 144,
+      "sha256": "ae1f3e5d309be0dc196fb6b35324d4c8287345b50a108d5030c1058645d2ed39",
+      "gitBlob": "f629aca2410dfd194fd73d3a651e624baa633386"
+    },
+    {
+      "path": "app/src/zenon/dynamic-plasma-user-send-fixed-work.js",
+      "bytes": 3475,
+      "LF": 77,
+      "sha256": "4ee83870df0b25c34d35c0f0d0ceb894ca9dab8c047f81b34a48dd816f1fbf38",
+      "gitBlob": "4ce2a790df84c77bc76615e5eebc309ecd2868ac"
+    },
+    {
+      "path": "app/src/zenon/dynamic-plasma-user-send-key-binding.js",
+      "bytes": 4237,
+      "LF": 91,
+      "sha256": "37ad7e74b038801297e4bffb0cb8ba92cbd79009ed32c4ae5b134fe2cb154be2",
+      "gitBlob": "c366f0fee4132604b40604547fe22f1bc1dba65d"
+    },
+    {
+      "path": "app/src/zenon/dynamic-plasma-user-send-nonce-search.js",
+      "bytes": 8437,
+      "LF": 156,
+      "sha256": "8eda71acf12265b65015ad6db20c1c7b357b207874c8e4c8b72e2889bf86f318",
+      "gitBlob": "ec65d9e2ea6522e07bb80b95b9dc398d7714af2f"
+    },
+    {
+      "path": "app/src/zenon/dynamic-plasma-user-send-pre-work-key-binding.js",
+      "bytes": 3783,
+      "LF": 73,
+      "sha256": "81c0b84174d045baac9b3cc8915e3a079ecf60590cbe43230bff287ce37d8bd9",
+      "gitBlob": "5aba63fd478cb3e32c2b409dd48034f7256a38b3"
+    },
+    {
+      "path": "app/src/zenon/dynamic-plasma-user-send-work-binding.js",
+      "bytes": 1940,
+      "LF": 42,
+      "sha256": "79eba29a05427128ae3a12346fd3ee7cbaa526d6f39eb36ed58d388640638266",
+      "gitBlob": "a329d521458a5c5b6dbc87194d91d4165d5e759c"
+    },
+    {
+      "path": "app/src/zenon/dynamic-plasma-user-send-work-input.js",
+      "bytes": 2853,
+      "LF": 59,
+      "sha256": "2ff9c089e5903c059746d0a1c38688a2849f94d04d429279811fbbfbb40450a4",
+      "gitBlob": "dad4febf4ef6f09216640245c7e3805e01ad0127"
+    },
+    {
+      "path": "app/src/zenon/dynamic-plasma-user-send-work-request.js",
+      "bytes": 2564,
+      "LF": 50,
+      "sha256": "bc66c7d629eae230c46f62c88fa97960860d94b5d65d3c5611612ccae13fe9ce",
+      "gitBlob": "d4e9731b0af82a892226c2817e9d5a5273b39599"
+    },
+    {
+      "path": "app/src/zenon/internal/legacy-sdk-1-0-5-signed-composite.js",
+      "bytes": 692,
+      "LF": 16,
+      "sha256": "9473d48ca372d5616f3006cfd2866af2b897f374b169c3511876bf1bc079620f",
+      "gitBlob": "3dbfdde3ae6ab2643b656665cd69aec1a160840d"
+    },
+    {
+      "path": "app/src/zenon/native-read-generation-handles-closed.js",
+      "bytes": 1194,
+      "LF": 19,
+      "sha256": "136c4088341d71d10ec8a4f07fbfbf959607c6a6676a2f6a86b56f6d3ac92de5",
+      "gitBlob": "466c20d9849c81306ba10f6001eb9951f14cd55d"
+    },
+    {
+      "path": "app/src/zenon/native-read-loopback-qualification-configuration.js",
+      "bytes": 4126,
+      "LF": 80,
+      "sha256": "1d8c20410d5ab8786c1fbf2dc1ef9c8346bc2b30c1c8146f16e46ff231cd0427",
+      "gitBlob": "15ae6af21f8f07351e7e4f680557d247cc379b88"
+    },
+    {
+      "path": "app/src/zenon/native-read-retired-error-latch.js",
+      "bytes": 994,
+      "LF": 24,
+      "sha256": "a7c2c242f2df97e8f6fcd6171d0f24b3ec048f25115135dcb08dd83a21f48d84",
+      "gitBlob": "97cff24934379cf9d8b1ae9b5fe43df68afd6483"
+    },
+    {
+      "path": "app/src/zenon/operator-trusted-chain-policy.js",
+      "bytes": 5337,
+      "LF": 155,
+      "sha256": "12715f104784f541493ac1d23f92b3e15ce120d0e8287e954eaf1151763d509d",
+      "gitBlob": "77446dce50e61831f29352ec2858a9047bd357ca"
+    },
+    {
+      "path": "app/src/zenon/operator-trusted-local-devnet-profile.js",
+      "bytes": 31832,
+      "LF": 942,
+      "sha256": "3882a76b699fa177cada93e055e9a05b4afe31fe1c3d0b3accbcc84e6dc7a9ec",
+      "gitBlob": "4d1a261ff9de3b660a3fb2584a87b1d67c237b0a"
+    },
+    {
+      "path": "app/src/zenon/operator-trusted-testnet-profile.js",
+      "bytes": 43153,
+      "LF": 1085,
+      "sha256": "ec30bbcfc6b443b7839d1306eaae8d7bd25dbbbf616fafd64afcaefa8af1e526",
+      "gitBlob": "a1c31e55677ef34ee76d45575b80ad30466ce1e7"
+    },
+    {
+      "path": "app/src/zenon/plasma-strategy.js",
+      "bytes": 974,
+      "LF": 32,
+      "sha256": "1c597d4e169ba8a5e6d2b7852c4ffa3a8ec9b854332fe354b9b013c36ebae093",
+      "gitBlob": "5cddc2d270aaf043e6e43145e95ffe0be3dde475"
+    },
+    {
+      "path": "app/src/zenon/transaction-planner.js",
+      "bytes": 22611,
+      "LF": 464,
+      "sha256": "079fe8da938e08e33a20ca1076492a829afa6fce3ae7f9b9f68d3bf4bff94233",
+      "gitBlob": "17b49a3d53974c9b3846ec6f352d6e8974bad7d3"
+    }
+  ],
+  "launcherInputs": [
+    {
+      "path": "qualification/dynamic-plasma-full-native-loopback-profile.draft.py",
+      "bytes": 9266,
+      "LF": 173,
+      "sha256": "3d207079758c864f0d5a767f4e2f2b2ec1c86416405bfc2f28897baf086999ea",
+      "gitBlob": "eabb3d77e00e51d7297f21fe0ea0855641f07d84"
+    },
+    {
+      "path": "qualification/funding_tls_current_gate.py",
+      "bytes": 7969,
+      "LF": 145,
+      "sha256": "9777b8dca3c8c86e543c1f202c0cde248280ed3a108df4a688565ccf83132936",
+      "gitBlob": "91362d22ca606a6711612b02ecea3c6e92c55a59"
+    },
+    {
+      "path": "qualification/run-funding-post-native-loopback-tls.local.py",
+      "bytes": 17205,
+      "LF": 311,
+      "sha256": "4535d39c312d9bcd59a0b3890d71f79df46628c1b7d8f8be63b51747e10d33f1",
+      "gitBlob": "e484adeb02800f66c518ce8be52f0de57800b640"
+    },
+    {
+      "path": "qualification/run-dp-full-native-loopback.local.py",
+      "bytes": 19568,
+      "LF": 340,
+      "sha256": "bec13c53173e91f24e25144f2aa1d9ec19002b32c440e517909987d313bc03cb",
+      "gitBlob": "ccde00c3da9ccdd7c8b6d59cb723f0b77457e290"
+    },
+    {
+      "path": "qualification/dynamic-plasma-full-native-loopback.storage-policy.json",
+      "bytes": 381,
+      "LF": 14,
+      "sha256": "b9afddc0230e1e4161a06e862caf1887d3ea25f9b115c2bfa29c63c6d328445d",
+      "gitBlob": "247dc4fee869ff6c833863c3d993fb5a62c0c6bb"
+    }
+  ],
+  "effectsCeiling": {
+    "maximumRuns": 1,
+    "selectedCases": 3,
+    "opensslCommandsPerRun": 1,
+    "nodeCommandsPerRun": 1,
+    "nodeChildren": 0,
+    "loopbackConnectionsPerRun": 524,
+    "expectedConnectionsIfAllPass": 272,
+    "newSqliteFiles": 3,
+    "independentPinFiles": 3,
+    "syntheticKeys": 1,
+    "syntheticTransactionSignatures": 3,
+    "maximumCandidatesPerSearch": 4096,
+    "maximumReferenceCandidates": 32768,
+    "maximumProducerCandidateReservation": 12288,
+    "fixedVerificationCandidateReservation": 16384,
+    "maximumAggregateCandidates": 65536,
+    "taskQuotaBytes": 4194304,
+    "externalNetwork": false,
+    "realWalletOrPayment": false,
+    "providerSigning": false,
+    "capabilitySigning": false,
+    "SDKPrepareBlock": false,
+    "nativeOsNetworkSandbox": false
+  },
+  "executionProfile": {
+    "mode": "reviewed-native-fchmod",
+    "NodePermissionModel": false,
+    "nativeOsSandbox": false,
+    "sourceTransforms": false
+  },
+  "actualFullNativeExecution": "NOT_RUN",
+  "authority": "NONE"
+}
