@@ -2,6 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createNativeCapacityPayerLaneProtocol as create, captureNativeCapacityLanePlan as plan,
   captureNativeCapacityServiceOriginals as originals } from './capacity-native-payer-lane.protocol.js';
+import { captureOriginalServiceRequestCustody, validateOriginalServiceRequestCustody,
+  serializeOriginalServiceRequestCustody, parseOriginalServiceRequestCustody } from '../src/service-credit-original-request-custody-contract.js';
 
 if (process.version !== 'v24.19.0' || process.env.X402_CAPACITY_LANE_DATA_SELECTION !== 'payer-lane-data-v1')
   throw new TypeError('CAPACITY_LANE_DATA_SELECTION_REQUIRED');
@@ -19,7 +21,7 @@ function envelope(w = 1, m = 2) {
     originals: Array.from({ length: w+m }, (_, i) => {
       const requestId = 'request.' + i;
       const request = { modelVersion: 1, grantId, requestId, method: 'POST', routeId: 'service-credit.execute.v1',
-        canonicalBodyDigest: 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
+        canonicalBodyDigest: 'sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
         selectedContentType: 'application/json', maxCostUnits: 2 };
       return { cohort: i < w ? 'WARMUP' : 'MEASUREMENT', ordinal: i < w ? i : i-w,
         original: { grantId, requestId, originalRequestJson: JSON.stringify(request), originalBodyBase64: '',
@@ -233,4 +235,33 @@ test('returned close cannot clear an earlier held observation or manufacture han
   const p = ready(fresh()); p.markUnknown(); const c = p.requestClose(); p.completeClose(c, 'RETURNED');
   assert.equal(p.snapshot().phase, 'HELD'); assert.equal(p.snapshot().closeOutcome, 'RETURNED');
   assert.equal(p.snapshot().nativeExecution, 'NOT_ESTABLISHED'); assert.equal('nativeHandleOpen' in p.snapshot(), false);
+});
+
+test('captured originals pass the genuine existing custody contract unchanged', () => {
+  const selected = originals(envelope(), selection());
+  for (const row of selected.originals) {
+    const o = row.original;
+    const retained = captureOriginalServiceRequestCustody({ originalRequestJson: o.originalRequestJson,
+      originalBodyBase64: o.originalBodyBase64, serviceResourceUrl: o.serviceResourceUrl },
+    { fundingResourceUrl: 'https://localhost:18443/funding', paymentHash: 'a'.repeat(64), network: 'zenon:testnet' });
+    assert.equal(retained.profile, 'service-credit.execute.v1.empty-body');
+    assert.equal(retained.originalRequestJson, o.originalRequestJson);
+    assert.equal(retained.grantId, selected.selectedGrantId); assert.equal(retained.requestId, o.requestId);
+    assert.deepEqual(validateOriginalServiceRequestCustody(retained), retained);
+    assert.deepEqual(parseOriginalServiceRequestCustody(serializeOriginalServiceRequestCustody(retained)), retained);
+  }
+});
+test('unprefixed legacy fixture digest is rejected by both actual contracts', () => {
+  const e = envelope(); changeRequest(e, { canonicalBodyDigest: 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855' });
+  assert.throws(() => originals(e, selection())); const o = e.originals[0].original;
+  assert.throws(() => captureOriginalServiceRequestCustody({ originalRequestJson: o.originalRequestJson,
+    originalBodyBase64: o.originalBodyBase64, serviceResourceUrl: o.serviceResourceUrl },
+  { fundingResourceUrl: 'https://localhost:18443/funding', paymentHash: 'a'.repeat(64), network: 'zenon:testnet' }));
+});
+test('prefixed but wrong body digest cannot enter either actual contract', () => {
+  const e = envelope(); changeRequest(e, { canonicalBodyDigest: 'sha256:' + '0'.repeat(64) });
+  assert.throws(() => originals(e, selection())); const o = e.originals[0].original;
+  assert.throws(() => captureOriginalServiceRequestCustody({ originalRequestJson: o.originalRequestJson,
+    originalBodyBase64: o.originalBodyBase64, serviceResourceUrl: o.serviceResourceUrl },
+  { fundingResourceUrl: 'https://localhost:18443/funding', paymentHash: 'a'.repeat(64), network: 'zenon:testnet' }));
 });

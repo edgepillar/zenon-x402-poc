@@ -3,7 +3,7 @@ import { Buffer } from 'node:buffer';
 
 const F = Object.freeze, D = Object.getOwnPropertyDescriptor, P = Object.getPrototypeOf;
 const K = Reflect.ownKeys, HAS = Object.hasOwn, PROXY = utilTypes.isProxy;
-const EMPTY_BODY_SHA256 = 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855';
+const EMPTY_BODY_SHA256 = 'sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855';
 const NEXT = F({ OPEN: ['NEW','OPENING','FUNDING_READY'], PREPARE: ['FUNDING_READY','PREPARING','PREPARED'],
   COMMIT: ['PREPARED','COMMITTING','COMMITTED'], SUBMIT: ['COMMITTED','SUBMITTING','BOUND'],
   BIND: ['BOUND','BINDING_SERVICE','SERVICE_READY'], EXECUTE: ['SERVICE_READY','CALL_ACTIVE','SERVICE_READY'] });
