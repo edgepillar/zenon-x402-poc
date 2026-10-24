@@ -1,5 +1,11 @@
 # Managed native capacity V3 source, revision 2
 
+Historical revision at
+[1aa075a](https://github.com/edgepillar/zenon-x402-poc/tree/1aa075ae8e4d848abd2b6b2e565ec138ee9cea6b).
+Its result is byte-preserved. See the
+[revision 3 source rebinding](NATIVE_CAPACITY_MANAGED_WORKLOAD_V3_R3_SOURCE.md)
+for the changed shared core and fresh current-source DATA checks.
+
 Status: complete managed control source authored; **no native execution**.
 The source-only graph remains the complete 138-application/404-package graph,
 preserving the exact 117/404 baseline. A fresh finite native allowance is

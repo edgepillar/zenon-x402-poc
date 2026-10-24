@@ -11,9 +11,9 @@ import json
 import math
 import re
 
-GRAPH_SHA = "03305e857cf787aaba7dfb43412fb38cdcd9c8615284ca25e242a0eb322cec99"
-INVENTORY_SHA = "d9599aa00924777f91cb1cbb51a508b5bda156ef30994d342bd3a4512d5b2d97"
-PROFILE_SHA = "3cab5240c30a4c872a04fb9a1304429eadbc4d81e8851bed8a8fd9d34dce7112"
+GRAPH_SHA = "c517355f0eaa2b21eea7289b91f40d3464adb5966f60ff085dbc0b0a96d8a92c"
+INVENTORY_SHA = "73624c02d9bc39a7186ae994434ced83311ed718a6499997b3ee5cc4fdcda10a"
+PROFILE_SHA = "93568d6e149c6da0eedbbcbe2fa8115dd4b23d4a0965faef0b1f47729ab0b244"
 PAYEE = "z1qq3zyg3zyg3zyg3zyg3zyg3zyg3zyg3z3yw2mk"  # Public 20-byte fixture, not a wallet.
 MIB = 1048576
 FLOOR = 10 * 1024 * MIB

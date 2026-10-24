@@ -1,7 +1,7 @@
 {
   "sourceSelectionVersion": 3,
   "kind": "FULL_NATIVE_CAPACITY_V3_ALL_ROLES_SOURCE_NOT_EXECUTION",
-  "sourceParent": "25c62dc7fc511f9ebed3b33a92908f8ed8d42c4f",
+  "sourceParent": "1aa075ae8e4d848abd2b6b2e565ec138ee9cea6b",
   "runtime": {
     "node": "24.19.0",
     "platform": "darwin",
@@ -161,10 +161,10 @@
     },
     {
       "path": "app/src/service-credit-capacity-windowed-async-workload-owner-core.js",
-      "bytes": 31976,
-      "LF": 563,
-      "sha256": "e6559f7646d65795339c99fb853d0a9dbeb4e69ee8df6c2fcb0070d9c4ca2624",
-      "gitBlob": "f41334ea389adf5f9ee2f69cc0b2e525cbe718dd"
+      "bytes": 36252,
+      "LF": 645,
+      "sha256": "fda636116343c497f269d926ae8e3a61f1b9cd1cf11b493c3d9ba99ef55a7444",
+      "gitBlob": "cc9eae4a2e553a0e71a531f191648c9cbe0cb101"
     }
   ],
   "roleSpecs": {
@@ -195,8 +195,8 @@
   },
   "applicationFiles": 138,
   "packageFiles": 404,
-  "sourceRowsSha256": "03305e857cf787aaba7dfb43412fb38cdcd9c8615284ca25e242a0eb322cec99",
-  "declaredSourceBytes": 4755365,
+  "sourceRowsSha256": "c517355f0eaa2b21eea7289b91f40d3464adb5966f60ff085dbc0b0a96d8a92c",
+  "declaredSourceBytes": 4759641,
   "rolePreloadersImplemented": true,
   "completeManagedLauncherImplemented": true,
   "nativeExecuted": false,
@@ -206,4 +206,3 @@
   "nativeOsNetworkSandbox": false,
   "authority": "NONE"
 }
-
