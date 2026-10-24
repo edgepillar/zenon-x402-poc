@@ -1,0 +1,141 @@
+{
+  "resultVersion": 1,
+  "kind": "CAPACITY_COHORT_WRITER_TRACE_SELECTED_DATA_NOT_NATIVE",
+  "sourceParent": "7525efc6218b2e6eef1c104270e789e4c2e280ff",
+  "runtime": {
+    "node": "24.19.0",
+    "nodeSha256": "dbedff294bab84a0a86c04e15fbcbeb1c97ca10bef1b32b0634cd24b36f62100",
+    "platform": "darwin",
+    "arch": "arm64"
+  },
+  "actual": {
+    "exit": 0,
+    "complete": true,
+    "counts": {
+      "tests": 51,
+      "suites": 0,
+      "pass": 51,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "validated": true,
+    "stdoutBytes": 11028,
+    "stdoutSha256": "9f1e8108a27f799a2107d0e5b694d5b5e38f65d31c51c1833a44b5265d9ff83f",
+    "stderrBytes": 0,
+    "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "sourcePinsUnchanged": true
+  },
+  "sourcePins": [
+    {
+      "path": "package.json",
+      "bytes": 2677,
+      "LF": 40,
+      "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+      "gitBlob": "45752ffde39d29666094f7f1c755060d75e43deb"
+    },
+    {
+      "path": "src/service-credit-capacity-native-observation-data.js",
+      "bytes": 6173,
+      "LF": 103,
+      "sha256": "d6d19890334fbb6d7e92e605640d4638154f8e3e10588c8e217bf782a675b7ca",
+      "gitBlob": "aaf6b24f65a59e4b421805d7667a5fdf9e72433f"
+    },
+    {
+      "path": "src/service-credit-capacity-cohort-writer-trace-data.js",
+      "bytes": 10956,
+      "LF": 181,
+      "sha256": "75c3529584f7c6126f726734d085e107438c7a676ff1f63073956054aedcba65",
+      "gitBlob": "63bee5ad4714d3179666eef371373d4e0416a4a0"
+    },
+    {
+      "path": "qualification/service-credit-capacity-cohort-writer-trace-data.behavior.mjs",
+      "bytes": 20646,
+      "LF": 318,
+      "sha256": "1f5e727965399bdae67113b09a00885d64e210f250133b0ede72a41957c2d295",
+      "gitBlob": "44734b7b0c4a23c2663dc4144671efd1f6b5b90f"
+    }
+  ],
+  "normativeNativeBindingReview": {
+    "sourceRef": "7525efc6218b2e6eef1c104270e789e4c2e280ff",
+    "inputs": [
+      {
+        "path": "qualification/capacity-native-payer-lane-v2.worker.draft.mjs",
+        "bytes": 21279,
+        "LF": 299,
+        "sha256": "8ab5d166d80635363b427228864a55d392d1bd78940e4b38a91786d6c70d73fe",
+        "gitBlob": "4ce31b1435de36438eec1050f545f56d7aaa9f74"
+      },
+      {
+        "path": "qualification/capacity-native-paired-lane-v2.supervisor.draft.mjs",
+        "bytes": 22410,
+        "LF": 237,
+        "sha256": "be8dd242df3eec463baa7665647c9259660e4e26c000296e344897f2e2d9b1d1",
+        "gitBlob": "2b8d487858176a9946ebca3789361a2fd1db2b2e"
+      },
+      {
+        "path": "qualification/capacity-native-service-lane-v2.owner.draft.mjs",
+        "bytes": 29036,
+        "LF": 312,
+        "sha256": "2f36d0d1ef8fb250358630e30eadcfc157c1764a5e2232d30b23d46957141e6a",
+        "gitBlob": "119d177b7b8627c5d2f8966dc7788ff6cf04eb3d"
+      }
+    ],
+    "executed": false,
+    "binding": "sha256(native-capacity-original-v1\\0 + runId + \\0 + laneId + \\0 + cohort + \\0 + ordinal)",
+    "genuineRawPageCaptureReused": true,
+    "smallerSdkSqlApplicationSubstituted": false
+  },
+  "selectedCoverage": {
+    "maximumOriginals": 256,
+    "maximumWriterIntervals": 3136,
+    "maximumPages": 49,
+    "pageAtomicity": true,
+    "stickyUnknown": true,
+    "independentCompletionRequired": true,
+    "privateIdentifiersExcludedFromReturnedData": true,
+    "incompleteDistributionsWithheld": true,
+    "childClockDomainsNotMerged": true,
+    "retainedReferencesReleasedOnFinalize": true,
+    "physicalHeapMeasurement": false,
+    "rawNativeTraceProduced": false
+  },
+  "earlierSourceRevision": {
+    "testsPassed": 49,
+    "qualifiesCurrentSource": false,
+    "stdoutSha256": "81013e771eb0bd4bd9bebf11c2b6bbe0d0ce8420050c9807ff393b20b7a99a42",
+    "helperSha256": "cebd6fe81700d6c8732171ab253a0701cfe0cc64484e18321c580d03c2b26afb"
+  },
+  "qualification": {
+    "syntheticDeclaredDataOnly": true,
+    "SDK": false,
+    "SQLite": false,
+    "keys": false,
+    "signatures": false,
+    "nonceSearch": false,
+    "sockets": false,
+    "children": false,
+    "nativeWorkload": false,
+    "nativeEventsAuthenticated": false,
+    "nativeResourcesQualified": false,
+    "pureSqlLatencyQualified": false,
+    "measurementWindowIsolationQualified": false,
+    "sustainableCapacityQualified": false,
+    "economicAcceptance": false,
+    "liveOrProduction": false,
+    "existingNativeV2SourcesChanged": false,
+    "oldAllowancesRenewed": false,
+    "nativeApprovalPendingUnchanged": true,
+    "authority": "NONE"
+  },
+  "resources": {
+    "newTaskRoots": 0,
+    "qualificationScratchCreated": false,
+    "sourceCopiesCreated": 0,
+    "packagesInstalled": false,
+    "cleanupPerformed": false,
+    "existingEvidenceChanged": false,
+    "hostedCiProfileExpanded": false
+  }
+}
