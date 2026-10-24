@@ -42,9 +42,35 @@ const SPECIES = DESC(NativePromise, Symbol.species);
  */
 export async function openNativeOfficialV6FundingPostOriginalPaymentClient(configuration) {
   if (arguments.length !== 1 || !invariant()) fail('configuration_rejected');
+  return openNativeClient(configuration, false);
+}
+
+/**
+ * SOURCE-ONLY handoff selection. The enclosing actual funding/service owner
+ * supplies one PRIVATE current funding-resource/file guard. Not payment DATA,
+ * a caller-learned receipt or a cached close permit. Refusal is permanent and
+ * also vetoes actual DB close, including unpublished construction cleanup.
+ */
+export async function openNativeOfficialV6FundingPostOriginalPaymentClientWithFundingHandoffGuard(configuration) {
+  if (arguments.length !== 1 || !invariant()) fail('configuration_rejected');
+  return openNativeClient(configuration, true);
+}
+
+async function openNativeClient(configuration, handoffEnabled) {
   let native = null, client = null, joined = null, constructing = true;
   let payerOptions, originalPayment, official, transportOptions, policy, budget;
+  let handoffGuard = null, handoffHeld = false, checkingHandoff = false;
   let lifecycle = 'OPEN', pending = null, closing = null, historicalClose = 'NOT_REQUESTED';
+  function handoffLive() {
+    if (!handoffEnabled) return true;
+    if (handoffHeld) return false;
+    if (checkingHandoff || handoffGuard === null || !invariant()) { handoffHeld = true; return false; }
+    checkingHandoff = true;
+    try { if (APPLY(handoffGuard, undefined, []) !== true) handoffHeld = true; }
+    catch { handoffHeld = true; }
+    finally { checkingHandoff = false; }
+    return !handoffHeld;
+  }
   function nativeView() { return NATIVE_SNAPSHOT(); }
   function cleanNative() {
     try { return closedNativeView(nativeView()); } catch { return false; }
@@ -62,9 +88,9 @@ export async function openNativeOfficialV6FundingPostOriginalPaymentClient(confi
   }
   // This capability is never accepted from caller DATA or exposed publicly.
   const actualStoreCloseGuard = F(function actualStoreCloseGuard() {
-    if (!invariant()) return false;
+    if (!invariant() || !handoffLive()) return false;
     if (constructing) return unusedNative(); // No request has been exposed.
-    return joined !== null && joined.canCloseFunding() && cleanNative() && joined.canCloseFunding();
+    return joined !== null && joined.canCloseFunding() && cleanNative() && handoffLive() && joined.canCloseFunding();
   });
   let NATIVE_CLOSE, NATIVE_SNAPSHOT, CLIENT_CLOSE, CLIENT_SNAPSHOT;
   function normalizedNativeClose() {
@@ -99,7 +125,13 @@ export async function openNativeOfficialV6FundingPostOriginalPaymentClient(confi
     return c.promise;
   }
   try {
-    const c = exact(configuration, ['payerOptions', 'originalPayment', 'official', 'transportOptions']);
+    const fields = ['payerOptions', 'originalPayment', 'official', 'transportOptions'];
+    const c = exact(configuration, handoffEnabled ? [...fields, 'fundingHandoffGuard'] : fields);
+    if (handoffEnabled) {
+      handoffGuard = c.fundingHandoffGuard;
+      if (typeof handoffGuard !== 'function' || IS_PROXY(handoffGuard)
+          || PROTO(handoffGuard) !== Function.prototype || !Object.isFrozen(handoffGuard)) fail('configuration_rejected');
+    }
     payerOptions = exact(c.payerOptions, ['databasePath', 'allowedRoot', 'fundingResourceUrl',
       'custodyPolicy', 'selectedGrantId', 'deadlineMs']);
     originalPayment = exact(c.originalPayment, ['resourceUrl', 'serializedCheckpoint', 'expectedPins']);
@@ -109,7 +141,14 @@ export async function openNativeOfficialV6FundingPostOriginalPaymentClient(confi
     const route = ROUTE(originalPayment.resourceUrl);
     policy = POLICY(payerOptions.custodyPolicy, payerOptions.fundingResourceUrl);
     budget = transportOptions.closeGraceMs;
-    if (route.resourceUrl !== payerOptions.fundingResourceUrl
+    if (typeof transportOptions.origin !== 'string'
+        || !Number.isSafeInteger(transportOptions.maxRequestStarts) || transportOptions.maxRequestStarts < 1
+        || transportOptions.maxRequestStarts > 256
+        || !Number.isSafeInteger(transportOptions.requestDeadlineMs) || transportOptions.requestDeadlineMs < 1
+        || transportOptions.requestDeadlineMs > 30000
+        || !Number.isSafeInteger(transportOptions.handshakeDeadlineMs) || transportOptions.handshakeDeadlineMs < 1
+        || transportOptions.handshakeDeadlineMs > transportOptions.requestDeadlineMs
+        || route.resourceUrl !== payerOptions.fundingResourceUrl
         || route.resourceUrl !== transportOptions.origin + '/funding'
         || policy.serviceResourceUrl !== transportOptions.origin + '/service-credit/v1/execute'
         || !Number.isSafeInteger(payerOptions.deadlineMs) || payerOptions.deadlineMs < 1
@@ -118,6 +157,7 @@ export async function openNativeOfficialV6FundingPostOriginalPaymentClient(confi
         || budget > payerOptions.deadlineMs || transportOptions.maxConcurrentRequests !== 1
         || transportOptions.maxRequestStarts > policy.maxRequests
         || transportOptions.requestDeadlineMs > payerOptions.deadlineMs) fail('configuration_rejected');
+    if (!handoffLive()) fail('configuration_rejected');
     native = TRANSPORT(transportOptions);
     NATIVE_CLOSE = native.close; NATIVE_SNAPSHOT = native.snapshot;
     client = await OPEN({ payerOptions: { ...payerOptions, custodyPolicy: policy,
@@ -129,9 +169,9 @@ export async function openNativeOfficialV6FundingPostOriginalPaymentClient(confi
       closeFunding: F(function closeFunding() { return normalizedClientClose(); }),
       canCloseFunding: F(function canCloseFunding() { return cleanNative(); }),
     }), budget);
-    if (!invariant() || !unusedNative()) fail('construction_close_unknown');
+    if (!invariant() || !unusedNative() || !handoffLive()) fail('construction_close_unknown');
   } catch (caught) {
-    let unknown = constructionHeld(caught);
+    let unknown = constructionHeld(caught) || handoffEnabled && handoffHeld && client !== null;
     // Keep the guard in construction mode while cleaning only unpublished
     // owners. Never reach into a hidden HELD root or reopen a DB on failure.
     if (native !== null) {
@@ -147,7 +187,7 @@ export async function openNativeOfficialV6FundingPostOriginalPaymentClient(confi
   }
 
   function live() {
-    if (!invariant() || lifecycle !== 'OPEN' || closing !== null) return false;
+    if (!invariant() || lifecycle !== 'OPEN' || closing !== null || !handoffLive()) return false;
     try {
       const s = nativeView();
       return data(s, 'phase') === 'OPEN' && data(s, 'unknown') === false;
@@ -185,7 +225,7 @@ export async function openNativeOfficialV6FundingPostOriginalPaymentClient(confi
       observe(joined.promise, value => {
         if (historicalClose !== 'PENDING') return;
         try {
-          if (data(value, 'lifecycle', true) !== 'CLOSED' || !cleanNative()) fail('close_unknown');
+          if (data(value, 'lifecycle', true) !== 'CLOSED' || !cleanNative() || !handoffLive()) fail('close_unknown');
           lifecycle = 'CLOSED'; historicalClose = 'FULFILLED_UNDEFINED'; c.resolve(undefined);
         } catch { closeUnknown(); }
       }, closeUnknown);
@@ -198,11 +238,14 @@ export async function openNativeOfficialV6FundingPostOriginalPaymentClient(confi
   const snapshot = F(function snapshot() {
     if (arguments.length !== 0 || !invariant()) fail('input_rejected');
     const n = nativeView();
+    if (handoffEnabled && !handoffLive()) lifecycle = 'CLOSE_UNKNOWN';
     // Only downgrade the current view. No second close or replacement Promise.
     if (lifecycle === 'CLOSED' && !closedNativeView(n)) lifecycle = 'CLOSE_UNKNOWN';
     return F({ profile: 'NATIVE_OFFICIAL_X402_FUNDING_POST_ORIGINAL_V6_CLIENT',
       lifecycle, historicalClose, operationActive: pending !== null,
       native: n, client: APPLY(CLIENT_SNAPSHOT, client, []), closeJoin: joined.inspect(),
+      ...(handoffEnabled ? { fundingHandoff: F({ held: handoffHeld, checking: checkingHandoff,
+        currentSourceGuardRequired: true, authority: 'NONE' }) } : {}),
       defaultEnabled: false, fundingPostTransport: 'NOT_PROVIDED', authority: 'NONE',
       serviceDelivery: 'NOT_ESTABLISHED', fullP1: 'NOT_ESTABLISHED',
       nativeResourceCleanup: 'NOT_QUALIFIED', automaticRetry: false });
