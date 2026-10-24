@@ -1,0 +1,229 @@
+{
+  "resultVersion": 1,
+  "status": "PASS_COMPONENT_ONLY",
+  "sourceParent": "ca02f5f4b8f7d9b79f95ae727e50a8835a6a05d7",
+  "mainParent": "4d6d3e69ff4d5557e57f85181e2d88f03285dc2e",
+  "runtime": {
+    "node": "24.19.0",
+    "platform": "darwin",
+    "arch": "arm64",
+    "binarySha256": "dbedff294bab84a0a86c04e15fbcbeb1c97ca10bef1b32b0634cd24b36f62100"
+  },
+  "execution": {
+    "componentRuntimeNodeCommands": 1,
+    "syntaxOnlyNodeCommands": 1,
+    "NodeChildren": 0,
+    "componentActualExit": 0,
+    "outputComplete": true,
+    "permissions": "exact read grants; no child, worker, addon or filesystem write grants",
+    "compileCache": "DISABLED",
+    "outputCapture": "bounded separate stdout/stderr; retained in the local command record",
+    "captureCapsPerStreamBytes": 65536,
+    "supervisorDeadlineSeconds": 15,
+    "osOrNetworkSandboxClaim": false
+  },
+  "counts": {
+    "tests": 10,
+    "passed": 10,
+    "failed": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "observedComponentCounters": {
+    "casesEntered": 10,
+    "casesCompleted": 10,
+    "booleanRows": 64,
+    "proxyTraps": 0,
+    "declaredReadCloseCalls": 3,
+    "declaredFundingCloseCalls": 1,
+    "operationSnapshots": 3,
+    "guardCalls": 3,
+    "nativeOwnerImported": false,
+    "SDK": 0,
+    "SQLite": 0,
+    "sockets": 0,
+    "keys": 0,
+    "signatures": 0,
+    "nonceEvaluations": 0,
+    "nativeResourceCleanup": "NOT_QUALIFIED",
+    "authority": "NONE"
+  },
+  "executedInputs": [
+    {
+      "path": "package.json",
+      "bytes": 2677,
+      "LF": 40,
+      "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+      "gitBlob": "45752ffde39d29666094f7f1c755060d75e43deb"
+    },
+    {
+      "path": "src/zenon/native-read-generation-handles-closed.js",
+      "bytes": 1194,
+      "LF": 19,
+      "sha256": "136c4088341d71d10ec8a4f07fbfbf959607c6a6676a2f6a86b56f6d3ac92de5",
+      "gitBlob": "466c20d9849c81306ba10f6001eb9951f14cd55d"
+    },
+    {
+      "path": "src/zenon/native-read-retired-error-latch.js",
+      "bytes": 994,
+      "LF": 24,
+      "sha256": "a7c2c242f2df97e8f6fcd6171d0f24b3ec048f25115135dcb08dd83a21f48d84",
+      "gitBlob": "97cff24934379cf9d8b1ae9b5fe43df68afd6483"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-original-funding-read-close.js",
+      "bytes": 9568,
+      "LF": 178,
+      "sha256": "5086567b2c0cce0fc3419db69641beb7e5e434d47f83e17015682964ad482a45",
+      "gitBlob": "f2a1b30bb02a6b192fc3b0fe0b4fc5b65e2d297b"
+    },
+    {
+      "path": "qualification/native-read-response-close-gate.behavior.draft.mjs",
+      "bytes": 8076,
+      "LF": 134,
+      "sha256": "609dfdc79550496cfb8b68ecfe07368d72edc78efa87a2a8a06e93d7536a7f8e",
+      "gitBlob": "404ea6df0eb162139e29bb8e4deb130e8eebae27"
+    }
+  ],
+  "componentStreams": {
+    "stdout": {
+      "bytes": 2816,
+      "sha256": "5b76bcb23261c1144a2f12307c9a854b33dabaf40b50921848fa680d531629dc"
+    },
+    "stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  },
+  "syntaxOnly": {
+    "inputs": [
+      {
+        "path": "package.json",
+        "bytes": 2677,
+        "LF": 40,
+        "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+        "gitBlob": "45752ffde39d29666094f7f1c755060d75e43deb"
+      },
+      {
+        "path": "src/zenon/bounded-json-rpc-https-exchange-owner.js",
+        "bytes": 46022,
+        "LF": 964,
+        "sha256": "2fab30762796817b379d8b6e6d1ae829007cf6a45cd3f411dccd72673cd0053a",
+        "gitBlob": "e7196244cdcdfdacc458dfec0a6a0b408fbee2ac"
+      }
+    ],
+    "results": [
+      {
+        "input": {
+          "path": "src/zenon/bounded-json-rpc-https-exchange-owner.js",
+          "bytes": 46022,
+          "LF": 964,
+          "sha256": "2fab30762796817b379d8b6e6d1ae829007cf6a45cd3f411dccd72673cd0053a",
+          "gitBlob": "e7196244cdcdfdacc458dfec0a6a0b408fbee2ac"
+        },
+        "syntaxActualExit": 0,
+        "outputComplete": true,
+        "reason": null,
+        "streams": {
+          "stdout": {
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "stderr": {
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        "applicationImported": false,
+        "applicationExecuted": false
+      }
+    ],
+    "applicationImported": false,
+    "applicationExecuted": false
+  },
+  "nativeSourceIntegration": {
+    "qualification": "STATIC_SOURCE_PLUS_SYNTAX_ONLY",
+    "currentInput": {
+      "path": "src/zenon/bounded-json-rpc-https-exchange-owner.js",
+      "bytes": 46022,
+      "LF": 964,
+      "sha256": "2fab30762796817b379d8b6e6d1ae829007cf6a45cd3f411dccd72673cd0053a",
+      "gitBlob": "e7196244cdcdfdacc458dfec0a6a0b408fbee2ac"
+    },
+    "previousInput": {
+      "path": "src/zenon/bounded-json-rpc-https-exchange-owner.js",
+      "bytes": 44831,
+      "LF": 941,
+      "sha256": "c270192d97be823f94eca1f5db6cf2fbf7f6128049e686579a00dedc3d8cc410",
+      "gitBlob": "e9c2420bed6a6f9d0a739384bceecb8f73cb86c0"
+    },
+    "controls": {
+      "sharedExecutedPredicateImported": true,
+      "retainedCustodySelectionOnly": true,
+      "samePredicateUsedForFinishAndGraceExpiry": true,
+      "assignedResponseMustObserveOwnClose": true,
+      "responseCloseUsesExistingClockAndGrace": true,
+      "lateOrMissingCloseRemainsUncertain": true,
+      "legacyFourFiveArgumentPredicateRetained": true
+    },
+    "physicalDrain": "NOT_QUALIFIED",
+    "currentNativeOwnerRuntimeTested": false,
+    "fullDpGraphImported": false
+  },
+  "interpretation": {
+    "nativeReadOwnerImported": false,
+    "nativeReadOwnerConstructed": false,
+    "newTlsAttempt": 0,
+    "SDKImports": 0,
+    "SQLiteOpens": 0,
+    "sockets": 0,
+    "keys": 0,
+    "signatures": 0,
+    "nonceEvaluations": 0,
+    "realPrepare": 0,
+    "declaredFlagsAuthenticateNativeEvents": false,
+    "declaredGraceIsRealClockTest": false,
+    "declaredFundingCloseIsStoreClose": false,
+    "lateEventPermitsRetry": false,
+    "defaultBuyerChanged": false,
+    "fullP1Complete": false,
+    "fullP2Complete": false,
+    "roadmapComplete": false,
+    "productionQualified": false,
+    "authority": "NONE"
+  },
+  "resources": {
+    "newManagedRoots": 0,
+    "newManagedTasks": 0,
+    "newQualificationScratchBytes": 0,
+    "downloads": 0,
+    "archives": 0,
+    "cleanupPerformed": false,
+    "heldHistoricalEvidencePreserved": true,
+    "storageAndThroughputBenchmark": false
+  },
+  "publication": {
+    "eligibleMainFiles": [
+      "src/zenon/native-read-generation-handles-closed.js",
+      "qualification/native-read-response-close-gate.behavior.draft.mjs",
+      "qualification/native-read-response-close-gate.actual-local-result.json",
+      "docs/P2_NATIVE_READ_RESPONSE_CLOSE.md"
+    ],
+    "nativeCoreStaysOffMain": true,
+    "CIAtParents": {
+      "source": {
+        "checks": 0,
+        "statuses": 0,
+        "runs": 0
+      },
+      "main": {
+        "checks": 0,
+        "statuses": 0,
+        "runs": 0
+      }
+    },
+    "CIInterpretation": "NOT_RUN_NOT_GREEN",
+    "historicalResultsRebound": false
+  }
+}
