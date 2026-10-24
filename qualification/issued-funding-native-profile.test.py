@@ -14,7 +14,7 @@ HERE = Path(__file__).absolute().parent
 spec = importlib.util.spec_from_file_location("issued_native_profile_data_test", HERE / "issued_funding_native_profile.py")
 profile = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(profile)
-MANIFEST = json.loads((HERE / "issued-funding-post-native-vertical.inputs.json").read_bytes())
+MANIFEST = json.loads((HERE / "issued-funding-post-native-vertical.inputs-v2.json").read_bytes())
 
 
 def synthetic(mode="clean"):
@@ -29,8 +29,8 @@ def synthetic(mode="clean"):
         grantActivation="ACTUAL_COMPOSITION_WITH_SYNTHETIC_SIGNED_PROVIDER_ENVELOPES", chainObservations="DECLARED_NOT_AUTHENTICATED",
         producerCandidateReservation=4096, fixedVerificationReservation=16384, aggregateCandidateReservation=17+4096+16384,
         sdkPrepareBlock=False, realPayment=False, productionQualified=False, nativePhysicalDrain="NOT_QUALIFIED")
-    namespace = dict(profileKind=profile.KIND, profileVersion=1, mode=mode, inputsVerifiedBeforeCase=520,
-        applicationFiles=116, packageFiles=404, declaredSourceBytes=MANIFEST["sourceBytes"], sourceRowsSha256=MANIFEST["sourceRowsSha256"],
+    namespace = dict(profileKind=profile.KIND, profileVersion=1, mode=mode, inputsVerifiedBeforeCase=521,
+        applicationFiles=117, packageFiles=404, declaredSourceBytes=MANIFEST["sourceBytes"], sourceRowsSha256=MANIFEST["sourceRowsSha256"],
         resolveCalls=100, bareImportOverrideHits=8, declaredFilesResolved=100, sourceTransforms=0, nativeBuiltinAliases=0,
         ordinaryInstalledNamespaceQualified=False, nativeOsNetworkSandbox=False)
     receipt = dict(state="COMPLETE", output_complete=True, actual_exit=0)
@@ -51,7 +51,7 @@ class ManifestDataTests(unittest.TestCase):
             profile.validate_manifest(value)
 
     def test_complete_current_public_manifest(self):
-        self.assertEqual(len(profile.validate_manifest(MANIFEST)), 520)
+        self.assertEqual(len(profile.validate_manifest(MANIFEST)), 521)
         self.assertGreater(MANIFEST["sourceBytes"], 4194304)
         self.assertLess(MANIFEST["sourceBytes"], profile.MAX_SOURCE_BYTES)
         self.assertFalse(MANIFEST["effectsCeiling"]["existingSourcesRecopied"])

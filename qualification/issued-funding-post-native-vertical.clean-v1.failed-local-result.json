@@ -1,0 +1,89 @@
+{
+  "kind": "ACTUAL_ISSUED_NATIVE_CLEAN_V1_FAILED_LOCAL_RESULT",
+  "date": "2026-10-24",
+  "status": "FAILED_CONSTRUCTION_NOT_INTEGRATION_PASS",
+  "qualifiedSourceHead": "ef0951b73e1c1b0d3b6eda00f5373fcadebf638e",
+  "sourceBinding": {
+    "manifestPath": "qualification/issued-funding-post-native-vertical.inputs.json",
+    "manifestSha256": "296dd3eee42e0756dc93e9b720f838ec2ff180a3ba898f4253bdae8d4d4a5b47",
+    "sourceRowsSha256": "57d227c477edf212e7599017276d3348d42fa795da511b1d02e85689777f5788",
+    "applicationFilesVerified": 116,
+    "existingPackageFilesVerified": 404,
+    "inputsVerifiedBeforeCase": 520,
+    "declaredSourceBytes": 4363667,
+    "runtimeFilesResolved": 138,
+    "resolveCalls": 544,
+    "bareImportOverrideHits": 5,
+    "sourceTransforms": 0,
+    "nativeBuiltinAliases": 0
+  },
+  "actualExecution": {
+    "case": "clean",
+    "authorizedAttempts": 1,
+    "attemptsEntered": 1,
+    "attemptsRemaining": 0,
+    "opensslCommands": 1,
+    "opensslActualExit": 0,
+    "opensslCaptureComplete": true,
+    "nodeCommands": 1,
+    "nodeChildren": 0,
+    "nodeActualExit": 1,
+    "nodeCaptureComplete": true,
+    "tests": 1,
+    "pass": 0,
+    "fail": 1,
+    "skipped": 0,
+    "cancelled": 0,
+    "todo": 0,
+    "failureCode": "official_issued_funding_post_native_application_construction",
+    "innerConstructionStage": "NOT_REPORTED",
+    "completedCaseFooter": false,
+    "nodeStdout": {
+      "bytes": 1207,
+      "sha256": "23063ca1712dba1d9c9d370673fc91e8218ac6701ed3c0e06ec05c69daa2a452"
+    },
+    "nodeStderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "rawCapturesPublished": false,
+    "completedEffectCounters": "NOT_REPORTED_BEFORE_FAILURE",
+    "newSqliteFilesObservedAfterFailure": 2,
+    "independentPinFilesObservedAfterFailure": 0,
+    "lostAckCaseEntered": false
+  },
+  "sourceBoundDefect": {
+    "caseRequestResponseDeadlineMs": 5000,
+    "caseCloseGraceMs": 1000,
+    "actualIngressInvariant": "requestResponseDeadlineMs <= closeGraceMs",
+    "inputIsGuaranteedIncompatible": true,
+    "coarseNativeErrorProvesSoleCause": false,
+    "otherConstructionFailuresExcluded": false
+  },
+  "taskCompletion": {
+    "state": "CLOSED",
+    "outcome": "FAILURE",
+    "cleanupDisposition": "HOLD",
+    "evidencePreserved": true,
+    "historicalFilesChanged": false,
+    "failedTaskReused": false
+  },
+  "followUp": {
+    "correctedManifestPath": "qualification/issued-funding-post-native-vertical.inputs-v2.json",
+    "correctedManifestSha256": "980bc24a3effe011b6199338f3a3224da8c79e33b48a40296cbe4bf13ee21c5b",
+    "correction": "Share the actual ingress limit admission with the application before SQL/SDK entry; use a 5000 ms close budget in the corrected case.",
+    "correctedNativeCasesExecuted": 0,
+    "freshExplicitNativeAllowanceRequired": true
+  },
+  "evidenceLimits": {
+    "actualNativeCaseAttempted": true,
+    "issuedFundingGrantServiceFlowCompleted": false,
+    "ordinaryInstalledNamespaceQualified": false,
+    "nativePhysicalDrain": "NOT_QUALIFIED",
+    "hostedCI": "NOT_RUN",
+    "nativeOsNetworkSandbox": false,
+    "realWalletOrPayment": false,
+    "chainPublication": "NOT_ESTABLISHED",
+    "productionQualified": false
+  }
+}

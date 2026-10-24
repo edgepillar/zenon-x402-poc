@@ -1,0 +1,213 @@
+{
+  "kind": "SOURCE_BOUND_ISSUED_NATIVE_V2_LIMITS_CORRECTION_NOT_NATIVE_PASS",
+  "date": "2026-10-24",
+  "sourceParent": "ef0951b73e1c1b0d3b6eda00f5373fcadebf638e",
+  "originalAttempt": {
+    "manifestSha256": "296dd3eee42e0756dc93e9b720f838ec2ff180a3ba898f4253bdae8d4d4a5b47",
+    "case": "clean",
+    "attempts": 1,
+    "remaining": 0,
+    "nodeExit": 1,
+    "result": "FAILED_CONSTRUCTION",
+    "errorCode": "official_issued_funding_post_native_application_construction",
+    "originalManifestAndRawEvidencePreserved": true
+  },
+  "sourceCorrection": {
+    "sharedLimitsModule": "src/service-credit-bounded-https-ingress-limits.js",
+    "realIngressUsesSharedAdmission": true,
+    "issuedApplicationUsesSameAdmissionBeforeStoreOrSdk": true,
+    "originalNumericAndRelationalLimitsPreserved": true,
+    "caseRequestResponseDeadlineMs": 5000,
+    "caseCloseGraceMs": 5000,
+    "otherIndependentNativeFailuresExcluded": false
+  },
+  "actualDataTests": {
+    "limits": {
+      "tests": 12,
+      "pass": 12,
+      "fail": 0,
+      "skipped": 0,
+      "sourceFiles": [
+        "src/service-credit-bounded-https-ingress-limits.js",
+        "qualification/service-credit-bounded-https-ingress-limits.behavior.mjs"
+      ],
+      "nativeGraphImported": false
+    },
+    "admissionAndCaptureParser": {
+      "tests": 21,
+      "pass": 21,
+      "fail": 0,
+      "skipped": 0,
+      "captureInputsFabricated": true,
+      "nativeGraphImported": false
+    }
+  },
+  "actualSyntaxOnly": {
+    "event": "Q110_CORRECTED_SOURCE_SYNTAX_ONLY",
+    "javascript": [
+      {
+        "path": "src/service-credit-bounded-https-ingress-owner.js",
+        "sha256": "7c8a663f8541373c93cf7b90b243a4d5ec88db43a400fbf411c9535571e20830",
+        "actualExit": 0,
+        "stdoutBytes": 0,
+        "stderrBytes": 0
+      },
+      {
+        "path": "src/x402-official-issued-funding-post-native-application.js",
+        "sha256": "19f147de7167ea0c20f51958b3716fb9d8fcc21e63ee6c9d74fe34dcde727cdd",
+        "actualExit": 0,
+        "stdoutBytes": 0,
+        "stderrBytes": 0
+      },
+      {
+        "path": "qualification/issued-funding-post-native-vertical.case.draft.mjs",
+        "sha256": "59240af09c54cf9252b016417091157b182a2ae10993e6f3744694bef2b319d8",
+        "actualExit": 0,
+        "stdoutBytes": 0,
+        "stderrBytes": 0
+      },
+      {
+        "path": "qualification/issued-funding-post-native-vertical.preload.draft.mjs",
+        "sha256": "721972d7e0849fb56fbf105b30bfdd3189ebd4a4c4ce612887fa3b65bc1cd095",
+        "actualExit": 0,
+        "stdoutBytes": 0,
+        "stderrBytes": 0
+      }
+    ],
+    "pythonCompileOnly": [
+      "qualification/issued_funding_native_profile.py",
+      "qualification/run-issued-funding-native-vertical.local.py",
+      "qualification/issued-funding-native-profile.test.py"
+    ],
+    "JSImported": false,
+    "oldFullDpInputsChanged": []
+  },
+  "currentReadOnlyAdmission": {
+    "manifest": "qualification/issued-funding-post-native-vertical.inputs-v2.json",
+    "manifestSha256": "980bc24a3effe011b6199338f3a3224da8c79e33b48a40296cbe4bf13ee21c5b",
+    "sourceRowsSha256": "a21d6b74f995786807793b7c2417b63fe66b82e0480b67a3ec7c580e32c71b09",
+    "applicationFiles": 117,
+    "existingPackageFiles": 404,
+    "sourceInputFiles": 521,
+    "sourceBytesReadOnly": 4364418,
+    "privateProfileBytes": 216651,
+    "existingSourcesRecopied": false,
+    "newRootsCreated": 0,
+    "newTasksCreated": 0,
+    "capacityAdmission": "PASS_WITH_ALL_SCOPED_RESERVATIONS",
+    "minimumFreeBytes": 10737418240,
+    "taskQuotaBytes": 4194304,
+    "actualNativeEffectsExecuted": false
+  },
+  "codeAndEvidenceInputs": [
+    {
+      "path": "src/service-credit-bounded-https-ingress-limits.js",
+      "bytes": 2661,
+      "LF": 50,
+      "sha256": "35e2cc603398a929979b2f939f558d43002079038922d6248cc654c425eafb68",
+      "gitBlob": "beb1fa1576a592fe206de34ccbb498ad4a6ed186"
+    },
+    {
+      "path": "src/service-credit-bounded-https-ingress-owner.js",
+      "bytes": 140920,
+      "LF": 4039,
+      "sha256": "7c8a663f8541373c93cf7b90b243a4d5ec88db43a400fbf411c9535571e20830",
+      "gitBlob": "ca95e2876408adeffc44487cbbaaa5471e9b4b29"
+    },
+    {
+      "path": "src/x402-official-issued-funding-post-native-application.js",
+      "bytes": 19745,
+      "LF": 285,
+      "sha256": "19f147de7167ea0c20f51958b3716fb9d8fcc21e63ee6c9d74fe34dcde727cdd",
+      "gitBlob": "d64572a469523a8446b2fc563dac70a51d0718c3"
+    },
+    {
+      "path": "qualification/issued-funding-post-native-vertical.case.draft.mjs",
+      "bytes": 34893,
+      "LF": 487,
+      "sha256": "59240af09c54cf9252b016417091157b182a2ae10993e6f3744694bef2b319d8",
+      "gitBlob": "98fa0e8b5f98c0b47a749d4c68b8ab2195a574f2"
+    },
+    {
+      "path": "qualification/issued_funding_native_profile.py",
+      "bytes": 17784,
+      "LF": 244,
+      "sha256": "48b04cdd7ec0675e9aa5fcc9cd24bb86f2f769ec066a86ec9325a9ce2077a4da",
+      "gitBlob": "2467c6d55f1e8b9cf07c57afe93c979fc682a41d"
+    },
+    {
+      "path": "qualification/issued-funding-post-native-vertical.preload.draft.mjs",
+      "bytes": 11254,
+      "LF": 162,
+      "sha256": "721972d7e0849fb56fbf105b30bfdd3189ebd4a4c4ce612887fa3b65bc1cd095",
+      "gitBlob": "13d45c646f60b395def3b2ab1e8b4a69b3d2031a"
+    },
+    {
+      "path": "qualification/run-issued-funding-native-vertical.local.py",
+      "bytes": 15889,
+      "LF": 265,
+      "sha256": "8a6d7d47abb9c6dd143368bc3271b17f830b89998cd1dcdd9b0b9f7a8ba87fe2",
+      "gitBlob": "d56caa71b2edd2b33a5db40e6332932d3078972b"
+    },
+    {
+      "path": "qualification/issued-funding-native-profile.test.py",
+      "bytes": 8946,
+      "LF": 175,
+      "sha256": "69d05ea2350a7be5bd2b0ab6d5c98a8ce09bc8464afdda58ffb0b77d74ae8a34",
+      "gitBlob": "2318bcedb3ee2317f7c0aadc1a74a16739c049d3"
+    },
+    {
+      "path": "qualification/service-credit-bounded-https-ingress-limits.behavior.mjs",
+      "bytes": 5724,
+      "LF": 84,
+      "sha256": "066bf48960b63bb92061f7c0d1bea303ab51ded1b386b6400c8a920d8e2a3d3b",
+      "gitBlob": "5e5cd6204477e78831f6ddac7a4dc25f7863a9c7"
+    },
+    {
+      "path": "qualification/issued-funding-post-native-vertical.inputs-v2.json",
+      "bytes": 138777,
+      "LF": 3836,
+      "sha256": "980bc24a3effe011b6199338f3a3224da8c79e33b48a40296cbe4bf13ee21c5b",
+      "gitBlob": "380437ea984a78e1b4f46cf3abb5dc013020e2e1"
+    },
+    {
+      "path": "qualification/issued-funding-post-native-vertical.clean-v1.failed-local-result.json",
+      "bytes": 3248,
+      "LF": 89,
+      "sha256": "b81a93176c52c12b5d0aada33359ca6329460ddbf8f40a3acdc69b4ae9021393",
+      "gitBlob": "a42af5c773c2acf14f3aaa2017d06ce5fe0fb957"
+    },
+    {
+      "path": "docs/P1_NATIVE_ISSUED_FUNDING_CLEAN_V1_FAILURE_AND_LIMITS_FIX.md",
+      "bytes": 4022,
+      "LF": 69,
+      "sha256": "97b74584958202ac4c10fdf4a5790bf737920dd8a40361f0e841076ee1d28a33",
+      "gitBlob": "44b4986d2ff5a500aac04c1516280626b807cefd"
+    },
+    {
+      "path": "docs/P1_NATIVE_ISSUED_FUNDING_ADMISSION_DRAFT.md",
+      "bytes": 7487,
+      "LF": 135,
+      "sha256": "02e85018c546e476ac628e6fb0719fb16eeea8cab4190d5afb60cb7e901fc4f4",
+      "gitBlob": "d08f8b49427689fd6f021237afc8fa6b15ffc6d9"
+    },
+    {
+      "path": "docs/P1_NATIVE_ISSUED_FUNDING_VERTICAL_CASE_DRAFT.md",
+      "bytes": 7999,
+      "LF": 132,
+      "sha256": "80fc457bb94606d41b1a8ea62b62f68d85f2fabcf87eef8c0e3a7b530075138e",
+      "gitBlob": "19d30e4dd35b550e50fb81949e69e5076416febf"
+    }
+  ],
+  "boundaries": {
+    "correctedNativeCasesExecuted": 0,
+    "oldFullDpManifestInputsChanged": 0,
+    "oldFullDpSelectedPassNotIssuedGrantProof": true,
+    "lostAckCaseExecuted": false,
+    "newNativeAllowanceRequired": true,
+    "mainChanged": false,
+    "hostedCI": "NOT_RUN",
+    "ordinaryInstalledNamespaceQualified": false,
+    "productionQualified": false
+  }
+}

@@ -356,7 +356,7 @@ await test('actual issued funding native vertical slice: ' + MODE, { timeout: 30
       transport: F({ origin, generation: F({ generationId: 'native.issued.vertical', generationVersion: 1 }),
         limits: F({ maxHeaderBytes: 16384, maxHeaderCount: 16, maxConcurrentSockets: 2, maxConnectionStarts: 8,
           maxConcurrentRequests: 1, maxRequestStarts: 8, tlsHandshakeDeadlineMs: 1000, headerDeadlineMs: 2000,
-          requestResponseDeadlineMs: 5000, idleSocketDeadlineMs: 2000, startDeadlineMs: 1000, closeGraceMs: 1000, metricsCounterLimit: 10000 }),
+          requestResponseDeadlineMs: 5000, idleSocketDeadlineMs: 2000, startDeadlineMs: 1000, closeGraceMs: 5000, metricsCounterLimit: 10000 }),
         deadlineRuntime: ingressRuntime, httpsServerFactory: factory }),
     }));
     retained.app = app; retained.appOpening = false;

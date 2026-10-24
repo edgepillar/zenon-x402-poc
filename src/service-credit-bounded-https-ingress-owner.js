@@ -2,6 +2,7 @@ import { EventEmitter } from 'node:events';
 import { OutgoingMessage } from 'node:http';
 import { isIP } from 'node:net';
 import { types as utilTypes } from 'node:util';
+import { captureServiceCreditBoundedHttpsIngressLimits } from './service-credit-bounded-https-ingress-limits.js';
 import {
   captureOfficialUpfrontHttpsRoute,
   captureOfficialUpfrontHttpsRequest,
@@ -260,21 +261,6 @@ const CONFIGURATION_KEYS = OBJECT_FREEZE([
   'httpsServerFactory',
 ]);
 const GENERATION_KEYS = OBJECT_FREEZE(['generationId', 'generationVersion']);
-const LIMIT_KEYS = OBJECT_FREEZE([
-  'maxHeaderBytes',
-  'maxHeaderCount',
-  'maxConcurrentSockets',
-  'maxConnectionStarts',
-  'maxConcurrentRequests',
-  'maxRequestStarts',
-  'tlsHandshakeDeadlineMs',
-  'headerDeadlineMs',
-  'requestResponseDeadlineMs',
-  'idleSocketDeadlineMs',
-  'startDeadlineMs',
-  'closeGraceMs',
-  'metricsCounterLimit',
-]);
 const DOWNSTREAM_KEYS = OBJECT_FREEZE(['handle', 'close']);
 const DEADLINE_RUNTIME_KEYS = OBJECT_FREEZE(['schedule', 'cancel']);
 const SERVER_CAPABILITY_KEYS = OBJECT_FREEZE(['listen', 'close', 'closeAllConnections']);
@@ -307,11 +293,7 @@ const MAX_REQUEST_TARGETS = 16;
 const MAX_GENERATION_VERSION = 1_000_000;
 const MAX_HEADER_BYTES = 65_536;
 const MAX_HEADER_COUNT = 256;
-const MAX_CONCURRENT = 10_000;
-const MAX_LIFETIME_STARTS = 1_000_000;
-const MAX_DEADLINE_MS = 60_000;
 const MAX_PROPERTY_PROTOTYPE_DEPTH = 32;
-const METRIC_RESERVE = 32;
 const FAILURE_TEXT = '{"error":"unavailable"}';
 
 const PHASE = OBJECT_FREEZE({
@@ -547,43 +529,8 @@ function captureGeneration(value) {
   });
 }
 
-function boundedInteger(value, minimum, maximum) {
-  return NUMBER_IS_SAFE_INTEGER(value) && value >= minimum && value <= maximum;
-}
-
 function captureLimits(value) {
-  const captured = exactDataObject(value, LIMIT_KEYS);
-  if (
-    captured === null
-    || !boundedInteger(captured.maxHeaderBytes, 512, MAX_HEADER_BYTES)
-    || !boundedInteger(captured.maxHeaderCount, 1, MAX_HEADER_COUNT)
-    || !boundedInteger(captured.maxConcurrentSockets, 1, MAX_CONCURRENT)
-    || !boundedInteger(captured.maxConnectionStarts, 1, MAX_LIFETIME_STARTS)
-    || !boundedInteger(captured.maxConcurrentRequests, 1, MAX_CONCURRENT)
-    || !boundedInteger(captured.maxRequestStarts, 1, MAX_LIFETIME_STARTS)
-    || !boundedInteger(captured.tlsHandshakeDeadlineMs, 1, MAX_DEADLINE_MS)
-    || !boundedInteger(captured.headerDeadlineMs, 1, MAX_DEADLINE_MS)
-    || !boundedInteger(captured.requestResponseDeadlineMs, 1, MAX_DEADLINE_MS)
-    || !boundedInteger(captured.idleSocketDeadlineMs, 1, MAX_DEADLINE_MS)
-    || !boundedInteger(captured.startDeadlineMs, 1, MAX_DEADLINE_MS)
-    || !boundedInteger(captured.closeGraceMs, 1, MAX_DEADLINE_MS)
-    || !boundedInteger(captured.metricsCounterLimit, 1, NUMBER_MAX_SAFE_INTEGER)
-    || captured.maxConcurrentRequests > captured.maxConcurrentSockets
-    || captured.maxConnectionStarts < captured.maxConcurrentSockets
-    || captured.maxRequestStarts < captured.maxConcurrentRequests
-    || captured.maxRequestStarts > captured.maxConnectionStarts
-    || captured.headerDeadlineMs > captured.requestResponseDeadlineMs
-    || captured.requestResponseDeadlineMs > captured.closeGraceMs
-    || captured.tlsHandshakeDeadlineMs > captured.idleSocketDeadlineMs
-    || captured.metricsCounterLimit
-      < captured.maxConnectionStarts + captured.maxRequestStarts + METRIC_RESERVE
-  ) return null;
-  const result = {};
-  for (let index = 0; index < LIMIT_KEYS.length; index += 1) {
-    const key = LIMIT_KEYS[index];
-    result[key] = captured[key];
-  }
-  return OBJECT_FREEZE(result);
+  return captureServiceCreditBoundedHttpsIngressLimits(value);
 }
 
 function captureLifecycle(value) {

@@ -1,5 +1,11 @@
 # Actual issued funding native vertical case: source-only draft
 
+The original clean case has now run and failed; its allowance is consumed.
+See the [retained failure and current source correction](P1_NATIVE_ISSUED_FUNDING_CLEAN_V1_FAILURE_AND_LIMITS_FIX.md).
+The corrected case has not run, and the lost-ACK mode has not run.
+The narrative below preserves the original pre-execution design context;
+its older unused DP allowance statements are historical.
+
 The new case driver hardwires the actual issued-funding application, RPC-only
 peer, DP funding/service client, V6 store, grant operator and bounded native
 HTTPS factory. It does not replace these owners with event facades, canned

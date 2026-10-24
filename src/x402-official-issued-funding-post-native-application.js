@@ -7,6 +7,7 @@ import { createServiceCreditBoundedHttpsIngressOwner } from './service-credit-bo
 import { createDurableServiceCreditHttpSession } from './service-credit-durable-http-session.js';
 import { ZenonFundingIntakeSqliteStore } from './service-credit-zenon-funding-intake-sqlite-store.js';
 import { ServiceCreditSqliteStore } from './service-credit-sqlite-store.js';
+import { captureServiceCreditBoundedHttpsIngressLimits, SERVICE_CREDIT_BOUNDED_HTTPS_INGRESS_LIMIT_FIELDS } from './service-credit-bounded-https-ingress-limits.js';
 
 const FUNDING=createOfficialFundingPostIntakeComposition,INGRESS=createServiceCreditBoundedHttpsIngressOwner;
 const SESSION=createDurableServiceCreditHttpSession,BINDING=createIssuedFundingPostApplicationBinding;
@@ -18,9 +19,7 @@ const THEN=D(PP,'then'),CTOR=D(PP,'constructor'),SPECIES=D(NativePromise,Symbol.
 const INTAKE_PROTO=ZenonFundingIntakeSqliteStore.prototype,SERVICE_PROTO=ServiceCreditSqliteStore.prototype;
 const LOAD_BOUND=D(INTAKE_PROTO,'loadBound').value,GET_GRANT=D(SERVICE_PROTO,'getGrant').value;
 const CREDIT='/service-credit/v1/execute',MAX_ACTIVE=64;
-const LIMITS=['maxHeaderBytes','maxHeaderCount','maxConcurrentSockets','maxConnectionStarts',
-  'maxConcurrentRequests','maxRequestStarts','tlsHandshakeDeadlineMs','headerDeadlineMs',
-  'requestResponseDeadlineMs','idleSocketDeadlineMs','startDeadlineMs','closeGraceMs','metricsCounterLimit'];
+const LIMITS=SERVICE_CREDIT_BOUNDED_HTTPS_INGRESS_LIMIT_FIELDS;
 const BAD=frame(400,'Bad Request'),UNAVAILABLE=frame(503,'Service Unavailable');
 const SERVICE_UNAVAILABLE=F({statusCode:503,contentType:'application/json',body:'{"error":"service_unavailable"}',headers:F({})});
 
@@ -68,8 +67,12 @@ export async function createOfficialIssuedFundingPostNativeApplication(options) 
     // or synthesize a clock; the separate ingress runtime remains two-field.
     serviceConfig=F({...s,deadlineRuntime:F(exact(s.deadlineRuntime,['monotonicNowNs','schedule','cancel']))});
     const t=exact(c.transport,['origin','generation','limits','deadlineRuntime','httpsServerFactory']);
+    // Admit the SAME complete limit contract as the actual native owner before
+    // fresh()/FUNDING can enter SQL, issue a challenge or initialize the SDK.
+    const ingressLimits=captureServiceCreditBoundedHttpsIngressLimits(F(exact(t.limits,LIMITS)));
+    if(ingressLimits===null)fail('configuration');
     transport=F({origin:t.origin,generation:F(exact(t.generation,['generationId','generationVersion'])),
-      limits:F(exact(t.limits,LIMITS)),deadlineRuntime:F(exact(t.deadlineRuntime,['schedule','cancel'])),
+      limits:ingressLimits,deadlineRuntime:F(exact(t.deadlineRuntime,['schedule','cancel'])),
       httpsServerFactory:t.httpsServerFactory});
     route=ROUTE(i.resourceUrl);
     if(typeof transport.origin!=='string'||route.resourceUrl!==transport.origin+'/funding'

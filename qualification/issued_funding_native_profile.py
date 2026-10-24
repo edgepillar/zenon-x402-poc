@@ -19,7 +19,7 @@ ENTRY = "app/qualification/issued-funding-post-native-vertical.case.draft.mjs"
 PRELOAD = "app/qualification/issued-funding-post-native-vertical.preload.draft.mjs"
 BASE = "qualification/dynamic-plasma-full-native-loopback-profile.draft.py"
 BASE_SHA = "3d207079758c864f0d5a767f4e2f2b2ec1c86416405bfc2f28897baf086999ea"
-APP_FILES, PACKAGE_FILES = 116, 404
+APP_FILES, PACKAGE_FILES = 117, 404
 MAX_SOURCE_BYTES, MAX_PROFILE_BYTES = 6291456, 524288
 FIELDS = {"path", "bytes", "LF", "sha256", "gitBlob"}
 VERSIONS = {
@@ -28,8 +28,9 @@ VERSIONS = {
     "packages/@noble/hashes/package.json": "1.8.0",
 }
 FIXED = {
-    ENTRY: "de5068429bb87c256dc26e04c8a050b0e84306ed19231101a98d8267047c15dc",
-    "app/src/x402-official-issued-funding-post-native-application.js": "6a36269185cb095f2a7d2c8ac7c90c2e04432e9ef9590dbbb1ab4fecb33fac9f",
+    ENTRY: "59240af09c54cf9252b016417091157b182a2ae10993e6f3744694bef2b319d8",
+    "app/src/x402-official-issued-funding-post-native-application.js": "19f147de7167ea0c20f51958b3716fb9d8fcc21e63ee6c9d74fe34dcde727cdd",
+    "app/src/service-credit-bounded-https-ingress-limits.js": "35e2cc603398a929979b2f939f558d43002079038922d6248cc654c425eafb68",
     "app/qualification/issued-funding-post-native-grant-operator.fixture.draft.mjs": "b1224cc52ef9a5dd67418392b3064ea79d6a7f8c8abb9c7fb9b986a42bb4f587",
     "app/qualification/issued-funding-post-native-rpc-peer.fixture.draft.mjs": "8500fc75a7736a976a9b07efb537e70f7f4f4ca3a1c7a2ee41d33496f8cb706b",
     "app/src/zenon/dynamic-plasma-native-funding-service-client.js": "5ed9ac6189f2f86bcc2195c5c6da03ecec7e1e779c4084490029270e617743a8",
