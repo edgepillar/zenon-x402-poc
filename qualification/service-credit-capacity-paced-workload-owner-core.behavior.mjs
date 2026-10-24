@@ -84,7 +84,7 @@ function fixture(options = {}) {
     assert.ok(timer); h.fire(timer);
   };
   if (options.before) options.before(config, h);
-  h.config = config; h.owner = create(config);
+  h.config = config; h.owner = (options.factory ?? create)(config);
   return h;
 }
 async function complete(h, bound = 40) {
@@ -110,6 +110,9 @@ test('paced construction is inert and retains the genuine owner without host ent
   assert.deepEqual(h.events, []); assert.equal(h.clockCalls, 0); assert.equal(h.timers.length, 0);
   assert.equal(h.owner.inspect().core.phase, 'CREATED');
 });
+
+// Reuse explicit DATA host fixtures, not a copied SDK/application substitute.
+export { fixture, complete, ticks, deferred };
 test('one funding and unchanged warmup precede globally spaced measured calls', async () => {
   const h = fixture(), s = await complete(h);
   assert.equal(s.outcome, 'OBSERVED_OWNERS_RETURNED'); assertData(s);

@@ -1,5 +1,6 @@
 import { types as utilTypes } from 'node:util';
-import { createServiceCreditCapacityWindowedAsyncWorkloadOwnerCore } from './service-credit-capacity-windowed-async-workload-owner-core.js';
+import { createServiceCreditCapacityWindowedAsyncWorkloadOwnerCore,
+  createServiceCreditCapacityWindowedAsyncWorkloadOwnerCoreWithPrivateTimingTrace } from './service-credit-capacity-windowed-async-workload-owner-core.js';
 import { createServiceCreditCapacityRecorder } from './service-credit-capacity-recorder.js';
 
 const F = Object.freeze, A = Reflect.apply, D = Object.getOwnPropertyDescriptor;
@@ -8,6 +9,7 @@ const DEFINE = Object.defineProperty, IS_PROXY = utilTypes.isProxy, IS_PROMISE =
 const NATIVE = Promise, PP = NATIVE.prototype, THEN = D(PP, 'then');
 const CTOR = D(PP, 'constructor'), SPECIES = D(NATIVE, Symbol.species);
 const CORE = createServiceCreditCapacityWindowedAsyncWorkloadOwnerCore;
+const TRACED_CORE = createServiceCreditCapacityWindowedAsyncWorkloadOwnerCoreWithPrivateTimingTrace;
 const RECORDER = createServiceCreditCapacityRecorder;
 const MAX_NS = (1n << 128n) - 1n, MILLION = 1000000n;
 const METHODS = F(['fund', 'execute', 'checkBalances', 'openMeasurementWindow', 'stopMeasurementWindow', 'close']);
@@ -37,6 +39,16 @@ const OUTCOMES = F(['SUCCEEDED', 'REJECTED', 'UNKNOWN']);
  */
 export function createServiceCreditCapacityPacedWorkloadOwnerCore(configuration) {
   if (arguments.length !== 1 || !invariant()) fail('configuration_rejected');
+  return construct(configuration, false);
+}
+
+/** Explicit private DATA capture; ordinary reports never include raw events. */
+export function createServiceCreditCapacityPacedWorkloadOwnerCoreWithPrivateTimingTrace(configuration) {
+  if (arguments.length !== 1 || !invariant()) fail('configuration_rejected');
+  return construct(configuration, true);
+}
+
+function construct(configuration, traceEnabled) {
   let plan, limits, runtime, lanes, gapMs;
   try {
     const c = exact(configuration, ['plan', 'recordingLimits', 'runtime', 'lanes', 'pacing']);
@@ -68,8 +80,17 @@ export function createServiceCreditCapacityPacedWorkloadOwnerCore(configuration)
   let requested = 0, entered = 0, withheld = 0, pendingSource = 0, peakQueued = 0, timersStarted = 0;
   const queue = [], pending = new Set();
   const queueRecorder = RECORDER(limits), sourceRecorder = RECORDER(limits);
+  const privateEvents = traceEnabled ? [] : null, maximumEvents = 4 * limits.maxSamplesPerPhase + 1;
+  let privateCached = null, privateIssue = false;
 
   function unknown(code) { if (issue === null) issue = code; }
+  function append(row) {
+    if (!traceEnabled) return;
+    if (privateCached !== null || privateEvents.length >= maximumEvents) {
+      privateIssue = true; fail('private_timing_limit');
+    }
+    privateEvents.push(F({ sequence: privateEvents.length + 1, ...row }));
+  }
   function clock() {
     const at = A(NOW, undefined, []);
     if (typeof at !== 'bigint' || at < 0n || at > MAX_NS || lastClock !== null && at < lastClock) fail('clock_rejected');
@@ -104,6 +125,9 @@ export function createServiceCreditCapacityPacedWorkloadOwnerCore(configuration)
         if (row.wait !== null && final === null && at !== null) {
           try { row.wait.finish('REJECTED', at); } catch { unknown('PACING_RECORDING_UNKNOWN'); }
         }
+        try { append({ kind: 'WITHDRAW', request: row.request, recordedWait: row.wait !== null,
+          atNs: at === null ? null : String(at) }); }
+        catch { privateIssue = true; unknown('PRIVATE_TIMING_UNKNOWN'); }
         row.command = null; row.resolve('REJECTED');
       }
     } finally { withdrawing = false; }
@@ -117,12 +141,17 @@ export function createServiceCreditCapacityPacedWorkloadOwnerCore(configuration)
     if (row.state !== 'ENTERED') return;
     if (!observed) {
       // A throw or non-Promise is NOT evidence that an entered effect drained.
-      row.state = 'UNOBSERVABLE'; fault('SOURCE_PROMISE_UNKNOWN'); row.resolve('UNKNOWN'); return;
+      row.state = 'UNOBSERVABLE';
+      try { append({ kind: 'UNOBSERVABLE', request: row.request }); } catch { privateIssue = true; }
+      fault('SOURCE_PROMISE_UNKNOWN'); row.resolve('UNKNOWN'); return;
     }
     row.state = 'SETTLED'; pending.delete(row); pendingSource--;
     const outcome = OUTCOMES.includes(value) ? value : 'UNKNOWN';
     if (final === null) {
-      try { row.source.finish(outcome, clock()); } catch { fault('PACING_RECORDING_UNKNOWN'); }
+      try {
+        const at = clock(); row.source.finish(outcome, at);
+        append({ kind: 'SOURCE_TERMINAL', request: row.request, outcome, atNs: String(at) });
+      } catch { fault('PACING_RECORDING_UNKNOWN'); }
     }
     row.command = null;
     if (outcome === 'UNKNOWN') fault('SOURCE_OUTCOME_UNKNOWN');
@@ -183,6 +212,7 @@ export function createServiceCreditCapacityPacedWorkloadOwnerCore(configuration)
       queue.shift();
       row.state = 'ENTERED'; pending.add(row); pendingSource++; entered++;
       const command = row.command; row.command = null;
+      append({ kind: 'DISPATCH', request: row.request, atNs: String(at) });
       let result;
       try { result = A(row.execute, undefined, [command]); }
       catch { terminal(row, undefined, false); return; }
@@ -191,32 +221,36 @@ export function createServiceCreditCapacityPacedWorkloadOwnerCore(configuration)
     } catch { fault('PACING_RECORDING_OR_CLOCK_UNKNOWN'); }
     finally { pumping = false; }
   }
-  function execute(lane, command) {
+  function execute(lane, command, laneIndex) {
     if (command.cohort !== 'MEASUREMENT') return A(lane.execute, undefined, [command]);
     const cap = capability(), row = { state: 'QUEUED', execute: lane.execute, command,
       resolve: cap.resolve, wait: null, source: null };
-    requested++; queue.push(row); peakQueued = Math.max(peakQueued, queue.length);
+    requested++; row.request = requested; queue.push(row); peakQueued = Math.max(peakQueued, queue.length);
     if (queue.length > lanes.length || requested > limits.maxSamplesPerPhase) {
       fault('PACING_CAPACITY_UNKNOWN'); return cap.promise;
     }
     try {
+      append({ kind: 'REQUEST', request: row.request, lane: laneIndex, ordinal: command.ordinal });
       const at = clock();
-      if (!stopped && row.state === 'QUEUED') row.wait = queueRecorder.begin('FUNDED_CALL', at);
+      if (!stopped && row.state === 'QUEUED') {
+        row.wait = queueRecorder.begin('FUNDED_CALL', at);
+        append({ kind: 'WAIT_BEGIN', request: row.request, atNs: String(at) });
+      }
       if (stopped) withdraw();
       else pump(at);
     } catch { fault('PACING_RECORDING_OR_CLOCK_UNKNOWN'); }
     return cap.promise;
   }
 
-  const wrapped = F(lanes.map(lane => F({
+  const wrapped = F(lanes.map((lane, laneIndex) => F({
     fund: F(function fund(command) { return A(lane.fund, undefined, [command]); }),
-    execute: F(function measuredExecute(command) { return execute(lane, command); }),
+    execute: F(function measuredExecute(command) { return execute(lane, command, laneIndex); }),
     checkBalances: F(function checkBalances() { return A(lane.checkBalances, undefined, []); }),
     openMeasurementWindow: F(function openMeasurementWindow() { return A(lane.openMeasurementWindow, undefined, []); }),
     stopMeasurementWindow: F(function stopMeasurementWindow() { withdraw(); return A(lane.stopMeasurementWindow, undefined, []); }),
     close: F(function close() { withdraw(); return A(lane.close, undefined, []); }),
   })));
-  core = CORE({ plan, recordingLimits: limits, lanes: wrapped, runtime: {
+  core = (traceEnabled ? TRACED_CORE : CORE)({ plan, recordingLimits: limits, lanes: wrapped, runtime: {
     monotonicNowNs: F(clock), schedule: F(schedule),
     cancel: F(function cancel(token) { return A(CANCEL, undefined, [token]); }),
   } });
@@ -230,6 +264,12 @@ export function createServiceCreditCapacityPacedWorkloadOwnerCore(configuration)
     if (pendingSource || waiting === null || dispatched === null
         || waiting.recordingState === 'INCOMPLETE' || dispatched.recordingState === 'INCOMPLETE')
       unknown('PACING_DRAIN_UNKNOWN');
+    let coreTrace = null;
+    if (traceEnabled) {
+      try { append({ kind: 'FINALIZE' }); } catch { privateIssue = true; }
+      try { coreTrace = core.captureTimingEvidence(); } catch { privateIssue = true; }
+      if (privateIssue) unknown('PRIVATE_TIMING_UNKNOWN');
+    }
     final = F({
       pacedCapacityWorkloadOwnerVersion: 1, scope: 'TRUSTED_PACED_SOURCE_LANES_NOT_NATIVE_QUALIFICATION',
       outcome: issue === null && coreResult.outcome === 'OBSERVED_OWNERS_RETURNED'
@@ -243,6 +283,16 @@ export function createServiceCreditCapacityPacedWorkloadOwnerCore(configuration)
       queueWaitRecording: waiting, dispatchedCallRecording: dispatched, core: coreResult,
       nativeEventsAuthenticated: false, nativeResourcesQualified: false, fixedOfferedRateQualified: false,
       sustainableCapacityQualified: false, productionQualified: false, authority: 'NONE',
+    });
+    if (traceEnabled) privateCached = F({
+      pacedTimingTraceVersion: 1, scope: 'PRIVATE_PACED_PARENT_SOURCE_DATA_NOT_NATIVE_AUTHENTICATION',
+      clockDomain: 'PARENT_MONOTONIC_SHARED_WITH_CORE_NOT_CHILD_OR_SQL',
+      limits, laneCount: lanes.length, minimumStartGapMs: gapMs, maximumEvents,
+      unknown: privateIssue || final.outcome !== 'OBSERVED_OWNERS_RETURNED' || coreTrace === null
+        || coreTrace.unknown || coreResult.recording === null || coreResult.recording.measurementNanoseconds === null,
+      events: F(privateEvents), coreParentTimingTrace: coreTrace,
+      rawIdentifiersIncluded: false, additionalClockReads: 0, nativeEventsAuthenticated: false,
+      nativeResourcesQualified: false, sustainableCapacityQualified: false, authority: 'NONE',
     });
     resolveRun(final);
   }
@@ -270,7 +320,11 @@ export function createServiceCreditCapacityPacedWorkloadOwnerCore(configuration)
       pacingTimerPending: timer !== null, peakQueuedCalls: peakQueued, finalCached: final !== null,
       core: core.inspect(), authority: 'NONE' });
   });
-  return F({ run, stop, inspect });
+  const captureTimingEvidence = F(function captureTimingEvidence() {
+    if (arguments.length !== 0 || privateCached === null) fail('private_timing_not_finalized');
+    return privateCached;
+  });
+  return traceEnabled ? F({ run, stop, inspect, captureTimingEvidence }) : F({ run, stop, inspect });
 }
 
 function exact(value, fields, frozen = false) {
