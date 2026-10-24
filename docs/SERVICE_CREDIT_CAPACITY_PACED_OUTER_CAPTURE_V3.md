@@ -107,7 +107,10 @@ and this full DATA verifier are implemented. The later
 [new managed launcher](SERVICE_CREDIT_CAPACITY_PACED_MANAGED_LAUNCHER_V3.md)
 now binds these actual controls with 89 passing DATA cases plus a source-only CLI.
 Its native branch is authored, not executed; physical new policy admission and
-positive complete selected-default application evidence remain open. The original R4 finite approval is
+actual selected-default native application evidence remain open. The later
+[exact-default source DATA pipeline](SERVICE_CREDIT_CAPACITY_PACED_SELECTED_DEFAULT_SOURCE.md)
+passes 15 controls for the full four-call plan without upgrading it to native evidence.
+The original R4 finite approval is
 unconsumed and not transferred. Exact finite authority plus fresh source/tool/
 storage admission remains required before any new native graph can run.
 
