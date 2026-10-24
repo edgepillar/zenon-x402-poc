@@ -1,0 +1,260 @@
+{
+  "kind": "ACTUAL_SHARED_RETIRED_ERROR_LATCH_COMPONENT_NOT_NATIVE_READ_QUALIFICATION",
+  "status": "PASS_COMPONENT_ONLY",
+  "localDate": "2026-10-24",
+  "sourceParent": "dac74bb9555f48d9b379d07f5a35ac18a8824f45",
+  "mainParent": "5d229cee069904c09ef6a870d29d837bc5e51389",
+  "execution": {
+    "componentRuntimeNodeCommands": 1,
+    "syntaxOnlyNodeCommands": 5,
+    "NodeChildren": 0,
+    "nodeVersion": "24.19.0",
+    "platform": "darwin",
+    "arch": "arm64",
+    "nodeSha256": "dbedff294bab84a0a86c04e15fbcbeb1c97ca10bef1b32b0634cd24b36f62100",
+    "componentActualExit": 0,
+    "outputComplete": true,
+    "sourceCopies": 0,
+    "newManagedRoots": 0,
+    "newManagedTasks": 0,
+    "newQualificationScratchBytes": 0,
+    "SDKImports": 0,
+    "SQLiteOpens": 0,
+    "networkCalls": 0,
+    "keys": 0,
+    "signatures": 0,
+    "nonceSearch": 0,
+    "OpenSSLCommands": 0,
+    "realPrepare": 0
+  },
+  "counts": {
+    "tests": 5,
+    "passed": 5,
+    "failed": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "executedInputs": [
+    {
+      "path": "package.json",
+      "bytes": 2677,
+      "LF": 40,
+      "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+      "gitBlob": "45752ffde39d29666094f7f1c755060d75e43deb"
+    },
+    {
+      "path": "src/zenon/native-read-retired-error-latch.js",
+      "bytes": 994,
+      "LF": 24,
+      "sha256": "a7c2c242f2df97e8f6fcd6171d0f24b3ec048f25115135dcb08dd83a21f48d84",
+      "gitBlob": "97cff24934379cf9d8b1ae9b5fe43df68afd6483"
+    },
+    {
+      "path": "qualification/native-read-retired-error-latch.behavior.draft.mjs",
+      "bytes": 3491,
+      "LF": 58,
+      "sha256": "e079d4b1c0d51c3ec69b6b4864a3eb317d5d0902b6007092c3e8cc921795db55",
+      "gitBlob": "797bc22609847ec16da4cb15140287e64af8e338"
+    }
+  ],
+  "selectedCases": [
+    "Inert frozen capabilities with no reset.",
+    "Getter-bearing error data is not read; the true state is permanent.",
+    "Proxy event arguments are not inspected.",
+    "Independent owner latches ignore emitter receiver data.",
+    "Invalid factory/inspection arity refuses without clearing uncertainty."
+  ],
+  "capture": {
+    "stdout": {
+      "bytes": 1242,
+      "sha256": "a7ac0f30328de400f9850a82e1387a647c939b6bf7a2111954e65342b3f75d11"
+    },
+    "stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "byteCapPerStream": 65536,
+    "timeoutSeconds": 15,
+    "rawOutputInCommandTranscript": true,
+    "rawOutputPublished": false,
+    "OSOrNetworkSandbox": false
+  },
+  "syntaxOnly": {
+    "NodeCommands": 5,
+    "inputs": [
+      {
+        "path": "package.json",
+        "bytes": 2677,
+        "LF": 40,
+        "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+        "gitBlob": "45752ffde39d29666094f7f1c755060d75e43deb"
+      },
+      {
+        "path": "src/zenon/bounded-json-rpc-https-exchange-owner.js",
+        "bytes": 44831,
+        "LF": 941,
+        "sha256": "c270192d97be823f94eca1f5db6cf2fbf7f6128049e686579a00dedc3d8cc410",
+        "gitBlob": "e9c2420bed6a6f9d0a739384bceecb8f73cb86c0"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-retained-https-read-owners.js",
+        "bytes": 5371,
+        "LF": 104,
+        "sha256": "725ee84143fd18416e638ae6acc0295e1fdea9c20fb4ee67d8b3e35b5bec77e8",
+        "gitBlob": "f496edb1ea70c67f5b1303f4322c0ace56156a86"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-retained-https-read-session.js",
+        "bytes": 7345,
+        "LF": 135,
+        "sha256": "e2e081c26a69f6cdf91cf30bdb14510b6fdb141b81b74b1fe0753d16f8be53c5",
+        "gitBlob": "575f803c66b9f85aed162dc46ab9b532a3fd8693"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-native-https-original-funding-submission.js",
+        "bytes": 10947,
+        "LF": 182,
+        "sha256": "9005bbcde0d3d05771f021916985d3238953d679eca136cb90226a8e940d6207",
+        "gitBlob": "b75e2ef97030e712d704d88fe3cb9d5e103039a1"
+      }
+    ],
+    "results": [
+      {
+        "input": {
+          "path": "src/zenon/bounded-json-rpc-https-exchange-owner.js",
+          "bytes": 44622,
+          "LF": 937,
+          "sha256": "1dae53406d5892f7b3323a6c292633be808cdeb966246009685f415efca18720",
+          "gitBlob": "9ae0e99d00a25c6a1614e3ff9fa41aedad52c848"
+        },
+        "actualExit": 0,
+        "outputComplete": true,
+        "streams": {
+          "stdout": {
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "stderr": {
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        "applicationImported": false,
+        "applicationExecuted": false,
+        "historicalSupersededSource": true
+      },
+      {
+        "input": {
+          "path": "src/zenon/dynamic-plasma-retained-https-read-owners.js",
+          "bytes": 5371,
+          "LF": 104,
+          "sha256": "725ee84143fd18416e638ae6acc0295e1fdea9c20fb4ee67d8b3e35b5bec77e8",
+          "gitBlob": "f496edb1ea70c67f5b1303f4322c0ace56156a86"
+        },
+        "actualExit": 0,
+        "outputComplete": true,
+        "streams": {
+          "stdout": {
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "stderr": {
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        "applicationImported": false,
+        "applicationExecuted": false
+      },
+      {
+        "input": {
+          "path": "src/zenon/dynamic-plasma-retained-https-read-session.js",
+          "bytes": 7345,
+          "LF": 135,
+          "sha256": "e2e081c26a69f6cdf91cf30bdb14510b6fdb141b81b74b1fe0753d16f8be53c5",
+          "gitBlob": "575f803c66b9f85aed162dc46ab9b532a3fd8693"
+        },
+        "actualExit": 0,
+        "outputComplete": true,
+        "streams": {
+          "stdout": {
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "stderr": {
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        "applicationImported": false,
+        "applicationExecuted": false
+      },
+      {
+        "input": {
+          "path": "src/zenon/dynamic-plasma-native-https-original-funding-submission.js",
+          "bytes": 10947,
+          "LF": 182,
+          "sha256": "9005bbcde0d3d05771f021916985d3238953d679eca136cb90226a8e940d6207",
+          "gitBlob": "b75e2ef97030e712d704d88fe3cb9d5e103039a1"
+        },
+        "actualExit": 0,
+        "outputComplete": true,
+        "streams": {
+          "stdout": {
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "stderr": {
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        "applicationImported": false,
+        "applicationExecuted": false
+      },
+      {
+        "input": {
+          "path": "src/zenon/bounded-json-rpc-https-exchange-owner.js",
+          "bytes": 44831,
+          "LF": 941,
+          "sha256": "c270192d97be823f94eca1f5db6cf2fbf7f6128049e686579a00dedc3d8cc410",
+          "gitBlob": "e9c2420bed6a6f9d0a739384bceecb8f73cb86c0"
+        },
+        "actualExit": 0,
+        "outputComplete": true,
+        "streams": {
+          "stdout": {
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "stderr": {
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        "applicationImported": false,
+        "applicationExecuted": false
+      }
+    ],
+    "correction": "Native-core rejected close settlement now latches uncertainty permanently; this final source was syntax-checked once after review. The earlier four captures are retained, not rebound."
+  },
+  "interpretation": {
+    "actualProductionLeafImported": true,
+    "nativeReadOwnerImported": false,
+    "nativeReadOwnerConstructed": false,
+    "nativeReadOwnerOrSessionExecuted": false,
+    "nativeReadGraph": "PARSED_SOURCE_ONLY_NOT_IMPORTED_OR_EXECUTED",
+    "newV4ResourceGuard": "SOURCE_INTEGRATED_NOT_RUNTIME_QUALIFIED",
+    "nativePhysicalDrain": "NOT_ESTABLISHED",
+    "actualTlsAuthentication": false,
+    "fullP1": false,
+    "fullP2": false,
+    "livePayment": false,
+    "providerAuthority": false,
+    "productionReady": false,
+    "priorTlsAllowanceConsumed": 2,
+    "newTlsAttempt": 0,
+    "CI": "NOT_RUN_NOT_GREEN"
+  }
+}
