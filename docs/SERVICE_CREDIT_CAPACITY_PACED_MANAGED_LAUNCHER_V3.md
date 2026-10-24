@@ -76,9 +76,12 @@ against the actual selected default. Even matching lane labels cannot hide the
 two-versus-four measurement-call mismatch. That smaller fixture is never
 promoted to evidence for the default application run.
 
-This does NOT yet supply a positive complete default four-call outer fixture,
-a real managed/native composition, command provenance, physical roots, TLS,
-SQLite, signatures, nonce execution, native timing or cleanup qualification.
+At this snapshot the positive complete default four-call fixture was pending.
+The later [exact selected-default source pipeline](SERVICE_CREDIT_CAPACITY_PACED_SELECTED_DEFAULT_SOURCE.md)
+now binds the actual full plan, profiles, entry and complete outer DATA with
+15 passing controls. It does not supply real managed/native composition,
+command provenance, physical roots, TLS, SQLite, signatures, nonce execution,
+native timing or cleanup qualification.
 Synthetic task/root/CAS references remain declarations and are never opened.
 
 ## Actual results, preserved old lanes and next gates
@@ -107,8 +110,8 @@ Old launcher/declarations, source-bound failures/results, original child graph
 and unconsumed R4 approval are unchanged. The manager contract was reviewed;
 the private local implementation pointer is not copied into public artifacts.
 
-Next gates include a positive complete selected-default source fixture,
-independent review, a new finite native scope and fresh successful physical
+The selected-default source-fixture gate is established by that later result.
+Next gates include independent review, a new finite native scope and fresh successful physical
 admission. Actual native application/receipts, storage HOLD/release, sustainable
 capacity, chain/economic acceptance, pilot and production remain unqualified.
 The separate four-existing-runtime-file regression gate for full paced main
