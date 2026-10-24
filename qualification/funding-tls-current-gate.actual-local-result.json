@@ -1,0 +1,439 @@
+{
+  "resultVersion": 1,
+  "status": "PASS_PURE_GATE_AND_SOURCE_ADMISSION_NOT_TLS",
+  "sourceParent": "87b55e77353d8545ce94698a29f986165b5574f0",
+  "mainParent": "cc19f63b912b45b720e3e8fdba8f433ee8b0d7bc",
+  "runtime": {
+    "python": "3.12.14",
+    "pythonPlatform": "darwin",
+    "nodeSyntaxOnly": "24.19.0",
+    "bytecodeDisabled": true,
+    "compileCacheDisabled": true
+  },
+  "execution": {
+    "initialFailedPythonUnitCommands": 1,
+    "finalPythonUnitCommands": 1,
+    "sourceOnlyAdmissionCommands": 1,
+    "totalSelectedPythonCheckCommands": 3,
+    "nodeSyntaxOnlyCommands": 2,
+    "nativeNodeTestCommands": 0,
+    "OpenSslCommands": 0,
+    "managerImported": false,
+    "outputCaptureComplete": true,
+    "pythonCapturePerStreamBytes": 32768,
+    "pythonSupervisorDeadlineSeconds": 15,
+    "osOrNetworkSandboxClaim": false
+  },
+  "currentPureUnit": {
+    "summary": {
+      "event": "CURRENT_FUNDING_TLS_PURE_GATE_TESTS",
+      "tests": 16,
+      "pythonVersion": "3.12.14",
+      "platform": "darwin",
+      "bytecodeDisabled": true,
+      "passed": 16,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "nativeTlsExecuted": false,
+      "OpenSslCommands": 0,
+      "nodeCommands": 0,
+      "managerImported": false,
+      "newManagedRoots": 0,
+      "newManagedTasks": 0,
+      "qualificationScratchBytes": 0,
+      "privateKeysGenerated": 0,
+      "pemDataIsSyntheticNotCryptographic": true,
+      "sourceMapsAreSyntheticNotApplicationRuns": true,
+      "authority": "NONE"
+    },
+    "inputs": [
+      {
+        "path": "qualification/funding_tls_current_gate.py",
+        "bytes": 7969,
+        "LF": 145,
+        "sha256": "9777b8dca3c8c86e543c1f202c0cde248280ed3a108df4a688565ccf83132936",
+        "gitBlob": "91362d22ca606a6711612b02ecea3c6e92c55a59"
+      },
+      {
+        "path": "qualification/funding-tls-current-gate.test.py",
+        "bytes": 9221,
+        "LF": 165,
+        "sha256": "cd720c62a74967ba1b1a56436fc50fa561f9b35ff0000992374d97a7dfd1febf",
+        "gitBlob": "6f456d797e7cc830a40b5ae066c8624c3aafadda"
+      }
+    ],
+    "actualExit": 0,
+    "streams": {
+      "stdout": {
+        "bytes": 507,
+        "sha256": "4ac13ea7724e2daf0062f0b8f257911301fd9dc131caf17bf07e019d6ec13cd3"
+      },
+      "stderr": {
+        "bytes": 2811,
+        "sha256": "dbedf7e13c3e025450c82fa4f41552dbecc4f047541cace40fec95141f54ef5e"
+      }
+    },
+    "fixtures": "SYNTHETIC_SOURCE_MAPS_AND_NON_CRYPTOGRAPHIC_PEM_DATA",
+    "selfContainedWithoutNativeProfileFiles": true
+  },
+  "currentSourceAdmission": {
+    "summary": {
+      "event": "CURRENT_FUNDING_TLS_SOURCE_ADMITTED",
+      "sourceInputs": 11,
+      "productionModules": 4,
+      "selectedCases": 4,
+      "maximumRuns": 1,
+      "effectsExecuted": false,
+      "authority": "NONE"
+    },
+    "actualExit": 0,
+    "inputs": [
+      {
+        "path": "package.json",
+        "bytes": 2677,
+        "LF": 40,
+        "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+        "gitBlob": "45752ffde39d29666094f7f1c755060d75e43deb"
+      },
+      {
+        "path": "src/service-credit-funding-post-native-https-transport.js",
+        "bytes": 18761,
+        "LF": 327,
+        "sha256": "3b3fec921b46c62ed7557043f99cffb2e1a12f515bf4e607ea8f61525db28b7c",
+        "gitBlob": "ea47b0e9cc9479f6bb98b07b3b886d6100c630e3"
+      },
+      {
+        "path": "src/service-credit-funding-post-native-response.js",
+        "bytes": 7903,
+        "LF": 157,
+        "sha256": "b5084844ecf029445bc55efd0b9d0ef61b8c2e65424ea74a6dfb30941f9f676c",
+        "gitBlob": "0bae9c30c7a11624612418bb6a1e7643effb0775"
+      },
+      {
+        "path": "src/service-credit-native-client-close-owner.js",
+        "bytes": 7170,
+        "LF": 149,
+        "sha256": "00366016a37cf71234cb305e860b5d3f406c97f6b6a7af8569ae76726b759c91",
+        "gitBlob": "ed68174f93050d837786ab799b3b6dee5f7e0676"
+      },
+      {
+        "path": "src/service-credit-funding-post-readable-flow.js",
+        "bytes": 1568,
+        "LF": 34,
+        "sha256": "e624b56cabfb72aed927f0fb78d866b90da2bde5aefdadd71a16f65159e48d4e",
+        "gitBlob": "ac52bba7279286e6a0b33b0feca57d8a1eefc6c5"
+      },
+      {
+        "path": "qualification/funding-post-native-loopback-tls-current.selection.draft.mjs",
+        "bytes": 1117,
+        "LF": 19,
+        "sha256": "7c5cfe4e25e106a59b027dcc5d044e992c2846c1767bcf9606b5a0cdefdabaac",
+        "gitBlob": "3978f77bbe4d29ac57834636fe9d49dc69dc55d8"
+      },
+      {
+        "path": "qualification/funding-post-native-loopback-tls-current.behavior.draft.mjs",
+        "bytes": 13740,
+        "LF": 236,
+        "sha256": "d9c24efd6ddec096d24d2c59564322aa5399365bcb671fc362f524dc70f029e3",
+        "gitBlob": "2fb7f9f497456f37fc664cfbf1fa76400fe8c9f3"
+      },
+      {
+        "path": "qualification/funding-post-native-loopback-tls-current.storage-policy.json",
+        "bytes": 381,
+        "LF": 14,
+        "sha256": "5a119a458177c23cc8625a5be19332ecadb7bf2e84557e92d335fa1a1a4c816a",
+        "gitBlob": "a52986562f8970ccbdb7d308a2e86fdc1331fc50"
+      },
+      {
+        "path": "qualification/funding_tls_current_gate.py",
+        "bytes": 7969,
+        "LF": 145,
+        "sha256": "9777b8dca3c8c86e543c1f202c0cde248280ed3a108df4a688565ccf83132936",
+        "gitBlob": "91362d22ca606a6711612b02ecea3c6e92c55a59"
+      },
+      {
+        "path": "qualification/run-funding-post-native-loopback-tls-current.local.py",
+        "bytes": 12995,
+        "LF": 237,
+        "sha256": "bafa60958622784220f50f988fe40312522bfa977a1e4319210651b7aaedf827",
+        "gitBlob": "b80a9ae566960805e6e34c04f6e75b591b99faed"
+      },
+      {
+        "path": "qualification/run-funding-post-native-loopback-tls.local.py",
+        "bytes": 17205,
+        "LF": 311,
+        "sha256": "4535d39c312d9bcd59a0b3890d71f79df46628c1b7d8f8be63b51747e10d33f1",
+        "gitBlob": "e484adeb02800f66c518ce8be52f0de57800b640"
+      },
+      {
+        "path": "qualification/funding-post-native-loopback-tls-current.inputs.json",
+        "bytes": 4718,
+        "LF": 138,
+        "sha256": "523827fb540b30d15f954e93b3245e1efdde84fca3aeafba9bddaac363c471b9",
+        "gitBlob": "08e6a34b6b103988a5b4017548b5b410eecb336f"
+      }
+    ],
+    "manifestSha256": "523827fb540b30d15f954e93b3245e1efdde84fca3aeafba9bddaac363c471b9",
+    "streams": {
+      "stdout": {
+        "bytes": 178,
+        "sha256": "745bd2b5318ec61adf069d828863ba973390f26c3bc7ead4e359cf0a97846a8f"
+      },
+      "stderr": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    "meaning": "Exact real source pins and observed literal-import graph admitted; no native application import or execution."
+  },
+  "syntaxOnly": {
+    "inputs": [
+      {
+        "path": "package.json",
+        "bytes": 2677,
+        "LF": 40,
+        "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+        "gitBlob": "45752ffde39d29666094f7f1c755060d75e43deb"
+      },
+      {
+        "path": "qualification/funding-post-native-loopback-tls-current.selection.draft.mjs",
+        "bytes": 1117,
+        "LF": 19,
+        "sha256": "7c5cfe4e25e106a59b027dcc5d044e992c2846c1767bcf9606b5a0cdefdabaac",
+        "gitBlob": "3978f77bbe4d29ac57834636fe9d49dc69dc55d8"
+      },
+      {
+        "path": "qualification/funding-post-native-loopback-tls-current.behavior.draft.mjs",
+        "bytes": 13740,
+        "LF": 236,
+        "sha256": "d9c24efd6ddec096d24d2c59564322aa5399365bcb671fc362f524dc70f029e3",
+        "gitBlob": "2fb7f9f497456f37fc664cfbf1fa76400fe8c9f3"
+      }
+    ],
+    "results": [
+      {
+        "input": {
+          "path": "qualification/funding-post-native-loopback-tls-current.selection.draft.mjs",
+          "bytes": 1117,
+          "LF": 19,
+          "sha256": "7c5cfe4e25e106a59b027dcc5d044e992c2846c1767bcf9606b5a0cdefdabaac",
+          "gitBlob": "3978f77bbe4d29ac57834636fe9d49dc69dc55d8"
+        },
+        "syntaxActualExit": 0,
+        "outputComplete": true,
+        "reason": null,
+        "streams": {
+          "stdout": {
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "stderr": {
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        "applicationImported": false,
+        "applicationExecuted": false
+      },
+      {
+        "input": {
+          "path": "qualification/funding-post-native-loopback-tls-current.behavior.draft.mjs",
+          "bytes": 13740,
+          "LF": 236,
+          "sha256": "d9c24efd6ddec096d24d2c59564322aa5399365bcb671fc362f524dc70f029e3",
+          "gitBlob": "2fb7f9f497456f37fc664cfbf1fa76400fe8c9f3"
+        },
+        "syntaxActualExit": 0,
+        "outputComplete": true,
+        "reason": null,
+        "streams": {
+          "stdout": {
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "stderr": {
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        "applicationImported": false,
+        "applicationExecuted": false
+      }
+    ],
+    "applicationImported": false,
+    "applicationExecuted": false
+  },
+  "initialFailure": {
+    "summary": {
+      "event": "CURRENT_FUNDING_TLS_PURE_GATE_TESTS",
+      "tests": 16,
+      "pythonVersion": "3.12.14",
+      "platform": "darwin",
+      "bytecodeDisabled": true,
+      "passed": 14,
+      "failures": 2,
+      "errors": 0,
+      "skipped": 0,
+      "nativeTlsExecuted": false,
+      "OpenSslCommands": 0,
+      "nodeCommands": 0,
+      "managerImported": false,
+      "newManagedRoots": 0,
+      "newManagedTasks": 0,
+      "qualificationScratchBytes": 0,
+      "privateKeysGenerated": 0,
+      "pemDataIsSyntheticNotCryptographic": true,
+      "authority": "NONE"
+    },
+    "actualExit": 1,
+    "streams": {
+      "stdout": {
+        "bytes": 457,
+        "sha256": "f0909fddbc98cb1fdb71f861193dc9ff06e3539e8517249f1a3bf4c1d2adde73"
+      },
+      "stderr": {
+        "bytes": 4300,
+        "sha256": "71110204e1da584b4bd216f3f455ca835081a5412b5e50ee500524fea626fe95"
+      }
+    },
+    "sourceOnlyAdmissionEntered": false,
+    "inputsObservedBeforeCorrection": [
+      {
+        "path": "qualification/funding_tls_current_gate.py",
+        "bytes": 7670,
+        "LF": 141,
+        "sha256": "4de732d96d28364027da2ee0dcb1a4d322ed8f1cdaa1bee06960eae2e70af50e",
+        "gitBlob": "23d0cfe58c77c33d4fef7918bb1d3744d84bf776"
+      },
+      {
+        "path": "qualification/funding-post-native-loopback-tls-current.inputs.json",
+        "bytes": 4718,
+        "LF": 138,
+        "sha256": "b3e1194a68f061b26a998953ef78c55fc25d31536a5a5330bbab34230ac9e4be",
+        "gitBlob": "9ff8d320bb260792b6bc0a50b83fa2a38ce6c68d"
+      },
+      {
+        "path": "qualification/funding-tls-current-gate.test.py",
+        "bytes": 8589,
+        "LF": 157,
+        "sha256": "752bb4120e7b3ae68bcc17688486f7d13e9b5d96202cb6f295e43edbd8361d68",
+        "gitBlob": "2c806fcc2f3f231ab0cbd546c1027e1c5df60d22"
+      }
+    ],
+    "defect": "Bare import statements were missed. Two negative cases failed. The current gate handles bare/static/dynamic literal imports and conservatively refuses unaccounted import tokens.",
+    "historicalResultRebound": false
+  },
+  "plannedNativeSelection": {
+    "status": "NOT_EXECUTED_AUTHORITY_PENDING",
+    "effectsCeiling": {
+      "selectedCases": 4,
+      "maximumRuns": 1,
+      "opensslCommandsPerRun": 1,
+      "nodeCommandsPerRun": 1,
+      "nodeChildren": 0,
+      "loopbackConnectionsPerRun": 8,
+      "taskQuotaBytes": 4194304,
+      "SDK": false,
+      "SQLite": false,
+      "nonce": false,
+      "paymentSigning": false,
+      "fullDpGraph": false,
+      "externalNetwork": false,
+      "nativeOsNetworkSandbox": false
+    },
+    "sourceOnlyIsNotAuthorization": true,
+    "executeFlagIsNotAuthorization": true,
+    "emptyStoreIsNotAuthorization": true,
+    "oneTaskInSelectedStoreOnly": true,
+    "changingRootRequiresFreshAuthority": true,
+    "preNativePlanExecuted": false,
+    "capacityOrMountQualifiedThisTurn": false,
+    "opensslStdoutHandling": "PROPOSED_NOT_NATIVE_VALIDATED",
+    "pemSplitter": "FRAMING_AND_BASE64_ONLY_NOT_DER_OR_CRYPTO",
+    "rawPemOutputMustRemainPrivate": true,
+    "historicalTlsAttemptsRemainConsumed": 2,
+    "newTlsAttempt": 0,
+    "currentNativeCasesPassed": 0,
+    "fullP1Qualified": false,
+    "fullP2Qualified": false,
+    "productionQualified": false
+  },
+  "preservation": {
+    "historicalInputsAndFailedResultsUntouched": true,
+    "historicalPins": [
+      {
+        "path": "qualification/funding-post-native-loopback-tls.inputs.json",
+        "bytes": 3446,
+        "LF": 105,
+        "sha256": "4859fc773cbb4b032cbcea89867d252881505d8d01e8a19075e5d0a69c8033ad",
+        "gitBlob": "1680970f1aba8a9f0b49f71155b4dbc11eeaeabb"
+      },
+      {
+        "path": "qualification/funding-post-native-loopback-tls.selection.draft.mjs",
+        "bytes": 1093,
+        "LF": 19,
+        "sha256": "cf293a00c06f720b98a8c848977ea9b1a48ba4850b770c40b71be49530b64ba9",
+        "gitBlob": "36c39780876ff148c9b5a601fee3b0faa52d0109"
+      },
+      {
+        "path": "qualification/funding-post-native-loopback-tls.behavior.draft.mjs",
+        "bytes": 13381,
+        "LF": 234,
+        "sha256": "f227c9975243376cb5e3c13f382a9dc8fdee44b55f9f67c424a6b3ccfbd450bd",
+        "gitBlob": "c760c23d7c0d6d4e4edfc5072c4275d07bf0c0a3"
+      },
+      {
+        "path": "qualification/funding-post-native-loopback-tls.storage-policy.json",
+        "bytes": 383,
+        "LF": 14,
+        "sha256": "4f07ab197693934ff8b00ff76dc391aa5ac7a543332ba0538d3788c142b733dd",
+        "gitBlob": "b360db9971165613fb76467c3da00a60f96b47c6"
+      },
+      {
+        "path": "qualification/run-funding-post-native-loopback-tls.local.py",
+        "bytes": 17205,
+        "LF": 311,
+        "sha256": "4535d39c312d9bcd59a0b3890d71f79df46628c1b7d8f8be63b51747e10d33f1",
+        "gitBlob": "e484adeb02800f66c518ce8be52f0de57800b640"
+      },
+      {
+        "path": "qualification/funding-post-native-loopback-tls.actual-local-result.json",
+        "bytes": 9269,
+        "LF": 281,
+        "sha256": "86723994cee3427a454b6cf2ebef341e7e3a6c695f1c72b85f39d10f5c0bacc0",
+        "gitBlob": "1af6e596b9b11f6b73c950a821609bda971bbfed"
+      }
+    ],
+    "newManagedRoots": 0,
+    "newManagedTasks": 0,
+    "newQualificationScratchBytes": 0,
+    "privateKeysGenerated": 0,
+    "downloads": 0,
+    "archives": 0,
+    "cleanupPerformed": false
+  },
+  "publication": {
+    "eligibleMainFiles": [
+      "qualification/funding_tls_current_gate.py",
+      "qualification/funding-tls-current-gate.test.py",
+      "qualification/funding-tls-current-gate.actual-local-result.json",
+      "docs/P1_CURRENT_FUNDING_TLS_SELECTION.md"
+    ],
+    "nativeProfileAndLauncherRemainSourceBranchOnly": true,
+    "CIAtParents": {
+      "source": {
+        "checks": 0,
+        "statuses": 0,
+        "runs": 0
+      },
+      "main": {
+        "checks": 0,
+        "statuses": 0,
+        "runs": 0
+      }
+    },
+    "CIInterpretation": "NOT_RUN_NOT_GREEN",
+    "noWorkflowDispatch": true
+  }
+}
