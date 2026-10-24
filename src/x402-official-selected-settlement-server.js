@@ -12,6 +12,7 @@ import {
 } from './x402-official-https-request-binding.js';
 import { captureOfficialFundingPostHttpsRoute,
   captureOfficialFundingPostHttpsRequest } from './x402-official-funding-post-https-request-binding.js';
+import { createIssuedFundingPostSdkResourceBinding } from './x402-issued-funding-post-sdk-resource.js';
 
 const APPLY = Reflect.apply, KEYS = Reflect.ownKeys, DESC = Object.getOwnPropertyDescriptor;
 const PROTO = Object.getPrototypeOf, OWN = Object.hasOwn, FREEZE = Object.freeze;
@@ -86,7 +87,25 @@ export async function createOfficialFundingPostSelectedSettlementServer(options)
   return createSelectedServer(options, true);
 }
 
-async function createSelectedServer(options, fundingPost) {
+/** SOURCE-ONLY actual issued url/tags resource, not a reconstructed receipt.
+ * The intake root supplies its actual original frame. SDK response formation
+ * occurs at the real enrichment hook before the existing tuple bridge captures
+ * it; signed payload/header/requirements and their identities are untouched.
+ */
+export async function createOfficialIssuedFundingPostSelectedSettlementServer(options) {
+  if (arguments.length !== 1) fail('configuration_rejected');
+  const c = record(options, ['issuedFrame','resourceUrl','localFacilitator','validateChallenge',
+    'reconcilePendingSettlement','maxPendingReconciliations','contextLimit']);
+  if (c.contextLimit !== 1) fail('configuration_rejected');
+  const binding = createIssuedFundingPostSdkResourceBinding(c.issuedFrame, c.resourceUrl);
+  const selected = binding.selection();
+  return createSelectedServer({ requirement: selected.requirement, resource: selected.resource,
+    localFacilitator: c.localFacilitator, validateChallenge: c.validateChallenge,
+    reconcilePendingSettlement: c.reconcilePendingSettlement,
+    maxPendingReconciliations: c.maxPendingReconciliations, contextLimit: c.contextLimit }, true, binding);
+}
+
+async function createSelectedServer(options, fundingPost, issuedBinding = null) {
   const HTTP_METHOD = fundingPost ? 'POST' : 'GET', HTTP_TARGET = fundingPost ? '/funding' : '/paid';
   const ROUTE_CAPTURE = fundingPost ? captureOfficialFundingPostHttpsRoute : CAPTURE_HTTP_ROUTE;
   const REQUEST_CAPTURE = fundingPost ? captureOfficialFundingPostHttpsRequest : CAPTURE_HTTP_REQUEST;
@@ -94,7 +113,7 @@ async function createSelectedServer(options, fundingPost) {
   try {
     const c = record(options, CONFIG);
     bounded(c.requirement); REQUIREMENT(c.requirement); fixed = snapshot(c.requirement);
-    record(c.resource, ['url', 'description', 'mimeType']);
+    record(c.resource, issuedBinding === null ? ['url', 'description', 'mimeType'] : ['url', 'tags']);
     bounded(c.resource); RESOURCE(c.resource); resource = snapshot(c.resource);
     // Keep the original scalar API's resource acceptance unchanged. The new
     // native-request entry refuses a resource outside its exact HTTPS profile.
@@ -107,13 +126,21 @@ async function createSelectedServer(options, fundingPost) {
       validateChallenge: c.validateChallenge, reconcilePendingSettlement: c.reconcilePendingSettlement,
       maxPendingReconciliations: c.maxPendingReconciliations, contextLimit: c.contextLimit });
     const server = new CoreServer(bridge.facilitatorClient);
-    if (APPLY(REGISTER, server, [fixed.network, bridge.schemeServer]) !== server) fail('configuration_rejected');
+    const originalScheme = bridge.schemeServer;
+    const originalEnrich = originalScheme.enrichPaymentRequiredResponse;
+    const scheme = issuedBinding === null ? originalScheme : FREEZE({ ...originalScheme,
+      enrichPaymentRequiredResponse: FREEZE(function enrichIssuedFundingResponse(context) {
+        if (arguments.length !== 1) fail('input_rejected');
+        return APPLY(originalEnrich, originalScheme, [issuedBinding.capture(context)]);
+      }) });
+    if (APPLY(REGISTER, server, [fixed.network, scheme]) !== server) fail('configuration_rejected');
     APPLY(BEFORE, server, [capture]);
     http = new HttpServer(server, {
       [HTTP_METHOD + ' ' + HTTP_TARGET]: { accepts: { scheme: fixed.scheme, network: fixed.network,
         price: { amount: fixed.amount, asset: fixed.asset }, payTo: fixed.payTo,
         maxTimeoutSeconds: fixed.maxTimeoutSeconds, extra: snapshot(fixed.extra) },
-        resource: resource.url, description: resource.description, mimeType: resource.mimeType },
+        resource: resource.url, description: resource.description, mimeType: resource.mimeType,
+        ...(issuedBinding === null ? {} : { tags: resource.tags }) },
     });
     await APPLY(INITIALIZE, http, []);
   } catch { fail('configuration_rejected'); }
@@ -220,10 +247,12 @@ async function createSelectedServer(options, fundingPost) {
     } finally { request = null; }
   });
   const getSnapshot = FREEZE(function getSnapshot() {
-    return FREEZE({ profile: fundingPost ? 'OFFICIAL_CORE_2_23_0_SINGLE_POST_FUNDING_UPFRONT'
+    return FREEZE({ profile: issuedBinding !== null ? 'OFFICIAL_CORE_2_23_0_ISSUED_POST_FUNDING_UPFRONT'
+      : fundingPost ? 'OFFICIAL_CORE_2_23_0_SINGLE_POST_FUNDING_UPFRONT'
       : 'OFFICIAL_CORE_2_23_0_SINGLE_GET_PAID_UPFRONT',
       requestCalls, requestLimit: REQUEST_LIMIT, resumeAttempts, active: operation !== null,
       bridge: BRIDGE.getSnapshot(),
+      ...(issuedBinding === null ? {} : { issuedResource: issuedBinding.inspect() }),
       persistence: 'MEMORY_ONLY', serviceDelivery: 'NOT_ESTABLISHED', currentAuthority: 'NOT_ESTABLISHED' });
   });
   return FREEZE({ processRequest, processHttpRequest, getSnapshot });
