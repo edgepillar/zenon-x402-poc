@@ -1,0 +1,150 @@
+{
+  "kind": "ONE_FULL_ISSUED_PREPARED_P2_CRASH_PAIR_LAUNCH_SOURCE_NOT_A_RESULT",
+  "version": 1,
+  "sourceParent": "c9b6c68a6aeac0ff0138baff5ca66b039740ecaf",
+  "inventory": {
+    "path": "qualification/recovery-crash-prepared-full-graph.source-inputs.json",
+    "bytes": 141194,
+    "LF": 3889,
+    "sha256": "cd12a2076f2ee3760ea7c090990518953d533032aec624013597c839d079e84d",
+    "gitBlob": "68c65fde506cb785a246a6484ca038623bb3fa54"
+  },
+  "baseline": {
+    "path": "qualification/issued-funding-post-native-vertical.inputs-v3.json",
+    "bytes": 138777,
+    "LF": 3836,
+    "sha256": "51ffb5b0ff0052523c1b7f3d75fa24e9be27e60ca3bcc09236b1f439096aaed1",
+    "gitBlob": "3dc05ccffd306e97056b4ed168d8121f63acebbc"
+  },
+  "pythonControls": [
+    {
+      "path": "qualification/recovery_crash_prepared_native_profile.py",
+      "bytes": 34275,
+      "LF": 550,
+      "sha256": "019e92fc8713f8e07d0e98c454c38ba8ab289ec6ec86fa90c0568fcfe3cf28f7",
+      "gitBlob": "dda209d6828db47a2c3abf9d325f57e07c916d27"
+    },
+    {
+      "path": "qualification/run-recovery-crash-prepared-pair.local.py",
+      "bytes": 17601,
+      "LF": 285,
+      "sha256": "18e72046610a20d5648cb8ecfa785b896f8e361b7cdfde0ba7148c31eab3fffd",
+      "gitBlob": "ea635ee624d043ea8db2dafe14856bef9d549df3"
+    },
+    {
+      "path": "qualification/run-funding-post-native-loopback-tls.local.py",
+      "bytes": 17205,
+      "LF": 311,
+      "sha256": "4535d39c312d9bcd59a0b3890d71f79df46628c1b7d8f8be63b51747e10d33f1",
+      "gitBlob": "e484adeb02800f66c518ce8be52f0de57800b640"
+    },
+    {
+      "path": "qualification/funding_tls_current_gate.py",
+      "bytes": 7969,
+      "LF": 145,
+      "sha256": "9777b8dca3c8c86e543c1f202c0cde248280ed3a108df4a688565ccf83132936",
+      "gitBlob": "91362d22ca606a6711612b02ecea3c6e92c55a59"
+    }
+  ],
+  "parentControls": [
+    {
+      "path": "app/qualification/recovery-crash-prepared-pair.entry.draft.mjs",
+      "bytes": 8345,
+      "LF": 129,
+      "sha256": "fed38c0caa2b78270ce7bd9dad009f1be6958b90685ebc334f37095b6d190a3c",
+      "gitBlob": "85f80de622aa587e841d3128647420c6fcc6dc8f"
+    },
+    {
+      "path": "app/qualification/recovery-crash-prepared-supervisor.draft.mjs",
+      "bytes": 23092,
+      "LF": 342,
+      "sha256": "d6fa6668ccea2f7f9b911aa1131d8840bb8cbfe211287df2eab18edde4d78e66",
+      "gitBlob": "8740f8f4a46a5b84042663d6286930485bb03df5"
+    },
+    {
+      "path": "app/qualification/recovery-crash-prepared-cutpoint-protocol.js",
+      "bytes": 11607,
+      "LF": 184,
+      "sha256": "e84d4ddf642f5a63bde0e17a4cb65b5bb1c4ee7f31a0e3cf917287741331131f",
+      "gitBlob": "44436e5fe27bd62c39846c389986889f82fea924"
+    },
+    {
+      "path": "app/src/service-credit-pilot-original-payment-checkpoint.js",
+      "bytes": 4003,
+      "LF": 89,
+      "sha256": "930905f31824a6cadc16dfb84572cd4dc38a81e2fce4569b73b6bef29dec97d1",
+      "gitBlob": "51c6391bc22f561ebff0005ced31e538aa83f4fa"
+    },
+    {
+      "path": "app/package.json",
+      "bytes": 2677,
+      "LF": 40,
+      "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+      "gitBlob": "45752ffde39d29666094f7f1c755060d75e43deb"
+    }
+  ],
+  "effectsCeiling": {
+    "cutpointKind": "PREPARED_BEFORE_EXECUTOR",
+    "maximumServiceExecutions": 0,
+    "backendMutatingRecovery": false,
+    "heldCreditRelease": false,
+    "selectedCases": 1,
+    "maximumRuns": 1,
+    "opensslCommands": 1,
+    "nodeParentCommands": 1,
+    "nodeChildren": 2,
+    "maximumChildSignalRequests": 2,
+    "selectedSeedSigkillRequests": 1,
+    "ownedCommandGroupsOnly": true,
+    "newSqlitePaths": 5,
+    "auxiliaryReadonlySqliteOpens": 8,
+    "independentPinFiles": 2,
+    "syntheticEd25519Keys": 4,
+    "transactionSignatures": 1,
+    "capabilitySignatures": 2,
+    "providerSignatures": 2,
+    "testTlsMaterialSeparate": true,
+    "maxRpcConnections": 174,
+    "maxApplicationConnections": 8,
+    "maxTotalConnections": 182,
+    "maxCandidatesPerSearch": 4096,
+    "maxReferenceCandidates": 32768,
+    "producerCandidateReservation": 4096,
+    "fixedVerificationReservation": 16384,
+    "maxAggregateCandidates": 65536,
+    "maximumCutpointWaitMs": 5000,
+    "childObserverMs": 45000,
+    "parentCommandTimeoutSeconds": 120,
+    "parentStdoutBytes": 524288,
+    "childStdoutBytes": 65536,
+    "childStderrBytes": 8192,
+    "taskQuotaBytes": 4194304,
+    "maximumSourceReadBytes": 6291456,
+    "existingSourcesRecopied": false,
+    "externalNetwork": false,
+    "install": false,
+    "realWallet": false,
+    "realPayment": false,
+    "sdkPrepareBlock": false,
+    "nativeOsNetworkSandbox": false
+  },
+  "storagePolicy": {
+    "min_free_bytes": 10737418240,
+    "safety_margin_bytes": 1073741824,
+    "task_quota_bytes": 4194304,
+    "scratch_quota_bytes": 4194304,
+    "store_quota_bytes": 4194304,
+    "metadata_quota_bytes": 4194304,
+    "max_tasks": 1,
+    "max_objects": 48,
+    "max_commands_per_task": 2,
+    "max_output_bytes": 524288,
+    "abandoned_after_seconds": 86400,
+    "unreferenced_after_seconds": 1209600
+  },
+  "sourceRowsSha256": "31fe255b2862dfd2eb0647b8a8b34f9bd4d48e4a6b3afec65846b0a0889ec6b9",
+  "sourceTransforms": false,
+  "nativeBuiltinAliases": false,
+  "nativeExecuted": false,
+  "nativeOsNetworkSandbox": false
+}
