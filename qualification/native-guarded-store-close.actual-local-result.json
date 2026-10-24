@@ -1,0 +1,406 @@
+{
+  "kind": "NATIVE_GUARDED_STORE_CLOSE_COMPONENT_RESULT_ACTUAL_NATIVE_OFFICIAL_V6_SOURCE_NOT_RUNTIME_RESULT",
+  "status": "PASS_21_COMPONENT_CASES_NATIVE_OFFICIAL_V6_GRAPH_SOURCE_AND_SYNTAX_ONLY",
+  "sourceParent": "87e8d77e3f379e4efbb2e41421c4acd5e2da042f",
+  "mainParent": "472426d8805006e3e5e739923b87dd1296271ce4",
+  "implemented": {
+    "boundary": "createNativeGuardedStoreCloseBoundary",
+    "guardedActualV6": "openServiceCreditCustodiedSqliteHttpClientV6WithNativeCloseGuard",
+    "guardedActualOfficialPost": "openOfficialV6GuardedFundingPostOriginalPaymentClient",
+    "actualNativeComposition": "openNativeOfficialV6FundingPostOriginalPaymentClient",
+    "actualConstructorsHardwired": true,
+    "injectedNativeOrSdkOrStoreFactory": false,
+    "checkAtActualStoreEntryAndVoidReturn": true,
+    "checksAfterAsyncChildJoin": true,
+    "cooperativeBudgetRecheckedAtStoreBoundary": true,
+    "privateNativeObservationRechecked": true,
+    "constructorCleanupRequiresPrivateUnusedNativeOwner": true,
+    "hiddenHeldRootNeverReopenedOrForceClosed": true,
+    "guardedAcquisitionHoldPreserved": true,
+    "oldRootGetAndPlainPostSelectionUnchangedInSource": true,
+    "oldRootAndOfficialRuntimeRegressionNotEstablished": true,
+    "lateOperationPublicResultSuppressedAfterClose": true,
+    "nativeStopAttemptedEvenIfCloseObservationRefuses": true,
+    "cachedClosePromiseHistoricalNotFreshPermit": true,
+    "postReturnRefusalDoesNotUndoReturnedStoreClose": true,
+    "fundingPostCheckpointOnlyNotNewFundingSender": true,
+    "nativeServiceTransportOnly": true,
+    "automaticFundingResend": false,
+    "automaticResignOrReplacement": false,
+    "grantActivation": false,
+    "defaultBuyerCutover": false
+  },
+  "actualComponent": {
+    "event": "Q97_ACTUAL_NATIVE_GUARDED_STORE_BOUNDARY_COMPONENT_CAPTURE",
+    "actualExit": 0,
+    "outputComplete": true,
+    "counts": {
+      "tests": 21,
+      "pass": 21,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "boundaryCases": 18,
+    "boundedJoinCases": 3,
+    "entered": 21,
+    "completed": 21,
+    "hooks": 0,
+    "streams": {
+      "stdout": {
+        "bytes": 6292,
+        "sha256": "737be8eb3c27b88df61f3942968fae77d78f9d47bd043eb8352270888ea0c34a"
+      },
+      "stderr": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    "NodeCommands": 1,
+    "NodeChildren": 0,
+    "actualNativeClient": false,
+    "actualOfficialSdk": false,
+    "actualV6Store": false,
+    "physicalDrain": "NOT_ESTABLISHED",
+    "inputs": [
+      {
+        "path": "package.json",
+        "bytes": 2677,
+        "LF": 40,
+        "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+        "gitBlob": "45752ffde39d29666094f7f1c755060d75e43deb"
+      },
+      {
+        "path": "src/service-credit-native-guarded-store-close.js",
+        "bytes": 4111,
+        "LF": 79,
+        "sha256": "2b539ae27ccdb8339fdb3543e5dd0f5e6f5f1b317114d9def1a9dc168bb04f5d",
+        "gitBlob": "6feec95714f055996bda64d36a82a2aebfe7c6a2"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-original-funding-bounded-read-close.js",
+        "bytes": 10732,
+        "LF": 197,
+        "sha256": "69fe92b9460aba5f5ecb671a4befe059f0686f4ca2e50ffeaf468e25893f0f9c",
+        "gitBlob": "fa279111addab91315d54f7333bbbb9266369c53"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-original-funding-read-close.js",
+        "bytes": 9568,
+        "LF": 178,
+        "sha256": "5086567b2c0cce0fc3419db69641beb7e5e434d47f83e17015682964ad482a45",
+        "gitBlob": "f2a1b30bb02a6b192fc3b0fe0b4fc5b65e2d297b"
+      },
+      {
+        "path": "src/service-credit-bounded-operation-drain.js",
+        "bytes": 4046,
+        "LF": 92,
+        "sha256": "ccaf1742f94a2ae312598c4bb2adc0c6168b1ade0167dbc8990422f5e7037885",
+        "gitBlob": "9cb4987ecd835e7b558d6088d562f417a9179da8"
+      },
+      {
+        "path": "qualification/native-guarded-store-close.behavior.draft.mjs",
+        "bytes": 15497,
+        "LF": 229,
+        "sha256": "8d7735dd06b31e05066b4b4141667bfc2a650289cd934560a982203bd81e5340",
+        "gitBlob": "e858c88458d211d636ec0ae427aceedd49bdbf96"
+      }
+    ],
+    "cases": [
+      "ok 1 - construction is inert and supplies no native SQL or retry authority",
+      "ok 2 - strict clean guards surround exactly one synchronous void close",
+      "ok 3 - false or nonboolean before-guard never enters close or assimilates a thenable",
+      "ok 4 - throwing before-guard is held before resource entry",
+      "ok 5 - an earlier clean observation is not a cached permit for later close entry",
+      "ok 6 - post-return refusal truthfully retains returned-close evidence without undo or retry",
+      "ok 7 - throwing post-guard cannot relabel a returned resource close as unentered",
+      "ok 8 - resource close throw permanently holds one entry with unknown return",
+      "ok 9 - non-void resource return is invalid and never awaited or assimilated",
+      "ok 10 - before-guard reentry is held without claiming resource entry",
+      "ok 11 - resource-close reentry is held after its one void return with no repeat",
+      "ok 12 - post-guard reentry latches unknown despite a true outer return",
+      "ok 13 - repeated clean close is cached without new callbacks or observations",
+      "ok 14 - repeated held close never rechecks a later repaired before-guard",
+      "ok 15 - snapshots are immutable DATA without captured callbacks or resource references",
+      "ok 16 - configuration proxies getters extra keys and nonfrozen records refuse with zero hooks",
+      "ok 17 - callback shapes refuse proxies async functions and mutable functions without hooks",
+      "ok 18 - invalid constructor close and snapshot arity never enters callbacks",
+      "ok 19 - actual bounded join and boundary component order read close child join then one resource close",
+      "ok 20 - native DATA becoming unknown during a child await vetoes actual component resource entry",
+      "ok 21 - expired actual join budget vetoes a late child continuation before component resource entry"
+    ],
+    "footer": {
+      "tests": 21,
+      "boundaryCases": 18,
+      "boundedJoinCases": 3,
+      "entered": 21,
+      "completed": 21,
+      "hooks": 0,
+      "actualBoundaryComponent": true,
+      "actualBoundedJoinComponent": true,
+      "realNodeTimers": true,
+      "actualNativeClient": false,
+      "actualOfficialSdk": false,
+      "actualV6Store": false,
+      "physicalDrain": "NOT_ESTABLISHED",
+      "authority": "NONE",
+      "inputs": [
+        {
+          "path": "package.json",
+          "bytes": 2677,
+          "LF": 40,
+          "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+          "gitBlob": "45752ffde39d29666094f7f1c755060d75e43deb"
+        },
+        {
+          "path": "src/service-credit-native-guarded-store-close.js",
+          "bytes": 4111,
+          "LF": 79,
+          "sha256": "2b539ae27ccdb8339fdb3543e5dd0f5e6f5f1b317114d9def1a9dc168bb04f5d",
+          "gitBlob": "6feec95714f055996bda64d36a82a2aebfe7c6a2"
+        },
+        {
+          "path": "src/zenon/dynamic-plasma-original-funding-bounded-read-close.js",
+          "bytes": 10732,
+          "LF": 197,
+          "sha256": "69fe92b9460aba5f5ecb671a4befe059f0686f4ca2e50ffeaf468e25893f0f9c",
+          "gitBlob": "fa279111addab91315d54f7333bbbb9266369c53"
+        },
+        {
+          "path": "src/zenon/dynamic-plasma-original-funding-read-close.js",
+          "bytes": 9568,
+          "LF": 178,
+          "sha256": "5086567b2c0cce0fc3419db69641beb7e5e434d47f83e17015682964ad482a45",
+          "gitBlob": "f2a1b30bb02a6b192fc3b0fe0b4fc5b65e2d297b"
+        },
+        {
+          "path": "src/service-credit-bounded-operation-drain.js",
+          "bytes": 4046,
+          "LF": 92,
+          "sha256": "ccaf1742f94a2ae312598c4bb2adc0c6168b1ade0167dbc8990422f5e7037885",
+          "gitBlob": "9cb4987ecd835e7b558d6088d562f417a9179da8"
+        },
+        {
+          "path": "qualification/native-guarded-store-close.behavior.draft.mjs",
+          "bytes": 15497,
+          "LF": 229,
+          "sha256": "8d7735dd06b31e05066b4b4141667bfc2a650289cd934560a982203bd81e5340",
+          "gitBlob": "e858c88458d211d636ec0ae427aceedd49bdbf96"
+        }
+      ]
+    },
+    "NodeVersion": "24.19.0",
+    "platform": "darwin",
+    "arch": "arm64",
+    "realNodeTimers": true,
+    "attempts": 1,
+    "sourceBeforeAndAfterVerified": true,
+    "actualBoundaryAndBoundedJoinModules": true,
+    "declaredCallbackDataNotNativeProof": true,
+    "actualSDK": false,
+    "actualSQLite": false,
+    "actualNativeTransport": false,
+    "externalNetwork": false,
+    "loopbackSockets": false,
+    "keys": false,
+    "signing": false,
+    "nonce": false
+  },
+  "effectfulSyntax": {
+    "currentInputs": [
+      {
+        "path": "src/service-credit-custodied-sqlite-http-client.js",
+        "bytes": 25423,
+        "LF": 620,
+        "sha256": "407063b8d61ff7138f1a9374dea596a250e212ba04304163db2b7e824af03cd3",
+        "gitBlob": "e8082803bb8f0f2c780d660c897bfb6856ba7932"
+      },
+      {
+        "path": "src/x402-official-v6-original-payment-client.js",
+        "bytes": 14497,
+        "LF": 264,
+        "sha256": "8fcbe27d631fb1f21c2f128550be7124040b676920f30233e328dbad9f3d3aae",
+        "gitBlob": "535453072223388fbcae4741a6fc7c37723377ce"
+      },
+      {
+        "path": "src/x402-native-v6-funding-post-client.js",
+        "bytes": 16936,
+        "LF": 301,
+        "sha256": "82c18370d5e9dcfcb9456af6e26336e9e410e1dd5d090e10dd2a50a46fc8fc15",
+        "gitBlob": "1d5ba3d9e5297c517420043c741052bdd8251d87"
+      }
+    ],
+    "currentResults": [
+      {
+        "path": "src/service-credit-custodied-sqlite-http-client.js",
+        "syntaxActualExit": 0,
+        "outputComplete": true,
+        "applicationImported": false,
+        "input": {
+          "path": "src/service-credit-custodied-sqlite-http-client.js",
+          "bytes": 25423,
+          "LF": 620,
+          "sha256": "407063b8d61ff7138f1a9374dea596a250e212ba04304163db2b7e824af03cd3",
+          "gitBlob": "e8082803bb8f0f2c780d660c897bfb6856ba7932"
+        },
+        "stdoutBytes": 0,
+        "stderrBytes": 0,
+        "NodeCommands": 1,
+        "nativeTlsExecuted": false
+      },
+      {
+        "path": "src/x402-official-v6-original-payment-client.js",
+        "syntaxActualExit": 0,
+        "outputComplete": true,
+        "applicationImported": false,
+        "input": {
+          "path": "src/x402-official-v6-original-payment-client.js",
+          "bytes": 14497,
+          "LF": 264,
+          "sha256": "8fcbe27d631fb1f21c2f128550be7124040b676920f30233e328dbad9f3d3aae",
+          "gitBlob": "535453072223388fbcae4741a6fc7c37723377ce"
+        },
+        "stdoutBytes": 0,
+        "stderrBytes": 0,
+        "NodeCommands": 1,
+        "nativeTlsExecuted": false
+      },
+      {
+        "path": "src/x402-native-v6-funding-post-client.js",
+        "syntaxActualExit": 0,
+        "outputComplete": true,
+        "applicationImported": false,
+        "input": {
+          "path": "src/x402-native-v6-funding-post-client.js",
+          "bytes": 16936,
+          "LF": 301,
+          "sha256": "82c18370d5e9dcfcb9456af6e26336e9e410e1dd5d090e10dd2a50a46fc8fc15",
+          "gitBlob": "1d5ba3d9e5297c517420043c741052bdd8251d87"
+        },
+        "stdoutBytes": 0,
+        "stderrBytes": 0,
+        "NodeCommands": 1,
+        "nativeTlsExecuted": false
+      }
+    ],
+    "checksPerformed": 4,
+    "checkBeforeFinalNativeWrapperSourceEdit": {
+      "path": "src/x402-native-v6-funding-post-client.js",
+      "syntaxActualExit": 0,
+      "outputComplete": true,
+      "applicationImported": false,
+      "input": {
+        "path": "src/x402-native-v6-funding-post-client.js",
+        "bytes": 16840,
+        "LF": 296,
+        "sha256": "77307493ca1d31d168990d3df052739e84d96f18b85344ba1dbfec3521c0b97d",
+        "gitBlob": "784d87d373835a2236c267f6f26e15dab9f791c4"
+      },
+      "stdoutBytes": 0,
+      "stderrBytes": 0,
+      "NodeCommands": 1,
+      "nativeTlsExecuted": false
+    },
+    "applicationImported": false,
+    "actualNativeOfficialV6Executed": false
+  },
+  "closeEvidenceRules": {
+    "beforeRefusal": "NO_STORE_CLOSE_ENTRY_SLOT_RETAINED",
+    "voidReturnThenRefusal": "RETURNED_CLOSE_RECORDED_CLOSED_SLOT_QUARANTINED_NOT_UNDONE",
+    "closeThrowOrNonVoid": "ONE_ENTRY_RETURN_UNKNOWN_NEVER_RETRY",
+    "nativeJoinRefusalBeforeOfficialClose": "WRAPPER_HELD_DB_MAY_REMAIN_OPEN_OCCUPIED_SLOT_NOT_FORCED_CLOSED",
+    "resourceCloseReturnedMeans": "EXPECTED_SYNCHRONOUS_VOID_CONTRACT_NOT_ARBITRARY_VALUE_RETURN",
+    "dataCallbacksAuthenticateNativeBrands": false,
+    "physicalDrain": "NOT_ESTABLISHED"
+  },
+  "execution": {
+    "componentNodeCommands": 1,
+    "syntaxOnlyNodeCommands": 4,
+    "NodeChildren": 0,
+    "newOpenSSLCommands": 0,
+    "newNativeTLSCommands": 0,
+    "newSdkRuns": 0,
+    "newSQLiteFiles": 0,
+    "newKeysOrSignatures": 0,
+    "newNonceSearches": 0,
+    "newTaskStorageRoots": 0,
+    "newTaskStorageTasks": 0,
+    "newQualificationScratchBytes": 0,
+    "installation": false,
+    "cleanup": false,
+    "hostedWorkflowDispatched": false
+  },
+  "preserved": {
+    "pendingFullDPProfileUnchanged": true,
+    "pendingFullDPManifestSha256": "a472e3bcd8840ef4236e395cb918ae5f2a84be9ca45d8f59417c0b77da291933",
+    "newGraphInPendingFullDPProfile": false,
+    "pendingProfilePermissionExpanded": false,
+    "oldTlsAllowsNotReused": true,
+    "historicalResultsNotRelabeled": true,
+    "oldGetAndPostArtifactsUnchanged": true,
+    "unrelatedEditsIndexHeadBranchRefsAndPRsPreserved": true
+  },
+  "publication": {
+    "eligibleSourceFiles": [
+      "src/service-credit-native-guarded-store-close.js",
+      "src/service-credit-custodied-sqlite-http-client.js",
+      "src/x402-official-v6-original-payment-client.js",
+      "src/x402-native-v6-funding-post-client.js",
+      "qualification/native-guarded-store-close.behavior.draft.mjs",
+      "qualification/native-guarded-store-close.actual-local-result.json",
+      "docs/P1_NATIVE_OFFICIAL_V6_GUARDED_CLOSE.md"
+    ],
+    "eligibleMainFiles": [
+      "src/service-credit-native-guarded-store-close.js",
+      "qualification/native-guarded-store-close.behavior.draft.mjs",
+      "qualification/native-guarded-store-close.actual-local-result.json",
+      "docs/P1_NATIVE_OFFICIAL_V6_GUARDED_CLOSE.md"
+    ],
+    "actualNativeOfficialAndGuardedV6OnMain": false,
+    "mainEffectfulBlobsMustRemain": {
+      "src/service-credit-custodied-sqlite-http-client.js": {
+        "sha": "86ac76593fa9c9a6b39bb6a39c1a2ef994aff7f2",
+        "type": "blob",
+        "mode": "100644"
+      },
+      "src/x402-official-v6-original-payment-client.js": {
+        "sha": "ee582ed684cd73c5ae92d9583aa7057d111baaea",
+        "type": "blob",
+        "mode": "100644"
+      },
+      "src/service-credit-native-https-client-transport.js": {
+        "sha": "ab6740f8e82c0cf06d5c268ce0b6750d87d0ddeb",
+        "type": "blob",
+        "mode": "100644"
+      },
+      "src/x402-original-payment-checkpoint-client.js": {
+        "sha": "6fdc3917e64f9dbad61ffb4b236951e3cb9ebcf5",
+        "type": "blob",
+        "mode": "100644"
+      }
+    },
+    "currentComponentOnlyNotCurrentFullSuite": true,
+    "englishAsciiPrivacySafe": true,
+    "normalFastForwardOnly": true
+  },
+  "currentHeadCI": {
+    "source": {
+      "checks": 0,
+      "statuses": 0,
+      "runs": 0
+    },
+    "main": {
+      "checks": 0,
+      "statuses": 0,
+      "runs": 0
+    }
+  },
+  "CIInterpretation": "NO_CURRENT_PASS_INFERRED",
+  "fullP0Complete": false,
+  "fullP1Complete": false,
+  "fullP2Complete": false,
+  "fullRoadmapComplete": false,
+  "productionQualified": false
+}
+
