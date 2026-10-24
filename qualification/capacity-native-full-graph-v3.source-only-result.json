@@ -1,0 +1,531 @@
+{
+  "resultVersion": 1,
+  "kind": "FULL_NATIVE_CAPACITY_V3_SOURCE_DATA_AND_INERT_ONLY_NOT_EXECUTION",
+  "sourceParent": "9fbfc79836dc9fca73385fc583f9de865cce7353",
+  "fullSource": {
+    "applicationFiles": 138,
+    "packageFiles": 404,
+    "baselineApplication117Preserved": true,
+    "baselinePackages404Preserved": true,
+    "additionalApplicationInputs": 21,
+    "sourceRowsSha256": "1ca3019657b83678fc902fd17513cd98dbd222b51448ed3268a59e30223dd6a3",
+    "declaredSourceBytes": 4754533,
+    "sourceCopies": 0,
+    "packageCopies": 0
+  },
+  "actual": {
+    "windowWriterData": {
+      "exit": 0,
+      "complete": true,
+      "validated": true,
+      "counts": {
+        "tests": 54,
+        "suites": 0,
+        "pass": 54,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "stdoutBytes": 10571,
+      "stdoutSha256": "b1e5f133573522691cd2fcbc1345a433453aec439a87489f0faf39fe9692fb77",
+      "stderrBytes": 0,
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sourcePinsUnchanged": true
+    },
+    "sourceOnlyEntry": {
+      "exit": 0,
+      "complete": true,
+      "validated": true,
+      "counts": {
+        "event": "P4_FULL_V3_SOURCE_REGISTRY_READ_ONLY_NOT_NATIVE",
+        "sourceRowsSha256": "1ca3019657b83678fc902fd17513cd98dbd222b51448ed3268a59e30223dd6a3",
+        "applicationFilesRead": 138,
+        "packageFilesRead": 404,
+        "sourceBytesReadOnly": 4754533,
+        "sourceCopiesCreated": 0,
+        "nodeBinaryBytesHashedOnce": 121304480,
+        "nodeBinaryExecuted": false,
+        "roleKinds": [
+          "PAYER",
+          "SERVICE",
+          "SUPERVISOR"
+        ],
+        "newTaskRoots": 0,
+        "qualificationScratchCreated": false,
+        "profilesWritten": false,
+        "privateRootsOpened": false,
+        "nativeExecuted": false,
+        "managedNativeLauncherComplete": false,
+        "authority": "NONE"
+      },
+      "stdoutBytes": 577,
+      "stdoutSha256": "e0e70d82d2a6ec53af6f90df285c2e74d631e75a3dc299c2f6ad725c59c554f2",
+      "stderrBytes": 0,
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sourcePinsUnchanged": true
+    },
+    "roleProfileData": {
+      "exit": 0,
+      "complete": true,
+      "validated": true,
+      "counts": {
+        "event": "P4_FULL_V3_ROLE_PROFILE_DATA_NOT_NATIVE",
+        "testsRun": 87,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "successful": true,
+        "sourceBuilderPin": "ffd4ee534137fcf237f20a5f113aa44b94e986c20b83436ef486a9a9c94f453b",
+        "sourceRowsSha256": "1ca3019657b83678fc902fd17513cd98dbd222b51448ed3268a59e30223dd6a3",
+        "builderUnchanged": true,
+        "nativeExecuted": false,
+        "fakeNamespaceInstalled": false,
+        "privateRootsOpened": false,
+        "SDK": false,
+        "SQLite": false,
+        "keys": false,
+        "signatures": false,
+        "sockets": false,
+        "nonceSearch": false,
+        "children": false,
+        "profilesWritten": false,
+        "qualificationScratchCreated": false,
+        "authority": "NONE"
+      },
+      "stdoutBytes": 631,
+      "stdoutSha256": "82fa1c0842a131ba2c2e13177bee03111cea8fb26478f83dc7f624195f1e791e",
+      "stderrBytes": 0,
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sourcePinsUnchanged": true
+    },
+    "inertAdapterAndClockOwner": {
+      "exit": 0,
+      "complete": true,
+      "validated": true,
+      "counts": {
+        "tests": 17,
+        "suites": 0,
+        "pass": 17,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "stdoutBytes": 4235,
+      "stdoutSha256": "6818a126479262e754803b96db8bba282a37eadb3b638bfa06a0e43afb8e8aab",
+      "stderrBytes": 0,
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sourcePinsUnchanged": true
+    },
+    "syntaxOnly": {
+      "nodeSourceFiles": 15,
+      "pythonSourceFiles": 2,
+      "sourcePinsUnchanged": true,
+      "importsExecuted": false,
+      "results": [
+        {
+          "path": "qualification/capacity-native-payer-lane-v3.owner.draft.mjs",
+          "actualExit": 0,
+          "stdoutBytes": 0,
+          "stderrBytes": 0,
+          "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "qualification/capacity-native-payer-lane-v3.worker.draft.mjs",
+          "actualExit": 0,
+          "stdoutBytes": 0,
+          "stderrBytes": 0,
+          "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "qualification/capacity-native-payer-lane-v3.namespace.preload.draft.mjs",
+          "actualExit": 0,
+          "stdoutBytes": 0,
+          "stderrBytes": 0,
+          "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "qualification/capacity-native-service-lane-v3.owner.draft.mjs",
+          "actualExit": 0,
+          "stdoutBytes": 0,
+          "stderrBytes": 0,
+          "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "qualification/capacity-native-service-lane-v3.worker.draft.mjs",
+          "actualExit": 0,
+          "stdoutBytes": 0,
+          "stderrBytes": 0,
+          "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "qualification/capacity-native-service-lane-v3.namespace.preload.draft.mjs",
+          "actualExit": 0,
+          "stdoutBytes": 0,
+          "stderrBytes": 0,
+          "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "qualification/capacity-native-paired-lane-v3.supervisor.draft.mjs",
+          "actualExit": 0,
+          "stdoutBytes": 0,
+          "stderrBytes": 0,
+          "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "qualification/capacity-native-supervisor-v3.namespace.preload.draft.mjs",
+          "actualExit": 0,
+          "stdoutBytes": 0,
+          "stderrBytes": 0,
+          "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "qualification/capacity-native-workload-adapter-v3.draft.mjs",
+          "actualExit": 0,
+          "stdoutBytes": 0,
+          "stderrBytes": 0,
+          "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "qualification/capacity-native-full-namespace-v3.preload-common.draft.mjs",
+          "actualExit": 0,
+          "stdoutBytes": 0,
+          "stderrBytes": 0,
+          "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "qualification/capacity-native-workload-v3.entry.draft.mjs",
+          "actualExit": 0,
+          "stdoutBytes": 0,
+          "stderrBytes": 0,
+          "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "qualification/capacity-native-service-window-v3.owner.draft.mjs",
+          "actualExit": 0,
+          "stdoutBytes": 0,
+          "stderrBytes": 0,
+          "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "src/service-credit-capacity-window-writer-trace-data.js",
+          "actualExit": 0,
+          "stdoutBytes": 0,
+          "stderrBytes": 0,
+          "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "qualification/service-credit-capacity-window-writer-trace-data.behavior.mjs",
+          "actualExit": 0,
+          "stdoutBytes": 0,
+          "stderrBytes": 0,
+          "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "qualification/capacity-native-workload-adapter-v3.inert-behavior.mjs",
+          "actualExit": 0,
+          "stdoutBytes": 0,
+          "stderrBytes": 0,
+          "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ]
+    }
+  },
+  "sourceOnlyEntryResult": {
+    "event": "P4_FULL_V3_SOURCE_REGISTRY_READ_ONLY_NOT_NATIVE",
+    "sourceRowsSha256": "1ca3019657b83678fc902fd17513cd98dbd222b51448ed3268a59e30223dd6a3",
+    "applicationFilesRead": 138,
+    "packageFilesRead": 404,
+    "sourceBytesReadOnly": 4754533,
+    "sourceCopiesCreated": 0,
+    "nodeBinaryBytesHashedOnce": 121304480,
+    "nodeBinaryExecuted": false,
+    "roleKinds": [
+      "PAYER",
+      "SERVICE",
+      "SUPERVISOR"
+    ],
+    "newTaskRoots": 0,
+    "qualificationScratchCreated": false,
+    "profilesWritten": false,
+    "privateRootsOpened": false,
+    "nativeExecuted": false,
+    "managedNativeLauncherComplete": false,
+    "authority": "NONE"
+  },
+  "roleProfileDataResult": {
+    "event": "P4_FULL_V3_ROLE_PROFILE_DATA_NOT_NATIVE",
+    "testsRun": 87,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "successful": true,
+    "sourceBuilderPin": "ffd4ee534137fcf237f20a5f113aa44b94e986c20b83436ef486a9a9c94f453b",
+    "sourceRowsSha256": "1ca3019657b83678fc902fd17513cd98dbd222b51448ed3268a59e30223dd6a3",
+    "builderUnchanged": true,
+    "nativeExecuted": false,
+    "fakeNamespaceInstalled": false,
+    "privateRootsOpened": false,
+    "SDK": false,
+    "SQLite": false,
+    "keys": false,
+    "signatures": false,
+    "sockets": false,
+    "nonceSearch": false,
+    "children": false,
+    "profilesWritten": false,
+    "qualificationScratchCreated": false,
+    "authority": "NONE"
+  },
+  "sourcePins": [
+    {
+      "path": "package.json",
+      "bytes": 2677,
+      "LF": 40,
+      "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+      "gitBlob": "45752ffde39d29666094f7f1c755060d75e43deb"
+    },
+    {
+      "path": "qualification/capacity-native-full-graph-v3.inputs.json",
+      "bytes": 8426,
+      "LF": 209,
+      "sha256": "056e1ef2290d16fd900edeaa124503dee9b084d2aaef73ac79d8a83846c87695",
+      "gitBlob": "54cccc37e59af0f559e2650b7a27f6c1bda55450"
+    },
+    {
+      "path": "qualification/capacity-native-full-namespace-v3.preload-common.draft.mjs",
+      "bytes": 20054,
+      "LF": 281,
+      "sha256": "452547f2aa3a740cf562bdee83c63be9a78eed70c4b57a0931538a156b054e8e",
+      "gitBlob": "7628a0507d0a140d4f12d69fe46911e9ec32e18d"
+    },
+    {
+      "path": "qualification/capacity-native-paired-lane-v3.supervisor.draft.mjs",
+      "bytes": 25906,
+      "LF": 288,
+      "sha256": "33392301ef64e402163f8d21f0ed29334924183f5489408195d38b2251bb8f4a",
+      "gitBlob": "297daf82987510452625e1b1848140025c7f5941"
+    },
+    {
+      "path": "qualification/capacity-native-payer-lane-v3.namespace.preload.draft.mjs",
+      "bytes": 255,
+      "LF": 4,
+      "sha256": "0c6ee76d373c97025ee0686300adf57522d7f3bee06f65a3e25e5b1c303100aa",
+      "gitBlob": "95fffff11b6cac6b1bc306d32c1cc0d7101ac1bd"
+    },
+    {
+      "path": "qualification/capacity-native-payer-lane-v3.owner.draft.mjs",
+      "bytes": 21481,
+      "LF": 341,
+      "sha256": "2f3a3305e025e14083b44ec7c7b8b431c9928500289a7d5ceb51db33d94e7132",
+      "gitBlob": "c7e7feac935cb2ea2357cfa99399ae47b5de93c6"
+    },
+    {
+      "path": "qualification/capacity-native-payer-lane-v3.worker.draft.mjs",
+      "bytes": 21280,
+      "LF": 300,
+      "sha256": "31334141e77da486dcb074766e71b962ac52c6b8104115780247260537885900",
+      "gitBlob": "475bcba541d71ab22b8ad1ef3e225a9effeb09a9"
+    },
+    {
+      "path": "qualification/capacity-native-service-lane-v3.namespace.preload.draft.mjs",
+      "bytes": 259,
+      "LF": 4,
+      "sha256": "0ccd5fff93a1b6503f17d91f87e6618849f7206030132a5eb21f748353f454b4",
+      "gitBlob": "cfa68fbe659c823b9c216c23d9b2167179086ae4"
+    },
+    {
+      "path": "qualification/capacity-native-service-lane-v3.owner.draft.mjs",
+      "bytes": 30358,
+      "LF": 333,
+      "sha256": "b2f3e039d08c905fe74a1eae2ae7fc5d923553f3bb284f63e4509f7db0c071a2",
+      "gitBlob": "d368e43d91a420426fe23c969827cb619feefc29"
+    },
+    {
+      "path": "qualification/capacity-native-service-lane-v3.worker.draft.mjs",
+      "bytes": 9052,
+      "LF": 120,
+      "sha256": "3927fe60b38178438d8f8f63506e1609219749896787cefdd93898aa6a17bf7d",
+      "gitBlob": "6e92bd45cc47b179d82813eb6f6286689581a16f"
+    },
+    {
+      "path": "qualification/capacity-native-service-window-v3.owner.draft.mjs",
+      "bytes": 5151,
+      "LF": 87,
+      "sha256": "89e0fded8af54694208861d2abcb7947afd30d96e4a9e3b8296de64870d66f7e",
+      "gitBlob": "31d86a2c924bb27ba3d2fd619d0bdb63db8690cc"
+    },
+    {
+      "path": "qualification/capacity-native-supervisor-v3.namespace.preload.draft.mjs",
+      "bytes": 265,
+      "LF": 4,
+      "sha256": "3c8716ed84303cc533f6406e8fb68b66137d62f34b708ad751c94def8d35690c",
+      "gitBlob": "8217ad4bd174415e1a24d2dcceb115cbf8b82142"
+    },
+    {
+      "path": "qualification/capacity-native-workload-adapter-v3.draft.mjs",
+      "bytes": 17159,
+      "LF": 251,
+      "sha256": "662dd8eea272f617a3ea05bc0681fac90846596548dca944d36a6f639ae49131",
+      "gitBlob": "ad91680c8522a427822fd6fa786345fc281e0a96"
+    },
+    {
+      "path": "qualification/capacity-native-workload-adapter-v3.inert-behavior.mjs",
+      "bytes": 9156,
+      "LF": 142,
+      "sha256": "6d0421cef5d607d92a2ef0e7e77a1e988e939a1af4acf2af0b123f008d4eb3ad",
+      "gitBlob": "cf8c5c709612e633ed8d1715f315ef205cca4a74"
+    },
+    {
+      "path": "qualification/capacity-native-workload-v3.entry.draft.mjs",
+      "bytes": 6734,
+      "LF": 89,
+      "sha256": "724a5689cc6e76b32ddcc51a698089c22ef464ce8825e5615443064816026b67",
+      "gitBlob": "1caad024c273256f0fc844c6b5f968b0f7148f2b"
+    },
+    {
+      "path": "qualification/issued-funding-post-native-vertical.inputs-v3.json",
+      "bytes": 138777,
+      "LF": 3836,
+      "sha256": "51ffb5b0ff0052523c1b7f3d75fa24e9be27e60ca3bcc09236b1f439096aaed1",
+      "gitBlob": "3dc05ccffd306e97056b4ed168d8121f63acebbc"
+    },
+    {
+      "path": "qualification/native_capacity_full_profile_v3.behavior.py",
+      "bytes": 19817,
+      "LF": 295,
+      "sha256": "06dffc28d668f1a07866194eb50b97bcc907656464a39a13a7964b13aaac9afb",
+      "gitBlob": "6e1fcf65d3b6a855fb0f3c63e41a5bb227b6c329"
+    },
+    {
+      "path": "qualification/native_capacity_full_profile_v3.py",
+      "bytes": 23297,
+      "LF": 351,
+      "sha256": "ffd4ee534137fcf237f20a5f113aa44b94e986c20b83436ef486a9a9c94f453b",
+      "gitBlob": "7a55e87fe4e2b7e1a97d419594f59a9d9e7d5436"
+    },
+    {
+      "path": "qualification/recovery_crash_native_profile.py",
+      "bytes": 33443,
+      "LF": 538,
+      "sha256": "75c2c9478b7e792a7bade739161af2bb8fb624cd407924ead2cf822dc23dacbd",
+      "gitBlob": "dc93890c4f9772b726e015ddd11d63bfa1a48ad4"
+    },
+    {
+      "path": "qualification/service-credit-capacity-window-writer-trace-data.behavior.mjs",
+      "bytes": 13151,
+      "LF": 168,
+      "sha256": "031368e4ddc92383ccb52242cb2e0262e5b7d19ebcb514e5ab07b1055b2553a4",
+      "gitBlob": "c69bf546fd0d716fa95905bca31067d21797f2e4"
+    },
+    {
+      "path": "src/native-private-directory-identity.js",
+      "bytes": 1927,
+      "LF": 40,
+      "sha256": "f3945ab75a86fd2d5f8f53baddf6fbd684ee55c68139f9c4f061c3d13b9cc844",
+      "gitBlob": "1500d55d3313cb1a02c07b49108eb3bcfa5f20ad"
+    },
+    {
+      "path": "src/service-credit-capacity-cohort-writer-trace-data.js",
+      "bytes": 10956,
+      "LF": 181,
+      "sha256": "75c3529584f7c6126f726734d085e107438c7a676ff1f63073956054aedcba65",
+      "gitBlob": "63bee5ad4714d3179666eef371373d4e0416a4a0"
+    },
+    {
+      "path": "src/service-credit-capacity-native-observation-data.js",
+      "bytes": 6173,
+      "LF": 103,
+      "sha256": "d6d19890334fbb6d7e92e605640d4638154f8e3e10588c8e217bf782a675b7ca",
+      "gitBlob": "aaf6b24f65a59e4b421805d7667a5fdf9e72433f"
+    },
+    {
+      "path": "src/service-credit-capacity-recorder.js",
+      "bytes": 10801,
+      "LF": 236,
+      "sha256": "eca9bf4cad4717df5d61457044c2c5d0a6bc00b6af81964d09bf18325d4a46ad",
+      "gitBlob": "bc9b0a8a9abd48033e698e100cdc6ef90d2152c9"
+    },
+    {
+      "path": "src/service-credit-capacity-window-recorder.js",
+      "bytes": 13321,
+      "LF": 242,
+      "sha256": "48855e34729ae68c179d6439aed962a719964732c992a83472330b7e41293579",
+      "gitBlob": "6e28e75b4fd6572fbae535ac066334349ed26038"
+    },
+    {
+      "path": "src/service-credit-capacity-window-writer-trace-data.js",
+      "bytes": 8906,
+      "LF": 126,
+      "sha256": "b86377ec5474f85465073e7891bde9f706b167a40cb6677671a6012dab4d9bbd",
+      "gitBlob": "ceabbe01bb341ccf2c9c8f0d89229e3dd4268c5f"
+    },
+    {
+      "path": "src/service-credit-capacity-windowed-async-workload-owner-core.js",
+      "bytes": 31976,
+      "LF": 563,
+      "sha256": "e6559f7646d65795339c99fb853d0a9dbeb4e69ee8df6c2fcb0070d9c4ca2624",
+      "gitBlob": "f41334ea389adf5f9ee2f69cc0b2e525cbe718dd"
+    }
+  ],
+  "sourceReviewNotNativeProof": {
+    "hardwiredServiceChildClockOwner": true,
+    "sourceClockNotInjected": true,
+    "constructionAndSnapshotInert": true,
+    "actualWorkerStopBranchBeforeOrdinaryActiveGate": true,
+    "windowFailureDoesNotItselfCloseSqlOrOriginal": true,
+    "originalArmSendEnteredBeforeDeferredParentStop": true,
+    "markerAndOperationTicketsBoundSeparately": true,
+    "unobservedTicketsRetainedOnEof": true,
+    "onlyOwnedObsoleteTimersStoppedOnEof": true,
+    "fullSourceRolesVersionedSeparatelyFromV2": true,
+    "sourceReviewIsRuntimeQualification": false
+  },
+  "nativeStatus": {
+    "executed": false,
+    "completeManagedV3LauncherImplemented": false,
+    "rolePreloadersImplemented": true,
+    "newV3NativeAuthority": "NONE",
+    "previousV2SourceAndPendingApprovalUnchanged": true,
+    "oldAllowancesRenewed": false,
+    "existingP2FailuresUnchanged": true,
+    "sustainableCapacityQualified": false,
+    "liveOrProduction": false,
+    "authority": "NONE"
+  },
+  "resources": {
+    "newTaskRoots": 0,
+    "qualificationScratchCreated": false,
+    "privateProfilesWritten": false,
+    "privateRootsOpened": false,
+    "packagesInstalled": false,
+    "sourceOrPackageCopiesCreated": 0,
+    "SDKExecuted": false,
+    "SQLiteOpened": false,
+    "keysGenerated": false,
+    "signaturesProduced": false,
+    "nonceSearchExecuted": false,
+    "nativeChildrenStarted": 0,
+    "socketsOpened": false,
+    "OSNetworkSandbox": false,
+    "cleanupPerformed": false,
+    "automationsChanged": false
+  }
+}
+
