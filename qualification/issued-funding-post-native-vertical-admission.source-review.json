@@ -1,0 +1,325 @@
+{
+  "kind": "ACTUAL_ISSUED_NATIVE_VERTICAL_ADMISSION_SOURCE_AND_READ_ONLY_RESULT",
+  "status": "PASS_DATA_TESTS_SYNTAX_SOURCE_PACKAGE_READS_NATIVE_NOT_RUN",
+  "sourceParent": "82f67b295885be8129bb28144abb8ef4d9957d88",
+  "mainParent": "dfc799cef3d2c77f1192bc10c8433c6349f567d9",
+  "manifest": {
+    "path": "qualification/issued-funding-post-native-vertical.inputs.json",
+    "bytes": 138511,
+    "LF": 3829,
+    "sha256": "296dd3eee42e0756dc93e9b720f838ec2ff180a3ba898f4253bdae8d4d4a5b47",
+    "gitBlob": "134646994d04de64d4ad8fecfd6a1002f98cd212"
+  },
+  "sourceRowsSha256": "57d227c477edf212e7599017276d3348d42fa795da511b1d02e85689777f5788",
+  "dataQualification": {
+    "event": "Q106_CURRENT_SOURCE_DATA_TEST_PASS",
+    "tests": 21,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "actualExit": 0,
+    "outputComplete": true,
+    "stdoutBytes": 0,
+    "stderrBytes": 2411,
+    "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stderrSha256": "995c65e53f580818822e4b3e3d1ed831049c4521fd9cb56ed1789974c0cf4aa3",
+    "inputs": [
+      {
+        "path": "qualification/issued-funding-native-profile.test.py",
+        "bytes": 8943,
+        "LF": 175,
+        "sha256": "b0d3ba4652591d169c771533ed7b11e40586385c0db048002739e38401e1837d",
+        "gitBlob": "327a218e19d075b5b4e43fa5dc008d6cd9994590"
+      },
+      {
+        "path": "qualification/issued-funding-post-native-vertical.inputs.json",
+        "bytes": 138511,
+        "LF": 3829,
+        "sha256": "296dd3eee42e0756dc93e9b720f838ec2ff180a3ba898f4253bdae8d4d4a5b47",
+        "gitBlob": "134646994d04de64d4ad8fecfd6a1002f98cd212"
+      },
+      {
+        "path": "qualification/issued_funding_native_profile.py",
+        "bytes": 17654,
+        "LF": 243,
+        "sha256": "d303173479fa9bb7af80bdabeff49394bd65481e97064460abd0928f5556b5b5",
+        "gitBlob": "04aef8151405d277b40b2227992575f8c83bbdfe"
+      }
+    ],
+    "syntheticCaptureOnly": true,
+    "applicationImported": false,
+    "SDK": 0,
+    "SQLite": 0,
+    "keys": 0,
+    "signatures": 0,
+    "nonce": 0,
+    "TLS": 0,
+    "NodeChildren": 0,
+    "newManagedRoots": 0,
+    "newManagedTasks": 0,
+    "newScratchBytes": 0
+  },
+  "dataTestCommandsThisTurn": 2,
+  "qualifiedCurrentDataTests": 21,
+  "syntaxOnly": {
+    "path": "qualification/issued-funding-post-native-vertical.preload.draft.mjs",
+    "syntaxActualExit": 0,
+    "outputComplete": true,
+    "applicationImported": false,
+    "input": {
+      "path": "qualification/issued-funding-post-native-vertical.preload.draft.mjs",
+      "bytes": 11124,
+      "LF": 161,
+      "sha256": "6c9dad0aff2d0836edb9bf67ec92afe80c4e966bb71395451e5239305adca75e",
+      "gitBlob": "819cd6779e8df5d09d864180ea85ba790e927bc1"
+    },
+    "stdoutBytes": 0,
+    "stderrBytes": 0,
+    "NodeCommands": 1,
+    "nativeTlsExecuted": false
+  },
+  "pythonCompileOnly": {
+    "event": "Q106_PYTHON_COMPILE_NO_BYTECODE",
+    "compiled": [
+      {
+        "path": "qualification/issued_funding_native_profile.py",
+        "bytes": 17654,
+        "LF": 243,
+        "sha256": "d303173479fa9bb7af80bdabeff49394bd65481e97064460abd0928f5556b5b5",
+        "gitBlob": "04aef8151405d277b40b2227992575f8c83bbdfe"
+      },
+      {
+        "path": "qualification/run-issued-funding-native-vertical.local.py",
+        "bytes": 15886,
+        "LF": 265,
+        "sha256": "3cacc7bed20b397005d1b6a3401670f768da875e6118b93a290dbb7add10927e",
+        "gitBlob": "4f7778260cb4fc82fd799dfc8916f0d43d11cd97"
+      },
+      {
+        "path": "qualification/issued-funding-native-profile.test.py",
+        "bytes": 8943,
+        "LF": 175,
+        "sha256": "b0d3ba4652591d169c771533ed7b11e40586385c0db048002739e38401e1837d",
+        "gitBlob": "327a218e19d075b5b4e43fa5dc008d6cd9994590"
+      }
+    ],
+    "modulesImported": false,
+    "manifest": {
+      "path": "qualification/issued-funding-post-native-vertical.inputs.json",
+      "bytes": 138511,
+      "LF": 3829,
+      "sha256": "296dd3eee42e0756dc93e9b720f838ec2ff180a3ba898f4253bdae8d4d4a5b47",
+      "gitBlob": "134646994d04de64d4ad8fecfd6a1002f98cd212"
+    }
+  },
+  "currentReadOnlyProfile": {
+    "profileBytesCount": 216221,
+    "sourceRowsSha256": "57d227c477edf212e7599017276d3348d42fa795da511b1d02e85689777f5788",
+    "sourceBytes": 4363667,
+    "applicationFiles": 116,
+    "packageFiles": 404,
+    "mode": "clean",
+    "sourceTransforms": false,
+    "effectsExecuted": false,
+    "existingSourcesRecopied": false,
+    "privateFileUrlsPublished": false,
+    "privatePhysicalIdentitiesPublished": false,
+    "privateProfilePublished": false,
+    "applicationFilesFromPublishedParent": 115,
+    "newPreloaderFiles": 1,
+    "packageFilesVerified": 404,
+    "packageCodeExecuted": false,
+    "ordinaryInstalledNamespaceQualified": false,
+    "currentRuntimeNamespaceQualified": false
+  },
+  "sourceClosure": {
+    "applicationFiles": 116,
+    "packageFiles": 404,
+    "totalFiles": 520,
+    "sourceBytes": 4363667,
+    "eightRealPackageBindings": true,
+    "nativeBuiltinAliases": false,
+    "sourceTransforms": false,
+    "sourceOrFormatLoadHook": false,
+    "literalDiscoveryIsNotAFullJSParser": true,
+    "quotedImportGuardTextNotAnImportEdge": true,
+    "caseAndRuntimeSourceFilesChanged": 0
+  },
+  "storagePlan": {
+    "sourceReadLimitBytes": 6291456,
+    "taskQuotaBytes": 4194304,
+    "plannedControlSourceRetentionBytes": 252508,
+    "privateProfileBytes": 216221,
+    "existingSourceGraphBytesReadOnly": 4363667,
+    "wholeGraphCopied": false,
+    "onlyControlCasePreloaderManifestRetained": true,
+    "actualNewScratchBytes": 0,
+    "physicalReclaim": "NOT_MEASURED",
+    "nativeDiskBenchmark": "NOT_RUN"
+  },
+  "readOnlyPreNative": {
+    "actualExit": 1,
+    "sourceAdmissionPassed": true,
+    "packageBinaryAndManagerGuardsPassedBeforeCapacity": true,
+    "capacityAdmission": "REFUSED",
+    "code": "OLD_TASK_DIRECTORY",
+    "historicalRefusalPreserved": true,
+    "unknownEntriesNotIgnored": true,
+    "historicalRootsNotAdopted": true,
+    "existingMetadataNotRebound": true,
+    "nativeCommandsEntered": 0,
+    "newRootsCreated": 0,
+    "newTasksCreated": 0
+  },
+  "olderApprovedFullDp": {
+    "manifestPath": "qualification/dynamic-plasma-full-native-loopback.inputs.json",
+    "manifestSha256": "a472e3bcd8840ef4236e395cb918ae5f2a84be9ca45d8f59417c0b77da291933",
+    "manifestAndGraphUnchanged": true,
+    "authorizedAttempts": 1,
+    "attemptsEntered": 0,
+    "allowanceUnused": true,
+    "coversNewIssuedGraph": false
+  },
+  "authoredNativeScope": {
+    "selectedCases": 1,
+    "maximumRuns": 1,
+    "opensslCommands": 1,
+    "nodeCommands": 1,
+    "nodeChildren": 0,
+    "newSqlitePaths": 5,
+    "independentPinFiles": 2,
+    "syntheticEd25519Keys": 4,
+    "transactionSignatures": 1,
+    "capabilitySignatures": 3,
+    "providerSignatures": 2,
+    "testTlsMaterialSeparate": true,
+    "maxRpcConnections": 174,
+    "maxApplicationConnections": 8,
+    "maxTotalConnections": 182,
+    "expectedTotalConnections": 96,
+    "maxCandidatesPerSearch": 4096,
+    "maxReferenceCandidates": 32768,
+    "producerCandidateReservation": 4096,
+    "fixedVerificationReservation": 16384,
+    "maxAggregateCandidates": 65536,
+    "taskQuotaBytes": 4194304,
+    "maximumSourceReadBytes": 6291456,
+    "existingSourcesRecopied": false,
+    "externalNetwork": false,
+    "install": false,
+    "realWallet": false,
+    "realPayment": false,
+    "sdkPrepareBlock": false,
+    "nativeOsNetworkSandbox": false
+  },
+  "actualExecution": {
+    "qualifiedDataTests": 21,
+    "nativeApplicationCases": 0,
+    "applicationJSImported": false,
+    "preloaderImported": false,
+    "SDK": 0,
+    "SQLite": 0,
+    "keys": 0,
+    "signatures": 0,
+    "nonce": 0,
+    "TLS": 0,
+    "sockets": 0,
+    "OpenSSL": 0,
+    "syntaxOnlyNodeCommands": 1,
+    "NodeChildren": 0,
+    "downloads": 0,
+    "installs": 0,
+    "newManagedRoots": 0,
+    "newManagedTasks": 0,
+    "newQualificationScratchBytes": 0,
+    "cleanup": 0
+  },
+  "evidenceLimits": [
+    "DATA tests validate admission/capture parsing against fabricated data, not an actual native result.",
+    "Source/physical input matching is not runtime resolution or installed-package compatibility.",
+    "The complete graph is retained; no easier facade replaces actual application/SDK/SQL/native owners.",
+    "Existing source bytes and planned retention sizes are not APFS reclaim or performance results.",
+    "Live historical reservation refusal remains authoritative; no native run starts through a modified helper or omitted reservations.",
+    "Native effects need their separately reviewed current graph/mode/resource scope, not combined historical allowances."
+  ],
+  "baseline": {
+    "source": {
+      "commit": "82f67b295885be8129bb28144abb8ef4d9957d88",
+      "tree": "b6b155cf0cd22523c47e5094de48132dfb074f1b",
+      "files": 1020,
+      "treeSeal": "93cfab08fabd223554d62e7eb4b872b2514564577566b874102c1cf4fb146450",
+      "selectedFiles": 4,
+      "force": false
+    },
+    "main": {
+      "commit": "dfc799cef3d2c77f1192bc10c8433c6349f567d9",
+      "tree": "6a1112aff47c56dabad935fb499fcf58b8db646d",
+      "files": 875,
+      "treeSeal": "3c649ff6271721a28c4507eb428ab35914072cb005d1aae6044c9d3a209a213a",
+      "selectedFiles": 4,
+      "force": false
+    },
+    "PRSummary": [
+      {
+        "number": 194,
+        "draft": true,
+        "head": "79ca2b430ae53c55b1aba11e56c99e083d4a8431",
+        "files": 20
+      },
+      {
+        "number": 193,
+        "draft": true,
+        "head": "5b4bf1b6780586676007c84303510fb4e316cf5e",
+        "files": 2
+      },
+      {
+        "number": 175,
+        "draft": true,
+        "head": "40eca21c34263513230c5d3c431250a0ed42aa90",
+        "files": 11
+      },
+      {
+        "number": 157,
+        "draft": false,
+        "head": "525578cc44db23943e9cfb5a62c4d1c487cca99a",
+        "files": 2
+      }
+    ],
+    "CI": {
+      "source": {
+        "checks": 0,
+        "statuses": 0,
+        "runs": 0
+      },
+      "main": {
+        "checks": 0,
+        "statuses": 0,
+        "runs": 0
+      }
+    },
+    "CIInterpretation": "NO_CURRENT_PASS_INFERRED"
+  },
+  "publication": {
+    "eligibleSourceFiles": [
+      "qualification/issued-funding-post-native-vertical.preload.draft.mjs",
+      "qualification/issued_funding_native_profile.py",
+      "qualification/run-issued-funding-native-vertical.local.py",
+      "qualification/issued-funding-post-native-vertical.inputs.json",
+      "qualification/issued-funding-native-profile.test.py",
+      "qualification/issued-funding-post-native-vertical-admission.source-review.json",
+      "docs/P1_NATIVE_ISSUED_FUNDING_ADMISSION_DRAFT.md"
+    ],
+    "eligibleMainFiles": [],
+    "mainFilesChanged": 0,
+    "normalFastForwardOnly": true,
+    "forcePush": false,
+    "branchProtectionBypass": false,
+    "privatePathsOrRawDiagnosticsPublished": false,
+    "CIOrWorkflowsChanged": false
+  },
+  "fullP0Complete": false,
+  "fullP1Complete": false,
+  "fullP2Complete": false,
+  "fullRoadmapComplete": false,
+  "productionQualified": false
+}
