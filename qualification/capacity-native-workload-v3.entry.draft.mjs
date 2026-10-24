@@ -19,7 +19,7 @@ try {
       ||!d||!Object.hasOwn(d,'value')||d.writable||d.configurable||d.enumerable||typeof d.value!=='function'||!Object.isFrozen(d.value)
       ||!/^[0-9a-f]{64}$/.test(E.X402_NATIVE_CAPACITY_PLAN_SHA256||''))fail();
   const namespace=d.value(),rows=namespace.childProfiles;
-  if(namespace.profileKind!=='NATIVE_CAPACITY_SUPERVISOR_NODE24_V3'||namespace.applicationFiles!==138||namespace.packageFiles!==404
+  if(namespace.profileKind!=='NATIVE_CAPACITY_SUPERVISOR_NODE24_V3'||namespace.applicationFiles!==139||namespace.packageFiles!==404
       ||namespace.nodeSha256!==nodeSha||namespace.rootIdentityFields!==5||namespace.rootIndependenceVerifiedAtAdmission!==true
       ||namespace.sourceTransforms!==0||namespace.nativeBuiltinAliases!==0||namespace.ordinaryInstalledNamespaceQualified!==false
       ||!Array.isArray(rows)||rows.length<2||rows.length>32)fail();
@@ -43,10 +43,18 @@ try {
   if(seen.size!==rows.length)fail();
   // This is the real source-owned pair/core adapter, not an injected workload.
   const {createNativeCapacityWorkloadAdapter:CREATE}=await import('./capacity-native-workload-adapter-v3.draft.mjs');
+  const {checkServiceCreditCapacityParentTimingTraceData:CHECK_PARENT}=await import('../src/service-credit-capacity-parent-timing-trace-data.js');
   owned=CREATE(deepFreeze(plan));
   const result=await owned.run(),evidence=owned.privateEvidence();
+  let parentTrace=null,parentCheck=null;
+  try{parentTrace=owned.privateParentTimingEvidence();}catch{/* Preserve the failed capture as UNKNOWN. */}
+  try{if(parentTrace!==null)parentCheck=CHECK_PARENT(F({trace:parentTrace,recording:result.core.recording}));}catch{/* No repaired pass. */}
+  const parentTimingData=F({parentTimingCaptureVersion:1,
+    context:F({runId:plan.context.runId,sourceRowsSha256:namespace.sourceRowsSha256,
+      laneIds:F(plan.laneProfiles.map(row=>row.laneId))}),trace:parentTrace,check:parentCheck,
+    status:parentCheck===null?'UNKNOWN_OR_MISMATCHED_PARENT_TRACE':'MATCHING_DECLARED_PARENT_TRACE'});
   const packed=F({captureVersion:3,kind:'PRIVATE_FULL_NATIVE_CAPACITY_COMPONENT_CAPTURE_NOT_PRODUCTION',
-    sourceRowsSha256:namespace.sourceRowsSha256,result,evidence:F(evidence.map(row=>F({
+    sourceRowsSha256:namespace.sourceRowsSha256,result,parentTimingData,evidence:F(evidence.map(row=>F({
       laneId:row.laneId,pairSnapshot:row.pairSnapshot,serviceWriterIntervals:row.serviceWriterIntervals,
       serviceWriterAttribution:row.serviceWriterAttribution,
       serviceMeasurementWindow:row.serviceMeasurementWindow,
@@ -55,7 +63,7 @@ try {
     nativeResourcesQualified:false,sustainableCapacityQualified:false,chainAuthenticated:false,productionQualified:false,authority:'NONE'});
   const bytes=Buffer.from(JSON.stringify(packed)+'\n');if(bytes.length>MAX)fail();
   await new Promise((yes,no)=>process.stdout.write(bytes,error=>error?no(error):yes()));
-  process.exitCode=result.status==='OBSERVED_COMPONENT_ONLY'&&result.core.outcome==='OBSERVED_OWNERS_RETURNED'?0:1;
+  process.exitCode=result.status==='OBSERVED_COMPONENT_ONLY'&&result.core.outcome==='OBSERVED_OWNERS_RETURNED'&&parentCheck!==null?0:1;
   // Natural exit only: live children/timers remain real obligations. The owned
   // managed command's outer bound may stop its process group on UNKNOWN.
 }catch{

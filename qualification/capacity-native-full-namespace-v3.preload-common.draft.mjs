@@ -56,6 +56,7 @@ const ADDITIONS = [
   "app/src/native-private-directory-identity.js",
   "app/src/service-credit-capacity-cohort-writer-trace-data.js",
   "app/src/service-credit-capacity-native-observation-data.js",
+  "app/src/service-credit-capacity-parent-timing-trace-data.js",
   "app/src/service-credit-capacity-recorder.js",
   "app/src/service-credit-capacity-window-recorder.js",
   "app/src/service-credit-capacity-window-writer-trace-data.js",
@@ -111,7 +112,7 @@ export function installNativeCapacityFullNamespaceV3(role, preloaderURL) {
       || profile.runId !== E.X402_NATIVE_CAPACITY_RUN_ID || profile.laneId !== E.X402_NATIVE_CAPACITY_LANE_ID
       || profile.rootPath !== E.SPV_TASK_SCRATCH || !numbers(profile.rootIdentity, 5)
       || profile.preloaderURL !== preloaderURL || !SHA.test(profile.sourceRowsSha256 || '')
-      || !Array.isArray(profile.inputs) || profile.inputs.length !== 542
+      || !Array.isArray(profile.inputs) || profile.inputs.length !== 543
       || !Array.isArray(profile.bareBindings) || !Array.isArray(profile.allowedBuiltins) || !Array.isArray(profile.childProfiles)) reject();
   rootCheck(profile.rootPath, profile.rootIdentity); nodeCheck();
   const logical = new Map(), urls = new Map(), verified = new Set();
@@ -129,7 +130,7 @@ export function installNativeCapacityFullNamespaceV3(role, preloaderURL) {
     if (row.logicalPath.startsWith('app/')) applications++; else packages++;
     F(row.identity); F(row); logical.set(row.logicalPath, row); urls.set(row.url, row);
   }
-  if (applications !== 138 || packages !== 404 || logical.get(spec.preloader)?.url !== preloaderURL
+  if (applications !== 139 || packages !== 404 || logical.get(spec.preloader)?.url !== preloaderURL
       || logical.get(spec.entry)?.url !== profile.entryURL || pathToFileURL(process.argv[1]).href !== profile.entryURL
       || logical.get(COMMON)?.url !== import.meta.url || logical.get(BASE)?.sha256 !== BASE_SHA) reject();
   const publicRows = [...logical.values()].map(r => ({ path:r.logicalPath, bytes:r.bytes, LF:r.LF, sha256:r.sha256, gitBlob:r.gitBlob }))

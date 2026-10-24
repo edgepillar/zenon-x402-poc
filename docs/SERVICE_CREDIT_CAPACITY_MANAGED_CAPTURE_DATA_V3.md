@@ -2,11 +2,13 @@
 
 The original result linked below is historical at
 [1753877](https://github.com/edgepillar/zenon-x402-poc/tree/1753877381b0a81fa6394c5b7cda9b9b465e792b).
-The validator's new source-seal binding was separately rerun through all 135
-controls; see the [current component result](../qualification/service-credit-capacity-parent-timing-trace.actual-local-result.json).
-Neither result is a native run or a renewal of an earlier allowance.
+An intermediate source-seal binding was rerun through 135 controls; its
+[component result](../qualification/service-credit-capacity-parent-timing-trace.actual-local-result.json)
+also remains historical. The current parent-bound selection has 175 controls;
+see the [current controller contract](SERVICE_CREDIT_CAPACITY_PARENT_CAPTURE_CONTROLLER.md).
+None of these results is a native run or renewal of an earlier allowance.
 
-Status: **135 selected DATA controls passed**. This
+Historical qualification: **135 selected DATA controls passed**. This
 [pure module](../qualification/native_capacity_managed_workload_v3.py)
 plans finite resource ceilings and checks declared capture/receipt DATA.
 It imports no manager, SDK, SQL, clock, process or native namespace.

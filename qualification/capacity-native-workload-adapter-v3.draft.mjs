@@ -10,7 +10,7 @@
 import { setTimeout, clearTimeout } from 'node:timers';
 import { resolve } from 'node:path';
 import { types as utilTypes } from 'node:util';
-import { createServiceCreditCapacityWindowedAsyncWorkloadOwnerCore as CREATE_CORE } from '../src/service-credit-capacity-windowed-async-workload-owner-core.js';
+import { createServiceCreditCapacityWindowedAsyncWorkloadOwnerCoreWithPrivateTimingTrace as CREATE_CORE } from '../src/service-credit-capacity-windowed-async-workload-owner-core.js';
 import { captureNativeCapacityBalanceRead as BALANCE,
   captureNativeCapacityLedgerTimingPage as TIMING_PAGE } from '../src/service-credit-capacity-native-observation-data.js';
 import { createNativeCapacityPairedLane as CREATE_PAIR } from './capacity-native-paired-lane-v3.supervisor.draft.mjs';
@@ -224,7 +224,13 @@ export function createNativeCapacityWorkloadAdapter(configuration) {
       payerOperationTimings: s.pair === null ? F([]) : s.pair.payerOperationTimings(),
       privateStreams: s.pair === null ? F([]) : s.pair.privateStreams() })));
   });
-  return F({ run, stop, inspect, privateEvidence });
+  const privateParentTimingEvidence = F(function privateParentTimingEvidence() {
+    if (arguments.length !== 0) fail();
+    // The genuine core returns one frozen cached recorder-event array only
+    // after finalization. No new clock read, report copy or native action.
+    return owner.captureTimingEvidence();
+  });
+  return F({ run, stop, inspect, privateEvidence, privateParentTimingEvidence });
 }
 function now() { const n = process.hrtime.bigint(); if (typeof n !== 'bigint' || n < 0n || n >= 1n << 128n) fail(); return n; }
 function summarize(values) {

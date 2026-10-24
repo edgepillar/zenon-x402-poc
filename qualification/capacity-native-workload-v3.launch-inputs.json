@@ -1,7 +1,7 @@
 {
   "kind": "ONE_FULL_NATIVE_CAPACITY_V3_MANAGED_LAUNCH_SOURCE_NOT_EXECUTION",
   "version": 3,
-  "sourceParent": "1aa075ae8e4d848abd2b6b2e565ec138ee9cea6b",
+  "sourceParent": "354686881d0f74796b6aac675ba87a7cce48d7b0",
   "pythonControls": [
     {
       "path": "qualification/funding_tls_current_gate.py",
@@ -12,17 +12,17 @@
     },
     {
       "path": "qualification/native_capacity_full_profile_v3.py",
-      "bytes": 23370,
-      "LF": 352,
-      "sha256": "93568d6e149c6da0eedbbcbe2fa8115dd4b23d4a0965faef0b1f47729ab0b244",
-      "gitBlob": "ca85dbfaff0d348c09c052d1e13e03b50ef40204"
+      "bytes": 23435,
+      "LF": 353,
+      "sha256": "6928303c36f034fc295145563e40304641a91fe7db35d62eb364031bbcff7e6a",
+      "gitBlob": "6268ca35b32c32611b9663e964ddf2485b941ddc"
     },
     {
       "path": "qualification/native_capacity_managed_workload_v3.py",
-      "bytes": 36833,
-      "LF": 503,
-      "sha256": "428a698d6de786d6b326256d345ffd7b6a2122bd4580ff1f13a2eb85f99db61a",
-      "gitBlob": "abe5f1dfb3efb5f5714c75d59bc5cf5ce26536ee"
+      "bytes": 49689,
+      "LF": 646,
+      "sha256": "6d4e2d726bd600b84be387147ee7cd6555daa8b72b8940a8719861a1078b4567",
+      "gitBlob": "c11c7981db6827e68d49dfdf354db3601afb5adc"
     },
     {
       "path": "qualification/recovery_crash_native_profile.py",
@@ -35,16 +35,16 @@
       "path": "qualification/run-capacity-native-workload-v3.local.py",
       "bytes": 26105,
       "LF": 395,
-      "sha256": "0834d32fcae93fc6ad679625c24974300670fd228f336f35231a98cab272da25",
-      "gitBlob": "347dc0b097fd5145ba087a1f7224087d442968c7"
+      "sha256": "4e2e29c31ae10c661bd5599506cda87482d030fc328dbde1e3e1066db5dba9e6",
+      "gitBlob": "eac94ea35f381307f61db1b7d709f29e1c23b8a5"
     }
   ],
   "inventory": {
     "path": "qualification/capacity-native-full-graph-v3.inputs.json",
-    "bytes": 8424,
-    "LF": 208,
-    "sha256": "73624c02d9bc39a7186ae994434ced83311ed718a6499997b3ee5cc4fdcda10a",
-    "gitBlob": "d97d9bb6bb0baea911aaf3f507fa40d41cffdbff"
+    "bytes": 8697,
+    "LF": 215,
+    "sha256": "3bb597da71736542615047d11af78ad6825df5bdb6e4561747d8c1f9dff7d0df",
+    "gitBlob": "0530e2b08929d45c93b4e4912dc69d27b0645204"
   },
   "baseline": {
     "path": "qualification/issued-funding-post-native-vertical.inputs-v3.json",
@@ -63,7 +63,7 @@
   "effectsCeiling": {
     "planVersion": 3,
     "workloadPlanSha256": "305ac4cc311f18b370d3295206ba8ef1a533eee23bdbbbd5166474226816fd0b",
-    "sourceRowsSha256": "c517355f0eaa2b21eea7289b91f40d3464adb5966f60ff085dbc0b0a96d8a92c",
+    "sourceRowsSha256": "d756740994aeb53ebeee47320d732583d96381dfa8c00e18a30f414e70a77027",
     "laneCount": 2,
     "totalCallsPerLane": 5,
     "warmupCallsMaximum": 2,
@@ -77,7 +77,7 @@
     "serviceWriterRowsMaximum": 248,
     "privateWriterAttributionRowsMaximum": 248,
     "serviceChildClockReadsMaximum": 996,
-    "logicalFullCaptureBytesMaximum": 784384,
+    "logicalFullCaptureBytesMaximum": 1022976,
     "fullCaptureBytesPerWriterReserved": 1024,
     "windowSummaryBytesPerLaneReserved": 65536,
     "captureJsonTreeCopyRequired": false,
@@ -96,7 +96,7 @@
     "nonceCandidatesTotalReserved": 131072,
     "testTlsKeyPairsMaximum": 1,
     "privateProfileBytesReserved": 2621440,
-    "nodeStdoutLimit": 786432,
+    "nodeStdoutLimit": 1048576,
     "nodeEntryCaptureMaximum": 16777216,
     "theoreticalCaptureMayExceedEntryCap": false,
     "nativeFileBytesReserved": 67108864,
@@ -114,7 +114,13 @@
     "diskQuotaOsEnforced": false,
     "nativeOsNetworkSandbox": false,
     "effectsExecuted": false,
-    "authority": "NONE"
+    "authority": "NONE",
+    "privateParentTimingEventsMaximum": 900,
+    "parentTimingBytesPerEventReserved": 256,
+    "parentTimingWrapperBytesReserved": 8192,
+    "privateParentTimingBytesReserved": 238592,
+    "parentTimingSourceClockReadsAdditional": 0,
+    "parentTimingCheckInsideActualEntrySourceAuthored": true
   },
   "storagePolicy": {
     "min_free_bytes": 10737418240,
@@ -126,11 +132,11 @@
     "max_tasks": 1,
     "max_objects": 128,
     "max_commands_per_task": 2,
-    "max_output_bytes": 786432,
+    "max_output_bytes": 1048576,
     "abandoned_after_seconds": 86400,
     "unreferenced_after_seconds": 1209600
   },
-  "sourceRowsSha256": "c517355f0eaa2b21eea7289b91f40d3464adb5966f60ff085dbc0b0a96d8a92c",
+  "sourceRowsSha256": "d756740994aeb53ebeee47320d732583d96381dfa8c00e18a30f414e70a77027",
   "completeManagedControlSourceAuthored": true,
   "nativeExecuted": false,
   "nativeAllowanceGranted": false,

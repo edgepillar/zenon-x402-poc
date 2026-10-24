@@ -17,13 +17,13 @@ import stat
 import sys
 
 INVENTORY = "qualification/capacity-native-full-graph-v3.inputs.json"
-INVENTORY_SHA = "73624c02d9bc39a7186ae994434ced83311ed718a6499997b3ee5cc4fdcda10a"
+INVENTORY_SHA = "3bb597da71736542615047d11af78ad6825df5bdb6e4561747d8c1f9dff7d0df"
 BASELINE = "qualification/issued-funding-post-native-vertical.inputs-v3.json"
 BASELINE_SHA = "51ffb5b0ff0052523c1b7f3d75fa24e9be27e60ca3bcc09236b1f439096aaed1"
 HELPERS = "qualification/recovery_crash_native_profile.py"
 HELPERS_SHA = "75c2c9478b7e792a7bade739161af2bb8fb624cd407924ead2cf822dc23dacbd"
-SOURCE_SEAL = "c517355f0eaa2b21eea7289b91f40d3464adb5966f60ff085dbc0b0a96d8a92c"
-SOURCE_BYTES = 4759641
+SOURCE_SEAL = "d756740994aeb53ebeee47320d732583d96381dfa8c00e18a30f414e70a77027"
+SOURCE_BYTES = 4774150
 NODE_SHA = "dbedff294bab84a0a86c04e15fbcbeb1c97ca10bef1b32b0634cd24b36f62100"
 NODE_BYTES = 121304480
 SPECS = {
@@ -70,6 +70,7 @@ ADDITIONS = [
   "app/src/native-private-directory-identity.js",
   "app/src/service-credit-capacity-cohort-writer-trace-data.js",
   "app/src/service-credit-capacity-native-observation-data.js",
+  "app/src/service-credit-capacity-parent-timing-trace-data.js",
   "app/src/service-credit-capacity-recorder.js",
   "app/src/service-credit-capacity-window-recorder.js",
   "app/src/service-credit-capacity-window-writer-trace-data.js",
@@ -145,15 +146,15 @@ def capture_selection(base, inventory_raw, baseline_raw):
             "nativeBuiltinAliases", "ordinaryInstalledNamespaceQualified", "nativeOsNetworkSandbox")), "SOURCE_NOT_NATIVE_OR_PERMISSION")
     require(type(inv["sourceParent"]) is str and re.fullmatch(r"[0-9a-f]{40}", inv["sourceParent"]), "SOURCE_PARENT_PIN")
     for name, wanted in (("baselineApplicationInputsPreserved", 117), ("baselinePackageInputsPreserved", 404),
-                         ("applicationFiles", 138), ("packageFiles", 404), ("declaredSourceBytes", SOURCE_BYTES)):
+                         ("applicationFiles", 139), ("packageFiles", 404), ("declaredSourceBytes", SOURCE_BYTES)):
         require(type(inv[name]) is int and inv[name] == wanted, "FULL_V3_SOURCE_COUNTS")
     apps = base._rows(baseline["applicationInputs"], "app/", 117)
     packages = base._rows(baseline["packageInputs"], "packages/", 404)
-    extra = base._rows(inv["additionalApplicationInputs"], "app/", 21)
+    extra = base._rows(inv["additionalApplicationInputs"], "app/", 22)
     require(sorted(extra) == ADDITIONS and not set(extra).intersection(apps)
         and extra["app/" + BASELINE] == inv["baselineManifest"], "FULL_V3_NO_REPLACED_BASELINE")
     rows = sorted([*apps.values(), *packages.values(), *extra.values()], key=lambda r: r["path"])
-    require(len(rows) == 542 and sum(r["bytes"] for r in rows) == SOURCE_BYTES <= 6291456
+    require(len(rows) == 543 and sum(r["bytes"] for r in rows) == SOURCE_BYTES <= 6291456
         and inv["sourceRowsSha256"] == sha(canonical(rows)) == SOURCE_SEAL, "FULL_V3_COMPLETE_SOURCE_SEAL")
     require(baseline["allowedBuiltins"] == base.BUILTINS and baseline["packageVersions"] == base.VERSIONS, "EXACT_BASELINE_DEPENDENCIES")
     entry = SPECS["PAYER"]["entry"]
@@ -335,7 +336,7 @@ def main():
     baseline_raw = read_owned(repo / BASELINE, 262144)[0]
     registry = build_source_registry(base, str(repo), args.packages, args.node, inventory_raw, baseline_raw)
     print(json.dumps(dict(event="P4_FULL_V3_SOURCE_REGISTRY_READ_ONLY_NOT_NATIVE", sourceRowsSha256=SOURCE_SEAL,
-        applicationFilesRead=138, packageFilesRead=404, sourceBytesReadOnly=SOURCE_BYTES, sourceCopiesCreated=0,
+        applicationFilesRead=139, packageFilesRead=404, sourceBytesReadOnly=SOURCE_BYTES, sourceCopiesCreated=0,
         nodeBinaryBytesHashedOnce=NODE_BYTES, nodeBinaryExecuted=False, roleKinds=sorted(SPECS),
         newTaskRoots=0, qualificationScratchCreated=False, profilesWritten=False, privateRootsOpened=False,
         nativeExecuted=False, managedNativeLauncherSourceComplete=True, managedNativeLauncherNativeQualified=False, authority="NONE")), flush=True)

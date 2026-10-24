@@ -1,5 +1,10 @@
 # Managed V3 source rebinding after private parent trace support
 
+Historical revision 3 at
+[3546868](https://github.com/edgepillar/zenon-x402-poc/tree/354686881d0f74796b6aac675ba87a7cce48d7b0).
+Its result stays byte-preserved and does not qualify the changed graph. See
+[revision 4](NATIVE_CAPACITY_MANAGED_WORKLOAD_V3_R4_SOURCE.md) for the new source integration.
+
 Status: CURRENT SOURCE-ONLY REBIND; ZERO NATIVE ATTEMPTS.
 
 The shared async core now has an explicit, separately tested private timing
