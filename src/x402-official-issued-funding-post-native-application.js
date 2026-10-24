@@ -63,7 +63,10 @@ export async function createOfficialIssuedFundingPostNativeApplication(options) 
     if(s.store!==i.serviceCreditStore||typeof s.execute!=='function'||IS_PROXY(s.execute)
         ||!Number.isSafeInteger(s.selectedDurationMs)||s.selectedDurationMs<1)fail('configuration');
     brand(i.store,INTAKE_PROTO,'loadBound');brand(s.store,SERVICE_PROTO,'getGrant');
-    serviceConfig=F({...s,deadlineRuntime:F(exact(s.deadlineRuntime,['schedule','cancel']))});
+    // The actual durable execution owner requires its monotonic clock as well
+    // as schedule/cancel. Do not drop that capability at this composition seam
+    // or synthesize a clock; the separate ingress runtime remains two-field.
+    serviceConfig=F({...s,deadlineRuntime:F(exact(s.deadlineRuntime,['monotonicNowNs','schedule','cancel']))});
     const t=exact(c.transport,['origin','generation','limits','deadlineRuntime','httpsServerFactory']);
     transport=F({origin:t.origin,generation:F(exact(t.generation,['generationId','generationVersion'])),
       limits:F(exact(t.limits,LIMITS)),deadlineRuntime:F(exact(t.deadlineRuntime,['schedule','cancel'])),
