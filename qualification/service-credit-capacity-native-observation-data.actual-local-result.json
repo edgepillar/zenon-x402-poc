@@ -1,0 +1,87 @@
+{
+  "schemaVersion": 1,
+  "kind": "ACTUAL_NATIVE_CAPACITY_OBSERVATION_DATA_CAPTURE_NOT_SQL_OR_IPC",
+  "recordedDate": "2026-10-24",
+  "status": "SELECTED_COMPONENT_DATA_PASSED_NOT_NATIVE",
+  "runtime": {
+    "node": "24.19.0",
+    "platform": "darwin",
+    "arch": "arm64",
+    "binarySha256": "dbedff294bab84a0a86c04e15fbcbeb1c97ca10bef1b32b0634cd24b36f62100"
+  },
+  "sourcePins": [
+    {
+      "path": "package.json",
+      "bytes": 2677,
+      "LF": 40,
+      "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+      "gitBlob": "45752ffde39d29666094f7f1c755060d75e43deb"
+    },
+    {
+      "path": "src/service-credit-capacity-native-observation-data.js",
+      "bytes": 6173,
+      "LF": 103,
+      "sha256": "d6d19890334fbb6d7e92e605640d4638154f8e3e10588c8e217bf782a675b7ca",
+      "gitBlob": "aaf6b24f65a59e4b421805d7667a5fdf9e72433f"
+    },
+    {
+      "path": "qualification/service-credit-capacity-native-observation-data.behavior.mjs",
+      "bytes": 9151,
+      "LF": 135,
+      "sha256": "5b7afb10387cc8895d53d068f4005f649997b319d85d9e9cf95caff5ea4cc3d1",
+      "gitBlob": "4be7d43463e39266b24541f1c82fb33edf5cd3ee"
+    }
+  ],
+  "actual": {
+    "exit": 0,
+    "complete": true,
+    "counts": {
+      "tests": 16,
+      "suites": 0,
+      "pass": 16,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "stdoutBytes": 3674,
+    "stdoutSha256": "ecbb77e0f223229ffbf5bb442c05762e4378c55addcddceb2306556570f0da65",
+    "stderrBytes": 0,
+    "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "sourcePinsUnchanged": true
+  },
+  "scope": {
+    "directNodeTestFile": true,
+    "readOnlySourceAllowlistFiles": 3,
+    "SDK": false,
+    "SQLite": false,
+    "keys": false,
+    "signatures": false,
+    "nonceSearch": false,
+    "sockets": false,
+    "workers": false,
+    "nativeTimersFromApplication": false,
+    "newTaskRoots": 0,
+    "qualificationScratchCreated": false,
+    "sourceCopiesCreated": 0
+  },
+  "qualification": {
+    "nativeWorkloadExecuted": false,
+    "nativeResourcesQualified": false,
+    "chainAuthenticated": false,
+    "sustainableCapacityQualified": false,
+    "productionQualified": false,
+    "authority": "NONE"
+  },
+  "componentContract": {
+    "independentPlanExpectations": true,
+    "freshNativeReadAuthenticated": false,
+    "closedFrozenBalanceDTO": true,
+    "pagedChildLocalWriterBrackets": true,
+    "clockDomainsMerged": false,
+    "rawOperationNamesRetained": false,
+    "originalRequestIdsRetained": false,
+    "maximumRowsPerPage": 64
+  },
+  "hostedCiLane": "Separate unchanged 27-control profile; does not execute these 16 tests."
+}
