@@ -132,6 +132,8 @@ test('native adapter V3 requires genuine window capabilities without entering th
   assert.equal(s.core.pendingWindowStarts,0);assert.equal(s.core.pendingWindowStops,0);
   assert.equal(s.core.windowOpenBarrierPending,false);
   assert.equal(owner.privateEvidence()[0].serviceMeasurementWindow,null);
+  assert.deepEqual(owner.privateEvidence()[0].serviceWriterAttribution,[]);
+  assert.equal(Object.isFrozen(owner.privateEvidence()[0].serviceWriterAttribution),true);
   assert.equal(s.pairHandlesCaptured,0);
 });
 test('native worker and preloader namespace are never replaced by the inert tests',()=>{

@@ -1,7 +1,7 @@
 {
   "sourceSelectionVersion": 3,
   "kind": "FULL_NATIVE_CAPACITY_V3_ALL_ROLES_SOURCE_NOT_EXECUTION",
-  "sourceParent": "9fbfc79836dc9fca73385fc583f9de865cce7353",
+  "sourceParent": "25c62dc7fc511f9ebed3b33a92908f8ed8d42c4f",
   "runtime": {
     "node": "24.19.0",
     "platform": "darwin",
@@ -98,17 +98,17 @@
     },
     {
       "path": "app/qualification/capacity-native-workload-adapter-v3.draft.mjs",
-      "bytes": 17159,
-      "LF": 251,
-      "sha256": "662dd8eea272f617a3ea05bc0681fac90846596548dca944d36a6f639ae49131",
-      "gitBlob": "ad91680c8522a427822fd6fa786345fc281e0a96"
+      "bytes": 17930,
+      "LF": 263,
+      "sha256": "8905ffd5be92a5792bb9141cb0f45592f6342d013fef4e9379b4211eabe4b426",
+      "gitBlob": "0ce4f3508cdf6bd4fbca2b298ddb3f0cc95aebac"
     },
     {
       "path": "app/qualification/capacity-native-workload-v3.entry.draft.mjs",
-      "bytes": 6734,
-      "LF": 89,
-      "sha256": "724a5689cc6e76b32ddcc51a698089c22ef464ce8825e5615443064816026b67",
-      "gitBlob": "1caad024c273256f0fc844c6b5f968b0f7148f2b"
+      "bytes": 6795,
+      "LF": 90,
+      "sha256": "a5c498d6ed682903866c4d24d547b0d80afe76754f79a1e9bf07b42db9c848c5",
+      "gitBlob": "e23c3201c1d03729ad8349467b6cd1a6ea4212a7"
     },
     {
       "path": "app/qualification/issued-funding-post-native-vertical.inputs-v3.json",
@@ -195,10 +195,10 @@
   },
   "applicationFiles": 138,
   "packageFiles": 404,
-  "sourceRowsSha256": "1ca3019657b83678fc902fd17513cd98dbd222b51448ed3268a59e30223dd6a3",
-  "declaredSourceBytes": 4754533,
+  "sourceRowsSha256": "03305e857cf787aaba7dfb43412fb38cdcd9c8615284ca25e242a0eb322cec99",
+  "declaredSourceBytes": 4755365,
   "rolePreloadersImplemented": true,
-  "completeManagedLauncherImplemented": false,
+  "completeManagedLauncherImplemented": true,
   "nativeExecuted": false,
   "sourceTransforms": false,
   "nativeBuiltinAliases": false,

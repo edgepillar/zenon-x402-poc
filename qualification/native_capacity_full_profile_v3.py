@@ -17,13 +17,13 @@ import stat
 import sys
 
 INVENTORY = "qualification/capacity-native-full-graph-v3.inputs.json"
-INVENTORY_SHA = "056e1ef2290d16fd900edeaa124503dee9b084d2aaef73ac79d8a83846c87695"
+INVENTORY_SHA = "d9599aa00924777f91cb1cbb51a508b5bda156ef30994d342bd3a4512d5b2d97"
 BASELINE = "qualification/issued-funding-post-native-vertical.inputs-v3.json"
 BASELINE_SHA = "51ffb5b0ff0052523c1b7f3d75fa24e9be27e60ca3bcc09236b1f439096aaed1"
 HELPERS = "qualification/recovery_crash_native_profile.py"
 HELPERS_SHA = "75c2c9478b7e792a7bade739161af2bb8fb624cd407924ead2cf822dc23dacbd"
-SOURCE_SEAL = "1ca3019657b83678fc902fd17513cd98dbd222b51448ed3268a59e30223dd6a3"
-SOURCE_BYTES = 4754533
+SOURCE_SEAL = "03305e857cf787aaba7dfb43412fb38cdcd9c8615284ca25e242a0eb322cec99"
+SOURCE_BYTES = 4755365
 NODE_SHA = "dbedff294bab84a0a86c04e15fbcbeb1c97ca10bef1b32b0634cd24b36f62100"
 NODE_BYTES = 121304480
 SPECS = {
@@ -140,7 +140,8 @@ def capture_selection(base, inventory_raw, baseline_raw):
         and inv["roleSpecs"] == SPECS and inv["baselineManifest"] == base.pin("app/" + BASELINE, baseline_raw), "FULL_V3_SELECTION")
     require(inv["runtime"] == dict(node="24.19.0", platform="darwin", arch="arm64", nodeSha256=NODE_SHA, nodeBytes=NODE_BYTES)
         and inv["authority"] == "NONE" and inv["rolePreloadersImplemented"] is True
-        and all(inv[k] is False for k in ("completeManagedLauncherImplemented", "nativeExecuted", "sourceTransforms",
+        and inv["completeManagedLauncherImplemented"] is True
+        and all(inv[k] is False for k in ("nativeExecuted", "sourceTransforms",
             "nativeBuiltinAliases", "ordinaryInstalledNamespaceQualified", "nativeOsNetworkSandbox")), "SOURCE_NOT_NATIVE_OR_PERMISSION")
     require(type(inv["sourceParent"]) is str and re.fullmatch(r"[0-9a-f]{40}", inv["sourceParent"]), "SOURCE_PARENT_PIN")
     for name, wanted in (("baselineApplicationInputsPreserved", 117), ("baselinePackageInputsPreserved", 404),
@@ -337,7 +338,7 @@ def main():
         applicationFilesRead=138, packageFilesRead=404, sourceBytesReadOnly=SOURCE_BYTES, sourceCopiesCreated=0,
         nodeBinaryBytesHashedOnce=NODE_BYTES, nodeBinaryExecuted=False, roleKinds=sorted(SPECS),
         newTaskRoots=0, qualificationScratchCreated=False, profilesWritten=False, privateRootsOpened=False,
-        nativeExecuted=False, managedNativeLauncherComplete=False, authority="NONE")), flush=True)
+        nativeExecuted=False, managedNativeLauncherSourceComplete=True, managedNativeLauncherNativeQualified=False, authority="NONE")), flush=True)
     return 0
 
 

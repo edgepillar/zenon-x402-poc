@@ -16,7 +16,7 @@ import stat
 import sys
 import unittest
 
-BUILDER_SHA = "ffd4ee534137fcf237f20a5f113aa44b94e986c20b83436ef486a9a9c94f453b"
+BUILDER_SHA = "3cab5240c30a4c872a04fb9a1304429eadbc4d81e8851bed8a8fd9d34dce7112"
 repo = Path(__file__).absolute().parents[1]
 builder_path = repo / "qualification/native_capacity_full_profile_v3.py"
 for at in (builder_path, *builder_path.parents):
