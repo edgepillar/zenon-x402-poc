@@ -104,9 +104,12 @@ The previous 549-row producer/resource/bundle, managed launcher, declarations,
 failed evidence and source-bound results are unchanged. Earlier v2/v3 result
 fields remain historical snapshots, not silently upgraded proof.
 
-The new independent FULL outer-capture-v3 verifier and real managed-launch
-binding remain unfinished. The new resource policy has not been physically
-admitted. Existing R4 approval is unconsumed and is not a new paced grant; exact
+At this source snapshot the new full outer verifier was still pending. The later
+[independent outer-v3 verifier](SERVICE_CREDIT_CAPACITY_PACED_OUTER_CAPTURE_V3.md)
+now reconstructs complete balance series plus retained child/writer/receipt DATA,
+with 131 controls passed after a separately recorded failed attempt.
+The real managed-launch binding remains unfinished, and the new resource policy
+has not been physically admitted. Existing R4 approval is unconsumed and is not a new paced grant; exact
 finite authority and fresh source/tool/storage admission would still be required
 before any native attempt. No task/root, fresh storage poll, cleanup, metadata
 rebinding, floor reduction, SDK, SQLite, key/signature, nonce, socket or child ran.

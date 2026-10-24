@@ -92,8 +92,10 @@ it creates no private profile file and grants no native authority.
 
 The later [full profile/resource/entry binding](SERVICE_CREDIT_CAPACITY_PACED_PROFILE_RESOURCE_BUNDLE_V2.md)
 implements the new resource calculation and complete bundle with 129 DATA controls.
-The real managed-launch binding, physical policy admission and independent FULL
-v3 outer verifier are still required. Existing 145-application-row parent profiles,
+The later [full outer-v3 verifier](SERVICE_CREDIT_CAPACITY_PACED_OUTER_CAPTURE_V3.md)
+adds independent raw balance reconstruction and 131 passing DATA controls.
+The real managed-launch binding and physical policy admission are still required.
+Existing 145-application-row parent profiles,
 the old v2 outer validator and old
 71 MiB/72-second reservations cannot be relabeled as qualification of this new
 graph. The original R4 grant is unconsumed; no new paced native grant exists.
