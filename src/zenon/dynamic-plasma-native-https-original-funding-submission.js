@@ -4,11 +4,13 @@ import { createBoundedNonceDynamicPlasmaMaterialExchange } from './dynamic-plasm
 import { createRetainedDynamicPlasmaHttpsReadSessionV2 } from './dynamic-plasma-retained-https-read-session.js';
 import { createZenonDynamicPlasmaOriginalFundingSubmissionV4 } from './dynamic-plasma-original-funding-submission.js';
 import { createFundingPostNativeHttpsTransport } from '../service-credit-funding-post-native-https-transport.js';
+import { createNativeOriginalFundingCloseSession } from './dynamic-plasma-native-funding-close-session.js';
 
 const CAPTURE = captureZenonDynamicPlasmaBoundedOriginalFundingConfiguration;
 const MATERIAL = createBoundedNonceDynamicPlasmaMaterialExchange;
 const READS = createRetainedDynamicPlasmaHttpsReadSessionV2, SUBMIT = createZenonDynamicPlasmaOriginalFundingSubmissionV4;
 const FUNDING = createFundingPostNativeHttpsTransport, FREEZE = Object.freeze;
+const JOIN = createNativeOriginalFundingCloseSession;
 const DESC = Object.getOwnPropertyDescriptor, PROTO = Object.getPrototypeOf, KEYS = Reflect.ownKeys;
 const OWN = Object.hasOwn, APPLY = Reflect.apply, IS_PROXY = utilTypes.isProxy, IS_PROMISE = utilTypes.isPromise;
 const NativePromise = Promise, PROMISE = NativePromise.prototype, THEN = PROMISE.then;
@@ -40,6 +42,9 @@ const NativePromise = Promise, PROMISE = NativePromise.prototype, THEN = PROMISE
  * Construction performs no native request, search, signing or SQL. Failure asks
  * constructed inert owners to close, without claiming cleanup. A consumed store
  * claim stays consumed; caller retains store close/quarantine on refusal.
+ * The same private read/funding join now lives in its own SDK/SQL/network-free
+ * component, with own-data current-view checks and cached inspection. The
+ * actual owners are still hardwired above; no caller-supplied factory is added.
  * Component or previous callback tests do NOT qualify this new native graph.
  */
 export function createZenonDynamicPlasmaNativeHttpsOriginalFundingSubmission(configuration) {
@@ -60,7 +65,7 @@ export function createZenonDynamicPlasmaNativeHttpsOriginalFundingSubmission(con
       fundingResourceUrl: c.fundingResourceUrl, deadlineMs: c.deadlineMs, fetchImpl: funding.fetchImpl });
     const materialExchange = MATERIAL(selected.materialOptions);
     reads = READS(selected.readOptions);
-    const session = joinedSession(reads, funding);
+    const session = JOIN(reads, funding);
     return SUBMIT({ preparerOptions: { readOptions: session.readSession.readOptions, materialExchange,
       materialWaitMs: selected.materialWaitMs, wallet: selected.wallet }, store: selected.store,
       fundingResourceUrl: selected.fundingResourceUrl, deadlineMs: selected.deadlineMs,
@@ -72,81 +77,6 @@ export function createZenonDynamicPlasmaNativeHttpsOriginalFundingSubmission(con
     }
     fail('configuration_rejected');
   }
-}
-function joinedSession(reads, funding) {
-  let closing = null, unknown = false, readOutcome = 'NOT_REQUESTED', fundingOutcome = 'NOT_REQUESTED';
-  const READ_INSPECT = reads.inspect, READ_NATIVE = reads.inspectNativeCustody, FUNDING_SNAPSHOT = funding.snapshot;
-  const canCloseFunding = FREEZE(function canCloseFunding() {
-    if (arguments.length !== 0 || unknown || readOutcome !== 'CLOSED' || fundingOutcome !== 'CLOSED') return false;
-    try {
-      const r = APPLY(READ_INSPECT, undefined, []), n = APPLY(READ_NATIVE, undefined, []);
-      const f = APPLY(FUNDING_SNAPSHOT, undefined, []);
-      if (r.lifecycle !== 'CLOSED' || r.closeUncertaintyLatched !== false
-          || r.closeRequested !== 3 || r.closeSettled !== 3 || r.closeFulfilledUndefined !== 3
-          || f.phase !== 'CLOSED' || f.unknown !== false || f.trackedRequests !== 0
-          || f.trackedSockets !== 0 || f.ownedTimers !== 0
-          || f.close.closePromiseOutcome !== 'CLOSED' || f.close.quiescenceObserved !== true
-          || f.close.localMaterialRelease.attempts !== 1 || f.close.localMaterialRelease.outcome !== 'RETURNED') {
-        unknown = true; return false;
-      }
-      if (n.nativeReadSessionCustodyVersion !== 2 || !Array.isArray(n.owners) || n.owners.length !== 3) {
-        unknown = true; return false;
-      }
-      for (let index = 0; index < 3; index++) {
-        const owner = n.owners[index];
-        if (owner.nativeReadCustodyVersion !== 1 || owner.closeRequested !== true
-            || owner.closePromiseSettled !== true || owner.uncertaintyLatched !== false
-            || owner.retiredErrorObserved !== false || owner.activeGeneration !== false
-            || owner.closeObserved !== true || owner.trackedRequests !== 0 || owner.trackedResponses !== 0
-            || owner.trackedSockets !== 0 || owner.trackedAgents !== 0 || owner.ownedTimers !== 0) {
-          unknown = true; return false;
-        }
-      }
-      return true;
-    } catch { unknown = true; return false; }
-  });
-  const close = FREEZE(function close() {
-    if (arguments.length !== 0) return rejected('input_rejected');
-    if (closing !== null) return closing;
-    const cell = capability(); closing = cell.promise; // Before either child callback.
-    let readSettled = false, fundingSettled = false;
-    function hold() { unknown = true; cell.reject(error('read_or_funding_close_unknown')); }
-    function finish() {
-      if (unknown || !readSettled || !fundingSettled) return;
-      try {
-        if (!canCloseFunding()) { hold(); return; }
-        cell.resolve(undefined); // Existing read-close contract, no authority.
-      } catch { hold(); }
-    }
-    // No await/short-circuit between independent native close attempts.
-    try {
-      const p = APPLY(reads.close, undefined, []);
-      if (!observe(p, value => {
-        readSettled = true; readOutcome = value === undefined ? 'CLOSED' : 'INVALID_VALUE';
-        if (value !== undefined) hold(); else finish();
-      }, () => { readSettled = true; readOutcome = 'REJECTED'; hold(); })) {
-        readOutcome = 'UNOBSERVABLE'; hold();
-      }
-    } catch { readOutcome = 'THREW'; hold(); }
-    try {
-      const p = APPLY(funding.close, undefined, []);
-      if (!observe(p, value => {
-        fundingSettled = true;
-        const d = value !== null && typeof value === 'object' && !IS_PROXY(value) ? DESC(value, 'phase') : null;
-        fundingOutcome = d && OWN(d, 'value') && d.value === 'CLOSED' ? 'CLOSED' : 'INVALID_VALUE';
-        if (fundingOutcome !== 'CLOSED') hold(); else finish();
-      }, () => { fundingSettled = true; fundingOutcome = 'REJECTED'; hold(); })) {
-        fundingOutcome = 'UNOBSERVABLE'; hold();
-      }
-    } catch { fundingOutcome = 'THREW'; hold(); }
-    return closing;
-  });
-  const inspect = FREEZE(function inspect() {
-    if (arguments.length !== 0) fail('input_rejected');
-    return FREEZE({ reads: reads.inspect(), nativeReads: reads.inspectNativeCustody(), funding: funding.snapshot(), unknown,
-      readOutcome, fundingOutcome, authority: 'NONE', nativeGraphQualified: false });
-  });
-  return FREEZE({ readSession: FREEZE({ readOptions: reads.readOptions, close, inspect }), canCloseFunding });
 }
 function record(value, fields) {
   if (typeof value !== 'object' || value === null || IS_PROXY(value)
@@ -165,13 +95,6 @@ function observe(value, yes, no) {
   if (d && (!OWN(d, 'value') || d.value !== NativePromise || d.enumerable || d.writable || d.configurable)) return false;
   try { APPLY(THEN, value, [yes, no]); return true; } catch { return false; }
 }
-function capability() {
-  let resolve, reject;
-  const promise = new NativePromise((yes, no) => { resolve = yes; reject = no; });
-  Object.defineProperty(promise, 'constructor', { value: NativePromise });
-  APPLY(THEN, promise, [() => undefined, () => undefined]);
-  return { promise, resolve, reject };
-}
 function prehandle(promise) { observe(promise, () => undefined, () => undefined); }
 function error(kind) {
   const code = 'ZENON_DP_NATIVE_HTTPS_ORIGINAL_FUNDING_' + kind.toUpperCase(), e = new TypeError(code);
@@ -179,4 +102,3 @@ function error(kind) {
   Object.defineProperty(e, 'stack', { value: 'TypeError: ' + code }); return FREEZE(e);
 }
 function fail(kind) { throw error(kind); }
-function rejected(kind) { const c = capability(); c.reject(error(kind)); return c.promise; }
