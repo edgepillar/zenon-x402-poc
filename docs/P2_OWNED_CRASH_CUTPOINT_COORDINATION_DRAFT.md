@@ -1,5 +1,10 @@
 # Owned P2 crash cutpoint coordination: source draft
 
+This document retains the initial V1 source snapshot. The later full-graph
+child/operator/preloader source, versioned V2 protocol and separate current
+result are documented in [the full-graph draft](P2_FULL_GRAPH_COMMITTED_INTENT_CRASH_SOURCE_DRAFT.md).
+Neither source snapshot is a native crash qualification.
+
 ## Scope and current result, 2026-10-24
 
 This is an intermediate implementation for the roadmap's abrupt-death and

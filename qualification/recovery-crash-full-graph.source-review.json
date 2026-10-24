@@ -1,0 +1,245 @@
+{
+  "kind": "ACTUAL_RECOVERY_CRASH_PROTOCOL_V2_DATA_AND_FULL_CHILD_SOURCE_REVIEW_NOT_NATIVE",
+  "version": 2,
+  "date": "2026-10-24",
+  "sourceParent": "554ea374f56cb53641f5235803dfa6fa73a2180c",
+  "mainAtSourceReview": "e9c2b7964b2b9aad802f636c800487a49faabda9",
+  "protocol": {
+    "scope": "ACTUAL_V2_PROTOCOL_WITH_DECLARED_PROCESS_EVENTS_ONLY",
+    "tests": 24,
+    "pass": 24,
+    "fail": 0,
+    "skipped": 0,
+    "cancelled": 0,
+    "entered": 24,
+    "completed": 24,
+    "invalidEventRefusals": 92,
+    "callerHooks": 0,
+    "actualExit": 0,
+    "streamsComplete": true,
+    "stdoutBytes": 2572,
+    "stdoutSha256": "f1aa7f0692ee370b3e5d8a06414ad539ab9825d4431a8f73be515d7a81aa5007",
+    "stderrBytes": 0,
+    "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "sourcePinsUnchanged": true,
+    "sources": [
+      {
+        "path": "qualification/recovery-crash-cutpoint-protocol-v2.behavior.mjs",
+        "sha256": "f4f0daeb731dbb8788dc1430e43ab0570a697ad226f9e858325a22b16e6315df",
+        "bytes": 13964
+      },
+      {
+        "path": "package.json",
+        "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+        "bytes": 2677
+      },
+      {
+        "path": "qualification/recovery-crash-cutpoint-protocol-v2.js",
+        "sha256": "5b599b1e1ee7b048baf1ace99a170bc5a633be7667b00c069103eed8f4e1fa39",
+        "bytes": 10964
+      }
+    ],
+    "filesystemWritesPermitted": false,
+    "childProcessesPermitted": false,
+    "workersPermitted": false,
+    "nativeAddonsPermitted": false,
+    "nativeEventsAuthenticated": false,
+    "nativeCrashQualified": false,
+    "authority": "NONE"
+  },
+  "sourceSyntax": {
+    "scope": "NODE_CHECK_ONLY_NO_IMPORT_OR_NATIVE_EXECUTION",
+    "checks": [
+      {
+        "path": "qualification/recovery-crash-committed-intent.child.draft.mjs",
+        "actualExit": 0,
+        "stdoutBytes": 0,
+        "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderrBytes": 0,
+        "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "source": {
+          "path": "qualification/recovery-crash-committed-intent.child.draft.mjs",
+          "bytes": 48940,
+          "LF": 683,
+          "sha256": "a2aaefa6ff60f275f36a43949164d966467764c20e37e45d417d9f3e74d41b56",
+          "gitBlob": "9056c4f6a4d1462f9c4f20a80730c55f3290451b"
+        }
+      },
+      {
+        "path": "qualification/issued-funding-post-native-crash-grant-operator.fixture.draft.mjs",
+        "actualExit": 0,
+        "stdoutBytes": 0,
+        "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderrBytes": 0,
+        "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "source": {
+          "path": "qualification/issued-funding-post-native-crash-grant-operator.fixture.draft.mjs",
+          "bytes": 25197,
+          "LF": 328,
+          "sha256": "2d306de7ca0384156b40cbee57aef22c73b31fdc9d3908d3766856bfb8f14fee",
+          "gitBlob": "ba1845fe24d2f63c7b3aec074e07baf8f8243eb3"
+        }
+      },
+      {
+        "path": "qualification/recovery-crash-full-namespace.preload.draft.mjs",
+        "actualExit": 0,
+        "stdoutBytes": 0,
+        "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderrBytes": 0,
+        "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "source": {
+          "path": "qualification/recovery-crash-full-namespace.preload.draft.mjs",
+          "bytes": 10834,
+          "LF": 166,
+          "sha256": "d352e21040763586f1db746880edfcbae49fc5a7c64e5866d784daa04b0b7e99",
+          "gitBlob": "cbc39e211ebde2b2fb83ac9176c6c3fe129fe0ac"
+        }
+      },
+      {
+        "path": "qualification/recovery-crash-cutpoint-supervisor.draft.mjs",
+        "actualExit": 0,
+        "stdoutBytes": 0,
+        "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderrBytes": 0,
+        "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "source": {
+          "path": "qualification/recovery-crash-cutpoint-supervisor.draft.mjs",
+          "bytes": 22802,
+          "LF": 339,
+          "sha256": "9ee02372219c18a750a7dff2c3689f59ecd20922694e3c8e108ce1db84d09558",
+          "gitBlob": "3e16f4b96ec26405f4d88861bfa300eee5909a13"
+        }
+      }
+    ],
+    "sourcePinsUnchanged": true,
+    "applicationOrPackageExecuted": false,
+    "childrenSpawnedByCheckedCode": 0,
+    "signals": 0
+  },
+  "fullChildSourceInventory": {
+    "path": "qualification/recovery-crash-full-graph.source-inputs.json",
+    "sourceRowsSha256": "5aff94f7427ba46bbf3cc8e8ddc4f896672909773e44ff0335a26dc52502e979",
+    "applicationInputs": 130,
+    "packageInputs": 404,
+    "controlInputs": 3,
+    "declaredSourceBytes": 4710510,
+    "baselineApplication117Preserved": true,
+    "baselinePackages404Preserved": true,
+    "addedApplicationInputs": [
+      "app/qualification/issued-funding-post-native-crash-grant-operator.fixture.draft.mjs",
+      "app/qualification/issued-funding-post-native-vertical.inputs-v3.json",
+      "app/qualification/recovery-crash-committed-intent.child.draft.mjs",
+      "app/qualification/recovery-crash-full-namespace.preload.draft.mjs",
+      "app/src/service-credit-backend-original-outcome-reader.js",
+      "app/src/service-credit-custodied-backend-recovery-client.js",
+      "app/src/service-credit-custodied-recovery-collection-core.js",
+      "app/src/service-credit-custodied-recovery-observation-collection-core.js",
+      "app/src/service-credit-custodied-sequential-runner-core.js",
+      "app/src/service-credit-custodied-sqlite-recovery-reader.js",
+      "app/src/service-credit-custodied-sqlite-sequential-runner.js",
+      "app/src/service-credit-pilot-client-plan.js",
+      "app/src/service-credit-pilot-status-view.js"
+    ],
+    "literalSourceInventory": {
+      "method": "LITERAL_SOURCE_SUPERSET_NOT_RUNTIME_EXECUTION_PROOF",
+      "applicationJavaScriptFilesScanned": 128,
+      "literalImportOccurrences": 600,
+      "nonLiteralImportExpressions": 0,
+      "unresolvedLiteralRelativeOrBareImports": 0,
+      "unapprovedChildBuiltins": 0,
+      "allBaselineApplicationRowsRequired": true,
+      "allBaselinePackageRowsRequired": true
+    },
+    "existingSourcesCopied": 0,
+    "sourceTransform": false,
+    "nativeBuiltinAlias": false,
+    "ordinaryInstalledNamespaceQualified": false,
+    "osNetworkSandbox": false
+  },
+  "implementedInSource": [
+    "Use the actual issued HTTPS/x402/DP/V6 seed and selected-grant service, not a smaller SQLite substitute",
+    "Preserve the original fixed two-unit debit, leaving eight of ten available units",
+    "Retain and acknowledge funding checkpoint, signed bytes, hash and independent pins before funding submission",
+    "Retain and acknowledge the exact service original and proof before dispatch",
+    "Stop at the actual completeDurableExecution COMMIT after the native transaction returned and before its response",
+    "Use separate bounded read-only native SQLite handles instead of forbidden same-store callback reentry",
+    "Hold the seed main thread for at most 5000 ms without creating a Worker; fail if the selected signal is not observed",
+    "Wait for the exact seed SIGKILL, complete stdout/stderr EOF and IPC disconnect before distinct recovery",
+    "Recover the same principal files through the actual no-dispatch V6 backend recovery client",
+    "Retain checkpoint, original request, dispatch intent and zero response observations; do not dispatch or sign again",
+    "Require unchanged backend envelope, payer metadata except owner_epoch, and a single owner_epoch increment",
+    "Retain persisted UNKNOWN and cached CHILD_UNKNOWN even if one payer SQLite close returned",
+    "Require child boot/namespace admission before sending initial IPC input",
+    "Keep all baseline app/package rows mandatory before effectful child imports and reject undeclared resolution"
+  ],
+  "sourceReviewedContracts": [
+    {
+      "path": "src/service-credit-sqlite-store.js",
+      "contract": "COMMIT -> refreshIdentity -> afterCommit; hook must return undefined; same-store callback reentry is refused"
+    },
+    {
+      "path": "src/service-credit-model.js",
+      "contract": "Fixed existing request cost and exported grant balances are validated without recomputing a new cost during fromState"
+    },
+    {
+      "path": "src/service-credit-zenon-funding-post-v1-payer-recovery-sqlite-store.js",
+      "contract": "V6 schema, original checkpoint, dispatch-intent and quarantine envelopes; owner_epoch acquisition is not a read-only open"
+    },
+    {
+      "path": "src/service-credit-custodied-backend-recovery-client.js",
+      "contract": "V6 read requires original proof and expected checkpoint pins; no submit method in recovery-only entry"
+    },
+    {
+      "path": "src/service-credit-backend-original-outcome-reader.js",
+      "contract": "Exact eight-field original and capability admission before cached backend outcome; backend remains borrowed"
+    },
+    {
+      "path": "src/service-credit-pilot-original-payment-checkpoint.js",
+      "contract": "Canonical checkpoint round-trip and independent binding/digest pins; no action authority"
+    }
+  ],
+  "preservation": {
+    "oldProtocolV1ResultSha256": "0a4a86464414da70724c47388cba22672c10ee7ec4b6b34be9c7c2f3f93b5a34",
+    "oldProtocolV1AndResultUnchanged": true,
+    "frozenV3ManifestSha256": "51ffb5b0ff0052523c1b7f3d75fa24e9be27e60ca3bcc09236b1f439096aaed1",
+    "allV3Application117AndControls5Unchanged": true,
+    "oldAllowancesReused": false,
+    "historicalEvidenceRewritten": false,
+    "defaultApplicationChanged": false,
+    "workflowChanged": false,
+    "storageRootsChanged": false
+  },
+  "actualApplicationEffects": {
+    "childProcesses": 0,
+    "signals": 0,
+    "IPC": false,
+    "SQLite": false,
+    "SDK": false,
+    "officialX402Package": false,
+    "keysOrSignatures": false,
+    "nonceSearch": false,
+    "sockets": false,
+    "qualificationScratchCreated": false,
+    "sourceCopiesCreated": false,
+    "taskRootsCreated": 0
+  },
+  "qualification": {
+    "protocolData": "PASS_24_OF_24",
+    "childOperatorPreloaderSupervisor": "SOURCE_AUTHORED_SYNTAX_ONLY_NOT_IMPORTED_OR_RUN",
+    "completeSourceInventory": "PHYSICALLY_MATCHED_LITERAL_SOURCE_SUPERSET_NOT_RESOLUTION_EXECUTION_PROOF",
+    "privateProfileBuilder": "NOT_YET_COMPLETED",
+    "managedParentLauncher": "NOT_YET_COMPLETED",
+    "nativePermission": "SEPARATE_FINITE_APPROVAL_STILL_REQUIRED_AFTER_SOURCE_AND_LAUNCHER_REVIEW",
+    "frozenV3CleanPermission": "DISTINCT_SCOPE_NOT_REUSED",
+    "forcedKillSqliteReopen": "NOT_RUN",
+    "fullP2SocketHeldStoreComposition": "NOT_QUALIFIED",
+    "physicalDurability": "NOT_QUALIFIED",
+    "nativeProcessCleanup": "NOT_QUALIFIED",
+    "chainAuthentication": "NOT_ESTABLISHED",
+    "serviceDelivery": "NOT_ESTABLISHED",
+    "pilot": "NO_GO",
+    "production": "NO_GO",
+    "authority": "NONE"
+  }
+}
+
