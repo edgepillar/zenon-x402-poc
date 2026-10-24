@@ -71,11 +71,18 @@ existing runtime file, default script, workflow, package contract, old source
 graph or finite native approval. The hosted profile remains the existing 27
 controls; these new 64 controls were local, not silently added to CI.
 
-The existing paced native adapter does NOT yet emit this new capsule, and the
+The existing v1 paced native adapter does NOT emit this new capsule, and the
 [existing outer validator](SERVICE_CREDIT_CAPACITY_PACED_OUTER_CAPTURE_DATA.md)
 does not gain raw balance-series evidence merely because this component exists.
 Actual instrumentation, source pinning, native admission/receipts and measurement
 remain separate required work.
+
+A separate [v2 source integration](SERVICE_CREDIT_CAPACITY_PACED_BALANCE_BINDING_V2.md)
+now wires the genuine component into the actual versioned adapter's existing
+clock brackets and an outer v3 capture. Its 53 constructor/admission-absence
+controls and two parser-only checks are NOT native execution. The new private
+profile/controller, resource planning and full outer verification remain open;
+this does not retroactively add native series evidence to the result above.
 
 The separate full paced main candidate currently differs in at least 47 paths,
 including four pre-existing HTTP/x402 runtime edits with unestablished legacy

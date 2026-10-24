@@ -1,0 +1,142 @@
+{
+  "sourceSelectionVersion": 3,
+  "kind": "NATIVE_CAPACITY_PACED_PARENT_CAPTURE_V3_BALANCE_BARRIERS_WITH_FROZEN_R4_CHILDREN_SOURCE_NOT_EXECUTION",
+  "sourceParent": "30bcde92fd3963b91b7ab12f5a9bf77d31bab3a5",
+  "mainParent": "f01a51a5f9363a7a9b3056ee5691475db93d7f2b",
+  "runtime": {
+    "node": "24.19.0",
+    "platform": "darwin",
+    "arch": "arm64",
+    "nodeSha256": "dbedff294bab84a0a86c04e15fbcbeb1c97ca10bef1b32b0634cd24b36f62100",
+    "nodeBytes": 121304480
+  },
+  "legacyInventory": {
+    "path": "qualification/capacity-native-full-graph-v3.inputs.json",
+    "bytes": 8697,
+    "LF": 215,
+    "sha256": "3bb597da71736542615047d11af78ad6825df5bdb6e4561747d8c1f9dff7d0df",
+    "gitBlob": "0530e2b08929d45c93b4e4912dc69d27b0645204"
+  },
+  "legacyBaseline": {
+    "path": "qualification/issued-funding-post-native-vertical.inputs-v3.json",
+    "bytes": 138777,
+    "LF": 3836,
+    "sha256": "51ffb5b0ff0052523c1b7f3d75fa24e9be27e60ca3bcc09236b1f439096aaed1",
+    "gitBlob": "3dc05ccffd306e97056b4ed168d8121f63acebbc"
+  },
+  "parentSourceRowsSha256": "38bb4557357dd42bcd7dedacb4b7ec2fc750d474e7f9c14045376b73b0739160",
+  "parentApplicationFiles": 146,
+  "parentPackageFiles": 404,
+  "parentDeclaredSourceBytes": 4907208,
+  "parentAdditionalInputs": [
+    {
+      "path": "app/qualification/capacity-native-paced-paired-lane-v2.supervisor.draft.mjs",
+      "bytes": 26226,
+      "LF": 292,
+      "sha256": "8df14407b7da04ab27a08b729124f7c58f978379871365b74fd38154d940ea57",
+      "gitBlob": "e1451f9fc27b8a314ad18a638c00af29b431582c"
+    },
+    {
+      "path": "app/qualification/capacity-native-paced-supervisor-v2.namespace.preload.draft.mjs",
+      "bytes": 22411,
+      "LF": 314,
+      "sha256": "a74f99963e6bb55ad862d7d9f01d21fc1fe77fcc6d24f4f69401c9b97c24b201",
+      "gitBlob": "7e6817c1751f6c19e1ca1b1407b0cbad14f7d916"
+    },
+    {
+      "path": "app/qualification/capacity-native-paced-workload-adapter-v2.draft.mjs",
+      "bytes": 21340,
+      "LF": 310,
+      "sha256": "74875ec4dcee3da53333ebf6a994eaae1d772fc72b22bce1eacf8683299db5d3",
+      "gitBlob": "4aa97184d956ca3c66bca4c130e768a00049fe4e"
+    },
+    {
+      "path": "app/qualification/capacity-native-paced-workload-v2.entry.draft.mjs",
+      "bytes": 8491,
+      "LF": 105,
+      "sha256": "8ba5d592e5b1fd32abcfd654ca9dab5e10a418aa462f86fb9692daf0942ba760",
+      "gitBlob": "bdd87a0780c648f6ff63e214bc5b659cb4d355b0"
+    },
+    {
+      "path": "app/src/service-credit-capacity-balance-barrier-trace-data.js",
+      "bytes": 10712,
+      "LF": 177,
+      "sha256": "235f5ff9b0b128a393244a545e6d5f83ffb3c8335e358efcc294968d562260e9",
+      "gitBlob": "0674cf00e3906b54441638903827d8bebe6f81aa"
+    },
+    {
+      "path": "app/src/service-credit-capacity-paced-timing-trace-data.js",
+      "bytes": 22759,
+      "LF": 299,
+      "sha256": "4459f9e90692b99af0b831e9acf013b579fe63b2113b8ef5abd81f29c559f5dc",
+      "gitBlob": "0f06c70e53c61497c10b7e4de3fac8697904856e"
+    },
+    {
+      "path": "app/src/service-credit-capacity-paced-workload-owner-core.js",
+      "bytes": 21119,
+      "LF": 398,
+      "sha256": "ec12fc8cef93f2ecda6ca88c8bf193db183a8a3f456d3a712411d319dfe7761f",
+      "gitBlob": "eb12bbbe1e3b468f1c8e0acf09ce94b076825178"
+    }
+  ],
+  "childSourceRowsSha256": "d756740994aeb53ebeee47320d732583d96381dfa8c00e18a30f414e70a77027",
+  "childApplicationFiles": 139,
+  "childPackageFiles": 404,
+  "parentRole": {
+    "profileVersion": 2,
+    "profileKind": "NATIVE_CAPACITY_PACED_SUPERVISOR_NODE24_V2",
+    "role": "SUPERVISOR",
+    "entry": "app/qualification/capacity-native-paced-workload-v2.entry.draft.mjs",
+    "preloader": "app/qualification/capacity-native-paced-supervisor-v2.namespace.preload.draft.mjs",
+    "namespace": "getPinnedNativeCapacityPacedSupervisorNamespaceSnapshotV2",
+    "selection": "native-capacity-paced-supervisor-source-draft-v2",
+    "workloadSelection": "native-capacity-paced-workload-source-draft-v2",
+    "runScope": "one-reviewed-native-capacity-paced-parent-v2"
+  },
+  "childRoleProfilesRemainVersion3": true,
+  "originalChildWorkersAndPreloadersUnchanged": true,
+  "separateParentNamespaceSourceAuthored": true,
+  "completeChildProfileSourceComparisonSourceAuthored": true,
+  "balanceBarrierRecorderWiredInSource": true,
+  "additionalClockReadsSourceAuthored": 0,
+  "balanceBarrierFailureTerminalFabricated": false,
+  "managedPrivateProfileProducerImplemented": false,
+  "completeManagedLauncherImplemented": false,
+  "independentFullOuterV3VerifierImplemented": false,
+  "completeGraphPhysicalFileRead": false,
+  "selectedApplicationPinsReadOnlyVerified": true,
+  "packageFilesOpenedForThisDeclaration": 0,
+  "nodeBinaryHashesForThisDeclaration": 0,
+  "preloaderOrEntryTopLevelExecuted": false,
+  "nativeAdmissionExecuted": false,
+  "nativeExecuted": false,
+  "sourceTransforms": 0,
+  "nativeBuiltinAliases": 0,
+  "compatibilitySupervisorNamespaceInstalled": false,
+  "nativeOsNetworkSandbox": false,
+  "sourceOrPackageTreeCopies": 0,
+  "nativeAllowanceGranted": false,
+  "authority": "NONE",
+  "captureLayout": {
+    "pacedCaptureVersion": 3,
+    "pacedTimingCaptureVersion": 2,
+    "balanceBarrierCaptureVersion": 1,
+    "soleRawParentTimingLocation": "pacedTimingData.trace.coreParentTimingTrace",
+    "soleRawBalanceTimingLocation": "balanceBarrierData.trace",
+    "soleBalanceRecordingLocation": "result.balanceBarrierRecording",
+    "scalarBalanceRecordingSerializedCopies": 1,
+    "rawBalanceTimingSerializedCopies": 1,
+    "rawParentTimingSerializedCopies": 1,
+    "clockDomain": "PARENT_BALANCE_BARRIER_INCLUDING_FINAL_WRITER_TRACE_NOT_SQL_OR_L1",
+    "balanceBarrierCheckSeparateFromPacedChecks": true,
+    "oldV2FrameRewritten": false,
+    "oldChildSourceSealRebound": false
+  },
+  "priorSourceSelection": {
+    "path": "qualification/capacity-native-paced-parent-v2.inputs.json",
+    "bytes": 5054,
+    "LF": 121,
+    "sha256": "d4cae3a44dd0bb3cca7c892a333bac64802ddad26370e09be5b1564fbe535f8d",
+    "gitBlob": "07200d11d7b6b606b5aac6ba9166860e7fce7622"
+  }
+}
