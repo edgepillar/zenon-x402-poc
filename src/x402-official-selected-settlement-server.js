@@ -10,6 +10,8 @@ import {
   captureOfficialUpfrontHttpsRoute,
   captureOfficialUpfrontHttpsRequest,
 } from './x402-official-https-request-binding.js';
+import { captureOfficialFundingPostHttpsRoute,
+  captureOfficialFundingPostHttpsRequest } from './x402-official-funding-post-https-request-binding.js';
 
 const APPLY = Reflect.apply, KEYS = Reflect.ownKeys, DESC = Object.getOwnPropertyDescriptor;
 const PROTO = Object.getPrototypeOf, OWN = Object.hasOwn, FREEZE = Object.freeze;
@@ -69,16 +71,37 @@ const CONFIG = FREEZE(['requirement', 'resource', 'localFacilitator', 'validateC
  * not a hostile-code, OS, timeout, memory-erasure or transport sandbox.
  */
 export async function createOfficialSelectedSettlementServer(options) {
+  if (arguments.length !== 1) fail('configuration_rejected');
+  return createSelectedServer(options, false);
+}
+
+/**
+ * SOURCE-ONLY explicitly named actual SDK POST /funding profile. Not GET
+ * relabeling and not funding-intake BOUND: it returns existing x402 settlement
+ * DATA/continuations, never invents a durable intake, grant or publication ACK.
+ * Actual HTTP/native/backend integration requires a new current qualification.
+ */
+export async function createOfficialFundingPostSelectedSettlementServer(options) {
+  if (arguments.length !== 1) fail('configuration_rejected');
+  return createSelectedServer(options, true);
+}
+
+async function createSelectedServer(options, fundingPost) {
+  const HTTP_METHOD = fundingPost ? 'POST' : 'GET', HTTP_TARGET = fundingPost ? '/funding' : '/paid';
+  const ROUTE_CAPTURE = fundingPost ? captureOfficialFundingPostHttpsRoute : CAPTURE_HTTP_ROUTE;
+  const REQUEST_CAPTURE = fundingPost ? captureOfficialFundingPostHttpsRequest : CAPTURE_HTTP_REQUEST;
   let bridge, http, fixed, resource, requestLimit, observerBudget, httpRoute;
   try {
-    if (arguments.length !== 1) fail('configuration_rejected');
     const c = record(options, CONFIG);
     bounded(c.requirement); REQUIREMENT(c.requirement); fixed = snapshot(c.requirement);
     record(c.resource, ['url', 'description', 'mimeType']);
     bounded(c.resource); RESOURCE(c.resource); resource = snapshot(c.resource);
     // Keep the original scalar API's resource acceptance unchanged. The new
     // native-request entry refuses a resource outside its exact HTTPS profile.
-    try { httpRoute = CAPTURE_HTTP_ROUTE(resource.url); } catch { httpRoute = null; }
+    try { httpRoute = ROUTE_CAPTURE(resource.url); } catch {
+      if (fundingPost) fail('configuration_rejected');
+      httpRoute = null;
+    }
     requestLimit = c.contextLimit; observerBudget = c.maxPendingReconciliations;
     bridge = CREATE_BRIDGE({ requirement: fixed, localFacilitator: c.localFacilitator,
       validateChallenge: c.validateChallenge, reconcilePendingSettlement: c.reconcilePendingSettlement,
@@ -87,7 +110,7 @@ export async function createOfficialSelectedSettlementServer(options) {
     if (APPLY(REGISTER, server, [fixed.network, bridge.schemeServer]) !== server) fail('configuration_rejected');
     APPLY(BEFORE, server, [capture]);
     http = new HttpServer(server, {
-      'GET /paid': { accepts: { scheme: fixed.scheme, network: fixed.network,
+      [HTTP_METHOD + ' ' + HTTP_TARGET]: { accepts: { scheme: fixed.scheme, network: fixed.network,
         price: { amount: fixed.amount, asset: fixed.asset }, payTo: fixed.payTo,
         maxTimeoutSeconds: fixed.maxTimeoutSeconds, extra: snapshot(fixed.extra) },
         resource: resource.url, description: resource.description, mimeType: resource.mimeType },
@@ -153,10 +176,10 @@ export async function createOfficialSelectedSettlementServer(options) {
       const PAYMENT_HEADER = header; // The private adapter retains the original scalar.
       const adapter = FREEZE({
         getHeader: name => typeof name === 'string' && name.toLowerCase() === 'payment-signature' ? PAYMENT_HEADER : undefined,
-        getMethod: () => 'GET', getPath: () => '/paid', getUrl: () => RESOURCE_INFO.url,
+        getMethod: () => HTTP_METHOD, getPath: () => HTTP_TARGET, getUrl: () => RESOURCE_INFO.url,
         getAcceptHeader: () => 'application/json', getUserAgent: () => 'selected-upfront-application',
       });
-      const result = await APPLY(REQUEST, HTTP, [{ adapter, method: 'GET', path: '/paid', paymentHeader: PAYMENT_HEADER }]);
+      const result = await APPLY(REQUEST, HTTP, [{ adapter, method: HTTP_METHOD, path: HTTP_TARGET, paymentHeader: PAYMENT_HEADER }]);
       if (result.type === 'payment-error') {
         const response = deepFreeze(snapshot(result.response));
         let pending = null;
@@ -188,7 +211,7 @@ export async function createOfficialSelectedSettlementServer(options) {
   const processHttpRequest = FREEZE(function processHttpRequest(request) {
     try {
       if (arguments.length !== 1 || HTTP_ROUTE === null) fail('input_rejected');
-      const captured = CAPTURE_HTTP_REQUEST(request, HTTP_ROUTE);
+      const captured = REQUEST_CAPTURE(request, HTTP_ROUTE);
       // Preserve the actual existing request Promise, busy fence, context and
       // continuation. No extra SDK owner or first-settlement authority exists.
       return processRequest(captured.paymentSignature);
@@ -197,7 +220,8 @@ export async function createOfficialSelectedSettlementServer(options) {
     } finally { request = null; }
   });
   const getSnapshot = FREEZE(function getSnapshot() {
-    return FREEZE({ profile: 'OFFICIAL_CORE_2_23_0_SINGLE_GET_PAID_UPFRONT',
+    return FREEZE({ profile: fundingPost ? 'OFFICIAL_CORE_2_23_0_SINGLE_POST_FUNDING_UPFRONT'
+      : 'OFFICIAL_CORE_2_23_0_SINGLE_GET_PAID_UPFRONT',
       requestCalls, requestLimit: REQUEST_LIMIT, resumeAttempts, active: operation !== null,
       bridge: BRIDGE.getSnapshot(),
       persistence: 'MEMORY_ONLY', serviceDelivery: 'NOT_ESTABLISHED', currentAuthority: 'NOT_ESTABLISHED' });
