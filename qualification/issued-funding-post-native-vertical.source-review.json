@@ -1,0 +1,460 @@
+{
+  "kind": "SOURCE_BOUND_ACTUAL_ISSUED_FUNDING_NATIVE_VERTICAL_CASE_NOT_EXECUTION",
+  "status": "SOURCE_REVIEW_AND_SYNTAX_ONLY_NOT_EXECUTED",
+  "sourceParent": "18e00d8efc4edde41bb95f0bbaba5c39594b88f6",
+  "mainParent": "dfc799cef3d2c77f1192bc10c8433c6349f567d9",
+  "applicationFix": {
+    "path": "src/x402-official-issued-funding-post-native-application.js",
+    "before": {
+      "bytes": 19260,
+      "LF": 279,
+      "sha256": "4e77497ace87c3a2c110969ed11dfd157d3c564d10adf2fa3b5c5643b8197e63",
+      "gitBlob": "c11ddf30d7cc2de3f328d6321a39cbc4185221f3"
+    },
+    "after": {
+      "path": "src/x402-official-issued-funding-post-native-application.js",
+      "bytes": 19514,
+      "LF": 282,
+      "sha256": "6a36269185cb095f2a7d2c8ac7c90c2e04432e9ef9590dbbb1ab4fecb33fac9f",
+      "gitBlob": "bf37732e2f120770efe1d4c3444f149dbcc56c6e"
+    },
+    "cause": "Composition copied schedule/cancel but omitted the actual durable execution owner's required monotonicNowNs.",
+    "change": "Preserve the exact three-field durable service runtime. Leave the distinct two-field ingress runtime unchanged.",
+    "actualNativeAdmissionTested": false
+  },
+  "sourceReview": {
+    "event": "Q105_LITERAL_SOURCE_REVIEW",
+    "input": {
+      "path": "qualification/issued-funding-post-native-vertical.case.draft.mjs",
+      "bytes": 34893,
+      "LF": 487,
+      "sha256": "de5068429bb87c256dc26e04c8a050b0e84306ed19231101a98d8267047c15dc",
+      "gitBlob": "3e982a716f0d5a89a17d81766f3667b6a7da6bd4"
+    },
+    "application": {
+      "path": "src/x402-official-issued-funding-post-native-application.js",
+      "bytes": 19514,
+      "LF": 282,
+      "sha256": "6a36269185cb095f2a7d2c8ac7c90c2e04432e9ef9590dbbb1ab4fecb33fac9f",
+      "gitBlob": "bf37732e2f120770efe1d4c3444f149dbcc56c6e"
+    },
+    "localGraphInputs": [
+      {
+        "path": "src/canonical.js",
+        "bytes": 967,
+        "LF": 26,
+        "sha256": "0d55ddf1727cafb0dcd46df2922305568615552a4d2ae34a5c30e90b9d8d998c",
+        "gitBlob": "5367f9c72ee13017a61630e1f0cffdced21d52c4"
+      },
+      {
+        "path": "src/x402-wire.js",
+        "bytes": 39886,
+        "LF": 934,
+        "sha256": "5fba91af5a352f62d1a335c7176a45a604e2af5d92b1c4b0e53825c1f20d4e56",
+        "gitBlob": "fb060d4e349b1c31a1219a0cc137af250a8a2291"
+      },
+      {
+        "path": "src/service-credit-capability.js",
+        "bytes": 8284,
+        "LF": 256,
+        "sha256": "cb2b96d9a2e56c132dd1b4aca8f1c065b244ecd0e7e92f41ea3f4a8c969d17c3",
+        "gitBlob": "2e19d42c1b9311a75897c84669849f56ae40f785"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-user-send-work-input.js",
+        "bytes": 2853,
+        "LF": 59,
+        "sha256": "2ff9c089e5903c059746d0a1c38688a2849f94d04d429279811fbbfbb40450a4",
+        "gitBlob": "dad4febf4ef6f09216640245c7e3805e01ad0127"
+      },
+      {
+        "path": "src/service-credit-zenon-funding-post-v1-payer-recovery-sqlite-store.js",
+        "bytes": 83681,
+        "LF": 2042,
+        "sha256": "bea9e00aa6208f776561c975d54640dfb676168dd4d0b44d125c9dc684912c4a",
+        "gitBlob": "e6af1576df21a20a466d089a4ba6ecdf7380a0df"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-native-funding-service-client.js",
+        "bytes": 31340,
+        "LF": 506,
+        "sha256": "5ed9ac6189f2f86bcc2195c5c6da03ecec7e1e779c4084490029270e617743a8",
+        "gitBlob": "53bba44ab96c860600ef9df10e94edae8aa1cff7"
+      },
+      {
+        "path": "src/x402-official-issued-funding-post-native-application.js",
+        "bytes": 19514,
+        "LF": 282,
+        "sha256": "6a36269185cb095f2a7d2c8ac7c90c2e04432e9ef9590dbbb1ab4fecb33fac9f",
+        "gitBlob": "bf37732e2f120770efe1d4c3444f149dbcc56c6e"
+      },
+      {
+        "path": "src/service-credit-bounded-node-https-server-factory.js",
+        "bytes": 26968,
+        "LF": 778,
+        "sha256": "aead901ba154c39ea25e5cdcc363ea91ed6749841f6e8945cd01debc52cae387",
+        "gitBlob": "5900a111df486329e0e0644b78b49048ed551ca7"
+      },
+      {
+        "path": "qualification/issued-funding-post-native-grant-operator.fixture.draft.mjs",
+        "bytes": 24047,
+        "LF": 313,
+        "sha256": "b1224cc52ef9a5dd67418392b3064ea79d6a7f8c8abb9c7fb9b986a42bb4f587",
+        "gitBlob": "a2438e531abb1fa9103aa43def9e94986d502368"
+      },
+      {
+        "path": "qualification/issued-funding-post-native-rpc-peer.fixture.draft.mjs",
+        "bytes": 20696,
+        "LF": 265,
+        "sha256": "8500fc75a7736a976a9b07efb537e70f7f4f4ca3a1c7a2ee41d33496f8cb706b",
+        "gitBlob": "7b3db68a430419cde14c43fadea9dadfec4ada93"
+      },
+      {
+        "path": "src/service-credit-bounded-operation-drain.js",
+        "bytes": 4046,
+        "LF": 92,
+        "sha256": "ccaf1742f94a2ae312598c4bb2adc0c6168b1ade0167dbc8990422f5e7037885",
+        "gitBlob": "9cb4987ecd835e7b558d6088d562f417a9179da8"
+      }
+    ],
+    "literalNamedExports": [
+      {
+        "path": "src/canonical.js",
+        "symbol": "canonicalJson",
+        "literalDeclarationFound": true
+      },
+      {
+        "path": "src/x402-wire.js",
+        "symbol": "validatePaymentRequired",
+        "literalDeclarationFound": true
+      },
+      {
+        "path": "src/x402-wire.js",
+        "symbol": "validateActiveUpfrontRequirement",
+        "literalDeclarationFound": true
+      },
+      {
+        "path": "src/service-credit-capability.js",
+        "symbol": "deriveServiceCreditCapabilityCommitment",
+        "literalDeclarationFound": true
+      },
+      {
+        "path": "src/service-credit-capability.js",
+        "symbol": "createServiceCreditCapabilitySigningBytes",
+        "literalDeclarationFound": true
+      },
+      {
+        "path": "src/service-credit-capability.js",
+        "symbol": "verifyServiceCreditCapability",
+        "literalDeclarationFound": true
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-user-send-work-input.js",
+        "symbol": "deriveZenonUserSendWorkInput",
+        "literalDeclarationFound": true
+      },
+      {
+        "path": "src/service-credit-zenon-funding-post-v1-payer-recovery-sqlite-store.js",
+        "symbol": "createZenonFundingPayerRecoveryOriginalPaymentSqliteStoreV6",
+        "literalDeclarationFound": true
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-native-funding-service-client.js",
+        "symbol": "openZenonDynamicPlasmaNativeFundingServiceClientForLocalQualification",
+        "literalDeclarationFound": true
+      },
+      {
+        "path": "src/x402-official-issued-funding-post-native-application.js",
+        "symbol": "createOfficialIssuedFundingPostNativeApplication",
+        "literalDeclarationFound": true
+      },
+      {
+        "path": "src/service-credit-bounded-node-https-server-factory.js",
+        "symbol": "createServiceCreditBoundedNodeHttpsServerFactory",
+        "literalDeclarationFound": true
+      },
+      {
+        "path": "qualification/issued-funding-post-native-grant-operator.fixture.draft.mjs",
+        "symbol": "createNativeIssuedFundingPostGrantOperatorFixture",
+        "literalDeclarationFound": true
+      },
+      {
+        "path": "qualification/issued-funding-post-native-rpc-peer.fixture.draft.mjs",
+        "symbol": "createNativeIssuedFundingPostRpcPeerFixture",
+        "literalDeclarationFound": true
+      },
+      {
+        "path": "src/service-credit-bounded-operation-drain.js",
+        "symbol": "observeServiceCreditOperationDrain",
+        "literalDeclarationFound": true
+      }
+    ],
+    "dynamicLiteralImportEdges": 21,
+    "localImportFiles": 11,
+    "actualBehaviorTests": 0,
+    "modulesImported": false,
+    "sourceTransforms": false
+  },
+  "currentSyntaxOnly": [
+    {
+      "path": "src/x402-official-issued-funding-post-native-application.js",
+      "syntaxActualExit": 0,
+      "outputComplete": true,
+      "applicationImported": false,
+      "input": {
+        "path": "src/x402-official-issued-funding-post-native-application.js",
+        "bytes": 19514,
+        "LF": 282,
+        "sha256": "6a36269185cb095f2a7d2c8ac7c90c2e04432e9ef9590dbbb1ab4fecb33fac9f",
+        "gitBlob": "bf37732e2f120770efe1d4c3444f149dbcc56c6e"
+      },
+      "stdoutBytes": 0,
+      "stderrBytes": 0,
+      "NodeCommands": 1,
+      "nativeTlsExecuted": false
+    },
+    {
+      "path": "qualification/issued-funding-post-native-vertical.case.draft.mjs",
+      "syntaxActualExit": 0,
+      "outputComplete": true,
+      "applicationImported": false,
+      "input": {
+        "path": "qualification/issued-funding-post-native-vertical.case.draft.mjs",
+        "bytes": 34893,
+        "LF": 487,
+        "sha256": "de5068429bb87c256dc26e04c8a050b0e84306ed19231101a98d8267047c15dc",
+        "gitBlob": "3e982a716f0d5a89a17d81766f3667b6a7da6bd4"
+      },
+      "stdoutBytes": 0,
+      "stderrBytes": 0,
+      "NodeCommands": 1,
+      "nativeTlsExecuted": false
+    }
+  ],
+  "syntaxHistory": [
+    {
+      "path": "src/x402-official-issued-funding-post-native-application.js",
+      "syntaxActualExit": 0,
+      "outputComplete": true,
+      "applicationImported": false,
+      "input": {
+        "path": "src/x402-official-issued-funding-post-native-application.js",
+        "bytes": 19514,
+        "LF": 282,
+        "sha256": "6a36269185cb095f2a7d2c8ac7c90c2e04432e9ef9590dbbb1ab4fecb33fac9f",
+        "gitBlob": "bf37732e2f120770efe1d4c3444f149dbcc56c6e"
+      },
+      "stdoutBytes": 0,
+      "stderrBytes": 0,
+      "NodeCommands": 1,
+      "nativeTlsExecuted": false
+    },
+    {
+      "path": "qualification/issued-funding-post-native-vertical.case.draft.mjs",
+      "syntaxActualExit": 0,
+      "outputComplete": true,
+      "applicationImported": false,
+      "input": {
+        "path": "qualification/issued-funding-post-native-vertical.case.draft.mjs",
+        "bytes": 34163,
+        "LF": 472,
+        "sha256": "19d18f9629553e3042e9c599c4be0feec3d46913aaeaa45ed404ab27baa7a234",
+        "gitBlob": "383393d192f1a17aa424215c84bc7f169fbeb4b3"
+      },
+      "stdoutBytes": 0,
+      "stderrBytes": 0,
+      "NodeCommands": 1,
+      "nativeTlsExecuted": false
+    },
+    {
+      "path": "qualification/issued-funding-post-native-vertical.case.draft.mjs",
+      "syntaxActualExit": 0,
+      "outputComplete": true,
+      "applicationImported": false,
+      "input": {
+        "path": "qualification/issued-funding-post-native-vertical.case.draft.mjs",
+        "bytes": 34893,
+        "LF": 487,
+        "sha256": "de5068429bb87c256dc26e04c8a050b0e84306ed19231101a98d8267047c15dc",
+        "gitBlob": "3e982a716f0d5a89a17d81766f3667b6a7da6bd4"
+      },
+      "stdoutBytes": 0,
+      "stderrBytes": 0,
+      "NodeCommands": 1,
+      "nativeTlsExecuted": false
+    }
+  ],
+  "actualExecution": {
+    "syntaxOnlyNodeCommands": 3,
+    "currentFilesSyntaxChecks": 2,
+    "actualBehaviorTestsExecuted": 0,
+    "driverImported": false,
+    "applicationImported": false,
+    "nativeServerConstructors": 0,
+    "listenCalls": 0,
+    "TLS": 0,
+    "sockets": 0,
+    "RPC": 0,
+    "SDK": 0,
+    "SQLite": 0,
+    "keys": 0,
+    "signatures": 0,
+    "nonceEvaluations": 0,
+    "OpenSSL": 0,
+    "NodeChildren": 0,
+    "downloads": 0,
+    "installs": 0,
+    "newManagedRoots": 0,
+    "newManagedTasks": 0,
+    "newQualificationScratchBytes": 0,
+    "cleanup": 0,
+    "sourceTransforms": 0,
+    "nativeBuiltinAliases": 0
+  },
+  "approvedOlderFullDp": {
+    "manifestPath": "qualification/dynamic-plasma-full-native-loopback.inputs.json",
+    "manifestSha256": "a472e3bcd8840ef4236e395cb918ae5f2a84be9ca45d8f59417c0b77da291933",
+    "humanAuthorizedAttempts": 1,
+    "attemptsEntered": 0,
+    "nativeApprovalConsumed": false,
+    "sourceOnlyAdmission": {
+      "applicationFiles": 74,
+      "applicationRuntimeFiles": 69,
+      "packageFilesDeclared": 382,
+      "packageFilesRead": 0,
+      "effectsExecuted": false
+    },
+    "readOnlyCapacityAdmission": {
+      "status": "REFUSED",
+      "code": "OLD_TASK_DIRECTORY",
+      "cause": "Protected historical reservation roots contain unexpected non-task entries.",
+      "historicalFilesPreserved": true,
+      "reservationsNotOmitted": true,
+      "launcherNotModified": true,
+      "newRootCreated": false,
+      "newTaskCreated": false,
+      "OpenSSL": 0,
+      "fullDpNodeInvocations": 0
+    },
+    "coversThisNewIssuedGraph": false
+  },
+  "authoredFlow": [
+    "Real native issued 402 frame, not reconstructed tags or a canned funding peer.",
+    "Actual DP bounded material producer and one synthetic transaction signer with original block/hash/header/checkpoint retention.",
+    "Actual V6 commit and one native original funding POST to the real issued-intake/official composition.",
+    "Same explicit pending continuation: pending then success, with declared local facilitator results.",
+    "Actual signed synthetic provider grant activation; explicit committed primary-grant admission.",
+    "Actual same-file V6 guarded funding-to-service handoff, with no payment resend.",
+    "Actual selected-grant service call; identical client original refuses redispatch.",
+    "Separate exact backend proof replay and valid foreign-grant proof admission through genuine native HTTPS.",
+    "Second service request; clean close or candidate real client-stop lost-ACK fault with required durable server success/client UNKNOWN assertions.",
+    "Cached actual close paths, no direct HELD-V6 close/reopen/deletion or historical cleanup."
+  ],
+  "futurePerCaseCeilingNotPermission": {
+    "modes": [
+      "clean",
+      "lost-ack"
+    ],
+    "oneModePerNodeProcess": true,
+    "newSqlitePaths": 5,
+    "newIndependentPinFiles": 2,
+    "ephemeralSyntheticEd25519Keys": 4,
+    "walletSignatures": 1,
+    "capabilitySignatures": 3,
+    "providerSignatures": 2,
+    "testTlsMaterialSeparate": true,
+    "referenceWindowCandidates": 4096,
+    "maxReferenceCandidates": 32768,
+    "maxProducerCandidates": 4096,
+    "fixedVerificationReservation": 16384,
+    "maxAggregateCandidateReservation": 65536,
+    "actualProducerIterations": "NOT_INSTRUMENTED",
+    "maxRpcConnections": 174,
+    "maxApplicationConnections": 8,
+    "maxTotalConnections": 182,
+    "expectedConnections": 96,
+    "NodeChildren": 0,
+    "newSourcePackageAndManagedStorageAdmissionRequired": true,
+    "currentExecutionAuthority": false,
+    "nativeOsNetworkSandbox": false
+  },
+  "baseline": {
+    "source": {
+      "commit": "18e00d8efc4edde41bb95f0bbaba5c39594b88f6",
+      "tree": "3afe4e9219d4d6704c4cbcd94bff94eca76da15a",
+      "files": 1017,
+      "treeSeal": "7f529f80b37ebe86ff2c732c5783a0836103c36101931d382d08c56e3e146760",
+      "selectedFiles": 3,
+      "force": false
+    },
+    "main": {
+      "commit": "dfc799cef3d2c77f1192bc10c8433c6349f567d9",
+      "tree": "6a1112aff47c56dabad935fb499fcf58b8db646d",
+      "files": 875,
+      "treeSeal": "3c649ff6271721a28c4507eb428ab35914072cb005d1aae6044c9d3a209a213a",
+      "selectedFiles": 4,
+      "force": false
+    },
+    "PRSummary": [
+      {
+        "number": 194,
+        "draft": true,
+        "head": "79ca2b430ae53c55b1aba11e56c99e083d4a8431",
+        "files": 20
+      },
+      {
+        "number": 193,
+        "draft": true,
+        "head": "5b4bf1b6780586676007c84303510fb4e316cf5e",
+        "files": 2
+      },
+      {
+        "number": 175,
+        "draft": true,
+        "head": "40eca21c34263513230c5d3c431250a0ed42aa90",
+        "files": 11
+      },
+      {
+        "number": 157,
+        "draft": false,
+        "head": "525578cc44db23943e9cfb5a62c4d1c487cca99a",
+        "files": 2
+      }
+    ],
+    "CI": {
+      "source": {
+        "checks": 0,
+        "statuses": 0,
+        "runs": 0
+      },
+      "main": {
+        "checks": 0,
+        "statuses": 0,
+        "runs": 0
+      }
+    },
+    "CIInterpretation": "NO_CURRENT_PASS_INFERRED"
+  },
+  "publication": {
+    "eligibleSourceFiles": [
+      "src/x402-official-issued-funding-post-native-application.js",
+      "qualification/issued-funding-post-native-vertical.case.draft.mjs",
+      "qualification/issued-funding-post-native-vertical.source-review.json",
+      "docs/P1_NATIVE_ISSUED_FUNDING_VERTICAL_CASE_DRAFT.md"
+    ],
+    "eligibleMainFiles": [],
+    "mainFilesChanged": 0,
+    "sourceOnly": true,
+    "normalFastForwardOnly": true,
+    "forcePush": false,
+    "branchProtectionBypass": false,
+    "privatePathsOrRawDiagnostics": false,
+    "newCIOrWorkflowExecution": false,
+    "unrelatedWorktreesOrLocalIndexChanged": false
+  },
+  "fullP0Complete": false,
+  "fullP1Complete": false,
+  "fullP2Complete": false,
+  "fullRoadmapComplete": false,
+  "productionQualified": false
+}
