@@ -1,0 +1,501 @@
+{
+  "status": "PASS_DATA_POLICY_ONLY_NATIVE_FOUR_FILE_CONNECTION_SOURCE_AND_SYNTAX_ONLY",
+  "sourceParent": "ec13cad885e98697d4ed53235f2b3a9ff24a5d2f",
+  "mainParent": "f754f640ea8990eeb83a0502c6b76dde20c19650",
+  "actualPolicy": {
+    "actualExit": 0,
+    "outputComplete": true,
+    "reason": null,
+    "firstAttemptPassed": true,
+    "counts": {
+      "tests": 16,
+      "passed": 16,
+      "failed": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "cases": [
+      "exact namespace is the closed capture and funding-resource grammar only",
+      "both retained DP paths bind exact localhost IPv4 port and owned CA bytes",
+      "account and DP role paths are not interchangeable or caller-extendable",
+      "only integer unprivileged ports in 1024 through 65535 are admitted",
+      "no external host alternative loopback address IPv6 or textual alias is admitted",
+      "unknown source flags request factories and global trust knobs are rejected as extra fields",
+      "own frozen records including private null-prototype source snapshots are accepted",
+      "configuration accessors never invoke caller getters or start callbacks",
+      "proxies at route options or CA boundaries are refused before reflection hooks",
+      "CA is bounded genuine nonshared Buffer data not a string view or mutable protocol object",
+      "one byte and 65536 byte synthetic CA bounds are copied completely",
+      "each owner receives an independent CA copy and never changes caller-owned bytes",
+      "string or symbol adornments and fake Buffer prototypes are never assimilated",
+      "funding resource is the exact same-port IPv4 HTTPS funding URL with no discovery",
+      "all exported entry arities and nonstring profile values fail without coercion",
+      "a valid policy is only configuration and never certificate or native graph qualification"
+    ],
+    "inputs": [
+      {
+        "path": "package.json",
+        "bytes": 2677,
+        "LF": 40,
+        "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+        "gitBlob": "45752ffde39d29666094f7f1c755060d75e43deb"
+      },
+      {
+        "path": "src/zenon/native-read-loopback-qualification-configuration.js",
+        "bytes": 4126,
+        "LF": 80,
+        "sha256": "1d8c20410d5ab8786c1fbf2dc1ef9c8346bc2b30c1c8146f16e46ff231cd0427",
+        "gitBlob": "15ae6af21f8f07351e7e4f680557d247cc379b88"
+      },
+      {
+        "path": "qualification/native-read-loopback-qualification-configuration.behavior.draft.mjs",
+        "bytes": 10398,
+        "LF": 153,
+        "sha256": "1ee2cd9c123096c7f5290f8a7d469e17303713230480e92bf9c04b2033200c54",
+        "gitBlob": "59f5851d76575a5ed21fe22b5e7034df25dc0b35"
+      }
+    ],
+    "streams": {
+      "stdout": {
+        "bytes": 4046,
+        "sha256": "7396969429c25f1b5a2b7f0cca489aa0c6a230ad1f9252d2bc3343681f6e4b9f"
+      },
+      "stderr": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    "footer": {
+      "entered": 16,
+      "completed": 16,
+      "hooks": 0,
+      "actualProductionModules": 1,
+      "CAData": "SYNTHETIC_BYTES_NOT_CERTIFICATE_VALIDATION",
+      "nativeCoreImported": false,
+      "fullFactoryImported": false,
+      "SDK": 0,
+      "SQLite": 0,
+      "sockets": 0,
+      "keys": 0,
+      "signatures": 0,
+      "nonceEvaluations": 0,
+      "authority": "NONE",
+      "productionQualified": false
+    },
+    "runtime": {
+      "version": "v24.19.0",
+      "platform": "darwin",
+      "architecture": "arm64",
+      "sha256": "dbedff294bab84a0a86c04e15fbcbeb1c97ca10bef1b32b0634cd24b36f62100"
+    },
+    "command": {
+      "entry": "qualification/native-read-loopback-qualification-configuration.behavior.draft.mjs",
+      "directNodeCommands": 1,
+      "nodeChildProcesses": 0,
+      "readOnlyInputGrants": 3,
+      "filesystemWriteGrant": false,
+      "childGrant": false,
+      "workerGrant": false,
+      "addons": false,
+      "compileCacheDisabled": true,
+      "dynamicCodeGenerationFromStrings": false,
+      "unhandledRejections": "strict",
+      "supervisorDeadlineSeconds": 15,
+      "streamCaptureCapBytes": 65536,
+      "ramCaptureOnly": true,
+      "inputAndRuntimeIdentityAndBytesMatched": true,
+      "completeCaptureRetainedInCommandRecord": true,
+      "OSOrNetworkSandboxClaim": false
+    },
+    "CAData": "SYNTHETIC_BYTES_NOT_CERTIFICATES",
+    "actualTlsOrX509Parsing": false,
+    "performanceBenchmark": false
+  },
+  "nativeSyntaxOnly": {
+    "event": "Q93_NATIVE_LOOPBACK_SYNTAX_COMPLETE",
+    "NodeCommands": 4,
+    "NodeChildren": 0,
+    "inputs": [
+      {
+        "path": "package.json",
+        "bytes": 2677,
+        "LF": 40,
+        "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+        "gitBlob": "45752ffde39d29666094f7f1c755060d75e43deb"
+      },
+      {
+        "path": "src/zenon/bounded-json-rpc-https-exchange-owner.js",
+        "bytes": 48201,
+        "LF": 1000,
+        "sha256": "2c501f3353d55e31d4baedcb068e2bac5943ca7e3e4171521a3bb0ee8a0a8bdb",
+        "gitBlob": "1eb4626a7bdecc496811ebcd59464500f4ca9937"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-retained-https-read-owners.js",
+        "bytes": 6241,
+        "LF": 117,
+        "sha256": "48ed2db2e36a12a93c106d76315f376a56f186cbf591ac544cb02c51f203c64d",
+        "gitBlob": "f03533b766e8f5f1e98c9a2b878e59a49631c5ce"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-retained-https-read-session.js",
+        "bytes": 8464,
+        "LF": 150,
+        "sha256": "791d2c74a81a18d4e3b4478d9ca569db1ec971f5c1e0540ddac02eb3a79938b7",
+        "gitBlob": "a18bec3918105f7cd2151d5a71d4b436401fe1a3"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-native-https-original-funding-submission.js",
+        "bytes": 8317,
+        "LF": 132,
+        "sha256": "813ee2aa8488f788025d9ee2704e4a207dfd6dc2e34cbf5c827988d1908ae8d6",
+        "gitBlob": "2f91f1df738364a0f8892fec0b111d490dd1d95e"
+      }
+    ],
+    "results": [
+      {
+        "input": {
+          "path": "src/zenon/bounded-json-rpc-https-exchange-owner.js",
+          "bytes": 48201,
+          "LF": 1000,
+          "sha256": "2c501f3353d55e31d4baedcb068e2bac5943ca7e3e4171521a3bb0ee8a0a8bdb",
+          "gitBlob": "1eb4626a7bdecc496811ebcd59464500f4ca9937"
+        },
+        "syntaxActualExit": 0,
+        "outputComplete": true,
+        "reason": null,
+        "streams": {
+          "stdout": {
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "stderr": {
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        "stderr": "",
+        "applicationImported": false,
+        "applicationExecuted": false
+      },
+      {
+        "input": {
+          "path": "src/zenon/dynamic-plasma-retained-https-read-owners.js",
+          "bytes": 6241,
+          "LF": 117,
+          "sha256": "48ed2db2e36a12a93c106d76315f376a56f186cbf591ac544cb02c51f203c64d",
+          "gitBlob": "f03533b766e8f5f1e98c9a2b878e59a49631c5ce"
+        },
+        "syntaxActualExit": 0,
+        "outputComplete": true,
+        "reason": null,
+        "streams": {
+          "stdout": {
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "stderr": {
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        "stderr": "",
+        "applicationImported": false,
+        "applicationExecuted": false
+      },
+      {
+        "input": {
+          "path": "src/zenon/dynamic-plasma-retained-https-read-session.js",
+          "bytes": 8464,
+          "LF": 150,
+          "sha256": "791d2c74a81a18d4e3b4478d9ca569db1ec971f5c1e0540ddac02eb3a79938b7",
+          "gitBlob": "a18bec3918105f7cd2151d5a71d4b436401fe1a3"
+        },
+        "syntaxActualExit": 0,
+        "outputComplete": true,
+        "reason": null,
+        "streams": {
+          "stdout": {
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "stderr": {
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        "stderr": "",
+        "applicationImported": false,
+        "applicationExecuted": false
+      },
+      {
+        "input": {
+          "path": "src/zenon/dynamic-plasma-native-https-original-funding-submission.js",
+          "bytes": 8317,
+          "LF": 132,
+          "sha256": "813ee2aa8488f788025d9ee2704e4a207dfd6dc2e34cbf5c827988d1908ae8d6",
+          "gitBlob": "2f91f1df738364a0f8892fec0b111d490dd1d95e"
+        },
+        "syntaxActualExit": 0,
+        "outputComplete": true,
+        "reason": null,
+        "streams": {
+          "stdout": {
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "stderr": {
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        "stderr": "",
+        "applicationImported": false,
+        "applicationExecuted": false
+      }
+    ],
+    "SDKImports": 0,
+    "SQLiteOpens": 0,
+    "networkCalls": 0,
+    "newScratch": 0,
+    "nativeReadGraphImported": false,
+    "nativeReadGraphRuntimeQualified": false,
+    "previousApplicationPins": [
+      {
+        "path": "src/zenon/bounded-json-rpc-https-exchange-owner.js",
+        "bytes": 46022,
+        "LF": 964,
+        "sha256": "2fab30762796817b379d8b6e6d1ae829007cf6a45cd3f411dccd72673cd0053a",
+        "gitBlob": "e7196244cdcdfdacc458dfec0a6a0b408fbee2ac"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-retained-https-read-owners.js",
+        "bytes": 5371,
+        "LF": 104,
+        "sha256": "725ee84143fd18416e638ae6acc0295e1fdea9c20fb4ee67d8b3e35b5bec77e8",
+        "gitBlob": "f496edb1ea70c67f5b1303f4322c0ace56156a86"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-retained-https-read-session.js",
+        "bytes": 7345,
+        "LF": 135,
+        "sha256": "e2e081c26a69f6cdf91cf30bdb14510b6fdb141b81b74b1fe0753d16f8be53c5",
+        "gitBlob": "575f803c66b9f85aed162dc46ab9b532a3fd8693"
+      },
+      {
+        "path": "src/zenon/dynamic-plasma-native-https-original-funding-submission.js",
+        "bytes": 6748,
+        "LF": 104,
+        "sha256": "dcae184c5d8db5b4104920f2f3f8904b524c2cab38b4a867b1568f5db72e9493",
+        "gitBlob": "554adc3620487813d9535590ff1f1cfbcdc24317"
+      }
+    ],
+    "interpretation": "Four separate node --check commands parsed only current native application files. No native core, owner/session, full factory, SDK or SQLite module was imported or executed.",
+    "applicationRuntimeQualified": false
+  },
+  "sourceConnection": {
+    "actualLocalExport": "createZenonDynamicPlasmaNativeHttpsOriginalFundingSubmissionForLocalQualification",
+    "actualLocalSession": "createRetainedDynamicPlasmaHttpsReadSessionForLocalQualification",
+    "actualLocalOwnerExports": [
+      "createRetainedDynamicPlasmaHttpsReadTransportOwnerForLocalQualification",
+      "createRetainedAccountStateHttpsExchangeOwnerForLocalQualification"
+    ],
+    "sameActualHttpsCore": true,
+    "coreExplicitSelection": "seventh source-selected local-options argument with retained native-custody profile",
+    "sameActualMaterialProducer": true,
+    "sameActualV4Submission": true,
+    "sameActualFundingPostTransport": true,
+    "sameActualSDKPreflightAndV6Store": true,
+    "noOwnerRequestFetchOrStoreFactoryInjection": true,
+    "currentFullFactoryImported": false,
+    "fullNativeHarnessAuthored": false,
+    "fullNativeHarnessExecuted": false,
+    "constructorOperationOrNativeBehaviorProvenBySyntax": false,
+    "defaultBuyerChanged": false
+  },
+  "closedLocalPolicy": {
+    "exactHostnameAndSni": "localhost",
+    "exactIpv4": "127.0.0.1",
+    "minimumPort": 1024,
+    "maximumPort": 65535,
+    "exactDpPaths": [
+      "/rpc/first",
+      "/rpc/second"
+    ],
+    "exactAccountPath": "/rpc/account",
+    "fundingResource": "https://127.0.0.1:<same-port>/funding",
+    "sameBorrowedCaIdentityRequiredAcrossReadAndFundingOptionsBySource": true,
+    "minimumCaBytes": 1,
+    "maximumCaBytes": 65536,
+    "CA": "genuine nonshared unadorned Buffer DATA copied per owner",
+    "optionsAreFrozenOwnData": true,
+    "proxyAccessorCoercionAndUnknownFieldsRefused": true,
+    "captureStartsNoTlsSocketOrCertificateValidation": true,
+    "outputAuthority": "NONE",
+    "productionRouteQualified": false
+  },
+  "sourceTlsAndLifecycleReview": {
+    "requestLookupRemainsPinnedIPv4": true,
+    "hostnameVerificationRemainsNodeCheckServerIdentity": true,
+    "rejectUnauthorizedRemainsTrue": true,
+    "tlsVersionsRemainOnlyTLS13": true,
+    "alpnRemainsHttp11": true,
+    "freshAgentSocketAndNoSessionReuseRemain": true,
+    "readAdmissionBudgetsRemain78_78_18": true,
+    "requestHostIncludesLocalPortOnlyForLocalSelection": true,
+    "explicitOwnedCaOnlyOnLocalRequestOptions": true,
+    "noGlobalCaEnvironmentOrTlsMutation": true,
+    "caReleaseAuthoredAtConfigurationFailureAndOwnedCloseBoundary": true,
+    "caReleaseAttemptClaimedBeforeFillAndRefDropped": true,
+    "caReleaseFailureMarksCloseUncertain": true,
+    "caReleaseRuntimeExecuted": false,
+    "CAReleaseIsNotSecureErasure": true,
+    "physicalResourceCleanupQualified": false,
+    "legacyPublicBranchesReviewedAsRetainingOriginalGrammarPortAndTrustMode": true,
+    "legacyOrLocalRuntimeCompatibilityQualified": false,
+    "previousProfileResultsRebound": false
+  },
+  "documentationReferences": [
+    {
+      "url": "https://nodejs.org/download/release/v24.19.0/docs/api/tls.html#tlscreatesecurecontextoptions",
+      "supports": "Explicit ca replaces default trust anchors; real TLS must still authenticate the peer."
+    },
+    {
+      "url": "https://nodejs.org/download/release/v24.19.0/docs/api/https.html#httpsrequestoptions-callback",
+      "supports": "Actual https.request accepts the TLS ca option. A DATA policy or syntax result is not that execution."
+    }
+  ],
+  "executionEffects": {
+    "totalNodeCommands": 5,
+    "dataPolicyNodeCommands": 1,
+    "nativeSyntaxOnlyCommands": 4,
+    "nodeChildProcesses": 0,
+    "nativeCoreImports": 0,
+    "SDKImports": 0,
+    "SQLiteOpens": 0,
+    "sockets": 0,
+    "keys": 0,
+    "signatures": 0,
+    "nonceEvaluations": 0,
+    "actualPrepareCalls": 0,
+    "payments": 0,
+    "OpenSslCommands": 0,
+    "newNativeTlsAttempts": 0,
+    "newManagedRoots": 0,
+    "newManagedTasks": 0,
+    "newQualificationScratchBytes": 0,
+    "newDownloads": 0,
+    "newArchives": 0,
+    "historicalRootsOrMetadataTouchedByThisWork": false,
+    "existingDataDeleted": 0
+  },
+  "frozenFundingOnlyTlsProfile": {
+    "manifest": "qualification/funding-post-native-loopback-tls-current.inputs.json",
+    "manifestSha256": "523827fb540b30d15f954e93b3245e1efdde84fca3aeafba9bddaac363c471b9",
+    "selectedInputRows": 11,
+    "manifestAndInputsUnchanged": true,
+    "sourceAdmissionReplayed": false,
+    "previousTwoAttemptsRemainConsumed": true,
+    "pendingOneShotAuthorityExpanded": false,
+    "thatScopeExcludesFullDPGraph": true,
+    "newFullGraphNativeAuthority": "NOT_GRANTED_OR_INFERRED"
+  },
+  "publication": {
+    "eligibleSourceFiles": [
+      "src/zenon/native-read-loopback-qualification-configuration.js",
+      "src/zenon/bounded-json-rpc-https-exchange-owner.js",
+      "src/zenon/dynamic-plasma-retained-https-read-owners.js",
+      "src/zenon/dynamic-plasma-retained-https-read-session.js",
+      "src/zenon/dynamic-plasma-native-https-original-funding-submission.js",
+      "qualification/native-read-loopback-qualification-configuration.behavior.draft.mjs",
+      "qualification/native-read-loopback-qualification-configuration.actual-local-result.json",
+      "docs/P1_NATIVE_DP_LOOPBACK_QUALIFICATION_SELECTION.md"
+    ],
+    "eligibleMainFiles": [
+      "src/zenon/native-read-loopback-qualification-configuration.js",
+      "qualification/native-read-loopback-qualification-configuration.behavior.draft.mjs",
+      "qualification/native-read-loopback-qualification-configuration.actual-local-result.json",
+      "docs/P1_NATIVE_DP_LOOPBACK_QUALIFICATION_SELECTION.md"
+    ],
+    "nativeFourChangedFilesOffMain": true,
+    "packagePinMatchesBothParents": true,
+    "targetOverlapWithOpenPRs": false,
+    "CIAtParents": {
+      "source": {
+        "checks": 0,
+        "statuses": 0,
+        "runs": 0
+      },
+      "main": {
+        "checks": 0,
+        "statuses": 0,
+        "runs": 0
+      }
+    },
+    "CIInterpretation": "NO_CURRENT_PASS_INFERRED",
+    "openPRs": [
+      {
+        "number": 194,
+        "head": "79ca2b430ae53c55b1aba11e56c99e083d4a8431",
+        "files": 20,
+        "draft": true
+      },
+      {
+        "number": 193,
+        "head": "5b4bf1b6780586676007c84303510fb4e316cf5e",
+        "files": 2,
+        "draft": true
+      },
+      {
+        "number": 175,
+        "head": "40eca21c34263513230c5d3c431250a0ed42aa90",
+        "files": 11,
+        "draft": true
+      },
+      {
+        "number": 157,
+        "head": "525578cc44db23943e9cfb5a62c4d1c487cca99a",
+        "files": 2,
+        "draft": false
+      }
+    ],
+    "protectionsAtReview": {
+      "x402/p1-router-late-pending-close-integration-v2": {
+        "protected": false,
+        "rules": []
+      },
+      "main": {
+        "protected": false,
+        "rules": []
+      }
+    },
+    "normalFastForwardOnly": true,
+    "forcePush": false,
+    "workflowChange": false,
+    "workflowDispatch": false,
+    "PRCreationOrComment": false,
+    "publicationOutcome": "VERIFY_SEPARATELY_BY_EXACT_COMMIT_READBACK"
+  },
+  "nextRequiredWork": [
+    "Author a pinned full native local fixture/launcher using the actual hardwired local selection, real HTTPS and new private V6 databases, not callback replacements for the native owners.",
+    "Include positive bounded work, original signing/pins/custody, exact one original POST, lost acknowledgement and held close behavior; enforce effects/candidate/socket/storage ceilings.",
+    "Review the exact current source/dependencies/launcher/storage manager/disk/capacity and obtain its separate native execution scope before any launch.",
+    "The local profile's execution cannot qualify public port-443/default-PKI behavior, canonical chain identity, production or the economic pilot."
+  ],
+  "limits": [
+    "The sixteen cases execute only the actual DATA policy. Synthetic CA bytes are not certificates and were not validated by TLS.",
+    "The four changed native files were syntax checked and source reviewed only, not imported or constructed.",
+    "The newly wired local selection is a concrete same-core application path, but no full native harness or actual full application run exists from this step.",
+    "Source-selected local loopback behavior does not weaken or qualify the legacy public route; full runtime compatibility remains unproven.",
+    "No prior native allowance, successful component record, environment flag or selector provides human authority for the full DP graph.",
+    "No key, signing, nonce search, SQL, network test, root/task initialization, cleanup or current CI execution occurred."
+  ],
+  "fullP0Complete": false,
+  "fullP1Complete": false,
+  "fullP2Complete": false,
+  "fullRoadmapComplete": false,
+  "livePaymentQualified": false,
+  "economicPilotQualified": false,
+  "productionQualified": false
+}

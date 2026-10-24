@@ -29,16 +29,23 @@ export function createRetainedDynamicPlasmaHttpsReadTransportOwnerV2(options) {
   return retainedOwner(options, arguments.length, DP, true);
 }
 
-function retainedOwner(options, argumentCount, profileName, nativeCustody) {
+/** Named SOURCE-ONLY loopback selection; no request/TLS execution authority. */
+export function createRetainedDynamicPlasmaHttpsReadTransportOwnerForLocalQualification(options, localOptions) {
+  if (arguments.length !== 2 || typeof localOptions !== 'object' || localOptions === null) reject();
+  return retainedOwner(options, 1, DP, true, localOptions);
+}
+
+function retainedOwner(options, argumentCount, profileName, nativeCustody, localOptions = null) {
   let inspector = null;
   const receive = FREEZE(function receive(inspect) {
     if (arguments.length !== 1 || inspector !== null || typeof inspect !== 'function'
         || IS_PROXY(inspect) || PROTOTYPE(inspect) !== Function.prototype || !IS_FROZEN(inspect)) reject();
     inspector = inspect;
   });
-  const owner = nativeCustody
-    ? OWNER(options, argumentCount, snapshotConfiguration, profileName, undefined, receive)
-    : OWNER(options, argumentCount, snapshotConfiguration, profileName);
+  const owner = localOptions !== null
+    ? OWNER(options, argumentCount, snapshotConfiguration, profileName, undefined, receive, localOptions)
+    : nativeCustody ? OWNER(options, argumentCount, snapshotConfiguration, profileName, undefined, receive)
+      : OWNER(options, argumentCount, snapshotConfiguration, profileName);
   if (nativeCustody && inspector === null) reject();
   let methods;
   if (profileName === ACCOUNT) {
@@ -70,6 +77,12 @@ export function createRetainedAccountStateHttpsExchangeOwner(options) {
 /** Same account byte gate and budget, plus a private actual-native view. */
 export function createRetainedAccountStateHttpsExchangeOwnerV2(options) {
   return retainedOwner(options, arguments.length, ACCOUNT, true);
+}
+
+/** Same actual retained account gate/core, closed loopback-only qualification. */
+export function createRetainedAccountStateHttpsExchangeOwnerForLocalQualification(options, localOptions) {
+  if (arguments.length !== 2 || typeof localOptions !== 'object' || localOptions === null) reject();
+  return retainedOwner(options, 1, ACCOUNT, true, localOptions);
 }
 
 function exact(value, fields) {

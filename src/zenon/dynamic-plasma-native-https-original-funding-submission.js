@@ -1,16 +1,20 @@
 import { types as utilTypes } from 'node:util';
 import { captureZenonDynamicPlasmaBoundedOriginalFundingConfiguration } from './dynamic-plasma-bounded-original-funding-configuration.js';
 import { createBoundedNonceDynamicPlasmaMaterialExchange } from './dynamic-plasma-bounded-material-exchange.js';
-import { createRetainedDynamicPlasmaHttpsReadSessionV2 } from './dynamic-plasma-retained-https-read-session.js';
+import { createRetainedDynamicPlasmaHttpsReadSessionV2,
+  createRetainedDynamicPlasmaHttpsReadSessionForLocalQualification } from './dynamic-plasma-retained-https-read-session.js';
 import { createZenonDynamicPlasmaOriginalFundingSubmissionV4 } from './dynamic-plasma-original-funding-submission.js';
 import { createFundingPostNativeHttpsTransport } from '../service-credit-funding-post-native-https-transport.js';
 import { createNativeOriginalFundingCloseSession } from './dynamic-plasma-native-funding-close-session.js';
+import { nativeReadLoopbackQualificationFundingResourceUrl } from './native-read-loopback-qualification-configuration.js';
 
 const CAPTURE = captureZenonDynamicPlasmaBoundedOriginalFundingConfiguration;
 const MATERIAL = createBoundedNonceDynamicPlasmaMaterialExchange;
 const READS = createRetainedDynamicPlasmaHttpsReadSessionV2, SUBMIT = createZenonDynamicPlasmaOriginalFundingSubmissionV4;
 const FUNDING = createFundingPostNativeHttpsTransport, FREEZE = Object.freeze;
 const JOIN = createNativeOriginalFundingCloseSession;
+const LOCAL_READS = createRetainedDynamicPlasmaHttpsReadSessionForLocalQualification;
+const LOCAL_FUNDING_URL = nativeReadLoopbackQualificationFundingResourceUrl;
 const DESC = Object.getOwnPropertyDescriptor, PROTO = Object.getPrototypeOf, KEYS = Reflect.ownKeys;
 const OWN = Object.hasOwn, APPLY = Reflect.apply, IS_PROXY = utilTypes.isProxy, IS_PROMISE = utilTypes.isPromise;
 const NativePromise = Promise, PROMISE = NativePromise.prototype, THEN = PROMISE.then;
@@ -48,23 +52,47 @@ const NativePromise = Promise, PROMISE = NativePromise.prototype, THEN = PROMISE
  * Component or previous callback tests do NOT qualify this new native graph.
  */
 export function createZenonDynamicPlasmaNativeHttpsOriginalFundingSubmission(configuration) {
+  if (arguments.length !== 1) fail('configuration_rejected');
+  return createNativeSubmission(configuration, false);
+}
+
+/**
+ * Named SOURCE-ONLY same actual native/SDK/V6 graph with closed loopback RPC
+ * qualification routes. The ninth group binds port/CA; funding must use the
+ * same CA input and exact 127.0.0.1:port/funding URL. No owner/fetch factory is
+ * injected and no global trust or legacy public selection is changed. This
+ * selection does NOT authorize native TLS, SQL, signing or nonce execution.
+ */
+export function createZenonDynamicPlasmaNativeHttpsOriginalFundingSubmissionForLocalQualification(configuration) {
+  if (arguments.length !== 1) fail('configuration_rejected');
+  return createNativeSubmission(configuration, true);
+}
+
+function createNativeSubmission(configuration, localQualification) {
   let reads = null, funding = null;
   try {
-    if (arguments.length !== 1) fail('configuration_rejected');
-    const c = record(configuration, ['readSessionOptions', 'materialOptions', 'materialWaitMs',
-      'wallet', 'store', 'fundingResourceUrl', 'deadlineMs', 'fundingTransportOptions']);
+    const fields = ['readSessionOptions', 'materialOptions', 'materialWaitMs',
+      'wallet', 'store', 'fundingResourceUrl', 'deadlineMs', 'fundingTransportOptions'];
+    if (localQualification) fields.push('localReadQualificationOptions');
+    const c = record(configuration, fields);
     const f = record(c.fundingTransportOptions, ['resourceUrl', 'ca', 'maxRequestStarts',
       'requestDeadlineMs', 'handshakeDeadlineMs', 'closeGraceMs']);
     if (f.resourceUrl !== c.fundingResourceUrl || f.maxRequestStarts !== 1
         || !Number.isSafeInteger(c.deadlineMs) || !Number.isSafeInteger(f.requestDeadlineMs)
         || f.requestDeadlineMs > c.deadlineMs)
       fail('configuration_rejected');
+    let localOptions = null;
+    if (localQualification) {
+      localOptions = FREEZE(record(c.localReadQualificationOptions, ['port', 'ca']));
+      if (c.fundingResourceUrl !== LOCAL_FUNDING_URL(localOptions) || f.ca !== localOptions.ca)
+        fail('configuration_rejected');
+    }
     funding = FUNDING(f); // Inert actual native constructor; no test factory.
     const selected = CAPTURE({ readOptions: c.readSessionOptions, materialOptions: c.materialOptions,
       materialWaitMs: c.materialWaitMs, wallet: c.wallet, store: c.store,
       fundingResourceUrl: c.fundingResourceUrl, deadlineMs: c.deadlineMs, fetchImpl: funding.fetchImpl });
     const materialExchange = MATERIAL(selected.materialOptions);
-    reads = READS(selected.readOptions);
+    reads = localQualification ? LOCAL_READS(selected.readOptions, localOptions) : READS(selected.readOptions);
     const session = JOIN(reads, funding);
     return SUBMIT({ preparerOptions: { readOptions: session.readSession.readOptions, materialExchange,
       materialWaitMs: selected.materialWaitMs, wallet: selected.wallet }, store: selected.store,

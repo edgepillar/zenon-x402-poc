@@ -4,6 +4,8 @@ import {
   createRetainedAccountStateHttpsExchangeOwner,
   createRetainedDynamicPlasmaHttpsReadTransportOwnerV2,
   createRetainedAccountStateHttpsExchangeOwnerV2,
+  createRetainedDynamicPlasmaHttpsReadTransportOwnerForLocalQualification,
+  createRetainedAccountStateHttpsExchangeOwnerForLocalQualification,
 } from './dynamic-plasma-retained-https-read-owners.js';
 import { createRetainedDynamicPlasmaReadSessionCore } from './dynamic-plasma-retained-read-session-core.js';
 
@@ -11,6 +13,8 @@ const DP = createRetainedDynamicPlasmaHttpsReadTransportOwner;
 const ACCOUNT = createRetainedAccountStateHttpsExchangeOwner, SESSION = createRetainedDynamicPlasmaReadSessionCore;
 const DP_V2 = createRetainedDynamicPlasmaHttpsReadTransportOwnerV2;
 const ACCOUNT_V2 = createRetainedAccountStateHttpsExchangeOwnerV2;
+const DP_LOCAL = createRetainedDynamicPlasmaHttpsReadTransportOwnerForLocalQualification;
+const ACCOUNT_LOCAL = createRetainedAccountStateHttpsExchangeOwnerForLocalQualification;
 const FREEZE = Object.freeze, CREATE = Object.create, DEFINE = Object.defineProperty;
 const DESCRIPTOR = Object.getOwnPropertyDescriptor, PROTOTYPE = Object.getPrototypeOf;
 const KEYS = Reflect.ownKeys, HAS = Object.hasOwn, APPLY = Reflect.apply;
@@ -54,7 +58,18 @@ export function createRetainedDynamicPlasmaHttpsReadSessionV2(options) {
   return createSession(options, true);
 }
 
-function createSession(options, nativeCustody) {
+/**
+ * Named SOURCE-ONLY actual-core local qualification. All three routes must be
+ * fixed localhost/127.0.0.1 role paths; the source core binds one explicit CA
+ * and unprivileged port. Existing public/native V2 selections are unchanged.
+ * Constructing this selection is not authority to execute sockets or tests.
+ */
+export function createRetainedDynamicPlasmaHttpsReadSessionForLocalQualification(options, localOptions) {
+  if (arguments.length !== 2 || typeof localOptions !== 'object' || localOptions === null) reject();
+  return createSession(options, true, localOptions);
+}
+
+function createSession(options, nativeCustody, localOptions = null) {
   let selected;
   try {
     const top = exact(options, ['endpoints', 'accountEndpoint']);
@@ -65,9 +80,9 @@ function createSession(options, nativeCustody) {
   } catch { reject(); }
   const owners = [];
   try {
-    put(owners, '0', (nativeCustody ? DP_V2 : DP)(selected[0]));
-    put(owners, '1', (nativeCustody ? DP_V2 : DP)(selected[1]));
-    put(owners, '2', (nativeCustody ? ACCOUNT_V2 : ACCOUNT)(selected[2]));
+    put(owners, '0', localOptions !== null ? DP_LOCAL(selected[0], localOptions) : (nativeCustody ? DP_V2 : DP)(selected[0]));
+    put(owners, '1', localOptions !== null ? DP_LOCAL(selected[1], localOptions) : (nativeCustody ? DP_V2 : DP)(selected[1]));
+    put(owners, '2', localOptions !== null ? ACCOUNT_LOCAL(selected[2], localOptions) : (nativeCustody ? ACCOUNT_V2 : ACCOUNT)(selected[2]));
     // The existing core receives its exact legacy grammar and the SAME actual
     // read/close functions; no fake owner, new request or wrapping close result.
     const first = nativeCustody ? FREEZE({ transport: owners[0].transport,
