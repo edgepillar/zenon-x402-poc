@@ -1,0 +1,22 @@
+{
+  "offeredWorkloadVersion": 2,
+  "laneIds": [
+    "lane.01"
+  ],
+  "plan": {
+    "warmupCallsPerLane": 1,
+    "measurementCallsPerLane": 4,
+    "setupBudgetMs": 20000,
+    "measurementWindowMs": 40,
+    "drainGraceMs": 1000,
+    "maxLedgerTransactionsPerOperation": 8,
+    "arrivalIntervalMs": 10
+  },
+  "recordingLimits": {
+    "maxSamplesPerPhase": 64,
+    "maxInFlightPerPhase": 1
+  },
+  "payeeAddress": "z1qq3zyg3zyg3zyg3zyg3zyg3zyg3zyg3z3yw2mk",
+  "commandBudgetMs": 5000,
+  "closeBudgetMs": 6000
+}
