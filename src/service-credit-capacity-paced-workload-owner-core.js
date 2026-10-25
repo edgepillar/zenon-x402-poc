@@ -3,6 +3,7 @@ import { createServiceCreditCapacityWindowedAsyncWorkloadOwnerCore,
   createServiceCreditCapacityWindowedAsyncWorkloadOwnerCoreWithPrivateTimingTrace } from './service-credit-capacity-windowed-async-workload-owner-core.js';
 import { createServiceCreditCapacityRecorder } from './service-credit-capacity-recorder.js';
 import { checkServiceCreditCapacityPacedTimingTraceData } from './service-credit-capacity-paced-timing-trace-data.js';
+import { checkServiceCreditCapacityPacedTimerTraceData } from './service-credit-capacity-paced-timer-trace-data.js';
 
 const F = Object.freeze, A = Reflect.apply, D = Object.getOwnPropertyDescriptor;
 const P = Object.getPrototypeOf, K = Reflect.ownKeys, O = Object.hasOwn;
@@ -13,6 +14,7 @@ const CORE = createServiceCreditCapacityWindowedAsyncWorkloadOwnerCore;
 const TRACED_CORE = createServiceCreditCapacityWindowedAsyncWorkloadOwnerCoreWithPrivateTimingTrace;
 const RECORDER = createServiceCreditCapacityRecorder;
 const PACED_TIMING_CHECK = checkServiceCreditCapacityPacedTimingTraceData;
+const PACED_TIMER_CHECK = checkServiceCreditCapacityPacedTimerTraceData;
 const MAX_NS = (1n << 128n) - 1n, MILLION = 1000000n;
 const METHODS = F(['fund', 'execute', 'checkBalances', 'openMeasurementWindow', 'stopMeasurementWindow', 'close']);
 const OUTCOMES = F(['SUCCEEDED', 'REJECTED', 'UNKNOWN']);
@@ -50,7 +52,13 @@ export function createServiceCreditCapacityPacedWorkloadOwnerCoreWithPrivateTimi
   return construct(configuration, true);
 }
 
-function construct(configuration, traceEnabled) {
+/** Separate opt-in timer DATA. Existing factories and capture layouts are unchanged. */
+export function createServiceCreditCapacityPacedWorkloadOwnerCoreWithPrivateTimerTrace(configuration) {
+  if (arguments.length !== 1 || !invariant()) fail('configuration_rejected');
+  return construct(configuration, true, true);
+}
+
+function construct(configuration, traceEnabled, timerTraceEnabled = false) {
   let plan, limits, runtime, lanes, gapMs;
   try {
     const c = exact(configuration, ['plan', 'recordingLimits', 'runtime', 'lanes', 'pacing']);
@@ -84,6 +92,8 @@ function construct(configuration, traceEnabled) {
   const queueRecorder = RECORDER(limits), sourceRecorder = RECORDER(limits);
   const privateEvents = traceEnabled ? [] : null, maximumEvents = 4 * limits.maxSamplesPerPhase + 1;
   let privateCached = null, privateIssue = false;
+  const timerEvents = timerTraceEnabled ? [] : null, maximumTimerEvents = 4 * limits.maxSamplesPerPhase + 1;
+  let timerAttempts = 0, timerCached = null;
 
   function unknown(code) { if (issue === null) issue = code; }
   function append(row) {
@@ -92,6 +102,13 @@ function construct(configuration, traceEnabled) {
       privateIssue = true; fail('private_timing_limit');
     }
     privateEvents.push(F({ sequence: privateEvents.length + 1, ...row }));
+  }
+  function appendTimer(row) {
+    if (!timerTraceEnabled) return;
+    if (timerCached !== null || timerEvents.length >= maximumTimerEvents) {
+      privateIssue = true; fail('private_timer_trace_limit');
+    }
+    timerEvents.push(F({ sequence: timerEvents.length + 1, pacedSequence: privateEvents.length, ...row }));
   }
   function clock() {
     const at = A(NOW, undefined, []);
@@ -108,8 +125,12 @@ function construct(configuration, traceEnabled) {
     if (slot === null || !slot.live) return;
     slot.live = false; timer = null;
     if (slot.installing) return; // The exact late token is handled after schedule returns.
-    try { if (A(CANCEL, undefined, [slot.token]) !== undefined) unknown('PACING_CANCEL_UNKNOWN'); }
-    catch { unknown('PACING_CANCEL_UNKNOWN'); }
+    let returned = false;
+    try { returned = A(CANCEL, undefined, [slot.token]) === undefined; }
+    catch { /* A requested cancellation is not physical timer removal. */ }
+    if (!returned) unknown('PACING_CANCEL_UNKNOWN');
+    try { appendTimer({ kind: 'CANCEL', timer: slot.ordinal, returned }); }
+    catch { privateIssue = true; unknown('PRIVATE_TIMER_TRACE_UNKNOWN'); }
   }
   function withdraw() {
     if (withdrawing) return;
@@ -171,29 +192,41 @@ function construct(configuration, traceEnabled) {
   function armPacing(at) {
     const delay = Number((nextStart - at + MILLION - 1n) / MILLION);
     if (!Number.isSafeInteger(delay) || delay < 1 || delay > gapMs) { fault('PACING_DELAY_UNKNOWN'); return; }
-    const slot = { token: null, live: true, installing: true, early: false };
+    const slot = { token: null, live: true, installing: true, early: false, ordinal: ++timerAttempts };
     timer = slot;
     const callback = F(function pacingTick() {
       if (!slot.live) return undefined;
       slot.live = false; if (timer === slot) timer = null;
-      if (slot.installing) { slot.early = true; return undefined; }
+      if (slot.installing) {
+        slot.early = true;
+        try { appendTimer({ kind: 'EARLY_FIRE', timer: slot.ordinal }); } catch { privateIssue = true; }
+        return undefined;
+      }
       if (arguments.length !== 0) { fault('PACING_TIMER_PROTOCOL_UNKNOWN'); return undefined; }
       if (!stopped && final === null) {
         let now;
         try { now = clock(); } catch { fault('PACING_CLOCK_UNKNOWN'); return undefined; }
+        try { appendTimer({ kind: 'FIRE', timer: slot.ordinal, atNs: String(now) }); }
+        catch { fault('PRIVATE_TIMER_TRACE_UNKNOWN'); return undefined; }
         if (now < nextStart) fault('PACING_EARLY_TIMER_UNKNOWN');
         else pump(now);
       }
       return undefined;
     });
     try {
+      appendTimer({ kind: 'ARM', timer: slot.ordinal, atNs: String(at), dueNs: String(nextStart), delayMs: delay });
       slot.token = schedule(callback, delay); slot.installing = false; timersStarted++;
+      appendTimer({ kind: 'ARMED', timer: slot.ordinal });
       if (slot.early) { slot.live = true; timer = slot; cancelPacingTimer(); fault('PACING_SYNCHRONOUS_TIMER_UNKNOWN'); }
       else if (stopped || final !== null || timer !== slot) {
         // stop/reentry may have withdrawn the installing slot before its token existed.
         slot.live = true; timer = slot; cancelPacingTimer();
       }
-    } catch { slot.installing = false; slot.live = false; if (timer === slot) timer = null; fault('PACING_TIMER_SETUP_UNKNOWN'); }
+    } catch {
+      slot.installing = false; slot.live = false; if (timer === slot) timer = null;
+      try { appendTimer({ kind: 'REFUSED', timer: slot.ordinal }); } catch { privateIssue = true; }
+      fault('PACING_TIMER_SETUP_UNKNOWN');
+    }
   }
   function pump(observedAt) {
     if (pumping || stopped || final !== null || timer !== null || queue.length === 0) return;
@@ -296,7 +329,7 @@ function construct(configuration, traceEnabled) {
       rawIdentifiersIncluded: false, additionalClockReads: 0, nativeEventsAuthenticated: false,
       nativeResourcesQualified: false, sustainableCapacityQualified: false, authority: 'NONE',
     });
-    if (traceEnabled && privateCached.unknown === false) {
+    if (traceEnabled && !timerTraceEnabled && privateCached.unknown === false) {
       try {
         // Independent expectations come from captured source configuration,
         // never from the returned trace/report. A mismatch is not success.
@@ -307,6 +340,25 @@ function construct(configuration, traceEnabled) {
         unknown('PRIVATE_TIMING_CHECK_UNKNOWN');
         final = F({ ...final, outcome: 'HELD_UNKNOWN', issue });
         privateCached = F({ ...privateCached, unknown: true });
+      }
+    }
+    if (timerTraceEnabled) {
+      try { appendTimer({ kind: 'FINALIZE' }); } catch { privateIssue = true; }
+      timerCached = F({ pacedTimerTraceVersion: 1, scope: 'PRIVATE_PACING_TIMER_CALLS_NOT_NATIVE_AUTHENTICATION',
+        clockDomain: 'PARENT_MONOTONIC_SHARED_WITH_PACED_TRACE_NOT_TIMER_LIVENESS',
+        limits, laneCount: lanes.length, minimumStartGapMs: gapMs, maximumEvents: maximumTimerEvents,
+        unknown: privateIssue || privateCached.unknown || final.outcome !== 'OBSERVED_OWNERS_RETURNED',
+        events: F(timerEvents), rawTokensIncluded: false, additionalClockReads: 0,
+        nativeEventsAuthenticated: false, physicalTimerAbsenceQualified: false, authority: 'NONE' });
+      if (!timerCached.unknown) {
+        try {
+          PACED_TIMER_CHECK(F({ trace: privateCached, timerTrace: timerCached, report: final, expected: F({
+            plan, recordingLimits: limits, laneCount: lanes.length, minimumStartGapMs: gapMs,
+          }) }));
+        } catch {
+          unknown('PRIVATE_TIMER_CHECK_UNKNOWN'); final = F({ ...final, outcome: 'HELD_UNKNOWN', issue });
+          privateCached = F({ ...privateCached, unknown: true }); timerCached = F({ ...timerCached, unknown: true });
+        }
       }
     }
     resolveRun(final);
@@ -339,6 +391,11 @@ function construct(configuration, traceEnabled) {
     if (arguments.length !== 0 || privateCached === null) fail('private_timing_not_finalized');
     return privateCached;
   });
+  const captureTimerEvidence = F(function captureTimerEvidence() {
+    if (arguments.length !== 0 || timerCached === null) fail('private_timer_not_finalized');
+    return timerCached;
+  });
+  if (timerTraceEnabled) return F({ run, stop, inspect, captureTimingEvidence, captureTimerEvidence });
   return traceEnabled ? F({ run, stop, inspect, captureTimingEvidence }) : F({ run, stop, inspect });
 }
 
