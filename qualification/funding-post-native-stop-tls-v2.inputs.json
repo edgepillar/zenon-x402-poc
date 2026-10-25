@@ -1,0 +1,137 @@
+{
+  "kind": "FUNDING_POST_NATIVE_STOP_TLS_V2_SOURCE_DRAFT_NOT_AUTHORITY",
+  "version": 2,
+  "sourceParent": "f6862c4a7329a1302c978ef31cbcf994105a3f36",
+  "mainBefore": "417f21b7007590c63b5b0b04de386d5cb19238fe",
+  "inputs": [
+    {
+      "path": "package.json",
+      "bytes": 2677,
+      "LF": 40,
+      "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+      "gitBlob": "45752ffde39d29666094f7f1c755060d75e43deb"
+    },
+    {
+      "path": "src/service-credit-funding-post-native-https-transport.js",
+      "bytes": 20632,
+      "LF": 351,
+      "sha256": "61751ba97d98f02393cdf95fba166ece9f517b6e98db66ee05f3d4a52762f3fe",
+      "gitBlob": "368475ea019efc0e68eb06a55d8e87e721ec633a"
+    },
+    {
+      "path": "src/service-credit-funding-post-native-response.js",
+      "bytes": 7903,
+      "LF": 157,
+      "sha256": "b5084844ecf029445bc55efd0b9d0ef61b8c2e65424ea74a6dfb30941f9f676c",
+      "gitBlob": "0bae9c30c7a11624612418bb6a1e7643effb0775"
+    },
+    {
+      "path": "src/service-credit-native-client-close-owner.js",
+      "bytes": 7750,
+      "LF": 157,
+      "sha256": "519809b2cc6b2bf2d37cf6048e68847255f75dc9869a1fc1119bae310462fbd7",
+      "gitBlob": "ce749d7f9637a1afffb019a89c0f0c4b2387fb92"
+    },
+    {
+      "path": "src/service-credit-native-client-request-stop-owner.js",
+      "bytes": 5794,
+      "LF": 113,
+      "sha256": "1a1d9f0dec325210251f3f6aedb92a30e820d04f7a0dd710f25b3c8fd0ec079c",
+      "gitBlob": "d99031babeabc5360d4950fbbe2633b6589aca37"
+    },
+    {
+      "path": "src/service-credit-funding-post-readable-flow.js",
+      "bytes": 1568,
+      "LF": 34,
+      "sha256": "e624b56cabfb72aed927f0fb78d866b90da2bde5aefdadd71a16f65159e48d4e",
+      "gitBlob": "ac52bba7279286e6a0b33b0feca57d8a1eefc6c5"
+    },
+    {
+      "path": "qualification/funding-post-native-stop-tls-v2.behavior.draft.mjs",
+      "bytes": 18695,
+      "LF": 300,
+      "sha256": "123abf76ac91a6eeb02091a8f76454d3fb069211882c88ee5e922cfe41bd3973",
+      "gitBlob": "5529612e87b8c370f3112b0694072edfdd6c36c6"
+    },
+    {
+      "path": "qualification/funding-post-native-stop-tls-v2.selection.draft.mjs",
+      "bytes": 1227,
+      "LF": 16,
+      "sha256": "ca93c20c3f2f4c3b3bb3ad63deda4e051495eab556cdf4c22f5bf432b65ecab2",
+      "gitBlob": "ff8b684445441ec2c27da192024c6dc0399c83f7"
+    },
+    {
+      "path": "qualification/funding_post_native_stop_tls_v2_source_data.py",
+      "bytes": 9231,
+      "LF": 160,
+      "sha256": "53f46884e6141d4a9de9d06568c47b4ca810f5d8bfeb9c64f33a5d88e55309c4",
+      "gitBlob": "e3aa15f6b6a363ad004f97cf2f41c187c62ad64c"
+    }
+  ],
+  "sourceRowsSha256": "17bbf55bc2832b2049d797daabe14b3488e829198cfb4490290f6bbe7286d76b",
+  "imports": {
+    "src/service-credit-funding-post-native-https-transport.js": [
+      "node:buffer",
+      "node:events",
+      "node:https",
+      "node:http",
+      "node:net",
+      "node:util",
+      "./service-credit-funding-post-native-response.js",
+      "./service-credit-native-client-close-owner.js",
+      "./service-credit-native-client-request-stop-owner.js",
+      "./service-credit-funding-post-readable-flow.js"
+    ],
+    "src/service-credit-funding-post-native-response.js": [
+      "node:buffer",
+      "node:util"
+    ],
+    "src/service-credit-native-client-close-owner.js": [
+      "node:util"
+    ],
+    "src/service-credit-native-client-request-stop-owner.js": [
+      "node:util"
+    ],
+    "src/service-credit-funding-post-readable-flow.js": [
+      "node:stream",
+      "node:util"
+    ],
+    "qualification/funding-post-native-stop-tls-v2.behavior.draft.mjs": [
+      "node:assert/strict",
+      "node:buffer",
+      "node:https",
+      "node:net",
+      "node:fs",
+      "node:path",
+      "node:timers/promises",
+      "node:test",
+      "../src/service-credit-funding-post-native-https-transport.js"
+    ],
+    "qualification/funding-post-native-stop-tls-v2.selection.draft.mjs": [
+      "node:assert/strict",
+      "node:path",
+      "./funding-post-native-stop-tls-v2.behavior.draft.mjs"
+    ]
+  },
+  "effectsCeiling": {
+    "selectedCases": 7,
+    "maximumRuns": 1,
+    "opensslCommands": 1,
+    "nodeCommands": 1,
+    "nodeChildren": 0,
+    "loopbackListeners": 2,
+    "loopbackConnections": 8,
+    "taskQuotaBytes": 4194304,
+    "minimumFreeFloorBytes": 10737418240,
+    "nodeTimeoutSeconds": 45,
+    "SDK": false,
+    "SQLite": false,
+    "nonce": false,
+    "walletPaymentCapabilityProviderSigning": false,
+    "fullDpGraph": false,
+    "externalNetwork": false,
+    "nativeOsNetworkSandbox": false
+  },
+  "nativeAuthority": "NONE",
+  "nativeExecuted": false
+}
