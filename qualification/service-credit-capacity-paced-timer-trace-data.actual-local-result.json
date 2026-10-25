@@ -1,0 +1,246 @@
+{
+  "kind": "PACED_PRIVATE_TIMER_PRODUCER_AND_INDEPENDENT_CHECK_ACTUAL_SOURCE_DATA_NOT_NATIVE",
+  "version": 1,
+  "sourceParent": "2508eaf556e715c2d9cb482b4d423a352ad0191d",
+  "mainParent": "f6d82ac44f2f22e371621e4fbc6bddd07588b7ef",
+  "selectedEntry": "qualification/service-credit-capacity-paced-timer-trace-data.behavior.mjs",
+  "sourcePins": [
+    {
+      "path": "package.json",
+      "bytes": 2677,
+      "LF": 40,
+      "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+      "gitBlob": "45752ffde39d29666094f7f1c755060d75e43deb"
+    },
+    {
+      "path": "src/service-credit-capacity-paced-workload-owner-core.js",
+      "bytes": 24519,
+      "LF": 455,
+      "sha256": "5eef2c11c5a10bce0594bb43ea6a9f947974f0d6d8455e160227d35d2233bb26",
+      "gitBlob": "4cb1372f14e18b829fa114fe533bc0f1459f5666"
+    },
+    {
+      "path": "src/service-credit-capacity-windowed-async-workload-owner-core.js",
+      "bytes": 36252,
+      "LF": 645,
+      "sha256": "fda636116343c497f269d926ae8e3a61f1b9cd1cf11b493c3d9ba99ef55a7444",
+      "gitBlob": "cc9eae4a2e553a0e71a531f191648c9cbe0cb101"
+    },
+    {
+      "path": "src/service-credit-capacity-window-recorder.js",
+      "bytes": 13321,
+      "LF": 242,
+      "sha256": "48855e34729ae68c179d6439aed962a719964732c992a83472330b7e41293579",
+      "gitBlob": "6e28e75b4fd6572fbae535ac066334349ed26038"
+    },
+    {
+      "path": "src/service-credit-capacity-recorder.js",
+      "bytes": 10801,
+      "LF": 236,
+      "sha256": "eca9bf4cad4717df5d61457044c2c5d0a6bc00b6af81964d09bf18325d4a46ad",
+      "gitBlob": "bc9b0a8a9abd48033e698e100cdc6ef90d2152c9"
+    },
+    {
+      "path": "src/service-credit-capacity-parent-timing-trace-data.js",
+      "bytes": 13257,
+      "LF": 213,
+      "sha256": "9b48e9212efa6b000690b32c04f07277d2c868562a1e649766a28aab85e0907d",
+      "gitBlob": "8aecb7664c2a4772870fdeb51d10fe69bc71cb79"
+    },
+    {
+      "path": "src/service-credit-capacity-paced-timing-trace-data.js",
+      "bytes": 22759,
+      "LF": 299,
+      "sha256": "4459f9e90692b99af0b831e9acf013b579fe63b2113b8ef5abd81f29c559f5dc",
+      "gitBlob": "0f06c70e53c61497c10b7e4de3fac8697904856e"
+    },
+    {
+      "path": "src/service-credit-capacity-paced-timer-trace-data.js",
+      "bytes": 8115,
+      "LF": 129,
+      "sha256": "b926bbe4b3e047dbaa743da56052e253fe6484478b41eb78c930fffb696e1adf",
+      "gitBlob": "498feeacc9684fee4b9255e3b78c4d908ae59251"
+    },
+    {
+      "path": "qualification/service-credit-capacity-paced-workload-owner-core.behavior.mjs",
+      "bytes": 26035,
+      "LF": 452,
+      "sha256": "73bcb9a4ee4881693fb22e7597340fe1dc95fd64163a04c582185d44be7dee9b",
+      "gitBlob": "40453f7801e61493ff1f6bce221902cf75864088"
+    },
+    {
+      "path": "qualification/service-credit-capacity-paced-private-timing.behavior.mjs",
+      "bytes": 16273,
+      "LF": 234,
+      "sha256": "7184a2d4340000e51296cf1e9a8d8837973fa227445ede9a35456f3843778f00",
+      "gitBlob": "c8757bc35971081c2f314f1ff28c7febc7457032"
+    },
+    {
+      "path": "qualification/service-credit-capacity-paced-timing-trace-data.behavior.mjs",
+      "bytes": 16195,
+      "LF": 219,
+      "sha256": "c73873008f88199cbda5db08f44d03154495680ab1ede8875dc9114ba672419d",
+      "gitBlob": "ff2c6d90b77e0715912573667da04d345650b3b5"
+    },
+    {
+      "path": "qualification/service-credit-capacity-paced-timing-envelope-v2.behavior.mjs",
+      "bytes": 9484,
+      "LF": 144,
+      "sha256": "59c51a2fd9ab682a2cffd1615e337938182ff2b92705fd0f7ac3fead7c47b599",
+      "gitBlob": "236d7ddf5e5f44f26d3a3689b4edc086edf0108e"
+    },
+    {
+      "path": "qualification/service-credit-capacity-paced-timer-trace-data.behavior.mjs",
+      "bytes": 17843,
+      "LF": 240,
+      "sha256": "7120e74d9c6b316d291f4851801dc4e69bcd1d713a701dac58890d3812b738d1",
+      "gitBlob": "0cc6f265b2fb106e69583d90622616c9fa976b8e"
+    }
+  ],
+  "actual": {
+    "actualExit": 0,
+    "complete": true,
+    "counts": {
+      "tests": 212,
+      "suites": 0,
+      "pass": 212,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "elapsedSeconds": 2.9995803339988925,
+    "stdoutBytes": 17968,
+    "stdoutSha256": "eaf579d06ffaf7b9478dccdc31024e18c6861dc8026dffe82ef4d4bc69303501",
+    "stderrBytes": 0,
+    "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "sourceAndProtectedInputsUnchanged": true,
+    "validated": true,
+    "actualReporter": "node:test default spec",
+    "passedCaseRows": 212,
+    "priorRegressions": 163,
+    "newTimerControls": 49,
+    "NodeDataCommands": 1,
+    "NodeApplicationChildren": 0,
+    "protectedInputCount": 13
+  },
+  "preliminary": {
+    "actualExit": 0,
+    "complete": true,
+    "counts": {
+      "tests": 208,
+      "suites": 0,
+      "pass": 208,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "elapsedSeconds": 2.621360499993898,
+    "stdoutBytes": 17589,
+    "stdoutSha256": "67ebd9f1d1db58d386a85ae5a92870fcd9894cbeadca53b8b8a66cf4c00acacf",
+    "stderrBytes": 0,
+    "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "sourceAndProtectedInputsUnchanged": true,
+    "validatedAfterSameCaptureReconciliation": true,
+    "originalTAPReaderMatched": false,
+    "originalTAPReaderCounts": {},
+    "actualReporter": "node:test default spec",
+    "reconciliationRequiredNoNodeReexecution": true,
+    "sourceVariant": "Same production sources; entry predates four added reentry/deadline cases.",
+    "selectedEntryPin": {
+      "path": "qualification/service-credit-capacity-paced-timer-trace-data.behavior.mjs",
+      "bytes": 15067,
+      "LF": 203,
+      "sha256": "4e596e6ded45405ba13279456744b80206946bcb22c65198292714b8814371ce",
+      "gitBlob": "a3c221ac0d13fe3159134ae26c3cca0e3b2e5c5f"
+    },
+    "legacyZeroDisplayNameCollision": "Two existing positive/negative-zero cases share a display name; both terminal case rows were retained."
+  },
+  "implementation": {
+    "explicitNewOptInFactory": true,
+    "existingFactoriesAndTraceLayoutsRetained": true,
+    "actualPacingArmReturnFireCancelCallsCaptured": true,
+    "extraClockReads": 0,
+    "extraHostSchedulerCalls": 0,
+    "onlyOrdinalAndDispatchAnchorNotRawTokens": true,
+    "cancelReturnNotPhysicalRemoval": true,
+    "independentlyRecomputedTimerCount": true,
+    "roundedDelayAndDueTimeBoundToLastActualDispatch": true,
+    "firedDispatchUsesExactObservedTime": true,
+    "maximumLogicalLiveSlots": 1,
+    "maximumTraceEvents": "4 * maxSamplesPerPhase + 1",
+    "rawTimerTraceCopied": false,
+    "rawParentTraceCopied": false,
+    "wholeInputTreeCopied": false,
+    "automaticPacedAndParentArithmeticPasses": 1,
+    "cachedFrozenPrivateEvidence": true,
+    "lateHeldEvidenceUpgraded": false,
+    "noCatchupOrReplacement": true,
+    "postStopLedgerDurationSeriesRecomputed": false
+  },
+  "provenance": {
+    "runtime": {
+      "node": "24.19.0",
+      "platform": "darwin",
+      "arch": "arm64",
+      "nodeSha256": "dbedff294bab84a0a86c04e15fbcbeb1c97ca10bef1b32b0634cd24b36f62100",
+      "nodeBytes": 121304480
+    },
+    "totalNodeDataCommands": 2,
+    "nodeBinaryHashPassesBeforeBothCommands": 1,
+    "nodeIdentityBeforeAndAfterBothMatched": true,
+    "closedReadOnlySourceGrants": 13,
+    "addonsDisabled": true,
+    "fileWriteOrChildWorkerPermissionGranted": false,
+    "stdoutCapPerCommand": 262144,
+    "stderrCapPerCommand": 16384,
+    "supervisorSecondsPerCommand": 15,
+    "permissionModelIsOsNetworkSandbox": false,
+    "nativeCapacityBenchmark": false
+  },
+  "executionBoundary": {
+    "SDK": false,
+    "x402Core": false,
+    "SQLite": false,
+    "keys": false,
+    "signatures": false,
+    "nonceSearch": false,
+    "sockets": false,
+    "applicationChildren": false,
+    "managerImported": false,
+    "privateRootOpened": false,
+    "qualificationScratchCreated": false,
+    "packageInstallation": false,
+    "sourceOrPackageCopies": 0,
+    "originalUnpacedR4LaunchOrGraphChanged": false,
+    "originalR4ApprovalConsumed": false,
+    "newNativeAllowanceGranted": false,
+    "automationsChanged": false
+  },
+  "qualification": {
+    "callerClockAuthenticated": false,
+    "nativeTimerEventsAuthenticated": false,
+    "physicalTimerAbsenceQualified": false,
+    "currentNativePacedProfileRebound": false,
+    "oldSourcePipeline15RelabeledAsCurrent": false,
+    "nativeSdkSqlApplicationExecuted": false,
+    "sustainableCapacityQualified": false,
+    "chainOrEconomicAcceptance": false,
+    "pilotOrProductionQualified": false
+  },
+  "mainSeparation": {
+    "mainHead": "f6d82ac44f2f22e371621e4fbc6bddd07588b7ef",
+    "existingExactPushRun": 40173894494,
+    "existingHostedCases": 27,
+    "these212ControlsHosted": false,
+    "independentExercisedDataComponentMainTransferEligible": true,
+    "existingPacedSourceOwnerChanges": true,
+    "nativeSdkSqlApplicationRuntimeChanged": false,
+    "fourPendingNativeRuntimeEditsTransferred": false,
+    "defaultScriptsOrWorkflowsChanged": false,
+    "fullNativeMainClosureQualified": false,
+    "eligibility": "All unchanged selected source dependencies and 163 prior controls are identical on main and development; transfer only the five reviewed component paths."
+  },
+  "authority": "NONE"
+}
