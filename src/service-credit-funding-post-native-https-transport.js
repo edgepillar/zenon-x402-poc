@@ -67,6 +67,9 @@ export function createFundingPostNativeHttpsTransport(configuration) {
   let starts = 0, handshakes = 0, closing = null, closeTimer = null, unknown = false;
   let responseHeadersAccepted = 0, responseBodyBytesObserved = 0, responseEndsObserved = 0;
   let responseFlowsStarted = 0;
+  // Bounded event/entry counters, not evidence of unobserved native paths.
+  let socketAssignmentsObserved = 0, stoppedSocketAssignmentsObserved = 0;
+  let handshakeTimerStartAttempts = 0, requestClosesWithoutSocketObserved = 0;
   // Bounded stage/code observations only. Never retain an Error/message/stack,
   // URL, header, certificate, response body or caller-provided diagnostic text.
   // Authored after the first native failure; these diagnostics are SOURCE ONLY.
@@ -224,6 +227,7 @@ export function createFundingPostNativeHttpsTransport(configuration) {
       });
       APPLY(ON, entry.request, ['error', cause => stop(entry, 'REQUEST_ERROR', cause)]);
       APPLY(ONCE, entry.request, ['close', () => {
+        if (!entry.socketSeen) requestClosesWithoutSocketObserved++;
         entry.requestClosed = true;
         entry.stop.markRequestClosed(); entry.request = null;
         event(entry, 'REQUEST_CLOSE', () => entry.custody.acceptRequestClose()); settle(entry);
@@ -233,6 +237,7 @@ export function createFundingPostNativeHttpsTransport(configuration) {
           stop(entry, 'SOCKET_ASSIGNMENT_REJECTED'); try { APPLY(DESTROY_SOCKET, socket, []); } catch {} return;
         }
         entry.socketSeen = true; entry.socket = socket; sockets.add(socket);
+        socketAssignmentsObserved++;
         lastObservedStage = 'SOCKET_ASSIGNED';
         APPLY(ON, socket, ['error', cause => stop(entry, 'SOCKET_ERROR', cause)]);
         // Track the genuine close BEFORE attach/stop may destroy this handle.
@@ -243,9 +248,12 @@ export function createFundingPostNativeHttpsTransport(configuration) {
           cancel(entry.handshake); entry.handshake = null;
           event(entry, 'SOCKET_CLOSE', () => entry.custody.acceptSocketClose({ hadError })); settle(entry);
         }]);
-        if (entry.requestClosed || closing !== null || entry.stopping) stop(entry, 'LATE_SOCKET_STOP');
+        if (entry.requestClosed || closing !== null || entry.stopping) {
+          stoppedSocketAssignmentsObserved++; stop(entry, 'LATE_SOCKET_STOP');
+        }
         if (!entry.stop.attachSocket(socket)) { stop(entry, 'SOCKET_ASSOCIATION_REJECTED'); return; }
         if (!entry.stop.canStartHandshake()) { closeOwner.observe(); return; }
+        handshakeTimerStartAttempts++;
         entry.handshake = timer(() => stop(entry, 'TLS_DEADLINE'), HANDSHAKE);
         APPLY(ONCE, socket, ['secureConnect', () => {
           cancel(entry.handshake); entry.handshake = null;
@@ -285,6 +293,8 @@ export function createFundingPostNativeHttpsTransport(configuration) {
     return FREEZE({ phase: state.phase, unknown: unknown || state.unknown,
       requestStarts: starts, authenticatedTlsHandshakes: handshakes,
       responseHeadersAccepted, responseBodyBytesObserved, responseEndsObserved, responseFlowsStarted,
+      socketAssignmentsObserved, stoppedSocketAssignmentsObserved,
+      handshakeTimerStartAttempts, requestClosesWithoutSocketObserved,
       lastObservedStage, firstUnknown,
       trackedRequests: entries.size, trackedSockets: sockets.size, ownedTimers: timers.size,
       close: state, defaultEnabled: false,
