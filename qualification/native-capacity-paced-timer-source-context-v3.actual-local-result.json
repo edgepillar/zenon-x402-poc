@@ -1,0 +1,289 @@
+{
+  "kind": "ACTUAL_LOCAL_TIMER_PARENT_V3_551_INSTALLED_SOURCE_CONTEXT_NOT_NATIVE_EXECUTION",
+  "version": 1,
+  "sourceGraphDevelopmentBase": "687fd3622885fdfbb656ea3d560f820f54052588",
+  "mainBefore": "110bc2e486fc40cc7e2c56ce319681bce1dd0f9e",
+  "qualificationAdvance": {
+    "actualInstalledSourceFactoryExecuted": true,
+    "actualApplicationFilesRead": 147,
+    "actualPackageFilesRead": 404,
+    "sourceFilesReadOnlyVerified": true,
+    "sourceContextWasNotSynthesized": true,
+    "sourceIdentitiesMatchedBeforeAndAfter": true,
+    "sourceInputHashesMatchedFrozenDeclarations": true,
+    "nativeApplicationExecuted": false,
+    "privateRootOrCasOriginsAuthenticated": false,
+    "storageAdmissionQualified": false
+  },
+  "actual": {
+    "successful": true,
+    "actualSourceReadCommands": 1,
+    "python": {
+      "actualExit": 0,
+      "outputComplete": true,
+      "inputComplete": true,
+      "elapsedSeconds": 0.587886499997694,
+      "stdoutBytes": 102652,
+      "stdoutSha256": "01597736a20d3ea51b77989bbafe8ab6478494e05e37103f304516e0b1889d6c",
+      "stderrBytes": 0,
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "observed": {
+      "SDKExecuted": false,
+      "SQLiteExecuted": false,
+      "actualReadObservations": {
+        "nodeReadOpens": 1,
+        "packageReadOpens": 404
+      },
+      "applicationSourceReadOpens": 148,
+      "auditedEffects": {
+        "managerExecutions": 0,
+        "nativeProcesses": 0,
+        "sockets": 0,
+        "sqlite": 0,
+        "writeOpens": 0
+      },
+      "authority": "NONE",
+      "baselineSelectionMetadataPrereads": 1,
+      "completeChildProfilesPlanned": 4,
+      "completeEntryPlansPlanned": 1,
+      "completeOriginalChildBytesMatched": true,
+      "completeParentProfilesPlanned": 1,
+      "entryPlanBytes": 1339,
+      "event": "PACED_TIMER_V3_ACTUAL_551_INSTALLED_SOURCE_AND_COMPLETE_IN_MEMORY_COMMAND_DATA",
+      "independentReferenceWholeChildEncodings": 4,
+      "keySignatureNonceExecuted": false,
+      "managerExecuted": false,
+      "nativeApplicationExecuted": false,
+      "nativeAuthorityGranted": false,
+      "nodeExecuted": false,
+      "osSandboxClaim": false,
+      "parentProfileBytes": 245594,
+      "physicalRootOrCasOriginsAuthenticated": false,
+      "plannedArgvFields": 8,
+      "plannedEnvironmentFields": 9,
+      "privateProfileBytesTotal": 1199106,
+      "privateProfilesWritten": false,
+      "privateRoleRootsOpened": false,
+      "rawProfilesOrSourceUrlsPublished": false,
+      "rootTaskAndCasDtosSynthetic": true,
+      "selectedDefaultUnchanged": true,
+      "sourceContext": {
+        "authority": "NONE",
+        "childApplicationFiles": 139,
+        "childPackageFiles": 404,
+        "childSourceRowsSha256": "d756740994aeb53ebeee47320d732583d96381dfa8c00e18a30f414e70a77027",
+        "completeChildByteComparisons": 4,
+        "nativeExecuted": false,
+        "nodeBinaryHashesForContext": 1,
+        "parentApplicationFiles": 147,
+        "parentPackageFiles": 404,
+        "parentSourceRowsSha256": "0e0533ba2e3bfdf97b2670a0ee693c64ddc04ea93bf52b4e779d9d073cb51c90",
+        "privateProfileIsNativeAuthority": false,
+        "privateRootsOpened": false,
+        "profilesWritten": false,
+        "sharedCanonicalByteLimit": 1048576,
+        "sharedCanonicalBytes": 474893,
+        "sharedFieldSerializations": 4,
+        "sourceFilesRead": 551,
+        "sourceFilesReadOnlyVerified": true,
+        "sourceOrPackageTreeCopies": 0,
+        "wholeExpectedChildBytesMaterialized": 0
+      },
+      "sourceOnlyManagedPreconditionAccepted": true,
+      "storageAdmissionPerformed": false,
+      "successful": true,
+      "uniqueApplicationSourcesRead": 147,
+      "uniquePackageSourcesRead": 404,
+      "wholeSourceCapturePasses": 1
+    },
+    "identityCapture": {
+      "rows": 551,
+      "matchPreflight": true,
+      "canonicalSha256": "95f284a0422d034b8410cc99b2d637712d02caf6315fb205140dfbb32fd37b74",
+      "rawMetadataRetainedPrivately": true
+    },
+    "sourceAndProtectedInputsUnchanged": true,
+    "auditedSourceFiles": 166,
+    "protectedFiles": 90
+  },
+  "runtimeBinding": {
+    "selectedNodeVersion": "24.19.0",
+    "requiredExistingNodeFileBytes": 121304480,
+    "requiredExistingNodeFileSha256": "dbedff294bab84a0a86c04e15fbcbeb1c97ca10bef1b32b0634cd24b36f62100",
+    "fileHashMatchedBySuccessfulFrozenFactory": true,
+    "nodeBinaryReadOpens": 1,
+    "nodeProcessExecutions": 0,
+    "Python": "3.12.14",
+    "platform": "Darwin arm64",
+    "runtimeVersionCommandExecuted": false
+  },
+  "efficiency": {
+    "installedSourceCapturePasses": 1,
+    "packagePayloadReadOpens": 404,
+    "nodeBinaryHashPasses": 1,
+    "profileOrPackageFilesCopied": 0,
+    "qualificationScratchCreated": false,
+    "profileFilesWritten": 0,
+    "outputContainsPackagePayloadOrPrivateProfiles": false,
+    "metadataOutputOnly": true,
+    "wholeExpectedChildAllocationsInsideOptimizedProducer": 0,
+    "independentReferenceWholeChildEncodings": 4,
+    "secondWholeParentSerializationForCommandBinding": false,
+    "allProfilesFitUnchangedSourceResourceReservation": true
+  },
+  "sourceBinding": {
+    "parentApplicationFiles": 147,
+    "parentPackageFiles": 404,
+    "parentRows": 551,
+    "childApplicationFiles": 139,
+    "childPackageFiles": 404,
+    "childRows": 543,
+    "parentSourceRowsSha256": "0e0533ba2e3bfdf97b2670a0ee693c64ddc04ea93bf52b4e779d9d073cb51c90",
+    "childSourceRowsSha256": "d756740994aeb53ebeee47320d732583d96381dfa8c00e18a30f414e70a77027",
+    "workloadPlanSha256": "cbbf3b62215473ea614867461eb27ceefc3c5478f6a70eeac781982ad5689a2f",
+    "fullAuditedSourcePinSetSha256": "bcaf28cf21c00b247ed00d1387d3a9cf99238ea36d79e7cf8716c9f06294f4ad",
+    "fullAuditedSourcePins": 166,
+    "fullAuditedSourcePinsRetainedPrivately": true,
+    "explicitBootstrapControlAndDeclarationPins": 12,
+    "transitive551RowsBoundByPinnedDeclarations": true
+  },
+  "storageAndAuthority": {
+    "existingInstalledRepositoryPackagesOnly": true,
+    "newDownloads": false,
+    "missingMountRecreated": false,
+    "homeCacheFallbackOrLegacyAdoption": false,
+    "privateTaskRootCreated": false,
+    "managerImported": false,
+    "managerExecuted": false,
+    "managedMountAndReservationAdmissionPerformed": false,
+    "roleTaskCasDtosRemainSynthetic": true,
+    "oldNativeR4ApprovalConsumed": false,
+    "newNativeAllowanceGranted": false,
+    "cleanupOrReservationChange": false
+  },
+  "publication": {
+    "developmentFiles": [
+      "qualification/native_capacity_paced_timer_parent_profile_v3.source-context-data.py",
+      "qualification/native-capacity-paced-timer-source-context-v3.actual-local-result.json",
+      "docs/SERVICE_CREDIT_CAPACITY_PACED_TIMER_INSTALLED_SOURCE_V3.md"
+    ],
+    "mainFiles": [
+      "qualification/native-capacity-paced-timer-source-context-v3.actual-local-result.json",
+      "docs/SERVICE_CREDIT_CAPACITY_PACED_TIMER_INSTALLED_SOURCE_V3.md"
+    ],
+    "sourceReaderDevelopmentOnly": true,
+    "mainReportsOnly": true,
+    "full551ApplicationGraphPromoted": false,
+    "sourceReadCommandHosted": false,
+    "unchangedHostedProfileCases": 27,
+    "defaultBuyerWorkflowAndPackagesUnchanged": true
+  },
+  "remaining": {
+    "nativeManagedControllerExecutionQualified": false,
+    "freshStoreAndAllReservationsAdmitted": false,
+    "privateProfileAndCasOriginAuthenticated": false,
+    "nativeTlsSdkSqlChildLifecycleQualified": false,
+    "physicalTimerLivenessQualified": false,
+    "sustainableCapacityQualified": false,
+    "realPaymentPilotOrProductionQualified": false
+  },
+  "sourcePins": [
+    {
+      "path": "qualification/native_capacity_paced_timer_parent_profile_v3.source-context-data.py",
+      "bytes": 12368,
+      "LF": 198,
+      "sha256": "c967963e6cb978f28f16bc8e914f84b91a3ceec95ad72f59180fbd220321b6ff",
+      "gitBlob": "81359ef630704ba36bf4274c7f4f264d416b9bb5"
+    },
+    {
+      "path": "qualification/native_capacity_paced_timer_parent_profile_v3.py",
+      "bytes": 20887,
+      "LF": 334,
+      "sha256": "6d67d698b9c76088852426be0c1b8d11f90e067c7e850fde227f906a618727de",
+      "gitBlob": "0ac97f5395eddede46ebbc1a1a06769bcfb395d9"
+    },
+    {
+      "path": "qualification/native_capacity_paced_timer_resource_plan_v3.py",
+      "bytes": 17391,
+      "LF": 276,
+      "sha256": "5519fe20147ae3d03910daf089111a5803648bb5f245916659f07c151bf07997",
+      "gitBlob": "8f28daf355747ff21dd4ab02bd53949e8d0c71ef"
+    },
+    {
+      "path": "qualification/native_capacity_paced_timer_profile_bundle_v3.py",
+      "bytes": 9028,
+      "LF": 140,
+      "sha256": "8dedf77f16e4984cd8b2f225965882e352cb2dd72fe01e28ee320a779d0c7efc",
+      "gitBlob": "5618c85fd2fd216ae438fec4309baf2b8d0332ba"
+    },
+    {
+      "path": "qualification/native_capacity_paced_timer_managed_command_data_v3.py",
+      "bytes": 13763,
+      "LF": 226,
+      "sha256": "689dfacd2c94dadf880fe19f1365e15c878a6fc14f9d35b33ecff2e546ca40d5",
+      "gitBlob": "f17105270192b5187a848572607d8d9f5cbf66d3"
+    },
+    {
+      "path": "qualification/run-capacity-native-paced-timer-managed-v3.local.py",
+      "bytes": 31856,
+      "LF": 518,
+      "sha256": "5f3f6893559a9fdce3d7c19b9d729996a14f157822d1938bbad3ae25daeef22e",
+      "gitBlob": "5956f77026eb0f9f8024318aaa100158ae7b0b30"
+    },
+    {
+      "path": "qualification/native_capacity_full_profile_v3.py",
+      "bytes": 23435,
+      "LF": 353,
+      "sha256": "6928303c36f034fc295145563e40304641a91fe7db35d62eb364031bbcff7e6a",
+      "gitBlob": "6268ca35b32c32611b9663e964ddf2485b941ddc"
+    },
+    {
+      "path": "qualification/recovery_crash_native_profile.py",
+      "bytes": 33443,
+      "LF": 538,
+      "sha256": "75c2c9478b7e792a7bade739161af2bb8fb624cd407924ead2cf822dc23dacbd",
+      "gitBlob": "dc93890c4f9772b726e015ddd11d63bfa1a48ad4"
+    },
+    {
+      "path": "qualification/capacity-native-paced-timer-parent-v3.inputs.json",
+      "bytes": 5152,
+      "LF": 134,
+      "sha256": "90eba86d5f14f4226867815667213dc4ac3799e146d65b74eb75441c047a1236",
+      "gitBlob": "0217ad6835534aea21abc03e238f19ad0b21c196"
+    },
+    {
+      "path": "qualification/capacity-native-full-graph-v3.inputs.json",
+      "bytes": 8697,
+      "LF": 215,
+      "sha256": "3bb597da71736542615047d11af78ad6825df5bdb6e4561747d8c1f9dff7d0df",
+      "gitBlob": "0530e2b08929d45c93b4e4912dc69d27b0645204"
+    },
+    {
+      "path": "qualification/issued-funding-post-native-vertical.inputs-v3.json",
+      "bytes": 138777,
+      "LF": 3836,
+      "sha256": "51ffb5b0ff0052523c1b7f3d75fa24e9be27e60ca3bcc09236b1f439096aaed1",
+      "gitBlob": "3dc05ccffd306e97056b4ed168d8121f63acebbc"
+    },
+    {
+      "path": "qualification/capacity-native-paced-workload-v1.plan.json",
+      "bytes": 434,
+      "LF": 1,
+      "sha256": "cbbf3b62215473ea614867461eb27ceefc3c5478f6a70eeac781982ad5689a2f",
+      "gitBlob": "52b75834ac4e2c9b03455be428cd3b96120fa94d"
+    }
+  ],
+  "authority": "NONE",
+  "counterScopes": {
+    "applicationSourceReadOpens": "148 during the factory CAPTURE phase only, including the baseline metadata preread.",
+    "independentReferenceMetadataRereadsAfterCapture": {
+      "inventory": 1,
+      "baseline": 1,
+      "selectedApplicationPayloadRereads": 1
+    },
+    "extraReferenceReadsEstablishedByExecutedPinnedSource": true,
+    "noSecondNodeOrPackageCapture": true,
+    "wholeSourceCapturePasses": 1
+  }
+}
