@@ -1,0 +1,254 @@
+{
+  "qualificationVersion": 1,
+  "kind": "SOURCE_OFFERED_PLAN_AND_REAL_PARENT_BINDING_NOT_NATIVE_EXECUTION",
+  "qualifiedComponent": "src/service-credit-capacity-offered-plan-data.js",
+  "selection": {
+    "entry": "qualification/service-credit-capacity-offered-plan-data.behavior.mjs",
+    "environment": {
+      "X402_OFFERED_PLAN_DATA_SELECTION": "source-offered-plan-data-v1"
+    },
+    "node": "24.19.0",
+    "explicitFiles": 1,
+    "broadTestDiscovery": false
+  },
+  "actual": {
+    "attempts": 1,
+    "cases": 41,
+    "entered": 41,
+    "completed": 41,
+    "passed": 41,
+    "failed": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0,
+    "actualExit": 0,
+    "complete": true,
+    "stdoutBytes": 9100,
+    "stdoutSha256": "29815eb427ca6cc7647cf5f68309e74838971571bb14a5a5bafbf51375029538",
+    "stderrBytes": 0,
+    "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "controllerElapsedSeconds": 0.40057779199560173,
+    "elapsedIsCapacityBenchmark": false
+  },
+  "sourcePins": [
+    {
+      "path": "package.json",
+      "bytes": 2677,
+      "LF": 40,
+      "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+      "gitBlob": "45752ffde39d29666094f7f1c755060d75e43deb"
+    },
+    {
+      "path": "src/service-credit-capacity-offered-plan-data.js",
+      "bytes": 4641,
+      "LF": 74,
+      "sha256": "d502d72ded56965ac9a5a7eec9ce57eb37bc44c78bd584ac84bdbbc5f526c317",
+      "gitBlob": "ded144bc95b92195caab037897c4d0ebcd6b05b7"
+    },
+    {
+      "path": "qualification/service-credit-capacity-offered-plan-data.behavior.mjs",
+      "bytes": 13445,
+      "LF": 183,
+      "sha256": "492d8874d9818a68cca7997f2a27bb60c687d05cdaeb8d3464d032ecd682cbd5",
+      "gitBlob": "9871f5287232010baf88dac559ec45f348e5c228"
+    },
+    {
+      "path": "src/service-credit-capacity-recorder.js",
+      "bytes": 10801,
+      "LF": 236,
+      "sha256": "eca9bf4cad4717df5d61457044c2c5d0a6bc00b6af81964d09bf18325d4a46ad",
+      "gitBlob": "bc9b0a8a9abd48033e698e100cdc6ef90d2152c9"
+    },
+    {
+      "path": "src/service-credit-capacity-offered-window-owner-core.js",
+      "bytes": 27427,
+      "LF": 520,
+      "sha256": "3ba123064f4b8da1d1fbd7003e239e9284584b27274632a7fcb7f9686dc8d4fc",
+      "gitBlob": "eb9f7b53fcf8324948fdfb62ce7e5b517bffc3f6"
+    },
+    {
+      "path": "src/service-credit-capacity-offered-workload-owner-core.js",
+      "bytes": 26641,
+      "LF": 482,
+      "sha256": "f55a84aee2796374291b837710b27ca96fc031050a8d2a9dab65e334280c526e",
+      "gitBlob": "d3b9faca2a98f6d556d9bd928c1efaf5e68119b7"
+    }
+  ],
+  "actualCases": [
+    "captures the complete native source plan without assuming equal lane shares",
+    "captures mutable inputs once and returns no caller-owned nested objects",
+    "native source plan and genuine funded offered coordinator compose",
+    "non-divisible window uses ceil offers and does not allocate another call at its endpoint",
+    "zero warmup and one lane still execute three genuine fresh balance barriers",
+    "maximum sixteen-lane budget composes without dividing global offers among lanes",
+    "rejected offered originals cannot increase the selected funding or call budget",
+    "full 256-call per-lane reservation remains finite at sixteen lanes",
+    "ledger and balance sample requirements match genuine owner construction",
+    "exact cooperative whole-plan ceiling is admitted without becoming an OS deadline",
+    "refuses zero lanes",
+    "refuses seventeenth lane",
+    "refuses fractional lane count",
+    "refuses negative zero warmup",
+    "refuses equal-share underfunding",
+    "refuses implicit extra per-lane funding",
+    "refuses 257 calls per native lane",
+    "refuses expired setup",
+    "refuses expired drain",
+    "refuses zero measurement interval",
+    "refuses too coarse interval",
+    "refuses zero measurement window",
+    "refuses renewed total deadline",
+    "refuses insufficient prefix ledger recording",
+    "refuses insufficient measurement ledger recording",
+    "refuses insufficient two-round balance recording",
+    "refuses insufficient in-flight lane recording",
+    "refuses in-flight slots exceeding sample slots",
+    "refuses excessive source sample count",
+    "refuses excessive per-operation ledger budget",
+    "refuses short native close ceiling",
+    "refuses long native close ceiling",
+    "refuses short child command ceiling",
+    "refuses long child command ceiling",
+    "refuses string numeric authority",
+    "refuses NaN numeric authority",
+    "rejects an injected runtime or native owner instead of entering it",
+    "rejects accessors without invoking them",
+    "rejects proxy and numeric coercion without entering traps",
+    "rejects symbol extras, sparse-shaped arrays and inherited plans",
+    "rejects missing fields and wrong argument counts"
+  ],
+  "sourcePipeline": {
+    "genuineOfferedCoordinatorImported": true,
+    "genuineOfferedMeasurementImported": true,
+    "genuineRecordersImported": true,
+    "laneAndClockCapabilitiesDeclared": true,
+    "sourceBalanceResultsDeclared": true
+  },
+  "nativeDrafts": [
+    {
+      "path": "qualification/capacity-native-offered-paired-lane-v1.supervisor.draft.mjs",
+      "bytes": 26242,
+      "LF": 292,
+      "sha256": "a941ef90a6800c60b1465574840301bb8599f07deae6b9d921a993feeebd2b4a",
+      "gitBlob": "a63062169c858656bf44e39a1e887151b8d2b29e"
+    },
+    {
+      "path": "qualification/capacity-native-offered-workload-adapter-v2.draft.mjs",
+      "bytes": 18578,
+      "LF": 270,
+      "sha256": "0b93494c3cb0f97a2cf5f81285943eb2fe80e7f62b5141a6679d2303106da380",
+      "gitBlob": "8901cb013ffeed50048a9acfed7be3e81e3695e0"
+    },
+    {
+      "path": "qualification/capacity-native-offered-supervisor-v1.namespace.preload.draft.mjs",
+      "bytes": 22455,
+      "LF": 314,
+      "sha256": "927ddeb9373c8d5489e5fa38bc40cb9c0f44c5a04019857e9b2d1e80e2ec00de",
+      "gitBlob": "bd4b85acea82cf6cd006e802896f2390290d1946"
+    },
+    {
+      "path": "qualification/capacity-native-offered-workload-v1.entry.draft.mjs",
+      "bytes": 9853,
+      "LF": 120,
+      "sha256": "b5f8a65293a1b4d8ffab8ccd0467914f597393f97a1b57a17a244e10ca9c3ba0",
+      "gitBlob": "eefb247375ff5f199c551947f304b2f7403d4447"
+    }
+  ],
+  "syntax": {
+    "files": 4,
+    "passed": 4,
+    "importsExecuted": false,
+    "actual": [
+      {
+        "path": "qualification/capacity-native-offered-paired-lane-v1.supervisor.draft.mjs",
+        "exit": 0,
+        "complete": true,
+        "stdoutBytes": 0,
+        "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderrBytes": 0,
+        "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "qualification/capacity-native-offered-workload-adapter-v2.draft.mjs",
+        "exit": 0,
+        "complete": true,
+        "stdoutBytes": 0,
+        "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderrBytes": 0,
+        "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "qualification/capacity-native-offered-supervisor-v1.namespace.preload.draft.mjs",
+        "exit": 0,
+        "complete": true,
+        "stdoutBytes": 0,
+        "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderrBytes": 0,
+        "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "qualification/capacity-native-offered-workload-v1.entry.draft.mjs",
+        "exit": 0,
+        "complete": true,
+        "stdoutBytes": 0,
+        "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderrBytes": 0,
+        "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    ]
+  },
+  "intendedParent": {
+    "applicationFiles": 146,
+    "packageFiles": 404,
+    "profileVersion": 4,
+    "profileKind": "NATIVE_CAPACITY_OFFERED_SUPERVISOR_NODE24_V1",
+    "installedNamespaceAuthenticated": false,
+    "originalChildrenApplicationFiles": 139,
+    "originalChildrenPackageFiles": 404,
+    "originalChildSourceRowsSha256": "d756740994aeb53ebeee47320d732583d96381dfa8c00e18a30f414e70a77027",
+    "originalChildProfileVersion": 3,
+    "currentOldGraphsModified": false,
+    "completeParentProfileProducerQualified": false,
+    "managedLauncherQualified": false,
+    "outerVerifierQualified": false
+  },
+  "publicationBoundary": {
+    "nativeDraftsMainEligibleThisBatch": false,
+    "mainEligiblePaths": [
+      "src/service-credit-capacity-offered-plan-data.js",
+      "qualification/service-credit-capacity-offered-plan-data.behavior.mjs",
+      "qualification/service-credit-capacity-offered-plan-data.actual-local-result.json",
+      "docs/SERVICE_CREDIT_CAPACITY_OFFERED_NATIVE_PARENT.md"
+    ],
+    "unchangedAutomaticCIControls": 27,
+    "new41CasesExecutedByCI": false
+  },
+  "effects": {
+    "SDK": 0,
+    "x402PackageImports": 0,
+    "SQLite": 0,
+    "keys": 0,
+    "signatures": 0,
+    "nonceSearch": 0,
+    "sockets": 0,
+    "applicationChildren": 0,
+    "nativeAppExecutions": 0,
+    "packageInstall": 0,
+    "managerImported": false,
+    "storageRootRead": false,
+    "newStorageTasks": 0,
+    "cleanup": false,
+    "oldR4AllowanceConsumed": false,
+    "currentCleanAllowanceConsumed": false
+  },
+  "limits": {
+    "nativeQualification": false,
+    "wholeGraphRuntimeQualification": false,
+    "physicalResourceReleaseQualified": false,
+    "offeredRateQualified": false,
+    "sustainableCapacityQualified": false,
+    "economicAcceptance": false,
+    "productionQualified": false,
+    "authority": "NONE"
+  }
+}
