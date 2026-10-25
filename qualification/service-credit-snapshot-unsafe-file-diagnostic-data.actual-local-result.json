@@ -1,0 +1,201 @@
+{
+  "kind": "ACTUAL_LOCAL_P2_SQLITE_SNAPSHOT_ERRNO_DIAGNOSTIC_DATA_NOT_SQLITE_EXECUTION",
+  "version": 1,
+  "sourceParent": "06a1c117b6bdd010bf058b82cab3970cca8323a3",
+  "mainBefore": "d4670e0f52745c85b0da9d210b4ecc1807ecf04c",
+  "issue": "https://github.com/edgepillar/zenon-x402-poc/issues/165",
+  "change": {
+    "testOnly": true,
+    "productionStoreChanged": false,
+    "quarantineOrFileSafetyPolicyChanged": false,
+    "diagnosticExtractedIntoRealTestHelper": true,
+    "actualInstrumentedReaddirUsesTestedBridge": true,
+    "rawOperations": [
+      "LSTAT",
+      "READDIR",
+      "REALPATH"
+    ],
+    "fixedOwnErrnoWhitelist": 33,
+    "unknownOrAccessorOrProxyCodesDoNotEchoCallerText": true,
+    "knownLegacyPredicateLabelStringsUnchanged": true,
+    "readFailureAndResultIdentityPreserved": true,
+    "broadRetryAdded": false
+  },
+  "red": {
+    "confirmed": true,
+    "selectedGapControls": 2,
+    "exactOldFunctionSha256": "43a037d80a97d34855a47b968760c4ff1ef344dbe0c4ad3599d89e71599640c2",
+    "oldTestPin": {
+      "path": "test/service-credit-zenon-funding-observer-sqlite-store.test.js",
+      "bytes": 149666,
+      "LF": 3820,
+      "sha256": "c0d84fc03762d370351cf6ffd432052cea11ae734e11206b8f24bff7a132c681",
+      "gitBlob": "16b2d14e21d1c57bd37dd02bbcabc1d61b026736"
+    },
+    "exactSourceSubsetOnly": true,
+    "wholeOldSqliteEntryImported": false,
+    "observed": {
+      "event": "PRE_FIX_SQLITE_SNAPSHOT_DIAGNOSTIC_GAPS_CONFIRMED",
+      "selectedCases": 2,
+      "lstatNonEnoentWasOpaque": true,
+      "readdirErrorObserverMissing": true,
+      "lstatLabels": "PHASE=PRE_BEGIN;GUARD=EXPECTED_JOURNAL;TYPE=UNKNOWN;OWNER=UNKNOWN;NLINK=UNKNOWN;NLINK_CLASS=UNKNOWN;PERMISSION=UNKNOWN;SPECIAL_BITS=UNKNOWN;LSTAT=NON_ENOENT;DB_IDENTITY=UNKNOWN;DB_REALPATH=UNKNOWN",
+      "readdirLabels": "PHASE=PRE_BEGIN;GUARD=UNKNOWN;TYPE=UNKNOWN;OWNER=UNKNOWN;NLINK=UNKNOWN;NLINK_CLASS=UNKNOWN;PERMISSION=UNKNOWN;SPECIAL_BITS=UNKNOWN;LSTAT=UNKNOWN;DB_IDENTITY=UNKNOWN;DB_REALPATH=UNKNOWN",
+      "SDK": false,
+      "SQL": false,
+      "filesystemOperations": 0,
+      "authority": "NONE"
+    },
+    "command": {
+      "actualExit": 0,
+      "outputComplete": true,
+      "elapsedSeconds": 0.03531779200420715,
+      "stdoutBytes": 630,
+      "stdoutSha256": "6ec0e0b97a1677417784633d58f8b1c86fefddfa5c3b292133e4b458fa75a9e5",
+      "stderrBytes": 0
+    }
+  },
+  "actual": {
+    "passed": true,
+    "selectedCases": 157,
+    "testsRun": 157,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "dataCommand": {
+      "actualExit": 0,
+      "outputComplete": true,
+      "elapsedSeconds": 0.3455424999992829,
+      "stdoutBytes": 5266,
+      "stdoutSha256": "d2fd1f8608de8937b4bd54089d9d41189f1e57206ba43d0e0c27697ae0ec81f6",
+      "stderrBytes": 0,
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "nativeEntrySyntax": {
+      "actualExit": 0,
+      "outputComplete": true,
+      "elapsedSeconds": 0.03155658399919048,
+      "stdoutBytes": 0,
+      "stderrBytes": 0,
+      "entryImportedOrExecuted": false
+    },
+    "sourceAndProtectedInputsUnchanged": true,
+    "protectedFiles": 224,
+    "nativeSqliteSuiteRun": false,
+    "realConcurrencyFailureReproduced": false,
+    "originalIssueRootCauseEstablished": false
+  },
+  "selectedCoverage": {
+    "errnoOperationCases": 99,
+    "exactLegacyPredicateStrings": 2,
+    "nlinkClassesAndThrowingGetter": true,
+    "unsafeOwnerModeTypeHardlinkAndZeroLinkDiagnosticPredicatesRemainFail": true,
+    "journalEnoentResetRetained": true,
+    "readdirEnoentNotJournalDisappearance": true,
+    "noErrorMessageStackPathSyscallAccessorOrInheritedCodeReads": true,
+    "proxyErrorTrapsNotConsulted": true,
+    "unknownAndInjectedCodeValuesHaveFixedBoundedLabels": true,
+    "synchronousObserverFailuresDoNotReplaceReadFailure": true,
+    "afterReadHookFailureNotMislabeledAsFilesystemFailure": true,
+    "noRetryAndExactResultForwarding": true,
+    "phaseAndSuccessDropStaleErrno": true,
+    "invalidObserverCallbacksRefused": true
+  },
+  "executionScope": {
+    "selectedNodeVersion": "24.19.0",
+    "platform": "Darwin arm64",
+    "nodeDataCommands": 2,
+    "nodeSyntaxCommands": 1,
+    "nodeChildren": 0,
+    "SDK": false,
+    "SQLite": false,
+    "keys": false,
+    "signatures": false,
+    "nonce": false,
+    "sockets": false,
+    "nativeFilesystemProbeCalls": 0,
+    "sourceLoadingReadsNotFilesystemProbeCalls": true,
+    "fixtureFilesOrTaskRootsCreated": false,
+    "managerImported": false,
+    "noOsSandboxClaim": true
+  },
+  "efficiency": {
+    "reusePassedR167NodeHash": true,
+    "requiredNodeSha256": "dbedff294bab84a0a86c04e15fbcbeb1c97ca10bef1b32b0634cd24b36f62100",
+    "reuseRequiresUnchangedFullNineFieldIdentity": true,
+    "nodeBinaryRehashesThisTurn": 0,
+    "noDependencyInstallation": true,
+    "noNativeDatabaseOrConcurrencyLoop": true,
+    "noNewDataAddedToCurrentHostedProfile": true
+  },
+  "integration": {
+    "modifiedFile": "test/service-credit-zenon-funding-observer-sqlite-store.test.js",
+    "oldTestBlob": "16b2d14e21d1c57bd37dd02bbcabc1d61b026736",
+    "newTestBlob": "afe052e0b7514bfe0727648c5861410d91880b53",
+    "oldTestCasesRemoved": 0,
+    "oldFailureAssertionsNotRelaxed": true,
+    "currentFrozen551SourceGraphUnchanged": true
+  },
+  "publication": {
+    "targetFiles": [
+      "test/helpers/snapshot-unsafe-file-diagnostic.js",
+      "qualification/service-credit-snapshot-unsafe-file-diagnostic-data.behavior.mjs",
+      "qualification/service-credit-snapshot-unsafe-file-diagnostic-data.actual-local-result.json",
+      "docs/P2_SQLITE_SNAPSHOT_ERROR_DIAGNOSTICS.md",
+      "test/service-credit-zenon-funding-observer-sqlite-store.test.js"
+    ],
+    "mainScope": "Test-only diagnostics, isolated DATA controls and reports; no production runtime, package, workflow or profile changes.",
+    "currentHostedProfileCases": 27,
+    "new157CasesHosted": false,
+    "issueClosedOrCommented": false,
+    "oldNativeAllowancesConsumed": false,
+    "newNativeAllowanceGranted": false
+  },
+  "limits": {
+    "rawErrorsSynthetic": true,
+    "actualFilesystemErrnoCauseNotAuthenticated": true,
+    "nativeInstrumentedStoreImportNotExecuted": true,
+    "snapshotIntegrityAndQuarantineRuntimeRegressionNotRerun": true,
+    "linuxNativeConcurrencyNotQualified": true,
+    "issue165AvailabilityFixNotClaimed": true,
+    "fullP0P2OrProductionNotQualified": true
+  },
+  "sourcePins": [
+    {
+      "path": "package.json",
+      "bytes": 2677,
+      "LF": 40,
+      "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+      "gitBlob": "45752ffde39d29666094f7f1c755060d75e43deb"
+    },
+    {
+      "path": "test/helpers/snapshot-unsafe-file-diagnostic.js",
+      "bytes": 6571,
+      "LF": 157,
+      "sha256": "4338de67bde7eaf6f16785cb3a6fb6bf2fb73a62d71eb0a2445e43dd1e912728",
+      "gitBlob": "9fa464596731518945596f1da31d9ac4c3e648f7"
+    },
+    {
+      "path": "qualification/service-credit-snapshot-unsafe-file-diagnostic-data.behavior.mjs",
+      "bytes": 13968,
+      "LF": 299,
+      "sha256": "b883094586e9f483b98b76db724ad5783e3bfefb0aec5ad501582ba1afc5c4d5",
+      "gitBlob": "35090396e7bc2f48f4bdad05fafdecc0c8825693"
+    },
+    {
+      "path": "test/service-credit-zenon-funding-observer-sqlite-store.test.js",
+      "bytes": 146249,
+      "LF": 3733,
+      "sha256": "fcf0337c727942b9d9c2fa8316b2991a3eaa12f91a3c2fa78899c7c524ae2750",
+      "gitBlob": "afe052e0b7514bfe0727648c5861410d91880b53"
+    }
+  ],
+  "productionStorePin": {
+    "path": "src/service-credit-zenon-funding-observer-sqlite-store.js",
+    "bytes": 87075,
+    "LF": 2449,
+    "sha256": "899a79ce7b3003b1f32ef7c23adcf06e55a74486abc4bd1cb63cb44f1c087d0c",
+    "gitBlob": "8c1ce3e6640ee1da8663754abba2e5d555932e9f"
+  },
+  "authority": "NONE"
+}

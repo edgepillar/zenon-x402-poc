@@ -21,6 +21,7 @@ import {
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
+import { createSnapshotUnsafeFileDiagnostic } from './helpers/snapshot-unsafe-file-diagnostic.js';
 
 import {
   createZenonFundingObserverSqliteStore,
@@ -343,6 +344,9 @@ async function importInstrumentedStore(t, hooks) {
   const dataUrl = source => `data:text/javascript;base64,${Buffer.from(source).toString('base64')}`;
   const fsShimUrl = dataUrl(`
     import * as fs from 'node:fs';
+    import { createObservedReaddirSync } from ${JSON.stringify(
+      new URL('./helpers/snapshot-unsafe-file-diagnostic.js', import.meta.url).href,
+    )};
     const hooks = globalThis[${JSON.stringify(hookKey)}];
     function observe(name, ...args) {
       try { hooks[name]?.(...args); } catch {}
@@ -375,11 +379,11 @@ async function importInstrumentedStore(t, hooks) {
         throw error;
       }
     }
-    export function readdirSync(...args) {
-      const entries = fs.readdirSync(...args);
-      hooks.afterReaddir?.(args[0], entries);
-      return entries;
-    }
+    export const readdirSync = createObservedReaddirSync(
+      (...args) => fs.readdirSync(...args),
+      (parent, entries) => hooks.afterReaddir?.(parent, entries),
+      (...args) => observe('observeReaddirError', ...args),
+    );
   `);
   const sqliteShimUrl = dataUrl(`
     import { DatabaseSync as NativeDatabaseSync } from 'node:sqlite';
@@ -841,97 +845,6 @@ function snapshotFailureDiagnostic(stage, error) {
   return `STAGE=${fixedStage};CODE=${snapshotFailureCode(error)}`;
 }
 
-function createSnapshotUnsafeFileDiagnostic(databasePath) {
-  const journalPath = `${databasePath}-journal`;
-  const blank = () => ({
-    guard: 'UNKNOWN', type: 'UNKNOWN', owner: 'UNKNOWN', nlink: 'UNKNOWN',
-    nlinkClass: 'UNKNOWN', permission: 'UNKNOWN', specialBits: 'UNKNOWN', lstat: 'UNKNOWN',
-    dbIdentity: 'UNKNOWN', dbRealpath: 'UNKNOWN',
-  });
-  const predicate = operation => {
-    try { return operation() ? 'PASS' : 'FAIL'; } catch { return 'UNKNOWN'; }
-  };
-  const classifyNlink = value => {
-    if (typeof value !== 'bigint' || value < 0n) return 'UNKNOWN';
-    if (value === 0n) return 'ZERO';
-    return value === 1n ? 'ONE' : 'MULTIPLE';
-  };
-  let phase = 'UNKNOWN', observation = blank(), identity;
-  const guardFor = candidate => candidate === databasePath
-    ? 'MAIN_DB' : candidate === journalPath ? 'EXPECTED_JOURNAL' : null;
-  const observeDatabaseRealpath = (candidate, status) => {
-    if (candidate === databasePath) {
-      observation = { ...observation, guard: 'MAIN_DB', dbRealpath: status };
-    }
-  };
-  const hooks = {
-    observeReadGuard(candidate) {
-      phase = candidate === 'PRE_BEGIN' || candidate === 'POST_COMMIT'
-        ? candidate : 'UNKNOWN';
-      observation = blank();
-    },
-    observeLstatResult(stat, candidate) {
-      const guard = guardFor(candidate);
-      if (guard === null) return;
-      let currentIdentity;
-      if (guard === 'MAIN_DB') {
-        try { currentIdentity = [stat.dev, stat.ino]; } catch {}
-        identity ??= currentIdentity;
-      }
-      let nlinkClass = 'UNKNOWN';
-      observation = {
-        guard,
-        type: predicate(() => stat.isFile() && !stat.isSymbolicLink()),
-        owner: predicate(() => typeof process.getuid === 'function'
-          && stat.uid === BigInt(process.getuid())),
-        nlink: predicate(() => {
-          const value = stat.nlink;
-          nlinkClass = classifyNlink(value);
-          return value === 1n;
-        }),
-        nlinkClass,
-        permission: predicate(() => (stat.mode & 0o777n) === 0o600n),
-        specialBits: predicate(() => (stat.mode & 0o7000n) === 0n),
-        lstat: 'OK',
-        dbIdentity: guard === 'MAIN_DB' && identity !== undefined
-          && currentIdentity !== undefined
-          ? predicate(() => identity[0] === currentIdentity[0]
-            && identity[1] === currentIdentity[1]) : 'UNKNOWN',
-        dbRealpath: 'UNKNOWN',
-      };
-    },
-    observeLstatError(error, candidate) {
-      const guard = guardFor(candidate);
-      if (guard === null) return;
-      let enoent = false;
-      try { enoent = Object.getOwnPropertyDescriptor(error, 'code')?.value === 'ENOENT'; } catch {}
-      if (guard === 'EXPECTED_JOURNAL' && enoent) {
-        observation = blank(); return;
-      }
-      observation = { ...blank(), guard, lstat: enoent ? 'ENOENT' : 'NON_ENOENT' };
-    },
-    observeRealpathResult(result, candidate) {
-      observeDatabaseRealpath(candidate, result === databasePath ? 'PASS' : 'FAIL');
-    },
-    observeRealpathError(_error, candidate) {
-      observeDatabaseRealpath(candidate, 'FAIL');
-    },
-  };
-  return {
-    hooks,
-    phase: () => phase,
-    labels() {
-      const known = Object.values(observation).includes('FAIL')
-        || observation.lstat === 'ENOENT' || observation.lstat === 'NON_ENOENT';
-      return `PHASE=${phase};GUARD=${known ? observation.guard : 'UNKNOWN'}`
-        + `;TYPE=${observation.type};OWNER=${observation.owner};NLINK=${observation.nlink}`
-        + `;NLINK_CLASS=${observation.nlinkClass}`
-        + `;PERMISSION=${observation.permission};SPECIAL_BITS=${observation.specialBits}`
-        + `;LSTAT=${observation.lstat};DB_IDENTITY=${observation.dbIdentity}`
-        + `;DB_REALPATH=${observation.dbRealpath}`;
-    },
-  };
-}
 
 function snapshotUnsafeFileDiagnostic(error, diagnostic) {
   return snapshotFailureCode(error) === 'ZENON_FUNDING_OBSERVER_STORE_UNSAFE_FILE'
