@@ -1,0 +1,345 @@
+{
+  "qualificationVersion": 1,
+  "kind": "CURRENT_FULL_CAPACITY_ROLE_SOURCE_AND_DATA_NOT_NATIVE_EXECUTION",
+  "selection": "qualification/capacity-native-current-roles-v4.inputs.json",
+  "producer": "qualification/native_capacity_current_role_profiles_v4.py",
+  "test": "qualification/native_capacity_current_role_profiles_v4.behavior.py",
+  "actual": {
+    "attempts": 1,
+    "python": "3.12.14",
+    "tests": 48,
+    "passed": 48,
+    "failed": 0,
+    "errors": 0,
+    "skipped": 0,
+    "actualExit": 0,
+    "complete": true,
+    "controllerElapsedSeconds": 0.831667041988112,
+    "stdoutBytes": 3369,
+    "stdoutSha256": "e79443f9b1a50d1df3ca09b37448cb368526e8f9539a15eddf905f95dced0ede",
+    "stderrBytes": 0,
+    "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "elapsedIsNativeCapacityBenchmark": false
+  },
+  "actualCases": [
+    "complete_current_graph_has_153_application_and_all_404_package_rows",
+    "all_eight_current_runtime_overlays_and_six_additions_reach_real_profile_bytes",
+    "canonical_current_payer_profile_matches_exact_leaf_preloader_contract",
+    "canonical_current_service_profile_matches_exact_leaf_preloader_contract",
+    "real_native_leaf_sources_require_current_graph_and_current_rpc_without_parent_authority",
+    "captured_registry_runtime_and_inputs_are_owned_not_mutable_caller_references",
+    "returned_information_and_result_mutation_do_not_change_future_profiles",
+    "caller_read_claim_is_never_physical_source_or_node_observation",
+    "thirty_two_current_role_profiles_share_complete_source_fields_without_reserializing_them",
+    "old_r4_registry_and_clean_selection_cannot_be_relabelled_as_current_capacity_roles",
+    "child_planning_does_not_mutate_context_or_root_data",
+    "refuses_changed_selection_bytes",
+    "refuses_changed_current_runtime_delta",
+    "refuses_changed_legacy_inventory",
+    "refuses_changed_immutable_baseline",
+    "refuses_old_source_seal",
+    "refuses_missing_last_source",
+    "refuses_extra_source",
+    "refuses_reordered_source_rows",
+    "refuses_changed_last_source_digest",
+    "refuses_redirected_source_url",
+    "refuses_hardlinked_source_data",
+    "refuses_foreign_source_uid",
+    "refuses_zero_source_inode",
+    "refuses_noncanonical_source_identity",
+    "refuses_oversized_source_identity",
+    "refuses_directory_as_source_file",
+    "refuses_redirected_bare_binding",
+    "refuses_missing_bare_binding",
+    "refuses_wrong_node_digest",
+    "refuses_wrong_node_version",
+    "refuses_wrong_node_identity_size",
+    "refuses_non_executable_node",
+    "refuses_source_copy_claim",
+    "refuses_native_execution_claim",
+    "refuses_authority_claim",
+    "refuses_extra_registry_authority",
+    "child_refuses_supervisor_role",
+    "child_refuses_unknown_role",
+    "child_refuses_boolean_role",
+    "child_refuses_changed_run_id",
+    "child_refuses_invalid_lane",
+    "child_refuses_extra_context_authority",
+    "child_refuses_missing_root_identity",
+    "child_refuses_nonprivate_root_mode",
+    "child_refuses_foreign_root_uid",
+    "child_refuses_relative_root",
+    "subclass_hooks_are_rejected_without_evaluation"
+  ],
+  "sourcePins": [
+    {
+      "path": "qualification/native_capacity_current_role_profiles_v4.py",
+      "bytes": 19763,
+      "LF": 295,
+      "sha256": "a32d566f61c7093464a8c84e543965d82bf9fedf45741e65101ae28f331db24f",
+      "gitBlob": "3d99b2ab631c1ef1857f0c90af7330340410eb52"
+    },
+    {
+      "path": "qualification/native_capacity_current_role_profiles_v4.behavior.py",
+      "bytes": 19522,
+      "LF": 271,
+      "sha256": "0b12cfe1ab4e912393564aebbd0270a99d1cd2a2592848ee89336d199685f9f5",
+      "gitBlob": "53bcdc42889039ecd90364ae9fdfb8a81a01d5f8"
+    },
+    {
+      "path": "qualification/capacity-native-current-roles-v4.inputs.json",
+      "bytes": 5209,
+      "LF": 132,
+      "sha256": "6a819a3e87e89927c05e292f8f0ee4332ac0a884199ab68d0f6cf286327a1662",
+      "gitBlob": "bc9977247b11a3edea32398969a9a4049f59c289"
+    },
+    {
+      "path": "qualification/recovery_crash_native_profile.py",
+      "bytes": 33443,
+      "LF": 538,
+      "sha256": "75c2c9478b7e792a7bade739161af2bb8fb624cd407924ead2cf822dc23dacbd",
+      "gitBlob": "dc93890c4f9772b726e015ddd11d63bfa1a48ad4"
+    },
+    {
+      "path": "qualification/issued_current_close_v4_profile.py",
+      "bytes": 24610,
+      "LF": 297,
+      "sha256": "b3a8edc522471b0d34f33857e6bd2aae9286b101ec7ea24b6a0f0275e6e447e7",
+      "gitBlob": "7ce435651b6d853baa06856ce5f0b04aef58c5c4"
+    },
+    {
+      "path": "qualification/native_capacity_full_profile_v3.py",
+      "bytes": 23435,
+      "LF": 353,
+      "sha256": "6928303c36f034fc295145563e40304641a91fe7db35d62eb364031bbcff7e6a",
+      "gitBlob": "6268ca35b32c32611b9663e964ddf2485b941ddc"
+    },
+    {
+      "path": "qualification/capacity-native-full-graph-v3.inputs.json",
+      "bytes": 8697,
+      "LF": 215,
+      "sha256": "3bb597da71736542615047d11af78ad6825df5bdb6e4561747d8c1f9dff7d0df",
+      "gitBlob": "0530e2b08929d45c93b4e4912dc69d27b0645204"
+    },
+    {
+      "path": "qualification/issued-funding-post-native-vertical.inputs-v3.json",
+      "bytes": 138777,
+      "LF": 3836,
+      "sha256": "51ffb5b0ff0052523c1b7f3d75fa24e9be27e60ca3bcc09236b1f439096aaed1",
+      "gitBlob": "3dc05ccffd306e97056b4ed168d8121f63acebbc"
+    },
+    {
+      "path": "qualification/issued-current-close-v4.inputs.json",
+      "bytes": 10437,
+      "LF": 300,
+      "sha256": "8339b2a8e04e7e3c573b1c26d8162f1c821df91182738409693d188121a21893",
+      "gitBlob": "f292abda9f607a7d423f9d32fce2e55472d84a33"
+    },
+    {
+      "path": "qualification/capacity-native-current-namespace-v4.preload-common.draft.mjs",
+      "bytes": 19399,
+      "LF": 269,
+      "sha256": "cf32a73c37ce402dc391ef4a3df712b80130bb272d7c47b5979a96a8462fb5bf",
+      "gitBlob": "e6804f7b81ab08779c71c0908dcd90114b89bf0f"
+    },
+    {
+      "path": "qualification/capacity-native-current-payer-v4.owner.draft.mjs",
+      "bytes": 21517,
+      "LF": 341,
+      "sha256": "5b388bb30230ece395e150625401f6bf1737dbc2a9697e2e107a1c3b917e2351",
+      "gitBlob": "bc123cdf403f206cbc63039f1a031875086b04de"
+    },
+    {
+      "path": "qualification/capacity-native-current-payer-v4.worker.draft.mjs",
+      "bytes": 21390,
+      "LF": 300,
+      "sha256": "46c0775b1810e4ce26c657a7ee811539c72af1a14503020d7776ad77212f3c3c",
+      "gitBlob": "c82f0bb716a2348a046c4be84e95ac466b51c434"
+    },
+    {
+      "path": "qualification/capacity-native-current-payer-v4.namespace.preload.draft.mjs",
+      "bytes": 265,
+      "LF": 3,
+      "sha256": "a97097db53c917b029186083a5524069177e9299c05f03c6f413f020d7ab7b2a",
+      "gitBlob": "33848e84aadf0e138bd4319c05118a43907f3f81"
+    },
+    {
+      "path": "qualification/capacity-native-current-service-v4.owner.draft.mjs",
+      "bytes": 30436,
+      "LF": 333,
+      "sha256": "ad443cae60f944628651fca66b87b678e7eadb603dc964987c58af80f04b76f2",
+      "gitBlob": "dc4ccdc10890fcb6c6a18aa338ae992e5c08f885"
+    },
+    {
+      "path": "qualification/capacity-native-current-service-v4.worker.draft.mjs",
+      "bytes": 9163,
+      "LF": 120,
+      "sha256": "d3b0b582fe8022595e97f8341f882a4747971b44ef7f5f7ba3a21a16a13abdbc",
+      "gitBlob": "9f7f1a58009270d87e50d4730ae93cf0c2164c97"
+    },
+    {
+      "path": "qualification/capacity-native-current-service-v4.namespace.preload.draft.mjs",
+      "bytes": 267,
+      "LF": 3,
+      "sha256": "3dee28a4d7a2c9c3c69b153f2deb1e04300c53d929100ec4f652dbc022624702",
+      "gitBlob": "d3a7c6e4fc5e1809705672c18cc49f2c6c6238b9"
+    }
+  ],
+  "currentSourceSelection": {
+    "applicationFiles": 153,
+    "packageRowsDeclared": 404,
+    "completeRows": 557,
+    "declaredSourceBytes": 4995543,
+    "sourceRowsSha256": "db33115ac37137f5b0212cb33d748154b498ec1b15ca106dfb757575da692a6e",
+    "actualApplicationFilesReadOnlyVerified": 153,
+    "installedPackageFilesRead": 0,
+    "currentRuntimeReplacements": 8,
+    "currentApplicationAdditions": 6,
+    "newNativeRoleFiles": 7,
+    "historicalR4GraphCurrentSourceMismatches": 8,
+    "historicalR4NativeFilesModified": false,
+    "currentCleanNativeSelectionUnchanged": true
+  },
+  "optimizationData": {
+    "profilesGeneratedSequentially": 32,
+    "sharedFieldSerializations": 3,
+    "sharedCanonicalBytes": 203262,
+    "completeSourceRows": 557,
+    "largeRowsReserializedDuringRolePlanning": 0,
+    "totalReturnedProfileBytes": 6543404,
+    "individualProfileMaximum": 524288,
+    "physicalPeakHeapOrNativePerformanceMeasured": false
+  },
+  "syntax": {
+    "parsedFiles": 7,
+    "passed": 7,
+    "importsExecuted": false,
+    "actual": [
+      {
+        "path": "qualification/capacity-native-current-namespace-v4.preload-common.draft.mjs",
+        "exit": 0,
+        "complete": true,
+        "stdoutBytes": 0,
+        "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderrBytes": 0,
+        "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "qualification/capacity-native-current-payer-v4.owner.draft.mjs",
+        "exit": 0,
+        "complete": true,
+        "stdoutBytes": 0,
+        "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderrBytes": 0,
+        "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "qualification/capacity-native-current-payer-v4.worker.draft.mjs",
+        "exit": 0,
+        "complete": true,
+        "stdoutBytes": 0,
+        "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderrBytes": 0,
+        "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "qualification/capacity-native-current-payer-v4.namespace.preload.draft.mjs",
+        "exit": 0,
+        "complete": true,
+        "stdoutBytes": 0,
+        "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderrBytes": 0,
+        "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "qualification/capacity-native-current-service-v4.owner.draft.mjs",
+        "exit": 0,
+        "complete": true,
+        "stdoutBytes": 0,
+        "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderrBytes": 0,
+        "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "qualification/capacity-native-current-service-v4.worker.draft.mjs",
+        "exit": 0,
+        "complete": true,
+        "stdoutBytes": 0,
+        "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderrBytes": 0,
+        "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "qualification/capacity-native-current-service-v4.namespace.preload.draft.mjs",
+        "exit": 0,
+        "complete": true,
+        "stdoutBytes": 0,
+        "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderrBytes": 0,
+        "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    ]
+  },
+  "literalSourceCheck": {
+    "event": "R183_CURRENT_NATIVE_LITERAL_IMPORT_CLOSURE_LEXICAL_SOURCE_ONLY",
+    "valid": true,
+    "sourceFilesVisited": 125,
+    "literalEdges": 539,
+    "missing": [],
+    "lexicalOnly": true,
+    "computedImportsQualified": false,
+    "regexLiteralGrammarQualified": false,
+    "allDeclaredApplicationFilesRead": 153,
+    "declaredPackageFiles": 404,
+    "installedPackageFilesRead": 0,
+    "nativeModulesImported": false,
+    "SDK": false,
+    "SQL": false,
+    "sockets": false,
+    "authority": "NONE"
+  },
+  "executionBoundary": {
+    "nativeModulesImported": false,
+    "applicationOrSDKExecuted": false,
+    "SQLite": false,
+    "keys": false,
+    "signatures": false,
+    "nonceSearch": false,
+    "sockets": false,
+    "applicationChildren": 0,
+    "profilesWritten": false,
+    "sourceOrPackageCopies": 0,
+    "installedSourceContextExecuted": false,
+    "managerImported": false,
+    "storageRootRead": false,
+    "newTasks": 0,
+    "cleanup": false,
+    "currentCleanAllowanceConsumed": false,
+    "oldR4AllowanceConsumed": false
+  },
+  "effectsAudit": {
+    "subprocesses": 0,
+    "sockets": 0,
+    "sqlite": 0,
+    "writeOpens": 0,
+    "outsideSourceReads": 0,
+    "mutations": 0
+  },
+  "publicationBoundary": {
+    "lane": "development-only",
+    "mainRuntimeChanged": false,
+    "automaticCIProfileChanged": false,
+    "newHostedCIClaim": false
+  },
+  "remaining": {
+    "currentOfferedParentBridgeQualified": false,
+    "managedLauncherQualified": false,
+    "physicalRoleRootAdmissionQualified": false,
+    "resourceReservationAdmissionQualified": false,
+    "currentNativeRuntimeQualified": false,
+    "actualNativeLoadObserved": false,
+    "economicAcceptance": false,
+    "productionQualified": false,
+    "authority": "NONE"
+  }
+}
