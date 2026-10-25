@@ -1,0 +1,134 @@
+{
+  "sourceSelectionVersion": 3,
+  "kind": "PACED_TIMER_PARENT_147_SOURCE_GRAPH_DATA_NOT_NATIVE_EXECUTION",
+  "sourceParent": "4d0d3b5cad2c03c9dd54d4e61455e228243c20ec",
+  "runtime": {
+    "node": "24.19.0",
+    "platform": "darwin",
+    "arch": "arm64",
+    "nodeSha256": "dbedff294bab84a0a86c04e15fbcbeb1c97ca10bef1b32b0634cd24b36f62100",
+    "nodeBytes": 121304480
+  },
+  "parentRole": {
+    "profileKind": "NATIVE_CAPACITY_PACED_SUPERVISOR_NODE24_V3",
+    "profileVersion": 3,
+    "entry": "app/qualification/capacity-native-paced-workload-v3.entry.draft.mjs",
+    "preloader": "app/qualification/capacity-native-paced-supervisor-v3.namespace.preload.draft.mjs",
+    "namespace": "getPinnedNativeCapacityPacedSupervisorNamespaceSnapshotV3"
+  },
+  "childGraph": {
+    "inventory": {
+      "path": "qualification/capacity-native-full-graph-v3.inputs.json",
+      "bytes": 8697,
+      "LF": 215,
+      "sha256": "3bb597da71736542615047d11af78ad6825df5bdb6e4561747d8c1f9dff7d0df",
+      "gitBlob": "0530e2b08929d45c93b4e4912dc69d27b0645204"
+    },
+    "baselineManifest": {
+      "path": "qualification/issued-funding-post-native-vertical.inputs-v3.json",
+      "bytes": 138777,
+      "LF": 3836,
+      "sha256": "51ffb5b0ff0052523c1b7f3d75fa24e9be27e60ca3bcc09236b1f439096aaed1",
+      "gitBlob": "3dc05ccffd306e97056b4ed168d8121f63acebbc"
+    },
+    "sourceRowsSha256": "d756740994aeb53ebeee47320d732583d96381dfa8c00e18a30f414e70a77027",
+    "applicationFiles": 139,
+    "packageFiles": 404,
+    "originalChildRowsPreserved": true
+  },
+  "additionalParentApplicationInputs": [
+    {
+      "path": "app/qualification/capacity-native-paced-paired-lane-v3.supervisor.draft.mjs",
+      "bytes": 26232,
+      "LF": 292,
+      "sha256": "ae6388a81b37ebfcd20a0e304d5699a2cb3cd91dc11f2f4bb6061b2ca4f5417f",
+      "gitBlob": "e0a1c0c73cafb55919ba680be740f4c3d03ca82c"
+    },
+    {
+      "path": "app/qualification/capacity-native-paced-supervisor-v3.namespace.preload.draft.mjs",
+      "bytes": 22557,
+      "LF": 316,
+      "sha256": "f593b9367dc832ca2a7fdd65a69eca51938ea0b12590999bf07ed9e58a33ae7b",
+      "gitBlob": "0366ad725790d4441fe3834d3038595437e794f2"
+    },
+    {
+      "path": "app/qualification/capacity-native-paced-workload-adapter-v3.draft.mjs",
+      "bytes": 21616,
+      "LF": 315,
+      "sha256": "c4100d595beeb5389a379851df570d9aca96c1f4f147ab403119f8309587d89b",
+      "gitBlob": "a5bc5aa1dcc0b8c90267ba00b84f59d71fae3fbd"
+    },
+    {
+      "path": "app/qualification/capacity-native-paced-workload-v3.entry.draft.mjs",
+      "bytes": 8635,
+      "LF": 105,
+      "sha256": "4d204f23d05eec52dbb9acfc2e26ee6fe79a150400a1faa34b39d127a9248288",
+      "gitBlob": "9bf05c803312856a68a33852e3b3e6baad42a9ec"
+    },
+    {
+      "path": "app/src/service-credit-capacity-balance-barrier-trace-data.js",
+      "bytes": 10712,
+      "LF": 177,
+      "sha256": "235f5ff9b0b128a393244a545e6d5f83ffb3c8335e358efcc294968d562260e9",
+      "gitBlob": "0674cf00e3906b54441638903827d8bebe6f81aa"
+    },
+    {
+      "path": "app/src/service-credit-capacity-paced-timer-trace-data.js",
+      "bytes": 11764,
+      "LF": 187,
+      "sha256": "ec0ada7fa8c67d72f837c49369f470639a28ca0c7185025f74f59dfa73542b18",
+      "gitBlob": "c4ccadf23e10e41da86181a86f7348cedaf8ff23"
+    },
+    {
+      "path": "app/src/service-credit-capacity-paced-timing-trace-data.js",
+      "bytes": 22759,
+      "LF": 299,
+      "sha256": "4459f9e90692b99af0b831e9acf013b579fe63b2113b8ef5abd81f29c559f5dc",
+      "gitBlob": "0f06c70e53c61497c10b7e4de3fac8697904856e"
+    },
+    {
+      "path": "app/src/service-credit-capacity-paced-workload-owner-core.js",
+      "bytes": 24519,
+      "LF": 455,
+      "sha256": "5eef2c11c5a10bce0594bb43ea6a9f947974f0d6d8455e160227d35d2233bb26",
+      "gitBlob": "4cb1372f14e18b829fa114fe533bc0f1459f5666"
+    }
+  ],
+  "parentApplicationFiles": 147,
+  "parentPackageFiles": 404,
+  "parentSourceRows": 551,
+  "parentSourceRowsSha256": "0e0533ba2e3bfdf97b2670a0ee693c64ddc04ea93bf52b4e779d9d073cb51c90",
+  "parentDeclaredInputBytes": 4922944,
+  "capture": {
+    "pacedCaptureVersion": 4,
+    "pacedTimerCaptureVersion": 1,
+    "singleRawParentTrace": true,
+    "singleRawPacedTrace": true,
+    "singleRawTimerTrace": true
+  },
+  "selectionEvidence": {
+    "applicationSourcesReadOnlyVerified": 147,
+    "packageSourceRowsReadFromFrozenManifest": 404,
+    "installedPackageBytesVerifiedThisSelection": false,
+    "nativeSourceFilesSyntaxChecked": 4,
+    "nativeModulesImported": false,
+    "nativeConstructorsEntered": false,
+    "profilesWritten": false,
+    "privateRootsOpened": false,
+    "actualManagedNativeSdkSqlExecution": false,
+    "originalR4ApprovalConsumed": false,
+    "newNativeAllowanceGranted": false
+  },
+  "remaining": {
+    "currentV3PythonParentProfileBuilder": false,
+    "currentV3ResourceCapturePolicy": false,
+    "currentV4OuterPythonVerifier": false,
+    "currentV3ManagedLauncher": false,
+    "physicalRoleRootAdmission": false,
+    "newExactFiniteNativeScope": false,
+    "nativeIntegrationQualified": false,
+    "sustainableCapacityQualified": false,
+    "pilotOrProductionQualified": false
+  },
+  "authority": "NONE"
+}

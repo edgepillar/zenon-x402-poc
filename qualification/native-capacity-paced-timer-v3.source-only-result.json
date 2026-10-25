@@ -1,0 +1,201 @@
+{
+  "kind": "PACED_NATIVE_TIMER_V3_SOURCE_AND_SYNTAX_ONLY_NOT_EXECUTED",
+  "version": 1,
+  "sourceParent": "4d0d3b5cad2c03c9dd54d4e61455e228243c20ec",
+  "mainParent": "919b848030227baf1ac1f73feaaca2ee35421242",
+  "sourcePins": [
+    {
+      "path": "qualification/capacity-native-paced-workload-adapter-v3.draft.mjs",
+      "bytes": 21616,
+      "LF": 315,
+      "sha256": "c4100d595beeb5389a379851df570d9aca96c1f4f147ab403119f8309587d89b",
+      "gitBlob": "a5bc5aa1dcc0b8c90267ba00b84f59d71fae3fbd"
+    },
+    {
+      "path": "qualification/capacity-native-paced-workload-v3.entry.draft.mjs",
+      "bytes": 8635,
+      "LF": 105,
+      "sha256": "4d204f23d05eec52dbb9acfc2e26ee6fe79a150400a1faa34b39d127a9248288",
+      "gitBlob": "9bf05c803312856a68a33852e3b3e6baad42a9ec"
+    },
+    {
+      "path": "qualification/capacity-native-paced-paired-lane-v3.supervisor.draft.mjs",
+      "bytes": 26232,
+      "LF": 292,
+      "sha256": "ae6388a81b37ebfcd20a0e304d5699a2cb3cd91dc11f2f4bb6061b2ca4f5417f",
+      "gitBlob": "e0a1c0c73cafb55919ba680be740f4c3d03ca82c"
+    },
+    {
+      "path": "qualification/capacity-native-paced-supervisor-v3.namespace.preload.draft.mjs",
+      "bytes": 22557,
+      "LF": 316,
+      "sha256": "f593b9367dc832ca2a7fdd65a69eca51938ea0b12590999bf07ed9e58a33ae7b",
+      "gitBlob": "0366ad725790d4441fe3834d3038595437e794f2"
+    }
+  ],
+  "inputManifest": {
+    "path": "qualification/capacity-native-paced-timer-parent-v3.inputs.json",
+    "bytes": 5152,
+    "LF": 134,
+    "sha256": "90eba86d5f14f4226867815667213dc4ac3799e146d65b74eb75441c047a1236",
+    "gitBlob": "0217ad6835534aea21abc03e238f19ad0b21c196"
+  },
+  "actualSyntax": {
+    "commands": [
+      {
+        "path": "qualification/capacity-native-paced-workload-adapter-v3.draft.mjs",
+        "actualExit": 0,
+        "complete": true,
+        "reason": null,
+        "elapsedSeconds": 0.02713470801245421,
+        "streams": {
+          "stdout": {
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "stderr": {
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        "validated": true
+      },
+      {
+        "path": "qualification/capacity-native-paced-workload-v3.entry.draft.mjs",
+        "actualExit": 0,
+        "complete": true,
+        "reason": null,
+        "elapsedSeconds": 0.027351875003660098,
+        "streams": {
+          "stdout": {
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "stderr": {
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        "validated": true
+      },
+      {
+        "path": "qualification/capacity-native-paced-paired-lane-v3.supervisor.draft.mjs",
+        "actualExit": 0,
+        "complete": true,
+        "reason": null,
+        "elapsedSeconds": 0.02857991700875573,
+        "streams": {
+          "stdout": {
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "stderr": {
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        "validated": true
+      },
+      {
+        "path": "qualification/capacity-native-paced-supervisor-v3.namespace.preload.draft.mjs",
+        "actualExit": 0,
+        "complete": true,
+        "reason": null,
+        "elapsedSeconds": 0.02695716600283049,
+        "streams": {
+          "stdout": {
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "stderr": {
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        "validated": true
+      }
+    ],
+    "fourExactSourcesParsed": true,
+    "sourcePinsUnchanged": true,
+    "nativeModulesImported": false,
+    "nativeConstructorsOrRunEntered": false
+  },
+  "precedingControllerRefusal": {
+    "actualParentExit": 1,
+    "syntaxCommandsAttempted": 1,
+    "firstParserExitRetained": false,
+    "firstParserQualification": "UNKNOWN_NOT_A_PASS",
+    "failure": "Observer used undefined pin helper after first parser wait; corrected observer uses the existing pins helper.",
+    "unknownRetained": true,
+    "completedNativeExperimentRepeated": false
+  },
+  "sourceDeclaration": {
+    "parentApplicationFiles": 147,
+    "parentPackageRows": 404,
+    "parentRows": 551,
+    "parentSourceRowsSha256": "0e0533ba2e3bfdf97b2670a0ee693c64ddc04ea93bf52b4e779d9d073cb51c90",
+    "parentDeclaredBytes": 4922944,
+    "childApplicationFiles": 139,
+    "childPackageRows": 404,
+    "childSourceRowsSha256": "d756740994aeb53ebeee47320d732583d96381dfa8c00e18a30f414e70a77027",
+    "applicationSourceFilesReadOnlyVerified": 147,
+    "installedPackageSourceBytesVerifiedThisSelection": false,
+    "completeNewRelativeImportsCovered": true,
+    "childOriginalRowsPreserved": true,
+    "newChildProtocolOrEconomicBehaviorAdded": false
+  },
+  "integration": {
+    "newParentProfileVersion": 3,
+    "newParentNamespace": "getPinnedNativeCapacityPacedSupervisorNamespaceSnapshotV3",
+    "newOuterCaptureVersion": 4,
+    "timerEnvelopeVersion": 1,
+    "actualTimerProducingCoreSelected": true,
+    "actualV3PairRolesSelected": true,
+    "singleTimerCapsuleForwarded": true,
+    "outputSuccessRequiresTimerAndBalanceChecks": true,
+    "existingV2ExecutableSourcesChanged": false,
+    "originalUnpacedR4SourcesAndManifestChanged": false,
+    "historicalPacedManifestCommittedBytesRestoredAfterNamingCollision": true,
+    "historicalPacedManifestLocalIdentityContinuityQualified": false,
+    "oldCaptureRelabeledOrFlattened": false,
+    "rawParentTraceCopiedIntoSecondEnvelope": false
+  },
+  "remaining": {
+    "V3ParentProfileProducer": false,
+    "V3ConservativeResourcePlan": false,
+    "independentTimerEnvelopePythonChecker": false,
+    "V4OuterPythonVerifier": false,
+    "V3ManagedLauncher": false,
+    "actualPrivateRoleRootsAdmitted": false,
+    "newExactFiniteNativeScope": false,
+    "fullApplicationSDKSQLTLSTimerExecution": false,
+    "commandOrClosureReceiptsAuthenticated": false,
+    "sustainableCapacityQualified": false,
+    "economicAcceptance": false,
+    "pilotOrProductionQualified": false
+  },
+  "executionBoundary": {
+    "NodeSyntaxCommandsRetained": 4,
+    "additionalObserverFailureSyntaxAttempts": 1,
+    "SDK": false,
+    "SQLite": false,
+    "keys": false,
+    "signatures": false,
+    "nonceSearch": false,
+    "sockets": false,
+    "NodeApplicationChildren": 0,
+    "profilesWritten": false,
+    "managerImported": false,
+    "privateRootsOpened": false,
+    "qualificationScratchCreated": false,
+    "originalR4ApprovalConsumed": false,
+    "newNativeAllowanceGranted": false
+  },
+  "publication": {
+    "developmentOnly": true,
+    "mainTransferEligible": false,
+    "mainNativeRuntimeUnchanged": true,
+    "mainWorkflowOrProfileUnchanged": true
+  },
+  "authority": "NONE"
+}

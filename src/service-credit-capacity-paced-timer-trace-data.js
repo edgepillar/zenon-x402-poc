@@ -1,9 +1,11 @@
 import { types as utilTypes } from 'node:util';
-import { checkServiceCreditCapacityPacedTimingTraceData } from './service-credit-capacity-paced-timing-trace-data.js';
+import { checkServiceCreditCapacityPacedTimingTraceData,
+  captureServiceCreditCapacityPacedTimingEnvelopeData } from './service-credit-capacity-paced-timing-trace-data.js';
 
 const F = Object.freeze, D = Object.getOwnPropertyDescriptor, K = Reflect.ownKeys;
 const P = Object.getPrototypeOf, O = Object.hasOwn, PROXY = utilTypes.isProxy;
 const BASE = checkServiceCreditCapacityPacedTimingTraceData, MAX_NS = (1n << 128n) - 1n, M = 1000000n;
+const BASE_CAPTURE = captureServiceCreditCapacityPacedTimingEnvelopeData;
 
 /**
  * Independently reconstruct pacing timer call DATA against the genuine paced
@@ -17,9 +19,35 @@ export function checkServiceCreditCapacityPacedTimerTraceData(input) {
   try { return checked(input); } catch { fail(); }
 }
 
-function checked(input) {
+/**
+ * PRIVATE transport capsule for the actual parent entry. Keep one paced trace,
+ * its one inner parent trace and one timer trace. Obtain the genuine old
+ * paced/parent checks once; never trust a supplied check or replay a recorder.
+ * Safe UNKNOWN arithmetic is retained without partial check passes. Unsafe
+ * hooks, unknown fields and raw token/callback data refuse before retention.
+ */
+export function captureServiceCreditCapacityPacedTimerEnvelopeData(input) {
+  if (arguments.length !== 1) fail();
+  try {
+    const c = exact(input, ['context', 'trace', 'timerTrace', 'report', 'expected']);
+    safeTimerTrace(c.timerTrace);
+    const base = BASE_CAPTURE(F({ context: c.context, trace: c.trace, report: c.report, expected: c.expected }));
+    let verdict = null;
+    if (base.status === 'MATCHING_DECLARED_PACED_TRACE') {
+      try {
+        verdict = checked(F({ trace: c.trace, timerTrace: c.timerTrace, report: c.report, expected: c.expected }), base.check);
+      } catch { /* Retain the safe complete input; no partial arithmetic pass. */ }
+    }
+    return F({ pacedTimerCaptureVersion: 1, context: base.context, trace: base.trace, timerTrace: c.timerTrace,
+      check: verdict, parentCheck: verdict === null ? null : base.parentCheck,
+      parentTraceLocation: 'trace.coreParentTimingTrace',
+      status: verdict === null ? 'UNKNOWN_OR_MISMATCHED_PACED_TIMER_TRACE' : 'MATCHING_DECLARED_PACED_TIMER_TRACE' });
+  } catch { fail(); }
+}
+
+function checked(input, genuinePacedCheck = null) {
   const c = exact(input, ['trace', 'timerTrace', 'report', 'expected']);
-  const pacedCheck = BASE(F({ trace: c.trace, report: c.report, expected: c.expected }));
+  const pacedCheck = genuinePacedCheck === null ? BASE(F({ trace: c.trace, report: c.report, expected: c.expected })) : genuinePacedCheck;
   const expected = exact(c.expected, ['plan', 'recordingLimits', 'laneCount', 'minimumStartGapMs']);
   const limits = exact(expected.recordingLimits, ['maxSamplesPerPhase', 'maxInFlightPerPhase']);
   const t = exact(c.timerTrace, ['pacedTimerTraceVersion', 'scope', 'clockDomain', 'limits', 'laneCount',
@@ -97,6 +125,36 @@ function checked(input) {
     pacedAndParentArithmeticPasses: 1, pacedCheck, postStopLedgerDurationSeriesRecomputed: false,
     callerClockAuthenticated: false, nativeEventsAuthenticated: false, physicalTimerAbsenceQualified: false,
     nativeResourcesQualified: false, sustainableCapacityQualified: false, productionQualified: false, authority: 'NONE' });
+}
+function safeTimerTrace(value) {
+  const t = exact(value, ['pacedTimerTraceVersion', 'scope', 'clockDomain', 'limits', 'laneCount',
+    'minimumStartGapMs', 'maximumEvents', 'unknown', 'events', 'rawTokensIncluded', 'additionalClockReads',
+    'nativeEventsAuthenticated', 'physicalTimerAbsenceQualified', 'authority']);
+  const limits = exact(t.limits, ['maxSamplesPerPhase', 'maxInFlightPerPhase']);
+  integer(limits.maxSamplesPerPhase, 1, 4096); integer(limits.maxInFlightPerPhase, 1, 64);
+  integer(t.laneCount, 1, 16); integer(t.minimumStartGapMs, 1, 1000);
+  need(t.pacedTimerTraceVersion === 1 && t.scope === 'PRIVATE_PACING_TIMER_CALLS_NOT_NATIVE_AUTHENTICATION'
+    && t.clockDomain === 'PARENT_MONOTONIC_SHARED_WITH_PACED_TRACE_NOT_TIMER_LIVENESS'
+    && limits.maxInFlightPerPhase <= limits.maxSamplesPerPhase && typeof t.unknown === 'boolean'
+    && t.maximumEvents === 4 * limits.maxSamplesPerPhase + 1 && t.rawTokensIncluded === false
+    && t.additionalClockReads === 0 && t.nativeEventsAuthenticated === false && t.physicalTimerAbsenceQualified === false
+    && t.authority === 'NONE');
+  const rows = dense(t.events, t.maximumEvents);
+  for (const raw of rows) {
+    const kind = data(raw, 'kind');
+    const fields = ['sequence', 'pacedSequence', 'kind'];
+    if (kind !== 'FINALIZE') fields.push('timer');
+    if (kind === 'ARM') fields.push('atNs', 'dueNs', 'delayMs');
+    else if (kind === 'FIRE') fields.push('atNs');
+    else if (kind === 'CANCEL') fields.push('returned');
+    else need(['ARMED', 'EARLY_FIRE', 'REFUSED', 'FINALIZE'].includes(kind));
+    const row = exact(raw, fields);
+    integer(row.sequence, 1, t.maximumEvents); integer(row.pacedSequence, 0, 30000);
+    if (kind !== 'FINALIZE') integer(row.timer, 1, limits.maxSamplesPerPhase);
+    if (kind === 'ARM') { ns(row.atNs); ns(row.dueNs); integer(row.delayMs, 1, 1000); }
+    else if (kind === 'FIRE') ns(row.atNs);
+    else if (kind === 'CANCEL') need(typeof row.returned === 'boolean');
+  }
 }
 function object(value) {
   need(value !== null && typeof value === 'object' && !PROXY(value)
