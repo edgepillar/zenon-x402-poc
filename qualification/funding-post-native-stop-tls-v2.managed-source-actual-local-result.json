@@ -1,0 +1,1113 @@
+{
+  "kind": "FUNDING_STOP_TLS_V2_MANAGED_SOURCE_ACTUAL_LOCAL_DATA_NOT_NATIVE_RESULT",
+  "date": "2026-10-25",
+  "sourceParent": "087a135263d1474390577ffcefb651cb9ad59815",
+  "mainUnchanged": "417f21b7007590c63b5b0b04de386d5cb19238fe",
+  "implementation": {
+    "managedNativeControllerSourceAuthored": true,
+    "outerPythonControls": 5,
+    "unchangedInnerSourceRows": 9,
+    "completeRepositoryInputFiles": 16,
+    "applicationModules": 5,
+    "proposedNativeCases": 7,
+    "frozenFullSiblingCapacityReaderReused": true,
+    "maximumReservationRoots": 256,
+    "unchangedTaskRecordIdentityCacheReused": true,
+    "toolByteHashesOncePerNativeContextOnly": true,
+    "ownedTaskClosureAndCleanupDispositionSeparate": true,
+    "privateTlsInputsAndActualStreamsRetainedWithoutArchiveCopy": true,
+    "rootInitializationOrLegacyAdoptionProvided": false,
+    "automaticRetry": false,
+    "metadataOrProductionFloorBypass": false,
+    "nativeOsNetworkSandbox": false,
+    "managedNativeControllerNativeQualified": false
+  },
+  "actual": {
+    "selectedCases": 161,
+    "negativeCases": 147,
+    "pythonData": {
+      "actualExit": 0,
+      "complete": true,
+      "inputComplete": true,
+      "inputBytes": 0,
+      "reason": null,
+      "elapsedSeconds": 0.20600033400114626,
+      "stdoutBytes": 19907,
+      "stdoutSha256": "05001b25292a1e5d09b651b43e161ff3470425f9fd9379e87ec80c909678b890",
+      "stderrBytes": 0,
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "declared": {
+      "actualSourceFilesRead": 16,
+      "authority": "NONE",
+      "cases": [
+        "actual source-only controller admission",
+        "default main ignores native path hints without opening them",
+        "wrong actual outer digest",
+        "missing outer field version",
+        "missing outer field pythonControls",
+        "missing outer field resources",
+        "missing outer field nativeSelection",
+        "missing outer field innerSelection",
+        "forged native authority nativeExecuted",
+        "forged native authority nativeAllowanceGranted",
+        "forged native authority nativeOsNetworkSandbox",
+        "forged native authority managedLauncherNativeQualified",
+        "wrong outer selection version",
+        "wrong outer selection sourceParent",
+        "wrong outer selection authority",
+        "wrong outer selection nativeSelection",
+        "wrong outer selection managedLauncherSourceAuthored",
+        "changed control pin bytes",
+        "changed control pin LF",
+        "changed control pin path",
+        "changed control pin sha256",
+        "changed control pin gitBlob",
+        "resealed frozen helper qualification/run-capacity-native-paced-timer-managed-v3.local.py",
+        "resealed frozen helper qualification/run-capacity-native-workload-v3.local.py",
+        "resealed frozen helper qualification/funding_tls_current_gate.py",
+        "inner selection old digest",
+        "inner row seal changed",
+        "resource drift taskQuotaBytes",
+        "resource drift expectedPeakBytes",
+        "resource drift minimumFreeBytes",
+        "resource drift safetyMarginBytes",
+        "resource drift metadataStoreQuotaBytesReserved",
+        "resource drift requiredFreeBytesBeforeOtherReservations",
+        "resource drift opensslTimeoutSeconds",
+        "resource drift opensslStdoutLimit",
+        "resource drift opensslStderrLimit",
+        "resource drift nodeTimeoutSeconds",
+        "resource drift nodeStdoutLimit",
+        "resource drift nodeStderrLimit",
+        "resource drift maximumRuns",
+        "resource drift opensslCommands",
+        "resource drift nodeCommands",
+        "resource drift nodeChildren",
+        "resource drift selectedCases",
+        "resource drift loopbackListeners",
+        "resource drift loopbackConnections",
+        "resource drift allSiblingReservationsRequired",
+        "resource drift maximumReservationRoots",
+        "resource drift automaticRetry",
+        "resource drift initializeRoot",
+        "resource drift cleanupHistoricalData",
+        "resource drift nativeOsNetworkSandbox",
+        "resource drift SDK",
+        "resource drift SQLite",
+        "resource drift nonce",
+        "resource drift walletPaymentCapabilityProviderSigning",
+        "resource drift externalNetwork",
+        "resource drift fullDpGraph",
+        "policy drift min_free_bytes",
+        "policy drift safety_margin_bytes",
+        "policy drift task_quota_bytes",
+        "policy drift scratch_quota_bytes",
+        "policy drift store_quota_bytes",
+        "policy drift metadata_quota_bytes",
+        "policy drift max_tasks",
+        "policy drift max_objects",
+        "policy drift max_commands_per_task",
+        "policy drift max_output_bytes",
+        "policy drift abandoned_after_seconds",
+        "policy drift unreferenced_after_seconds",
+        "inner SDK expansion",
+        "frozen TLS policy reused unchanged",
+        "strict DATA JSON {\"x\":1,\"x\":2}",
+        "strict DATA JSON {\"x\":1.0}",
+        "strict DATA JSON {\"x\":NaN}",
+        "strict DATA JSON {\"x\":-0}",
+        "strict DATA JSON {\"x\":9007199254740992}",
+        "all-root finite reservation DATA 1",
+        "all-root finite reservation DATA 61",
+        "all-root finite reservation DATA 256",
+        "capacity refusal DATA (11819548688, 17, 61)",
+        "capacity refusal DATA (11819548672, 0, 257)",
+        "capacity refusal DATA (11819548672, 0, 0)",
+        "capacity refusal DATA (True, 0, 1)",
+        "capacity refusal DATA (11819548672, True, 1)",
+        "exact native argv DATA is read-only with no children",
+        "command plan relative repo",
+        "command plan path traversal",
+        "command plan permission comma",
+        "command plan newline",
+        "command plan root path",
+        "command plan scratch alias",
+        "command plan node under scratch",
+        "command plan extra application",
+        "command plan foreign application",
+        "command plan old entry",
+        "complete synthetic capture DATA with observed late assignment",
+        "zero late observation DATA never qualifies unobserved path",
+        "capture receipt actual_exit=True",
+        "capture receipt actual_exit=1",
+        "capture receipt output_complete=False",
+        "capture receipt state=RUNNING",
+        "capture receipt reason=TIMEOUT",
+        "capture receipt process_group=False",
+        "capture receipt argv=['node']",
+        "TAP missing EOF",
+        "TAP wrong case",
+        "TAP failure",
+        "TAP skip",
+        "TAP duplicate plan",
+        "TAP duplicate footer",
+        "TAP wrong total",
+        "native stderr is not silently ignored",
+        "native summary casesEntered=True",
+        "native summary casesCompleted=6",
+        "native summary connections=9",
+        "native summary connections=3",
+        "native summary silentConnections=0",
+        "native summary requests=4",
+        "native summary httpsClosed=False",
+        "native summary tcpClosed=False",
+        "native summary cleanupDestroyedSockets=1",
+        "native summary allClientHandlesDrained=False",
+        "native summary actualLateSocketAssignmentsObserved=0",
+        "native summary unobservedLateSocketPathQualified=True",
+        "native summary nonclosingSocketQualified=True",
+        "native summary SDK=True",
+        "native summary SQLite=True",
+        "native summary nonce=True",
+        "native summary paymentSigning=True",
+        "native summary externalNetwork=True",
+        "native summary fullDpGraph=True",
+        "owner observation (0, 'index', True)",
+        "owner observation (0, 'requestStarts', True)",
+        "owner observation (0, 'phase', 'CLOSE_UNKNOWN')",
+        "owner observation (1, 'unknown', False)",
+        "owner observation (2, 'beforeStopHandshakeTimerStartAttempts', 0)",
+        "owner observation (3, 'handshakeTimerStartAttempts', 1)",
+        "owner observation (4, 'handlesDrained', False)",
+        "owner observation (5, 'authenticatedTlsHandshakes', 1)",
+        "owner observation (6, 'requestStarts', 1)",
+        "task closure separate cleanup DATA CLEANED",
+        "task closure separate cleanup DATA ALREADY_CLEAN",
+        "task closure separate cleanup DATA HOLD",
+        "closure DATA state",
+        "closure DATA id",
+        "closure DATA outcome",
+        "closure DATA commands",
+        "closure DATA scratch_files",
+        "foreign task cleanup DATA",
+        "object cleanup not authorized DATA",
+        "finite native-selection tripwire DATA not authority",
+        "native tripwire native_selection",
+        "native tripwire approval_manifest_sha256",
+        "native tripwire approval_source_rows_sha256",
+        "native tripwire manager",
+        "native tripwire execute",
+        "native tripwire pre_native_plan",
+        "native tripwire volume_uuid",
+        "native tripwire store_id",
+        "context composition DATA uses full-sibling reader and hashes each tool once"
+      ],
+      "event": "FUNDING_STOP_TLS_V2_MANAGED_SOURCE_DATA_ACTUAL_LOCAL",
+      "listenerSocketsOpened": 0,
+      "managerImported": false,
+      "nativeAllowanceConsumed": false,
+      "nativeBodyImported": false,
+      "nativeRunsExecuted": 0,
+      "negativeCases": 147,
+      "orchestrationSubstitutesAreInMemoryDataOnly": true,
+      "physicalCapacityOrToolAdmissionPerformed": false,
+      "refusalCodes": [
+        {
+          "case": "wrong actual outer digest",
+          "code": "EXACT_MANAGED_MANIFEST_DIGEST"
+        },
+        {
+          "case": "missing outer field version",
+          "code": "EXACT_MANAGED_MANIFEST_FIELDS"
+        },
+        {
+          "case": "missing outer field pythonControls",
+          "code": "EXACT_MANAGED_MANIFEST_FIELDS"
+        },
+        {
+          "case": "missing outer field resources",
+          "code": "EXACT_MANAGED_MANIFEST_FIELDS"
+        },
+        {
+          "case": "missing outer field nativeSelection",
+          "code": "EXACT_MANAGED_MANIFEST_FIELDS"
+        },
+        {
+          "case": "missing outer field innerSelection",
+          "code": "EXACT_MANAGED_MANIFEST_FIELDS"
+        },
+        {
+          "case": "forged native authority nativeExecuted",
+          "code": "SOURCE_IS_NOT_NATIVE_AUTHORITY"
+        },
+        {
+          "case": "forged native authority nativeAllowanceGranted",
+          "code": "SOURCE_IS_NOT_NATIVE_AUTHORITY"
+        },
+        {
+          "case": "forged native authority nativeOsNetworkSandbox",
+          "code": "SOURCE_IS_NOT_NATIVE_AUTHORITY"
+        },
+        {
+          "case": "forged native authority managedLauncherNativeQualified",
+          "code": "SOURCE_IS_NOT_NATIVE_AUTHORITY"
+        },
+        {
+          "case": "wrong outer selection version",
+          "code": "SOURCE_IS_NOT_NATIVE_AUTHORITY"
+        },
+        {
+          "case": "wrong outer selection sourceParent",
+          "code": "SOURCE_IS_NOT_NATIVE_AUTHORITY"
+        },
+        {
+          "case": "wrong outer selection authority",
+          "code": "SOURCE_IS_NOT_NATIVE_AUTHORITY"
+        },
+        {
+          "case": "wrong outer selection nativeSelection",
+          "code": "SOURCE_IS_NOT_NATIVE_AUTHORITY"
+        },
+        {
+          "case": "wrong outer selection managedLauncherSourceAuthored",
+          "code": "SOURCE_IS_NOT_NATIVE_AUTHORITY"
+        },
+        {
+          "case": "changed control pin bytes",
+          "code": "EXACT_MANAGED_CONTROL_PIN"
+        },
+        {
+          "case": "changed control pin LF",
+          "code": "EXACT_MANAGED_CONTROL_PIN"
+        },
+        {
+          "case": "changed control pin path",
+          "code": "EXACT_MANAGED_CONTROL_PIN"
+        },
+        {
+          "case": "changed control pin sha256",
+          "code": "EXACT_MANAGED_CONTROL_PIN"
+        },
+        {
+          "case": "changed control pin gitBlob",
+          "code": "EXACT_MANAGED_CONTROL_PIN"
+        },
+        {
+          "case": "resealed frozen helper qualification/run-capacity-native-paced-timer-managed-v3.local.py",
+          "code": "UNCHANGED_FROZEN_MANAGED_CONTROL"
+        },
+        {
+          "case": "resealed frozen helper qualification/run-capacity-native-workload-v3.local.py",
+          "code": "UNCHANGED_FROZEN_MANAGED_CONTROL"
+        },
+        {
+          "case": "resealed frozen helper qualification/funding_tls_current_gate.py",
+          "code": "UNCHANGED_FROZEN_MANAGED_CONTROL"
+        },
+        {
+          "case": "inner selection old digest",
+          "code": "UNCHANGED_INNER_SEVEN_CASE_SELECTION"
+        },
+        {
+          "case": "inner row seal changed",
+          "code": "UNCHANGED_INNER_SEVEN_CASE_SELECTION"
+        },
+        {
+          "case": "resource drift taskQuotaBytes",
+          "code": "EXACT_FINITE_MANAGED_RESOURCES"
+        },
+        {
+          "case": "resource drift expectedPeakBytes",
+          "code": "EXACT_FINITE_MANAGED_RESOURCES"
+        },
+        {
+          "case": "resource drift minimumFreeBytes",
+          "code": "EXACT_FINITE_MANAGED_RESOURCES"
+        },
+        {
+          "case": "resource drift safetyMarginBytes",
+          "code": "EXACT_FINITE_MANAGED_RESOURCES"
+        },
+        {
+          "case": "resource drift metadataStoreQuotaBytesReserved",
+          "code": "EXACT_FINITE_MANAGED_RESOURCES"
+        },
+        {
+          "case": "resource drift requiredFreeBytesBeforeOtherReservations",
+          "code": "EXACT_FINITE_MANAGED_RESOURCES"
+        },
+        {
+          "case": "resource drift opensslTimeoutSeconds",
+          "code": "EXACT_FINITE_MANAGED_RESOURCES"
+        },
+        {
+          "case": "resource drift opensslStdoutLimit",
+          "code": "EXACT_FINITE_MANAGED_RESOURCES"
+        },
+        {
+          "case": "resource drift opensslStderrLimit",
+          "code": "EXACT_FINITE_MANAGED_RESOURCES"
+        },
+        {
+          "case": "resource drift nodeTimeoutSeconds",
+          "code": "EXACT_FINITE_MANAGED_RESOURCES"
+        },
+        {
+          "case": "resource drift nodeStdoutLimit",
+          "code": "EXACT_FINITE_MANAGED_RESOURCES"
+        },
+        {
+          "case": "resource drift nodeStderrLimit",
+          "code": "EXACT_FINITE_MANAGED_RESOURCES"
+        },
+        {
+          "case": "resource drift maximumRuns",
+          "code": "EXACT_FINITE_MANAGED_RESOURCES"
+        },
+        {
+          "case": "resource drift opensslCommands",
+          "code": "EXACT_FINITE_MANAGED_RESOURCES"
+        },
+        {
+          "case": "resource drift nodeCommands",
+          "code": "EXACT_FINITE_MANAGED_RESOURCES"
+        },
+        {
+          "case": "resource drift nodeChildren",
+          "code": "EXACT_FINITE_MANAGED_RESOURCES"
+        },
+        {
+          "case": "resource drift selectedCases",
+          "code": "EXACT_FINITE_MANAGED_RESOURCES"
+        },
+        {
+          "case": "resource drift loopbackListeners",
+          "code": "EXACT_FINITE_MANAGED_RESOURCES"
+        },
+        {
+          "case": "resource drift loopbackConnections",
+          "code": "EXACT_FINITE_MANAGED_RESOURCES"
+        },
+        {
+          "case": "resource drift allSiblingReservationsRequired",
+          "code": "EXACT_FINITE_MANAGED_RESOURCES"
+        },
+        {
+          "case": "resource drift maximumReservationRoots",
+          "code": "EXACT_FINITE_MANAGED_RESOURCES"
+        },
+        {
+          "case": "resource drift automaticRetry",
+          "code": "EXACT_FINITE_MANAGED_RESOURCES"
+        },
+        {
+          "case": "resource drift initializeRoot",
+          "code": "EXACT_FINITE_MANAGED_RESOURCES"
+        },
+        {
+          "case": "resource drift cleanupHistoricalData",
+          "code": "EXACT_FINITE_MANAGED_RESOURCES"
+        },
+        {
+          "case": "resource drift nativeOsNetworkSandbox",
+          "code": "EXACT_FINITE_MANAGED_RESOURCES"
+        },
+        {
+          "case": "resource drift SDK",
+          "code": "EXACT_FINITE_MANAGED_RESOURCES"
+        },
+        {
+          "case": "resource drift SQLite",
+          "code": "EXACT_FINITE_MANAGED_RESOURCES"
+        },
+        {
+          "case": "resource drift nonce",
+          "code": "EXACT_FINITE_MANAGED_RESOURCES"
+        },
+        {
+          "case": "resource drift walletPaymentCapabilityProviderSigning",
+          "code": "EXACT_FINITE_MANAGED_RESOURCES"
+        },
+        {
+          "case": "resource drift externalNetwork",
+          "code": "EXACT_FINITE_MANAGED_RESOURCES"
+        },
+        {
+          "case": "resource drift fullDpGraph",
+          "code": "EXACT_FINITE_MANAGED_RESOURCES"
+        },
+        {
+          "case": "policy drift min_free_bytes",
+          "code": "EXACT_FINITE_MANAGED_RESOURCES"
+        },
+        {
+          "case": "policy drift safety_margin_bytes",
+          "code": "EXACT_FINITE_MANAGED_RESOURCES"
+        },
+        {
+          "case": "policy drift task_quota_bytes",
+          "code": "EXACT_FINITE_MANAGED_RESOURCES"
+        },
+        {
+          "case": "policy drift scratch_quota_bytes",
+          "code": "EXACT_FINITE_MANAGED_RESOURCES"
+        },
+        {
+          "case": "policy drift store_quota_bytes",
+          "code": "EXACT_FINITE_MANAGED_RESOURCES"
+        },
+        {
+          "case": "policy drift metadata_quota_bytes",
+          "code": "EXACT_FINITE_MANAGED_RESOURCES"
+        },
+        {
+          "case": "policy drift max_tasks",
+          "code": "EXACT_FINITE_MANAGED_RESOURCES"
+        },
+        {
+          "case": "policy drift max_objects",
+          "code": "EXACT_FINITE_MANAGED_RESOURCES"
+        },
+        {
+          "case": "policy drift max_commands_per_task",
+          "code": "EXACT_FINITE_MANAGED_RESOURCES"
+        },
+        {
+          "case": "policy drift max_output_bytes",
+          "code": "EXACT_FINITE_MANAGED_RESOURCES"
+        },
+        {
+          "case": "policy drift abandoned_after_seconds",
+          "code": "EXACT_FINITE_MANAGED_RESOURCES"
+        },
+        {
+          "case": "policy drift unreferenced_after_seconds",
+          "code": "EXACT_FINITE_MANAGED_RESOURCES"
+        },
+        {
+          "case": "inner SDK expansion",
+          "code": "EXACT_FINITE_MANAGED_RESOURCES"
+        },
+        {
+          "case": "strict DATA JSON {\"x\":1,\"x\":2}",
+          "code": "DUPLICATE_JSON_DATA_KEY"
+        },
+        {
+          "case": "strict DATA JSON {\"x\":1.0}",
+          "code": "NON_INTEGER_JSON_DATA"
+        },
+        {
+          "case": "strict DATA JSON {\"x\":NaN}",
+          "code": "NON_INTEGER_JSON_DATA"
+        },
+        {
+          "case": "strict DATA JSON {\"x\":-0}",
+          "code": "SAFE_JSON_INTEGER_DATA"
+        },
+        {
+          "case": "strict DATA JSON {\"x\":9007199254740992}",
+          "code": "SAFE_JSON_INTEGER_DATA"
+        },
+        {
+          "case": "capacity refusal DATA (11819548688, 17, 61)",
+          "code": "PRODUCTION_FLOOR_AND_ALL_STORE_RESERVATIONS"
+        },
+        {
+          "case": "capacity refusal DATA (11819548672, 0, 257)",
+          "code": "BOUNDED_CAPACITY_DATA"
+        },
+        {
+          "case": "capacity refusal DATA (11819548672, 0, 0)",
+          "code": "BOUNDED_CAPACITY_DATA"
+        },
+        {
+          "case": "capacity refusal DATA (True, 0, 1)",
+          "code": "BOUNDED_CAPACITY_DATA"
+        },
+        {
+          "case": "capacity refusal DATA (11819548672, True, 1)",
+          "code": "BOUNDED_CAPACITY_DATA"
+        },
+        {
+          "case": "command plan relative repo",
+          "code": "CANONICAL_PRIVATE_PATH_DATA"
+        },
+        {
+          "case": "command plan path traversal",
+          "code": "CANONICAL_PRIVATE_PATH_DATA"
+        },
+        {
+          "case": "command plan permission comma",
+          "code": "CANONICAL_PRIVATE_PATH_DATA"
+        },
+        {
+          "case": "command plan newline",
+          "code": "CANONICAL_PRIVATE_PATH_DATA"
+        },
+        {
+          "case": "command plan root path",
+          "code": "CANONICAL_PRIVATE_PATH_DATA"
+        },
+        {
+          "case": "command plan scratch alias",
+          "code": "OWNED_TASK_SCRATCH_PATH_DATA"
+        },
+        {
+          "case": "command plan node under scratch",
+          "code": "DISJOINT_NATIVE_PATH_DATA"
+        },
+        {
+          "case": "command plan extra application",
+          "code": "EXACT_NODE_SOURCE_PATH_DATA"
+        },
+        {
+          "case": "command plan foreign application",
+          "code": "EXACT_NODE_SOURCE_PATH_DATA"
+        },
+        {
+          "case": "command plan old entry",
+          "code": "EXACT_NODE_SOURCE_PATH_DATA"
+        },
+        {
+          "case": "capture receipt actual_exit=True",
+          "code": "ACTUAL_SUCCESS_AND_COMPLETE_EOF_DATA"
+        },
+        {
+          "case": "capture receipt actual_exit=1",
+          "code": "ACTUAL_SUCCESS_AND_COMPLETE_EOF_DATA"
+        },
+        {
+          "case": "capture receipt output_complete=False",
+          "code": "ACTUAL_SUCCESS_AND_COMPLETE_EOF_DATA"
+        },
+        {
+          "case": "capture receipt state=RUNNING",
+          "code": "ACTUAL_SUCCESS_AND_COMPLETE_EOF_DATA"
+        },
+        {
+          "case": "capture receipt reason=TIMEOUT",
+          "code": "ACTUAL_SUCCESS_AND_COMPLETE_EOF_DATA"
+        },
+        {
+          "case": "capture receipt process_group=False",
+          "code": "OWNED_PRIVATE_COMMAND_RECEIPT_DATA"
+        },
+        {
+          "case": "capture receipt argv=['node']",
+          "code": "OWNED_PRIVATE_COMMAND_RECEIPT_DATA"
+        },
+        {
+          "case": "TAP missing EOF",
+          "code": "STRICT_NATIVE_TAP_STREAM_DATA"
+        },
+        {
+          "case": "TAP wrong case",
+          "code": "EXACT_SEVEN_ORDERED_TAP_CASES_DATA"
+        },
+        {
+          "case": "TAP failure",
+          "code": "ONLY_SUCCESSFUL_SELECTED_TAP_DATA"
+        },
+        {
+          "case": "TAP skip",
+          "code": "ONLY_SUCCESSFUL_SELECTED_TAP_DATA"
+        },
+        {
+          "case": "TAP duplicate plan",
+          "code": "ONLY_SUCCESSFUL_SELECTED_TAP_DATA"
+        },
+        {
+          "case": "TAP duplicate footer",
+          "code": "ONE_NATIVE_SUMMARY_NO_FAILURE_DATA"
+        },
+        {
+          "case": "TAP wrong total",
+          "code": "EXACT_TAP_TOTALS_DATA"
+        },
+        {
+          "case": "native stderr is not silently ignored",
+          "code": "STRICT_NATIVE_TAP_STREAM_DATA"
+        },
+        {
+          "case": "native summary casesEntered=True",
+          "code": "HONEST_COMPLETE_CLOSE_BOUNDARY_DATA"
+        },
+        {
+          "case": "native summary casesCompleted=6",
+          "code": "HONEST_COMPLETE_CLOSE_BOUNDARY_DATA"
+        },
+        {
+          "case": "native summary connections=9",
+          "code": "FINITE_NATIVE_CONNECTION_COUNTS_DATA"
+        },
+        {
+          "case": "native summary connections=3",
+          "code": "FINITE_NATIVE_CONNECTION_COUNTS_DATA"
+        },
+        {
+          "case": "native summary silentConnections=0",
+          "code": "FINITE_NATIVE_CONNECTION_COUNTS_DATA"
+        },
+        {
+          "case": "native summary requests=4",
+          "code": "FINITE_NATIVE_CONNECTION_COUNTS_DATA"
+        },
+        {
+          "case": "native summary httpsClosed=False",
+          "code": "HONEST_COMPLETE_CLOSE_BOUNDARY_DATA"
+        },
+        {
+          "case": "native summary tcpClosed=False",
+          "code": "HONEST_COMPLETE_CLOSE_BOUNDARY_DATA"
+        },
+        {
+          "case": "native summary cleanupDestroyedSockets=1",
+          "code": "HONEST_COMPLETE_CLOSE_BOUNDARY_DATA"
+        },
+        {
+          "case": "native summary allClientHandlesDrained=False",
+          "code": "HONEST_COMPLETE_CLOSE_BOUNDARY_DATA"
+        },
+        {
+          "case": "native summary actualLateSocketAssignmentsObserved=0",
+          "code": "ACTUAL_LATE_SOCKET_SUM_DATA"
+        },
+        {
+          "case": "native summary unobservedLateSocketPathQualified=True",
+          "code": "HONEST_COMPLETE_CLOSE_BOUNDARY_DATA"
+        },
+        {
+          "case": "native summary nonclosingSocketQualified=True",
+          "code": "HONEST_COMPLETE_CLOSE_BOUNDARY_DATA"
+        },
+        {
+          "case": "native summary SDK=True",
+          "code": "HONEST_COMPLETE_CLOSE_BOUNDARY_DATA"
+        },
+        {
+          "case": "native summary SQLite=True",
+          "code": "HONEST_COMPLETE_CLOSE_BOUNDARY_DATA"
+        },
+        {
+          "case": "native summary nonce=True",
+          "code": "HONEST_COMPLETE_CLOSE_BOUNDARY_DATA"
+        },
+        {
+          "case": "native summary paymentSigning=True",
+          "code": "HONEST_COMPLETE_CLOSE_BOUNDARY_DATA"
+        },
+        {
+          "case": "native summary externalNetwork=True",
+          "code": "HONEST_COMPLETE_CLOSE_BOUNDARY_DATA"
+        },
+        {
+          "case": "native summary fullDpGraph=True",
+          "code": "HONEST_COMPLETE_CLOSE_BOUNDARY_DATA"
+        },
+        {
+          "case": "owner observation (0, 'index', True)",
+          "code": "DRAINED_OR_UNKNOWN_OWNER_NOT_CLEANED_BY_FIXTURE_DATA"
+        },
+        {
+          "case": "owner observation (0, 'requestStarts', True)",
+          "code": "DRAINED_OR_UNKNOWN_OWNER_NOT_CLEANED_BY_FIXTURE_DATA"
+        },
+        {
+          "case": "owner observation (0, 'phase', 'CLOSE_UNKNOWN')",
+          "code": "DRAINED_OR_UNKNOWN_OWNER_NOT_CLEANED_BY_FIXTURE_DATA"
+        },
+        {
+          "case": "owner observation (1, 'unknown', False)",
+          "code": "DRAINED_OR_UNKNOWN_OWNER_NOT_CLEANED_BY_FIXTURE_DATA"
+        },
+        {
+          "case": "owner observation (2, 'beforeStopHandshakeTimerStartAttempts', 0)",
+          "code": "NO_NEW_HANDSHAKE_WORK_AFTER_STOP_DATA"
+        },
+        {
+          "case": "owner observation (3, 'handshakeTimerStartAttempts', 1)",
+          "code": "STOP_GATE_PROGRESS_RELATION_DATA"
+        },
+        {
+          "case": "owner observation (4, 'handlesDrained', False)",
+          "code": "DRAINED_OR_UNKNOWN_OWNER_NOT_CLEANED_BY_FIXTURE_DATA"
+        },
+        {
+          "case": "owner observation (5, 'authenticatedTlsHandshakes', 1)",
+          "code": "NO_NEW_HANDSHAKE_WORK_AFTER_STOP_DATA"
+        },
+        {
+          "case": "owner observation (6, 'requestStarts', 1)",
+          "code": "DRAINED_OR_UNKNOWN_OWNER_NOT_CLEANED_BY_FIXTURE_DATA"
+        },
+        {
+          "case": "closure DATA state",
+          "code": "ACTUAL_OWNED_TASK_CLOSURE_DATA"
+        },
+        {
+          "case": "closure DATA id",
+          "code": "ACTUAL_OWNED_TASK_CLOSURE_DATA"
+        },
+        {
+          "case": "closure DATA outcome",
+          "code": "ACTUAL_OWNED_TASK_CLOSURE_DATA"
+        },
+        {
+          "case": "closure DATA commands",
+          "code": "EXACT_OWNED_COMMAND_CARDINALITY_DATA"
+        },
+        {
+          "case": "closure DATA scratch_files",
+          "code": "CLEANUP_NOT_INFERRED_FROM_CLOSED_DATA"
+        },
+        {
+          "case": "foreign task cleanup DATA",
+          "code": "SEPARATE_EXACT_OWNED_CLEANUP_DATA"
+        },
+        {
+          "case": "object cleanup not authorized DATA",
+          "code": "SEPARATE_EXACT_OWNED_CLEANUP_DATA"
+        },
+        {
+          "case": "native tripwire native_selection",
+          "code": "NEW_EXACT_SEVEN_CASE_HUMAN_SCOPE_REQUIRED"
+        },
+        {
+          "case": "native tripwire approval_manifest_sha256",
+          "code": "NEW_EXACT_SEVEN_CASE_HUMAN_SCOPE_REQUIRED"
+        },
+        {
+          "case": "native tripwire approval_source_rows_sha256",
+          "code": "NEW_EXACT_SEVEN_CASE_HUMAN_SCOPE_REQUIRED"
+        },
+        {
+          "case": "native tripwire manager",
+          "code": "EXPLICIT_PRIVATE_NATIVE_IDENTITIES_REQUIRED"
+        },
+        {
+          "case": "native tripwire execute",
+          "code": "EXACT_ONE_PRE_NATIVE_OR_EXECUTE_MODE"
+        },
+        {
+          "case": "native tripwire pre_native_plan",
+          "code": "EXACT_ONE_PRE_NATIVE_OR_EXECUTE_MODE"
+        },
+        {
+          "case": "native tripwire volume_uuid",
+          "code": "EXACT_PRIVATE_ROOT_AND_VOLUME_PINS"
+        },
+        {
+          "case": "native tripwire store_id",
+          "code": "EXACT_PRIVATE_ROOT_AND_VOLUME_PINS"
+        }
+      ],
+      "selectedCases": 161,
+      "taskStorageInvoked": false,
+      "testTlsKeyGenerated": false
+    },
+    "sourceAndProtectedInputsUnchanged": true,
+    "sourceInputs": 17,
+    "protectedInputs": 249,
+    "priorFailedDataAttempt": {
+      "actualExit": 1,
+      "complete": true,
+      "inputComplete": true,
+      "inputBytes": 0,
+      "reason": null,
+      "elapsedSeconds": 0.20329120798851363,
+      "stdoutBytes": 0,
+      "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderrBytes": 2061,
+      "stderrSha256": "7e37edcec9940fc921a48e38826058f5d61123588f823b8c6a43b28f4a6c3820",
+      "failureCode": "ONLY_SUCCESSFUL_SELECTED_TAP_DATA",
+      "cause": "The directive detector incorrectly treated the required TAP todo-0 total as a skip/TODO directive.",
+      "corrected": "Skip/TODO directives are rejected only on case result lines. Complete exact seven-case DATA including todo-0 now passes.",
+      "nativeExecutionPerformed": false,
+      "rawTraceRetainedPrivately": true
+    }
+  },
+  "sourcePins": [
+    {
+      "path": "qualification/funding_post_native_stop_tls_v2_managed_data.py",
+      "bytes": 18153,
+      "LF": 257,
+      "sha256": "2b49c538362e7221063500267803a1da855a4c6e525da50ff55daedc8d739443",
+      "gitBlob": "8fcbf6fc9c84f8ce3db2375b8b9112c0a76058e8"
+    },
+    {
+      "path": "qualification/funding_tls_current_gate.py",
+      "bytes": 7969,
+      "LF": 145,
+      "sha256": "9777b8dca3c8c86e543c1f202c0cde248280ed3a108df4a688565ccf83132936",
+      "gitBlob": "91362d22ca606a6711612b02ecea3c6e92c55a59"
+    },
+    {
+      "path": "qualification/run-capacity-native-paced-timer-managed-v3.local.py",
+      "bytes": 31856,
+      "LF": 518,
+      "sha256": "5f3f6893559a9fdce3d7c19b9d729996a14f157822d1938bbad3ae25daeef22e",
+      "gitBlob": "5956f77026eb0f9f8024318aaa100158ae7b0b30"
+    },
+    {
+      "path": "qualification/run-capacity-native-workload-v3.local.py",
+      "bytes": 26105,
+      "LF": 395,
+      "sha256": "4e2e29c31ae10c661bd5599506cda87482d030fc328dbde1e3e1066db5dba9e6",
+      "gitBlob": "eac94ea35f381307f61db1b7d709f29e1c23b8a5"
+    },
+    {
+      "path": "qualification/run-funding-post-native-stop-tls-v2-managed.local.py",
+      "bytes": 19823,
+      "LF": 320,
+      "sha256": "30cde1798dfe72b2f575bd5e0592e769728071436f44d1d1c571487ebea1e318",
+      "gitBlob": "33f79d8fa3158559f4eb3add855ce69d27e0f5c2"
+    },
+    {
+      "path": "package.json",
+      "bytes": 2677,
+      "LF": 40,
+      "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+      "gitBlob": "45752ffde39d29666094f7f1c755060d75e43deb"
+    },
+    {
+      "path": "src/service-credit-funding-post-native-https-transport.js",
+      "bytes": 20632,
+      "LF": 351,
+      "sha256": "61751ba97d98f02393cdf95fba166ece9f517b6e98db66ee05f3d4a52762f3fe",
+      "gitBlob": "368475ea019efc0e68eb06a55d8e87e721ec633a"
+    },
+    {
+      "path": "src/service-credit-funding-post-native-response.js",
+      "bytes": 7903,
+      "LF": 157,
+      "sha256": "b5084844ecf029445bc55efd0b9d0ef61b8c2e65424ea74a6dfb30941f9f676c",
+      "gitBlob": "0bae9c30c7a11624612418bb6a1e7643effb0775"
+    },
+    {
+      "path": "src/service-credit-native-client-close-owner.js",
+      "bytes": 7750,
+      "LF": 157,
+      "sha256": "519809b2cc6b2bf2d37cf6048e68847255f75dc9869a1fc1119bae310462fbd7",
+      "gitBlob": "ce749d7f9637a1afffb019a89c0f0c4b2387fb92"
+    },
+    {
+      "path": "src/service-credit-native-client-request-stop-owner.js",
+      "bytes": 5794,
+      "LF": 113,
+      "sha256": "1a1d9f0dec325210251f3f6aedb92a30e820d04f7a0dd710f25b3c8fd0ec079c",
+      "gitBlob": "d99031babeabc5360d4950fbbe2633b6589aca37"
+    },
+    {
+      "path": "src/service-credit-funding-post-readable-flow.js",
+      "bytes": 1568,
+      "LF": 34,
+      "sha256": "e624b56cabfb72aed927f0fb78d866b90da2bde5aefdadd71a16f65159e48d4e",
+      "gitBlob": "ac52bba7279286e6a0b33b0feca57d8a1eefc6c5"
+    },
+    {
+      "path": "qualification/funding-post-native-stop-tls-v2.behavior.draft.mjs",
+      "bytes": 18695,
+      "LF": 300,
+      "sha256": "123abf76ac91a6eeb02091a8f76454d3fb069211882c88ee5e922cfe41bd3973",
+      "gitBlob": "5529612e87b8c370f3112b0694072edfdd6c36c6"
+    },
+    {
+      "path": "qualification/funding-post-native-stop-tls-v2.selection.draft.mjs",
+      "bytes": 1227,
+      "LF": 16,
+      "sha256": "ca93c20c3f2f4c3b3bb3ad63deda4e051495eab556cdf4c22f5bf432b65ecab2",
+      "gitBlob": "ff8b684445441ec2c27da192024c6dc0399c83f7"
+    },
+    {
+      "path": "qualification/funding_post_native_stop_tls_v2_source_data.py",
+      "bytes": 9231,
+      "LF": 160,
+      "sha256": "53f46884e6141d4a9de9d06568c47b4ca810f5d8bfeb9c64f33a5d88e55309c4",
+      "gitBlob": "e3aa15f6b6a363ad004f97cf2f41c187c62ad64c"
+    },
+    {
+      "path": "qualification/funding-post-native-stop-tls-v2.inputs.json",
+      "bytes": 4594,
+      "LF": 137,
+      "sha256": "d6ffe79e2699758c5b2bde909c3d5255c17356836b208e2d1bbdfea789f10b91",
+      "gitBlob": "e31ebdaa3f4fe18dbe643b03537b2d3dc1e0b207"
+    },
+    {
+      "path": "qualification/funding-post-native-stop-tls-v2.managed-inputs.json",
+      "bytes": 4127,
+      "LF": 123,
+      "sha256": "ff31e8b33675c806133f258d121a3b1f7a9ed18efde28130f1c3a0edda94c647",
+      "gitBlob": "59931282e7d08498647b89202888d2ecd4621854"
+    },
+    {
+      "path": "qualification/funding_post_native_stop_tls_v2_managed.behavior.py",
+      "bytes": 19474,
+      "LF": 254,
+      "sha256": "7d0ba9888542e8ee6fc16279c147bc6af61f9428490482822d219625a1c685cd",
+      "gitBlob": "b2913406680724e77fc35fc6ea03413f2f0e788f"
+    }
+  ],
+  "managedManifest": {
+    "kind": "FUNDING_STOP_TLS_V2_MANAGED_SOURCE_NOT_NATIVE_AUTHORITY",
+    "version": 2,
+    "sourceParent": "087a135263d1474390577ffcefb651cb9ad59815",
+    "pythonControls": [
+      {
+        "path": "qualification/funding_post_native_stop_tls_v2_managed_data.py",
+        "bytes": 18153,
+        "LF": 257,
+        "sha256": "2b49c538362e7221063500267803a1da855a4c6e525da50ff55daedc8d739443",
+        "gitBlob": "8fcbf6fc9c84f8ce3db2375b8b9112c0a76058e8"
+      },
+      {
+        "path": "qualification/funding_tls_current_gate.py",
+        "bytes": 7969,
+        "LF": 145,
+        "sha256": "9777b8dca3c8c86e543c1f202c0cde248280ed3a108df4a688565ccf83132936",
+        "gitBlob": "91362d22ca606a6711612b02ecea3c6e92c55a59"
+      },
+      {
+        "path": "qualification/run-capacity-native-paced-timer-managed-v3.local.py",
+        "bytes": 31856,
+        "LF": 518,
+        "sha256": "5f3f6893559a9fdce3d7c19b9d729996a14f157822d1938bbad3ae25daeef22e",
+        "gitBlob": "5956f77026eb0f9f8024318aaa100158ae7b0b30"
+      },
+      {
+        "path": "qualification/run-capacity-native-workload-v3.local.py",
+        "bytes": 26105,
+        "LF": 395,
+        "sha256": "4e2e29c31ae10c661bd5599506cda87482d030fc328dbde1e3e1066db5dba9e6",
+        "gitBlob": "eac94ea35f381307f61db1b7d709f29e1c23b8a5"
+      },
+      {
+        "path": "qualification/run-funding-post-native-stop-tls-v2-managed.local.py",
+        "bytes": 19823,
+        "LF": 320,
+        "sha256": "30cde1798dfe72b2f575bd5e0592e769728071436f44d1d1c571487ebea1e318",
+        "gitBlob": "33f79d8fa3158559f4eb3add855ce69d27e0f5c2"
+      }
+    ],
+    "innerSelection": {
+      "path": "qualification/funding-post-native-stop-tls-v2.inputs.json",
+      "bytes": 4594,
+      "LF": 137,
+      "sha256": "d6ffe79e2699758c5b2bde909c3d5255c17356836b208e2d1bbdfea789f10b91",
+      "gitBlob": "e31ebdaa3f4fe18dbe643b03537b2d3dc1e0b207"
+    },
+    "innerSourceRowsSha256": "17bbf55bc2832b2049d797daabe14b3488e829198cfb4490290f6bbe7286d76b",
+    "effectsCeiling": {
+      "selectedCases": 7,
+      "maximumRuns": 1,
+      "opensslCommands": 1,
+      "nodeCommands": 1,
+      "nodeChildren": 0,
+      "loopbackListeners": 2,
+      "loopbackConnections": 8,
+      "taskQuotaBytes": 4194304,
+      "minimumFreeFloorBytes": 10737418240,
+      "nodeTimeoutSeconds": 45,
+      "SDK": false,
+      "SQLite": false,
+      "nonce": false,
+      "walletPaymentCapabilityProviderSigning": false,
+      "fullDpGraph": false,
+      "externalNetwork": false,
+      "nativeOsNetworkSandbox": false
+    },
+    "resources": {
+      "taskQuotaBytes": 4194304,
+      "expectedPeakBytes": 4194304,
+      "minimumFreeBytes": 10737418240,
+      "safetyMarginBytes": 1073741824,
+      "metadataStoreQuotaBytesReserved": 4194304,
+      "requiredFreeBytesBeforeOtherReservations": 11819548672,
+      "opensslTimeoutSeconds": 20,
+      "opensslStdoutLimit": 16384,
+      "opensslStderrLimit": 65536,
+      "nodeTimeoutSeconds": 45,
+      "nodeStdoutLimit": 65536,
+      "nodeStderrLimit": 65536,
+      "maximumRuns": 1,
+      "opensslCommands": 1,
+      "nodeCommands": 1,
+      "nodeChildren": 0,
+      "selectedCases": 7,
+      "loopbackListeners": 2,
+      "loopbackConnections": 8,
+      "allSiblingReservationsRequired": true,
+      "maximumReservationRoots": 256,
+      "automaticRetry": false,
+      "initializeRoot": false,
+      "cleanupHistoricalData": false,
+      "nativeOsNetworkSandbox": false,
+      "SDK": false,
+      "SQLite": false,
+      "nonce": false,
+      "walletPaymentCapabilityProviderSigning": false,
+      "externalNetwork": false,
+      "fullDpGraph": false
+    },
+    "storagePolicy": {
+      "min_free_bytes": 10737418240,
+      "safety_margin_bytes": 1073741824,
+      "task_quota_bytes": 4194304,
+      "scratch_quota_bytes": 4194304,
+      "store_quota_bytes": 4194304,
+      "metadata_quota_bytes": 4194304,
+      "max_tasks": 1,
+      "max_objects": 128,
+      "max_commands_per_task": 2,
+      "max_output_bytes": 65536,
+      "abandoned_after_seconds": 86400,
+      "unreferenced_after_seconds": 1209600
+    },
+    "nativeSelection": "one-new-approved-seven-case-funding-stop-tls-v2",
+    "managedLauncherSourceAuthored": true,
+    "managedLauncherNativeQualified": false,
+    "nativeExecuted": false,
+    "nativeAllowanceGranted": false,
+    "nativeOsNetworkSandbox": false,
+    "authority": "NONE"
+  },
+  "qualificationLimits": {
+    "nativeRunsExecuted": 0,
+    "opensslCommandsExecuted": 0,
+    "nodeCommandsExecuted": 0,
+    "nodeByteHashesPerformed": 0,
+    "nativeBodyImported": false,
+    "listenerSocketsOpened": 0,
+    "testTlsKeyGenerated": false,
+    "managerImported": false,
+    "taskStorageInvoked": false,
+    "storageAdmissionPerformed": false,
+    "mountedVolumeOrActualReservationsMeasured": false,
+    "orchestrationSubstitutesAreInMemoryDataOnly": true,
+    "physicalCapacityOrToolAdmissionPerformed": false,
+    "sevenRealNativeScenariosExecuted": false,
+    "nativeTransportCloseOrTimingQualified": false,
+    "fullDpQualified": false,
+    "productionQualified": false,
+    "newNativeAllowanceGranted": false,
+    "oldR4ApprovalConsumed": false,
+    "readyOrAuthorizedToExecute": false
+  },
+  "publication": {
+    "sourceFiles": [
+      "qualification/run-funding-post-native-stop-tls-v2-managed.local.py",
+      "qualification/funding_post_native_stop_tls_v2_managed_data.py",
+      "qualification/funding-post-native-stop-tls-v2.managed-inputs.json",
+      "qualification/funding_post_native_stop_tls_v2_managed.behavior.py",
+      "qualification/funding-post-native-stop-tls-v2.managed-source-actual-local-result.json",
+      "docs/P2_FUNDING_POST_NATIVE_STOP_TLS_V2_MANAGED_SOURCE.md"
+    ],
+    "mainFiles": [],
+    "packageWorkflowAndHostedProfileUnchanged": true,
+    "hostedQueries": 0,
+    "newHostedRunRequested": false,
+    "privateReportsPublished": false
+  },
+  "nextGate": "A new exact finite human native scope and current physical source/tool/volume/all-sibling capacity admission are required before any pre-native or execute invocation. Neither old DP/R4 permission nor these DATA fixtures applies.",
+  "authority": "NONE"
+}
