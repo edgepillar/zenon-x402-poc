@@ -1,7 +1,8 @@
 import { types as utilTypes } from 'node:util';
 
 const F = Object.freeze, DESC = Object.getOwnPropertyDescriptor, PROTO = Object.getPrototypeOf;
-const KEYS = Reflect.ownKeys, OWN = Object.hasOwn, APPLY = Reflect.apply, IS_PROXY = utilTypes.isProxy;
+const KEYS = Reflect.ownKeys, OWN = Object.hasOwn, DEFINE = Object.defineProperty;
+const APPLY = Reflect.apply, IS_PROXY = utilTypes.isProxy;
 const FIELDS = F(['destroyRequest', 'destroySocket']);
 
 /**
@@ -28,7 +29,9 @@ export function createNativeHttpsClientRequestStopOwner(configuration) {
     if (!d || !OWN(d, 'value') || !d.enumerable || typeof d.value !== 'function'
         || IS_PROXY(d.value) || PROTO(d.value) !== Function.prototype || !Object.isFrozen(d.value))
       fail('configuration_rejected');
-    callbacks[name] = d.value;
+    // Assignment could publish/substitute this capability through an inherited
+    // accessor, or reject a valid callback under an inherited read-only name.
+    DEFINE(callbacks, name, { value: d.value });
   }
   const DESTROY_REQUEST = callbacks.destroyRequest, DESTROY_SOCKET = callbacks.destroySocket;
   configuration = null;
