@@ -1,0 +1,1326 @@
+{
+  "kind": "ACTUAL_LOCAL_PACED_TIMER_V3_SOURCE_AND_COMPLETE_PROFILE_ASSEMBLY_DATA_NOT_NATIVE",
+  "version": 1,
+  "sourceParent": "274a89271908f435f9575285680e4c3a89df54d6",
+  "mainBefore": "a76dcda61eeea05b28a499fde02d4cee9028fc18",
+  "contract": {
+    "parentProfileVersion": 3,
+    "resourcePlanVersion": 3,
+    "pacedCaptureVersion": 4,
+    "pacedTimerCaptureVersion": 1,
+    "parentSourceRows": 551,
+    "parentApplicationFiles": 147,
+    "parentPackageRowsDeclared": 404,
+    "childSourceRows": 543,
+    "childApplicationFiles": 139,
+    "parentSourceRowsSha256": "0e0533ba2e3bfdf97b2670a0ee693c64ddc04ea93bf52b4e779d9d073cb51c90",
+    "childSourceRowsSha256": "d756740994aeb53ebeee47320d732583d96381dfa8c00e18a30f414e70a77027",
+    "sourceOnlyDriverHasNativeExecutionBranch": false,
+    "sourceOnlyDriverConsumesOldR4Approval": false,
+    "childBytesEqualActualFrozenR4Producer": true,
+    "wholeSourceRegistryCopied": false,
+    "wholeExpectedChildProfileMaterialized": false,
+    "defaultWorkloadReduced": false
+  },
+  "actual": {
+    "validated": true,
+    "selectedCases": 102,
+    "testsRun": 102,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "python": {
+      "actualExit": 0,
+      "outputComplete": true,
+      "inputComplete": true,
+      "elapsedSeconds": 0.36082558397902176,
+      "stdoutBytes": 740,
+      "stdoutSha256": "ebe2bf4c79516107b8d4e2d1df6a75c11355d0cc7829bb3e42447d3e782b2514",
+      "stderrBytes": 0,
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sourceEntrySha256": "a7cf49abc3d87fbe910d0bfc2b9dc21fbc5fa82406a50a9e00b25e90fb31db78"
+    },
+    "details": {
+      "defaultCompleteProfileBytes": 971802,
+      "defaultEntryPlanBytes": 1359,
+      "maximumLanes": {
+        "childProfiles": 32,
+        "lanes": 16,
+        "parentProfileBytes": 215652,
+        "sharedCanonicalBytes": 385038,
+        "sharedFieldSerializations": 4,
+        "wholeExpectedChildBytesMaterialized": 0
+      },
+      "sourceApplicationFilesRead": 147,
+      "sourceControls": 9
+    },
+    "sourceAndProtectedInputsUnchanged": true,
+    "selectedSourceFiles": 161,
+    "protectedFiles": 77
+  },
+  "history": [
+    {
+      "attempt": 1,
+      "status": "FAILURE_BEFORE_FINAL_DATA_SUMMARY",
+      "python": {
+        "actualExit": 1,
+        "outputComplete": true,
+        "inputComplete": true,
+        "elapsedSeconds": 0.354280083993217,
+        "stdoutBytes": 0,
+        "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderrBytes": 887,
+        "stderrSha256": "5458c627b846aa0469de15f5b86ce96636ee3efdd80b9f4ffccaaa30c9bedc2c",
+        "sourceEntrySha256": "04b996f53ad6676c66915d2f6cc84d6b001c79e42af079344b80b3cba905cb3a"
+      },
+      "testCountsEstablished": false,
+      "cause": "Test parameter loop shadowed the driver source path; final source reread refused. No native entry.",
+      "fixed": "Use a distinct stable driver_path variable.",
+      "rawPrivateDiagnosticRetained": true
+    },
+    {
+      "attempt": 2,
+      "status": "FAILURE",
+      "python": {
+        "actualExit": 1,
+        "outputComplete": true,
+        "inputComplete": true,
+        "elapsedSeconds": 0.401837749988772,
+        "stdoutBytes": 575,
+        "stdoutSha256": "b0da11b43d2f9ae46f0c880b6c411b0e29b6f8b6a73ae09b5e3a475285dba4a7",
+        "stderrBytes": 2139,
+        "stderrSha256": "39cbe643f283bf6ed0800f6fb39d89c349082684393b625c0b0411b81cf76a62",
+        "sourceEntrySha256": "64e22701639b3b192c54418c5259f79fd8b1e29dcd41cb5c924a62ff9ed0eb60"
+      },
+      "testsRun": 101,
+      "failures": 0,
+      "errors": 1,
+      "skipped": 0,
+      "cause": "Sixteen-lane DATA fixture retained the default four in-flight slots; real recording capacity refused.",
+      "fixed": "Declare sixteen slots for that separate maximum-lane fixture; add an explicit refusal control for unchanged four slots. The selected default remains unchanged.",
+      "rawPrivateDiagnosticRetained": true
+    }
+  ],
+  "coverage": {
+    "completeDefault": {
+      "laneIds": [
+        "lane.one",
+        "lane.two"
+      ],
+      "warmupCallsPerLane": 1,
+      "measurementCallsPerLane": 4,
+      "workloadPlanSha256": "cbbf3b62215473ea614867461eb27ceefc3c5478f6a70eeac781982ad5689a2f",
+      "completeProfiles": 5,
+      "completeProfileBytes": 971802,
+      "entryPlanBytes": 1359
+    },
+    "otherDeclaredLaneCounts": [
+      1,
+      3,
+      16
+    ],
+    "maximumDeclaredChildProfiles": 32,
+    "originalChildBytesCompared": true,
+    "selfConsistentForgedChildDigestsRefused": true,
+    "wholeResourceAndPolicyFieldComparisons": true,
+    "nativeAndStorageFlagsNotExposed": true,
+    "driverReadsApplicationBytesWithoutImportingThem": true,
+    "realPinnedOuterV4DataControlPrepared": true
+  },
+  "method": {
+    "python": "3.12.14",
+    "platform": "Darwin arm64",
+    "pythonCommands": 3,
+    "finalPythonControlCommands": 1,
+    "sdkCommands": 0,
+    "nodeCommands": 0,
+    "testTlsCommands": 0,
+    "packageOrNodeBytesOpened": false,
+    "profileRegistryAndRootFactsSynthetic": true,
+    "privateProfileFilesWritten": 0,
+    "qualificationScratchCreated": false,
+    "sourceApplicationBytesOnlyRead": true,
+    "sourceOrPackageTreesCopied": 0,
+    "fixtureOutputPersisted": false,
+    "rawPrivateReceiptsRetained": true,
+    "osSandboxClaim": false
+  },
+  "publication": {
+    "developmentFiles": [
+      "qualification/native_capacity_paced_timer_profile_bundle_v3.py",
+      "qualification/run-capacity-native-paced-timer-source-v3.local.py",
+      "qualification/capacity-native-paced-timer-source-v3.launch-inputs.json",
+      "qualification/native_capacity_paced_timer_source_assembly_v3.behavior.py",
+      "qualification/native-capacity-paced-timer-source-assembly-v3.actual-local-result.json",
+      "docs/SERVICE_CREDIT_CAPACITY_PACED_TIMER_SOURCE_ASSEMBLY_V3.md"
+    ],
+    "mainFiles": [
+      "qualification/native_capacity_paced_timer_profile_bundle_v3.py",
+      "qualification/native-capacity-paced-timer-source-assembly-v3.actual-local-result.json",
+      "docs/SERVICE_CREDIT_CAPACITY_PACED_TIMER_SOURCE_ASSEMBLY_V3.md"
+    ],
+    "sourceOnlyDriverAndItsHarnessDevelopmentOnly": true,
+    "mainBundleStdlibOnly": true,
+    "mainDefaultRuntimeChanged": false,
+    "fullApplicationGraphNotPromoted": true,
+    "currentAutomaticHostedProfileCases": 27,
+    "new102ControlsHosted": false
+  },
+  "remaining": {
+    "installed551SourceContextQualified": false,
+    "taskRootAndCasOriginsAuthenticated": false,
+    "timerAwareManagedNativeControllerImplemented": false,
+    "actualManagedNativeSdkSqlRun": false,
+    "storageFloorAndAllReservationsAdmitted": false,
+    "physicalTimerLivenessQualified": false,
+    "sustainableCapacityQualified": false,
+    "realPaymentOrPilotQualified": false,
+    "productionQualified": false
+  },
+  "effects": {
+    "nativeProcesses": 0,
+    "sockets": 0,
+    "sqlite": 0,
+    "writeOpens": 0,
+    "SDK": false,
+    "SQL": false,
+    "keys": false,
+    "signatures": false,
+    "nonce": false,
+    "network": false,
+    "manager": false,
+    "newPrivateRoot": false,
+    "newNativeAllowanceGranted": false,
+    "oldR4ApprovalConsumed": false
+  },
+  "sourcePins": [
+    {
+      "path": "package.json",
+      "bytes": 2677,
+      "LF": 40,
+      "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+      "gitBlob": "45752ffde39d29666094f7f1c755060d75e43deb"
+    },
+    {
+      "path": "qualification/capacity-native-full-graph-v3.inputs.json",
+      "bytes": 8697,
+      "LF": 215,
+      "sha256": "3bb597da71736542615047d11af78ad6825df5bdb6e4561747d8c1f9dff7d0df",
+      "gitBlob": "0530e2b08929d45c93b4e4912dc69d27b0645204"
+    },
+    {
+      "path": "qualification/capacity-native-full-namespace-v3.preload-common.draft.mjs",
+      "bytes": 20119,
+      "LF": 282,
+      "sha256": "f65389d097b2dfc128b41860d5690a25cdc6f550afcb7ad8885098d4642f8172",
+      "gitBlob": "fcf7b238b4ac685561559e19c5e53b14246d12ac"
+    },
+    {
+      "path": "qualification/capacity-native-paced-paired-lane-v3.supervisor.draft.mjs",
+      "bytes": 26232,
+      "LF": 292,
+      "sha256": "ae6388a81b37ebfcd20a0e304d5699a2cb3cd91dc11f2f4bb6061b2ca4f5417f",
+      "gitBlob": "e0a1c0c73cafb55919ba680be740f4c3d03ca82c"
+    },
+    {
+      "path": "qualification/capacity-native-paced-supervisor-v3.namespace.preload.draft.mjs",
+      "bytes": 22557,
+      "LF": 316,
+      "sha256": "f593b9367dc832ca2a7fdd65a69eca51938ea0b12590999bf07ed9e58a33ae7b",
+      "gitBlob": "0366ad725790d4441fe3834d3038595437e794f2"
+    },
+    {
+      "path": "qualification/capacity-native-paced-timer-parent-v3.inputs.json",
+      "bytes": 5152,
+      "LF": 134,
+      "sha256": "90eba86d5f14f4226867815667213dc4ac3799e146d65b74eb75441c047a1236",
+      "gitBlob": "0217ad6835534aea21abc03e238f19ad0b21c196"
+    },
+    {
+      "path": "qualification/capacity-native-paced-timer-source-v3.launch-inputs.json",
+      "bytes": 9977,
+      "LF": 247,
+      "sha256": "01460ee967f5b7880f19d4ecd31f14b2c14f3d59e0841de41e5deea81281ee9e",
+      "gitBlob": "59578cb10c6aa3cadcf0b80efb139309790b3b12"
+    },
+    {
+      "path": "qualification/capacity-native-paced-workload-adapter-v3.draft.mjs",
+      "bytes": 21616,
+      "LF": 315,
+      "sha256": "c4100d595beeb5389a379851df570d9aca96c1f4f147ab403119f8309587d89b",
+      "gitBlob": "a5bc5aa1dcc0b8c90267ba00b84f59d71fae3fbd"
+    },
+    {
+      "path": "qualification/capacity-native-paced-workload-v1.plan.json",
+      "bytes": 434,
+      "LF": 1,
+      "sha256": "cbbf3b62215473ea614867461eb27ceefc3c5478f6a70eeac781982ad5689a2f",
+      "gitBlob": "52b75834ac4e2c9b03455be428cd3b96120fa94d"
+    },
+    {
+      "path": "qualification/capacity-native-paced-workload-v3.entry.draft.mjs",
+      "bytes": 8635,
+      "LF": 105,
+      "sha256": "4d204f23d05eec52dbb9acfc2e26ee6fe79a150400a1faa34b39d127a9248288",
+      "gitBlob": "9bf05c803312856a68a33852e3b3e6baad42a9ec"
+    },
+    {
+      "path": "qualification/capacity-native-paired-lane-v3.supervisor.draft.mjs",
+      "bytes": 25906,
+      "LF": 288,
+      "sha256": "33392301ef64e402163f8d21f0ed29334924183f5489408195d38b2251bb8f4a",
+      "gitBlob": "297daf82987510452625e1b1848140025c7f5941"
+    },
+    {
+      "path": "qualification/capacity-native-payer-lane-v3.namespace.preload.draft.mjs",
+      "bytes": 255,
+      "LF": 4,
+      "sha256": "0c6ee76d373c97025ee0686300adf57522d7f3bee06f65a3e25e5b1c303100aa",
+      "gitBlob": "95fffff11b6cac6b1bc306d32c1cc0d7101ac1bd"
+    },
+    {
+      "path": "qualification/capacity-native-payer-lane-v3.owner.draft.mjs",
+      "bytes": 21481,
+      "LF": 341,
+      "sha256": "2f3a3305e025e14083b44ec7c7b8b431c9928500289a7d5ceb51db33d94e7132",
+      "gitBlob": "c7e7feac935cb2ea2357cfa99399ae47b5de93c6"
+    },
+    {
+      "path": "qualification/capacity-native-payer-lane-v3.worker.draft.mjs",
+      "bytes": 21280,
+      "LF": 300,
+      "sha256": "5e36f8524cca16893de5518388a0b4813d2292dcf69285641b236eae2ed194f0",
+      "gitBlob": "ecf9126439399c163ca75ee069329d61e9d8dd71"
+    },
+    {
+      "path": "qualification/capacity-native-payer-lane.protocol.js",
+      "bytes": 9101,
+      "LF": 155,
+      "sha256": "6f24dfd6172ec6df1acc528caecbc22a220b3025f92d2c3ed9508d2e16a0c8e3",
+      "gitBlob": "23ca9ac95597506f3e2a41a5fedc2cd3daecce7b"
+    },
+    {
+      "path": "qualification/capacity-native-service-lane-v3.namespace.preload.draft.mjs",
+      "bytes": 259,
+      "LF": 4,
+      "sha256": "0ccd5fff93a1b6503f17d91f87e6618849f7206030132a5eb21f748353f454b4",
+      "gitBlob": "cfa68fbe659c823b9c216c23d9b2167179086ae4"
+    },
+    {
+      "path": "qualification/capacity-native-service-lane-v3.owner.draft.mjs",
+      "bytes": 30358,
+      "LF": 333,
+      "sha256": "b2f3e039d08c905fe74a1eae2ae7fc5d923553f3bb284f63e4509f7db0c071a2",
+      "gitBlob": "d368e43d91a420426fe23c969827cb619feefc29"
+    },
+    {
+      "path": "qualification/capacity-native-service-lane-v3.worker.draft.mjs",
+      "bytes": 9052,
+      "LF": 120,
+      "sha256": "07d5846dd7fcc6071080fa2eb0aab9dfebf5a5d33806aabe3ec172ae18612a99",
+      "gitBlob": "4ce77f4cf0306fdbf209a34d84a4687230b324c9"
+    },
+    {
+      "path": "qualification/capacity-native-service-window-v3.owner.draft.mjs",
+      "bytes": 5151,
+      "LF": 87,
+      "sha256": "89e0fded8af54694208861d2abcb7947afd30d96e4a9e3b8296de64870d66f7e",
+      "gitBlob": "31d86a2c924bb27ba3d2fd619d0bdb63db8690cc"
+    },
+    {
+      "path": "qualification/capacity-native-supervisor-v3.namespace.preload.draft.mjs",
+      "bytes": 265,
+      "LF": 4,
+      "sha256": "3c8716ed84303cc533f6406e8fb68b66137d62f34b708ad751c94def8d35690c",
+      "gitBlob": "8217ad4bd174415e1a24d2dcceb115cbf8b82142"
+    },
+    {
+      "path": "qualification/capacity-native-workload-adapter-v3.draft.mjs",
+      "bytes": 18302,
+      "LF": 269,
+      "sha256": "1886f4a6190e01a5659069d9e2e7a18d13128eace740f9903f7c02fa36832954",
+      "gitBlob": "f0d793cb3b0015d3ffb045eda5ddbc2130627970"
+    },
+    {
+      "path": "qualification/capacity-native-workload-v3.entry.draft.mjs",
+      "bytes": 7610,
+      "LF": 98,
+      "sha256": "b8bc90fd8d20a92ce55fe814c8a185411ea6dd2257312660693d4653230d338e",
+      "gitBlob": "255bc77e4cc2ac0e27da741362ccd5173a34491e"
+    },
+    {
+      "path": "qualification/issued-funding-post-native-grant-operator.fixture.draft.mjs",
+      "bytes": 24047,
+      "LF": 313,
+      "sha256": "b1224cc52ef9a5dd67418392b3064ea79d6a7f8c8abb9c7fb9b986a42bb4f587",
+      "gitBlob": "a2438e531abb1fa9103aa43def9e94986d502368"
+    },
+    {
+      "path": "qualification/issued-funding-post-native-rpc-peer.fixture.draft.mjs",
+      "bytes": 20696,
+      "LF": 265,
+      "sha256": "8500fc75a7736a976a9b07efb537e70f7f4f4ca3a1c7a2ee41d33496f8cb706b",
+      "gitBlob": "7b3db68a430419cde14c43fadea9dadfec4ada93"
+    },
+    {
+      "path": "qualification/issued-funding-post-native-vertical.case.draft.mjs",
+      "bytes": 34893,
+      "LF": 487,
+      "sha256": "59240af09c54cf9252b016417091157b182a2ae10993e6f3744694bef2b319d8",
+      "gitBlob": "98fa0e8b5f98c0b47a749d4c68b8ab2195a574f2"
+    },
+    {
+      "path": "qualification/issued-funding-post-native-vertical.inputs-v3.json",
+      "bytes": 138777,
+      "LF": 3836,
+      "sha256": "51ffb5b0ff0052523c1b7f3d75fa24e9be27e60ca3bcc09236b1f439096aaed1",
+      "gitBlob": "3dc05ccffd306e97056b4ed168d8121f63acebbc"
+    },
+    {
+      "path": "qualification/issued-funding-post-native-vertical.preload.draft.mjs",
+      "bytes": 11254,
+      "LF": 162,
+      "sha256": "721972d7e0849fb56fbf105b30bfdd3189ebd4a4c4ce612887fa3b65bc1cd095",
+      "gitBlob": "13d45c646f60b395def3b2ab1e8b4a69b3d2031a"
+    },
+    {
+      "path": "qualification/native_capacity_full_profile_v3.py",
+      "bytes": 23435,
+      "LF": 353,
+      "sha256": "6928303c36f034fc295145563e40304641a91fe7db35d62eb364031bbcff7e6a",
+      "gitBlob": "6268ca35b32c32611b9663e964ddf2485b941ddc"
+    },
+    {
+      "path": "qualification/native_capacity_managed_workload_v3.py",
+      "bytes": 49689,
+      "LF": 646,
+      "sha256": "6d4e2d726bd600b84be387147ee7cd6555daa8b72b8940a8719861a1078b4567",
+      "gitBlob": "c11c7981db6827e68d49dfdf354db3601afb5adc"
+    },
+    {
+      "path": "qualification/native_capacity_paced_timer_envelope_data_v1.py",
+      "bytes": 42658,
+      "LF": 616,
+      "sha256": "88a27b04b2cf83315d91390eef0889bc4c4732336d7fb569487950d8a75a5a28",
+      "gitBlob": "bd6a7df39eacd26f554b2e2c2ac290182789d3c4"
+    },
+    {
+      "path": "qualification/native_capacity_paced_timer_outer_capture_data_v3.py",
+      "bytes": 27697,
+      "LF": 396,
+      "sha256": "580322dbbc0173a42090b28d02e84645999c0310de333fa41db8d897d3ac248d",
+      "gitBlob": "51e9e1f50590e881388d502d58300c5b1957dad4"
+    },
+    {
+      "path": "qualification/native_capacity_paced_timer_parent_profile_v3.py",
+      "bytes": 20887,
+      "LF": 334,
+      "sha256": "6d67d698b9c76088852426be0c1b8d11f90e067c7e850fde227f906a618727de",
+      "gitBlob": "0ac97f5395eddede46ebbc1a1a06769bcfb395d9"
+    },
+    {
+      "path": "qualification/native_capacity_paced_timer_profile_bundle_v3.py",
+      "bytes": 9028,
+      "LF": 140,
+      "sha256": "8dedf77f16e4984cd8b2f225965882e352cb2dd72fe01e28ee320a779d0c7efc",
+      "gitBlob": "5618c85fd2fd216ae438fec4309baf2b8d0332ba"
+    },
+    {
+      "path": "qualification/native_capacity_paced_timer_resource_plan_v3.py",
+      "bytes": 17391,
+      "LF": 276,
+      "sha256": "5519fe20147ae3d03910daf089111a5803648bb5f245916659f07c151bf07997",
+      "gitBlob": "8f28daf355747ff21dd4ab02bd53949e8d0c71ef"
+    },
+    {
+      "path": "qualification/native_capacity_paced_timer_source_assembly_v3.behavior.py",
+      "bytes": 23222,
+      "LF": 369,
+      "sha256": "a7cf49abc3d87fbe910d0bfc2b9dc21fbc5fa82406a50a9e00b25e90fb31db78",
+      "gitBlob": "d7f4f09235f62efa389c99039fc75ab1554acad2"
+    },
+    {
+      "path": "qualification/recovery_crash_native_profile.py",
+      "bytes": 33443,
+      "LF": 538,
+      "sha256": "75c2c9478b7e792a7bade739161af2bb8fb624cd407924ead2cf822dc23dacbd",
+      "gitBlob": "dc93890c4f9772b726e015ddd11d63bfa1a48ad4"
+    },
+    {
+      "path": "qualification/run-capacity-native-paced-timer-source-v3.local.py",
+      "bytes": 12194,
+      "LF": 225,
+      "sha256": "ac1631cfd356cceaa11df85702ef0583bf6e825bec818ec476508dcb072df9e5",
+      "gitBlob": "19b8f05e9c13074b56ecf56d9419eae57fb4643f"
+    },
+    {
+      "path": "src/canonical.js",
+      "bytes": 967,
+      "LF": 26,
+      "sha256": "0d55ddf1727cafb0dcd46df2922305568615552a4d2ae34a5c30e90b9d8d998c",
+      "gitBlob": "5367f9c72ee13017a61630e1f0cffdced21d52c4"
+    },
+    {
+      "path": "src/live-observation.js",
+      "bytes": 12389,
+      "LF": 361,
+      "sha256": "36ce902ffb667b17eaf3e2ac94beb287be1401b34d83f8253407a93d286328c4",
+      "gitBlob": "d29ef9b4c23db397006550728cfb35429c7c09f2"
+    },
+    {
+      "path": "src/live-runtime.js",
+      "bytes": 8126,
+      "LF": 242,
+      "sha256": "354b70662ff501ccc173ab20742f5efcd0e581f784245a1bf2ba51786f2dae7a",
+      "gitBlob": "25d34b1e37de42e6eec81590c2f26e5158c4d3b1"
+    },
+    {
+      "path": "src/native-private-directory-identity.js",
+      "bytes": 1927,
+      "LF": 40,
+      "sha256": "f3945ab75a86fd2d5f8f53baddf6fbd684ee55c68139f9c4f061c3d13b9cc844",
+      "gitBlob": "1500d55d3313cb1a02c07b49108eb3bcfa5f20ad"
+    },
+    {
+      "path": "src/service-credit-activation.js",
+      "bytes": 24719,
+      "LF": 742,
+      "sha256": "9e1a2ce00b2950b290ebd0797d3a770f51ad252288c630ada5ebcd6cef54233a",
+      "gitBlob": "155be6ee91599e10043c0293de23d669e663b512"
+    },
+    {
+      "path": "src/service-credit-bounded-https-ingress-limits.js",
+      "bytes": 2661,
+      "LF": 50,
+      "sha256": "35e2cc603398a929979b2f939f558d43002079038922d6248cc654c425eafb68",
+      "gitBlob": "beb1fa1576a592fe206de34ccbb498ad4a6ed186"
+    },
+    {
+      "path": "src/service-credit-bounded-https-ingress-owner.js",
+      "bytes": 140920,
+      "LF": 4039,
+      "sha256": "7c8a663f8541373c93cf7b90b243a4d5ec88db43a400fbf411c9535571e20830",
+      "gitBlob": "ca95e2876408adeffc44487cbbaaa5471e9b4b29"
+    },
+    {
+      "path": "src/service-credit-bounded-node-https-server-factory.js",
+      "bytes": 26968,
+      "LF": 778,
+      "sha256": "aead901ba154c39ea25e5cdcc363ea91ed6749841f6e8945cd01debc52cae387",
+      "gitBlob": "5900a111df486329e0e0644b78b49048ed551ca7"
+    },
+    {
+      "path": "src/service-credit-bounded-operation-drain.js",
+      "bytes": 4046,
+      "LF": 92,
+      "sha256": "ccaf1742f94a2ae312598c4bb2adc0c6168b1ade0167dbc8990422f5e7037885",
+      "gitBlob": "9cb4987ecd835e7b558d6088d562f417a9179da8"
+    },
+    {
+      "path": "src/service-credit-capability.js",
+      "bytes": 8284,
+      "LF": 256,
+      "sha256": "cb2b96d9a2e56c132dd1b4aca8f1c065b244ecd0e7e92f41ea3f4a8c969d17c3",
+      "gitBlob": "2e19d42c1b9311a75897c84669849f56ae40f785"
+    },
+    {
+      "path": "src/service-credit-capacity-balance-barrier-trace-data.js",
+      "bytes": 10712,
+      "LF": 177,
+      "sha256": "235f5ff9b0b128a393244a545e6d5f83ffb3c8335e358efcc294968d562260e9",
+      "gitBlob": "0674cf00e3906b54441638903827d8bebe6f81aa"
+    },
+    {
+      "path": "src/service-credit-capacity-cohort-writer-trace-data.js",
+      "bytes": 10956,
+      "LF": 181,
+      "sha256": "75c3529584f7c6126f726734d085e107438c7a676ff1f63073956054aedcba65",
+      "gitBlob": "63bee5ad4714d3179666eef371373d4e0416a4a0"
+    },
+    {
+      "path": "src/service-credit-capacity-native-observation-data.js",
+      "bytes": 6173,
+      "LF": 103,
+      "sha256": "d6d19890334fbb6d7e92e605640d4638154f8e3e10588c8e217bf782a675b7ca",
+      "gitBlob": "aaf6b24f65a59e4b421805d7667a5fdf9e72433f"
+    },
+    {
+      "path": "src/service-credit-capacity-paced-timer-trace-data.js",
+      "bytes": 11764,
+      "LF": 187,
+      "sha256": "ec0ada7fa8c67d72f837c49369f470639a28ca0c7185025f74f59dfa73542b18",
+      "gitBlob": "c4ccadf23e10e41da86181a86f7348cedaf8ff23"
+    },
+    {
+      "path": "src/service-credit-capacity-paced-timing-trace-data.js",
+      "bytes": 22759,
+      "LF": 299,
+      "sha256": "4459f9e90692b99af0b831e9acf013b579fe63b2113b8ef5abd81f29c559f5dc",
+      "gitBlob": "0f06c70e53c61497c10b7e4de3fac8697904856e"
+    },
+    {
+      "path": "src/service-credit-capacity-paced-workload-owner-core.js",
+      "bytes": 24519,
+      "LF": 455,
+      "sha256": "5eef2c11c5a10bce0594bb43ea6a9f947974f0d6d8455e160227d35d2233bb26",
+      "gitBlob": "4cb1372f14e18b829fa114fe533bc0f1459f5666"
+    },
+    {
+      "path": "src/service-credit-capacity-parent-timing-trace-data.js",
+      "bytes": 13257,
+      "LF": 213,
+      "sha256": "9b48e9212efa6b000690b32c04f07277d2c868562a1e649766a28aab85e0907d",
+      "gitBlob": "8aecb7664c2a4772870fdeb51d10fe69bc71cb79"
+    },
+    {
+      "path": "src/service-credit-capacity-recorder.js",
+      "bytes": 10801,
+      "LF": 236,
+      "sha256": "eca9bf4cad4717df5d61457044c2c5d0a6bc00b6af81964d09bf18325d4a46ad",
+      "gitBlob": "bc9b0a8a9abd48033e698e100cdc6ef90d2152c9"
+    },
+    {
+      "path": "src/service-credit-capacity-window-recorder.js",
+      "bytes": 13321,
+      "LF": 242,
+      "sha256": "48855e34729ae68c179d6439aed962a719964732c992a83472330b7e41293579",
+      "gitBlob": "6e28e75b4fd6572fbae535ac066334349ed26038"
+    },
+    {
+      "path": "src/service-credit-capacity-window-writer-trace-data.js",
+      "bytes": 8906,
+      "LF": 126,
+      "sha256": "b86377ec5474f85465073e7891bde9f706b167a40cb6677671a6012dab4d9bbd",
+      "gitBlob": "ceabbe01bb341ccf2c9c8f0d89229e3dd4268c5f"
+    },
+    {
+      "path": "src/service-credit-capacity-windowed-async-workload-owner-core.js",
+      "bytes": 36252,
+      "LF": 645,
+      "sha256": "fda636116343c497f269d926ae8e3a61f1b9cd1cf11b493c3d9ba99ef55a7444",
+      "gitBlob": "cc9eae4a2e553a0e71a531f191648c9cbe0cb101"
+    },
+    {
+      "path": "src/service-credit-custodied-http-client.js",
+      "bytes": 12646,
+      "LF": 324,
+      "sha256": "35997f41c9a5162fe29ed56776181a1691c0a0a69c7dbdfe8b61785af3998145",
+      "gitBlob": "33879d019492de8d278b0d0dc998bd1c7806b413"
+    },
+    {
+      "path": "src/service-credit-custodied-request-owner.js",
+      "bytes": 55155,
+      "LF": 1358,
+      "sha256": "2ba222760d4a922bf0466d95fd2671076b9d19b8c5fa4ea2cb3c66b1338562eb",
+      "gitBlob": "7f99bdadcc622db203e864edb12a1f4d1059a965"
+    },
+    {
+      "path": "src/service-credit-custodied-sqlite-http-client.js",
+      "bytes": 25423,
+      "LF": 620,
+      "sha256": "407063b8d61ff7138f1a9374dea596a250e212ba04304163db2b7e824af03cd3",
+      "gitBlob": "e8082803bb8f0f2c780d660c897bfb6856ba7932"
+    },
+    {
+      "path": "src/service-credit-durable-execution-owner.js",
+      "bytes": 40833,
+      "LF": 1301,
+      "sha256": "a63a795dda77489f7da0682d83a0683cf07240f83b803f449668cb687a956863",
+      "gitBlob": "f0fd445a17466dd1ab83c785c44aa5e6fdf1e765"
+    },
+    {
+      "path": "src/service-credit-durable-http-session.js",
+      "bytes": 13978,
+      "LF": 425,
+      "sha256": "a0d6d1436cdb697f125fee2f4dc723a5ddcfd2ee7063b55d56fa006bb8ba69bf",
+      "gitBlob": "307b72b8a1d114463ad8e18935312b18ccb23199"
+    },
+    {
+      "path": "src/service-credit-durable-session-close.js",
+      "bytes": 2470,
+      "LF": 84,
+      "sha256": "5aae36a7da39ce5b7b9a8da8e9fbda88465cb1e4853dc791520a1df0ab87ede7",
+      "gitBlob": "f744b55595e2238dc088cf71ca8849e480cda1bc"
+    },
+    {
+      "path": "src/service-credit-execution-contract.js",
+      "bytes": 30258,
+      "LF": 956,
+      "sha256": "298f8e74885e1c507953c0fcf7874832f815296746e6bacbdac97a425f1a6c73",
+      "gitBlob": "acfbb5c5e943b9e09958a7831b3dbe159463dcf9"
+    },
+    {
+      "path": "src/service-credit-funding-post-native-https-transport.js",
+      "bytes": 18761,
+      "LF": 327,
+      "sha256": "3b3fec921b46c62ed7557043f99cffb2e1a12f515bf4e607ea8f61525db28b7c",
+      "gitBlob": "ea47b0e9cc9479f6bb98b07b3b886d6100c630e3"
+    },
+    {
+      "path": "src/service-credit-funding-post-native-response.js",
+      "bytes": 7903,
+      "LF": 157,
+      "sha256": "b5084844ecf029445bc55efd0b9d0ef61b8c2e65424ea74a6dfb30941f9f676c",
+      "gitBlob": "0bae9c30c7a11624612418bb6a1e7643effb0775"
+    },
+    {
+      "path": "src/service-credit-funding-post-readable-flow.js",
+      "bytes": 1568,
+      "LF": 34,
+      "sha256": "e624b56cabfb72aed927f0fb78d866b90da2bde5aefdadd71a16f65159e48d4e",
+      "gitBlob": "ac52bba7279286e6a0b33b0feca57d8a1eefc6c5"
+    },
+    {
+      "path": "src/service-credit-http-execute-dispatch.js",
+      "bytes": 29328,
+      "LF": 815,
+      "sha256": "e07470a9fde311c806beb09b1c4369b4724213682bcbcacc228ece0e0e36f5ef",
+      "gitBlob": "4b5bcb1b08b1ab44e65c8ed7bab76d41640a767b"
+    },
+    {
+      "path": "src/service-credit-http.js",
+      "bytes": 32432,
+      "LF": 958,
+      "sha256": "c76a7f1864bdfcd0c26916bf28fba615c8aecf899d53e69467e3ebe7d3353d0d",
+      "gitBlob": "040da1547c2fa6cc4a4044c47619b253f16d19a1"
+    },
+    {
+      "path": "src/service-credit-model.js",
+      "bytes": 55461,
+      "LF": 1580,
+      "sha256": "7ff7e3d88ab8c3b38a0073541533fbdb7a0d9f2be42f337ac35f6a3b05615c3a",
+      "gitBlob": "e6ac17254874584d1a01f70e7abc6f771bd35d73"
+    },
+    {
+      "path": "src/service-credit-native-client-close-owner.js",
+      "bytes": 7170,
+      "LF": 149,
+      "sha256": "00366016a37cf71234cb305e860b5d3f406c97f6b6a7af8569ae76726b759c91",
+      "gitBlob": "ed68174f93050d837786ab799b3b6dee5f7e0676"
+    },
+    {
+      "path": "src/service-credit-native-client-request-stop-owner.js",
+      "bytes": 5794,
+      "LF": 113,
+      "sha256": "1a1d9f0dec325210251f3f6aedb92a30e820d04f7a0dd710f25b3c8fd0ec079c",
+      "gitBlob": "d99031babeabc5360d4950fbbe2633b6589aca37"
+    },
+    {
+      "path": "src/service-credit-native-guarded-store-close.js",
+      "bytes": 4111,
+      "LF": 79,
+      "sha256": "2b539ae27ccdb8339fdb3543e5dd0f5e6f5f1b317114d9def1a9dc168bb04f5d",
+      "gitBlob": "6feec95714f055996bda64d36a82a2aebfe7c6a2"
+    },
+    {
+      "path": "src/service-credit-native-https-client-transport.js",
+      "bytes": 13702,
+      "LF": 247,
+      "sha256": "9751ba8b2a86e682fe0375aba3cc6427873c8004475126d4b71c2405c290ed6a",
+      "gitBlob": "6635dd2f656e79b8079007421a69c991920884da"
+    },
+    {
+      "path": "src/service-credit-original-request-custody-contract.js",
+      "bytes": 14051,
+      "LF": 356,
+      "sha256": "fd349de553a17abcc2e0567ba6640e6e3d5d26cfa79ee1e355928dc9fa8d3915",
+      "gitBlob": "f911d42d01b69e6577f9bcd66f4ed59aab8ab882"
+    },
+    {
+      "path": "src/service-credit-pilot-original-payment-checkpoint.js",
+      "bytes": 4003,
+      "LF": 89,
+      "sha256": "930905f31824a6cadc16dfb84572cd4dc38a81e2fce4569b73b6bef29dec97d1",
+      "gitBlob": "51c6391bc22f561ebff0005ced31e538aa83f4fa"
+    },
+    {
+      "path": "src/service-credit-sqlite-store.js",
+      "bytes": 83516,
+      "LF": 2366,
+      "sha256": "eea4032830dc1f641c4832e0dab33066633ba487eaf19581e3295cf8810460f3",
+      "gitBlob": "ae5260ef3442079fe73544d2d730d05724758fa1"
+    },
+    {
+      "path": "src/service-credit-zenon-funding-composition.js",
+      "bytes": 30736,
+      "LF": 856,
+      "sha256": "44ad33d3b773053978b474978e7c45c8f29a4796b08b6cf4299b1c6e2fab900a",
+      "gitBlob": "924812611fc60050c1585e30abb99595898f2502"
+    },
+    {
+      "path": "src/service-credit-zenon-funding-evidence.js",
+      "bytes": 48694,
+      "LF": 1407,
+      "sha256": "459c6cc2cdb57df1b648b2a56244935085770d9c3d1eee05ad56ddbf1bd98d80",
+      "gitBlob": "698aaa39aab6e2fa680eb8ebd8b9aa905f79354e"
+    },
+    {
+      "path": "src/service-credit-zenon-funding-intake-sqlite-store.js",
+      "bytes": 34138,
+      "LF": 818,
+      "sha256": "4d001bbeac004cdb88c454094b573bc00bd52822e9448d91ce9065a95b68c28c",
+      "gitBlob": "cb4211bd19c38165640f4825bc907c21618f647a"
+    },
+    {
+      "path": "src/service-credit-zenon-funding-intake.js",
+      "bytes": 19392,
+      "LF": 527,
+      "sha256": "52d1bddeb240fe6885abdc3a1cfcf44fe94735947b69d4c6a45510ee65102a1c",
+      "gitBlob": "34a167f3f2fc3eee0c5bd6c55bd3a2f6482c581f"
+    },
+    {
+      "path": "src/service-credit-zenon-funding-observer-sqlite-store.js",
+      "bytes": 87075,
+      "LF": 2449,
+      "sha256": "899a79ce7b3003b1f32ef7c23adcf06e55a74486abc4bd1cb63cb44f1c087d0c",
+      "gitBlob": "8c1ce3e6640ee1da8663754abba2e5d555932e9f"
+    },
+    {
+      "path": "src/service-credit-zenon-funding-observer-state.js",
+      "bytes": 58614,
+      "LF": 1738,
+      "sha256": "8f8f4e4b7bcbb95229eecc62cd82638e4adbcfda0ad54a3a7a089273457f5d8a",
+      "gitBlob": "d4a623ff662973e2c2082b5dea36807dbd8e45e7"
+    },
+    {
+      "path": "src/service-credit-zenon-funding-post-v1-client.js",
+      "bytes": 26077,
+      "LF": 727,
+      "sha256": "49ea2adbea7a26a2e87b05a5f96e6bb01230853f91922c531b4fdaf7da3fc22d",
+      "gitBlob": "98fa7d808eead2b1663487bb259426c09d5eaac9"
+    },
+    {
+      "path": "src/service-credit-zenon-funding-post-v1-payer-recovery-owner.js",
+      "bytes": 22581,
+      "LF": 626,
+      "sha256": "d62450b462a5412c35dfa474cbf7cac1e5aad88ecd6fc04106e36a67f8459a80",
+      "gitBlob": "cd030bb52146ae3445822224de25268f1c972b78"
+    },
+    {
+      "path": "src/service-credit-zenon-funding-post-v1-payer-recovery-sqlite-store.js",
+      "bytes": 83681,
+      "LF": 2042,
+      "sha256": "bea9e00aa6208f776561c975d54640dfb676168dd4d0b44d125c9dc684912c4a",
+      "gitBlob": "e6af1576df21a20a466d089a4ba6ecdf7380a0df"
+    },
+    {
+      "path": "src/service-credit-zenon-funding-provider-attestation.js",
+      "bytes": 33736,
+      "LF": 1003,
+      "sha256": "87329f823d9459539246974909e8974db0792f047724f2a3d55c239af080cbdc",
+      "gitBlob": "4060251980875b4a95347a72365ddf639b331b34"
+    },
+    {
+      "path": "src/settlement-journal.js",
+      "bytes": 64798,
+      "LF": 1577,
+      "sha256": "b2151cb20ea3ce82e306b2b8d6b996b818d8fb4c226c35316384564eb9e1c25a",
+      "gitBlob": "aade1a802009125a42dd6a0ee81a28f9830f521e"
+    },
+    {
+      "path": "src/x402-funding-post-checkpoint-route.js",
+      "bytes": 1310,
+      "LF": 29,
+      "sha256": "157e80e9f14b41c8cacc05423a7acd8616a6f759adac377f04f1fca21869831e",
+      "gitBlob": "777ff48ac9cf255f80cda7e22c68706b7d7084b3"
+    },
+    {
+      "path": "src/x402-issued-funding-post-application-binding.js",
+      "bytes": 9788,
+      "LF": 133,
+      "sha256": "e5ff9d77cb6ad590b26591ef559ac35523f0a60ade40accc775ea2bf128bea48",
+      "gitBlob": "77f2430710dbb4577040d5429e3021f42c4a392a"
+    },
+    {
+      "path": "src/x402-issued-funding-post-sdk-resource.js",
+      "bytes": 7469,
+      "LF": 129,
+      "sha256": "b4500c461d61b742a4bf6f6bbfb6f6c83b478a976f1300b8c07bf2db1543e681",
+      "gitBlob": "fca3aa91c16155c9abc9ada5e5c8aceb55b6a2c4"
+    },
+    {
+      "path": "src/x402-native-v6-funding-post-client.js",
+      "bytes": 19472,
+      "LF": 344,
+      "sha256": "d5bcd301ffaa65d8a6c9d383b56b736055633b963e7b8328de4c6360b5ae5d05",
+      "gitBlob": "2818d119f0005f1cbb92608a75c43b4e4d3ae7f6"
+    },
+    {
+      "path": "src/x402-official-funding-post-https-request-binding.js",
+      "bytes": 4154,
+      "LF": 78,
+      "sha256": "ce7af7ffe5cb9bf002eb596a4cc8093081ce880687cffd44d2d7c7c56871cc37",
+      "gitBlob": "fa410cf056e9de332e6ff9c3c57b907ddf34b484"
+    },
+    {
+      "path": "src/x402-official-funding-post-intake-composition.js",
+      "bytes": 15570,
+      "LF": 231,
+      "sha256": "51834311ab25336e77a8737319f0c8b316d2209a65020e29281ce52602baa604",
+      "gitBlob": "9babcc5319ea177a90d944ff085e57e6fcccbef2"
+    },
+    {
+      "path": "src/x402-official-https-request-binding.js",
+      "bytes": 5085,
+      "LF": 99,
+      "sha256": "dabf215408887bd0d2ba346085c5ab2df13f724e8759b7a98b71b09c8dc8d692",
+      "gitBlob": "47059c772407233b8b6f54632ba065893ff92dd3"
+    },
+    {
+      "path": "src/x402-official-issued-funding-post-native-application.js",
+      "bytes": 19745,
+      "LF": 285,
+      "sha256": "19f147de7167ea0c20f51958b3716fb9d8fcc21e63ee6c9d74fe34dcde727cdd",
+      "gitBlob": "d64572a469523a8446b2fc563dac70a51d0718c3"
+    },
+    {
+      "path": "src/x402-official-selected-payment-client.js",
+      "bytes": 9226,
+      "LF": 177,
+      "sha256": "6103703a48ab93b33e1d322d01da367d9552d1e37c9d983326f6e58d1e77693c",
+      "gitBlob": "f7a47d8d3405f624fa2dc489745752994263ce53"
+    },
+    {
+      "path": "src/x402-official-selected-settlement-server.js",
+      "bytes": 18997,
+      "LF": 337,
+      "sha256": "a4019832be67c5f74bc7765f1ed31320fe210b5fa6f094d0a73093b0e9abd45b",
+      "gitBlob": "e0e15f175fc60ef3f0d4f3bec8d265edf2d9ee46"
+    },
+    {
+      "path": "src/x402-official-v6-original-payment-client.js",
+      "bytes": 14497,
+      "LF": 264,
+      "sha256": "8fcbe27d631fb1f21c2f128550be7124040b676920f30233e328dbad9f3d3aae",
+      "gitBlob": "535453072223388fbcae4741a6fc7c37723377ce"
+    },
+    {
+      "path": "src/x402-original-payment-checkpoint-client.js",
+      "bytes": 12251,
+      "LF": 246,
+      "sha256": "b98c64fb071a55578bfd5c49790d11f8fca443e59e32beb8498eb67941201103",
+      "gitBlob": "6fdc3917e64f9dbad61ffb4b236951e3cb9ebcf5"
+    },
+    {
+      "path": "src/x402-selected-payment-client-bridge.js",
+      "bytes": 19446,
+      "LF": 370,
+      "sha256": "d8252e421240005f51b1627ab97b624496325403508d57b030be423e871a5083",
+      "gitBlob": "a405eb73cab88302ee5c0e130bdfc9d1ef9eebfa"
+    },
+    {
+      "path": "src/x402-selected-settlement-context.js",
+      "bytes": 16818,
+      "LF": 456,
+      "sha256": "afb6e16603023dd58d6a71cff5790a802dcfa4b98bc9d380b51ccc3d58e10991",
+      "gitBlob": "321d2a03a45296907c0a35a50d1e038e82307a40"
+    },
+    {
+      "path": "src/x402-selected-settlement-server-bridge.js",
+      "bytes": 39943,
+      "LF": 749,
+      "sha256": "38f47d24e1dcdd0f632e786054dc2e9544de2f261f74e949e28fee43ed56f40b",
+      "gitBlob": "483633ee18735355d9614cafe8f7bd8044a7d8b7"
+    },
+    {
+      "path": "src/x402-verification-bound-settlement-context.js",
+      "bytes": 11311,
+      "LF": 221,
+      "sha256": "b3ad2fd33dae7e77a77f069cbc1259bf77e18a2bf383aa30f41bcc19221656f5",
+      "gitBlob": "6734a4aa011239402c141b874612a3be0733b4bf"
+    },
+    {
+      "path": "src/x402-wire.js",
+      "bytes": 39886,
+      "LF": 934,
+      "sha256": "5fba91af5a352f62d1a335c7176a45a604e2af5d92b1c4b0e53825c1f20d4e56",
+      "gitBlob": "fb060d4e349b1c31a1219a0cc137af250a8a2291"
+    },
+    {
+      "path": "src/zenon-payment.js",
+      "bytes": 128301,
+      "LF": 3500,
+      "sha256": "44ee797207d557175256b5f69c89c5009e238e4c1b5b01c83b118b7e7b0ab35c",
+      "gitBlob": "f6645973803cb430d94f12698b14b7684c27493b"
+    },
+    {
+      "path": "src/zenon/bounded-dynamic-plasma-strategy.js",
+      "bytes": 15729,
+      "LF": 353,
+      "sha256": "7b82560bdeb25e573912090a2fe8de7b45912500a7a7c4434fe06dcf94e06d62",
+      "gitBlob": "ee85b7a4da8bf4190ae099e6bc5074059fccebbc"
+    },
+    {
+      "path": "src/zenon/bounded-json-rpc-https-exchange-owner.js",
+      "bytes": 48201,
+      "LF": 1000,
+      "sha256": "2c501f3353d55e31d4baedcb068e2bac5943ca7e3e4171521a3bb0ee8a0a8bdb",
+      "gitBlob": "1eb4626a7bdecc496811ebcd59464500f4ca9937"
+    },
+    {
+      "path": "src/zenon/bounded-json-rpc-read-admission.js",
+      "bytes": 2627,
+      "LF": 51,
+      "sha256": "0b0b0806487c2e648a83367a9ebcd48a3a92493158ebca23abe8d6d6849d9ff3",
+      "gitBlob": "9e9ee352d7cf0013d96851c769f2a205ccf98449"
+    },
+    {
+      "path": "src/zenon/bounded-json-rpc-read-core.js",
+      "bytes": 21759,
+      "LF": 582,
+      "sha256": "10cc529bfb0676bb03dc4dad56059663f4a578b586c52f6404fc859d27d18f76",
+      "gitBlob": "3bd98a83413eb13e3bceb097d35fb874b4c030a2"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-account-frontier-read.js",
+      "bytes": 7417,
+      "LF": 152,
+      "sha256": "283209685a41aed5647c87e33d046d1f81b3a6820ea6ea307c11d2f99b91020d",
+      "gitBlob": "6fbb894a4db5db15e4ded168fd663eeb24898bf8"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-account-state-read-transport.js",
+      "bytes": 3632,
+      "LF": 74,
+      "sha256": "9aa818dabdacf0baec60ca570e854cc8a327e554ba5e5a76c670eb5ed02b29b8",
+      "gitBlob": "751a4b8c5a0c42e1d2b0a47af9d2ef7264229821"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-bounded-material-exchange.js",
+      "bytes": 11992,
+      "LF": 213,
+      "sha256": "6773c946991834dfe3b01943bdb9bad7513ef0cbbb15b31e607b095bab42b28b",
+      "gitBlob": "1b84b826d4fc53f40127272e6b9651328961a085"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-compatibility.js",
+      "bytes": 7732,
+      "LF": 225,
+      "sha256": "b3989ce15e5f2e9d07b0ed035fe96bcce9f22cac93f5e497fdca5c37bf7618dd",
+      "gitBlob": "3811b748b3f905e454c8a4af4650bb7f89eb1cf2"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-json-rpc-read-transport.js",
+      "bytes": 10832,
+      "LF": 283,
+      "sha256": "fd03b2ad87d16660aa61d3961c163d724d5f89cd6d4bb9c4391d739566d5e5ca",
+      "gitBlob": "0475b7ab42889f67fb030fa7344d73d8bd6957d7"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-native-funding-close-session.js",
+      "bytes": 11968,
+      "LF": 220,
+      "sha256": "642ba6edf4983818145b973116638e63f15eaa0fcc4fe342052d927a096d2bc7",
+      "gitBlob": "df3a376c6a1e4291a49eb65d07a256ea10aa07fe"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-native-funding-service-client.js",
+      "bytes": 31340,
+      "LF": 506,
+      "sha256": "5ed9ac6189f2f86bcc2195c5c6da03ecec7e1e779c4084490029270e617743a8",
+      "gitBlob": "53bba44ab96c860600ef9df10e94edae8aa1cff7"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-observation-collector.js",
+      "bytes": 38492,
+      "LF": 949,
+      "sha256": "6bb665dd97e4b262941ed11fb7a9fb5c6d7a162004a39fcbfbfa8cd7b3f82d98",
+      "gitBlob": "171a49f29379866ed111031d15423634ac2d17b4"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-observation-normalizer.js",
+      "bytes": 28398,
+      "LF": 698,
+      "sha256": "2c3f7d42ded21a5513ff26c23a00a35a53aa334f053d10930f1571a020286897",
+      "gitBlob": "c406db8471aa6c8afd812c222c673c809491cf00"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-observed-balance-deferred-material-planner.js",
+      "bytes": 29368,
+      "LF": 557,
+      "sha256": "4cd321d23d9786c0cdff6ff9490b03d07441ba75aa66011b64ca4c16a84a4a4a",
+      "gitBlob": "3c62fecdfa649c1775ab233d4157b567bc809c06"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-observed-balance-user-send-attempt.js",
+      "bytes": 7377,
+      "LF": 146,
+      "sha256": "5111ef500bf33c19113f7ffabadc8980792bc9b5fa388cf6095a3f89a5f69e7a",
+      "gitBlob": "e81cf35120457aa520036042899ccd43bf3d1835"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-observed-balance-user-send-read-adapter.js",
+      "bytes": 29569,
+      "LF": 540,
+      "sha256": "36f40b8bac1359d8e1986ed75714ccb7c94912829181a03fa6b479ad262a2184",
+      "gitBlob": "1f36eb5c025aa543ae9cca482a7ba49b307cb24d"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-observed-original-checkpoint.js",
+      "bytes": 10343,
+      "LF": 202,
+      "sha256": "f0b485e3970bda3af3aa27f8d46d22a54322d7a893dbda3fa121d23c90d9d30b",
+      "gitBlob": "4d366df7eec92f9137381e90ca52e2f6fc1569a0"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-observed-user-send-adapter.js",
+      "bytes": 8149,
+      "LF": 180,
+      "sha256": "8526519aa6bf5006c572447127680d3cc871ee4eee1b9046b4ea09f9ad9e1653",
+      "gitBlob": "bbda0ebf5a6d4d21f159f31304165810ebd89a77"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-observed-user-send-subject.js",
+      "bytes": 5105,
+      "LF": 104,
+      "sha256": "bbcc1d718bcb1353f46e0650723e35c218db94754328103d4bce1d5765e13cd8",
+      "gitBlob": "5e29c6d70c965a4d72c0902504e57dae852a6223"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-original-funding-bounded-read-close.js",
+      "bytes": 10732,
+      "LF": 197,
+      "sha256": "69fe92b9460aba5f5ecb671a4befe059f0686f4ca2e50ffeaf468e25893f0f9c",
+      "gitBlob": "fa279111addab91315d54f7333bbbb9266369c53"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-original-funding-data.js",
+      "bytes": 15109,
+      "LF": 285,
+      "sha256": "b2cf8d63646ed4da467ddb3e621247470c2462925c190866d5a070d9dc5b123d",
+      "gitBlob": "08865c6d84895cba9ff5acbcc0fba66a991ca007"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-original-funding-preparation.js",
+      "bytes": 15618,
+      "LF": 257,
+      "sha256": "0e1eb8bb94ecd4da8d4dc8f9b384510e8c2764601ba22e228126ba9ed01368c6",
+      "gitBlob": "52174703adc79f457081dfaecde0e308cfc5ccdc"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-original-funding-read-close.js",
+      "bytes": 9568,
+      "LF": 178,
+      "sha256": "5086567b2c0cce0fc3419db69641beb7e5e434d47f83e17015682964ad482a45",
+      "gitBlob": "f2a1b30bb02a6b192fc3b0fe0b4fc5b65e2d297b"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-original-funding-service-handoff-request.js",
+      "bytes": 4584,
+      "LF": 75,
+      "sha256": "07affc3e40d785406fea54794ee694c03e31ab49fc8857369cdf52e33a331cab",
+      "gitBlob": "0382f9f6235a4fbc6f5935d3db77b29efaf1a345"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-original-funding-store-claim.js",
+      "bytes": 2640,
+      "LF": 59,
+      "sha256": "b5aa2b5d2e1b213d89622d11500fa674e536025317bee2f41740ee040c753945",
+      "gitBlob": "2a3e9da5a64f55ff631b5e33371226568b07aa4c"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-original-funding-submission.js",
+      "bytes": 22507,
+      "LF": 377,
+      "sha256": "666551930bcf481d136c773de12d00228822c0f2a810d5c92aafa401acf80c68",
+      "gitBlob": "169e70d4e5678d0e2f07f9dcbe0b3f1167f690e3"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-price-policy.js",
+      "bytes": 16224,
+      "LF": 444,
+      "sha256": "eba3225c4d26cbb6e0be575ac4fd5073bc8b0c4454eb51e2bea4d91856d0c65e",
+      "gitBlob": "649dd09b60236b43c91d22e34b76f71f4b661361"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-required-fused-policy-adapter.js",
+      "bytes": 12024,
+      "LF": 272,
+      "sha256": "e2b693d4df9065d44ba590f4d0c8dffeb8e55187668eedfa396b4026c9905c3e",
+      "gitBlob": "b592aafd4c41461318376ea9acc1373f99317455"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-required-fused-quote.js",
+      "bytes": 5416,
+      "LF": 133,
+      "sha256": "f5e10ff2dbfff3b6b63d87f0abadd0bb52b5d6b8fe0ead6a55fc5ea14207b730",
+      "gitBlob": "e820fd31ffde4ef77a2efa6e1fd3ed1775778726"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-retained-account-exchange-gate.js",
+      "bytes": 4659,
+      "LF": 89,
+      "sha256": "3304fee96333a0544c9ad3be0c5d465ff6d2377ae3ae657ac11f84482bb357f9",
+      "gitBlob": "39104ab5dbea4195a778e7226b9076fcd1f31366"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-retained-https-read-owners.js",
+      "bytes": 6241,
+      "LF": 117,
+      "sha256": "48ed2db2e36a12a93c106d76315f376a56f186cbf591ac544cb02c51f203c64d",
+      "gitBlob": "f03533b766e8f5f1e98c9a2b878e59a49631c5ce"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-retained-https-read-session.js",
+      "bytes": 8464,
+      "LF": 150,
+      "sha256": "791d2c74a81a18d4e3b4478d9ca569db1ec971f5c1e0540ddac02eb3a79938b7",
+      "gitBlob": "a18bec3918105f7cd2151d5a71d4b436401fe1a3"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-retained-read-session-core.js",
+      "bytes": 10450,
+      "LF": 204,
+      "sha256": "a0f91046c47cfa770f30bf299f620086351ee15977f669d9ec6016dd08d65794",
+      "gitBlob": "b9151955b073be614946525e70320600f7a6850b"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-signed-original-handoff.js",
+      "bytes": 8843,
+      "LF": 191,
+      "sha256": "bb592312c8d8cd3f4f80817b84bb9273a9232fe843f5ffeb66ac5266bd13ed9a",
+      "gitBlob": "4b3a18cb94b1daded74b798b81e881948cbb4637"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-unsigned-original-checkpoint.js",
+      "bytes": 9301,
+      "LF": 198,
+      "sha256": "506551e4292491a905a27f56695c30642af6a0e6a85158586379649999f8da47",
+      "gitBlob": "46ac7a4761b078048c205eaf531a7aab7a1d81a9"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-user-send-assembly.js",
+      "bytes": 7772,
+      "LF": 162,
+      "sha256": "05012a2a983ceca018674c4d1f63823f3f7ed53b0970a4b4bd486c4278832b04",
+      "gitBlob": "a0537856f6692d278c9043ab9c1c734d1bde61ba"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-user-send-balance-read.js",
+      "bytes": 7542,
+      "LF": 144,
+      "sha256": "ae1f3e5d309be0dc196fb6b35324d4c8287345b50a108d5030c1058645d2ed39",
+      "gitBlob": "f629aca2410dfd194fd73d3a651e624baa633386"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-user-send-fixed-work.js",
+      "bytes": 3475,
+      "LF": 77,
+      "sha256": "4ee83870df0b25c34d35c0f0d0ceb894ca9dab8c047f81b34a48dd816f1fbf38",
+      "gitBlob": "4ce2a790df84c77bc76615e5eebc309ecd2868ac"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-user-send-key-binding.js",
+      "bytes": 4237,
+      "LF": 91,
+      "sha256": "37ad7e74b038801297e4bffb0cb8ba92cbd79009ed32c4ae5b134fe2cb154be2",
+      "gitBlob": "c366f0fee4132604b40604547fe22f1bc1dba65d"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-user-send-nonce-search.js",
+      "bytes": 8437,
+      "LF": 156,
+      "sha256": "8eda71acf12265b65015ad6db20c1c7b357b207874c8e4c8b72e2889bf86f318",
+      "gitBlob": "ec65d9e2ea6522e07bb80b95b9dc398d7714af2f"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-user-send-pre-work-key-binding.js",
+      "bytes": 3783,
+      "LF": 73,
+      "sha256": "81c0b84174d045baac9b3cc8915e3a079ecf60590cbe43230bff287ce37d8bd9",
+      "gitBlob": "5aba63fd478cb3e32c2b409dd48034f7256a38b3"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-user-send-work-binding.js",
+      "bytes": 1940,
+      "LF": 42,
+      "sha256": "79eba29a05427128ae3a12346fd3ee7cbaa526d6f39eb36ed58d388640638266",
+      "gitBlob": "a329d521458a5c5b6dbc87194d91d4165d5e759c"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-user-send-work-input.js",
+      "bytes": 2853,
+      "LF": 59,
+      "sha256": "2ff9c089e5903c059746d0a1c38688a2849f94d04d429279811fbbfbb40450a4",
+      "gitBlob": "dad4febf4ef6f09216640245c7e3805e01ad0127"
+    },
+    {
+      "path": "src/zenon/dynamic-plasma-user-send-work-request.js",
+      "bytes": 2564,
+      "LF": 50,
+      "sha256": "bc66c7d629eae230c46f62c88fa97960860d94b5d65d3c5611612ccae13fe9ce",
+      "gitBlob": "d4e9731b0af82a892226c2817e9d5a5273b39599"
+    },
+    {
+      "path": "src/zenon/internal/legacy-sdk-1-0-5-signed-composite.js",
+      "bytes": 692,
+      "LF": 16,
+      "sha256": "9473d48ca372d5616f3006cfd2866af2b897f374b169c3511876bf1bc079620f",
+      "gitBlob": "3dbfdde3ae6ab2643b656665cd69aec1a160840d"
+    },
+    {
+      "path": "src/zenon/native-funding-service-loopback-read-selection.js",
+      "bytes": 1927,
+      "LF": 40,
+      "sha256": "fc97d86db3b24ef17572ff2cf14ac0620c422d8a7164de953f7e95b74656ac7c",
+      "gitBlob": "7962084da741d546738a64386428a885ba5d32c9"
+    },
+    {
+      "path": "src/zenon/native-read-generation-handles-closed.js",
+      "bytes": 1194,
+      "LF": 19,
+      "sha256": "136c4088341d71d10ec8a4f07fbfbf959607c6a6676a2f6a86b56f6d3ac92de5",
+      "gitBlob": "466c20d9849c81306ba10f6001eb9951f14cd55d"
+    },
+    {
+      "path": "src/zenon/native-read-loopback-qualification-configuration.js",
+      "bytes": 4126,
+      "LF": 80,
+      "sha256": "1d8c20410d5ab8786c1fbf2dc1ef9c8346bc2b30c1c8146f16e46ff231cd0427",
+      "gitBlob": "15ae6af21f8f07351e7e4f680557d247cc379b88"
+    },
+    {
+      "path": "src/zenon/native-read-retired-error-latch.js",
+      "bytes": 994,
+      "LF": 24,
+      "sha256": "a7c2c242f2df97e8f6fcd6171d0f24b3ec048f25115135dcb08dd83a21f48d84",
+      "gitBlob": "97cff24934379cf9d8b1ae9b5fe43df68afd6483"
+    },
+    {
+      "path": "src/zenon/operator-trusted-chain-policy.js",
+      "bytes": 5337,
+      "LF": 155,
+      "sha256": "12715f104784f541493ac1d23f92b3e15ce120d0e8287e954eaf1151763d509d",
+      "gitBlob": "77446dce50e61831f29352ec2858a9047bd357ca"
+    },
+    {
+      "path": "src/zenon/operator-trusted-local-devnet-profile.js",
+      "bytes": 31832,
+      "LF": 942,
+      "sha256": "3882a76b699fa177cada93e055e9a05b4afe31fe1c3d0b3accbcc84e6dc7a9ec",
+      "gitBlob": "4d1a261ff9de3b660a3fb2584a87b1d67c237b0a"
+    },
+    {
+      "path": "src/zenon/operator-trusted-testnet-profile.js",
+      "bytes": 43153,
+      "LF": 1085,
+      "sha256": "ec30bbcfc6b443b7839d1306eaae8d7bd25dbbbf616fafd64afcaefa8af1e526",
+      "gitBlob": "a1c31e55677ef34ee76d45575b80ad30466ce1e7"
+    },
+    {
+      "path": "src/zenon/plasma-strategy.js",
+      "bytes": 974,
+      "LF": 32,
+      "sha256": "1c597d4e169ba8a5e6d2b7852c4ffa3a8ec9b854332fe354b9b013c36ebae093",
+      "gitBlob": "5cddc2d270aaf043e6e43145e95ffe0be3dde475"
+    },
+    {
+      "path": "src/zenon/transaction-planner.js",
+      "bytes": 22611,
+      "LF": 464,
+      "sha256": "079fe8da938e08e33a20ca1076492a829afa6fce3ae7f9b9f68d3bf4bff94233",
+      "gitBlob": "17b49a3d53974c9b3846ec6f352d6e8974bad7d3"
+    }
+  ],
+  "authority": "NONE"
+}
