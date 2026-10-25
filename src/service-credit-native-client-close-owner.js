@@ -3,6 +3,7 @@ import { types as utilTypes } from 'node:util';
 const FREEZE = Object.freeze, DESC = Object.getOwnPropertyDescriptor, PROTO = Object.getPrototypeOf;
 const KEYS = Reflect.ownKeys, OWN = Object.hasOwn, APPLY = Reflect.apply;
 const IS_PROXY = utilTypes.isProxy, NativePromise = Promise, DEFINE = Object.defineProperty;
+const OBJECT = Object.prototype;
 const COUNT_FIELDS = FREEZE(['requests', 'sockets', 'timers']);
 
 /**
@@ -19,6 +20,9 @@ const COUNT_FIELDS = FREEZE(['requests', 'sockets', 'timers']);
  * local material ONCE; they never replace an uncertain verdict with CLOSED.
  * Release failure is not retried. A late error can downgrade the current phase,
  * but cannot change the historical settlement of an already-settled Promise.
+ * A clean receipt handoff refuses any inherited Object.prototype.then member
+ * by descriptor, without invoking it. Check after both trusted callbacks so
+ * Promise resolution cannot enter a getter/thenable introduced during release.
  *
  * Releasing this client's local CA copy/close timer is not secure erasure,
  * authenticated service delivery, OS physical drain, or new payment authority.
@@ -41,6 +45,10 @@ export function createNativeHttpsClientCloseOwner(configuration) {
   }
   function finish(clean) {
     if (closing === null || settledOutcome !== 'PENDING') return;
+    // Promise resolution reads even an inherited then on this plain receipt.
+    // Never let that read enter host code or turn a CLOSED verdict into a
+    // pending/assimilated Promise. Rejection does not assimilate its reason.
+    if (clean && !unknown && DESC(OBJECT, 'then') !== undefined) unknownState();
     const yes = resolveClose, no = rejectClose;
     resolveClose = null; rejectClose = null;
     phase = clean && !unknown ? 'CLOSED' : 'CLOSE_UNKNOWN';
