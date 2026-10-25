@@ -1,0 +1,393 @@
+{
+  "resultVersion": 2,
+  "kind": "CURRENT_OFFERED_PARENT_FULL_PROFILE_SOURCE_DATA_NOT_NATIVE",
+  "sourceParent": "9a2dbbe5cc3ab6d4ed300f7b3d625136f15192a8",
+  "reviewedMain": "cb273da6c09b8ad58658eef716e06d090f422460",
+  "parent": {
+    "profileVersion": 5,
+    "profileKind": "NATIVE_CAPACITY_CURRENT_OFFERED_SUPERVISOR_NODE24_V2",
+    "applicationFiles": 160,
+    "packageFiles": 404,
+    "sourceRows": 564,
+    "declaredInputBytes": 5134462,
+    "sourceRowsSha256": "f5ba2a28fe30f6ff1b5d54a45c1c3e424806ad6fa858fe2d0d57d11ba41b4b84",
+    "sourceSelection": {
+      "path": "qualification/capacity-native-current-offered-parent-v2.inputs.json",
+      "bytes": 4680,
+      "LF": 122,
+      "sha256": "c9eb8a699217aade0e5e09de014045fcf912c5f554246a1dd4dddd6ef78d530d",
+      "gitBlob": "1fdab64c3b4466e6292ff81a85ab2878e7c528d3"
+    }
+  },
+  "children": {
+    "profileVersion": 4,
+    "applicationFiles": 153,
+    "packageFiles": 404,
+    "sourceRows": 557,
+    "sourceRowsSha256": "db33115ac37137f5b0212cb33d748154b498ec1b15ca106dfb757575da692a6e",
+    "producer": {
+      "path": "qualification/native_capacity_current_role_profiles_v4.py",
+      "bytes": 19763,
+      "LF": 295,
+      "sha256": "a32d566f61c7093464a8c84e543965d82bf9fedf45741e65101ae28f331db24f",
+      "gitBlob": "3d99b2ab631c1ef1857f0c90af7330340410eb52"
+    },
+    "selection": {
+      "path": "qualification/capacity-native-current-roles-v4.inputs.json",
+      "bytes": 5209,
+      "LF": 132,
+      "sha256": "6a819a3e87e89927c05e292f8f0ee4332ac0a884199ab68d0f6cf286327a1662",
+      "gitBlob": "bc9977247b11a3edea32398969a9a4049f59c289"
+    },
+    "wholeCanonicalBytesEqualGenuineCurrentProducer": true,
+    "parentExtensionsLeakIntoChild": false
+  },
+  "actualLocalData": {
+    "attempts": 1,
+    "python": "3.12.14",
+    "actualExit": 0,
+    "complete": true,
+    "testsRun": 64,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "successful": true,
+    "stdoutBytes": 4737,
+    "stdoutSha256": "6f3398f5bff1cfaaa3f5bb3c04157f855c58773f1cb10cbd04baff3908ccb1d7",
+    "stderrBytes": 0,
+    "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "names": [
+      "whole_payer_bytes_equal_genuine_current_v4_producer",
+      "whole_service_bytes_equal_genuine_current_v4_producer",
+      "distinct_v5_parent_contains_full_160_404_graph_and_complete_current_children",
+      "real_parent_pair_adapter_entry_and_preloader_bind_current_v4_children_and_original_stop",
+      "thirty_two_complete_current_child_comparisons_reuse_shared_fields_without_second_whole_copy",
+      "prepared_tables_runtime_and_extensions_are_detached_from_caller",
+      "declared_registry_read_claim_never_becomes_source_root_or_node_authentication",
+      "planning_does_not_mutate_caller_context_roots_or_original_child_bundles",
+      "all_eight_current_runtime_overlays_and_seven_parent_extensions_survive_composition",
+      "preparation_refuses_changed_parent_manifest",
+      "preparation_refuses_changed_child_manifest",
+      "preparation_refuses_changed_legacy_inventory",
+      "preparation_refuses_changed_baseline",
+      "preparation_refuses_changed_current_delta",
+      "preparation_refuses_missing_parent_source",
+      "preparation_refuses_extra_parent_source",
+      "preparation_refuses_wrong_parent_source_hash",
+      "preparation_refuses_redirected_parent_source",
+      "preparation_refuses_hardlinked_parent_source",
+      "preparation_refuses_foreign_parent_source_uid",
+      "preparation_refuses_zero_parent_source_inode",
+      "preparation_refuses_old_child_source_seal",
+      "preparation_refuses_missing_current_child_source",
+      "preparation_refuses_reordered_current_child_sources",
+      "preparation_refuses_redirected_current_child_binding",
+      "preparation_refuses_wrong_runtime",
+      "parent_refuses_empty_children",
+      "parent_refuses_one_unpaired_child",
+      "parent_refuses_duplicate_role",
+      "parent_refuses_duplicate_profile_path",
+      "parent_refuses_duplicate_digest",
+      "parent_refuses_duplicate_root_path",
+      "parent_refuses_duplicate_physical_root",
+      "parent_refuses_parent_root_alias",
+      "parent_refuses_parent_physical_alias",
+      "parent_refuses_profile_path_is_parent_root",
+      "parent_refuses_wrong_child_preloader",
+      "parent_refuses_wrong_child_entry",
+      "parent_refuses_missing_child_field",
+      "parent_refuses_extra_child_field",
+      "parent_refuses_mutable_child_bytes",
+      "parent_refuses_truncated_child_bytes",
+      "parent_refuses_nonprivate_parent_root",
+      "parent_refuses_foreign_parent_uid",
+      "parent_refuses_wrong_parent_run",
+      "parent_refuses_invalid_parent_lane",
+      "parent_refuses_extra_parent_context",
+      "recomputed_digest_does_not_hide_missing_full_source_row",
+      "recomputed_digest_does_not_hide_old_profile_version",
+      "recomputed_digest_does_not_hide_parent_version_on_child",
+      "recomputed_digest_does_not_hide_parent_source_seal",
+      "recomputed_digest_does_not_hide_parent_extension_on_child",
+      "recomputed_digest_does_not_hide_changed_current_manifest",
+      "recomputed_digest_does_not_hide_changed_run_id",
+      "recomputed_digest_does_not_hide_changed_last_source_identity",
+      "recomputed_digest_does_not_hide_changed_last_binding",
+      "recomputed_digest_does_not_hide_source_transform",
+      "recomputed_digest_does_not_hide_ordinary_namespace",
+      "recomputed_digest_does_not_hide_parent_process_builtin",
+      "recomputed_digest_does_not_hide_extra_child_source_seal",
+      "seventeenth_complete_pair_does_not_expand_the_source_limit",
+      "child_factory_stays_closed_to_two_current_leaf_roles",
+      "whole_child_canonical_newline_and_whitespace_are_not_repaired",
+      "subclass_hooks_are_not_evaluated_for_context_or_child_bundle"
+    ],
+    "sourcePins": [
+      {
+        "path": "qualification/native_capacity_current_offered_parent_v2.py",
+        "bytes": 19695,
+        "LF": 290,
+        "sha256": "054b375cd88495796e533749be7e332e7e2d62829beb595b27d33ebe7024f36c",
+        "gitBlob": "907345ea429acead2b05bd11f22e82300d7b756f"
+      },
+      {
+        "path": "qualification/native_capacity_current_offered_parent_v2.behavior.py",
+        "bytes": 23978,
+        "LF": 299,
+        "sha256": "f548aa0d70fab8e930e536309980a65afbe16f78c6805b4a128e74477dd3f917",
+        "gitBlob": "cf1f9f27c8de8891f1b924ca236dd85545871396"
+      },
+      {
+        "path": "qualification/capacity-native-current-offered-parent-v2.inputs.json",
+        "bytes": 4680,
+        "LF": 122,
+        "sha256": "c9eb8a699217aade0e5e09de014045fcf912c5f554246a1dd4dddd6ef78d530d",
+        "gitBlob": "1fdab64c3b4466e6292ff81a85ab2878e7c528d3"
+      },
+      {
+        "path": "qualification/native_capacity_current_role_profiles_v4.py",
+        "bytes": 19763,
+        "LF": 295,
+        "sha256": "a32d566f61c7093464a8c84e543965d82bf9fedf45741e65101ae28f331db24f",
+        "gitBlob": "3d99b2ab631c1ef1857f0c90af7330340410eb52"
+      },
+      {
+        "path": "qualification/capacity-native-current-roles-v4.inputs.json",
+        "bytes": 5209,
+        "LF": 132,
+        "sha256": "6a819a3e87e89927c05e292f8f0ee4332ac0a884199ab68d0f6cf286327a1662",
+        "gitBlob": "bc9977247b11a3edea32398969a9a4049f59c289"
+      },
+      {
+        "path": "qualification/recovery_crash_native_profile.py",
+        "bytes": 33443,
+        "LF": 538,
+        "sha256": "75c2c9478b7e792a7bade739161af2bb8fb624cd407924ead2cf822dc23dacbd",
+        "gitBlob": "dc93890c4f9772b726e015ddd11d63bfa1a48ad4"
+      },
+      {
+        "path": "qualification/issued_current_close_v4_profile.py",
+        "bytes": 24610,
+        "LF": 297,
+        "sha256": "b3a8edc522471b0d34f33857e6bd2aae9286b101ec7ea24b6a0f0275e6e447e7",
+        "gitBlob": "7ce435651b6d853baa06856ce5f0b04aef58c5c4"
+      },
+      {
+        "path": "qualification/native_capacity_full_profile_v3.py",
+        "bytes": 23435,
+        "LF": 353,
+        "sha256": "6928303c36f034fc295145563e40304641a91fe7db35d62eb364031bbcff7e6a",
+        "gitBlob": "6268ca35b32c32611b9663e964ddf2485b941ddc"
+      },
+      {
+        "path": "qualification/capacity-native-full-graph-v3.inputs.json",
+        "bytes": 8697,
+        "LF": 215,
+        "sha256": "3bb597da71736542615047d11af78ad6825df5bdb6e4561747d8c1f9dff7d0df",
+        "gitBlob": "0530e2b08929d45c93b4e4912dc69d27b0645204"
+      },
+      {
+        "path": "qualification/issued-funding-post-native-vertical.inputs-v3.json",
+        "bytes": 138777,
+        "LF": 3836,
+        "sha256": "51ffb5b0ff0052523c1b7f3d75fa24e9be27e60ca3bcc09236b1f439096aaed1",
+        "gitBlob": "3dc05ccffd306e97056b4ed168d8121f63acebbc"
+      },
+      {
+        "path": "qualification/issued-current-close-v4.inputs.json",
+        "bytes": 10437,
+        "LF": 300,
+        "sha256": "8339b2a8e04e7e3c573b1c26d8162f1c821df91182738409693d188121a21893",
+        "gitBlob": "f292abda9f607a7d423f9d32fce2e55472d84a33"
+      },
+      {
+        "path": "qualification/capacity-native-current-offered-pair-v2.supervisor.draft.mjs",
+        "bytes": 26578,
+        "LF": 294,
+        "sha256": "19e31fb8bf7ec1289829ade437c21d50ed2ba30123aa776946cdf42ab08fb2f3",
+        "gitBlob": "b993dd3488a1a347482ac4dbd9bb6f7d099fb08a"
+      },
+      {
+        "path": "qualification/capacity-native-current-offered-adapter-v3.draft.mjs",
+        "bytes": 18583,
+        "LF": 270,
+        "sha256": "7104b8c477d0c1b356e68f24779b8d78bd47894393c07cde7abc9babdaf053f0",
+        "gitBlob": "1a433598f28426b70b28669bf91c99376a573a95"
+      },
+      {
+        "path": "qualification/capacity-native-current-offered-v2.entry.draft.mjs",
+        "bytes": 10184,
+        "LF": 123,
+        "sha256": "c95a8137fe451a636c263e2f8e0d36eb3f4268313836370871fdd94a0145dae1",
+        "gitBlob": "07be4884e60da2a62dc24a29f6ff5eb3963a468a"
+      },
+      {
+        "path": "qualification/capacity-native-current-offered-v2.namespace.preload.draft.mjs",
+        "bytes": 24865,
+        "LF": 341,
+        "sha256": "fc106c1a9cb25e5d717c149e3392d4dc664e93501d66f0d8664328f930b8a6c6",
+        "gitBlob": "7d8160071f07c241f1b27ba9a89be29c3011c0dd"
+      }
+    ],
+    "allBeforeAndAfterInputsMatched": true,
+    "protectedInputs": 318
+  },
+  "actualParserOnly": {
+    "node": "24.19.0",
+    "files": 4,
+    "valid": true,
+    "nativeImports": 0,
+    "checks": [
+      {
+        "path": "qualification/capacity-native-current-offered-pair-v2.supervisor.draft.mjs",
+        "actualExit": 0,
+        "complete": true,
+        "stdoutBytes": 0,
+        "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderrBytes": 0,
+        "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "qualification/capacity-native-current-offered-adapter-v3.draft.mjs",
+        "actualExit": 0,
+        "complete": true,
+        "stdoutBytes": 0,
+        "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderrBytes": 0,
+        "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "qualification/capacity-native-current-offered-v2.entry.draft.mjs",
+        "actualExit": 0,
+        "complete": true,
+        "stdoutBytes": 0,
+        "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderrBytes": 0,
+        "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "qualification/capacity-native-current-offered-v2.namespace.preload.draft.mjs",
+        "actualExit": 0,
+        "complete": true,
+        "stdoutBytes": 0,
+        "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderrBytes": 0,
+        "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    ],
+    "sourcePins": [
+      {
+        "path": "package.json",
+        "bytes": 2677,
+        "LF": 40,
+        "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+        "gitBlob": "45752ffde39d29666094f7f1c755060d75e43deb"
+      },
+      {
+        "path": "qualification/capacity-native-current-offered-pair-v2.supervisor.draft.mjs",
+        "bytes": 26578,
+        "LF": 294,
+        "sha256": "19e31fb8bf7ec1289829ade437c21d50ed2ba30123aa776946cdf42ab08fb2f3",
+        "gitBlob": "b993dd3488a1a347482ac4dbd9bb6f7d099fb08a"
+      },
+      {
+        "path": "qualification/capacity-native-current-offered-adapter-v3.draft.mjs",
+        "bytes": 18583,
+        "LF": 270,
+        "sha256": "7104b8c477d0c1b356e68f24779b8d78bd47894393c07cde7abc9babdaf053f0",
+        "gitBlob": "1a433598f28426b70b28669bf91c99376a573a95"
+      },
+      {
+        "path": "qualification/capacity-native-current-offered-v2.entry.draft.mjs",
+        "bytes": 10184,
+        "LF": 123,
+        "sha256": "c95a8137fe451a636c263e2f8e0d36eb3f4268313836370871fdd94a0145dae1",
+        "gitBlob": "07be4884e60da2a62dc24a29f6ff5eb3963a468a"
+      },
+      {
+        "path": "qualification/capacity-native-current-offered-v2.namespace.preload.draft.mjs",
+        "bytes": 24865,
+        "LF": 341,
+        "sha256": "fc106c1a9cb25e5d717c149e3392d4dc664e93501d66f0d8664328f930b8a6c6",
+        "gitBlob": "7d8160071f07c241f1b27ba9a89be29c3011c0dd"
+      }
+    ]
+  },
+  "sourceSelectionEvidence": {
+    "actualApplicationSourceFilesRead": 160,
+    "allActualApplicationPinsMatched": true,
+    "installedPackageFilesRead": 0,
+    "packageRowsAreRetainedPinsNotNewInstalledProof": true,
+    "physicalRoleIdentitiesAreSyntheticDataInTests": true,
+    "installedNativeContextQualified": false
+  },
+  "profileOptimizationData": {
+    "completeChildByteComparisons": 32,
+    "sharedFieldSerializations": 4,
+    "sharedCanonicalBytes": 405895,
+    "sharedByteLimit": 1048576,
+    "largeRowsReserializedDuringParentValidation": 0,
+    "wholeExpectedChildProfilesMaterialized": 0,
+    "parentProfileBytes": 222835,
+    "nativePerformanceOrPeakHeapMeasured": false
+  },
+  "implementation": {
+    "current123BasePreserved": true,
+    "eightRuntimeReplacementsPreserved": true,
+    "parentOnlyAdditions": 7,
+    "completeCurrentChildrenRetained": true,
+    "threeFreshBalanceReadsRetainedInSource": true,
+    "originalTransactionBytesGrantCustodyAndClosePathRetainedInSource": true,
+    "missingNativeCloseRemainsUnknown": true,
+    "sourceAndPackageTreeCopies": 0,
+    "parentAndChildClockDomainsAligned": false
+  },
+  "auditedTestEffects": {
+    "subprocesses": 0,
+    "sockets": 0,
+    "sqlite": 0,
+    "writeOpens": 0,
+    "outsideSourceReads": 0,
+    "mutations": 0
+  },
+  "notExecuted": {
+    "nativeAppExecutions": 0,
+    "nativeModulesImported": false,
+    "SDK": false,
+    "x402PackageImport": false,
+    "SQLite": false,
+    "TLS": false,
+    "keys": false,
+    "signatures": false,
+    "nonceSearch": false,
+    "sockets": false,
+    "applicationChildren": 0,
+    "managedNativeCommands": 0,
+    "privateRootAccess": false,
+    "privateProfilesWritten": false,
+    "sourceContextCLI": false,
+    "hostedCIForNewSources": false
+  },
+  "authority": {
+    "nativeGraphAdmitted": false,
+    "currentCleanAllowanceConsumed": false,
+    "oldR4AllowanceConsumed": false,
+    "scopeExpanded": false,
+    "newPrivateRoot": false,
+    "storageReservationsChanged": false,
+    "automationsChanged": false,
+    "cleanup": false,
+    "OSOrNetworkSandboxClaim": false,
+    "pilot": false,
+    "production": false
+  },
+  "remaining": {
+    "completeCurrentResourceAndManagedLauncherRequired": true,
+    "currentNativeRunRequired": true,
+    "currentInterruptionAndAmbiguityAcceptanceRequired": true,
+    "realLoadErrorLatencyBalancePressureAndSustainableCapacityProofRequired": true,
+    "independentRuntimeChainProviderAndOperatorAcceptanceRequired": true
+  },
+  "qualification": "GO_FOR_CONTINUED_SOURCE_INTEGRATION_ONLY_NOT_NATIVE_PILOT_OR_PRODUCTION",
+  "authorityClaim": "NONE"
+}
