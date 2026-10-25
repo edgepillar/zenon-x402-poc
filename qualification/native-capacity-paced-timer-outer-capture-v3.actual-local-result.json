@@ -1,0 +1,309 @@
+{
+  "recordVersion": 1,
+  "dateUTC": "2026-10-25",
+  "kind": "PACED_TIMER_OUTER_V4_CONTRACT_ACTUAL_LOCAL_DATA_NOT_NATIVE",
+  "sourceBase": "ca364e9b9ee249067e5e77f4757693640468e88f",
+  "mainBase": "721c12e14de0f0593a775fa142008189d18295d4",
+  "sourcePins": [
+    {
+      "path": "package.json",
+      "bytes": 2677,
+      "LF": 40,
+      "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+      "gitBlob": "45752ffde39d29666094f7f1c755060d75e43deb"
+    },
+    {
+      "path": "src/service-credit-capacity-paced-workload-owner-core.js",
+      "bytes": 24519,
+      "LF": 455,
+      "sha256": "5eef2c11c5a10bce0594bb43ea6a9f947974f0d6d8455e160227d35d2233bb26",
+      "gitBlob": "4cb1372f14e18b829fa114fe533bc0f1459f5666"
+    },
+    {
+      "path": "src/service-credit-capacity-windowed-async-workload-owner-core.js",
+      "bytes": 36252,
+      "LF": 645,
+      "sha256": "fda636116343c497f269d926ae8e3a61f1b9cd1cf11b493c3d9ba99ef55a7444",
+      "gitBlob": "cc9eae4a2e553a0e71a531f191648c9cbe0cb101"
+    },
+    {
+      "path": "src/service-credit-capacity-window-recorder.js",
+      "bytes": 13321,
+      "LF": 242,
+      "sha256": "48855e34729ae68c179d6439aed962a719964732c992a83472330b7e41293579",
+      "gitBlob": "6e28e75b4fd6572fbae535ac066334349ed26038"
+    },
+    {
+      "path": "src/service-credit-capacity-recorder.js",
+      "bytes": 10801,
+      "LF": 236,
+      "sha256": "eca9bf4cad4717df5d61457044c2c5d0a6bc00b6af81964d09bf18325d4a46ad",
+      "gitBlob": "bc9b0a8a9abd48033e698e100cdc6ef90d2152c9"
+    },
+    {
+      "path": "src/service-credit-capacity-parent-timing-trace-data.js",
+      "bytes": 13257,
+      "LF": 213,
+      "sha256": "9b48e9212efa6b000690b32c04f07277d2c868562a1e649766a28aab85e0907d",
+      "gitBlob": "8aecb7664c2a4772870fdeb51d10fe69bc71cb79"
+    },
+    {
+      "path": "src/service-credit-capacity-paced-timing-trace-data.js",
+      "bytes": 22759,
+      "LF": 299,
+      "sha256": "4459f9e90692b99af0b831e9acf013b579fe63b2113b8ef5abd81f29c559f5dc",
+      "gitBlob": "0f06c70e53c61497c10b7e4de3fac8697904856e"
+    },
+    {
+      "path": "src/service-credit-capacity-paced-timer-trace-data.js",
+      "bytes": 11764,
+      "LF": 187,
+      "sha256": "ec0ada7fa8c67d72f837c49369f470639a28ca0c7185025f74f59dfa73542b18",
+      "gitBlob": "c4ccadf23e10e41da86181a86f7348cedaf8ff23"
+    },
+    {
+      "path": "src/service-credit-capacity-window-writer-trace-data.js",
+      "bytes": 8906,
+      "LF": 126,
+      "sha256": "b86377ec5474f85465073e7891bde9f706b167a40cb6677671a6012dab4d9bbd",
+      "gitBlob": "ceabbe01bb341ccf2c9c8f0d89229e3dd4268c5f"
+    },
+    {
+      "path": "src/service-credit-capacity-cohort-writer-trace-data.js",
+      "bytes": 10956,
+      "LF": 181,
+      "sha256": "75c3529584f7c6126f726734d085e107438c7a676ff1f63073956054aedcba65",
+      "gitBlob": "63bee5ad4714d3179666eef371373d4e0416a4a0"
+    },
+    {
+      "path": "src/service-credit-capacity-native-observation-data.js",
+      "bytes": 6173,
+      "LF": 103,
+      "sha256": "d6d19890334fbb6d7e92e605640d4638154f8e3e10588c8e217bf782a675b7ca",
+      "gitBlob": "aaf6b24f65a59e4b421805d7667a5fdf9e72433f"
+    },
+    {
+      "path": "src/service-credit-capacity-balance-barrier-trace-data.js",
+      "bytes": 10712,
+      "LF": 177,
+      "sha256": "235f5ff9b0b128a393244a545e6d5f83ffb3c8335e358efcc294968d562260e9",
+      "gitBlob": "0674cf00e3906b54441638903827d8bebe6f81aa"
+    },
+    {
+      "path": "qualification/native_capacity_managed_workload_v3.py",
+      "bytes": 49689,
+      "LF": 646,
+      "sha256": "6d4e2d726bd600b84be387147ee7cd6555daa8b72b8940a8719861a1078b4567",
+      "gitBlob": "c11c7981db6827e68d49dfdf354db3601afb5adc"
+    },
+    {
+      "path": "qualification/native_capacity_paced_timer_resource_plan_v3.py",
+      "bytes": 17391,
+      "LF": 276,
+      "sha256": "5519fe20147ae3d03910daf089111a5803648bb5f245916659f07c151bf07997",
+      "gitBlob": "8f28daf355747ff21dd4ab02bd53949e8d0c71ef"
+    },
+    {
+      "path": "qualification/native_capacity_paced_timer_envelope_data_v1.py",
+      "bytes": 42658,
+      "LF": 616,
+      "sha256": "88a27b04b2cf83315d91390eef0889bc4c4732336d7fb569487950d8a75a5a28",
+      "gitBlob": "bd6a7df39eacd26f554b2e2c2ac290182789d3c4"
+    },
+    {
+      "path": "qualification/native_capacity_paced_timer_outer_capture_data_v3.py",
+      "bytes": 27697,
+      "LF": 396,
+      "sha256": "580322dbbc0173a42090b28d02e84645999c0310de333fa41db8d897d3ac248d",
+      "gitBlob": "51e9e1f50590e881388d502d58300c5b1957dad4"
+    },
+    {
+      "path": "qualification/native_capacity_paced_timer_outer_capture_data_v3.behavior.py",
+      "bytes": 36217,
+      "LF": 504,
+      "sha256": "3df15d99ceb5becf0c1c44a68ddf37966fa088d33f11b1596ed4cfd1b015c6fa",
+      "gitBlob": "83078e8bd070653c1522075dab240bf4535c7aec"
+    },
+    {
+      "path": "qualification/capacity-paced-timer-outer-contract-fixture-data-v3.mjs",
+      "bytes": 22229,
+      "LF": 288,
+      "sha256": "b81b571b65eb45fff6fbcce6843b9e80315fb7ed18732a2ddb62b71043c0dbf5",
+      "gitBlob": "71250b7ce18cd8bad6a270aa03a0cedc430327d4"
+    }
+  ],
+  "contract": {
+    "validatorVersion": 3,
+    "outerCaptureVersion": 4,
+    "timerEnvelopeVersion": 1,
+    "adapterReportVersion": 3,
+    "parentApplicationFiles": 147,
+    "parentPackageFiles": 404,
+    "parentSourceRowsSha256": "0e0533ba2e3bfdf97b2670a0ee693c64ddc04ea93bf52b4e779d9d073cb51c90",
+    "childApplicationFiles": 139,
+    "childPackageFiles": 404,
+    "childSourceRowsSha256": "d756740994aeb53ebeee47320d732583d96381dfa8c00e18a30f414e70a77027",
+    "field": "pacedTimerData",
+    "kind": "PRIVATE_PACED_TIMER_NATIVE_CAPACITY_COMPONENT_CAPTURE_NOT_PRODUCTION",
+    "oldEnvelopeRewritten": false
+  },
+  "controlInputs": [
+    {
+      "path": "qualification/native_capacity_managed_workload_v3.py",
+      "bytes": 49689,
+      "LF": 646,
+      "sha256": "6d4e2d726bd600b84be387147ee7cd6555daa8b72b8940a8719861a1078b4567",
+      "gitBlob": "c11c7981db6827e68d49dfdf354db3601afb5adc"
+    },
+    {
+      "path": "qualification/native_capacity_paced_timer_resource_plan_v3.py",
+      "bytes": 17391,
+      "LF": 276,
+      "sha256": "5519fe20147ae3d03910daf089111a5803648bb5f245916659f07c151bf07997",
+      "gitBlob": "8f28daf355747ff21dd4ab02bd53949e8d0c71ef"
+    },
+    {
+      "path": "qualification/native_capacity_paced_timer_envelope_data_v1.py",
+      "bytes": 42658,
+      "LF": 616,
+      "sha256": "88a27b04b2cf83315d91390eef0889bc4c4732336d7fb569487950d8a75a5a28",
+      "gitBlob": "bd6a7df39eacd26f554b2e2c2ac290182789d3c4"
+    }
+  ],
+  "actual": {
+    "attempt": 1,
+    "validated": true,
+    "testsRun": 151,
+    "selectedCases": 151,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "cleanOuterScenarios": 7,
+    "refusedOuterScenarios": 2,
+    "genuineWriterWindowClasses": 7,
+    "producer": {
+      "actualExit": 0,
+      "outputComplete": true,
+      "elapsedSeconds": 0.3902307499956805,
+      "stdoutBytes": 745988,
+      "stdoutSha256": "ef3c110a25a4db1c936ea417f7e779251bdba90d5297fd231741881eb28866bd",
+      "stderrBytes": 0,
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "python": {
+      "actualExit": 0,
+      "outputComplete": true,
+      "inputComplete": true,
+      "inputBytes": 745988,
+      "inputSha256": "ef3c110a25a4db1c936ea417f7e779251bdba90d5297fd231741881eb28866bd",
+      "elapsedSeconds": 1.3297693749773316,
+      "stdoutBytes": 851,
+      "stdoutSha256": "97f67b87be30b53488ac6dd3eda1ddf7f519d3ae1702d08652a62532b1275fa5",
+      "stderrBytes": 0,
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "sourceAndProtectedInputsUnchanged": true,
+    "protectedInputCount": 56
+  },
+  "selectedCoverage": {
+    "rawTimerParentAndPacedRecomputed": true,
+    "actualNewTimerVerifierInvocationsPerFrame": 1,
+    "completeCommandAndChildStreamFieldsBoundAsData": true,
+    "originalPayerSequenceAndPerLaneDispatchRecomputed": true,
+    "fullBalanceRawScalarCheckAndLaneMetricsRecomputed": true,
+    "allSevenWriterWindowClassesCrossLanguageChecked": true,
+    "multiPageWriter": {
+      "lanes": 2,
+      "pagesPerLane": 2,
+      "intervalsPerLane": 74,
+      "totalIntervals": 148,
+      "wholeOriginalAttributionPreserved": true
+    },
+    "selectedDefault": {
+      "workloadPlanSha256": "cbbf3b62215473ea614867461eb27ceefc3c5478f6a70eeac781982ad5689a2f",
+      "laneCount": 2,
+      "warmupCallsPerLane": 1,
+      "measuredCallsPerLane": 4,
+      "completedOriginalCallsAsData": 10,
+      "plannedTaskQuotaBytes": 74448896,
+      "plannedNodeTimeoutSeconds": 72,
+      "scopeReduced": false,
+      "policyActuallyApplied": false
+    },
+    "failureOrUnknownSourceNotUpgradedByCompleteSyntheticChildFacts": true,
+    "oversizePolicyRefusesWithoutReduction": true,
+    "parentAndChildClocksMerged": false,
+    "pureSqlLatencyClaimed": false,
+    "physicalTimerAbsenceClaimed": false
+  },
+  "method": {
+    "actualPacedTimerWriterAndBalanceDataHelpersExecuted": true,
+    "pairChildAndReceiptFactsSynthetic": true,
+    "actualNativeAdapterExecuted": false,
+    "historicalFrozenChildControlReused": true,
+    "newCopyOfChildControlAdded": false,
+    "controlSourcesCompiledFromExactCapturedBytes": true,
+    "installedPackagesImported": false,
+    "producerStreamParsedOnlyInSelectedPython": true,
+    "fixtureFilesWritten": 0,
+    "rawSuccessfulSyntheticFixturePersisted": false,
+    "reproducibleFixtureSourcePinned": true,
+    "producerStdoutCap": 8388608,
+    "pythonStdinCap": 8388608,
+    "fullJsonReserializedByOuterFrameChecker": false,
+    "wholeCaptureTreeClonedByValidator": false
+  },
+  "runtime": {
+    "nodeVersion": "24.19.0",
+    "nodeBinaryBytes": 121304480,
+    "nodeBinarySha256": "dbedff294bab84a0a86c04e15fbcbeb1c97ca10bef1b32b0634cd24b36f62100",
+    "nodeBinaryHashPasses": 1,
+    "PythonIsolated": true,
+    "PythonNoSite": true,
+    "PythonNoBytecode": true,
+    "osNetworkSandboxEstablished": false
+  },
+  "effects": {
+    "NodeSourceDataCommands": 1,
+    "PythonSourceDataCommands": 1,
+    "NodeChildren": 0,
+    "nativeApplicationChildren": 0,
+    "hostTimers": false,
+    "SDK": false,
+    "SQLite": false,
+    "keys": false,
+    "signatures": false,
+    "nonceSearch": false,
+    "sockets": false,
+    "managerImported": false,
+    "privateRootsOpened": false,
+    "qualificationScratchCreated": false,
+    "originalR4ApprovalConsumed": false,
+    "newNativeAllowanceGranted": false,
+    "auditedPythonEffects": {
+      "nativeProcesses": 0,
+      "sockets": 0,
+      "sqlite": 0,
+      "writeOpens": 0
+    }
+  },
+  "limits": {
+    "selectedOuterContractDataPassed": true,
+    "receiptOriginIndependentlyAuthenticated": false,
+    "actualNativeOuterV4CaptureObserved": false,
+    "nativeIntegrationQualified": false,
+    "physicalStorageAdmissionQualified": false,
+    "storageCleanupQualified": false,
+    "postStopLedgerDurationSeriesRecomputed": false,
+    "sustainableCapacityQualified": false,
+    "pilotOrProductionQualified": false,
+    "these151ControlsHosted": false,
+    "authority": "NONE"
+  },
+  "remaining": [
+    "Versioned managed timer-parent controller binding actual command, source, owned roots and receipts",
+    "Physical owned-root and all-reservations admission without weakening any existing refusal",
+    "Fresh exact finite native scope and actual source-pinned native evidence",
+    "Sustainable-capacity and economic/pilot acceptance gates"
+  ]
+}
