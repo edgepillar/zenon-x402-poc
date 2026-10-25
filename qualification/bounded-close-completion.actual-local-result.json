@@ -1,0 +1,208 @@
+{
+  "schemaVersion": 1,
+  "status": "ACTUAL_LOCAL_COMPONENT_PASS_NATIVE_APPLICATION_NOT_EXECUTED",
+  "sourceScope": {
+    "component": "src/service-credit-bounded-close-completion.js",
+    "test": "qualification/bounded-close-completion.behavior.mjs",
+    "executedProductionModules": [
+      "src/service-credit-bounded-close-completion.js",
+      "src/service-credit-bounded-operation-drain.js",
+      "src/service-credit-native-client-close-owner.js"
+    ],
+    "nativeWiring": "src/zenon/dynamic-plasma-native-funding-service-client.js",
+    "nativeWiringQualification": "SOURCE_REVIEW_AND_NODE_CHECK_ONLY",
+    "mainEligiblePaths": [
+      "src/service-credit-bounded-close-completion.js",
+      "qualification/bounded-close-completion.behavior.mjs",
+      "qualification/bounded-close-completion.actual-local-result.json",
+      "docs/P2_AGGREGATE_CLOSE_COMPLETION_BUDGET.md"
+    ],
+    "developmentOnlyModifiedRuntime": [
+      "src/zenon/dynamic-plasma-native-funding-service-client.js"
+    ]
+  },
+  "selectedRuntime": {
+    "node": "v24.19.0",
+    "platform": "darwin",
+    "architecture": "arm64",
+    "nodeSha256": "dbedff294bab84a0a86c04e15fbcbeb1c97ca10bef1b32b0634cd24b36f62100",
+    "fullBeforeAfterNodeIdentityMatched": true,
+    "addonsDisabled": true,
+    "codeGenerationFromStringsDisabled": true,
+    "compileCacheDisabled": true,
+    "fsWriteChildWorkerPermissions": false,
+    "osSandboxClaim": false
+  },
+  "inputPins": [
+    {
+      "path": "package.json",
+      "bytes": 2677,
+      "LF": 40,
+      "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+      "gitBlob": "45752ffde39d29666094f7f1c755060d75e43deb"
+    },
+    {
+      "path": "src/service-credit-bounded-close-completion.js",
+      "bytes": 6020,
+      "LF": 115,
+      "sha256": "1d59ec72cf9b8877947ba766316746be1e2ca5b82029c9b656757c2953ff7e5e",
+      "gitBlob": "9ccc197dd1090f14bb4c452389be8aa8180d0322"
+    },
+    {
+      "path": "src/service-credit-bounded-operation-drain.js",
+      "bytes": 5474,
+      "LF": 118,
+      "sha256": "4ea81e010451f91bb8f0ca668dd6bd3966763ea23385bdd0d511c200e4b3eecd",
+      "gitBlob": "843f9b0a3adb411471f7e345b97362e9035e094b"
+    },
+    {
+      "path": "src/service-credit-native-client-close-owner.js",
+      "bytes": 7750,
+      "LF": 157,
+      "sha256": "519809b2cc6b2bf2d37cf6048e68847255f75dc9869a1fc1119bae310462fbd7",
+      "gitBlob": "ce749d7f9637a1afffb019a89c0f0c4b2387fb92"
+    },
+    {
+      "path": "qualification/bounded-close-completion.behavior.mjs",
+      "bytes": 14130,
+      "LF": 214,
+      "sha256": "08fafe2b5ec48bf8aa74e6ecc9a07ebd4717e20469d2e9bca414b4d4eb357b89",
+      "gitBlob": "7bd5ab993a017719c102f02b43374ca0ef1736a8"
+    }
+  ],
+  "nativeSourceSyntaxOnly": {
+    "old": {
+      "path": "src/zenon/dynamic-plasma-native-funding-service-client.js",
+      "bytes": 31517,
+      "LF": 508,
+      "sha256": "988fe39a8c0afb71fb2b7525d656bc0322e354962dcd23bdd7d9c93be28a119c",
+      "gitBlob": "5ce3f830edf235c42df90c38fc2bdfce8f13fbe9"
+    },
+    "current": {
+      "path": "src/zenon/dynamic-plasma-native-funding-service-client.js",
+      "bytes": 32925,
+      "LF": 535,
+      "sha256": "71b6a60c926d66dbc1b70888a2dc1720abc6886cb3c98cac28722d7be4089a01",
+      "gitBlob": "a37591cb7815951f6e9fe77895fe89916bbeb741"
+    },
+    "actualExit": 0,
+    "complete": true,
+    "stdoutBytes": 0,
+    "stderrBytes": 0,
+    "dependencyImportsExecuted": 0,
+    "elapsedSeconds": 0.2896155829948839,
+    "priorParsedDraft": {
+      "path": "src/zenon/dynamic-plasma-native-funding-service-client.js",
+      "bytes": 32552,
+      "LF": 526,
+      "sha256": "d3734dfcb5b6dae431386528ecc708ec5948ca54468b60b5258ba320d1c92add",
+      "gitBlob": "83827f4518e9de58d6804f8f2afe9851c1851619"
+    },
+    "syntaxChecks": 2
+  },
+  "actualLocal": {
+    "tests": 24,
+    "pass": 24,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0,
+    "actualExit": 0,
+    "complete": true,
+    "stdoutBytes": 7871,
+    "stdoutSha256": "319a68fb8ee12671491a711d7481447994414855748a0b3fad95d751d895855d",
+    "stderrBytes": 0,
+    "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "elapsedSeconds": 0.49358904201653786,
+    "elapsedMeaning": "One selected component command, not application latency, native close performance or sustainable throughput",
+    "caseNames": [
+      "construction and cached inspection start no close observation",
+      "budget and constructor arity reject without coercion or object hooks",
+      "public methods and reserved prehandled Promise are frozen exact source surfaces",
+      "wrong start arity uses a cached rejection without consuming the genuine start",
+      "wrong completion or inspection arity does not claim readiness",
+      "start is idempotent and creates exactly one pending completion probe",
+      "a readiness notification is not a synchronous clean close result",
+      "duplicate or post-terminal notification cannot renew the budget or repeat observation",
+      "pending whole-close completion times out without an active application operation",
+      "late readiness after expiry never upgrades the cached rejection or allows reopen",
+      "a pending funding close remains covered even when operation settlement was immediate",
+      "a pending service close remains covered after operation and funding settlement",
+      "completion in a later responsive event-loop turn still uses the original budget",
+      "an inherited then getter introduced at notification is refused without invoking it",
+      "Promise then drift at start refuses without a new reaction or timer observer",
+      "Promise constructor drift at notification is refused without a constructor getter",
+      "Promise species drift at notification is refused without a species getter",
+      "restoring intrinsics cannot repair an already refused close notification",
+      "two close components have independent budgets and never borrow a completion signal",
+      "cached inspection cannot turn a pending observation into a close permit",
+      "actual funding-close lifecycle joins the actual bounded observer with declared zero counts",
+      "actual funding late UNKNOWN before readiness leaves the bounded close permanently held",
+      "actual funding late UNKNOWN after notification still requires the owner post-await guard",
+      "input failures and observations expose no callback resource or raw failure payload"
+    ],
+    "getterOrCoercionHooks": 0,
+    "actualFundingCoreConstructions": 3,
+    "declaredMaterialReleases": 3,
+    "declaredStoreEntries": 0,
+    "inputAndNodePinsBeforeAfterMatched": true,
+    "otherPriorInputsPreserved": 274,
+    "executionRetries": 0
+  },
+  "implementation": {
+    "oneBudgetForEntireOwnerCloseJoin": true,
+    "budgetRangeMs": [
+      1,
+      1000
+    ],
+    "nativeOwnerBudget": "min(funding deadline, service deadline, 1000)",
+    "constructorInert": true,
+    "reservedPrehandledPromise": true,
+    "startBeforeIndependentStops": true,
+    "pendingCompletionSignalNotRepeatedBusyPolling": true,
+    "alsoArmedWhenOperationAbsent": true,
+    "noBudgetRenewal": true,
+    "lateCompletionCannotRepairUnknown": true,
+    "ownerMustRecheckCurrentResourceGuardsAfterAwait": true,
+    "originalOperationValueAndReasonRemainOpaque": true,
+    "returnedCloseHistoryNotUndone": true,
+    "existingSingleOwnerAndSameFileChecksPreservedInSource": true,
+    "noDefaultOrInputContractChange": true,
+    "serviceCloseViewRecheckedBeforeCompletionAndFinalReleaseInSource": true
+  },
+  "effectScope": {
+    "realBoundedNodeTimers": true,
+    "actualComponentRuntime": true,
+    "nativeApplicationImported": false,
+    "SDK": false,
+    "SQLite": false,
+    "x402Packages": false,
+    "sockets": false,
+    "network": false,
+    "keysGenerated": false,
+    "signatures": 0,
+    "nonceSearch": false,
+    "realPrepare": false,
+    "livePayment": false,
+    "childNodeProcesses": 0,
+    "taskStorageImported": false,
+    "storageAdmissionPerformed": false,
+    "newScratchFiles": 0,
+    "oldNativeAllowanceConsumed": false,
+    "workflowPackageOrDefaultChanged": false,
+    "automaticHosted27ProfileChanged": false,
+    "currentHeadHostedResultObservedAtCreation": false,
+    "manualCIRetry": false,
+    "authority": "NONE",
+    "componentCommands": 1,
+    "syntaxOnlyCommands": 2
+  },
+  "evidenceLimits": [
+    "The operation-only gap was identified in current native-client SOURCE. No native old-client hang or current full application close was executed or reproduced.",
+    "The 24 cases execute the actual new observer, current drain helper and actual funding close lifecycle against declared resource counts/callbacks. They are not SDK/HTTPS/V6 store closure or native physical-drain proof.",
+    "A fulfilled completion observer is historical readiness observation, never a fresh native/store-close permit. The source owner rechecks current funding/service guards before releasing its application slot; late funding UNKNOWN was exercised at the component seam.",
+    "The event loop and trusted callbacks must cooperate. No hard cancellation, OS deadline, resource repair, rollback, reopen, payment replacement or retry authority is added.",
+    "The modified native-client wiring is development-only, reviewed and parsed without importing its dependencies. Native composition, crash/lost-ACK, quarantine/reopen and economic acceptance remain unqualified.",
+    "Main may receive only the independently executed component/test/result/document. The existing 27-case hosted profile is unchanged and must be observed separately for the intended published head."
+  ]
+}
