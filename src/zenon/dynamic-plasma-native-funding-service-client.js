@@ -10,7 +10,7 @@ import { captureNativeFundingServiceLoopbackReadSelection } from './native-fundi
 import { createNativeOriginalFundingCloseSession } from './dynamic-plasma-native-funding-close-session.js';
 import { createBoundedNonceDynamicPlasmaMaterialExchange } from './dynamic-plasma-bounded-material-exchange.js';
 import { createZenonDynamicPlasmaOriginalFundingSubmissionV4 } from './dynamic-plasma-original-funding-submission.js';
-import { captureZenonDynamicPlasmaOriginalFundingInputV2 } from './dynamic-plasma-original-funding-data.js';
+import { captureZenonDynamicPlasmaFundingPostPreparationInput } from './dynamic-plasma-funding-post-preparation-input.js';
 import { captureOriginalFundingServiceHandoffRequest } from './dynamic-plasma-original-funding-service-handoff-request.js';
 import { captureFundingPostCheckpointRoute } from '../x402-funding-post-checkpoint-route.js';
 import { snapshotOriginalServiceRequestCustodyPolicy } from '../service-credit-original-request-custody-contract.js';
@@ -23,7 +23,7 @@ const LOCAL_READS = createRetainedDynamicPlasmaHttpsReadSessionForLocalQualifica
 const LOCAL_SELECTION = captureNativeFundingServiceLoopbackReadSelection;
 const SESSION = createNativeOriginalFundingCloseSession, MATERIAL = createBoundedNonceDynamicPlasmaMaterialExchange;
 const SUBMISSION = createZenonDynamicPlasmaOriginalFundingSubmissionV4;
-const ORIGINAL_INPUT = captureZenonDynamicPlasmaOriginalFundingInputV2;
+const ORIGINAL_INPUT = captureZenonDynamicPlasmaFundingPostPreparationInput;
 const HANDOFF = captureOriginalFundingServiceHandoffRequest;
 const SERVICE = openNativeOfficialV6FundingPostOriginalPaymentClientWithFundingHandoffGuard;
 const ROUTE = captureFundingPostCheckpointRoute, POLICY = snapshotOriginalServiceRequestCustodyPolicy;
@@ -265,6 +265,8 @@ async function openClient(configuration, localReadOptions, localQualification) {
   }
   async function prepare(input) {
     const original = ORIGINAL_INPUT(input, storeOptions.resourceUrl);
+    // Bind the fixed empty-body POST contract BEFORE real preparation/signing.
+    // General original-checkpoint DATA still supports bodies in other lanes.
     // Reject a misconfigured official asset before the real signer/preparer.
     // This DATA capture is not another current read or a renewed work budget.
     if (original.challenge.paymentRequired.accepts[0].asset !== serviceOptions.official.assetInfo.asset)
