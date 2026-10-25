@@ -16,6 +16,7 @@ import { captureFundingPostCheckpointRoute } from '../x402-funding-post-checkpoi
 import { snapshotOriginalServiceRequestCustodyPolicy } from '../service-credit-original-request-custody-contract.js';
 import { openNativeOfficialV6FundingPostOriginalPaymentClientWithFundingHandoffGuard } from '../x402-native-v6-funding-post-client.js';
 import { observeServiceCreditOperationDrain } from '../service-credit-bounded-operation-drain.js';
+import { createServiceCreditBoundedCloseCompletion } from '../service-credit-bounded-close-completion.js';
 
 const OPEN_STORE = openZenonFundingPayerRecoveryOriginalPaymentSqliteStoreV6;
 const FUNDING = createFundingPostNativeHttpsTransport, READS = createRetainedDynamicPlasmaHttpsReadSessionV2;
@@ -28,6 +29,7 @@ const HANDOFF = captureOriginalFundingServiceHandoffRequest;
 const SERVICE = openNativeOfficialV6FundingPostOriginalPaymentClientWithFundingHandoffGuard;
 const ROUTE = captureFundingPostCheckpointRoute, POLICY = snapshotOriginalServiceRequestCustodyPolicy;
 const DRAIN = observeServiceCreditOperationDrain, STAT = lstatSync, F = Object.freeze;
+const CLOSE_COMPLETION = createServiceCreditBoundedCloseCompletion;
 const DESC = Object.getOwnPropertyDescriptor, PROTO = Object.getPrototypeOf, KEYS = Reflect.ownKeys;
 const OWN = Object.hasOwn, APPLY = Reflect.apply, IS_PROXY = utilTypes.isProxy, IS_PROMISE = utilTypes.isPromise;
 const NativePromise = Promise, PROMISE = NativePromise.prototype, THEN = DESC(PROMISE, 'then');
@@ -88,6 +90,7 @@ async function openClient(configuration, localReadOptions, localQualification) {
   let pending = null, closing = null, handoffAttempts = 0, serviceOpenEntered = false;
   let fundingClose = null, fundingCloseOutcome = 'NOT_REQUESTED', serviceClose = null, serviceCloseOutcome = 'NOT_REQUESTED';
   let operationDrain = 'NOT_REQUESTED', historicalClose = 'NOT_REQUESTED', closeError = null;
+  let closeCompletion = null, closeCompletionOutcome = 'NOT_REQUESTED';
   let privateCa = null, localReadSelection = null;
   const slot = { phase: 'STARTING', store: null, funder: null, service: null,
     reads: null, post: null, session: null };
@@ -170,6 +173,8 @@ async function openClient(configuration, localReadOptions, localQualification) {
         || policy.serviceResourceUrl !== serviceTransport.origin + '/service-credit/v1/execute'
         || serviceTransport.maxConcurrentRequests !== 1 || serviceTransport.maxRequestStarts > policy.maxRequests
         || serviceTransport.requestDeadlineMs > serviceOptions.deadlineMs) fail('configuration_or_owner_unavailable');
+    // Inert reservation before native/store construction, not a timer or permit.
+    closeCompletion = CLOSE_COMPLETION(Math.min(fundingOptions.deadlineMs, serviceOptions.deadlineMs, 1000));
     // Detach operator trust DATA before the funding lifetime starts. A caller
     // cannot swap the later service CA while funding/signing is in progress.
     privateCa = captureCa(serviceTransport.ca);
@@ -241,9 +246,7 @@ async function openClient(configuration, localReadOptions, localQualification) {
     localReadOptions = null;
     configuration = null; materialOptions = null; fundingTransportOptions = null;
   }
-  const FUNDING_DEADLINE = fundingOptions.deadlineMs;
   fundingOptions = null;
-  const JOIN_BUDGET = Math.min(FUNDING_DEADLINE, serviceOptions.deadlineMs, 1000);
 
   function operation(name, input) {
     if (phase !== 'FUNDING' || closing !== null || held) fail('funding_unavailable');
@@ -316,6 +319,12 @@ async function openClient(configuration, localReadOptions, localQualification) {
     } catch { serviceCloseOutcome = 'UNKNOWN'; hold('SERVICE_CLOSE_UNKNOWN'); c.reject(error('close_unknown')); }
     return serviceClose;
   }
+  function serviceClosedFresh() {
+    try {
+      return service === null || serviceCloseOutcome === 'CLOSED'
+        && data(service.snapshot(), 'lifecycle') === 'CLOSED';
+    } catch { return false; }
+  }
   async function handoff(input) {
     if (phase !== 'FUNDING' || !bound || retained === null || handoffAttempts !== 0) fail('handoff_unavailable');
     // Reject malformed external originals/pins/grant/challenge BEFORE consuming
@@ -361,7 +370,8 @@ async function openClient(configuration, localReadOptions, localQualification) {
   let closeCapability = null;
   function finishClose() {
     if (closing === null || historicalClose !== 'PENDING') return;
-    if (held || fundingCloseOutcome === 'UNKNOWN' || serviceCloseOutcome === 'UNKNOWN' || operationDrain === 'UNKNOWN') {
+    if (held || fundingCloseOutcome === 'UNKNOWN' || serviceCloseOutcome === 'UNKNOWN'
+        || operationDrain === 'UNKNOWN' || closeCompletionOutcome === 'UNKNOWN') {
       historicalClose = 'REJECTED'; hold('CLOSE_OUTCOME_UNKNOWN'); closeCapability.reject(error('close_unknown')); return;
     }
     if (fundingCloseOutcome !== 'CLOSED' || operationDrain !== 'DRAINED' || pending !== null) return;
@@ -371,6 +381,14 @@ async function openClient(configuration, localReadOptions, localQualification) {
     }
     if (!fundingClosedFresh()) {
       historicalClose = 'REJECTED'; hold('LATE_FUNDING_VIEW_UNKNOWN'); closeCapability.reject(error('close_unknown')); return;
+    }
+    if (!serviceClosedFresh()) {
+      historicalClose = 'REJECTED'; hold('LATE_SERVICE_VIEW_UNKNOWN'); closeCapability.reject(error('close_unknown')); return;
+    }
+    if (closeCompletionOutcome !== 'DRAINED') {
+      // All current owner conditions, including late service acquisition, must
+      // join the SAME enclosing budget. A notification is not yet permission.
+      closeCompletion.complete(); return;
     }
     historicalClose = 'FULFILLED_UNDEFINED'; lifecycle = 'CLOSED'; slot.phase = 'RELEASED';
     releaseCa();
@@ -382,20 +400,28 @@ async function openClient(configuration, localReadOptions, localQualification) {
     if (closing !== null) return closing;
     closeCapability = capability(); closing = closeCapability.promise; lifecycle = 'CLOSING'; historicalClose = 'PENDING';
     const active = pending;
+    operationDrain = active === null ? 'DRAINED' : 'PENDING';
+    closeCompletionOutcome = 'PENDING';
+    // Arm before entering either trusted stop, even with no active operation.
+    // The event loop must remain responsive; this is not OS cancellation.
+    try {
+      observe(closeCompletion.start(), () => {
+        closeCompletionOutcome = 'DRAINED'; finishClose();
+      }, () => {
+        closeCompletionOutcome = 'UNKNOWN'; hold('CLOSE_JOIN_UNKNOWN'); finishClose();
+      });
+    } catch { closeCompletionOutcome = 'UNKNOWN'; hold('CLOSE_JOIN_UNKNOWN'); }
     if (!serviceOpenEntered) releaseCa(); // A pending handoff checks closing before opening.
     // Independent stop attempts, no await/short-circuit. The actual funder and
     // service owners retain their own native/budget/store-close fences.
     closeFundingOnce(); closeServiceOnce();
-    operationDrain = active === null ? 'DRAINED' : 'PENDING';
     if (active !== null) {
-      const settled = capability();
-      observe(active, () => settled.resolve('DRAINED'), () => settled.resolve('DRAINED'));
-      const observed = DRAIN(F(function currentOperationSettlement() { return settled.promise; }), JOIN_BUDGET);
-      observe(observed, value => {
-        operationDrain = value === true ? 'DRAINED' : 'UNKNOWN';
-        if (operationDrain === 'UNKNOWN') hold('OPERATION_JOIN_UNKNOWN');
-        finishClose();
-      }, () => { operationDrain = 'UNKNOWN'; hold('OPERATION_JOIN_UNKNOWN'); finishClose(); });
+      // Observe the original operation without classifying its value/reason.
+      // The enclosing completion observer already bounds the whole join.
+      try {
+        observe(active, () => { operationDrain = 'DRAINED'; finishClose(); },
+          () => { operationDrain = 'DRAINED'; finishClose(); });
+      } catch { operationDrain = 'UNKNOWN'; hold('OPERATION_JOIN_UNKNOWN'); }
     }
     finishClose(); return closing;
   });
@@ -409,6 +435,7 @@ async function openClient(configuration, localReadOptions, localQualification) {
       applicationSlotHeld: applicationSlot === slot, applicationSlotPhase: slot.phase,
       publicOperationActive: pending !== null, fundingBound: bound, handoffAttempts, serviceOpenEntered,
       fundingCloseOutcome, serviceCloseOutcome, operationDrain, historicalClose,
+      closeCompletionOutcome, closeCompletion: closeCompletion.inspect(),
       funding: funder.inspectOriginalFunding(), service: serviceView,
       defaultEnabled: false, automaticReplay: false, sameFileIsAtomicLease: false,
       nativeResourceCleanup: 'NOT_QUALIFIED', grantActivation: 'NOT_ESTABLISHED',
