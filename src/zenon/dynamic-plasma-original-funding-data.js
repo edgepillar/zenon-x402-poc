@@ -37,6 +37,10 @@ const TARGET = /^\/[A-Za-z0-9\-._~!$&'()*+,;=:@]+(?:\/[A-Za-z0-9\-._~!$&'()*+,;=
 const DOT = /(?:^|\/)\.{1,2}(?:\/|$)/;
 const READ = FREEZE(['observedUserSendReadVersion', 'phase', 'paymentRequired', 'accepted',
   'payerAddress', 'compiledSporkIds', 'policy', 'runtimeContextDigest']);
+// Weak keys retain no caller input or historical payment index. Only a fully
+// detached, recursively frozen v7 capture from THIS module is registered.
+const RETAINED_V2 = new WeakMap();
+const RETAINED_GET = WeakMap.prototype.get, RETAINED_SET = WeakMap.prototype.set;
 
 /**
  * Synchronous SDK/SQL-free capture BEFORE the actual candidate preparer is
@@ -60,6 +64,27 @@ export function captureZenonDynamicPlasmaOriginalFundingInput(input, fundingReso
 export function captureZenonDynamicPlasmaOriginalFundingInputV2(input, fundingResourceUrl) {
   if (arguments.length !== 2) reject();
   return captureInput(input, fundingResourceUrl, 7);
+}
+
+/**
+ * Internal-chain DATA reuse, not a new current read or operation permission.
+ * Reuse ONLY this module's exact immutable v7 capture at its original resource.
+ * Unbranded input, including an equal frozen clone, takes the full capture.
+ * The public v1/v2 capture entries still always produce a fresh detached copy.
+ * No object is branded from a caller flag, digest, prototype or frozen status.
+ * This does not skip actual quote/work, signing, preflight, custody revalidation,
+ * independent pins or persistence. A retained capture is not authority.
+ */
+export function retainCapturedZenonDynamicPlasmaOriginalFundingInputV2(input, fundingResourceUrl) {
+  if (arguments.length !== 2) reject();
+  try { return retainInputV2(input, fundingResourceUrl); } catch { reject(); }
+}
+
+function retainInputV2(input, fundingResourceUrl) {
+  if (!invariant()) reject();
+  const url = resourceUrl(fundingResourceUrl);
+  if (APPLY(RETAINED_GET, RETAINED_V2, [input]) === url) return input;
+  return captureInput(input, url, 7);
 }
 
 function captureInput(input, fundingResourceUrl, contextVersion) {
@@ -91,6 +116,7 @@ function captureInput(input, fundingResourceUrl, contextVersion) {
     identifier(original.requestId); identifier(original.contextId);
     base64(original.requestBodyBase64, true); base64(original.contextBase64, false);
     if (!invariant()) reject();
+    if (contextVersion === 7) APPLY(RETAINED_SET, RETAINED_V2, [stable, url]);
     return stable;
   } catch { reject(); }
 }
@@ -129,7 +155,8 @@ export function assembleZenonDynamicPlasmaOriginalFundingDataV2(originals, candi
 function assembleData(originals, candidate, fundingResourceUrl, contextVersion) {
   try {
     if (!invariant()) reject();
-    const input = captureInput(originals, fundingResourceUrl, contextVersion);
+    const input = contextVersion === 7 ? retainInputV2(originals, fundingResourceUrl)
+      : captureInput(originals, fundingResourceUrl, contextVersion);
     const pair = record(snapshot(candidate, 0, { nodes: 2048, characters: 65536 }),
       ['originalUnsignedBlock', 'accountBlock']);
     const original = FIELDS(pair.originalUnsignedBlock);

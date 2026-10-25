@@ -11,7 +11,7 @@ import { claimZenonDynamicPlasmaOriginalFundingStore } from './dynamic-plasma-or
 import {
   captureZenonDynamicPlasmaOriginalFundingInput,
   assembleZenonDynamicPlasmaOriginalFundingData,
-  captureZenonDynamicPlasmaOriginalFundingInputV2,
+  retainCapturedZenonDynamicPlasmaOriginalFundingInputV2,
   assembleZenonDynamicPlasmaOriginalFundingDataV2,
   snapshotZenonDynamicPlasmaOriginalFundingPins,
 } from './dynamic-plasma-original-funding-data.js';
@@ -21,7 +21,7 @@ const CREATE_RETAINED_PREPARER = createObservedBalanceDeadlineBoundMaterialRetai
 const CLAIM_STORE = claimZenonDynamicPlasmaOriginalFundingStore;
 const CAPTURE = captureZenonDynamicPlasmaOriginalFundingInput;
 const ASSEMBLE = assembleZenonDynamicPlasmaOriginalFundingData;
-const CAPTURE_V2 = captureZenonDynamicPlasmaOriginalFundingInputV2;
+const CAPTURE_V2 = retainCapturedZenonDynamicPlasmaOriginalFundingInputV2;
 const ASSEMBLE_V2 = assembleZenonDynamicPlasmaOriginalFundingDataV2;
 const PINS = snapshotZenonDynamicPlasmaOriginalFundingPins;
 const PREFLIGHT = preflightZenonPayment, CANONICAL = canonicalJson;
@@ -130,6 +130,8 @@ function createPreparation(configuration, retainedValidationEnabled) {
     used = true; active = true; phase = 'PREPARING';
     try {
       if (!invariant()) fail('operation_rejected');
+      // V2 may reuse only a fully detached immutable capture from the DATA
+      // module. Actual reads, signing and pre-custody revalidation stay below.
       originals = CAPTURE_INPUT(incoming, RESOURCE);
       await undefined;
       if (!invariant() || APPLY(STORE_LOAD, STORE, []) !== null) fail('occupied_or_unusable_store');
