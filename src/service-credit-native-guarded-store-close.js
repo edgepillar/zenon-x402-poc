@@ -1,6 +1,6 @@
 import { types as utilTypes } from 'node:util';
 
-const F = Object.freeze, DESC = Object.getOwnPropertyDescriptor, PROTO = Object.getPrototypeOf;
+const F = Object.freeze, CREATE = Object.create, DESC = Object.getOwnPropertyDescriptor, PROTO = Object.getPrototypeOf;
 const KEYS = Reflect.ownKeys, OWN = Object.hasOwn, APPLY = Reflect.apply, IS_PROXY = utilTypes.isProxy;
 
 /**
@@ -19,7 +19,9 @@ export function createNativeGuardedStoreCloseBoundary(configuration) {
   if (arguments.length !== 1 || configuration === null || typeof configuration !== 'object'
       || IS_PROXY(configuration) || PROTO(configuration) !== Object.prototype
       || !Object.isFrozen(configuration) || KEYS(configuration).length !== 2) fail();
-  const c = {};
+  // Inherited setters/getters must not learn or replace either private
+  // source-owned callback, even if construction later refuses another field.
+  const c = CREATE(null);
   for (const name of ['nativeGuard', 'closeResource']) {
     const d = DESC(configuration, name);
     if (!d || !OWN(d, 'value') || !d.enumerable || typeof d.value !== 'function'
