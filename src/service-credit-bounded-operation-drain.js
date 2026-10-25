@@ -5,7 +5,12 @@ const NativePromise = Promise, THEN = NativePromise.prototype.then;
 const PROMISE_PROTOTYPE = NativePromise.prototype;
 const APPLY = Reflect.apply, DESCRIPTOR = Object.getOwnPropertyDescriptor;
 const PROTOTYPE = Object.getPrototypeOf, HAS = Object.hasOwn;
+const KEYS = Reflect.ownKeys, CREATE = Object.create, DEFINE = Object.defineProperty;
 const IS_PROMISE = utilTypes.isPromise, IS_PROXY = utilTypes.isProxy;
+const SPECIES = Symbol.species;
+const THEN_DESCRIPTOR = DESCRIPTOR(PROMISE_PROTOTYPE, 'then');
+const CONSTRUCTOR_DESCRIPTOR = DESCRIPTOR(PROMISE_PROTOTYPE, 'constructor');
+const SPECIES_DESCRIPTOR = DESCRIPTOR(NativePromise, SPECIES);
 const SET_TIMEOUT = setTimeout, CLEAR_TIMEOUT = clearTimeout;
 const NOW = performance.now.bind(performance), FINITE = Number.isFinite;
 const INTEGER = Number.isSafeInteger, MIN = Math.min, CEIL = Math.ceil;
@@ -21,13 +26,17 @@ const MAX_OBSERVATIONS = 64, MAX_DELAY_MS = 32;
  * scheduled afterward. This does not cancel the probe, prove native resource
  * release, close a store or authorize a retry. A blocked event loop can delay
  * the watchdog: this is NOT an OS or hostile-code hard-timeout guarantee.
+ * Captured Promise descriptors must remain stable before/after a probe and at
+ * completion. Drift is UNKNOWN, never a fresh DRAINED permit. No inherited
+ * constructor/species getter may substitute for the supported native boundary.
+ * Returned promises pin their own constructor without consulting a getter.
  */
 export function observeServiceCreditOperationDrain(probe, budgetMs) {
   if (arguments.length !== 2 || typeof probe !== 'function' || IS_PROXY(probe)
-      || !INTEGER(budgetMs) || budgetMs < 1 || budgetMs > 1000) {
-    return new NativePromise(resolve => resolve(false));
+      || !INTEGER(budgetMs) || budgetMs < 1 || budgetMs > 1000 || !invariant()) {
+    return shield(new NativePromise(resolve => resolve(false)));
   }
-  return new NativePromise(resolve => {
+  return shield(new NativePromise(resolve => {
     let terminal = false, watchdog = null, wake = null, observations = 0, delayMs = 1;
     let started, deadline;
     function finish(drained) {
@@ -39,10 +48,11 @@ export function observeServiceCreditOperationDrain(probe, budgetMs) {
         try { CLEAR_TIMEOUT(handle); } catch { cancelled = false; }
       }
       watchdog = null; wake = null;
-      resolve(drained === true && cancelled);
+      resolve(drained === true && cancelled && invariant());
     }
     function beforeDeadline() {
       if (terminal) return false;
+      if (!invariant()) { finish(false); return false; }
       let now;
       try { now = NOW(); } catch { finish(false); return false; }
       if (!FINITE(now) || now < started || now >= deadline) {
@@ -70,6 +80,7 @@ export function observeServiceCreditOperationDrain(probe, budgetMs) {
       let result;
       try { result = APPLY(probe, undefined, []); }
       catch { finish(false); return; }
+      if (!beforeDeadline()) return;
       if (typeof result === 'string') { accept(result); return; }
       // Never assimilate an arbitrary thenable or touch its then getter.
       if (!IS_PROMISE(result) || IS_PROXY(result) || PROTOTYPE(result) !== PROMISE_PROTOTYPE) {
@@ -88,5 +99,20 @@ export function observeServiceCreditOperationDrain(probe, budgetMs) {
       watchdog = SET_TIMEOUT(() => finish(false), budgetMs);
       check();
     } catch { finish(false); }
-  });
+  }));
+}
+
+function invariant() {
+  return same(DESCRIPTOR(PROMISE_PROTOTYPE, 'then'), THEN_DESCRIPTOR)
+    && same(DESCRIPTOR(PROMISE_PROTOTYPE, 'constructor'), CONSTRUCTOR_DESCRIPTOR)
+    && same(DESCRIPTOR(NativePromise, SPECIES), SPECIES_DESCRIPTOR);
+}
+function same(actual, expected) {
+  if (!actual || !expected || KEYS(actual).length !== KEYS(expected).length) return false;
+  for (const key of KEYS(expected)) if (!HAS(actual, key) || actual[key] !== expected[key]) return false;
+  return true;
+}
+function shield(promise) {
+  const descriptor = CREATE(null); descriptor.value = NativePromise;
+  DEFINE(promise, 'constructor', descriptor); return promise;
 }
