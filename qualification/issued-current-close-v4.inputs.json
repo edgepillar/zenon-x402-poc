@@ -1,0 +1,300 @@
+{
+  "kind": "CURRENT_ISSUED_CLOSE_FULL_GRAPH_DELTA_NOT_EXECUTION_V4",
+  "version": 4,
+  "sourceParent": "61f7c11967afcb4310fb50700c8e91d7acdb8a25",
+  "baseline": {
+    "path": "qualification/issued-funding-post-native-vertical.inputs-v3.json",
+    "bytes": 138777,
+    "LF": 3836,
+    "sha256": "51ffb5b0ff0052523c1b7f3d75fa24e9be27e60ca3bcc09236b1f439096aaed1",
+    "gitBlob": "3dc05ccffd306e97056b4ed168d8121f63acebbc"
+  },
+  "applicationReplacements": [
+    {
+      "beforeSha256": "ccaf1742f94a2ae312598c4bb2adc0c6168b1ade0167dbc8990422f5e7037885",
+      "input": {
+        "path": "app/src/service-credit-bounded-operation-drain.js",
+        "bytes": 5474,
+        "LF": 118,
+        "sha256": "4ea81e010451f91bb8f0ca668dd6bd3966763ea23385bdd0d511c200e4b3eecd",
+        "gitBlob": "843f9b0a3adb411471f7e345b97362e9035e094b"
+      }
+    },
+    {
+      "beforeSha256": "3b3fec921b46c62ed7557043f99cffb2e1a12f515bf4e607ea8f61525db28b7c",
+      "input": {
+        "path": "app/src/service-credit-funding-post-native-https-transport.js",
+        "bytes": 20632,
+        "LF": 351,
+        "sha256": "61751ba97d98f02393cdf95fba166ece9f517b6e98db66ee05f3d4a52762f3fe",
+        "gitBlob": "368475ea019efc0e68eb06a55d8e87e721ec633a"
+      }
+    },
+    {
+      "beforeSha256": "00366016a37cf71234cb305e860b5d3f406c97f6b6a7af8569ae76726b759c91",
+      "input": {
+        "path": "app/src/service-credit-native-client-close-owner.js",
+        "bytes": 7750,
+        "LF": 157,
+        "sha256": "519809b2cc6b2bf2d37cf6048e68847255f75dc9869a1fc1119bae310462fbd7",
+        "gitBlob": "ce749d7f9637a1afffb019a89c0f0c4b2387fb92"
+      }
+    },
+    {
+      "beforeSha256": "1a1d9f0dec325210251f3f6aedb92a30e820d04f7a0dd710f25b3c8fd0ec079c",
+      "input": {
+        "path": "app/src/service-credit-native-client-request-stop-owner.js",
+        "bytes": 6009,
+        "LF": 116,
+        "sha256": "c030e52ba8ff25da68b590fb32f54ba58d983ed80b22aa0c611fb81c17ad4a63",
+        "gitBlob": "65431323a4dcf992381c573223a77fb440db9375"
+      }
+    },
+    {
+      "beforeSha256": "2b539ae27ccdb8339fdb3543e5dd0f5e6f5f1b317114d9def1a9dc168bb04f5d",
+      "input": {
+        "path": "app/src/service-credit-native-guarded-store-close.js",
+        "bytes": 4295,
+        "LF": 81,
+        "sha256": "9110b9127388c893163f153a7bbea373955a44a49bc5f0ca595e6b179389e885",
+        "gitBlob": "0088bab801b1e3f5d861d8b1d22b9f7ca7dc8b51"
+      }
+    },
+    {
+      "beforeSha256": "5ed9ac6189f2f86bcc2195c5c6da03ecec7e1e779c4084490029270e617743a8",
+      "input": {
+        "path": "app/src/zenon/dynamic-plasma-native-funding-service-client.js",
+        "bytes": 32925,
+        "LF": 535,
+        "sha256": "71b6a60c926d66dbc1b70888a2dc1720abc6886cb3c98cac28722d7be4089a01",
+        "gitBlob": "a37591cb7815951f6e9fe77895fe89916bbeb741"
+      }
+    },
+    {
+      "beforeSha256": "b2cf8d63646ed4da467ddb3e621247470c2462925c190866d5a070d9dc5b123d",
+      "input": {
+        "path": "app/src/zenon/dynamic-plasma-original-funding-data.js",
+        "bytes": 16557,
+        "LF": 312,
+        "sha256": "8a416a548e827dc71bc6f87e675e265d01c20d6e8147de8617d47b8b8b8b0770",
+        "gitBlob": "8d8e44fba2bd093ec0d0c909530a570b7eb104ce"
+      }
+    },
+    {
+      "beforeSha256": "0e1eb8bb94ecd4da8d4dc8f9b384510e8c2764601ba22e228126ba9ed01368c6",
+      "input": {
+        "path": "app/src/zenon/dynamic-plasma-original-funding-preparation.js",
+        "bytes": 15788,
+        "LF": 259,
+        "sha256": "2d21e84d097c9814a3501a5742795df924ea59053c023825f4d9a9125f8f3451",
+        "gitBlob": "f95bc59831e69e59748494f989cce9376784f53b"
+      }
+    }
+  ],
+  "applicationAdditions": [
+    {
+      "path": "app/qualification/issued-current-close-v4-grant.fixture.mjs",
+      "bytes": 24039,
+      "LF": 313,
+      "sha256": "0134331b571eda461c8af2398e7dccd67010ed8b0f2c563b11415efc57ef8422",
+      "gitBlob": "c5b3e0a4ab138c4eeb733895ebb71e1d29eb0675"
+    },
+    {
+      "path": "app/qualification/issued-current-close-v4-rpc.fixture.mjs",
+      "bytes": 20688,
+      "LF": 265,
+      "sha256": "f54f75f6e6f50d2ebf9b47323cb16764dc885b754aef3bde390495c973046fc7",
+      "gitBlob": "f74f41ca96e4901cbfa8dcfe970006e7f66ef3c6"
+    },
+    {
+      "path": "app/qualification/issued-current-close-v4.case.mjs",
+      "bytes": 35758,
+      "LF": 493,
+      "sha256": "b79e955adffd83cd727e613fa9e54bede5edb06c678e303dbbea3578cfbbf883",
+      "gitBlob": "d2ad2afcd607d30f9fdf262cefad1cdf1213ec69"
+    },
+    {
+      "path": "app/qualification/issued-current-close-v4.preload.mjs",
+      "bytes": 12504,
+      "LF": 175,
+      "sha256": "d105a810a164b717224d69e2c3e975c7412de62c88d5b0cdd7ab85fb17bf6700",
+      "gitBlob": "44cabd5b5f3c043e6ce88c509d03fb190583b407"
+    },
+    {
+      "path": "app/src/service-credit-bounded-close-completion.js",
+      "bytes": 6020,
+      "LF": 115,
+      "sha256": "1d59ec72cf9b8877947ba766316746be1e2ca5b82029c9b656757c2953ff7e5e",
+      "gitBlob": "9ccc197dd1090f14bb4c452389be8aa8180d0322"
+    },
+    {
+      "path": "app/src/zenon/dynamic-plasma-funding-post-preparation-input.js",
+      "bytes": 2029,
+      "LF": 39,
+      "sha256": "d45623eca3536309de46df816cafb05db14ec25a13a7b2e9a52625591d5a9972",
+      "gitBlob": "466b63e4f1c46731095163b7e922c136df0b5031"
+    }
+  ],
+  "resolvedApplicationFiles": 123,
+  "packageFiles": 404,
+  "resolvedSourceRowsSha256": "b0ead918f6e0a86e78655ee4350ba21dfb88296f0bbd9893913cdf18b7d36d52",
+  "resolvedSourceBytes": 4473160,
+  "packageRowsSha256": "6de2ebf27c64de96e4823d3c504347593490061b0c6510db378311258730a31f",
+  "entry": "app/qualification/issued-current-close-v4.case.mjs",
+  "preload": "app/qualification/issued-current-close-v4.preload.mjs",
+  "bareBindings": [
+    {
+      "parent": "app/qualification/issued-funding-post-native-vertical.case.draft.mjs",
+      "specifier": "@noble/ed25519",
+      "target": "packages/@noble/ed25519/index.js"
+    },
+    {
+      "parent": "app/qualification/issued-funding-post-native-vertical.case.draft.mjs",
+      "specifier": "@noble/hashes/sha2",
+      "target": "packages/@noble/hashes/esm/sha2.js"
+    },
+    {
+      "parent": "app/src/zenon-payment.js",
+      "specifier": "znn-typescript-sdk",
+      "target": "packages/znn-typescript-sdk/dist/index.js"
+    },
+    {
+      "parent": "app/src/zenon-payment.js",
+      "specifier": "@noble/ed25519",
+      "target": "packages/@noble/ed25519/index.js"
+    },
+    {
+      "parent": "app/src/zenon-payment.js",
+      "specifier": "@noble/hashes/sha2",
+      "target": "packages/@noble/hashes/esm/sha2.js"
+    },
+    {
+      "parent": "app/src/x402-official-selected-payment-client.js",
+      "specifier": "@x402/core/client",
+      "target": "packages/@x402/core/dist/esm/client/index.mjs"
+    },
+    {
+      "parent": "app/src/x402-official-selected-settlement-server.js",
+      "specifier": "@x402/core/server",
+      "target": "packages/@x402/core/dist/esm/server/index.mjs"
+    },
+    {
+      "parent": "packages/@x402/core/dist/esm/chunk-N4QXZG2Z.mjs",
+      "specifier": "zod",
+      "target": "packages/zod/index.js"
+    },
+    {
+      "parent": "app/qualification/issued-current-close-v4.case.mjs",
+      "specifier": "@noble/ed25519",
+      "target": "packages/@noble/ed25519/index.js"
+    },
+    {
+      "parent": "app/qualification/issued-current-close-v4.case.mjs",
+      "specifier": "@noble/hashes/sha2",
+      "target": "packages/@noble/hashes/esm/sha2.js"
+    }
+  ],
+  "allowedBuiltins": [
+    "node:assert/strict",
+    "node:async_hooks",
+    "node:buffer",
+    "node:crypto",
+    "node:events",
+    "node:fs",
+    "node:fs/promises",
+    "node:http",
+    "node:https",
+    "node:module",
+    "node:net",
+    "node:path",
+    "node:perf_hooks",
+    "node:sqlite",
+    "node:stream",
+    "node:test",
+    "node:timers",
+    "node:tls",
+    "node:url",
+    "node:util",
+    "node:vm",
+    "node:zlib"
+  ],
+  "packageVersions": {
+    "packages/@x402/core/package.json": "2.23.0",
+    "packages/zod/package.json": "3.25.76",
+    "packages/znn-typescript-sdk/package.json": "1.0.5",
+    "packages/@noble/ed25519/package.json": "2.3.0",
+    "packages/@noble/hashes/package.json": "1.8.0"
+  },
+  "effectsCeiling": {
+    "selectedCases": 1,
+    "maximumRuns": 1,
+    "opensslCommands": 1,
+    "nodeCommands": 1,
+    "nodeChildren": 0,
+    "newSqlitePaths": 5,
+    "independentPinFiles": 2,
+    "syntheticEd25519Keys": 4,
+    "transactionSignatures": 1,
+    "capabilitySignatures": 3,
+    "providerSignatures": 2,
+    "testTlsMaterialSeparate": true,
+    "maxRpcConnections": 174,
+    "maxApplicationConnections": 8,
+    "maxTotalConnections": 182,
+    "expectedTotalConnections": 96,
+    "maxCandidatesPerSearch": 4096,
+    "maxReferenceCandidates": 32768,
+    "producerCandidateReservation": 4096,
+    "fixedVerificationReservation": 16384,
+    "maxAggregateCandidates": 65536,
+    "taskQuotaBytes": 4194304,
+    "maximumSourceReadBytes": 6291456,
+    "existingSourcesRecopied": false,
+    "externalNetwork": false,
+    "install": false,
+    "realWallet": false,
+    "realPayment": false,
+    "sdkPrepareBlock": false,
+    "nativeOsNetworkSandbox": false
+  },
+  "taskPolicy": {
+    "quotaBytes": 4194304,
+    "minimumFreeBytes": 10737418240,
+    "existingApprovedRootOnly": true,
+    "rootPolicyOverride": false,
+    "maximumRuns": 1
+  },
+  "controlInputs": [
+    {
+      "path": "qualification/issued_current_close_v4_profile.py",
+      "bytes": 24610,
+      "LF": 297,
+      "sha256": "b3a8edc522471b0d34f33857e6bd2aae9286b101ec7ea24b6a0f0275e6e447e7",
+      "gitBlob": "7ce435651b6d853baa06856ce5f0b04aef58c5c4"
+    },
+    {
+      "path": "qualification/run-issued-current-close-v4.local.py",
+      "bytes": 17814,
+      "LF": 308,
+      "sha256": "dbda96859c25d661f844d2974ff1b538faaa8a661b49f9a6307b4ef61db750ba",
+      "gitBlob": "f2351fdd51adc496276a06853f697c027a9345a3"
+    },
+    {
+      "path": "qualification/funding_tls_current_gate.py",
+      "bytes": 7969,
+      "LF": 145,
+      "sha256": "9777b8dca3c8c86e543c1f202c0cde248280ed3a108df4a688565ccf83132936",
+      "gitBlob": "91362d22ca606a6711612b02ecea3c6e92c55a59"
+    },
+    {
+      "path": "qualification/run-funding-post-native-loopback-tls.local.py",
+      "bytes": 17205,
+      "LF": 311,
+      "sha256": "4535d39c312d9bcd59a0b3890d71f79df46628c1b7d8f8be63b51747e10d33f1",
+      "gitBlob": "e484adeb02800f66c518ce8be52f0de57800b640"
+    }
+  ],
+  "sourceTransforms": false,
+  "nativeBuiltinAliases": false,
+  "nativeCasesExecuted": 0
+}

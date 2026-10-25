@@ -1,0 +1,200 @@
+{
+  "kind": "CURRENT_ISSUED_CLOSE_V4_SOURCE_AND_DATA_RESULT_NOT_NATIVE_EVIDENCE",
+  "version": 1,
+  "sourceParent": "61f7c11967afcb4310fb50700c8e91d7acdb8a25",
+  "sourceLane": "x402/p1-router-late-pending-close-integration-v2",
+  "selection": {
+    "baselinePath": "qualification/issued-funding-post-native-vertical.inputs-v3.json",
+    "baselineSha256": "51ffb5b0ff0052523c1b7f3d75fa24e9be27e60ca3bcc09236b1f439096aaed1",
+    "applicationFilesDeclared": 123,
+    "packageFilesDeclared": 404,
+    "totalInputsDeclared": 527,
+    "declaredSourceBytes": 4473160,
+    "currentApplicationReplacements": 8,
+    "currentApplicationAdditions": 6,
+    "sourceTransforms": 0,
+    "nativeModuleAliases": 0,
+    "unchangedPackageTableRetained": true,
+    "sourceRowsSha256": "b0ead918f6e0a86e78655ee4350ba21dfb88296f0bbd9893913cdf18b7d36d52"
+  },
+  "actual": {
+    "dataCasesPassed": 36,
+    "dataCasesFailed": 0,
+    "syntheticParserTranscriptsAreNotNativeEvidence": true,
+    "dataCommand": {
+      "actualExit": 0,
+      "outputComplete": true,
+      "stdoutBytes": 0,
+      "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderrBytes": 6065,
+      "stderrSha256": "f8bc683db4a58930ee2d3ae709652d5bc47f06e54068ce8bca8dc74e1d3aca1e"
+    },
+    "sourceOnlyAdmission": {
+      "actualExit": 0,
+      "outputComplete": true,
+      "stdoutBytes": 183,
+      "stdoutSha256": "fbf7b3341b690bdf6a52df216b323c49c197312110bbd7eb160c8e2ce485285b",
+      "stderrBytes": 0,
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "applicationFilesRead": 123,
+      "packageFilesRead": 0,
+      "managerImported": false
+    },
+    "syntaxOnlyChecks": [
+      {
+        "path": "qualification/issued-current-close-v4.case.mjs",
+        "actualExit": 0,
+        "outputComplete": true,
+        "stdoutBytes": 0,
+        "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderrBytes": 0,
+        "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "dependencyImports": 0
+      },
+      {
+        "path": "qualification/issued-current-close-v4.preload.mjs",
+        "actualExit": 0,
+        "outputComplete": true,
+        "stdoutBytes": 0,
+        "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderrBytes": 0,
+        "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "dependencyImports": 0
+      },
+      {
+        "path": "qualification/issued-current-close-v4-grant.fixture.mjs",
+        "actualExit": 0,
+        "outputComplete": true,
+        "stdoutBytes": 0,
+        "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderrBytes": 0,
+        "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "dependencyImports": 0
+      },
+      {
+        "path": "qualification/issued-current-close-v4-rpc.fixture.mjs",
+        "actualExit": 0,
+        "outputComplete": true,
+        "stdoutBytes": 0,
+        "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderrBytes": 0,
+        "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "dependencyImports": 0
+      }
+    ],
+    "allSourceInputsMatchedBeforeAndAfter": true,
+    "currentNativeApplicationCases": 0,
+    "effectfulNodeCommands": 0,
+    "opensslCommands": 0,
+    "SQLiteOpens": 0,
+    "keysGenerated": 0,
+    "signatures": 0,
+    "nonceCandidates": 0,
+    "sockets": 0,
+    "managedTasksCreated": 0
+  },
+  "storage": {
+    "preflight": "REFUSED_BY_KNOWN_RESERVATION_LOWER_BOUND",
+    "fullRootAdmissionQualified": false,
+    "omittedRootsNotCountedAsZero": true,
+    "partialInventoryIsNotFullAdmission": true,
+    "managerImported": false,
+    "reservationsChanged": false,
+    "existingEvidenceChanged": false,
+    "cleanupPerformed": false,
+    "privateCapacityAndRootDetailsPublished": false
+  },
+  "authority": {
+    "separateCurrentCleanAllowanceGranted": true,
+    "currentCleanAllowanceConsumed": false,
+    "originalV3R4AllowanceConsumed": false,
+    "maximumRuns": 1,
+    "automaticRetry": false
+  },
+  "scope": {
+    "sourceOnlyDefault": true,
+    "existingApprovedRootOnly": true,
+    "rootInitialization": false,
+    "policyOverride": false,
+    "allDiscoveredSiblingRootsRequiredBeforeAdmission": true,
+    "maximumDeclaredRoots": 128,
+    "maximumSiblingEntries": 512,
+    "packageInstallation": false,
+    "sourcePackageCopies": false,
+    "oldManifestsRewritten": false,
+    "OSOrNetworkSandbox": false
+  },
+  "qualification": {
+    "fullNativeGraph": "NOT_EXECUTED",
+    "wholeCloseIntegration": "NOT_EXECUTED",
+    "P1": "OPEN",
+    "P2": "OPEN",
+    "crashRecovery": "NOT_EXECUTED",
+    "lostAcknowledgement": "NOT_EXECUTED",
+    "providerRuntime": "NOT_QUALIFIED",
+    "livePayment": "NOT_EXECUTED",
+    "economicPilot": "NO_GO",
+    "production": "NO_GO",
+    "hostedCIForTheseCases": "NOT_RUN",
+    "automatic27ProfileUnchanged": true
+  },
+  "sourcePins": [
+    {
+      "path": "qualification/issued-current-close-v4-grant.fixture.mjs",
+      "bytes": 24039,
+      "LF": 313,
+      "sha256": "0134331b571eda461c8af2398e7dccd67010ed8b0f2c563b11415efc57ef8422",
+      "gitBlob": "c5b3e0a4ab138c4eeb733895ebb71e1d29eb0675"
+    },
+    {
+      "path": "qualification/issued-current-close-v4-rpc.fixture.mjs",
+      "bytes": 20688,
+      "LF": 265,
+      "sha256": "f54f75f6e6f50d2ebf9b47323cb16764dc885b754aef3bde390495c973046fc7",
+      "gitBlob": "f74f41ca96e4901cbfa8dcfe970006e7f66ef3c6"
+    },
+    {
+      "path": "qualification/issued-current-close-v4.case.mjs",
+      "bytes": 35758,
+      "LF": 493,
+      "sha256": "b79e955adffd83cd727e613fa9e54bede5edb06c678e303dbbea3578cfbbf883",
+      "gitBlob": "d2ad2afcd607d30f9fdf262cefad1cdf1213ec69"
+    },
+    {
+      "path": "qualification/issued-current-close-v4.preload.mjs",
+      "bytes": 12504,
+      "LF": 175,
+      "sha256": "d105a810a164b717224d69e2c3e975c7412de62c88d5b0cdd7ab85fb17bf6700",
+      "gitBlob": "44cabd5b5f3c043e6ce88c509d03fb190583b407"
+    },
+    {
+      "path": "qualification/issued_current_close_v4_profile.py",
+      "bytes": 24610,
+      "LF": 297,
+      "sha256": "b3a8edc522471b0d34f33857e6bd2aae9286b101ec7ea24b6a0f0275e6e447e7",
+      "gitBlob": "7ce435651b6d853baa06856ce5f0b04aef58c5c4"
+    },
+    {
+      "path": "qualification/run-issued-current-close-v4.local.py",
+      "bytes": 17814,
+      "LF": 308,
+      "sha256": "dbda96859c25d661f844d2974ff1b538faaa8a661b49f9a6307b4ef61db750ba",
+      "gitBlob": "f2351fdd51adc496276a06853f697c027a9345a3"
+    },
+    {
+      "path": "qualification/issued-current-close-v4.inputs.json",
+      "bytes": 10437,
+      "LF": 300,
+      "sha256": "8339b2a8e04e7e3c573b1c26d8162f1c821df91182738409693d188121a21893",
+      "gitBlob": "f292abda9f607a7d423f9d32fce2e55472d84a33"
+    },
+    {
+      "path": "qualification/issued-current-close-v4-profile.test.py",
+      "bytes": 16254,
+      "LF": 277,
+      "sha256": "45e9d802ce1a999e9a9ca80850dbcfdb4454f675e78f3b6b8fbd40b44d631ac4",
+      "gitBlob": "629f9e87cb9a649f60e3800b6ddd9c9f8c0dbcac"
+    }
+  ]
+}
+
