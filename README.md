@@ -8,6 +8,8 @@ This is not an official Zenon integration, not an official x402 network implemen
 
 ## Current architecture status
 
+For a dated source-pinned checkpoint, see the [qualification and roadmap snapshot (2026-10-25)](docs/QUALIFICATION_STATUS_20261025.md). It separates main CI, independent local DATA results, the development candidate and the still-open native/economic acceptance gates; it does not activate runtime behavior.
+
 The current `main` branch contains the v0.3 architecture checkpoint; this is not a v0.3 package or production release. The planner, wallet, Plasma, payment-mechanism, chain-profile, settlement-repository, and prepaid service-credit interfaces are additive design boundaries. They document intended ownership and separation but are not wired into the active transaction path.
 
 Package semantic versioning is intentionally independent of architecture-checkpoint and payload-generation labels; those labels do not represent a published package release.
