@@ -6,6 +6,7 @@ import { Socket, isIP } from 'node:net';
 import { types as utilTypes } from 'node:util';
 import { createFundingPostNativeResponseCustody } from './service-credit-funding-post-native-response.js';
 import { createNativeHttpsClientCloseOwner } from './service-credit-native-client-close-owner.js';
+import { createNativeHttpsClientRequestStopOwner } from './service-credit-native-client-request-stop-owner.js';
 import { startFundingPostReadableFlow } from './service-credit-funding-post-readable-flow.js';
 
 const REQUEST = nativeRequest, ON = EventEmitter.prototype.on, ONCE = EventEmitter.prototype.once;
@@ -16,6 +17,9 @@ const TIMER = setTimeout, CANCEL = clearTimeout, FILL = Buffer.prototype.fill;
 const NativePromise = Promise, THEN = NativePromise.prototype.then, RESPONSE = Response, HEADERS = Headers;
 const IS_BUFFER = Buffer.isBuffer, ARRAY_BUFFER = DESC(PROTO(Uint8Array.prototype), 'buffer').get;
 const START_RESPONSE_FLOW = startFundingPostReadableFlow;
+const REQUEST_STOP = createNativeHttpsClientRequestStopOwner;
+const STOP_REQUEST = FREEZE(request => APPLY(DESTROY_REQUEST, request, [error('outcome_unknown')]));
+const STOP_SOCKET = FREEZE(socket => APPLY(DESTROY_SOCKET, socket, []));
 const BYTE_LENGTH = DESC(PROTO(Uint8Array.prototype), 'byteLength').get;
 const SIGNAL = AbortSignal.prototype, SIGNAL_ABORTED = DESC(SIGNAL, 'aborted').get;
 const ADD_EVENT = EventTarget.prototype.addEventListener, REMOVE_EVENT = EventTarget.prototype.removeEventListener;
@@ -99,7 +103,12 @@ export function createFundingPostNativeHttpsTransport(configuration) {
     // A synchronous callback during resume must not publish a response before
     // that flow-start entry has returned successfully and its guard survives.
     if (entry.responseFlowStarting) return;
-    if (!entry.requestClosed || !entry.socketClosed || !entry.socketSeen) return;
+    if (!entry.requestClosed) return;
+    // A closed request without an observed socket is uncertain, not a live
+    // request reference. A later socket is still tracked by its own close
+    // listener below and never obtains a handshake capability.
+    if (!entry.socketSeen) stop(entry, 'REQUEST_CLOSE_WITHOUT_SOCKET');
+    else if (!entry.socketClosed) return;
     cancel(entry.deadline); entry.deadline = null;
     cancel(entry.handshake); entry.handshake = null;
     if (entry.signalAttached) {
@@ -126,18 +135,10 @@ export function createFundingPostNativeHttpsTransport(configuration) {
   function stop(entry, reason, cause = null) {
     markUnknown(reason, cause); entry.custody.fail();
     if (!entry.done) { entry.done = true; entry.reject(error('outcome_unknown')); }
-    if (!entry.stopping) {
-      entry.stopping = true;
-      if (entry.request !== null) {
-        try { APPLY(DESTROY_REQUEST, entry.request, [error('outcome_unknown')]); } catch {}
-      }
-    }
-    // A socket may be assigned AFTER an earlier abort/request destroy. Track
-    // and destroy that newly observed handle too, without recursive repeats.
-    if (entry.socket !== null && !entry.socketStopRequested) {
-      entry.socketStopRequested = true;
-      try { APPLY(DESTROY_SOCKET, entry.socket, []); } catch {}
-    }
+    entry.stopping = true;
+    // Claim each destroy before native entry. Reentry, throws and repeated
+    // reasons cannot destroy an already closed handle or acquire a new claim.
+    entry.stop.stop('funding_transport_unknown');
   }
   function event(entry, stage, operation) {
     try { if (entry.stopping) return; operation(); lastObservedStage = stage; }
@@ -174,9 +175,10 @@ export function createFundingPostNativeHttpsTransport(configuration) {
     Object.defineProperty(promise, 'constructor', { value: NativePromise });
     APPLY(THEN, promise, [() => undefined, () => undefined]);
     const entry = { resolve, reject, done: false, stopping: false, request: null, socket: null,
-      socketSeen: false, socketStopRequested: false, requestClosed: false, socketClosed: false, signal, signalAttached: false,
+      socketSeen: false, requestClosed: false, socketClosed: false, signal, signalAttached: false,
       deadline: null, handshake: null, custody: createFundingPostNativeResponseCustody(), onAbort: null,
-      responseFlowStarted: false, responseFlowStarting: false };
+      responseFlowStarted: false, responseFlowStarting: false,
+      stop: REQUEST_STOP({ destroyRequest: STOP_REQUEST, destroySocket: STOP_SOCKET }) };
     entries.add(entry); // Retain ownership before the native constructor can reenter.
     entry.onAbort = () => stop(entry, 'REQUEST_ABORT');
     try {
@@ -223,30 +225,42 @@ export function createFundingPostNativeHttpsTransport(configuration) {
       APPLY(ON, entry.request, ['error', cause => stop(entry, 'REQUEST_ERROR', cause)]);
       APPLY(ONCE, entry.request, ['close', () => {
         entry.requestClosed = true;
+        entry.stop.markRequestClosed(); entry.request = null;
         event(entry, 'REQUEST_CLOSE', () => entry.custody.acceptRequestClose()); settle(entry);
       }]);
       APPLY(ONCE, entry.request, ['socket', socket => {
-        if (entry.socketSeen || entry.requestClosed) {
+        if (entry.socketSeen) {
           stop(entry, 'SOCKET_ASSIGNMENT_REJECTED'); try { APPLY(DESTROY_SOCKET, socket, []); } catch {} return;
         }
         entry.socketSeen = true; entry.socket = socket; sockets.add(socket);
         lastObservedStage = 'SOCKET_ASSIGNED';
-        entry.handshake = timer(() => stop(entry, 'TLS_DEADLINE'), HANDSHAKE);
         APPLY(ON, socket, ['error', cause => stop(entry, 'SOCKET_ERROR', cause)]);
+        // Track the genuine close BEFORE attach/stop may destroy this handle.
+        // A socket assigned after request close/abort still belongs to us.
+        APPLY(ONCE, socket, ['close', hadError => {
+          entry.stop.markSocketClosed(); entry.socket = null;
+          entry.socketClosed = true; sockets.delete(socket);
+          cancel(entry.handshake); entry.handshake = null;
+          event(entry, 'SOCKET_CLOSE', () => entry.custody.acceptSocketClose({ hadError })); settle(entry);
+        }]);
+        if (entry.requestClosed || closing !== null || entry.stopping) stop(entry, 'LATE_SOCKET_STOP');
+        if (!entry.stop.attachSocket(socket)) { stop(entry, 'SOCKET_ASSOCIATION_REJECTED'); return; }
+        if (!entry.stop.canStartHandshake()) { closeOwner.observe(); return; }
+        entry.handshake = timer(() => stop(entry, 'TLS_DEADLINE'), HANDSHAKE);
         APPLY(ONCE, socket, ['secureConnect', () => {
           cancel(entry.handshake); entry.handshake = null;
           event(entry, 'TLS_AUTHENTICATED', () => {
-            if (socket.authorized !== true || socket.getProtocol() !== 'TLSv1.3'
+            if (!entry.stop.canStartHandshake() || closing !== null
+                || socket.authorized !== true || socket.getProtocol() !== 'TLSv1.3'
                 || socket.alpnProtocol !== 'http/1.1') throw error('outcome_unknown');
             entry.custody.acceptTls(); handshakes++;
           });
         }]);
-        APPLY(ONCE, socket, ['close', hadError => {
-          entry.socketClosed = true; sockets.delete(socket);
-          event(entry, 'SOCKET_CLOSE', () => entry.custody.acceptSocketClose({ hadError })); settle(entry);
-        }]);
-        if (closing !== null || entry.stopping) stop(entry, 'LATE_SOCKET_STOP');
       }]);
+      // Association may stop a request whose abort happened during creation;
+      // all owned error/close/socket listeners are installed before that entry.
+      if (!entry.stop.attachRequest(entry.request) || entry.stopping || entry.requestClosed || closing !== null)
+        throw error('outcome_unknown');
       entry.deadline = timer(() => stop(entry, 'REQUEST_DEADLINE'), DEADLINE);
       if (entry.stopping || closing !== null) throw error('outcome_unknown');
       entry.request.end(); // The only end entry: fixed POST with zero body.

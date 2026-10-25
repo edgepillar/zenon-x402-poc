@@ -1,0 +1,252 @@
+{
+  "kind": "ACTUAL_LOCAL_FUNDING_POST_STOP_CLOSE_RESPONSE_DATA_AND_NATIVE_SOURCE_FIX_NOT_TLS_QUALIFICATION",
+  "version": 1,
+  "sourceParent": "b5bf7a683bcb8d9fe51faecd82977a19372035ca",
+  "mainBefore": "98a2c8cdd4238fd95832fe27b7fc773f8fec2cf2",
+  "sourceFinding": {
+    "kind": "SOURCE_DIAGNOSED_NOT_NATIVE_REPRODUCED",
+    "oldNativeAdapter": {
+      "path": "src/service-credit-funding-post-native-https-transport.js",
+      "bytes": 18761,
+      "LF": 327,
+      "sha256": "3b3fec921b46c62ed7557043f99cffb2e1a12f515bf4e607ea8f61525db28b7c",
+      "gitBlob": "ea47b0e9cc9479f6bb98b07b3b886d6100c630e3"
+    },
+    "newNativeAdapter": {
+      "path": "src/service-credit-funding-post-native-https-transport.js",
+      "bytes": 20061,
+      "LF": 341,
+      "sha256": "eca66830d82ae2829314633b3b01f1cd73bef60da9c67e9832a184cc0da7c374",
+      "gitBlob": "f863d1c3363404e455ab5a82e09a1cf2c058ba09"
+    },
+    "firstLateSocketWasRejectedWithoutOwnedCloseTracking": true,
+    "handshakeTimerWasEnteredBeforeStoppedGate": true,
+    "requestStopDidNotObserveClosedRequestAssociation": true
+  },
+  "implementation": {
+    "nativeAdapterPath": "src/service-credit-funding-post-native-https-transport.js",
+    "existingSharedStopOwnerReused": true,
+    "nativeRequestFactoryStillHardwired": true,
+    "nativeDestroyCapabilitiesStillHardwired": true,
+    "callerFactoryInjectionAdded": false,
+    "firstLateSocketTrackedBeforeStop": true,
+    "closedRequestAssociationDroppedBeforeStop": true,
+    "actualCloseListenerInstalledBeforeSocketDestroy": true,
+    "handshakeGateBeforeTimerAndListener": true,
+    "lateSecureConnectCannotRegainPermit": true,
+    "requestAndSocketDestroyClaimsIndependentAndOnce": true,
+    "requestCloseWithoutObservedSocketPermanentlyUnknown": true,
+    "closedRequestEntryNotRetainedAsLiveForever": true,
+    "responseRequiresOriginalTlsBodyEndAndBothCloseObservations": true,
+    "defaultBuyerChanged": false,
+    "urlHeadersTlsPolicySignatureAndStorePolicyChanged": false
+  },
+  "actual": {
+    "passed": true,
+    "selectedCases": 24,
+    "cases": [
+      "construction admits no work or response",
+      "normal_complete_response_request-first",
+      "normal_complete_response_socket-first",
+      "abort_before_any_association_stops_later_request_and_socket_once",
+      "abort_before_socket_never_grants_handshake_or_retries_destroy",
+      "request_close_before_socket_stops_only_the_late_socket",
+      "request_close_without_socket_can_release_local_material_but_never_close_cleanly",
+      "late_socket_after_unknown_settlement_is_tracked_without_releasing_twice",
+      "aborted_pair_retains_observed_ownership_until_both_close_request-first",
+      "aborted_pair_retains_observed_ownership_until_both_close_socket-first",
+      "close_before_socket_stops_late_assignment_and_stays_unknown",
+      "request_destroy_reentry_does_not_acquire_a_second_claim",
+      "socket_assignment_during_request_destroy_is_tracked_and_stopped_before_return",
+      "request_destroy_throw_still_stops_socket_without_retry",
+      "socket_destroy_throw_stays_unknown_without_retry",
+      "synchronous_close_observations_during_destroy_release_no_live_handle",
+      "socket_closed_before_stop_is_not_destroyed_again",
+      "closed_request_is_not_destroyed_again_while_socket_remains_owned",
+      "late_tls_after_socket_close_obtains_no_new_authentication",
+      "partial_response_then_abort_never_exposes_body",
+      "errored_socket_close_cannot_become_a_complete_response",
+      "deadline_verdict_is_not_repaired_by_late_pair_drain",
+      "response_handoff_requires_both_observed_close_events",
+      "component_exposes_no_retry_signer_store_or_dispatch_capability"
+    ],
+    "failures": 0,
+    "skipped": 0,
+    "dataCommand": {
+      "actualExit": 0,
+      "outputComplete": true,
+      "elapsedSeconds": 0.04456849998678081,
+      "stdoutBytes": 1942,
+      "stdoutSha256": "dea31951c04ce654c61c56a0078b538a4b7b40eab5b416abd8e2b97a033d24de",
+      "stderrBytes": 0,
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "nativeSourceSyntax": {
+      "actualExit": 0,
+      "outputComplete": true,
+      "elapsedSeconds": 0.030967291997512802,
+      "stdoutBytes": 0,
+      "stderrBytes": 0,
+      "moduleImportedOrExecuted": false
+    },
+    "sourceAndProtectedInputsUnchanged": true,
+    "protectedFiles": 230,
+    "composedOwners": "Actual existing stop, close and response-custody modules; host handle/event/count callbacks are declared DATA.",
+    "nativeTransportImported": false,
+    "nativeTransportExecuted": false,
+    "nativeEventProvenanceEstablished": false,
+    "nativePhysicalDrainEstablished": false,
+    "nativeAdapterQualified": false
+  },
+  "componentResult": {
+    "event": "FUNDING_POST_STOP_LIFECYCLE_DECLARED_DATA_COMPOSITION",
+    "successful": true,
+    "selectedCases": 24,
+    "cases": [
+      "construction admits no work or response",
+      "normal_complete_response_request-first",
+      "normal_complete_response_socket-first",
+      "abort_before_any_association_stops_later_request_and_socket_once",
+      "abort_before_socket_never_grants_handshake_or_retries_destroy",
+      "request_close_before_socket_stops_only_the_late_socket",
+      "request_close_without_socket_can_release_local_material_but_never_close_cleanly",
+      "late_socket_after_unknown_settlement_is_tracked_without_releasing_twice",
+      "aborted_pair_retains_observed_ownership_until_both_close_request-first",
+      "aborted_pair_retains_observed_ownership_until_both_close_socket-first",
+      "close_before_socket_stops_late_assignment_and_stays_unknown",
+      "request_destroy_reentry_does_not_acquire_a_second_claim",
+      "socket_assignment_during_request_destroy_is_tracked_and_stopped_before_return",
+      "request_destroy_throw_still_stops_socket_without_retry",
+      "socket_destroy_throw_stays_unknown_without_retry",
+      "synchronous_close_observations_during_destroy_release_no_live_handle",
+      "socket_closed_before_stop_is_not_destroyed_again",
+      "closed_request_is_not_destroyed_again_while_socket_remains_owned",
+      "late_tls_after_socket_close_obtains_no_new_authentication",
+      "partial_response_then_abort_never_exposes_body",
+      "errored_socket_close_cannot_become_a_complete_response",
+      "deadline_verdict_is_not_repaired_by_late_pair_drain",
+      "response_handoff_requires_both_observed_close_events",
+      "component_exposes_no_retry_signer_store_or_dispatch_capability"
+    ],
+    "actualStopCloseResponseOwners": true,
+    "declaredHandlesAndCallbacks": true,
+    "nativeTransportImported": false,
+    "nativeBuiltinAliases": 0,
+    "sourceTransforms": 0,
+    "SDK": false,
+    "SQLite": false,
+    "keysSignaturesNonce": false,
+    "sockets": 0,
+    "productTimers": 0,
+    "children": 0,
+    "nativeEventProvenance": "NOT_ESTABLISHED",
+    "nativePhysicalDrain": "NOT_ESTABLISHED",
+    "nativeAdapterQualified": false,
+    "authority": "NONE"
+  },
+  "sourcePins": [
+    {
+      "path": "package.json",
+      "bytes": 2677,
+      "LF": 40,
+      "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+      "gitBlob": "45752ffde39d29666094f7f1c755060d75e43deb"
+    },
+    {
+      "path": "src/service-credit-native-client-request-stop-owner.js",
+      "bytes": 5794,
+      "LF": 113,
+      "sha256": "1a1d9f0dec325210251f3f6aedb92a30e820d04f7a0dd710f25b3c8fd0ec079c",
+      "gitBlob": "d99031babeabc5360d4950fbbe2633b6589aca37"
+    },
+    {
+      "path": "src/service-credit-native-client-close-owner.js",
+      "bytes": 7170,
+      "LF": 149,
+      "sha256": "00366016a37cf71234cb305e860b5d3f406c97f6b6a7af8569ae76726b759c91",
+      "gitBlob": "ed68174f93050d837786ab799b3b6dee5f7e0676"
+    },
+    {
+      "path": "src/service-credit-funding-post-native-response.js",
+      "bytes": 7903,
+      "LF": 157,
+      "sha256": "b5084844ecf029445bc55efd0b9d0ef61b8c2e65424ea74a6dfb30941f9f676c",
+      "gitBlob": "0bae9c30c7a11624612418bb6a1e7643effb0775"
+    },
+    {
+      "path": "qualification/funding-post-native-stop-lifecycle-data.behavior.mjs",
+      "bytes": 14004,
+      "LF": 256,
+      "sha256": "7b362a6eabfb39adb55bcd3e8eed08b967899c44f45eaded0c41cfaae835bc12",
+      "gitBlob": "0d6c0bdec95592e516acc03687b3cdab79375d24"
+    },
+    {
+      "path": "src/service-credit-funding-post-native-https-transport.js",
+      "bytes": 20061,
+      "LF": 341,
+      "sha256": "eca66830d82ae2829314633b3b01f1cd73bef60da9c67e9832a184cc0da7c374",
+      "gitBlob": "f863d1c3363404e455ab5a82e09a1cf2c058ba09"
+    }
+  ],
+  "efficiency": {
+    "dependencyInstalls": 0,
+    "fixtureFiles": 0,
+    "taskStorageRoots": 0,
+    "sourceTreeCopies": 0,
+    "newNodeBinaryHashPasses": 0,
+    "nodeByteHashReusedOnlyWhileFullNineFieldIdentityUnchanged": true,
+    "nodeDataCommands": 1,
+    "nodeSyntaxCommands": 1,
+    "nodeChildren": 0,
+    "actualNativePerformanceImprovementMeasured": false
+  },
+  "executionScope": {
+    "selectedNodeVersion": "24.19.0",
+    "platform": "darwin-arm64",
+    "SDK": false,
+    "SQLite": false,
+    "keys": false,
+    "signatures": false,
+    "nonce": false,
+    "sockets": 0,
+    "productTimers": 0,
+    "children": 0,
+    "managerImported": false,
+    "noOsSandboxClaim": true
+  },
+  "historicalBoundary": {
+    "prior147ApplicationPlus404PackageReadRemainsAtItsOriginalRef": true,
+    "oldCapacityProfilesAndResultsUnchanged": true,
+    "changedApplicationModule": "src/service-credit-funding-post-native-https-transport.js",
+    "currentChangedNativeGraphRequalified": false,
+    "oldNativeAllowanceConsumed": false,
+    "newNativeAllowanceGranted": false
+  },
+  "publication": {
+    "sourceFiles": [
+      "qualification/funding-post-native-stop-lifecycle-data.behavior.mjs",
+      "qualification/funding-post-native-stop-lifecycle-data.actual-local-result.json",
+      "docs/P2_FUNDING_POST_LATE_SOCKET_OWNERSHIP.md",
+      "src/service-credit-funding-post-native-https-transport.js"
+    ],
+    "mainFiles": [
+      "qualification/funding-post-native-stop-lifecycle-data.behavior.mjs",
+      "qualification/funding-post-native-stop-lifecycle-data.actual-local-result.json",
+      "docs/P2_FUNDING_POST_LATE_SOCKET_OWNERSHIP.md"
+    ],
+    "nativeRuntimeFixDevelopmentOnly": true,
+    "mainNativeAdapterRemainsAtOldPin": true,
+    "mainMayPublishDataEntryAndEvidenceOnly": true,
+    "currentHostedProfileCases": 27,
+    "new24CasesHosted": false,
+    "packagesWorkflowsProfilesDefaultsChanged": false,
+    "issueMutation": false
+  },
+  "limits": [
+    "The DATA fixture declares host tracking/order and callbacks; it does not execute the modified native adapter.",
+    "The native adapter passed syntax checking only; no TLS/socket test or physical cleanup evidence was obtained.",
+    "The changed candidate needs fresh current-source native regression; old graphs and permissions are not rebound.",
+    "No full P1/P2/P4 completion, payment, pilot, signer, store-close or retry authority is established."
+  ],
+  "authority": "NONE"
+}
