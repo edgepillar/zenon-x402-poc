@@ -1,0 +1,132 @@
+{
+  "version": 4,
+  "kind": "COMPLETE_CURRENT_CAPACITY_ROLES_153_404_SOURCE_NOT_NATIVE_EXECUTION",
+  "sourceParent": "06a9e59d2c9391f0112c2b0c4a674d53e9786314",
+  "runtime": {
+    "node": "24.19.0",
+    "platform": "darwin",
+    "arch": "arm64",
+    "nodeSha256": "dbedff294bab84a0a86c04e15fbcbeb1c97ca10bef1b32b0634cd24b36f62100",
+    "nodeBytes": 121304480
+  },
+  "baseline": {
+    "path": "qualification/issued-funding-post-native-vertical.inputs-v3.json",
+    "bytes": 138777,
+    "LF": 3836,
+    "sha256": "51ffb5b0ff0052523c1b7f3d75fa24e9be27e60ca3bcc09236b1f439096aaed1",
+    "gitBlob": "3dc05ccffd306e97056b4ed168d8121f63acebbc"
+  },
+  "currentSelection": {
+    "path": "qualification/issued-current-close-v4.inputs.json",
+    "bytes": 10437,
+    "LF": 300,
+    "sha256": "8339b2a8e04e7e3c573b1c26d8162f1c821df91182738409693d188121a21893",
+    "gitBlob": "f292abda9f607a7d423f9d32fce2e55472d84a33"
+  },
+  "legacyCapacityInventory": {
+    "path": "qualification/capacity-native-full-graph-v3.inputs.json",
+    "bytes": 8697,
+    "LF": 215,
+    "sha256": "3bb597da71736542615047d11af78ad6825df5bdb6e4561747d8c1f9dff7d0df",
+    "gitBlob": "0530e2b08929d45c93b4e4912dc69d27b0645204"
+  },
+  "roleSpecs": {
+    "PAYER": {
+      "kind": "NATIVE_CAPACITY_CURRENT_PAYER_NODE24_V4",
+      "entry": "app/qualification/capacity-native-current-payer-v4.worker.draft.mjs",
+      "preloader": "app/qualification/capacity-native-current-payer-v4.namespace.preload.draft.mjs",
+      "namespace": "getPinnedNativeCapacityCurrentPayerNamespaceSnapshotV4",
+      "pathEnv": "X402_NATIVE_CAPACITY_PROFILE_PATH",
+      "shaEnv": "X402_NATIVE_CAPACITY_PROFILE_SHA256"
+    },
+    "SERVICE": {
+      "kind": "NATIVE_CAPACITY_CURRENT_SERVICE_NODE24_V4",
+      "entry": "app/qualification/capacity-native-current-service-v4.worker.draft.mjs",
+      "preloader": "app/qualification/capacity-native-current-service-v4.namespace.preload.draft.mjs",
+      "namespace": "getPinnedNativeCapacityCurrentServiceNamespaceSnapshotV4",
+      "pathEnv": "X402_NATIVE_CAPACITY_SERVICE_PROFILE_PATH",
+      "shaEnv": "X402_NATIVE_CAPACITY_SERVICE_PROFILE_SHA256"
+    }
+  },
+  "additionalNativeRoleInputs": [
+    {
+      "bytes": 19399,
+      "LF": 269,
+      "sha256": "cf32a73c37ce402dc391ef4a3df712b80130bb272d7c47b5979a96a8462fb5bf",
+      "gitBlob": "e6804f7b81ab08779c71c0908dcd90114b89bf0f",
+      "path": "app/qualification/capacity-native-current-namespace-v4.preload-common.draft.mjs"
+    },
+    {
+      "bytes": 265,
+      "LF": 3,
+      "sha256": "a97097db53c917b029186083a5524069177e9299c05f03c6f413f020d7ab7b2a",
+      "gitBlob": "33848e84aadf0e138bd4319c05118a43907f3f81",
+      "path": "app/qualification/capacity-native-current-payer-v4.namespace.preload.draft.mjs"
+    },
+    {
+      "bytes": 21517,
+      "LF": 341,
+      "sha256": "5b388bb30230ece395e150625401f6bf1737dbc2a9697e2e107a1c3b917e2351",
+      "gitBlob": "bc123cdf403f206cbc63039f1a031875086b04de",
+      "path": "app/qualification/capacity-native-current-payer-v4.owner.draft.mjs"
+    },
+    {
+      "bytes": 21390,
+      "LF": 300,
+      "sha256": "46c0775b1810e4ce26c657a7ee811539c72af1a14503020d7776ad77212f3c3c",
+      "gitBlob": "c82f0bb716a2348a046c4be84e95ac466b51c434",
+      "path": "app/qualification/capacity-native-current-payer-v4.worker.draft.mjs"
+    },
+    {
+      "bytes": 267,
+      "LF": 3,
+      "sha256": "3dee28a4d7a2c9c3c69b153f2deb1e04300c53d929100ec4f652dbc022624702",
+      "gitBlob": "d3a7c6e4fc5e1809705672c18cc49f2c6c6238b9",
+      "path": "app/qualification/capacity-native-current-service-v4.namespace.preload.draft.mjs"
+    },
+    {
+      "bytes": 30436,
+      "LF": 333,
+      "sha256": "ad443cae60f944628651fca66b87b678e7eadb603dc964987c58af80f04b76f2",
+      "gitBlob": "dc4ccdc10890fcb6c6a18aa338ae992e5c08f885",
+      "path": "app/qualification/capacity-native-current-service-v4.owner.draft.mjs"
+    },
+    {
+      "bytes": 9163,
+      "LF": 120,
+      "sha256": "d3b0b582fe8022595e97f8341f882a4747971b44ef7f5f7ba3a21a16a13abdbc",
+      "gitBlob": "9f7f1a58009270d87e50d4730ae93cf0c2164c97",
+      "path": "app/qualification/capacity-native-current-service-v4.worker.draft.mjs"
+    }
+  ],
+  "applicationFiles": 153,
+  "packageFiles": 404,
+  "sourceRows": 557,
+  "sourceRowsSha256": "db33115ac37137f5b0212cb33d748154b498ec1b15ca106dfb757575da692a6e",
+  "declaredSourceBytes": 4995543,
+  "currentRuntimeReplacements": 8,
+  "currentApplicationAdditions": 6,
+  "currentMetadataIncludedAsSource": true,
+  "historicalR4ChildrenAcceptCurrentSources": false,
+  "historicalR4FilesModified": false,
+  "sourceEvidence": {
+    "actualCurrentApplicationFilesReadOnlyVerified": 153,
+    "installedPackageFilesRead": 0,
+    "packageSourceRowsDeclared": 404,
+    "nativeModulesImported": false,
+    "nativeAppExecutions": 0,
+    "profilesWritten": false,
+    "storageRootOpened": false,
+    "nativeAllowanceConsumed": false
+  },
+  "remaining": {
+    "currentRoleNativeQualified": false,
+    "currentOfferedParentBridgeQualified": false,
+    "managedLauncherQualified": false,
+    "resourceAdmissionQualified": false,
+    "scopeGranted": false,
+    "economicAcceptance": false,
+    "productionQualified": false
+  },
+  "authority": "NONE"
+}
