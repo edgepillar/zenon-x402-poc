@@ -1,3 +1,4 @@
+import { cancelBuyerChallengeBody } from './buyer-challenge-body.js';
 import {
   decodeB64Json,
   encodeB64Json,
@@ -22,6 +23,7 @@ const GET_PROTOTYPE_OF = Object.getPrototypeOf;
 const HAS_OWN = Object.hasOwn;
 const REFLECT_APPLY = Reflect.apply;
 const STRUCTURED_CLONE = structuredClone;
+const CANCEL_CHALLENGE_BODY = cancelBuyerChallengeBody;
 const WEAK_MAP_DELETE = WeakMap.prototype.delete;
 const WEAK_MAP_GET = WeakMap.prototype.get;
 const WEAK_MAP_SET = WeakMap.prototype.set;
@@ -171,29 +173,43 @@ export async function paidFetch(url, paymentClient, fetchImpl = fetch, options =
     });
   }
 
-  const requiredHeader = first.headers.get(HEADERS.PAYMENT_REQUIRED);
-  if (!requiredHeader) throw new Error('402 response did not contain PAYMENT-REQUIRED');
-  const paymentRequired = decodeB64Json(requiredHeader, {
-    maxDecodedBytes: MAX_X402_HEADER_ENCODED_BYTES,
-    maxEncodedBytes: MAX_X402_HEADER_ENCODED_BYTES,
-  });
-  validatePaymentRequiredForOfferSelection(paymentRequired);
-  if (paymentRequired.accepts.length === 1) validatePaymentRequired(paymentRequired);
-  const observedResponseUrl = first.url;
-  const responseTarget = String(observedResponseUrl || url);
-  const advertisedResource = new URL(paymentRequired.resource.url);
-  if (advertisedResource.username || advertisedResource.password) throw new Error('payment resource URL must not contain credentials');
-  if (advertisedResource.href !== new URL(responseTarget).href) {
-    throw new Error('payment resource does not match the requested URL');
+  let paymentRequired, responseTarget, accepted;
+  let challengeCaptured = false;
+  try {
+    const requiredHeader = first.headers.get(HEADERS.PAYMENT_REQUIRED);
+    if (!requiredHeader) throw new Error('402 response did not contain PAYMENT-REQUIRED');
+    paymentRequired = decodeB64Json(requiredHeader, {
+      maxDecodedBytes: MAX_X402_HEADER_ENCODED_BYTES,
+      maxEncodedBytes: MAX_X402_HEADER_ENCODED_BYTES,
+    });
+    validatePaymentRequiredForOfferSelection(paymentRequired);
+    if (paymentRequired.accepts.length === 1) validatePaymentRequired(paymentRequired);
+    const observedResponseUrl = first.url;
+    responseTarget = String(observedResponseUrl || url);
+    const advertisedResource = new URL(paymentRequired.resource.url);
+    if (advertisedResource.username || advertisedResource.password) throw new Error('payment resource URL must not contain credentials');
+    if (advertisedResource.href !== new URL(responseTarget).href) {
+      throw new Error('payment resource does not match the requested URL');
+    }
+    accepted = selectPaymentRequirement(
+      paymentRequired,
+      paymentCapabilities,
+      allowLegacyMissingPaymentFlow,
+    );
+    if (accepted.network === EXPERIMENTAL_LIVE_NETWORK && advertisedResource.protocol !== 'https:') {
+      throw new Error('live payment resource must use HTTPS');
+    }
+    challengeCaptured = true;
+  } finally {
+    // The initial 402 body is discarded by this flow. Finish its cooperative
+    // cancellation before entering a potentially expensive preparer/signer.
+    // Keep an earlier challenge-validation error when cleanup is also unknown.
+    const cancelled = await CANCEL_CHALLENGE_BODY(first);
+    if (challengeCaptured && cancelled !== true) {
+      throw new Error('payment_challenge_response_cleanup_failed');
+    }
   }
-  const accepted = selectPaymentRequirement(
-    paymentRequired,
-    paymentCapabilities,
-    allowLegacyMissingPaymentFlow,
-  );
-  if (accepted.network === EXPERIMENTAL_LIVE_NETWORK && advertisedResource.protocol !== 'https:') {
-    throw new Error('live payment resource must use HTTPS');
-  }
+
   const selectedView = makeSelectedPaymentRequiredView(paymentRequired, accepted);
   const paymentPayload = await paymentClient.createPaymentPayload(
     selectedView.paymentRequired,
