@@ -1,0 +1,516 @@
+{
+  "resultVersion": 1,
+  "kind": "CURRENT_P2_CAPACITY_PROFILE_V3_ACTUAL_LOCAL_NOT_HOSTED_OR_NATIVE",
+  "mainParent": "98cef878b41e7ee5814ea04d161e1c862855574b",
+  "developmentParent": "6716859ef30314ce66072f9ed842d5345ea6db9b",
+  "profileId": "p0-current-p2-capacity-node24-v3",
+  "sourcePins": [
+    {
+      "path": "qualification/profiles/p0-current-p2-capacity-node24-v3.json",
+      "bytes": 14816,
+      "LF": 313,
+      "sha256": "360ecc44f92300dee6937d8966ef75a1d3595d4c7ff8b85706d4a1d59354f8a1",
+      "gitBlob": "8a99b61c71a5daed31cb5567fe4cdbba2235fad5"
+    },
+    {
+      "path": "package.json",
+      "bytes": 2677,
+      "LF": 40,
+      "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+      "gitBlob": "45752ffde39d29666094f7f1c755060d75e43deb"
+    },
+    {
+      "path": "package-lock.json",
+      "bytes": 49240,
+      "LF": 1334,
+      "sha256": "44bf8922c9937b7d1175a666017f0a2fcbc48f1f8f8a3ccb39e2c31b5b205e91",
+      "gitBlob": "44440cfe88daad3a61c23b4ba25a4d831847e5f8"
+    },
+    {
+      "path": "scripts/current-qualification-profile-v3.mjs",
+      "bytes": 10441,
+      "LF": 193,
+      "sha256": "cf5bdc90c7a4316780c5b7030d7d82c14ea72efa513c09c98231540cfd3b3135",
+      "gitBlob": "3f592c7d4f0249c62bdf88a853b5e748d17124a2"
+    },
+    {
+      "path": "scripts/run-current-qualification-v3.mjs",
+      "bytes": 7614,
+      "LF": 137,
+      "sha256": "bb2b8cf6baa9714f09089e3dc66c8a41357cf1da1f673b8bc1681fcc6674732f",
+      "gitBlob": "d5268b6dec8fdb73a8c6d19f22698a4d24068150"
+    },
+    {
+      "path": "scripts/x402-runtime-dependency-contract.mjs",
+      "bytes": 3871,
+      "LF": 65,
+      "sha256": "c5805c5cbe379749b322174b44260129437456846153d25999c7491702a6ccc5",
+      "gitBlob": "aa1c806060cee0480b99248eb3e85a999a3d66f1"
+    },
+    {
+      "path": "test/current-qualification-profile-v3.test.js",
+      "bytes": 8324,
+      "LF": 135,
+      "sha256": "5f15a9221e80b7e9f7ee3b7b53e8be535f2d996b12a543b2a5a538d74d2cfe8b",
+      "gitBlob": "b3c793f1b822f2010284253beb1273d14f376305"
+    },
+    {
+      "path": "test/service-credit-custodied-sequential-runner-accepted-receipt-prototype.test.js",
+      "bytes": 2817,
+      "LF": 73,
+      "sha256": "bbf99a61bac18b984c6d545200666388278646ef002ddac08ba3a3220e7eabad",
+      "gitBlob": "d9a733d4dc3e04db182d620d7b654e666938ea6b"
+    },
+    {
+      "path": "qualification/service-credit-dispatch-abort-drain.behavior.draft.mjs",
+      "bytes": 20224,
+      "LF": 355,
+      "sha256": "6cc01f7cd8b683b49bae7aacfd44591c33e45db248ee16957f62107221e7ee61",
+      "gitBlob": "ba7b7b910cfce72ab8316bbd1e78e55b7b413a82"
+    },
+    {
+      "path": "test/x402-runtime-dependency-contract.test.js",
+      "bytes": 4082,
+      "LF": 69,
+      "sha256": "ee2b008a44528b58bb79df6d052f327e9fc5d52effe3b9ebf8588395cbefe9ba",
+      "gitBlob": "8e5aebd2c3315a7ec5cc3dbf0858df955df2eb62"
+    },
+    {
+      "path": "qualification/service-credit-capacity-window-writer-trace-owned-data.behavior.mjs",
+      "bytes": 13154,
+      "LF": 168,
+      "sha256": "ccb66e4aa8b8d15a14ab99b35c400ce36db01dcdc8c678766f98ca600872bc2b",
+      "gitBlob": "a2b0d5c0f5747b6247e86211a112d59dcbb689b3"
+    },
+    {
+      "path": "qualification/service-credit-capacity-window-owned-comparison.behavior.mjs",
+      "bytes": 20697,
+      "LF": 345,
+      "sha256": "5443b917af9df1fcfa2a8ff9a463fd5f98b8b195de36a1ad4ccb4de04a39c492",
+      "gitBlob": "427c6c5edc64e028dec9f0d1f9c5cf60b8931d19"
+    },
+    {
+      "path": "src/service-credit-http-execute-dispatch.js",
+      "bytes": 29328,
+      "LF": 815,
+      "sha256": "e07470a9fde311c806beb09b1c4369b4724213682bcbcacc228ece0e0e36f5ef",
+      "gitBlob": "4b5bcb1b08b1ab44e65c8ed7bab76d41640a767b"
+    },
+    {
+      "path": "src/service-credit-custodied-sequential-runner.js",
+      "bytes": 5773,
+      "LF": 121,
+      "sha256": "de0f3e143066f19ac3f3cab072abe8d250ea72b9fac9ad2c5bedb75110d7ec56",
+      "gitBlob": "f624375877ee0dd3d8352a5d13e35d95b43a12e7"
+    },
+    {
+      "path": "src/service-credit-original-request-custody-contract.js",
+      "bytes": 14051,
+      "LF": 356,
+      "sha256": "fd349de553a17abcc2e0567ba6640e6e3d5d26cfa79ee1e355928dc9fa8d3915",
+      "gitBlob": "f911d42d01b69e6577f9bcd66f4ed59aab8ab882"
+    },
+    {
+      "path": "src/service-credit-custodied-http-client.js",
+      "bytes": 12646,
+      "LF": 324,
+      "sha256": "35997f41c9a5162fe29ed56776181a1691c0a0a69c7dbdfe8b61785af3998145",
+      "gitBlob": "33879d019492de8d278b0d0dc998bd1c7806b413"
+    },
+    {
+      "path": "src/service-credit-custodied-sequential-runner-core.js",
+      "bytes": 15983,
+      "LF": 492,
+      "sha256": "044477cb1300453f10bacf070037db175d08deec1d488549b34a5cb92e6328bd",
+      "gitBlob": "e91acb307f4f0f5fb5292a805f7ca1d02b21b68d"
+    },
+    {
+      "path": "src/service-credit-custodied-request-owner.js",
+      "bytes": 55155,
+      "LF": 1358,
+      "sha256": "2ba222760d4a922bf0466d95fd2671076b9d19b8c5fa4ea2cb3c66b1338562eb",
+      "gitBlob": "7f99bdadcc622db203e864edb12a1f4d1059a965"
+    },
+    {
+      "path": "src/service-credit-capacity-native-observation-data.js",
+      "bytes": 6173,
+      "LF": 103,
+      "sha256": "d6d19890334fbb6d7e92e605640d4638154f8e3e10588c8e217bf782a675b7ca",
+      "gitBlob": "aaf6b24f65a59e4b421805d7667a5fdf9e72433f"
+    },
+    {
+      "path": "src/service-credit-capacity-cohort-writer-trace-data.js",
+      "bytes": 10956,
+      "LF": 181,
+      "sha256": "75c3529584f7c6126f726734d085e107438c7a676ff1f63073956054aedcba65",
+      "gitBlob": "63bee5ad4714d3179666eef371373d4e0416a4a0"
+    },
+    {
+      "path": "src/service-credit-capacity-cohort-writer-coverage-data.js",
+      "bytes": 10102,
+      "LF": 172,
+      "sha256": "9d7ee0d837bca9668cdf1a26d296376082be6a1b4a25bc43114652f3ecfbda90",
+      "gitBlob": "a1b706447b8312c67c86debe57ea8ef4023c8131"
+    },
+    {
+      "path": "src/service-credit-capacity-window-writer-trace-data.js",
+      "bytes": 8906,
+      "LF": 126,
+      "sha256": "b86377ec5474f85465073e7891bde9f706b167a40cb6677671a6012dab4d9bbd",
+      "gitBlob": "ceabbe01bb341ccf2c9c8f0d89229e3dd4268c5f"
+    },
+    {
+      "path": "src/service-credit-capacity-window-writer-trace-owned-data.js",
+      "bytes": 9400,
+      "LF": 133,
+      "sha256": "60a5df357210f3ffa0a3d0cf5875a93cee656a7bc995ae7abd76e2e9e9a6c122",
+      "gitBlob": "28705d253e5ca88e6ef6ab3cc4100904aa6c0391"
+    }
+  ],
+  "runtime": {
+    "node": "24.19.0",
+    "nodeSha256": "dbedff294bab84a0a86c04e15fbcbeb1c97ca10bef1b32b0634cd24b36f62100",
+    "platform": "darwin",
+    "arch": "arm64"
+  },
+  "restrictedNodeArgv": [
+    "node",
+    "--permission",
+    "--allow-fs-read=./package.json",
+    "--allow-fs-read=./package-lock.json",
+    "--allow-fs-read=./scripts/current-qualification-profile-v3.mjs",
+    "--allow-fs-read=./scripts/run-current-qualification-v3.mjs",
+    "--allow-fs-read=./scripts/x402-runtime-dependency-contract.mjs",
+    "--allow-fs-read=./test/current-qualification-profile-v3.test.js",
+    "--allow-fs-read=./test/service-credit-custodied-sequential-runner-accepted-receipt-prototype.test.js",
+    "--allow-fs-read=./qualification/service-credit-dispatch-abort-drain.behavior.draft.mjs",
+    "--allow-fs-read=./test/x402-runtime-dependency-contract.test.js",
+    "--allow-fs-read=./qualification/service-credit-capacity-window-writer-trace-owned-data.behavior.mjs",
+    "--allow-fs-read=./qualification/service-credit-capacity-window-owned-comparison.behavior.mjs",
+    "--allow-fs-read=./src/service-credit-http-execute-dispatch.js",
+    "--allow-fs-read=./src/service-credit-custodied-sequential-runner.js",
+    "--allow-fs-read=./src/service-credit-original-request-custody-contract.js",
+    "--allow-fs-read=./src/service-credit-custodied-http-client.js",
+    "--allow-fs-read=./src/service-credit-custodied-sequential-runner-core.js",
+    "--allow-fs-read=./src/service-credit-custodied-request-owner.js",
+    "--allow-fs-read=./src/service-credit-capacity-native-observation-data.js",
+    "--allow-fs-read=./src/service-credit-capacity-cohort-writer-trace-data.js",
+    "--allow-fs-read=./src/service-credit-capacity-cohort-writer-coverage-data.js",
+    "--allow-fs-read=./src/service-credit-capacity-window-writer-trace-data.js",
+    "--allow-fs-read=./src/service-credit-capacity-window-writer-trace-owned-data.js",
+    "--allow-fs-read=./qualification/profiles/p0-current-p2-capacity-node24-v3.json",
+    "--no-addons",
+    "--disallow-code-generation-from-strings",
+    "--unhandled-rejections=strict",
+    "scripts/run-current-qualification-v3.mjs"
+  ],
+  "actualPlan": {
+    "exit": 0,
+    "complete": true,
+    "stdoutBytes": 9165,
+    "stdoutSha256": "ba65a05ce34f56ce3d54be21a4c3dd18f15955f81b0770ff0c986daa93c50c7b",
+    "summary": {
+      "profileId": "p0-current-p2-capacity-node24-v3",
+      "node": "24.19.0",
+      "platform": "darwin",
+      "arch": "arm64",
+      "manifestSha256": "360ecc44f92300dee6937d8966ef75a1d3595d4c7ff8b85706d4a1d59354f8a1",
+      "sourceFiles": 22,
+      "selectedCases": 108,
+      "installedDependencies": false,
+      "scope": "DECLARED_P2_CAPACITY_COMPONENTS_AND_RUNTIME_DEPENDENCY_CONTRACT_ONLY",
+      "runtimeDependencyContract": {
+        "coreVersion": "2.23.0",
+        "coreDependencyKind": "runtime",
+        "zodVersion": "3.25.76",
+        "selectedRuntimeLockRows": 2,
+        "lockfileVersion": 3,
+        "retainedArtifactIntegrityUnchanged": true,
+        "installedDependencies": false,
+        "x402PackageExecuted": false,
+        "sdkExecuted": false,
+        "ordinaryInstalledNamespaceQualified": false
+      },
+      "selectionEnvironment": "owned-child-window-data-v1",
+      "selectionGrantsHostedAuthority": false,
+      "result": "PLAN_ONLY_NOT_EXECUTED",
+      "entries": [
+        {
+          "path": "test/current-qualification-profile-v3.test.js",
+          "names": [
+            "current profile admits a closed immutable source and case selection",
+            "current profile rejects malformed text and unknown schema members",
+            "current profile refuses floating runtime and dependency installation",
+            "current profile keeps package declaration separate from package execution",
+            "current profile refuses missing reordered or historical entry paths",
+            "current profile rejects duplicate empty and unsafe case names",
+            "current profile rejects traversal incomplete or additional source rows",
+            "current profile requires bounded exact hashes sizes and source budget",
+            "current profile cannot omit excluded authority or broaden its declared scope",
+            "current profile recheck rejects content and physical identity drift",
+            "current profile requires real complete passes and both stream completions",
+            "current profile rejects skipped duplicate unexpected nested or failed case results",
+            "current capacity profile reads exact file-sized buffers with complete source hashes"
+          ]
+        },
+        {
+          "path": "test/service-credit-custodied-sequential-runner-accepted-receipt-prototype.test.js",
+          "names": [
+            "accepted run receipt survives caller array prototype mutation"
+          ]
+        },
+        {
+          "path": "qualification/service-credit-dispatch-abort-drain.behavior.draft.mjs",
+          "names": [
+            "V1 missing request close becomes unknown-undrained without retry or synthetic release",
+            "V2 missing response close rejects and late complete reply cannot create a response receipt",
+            "early error uses the capped one-second abort observation instead of the sixty-second request deadline",
+            "actual V3 custodied runner close terminates unknown and never submits its queued second original",
+            "normal V2 response bytes and actual V3 two-original completion retain their existing contracts",
+            "V1 and V2 observed abort closes before the drain budget remain unknown but not undrained",
+            "repeated errors do not renew the one abort-drain budget or repeat destroy and settlement"
+          ]
+        },
+        {
+          "path": "test/x402-runtime-dependency-contract.test.js",
+          "names": [
+            "runtime x402 contract reads the current pinned manifest and lock without installing packages",
+            "runtime x402 contract refuses missing floating development peer and optional declarations",
+            "runtime x402 contract refuses manifest lock root and engine divergence",
+            "runtime x402 contract refuses development optional link and installer-only lock rows",
+            "runtime x402 contract refuses changed versions tarball sources and retained integrity",
+            "runtime x402 contract refuses changed or shadowed transitive zod resolution",
+            "runtime x402 contract refuses malformed oversized non-ASCII and non-object input text"
+          ]
+        },
+        {
+          "path": "qualification/service-credit-capacity-window-writer-trace-owned-data.behavior.mjs",
+          "names": [
+            "coverage uses independent literal original vectors and preserves every appended field",
+            "coverage preserves whole-page refusal and sticky hold / foreign lane",
+            "coverage preserves whole-page refusal and sticky hold / foreign run",
+            "coverage preserves whole-page refusal and sticky hold / ordinal gap",
+            "coverage preserves whole-page refusal and sticky hold / reversed original order",
+            "coverage preserves whole-page refusal and sticky hold / original reopened after control",
+            "coverage preserves whole-page refusal and sticky hold / unobserved completion",
+            "coverage preserves whole-page refusal and sticky hold / late malformed row",
+            "coverage preserves whole-page refusal and sticky hold / noncanonical timestamp",
+            "coverage preserves whole-page refusal and sticky hold / nonmonotonic rows",
+            "coverage preserves raw snapshot refusal / UNKNOWN",
+            "coverage preserves raw snapshot refusal / active writer",
+            "coverage preserves raw snapshot refusal / wrong child clock",
+            "coverage preserves raw snapshot refusal / wrong total",
+            "coverage preserves incomplete paging and does not fabricate missing originals",
+            "coverage preserves cross-page grouping and control closure of an original",
+            "coverage rejects replay and changed declared totals without resetting its prefix",
+            "coverage refuses mutable/accessor/proxy DATA without entering user hooks",
+            "coverage arity failure preserves exact hold and cached finalization behavior",
+            "complete and incomplete window reports equal the preserved baseline byte for byte",
+            "full 16-lane trace retains half the durations and eliminates finalize duration copies",
+            "duration reuse keeps exact zero and large canonical decimal reports",
+            "duration reuse counts one fewer bigint parse and no repeated decimal rendering per row",
+            "duration reuse preserves page atomicity when a later endpoint is malformed",
+            "duration reuse never reads an accessor or coerces a boxed timestamp",
+            "full 16-lane duration reuse avoids 100352 decimal renders with identical distributions",
+            "same-child window capture admits exact OPEN and STOPPED DATA without authenticating it",
+            "window trace construction is inert with an empty private DATA cursor",
+            "whole bracket classification BEFORE never clips either endpoint",
+            "whole bracket classification CROSSES_OPEN never clips either endpoint",
+            "whole bracket classification INSIDE never clips either endpoint",
+            "whole bracket classification CROSSES_STOP never clips either endpoint",
+            "whole bracket classification CROSSES_BOTH never clips either endpoint",
+            "whole bracket classification AFTER never clips either endpoint",
+            "whole bracket classification TOUCHES_BOUNDARY never clips either endpoint",
+            "equal-nanosecond contact 90-100 remains a separate conservative class",
+            "equal-nanosecond contact 90-200 remains a separate conservative class",
+            "equal-nanosecond contact 100-100 remains a separate conservative class",
+            "equal-nanosecond contact 100-200 remains a separate conservative class",
+            "equal-nanosecond contact 100-210 remains a separate conservative class",
+            "equal-nanosecond contact 190-200 remains a separate conservative class",
+            "equal-nanosecond contact 200-200 remains a separate conservative class",
+            "equal-nanosecond contact 200-210 remains a separate conservative class",
+            "window capture refuses version",
+            "window capture refuses parent clock",
+            "window capture refuses pending phase",
+            "window capture refuses sticky UNKNOWN",
+            "window capture refuses fallback close",
+            "window capture refuses missing STOP",
+            "window capture refuses empty duration",
+            "window capture refuses reversed duration",
+            "window capture refuses noncanonical time",
+            "window capture refuses numeric time",
+            "window capture refuses bigint time"
+          ]
+        },
+        {
+          "path": "qualification/service-credit-capacity-window-owned-comparison.behavior.mjs",
+          "names": [
+            "window capture refuses negative time",
+            "window capture refuses overlarge time",
+            "window capture refuses noninteger read count",
+            "window capture refuses coerced read count",
+            "window capture refuses negative zero count",
+            "window capture refuses insufficient reads",
+            "window capture refuses per-plan read overflow",
+            "window capture refuses foreign run",
+            "window capture refuses foreign lane",
+            "window capture refuses foreign source",
+            "window capture refuses mutable extra accessor and proxy DATA without hooks",
+            "window capture rejects wrong expectation context total phase and public arity",
+            "window trace captures the plan through descriptors before deriving the finite clock budget",
+            "window trace binds independently completed originals and preserves separate cohorts",
+            "writer row alone never proves completion of its declared original",
+            "unmatched original binding cannot be replaced by a fuzzy cohort or ordinal match",
+            "late malformed row cannot partly commit a valid prefix to the window aggregates",
+            "incomplete multi-page snapshot retains counts but withholds every latency distribution",
+            "missing independently completed original makes otherwise complete paging insufficient",
+            "raw source UNKNOWN active writer and changed totals never become window metrics",
+            "replayed page after a complete snapshot sticks UNKNOWN rather than restarting a window",
+            "finalization releases both genuine cohort and window duration collections",
+            "max finite owned trace uses 49 pages 256 commands and two duration references per row",
+            "empty DATA snapshot fabricates neither a latency sample nor native qualification",
+            "public DATA arity failures are bounded and cannot rewrite a cached result",
+            "large exact child timestamps remain bigint DATA rather than rounded JS numbers"
+          ]
+        }
+      ],
+      "excludedScopes": [
+        "historical-discovery",
+        "sdk",
+        "x402-package-execution",
+        "sqlite",
+        "native-http",
+        "network",
+        "keys-or-signatures",
+        "nonce-search",
+        "real-prepare",
+        "payment",
+        "provider-or-pilot"
+      ]
+    }
+  },
+  "actualExecution": {
+    "exit": 0,
+    "complete": true,
+    "stdoutBytes": 22270,
+    "stdoutSha256": "0c059e865d73536af8a994c570b300d9c9368153a6a83a9def9d8a3d39c454e5",
+    "stderrBytes": 0,
+    "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "counts": {
+      "tests": 108,
+      "suites": 0,
+      "pass": 108,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "summary": {
+      "profileId": "p0-current-p2-capacity-node24-v3",
+      "node": "24.19.0",
+      "platform": "darwin",
+      "arch": "arm64",
+      "manifestSha256": "360ecc44f92300dee6937d8966ef75a1d3595d4c7ff8b85706d4a1d59354f8a1",
+      "sourceFiles": 22,
+      "selectedCases": 108,
+      "installedDependencies": false,
+      "scope": "DECLARED_P2_CAPACITY_COMPONENTS_AND_RUNTIME_DEPENDENCY_CONTRACT_ONLY",
+      "runtimeDependencyContract": {
+        "coreVersion": "2.23.0",
+        "coreDependencyKind": "runtime",
+        "zodVersion": "3.25.76",
+        "selectedRuntimeLockRows": 2,
+        "lockfileVersion": 3,
+        "retainedArtifactIntegrityUnchanged": true,
+        "installedDependencies": false,
+        "x402PackageExecuted": false,
+        "sdkExecuted": false,
+        "ordinaryInstalledNamespaceQualified": false
+      },
+      "selectionEnvironment": "owned-child-window-data-v1",
+      "selectionGrantsHostedAuthority": false,
+      "result": "SELECTED_CURRENT_P2_CAPACITY_COMPONENTS_AND_RUNTIME_CONTRACT_PASS",
+      "counts": {
+        "tests": 108,
+        "suites": 0,
+        "pass": 108,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "boundedFileBufferObservation": {
+        "files": 23,
+        "allocatedBytes": 336453,
+        "legacyCapacityBytes": 2916375,
+        "savedBytes": 2579922,
+        "measurement": "BUFFER_ALLOC_REQUEST_BYTES_NOT_HEAP_OR_DISK_IO"
+      },
+      "sourcePinsRechecked": true,
+      "historicalEntriesRun": 0,
+      "hostedCiEstablishedByLocalCommand": false,
+      "fullApplicationQualified": false,
+      "serviceDelivery": "NOT_ESTABLISHED",
+      "pilot": "NO_GO"
+    }
+  },
+  "fileBufferObservation": {
+    "files": 23,
+    "allocatedBytes": 336453,
+    "legacyCapacityBytes": 2916375,
+    "savedBytes": 2579922,
+    "measurement": "BUFFER_ALLOC_REQUEST_BYTES_NOT_HEAP_OR_DISK_IO",
+    "actualAllocationFunctionEntriesObserved": true,
+    "legacyCapacityBytesComputedForSameSelection": true,
+    "actualLegacyV2GraphAllocationMeasured": false,
+    "heapRSSOrDiskIOBytesMeasured": false,
+    "physicalReclaimMeasured": false
+  },
+  "preserved": {
+    "earlierProfilesUnchanged": true,
+    "packageScriptsUnchanged": true,
+    "workflowUnchanged": true,
+    "existingDefaultCIControls": 27,
+    "fullByteHashAndIdentityBookends": true,
+    "readGrowthSentinel": true
+  },
+  "proposedHostedSelection": {
+    "diffPath": "qualification/current-p2-capacity-profile-v3.workflow.diff",
+    "baseWorkflowGitBlob": "a376badfdca195233cdec28829bdf392c15848c3",
+    "applied": false,
+    "executed": false,
+    "selectedCases": 108,
+    "newJobCount": 0,
+    "dependencyInstall": false,
+    "SDKImported": false,
+    "SQLite": false,
+    "sockets": false,
+    "keysOrSignatures": false,
+    "nonce": false,
+    "nativeApplication": false,
+    "approvalGranted": false
+  },
+  "qualification": {
+    "sourcePinRecheck": true,
+    "filesystemWritePermissionGranted": false,
+    "childProcessPermissionGranted": false,
+    "workerPermissionGranted": false,
+    "installedDependencies": false,
+    "SDKImported": false,
+    "x402PackageExecuted": false,
+    "SQLite": false,
+    "sockets": false,
+    "keysOrSignatures": false,
+    "nonce": false,
+    "storageRootRead": false,
+    "managerImported": false,
+    "managedTasksCreated": 0,
+    "finiteNativeAllowancesConsumed": 0,
+    "OSNetworkSandboxClaimed": false,
+    "hostedV3CIEstablished": false,
+    "fullApplicationQualified": false,
+    "economicPilotQualified": false,
+    "productionQualified": false,
+    "authority": "NONE"
+  }
+}
