@@ -77,6 +77,11 @@ export function createOriginalFundingReadCloseCoordinator(options) {
       done.resolve(record({ originalFundingReadCloseVersion: 1, lifecycle,
         readClose: 'FULFILLED_UNDEFINED', operation: 'SETTLED', fundingClose: 'CLOSED',
         operationOutcome: 'NOT_ESTABLISHED', nativeResourceCleanup: 'NOT_QUALIFIED', authority: 'NONE' }));
+      // A clean joined close no longer needs captured source capabilities.
+      // Drop only our references; active and HELD owners remain untouched.
+      callbacks = null;
+      readPromise = null;
+      operationPromise = null;
     }, () => { fundingCloseSettled = true; hold(); })) hold();
   }
   function operationFinished() {
