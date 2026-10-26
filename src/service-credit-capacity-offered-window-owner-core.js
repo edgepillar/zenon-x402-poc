@@ -69,7 +69,9 @@ export function createServiceCreditCapacityOfferedWindowOwnerCore(configuration)
   function clock() {
     if (!invariant()) fail('intrinsics_rejected');
     const value = A(NOW, undefined, []);
-    if (typeof value !== 'bigint' || value < 0n || value > MAX_NS
+    // A trusted clock can change the Promise contract before returning.
+    // Fence new work before its timestamp grants admission to a callback.
+    if (!invariant() || typeof value !== 'bigint' || value < 0n || value > MAX_NS
         || lastClock !== null && value < lastClock) fail('clock_rejected');
     lastClock = value; return value;
   }
