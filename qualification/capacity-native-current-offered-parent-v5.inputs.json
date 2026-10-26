@@ -1,7 +1,7 @@
 {
   "sourceSelectionVersion": 5,
-  "kind": "CURRENT_V6_MATCHED_WINDOW_OFFERED_PARENT_172_404_SOURCE_NOT_NATIVE_EXECUTION",
-  "sourceParent": "439b47905f264dac8cb079234e42d5b9b2d8003f",
+  "kind": "CURRENT_V6_MATCHED_WINDOW_OFFERED_PARENT_174_404_SOURCE_NOT_NATIVE_EXECUTION",
+  "sourceParent": "3f2e225c66ad8db7bdc671e82703b3d3ad6dc808",
   "parentRole": {
     "profileKind": "NATIVE_CAPACITY_CURRENT_OFFERED_SUPERVISOR_NODE24_V5",
     "profileVersion": 8,
@@ -33,31 +33,31 @@
   "additionalParentApplicationInputs": [
     {
       "path": "app/qualification/capacity-native-current-offered-adapter-v6.draft.mjs",
-      "bytes": 18701,
+      "bytes": 18712,
       "LF": 271,
-      "sha256": "ccb668fc9a7a0d38380d7e7ed7bc7ae41d171131ded33d9549568f1b13ad5d47",
-      "gitBlob": "f63a0cd9c2ec580fa640b7080a1e14de31247ce3"
+      "sha256": "6f854e162784f2c43d4f11dc872a501964ad702eff6b51e3bce3f6d889ed1121",
+      "gitBlob": "ca656e81cc29515f85f3a35ff3d3005cb1e42cad"
     },
     {
       "path": "app/qualification/capacity-native-current-offered-pair-v5.supervisor.draft.mjs",
       "bytes": 26835,
       "LF": 301,
-      "sha256": "74faae6242cc57902fdfba4d683a89e0127c4fdb304df469a2669aafbebfad5f",
-      "gitBlob": "a6d6abd8c4b46ab2a55ea56d8fb3500ed01edeab"
+      "sha256": "c0f3aa296670567b78342026efe6371133b6bbaf1a0828a58d85c977071520d4",
+      "gitBlob": "fbc037d77a975b9c896ea01261200d4da89c3a85"
     },
     {
       "path": "app/qualification/capacity-native-current-offered-v5.entry.draft.mjs",
       "bytes": 10191,
       "LF": 123,
-      "sha256": "38be31c983d9b03c24292454cbbd27d71298ca010325d4410345afa0320a585f",
-      "gitBlob": "5cb8c88d077b83b8360fd46783558ccea10c8b69"
+      "sha256": "3f3bc3ddae9764f34ea15f3125f9f4590cef6f3e4eb5a0e96de40fd5ef8a546f",
+      "gitBlob": "ef2496ab24bc383efa190a1bf58496361336093a"
     },
     {
       "path": "app/qualification/capacity-native-current-offered-v5.namespace.preload.draft.mjs",
-      "bytes": 28746,
-      "LF": 390,
-      "sha256": "dca7e95d3f5659cccccd370cb1345199a6ec91cccd4c60b976a5f43b2c07a488",
-      "gitBlob": "904198a9c6a07be63b0308cee2d2fde0f071743c"
+      "bytes": 29024,
+      "LF": 394,
+      "sha256": "72bd429443890ecc2d1fb484c996c437b6bef883a1bf898593f5a05785c25f0e",
+      "gitBlob": "1254b42143f268e4102e02a1300356a1c0017973"
     },
     {
       "path": "app/src/native-profile-byte-fragments.js",
@@ -65,6 +65,13 @@
       "LF": 52,
       "sha256": "234d270445238674c1c17515e9a4fcc4fef309e976f150242d36e6dc7fd29a98",
       "gitBlob": "ea4de4f30cd1fd255ed671be11683531eb159503"
+    },
+    {
+      "path": "app/src/service-credit-capacity-cohort-writer-coverage-data.js",
+      "bytes": 10102,
+      "LF": 172,
+      "sha256": "9d7ee0d837bca9668cdf1a26d296376082be6a1b4a25bc43114652f3ecfbda90",
+      "gitBlob": "a1b706447b8312c67c86debe57ea8ef4023c8131"
     },
     {
       "path": "app/src/service-credit-capacity-offered-plan-data.js",
@@ -93,13 +100,20 @@
       "LF": 253,
       "sha256": "bd15ef2f4ba1ab7d340f0a66934bfc12ad7af392379f63c538dffebcb37861d1",
       "gitBlob": "712018855423009cd1c0ce8e5237fe3c201f898f"
+    },
+    {
+      "path": "app/src/service-credit-capacity-window-writer-trace-owned-data.js",
+      "bytes": 9146,
+      "LF": 129,
+      "sha256": "970fe9961b9c5de27694d96ea8c414c5ee362da88d10e1c597221647711e8cc1",
+      "gitBlob": "03d2e366104b2d203e764e6c5d848c9f81b5e2ff"
     }
   ],
-  "parentApplicationFiles": 172,
+  "parentApplicationFiles": 174,
   "parentPackageFiles": 404,
-  "parentSourceRows": 576,
-  "parentSourceRowsSha256": "6f4992bb133fb399f9f28e111bd2b993a88c412c4832b163a519a357abee3b7a",
-  "parentDeclaredInputBytes": 5285067,
+  "parentSourceRows": 578,
+  "parentSourceRowsSha256": "fe51e40aebd38177628a04a8868f78d5804f3c02a00ea363d1aade20c2bcb2cd",
+  "parentDeclaredInputBytes": 5304604,
   "capture": {
     "offeredCaptureVersion": 3,
     "adapterVersion": 6,

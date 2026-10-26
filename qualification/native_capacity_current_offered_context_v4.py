@@ -13,9 +13,9 @@ import stat
 import sys
 
 PARENT="qualification/native_capacity_current_offered_parent_v5.py"
-PARENT_SHA="868b1391c9a926e19a3855c5878920df47987e88d33a025d3cc56f28132e937e"
+PARENT_SHA="931e186d66b7bb2ccb8be66c16e7f840b1e3ae3b37b22a83ddca415edf66b553"
 SELECTION="qualification/capacity-native-current-offered-parent-v5.inputs.json"
-SELECTION_SHA="618aec16af6144523c568fd2bb851ad7eeb780702f0377f4059df5c577304327"
+SELECTION_SHA="b832012dab133290d248d6fa8ab86baac328d3012c10327d935a3cd62b569dc8"
 def require(value,code):
     if not value:raise ValueError(code)
 def identity(s):
@@ -26,7 +26,7 @@ def build_source_context(repo,packages,node):
     require(repo.is_absolute()and os.path.normpath(str(repo))==str(repo),"ABSOLUTE_V3_V5_SOURCE_ROOT")
     for parent in(path,*path.parents):require(not parent.is_symlink(),"NO_V3_V5_SOURCE_LINK")
     before=path.lstat()
-    require(stat.S_ISREG(before.st_mode)and before.st_uid==os.getuid()and before.st_nlink==1 and before.st_size==16514,"V3_PARENT_SOURCE_IDENTITY")
+    require(stat.S_ISREG(before.st_mode)and before.st_uid==os.getuid()and before.st_nlink==1 and before.st_size==16650,"V3_PARENT_SOURCE_IDENTITY")
     fd=os.open(path,os.O_RDONLY|os.O_NOFOLLOW)
     try:
         opened=os.fstat(fd)
@@ -34,7 +34,7 @@ def build_source_context(repo,packages,node):
         with os.fdopen(fd,"rb",closefd=False)as stream:raw=stream.read(65537)
         require(identity(os.fstat(fd))==identity(before)and identity(path.lstat())==identity(before),"V3_PARENT_READ_IDENTITY")
     finally:os.close(fd)
-    require(len(raw)==16514 and hashlib.sha256(raw).hexdigest()==PARENT_SHA,"PINNED_REAL_V3_PARENT")
+    require(len(raw)==16650 and hashlib.sha256(raw).hexdigest()==PARENT_SHA,"PINNED_REAL_V3_PARENT")
     spec=importlib.util.spec_from_file_location("current_v5_v6_actual_installed_parent",path)
     require(spec is not None and spec.loader is not None,"REAL_V3_PARENT_SPEC")
     parent=importlib.util.module_from_spec(spec);sys.modules[spec.name]=parent
@@ -50,7 +50,7 @@ def build_source_context(repo,packages,node):
     for row in selected["rows"]:
         root,relative=(app,row["path"][4:])if row["path"].startswith("app/")else(package_root,row["path"][9:])
         content,ident=parent.read_owned(Path(root)/relative)
-        require(base.pin(row["path"],content)==row,"ALL_567_INSTALLED_CURRENT_SOURCE_PINS")
+        require(base.pin(row["path"],content)==row,"ALL_578_INSTALLED_CURRENT_SOURCE_PINS")
         if row["path"]in base.VERSIONS:
             package=json.loads(content.decode("utf8"),object_pairs_hook=base._pairs)
             require(type(package)is dict and package.get("version")==base.VERSIONS[row["path"]],"EXACT_CURRENT_INSTALLED_PACKAGE_VERSION")

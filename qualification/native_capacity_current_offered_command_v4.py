@@ -10,7 +10,7 @@ import re
 from urllib.parse import quote
 
 HASH=re.compile(r"[0-9a-f]{64}")
-PARENT_SEAL="6f4992bb133fb399f9f28e111bd2b993a88c412c4832b163a519a357abee3b7a"
+PARENT_SEAL="fe51e40aebd38177628a04a8868f78d5804f3c02a00ea363d1aade20c2bcb2cd"
 CHILD_SEAL="92646a2cf5edf717a1d24468fa6277c48c4f59f43db5b6e607b6071acc79c2b2"
 NODE_SHA="dbedff294bab84a0a86c04e15fbcbeb1c97ca10bef1b32b0634cd24b36f62100"
 ENTRY="qualification/capacity-native-current-offered-v5.entry.draft.mjs"
@@ -116,7 +116,7 @@ def assemble(planner,resource,workload,run_id,root,children):
     parent=planner.plan_parent(dict(runId=run_id,laneId="workload.parent"),root,children)
     entry=resource.entry_plan(value,run_id,lanes)
     return dict(parentProfile=parent,entryPlan=entry,resourcePlan=effects,
-        summary=dict(kind="COMPLETE_CURRENT_OFFERED_PROFILE_AND_ENTRY_DATA",parentSourceRows=576,childSourceRows=567,
+        summary=dict(kind="COMPLETE_CURRENT_OFFERED_PROFILE_AND_ENTRY_DATA",parentSourceRows=578,childSourceRows=567,
             parentProfileVersion=8,childProfileVersion=6,childProfiles=len(children),wholeCurrentChildBytesPreserved=True,
             originalEntryPlanBytesBound=True,rootsPhysicallyAuthenticated=False,casOriginsAuthenticated=False,
             effectsExecuted=False,nativeAllowanceGranted=False,authority="NONE"))
@@ -163,7 +163,7 @@ def plan(planner,resource,workload,effects,repo,node,task_root,parent_input,entr
         X402_NATIVE_CAPACITY_PLAN_PATH=entry_input["path"],X402_NATIVE_CAPACITY_PLAN_SHA256=entry_input["sha256"])
     return dict(argv=argv,envDelta=env,sourceProfile=profile,timeoutSeconds=expected["nodeTimeoutSeconds"],
         stdoutLimit=expected["nodeStdoutLimit"],stderrLimit=expected["nodeStderrLimit"],
-        summary=dict(kind="CURRENT_OFFERED_V5_MANAGED_COMMAND_BINDING_DATA",parentSourceRows=576,childSourceRows=567,
+        summary=dict(kind="CURRENT_OFFERED_V5_MANAGED_COMMAND_BINDING_DATA",parentSourceRows=578,childSourceRows=567,
             childProfiles=len(children),parentProfileVersion=8,childProfileVersion=6,offeredCaptureVersion=3,
             resourcePlanVersion=4,wholeEntryBytesBound=True,wholeGenuineCurrentProfileBytesBound=True,
             completeResourceFieldsBound=True,nativeCommandExecuted=False,sourceBytesPhysicallyAuthenticated=False,

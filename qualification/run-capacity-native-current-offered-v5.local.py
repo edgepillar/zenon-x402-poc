@@ -30,7 +30,7 @@ PARENT="qualification/capacity-native-current-offered-parent-v5.inputs.json"
 SOURCE_SELECTION="qualification/capacity-native-current-roles-v6.inputs.json"
 KIND="CURRENT_OFFERED_V5_COMPLETE_MANAGED_SOURCE_NOT_NATIVE_EXECUTION"
 NATIVE_SELECTION="one-new-approved-native-current-offered-parent-v5"
-FROZEN=[['qualification/native_capacity_current_offered_resource_v4.py', 'ada0ccd60a13698f81142817d92e78ef8b9a766837f8b3f9f300d43f7544a453'], ['qualification/native_capacity_current_offered_command_v4.py', '830effd30cf87230ea70330a24b982209965d7a46d37dad32f0cb0d4ce39ef59'], ['qualification/native_capacity_current_offered_capture_v4.py', '5a815fc2ca45e5da9e3750b9412e984f2cb2b6ad89121a10e34be89bd743b147'], ['qualification/native_capacity_current_offered_context_v4.py', 'b54fc1d4549ecdd4810e42134d905b0f9ed9bcbfc3cde7bfc22306f792fee586'], ['qualification/native_capacity_current_offered_parent_v5.py', '868b1391c9a926e19a3855c5878920df47987e88d33a025d3cc56f28132e937e'], ['qualification/run-capacity-native-paced-timer-managed-v3.local.py', '5f3f6893559a9fdce3d7c19b9d729996a14f157822d1938bbad3ae25daeef22e'], ['qualification/run-capacity-native-workload-v3.local.py', '4e2e29c31ae10c661bd5599506cda87482d030fc328dbde1e3e1066db5dba9e6'], ['qualification/funding_tls_current_gate.py', '9777b8dca3c8c86e543c1f202c0cde248280ed3a108df4a688565ccf83132936']]
+FROZEN=[['qualification/native_capacity_current_offered_resource_v4.py', '352c36dc24edb96e05227f5bb8daacfbe73b32461b27a17246bc167f77b6d4a2'], ['qualification/native_capacity_current_offered_command_v4.py', '806f56a47fc86ac034313305e5796cfe1369a1fb8c69c44f484f7ada640a9a74'], ['qualification/native_capacity_current_offered_capture_v4.py', 'e96ab83de4cbeb0ab1fc5f1d4c1dbcaaaf96e1184c776c687f6536f9e2cb75c2'], ['qualification/native_capacity_current_offered_context_v4.py', '76c3b77010d2c7684c33d0b73a409ea4d086a8fa5a6cd91c893004ccd4452bfd'], ['qualification/native_capacity_current_offered_parent_v5.py', '931e186d66b7bb2ccb8be66c16e7f840b1e3ae3b37b22a83ddca415edf66b553'], ['qualification/run-capacity-native-paced-timer-managed-v3.local.py', '5f3f6893559a9fdce3d7c19b9d729996a14f157822d1938bbad3ae25daeef22e'], ['qualification/run-capacity-native-workload-v3.local.py', '4e2e29c31ae10c661bd5599506cda87482d030fc328dbde1e3e1066db5dba9e6'], ['qualification/funding_tls_current_gate.py', '9777b8dca3c8c86e543c1f202c0cde248280ed3a108df4a688565ccf83132936']]
 STORAGE_SHA="a4d82a72214c9698fda7ae363c38b2470c08da5e2e04c63ee9284e43f638f081"
 CLI_SHA="0bf13cdc1f25a6b31ab14cfb124908808ca7ddc89073ecbcd0263bef4d52238c"
 OPENSSL_SHA="49db04c17e3a8c169ebc48a1149d78c165a86c04913203f46b2a14ce7f4a14fc"
@@ -146,7 +146,7 @@ def source_admission(repo,digest):
     require(type(manifest)is dict and set(manifest)=={"kind","version","sourceParent","pythonControls","profileSelection",
         "childSelection","workload","effectsCeiling","requiredPolicy","nativeSelection","nativeExecuted","nativeAllowanceGranted","authority"}
         and manifest["kind"]==KIND and type(manifest["version"])is int and manifest["version"]==4
-        and manifest["sourceParent"]=="439b47905f264dac8cb079234e42d5b9b2d8003f"
+        and manifest["sourceParent"]=="3f2e225c66ad8db7bdc671e82703b3d3ad6dc808"
         and manifest["nativeSelection"]==NATIVE_SELECTION and manifest["nativeExecuted"]is False
         and manifest["nativeAllowanceGranted"]is False and manifest["authority"]=="NONE","CURRENT_MANAGED_SOURCE_NOT_AUTHORITY")
     inputs={name:read(repo/name)for name in[SELF]+[name for name,_ in FROZEN]+[PARENT,SOURCE_SELECTION,PLAN]}
@@ -179,7 +179,7 @@ def source_admission(repo,digest):
         content,identity_data=inputs[name]if name in inputs else read(repo/name,1048576)
         require(pin(row["path"],content)==row,"COMPLETE_CURRENT_APPLICATION_SOURCE")
         application[name]=tuple(identity_data);application_bytes+=len(content)
-    require(len(application)==172,"ACTUAL_CURRENT_163_APPLICATION_SOURCES")
+    require(len(application)==174,"ACTUAL_CURRENT_174_APPLICATION_SOURCES")
     workload=controls["resource"].capture_plan(strict(inputs[PLAN][0]))
     effects=controls["resource"].resource_plan(workload);policy=controls["resource"].storage_policy(workload)
     require(same(manifest["effectsCeiling"],effects)and same(manifest["requiredPolicy"],policy),"COMPLETE_CURRENT_RESOURCE_POLICY_SELECTION")
@@ -196,7 +196,7 @@ def source_admission(repo,digest):
     unchanged()
     require(not any(Path(name).suffix in(".js",".mjs")for name in inputs),"NO_RETAINED_APPLICATION_CODE_BODIES")
     return dict(manifest=manifest,inputs=inputs,controls=controls,workload=workload,effects=effects,policy=policy,unchanged=unchanged,
-        applicationSources=application,sourceAdmissionFacts=dict(applicationFilesVerified=172,applicationBytesVerified=application_bytes,
+        applicationSources=application,sourceAdmissionFacts=dict(applicationFilesVerified=174,applicationBytesVerified=application_bytes,
         installedPackageFilesRead=0,applicationCodeBytesRetained=0,unchangedSourceByteReads=0,nativeExecuted=False,authority="NONE"))
 
 
@@ -215,14 +215,14 @@ def native_intent(args,effects):
 def validate_full_source_context(planner):
     info=planner.info()
     require(type(info)is dict and info.get("sourceFilesReadOnlyVerified")is True
-        and type(info.get("sourceFilesRead"))is int and info["sourceFilesRead"]==576
+        and type(info.get("sourceFilesRead"))is int and info["sourceFilesRead"]==578
         and type(info.get("nodeBinaryHashesForContext"))is int and info["nodeBinaryHashesForContext"]==1
-        and info.get("parentApplicationFiles")==172 and info.get("parentPackageFiles")==404
+        and info.get("parentApplicationFiles")==174 and info.get("parentPackageFiles")==404
         and info.get("childApplicationFiles")==163 and info.get("childPackageFiles")==404
-        and info.get("parentSourceRowsSha256")=="6f4992bb133fb399f9f28e111bd2b993a88c412c4832b163a519a357abee3b7a"
+        and info.get("parentSourceRowsSha256")=="fe51e40aebd38177628a04a8868f78d5804f3c02a00ea363d1aade20c2bcb2cd"
         and info.get("childSourceRowsSha256")=="92646a2cf5edf717a1d24468fa6277c48c4f59f43db5b6e607b6071acc79c2b2"
         and info.get("privateProfileIsNativeAuthority")is False and info.get("nativeExecuted")is False and info.get("authority")=="NONE",
-        "ACTUAL_567_SOURCE_CONTEXT_REQUIRED")
+        "ACTUAL_578_SOURCE_CONTEXT_REQUIRED")
     return info
 
 
@@ -560,7 +560,7 @@ def main(argv=None):
         require(all(getattr(args,k)is None for k in private),"NO_PRIVATE_NATIVE_INPUTS_IN_SOURCE_ONLY")
     admitted=source_admission(args.repo,args.manifest_sha256)
     print(json.dumps(dict(event="CURRENT_OFFERED_V5_COMPLETE_MANAGED_SOURCE_NOT_NATIVE",
-        currentApplicationFilesRead=172,packageRowsDeclared=404,completeManagedControllerSourceAuthored=True,
+        currentApplicationFilesRead=174,packageRowsDeclared=404,completeManagedControllerSourceAuthored=True,
         nativeControllerQualified=False,sourceAdmissionFacts=admitted["sourceAdmissionFacts"],effectsCeiling=admitted["effects"],nativeExecuted=False,nativeAllowanceGranted=False,authority="NONE")),flush=True)
     if not args.execute and not args.pre_native_plan:return 0
     native_selection(args,admitted["effects"])

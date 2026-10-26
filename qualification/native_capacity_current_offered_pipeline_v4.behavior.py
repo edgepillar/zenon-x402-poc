@@ -114,7 +114,7 @@ def check(name,fn):
     setattr(Pipeline,"test_"+name,body);names.append(name)
 def full(self):
     value=command.plan(**case());profile=value["sourceProfile"]
-    self.assertEqual(profile["profileVersion"],8);self.assertEqual(len(profile["inputs"]),576)
+    self.assertEqual(profile["profileVersion"],8);self.assertEqual(len(profile["inputs"]),578)
     self.assertEqual(profile["childSourceRowsSha256"],p.CHILD_SEAL);self.assertEqual(len(profile["childProfiles"]),2)
     self.assertEqual(value["argv"][-2],APP+"/"+command.ENTRY);self.assertEqual(value["envDelta"]["X402_NATIVE_CAPACITY_RUN_SCOPE"],command.NATIVE_SCOPE)
     self.assertEqual(value["stdoutLimit"],458752);self.assertFalse(value["summary"]["nativeCommandExecuted"])
@@ -136,7 +136,7 @@ for label,application_root,package_root in[
         self.assertEqual(profile["preloaderURL"],"file://"+application_root.replace(" ","%20")+"/"+command.PRELOAD)
         self.assertEqual(result["argv"][-2],application_root+"/"+command.ENTRY)
         self.assertIn("--import="+application_root+"/"+command.PRELOAD,result["argv"])
-        self.assertEqual(len(profile["inputs"]),576)
+        self.assertEqual(len(profile["inputs"]),578)
         self.assertTrue(any("/@vendor/"in row["url"]or row["url"].startswith("file://"+package_root.replace(" ","%20")+"/")
             for row in profile["inputs"]if row["logicalPath"].startswith("packages/")))
         summary.setdefault("currentCanonicalSourceRootCases",[]).append(label)
@@ -154,7 +154,7 @@ def all_32(self):
     work=copy.deepcopy(WORKLOAD);work["laneIds"]=["lane."+str(i)for i in range(16)];work["recordingLimits"]["maxInFlightPerPhase"]=16
     work["recordingLimits"]["maxSamplesPerPhase"]=256
     value=command.plan(**command_case(work));self.assertEqual(value["summary"]["childProfiles"],32)
-    self.assertEqual(len(value["sourceProfile"]["inputs"]),576)
+    self.assertEqual(len(value["sourceProfile"]["inputs"]),578)
     summary["completeChildProfilesPlannedAndBound"]=32
 check("all_32_complete_v6_profiles_bind_to_the_full_v5_parent_and_command",all_32)
 def headers(self):
@@ -162,7 +162,7 @@ def headers(self):
     self.assertEqual(effects["sourceSelectionSha256"],launch["profileSelection"]["sha256"])
     self.assertEqual(effects["parentProfileProducerSha256"],pins["qualification/native_capacity_current_offered_parent_v5.py"]["sha256"])
     self.assertEqual(effects["parentProfileVersion"],8);self.assertEqual(effects["childProfileVersion"],6)
-    self.assertEqual(effects["parentSourceRows"],576);self.assertEqual(effects["childSourceRows"],567)
+    self.assertEqual(effects["parentSourceRows"],578);self.assertEqual(effects["childSourceRows"],567)
     self.assertEqual(effects,launch["effectsCeiling"])
     summary["effectsCeilingFieldsBound"]=len(effects)
 check("resource_graph_headers_directly_bind_actual_parent_manifest_and_producer",headers)
@@ -175,7 +175,7 @@ for name in resource.resource_plan(WORKLOAD):
 def actual_source(self):
     global recheck_phase
     admitted=launcher.source_admission(str(repo),launch_sha)
-    self.assertEqual(admitted["sourceAdmissionFacts"]["applicationFilesVerified"],172)
+    self.assertEqual(admitted["sourceAdmissionFacts"]["applicationFilesVerified"],174)
     self.assertEqual(admitted["sourceAdmissionFacts"]["applicationCodeBytesRetained"],0)
     self.assertFalse(any(Path(name).suffix in(".js",".mjs")for name in admitted["inputs"]))
     before=len(recheck_opens);recheck_phase=True
@@ -183,7 +183,7 @@ def actual_source(self):
     finally:recheck_phase=False
     self.assertEqual(recheck_opens[before:],[])
     summary["sourceAdmissionFacts"]=admitted["sourceAdmissionFacts"];summary["actualUnchangedOpenEvents"]=0
-check("actual_source_admission_verifies_163_files_and_rechecks_without_source_byte_reads",actual_source)
+check("actual_source_admission_verifies_174_files_and_rechecks_without_source_byte_reads",actual_source)
 def identity_refusal(self):
     admitted=launcher.source_admission(str(repo),launch_sha);old=launcher.identity
     target=next(iter(admitted["applicationSources"].values()))
@@ -201,7 +201,7 @@ def source_cli(self):
     try:code=launcher.main(["--repo",str(repo),"--manifest-sha256",launch_sha])
     finally:sys.stdout=old
     self.assertEqual(code,0);value=json.loads(out.getvalue())
-    self.assertEqual(value["currentApplicationFilesRead"],172);self.assertFalse(value["nativeExecuted"])
+    self.assertEqual(value["currentApplicationFilesRead"],174);self.assertFalse(value["nativeExecuted"])
     self.assertFalse(value["nativeControllerQualified"]);self.assertEqual(value["sourceAdmissionFacts"]["applicationCodeBytesRetained"],0)
 check("real_default_cli_is_source_only_and_reports_no_native_authority",source_cli)
 def private_cli(self):
@@ -597,15 +597,34 @@ def packed_graph_closure(self):
     packed_names={"app/src/service-credit-capacity-recorder-packed.js",
         "app/src/service-credit-capacity-offered-window-packed-owner-core.js",
         "app/src/service-credit-capacity-offered-workload-packed-owner-core.js"}
-    self.assertTrue(packed_names.issubset(rows));self.assertEqual(len(rows),576)
-    self.assertEqual(sum(name.startswith("app/")for name in rows),172)
+    self.assertTrue(packed_names.issubset(rows));self.assertEqual(len(rows),578)
+    self.assertEqual(sum(name.startswith("app/")for name in rows),174)
     child_names={row["path"]for row in selection["childSelection"]["rows"]}
     self.assertEqual(len(child_names),567);self.assertFalse(child_names.intersection(packed_names))
-    self.assertEqual(len(selection["extraRows"]),9)
+    self.assertEqual(len(selection["extraRows"]),11)
     self.assertEqual(p.CHILD_SEAL,"92646a2cf5edf717a1d24468fa6277c48c4f59f43db5b6e607b6071acc79c2b2")
-    summary["packedSourceGraph"]=dict(parentRows=576,parentApplications=172,parentPackages=404,childRows=567,
-        childApplications=163,childPackages=404,packedComponents=3,parentOnlyExtensions=9)
+    summary["packedSourceGraph"]=dict(parentRows=578,parentApplications=174,parentPackages=404,childRows=567,
+        childApplications=163,childPackages=404,packedComponents=3,parentOnlyExtensions=11)
 check("packed_parent_adds_three_actual_components_without_replacing_any_v6_child_row",packed_graph_closure)
+
+def owned_window_graph_closure(self):
+    expected={"app/src/service-credit-capacity-cohort-writer-coverage-data.js",
+        "app/src/service-credit-capacity-window-writer-trace-owned-data.js"}
+    rows={row["path"]:row for row in selection["rows"]}
+    self.assertTrue(expected.issubset(row["path"]for row in selection["extraRows"]))
+    self.assertFalse(expected.intersection(row["path"]for row in selection["childSelection"]["rows"]))
+    for name in expected:
+        raw=(repo/name[4:]).read_bytes()
+        self.assertEqual(rows[name]["sha256"],hashlib.sha256(raw).hexdigest())
+    adapter=(repo/"qualification/capacity-native-current-offered-adapter-v6.draft.mjs").read_text()
+    self.assertIn("createServiceCreditCapacityWindowWriterTraceOwnedData as WINDOW_TRACE",adapter)
+    self.assertIn("../src/service-credit-capacity-window-writer-trace-owned-data.js",adapter)
+    self.assertNotIn("createServiceCreditCapacityWindowWriterTraceData as WINDOW_TRACE",adapter)
+    preload=(repo/"qualification/capacity-native-current-offered-v5.namespace.preload.draft.mjs").read_text()
+    for name in expected:self.assertIn(name,preload)
+    summary["ownedWindowGraph"]=dict(parentRows=578,parentApplications=174,childRows=567,
+        coverageAndWindowComponents=2,allPreviousChildRowsPreserved=True,nativeExecuted=False)
+check("complete_parent_selects_owned_window_and_preserves_all_567_child_rows",owned_window_graph_closure)
 def native_source_edges(self):
     adapter=(repo/"qualification/capacity-native-current-offered-adapter-v6.draft.mjs").read_text()
     entry=(repo/"qualification/capacity-native-current-offered-v5.entry.draft.mjs").read_text()
@@ -619,11 +638,11 @@ def native_source_edges(self):
     self.assertIn("capacity-native-current-offered-adapter-v6.draft.mjs",entry)
     self.assertIn("createServiceCreditCapacityRecorderPacked",workload);self.assertIn("createServiceCreditCapacityOfferedWindowPackedOwnerCore",workload)
     self.assertIn("createServiceCreditCapacityRecorderPacked",window)
-    self.assertIn("profile.profileVersion !== 8",preload);self.assertIn("profile.inputs.length !== 576",preload)
-    self.assertIn("applications !== 172",preload)
+    self.assertIn("profile.profileVersion !== 8",preload);self.assertIn("profile.inputs.length !== 578",preload)
+    self.assertIn("applications !== 174",preload)
     self.assertIn("one-reviewed-native-capacity-current-offered-parent-v5",preload)
     self.assertIn("nativeCapacityCurrentOfferedSupervisorNamespaceSnapshotV5()",preload)
-    self.assertIn("namespace.applicationFiles!==172",entry);self.assertIn("offeredCaptureVersion:3",entry)
+    self.assertIn("namespace.applicationFiles!==174",entry);self.assertIn("offeredCaptureVersion:3",entry)
     self.assertIn("nativeOfferedCapacityWorkloadAdapterVersion===6",entry)
     pair_source=(repo/"qualification/capacity-native-current-offered-pair-v5.supervisor.draft.mjs").read_text()
     for role in("payer","service"):

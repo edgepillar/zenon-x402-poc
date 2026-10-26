@@ -19,7 +19,7 @@ try {
       ||!d||!Object.hasOwn(d,'value')||d.writable||d.configurable||d.enumerable||typeof d.value!=='function'||!Object.isFrozen(d.value)
       ||!/^[0-9a-f]{64}$/.test(E.X402_NATIVE_CAPACITY_PLAN_SHA256||''))fail();
   const namespace=d.value(),rows=namespace.childProfiles;
-  if(namespace.profileKind!=='NATIVE_CAPACITY_CURRENT_OFFERED_SUPERVISOR_NODE24_V5'||namespace.applicationFiles!==172||namespace.packageFiles!==404
+  if(namespace.profileKind!=='NATIVE_CAPACITY_CURRENT_OFFERED_SUPERVISOR_NODE24_V5'||namespace.applicationFiles!==174||namespace.packageFiles!==404
       ||namespace.childApplicationFiles!==163||namespace.childPackageFiles!==404
       ||namespace.childSourceRowsSha256!=='92646a2cf5edf717a1d24468fa6277c48c4f59f43db5b6e607b6071acc79c2b2'
       ||namespace.nodeSha256!==nodeSha||namespace.rootIdentityFields!==5||namespace.rootIndependenceVerifiedAtAdmission!==true

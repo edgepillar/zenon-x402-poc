@@ -8,17 +8,17 @@ import re
 import stat
 import sys
 MANIFEST = 'qualification/capacity-native-current-offered-parent-v5.inputs.json'
-MANIFEST_SHA = '618aec16af6144523c568fd2bb851ad7eeb780702f0377f4059df5c577304327'
+MANIFEST_SHA = 'b832012dab133290d248d6fa8ab86baac328d3012c10327d935a3cd62b569dc8'
 CHILD_PRODUCER = 'qualification/native_capacity_current_role_profiles_v6.py'
 CHILD_PRODUCER_PIN = {'path': 'qualification/native_capacity_current_role_profiles_v6.py', 'bytes': 16701, 'LF': 164, 'sha256': '0db4e53f09d12b90a3bbef25c1702f11368b4f067da05f30f022e7119af3c9d3', 'gitBlob': '5a907bb743af80d5e53f61f24cb11935dd0566e6'}
-PARENT_SEAL = '6f4992bb133fb399f9f28e111bd2b993a88c412c4832b163a519a357abee3b7a'
+PARENT_SEAL = 'fe51e40aebd38177628a04a8868f78d5804f3c02a00ea363d1aade20c2bcb2cd'
 CHILD_SEAL = '92646a2cf5edf717a1d24468fa6277c48c4f59f43db5b6e607b6071acc79c2b2'
-PARENT_BYTES = 5285067
+PARENT_BYTES = 5304604
 PARENT_KIND = 'NATIVE_CAPACITY_CURRENT_OFFERED_SUPERVISOR_NODE24_V5'
 PARENT_ENTRY = 'app/qualification/capacity-native-current-offered-v5.entry.draft.mjs'
 PARENT_PRELOAD = 'app/qualification/capacity-native-current-offered-v5.namespace.preload.draft.mjs'
 PARENT_NAMESPACE = 'getPinnedNativeCapacityCurrentOfferedSupervisorNamespaceSnapshotV5'
-EXTRAS = ('app/qualification/capacity-native-current-offered-adapter-v6.draft.mjs', 'app/qualification/capacity-native-current-offered-pair-v5.supervisor.draft.mjs', 'app/qualification/capacity-native-current-offered-v5.entry.draft.mjs', 'app/qualification/capacity-native-current-offered-v5.namespace.preload.draft.mjs', 'app/src/native-profile-byte-fragments.js', 'app/src/service-credit-capacity-offered-plan-data.js', 'app/src/service-credit-capacity-offered-window-packed-owner-core.js', 'app/src/service-credit-capacity-offered-workload-packed-owner-core.js', 'app/src/service-credit-capacity-recorder-packed.js')
+EXTRAS = ('app/qualification/capacity-native-current-offered-adapter-v6.draft.mjs', 'app/qualification/capacity-native-current-offered-pair-v5.supervisor.draft.mjs', 'app/qualification/capacity-native-current-offered-v5.entry.draft.mjs', 'app/qualification/capacity-native-current-offered-v5.namespace.preload.draft.mjs', 'app/src/native-profile-byte-fragments.js', 'app/src/service-credit-capacity-cohort-writer-coverage-data.js', 'app/src/service-credit-capacity-offered-plan-data.js', 'app/src/service-credit-capacity-offered-window-packed-owner-core.js', 'app/src/service-credit-capacity-offered-workload-packed-owner-core.js', 'app/src/service-credit-capacity-recorder-packed.js', 'app/src/service-credit-capacity-window-writer-trace-owned-data.js')
 MAX_PROFILE, MAX_SHARED = 524288, 1048576
 HASH = re.compile(r"[0-9a-f]{64}")
 LANE = re.compile(r"[A-Za-z0-9][A-Za-z0-9._:-]{0,127}")
@@ -77,7 +77,7 @@ def validate_selection_data(child,selection):
     child.validate_selection_data(selection["childSelection"])
     require(type(selection["extraRows"])is list and tuple(row["path"]for row in selection["extraRows"])==EXTRAS,"EXACT_EIGHT_V5_PARENT_EXTENSIONS")
     rows=selection["rows"];full={row["path"]:row for row in selection["childSelection"]["rows"]+selection["extraRows"]}
-    require(len(full)==len(rows)==576 and len({row["path"]for row in rows})==576
+    require(len(full)==len(rows)==578 and len({row["path"]for row in rows})==578
         and all(full.get(row["path"])==row for row in rows)
         and sha(canonical(rows))==PARENT_SEAL and sum(row["bytes"]for row in rows)==PARENT_BYTES,"FULL_CURRENT_V5_PARENT_SEAL")
 def capture_selection(repo,dependencies,manifest_raw):
@@ -89,7 +89,7 @@ def capture_selection(repo,dependencies,manifest_raw):
         and child.SOURCE_SEAL==CHILD_SEAL and m["nativeExecuted"]is False and m["historicalSourcesModified"]is False
         and m["nativeAuthority"]=="NOT_GRANTED"and m["authority"]=="NONE","CURRENT_V5_PARENT_NOT_NATIVE_AUTHORITY")
     selected=child.capture_selection(repo,child_dependencies,child_raw)
-    extras=base._rows(m["additionalParentApplicationInputs"],"app/",9)
+    extras=base._rows(m["additionalParentApplicationInputs"],"app/",11)
     require(tuple(extras)==EXTRAS and not set(extras).intersection(row["path"]for row in selected["rows"]),"ONLY_PARENT_EXTENSIONS")
     value=dict(rows=sorted(selected["rows"]+list(extras.values()),key=lambda row:row["path"]),childSelection=selected,extraRows=list(extras.values()))
     validate_selection_data(child,value);return value
@@ -101,9 +101,9 @@ def verify_application_inputs(repo,child,selection):
         actual=dict(path=row["path"],bytes=len(raw),LF=raw.count(b"\n"),sha256=sha(raw),
             gitBlob=hashlib.sha1(b"blob "+str(len(raw)).encode()+b"\0"+raw).hexdigest())
         require(actual==row,"ACTUAL_CURRENT_V5_PARENT_APPLICATION_PIN");captured.append((row["path"],ident))
-    require(len(captured)==172 and identity(root.lstat())==before,"ALL_163_CURRENT_PARENT_APPLICATION_SOURCES")
+    require(len(captured)==174 and identity(root.lstat())==before,"ALL_163_CURRENT_PARENT_APPLICATION_SOURCES")
     for name,ident in captured:require(identity((root/name[4:]).lstat())==ident,"PARENT_APPLICATION_IDENTITIES_RECHECKED")
-    return dict(applicationFilesRead=172,installedPackageFilesRead=0,nativeExecuted=False,authority="NONE")
+    return dict(applicationFilesRead=174,installedPackageFilesRead=0,nativeExecuted=False,authority="NONE")
 
 class _Planner:
     """Detached full tables and bounded shared canonical fields."""
@@ -143,10 +143,10 @@ class _Planner:
         return self
 
     def info(self):
-        return dict(parentApplicationFiles=172,parentPackageFiles=404,parentSourceRows=576,
+        return dict(parentApplicationFiles=174,parentPackageFiles=404,parentSourceRows=578,
             childApplicationFiles=163,childPackageFiles=404,childSourceRows=567,
             parentSourceRowsSha256=PARENT_SEAL,childSourceRowsSha256=CHILD_SEAL,
-            sourceFilesReadOnlyVerified=self._source_read,sourceFilesRead=576 if self._source_read else 0,
+            sourceFilesReadOnlyVerified=self._source_read,sourceFilesRead=578 if self._source_read else 0,
             nodeBinaryHashesForContext=1 if self._source_read else 0,sharedFieldSerializations=4,
             sharedCanonicalBytes=self._shared_bytes,sharedCanonicalByteLimit=MAX_SHARED,
             completeChildByteComparisons=self._child_comparisons,wholeExpectedChildBytesMaterialized=0,
