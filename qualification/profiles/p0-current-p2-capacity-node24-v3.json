@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "profileId": "p0-current-p2-capacity-node24-v3",
-  "sourceBase": "98cef878b41e7ee5814ea04d161e1c862855574b",
+  "sourceBase": "a21b35ba9662ce322b56dee86aac2bbc797e91f5",
   "runtime": {
     "node": "24.19.0",
     "platforms": [
@@ -257,9 +257,9 @@
     },
     {
       "path": "src/service-credit-original-request-custody-contract.js",
-      "bytes": 14051,
-      "LF": 356,
-      "sha256": "fd349de553a17abcc2e0567ba6640e6e3d5d26cfa79ee1e355928dc9fa8d3915"
+      "bytes": 15100,
+      "LF": 376,
+      "sha256": "483d20e90d78ba95a8c5d5458dd201910e8d42aecbdc0dc03812e7044a464054"
     },
     {
       "path": "src/service-credit-custodied-http-client.js",

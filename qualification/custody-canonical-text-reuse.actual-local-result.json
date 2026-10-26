@@ -1,0 +1,944 @@
+{
+  "schema": "x402/custody-canonical-text-reuse-local/v1",
+  "date": "2026-10-26",
+  "mainBaseCommit": "a21b35ba9662ce322b56dee86aac2bbc797e91f5",
+  "developmentBaseCommit": "c2816b95a3a92e40d64ea3b08de037968e8558e7",
+  "sourceBefore": {
+    "path": "src/service-credit-original-request-custody-contract.js",
+    "bytes": 14051,
+    "LF": 356,
+    "sha256": "fd349de553a17abcc2e0567ba6640e6e3d5d26cfa79ee1e355928dc9fa8d3915",
+    "gitBlob": "f911d42d01b69e6577f9bcd66f4ed59aab8ab882"
+  },
+  "sourceAfter": {
+    "path": "src/service-credit-original-request-custody-contract.js",
+    "bytes": 15100,
+    "LF": 376,
+    "sha256": "483d20e90d78ba95a8c5d5458dd201910e8d42aecbdc0dc03812e7044a464054",
+    "gitBlob": "94d67559a11f87f283a5cd99d2aaf8074374eb0a"
+  },
+  "currentTestSourceAndDataInputs": [
+    {
+      "path": "qualification/custody-canonical-text-reuse.behavior.mjs",
+      "bytes": 13958,
+      "LF": 216,
+      "sha256": "61243e6a9e1eecee655ae5ff6b76ffd674d32befa9946489f93dfa96d2b168c1",
+      "gitBlob": "892fa55dd10594485c71fb622b9643b971b2ef68"
+    },
+    {
+      "path": "qualification/original-request-custody-current.behavior.mjs",
+      "bytes": 20778,
+      "LF": 438,
+      "sha256": "ff242bb36502744c4466324b9e2521195b076ab6a264ef405a617e47b2d18d97",
+      "gitBlob": "94c54e5497f7955e2c4e5fa043990242302664cb"
+    },
+    {
+      "path": "qualification/original-dispatch-intent-current.behavior.mjs",
+      "bytes": 18633,
+      "LF": 312,
+      "sha256": "8425f393068da8ec97a38cc4c6255b6d4138eed8dab1f642c03df95a7b61353a",
+      "gitBlob": "a0e4f20cdeeb1ef211eba66ef8d2fd1e09b2c13d"
+    },
+    {
+      "path": "qualification/custodied-recovery-observation-collection-current.behavior.mjs",
+      "bytes": 15379,
+      "LF": 261,
+      "sha256": "122fea67c288845f09e0cdce47df83734202456412b5d89e5dc0a218d52a4e44",
+      "gitBlob": "e013a83d7ab2e36a94755e36667791975b254a5c"
+    },
+    {
+      "path": "scripts/run-current-custody-canonical-reuse.mjs",
+      "bytes": 1714,
+      "LF": 33,
+      "sha256": "c47bdcee4592df58282aaef454caff906fe2e3d58ccddc34a64ee5fb59b0b67d",
+      "gitBlob": "1cf0865a2efd32a3dc6096454dfd5437ffb8893c"
+    },
+    {
+      "path": "src/service-credit-custodied-recovery-observation-collection-core.js",
+      "bytes": 8579,
+      "LF": 213,
+      "sha256": "36b7cece2d436cbfcac5f4299dd6bd30e5eede6ebb2ebe769ae7bf3a6f1a72b4",
+      "gitBlob": "4dc8765be0aa4b0e927fface960e366a3a6ccd1e"
+    },
+    {
+      "path": "src/service-credit-custodied-recovery-collection-core.js",
+      "bytes": 13794,
+      "LF": 306,
+      "sha256": "51d06da70ecccd0cf8b38d650367d1ae903ea86010a5ebeadb682af98e4b890b",
+      "gitBlob": "5275832eebbf87e0cd37f3c2e3b82147ab625a72"
+    },
+    {
+      "path": "src/service-credit-custodied-sequential-runner-core.js",
+      "bytes": 15983,
+      "LF": 492,
+      "sha256": "044477cb1300453f10bacf070037db175d08deec1d488549b34a5cb92e6328bd",
+      "gitBlob": "e91acb307f4f0f5fb5292a805f7ca1d02b21b68d"
+    },
+    {
+      "path": "src/service-credit-original-request-custody-contract.js",
+      "bytes": 15100,
+      "LF": 376,
+      "sha256": "483d20e90d78ba95a8c5d5458dd201910e8d42aecbdc0dc03812e7044a464054",
+      "gitBlob": "94d67559a11f87f283a5cd99d2aaf8074374eb0a"
+    },
+    {
+      "path": "src/service-credit-pilot-client-plan.js",
+      "bytes": 7483,
+      "LF": 181,
+      "sha256": "73ee3d739de85150039e733234cd0761c228d68de040d1e126902e808a259ac6",
+      "gitBlob": "14334c82b5b7c80fb8f7f6a392a1a0f3c3adcbf1"
+    },
+    {
+      "path": "src/service-credit-pilot-status-view.js",
+      "bytes": 3202,
+      "LF": 60,
+      "sha256": "cf3822d8b9ec4eb4772452ed1888b96d398fd87c1ead44cd155a5acc1a6b66ed",
+      "gitBlob": "0890db504e44b704d0434dc309e711743570e652"
+    },
+    {
+      "path": "package.json",
+      "bytes": 2677,
+      "LF": 40,
+      "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+      "gitBlob": "45752ffde39d29666094f7f1c755060d75e43deb"
+    },
+    {
+      "path": "src/service-credit-custodied-sqlite-sequential-runner.js",
+      "bytes": 24572,
+      "LF": 560,
+      "sha256": "3448e5ee1c8408d47aa6ecdce9c7e133ee6515ba9ca929476ab5f433fb8f847d",
+      "gitBlob": "75811ab4779e416c3618f363eaa70fa385cfaa72"
+    }
+  ],
+  "runtimeChange": {
+    "onlyFactoryProducedImmutablePrimitiveRecordsMemoized": true,
+    "borrowedInputsMemoized": false,
+    "borrowedFrozenInputsMemoized": false,
+    "weakMapKeysDoNotOwnRecordLifetime": true,
+    "cachesSharedAcrossKinds": false,
+    "oneCanonicalStringPerReachableFactoryRecord": true,
+    "canonicalTextMaximumUtf8Bytes": 16384,
+    "canonicalTextMaximumUtf16Units": 16384,
+    "objectHeapBytesMeasured": false,
+    "GCReleaseTimingEstablished": false,
+    "diskWritesIntroduced": false,
+    "exportsOrSchemaOrChecksumDomainsChanged": false,
+    "authorizationOrSigningOrDispatchChanged": false
+  },
+  "baseline": {
+    "counts": {
+      "tests": 38,
+      "pass": 38,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "actual": {
+      "actualExit": 0,
+      "complete": true,
+      "inputComplete": true,
+      "inputBytes": 0,
+      "stdoutBytes": 11412,
+      "stdoutSha256": "6854ea9aa6da45234ff1deea7a77fc937c23400f5c37e37998ba58782424a420",
+      "stderrBytes": 0,
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "sourceInputs": [
+      {
+        "path": "qualification/original-request-custody-current.behavior.mjs",
+        "bytes": 20778,
+        "LF": 438,
+        "sha256": "d82fff7fa837a7ce0c8e3c4ff2019349f8de1b49f6fde99f3e6e4694ee5b767d",
+        "gitBlob": "dd2c3c877faca2bdea8ab674f3eaf7dad726c6d2"
+      },
+      {
+        "path": "qualification/original-dispatch-intent-current.behavior.mjs",
+        "bytes": 16006,
+        "LF": 300,
+        "sha256": "32c01673adffaeefc1b769dcc11d899928d8c3316e4685192d89b16e48d9a22d",
+        "gitBlob": "de5d40c32da1872bd86e4e4b46eef5f83035e81a"
+      },
+      {
+        "path": "qualification/custodied-recovery-observation-collection-current.behavior.mjs",
+        "bytes": 15379,
+        "LF": 261,
+        "sha256": "c682971bb6c47cbda13989f4faa1a84d9930debff8c69ce5a7d22a92eee38625",
+        "gitBlob": "ee12c6f5fa71373f4619f7057509cb1172c5d2f9"
+      },
+      {
+        "path": "qualification/custody-canonical-text-reuse.behavior.mjs",
+        "bytes": 13958,
+        "LF": 216,
+        "sha256": "61243e6a9e1eecee655ae5ff6b76ffd674d32befa9946489f93dfa96d2b168c1",
+        "gitBlob": "892fa55dd10594485c71fb622b9643b971b2ef68"
+      },
+      {
+        "path": "scripts/run-current-custody-canonical-reuse.mjs",
+        "bytes": 1714,
+        "LF": 33,
+        "sha256": "c47bdcee4592df58282aaef454caff906fe2e3d58ccddc34a64ee5fb59b0b67d",
+        "gitBlob": "1cf0865a2efd32a3dc6096454dfd5437ffb8893c"
+      },
+      {
+        "path": "src/service-credit-custodied-recovery-observation-collection-core.js",
+        "bytes": 8579,
+        "LF": 213,
+        "sha256": "36b7cece2d436cbfcac5f4299dd6bd30e5eede6ebb2ebe769ae7bf3a6f1a72b4",
+        "gitBlob": "4dc8765be0aa4b0e927fface960e366a3a6ccd1e"
+      },
+      {
+        "path": "src/service-credit-custodied-recovery-collection-core.js",
+        "bytes": 13794,
+        "LF": 306,
+        "sha256": "51d06da70ecccd0cf8b38d650367d1ae903ea86010a5ebeadb682af98e4b890b",
+        "gitBlob": "5275832eebbf87e0cd37f3c2e3b82147ab625a72"
+      },
+      {
+        "path": "src/service-credit-custodied-sequential-runner-core.js",
+        "bytes": 15983,
+        "LF": 492,
+        "sha256": "044477cb1300453f10bacf070037db175d08deec1d488549b34a5cb92e6328bd",
+        "gitBlob": "e91acb307f4f0f5fb5292a805f7ca1d02b21b68d"
+      },
+      {
+        "path": "src/service-credit-original-request-custody-contract.js",
+        "bytes": 14051,
+        "LF": 356,
+        "sha256": "fd349de553a17abcc2e0567ba6640e6e3d5d26cfa79ee1e355928dc9fa8d3915",
+        "gitBlob": "f911d42d01b69e6577f9bcd66f4ed59aab8ab882"
+      },
+      {
+        "path": "src/service-credit-pilot-client-plan.js",
+        "bytes": 7483,
+        "LF": 181,
+        "sha256": "73ee3d739de85150039e733234cd0761c228d68de040d1e126902e808a259ac6",
+        "gitBlob": "14334c82b5b7c80fb8f7f6a392a1a0f3c3adcbf1"
+      },
+      {
+        "path": "src/service-credit-pilot-status-view.js",
+        "bytes": 3202,
+        "LF": 60,
+        "sha256": "cf3822d8b9ec4eb4772452ed1888b96d398fd87c1ead44cd155a5acc1a6b66ed",
+        "gitBlob": "0890db504e44b704d0434dc309e711743570e652"
+      },
+      {
+        "path": "package.json",
+        "bytes": 2677,
+        "LF": 40,
+        "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+        "gitBlob": "45752ffde39d29666094f7f1c755060d75e43deb"
+      },
+      {
+        "path": "src/service-credit-custodied-sqlite-sequential-runner.js",
+        "bytes": 24572,
+        "LF": 560,
+        "sha256": "3448e5ee1c8408d47aa6ecdce9c7e133ee6515ba9ca929476ab5f433fb8f847d",
+        "gitBlob": "75811ab4779e416c3618f363eaa70fa385cfaa72"
+      }
+    ]
+  },
+  "optimized": {
+    "counts": {
+      "tests": 38,
+      "pass": 38,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "actual": {
+      "actualExit": 0,
+      "complete": true,
+      "inputComplete": true,
+      "inputBytes": 0,
+      "stdoutBytes": 11396,
+      "stdoutSha256": "2cebd6a26db13a3079561bde39ece4b8874728c8317c4f59654f376d47536e33",
+      "stderrBytes": 0,
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "sourceInputs": [
+      {
+        "path": "qualification/custody-canonical-text-reuse.behavior.mjs",
+        "bytes": 13958,
+        "LF": 216,
+        "sha256": "61243e6a9e1eecee655ae5ff6b76ffd674d32befa9946489f93dfa96d2b168c1",
+        "gitBlob": "892fa55dd10594485c71fb622b9643b971b2ef68"
+      },
+      {
+        "path": "qualification/original-request-custody-current.behavior.mjs",
+        "bytes": 20778,
+        "LF": 438,
+        "sha256": "ff242bb36502744c4466324b9e2521195b076ab6a264ef405a617e47b2d18d97",
+        "gitBlob": "94c54e5497f7955e2c4e5fa043990242302664cb"
+      },
+      {
+        "path": "qualification/original-dispatch-intent-current.behavior.mjs",
+        "bytes": 18633,
+        "LF": 312,
+        "sha256": "8425f393068da8ec97a38cc4c6255b6d4138eed8dab1f642c03df95a7b61353a",
+        "gitBlob": "a0e4f20cdeeb1ef211eba66ef8d2fd1e09b2c13d"
+      },
+      {
+        "path": "qualification/custodied-recovery-observation-collection-current.behavior.mjs",
+        "bytes": 15379,
+        "LF": 261,
+        "sha256": "122fea67c288845f09e0cdce47df83734202456412b5d89e5dc0a218d52a4e44",
+        "gitBlob": "e013a83d7ab2e36a94755e36667791975b254a5c"
+      },
+      {
+        "path": "scripts/run-current-custody-canonical-reuse.mjs",
+        "bytes": 1714,
+        "LF": 33,
+        "sha256": "c47bdcee4592df58282aaef454caff906fe2e3d58ccddc34a64ee5fb59b0b67d",
+        "gitBlob": "1cf0865a2efd32a3dc6096454dfd5437ffb8893c"
+      },
+      {
+        "path": "src/service-credit-custodied-recovery-observation-collection-core.js",
+        "bytes": 8579,
+        "LF": 213,
+        "sha256": "36b7cece2d436cbfcac5f4299dd6bd30e5eede6ebb2ebe769ae7bf3a6f1a72b4",
+        "gitBlob": "4dc8765be0aa4b0e927fface960e366a3a6ccd1e"
+      },
+      {
+        "path": "src/service-credit-custodied-recovery-collection-core.js",
+        "bytes": 13794,
+        "LF": 306,
+        "sha256": "51d06da70ecccd0cf8b38d650367d1ae903ea86010a5ebeadb682af98e4b890b",
+        "gitBlob": "5275832eebbf87e0cd37f3c2e3b82147ab625a72"
+      },
+      {
+        "path": "src/service-credit-custodied-sequential-runner-core.js",
+        "bytes": 15983,
+        "LF": 492,
+        "sha256": "044477cb1300453f10bacf070037db175d08deec1d488549b34a5cb92e6328bd",
+        "gitBlob": "e91acb307f4f0f5fb5292a805f7ca1d02b21b68d"
+      },
+      {
+        "path": "src/service-credit-original-request-custody-contract.js",
+        "bytes": 15100,
+        "LF": 376,
+        "sha256": "483d20e90d78ba95a8c5d5458dd201910e8d42aecbdc0dc03812e7044a464054",
+        "gitBlob": "94d67559a11f87f283a5cd99d2aaf8074374eb0a"
+      },
+      {
+        "path": "src/service-credit-pilot-client-plan.js",
+        "bytes": 7483,
+        "LF": 181,
+        "sha256": "73ee3d739de85150039e733234cd0761c228d68de040d1e126902e808a259ac6",
+        "gitBlob": "14334c82b5b7c80fb8f7f6a392a1a0f3c3adcbf1"
+      },
+      {
+        "path": "src/service-credit-pilot-status-view.js",
+        "bytes": 3202,
+        "LF": 60,
+        "sha256": "cf3822d8b9ec4eb4772452ed1888b96d398fd87c1ead44cd155a5acc1a6b66ed",
+        "gitBlob": "0890db504e44b704d0434dc309e711743570e652"
+      },
+      {
+        "path": "package.json",
+        "bytes": 2677,
+        "LF": 40,
+        "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+        "gitBlob": "45752ffde39d29666094f7f1c755060d75e43deb"
+      },
+      {
+        "path": "src/service-credit-custodied-sqlite-sequential-runner.js",
+        "bytes": 24572,
+        "LF": 560,
+        "sha256": "3448e5ee1c8408d47aa6ecdce9c7e133ee6515ba9ca929476ab5f433fb8f847d",
+        "gitBlob": "75811ab4779e416c3618f363eaa70fa385cfaa72"
+      }
+    ]
+  },
+  "operationCounts": {
+    "rows": [
+      {
+        "before": {
+          "label": "captured-original",
+          "mode": "owned",
+          "iterations": 16,
+          "hashCalls": 16,
+          "jsonParses": 16,
+          "jsonStringifies": 64,
+          "outputUnits": 805,
+          "outputSha256": "a5a59ec9823febe69c394ba870d4ee2b10b9ff0f7fae9c80d4dfc04443c5044b"
+        },
+        "after": {
+          "label": "captured-original",
+          "mode": "owned",
+          "iterations": 16,
+          "hashCalls": 0,
+          "jsonParses": 0,
+          "jsonStringifies": 0,
+          "outputUnits": 805,
+          "outputSha256": "a5a59ec9823febe69c394ba870d4ee2b10b9ff0f7fae9c80d4dfc04443c5044b"
+        }
+      },
+      {
+        "before": {
+          "label": "captured-intent",
+          "mode": "owned",
+          "iterations": 16,
+          "hashCalls": 16,
+          "jsonParses": 0,
+          "jsonStringifies": 1408,
+          "outputUnits": 888,
+          "outputSha256": "54eba6b0b1c3f20ed2988eabce03fb3456af7c874cc34ba213c142a90db7ed15"
+        },
+        "after": {
+          "label": "captured-intent",
+          "mode": "owned",
+          "iterations": 16,
+          "hashCalls": 0,
+          "jsonParses": 0,
+          "jsonStringifies": 0,
+          "outputUnits": 888,
+          "outputSha256": "54eba6b0b1c3f20ed2988eabce03fb3456af7c874cc34ba213c142a90db7ed15"
+        }
+      },
+      {
+        "before": {
+          "label": "parsed-original",
+          "mode": "owned",
+          "iterations": 16,
+          "hashCalls": 16,
+          "jsonParses": 16,
+          "jsonStringifies": 64,
+          "outputUnits": 805,
+          "outputSha256": "a5a59ec9823febe69c394ba870d4ee2b10b9ff0f7fae9c80d4dfc04443c5044b"
+        },
+        "after": {
+          "label": "parsed-original",
+          "mode": "owned",
+          "iterations": 16,
+          "hashCalls": 0,
+          "jsonParses": 0,
+          "jsonStringifies": 0,
+          "outputUnits": 805,
+          "outputSha256": "a5a59ec9823febe69c394ba870d4ee2b10b9ff0f7fae9c80d4dfc04443c5044b"
+        }
+      },
+      {
+        "before": {
+          "label": "parsed-intent",
+          "mode": "owned",
+          "iterations": 16,
+          "hashCalls": 16,
+          "jsonParses": 0,
+          "jsonStringifies": 1408,
+          "outputUnits": 888,
+          "outputSha256": "54eba6b0b1c3f20ed2988eabce03fb3456af7c874cc34ba213c142a90db7ed15"
+        },
+        "after": {
+          "label": "parsed-intent",
+          "mode": "owned",
+          "iterations": 16,
+          "hashCalls": 0,
+          "jsonParses": 0,
+          "jsonStringifies": 0,
+          "outputUnits": 888,
+          "outputSha256": "54eba6b0b1c3f20ed2988eabce03fb3456af7c874cc34ba213c142a90db7ed15"
+        }
+      },
+      {
+        "before": {
+          "label": "validated-original",
+          "mode": "owned",
+          "iterations": 16,
+          "hashCalls": 16,
+          "jsonParses": 16,
+          "jsonStringifies": 64,
+          "outputUnits": 805,
+          "outputSha256": "a5a59ec9823febe69c394ba870d4ee2b10b9ff0f7fae9c80d4dfc04443c5044b"
+        },
+        "after": {
+          "label": "validated-original",
+          "mode": "owned",
+          "iterations": 16,
+          "hashCalls": 0,
+          "jsonParses": 0,
+          "jsonStringifies": 0,
+          "outputUnits": 805,
+          "outputSha256": "a5a59ec9823febe69c394ba870d4ee2b10b9ff0f7fae9c80d4dfc04443c5044b"
+        }
+      },
+      {
+        "before": {
+          "label": "borrowed-original",
+          "mode": "borrowed",
+          "iterations": 16,
+          "hashCalls": 16,
+          "jsonParses": 16,
+          "jsonStringifies": 64,
+          "outputUnits": 805,
+          "outputSha256": "a5a59ec9823febe69c394ba870d4ee2b10b9ff0f7fae9c80d4dfc04443c5044b"
+        },
+        "after": {
+          "label": "borrowed-original",
+          "mode": "borrowed",
+          "iterations": 16,
+          "hashCalls": 16,
+          "jsonParses": 16,
+          "jsonStringifies": 48,
+          "outputUnits": 805,
+          "outputSha256": "a5a59ec9823febe69c394ba870d4ee2b10b9ff0f7fae9c80d4dfc04443c5044b"
+        }
+      },
+      {
+        "before": {
+          "label": "borrowed-intent",
+          "mode": "borrowed",
+          "iterations": 16,
+          "hashCalls": 16,
+          "jsonParses": 0,
+          "jsonStringifies": 1408,
+          "outputUnits": 888,
+          "outputSha256": "54eba6b0b1c3f20ed2988eabce03fb3456af7c874cc34ba213c142a90db7ed15"
+        },
+        "after": {
+          "label": "borrowed-intent",
+          "mode": "borrowed",
+          "iterations": 16,
+          "hashCalls": 16,
+          "jsonParses": 0,
+          "jsonStringifies": 928,
+          "outputUnits": 888,
+          "outputSha256": "54eba6b0b1c3f20ed2988eabce03fb3456af7c874cc34ba213c142a90db7ed15"
+        }
+      },
+      {
+        "before": {
+          "label": "parse-original",
+          "mode": "parse",
+          "iterations": 16,
+          "hashCalls": 32,
+          "jsonParses": 48,
+          "jsonStringifies": 128,
+          "outputUnits": 805,
+          "outputSha256": "a5a59ec9823febe69c394ba870d4ee2b10b9ff0f7fae9c80d4dfc04443c5044b"
+        },
+        "after": {
+          "label": "parse-original",
+          "mode": "parse",
+          "iterations": 16,
+          "hashCalls": 16,
+          "jsonParses": 32,
+          "jsonStringifies": 48,
+          "outputUnits": 805,
+          "outputSha256": "a5a59ec9823febe69c394ba870d4ee2b10b9ff0f7fae9c80d4dfc04443c5044b"
+        }
+      },
+      {
+        "before": {
+          "label": "parse-intent",
+          "mode": "parse",
+          "iterations": 16,
+          "hashCalls": 32,
+          "jsonParses": 16,
+          "jsonStringifies": 2816,
+          "outputUnits": 888,
+          "outputSha256": "54eba6b0b1c3f20ed2988eabce03fb3456af7c874cc34ba213c142a90db7ed15"
+        },
+        "after": {
+          "label": "parse-intent",
+          "mode": "parse",
+          "iterations": 16,
+          "hashCalls": 16,
+          "jsonParses": 16,
+          "jsonStringifies": 928,
+          "outputUnits": 888,
+          "outputSha256": "54eba6b0b1c3f20ed2988eabce03fb3456af7c874cc34ba213c142a90db7ed15"
+        }
+      },
+      {
+        "before": {
+          "label": "frozen-borrowed-original",
+          "mode": "borrowed",
+          "iterations": 16,
+          "hashCalls": 16,
+          "jsonParses": 16,
+          "jsonStringifies": 64,
+          "outputUnits": 805,
+          "outputSha256": "a5a59ec9823febe69c394ba870d4ee2b10b9ff0f7fae9c80d4dfc04443c5044b"
+        },
+        "after": {
+          "label": "frozen-borrowed-original",
+          "mode": "borrowed",
+          "iterations": 16,
+          "hashCalls": 16,
+          "jsonParses": 16,
+          "jsonStringifies": 48,
+          "outputUnits": 805,
+          "outputSha256": "a5a59ec9823febe69c394ba870d4ee2b10b9ff0f7fae9c80d4dfc04443c5044b"
+        }
+      },
+      {
+        "before": {
+          "label": "whole-recovery-collection",
+          "mode": "owned",
+          "iterations": 8,
+          "hashCalls": 24,
+          "jsonParses": 16,
+          "jsonStringifies": 768,
+          "outputUnits": 4666,
+          "outputSha256": "601d36233fff07c6b991dc2a40fa5364b36aa345aa9e56d6c951ae1533203fc2",
+          "catalogReads": 16,
+          "childReads": 16,
+          "diagnosticChildrenClosed": 2
+        },
+        "after": {
+          "label": "whole-recovery-collection",
+          "mode": "owned",
+          "iterations": 8,
+          "hashCalls": 0,
+          "jsonParses": 0,
+          "jsonStringifies": 0,
+          "outputUnits": 4666,
+          "outputSha256": "601d36233fff07c6b991dc2a40fa5364b36aa345aa9e56d6c951ae1533203fc2",
+          "catalogReads": 16,
+          "childReads": 16,
+          "diagnosticChildrenClosed": 2
+        }
+      }
+    ],
+    "totals": {
+      "before": {
+        "hashCalls": 216,
+        "jsonParses": 160,
+        "jsonStringifies": 8256
+      },
+      "after": {
+        "hashCalls": 80,
+        "jsonParses": 80,
+        "jsonStringifies": 2000
+      }
+    },
+    "sameOutputDigestForAllElevenRows": true,
+    "recoveryBookendCatalogReads": 16,
+    "recoveryChildSnapshotReads": 16,
+    "recoveryDiagnosticChildrenClosed": 2,
+    "countingDelegatesForwardedRealSha256AndJSON": true,
+    "sourceTextRewrittenForExecution": false,
+    "elapsedSpeedupOrHeapSavingClaimed": false,
+    "diskSavingMeasured": false
+  },
+  "priorOptimizedAttempt": {
+    "counts": {
+      "tests": 38,
+      "pass": 37,
+      "fail": 1,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "actual": {
+      "actualExit": 1,
+      "complete": true,
+      "inputComplete": true,
+      "inputBytes": 0,
+      "stdoutBytes": 12235,
+      "stdoutSha256": "bf43e02c5e53dc975bf50a379b7abb3dd20affdb2c42c31432b5f9e702fb60db",
+      "stderrBytes": 0,
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "outcome": "FAILURE_PRESERVED",
+    "failedCase": "exact exports source imports and frozen rejection descriptors stay redacted",
+    "reason": "The historical prefix guard assumed a 9810-byte immutable pre-dispatch prefix plus a 4241-byte append. This reviewed runtime patch also changes that prefix.",
+    "runtimeChangedAfterFailure": false,
+    "correction": "The current fixture inverses exactly seven reviewed source edits as DATA and retains the prior full-file, prefix digest and append-size guards. The actual current original module is imported unchanged.",
+    "oldReceiptRewritten": false,
+    "reconstructedSourceImportedOrEvaluated": false,
+    "historicalTestOrResultModified": false
+  },
+  "tests": {
+    "entry": "scripts/run-current-custody-canonical-reuse.mjs",
+    "files": [
+      "qualification/custody-canonical-text-reuse.behavior.mjs",
+      "qualification/original-request-custody-current.behavior.mjs",
+      "qualification/original-dispatch-intent-current.behavior.mjs",
+      "qualification/custodied-recovery-observation-collection-current.behavior.mjs"
+    ],
+    "cases": 38,
+    "retainedPureContractCases": 18,
+    "retainedRecoveryObservationCases": 2,
+    "newCanonicalReuseCases": 18,
+    "NodeChildren": 0,
+    "fixtureOwnedSqliteRunnerSourceReadAsDataOnly": true,
+    "SQLRunnerImported": false
+  },
+  "runtime": {
+    "node": "24.19.0",
+    "platform": "darwin",
+    "arch": "arm64",
+    "nodeSha256": "dbedff294bab84a0a86c04e15fbcbeb1c97ca10bef1b32b0634cd24b36f62100",
+    "readPermissionFiles": 13,
+    "NodePermissionMode": true,
+    "noAddons": true,
+    "stringCodeGenerationDisabled": true,
+    "installedPackageImports": false
+  },
+  "qualification": {
+    "newNativeCapacityOrFundingExecution": false,
+    "currentNativeGraphRequalified": false,
+    "immutableV7V6CandidateRetainsPriorCustodySource": true,
+    "existingHosted108SelectionChanged": false,
+    "local38CasesHosted": false,
+    "SDKOrX402PackagesImported": false,
+    "SQLiteOpened": false,
+    "sockets": false,
+    "keysOrSignatures": false,
+    "nonceSearch": false,
+    "taskStorageManagerImported": false,
+    "physicalStorageRootOpened": false,
+    "managedTasksCreated": 0,
+    "sourceOrPackageTreesCopied": false,
+    "realPaymentOrRestartOrPowerLossProven": false,
+    "productionQualified": false,
+    "authority": "NONE",
+    "existingHosted108SourceBindingRefreshed": true
+  },
+  "currentV3Profile": {
+    "profile": {
+      "path": "qualification/profiles/p0-current-p2-capacity-node24-v3.json",
+      "bytes": 14816,
+      "LF": 313,
+      "sha256": "515efc53791f6bb2e98a3c08d6e6b38fc36184ca5ef9714276247efcebf2d525",
+      "gitBlob": "615af6c6e9dbf02d20e3101b65e6dd402bba60b8"
+    },
+    "selectionsExactlyUnchanged": true,
+    "selectedCases": 108,
+    "oneRuntimeSourceRowAndReviewBaseRefreshed": true,
+    "workflowPermissionsRuntimeAndExclusionsUnchanged": true,
+    "localCounts": {
+      "tests": 108,
+      "pass": 108,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "localActual": {
+      "actualExit": 0,
+      "complete": true,
+      "inputComplete": true,
+      "inputBytes": 0,
+      "stdoutBytes": 22270,
+      "stdoutSha256": "2f7e4bc7e55e49df3d0be6ed536cfb7385f67fd8919fecde31e51962c0215fa5",
+      "stderrBytes": 0,
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "localSummary": {
+      "profileId": "p0-current-p2-capacity-node24-v3",
+      "node": "24.19.0",
+      "platform": "darwin",
+      "arch": "arm64",
+      "manifestSha256": "515efc53791f6bb2e98a3c08d6e6b38fc36184ca5ef9714276247efcebf2d525",
+      "sourceFiles": 22,
+      "selectedCases": 108,
+      "installedDependencies": false,
+      "scope": "DECLARED_P2_CAPACITY_COMPONENTS_AND_RUNTIME_DEPENDENCY_CONTRACT_ONLY",
+      "runtimeDependencyContract": {
+        "coreVersion": "2.23.0",
+        "coreDependencyKind": "runtime",
+        "zodVersion": "3.25.76",
+        "selectedRuntimeLockRows": 2,
+        "lockfileVersion": 3,
+        "retainedArtifactIntegrityUnchanged": true,
+        "installedDependencies": false,
+        "x402PackageExecuted": false,
+        "sdkExecuted": false,
+        "ordinaryInstalledNamespaceQualified": false
+      },
+      "selectionEnvironment": "owned-child-window-data-v1",
+      "selectionGrantsHostedAuthority": false,
+      "result": "SELECTED_CURRENT_P2_CAPACITY_COMPONENTS_AND_RUNTIME_CONTRACT_PASS",
+      "counts": {
+        "tests": 108,
+        "suites": 0,
+        "pass": 108,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "boundedFileBufferObservation": {
+        "files": 23,
+        "allocatedBytes": 337502,
+        "legacyCapacityBytes": 2916375,
+        "savedBytes": 2578873,
+        "measurement": "BUFFER_ALLOC_REQUEST_BYTES_NOT_HEAP_OR_DISK_IO"
+      },
+      "sourcePinsRechecked": true,
+      "historicalEntriesRun": 0,
+      "hostedCiEstablishedByLocalCommand": false,
+      "fullApplicationQualified": false,
+      "serviceDelivery": "NOT_ESTABLISHED",
+      "pilot": "NO_GO"
+    },
+    "sourcePins": [
+      {
+        "path": "qualification/profiles/p0-current-p2-capacity-node24-v3.json",
+        "bytes": 14816,
+        "LF": 313,
+        "sha256": "515efc53791f6bb2e98a3c08d6e6b38fc36184ca5ef9714276247efcebf2d525",
+        "gitBlob": "615af6c6e9dbf02d20e3101b65e6dd402bba60b8"
+      },
+      {
+        "path": "package.json",
+        "bytes": 2677,
+        "LF": 40,
+        "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+        "gitBlob": "45752ffde39d29666094f7f1c755060d75e43deb"
+      },
+      {
+        "path": "package-lock.json",
+        "bytes": 49240,
+        "LF": 1334,
+        "sha256": "44bf8922c9937b7d1175a666017f0a2fcbc48f1f8f8a3ccb39e2c31b5b205e91",
+        "gitBlob": "44440cfe88daad3a61c23b4ba25a4d831847e5f8"
+      },
+      {
+        "path": "scripts/current-qualification-profile-v3.mjs",
+        "bytes": 10441,
+        "LF": 193,
+        "sha256": "cf5bdc90c7a4316780c5b7030d7d82c14ea72efa513c09c98231540cfd3b3135",
+        "gitBlob": "3f592c7d4f0249c62bdf88a853b5e748d17124a2"
+      },
+      {
+        "path": "scripts/run-current-qualification-v3.mjs",
+        "bytes": 7614,
+        "LF": 137,
+        "sha256": "bb2b8cf6baa9714f09089e3dc66c8a41357cf1da1f673b8bc1681fcc6674732f",
+        "gitBlob": "d5268b6dec8fdb73a8c6d19f22698a4d24068150"
+      },
+      {
+        "path": "scripts/x402-runtime-dependency-contract.mjs",
+        "bytes": 3871,
+        "LF": 65,
+        "sha256": "c5805c5cbe379749b322174b44260129437456846153d25999c7491702a6ccc5",
+        "gitBlob": "aa1c806060cee0480b99248eb3e85a999a3d66f1"
+      },
+      {
+        "path": "test/current-qualification-profile-v3.test.js",
+        "bytes": 8324,
+        "LF": 135,
+        "sha256": "5f15a9221e80b7e9f7ee3b7b53e8be535f2d996b12a543b2a5a538d74d2cfe8b",
+        "gitBlob": "b3c793f1b822f2010284253beb1273d14f376305"
+      },
+      {
+        "path": "test/service-credit-custodied-sequential-runner-accepted-receipt-prototype.test.js",
+        "bytes": 2817,
+        "LF": 73,
+        "sha256": "bbf99a61bac18b984c6d545200666388278646ef002ddac08ba3a3220e7eabad",
+        "gitBlob": "d9a733d4dc3e04db182d620d7b654e666938ea6b"
+      },
+      {
+        "path": "qualification/service-credit-dispatch-abort-drain.behavior.draft.mjs",
+        "bytes": 20224,
+        "LF": 355,
+        "sha256": "6cc01f7cd8b683b49bae7aacfd44591c33e45db248ee16957f62107221e7ee61",
+        "gitBlob": "ba7b7b910cfce72ab8316bbd1e78e55b7b413a82"
+      },
+      {
+        "path": "test/x402-runtime-dependency-contract.test.js",
+        "bytes": 4082,
+        "LF": 69,
+        "sha256": "ee2b008a44528b58bb79df6d052f327e9fc5d52effe3b9ebf8588395cbefe9ba",
+        "gitBlob": "8e5aebd2c3315a7ec5cc3dbf0858df955df2eb62"
+      },
+      {
+        "path": "qualification/service-credit-capacity-window-writer-trace-owned-data.behavior.mjs",
+        "bytes": 13154,
+        "LF": 168,
+        "sha256": "ccb66e4aa8b8d15a14ab99b35c400ce36db01dcdc8c678766f98ca600872bc2b",
+        "gitBlob": "a2b0d5c0f5747b6247e86211a112d59dcbb689b3"
+      },
+      {
+        "path": "qualification/service-credit-capacity-window-owned-comparison.behavior.mjs",
+        "bytes": 20697,
+        "LF": 345,
+        "sha256": "5443b917af9df1fcfa2a8ff9a463fd5f98b8b195de36a1ad4ccb4de04a39c492",
+        "gitBlob": "427c6c5edc64e028dec9f0d1f9c5cf60b8931d19"
+      },
+      {
+        "path": "src/service-credit-http-execute-dispatch.js",
+        "bytes": 29328,
+        "LF": 815,
+        "sha256": "e07470a9fde311c806beb09b1c4369b4724213682bcbcacc228ece0e0e36f5ef",
+        "gitBlob": "4b5bcb1b08b1ab44e65c8ed7bab76d41640a767b"
+      },
+      {
+        "path": "src/service-credit-custodied-sequential-runner.js",
+        "bytes": 5773,
+        "LF": 121,
+        "sha256": "de0f3e143066f19ac3f3cab072abe8d250ea72b9fac9ad2c5bedb75110d7ec56",
+        "gitBlob": "f624375877ee0dd3d8352a5d13e35d95b43a12e7"
+      },
+      {
+        "path": "src/service-credit-original-request-custody-contract.js",
+        "bytes": 15100,
+        "LF": 376,
+        "sha256": "483d20e90d78ba95a8c5d5458dd201910e8d42aecbdc0dc03812e7044a464054",
+        "gitBlob": "94d67559a11f87f283a5cd99d2aaf8074374eb0a"
+      },
+      {
+        "path": "src/service-credit-custodied-http-client.js",
+        "bytes": 12646,
+        "LF": 324,
+        "sha256": "35997f41c9a5162fe29ed56776181a1691c0a0a69c7dbdfe8b61785af3998145",
+        "gitBlob": "33879d019492de8d278b0d0dc998bd1c7806b413"
+      },
+      {
+        "path": "src/service-credit-custodied-sequential-runner-core.js",
+        "bytes": 15983,
+        "LF": 492,
+        "sha256": "044477cb1300453f10bacf070037db175d08deec1d488549b34a5cb92e6328bd",
+        "gitBlob": "e91acb307f4f0f5fb5292a805f7ca1d02b21b68d"
+      },
+      {
+        "path": "src/service-credit-custodied-request-owner.js",
+        "bytes": 55155,
+        "LF": 1358,
+        "sha256": "2ba222760d4a922bf0466d95fd2671076b9d19b8c5fa4ea2cb3c66b1338562eb",
+        "gitBlob": "7f99bdadcc622db203e864edb12a1f4d1059a965"
+      },
+      {
+        "path": "src/service-credit-capacity-native-observation-data.js",
+        "bytes": 6173,
+        "LF": 103,
+        "sha256": "d6d19890334fbb6d7e92e605640d4638154f8e3e10588c8e217bf782a675b7ca",
+        "gitBlob": "aaf6b24f65a59e4b421805d7667a5fdf9e72433f"
+      },
+      {
+        "path": "src/service-credit-capacity-cohort-writer-trace-data.js",
+        "bytes": 10956,
+        "LF": 181,
+        "sha256": "75c3529584f7c6126f726734d085e107438c7a676ff1f63073956054aedcba65",
+        "gitBlob": "63bee5ad4714d3179666eef371373d4e0416a4a0"
+      },
+      {
+        "path": "src/service-credit-capacity-cohort-writer-coverage-data.js",
+        "bytes": 10102,
+        "LF": 172,
+        "sha256": "9d7ee0d837bca9668cdf1a26d296376082be6a1b4a25bc43114652f3ecfbda90",
+        "gitBlob": "a1b706447b8312c67c86debe57ea8ef4023c8131"
+      },
+      {
+        "path": "src/service-credit-capacity-window-writer-trace-data.js",
+        "bytes": 8906,
+        "LF": 126,
+        "sha256": "b86377ec5474f85465073e7891bde9f706b167a40cb6677671a6012dab4d9bbd",
+        "gitBlob": "ceabbe01bb341ccf2c9c8f0d89229e3dd4268c5f"
+      },
+      {
+        "path": "src/service-credit-capacity-window-writer-trace-owned-data.js",
+        "bytes": 9400,
+        "LF": 133,
+        "sha256": "60a5df357210f3ffa0a3d0cf5875a93cee656a7bc995ae7abd76e2e9e9a6c122",
+        "gitBlob": "28705d253e5ca88e6ef6ab3cc4100904aa6c0391"
+      }
+    ],
+    "hostedNewMainEstablishedByLocalCommand": false
+  }
+}
