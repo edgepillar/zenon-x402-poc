@@ -1,0 +1,230 @@
+{
+  "version": 5,
+  "kind": "COMPLETE_CURRENT_CAPACITY_V5_ROLES_SOURCE_NOT_NATIVE_EXECUTION",
+  "sourceParent": "d4d5ff059363dea05179522c41ade4de4c7bdd02",
+  "currentProducer": {
+    "path": "qualification/issued_current_close_v5_profile.py",
+    "bytes": 18205,
+    "LF": 176,
+    "sha256": "c96432e2af56c49932e7a403b099b57d4a1028866980ab37e031deb79fd45d6a",
+    "gitBlob": "0bc7ca7d6a5b2406e24aeda4d873f3e2bc050950"
+  },
+  "currentSelection": {
+    "path": "qualification/issued-current-close-v5.inputs.json",
+    "bytes": 7605,
+    "LF": 231,
+    "sha256": "4a7b2f42c89363bf5d60de80fb18ecb2373963a2d5e0079d4f7225ce02c74985",
+    "gitBlob": "d113c6b048dbea38f4da04d9467d1a769a482423"
+  },
+  "previousRoleProducer": {
+    "path": "qualification/native_capacity_current_role_profiles_v4.py",
+    "bytes": 19763,
+    "LF": 295,
+    "sha256": "a32d566f61c7093464a8c84e543965d82bf9fedf45741e65101ae28f331db24f",
+    "gitBlob": "3d99b2ab631c1ef1857f0c90af7330340410eb52"
+  },
+  "previousRoleSelection": {
+    "path": "qualification/capacity-native-current-roles-v4.inputs.json",
+    "bytes": 5209,
+    "LF": 132,
+    "sha256": "6a819a3e87e89927c05e292f8f0ee4332ac0a884199ab68d0f6cf286327a1662",
+    "gitBlob": "bc9977247b11a3edea32398969a9a4049f59c289"
+  },
+  "legacyInventory": {
+    "path": "qualification/capacity-native-full-graph-v3.inputs.json",
+    "bytes": 8697,
+    "LF": 215,
+    "sha256": "3bb597da71736542615047d11af78ad6825df5bdb6e4561747d8c1f9dff7d0df",
+    "gitBlob": "0530e2b08929d45c93b4e4912dc69d27b0645204"
+  },
+  "baseline": {
+    "path": "qualification/issued-funding-post-native-vertical.inputs-v3.json",
+    "bytes": 138777,
+    "LF": 3836,
+    "sha256": "51ffb5b0ff0052523c1b7f3d75fa24e9be27e60ca3bcc09236b1f439096aaed1",
+    "gitBlob": "3dc05ccffd306e97056b4ed168d8121f63acebbc"
+  },
+  "previousCurrentSelection": {
+    "path": "qualification/issued-current-close-v4.inputs.json",
+    "bytes": 10437,
+    "LF": 300,
+    "sha256": "8339b2a8e04e7e3c573b1c26d8162f1c821df91182738409693d188121a21893",
+    "gitBlob": "f292abda9f607a7d423f9d32fce2e55472d84a33"
+  },
+  "additionalNativeRoleInputs": [
+    {
+      "path": "app/qualification/capacity-native-current-namespace-v5.preload-common.draft.mjs",
+      "bytes": 21051,
+      "LF": 288,
+      "sha256": "bbb188436c061f090f26471cb802c15443c88a2c30f796804eea1437104da91a",
+      "gitBlob": "9b5248ef9831e7f58bd02e733c94661e369ff72c"
+    },
+    {
+      "path": "app/qualification/capacity-native-current-payer-v5.namespace.preload.draft.mjs",
+      "bytes": 265,
+      "LF": 3,
+      "sha256": "aa7cff6f78934b829e9cc276e6cdad292f67cb3fab69d48c5c8bce2dba47dc72",
+      "gitBlob": "4969198462710ef284e3894d03bfd21532a1a689"
+    },
+    {
+      "path": "app/qualification/capacity-native-current-payer-v5.owner.draft.mjs",
+      "bytes": 21517,
+      "LF": 341,
+      "sha256": "0cac2d6f533158ca42e4c2b5144e1b630c6c248df02070567b5a5acfa77cc77a",
+      "gitBlob": "ef025184cfb7b1c67b62f96d558525b1c947c4d3"
+    },
+    {
+      "path": "app/qualification/capacity-native-current-payer-v5.worker.draft.mjs",
+      "bytes": 21390,
+      "LF": 300,
+      "sha256": "df15844514c2c628b0a7165bd7134cbb2ebdd2fae588cd86eab80642d81098e0",
+      "gitBlob": "a6c3c227b40cd200135374e246b3283c773cf04f"
+    },
+    {
+      "path": "app/qualification/capacity-native-current-service-v5.namespace.preload.draft.mjs",
+      "bytes": 267,
+      "LF": 3,
+      "sha256": "d52f184b0ea5bbace2f029cc6e5e046fc8af76c7b8aca73e9a9e41321d7943a3",
+      "gitBlob": "c02304757969cf6a840f16caba1dd8b4c255320d"
+    },
+    {
+      "path": "app/qualification/capacity-native-current-service-v5.owner.draft.mjs",
+      "bytes": 30436,
+      "LF": 333,
+      "sha256": "41d009cf595781f53b0b9cf83dee8eb1b63e06c93b680ee40ef02a2500306c71",
+      "gitBlob": "afc49c506c93e7fc143469f20c6ca6fd1afe0647"
+    },
+    {
+      "path": "app/qualification/capacity-native-current-service-v5.worker.draft.mjs",
+      "bytes": 9163,
+      "LF": 120,
+      "sha256": "8598f85f3311fa4b4bd63b195b62cfcc008113b5eb4eeea289350d5fe02d4724",
+      "gitBlob": "9aa57750504ac4b0f8cabc9fef45892e8f4b872d"
+    }
+  ],
+  "currentMetadataInputs": [
+    {
+      "path": "app/qualification/issued-current-close-v4.inputs.json",
+      "bytes": 10437,
+      "LF": 300,
+      "sha256": "8339b2a8e04e7e3c573b1c26d8162f1c821df91182738409693d188121a21893",
+      "gitBlob": "f292abda9f607a7d423f9d32fce2e55472d84a33"
+    },
+    {
+      "path": "app/qualification/issued-current-close-v5.inputs.json",
+      "bytes": 7605,
+      "LF": 231,
+      "sha256": "4a7b2f42c89363bf5d60de80fb18ecb2373963a2d5e0079d4f7225ce02c74985",
+      "gitBlob": "d113c6b048dbea38f4da04d9467d1a769a482423"
+    }
+  ],
+  "roleSpecs": {
+    "PAYER": {
+      "kind": "NATIVE_CAPACITY_CURRENT_PAYER_NODE24_V5",
+      "entry": "app/qualification/capacity-native-current-payer-v5.worker.draft.mjs",
+      "preloader": "app/qualification/capacity-native-current-payer-v5.namespace.preload.draft.mjs",
+      "namespace": "getPinnedNativeCapacityCurrentPayerNamespaceSnapshotV5",
+      "pathEnv": "X402_NATIVE_CAPACITY_PROFILE_PATH",
+      "shaEnv": "X402_NATIVE_CAPACITY_PROFILE_SHA256"
+    },
+    "SERVICE": {
+      "kind": "NATIVE_CAPACITY_CURRENT_SERVICE_NODE24_V5",
+      "entry": "app/qualification/capacity-native-current-service-v5.worker.draft.mjs",
+      "preloader": "app/qualification/capacity-native-current-service-v5.namespace.preload.draft.mjs",
+      "namespace": "getPinnedNativeCapacityCurrentServiceNamespaceSnapshotV5",
+      "pathEnv": "X402_NATIVE_CAPACITY_SERVICE_PROFILE_PATH",
+      "shaEnv": "X402_NATIVE_CAPACITY_SERVICE_PROFILE_SHA256"
+    }
+  },
+  "applicationFiles": 154,
+  "packageFiles": 404,
+  "sourceRows": 558,
+  "sourceRowsSha256": "be5952dbf0e5fe17dbdd16549f2ac039802abbb92f541deb31c2591f4db653d7",
+  "declaredSourceBytes": 5005199,
+  "bareBindings": [
+    {
+      "parent": "app/qualification/issued-funding-post-native-vertical.case.draft.mjs",
+      "specifier": "@noble/ed25519",
+      "target": "packages/@noble/ed25519/index.js"
+    },
+    {
+      "parent": "app/qualification/issued-funding-post-native-vertical.case.draft.mjs",
+      "specifier": "@noble/hashes/sha2",
+      "target": "packages/@noble/hashes/esm/sha2.js"
+    },
+    {
+      "parent": "app/src/zenon-payment.js",
+      "specifier": "znn-typescript-sdk",
+      "target": "packages/znn-typescript-sdk/dist/index.js"
+    },
+    {
+      "parent": "app/src/zenon-payment.js",
+      "specifier": "@noble/ed25519",
+      "target": "packages/@noble/ed25519/index.js"
+    },
+    {
+      "parent": "app/src/zenon-payment.js",
+      "specifier": "@noble/hashes/sha2",
+      "target": "packages/@noble/hashes/esm/sha2.js"
+    },
+    {
+      "parent": "app/src/x402-official-selected-payment-client.js",
+      "specifier": "@x402/core/client",
+      "target": "packages/@x402/core/dist/esm/client/index.mjs"
+    },
+    {
+      "parent": "app/src/x402-official-selected-settlement-server.js",
+      "specifier": "@x402/core/server",
+      "target": "packages/@x402/core/dist/esm/server/index.mjs"
+    },
+    {
+      "parent": "packages/@x402/core/dist/esm/chunk-N4QXZG2Z.mjs",
+      "specifier": "zod",
+      "target": "packages/zod/index.js"
+    },
+    {
+      "parent": "app/qualification/issued-current-close-v5.case.mjs",
+      "specifier": "@noble/ed25519",
+      "target": "packages/@noble/ed25519/index.js"
+    },
+    {
+      "parent": "app/qualification/issued-current-close-v5.case.mjs",
+      "specifier": "@noble/hashes/sha2",
+      "target": "packages/@noble/hashes/esm/sha2.js"
+    },
+    {
+      "parent": "app/qualification/capacity-native-payer-lane-v3.worker.draft.mjs",
+      "specifier": "@noble/ed25519",
+      "target": "packages/@noble/ed25519/index.js"
+    },
+    {
+      "parent": "app/qualification/capacity-native-payer-lane-v3.worker.draft.mjs",
+      "specifier": "@noble/hashes/sha2",
+      "target": "packages/@noble/hashes/esm/sha2.js"
+    },
+    {
+      "parent": "app/qualification/capacity-native-payer-lane-v3.worker.draft.mjs",
+      "specifier": "znn-typescript-sdk",
+      "target": "packages/znn-typescript-sdk/dist/index.js"
+    },
+    {
+      "parent": "app/qualification/capacity-native-current-payer-v5.worker.draft.mjs",
+      "specifier": "@noble/ed25519",
+      "target": "packages/@noble/ed25519/index.js"
+    },
+    {
+      "parent": "app/qualification/capacity-native-current-payer-v5.worker.draft.mjs",
+      "specifier": "@noble/hashes/sha2",
+      "target": "packages/@noble/hashes/esm/sha2.js"
+    },
+    {
+      "parent": "app/qualification/capacity-native-current-payer-v5.worker.draft.mjs",
+      "specifier": "znn-typescript-sdk",
+      "target": "packages/znn-typescript-sdk/dist/index.js"
+    }
+  ],
+  "nativeExecuted": false,
+  "historicalFilesModified": false,
+  "nativeAuthority": "NOT_GRANTED",
+  "authority": "NONE"
+}
