@@ -17,6 +17,8 @@ const IS_PROXY = utilTypes.isProxy, IS_PROMISE = utilTypes.isPromise;
 const OBJECT = Object.prototype, ARRAY = Array.prototype;
 const COPY = JSON.parse, TEXT = JSON.stringify, BYTES = Buffer.byteLength;
 const RESTORE = restoreOriginalPaymentCheckpoint, ENCODE_CHECKPOINT = encodeOriginalPaymentCheckpoint;
+const PIN_BINDING = FREEZE(['requestId', 'paymentHash', 'origin', 'contextId']);
+const PIN_DIGESTS = FREEZE(['requestBody', 'paymentPayload', 'paymentRequirements', 'context']);
 const DECODE = decodeB64Json, ENCODE = encodeB64Json, CANONICAL = canonicalJson;
 
 /**
@@ -50,7 +52,7 @@ export function createFundingPostOriginalPaymentCheckpointClient(configuration) 
 }
 
 function createCheckpointClient(configuration, fundingPost) {
-  let resource, original, fixedRequired, fixedPayload, readCheckpoint;
+  let resource, original, fixedRequired, fixedPayload, readCheckpoint, fixedPins, retainedSerialized;
   let requestProfile = null;
   try {
     if (!invariant()) fail('configuration_rejected');
@@ -63,7 +65,11 @@ function createCheckpointClient(configuration, fundingPost) {
     } else resource = captureOfficialUpfrontHttpsRoute(c.resourceUrl).resourceUrl;
     if (typeof c.readOriginalPaymentCheckpoint !== 'function' || IS_PROXY(c.readOriginalPaymentCheckpoint))
       fail('configuration_rejected');
-    original = RESTORE(c.serializedCheckpoint, snapshot(c.expectedPins));
+    fixedPins = deepFreeze(snapshot(c.expectedPins));
+    original = RESTORE(c.serializedCheckpoint, fixedPins);
+    // RESTORE already checked full canonical bytes and every external pin.
+    // Retain that exact validated input, not another encoded comparison copy.
+    retainedSerialized = c.serializedCheckpoint;
     if (original.binding.origin !== new URL(resource).origin || original.originalBytes.requestBody !== '')
       fail('configuration_rejected');
     fixedRequired = DECODE(original.originalBytes.paymentRequirements,
@@ -81,9 +87,10 @@ function createCheckpointClient(configuration, fundingPost) {
     validateActiveUpfrontRequirement(fixedRequired.accepts[0]);
     readCheckpoint = c.readOriginalPaymentCheckpoint;
   } catch { fail('configuration_rejected'); }
-  const REQUIRED_TEXT = CANONICAL(fixedRequired), PAYLOAD_TEXT = TEXT(fixedPayload);
-  const PAYLOAD_DATA = payloadData(fixedPayload);
-  const SERIALIZED = ENCODE_CHECKPOINT(original);
+  let REQUIRED_TEXT = CANONICAL(fixedRequired), PAYLOAD_TEXT = TEXT(fixedPayload);
+  let PAYLOAD_DATA = payloadData(fixedPayload);
+  let SERIALIZED = retainedSerialized;
+  retainedSerialized = null;
   let originalHeader = original.originalBytes.paymentPayload;
   let challengeHeader = original.originalBytes.paymentRequirements;
   let phase = 'OPEN', reading = false, reads = 0, creationAttempts = 0, created = false, uncertain = false;
@@ -98,8 +105,14 @@ function createCheckpointClient(configuration, fundingPost) {
   function callerPins(pins) {
     admitted();
     const copied = snapshot(pins);
-    try { RESTORE(SERIALIZED, copied); } // Expectations are never learned from the reader.
-    catch { fail('pins_rejected'); }
+    try {
+      const p = record(copied, ['binding', 'digests']);
+      const b = record(p.binding, PIN_BINDING), d = record(p.digests, PIN_DIGESTS);
+      // Closed shape plus exact primitive equality to independently supplied,
+      // fully validated construction pins. Never learn expectations from a read.
+      for (const field of PIN_BINDING) if (b[field] !== fixedPins.binding[field]) fail('pins_rejected');
+      for (const field of PIN_DIGESTS) if (d[field] !== fixedPins.digests[field]) fail('pins_rejected');
+    } catch { fail('pins_rejected'); }
     return deepFreeze(copied);
   }
   function retained(pins) {
@@ -111,7 +124,9 @@ function createCheckpointClient(configuration, fundingPost) {
       if (IS_PROMISE(result) || IS_PROXY(result)) fail('read_rejected');
       const serialized = ENCODE_CHECKPOINT(snapshot(result));
       if (phase !== 'OPEN' || !invariant() || serialized !== SERIALIZED) fail('read_rejected');
-      RESTORE(serialized, pins);
+      // ENCODE_CHECKPOINT above freshly validates the complete read record,
+      // including every original-byte fingerprint. Exact equality to SERIALIZED
+      // and the freshly checked independent pins make reparsing it redundant.
     } catch {
       uncertain = true;
       if (phase === 'OPEN') phase = 'HELD';
@@ -172,6 +187,7 @@ function createCheckpointClient(configuration, fundingPost) {
     if (arguments.length !== 0) fail('input_rejected');
     phase = 'CLOSED'; readCheckpoint = null; originalHeader = null;
     challengeHeader = null; selected = null; admittedPins = null;
+    SERIALIZED = null; REQUIRED_TEXT = null; PAYLOAD_TEXT = null; PAYLOAD_DATA = null; fixedPins = null;
     return FREEZE({ phase: 'CLOSED', uncertain, storeClosed: false, authority: 'NONE' });
   });
   return FREEZE({ captureChallenge, localClient: FREEZE({ createPaymentPayload }),
