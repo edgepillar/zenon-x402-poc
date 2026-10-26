@@ -353,7 +353,7 @@ function utf8Length(text, maximum) {
 }
 
 function resultSlice(text, expectedId) {
-  utf8Length(text, MAX_RESPONSE_BYTES);
+  const responseBytes = utf8Length(text, MAX_RESPONSE_BYTES);
   let cursor = 0;
   let values = 0;
   let containers = 0;
@@ -522,7 +522,11 @@ function resultSlice(text, expectedId) {
   whitespace();
   if (cursor !== text.length || !versionSeen || !idSeen || resultStart === -1) invalid();
   const result = slice(text, resultStart, resultEnd);
-  utf8Length(result, MAX_RESULT_BYTES);
+  // A syntactically complete result is a contiguous part of the validated
+  // UTF-8 response. When that whole response fits the result budget, its
+  // substring cannot exceed the same budget. Larger envelopes still need
+  // the independent raw-result check, including escaped representations.
+  if (responseBytes > MAX_RESULT_BYTES) utf8Length(result, MAX_RESULT_BYTES);
   return result;
 }
 
