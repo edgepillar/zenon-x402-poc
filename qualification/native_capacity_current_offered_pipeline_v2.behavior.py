@@ -12,6 +12,7 @@ from pathlib import Path
 import stat
 import sys
 import unittest
+import types
 
 repo=Path(__file__).absolute().parents[1]
 LAUNCH="qualification/capacity-native-current-offered-v3.launch-inputs.json"
@@ -291,6 +292,212 @@ def early_storage_acceptance_order(self):
             sys.stdout=old_stdout
     summary["earlyStorageAcceptanceOrderingData"]=observations
 check("actual_main_enters_installed_context_only_after_declared_early_preflight_success",early_storage_acceptance_order)
+
+def declared_capacity_inventory(reserved_values,available_values,*,snapshot_change=False,metadata_change=False,
+        membership_change=False,reservation_fault=None):
+    """Call actual capacity control flow with DATA-only filesystem callbacks."""
+    events=dict(reservations=[],snapshots=[],metadataReads=0,available=[],membershipReads=0)
+    paths=["/declared-volume/spv2/store"+format(i,"03d")for i in range(1,len(reserved_values)+1)]
+    directories={"/declared-volume","/declared-volume/spv2",*paths}
+    class DeclaredPath:
+        def __init__(self,value):self.value=value
+        def __str__(self):return self.value
+        def __truediv__(self,other):return DeclaredPath(self.value+"/"+other)
+        def __eq__(self,other):return type(other)is DeclaredPath and self.value==other.value
+        def __hash__(self):return hash(self.value)
+        @property
+        def parent(self):return DeclaredPath(self.value.rsplit("/",1)[0])
+        def is_symlink(self):return False
+        def is_dir(self):return self.value in directories
+        def stat(self):
+            return types.SimpleNamespace(st_dev=1,st_ino=2,st_uid=os.getuid(),st_gid=20,st_mode=stat.S_IFDIR|0o700,
+                st_nlink=1,st_size=0,st_mtime_ns=1,st_ctime_ns=1)
+        def iterdir(self):
+            if self.value!="/declared-volume/spv2":raise AssertionError("DECLARED_PARENT_ONLY")
+            events["membershipReads"]+=1
+            return iter([DeclaredPath(p)for p in paths]+([DeclaredPath("/declared-volume/spv2/unexpected")]
+                if membership_change and events["membershipReads"]>1 else[]))
+    counts={};metadata_counts={}
+    def read_metadata(path,maximum):
+        value=str(path)
+        if not value.endswith("/storage.json")or value.rsplit("/",1)[0]not in paths:raise AssertionError("DECLARED_METADATA_ONLY")
+        directory=value.rsplit("/",1)[0];index=paths.index(directory)
+        events["metadataReads"]+=1;metadata_counts[directory]=metadata_counts.get(directory,0)+1
+        raw=json.dumps(dict(schema="zenon-owned-task-storage/v2",id=format(index+1,"032x"))).encode()
+        ident=["1",str(index+100),"0","0","0","1",str(len(raw)),"1","1"]
+        if metadata_change and metadata_counts[directory]>1:ident[-1]="2"
+        return raw,ident
+    def snapshot(path,common):
+        value=str(path);events["snapshots"].append(value);counts[value]=counts.get(value,0)+1
+        return(value,1 if snapshot_change and counts[value]>1 else 0)
+    own_task=("a"*32,"b"*32)
+    def reservations(path,selected_own_task):
+        if selected_own_task!=own_task:raise AssertionError("SAME_OWN_TASK_EXCLUSION")
+        index=paths.index(str(path));events["reservations"].append(index)
+        if reservation_fault is not None and index==reservation_fault:raise ValueError("DECLARED_RESERVATION_READ_FAILURE")
+        return dict(reservedBytes=reserved_values[index])
+    def available(volume):
+        if str(volume)!="/declared-volume":raise AssertionError("DECLARED_VOLUME_ONLY")
+        value=available_values[min(len(events["available"]),len(available_values)-1)]
+        events["available"].append(value);return types.SimpleNamespace(f_bavail=value,f_frsize=1)
+    common=types.SimpleNamespace(no_links=lambda _:None,
+        private_directory=lambda path:launcher.identity(path.stat())[:5],reservations=reservations)
+    volume=DeclaredPath("/declared-volume");root=DeclaredPath(paths[0]);uuid="11111111-1111-1111-1111-111111111111"
+    def mount_query(argv,**kwargs):
+        if argv!=["/usr/sbin/diskutil","info","-plist",str(volume)]:raise AssertionError("DECLARED_MOUNT_QUERY_ONLY")
+        return types.SimpleNamespace(returncode=0,stdout=launcher.plistlib.dumps(dict(VolumeUUID=uuid,MountPoint=str(volume))),stderr=b"")
+    originals=launcher.read,launcher.reservation_snapshot,launcher.subprocess.run,launcher.os.statvfs
+    launcher.read=read_metadata;launcher.reservation_snapshot=snapshot
+    launcher.subprocess.run=mount_query;launcher.os.statvfs=available
+    result=error=None
+    try:
+        try:result=launcher.capacity(volume,uuid,root,common,resource.resource_plan(WORKLOAD),own_task)
+        except (ValueError,AssertionError)as problem:error=problem
+    finally:
+        launcher.read,launcher.reservation_snapshot,launcher.subprocess.run,launcher.os.statvfs=originals
+    return dict(result=result,error=error,events=events)
+
+def capacity_early_prefix(self):
+    base_bytes=resource.resource_plan(WORKLOAD)["requiredFreeBytesBeforeOtherReservations"]
+    value=declared_capacity_inventory([1048576]*111,[base_bytes+64*1048576-1])
+    e=value["events"];summary["declaredReservationPrefixRefusal"]=dict(storesDeclared=111,storesRead=len(e["reservations"]),
+        taskSnapshotCallbacks=len(e["snapshots"]),metadataCallbacks=e["metadataReads"],nativeExecuted=False)
+    self.assertIsInstance(value["error"],ValueError)
+    self.assertEqual(e["reservations"],list(range(64)))
+    self.assertEqual(len(e["snapshots"]),128)
+    self.assertEqual(e["metadataReads"],222)
+check("actual_capacity_refuses_known_64_store_prefix_without_reading_47_later_task_sets",capacity_early_prefix)
+def capacity_base_refusal(self):
+    base_bytes=resource.resource_plan(WORKLOAD)["requiredFreeBytesBeforeOtherReservations"]
+    value=declared_capacity_inventory([1048576]*111,[base_bytes-1]);e=value["events"]
+    summary["declaredReservationBaseRefusal"]=dict(storesDeclared=111,storesRead=len(e["reservations"]),
+        taskSnapshotCallbacks=len(e["snapshots"]),metadataCallbacks=e["metadataReads"],nativeExecuted=False)
+    self.assertIsInstance(value["error"],ValueError);self.assertEqual(e["reservations"],[])
+    self.assertEqual(e["snapshots"],[]);self.assertEqual(e["metadataReads"],222)
+check("actual_capacity_refuses_below_base_floor_without_task_record_reads",capacity_base_refusal)
+def capacity_complete_scope(self):
+    base_bytes=resource.resource_plan(WORKLOAD)["requiredFreeBytesBeforeOtherReservations"]
+    value=declared_capacity_inventory([1048576]*111,[base_bytes+111*1048576]);e=value["events"]
+    self.assertIsNone(value["error"]);self.assertEqual(e["reservations"],list(range(111)))
+    self.assertEqual(value["result"]["storeRoots"],111);self.assertEqual(value["result"]["reservedBytes"],111*1048576)
+    self.assertEqual(len(e["snapshots"]),222);self.assertEqual(e["metadataReads"],222)
+    summary["declaredReservationCompleteAdmission"]=dict(storesDeclared=111,storesRead=len(e["reservations"]),
+        taskSnapshotCallbacks=len(e["snapshots"]),metadataCallbacks=e["metadataReads"],nativeExecuted=False)
+check("actual_capacity_still_reads_and_rechecks_all_stores_before_complete_data_result",capacity_complete_scope)
+
+for label,available_value in[("negative",-1),("boolean",True),("float",1.5),("unsafe_integer",2**53)]:
+    def run(self,available_value=available_value):
+        calls=[]
+        def never(*args):calls.append(args);raise AssertionError("INVALID_SPACE_HAS_NO_TASK_CALLBACKS")
+        with self.assertRaisesRegex(ValueError,"^BOUNDED_CAPACITY_DATA$"):
+            launcher.reservation_capacity_data(1,resource.resource_plan(WORKLOAD),never,lambda:available_value,never)
+        self.assertEqual(calls,[])
+    check("prefix_capacity_rejects_"+label+"_available_data_before_task_reads",run)
+for label,amount in[("negative",-1),("boolean",True),("float",1.5),("unsafe_integer",2**53)]:
+    def run(self,amount=amount):
+        base_bytes=resource.resource_plan(WORKLOAD)["requiredFreeBytesBeforeOtherReservations"]
+        value=declared_capacity_inventory([amount,1],[base_bytes+100])
+        self.assertIsInstance(value["error"],ValueError);self.assertEqual(str(value["error"]),"BOUNDED_STORE_RESERVATION_BYTES")
+        self.assertEqual(value["events"]["reservations"],[0])
+    check("actual_capacity_rejects_"+label+"_reservation_data_without_continuation",run)
+for label,count in[("empty",0),("boolean",True),("float",1.5),("too_many",257)]:
+    def run(self,count=count):
+        calls=[]
+        def never(*args):calls.append(args);raise AssertionError("INVALID_SCOPE_HAS_NO_CALLBACKS")
+        with self.assertRaisesRegex(ValueError,"^BOUNDED_CAPACITY_DATA$"):
+            launcher.reservation_capacity_data(count,resource.resource_plan(WORKLOAD),never,never,never)
+        self.assertEqual(calls,[])
+    check("prefix_capacity_data_rejects_"+label+"_scope_before_callbacks",run)
+def capacity_grows_before_guard(self):
+    base_bytes=resource.resource_plan(WORKLOAD)["requiredFreeBytesBeforeOtherReservations"]
+    value=declared_capacity_inventory([1,1,1],[base_bytes-1,base_bytes+3]);e=value["events"]
+    self.assertIsNone(value["error"]);self.assertEqual(e["reservations"],[0,1,2])
+    self.assertEqual(len(e["snapshots"]),6);self.assertEqual(e["metadataReads"],6)
+check("capacity_growth_before_prefix_guard_continues_to_complete_scope",capacity_grows_before_guard)
+def capacity_grows_during_base_guard(self):
+    base_bytes=resource.resource_plan(WORKLOAD)["requiredFreeBytesBeforeOtherReservations"]
+    value=declared_capacity_inventory([1,1,1],[base_bytes-1,base_bytes-1,base_bytes+3]);e=value["events"]
+    self.assertIsNone(value["error"]);self.assertEqual(e["reservations"],[0,1,2])
+    self.assertEqual(value["result"]["reservedBytes"],3);self.assertEqual(len(e["snapshots"]),6)
+    self.assertEqual(e["metadataReads"],9)
+check("capacity_growth_during_zero_prefix_guard_never_returns_partial_admission",capacity_grows_during_base_guard)
+def capacity_grows_during_task_guard(self):
+    base_bytes=resource.resource_plan(WORKLOAD)["requiredFreeBytesBeforeOtherReservations"]
+    low=base_bytes+64*1048576-1
+    value=declared_capacity_inventory([1048576]*111,[low,low,base_bytes+200*1048576]);e=value["events"]
+    self.assertIsNone(value["error"]);self.assertEqual(e["reservations"],list(range(111)))
+    self.assertEqual(value["result"]["reservedBytes"],111*1048576)
+    self.assertEqual(len(e["snapshots"]),286);self.assertEqual(e["metadataReads"],333)
+    summary["declaredPrefixGrowthStillCompletes"]=dict(storesRead=111,taskSnapshotCallbacks=286,
+        maximumPrefixGuards=1,nativeExecuted=False)
+check("capacity_growth_during_64_prefix_guard_still_reads_all_111_and_checks_only_one_prefix",capacity_grows_during_task_guard)
+def capacity_late_shrink(self):
+    base_bytes=resource.resource_plan(WORKLOAD)["requiredFreeBytesBeforeOtherReservations"]
+    value=declared_capacity_inventory([1,1,1],[base_bytes+3,base_bytes+2])
+    self.assertIsInstance(value["error"],ValueError)
+    self.assertEqual(str(value["error"]),"PRODUCTION_FLOOR_AND_ALL_STORE_RESERVATIONS")
+    self.assertEqual(value["events"]["reservations"],[0,1,2]);self.assertIsNone(value["result"])
+check("fresh_final_capacity_refuses_space_lost_after_complete_inventory",capacity_late_shrink)
+for label,kw,code in[
+ ("task_identity",dict(snapshot_change=True),"RESERVATION_RECORD_OR_SCRATCH_CHANGED"),
+ ("store_metadata",dict(metadata_change=True),"STORAGE_INVENTORY_CHANGED"),
+ ("parent_membership",dict(membership_change=True),"STORAGE_PARENT_CHANGED")]:
+    def run(self,kw=kw,code=code):
+        base_bytes=resource.resource_plan(WORKLOAD)["requiredFreeBytesBeforeOtherReservations"]
+        value=declared_capacity_inventory([1,1,1],[base_bytes],**kw)
+        self.assertIsInstance(value["error"],ValueError);self.assertEqual(str(value["error"]),code)
+        self.assertEqual(value["events"]["reservations"],[0]);self.assertIsNone(value["result"])
+    check("actual_prefix_refusal_preserves_"+label+"_failure_without_further_task_reads",run)
+def capacity_reservation_failure(self):
+    base_bytes=resource.resource_plan(WORKLOAD)["requiredFreeBytesBeforeOtherReservations"]
+    value=declared_capacity_inventory([1,1,1],[base_bytes+100],reservation_fault=1)
+    self.assertIsInstance(value["error"],ValueError);self.assertEqual(str(value["error"]),"DECLARED_RESERVATION_READ_FAILURE")
+    self.assertEqual(value["events"]["reservations"],[0,1]);self.assertIsNone(value["result"])
+check("actual_reservation_reader_failure_is_preserved_without_retry",capacity_reservation_failure)
+def capacity_sum_overflow(self):
+    value=declared_capacity_inventory([2**52,2**52],[2**53-1])
+    self.assertIsInstance(value["error"],ValueError);self.assertEqual(str(value["error"]),"BOUNDED_CAPACITY_DATA")
+    self.assertEqual(value["events"]["reservations"],[0,1]);self.assertIsNone(value["result"])
+check("aggregate_reservations_cannot_overflow_safe_capacity_data",capacity_sum_overflow)
+def capacity_unread_is_not_zero(self):
+    base_bytes=resource.resource_plan(WORKLOAD)["requiredFreeBytesBeforeOtherReservations"]
+    early=declared_capacity_inventory([1,True,1],[base_bytes])
+    self.assertEqual(str(early["error"]),"KNOWN_RESERVATION_LOWER_BOUND_EXCEEDS_AVAILABLE")
+    self.assertEqual(early["events"]["reservations"],[0]);self.assertIsNone(early["result"])
+    complete=declared_capacity_inventory([1,True,1],[base_bytes+100])
+    self.assertEqual(str(complete["error"]),"BOUNDED_STORE_RESERVATION_BYTES")
+    self.assertEqual(complete["events"]["reservations"],[0,1]);self.assertIsNone(complete["result"])
+check("unread_later_rows_are_not_zero_or_qualified_by_a_prefix_refusal",capacity_unread_is_not_zero)
+def capacity_maximum_scope(self):
+    base_bytes=resource.resource_plan(WORKLOAD)["requiredFreeBytesBeforeOtherReservations"]
+    value=declared_capacity_inventory([1]*256,[base_bytes+256])
+    self.assertIsNone(value["error"]);self.assertEqual(value["events"]["reservations"],list(range(256)))
+    self.assertEqual(value["result"]["storeRoots"],256);self.assertEqual(len(value["events"]["snapshots"]),512)
+check("maximum_256_store_scope_still_requires_complete_inventory",capacity_maximum_scope)
+def capacity_zero_reservations(self):
+    base_bytes=resource.resource_plan(WORKLOAD)["requiredFreeBytesBeforeOtherReservations"]
+    value=declared_capacity_inventory([0]*111,[base_bytes])
+    self.assertIsNone(value["error"]);self.assertEqual(value["events"]["reservations"],list(range(111)))
+    self.assertEqual(value["result"]["reservedBytes"],0);self.assertEqual(len(value["events"]["snapshots"]),222)
+check("zero_reservations_still_require_all_store_reads_and_rechecks",capacity_zero_reservations)
+def capacity_callback_contract(self):
+    calls=[]
+    def never(*args):calls.append(args);raise AssertionError("INVALID_CALLBACK_CONTRACT")
+    with self.assertRaisesRegex(ValueError,"^CAPACITY_OBSERVATION_CALLBACKS$"):
+        launcher.reservation_capacity_data(1,resource.resource_plan(WORKLOAD),None,never,never)
+    self.assertEqual(calls,[])
+check("capacity_data_requires_complete_observation_callback_contract",capacity_callback_contract)
+
+for label,kw,code in[
+ ("task_identity",dict(snapshot_change=True),"RESERVATION_RECORD_OR_SCRATCH_CHANGED"),
+ ("store_metadata",dict(metadata_change=True),"STORAGE_INVENTORY_CHANGED"),
+ ("parent_membership",dict(membership_change=True),"STORAGE_PARENT_CHANGED")]:
+    def run(self,kw=kw,code=code):
+        base_bytes=resource.resource_plan(WORKLOAD)["requiredFreeBytesBeforeOtherReservations"]
+        value=declared_capacity_inventory([1,1,1],[base_bytes+100],**kw)
+        self.assertIsInstance(value["error"],ValueError);self.assertEqual(str(value["error"]),code)
+        self.assertEqual(value["events"]["reservations"],[0,1,2]);self.assertIsNone(value["result"])
+    check("complete_inventory_preserves_"+label+"_failure_before_successful_data_result",run)
 
 def call_binding(self):
     actual=ast.parse((repo/"qualification/run-capacity-native-current-offered-v3.local.py").read_bytes())

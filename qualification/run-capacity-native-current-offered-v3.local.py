@@ -146,7 +146,7 @@ def source_admission(repo,digest):
     require(type(manifest)is dict and set(manifest)=={"kind","version","sourceParent","pythonControls","profileSelection",
         "childSelection","workload","effectsCeiling","requiredPolicy","nativeSelection","nativeExecuted","nativeAllowanceGranted","authority"}
         and manifest["kind"]==KIND and type(manifest["version"])is int and manifest["version"]==2
-        and manifest["sourceParent"]=="166b9a0fa711de90bad97539e702b1c9d5239cd8"
+        and manifest["sourceParent"]=="184c0a2b85fa75a32d97b7b4be882166d183738f"
         and manifest["nativeSelection"]==NATIVE_SELECTION and manifest["nativeExecuted"]is False
         and manifest["nativeAllowanceGranted"]is False and manifest["authority"]=="NONE","CURRENT_MANAGED_SOURCE_NOT_AUTHORITY")
     inputs={name:read(repo/name)for name in[SELF]+[name for name,_ in FROZEN]+[PARENT,SOURCE_SELECTION,PLAN]}
@@ -236,26 +236,58 @@ def policy_admits_existing_store(policy,effects):
     return True
 
 
-def capacity_data(available, reserved, effects, roots):
-    """Conservative DATA predicate, never a measurement or admission by itself."""
-    require(type(available) is int and type(reserved) is int and type(roots) is int
-        and 0 <= available <= 2**53 - 1 and 0 <= reserved <= 2**53 - 1 and 1 <= roots <= 256, "BOUNDED_CAPACITY_DATA")
-    require(type(effects) is dict and type(effects.get("taskQuotaBytes")) is int and 0 < effects["taskQuotaBytes"] <= 2**53 - 1
-        and type(effects.get("minimumFreeBytes")) is int and effects["minimumFreeBytes"] == 10 * 1024**3
-        and type(effects.get("safetyMarginBytes")) is int and effects["safetyMarginBytes"] == 1024**3,
+def _capacity_required_bytes(reserved,effects,roots):
+    require(type(reserved)is int and type(roots)is int and 0<=reserved<=2**53-1 and 1<=roots<=256,
+        "BOUNDED_CAPACITY_DATA")
+    require(type(effects)is dict and type(effects.get("taskQuotaBytes"))is int and 0<effects["taskQuotaBytes"]<=2**53-1
+        and type(effects.get("minimumFreeBytes"))is int and effects["minimumFreeBytes"]==10*1024**3
+        and type(effects.get("safetyMarginBytes"))is int and effects["safetyMarginBytes"]==1024**3,
         "UNCHANGED_PRODUCTION_FLOOR")
-    require(type(effects.get("metadataStoreQuotaBytesReserved")) is int
-        and effects["metadataStoreQuotaBytesReserved"] == 4 * 1048576, "EXACT_NEW_STORE_METADATA_RESERVATION")
-    base = (effects["minimumFreeBytes"] + effects["safetyMarginBytes"] + effects["taskQuotaBytes"]
-        + effects["metadataStoreQuotaBytesReserved"])
-    require(type(effects.get("requiredFreeBytesBeforeOtherReservations")) is int
-        and effects["requiredFreeBytesBeforeOtherReservations"] == base, "FULL_SOURCE_RESOURCE_RESERVATION_MATCH")
-    required = base + reserved
-    require(required <= 2**53 - 1 and available >= required, "PRODUCTION_FLOOR_AND_ALL_STORE_RESERVATIONS")
-    return dict(availableBytes=available, requiredBytes=required, reservedBytes=reserved, storeRoots=roots,
-        minimumFreeBytes=effects["minimumFreeBytes"], taskQuotaBytes=effects["taskQuotaBytes"],
+    require(type(effects.get("metadataStoreQuotaBytesReserved"))is int
+        and effects["metadataStoreQuotaBytesReserved"]==4*1048576,"EXACT_NEW_STORE_METADATA_RESERVATION")
+    base=effects["minimumFreeBytes"]+effects["safetyMarginBytes"]+effects["taskQuotaBytes"]+effects["metadataStoreQuotaBytesReserved"]
+    require(type(effects.get("requiredFreeBytesBeforeOtherReservations"))is int
+        and effects["requiredFreeBytesBeforeOtherReservations"]==base,"FULL_SOURCE_RESOURCE_RESERVATION_MATCH")
+    required=base+reserved
+    require(required<=2**53-1,"PRODUCTION_FLOOR_AND_ALL_STORE_RESERVATIONS")
+    return required
+
+
+def capacity_data(available,reserved,effects,roots):
+    """Complete cooperative DATA predicate; never native admission by itself."""
+    require(type(available)is int and 0<=available<=2**53-1,"BOUNDED_CAPACITY_DATA")
+    required=_capacity_required_bytes(reserved,effects,roots)
+    require(available>=required,"PRODUCTION_FLOOR_AND_ALL_STORE_RESERVATIONS")
+    return dict(availableBytes=available,requiredBytes=required,reservedBytes=reserved,storeRoots=roots,
+        minimumFreeBytes=effects["minimumFreeBytes"],taskQuotaBytes=effects["taskQuotaBytes"],
         metadataStoreQuotaBytesReserved=effects["metadataStoreQuotaBytesReserved"])
 
+
+def reservation_capacity_data(roots,effects,reservation_reader,available_reader,recheck):
+    """A stable known prefix can refuse; only a complete scan can return."""
+    require(callable(reservation_reader)and callable(available_reader)and callable(recheck),"CAPACITY_OBSERVATION_CALLBACKS")
+    _capacity_required_bytes(0,effects,roots)
+    def available():
+        value=available_reader()
+        require(type(value)is int and 0<=value<=2**53-1,"BOUNDED_CAPACITY_DATA")
+        return value
+    space=available();reserved=0;partial_guard_used=False
+    for observed in range(roots+1):
+        required=_capacity_required_bytes(reserved,effects,roots)
+        if not partial_guard_used and required>space:
+            space=available()
+            if required>space:
+                recheck(observed);partial_guard_used=True
+                space=available()
+                require(space>=required,"KNOWN_RESERVATION_LOWER_BOUND_EXCEEDS_AVAILABLE")
+                # If space grew during this guard, continue to a full scan.
+                # At most one prefix guard avoids quadratic metadata work.
+        if observed==roots:break
+        amount=reservation_reader(observed)
+        require(type(amount)is int and 0<=amount<=2**53-1,"BOUNDED_STORE_RESERVATION_BYTES")
+        reserved+=amount
+    recheck(roots)
+    return capacity_data(available(),reserved,effects,roots)
 
 
 def reservation_snapshot(root, common):
@@ -285,7 +317,7 @@ def reservation_snapshot(root, common):
 
 
 def capacity(volume, volume_uuid, root, common, effects, own_task=None):
-    """Read every recognized sibling store, not a task-storage name prefix."""
+    """Discover every store; refuse a stable insufficient prefix, never admit it."""
     common.no_links(volume); common.no_links(root)
     r = subprocess.run(["/usr/sbin/diskutil", "info", "-plist", str(volume)], capture_output=True, timeout=10)
     require(r.returncode == 0 and len(r.stdout) <= 65536 and len(r.stderr) <= 8192, "MOUNT_QUERY")
@@ -318,16 +350,24 @@ def capacity(volume, volume_uuid, root, common, effects, own_task=None):
     require(1 <= len(candidates) <= 256 and root in [v[0] for v in candidates]
         and all(type(v[3]) is str and re.fullmatch(r"[0-9a-f]{32}", v[3]) for v in candidates)
         and len({v[3] for v in candidates}) == len(candidates), "COMPLETE_DISTINCT_STORE_SCOPE")
-    snapshots = {str(path): reservation_snapshot(path, common) for path, _, _, _ in candidates}
-    reserved = sum(common.reservations(path, own_task)["reservedBytes"] for path, raw, ident, store_id in candidates)
-    for path, _, _, _ in candidates:
-        require(reservation_snapshot(path, common) == snapshots[str(path)], "RESERVATION_RECORD_OR_SCRATCH_CHANGED")
-    for path, raw, ident, store_id in candidates:
-        require(read(path / "storage.json", 65536) == (raw, ident), "STORAGE_INVENTORY_CHANGED")
-    require(identity(root.parent.stat())[:5] == before and set(root.parent.iterdir()) == set(siblings),
-        "STORAGE_PARENT_CHANGED")
-    space = os.statvfs(volume)
-    return capacity_data(space.f_bavail * space.f_frsize, reserved, effects, len(candidates))
+    snapshots={}
+    def reservation_reader(index):
+        path=candidates[index][0]
+        snapshots[str(path)]=reservation_snapshot(path,common)
+        return common.reservations(path,own_task)["reservedBytes"]
+    def recheck(observed):
+        prefix=candidates[:observed]
+        require(set(snapshots)=={str(row[0])for row in prefix},"COMPLETE_OBSERVED_RESERVATION_PREFIX")
+        for path,_,_,_ in prefix:
+            require(reservation_snapshot(path,common)==snapshots[str(path)],"RESERVATION_RECORD_OR_SCRATCH_CHANGED")
+        # Discovery and metadata remain complete even for a prefix refusal.
+        for path,raw,ident,store_id in candidates:
+            require(read(path/"storage.json",65536)==(raw,ident),"STORAGE_INVENTORY_CHANGED")
+        require(identity(root.parent.stat())[:5]==before and set(root.parent.iterdir())==set(siblings),"STORAGE_PARENT_CHANGED")
+    def available_reader():
+        space=os.statvfs(volume)
+        return space.f_bavail*space.f_frsize
+    return reservation_capacity_data(len(candidates),effects,reservation_reader,available_reader,recheck)
 
 
 def recheck_profile_sources(profile, common, node):
