@@ -1,0 +1,354 @@
+{
+  "event": "V4_PAIR_NAMESPACE_APPLICATION_COUNT_CORRECTION_ACTUAL_SOURCE_AND_GUARD_DATA",
+  "date": "2026-10-26",
+  "sourceParent": "fbaee5abf29443532f079c30644b1a1ec178e2f0",
+  "changedSourcePins": [
+    {
+      "path": "qualification/capacity-native-current-offered-pair-v4.supervisor.draft.mjs",
+      "bytes": 26578,
+      "LF": 294,
+      "sha256": "6dbe163fd9eb749a8d3085bc6d2371560219d4df876949c27ed5937736bc6ea4",
+      "gitBlob": "5d050a0dc1c2e168e8c502b7f670710c77a5599f"
+    },
+    {
+      "path": "qualification/capacity-native-current-offered-parent-v4.inputs.json",
+      "bytes": 4450,
+      "LF": 113,
+      "sha256": "baa6c8b26fea81b81e8df43f7595668fa8b9d40d9799d268646d93a028e859b1",
+      "gitBlob": "631ce501121e940d6cf0af907cc58362ab278f87"
+    },
+    {
+      "path": "qualification/native_capacity_current_offered_parent_v4.py",
+      "bytes": 16514,
+      "LF": 239,
+      "sha256": "1eb69556d958bd9211610bebdd6db2fdad3fd0eebe60120798b6abe837a6e684",
+      "gitBlob": "ed1bf9ac086221a255fd695fec2330aeae0d3084"
+    },
+    {
+      "path": "qualification/native_capacity_current_offered_resource_v3.py",
+      "bytes": 13667,
+      "LF": 219,
+      "sha256": "0aeebfef5ed172bd2efe96fe54fe7b9108414bf4d0705b659a4106b2e5d0b9a3",
+      "gitBlob": "e434e81b7538c48d337f4c8f0a5cd9456ced57e0"
+    },
+    {
+      "path": "qualification/native_capacity_current_offered_command_v3.py",
+      "bytes": 10047,
+      "LF": 171,
+      "sha256": "8960a6259d08f594656b61318f9e43cc9004a9a46628585613843ed630e8f4b9",
+      "gitBlob": "7b99969cc438f441e1055c55897f65cf201ac1ee"
+    },
+    {
+      "path": "qualification/native_capacity_current_offered_capture_v3.py",
+      "bytes": 39793,
+      "LF": 565,
+      "sha256": "b698046532979ce2d084dd736aabd11e8806d6e0d7097997e53211674d583cf2",
+      "gitBlob": "b1d522e7230ab664edef5946147e1ceef632676b"
+    },
+    {
+      "path": "qualification/native_capacity_current_offered_context_v3.py",
+      "bytes": 4862,
+      "LF": 71,
+      "sha256": "e6ed585e7de73bfb5a61779a1b5aca5f3fa27aad26124dc95a8ad89691ee8646",
+      "gitBlob": "d6145a38c77a115d0bcdfde1d12c9256b0280b49"
+    },
+    {
+      "path": "qualification/run-capacity-native-current-offered-v4.local.py",
+      "bytes": 37748,
+      "LF": 579,
+      "sha256": "57af5e67e5c95fca4aada403e4de9a1a499c4db5fa258a602844fb2f4b6a3af9",
+      "gitBlob": "2a519972d75e5bfa6fde444c86706deb1445c210"
+    },
+    {
+      "path": "qualification/capacity-native-current-offered-v4.launch-inputs.json",
+      "bytes": 7727,
+      "LF": 200,
+      "sha256": "5e588c03097f07ef42aa93ea7bf5f3a8771911d8ea08022b18aceb13e9fc6210",
+      "gitBlob": "fb309761315eb6973abf7be4587c1456fd8dad8d"
+    },
+    {
+      "path": "qualification/native_capacity_current_offered_pipeline_v3.behavior.py",
+      "bytes": 48338,
+      "LF": 653,
+      "sha256": "409658ba1bf1c8501acd24e759a2cf050202b755c301e6295c1a8586fc550ae6",
+      "gitBlob": "b417b4bd160a422f97e7bd70a2864e820f9ce2c4"
+    }
+  ],
+  "guardTestPin": {
+    "path": "qualification/packed-v4-pair-namespace.behavior.mjs",
+    "bytes": 5817,
+    "LF": 103,
+    "sha256": "b62f696c73e8486cbe378024eeb6ffa25cd189aedadc9351dc795fddf136ef6b",
+    "gitBlob": "3ec7e93bcc8be2a44c80477ce4c9d510ca1bf573"
+  },
+  "previousSourcePins": [
+    {
+      "path": "qualification/capacity-native-current-offered-pair-v4.supervisor.draft.mjs",
+      "bytes": 26578,
+      "LF": 294,
+      "sha256": "580627589d923d652e0f6879ab195557087a5f7f9c524bcf9b095a761c67f002",
+      "gitBlob": "5f6357423c3f3082a337188cf9afc9ccd19aa8fc"
+    },
+    {
+      "path": "qualification/capacity-native-current-offered-parent-v4.inputs.json",
+      "bytes": 4450,
+      "LF": 113,
+      "sha256": "37fbb935a233f82817f71cda59f0f648b13dd7a5d32cf9b8c6c2fec97f321f21",
+      "gitBlob": "d08391b5f11d54f2c5d9bd5bcb5d5861db295333"
+    },
+    {
+      "path": "qualification/native_capacity_current_offered_parent_v4.py",
+      "bytes": 16514,
+      "LF": 239,
+      "sha256": "738d640d5babdc5f5553863d34cc3bd8a503becb8c97fdbea9800942271a14f0",
+      "gitBlob": "8f8d37ea82fdb06b641cd935a38b1b745cd24df6"
+    },
+    {
+      "path": "qualification/native_capacity_current_offered_resource_v3.py",
+      "bytes": 13667,
+      "LF": 219,
+      "sha256": "49e293ece317cb744afc9f577244d5e02a0ca676dff69317c57dbf17f9e9f0d5",
+      "gitBlob": "e6eece13b5d8f43f0499cb52cc46babafb9c8821"
+    },
+    {
+      "path": "qualification/native_capacity_current_offered_command_v3.py",
+      "bytes": 10047,
+      "LF": 171,
+      "sha256": "0b55429cb521d735099503017ac2ad60d977cbbfbc5f5cec8a02c878fb1d311a",
+      "gitBlob": "ec828c41fa0e3870617a2cb7cc845b196783c47c"
+    },
+    {
+      "path": "qualification/native_capacity_current_offered_capture_v3.py",
+      "bytes": 39793,
+      "LF": 565,
+      "sha256": "263befe82e6bfc89c20322158a87957457f0f08b8f887fb8b7147b04e1071b0c",
+      "gitBlob": "4f3e207e5799689f309d6d669d652be46d061fef"
+    },
+    {
+      "path": "qualification/native_capacity_current_offered_context_v3.py",
+      "bytes": 4862,
+      "LF": 71,
+      "sha256": "497958a9908437bf96eb3a81b65f2980277330dfe9d353010bba5d1ad7059c94",
+      "gitBlob": "0a9f125b5d87c7cd1ef0a270e93c788a1bd940e9"
+    },
+    {
+      "path": "qualification/run-capacity-native-current-offered-v4.local.py",
+      "bytes": 37748,
+      "LF": 579,
+      "sha256": "a102974636821a07623c6b376fac1a96616b76cf776632907056680ff1dc9d46",
+      "gitBlob": "baf50f27086d14ea072e46a61393746c854cfcb8"
+    },
+    {
+      "path": "qualification/capacity-native-current-offered-v4.launch-inputs.json",
+      "bytes": 7727,
+      "LF": 200,
+      "sha256": "c109972f1aa0d3cd79ca4616f7ae79d74ea50230c32ab902d1503810da7ee4d4",
+      "gitBlob": "520be0bdc93ed88a0e2bb62a37a7228f5e841580"
+    },
+    {
+      "path": "qualification/native_capacity_current_offered_pipeline_v3.behavior.py",
+      "bytes": 48041,
+      "LF": 650,
+      "sha256": "121022a9303272cdd6a84e665e44e9c7591e8e2d3b305eb3ded51b7661953d01",
+      "gitBlob": "b9e47c60e68fb32b74dfcb4283ac103a5f081d9d"
+    }
+  ],
+  "unchangedProtectedFiles": 406,
+  "correction": {
+    "oldPairExpectedApplications": 162,
+    "currentParentApplications": 163,
+    "newPairExpectedApplications": 163,
+    "onlyNativePairSemanticChange": "applicationFiles count comparison",
+    "parentRows": 567,
+    "parentPackages": 404,
+    "childRows": 558,
+    "childApplications": 154,
+    "childPackages": 404,
+    "childSealUnchanged": true
+  },
+  "guardBefore": {
+    "actual": {
+      "actualExit": 1,
+      "complete": true,
+      "inputComplete": true,
+      "inputBytes": 0,
+      "reason": null,
+      "elapsedSeconds": 0.3599041660017974,
+      "stdoutBytes": 5972,
+      "stdoutSha256": "988194347cf796801f85a294370ee5d221ed41c043bfcec3358ca01004658c39",
+      "stderrBytes": 0,
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "selected": 24,
+    "entered": 24,
+    "completed": 22,
+    "failed": 2,
+    "correct163Rejected": true,
+    "stale162Accepted": true,
+    "originalFailurePreserved": true
+  },
+  "guardAfter": {
+    "actual": {
+      "actualExit": 0,
+      "complete": true,
+      "inputComplete": true,
+      "inputBytes": 0,
+      "reason": null,
+      "elapsedSeconds": 0.34843466600068496,
+      "stdoutBytes": 3785,
+      "stdoutSha256": "dee8638b5c527de18f34822b2e73a831757cf03ec8cbbf93d644bcce9e95d487",
+      "stderrBytes": 0,
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "selected": 24,
+    "entered": 24,
+    "completed": 24,
+    "failed": 0,
+    "names": [
+      "actual V4 pair guard accepts the current 163-application namespace DATA",
+      "actual V4 pair guard refuses the stale 162-application namespace DATA",
+      "actual pair guard preserves foreign_kind refusal",
+      "actual pair guard preserves package_count refusal",
+      "actual pair guard preserves child_application_count refusal",
+      "actual pair guard preserves child_package_count refusal",
+      "actual pair guard preserves child_seal refusal",
+      "actual pair guard preserves base_application_flag refusal",
+      "actual pair guard preserves base_package_flag refusal",
+      "actual pair guard preserves source_transform refusal",
+      "actual pair guard preserves builtin_alias refusal",
+      "actual pair guard preserves root_independence refusal",
+      "actual pair guard preserves root_identity_fields refusal",
+      "actual pair guard preserves invalid_parent_seal refusal",
+      "actual pair guard preserves too_many_children refusal",
+      "actual pair guard preserves node_digest refusal",
+      "actual pair guard preserves runtime node_version refusal",
+      "actual pair guard preserves runtime platform refusal",
+      "actual pair guard preserves runtime architecture refusal",
+      "actual pair guard preserves writable descriptor refusal",
+      "actual pair guard preserves enumerable descriptor refusal",
+      "actual pair guard preserves configurable descriptor refusal",
+      "actual pair guard preserves unfrozenFunction descriptor refusal",
+      "actual pair guard preserves missingDescriptor descriptor refusal"
+    ],
+    "actualGuardDefinitionExtracted": true,
+    "namespaceAndRuntimeFactsDeclared": true,
+    "nativeModuleImported": false,
+    "nativeNamespaceQualified": false
+  },
+  "pipelineAfter": {
+    "testsRun": 329,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "successful": true,
+    "sourceAdmissionFacts": {
+      "applicationFilesVerified": 163,
+      "applicationBytesVerified": 3128366,
+      "installedPackageFilesRead": 0,
+      "applicationCodeBytesRetained": 0,
+      "unchangedSourceByteReads": 0,
+      "nativeExecuted": false,
+      "authority": "NONE"
+    },
+    "packedSourceGraph": {
+      "parentRows": 567,
+      "parentApplications": 163,
+      "parentPackages": 404,
+      "childRows": 558,
+      "childApplications": 154,
+      "childPackages": 404,
+      "packedComponents": 3,
+      "parentOnlyExtensions": 9
+    },
+    "packedNativeSourceEdgesChecked": 8,
+    "completeChildProfilesPlannedAndBound": 32,
+    "effectsCeilingFieldsBound": 89,
+    "auditedEffects": {
+      "children": 0,
+      "sockets": 0,
+      "sqlite": 0,
+      "writeOpens": 0,
+      "outsideSourceReads": 0,
+      "mutations": 0
+    },
+    "actualUnchangedOpenEvents": 0,
+    "attempts": [
+      {
+        "label": "complete_v4_v5_packed_managed_pipeline_data",
+        "actual": {
+          "actualExit": 0,
+          "complete": true,
+          "inputComplete": true,
+          "inputBytes": 0,
+          "reason": null,
+          "elapsedSeconds": 1.7828147079999326,
+          "stdoutBytes": 27227,
+          "stdoutSha256": "582e0bd85ef11dcbd039a9e28ed3264e7ae947bbdbcf5a08c9851a7e5adb6a10",
+          "stderrBytes": 0,
+          "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "allBeforeAfterInputsMatched": true
+      },
+      {
+        "label": "actual_default_source_only_v4_cli",
+        "actual": {
+          "actualExit": 0,
+          "complete": true,
+          "inputComplete": true,
+          "inputBytes": 0,
+          "reason": null,
+          "elapsedSeconds": 0.10912783400272019,
+          "stdoutBytes": 3858,
+          "stdoutSha256": "f70b96f456f3bbb0b09b3ef6a2dac1e013ae8ffeda3c414d30f0c51a26f09d4e",
+          "stderrBytes": 0,
+          "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "allBeforeAfterInputsMatched": true
+      },
+      {
+        "label": "parser_only_capacity-native-current-offered-pair-v4.supervisor.draft.mjs",
+        "actual": {
+          "actualExit": 0,
+          "complete": true,
+          "inputComplete": true,
+          "inputBytes": 0,
+          "reason": null,
+          "elapsedSeconds": 0.2882399580012134,
+          "stdoutBytes": 0,
+          "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stderrBytes": 0,
+          "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "allBeforeAfterInputsMatched": true
+      }
+    ]
+  },
+  "unchangedOtherParserEvidence": {
+    "sourceCommit": "fbaee5abf29443532f079c30644b1a1ec178e2f0",
+    "result": "qualification/packed-v4-offered-pipeline.actual-local-result.json",
+    "unchangedNativeFiles": 3,
+    "rerun": false
+  },
+  "resourceScope": {
+    "taskQuotaBytes": 39845888,
+    "minimumFreeBytes": 10737418240,
+    "safetyMarginBytes": 1073741824,
+    "nativeScopeChanged": false,
+    "oldAllowancesReused": false,
+    "newNativeAuthorityGranted": false
+  },
+  "qualification": {
+    "nativeApplicationExecutions": 0,
+    "SDKImported": false,
+    "SQLite": false,
+    "sockets": false,
+    "keysOrSignatures": false,
+    "nonce": false,
+    "storageRootRead": false,
+    "managerImported": false,
+    "managedTasksCreated": 0,
+    "profilesWritten": 0,
+    "productionQualified": false,
+    "authority": "NONE"
+  }
+}

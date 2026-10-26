@@ -261,7 +261,7 @@ export function createNativeCapacityCurrentOfferedPairV4(options){
 }
 function namespace(){const d=D(globalThis,NS);if(!d||!O(d,'value')||d.writable||d.configurable||d.enumerable||typeof d.value!=='function'||!Object.isFrozen(d.value))fail();
   const s=d.value();if(s.profileKind!=='NATIVE_CAPACITY_CURRENT_OFFERED_SUPERVISOR_NODE24_V4'
-      ||s.applicationFiles!==162||s.packageFiles!==404||s.childApplicationFiles!==154||s.childPackageFiles!==404
+      ||s.applicationFiles!==163||s.packageFiles!==404||s.childApplicationFiles!==154||s.childPackageFiles!==404
       ||s.childSourceRowsSha256!=='be5952dbf0e5fe17dbdd16549f2ac039802abbb92f541deb31c2591f4db653d7'
       ||s.currentBaseApplication123Preserved!==true
       ||s.baselinePackages404Preserved!==true||s.sourceTransforms!==0||s.nativeBuiltinAliases!==0
