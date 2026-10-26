@@ -16,7 +16,7 @@ import { captureNativeCapacityBalanceRead as BALANCE,
   captureNativeCapacityLedgerTimingPage as TIMING_PAGE } from '../src/service-credit-capacity-native-observation-data.js';
 import { createNativeCapacityCurrentOfferedPairV5 as CREATE_PAIR } from './capacity-native-current-offered-pair-v5.supervisor.draft.mjs';
 import { captureServiceCreditCapacityOfferedPlanData as PLAN_DATA } from '../src/service-credit-capacity-offered-plan-data.js';
-import { createServiceCreditCapacityWindowWriterTraceData as WINDOW_TRACE } from '../src/service-credit-capacity-window-writer-trace-data.js';
+import { createServiceCreditCapacityWindowWriterTraceOwnedData as WINDOW_TRACE } from '../src/service-credit-capacity-window-writer-trace-owned-data.js';
 
 const F = Object.freeze, D = Object.getOwnPropertyDescriptor, O = Object.hasOwn;
 

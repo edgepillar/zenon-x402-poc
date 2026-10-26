@@ -16,10 +16,10 @@ ENTRY_CAPTURE_CAP=16*MIB
 PROFILE_CAP=524288
 ENTRY_PLAN_CAP=65536
 PAYEE="z1qq3zyg3zyg3zyg3zyg3zyg3zyg3zyg3z3yw2mk"
-PARENT_SOURCE_SHA256="6f4992bb133fb399f9f28e111bd2b993a88c412c4832b163a519a357abee3b7a"
+PARENT_SOURCE_SHA256="fe51e40aebd38177628a04a8868f78d5804f3c02a00ea363d1aade20c2bcb2cd"
 CHILD_SOURCE_SHA256="92646a2cf5edf717a1d24468fa6277c48c4f59f43db5b6e607b6071acc79c2b2"
-SOURCE_SELECTION_SHA256="618aec16af6144523c568fd2bb851ad7eeb780702f0377f4059df5c577304327"
-PARENT_PROFILE_PRODUCER_SHA256="868b1391c9a926e19a3855c5878920df47987e88d33a025d3cc56f28132e937e"
+SOURCE_SELECTION_SHA256="b832012dab133290d248d6fa8ab86baac328d3012c10327d935a3cd62b569dc8"
+PARENT_PROFILE_PRODUCER_SHA256="931e186d66b7bb2ccb8be66c16e7f840b1e3ae3b37b22a83ddca415edf66b553"
 LANE=re.compile(r"[A-Za-z0-9][A-Za-z0-9._:-]{0,127}")
 HASH=re.compile(r"[0-9a-f]{64}")
 
@@ -144,7 +144,7 @@ def resource_plan(value):
         workloadInputVersion=2,workloadPlanSha256=hashlib.sha256(canonical_bytes(v)).hexdigest(),
         sourceSelectionSha256=SOURCE_SELECTION_SHA256,parentProfileProducerSha256=PARENT_PROFILE_PRODUCER_SHA256,
         parentSourceRowsSha256=PARENT_SOURCE_SHA256,childSourceRowsSha256=CHILD_SOURCE_SHA256,
-        parentApplicationFiles=172,parentPackageFiles=404,parentSourceRows=576,
+        parentApplicationFiles=174,parentPackageFiles=404,parentSourceRows=578,
         childApplicationFiles=163,childPackageFiles=404,childSourceRows=567,
         laneCount=n,totalCallsPerLane=calls,globalScheduledOffers=p["measurementCallsPerLane"],
         globalMeasuredOriginalsMaximum=p["measurementCallsPerLane"],fundingOriginalsMaximum=n,

@@ -1,4 +1,4 @@
-/* Current matched-window packed parent V5: 172/404 parent and exact current V6 163/404 children.
+/* Current matched-window packed parent V5: 174/404 parent and exact current V6 163/404 children.
  * Bootstrap controls must be source-pinned by the reviewed launcher BEFORE
  * Node entry. This file admits real installed bytes, then registers real Node
  * resolution hooks. It never supplies fake SDK/SQL/FS modules or transforms.
@@ -48,7 +48,9 @@ const OFFERED_ADDITIONS = [
   "app/src/service-credit-capacity-offered-plan-data.js",
   "app/src/service-credit-capacity-offered-window-packed-owner-core.js",
   "app/src/service-credit-capacity-offered-workload-packed-owner-core.js",
-  "app/src/service-credit-capacity-recorder-packed.js"
+  "app/src/service-credit-capacity-recorder-packed.js",
+  "app/src/service-credit-capacity-cohort-writer-coverage-data.js",
+  "app/src/service-credit-capacity-window-writer-trace-owned-data.js"
 ];
 const OFFERED_PATHS = new Set(OFFERED_ADDITIONS);
 const CHILD_SOURCE_SEAL = '92646a2cf5edf717a1d24468fa6277c48c4f59f43db5b6e607b6071acc79c2b2';
@@ -101,7 +103,9 @@ const ADDITIONS = [
   "app/src/service-credit-capacity-offered-plan-data.js",
   "app/src/service-credit-capacity-offered-window-packed-owner-core.js",
   "app/src/service-credit-capacity-offered-workload-packed-owner-core.js",
-  "app/src/service-credit-capacity-recorder-packed.js"
+  "app/src/service-credit-capacity-recorder-packed.js",
+  "app/src/service-credit-capacity-cohort-writer-coverage-data.js",
+  "app/src/service-credit-capacity-window-writer-trace-owned-data.js"
 ];
 const COMMON = 'app/qualification/capacity-native-current-offered-v5.namespace.preload.draft.mjs';
 const PREVIOUS = 'app/qualification/issued-current-close-v4.inputs.json';
@@ -157,7 +161,7 @@ function installNativeCapacityCurrentOfferedSupervisorNamespaceV5(role, preloade
       || profile.runId !== E.X402_NATIVE_CAPACITY_RUN_ID || profile.laneId !== E.X402_NATIVE_CAPACITY_LANE_ID
       || profile.rootPath !== E.SPV_TASK_SCRATCH || !numbers(profile.rootIdentity, 5)
       || profile.preloaderURL !== preloaderURL || !SHA.test(profile.sourceRowsSha256 || '')
-      || !Array.isArray(profile.inputs) || profile.inputs.length !== 576
+      || !Array.isArray(profile.inputs) || profile.inputs.length !== 578
       || !Array.isArray(profile.bareBindings) || !Array.isArray(profile.allowedBuiltins) || !Array.isArray(profile.childProfiles)) reject();
   rootCheck(profile.rootPath, profile.rootIdentity); nodeCheck();
   const logical = new Map(), urls = new Map(), verified = new Set();
@@ -175,7 +179,7 @@ function installNativeCapacityCurrentOfferedSupervisorNamespaceV5(role, preloade
     if (row.logicalPath.startsWith('app/')) applications++; else packages++;
     F(row.identity); F(row); logical.set(row.logicalPath, row); urls.set(row.url, row);
   }
-  if (applications !== 172 || packages !== 404 || logical.get(spec.preloader)?.url !== preloaderURL
+  if (applications !== 174 || packages !== 404 || logical.get(spec.preloader)?.url !== preloaderURL
       || logical.get(spec.entry)?.url !== profile.entryURL || pathToFileURL(process.argv[1]).href !== profile.entryURL
       || logical.get(COMMON)?.url !== import.meta.url || logical.get(BASE)?.sha256 !== BASE_SHA || logical.get(CURRENT)?.sha256 !== CURRENT_SHA || logical.get(PREVIOUS)?.sha256 !== PREVIOUS_SHA) reject();
   const publicRows = [...logical.values()].map(r => ({ path:r.logicalPath, bytes:r.bytes, LF:r.LF, sha256:r.sha256, gitBlob:r.gitBlob }))
