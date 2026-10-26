@@ -1,0 +1,238 @@
+{
+  "event": "CURRENT_CAPACITY_KNOWN_PREFIX_REFUSAL_ACTUAL_LOCAL_DATA",
+  "date": "2026-10-26",
+  "sourceParent": "184c0a2b85fa75a32d97b7b4be882166d183738f",
+  "sourcePins": [
+    {
+      "path": "qualification/run-capacity-native-current-offered-v3.local.py",
+      "bytes": 37733,
+      "LF": 579,
+      "sha256": "c90f4cbc26dbaf0b0b32340fa421d23d59e93ab8622a93af3a3da9057d208ba6",
+      "gitBlob": "14205cb3f97c401242c7728eeba26fcdbe228456"
+    },
+    {
+      "path": "qualification/capacity-native-current-offered-v3.launch-inputs.json",
+      "bytes": 7727,
+      "LF": 200,
+      "sha256": "b0aadb64c198fed49b39bba364ab1cbe7f6f41d16546014dde916e53f7d928be",
+      "gitBlob": "8d2df2663c369b545e17cadf79e2912a06425eda"
+    },
+    {
+      "path": "qualification/native_capacity_current_offered_pipeline_v2.behavior.py",
+      "bytes": 44096,
+      "LF": 601,
+      "sha256": "7c128805bed34237d9cbe2977599d6099b69875a7002984aa1b904f614d05b8c",
+      "gitBlob": "ffa278e86eb90c7e50a47a5434ef79cc14f36022"
+    }
+  ],
+  "previousSourcePins": [
+    {
+      "path": "qualification/run-capacity-native-current-offered-v3.local.py",
+      "bytes": 35886,
+      "LF": 539,
+      "sha256": "4f7bb1f89aa54e88f875bd541bd06ca27fcd1ec0568501b8394b358d565e1d2e",
+      "gitBlob": "f405c6dfc970dfe1bdb76749a4d6bd359a5fb9d4"
+    },
+    {
+      "path": "qualification/capacity-native-current-offered-v3.launch-inputs.json",
+      "bytes": 7727,
+      "LF": 200,
+      "sha256": "561baf969908c4c9176a6aae626fe3a463b63f8f500c258f05ac39f42b1209cd",
+      "gitBlob": "0c7723472df05c37040e5b24a0c68f093122a4be"
+    },
+    {
+      "path": "qualification/native_capacity_current_offered_pipeline_v2.behavior.py",
+      "bytes": 28712,
+      "LF": 394,
+      "sha256": "61a91122a6e0e5d5fec989120b46c31c997fa7aa24c4a2fec3583fe087e75355",
+      "gitBlob": "74750663256ec4b8b9e43665b8d381cfc70c1ab4"
+    }
+  ],
+  "unchangedProtectedFiles": 389,
+  "beforeFix": {
+    "testsRun": 295,
+    "failures": 2,
+    "errors": 0,
+    "successful": false,
+    "actual": {
+      "actualExit": 1,
+      "complete": true,
+      "inputComplete": true,
+      "inputBytes": 0,
+      "reason": null,
+      "elapsedSeconds": 1.6189347909985372,
+      "stdoutBytes": 24372,
+      "stdoutSha256": "187bc47c33e48d00b5db16ba2f8c5dc66e1a58ce333fde678d376c95de3a16f3",
+      "stderrBytes": 2495,
+      "stderrSha256": "cafcec2fc6648d40be0809fda77d1348c432131ad96a125dd4c9beb0ae7f9105"
+    },
+    "observations": {
+      "declaredReservationPrefixRefusal": {
+        "storesDeclared": 111,
+        "storesRead": 111,
+        "taskSnapshotCallbacks": 222,
+        "metadataCallbacks": 222,
+        "nativeExecuted": false
+      },
+      "declaredReservationBaseRefusal": {
+        "storesDeclared": 111,
+        "storesRead": 111,
+        "taskSnapshotCallbacks": 222,
+        "metadataCallbacks": 222,
+        "nativeExecuted": false
+      },
+      "declaredReservationCompleteAdmission": {
+        "storesDeclared": 111,
+        "storesRead": 111,
+        "taskSnapshotCallbacks": 222,
+        "metadataCallbacks": 222,
+        "nativeExecuted": false
+      }
+    },
+    "originalFailurePreserved": true
+  },
+  "intermediateQualification": {
+    "testsRun": 320,
+    "successful": true,
+    "sourceReceiptRetained": true,
+    "currentSourceReceipt": false
+  },
+  "afterFix": {
+    "testsRun": 323,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "successful": true,
+    "observations": {
+      "declaredReservationPrefixRefusal": {
+        "storesDeclared": 111,
+        "storesRead": 64,
+        "taskSnapshotCallbacks": 128,
+        "metadataCallbacks": 222,
+        "nativeExecuted": false
+      },
+      "declaredReservationBaseRefusal": {
+        "storesDeclared": 111,
+        "storesRead": 0,
+        "taskSnapshotCallbacks": 0,
+        "metadataCallbacks": 222,
+        "nativeExecuted": false
+      },
+      "declaredReservationCompleteAdmission": {
+        "storesDeclared": 111,
+        "storesRead": 111,
+        "taskSnapshotCallbacks": 222,
+        "metadataCallbacks": 222,
+        "nativeExecuted": false
+      }
+    },
+    "capacityGrowthDuringGuard": {
+      "storesRead": 111,
+      "taskSnapshotCallbacks": 286,
+      "maximumPrefixGuards": 1,
+      "nativeExecuted": false
+    },
+    "auditedEffects": {
+      "children": 0,
+      "sockets": 0,
+      "sqlite": 0,
+      "writeOpens": 0,
+      "outsideSourceReads": 0,
+      "mutations": 0
+    },
+    "sourceAdmissionFacts": {
+      "applicationFilesVerified": 162,
+      "applicationBytesVerified": 3116247,
+      "installedPackageFilesRead": 0,
+      "applicationCodeBytesRetained": 0,
+      "unchangedSourceByteReads": 0,
+      "nativeExecuted": false,
+      "authority": "NONE"
+    },
+    "completeChildProfilesPlannedAndBound": 32,
+    "effectsCeilingFieldsBound": 89,
+    "actualUnchangedOpenEvents": 0,
+    "attempts": [
+      {
+        "label": "complete_current_pipeline_green",
+        "actual": {
+          "actualExit": 0,
+          "complete": true,
+          "inputComplete": true,
+          "inputBytes": 0,
+          "reason": null,
+          "elapsedSeconds": 1.6671335419996467,
+          "stdoutBytes": 26527,
+          "stdoutSha256": "68fccef6f482ed4ace80d1467e0485ac3e1c4f9c721a659c87f03301c6d5f15b",
+          "stderrBytes": 0,
+          "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "allBeforeAfterInputsMatched": true
+      },
+      {
+        "label": "actual_default_source_only_cli",
+        "actual": {
+          "actualExit": 0,
+          "complete": true,
+          "inputComplete": true,
+          "inputBytes": 0,
+          "reason": null,
+          "elapsedSeconds": 0.10904800000025716,
+          "stdoutBytes": 3858,
+          "stdoutSha256": "9e9fb1d6b3fbf16179a698d660216bfeb24659997dd0b08ad74f289dd3c1514b",
+          "stderrBytes": 0,
+          "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "allBeforeAfterInputsMatched": true
+      }
+    ]
+  },
+  "declaredImprovement": {
+    "storeTaskReadersBefore": 111,
+    "storeTaskReadersAfter": 64,
+    "storeTaskReadersAvoided": 47,
+    "taskSnapshotCallbacksBefore": 222,
+    "taskSnapshotCallbacksAfter": 128,
+    "taskSnapshotCallbacksAvoided": 94,
+    "metadataCallbacksBefore": 222,
+    "metadataCallbacksAfter": 222,
+    "physicalNativeBenchmark": false
+  },
+  "invariants": {
+    "allStoreMetadataDiscoveredBeforePrefixAccounting": true,
+    "prefixCanOnlyRefuse": true,
+    "completeScanRequiredForReturnedCapacityData": true,
+    "latestAvailableCheckedAfterStabilityGuard": true,
+    "maximumPartialStabilityGuards": 1,
+    "finalFullStabilityAndAvailableCheckRequired": true,
+    "unchangedProductionFloorBytes": 10737418240,
+    "unchangedSafetyMarginBytes": 1073741824,
+    "unchangedTaskQuotaBytes": 39845888,
+    "unchangedBaseRequirementBytes": 11855200256,
+    "unchangedOwnTaskExclusion": true,
+    "nativeTaskAndCommandBodyChanged": false
+  },
+  "scope": {
+    "actualPythonCapacityControlFlow": true,
+    "filesystemAndFreeSpaceCallbacksDeclared": true,
+    "physicalStorageAdmissionTested": false,
+    "nativeApplicationExecutions": 0,
+    "installedPackageFilesRead": 0,
+    "NodeBinaryReadOrExecuted": false,
+    "managerImported": false,
+    "SDKImported": false,
+    "SQLite": false,
+    "keysOrSignatures": false,
+    "nonce": false,
+    "sockets": false,
+    "storageRootRead": false,
+    "storagePolicyChanged": false,
+    "managedTasksCreated": 0,
+    "profilesWritten": 0,
+    "cleanupPerformed": false,
+    "finiteNativeAllowancesConsumed": false,
+    "newNativeAuthorityGranted": false,
+    "productionQualified": false,
+    "authority": "NONE"
+  }
+}
