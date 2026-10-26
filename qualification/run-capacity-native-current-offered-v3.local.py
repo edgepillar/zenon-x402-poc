@@ -146,7 +146,7 @@ def source_admission(repo,digest):
     require(type(manifest)is dict and set(manifest)=={"kind","version","sourceParent","pythonControls","profileSelection",
         "childSelection","workload","effectsCeiling","requiredPolicy","nativeSelection","nativeExecuted","nativeAllowanceGranted","authority"}
         and manifest["kind"]==KIND and type(manifest["version"])is int and manifest["version"]==2
-        and manifest["sourceParent"]=="d789ed6b9a90d325a4b7e671e4fbca3331ef7f73"
+        and manifest["sourceParent"]=="30e5bd3af8976a2563707efc2572293c4e094ca5"
         and manifest["nativeSelection"]==NATIVE_SELECTION and manifest["nativeExecuted"]is False
         and manifest["nativeAllowanceGranted"]is False and manifest["authority"]=="NONE","CURRENT_MANAGED_SOURCE_NOT_AUTHORITY")
     inputs={name:read(repo/name)for name in[SELF]+[name for name,_ in FROZEN]+[PARENT,SOURCE_SELECTION,PLAN]}
@@ -341,38 +341,58 @@ def recheck_profile_sources(profile, common, node):
 
 
 
-def execute(args, repo, admitted, planner):
-    c, effects = admitted["controls"], admitted["effects"]
-    common, resource, producer = c["common"], c["resource"], c["producer"]
-    validate_full_source_context(planner)
-    native_selection(args, effects)
-    require(sys.platform == "darwin" and os.uname().machine == "arm64" and sys.version.split()[0] == "3.12.14",
-        "NATIVE_DRIVER_RUNTIME")
-    require(all(getattr(args, k) is not None for k in ("manager", "node", "root", "store_id", "storage_sha256",
-        "volume", "volume_uuid")), "EXPLICIT_PRIVATE_NATIVE_INPUTS")
-    require(re.fullmatch(r"[0-9a-f]{32}", args.store_id) and HASH.fullmatch(args.storage_sha256)
-        and re.fullmatch(r"[0-9A-F]{8}(?:-[0-9A-F]{4}){3}-[0-9A-F]{12}", args.volume_uuid), "EXACT_PRIVATE_IDS")
-    manager, node, root, volume = map(Path, (args.manager, args.node, args.root, args.volume))
-    source_roots = []
-    for path in (repo, Path(args.packages)):
-        common.no_links(path)
-        source_roots.append((path, common.private_directory(path) if stat.S_IMODE(path.stat().st_mode) == 0o700
-            else identity(path.stat())[:5]))
-    for path, ident in source_roots:
-        common.no_links(path)
-        require(stat.S_ISDIR(path.lstat().st_mode) and path.lstat().st_uid == os.getuid(), "OWNED_SOURCE_ROOT")
-    manager_raw, manager_id = read(manager / "storage.py"); cli_raw, cli_id = read(manager / "cli.py", 65536)
-    require(sha(manager_raw) == STORAGE_SHA and sha(cli_raw) == CLI_SHA, "APPROVED_UNCHANGED_MANAGER")
-    meta_raw, meta_id = read(root / "storage.json", 65536); meta = metadata(meta_raw)
-    require(meta.get("id") == args.store_id and sha(meta_raw) == args.storage_sha256, "PINNED_EXISTING_PRIVATE_STORE")
-    openssl = Path("/usr/bin/openssl"); openssl_id = common.binary(openssl, OPENSSL_SHA, 0)
+def native_storage_preflight(args,repo,admitted):
+    """Refuse storage/policy before installed package reads or Node hashing."""
+    common,effects=admitted["controls"]["common"],admitted["effects"]
+    native_selection(args,effects)
+    require(sys.platform=="darwin"and os.uname().machine=="arm64"and sys.version.split()[0]=="3.12.14","NATIVE_DRIVER_RUNTIME")
+    require(all(getattr(args,k)is not None for k in("manager","node","packages","root","store_id","storage_sha256","volume","volume_uuid")),"EXPLICIT_PRIVATE_NATIVE_INPUTS")
+    require(re.fullmatch(r"[0-9a-f]{32}",args.store_id)and HASH.fullmatch(args.storage_sha256)
+        and re.fullmatch(r"[0-9A-F]{8}(?:-[0-9A-F]{4}){3}-[0-9A-F]{12}",args.volume_uuid),"EXACT_PRIVATE_IDS")
+    manager,node,root,volume=map(Path,(args.manager,args.node,args.root,args.volume))
     admitted["unchanged"]()
-    capacity(volume, args.volume_uuid, root, common, effects)
+    # capacity validates the mounted UUID before reading sibling metadata.
+    # It does not open installed packages, Node, OpenSSL or a manager Store.
+    observed=capacity(volume,args.volume_uuid,root,common,effects)
+    manager_raw,manager_id=read(manager/"storage.py");cli_raw,cli_id=read(manager/"cli.py",65536)
+    require(sha(manager_raw)==STORAGE_SHA and sha(cli_raw)==CLI_SHA,"APPROVED_UNCHANGED_MANAGER")
+    meta_raw,meta_id=read(root/"storage.json",65536);meta=metadata(meta_raw)
+    require(meta.get("id")==args.store_id and sha(meta_raw)==args.storage_sha256,"PINNED_EXISTING_PRIVATE_STORE")
+    policy_admits_existing_store(meta["policy"],effects)
+    return dict(manager=manager,node=node,root=root,volume=volume,managerRaw=manager_raw,managerIdentity=manager_id,
+        cliRaw=cli_raw,cliIdentity=cli_id,metadataRaw=meta_raw,metadataIdentity=meta_id,capacityData=observed)
+
+def execute(args,repo,admitted,planner,prepared=None):
+    c,effects=admitted["controls"],admitted["effects"]
+    common,resource,producer=c["common"],c["resource"],c["producer"]
+    validate_full_source_context(planner);native_selection(args,effects)
+    if prepared is None:prepared=native_storage_preflight(args,repo,admitted)
+    manager,node,root,volume=(prepared[k]for k in("manager","node","root","volume"))
+    require([manager,node,root,volume]==list(map(Path,(args.manager,args.node,args.root,args.volume))),"SAME_PRIVATE_PREFLIGHT_INPUTS")
+    manager_raw,manager_id=prepared["managerRaw"],prepared["managerIdentity"]
+    cli_raw,cli_id=prepared["cliRaw"],prepared["cliIdentity"]
+    meta_raw,meta_id=prepared["metadataRaw"],prepared["metadataIdentity"]
+    require(sha(manager_raw)==STORAGE_SHA and sha(cli_raw)==CLI_SHA
+        and sha(meta_raw)==args.storage_sha256 and metadata(meta_raw).get("id")==args.store_id,"EXACT_PREPARED_SOURCE_AND_STORE")
+    require(identity((manager/"storage.py").lstat())==manager_id and identity((manager/"cli.py").lstat())==cli_id
+        and identity((root/"storage.json").lstat())==meta_id,"PREFLIGHT_INPUT_IDENTITIES_STABLE")
+    source_roots=[]
+    for path in(repo,Path(args.packages)):
+        common.no_links(path)
+        source_roots.append((path,common.private_directory(path)if stat.S_IMODE(path.stat().st_mode)==0o700 else identity(path.stat())[:5]))
+    for path,ident in source_roots:
+        common.no_links(path)
+        require(stat.S_ISDIR(path.lstat().st_mode)and path.lstat().st_uid==os.getuid(),"OWNED_SOURCE_ROOT")
+    openssl=Path("/usr/bin/openssl");openssl_id=common.binary(openssl,OPENSSL_SHA,0)
+    admitted["unchanged"]()
+    # Fresh global accounting is still mandatory after installed-source capture
+    # and before task creation; an early observation is not admission authority.
+    capacity(volume,args.volume_uuid,root,common,effects)
     if args.pre_native_plan:
         print(json.dumps(dict(event="CURRENT_OFFERED_V3_NATIVE_READ_ONLY_PREFLIGHT",nativeExecuted=False,
-            expectedPeakBytes=effects["expectedPeakBytesReserved"], authority="NONE")), flush=True)
+            expectedPeakBytes=effects["expectedPeakBytesReserved"],authority="NONE")),flush=True)
         return 0
-    native_intent(args, effects)
+    native_intent(args,effects)
     storage = load_verified(manager / "storage.py", manager_raw, "current_offered_v3_actual_owned_storage")
     store = storage.Store(root, metadata_lock_timeout=5)
     require(store.id == args.store_id and policy_admits_existing_store(dataclasses.asdict(store.policy), effects),
@@ -504,9 +524,10 @@ def main(argv=None):
     if not args.execute and not args.pre_native_plan:return 0
     native_selection(args,admitted["effects"])
     require(args.packages is not None and args.node is not None,"EXPLICIT_CURRENT_INSTALLED_INPUTS")
+    prepared=native_storage_preflight(args,Path(args.repo),admitted)
     planner=admitted["controls"]["context"].build_source_context(args.repo,args.packages,args.node)
     admitted["unchanged"]();validate_full_source_context(planner)
-    return execute(args,Path(args.repo),admitted,planner)
+    return execute(args,Path(args.repo),admitted,planner,prepared)
 
 
 if __name__=="__main__":
