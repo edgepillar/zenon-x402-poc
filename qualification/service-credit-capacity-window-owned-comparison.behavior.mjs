@@ -207,6 +207,137 @@ check('full 16-lane trace retains half the durations and eliminates finalize dur
     finalReportsEqual: true, arraysReleasedAtFinalization: true, actualHeapBytesMeasured: false,
     nativeThroughputMeasured: false, physicalReclaimMeasured: false };
 });
+
+function appendConversionCounts(owner,input) {
+  const bigintDescriptor=Object.getOwnPropertyDescriptor(globalThis,'BigInt');
+  const stringDescriptor=Object.getOwnPropertyDescriptor(globalThis,'String');
+  const counts={bigintCalls:0,stringCalls:0};
+  let value;
+  try {
+    Object.defineProperty(globalThis,'BigInt',{...bigintDescriptor,value:function(value) {
+      counts.bigintCalls++;return Reflect.apply(bigintDescriptor.value,undefined,[value]);
+    }});
+    Object.defineProperty(globalThis,'String',{...stringDescriptor,value:function(value) {
+      counts.stringCalls++;return Reflect.apply(stringDescriptor.value,undefined,[value]);
+    }});
+    value=owner.append(input);
+  } finally {
+    Object.defineProperty(globalThis,'BigInt',bigintDescriptor);
+    Object.defineProperty(globalThis,'String',stringDescriptor);
+  }
+  return {value,counts};
+}
+function durationReuseOwners(config) {
+  return {
+    originalWindow:baselineWindow(config),currentWindow:ownedWindow(config),
+    originalCoverage:baselineCoverage(coverageOptions(config)),
+    currentCoverage:ownedCoverage(coverageOptions(config)),
+  };
+}
+function durationReusePage(owners,input) {
+  const a=appendConversionCounts(owners.originalWindow,input);
+  const b=appendConversionCounts(owners.currentWindow,input);
+  const c=appendConversionCounts(owners.originalCoverage,input);
+  const d=appendConversionCounts(owners.currentCoverage,input);
+  assert.deepEqual(b.value,a.value);
+  compareInspect(owners.originalWindow.inspect(),owners.currentWindow.inspect());
+  const subtract=(x,y)=>({bigintCalls:x.bigintCalls-y.bigintCalls,stringCalls:x.stringCalls-y.stringCalls});
+  return {previousOwnedWindow:subtract(a.counts,c.counts),
+    currentOwnedWindow:subtract(b.counts,d.counts),
+    originalFullPath:a.counts,currentFullPath:b.counts};
+}
+check('duration reuse keeps exact zero and large canonical decimal reports',()=>{
+  const maximum=(1n<<128n)-1n;
+  for(const [before,after,begin,commit]of [
+    [0n,0n,0n,0n],[10n,20n,11n,19n],
+    [(1n<<53n)+1n,(1n<<53n)+19n,(1n<<53n)+2n,(1n<<53n)+18n],
+    [maximum-100n,maximum,maximum-99n,maximum-1n]]) {
+    const config=options({completion:F({warmupCompleted:0,measuredCompleted:0})});
+    const pair=[baselineWindow(config),ownedWindow(config)];
+    const input=page([row(1,'CONTROL',0n,{beforeBeginNs:String(before),afterBeginNs:String(begin),
+      beforeCommitNs:String(commit),afterCommitNs:String(after)})]);
+    const old=pair[0].append(input),now=pair[1].append(input);
+    assert.deepEqual(now,old);assert.equal(now.intervals[0].bracketElapsedNs,String(after-before));
+    assert.equal(now.intervals[0].insideTransactionElapsedNs,String(commit-begin));
+    assert.equal(JSON.stringify(pair[1].finalize()),JSON.stringify(pair[0].finalize()));
+  }
+});
+check('duration reuse counts one fewer bigint parse and no repeated decimal rendering per row',()=>{
+  const config=options({plan:F({warmupCallsPerLane:0,measurementCallsPerLane:1}),
+    completion:F({warmupCompleted:0,measuredCompleted:0})});
+  const owners=durationReuseOwners(config);
+  const input=page(Array.from({length:64},(_,i)=>row(i+1,'CONTROL',BigInt(3+i%23))));
+  const result=durationReusePage(owners,input);
+  assert.deepEqual(result.previousOwnedWindow,{bigintCalls:256,stringCalls:128});
+  assert.deepEqual(result.currentOwnedWindow,{bigintCalls:192,stringCalls:0});
+  assert.deepEqual(result.originalFullPath,{bigintCalls:640,stringCalls:321});
+  assert.deepEqual(result.currentFullPath,{bigintCalls:448,stringCalls:193});
+  assert.equal(JSON.stringify(owners.currentWindow.finalize()),JSON.stringify(owners.originalWindow.finalize()));
+  owners.originalCoverage.finalize();owners.currentCoverage.finalize();
+  metrics.durationReuseOnePage={rows:64,...result,cohortOverheadSubtracted:true,
+    previousWindowBodyMatchesPriorOwnedSource:true,countsOnly:true};
+});
+check('duration reuse preserves page atomicity when a later endpoint is malformed',()=>{
+  const config=options({completion:F({warmupCompleted:0,measuredCompleted:0})});
+  for(const malformed of ['00020','-1',String(1n<<128n),20n,20]) {
+    const pair=[baselineWindow(config),ownedWindow(config)];
+    const input=page([row(1),row(2,'CONTROL',3n,{afterCommitNs:malformed})]);
+    for(const owner of pair)assert.throws(()=>owner.append(input));
+    assert.equal(pair[1].inspect().acceptedIntervals,0);
+    assert.equal(pair[1].inspect().retainedDurationReferences,0);
+    assert.equal(JSON.stringify(pair[1].finalize()),JSON.stringify(pair[0].finalize()));
+  }
+});
+check('duration reuse never reads an accessor or coerces a boxed timestamp',()=>{
+  let hooks=0;
+  const config=options({completion:F({warmupCompleted:0,measuredCompleted:0})});
+  const withGetter=F({...row(1),get afterCommitNs(){hooks++;return '1013';}});
+  const boxed=Object.freeze({toString(){hooks++;return '1013';}});
+  for(const input of [page([withGetter]),page([row(1,'CONTROL',3n,{afterCommitNs:boxed})])]) {
+    const pair=[baselineWindow(config),ownedWindow(config)];
+    for(const owner of pair)assert.throws(()=>owner.append(input));
+    assert.equal(pair[1].inspect().acceptedIntervals,0);
+    assert.equal(JSON.stringify(pair[1].finalize()),JSON.stringify(pair[0].finalize()));
+  }
+  assert.equal(hooks,0);
+});
+check('full 16-lane duration reuse avoids 100352 decimal renders with identical distributions',()=>{
+  const total=3136,lanes=16;
+  const config=options({plan:F({warmupCallsPerLane:0,measurementCallsPerLane:256}),
+    completion:F({warmupCompleted:0,measuredCompleted:0})});
+  const previous={bigintCalls:0,stringCalls:0},current={...previous};
+  const originalFullPath={...previous},currentFullPath={...previous};
+  let accepted=0;
+  for(let lane=0;lane<lanes;lane++) {
+    const owners=durationReuseOwners(config);
+    for(let from=0;from<total;from+=64) {
+      const input=page(Array.from({length:Math.min(64,total-from)},
+        (_,i)=>row(from+i+1,'CONTROL',BigInt(3+i%23))),from,total);
+      const r=durationReusePage(owners,input);
+      for(const [target,value]of [[previous,r.previousOwnedWindow],[current,r.currentOwnedWindow],
+        [originalFullPath,r.originalFullPath],[currentFullPath,r.currentFullPath]])
+        for(const field of ['bigintCalls','stringCalls'])target[field]+=value[field];
+      accepted+=input.records.length;
+    }
+    assert.equal(JSON.stringify(owners.currentWindow.finalize()),JSON.stringify(owners.originalWindow.finalize()));
+    owners.originalCoverage.finalize();owners.currentCoverage.finalize();
+    for(const owner of Object.values(owners)) {
+      assert.equal(owner.inspect().retainedDurationReferences,0);
+      assert.equal(owner.inspect().retainedCommandReferences,0);
+    }
+  }
+  assert.equal(accepted,50176);
+  assert.deepEqual(previous,{bigintCalls:200704,stringCalls:100352});
+  assert.deepEqual(current,{bigintCalls:150528,stringCalls:0});
+  assert.equal(previous.bigintCalls-current.bigintCalls,50176);
+  assert.equal(previous.stringCalls-current.stringCalls,100352);
+  metrics.durationReuseFullTrace={lanes,rowsPerLane:total,rawIntervals:accepted,
+    previousOwnedWindow:previous,currentOwnedWindow:current,originalFullPath,currentFullPath,
+    cohortOverheadSubtracted:true,priorOwnedAppendBodyMatched:true,finalReportsEqual:true,
+    arraysReleasedAtFinalization:true,actualHeapBytesMeasured:false,
+    nativeThroughputMeasured:false,physicalReclaimMeasured:false};
+});
+
 after(() => console.log(JSON.stringify({ event: 'OWNED_WINDOW_REAL_COMPONENT_COMPARISON', selected: names.length,
   entered, completed, names, ...metrics, componentsImported: true, declaredPagesOnly: true,
   nativeApplicationImported: false, SDKImported: false, SQLite: false, sockets: false,

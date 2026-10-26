@@ -1,0 +1,270 @@
+{
+  "resultVersion": 1,
+  "kind": "VALIDATED_WINDOW_DURATION_REUSE_ACTUAL_COMPONENT_AND_SOURCE_DATA_NOT_NATIVE_CAPACITY",
+  "developmentParent": "ab509da735b7ecc938bb6896d4c7772b2acd6d05",
+  "mainParent": "962a09f98819675f550901f7d4fff0f78a356374",
+  "runtime": {
+    "node": "24.19.0",
+    "nodeSha256": "dbedff294bab84a0a86c04e15fbcbeb1c97ca10bef1b32b0634cd24b36f62100",
+    "python": "3.12.14",
+    "platform": "darwin",
+    "arch": "arm64"
+  },
+  "componentSourcePins": [
+    {
+      "path": "src/service-credit-capacity-window-writer-trace-owned-data.js",
+      "bytes": 9400,
+      "LF": 133,
+      "sha256": "60a5df357210f3ffa0a3d0cf5875a93cee656a7bc995ae7abd76e2e9e9a6c122",
+      "gitBlob": "28705d253e5ca88e6ef6ab3cc4100904aa6c0391"
+    },
+    {
+      "path": "qualification/service-credit-capacity-window-owned-comparison.behavior.mjs",
+      "bytes": 20697,
+      "LF": 345,
+      "sha256": "5443b917af9df1fcfa2a8ff9a463fd5f98b8b195de36a1ad4ccb4de04a39c492",
+      "gitBlob": "427c6c5edc64e028dec9f0d1f9c5cf60b8931d19"
+    },
+    {
+      "path": "qualification/service-credit-capacity-window-writer-trace-owned-data.behavior.mjs",
+      "bytes": 13154,
+      "LF": 168,
+      "sha256": "ccb66e4aa8b8d15a14ab99b35c400ce36db01dcdc8c678766f98ca600872bc2b",
+      "gitBlob": "a2b0d5c0f5747b6247e86211a112d59dcbb689b3"
+    },
+    {
+      "path": "src/service-credit-capacity-cohort-writer-coverage-data.js",
+      "bytes": 10102,
+      "LF": 172,
+      "sha256": "9d7ee0d837bca9668cdf1a26d296376082be6a1b4a25bc43114652f3ecfbda90",
+      "gitBlob": "a1b706447b8312c67c86debe57ea8ef4023c8131"
+    },
+    {
+      "path": "src/service-credit-capacity-cohort-writer-trace-data.js",
+      "bytes": 10956,
+      "LF": 181,
+      "sha256": "75c3529584f7c6126f726734d085e107438c7a676ff1f63073956054aedcba65",
+      "gitBlob": "63bee5ad4714d3179666eef371373d4e0416a4a0"
+    },
+    {
+      "path": "src/service-credit-capacity-window-writer-trace-data.js",
+      "bytes": 8906,
+      "LF": 126,
+      "sha256": "b86377ec5474f85465073e7891bde9f706b167a40cb6677671a6012dab4d9bbd",
+      "gitBlob": "ceabbe01bb341ccf2c9c8f0d89229e3dd4268c5f"
+    },
+    {
+      "path": "src/service-credit-capacity-native-observation-data.js",
+      "bytes": 6173,
+      "LF": 103,
+      "sha256": "d6d19890334fbb6d7e92e605640d4638154f8e3e10588c8e217bf782a675b7ca",
+      "gitBlob": "aaf6b24f65a59e4b421805d7667a5fdf9e72433f"
+    },
+    {
+      "path": "package.json",
+      "bytes": 2677,
+      "LF": 40,
+      "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+      "gitBlob": "45752ffde39d29666094f7f1c755060d75e43deb"
+    }
+  ],
+  "actualComponent": {
+    "tests": 80,
+    "passes": 80,
+    "failures": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0,
+    "comparisonCases": 26,
+    "newCases": 5,
+    "exit": 0,
+    "complete": true,
+    "stdoutBytes": 19897,
+    "stdoutSha256": "80061b63c41bdd4253680e9ae3c39db8664951d23d8baf65d8985cda28eba792",
+    "stderrBytes": 0,
+    "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "actualImportedComponents": true,
+    "declaredInputPages": true,
+    "priorOwnedAppendBodyMatchedPreservedReference": true,
+    "countersRestoreOriginalDescriptors": true,
+    "cohortCounterOverheadSubtracted": true,
+    "onePage": {
+      "rows": 64,
+      "previousOwnedWindow": {
+        "bigintCalls": 256,
+        "stringCalls": 128
+      },
+      "currentOwnedWindow": {
+        "bigintCalls": 192,
+        "stringCalls": 0
+      },
+      "originalFullPath": {
+        "bigintCalls": 640,
+        "stringCalls": 321
+      },
+      "currentFullPath": {
+        "bigintCalls": 448,
+        "stringCalls": 193
+      },
+      "cohortOverheadSubtracted": true,
+      "previousWindowBodyMatchesPriorOwnedSource": true,
+      "countsOnly": true
+    },
+    "fullTrace": {
+      "lanes": 16,
+      "rowsPerLane": 3136,
+      "rawIntervals": 50176,
+      "previousOwnedWindow": {
+        "bigintCalls": 200704,
+        "stringCalls": 100352
+      },
+      "currentOwnedWindow": {
+        "bigintCalls": 150528,
+        "stringCalls": 0
+      },
+      "originalFullPath": {
+        "bigintCalls": 502528,
+        "stringCalls": 251664
+      },
+      "currentFullPath": {
+        "bigintCalls": 352000,
+        "stringCalls": 151312
+      },
+      "cohortOverheadSubtracted": true,
+      "priorOwnedAppendBodyMatched": true,
+      "finalReportsEqual": true,
+      "arraysReleasedAtFinalization": true,
+      "actualHeapBytesMeasured": false,
+      "nativeThroughputMeasured": false,
+      "physicalReclaimMeasured": false
+    }
+  },
+  "developmentSourceIntegration": {
+    "pins": [
+      {
+        "path": "qualification/capacity-native-current-offered-parent-v5.inputs.json",
+        "bytes": 5012,
+        "LF": 127,
+        "sha256": "c8892bae59449b797b913b4b76d934834bc605581f9cca31ebf30a5d93dbdda8",
+        "gitBlob": "87ce41071e1a31f4475a04b196be27c02d83a2e6"
+      },
+      {
+        "path": "qualification/native_capacity_current_offered_parent_v5.py",
+        "bytes": 16650,
+        "LF": 239,
+        "sha256": "2fdddbacaf2684fbb1b2d782287efd08929d57fb1b423d40da152cc564ce868d",
+        "gitBlob": "e572ee899788ec649111a7f69884df988ef7c4f5"
+      },
+      {
+        "path": "qualification/native_capacity_current_offered_resource_v4.py",
+        "bytes": 13667,
+        "LF": 219,
+        "sha256": "45095fdf2e4ff7de45641820da936be9acea6caaf82cea010306d7c6da2d44b1",
+        "gitBlob": "80d0efaaf09eb3c78ed295cd6db77996288ccb39"
+      },
+      {
+        "path": "qualification/native_capacity_current_offered_command_v4.py",
+        "bytes": 10047,
+        "LF": 171,
+        "sha256": "1c105b2fc13f8590ae9f4f833585f85541383e25d0fac55eefde0a0327c94e07",
+        "gitBlob": "78746eca664706da8a39002be2865e060579a443"
+      },
+      {
+        "path": "qualification/native_capacity_current_offered_capture_v4.py",
+        "bytes": 39793,
+        "LF": 565,
+        "sha256": "133c5db0dd4a5151ef724e4b96cc2e88b1ba0dcb43b88f20d967f717c1bf6f3b",
+        "gitBlob": "9cc2fdee377a34e69c76b62e3106f5368b6833be"
+      },
+      {
+        "path": "qualification/native_capacity_current_offered_context_v4.py",
+        "bytes": 4862,
+        "LF": 71,
+        "sha256": "bb96dac151ee2c98e20451e95a5cd83e4d86ef549f7545b19563ba8f6739214d",
+        "gitBlob": "d35056a608d58e6e843f5cbe4a4f61201bfcbfc5"
+      },
+      {
+        "path": "qualification/run-capacity-native-current-offered-v5.local.py",
+        "bytes": 44978,
+        "LF": 720,
+        "sha256": "0054a025fb6e50398c0edf47b71e9aa4562791a12588bdc6a4253079a470dd24",
+        "gitBlob": "275d1a2dc2eba9582450d6113f966345bc038d38"
+      },
+      {
+        "path": "qualification/capacity-native-current-offered-v5.launch-inputs.json",
+        "bytes": 7727,
+        "LF": 200,
+        "sha256": "a603bd0dd683ae125e59d12fff2a51f46d90aab1eeaf54c4fe1113bc712694dc",
+        "gitBlob": "2061c9540d88e64d9b7c04458079d7d4e1999924"
+      },
+      {
+        "path": "qualification/native_capacity_current_offered_pipeline_v4.behavior.py",
+        "bytes": 64909,
+        "LF": 898,
+        "sha256": "12e4ee80be0a2aad194abb311052db38b2bd6b0c2fa7b9c30d102f5db1fa14c5",
+        "gitBlob": "6fc08995b6ba5190616ca0e023ec5724d9f8fec4"
+      }
+    ],
+    "cases": 360,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "exit": 0,
+    "complete": true,
+    "stdoutSha256": "9cc14ee856c717e1919c98c57042a06ffbf1cdc00a4b2871078448e84220acc7",
+    "sourceOnlyCLIExit": 0,
+    "sourceOnlyCLIComplete": true,
+    "sourceOnlyCLIStdoutSha256": "c03d7d804a0848fc012ee61fa911248d6d9ccb96c45897e1a6755adca4e997f9",
+    "sourceAdmissionFacts": {
+      "applicationFilesVerified": 174,
+      "applicationBytesVerified": 3272071,
+      "installedPackageFilesRead": 0,
+      "applicationCodeBytesRetained": 0,
+      "unchangedSourceByteReads": 0,
+      "nativeExecuted": false,
+      "authority": "NONE"
+    },
+    "auditedEffects": {
+      "children": 0,
+      "sockets": 0,
+      "sqlite": 0,
+      "writeOpens": 0,
+      "outsideSourceReads": 0,
+      "mutations": 0
+    },
+    "parentRows": 578,
+    "parentApplicationFiles": 174,
+    "parentPackageFiles": 404,
+    "childRows": 567,
+    "allChildRowsPreserved": true,
+    "parentSourceRowsSha256": "9c9681a1229d69824c4859c1bf9a57498bc5ed9a24755c63280e6b4b528bea5d",
+    "changedParentRows": [
+      "app/src/service-credit-capacity-window-writer-trace-owned-data.js"
+    ],
+    "effectsChangedOnlySourceBindings": [
+      "parentProfileProducerSha256",
+      "parentSourceRowsSha256",
+      "sourceSelectionSha256"
+    ],
+    "allStorageCapacityAndNativeExecutionFunctionsUnchanged": true
+  },
+  "qualification": {
+    "nativeApplicationImported": false,
+    "SDKImported": false,
+    "installedPackageFilesRead": 0,
+    "SQLite": false,
+    "sockets": false,
+    "keysOrSignatures": false,
+    "nonce": false,
+    "storageRootRead": false,
+    "managedTasksCreated": 0,
+    "finiteNativeAllowancesConsumed": 0,
+    "hostedCIExecutedTheseSuites": false,
+    "actualHeapBytesMeasured": false,
+    "nativeThroughputMeasured": false,
+    "physicalReclaimMeasured": false,
+    "economicPilotQualified": false,
+    "productionQualified": false,
+    "authority": "NONE"
+  }
+}

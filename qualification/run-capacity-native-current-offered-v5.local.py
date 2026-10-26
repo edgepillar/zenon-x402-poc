@@ -30,7 +30,7 @@ PARENT="qualification/capacity-native-current-offered-parent-v5.inputs.json"
 SOURCE_SELECTION="qualification/capacity-native-current-roles-v6.inputs.json"
 KIND="CURRENT_OFFERED_V5_COMPLETE_MANAGED_SOURCE_NOT_NATIVE_EXECUTION"
 NATIVE_SELECTION="one-new-approved-native-current-offered-parent-v5"
-FROZEN=[['qualification/native_capacity_current_offered_resource_v4.py', '352c36dc24edb96e05227f5bb8daacfbe73b32461b27a17246bc167f77b6d4a2'], ['qualification/native_capacity_current_offered_command_v4.py', '806f56a47fc86ac034313305e5796cfe1369a1fb8c69c44f484f7ada640a9a74'], ['qualification/native_capacity_current_offered_capture_v4.py', 'e96ab83de4cbeb0ab1fc5f1d4c1dbcaaaf96e1184c776c687f6536f9e2cb75c2'], ['qualification/native_capacity_current_offered_context_v4.py', '76c3b77010d2c7684c33d0b73a409ea4d086a8fa5a6cd91c893004ccd4452bfd'], ['qualification/native_capacity_current_offered_parent_v5.py', '931e186d66b7bb2ccb8be66c16e7f840b1e3ae3b37b22a83ddca415edf66b553'], ['qualification/run-capacity-native-paced-timer-managed-v3.local.py', '5f3f6893559a9fdce3d7c19b9d729996a14f157822d1938bbad3ae25daeef22e'], ['qualification/run-capacity-native-workload-v3.local.py', '4e2e29c31ae10c661bd5599506cda87482d030fc328dbde1e3e1066db5dba9e6'], ['qualification/funding_tls_current_gate.py', '9777b8dca3c8c86e543c1f202c0cde248280ed3a108df4a688565ccf83132936']]
+FROZEN=[['qualification/native_capacity_current_offered_resource_v4.py', '45095fdf2e4ff7de45641820da936be9acea6caaf82cea010306d7c6da2d44b1'], ['qualification/native_capacity_current_offered_command_v4.py', '1c105b2fc13f8590ae9f4f833585f85541383e25d0fac55eefde0a0327c94e07'], ['qualification/native_capacity_current_offered_capture_v4.py', '133c5db0dd4a5151ef724e4b96cc2e88b1ba0dcb43b88f20d967f717c1bf6f3b'], ['qualification/native_capacity_current_offered_context_v4.py', 'bb96dac151ee2c98e20451e95a5cd83e4d86ef549f7545b19563ba8f6739214d'], ['qualification/native_capacity_current_offered_parent_v5.py', '2fdddbacaf2684fbb1b2d782287efd08929d57fb1b423d40da152cc564ce868d'], ['qualification/run-capacity-native-paced-timer-managed-v3.local.py', '5f3f6893559a9fdce3d7c19b9d729996a14f157822d1938bbad3ae25daeef22e'], ['qualification/run-capacity-native-workload-v3.local.py', '4e2e29c31ae10c661bd5599506cda87482d030fc328dbde1e3e1066db5dba9e6'], ['qualification/funding_tls_current_gate.py', '9777b8dca3c8c86e543c1f202c0cde248280ed3a108df4a688565ccf83132936']]
 STORAGE_SHA="a4d82a72214c9698fda7ae363c38b2470c08da5e2e04c63ee9284e43f638f081"
 CLI_SHA="0bf13cdc1f25a6b31ab14cfb124908808ca7ddc89073ecbcd0263bef4d52238c"
 OPENSSL_SHA="49db04c17e3a8c169ebc48a1149d78c165a86c04913203f46b2a14ce7f4a14fc"
@@ -146,7 +146,7 @@ def source_admission(repo,digest):
     require(type(manifest)is dict and set(manifest)=={"kind","version","sourceParent","pythonControls","profileSelection",
         "childSelection","workload","effectsCeiling","requiredPolicy","nativeSelection","nativeExecuted","nativeAllowanceGranted","authority"}
         and manifest["kind"]==KIND and type(manifest["version"])is int and manifest["version"]==4
-        and manifest["sourceParent"]=="abd2039565504ef9dce14d489fe4399ee208b303"
+        and manifest["sourceParent"]=="ab509da735b7ecc938bb6896d4c7772b2acd6d05"
         and manifest["nativeSelection"]==NATIVE_SELECTION and manifest["nativeExecuted"]is False
         and manifest["nativeAllowanceGranted"]is False and manifest["authority"]=="NONE","CURRENT_MANAGED_SOURCE_NOT_AUTHORITY")
     inputs={name:read(repo/name)for name in[SELF]+[name for name,_ in FROZEN]+[PARENT,SOURCE_SELECTION,PLAN]}
@@ -219,7 +219,7 @@ def validate_full_source_context(planner):
         and type(info.get("nodeBinaryHashesForContext"))is int and info["nodeBinaryHashesForContext"]==1
         and info.get("parentApplicationFiles")==174 and info.get("parentPackageFiles")==404
         and info.get("childApplicationFiles")==163 and info.get("childPackageFiles")==404
-        and info.get("parentSourceRowsSha256")=="fe51e40aebd38177628a04a8868f78d5804f3c02a00ea363d1aade20c2bcb2cd"
+        and info.get("parentSourceRowsSha256")=="9c9681a1229d69824c4859c1bf9a57498bc5ed9a24755c63280e6b4b528bea5d"
         and info.get("childSourceRowsSha256")=="92646a2cf5edf717a1d24468fa6277c48c4f59f43db5b6e607b6071acc79c2b2"
         and info.get("privateProfileIsNativeAuthority")is False and info.get("nativeExecuted")is False and info.get("authority")=="NONE",
         "ACTUAL_578_SOURCE_CONTEXT_REQUIRED")
