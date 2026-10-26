@@ -17,7 +17,7 @@ concurrency:
 
 jobs:
   test:
-    name: Current profile / Node 24.19.0
+    name: Current capacity profile V3 / Node 24.19.0
     runs-on: ubuntu-24.04
     timeout-minutes: 15
 
@@ -47,10 +47,38 @@ jobs:
           test -z "$(git --no-optional-locks status --porcelain=v1 --untracked-files=all --ignored=matching)"
           printf 'source-head=%s\nsource-tree=%s\n' "$EXPECTED_SHA" "$(git rev-parse 'HEAD^{tree}')"
 
-      # The selected profile imports built-ins and six local modules only.
+      # V3 selects built-ins, the closed test graph and eleven local runtime modules.
       # No npm install/ci, SDK, x402 package, SQL, key or native HTTP execution.
-      - name: Run only the current qualification profile
-        run: npm test
+      - name: Run only the reviewed current capacity profile V3
+        run: |
+          node --permission \
+            --allow-fs-read=./package.json \
+            --allow-fs-read=./package-lock.json \
+            --allow-fs-read=./scripts/current-qualification-profile-v3.mjs \
+            --allow-fs-read=./scripts/run-current-qualification-v3.mjs \
+            --allow-fs-read=./scripts/x402-runtime-dependency-contract.mjs \
+            --allow-fs-read=./test/current-qualification-profile-v3.test.js \
+            --allow-fs-read=./test/service-credit-custodied-sequential-runner-accepted-receipt-prototype.test.js \
+            --allow-fs-read=./qualification/service-credit-dispatch-abort-drain.behavior.draft.mjs \
+            --allow-fs-read=./test/x402-runtime-dependency-contract.test.js \
+            --allow-fs-read=./qualification/service-credit-capacity-window-writer-trace-owned-data.behavior.mjs \
+            --allow-fs-read=./qualification/service-credit-capacity-window-owned-comparison.behavior.mjs \
+            --allow-fs-read=./src/service-credit-http-execute-dispatch.js \
+            --allow-fs-read=./src/service-credit-custodied-sequential-runner.js \
+            --allow-fs-read=./src/service-credit-original-request-custody-contract.js \
+            --allow-fs-read=./src/service-credit-custodied-http-client.js \
+            --allow-fs-read=./src/service-credit-custodied-sequential-runner-core.js \
+            --allow-fs-read=./src/service-credit-custodied-request-owner.js \
+            --allow-fs-read=./src/service-credit-capacity-native-observation-data.js \
+            --allow-fs-read=./src/service-credit-capacity-cohort-writer-trace-data.js \
+            --allow-fs-read=./src/service-credit-capacity-cohort-writer-coverage-data.js \
+            --allow-fs-read=./src/service-credit-capacity-window-writer-trace-data.js \
+            --allow-fs-read=./src/service-credit-capacity-window-writer-trace-owned-data.js \
+            --allow-fs-read=./qualification/profiles/p0-current-p2-capacity-node24-v3.json \
+            --no-addons \
+            --disallow-code-generation-from-strings \
+            --unhandled-rejections=strict \
+            scripts/run-current-qualification-v3.mjs
 
       - name: Verify repository remains clean
         if: always()
