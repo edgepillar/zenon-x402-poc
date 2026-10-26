@@ -1,3 +1,5 @@
+export { createPreparedHashWalletAdapter } from './prepared-hash-wallet-adapter.js';
+
 /**
  * Signing boundary for a payer wallet. A wallet does not plan, prepare,
  * enrich, publish, or perform node RPC for an account block.
