@@ -1,0 +1,467 @@
+{
+  "schema": "x402/checkpoint-fixed-independent-pins-reuse-local/v1",
+  "date": "2026-10-26",
+  "mainBaseCommit": "5475efea75ee0b94ad6f9e3890bbf84d0bde24cf",
+  "developmentBaseCommit": "970af8cf5ff3eefc4b8026896a0dbe5556da174b",
+  "sourceBefore": {
+    "path": "src/x402-original-payment-checkpoint-client.js",
+    "bytes": 12251,
+    "LF": 246,
+    "sha256": "b98c64fb071a55578bfd5c49790d11f8fca443e59e32beb8498eb67941201103",
+    "gitBlob": "6fdc3917e64f9dbad61ffb4b236951e3cb9ebcf5"
+  },
+  "sourceAfter": {
+    "path": "src/x402-original-payment-checkpoint-client.js",
+    "bytes": 13457,
+    "LF": 262,
+    "sha256": "bba2439e40a2decb75b330440919d8d1ea1fea53f6e684f77b57a9bb66129af1",
+    "gitBlob": "bd732c2c739e6dbe1d4ed583b6b55040bf8aecfd"
+  },
+  "currentInputs": [
+    {
+      "path": "package.json",
+      "bytes": 2677,
+      "LF": 40,
+      "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+      "gitBlob": "45752ffde39d29666094f7f1c755060d75e43deb"
+    },
+    {
+      "path": "src/x402-original-payment-checkpoint-client.js",
+      "bytes": 13457,
+      "LF": 262,
+      "sha256": "bba2439e40a2decb75b330440919d8d1ea1fea53f6e684f77b57a9bb66129af1",
+      "gitBlob": "bd732c2c739e6dbe1d4ed583b6b55040bf8aecfd"
+    },
+    {
+      "path": "src/canonical.js",
+      "bytes": 967,
+      "LF": 26,
+      "sha256": "0d55ddf1727cafb0dcd46df2922305568615552a4d2ae34a5c30e90b9d8d998c",
+      "gitBlob": "5367f9c72ee13017a61630e1f0cffdced21d52c4"
+    },
+    {
+      "path": "src/service-credit-pilot-original-payment-checkpoint.js",
+      "bytes": 4003,
+      "LF": 89,
+      "sha256": "930905f31824a6cadc16dfb84572cd4dc38a81e2fce4569b73b6bef29dec97d1",
+      "gitBlob": "51c6391bc22f561ebff0005ced31e538aa83f4fa"
+    },
+    {
+      "path": "src/x402-wire.js",
+      "bytes": 39886,
+      "LF": 934,
+      "sha256": "5fba91af5a352f62d1a335c7176a45a604e2af5d92b1c4b0e53825c1f20d4e56",
+      "gitBlob": "fb060d4e349b1c31a1219a0cc137af250a8a2291"
+    },
+    {
+      "path": "src/x402-official-https-request-binding.js",
+      "bytes": 5085,
+      "LF": 99,
+      "sha256": "dabf215408887bd0d2ba346085c5ab2df13f724e8759b7a98b71b09c8dc8d692",
+      "gitBlob": "47059c772407233b8b6f54632ba065893ff92dd3"
+    },
+    {
+      "path": "src/x402-funding-post-checkpoint-route.js",
+      "bytes": 1310,
+      "LF": 29,
+      "sha256": "157e80e9f14b41c8cacc05423a7acd8616a6f759adac377f04f1fca21869831e",
+      "gitBlob": "777ff48ac9cf255f80cda7e22c68706b7d7084b3"
+    },
+    {
+      "path": "qualification/x402-original-payment-checkpoint-post-v3.behavior.mjs",
+      "bytes": 20822,
+      "LF": 335,
+      "sha256": "368dadff0a5efbf75d2ba5695b3ed5e85932208a4c9b0c18e7427f176f961cee",
+      "gitBlob": "b1771486b876060bd368c523328e69440df6feff"
+    },
+    {
+      "path": "qualification/checkpoint-client-fixed-pins-reuse.behavior.mjs",
+      "bytes": 13012,
+      "LF": 197,
+      "sha256": "f192cca8f28502b854acdb865d278a3b01843fc91693b6bdd01489538c6ca572",
+      "gitBlob": "1875adba9a67c81083774607c554cc5df68574da"
+    },
+    {
+      "path": "scripts/run-current-checkpoint-client-reuse.mjs",
+      "bytes": 1587,
+      "LF": 31,
+      "sha256": "66bdc36a32fa17c2fecca309126bf0d2e215df0149e39d9872aa77ef6bea36e7",
+      "gitBlob": "f4d7bd22a3625925eee727452417da6aa3a309d2"
+    }
+  ],
+  "baseline": {
+    "counts": {
+      "tests": 54,
+      "pass": 54,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "actual": {
+      "actualExit": 0,
+      "complete": true,
+      "inputComplete": true,
+      "inputBytes": 0,
+      "stdoutBytes": 14638,
+      "stdoutSha256": "5dd6ba396517552c8d9dad1d82ae453edb1ab24f4085773f754b5ee627b824a3",
+      "stderrBytes": 0,
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "inputs": [
+      {
+        "path": "package.json",
+        "bytes": 2677,
+        "LF": 40,
+        "sha256": "cb4364b57d7918682d68dd00b10a5c35c26ec6af2118a0d70353df2f3324c65f",
+        "gitBlob": "45752ffde39d29666094f7f1c755060d75e43deb"
+      },
+      {
+        "path": "src/x402-original-payment-checkpoint-client.js",
+        "bytes": 12251,
+        "LF": 246,
+        "sha256": "b98c64fb071a55578bfd5c49790d11f8fca443e59e32beb8498eb67941201103",
+        "gitBlob": "6fdc3917e64f9dbad61ffb4b236951e3cb9ebcf5"
+      },
+      {
+        "path": "src/canonical.js",
+        "bytes": 967,
+        "LF": 26,
+        "sha256": "0d55ddf1727cafb0dcd46df2922305568615552a4d2ae34a5c30e90b9d8d998c",
+        "gitBlob": "5367f9c72ee13017a61630e1f0cffdced21d52c4"
+      },
+      {
+        "path": "src/service-credit-pilot-original-payment-checkpoint.js",
+        "bytes": 4003,
+        "LF": 89,
+        "sha256": "930905f31824a6cadc16dfb84572cd4dc38a81e2fce4569b73b6bef29dec97d1",
+        "gitBlob": "51c6391bc22f561ebff0005ced31e538aa83f4fa"
+      },
+      {
+        "path": "src/x402-wire.js",
+        "bytes": 39886,
+        "LF": 934,
+        "sha256": "5fba91af5a352f62d1a335c7176a45a604e2af5d92b1c4b0e53825c1f20d4e56",
+        "gitBlob": "fb060d4e349b1c31a1219a0cc137af250a8a2291"
+      },
+      {
+        "path": "src/x402-official-https-request-binding.js",
+        "bytes": 5085,
+        "LF": 99,
+        "sha256": "dabf215408887bd0d2ba346085c5ab2df13f724e8759b7a98b71b09c8dc8d692",
+        "gitBlob": "47059c772407233b8b6f54632ba065893ff92dd3"
+      },
+      {
+        "path": "src/x402-funding-post-checkpoint-route.js",
+        "bytes": 1310,
+        "LF": 29,
+        "sha256": "157e80e9f14b41c8cacc05423a7acd8616a6f759adac377f04f1fca21869831e",
+        "gitBlob": "777ff48ac9cf255f80cda7e22c68706b7d7084b3"
+      },
+      {
+        "path": "qualification/x402-original-payment-checkpoint-post-v3.behavior.mjs",
+        "bytes": 20822,
+        "LF": 335,
+        "sha256": "368dadff0a5efbf75d2ba5695b3ed5e85932208a4c9b0c18e7427f176f961cee",
+        "gitBlob": "b1771486b876060bd368c523328e69440df6feff"
+      },
+      {
+        "path": "qualification/checkpoint-client-fixed-pins-reuse.behavior.mjs",
+        "bytes": 13012,
+        "LF": 197,
+        "sha256": "f192cca8f28502b854acdb865d278a3b01843fc91693b6bdd01489538c6ca572",
+        "gitBlob": "1875adba9a67c81083774607c554cc5df68574da"
+      },
+      {
+        "path": "scripts/run-current-checkpoint-client-reuse.mjs",
+        "bytes": 1587,
+        "LF": 31,
+        "sha256": "66bdc36a32fa17c2fecca309126bf0d2e215df0149e39d9872aa77ef6bea36e7",
+        "gitBlob": "f4d7bd22a3625925eee727452417da6aa3a309d2"
+      }
+    ]
+  },
+  "optimized": {
+    "counts": {
+      "tests": 54,
+      "pass": 54,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "actual": {
+      "actualExit": 0,
+      "complete": true,
+      "inputComplete": true,
+      "inputBytes": 0,
+      "stdoutBytes": 14643,
+      "stdoutSha256": "cd5c48501d9503c561c114ad813ce163629feff577027cf91b05a887b70eb704",
+      "stderrBytes": 0,
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  },
+  "operationCounts": {
+    "rows": [
+      {
+        "before": {
+          "label": "construct-GET",
+          "kind": "construction",
+          "hashCalls": 8,
+          "jsonParses": 3,
+          "jsonStringifies": 86,
+          "outputUnits": 432,
+          "outputSha256": "7ba1a4df973255b097daac7d171232a63be246776abfccac068c4a1ceb87dc8a"
+        },
+        "after": {
+          "label": "construct-GET",
+          "kind": "construction",
+          "hashCalls": 4,
+          "jsonParses": 3,
+          "jsonStringifies": 85,
+          "outputUnits": 432,
+          "outputSha256": "7ba1a4df973255b097daac7d171232a63be246776abfccac068c4a1ceb87dc8a"
+        }
+      },
+      {
+        "before": {
+          "label": "construct-POST",
+          "kind": "construction",
+          "hashCalls": 8,
+          "jsonParses": 3,
+          "jsonStringifies": 86,
+          "outputUnits": 656,
+          "outputSha256": "00c01a4ffb4835a36fb03051ff034eb8c9e4b61d5899782ec149cba1cc44ddd3"
+        },
+        "after": {
+          "label": "construct-POST",
+          "kind": "construction",
+          "hashCalls": 4,
+          "jsonParses": 3,
+          "jsonStringifies": 85,
+          "outputUnits": 656,
+          "outputSha256": "00c01a4ffb4835a36fb03051ff034eb8c9e4b61d5899782ec149cba1cc44ddd3"
+        }
+      },
+      {
+        "before": {
+          "label": "three-reads-GET",
+          "kind": "three-reads",
+          "hashCalls": 36,
+          "jsonParses": 7,
+          "jsonStringifies": 93,
+          "outputUnits": 1028,
+          "outputSha256": "135968f90028a096fc25519724485bea530d45d0eaf7f67caeefb5513edb0dba"
+        },
+        "after": {
+          "label": "three-reads-GET",
+          "kind": "three-reads",
+          "hashCalls": 12,
+          "jsonParses": 1,
+          "jsonStringifies": 87,
+          "outputUnits": 1028,
+          "outputSha256": "135968f90028a096fc25519724485bea530d45d0eaf7f67caeefb5513edb0dba"
+        }
+      },
+      {
+        "before": {
+          "label": "six-reads-GET",
+          "kind": "six-reads",
+          "hashCalls": 72,
+          "jsonParses": 13,
+          "jsonStringifies": 102,
+          "outputUnits": 1028,
+          "outputSha256": "135968f90028a096fc25519724485bea530d45d0eaf7f67caeefb5513edb0dba"
+        },
+        "after": {
+          "label": "six-reads-GET",
+          "kind": "six-reads",
+          "hashCalls": 24,
+          "jsonParses": 1,
+          "jsonStringifies": 90,
+          "outputUnits": 1028,
+          "outputSha256": "135968f90028a096fc25519724485bea530d45d0eaf7f67caeefb5513edb0dba"
+        }
+      },
+      {
+        "before": {
+          "label": "bad-pins-GET",
+          "kind": "bad-pins",
+          "hashCalls": 32,
+          "jsonParses": 8,
+          "jsonStringifies": 8,
+          "outputUnits": 449,
+          "outputSha256": "e41149c041c9ee69002a7d4683aba0a63db73a3da56dd6688084252132a5aa7c"
+        },
+        "after": {
+          "label": "bad-pins-GET",
+          "kind": "bad-pins",
+          "hashCalls": 0,
+          "jsonParses": 0,
+          "jsonStringifies": 0,
+          "outputUnits": 449,
+          "outputSha256": "e41149c041c9ee69002a7d4683aba0a63db73a3da56dd6688084252132a5aa7c"
+        }
+      },
+      {
+        "before": {
+          "label": "three-reads-POST",
+          "kind": "three-reads",
+          "hashCalls": 36,
+          "jsonParses": 7,
+          "jsonStringifies": 93,
+          "outputUnits": 1032,
+          "outputSha256": "57f90590b4bdb404c9d48e7efc22bd5e49a6dbd79b363c776f396f091c2023e3"
+        },
+        "after": {
+          "label": "three-reads-POST",
+          "kind": "three-reads",
+          "hashCalls": 12,
+          "jsonParses": 1,
+          "jsonStringifies": 87,
+          "outputUnits": 1032,
+          "outputSha256": "57f90590b4bdb404c9d48e7efc22bd5e49a6dbd79b363c776f396f091c2023e3"
+        }
+      },
+      {
+        "before": {
+          "label": "six-reads-POST",
+          "kind": "six-reads",
+          "hashCalls": 72,
+          "jsonParses": 13,
+          "jsonStringifies": 102,
+          "outputUnits": 1032,
+          "outputSha256": "57f90590b4bdb404c9d48e7efc22bd5e49a6dbd79b363c776f396f091c2023e3"
+        },
+        "after": {
+          "label": "six-reads-POST",
+          "kind": "six-reads",
+          "hashCalls": 24,
+          "jsonParses": 1,
+          "jsonStringifies": 90,
+          "outputUnits": 1032,
+          "outputSha256": "57f90590b4bdb404c9d48e7efc22bd5e49a6dbd79b363c776f396f091c2023e3"
+        }
+      },
+      {
+        "before": {
+          "label": "bad-pins-POST",
+          "kind": "bad-pins",
+          "hashCalls": 32,
+          "jsonParses": 8,
+          "jsonStringifies": 8,
+          "outputUnits": 449,
+          "outputSha256": "e41149c041c9ee69002a7d4683aba0a63db73a3da56dd6688084252132a5aa7c"
+        },
+        "after": {
+          "label": "bad-pins-POST",
+          "kind": "bad-pins",
+          "hashCalls": 0,
+          "jsonParses": 0,
+          "jsonStringifies": 0,
+          "outputUnits": 449,
+          "outputSha256": "e41149c041c9ee69002a7d4683aba0a63db73a3da56dd6688084252132a5aa7c"
+        }
+      }
+    ],
+    "totals": {
+      "before": {
+        "hashCalls": 296,
+        "jsonParses": 62,
+        "jsonStringifies": 578
+      },
+      "after": {
+        "hashCalls": 80,
+        "jsonParses": 10,
+        "jsonStringifies": 524
+      }
+    },
+    "sameOutputDigestForEveryRow": true,
+    "completeFreshReadFingerprintsPerRead": 4,
+    "ordinaryFlowFreshReads": 3,
+    "repeatedAdmissionFlowFreshReads": 6,
+    "fixedIndependentPinFieldsComparedEveryAdmission": 8,
+    "privateRetainedHeaderAlwaysReturned": true,
+    "SDKComparisonHeaderNeverSubstituted": true,
+    "actualNativeHashAndJSONDelegatesUsed": true,
+    "sourceImportedUnmodified": true,
+    "elapsedSpeedupOrHeapSavingMeasured": false
+  },
+  "implementation": {
+    "firstRestoreFullyValidatesCanonicalExternalCheckpointAndPins": true,
+    "retainedConstructionTextIsThatExactValidatedInput": true,
+    "freshPinsRemainClosedDataSnapshots": true,
+    "pinsNeverLearnedFromReader": true,
+    "eachFreshRecordFullyEncodedFingerprintCheckedAndComparedByteForByte": true,
+    "lateFaultsKeepHeldAndConsumedContext": true,
+    "reentrantCloseNeverReleasesOriginalHeader": true,
+    "closeDropsInternalCheckpointPayloadAndPinReferences": true,
+    "callerCopiesOrGCOrMemoryErasureQualified": false,
+    "defaultRuntimeOrProtocolSelectionChanged": false,
+    "SDKSigningOrPaymentSendingAdded": false
+  },
+  "preservedUnsuccessfulAttempt": {
+    "actual": {
+      "actualExit": 1,
+      "complete": true,
+      "inputComplete": true,
+      "inputBytes": 0,
+      "stdoutBytes": 20517,
+      "stdoutSha256": "0ff04282b49f606492e2bf66abde473373a88e269c255b03fd29ec80b80cfa32",
+      "stderrBytes": 0,
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "counts": {
+      "tests": 54,
+      "pass": 36,
+      "fail": 18,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "outcome": "FAILURE_PRESERVED",
+    "reason": "The newly authored fixture used unsupported zenon:declared; all 36 retained cases passed. The fixture was corrected to the already-supported synthetic zenon:mock profile. No validator or runtime change was used to make that fixture admissible.",
+    "originalReceiptModified": false
+  },
+  "selectedCases": {
+    "entry": "scripts/run-current-checkpoint-client-reuse.mjs",
+    "files": [
+      "qualification/checkpoint-client-fixed-pins-reuse.behavior.mjs",
+      "qualification/x402-original-payment-checkpoint-post-v3.behavior.mjs"
+    ],
+    "retainedGETCases": 24,
+    "retainedPOSTCases": 12,
+    "newIndependentPinLifecycleCases": 18,
+    "total": 54,
+    "NodeChildren": 0
+  },
+  "runtime": {
+    "node": "24.19.0",
+    "platform": "darwin",
+    "arch": "arm64",
+    "nodeSha256": "dbedff294bab84a0a86c04e15fbcbeb1c97ca10bef1b32b0634cd24b36f62100",
+    "NodePermissionMode": true,
+    "explicitReadFiles": 10,
+    "noAddons": true,
+    "stringCodeGenerationDisabled": true
+  },
+  "qualification": {
+    "actualOfficialSDK": false,
+    "actualV6Store": false,
+    "SQLite": false,
+    "sockets": false,
+    "keysOrSignatures": false,
+    "nonceSearch": false,
+    "realPayment": false,
+    "grantActivation": false,
+    "currentNativeGraphRequalified": false,
+    "installedPackagesImported": false,
+    "existing108HostedCaseSelectionChanged": false,
+    "new54CasesHosted": false,
+    "managerImported": false,
+    "storageRootOpened": false,
+    "managedTaskCreated": false,
+    "productionQualified": false,
+    "authority": "NONE"
+  }
+}
