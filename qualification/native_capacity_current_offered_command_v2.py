@@ -145,8 +145,9 @@ def plan(planner,resource,workload,effects,repo,node,task_root,parent_input,entr
     require(entry_input["raw"]==full["entryPlan"]["planBytes"],"WHOLE_CURRENT_ENTRY_PLAN_BYTES")
     require(profile["rootPath"]==task_root and profile["runId"]==run_id
         and profile["laneId"]=="workload.parent" and profile["profileVersion"]==6,"CURRENT_PARENT_TASK_CONTEXT")
-    require(profile["entryURL"]=="file://"+quote(repo+"/"+ENTRY,safe="/")
-        and profile["preloaderURL"]=="file://"+quote(repo+"/"+PRELOAD,safe="/"),"CURRENT_COMMAND_SOURCE_ROOT")
+    # Keep the full-profile canonical source URL rule, including unescaped @.
+    require(profile["entryURL"]=="file://"+quote(repo+"/"+ENTRY,safe="/@")
+        and profile["preloaderURL"]=="file://"+quote(repo+"/"+PRELOAD,safe="/@"),"CURRENT_COMMAND_SOURCE_ROOT")
     require(profile["runtime"]["nodeSha256"]==NODE_SHA,"CURRENT_NODE_RUNTIME")
     paths={parent_input["path"],entry_input["path"]}
     for bundle in children:

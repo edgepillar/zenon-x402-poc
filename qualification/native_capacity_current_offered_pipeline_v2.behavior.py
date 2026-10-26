@@ -80,10 +80,19 @@ EXTRA=[source_capture(row,700+i)for i,row in enumerate(selection["extraRows"])]
 STORE="/synthetic-current-store";TASK_ROOT=STORE+"/tasks/"+"2"*32+"/scratch"
 ROOT=dict(path=TASK_ROOT,identity=["1","800",str(os.getuid()),"20",str(stat.S_IFDIR|0o700)])
 RUN="a"*64
-def planner():
-    return p._Planner._create(base,legacy,child,copy.deepcopy(REGISTRY),copy.deepcopy(EXTRA),selection,False)
-def command_case(workload=None):
-    value=copy.deepcopy(WORKLOAD if workload is None else workload);plans=planner();children=[]
+def planner(application_root=APP,package_root=PACKAGES):
+    registry=copy.deepcopy(REGISTRY);extras=copy.deepcopy(EXTRA)
+    if (application_root,package_root)!=(APP,PACKAGES):
+        for row in registry["inputs"]+extras:
+            root,relative=(application_root,row["logicalPath"][4:])if row["logicalPath"].startswith("app/")else(package_root,row["logicalPath"][9:])
+            row["url"]=base.source_url(root,relative)
+        indexed={row["logicalPath"]:row for row in registry["inputs"]}
+        registry["bareBindings"]=[dict(parentURL=indexed[e["parent"]]["url"],specifier=e["specifier"],targetURL=indexed[e["target"]]["url"])
+            for e in selection["childSelection"]["bareBindings"]]
+        registry.update(applicationRoot=application_root,packageRoot=package_root)
+    return p._Planner._create(base,legacy,child,registry,extras,selection,False)
+def command_case(workload=None,application_root=APP,package_root=PACKAGES):
+    value=copy.deepcopy(WORKLOAD if workload is None else workload);plans=planner(application_root,package_root);children=[]
     for n,lane in enumerate(value["laneIds"],1):
         for i,role in enumerate(("PAYER","SERVICE")):
             root=dict(path=TASK_ROOT+"/lanes/"+format(n,"02d")+"/"+role.lower(),identity=["1",str(900+2*n+i),str(os.getuid()),"20",str(stat.S_IFDIR|0o700)])
@@ -92,7 +101,7 @@ def command_case(workload=None):
                 entryURL=dto["entryURL"],preloaderURL=dto["preloaderURL"],rootPath=root["path"],rootIdentity=root["identity"]),profileBytes=built["profileBytes"]))
     assembly=command.assemble(plans,resource,value,RUN,ROOT,children)
     def retained(raw):return dict(path=STORE+"/objects/"+hashlib.sha256(raw).hexdigest(),sha256=hashlib.sha256(raw).hexdigest(),raw=raw)
-    return dict(planner=plans,resource=resource,workload=value,effects=assembly["resourcePlan"],repo=APP,node="/synthetic-node24",
+    return dict(planner=plans,resource=resource,workload=value,effects=assembly["resourcePlan"],repo=application_root,node="/synthetic-node24",
         task_root=TASK_ROOT,parent_input=retained(assembly["parentProfile"]["profileBytes"]),entry_input=retained(assembly["entryPlan"]["planBytes"]),run_id=RUN,children=children)
 CASE=command_case()
 def case():return{k:(v if k in("planner","resource")else copy.deepcopy(v))for k,v in CASE.items()}
@@ -108,6 +117,37 @@ def full(self):
     self.assertIn("offered-v3",value["argv"][-2]);self.assertEqual(value["envDelta"]["X402_NATIVE_CAPACITY_RUN_SCOPE"],command.NATIVE_SCOPE)
     self.assertEqual(value["stdoutLimit"],458752);self.assertFalse(value["summary"]["nativeCommandExecuted"])
 check("whole_current_parent_entry_and_exact_v3_command_are_bound",full)
+
+for label,application_root,package_root in[
+ ("at_repository","/synthetic@source","/synthetic-packages"),
+ ("space_repository","/synthetic source","/synthetic-packages"),
+ ("at_and_space_repository","/synthetic @ source/current app","/synthetic-packages"),
+ ("at_parent_repository","/synthetic@owner/current-source","/synthetic-packages"),
+ ("at_packages","/synthetic-source","/synthetic@packages"),
+ ("scoped_packages","/synthetic-source","/synthetic-packages/@vendor/current"),
+ ("mixed_roots","/synthetic @ owner/current app","/synthetic @ vendor/packages"),
+ ("canonical_plain","/synthetic-source","/synthetic-packages")]:
+    def run(self,application_root=application_root,package_root=package_root,label=label):
+        value=command_case(application_root=application_root,package_root=package_root)
+        result=command.plan(**value);profile=result["sourceProfile"]
+        self.assertEqual(profile["entryURL"],"file://"+application_root.replace(" ","%20")+"/"+command.ENTRY)
+        self.assertEqual(profile["preloaderURL"],"file://"+application_root.replace(" ","%20")+"/"+command.PRELOAD)
+        self.assertEqual(result["argv"][-2],application_root+"/"+command.ENTRY)
+        self.assertIn("--import="+application_root+"/"+command.PRELOAD,result["argv"])
+        self.assertEqual(len(profile["inputs"]),566)
+        self.assertTrue(any("/@vendor/"in row["url"]or row["url"].startswith("file://"+package_root.replace(" ","%20")+"/")
+            for row in profile["inputs"]if row["logicalPath"].startswith("packages/")))
+        summary.setdefault("currentCanonicalSourceRootCases",[]).append(label)
+    check("genuine_current_profiles_bind_canonical_source_roots_"+label,run)
+def foreign_source_root(self):
+    value=command_case(application_root="/synthetic @ owner/current app",package_root="/synthetic-packages")
+    value["repo"]="/synthetic @ other/current app"
+    with self.assertRaisesRegex(ValueError,"^CURRENT_COMMAND_SOURCE_ROOT$"):command.plan(**value)
+check("genuine_at_space_profile_refuses_a_different_command_source_root",foreign_source_root)
+for label,root in[("percent","/synthetic%40source"),("fragment","/synthetic#source"),("authority","//synthetic-source")]:
+    def run(self,root=root):
+        with self.assertRaises(ValueError):command_case(application_root=root)
+    check("canonical_source_contract_still_refuses_"+label,run)
 def all_32(self):
     work=copy.deepcopy(WORKLOAD);work["laneIds"]=["lane."+str(i)for i in range(16)];work["recordingLimits"]["maxInFlightPerPhase"]=16
     work["recordingLimits"]["maxSamplesPerPhase"]=256
