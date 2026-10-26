@@ -12,7 +12,7 @@ import math
 import re
 
 GRAPH_SHA="be5952dbf0e5fe17dbdd16549f2ac039802abbb92f541deb31c2591f4db653d7"
-PARENT_SHA="7db8a233dec845c9f27975df76e554431bdd89c2a9e0ec63967de5dbadae5b8c"
+PARENT_SHA="cb24514abb5536ed1c4564654426229880872020d17c90ffc73e2f29c269efa1"
 HASH=re.compile(r"[0-9a-f]{64}")
 NS=re.compile(r"(?:0|[1-9][0-9]{0,38})")
 COHORTS=("CONTROL","WARMUP","MEASUREMENT")
