@@ -1,0 +1,231 @@
+{
+  "kind": "CURRENT_ISSUED_CLOSE_V5_SOURCE_CANDIDATE_NOT_NATIVE_AUTHORITY",
+  "version": 5,
+  "sourceParent": "ef7df9c1ab953bea3501edeefb1ce64946463ecb",
+  "previousSelection": {
+    "path": "qualification/issued-current-close-v4.inputs.json",
+    "bytes": 10437,
+    "LF": 300,
+    "sha256": "8339b2a8e04e7e3c573b1c26d8162f1c821df91182738409693d188121a21893",
+    "gitBlob": "f292abda9f607a7d423f9d32fce2e55472d84a33"
+  },
+  "previousProducer": {
+    "path": "qualification/issued_current_close_v4_profile.py",
+    "bytes": 24610,
+    "LF": 297,
+    "sha256": "b3a8edc522471b0d34f33857e6bd2aae9286b101ec7ea24b6a0f0275e6e447e7",
+    "gitBlob": "7ce435651b6d853baa06856ce5f0b04aef58c5c4"
+  },
+  "baseline": {
+    "path": "qualification/issued-funding-post-native-vertical.inputs-v3.json",
+    "bytes": 138777,
+    "LF": 3836,
+    "sha256": "51ffb5b0ff0052523c1b7f3d75fa24e9be27e60ca3bcc09236b1f439096aaed1",
+    "gitBlob": "3dc05ccffd306e97056b4ed168d8121f63acebbc"
+  },
+  "runtime": {
+    "node": "24.19.0",
+    "platform": "darwin",
+    "arch": "arm64"
+  },
+  "applicationReplacements": [
+    {
+      "before": {
+        "path": "app/src/zenon/dynamic-plasma-original-funding-read-close.js",
+        "bytes": 9568,
+        "LF": 178,
+        "sha256": "5086567b2c0cce0fc3419db69641beb7e5e434d47f83e17015682964ad482a45",
+        "gitBlob": "f2a1b30bb02a6b192fc3b0fe0b4fc5b65e2d297b"
+      },
+      "input": {
+        "path": "app/src/zenon/dynamic-plasma-original-funding-read-close.js",
+        "bytes": 9801,
+        "LF": 183,
+        "sha256": "b7b33770b774a506b09cef81550a5b39d62480968f1a3c567ad9bc018ad79470",
+        "gitBlob": "1c7a832c3704b25ee8f5ded10fad5d4b9d54fc8c"
+      }
+    },
+    {
+      "before": {
+        "path": "app/qualification/issued-current-close-v4.case.mjs",
+        "bytes": 35758,
+        "LF": 493,
+        "sha256": "b79e955adffd83cd727e613fa9e54bede5edb06c678e303dbbea3578cfbbf883",
+        "gitBlob": "d2ad2afcd607d30f9fdf262cefad1cdf1213ec69"
+      },
+      "input": {
+        "path": "app/qualification/issued-current-close-v5.case.mjs",
+        "bytes": 35789,
+        "LF": 493,
+        "sha256": "fc40cdfd0b574f6b9a5ab95eb8837d9240cf1a77e9f673c15a6eb979651444ba",
+        "gitBlob": "1b4970ed44c1de932c91d984240938e82b03b7cd"
+      }
+    },
+    {
+      "before": {
+        "path": "app/qualification/issued-current-close-v4.preload.mjs",
+        "bytes": 12504,
+        "LF": 175,
+        "sha256": "d105a810a164b717224d69e2c3e975c7412de62c88d5b0cdd7ab85fb17bf6700",
+        "gitBlob": "44cabd5b5f3c043e6ce88c509d03fb190583b407"
+      },
+      "input": {
+        "path": "app/qualification/issued-current-close-v5.preload.mjs",
+        "bytes": 12639,
+        "LF": 176,
+        "sha256": "eb684c3762a9b34bb8c1c5306486eac65f66001475870a25e8af187fe02989b2",
+        "gitBlob": "ae41957fde574fe47fc1bd43b00545dbd29c134d"
+      }
+    }
+  ],
+  "resolvedApplicationFiles": 123,
+  "packageFiles": 404,
+  "resolvedSourceRowsSha256": "0c270548aceb8bb5589776e5f5a8cdb68bfe5f03472ed1c1e507c044fcddea70",
+  "resolvedSourceBytes": 4473559,
+  "packageRowsSha256": "6de2ebf27c64de96e4823d3c504347593490061b0c6510db378311258730a31f",
+  "entry": "app/qualification/issued-current-close-v5.case.mjs",
+  "preload": "app/qualification/issued-current-close-v5.preload.mjs",
+  "bareBindings": [
+    {
+      "parent": "app/qualification/issued-funding-post-native-vertical.case.draft.mjs",
+      "specifier": "@noble/ed25519",
+      "target": "packages/@noble/ed25519/index.js"
+    },
+    {
+      "parent": "app/qualification/issued-funding-post-native-vertical.case.draft.mjs",
+      "specifier": "@noble/hashes/sha2",
+      "target": "packages/@noble/hashes/esm/sha2.js"
+    },
+    {
+      "parent": "app/src/zenon-payment.js",
+      "specifier": "znn-typescript-sdk",
+      "target": "packages/znn-typescript-sdk/dist/index.js"
+    },
+    {
+      "parent": "app/src/zenon-payment.js",
+      "specifier": "@noble/ed25519",
+      "target": "packages/@noble/ed25519/index.js"
+    },
+    {
+      "parent": "app/src/zenon-payment.js",
+      "specifier": "@noble/hashes/sha2",
+      "target": "packages/@noble/hashes/esm/sha2.js"
+    },
+    {
+      "parent": "app/src/x402-official-selected-payment-client.js",
+      "specifier": "@x402/core/client",
+      "target": "packages/@x402/core/dist/esm/client/index.mjs"
+    },
+    {
+      "parent": "app/src/x402-official-selected-settlement-server.js",
+      "specifier": "@x402/core/server",
+      "target": "packages/@x402/core/dist/esm/server/index.mjs"
+    },
+    {
+      "parent": "packages/@x402/core/dist/esm/chunk-N4QXZG2Z.mjs",
+      "specifier": "zod",
+      "target": "packages/zod/index.js"
+    },
+    {
+      "parent": "app/qualification/issued-current-close-v5.case.mjs",
+      "specifier": "@noble/ed25519",
+      "target": "packages/@noble/ed25519/index.js"
+    },
+    {
+      "parent": "app/qualification/issued-current-close-v5.case.mjs",
+      "specifier": "@noble/hashes/sha2",
+      "target": "packages/@noble/hashes/esm/sha2.js"
+    }
+  ],
+  "allowedBuiltins": [
+    "node:assert/strict",
+    "node:async_hooks",
+    "node:buffer",
+    "node:crypto",
+    "node:events",
+    "node:fs",
+    "node:fs/promises",
+    "node:http",
+    "node:https",
+    "node:module",
+    "node:net",
+    "node:path",
+    "node:perf_hooks",
+    "node:sqlite",
+    "node:stream",
+    "node:test",
+    "node:timers",
+    "node:tls",
+    "node:url",
+    "node:util",
+    "node:vm",
+    "node:zlib"
+  ],
+  "packageVersions": {
+    "packages/@x402/core/package.json": "2.23.0",
+    "packages/zod/package.json": "3.25.76",
+    "packages/znn-typescript-sdk/package.json": "1.0.5",
+    "packages/@noble/ed25519/package.json": "2.3.0",
+    "packages/@noble/hashes/package.json": "1.8.0"
+  },
+  "effectsCeiling": {
+    "selectedCases": 1,
+    "maximumRuns": 1,
+    "opensslCommands": 1,
+    "nodeCommands": 1,
+    "nodeChildren": 0,
+    "newSqlitePaths": 5,
+    "independentPinFiles": 2,
+    "syntheticEd25519Keys": 4,
+    "transactionSignatures": 1,
+    "capabilitySignatures": 3,
+    "providerSignatures": 2,
+    "testTlsMaterialSeparate": true,
+    "maxRpcConnections": 174,
+    "maxApplicationConnections": 8,
+    "maxTotalConnections": 182,
+    "expectedTotalConnections": 96,
+    "maxCandidatesPerSearch": 4096,
+    "maxReferenceCandidates": 32768,
+    "producerCandidateReservation": 4096,
+    "fixedVerificationReservation": 16384,
+    "maxAggregateCandidates": 65536,
+    "taskQuotaBytes": 4194304,
+    "maximumSourceReadBytes": 6291456,
+    "existingSourcesRecopied": false,
+    "externalNetwork": false,
+    "install": false,
+    "realWallet": false,
+    "realPayment": false,
+    "sdkPrepareBlock": false,
+    "nativeOsNetworkSandbox": false
+  },
+  "taskPolicy": {
+    "quotaBytes": 4194304,
+    "minimumFreeBytes": 10737418240,
+    "existingApprovedRootOnly": true,
+    "rootPolicyOverride": false,
+    "maximumRuns": 1
+  },
+  "controlInputs": [
+    {
+      "path": "qualification/issued_current_close_v5_profile.py",
+      "bytes": 18205,
+      "LF": 176,
+      "sha256": "c96432e2af56c49932e7a403b099b57d4a1028866980ab37e031deb79fd45d6a",
+      "gitBlob": "0bc7ca7d6a5b2406e24aeda4d873f3e2bc050950"
+    },
+    {
+      "path": "qualification/run-issued-current-close-v5.source.py",
+      "bytes": 3219,
+      "LF": 56,
+      "sha256": "3493e4a69397342f1456283f8d219f91177c68a43b8a1da6c65c295f37d1e221",
+      "gitBlob": "688f534363164e7b8f0f4b33285593f686bd7234"
+    }
+  ],
+  "nativeAuthority": "NOT_GRANTED",
+  "nativeCasesExecuted": 0,
+  "installedPackageFilesRead": 0,
+  "sourceTransforms": false,
+  "historicalEvidenceRebound": false
+}
