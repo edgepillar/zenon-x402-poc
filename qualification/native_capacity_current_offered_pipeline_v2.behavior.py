@@ -178,6 +178,80 @@ for label,scope,plan in[("old_v2","one-new-approved-native-current-offered-paren
             with self.assertRaises(ValueError):launcher.main(native_cli(scope,plan))
         finally:sys.stdout=old
     check("real_native_cli_refuses_"+label+"_before_installed_inputs",run)
+def private_native_cli(mode):
+    args=native_cli()
+    args[args.index("--execute")]=mode
+    return args+["--manager","/must-not-read-manager","--root","/must-not-read-store",
+        "--store-id","a"*32,"--storage-sha256","b"*64,"--volume","/must-not-read-volume",
+        "--volume-uuid","11111111-1111-1111-1111-111111111111"]
+
+def early_storage_refusal(self):
+    admitted=launcher.source_admission(str(repo),launch_sha)
+    context=admitted["controls"]["context"]
+    originals=launcher.source_admission,launcher.capacity,context.build_source_context,launcher.execute
+    observations=[]
+    for mode in("--execute","--pre-native-plan"):
+        calls=[];old_stdout=sys.stdout;sys.stdout=io.StringIO()
+        def refuse_capacity(volume,uuid,root,common,effects):
+            calls.append("capacity")
+            self.assertEqual(str(volume),"/must-not-read-volume")
+            self.assertEqual(str(root),"/must-not-read-store")
+            self.assertIs(effects,admitted["effects"])
+            raise ValueError("DECLARED_STORAGE_REFUSAL_BEFORE_INSTALLED_INPUTS")
+        def no_context(*args):
+            calls.append("installed_context")
+            raise AssertionError("STORAGE_REFUSAL_MUST_SKIP_INSTALLED_CONTEXT")
+        def no_execute(*args):
+            calls.append("execute")
+            raise AssertionError("STORAGE_REFUSAL_MUST_SKIP_NATIVE_EXECUTE")
+        launcher.source_admission=lambda *_:admitted
+        launcher.capacity=refuse_capacity
+        context.build_source_context=no_context
+        launcher.execute=no_execute
+        try:
+            with self.assertRaisesRegex(ValueError,"^DECLARED_STORAGE_REFUSAL_BEFORE_INSTALLED_INPUTS$"):
+                launcher.main(private_native_cli(mode))
+            self.assertEqual(calls,["capacity"])
+            observations.append(dict(mode=mode,capacityCalls=1,installedContextCalls=0,nativeExecuteCalls=0))
+        finally:
+            launcher.source_admission,launcher.capacity,context.build_source_context,launcher.execute=originals
+            sys.stdout=old_stdout
+    summary["earlyStorageRefusalOrderingData"]=observations
+check("actual_main_refuses_at_declared_capacity_before_manager_package_or_node_reads",early_storage_refusal)
+
+def early_storage_acceptance_order(self):
+    admitted=launcher.source_admission(str(repo),launch_sha)
+    context=admitted["controls"]["context"]
+    originals=launcher.source_admission,launcher.native_storage_preflight,context.build_source_context,launcher.execute
+    observations=[]
+    for mode in("--execute","--pre-native-plan"):
+        calls=[];old_stdout=sys.stdout;sys.stdout=io.StringIO()
+        def declared_preflight(args,selected_repo,value):
+            calls.append("declared_storage_preflight")
+            self.assertIs(value,admitted);self.assertEqual(selected_repo,repo)
+            return object()
+        def stop_context(selected_repo,packages,node):
+            calls.append("installed_context_boundary")
+            self.assertEqual((selected_repo,packages,node),(str(repo),"/must-not-read-packages","/must-not-read-node"))
+            raise ValueError("DECLARED_STOP_BEFORE_INSTALLED_SOURCE_READ")
+        def no_execute(*args):
+            calls.append("execute")
+            raise AssertionError("ORDERING_DATA_MUST_NOT_EXECUTE_NATIVE")
+        launcher.source_admission=lambda *_:admitted
+        launcher.native_storage_preflight=declared_preflight
+        context.build_source_context=stop_context
+        launcher.execute=no_execute
+        try:
+            with self.assertRaisesRegex(ValueError,"^DECLARED_STOP_BEFORE_INSTALLED_SOURCE_READ$"):
+                launcher.main(private_native_cli(mode))
+            self.assertEqual(calls,["declared_storage_preflight","installed_context_boundary"])
+            observations.append(dict(mode=mode,declaredPreflightCalls=1,installedContextBoundaryCalls=1,nativeExecuteCalls=0))
+        finally:
+            launcher.source_admission,launcher.native_storage_preflight,context.build_source_context,launcher.execute=originals
+            sys.stdout=old_stdout
+    summary["earlyStorageAcceptanceOrderingData"]=observations
+check("actual_main_enters_installed_context_only_after_declared_early_preflight_success",early_storage_acceptance_order)
+
 def call_binding(self):
     actual=ast.parse((repo/"qualification/run-capacity-native-current-offered-v3.local.py").read_bytes())
     old=ast.parse((repo/"qualification/run-capacity-native-current-offered-v2.local.py").read_bytes())

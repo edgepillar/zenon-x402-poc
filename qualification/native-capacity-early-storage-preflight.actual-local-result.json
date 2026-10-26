@@ -1,0 +1,182 @@
+{
+  "event": "CURRENT_V3_EARLY_STORAGE_PREFLIGHT_ACTUAL_DATA_AND_SEPARATE_READ_ONLY_OBSERVATION",
+  "date": "2026-10-26",
+  "sourceParent": "30e5bd3af8976a2563707efc2572293c4e094ca5",
+  "sourcePins": [
+    {
+      "path": "qualification/run-capacity-native-current-offered-v3.local.py",
+      "bytes": 35886,
+      "LF": 539,
+      "sha256": "fced31981a158a684285c8367bdce1ddc062dc0fbea7894d2509865c06626e53",
+      "gitBlob": "0c7e1259a979c062add6a8dd062fbf0f704cf345"
+    },
+    {
+      "path": "qualification/capacity-native-current-offered-v3.launch-inputs.json",
+      "bytes": 7726,
+      "LF": 200,
+      "sha256": "101b673c0fcf942ec253cd5eebe96352e263779a2e2088b5a6da830180f33d84",
+      "gitBlob": "036964d084ad6e910288e7b3c80721cd283274fb"
+    },
+    {
+      "path": "qualification/native_capacity_current_offered_pipeline_v2.behavior.py",
+      "bytes": 25516,
+      "LF": 354,
+      "sha256": "8e385bd126a81880a30831534bdaef287e780ac90f42dc3f752c8cde807804d8",
+      "gitBlob": "91cc3a9464765dca08cf012d450c5ec54a1a9f4b"
+    }
+  ],
+  "priorCurrentSourcePins": [
+    {
+      "path": "qualification/run-capacity-native-current-offered-v3.local.py",
+      "bytes": 34067,
+      "LF": 518,
+      "sha256": "df10a1ef3427d6bb04c8e11bf5d6d3735956b52fac3670eb5230fcf2703efbfa",
+      "gitBlob": "3ede570a6dc8104416ef986bd6e83cbf442f88cc"
+    },
+    {
+      "path": "qualification/capacity-native-current-offered-v3.launch-inputs.json",
+      "bytes": 7726,
+      "LF": 200,
+      "sha256": "b8edd6d60b0806c0a0cc5daadbf7dfef649b9d4f946580e8bb4a7736e3b68875",
+      "gitBlob": "6689692e49eabf1e1c118cfea59ece8d5403893d"
+    },
+    {
+      "path": "qualification/native_capacity_current_offered_pipeline_v2.behavior.py",
+      "bytes": 21273,
+      "LF": 280,
+      "sha256": "fa62b7424854970544d520063de0b40891901af90a438bb4ab87c5e787dc022e",
+      "gitBlob": "5c55e93de952e99a1eec2457abcf7f4dfe3a2559"
+    }
+  ],
+  "unchangedProtectedFiles": 385,
+  "localControls": {
+    "testsRun": 280,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "successful": true,
+    "auditedEffects": {
+      "children": 0,
+      "sockets": 0,
+      "sqlite": 0,
+      "writeOpens": 0,
+      "outsideSourceReads": 0,
+      "mutations": 0
+    },
+    "earlyStorageRefusalOrderingData": [
+      {
+        "mode": "--execute",
+        "capacityCalls": 1,
+        "installedContextCalls": 0,
+        "nativeExecuteCalls": 0
+      },
+      {
+        "mode": "--pre-native-plan",
+        "capacityCalls": 1,
+        "installedContextCalls": 0,
+        "nativeExecuteCalls": 0
+      }
+    ],
+    "earlyStorageAcceptanceOrderingData": [
+      {
+        "mode": "--execute",
+        "declaredPreflightCalls": 1,
+        "installedContextBoundaryCalls": 1,
+        "nativeExecuteCalls": 0
+      },
+      {
+        "mode": "--pre-native-plan",
+        "declaredPreflightCalls": 1,
+        "installedContextBoundaryCalls": 1,
+        "nativeExecuteCalls": 0
+      }
+    ],
+    "sourceAdmissionFacts": {
+      "applicationFilesVerified": 162,
+      "applicationBytesVerified": 3116247,
+      "installedPackageFilesRead": 0,
+      "applicationCodeBytesRetained": 0,
+      "unchangedSourceByteReads": 0,
+      "nativeExecuted": false,
+      "authority": "NONE"
+    },
+    "actualUnchangedOpenEvents": 0,
+    "completeChildProfilesPlannedAndBound": 32,
+    "effectsCeilingFieldsBound": 89,
+    "nativeCommandCallArgumentsBound": 11,
+    "attempts": [
+      {
+        "label": "complete_pipeline_with_early_storage_ordering_data",
+        "actual": {
+          "actualExit": 0,
+          "complete": true,
+          "inputComplete": true,
+          "inputBytes": 0,
+          "reason": null,
+          "elapsedSeconds": 1.421257042000434,
+          "stdoutBytes": 22652,
+          "stdoutSha256": "323f63d9e39c802ef4b398d0160056de8a3f9e467f86603a4d16e784c76395b6",
+          "stderrBytes": 0,
+          "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "allBeforeAfterInputsMatched": true
+      },
+      {
+        "label": "actual_default_source_only_cli",
+        "actual": {
+          "actualExit": 0,
+          "complete": true,
+          "inputComplete": true,
+          "inputBytes": 0,
+          "reason": null,
+          "elapsedSeconds": 0.10617612500027462,
+          "stdoutBytes": 3858,
+          "stdoutSha256": "9e9fb1d6b3fbf16179a698d660216bfeb24659997dd0b08ad74f289dd3c1514b",
+          "stderrBytes": 0,
+          "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "allBeforeAfterInputsMatched": true
+      }
+    ]
+  },
+  "separateReadOnlyStorageObservation": {
+    "recognizedSiblingStores": 111,
+    "observedStores": 64,
+    "taskRecordsRead": 6744,
+    "requiredBaseBytesBeforeOtherReservations": 11855200256,
+    "scopedReservationBytesLowerBound": 377199001600,
+    "requiredBytesLowerBound": 389054201856,
+    "availableBytes": 386319081472,
+    "earlyStop": "KNOWN_RESERVATION_LOWER_BOUND_EXCEEDS_AVAILABLE",
+    "omittedStoresAreNotZero": true,
+    "fullRootAdmissionQualified": false,
+    "physicalReclaimMeasured": false,
+    "allocationBytesMeasured": false,
+    "decision": "NO_GO_KNOWN_RESERVATIONS",
+    "elapsedSeconds": 1.4697617499987246,
+    "shortfallBytesLowerBound": 2735120384
+  },
+  "failedObserverReport": {
+    "actualExit": 1,
+    "status": "UNKNOWN_REPORT_NOT_PERSISTED",
+    "emptyReportPreserved": true,
+    "correctedAttemptIsSeparate": true
+  },
+  "priorQualification": {
+    "sourceCommit": "30e5bd3af8976a2563707efc2572293c4e094ca5",
+    "result": "qualification/native-capacity-current-offered-pipeline-v2.actual-local-result.json",
+    "sha256": "f7c14f20d30fe4e00b94db1e34a36428269f1e1b99937bdf17b660ad0838bd59",
+    "unchanged": true
+  },
+  "nativeApplicationExecutions": 0,
+  "installedPackageFilesReadByControls": 0,
+  "NodeBinaryReadOrExecutedByControls": false,
+  "managerImported": false,
+  "managedTasksCreated": 0,
+  "storageRootOrPolicyChanged": false,
+  "historicalEvidenceChanged": false,
+  "finiteNativeAllowancesConsumed": false,
+  "newNativeAuthorityGranted": false,
+  "productionQualified": false,
+  "authority": "NONE"
+}
