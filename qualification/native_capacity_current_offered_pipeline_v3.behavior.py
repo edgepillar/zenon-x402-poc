@@ -625,6 +625,11 @@ def native_source_edges(self):
     pair_source=(repo/"qualification/capacity-native-current-offered-pair-v4.supervisor.draft.mjs").read_text()
     self.assertIn("s.applicationFiles!=="+str(sum(row["path"].startswith("app/")for row in selection["rows"])),pair_source)
     self.assertNotIn("s.applicationFiles!==162",pair_source)
+    self.assertIn("summarizeOwned([...s.balanceReadNs])",adapter)
+    self.assertEqual(adapter.count("summarizeOwned(s.intervals.map("),2)
+    self.assertIn("const sorted = values.sort(",adapter)
+    self.assertNotIn("const sorted = [...values].sort(",adapter)
+    summary["ownedWriterScratchSortBound"]=True
     summary["packedNativeSourceEdgesChecked"]=8
 check("real_native_entry_adapter_and_both_packed_owner_edges_match_new_admission_versions",native_source_edges)
 for label,field,value in[("outer_version","offeredCaptureVersion",2),("adapter_version","nativeOfferedCapacityWorkloadAdapterVersion",4)]:

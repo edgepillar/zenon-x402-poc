@@ -8,12 +8,12 @@ import re
 import stat
 import sys
 MANIFEST = 'qualification/capacity-native-current-offered-parent-v4.inputs.json'
-MANIFEST_SHA = 'baa6c8b26fea81b81e8df43f7595668fa8b9d40d9799d268646d93a028e859b1'
+MANIFEST_SHA = '19735c4633cfe7b851d4286795ce9253d5cb14252273544c8417a6c4b7180d27'
 CHILD_PRODUCER = 'qualification/native_capacity_current_role_profiles_v5.py'
 CHILD_PRODUCER_PIN = {'path': 'qualification/native_capacity_current_role_profiles_v5.py', 'bytes': 17540, 'LF': 179, 'sha256': 'ec6aed07ce441669aa4f4ecff6a416c7b49e6f648e70d108dade283f3911735d', 'gitBlob': '898b972b3a6ebf7e2c9c5eae7079b8aa62fbd4c0'}
-PARENT_SEAL = 'a781b9e1bdfddbdf282aae8706f55432af42f6577f0517a3204f1d09f269ff3a'
+PARENT_SEAL = '7db8a233dec845c9f27975df76e554431bdd89c2a9e0ec63967de5dbadae5b8c'
 CHILD_SEAL = 'be5952dbf0e5fe17dbdd16549f2ac039802abbb92f541deb31c2591f4db653d7'
-PARENT_BYTES = 5161153
+PARENT_BYTES = 5161251
 PARENT_KIND = 'NATIVE_CAPACITY_CURRENT_OFFERED_SUPERVISOR_NODE24_V4'
 PARENT_ENTRY = 'app/qualification/capacity-native-current-offered-v4.entry.draft.mjs'
 PARENT_PRELOAD = 'app/qualification/capacity-native-current-offered-v4.namespace.preload.draft.mjs'
