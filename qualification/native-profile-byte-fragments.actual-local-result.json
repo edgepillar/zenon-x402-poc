@@ -1,0 +1,80 @@
+{
+  "schemaVersion": 1,
+  "event": "NATIVE_PROFILE_BYTE_FRAGMENTS_ACTUAL_COMPONENT_RESULT",
+  "observedOn": "2026-10-26",
+  "mainBase": "ef7df9c1ab953bea3501edeefb1ce64946463ecb",
+  "qualification": "ACTUAL_SHARED_COMPONENT_DATA_NOT_NATIVE_PROFILE_ADMISSION",
+  "sourceInputs": [
+    {
+      "path": "src/native-profile-byte-fragments.js",
+      "bytes": 2201,
+      "LF": 52,
+      "sha256": "234d270445238674c1c17515e9a4fcc4fef309e976f150242d36e6dc7fd29a98",
+      "gitBlob": "ea4de4f30cd1fd255ed671be11683531eb159503"
+    },
+    {
+      "path": "test/native-profile-byte-fragments.test.js",
+      "bytes": 7279,
+      "LF": 129,
+      "sha256": "6f6ad67f5635046b55e1039c59d5359627fa898bd55a68d9769597a329885c4a",
+      "gitBlob": "327735e8e93cd3fb482f4fe7857bedbf87568a60"
+    }
+  ],
+  "actualCommand": {
+    "node": "24.19.0",
+    "execution": "One direct Node process; no test process isolation or child launcher.",
+    "facts": {
+      "actualExit": 0,
+      "complete": true,
+      "inputComplete": true,
+      "inputBytes": 0,
+      "reason": null,
+      "elapsedSeconds": 0.3715054999993299,
+      "stdoutBytes": 1030,
+      "stdoutSha256": "99424b56adc8a0e8d7256472953f5fb1a905cf5ddff78bdcd580f6db0febf0bd",
+      "stderrBytes": 0,
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "tests": 11,
+    "passed": 11,
+    "failed": 0,
+    "skipped": 0
+  },
+  "controls": [
+    "Exact byte equivalence across arbitrary, empty and nonempty fragment boundaries.",
+    "Every-byte corruption, length mismatch and prefix/trailing bytes.",
+    "Maximum byte and fragment-count refusal.",
+    "Invalid types and caps; accessors, sparse arrays, proxies and forged Buffer lengths.",
+    "Captured Buffer comparison is used after prototype replacement.",
+    "No whole expected Buffer concatenation during comparison.",
+    "All 32 complete synthetic profiles equal an independent whole JSON reference.",
+    "Noncanonical or reordered JSON bytes are not reinterpreted as equivalent."
+  ],
+  "bounds": {
+    "maximumBytes": 1048576,
+    "maximumFragments": 256,
+    "sourceCallerMaySelectLowerByteCap": true,
+    "fullExpectedProfileBufferAssembledByMatcher": false
+  },
+  "scope": {
+    "fullNativeApplicationExecutions": 0,
+    "SDKImported": false,
+    "SQLite": false,
+    "keysOrSignatures": false,
+    "nonce": false,
+    "sockets": false,
+    "storageRootRead": false,
+    "managedTasksCreated": 0,
+    "all366PriorSourcePinsUnchanged": true,
+    "profileAuthenticated": false,
+    "JSONParsedOrNormalized": false,
+    "nativeAuthorityGranted": false,
+    "OSOrNetworkSandboxClaimed": false
+  },
+  "limitations": [
+    "Callers supply the complete expected encoded fields and their own source/profile admission.",
+    "This proves component DATA byte matching, not native preload integration or operational throughput.",
+    "No native heap, allocation-byte, latency or sustainable-capacity measurement was made.",
+    "Hosted CI for any main transfer must be observed independently."
+  ]
+}
