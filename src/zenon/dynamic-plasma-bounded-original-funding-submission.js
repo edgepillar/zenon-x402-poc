@@ -1,3 +1,5 @@
+import { captureDynamicPlasmaKeyPairFundingConfiguration } from './dynamic-plasma-keypair-funding-configuration.js';
+import { createDynamicPlasmaPreparedHashWalletOptions } from './dynamic-plasma-prepared-hash-wallet-options.js';
 import { captureZenonDynamicPlasmaBoundedOriginalFundingConfiguration } from './dynamic-plasma-bounded-original-funding-configuration.js';
 import { createBoundedNonceDynamicPlasmaMaterialExchange } from './dynamic-plasma-bounded-material-exchange.js';
 import { createZenonDynamicPlasmaOriginalFundingSubmissionV2 } from './dynamic-plasma-original-funding-submission.js';
@@ -5,6 +7,8 @@ import { createZenonDynamicPlasmaOriginalFundingSubmissionV2 } from './dynamic-p
 const CAPTURE = captureZenonDynamicPlasmaBoundedOriginalFundingConfiguration;
 const MATERIAL = createBoundedNonceDynamicPlasmaMaterialExchange;
 const SUBMISSION = createZenonDynamicPlasmaOriginalFundingSubmissionV2;
+const KEYPAIR_CONFIGURATION = captureDynamicPlasmaKeyPairFundingConfiguration;
+const KEYPAIR_OPTIONS = createDynamicPlasmaPreparedHashWalletOptions;
 const FREEZE = Object.freeze, CREATE = Object.create, DEFINE = Object.defineProperty;
 const ErrorType = TypeError;
 
@@ -56,6 +60,38 @@ export function createZenonDynamicPlasmaBoundedOriginalFundingSubmission(configu
       store: selected.store, fundingResourceUrl: selected.fundingResourceUrl,
       deadlineMs: selected.deadlineMs, fetchImpl: selected.fetchImpl,
     });
+  } catch { reject(); }
+}
+
+/**
+ * Explicit SOURCE-ONLY KeyPair selection for the ACTUAL bounded material ->
+ * retained contextv7 candidate -> hash-only signer -> real preflight -> V6
+ * custody/readback -> original funding POST owner. No supplied wallet/preparer,
+ * material producer, preflight or store-writer factory is substituted.
+ *
+ * Expected public bytes are the same captured materialOptions.publicKey.
+ * Return the actual V2 owner directly: independent pins, explicit prepare/
+ * commit/submit, one-shot attempts, close and retained uncertainty stay owned
+ * there. No legacy fallback, quote refresh, replacement, resign or send occurs
+ * on construction or after a refusal. The caller still owns key consent and
+ * cleanup. A BOUND intake is not inclusion, grant activation or delivery.
+ *
+ * The separate builtin component result exercises the actual options/adapter
+ * and retained candidate with declared read/material/key callbacks. It does
+ * NOT execute this SDK/SQLite binding or qualify a real KeyPair implementation.
+ * No default buyer/Phase 2C cutover or old native-result rebinding is made.
+ */
+export function createZenonDynamicPlasmaBoundedKeyPairOriginalFundingSubmission(configuration) {
+  try {
+    if (arguments.length !== 1) reject();
+    const selected = KEYPAIR_CONFIGURATION(configuration);
+    const materialExchange = MATERIAL(selected.materialOptions);
+    const preparerOptions = KEYPAIR_OPTIONS({ readOptions: selected.readOptions,
+      materialExchange, materialWaitMs: selected.materialWaitMs,
+      keyPair: selected.keyPair, expectedAddress: selected.expectedAddress,
+      expectedPublicKey: selected.materialOptions.publicKey });
+    return SUBMISSION({ preparerOptions, store: selected.store,
+      fundingResourceUrl: selected.fundingResourceUrl, deadlineMs: selected.deadlineMs, fetchImpl: selected.fetchImpl });
   } catch { reject(); }
 }
 function reject() {
