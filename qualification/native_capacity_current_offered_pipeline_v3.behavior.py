@@ -622,7 +622,10 @@ def native_source_edges(self):
     self.assertIn("nativeCapacityCurrentOfferedSupervisorNamespaceSnapshotV4()",preload)
     self.assertIn("namespace.applicationFiles!==163",entry);self.assertIn("offeredCaptureVersion:3",entry)
     self.assertIn("nativeOfferedCapacityWorkloadAdapterVersion===5",entry)
-    summary["packedNativeSourceEdgesChecked"]=7
+    pair_source=(repo/"qualification/capacity-native-current-offered-pair-v4.supervisor.draft.mjs").read_text()
+    self.assertIn("s.applicationFiles!=="+str(sum(row["path"].startswith("app/")for row in selection["rows"])),pair_source)
+    self.assertNotIn("s.applicationFiles!==162",pair_source)
+    summary["packedNativeSourceEdgesChecked"]=8
 check("real_native_entry_adapter_and_both_packed_owner_edges_match_new_admission_versions",native_source_edges)
 for label,field,value in[("outer_version","offeredCaptureVersion",2),("adapter_version","nativeOfferedCapacityWorkloadAdapterVersion",4)]:
     def run(self,field=field,value=value):
