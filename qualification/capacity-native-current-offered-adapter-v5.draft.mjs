@@ -189,10 +189,10 @@ export function createNativeCapacityCurrentOfferedAdapterV5(configuration) {
       fundingIsSyntheticAndNotEconomicAcceptance: true,
       lanes: F(states.map(s => F({ laneId: s.laneId, pairAcquisitionEntered: s.acquisitionEntered,
         balanceReadsEntered: s.balanceReadsEntered, pendingBalanceReads: s.balanceReadsPending,
-        balanceObservationRoundTripNs: summarize(s.balanceReadNs), timingPages: s.timingPages,
+        balanceObservationRoundTripNs: summarizeOwned([...s.balanceReadNs]), timingPages: s.timingPages,
         serviceWriterTraceBeforeCloseObserved: s.finalTraceObserved, serviceWriterIntervals: s.intervals.length,
-        writerBracketNs: summarize(s.intervals.map(r => BigInt(r.bracketElapsedNs))),
-        insideWriterTransactionNs: summarize(s.intervals.map(r => BigInt(r.insideTransactionElapsedNs))),
+        writerBracketNs: summarizeOwned(s.intervals.map(r => BigInt(r.bracketElapsedNs))),
+        insideWriterTransactionNs: summarizeOwned(s.intervals.map(r => BigInt(r.insideTransactionElapsedNs))),
         serviceChildWindowWriterTrace: s.windowTrace, measurementUnknown: s.measurementUnknown,
         closeStatus: s.closeStatus, held: s.held }))),
       parentClockDomain: 'PARENT_MONOTONIC_IPC_ROUNDTRIP_NOT_CHILD_OR_SQL_LATENCY',
@@ -235,9 +235,10 @@ export function createNativeCapacityCurrentOfferedAdapterV5(configuration) {
 }
 
 function now() { const n = process.hrtime.bigint(); if (typeof n !== 'bigint' || n < 0n || n >= 1n << 128n) fail(); return n; }
-function summarize(values) {
+// Each caller transfers a fresh scratch array; raw evidence stays untouched.
+function summarizeOwned(values) {
   if (values.length === 0) return F({ samples: 0, min: null, p50: null, p95: null, p99: null, max: null });
-  const sorted = [...values].sort((a, b) => a < b ? -1 : a > b ? 1 : 0);
+  const sorted = values.sort((a, b) => a < b ? -1 : a > b ? 1 : 0);
   const rank = p => String(sorted[Math.ceil(sorted.length * p / 100) - 1]);
   return F({ samples: values.length, min: String(sorted[0]), p50: rank(50), p95: rank(95), p99: rank(99), max: String(sorted.at(-1)) });
 }
