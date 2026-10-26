@@ -30,7 +30,7 @@ PARENT="qualification/capacity-native-current-offered-parent-v2.inputs.json"
 SOURCE_SELECTION="qualification/capacity-native-current-roles-v4.inputs.json"
 KIND="CURRENT_OFFERED_V2_COMPLETE_MANAGED_SOURCE_NOT_NATIVE_EXECUTION"
 NATIVE_SELECTION="one-new-approved-native-current-offered-parent-v2"
-FROZEN=[["qualification/native_capacity_current_offered_resource_v1.py","85a97cafa15e9e8801bdb09d184464720128cce4ad4025ee83bd029365d7bf91"],["qualification/native_capacity_current_offered_command_v1.py","9c1096aa49191db783dc9d1a23f4d205a31af1a1eca335f23044c9651b8516d6"],["qualification/native_capacity_current_offered_capture_v1.py","d79248e0f7bfd6ba092c400308b17db6d27912faa9d8532ae50cb2d3584b8ed2"],["qualification/native_capacity_current_offered_parent_v2.py","054b375cd88495796e533749be7e332e7e2d62829beb595b27d33ebe7024f36c"],["qualification/run-capacity-native-paced-timer-managed-v3.local.py","5f3f6893559a9fdce3d7c19b9d729996a14f157822d1938bbad3ae25daeef22e"],["qualification/run-capacity-native-workload-v3.local.py","4e2e29c31ae10c661bd5599506cda87482d030fc328dbde1e3e1066db5dba9e6"],["qualification/funding_tls_current_gate.py","9777b8dca3c8c86e543c1f202c0cde248280ed3a108df4a688565ccf83132936"]]
+FROZEN=[["qualification/native_capacity_current_offered_resource_v1.py","89f8fbd2bc0c74542d75380fa2f17d965a5e6e6c6d1639d84bcb366a5b7a1f3b"],["qualification/native_capacity_current_offered_command_v1.py","2a9ff244b67a418caa06697407030f6e9c31ba0432242bfc5a5a6b4bc46cc205"],["qualification/native_capacity_current_offered_capture_v1.py","e9f5d3d75067028039fbedd5f1728835cbc44bb7518d01f8f22725afc069a60e"],["qualification/native_capacity_current_offered_parent_v2.py","59017e3e71fe1bcb038eb39a38cc483a8f1c612268639ffb90329ee53dad89b1"],["qualification/run-capacity-native-paced-timer-managed-v3.local.py","5f3f6893559a9fdce3d7c19b9d729996a14f157822d1938bbad3ae25daeef22e"],["qualification/run-capacity-native-workload-v3.local.py","4e2e29c31ae10c661bd5599506cda87482d030fc328dbde1e3e1066db5dba9e6"],["qualification/funding_tls_current_gate.py","9777b8dca3c8c86e543c1f202c0cde248280ed3a108df4a688565ccf83132936"]]
 STORAGE_SHA="a4d82a72214c9698fda7ae363c38b2470c08da5e2e04c63ee9284e43f638f081"
 CLI_SHA="0bf13cdc1f25a6b31ab14cfb124908808ca7ddc89073ecbcd0263bef4d52238c"
 OPENSSL_SHA="49db04c17e3a8c169ebc48a1149d78c165a86c04913203f46b2a14ce7f4a14fc"
@@ -146,7 +146,7 @@ def source_admission(repo,digest):
     require(type(manifest)is dict and set(manifest)=={"kind","version","sourceParent","pythonControls","profileSelection",
         "childSelection","workload","effectsCeiling","requiredPolicy","nativeSelection","nativeExecuted","nativeAllowanceGranted","authority"}
         and manifest["kind"]==KIND and type(manifest["version"])is int and manifest["version"]==1
-        and manifest["sourceParent"]=="6975c5dd98cd9c765853c3c24a93e12eff58b387"
+        and manifest["sourceParent"]=="c2c9ed9b1e663a69a780c3f12ba463fe6af88317"
         and manifest["nativeSelection"]==NATIVE_SELECTION and manifest["nativeExecuted"]is False
         and manifest["nativeAllowanceGranted"]is False and manifest["authority"]=="NONE","CURRENT_MANAGED_SOURCE_NOT_AUTHORITY")
     inputs={name:read(repo/name)for name in[SELF]+[name for name,_ in FROZEN]+[PARENT,SOURCE_SELECTION,PLAN]}
@@ -204,7 +204,7 @@ def validate_full_source_context(planner):
         and type(info.get("nodeBinaryHashesForContext"))is int and info["nodeBinaryHashesForContext"]==1
         and info.get("parentApplicationFiles")==160 and info.get("parentPackageFiles")==404
         and info.get("childApplicationFiles")==153 and info.get("childPackageFiles")==404
-        and info.get("parentSourceRowsSha256")=="f5ba2a28fe30f6ff1b5d54a45c1c3e424806ad6fa858fe2d0d57d11ba41b4b84"
+        and info.get("parentSourceRowsSha256")=="ac68afce186b6862eac33cbb3ee88944d5e8985976e0391fedb961213bd25732"
         and info.get("childSourceRowsSha256")=="db33115ac37137f5b0212cb33d748154b498ec1b15ca106dfb757575da692a6e"
         and info.get("privateProfileIsNativeAuthority")is False and info.get("nativeExecuted")is False and info.get("authority")=="NONE",
         "ACTUAL_564_SOURCE_CONTEXT_REQUIRED")

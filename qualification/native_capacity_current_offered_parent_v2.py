@@ -16,12 +16,12 @@ import stat
 import sys
 
 MANIFEST = "qualification/capacity-native-current-offered-parent-v2.inputs.json"
-MANIFEST_SHA = "c9eb8a699217aade0e5e09de014045fcf912c5f554246a1dd4dddd6ef78d530d"
+MANIFEST_SHA = "ef0202ada8a55d8e1659be944555bd2111d50181ad00afa2c284cce4007d9eaa"
 CHILD_PRODUCER = "qualification/native_capacity_current_role_profiles_v4.py"
 CHILD_PRODUCER_PIN = json.loads("{\"path\":\"qualification/native_capacity_current_role_profiles_v4.py\",\"bytes\":19763,\"LF\":295,\"sha256\":\"a32d566f61c7093464a8c84e543965d82bf9fedf45741e65101ae28f331db24f\",\"gitBlob\":\"3d99b2ab631c1ef1857f0c90af7330340410eb52\"}")
-PARENT_SEAL = "f5ba2a28fe30f6ff1b5d54a45c1c3e424806ad6fa858fe2d0d57d11ba41b4b84"
+PARENT_SEAL = "ac68afce186b6862eac33cbb3ee88944d5e8985976e0391fedb961213bd25732"
 CHILD_SEAL = "db33115ac37137f5b0212cb33d748154b498ec1b15ca106dfb757575da692a6e"
-PARENT_BYTES = 5134462
+PARENT_BYTES = 5134626
 PARENT_KIND = "NATIVE_CAPACITY_CURRENT_OFFERED_SUPERVISOR_NODE24_V2"
 PARENT_ENTRY = "app/qualification/capacity-native-current-offered-v2.entry.draft.mjs"
 PARENT_PRELOAD = "app/qualification/capacity-native-current-offered-v2.namespace.preload.draft.mjs"
@@ -87,7 +87,7 @@ def capture_selection(base,current,legacy,child,manifest_raw,child_manifest_raw,
     selected=child.capture_selection(base,current,legacy,child_manifest_raw,inventory_raw,baseline_raw,current_raw)
     require(type(manifest["sourceSelectionVersion"]) is int and manifest["sourceSelectionVersion"]==2
         and manifest["kind"]=="CURRENT_OFFERED_PARENT_160_404_SOURCE_NOT_NATIVE_EXECUTION"
-        and manifest["sourceParent"]=="9a2dbbe5cc3ab6d4ed300f7b3d625136f15192a8"
+        and manifest["sourceParent"]=="c2c9ed9b1e663a69a780c3f12ba463fe6af88317"
         and manifest["authority"]=="NONE","CURRENT_PARENT_SELECTION")
     require(manifest["runtime"]==dict(node="24.19.0",platform="darwin",arch="arm64",
         nodeSha256=legacy.NODE_SHA,nodeBytes=legacy.NODE_BYTES),"CURRENT_PARENT_RUNTIME")
