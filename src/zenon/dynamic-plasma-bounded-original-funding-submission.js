@@ -1,3 +1,5 @@
+import { createSdk105PreparedHashWalletOwner } from './sdk105-prepared-hash-wallet-owner.js';
+import { createSdk105OriginalFundingOwner } from './sdk105-original-funding-owner.js';
 import { captureDynamicPlasmaKeyPairFundingConfiguration } from './dynamic-plasma-keypair-funding-configuration.js';
 import { createDynamicPlasmaPreparedHashWalletOptions } from './dynamic-plasma-prepared-hash-wallet-options.js';
 import { captureZenonDynamicPlasmaBoundedOriginalFundingConfiguration } from './dynamic-plasma-bounded-original-funding-configuration.js';
@@ -9,6 +11,8 @@ const MATERIAL = createBoundedNonceDynamicPlasmaMaterialExchange;
 const SUBMISSION = createZenonDynamicPlasmaOriginalFundingSubmissionV2;
 const KEYPAIR_CONFIGURATION = captureDynamicPlasmaKeyPairFundingConfiguration;
 const KEYPAIR_OPTIONS = createDynamicPlasmaPreparedHashWalletOptions;
+const SDK105_WALLET = createSdk105PreparedHashWalletOwner;
+const SDK105_FUNDING_OWNER = createSdk105OriginalFundingOwner;
 const FREEZE = Object.freeze, CREATE = Object.create, DEFINE = Object.defineProperty;
 const ErrorType = TypeError;
 
@@ -92,6 +96,36 @@ export function createZenonDynamicPlasmaBoundedKeyPairOriginalFundingSubmission(
       expectedPublicKey: selected.materialOptions.publicKey });
     return SUBMISSION({ preparerOptions, store: selected.store,
       fundingResourceUrl: selected.fundingResourceUrl, deadlineMs: selected.deadlineMs, fetchImpl: selected.fetchImpl });
+  } catch { reject(); }
+}
+/**
+ * Explicit SOURCE-ONLY SDK1.0.5 selection. Unlike the generic native-Promise
+ * KeyPair protocol above, the pinned SDK returns synchronous signature bytes.
+ * Own one existing exclusively transferred KeyPair, capture its synchronous
+ * result, and join its one-shot clear with the ACTUAL V2 funding owner close.
+ * The real bounded producer, retained preparer, cryptographic preflight,
+ * independent pins, V6 custody and original submit remain hardwired.
+ *
+ * Construction enters no key/address/sign/clear callback. Ownership of the
+ * existing store and KeyPair transfers only when this enclosing constructor
+ * returns. If construction fails, caller retains BOTH close/quarantine duties
+ * and any existing store-object claim may already be consumed. No key cleanup,
+ * new key derivation, mnemonic, SDK prepareBlock or automatic fallback occurs.
+ * The exact SDK source protocol was inspected; this changed SDK/SQLite graph
+ * has NOT been evaluated by the component tests or the parser-only control.
+ */
+export function createZenonDynamicPlasmaBoundedSdk105OriginalFundingSubmission(configuration) {
+  try {
+    if (arguments.length !== 1) reject();
+    const selected = KEYPAIR_CONFIGURATION(configuration);
+    const materialExchange = MATERIAL(selected.materialOptions);
+    const walletOwner = SDK105_WALLET({ keyPair:selected.keyPair,
+      expectedAddress:selected.expectedAddress, expectedPublicKey:selected.materialOptions.publicKey });
+    const funding = SUBMISSION({ preparerOptions:{readOptions:selected.readOptions,
+      materialExchange, materialWaitMs:selected.materialWaitMs, wallet:walletOwner},
+      store:selected.store, fundingResourceUrl:selected.fundingResourceUrl,
+      deadlineMs:selected.deadlineMs, fetchImpl:selected.fetchImpl });
+    return SDK105_FUNDING_OWNER({funding,walletOwner});
   } catch { reject(); }
 }
 function reject() {
