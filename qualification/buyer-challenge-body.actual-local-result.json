@@ -1,0 +1,186 @@
+{
+  "schemaVersion": 1,
+  "status": "CURRENT_BUYER_CHALLENGE_BODY_COMPONENTS_PASSED",
+  "date": "2026-10-26",
+  "reviewedMain": "d6464cfeae28329059a5eb464844cbee1f7e8e1f",
+  "reviewedDevelopment": "6cf9b969aec1a7ff4767fcea0c66ce5d5e1441c3",
+  "currentSourceInputs": [
+    {
+      "path": "src/buyer.js",
+      "bytes": 20907,
+      "LF": 552,
+      "sha256": "28a1f1080e64f79ac5887b3fae8d137fd4e6264794b7d7d27c7e871d7bdc0702",
+      "gitBlob": "a011ebe90d02a0250f001c87a42881dbd53b469f"
+    },
+    {
+      "path": "src/buyer-challenge-body.js",
+      "bytes": 2241,
+      "LF": 44,
+      "sha256": "aed6af851c98f439d20259532b453f496bf608df5534c55a3cbf837da1affb8d",
+      "gitBlob": "4a505add02f7f2c472589c37868740e4a914130c"
+    },
+    {
+      "path": "qualification/buyer-challenge-body.behavior.mjs",
+      "bytes": 13181,
+      "LF": 182,
+      "sha256": "dfea2f9b8cff6b172d67d64487551d60ebe0ee890e705f7eae33d662601f6977",
+      "gitBlob": "5999dd85f65f01517083359918e539d89666e288"
+    },
+    {
+      "path": "scripts/run-current-buyer-challenge-body.mjs",
+      "bytes": 1086,
+      "LF": 21,
+      "sha256": "c53487710d327f642ee5141336944b4ab74ca61a04e135bd49f9cf250be5f082",
+      "gitBlob": "739d62a0ef5d7fd6c1b81021485e7050eed8528a"
+    }
+  ],
+  "literalRelativeImportInputs": [
+    {
+      "path": "src/buyer-challenge-body.js",
+      "bytes": 2241,
+      "LF": 44,
+      "sha256": "aed6af851c98f439d20259532b453f496bf608df5534c55a3cbf837da1affb8d",
+      "gitBlob": "4a505add02f7f2c472589c37868740e4a914130c"
+    },
+    {
+      "path": "src/buyer.js",
+      "bytes": 20907,
+      "LF": 552,
+      "sha256": "28a1f1080e64f79ac5887b3fae8d137fd4e6264794b7d7d27c7e871d7bdc0702",
+      "gitBlob": "a011ebe90d02a0250f001c87a42881dbd53b469f"
+    },
+    {
+      "path": "src/service-credit-bounded-operation-drain.js",
+      "bytes": 5474,
+      "LF": 118,
+      "sha256": "4ea81e010451f91bb8f0ca668dd6bd3966763ea23385bdd0d511c200e4b3eecd",
+      "gitBlob": "843f9b0a3adb411471f7e345b97362e9035e094b"
+    },
+    {
+      "path": "src/x402-wire.js",
+      "bytes": 39886,
+      "LF": 934,
+      "sha256": "5fba91af5a352f62d1a335c7176a45a604e2af5d92b1c4b0e53825c1f20d4e56",
+      "gitBlob": "fb060d4e349b1c31a1219a0cc137af250a8a2291"
+    }
+  ],
+  "before": {
+    "actualCommand": {
+      "actualExit": 1,
+      "complete": true,
+      "inputComplete": true,
+      "inputBytes": 0,
+      "reason": null,
+      "stdoutBytes": 18235,
+      "stdoutSha256": "b32a2b0acc7a72119f44bf0beec9a23e8dd2baebc722956a6dc925a88c80da2b",
+      "stderrBytes": 0,
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "totals": {
+      "tests": 32,
+      "pass": 16,
+      "fail": 16,
+      "skipped": 0,
+      "cancelled": 0,
+      "todo": 0
+    },
+    "failedTestNames": [
+      "cancel the initial 402 stream before payment preparation and submission",
+      "wait for deferred cancellation before entering the payment callback",
+      "rejected cancellation prevents any payment construction or signed request",
+      "throwing cancellation is a pre-payment refusal with a fixed error",
+      "a locked initial stream cannot allow payment preparation",
+      "malformed challenge cleanup runs while preserving the original validation error",
+      "resource mismatch closes the discarded challenge before its original error",
+      "unsupported payment flow still cancels the discarded challenge",
+      "a cleanup rejection cannot replace an earlier malformed-challenge error",
+      "an unobservable initial body prevents payment without exposing its getter error",
+      "the final paid body stays with the caller",
+      "pending reconciliation retains the same payment bytes and one preparation",
+      "lost-response recovery keeps the same original payload without new challenge cleanup",
+      "a paid redirect remains outcome-unknown and its body is not canceled as a challenge",
+      "invalid payment output is rejected after initial-body cleanup and before send",
+      "real Node Response cancellation uses its actual in-memory Web Stream"
+    ]
+  },
+  "after": {
+    "actualCommand": {
+      "actualExit": 0,
+      "complete": true,
+      "inputComplete": true,
+      "inputBytes": 0,
+      "reason": null,
+      "stdoutBytes": 6754,
+      "stdoutSha256": "6d9bd87b0d527bde42568a4675787af6341f6ddc1b588be6dc8fe0844f8c2b66",
+      "stderrBytes": 0,
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "totals": {
+      "tests": 32,
+      "pass": 32,
+      "fail": 0,
+      "skipped": 0,
+      "cancelled": 0,
+      "todo": 0
+    },
+    "failedTestNames": []
+  },
+  "correctedBehavior": {
+    "initial402BodyCanceledBeforePaymentPreparation": true,
+    "cancelAtMostOnce": true,
+    "cooperativeDefaultBudgetMs": 1000,
+    "cancellationMustResolveBeforeDeadline": true,
+    "unknownCancellationStopsBeforePaymentCreation": true,
+    "fixedError": "payment_challenge_response_cleanup_failed",
+    "malformedChallengeStillCanceled": true,
+    "originalChallengeValidationErrorPreserved": true,
+    "responseBytesBuffered": false,
+    "callerReplacementCancelMethodInvoked": false,
+    "proxyTrapsInvoked": false
+  },
+  "preservedBehavior": {
+    "non402ResponseBodyRemainsCallerOwned": true,
+    "paidResponseBodyRemainsCallerOwned": true,
+    "lostResponseReconciliationUsesExactOriginalHeader": true,
+    "pendingReconciliationUsesExactOriginalHeader": true,
+    "automaticRepreparation": false,
+    "postSubmissionErrorClassificationChanged": false,
+    "defaultDPStrategyChanged": false
+  },
+  "verification": {
+    "actualBuyerModuleImported": true,
+    "realInMemoryNodeWebStreams": true,
+    "realInMemoryNodeResponseCases": 2,
+    "declaredHTTPCallbacks": true,
+    "declaredUnsignedPayloadData": true,
+    "actualFetchCalls": 0,
+    "localCases": 32,
+    "actualStandaloneHelperDeadlineCases": 2,
+    "nodeVersion": "v24.19.0",
+    "nodePlatform": "darwin-arm64",
+    "nodeChildren": 0
+  },
+  "limits": {
+    "physicalSocketCloseQualified": false,
+    "realHTTPTransportQualified": false,
+    "heapOrLatencyBenchmark": false,
+    "blockedEventLoopHardTimeoutGuaranteed": false,
+    "underlyingPendingOperationForceCanceled": false,
+    "SDKImported": false,
+    "officialX402PackageImported": false,
+    "SQLite": false,
+    "keysOrSignatures": false,
+    "nonceSearch": false,
+    "sockets": false,
+    "nativeFundingApplicationExecuted": false,
+    "managedTasksCreated": 0,
+    "approvedNative123SourceGraphChanged": false,
+    "unconsumedV6NativeAllowanceUsed": false,
+    "existing108CaseHostedProfileChanged": false,
+    "new32CasesHosted": false,
+    "durableRecoveryQualified": false,
+    "serviceDeliveryQualified": false,
+    "economicPilotQualified": false,
+    "productionQualified": false
+  }
+}
