@@ -21,6 +21,18 @@ const parse = JSON.parse;
 const URLConstructor = URL;
 const TypeErrorConstructor = TypeError;
 const CREATE_HASH = createHash;
+const NativeWeakMap = WeakMap;
+const weakGet = NativeWeakMap.prototype.get;
+const weakSet = NativeWeakMap.prototype.set;
+const originalTexts = new NativeWeakMap();
+const intentTexts = new NativeWeakMap();
+
+// Only records constructed below enter these maps, after their complete
+// validation, text bounds and freeze. Every own value is an immutable primitive.
+// Weak keys add no ownership of a caller's record lifetime. Unknown inputs,
+// including frozen lookalikes, always take the existing complete validation path.
+// This retains at most one already-bounded canonical string per live record;
+// it is not a cache of caller input, payment authority or persistent storage.
 
 const PROFILE = 'service-credit.execute.v1.empty-body';
 const EMPTY_DIGEST = 'sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855';
@@ -101,9 +113,9 @@ export function validateOriginalServiceRequestCustody(input) {
 
 export function serializeOriginalServiceRequestCustody(input) {
   if (arguments.length !== 1) reject();
-  const text = stringify(validateRecord(input));
-  bounded(text, 16384);
-  return text;
+  const text = apply(weakGet, originalTexts, [input]);
+  if (text !== undefined) return text;
+  return apply(weakGet, originalTexts, [validateRecord(input)]);
 }
 
 export function parseOriginalServiceRequestCustody(text) {
@@ -112,7 +124,7 @@ export function parseOriginalServiceRequestCustody(text) {
   let decoded;
   try { decoded = parse(text); } catch { reject(); }
   const result = validateRecord(decoded);
-  if (stringify(result) !== text) reject();
+  if (apply(weakGet, originalTexts, [result]) !== text) reject();
   return result;
 }
 
@@ -235,8 +247,11 @@ function capture(input, bindingInput) {
     requestId: request.requestId,
   };
   const result = { ...core, checksum: checksum(core) };
-  bounded(stringify(result), 16384);
-  return freeze(result);
+  const text = stringify(result);
+  bounded(text, 16384);
+  freeze(result);
+  apply(weakSet, originalTexts, [result, text]);
+  return result;
 }
 
 function validateRecord(input) {
@@ -313,8 +328,11 @@ function validateIntent(input) {
   for (const key of INTENT_FIELDS) if (key !== 'checksum') core[key] = r[key];
   if (r.checksum !== intentDigest(INTENT_DOMAIN, core)) rejectIntent();
   const result = { ...core, checksum: r.checksum };
-  bounded(intentCanonical(result), 16384);
-  return freeze(result);
+  const text = intentCanonical(result);
+  bounded(text, 16384);
+  freeze(result);
+  apply(weakSet, intentTexts, [result, text]);
+  return result;
 }
 export function captureOriginalServiceDispatchIntent(original, binding) {
   if (arguments.length !== 2) rejectIntent();
@@ -334,7 +352,9 @@ export function captureOriginalServiceDispatchIntent(original, binding) {
 }
 export function serializeOriginalServiceDispatchIntent(input) {
   if (arguments.length !== 1) rejectIntent();
-  return intentCanonical(validateIntent(input));
+  const text = apply(weakGet, intentTexts, [input]);
+  if (text !== undefined) return text;
+  return apply(weakGet, intentTexts, [validateIntent(input)]);
 }
 export function parseOriginalServiceDispatchIntent(text) {
   if (arguments.length !== 1) rejectIntent();
@@ -342,7 +362,7 @@ export function parseOriginalServiceDispatchIntent(text) {
   let decoded;
   try { decoded = parse(text); } catch { rejectIntent(); }
   const result = validateIntent(decoded);
-  if (intentCanonical(result) !== text) rejectIntent();
+  if (apply(weakGet, intentTexts, [result]) !== text) rejectIntent();
   return result;
 }
 function rejectIntent() {
