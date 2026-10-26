@@ -627,6 +627,12 @@ def owned_window_graph_closure(self):
     self.assertNotIn("createServiceCreditCapacityWindowWriterTraceData as WINDOW_TRACE",adapter)
     preload=(repo/"qualification/capacity-native-current-offered-v5.namespace.preload.draft.mjs").read_text()
     for name in expected:self.assertIn(name,preload)
+    source=(repo/"src/service-credit-capacity-window-writer-trace-owned-data.js").read_text()
+    self.assertIn("bracket:after-before",source)
+    self.assertIn("bracketElapsedNs:page.intervals[index].bracketElapsedNs",source)
+    self.assertIn("insideTransactionElapsedNs:page.intervals[index].insideTransactionElapsedNs",source)
+    self.assertNotIn("bracketElapsedNs:String(r.bracket)",source)
+    summary["validatedDurationReuseSourceBound"]=True
     summary["ownedWindowGraph"]=dict(parentRows=578,parentApplications=174,childRows=567,
         coverageAndWindowComponents=2,allPreviousChildRowsPreserved=True,nativeExecuted=False)
 check("complete_parent_selects_owned_window_and_preserves_all_567_child_rows",owned_window_graph_closure)

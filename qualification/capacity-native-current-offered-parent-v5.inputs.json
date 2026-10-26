@@ -1,7 +1,7 @@
 {
   "sourceSelectionVersion": 5,
   "kind": "CURRENT_V6_MATCHED_WINDOW_OFFERED_PARENT_174_404_SOURCE_NOT_NATIVE_EXECUTION",
-  "sourceParent": "3f2e225c66ad8db7bdc671e82703b3d3ad6dc808",
+  "sourceParent": "ab509da735b7ecc938bb6896d4c7772b2acd6d05",
   "parentRole": {
     "profileKind": "NATIVE_CAPACITY_CURRENT_OFFERED_SUPERVISOR_NODE24_V5",
     "profileVersion": 8,
@@ -103,17 +103,17 @@
     },
     {
       "path": "app/src/service-credit-capacity-window-writer-trace-owned-data.js",
-      "bytes": 9146,
-      "LF": 129,
-      "sha256": "970fe9961b9c5de27694d96ea8c414c5ee362da88d10e1c597221647711e8cc1",
-      "gitBlob": "03d2e366104b2d203e764e6c5d848c9f81b5e2ff"
+      "bytes": 9400,
+      "LF": 133,
+      "sha256": "60a5df357210f3ffa0a3d0cf5875a93cee656a7bc995ae7abd76e2e9e9a6c122",
+      "gitBlob": "28705d253e5ca88e6ef6ab3cc4100904aa6c0391"
     }
   ],
   "parentApplicationFiles": 174,
   "parentPackageFiles": 404,
   "parentSourceRows": 578,
-  "parentSourceRowsSha256": "fe51e40aebd38177628a04a8868f78d5804f3c02a00ea363d1aade20c2bcb2cd",
-  "parentDeclaredInputBytes": 5304604,
+  "parentSourceRowsSha256": "9c9681a1229d69824c4859c1bf9a57498bc5ed9a24755c63280e6b4b528bea5d",
+  "parentDeclaredInputBytes": 5304858,
   "capture": {
     "offeredCaptureVersion": 3,
     "adapterVersion": 6,

@@ -10,7 +10,7 @@ import re
 from urllib.parse import quote
 
 HASH=re.compile(r"[0-9a-f]{64}")
-PARENT_SEAL="fe51e40aebd38177628a04a8868f78d5804f3c02a00ea363d1aade20c2bcb2cd"
+PARENT_SEAL="9c9681a1229d69824c4859c1bf9a57498bc5ed9a24755c63280e6b4b528bea5d"
 CHILD_SEAL="92646a2cf5edf717a1d24468fa6277c48c4f59f43db5b6e607b6071acc79c2b2"
 NODE_SHA="dbedff294bab84a0a86c04e15fbcbeb1c97ca10bef1b32b0634cd24b36f62100"
 ENTRY="qualification/capacity-native-current-offered-v5.entry.draft.mjs"
